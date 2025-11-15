@@ -1,13 +1,8 @@
-/**
- * Basic Information Step Component
- * Common first step for all plugin console
- */
-
-import { TagChipsInput } from '@hierarchidb/ui-plugin-basic-info';
-import { LocalOffer } from '@mui/icons-material';
-import { Box, FormControl, FormHelperText, TextField, Typography } from '@mui/material';
-import type React from 'react';
 import { useCallback, useEffect, useRef } from 'react';
+import type { ChangeEvent, FC } from 'react';
+import { Box, FormControl, FormHelperText, TextField, Typography } from '@mui/material';
+import { LocalOffer } from '@mui/icons-material';
+import { TagChipsInput } from './TagChipsInput.js';
 
 export interface BasicInfoData {
   name: string;
@@ -18,30 +13,27 @@ export interface BasicInfoData {
 export interface BasicInfoStepProps {
   /** Current name value */
   name: string;
-
   /** Current description value */
   description: string;
-
   /** Current tags */
   tags?: string[];
-
   /** Change handler */
   onChange: (data: BasicInfoData) => void;
-
   /** Dialog mode */
   mode: 'create' | 'edit';
-
   /** Optional custom validation */
   validate?: (data: BasicInfoData) => string | null;
-
   /** Optional tag suggestions */
   tagSuggestions?: string[];
+  /** Disable editing */
+  disabled?: boolean;
 }
 
 /**
- * Basic Information Step Component
+ * Shared Basic Information step component for dialogs.
+ * Provides name/description/tag inputs and handles validation focus behavior.
  */
-export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
+export const BasicInfoStep: FC<BasicInfoStepProps> = ({
   name,
   description,
   tags = [],
@@ -49,59 +41,60 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
   mode,
   validate,
   tagSuggestions = [],
+  disabled = false,
 }) => {
   const nameInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Handle name change
-  const handleNameChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      onChange({
-        name: event.target.value,
-        description,
-        tags,
-      });
-    },
-    [description, tags, onChange]
-  );
-
-  // Handle description change
-  const handleDescriptionChange = useCallback(
-    (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const emitChange = useCallback(
+    (updates: Partial<BasicInfoData>) => {
       onChange({
         name,
-        description: event.target.value,
+        description,
         tags,
+        ...updates,
       });
     },
-    [name, tags, onChange]
+    [description, name, onChange, tags],
+  );
+
+  const handleNameChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      emitChange({ name: event.target.value });
+    },
+    [emitChange],
+  );
+
+  const handleDescriptionChange = useCallback(
+    (event: ChangeEvent<HTMLTextAreaElement>) => {
+      emitChange({ description: event.target.value });
+    },
+    [emitChange],
   );
 
   const handleTagsChange = useCallback(
     (nextTags: string[]) => {
-      onChange({
-        name,
-        description,
-        tags: nextTags,
-      });
+      emitChange({ tags: nextTags });
     },
-    [name, description, onChange]
+    [emitChange],
   );
 
-  // Validation
-  const validationError = validate?.({ name, description });
+  const validationError = validate?.({ name, description, tags });
   const nameError = !name.trim() ? 'Name is required' : null;
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
     if (mode !== 'create') return undefined;
+
     const input = nameInputRef.current;
     if (!input) return undefined;
-    const focusTimer = window.setTimeout(() => {
+
+    const timer = window.setTimeout(() => {
       input.focus();
       input.select();
     }, 0);
+
     return () => {
-      window.clearTimeout(focusTimer);
+      window.clearTimeout(timer);
     };
   }, [mode]);
 
@@ -124,9 +117,8 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
           placeholder="Enter a descriptive name"
           variant="outlined"
           inputRef={nameInputRef}
-          inputProps={{
-            maxLength: 255,
-          }}
+          inputProps={{ maxLength: 255 }}
+          disabled={disabled}
         />
       </FormControl>
 
@@ -140,37 +132,30 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
           placeholder="Enter an optional description"
           variant="outlined"
           helperText={`${description.length}/1000 characters`}
-          inputProps={{
-            maxLength: 1000,
-          }}
+          inputProps={{ maxLength: 1000 }}
+          disabled={disabled}
         />
       </FormControl>
 
-      {/* Tags input */}
       <FormControl fullWidth>
         <TagChipsInput
-          label={
-            <Box
-              style={{
-                gap: 1,
-                justifyContent: 'start',
-                justifyItems: 'start',
-                display: 'flex',
-                flexDirection: 'row',
-              }}
-            >
-              <LocalOffer />
-              <Box>Tags</Box>
+          label={(
+            <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, alignItems: 'center' }}>
+              <LocalOffer fontSize="small" />
+              <Box component="span">Tags</Box>
             </Box>
-          }
+          )}
           value={tags}
           onChange={handleTagsChange}
           suggestions={tagSuggestions}
           placeholder="Enter tag and press Enter"
+          disabled={disabled}
         />
       </FormControl>
 
-      {validationError && <FormHelperText error>{validationError}</FormHelperText>}
+      {(validationError || nameError) && (
+        <FormHelperText error>{validationError ?? nameError}</FormHelperText>
+      )}
     </Box>
   );
 };

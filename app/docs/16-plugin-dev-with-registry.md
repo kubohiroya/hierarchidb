@@ -122,7 +122,7 @@ export interface PluginStepConfig<TData = unknown> {
 ```tsx
 import React from 'react';
 import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/runtime-ui-plugin-dialog';
-import { RouteBasicInfoStep } from '../components/RouteBasicInfoStep';
+import { RouteDetailsStep } from '../components/RouteDetailsStep';
 
 type RouteData = { name: string; routeType?: string };
 
@@ -133,7 +133,7 @@ PluginStepRegistry.getInstance().registerConfigProvider<RouteData>({
       {
         id: 'route-basic',
         label: '基本情報',
-        componentFactory: (props: StepComponentProps<RouteData>) => <RouteBasicInfoStep {...props} />,
+        componentFactory: (props: StepComponentProps<RouteData>) => <RouteDetailsStep {...props} />,
       },
     ];
   },

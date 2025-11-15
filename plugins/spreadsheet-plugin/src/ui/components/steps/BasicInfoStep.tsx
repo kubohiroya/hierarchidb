@@ -4,10 +4,10 @@
  * Includes name, description, tags, and category selection
  */
 
-import { Box, Divider, Stack, Typography } from '@mui/material';
+import { Box, Stack, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import { BasicInfoFields, TagChipsInput } from '@hierarchidb/ui-plugin-basic-info';
 import type { FC } from 'react';
+import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 
 export interface BasicInfoStepProps {
   data: {
@@ -24,16 +24,18 @@ export interface BasicInfoStepProps {
 /**
     */
 export const BasicInfoStep: FC<BasicInfoStepProps> = ({
-                                                              data,
-                                                              onNext,
-                                                              disabled = false,
-                                                            }) => {
+  data,
+  onNext,
+  disabled = false,
+}) => {
   const { t } = useTranslation('spreadsheet-plugin');
 
-  const handleUpdate = (updates: Partial<typeof data>) => {
+  const handleUpdate = (updates: BasicInfoData) => {
     onNext({
       ...data,
-      ...updates,
+      name: updates.name,
+      description: updates.description,
+      tags: updates.tags,
     });
   };
 
@@ -50,33 +52,15 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
       </Typography>
 
       <Stack spacing={3}>
-        <BasicInfoFields
-          value={{ name: data.name, description: data.description }}
-          onChange={(updates: Partial<{ name: string; description: string }>) => handleUpdate(updates)}
+        <SharedBasicInfoStep
+          name={data.name ?? ''}
+          description={data.description ?? ''}
+          tags={data.tags ?? []}
+          onChange={handleUpdate}
+          mode="create"
           disabled={disabled}
-          nameLabel={String(t('basicInfo.name.label', 'Spreadsheet Name'))}
-          nameHelperText={String(t('basicInfo.name.helper', 'Enter a descriptive name for this spreadsheet'))}
-          nameRequiredText={String(t('basicInfo.name.required', 'Spreadsheet name is required'))}
-          descriptionLabel={String(t('basicInfo.description.label', 'Description'))}
-          descriptionHelperText={String(t('basicInfo.description.helper', 'Describe the purpose or contents of this spreadsheet (optional)'))}
+          validate={(value) => (value.name.trim().length ? null : String(t('basicInfo.name.required', 'Spreadsheet name is required')))}
         />
-
-        <Divider />
-
-        <Box>
-          <TagChipsInput
-            value={data.tags ?? []}
-            onChange={(tags: string[]) => handleUpdate({ tags })}
-            placeholder={String(t('basicInfo.tags.placeholder', 'Type a tag and press Enter'))}
-            label={String(t('basicInfo.tags.label', 'Tags'))}
-            helperText={String(t('basicInfo.tags.helper', 'Add tags to categorize and organize this spreadsheet'))}
-            disabled={disabled}
-          />
-        </Box>
-
-        {/*
- PRTagInput
-*/}
       </Stack>
 
       {/*

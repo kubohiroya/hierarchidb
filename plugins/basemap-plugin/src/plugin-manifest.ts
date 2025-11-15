@@ -52,11 +52,6 @@ export const PLUGIN_MANIFEST: PluginManifest = {
         type: 'object',
         required: true,
       },
-      {
-        name: 'displayOptions',
-        type: 'object',
-        required: false,
-      },
     ],
   },
   database: {

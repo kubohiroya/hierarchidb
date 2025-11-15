@@ -37,8 +37,6 @@ export {
   StylerConfigDefault,
 } from './common/types/stylerTypes.js';
 export { PLUGIN_MANIFEST as StylerPluginManifest } from './plugin-manifest.js';
-export type { StylemapBasicInfoData } from './ui/components/steps/BasicInfoStep.js';
-
 // Extension definition (main plugin definition)
 
 // Entity handler

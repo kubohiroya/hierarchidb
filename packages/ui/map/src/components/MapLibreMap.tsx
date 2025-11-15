@@ -44,6 +44,8 @@ export interface MapLibreMapProps extends BaseMapProps {
 // Default values from unified config
 const { mapStyle: defaultMapStyle, interactionOptions: defaultMapOptions } = DEFAULT_MAP_CONFIG;
 
+
+
 export const MapLibreMap: React.FC<MapLibreMapProps> = ({
                                                           initialViewState,
                                                           mapStyle = defaultMapStyle,
@@ -145,11 +147,11 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
     },
     [defaultIdentifyConfig, identifyFeatureOnClick, onClick],
   );
-
   const handleSnackbarClose = useCallback((_: unknown, reason?: string) => {
     if (reason === 'clickaway') return;
     setIdentifySnackbarState((prev) => ({ ...prev, open: false }));
   }, []);
+
 
   const containerStyle: React.CSSProperties = {
     width,

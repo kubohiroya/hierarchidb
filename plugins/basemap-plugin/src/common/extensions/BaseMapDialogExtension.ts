@@ -94,7 +94,7 @@ const hasValidViewportStep = (data: BaseMapDialogData): boolean => {
 };
 
 const resolveStepNumbers = (stepNumbers: ReadonlyArray<number> | undefined): number[] =>
-  stepNumbers && stepNumbers.length > 0 ? Array.from(stepNumbers) : [2, 3, 4];
+  stepNumbers && stepNumbers.length > 0 ? Array.from(stepNumbers) : [2, 3];
 
 export class BaseMapDialogExtension extends NodeDialogPlugin<BaseMapDialogPeer> {
   readonly pluginId = 'basemap-plugin-dialog-extension';
@@ -113,15 +113,12 @@ export class BaseMapDialogExtension extends NodeDialogPlugin<BaseMapDialogPeer> 
           if (n === 3) {
             return hasValidViewportStep(dialogData);
           }
-          if (n === 4) {
-            return true; // display options optional
-          }
           return true;
         });
       },
       getEnabledSteps: (data: BaseMapDialogPeer, stepNumbers?: ReadonlyArray<number>) => {
         const dialogData = toDialogData(data);
-        // sequential gating: 2 -> 3 -> 4
+        // sequential gating: 2 -> 3
         const filled = new Map<number, boolean>();
         const ok2 = (() => {
           return hasValidStyleStep(dialogData);
@@ -134,7 +131,6 @@ export class BaseMapDialogExtension extends NodeDialogPlugin<BaseMapDialogPeer> 
         return resolveStepNumbers(stepNumbers).map((n) => {
           if (n === 2) return true;
           if (n === 3) return filled.get(2) === true;
-          if (n === 4) return filled.get(3) === true;
           return true;
         });
       },

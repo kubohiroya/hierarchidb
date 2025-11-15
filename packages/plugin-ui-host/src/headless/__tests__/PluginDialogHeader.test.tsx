@@ -110,4 +110,55 @@ describe('PluginDialogHeader', () => {
     fireEvent.pointerDown(dragHandle!, { button: 0 });
     expect(onDragHandlePointerDown).toHaveBeenCalledTimes(1);
   });
+
+  it('distinguishes validated steps from the active step and exposes aria hints', () => {
+    const contextValue = {
+      open: true,
+      stepComponents: [
+        { id: 'basic', label: 'Step One', component: () => null },
+        { id: 'details', label: 'Step Two', component: () => null },
+        { id: 'review', label: 'Step Three', component: () => null },
+      ],
+      stepData: {},
+      onStepDataChange: vi.fn(),
+      activeStepIndex: 1,
+      enabledStepIndices: [0, 1, 2],
+      validatedStepIndices: [0],
+      committableStepIndices: [2],
+      invalidMessageMap: {},
+      isDirty: true,
+      onStepNavigate: vi.fn(),
+      onRequestClose: vi.fn(),
+      onRequestCommit: vi.fn(),
+      displayMode: 'normal' as const,
+      onDisplayModeChange: vi.fn(),
+      onDragHandlePointerDown: vi.fn(),
+    } satisfies Parameters<typeof MultiStepDialogProvider>[0]['value'];
+
+    render(
+      <ThemeProvider theme={createTheme()}>
+        <MultiStepDialogProvider value={contextValue}>
+          <PluginDialogHeader title="Create Folder" />
+        </MultiStepDialogProvider>
+      </ThemeProvider>
+    );
+
+    const validatedIcon = screen.getByTestId('plugin-dialog-step-icon-1');
+    expect(validatedIcon).toHaveAttribute('data-validated', 'true');
+    expect(validatedIcon).toHaveAttribute('data-active', 'false');
+
+    const activeIcon = screen.getByTestId('plugin-dialog-step-icon-2');
+    expect(activeIcon).toHaveAttribute('data-active', 'true');
+    expect(activeIcon).toHaveAttribute('data-validated', 'false');
+
+    expect(screen.queryByText('Current step')).toBeNull();
+
+    const activeLabel = screen.getByText('Step Two');
+    expect(activeLabel).toHaveAttribute('data-active-label', 'true');
+    const inactiveLabel = screen.getByText('Step One');
+    expect(inactiveLabel).toHaveAttribute('data-active-label', 'false');
+
+    const activeStepButton = screen.getByRole('link', { name: /Step Two/i });
+    expect(activeStepButton).toHaveAttribute('aria-current', 'step');
+  });
 });

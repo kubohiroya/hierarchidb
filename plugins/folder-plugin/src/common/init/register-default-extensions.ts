@@ -26,12 +26,17 @@ async function registerNodeDialogDefaults(): Promise<void> {
   const SHAPE = '@hierarchidb/shape-plugin' as string;
   const SHEET = '@hierarchidb/spreadsheet-plugin' as string;
   const BASEMAP = '@hierarchidb/basemap-plugin' as string;
+  const BASEMAP_WORKER = '@hierarchidb/basemap-plugin/worker' as string;
   const STYLER = '@hierarchidb/styler-plugin' as string;
 
   await Promise.all([
     tryInit<ShapeExtensionModule>(
       () => import(/* @vite-ignore */ SHAPE) as Promise<ShapeExtensionModule>,
       (mod) => mod.initializeShapeDialogExtension,
+    ),
+    tryInit<BaseMapWorkerModule>(
+      () => import(/* @vite-ignore */ BASEMAP_WORKER) as Promise<BaseMapWorkerModule>,
+      (mod) => mod.registerBasemapWorkerStores,
     ),
     tryInit<SpreadsheetExtensionModule>(
       () => import(/* @vite-ignore */ SHEET) as Promise<SpreadsheetExtensionModule>,
@@ -62,6 +67,10 @@ interface SpreadsheetExtensionModule {
 
 interface BaseMapExtensionModule {
   initializeBaseMapDialogExtension?: () => Promise<void>;
+}
+
+interface BaseMapWorkerModule {
+  registerBasemapWorkerStores?: () => Promise<void>;
 }
 
 interface StylerExtensionModule {

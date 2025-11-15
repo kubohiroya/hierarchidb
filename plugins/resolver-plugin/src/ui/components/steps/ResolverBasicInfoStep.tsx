@@ -1,48 +1,26 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { Box, FormHelperText, Typography } from '@mui/material';
-import { BasicInfoFields } from '@hierarchidb/ui-plugin-basic-info';
+import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 import type { ResolverWorkingCopyEntity } from '../../../common/types/index.js';
 
 interface ResolverBasicInfoStepProps {
   data: Partial<ResolverWorkingCopyEntity>;
   onUpdate: (updates: Partial<ResolverWorkingCopyEntity>) => void;
   onValidationChange: (isValid: boolean) => void;
+  mode: 'create' | 'edit';
 }
 
 export const ResolverBasicInfoStep: React.FC<ResolverBasicInfoStepProps> = ({
                                                                               data,
                                                                               onUpdate,
                                                                               onValidationChange,
+                                                                              mode,
                                                                             }) => {
-  const [nameError, setNameError] = useState<string>('');
-  const [descriptionError, setDescriptionError] = useState<string>('');
-
-  const validateName = (name: string): boolean => {
-    if (!name || name.trim().length === 0) {
-      setNameError('Name is required');
-      return false;
-    }
-    if (name.length > 100) {
-      setNameError('Name must be 100 characters or less');
-      return false;
-    }
-    setNameError('');
-    return true;
-  };
-
-  const validateDescription = (description: string): boolean => {
-    if (description && description.length > 500) {
-      setDescriptionError('Description must be 500 characters or less');
-      return false;
-    }
-    setDescriptionError('');
-    return true;
-  };
-
   const validateStep = useCallback(() => {
-    const isNameValid = validateName(data.name || '');
-    const isDescriptionValid = validateDescription(data.description || '');
-    return isNameValid && isDescriptionValid;
+    const name = data.name ?? '';
+    if (!name.trim() || name.length > 100) return false;
+    if (data.description && data.description.length > 500) return false;
+    return true;
   }, [data.description, data.name]);
 
   useEffect(() => {
@@ -50,15 +28,12 @@ export const ResolverBasicInfoStep: React.FC<ResolverBasicInfoStepProps> = ({
     onValidationChange(isValid);
   }, [data.name, data.description, onValidationChange, validateStep]);
 
-  const handleBasicChange = (updates: Partial<ResolverWorkingCopyEntity>) => {
-    if (updates.name !== undefined) {
-      onUpdate({ name: updates.name });
-      validateName(updates.name || '');
-    }
-    if (updates.description !== undefined) {
-      onUpdate({ description: updates.description });
-      validateDescription(updates.description || '');
-    }
+  const handleBasicChange = (value: BasicInfoData) => {
+    onUpdate({
+      name: value.name,
+      description: value.description,
+      tags: value.tags,
+    });
   };
 
   return (
@@ -71,18 +46,22 @@ export const ResolverBasicInfoStep: React.FC<ResolverBasicInfoStepProps> = ({
       </Typography>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        <BasicInfoFields
-          value={{ name: data.name, description: data.description }}
+        <SharedBasicInfoStep
+          name={data.name ?? ''}
+          description={data.description ?? ''}
+          tags={data.tags ?? []}
+          mode={mode}
           onChange={handleBasicChange}
-          nameLabel={'Name'}
-          nameRequiredText={'Name is required'}
-          nameHelperText={'Enter a descriptive name for this property resolver'}
-          descriptionLabel={'Description'}
-          descriptionHelperText={'Optional detailed description'}
+          validate={({ name, description }) => {
+            if (!name.trim()) return 'Name is required';
+            if (name.length > 100) return 'Name must be 100 characters or less';
+            if (description && description.length > 500) return 'Description must be 500 characters or less';
+            return null;
+          }}
         />
-        {(nameError || descriptionError) && (
-          <FormHelperText error>{nameError || descriptionError}</FormHelperText>
-        )}
+        <FormHelperText error={!validateStep()}>
+          {!validateStep() ? 'Name is required and description must be under 500 characters.' : ' '}
+        </FormHelperText>
 
         <Box sx={{ mt: 2, p: 2, bgcolor: 'info.main', color: 'info.contrastText', borderRadius: 1 }}>
           <Typography variant="subtitle2" sx={{ mb: 1 }}>

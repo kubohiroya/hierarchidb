@@ -1,7 +1,7 @@
 import { describe, expect, vi, it, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { RouteBasicInfoStep } from '../components/RouteBasicInfoStep.js';
-import { RouteType, TransportMode, type RouteEntity, type RouteWorkingCopy, type NodeId, TagId } from '../types/index.js';
+import { RouteDetailsStep } from '../components/RouteDetailsStep.js';
+import { RouteType, TransportMode, type RouteEntity, type RouteWorkingCopy, type NodeId } from '../types/index.js';
 import { createRouteDraftWorkingCopy, mergeRouteWorkingCopy } from '../utils/workingCopy.js';
 import { en as enTranslations } from '../i18n/en.js';
 import "@testing-library/jest-dom/vitest";
@@ -18,60 +18,49 @@ const createWorkingCopy = (overrides: Partial<RouteEntity> = {}): RouteWorkingCo
   return mergeRouteWorkingCopy(base, overrides);
 };
 
-describe('RouteBasicInfoStep', () => {
+describe('RouteDetailsStep', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('prefers values provided via payload.draft', () => {
+  it('renders draft values for route configuration fields', () => {
     const workingCopy = createWorkingCopy({
-      name: 'Draft Route',
-      description: 'Draft description',
       routeType: RouteType.ROAD,
       transportModes: [TransportMode.CAR, TransportMode.BUS],
       category: 'logistics',
-      tags: ['draft-tag' as TagId],
-      version: 4,
     });
 
     render(
-      <RouteBasicInfoStep
+      <RouteDetailsStep
         workingCopy={workingCopy}
         onUpdate={vi.fn()}
         onValidationChange={vi.fn()}
       />,
     );
 
-    const nameInput = screen.getByLabelText('Route Name') as HTMLInputElement;
-    const descriptionInput = screen.getByLabelText('Description') as HTMLInputElement;
-    const tagsInput = screen.getByLabelText('Tags') as HTMLInputElement;
-
-    expect(nameInput.value).toBe('Draft Route');
-    expect(descriptionInput.value).toBe('Draft description');
-    expect(tagsInput.value).toBe('draft-tag');
+    expect(screen.getByDisplayValue('road')).toBeInTheDocument();
     expect(screen.getByText('Car')).toBeInTheDocument();
     expect(screen.getByText('Bus')).toBeInTheDocument();
   });
 
-  it('emits updates with incremented version and timestamp', () => {
+  it('emits updates when route type changes', () => {
     const onUpdate = vi.fn();
-    const workingCopy = createWorkingCopy({ name: 'Draft Route', version: 1 });
+    const workingCopy = createWorkingCopy({ routeType: RouteType.ROAD });
 
     render(
-      <RouteBasicInfoStep
+      <RouteDetailsStep
         workingCopy={workingCopy}
         onUpdate={onUpdate}
         onValidationChange={vi.fn()}
       />,
     );
 
-    const nameInput = screen.getByLabelText('Route Name');
-    fireEvent.change(nameInput, { target: { value: 'Updated Route' } });
+    const routeTypeSelect = screen.getByLabelText('Route Type');
+    fireEvent.change(routeTypeSelect, { target: { value: RouteType.AIRWAY } });
 
     expect(onUpdate).toHaveBeenCalledTimes(1);
     const payload = onUpdate.mock.calls[0][0];
-    expect(payload.name).toBe('Updated Route');
+    expect(payload.routeType).toBe(RouteType.AIRWAY);
     expect(typeof payload.updatedAt).toBe('number');
-    expect(payload.version).toBe(2);
   });
 });

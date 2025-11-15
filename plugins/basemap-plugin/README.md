@@ -1,693 +1,176 @@
 # @hierarchidb/plugin-basemap
 
-実装サマリ（2025-09-09）
-- nodeType: `basemap`
-- DB: Dexie(`basemap-db`) — stores: `baseMaps`, `workingCopies`
-- UI: `BaseMapDialog`/`BaseMapView`/`BaseMapEditor`/`BaseMapAnalytics`
-- 機能: スタイル検証・最適化、空間解析、画像/PDF/GeoJSON エクスポート
-- 依存: MapLibre（ピア依存）、共通型 `@hierarchidb/common-type`
+Basemap plugin for HierarchiDB nodes.  
+The current implementation focuses on persisting a MapLibre style reference and a default viewport per tree node, and wiring those values into the shared multi-step dialog runtime.
 
-A comprehensive basemap management plugin for HierarchiDB that provides interactive map visualization, spatial analysis, and advanced mapping capabilities.
-
-## Overview
-
-The BaseMap Plugin enables users to:
-
-- Create and manage interactive basemaps with MapLibre GL
-- Configure map sources (raster tiles, vector tiles, static images)
-- Perform spatial analysis and measurements
-- Optimize map styles and performance
-- Export maps in multiple formats
-- Monitor map performance and usage analytics
+- **Node type**: `basemap`
+- **Persistence**: Dexie (`basemap-db`) tables `baseMaps` / `workingCopies`
+- **UI hooks**: Map style step + viewport step, plus reusable view components (`BaseMapPanel`, `BaseMapDisplay`, `BaseMapPreview`)
+- **Worker sync**: peer store keeps `mapStyle` + `viewport` only (no custom metadata payload today)
 
 ## Table of Contents
 
 - [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Core Concepts](#core-concepts)
-- [API Reference](#api-reference)
-- [Advanced Features](#advanced-features)
-- [User Guide](#user-guide)
-- [Configuration](#configuration)
-- [Examples](#examples)
+- [Entity Model](#entity-model)
+- [Built-in Style Presets](#built-in-style-presets)
+- [Multi-Step Dialog Integration](#multi-step-dialog-integration)
+- [UI Components](#ui-components)
+- [Persistence & Worker Sync](#persistence--worker-sync)
+- [Usage Example](#usage-example)
+- [Testing & Validation](#testing--validation)
+- [Future Work](#future-work)
 
 ## Installation
 
 ```bash
-# Install the plugin
 pnpm add @hierarchidb/plugin-basemap
 
-# Peer dependencies
-pnpm add @hierarchidb/core @hierarchidb/worker @hierarchidb/ui-core maplibre-gl
+# peer deps expected by the UI package
+pnpm add maplibre-gl @mui/material @mui/icons-material \
+  @hierarchidb/plugin-base @hierarchidb/plugin-ui-sdk
 ```
 
-## Quick Start
+To register the step provider + components inside the UI shell:
 
-### Plugin Registration
-
-```typescript
-import { NodeTypeRegistry } from '@hierarchidb/worker';
-import { BaseMapDefinition } from '@hierarchidb/plugin-basemap';
-
-// Register the BaseMap plugin
-NodeTypeRegistry.getInstance().register(BaseMapDefinition);
+```ts
+// executed once in the host UI bootstrap
+import '@hierarchidb/plugin-basemap/ui';
 ```
 
-### Creating a BaseMap
+## Entity Model
 
-```typescript
-import { createBaseMap } from '@hierarchidb/plugin-basemap';
+`src/common/types/BaseMapEntity.ts` defines the only persisted fields:
 
-const baseMapData = {
-  name: 'City Streets',
-  description: 'High-detail street map for urban planning',
+```ts
+interface BaseMapEntity extends BaseEntity<NodeId> {
+  nodeId: NodeId;
   mapStyle: {
-    version: 8,
-    sources: {
-      'osm-tiles': {
-        type: 'raster',
-        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-        tileSize: 256,
-        attribution: '© OpenStreetMap contributors',
-      },
-    },
-    layers: [
-      {
-        id: 'osm-layer',
-        type: 'raster',
-        source: 'osm-tiles',
-      },
-    ],
-  },
-  center: [-122.4194, 37.7749], // San Francisco
-  zoom: 12,
-  bearing: 0,
-  pitch: 0,
-};
-
-const baseMap = await createBaseMap(baseMapData);
-```
-
-### Using BaseMap UI Components
-
-```typescript
-import { BaseMapDialog, BaseMapView, BaseMapEditor } from '@hierarchidb/plugin-basemap';
-
-// Create/Edit Dialog
-<BaseMapDialog
-  nodeId={nodeId}
-  isOpen={isDialogOpen}
-  onClose={() => setIsDialogOpen(false)}
-  onSave={handleSave}
-  mode="create"
-/>
-
-// Map Viewer
-<BaseMapView
-  nodeId={nodeId}
-  height={400}
-  interactive={true}
-/>
-
-// Map Editor
-<BaseMapEditor
-  nodeId={nodeId}
-  onStyleChange={handleStyleChange}
-  onViewportChange={handleViewportChange}
-/>
-```
-
-## Core Concepts
-
-### BaseMap Entity
-
-A BaseMap is a `PeerEntity` that defines an interactive map with sources, layers, and configuration:
-
-```typescript
-interface BaseMapEntity extends PeerEntity {
-  // Basic information
-  name: string;
-  description: string;
-  
-  // Map configuration
-  mapStyle: MapLibreStyle;
-  center: [number, number];
-  zoom: number;
-  bearing: number;
-  pitch: number;
-  
-  // Bounds and constraints
-  bounds?: [[number, number], [number, number]];
-  maxZoom?: number;
-  minZoom?: number;
-  
-  // Performance settings
-  performanceConfig: PerformanceConfiguration;
-  
-  // Analytics
-  analytics: MapAnalytics;
-  
-  // Lifecycle
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  version: number;
-}
-```
-
-### MapLibre Style
-
-BaseMap uses MapLibre GL style specification:
-
-```typescript
-interface MapLibreStyle {
-  version: 8;
-  name?: string;
-  sources: Record<string, SourceSpecification>;
-  layers: LayerSpecification[];
-  sprite?: string;
-  glyphs?: string;
-  metadata?: any;
-  center?: [number, number];
-  zoom?: number;
-  bearing?: number;
-  pitch?: number;
-}
-```
-
-### Advanced Services
-
-The plugin includes advanced services for spatial analysis and optimization:
-
-```typescript
-interface BaseMapAdvancedService {
-  // Spatial analysis
-  analyzeSpatialExtent(nodeId: NodeId): Promise<SpatialAnalysisResult>;
-  measureDistance(nodeId: NodeId, coordinates: [number, number][]): Promise<number>;
-  calculateArea(nodeId: NodeId, polygon: [number, number][]): Promise<number>;
-  
-  // Style optimization
-  optimizeMapStyle(nodeId: NodeId, options?: OptimizationOptions): Promise<MapLibreStyle>;
-  validateMapConfiguration(nodeId: NodeId): Promise<ValidationResult>;
-  
-  // Export capabilities
-  exportAsImage(nodeId: NodeId, options: ImageExportOptions): Promise<Blob>;
-  exportAsPDF(nodeId: NodeId, options: PDFExportOptions): Promise<Blob>;
-  exportAsGeoJSON(nodeId: NodeId): Promise<GeoJSON>;
-}
-```
-
-## API Reference
-
-### Core Functions
-
-#### `createBaseMap(data: CreateBaseMapData): Promise<BaseMapEntity>`
-
-Creates a new basemap with the specified configuration.
-
-**Parameters:**
-- `data.name` (string): Map name
-- `data.description` (string, optional): Map description
-- `data.mapStyle` (MapLibreStyle): MapLibre style specification
-- `data.center` ([number, number], optional): Initial center coordinates
-- `data.zoom` (number, optional): Initial zoom level
-- `data.bearing` (number, optional): Initial bearing (0-360)
-- `data.pitch` (number, optional): Initial pitch (0-60)
-
-**Returns:** Promise<BaseMapEntity>
-
-#### `updateBaseMap(nodeId: NodeId, data: UpdateBaseMapData): Promise<BaseMapEntity>`
-
-Updates an existing basemap.
-
-#### `deleteBaseMap(nodeId: NodeId): Promise<void>`
-
-Deletes a basemap and cleans up its resources.
-
-### Advanced API Methods
-
-#### Spatial Analysis
-
-```typescript
-// Analyze spatial extent of map data
-const analysis = await BaseMapAdvancedService.getInstance()
-  .analyzeSpatialExtent(nodeId);
-
-console.log('Bounds:', analysis.bounds);
-console.log('Area:', analysis.totalArea);
-console.log('Feature count:', analysis.featureCount);
-```
-
-#### Style Optimization
-
-```typescript
-// Optimize map style for performance
-const optimizedStyle = await BaseMapAdvancedService.getInstance()
-  .optimizeMapStyle(nodeId, {
-    removeUnusedSources: true,
-    simplifyGeometry: true,
-    optimizeFilters: true,
-  });
-```
-
-#### Export Functions
-
-```typescript
-// Export as high-resolution image
-const imageBlob = await BaseMapAdvancedService.getInstance()
-  .exportAsImage(nodeId, {
-    width: 1920,
-    height: 1080,
-    format: 'png',
-    dpi: 300,
-  });
-
-// Export as PDF for printing
-const pdfBlob = await BaseMapAdvancedService.getInstance()
-  .exportAsPDF(nodeId, {
-    pageSize: 'A4',
-    orientation: 'landscape',
-    includeAttribution: true,
-  });
-```
-
-### UI Components
-
-#### `<BaseMapDialog>`
-
-Main dialog for creating and editing basemaps.
-
-**Props:**
-- `nodeId` (NodeId, optional): Node ID for editing
-- `isOpen` (boolean): Dialog visibility
-- `onClose` (() => void): Close handler
-- `onSave` ((baseMap: BaseMapEntity) => void): Save handler
-- `mode` ('create' | 'edit'): Dialog mode
-
-#### `<BaseMapView>`
-
-Interactive map viewer component.
-
-**Props:**
-- `nodeId` (NodeId): BaseMap node ID
-- `height` (number, optional): Component height
-- `interactive` (boolean, optional): Enable user interaction
-- `onMapLoad` ((map: maplibregl.Map) => void, optional): Map load callback
-
-#### `<BaseMapEditor>`
-
-Advanced map editor with style editing capabilities.
-
-**Props:**
-- `nodeId` (NodeId): BaseMap node ID
-- `onStyleChange` ((style: MapLibreStyle) => void): Style change handler
-- `onViewportChange` ((viewport: ViewState) => void): Viewport change handler
-
-#### `<BaseMapAnalytics>`
-
-Analytics dashboard for map performance and usage.
-
-**Props:**
-- `nodeId` (NodeId): BaseMap node ID
-- `timeRange` ('1d' | '7d' | '30d', optional): Analytics time range
-
-## Advanced Features
-
-### Spatial Analysis
-
-The BaseMap plugin includes comprehensive spatial analysis tools:
-
-```typescript
-interface SpatialAnalysisResult {
-  bounds: [[number, number], [number, number]];
-  center: [number, number];
-  totalArea: number; // in square meters
-  featureCount: number;
-  layerAnalysis: LayerAnalysis[];
-  recommendations: string[];
-}
-
-interface LayerAnalysis {
-  layerId: string;
-  layerType: string;
-  featureCount: number;
-  bounds: [[number, number], [number, number]];
-  averageFeatureSize: number;
-  complexity: 'low' | 'medium' | 'high';
-}
-```
-
-### Performance Optimization
-
-Automatic style optimization for better performance:
-
-```typescript
-interface OptimizationOptions {
-  removeUnusedSources: boolean;
-  simplifyGeometry: boolean;
-  optimizeFilters: boolean;
-  consolidateLayers: boolean;
-  maxFeatureCount?: number;
-  targetFileSize?: number;
-}
-
-interface OptimizationResult {
-  originalSize: number;
-  optimizedSize: number;
-  reductionPercent: number;
-  optimizations: string[];
-  warnings: string[];
-}
-```
-
-### Map Validation
-
-Comprehensive validation of map configurations:
-
-```typescript
-interface ValidationResult {
-  isValid: boolean;
-  errors: ValidationError[];
-  warnings: ValidationWarning[];
-  performance: PerformanceMetrics;
-}
-
-interface ValidationError {
-  type: 'style' | 'source' | 'layer' | 'bounds';
-  message: string;
-  severity: 'error' | 'warning';
-  suggestion?: string;
-}
-```
-
-## User Guide
-
-### Creating a BaseMap
-
-1. **Open Create Dialog**: Click "Create BaseMap" or use context menu
-2. **Basic Information**: Enter name and description
-3. **Map Configuration**: Set initial viewport (center, zoom, bearing, pitch)
-4. **Style Configuration**: Define map sources and layers
-5. **Bounds and Constraints**: Optionally set map boundaries
-6. **Performance Settings**: Configure rendering options
-7. **Preview**: Test the map configuration
-8. **Save**: Create the basemap
-
-### Map Style Configuration
-
-#### Adding Sources
-
-```typescript
-// Raster tile source
-{
-  "osm": {
-    "type": "raster",
-    "tiles": ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-    "tileSize": 256,
-    "attribution": "© OpenStreetMap contributors"
-  }
-}
-
-// Vector tile source
-{
-  "mapbox": {
-    "type": "vector",
-    "url": "mapbox://mapbox.mapbox-streets-v8"
-  }
-}
-
-// GeoJSON source
-{
-  "data": {
-    "type": "geojson",
-    "data": {
-      "type": "FeatureCollection",
-      "features": [...]
-    }
-  }
-}
-```
-
-#### Adding Layers
-
-```typescript
-// Raster layer
-{
-  "id": "background",
-  "type": "raster",
-  "source": "osm"
-}
-
-// Vector layers
-{
-  "id": "water",
-  "type": "fill",
-  "source": "mapbox",
-  "source-layer": "water",
-  "paint": {
-    "fill-color": "#4264fb"
-  }
-}
-```
-
-### Performance Optimization
-
-#### Best Practices
-
-1. **Limit Source Count**: Use fewer sources for better performance
-2. **Optimize Tile Sizes**: Use appropriate tile sizes (256px for most cases)
-3. **Filter Layers**: Apply filters to reduce rendered features
-4. **Use Zoom Ranges**: Set min/max zoom for layers
-5. **Monitor Analytics**: Use the analytics dashboard to identify bottlenecks
-
-#### Automatic Optimization
-
-```typescript
-// Enable automatic optimization
-const optimized = await BaseMapAdvancedService.getInstance()
-  .optimizeMapStyle(nodeId, {
-    removeUnusedSources: true,
-    simplifyGeometry: true,
-    optimizeFilters: true,
-    consolidateLayers: true,
-    maxFeatureCount: 10000,
-  });
-```
-
-### Export Options
-
-#### Image Export
-
-- **PNG**: High quality with transparency support
-- **JPEG**: Smaller file size, no transparency
-- **WebP**: Modern format with excellent compression
-
-#### Data Export
-
-- **GeoJSON**: Standard geospatial data format
-- **Style JSON**: MapLibre style specification
-- **Metadata**: Map configuration and analytics
-
-#### Print Export
-
-- **PDF**: Vector format for high-quality printing
-- **Customizable layouts**: A4, A3, Letter, Legal
-- **Attribution**: Automatic attribution inclusion
-
-## Configuration
-
-### Plugin Configuration
-
-```typescript
-export const BASEMAP_CONFIG = {
-  name: 'basemap',
-  version: '1.0.0',
-  description: 'Interactive BaseMap Management',
-  capabilities: {
-    supportsCreate: true,
-    supportsUpdate: true,
-    supportsDelete: true,
-    supportsChildren: false,
-  },
-  defaultSettings: {
-    maxZoom: 18,
-    minZoom: 0,
-    tileSize: 256,
-    preserveDrawingBuffer: true,
-  },
-};
-```
-
-### Performance Configuration
-
-```typescript
-interface PerformanceConfiguration {
-  maxSourceCount: number;
-  maxLayerCount: number;
-  tileLoadTimeout: number;
-  cacheSize: number;
-  enableOptimization: boolean;
-  optimizationThresholds: {
-    featureCount: number;
-    fileSize: number;
+    style: 'streets' | 'satellite' | 'terrain' | 'dark' | 'light' | 'custom';
+    customStyleUrl?: string;
+    customStyleConfig?: Record<string, unknown>;
+  };
+  viewport: {
+    center: [number, number];
+    zoom: number;
+    bearing: number;
+    pitch: number;
   };
 }
 ```
 
-## Examples
+There is intentionally **no** duplication of tree-node metadata (name, description, tags, children, etc.) in the basemap document. All hierarchical context is handled by the surrounding folder node.
 
-## 依存管理とインポート規約（重要）
-本プラグインは Node Type 共通の依存方針に従います（packages/plugins/CONTRIBUTING.md 参照）。要点:
-- peerDependencies（ホスト提供）: react, react-dom, @mui/material, @mui/icons-material, @emotion/react, @emotion/styled, dexie, （採用時）maplibre-gl, react-i18next, i18next
-- dependencies（プラグイン実行用）: @hierarchidb/util ほか必要に応じて @hierarchidb/features/*（例: @hierarchidb/table-metadata など）
-- devDependencies（ビルド/テスト/型）: typescript, tsup, vitest, @testing-library/*, @types/*
-- import は公開APIのみ、型は `import type` を優先。重い処理は dynamic import で遅延読込。
-- tsup external はモノレポ共通設定で外部化済み（react/mui/dexie/i18n/maplibre）。
+Working copies share the same shape (map style + viewport) and are materialised through Dexie to support offline edits.
 
-### Simple Raster BaseMap
+## Built-in Style Presets
 
-```typescript
-const osmBaseMap = await createBaseMap({
-  name: 'OpenStreetMap',
-  description: 'Standard OpenStreetMap basemap',
-  mapStyle: {
+`src/common/constants/builtInStyles.ts` contains the preset map styles the UI exposes:
+
+| preset      | provider / URL                                                   | Notes                                  |
+|-------------|------------------------------------------------------------------|----------------------------------------|
+| `streets`   | `https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json`   | default; free                          |
+| `satellite` | `https://demotiles.maplibre.org/style.json`                      | demo satellite tiles (no key)          |
+| `terrain`   | `https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json`   | reused CARTO Voyager for terrain view  |
+| `dark`      | `https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json` | dark matter theme                    |
+| `light`     | `https://basemaps.cartocdn.com/gl/positron-gl-style/style.json`  | Positron light theme                   |
+| `custom`    | requires `customStyleUrl` or `customStyleConfig`                  | user-provided MapLibre style JSON      |
+
+Premium providers (Mapbox, MapTiler, …) are listed for reference but are not wired up yet; callers are expected to inject their own `customStyleUrl`.
+
+### Custom style example
+
+```ts
+const mapStyle = {
+  style: 'custom' as const,
+  customStyleUrl: 'https://example.com/styles/city-night.json',
+};
+```
+
+or, if you need an inline JSON config:
+
+```ts
+const mapStyle = {
+  style: 'custom' as const,
+  customStyleConfig: {
     version: 8,
     sources: {
-      'osm': {
+      osm: {
         type: 'raster',
         tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
         tileSize: 256,
         attribution: '© OpenStreetMap contributors',
       },
     },
-    layers: [
-      {
-        id: 'osm-layer',
-        type: 'raster',
-        source: 'osm',
-      },
-    ],
+    layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
   },
-  center: [0, 0],
-  zoom: 2,
-});
-```
-
-### Vector BaseMap with Custom Styling
-
-```typescript
-const vectorBaseMap = await createBaseMap({
-  name: 'Custom Vector Map',
-  description: 'Styled vector basemap',
-  mapStyle: {
-    version: 8,
-    sources: {
-      'mapbox': {
-        type: 'vector',
-        url: 'mapbox://mapbox.mapbox-streets-v8',
-      },
-    },
-    layers: [
-      {
-        id: 'background',
-        type: 'background',
-        paint: {
-          'background-color': '#f8f8f8',
-        },
-      },
-      {
-        id: 'water',
-        type: 'fill',
-        source: 'mapbox',
-        'source-layer': 'water',
-        paint: {
-          'fill-color': '#4264fb',
-          'fill-opacity': 0.6,
-        },
-      },
-      {
-        id: 'roads',
-        type: 'line',
-        source: 'mapbox',
-        'source-layer': 'road',
-        paint: {
-          'line-color': '#ffffff',
-          'line-width': 2,
-        },
-        filter: ['==', 'class', 'primary'],
-      },
-    ],
-  },
-  center: [-74.006, 40.7128], // New York City
-  zoom: 10,
-});
-```
-
-### Advanced Analytics Integration
-
-```typescript
-import React, { useEffect, useState } from 'react';
-import { BaseMapAnalytics, BaseMapAdvancedService } from '@hierarchidb/plugin-basemap';
-
-const MapDashboard: React.FC<{ nodeId: NodeId }> = ({ nodeId }) => {
-  const [analysis, setAnalysis] = useState<SpatialAnalysisResult | null>(null);
-  const [performance, setPerformance] = useState<PerformanceMetrics | null>(null);
-
-  useEffect(() => {
-    const loadAnalytics = async () => {
-      const service = BaseMapAdvancedService.getInstance();
-      
-      // Load spatial analysis
-      const spatialAnalysis = await service.analyzeSpatialExtent(nodeId);
-      setAnalysis(spatialAnalysis);
-      
-      // Load performance metrics
-      const validation = await service.validateMapConfiguration(nodeId);
-      setPerformance(validation.performance);
-    };
-
-    loadAnalytics();
-  }, [nodeId]);
-
-  return (
-    <div>
-      <h2>Map Dashboard</h2>
-      
-      {analysis && (
-        <div>
-          <h3>Spatial Analysis</h3>
-          <p>Total Area: {analysis.totalArea.toLocaleString()} m²</p>
-          <p>Feature Count: {analysis.featureCount}</p>
-          <p>Bounds: {analysis.bounds.map(coord => coord.join(', ')).join(' to ')}</p>
-        </div>
-      )}
-      
-      {performance && (
-        <div>
-          <h3>Performance Metrics</h3>
-          <p>Load Time: {performance.averageLoadTime}ms</p>
-          <p>Memory Usage: {performance.memoryUsage}MB</p>
-          <p>Render FPS: {performance.averageFPS}</p>
-        </div>
-      )}
-      
-      <BaseMapAnalytics nodeId={nodeId} timeRange="7d" />
-    </div>
-  );
 };
 ```
 
-## License
+## Multi-Step Dialog Integration
 
-MIT License - see LICENSE file for details.
+The plugin adds **two** extended steps to the folder dialog via `PluginStepRegistry` (`src/ui/components/steps-provider.tsx`):
 
-## Runtime Worker Integration Status
+| step # | label        | form fields / interaction                                                                                                 | validation                                                                                  |
+|--------|--------------|------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|
+| 2      | Map Style    | preset cards (`streets`, `satellite`, `terrain`, `dark`, `light`) + “Custom” card with URL input                             | style must be selected; when `custom`, URL must be a valid absolute URL                    |
+| 3      | Map Viewport | compact inputs for longitude/latitude/zoom/bearing + interactive MapLibre map (drag / wheel / double-click to adjust view) | longitude in [-180, 180], latitude in [-90, 90], zoom in [0, 24], bearing [-180, 180]; pitch is fixed at 0 internally |
 
-- 現状: DX のために Dexie ピアストア (`createBasemapPeerStoreDexie`) を登録するのみで、Runtime Worker (entity handler / batch manager) 自体は未実装です。
-- 影響: `RuntimeWiring.registerRuntimeWorkerAdapters` は @hierarchidb/runtime-worker-factory の "not implemented" スタブを登録しており、Runtime Worker 経由で basemap をロードしようとすると例外が発生します。
-- 参考実装: `@eria-cartograph/app0/src/domains/resources/basemap` に旧実装があり、将来的な機能移植の際の参考になります。困った場合はまずそちらを参照してください。
-- TODO: エンティティハンドラ/サービス/batch 処理を整備し、共通ファクトリから実際の Runtime Worker クライアントを返すようにすること。
+Step gating is sequential (2 must validate before 3 is unlocked). Submit is enabled only when both steps pass validation (`BaseMapDialogExtension`).
 
-### Runtime Worker Perspective
+There are no extra steps such as bounds, performance settings, or preview tabs at this stage.
 
-- Basemap plugin registers shared Dexie peer stores (`createBasemapPeerStoreDexie`) so the standard 3×2 lifecycle can manage entities without plugin-specific code.
-- Dedicated runtime worker adapters（entity handler / batch manager） are still未移植です。必要になった際は `@eria-cartograph/app0/src/domains/resources/basemap` の旧実装を参考にモジュール化します。
+## UI Components
+
+Import from the UI entry point (`@hierarchidb/plugin-basemap/ui`):
+
+| component        | description                                                                                          |
+|------------------|------------------------------------------------------------------------------------------------------|
+| `BaseMapPanel`   | high-level panel showing the configured map (style + viewport summary) with edit/refresh controls    |
+| `BaseMapDisplay` | MapLibre-powered viewer that renders the persisted style + viewport                                  |
+| `BaseMapPreview` | lightweight preview card (used inside dialogs or summaries)                                          |
+
+The components only rely on `mapStyle` and `viewport`. There are no display-option toggles (traffic, 3D buildings, etc.) in the current implementation.
+
+## Persistence & Worker Sync
+
+- **Dexie database**: `BaseMapDatabase` (`basemap-db`) stores two tables: `baseMaps` (the entity) and `workingCopies`. The schema indexes only `id`, `nodeId`, `createdAt`, `updatedAt`.
+- **Entity handler**: `BaseMapEntityHandler` extends `BaseEntityHandler` and performs normalization + validation; it mirrors every change into the peer store so worker consumers receive the same `mapStyle`/`viewport`.
+- **Peer store**: `BasemapPeerData` keeps `{ schemaVersion: 1, presentation: { style, viewport } }` and nothing else, keeping the worker payload small and deterministic.
+
+## Usage Example
+
+```tsx
+import '@hierarchidb/plugin-basemap/ui';
+import { BaseMapPanel } from '@hierarchidb/plugin-basemap/ui';
+
+export function BasemapNodeView({ nodeId }: { nodeId: string }) {
+  return (
+    <BaseMapPanel
+      nodeId={nodeId as NodeId}
+      height={420}
+      onEdit={() => openDialog(nodeId)}
+      onRefresh={() => console.info('Basemap refreshed')}
+    />
+  );
+}
+```
+
+If you only need a preview thumbnail:
+
+```tsx
+import { BaseMapPreview } from '@hierarchidb/plugin-basemap/ui';
+
+<BaseMapPreview mapStyle={entity.mapStyle} viewport={entity.viewport} height={240} />;
+```
+
+## Testing & Validation
+
+This package ships with Vitest specs for the handler (`pnpm --filter @hierarchidb/basemap-plugin test`).  
+Type-check scripts are not wired in this package; run workspace-level `pnpm typecheck` when integrating changes.
+
+## Future Work
+
+- Additional dialog steps (bounds, performance settings, preview) once the shared UI supports them.
+- Optional display options (traffic, terrain) once the runtime proves a need for those flags.
+- Runtime worker entity handlers; currently only peer-store mirroring exists.
+- Reintroducing metadata documents (`BaseMapMetadata`) if/when external catalogues are required. For now, node data remains the single source of truth.

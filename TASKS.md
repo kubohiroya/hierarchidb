@@ -85,6 +85,38 @@
 - ロールバック手順：`TreeConsoleToolbar.tsx`, `packages/ui/treeconsole/toolbar/src/types.ts`, `app/src/router/pages/tree/console/TreeConsoleIntegration.tsx`、追加したテストファイルを revert し、`pnpm -C app test -- --run <追加テスト名>` と `pnpm -C app typecheck` を再実行して旧挙動に戻ることを確認する
 
 
+-1287) PluginDialog フッターボタンへアイコン追加（P0）
+- ブランチ: `feat/plugin-dialog/footer-icons`（sandbox 制約で `main` 上で作業）
+- 依存: `packages/plugin-ui-host/src/headless/components/PluginDialogFooter.tsx`, `@hierarchidb/ui-dialog`, `packages/plugin-ui-host/src/headless/__tests__/*`
+- 受け入れ基準（DoD）:
+  - [x] `TASKS.md` の Kanban／運用ログを更新し、本タスクの start/progress/done とロールバック手順を明記する
+  - [x] マルチステップダイアログフッターの Cancel/Back/Next/Create（Save）ボタンに、それぞれ「×」「＜」「＞」「チェック」相当のアイコンを表示する（MUI Icons など既存リソースを用いる）
+  - [x] PluginDialogFooter または関連コンポーネントのテストを追加/更新し、意図したアイコンが描画されることを検証する
+  - [x] 影響範囲のテストコマンド（例: `pnpm --filter @hierarchidb/plugin-ui-host test -- PluginDialogFooter`、`pnpm -C app test -- --run PluginDialog`) を実行しログを運用ログに追記、必要に応じて手動確認メモを追加する
+- チェックリスト:
+  - [x] ボタンのステート（Cancel/Back/Next/Create/Save）それぞれに対応する Icon コンポーネントを選定し、`startIcon` 等で表示する
+  - [x] SaveDraft や StartBatch など既存ボタンへ副作用がないこと、アクセシビリティが損なわれないことを確認する
+  - [x] Footer 用のユニットテストを新設し、ステップ位置ごとに適切な icon が存在するか検証する
+  - [x] 実行コマンドの結果とロールバック方法を TASKS に明記する
+- ロールバック手順：`packages/plugin-ui-host/src/headless/components/PluginDialogFooter.tsx` と追加テストファイルの差分を revert し、上記テストコマンドを再実行してアイコンなし状態へ戻ることを確認する
+
+-1288) PluginDialog Stepper 表示の状態分離（P0）
+- ブランチ: `feat/plugin-dialog/stepper-states`（sandbox 制約で `main` 上で作業）
+- 依存: `packages/plugin-ui-host/src/headless/components/PluginDialogHeader.tsx`, `packages/plugin-ui-host/src/headless/__tests__/PluginDialogHeader.test.tsx`, `@hierarchidb/ui-dialog`
+- 受け入れ基準（DoD）:
+  - [x] `TASKS.md` の Kanban／運用ログを更新し、start→done とロールバック手順を明記する
+  - [x] マルチステップダイアログの Stepper において「検証済み(validated)」と「現在のステップ(active)」を視覚的に区別できるようにする
+  - [x] 現在のステップであることをユーザーへ明示するテキストやアクセシビリティ属性（`aria-current` など）を追加し、validated とは直交した概念として提示できるようにする
+  - [x] PluginDialogHeader など関連コンポーネントのテストを追加・更新し、状態分離やアクセシビリティ属性の存在を検証する
+  - [x] 変更後のテストコマンド（例: `pnpm --filter @hierarchidb/plugin-ui-host test -- --run PluginDialogHeader`）を実行し、結果を運用ログへ記録する
+- チェックリスト:
+  - [x] Stepper アイコン用コンポーネントを実装し、validated/active 状態の表示ロジックを整理する
+  - [x] `aria-current` や “Current step” 表示など、現在ステップを示す UI/テキストを追加する
+  - [x] ユニットテストでアイコン状態・`aria-current` 属性・テキスト表示を検証する
+  - [x] 実行ログとロールバック手順を TASKS.md に明記する
+- ロールバック手順：`packages/plugin-ui-host/src/headless/components/PluginDialogHeader.tsx` と関連テスト差分を revert し、上記テストコマンドを再実行して従来の Stepper 表示へ戻ることを確認する
+
+
 1286) SpeedDial/TreeConsole プラグインアイコン回帰修正（P0）
 - ブランチ: `fix/app/plugin-menu-icons`（sandbox 制約で `main` 上で作業）
 - 依存: `app/src/components/DynamicSpeedDial.tsx`, `app/src/components/tree/menus/TreeConsoleContextMenu.tsx`, `app/src/hooks/usePluginMenuItems.ts`, `app/src/services/pluginPresentation`, `packages/plugin-registry/generated/registry.ts`
@@ -7929,6 +7961,17 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-15 15:46 command: pnpm -C app test -- createTreeConsoleActions — exit 0。TreeConsole action factory のユニットテストで info panel 向け edit ハンドリングの回帰がないことを確認。
 - 2025-11-15 15:46 command: pnpm -C app test -- load-tree-router-handlers — exit 0。Router loader が `action=edit` を UPDATE として扱うルートのユニットテストを通過。
 - 2025-11-15 15:47 done: feat/ui-treeconsole/node-info-panel — Breadcrumb 常時表示と PluginDialogRoute 修正を反映済み。ロールバックは `TreeConsoleIntegration.tsx`, `TreeNodeInfoPanel.tsx`, `createTreeConsoleActions.ts`, `app/src/loader.ts`, `app/src/router/routes/tree/PluginDialogRoute.tsx`, `app/src/router/loaders/__tests__/unit/...` 差分を revert し、上記テストコマンドを再実行する。
+- 2025-11-15 17:45 start: feat/plugin-dialog/footer-icons — MultiStepDialog フッターの Cancel/Back/Next/Create（Save）ボタンへ指定のアイコン（×/＜/＞/チェック）を付与するタスクを開始。DoD: TASKS 更新、アイコン実装＋テスト追加、`pnpm --filter @hierarchidb/plugin-ui-host test` 等のログ取得、ロールバック手順記載。
+- 2025-11-15 17:58 progress: feat/plugin-dialog/footer-icons — PluginDialogFooter の primary ボタンに `Close`/`ChevronLeft`/`ChevronRight`/`Check` の各 MUI アイコンを `startIcon` で付与し、ステップ位置に応じて Cancel/Back/Next/Create/Save へ反映。`packages/plugin-ui-host/src/headless/__tests__/PluginDialogFooter.test.tsx` を新設し、各ステートで期待するアイコンが描画されることを検証。
+- 2025-11-15 18:00 command: pnpm --filter @hierarchidb/plugin-ui-host test -- --run PluginDialogFooter — exit 0（新規テスト3件がグリーン）。
+- 2025-11-15 18:01 command: pnpm -C app test -- --run PluginDialog — exit 1（`PluginDialog` 名を含むテストが app 配下に存在せず、`No test files found`。既存テスト未整備のため記録のみで継続）。
+- 2025-11-15 18:05 done: feat/plugin-dialog/footer-icons — MultiStepDialog フッター主要ボタンへ指定アイコンを追加し、plugin-ui-host テストで回帰がないことを確認。ロールバックは `packages/plugin-ui-host/src/headless/components/PluginDialogFooter.tsx` と新設テストファイル、`vitest.config.ts` の差分を revert し、上記テストコマンドを再実行する。
+- 2025-11-15 18:10 start: feat/plugin-dialog/stepper-states — Stepper で validated/active を独立表示できるよう調査開始。DoD: TASKS/ログ更新、ステータス別アイコン＋`aria-current` の実装、PluginDialogHeader テスト追加、ロールバック手順記載。
+- 2025-11-15 19:34 progress: feat/plugin-dialog/stepper-states — Stepper 用のカスタムアイコンを実装し、validated は緑チェック、active は primary 枠＋`Current step` バッジ＋`aria-current="step"` で強調するよう変更。`packages/plugin-ui-host/src/headless/components/PluginDialogHeader.tsx` に `StepStatusIcon` を追加し、`data-active`/`data-validated` 属性で状態を判別できるようにした。
+- 2025-11-15 19:43 command: pnpm --filter @hierarchidb/plugin-ui-host test -- --run PluginDialogHeader — exit 0（新規テスト 1 件を含む 3 テストが通過）。
+- 2025-11-15 19:45 done: feat/plugin-dialog/stepper-states — Stepper 表示の状態分離とアクセシビリティ対応を完了。ロールバックは `packages/plugin-ui-host/src/headless/components/PluginDialogHeader.tsx` とヘッダーテスト差分を revert し、上記テストコマンドを再実行する。
+- 2025-11-15 19:46 progress: feat/plugin-dialog/footer-icons — primary ボタンのアイコン位置を `endIcon` へ切り替え、ラベル右側に表示されるよう調整。
+- 2025-11-15 19:47 command: pnpm --filter @hierarchidb/plugin-ui-host test -- --run PluginDialogFooter — exit 0（endIcon 変更後も 3 テストすべて緑）。
 - 2025-11-15 16:01 progress: feat/ui-treeconsole/node-info-panel — TreeNodeInfoPanel の NodeTypeIcon が常に primary 色になる問題を、`getPluginIconColor`/`rainbowColors` ベースの既存ロジックを流用して解消。`nodeType` に応じて manifest 色または depth 依存グラデーションを反映し、Breadcrumb や TreeTable と同じ色決定が行われるようにした（テストコマンドは未実行、UI 変更のみ）。
 - 2025-11-15 16:20 start: fix/app/plugin-menu-icons — SpeedDial および TreeConsole コンテキストメニューで folder/basemap/resolver 以外のプラグイン nodeType がすべて代替アイコン表示になる回帰を調査・修正開始。DoD: (1) TASKS Kanban/ログ更新（start→done + rollback）、(2) SpeedDial/ContextMenu 双方で全 nodeType が manifest 設定に沿ったアイコンへ戻ることを手動確認、(3) DynamicSpeedDial 等のユニット or 明示的検証手順を整備し成功ログを残す、(4) ロールバック手順と実行コマンドを記載。
 - 2025-11-15 17:05 progress: fix/app/plugin-menu-icons — `@hierarchidb/ui-icon` の `getMuiIconComponent` / `getMuiIconWithColor` が正規化後のアイコン名のみで global icon map を参照していたため、nodeType ベースで登録されるプラグイン固有アイコンを拾えず汎用 MUI アイコンへフォールバックしていたと判明。raw 名称 → 正規化名称の順で global map / static map を探索するよう修正し、`collectPascalCandidates` ヘルパーで重複排除を行った。`packages/ui/icon/src/__tests__/getMuiIconComponent.test.tsx` を新設し、raw 名称で custom icon が優先されること＆ `getMuiIconWithColor` が色指定を維持することを検証。

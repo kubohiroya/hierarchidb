@@ -150,7 +150,7 @@
 ## route-plugin（RouteDialog）
 - 実装: `packages/plugins/route-plugin/src/components/RouteDialog.tsx`
 - ステップ構成コンポーネント:
-  - RouteBasicInfoStep, RouteSelectionStep, RouteProcessingStep
+  - RouteDetailsStep, RouteSelectionStep, RouteProcessingStep
 
 ### Step 1: Basic Information（1）
 - 画面構成

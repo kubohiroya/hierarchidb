@@ -1,6 +1,7 @@
 import type { MultiStepDialogState, NodeId } from '@hierarchidb/common-types';
 import { getDialogSurfaceColor, useMultiStepDialogContext } from '@hierarchidb/ui-dialog';
 import {
+  Check as CheckIcon,
   Close as CloseIcon,
   FullscreenExit as FullscreenExitIcon,
   Fullscreen as FullscreenIcon,
@@ -17,7 +18,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
 import { Link, useLocation } from '@tanstack/react-router';
 import type React from 'react';
 import { useCallback, useMemo } from 'react';
@@ -43,6 +44,7 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
 }) => {
   const ctx = useMultiStepDialogContext<Record<string, unknown>>();
   const location = useLocation();
+  const theme = useTheme();
 
   const workerStepMap = useMemo(() => {
     if (!dialogState?.steps?.length) {
@@ -92,6 +94,50 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
       ctx.onStepNavigate({ type: 'direct', targetIndex: index });
     },
     [ctx]
+  );
+
+  const StepStatusIcon = useCallback(
+    (props: { active?: boolean; completed?: boolean; icon?: React.ReactNode }) => {
+      const { active, completed, icon: iconProp } = props;
+      const baseColor = completed ? theme.palette.success.main : theme.palette.background.paper;
+      const textColor = completed ? theme.palette.common.white : theme.palette.text.primary;
+      const borderColor = active ? theme.palette.primary.main : theme.palette.divider;
+      const boxShadow = active
+        ? `0 0 0 2px ${alpha(
+            theme.palette.primary.main,
+            theme.palette.mode === 'dark' ? 0.5 : 0.3
+          )}`
+        : 'none';
+
+      return (
+        <Box
+          data-testid={`plugin-dialog-step-icon-${iconProp}`}
+          data-active={active ? 'true' : 'false'}
+          data-validated={completed ? 'true' : 'false'}
+          sx={{
+            width: 30,
+            height: 30,
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: baseColor,
+            color: textColor,
+            border: '2px solid',
+            borderColor,
+            fontWeight: 600,
+            fontSize: 13,
+            transition: theme.transitions.create(['background-color', 'border-color', 'color'], {
+              duration: theme.transitions.duration.short,
+            }),
+            boxShadow,
+          }}
+        >
+          {completed ? <CheckIcon fontSize="inherit" /> : iconProp}
+        </Box>
+      );
+    },
+    [theme]
   );
 
   return (
@@ -178,6 +224,7 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
                 const completed = workerStep?.completed ?? ctx.validatedStepIndices.includes(index);
                 const label = workerStep?.title ?? step.label ?? step.id;
                 const stepLink = buildStepLink(index);
+                const isActive = index === ctx.activeStepIndex;
                 return (
                   <Step key={step.id} completed={completed}>
                     <StepButton
@@ -188,10 +235,19 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
                       onClick={(
                         event
                       ) => handleStepClick(event, index, canNavigate)}
+                      aria-current={isActive ? 'step' : undefined}
                       sx={{ padding: 0, margin: 0 }}
                     >
-                      <StepLabel>
-                        <Typography variant="caption" noWrap>
+                      <StepLabel StepIconComponent={StepStatusIcon as never}>
+                        <Typography
+                          variant="caption"
+                          noWrap
+                          sx={{
+                            color: isActive ? 'primary.main' : 'text.secondary',
+                            fontWeight: isActive ? 600 : 400,
+                          }}
+                          data-active-label={isActive ? 'true' : 'false'}
+                        >
                           {label}
                         </Typography>
                       </StepLabel>

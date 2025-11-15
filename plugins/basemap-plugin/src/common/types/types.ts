@@ -18,17 +18,10 @@ export interface MapStyle {
   preview?: string;
 }
 
-export interface MapDisplayOptions {
-  showAttribution: boolean;
-  showNavigation: boolean;
-  enableInteraction: boolean;
-}
-
 export type BaseMapStylePreset = 'streets' | 'satellite' | 'terrain' | 'dark' | 'light' | 'custom';
 
 export interface BaseMapConfig {
   stylePreset: BaseMapStylePreset;
   styleUrl: string;
   viewport: MapViewport;
-  displayOptions: MapDisplayOptions;
 }

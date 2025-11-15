@@ -5,18 +5,13 @@
  */
 
 import { CrossViewSnackbar } from '@hierarchidb/ui-data-grid';
-import {
-  loadMapLibreMap,
-  type MapLibreLayer,
-  type MapLibreMapInstance,
-  type MapViewState,
-} from '@hierarchidb/ui-map';
+import { loadMapLibreMap, type MapViewState } from '@hierarchidb/ui-map';
 import { DarkMode, LightMode, Map as MapIcon, Satellite, Terrain, Tune } from '@mui/icons-material';
 import { Box, Chip, Paper, Stack, Typography } from '@mui/material';
 import type React from 'react';
 import { lazy, Suspense, useMemo } from 'react';
 import { getStyleAttribution } from '../../common/constants/builtInStyles.js';
-import type { DisplayOptions, MapStyle, MapViewport } from '../../common/types/BaseMapEntity.js';
+import type { MapStyle, MapViewport } from '../../common/types/BaseMapEntity.js';
 import { resolvePreviewMapStyle } from '../utils/mapStyle.js';
 
 export interface BaseMapPreviewProps {
@@ -26,8 +21,6 @@ export interface BaseMapPreviewProps {
   viewport: MapViewport;
   /** Optional zxy string for map preview URL (zoom,lng,lat) */
   zxy?: string;
-  /** Display options */
-  displayOptions?: DisplayOptions;
   /** Preview size */
   width?: string | number;
   height?: string | number;
@@ -66,7 +59,6 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
   mapStyle,
   viewport,
   zxy,
-  displayOptions = {},
   width = '100%',
   height = 300,
   showMetadata = true,
@@ -110,14 +102,11 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
 
   // Get attribution
   const attribution = useMemo(() => {
-    if (displayOptions.attribution) {
-      return displayOptions.attribution;
-    }
     if (mapStyle.style !== 'custom') {
       return getStyleAttribution(mapStyle.style);
     }
     return '© Map contributors';
-  }, [mapStyle, displayOptions.attribution]);
+  }, [mapStyle]);
 
   return (
     <Paper
@@ -184,67 +173,7 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
               doubleClickZoom: interactive,
               touchZoomRotate: interactive,
             }}
-            onLoad={(map: MapLibreMapInstance) => {
-              // Apply display options
-              if (!displayOptions.showLabels) {
-                // Hide all label layers
-                const layers = map.getStyle().layers;
-                layers.forEach((layer: MapLibreLayer) => {
-                  if (layer.type === 'symbol' && layer.id.includes('label')) {
-                    map.setLayoutProperty(layer.id, 'visibility', 'none');
-                  }
-                });
-              }
-
-              // Add 3D buildings if requested and available
-              if (displayOptions.show3dBuildings) {
-                // Check if the style supports 3D buildings
-                if (!map.getLayer('building-3d')) {
-                  // Add a simple 3D building layer if not present
-                  const layers = map.getStyle().layers;
-                  const labelLayerId = layers.find((layer: MapLibreLayer) => {
-                    if (layer.type !== 'symbol') return false;
-                    const layout = layer.layout as Record<string, unknown> | undefined;
-                    return typeof layout?.['text-field'] !== 'undefined';
-                  })?.id;
-
-                  if (map.getSource('openmaptiles') || map.getSource('composite')) {
-                    map.addLayer(
-                      {
-                        id: 'building-3d',
-                        source: map.getSource('openmaptiles') ? 'openmaptiles' : 'composite',
-                        'source-layer': 'building',
-                        type: 'fill-extrusion',
-                        minzoom: 15,
-                        paint: {
-                          'fill-extrusion-color': '#aaa',
-                          'fill-extrusion-height': [
-                            'interpolate',
-                            ['linear'],
-                            ['zoom'],
-                            15,
-                            0,
-                            15.05,
-                            ['get', 'height'],
-                          ],
-                          'fill-extrusion-base': [
-                            'interpolate',
-                            ['linear'],
-                            ['zoom'],
-                            15,
-                            0,
-                            15.05,
-                            ['get', 'min_height'],
-                          ],
-                          'fill-extrusion-opacity': 0.6,
-                        },
-                      },
-                      labelLayerId
-                    );
-                  }
-                }
-              }
-            }}
+            onLoad={() => undefined}
           />
         </Suspense>
 
@@ -269,76 +198,6 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
                 {viewport.zoom.toFixed(1)}
               </Typography>
             </Box>
-
-            {/* Display Options */}
-            {(displayOptions.show3dBuildings ||
-              displayOptions.showTerrain ||
-              displayOptions.showTraffic ||
-              displayOptions.showTransit) && (
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 8,
-                  right: 8,
-                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                  px: 1.5,
-                  py: 0.5,
-                  borderRadius: 1,
-                  boxShadow: 1,
-                }}
-              >
-                <Stack direction="row" spacing={0.5}>
-                  {displayOptions.show3dBuildings && (
-                    <Chip label="3D" size="small" variant="filled" color="primary" />
-                  )}
-                  {displayOptions.showTerrain && (
-                    <Chip label="Terrain" size="small" variant="filled" color="primary" />
-                  )}
-                  {displayOptions.showTraffic && (
-                    <Chip label="Traffic" size="small" variant="filled" color="primary" />
-                  )}
-                  {displayOptions.showTransit && (
-                    <Chip label="Transit" size="small" variant="filled" color="primary" />
-                  )}
-                </Stack>
-              </Box>
-            )}
-
-            {/* Tags */}
-            {displayOptions.tags && displayOptions.tags.length > 0 && (
-              <Box
-                sx={{
-                  position: 'absolute',
-                  bottom: 8,
-                  left: 8,
-                  maxWidth: '60%',
-                }}
-              >
-                <Stack direction="row" spacing={0.5} flexWrap="wrap">
-                  {displayOptions.tags.slice(0, 3).map((tag) => (
-                    <Chip
-                      key={tag}
-                      label={tag}
-                      size="small"
-                      sx={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                        fontSize: '0.7rem',
-                      }}
-                    />
-                  ))}
-                  {displayOptions.tags.length > 3 && (
-                    <Chip
-                      label={`+${displayOptions.tags.length - 3}`}
-                      size="small"
-                      sx={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                        fontSize: '0.7rem',
-                      }}
-                    />
-                  )}
-                </Stack>
-              </Box>
-            )}
 
             {/* Attribution */}
             <Box

@@ -5,15 +5,16 @@
 import type React from 'react';
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { RouteEntity, RouteWorkingCopy } from '../types/index.js';
+import type { RouteEntity, RouteWorkingCopy, TagId } from '../types/index.js';
 import { createRouteDraftWorkingCopy, mergeRouteWorkingCopy, getRouteDraft } from '../utils/workingCopy.js';
 import { useTranslation } from '../i18n/index.js';
-import { RouteBasicInfoStep } from './RouteBasicInfoStep.js';
+import { RouteDetailsStep } from './RouteDetailsStep.js';
 import { RouteSelectionStep } from './RouteSelectionStep.js';
 import { RouteProcessingStep } from './RouteProcessingStep.js';
 import { readRuntimeMode } from '@hierarchidb/util';
 import { notify } from '@hierarchidb/components';
 import { useWorkingCopy } from '@hierarchidb/plugin-ui-sdk';
+import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 import {
   HeadlessMultiStepDialog,
   FRAME_CONSTANTS,
@@ -66,6 +67,7 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
   useEffect(() => { if (open) { void init(); } }, [open, init]);
 
   const [activeStepIndex, setActiveStepIndex] = useState(0);
+  const [detailsValid, setDetailsValid] = useState(false);
 
   const updateWorkingCopy = useCallback(
     (updater: (prev: RouteWorkingCopy | null) => RouteWorkingCopy | null) => {
@@ -87,16 +89,36 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
   }, [updateWorkingCopy]);
 
   // Simple computed validity based on workingCopy to ease testing and determinism
-  const isBasicValid = useMemo(() => {
-    if(workingCopy === null) return false;
-    const draft = getRouteDraft(workingCopy);
-    const name = typeof draft.name === 'string' ? draft.name : '';
-    const routeType = draft.routeType;
-    const transportModes = draft.transportModes;
-    return Boolean(name.trim()) && Boolean(routeType) && Array.isArray(transportModes) && transportModes.length > 0;
-  }, [workingCopy]);
-  const isSelectionValid = true; // keep permissive; selection completeness is reflected after calculation
+  const routeDraft = useMemo(() => (workingCopy ? getRouteDraft(workingCopy) : null), [workingCopy]);
+  const resolvedName = typeof routeDraft?.name === 'string' ? routeDraft.name : '';
+  const resolvedDescription = typeof routeDraft?.description === 'string' ? routeDraft.description : '';
+  const resolvedTags = useMemo(() => {
+    const draftTags = Array.isArray(routeDraft?.tags) ? routeDraft?.tags : undefined;
+    const wcTags = Array.isArray((workingCopy as RouteWorkingCopy | null)?.tags) ? (workingCopy as RouteWorkingCopy).tags : undefined;
+    return (draftTags ?? wcTags ?? []) as TagId[];
+  }, [routeDraft?.tags, workingCopy]);
+
+  const isBasicValid = resolvedName.trim().length > 0;
+  const isSelectionValid = true;
   const isProcessingValid = true;
+
+  useEffect(() => {
+    if (!routeDraft) {
+      setDetailsValid(false);
+      return;
+    }
+    const hasRouteType = Boolean(routeDraft.routeType);
+    const transports = Array.isArray(routeDraft.transportModes) ? routeDraft.transportModes : [];
+    setDetailsValid(hasRouteType && transports.length > 0);
+  }, [routeDraft]);
+
+  const handleBasicInfoChange = useCallback((data: BasicInfoData) => {
+    applyUpdates({
+      name: data.name,
+      description: data.description,
+      tags: (data.tags ?? []).map((tag) => tag as TagId),
+    });
+  }, [applyUpdates]);
 
   const steps: DialogStep[] = useMemo(() => {
     if (!workingCopy) return [];
@@ -106,13 +128,27 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
         id: '1',
         label: t('base-dialog.steps.basicInfo', 'Basic Information'),
         component: (
-          <RouteBasicInfoStep
-            workingCopy={workingCopy}
-            onUpdate={handleUpdate}
-            onValidationChange={() => {/* computed above */}}
+          <SharedBasicInfoStep
+            name={resolvedName}
+            description={resolvedDescription}
+            tags={resolvedTags}
+            mode={mode}
+            onChange={handleBasicInfoChange}
           />
         ),
         validate: async () => isBasicValid,
+      },
+      {
+        id: '1-details',
+        label: t('base-dialog.steps.routeDetails', 'Route Settings'),
+        component: (
+          <RouteDetailsStep
+            workingCopy={workingCopy}
+            onUpdate={handleUpdate}
+            onValidationChange={setDetailsValid}
+          />
+        ),
+        validate: async () => detailsValid,
       },
       {
         id: '2',
@@ -139,10 +175,16 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
         validate: async () => isProcessingValid,
       },
     ];
-  }, [applyUpdates, isBasicValid, isProcessingValid, isSelectionValid, t, workingCopy]);
+  }, [applyUpdates, detailsValid, handleBasicInfoChange, isBasicValid, isProcessingValid, isSelectionValid, mode, resolvedDescription, resolvedName, resolvedTags, t, workingCopy]);
 
-  const filledSteps = useMemo(() => [isBasicValid, isSelectionValid, isProcessingValid], [isBasicValid, isProcessingValid, isSelectionValid]);
-  const enabledMatrix = useMemo(() => [true, isBasicValid, isSelectionValid], [isBasicValid, isSelectionValid]);
+  const filledSteps = useMemo(
+    () => [isBasicValid, detailsValid, isSelectionValid, isProcessingValid],
+    [detailsValid, isBasicValid, isProcessingValid, isSelectionValid],
+  );
+  const enabledMatrix = useMemo(
+    () => [true, isBasicValid, detailsValid, isSelectionValid],
+    [detailsValid, isBasicValid, isSelectionValid],
+  );
   const enabledStepIndices = useMemo(() => enabledMatrix
     .map((allow, idx) => (allow ? idx : -1))
     .filter((idx) => idx >= 0), [enabledMatrix]);

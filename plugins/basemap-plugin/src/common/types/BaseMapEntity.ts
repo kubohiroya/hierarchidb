@@ -1,14 +1,11 @@
 /**
  * @file BaseMapEntity.ts
- * @description BaseMap entity types extending Folder entity
+ * @description BaseMap entity types focused on persistent basemap configuration
  */
 
-import type { NodeId, Timestamp } from '@hierarchidb/common-types';
+import type { BaseEntity, NodeId, Timestamp } from '@hierarchidb/common-types';
 import type { PeerDataBase, WorkingCopyDraft } from '@hierarchidb/plugin-service-api';
-import type {
-  HierarchicalEntity,
-  HierarchicalSearchCriteria,
-} from '@hierarchidb/plugin-service-sdk';
+import type { BaseSearchCriteria } from '@hierarchidb/plugin-service-api/types/baseSearchCriteria.js';
 
 /**
  * Map style configuration
@@ -30,59 +27,20 @@ export interface MapViewport {
 }
 
 /**
- * Map display options
+ * BaseMap entity persisted for each tree node
  */
-export interface DisplayOptions {
-  show3dBuildings: boolean;
-  showTraffic: boolean;
-  showTransit: boolean;
-  showTerrain: boolean;
-  showLabels: boolean;
-  attribution?: string;
-  // Optional tags used for search/grouping in tests and UI
-  tags?: string[];
-}
-
-/**
- * BaseMap entity extending Folder entity
- */
-export interface FolderSettings {
-  allowNestedFolders: boolean;
-  maxDepth: number;
-  sortOrder: 'name' | 'date' | 'size';
-}
-
-export interface BaseMapEntity extends HierarchicalEntity {
-  id: NodeId;
-  // Common folder-like fields used in UI/handlers
-  name?: string;
-  description?: string;
-  category?: string;
-  settings?: FolderSettings;
-  tags?: string[];
-  // BaseMap specific fields
-  baseMapMetadataId?: string;
+export interface BaseMapEntity extends BaseEntity<NodeId> {
+  nodeId: NodeId;
   mapStyle: MapStyle;
   viewport: MapViewport;
-  displayOptions: DisplayOptions;
-  // HierarchicalEntity optional fields are inherited; listed for clarity
-  parentId?: NodeId;
-  depth?: number;
-  path?: string;
-  childCount?: number;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  version: number;
-  hasChildren?: boolean; // UI optimization hint; if missing, treated as false
 }
 
 /**
  * BaseMap working copy for edit operations
  */
-export type BaseMapDraftPayload = Partial<BaseMapEntity> & {
+export type BaseMapDraftPayload = {
   mapStyle: MapStyle;
   viewport: MapViewport;
-  displayOptions: DisplayOptions;
   createdAt: Timestamp;
   updatedAt: Timestamp;
   version: number;
@@ -96,19 +54,15 @@ export type BaseMapWorkingCopy = BaseMapWorkingCopyEntity;
  * Data for creating a new BaseMap
  */
 export interface CreateBaseMapData extends Partial<BaseMapEntity> {
-  name?: string;
-  description?: string;
   mapStyle?: MapStyle;
   viewport?: MapViewport;
-  displayOptions?: DisplayOptions;
 }
 
 /**
  * Search criteria for BaseMap entities
  */
-export interface BaseMapSearchCriteria extends HierarchicalSearchCriteria {
+export interface BaseMapSearchCriteria extends BaseSearchCriteria {
   mapStyle?: string;
-  tags?: string[];
 }
 
 /**
@@ -122,5 +76,4 @@ export interface BasemapPeerData extends PeerDataBase {
     viewport?: MapViewport;
     style?: MapStyle;
   };
-  metadata?: Record<string, unknown>;
 }

@@ -197,7 +197,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
       id: 'basic-info',
       label: translations.basicInfo.title,
       component: ({ data, onChange }: { data: LocationWorkingCopy; onChange: (patch: Partial<LocationWorkingCopy>) => void }) => (
-        <LocationBasicInfoStep workingCopy={data} onUpdate={onChange} />
+        <LocationBasicInfoStep workingCopy={data} onUpdate={onChange} mode={mode} />
       ),
     },
     {
@@ -242,6 +242,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     translations.selection.title,
     translations.panel.processingSettings,
     translations.mapPreview?.title,
+    mode,
   ]);
 
   const enabledStepIndices = useMemo(() => stepComponents.map((_, index) => index), [stepComponents]);

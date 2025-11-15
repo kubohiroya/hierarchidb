@@ -20,7 +20,7 @@ export class BaseMapDatabase extends Dexie {
     super(getDBName('basemap-db'));
 
     this.version(1).stores({
-      baseMaps: '&id, nodeId, name, createdAt, updatedAt, baseMapMetadataId',
+      baseMaps: '&id, nodeId, createdAt, updatedAt',
       workingCopies: '&treeNodeId',
     });
   }
@@ -32,13 +32,6 @@ export class BaseMapDatabase extends Dexie {
   async cleanupExpiredWorkingCopies(maxAge: number = 24 * 60 * 60 * 1000): Promise<void> {
     const cutoff = Date.now() - maxAge;
     await this.workingCopies.where('copiedAt').below(cutoff).delete();
-  }
-
-  /**
-   * Get all BaseMaps for a specific metadata ID
-   */
-  async getByMetadataId(metadataId: string): Promise<BaseMapEntity[]> {
-    return await this.baseMaps.where('baseMapMetadataId').equals(metadataId).toArray();
   }
 
   /**

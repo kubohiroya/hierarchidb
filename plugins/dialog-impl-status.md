@@ -13,7 +13,7 @@
 | spreadsheet-plugin（spreadsheet） | folder の拡張ステップ | Step2/Step3 に `validation.validate(data)`（Step2: 必須チェック、Step3: 常に true） | 順次遷移（`dependsOn` なし） | `spreadsheet-plugin/src/extension/definition.ts` |
 | styler-plugin（styler, ext=spreadsheet） | spreadsheet の拡張ステップ（Step5/Step6 追加） | 各ステップの `validation.validate(data)`（Step5: 必須項目/範囲、Step6: 常に true） | 順次遷移（`dependsOn` なし） | `styler-plugin/src/extension/definition.ts`, `styler-plugin/src/components/steps/StylerStep5.tsx`, `StylerStep6.tsx` |
 | styler-plugin（folder 拡張バリアント） | folder の拡張（サンプル実装） | `BaseDialogPlugin#createDialogStep` で渡す `validation.validate(data)` | `dependsOn` 相当の指定はコード上コメントアウトのため未配線／実質は順次遷移 | `styler-plugin/src/extensions/StylerFolderExtension.tsx`, `folder-plugin/src/base/BaseDialogPlugin.ts` |
-| route-plugin（route） | 独自ダイアログ `RouteDialog` | 各子ステップが `onValidationChange(isValid: boolean)` を親に通知し、`stepValidation[]` を更新 | Next ボタンの活性/非活性で遷移制御（ステッパー直接遷移なし） | `route-plugin/src/components/RouteDialog.tsx` と各 Step（`RouteBasicInfoStep.tsx` ほか） |
+| route-plugin（route） | 独自ダイアログ `RouteDialog` | 各子ステップが `onValidationChange(isValid: boolean)` を親に通知し、`stepValidation[]` を更新 | Next ボタンの活性/非活性で遷移制御（ステッパー直接遷移なし） | `route-plugin/src/components/RouteDialog.tsx` と各 Step（`RouteDetailsStep.tsx` ほか） |
 | resolver-plugin（resolver） | 独自ダイアログ `ResolverDialog` | 各子ステップが `onValidationChange(isValid: boolean)` を親に通知し、`stepValidation{}` を更新 | Next で順次。ステッパークリックは「一度全完了した後」または「現在位置以前」へ限定 | `resolver-plugin/src/components/ResolverDialog.tsx` と各 Step |
 | location-plugin（location） | 単票ダイアログ（現状）＋ハンドラにステップ能力判定 | `LocationEntityHandler#getStepCapabilities(data, step)` が `canProceedToNext` を返す（入力充足の近似） | 同関数が `canNavigateTo` を返す（ステップ解放判定）。UI 側のウィザード化は未整備 | `location-plugin/src/entities/LocationEntityHandler.ts`（`getStepCapabilities`） |
 | linker-plugin（linker） | 独自ダイアログ `ProjectWizard` | 具体的なバリデーション連動無し（Next 常時有効・各 Step 内で onComplete を想定） | 順次遷移のみ（バリデーションによる制御なし） | `linker-plugin/src/components/wizard/ProjectWizard.tsx` |
@@ -57,7 +57,7 @@
 ### route-plugin（独自ダイアログ）
 - 入力済み判定: 各ステップコンポーネントが `onValidationChange(isValid)` を親へ通知し、親が `stepValidation[]` を保持。
 - ステップ遷移判定: Next ボタンの活性で制御。ステッパー直接遷移は提供せず。
-- 参照: `packages/plugins/route-plugin/src/components/RouteDialog.tsx` と `RouteBasicInfoStep.tsx` など。
+- 参照: `packages/plugins/route-plugin/src/components/RouteDialog.tsx` と `RouteDetailsStep.tsx` など。
 
 ### resolver-plugin（独自ダイアログ）
 - 入力済み判定: 各ステップが `onValidationChange(isValid)` を親へ通知し、親が `stepValidation{}` を保持。

@@ -8,6 +8,10 @@
 
 import { getDialogSurfaceColor, useMultiStepDialogContext } from '@hierarchidb/ui-dialog';
 import { Box, Button, Stack, Tooltip } from '@mui/material';
+import CheckIcon from '@mui/icons-material/Check';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import CloseIcon from '@mui/icons-material/Close';
 import { useLocation } from '@tanstack/react-router';
 import React from 'react';
 
@@ -86,6 +90,16 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
     primaryButtonOptions?.leftLabelOverride ?? (isFirstStep ? 'Cancel' : 'Back');
   const rightPrimaryLabel =
     primaryButtonOptions?.rightLabelOverride ?? (isLastStep ? commitLabel : 'Next');
+  const leftPrimaryIcon = isFirstStep ? (
+    <CloseIcon fontSize="small" />
+  ) : (
+    <ChevronLeftIcon fontSize="small" />
+  );
+  const rightPrimaryIcon = isLastStep ? (
+    <CheckIcon fontSize="small" />
+  ) : (
+    <ChevronRightIcon fontSize="small" />
+  );
   const disableLeftPrimary = isFirstStep ? false : !canNavigateBack;
   const disableRightPrimary = isLastStep ? !canCommit : !canNavigateNext;
   const showSaveDraft = typeof onSaveDraft === 'function';
@@ -117,6 +131,7 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
               onClick={handleBackOrCancel}
               onPointerDown={stopPointerPropagation}
               disabled={disableLeftPrimary}
+              startIcon={leftPrimaryIcon}
             >
               {leftPrimaryLabel}
             </Button>
@@ -162,6 +177,7 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
               onClick={handleNextOrSave}
               onPointerDown={stopPointerPropagation}
               disabled={disableRightPrimary}
+              endIcon={rightPrimaryIcon}
             >
               {rightPrimaryLabel}
             </Button>

@@ -8,7 +8,6 @@ import type { NodeId } from '@hierarchidb/common-types';
 import { CrossViewSnackbar, useCrossHighlightSync } from '@hierarchidb/ui-data-grid';
 import {
   loadMapLibreMap,
-  type MapLibreLayer,
   type MapLibreMapInstance,
   type MapLibreStyle,
   type MapViewState,
@@ -146,140 +145,91 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
     (map: MapLibreMapInstance) => {
       setMapInstance(map);
 
-      // Apply display options
-      if (entity?.displayOptions) {
-        const { show3dBuildings, showTerrain, showLabels } = entity.displayOptions;
-        // Note: showTraffic and showTransit depend on the specific map style
-        // and may not be available in all styles
-
-        // Wait for style to load
-        map.once('styledata', () => {
-          // Toggle 3D buildings
-          if (show3dBuildings && map.getLayer('building-3d')) {
-            map.setLayoutProperty('building-3d', 'visibility', 'visible');
-          } else if (!show3dBuildings && map.getLayer('building-3d')) {
-            map.setLayoutProperty('building-3d', 'visibility', 'none');
-          }
-
-          // Toggle labels
-          const labelLayers = map
-            .getStyle()
-            .layers.filter(
-              (layer: MapLibreLayer) => layer.type === 'symbol' && layer.id.includes('label')
-            );
-          labelLayers.forEach((layer: MapLibreLayer) => {
-            map.setLayoutProperty(layer.id, 'visibility', showLabels ? 'visible' : 'none');
-          });
-
-          // Add terrain if requested (requires terrain source in style)
-          if (showTerrain && !map.getTerrain()) {
-            // Check if terrain source exists
-            const terrainSource = Object.keys(map.getStyle().sources).find((source) =>
-              source.includes('terrain')
-            );
-            if (terrainSource) {
-              map.setTerrain({ source: terrainSource, exaggeration: 1.5 });
-            }
-          } else if (!showTerrain && map.getTerrain()) {
-            map.setTerrain(null);
-          }
-
-          // Note: Traffic and transit layers depend on the map style
-          // and may not be available in all styles
-
-          // Optional demo overlay: small squares around the map center with features ids
-          if (enableDemoOverlay) {
-            const c = {
-              lng: entity?.viewport?.center?.[0] ?? 0,
-              lat: entity?.viewport?.center?.[1] ?? 0,
-            } as { lng: number; lat: number };
-            const dx = 0.05,
-              dy = 0.03;
-            const mkPoly = (cx: number, cy: number, w: number, h: number): [number, number][] => [
-              [cx - w, cy - h],
-              [cx + w, cy - h],
-              [cx + w, cy + h],
-              [cx - w, cy + h],
-              [cx - w, cy - h],
-            ];
-            const demoData: DemoFeatureCollection = {
-              type: 'FeatureCollection',
-              features: [
-                {
-                  type: 'Feature',
-                  id: 'demo-1',
-                  properties: { name: 'Demo Area A', nodeType: 'basemap' },
-                  geometry: { type: 'Polygon', coordinates: [mkPoly(c.lng - 0.08, c.lat, dx, dy)] },
-                },
-                {
-                  type: 'Feature',
-                  id: 'demo-2',
-                  properties: { name: 'Demo Area B', nodeType: 'basemap' },
-                  geometry: { type: 'Polygon', coordinates: [mkPoly(c.lng + 0.08, c.lat, dx, dy)] },
-                },
+      map.once('styledata', () => {
+        if (!enableDemoOverlay) return;
+        const c = {
+          lng: entity?.viewport?.center?.[0] ?? 0,
+          lat: entity?.viewport?.center?.[1] ?? 0,
+        } as { lng: number; lat: number };
+        const dx = 0.05,
+          dy = 0.03;
+        const mkPoly = (cx: number, cy: number, w: number, h: number): [number, number][] => [
+          [cx - w, cy - h],
+          [cx + w, cy - h],
+          [cx + w, cy + h],
+          [cx - w, cy + h],
+          [cx - w, cy - h],
+        ];
+        const demoData: DemoFeatureCollection = {
+          type: 'FeatureCollection',
+          features: [
+            {
+              type: 'Feature',
+              id: 'demo-1',
+              properties: { name: 'Demo Area A', nodeType: 'basemap' },
+              geometry: { type: 'Polygon', coordinates: [mkPoly(c.lng - 0.08, c.lat, dx, dy)] },
+            },
+            {
+              type: 'Feature',
+              id: 'demo-2',
+              properties: { name: 'Demo Area B', nodeType: 'basemap' },
+              geometry: { type: 'Polygon', coordinates: [mkPoly(c.lng + 0.08, c.lat, dx, dy)] },
+            },
+          ],
+        };
+        if (!map.getSource('demo-source')) {
+          map.addSource('demo-source', { type: 'geojson', data: demoData });
+        }
+        if (!map.getLayer('demo-fill')) {
+          map.addLayer({
+            id: 'demo-fill',
+            type: 'fill',
+            source: 'demo-source',
+            paint: {
+              'fill-color': [
+                'case',
+                ['to-boolean', ['features-state', 'selected']],
+                '#1976d2',
+                ['to-boolean', ['features-state', 'hovered']],
+                '#64b5f6',
+                '#3f51b5',
               ],
-            };
-            if (!map.getSource('demo-source')) {
-              map.addSource('demo-source', { type: 'geojson', data: demoData });
-            }
-            if (!map.getLayer('demo-fill')) {
-              map.addLayer({
-                id: 'demo-fill',
-                type: 'fill',
-                source: 'demo-source',
-                paint: {
-                  'fill-color': [
-                    'case',
-                    ['to-boolean', ['features-state', 'selected']],
-                    '#1976d2',
-                    ['to-boolean', ['features-state', 'hovered']],
-                    '#64b5f6',
-                    '#3f51b5',
-                  ],
-                  'fill-opacity': 0.25,
-                },
-              });
-            }
-            if (!map.getLayer('demo-outline')) {
-              map.addLayer({
-                id: 'demo-outline',
-                type: 'line',
-                source: 'demo-source',
-                paint: {
-                  'line-color': [
-                    'case',
-                    ['to-boolean', ['features-state', 'selected']],
-                    '#0d47a1',
-                    ['to-boolean', ['features-state', 'hovered']],
-                    '#1976d2',
-                    '#283593',
-                  ],
-                  'line-width': [
-                    'case',
-                    ['to-boolean', ['features-state', 'selected']],
-                    3,
-                    ['to-boolean', ['features-state', 'hovered']],
-                    2.5,
-                    2,
-                  ],
-                },
-              });
-            }
-            // Bind events if user didn’t set custom binding
-            if (!bindSourceId || !bindLayerIds || bindLayerIds.length === 0) {
-              unbindRef.current?.();
-              unbindRef.current = bindMapLibre(map, 'demo-source', ['demo-fill', 'demo-outline'], {
-                selectOnClick: true,
-              });
-            }
-          }
-        });
-      }
-
-      // Set attribution if provided
-      if (entity?.displayOptions?.attribution) {
-        map.getContainer().setAttribute('data-attribution', entity.displayOptions.attribution);
-      }
+              'fill-opacity': 0.25,
+            },
+          });
+        }
+        if (!map.getLayer('demo-outline')) {
+          map.addLayer({
+            id: 'demo-outline',
+            type: 'line',
+            source: 'demo-source',
+            paint: {
+              'line-color': [
+                'case',
+                ['to-boolean', ['features-state', 'selected']],
+                '#0d47a1',
+                ['to-boolean', ['features-state', 'hovered']],
+                '#1976d2',
+                '#283593',
+              ],
+              'line-width': [
+                'case',
+                ['to-boolean', ['features-state', 'selected']],
+                3,
+                ['to-boolean', ['features-state', 'hovered']],
+                2.5,
+                2,
+              ],
+            },
+          });
+        }
+        if (!bindSourceId || !bindLayerIds || bindLayerIds.length === 0) {
+          unbindRef.current?.();
+          unbindRef.current = bindMapLibre(map, 'demo-source', ['demo-fill', 'demo-outline'], {
+            selectOnClick: true,
+          });
+        }
+      });
 
       // Call parent callback
       onLoad?.(map);
@@ -289,7 +239,6 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
       bindMapLibre,
       bindSourceId,
       enableDemoOverlay,
-      entity?.displayOptions,
       entity?.viewport?.center,
       onLoad,
     ]
@@ -394,24 +343,6 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
           {/* Children components like markers, layers etc. can be added here */}
         </LazyMapLibreMap>
       </Suspense>
-
-      {/* Attribution overlay if needed */}
-      {entity.displayOptions?.attribution && (
-        <Box
-          sx={{
-            position: 'absolute',
-            bottom: 0,
-            right: 0,
-            backgroundColor: 'rgba(255, 255, 255, 0.8)',
-            px: 1,
-            py: 0.5,
-            fontSize: '10px',
-            pointerEvents: 'none',
-          }}
-        >
-          {entity.displayOptions.attribution}
-        </Box>
-      )}
 
       {/* Focus detail via Snackbar (shared channel for basemap) */}
       <CrossViewSnackbar datasetId={dsId} />

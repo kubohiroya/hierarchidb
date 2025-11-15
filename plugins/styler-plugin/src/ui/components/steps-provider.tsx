@@ -6,6 +6,7 @@ import {
 } from '@hierarchidb/spreadsheet-plugin';
 import { StylerStep5 } from './steps/StylerStep5.js';
 import { StylerStep6 } from './steps/StylerStep6.js';
+import { StyleSettingsStep, isStyleSettingsComplete } from './steps/StyleSettingsStep.js';
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -13,6 +14,15 @@ registry.registerConfigProvider({
   nodeType: 'styler',
   getCreateStepConfigs() {
     return [
+      {
+        id: 'style-settings',
+        label: 'Style Settings',
+        componentFactory: (p: StepComponentProps) => <StyleSettingsStep {...p} />,
+        validate: (dialogData?: unknown) => isStyleSettingsComplete(dialogData),
+        capabilities: {
+          canProceedToNext: (dialogData?: unknown) => isStyleSettingsComplete(dialogData),
+        },
+      },
       // Step 2: Spreadsheet Data Source
       {
         id: 'data-source',

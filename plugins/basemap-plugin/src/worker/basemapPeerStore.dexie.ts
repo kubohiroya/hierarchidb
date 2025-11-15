@@ -3,27 +3,6 @@ import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
 import type { BasemapPeerData } from '../common/types/BaseMapEntity.js';
 import type { BasemapEntitiesDB, BasemapPeerRow } from './basemapEntitiesDB.js';
 
-const createPeerStoreNormalizer = <TData>(
-  defaults: () => TData
-): ((input?: Partial<TData> | null) => TData) => {
-  return (input) => {
-    const base = defaults();
-    const extractMetadata = (source?: Partial<TData> | null): Record<string, unknown> => {
-      const meta = (source as { metadata?: unknown })?.metadata;
-      return typeof meta === 'object' && meta !== null ? (meta as Record<string, unknown>) : {};
-    };
-
-    return {
-      ...base,
-      ...(input ?? {}),
-      metadata: {
-        ...extractMetadata(base),
-        ...extractMetadata(input),
-      },
-    } as TData;
-  };
-};
-
 // TODO(basemap-runtime-worker-integration): when basemap adopts the shared
 // runtime worker factory, register its client via
 // @hierarchidb/runtime-worker-factory rather than manual peer store
@@ -63,8 +42,9 @@ export function createBasemapPeerStoreDexie(db: BasemapEntitiesDB): PeerStore<Ba
   };
 }
 
-const normalizeBasemapPeerData = createPeerStoreNormalizer<BasemapPeerData>(() => ({
+const normalizeBasemapPeerData = (
+  input?: Partial<BasemapPeerData> | null
+): BasemapPeerData => ({
   schemaVersion: 1,
-  presentation: undefined,
-  metadata: {},
-}));
+  presentation: input?.presentation,
+});

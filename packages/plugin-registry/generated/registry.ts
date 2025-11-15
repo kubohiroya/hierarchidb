@@ -84,11 +84,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
               "name": "viewport",
               "type": "object",
               "required": true
-            },
-            {
-              "name": "displayOptions",
-              "type": "object",
-              "required": false
             }
           ]
         },

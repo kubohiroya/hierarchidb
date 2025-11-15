@@ -10,7 +10,6 @@ export type {
   BaseMapWorkingCopy,
   BasemapPeerData,
   CreateBaseMapData,
-  DisplayOptions,
   MapStyle,
   MapViewport,
 } from './BaseMapEntity.js';

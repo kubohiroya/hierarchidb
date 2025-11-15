@@ -16,7 +16,6 @@ import {
   Layers,
   Map as MapIcon,
   Refresh,
-  Settings,
 } from '@mui/icons-material';
 import {
   Alert,
@@ -109,12 +108,13 @@ export const BaseMapPanel: React.FC<BaseMapPanelProps> = ({
             <Stack direction="row" alignItems="center" justifyContent="space-between">
               <Stack direction="row" alignItems="center" spacing={1}>
                 <MapIcon color="primary" />
-                <Typography variant="h6">{entity?.name || 'BaseMap'}</Typography>
-                {entity?.mapStyle && (
-                  <Typography variant="body2" color="text.secondary">
-                    ({entity.mapStyle.style})
-                  </Typography>
-                )}
+                <Typography variant="h6">BaseMap</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {entity?.mapStyle?.style ?? 'loading…'}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  #{nodeId}
+                </Typography>
               </Stack>
 
               <Stack direction="row" spacing={1}>
@@ -146,12 +146,6 @@ export const BaseMapPanel: React.FC<BaseMapPanelProps> = ({
                 )}
               </Stack>
             </Stack>
-
-            {entity?.description && (
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                {entity.description}
-              </Typography>
-            )}
           </Box>
           <Divider />
         </>
@@ -221,38 +215,6 @@ export const BaseMapPanel: React.FC<BaseMapPanelProps> = ({
                 </ListItem>
               )}
 
-              {/* Display Options */}
-              {entity?.displayOptions && (
-                <ListItem>
-                  <ListItemIcon>
-                    <Settings fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Display Options"
-                    secondary={
-                      [
-                        entity.displayOptions.show3dBuildings && '3D Buildings',
-                        entity.displayOptions.showTraffic && 'Traffic',
-                        entity.displayOptions.showTransit && 'Transit',
-                        entity.displayOptions.showTerrain && 'Terrain',
-                        entity.displayOptions.showLabels !== false && 'Labels',
-                      ]
-                        .filter(Boolean)
-                        .join(', ') || 'Default'
-                    }
-                  />
-                </ListItem>
-              )}
-
-              {/* Tags (from entity) */}
-              {Array.isArray(entity?.tags) && (entity?.tags?.length ?? 0) > 0 && (
-                <ListItem>
-                  <ListItemIcon>
-                    <Info fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText primary="Tags" secondary={`${entity?.tags?.length ?? 0} tags`} />
-                </ListItem>
-              )}
             </List>
           </Box>
         </Collapse>

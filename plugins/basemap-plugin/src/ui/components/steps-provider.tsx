@@ -1,13 +1,11 @@
 import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/plugin-base';
-import type { DisplayOptions, MapStyle, MapViewport } from '../../common/types/BaseMapEntity.js';
-import { DisplayOptionsStep } from './steps/DisplayOptionsStep.js';
+import type { MapStyle, MapViewport } from '../../common/types/BaseMapEntity.js';
 import { MapStyleStep } from './steps/MapStyleStep.js';
 import { ViewportStep } from './steps/ViewportStep.js';
 
 type StepData = {
   mapStyle?: MapStyle;
   viewport?: MapViewport;
-  displayOptions?: DisplayOptions;
 };
 
 type P = StepComponentProps<StepData>;
@@ -47,6 +45,7 @@ registry.registerConfigProvider<StepData>({
         componentFactory: (p: P) => (
           <ViewportStep
             value={p.data?.viewport}
+            mapStyle={p.data?.mapStyle}
             onChange={(next) => p.onChange({ ...(p.data || {}), viewport: next })}
           />
         ),
@@ -73,17 +72,6 @@ registry.registerConfigProvider<StepData>({
             return false;
           }
         },
-      },
-      {
-        id: 'display-options',
-        label: 'Display Options',
-        componentFactory: (p: P) => (
-          <DisplayOptionsStep
-            value={p.data?.displayOptions}
-            onChange={(next) => p.onChange({ ...(p.data || {}), displayOptions: next })}
-          />
-        ),
-        validate: () => true,
       },
     ];
   },

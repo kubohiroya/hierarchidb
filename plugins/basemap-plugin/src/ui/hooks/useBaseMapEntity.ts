@@ -114,7 +114,6 @@ export function useBaseMapConfiguration(nodeId: NodeId | null) {
   const [config, setConfig] = useState<{
     mapStyle: BaseMapEntity['mapStyle'];
     viewport: BaseMapEntity['viewport'];
-    displayOptions: BaseMapEntity['displayOptions'];
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);

@@ -171,6 +171,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
           data={workingCopy}
           onUpdate={updateWorkingCopy}
           onValidationChange={() => {}}
+          mode={mode}
         />
       ),
       validate: async () => Boolean(workingCopy?.name?.trim()),
