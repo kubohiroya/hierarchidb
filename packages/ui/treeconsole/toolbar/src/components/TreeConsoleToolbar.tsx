@@ -57,6 +57,7 @@ import {
   type MouseEvent,
   type ReactNode,
   useCallback,
+  useEffect,
   useMemo,
   useState,
 } from 'react';
@@ -229,6 +230,7 @@ function TreeConsoleToolbarContent({
   availableTemplates = [],
   searchPlaceholder,
   searchAriaLabel,
+  allowImport = true,
 }: {
   controller: TreeConsoleToolbarProps['controller'];
   hasTrashItems: boolean;
@@ -246,6 +248,7 @@ function TreeConsoleToolbarContent({
   availableTemplates?: NonNullable<TreeConsoleToolbarProps['availableTemplates']>;
   searchPlaceholder: string;
   searchAriaLabel: string;
+  allowImport?: boolean;
 }) {
   const portalContainer = typeof window !== 'undefined' ? document.body : undefined;
   const [settingsAnchorEl, setSettingsAnchorEl] = useState<null | HTMLElement>(null);
@@ -394,6 +397,12 @@ function TreeConsoleToolbarContent({
     setTemplateAnchorEl(null);
   };
 
+  useEffect(() => {
+    if (!allowImport) {
+      setTemplateAnchorEl(null);
+    }
+  }, [allowImport]);
+
   const handleTrashClick = (event: MouseEvent<HTMLElement>) => {
     // Close other menus before opening Trash menu
     setSettingsAnchorEl(null);
@@ -410,6 +419,9 @@ function TreeConsoleToolbarContent({
   const handleTemplateMenuOpen = (
     event: MouseEvent<HTMLElement> | FocusEvent<HTMLElement> | KeyboardEvent<HTMLElement>
   ) => {
+    if (!allowImport) {
+      return;
+    }
     event.preventDefault?.();
     event.stopPropagation?.();
     const target = event.currentTarget as HTMLElement | null;
@@ -661,6 +673,7 @@ function TreeConsoleToolbarContent({
               handleImportExportClose();
             }}
             aria-label={importLabel}
+            disabled={!allowImport}
           >
             <ListItemIcon>
               <FileUploadIcon fontSize="small" />
@@ -693,6 +706,7 @@ function TreeConsoleToolbarContent({
                   handleTemplateMenuOpen(event);
                 }
               }}
+              disabled={!allowImport}
             >
               <ListItemIcon>
                 <SnippetFolderIcon fontSize="small" />
@@ -894,6 +908,7 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
     canTrash,
     canRemove = false,
     availableTemplates = [],
+    allowImport = true,
   } = props;
 
   const resolvedCanTrash = typeof canTrash === 'boolean' ? canTrash : canRemove;
@@ -998,6 +1013,7 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
         availableTemplates={availableTemplates}
         searchPlaceholder={searchPlaceholder}
         searchAriaLabel={searchAriaLabel}
+        allowImport={allowImport}
       />
     </Box>
   );

@@ -470,6 +470,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
   const appPrefix = (env.VITE_APP_PREFIX || env.VITE_APP_NAME || '').replace(/^\/+|\/+$/g, '');
   const base = appPrefix ? `/${appPrefix}/` : '/';
   const isDev = mode === 'development';
+  const enableWorkspaceAliases = mode === 'development' || mode === 'test';
 
   const ssrExternalDeps = ['@mui/material', '@mui/system', '@mui/utils', 'node-fetch', 'whatwg-url', 'tr46'];
 
@@ -479,14 +480,16 @@ export default defineConfig(({ mode, isSsrBuild }) => {
     env.VITE_DEV_ALIAS_OVERRIDE || process.env.VITE_DEV_ALIAS_OVERRIDE,
     baseDevAliasConfig,
   );
-  const devAliasSelection: DevAliasSelection = isDev
+  const devAliasSelection: DevAliasSelection = enableWorkspaceAliases
     ? createDevAliasSelection(effectiveDevAliasConfig)
     : EMPTY_DEV_ALIAS_SELECTION;
-  const workspacePackages: WorkspacePackageMeta[] = isDev ? collectWorkspacePackages(repoRoot) : [];
+  const workspacePackages: WorkspacePackageMeta[] = enableWorkspaceAliases
+    ? collectWorkspacePackages(repoRoot)
+    : [];
 
   const runtimeAliasConfig = createRuntimeAliasConfig({
     rootDir: __dirname,
-    isDev,
+    isDev: enableWorkspaceAliases,
     selection: devAliasSelection,
     workspacePackages,
   });
@@ -638,7 +641,10 @@ export default defineConfig(({ mode, isSsrBuild }) => {
   // In production builds the plugin would re-alias workspace packages back to src/,
   // which breaks dist-only plugins (e.g. database/icon subpaths).
   const enableTsconfigPaths =
-    isDev || env.VITE_TSCONFIG_PATHS === 'true' || process.env.HDB_TSCONFIG_PATHS === '1';
+    isDev ||
+    mode === 'test' ||
+    env.VITE_TSCONFIG_PATHS === 'true' ||
+    process.env.HDB_TSCONFIG_PATHS === '1';
 
   if (enableTsconfigPaths) {
     plugins.push(

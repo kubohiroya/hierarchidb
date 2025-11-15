@@ -60,6 +60,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { proxy, type Remote, releaseProxy } from 'comlink';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { resolveDefaultNodeName } from '@hierarchidb/runtime-worker';
 import { BasicInfoStep } from '../components/steps/BasicInfoStep.js';
 import { PluginDialogFooter, PluginDialogHeader } from './components/index.js';
 import type { PluginDialogFooterPrimaryButtonOptions } from './components/PluginDialogFooter.js';
@@ -867,6 +868,17 @@ export function usePluginDialogController(
   }, [displayMode, persistPosition, persistSize]);
 
   const [basicInfo, setBasicInfo] = useState({ name: '', description: '', tags: [] as string[] });
+  useEffect(() => {
+    if (mode === 'create') {
+      const fallbackName = resolveDefaultNodeName(nodeType);
+      setBasicInfo((prev) => ({
+        name: prev.name || fallbackName,
+        description: prev.description,
+        tags: prev.tags,
+      }));
+    }
+  }, [mode, nodeType]);
+
   useEffect(() => {
     if (workingCopy) {
       const tagsValue = workingCopy.data?.tags;

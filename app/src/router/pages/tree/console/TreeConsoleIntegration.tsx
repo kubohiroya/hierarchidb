@@ -40,6 +40,13 @@ const isSubscriptionDebug = (): boolean => {
   }
 };
 
+export function canImportFromNode(node?: TreeNode | null): boolean {
+  if (!node?.nodeType) {
+    return true;
+  }
+  return node.nodeType.toLowerCase() === 'folder';
+}
+
 export interface TreeConsoleIntegrationProps {
   readonly treeId?: string;
   readonly pageNodeId?: NodeId;
@@ -492,7 +499,9 @@ const TreeConsoleIntegrationInner: React.FC<
     lowerPageNodeId.endsWith(':trash') ||
     lowerPageNodeId === 'trash';
   const shouldRenderTreeTable =
-    !pageTreeNode || (pageTreeNode.nodeType ?? '').toLowerCase() === 'folder';
+    !pageTreeNode ||
+    (pageTreeNode.nodeType ?? '').toLowerCase() === 'folder' ||
+    (pageTreeNode.nodeType ?? '').toLowerCase() === 'trash_highlight_placeholder';
 
   // Handle loading state
   if (workerLoading) {
@@ -555,6 +564,7 @@ const TreeConsoleIntegrationInner: React.FC<
         canTrash={canTrash}
         canRemove={canTrash}
         availableTemplates={availableTemplateOptions}
+        allowImport={canImportFromNode(pageTreeNode)}
       />
 
       {/* TreeConsole Panel / Node Info */}

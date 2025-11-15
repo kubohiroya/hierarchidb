@@ -135,4 +135,10 @@ export interface TreeConsoleToolbarProps {
    * the "Import Template" menu item will be hidden.
    */
   availableTemplates?: Array<{ id: string; label?: string }>;
+
+  /**
+   * When false, disables Import from JSON / Import template menu entries.
+   * Defaults to true for backward compatibility.
+   */
+  allowImport?: boolean;
 }

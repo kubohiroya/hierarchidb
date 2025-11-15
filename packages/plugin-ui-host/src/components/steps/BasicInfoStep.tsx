@@ -7,7 +7,7 @@ import { TagChipsInput } from '@hierarchidb/ui-plugin-basic-info';
 import { LocalOffer } from '@mui/icons-material';
 import { Box, FormControl, FormHelperText, TextField, Typography } from '@mui/material';
 import type React from 'react';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 export interface BasicInfoData {
   name: string;
@@ -50,6 +50,8 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
   validate,
   tagSuggestions = [],
 }) => {
+  const nameInputRef = useRef<HTMLInputElement | null>(null);
+
   // Handle name change
   const handleNameChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,6 +91,20 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
   const validationError = validate?.({ name, description });
   const nameError = !name.trim() ? 'Name is required' : null;
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    if (mode !== 'create') return undefined;
+    const input = nameInputRef.current;
+    if (!input) return undefined;
+    const focusTimer = window.setTimeout(() => {
+      input.focus();
+      input.select();
+    }, 0);
+    return () => {
+      window.clearTimeout(focusTimer);
+    };
+  }, [mode]);
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       <Typography variant="body2" color="text.secondary">
@@ -107,6 +123,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
           helperText={nameError}
           placeholder="Enter a descriptive name"
           variant="outlined"
+          inputRef={nameInputRef}
           inputProps={{
             maxLength: 255,
           }}

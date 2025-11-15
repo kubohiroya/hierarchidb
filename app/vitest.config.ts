@@ -27,6 +27,10 @@ function createAliasMap(): Record<string, string> {
     '@hierarchidb/runtime-worker': path.resolve(rootDir, '../packages/runtime/worker/dist/index.js'),
     '@hierarchidb/util': path.resolve(rootDir, '../packages/util/dist/index.js'),
     '@hierarchidb/plugin-base': path.resolve(rootDir, '../packages/plugin-base/dist/index.js'),
+    '@hierarchidb/ui-treeconsole-toolbar': path.resolve(
+      rootDir,
+      '../packages/ui/treeconsole/toolbar/src/index.ts'
+    ),
   };
 
   return {

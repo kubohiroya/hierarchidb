@@ -68,6 +68,22 @@
   - [x] 必要なコマンド（typecheck/test）を実行し、結果を運用ログに追記する
 - ロールバック手順：`packages/ui/treeconsole/breadcrumb` と関連する `app/src` の差分を revert し、`pnpm --filter @hierarchidb/ui-treeconsole-breadcrumb test` を再実行して現状挙動へ戻ることを確認する
 
+1285) TreeConsole Toolbar import 制限（P0）
+- ブランチ: `fix/ui-treeconsole/toolbar-import-guard`（sandbox 制約で `main` 上で作業）
+- 依存: `packages/ui/treeconsole/toolbar`, `app/src/router/pages/tree/console/TreeConsoleIntegration.tsx`, `app/src/hooks/treeconsole/**/*`
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` の Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] `TreeConsoleToolbar` の Import from JSON／Import template ボタンが `allowImport` prop（pageNode の nodeType が folder のときのみ true）に従って enabled/disabled を切り替える実装へ更新されている
+  - [ ] `TreeConsoleIntegration` が現在の `pageTreeNode` の nodeType から import 可否を判定し、folder 以外なら Import from JSON／Import template を disabled にする
+  - [ ] `Import from JSON`／`Import template` の enabled/disabled 切り替えと動作を検証する詳細なユニットテストを追加する
+  - [ ] `pnpm -C app test -- --run TreeConsoleToolbarImportMenu`（仮）等、追加したテストを含むコマンドと `pnpm -C app typecheck` を実行し、結果を運用ログに記録する
+- チェックリスト:
+  - [ ] pageNode が folder のときのみ import メニューを有効化する判定ヘルパー（nodeType 正規化含む）を実装し、テストで仕様を明文化する
+  - [ ] `TreeConsoleToolbar` の Import/Template MenuItem に disabled 制御と副作用抑制（サブメニュー開閉ガード）を追加する
+  - [ ] Import 許可状態を切り替えたときのメニュー挙動を検証する UI テストを `app` 配下に追加する
+  - [ ] 変更後のテスト／typecheck を実行し、ログを運用ログへ追記する
+- ロールバック手順：`TreeConsoleToolbar.tsx`, `packages/ui/treeconsole/toolbar/src/types.ts`, `app/src/router/pages/tree/console/TreeConsoleIntegration.tsx`、追加したテストファイルを revert し、`pnpm -C app test -- --run <追加テスト名>` と `pnpm -C app typecheck` を再実行して旧挙動に戻ることを確認する
+
 
 303) TreeConsole Folder Undo エラー修正（P0）
 - ブランチ: `fix/ui-treeconsole/folder-undo-error`（sandbox 制約で `main` 上で作業）
@@ -7891,6 +7907,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-15 15:23 progress: chore/docs/agents-tsdown-update — Kanban にタスクを追加し、tsdown 周辺の現状把握（`tsdown.config.ts`, `docs/turbo-tsdown-migration-plan.md`, `@hierarchidb/runtime-worker/package.json` など）を棚卸し。AGENTS.md の Turbo セクション／Agent Workflow セクションで tsup 依存の残骸を特定。
 - 2025-11-15 15:32 blocked: feat/ui-treeconsole/node-info-panel — `pnpm --filter @hierarchidb/app typecheck` exit 1。`TreeNodeInfoPanel` 追加に伴い `@hierarchidb/ui-treeconsole-breadcrumb` 参照解決不可・MUI Button の `aria-label` 型が `DefaultTFuncReturn` で不一致 (tsc TS2307/TS2769)。UI-shell の再エクスポートと翻訳 helper で string に収束させる修正を継続中。
 - 2025-11-15 15:38 command: pnpm --filter @hierarchidb/app typecheck — exit 0。`TreeNodeInfoPanel` で `@hierarchidb/ui-shell/ui-treeconsole-breadcrumb` を参照し、翻訳 helper で `aria-label` を string 化したことで tsc の TS2307/TS2769 が解消されたことを確認。
+- 2025-11-15 15:55 command: pnpm --filter @hierarchidb/app typecheck — exit 0。PluginDialog create フローの Name input にフォーカス＆テキスト選択を追加（BasicInfoStep）した後も型検証が通ることを確認。
 - 2025-11-15 15:24 done: chore/docs/agents-tsdown-update — AGENTS.md に tsdown 導入後の運用（root config の external/clean:false, `pnpm --filter <pkg> build` による tsdown 実行, `tsup` 廃止/ロールバック手順）を追記し、依存タスク順序ポリシーも `tsdown` 前提へ更新。ドキュメントのみの変更につき追加コマンド実行なし。
 - 2025-11-15 15:45 progress: feat/ui-treeconsole/node-info-panel — Folder 以外のページで Breadcrumb が消える不具合を `TreeConsoleIntegration` の info panel 分岐にも `TreeConsoleBreadcrumb` を描画することで解消。`TreeNodeInfoPanel` からの Edit/Play が `effectiveAction`/nodeType を欠落させていたため、context アクションで渡すノード情報を `openEditDialog` へ引き渡し、`loadNodeAction`/`PluginDialogRoute` 側で `action=edit` を NodeAction.UPDATE として解釈するよう修正。
 - 2025-11-15 15:46 command: pnpm -C app test -- createTreeConsoleActions — exit 0。TreeConsole action factory のユニットテストで info panel 向け edit ハンドリングの回帰がないことを確認。
@@ -7906,6 +7923,11 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-15 16:23 blocked: pnpm -C app typecheck — exit 1。`@hierarchidb/ui-theme` の path alias が app/tsconfig.json に未定義で、`TreeNodeInfoPanel.tsx` で TS2307 が発生したため alias を追加して再実行する。
 - 2025-11-15 16:25 command: pnpm -C app typecheck — exit 0。`app/tsconfig.json` に `@hierarchidb/ui-theme` の paths を追記し、TS2307 を解消。
 - 2025-11-15 16:26 command: pnpm -C app typecheck — exit 0。breadcrumb テストのフォーマット調整後も typecheck が維持されることを確認。
+- 2025-11-15 16:30 start: fix/ui-treeconsole/toolbar-import-guard — TreeConsole Toolbar の Import from JSON / Import template を folder node 限定で有効化し、それ以外では disabled にする仕様変更へ着手。DoD: Kanban/ログ更新、pageNode 判定ロジックと Toolbar 実装の更新、Import メニュー挙動を検証する詳細テスト追加、`pnpm -C app test -- --run <追加テスト>` および `pnpm -C app typecheck` 成功ログの記録、ロールバック手順明記。
+- 2025-11-15 17:00 progress: fix/ui-treeconsole/toolbar-import-guard — `TreeConsoleToolbar` に `allowImport` props を導入し、Import from JSON / Import template の MenuItem を folder 以外の pageNode で disabled 扱いに切替。`TreeConsoleIntegration` へ `canImportFromNode` ヘルパーを追加して nodeType を正規化判定するよう更新。Toolbar メニュー挙動と pageNode 判定をカバーするユニットテスト（Import menu / Integration import guard）を `app/src/router/pages/tree/console/__tests__` 配下に追加。
+- 2025-11-15 17:05 command: pnpm -C app test -- --run TreeConsoleToolbarImportMenu — exit 0。Import from JSON / Import template が allowImport=false で disabled になるテスト 2 件を追加し成功。
+- 2025-11-15 17:05 command: pnpm -C app test -- --run TreeConsoleIntegrationImportGuard — exit 0。pageTreeNode の nodeType に応じて `TreeConsoleToolbar` が `allowImport` を true/false で受け取ることと helper の挙動を検証する 5 ケースがグリーン。
+- 2025-11-15 17:06 command: pnpm -C app typecheck — exit 0。toolbar/import ガード関連の型調整（vitest config alias 追加含む）後にアプリ全体の typecheck を通過。
 
 ## 今日の着手（運用ログ） <a id="worklog-12"></a>
 

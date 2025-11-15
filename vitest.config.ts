@@ -92,6 +92,10 @@ export default defineConfig({
       '@hierarchidb/common-api': path.resolve(__dirname, './packages/common/api/src/index.ts'),
       '@hierarchidb/ui-core': path.resolve(__dirname, './packages/ui/core/src/index.ts'),
       '@hierarchidb/util': path.resolve(__dirname, './packages/util/src/index.ts'),
+      '@hierarchidb/ui-treeconsole-toolbar': path.resolve(
+        __dirname,
+        './packages/ui/treeconsole/toolbar/src/index.ts'
+      ),
       // Node-type plugin aliases are generated automatically (root/src/services/database/shared)
       ...nodeTypeAliases,
       ...nodeTypeSrcAliases,
