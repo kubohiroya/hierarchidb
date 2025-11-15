@@ -1,0 +1,1 @@
+import{loadTimelineEntitiesDbModule as n,registerTimelineWorkerStores as a}from"./index-Bx4VA_Vi.js";import"./index.js";import"./vendor-react-2It2lbss.js";const i={nodeType:"timeline",capabilities:{canHaveChildren:!0,canBeRoot:!1,canBeDeleted:!0,canBeRenamed:!0,canBeMoved:!0}};export{i as lifecycle,n as loadTimelineEntitiesDbModule,a as registerTimelineWorkerStores};

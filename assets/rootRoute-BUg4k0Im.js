@@ -1,1 +1,0 @@
-import{ac as e,ad as s,j as a,O as r}from"./index.js";import"./vendor-react-2It2lbss.js";async function n(){await e();const t={},o=Promise.resolve();return{registry:t,servicesReady:o,teardown:async()=>{}}}const l=s({beforeLoad:async()=>(await n(),{uiPluginsReady:!0}),component:()=>a.jsx(r,{})});export{l as rootRoute};
