@@ -71,19 +71,42 @@ const staticMap: Record<string, React.ComponentType<SvgIconProps> | undefined> =
 
 export function getMuiIconComponent(muiIconName?: string, emoji?: string): ReactNode {
   const normalized = normalizeMuiName(muiIconName);
-  const pascal = toPascalCase(normalized);
-  if (pascal) {
-    const GlobalIcon = __globalMuiIconMap?.[pascal];
-    if (GlobalIcon) return <GlobalIcon />;
-    const StaticIcon = staticMap[pascal];
-    if (StaticIcon) return <StaticIcon />;
+  const globalCandidates = collectPascalCandidates([muiIconName, normalized]);
+  for (const candidate of globalCandidates) {
+    const GlobalIcon = __globalMuiIconMap?.[candidate];
+    if (GlobalIcon) {
+      return <GlobalIcon />;
+    }
   }
+
+  const staticCandidates = collectPascalCandidates([normalized, muiIconName]);
+  for (const candidate of staticCandidates) {
+    const StaticIcon = staticMap[candidate];
+    if (StaticIcon) {
+      return <StaticIcon />;
+    }
+  }
+
   if (emoji) return <span style={{ fontSize: '1.5rem' }}>{emoji}</span>;
   return <AddIcon />;
 }
 
 // Simple prefetch cache to avoid duplicate dynamic imports
 const _prefetched = new Set<string>();
+
+function collectPascalCandidates(names: Array<string | undefined>): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const name of names) {
+    if (!name) continue;
+    const pascal = toPascalCase(name);
+    if (!pascal) continue;
+    if (seen.has(pascal)) continue;
+    seen.add(pascal);
+    result.push(pascal);
+  }
+  return result;
+}
 
 /**
  * Prefetch a list of MUI icons by name (case-insensitive), warming the dynamic import cache
@@ -106,12 +129,23 @@ export function getMuiIconWithColor(
   emoji?: string,
   color?: string,
 ): ReactNode {
-  const pascal = toPascalCase(normalizeMuiName(muiIconName));
-  const GlobalIcon = __globalMuiIconMap?.[pascal];
-  if (GlobalIcon) return <GlobalIcon sx={color ? { color } : undefined} />;
-  // Fallback to static map or emoji
-  const StaticIcon = staticMap[pascal];
-  if (StaticIcon) return <StaticIcon sx={color ? { color } : undefined} />;
+  const normalized = normalizeMuiName(muiIconName);
+  const globalCandidates = collectPascalCandidates([muiIconName, normalized]);
+  for (const candidate of globalCandidates) {
+    const GlobalIcon = __globalMuiIconMap?.[candidate];
+    if (GlobalIcon) {
+      return <GlobalIcon sx={color ? { color } : undefined} />;
+    }
+  }
+
+  const staticCandidates = collectPascalCandidates([normalized, muiIconName]);
+  for (const candidate of staticCandidates) {
+    const StaticIcon = staticMap[candidate];
+    if (StaticIcon) {
+      return <StaticIcon sx={color ? { color } : undefined} />;
+    }
+  }
+
   if (emoji) {
     return <span style={{ fontSize: '1.5rem', color }}>{emoji}</span>;
   }

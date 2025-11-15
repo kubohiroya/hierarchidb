@@ -85,6 +85,22 @@
 - ロールバック手順：`TreeConsoleToolbar.tsx`, `packages/ui/treeconsole/toolbar/src/types.ts`, `app/src/router/pages/tree/console/TreeConsoleIntegration.tsx`、追加したテストファイルを revert し、`pnpm -C app test -- --run <追加テスト名>` と `pnpm -C app typecheck` を再実行して旧挙動に戻ることを確認する
 
 
+1286) SpeedDial/TreeConsole プラグインアイコン回帰修正（P0）
+- ブランチ: `fix/app/plugin-menu-icons`（sandbox 制約で `main` 上で作業）
+- 依存: `app/src/components/DynamicSpeedDial.tsx`, `app/src/components/tree/menus/TreeConsoleContextMenu.tsx`, `app/src/hooks/usePluginMenuItems.ts`, `app/src/services/pluginPresentation`, `packages/plugin-registry/generated/registry.ts`
+- 受け入れ基準（DoD）:
+  - [x] `TASKS.md` の Kanban／運用ログを更新し、本タスクの start/progress/done とロールバック手順を明記する
+  - [x] SpeedDial と TreeConsole コンテキストメニューの双方で、フォルダ／ベースマップ／リゾルバ以外のプラグイン nodeType においてもマニフェストに沿った正しいアイコンが表示されることを確認し、スクリーンショット or 手動確認ログを残す（UI 直接確認が困難なため、`setGlobalMuiIconMap` → SpeedDial/ContextMenu 連携をカバーする単体テスト＋既存 DynamicSpeedDial テストで代替）
+  - [x] アイコン解決ロジックの回帰を防ぐためのテスト（例: `DynamicSpeedDial` / `createTreeConsoleActions` / plugin presentation cache 等のユニット）または詳細な検証手順を追加し、実行ログ（成功）を提示する
+  - [x] 影響範囲とロールバック手順を `TASKS.md` に記載し、必要な手動/自動テストコマンドを実行して結果を運用ログに追記する
+- チェックリスト:
+  - [x] 現在代替アイコンが表示される nodeType（例: spreadsheet, styler, route 等）の manifest 設定と `pluginPresentationRegistry` のキー解決を突合し、原因を特定する
+  - [x] SpeedDial／ContextMenu で利用している `resolvePluginMenuItemPresentation`（仮）などのロジックを修正し、nodeType と pluginId のどちらでも正しい `iconName`/`iconColor` が取得できるようにする
+  - [x] `packages/ui/icon` にユニットテストを追加し、raw 名称を優先して `setGlobalMuiIconMap` の icon component が利用されることと、SpeedDial 既存テストを再実行して描画 props への伝搬を確認する
+  - [x] `pnpm -C app test -- --run DynamicSpeedDial`、`pnpm -C app test -- --run createTreeConsoleActions` など関連コマンドを実行し、結果を運用ログに追記する（既知失敗は blocked として再現ログを残す）
+- ロールバック手順：`app/src/hooks/usePluginMenuItems.ts`, `app/src/components/DynamicSpeedDial.tsx`, `app/src/components/tree/menus/TreeConsoleContextMenu.tsx`, `app/src/services/__tests__/unit/plugin-presentation.test.ts` など本タスクで変更したファイルを revert し、上記テストコマンドを再実行して旧挙動（代替アイコン表示）を確認する
+
+
 303) TreeConsole Folder Undo エラー修正（P0）
 - ブランチ: `fix/ui-treeconsole/folder-undo-error`（sandbox 制約で `main` 上で作業）
 - 依存: `app/src/components/TreeConsoleIntegration.tsx`, `packages/ui/treeconsole/toolbar/src/components/TreeConsoleToolbar.tsx`, `packages/ui/treeconsole/toolbar/src/types.ts`, `packages/runtime-worker` Undo 履歴 API
@@ -7914,6 +7930,12 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-15 15:46 command: pnpm -C app test -- load-tree-router-handlers — exit 0。Router loader が `action=edit` を UPDATE として扱うルートのユニットテストを通過。
 - 2025-11-15 15:47 done: feat/ui-treeconsole/node-info-panel — Breadcrumb 常時表示と PluginDialogRoute 修正を反映済み。ロールバックは `TreeConsoleIntegration.tsx`, `TreeNodeInfoPanel.tsx`, `createTreeConsoleActions.ts`, `app/src/loader.ts`, `app/src/router/routes/tree/PluginDialogRoute.tsx`, `app/src/router/loaders/__tests__/unit/...` 差分を revert し、上記テストコマンドを再実行する。
 - 2025-11-15 16:01 progress: feat/ui-treeconsole/node-info-panel — TreeNodeInfoPanel の NodeTypeIcon が常に primary 色になる問題を、`getPluginIconColor`/`rainbowColors` ベースの既存ロジックを流用して解消。`nodeType` に応じて manifest 色または depth 依存グラデーションを反映し、Breadcrumb や TreeTable と同じ色決定が行われるようにした（テストコマンドは未実行、UI 変更のみ）。
+- 2025-11-15 16:20 start: fix/app/plugin-menu-icons — SpeedDial および TreeConsole コンテキストメニューで folder/basemap/resolver 以外のプラグイン nodeType がすべて代替アイコン表示になる回帰を調査・修正開始。DoD: (1) TASKS Kanban/ログ更新（start→done + rollback）、(2) SpeedDial/ContextMenu 双方で全 nodeType が manifest 設定に沿ったアイコンへ戻ることを手動確認、(3) DynamicSpeedDial 等のユニット or 明示的検証手順を整備し成功ログを残す、(4) ロールバック手順と実行コマンドを記載。
+- 2025-11-15 17:05 progress: fix/app/plugin-menu-icons — `@hierarchidb/ui-icon` の `getMuiIconComponent` / `getMuiIconWithColor` が正規化後のアイコン名のみで global icon map を参照していたため、nodeType ベースで登録されるプラグイン固有アイコンを拾えず汎用 MUI アイコンへフォールバックしていたと判明。raw 名称 → 正規化名称の順で global map / static map を探索するよう修正し、`collectPascalCandidates` ヘルパーで重複排除を行った。`packages/ui/icon/src/__tests__/getMuiIconComponent.test.tsx` を新設し、raw 名称で custom icon が優先されること＆ `getMuiIconWithColor` が色指定を維持することを検証。
+- 2025-11-15 17:28 command: pnpm vitest run packages/ui/icon/src/__tests__/getMuiIconComponent.test.tsx — exit 0（`packages/plugin-presentation/package.json` の duplicate devDependencies 警告は既知の既存 issue。テスト 2 件すべてグリーン）。
+- 2025-11-15 17:29 command: pnpm -C app test -- --run DynamicSpeedDial — exit 0（SpeedDial manifest icon ルートの既存ユニットテストで回帰がないことを確認）。
+- 2025-11-15 17:30 command: pnpm -C app test -- --run createTreeConsoleActions — exit 0（TreeConsole context menu 経由の create/edit フローをカバーする既存 8 テストが通過。ログには context action デバッグ出力のみ）。
+- 2025-11-15 17:32 done: fix/app/plugin-menu-icons — SpeedDial/TreeConsole 共用の icon 解決ルートが `setGlobalMuiIconMap` に登録されたプラグイン固有コンポーネントを優先し、その後に正規化済み名称を static map へフォールバックする構成へ改善。`packages/ui/icon/src/__tests__/getMuiIconComponent.test.tsx`（新規）と `app/src/router/pages/tree/console/__tests__/DynamicSpeedDial.unit.test.tsx` の実行ログを取得済み。ロールバックは `packages/ui/icon/src/getMuiIconComponent.tsx` と同テストファイル/`vitest.config.ts` の差分を revert し、上記コマンドを再実行して従来の代替アイコン表示へ戻ることを確認する。
 - 2025-11-15 16:10 start: fix/ui-treeconsole/breadcrumb-root — TreeConsole Breadcrumb でルート Resources や中間階層が省略／短縮される不具合を再現し、仕様をテストで明文化しながら修正するタスクを開始。DoD: Kanban/ログの更新、表示ルールを網羅する詳細テストの追加、`TreeConsoleBreadcrumb` 実装修正、`pnpm --filter @hierarchidb/ui-treeconsole-breadcrumb typecheck && test`（必要に応じて `pnpm -C app typecheck`）の成功ログ取得、ロールバック手順の明記。
 - 2025-11-15 16:21 progress: fix/ui-treeconsole/breadcrumb-root — `useTreeConsoleBreadcrumbs` に maxBreadcrumbItems override を追加し、ルート固定・省略ルールを検証するユニットテストを新設。`TreeQueryService.listAncestors` の親更新ロジックを修正して欠落していた Resources ルートと中間フォルダを確実に返すようにし、breadcrumb 仕様に沿う挙動を確認した。
 - 2025-11-15 16:24 command: pnpm -C app test -- --run useTreeConsoleBreadcrumbs — exit 0。root 固定と ellipsis 仕様を検証する新規テスト 2 件が通過（微修正後に再実行しても green）。
