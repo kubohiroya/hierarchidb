@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { createHierarchiRouter, getBasePath, getRouterMode } from './router/index.js';
 import AppRoot from './root.js';
 import { initializeBrowserGlobals } from './router/init/initializeBrowserGlobals.ts';
+import { preloadPluginWorkerStores } from './worker-runtime/WorkerModuleLoader.js';
 
 /**
  * Initialize and mount the application with TanStack Router
@@ -15,6 +16,7 @@ async function initializeApp() {
     '@hierarchidb/folder-plugin'
   );
   await initializeDefaultNodeDialogExtensions();
+  await preloadPluginWorkerStores();
   const mode = getRouterMode();
   const basename = getBasePath();
 

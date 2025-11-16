@@ -123,7 +123,7 @@ function createAdapterFromPeerStore<TData>(store: PeerStore<TData>): PeerEntitie
 class UIPersistenceRegistry {
   private providers = new Map<string, PeerDialogPersistence>();
   private dbCache = new Map<string, PeerEntitiesDBAdapter | null>();
-  private warningExclusions = new Set<string>(['folder', 'basemap']);
+  private warningExclusions = new Set<string>(['folder']);
 
   register(nodeType: string, provider: PeerDialogPersistence) {
     this.providers.set(nodeType, provider);

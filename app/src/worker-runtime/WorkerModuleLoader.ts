@@ -71,6 +71,24 @@ async function loadPluginWorkers(): Promise<void> {
   await Promise.allSettled(loadTasks);
 }
 
+function startPluginWorkerPreloads(): Promise<void> {
+  if (!pluginLoadPromise) {
+    pluginLoadPromise = loadPluginWorkers().catch((error) => {
+      console.warn('[WorkerModuleLoader] plugin preload encountered errors', error);
+      throw error;
+    });
+  }
+  return pluginLoadPromise;
+}
+
+export async function preloadPluginWorkerStores(): Promise<void> {
+  try {
+    await startPluginWorkerPreloads();
+  } catch {
+    // individual plugin errors already logged in startPluginWorkerPreloads
+  }
+}
+
 export async function ensureWorkerRuntime(): Promise<Remote<WorkerAPI>> {
   if (!runtimePromise) {
     runtimePromise = (async () => {
@@ -82,19 +100,18 @@ export async function ensureWorkerRuntime(): Promise<Remote<WorkerAPI>> {
         }),
       ]);
       const client = await WorkerAPIClient.getOrInit();
-      if (!pluginLoadPromise) {
-        pluginLoadPromise = loadPluginWorkers().catch((error) => {
-          console.warn('[WorkerModuleLoader] plugin preload encountered errors', error);
-        });
-      }
+      startPluginWorkerPreloads();
 
       // ensure module paths cache populated for subsequent synchronous access
       if (!getModulePaths()) {
         cachedModulePaths = modulePaths;
       }
-      await pluginLoadPromise.catch(() => {
-        // individual plugin errors are logged above; swallow to avoid failing initialization
-      });
+      const preloadPromise = pluginLoadPromise;
+      if (preloadPromise) {
+        await preloadPromise.catch(() => {
+          // individual plugin errors are logged above; swallow to avoid failing initialization
+        });
+      }
       return client;
     })();
   }

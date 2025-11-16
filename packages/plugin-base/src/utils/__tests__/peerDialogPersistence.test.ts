@@ -136,11 +136,10 @@ describe('UIPersistence warning exclusion list', () => {
   });
 
   it('allows replacing the exclusion list', () => {
-    registry.setWarningExclusions(['custom', 'folder', 'basemap']);
-    expect(registry.getWarningExclusions().sort()).toEqual(['basemap', 'custom', 'folder']);
+    registry.setWarningExclusions(['custom', 'folder']);
+    expect(registry.getWarningExclusions().sort()).toEqual(['custom', 'folder']);
     expect(registry.isWarningSuppressed('custom')).toBe(true);
     expect(registry.isWarningSuppressed('folder')).toBe(true);
-    expect(registry.isWarningSuppressed('basemap')).toBe(true);
     expect(registry.isWarningSuppressed('other')).toBe(false);
   });
 
@@ -153,14 +152,13 @@ describe('UIPersistence warning exclusion list', () => {
   });
 
   it('skips console warnings for excluded node types without a peer store', async () => {
-    registry.setWarningExclusions(['ghost', 'basemap']);
+    registry.setWarningExclusions(['ghost']);
     registry.providers.delete('ghost');
     registry.dbCache.delete('ghost');
 
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     await getPeerDisplayMode('ghost', 'ghost-node');
-    await getPeerDisplayMode('basemap', 'basemap-node');
 
     expect(warnSpy).not.toHaveBeenCalled();
     warnSpy.mockRestore();
