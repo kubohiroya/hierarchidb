@@ -361,7 +361,6 @@ export class CommandProcessor {
   private async deletePeerEntitiesForNodes(
     nodes: Array<import('@hierarchidb/common-types').TreeNode>
   ): Promise<void> {
-    console.log('deletePeerEntitiesForNodes invoked', nodes.map((n) => [n.id, n.nodeType]));
     const { storeRegistry } = await import('../entity/store-registry.js');
     for (const n of nodes) {
       const nodeType = n.nodeType;

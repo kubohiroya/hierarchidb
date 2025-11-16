@@ -44,8 +44,10 @@ export const treeDialogRoute = createRoute({
       action,
     };
 
+    const normalizedNodeType = nodeType.toLowerCase();
+
     // Special handling for trash dialog
-    if (nodeType === 'trash') {
+    if (normalizedNodeType === 'trash') {
       const trashDialogModule = await import('~/router/pages/tree/trash/TrashDialog.js');
       if (trashDialogModule.clientLoader) {
         const trashParams = toTrashDialogParams(resolvedParams);
@@ -56,6 +58,20 @@ export const treeDialogRoute = createRoute({
           params: trashParams,
         } satisfies TreeDialogLoaderResult;
       }
+    }
+
+    if (normalizedNodeType === 'folder') {
+      return {
+        kind: 'plugin',
+        data: {
+          tree: null,
+          pageNode: null,
+          targetNode: null,
+          nodeType: undefined,
+          action: undefined,
+          params: resolvedParams,
+        } as PluginDialogLoaderData,
+      } satisfies TreeDialogLoaderResult;
     }
 
     const pluginData = await loadNodeAction({

@@ -3,8 +3,6 @@ export { ResolverDialog } from './ResolverDialog.js';
 export type { ResolverDialogProps } from './ResolverDialog.js';
 export { ResolverPanel } from './ResolverPanel.js';
 
-// Export step components for potential reuse
-export { ResolverBasicInfoStep } from './steps/ResolverBasicInfoStep.js';
 export { SchemaSelectionStep } from './steps/SchemaSelectionStep.js';
 export { PropertyMappingStep } from './steps/PropertyMappingStep.js';
 export { ValidationConfigStep } from './steps/ValidationConfigStep.js';
@@ -17,10 +15,6 @@ export async function loadResolverDialogModule() {
 
 export async function loadResolverPanelModule() {
   return import(/* @vite-ignore */ './ResolverPanel.js');
-}
-
-export async function loadResolverBasicInfoStepModule() {
-  return import(/* @vite-ignore */ './steps/ResolverBasicInfoStep.js');
 }
 
 export async function loadSchemaSelectionStepModule() {

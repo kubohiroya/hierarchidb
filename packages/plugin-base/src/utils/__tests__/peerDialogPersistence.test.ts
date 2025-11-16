@@ -84,18 +84,24 @@ describe('peerDialogPersistence EntitiesDB fallback', () => {
     const registry = UIPersistence as unknown as {
       providers: Map<string, unknown>;
       dbCache: Map<string, unknown>;
+      setWarningExclusions: (nodeTypes: Iterable<string>) => void;
+      getWarningExclusions: () => string[];
     };
     registry.providers.delete('folder');
     registry.dbCache.delete('folder');
+    registry.setWarningExclusions(['folder']);
   });
 
   afterEach(() => {
     const registry = UIPersistence as unknown as {
       providers: Map<string, unknown>;
       dbCache: Map<string, unknown>;
+      setWarningExclusions: (nodeTypes: Iterable<string>) => void;
+      getWarningExclusions: () => string[];
     };
     registry.providers.delete('folder');
     registry.dbCache.delete('folder');
+    registry.setWarningExclusions(['folder']);
   });
 
   it('falls back to worker EntitiesDB export when no override is provided', async () => {
@@ -103,5 +109,60 @@ describe('peerDialogPersistence EntitiesDB fallback', () => {
     await setPeerDisplayMode('folder', nodeId, 'full-screen');
     const mode = await getPeerDisplayMode('folder', nodeId);
     expect(mode).toBe('full-screen');
+  });
+});
+
+describe('UIPersistence warning exclusion list', () => {
+  type RegistryTestHandle = typeof UIPersistence & {
+    providers: Map<string, unknown>;
+    dbCache: Map<string, unknown>;
+    setWarningExclusions: (nodeTypes: Iterable<string>) => void;
+    addWarningExclusion: (nodeType: string) => void;
+    removeWarningExclusion: (nodeType: string) => void;
+    isWarningSuppressed: (nodeType: string) => boolean;
+    getWarningExclusions: () => string[];
+  };
+
+  let registry: RegistryTestHandle;
+  let previousExclusions: string[];
+
+  beforeEach(() => {
+    registry = UIPersistence as RegistryTestHandle;
+    previousExclusions = registry.getWarningExclusions();
+  });
+
+  afterEach(() => {
+    registry.setWarningExclusions(previousExclusions);
+  });
+
+  it('allows replacing the exclusion list', () => {
+    registry.setWarningExclusions(['custom', 'folder', 'basemap']);
+    expect(registry.getWarningExclusions().sort()).toEqual(['basemap', 'custom', 'folder']);
+    expect(registry.isWarningSuppressed('custom')).toBe(true);
+    expect(registry.isWarningSuppressed('folder')).toBe(true);
+    expect(registry.isWarningSuppressed('basemap')).toBe(true);
+    expect(registry.isWarningSuppressed('other')).toBe(false);
+  });
+
+  it('supports adding and removing individual exclusions', () => {
+    registry.setWarningExclusions([]);
+    registry.addWarningExclusion('temp');
+    expect(registry.isWarningSuppressed('temp')).toBe(true);
+    registry.removeWarningExclusion('temp');
+    expect(registry.isWarningSuppressed('temp')).toBe(false);
+  });
+
+  it('skips console warnings for excluded node types without a peer store', async () => {
+    registry.setWarningExclusions(['ghost', 'basemap']);
+    registry.providers.delete('ghost');
+    registry.dbCache.delete('ghost');
+
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await getPeerDisplayMode('ghost', 'ghost-node');
+    await getPeerDisplayMode('basemap', 'basemap-node');
+
+    expect(warnSpy).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
   });
 });

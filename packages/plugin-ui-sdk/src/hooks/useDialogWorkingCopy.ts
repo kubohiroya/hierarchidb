@@ -87,8 +87,11 @@ export function useDialogWorkingCopy({
         const { wc: wcAPI } = await getClient();
 
         if (mode === 'edit' && nodeId) {
-          await wcAPI.createWorkingCopyFromNode(nodeId);
-          const wc = await wcAPI.getWorkingCopy(nodeId);
+          let wc = await wcAPI.getWorkingCopy(nodeId);
+          if (!wc) {
+            await wcAPI.createWorkingCopyFromNode(nodeId);
+            wc = await wcAPI.getWorkingCopy(nodeId);
+          }
           if (!wc) throw new Error('Failed to create working copy');
           const copy = toWorkingCopyData(wc);
           setWorkingCopy(copy);

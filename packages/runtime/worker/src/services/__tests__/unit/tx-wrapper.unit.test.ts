@@ -155,7 +155,6 @@ describe('transaction wrapper', () => {
       },
     };
     storeRegistry.registerPeer(TX_NODE_TYPE, peerStore);
-    console.log('registered peer store?', !!storeRegistry.getPeer(TX_NODE_TYPE));
 
     const env = cp.createEnvelope('remove', { nodeIds: [child.id as NodeId] });
     const result = await cp.processCommand(env);

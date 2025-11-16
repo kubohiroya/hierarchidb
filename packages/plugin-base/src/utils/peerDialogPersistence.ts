@@ -123,7 +123,7 @@ function createAdapterFromPeerStore<TData>(store: PeerStore<TData>): PeerEntitie
 class UIPersistenceRegistry {
   private providers = new Map<string, PeerDialogPersistence>();
   private dbCache = new Map<string, PeerEntitiesDBAdapter | null>();
-  private suppressedWarnings = new Set<string>(['folder']);
+  private warningExclusions = new Set<string>(['folder', 'basemap']);
 
   register(nodeType: string, provider: PeerDialogPersistence) {
     this.providers.set(nodeType, provider);
@@ -196,7 +196,7 @@ class UIPersistenceRegistry {
         return adapter;
       }
 
-      if (typeof console !== 'undefined' && !this.suppressedWarnings.has(nodeType)) {
+      if (typeof console !== 'undefined' && this.shouldWarn(nodeType)) {
         console.warn('[UIPersistenceRegistry] No peer store registered for node type', nodeType);
       }
       this.dbCache.set(nodeType, null);
@@ -293,16 +293,54 @@ class UIPersistenceRegistry {
     };
   }
 
+  private shouldWarn(nodeType: string): boolean {
+    if (!nodeType) return false;
+    return !this.isWarningSuppressed(nodeType);
+  }
+
+  private normalizeNodeType(nodeType: string | undefined): string | null {
+    if (!nodeType) return null;
+    const normalized = nodeType.trim();
+    return normalized ? normalized : null;
+  }
+
   suppressWarningFor(nodeType: string): void {
-    if (nodeType) {
-      this.suppressedWarnings.add(nodeType);
+    this.addWarningExclusion(nodeType);
+  }
+
+  addWarningExclusion(nodeType: string | undefined): void {
+    const normalized = this.normalizeNodeType(nodeType);
+    if (normalized) {
+      this.warningExclusions.add(normalized);
     }
+  }
+
+  removeWarningExclusion(nodeType: string | undefined): void {
+    const normalized = this.normalizeNodeType(nodeType);
+    if (normalized) {
+      this.warningExclusions.delete(normalized);
+    }
+  }
+
+  setWarningExclusions(nodeTypes: Iterable<string>): void {
+    this.warningExclusions.clear();
+    for (const nodeType of nodeTypes) {
+      this.addWarningExclusion(nodeType);
+    }
+  }
+
+  isWarningSuppressed(nodeType: string | undefined): boolean {
+    const normalized = this.normalizeNodeType(nodeType);
+    if (!normalized) return false;
+    return this.warningExclusions.has(normalized);
+  }
+
+  getWarningExclusions(): string[] {
+    return Array.from(this.warningExclusions);
   }
 }
 
 export const UIPersistence = new UIPersistenceRegistry();
-
-UIPersistence.suppressWarningFor('folder');
 
 // Convenience wrappers (default provider)
 export const getPeerDisplayMode = (nodeType: string, nodeId: string) =>

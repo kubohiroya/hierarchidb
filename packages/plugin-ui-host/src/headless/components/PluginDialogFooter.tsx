@@ -78,7 +78,6 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   };
 
   const handleNextOrSave = () => {
-    console.debug('[Folder-create]');
     if (isLastStep) {
       ctx.onRequestCommit?.();
       return;

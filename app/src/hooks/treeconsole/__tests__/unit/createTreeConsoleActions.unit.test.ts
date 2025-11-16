@@ -168,7 +168,7 @@ describe('createTreeConsoleActions.handleEdit', () => {
 
     expect(workingCopyApi.getWorkingCopy).toHaveBeenCalledTimes(2);
     expect(workingCopyApi.createWorkingCopyFromNode).toHaveBeenCalledWith('node-1');
-    expect(pushPath).toHaveBeenCalledWith('/t/console-1/parent-1/wc-1/folder/edit');
+    expect(pushPath).toHaveBeenCalledWith('/t/console-1/parent-1/node-1/folder/edit');
     expect(preconnectSpy).toHaveBeenCalledWith('folder');
   });
 
@@ -188,7 +188,7 @@ describe('createTreeConsoleActions.handleEdit', () => {
     await actions.handleEdit();
 
     expect(workingCopyApi.createWorkingCopyFromNode).not.toHaveBeenCalled();
-    expect(pushPath).toHaveBeenCalledWith('/t/console-1/parent-1/wc-existing/folder/edit');
+    expect(pushPath).toHaveBeenCalledWith('/t/console-1/parent-1/node-1/folder/edit');
   });
 
   it('opens edit dialog via context menu edit action', async () => {
@@ -206,7 +206,7 @@ describe('createTreeConsoleActions.handleEdit', () => {
 
     expect(workingCopyApi.getWorkingCopy).toHaveBeenCalledTimes(2);
     expect(workingCopyApi.createWorkingCopyFromNode).toHaveBeenCalledWith('node-1');
-    expect(pushPath).toHaveBeenCalledWith('/t/console-1/parent-1/wc-1/folder/edit');
+    expect(pushPath).toHaveBeenCalledWith('/t/console-1/parent-1/node-1/folder/edit');
   });
 
   it('navigates to the create dialog when treetable context menu invokes create', async () => {

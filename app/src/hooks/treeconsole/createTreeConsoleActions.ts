@@ -233,8 +233,6 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         return;
       }
 
-      const workingCopyId = (workingCopy.id as NodeId) ?? targetNodeId;
-
       const hintedParent =
         nodeRecord?.parentId ??
         (nodeHint as { parentId?: NodeId | null } | undefined)?.parentId ??
@@ -245,7 +243,12 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         return targetNodeId;
       })();
 
-      pushPath(`/t/${treeId}/${parentForRoute}/${workingCopyId}/${nodeType}/edit`);
+      const canonicalId =
+        (nodeRecord as { holderTargetId?: NodeId } | undefined)?.holderTargetId ??
+        (nodeHint as { holderTargetId?: NodeId } | undefined)?.holderTargetId ??
+        targetNodeId;
+
+      pushPath(`/t/${treeId}/${parentForRoute}/${canonicalId}/${nodeType}/edit`);
     } catch (error) {
       console.error('Failed to launch edit dialog:', error);
       showCommandError('UNKNOWN_ERROR', error instanceof Error ? error.message : String(error));

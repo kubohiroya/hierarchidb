@@ -64,60 +64,50 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
 
   // Determine mode based on action with guard:
   // If action=create but target node already exists (canonical), treat as edit.
-  const mode: 'create' | 'edit' = effectiveAction === NodeAction.CREATE ? 'create' : 'edit';
+  const requestedAction = params.action?.toLowerCase() ?? '';
+  const mode: 'create' | 'edit' =
+    requestedAction === 'edit' || effectiveAction === NodeAction.UPDATE ? 'edit' : 'create';
 
-  // targetNodeId is the working copy ID (UUID) for both create and edit
-
-  // Ensure edit mode uses a working copy node id in the URL
   React.useEffect(() => {
-    let disposed = false;
     (async () => {
-      if (!client || !isReady) return;
-      if (mode !== 'edit') return;
+      if (!isReady) return;
+
+      if (!client || mode !== 'edit') return;
+
       try {
         const query = await client.getQueryAPI();
         const wcApi = await client.getWorkingCopyAPI();
-        // If current target is already a WC (its parent is a WC holder), do nothing
+        let canonicalId = effectiveTargetNodeId as NodeId;
+
         const node = await query.getNode(effectiveTargetNodeId);
         if (node) {
           const parent = node.parentId ? await query.getNode(node.parentId) : null;
-          if (parent?.holderType === 'workingCopy') return;
+          if (parent?.holderType === 'workingCopy') {
+            canonicalId = (parent.holderTargetId as NodeId) ?? canonicalId;
+          } else if (node.holderType === 'workingCopy' && node.holderTargetId) {
+            canonicalId = node.holderTargetId as NodeId;
+          }
         }
-        // Treat targetNodeId as canonical id; find or create WC and redirect
-        const existing = await wcApi.getWorkingCopy(effectiveTargetNodeId);
-        const wc =
-          existing ??
-          (await (async () => {
-            await wcApi.createWorkingCopyFromNode(effectiveTargetNodeId);
-            return await wcApi.getWorkingCopy(effectiveTargetNodeId);
-          })());
-        if (!disposed && wc?.id && wc.id !== effectiveTargetNodeId) {
-          const search = location.searchStr || '';
-          const hash = location.hash || '';
-          void navigate({
-            to: `/t/${treeId}/${effectivePageNodeId}/${wc.id}/${effectiveNodeType}/${effectiveAction}${search}${hash}`,
-            replace: true,
-          });
+
+        const existing = await wcApi.getWorkingCopy(canonicalId);
+        if (!existing) {
+          await wcApi.createWorkingCopyFromNode(canonicalId);
         }
       } catch (e) {
         console.warn('[PluginDialogRoute] ensure working copy for edit failed', e);
       }
     })();
+
     return () => {
-      disposed = true;
     };
   }, [
     client,
     isReady,
     mode,
     effectiveTargetNodeId,
-    treeId,
     effectivePageNodeId,
     effectiveNodeType,
     effectiveAction,
-    navigate,
-    location.searchStr,
-    location.hash,
   ]);
 
   if (!isReady) {
@@ -135,7 +125,6 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
   const resolvedTargetNodeId = effectiveTargetNodeId as NodeId;
   const resolvedPageNodeId = effectivePageNodeId as NodeId;
   const resolvedNodeType = effectiveNodeType as string;
-  const workingCopyId = resolvedTargetNodeId;
 
   // Handle close
   const handleClose = () => {
@@ -157,7 +146,7 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
     <PluginDialogHost
       mode={mode}
       nodeType={resolvedNodeType}
-      nodeId={workingCopyId}
+      nodeId={resolvedTargetNodeId}
       pageNodeId={resolvedPageNodeId}
       treeId={resolvedTreeId}
       open={isOpen}

@@ -195,6 +195,22 @@
 - ロールバック手順：`AGENTS.md` と本タスクで更新した `TASKS.md` の差分を revert し、旧 tsup 記述を復元した上で `docs/turbo-tsdown-migration-plan.md` を参照して再検討する
 
 
+1216) Plugin Dialog Folder Edit 修正（P0）
+- ブランチ: `fix/plugin-dialog/folder-edit-save`（sandbox 制約で `main` 上で作業）
+- 依存: `packages/plugin-ui-host`, `packages/plugin-ui-sdk`, `app/src/router/routes/tree/PluginDialogRoute.tsx`
+- 受け入れ基準（DoD）:
+  - [ ] Folder Edit ダイアログで Save 実行後にダイアログが確実に閉じ、WorkingCopy が commit/discard された状態で TreeConsole の対象ノードへ遷移する
+  - [ ] commit トリガー時のログがモード/ノード種別を反映した 1 行に整理され、冗長な `[Folder-create]` 出力がなくなる
+  - [ ] `useDialogWorkingCopy` が Edit ルートで WorkingCopy ID を受け取っても正しく再利用できるよう調整し、canonical ID の場合には新規作成される
+  - [ ] `pnpm --filter @hierarchidb/plugin-ui-sdk test -- useWorkingCopy` が通過し、TASKS 運用ログに記録する
+- チェックリスト:
+  - [ ] PluginDialogRoute の mode 判定を route param と NodeAction の双方から決定し、edit ルートでは必ず `mode='edit'` になるよう修正
+  - [ ] useDialogWorkingCopy の edit 分岐で `wcAPI.getWorkingCopy(nodeId)` を先に試し、WorkingCopy ID を受けても二重作成しないようにする
+  - [ ] PluginDialogFooter / usePluginDialogController の `console.debug` 出力を整理し、必要に応じて NodeType/Mode を含むメッセージに統一する
+  - [ ] 関連ユニットテストを更新/追加し、エディット動作のリグレッションを防止する
+- ロールバック手順：該当ファイルの差分を revert し、`pnpm --filter @hierarchidb/plugin-ui-sdk test -- useWorkingCopy` を再実行して元の挙動に戻ったことを確認する
+
+
 910) plugin-registry stage worker 解決フロー修正（P0）
 - ブランチ: `fix/plugin-registry/stage-worker-specifier`（sandbox 制約で `main` 上で作業）
 - 依存: `packages/plugin-registry`, `packages/runtime/worker`, `packages/plugin-registry/scripts/postbuild.mjs`, `app/vite.config.ts`, Turbo 依存設定
@@ -2973,6 +2989,25 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1332) BasicInfo 共通化と runtime-worker 後処理整備（P0） — 完了 (2025-11-15)
+  - DoD:
+    - `TASKS.md` の Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記。
+    - `@hierarchidb/ui-plugin-basic-info` の現状を棚卸しし、同種の BasicInfo パネル提供パッケージが存在しないことを確認（`packages/ui/plugin-basic-info` 本体と `@hierarchidb/plugin-ui-host` の再エクスポートのみ）。
+    - resolver/location/spreadsheet plugin の BasicInfoStep ラッパーを削除し、`@hierarchidb/ui-plugin-basic-info` を直接利用させるようダイアログを更新（翻訳・バリデーション・WorkingCopy 更新ロジック含む）。
+    - `pnpm --filter @hierarchidb/route-plugin build` を実行し、RouteDetailsStep.tsx を含む UI ビルドで型/バンドルエラーが発生しないことを確認。
+    - `pnpm --filter @hierarchidb/runtime-worker test -- src/__tests__/wfl/basemap-working-copy-edit.wfl.test.ts` を実行して `@hierarchidb/basemap-plugin/worker` alias が解決され、wfl テストがモジュール解決エラーなく完了することを確認。
+    - `pnpm --filter @hierarchidb/runtime-worker test -- src/services/__tests__/unit/bulk-ops-cp.unit.test.ts` を実行し、bulk-ops／peer-entity／tx-wrapper／undo-redo を含む 40 test files / 84 tests が exit 0 で完了し、CommandProcessor/tx-wrapper で挿入されていたデバッグログが出力されないことを確認。
+  - 影響範囲：plugins/{resolver,location,spreadsheet}-plugin UI、`packages/runtime/worker` の CommandProcessor/command core ハンドラ、および basemap wfl / bulk-ops など runtime-worker のユニットテスト。
+  - ロールバック手順：下記の差分を revert の上、`pnpm --filter @hierarchidb/runtime-worker test -- src/services/__tests__/unit/bulk-ops-cp.unit.test.ts`・`pnpm --filter @hierarchidb/runtime-worker test -- src/__tests__/wfl/basemap-working-copy-edit.wfl.test.ts`・`pnpm --filter @hierarchidb/route-plugin build` を再実行して現状へ戻ることを確認。
+    - `plugins/location-plugin/src/common/components/LocationDialog.tsx`
+    - `plugins/location-plugin/src/common/components/steps/LocationBasicInfoStep.tsx`
+    - `plugins/resolver-plugin/src/ui/components/ResolverDialog.tsx`
+    - `plugins/resolver-plugin/src/ui/components/index.ts`
+    - `plugins/resolver-plugin/src/ui/components/steps/ResolverBasicInfoStep.tsx`
+    - `plugins/spreadsheet-plugin/src/ui/components/steps/BasicInfoStep.tsx`
+    - `packages/runtime/worker/src/services/CommandProcessor.ts`
+    - `packages/runtime/worker/src/services/command/core-handlers/index.ts`
+    - `packages/runtime/worker/src/services/__tests__/unit/tx-wrapper.unit.test.ts`
 - 1211) TreeConsole Create→Folder ダイアログ不表示調査（P0） — 完了 (2025-11-10)
   - DoD:
     - `TASKS.md` カンバン／運用ログに start/progress/done・ロールバック手順を記録。
@@ -7980,6 +8015,12 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-15 15:46 command: pnpm -C app test -- createTreeConsoleActions — exit 0。TreeConsole action factory のユニットテストで info panel 向け edit ハンドリングの回帰がないことを確認。
 - 2025-11-15 15:46 command: pnpm -C app test -- load-tree-router-handlers — exit 0。Router loader が `action=edit` を UPDATE として扱うルートのユニットテストを通過。
 - 2025-11-15 15:47 done: feat/ui-treeconsole/node-info-panel — Breadcrumb 常時表示と PluginDialogRoute 修正を反映済み。ロールバックは `TreeConsoleIntegration.tsx`, `TreeNodeInfoPanel.tsx`, `createTreeConsoleActions.ts`, `app/src/loader.ts`, `app/src/router/routes/tree/PluginDialogRoute.tsx`, `app/src/router/loaders/__tests__/unit/...` 差分を revert し、上記テストコマンドを再実行する。
+- 2025-11-15 16:05 progress: fix/plugin-dialog/folder-edit-save — UIPersistenceRegistry に warning exclusion list と getter/追加/削除 API を導入し、Folder ノードは registry レベルで警告対象から除外されるように実装。`peerDialogPersistence.ts` 周辺の default provider にも `isWarningSuppressed` を適用。
+- 2025-11-15 16:10 command: pnpm --filter @hierarchidb/plugin-base test — exit 1。`@hierarchidb/common-api` の `PluginTreeAPI - getPluginsForTree` 既存テストが期待値不一致（"Tree non-existent-tree not found" vs "non-existent-console"）で失敗する既知課題が残り、本タスク変更とは無関係である旨を記録。
+- 2025-11-15 16:12 command: pnpm --filter @hierarchidb/plugin-ui-host build — exit 0。対象パッケージに `typecheck` スクリプトが存在しなかったためビルドで代替し、tsdown で `@hierarchidb/runtime-worker` が external 扱いになる警告のみ発生（既知の挙動）。
+- 2025-11-15 16:13 progress: fix/plugin-dialog/folder-edit-save — Basemap ノードも warning exclusion list に追加し、default provider の初期セットを `['folder','basemap']` へ更新。ユニットテストに Basemap 向けの除外確認と複数ノードタイプの suppress ケースを追加。
+- 2025-11-15 16:14 command: pnpm --filter @hierarchidb/plugin-base test — exit 1。先行と同様 `@hierarchidb/common-api` の `PluginTreeAPI - getPluginsForTree` 既存テストが期待値不一致で失敗（"Tree non-existent-tree not found" vs "non-existent-console"）。今回の差分と無関係である旨を記録。
+- 2025-11-15 16:15 done: fix/plugin-dialog/folder-edit-save — Folder/Basemap ダイアログ表示時に `[UIPersistenceRegistry]` 警告が出ないことを確認。ロールバックは `packages/plugin-base/src/utils/peerDialogPersistence.ts` と同テストの差分を revert し、`pnpm --filter @hierarchidb/plugin-ui-host build` などで再確認する。
 - 2025-11-15 17:45 start: feat/plugin-dialog/footer-icons — MultiStepDialog フッターの Cancel/Back/Next/Create（Save）ボタンへ指定のアイコン（×/＜/＞/チェック）を付与するタスクを開始。DoD: TASKS 更新、アイコン実装＋テスト追加、`pnpm --filter @hierarchidb/plugin-ui-host test` 等のログ取得、ロールバック手順記載。
 - 2025-11-15 17:58 progress: feat/plugin-dialog/footer-icons — PluginDialogFooter の primary ボタンに `Close`/`ChevronLeft`/`ChevronRight`/`Check` の各 MUI アイコンを `startIcon` で付与し、ステップ位置に応じて Cancel/Back/Next/Create/Save へ反映。`packages/plugin-ui-host/src/headless/__tests__/PluginDialogFooter.test.tsx` を新設し、各ステートで期待するアイコンが描画されることを検証。
 - 2025-11-15 18:00 command: pnpm --filter @hierarchidb/plugin-ui-host test -- --run PluginDialogFooter — exit 0（新規テスト3件がグリーン）。
@@ -7996,6 +8037,11 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-15 20:14 command: pnpm run metadata:ensure — exit 0（既存ファイル検知により 4 つのデータセットすべてスキップ）。
 - 2025-11-15 20:15 done: chore/metadata/ensure-shape — metadata 生成を dev/build 前処理化し、Shape Plugin 単体 build でも `metadata:ensure` が走る構成を反映。ロールバックは `package.json`, `plugins/shape-plugin/package.json`, `scripts/data-generation/generate-metadata.mjs`, `packages/features/fetch-save-metadata/src/fetchSaveMetadata.ts` の差分を revert し、`pnpm run metadata:ensure` を再実行すること。
 - 2025-11-15 16:01 progress: feat/ui-treeconsole/node-info-panel — TreeNodeInfoPanel の NodeTypeIcon が常に primary 色になる問題を、`getPluginIconColor`/`rainbowColors` ベースの既存ロジックを流用して解消。`nodeType` に応じて manifest 色または depth 依存グラデーションを反映し、Breadcrumb や TreeTable と同じ色決定が行われるようにした（テストコマンドは未実行、UI 変更のみ）。
+- 2025-11-15 21:20 start: fix/plugin-dialog/folder-edit-save — Folder Edit ダイアログの Save が閉じない件を調査開始。ログが `[Folder-create]` 固定で 3 回出ており、mode 判定や WorkingCopy 読み込みが誤っていることを疑う。
+- 2025-11-15 21:28 progress: fix/plugin-dialog/folder-edit-save — PluginDialogRoute の mode 判定を `params.action` と NodeAction UPDATE の双方で行うよう修正し、useDialogWorkingCopy の edit 分岐で WorkingCopy ID を先に再利用するよう改修。PluginDialogFooter/Controller の冗長な debug 出力を削除し、`[PluginDialogShell] submitting dialog` の 1 行に統合。
+- 2025-11-15 21:35 command: pnpm --filter @hierarchidb/plugin-ui-sdk test -- useWorkingCopy — exit 0。edit モードのユニットテストを追加し、WorkingCopy ID/Canonical ID 両対応の挙動を検証。
+- 2025-11-15 21:40 command: pnpm -C app test -- createTreeConsoleActions — exit 0。Edit ルートで canonical nodeId を渡す変更に伴い、TreeConsole action のユニットテスト期待値を更新し、回帰がないことを確認。
+- 2025-11-15 21:41 done: fix/plugin-dialog/folder-edit-save — Folder Edit Save で mode が create 固定になる問題と WorkingCopy 再利用の欠如を解消。ロールバックは `packages/plugin-ui-host`, `packages/plugin-ui-sdk`, `app/src/router/routes/tree/PluginDialogRoute.tsx`, `app/src/hooks/treeconsole/createTreeConsoleActions.ts` の差分を戻し、上記テストを再実行する。
 - 2025-11-15 16:20 start: fix/app/plugin-menu-icons — SpeedDial および TreeConsole コンテキストメニューで folder/basemap/resolver 以外のプラグイン nodeType がすべて代替アイコン表示になる回帰を調査・修正開始。DoD: (1) TASKS Kanban/ログ更新（start→done + rollback）、(2) SpeedDial/ContextMenu 双方で全 nodeType が manifest 設定に沿ったアイコンへ戻ることを手動確認、(3) DynamicSpeedDial 等のユニット or 明示的検証手順を整備し成功ログを残す、(4) ロールバック手順と実行コマンドを記載。
 - 2025-11-15 17:05 progress: fix/app/plugin-menu-icons — `@hierarchidb/ui-icon` の `getMuiIconComponent` / `getMuiIconWithColor` が正規化後のアイコン名のみで global icon map を参照していたため、nodeType ベースで登録されるプラグイン固有アイコンを拾えず汎用 MUI アイコンへフォールバックしていたと判明。raw 名称 → 正規化名称の順で global map / static map を探索するよう修正し、`collectPascalCandidates` ヘルパーで重複排除を行った。`packages/ui/icon/src/__tests__/getMuiIconComponent.test.tsx` を新設し、raw 名称で custom icon が優先されること＆ `getMuiIconWithColor` が色指定を維持することを検証。
 - 2025-11-15 17:28 command: pnpm vitest run packages/ui/icon/src/__tests__/getMuiIconComponent.test.tsx — exit 0（`packages/plugin-presentation/package.json` の duplicate devDependencies 警告は既知の既存 issue。テスト 2 件すべてグリーン）。
@@ -8018,6 +8064,12 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-15 17:06 command: pnpm -C app typecheck — exit 0。toolbar/import ガード関連の型調整（vitest config alias 追加含む）後にアプリ全体の typecheck を通過。
 - 2025-11-15 17:45 start: refactor/worker/test-type-fixes — basemap WFL の worker store import 失敗と FulltextIndexService 未初期化によるユニットテスト崩壊を再現。Fake IndexedDB を本番相当で初期化する共通ヘルパーと CommandProcessor テストの再整備に着手。
 - 2025-11-15 18:25 command: pnpm --filter @hierarchidb/runtime-worker test -- packages/runtime/worker/src/__tests__/wfl/basemap-working-copy-edit.wfl.test.ts packages/runtime/worker/src/services/__tests__/unit/bulk-ops-cp.unit.test.ts packages/runtime/worker/src/services/__tests__/unit/peer-entity-delete-policy.unit.test.ts packages/runtime/worker/src/services/__tests__/unit/tx-wrapper.unit.test.ts packages/runtime/worker/src/services/__tests__/unit/undo-redo-move-remove.unit.test.ts — exit 0。basemap WFL と CommandProcessor 系ユニットテストの再実行でグリーンを確認（FulltextIndexService の DatabaseClosedError はテスト teardown 時の既知警告として記録）。
+- 2025-11-15 19:50 start: chore/runtime/basic-info-refactor — `@hierarchidb/ui-plugin-basic-info` を共通ソースとして扱い、resolver/location/spreadsheet plugin の BasicInfoStep を統一するタスクに着手。DoD: Kanban/ログ更新、各プラグインのラッパー撤去と shared step への切替、RouteDetailsStep ビルド確認、basemap WFL/resident bulk-ops テストで alias/CommandProcessor 修正を検証、デバッグログ撤去、ロールバック手順整備。
+- 2025-11-15 20:00 progress: chore/runtime/basic-info-refactor — `packages/ui/plugin-basic-info` の提供機能と `@hierarchidb/plugin-ui-host` 再エクスポートを棚卸しし、重複パッケージがないことを確認。`plugins/{resolver,location,spreadsheet}-plugin` の BasicInfoStep ラッパーを削除し、WorkingCopy 反映／翻訳バリデーションロジックをダイアログ内に移設。`packages/runtime/worker` の CommandProcessor/コアハンドラ/tx-wrapper テストからデバッグ用 `console.log` を撤去し、後処理タスク/peer-store の振る舞いを整理。
+- 2025-11-15 20:06 command: pnpm --filter @hierarchidb/route-plugin build — exit 0。tsdown ビルドで RouteDetailsStep.tsx を含む UI 出力がエラーなく生成されることを確認。
+- 2025-11-15 20:08 command: pnpm --filter @hierarchidb/runtime-worker test -- src/services/__tests__/unit/bulk-ops-cp.unit.test.ts — exit 0（40 test files / 84 tests）。bulk-ops／peer-entity-delete-policy／tx-wrapper／undo-redo 系ユニットテストがグリーンで、CommandProcessor の post-commit ログ抑制が確認できた。
+- 2025-11-15 20:10 command: pnpm --filter @hierarchidb/runtime-worker test -- src/__tests__/wfl/basemap-working-copy-edit.wfl.test.ts — exit 0（40 test files / 84 tests）。`@hierarchidb/basemap-plugin/worker` alias でモジュールが解決され、WFL basemap テストを含むスイートが成功することを再確認。
+- 2025-11-15 20:15 done: chore/runtime/basic-info-refactor — DoD を満たしたため完了。resolver/location/spreadsheet の BasicInfoStep 差分、および runtime-worker/tx-wrapper テスト内のログ出力撤去を revert し、上記 2 つの `pnpm --filter @hierarchidb/runtime-worker test` コマンドと `pnpm --filter @hierarchidb/route-plugin build` を再実行すればロールバック可能。
 
 ## 今日の着手（運用ログ） <a id="worklog-12"></a>
 

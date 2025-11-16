@@ -1268,7 +1268,12 @@ export function usePluginDialogController(
   const saveDraftInProgress = useRef(false);
 
   const handleSubmit = useCallback(async () => {
-    console.debug('[Folder-create]');
+    if (typeof console !== 'undefined' && typeof console.debug === 'function') {
+      console.debug('[PluginDialogShell] submitting dialog', {
+        nodeType,
+        mode,
+      });
+    }
     const finalData = {
       ...workingCopy,
       name: basicInfo.name,
@@ -1290,15 +1295,7 @@ export function usePluginDialogController(
     }
 
     onClose();
-  }, [
-    workingCopy,
-    basicInfo,
-    saveWorkingCopy,
-    discardWorkingCopy,
-    onSuccess,
-    navigateToNode,
-    onClose,
-  ]);
+  }, [workingCopy, basicInfo.name, basicInfo.description, basicInfo.tags, saveWorkingCopy, onClose, nodeType, mode, discardWorkingCopy, onSuccess, navigateToNode]);
 
   const handleSaveDraft = useCallback(async () => {
     try {
@@ -1471,7 +1468,6 @@ export function usePluginDialogController(
     invalidMessageMap: {},
     onRequestClose: handleCloseRequest,
     onRequestCommit: () => {
-      console.debug('[Folder-create]');
       handleSubmit().catch(() => void 0);
     },
     isDirty: hasUnsavedChanges,

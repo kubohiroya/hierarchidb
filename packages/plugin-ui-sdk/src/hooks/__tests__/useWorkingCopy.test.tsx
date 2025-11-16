@@ -18,14 +18,21 @@ vi.mock('@hierarchidb/runtime-client', async () => {
 });
 
 function createMockClient(options: {
-  existingWorkingCopy?: { id: NodeId; name?: string; description?: string; data?: Record<string, unknown> };
+  existingWorkingCopy?: { id: NodeId; name?: string; description?: string; data?: Record<string, unknown> } | null;
+  canonicalNodeId?: NodeId;
 }) {
-  const { existingWorkingCopy } = options;
+  const { existingWorkingCopy = null, canonicalNodeId } = options;
+  let currentWorkingCopy = existingWorkingCopy;
+
+  const matchesCurrent = (id: NodeId) => {
+    if (!currentWorkingCopy) return false;
+    return currentWorkingCopy.id === id || (canonicalNodeId ? canonicalNodeId === id : false);
+  };
 
   const wcAPI = {
     getWorkingCopy: vi.fn(async (id: NodeId) => {
-      if (existingWorkingCopy && existingWorkingCopy.id === id) {
-        return existingWorkingCopy;
+      if (matchesCurrent(id)) {
+        return currentWorkingCopy;
       }
       return null;
     }),
@@ -35,6 +42,15 @@ function createMockClient(options: {
       description: '',
       data: {},
     })),
+    createWorkingCopyFromNode: vi.fn(async (id: NodeId) => {
+      currentWorkingCopy = {
+        id: `wc-${id}` as NodeId,
+        name: `Draft ${id}`,
+        description: '',
+        data: {},
+      };
+      return currentWorkingCopy;
+    }),
     updateWorkingCopy: vi.fn(async () => {}),
     commitWorkingCopy: vi.fn(async () => ({ status: 'ok', nodeId: 'n:1' })),
     discardWorkingCopy: vi.fn(async () => {}),
@@ -112,6 +128,50 @@ describe('useWorkingCopy (create mode)', () => {
   });
 });
 
+describe('useDialogWorkingCopy (edit mode)', () => {
+  it('reuses an existing working copy when nodeId already points to one', async () => {
+    const existing = { id: 'wc-existing' as NodeId, name: 'Existing', description: 'desc', data: {} };
+    const { workerClient, wcAPI } = createMockClient({ existingWorkingCopy: existing });
+
+    const { result } = renderHook(() =>
+      useDialogWorkingCopy({
+        mode: 'edit',
+        nodeType: 'folder',
+        nodeId: existing.id,
+        treeId: 'console-1' as TreeId,
+        workerClient,
+      })
+    );
+
+    await waitFor(() => result.current.loading === false);
+
+    expect(wcAPI.getWorkingCopy).toHaveBeenCalledWith(existing.id);
+    expect(wcAPI.createWorkingCopyFromNode).not.toHaveBeenCalled();
+    expect(result.current.workingCopy?.treeNodeId).toBe(existing.id);
+  });
+
+  it('creates a working copy when only canonical node id is provided', async () => {
+    const canonicalId = 'node-canonical' as NodeId;
+    const { workerClient, wcAPI } = createMockClient({ existingWorkingCopy: null, canonicalNodeId: canonicalId });
+
+    const { result } = renderHook(() =>
+      useDialogWorkingCopy({
+        mode: 'edit',
+        nodeType: 'folder',
+        nodeId: canonicalId,
+        treeId: 'console-1' as TreeId,
+        workerClient,
+      })
+    );
+
+    await waitFor(() => result.current.loading === false);
+
+    expect(wcAPI.getWorkingCopy).toHaveBeenCalledWith(canonicalId);
+    expect(wcAPI.createWorkingCopyFromNode).toHaveBeenCalledWith(canonicalId);
+    expect(result.current.workingCopy?.treeNodeId).toMatch(/^wc-node-canonical/);
+  });
+});
+
 describe('legacy useWorkingCopy hook (create mode)', () => {
   it('reuses an existing working copy when nodeId is supplied', async () => {
     const existing = { id: 'wc-existing' as NodeId, name: 'Existing', description: 'desc', data: { alpha: 1 } };
@@ -156,4 +216,3 @@ describe('legacy useWorkingCopy hook (create mode)', () => {
     expect(result.current.workingCopy).not.toBeNull();
   });
 });
-
