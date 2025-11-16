@@ -2973,6 +2973,25 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1332) BasicInfo 共通化と runtime-worker 後処理整備（P0） — 完了 (2025-11-15)
+  - DoD:
+    - `TASKS.md` の Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記。
+    - `@hierarchidb/ui-plugin-basic-info` の現状を棚卸しし、同種の BasicInfo パネル提供パッケージが存在しないことを確認（`packages/ui/plugin-basic-info` 本体と `@hierarchidb/plugin-ui-host` の再エクスポートのみ）。
+    - resolver/location/spreadsheet plugin の BasicInfoStep ラッパーを削除し、`@hierarchidb/ui-plugin-basic-info` を直接利用させるようダイアログを更新（翻訳・バリデーション・WorkingCopy 更新ロジック含む）。
+    - `pnpm --filter @hierarchidb/route-plugin build` を実行し、RouteDetailsStep.tsx を含む UI ビルドで型/バンドルエラーが発生しないことを確認。
+    - `pnpm --filter @hierarchidb/runtime-worker test -- src/__tests__/wfl/basemap-working-copy-edit.wfl.test.ts` を実行して `@hierarchidb/basemap-plugin/worker` alias が解決され、wfl テストがモジュール解決エラーなく完了することを確認。
+    - `pnpm --filter @hierarchidb/runtime-worker test -- src/services/__tests__/unit/bulk-ops-cp.unit.test.ts` を実行し、bulk-ops／peer-entity／tx-wrapper／undo-redo を含む 40 test files / 84 tests が exit 0 で完了し、CommandProcessor/tx-wrapper で挿入されていたデバッグログが出力されないことを確認。
+  - 影響範囲：plugins/{resolver,location,spreadsheet}-plugin UI、`packages/runtime/worker` の CommandProcessor/command core ハンドラ、および basemap wfl / bulk-ops など runtime-worker のユニットテスト。
+  - ロールバック手順：下記の差分を revert の上、`pnpm --filter @hierarchidb/runtime-worker test -- src/services/__tests__/unit/bulk-ops-cp.unit.test.ts`・`pnpm --filter @hierarchidb/runtime-worker test -- src/__tests__/wfl/basemap-working-copy-edit.wfl.test.ts`・`pnpm --filter @hierarchidb/route-plugin build` を再実行して現状へ戻ることを確認。
+    - `plugins/location-plugin/src/common/components/LocationDialog.tsx`
+    - `plugins/location-plugin/src/common/components/steps/LocationBasicInfoStep.tsx`
+    - `plugins/resolver-plugin/src/ui/components/ResolverDialog.tsx`
+    - `plugins/resolver-plugin/src/ui/components/index.ts`
+    - `plugins/resolver-plugin/src/ui/components/steps/ResolverBasicInfoStep.tsx`
+    - `plugins/spreadsheet-plugin/src/ui/components/steps/BasicInfoStep.tsx`
+    - `packages/runtime/worker/src/services/CommandProcessor.ts`
+    - `packages/runtime/worker/src/services/command/core-handlers/index.ts`
+    - `packages/runtime/worker/src/services/__tests__/unit/tx-wrapper.unit.test.ts`
 - 1211) TreeConsole Create→Folder ダイアログ不表示調査（P0） — 完了 (2025-11-10)
   - DoD:
     - `TASKS.md` カンバン／運用ログに start/progress/done・ロールバック手順を記録。
@@ -8018,6 +8037,12 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-15 17:06 command: pnpm -C app typecheck — exit 0。toolbar/import ガード関連の型調整（vitest config alias 追加含む）後にアプリ全体の typecheck を通過。
 - 2025-11-15 17:45 start: refactor/worker/test-type-fixes — basemap WFL の worker store import 失敗と FulltextIndexService 未初期化によるユニットテスト崩壊を再現。Fake IndexedDB を本番相当で初期化する共通ヘルパーと CommandProcessor テストの再整備に着手。
 - 2025-11-15 18:25 command: pnpm --filter @hierarchidb/runtime-worker test -- packages/runtime/worker/src/__tests__/wfl/basemap-working-copy-edit.wfl.test.ts packages/runtime/worker/src/services/__tests__/unit/bulk-ops-cp.unit.test.ts packages/runtime/worker/src/services/__tests__/unit/peer-entity-delete-policy.unit.test.ts packages/runtime/worker/src/services/__tests__/unit/tx-wrapper.unit.test.ts packages/runtime/worker/src/services/__tests__/unit/undo-redo-move-remove.unit.test.ts — exit 0。basemap WFL と CommandProcessor 系ユニットテストの再実行でグリーンを確認（FulltextIndexService の DatabaseClosedError はテスト teardown 時の既知警告として記録）。
+- 2025-11-15 19:50 start: chore/runtime/basic-info-refactor — `@hierarchidb/ui-plugin-basic-info` を共通ソースとして扱い、resolver/location/spreadsheet plugin の BasicInfoStep を統一するタスクに着手。DoD: Kanban/ログ更新、各プラグインのラッパー撤去と shared step への切替、RouteDetailsStep ビルド確認、basemap WFL/resident bulk-ops テストで alias/CommandProcessor 修正を検証、デバッグログ撤去、ロールバック手順整備。
+- 2025-11-15 20:00 progress: chore/runtime/basic-info-refactor — `packages/ui/plugin-basic-info` の提供機能と `@hierarchidb/plugin-ui-host` 再エクスポートを棚卸しし、重複パッケージがないことを確認。`plugins/{resolver,location,spreadsheet}-plugin` の BasicInfoStep ラッパーを削除し、WorkingCopy 反映／翻訳バリデーションロジックをダイアログ内に移設。`packages/runtime/worker` の CommandProcessor/コアハンドラ/tx-wrapper テストからデバッグ用 `console.log` を撤去し、後処理タスク/peer-store の振る舞いを整理。
+- 2025-11-15 20:06 command: pnpm --filter @hierarchidb/route-plugin build — exit 0。tsdown ビルドで RouteDetailsStep.tsx を含む UI 出力がエラーなく生成されることを確認。
+- 2025-11-15 20:08 command: pnpm --filter @hierarchidb/runtime-worker test -- src/services/__tests__/unit/bulk-ops-cp.unit.test.ts — exit 0（40 test files / 84 tests）。bulk-ops／peer-entity-delete-policy／tx-wrapper／undo-redo 系ユニットテストがグリーンで、CommandProcessor の post-commit ログ抑制が確認できた。
+- 2025-11-15 20:10 command: pnpm --filter @hierarchidb/runtime-worker test -- src/__tests__/wfl/basemap-working-copy-edit.wfl.test.ts — exit 0（40 test files / 84 tests）。`@hierarchidb/basemap-plugin/worker` alias でモジュールが解決され、WFL basemap テストを含むスイートが成功することを再確認。
+- 2025-11-15 20:15 done: chore/runtime/basic-info-refactor — DoD を満たしたため完了。resolver/location/spreadsheet の BasicInfoStep 差分、および runtime-worker/tx-wrapper テスト内のログ出力撤去を revert し、上記 2 つの `pnpm --filter @hierarchidb/runtime-worker test` コマンドと `pnpm --filter @hierarchidb/route-plugin build` を再実行すればロールバック可能。
 
 ## 今日の着手（運用ログ） <a id="worklog-12"></a>
 

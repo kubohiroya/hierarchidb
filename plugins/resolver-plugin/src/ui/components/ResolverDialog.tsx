@@ -1,8 +1,8 @@
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/common-types';
+import { Box, FormHelperText, Typography } from '@mui/material';
 import type { ResolverEntity, ResolverWorkingCopyEntity, SchemaInfo, PreviewConfig } from '../../common/types/index.js';
-import { ResolverBasicInfoStep } from './steps/ResolverBasicInfoStep.js';
 import { SchemaSelectionStep } from './steps/SchemaSelectionStep.js';
 import { PropertyMappingStep } from './steps/PropertyMappingStep.js';
 import { ValidationConfigStep } from './steps/ValidationConfigStep.js';
@@ -29,6 +29,7 @@ import {
   type MultiDialogPosition,
 } from '@hierarchidb/ui-dialog';
 import { readRuntimeMode } from '@hierarchidb/util';
+import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 
 type ResolverDialogStep = {
   id: string;
@@ -162,19 +163,72 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     onCancel();
   }, [onCancel]);
 
+  const basicInfoMode: 'create' | 'edit' = entity ? 'edit' : 'create';
+
+  const basicInfoValidationError = useMemo(() => {
+    const name = workingCopy?.name ?? '';
+    if (!name.trim()) return 'Name is required';
+    if (name.length > 100) return 'Name must be 100 characters or less';
+    if (workingCopy?.description && workingCopy.description.length > 500) {
+      return 'Description must be 500 characters or less';
+    }
+    return null;
+  }, [workingCopy?.description, workingCopy?.name]);
+
+  const handleBasicInfoChange = useCallback(
+    (value: BasicInfoData) => {
+      updateWorkingCopy({
+        name: value.name,
+        description: value.description,
+        tags: value.tags,
+      });
+    },
+    [updateWorkingCopy],
+  );
+
   const steps = useMemo((): ResolverDialogStep[] => [
     {
       id: '1',
       label: STEPS[0]!,
       component: (
-        <ResolverBasicInfoStep
-          data={workingCopy}
-          onUpdate={updateWorkingCopy}
-          onValidationChange={() => {}}
-          mode={mode}
-        />
+        <Box sx={{ maxWidth: 600 }}>
+          <Typography variant="h6" gutterBottom>
+            Basic Information
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Provide basic information for your property resolver configuration.
+          </Typography>
+          <SharedBasicInfoStep
+            name={workingCopy?.name ?? ''}
+            description={workingCopy?.description ?? ''}
+            tags={workingCopy?.tags ?? []}
+            mode={basicInfoMode}
+            validate={({ name, description }: BasicInfoData) => {
+              if (!name.trim()) return 'Name is required';
+              if (name.length > 100) return 'Name must be 100 characters or less';
+              if (description && description.length > 500) {
+                return 'Description must be 500 characters or less';
+              }
+              return null;
+            }}
+            onChange={handleBasicInfoChange}
+          />
+          <FormHelperText error={Boolean(basicInfoValidationError)} sx={{ mt: 1 }}>
+            {basicInfoValidationError ?? ' '}
+          </FormHelperText>
+          <Box sx={{ mt: 2, p: 2, bgcolor: 'info.main', color: 'info.contrastText', borderRadius: 1 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+              What is Property Resolver?
+            </Typography>
+            <Typography variant="body2">
+              Property Resolver allows you to create mapping rules between different data schemas.
+              It&apos;s useful when you need to transform data properties from one format to another,
+              validate data integrity, handle duplicates, and preview the mapping results.
+            </Typography>
+          </Box>
+        </Box>
       ),
-      validate: async () => Boolean(workingCopy?.name?.trim()),
+      validate: async () => !basicInfoValidationError,
     },
     {
       id: '2',
@@ -245,16 +299,16 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
       ),
       validate: async () => true,
     },
-  ], [workingCopy, updateWorkingCopy, sourceSchema, targetSchema]);
+  ], [basicInfoMode, basicInfoValidationError, handleBasicInfoChange, sourceSchema, targetSchema, updateWorkingCopy, workingCopy]);
 
   const filledSteps = useMemo(() => [
-    Boolean(workingCopy?.name?.trim()),
+    !basicInfoValidationError,
     Boolean(workingCopy?.sourceSchema) && Boolean(workingCopy?.targetSchema),
     Array.isArray(workingCopy?.mappingRules),
     true,
     Boolean(workingCopy?.duplicateResolution),
     true,
-  ], [workingCopy]);
+  ], [basicInfoValidationError, workingCopy]);
 
   const enabledMatrix = useMemo(() => [
     true,

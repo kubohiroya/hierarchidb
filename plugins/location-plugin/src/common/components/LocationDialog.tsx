@@ -12,7 +12,6 @@ import type {
   LocationDataSource,
 } from '../types/index.js';
 import { useTranslation } from '../i18n/index.js';
-import { LocationBasicInfoStep } from './steps/LocationBasicInfoStep.js';
 import { LocationDataSourceStep } from './steps/LocationDataSourceStep.js';
 import { LocationLicenseStep } from './steps/LocationLicenseStep.js';
 import { LocationSelectionStep } from './steps/LocationSelectionStep.js';
@@ -42,6 +41,7 @@ import {
 import { notify } from '@hierarchidb/components';
 
 import { useWorkingCopy } from '@hierarchidb/plugin-ui-sdk';
+import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 // import { useToastNotifications } from '@hierarchidb/components/toast/ToastProvider.js';
 
 const toIdString = (value?: LocationDialogProps['nodeId']): string | undefined =>
@@ -197,7 +197,24 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
       id: 'basic-info',
       label: translations.basicInfo.title,
       component: ({ data, onChange }: { data: LocationWorkingCopy; onChange: (patch: Partial<LocationWorkingCopy>) => void }) => (
-        <LocationBasicInfoStep workingCopy={data} onUpdate={onChange} mode={mode} />
+        <SharedBasicInfoStep
+          name={data.draft?.name ?? ''}
+          description={data.draft?.description ?? ''}
+          tags={data.tags ?? []}
+          mode={mode}
+          tagSuggestions={translations.basicInfo.tagSuggestions ?? []}
+          validate={({ name }) => (name.trim().length ? null : translations.errors.nameRequired)}
+          onChange={(value: BasicInfoData) => {
+            onChange({
+              draft: {
+                ...data.draft,
+                name: value.name,
+                description: value.description,
+              },
+              tags: value.tags,
+            });
+          }}
+        />
       ),
     },
     {
@@ -237,11 +254,13 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     },
   ]), [
     translations.basicInfo.title,
+    translations.basicInfo.tagSuggestions,
     translations.dialog.dataSourceLabel,
     translations.dialog.licenseAgreementLabel,
     translations.selection.title,
     translations.panel.processingSettings,
     translations.mapPreview?.title,
+    translations.errors?.nameRequired,
     mode,
   ]);
 
