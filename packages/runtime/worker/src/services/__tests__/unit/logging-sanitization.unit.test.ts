@@ -1,9 +1,23 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { CommandProcessor } from '../../CommandProcessor.js';
 import type { CoreDB } from '../../CoreDB.js';
 import type { CommandEnvelope } from '../../command-types.js';
+import { createFulltextTestDB, destroyFulltextTestDB } from '../../test-helpers/fulltextTestDB.js';
 
-const coreDBStub = {} as CoreDB;
+let coreDBStub: CoreDB;
+let fulltextDb: Awaited<ReturnType<typeof createFulltextTestDB>>;
+
+beforeAll(async () => {
+  fulltextDb = await createFulltextTestDB('logging-sanitization');
+  coreDBStub = {
+    fulltextNodes: fulltextDb.fulltextNodes,
+    fulltextIndexes: fulltextDb.fulltextIndexes,
+  } as Partial<CoreDB> as CoreDB;
+});
+
+afterAll(async () => {
+  await destroyFulltextTestDB(fulltextDb);
+});
 
 describe('ZE-4: logging and event sanitization', () => {
   it('does not record event for validation failure', async () => {

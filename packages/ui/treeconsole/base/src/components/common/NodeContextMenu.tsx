@@ -22,6 +22,7 @@ import { type MouseEvent, type ReactElement, useEffect, useRef, useState } from 
 
 export interface NodeContextMenuProps {
   anchorEl: HTMLElement | null;
+  anchorPosition?: { top: number; left: number } | null;
   open: boolean;
   onClose: () => void;
   nodeId: string;
@@ -57,6 +58,7 @@ export interface NodeContextMenuProps {
 export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | null {
   const {
     anchorEl,
+    anchorPosition,
     open,
     onClose,
     nodeType = 'folder',
@@ -183,13 +185,34 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     nodeType === 'folder' || nodeType === 'ProjectFolder' || nodeType === 'ResourceFolder';
   const allowTrash = (typeof canTrash === 'boolean' ? canTrash : undefined) ?? canRemove ?? true;
 
+  const safeAnchorEl = (() => {
+    try {
+      if (!anchorEl) return null;
+      const doc = anchorEl.ownerDocument || document;
+      return doc.contains(anchorEl) ? anchorEl : null;
+    } catch (error) {
+      console.warn('[NodeContextMenu] Failed to validate context menu anchor', error);
+      return null;
+    }
+  })();
+
+  const fallbackAnchorPosition = !safeAnchorEl && anchorPosition ? anchorPosition : null;
+
+  useEffect(() => {
+    if (open && !safeAnchorEl && !fallbackAnchorPosition) {
+      requestAnimationFrame(() => handleMainMenuClose());
+    }
+  }, [open, safeAnchorEl, fallbackAnchorPosition]);
+
   return (
     <>
       {/*
        */}
       <Menu
-        anchorEl={anchorEl}
-        open={open}
+        anchorEl={safeAnchorEl}
+        anchorReference={fallbackAnchorPosition ? 'anchorPosition' : 'anchorEl'}
+        anchorPosition={fallbackAnchorPosition ?? undefined}
+        open={open && (!!safeAnchorEl || !!fallbackAnchorPosition)}
         onClose={handleMainMenuClose}
         disablePortal={false}
         keepMounted={false}

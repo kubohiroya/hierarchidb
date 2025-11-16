@@ -10,6 +10,7 @@ import type { TreeTableController } from '../../types.js';
 
 interface TreeTableContextMenuState {
   anchorEl: HTMLElement | null;
+  anchorPosition: { left: number; top: number } | null;
   node: TreeNode | null;
 }
 
@@ -46,7 +47,8 @@ export function TreeTableContextMenu({
   return (
     <ContextMenuComponent
       anchorEl={contextMenuState.anchorEl}
-      open={Boolean(contextMenuState.anchorEl)}
+      anchorPosition={contextMenuState.anchorPosition}
+      open={Boolean(contextMenuState.anchorEl) || Boolean(contextMenuState.anchorPosition)}
       onClose={handleClose}
       nodeId={node?.id || ''}
       nodeType={node?.nodeType || 'folder'}

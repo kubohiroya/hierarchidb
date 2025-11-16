@@ -123,6 +123,7 @@ function createAdapterFromPeerStore<TData>(store: PeerStore<TData>): PeerEntitie
 class UIPersistenceRegistry {
   private providers = new Map<string, PeerDialogPersistence>();
   private dbCache = new Map<string, PeerEntitiesDBAdapter | null>();
+  private suppressedWarnings = new Set<string>(['folder']);
 
   register(nodeType: string, provider: PeerDialogPersistence) {
     this.providers.set(nodeType, provider);
@@ -195,7 +196,7 @@ class UIPersistenceRegistry {
         return adapter;
       }
 
-      if (typeof console !== 'undefined') {
+      if (typeof console !== 'undefined' && !this.suppressedWarnings.has(nodeType)) {
         console.warn('[UIPersistenceRegistry] No peer store registered for node type', nodeType);
       }
       this.dbCache.set(nodeType, null);
@@ -291,9 +292,17 @@ class UIPersistenceRegistry {
       },
     };
   }
+
+  suppressWarningFor(nodeType: string): void {
+    if (nodeType) {
+      this.suppressedWarnings.add(nodeType);
+    }
+  }
 }
 
 export const UIPersistence = new UIPersistenceRegistry();
+
+UIPersistence.suppressWarningFor('folder');
 
 // Convenience wrappers (default provider)
 export const getPeerDisplayMode = (nodeType: string, nodeId: string) =>

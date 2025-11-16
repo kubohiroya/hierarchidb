@@ -202,6 +202,10 @@ export async function createWorkingCopyFromNode(
   const sourceNode = await coreDB.getNode(nodeId);
 
   if (!sourceNode) {
+    const existingWc = await getWorkingCopy(coreDB, nodeId);
+    if (existingWc) {
+      return nodeId;
+    }
     throw new Error('Node not found');
   }
 
@@ -313,9 +317,10 @@ export async function commitWorkingCopyV2(
   const originalNode = await coreDB.nodes.get(targetNodeId);
   const siblingNames = await getChildNames(coreDB, targetParentNodeId);
 
-  // Determine name and conflict policy for the eventual node name
-  let finalName = wcNode.name;
-  const nameConflicts = siblingNames.includes(finalName);
+  const baseName = wcNode.name;
+  let finalName = baseName;
+  const sameNameCount = siblingNames.filter((name) => name === baseName).length;
+  const nameConflicts = sameNameCount > (originalNode ? 1 : 0);
 
   if (!originalNode) {
     // Draft path: create new node with id=targetNodeId
@@ -441,17 +446,18 @@ export async function commitWorkingCopy(
     // Check for name conflict
     const siblingNames = await getChildNames(coreDB, parentId);
     let name = workingCopyNode.name;
+    const sameNameCount = siblingNames.filter((n) => n === name).length;
+    const nameConflicts = sameNameCount > 1;
 
-    if (siblingNames.includes(name)) {
+    if (nameConflicts) {
       if (onNameConflict === 'error') {
         return {
           success: false,
           error: `Name "${name}" already exists`,
           code: WorkerErrorCode.VALIDATION_ERROR,
         };
-      } else {
-        name = createNewName(siblingNames, name);
       }
+      name = createNewName(siblingNames, name);
     }
 
     // Check for version conflict (optimistic locking)

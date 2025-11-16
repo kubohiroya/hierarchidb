@@ -63,7 +63,11 @@ export interface ColumnBuilderParams {
   setEditingNodeId: (value: string | null) => void;
   setEditingField: (value: 'name' | 'description' | null) => void;
   treeId?: string;
-  setContextMenuState: React.Dispatch<React.SetStateAction<{ anchorEl: HTMLElement | null; node: TreeNode | null }>>;
+  setContextMenuState: React.Dispatch<React.SetStateAction<{
+    anchorEl: HTMLElement | null;
+    anchorPosition: { left: number; top: number } | null;
+    node: TreeNode | null;
+  }>>;
   visualSelectionSet: Set<NodeId>;
   useTrashColumns: boolean;
   trashAction: 'restore' | 'empty';
@@ -320,7 +324,16 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                 if (toSelect.length) controller?.onNodeSelect?.(toSelect, true);
                 return;
               }
-              setContextMenuState({ anchorEl: e.currentTarget as HTMLElement, node });
+              const target = e.currentTarget as HTMLElement;
+              const rect = target.getBoundingClientRect();
+              setContextMenuState({
+                anchorEl: target,
+                anchorPosition: {
+                  left: rect.left + rect.width / 2,
+                  top: rect.top + rect.height / 2,
+                },
+                node,
+              });
             }}
             aria-label="Open menu"
             role="button"

@@ -1,91 +1,73 @@
-import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CommandProcessor } from '../../CommandProcessor.js';
-import type { CoreDB } from '../../CoreDB.js';
+import type { NodeId } from '@hierarchidb/common-types';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { CommandTestHarness } from '../../test-helpers/commandProcessorHarness.js';
+import { createCommandTestHarness, seedNode } from '../../test-helpers/commandProcessorHarness.js';
 
 describe('Undo/Redo for moveNodes and remove', () => {
-  type CoreStub = Pick<
-    CoreDB,
-    'getNode' | 'updateNode' | 'deleteNode' | 'createNode' | 'listChildren'
-  > & {
-    state: Map<NodeId, TreeNode>;
-  };
+  let harness: CommandTestHarness;
+  let rootId: NodeId;
+  let moveTargetId: NodeId;
 
-  let core: CoreStub;
-  let state: Map<NodeId, TreeNode>;
-  const makeNode = (id: string, parentId: string, name: string): TreeNode => ({
-    id: id as NodeId,
-    parentId: parentId as NodeId,
-    nodeType: 'folder' as NodeType,
-    name,
-    depth: 1,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-    version: 1,
+  beforeEach(async () => {
+    harness = await createCommandTestHarness('undo-redo-move-remove');
+    const [tree] = await harness.core.trees.toArray();
+    rootId = (tree?.rootId ?? 'r:root') as NodeId;
+    moveTargetId = (
+      await seedNode(harness.core, {
+        id: 'p2' as NodeId,
+        parentId: rootId,
+        name: 'P2',
+      })
+    ).id as NodeId;
+
+    await seedNode(harness.core, {
+      id: 'a' as NodeId,
+      parentId: rootId,
+      name: 'A',
+    });
+    await seedNode(harness.core, {
+      id: 'b' as NodeId,
+      parentId: rootId,
+      name: 'B',
+    });
   });
 
-  beforeEach(() => {
-    state = new Map<NodeId, TreeNode>([
-      ['r_root' as NodeId, makeNode('r_root', 'r_super', 'root')],
-      ['a' as NodeId, makeNode('a', 'r_root', 'A')],
-      ['b' as NodeId, makeNode('b', 'r_root', 'B')],
-      ['p2' as NodeId, makeNode('p2', 'r_root', 'P2')],
-    ]);
-
-    const listChildren = async (parentId: NodeId): Promise<TreeNode[]> =>
-      Array.from(state.values()).filter((node) => node.parentId === parentId);
-
-    core = {
-      state,
-      getNode: vi.fn(async (id: NodeId) => state.get(id)),
-      updateNode: vi.fn(async (node: Partial<TreeNode> & { id: NodeId }) => {
-        const current = state.get(node.id);
-        if (!current) throw new Error(`Node ${String(node.id)} not found`);
-        state.set(node.id, { ...current, ...node });
-      }),
-      deleteNode: vi.fn(async (id: NodeId) => {
-        state.delete(id);
-      }),
-      createNode: vi.fn(async (node: TreeNode) => {
-        state.set(node.id, { ...node });
-        return node.id;
-      }),
-      listChildren: vi.fn(listChildren),
-    };
+  afterEach(async () => {
+    await harness.cleanup();
   });
 
   it('undo/redo moveNodes', async () => {
-    const cp = new CommandProcessor(core as unknown as CoreDB);
+    const { core, cp } = harness;
     const env = cp.createEnvelope('moveNodes', {
       nodeIds: ['a' as NodeId],
-      toParentId: 'p2' as NodeId,
+      toParentId: moveTargetId,
     });
-    const r = await cp.processCommand(env);
-    expect(r.success).toBe(true);
-    expect(state.get('a' as NodeId)?.parentId).toBe('p2');
+    const result = await cp.processCommand(env);
+    expect(result.success).toBe(true);
+    expect((await core.getNode('a' as NodeId))?.parentId).toBe(moveTargetId);
 
-    const u = await cp.undo();
-    expect(u.success).toBe(true);
-    expect(state.get('a' as NodeId)?.parentId).toBe('r_root');
+    const undoResult = await cp.undo();
+    expect(undoResult.success).toBe(true);
+    expect((await core.getNode('a' as NodeId))?.parentId).toBe(rootId);
 
-    const re = await cp.redo();
-    expect(re.success).toBe(true);
-    expect(state.get('a' as NodeId)?.parentId).toBe('p2');
+    const redoResult = await cp.redo();
+    expect(redoResult.success).toBe(true);
+    expect((await core.getNode('a' as NodeId))?.parentId).toBe(moveTargetId);
   });
 
   it('undo/redo remove', async () => {
-    const cp = new CommandProcessor(core as unknown as CoreDB);
+    const { core, cp } = harness;
     const env = cp.createEnvelope('remove', { nodeIds: ['b' as NodeId] });
-    const r = await cp.processCommand(env);
-    expect(r.success).toBe(true);
-    expect(state.has('b' as NodeId)).toBe(false);
+    const result = await cp.processCommand(env);
+    expect(result.success).toBe(true);
+    expect(await core.getNode('b' as NodeId)).toBeUndefined();
 
-    const u = await cp.undo();
-    expect(u.success).toBe(true);
-    expect(state.has('b' as NodeId)).toBe(true);
+    const undoResult = await cp.undo();
+    expect(undoResult.success).toBe(true);
+    expect(await core.getNode('b' as NodeId)).toBeTruthy();
 
-    const re = await cp.redo();
-    expect(re.success).toBe(true);
-    expect(state.has('b' as NodeId)).toBe(false);
+    const redoResult = await cp.redo();
+    expect(redoResult.success).toBe(true);
+    expect(await core.getNode('b' as NodeId)).toBeUndefined();
   });
 });

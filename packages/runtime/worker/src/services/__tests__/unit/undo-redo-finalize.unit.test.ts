@@ -1,6 +1,12 @@
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { CoreDB } from '../../CoreDB.js';
+import {
+  attachFulltextTables,
+  createFulltextTestDB,
+  destroyFulltextTestDB,
+  type FulltextTables,
+} from '../../test-helpers/fulltextTestDB.js';
 
 type TreeNodeState = Partial<Record<NodeId, TreeNode>>;
 
@@ -11,6 +17,8 @@ interface CoreStub {
   updateNode: (node: Partial<TreeNode> & { id: NodeId }) => Promise<void>;
   deleteNode: (id: NodeId) => Promise<void>;
   listChildren: (parentId: NodeId) => Promise<TreeNode[]>;
+  fulltextNodes: FulltextTables['fulltextNodes'];
+  fulltextIndexes: FulltextTables['fulltextIndexes'];
 }
 
 function makeCore(): CoreStub {
@@ -42,8 +50,18 @@ function makeCore(): CoreStub {
 }
 
 describe('Undo/Redo finalize: create -> undo -> redo', () => {
+  let fulltextDb: Awaited<ReturnType<typeof createFulltextTestDB>>;
+
+  beforeEach(async () => {
+    fulltextDb = await createFulltextTestDB('undo-redo-finalize');
+  });
+
+  afterEach(async () => {
+    await destroyFulltextTestDB(fulltextDb);
+  });
+
   it('removes created node on undo and restores on redo with same id', async () => {
-    const core = makeCore();
+    const core = attachFulltextTables(makeCore(), fulltextDb);
     const { CommandProcessor } = await import('../../CommandProcessor.js');
     const cp = new CommandProcessor(core as unknown as CoreDB);
 

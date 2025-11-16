@@ -288,10 +288,11 @@ export class WorkingCopyService implements WorkingCopyAPI {
       );
 
       const siblingNames = await getChildNames(this.coreDB, targetParentNodeId);
-      const nameConflicts = siblingNames.includes(wcNode.name);
-      const suggestedName = nameConflicts ? createNewName(siblingNames, wcNode.name) : undefined;
-
       const existingNode = await this.coreDB.nodes.get(targetNodeId);
+      const sameNameCount = siblingNames.filter((name) => name === wcNode.name).length;
+      const conflictThreshold = existingNode ? 1 : 0;
+      const nameConflicts = sameNameCount > conflictThreshold;
+      const suggestedName = nameConflicts ? createNewName(siblingNames, wcNode.name) : undefined;
       const now = Date.now();
 
       if (!existingNode) {

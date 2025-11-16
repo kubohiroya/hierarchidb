@@ -51,8 +51,13 @@ export function TreeTableCore({
   const ContextMenuComponent = CustomNodeContextMenu || NodeContextMenu;
 
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [contextMenuState, setContextMenuState] = useState<{ anchorEl: HTMLElement | null; node: TreeNode | null }>({
+  const [contextMenuState, setContextMenuState] = useState<{
+    anchorEl: HTMLElement | null;
+    anchorPosition: { left: number; top: number } | null;
+    node: TreeNode | null;
+  }>({
     anchorEl: null,
+    anchorPosition: null,
     node: null,
   });
   const [hoverDropTargetId, setHoverDropTargetId] = useState<string | null>(null);
@@ -260,7 +265,7 @@ export function TreeTableCore({
   });
 
   const handleContextMenuClose = () => {
-    setContextMenuState({ anchorEl: null, node: null });
+    setContextMenuState({ anchorEl: null, anchorPosition: null, node: null });
   };
 
   return (

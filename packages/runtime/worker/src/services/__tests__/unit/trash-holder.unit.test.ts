@@ -1,7 +1,13 @@
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommandProcessor } from '../../CommandProcessor.js';
 import type { CoreDB } from '../../CoreDB.js';
+import {
+  attachFulltextTables,
+  createFulltextTestDB,
+  destroyFulltextTestDB,
+  type FulltextTables,
+} from '../../test-helpers/fulltextTestDB.js';
 
 type TreeNodeState = Record<string, TreeNode>;
 
@@ -13,11 +19,14 @@ interface CoreStub {
   createNode: (node: TreeNode) => Promise<NodeId>;
   listChildren: (parentId: NodeId) => Promise<TreeNode[]>;
   trees: { toArray: () => Promise<Array<{ rootId: NodeId; trashRootId: NodeId }>> };
+  fulltextNodes: FulltextTables['fulltextNodes'];
+  fulltextIndexes: FulltextTables['fulltextIndexes'];
 }
 
 describe('Trash direct trash storage flow', () => {
   let core: CoreStub;
   let state: TreeNodeState;
+  let fulltextDb: Awaited<ReturnType<typeof createFulltextTestDB>>;
   const now = Date.now();
   const makeNode = (
     id: string,
@@ -35,7 +44,8 @@ describe('Trash direct trash storage flow', () => {
     version: 1,
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    fulltextDb = await createFulltextTestDB('trash-holder');
     state = {};
     state['r:superRoot'] = makeNode('r:superRoot', 'r:superRoot', 'super');
     state['r:root'] = makeNode('r:root', 'r:superRoot', 'root');
@@ -49,7 +59,7 @@ describe('Trash direct trash storage flow', () => {
     state.d = makeNode('d', 'b', 'D');
     state.d.depth = 3;
 
-    core = {
+    core = attachFulltextTables({
       state,
       getNode: vi.fn(async (id: NodeId) => state[id]),
       updateNode: vi.fn(async (node: Partial<TreeNode> & { id: NodeId }) => {
@@ -72,7 +82,11 @@ describe('Trash direct trash storage flow', () => {
           { rootId: 'r:root' as NodeId, trashRootId: 'r:trash' as NodeId },
         ]),
       },
-    };
+    }, fulltextDb);
+  });
+
+  afterEach(async () => {
+    await destroyFulltextTestDB(fulltextDb);
   });
 
   const findTrashHolderByTarget = (target: NodeId): TreeNode | undefined =>

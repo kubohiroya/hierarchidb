@@ -44,14 +44,6 @@ export interface MapLibreMapProps extends BaseMapProps {
 // Default values from unified config
 const { mapStyle: defaultMapStyle, interactionOptions: defaultMapOptions } = DEFAULT_MAP_CONFIG;
 
-const useWheelCapture = () =>
-  useCallback((event: React.WheelEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-  }, []);
-
-
-
 export const MapLibreMap: React.FC<MapLibreMapProps> = ({
                                                           initialViewState,
                                                           mapStyle = defaultMapStyle,
@@ -158,7 +150,7 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
     setIdentifySnackbarState((prev) => ({ ...prev, open: false }));
   }, []);
 
-  const handleWheelCapture = useWheelCapture();
+
 
 
   const containerStyle: React.CSSProperties = {
@@ -176,7 +168,7 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
   const resolvedMapStyle = mapStyle as React.ComponentProps<typeof ReactMapLibreMap>['mapStyle'];
 
   return (
-    <div style={containerStyle} onWheelCapture={handleWheelCapture}>
+    <div style={containerStyle}>
       <MapProvider>
         <ReactMapLibreMap
           style={mapStyleForMapLibre}

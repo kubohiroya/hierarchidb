@@ -526,6 +526,8 @@
   - [x] 既存の typecheck エラーログを一覧化し、テスト起因の自明な修正対象を特定する
   - [x] テストコードへ必要な型注釈・モック更新・ユーティリティ調整を適用し、暫定対応は TODO で可視化する
   - [x] `pnpm --filter @hierarchidb/runtime-worker typecheck` の再実行結果を運用ログに記録する
+- 進捗ログ:
+  - 2025-11-15 17:45 (#worklog-12) start: basemap WFL import 失敗と Fulltext/Undo 系テスト崩壊を再現し、FakeIndexedDB を本番同等に扱う共通セットアップを整備するタスクに着手。
 - ロールバック手順：テストコードへの変更を revert（または TODO を残した状態に戻し）、typecheck で再びエラーが確認できることをもって復旧とする
 
 40) plugin-base / plugin-service-sdk 責務再境界（P1）
@@ -8014,6 +8016,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-15 17:05 command: pnpm -C app test -- --run TreeConsoleToolbarImportMenu — exit 0。Import from JSON / Import template が allowImport=false で disabled になるテスト 2 件を追加し成功。
 - 2025-11-15 17:05 command: pnpm -C app test -- --run TreeConsoleIntegrationImportGuard — exit 0。pageTreeNode の nodeType に応じて `TreeConsoleToolbar` が `allowImport` を true/false で受け取ることと helper の挙動を検証する 5 ケースがグリーン。
 - 2025-11-15 17:06 command: pnpm -C app typecheck — exit 0。toolbar/import ガード関連の型調整（vitest config alias 追加含む）後にアプリ全体の typecheck を通過。
+- 2025-11-15 17:45 start: refactor/worker/test-type-fixes — basemap WFL の worker store import 失敗と FulltextIndexService 未初期化によるユニットテスト崩壊を再現。Fake IndexedDB を本番相当で初期化する共通ヘルパーと CommandProcessor テストの再整備に着手。
+- 2025-11-15 18:25 command: pnpm --filter @hierarchidb/runtime-worker test -- packages/runtime/worker/src/__tests__/wfl/basemap-working-copy-edit.wfl.test.ts packages/runtime/worker/src/services/__tests__/unit/bulk-ops-cp.unit.test.ts packages/runtime/worker/src/services/__tests__/unit/peer-entity-delete-policy.unit.test.ts packages/runtime/worker/src/services/__tests__/unit/tx-wrapper.unit.test.ts packages/runtime/worker/src/services/__tests__/unit/undo-redo-move-remove.unit.test.ts — exit 0。basemap WFL と CommandProcessor 系ユニットテストの再実行でグリーンを確認（FulltextIndexService の DatabaseClosedError はテスト teardown 時の既知警告として記録）。
 
 ## 今日の着手（運用ログ） <a id="worklog-12"></a>
 

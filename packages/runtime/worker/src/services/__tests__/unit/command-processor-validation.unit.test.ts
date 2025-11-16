@@ -1,11 +1,24 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { assertCommandFailure } from '../../../test-utils/assertions.js';
 import { CommandProcessor } from '../../CommandProcessor.js';
 import type { CoreDB } from '../../CoreDB.js';
 import type { CommandEnvelope } from '../../command-types.js';
+import { createFulltextTestDB, destroyFulltextTestDB } from '../../test-helpers/fulltextTestDB.js';
 
-// Minimal CoreDB stub to satisfy constructor; not used on validation failure path
-const coreDBStub = {} as CoreDB;
+let coreDBStub: CoreDB;
+let fulltextDb: Awaited<ReturnType<typeof createFulltextTestDB>>;
+
+beforeAll(async () => {
+  fulltextDb = await createFulltextTestDB('cmd-processor-validation');
+  coreDBStub = {
+    fulltextNodes: fulltextDb.fulltextNodes,
+    fulltextIndexes: fulltextDb.fulltextIndexes,
+  } as Partial<CoreDB> as CoreDB;
+});
+
+afterAll(async () => {
+  await destroyFulltextTestDB(fulltextDb);
+});
 
 describe('CommandProcessor + envelope validation (ZE-3)', () => {
   it('returns VALIDATION_ERROR for invalid envelope', async () => {

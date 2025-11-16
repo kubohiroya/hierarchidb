@@ -11,6 +11,35 @@ export type CommandExecutionContext = {
   postCommitTasks: PostCommitTask[];
 };
 
+type GlobalTxFlags = typeof globalThis & {
+  __HDB_FORCE_WORKER_TRANSACTIONS__?: boolean;
+  __HDB_DISABLE_WORKER_TRANSACTIONS__?: boolean;
+};
+
+function detectFakeIndexedDB(): boolean {
+  try {
+    const factory = (globalThis as { indexedDB?: unknown }).indexedDB;
+    if (!factory || typeof factory !== 'object') return false;
+    const ctorName = (factory as { constructor?: { name?: unknown } }).constructor?.name;
+    return ctorName === 'FDBFactory';
+  } catch {
+    return false;
+  }
+}
+
+function shouldUseTransactions(commandKind: string): boolean {
+  if (CommandExecutionRunner.NON_TRANSACTIONAL_COMMANDS.has(commandKind)) {
+    return false;
+  }
+  const flags = globalThis as GlobalTxFlags;
+  if (flags.__HDB_FORCE_WORKER_TRANSACTIONS__) {
+    return true;
+  }
+  const disableByEnv =
+    flags.__HDB_DISABLE_WORKER_TRANSACTIONS__ ?? detectFakeIndexedDB();
+  return !disableByEnv;
+}
+
 export class CommandExecutionRunner {
   private static readonly NON_TRANSACTIONAL_COMMANDS = new Set(['commitWorkingCopy']);
   private static readonly TRANSACTION_TABLES: Array<
@@ -28,12 +57,13 @@ export class CommandExecutionRunner {
     execute: (context: CommandExecutionContext) => Promise<CommandResult>
   ): Promise<CommandResult> {
     let context = this.createContext();
+    let pendingTasks: PostCommitTask[] = [];
     let result: CommandResult | undefined;
     let retriedWithoutTx = false;
 
     const runInTx =
       typeof this.coreDB.runInTx === 'function' ? this.coreDB.runInTx.bind(this.coreDB) : null;
-    if (runInTx && !CommandExecutionRunner.NON_TRANSACTIONAL_COMMANDS.has(envelope.kind)) {
+    if (runInTx && shouldUseTransactions(envelope.kind)) {
       try {
         result = await runInTx('rw', CommandExecutionRunner.TRANSACTION_TABLES, () =>
           execute(context)
@@ -43,6 +73,7 @@ export class CommandExecutionRunner {
           console.warn(
             '[CommandProcessor] Dexie transaction failed with PrematureCommitError; retrying without TX.'
           );
+          pendingTasks = context.postCommitTasks.slice();
           retriedWithoutTx = true;
         } else {
           throw error;
@@ -55,6 +86,10 @@ export class CommandExecutionRunner {
         context = this.createContext();
       }
       result = await execute(context);
+      if (pendingTasks.length > 0) {
+        context.postCommitTasks.push(...pendingTasks);
+        pendingTasks = [];
+      }
     }
 
     await this.runPostCommitTasks(result, context);

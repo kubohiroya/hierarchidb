@@ -1,7 +1,13 @@
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommandProcessor } from '../../CommandProcessor.js';
 import type { CoreDB } from '../../CoreDB.js';
+import {
+  attachFulltextTables,
+  createFulltextTestDB,
+  destroyFulltextTestDB,
+  type FulltextTables,
+} from '../../test-helpers/fulltextTestDB.js';
 
 describe('Undo/Redo for updateNode', () => {
   const baseNode: TreeNode = {
@@ -18,13 +24,18 @@ describe('Undo/Redo for updateNode', () => {
   type CoreStub = Pick<
     CoreDB,
     'getNode' | 'updateNode' | 'deleteNode' | 'createNode' | 'listChildren'
-  >;
+  > & {
+    fulltextNodes: FulltextTables['fulltextNodes'];
+    fulltextIndexes: FulltextTables['fulltextIndexes'];
+  };
 
   let coreDBStub: CoreStub;
+  let fulltextDb: Awaited<ReturnType<typeof createFulltextTestDB>>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    fulltextDb = await createFulltextTestDB('undo-redo-update');
     const state: Record<string, TreeNode> = { [baseNode.id]: { ...baseNode } };
-    coreDBStub = {
+    coreDBStub = attachFulltextTables({
       getNode: vi.fn(async (id: NodeId) => state[id]),
       updateNode: vi.fn(async (node: Partial<TreeNode> & { id: NodeId }) => {
         const prev = state[node.id];
@@ -33,7 +44,11 @@ describe('Undo/Redo for updateNode', () => {
       deleteNode: vi.fn(async (_id: NodeId) => {}),
       createNode: vi.fn(async (node: TreeNode) => node.id),
       listChildren: vi.fn(async (_id: NodeId) => []),
-    };
+    }, fulltextDb);
+  });
+
+  afterEach(async () => {
+    await destroyFulltextTestDB(fulltextDb);
   });
 
   it('undo restores previous name and redo reapplies new name', async () => {

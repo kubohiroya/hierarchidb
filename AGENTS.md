@@ -7,6 +7,16 @@
 - TASKS.mdは日本語で記述する。
 - そのほか、ユーザーが特に求めた場合にはドキュメントは日本語版を作成してもよいものとする。
 
+## このファイル（AGNETS.md）のメンテナンス_ポリシー（Maintenance policy）
+
+- 会話の中で繰り返し指示された事柄について、このファイルへの反映を検討すること
+- このファイルにおいて、冗長だったり圧縮の余地がある箇所がないか検討し、必要に応じて更新すること
+- 簡潔でありながら密度の濃い文書にすること
+
+# ExecPlans
+
+When writing complex features or significant refactors, use an ExecPlan (as described in PLANS.md) from design to implementation.
+
 ## Project Structure & Module Organization
 The workspace relies on `pnpm`. `app/` contains the main UI, with shared documentation in `app/docs/`. Core libraries live in `packages/` (runtime services, UI components, tooling), feature plugins in `plugins/`, and shared assets inside `docs/`, `reports/`, or package-level `dist/`. Tests are colocated: unit suites in `packages/*/src/__tests__/`, worker flows in `packages/runtime-worker/src/__tests__/wfl/`, and Playwright smoke tests in `e2e/`.
 
@@ -84,10 +94,3 @@ Work in small, reviewable increments. Document sandbox blockers and attempted al
 - **依存タスクの順序制御**: Turbo は同名タスク間でのみ順序保証される。runtime/plugin など別パッケージの `.d.ts` に依存する場合は、明示的に `pipeline.build(:types|:bundle)` を設定し、`prebuild:*` で `pnpm --filter <pkg> build(:types|:bundle)` を先行実行する。`tsdown` は root config で `clean: false` を強制しているため、個別パッケージで `clean` を上書きしない。
 - **依存タスクの順序制御**: 他パッケージの `.d.ts` を参照するビルドでは、依存先の `build` / `build:types` / `build:bundle` を Turbo で明示し、必要に応じて `prebuild:*` で `pnpm --filter <pkg> build[:types|:bundle]` を実行してから自パッケージの `tsc`/`tsdown` を呼び出す。`tsup` 系のスクリプトは廃止済みであることを常に意識する。
 - **依存タスクの順序制御**: `@hierarchidb/*` の `.d.ts` を使うプラグインは、Turbo の `pipeline` や `prebuild:*` で `pnpm --filter <pkg> build(:types|:bundle)` を先に呼び出し、その後に `tsdown` を起動する。dist を消したい場合は明示的に `pnpm clean` 系のタスクを実行し、`tsdown` へ `clean:true` を渡さない。
-
-## メンテナンス_ポリシー（Maintenance policy）
-
-- 会話の中で繰り返し指示されたことがある場合は反映を検討すること
-- 冗長だったり、圧縮の余地がある箇所を検討すること
-- 簡潔でありながら密度の濃い文書にすること
-- 

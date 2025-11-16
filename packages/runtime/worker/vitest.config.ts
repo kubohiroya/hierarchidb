@@ -44,6 +44,10 @@ export default defineConfig({
       '@hierarchidb/common-types': path.resolve(__dirname, '../../common/types/dist'),
       '@hierarchidb/common-api': path.resolve(__dirname, '../../common/api/dist'),
       '@hierarchidb/util': path.resolve(__dirname, '../../util/dist'),
+      '@hierarchidb/basemap-plugin/worker': path.resolve(
+        __dirname,
+        '../../../plugins/basemap-plugin/src/worker/index.ts',
+      ),
       '~': path.resolve(__dirname, './src'),
     },
   },

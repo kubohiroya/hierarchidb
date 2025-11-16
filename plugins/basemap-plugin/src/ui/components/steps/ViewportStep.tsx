@@ -1,3 +1,4 @@
+import type { NodeId } from '@hierarchidb/common-types';
 import { Box, Stack, TextField, Typography } from '@mui/material';
 import type React from 'react';
 import {
@@ -7,15 +8,19 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from 'react';
 import { loadMapLibreMap, type MapLibreMapInstance, type MapViewState } from '@hierarchidb/ui-map';
 import type { MapStyle, MapViewport } from '../../../common/types/BaseMapEntity.js';
+import { BaseMapEntityHandler } from '../../hooks/BaseMapEntityHandler.js';
 import { resolveMapStyleSource } from '../../utils/mapStyle.js';
 
 export interface ViewportStepProps {
   value: MapViewport | undefined;
   mapStyle?: MapStyle;
   onChange: (next: MapViewport) => void;
+  mode: 'create' | 'edit';
+  nodeId?: string;
 }
 
 const DEFAULT_VIEWPORT: MapViewport = {
@@ -32,10 +37,16 @@ const LazyMapLibreMap = lazy(async () => {
   return { default: mod.MapLibreMap };
 });
 
-export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onChange }) => {
+export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onChange, mode, nodeId }) => {
   const mapRef = useRef<MapLibreMapInstance | null>(null);
   const initialViewStateRef = useRef<MapViewState | null>(null);
   const pendingSyncRef = useRef(false);
+  const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
+  const handlerRef = useRef<BaseMapEntityHandler | null>(null);
+
+  if (!handlerRef.current) {
+    handlerRef.current = new BaseMapEntityHandler();
+  }
 
   useEffect(() => {
     if (!value) {
@@ -80,6 +91,46 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
     [selectedStyle]
   );
 
+  const resolvedNodeId = useMemo(() => {
+    if (mode !== 'edit') return undefined;
+    if (!nodeId || nodeId === 'undefined') return undefined;
+    return nodeId as NodeId;
+  }, [mode, nodeId]);
+  const hasViewportValue = useMemo(() => {
+    if (!value) return false;
+    const [lng, lat] = value.center ?? [];
+    return (
+      Array.isArray(value.center) &&
+      value.center.length === 2 &&
+      Number.isFinite(lng) &&
+      Number.isFinite(lat) &&
+      Number.isFinite(value.zoom)
+    );
+  }, [value]);
+
+  useEffect(() => {
+    if (!resolvedNodeId) return;
+    if (hasViewportValue) return;
+    const handler = handlerRef.current;
+    if (!handler) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const entity = await handler.getEntityByNodeId(resolvedNodeId);
+        if (!entity || cancelled) return;
+        pendingSyncRef.current = true;
+        setViewport(entity.viewport ?? DEFAULT_VIEWPORT);
+      } catch (error) {
+        console.warn('[ViewportStep] failed to hydrate viewport from peer entity', error);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [resolvedNodeId, hasViewportValue, setViewport]);
+
   const handleViewStateChange = useCallback(
     (viewState: MapViewState) => {
       pendingSyncRef.current = false;
@@ -94,7 +145,40 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
 
   const handleMapLoad = useCallback((map: MapLibreMapInstance) => {
     mapRef.current = map;
+    setMapInstance(map);
   }, []);
+
+  useEffect(() => {
+    if (!mapInstance) return;
+    const container = mapInstance.getContainer();
+    if (!container) return;
+
+    const handleWheel = (event: WheelEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (!container.contains(target)) return;
+      if (event.defaultPrevented) return;
+      event.preventDefault();
+      event.stopPropagation();
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (!container.contains(target)) return;
+      if (event.defaultPrevented) return;
+      event.preventDefault();
+      event.stopPropagation();
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+      container.removeEventListener('touchmove', handleTouchMove);
+    };
+  }, [mapInstance]);
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -109,11 +193,22 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
   }, [vp.center, vp.zoom, vp.bearing]);
 
   return (
-    <Box sx={{ p: 2 }} onWheel={(event) => event.stopPropagation()}>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+    <Box
+      sx={{
+        p: 2,
+        overscrollBehavior: 'contain',
+        height: '100%',
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 2,
+        overflow: 'hidden',
+      }}
+    >
+      <Typography variant="body2" color="text.secondary" sx={{ flexShrink: 0 }}>
         Fine-tune the initial viewport. Enter values directly or drag / zoom the map below.
       </Typography>
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mb: 2 }}>
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ flexShrink: 0 }}>
         <TextField
           label="Longitude"
           type="number"
@@ -162,11 +257,12 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
           border: '1px solid',
           borderColor: 'divider',
           overflow: 'hidden',
-          height: 320,
           position: 'relative',
           overscrollBehavior: 'contain',
+          touchAction: 'none',
+          flexGrow: 1,
+          minHeight: 280,
         }}
-        onWheelCapture={(event) => event.stopPropagation()}
       >
         <Suspense
           fallback={
@@ -197,6 +293,7 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
               doubleClickZoom: true,
               touchZoomRotate: true,
             }}
+            controls={{ navigation: { position: 'top-right' } }}
             onLoad={handleMapLoad}
             onViewStateChange={handleViewStateChange}
           />

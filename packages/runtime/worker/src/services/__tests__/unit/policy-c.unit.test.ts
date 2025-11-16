@@ -1,8 +1,14 @@
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommandProcessor } from '../../CommandProcessor.js';
 import type { CoreDB } from '../../CoreDB.js';
 import { encodeWorkingCopyHolderName } from '../../utils/holder-encoding.js';
+import {
+  attachFulltextTables,
+  createFulltextTestDB,
+  destroyFulltextTestDB,
+  type FulltextTables,
+} from '../../test-helpers/fulltextTestDB.js';
 
 describe('Policy C: block move/remove when WC exists', () => {
   const makeNode = (
@@ -27,12 +33,16 @@ describe('Policy C: block move/remove when WC exists', () => {
   > & {
     nodes: { toArray: () => Promise<TreeNode[]> };
     state: Map<NodeId, TreeNode>;
+    fulltextNodes: FulltextTables['fulltextNodes'];
+    fulltextIndexes: FulltextTables['fulltextIndexes'];
   };
 
   let core: CoreStub;
   let state: Map<NodeId, TreeNode>;
+  let fulltextDb: Awaited<ReturnType<typeof createFulltextTestDB>>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    fulltextDb = await createFulltextTestDB('policy-c');
     state = new Map<NodeId, TreeNode>();
     state.set('root' as NodeId, makeNode('root', 'super', 'root'));
     state.set('a' as NodeId, makeNode('a', 'root', 'A'));
@@ -55,7 +65,7 @@ describe('Policy C: block move/remove when WC exists', () => {
     const listChildren = async (parentId: NodeId): Promise<TreeNode[]> =>
       Array.from(state.values()).filter((node) => node.parentId === parentId);
 
-    core = {
+    core = attachFulltextTables({
       state,
       getNode: vi.fn(async (id: NodeId) => state.get(id)),
       updateNode: vi.fn(async (node: Partial<TreeNode> & { id: NodeId }) => {
@@ -74,7 +84,11 @@ describe('Policy C: block move/remove when WC exists', () => {
       nodes: {
         toArray: vi.fn(async () => Array.from(state.values())),
       },
-    };
+    }, fulltextDb);
+  });
+
+  afterEach(async () => {
+    await destroyFulltextTestDB(fulltextDb);
   });
 
   it('blocks moveNodes when WC under subtree', async () => {

@@ -964,6 +964,34 @@ export function usePluginDialogController(
     return composeStepConfigs(nodeType, mode);
   }, [nodeType, mode, regTick, hostTick]);
 
+  useEffect(() => {
+    if (!composedConfigs.hasHostBase) return;
+    if (!workingCopy?.data) return;
+    const dataRecord = toRecord(workingCopy.data);
+    if (!dataRecord) return;
+
+    const nameFromData = typeof dataRecord.name === 'string' ? dataRecord.name : undefined;
+    const descriptionFromData =
+      typeof dataRecord.description === 'string' ? dataRecord.description : undefined;
+    const tagsFromData = dataRecord.tags;
+
+    setBasicInfo((prev) => {
+      const nextName = nameFromData ?? prev.name;
+      const nextDescription = descriptionFromData ?? prev.description;
+      const nextTags = tagsFromData !== undefined ? toStringArray(tagsFromData) : prev.tags;
+      const tagsEqual =
+        prev.tags.length === nextTags.length && prev.tags.every((tag, idx) => tag === nextTags[idx]);
+      if (prev.name === nextName && prev.description === nextDescription && tagsEqual) {
+        return prev;
+      }
+      return {
+        name: nextName,
+        description: nextDescription,
+        tags: nextTags,
+      };
+    });
+  }, [composedConfigs.hasHostBase, workingCopy?.data]);
+
   const pluginConfigSteps = useMemo(() => {
     void regTick;
     if (mode === 'create') return stepRegistry.getCreateSteps(nodeType);

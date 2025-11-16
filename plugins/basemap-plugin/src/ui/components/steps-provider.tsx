@@ -46,6 +46,8 @@ registry.registerConfigProvider<StepData>({
           <ViewportStep
             value={p.data?.viewport}
             mapStyle={p.data?.mapStyle}
+            mode={p.mode}
+            nodeId={p.nodeId}
             onChange={(next) => p.onChange({ ...(p.data || {}), viewport: next })}
           />
         ),

@@ -420,6 +420,7 @@ async function handleRemove(
     }
 
     if (beforeNodes.length > 0) {
+      console.log('beforeNodes snapshot', beforeNodes.map((node) => node.id));
       deps.history.storePreRemoveState(envelope.commandId, beforeNodes);
       const nodesForCleanup = beforeNodes.map((node) => ({ ...node }));
       context.postCommitTasks.push(async () => {

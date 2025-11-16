@@ -1,7 +1,13 @@
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommandProcessor } from '../../CommandProcessor.js';
 import type { CoreDB } from '../../CoreDB.js';
+import {
+  attachFulltextTables,
+  createFulltextTestDB,
+  destroyFulltextTestDB,
+  type FulltextTables,
+} from '../../test-helpers/fulltextTestDB.js';
 
 describe('Undo/Redo for restoreFromTrash', () => {
   type TrashedNode = TreeNode & {
@@ -15,9 +21,12 @@ describe('Undo/Redo for restoreFromTrash', () => {
     'getNode' | 'updateNode' | 'listChildren' | 'deleteNode' | 'createNode'
   > & {
     state: Map<NodeId, TrashedNode>;
+    fulltextNodes: FulltextTables['fulltextNodes'];
+    fulltextIndexes: FulltextTables['fulltextIndexes'];
   };
 
   let core: CoreStub;
+  let fulltextDb: Awaited<ReturnType<typeof createFulltextTestDB>>;
   let state: Map<NodeId, TrashedNode>;
   const makeNode = (id: string, parentId: string, name: string): TrashedNode => ({
     id: id as NodeId,
@@ -33,7 +42,8 @@ describe('Undo/Redo for restoreFromTrash', () => {
     originalName: name,
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    fulltextDb = await createFulltextTestDB('undo-redo-restore');
     state = new Map<NodeId, TrashedNode>();
     state.set('t_trash' as NodeId, makeNode('t_trash', 'r_root', 'Trash'));
     state.set('x' as NodeId, makeNode('x', 't_trash', 'X'));
@@ -41,7 +51,7 @@ describe('Undo/Redo for restoreFromTrash', () => {
     const listChildren = async (parentId: NodeId): Promise<TreeNode[]> =>
       Array.from(state.values()).filter((node) => node.parentId === parentId);
 
-    core = {
+    core = attachFulltextTables({
       state,
       getNode: vi.fn(async (id: NodeId) => state.get(id)),
       updateNode: vi.fn(async (node: Partial<TreeNode> & { id: NodeId }) => {
@@ -63,7 +73,11 @@ describe('Undo/Redo for restoreFromTrash', () => {
         state.set(node.id, extended);
         return node.id;
       }),
-    };
+    }, fulltextDb);
+  });
+
+  afterEach(async () => {
+    await destroyFulltextTestDB(fulltextDb);
   });
 
   it('undo/redo restoreFromTrash', async () => {

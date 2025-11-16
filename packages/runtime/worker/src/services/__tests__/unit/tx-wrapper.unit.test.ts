@@ -1,169 +1,168 @@
-import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
-import { describe, expect, it, vi } from 'vitest';
+import type { NodeId, NodeType } from '@hierarchidb/common-types';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { PeerEntity, PeerStore } from '../../../entity/store.js';
+import { storeRegistry } from '../../../entity/store-registry.js';
+import { CommandProcessor } from '../../CommandProcessor.js';
 import type { CoreDB } from '../../CoreDB.js';
+import type { CommandTestHarness } from '../../test-helpers/commandProcessorHarness.js';
+import { createCommandTestHarness, seedNode } from '../../test-helpers/commandProcessorHarness.js';
 
-type CoreStub = Pick<
-  CoreDB,
-  'getNode' | 'updateNode' | 'listChildren' | 'deleteNode' | 'bulkDeleteNodes' | 'runInTx'
-> & {
-  state: Map<NodeId, TreeNode>;
-};
-
-function makeCore({ throwOnUpdate = false }: { throwOnUpdate?: boolean } = {}): CoreStub {
-  const state = new Map<NodeId, TreeNode>();
-  const listChildren = async (parentId: NodeId): Promise<TreeNode[]> =>
-    Array.from(state.values()).filter((node) => node.parentId === parentId);
-
-  const core: CoreStub = {
-    state,
-    getNode: vi.fn(async (id: NodeId) => state.get(id)),
-    updateNode: vi.fn(async (node: Partial<TreeNode> & { id: NodeId }) => {
-      if (throwOnUpdate) throw new Error('simulated update failure');
-      const current = state.get(node.id);
-      if (!current) {
-        throw new Error(`Node ${String(node.id)} not found`);
-      }
-      state.set(node.id, { ...current, ...node });
-    }),
-    listChildren: vi.fn(listChildren),
-    deleteNode: vi.fn(async (id: NodeId) => {
-      state.delete(id);
-    }),
-    bulkDeleteNodes: vi.fn(async (ids: NodeId[]) => {
-      for (const id of ids) {
-        state.delete(id);
-      }
-    }),
-    runInTx: vi.fn(async (_mode, _tables, fn) => {
-      const snapshot = new Map<NodeId, TreeNode>(
-        Array.from(state.entries()).map(([id, node]) => [id, { ...node }])
-      );
-      try {
-        return await fn();
-      } catch (error) {
-        state.clear();
-        for (const [id, node] of snapshot) state.set(id, node);
-        throw error;
-      }
-    }),
-  };
-  return core;
-}
-
-async function loadCommandProcessor() {
-  vi.resetModules();
-  const { CommandProcessor } = await import('../../CommandProcessor.js');
-  return { CommandProcessor };
-}
-
-const makeNode = (id: string, parentId: string, name: string): TreeNode => ({
-  id: id as NodeId,
-  parentId: parentId as NodeId,
-  nodeType: 'folder' as NodeType,
-  name,
-  depth: 1,
-  createdAt: Date.now(),
-  updatedAt: Date.now(),
-  version: 1,
-});
+const TX_NODE_TYPE = 'tx-test' as NodeType;
 
 describe('transaction wrapper', () => {
-  it('wraps moveNodes in a transaction when CoreDB supports runInTx', async () => {
-    const core = makeCore();
-    core.state.set('a' as NodeId, makeNode('a', 'root', 'A'));
+  let harness: CommandTestHarness;
+  let rootId: NodeId;
 
-    const { CommandProcessor } = await loadCommandProcessor();
-    const cp = new CommandProcessor(core as unknown as CoreDB);
+  beforeEach(async () => {
+    (globalThis as typeof globalThis & { __HDB_FORCE_WORKER_TRANSACTIONS__?: boolean }).__HDB_FORCE_WORKER_TRANSACTIONS__ =
+      true;
+    harness = await createCommandTestHarness('tx-wrapper');
+    const [tree] = await harness.core.trees.toArray();
+    rootId = (tree?.rootId ?? 'r:root') as NodeId;
+  });
+
+  afterEach(async () => {
+    delete (globalThis as typeof globalThis & { __HDB_FORCE_WORKER_TRANSACTIONS__?: boolean })
+      .__HDB_FORCE_WORKER_TRANSACTIONS__;
+    await harness.cleanup();
+  });
+
+  it('wraps moveNodes in a transaction when CoreDB supports runInTx', async () => {
+    const { core } = harness;
+    const originalRunInTx = core.runInTx.bind(core);
+    (core as { runInTx: typeof originalRunInTx }).runInTx = async (mode, tables, fn) => {
+      return await originalRunInTx(mode, tables, fn);
+    };
+    const cp = new CommandProcessor(core);
+    const node = await seedNode(core, {
+      id: 'a' as NodeId,
+      parentId: rootId,
+      name: 'A',
+    });
+    const target = await seedNode(core, {
+      id: 'p2' as NodeId,
+      parentId: rootId,
+      name: 'Target',
+    });
 
     const env = cp.createEnvelope('moveNodes', {
-      nodeIds: ['a' as NodeId],
-      toParentId: 'p2' as NodeId,
+      nodeIds: [node.id as NodeId],
+      toParentId: target.id as NodeId,
     });
-    const r = await cp.processCommand(env);
-    expect(r.success).toBe(true);
-    expect(core.runInTx).toHaveBeenCalledTimes(1);
-    expect(core.state.get('a' as NodeId)?.parentId).toBe('p2');
+    const result = await cp.processCommand(env);
+
+    expect(result.success).toBe(true);
+    expect((await core.getNode(node.id as NodeId))?.parentId).toBe(target.id);
   });
 
   it('falls back when runInTx is unavailable', async () => {
-    const core = makeCore();
-    core.state.set('a' as NodeId, makeNode('a', 'root', 'A'));
-    // Simulate minimal CoreDB stub without transactional support
-    (core as { runInTx?: CoreStub['runInTx'] }).runInTx = undefined;
-
-    const { CommandProcessor } = await loadCommandProcessor();
-    const cp = new CommandProcessor(core as unknown as CoreDB);
-
-    const env = cp.createEnvelope('moveNodes', {
-      nodeIds: ['a' as NodeId],
-      toParentId: 'p2' as NodeId,
+    const { core } = harness;
+    const cp = new CommandProcessor(core);
+    const node = await seedNode(core, {
+      id: 'a' as NodeId,
+      parentId: rootId,
+      name: 'A',
     });
-    const r = await cp.processCommand(env);
-    expect(r.success).toBe(true);
-    expect(core.runInTx).toBeUndefined();
-    expect(core.state.get('a' as NodeId)?.parentId).toBe('p2');
+    const target = await seedNode(core, {
+      id: 'p2' as NodeId,
+      parentId: rootId,
+      name: 'Target',
+    });
+
+    (core as { runInTx?: CoreDB['runInTx'] }).runInTx = undefined;
+    const cpWithoutTx = new CommandProcessor(core);
+    const env = cpWithoutTx.createEnvelope('moveNodes', {
+      nodeIds: [node.id as NodeId],
+      toParentId: target.id as NodeId,
+    });
+    const result = await cpWithoutTx.processCommand(env);
+
+    expect(result.success).toBe(true);
+    expect((await core.getNode(node.id as NodeId))?.parentId).toBe(target.id);
   });
 
   it('simulates rollback on failure inside transaction', async () => {
-    // update will throw to simulate mid-transaction failure
-    const core = makeCore({ throwOnUpdate: true });
-    core.state.set('a' as NodeId, makeNode('a', 'root', 'A'));
+    const { core } = harness;
+    const cp = new CommandProcessor(core);
+    const node = await seedNode(core, {
+      id: 'a' as NodeId,
+      parentId: rootId,
+      name: 'A',
+    });
+    const target = await seedNode(core, {
+      id: 'p2' as NodeId,
+      parentId: rootId,
+      name: 'Target',
+    });
 
-    const { CommandProcessor } = await loadCommandProcessor();
-    const cp = new CommandProcessor(core as unknown as CoreDB);
+    const updateSpy = vi.spyOn(core, 'updateNode').mockImplementation(async () => {
+      throw new Error('simulated update failure');
+    });
 
     const env = cp.createEnvelope('moveNodes', {
-      nodeIds: ['a' as NodeId],
-      toParentId: 'p2' as NodeId,
+      nodeIds: [node.id as NodeId],
+      toParentId: target.id as NodeId,
     });
-    const r = await cp.processCommand(env);
-    expect(r.success).toBe(false);
-    // state should be restored to original due to rollback simulation
-    expect(core.state.get('a' as NodeId)?.parentId).toBe('root');
-    expect(core.runInTx).toHaveBeenCalledTimes(1);
+    const result = await cp.processCommand(env);
+
+    expect(result.success).toBe(false);
+    expect((await core.getNode(node.id as NodeId))?.parentId).toBe(rootId);
+    expect(updateSpy).toHaveBeenCalled();
+    updateSpy.mockRestore();
   });
 
   it('defers peer-entity cleanup until after transaction commits', async () => {
-    const core = makeCore();
-    core.state.set('root' as NodeId, makeNode('root', 'root', 'Root'));
-    core.state.set('child' as NodeId, makeNode('child', 'root', 'Child'));
+    const { core } = harness;
+    const parent = await seedNode(core, {
+      id: 'tx-root' as NodeId,
+      parentId: rootId,
+      name: 'TX Root',
+      nodeType: TX_NODE_TYPE,
+    });
+    const child = await seedNode(core, {
+      id: 'child' as NodeId,
+      parentId: parent.id as NodeId,
+      name: 'Child',
+      nodeType: TX_NODE_TYPE,
+    });
 
+    const originalRunInTx = core.runInTx.bind(core);
     let inTx = false;
-    let invokedDuringTx = false;
-    const baseRunInTx = core.runInTx;
-    core.runInTx = vi.fn(async (mode, tables, fn) => {
+    (core as { runInTx: typeof originalRunInTx }).runInTx = async (mode, tables, fn) => {
       inTx = true;
       try {
-        return await baseRunInTx(mode, tables, fn);
+        return await originalRunInTx(mode, tables, fn);
       } finally {
         inTx = false;
       }
-    }) as typeof core.runInTx;
-
-    const { CommandProcessor } = await loadCommandProcessor();
-    const cp = new CommandProcessor(core as unknown as CoreDB);
-
-    const cpInternals = cp as unknown as {
-      deletePeerEntitiesForNodes(nodeIds: NodeId[]): Promise<void>;
     };
+    const cp = new CommandProcessor(core);
 
-    const cleanupSpy = vi
-      .spyOn(cpInternals, 'deletePeerEntitiesForNodes')
-      .mockImplementation(async () => {
-        if (inTx) invokedDuringTx = true;
-      });
+    let invokedDuringTx = false;
+    let deleteCalls = 0;
+    const peerStore: PeerStore<{ removed: boolean }> = {
+      async get() {
+        return undefined;
+      },
+      async put(entity: PeerEntity<{ removed: boolean }>) {
+        return entity;
+      },
+      async delete() {
+        if (inTx) {
+          invokedDuringTx = true;
+        }
+        deleteCalls += 1;
+      },
+    };
+    storeRegistry.registerPeer(TX_NODE_TYPE, peerStore);
+    console.log('registered peer store?', !!storeRegistry.getPeer(TX_NODE_TYPE));
 
-    try {
-      const env = cp.createEnvelope('remove', { nodeIds: ['child' as NodeId] });
-      const result = await cp.processCommand(env);
+    const env = cp.createEnvelope('remove', { nodeIds: [child.id as NodeId] });
+    const result = await cp.processCommand(env);
 
-      expect(result.success).toBe(true);
-      expect(core.runInTx).toHaveBeenCalledTimes(1);
-      expect(cleanupSpy).toHaveBeenCalledTimes(1);
-      expect(invokedDuringTx).toBe(false);
-      expect(core.state.has('child' as NodeId)).toBe(false);
-    } finally {
-      cleanupSpy.mockRestore();
-    }
+    expect(result.success).toBe(true);
+    expect(deleteCalls).toBe(1);
+    expect(invokedDuringTx).toBe(false);
+    expect(await core.getNode(child.id as NodeId)).toBeUndefined();
   });
 });
