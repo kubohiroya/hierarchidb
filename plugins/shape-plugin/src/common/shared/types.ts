@@ -26,7 +26,7 @@ import type { BBox, Geometry } from 'geojson';
 // Core Entity Types
 // ================================
 
-export interface ShapeEntity extends Partial<PeerEntity> {
+export interface ShapeEntity extends PeerEntity {
   // Basic Information (Step 1)
   name?: string;
   description?: string;
@@ -116,10 +116,10 @@ export interface DataSourceConfig {
 // ================================
 
 export interface ProcessingConfig extends ProcessingConfigLegacyFields {
-  dataSource: DataSourceName;
-  downloadConfig: DownloadProcessingConfig;
-  simplificationConfig: SimplificationProcessingConfig;
-  tileConfig: TileProcessingConfig;
+  dataSource?: DataSourceName;
+  downloadConfig?: DownloadProcessingConfig;
+  simplificationConfig?: SimplificationProcessingConfig;
+  tileConfig?: TileProcessingConfig;
   cleanupConfig?: CleanupProcessingConfig;
 }
 

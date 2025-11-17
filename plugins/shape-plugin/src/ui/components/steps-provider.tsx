@@ -4,6 +4,7 @@ import {
   summarizeCheckboxState,
   validateProcessingConfig,
   DEFAULT_PROCESSING_CONFIG,
+  mergeProcessingConfig,
   type ShapeWorkingCopy,
 } from '../../common/shared/index.js';
 import { Step2DataSource } from '../../common/components/steps/Step2DataSource.js';
@@ -61,7 +62,9 @@ registry.registerConfigProvider({
         label: 'Processing Configuration',
         componentFactory: (props: ShapeDialogStepProps) => <Step4 {...props} />,
         validate: (data?: Partial<ShapeWorkingCopy>) =>
-          validateProcessingConfig(data?.processingConfig ?? DEFAULT_PROCESSING_CONFIG).isValid,
+          validateProcessingConfig(
+            mergeProcessingConfig(data?.processingConfig ?? DEFAULT_PROCESSING_CONFIG),
+          ).isValid,
       },
       {
         id: 'country-selection',

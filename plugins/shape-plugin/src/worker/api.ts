@@ -12,11 +12,14 @@ import {
   type DataSourceConfig,
   type DataSourceName,
   DEFAULT_DATA_SOURCES,
+  DEFAULT_PROCESSING_CONFIG,
   generateUrlMetadata,
+  mergeProcessingConfig,
   type NodeId,
   type ProcessingConfig,
   type ProcessingStatus,
-  type BatchProgressEvent,
+  type ProcessingStage,
+  type BatchProgressEvent as ShapeBatchProgressEvent,
   type ShapeBatchCommand,
   type ShapeBatchCommandPayload,
   type ProgressInfo,
@@ -37,7 +40,7 @@ import { getEphemeralShapeDB } from '../services/database/EphemeralShapeDB.js';
 import { ShapeDB } from '../services/database/ShapeDB.js';
 import type { TreeNodeId } from '@hierarchidb/common-types';
 import type { BatchStage, BatchTaskStatus } from '../common/types/BatchTaskLike.js';
-import { createComlinkEventBridge, type RemoteEventListener } from '@hierarchidb/runtime-client';
+import type { BatchProgressEvent as RuntimeBatchProgressEvent } from '@hierarchidb/common-api';
 
 // Create singleton unified batch manager
 const batchSessionManager = createShapeBatchManager();
@@ -46,7 +49,6 @@ const batchManagerWithDispatch = batchSessionManager as unknown as {
 };
 
 interface ProgressSubscription {
-  proxy: RemoteEventListener<ProgressInfo>;
   unsubscribe?: () => void;
 }
 
@@ -56,7 +58,6 @@ interface ProgressSessionMeta {
 
 const progressCallbacks = new Map<string, ProgressSubscription>();
 const progressSessionMeta = new Map<string, ProgressSessionMeta>();
-type StandardProgressEvent = ProgressInfo;
 
 const shapeEntitiesDB = new ShapeDB();
 void shapeEntitiesDB.open();
@@ -90,6 +91,28 @@ const mapStageToBatchStage = (stage?: string): BatchStage => {
   }
 };
 
+const mapStageToProcessingStage = (stage?: string): ProcessingStage | 'processing' =>
+  mapStageToBatchStage(stage) as ProcessingStage;
+
+const mapManagerStatusToShapeStatus = (
+  status: string,
+): BatchSession['status'] => {
+  switch (status) {
+    case 'paused':
+      return 'paused';
+    case 'completed':
+      return 'completed';
+    case 'failed':
+      return 'failed';
+    case 'cancelled':
+      return 'cancelled';
+    case 'running':
+    case 'idle':
+    default:
+      return 'running';
+  }
+};
+
 const mapProgressToStatus = (progress: ProgressInfo): BatchTaskStatus => {
   if (progress.failed > 0) return 'failed';
   if (progress.total > 0 && progress.completed >= progress.total) return 'completed';
@@ -100,7 +123,7 @@ const buildBatchProgressEvent = (
   sessionId: string,
   progress: ProgressInfo,
   meta: ProgressSessionMeta,
-): BatchProgressEvent => {
+): ShapeBatchProgressEvent => {
   const status = mapProgressToStatus(progress);
   return {
     sessionId,
@@ -117,15 +140,28 @@ const buildBatchProgressEvent = (
   };
 };
 
-const standardToProgressInfo = (event: StandardProgressEvent): ProgressInfo => ({
-  total: event.total,
-  completed: event.completed,
-  failed: event.failed,
-  skipped: Math.max(event.total - event.completed - event.failed, 0),
-  percentage: event.percentage,
-  currentStage: event.stage,
-  currentTask: event.currentTask,
-});
+const batchEventToProgressInfo = (event: RuntimeBatchProgressEvent): ProgressInfo => {
+  const payload = event.payload ?? {};
+  const total = payload.total ?? 0;
+  const completed = payload.completed ?? 0;
+  const failed = payload.failed ?? 0;
+  const skipped = payload.skipped ?? Math.max(total - completed - failed, 0);
+  const percentageFromPayload = payload.meta?.percentage;
+  const percentage = typeof percentageFromPayload === 'number'
+    ? percentageFromPayload
+    : total > 0
+      ? Math.round((completed / total) * 100)
+      : 0;
+  return {
+    total,
+    completed,
+    failed,
+    skipped,
+    percentage,
+    currentStage: mapStageToProcessingStage(event.stage),
+    currentTask: payload.currentTask ?? event.message,
+  };
+};
 
 const hydrateSessionMeta = async (sessionId: string): Promise<void> => {
   const meta = getOrCreateSessionMeta(sessionId);
@@ -134,7 +170,7 @@ const hydrateSessionMeta = async (sessionId: string): Promise<void> => {
     const db = getEphemeralShapeDB();
     const record = await db.sessions.get(sessionId);
     if (record?.nodeId) {
-      meta.treeNodeId = record.nodeId as TreeNodeId;
+      meta.treeNodeId = record.nodeId as unknown as TreeNodeId;
     }
   } catch (error) {
     console.warn('[shapePluginAPI] Failed to hydrate session metadata', error);
@@ -239,8 +275,8 @@ export const shapePluginAPI = {
     }
     // Fallback minimal metadata for tests/offline
     return [
-      { countryCode: 'US', countryName: 'United States', availableAdminLevels: [0, 1, 2] },
-      { countryCode: 'JP', countryName: 'Japan', availableAdminLevels: [0, 1, 2] },
+      { countryCode: 'US', countryName: 'United States', continent: 'North America', availableAdminLevels: [0, 1, 2] },
+      { countryCode: 'JP', countryName: 'Japan', continent: 'Asia', availableAdminLevels: [0, 1, 2] },
     ];
   },
 
@@ -303,7 +339,7 @@ export const shapePluginAPI = {
     workingCopyId: NodeId,
     config: ProcessingConfig,
     urlMetadata: UrlMetadata[],
-    progressCallback?: (event: BatchProgressEvent) => void,
+    progressCallback?: (event: ShapeBatchProgressEvent) => void,
   ): Promise<string> => {
     const validation = validateProcessingConfig(config);
     if (!validation.isValid) {
@@ -319,16 +355,21 @@ export const shapePluginAPI = {
 
     // Convert ProcessingConfig to BatchConfig
     const batchConfig: BatchProcessConfig = {
-      corsProxyBaseURL: config.downloadConfig?.corsProxyUrl ?? '',
-      dataSource: config.dataSource,
+      corsProxyBaseURL:
+        config.downloadConfig?.corsProxyUrl ?? config.corsProxyBaseURL ?? '',
+      dataSource: config.dataSource ?? toDataSourceName(workingCopy.dataSourceName ?? 'naturalearth'),
       download: {
-        concurrentDownloads: config.downloadConfig?.maxConcurrent ?? 4,
+        concurrentDownloads:
+          config.downloadConfig?.maxConcurrent ?? config.concurrentDownloads ?? 4,
         deleteOnComplete: config.cleanupConfig?.deleteDownloadedFiles ?? false,
       },
       simplify1: {
-        concurrentProcesses: config.simplificationConfig?.level1Workers ?? 2,
-        enableFeatureFiltering: config.simplificationConfig?.enableFiltering ?? true,
-        featureAreaThreshold: config.simplificationConfig?.areaThreshold ?? 0.5,
+        concurrentProcesses:
+          config.simplificationConfig?.level1Workers ?? config.concurrentProcesses ?? 2,
+        enableFeatureFiltering:
+          config.simplificationConfig?.enableFiltering ?? config.enableFeatureFiltering ?? true,
+        featureAreaThreshold:
+          config.simplificationConfig?.areaThreshold ?? config.featureAreaThreshold ?? 0.5,
         minVertexCountForAreaFilter: 25,
         aspectRatioThreshold: 5,
         featureFilterMethod: 'hybrid',
@@ -342,16 +383,18 @@ export const shapePluginAPI = {
         deleteOnComplete: false,
       },
       simplify2: {
-        concurrentProcesses: config.simplificationConfig?.level2Workers ?? 2,
+        concurrentProcesses:
+          config.simplificationConfig?.level2Workers ?? config.concurrentProcesses ?? 2,
         quantize: 1e4,
-        simplify: config.simplificationConfig?.tolerance ?? 0.01,
-        tolerance: 0.1,
+        simplify: config.simplificationConfig?.tolerance ?? config.simplificationTolerance ?? 0.01,
+        tolerance: config.simplificationConfig?.tolerance ?? 0.1,
         enablePerFeatureSimplification: true,
         deleteOnComplete: false,
       },
       vectorTiles: {
-        concurrentProcesses: config.tileConfig?.workers ?? 2,
-        maxZoom: config.tileConfig?.maxZoom ?? 14,
+        concurrentProcesses:
+          config.tileConfig?.workers ?? config.concurrentProcesses ?? 2,
+        maxZoom: config.tileConfig?.maxZoom ?? config.maxZoomLevel ?? 14,
         tileCountThresholdForZoomStop: 5000,
       },
     };
@@ -370,16 +413,14 @@ export const shapePluginAPI = {
 
     // Register progress callback if provided
     if (progressCallback) {
-      const bridge = createComlinkEventBridge<BatchProgressEvent, ProgressInfo, StandardProgressEvent>({
-        runtimeToUi: (progress) => buildBatchProgressEvent(sessionId, progress, sessionMeta),
-        workerToRuntime: standardToProgressInfo,
-      });
-      const proxiedCallback = bridge.createUiProxy(progressCallback);
-      const runtimeListener = bridge.toRuntimeListener(proxiedCallback);
       const existing = progressCallbacks.get(sessionId);
       existing?.unsubscribe?.();
-      const unsubscribe = batchSessionManager.onBatchProgress(sessionId, runtimeListener);
-      progressCallbacks.set(sessionId, { proxy: proxiedCallback, unsubscribe });
+      const unsubscribe = batchSessionManager.onBatchProgress(sessionId, (event) => {
+        const info = batchEventToProgressInfo(event);
+        const normalized = buildBatchProgressEvent(sessionId, info, sessionMeta);
+        progressCallback(normalized);
+      });
+      progressCallbacks.set(sessionId, { unsubscribe });
     }
 
     // Save session ID to working copy
@@ -444,66 +485,58 @@ export const shapePluginAPI = {
   },
 
   getBatchSession: async (sessionId: string): Promise<BatchSession | undefined> => {
-    const ephemeralDB = getEphemeralShapeDB();
-    const session = await ephemeralDB.sessions.get(sessionId);
-
-    if (!session) {
+    try {
+      const status = await batchSessionManager.getBatchSessionStatus(sessionId);
+      const nodeId = status.nodeId as NodeId;
+      const handler = getShapeEntityHandler();
+      const entity = await handler.getEntityByNodeId(nodeId);
+      const config = mergeProcessingConfig(entity?.processingConfig ?? DEFAULT_PROCESSING_CONFIG);
+      const progress = status.progress ?? {
+        total: 0,
+        completed: 0,
+        failed: 0,
+        percentage: 0,
+      };
+      const normalizedStatus = mapManagerStatusToShapeStatus(status.status);
+      return {
+        sessionId: status.sessionId,
+        workingCopyId: nodeId,
+        nodeId,
+        status: normalizedStatus,
+        config,
+        startedAt: status.startedAt ?? Date.now(),
+        updatedAt: status.lastActivity ?? status.startedAt ?? Date.now(),
+        completedAt: status.completedAt,
+        progress: {
+          total: progress.total ?? 0,
+          completed: progress.completed ?? 0,
+          failed: progress.failed ?? 0,
+          skipped: progress.skipped ?? 0,
+          percentage: progress.percentage ?? 0,
+          currentStage: mapStageToProcessingStage(progress.currentStage),
+          currentTask: progress.currentTask,
+        },
+        canResume: normalizedStatus === 'paused',
+        lastActivity: status.lastActivity ?? status.startedAt ?? Date.now(),
+        expiresAt: status.lastActivity ?? Date.now(),
+        stages: {},
+        resourceUsage: undefined,
+      };
+    } catch (error) {
+      console.warn('[shapePluginAPI] failed to fetch batch session', error);
       return undefined;
     }
-
-    return {
-      sessionId: session.id,
-      workingCopyId: session.nodeId,
-      status: session.status,
-      progress: session.progress,
-      stage: session.stage,
-      startTime: session.startTime,
-      endTime: session.endTime,
-      config: session.config,
-      totalTasks: session.totalTasks,
-      completedTasks: session.completedTasks,
-      failedTasks: session.failedTasks,
-    };
   },
 
-  getBatchTasks: async (sessionId: string): Promise<BatchTask[]> => {
-    const ephemeralDB = getEphemeralShapeDB();
-    const maybeTasks = (ephemeralDB as Record<string, unknown>).tasks;
-    if (!maybeTasks || typeof (maybeTasks as { where: unknown }).where !== 'function') {
-      return [];
-    }
-    const tasks = await (maybeTasks as {
-      where(field: string): { equals(value: string): { toArray(): Promise<Array<Record<string, unknown>>> } };
-    })
-      .where('sessionId')
-      .equals(sessionId)
-      .toArray();
-
-    return tasks.map(task => {
-      const record = task as Record<string, unknown>;
-      return {
-        id: record.id as string,
-        sessionId: record.sessionId as string,
-        stage: record.stage as string,
-        url: record.urlString as string | undefined,
-        status: record.status as string,
-        progress: (record.progress as number | undefined) ?? 0,
-        error: record.error as string | undefined,
-        startTime: record.startTime as number | undefined,
-        endTime: record.endTime as number | undefined,
-        retryCount: (record.retryCount as number | undefined) ?? 0,
-        metadata: {
-          adminLevel: record.adminLevel as number | undefined,
-          countryCode: record.countryCode as string | undefined,
-        },
-      } satisfies BatchTask;
-    });
+  getBatchTasks: async (_sessionId: string): Promise<BatchTask[]> => {
+    console.warn('[shapePluginAPI] getBatchTasks not implemented in worker; returning empty list');
+    return [];
   },
 
   getBatchProgress: async (workingCopyId: NodeId): Promise<ProgressInfo> => {
     const handler = getShapeEntityHandler();
     const workingCopy = await handler.getWorkingCopy(workingCopyId);
-    if (!workingCopy || !workingCopy.batchSessionId) {
+    if (!workingCopy?.batchSessionId) {
       return {
         total: 0,
         completed: 0,
@@ -512,9 +545,24 @@ export const shapePluginAPI = {
         percentage: 0,
       };
     }
-
-    const session = await shapePluginAPI.getBatchSession(workingCopy.batchSessionId);
-    if (!session) {
+    try {
+      const status = await batchSessionManager.getBatchSessionStatus(workingCopy.batchSessionId);
+      const progress = status.progress ?? {
+        total: 0,
+        completed: 0,
+        failed: 0,
+        percentage: 0,
+      };
+      return {
+        total: progress.total ?? 0,
+        completed: progress.completed ?? 0,
+        failed: progress.failed ?? 0,
+        skipped: progress.skipped ?? 0,
+        percentage: progress.percentage ?? 0,
+        currentStage: mapStageToProcessingStage(progress.currentStage),
+        currentTask: progress.currentTask,
+      };
+    } catch {
       return {
         total: 0,
         completed: 0,
@@ -523,15 +571,6 @@ export const shapePluginAPI = {
         percentage: 0,
       };
     }
-
-    return {
-      total: session.totalTasks || 0,
-      completed: session.completedTasks || 0,
-      failed: session.failedTasks || 0,
-      skipped: 0,
-      percentage: session.progress || 0,
-      currentStage: session.stage,
-    };
   },
 
   getBatchStatus: async (
@@ -544,14 +583,24 @@ export const shapePluginAPI = {
     completedTasks?: number;
     totalTasks?: number;
   }> => {
-    console.log(`Getting batch status for session: ${sessionId}`);
-    return {
-      sessionId,
-      status: 'running',
-      progress: 0.5,
-      completedTasks: 0,
-      totalTasks: 0,
-    };
+    try {
+      const status = await batchSessionManager.getBatchSessionStatus(sessionId);
+      const normalizedStatus = mapManagerStatusToShapeStatus(status.status);
+      return {
+        sessionId,
+        workingCopyId: status.nodeId as NodeId,
+        status: normalizedStatus,
+        progress: status.progress?.percentage,
+        completedTasks: status.progress?.completed,
+        totalTasks: status.progress?.total,
+      };
+    } catch (error) {
+      console.warn('[shapePluginAPI] failed to fetch batch status', error);
+      return {
+        sessionId,
+        status: 'idle',
+      };
+    }
   },
 
   // ===================================
@@ -571,13 +620,24 @@ export const shapePluginAPI = {
     lastActivity: number;
     expiresAt: number;
   }> => {
-    console.log(`Getting batch session status: ${sessionId}`);
-    return {
-      exists: false,
-      canResume: false,
-      lastActivity: 0,
-      expiresAt: 0,
-    };
+    try {
+      const status = await batchSessionManager.getBatchSessionStatus(sessionId);
+      const lastActivity = status.lastActivity ?? status.startedAt ?? Date.now();
+      const normalizedStatus = mapManagerStatusToShapeStatus(status.status);
+      return {
+        exists: true,
+        canResume: normalizedStatus === 'paused',
+        lastActivity,
+        expiresAt: lastActivity + 5 * 60 * 1000,
+      };
+    } catch {
+      return {
+        exists: false,
+        canResume: false,
+        lastActivity: 0,
+        expiresAt: 0,
+      };
+    }
   },
 
   // ===================================
@@ -622,22 +682,19 @@ export const shapePluginAPI = {
   // Real-time Progress Subscription
   // ===================================
 
-  subscribeToProgress: (sessionId: string, callback: (event: BatchProgressEvent) => void): (() => void) => {
+  subscribeToProgress: (sessionId: string, callback: (event: ShapeBatchProgressEvent) => void): (() => void) => {
     const sessionMeta = getOrCreateSessionMeta(sessionId);
     if (!sessionMeta.treeNodeId) {
       void hydrateSessionMeta(sessionId);
     }
-
-    const bridge = createComlinkEventBridge<BatchProgressEvent, ProgressInfo, StandardProgressEvent>({
-      runtimeToUi: (progress) => buildBatchProgressEvent(sessionId, progress, sessionMeta),
-      workerToRuntime: standardToProgressInfo,
-    });
-    const proxiedCallback = bridge.createUiProxy(callback);
-    const runtimeListener = bridge.toRuntimeListener(proxiedCallback);
     const existing = progressCallbacks.get(sessionId);
     existing?.unsubscribe?.();
-    const unsubscribe = batchSessionManager.onBatchProgress(sessionId, runtimeListener);
-    progressCallbacks.set(sessionId, { proxy: proxiedCallback, unsubscribe });
+    const unsubscribe = batchSessionManager.onBatchProgress(sessionId, (event) => {
+      const info = batchEventToProgressInfo(event);
+      const normalized = buildBatchProgressEvent(sessionId, info, sessionMeta);
+      callback(normalized);
+    });
+    progressCallbacks.set(sessionId, { unsubscribe });
 
     return () => {
       const active = progressCallbacks.get(sessionId);
@@ -696,10 +753,16 @@ export const shapePluginAPI = {
       const session = await shapePluginAPI.getBatchSession(entity.batchSessionId);
       if (session) {
         return {
-          status: session.status === 'running' ? 'processing' : (session.status === 'completed' ? 'completed' : (session.status === 'failed' ? 'failed' : 'idle')),
+          status: session.status === 'running'
+            ? 'processing'
+            : session.status === 'completed'
+              ? 'completed'
+              : session.status === 'failed'
+                ? 'failed'
+                : 'idle',
           lastProcessed: session.updatedAt,
-          hasErrors: !!session.error,
-          errorMessages: session.error ? [String(session.error)] : [],
+          hasErrors: session.status === 'failed',
+          errorMessages: session.status === 'failed' ? ['Batch processing failed'] : [],
           // Optionally map aggregates if available
           totalFeatures: undefined,
           totalVectorTiles: undefined,

@@ -117,7 +117,7 @@ export interface ShapeAPI {
  * Processing status types
  */
 export interface ProcessingStatus {
-  status: 'idle' | 'processing' | 'completed' | 'failed' | 'cancelled';
+  status: 'idle' | 'processing' | 'paused' | 'completed' | 'failed' | 'cancelled';
   lastProcessed?: number;
   totalFeatures?: number;
   totalVectorTiles?: number;

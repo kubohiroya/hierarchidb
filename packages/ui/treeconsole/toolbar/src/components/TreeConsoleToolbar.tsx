@@ -824,10 +824,11 @@ function TreeConsoleToolbarContent({
             />
           </MenuItem>
 
-          {developerModeEnabled && (
-            <>
-              <Divider sx={{ my: 1 }} />
+          {developerModeEnabled &&
+            [
+              <Divider key="dev-divider" sx={{ my: 1 }} />,
               <MenuItem
+                key="dev-clear-idb"
                 onClick={() => {
                   handleAction('clear-indexeddb');
                   handleSettingsClose();
@@ -838,9 +839,8 @@ function TreeConsoleToolbarContent({
                   <DeleteSweepIcon fontSize="small" />
                 </ListItemIcon>
                 <ListItemText primary={developerMenuLabel} />
-              </MenuItem>
-            </>
-          )}
+              </MenuItem>,
+            ]}
         </Menu>
 
         {/* Theme submenu (rendered outside parent Menu to avoid invalid children) */}
@@ -935,6 +935,7 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
     canRemove = false,
     availableTemplates = [],
     allowImport = true,
+    developerModeEnabled = false,
   } = props;
 
   const resolvedCanTrash = typeof canTrash === 'boolean' ? canTrash : canRemove;
@@ -1040,6 +1041,7 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
         searchPlaceholder={searchPlaceholder}
         searchAriaLabel={searchAriaLabel}
         allowImport={allowImport}
+        developerModeEnabled={developerModeEnabled}
       />
     </Box>
   );

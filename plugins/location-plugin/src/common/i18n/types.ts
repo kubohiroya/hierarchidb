@@ -334,4 +334,13 @@ export interface LocationPluginTranslations {
     networkError: string;
     dataNotFound: string;
   };
+
+  build?: {
+    actionLabel: string;
+    inProgress: string;
+    success: string;
+    error: string;
+    noPoints: string;
+    requiresApproval: string;
+  };
 }

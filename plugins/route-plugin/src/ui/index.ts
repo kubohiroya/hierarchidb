@@ -44,12 +44,6 @@ export async function getPanelComponent(): Promise<PluginPanelComponent> {
 // Register host-composed steps on import (idempotent in registry)
 import './components/steps-provider.js';
 
-/*
-function toOptionalNodeId(value: HostPluginDialogProps['nodeId']): NodeId | undefined {
-  return typeof value === 'string' && value.length > 0 ? (value as NodeId) : undefined;
-}
- */
-
 function toRoutePanelProps(props: HostPluginPanelProps): RoutePanelProps {
   const record = props as Record<string, unknown>;
   const nodeId = record.nodeId;

@@ -5,16 +5,12 @@
  * extracted dependencies from the integration hook.
  */
 
-import type {
-  CommandResult,
-  NodeId,
-  NodeType,
-  TreeId,
-  TreeNode,
-} from '@hierarchidb/common-types';
+import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { CommandResult, NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-base';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import { DualKeyMap } from '@hierarchidb/util';
+import type { Remote } from 'comlink';
 import { preconnectPluginServices } from '../../services/preconnect.js';
 import type { TreeConsoleSSOTEntry } from '../../state/treeconsole.atoms.js';
 import { buildVisibleRows, syncNodeIndex } from '../../state/treeconsole.derive.js';
@@ -82,8 +78,9 @@ async function buildAncestryChain(params: {
   }
   try {
     const queryAPI = await client.getQueryAPI();
-    const ancestors = await queryAPI.listAncestors(pageNodeId as NodeId);
-    const ancestorIdsDesc = (ancestors ?? [])
+    const ancestors = ((await queryAPI.listAncestors(pageNodeId as NodeId)) ??
+      []) as Array<TreeNode | null>;
+    const ancestorIdsDesc: NodeId[] = ancestors
       .map((node) => normalizeNodeId(node?.id))
       .filter((id): id is NodeId => Boolean(id))
       .reverse();
@@ -134,6 +131,9 @@ export async function resolveTrashNavigationTarget(params: {
     return undefined;
   }
   const targetEntry = matches[matches.length - 1];
+  if (!targetEntry) {
+    return undefined;
+  }
   return targetEntry.parentId ?? null;
 }
 

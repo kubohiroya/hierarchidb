@@ -6,10 +6,18 @@
  * Corresponds to React Router route `t.($treeId).($pageNodeId).($targetNodeId).$nodeType.$action.tsx`
  */
 
+import type { NodeId } from '@hierarchidb/common-types';
 import { createRoute } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
-import type { TrashDialogData, TrashDialogRouteParams } from '~/router/pages/tree/trash/TrashDialog.js';
-import { type LoadNodeActionReturn, loadNodeAction } from '../../loaders/treeLoaders.js';
+import type {
+  TrashDialogData,
+  TrashDialogRouteParams,
+} from '~/router/pages/tree/trash/TrashDialog.js';
+import {
+  type LoadNodeActionReturn,
+  loadNodeAction,
+  loadWorkerAPIClient,
+} from '../../loaders/treeLoaders.js';
 import { treeNodeTypeRoute } from './nodeTypeRoute.js';
 import { type PluginDialogLoaderData, PluginDialogRoute } from './PluginDialogRoute.js';
 
@@ -61,16 +69,20 @@ export const treeDialogRoute = createRoute({
     }
 
     if (normalizedNodeType === 'folder') {
+      const { client } = await loadWorkerAPIClient();
       return {
         kind: 'plugin',
         data: {
-          tree: null,
-          pageNode: null,
-          targetNode: null,
+          client,
+          tree: undefined,
+          pageNodeId: resolvedPageNodeId as NodeId,
+          pageNode: undefined,
+          targetNodeId: targetNodeId as NodeId,
+          targetNode: undefined,
           nodeType: undefined,
           action: undefined,
           params: resolvedParams,
-        } as PluginDialogLoaderData,
+        },
       } satisfies TreeDialogLoaderResult;
     }
 

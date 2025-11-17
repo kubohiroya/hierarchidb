@@ -858,6 +858,9 @@
   - progress: 2025-10-17 20:02 Shape plugin の batch/service 層インポートと Runtime Worker 型の整合を整理し、`ShapeViewPanel`/各 Step の null 安全性を補強（UI/worker 未整理のため shape typecheck は引き続き未達）
   - progress: 2025-10-17 20:35 Shape plugin の旧来 `common/api`・バッチ監視 UI・ダイアログ拡張を撤去し、route/location と同様に Worker/API 依存へ一本化。`pnpm --filter @hierarchidb/shape-plugin typecheck` が通過（legacy API への参照なし）
   - blocked: 2025-10-16 11:40 `pnpm --filter @hierarchidb/{location,shape}-plugin typecheck` は引き続き既存課題（happy-dom 型不整合や UI/worker モジュール未整備）で失敗。Route plugin は batch API 整合化後に型検証通過。残りの課題は別タスクで対処が必要
+  - progress: 2025-11-17 18:24 shape plugin の ProcessingConfig を legacy flat + nested ブロックのハイブリッド構造へ整理し、shared utils/Step4/worker API から `mergeProcessingConfig`/`validateProcessingConfig` を共通利用する形へ統一。ShapeEntityHandler を Dexie 常駐シングルトン化し、UI/worker 間で同じ正規化済み設定を共有できることを確認。
+  - progress: 2025-11-17 18:46 worker API の batch progress/Session 連携を runtime manager 仕様に合わせて再実装（`mapManagerStatusToShapeStatus` 追加、TreeNodeId cast 補正、EphemeralDB メタ復元、`getBatchSession`/`getProcessingStatus` の型整備）し、`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0（#worklog-13 へログ）。
+  - blocked: 2025-11-17 18:46 location-plugin typecheck では BasicInfo 共通化前の UI/worker 差分（未整理の batch service）で引き続き失敗しており、本タスクでは触れていない。shape plugin 側の型エラーは解消済み。
 
 11) UI ローダーのスタブ撤去（P0）
 - ブランチ: `refactor/app/remove-ui-fallback`
@@ -8155,6 +8158,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-17 17:20 progress: refactor/worker/test-type-fixes — basemap WFL で `@hierarchidb/basemap-plugin/worker` を参照する際の型崩壊を防ぐため ambient d.ts を追加し、Fulltext attach ヘルパーと Undo/Policy/Trash 系テストの CoreStub をフルテキストテーブル付きの戻り値にリファクタ。TreeQuery の NodeType ブランド化や CommandExecutionRunner の private set 参照エラーも合わせて解消。
 - 2025-11-17 17:34 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0。basemap import・Fulltext attach・PeerStore mock の修正後に runtime-worker の型検証がグリーンになることを確認。
 - 2025-11-17 17:36 done: refactor/worker/test-type-fixes — runtime-worker の WFL/Undo 系テストが再び型エラーなしで通過するようになり、basemap peer store 登録の確認手順も復旧。ロールバックは `packages/runtime/worker/src/__tests__/wfl/basemap-working-copy-edit.wfl.test.ts` と `services/__tests__/unit/*`、`services/test-helpers/fulltextTestDB.ts`、`services/command/execution/CommandExecutionRunner.ts`、`tsconfig.base.json`、`packages/runtime/worker/tsconfig.json`、`TASKS.md` の差分を戻して `pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行する。
+- 2025-11-17 18:05 progress: fix/ui-treeconsole/trash-empty-flow — TreeConsole action factoryの Remote/WorkerAPI import欠落と implicit any を解消し、TanStack dialog ルートでフォルダ種別の loader データを補填。app/tsconfig に components/basemap/plugin-service-api の paths を追加して basemap worker database 参照と notify import を解決。
+- 2025-11-17 18:12 command: pnpm --filter @hierarchidb/app typecheck — exit 0。TreeConsole actions ・ dialogRoute ・ tsconfig 更新後に app 型検証がグリーンになることを確認。
 - 2025-11-17 16:13 start: fix/basemap/create-dialog-save — basemap Create ダイアログで Step1 name/description が保存されず、自動連番リネームと peerEntities 未保存が発生する問題を調査開始。DoD: Step1 入力の保存反映と重複検知による Next 無効化、Step2+ 値の `hdb-basemap-entities-db.peerEntities` 保存、カバレッジ追加、`pnpm --filter @hierarchidb/basemap-plugin test` 等のログ取得、TASKS 更新。
 - 2025-11-17 16:45 progress: fix/basemap/create-dialog-save — `usePluginDialogController` に basic-info 同期ブリッジ／予約フィールド除去／兄弟ノード名の重複検証を追加し、Folder Host の基本情報ステップが `__basicInfoValidation` メタを受け取ってエラーメッセージを表示できるように更新。BasicInfo ステップの validate を Next ボタン判定へ連携し、ベースマップ Create で空名／重複名がある場合に Next が disable されるよう調整。
 - 2025-11-17 16:48 command: pnpm --filter @hierarchidb/plugin-ui-host test — exit 0（PluginFlows/MultiStepDialog 等 6 ファイル・37 テスト green、Basic Info バリデーション差分の回帰なしを確認）。
@@ -8321,3 +8326,5 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-10 11:15 progress: fix/app/reload-browser-route — Router インスタンスを `window.__HDB_ROUTER__` に公開するフックを `entry.client.tsx` に追加し、ユーザーが DevTools から現在のマッチ状態/ロケーションを確認できるようにした（ハング時の実測値を共有してもらうため）。
 - 2025-11-10 12:40 progress: fix/app/reload-browser-route — RouterProvider を `AppRoot`/`AppProviders` で外側から包むようにエントリーを変更し、rootRoute 側は単純な `<Outlet/>` だけにして WorkerProvider がルートローダーの完了前でも必ずマウントされるように調整。`pnpm --filter @hierarchidb/app test -- router/__tests__/unit/configure-router-mode.unit.test.ts` を再実行し、タイムアウト対策として同テストのタイムアウトも延長済み。
 - 2025-11-11 12:50 progress: fix/app/reload-browser-route — デバッグ用途で一時的に追加していた `window.__HDB_ROUTER__` / `window.__HDB_WORKER_CLIENT_REF__` への代入処理を削除し、公開ビルドに不要なグローバル汚染が残らないよう後片付け。`entry.client.tsx` と `WorkerProvider.tsx` を整理済み。
+- 2025-11-17 18:24 progress: refactor/shape-plugin/runtime-typecheck — ProcessingConfig ハイブリッド構成と shared utils の merge/validate 更新を完了。ShapeDialog Step4 と worker API の入力検証を揃え、Dexie 常駐の ShapeEntityHandler へ WorkingCopy 作成/commit を一元化。
+- 2025-11-17 18:46 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。batch progress ブリッジと BatchSession status mapping を runtime manager 準拠に整備し、残っていた worker API/ShapeEntityService の型エラーが解消（ログ: 本 worklog）。

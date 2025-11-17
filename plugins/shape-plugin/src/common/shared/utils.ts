@@ -8,6 +8,9 @@ import type {
   CountryMetadata,
   DataSourceName,
   ProcessingConfig,
+  DownloadProcessingConfig,
+  SimplificationProcessingConfig,
+  TileProcessingConfig,
   SelectionStats,
   UrlMetadata,
   ValidationResult,
@@ -60,33 +63,33 @@ export function validateProcessingConfig(config: Partial<ProcessingConfig>): Val
   const errors: string[] = [];
   const warnings: string[] = [];
 
-  // Validate concurrent downloads
-  if (config.concurrentDownloads !== undefined) {
-    if (config.concurrentDownloads < 1 || config.concurrentDownloads > 10) {
+  const downloadConcurrency = config.downloadConfig?.maxConcurrent ?? config.concurrentDownloads;
+  if (downloadConcurrency !== undefined) {
+    if (downloadConcurrency < 1 || downloadConcurrency > 10) {
       errors.push('Concurrent downloads must be between 1 and 10');
     }
   }
 
-  // Validate concurrent processes
-  if (config.concurrentProcesses !== undefined) {
-    if (config.concurrentProcesses < 1 || config.concurrentProcesses > 8) {
+  const simplifyWorkers = config.simplificationConfig?.level1Workers ?? config.concurrentProcesses;
+  if (simplifyWorkers !== undefined) {
+    if (simplifyWorkers < 1 || simplifyWorkers > 8) {
       errors.push('Concurrent processes must be between 1 and 8');
     }
   }
 
-  // Validate max zoom level
-  if (config.maxZoomLevel !== undefined) {
-    if (config.maxZoomLevel < 8 || config.maxZoomLevel > 18) {
+  const maxZoom = config.tileConfig?.maxZoom ?? config.maxZoomLevel;
+  if (maxZoom !== undefined) {
+    if (maxZoom < 8 || maxZoom > 18) {
       errors.push('Max zoom level must be between 8 and 18');
     }
-    if (config.maxZoomLevel > 14) {
+    if (maxZoom > 14) {
       warnings.push('High zoom levels may require significant storage and processing time');
     }
   }
 
-  // Validate features area threshold
-  if (config.featureAreaThreshold !== undefined) {
-    if (config.featureAreaThreshold < 0 || config.featureAreaThreshold > 1) {
+  const areaThreshold = config.simplificationConfig?.areaThreshold ?? config.featureAreaThreshold;
+  if (areaThreshold !== undefined) {
+    if (areaThreshold < 0 || areaThreshold > 1) {
       errors.push('Feature area threshold must be between 0 and 1');
     }
   }
@@ -253,10 +256,56 @@ function estimateDataSize(
  * Merge processing config with defaults
  */
 export function mergeProcessingConfig(config: Partial<ProcessingConfig>): ProcessingConfig {
-  return {
+  const merged: ProcessingConfig = {
     ...DEFAULT_PROCESSING_CONFIG,
     ...config,
+    downloadConfig: {
+      ...(DEFAULT_PROCESSING_CONFIG.downloadConfig ?? { maxConcurrent: 2 }),
+      ...(config.downloadConfig ?? {}),
+    } as DownloadProcessingConfig,
+    simplificationConfig: {
+      ...(DEFAULT_PROCESSING_CONFIG.simplificationConfig ?? {
+        enableFiltering: false,
+        featureFilterMethod: 'hybrid',
+        areaThreshold: 0.1,
+        level1Workers: 2,
+        level2Workers: 2,
+        tolerance: 0.01,
+      }),
+      ...(config.simplificationConfig ?? {}),
+    } as SimplificationProcessingConfig,
+    tileConfig: {
+      ...(DEFAULT_PROCESSING_CONFIG.tileConfig ?? {
+        workers: 2,
+        maxZoom: 12,
+      }),
+      ...(config.tileConfig ?? {}),
+    } as TileProcessingConfig,
+    cleanupConfig: {
+      ...(DEFAULT_PROCESSING_CONFIG.cleanupConfig ?? {}),
+      ...(config.cleanupConfig ?? {}),
+    },
   };
+
+  merged.dataSource = config.dataSource ?? DEFAULT_PROCESSING_CONFIG.dataSource;
+
+  if (merged.downloadConfig) {
+    merged.concurrentDownloads = merged.downloadConfig.maxConcurrent;
+    merged.corsProxyBaseURL = merged.downloadConfig.corsProxyUrl;
+  }
+  if (merged.simplificationConfig) {
+    merged.enableFeatureFiltering = merged.simplificationConfig.enableFiltering;
+    merged.featureFilterMethod = merged.simplificationConfig.featureFilterMethod;
+    merged.featureAreaThreshold = merged.simplificationConfig.areaThreshold;
+    merged.simplificationTolerance = merged.simplificationConfig.tolerance;
+    merged.concurrentProcesses = merged.simplificationConfig.level1Workers;
+  }
+  if (merged.tileConfig) {
+    merged.maxZoomLevel = merged.tileConfig.maxZoom;
+    merged.tileBufferSize = merged.tileConfig.bufferSize;
+  }
+
+  return merged;
 }
 
 /**
@@ -416,6 +465,7 @@ export function createWorkingCopyFromEntity(entity: ShapeEntity): ShapeWorkingCo
     hasEntityCopy: true,
     entityWorkingCopyId: entity.id,
     originalVersion: entity.version,
+    version: entity.version ?? 1,
     isDraft: false,
     resumeStep: entity.resumeStep,
   };
@@ -450,7 +500,7 @@ export function mapWorkingCopyToUpdates(
     updates.licenseAgreement = source.licenseAgreement;
   }
   if (source.processingConfig) {
-    updates.processingConfig = source.processingConfig;
+    updates.processingConfig = mergeProcessingConfig(source.processingConfig);
   }
   if (source.checkboxState !== undefined) {
     updates.checkboxState = source.checkboxState;

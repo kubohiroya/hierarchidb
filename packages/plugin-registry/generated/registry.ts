@@ -105,22 +105,22 @@ export const pluginRegistry: PluginRegistryEntry[] = [
       },
     modules: {
     root: {
-        specifier: new URL("../../../plugins/basemap-plugin/dist/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/basemap-plugin",
       },
     ui: {
-        specifier: new URL("../../../plugins/basemap-plugin/dist/ui/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/basemap-plugin/ui",
         source: "plugins/basemap-plugin/src/ui/index.ts",
       },
     worker: {
-        specifier: new URL("../../../plugins/basemap-plugin/dist/worker/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/basemap-plugin/worker",
         source: "plugins/basemap-plugin/src/worker/index.ts",
       },
     database: {
-        specifier: new URL("../../../plugins/basemap-plugin/dist/services/database/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/basemap-plugin/database",
         source: "plugins/basemap-plugin/src/worker/database/index.ts",
       },
     icon: {
-        specifier: new URL("../../../plugins/basemap-plugin/dist/icon/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/basemap-plugin/icon",
         source: "plugins/basemap-plugin/src/icon/index.ts",
         exportName: "BasemapPluginIcon",
       }
@@ -226,18 +226,18 @@ export const pluginRegistry: PluginRegistryEntry[] = [
       },
     modules: {
     root: {
-        specifier: new URL("../../../plugins/folder-plugin/dist/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/folder-plugin",
       },
     ui: {
-        specifier: new URL("../../../plugins/folder-plugin/dist/ui/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/folder-plugin/ui",
         source: "plugins/folder-plugin/src/ui/index.ts",
       },
     worker: {
-        specifier: new URL("../../../plugins/folder-plugin/dist/worker/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/folder-plugin/worker",
         source: "plugins/folder-plugin/src/worker/index.ts",
       },
     icon: {
-        specifier: new URL("../../../plugins/folder-plugin/dist/icon/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/folder-plugin/icon",
         source: "plugins/folder-plugin/src/icon/index.ts",
         exportName: "FolderPluginIcon",
       }
@@ -330,14 +330,14 @@ export const pluginRegistry: PluginRegistryEntry[] = [
       },
     modules: {
     root: {
-        specifier: new URL("../../../plugins/linker-plugin/dist/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/linker-plugin",
       },
     ui: {
-        specifier: new URL("../../../plugins/linker-plugin/dist/ui/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/linker-plugin/ui",
         source: "plugins/linker-plugin/src/ui/index.ts",
       },
     worker: {
-        specifier: new URL("../../../plugins/linker-plugin/dist/worker/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/linker-plugin/worker",
         source: "plugins/linker-plugin/src/worker/index.ts",
       },
     common: {
@@ -345,7 +345,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         source: "plugins/linker-plugin/src/common/index.ts",
       },
     icon: {
-        specifier: new URL("../../../plugins/linker-plugin/dist/icon/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/linker-plugin/icon",
         source: "plugins/linker-plugin/src/icon/index.ts",
         exportName: "LinkerPluginIcon",
       }
@@ -455,22 +455,22 @@ export const pluginRegistry: PluginRegistryEntry[] = [
       },
     modules: {
     root: {
-        specifier: new URL("../../../plugins/location-plugin/dist/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/location-plugin",
       },
     ui: {
-        specifier: new URL("../../../plugins/location-plugin/dist/ui/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/location-plugin/ui",
         source: "plugins/location-plugin/src/ui/index.ts",
       },
     worker: {
-        specifier: new URL("../../../plugins/location-plugin/dist/worker/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/location-plugin/worker",
         source: "plugins/location-plugin/src/worker/index.ts",
       },
     database: {
-        specifier: new URL("../../../plugins/location-plugin/dist/database/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/location-plugin/database",
         source: "plugins/location-plugin/src/database/index.ts",
       },
     icon: {
-        specifier: new URL("../../../plugins/location-plugin/dist/icon/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/location-plugin/icon",
         source: "plugins/location-plugin/src/icon/index.ts",
         exportName: "LocationPluginIcon",
       }
@@ -564,22 +564,22 @@ export const pluginRegistry: PluginRegistryEntry[] = [
       },
     modules: {
     root: {
-        specifier: new URL("../../../plugins/resolver-plugin/dist/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/resolver-plugin",
       },
     ui: {
-        specifier: new URL("../../../plugins/resolver-plugin/dist/ui/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/resolver-plugin/ui",
         source: "plugins/resolver-plugin/src/ui/index.ts",
       },
     worker: {
-        specifier: new URL("../../../plugins/resolver-plugin/dist/worker/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/resolver-plugin/worker",
         source: "plugins/resolver-plugin/src/worker/index.ts",
       },
     database: {
-        specifier: new URL("../../../plugins/resolver-plugin/dist/worker/database/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/resolver-plugin/database",
         source: "plugins/resolver-plugin/src/worker/database/index.ts",
       },
     icon: {
-        specifier: new URL("../../../plugins/resolver-plugin/dist/icon/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/resolver-plugin/icon",
         source: "plugins/resolver-plugin/src/icon/index.ts",
         exportName: "ResolverPluginIcon",
       }
@@ -685,22 +685,22 @@ export const pluginRegistry: PluginRegistryEntry[] = [
       },
     modules: {
     root: {
-        specifier: new URL("../../../plugins/route-plugin/dist/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/route-plugin",
       },
     ui: {
-        specifier: new URL("../../../plugins/route-plugin/dist/ui/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/route-plugin/ui",
         source: "plugins/route-plugin/src/ui/index.ts",
       },
     worker: {
-        specifier: new URL("../../../plugins/route-plugin/dist/worker/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/route-plugin/worker",
         source: "plugins/route-plugin/src/worker/index.ts",
       },
     database: {
-        specifier: new URL("../../../plugins/route-plugin/dist/services/database/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/route-plugin/database",
         source: "plugins/route-plugin/src/services/database/index.ts",
       },
     icon: {
-        specifier: new URL("../../../plugins/route-plugin/dist/icon/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/route-plugin/icon",
         source: "plugins/route-plugin/src/icon/index.ts",
         exportName: "RoutePluginIcon",
       }
@@ -852,21 +852,21 @@ export const pluginRegistry: PluginRegistryEntry[] = [
       },
     modules: {
     root: {
-        specifier: new URL("../../../plugins/shape-plugin/dist/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/shape-plugin",
       },
     ui: {
-        specifier: new URL("../../../plugins/shape-plugin/dist/ui/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/shape-plugin/ui",
         source: "plugins/shape-plugin/src/ui/index.ts",
       },
     worker: {
-        specifier: new URL("../../../plugins/shape-plugin/dist/worker/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/shape-plugin/worker",
         source: "plugins/shape-plugin/src/worker/index.ts",
       },
     database: {
-        specifier: new URL("../../../plugins/shape-plugin/dist/worker/database/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/shape-plugin/database",
       },
     icon: {
-        specifier: new URL("../../../plugins/shape-plugin/dist/icon/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/shape-plugin/icon",
         source: "plugins/shape-plugin/src/icon/index.ts",
         exportName: "ShapePluginIcon",
       }
@@ -984,22 +984,22 @@ export const pluginRegistry: PluginRegistryEntry[] = [
       },
     modules: {
     root: {
-        specifier: new URL("../../../plugins/spreadsheet-plugin/dist/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/spreadsheet-plugin",
       },
     ui: {
-        specifier: new URL("../../../plugins/spreadsheet-plugin/dist/ui/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/spreadsheet-plugin/ui",
         source: "plugins/spreadsheet-plugin/src/ui/index.ts",
       },
     worker: {
-        specifier: new URL("../../../plugins/spreadsheet-plugin/dist/worker/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/spreadsheet-plugin/worker",
         source: "plugins/spreadsheet-plugin/src/worker/index.ts",
       },
     database: {
-        specifier: new URL("../../../plugins/spreadsheet-plugin/dist/services/database/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/spreadsheet-plugin/database",
         source: "plugins/spreadsheet-plugin/src/services/database/index.ts",
       },
     icon: {
-        specifier: new URL("../../../plugins/spreadsheet-plugin/dist/icon/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/spreadsheet-plugin/icon",
         source: "plugins/spreadsheet-plugin/src/icon/index.ts",
         exportName: "SpreadsheetPluginIcon",
       }
@@ -1107,18 +1107,18 @@ export const pluginRegistry: PluginRegistryEntry[] = [
       },
     modules: {
     root: {
-        specifier: new URL("../../../plugins/styler-plugin/dist/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/styler-plugin",
       },
     ui: {
-        specifier: new URL("../../../plugins/styler-plugin/dist/ui/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/styler-plugin/ui",
         source: "plugins/styler-plugin/src/ui/index.ts",
       },
     worker: {
-        specifier: new URL("../../../plugins/styler-plugin/dist/worker/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/styler-plugin/worker",
         source: "plugins/styler-plugin/src/worker/index.ts",
       },
     icon: {
-        specifier: new URL("../../../plugins/styler-plugin/dist/icon/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/styler-plugin/icon",
         source: "plugins/styler-plugin/src/icon/index.ts",
         exportName: "StylerPluginIcon",
       }
@@ -1201,14 +1201,14 @@ export const pluginRegistry: PluginRegistryEntry[] = [
       },
     modules: {
     root: {
-        specifier: new URL("../../../plugins/timeline-plugin/dist/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/timeline-plugin",
       },
     ui: {
-        specifier: new URL("../../../plugins/timeline-plugin/dist/ui/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/timeline-plugin/ui",
         source: "plugins/timeline-plugin/src/ui/index.ts",
       },
     worker: {
-        specifier: new URL("../../../plugins/timeline-plugin/dist/worker/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/timeline-plugin/worker",
         source: "plugins/timeline-plugin/src/worker/index.ts",
       },
     common: {
@@ -1216,7 +1216,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         source: "plugins/timeline-plugin/src/common/index.ts",
       },
     icon: {
-        specifier: new URL("../../../plugins/timeline-plugin/dist/icon/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/timeline-plugin/icon",
         source: "plugins/timeline-plugin/src/icon/index.ts",
         exportName: "TimelinePluginIcon",
       }
@@ -1302,9 +1302,9 @@ export const pluginWorkerPreloads: Record<string, string[]> = {
 
 export const pluginDatabaseLoaders: Record<string, { moduleSpecifier?: string; loader?: () => Promise<unknown>; prewarm?: { specifier?: string; exportName: string; load: () => Promise<unknown> }[] }> = {
   "basemap": {
-    moduleSpecifier: new URL("../../../plugins/basemap-plugin/dist/services/database/index.js", import.meta.url).href,
+    moduleSpecifier: "@hierarchidb/basemap-plugin/database",
     async loader() {
-      const mod = await import(new URL("../../../plugins/basemap-plugin/dist/services/database/index.js", import.meta.url).href);
+      const mod = await import("@hierarchidb/basemap-plugin/database");
       return mod;
     },
     prewarm: [
@@ -1333,85 +1333,85 @@ export const pluginDatabaseLoaders: Record<string, { moduleSpecifier?: string; l
     },
   },
   "location": {
-    moduleSpecifier: new URL("../../../plugins/location-plugin/dist/database/index.js", import.meta.url).href,
+    moduleSpecifier: "@hierarchidb/location-plugin/database",
     async loader() {
-      const mod = await import(new URL("../../../plugins/location-plugin/dist/database/index.js", import.meta.url).href);
+      const mod = await import("@hierarchidb/location-plugin/database");
       return mod;
     },
     prewarm: [
       {
-        specifier: new URL("../../../plugins/location-plugin/dist/database/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/location-plugin/database",
         exportName: "getEphemeralLocationDB",
         async load() {
-          const mod = await import(new URL("../../../plugins/location-plugin/dist/database/index.js", import.meta.url).href);
+          const mod = await import("@hierarchidb/location-plugin/database");
           return mod;
         },
       },
     ],
   },
   "resolver": {
-    moduleSpecifier: new URL("../../../plugins/resolver-plugin/dist/worker/database/index.js", import.meta.url).href,
+    moduleSpecifier: "@hierarchidb/resolver-plugin/database",
     async loader() {
-      const mod = await import(new URL("../../../plugins/resolver-plugin/dist/worker/database/index.js", import.meta.url).href);
+      const mod = await import("@hierarchidb/resolver-plugin/database");
       return mod;
     },
     prewarm: [
       {
-        specifier: new URL("../../../plugins/resolver-plugin/dist/worker/database/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/resolver-plugin/database",
         exportName: "resolverEntitiesDB",
         async load() {
-          const mod = await import(new URL("../../../plugins/resolver-plugin/dist/worker/database/index.js", import.meta.url).href);
+          const mod = await import("@hierarchidb/resolver-plugin/database");
           return mod;
         },
       },
     ],
   },
   "route": {
-    moduleSpecifier: new URL("../../../plugins/route-plugin/dist/services/database/index.js", import.meta.url).href,
+    moduleSpecifier: "@hierarchidb/route-plugin/database",
     async loader() {
-      const mod = await import(new URL("../../../plugins/route-plugin/dist/services/database/index.js", import.meta.url).href);
+      const mod = await import("@hierarchidb/route-plugin/database");
       return mod;
     },
     prewarm: [
       {
-        specifier: new URL("../../../plugins/route-plugin/dist/services/database/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/route-plugin/database",
         exportName: "RouteDatabase",
         async load() {
-          const mod = await import(new URL("../../../plugins/route-plugin/dist/services/database/index.js", import.meta.url).href);
+          const mod = await import("@hierarchidb/route-plugin/database");
           return mod;
         },
       },
     ],
   },
   "shape": {
-    moduleSpecifier: new URL("../../../plugins/shape-plugin/dist/worker/database/index.js", import.meta.url).href,
+    moduleSpecifier: "@hierarchidb/shape-plugin",
     async loader() {
-      const mod = await import(new URL("../../../plugins/shape-plugin/dist/worker/database/index.js", import.meta.url).href);
+      const mod = await import("@hierarchidb/shape-plugin");
       return mod;
     },
     prewarm: [
       {
-        specifier: new URL("../../../plugins/shape-plugin/dist/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/shape-plugin",
         exportName: "ShapeDB",
         async load() {
-          const mod = await import(new URL("../../../plugins/shape-plugin/dist/index.js", import.meta.url).href);
+          const mod = await import("@hierarchidb/shape-plugin");
           return mod;
         },
       },
     ],
   },
   "spreadsheet": {
-    moduleSpecifier: new URL("../../../plugins/spreadsheet-plugin/dist/services/database/index.js", import.meta.url).href,
+    moduleSpecifier: "@hierarchidb/spreadsheet-plugin/database",
     async loader() {
-      const mod = await import(new URL("../../../plugins/spreadsheet-plugin/dist/services/database/index.js", import.meta.url).href);
+      const mod = await import("@hierarchidb/spreadsheet-plugin/database");
       return mod;
     },
     prewarm: [
       {
-        specifier: new URL("../../../plugins/spreadsheet-plugin/dist/services/database/index.js", import.meta.url).href,
+        specifier: "@hierarchidb/spreadsheet-plugin/database",
         exportName: "SpreadsheetDatabase",
         async load() {
-          const mod = await import(new URL("../../../plugins/spreadsheet-plugin/dist/services/database/index.js", import.meta.url).href);
+          const mod = await import("@hierarchidb/spreadsheet-plugin/database");
           return mod;
         },
       },

@@ -206,6 +206,16 @@ export const ja: LocationPluginTranslations = {
     },
   },
 
+  build: {
+    actionLabel: 'ビルドを開始',
+    inProgress: 'ビルド中…',
+    success: 'ビルドを開始しました（セッション {sessionId}）',
+    error: 'ビルドに失敗しました: {message}',
+    noPoints: '処理可能な地点データがありません。',
+    requiresApproval:
+      'データソースを選択し、ライセンス同意を完了してノードを保存してからビルドを実行してください。',
+  },
+
   mapPreview: {
     description: 'バッチ処理の前に生成される地点データの範囲と密度を確認できます。',
     searchPlaceholder: '地点を検索...',

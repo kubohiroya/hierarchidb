@@ -27,6 +27,21 @@
       "@hierarchidb/common-types/*": [
         "../packages/common/types/src/*"
       ],
+      "@hierarchidb/basemap-plugin": [
+        "../plugins/basemap-plugin/src/index.ts"
+      ],
+      "@hierarchidb/basemap-plugin/*": [
+        "../plugins/basemap-plugin/src/*"
+      ],
+      "@hierarchidb/basemap-plugin/worker-database": [
+        "../plugins/basemap-plugin/src/worker/database/index.ts"
+      ],
+      "@hierarchidb/components": [
+        "../packages/components/src/index.ts"
+      ],
+      "@hierarchidb/components/*": [
+        "../packages/components/src/*"
+      ],
       "@hierarchidb/plugin-presentation": [
         "../packages/plugin-presentation/src/index.ts"
       ],
@@ -45,6 +60,15 @@
       "@hierarchidb/plugin-registry/*": [
         "../packages/plugin-registry/generated/*",
         "../packages/plugin-registry/src/*"
+      ],
+      "@hierarchidb/plugin-service-api": [
+        "../packages/plugin-service-api/dist/index"
+      ],
+      "@hierarchidb/plugin-service-api/*": [
+        "../packages/plugin-service-api/dist/*"
+      ],
+      "@hierarchidb/plugin-service-api/types/*": [
+        "../packages/plugin-service-api/src/types/*"
       ],
       "@hierarchidb/plugin-ui-sdk": [
         "../packages/plugin-ui-sdk/src/index.ts"

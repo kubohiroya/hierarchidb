@@ -212,6 +212,16 @@ export const en: LocationPluginTranslations = {
     },
   },
 
+  build: {
+    actionLabel: 'Build',
+    inProgress: 'Building…',
+    success: 'Build started (session {sessionId})',
+    error: 'Build failed: {message}',
+    noPoints: 'No location points available to process.',
+    requiresApproval:
+      'Provide a data source, accept license terms, and save the node before building.',
+  },
+
   mapPreview: {
     description: 'Preview the generated location points and verify coverage before running batch processing.',
     searchPlaceholder: 'Search locations...',

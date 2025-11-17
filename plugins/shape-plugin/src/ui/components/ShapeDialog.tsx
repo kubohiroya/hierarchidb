@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material';
 import type { NodeId } from '../../common/shared/index.js';
-import { DEFAULT_PROCESSING_CONFIG, type ShapeEntity } from '../../common/shared/index.js';
+import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig, type ShapeEntity } from '../../common/shared/index.js';
 
 export interface ShapeDialogProps {
   mode: 'create' | 'edit';
@@ -36,7 +36,7 @@ export function ShapeDialog({
         description: '',
         dataSourceName: 'naturalearth',
         licenseAgreement: true,
-        processingConfig: { ...DEFAULT_PROCESSING_CONFIG },
+        processingConfig: mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG),
         checkboxState: [],
         selectedCountries: [],
         adminLevels: [],
