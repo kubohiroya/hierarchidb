@@ -7,11 +7,11 @@
  */
 
 import { getDialogSurfaceColor, useMultiStepDialogContext } from '@hierarchidb/ui-dialog';
-import { Box, Button, Stack, Tooltip } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloseIcon from '@mui/icons-material/Close';
+import { Box, Button, Stack, Tooltip } from '@mui/material';
 import { useLocation } from '@tanstack/react-router';
 import React from 'react';
 
@@ -108,8 +108,7 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   const showLeftPrimary = primaryButtonOptions?.leftVisibility !== 'hidden';
   const showRightPrimary = primaryButtonOptions?.rightVisibility !== 'hidden';
   const showInlineSaveButton = mode === 'edit' && !isLastStep && showRightPrimary;
-  const inlineSaveDisabled =
-    !ctx.onRequestCommit || !allStepsValidated || !canCommit;
+  const inlineSaveDisabled = !ctx.onRequestCommit || !allStepsValidated || !canCommit;
   const shouldRenderNextButton = showRightPrimary && !isLastStep;
   const shouldRenderFinalCommitButton = showRightPrimary && isLastStep;
 

@@ -12,6 +12,7 @@ import type {
 import { resolveDefaultNodeName } from '../utils/default-node-name.js';
 import type { CommandProcessor } from './CommandProcessor.js';
 import type { CoreDB } from './CoreDB.js';
+import { getWorkingCopyCleaner, type WorkingCopyCleaner } from './WorkingCopyCleaner.js';
 import type { CommitResultV2 } from './WorkingCopyTreeNodeOperations.js';
 import {
   createDraftWorkingCopyGetOrCreate,
@@ -21,7 +22,6 @@ import {
   touchWorkingCopyByRecord,
   updateWorkingCopy as updateWc,
 } from './WorkingCopyTreeNodeOperations.js';
-import { getWorkingCopyCleaner, WorkingCopyCleaner } from './WorkingCopyCleaner.js';
 
 /**
  * WorkingCopyService - minimal implementation backed by EphemeralDB/CoreDB

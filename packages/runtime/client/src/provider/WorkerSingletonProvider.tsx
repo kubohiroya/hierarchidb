@@ -6,8 +6,8 @@
  * and verification that the Worker-side initialization is complete.
  */
 
-import type React from 'react';
 import type { WorkerAPI } from '@hierarchidb/common-api';
+import type React from 'react';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { WorkerInitializationChannel } from '../WorkerInitializationChannel.js';
 

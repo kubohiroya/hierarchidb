@@ -2,13 +2,13 @@ import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommandProcessor } from '../../CommandProcessor.js';
 import type { CoreDB } from '../../CoreDB.js';
-import { encodeWorkingCopyHolderName } from '../../utils/holder-encoding.js';
 import {
   attachFulltextTables,
   createFulltextTestDB,
   destroyFulltextTestDB,
   type FulltextTables,
 } from '../../test-helpers/fulltextTestDB.js';
+import { encodeWorkingCopyHolderName } from '../../utils/holder-encoding.js';
 
 describe('Policy C: block move/remove when WC exists', () => {
   const makeNode = (
@@ -27,15 +27,15 @@ describe('Policy C: block move/remove when WC exists', () => {
     version: 1,
   });
 
-  type CoreStub = Pick<
+  type CoreStubBase = Pick<
     CoreDB,
     'getNode' | 'updateNode' | 'deleteNode' | 'createNode' | 'listChildren'
   > & {
     nodes: { toArray: () => Promise<TreeNode[]> };
     state: Map<NodeId, TreeNode>;
-    fulltextNodes: FulltextTables['fulltextNodes'];
-    fulltextIndexes: FulltextTables['fulltextIndexes'];
   };
+
+  type CoreStub = CoreStubBase & FulltextTables;
 
   let core: CoreStub;
   let state: Map<NodeId, TreeNode>;
@@ -65,7 +65,7 @@ describe('Policy C: block move/remove when WC exists', () => {
     const listChildren = async (parentId: NodeId): Promise<TreeNode[]> =>
       Array.from(state.values()).filter((node) => node.parentId === parentId);
 
-    core = attachFulltextTables({
+    const baseCore: CoreStubBase = {
       state,
       getNode: vi.fn(async (id: NodeId) => state.get(id)),
       updateNode: vi.fn(async (node: Partial<TreeNode> & { id: NodeId }) => {
@@ -84,7 +84,9 @@ describe('Policy C: block move/remove when WC exists', () => {
       nodes: {
         toArray: vi.fn(async () => Array.from(state.values())),
       },
-    }, fulltextDb);
+    };
+
+    core = attachFulltextTables(baseCore, fulltextDb);
   });
 
   afterEach(async () => {

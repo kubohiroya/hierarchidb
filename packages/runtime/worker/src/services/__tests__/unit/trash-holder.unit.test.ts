@@ -11,7 +11,7 @@ import {
 
 type TreeNodeState = Record<string, TreeNode>;
 
-interface CoreStub {
+interface CoreStubBase {
   state: TreeNodeState;
   getNode: (id: NodeId) => Promise<TreeNode | undefined>;
   updateNode: (node: Partial<TreeNode> & { id: NodeId }) => Promise<void>;
@@ -19,9 +19,9 @@ interface CoreStub {
   createNode: (node: TreeNode) => Promise<NodeId>;
   listChildren: (parentId: NodeId) => Promise<TreeNode[]>;
   trees: { toArray: () => Promise<Array<{ rootId: NodeId; trashRootId: NodeId }>> };
-  fulltextNodes: FulltextTables['fulltextNodes'];
-  fulltextIndexes: FulltextTables['fulltextIndexes'];
 }
+
+type CoreStub = CoreStubBase & FulltextTables;
 
 describe('Trash direct trash storage flow', () => {
   let core: CoreStub;
@@ -59,7 +59,7 @@ describe('Trash direct trash storage flow', () => {
     state.d = makeNode('d', 'b', 'D');
     state.d.depth = 3;
 
-    core = attachFulltextTables({
+    const baseCore: CoreStubBase = {
       state,
       getNode: vi.fn(async (id: NodeId) => state[id]),
       updateNode: vi.fn(async (node: Partial<TreeNode> & { id: NodeId }) => {
@@ -82,7 +82,9 @@ describe('Trash direct trash storage flow', () => {
           { rootId: 'r:root' as NodeId, trashRootId: 'r:trash' as NodeId },
         ]),
       },
-    }, fulltextDb);
+    };
+
+    core = attachFulltextTables(baseCore, fulltextDb);
   });
 
   afterEach(async () => {

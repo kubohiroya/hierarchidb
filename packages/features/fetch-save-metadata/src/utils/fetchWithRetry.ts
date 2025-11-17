@@ -4,7 +4,7 @@
 export async function fetchWithRetry(
   url: string,
   maxRetries: number = 3,
-  delay: number = 1000,
+  delay: number = 1000
 ): Promise<Response> {
   let lastError: Error | undefined;
 
@@ -22,7 +22,7 @@ export async function fetchWithRetry(
       console.warn(`Attempt ${i + 1} failed: ${lastError.message}`);
 
       if (i < maxRetries - 1) {
-        await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
+        await new Promise((resolve) => setTimeout(resolve, delay * (i + 1)));
       }
     }
   }

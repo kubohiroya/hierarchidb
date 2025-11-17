@@ -232,9 +232,7 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
                       to={stepLink}
                       disabled={!canNavigate}
                       preload="intent"
-                      onClick={(
-                        event
-                      ) => handleStepClick(event, index, canNavigate)}
+                      onClick={(event) => handleStepClick(event, index, canNavigate)}
                       aria-current={isActive ? 'step' : undefined}
                       sx={{ padding: 0, margin: 0 }}
                     >

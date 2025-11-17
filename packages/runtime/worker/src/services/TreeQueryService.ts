@@ -13,7 +13,7 @@ import type {
 } from '@hierarchidb/common-types';
 import { SingletonMixin } from '@hierarchidb/util';
 import type { CoreDB } from './CoreDB.js';
-import { FulltextIndexService } from './FulltextIndexService.js';
+import type { FulltextIndexService } from './FulltextIndexService.js';
 
 export class TreeQueryService implements TreeQueryAPI {
   static async getSingleton(

@@ -12,6 +12,7 @@ import {
   ContentCut as ContentCutIcon,
   ContentPaste as ContentPasteIcon,
   DarkMode as DarkModeIcon,
+  DeleteSweep as DeleteSweepIcon,
   FileCopy as DuplicateIcon,
   Edit,
   FileDownload as FileDownloadIcon,
@@ -815,6 +816,24 @@ function TreeConsoleToolbarContent({
               secondary={languageLabels[language as keyof typeof languageLabels] ?? language}
             />
           </MenuItem>
+
+          {developerModeEnabled && (
+            <>
+              <Divider sx={{ my: 1 }} />
+              <MenuItem
+                onClick={() => {
+                  handleAction('clear-indexeddb');
+                  handleSettingsClose();
+                }}
+                aria-label={developerMenuLabel}
+              >
+                <ListItemIcon>
+                  <DeleteSweepIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary={developerMenuLabel} />
+              </MenuItem>
+            </>
+          )}
         </Menu>
 
         {/* Theme submenu (rendered outside parent Menu to avoid invalid children) */}
@@ -909,6 +928,7 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
     canRemove = false,
     availableTemplates = [],
     allowImport = true,
+    developerModeEnabled = false,
   } = props;
 
   const resolvedCanTrash = typeof canTrash === 'boolean' ? canTrash : canRemove;
@@ -919,6 +939,7 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
   const searchPlaceholder = t('search.placeholder');
   const searchAriaLabel = t('search.ariaLabel');
   const toolbarAriaLabel = t('aria.toolbarLabel');
+  const developerMenuLabel = t('developerMenu.clearIndexedDb');
 
   // Hide if console is hidden
   if (hideConsole) {

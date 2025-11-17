@@ -1,4 +1,5 @@
-import type { CountryMetadata } from '../../common/shared/index.js';
+import type { CountryMetadata, DataSourceName } from '../../common/shared/index.js';
+import { normalizeDataSourceName } from '../../common/shared/index.js';
 
 /**
  * MetadataLoader service
@@ -6,14 +7,14 @@ import type { CountryMetadata } from '../../common/shared/index.js';
  */
 export class MetadataLoader {
   private static instance: MetadataLoader | null = null;
-  private metadataCache: Map<string, CountryMetadata[]> = new Map();
+  private metadataCache: Map<DataSourceName, CountryMetadata[]> = new Map();
 
   // Mapping of data source names to metadata file names
-  private readonly dataSourceFileMap: Record<string, string> = {
-    GADM: 'gadm.json',
-    GeoBoundaries: 'geoboundaries.json',
-    NaturalEarth: 'naturalearth.json',
-    OpenStreetMap: 'osm.json',
+  private readonly dataSourceFileMap: Record<DataSourceName, string> = {
+    gadm: 'gadm.json',
+    geoboundaries: 'geoboundaries.json',
+    naturalearth: 'naturalearth.json',
+    openstreetmap: 'osm.json',
   };
 
   private constructor() {
@@ -30,55 +31,54 @@ export class MetadataLoader {
    * Load metadata for a specific data source
    */
   async loadMetadata(dataSource: string): Promise<CountryMetadata[]> {
-    // Check cache first
-    if (this.metadataCache.has(dataSource)) {
-      return this.metadataCache.get(dataSource)!;
-    }
-
-    const fileName = this.dataSourceFileMap[dataSource];
-    if (!fileName) {
+    const normalized = normalizeDataSourceName(dataSource);
+    if (!normalized) {
       console.warn(`No metadata file mapping for data source: ${dataSource}`);
       return [];
+    }
+
+    if (this.metadataCache.has(normalized)) {
+      return this.metadataCache.get(normalized)!;
     }
 
     try {
       // Import metadata from 02-fetch-save-metadata package
       let rawData: any[];
 
-      switch (dataSource) {
-        case 'GADM':
+      switch (normalized) {
+        case 'gadm':
           rawData = await import('@hierarchidb/fetch-save-metadata/output/gadm.json').then(
             (m) => m.default,
           );
           break;
-        case 'GeoBoundaries':
+        case 'geoboundaries':
           rawData = await import(
             '@hierarchidb/fetch-save-metadata/output/geoboundaries.json'
             ).then((m) => m.default);
           break;
-        case 'NaturalEarth':
+        case 'naturalearth':
           rawData = await import(
             '@hierarchidb/fetch-save-metadata/output/naturalearth.json'
             ).then((m) => m.default);
           break;
-        case 'OpenStreetMap':
+        case 'openstreetmap':
           rawData = await import('@hierarchidb/fetch-save-metadata/output/osm.json').then(
             (m) => m.default,
           );
           break;
         default:
-          console.warn(`Unknown data source: ${dataSource}`);
+          console.warn(`Unknown data source: ${normalized}`);
           return [];
       }
 
-      const metadata = this.transformMetadata(rawData, dataSource);
+      const metadata = this.transformMetadata(rawData, normalized);
 
       // Cache the result
-      this.metadataCache.set(dataSource, metadata);
+      this.metadataCache.set(normalized, metadata);
 
       return metadata;
     } catch (error) {
-      console.error(`Error loading metadata for ${dataSource}:`, error);
+      console.error(`Error loading metadata for ${normalized}:`, error);
       return [];
     }
   }
@@ -144,7 +144,10 @@ export class MetadataLoader {
    */
   clearCache(dataSource?: string): void {
     if (dataSource) {
-      this.metadataCache.delete(dataSource);
+      const normalized = normalizeDataSourceName(dataSource);
+      if (normalized) {
+        this.metadataCache.delete(normalized);
+      }
     } else {
       this.metadataCache.clear();
     }

@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import type { NodeId, TreeId } from '@hierarchidb/common-types';
 import { Dexie, type Table } from 'dexie';
-import type { FulltextIndexRecord, FulltextNodeRecord } from '../../../fulltext-types.js';
+import type { FulltextIndexRecord, FulltextNodeRecord } from '../fulltext-types.js';
 
 class FulltextTestDB extends Dexie {
   fulltextNodes!: Table<FulltextNodeRecord, [TreeId, NodeId]>;
@@ -24,7 +24,9 @@ export type FulltextTables = {
 };
 
 export async function createFulltextTestDB(label: string): Promise<FulltextTestDB> {
-  const db = new FulltextTestDB(`fulltext-${label}-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  const db = new FulltextTestDB(
+    `fulltext-${label}-${Date.now()}-${Math.random().toString(36).slice(2)}`
+  );
   await db.open();
   return db;
 }
@@ -35,7 +37,7 @@ export async function destroyFulltextTestDB(db?: FulltextTestDB): Promise<void> 
   db.close();
 }
 
-export function attachFulltextTables<T extends Record<string, unknown>>(
+export function attachFulltextTables<T extends object>(
   target: T,
   db: FulltextTestDB
 ): T & FulltextTables {

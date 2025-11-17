@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { CountryMetadata } from '../shared/index.js';
+import { normalizeDataSourceName } from '../shared/index.js';
 import { metadataLoader } from '../../services/metadata/MetadataLoader.js';
 
 export interface UseCountryMetadataOptions {
@@ -23,12 +24,13 @@ export function useCountryMetadata({
                                      dataSource,
                                      countryCodes,
                                    }: UseCountryMetadataOptions): UseCountryMetadataResult {
+  const normalizedDataSource = normalizeDataSourceName(dataSource ?? '') ?? '';
   const [metadata, setMetadata] = useState<CountryMetadata[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   const loadMetadata = useCallback(async () => {
-    if (!dataSource) {
+    if (!normalizedDataSource) {
       setMetadata([]);
       setLoading(false);
       return;
@@ -41,9 +43,9 @@ export function useCountryMetadata({
       let data: CountryMetadata[];
 
       if (countryCodes && countryCodes.length > 0) {
-        data = await metadataLoader.getCountriesMetadata(dataSource, countryCodes);
+        data = await metadataLoader.getCountriesMetadata(normalizedDataSource, countryCodes);
       } else {
-        data = await metadataLoader.loadMetadata(dataSource);
+        data = await metadataLoader.loadMetadata(normalizedDataSource);
       }
 
       setMetadata(data);
@@ -53,7 +55,7 @@ export function useCountryMetadata({
     } finally {
       setLoading(false);
     }
-  }, [dataSource, countryCodes]);
+  }, [normalizedDataSource, countryCodes]);
 
   useEffect(() => {
     loadMetadata();

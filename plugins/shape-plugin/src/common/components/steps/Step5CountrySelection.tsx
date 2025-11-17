@@ -20,6 +20,7 @@ import {
 import { Check as CheckIcon } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import type { CountryMetadata, StepProps } from '../../shared/index.js';
+import { normalizeDataSourceName } from '../../shared/index.js';
 import { useCountryMetadata } from '../../hooks/useCountryMetadata.js';
 import {
   calculateEstimatedFeatures,
@@ -42,7 +43,7 @@ export const Step5CountrySelection: React.FC<StepProps> = ({
   const { enqueueSnackbar } = useSnackbar();
 
   // Load country metadata from 02-fetch-save-metadata
-  const dataSourceKey = workingCopy.dataSourceName ?? 'gadm';
+  const dataSourceKey = normalizeDataSourceName(workingCopy.dataSourceName) ?? 'gadm';
   const {
     metadata: countries,
     loading,

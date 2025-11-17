@@ -141,4 +141,9 @@ export interface TreeConsoleToolbarProps {
    * Defaults to true for backward compatibility.
    */
   allowImport?: boolean;
+
+  /**
+   * Displays developer-only tools (e.g., IndexedDB reset) when true.
+   */
+  developerModeEnabled?: boolean;
 }

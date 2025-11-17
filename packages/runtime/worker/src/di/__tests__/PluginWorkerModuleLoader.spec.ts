@@ -15,7 +15,11 @@ class TestableLoader extends PluginWorkerModuleLoader {
 
 describe('PluginWorkerModuleLoader', () => {
   it('loads using specifier map when provided', async () => {
-    const loader = new TestableLoader({ basemap: '@hierarchidb/basemap-plugin/worker' }, undefined, undefined);
+    const loader = new TestableLoader(
+      { basemap: '@hierarchidb/basemap-plugin/worker' },
+      undefined,
+      undefined
+    );
     await loader.importModule('basemap');
     expect(loader.lastSpecifier).toBe('@hierarchidb/basemap-plugin/worker');
   });
@@ -28,7 +32,11 @@ describe('PluginWorkerModuleLoader', () => {
 
   it('retries with specifier when direct loader throws', async () => {
     const failingLoader = vi.fn().mockRejectedValue(new Error('fail'));
-    const loader = new TestableLoader({ basemap: '@hierarchidb/basemap-plugin/worker' }, { basemap: failingLoader }, undefined);
+    const loader = new TestableLoader(
+      { basemap: '@hierarchidb/basemap-plugin/worker' },
+      { basemap: failingLoader },
+      undefined
+    );
     await loader.importModule('basemap');
     expect(failingLoader).toHaveBeenCalledTimes(1);
     expect(loader.lastSpecifier).toBe('@hierarchidb/basemap-plugin/worker');

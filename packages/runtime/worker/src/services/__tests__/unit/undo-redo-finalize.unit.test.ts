@@ -5,23 +5,20 @@ import {
   attachFulltextTables,
   createFulltextTestDB,
   destroyFulltextTestDB,
-  type FulltextTables,
 } from '../../test-helpers/fulltextTestDB.js';
 
 type TreeNodeState = Partial<Record<NodeId, TreeNode>>;
 
-interface CoreStub {
+interface CoreStubBase {
   state: TreeNodeState;
   getNode: (id: NodeId) => Promise<TreeNode | undefined>;
   createNode: (node: TreeNode) => Promise<NodeId>;
   updateNode: (node: Partial<TreeNode> & { id: NodeId }) => Promise<void>;
   deleteNode: (id: NodeId) => Promise<void>;
   listChildren: (parentId: NodeId) => Promise<TreeNode[]>;
-  fulltextNodes: FulltextTables['fulltextNodes'];
-  fulltextIndexes: FulltextTables['fulltextIndexes'];
 }
 
-function makeCore(): CoreStub {
+function makeCore(): CoreStubBase {
   const state: TreeNodeState = {};
 
   return {

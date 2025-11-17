@@ -22,7 +22,10 @@ export class WorkingCopyCleaner {
   private intervalHandle: ReturnType<typeof setInterval> | null = null;
   private options: WorkingCopyCleanerOptions;
 
-  constructor(private readonly coreDB: CoreDB, options?: Partial<WorkingCopyCleanerOptions>) {
+  constructor(
+    private readonly coreDB: CoreDB,
+    options?: Partial<WorkingCopyCleanerOptions>
+  ) {
     this.options = {
       ttlMs: DEFAULT_TTL_MS,
       intervalMs: DEFAULT_INTERVAL_MS,

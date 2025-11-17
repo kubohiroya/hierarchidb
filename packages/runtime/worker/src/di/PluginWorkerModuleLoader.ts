@@ -4,8 +4,7 @@ import { WorkerDiTokens } from './tokens.js';
 
 type PluginWorkerModuleMap = Record<string, string>;
 type PluginWorkerLoaderMap = Record<string, () => Promise<unknown>>;
-const createPluginWorkerSpecifier = (nodeType: string) =>
-  `@hierarchidb/${nodeType}-plugin/worker`;
+const createPluginWorkerSpecifier = (nodeType: string) => `@hierarchidb/${nodeType}-plugin/worker`;
 
 @injectable()
 export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContract {

@@ -1,9 +1,9 @@
 import 'fake-indexeddb/auto';
-import { describe, expect, it } from 'vitest';
-import * as Comlink from 'comlink';
-import { MessageChannel } from 'worker_threads';
 import type { NodeId, TreeId } from '@hierarchidb/common-types';
 import { toNodeType, toTreeId } from '@hierarchidb/common-types';
+import * as Comlink from 'comlink';
+import { describe, expect, it } from 'vitest';
+import { MessageChannel } from 'worker_threads';
 import { createEndpointFromMessagePort } from '../../e2e/test-utils/messagePortEndpoint.js';
 import { exposeTestAPI } from '../../e2e/test-worker.entry.js';
 

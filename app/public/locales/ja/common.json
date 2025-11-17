@@ -171,6 +171,13 @@
             "ja": "日本語"
           }
         }
+      },
+      "developerMenu": {
+        "clearIndexedDb": "このアプリが作成したIndexedDBを全削除",
+        "clearIndexedDbConfirm": "このアプリが作成したIndexedDBをすべて削除しますか？この操作は元に戻せません。",
+        "clearIndexedDbSuccess": "このアプリが作成したIndexedDBデータを削除しました。",
+        "clearIndexedDbEmpty": "削除対象のIndexedDBは見つかりませんでした。",
+        "clearIndexedDbFailure": "IndexedDBの削除に失敗しました。詳細はコンソールを確認してください。"
       }
     },
     "contextMenu": {

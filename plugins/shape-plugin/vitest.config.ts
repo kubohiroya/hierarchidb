@@ -56,6 +56,10 @@ export default defineConfig({
         __dirname,
         '../../packages/features/download/src/index.ts',
       ),
+      '@hierarchidb/fetch-save-metadata': path.resolve(
+        __dirname,
+        '../../packages/features/fetch-save-metadata',
+      ),
       '~': path.resolve(__dirname, './src'),
       // App client hook is now injected via registerWorkerClientHook in tests
     },

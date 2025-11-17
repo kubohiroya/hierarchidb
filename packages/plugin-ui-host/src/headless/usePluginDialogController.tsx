@@ -35,6 +35,7 @@ import {
 } from '@hierarchidb/plugin-presentation';
 import { useDialogWorkingCopy, type WorkingCopyData } from '@hierarchidb/plugin-ui-sdk';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-client';
+import { resolveDefaultNodeName } from '@hierarchidb/runtime-worker';
 import type {
   DialogDisplayMode,
   DialogStep,
@@ -60,7 +61,6 @@ import { useNavigate } from '@tanstack/react-router';
 import { proxy, type Remote, releaseProxy } from 'comlink';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { resolveDefaultNodeName } from '@hierarchidb/runtime-worker';
 import { BasicInfoStep } from '../components/steps/BasicInfoStep.js';
 import { PluginDialogFooter, PluginDialogHeader } from './components/index.js';
 import type { PluginDialogFooterPrimaryButtonOptions } from './components/PluginDialogFooter.js';
@@ -139,7 +139,9 @@ type BasicInfoValidationMeta = {
   hasConflict: boolean;
 };
 
-const stripReservedDialogKeys = (input?: Record<string, unknown> | null): Record<string, unknown> => {
+const stripReservedDialogKeys = (
+  input?: Record<string, unknown> | null
+): Record<string, unknown> => {
   if (!input) return {};
   const clone: Record<string, unknown> = { ...input };
   delete clone[BASIC_INFO_META_KEY];
@@ -979,9 +981,7 @@ export function usePluginDialogController(
         if (disposed) return;
         const values = new Set(
           siblings
-            .map((node) =>
-              typeof node?.name === 'string' ? node.name.trim().toLowerCase() : ''
-            )
+            .map((node) => (typeof node?.name === 'string' ? node.name.trim().toLowerCase() : ''))
             .filter((name): name is string => Boolean(name))
         );
         setSiblingNames(values);
@@ -1043,7 +1043,8 @@ export function usePluginDialogController(
     const info = extractBasicInfoFields(workingCopyDataWithoutMeta);
     setBasicInfo((prev) => {
       const tagsEqual =
-        prev.tags.length === info.tags.length && prev.tags.every((tag, idx) => tag === info.tags[idx]);
+        prev.tags.length === info.tags.length &&
+        prev.tags.every((tag, idx) => tag === info.tags[idx]);
       if (prev.name === info.name && prev.description === info.description && tagsEqual) {
         return prev;
       }
@@ -1059,12 +1060,9 @@ export function usePluginDialogController(
     return [];
   }, [mode, nodeType, nodeId, workingCopyDataWithoutMeta, stepRegistry, regTick]);
 
-  const handleBasicInfoBridge = useCallback(
-    (data: Record<string, unknown>) => {
-      setBasicInfo(extractBasicInfoFields(data));
-    },
-    []
-  );
+  const handleBasicInfoBridge = useCallback((data: Record<string, unknown>) => {
+    setBasicInfo(extractBasicInfoFields(data));
+  }, []);
 
   const renderStep = useCallback(
     (cfg: PluginStepConfig) => (
@@ -1116,8 +1114,7 @@ export function usePluginDialogController(
         const resolveValidate = (() => {
           if (isBasicInfoStep) {
             if (validateFn) {
-              return () =>
-                Boolean(validateFn(workingCopyDataWithoutMeta)) && isBasicInfoValid;
+              return () => Boolean(validateFn(workingCopyDataWithoutMeta)) && isBasicInfoValid;
             }
             return () => isBasicInfoValid;
           }
@@ -1134,8 +1131,21 @@ export function usePluginDialogController(
       return result;
     }
 
-  return result.concat(pluginConfigSteps);
-  }, [composedConfigs.hasHostBase, composedConfigs.configs, pluginConfigSteps, basicInfo.name, basicInfo.description, basicInfo.tags, tagSuggestions, mode, basicInfoValidationError, isBasicInfoValid, renderStep, workingCopyDataWithoutMeta]);
+    return result.concat(pluginConfigSteps);
+  }, [
+    composedConfigs.hasHostBase,
+    composedConfigs.configs,
+    pluginConfigSteps,
+    basicInfo.name,
+    basicInfo.description,
+    basicInfo.tags,
+    tagSuggestions,
+    mode,
+    basicInfoValidationError,
+    isBasicInfoValid,
+    renderStep,
+    workingCopyDataWithoutMeta,
+  ]);
 
   useEffect(() => {
     hydratePresentationDefinitionsFromGlobal();

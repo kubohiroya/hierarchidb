@@ -35,16 +35,19 @@ describe('Undo/Redo for updateNode', () => {
   beforeEach(async () => {
     fulltextDb = await createFulltextTestDB('undo-redo-update');
     const state: Record<string, TreeNode> = { [baseNode.id]: { ...baseNode } };
-    coreDBStub = attachFulltextTables({
-      getNode: vi.fn(async (id: NodeId) => state[id]),
-      updateNode: vi.fn(async (node: Partial<TreeNode> & { id: NodeId }) => {
-        const prev = state[node.id];
-        state[node.id] = { ...prev, ...node } as TreeNode;
-      }),
-      deleteNode: vi.fn(async (_id: NodeId) => {}),
-      createNode: vi.fn(async (node: TreeNode) => node.id),
-      listChildren: vi.fn(async (_id: NodeId) => []),
-    }, fulltextDb);
+    coreDBStub = attachFulltextTables(
+      {
+        getNode: vi.fn(async (id: NodeId) => state[id]),
+        updateNode: vi.fn(async (node: Partial<TreeNode> & { id: NodeId }) => {
+          const prev = state[node.id];
+          state[node.id] = { ...prev, ...node } as TreeNode;
+        }),
+        deleteNode: vi.fn(async (_id: NodeId) => {}),
+        createNode: vi.fn(async (node: TreeNode) => node.id),
+        listChildren: vi.fn(async (_id: NodeId) => []),
+      },
+      fulltextDb
+    );
   });
 
   afterEach(async () => {

@@ -1,12 +1,12 @@
 import 'fake-indexeddb/auto';
+import type { NodeId, NodeType, Timestamp, TreeId } from '@hierarchidb/common-types';
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { NodeId, NodeType, TreeId, Timestamp } from '@hierarchidb/common-types';
 import { CoreDB } from '../../CoreDB.js';
+import { getWorkingCopyCleaner } from '../../WorkingCopyCleaner.js';
 import {
   createDraftWorkingCopyGetOrCreate,
   touchWorkingCopyNodes,
 } from '../../WorkingCopyTreeNodeOperations.js';
-import { getWorkingCopyCleaner } from '../../WorkingCopyCleaner.js';
 
 const TREE_ID = 'r' as TreeId;
 const PARENT_ID = 'r:root' as NodeId;

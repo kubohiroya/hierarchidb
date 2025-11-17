@@ -1,4 +1,5 @@
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';
+import { toNodeType } from '@hierarchidb/common-types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CoreDB } from '../../CoreDB.js';
 import type { FulltextIndexService } from '../../FulltextIndexService.js';
@@ -18,7 +19,7 @@ describe('TreeQueryService.listAncestors', () => {
     return {
       id: options.id as NodeId,
       parentId: (options.parentId ?? 'super-root') as NodeId,
-      nodeType: 'folder',
+      nodeType: toNodeType('folder'),
       name: options.name,
       depth: options.depth,
       createdAt: now,
@@ -48,12 +49,7 @@ describe('TreeQueryService.listAncestors', () => {
 
     const ancestors = await service.listAncestors('r:leaf' as NodeId);
 
-    expect(ancestors.map((node) => node.id)).toEqual([
-      'r:root',
-      'r:alpha',
-      'r:beta',
-      'r:gamma',
-    ]);
+    expect(ancestors.map((node) => node.id)).toEqual(['r:root', 'r:alpha', 'r:beta', 'r:gamma']);
   });
 
   it('includes the Resources root even when the node depth is even', async () => {

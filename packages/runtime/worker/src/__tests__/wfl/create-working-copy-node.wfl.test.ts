@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import type { NodeId, TreeNodeEvent, TreeId } from '@hierarchidb/common-types';
+import type { NodeId, TreeId, TreeNodeEvent } from '@hierarchidb/common-types';
 import { toNodeType, toTreeId } from '@hierarchidb/common-types';
 import * as Comlink from 'comlink';
 import { describe, expect, it } from 'vitest';

@@ -105,7 +105,9 @@ describe('PluginDialogHeader', () => {
       </ThemeProvider>
     );
 
-    const dragHandle = container.querySelector('[data-dialog-drag-handle="true"]') as HTMLElement | null;
+    const dragHandle = container.querySelector(
+      '[data-dialog-drag-handle="true"]'
+    ) as HTMLElement | null;
     expect(dragHandle).not.toBeNull();
     fireEvent.pointerDown(dragHandle!, { button: 0 });
     expect(onDragHandlePointerDown).toHaveBeenCalledTimes(1);

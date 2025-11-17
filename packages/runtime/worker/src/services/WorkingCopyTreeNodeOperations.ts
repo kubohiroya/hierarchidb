@@ -168,7 +168,12 @@ export async function createDraftWorkingCopyGetOrCreate(
       child = Array.isArray(arr) ? arr[0] : undefined;
     }
     if (child?.id) {
-      await touchWorkingCopyNodes(coreDB, existing.id as NodeId, child.id as NodeId, Date.now() as Timestamp);
+      await touchWorkingCopyNodes(
+        coreDB,
+        existing.id as NodeId,
+        child.id as NodeId,
+        Date.now() as Timestamp
+      );
     }
     return {
       wcHolderId: existing.id as NodeId,

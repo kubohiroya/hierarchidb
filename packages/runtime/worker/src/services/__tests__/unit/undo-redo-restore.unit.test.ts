@@ -16,14 +16,14 @@ describe('Undo/Redo for restoreFromTrash', () => {
     originalName?: string;
   };
 
-  type CoreStub = Pick<
+  type CoreStubBase = Pick<
     CoreDB,
     'getNode' | 'updateNode' | 'listChildren' | 'deleteNode' | 'createNode'
   > & {
     state: Map<NodeId, TrashedNode>;
-    fulltextNodes: FulltextTables['fulltextNodes'];
-    fulltextIndexes: FulltextTables['fulltextIndexes'];
   };
+
+  type CoreStub = CoreStubBase & FulltextTables;
 
   let core: CoreStub;
   let fulltextDb: Awaited<ReturnType<typeof createFulltextTestDB>>;
@@ -51,7 +51,7 @@ describe('Undo/Redo for restoreFromTrash', () => {
     const listChildren = async (parentId: NodeId): Promise<TreeNode[]> =>
       Array.from(state.values()).filter((node) => node.parentId === parentId);
 
-    core = attachFulltextTables({
+    const baseCore: CoreStubBase = {
       state,
       getNode: vi.fn(async (id: NodeId) => state.get(id)),
       updateNode: vi.fn(async (node: Partial<TreeNode> & { id: NodeId }) => {
@@ -73,7 +73,9 @@ describe('Undo/Redo for restoreFromTrash', () => {
         state.set(node.id, extended);
         return node.id;
       }),
-    }, fulltextDb);
+    };
+
+    core = attachFulltextTables(baseCore, fulltextDb);
   });
 
   afterEach(async () => {

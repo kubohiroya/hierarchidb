@@ -14,8 +14,9 @@ describe('transaction wrapper', () => {
   let rootId: NodeId;
 
   beforeEach(async () => {
-    (globalThis as typeof globalThis & { __HDB_FORCE_WORKER_TRANSACTIONS__?: boolean }).__HDB_FORCE_WORKER_TRANSACTIONS__ =
-      true;
+    (
+      globalThis as typeof globalThis & { __HDB_FORCE_WORKER_TRANSACTIONS__?: boolean }
+    ).__HDB_FORCE_WORKER_TRANSACTIONS__ = true;
     harness = await createCommandTestHarness('tx-wrapper');
     const [tree] = await harness.core.trees.toArray();
     rootId = (tree?.rootId ?? 'r:root') as NodeId;
@@ -145,7 +146,7 @@ describe('transaction wrapper', () => {
         return undefined;
       },
       async put(entity: PeerEntity<{ removed: boolean }>) {
-        return entity;
+        void entity;
       },
       async delete() {
         if (inTx) {

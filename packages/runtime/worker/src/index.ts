@@ -23,14 +23,14 @@ import { CoreDB } from './services/CoreDB.js';
 import { DialogStateService } from './services/DialogStateService.js';
 import { EphemeralDB } from './services/EphemeralDB.js';
 import { bootstrapFeatures } from './services/FeatureBootstrap.js';
-import { NodeLifecycleManager } from './services/NodeLifecycleManager.js';
 import { FulltextIndexService } from './services/FulltextIndexService.js';
+import { NodeLifecycleManager } from './services/NodeLifecycleManager.js';
 import { TreeMutationService } from './services/TreeMutationService.js';
 import { TreeQueryService } from './services/TreeQueryService.js';
 import { TreeSubscriptionService } from './services/TreeSubscriptionService.js';
+import { getWorkingCopyCleaner } from './services/WorkingCopyCleaner.js';
 // No direct Comlink types should leak at this boundary
 import { WorkingCopyService } from './services/WorkingCopyService.js';
-import { getWorkingCopyCleaner } from './services/WorkingCopyCleaner.js';
 
 export {
   configureWorkerContainer,

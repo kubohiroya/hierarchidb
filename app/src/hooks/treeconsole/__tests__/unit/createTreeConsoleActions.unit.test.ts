@@ -3,7 +3,7 @@ import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import { DualKeyMap } from '@hierarchidb/util';
 import type { Remote } from 'comlink';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms.js';
 import { preconnectPluginServices } from '../../../../services/preconnect.js';
 import { createTreeConsoleActions, resolveTrashNavigationTarget } from '../../createTreeConsoleActions.js';

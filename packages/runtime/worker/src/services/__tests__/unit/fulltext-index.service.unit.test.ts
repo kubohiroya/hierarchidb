@@ -1,11 +1,17 @@
 import 'fake-indexeddb/auto';
-import type { NodeId, NodeType, TreeChangeEvent, TreeId, TreeNode } from '@hierarchidb/common-types';
+import type {
+  NodeId,
+  NodeType,
+  TreeChangeEvent,
+  TreeId,
+  TreeNode,
+} from '@hierarchidb/common-types';
 import { Dexie, type Table } from 'dexie';
 import { Subject } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { CoreDB } from '../../CoreDB.js';
-import type { FulltextIndexRecord, FulltextNodeRecord } from '../../fulltext-types.js';
 import { FulltextIndexService } from '../../FulltextIndexService.js';
+import type { FulltextIndexRecord, FulltextNodeRecord } from '../../fulltext-types.js';
 
 class TestCoreDB {
   public readonly changeSubject = new Subject<TreeChangeEvent>();
@@ -57,7 +63,7 @@ describe('FulltextIndexService', () => {
   const baseNode = (overrides: Partial<TreeNode>): TreeNode => ({
     id: overrides.id ?? rootId,
     parentId: overrides.parentId,
-    nodeType: (overrides.nodeType ?? ('folder' as NodeType)),
+    nodeType: overrides.nodeType ?? ('folder' as NodeType),
     name: overrides.name ?? 'Root',
     depth: overrides.depth ?? 0,
     createdAt: overrides.createdAt ?? Date.now(),

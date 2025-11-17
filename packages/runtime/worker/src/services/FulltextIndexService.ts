@@ -1,14 +1,12 @@
-import type { TreeChangeEvent, TreeNode } from '@hierarchidb/common-types';
-import type { NodeId, TreeId } from '@hierarchidb/common-types';
+import type { NodeId, TreeChangeEvent, TreeId, TreeNode } from '@hierarchidb/common-types';
+import { SingletonMixin } from '@hierarchidb/util';
 import type { Table } from 'dexie';
 import lunr from 'lunr';
-import { SingletonMixin } from '@hierarchidb/util';
 import type { Subscription } from 'rxjs';
 import type { CoreDB } from './CoreDB.js';
 import type { FulltextIndexRecord, FulltextNodeRecord } from './fulltext-types.js';
 
 const DEFAULT_LOCALE = 'en';
-
 
 interface FulltextSearchParams {
   rootNodeId: NodeId;
@@ -293,5 +291,4 @@ export class FulltextIndexService {
       await this.scheduleRebuild(treeId, locale);
     }
   }
-
 }

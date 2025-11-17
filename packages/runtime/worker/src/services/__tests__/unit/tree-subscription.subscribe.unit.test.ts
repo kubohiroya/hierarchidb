@@ -1,3 +1,4 @@
+import type { TreeQueryAPI } from '@hierarchidb/common-api';
 import type {
   NodeId,
   NodeType,
@@ -7,7 +8,6 @@ import type {
   TreeNode,
   TreeNodeEvent,
 } from '@hierarchidb/common-types';
-import type { TreeQueryAPI } from '@hierarchidb/common-api';
 import { Subject } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import type { CoreDB } from '../../CoreDB.js';

@@ -36,7 +36,13 @@ export class CoreDB extends Dexie {
   async runInTx<T>(
     mode: 'r' | 'rw',
     tableNames: Array<
-      'trees' | 'nodes' | 'rootStates' | 'tags' | 'tagAssociations' | 'fulltextNodes' | 'fulltextIndexes'
+      | 'trees'
+      | 'nodes'
+      | 'rootStates'
+      | 'tags'
+      | 'tagAssociations'
+      | 'fulltextNodes'
+      | 'fulltextIndexes'
     >,
     fn: () => Promise<T>
   ): Promise<T> {

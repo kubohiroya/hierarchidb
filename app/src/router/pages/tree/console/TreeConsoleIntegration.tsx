@@ -16,11 +16,15 @@ import { useLocation, useNavigate } from '@tanstack/react-router';
 import type { Remote } from 'comlink';
 import { proxy as comlinkProxy } from 'comlink';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { notify } from '@hierarchidb/components';
+import { useTranslation } from 'react-i18next';
 import { TreeConsolePanelWithDynamicSpeedDial } from './TreeConsolePanelWithDynamicSpeedDial.js';
 import { TreeNodeInfoPanel } from './TreeNodeInfoPanel.js';
 import { SubscriptionCallback, Subscriptions } from '~/services/SubscriptionServices.ts';
 import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration.ts';
 import { useWorker } from '~/contexts/WorkerProvider.tsx';
+import { clearAppIndexedDBs } from '~/services/clearIndexedDb.ts';
+import { resolveDeveloperMode } from '~/utils/developerMode.ts';
 
 
 const logIntegrationWarning = (message: string, error: unknown): void => {
@@ -75,6 +79,7 @@ const TreeConsoleIntegrationInner: React.FC<
 > = ({ client: workerClient, treeId, pageNodeId, pageTreeNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation('common');
   const [hasTrashItems, setHasTrashItems] = useState(false);
   const [trashRootId, setTrashRootId] = useState<NodeId | null>(null);
   const trashSubRef = useRef<string | null>(null);
@@ -130,6 +135,10 @@ const TreeConsoleIntegrationInner: React.FC<
   // Row Click Action state (Select | Edit | Navigate)
   const [rowClickAction, setRowClickAction] = useState<'Select/Navigate' | 'Edit'>(
     'Select/Navigate'
+  );
+  const developerModeEnabled = useMemo(
+    () => resolveDeveloperMode(location.searchStr),
+    [location.searchStr]
   );
 
   // Check for trash items when worker client is available
@@ -256,6 +265,50 @@ const TreeConsoleIntegrationInner: React.FC<
       void cleanup();
     };
   }, [workerClient, treeId]);
+
+  const handleIndexedDbReset = useCallback(async () => {
+    if (!developerModeEnabled) return;
+    const confirmMessage =
+      t('treeConsole.toolbar.developerMenu.clearIndexedDbConfirm', {
+        defaultValue: 'Delete all IndexedDB data created by this app?',
+      }) ?? '';
+    if (typeof window !== 'undefined') {
+      const confirmed = window.confirm(confirmMessage);
+      if (!confirmed) return;
+    }
+    try {
+      const result = await clearAppIndexedDBs();
+      if (result.errors.length > 0) {
+        notify.error(
+          t('treeConsole.toolbar.developerMenu.clearIndexedDbFailure', {
+            defaultValue: 'Failed to delete IndexedDB data. See console for details.',
+          })
+        );
+        return;
+      }
+      if (result.deleted.length > 0) {
+        notify.success(
+          t('treeConsole.toolbar.developerMenu.clearIndexedDbSuccess', {
+            defaultValue: 'Deleted IndexedDB data created by this app.',
+          })
+        );
+      } else {
+        notify.info(
+          t('treeConsole.toolbar.developerMenu.clearIndexedDbEmpty', {
+            defaultValue: 'No IndexedDB databases were found for this app.',
+          })
+        );
+      }
+      navigate({ to: '/', replace: true });
+    } catch (error) {
+      logIntegrationWarning('Failed to clear IndexedDB', error);
+      notify.error(
+        t('treeConsole.toolbar.developerMenu.clearIndexedDbFailure', {
+          defaultValue: 'Failed to delete IndexedDB data. See console for details.',
+        })
+      );
+    }
+  }, [developerModeEnabled, navigate, t]);
 
   // Handle toolbar actions
   const handleToolbarAction = useCallback(
@@ -431,6 +484,11 @@ const TreeConsoleIntegrationInner: React.FC<
         case 'export':
           actions.handleExport?.();
           break;
+        case 'clear-indexeddb':
+          if (developerModeEnabled) {
+            void handleIndexedDbReset();
+          }
+          break;
         default:
           logIntegrationWarning(
             `Unhandled toolbar action: ${normalizedAction} (raw: ${action})`,
@@ -438,7 +496,7 @@ const TreeConsoleIntegrationInner: React.FC<
           );
       }
     },
-    [pageNodeId, workerClient, treeId, actions, navigate]
+    [pageNodeId, workerClient, treeId, actions, navigate, handleIndexedDbReset, developerModeEnabled]
   );
 
   const handleContextMenuAction = useCallback(
@@ -565,6 +623,7 @@ const TreeConsoleIntegrationInner: React.FC<
         canRemove={canTrash}
         availableTemplates={availableTemplateOptions}
         allowImport={canImportFromNode(pageTreeNode)}
+        developerModeEnabled={developerModeEnabled}
       />
 
       {/* TreeConsole Panel / Node Info */}

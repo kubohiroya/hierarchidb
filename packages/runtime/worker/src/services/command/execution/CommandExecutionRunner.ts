@@ -27,21 +27,21 @@ function detectFakeIndexedDB(): boolean {
   }
 }
 
+const NON_TRANSACTIONAL_COMMANDS = new Set(['commitWorkingCopy']);
+
 function shouldUseTransactions(commandKind: string): boolean {
-  if (CommandExecutionRunner.NON_TRANSACTIONAL_COMMANDS.has(commandKind)) {
+  if (NON_TRANSACTIONAL_COMMANDS.has(commandKind)) {
     return false;
   }
   const flags = globalThis as GlobalTxFlags;
   if (flags.__HDB_FORCE_WORKER_TRANSACTIONS__) {
     return true;
   }
-  const disableByEnv =
-    flags.__HDB_DISABLE_WORKER_TRANSACTIONS__ ?? detectFakeIndexedDB();
+  const disableByEnv = flags.__HDB_DISABLE_WORKER_TRANSACTIONS__ ?? detectFakeIndexedDB();
   return !disableByEnv;
 }
 
 export class CommandExecutionRunner {
-  private static readonly NON_TRANSACTIONAL_COMMANDS = new Set(['commitWorkingCopy']);
   private static readonly TRANSACTION_TABLES: Array<
     'nodes' | 'trees' | 'rootStates' | 'tags' | 'tagAssociations'
   > = ['nodes', 'trees', 'rootStates', 'tags', 'tagAssociations'];

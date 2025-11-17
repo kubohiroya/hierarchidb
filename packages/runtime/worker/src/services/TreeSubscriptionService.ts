@@ -1,3 +1,4 @@
+import type { TreeQueryAPI } from '@hierarchidb/common-api';
 import type {
   CommandEnvelope,
   NodeId,
@@ -16,9 +17,6 @@ import type {
   UndoStateEvent,
 } from '@hierarchidb/common-types';
 import { SingletonMixin } from '@hierarchidb/util';
-import type { TreeQueryAPI } from '@hierarchidb/common-api';
-import { FulltextIndexService } from './FulltextIndexService.js';
-import { TreeQueryService } from './TreeQueryService.js';
 import {
   bufferTime,
   concat,
@@ -31,7 +29,9 @@ import {
   share,
 } from 'rxjs';
 import type { CoreDB } from './CoreDB.js';
+import { FulltextIndexService } from './FulltextIndexService.js';
 import { type SubscriptionInfo, SubscriptionRegistry } from './SubscriptionRegistry.js';
+import { TreeQueryService } from './TreeQueryService.js';
 import { TreeSearchService } from './TreeSearchService.js';
 
 /**
@@ -75,7 +75,10 @@ export class TreeSubscriptionService {
 
   private readonly searchService: TreeSearchService;
 
-  constructor(private coreDB: CoreDB, treeQuery: TreeQueryAPI) {
+  constructor(
+    private coreDB: CoreDB,
+    treeQuery: TreeQueryAPI
+  ) {
     this.searchService = new TreeSearchService(treeQuery);
     //  CoreDBchangeSubject
     this.coreDB.changeSubject.subscribe({

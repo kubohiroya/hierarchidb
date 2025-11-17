@@ -51,10 +51,9 @@ function renderWithContext(ui: ReactNode, overrides: ContextOverrides) {
 
 describe('PluginDialogFooter icons', () => {
   it('shows Close and Next icons on the first step', () => {
-    renderWithContext(
-      <PluginDialogFooter mode="create" canCommit={false} />, 
-      { activeStepIndex: 0 }
-    );
+    renderWithContext(<PluginDialogFooter mode="create" canCommit={false} />, {
+      activeStepIndex: 0,
+    });
 
     const cancelButton = screen.getByRole('button', { name: 'Cancel' });
     expect(within(cancelButton).getByTestId('CloseIcon')).toBeInTheDocument();
@@ -64,10 +63,9 @@ describe('PluginDialogFooter icons', () => {
   });
 
   it('shows Back and Create icons on the final step (create mode)', () => {
-    renderWithContext(
-      <PluginDialogFooter mode="create" canCommit={true} />, 
-      { activeStepIndex: 1 }
-    );
+    renderWithContext(<PluginDialogFooter mode="create" canCommit={true} />, {
+      activeStepIndex: 1,
+    });
 
     const backButton = screen.getByRole('button', { name: 'Back' });
     expect(within(backButton).getByTestId('ChevronLeftIcon')).toBeInTheDocument();
@@ -77,10 +75,7 @@ describe('PluginDialogFooter icons', () => {
   });
 
   it('shows the check icon for Save (edit mode) on the final step', () => {
-    renderWithContext(
-      <PluginDialogFooter mode="edit" canCommit={true} />, 
-      { activeStepIndex: 1 }
-    );
+    renderWithContext(<PluginDialogFooter mode="edit" canCommit={true} />, { activeStepIndex: 1 });
 
     const saveButton = screen.getByRole('button', { name: 'Save' });
     expect(within(saveButton).getByTestId('CheckIcon')).toBeInTheDocument();

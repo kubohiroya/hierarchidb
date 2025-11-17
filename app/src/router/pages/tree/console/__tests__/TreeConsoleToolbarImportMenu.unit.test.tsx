@@ -82,4 +82,33 @@ describe('TreeConsoleToolbar import menu restrictions', () => {
     fireEvent.click(importItem);
     expect(onAction).toHaveBeenCalledWith('import', undefined);
   });
+
+  it('hides developer IndexedDB reset option when developer mode is disabled', async () => {
+    renderToolbar();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'treeConsole.toolbar.aria.settingsButton' })
+    );
+
+    expect(
+      screen.queryByRole('menuitem', {
+        name: 'treeConsole.toolbar.developerMenu.clearIndexedDb',
+      })
+    ).toBeNull();
+  });
+
+  it('emits clear-indexeddb action when developer option is clicked', async () => {
+    const onAction = vi.fn();
+    renderToolbar({ developerModeEnabled: true, onAction });
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'treeConsole.toolbar.aria.settingsButton' })
+    );
+
+    const devItem = await screen.findByRole('menuitem', {
+      name: 'treeConsole.toolbar.developerMenu.clearIndexedDb',
+    });
+    fireEvent.click(devItem);
+    expect(onAction).toHaveBeenCalledWith('clear-indexeddb', undefined);
+  });
 });
