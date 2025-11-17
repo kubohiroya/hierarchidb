@@ -15,7 +15,7 @@ import type { ReactNode } from 'react';
  */
 export type SelectionMode = 'none' | 'checkbox' | 'radio' | 'row-click';
 
-export type TreeConsoleSearchMode = 'local' | 'fulltext';
+export type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-toolbar';
 
 /**
  * TreeTableConsolePanel Props

@@ -115,26 +115,53 @@ export interface DataSourceConfig {
 // Processing Configuration
 // ================================
 
-export interface ProcessingConfig {
-  // Download settings
-  concurrentDownloads: number;
+export interface ProcessingConfig extends ProcessingConfigLegacyFields {
+  dataSource: DataSourceName;
+  downloadConfig: DownloadProcessingConfig;
+  simplificationConfig: SimplificationProcessingConfig;
+  tileConfig: TileProcessingConfig;
+  cleanupConfig?: CleanupProcessingConfig;
+}
+
+export interface ProcessingConfigLegacyFields {
+  concurrentDownloads?: number;
   corsProxyBaseURL?: string;
-
-  // Feature processing settings
-  enableFeatureFiltering: boolean;
-  featureFilterMethod: FeatureFilterMethod;
-  featureAreaThreshold: number;
-
-  // Vector tile settings
-  concurrentProcesses: number;
-  maxZoomLevel: number;
+  enableFeatureFiltering?: boolean;
+  featureFilterMethod?: FeatureFilterMethod;
+  featureAreaThreshold?: number;
+  concurrentProcesses?: number;
+  maxZoomLevel?: number;
   tileBufferSize?: number;
   simplificationTolerance?: number;
-
-  // Additional settings
   workerPoolSize?: number;
   simplificationLevels?: number[];
   tileZoomRange?: [number, number];
+}
+
+export interface DownloadProcessingConfig {
+  maxConcurrent: number;
+  corsProxyUrl?: string;
+  retryLimit?: number;
+  retryBackoff?: 'linear' | 'exponential';
+}
+
+export interface SimplificationProcessingConfig {
+  enableFiltering: boolean;
+  featureFilterMethod: FeatureFilterMethod;
+  areaThreshold: number;
+  level1Workers: number;
+  level2Workers: number;
+  tolerance: number;
+}
+
+export interface TileProcessingConfig {
+  workers: number;
+  maxZoom: number;
+  bufferSize?: number;
+}
+
+export interface CleanupProcessingConfig {
+  deleteDownloadedFiles?: boolean;
 }
 
 export type FeatureFilterMethod = 'bbox_only' | 'polygon_only' | 'hybrid';

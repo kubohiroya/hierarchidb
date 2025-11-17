@@ -391,6 +391,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "nodeType": "location",
         "version": "0.1.0",
         "description": "Geographic location nodes with Shape integration",
+        "extends": "folder",
         "priority": 40,
         "dependencies": [
           "@hierarchidb/plugin-base",
@@ -507,6 +508,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "nodeType": "resolver",
         "version": "1.0.0",
         "description": "Resolver node type plugin for property mapping between different data schemas",
+        "extends": "folder",
         "priority": 60,
         "dependencies": [
           "@hierarchidb/plugin-runtime-services",

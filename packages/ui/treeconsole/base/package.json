@@ -32,7 +32,6 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/ui-treeconsole-breadcrumb": "workspace:*",
     "@hierarchidb/ui-treeconsole-footer": "workspace:*",
-    "@hierarchidb/ui-treeconsole-toolbar": "workspace:*",
     "@hierarchidb/ui-treeconsole-treetable": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "rxjs": "^7.8.2",

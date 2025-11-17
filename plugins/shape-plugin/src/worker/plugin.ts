@@ -6,11 +6,20 @@
 import { ShapeMetadata } from '../common/shared/index.js';
 import { shapePluginAPI } from './api.js';
 import { ShapeEntityHandler } from './handlers/index.js';
+import { ShapeDB } from '../services/database/ShapeDB.js';
+import { getEphemeralShapeDB } from '../services/database/EphemeralShapeDB.js';
 
 /**
  * Worker Plugin definition for Shape plugin
  * Exports API implementation and entity handler for Worker environment
  */
+const shapeEntitiesDB = new ShapeDB();
+void shapeEntitiesDB.open();
+const shapeEntityHandlerInstance = new ShapeEntityHandler(
+  shapeEntitiesDB.shapeEntities as any,
+  getEphemeralShapeDB(),
+);
+
 export const ShapeWorkerPlugin = {
   metadata: ShapeMetadata,
 
@@ -18,7 +27,7 @@ export const ShapeWorkerPlugin = {
   api: shapePluginAPI,
 
   // Entity handler for database operations
-  entityHandler: new ShapeEntityHandler(),
+  entityHandler: shapeEntityHandlerInstance,
 
   // Database schema definition
   database: {

@@ -318,6 +318,23 @@
   - [ ] カバーするテストと検証コマンドを実行し、結果を運用ログへ追記する
 - ロールバック手順：関連ファイルの差分を revert し、`pnpm --filter @hierarchidb/basemap-plugin test` や該当 UI テストを再実行して旧挙動（保存失敗＋validation 無し）へ戻ることを確認する
 
+1301) Location/Route/Resolver ダイアログの共通化（P0）
+- ブランチ: `feat/plugins/unify-plugin-dialog`（sandbox 制約で `main` 上で作業）
+- 依存: `plugins/location-plugin`, `plugins/route-plugin`, `plugins/resolver-plugin`, `packages/plugin-ui-host`, `packages/plugin-ui-sdk`, `packages/plugin-base`, `packages/runtime-worker`
+- 受け入れ基準（DoD）:
+  - [ ] Location/Route/Resolver の Create/Edit ルートが共通 PluginDialog（`usePluginDialogController`）経由へ統一され、既存の独自 `*Dialog.tsx` に依存しない
+  - [ ] 各プラグイン固有ステップ（selection / details / batch など）が `PluginStepRegistry` もしくはホストプロフィール経由で提供され、ステップ遷移・バリデーション・バッチ起動が従来通り機能する
+  - [ ] BasicInfo Step の空名/重複チェックが location/route/resolver でも働き、Next/Save が正しく制御される（検証手順 or テストログ付き）
+  - [ ] 影響範囲のテスト（最低 `pnpm --filter @hierarchidb/plugin-ui-host test` / `pnpm --filter @hierarchidb/{location,route,resolver}-plugin test`）と typecheck が成功し、ログを運用ログに記録する
+  - [ ] `TASKS.md` Kanban/運用ログへ start→progress→done とロールバック手順を明記する
+- チェックリスト:
+  - [ ] 各独自ダイアログのステップ構成・state 管理を棚卸しし、PluginDialog へ移行する際のギャップ（バッチ開始、カスタム validation 等）を洗い出す
+  - [ ] `plugins/*-plugin/src/ui/index.ts` のダイアログエクスポートを PluginDialog アダプタへ差し替え、独自 `*Dialog` コンポーネント/Hook を削除もしくは再利用できる形へ整理する
+  - [ ] 共有 BasicInfo Step で name/description/tags が workingCopy へ反映されること、Step2 以降のデータが peer store や Worker API へ届くことを確認する
+  - [ ] UI/Worker それぞれで必要な追加 Hook/Step を `PluginStepRegistry` 登録に移し、`pnpm --filter` 系テストを実行する
+  - [ ] ロールバック手順と検証ログを TASKS 運用ログへ追記する
+- ロールバック手順：`plugins/{location,route,resolver}-plugin` のダイアログアダプタ変更を revert し、旧 `LocationDialog` / `RouteDialog` / `ResolverDialog` を再度 `getDialogComponent` で返すよう戻した上で、該当テストコマンドを再実行して旧挙動へ復帰する
+
 
 910) plugin-registry stage worker 解決フロー修正（P0）
 - ブランチ: `fix/plugin-registry/stage-worker-specifier`（sandbox 制約で `main` 上で作業）
@@ -8142,6 +8159,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-17 16:45 progress: fix/basemap/create-dialog-save — `usePluginDialogController` に basic-info 同期ブリッジ／予約フィールド除去／兄弟ノード名の重複検証を追加し、Folder Host の基本情報ステップが `__basicInfoValidation` メタを受け取ってエラーメッセージを表示できるように更新。BasicInfo ステップの validate を Next ボタン判定へ連携し、ベースマップ Create で空名／重複名がある場合に Next が disable されるよう調整。
 - 2025-11-17 16:48 command: pnpm --filter @hierarchidb/plugin-ui-host test — exit 0（PluginFlows/MultiStepDialog 等 6 ファイル・37 テスト green、Basic Info バリデーション差分の回帰なしを確認）。
 - 2025-11-17 16:49 command: pnpm --filter @hierarchidb/basemap-plugin test — exit 0（`useBaseMapEntity` ユニット 3 テスト green、dialog 側の差分で worker/API 回帰なし）。
+- 2025-11-17 17:10 progress: feat/plugins/unify-plugin-dialog — location/route/resolver 各プラグインで独自 `*Dialog` を exports から除去し、`getDialogComponent()` は PluginDialogHost への移行を促すスタブ化に切り替え。Location Manifest を folder ホスト継承に変更し、PluginStepRegistry へ BasicInfo 後続ステップ（DataSource/Licence/Selection/Batch/Preview/Build）を登録。Build ステップで「Build」ボタンを実装し、データソース＋ライセンス承認後のみバッチを開始するよう再実装。Route/Resolver もホストベース構成に合わせ Steps provider を更新。
+- 2025-11-17 17:15 command: pnpm --filter @hierarchidb/location-plugin test — exit 1（Vite import 解析が `./LocationVectorTileService.js` 等のパス解決で失敗する既知課題。新規ステップ導入後も path 解決エラーは続いており、本作業では未解消）。
+- 2025-11-17 17:00 start: feat/plugins/unify-plugin-dialog — Location/Route/Resolver の独自ダイアログを廃止し、共通 PluginDialog（BasicInfo validation 共通化）へ統一するタスクに着手。DoD: Kanban/ログ更新、PluginDialog への統合とステップ登録、空名/重複名ブロック適用、`pnpm --filter @hierarchidb/plugin-ui-host test` と各プラグイン test/typecheck 成功ログ記録、ロールバック手順整備。
 - 2025-11-17 10:15 start: feat/ui/multistep-dialog-footer — MultiStepDialogFooter 再設計（Create モードの Save Draft 左寄せ、Edit モードで常時 Save 表示＋全ステップ検証成功時のみ enable、最終ステップは Save 1 つ、中央はバッチ起動エリア確保、`pnpm --filter @hierarchidb/ui-dialog {typecheck,test -- --run MultiStepDialogFooter}` 実行ログ）に着手。Task/DoD/ロールバックを Kanban と同期。
 - 2025-11-17 10:18 progress: feat/ui/multistep-dialog-footer — `PluginDialogFooter` の左右/中央 3 カラム構成を導入し、Create モードの Save Draft を左列へ固定。Edit モードでは最終ステップ以外でも Save ボタンを右列（Next 左側）に表示し、全ステップ検証済み＋`canCommit` 満たすまで disabled とする実装、および data-testid 付きのレイアウトセクションを追加。
 - 2025-11-17 10:18 command: pnpm --filter @hierarchidb/plugin-ui-host test -- --run PluginDialogFooter — exit 0（新設テストを含む 6 specs がグリーン）。

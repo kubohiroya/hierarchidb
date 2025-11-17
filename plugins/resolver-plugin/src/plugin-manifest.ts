@@ -14,7 +14,8 @@ export const PLUGIN_MANIFEST: PluginManifest = {
   version: PLUGIN_VERSION,
   description: PLUGIN_DESCRIPTION,
   priority: 60,
-  dependencies: [],
+  extends: 'folder',
+  dependencies: ['folder'],
   icon: {
     mui: 'Extension',
     emoji: '🧩',

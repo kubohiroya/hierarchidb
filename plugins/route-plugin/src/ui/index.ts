@@ -2,7 +2,6 @@
 import { createElement } from 'react';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { RouteEntity } from '../common/types/index.js';
-import type { RouteDialogProps } from '../common/components/RouteDialog.js';
 import type { RoutePanelProps } from '../common/components/RoutePanel.js';
 
 type PluginDialogComponent = (props: HostPluginDialogProps) => JSX.Element | null;
@@ -26,9 +25,12 @@ type HostPluginPanelProps = Record<string, unknown> & {
 };
 
 export async function getDialogComponent(): Promise<PluginDialogComponent> {
-  const { RouteDialog } = await import('../common/components/RouteDialog.js');
-  const Adapter: PluginDialogComponent = (props: HostPluginDialogProps) =>
-    createElement(RouteDialog, adaptDialogProps(props));
+  const Adapter: PluginDialogComponent = () => {
+    if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+      console.warn('[route-plugin] getDialogComponent() is deprecated. Dialogs are provided via PluginDialogHost.');
+    }
+    return null;
+  };
   return Adapter;
 }
 
@@ -42,21 +44,11 @@ export async function getPanelComponent(): Promise<PluginPanelComponent> {
 // Register host-composed steps on import (idempotent in registry)
 import './components/steps-provider.js';
 
+/*
 function toOptionalNodeId(value: HostPluginDialogProps['nodeId']): NodeId | undefined {
   return typeof value === 'string' && value.length > 0 ? (value as NodeId) : undefined;
 }
-
-function adaptDialogProps(props: HostPluginDialogProps): RouteDialogProps {
-  return {
-    open: props.open,
-    onClose: props.onClose,
-    mode: props.mode === 'edit' ? 'edit' : 'create',
-    nodeId: toOptionalNodeId(props.nodeId),
-    parentId: toOptionalNodeId(props.parentId),
-    onSuccess: (entity) => props.onSuccess?.(entity),
-    onError: props.onError,
-  };
-}
+ */
 
 function toRoutePanelProps(props: HostPluginPanelProps): RoutePanelProps {
   const record = props as Record<string, unknown>;

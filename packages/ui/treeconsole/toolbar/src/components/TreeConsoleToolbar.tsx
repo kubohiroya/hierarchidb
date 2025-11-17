@@ -63,8 +63,11 @@ import {
   useState,
 } from 'react';
 
-import type { TreeConsoleToolbarActionParams, TreeConsoleToolbarProps } from '../types.js';
-import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-base';
+import type {
+  TreeConsoleSearchMode,
+  TreeConsoleToolbarActionParams,
+  TreeConsoleToolbarProps,
+} from '../types.js';
 
 const BASE_SEARCH_FIELD_WIDTH_PX = 300;
 const SEARCH_FIELD_WIDTH_PX = Math.round(BASE_SEARCH_FIELD_WIDTH_PX * 1.4);
@@ -232,6 +235,7 @@ function TreeConsoleToolbarContent({
   searchPlaceholder,
   searchAriaLabel,
   allowImport = true,
+  developerModeEnabled = false
 }: {
   controller: TreeConsoleToolbarProps['controller'];
   hasTrashItems: boolean;
@@ -250,6 +254,7 @@ function TreeConsoleToolbarContent({
   searchPlaceholder: string;
   searchAriaLabel: string;
   allowImport?: boolean;
+  developerModeEnabled?: boolean
 }) {
   const portalContainer = typeof window !== 'undefined' ? document.body : undefined;
   const [settingsAnchorEl, setSettingsAnchorEl] = useState<null | HTMLElement>(null);
@@ -354,6 +359,8 @@ function TreeConsoleToolbarContent({
     en: t('settings.language.modes.en'),
     ja: t('settings.language.modes.ja'),
   } as const;
+
+  const developerMenuLabel = t('developerMenu.clearIndexedDb');
 
   const handleSettingsClick = (event: MouseEvent<HTMLElement>) => {
     // Close other menus before opening Settings
@@ -928,7 +935,6 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
     canRemove = false,
     availableTemplates = [],
     allowImport = true,
-    developerModeEnabled = false,
   } = props;
 
   const resolvedCanTrash = typeof canTrash === 'boolean' ? canTrash : canRemove;
@@ -939,7 +945,6 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
   const searchPlaceholder = t('search.placeholder');
   const searchAriaLabel = t('search.ariaLabel');
   const toolbarAriaLabel = t('aria.toolbarLabel');
-  const developerMenuLabel = t('developerMenu.clearIndexedDb');
 
   // Hide if console is hidden
   if (hideConsole) {

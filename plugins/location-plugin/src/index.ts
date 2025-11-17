@@ -9,7 +9,6 @@ export type { CreateLocationData } from './common/entities/LocationEntityHandler
 export * from './common/entities/LocationEntityHandler.js';
 export { TabularQueryService as LocationTableQueryService } from '@hierarchidb/tabular-store';
 export * as worker from './worker/index.js';
-export * from './common/components/LocationDialog.js';
 export * from './common/components/LocationPanel.js';
 export * from './common/components/ui/SelectionMatrix.js';
 export * from './common/components/steps/LocationSelectionStep.js';

@@ -5,6 +5,7 @@
 
 import { BaseDataSourceStrategy, type DataSourceConfig, type FetchOptions, type ProcessOptions } from './DataSourceStrategy.js';
 import type { NodeId, ShapeEntity } from '../../common/shared/types.js';
+import type JSZip from 'jszip';
 import type { Feature as GeoJSONFeature } from 'geojson';
 
 //  Natural Earth
@@ -112,13 +113,14 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
       const zipBuffer = await response.arrayBuffer();
 
       //  ZIP
-      const { default: JSZip } = await ensureJsZip();
-      const zip = new JSZip();
+      const JSZipCtor = await ensureJsZip();
+      const zip = new JSZipCtor();
       const zipData = await zip.loadAsync(zipBuffer);
 
       const files = new Map<string, ArrayBuffer>();
 
-      for (const [fileName, fileData] of Object.entries(zipData.files)) {
+      const entries = Object.entries(zipData.files) as Array<[string, JSZip.JSZipObject]>;
+      for (const [fileName, fileData] of entries) {
         if (!fileData.dir) {
           const buffer = await fileData.async('arraybuffer');
           files.set(fileName, buffer);
@@ -324,11 +326,11 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
     return undefined;
   }
 }
-type JSZipModule = typeof import('jszip');
-let jszipModule: Promise<JSZipModule> | null = null;
-function ensureJsZip(): Promise<JSZipModule> {
+// type JSZipModule = typeof import('jszip');
+let jszipModule: Promise<typeof JSZip> | null = null;
+function ensureJsZip(): Promise<typeof JSZip> {
   if (!jszipModule) {
-    jszipModule = import('jszip');
+    jszipModule = import('jszip').then((mod) => mod.default ?? mod);
   }
   return jszipModule;
 }

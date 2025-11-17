@@ -3,7 +3,7 @@
  * Manages CRUD operations for Shape entities in Worker environment
  */
 
-import type { Collection, IndexableType, Table } from 'dexie';
+import { Dexie, type Collection, type IndexableType, type Table } from 'dexie';
 import type { DataSourceName, NodeId, NodeType } from '../../common/shared/index.js';
 import {
   buildShapeEntityFromCreate,
@@ -21,6 +21,7 @@ import {
   markWorkingCopyUpdated,
 } from '@hierarchidb/plugin-runtime-services';
 import type { Timestamp } from '@hierarchidb/common-types';
+import { getDBName } from '@hierarchidb/util';
 
 /**
  * Create shape data interface
@@ -54,9 +55,22 @@ export class ShapeEntityService extends BaseEntityService<
   protected table: Table<ShapeEntity, NodeId>;
   private ephemeralDB: any; // EphemeralDB reference for working copies
 
-  constructor(table: Table<ShapeEntity, NodeId>, ephemeralDB?: any) {
+  private static defaultDb: Dexie | null = null;
+
+  private static ensureDefaultTable(): Table<ShapeEntity, NodeId> {
+    if (!ShapeEntityService.defaultDb) {
+      const db = new Dexie(getDBName('shape-entity-service'));
+      db.version(1).stores({
+        shapeEntities: '&id, nodeId',
+      });
+      ShapeEntityService.defaultDb = db;
+    }
+    return ShapeEntityService.defaultDb.table('shapeEntities') as Table<ShapeEntity, NodeId>;
+  }
+
+  constructor(table?: Table<ShapeEntity, NodeId>, ephemeralDB?: any) {
     super();
-    this.table = table;
+    this.table = table ?? ShapeEntityService.ensureDefaultTable();
     this.ephemeralDB = ephemeralDB;
   }
 
@@ -98,7 +112,7 @@ export class ShapeEntityService extends BaseEntityService<
   ): Collection<ShapeEntity, IndexableType, ShapeEntity> {
     if (criteria.name) {
       const needle = criteria.name.toLowerCase();
-      query = query.filter(entity => entity.name.toLowerCase().includes(needle));
+      query = query.filter(entity => (entity.name ?? '').toLowerCase().includes(needle));
     }
 
     if (criteria.dataSource) {

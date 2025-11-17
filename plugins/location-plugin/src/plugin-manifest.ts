@@ -12,8 +12,9 @@ export const PLUGIN_MANIFEST = {
   nodeType: PLUGIN_NODE_TYPE,
   version: PLUGIN_VERSION,
   description: PLUGIN_DESCRIPTION,
+  extends: 'folder',
+  dependencies: ['folder'],
   priority: 40,
-  dependencies: [],
   icon: {
     mui: 'LocationOn',
     emoji: '📍',

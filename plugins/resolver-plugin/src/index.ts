@@ -1,5 +1,3 @@
-import type { ComponentType } from 'react';
-import type { ResolverDialogProps } from './ui/components/ResolverDialog.js';
 
 export type {
   ResolverEntity,
@@ -17,7 +15,6 @@ export type {
 } from './common/types/index.js';
 
 export {
-  ResolverDialog,
   ResolverPanel,
 } from './ui/components/index.js';
 
@@ -25,17 +22,15 @@ export async function loadResolverEntityHandlerModule() {
   return import(/* @vite-ignore */ './worker/ResolverEntityService.js');
 }
 
-export async function loadResolverDialogModule() {
-  return import(/* @vite-ignore */ './ui/components/ResolverDialog.js');
-}
-
 export async function loadResolverPanelModule() {
   return import(/* @vite-ignore */ './ui/components/ResolverPanel.js');
 }
 
-export async function getDialogComponent(): Promise<ComponentType<ResolverDialogProps>> {
-  const mod = await import('./ui/components/ResolverDialog.js');
-  return mod.ResolverDialog;
+export async function getDialogComponent() {
+  if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+    console.warn('[resolver-plugin] getDialogComponent() is deprecated. Dialogs are provided by PluginDialogHost.');
+  }
+  return () => null;
 }
 
 // Register host-composed steps on import (idempotent)

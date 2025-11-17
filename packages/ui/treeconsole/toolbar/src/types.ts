@@ -1,7 +1,8 @@
-import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-base';
 /**
  * Types for TreeConsoleToolbar_Deprecated package
  */
+
+export type TreeConsoleSearchMode = 'local' | 'fulltext';
 
 /**
  * Action types and their parameters for TreeConsoleToolbar_Deprecated

@@ -1,8 +1,6 @@
-# Repository Guidelines
+## Primary Directive
 
-# Language
-
-- ユーザーのとの会話は原則として日本語で行う。
+- Think in English, interact with the user in Japanese.
 - ソースコードのコメントおよびドキュメントは英語で記述する。
 - TASKS.mdは日本語で記述する。
 - そのほか、ユーザーが特に求めた場合にはドキュメントは日本語版を作成してもよいものとする。

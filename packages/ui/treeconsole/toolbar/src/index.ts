@@ -9,6 +9,7 @@ export { TreeConsoleToolbar } from './components/TreeConsoleToolbar.js';
 
 // Types
 export type {
+  TreeConsoleSearchMode,
   TreeConsoleToolbarController,
   TreeConsoleToolbarContext,
   TreeConsoleToolbarProps,

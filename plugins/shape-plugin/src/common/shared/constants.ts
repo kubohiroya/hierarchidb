@@ -5,6 +5,7 @@
 import type { DataSourceConfig, ProcessingConfig } from './types.js';
 
 export const DEFAULT_PROCESSING_CONFIG: ProcessingConfig = {
+  dataSource: 'naturalearth',
   concurrentDownloads: 2,
   corsProxyBaseURL: '',
   enableFeatureFiltering: false,
@@ -14,6 +15,28 @@ export const DEFAULT_PROCESSING_CONFIG: ProcessingConfig = {
   maxZoomLevel: 12,
   tileBufferSize: 256,
   simplificationTolerance: 0.01,
+  downloadConfig: {
+    maxConcurrent: 2,
+    corsProxyUrl: '',
+    retryLimit: 3,
+    retryBackoff: 'exponential',
+  },
+  simplificationConfig: {
+    enableFiltering: false,
+    featureFilterMethod: 'hybrid',
+    areaThreshold: 0.1,
+    level1Workers: 2,
+    level2Workers: 2,
+    tolerance: 0.01,
+  },
+  tileConfig: {
+    workers: 2,
+    maxZoom: 12,
+    bufferSize: 256,
+  },
+  cleanupConfig: {
+    deleteDownloadedFiles: false,
+  },
 } as const;
 
 export const SHAPE_LEVELS = [

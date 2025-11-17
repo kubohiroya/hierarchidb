@@ -1,6 +1,5 @@
-import React from 'react';
 import { toNodeId } from '@hierarchidb/common-types';
-import type { LocationDialogProps, LocationWorkingCopy } from '../common/types/index.js';
+import type { LocationDialogProps } from '../common/types/index.js';
 import type { LocationPanelProps } from '../common/components/LocationPanel.js';
 
 type PluginDialogComponent = (props: HostPluginDialogProps) => JSX.Element | null;
@@ -29,29 +28,14 @@ const toOptionalNodeId = (value: HostPluginDialogProps['nodeId']): LocationDialo
 const isVoidFn = (value: unknown): value is () => void => typeof value === 'function';
 
 export async function getDialogComponent(): Promise<PluginDialogComponent> {
-  const { LocationDialog } = await import('../common/components/LocationDialog.js');
-
-  const Adapter: PluginDialogComponent = (props: HostPluginDialogProps) => {
-    const { open, onClose, mode = 'create', nodeId, parentId, onSuccess, onError } = props;
-    const normalizedMode: LocationDialogProps['mode'] = mode === 'edit' ? 'edit' : 'create';
-
-    const handleSuccess = onSuccess
-      ? (entity: LocationWorkingCopy) => {
-          onSuccess(entity);
-        }
-      : undefined;
-
-    return React.createElement(LocationDialog, {
-      mode: normalizedMode,
-      nodeId: toOptionalNodeId(nodeId),
-      parentId: toOptionalNodeId(parentId),
-      open,
-      onClose,
-      onSuccess: handleSuccess,
-      onError,
-    } satisfies LocationDialogProps);
+  const Adapter: PluginDialogComponent = () => {
+    if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+      console.warn(
+        '[location-plugin] getDialogComponent() is deprecated. Dialogs are now provided via PluginDialogHost.'
+      );
+    }
+    return null;
   };
-
   return Adapter;
 }
 

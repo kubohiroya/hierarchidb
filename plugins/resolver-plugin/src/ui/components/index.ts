@@ -1,6 +1,4 @@
 // Export step components for potential reuse
-export { ResolverDialog } from './ResolverDialog.js';
-export type { ResolverDialogProps } from './ResolverDialog.js';
 export { ResolverPanel } from './ResolverPanel.js';
 
 export { SchemaSelectionStep } from './steps/SchemaSelectionStep.js';
@@ -8,10 +6,6 @@ export { PropertyMappingStep } from './steps/PropertyMappingStep.js';
 export { ValidationConfigStep } from './steps/ValidationConfigStep.js';
 export { DuplicateResolutionStep } from './steps/DuplicateResolutionStep.js';
 export { PreviewTestStep } from './steps/PreviewTestStep.js';
-
-export async function loadResolverDialogModule() {
-  return import(/* @vite-ignore */ './ResolverDialog.js');
-}
 
 export async function loadResolverPanelModule() {
   return import(/* @vite-ignore */ './ResolverPanel.js');
