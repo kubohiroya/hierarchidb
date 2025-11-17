@@ -71,6 +71,7 @@ export const en: LocationPluginTranslations = {
     tagsHelperText: 'Enter tags for search and filtering, separated by commas (optional)',
     tagsPlaceholder: 'tag1, tag2, tag3',
     hint: '💡 Tip: Setting appropriate names and tags makes data easier to find later',
+    tagSuggestions: ['transportation', 'administrative', 'custom'],
   },
 
   // Selection step

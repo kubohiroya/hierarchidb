@@ -332,8 +332,47 @@
   - [ ] `plugins/*-plugin/src/ui/index.ts` のダイアログエクスポートを PluginDialog アダプタへ差し替え、独自 `*Dialog` コンポーネント/Hook を削除もしくは再利用できる形へ整理する
   - [ ] 共有 BasicInfo Step で name/description/tags が workingCopy へ反映されること、Step2 以降のデータが peer store や Worker API へ届くことを確認する
   - [ ] UI/Worker それぞれで必要な追加 Hook/Step を `PluginStepRegistry` 登録に移し、`pnpm --filter` 系テストを実行する
-  - [ ] ロールバック手順と検証ログを TASKS 運用ログへ追記する
+ - [ ] ロールバック手順と検証ログを TASKS 運用ログへ追記する
 - ロールバック手順：`plugins/{location,route,resolver}-plugin` のダイアログアダプタ変更を revert し、旧 `LocationDialog` / `RouteDialog` / `ResolverDialog` を再度 `getDialogComponent` で返すよう戻した上で、該当テストコマンドを再実行して旧挙動へ復帰する
+
+1302) runtime/worker 中核モジュールの行数分割（P1）
+- ブランチ: `refactor/runtime-worker/module-split`（sandbox 制約で `main` 上で作業）
+- 依存: `packages/runtime/worker/src/services/**/*`, `packages/runtime/worker/src/entity/**/*`, `packages/runtime/worker/src/services/WorkingCopyTreeNodeOperations.ts`, `packages/runtime/worker/src/services/CommandProcessor.ts`
+- 受け入れ基準（DoD）:
+  - [ ] `WorkingCopyTreeNodeOperations.ts`, `CommandProcessor.ts`, `EntityLifecycleManager.ts` など 300 行超のファイルを責務ごとに分割し、1 ファイル 200 行前後を目標に再構成する
+  - [ ] 分割後に `pnpm --filter @hierarchidb/runtime-worker typecheck && pnpm --filter @hierarchidb/runtime-worker test` が成功し、ログを運用ログへ記録する
+  - [ ] 変更方針・ロールバック手順を TASKS Kanban/運用ログへ明記する
+- チェックリスト:
+  - [ ] 分割対象の責務を棚卸しし、再配置プランと新規モジュール構成を策定する
+  - [ ] 新規モジュールの import/export を整備し、必要に応じて unit test を追加
+  - [ ] typecheck/test 実行ログを運用ログに追記する
+- ロールバック手順：対象ファイルの分割差分を revert し、旧構成に戻してから `pnpm --filter @hierarchidb/runtime-worker typecheck && pnpm --filter @hierarchidb/runtime-worker test` を再実行する
+
+1303) TreeConsole / PluginDialog UI コンポーネント分割（P1）
+- ブランチ: `refactor/ui-dialog/split-large-components`（sandbox 制約で `main` 上で作業）
+- 依存: `packages/ui/treeconsole/base`, `packages/ui/treeconsole/toolbar`, `packages/plugin-ui-host`, `app/src/router/pages/tree/console/*`
+- 受け入れ基準（DoD）:
+  - [ ] `TreeConsoleToolbar.tsx`, `TreeConsoleIntegration.tsx`, `PluginDialogFooter.tsx` など 300 行超の UI ファイルをサブコンポーネント/Hook に分割し、責務を整理する
+  - [ ] `pnpm --filter @hierarchidb/ui-treeconsole-* test` および `pnpm --filter @hierarchidb/plugin-ui-host test` が成功し、ログを運用ログへ記録する
+  - [ ] 変更概要とロールバック手順を TASKS Kanban/運用ログへ明記する
+- チェックリスト:
+  - [ ] 分割対象コンポーネント/Hook を特定し、ファイル構成案を作成する
+  - [ ] 新規サブコンポーネント実装と既存テスト更新を実施する
+  - [ ] typecheck/test 実行結果をログ化する
+- ロールバック手順：対象ファイルの分割変更を revert し、旧構成に戻してから前述コマンドでテストを再実行する
+
+1304) プラグインダイアログ共通ステップ整備（P1）
+- ブランチ: `feat/plugins/dialog-step-refactor`（sandbox 制約で `main` 上で作業）
+- 依存: `plugins/location-plugin`, `plugins/route-plugin`, `plugins/resolver-plugin`, `packages/plugin-base`, `packages/plugin-ui-host`
+- 受け入れ基準（DoD）:
+  - [ ] Location/Route/Resolver の `PluginStepRegistry` 登録を整理し、共通 BasicInfo → 拡張ステップ → Build の構成が PluginDialogHost から動作する
+  - [ ] PluginDialog の中央ボタンラベルを「Build」に統一し、`canStartBatch` 判定が正しく効いていることを確認する
+  - [ ] `pnpm --filter @hierarchidb/plugin-ui-host test` および各対象プラグインの test/typecheck が成功し、ログを記録する
+- チェックリスト:
+  - [ ] Location Build Step のリファクタ・Route/Resolver のステップ登録調整を行い、PluginDialogHost 前提の構成を完成させる
+  - [ ] `PluginDialogFooter` のテキスト変更（Start Batch→Build）とテスト更新を行う
+  - [ ] ロールバック手順と検証ログを TASKS 運用ログへ追記する
+- ロールバック手順：プラグイン側のステップ登録/フッター変更を revert し、旧 `Start Batch` 表示と独自ダイアログを復元して再度テストを実行する
 
 
 910) plugin-registry stage worker 解決フロー修正（P0）
@@ -861,6 +900,7 @@
   - progress: 2025-11-17 18:24 shape plugin の ProcessingConfig を legacy flat + nested ブロックのハイブリッド構造へ整理し、shared utils/Step4/worker API から `mergeProcessingConfig`/`validateProcessingConfig` を共通利用する形へ統一。ShapeEntityHandler を Dexie 常駐シングルトン化し、UI/worker 間で同じ正規化済み設定を共有できることを確認。
   - progress: 2025-11-17 18:46 worker API の batch progress/Session 連携を runtime manager 仕様に合わせて再実装（`mapManagerStatusToShapeStatus` 追加、TreeNodeId cast 補正、EphemeralDB メタ復元、`getBatchSession`/`getProcessingStatus` の型整備）し、`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0（#worklog-13 へログ）。
   - blocked: 2025-11-17 18:46 location-plugin typecheck では BasicInfo 共通化前の UI/worker 差分（未整理の batch service）で引き続き失敗しており、本タスクでは触れていない。shape plugin 側の型エラーは解消済み。
+  - progress: 2025-11-17 19:08 location-plugin の steps-provider を `@hierarchidb/ui-plugin-basic-info` ベースへ再構成し、tsconfig include/exclude を修正。`package.json` に `typecheck` スクリプトを追加し、`pnpm --filter @hierarchidb/location-plugin typecheck` exit 0 を確認（BasicInfo + batch/service ステップの共通ロジックへ統合）。
 
 11) UI ローダーのスタブ撤去（P0）
 - ブランチ: `refactor/app/remove-ui-fallback`
@@ -3117,6 +3157,14 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1504) PluginDialog currentStepData 初期化順序修正（P0） — 完了 (2025-11-18)
+  - 要点：`usePluginDialogController` で `basicInfoValidationMeta` と `currentStepData` の `useMemo` を `renderStep` より前へ集約し、`StepAdapterComponent` を渡す `useCallback` と `headlessProps` が TDZ を踏まないよう依存順を整理。PluginDialogShell 起動時の `Cannot access 'currentStepData' before initialization` を解消。
+  - 検証：`pnpm --filter @hierarchidb/plugin-ui-host test -- --run dialogStateSubscription`（2025-11-18 08:10 JST, #worklog-13）の exit 0 を確認。
+  - ロールバック手順：`packages/plugin-ui-host/src/headless/usePluginDialogController.tsx` の順序変更を revert し、上記テストコマンドを再実行して現状挙動へ戻す。
+- 1505) PluginPresentation description 型整備（P0） — 完了 (2025-11-18)
+  - 要点：`PluginPresentation` 型へ `description?: string` を追加し、registry/signature 生成と buildPresentation が manifest description を伝播するよう更新。UI の `presentation?.description` 参照が型安全になり、description 変更時にキャッシュが更新される。
+  - 検証：`pnpm --filter @hierarchidb/plugin-presentation build`（2025-11-18 08:30 JST）と `pnpm --filter @hierarchidb/plugin-ui-host test -- --run PluginDialogHeader`（2025-11-18 08:33 JST）の exit 0 を #worklog-13 に記録。
+  - ロールバック手順：`packages/plugin-presentation/src/{types.ts,index.ts,__tests__/pluginPresentation.test.ts}` と `app/src/services/plugin-presentation.ts` の差分を revert し、上記コマンドを再実行して description 拡張前へ戻す。
 - 1332) BasicInfo 共通化と runtime-worker 後処理整備（P0） — 完了 (2025-11-15)
   - DoD:
     - `TASKS.md` の Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記。
@@ -8140,6 +8188,19 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-13"></a>
 
+- 2025-11-18 08:05 start: fix/plugin-dialog/current-step-data — `usePluginDialogController` で `currentStepData` を評価順序の都合で未初期化参照している件を調査開始。DoD: Kanban/ログ更新、初期化順序の是正で PluginDialogShell 例外を解消、`pnpm --filter @hierarchidb/plugin-ui-host test -- --run dialogStateSubscription` などの検証ログ取得、ロールバック記述を完了する。
+- 2025-11-18 08:09 progress: fix/plugin-dialog/current-step-data — `currentStepData` の `useMemo` ブロックを `handleBasicInfoBridge` 直後へ移動し、`renderStep` の `useCallback` が TDZ を踏まないよう依存順序を確定。BasicInfo メタと workingCopy データの統合結果が従来どおり保持されることを確認。
+- 2025-11-18 08:10 command: pnpm --filter @hierarchidb/plugin-ui-host test -- --run dialogStateSubscription — exit 0。plugin-ui-host の headless/PluginDialog 系テストを実行し、順序修正後も回帰がないことを確認。
+- 2025-11-18 08:11 done: fix/plugin-dialog/current-step-data — `currentStepData` 初期化順を是正して PluginDialogShell 起動時の ReferenceError を解消。ロールバックは `packages/plugin-ui-host/src/headless/usePluginDialogController.tsx` の順序変更を revert し、上記テストコマンドを再実行する。
+- 2025-11-18 08:13 progress: fix/plugin-dialog/current-step-data — `basicInfoValidationMeta` も `renderStep` 以前へ移し、`currentStepData` が参照する依存がすべて初期化済みであることを保証。両 useMemo ブロックの順序を整理して TDZ を完全に排除。
+- 2025-11-18 08:15 command: pnpm --filter @hierarchidb/plugin-ui-host test -- --run dialogStateSubscription — exit 0。`basicInfoValidationMeta` と `currentStepData` の再配置後も PluginDialog まわりのテストが通過することを確認。
+- 2025-11-18 08:19 progress: fix/plugin-dialog/current-step-data — BasicInfo validation の正規化/競合判定を `renderStep` より前に移し、`basicInfoValidationMeta` → `currentStepData` の依存順を再整理。`basicInfoValidationError` 参照による TDZ が発生しないことを確認。
+- 2025-11-18 08:21 command: pnpm --filter @hierarchidb/plugin-ui-host test -- --run dialogStateSubscription — exit 0。最終順序調整後の PluginDialog テストがグリーン。
+- 2025-11-18 08:24 start: fix/plugin-dialog/presentation-description — PluginPresentation 型へ description を追加し、`usePluginDialogController` などで Optional description を正式に参照できるようにするタスクを開始。DoD: Kanban/ログ更新、型定義修正、`pnpm --filter @hierarchidb/plugin-presentation build` および `pnpm --filter @hierarchidb/plugin-ui-host test -- --run PluginDialogHeader` などで検証、ロールバック記載。
+- 2025-11-18 08:28 progress: fix/plugin-dialog/presentation-description — `PluginPresentation` 型へ `description?: string` を追加し、registry シグネチャと buildPresentation が manifest description を取り込むよう更新。app 側の signature 生成にも description を含め、キャッシュ更新で反映されるようにした。
+- 2025-11-18 08:30 command: pnpm --filter @hierarchidb/plugin-presentation build — exit 0。型定義更新後の tsdown ビルドを実行し、warning は既知の define オプションのみ。
+- 2025-11-18 08:33 command: pnpm --filter @hierarchidb/plugin-ui-host test -- --run PluginDialogHeader — exit 0。PluginDialog ヘッダー／関連 headless テストを実行し、description 型拡張後もグリーンを確認。
+- 2025-11-18 08:34 done: fix/plugin-dialog/presentation-description — PluginPresentation 型と registry を更新し、UI 側の Optional description 参照を正当化。ロールバックは `packages/plugin-presentation/src/{types.ts,index.ts,__tests__/pluginPresentation.test.ts}` と `app/src/services/plugin-presentation.ts` の差分を revert し、上記コマンドを再実行する。
 - 2025-11-17 16:41 start: fix/ui-treeconsole/trash-empty-flow — `/t/r/.../trash/empty` でチェックした行を削除してもゴミ箱が空にならず、ダイアログも閉じない回帰の調査と修正に着手。DoD: Kanban/ログ更新、Empty 操作→削除完了→ダイアログクローズ→元 `pageNodeId` 復帰、連続削除成功、`pnpm lint && pnpm format && pnpm typecheck && pnpm test` 成功ログ、ロールバック記述を完了する。
 - 2025-11-17 16:52 progress: fix/ui-treeconsole/trash-empty-flow — TrashDialog が `treeData` 全件（挿入された trash root 行を含む）を `mutationAPI.removeNodes` へ渡しており、trash root 自体の削除を拒否する worker から success=false が返り続けてダイアログが閉じない状態だった。Empty 専用の `emptyTrashBranch` ヘルパーを追加して `removeSubtree` を呼ぶように切り替え、TanStack Router の `navigate` で閉じるリビルド（Cancel 時は reload せず、Empty/Restore では reload 付き）とカウント表示の補正を実装。ユニットテストで `removeSubtree` 呼び出しを検証。
 - 2025-11-17 16:54 command: pnpm format — exit 0。turbo 経由で 83 パッケージの biome format を走らせ、新規ファイルを含めてフォーマットを揃えた。
@@ -8147,6 +8208,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-17 16:57 command: pnpm typecheck — exit 0。tsdown 実行時の define warning（`@hierarchidb/util`）のみで TrashDialog 変更に起因する型エラーは発生せず。
 - 2025-11-17 16:58 command: pnpm test — exit 1。`@hierarchidb/ui-auth` パッケージがテストファイル未登録のため Vitest が “No test files found” で停止する既知問題にブロックされ、全体テストは途中終了。
 - 2025-11-17 17:00 command: pnpm -C app test -- --run emptyTrashBranch — exit 1。追加した emptyTrashBranch ユニットは pass したが、既存スイートで `@hierarchidb/basemap-plugin/worker-database` 解決不可（registry 未生成）と `developerModeEnabled` 未定義による TreeConsoleToolbar/Router テスト失敗が残存。
+- 2025-11-17 18:55 progress: location-plugin steps-provider を `@hierarchidb/ui-plugin-basic-info` ベースへ統一し、host 側マルチステップに BasicInfo → DataSource 順が挿入されるよう整備。翻訳型の不足項目追加・tsconfig include/exclude 見直しも実施。
+- 2025-11-17 19:08 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 0。`tsc --noEmit` スクリプトを追加して batch/service 層の型崩れが解消されたことを確認。
 - 2025-11-17 16:30 start: feat/app/devmode-idb-reset — TreeConsole ツールバー右端メニューへ「このアプリが作成したIndexedDBを全削除」を追加し、開発者モード限定で表示・実行できるようにするタスクに着手。IndexedDB 全削除＋結果通知＋トップページ遷移、および `pnpm lint && pnpm typecheck` の成功ログ取得までを DoD とする。
 - 2025-11-17 16:31 blocked: feat/app/devmode-idb-reset — `git checkout -b feat/app/devmode-idb-reset` が `fatal: cannot lock ref 'refs/heads/feat/app/devmode-idb-reset'`（sandbox で `.git/refs/heads/...` ディレクトリ作成不可）で失敗。既存 `main` ブランチ上で作業を継続。
 - 2025-11-17 16:45 command: pnpm lint — exit 0。`turbo run lint` が全パッケージで完走し、既知警告（`@hierarchidb/plugin-ui-host` の `_error` 未使用）以外は発生せず。
@@ -8164,6 +8227,11 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-17 16:45 progress: fix/basemap/create-dialog-save — `usePluginDialogController` に basic-info 同期ブリッジ／予約フィールド除去／兄弟ノード名の重複検証を追加し、Folder Host の基本情報ステップが `__basicInfoValidation` メタを受け取ってエラーメッセージを表示できるように更新。BasicInfo ステップの validate を Next ボタン判定へ連携し、ベースマップ Create で空名／重複名がある場合に Next が disable されるよう調整。
 - 2025-11-17 16:48 command: pnpm --filter @hierarchidb/plugin-ui-host test — exit 0（PluginFlows/MultiStepDialog 等 6 ファイル・37 テスト green、Basic Info バリデーション差分の回帰なしを確認）。
 - 2025-11-17 16:49 command: pnpm --filter @hierarchidb/basemap-plugin test — exit 0（`useBaseMapEntity` ユニット 3 テスト green、dialog 側の差分で worker/API 回帰なし）。
+- 2025-11-17 17:10 progress: feat/plugins/unify-plugin-dialog — location/route/resolver 各プラグインで独自 `*Dialog` エクスポートを廃止し、`getDialogComponent()` を PluginDialogHost への移行を促すスタブ化へ変更。Location Manifest を folder ホスト継承に更新し、新しい Build Step を追加。Route/Resolver も PluginStepRegistry 登録を再整理。
+- 2025-11-17 17:15 command: pnpm --filter @hierarchidb/location-plugin test — exit 1（Vitest が `./LocationVectorTileService.js` 等のモジュール解決に失敗。既知の課題で今回も未解消）。
+- 2025-11-17 17:25 start: refactor/runtime-worker/module-split — runtime-worker の WorkingCopyTreeNodeOperations.ts / CommandProcessor.ts など大型ファイルを責務別モジュールへ分割するタスクを開始。DoD: 分割後の typecheck/test 成功、TASKS/ログ更新、ロールバック手順明記。
+- 2025-11-17 17:26 start: refactor/ui-dialog/split-large-components — TreeConsole/PluginDialog UI の 300 行超ファイルを分割し、サブコンポーネント化するタスクを開始。DoD: 分割完了、`pnpm --filter @hierarchidb/ui-treeconsole-* test` と `pnpm --filter @hierarchidb/plugin-ui-host test` の成功、ログ/ロールバック記載。
+- 2025-11-17 17:27 start: feat/plugins/dialog-step-refactor — Location/Route/Resolver の PluginStepRegistry 登録を整理し、Build ボタンを「Build」ラベルへ統一するタスクを開始。DoD: PluginDialogHost で共通ステップが動作、`pnpm --filter @hierarchidb/plugin-ui-host test` & 各プラグイン test/typecheck 成功、ログ更新。
 - 2025-11-17 17:10 progress: feat/plugins/unify-plugin-dialog — location/route/resolver 各プラグインで独自 `*Dialog` を exports から除去し、`getDialogComponent()` は PluginDialogHost への移行を促すスタブ化に切り替え。Location Manifest を folder ホスト継承に変更し、PluginStepRegistry へ BasicInfo 後続ステップ（DataSource/Licence/Selection/Batch/Preview/Build）を登録。Build ステップで「Build」ボタンを実装し、データソース＋ライセンス承認後のみバッチを開始するよう再実装。Route/Resolver もホストベース構成に合わせ Steps provider を更新。
 - 2025-11-17 17:15 command: pnpm --filter @hierarchidb/location-plugin test — exit 1（Vite import 解析が `./LocationVectorTileService.js` 等のパス解決で失敗する既知課題。新規ステップ導入後も path 解決エラーは続いており、本作業では未解消）。
 - 2025-11-17 17:00 start: feat/plugins/unify-plugin-dialog — Location/Route/Resolver の独自ダイアログを廃止し、共通 PluginDialog（BasicInfo validation 共通化）へ統一するタスクに着手。DoD: Kanban/ログ更新、PluginDialog への統合とステップ登録、空名/重複名ブロック適用、`pnpm --filter @hierarchidb/plugin-ui-host test` と各プラグイン test/typecheck 成功ログ記録、ロールバック手順整備。

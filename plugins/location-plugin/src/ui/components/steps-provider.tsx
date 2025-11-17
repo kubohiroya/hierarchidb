@@ -1,5 +1,6 @@
 import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/plugin-base';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId, Timestamp } from '@hierarchidb/common-types';
+import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 import type { LocationWorkingCopy } from '../../common/types/index.js';
 import { translations as locationTranslations } from '../../common/i18n/index.js';
 import { LocationDataSourceStep } from '../../common/components/steps/LocationDataSourceStep.js';
@@ -11,21 +12,24 @@ import { LocationBuildStep } from './steps/LocationBuildStep.js';
 
 const registry = PluginStepRegistry.getInstance();
 
-const ensureWorkingCopy = (data?: StepComponentProps['data']): LocationWorkingCopy => {
-  if (data && typeof data === 'object') {
-    const cast = data as LocationWorkingCopy;
+const ensureWorkingCopy = (data?: LocationWorkingCopy): LocationWorkingCopy => {
+  if (data) {
     return {
-      ...cast,
-      treeNodeId: cast.treeNodeId ?? (cast.id as NodeId) ?? ('' as NodeId),
-      draft: { ...(cast.draft ?? {}) },
+      ...data,
+      treeNodeId: data.treeNodeId ?? ('' as NodeId),
+      draft: { ...(data.draft ?? {}) },
+      createdAt: data.createdAt ?? (Date.now() as Timestamp),
+      updatedAt: data.updatedAt ?? (Date.now() as Timestamp),
+      tags: data.tags ?? [],
     } satisfies LocationWorkingCopy;
   }
   return {
     treeNodeId: '' as NodeId,
     draft: {},
-    createdAt: Date.now() as unknown as number,
-    updatedAt: Date.now() as unknown as number,
-  } as LocationWorkingCopy;
+    createdAt: Date.now() as Timestamp,
+    updatedAt: Date.now() as Timestamp,
+    tags: [],
+  } satisfies LocationWorkingCopy;
 };
 
 const mergeWorkingCopy = (
@@ -40,13 +44,10 @@ const mergeWorkingCopy = (
   },
 });
 
-type StepProps = StepComponentProps & { data: LocationWorkingCopy };
+type StepProps = StepComponentProps<LocationWorkingCopy>;
 
-type Validator = (data?: Record<string, unknown>) => boolean | Promise<boolean>;
-
-const hasSelection = (data?: Record<string, unknown>): boolean => {
-  const wc = data as LocationWorkingCopy | undefined;
-  const matrix = wc?.draft?.selectionMatrix;
+const hasSelection = (data?: LocationWorkingCopy): boolean => {
+  const matrix = data?.draft?.selectionMatrix;
   if (!Array.isArray(matrix)) return false;
   return matrix.some((row) => Array.isArray(row) && row.some(Boolean));
 };
@@ -56,6 +57,36 @@ registry.registerConfigProvider<LocationWorkingCopy>({
   getCreateStepConfigs() {
     const t = locationTranslations;
     return [
+      {
+        id: 'basic-info',
+        label: t.en.basicInfo.title,
+        componentFactory: (p: StepProps) => {
+          const workingCopy = ensureWorkingCopy(p.data);
+          return (
+            <SharedBasicInfoStep
+              name={workingCopy.draft?.name ?? ''}
+              description={workingCopy.draft?.description ?? ''}
+              tags={workingCopy.tags ?? []}
+              mode={p.mode}
+              tagSuggestions={t.en.basicInfo.tagSuggestions ?? []}
+              validate={({ name }) => (name.trim().length ? null : t.en.errors.nameRequired)}
+              onChange={(value: BasicInfoData) => {
+                p.onChange(
+                  mergeWorkingCopy(workingCopy, {
+                    draft: {
+                      ...workingCopy.draft,
+                      name: value.name,
+                      description: value.description,
+                    },
+                    tags: value.tags,
+                  })
+                );
+              }}
+            />
+          );
+        },
+        validate: (data?: LocationWorkingCopy) => Boolean(data?.draft?.name?.trim()),
+      },
       {
         id: 'data-source',
         label: t.en.dialog.dataSourceLabel,
@@ -68,10 +99,7 @@ registry.registerConfigProvider<LocationWorkingCopy>({
             />
           );
         },
-        validate: ((data?: Record<string, unknown>) => {
-          const wc = data as LocationWorkingCopy | undefined;
-          return Boolean(wc?.draft?.dataSource);
-        }) as Validator,
+        validate: (data?: LocationWorkingCopy) => Boolean(data?.draft?.dataSource),
       },
       {
         id: 'license',
@@ -85,10 +113,7 @@ registry.registerConfigProvider<LocationWorkingCopy>({
             />
           );
         },
-        validate: ((data?: Record<string, unknown>) => {
-          const wc = data as LocationWorkingCopy | undefined;
-          return Boolean(wc?.draft?.licenseAgreement);
-        }) as Validator,
+        validate: (data?: LocationWorkingCopy) => Boolean(data?.draft?.licenseAgreement),
       },
       {
         id: 'selection',
@@ -102,7 +127,7 @@ registry.registerConfigProvider<LocationWorkingCopy>({
             />
           );
         },
-        validate: hasSelection,
+        validate: (data?: LocationWorkingCopy) => hasSelection(data),
       },
       {
         id: 'batch-parameters',
@@ -130,7 +155,7 @@ registry.registerConfigProvider<LocationWorkingCopy>({
       },
       {
         id: 'build',
-        label: t.en.build?.title ?? 'Build',
+        label: t.en.build?.actionLabel ?? 'Build',
         optional: true,
         componentFactory: (p: StepProps) => {
           const workingCopy = ensureWorkingCopy(p.data);
@@ -142,10 +167,8 @@ registry.registerConfigProvider<LocationWorkingCopy>({
           );
         },
         capabilities: {
-          canStartBatch: (data?: Record<string, unknown>) => {
-            const wc = data as LocationWorkingCopy | undefined;
-            return Boolean(wc?.treeNodeId && wc?.draft?.dataSource && wc?.draft?.licenseAgreement);
-          },
+          canStartBatch: (data: LocationWorkingCopy) =>
+            Boolean(data?.treeNodeId && data?.draft?.dataSource && data?.draft?.licenseAgreement),
         },
         validate: () => true,
       },

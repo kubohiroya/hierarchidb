@@ -921,6 +921,9 @@ importers:
       '@hierarchidb/runtime-client':
         specifier: workspace:*
         version: link:../runtime/client
+      '@hierarchidb/runtime-worker':
+        specifier: workspace:*
+        version: link:../runtime/worker
       '@hierarchidb/testing-plugin-dialog-mocks':
         specifier: workspace:*
         version: link:../testing/plugin-dialog-mocks

@@ -106,7 +106,7 @@ describe('PluginDialogFooter inline save button', () => {
 });
 
 describe('PluginDialogFooter layout', () => {
-  it('reserves the center slot for the Start Batch button', () => {
+  it('reserves the center slot for the Build button', () => {
     renderWithContext(
       <PluginDialogFooter mode="edit" canCommit={true} onStartBatch={() => void 0} />,
       {
@@ -116,6 +116,6 @@ describe('PluginDialogFooter layout', () => {
     );
 
     const centerSlot = screen.getByTestId('plugin-dialog-footer-center');
-    expect(within(centerSlot).getByRole('button', { name: 'Start Batch' })).toBeInTheDocument();
+    expect(within(centerSlot).getByRole('button', { name: 'Build' })).toBeInTheDocument();
   });
 });

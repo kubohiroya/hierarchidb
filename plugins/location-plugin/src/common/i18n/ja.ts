@@ -67,6 +67,7 @@ export const ja: LocationPluginTranslations = {
     tagsHelperText: '検索やフィルタリングに使用するタグをカンマ区切りで入力してください（任意）',
     tagsPlaceholder: 'タグ1, タグ2, タグ3',
     hint: '💡 ヒント：適切な名前とタグを設定することで、後でデータを見つけやすくなります',
+    tagSuggestions: ['交通', '行政', '独自'],
   },
 
   selection: {

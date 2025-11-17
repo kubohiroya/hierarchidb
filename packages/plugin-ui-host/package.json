@@ -42,6 +42,7 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/runtime-client": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/testing-plugin-dialog-mocks": "workspace:*",
@@ -58,6 +59,7 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/runtime-client": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*"

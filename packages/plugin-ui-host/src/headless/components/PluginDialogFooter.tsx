@@ -189,7 +189,7 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
               onPointerDown={stopPointerPropagation}
               disabled={!canStartBatch}
             >
-              Start Batch
+              Build
             </Button>
           )}
         </Box>

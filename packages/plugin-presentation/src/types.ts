@@ -35,4 +35,5 @@ export interface PluginPresentation {
   label: string;
   icon: PluginPresentationIconConfig;
   priority: number;
+  description?: string;
 }

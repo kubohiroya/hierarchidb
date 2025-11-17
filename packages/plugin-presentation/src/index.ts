@@ -72,6 +72,7 @@ function buildPresentation(def: PluginPresentationDefinition): PluginPresentatio
   const normalizedIconName = normalizeMuiIconName(rawIconName);
   const componentIconName = hasComponent ? toPascalCase(String(def.nodeType)) : undefined;
   const fallbackIcon = FALLBACK_ICONS[def.nodeType] ?? {};
+  const description = typeof manifest?.description === 'string' ? manifest.description.trim() : undefined;
 
   return {
     nodeType: def.nodeType,
@@ -90,6 +91,7 @@ function buildPresentation(def: PluginPresentationDefinition): PluginPresentatio
         : manifestIcon?.color ?? fallbackIcon.color,
     },
     priority: typeof priorityCandidate === 'number' ? priorityCandidate : 1000,
+    description: description && description.length > 0 ? description : undefined,
   };
 }
 
@@ -100,6 +102,7 @@ function createSignature(defs: PluginPresentationDefinition[]): string {
       def.label ?? '',
       def.icon?.muiIconName ?? '',
       def.icon?.color ?? '',
+      def.manifest?.description ?? '',
       def.manifest?.priority ?? '',
       def.createOrder ?? '',
     ]);

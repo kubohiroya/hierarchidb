@@ -1060,9 +1060,34 @@ export function usePluginDialogController(
     return [];
   }, [mode, nodeType, nodeId, workingCopyDataWithoutMeta, stepRegistry, regTick]);
 
+  const normalizedBasicName = basicInfo.name.trim();
+  const normalizedBasicKey = normalizedBasicName.toLowerCase();
+  const hasBasicInfoNameConflict =
+    mode === 'create' && Boolean(normalizedBasicKey) && siblingNames.has(normalizedBasicKey);
+  const basicInfoValidationError = !normalizedBasicName
+    ? 'Name is required'
+    : hasBasicInfoNameConflict
+      ? 'A node with this name already exists in this folder'
+      : null;
+  const isBasicInfoValid = !basicInfoValidationError;
+
+  const basicInfoValidationMeta = useMemo<BasicInfoValidationMeta>(
+    () => ({
+      error: basicInfoValidationError,
+      hasConflict: hasBasicInfoNameConflict,
+    }),
+    [basicInfoValidationError, hasBasicInfoNameConflict]
+  );
+
   const handleBasicInfoBridge = useCallback((data: Record<string, unknown>) => {
     setBasicInfo(extractBasicInfoFields(data));
   }, []);
+
+  const currentStepData = useMemo<StepData>(() => {
+    const base = { ...workingCopyDataWithoutMeta };
+    base[BASIC_INFO_META_KEY] = basicInfoValidationMeta;
+    return base;
+  }, [workingCopyDataWithoutMeta, basicInfoValidationMeta]);
 
   const renderStep = useCallback(
     (cfg: PluginStepConfig) => (
@@ -1169,31 +1194,6 @@ export function usePluginDialogController(
     }
     return undefined;
   }, [mode, presentation?.description]);
-
-  const normalizedBasicName = basicInfo.name.trim();
-  const normalizedBasicKey = normalizedBasicName.toLowerCase();
-  const hasBasicInfoNameConflict =
-    mode === 'create' && Boolean(normalizedBasicKey) && siblingNames.has(normalizedBasicKey);
-  const basicInfoValidationError = !normalizedBasicName
-    ? 'Name is required'
-    : hasBasicInfoNameConflict
-      ? 'A node with this name already exists in this folder'
-      : null;
-  const isBasicInfoValid = !basicInfoValidationError;
-
-  const basicInfoValidationMeta = useMemo<BasicInfoValidationMeta>(
-    () => ({
-      error: basicInfoValidationError,
-      hasConflict: hasBasicInfoNameConflict,
-    }),
-    [basicInfoValidationError, hasBasicInfoNameConflict]
-  );
-
-  const currentStepData = useMemo<StepData>(() => {
-    const base = { ...workingCopyDataWithoutMeta };
-    base[BASIC_INFO_META_KEY] = basicInfoValidationMeta;
-    return base;
-  }, [workingCopyDataWithoutMeta, basicInfoValidationMeta]);
 
   const [evaluatedState, setEvaluatedState] = useState<{
     filled: boolean[];

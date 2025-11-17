@@ -68,6 +68,7 @@ export interface LocationPluginTranslations {
     tagsHelperText: string;
     tagsPlaceholder: string;
     hint: string;
+    tagSuggestions?: string[];
   };
 
   selection: {

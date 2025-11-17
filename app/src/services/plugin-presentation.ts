@@ -58,6 +58,7 @@ function createSignature(defs: InstalledPlugin[]): string {
       plugin.label ?? '',
       plugin.icon?.muiIconName ?? '',
       plugin.icon?.color ?? '',
+      plugin.manifest?.description ?? '',
       plugin.manifest?.priority ?? '',
       plugin.createOrder ?? '',
     ]);

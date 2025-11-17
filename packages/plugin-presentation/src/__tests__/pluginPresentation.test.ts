@@ -34,12 +34,14 @@ describe('plugin-presentation', () => {
           icon: {
             muiIconName: 'LocationPin',
           },
+          description: '  Location nodes with spatial data  ',
         },
       },
     ]);
     const presentation = getPresentation('location-plugin');
     expect(presentation?.label).toBe('Location');
     expect(presentation?.icon.muiIconName).toBe('LocationOn');
+    expect(presentation?.description).toBe('Location nodes with spatial data');
     const iconNode = getIconComponent('location-plugin');
     expect(iconNode).toBeDefined();
   });
