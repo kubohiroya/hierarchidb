@@ -17,7 +17,7 @@ import type React from 'react';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BUILT_IN_STYLES } from '../../common/constants/builtInStyles.js';
 import type { BaseMapEntity } from '../../common/types/BaseMapEntity.js';
-import { BaseMapEntityHandler } from '../hooks/BaseMapEntityHandler.js';
+import { useBaseMapEntity } from '../hooks/useBaseMapEntity.js';
 import { resolveMapStyleSource } from '../utils/mapStyle.js';
 
 interface DemoFeatureCollection {
@@ -83,7 +83,16 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
   bindSourceId,
   enableDemoOverlay = false,
 }) => {
-  const [entity, setEntity] = useState<BaseMapEntity | undefined>(providedEntity);
+  const shouldFetch = !providedEntity && Boolean(nodeId);
+  const {
+    entity: fetchedEntity,
+    loading: remoteLoading,
+    error: remoteError,
+  } = useBaseMapEntity(shouldFetch ? nodeId : null, {
+    skip: !shouldFetch,
+  });
+
+  const entity = providedEntity ?? fetchedEntity ?? undefined;
   const [loading, setLoading] = useState(!providedEntity);
   const [error, setError] = useState<string | null>(null);
   const [_mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
@@ -93,30 +102,15 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
   const { bindMapLibre } = useCrossHighlightSync({ datasetId: dsId, withDeckAccessors: false });
   // useMapLibreFeatureState({ datasetId: dsId, map: _mapInstance, sourceId: bindSourceId || '', throttleMs: 16 });
 
-  // Fetch entity if not provided
   useEffect(() => {
-    if (!providedEntity && nodeId) {
-      const handler = new BaseMapEntityHandler();
-      setLoading(true);
-      handler
-        .getEntityByNodeId(nodeId)
-        .then((data: BaseMapEntity | null) => {
-          if (data) {
-            setEntity(data || undefined);
-            setError(null);
-          } else {
-            setError('BaseMap entity not found');
-          }
-        })
-        .catch((err: unknown) => {
-          console.error('Failed to load BaseMap entity:', err);
-          setError('Failed to load map configuration');
-        })
-        .finally(() => {
-          setLoading(false);
-        });
+    if (providedEntity) {
+      setLoading(false);
+      setError(null);
+      return;
     }
-  }, [nodeId, providedEntity]);
+    setLoading(remoteLoading);
+    setError(remoteError ? remoteError.message ?? 'Failed to load map configuration' : null);
+  }, [providedEntity, remoteLoading, remoteError]);
 
   // Convert entity viewport to MapLibre view state
   const initialViewState = useMemo<MapViewState | undefined>(() => {

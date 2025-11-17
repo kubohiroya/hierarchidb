@@ -15,7 +15,19 @@ import type {
 import type { ShapeEntity, ShapeWorkingCopy } from './types.js';
 import type { Timestamp } from '@hierarchidb/common-types';
 import { createDraftWorkingCopyBase } from '@hierarchidb/plugin-runtime-services';
-import { DEFAULT_PROCESSING_CONFIG } from './constants.js';
+import { DEFAULT_DATA_SOURCES, DEFAULT_PROCESSING_CONFIG } from './constants.js';
+
+const KNOWN_DATA_SOURCE_NAMES = new Set<DataSourceName>(
+  DEFAULT_DATA_SOURCES.map((source) => source.name),
+);
+
+export function normalizeDataSourceName(value?: string | null): DataSourceName | undefined {
+  if (typeof value !== 'string') return undefined;
+  const normalized = value.trim().toLowerCase();
+  return KNOWN_DATA_SOURCE_NAMES.has(normalized as DataSourceName)
+    ? (normalized as DataSourceName)
+    : undefined;
+}
 
 /**
  * Validate shape-plugin entity name
@@ -359,10 +371,11 @@ export function createWorkingCopyFromEntity(entity: ShapeEntity): ShapeWorkingCo
       ? parseCheckboxState(entity.checkboxState)
       : [];
 
+  const normalizedDataSource = normalizeDataSourceName(entity.dataSourceName);
   const draftPayload: Partial<ShapeEntity> = {
     name: entity.name ?? '',
     description: entity.description ?? '',
-    dataSourceName: entity.dataSourceName ?? 'naturalearth',
+    dataSourceName: normalizedDataSource ?? 'naturalearth',
     licenseAgreement: entity.licenseAgreement ?? false,
     processingConfig: mergeProcessingConfig(entity.processingConfig ?? {}),
     checkboxState,
@@ -429,8 +442,9 @@ export function mapWorkingCopyToUpdates(
   if (typeof source.description === 'string') {
     updates.description = source.description;
   }
-  if (typeof source.dataSourceName === 'string') {
-    updates.dataSourceName = source.dataSourceName;
+  const normalizedDataSource = normalizeDataSourceName(source.dataSourceName);
+  if (normalizedDataSource) {
+    updates.dataSourceName = normalizedDataSource;
   }
   if (typeof source.licenseAgreement === 'boolean') {
     updates.licenseAgreement = source.licenseAgreement;

@@ -68,6 +68,12 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
     (ctx.enabledStepIndices.includes(ctx.activeStepIndex + 1) ||
       ctx.enabledStepIndices.length === 0);
   const isDirty = ctx.isDirty;
+  const totalSteps = ctx.stepComponents.length;
+  const validatedStepSet = React.useMemo(
+    () => new Set(ctx.validatedStepIndices),
+    [ctx.validatedStepIndices]
+  );
+  const allStepsValidated = totalSteps === 0 || validatedStepSet.size >= totalSteps;
 
   const handleBackOrCancel = () => {
     if (isFirstStep) {
@@ -94,11 +100,6 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   ) : (
     <ChevronLeftIcon fontSize="small" />
   );
-  const rightPrimaryIcon = isLastStep ? (
-    <CheckIcon fontSize="small" />
-  ) : (
-    <ChevronRightIcon fontSize="small" />
-  );
   const disableLeftPrimary = isFirstStep ? false : !canNavigateBack;
   const disableRightPrimary = isLastStep ? !canCommit : !canNavigateNext;
   const showSaveDraft = typeof onSaveDraft === 'function';
@@ -106,6 +107,15 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   const disableDraftButton = disableDraft ?? !isDirty;
   const showLeftPrimary = primaryButtonOptions?.leftVisibility !== 'hidden';
   const showRightPrimary = primaryButtonOptions?.rightVisibility !== 'hidden';
+  const showInlineSaveButton = mode === 'edit' && !isLastStep && showRightPrimary;
+  const inlineSaveDisabled =
+    !ctx.onRequestCommit || !allStepsValidated || !canCommit;
+  const shouldRenderNextButton = showRightPrimary && !isLastStep;
+  const shouldRenderFinalCommitButton = showRightPrimary && isLastStep;
+
+  const handleInlineSave = () => {
+    ctx.onRequestCommit?.();
+  };
 
   return (
     <Box
@@ -117,11 +127,17 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
     >
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
-        spacing={2}
+        spacing={{ xs: 1.5, sm: 2 }}
         justifyContent="space-between"
         alignItems={{ xs: 'stretch', sm: 'center' }}
       >
-        <Stack direction="row" spacing={1.5} alignItems="center">
+        <Stack
+          data-testid="plugin-dialog-footer-left"
+          direction="row"
+          spacing={1.5}
+          alignItems="center"
+          flexWrap="wrap"
+        >
           {showLeftPrimary && (
             <Button
               variant="contained"
@@ -155,7 +171,16 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
           )}
         </Stack>
 
-        <Stack direction="row" spacing={1.5} alignItems="center" justifyContent="flex-end">
+        <Box
+          data-testid="plugin-dialog-footer-center"
+          sx={{
+            flex: { xs: '0 0 auto', sm: '1 1 0%' },
+            display: 'flex',
+            justifyContent: { xs: 'flex-start', sm: 'center' },
+            alignItems: 'center',
+            minHeight: 40,
+          }}
+        >
           {showStartBatch && (
             <Button
               variant="outlined"
@@ -168,7 +193,30 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
               Start Batch
             </Button>
           )}
-          {showRightPrimary && (
+        </Box>
+
+        <Stack
+          data-testid="plugin-dialog-footer-right"
+          direction="row"
+          spacing={1.5}
+          alignItems="center"
+          justifyContent="flex-end"
+          flexWrap="wrap"
+        >
+          {showInlineSaveButton && (
+            <Button
+              variant="outlined"
+              size="large"
+              color="primary"
+              onClick={handleInlineSave}
+              onPointerDown={stopPointerPropagation}
+              disabled={inlineSaveDisabled}
+              endIcon={<CheckIcon fontSize="small" />}
+            >
+              {commitLabel}
+            </Button>
+          )}
+          {shouldRenderNextButton && (
             <Button
               variant="contained"
               size="large"
@@ -176,7 +224,20 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
               onClick={handleNextOrSave}
               onPointerDown={stopPointerPropagation}
               disabled={disableRightPrimary}
-              endIcon={rightPrimaryIcon}
+              endIcon={<ChevronRightIcon fontSize="small" />}
+            >
+              {rightPrimaryLabel}
+            </Button>
+          )}
+          {shouldRenderFinalCommitButton && (
+            <Button
+              variant="contained"
+              size="large"
+              color="primary"
+              onClick={handleNextOrSave}
+              onPointerDown={stopPointerPropagation}
+              disabled={disableRightPrimary}
+              endIcon={<CheckIcon fontSize="small" />}
             >
               {rightPrimaryLabel}
             </Button>

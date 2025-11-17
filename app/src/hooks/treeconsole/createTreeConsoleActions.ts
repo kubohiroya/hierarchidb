@@ -60,6 +60,83 @@ const showCommandError = (...args: unknown[]) => {
 const isCommandResult = (value: unknown): value is CommandResult =>
   typeof value === 'object' && value !== null && 'success' in value;
 
+function normalizeNodeId(value: unknown): NodeId | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  const str = String(value).trim();
+  if (!str) {
+    return null;
+  }
+  return str as NodeId;
+}
+
+async function buildAncestryChain(params: {
+  client: Remote<WorkerAPI> | undefined;
+  pageNodeId?: NodeId;
+  pageTreeNode?: TreeNode;
+}): Promise<Array<{ id: NodeId; parentId: NodeId | null }>> {
+  const { client, pageNodeId, pageTreeNode } = params;
+  if (!client || !pageNodeId) {
+    return [];
+  }
+  try {
+    const queryAPI = await client.getQueryAPI();
+    const ancestors = await queryAPI.listAncestors(pageNodeId as NodeId);
+    const ancestorIdsDesc = (ancestors ?? [])
+      .map((node) => normalizeNodeId(node?.id))
+      .filter((id): id is NodeId => Boolean(id))
+      .reverse();
+    const chain: Array<{ id: NodeId; parentId: NodeId | null }> = [];
+    const immediateParent =
+      normalizeNodeId(pageTreeNode?.parentId) ?? ancestorIdsDesc[0] ?? null;
+    chain.push({ id: pageNodeId as NodeId, parentId: immediateParent });
+    ancestorIdsDesc.forEach((id, index) => {
+      if (!id) return;
+      const parentId = ancestorIdsDesc[index + 1] ?? null;
+      chain.push({ id, parentId });
+    });
+    return chain;
+  } catch (error) {
+    console.warn('[TreeConsoleActions] failed to resolve ancestry for trash navigation', error);
+    if (pageNodeId) {
+      return [
+        {
+          id: pageNodeId as NodeId,
+          parentId: normalizeNodeId(pageTreeNode?.parentId),
+        },
+      ];
+    }
+    return [];
+  }
+}
+
+export async function resolveTrashNavigationTarget(params: {
+  client: Remote<WorkerAPI> | undefined;
+  pageNodeId?: NodeId;
+  pageTreeNode?: TreeNode;
+  selectedIds: readonly NodeId[];
+}): Promise<NodeId | null | undefined> {
+  const { client, pageNodeId, pageTreeNode, selectedIds } = params;
+  if (!pageNodeId || !selectedIds?.length) {
+    return undefined;
+  }
+  const selectedSet = new Set<NodeId>(selectedIds as NodeId[]);
+  if (!selectedSet.size) return undefined;
+  const chain = await buildAncestryChain({ client, pageNodeId, pageTreeNode });
+  if (!chain.length) {
+    return selectedSet.has(pageNodeId as NodeId)
+      ? normalizeNodeId(pageTreeNode?.parentId)
+      : undefined;
+  }
+  const matches = chain.filter((entry) => selectedSet.has(entry.id));
+  if (!matches.length) {
+    return undefined;
+  }
+  const targetEntry = matches[matches.length - 1];
+  return targetEntry.parentId ?? null;
+}
+
 export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConsoleActions {
   const {
     client,
@@ -142,6 +219,14 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         fireCmdEvent();
       }
     }
+  };
+
+  const pushToNode = (targetNodeId?: NodeId | null) => {
+    if (!pushPath || !treeId) return;
+    const qs = searchTerm ? `?q=${encodeURIComponent(searchTerm)}` : '';
+    const basePath = `/t/${treeId}`;
+    const nextPath = targetNodeId ? `${basePath}/${targetNodeId}${qs}` : `${basePath}${qs}`;
+    pushPath(nextPath);
   };
 
   const runLocalSearch = async (term: string) => {
@@ -259,19 +344,38 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
     if (!client || selectedIds.length === 0) return;
     const ok = confirm(`Move ${selectedIds.length} item(s) to trash?`);
     if (!ok) return;
+
+    let navigationParentId: NodeId | null | undefined;
+    if (pageNodeId) {
+      navigationParentId = await resolveTrashNavigationTarget({
+        client,
+        pageNodeId: pageNodeId as NodeId,
+        pageTreeNode,
+        selectedIds,
+      });
+      if (typeof navigationParentId !== 'undefined') {
+        pushToNode(navigationParentId);
+      }
+    }
+
     try {
-      await teardownSubscription(pageNodeId as NodeId);
+      if (pageNodeId) {
+        await teardownSubscription(pageNodeId as NodeId);
+      }
       const mutationAPI = await client.getMutationAPI();
       const res = await mutationAPI.moveNodesToTrash(selectedIds as NodeId[]);
       if (!res.success) {
         showCommandError('INVALID_OPERATION', res.error || 'Remove failed');
         return;
       }
-      const parent = pageNodeId as NodeId;
-      await loadChildrenOf(parent);
+      const refreshTarget =
+        typeof navigationParentId !== 'undefined' && navigationParentId
+          ? (navigationParentId as NodeId)
+          : (pageNodeId as NodeId);
+      await loadChildrenOf(refreshTarget);
       setSSOT({ selectedIds: [] });
       fireCmdEvent();
-      await setupSubscription(parent);
+      await setupSubscription(refreshTarget);
     } catch (error) {
       console.error('Trash failed:', error);
       showCommandError('UNKNOWN_ERROR');

@@ -96,8 +96,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "database": {
           "prewarm": [
             {
-              "export": "BaseMapDatabase",
-              "specifier": "@hierarchidb/basemap-plugin/database"
+              "export": "BasemapEntitiesDB",
+              "specifier": "@hierarchidb/basemap-plugin/worker-database"
             }
           ]
         },
@@ -117,7 +117,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
       },
     database: {
         specifier: "@hierarchidb/basemap-plugin/database",
-        source: "plugins/basemap-plugin/src/services/database/index.ts",
+        source: "plugins/basemap-plugin/src/worker/database/index.ts",
       },
     icon: {
         specifier: "@hierarchidb/basemap-plugin/icon",
@@ -1307,10 +1307,10 @@ export const pluginDatabaseLoaders: Record<string, { moduleSpecifier?: string; l
     },
     prewarm: [
       {
-        specifier: "@hierarchidb/basemap-plugin/database",
-        exportName: "BaseMapDatabase",
+        specifier: "@hierarchidb/basemap-plugin/worker-database",
+        exportName: "BasemapEntitiesDB",
         async load() {
-          const mod = await import("@hierarchidb/basemap-plugin/database");
+          const mod = await import("@hierarchidb/basemap-plugin/worker-database");
           return mod;
         },
       },

@@ -132,6 +132,26 @@ const emptyGuards: StepGuardState = {
   canStartBatch: false,
 };
 
+const BASIC_INFO_META_KEY = '__basicInfoValidation';
+
+type BasicInfoValidationMeta = {
+  error: string | null;
+  hasConflict: boolean;
+};
+
+const stripReservedDialogKeys = (input?: Record<string, unknown> | null): Record<string, unknown> => {
+  if (!input) return {};
+  const clone: Record<string, unknown> = { ...input };
+  delete clone[BASIC_INFO_META_KEY];
+  return clone;
+};
+
+const extractBasicInfoFields = (data?: Record<string, unknown>): BasicInfoState => ({
+  name: typeof data?.name === 'string' ? data.name : '',
+  description: typeof data?.description === 'string' ? data.description : '',
+  tags: toStringArray(data?.tags),
+});
+
 type StepAdapterProps = {
   cfg: PluginStepConfig;
   mode: 'create' | 'edit';
@@ -139,6 +159,7 @@ type StepAdapterProps = {
   parentId: string;
   workingData: Record<string, unknown> | undefined;
   updateWorkingCopy: (patch: Partial<WorkingCopyData>) => void;
+  onDataChange?: (data: Record<string, unknown>) => void;
 };
 
 const StepAdapterComponent: React.FC<StepAdapterProps> = ({
@@ -148,6 +169,7 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
   parentId,
   workingData,
   updateWorkingCopy,
+  onDataChange,
 }) => {
   const [, setValid] = useState<boolean | undefined>();
   const [, setError] = useState<string | null>(null);
@@ -160,6 +182,16 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
     }
   }, [cfg]);
 
+  const handleChange = useCallback(
+    (data: unknown) => {
+      const record = toRecord(data) ?? {};
+      const sanitized = stripReservedDialogKeys(record);
+      onDataChange?.(sanitized);
+      updateWorkingCopy({ data: sanitized });
+    },
+    [onDataChange, updateWorkingCopy]
+  );
+
   return (
     <>
       {cfg.componentFactory({
@@ -167,7 +199,7 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
         nodeId,
         parentId,
         data: workingData,
-        onChange: (data: unknown) => updateWorkingCopy({ data: data as Record<string, unknown> }),
+        onChange: handleChange,
         setValid,
         setError,
       })}
@@ -891,6 +923,11 @@ export function usePluginDialogController(
     }
   }, [workingCopy]);
 
+  const workingCopyDataWithoutMeta = useMemo(
+    () => stripReservedDialogKeys(workingCopy?.data),
+    [workingCopy?.data]
+  );
+
   const [tagSuggestions, setTagSuggestions] = useState<string[]>(() => []);
 
   useEffect(() => {
@@ -922,6 +959,42 @@ export function usePluginDialogController(
       disposed = true;
     };
   }, [client, nodeId, mode]);
+
+  const [siblingNames, setSiblingNames] = useState<Set<string>>(() => new Set());
+
+  useEffect(() => {
+    if (mode !== 'create') {
+      setSiblingNames(new Set());
+      return;
+    }
+    if (!client || !pageNodeId) {
+      setSiblingNames(new Set());
+      return;
+    }
+    let disposed = false;
+    (async () => {
+      try {
+        const query = await client.getQueryAPI();
+        const siblings = await query.listChildren(pageNodeId);
+        if (disposed) return;
+        const values = new Set(
+          siblings
+            .map((node) =>
+              typeof node?.name === 'string' ? node.name.trim().toLowerCase() : ''
+            )
+            .filter((name): name is string => Boolean(name))
+        );
+        setSiblingNames(values);
+      } catch (_error) {
+        if (!disposed) {
+          setSiblingNames(new Set());
+        }
+      }
+    })();
+    return () => {
+      disposed = true;
+    };
+  }, [client, mode, pageNodeId]);
 
   useEffect(() => {
     let disposed = false;
@@ -967,38 +1040,31 @@ export function usePluginDialogController(
   useEffect(() => {
     if (!composedConfigs.hasHostBase) return;
     if (!workingCopy?.data) return;
-    const dataRecord = toRecord(workingCopy.data);
-    if (!dataRecord) return;
-
-    const nameFromData = typeof dataRecord.name === 'string' ? dataRecord.name : undefined;
-    const descriptionFromData =
-      typeof dataRecord.description === 'string' ? dataRecord.description : undefined;
-    const tagsFromData = dataRecord.tags;
-
+    const info = extractBasicInfoFields(workingCopyDataWithoutMeta);
     setBasicInfo((prev) => {
-      const nextName = nameFromData ?? prev.name;
-      const nextDescription = descriptionFromData ?? prev.description;
-      const nextTags = tagsFromData !== undefined ? toStringArray(tagsFromData) : prev.tags;
       const tagsEqual =
-        prev.tags.length === nextTags.length && prev.tags.every((tag, idx) => tag === nextTags[idx]);
-      if (prev.name === nextName && prev.description === nextDescription && tagsEqual) {
+        prev.tags.length === info.tags.length && prev.tags.every((tag, idx) => tag === info.tags[idx]);
+      if (prev.name === info.name && prev.description === info.description && tagsEqual) {
         return prev;
       }
-      return {
-        name: nextName,
-        description: nextDescription,
-        tags: nextTags,
-      };
+      return info;
     });
-  }, [composedConfigs.hasHostBase, workingCopy?.data]);
+  }, [composedConfigs.hasHostBase, workingCopy?.data, workingCopyDataWithoutMeta]);
 
   const pluginConfigSteps = useMemo(() => {
     void regTick;
     if (mode === 'create') return stepRegistry.getCreateSteps(nodeType);
     if (mode === 'edit')
-      return stepRegistry.getEditSteps(nodeType, String(nodeId), workingCopy?.data);
+      return stepRegistry.getEditSteps(nodeType, String(nodeId), workingCopyDataWithoutMeta);
     return [];
-  }, [mode, nodeType, nodeId, workingCopy?.data, stepRegistry, regTick]);
+  }, [mode, nodeType, nodeId, workingCopyDataWithoutMeta, stepRegistry, regTick]);
+
+  const handleBasicInfoBridge = useCallback(
+    (data: Record<string, unknown>) => {
+      setBasicInfo(extractBasicInfoFields(data));
+    },
+    []
+  );
 
   const renderStep = useCallback(
     (cfg: PluginStepConfig) => (
@@ -1007,11 +1073,12 @@ export function usePluginDialogController(
         mode={mode}
         nodeId={String(nodeId)}
         parentId={String(pageNodeId)}
-        workingData={workingCopy?.data}
+        workingData={currentStepData}
         updateWorkingCopy={updateWorkingCopy}
+        onDataChange={cfg.id === 'basic-info' ? handleBasicInfoBridge : undefined}
       />
     ),
-    [mode, nodeId, pageNodeId, updateWorkingCopy, workingCopy?.data]
+    [currentStepData, handleBasicInfoBridge, mode, nodeId, pageNodeId, updateWorkingCopy]
   );
 
   const steps: DialogStep[] = useMemo(() => {
@@ -1035,36 +1102,40 @@ export function usePluginDialogController(
               })
             }
             mode={mode}
+            validate={() => basicInfoValidationError}
           />
         ),
-        validate: () => basicInfo.name.trim().length > 0,
+        validate: () => isBasicInfoValid,
       });
     }
 
     if (composedConfigs.configs.length) {
       composedConfigs.configs.forEach((cfg) => {
+        const isBasicInfoStep = cfg.id === 'basic-info';
         const validateFn = cfg.validate;
+        const resolveValidate = (() => {
+          if (isBasicInfoStep) {
+            if (validateFn) {
+              return () =>
+                Boolean(validateFn(workingCopyDataWithoutMeta)) && isBasicInfoValid;
+            }
+            return () => isBasicInfoValid;
+          }
+          return validateFn ? () => validateFn(workingCopyDataWithoutMeta) : undefined;
+        })();
         result.push({
           id: cfg.id,
           label: cfg.label ?? cfg.id,
           optional: !!cfg.optional,
-          validate: validateFn ? () => validateFn(workingCopy?.data) : undefined,
+          validate: resolveValidate,
           component: renderStep(cfg),
         });
       });
       return result;
     }
 
-    return result.concat(pluginConfigSteps);
-  }, [
-    composedConfigs,
-    basicInfo,
-    tagSuggestions,
-    mode,
-    renderStep,
-    pluginConfigSteps,
-    workingCopy?.data,
-  ]);
+  return result.concat(pluginConfigSteps);
+  }, [composedConfigs.hasHostBase, composedConfigs.configs, pluginConfigSteps, basicInfo.name, basicInfo.description, basicInfo.tags, tagSuggestions, mode, basicInfoValidationError, isBasicInfoValid, renderStep, workingCopyDataWithoutMeta]);
 
   useEffect(() => {
     hydratePresentationDefinitionsFromGlobal();
@@ -1089,6 +1160,31 @@ export function usePluginDialogController(
     return undefined;
   }, [mode, presentation?.description]);
 
+  const normalizedBasicName = basicInfo.name.trim();
+  const normalizedBasicKey = normalizedBasicName.toLowerCase();
+  const hasBasicInfoNameConflict =
+    mode === 'create' && Boolean(normalizedBasicKey) && siblingNames.has(normalizedBasicKey);
+  const basicInfoValidationError = !normalizedBasicName
+    ? 'Name is required'
+    : hasBasicInfoNameConflict
+      ? 'A node with this name already exists in this folder'
+      : null;
+  const isBasicInfoValid = !basicInfoValidationError;
+
+  const basicInfoValidationMeta = useMemo<BasicInfoValidationMeta>(
+    () => ({
+      error: basicInfoValidationError,
+      hasConflict: hasBasicInfoNameConflict,
+    }),
+    [basicInfoValidationError, hasBasicInfoNameConflict]
+  );
+
+  const currentStepData = useMemo<StepData>(() => {
+    const base = { ...workingCopyDataWithoutMeta };
+    base[BASIC_INFO_META_KEY] = basicInfoValidationMeta;
+    return base;
+  }, [workingCopyDataWithoutMeta, basicInfoValidationMeta]);
+
   const [evaluatedState, setEvaluatedState] = useState<{
     filled: boolean[];
     guards: StepGuardState;
@@ -1104,7 +1200,7 @@ export function usePluginDialogController(
         const filled = await evaluateValidationState(steps);
         const dialogData = mergeDialogData(
           basicInfo,
-          workingCopy?.data as Record<string, unknown> | undefined
+          workingCopyDataWithoutMeta as Record<string, unknown> | undefined
         );
         const guards = await evaluateStepGuards({
           steps,
@@ -1134,7 +1230,7 @@ export function usePluginDialogController(
     composedConfigs.hostCanSubmit,
     activeStepIndex,
     basicInfo,
-    workingCopy?.data,
+    workingCopyDataWithoutMeta,
   ]);
 
   const enabledStepIndices = useMemo(() => {
@@ -1278,7 +1374,7 @@ export function usePluginDialogController(
       ...workingCopy,
       name: basicInfo.name,
       description: basicInfo.description,
-      data: { ...((workingCopy?.data as Record<string, unknown>) || {}), tags: basicInfo.tags },
+      data: { ...workingCopyDataWithoutMeta, tags: basicInfo.tags },
     };
 
     const savedNodeId = await saveWorkingCopy(finalData);
@@ -1295,7 +1391,20 @@ export function usePluginDialogController(
     }
 
     onClose();
-  }, [workingCopy, basicInfo.name, basicInfo.description, basicInfo.tags, saveWorkingCopy, onClose, nodeType, mode, discardWorkingCopy, onSuccess, navigateToNode]);
+  }, [
+    workingCopy,
+    basicInfo.name,
+    basicInfo.description,
+    basicInfo.tags,
+    workingCopyDataWithoutMeta,
+    saveWorkingCopy,
+    onClose,
+    nodeType,
+    mode,
+    discardWorkingCopy,
+    onSuccess,
+    navigateToNode,
+  ]);
 
   const handleSaveDraft = useCallback(async () => {
     try {
@@ -1450,15 +1559,13 @@ export function usePluginDialogController(
     throw errorObject;
   }
 
-  const currentStepData: StepData = toRecord(workingCopy?.data) ?? {};
-
   const headlessProps: HeadlessMultiStepDialogProps<StepData> = {
     open,
     stepComponents: stepDescriptors,
     stepData: currentStepData,
     onStepDataChange: (patch: Partial<StepData>) =>
       updateWorkingCopy({
-        data: { ...currentStepData, ...patch },
+        data: stripReservedDialogKeys({ ...currentStepData, ...patch }),
       }),
     activeStepIndex,
     onStepNavigate: handleNavigation,

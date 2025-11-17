@@ -84,5 +84,43 @@ describe('PluginDialogFooter icons', () => {
 
     const saveButton = screen.getByRole('button', { name: 'Save' });
     expect(within(saveButton).getByTestId('CheckIcon')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Save' }).length).toBe(1);
+  });
+});
+
+describe('PluginDialogFooter inline save button', () => {
+  it('renders a disabled Save button on edit mode before validations finish', () => {
+    renderWithContext(<PluginDialogFooter mode="edit" canCommit={true} />, {
+      activeStepIndex: 0,
+      validatedStepIndices: [0],
+    });
+
+    const saveButton = screen.getByRole('button', { name: 'Save' });
+    expect(saveButton).toBeDisabled();
+  });
+
+  it('enables the Save button once all steps are validated', () => {
+    renderWithContext(<PluginDialogFooter mode="edit" canCommit={true} />, {
+      activeStepIndex: 0,
+      validatedStepIndices: [0, 1],
+    });
+
+    const saveButton = screen.getByRole('button', { name: 'Save' });
+    expect(saveButton).toBeEnabled();
+  });
+});
+
+describe('PluginDialogFooter layout', () => {
+  it('reserves the center slot for the Start Batch button', () => {
+    renderWithContext(
+      <PluginDialogFooter mode="edit" canCommit={true} onStartBatch={() => void 0} />,
+      {
+        activeStepIndex: 0,
+        validatedStepIndices: [0, 1],
+      }
+    );
+
+    const centerSlot = screen.getByTestId('plugin-dialog-footer-center');
+    expect(within(centerSlot).getByRole('button', { name: 'Start Batch' })).toBeInTheDocument();
   });
 });

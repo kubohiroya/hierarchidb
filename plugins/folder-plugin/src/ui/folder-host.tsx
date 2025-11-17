@@ -16,6 +16,10 @@ registry.register<FolderData>({
         const data = (props.data as FolderData) ?? {};
         const mode = (props as StepComponentProps & { mode?: 'create' | 'edit' }).mode ?? 'create';
         const tagStrings = Array.isArray(data.tags) ? data.tags.map((tag) => String(tag)) : [];
+        const meta = (data as { __basicInfoValidation?: { error?: string | null } })
+          ?.__basicInfoValidation;
+        const validationMessage =
+          typeof meta?.error === 'string' && meta.error.trim().length > 0 ? meta.error : null;
 
         return (
           <BasicInfoStep
@@ -23,6 +27,9 @@ registry.register<FolderData>({
             description={data.description ?? ''}
             tags={tagStrings}
             mode={mode}
+            validate={
+              validationMessage ? () => validationMessage : undefined
+            }
             onChange={(next) =>
               props.onChange({
                 ...data,

@@ -18,27 +18,28 @@ export interface RegisterSpreadsheetWorkerStoresOptions {
   signal?: AbortSignal;
 }
 
-async function resolveStoreRegistry(options: RegisterSpreadsheetWorkerStoresOptions = {}): Promise<StoreRegistry | undefined> {
-  return options.storeRegistry;
-
-  /*
+async function resolveStoreRegistry(options: RegisterSpreadsheetWorkerStoresOptions = {}): Promise<StoreRegistry | null> {
+  if (options.storeRegistry) {
+    return options.storeRegistry;
+  }
   try {
-    const { importRuntimeWorker } = await import('@hierarchidb/runtime-worker');
-    const runtime = await importRuntimeWorker();
-    return runtime.storeRegistry as StoreRegistry;
+    const runtime = await import('@hierarchidb/runtime-worker');
+    const candidate = runtime as { storeRegistry?: StoreRegistry };
+    if (candidate.storeRegistry) {
+      return candidate.storeRegistry;
+    }
+    return null;
   } catch (error) {
     if (import.meta.env?.DEV) {
       console.warn('[spreadsheet-worker] failed to import runtime worker module', error);
     }
     return null;
-
   }
-  */
 }
 
 
 async function ensureSpreadsheetStores(registry: StoreRegistry): Promise<void> {
-  const { SpreadsheetEntitiesDB } = await import('..//spreadsheetEntitiesDB.js');
+  const { SpreadsheetEntitiesDB } = await import('../spreadsheetEntitiesDB.js');
   const db = new SpreadsheetEntitiesDB();
   await db.open?.();
 

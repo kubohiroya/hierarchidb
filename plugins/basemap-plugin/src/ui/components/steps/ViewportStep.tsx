@@ -1,18 +1,10 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import { Box, Stack, TextField, Typography } from '@mui/material';
 import type React from 'react';
-import {
-  Suspense,
-  lazy,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { loadMapLibreMap, type MapLibreMapInstance, type MapViewState } from '@hierarchidb/ui-map';
 import type { MapStyle, MapViewport } from '../../../common/types/BaseMapEntity.js';
-import { BaseMapEntityHandler } from '../../hooks/BaseMapEntityHandler.js';
+import { useBaseMapEntity } from '../../hooks/useBaseMapEntity.js';
 import { resolveMapStyleSource } from '../../utils/mapStyle.js';
 
 export interface ViewportStepProps {
@@ -42,11 +34,6 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
   const initialViewStateRef = useRef<MapViewState | null>(null);
   const pendingSyncRef = useRef(false);
   const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
-  const handlerRef = useRef<BaseMapEntityHandler | null>(null);
-
-  if (!handlerRef.current) {
-    handlerRef.current = new BaseMapEntityHandler();
-  }
 
   useEffect(() => {
     if (!value) {
@@ -107,29 +94,17 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
       Number.isFinite(value.zoom)
     );
   }, [value]);
+  const shouldHydrateViewport = Boolean(resolvedNodeId) && mode === 'edit' && !hasViewportValue;
+  const { entity: baselineEntity } = useBaseMapEntity(shouldHydrateViewport ? resolvedNodeId : null, {
+    skip: !shouldHydrateViewport,
+  });
 
   useEffect(() => {
-    if (!resolvedNodeId) return;
-    if (hasViewportValue) return;
-    const handler = handlerRef.current;
-    if (!handler) return;
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const entity = await handler.getEntityByNodeId(resolvedNodeId);
-        if (!entity || cancelled) return;
-        pendingSyncRef.current = true;
-        setViewport(entity.viewport ?? DEFAULT_VIEWPORT);
-      } catch (error) {
-        console.warn('[ViewportStep] failed to hydrate viewport from peer entity', error);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [resolvedNodeId, hasViewportValue, setViewport]);
+    if (!shouldHydrateViewport) return;
+    if (!baselineEntity) return;
+    pendingSyncRef.current = true;
+    setViewport(baselineEntity.viewport ?? DEFAULT_VIEWPORT);
+  }, [baselineEntity, shouldHydrateViewport, setViewport]);
 
   const handleViewStateChange = useCallback(
     (viewState: MapViewState) => {

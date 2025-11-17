@@ -3,10 +3,10 @@ import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import { DualKeyMap } from '@hierarchidb/util';
 import type { Remote } from 'comlink';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms.js';
 import { preconnectPluginServices } from '../../../../services/preconnect.js';
-import { createTreeConsoleActions } from '../../createTreeConsoleActions.js';
+import { createTreeConsoleActions, resolveTrashNavigationTarget } from '../../createTreeConsoleActions.js';
 import type { TreeConsoleActionDeps } from '../../types.js';
 
 vi.mock('../../../../services/preconnect.js', () => ({
@@ -45,6 +45,59 @@ vi.mock('@hierarchidb/util', () => {
   }
 
   return { DualKeyMap: MockDualKeyMap };
+});
+
+describe('resolveTrashNavigationTarget', () => {
+  const createClient = (ancestors: Array<{ id: string; parentId?: string | null }>) => {
+    const queryApi = {
+      listAncestors: vi.fn(async () => ancestors),
+    };
+    return {
+      getQueryAPI: vi.fn(async () => queryApi),
+    } as unknown as Remote<WorkerAPI>;
+  };
+
+  it('returns the parent of the current page node when selected', async () => {
+    const client = createClient([
+      { id: 'root-1', parentId: null },
+      { id: 'parent-root', parentId: 'root-1' },
+    ]);
+    const result = await resolveTrashNavigationTarget({
+      client,
+      pageNodeId: 'child-1' as NodeId,
+      pageTreeNode: { id: 'child-1', parentId: 'parent-root' } as TreeNode,
+      selectedIds: ['child-1' as NodeId],
+    });
+    expect(result).toBe('parent-root');
+  });
+
+  it('returns the parent of a selected ancestor node', async () => {
+    const client = createClient([
+      { id: 'root-1', parentId: null },
+      { id: 'ancestor-1', parentId: 'root-1' },
+    ]);
+    const result = await resolveTrashNavigationTarget({
+      client,
+      pageNodeId: 'child-1' as NodeId,
+      pageTreeNode: { id: 'child-1', parentId: 'ancestor-1' } as TreeNode,
+      selectedIds: ['ancestor-1' as NodeId],
+    });
+    expect(result).toBe('root-1');
+  });
+
+  it('returns undefined when selection does not include page or ancestors', async () => {
+    const client = createClient([
+      { id: 'root-1', parentId: null },
+      { id: 'ancestor-1', parentId: 'root-1' },
+    ]);
+    const result = await resolveTrashNavigationTarget({
+      client,
+      pageNodeId: 'child-1' as NodeId,
+      pageTreeNode: { id: 'child-1', parentId: 'ancestor-1' } as TreeNode,
+      selectedIds: ['other-node' as NodeId],
+    });
+    expect(result).toBeUndefined();
+  });
 });
 
 const preconnectSpy = vi.mocked(preconnectPluginServices);
@@ -86,6 +139,7 @@ function buildDeps(overrides: Partial<TreeConsoleActionDeps> = {}): {
       nodeType: 'folder',
     })),
     searchNodesFulltext: vi.fn(async () => []),
+    listAncestors: vi.fn(async () => []),
   };
 
   const client = {

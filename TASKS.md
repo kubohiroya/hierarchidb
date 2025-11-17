@@ -84,6 +84,22 @@
   - [ ] 変更後のテスト／typecheck を実行し、ログを運用ログへ追記する
 - ロールバック手順：`TreeConsoleToolbar.tsx`, `packages/ui/treeconsole/toolbar/src/types.ts`, `app/src/router/pages/tree/console/TreeConsoleIntegration.tsx`、追加したテストファイルを revert し、`pnpm -C app test -- --run <追加テスト名>` と `pnpm -C app typecheck` を再実行して旧挙動に戻ることを確認する
 
+1291) TrashDialog 空操作が完了しない問題（P0）
+- ブランチ: `fix/ui-treeconsole/trash-empty-flow`（sandbox 制約で `main` 上で作業）
+- 依存: `app/src/components/dialogs/TrashDialog.tsx`, `app/src/hooks/treeconsole/createTreeConsoleActions.ts`, `app/src/hooks/treeconsole/useTrashDialog.ts`, `packages/runtime-worker/src/commands/trash/*`, `packages/runtime-worker/src/__tests__/wfl/*trash*`
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` の Kanban／運用ログへ start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] TrashDialog でチェックしたノードについて「ゴミ箱を空にする」を押すと、対象ノードが削除されて一覧が空になり、ダイアログが閉じて元の `pageNodeId` 階層へ復帰する
+  - [ ] リロードせずに同じ画面で再度削除を試みても UI/Worker 双方で矛盾なく反映される（ローカル state と購読イベントが同期している）
+  - [ ] 自動テスト（UI 操作または worker flow）を追加・更新し、`pnpm lint && pnpm format && pnpm typecheck && pnpm test` を実行して成功ログを取得する
+  - [ ] ロールバック時は当該ファイルの revert のみで復旧できることを TASKS に記載する
+- チェックリスト:
+  - [ ] Worker 側 batch/command と UI 側 TrashDialog state のどちらで停止しているかを調査し、原因メモを残す
+  - [ ] TrashDialog の削除実行・完了後の state/ナビゲーション制御を修正し、削除完了イベントで確実に閉じるようにする
+  - [ ] Worker Flow／React テストを追加し、削除→閉じる→元ページ再描画までをカバーする
+  - [ ] `pnpm lint && pnpm format && pnpm typecheck && pnpm test` を実行し、ログを運用ログに追記する
+- ロールバック手順：`app/src/components/dialogs/TrashDialog.tsx`, `app/src/hooks/treeconsole/*trash*`, `packages/runtime-worker/src/commands/trash/*`, 追加したテストファイルを revert し、`pnpm lint && pnpm typecheck && pnpm test` を再実行して現状挙動へ戻ることを確認する
+
 
 -1287) PluginDialog フッターボタンへアイコン追加（P0）
 - ブランチ: `feat/plugin-dialog/footer-icons`（sandbox 制約で `main` 上で作業）
@@ -130,7 +146,7 @@
   - [ ] `scripts/data-generation/generate-metadata.mjs` を実装し、指定データセットごとに fetch 処理をまとめる（環境変数で URL を override 可能に）
   - [ ] ルート `package.json` に `metadata:ensure` を追加し、`dev:pre` と `build:pre` に組み込む
   - [ ] `plugins/shape-plugin/package.json` に `prebuild` を追加し、Shape Plugin 単体 build 時にも metadata ensure が走るようにする
-  - [ ] 実行ログを TASKS.md に追記し、ロールバック手順として `package.json`/scripts/{data-generation}/fetch-save-metadata 変更を revert する旨を記載する
+ - [ ] 実行ログを TASKS.md に追記し、ロールバック手順として `package.json`/scripts/{data-generation}/fetch-save-metadata 変更を revert する旨を記載する
 - ロールバック手順：追加した `metadata:ensure` 関連スクリプトと `fetchAndSaveMetadata` のガードを revert し、`package.json`/`plugins/shape-plugin/package.json` の変更を元に戻した上で `pnpm run metadata:ensure` を再実行して従来挙動へ戻ることを確認する
 
 
@@ -149,6 +165,81 @@
   - [x] `pnpm -C app test -- --run DynamicSpeedDial`、`pnpm -C app test -- --run createTreeConsoleActions` など関連コマンドを実行し、結果を運用ログに追記する（既知失敗は blocked として再現ログを残す）
 - ロールバック手順：`app/src/hooks/usePluginMenuItems.ts`, `app/src/components/DynamicSpeedDial.tsx`, `app/src/components/tree/menus/TreeConsoleContextMenu.tsx`, `app/src/services/__tests__/unit/plugin-presentation.test.ts` など本タスクで変更したファイルを revert し、上記テストコマンドを再実行して旧挙動（代替アイコン表示）を確認する
 
+1290) Country Boundaries Edit Dialog Data Source 既定化（P0）
+- ブランチ: `fix/shape-plugin/import-template-datasource`（sandbox 制約で `main` 上で作業）
+- 依存: `plugins/shape-plugin/src/ui/dialog/steps/Step2DataSource*.tsx`, `plugins/shape-plugin/src/ui/hooks/useShapeDialog*.ts`, `app/public/templates/population-2023/*`, `packages/plugin-ui-host`
+- 受け入れ基準（DoD）:
+  - [x] `TASKS.md` Kanban／運用ログで start→done とロールバック手順を記録し、影響範囲（Import template: Total Population by Country → Country Boundaries）を明示する
+  - [x] Import テンプレート経由で生成した Country Boundaries ノードを Edit（shape-plugin）すると、Step 2 Data Source の初期選択が `geoBoundaries` になっている
+  - [x] 初期値が `geoBoundaries` 以外に戻る経路（テンプレート以外や既存ノード）への影響を確認し、必要に応じてコメントまたはドキュメントで補足する
+  - [x] 修正後の挙動を再現手順または自動テスト／スクリーンショット等で検証し、結果ログを運用ログに追記する
+- チェックリスト:
+  - [x] Edit Dialog の初期値計算（working copy import data → Step 2 state）を調査し、Import template で設定されるデフォルトの流れを把握する
+  - [x] Country Boundaries の dataSource フィールドを `geoBoundaries` で初期化するロジックを追加し、テンプレート由来ノードで確実に適用されるよう条件づける
+  - [x] 自動テスト or 手動検証メモを追加し、Step 2 で `geoBoundaries` が選択済みになることを確認する
+  - [x] ロールバック手順（該当ファイルの差分 revert + `pnpm --filter @hierarchidb/shape-plugin test` 再実行等）を明示する
+- ロールバック手順：shape-plugin UI Dialog 周辺の差分とテンプレート設定を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck`（必要に応じて `test`）を実行して `geoBoundaries` 自動選択前の挙動へ戻ることを確認する
+
+1291) Shape Step5 geoBoundaries metadata 読み込みエラー修正（P0）
+- ブランチ: `fix/shape-plugin/step5-geoboundaries-metadata`（sandbox 制約で `main` 上で作業）
+- 依存: `plugins/shape-plugin/src/common/components/steps/Step5CountrySelection.tsx`, `plugins/shape-plugin/src/services/metadata/MetadataLoader.ts`, `packages/features/fetch-save-metadata/output/geoboundaries.json`, `plugins/shape-plugin/src/services/datasources/*`
+- 受け入れ基準（DoD）:
+  - [ ] geoBoundaries を既定選択した Shape ノードで Edit ダイアログ Step5 を開いても「No metadata file mapping for data source: geoboundaries」が発生せず、メタデータに基づき国/Level の選択リストが表示される
+  - [ ] Natural Earth/GADM/OpenStreetMap 等の他データソースでも Step5 の挙動に回帰が無いことを確認し、必要に応じてコメント/ドキュメントで補足する
+  - [ ] 原因（メタデータファイル定義や loader のマッピング不足等）を特定し、TASKS 運用ログへ再現手順とともに記録する
+  - [ ] 修正後に `pnpm --filter @hierarchidb/shape-plugin test -- --run <対象>` もしくは該当モジュールの typecheck 等を実行し、結果ログを運用ログに追記する
+- チェックリスト:
+  - [ ] Step5 Country Selection で metadata loader が参照する dataSource → ファイルマッピング経路を調査し、geoBoundaries が漏れている箇所を特定する
+  - [ ] geoBoundaries 用の metadata ファイル path / manifest / loader 設定を追加または修正し、エラーを解消する
+  - [ ] 可能であればユニットテストや metadata loader の検証を追加し、回帰を防止する
+  - [ ] ロールバック手順を明記し、関連ファイルを revert して既存挙動へ戻す方法を記載する
+- ロールバック手順：metadata loader・Step5 UI 差分および追加テストを revert し、`pnpm --filter @hierarchidb/shape-plugin test`（または typecheck）を再実行して従来のエラー再現状態へ戻ることを確認する
+1501) MultiStepDialogFooter 再設計（P0）
+- ブランチ: `feat/ui/multistep-dialog-footer`（sandbox 制約で `main` 上で作業）
+- 依存: `packages/ui/dialog/src/headless/MultiStepDialogFooter.tsx`, `packages/ui/dialog/src/headless/useMultiStepDialogController.ts`, `packages/ui/dialog/src/headless/__tests__/*`, `packages/ui/dialog/src/index.ts`, `packages/plugin-ui-host/src/headless/components/PluginDialogFooter.tsx`, `packages/plugin-ui-host/src/headless/__tests__/PluginDialogFooter.test.tsx`
+- 受け入れ基準（DoD）:
+  - [x] Create モード時に `Save Draft` ボタンがフッター左側（Cancel/Back の右隣）へ表示され、既存キャンセル系ボタンと整合が取れている
+  - [x] Edit モード時は最終ステップ以外でも `Save` ボタンがフッター右側（Next の左隣）へ表示され、全ステップが validate 済みの時にのみ enable される
+  - [x] 最終ステップでは右側に `Save` ボタンが 1 つのみ表示され、`Next` と重複せず既存完了動線と競合しない
+  - [x] フッター中央領域がバッチ実行ボタン用のスペースとして確保され、左右ボタンが侵食しないレイアウトになっている
+  - [x] `pnpm --filter @hierarchidb/ui-dialog typecheck && pnpm --filter @hierarchidb/ui-dialog test -- --run MultiStepDialogFooter`（または相当コマンド）を実行し、結果を運用ログに記録する
+- チェックリスト:
+  - [x] `MultiStepDialogFooter.tsx` の左右/中央カラム構造を導入し、モードとステップ位置に応じたボタン表示ロジックを整理する
+  - [x] `useMultiStepDialogController` などから取得できる step validation 状態を集計し、`Save` enable 条件を全ステップ完了と連動させる
+  - [x] Create/Edit 双方の描画を網羅するユニットテストを追加または更新し、ボタン位置・表示数・disabled 状態を検証する
+  - [x] 変更点とロールバック手順をタスクカードへ反映し、関連 story/book/ドキュメントへの影響を確認する
+- ロールバック手順：`packages/plugin-ui-host/src/headless/components/PluginDialogFooter.tsx` と同テストファイル、必要に応じて `@hierarchidb/ui-dialog` 配下の補助モジュールを revert し、`pnpm --filter @hierarchidb/plugin-ui-host test -- --run PluginDialogFooter` と `pnpm --filter @hierarchidb/ui-dialog test -- --run MultiStepDialogFooter` を再実行して旧フッター構成へ戻ることを確認する
+
+1502) TreeConsole Trash 対象親遷移ガード（P0）
+- ブランチ: `fix/ui-treeconsole/trash-navigate-parent`（sandbox 制約で `main` 上で作業）
+- 依存: `app/src/hooks/treeconsole/createTreeConsoleActions.ts`, `app/src/hooks/treeconsole/types.ts`, `app/src/hooks/treeconsole/__tests__/unit/createTreeConsoleActions.unit.test.ts`, `app/src/router/pages/tree/console/TreeConsoleIntegration.tsx`
+- 受け入れ基準（DoD）:
+  - [x] TreeConsole で「ゴミ箱へ移動」を実行する際、現在の `pageNodeId` またはその祖先ノードが選択対象に含まれる場合は、対象ノードの親ノードへルーティングしてからゴミ箱操作を続行する
+  - [x] pageNodeId 自体を削除するケースでは親ノードが存在すればそこへ、祖先ノードを削除するケースでは該当祖先の親ノードへ遷移し、BreadCrumb/TreeTable がハングしない
+  - [x] 既存の trash 操作（当該条件に該当しないケース）は挙動が変わらない
+  - [x] 上記シナリオを検証するユニットテスト（`createTreeConsoleActions` など）が追加され、`pnpm -C app test -- --run createTreeConsoleActions` がグリーンである
+- チェックリスト:
+  - [ ] `createTreeConsoleActions` にページノードと祖先の連鎖を解析するヘルパーを実装し、trash 前に親遷移が必要か判定する
+  - [ ] ルーティング制御（`pushPath`）をページモードと検索クエリ付き URL に対しても正しく適用し、親遷移後に選択ノードの破棄を実施する
+ - [ ] pageNodeId/祖先が複数同時選択されるケースでも、最上位の対象ノードに合わせた親遷移を行う
+  - [ ] テストを追加し、親遷移が実際に発火する／しない両ケースを検証する
+- ロールバック手順：`app/src/hooks/treeconsole/createTreeConsoleActions.ts` と付随する型・テストの変更を revert し、`pnpm -C app test -- --run createTreeConsoleActions` を再実行して旧 trash 挙動へ戻ることを確認する
+
+1503) TreeConsole DevMenu IndexedDB 全削除（P0）
+- ブランチ: `feat/app/devmode-idb-reset`（sandbox 制約で `main` 上で作業）
+- 依存: `packages/ui/treeconsole/toolbar`, `app/src/components/tree/menus/TreeConsoleToolbarMenu.tsx`, `app/src/router/pages/tree/console/TreeConsoleIntegration.tsx`, `app/src/services/indexeddb`, `app/src/hooks/treeconsole/**/*`
+- 受け入れ基準（DoD）:
+  - [ ] TreeConsole ツールバー右端メニューに「このアプリが作成したIndexedDBを全削除」を追加し、開発者モード時のみ表示される
+  - [ ] メニュー選択でアプリが生成した IndexedDB すべてを削除し、成功/失敗ステータスを UI でユーザーへ通知する
+  - [ ] 全削除完了後にトップページへ自動遷移する
+  - [ ] 通常モードでは UI へ表示されず、既存機能に副作用がない
+  - [ ] `pnpm lint` と `pnpm typecheck` を実行し成功ログを提示（失敗時は TASKS 運用ログで blocked 理由を共有）する
+- チェックリスト:
+  - [ ] Developer Mode 検出結果を TreeConsoleToolbarMenu まで伝播し、メニュー項目の条件付き表示を実装する
+  - [ ] このアプリが作成する IndexedDB 名称の一覧を整理し、一括削除ユーティリティを実装する
+  - [ ] 削除処理完了後のユーザー通知とトップページ遷移を TreeConsole ルーター経由で実装し、UI テスト/ログで確認する
+  - [ ] `pnpm lint && pnpm typecheck` の成功ログを運用ログへ追記する
+- ロールバック手順：`packages/ui/treeconsole/toolbar/src/components/TreeConsoleToolbar.tsx`, `app/src/components/tree/menus/TreeConsoleToolbarMenu.tsx`, `app/src/router/pages/tree/console/TreeConsoleIntegration.tsx`, 新設ユーティリティ（IndexedDB 全削除）など本タスクで変更・追加したファイルを revert し、`pnpm lint && pnpm typecheck` を再実行して旧挙動へ戻ることを確認する
 
 303) TreeConsole Folder Undo エラー修正（P0）
 - ブランチ: `fix/ui-treeconsole/folder-undo-error`（sandbox 制約で `main` 上で作業）
@@ -209,6 +300,24 @@
   - [ ] PluginDialogFooter / usePluginDialogController の `console.debug` 出力を整理し、必要に応じて NodeType/Mode を含むメッセージに統一する
   - [ ] 関連ユニットテストを更新/追加し、エディット動作のリグレッションを防止する
 - ロールバック手順：該当ファイルの差分を revert し、`pnpm --filter @hierarchidb/plugin-ui-sdk test -- useWorkingCopy` を再実行して元の挙動に戻ったことを確認する
+
+1300) basemap Create ダイアログ save/validation 修正（P0）
+- ブランチ: `fix/basemap/create-dialog-save`（sandbox 制約で `main` 上で作業）
+- 依存: `plugins/basemap-plugin`, `packages/plugin-ui-host`, `packages/plugin-ui-sdk`, `packages/runtime-worker`, `packages/plugin-runtime-services`, `app/src/components/dialogs`
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] basemap Create ダイアログ Step1 の `name` / `description` 入力が保存される Basemap ノードへ正しく反映され、保存時に意図しない連番リネームが発動しない
+  - [ ] Step2 以降のフォーム入力が `hdb-basemap-entities-db` の `peerEntities` テーブルへ保存され、UI もしくは DB ログで確認できる
+  - [ ] Step1 `name` フィールドが空、または親階層に同名ノードが存在する場合はエラーが表示され、Step1 validation 失敗として Next ボタンが無効化される
+  - [ ] 対象ロジックをカバーするテスト（unit or integration）を追加し、今回の不具合再発防止のエビデンスとなる
+  - [ ] 検証コマンド（少なくとも `pnpm --filter @hierarchidb/basemap-plugin test` もしくは関連 UI テスト）が成功し、ログを運用ログに記録する
+- チェックリスト:
+  - [ ] basemap Create ダイアログ各ステップのデータフロー（WorkingCopy / Worker 保存 / Dexie commit）を調査し、Step1/Step2+ の保存経路を図解 or メモ化する
+  - [ ] Step1 の form state と WorkingCopy 反映処理を修正し、name/description が commit 時に正しく渡るようにする
+  - [ ] Step2 以降の値が `peerEntities` に落ちるよう Worker/API 層を修正し、Dexie 反映を確認する
+  - [ ] name フィールド validation（空・重複）を MultiStep/Form validation へ組み込み、Next ボタン制御を更新する
+  - [ ] カバーするテストと検証コマンドを実行し、結果を運用ログへ追記する
+- ロールバック手順：関連ファイルの差分を revert し、`pnpm --filter @hierarchidb/basemap-plugin test` や該当 UI テストを再実行して旧挙動（保存失敗＋validation 無し）へ戻ることを確認する
 
 
 910) plugin-registry stage worker 解決フロー修正（P0）
@@ -3008,6 +3117,14 @@ P2:
     - `packages/runtime/worker/src/services/CommandProcessor.ts`
     - `packages/runtime/worker/src/services/command/core-handlers/index.ts`
     - `packages/runtime/worker/src/services/__tests__/unit/tx-wrapper.unit.test.ts`
+- 1333) Spreadsheet plugin Dexie 初期化修正（P1） — 完了 (2025-11-15)
+  - DoD:
+    - `TASKS.md` Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記。
+    - Spreadsheet plugin の `registerSpreadsheetWorkerStores` が runtime-worker の `storeRegistry` を取得できるよう修正し、`hidb-spreadsheet-entities-db` データベースが確実に作成されることを確認。
+    - `plugins/spreadsheet-plugin/src/worker/__tests__/registerSpreadsheetWorkerStores.unit.test.ts` を追加し、peer/group/relation store が登録されることをユニットテストで検証。
+    - `pnpm --filter @hierarchidb/spreadsheet-plugin exec vitest run src/worker/__tests__/registerSpreadsheetWorkerStores.unit.test.ts` を実行してグリーンログを取得。
+  - 影響範囲：Spreadsheet プラグインの Worker 初期化（Dexie DB／PeerStore／GroupStore／RelationStore 登録）と関連ユニットテスト。
+  - ロールバック手順：`plugins/spreadsheet-plugin/src/worker/factory/registerSpreadsheetWorkerStores.ts` と `plugins/spreadsheet-plugin/src/worker/__tests__/registerSpreadsheetWorkerStores.unit.test.ts` の差分を revert し、上記 vitest コマンドを再実行。以前の挙動（storeRegistry 不取得で DB 未生成）が戻ることを確認する。
 - 1211) TreeConsole Create→Folder ダイアログ不表示調査（P0） — 完了 (2025-11-10)
   - DoD:
     - `TASKS.md` カンバン／運用ログに start/progress/done・ロールバック手順を記録。
@@ -8004,6 +8121,36 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-13"></a>
 
+- 2025-11-17 16:41 start: fix/ui-treeconsole/trash-empty-flow — `/t/r/.../trash/empty` でチェックした行を削除してもゴミ箱が空にならず、ダイアログも閉じない回帰の調査と修正に着手。DoD: Kanban/ログ更新、Empty 操作→削除完了→ダイアログクローズ→元 `pageNodeId` 復帰、連続削除成功、`pnpm lint && pnpm format && pnpm typecheck && pnpm test` 成功ログ、ロールバック記述を完了する。
+- 2025-11-17 16:30 start: feat/app/devmode-idb-reset — TreeConsole ツールバー右端メニューへ「このアプリが作成したIndexedDBを全削除」を追加し、開発者モード限定で表示・実行できるようにするタスクに着手。IndexedDB 全削除＋結果通知＋トップページ遷移、および `pnpm lint && pnpm typecheck` の成功ログ取得までを DoD とする。
+- 2025-11-17 16:31 blocked: feat/app/devmode-idb-reset — `git checkout -b feat/app/devmode-idb-reset` が `fatal: cannot lock ref 'refs/heads/feat/app/devmode-idb-reset'`（sandbox で `.git/refs/heads/...` ディレクトリ作成不可）で失敗。既存 `main` ブランチ上で作業を継続。
+- 2025-11-17 16:41 start: fix/shape-plugin/step5-geoboundaries-metadata — Edit Shape ダイアログ Step5 で geoBoundaries 選択時に「No metadata file mapping...」エラーが発生する件の調査を開始。DoD: TASKS/ログ更新、metadata loader/設定の修正、他 dataSource の回帰確認、`pnpm --filter @hierarchidb/shape-plugin test -- --run <対象>` などの検証ログ取得、ロールバック記載。
+- 2025-11-17 16:13 start: fix/basemap/create-dialog-save — basemap Create ダイアログで Step1 name/description が保存されず、自動連番リネームと peerEntities 未保存が発生する問題を調査開始。DoD: Step1 入力の保存反映と重複検知による Next 無効化、Step2+ 値の `hdb-basemap-entities-db.peerEntities` 保存、カバレッジ追加、`pnpm --filter @hierarchidb/basemap-plugin test` 等のログ取得、TASKS 更新。
+- 2025-11-17 16:45 progress: fix/basemap/create-dialog-save — `usePluginDialogController` に basic-info 同期ブリッジ／予約フィールド除去／兄弟ノード名の重複検証を追加し、Folder Host の基本情報ステップが `__basicInfoValidation` メタを受け取ってエラーメッセージを表示できるように更新。BasicInfo ステップの validate を Next ボタン判定へ連携し、ベースマップ Create で空名／重複名がある場合に Next が disable されるよう調整。
+- 2025-11-17 16:48 command: pnpm --filter @hierarchidb/plugin-ui-host test — exit 0（PluginFlows/MultiStepDialog 等 6 ファイル・37 テスト green、Basic Info バリデーション差分の回帰なしを確認）。
+- 2025-11-17 16:49 command: pnpm --filter @hierarchidb/basemap-plugin test — exit 0（`useBaseMapEntity` ユニット 3 テスト green、dialog 側の差分で worker/API 回帰なし）。
+- 2025-11-17 10:15 start: feat/ui/multistep-dialog-footer — MultiStepDialogFooter 再設計（Create モードの Save Draft 左寄せ、Edit モードで常時 Save 表示＋全ステップ検証成功時のみ enable、最終ステップは Save 1 つ、中央はバッチ起動エリア確保、`pnpm --filter @hierarchidb/ui-dialog {typecheck,test -- --run MultiStepDialogFooter}` 実行ログ）に着手。Task/DoD/ロールバックを Kanban と同期。
+- 2025-11-17 10:18 progress: feat/ui/multistep-dialog-footer — `PluginDialogFooter` の左右/中央 3 カラム構成を導入し、Create モードの Save Draft を左列へ固定。Edit モードでは最終ステップ以外でも Save ボタンを右列（Next 左側）に表示し、全ステップ検証済み＋`canCommit` 満たすまで disabled とする実装、および data-testid 付きのレイアウトセクションを追加。
+- 2025-11-17 10:18 command: pnpm --filter @hierarchidb/plugin-ui-host test -- --run PluginDialogFooter — exit 0（新設テストを含む 6 specs がグリーン）。
+- 2025-11-17 10:19 command: pnpm --filter @hierarchidb/ui-dialog typecheck — exit 0（同パッケージに typecheck スクリプトが無く、pnpm が "None of the selected packages..." と出力したため追加作業不要）。
+- 2025-11-17 10:19 command: pnpm --filter @hierarchidb/ui-dialog test -- --run MultiStepDialogFooter — exit 0（passWithNoTests, 4 files 緑）。
+- 2025-11-17 10:20 done: feat/ui/multistep-dialog-footer — Edit モードの Save 常時表示＋全ステップ検証連動、最終ステップの Save 単独表示、中央のバッチ専用領域確保、Create モードの Save Draft 左寄せを実装し、`@hierarchidb/plugin-ui-host` テスト＋`@hierarchidb/ui-dialog` 検証ログを取得済み。ロールバックは `packages/plugin-ui-host/src/headless/components/PluginDialogFooter.tsx` と同テストを revert し、前述のテスト／typecheck コマンドを再実行して旧状態へ戻る。
+- 2025-11-17 15:05 start: fix/basemap/worker-entity-handler — Basemap の IndexedDB 操作を UI から撤去し、worker 側の TreeQuery/WorkingCopy API で mapStyle/viewport を取得・更新する実装へ着手。DoD: `BaseMapEntityHandler`/`BaseMapDatabase` の廃止、`useBaseMapEntity`/`ViewportStep`/`BaseMapDisplay` の再実装、`@hierarchidb/basemap-plugin` manifest の prewarm 更新、hook unit test 追加、`pnpm --filter @hierarchidb/basemap-plugin test` と registry 再生成ログ取得。
+- 2025-11-17 15:18 progress: fix/basemap/worker-entity-handler — `useBaseMapEntity` を WorkerClient hook + TreeQuery API 連携へ書き換え、`BaseMapDisplay`/`ViewportStep` を同 hook に合わせて改修、`BaseMapEntityHandler`/`BaseMapDatabase`/旧 unit test を削除。`plugins/basemap-plugin/src/plugin-manifest.ts` の prewarm を `@hierarchidb/basemap-plugin/worker-database`（`BasemapEntitiesDB`）へ切替え、`pnpm run tools:gen-plugin-registry` — exit 0（tsdown 警告あり/正常終了）で生成物を更新。
+- 2025-11-17 15:27 progress: fix/basemap/worker-entity-handler — `pnpm --filter @hierarchidb/basemap-plugin typecheck` は typecheck スクリプト非定義のため "None of the selected packages..." を確認、`pnpm --filter @hierarchidb/basemap-plugin test` — exit 0（Vitest 1 suite / 3 tests グリーン）で新規 helper テストが通過。Vitest setup の相対パス/alias も修正済み。
+- 2025-11-17 15:28 done: fix/basemap/worker-entity-handler — UI からの Dexie 依存を排除し、`BaseMapDisplay`/`ViewportStep`/`useBaseMapEntity` が Worker 経由でノードデータを扱う構成へ移行。manifest prewarm も `hdb-basemap-entities-db` に揃え、registry 再生成＋テストログを取得済み。ロールバックは `plugins/basemap-plugin/src/ui/hooks/useBaseMapEntity.ts` を含む該当差分と `pnpm run tools:gen-plugin-registry` 生成物を revert し、`pnpm --filter @hierarchidb/basemap-plugin test` を再実行。
+- 2025-11-17 16:20 start: fix/shape-plugin/import-template-datasource — Import template（Total Population by Country → Country Boundaries）で生成したノードの Edit Shape Step2 Data Source が未選択になる回帰の調査を開始。DoD: geoBoundaries の既定選択復旧、他ノードへの副作用確認、`pnpm --filter @hierarchidb/shape-plugin typecheck` などの検証ログ取得、TASKS/Kanban/ロールバック記載。
+- 2025-11-17 16:31 progress: fix/shape-plugin/import-template-datasource — Step2 の value 正規化用に `normalizeDataSourceName` を shared utils へ追加し、WorkingCopy 生成/更新時および Step2 UI で `geoBoundaries`（lowercase）を既定 fallback に選択するよう実装。Country Boundaries 以外のノードにも適用されるため、無効な dataSourceName は自然に矯正される。
+- 2025-11-17 16:34 command: pnpm --filter @hierarchidb/shape-plugin test -- src/common/__tests__/unit/data-source-normalization.unit.test.ts — exit 1。追加テストは pass したが、既存の `utils.unit.test.ts`／`useShapeAPI.unit.test.tsx`／`useShapeProgress.unit.test.tsx` が `.js` 拡張子 import 解決エラーで失敗する既知課題のため suite 全体は red（新規テスト結果のみ確認済み）。
+- 2025-11-17 16:35 done: fix/shape-plugin/import-template-datasource — Country Boundaries Edit で Step2 Data Source が空表示になる原因（大文字混在の dataSourceName）を解消し、`geoBoundaries` を正規化した値で既定選択するよう調整。shared utils の normalization により他ノードへの副作用も抑止済み。ロールバックは `Step2DataSource.tsx`／`shared/utils.ts`／新規テストを revert し、前述のテストコマンドを再実行する。
+- 2025-11-17 10:50 start: investigate/basemap-db-naming — IndexedDB の名称が `hdb-basemap-entities-db` ではなく `hdb-basemap-db` で生成されていないかを確認する調査タスクに着手。DoD: 参照コードの洗い出し、生成条件と現行挙動の整理、TASKS/報告更新。
+- 2025-11-17 10:52 command: rg -n "basemap-db" — exit 0。`plugins/basemap-plugin/src/services/database/BaseMapDatabase.ts` が `Dexie(getDBName('basemap-db'))` を呼んでおり、UI 側の BaseMapDatabase/EntityHandler で `hdb-basemap-db` が開かれることを確認。
+- 2025-11-17 10:54 command: rg -n "basemap-entities-db" — exit 0。`plugins/basemap-plugin/src/worker/basemapEntitiesDB.ts` や `registerBasemapWorkerStores.ts` が `getDBName('basemap-entities-db')` を指定し、worker 側は正しい命名で Dexie を開いている点を把握。
+- 2025-11-17 11:05 done: investigate/basemap-db-naming — BaseMapEntityHandler/UI hooks（`plugins/basemap-plugin/src/ui/hooks/BaseMapEntityHandler.ts` 等）と `app/src/services/databases.ts` の prewarm フローを確認し、現在も UI 起動時や Basemap ダイアログ利用時に `BaseMapDatabase` が `hdb-basemap-db` を生成・利用すること、worker とは別スキーマの DB が併存していることを整理。コード変更は行っておらず、ロールバックは不要。
+- 2025-11-17 16:05 start: fix/ui-treeconsole/trash-navigate-parent — TreeConsole の「ゴミ箱へ移動」で pageNodeId / 祖先を対象とする際に先行して親ノードへ遷移させるタスクを開始。DoD: 親遷移の自動化、既存 trash 挙動の維持、`createTreeConsoleActions` ユニットテスト追加、`pnpm -C app test -- --run createTreeConsoleActions` ログ記録、ロールバック記述。
+- 2025-11-17 16:25 progress: fix/ui-treeconsole/trash-navigate-parent — `createTreeConsoleActions` の trash 事前処理に pageNode/祖先判定ロジックを追加し、`resolveTrashNavigationTarget` を導入。page/祖先を選択した場合は親ノードへ移動してからゴミ箱 API を呼ぶように更新。
+- 2025-11-17 16:29 command: pnpm -C app test -- --run createTreeConsoleActions — exit 0（navigation helper 含む 11 テストがグリーン）。
+- 2025-11-17 16:30 done: fix/ui-treeconsole/trash-navigate-parent — pageNode/祖先選択時に親へ遷移する実装と helper ユニットテストを追加し、通常の trash 操作への影響がないことを確認。ロールバックは `app/src/hooks/treeconsole/createTreeConsoleActions.ts` と追加テストを revert し、上記テストコマンドを再実行して旧挙動へ戻す。
 - 2025-11-15 15:16 start: chore/docs/agents-tsdown-update — AGENTS.md に tsdown 移行後の手順（root tsdown.config.ts, Turbo 連携, `tsup` 記述整理）を反映するタスクを開始。DoD: Kanban/ログ更新、tsdown 前提のビルドフロー記述、旧 tsup 記述の除去、ロールバック記述と自己レビューを完了する。
 - 2025-11-15 15:20 start: feat/ui-treeconsole/node-info-panel — TreeConsole で Folder 以外の pageNode を表示する際に TreeNodeInfoPanel を描画する実装へ着手。DoD: (1) Folder/Trash/Root 系は従来通り TreeTableCore を維持、(2) それ以外はアイコン→名前→説明→作成/更新日時→Edit/Play ボタンの順で縦配置する InfoPanel を追加、(3) アイコン/ボタンから既存の ContextMenu/Edit/Preview アクションを呼び出せるよう配線、(4) `pnpm --filter @hierarchidb/app typecheck` 成功ログとロールバック手順（変更ファイル revert）を運用ログへ記録。
 - 2025-11-15 15:23 progress: chore/docs/agents-tsdown-update — Kanban にタスクを追加し、tsdown 周辺の現状把握（`tsdown.config.ts`, `docs/turbo-tsdown-migration-plan.md`, `@hierarchidb/runtime-worker/package.json` など）を棚卸し。AGENTS.md の Turbo セクション／Agent Workflow セクションで tsup 依存の残骸を特定。
@@ -8072,6 +8219,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-15 20:08 command: pnpm --filter @hierarchidb/runtime-worker test -- src/services/__tests__/unit/bulk-ops-cp.unit.test.ts — exit 0（40 test files / 84 tests）。bulk-ops／peer-entity-delete-policy／tx-wrapper／undo-redo 系ユニットテストがグリーンで、CommandProcessor の post-commit ログ抑制が確認できた。
 - 2025-11-15 20:10 command: pnpm --filter @hierarchidb/runtime-worker test -- src/__tests__/wfl/basemap-working-copy-edit.wfl.test.ts — exit 0（40 test files / 84 tests）。`@hierarchidb/basemap-plugin/worker` alias でモジュールが解決され、WFL basemap テストを含むスイートが成功することを再確認。
 - 2025-11-15 20:15 done: chore/runtime/basic-info-refactor — DoD を満たしたため完了。resolver/location/spreadsheet の BasicInfoStep 差分、および runtime-worker/tx-wrapper テスト内のログ出力撤去を revert し、上記 2 つの `pnpm --filter @hierarchidb/runtime-worker test` コマンドと `pnpm --filter @hierarchidb/route-plugin build` を再実行すればロールバック可能。
+- 2025-11-15 20:30 start: fix/spreadsheet/peer-db-init — Spreadsheet plugin で `hidb-spreadsheet-entities-db` が生成されない問題の修正に着手。DoD: TASKS 更新、runtime-worker から storeRegistry を解決する実装へ更新、DB 作成確認、ユニットテスト追加、`pnpm --filter @hierarchidb/spreadsheet-plugin exec vitest run src/worker/__tests__/registerSpreadsheetWorkerStores.unit.test.ts` 成功ログ取得、ロールバック手順明記。
+- 2025-11-15 20:38 progress: fix/spreadsheet/peer-db-init — `registerSpreadsheetWorkerStores.ts` で `@hierarchidb/runtime-worker` を動的 import し、storeRegistry を解決できるよう更新。`SpreadsheetEntitiesDB` の import パスも修正し、登録処理が peer/group/relation store を確実に初期化するようにした。
+- 2025-11-15 20:40 command: pnpm --filter @hierarchidb/spreadsheet-plugin exec vitest run src/worker/__tests__/registerSpreadsheetWorkerStores.unit.test.ts — exit 0。fake-indexeddb 上で peer/group/relation store が登録されることを確認。
+- 2025-11-15 20:41 done: fix/spreadsheet/peer-db-init — ユニットテストと実装更新を反映完了。ロールバックは `registerSpreadsheetWorkerStores.ts` と新規テストファイルを revert し、上記 vitest コマンドを再実行して未解決状態へ戻れることを確認。
 
 ## 今日の着手（運用ログ） <a id="worklog-12"></a>
 

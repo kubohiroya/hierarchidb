@@ -1,7 +1,12 @@
 import type React from 'react';
 import { Box, Typography } from '@mui/material';
 import { DataSourceSelector, type DataSourceOption } from '@hierarchidb/ui-datasource';
-import type { DataSourceConfig, DataSourceName, StepProps } from '../../shared/index.js';
+import {
+  normalizeDataSourceName,
+  type DataSourceConfig,
+  type DataSourceName,
+  type StepProps,
+} from '../../shared/index.js';
 import { DATA_SOURCE_CONFIGS } from '../../mock/data.js';
 
 /**
@@ -30,6 +35,10 @@ export const Step2DataSource: React.FC<StepProps> = ({ workingCopy, onUpdate, di
     });
   };
 
+  const normalizedValue = normalizeDataSourceName(workingCopy.dataSourceName);
+  const defaultGeoBoundaries = options.find((option) => option.id === 'geoboundaries')?.id;
+  const fallbackValue = defaultGeoBoundaries ?? options[0]?.id ?? '';
+
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h6" gutterBottom>
@@ -43,7 +52,7 @@ export const Step2DataSource: React.FC<StepProps> = ({ workingCopy, onUpdate, di
       <Box sx={{ mt: 3 }}>
         <DataSourceSelector
           options={options}
-          value={workingCopy.dataSourceName ?? options[0]?.id ?? ''}
+          value={normalizedValue ?? fallbackValue}
           onChange={(next) => handleDataSourceSelect(next as DataSourceName)}
           disabled={disabled}
         />

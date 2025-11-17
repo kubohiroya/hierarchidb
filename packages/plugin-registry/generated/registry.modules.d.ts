@@ -6,7 +6,7 @@ declare module '@hierarchidb/basemap-plugin/icon' {
 }
 
 declare module '@hierarchidb/basemap-plugin/database' {
-  export const BaseMapDatabase: unknown;
+  export const BasemapEntitiesDB: unknown;
   const mod: Record<string, unknown>;
   export default mod;
 }

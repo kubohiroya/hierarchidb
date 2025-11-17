@@ -17,9 +17,6 @@ export { PLUGIN_MANIFEST as BaseMapPluginManifest } from './plugin-manifest.js';
 // Type exports (root)
 export * from './common/types/index.js';
 
-// Database
-export * from './services/database/index.js';
-
 // === Extension Exports (Legacy Compatibility)
 // Removed: legacy extension layer is not present in this package.
 

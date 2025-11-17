@@ -36,6 +36,10 @@ export default defineConfig({
       '@hierarchidb/util': path.resolve(workspaceRoot, 'packages/util/src/index.ts'),
       '@hierarchidb/plugin-ui-sdk': pluginSdkEntry,
       '@hierarchidb/folder-plugin': path.resolve(__dirname, '../folder-plugin/src/index.ts'),
+      '@hierarchidb/runtime-client': path.resolve(
+        workspaceRoot,
+        'packages/runtime/client/src/index.ts'
+      ),
     },
   },
 });
