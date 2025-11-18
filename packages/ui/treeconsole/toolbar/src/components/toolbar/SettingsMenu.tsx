@@ -197,23 +197,22 @@ export function SettingsMenu({
           />
         </MenuItem>
 
-        {developerModeEnabled && (
-          <>
-            <Divider sx={{ my: 1 }} />
-            <MenuItem
-              onClick={() => {
-                onAction('clear-indexeddb');
-                setSettingsAnchorEl(null);
-              }}
-              aria-label={labels.developerMenuLabel}
-            >
-              <ListItemIcon>
-                <DeleteSweepIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText primary={labels.developerMenuLabel} />
-            </MenuItem>
-          </>
-        )}
+        {developerModeEnabled && [
+          <Divider key="dev-divider" sx={{ my: 1 }} />,
+          <MenuItem
+            key="dev-clear-indexeddb"
+            onClick={() => {
+              onAction('clear-indexeddb');
+              setSettingsAnchorEl(null);
+            }}
+            aria-label={labels.developerMenuLabel}
+          >
+            <ListItemIcon>
+              <DeleteSweepIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText primary={labels.developerMenuLabel} />
+          </MenuItem>,
+        ]}
       </Menu>
 
       <Menu anchorEl={themeAnchorEl} open={themeOpen} onClose={closeThemeMenu} container={portalContainer}>

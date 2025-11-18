@@ -4,7 +4,7 @@ import {
   ContentPaste as ContentPasteIcon,
   KeyboardArrowDown as KeyboardArrowDownIcon,
   Redo as RedoIcon,
-  Trash as TrashIcon,
+  Delete as TrashIcon,
   Undo as UndoIcon,
   FileCopy as DuplicateIcon,
   Clear as ClearIcon,

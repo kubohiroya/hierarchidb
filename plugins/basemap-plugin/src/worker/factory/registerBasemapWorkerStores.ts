@@ -2,8 +2,11 @@
 
 const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
 
+import type { TreeNode } from '@hierarchidb/common-types';
 import type { PeerStore } from '@hierarchidb/runtime-worker';
+import type { BasemapPeerData } from '../../common/types/BaseMapEntity.js';
 import type { BasemapEntitiesDB } from '../basemapEntitiesDB.js';
+import { extractPresentationFromNodeData, normalizeBasemapPeerData } from '../utils/presentation.js';
 
 type StoreRegistry = {
   getPeer<T = unknown>(nodeType: string): PeerStore<T> | undefined;
@@ -83,7 +86,33 @@ async function ensureBasemapStores(registry: StoreRegistry): Promise<void> {
     const { createBasemapPeerStoreDexie } = await import('../basemapPeerStore.dexie.js');
     registry.registerPeer('basemap', createBasemapPeerStoreDexie(db));
   }
+
+  await ensureBasemapPeerComposer();
 }
+
+let peerComposerRegistered = false;
+
+async function ensureBasemapPeerComposer(): Promise<void> {
+  if (peerComposerRegistered) return;
+  try {
+    const runtime = await import('@hierarchidb/runtime-worker');
+    if (typeof runtime.registerPeerDataComposer === 'function') {
+      runtime.registerPeerDataComposer('basemap', composeBasemapPeerData);
+      peerComposerRegistered = true;
+    }
+  } catch (error) {
+    if (import.meta.env?.DEV) {
+      console.warn('[basemap-worker] failed to register peer data composer', error);
+    }
+  }
+}
+
+const composeBasemapPeerData = (node: TreeNode): BasemapPeerData => {
+  const data = normalizeBasemapPeerData({
+    presentation: extractPresentationFromNodeData((node as { data?: unknown }).data),
+  });
+  return data;
+};
 
 export async function registerBasemapWorkerStores(
   options: RegisterBasemapWorkerStoresOptions = {}

@@ -20,6 +20,7 @@ import {
   touchWorkingCopyByRecord,
   updateWorkingCopy as updateWc,
 } from './WorkingCopyTreeNodeOperations.js';
+import { syncPeerDataFromNode } from './peerDataRegistry.js';
 import {
   commitWorkingCopyManually,
   getWorkingCopyContext,
@@ -88,6 +89,7 @@ export class WorkingCopyService implements WorkingCopyAPI {
     await updateWc(this.coreDB, nodeId, { ...updates });
     const next = await this.coreDB.nodes.get(nodeId);
     if (!next) throw new Error('Working copy update failed');
+    await syncPeerDataFromNode(next as TreeNode);
     return next;
   }
 

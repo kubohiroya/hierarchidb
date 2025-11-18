@@ -8221,6 +8221,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-18 10:15 command: pnpm --filter '@hierarchidb/ui-treeconsole-*' test — exit 0。TreeConsole base/treetable 両方のテストスイートがグリーンであることを再確認。
 - 2025-11-18 10:35 progress: task1302 runtime/worker module split — CommandProcessor から peer entity cleanup/override ロジックを `services/command/peerEntityCleanup.ts` へ切り出し、type 定義とメソッドを削除して本体を 40 行以上削減。WorkingCopyService に続き CommandProcessor も段階分割を継続。
 - 2025-11-18 10:37 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0。peer entity cleanup 切り出し後も NodeNext typecheck が通ることを確認。
+- 2025-11-18 11:05 progress: basemap peerEntities presentation — runtime-worker に peer data composer registry を追加し、WorkingCopyService/EntityLifecycleManager から同期する仕組みを実装。basemap worker 側で composer を登録し、`presentation` に style/viewport を格納するよう修正。Dexie peer store 正規化も更新。
+- 2025-11-18 11:09 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0（peer composer 導入後）。
+- 2025-11-18 11:12 command: pnpm --filter @hierarchidb/runtime-worker test -- --run basemap-working-copy-edit — exit 0（既知 Dexie warning のみ）。
+- 2025-11-18 11:15 command: pnpm --filter @hierarchidb/basemap-plugin build — exit 0（define warning既知）。
 - 2025-11-17 16:41 start: fix/ui-treeconsole/trash-empty-flow — `/t/r/.../trash/empty` でチェックした行を削除してもゴミ箱が空にならず、ダイアログも閉じない回帰の調査と修正に着手。DoD: Kanban/ログ更新、Empty 操作→削除完了→ダイアログクローズ→元 `pageNodeId` 復帰、連続削除成功、`pnpm lint && pnpm format && pnpm typecheck && pnpm test` 成功ログ、ロールバック記述を完了する。
 - 2025-11-17 16:52 progress: fix/ui-treeconsole/trash-empty-flow — TrashDialog が `treeData` 全件（挿入された trash root 行を含む）を `mutationAPI.removeNodes` へ渡しており、trash root 自体の削除を拒否する worker から success=false が返り続けてダイアログが閉じない状態だった。Empty 専用の `emptyTrashBranch` ヘルパーを追加して `removeSubtree` を呼ぶように切り替え、TanStack Router の `navigate` で閉じるリビルド（Cancel 時は reload せず、Empty/Restore では reload 付き）とカウント表示の補正を実装。ユニットテストで `removeSubtree` 呼び出しを検証。
 - 2025-11-17 16:54 command: pnpm format — exit 0。turbo 経由で 83 パッケージの biome format を走らせ、新規ファイルを含めてフォーマットを揃えた。

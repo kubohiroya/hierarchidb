@@ -14,6 +14,7 @@ import type { CommandEnvelope } from '../services/command-types.js';
 import { decodeWorkingCopyHolderName } from '../services/utils/holder-encoding.js';
 import { PeerEntityHandler } from './handlers/PeerEntityHandler.js';
 import { storeRegistry } from './store-registry.js';
+import { syncPeerDataFromNode } from '../services/peerDataRegistry.js';
 
 type CreateWorkingCopyPayload = {
   originalId: NodeId;
@@ -222,6 +223,10 @@ export class EntityLifecycleManager {
       const peer = new PeerEntityHandler(store);
       await peer.upsertPeer(targetId, wcId);
       await peer.deletePeer(wcId);
+      const canonicalNode = await this.coreDB.getNode(targetId);
+      if (canonicalNode) {
+        await syncPeerDataFromNode(canonicalNode);
+      }
     } catch {}
   }
 

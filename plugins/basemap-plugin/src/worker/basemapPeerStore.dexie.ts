@@ -2,6 +2,7 @@ import type { NodeId } from '@hierarchidb/common-types';
 import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
 import type { BasemapPeerData } from '../common/types/BaseMapEntity.js';
 import type { BasemapEntitiesDB, BasemapPeerRow } from './basemapEntitiesDB.js';
+import { normalizeBasemapPeerData } from './utils/presentation.js';
 
 // TODO(basemap-runtime-worker-integration): when basemap adopts the shared
 // runtime worker factory, register its client via
@@ -41,10 +42,3 @@ export function createBasemapPeerStoreDexie(db: BasemapEntitiesDB): PeerStore<Ba
     },
   };
 }
-
-const normalizeBasemapPeerData = (
-  input?: Partial<BasemapPeerData> | null
-): BasemapPeerData => ({
-  schemaVersion: 1,
-  presentation: input?.presentation,
-});
