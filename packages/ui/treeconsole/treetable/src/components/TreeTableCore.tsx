@@ -46,6 +46,7 @@ export function TreeTableCore({
   onRowContextMenu: _onRowContextMenu,
   pageNodeId,
   treeId,
+  selectAllPersistence = 'page',
 }: TreeTableCoreProps): ReactElement {
   const IconComponent = CustomNodeTypeIcon || NodeTypeIcon;
   const ContextMenuComponent = CustomNodeContextMenu || NodeContextMenu;
@@ -78,7 +79,10 @@ export function TreeTableCore({
     const grandParent = parent?.parentElement ?? null;
     setObserverTarget(grandParent ?? parent ?? null);
   }, [setContainerElement, setObserverTarget]);
-  const { selectAll, selectAllHydrated, setSelectAll } = useTreeTableSelectAll({ pageNodeId });
+  const { selectAll, selectAllHydrated, setSelectAll } = useTreeTableSelectAll({
+    pageNodeId,
+    persistence: selectAllPersistence,
+  });
 
   const {
     editingNodeId,

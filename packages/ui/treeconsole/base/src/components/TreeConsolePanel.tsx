@@ -89,6 +89,8 @@ export interface TreeConsolePanelProps {
   readonly treeIdForPersistence?: string;
   /** Row click action behavior */
   readonly rowClickAction?: 'Edit' | 'Select/Navigate';
+  /** Optional select-all persistence strategy passed to TreeTableCore */
+  readonly selectAllPersistence?: 'page' | 'session';
   /** Enable trash-specific columns and behaviours */
   readonly useTrashColumns?: boolean;
   readonly trashAction?: 'restore' | 'empty';
@@ -293,6 +295,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         viewWidth={1200}
         treeId={props.treeId}
         pageNodeId={props.pageNodeId}
+        selectAllPersistence={props.selectAllPersistence}
         useTrashColumns={props.useTrashColumns ?? false}
         trashAction={props.trashAction}
         depthOffset={controller.depthOffset ?? 0}

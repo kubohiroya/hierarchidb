@@ -1,5 +1,7 @@
-declare module '@hierarchidb/runtime-worker' {
 import type { NodeId } from '@hierarchidb/common-types';
+import type { DialogProgressState, DialogWindowState } from '@hierarchidb/plugin-service-api';
+
+declare module '@hierarchidb/runtime-worker' {
 
 export interface RuntimeWorkerStageClient {
   vectortile?: {
@@ -46,9 +48,8 @@ export interface GroupItemBase<T = unknown> {
 export interface PeerEntity<T = unknown> {
   nodeId: NodeId;
   updatedAt?: number;
-  displayMode?: 'normal' | 'maximize' | 'full-screen';
-  dialogPosition?: { x: number; y: number } | null;
-  dialogSize?: { width: number; height: number } | null;
+  dialogWindow?: DialogWindowState | null;
+  dialogProgress?: DialogProgressState | null;
   data?: T;
 }
 

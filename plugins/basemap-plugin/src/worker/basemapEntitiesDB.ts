@@ -1,6 +1,7 @@
-import type { MultiStepDialogState, NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/common-types';
 import { getDBName } from '@hierarchidb/util';
 import { Dexie, type Table } from 'dexie';
+import type { DialogProgressState, DialogWindowState } from '@hierarchidb/plugin-service-api';
 import type { BasemapPeerData } from '../common/types/BaseMapEntity.js';
 
 // Minimal peer row for runtime-worker standard flow
@@ -8,10 +9,8 @@ export type BasemapPeerRow = {
   nodeId: NodeId;
   data?: BasemapPeerData;
   updatedAt?: number;
-  displayMode?: 'normal' | 'maximize' | 'full-screen';
-  dialogPosition?: { x: number; y: number } | null;
-  dialogSize?: { width: number; height: number } | null;
-  dialogState?: MultiStepDialogState | null;
+  dialogWindow?: DialogWindowState | null;
+  dialogProgress?: DialogProgressState | null;
 };
 
 export class BasemapEntitiesDB extends Dexie {

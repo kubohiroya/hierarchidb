@@ -1,16 +1,15 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
-import type { MultiStepDialogState, NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/common-types';
+import type { DialogProgressState, DialogWindowState } from '@hierarchidb/plugin-service-api';
 import type { RoutePeerData } from '../common/types/index.js';
 
 export type RoutePeerRow = {
   nodeId: NodeId;
   data?: RoutePeerData;
   updatedAt?: number;
-  displayMode?: 'normal' | 'maximize' | 'full-screen';
-  dialogPosition?: { x: number; y: number } | null;
-  dialogSize?: { width: number; height: number } | null;
-  dialogState?: MultiStepDialogState | null;
+  dialogWindow?: DialogWindowState | null;
+  dialogProgress?: DialogProgressState | null;
 };
 
 export class RouteEntitiesDB extends Dexie {

@@ -62,10 +62,10 @@
         "../packages/plugin-registry/src/*"
       ],
       "@hierarchidb/plugin-service-api": [
-        "../packages/plugin-service-api/dist/index"
+        "../packages/plugin-service-api/src/index.ts"
       ],
       "@hierarchidb/plugin-service-api/*": [
-        "../packages/plugin-service-api/dist/*"
+        "../packages/plugin-service-api/src/*"
       ],
       "@hierarchidb/plugin-service-api/types/*": [
         "../packages/plugin-service-api/src/types/*"

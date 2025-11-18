@@ -320,6 +320,9 @@ importers:
       '@hierarchidb/timeline-plugin':
         specifier: workspace:*
         version: link:../plugins/timeline-plugin
+      '@hierarchidb/ui-i18n':
+        specifier: workspace:*
+        version: link:../packages/ui/i18n
       '@hierarchidb/ui-shell':
         specifier: workspace:*
         version: link:../packages/ui-shell
@@ -2262,6 +2265,9 @@ importers:
       '@hierarchidb/plugin-base':
         specifier: workspace:*
         version: link:../../packages/plugin-base
+      '@hierarchidb/ui-plugin-basic-info':
+        specifier: workspace:*
+        version: link:../../packages/ui/plugin-basic-info
     devDependencies:
       '@hierarchidb/common-api':
         specifier: workspace:*

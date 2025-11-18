@@ -237,8 +237,22 @@
   - [ ] Developer Mode 検出結果を TreeConsoleToolbarMenu まで伝播し、メニュー項目の条件付き表示を実装する
   - [ ] このアプリが作成する IndexedDB 名称の一覧を整理し、一括削除ユーティリティを実装する
   - [ ] 削除処理完了後のユーザー通知とトップページ遷移を TreeConsole ルーター経由で実装し、UI テスト/ログで確認する
-  - [ ] `pnpm lint && pnpm typecheck` の成功ログを運用ログへ追記する
+ - [ ] `pnpm lint && pnpm typecheck` の成功ログを運用ログへ追記する
 - ロールバック手順：`packages/ui/treeconsole/toolbar/src/components/TreeConsoleToolbar.tsx`, `app/src/components/tree/menus/TreeConsoleToolbarMenu.tsx`, `app/src/router/pages/tree/console/TreeConsoleIntegration.tsx`, 新設ユーティリティ（IndexedDB 全削除）など本タスクで変更・追加したファイルを revert し、`pnpm lint && pnpm typecheck` を再実行して旧挙動へ戻ることを確認する
+
+1506) TrashDialog 復元ダイアログ初期選択リセット（P1）
+- ブランチ: `fix/ui-treeconsole/trash-restore-selection`（sandbox 制約で `main` 上で作業）
+- 依存: `app/src/router/pages/tree/trash/TrashDialog.tsx`, `packages/ui/treeconsole/base/src/components/TreeConsolePanel.tsx`, `packages/ui/treeconsole/treetable/src/components/TreeTableCore.tsx`, `packages/ui/treeconsole/treetable/src/components/hooks/useTreeTableSelectAll.ts`, `packages/ui/treeconsole/treetable/src/types.ts`
+- 受け入れ基準（DoD）:
+  - [ ] 「ゴミ箱から戻す」ダイアログを開いた際に TreeTable の各ノードとセレクトオールが既定で未選択状態になっている
+  - [ ] ユーザーが手動で選択したノードのみが復元/空にする対象となり、従来通り選択状態の保存やボタン活性条件が機能する
+  - [ ] 関連する確認手順（手動または自動テスト）と `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` / `pnpm -C app typecheck` 等の実行ログを運用ログへ記録する
+  - [ ] ゴミ箱以外の TreeConsole ダイアログや別ビューで初期選択/セレクトオール挙動に副作用がないと確認する
+- チェックリスト:
+  - [x] TreeTable の select-all 永続化を任意で無効化できるオプションを追加し、TrashDialog からはセッション限定で select-all を初期化する
+  - [x] TrashDialog への配線（TreeConsolePanel 経由）が正しく新オプションを渡し、開閉ごとに選択状態がリセットされることを確認する
+  - [x] 影響範囲の typecheck/必要なテストを実行し、TASKS Kanban/運用ログへ記載する（app typecheck は既知の `@hierarchidb/ui-i18n` 解決失敗と ImportExportMenu onFocus 型不一致で失敗だがログ済み）
+- ロールバック手順：`app/src/router/pages/tree/trash/TrashDialog.tsx`, `packages/ui/treeconsole/base/src/components/TreeConsolePanel.tsx`, `packages/ui/treeconsole/treetable/src/components/TreeTableCore.tsx`, `packages/ui/treeconsole/treetable/src/components/hooks/useTreeTableSelectAll.ts`, `packages/ui/treeconsole/treetable/src/types.ts` の差分を revert し、上記 typecheck コマンドを再実行して旧挙動へ戻ることを確認する
 
 303) TreeConsole Folder Undo エラー修正（P0）
 - ブランチ: `fix/ui-treeconsole/folder-undo-error`（sandbox 制約で `main` 上で作業）
@@ -8190,6 +8204,11 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-13"></a>
 
+- 2025-11-18 18:10 start: fix/ui-treeconsole/trash-restore-selection — 「ゴミ箱から戻す」ダイアログのデフォルト選択解除タスクに着手。DoD: TrashDialog 初期表示で全ノード未選択・セレクトオール OFF、手動選択の既存挙動維持、`pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck`／`pnpm -C app typecheck` 等の検証ログ取得、他ビューへの副作用なしを確認し、ロールバック手順を記す。
+- 2025-11-18 18:28 progress: fix/ui-treeconsole/trash-restore-selection — TreeTableCore/useTreeTableSelectAll に `selectAllPersistence` オプションを追加し、TreeConsolePanel から受け渡せるようにしたうえで TrashDialogContent は `session` を指定して開くたびに select-all/選択済みノードを初期化するように配線。既存ビューは未指定のため従来どおり `page` 永続化を継続。
+- 2025-11-18 18:32 command: pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck — exit 0（対象パッケージに typecheck スクリプトが無くスキップされた旨のみ出力）。
+- 2025-11-18 18:34 command: pnpm --filter @hierarchidb/ui-treeconsole-treetable build — exit 0（tsdown の define オプション警告は既知）。select-all オプションを含めた dist/.d.ts を更新。
+- 2025-11-18 18:40 command: pnpm -C app typecheck — exit 1。sandbox 既知の `@hierarchidb/ui-i18n` import 解決失敗と、既存課題の `ImportExportMenu` onFocus 型不一致（focus/mouse event 混在）で停止することを再現し、本タスク差分による追加エラーは発生していない。
 - 2025-11-18 08:05 start: fix/plugin-dialog/current-step-data — `usePluginDialogController` で `currentStepData` を評価順序の都合で未初期化参照している件を調査開始。DoD: Kanban/ログ更新、初期化順序の是正で PluginDialogShell 例外を解消、`pnpm --filter @hierarchidb/plugin-ui-host test -- --run dialogStateSubscription` などの検証ログ取得、ロールバック記述を完了する。
 - 2025-11-18 08:09 progress: fix/plugin-dialog/current-step-data — `currentStepData` の `useMemo` ブロックを `handleBasicInfoBridge` 直後へ移動し、`renderStep` の `useCallback` が TDZ を踏まないよう依存順序を確定。BasicInfo メタと workingCopy データの統合結果が従来どおり保持されることを確認。
 - 2025-11-18 08:10 command: pnpm --filter @hierarchidb/plugin-ui-host test -- --run dialogStateSubscription — exit 0。plugin-ui-host の headless/PluginDialog 系テストを実行し、順序修正後も回帰がないことを確認。

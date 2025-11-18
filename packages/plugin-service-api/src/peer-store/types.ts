@@ -1,5 +1,4 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { MultiStepDialogState } from '@hierarchidb/common-types';
 
 /**
  * Minimal shape for peer data persisted by plugin-loader.
@@ -9,14 +8,25 @@ export interface PeerDataBase {
   metadata?: Record<string, unknown>;
 }
 
+export interface DialogWindowState {
+  mode?: 'normal' | 'maximize' | 'full-screen';
+  position?: { x: number; y: number } | null;
+  size?: { width: number; height: number } | null;
+}
+
+export interface DialogProgressState {
+  /**
+   * Zero-based index of the last active step when the dialog was persisted.
+   */
+  activeStepIndex: number;
+}
+
 export interface PeerEntityBase<TData extends PeerDataBase = PeerDataBase> {
   nodeId: NodeId;
-  data: TData;
+  data?: TData;
   updatedAt?: number;
-  displayMode?: 'normal' | 'maximize' | 'full-screen';
-  dialogPosition?: { x: number; y: number } | null;
-  dialogSize?: { width: number; height: number } | null;
-  dialogState?: MultiStepDialogState | null;
+  dialogWindow?: DialogWindowState | null;
+  dialogProgress?: DialogProgressState | null;
 }
 
 export interface PeerStore<TData extends PeerDataBase = PeerDataBase> {

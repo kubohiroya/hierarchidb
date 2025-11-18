@@ -2,6 +2,11 @@ import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 
 export interface UseTreeTableSelectAllOptions {
   pageNodeId?: string;
+  /**
+   * 'page' (default) persists select-all state per pageNodeId.
+   * 'session' keeps the toggle in-memory only and always boots as false.
+   */
+  persistence?: 'page' | 'session';
 }
 
 export interface UseTreeTableSelectAllResult {
@@ -10,11 +15,22 @@ export interface UseTreeTableSelectAllResult {
   setSelectAll: Dispatch<SetStateAction<boolean>>;
 }
 
-export function useTreeTableSelectAll({ pageNodeId }: UseTreeTableSelectAllOptions): UseTreeTableSelectAllResult {
+export function useTreeTableSelectAll({
+  pageNodeId,
+  persistence = 'page',
+}: UseTreeTableSelectAllOptions): UseTreeTableSelectAllResult {
   const [selectAll, setSelectAll] = useState(false);
-  const [selectAllHydrated, setSelectAllHydrated] = useState<boolean>(!pageNodeId);
+  const [selectAllHydrated, setSelectAllHydrated] = useState<boolean>(
+    persistence !== 'page' || !pageNodeId
+  );
 
   useEffect(() => {
+    if (persistence !== 'page') {
+      setSelectAll(false);
+      setSelectAllHydrated(true);
+      return;
+    }
+
     if (!pageNodeId) {
       setSelectAll(false);
       setSelectAllHydrated(true);
@@ -46,15 +62,16 @@ export function useTreeTableSelectAll({ pageNodeId }: UseTreeTableSelectAllOptio
     return () => {
       cancelled = true;
     };
-  }, [pageNodeId]);
+  }, [pageNodeId, persistence]);
 
   useEffect(() => {
+    if (persistence !== 'page') return;
     if (!pageNodeId || !selectAllHydrated) return;
     (async () => {
       const { saveSelectAll } = await import('../../state/properties-db.js');
       await saveSelectAll(pageNodeId, selectAll);
     })();
-  }, [selectAll, pageNodeId, selectAllHydrated]);
+  }, [selectAll, pageNodeId, selectAllHydrated, persistence]);
 
   return { selectAll, selectAllHydrated, setSelectAll };
 }

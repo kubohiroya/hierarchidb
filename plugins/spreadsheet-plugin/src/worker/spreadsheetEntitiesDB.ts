@@ -1,6 +1,7 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
-import type { MultiStepDialogState, NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/common-types';
+import type { DialogProgressState, DialogWindowState } from '@hierarchidb/plugin-service-api';
 import type { SpreadsheetPeerData } from '../common/types/index.ts';
 import type { SpreadsheetGroupItemData, SpreadsheetRelationMeta } from '../common/types/entities.js';
 
@@ -8,10 +9,8 @@ export type SheetPeerRow = {
   nodeId: NodeId;
   data?: SpreadsheetPeerData;
   updatedAt?: number;
-  displayMode?: 'normal' | 'maximize' | 'full-screen';
-  dialogPosition?: { x: number; y: number } | null;
-  dialogSize?: { width: number; height: number } | null;
-  dialogState?: MultiStepDialogState | null;
+  dialogWindow?: DialogWindowState | null;
+  dialogProgress?: DialogProgressState | null;
 };
 export type SheetGroupRow = { nodeId: NodeId; id: string; data?: SpreadsheetGroupItemData; updatedAt?: number };
 export type SheetRelationRow = {

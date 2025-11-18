@@ -5,7 +5,6 @@ export * from './types/paginatedResult.js';
 export * from './types/package-json.js';
 export * from './types/plugin-definition.js';
 export * from './types/plugin-metadata.js';
-export * from './types/plugin-resolution.js';
 export * from './types/plugin-serialization.js';
 export * from './types/PluginExtensionAPI.js';
 export * from './types/PluginLifecycleAPI.js';
@@ -14,5 +13,11 @@ export * from './types/NodeTypeAPI.js';
 export * from './types/extensions.js';
 export * from './types/registry.js';
 export * from './types/PluginTreeAPI.js';
-export type { PeerDataBase, PeerEntityBase, PeerStore } from './peer-store/types.js';
+export type {
+  DialogProgressState,
+  DialogWindowState,
+  PeerDataBase,
+  PeerEntityBase,
+  PeerStore,
+} from './peer-store/types.js';
 export type { WorkingCopyBase, WorkingCopyDraft } from './working-copy/types.js';

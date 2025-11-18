@@ -9,6 +9,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     version: "1.0.0",
     dependencies: [
         "@hierarchidb/plugin-base",
+        "@hierarchidb/ui-plugin-basic-info",
         "dexie",
         "@emotion/react",
         "@emotion/styled",
@@ -39,6 +40,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "priority": 900,
         "dependencies": [
           "@hierarchidb/plugin-base",
+          "@hierarchidb/ui-plugin-basic-info",
           "dexie",
           "@emotion/react",
           "@emotion/styled",

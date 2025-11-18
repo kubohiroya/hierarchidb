@@ -1,4 +1,5 @@
-import type { MultiStepDialogState, NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/common-types';
+import type { DialogProgressState, DialogWindowState } from '@hierarchidb/plugin-service-api';
 
 /**
  * Abstractions for plugin entity stores (Peer/Group/Relational).
@@ -18,13 +19,10 @@ export interface PeerEntity<TData = unknown> {
   // Domain data only; UI-facing fields (name/description) live in TreeNode
   data?: TData;
   updatedAt?: number;
-  // UI presentation mode for console/panels associated with this node
-  displayMode?: 'normal' | 'maximize' | 'full-screen';
-  // Optional persisted dialog window position/size for UI
-  dialogPosition?: { x: number; y: number } | null;
-  dialogSize?: { width: number; height: number } | null;
-  // Worker-published multi-step dialog state snapshot
-  dialogState?: MultiStepDialogState | null;
+  // Persisted dialog window state (mode/position/size)
+  dialogWindow?: DialogWindowState | null;
+  // Minimal multi-step dialog progress snapshot
+  dialogProgress?: DialogProgressState | null;
 }
 
 export interface PeerStore<TData = unknown> {

@@ -19,6 +19,7 @@ const buildKey = (nodeType: string, nodeId: string) => `${nodeType}::${nodeId}`;
 
 export class DialogStateService implements DialogStateAPI {
   private subscribers = new Map<DialogStateSubscriptionId, SubscriptionEntry>();
+  private snapshotCache = new Map<string, MultiStepDialogState | null>();
 
   async publishState({ nodeId, nodeType, state }: DialogStateUpdateInput): Promise<void> {
     const store = storeRegistry.getPeer(nodeType);
@@ -36,9 +37,9 @@ export class DialogStateService implements DialogStateAPI {
       updatedAt: Date.now(),
     };
     if (state) {
-      next.dialogState = state;
-    } else if ('dialogState' in next) {
-      next.dialogState = null;
+      next.dialogProgress = { activeStepIndex: state.activeStepIndex };
+    } else if ('dialogProgress' in next) {
+      next.dialogProgress = undefined;
     }
 
     try {
@@ -49,20 +50,24 @@ export class DialogStateService implements DialogStateAPI {
       }
     }
 
-    this.emit(buildKey(nodeType, nodeId), state ?? null);
+    const cacheKey = buildKey(nodeType, nodeId);
+    if (state) {
+      this.snapshotCache.set(cacheKey, state);
+    } else {
+      this.snapshotCache.delete(cacheKey);
+    }
+    this.emit(cacheKey, state ?? null);
   }
 
   async getState({
     nodeId,
     nodeType,
   }: DialogStateRequestInput): Promise<MultiStepDialogState | null> {
-    const store = storeRegistry.getPeer(nodeType);
-    if (!store) {
-      return null;
+    const cacheKey = buildKey(nodeType, nodeId);
+    if (this.snapshotCache.has(cacheKey)) {
+      return this.snapshotCache.get(cacheKey) ?? null;
     }
-    const entity = await store.get(nodeId);
-    const state = entity?.dialogState ?? null;
-    return state ?? null;
+    return null;
   }
 
   async subscribeState(

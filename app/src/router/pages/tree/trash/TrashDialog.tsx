@@ -600,23 +600,24 @@ function TrashDialogContent({
       >
         <TreeConsolePanel
           title={t('trash.dialog.panelTitle') ?? ''}
-          treeId={treeId}
-          pageNodeId={pageNodeId ? String(pageNodeId) : undefined}
-          subtreeRootId={trashViewRootId ? String(trashViewRootId) : undefined}
-          data={filteredTreeData}
-          nodeIndex={nodeIndex}
+        treeId={treeId}
+        pageNodeId={pageNodeId ? String(pageNodeId) : undefined}
+        subtreeRootId={trashViewRootId ? String(trashViewRootId) : undefined}
+        data={filteredTreeData}
+        nodeIndex={nodeIndex}
           columns={columns}
           breadcrumbItems={breadcrumbItems}
           loading={false}
           selectedIds={selectedIds.map(String)}
           expandedIds={expandedIds}
-          viewMode="list"
-          canCreate={false}
-          canEdit={false}
-          canTrash={mode === 'empty'}
-          useTrashColumns
-          trashAction={mode}
-          hideDragHandler
+        viewMode="list"
+        canCreate={false}
+        canEdit={false}
+        canTrash={mode === 'empty'}
+        useTrashColumns
+        selectAllPersistence="session"
+        trashAction={mode}
+        hideDragHandler
           breadcrumbRenderer={({
             defaultRendererProps,
           }: TreeConsolePanelBreadcrumbRendererProps) => (
@@ -1017,27 +1018,7 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
         />
       ),
     }),
-    [
-      breadcrumbItems,
-      columns,
-      expandedIds,
-      frameState,
-      handleClose,
-      handleEmptyAll,
-      handleRestore,
-      loading,
-      mode,
-      nodeIndex,
-      onToggleExpand,
-      pageNodeId,
-      searchTerm,
-      selectedIds,
-      stepComponents,
-      t,
-      trashViewRootId,
-      treeData,
-      treeId,
-    ]
+    [breadcrumbItems, columns, expandedIds, frameState, handleClose, handleEmptyAll, handleRestore, loading, mode, nodeIndex, onToggleExpand, pageNodeId, removableCount, searchTerm, selectedIds, stepComponents, t, trashViewRootId, treeData, treeId]
   );
 
   const frameSx = useMemo(

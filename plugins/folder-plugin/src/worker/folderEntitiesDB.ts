@@ -1,6 +1,7 @@
 import Dexie, { type DexieConstructor, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
-import type { MultiStepDialogState, NodeId } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/common-types';
+import type { DialogProgressState, DialogWindowState } from '@hierarchidb/plugin-service-api';
 import { FolderPeerData } from '../common/types/types.ts';
 
 export type FolderGroupRow = {
@@ -22,10 +23,8 @@ export type FolderPeerRow = {
   nodeId: NodeId;
   data?: FolderPeerData;
   updatedAt?: number;
-  displayMode?: 'normal' | 'maximize' | 'full-screen';
-  dialogPosition?: { x: number; y: number } | null;
-  dialogSize?: { width: number; height: number } | null;
-  dialogState?: MultiStepDialogState | null;
+  dialogWindow?: DialogWindowState | null;
+  dialogProgress?: DialogProgressState | null;
 };
 
 const DexieBase = Dexie as unknown as DexieConstructor;

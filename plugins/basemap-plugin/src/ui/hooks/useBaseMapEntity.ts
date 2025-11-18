@@ -36,6 +36,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
+const toStringArray = (value: unknown): string[] =>
+  Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : [];
+
 export function normalizeMapStyle(mapStyle?: Partial<MapStyle>): MapStyle {
   return {
     ...DEFAULT_MAP_STYLE,
@@ -57,12 +60,18 @@ export function buildBaseMapEntityFromNode(node?: TreeNode | null): BaseMapEntit
   const viewport = normalizeViewport(data.viewport as Partial<MapViewport> | undefined);
   const createdAt: Timestamp = (typeof node.createdAt === 'number' ? node.createdAt : Date.now()) as Timestamp;
   const updatedAt: Timestamp = (typeof node.updatedAt === 'number' ? node.updatedAt : Date.now()) as Timestamp;
+  const name = typeof node.name === 'string' ? node.name : undefined;
+  const description = typeof node.description === 'string' ? node.description : undefined;
+  const tags = toStringArray(data.tags);
 
   return {
     id: node.id as NodeId,
     nodeId: node.id as NodeId,
     mapStyle,
     viewport,
+    name,
+    description,
+    tags,
     createdAt,
     updatedAt,
     version: typeof node.version === 'number' ? node.version : 1,
@@ -76,6 +85,9 @@ function createFallbackEntity(nodeId: NodeId): BaseMapEntity {
     nodeId,
     mapStyle: { ...DEFAULT_MAP_STYLE },
     viewport: { ...DEFAULT_VIEWPORT },
+    name: '',
+    description: '',
+    tags: [],
     createdAt: now,
     updatedAt: now,
     version: 1,

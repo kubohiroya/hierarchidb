@@ -68,7 +68,8 @@
     "dev:tsc": "tsc --watch"
   },
   "dependencies": {
-    "@hierarchidb/plugin-base": "workspace:*"
+    "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/ui-plugin-basic-info": "workspace:*"
   },
   "peerDependencies": {
     "dexie": "^4.2.0",
@@ -110,7 +111,8 @@
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/ui-data-grid": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/plugin-base": "workspace:*"
+    "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/ui-plugin-basic-info": "workspace:*"
   },
   "keywords": [
     "hierarchidb",

@@ -66,15 +66,34 @@ export const normalizePeerData = (data: unknown): LocationPeerData => {
   };
 };
 
-const coerceDialogPosition = (
-  value: PeerEntity<LocationPeerData>['dialogPosition'],
-): LocationPeerRow['dialogPosition'] =>
-  value ?? undefined;
+const coerceDialogWindow = (
+  value: PeerEntity<LocationPeerData>['dialogWindow'],
+): LocationPeerRow['dialogWindow'] => (value ? { ...value } : undefined);
 
-const coerceDialogSize = (
-  value: PeerEntity<LocationPeerData>['dialogSize'],
-): LocationPeerRow['dialogSize'] =>
-  value ?? undefined;
+type LegacyDialogFields = {
+  displayMode?: 'normal' | 'maximize' | 'full-screen';
+  dialogPosition?: { x: number; y: number } | null;
+  dialogSize?: { width: number; height: number } | null;
+};
+
+const resolveDialogWindow = (
+  row: LocationPeerRow & LegacyDialogFields,
+): LocationPeerRow['dialogWindow'] => {
+  if (row.dialogWindow) {
+    return { ...row.dialogWindow };
+  }
+  const legacyMode = row.displayMode;
+  const legacyPosition = row.dialogPosition;
+  const legacySize = row.dialogSize;
+  if (!legacyMode && !legacyPosition && !legacySize) {
+    return undefined;
+  }
+  return {
+    mode: legacyMode,
+    position: legacyPosition ?? null,
+    size: legacySize ?? null,
+  };
+};
 
 export const toPeerRow = (
   entity: PeerEntity<LocationPeerData>,
@@ -83,22 +102,20 @@ export const toPeerRow = (
   nodeId: entity.nodeId,
   data: normalizePeerData(entity.data),
   updatedAt: timestamp,
-  displayMode: entity.displayMode,
-  dialogPosition: coerceDialogPosition(entity.dialogPosition),
-  dialogSize: coerceDialogSize(entity.dialogSize),
+  dialogWindow: coerceDialogWindow(entity.dialogWindow),
+  dialogProgress: entity.dialogProgress ? { ...entity.dialogProgress } : undefined,
 });
 
 export const fromPeerRow = (
   row: LocationPeerRow | undefined,
 ): PeerEntity<LocationPeerData> | undefined => {
   if (!row) return undefined;
-  const { nodeId, updatedAt, displayMode, dialogPosition, dialogSize, data } = row;
+  const { nodeId, updatedAt, data } = row;
   return {
     nodeId,
     updatedAt,
-    displayMode,
-    dialogPosition: dialogPosition ?? null,
-    dialogSize: dialogSize ?? null,
+    dialogWindow: resolveDialogWindow(row as LocationPeerRow & LegacyDialogFields) ?? null,
+    dialogProgress: row.dialogProgress ? { ...row.dialogProgress } : null,
     data: normalizePeerData(data),
   };
 };

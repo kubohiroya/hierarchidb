@@ -35,6 +35,7 @@
     "@hierarchidb/runtime-client": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/util": "workspace:*",
+    "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/basemap-plugin": "workspace:*",
     "@hierarchidb/folder-plugin": "workspace:*",
     "@hierarchidb/linker-plugin": "workspace:*",

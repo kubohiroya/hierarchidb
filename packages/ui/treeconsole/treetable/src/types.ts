@@ -116,6 +116,10 @@ export interface TreeTableCoreProps {
    * Selection
    */
   selectionMode?: 'single' | 'multiple' | 'none';
+  /**
+   * select-all state persistence strategy. Defaults to 'page'.
+   */
+  selectAllPersistence?: 'page' | 'session';
 
   /**
    * Custom containers

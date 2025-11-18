@@ -51,7 +51,11 @@ describe('PeerEntity delete policy (trash vs permanent vs WC)', () => {
 
   it('moveToTrash keeps PeerEntity; restore keeps PeerEntity', async () => {
     const { cp } = harness;
-    await folderPeerStore.put({ nodeId: 'a' as NodeId, data: { v: 1 }, displayMode: 'normal' });
+    await folderPeerStore.put({
+      nodeId: 'a' as NodeId,
+      data: { v: 1 },
+      dialogWindow: { mode: 'normal' },
+    });
 
     const moveToTrash = cp.createEnvelope('moveToTrash', { nodeIds: ['a' as NodeId] });
     const moved = await cp.processCommand(moveToTrash);
@@ -68,7 +72,11 @@ describe('PeerEntity delete policy (trash vs permanent vs WC)', () => {
 
   it('remove (permanent delete) deletes PeerEntity', async () => {
     const { cp } = harness;
-    await folderPeerStore.put({ nodeId: 'a' as NodeId, data: { v: 1 }, displayMode: 'maximize' });
+    await folderPeerStore.put({
+      nodeId: 'a' as NodeId,
+      data: { v: 1 },
+      dialogWindow: { mode: 'maximize' },
+    });
 
     const removeEnvelope = cp.createEnvelope('remove', { nodeIds: ['a' as NodeId] });
     const removed = await cp.processCommand(removeEnvelope);

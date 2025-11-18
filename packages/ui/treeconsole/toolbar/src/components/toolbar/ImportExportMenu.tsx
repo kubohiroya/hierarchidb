@@ -7,7 +7,7 @@ import {
   SnippetFolder as SnippetFolderIcon,
 } from '@mui/icons-material';
 import { Box, Button, ButtonGroup, Divider, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
-import type { MouseEvent } from 'react';
+import type { FocusEvent, MouseEvent } from 'react';
 import { useEffect, useState } from 'react';
 
 export interface ImportExportMenuProps {
@@ -49,11 +49,18 @@ export function ImportExportMenu({
     setTemplateAnchor(null);
   };
 
-  const openTemplateMenu = (event: MouseEvent<HTMLElement>) => {
+  const openTemplateMenuFromMouse = (event: MouseEvent<HTMLElement>) => {
     if (!allowImport) return;
     event.preventDefault();
     event.stopPropagation();
     setTemplateAnchor(event.currentTarget);
+  };
+
+  const openTemplateMenuFromFocus = (event: FocusEvent<HTMLElement>) => {
+    if (!allowImport) return;
+    event.preventDefault();
+    event.stopPropagation();
+    setTemplateAnchor(event.currentTarget as HTMLElement);
   };
 
   const closeTemplateMenu = () => setTemplateAnchor(null);
@@ -112,9 +119,9 @@ export function ImportExportMenu({
               key="template-menu"
               aria-haspopup="menu"
               aria-label={importTemplateLabel}
-              onMouseEnter={openTemplateMenu}
-              onFocus={openTemplateMenu}
-              onClick={openTemplateMenu}
+              onMouseEnter={openTemplateMenuFromMouse}
+              onFocus={openTemplateMenuFromFocus}
+              onClick={openTemplateMenuFromMouse}
               disabled={!allowImport}
             >
               <ListItemIcon>

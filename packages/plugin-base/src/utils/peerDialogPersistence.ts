@@ -5,6 +5,16 @@ export type PeerDisplayMode = 'normal' | 'maximize' | 'full-screen';
 export type PeerDialogPosition = { x: number; y: number };
 export type PeerDialogSize = { width: number; height: number };
 
+type PeerDialogWindowState = {
+  mode?: PeerDisplayMode;
+  position?: PeerDialogPosition | null;
+  size?: PeerDialogSize | null;
+};
+
+type PeerDialogProgressState = {
+  activeStepIndex: number;
+};
+
 export interface PeerDialogPersistence {
   getDisplayMode(nodeId: string): Promise<PeerDisplayMode | null>;
   setDisplayMode(nodeId: string, mode: PeerDisplayMode): Promise<void>;
@@ -17,11 +27,16 @@ export interface PeerDialogPersistence {
 
 type LegacyDisplayMode = 'standard' | 'maximized' | 'fullscreen';
 
-type PeerDialogRow = {
+type LegacyDialogRow = {
   nodeId: string;
   displayMode?: PeerDisplayMode | LegacyDisplayMode;
-  dialogPosition?: PeerDialogPosition;
-  dialogSize?: PeerDialogSize;
+  dialogPosition?: PeerDialogPosition | null;
+  dialogSize?: PeerDialogSize | null;
+};
+
+type PeerDialogRow = LegacyDialogRow & {
+  dialogWindow?: PeerDialogWindowState | null;
+  dialogProgress?: PeerDialogProgressState | null;
   updatedAt?: number;
 };
 
@@ -84,14 +99,58 @@ function normalizeDisplayMode(
   return fallback;
 }
 
+function cloneDialogWindow(state?: PeerDialogWindowState | null): PeerDialogWindowState | undefined {
+  if (!state) return undefined;
+  return {
+    mode: state.mode,
+    position: state.position ? { ...state.position } : state.position ?? null,
+    size: state.size ? { ...state.size } : state.size ?? null,
+  };
+}
+
+function normalizeDialogWindow(
+  next: PeerDialogWindowState | null | undefined,
+  existing?: PeerDialogWindowState | null
+): PeerDialogWindowState | undefined {
+  const source = next ?? undefined;
+  const fallback = existing ?? undefined;
+  const mode = normalizeDisplayMode(source?.mode, fallback?.mode);
+  const position = source?.position ?? fallback?.position ?? null;
+  const size = source?.size ?? fallback?.size ?? null;
+  if (!mode && !position && !size) {
+    return undefined;
+  }
+  return { mode, position, size };
+}
+
+function extractDialogWindow(row: PeerDialogRow): PeerDialogWindowState | undefined {
+  if (row.dialogWindow) {
+    return normalizeDialogWindow(row.dialogWindow);
+  }
+  const mode = normalizeDisplayMode(row.displayMode, undefined);
+  if (!mode && !row.dialogPosition && !row.dialogSize) {
+    return undefined;
+  }
+  return {
+    mode,
+    position: row.dialogPosition ?? null,
+    size: row.dialogSize ?? null,
+  };
+}
+
+function clearLegacyDialogFields(row: PeerDialogRow): void {
+  delete row.displayMode;
+  delete row.dialogPosition;
+  delete row.dialogSize;
+}
+
 function createAdapterFromPeerStore<TData>(store: PeerStore<TData>): PeerEntitiesDBAdapter {
   const mapEntityToRow = (entity: PeerEntity<TData> | undefined): PeerDialogRow | undefined => {
     if (!entity) return undefined;
     return {
       nodeId: String(entity.nodeId),
-      displayMode: entity.displayMode,
-      dialogPosition: entity.dialogPosition ?? undefined,
-      dialogSize: entity.dialogSize ?? undefined,
+      dialogWindow: cloneDialogWindow(entity.dialogWindow),
+      dialogProgress: entity.dialogProgress ? { ...entity.dialogProgress } : undefined,
       updatedAt: entity.updatedAt,
     } satisfies PeerDialogRow;
   };
@@ -101,16 +160,16 @@ function createAdapterFromPeerStore<TData>(store: PeerStore<TData>): PeerEntitie
       get: async (id: string) => mapEntityToRow(await store.get(id as NodeId)),
       put: async (row: PeerDialogRow) => {
         const existing = await store.get(row.nodeId as NodeId);
-        const nextDisplayMode = normalizeDisplayMode(row.displayMode, existing?.displayMode);
+        const nextDialogWindow = normalizeDialogWindow(row.dialogWindow, existing?.dialogWindow);
         const baseEntity: PeerEntity<TData> =
           existing ?? ({ nodeId: row.nodeId as NodeId } as PeerEntity<TData>);
         const next: PeerEntity<TData> = {
           ...baseEntity,
-          displayMode: nextDisplayMode,
-          dialogPosition: row.dialogPosition ?? existing?.dialogPosition ?? null,
-          dialogSize: row.dialogSize ?? existing?.dialogSize ?? null,
+          dialogWindow: nextDialogWindow,
+          dialogProgress: row.dialogProgress ?? existing?.dialogProgress ?? null,
           updatedAt: row.updatedAt ?? existing?.updatedAt ?? Date.now(),
         };
+        clearLegacyDialogFields(row);
         await store.put(next);
       },
       delete: async (id: string) => {
@@ -213,6 +272,7 @@ class UIPersistenceRegistry {
       const row = (await tbl.get(nodeId)) ?? { nodeId };
       await Promise.resolve(updater(row));
       row.updatedAt = Date.now();
+      clearLegacyDialogFields(row);
       await tbl.put(row);
     };
 
@@ -221,46 +281,48 @@ class UIPersistenceRegistry {
         const db = await ensureDB();
         if (!db) return null;
         const row = await db.table('peerEntities').get(nodeId);
-        const raw = row?.displayMode ?? null;
-        if (raw === 'normal' || raw === 'maximize' || raw === 'full-screen') {
-          return raw;
-        }
-        if (raw === 'standard' || raw === 'maximized' || raw === 'fullscreen') {
-          const migrated =
-            raw === 'standard' ? 'normal' : raw === 'maximized' ? 'maximize' : 'full-screen';
-          await db.table('peerEntities').put({
-            ...(row ?? { nodeId }),
-            nodeId,
-            displayMode: migrated,
-            updatedAt: Date.now(),
-          });
-          return migrated;
-        }
-        return null;
+        const state = row ? extractDialogWindow(row) : undefined;
+        return state?.mode ?? null;
       },
       setDisplayMode: async (nodeId, mode) =>
         withRow(nodeId, (r) => {
-          r.displayMode = mode;
+          const normalized = normalizeDialogWindow(
+            { ...(r.dialogWindow ?? extractDialogWindow(r) ?? {}), mode },
+            r.dialogWindow ?? extractDialogWindow(r)
+          );
+          r.dialogWindow = normalized;
         }),
       getPosition: async (nodeId) => {
         const db = await ensureDB();
         if (!db) return null;
         const row = await db.table('peerEntities').get(nodeId);
-        return (row?.dialogPosition as PeerDialogPosition) ?? null;
+        const state = row ? extractDialogWindow(row) : undefined;
+        const pos = state?.position ?? null;
+        return pos ? { ...pos } : pos;
       },
       setPosition: async (nodeId, pos) =>
         withRow(nodeId, (r) => {
-          r.dialogPosition = pos;
+          const normalized = normalizeDialogWindow(
+            { ...(r.dialogWindow ?? extractDialogWindow(r) ?? {}), position: pos },
+            r.dialogWindow ?? extractDialogWindow(r)
+          );
+          r.dialogWindow = normalized;
         }),
       getSize: async (nodeId) => {
         const db = await ensureDB();
         if (!db) return null;
         const row = await db.table('peerEntities').get(nodeId);
-        return (row?.dialogSize as PeerDialogSize) ?? null;
+        const state = row ? extractDialogWindow(row) : undefined;
+        const size = state?.size ?? null;
+        return size ? { ...size } : size;
       },
       setSize: async (nodeId, size) =>
         withRow(nodeId, (r) => {
-          r.dialogSize = size;
+          const normalized = normalizeDialogWindow(
+            { ...(r.dialogWindow ?? extractDialogWindow(r) ?? {}), size },
+            r.dialogWindow ?? extractDialogWindow(r)
+          );
+          r.dialogWindow = normalized;
         }),
       copyState: async (fromId, toId) => {
         const db = await ensureDB();
@@ -268,27 +330,18 @@ class UIPersistenceRegistry {
         const tbl = db.table('peerEntities');
         const src = await tbl.get(fromId);
         if (!src) return;
-        const dst = (await tbl.get(toId)) || { nodeId: toId };
-        if (src.displayMode) {
-          const raw = src.displayMode;
-          const normalized =
-            raw === 'normal' || raw === 'maximize' || raw === 'full-screen'
-              ? raw
-              : raw === 'standard'
-                ? 'normal'
-                : raw === 'maximized'
-                  ? 'maximize'
-                  : raw === 'fullscreen'
-                    ? 'full-screen'
-                    : null;
-          if (normalized) {
-            dst.displayMode = normalized;
+        await withRow(toId, (dst) => {
+          const sourceWindow = extractDialogWindow(src);
+          if (sourceWindow) {
+            dst.dialogWindow = {
+              ...(dst.dialogWindow ?? extractDialogWindow(dst) ?? {}),
+              ...sourceWindow,
+            };
           }
-        }
-        dst.dialogPosition = src.dialogPosition ?? dst.dialogPosition;
-        dst.dialogSize = src.dialogSize ?? dst.dialogSize;
-        dst.updatedAt = Date.now();
-        await tbl.put(dst);
+          if (src.dialogProgress) {
+            dst.dialogProgress = { ...src.dialogProgress };
+          }
+        });
       },
     };
   }

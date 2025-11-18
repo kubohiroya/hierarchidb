@@ -1,4 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-types';
+import type { DialogProgressState, DialogWindowState } from '@hierarchidb/plugin-service-api';
 import type { StylerPeerData } from '../common/types/stylerTypes.js';
 import type { StylerEntitiesDB, StylerPeerRow } from './stylerEntitiesDB.js';
 
@@ -6,9 +7,8 @@ interface StylerPeerEntity<TData = StylerPeerData> {
   nodeId: NodeId;
   data: TData;
   updatedAt?: number;
-  displayMode?: 'normal' | 'maximize' | 'full-screen';
-  dialogPosition?: { x: number; y: number } | null;
-  dialogSize?: { width: number; height: number } | null;
+  dialogWindow?: DialogWindowState | null;
+  dialogProgress?: DialogProgressState | null;
 }
 
 interface StylerPeerStore<TData = StylerPeerData> {

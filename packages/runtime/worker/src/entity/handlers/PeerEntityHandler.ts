@@ -11,7 +11,8 @@ export class PeerEntityHandler {
     const copy: PeerEntity = {
       nodeId: wcId,
       data: src?.data,
-      displayMode: src?.displayMode,
+      dialogWindow: src?.dialogWindow ? { ...src.dialogWindow } : undefined,
+      dialogProgress: src?.dialogProgress ? { ...src.dialogProgress } : undefined,
       updatedAt: Date.now(),
     };
     await this.store.put(copy);
@@ -22,7 +23,8 @@ export class PeerEntityHandler {
     const next: PeerEntity = {
       nodeId: targetId,
       data: src?.data,
-      displayMode: src?.displayMode,
+      dialogWindow: src?.dialogWindow ? { ...src.dialogWindow } : undefined,
+      dialogProgress: src?.dialogProgress ? { ...src.dialogProgress } : undefined,
       updatedAt: Date.now(),
     };
     await this.store.put(next);
@@ -41,7 +43,8 @@ export class PeerEntityHandler {
         entities.push({
           nodeId: targetId,
           data: src?.data,
-          displayMode: src?.displayMode,
+          dialogWindow: src?.dialogWindow ? { ...src.dialogWindow } : undefined,
+          dialogProgress: src?.dialogProgress ? { ...src.dialogProgress } : undefined,
           updatedAt: Date.now(),
         });
       }

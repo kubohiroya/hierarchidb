@@ -180,10 +180,10 @@
         "packages/plugin-runtime-services/dist/*"
       ],
       "@hierarchidb/plugin-service-api": [
-        "packages/plugin-service-api/dist/index.js"
+        "packages/plugin-service-api/src/index.ts"
       ],
       "@hierarchidb/plugin-service-api/*": [
-        "packages/plugin-service-api/dist/*"
+        "packages/plugin-service-api/src/*"
       ],
       "@hierarchidb/plugin-service-sdk": [
         "packages/plugin-service-sdk/dist/index.js"

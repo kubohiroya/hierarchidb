@@ -33,6 +33,9 @@ export interface BaseMapEntity extends BaseEntity<NodeId> {
   nodeId: NodeId;
   mapStyle: MapStyle;
   viewport: MapViewport;
+  name?: string;
+  description?: string;
+  tags?: string[];
 }
 
 /**
@@ -46,9 +49,15 @@ export type BaseMapDraftPayload = {
   version: number;
 };
 
-export type BaseMapWorkingCopyEntity = WorkingCopyDraft<BaseMapEntity> & BaseMapDraftPayload;
-
-export type BaseMapWorkingCopy = BaseMapWorkingCopyEntity;
+export interface BaseMapWorkingCopy extends WorkingCopyDraft<BaseMapEntity>, BaseMapDraftPayload {
+  tags?: string[];
+  draft: WorkingCopyDraft<BaseMapEntity>['draft'] & {
+    mapStyle?: MapStyle;
+    viewport?: MapViewport;
+    name?: string;
+    description?: string;
+  };
+}
 
 /**
  * Data for creating a new BaseMap

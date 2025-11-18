@@ -21,7 +21,7 @@
   - `displayMode: 'normal'|'maximize'|'full-screen'`
   - `onDisplayModeChange(mode)`
 - 永続化
-  - `PeerEntity.displayMode`（UI/Worker 共有 Dexie）
+  - `PeerEntity.dialogWindow.mode`（UI/Worker 共有 Dexie）
   - UI ヘルパー: `getPeerDisplayMode(nodeType, nodeId)` / `setPeerDisplayMode(nodeType, nodeId, mode)`
 
 **フィーチャーフラグ**

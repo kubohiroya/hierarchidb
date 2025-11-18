@@ -1,5 +1,7 @@
+import type { NodeId } from '@hierarchidb/common-types';
+import type { DialogProgressState, DialogWindowState } from '@hierarchidb/plugin-service-api';
+
 declare module '@hierarchidb/runtime-worker' {
-  import type { NodeId } from '@hierarchidb/common-types';
 
   export interface RuntimeWorkerStageClient {
     vectortile?: {
@@ -42,9 +44,8 @@ declare module '@hierarchidb/runtime-worker' {
   export interface PeerEntity<T = unknown> {
     nodeId: NodeId;
     updatedAt?: number;
-    displayMode?: 'normal' | 'maximize' | 'full-screen';
-    dialogPosition?: { x: number; y: number } | null;
-    dialogSize?: { width: number; height: number } | null;
+    dialogWindow?: DialogWindowState | null;
+    dialogProgress?: DialogProgressState | null;
     data?: T;
   }
 
@@ -60,7 +61,7 @@ declare module '@hierarchidb/runtime-worker' {
     get(nodeId: NodeId): Promise<PeerEntity<T> | undefined>;
     put(entity: PeerEntity<T>): Promise<void>;
     delete(nodeId: NodeId): Promise<void>;
-    bulkUpsert(entities: PeerEntity<T>[]): Promise<void>;
+    bulkUpsert?(entities: PeerEntity<T>[]): Promise<void>;
   }
 
   export interface GroupStore<T = unknown> {
@@ -71,7 +72,7 @@ declare module '@hierarchidb/runtime-worker' {
 
   export interface RelationStore<T = unknown> {
     listByNode(nodeId: NodeId): Promise<T[]>;
-    bulkUpsert(relations: T[]): Promise<void>;
-    bulkDelete(relations: T[]): Promise<void>;
+    bulkUpsert(rels: T[]): Promise<void>;
+    bulkDelete(rels: T[]): Promise<void>;
   }
 }

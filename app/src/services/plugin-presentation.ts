@@ -85,17 +85,19 @@ function mapToDefinition(plugin: InstalledPlugin): PluginPresentationDefinition 
 function createSignature(defs: InstalledPlugin[]): string {
   try {
     const languageTag = i18n.language ?? 'en';
-    const parts = [languageTag];
+    const parts: string[] = [languageTag];
     defs.forEach((plugin) => {
-      parts.push([
-        plugin.nodeType,
-        plugin.label ?? '',
-        plugin.icon?.muiIconName ?? '',
-        plugin.icon?.color ?? '',
-        plugin.manifest?.description ?? '',
-        plugin.manifest?.priority ?? '',
-        plugin.createOrder ?? '',
-      ]);
+      parts.push(
+        JSON.stringify([
+          plugin.nodeType,
+          plugin.label ?? '',
+          plugin.icon?.muiIconName ?? '',
+          plugin.icon?.color ?? '',
+          plugin.manifest?.description ?? '',
+          plugin.manifest?.priority ?? '',
+          plugin.createOrder ?? '',
+        ])
+      );
     });
     return JSON.stringify(parts);
   } catch {
