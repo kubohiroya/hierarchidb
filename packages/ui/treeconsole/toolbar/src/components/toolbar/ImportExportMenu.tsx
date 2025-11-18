@@ -105,10 +105,11 @@ export function ImportExportMenu({
           </ListItemIcon>
           <ListItemText primary={exportLabel} />
         </MenuItem>
-        {hasTemplates && (
-          <>
-            <Divider />
+        {hasTemplates &&
+          [
+            <Divider key="template-divider" />,
             <MenuItem
+              key="template-menu"
               aria-haspopup="menu"
               aria-label={importTemplateLabel}
               onMouseEnter={openTemplateMenu}
@@ -121,9 +122,8 @@ export function ImportExportMenu({
               </ListItemIcon>
               <ListItemText primary={importTemplateLabel} />
               <KeyboardArrowRightIcon fontSize="small" />
-            </MenuItem>
-          </>
-        )}
+            </MenuItem>,
+          ]}
       </Menu>
       {hasTemplates && (
         <Menu
