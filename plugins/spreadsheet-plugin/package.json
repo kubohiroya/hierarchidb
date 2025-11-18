@@ -129,6 +129,7 @@
     "plugin": {
       "nodeType": "spreadsheet",
       "name": "Spreadsheet Plugin",
+      "description": "Import spreadsheet data, apply filtering, and expose the curated tabular items to other workflows.",
       "icon": {
         "mui": "Assessment",
         "emoji": "📈",

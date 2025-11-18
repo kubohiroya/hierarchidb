@@ -200,6 +200,17 @@ export interface LocationPluginTranslations {
     };
   };
 
+  build: {
+    title: string;
+    description: string;
+    actionLabel: string;
+    inProgress: string;
+    success: string;
+    error: string;
+    noPoints: string;
+    requiresApproval: string;
+  };
+
   mapPreview: {
     description?: string;
     searchPlaceholder: string;
@@ -334,14 +345,5 @@ export interface LocationPluginTranslations {
     processingFailed: string;
     networkError: string;
     dataNotFound: string;
-  };
-
-  build?: {
-    actionLabel: string;
-    inProgress: string;
-    success: string;
-    error: string;
-    noPoints: string;
-    requiresApproval: string;
   };
 }

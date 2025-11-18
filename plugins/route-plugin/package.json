@@ -117,6 +117,7 @@
     "plugin": {
       "nodeType": "route",
       "name": "Route Plugin",
+      "description": "Import transportation routes from online data sources, analyze them, and present the results in coordinated map views.",
       "icon": {
         "mui": "Route",
         "emoji": "〰️",

@@ -105,6 +105,7 @@
     "plugin": {
       "nodeType": "linker",
       "name": "Linker Plugin",
+      "description": "Link related nodes into reusable sequences so workers and timelines can traverse shared workflows.",
       "displayName": "Linker",
       "description": "Link compiled resources to map for usage",
       "icon": {

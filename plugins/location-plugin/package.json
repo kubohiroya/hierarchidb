@@ -114,7 +114,7 @@
       "nodeType": "location",
       "name": "Location Plugin",
       "displayName": "Location",
-      "description": "Geographic location nodes with Shape integration",
+      "description": "Import locations of geo-resources from online data sources, analyze them, and present the results in coordinated map views.",
       "icon": {
         "mui": "LocationOn",
         "emoji": "\ud83d\udccd",

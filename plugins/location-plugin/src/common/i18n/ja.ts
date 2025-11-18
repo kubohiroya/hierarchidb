@@ -208,6 +208,8 @@ export const ja: LocationPluginTranslations = {
   },
 
   build: {
+    title: 'ベクタータイルのビルド',
+    description: '選択した地点を整備し、バッチパイプラインを実行してベースマップレイヤーを生成します。',
     actionLabel: 'ビルドを開始',
     inProgress: 'ビルド中…',
     success: 'ビルドを開始しました（セッション {sessionId}）',

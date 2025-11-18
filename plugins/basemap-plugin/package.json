@@ -132,6 +132,7 @@
     "plugin": {
       "nodeType": "basemap",
       "name": "BaseMap Plugin",
+      "description": "Specify the shared map style and viewport that ancestor nodes in the tree will use as their basemap.",
       "icon": {
         "mui": "Public",
         "emoji": "\ud83c\udf0d",

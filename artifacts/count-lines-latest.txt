@@ -1,0 +1,899 @@
+
+> hierarchidb@2.0.0 count:lines /Users/hiroya/WebstormProjects/hierarchidb
+> tsx scripts/count-lines.ts
+
+
+🔍 Code Line Counter
+============================================================
+
+📁 packages/backend/bff/src:
+──────────────────────────────────────────────────
+  📂 auth/                               683 lines
+  📂 middleware/                         375 lines
+  📂 utils/                              945 lines
+  📄 env-mapper.ts                        56 lines
+  📄 index.ts                            466 lines
+  📄 types.ts                             50 lines
+──────────────────────────────────────────────────
+  Total: 2,575 lines
+
+
+📁 packages/backend/cors-proxy/src:
+──────────────────────────────────────────────────
+  📄 env-mapper.ts                        45 lines
+──────────────────────────────────────────────────
+  Total: 45 lines
+
+
+📁 packages/batch-runtime-services/src:
+──────────────────────────────────────────────────
+  📂 hooks/                               61 lines
+  📂 lane/                               196 lines
+  📄 AbstractBatchSession.ts             178 lines
+  📄 AbstractWorkerPoolManager.ts        238 lines
+  📄 BaseBatchSessionManager.ts          126 lines
+  📄 BatchService.ts                      46 lines
+  📄 capability.ts                        15 lines
+  📄 index.ts                             85 lines
+  📄 ports.ts                              9 lines
+  📄 Progress.ts                          61 lines
+  📄 progressAdapters.ts                  39 lines
+  📄 types.ts                             23 lines
+  📄 UnifiedBatchManagerBase.ts          131 lines
+──────────────────────────────────────────────────
+  Total: 1,208 lines
+
+
+📁 packages/common/api/src:
+──────────────────────────────────────────────────
+  📄 BatchControlAPI.ts                  211 lines
+  📄 DialogStateAPI.ts                    36 lines
+  📄 ImportExportAPI.ts                  311 lines
+  📄 index.ts                             37 lines
+  📄 MultiStepDialogAPI.ts               118 lines
+  📄 RuntimeWiring.ts                      8 lines
+  📄 TagAPI.ts                           105 lines
+  📄 TreeMutationAPI.ts                  104 lines
+  📄 TreeQueryAPI.ts                     244 lines
+  📄 TreeSubscriptionAPI.ts              196 lines
+  📄 WorkerAPI.ts                         74 lines
+  📄 WorkingCopyAPI.ts                   235 lines
+──────────────────────────────────────────────────
+  Total: 1,679 lines
+
+
+📁 packages/common/auth/src:
+──────────────────────────────────────────────────
+  📄 AuthNotificationSystem.ts           307 lines
+  📄 index.ts                             28 lines
+──────────────────────────────────────────────────
+  Total: 335 lines
+
+
+📁 packages/common/types/src:
+──────────────────────────────────────────────────
+  📄 action-types.ts                      12 lines
+  📄 ambient-ui-global.ts                  2 lines
+  📄 api-types.ts                         58 lines
+  📄 command-types.ts                    253 lines
+  📄 commit-types.ts                      26 lines
+  📄 datasource.ts                       262 lines
+  📄 dialog-state.ts                      60 lines
+  📄 entity-backup-types.ts               14 lines
+  📄 entity-handler-types.ts              37 lines
+  📄 entity-manager-types.ts              50 lines
+  📄 entity-types.ts                     135 lines
+  📄 id-types.ts                          27 lines
+  📄 id-util.ts                           35 lines
+  📄 import-export-types.ts              185 lines
+  📄 index.ts                            103 lines
+  📄 menu-types.ts                        67 lines
+  📄 primitive-types.ts                    2 lines
+  📄 progress-types.ts                    26 lines
+  📄 subscription-types.ts                16 lines
+  📄 tag-entity-types.ts                  88 lines
+  📄 tree-node-event-types.ts             12 lines
+  📄 tree-node-lifecycle-hooks.ts         25 lines
+  📄 tree-node-types.ts                   73 lines
+  📄 tree-root-node-types.ts              15 lines
+  📄 tree-root-state-types.ts             24 lines
+  📄 tree-types.ts                        10 lines
+  📄 tree-view-types.ts                   27 lines
+  📄 undo-state-events.ts                 12 lines
+  📄 validation-types.ts                  34 lines
+──────────────────────────────────────────────────
+  Total: 1,690 lines
+
+
+📁 packages/components/src:
+──────────────────────────────────────────────────
+  📂 AccordionMenu/                       41 lines
+  📂 AriaLiveRegion/                     110 lines
+  📂 BackActionButton/                    42 lines
+  📂 CloseActionButton/                   29 lines
+  📂 DropdownMenu/                       111 lines
+  📂 GitHubCorner/                        76 lines
+  📂 IndeterminateCheckbox/               35 lines
+  📂 Info/                               734 lines
+  📂 InlineIcon/                          19 lines
+  📂 landingpage/                        149 lines
+  📂 MenuListItemButton/                  72 lines
+  📂 NotificationSystem/                 234 lines
+  📂 ResourceProjectPreviewGroup/        158 lines
+  📂 ResourceProjectToggle/              138 lines
+  📂 SelectField/                         79 lines
+  📂 SelectionMatrix/                    266 lines
+  📂 sparkle-animation/                  126 lines
+  📂 StyledMenu/                          44 lines
+  📂 TextCopyComponent/                   31 lines
+  📂 toast/                              382 lines
+  📂 ToggleButtonItemGroup/               50 lines
+  📂 TreeToggleButtonGroup/              262 lines
+  📄 index.ts                             22 lines
+──────────────────────────────────────────────────
+  Total: 3,210 lines
+
+
+📁 packages/features/auth-recovery/src:
+──────────────────────────────────────────────────
+  📄 AuthRecoveryService.ts              132 lines
+  📄 capability.ts                         3 lines
+  📄 index.ts                             13 lines
+  📄 ports.ts                             15 lines
+──────────────────────────────────────────────────
+  Total: 163 lines
+
+
+📁 packages/features/batch/src:
+──────────────────────────────────────────────────
+  📂 lane/                               174 lines
+  📂 manager/                            135 lines
+  📂 progress/                           105 lines
+  📂 session/                            244 lines
+  📄 BatchService.ts                      97 lines
+  📄 index.ts                              8 lines
+  📄 types.ts                             22 lines
+──────────────────────────────────────────────────
+  Total: 785 lines
+
+
+📁 packages/features/compute/src:
+──────────────────────────────────────────────────
+  📄 capability.ts                        28 lines
+  📄 ComputeService.ts                    20 lines
+  📄 index.ts                             13 lines
+  📄 ports.ts                             27 lines
+  📄 types.ts                             24 lines
+  📄 WorkerPool.ts                       144 lines
+──────────────────────────────────────────────────
+  Total: 256 lines
+
+
+📁 packages/features/download/src:
+──────────────────────────────────────────────────
+  📂 __tests__/                           62 lines
+  📂 adapters/                           383 lines
+  📂 cas/                                 92 lines
+  📂 helpers/                            113 lines
+  📄 capability.ts                        15 lines
+  📄 createDownloadService.ts             37 lines
+  📄 DownloadService.ts                   98 lines
+  📄 index.ts                             25 lines
+  📄 ports.ts                             70 lines
+──────────────────────────────────────────────────
+  Total: 895 lines
+
+
+📁 packages/features/feature-registry/src:
+──────────────────────────────────────────────────
+  📄 FeatureRegistry.ts                   74 lines
+  📄 index.ts                              4 lines
+  📄 types.ts                             21 lines
+──────────────────────────────────────────────────
+  Total: 99 lines
+
+
+📁 packages/features/fetch-save-metadata/src:
+──────────────────────────────────────────────────
+  📂 types/                               22 lines
+  📂 utils/                               41 lines
+  📄 fetchSaveMetadata.ts                 54 lines
+  📄 index.ts                              3 lines
+──────────────────────────────────────────────────
+  Total: 120 lines
+
+
+📁 packages/features/import-export/src:
+──────────────────────────────────────────────────
+  📂 __tests__/                          171 lines
+  📄 capability.ts                        48 lines
+  📄 ImportExportService.ts              429 lines
+  📄 index.ts                             11 lines
+  📄 ports.ts                             10 lines
+──────────────────────────────────────────────────
+  Total: 669 lines
+
+
+📁 packages/features/map-adapter/src:
+──────────────────────────────────────────────────
+  📂 adapters/                           180 lines
+  📄 index.ts                             13 lines
+  📄 MapViewService.ts                    35 lines
+  📄 ports.ts                             30 lines
+  📄 types.ts                             28 lines
+──────────────────────────────────────────────────
+  Total: 286 lines
+
+
+📁 packages/features/map-source/src:
+──────────────────────────────────────────────────
+  📂 adapters/                           229 lines
+  📄 index.ts                             13 lines
+  📄 MapSourceService.ts                  20 lines
+  📄 ports.spatial.ts                      6 lines
+  📄 ports.ts                             36 lines
+──────────────────────────────────────────────────
+  Total: 304 lines
+
+
+📁 packages/features/route-resolver/src:
+──────────────────────────────────────────────────
+  📄 index.ts                             33 lines
+──────────────────────────────────────────────────
+  Total: 33 lines
+
+
+📁 packages/features/route-searoute/src:
+──────────────────────────────────────────────────
+  📄 index.ts                             20 lines
+──────────────────────────────────────────────────
+  Total: 20 lines
+
+
+📁 packages/features/tabular-source-xlsx/src:
+──────────────────────────────────────────────────
+  📄 index.ts                             27 lines
+  📄 xlsxParser.ts                       100 lines
+──────────────────────────────────────────────────
+  Total: 127 lines
+
+
+📁 packages/features/tabular-source/src:
+──────────────────────────────────────────────────
+  📂 parsers/                            210 lines
+  📂 processors/                          79 lines
+  📄 capability.ts                        21 lines
+  📄 index.ts                             18 lines
+  📄 ports.ts                             10 lines
+  📄 processor.ts                         26 lines
+  📄 registry.ts                          34 lines
+  📄 store.ts                             34 lines
+  📄 TabularService.ts                    81 lines
+  📄 types.ts                             55 lines
+──────────────────────────────────────────────────
+  Total: 568 lines
+
+
+📁 packages/features/tabular-store/src:
+──────────────────────────────────────────────────
+  📄 index.ts                              5 lines
+  📄 Indexer.ts                           90 lines
+  📄 RowStoreDB.ts                        70 lines
+  📄 SimpleTableMetadataManager.ts       178 lines
+  📄 TabularQuery.ts                      91 lines
+  📄 TabularWriter.ts                    111 lines
+  📄 types.ts                             39 lines
+──────────────────────────────────────────────────
+  Total: 584 lines
+
+
+📁 packages/features/tag/src:
+──────────────────────────────────────────────────
+  📄 capability.ts                        31 lines
+  📄 index.ts                             11 lines
+  📄 ports.ts                             28 lines
+  📄 TagService.ts                       151 lines
+──────────────────────────────────────────────────
+  Total: 221 lines
+
+
+📁 packages/plugin-base/src:
+──────────────────────────────────────────────────
+  📂 atoms/                              305 lines
+  📂 hooks/                              194 lines
+  📂 registry/                           429 lines
+  📂 services/                            59 lines
+  📂 utils/                              525 lines
+  📄 index.ts                             27 lines
+──────────────────────────────────────────────────
+  Total: 1,539 lines
+
+
+📁 packages/plugin-presentation/src:
+──────────────────────────────────────────────────
+  📂 __tests__/                           54 lines
+  📄 index.ts                            224 lines
+  📄 types.ts                             40 lines
+──────────────────────────────────────────────────
+  Total: 318 lines
+
+
+📁 packages/plugin-registry/src:
+──────────────────────────────────────────────────
+  📄 derivations.ts                       67 lines
+  📄 types.ts                            117 lines
+──────────────────────────────────────────────────
+  Total: 184 lines
+
+
+📁 packages/plugin-runtime-services/src:
+──────────────────────────────────────────────────
+  📂 download/                            84 lines
+  📂 entity/                             295 lines
+  📄 index.ts                             15 lines
+──────────────────────────────────────────────────
+  Total: 394 lines
+
+
+📁 packages/plugin-service-api/src:
+──────────────────────────────────────────────────
+  📂 peer-store/                          28 lines
+  📂 types/                            1,691 lines
+  📂 working-copy/                        16 lines
+  📄 index.ts                             19 lines
+──────────────────────────────────────────────────
+  Total: 1,754 lines
+
+
+📁 packages/plugin-service-sdk/src:
+──────────────────────────────────────────────────
+  📂 extensions/                          66 lines
+  📂 handlers/                           880 lines
+  📂 peer-store/                          75 lines
+  📂 worker/                             249 lines
+  📂 working-copy/                       460 lines
+  📄 download.ts                          97 lines
+  📄 index.ts                             73 lines
+──────────────────────────────────────────────────
+  Total: 1,900 lines
+
+
+📁 packages/plugin-ui-host/src:
+──────────────────────────────────────────────────
+  📂 components/                           6 lines
+  📂 examples/                           329 lines
+  📂 headless/                         2,653 lines
+  📂 tests/                              469 lines
+  📄 index.ts                             22 lines
+  📄 PluginDialogHost.tsx                 35 lines
+──────────────────────────────────────────────────
+  Total: 3,514 lines
+
+
+📁 packages/plugin-ui-sdk/src:
+──────────────────────────────────────────────────
+  📂 dialog/                             589 lines
+  📂 hooks/                              863 lines
+  📄 index.ts                             37 lines
+  📄 types.ts                             68 lines
+──────────────────────────────────────────────────
+  Total: 1,557 lines
+
+
+📁 packages/runtime/client/src:
+──────────────────────────────────────────────────
+  📂 __tests__/                        1,562 lines
+  📂 events/                             117 lines
+  📂 provider/                           515 lines
+  📂 ui/                                  48 lines
+  📂 wiring/                             148 lines
+  📄 index.ts                             55 lines
+  📄 types.ts                             74 lines
+  📄 utils.ts                             92 lines
+  📄 WorkerInitializationChannel.ts      191 lines
+  📄 WorkerInitializationReporter.ts      172 lines
+──────────────────────────────────────────────────
+  Total: 2,974 lines
+
+
+📁 packages/runtime/worker/src:
+──────────────────────────────────────────────────
+  📂 __tests__/                        2,526 lines
+  📂 di/                                 224 lines
+  📂 e2e/                                105 lines
+  📂 entity/                           1,880 lines
+  📂 plugin-registry/                     41 lines
+  📂 services/                        12,153 lines
+  📂 test-utils/                          59 lines
+  📂 tools/                                9 lines
+  📂 types/                                8 lines
+  📂 utils/                              184 lines
+  📄 index.ts                            354 lines
+  📄 module-paths.ts                      88 lines
+  📄 stageWorker.entry.ts                 12 lines
+  📄 types.ts                            103 lines
+  📄 vite-env.d.ts                         2 lines
+  📄 WorkerAPI.ts                          2 lines
+──────────────────────────────────────────────────
+  Total: 17,750 lines
+
+
+📁 packages/testing/plugin-dialog-mocks/src:
+──────────────────────────────────────────────────
+  📂 mocks/                              255 lines
+  📂 stubs/                               24 lines
+  📄 index.ts                              5 lines
+  📄 setupPluginWorkerMock.ts             49 lines
+──────────────────────────────────────────────────
+  Total: 333 lines
+
+
+📁 packages/tools/analyze-licenses/src:
+──────────────────────────────────────────────────
+  📄 cli.ts                               89 lines
+──────────────────────────────────────────────────
+  Total: 89 lines
+
+
+📁 packages/tools/build-scripts/src:
+──────────────────────────────────────────────────
+  📄 env-vite.ts                         136 lines
+  📄 gen-plugin-registry.ts            1,147 lines
+  📄 prepare-gh-pages-build.ts           141 lines
+  📄 sync-peer-dependencies.ts           149 lines
+  📄 tsconfig-set-nodenext.ts             50 lines
+──────────────────────────────────────────────────
+  Total: 1,623 lines
+
+
+📁 packages/tools/codemods/src:
+──────────────────────────────────────────────────
+  📄 esm-ext-codemod-basic.ts            115 lines
+  📄 esm-ext-codemod.ts                  127 lines
+──────────────────────────────────────────────────
+  Total: 242 lines
+
+
+📁 packages/tools/load-plugin-manifest/src:
+──────────────────────────────────────────────────
+  📄 index.ts                            101 lines
+──────────────────────────────────────────────────
+  Total: 101 lines
+
+
+📁 packages/ui-shell/src:
+──────────────────────────────────────────────────
+  📄 components.ts                         1 lines
+  📄 index.ts                             22 lines
+  📄 plugin-ui-host.ts                     2 lines
+  📄 ui-auth.ts                            2 lines
+  📄 ui-dialog.ts                          2 lines
+  📄 ui-i18n.ts                            2 lines
+  📄 ui-icon.ts                            2 lines
+  📄 ui-layout.ts                          2 lines
+  📄 ui-map.ts                             2 lines
+  📄 ui-navigation.ts                      2 lines
+  📄 ui-routing.ts                         2 lines
+  📄 ui-theme.ts                           2 lines
+  📄 ui-tour.ts                            2 lines
+  📄 ui-treeconsole-base.ts                2 lines
+  📄 ui-treeconsole-breadcrumb.ts          2 lines
+  📄 ui-treeconsole-toolbar.ts             2 lines
+  📄 ui-treeconsole-treetable.ts           2 lines
+  📄 ui-usermenu.ts                        2 lines
+──────────────────────────────────────────────────
+  Total: 55 lines
+
+
+📁 packages/ui/accordion-config/src:
+──────────────────────────────────────────────────
+  📂 components/                         688 lines
+  📂 hooks/                              143 lines
+  📂 presets/                            201 lines
+  📂 sections/                           237 lines
+  📂 types/                               47 lines
+  📂 utils/                               85 lines
+  📄 index.ts                             27 lines
+──────────────────────────────────────────────────
+  Total: 1,428 lines
+
+
+📁 packages/ui/auth/src:
+──────────────────────────────────────────────────
+  📂 components/                       2,214 lines
+  📂 contexts/                         2,237 lines
+  📂 hooks/                              294 lines
+  📂 services/                         3,083 lines
+  📂 test-shims/                          22 lines
+  📂 types/                               63 lines
+  📄 index.ts                             40 lines
+──────────────────────────────────────────────────
+  Total: 7,953 lines
+
+
+📁 packages/ui/country-select/src:
+──────────────────────────────────────────────────
+  📂 components/                         644 lines
+  📂 data/                               201 lines
+  📂 hooks/                              171 lines
+  📂 types/                              453 lines
+  📂 utils/                              256 lines
+  📄 index.ts                             69 lines
+──────────────────────────────────────────────────
+  Total: 1,794 lines
+
+
+📁 packages/ui/data-grid/src:
+──────────────────────────────────────────────────
+  📂 hooks/                              132 lines
+  📂 providers/                          318 lines
+  📂 types/                              189 lines
+  📂 utils/                               38 lines
+  📄 AbstractDataGrid.tsx                649 lines
+  📄 CrossViewSnackbar.tsx                54 lines
+  📄 CrossViewStyles.ts                  219 lines
+  📄 GenericDataGrid.tsx                 650 lines
+  📄 index.ts                             37 lines
+  📄 TabularPreview.tsx                  255 lines
+──────────────────────────────────────────────────
+  Total: 2,541 lines
+
+
+📁 packages/ui/datasource/src:
+──────────────────────────────────────────────────
+  📂 types/                              218 lines
+  📄 DataSourceSelectionStep.tsx          44 lines
+  📄 DataSourceSelector.tsx               63 lines
+  📄 index.ts                             35 lines
+──────────────────────────────────────────────────
+  Total: 360 lines
+
+
+📁 packages/ui/dialog/src:
+──────────────────────────────────────────────────
+  📂 components/                       1,238 lines
+  📂 headless/                         1,842 lines
+  📂 hooks/                              305 lines
+  📂 types/                              331 lines
+  📂 utils/                               39 lines
+  📄 index.ts                             18 lines
+──────────────────────────────────────────────────
+  Total: 3,773 lines
+
+
+📁 packages/ui/file/src:
+──────────────────────────────────────────────────
+  📂 components/                       1,189 lines
+  📂 hooks/                              296 lines
+  📂 services/                            50 lines
+  📂 utils/                               58 lines
+  📄 index.ts                             11 lines
+──────────────────────────────────────────────────
+  Total: 1,604 lines
+
+
+📁 packages/ui/floating-window/src:
+──────────────────────────────────────────────────
+  📂 components/                         331 lines
+  📂 hooks/                              398 lines
+  📂 types/                               50 lines
+  📄 index.ts                              3 lines
+──────────────────────────────────────────────────
+  Total: 782 lines
+
+
+📁 packages/ui/i18n/src:
+──────────────────────────────────────────────────
+  📂 components/                          64 lines
+  📂 hooks/                               62 lines
+  📂 i18n/                               313 lines
+  📂 provider/                           294 lines
+  📂 utils/                              356 lines
+  📄 index.ts                             13 lines
+──────────────────────────────────────────────────
+  Total: 1,102 lines
+
+
+📁 packages/ui/icon/src:
+──────────────────────────────────────────────────
+  📂 __tests__/                           39 lines
+  📄 EriaCartLogo.tsx                     16 lines
+  📄 getMuiIconComponent.tsx             155 lines
+  📄 index.ts                              8 lines
+──────────────────────────────────────────────────
+  Total: 218 lines
+
+
+📁 packages/ui/layout/src:
+──────────────────────────────────────────────────
+  📂 components/                         135 lines
+  📄 index.ts                              3 lines
+──────────────────────────────────────────────────
+  Total: 138 lines
+
+
+📁 packages/ui/license/src:
+──────────────────────────────────────────────────
+  📄 index.ts                              2 lines
+  📄 LicenseAgreementStep.tsx             79 lines
+──────────────────────────────────────────────────
+  Total: 81 lines
+
+
+📁 packages/ui/lru-splitview/src:
+──────────────────────────────────────────────────
+  📂 components/                         291 lines
+  📂 hooks/                              286 lines
+  📂 types/                              121 lines
+  📂 utils/                              231 lines
+  📄 index.ts                             37 lines
+──────────────────────────────────────────────────
+  Total: 966 lines
+
+
+📁 packages/ui/map/src:
+──────────────────────────────────────────────────
+  📂 components/                         970 lines
+  📂 hooks/                               40 lines
+  📂 lib/                                156 lines
+  📂 presets/                             60 lines
+  📂 stories/                            865 lines
+  📂 types/                              531 lines
+  📂 utils/                               28 lines
+  📄 index.ts                             63 lines
+──────────────────────────────────────────────────
+  Total: 2,713 lines
+
+
+📁 packages/ui/memory-usage/src:
+──────────────────────────────────────────────────
+  📂 hooks/                              261 lines
+  📂 services/                           351 lines
+  📄 index.ts                              8 lines
+  📄 MemoryUsageChart.tsx                270 lines
+──────────────────────────────────────────────────
+  Total: 890 lines
+
+
+📁 packages/ui/monitoring/src:
+──────────────────────────────────────────────────
+  📂 components/                       1,605 lines
+  📂 utils/                               33 lines
+  📄 index.ts                              8 lines
+──────────────────────────────────────────────────
+  Total: 1,646 lines
+
+
+📁 packages/ui/navigation/src:
+──────────────────────────────────────────────────
+  📂 components/                         135 lines
+  📄 index.ts                              5 lines
+──────────────────────────────────────────────────
+  Total: 140 lines
+
+
+📁 packages/ui/plugin-basic-info/src:
+──────────────────────────────────────────────────
+  📂 components/                         730 lines
+  📂 types/                              131 lines
+  📄 index.ts                              6 lines
+──────────────────────────────────────────────────
+  Total: 867 lines
+
+
+📁 packages/ui/routing/src:
+──────────────────────────────────────────────────
+  📂 components/                       1,423 lines
+  📂 config/                              26 lines
+  📄 index.ts                              8 lines
+  📄 test-setup.ts                        40 lines
+──────────────────────────────────────────────────
+  Total: 1,497 lines
+
+
+📁 packages/ui/search-result-window/src:
+──────────────────────────────────────────────────
+  📂 components/                         340 lines
+  📂 hooks/                              384 lines
+  📂 services/                           218 lines
+  📂 state/                              346 lines
+  📂 stories/                            900 lines
+  📂 types/                               85 lines
+  📄 index.ts                              6 lines
+──────────────────────────────────────────────────
+  Total: 2,279 lines
+
+
+📁 packages/ui/tabular-extract/src:
+──────────────────────────────────────────────────
+  📂 components/                       1,282 lines
+  📂 context/                             59 lines
+  📂 hooks/                              775 lines
+  📂 types/                              246 lines
+  📄 index.ts                             42 lines
+──────────────────────────────────────────────────
+  Total: 2,404 lines
+
+
+📁 packages/ui/theme/src:
+──────────────────────────────────────────────────
+  📂 components/                          55 lines
+  📂 hooks/                               29 lines
+  📂 theme/                              634 lines
+  📂 utils/                               49 lines
+  📄 constants.ts                         12 lines
+  📄 index.ts                             23 lines
+  📄 types.ts                              8 lines
+──────────────────────────────────────────────────
+  Total: 810 lines
+
+
+📁 packages/ui/tour/src:
+──────────────────────────────────────────────────
+  📂 components/                         572 lines
+  📂 managers/                            48 lines
+  📄 index.ts                             10 lines
+──────────────────────────────────────────────────
+  Total: 630 lines
+
+
+📁 packages/ui/treeconsole/base/src:
+──────────────────────────────────────────────────
+  📂 adapters/                         1,810 lines
+  📂 components/                       5,002 lines
+  📂 hooks/                            2,726 lines
+  📂 types/                              384 lines
+  📄 index.ts                             34 lines
+──────────────────────────────────────────────────
+  Total: 9,956 lines
+
+
+📁 packages/ui/treeconsole/breadcrumb/src:
+──────────────────────────────────────────────────
+  📂 components/                       1,117 lines
+  📂 utils/                              121 lines
+  📄 index.ts                             28 lines
+  📄 types.ts                            109 lines
+──────────────────────────────────────────────────
+  Total: 1,375 lines
+
+
+📁 packages/ui/treeconsole/footer/src:
+──────────────────────────────────────────────────
+  📂 components/                         196 lines
+  📄 index.ts                             15 lines
+  📄 types.ts                             63 lines
+──────────────────────────────────────────────────
+  Total: 274 lines
+
+
+📁 packages/ui/treeconsole/speeddial/src:
+──────────────────────────────────────────────────
+  📄 index.ts                              4 lines
+──────────────────────────────────────────────────
+  Total: 4 lines
+
+
+📁 packages/ui/treeconsole/toolbar/src:
+──────────────────────────────────────────────────
+  📂 components/                       1,061 lines
+  📄 index.ts                             18 lines
+  📄 types.ts                            151 lines
+──────────────────────────────────────────────────
+  Total: 1,230 lines
+
+
+📁 packages/ui/treeconsole/treetable/src:
+──────────────────────────────────────────────────
+  📂 __tests__/                        1,044 lines
+  📂 components/                       2,539 lines
+  📂 orchestrator/                       130 lines
+  📂 plugin/                           1,421 lines
+  📂 plugins/                            377 lines
+  📂 state/                              227 lines
+  📂 utils/                              511 lines
+  📄 index.ts                             42 lines
+  📄 types.ts                            239 lines
+──────────────────────────────────────────────────
+  Total: 6,530 lines
+
+
+📁 packages/ui/usermenu/src:
+──────────────────────────────────────────────────
+  📂 components/                         501 lines
+  📄 index.ts                              3 lines
+──────────────────────────────────────────────────
+  Total: 504 lines
+
+
+📁 packages/util/src:
+──────────────────────────────────────────────────
+  📂 __tests__/                           81 lines
+  📄 db-name.ts                           36 lines
+  📄 dualKeyMap.ts                       175 lines
+  📄 env.ts                              133 lines
+  📄 format.ts                            47 lines
+  📄 generateId.ts                         9 lines
+  📄 index.ts                             22 lines
+  📄 SingletonMixin.ts                    58 lines
+  📄 validation.ts                        42 lines
+  📄 webCrypto.ts                         89 lines
+──────────────────────────────────────────────────
+  Total: 692 lines
+
+
+📊 SUMMARY
+============================================================
+  packages/backend/bff/src                 2,575 lines
+  packages/backend/cors-proxy/src             45 lines
+  packages/batch-runtime-services/src      1,208 lines
+  packages/common/api/src                  1,679 lines
+  packages/common/auth/src                   335 lines
+  packages/common/types/src                1,690 lines
+  packages/components/src                  3,210 lines
+  packages/features/auth-recovery/src        163 lines
+  packages/features/batch/src                785 lines
+  packages/features/compute/src              256 lines
+  packages/features/download/src             895 lines
+  packages/features/feature-registry/src         99 lines
+  packages/features/fetch-save-metadata/src        120 lines
+  packages/features/import-export/src        669 lines
+  packages/features/map-adapter/src          286 lines
+  packages/features/map-source/src           304 lines
+  packages/features/route-resolver/src         33 lines
+  packages/features/route-searoute/src         20 lines
+  packages/features/tabular-source-xlsx/src        127 lines
+  packages/features/tabular-source/src        568 lines
+  packages/features/tabular-store/src        584 lines
+  packages/features/tag/src                  221 lines
+  packages/plugin-base/src                 1,539 lines
+  packages/plugin-presentation/src           318 lines
+  packages/plugin-registry/src               184 lines
+  packages/plugin-runtime-services/src        394 lines
+  packages/plugin-service-api/src          1,754 lines
+  packages/plugin-service-sdk/src          1,900 lines
+  packages/plugin-ui-host/src              3,514 lines
+  packages/plugin-ui-sdk/src               1,557 lines
+  packages/runtime/client/src              2,974 lines
+  packages/runtime/worker/src             17,750 lines
+  packages/testing/plugin-dialog-mocks/src        333 lines
+  packages/tools/analyze-licenses/src         89 lines
+  packages/tools/build-scripts/src         1,623 lines
+  packages/tools/codemods/src                242 lines
+  packages/tools/load-plugin-manifest/src        101 lines
+  packages/ui-shell/src                       55 lines
+  packages/ui/accordion-config/src         1,428 lines
+  packages/ui/auth/src                     7,953 lines
+  packages/ui/country-select/src           1,794 lines
+  packages/ui/data-grid/src                2,541 lines
+  packages/ui/datasource/src                 360 lines
+  packages/ui/dialog/src                   3,773 lines
+  packages/ui/file/src                     1,604 lines
+  packages/ui/floating-window/src            782 lines
+  packages/ui/i18n/src                     1,102 lines
+  packages/ui/icon/src                       218 lines
+  packages/ui/layout/src                     138 lines
+  packages/ui/license/src                     81 lines
+  packages/ui/lru-splitview/src              966 lines
+  packages/ui/map/src                      2,713 lines
+  packages/ui/memory-usage/src               890 lines
+  packages/ui/monitoring/src               1,646 lines
+  packages/ui/navigation/src                 140 lines
+  packages/ui/plugin-basic-info/src          867 lines
+  packages/ui/routing/src                  1,497 lines
+  packages/ui/search-result-window/src      2,279 lines
+  packages/ui/tabular-extract/src          2,404 lines
+  packages/ui/theme/src                      810 lines
+  packages/ui/tour/src                       630 lines
+  packages/ui/treeconsole/base/src         9,956 lines
+  packages/ui/treeconsole/breadcrumb/src      1,375 lines
+  packages/ui/treeconsole/footer/src         274 lines
+  packages/ui/treeconsole/speeddial/src          4 lines
+  packages/ui/treeconsole/toolbar/src      1,230 lines
+  packages/ui/treeconsole/treetable/src      6,530 lines
+  packages/ui/usermenu/src                   504 lines
+  packages/util/src                          692 lines
+============================================================
+  🎯 GRAND TOTAL:                      107,380 lines
+============================================================
+
