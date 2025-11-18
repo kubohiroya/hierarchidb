@@ -9,37 +9,10 @@ import { digestSha256Hex } from '@hierarchidb/util';
 import { DexieChunkStoragePort } from '@hierarchidb/download';
 import { BatchService, createLaneSemaphoreRegistry } from '@hierarchidb/batch';
 import { getLocationRuntimeWorkerClient } from './adapters/RuntimeWorkerClient.js';
-
-export interface LocationPointInput {
-  lon: number;
-  lat: number;
-  id?: string | number;
-  ts?: number;
-  properties?: Record<string, any>;
-}
-
-export interface LocationTileSettings {
-  zoomMinGenerate: number;
-  zoomMaxGenerate: number;
-  zoomMaxServe?: number; // not used here but preserved in summary
-  attributeAllowlist?: string[]; // optional; undefined means pass-through
-  tileFeatureLimit?: number; // per tile; used by geojson-vt
-  extent?: number; // MVT extent; encoded as 4096 default
-}
+import type { LocationPointInput, LocationTileSettings } from './types.js';
 
 // Use common progress event type to decouple worker from UI
 export type ProgressInfo = ProgressEvent;
-
-export interface SessionSummary {
-  sessionId: string;
-  nodeId: NodeId;
-  zoomMin: number;
-  zoomMax: number;
-  zoomMaxServe?: number;
-  bbox: [number, number, number, number];
-  totalPoints: number;
-  layers: string[];
-}
 
 export class LocationSessionController {
   private static readonly laneRegistry = createLaneSemaphoreRegistry({

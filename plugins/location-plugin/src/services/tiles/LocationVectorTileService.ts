@@ -1,7 +1,7 @@
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import { getEphemeralLocationDB } from '../database/EphemeralLocationDB.js';
-import { UnifiedLocationBatchManager, type LocationBatchData, type UnifiedLocationBatchConfig } from '../batch/UnifiedLocationBatchManager.js';
-import type { LocationPointInput, LocationTileSettings, SessionSummary } from '../batch/LocationSessionController.js';
+import { UnifiedLocationBatchManager } from '../batch/UnifiedLocationBatchManager.js';
+import type { LocationBatchData, LocationPointInput, LocationTileSettings, SessionSummary, UnifiedLocationBatchConfig } from '../batch/types.js';
 import type {
   BatchProgressEvent,
   BatchSessionId,
@@ -141,7 +141,7 @@ function computeBbox(points: LocationPointInput[]): [number, number, number, num
   return [minLon, minLat, maxLon, maxLat];
 }
 
-export type { LocationPointInput, LocationTileSettings };
+export type { LocationPointInput, LocationTileSettings } from '../batch/types.js';
 
 function tile2lon(x: number, z: number): number {
   return (x / 2 ** z) * 360 - 180;

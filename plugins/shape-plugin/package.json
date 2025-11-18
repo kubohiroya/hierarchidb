@@ -145,6 +145,7 @@
     "plugin": {
       "nodeType": "shape",
       "name": "Shape Plugin",
+      "description": "Import country and administrative-area shape files from online data sources, analyze them, and present the results in coordinated map views.",
       "icon": {
         "mui": "Hexagon",
         "emoji": "♦️",

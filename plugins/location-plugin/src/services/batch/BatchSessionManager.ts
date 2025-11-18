@@ -3,12 +3,8 @@
  */
 
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-types';
-import {
-  type LocationPointInput,
-  type LocationTileSettings,
-  LocationSessionController,
-  type SessionSummary,
-} from './LocationSessionController.js';
+import { LocationSessionController } from './LocationSessionController.js';
+import type { LocationPointInput, LocationTileSettings, SessionSummary } from './types.js';
 import { LocationBatchSession } from './LocationBatchSession.js';
 import { isDevEnvironment } from '../../common/utils/env.js';
 

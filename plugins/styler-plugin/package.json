@@ -133,6 +133,7 @@
     "plugin": {
       "nodeType": "styler",
       "name": "Styler Plugin",
+      "description": "Import spreadsheet data, filter them, and produce styling rules that drive themed visualizations on maps.",
       "icon": {
         "mui": "Palette",
         "emoji": "🎨",

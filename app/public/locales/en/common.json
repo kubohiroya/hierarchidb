@@ -77,43 +77,43 @@
     "corePluginMessage": "This plugin cannot be deleted as it provides the foundation for all other plugins.",
     "folder": {
       "name": "Folder",
-      "description": "Create folders to organize nodes and manage workspace structure."
+      "description": "Define hierarchical container nodes that semantically organize various types of nodes and consolidate their functions."
     },
     "basemap": {
       "name": "Basemap",
-      "description": "Manage base map layers and geographic context."
+      "description": "Specify the shared map style and viewport that ancestor nodes in the tree will use as their basemap."
     },
     "shape": {
       "name": "Shape",
-      "description": "Process and visualize geographic shape datasets."
+      "description": "Import country and administrative-area shape files from online data sources, analyze them, and present the results in coordinated map views."
     },
     "location": {
       "name": "Location",
-      "description": "Capture and manage location information with shape integration."
+      "description": "Import locations of geo-resources from online data sources, analyze them, and present the results in coordinated map views."
     },
     "route": {
       "name": "Route",
-      "description": "Generate and monitor routes between geographic points."
+      "description": "Import transportation routes from online data sources, analyze them, and present the results in coordinated map views."
     },
     "spreadsheet": {
       "name": "Spreadsheet",
-      "description": "Import tabular data sources for later processing."
+      "description": "Import spreadsheet data, apply filtering, and expose the curated tabular items to other workflows."
     },
     "styler": {
       "name": "Styler",
-      "description": "Define styling rules and color ramps for visualizations."
+      "description": "Import spreadsheet data, filter them, and produce styling rules that drive themed visualizations on maps."
     },
     "resolver": {
       "name": "Resolver",
-      "description": "Resolve data conflicts and map properties across sources."
+      "description": "Map heterogeneous schemas and properties into a unified structure so downstream plugins read consistent attributes."
     },
     "linker": {
       "name": "Linker",
-      "description": "Link compiled resources into projects and map contexts."
+      "description": "Link related nodes into reusable sequences so workers and timelines can traverse shared workflows."
     },
     "timeline": {
       "name": "Timeline",
-      "description": "Manage timeline-based projects and track progress."
+      "description": "Arrange descendant nodes as timeline frames and play them back as map animations inside a special folder node."
     }
   },
   "treeTable": {

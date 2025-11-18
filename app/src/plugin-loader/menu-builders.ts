@@ -27,6 +27,7 @@ export interface PluginMenuItem {
 
 function createMenuItem(plugin: InstalledPlugin, group: string, priority: number): PluginMenuItem {
   const presentation = getPresentation(plugin.nodeType);
+  const localizedDescription = presentation?.description?.trim();
   return {
     key: plugin.nodeType,
     nodeType: plugin.nodeType,
@@ -34,7 +35,7 @@ function createMenuItem(plugin: InstalledPlugin, group: string, priority: number
     icon: presentation?.icon ?? plugin.icon,
     group,
     priority,
-    description: plugin.description,
+    description: localizedDescription && localizedDescription.length > 0 ? localizedDescription : plugin.description,
     backgroundColor: plugin.backgroundColor,
   };
 }

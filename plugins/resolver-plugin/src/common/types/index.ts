@@ -84,6 +84,7 @@ export type ResolverWorkingCopyEntity = WorkingCopyDraft<ResolverEntity> &
     originalId?: NodeId;
     isDirty?: boolean;
     workingCopyId?: NodeId;
+    tags?: string[];
   };
 
 export type ResolverWorkingCopy = ResolverWorkingCopyEntity;

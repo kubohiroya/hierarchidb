@@ -5,6 +5,7 @@ import type { WorkerAPIAdapter } from '../adapters/index.js';
 type StateManagerLike = Partial<{
   moveNode: (nodeId: NodeId, targetParentId: NodeId, index: number) => Promise<void> | void;
   trashNode: (nodeId: NodeId) => Promise<void> | void;
+  deleteNode: (nodeId: NodeId) => Promise<void> | void;
   duplicateNode: (nodeId: NodeId) => Promise<void> | void;
 }>;
 
@@ -121,11 +122,11 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
           setIsLoading?.(false);
         }
       } else {
-        const canTrash = stateManager && typeof stateManager.trashNode === 'function';
-        if (!canTrash) throw new Error('No adapter available for trash operation');
+        const deleteFn = stateManager?.deleteNode ?? stateManager?.trashNode;
+        if (typeof deleteFn !== 'function') throw new Error('No adapter available for trash operation');
         setIsLoading?.(true);
         try {
-          await stateManager.trashNode!(nodeId);
+          await deleteFn(nodeId);
           onSelectedNodesChange?.((prev) => prev.filter((id) => id !== nodeId));
           onExpandedNodesChange?.((prev) => prev.filter((id) => id !== nodeId));
           onCurrentNodeChange?.((prev) => (prev?.id === nodeId ? null : prev));
@@ -140,11 +141,11 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
   const trashNodes = useCallback(
     async (nodeIds: NodeId[]) => {
       if (!workerAdapter) {
-        const canTrash = stateManager && typeof stateManager.trashNode === 'function';
-        if (!canTrash) throw new Error('WorkerAPIAdapter not available');
+        const deleteFn = stateManager?.deleteNode ?? stateManager?.trashNode;
+        if (typeof deleteFn !== 'function') throw new Error('WorkerAPIAdapter not available');
         setIsLoading?.(true);
         try {
-          for (const id of nodeIds) await stateManager.trashNode!(id);
+          for (const id of nodeIds) await deleteFn(id);
           onSelectedNodesChange?.((prev) => prev.filter((id) => !nodeIds.includes(id)));
           onExpandedNodesChange?.((prev) => prev.filter((id) => !nodeIds.includes(id)));
           onCurrentNodeChange?.((prev) => (prev && nodeIds.includes(prev.id) ? null : prev));

@@ -901,6 +901,8 @@
   - progress: 2025-11-17 18:46 worker API の batch progress/Session 連携を runtime manager 仕様に合わせて再実装（`mapManagerStatusToShapeStatus` 追加、TreeNodeId cast 補正、EphemeralDB メタ復元、`getBatchSession`/`getProcessingStatus` の型整備）し、`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0（#worklog-13 へログ）。
   - blocked: 2025-11-17 18:46 location-plugin typecheck では BasicInfo 共通化前の UI/worker 差分（未整理の batch service）で引き続き失敗しており、本タスクでは触れていない。shape plugin 側の型エラーは解消済み。
   - progress: 2025-11-17 19:08 location-plugin の steps-provider を `@hierarchidb/ui-plugin-basic-info` ベースへ再構成し、tsconfig include/exclude を修正。`package.json` に `typecheck` スクリプトを追加し、`pnpm --filter @hierarchidb/location-plugin typecheck` exit 0 を確認（BasicInfo + batch/service ステップの共通ロジックへ統合）。
+  - progress: 2025-11-18 09:05 UnifiedLocationBatchManager を runtime bridge 化し、`mapStageToBatchStage`/`mapManagerStatusToLocationStatus`/`toProgressSnapshot` で progress/status を正規化。EphemeralLocationDB の `sessions` / `pendingSessions` スキーマを型安全にし、BatchPersistence が Dexie 更新で TTL と進捗を一貫して記録するよう調整。
+  - progress: 2025-11-18 09:08 LocationVectorTileService が新しいバッチマネージャー／型定義を利用するよう更新し、`pnpm --filter @hierarchidb/location-plugin typecheck` 再実行で batch/service 層の型エラーが 0 であることを確認。
 
 11) UI ローダーのスタブ撤去（P0）
 - ブランチ: `refactor/app/remove-ui-fallback`
@@ -8201,6 +8203,24 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-18 08:30 command: pnpm --filter @hierarchidb/plugin-presentation build — exit 0。型定義更新後の tsdown ビルドを実行し、warning は既知の define オプションのみ。
 - 2025-11-18 08:33 command: pnpm --filter @hierarchidb/plugin-ui-host test -- --run PluginDialogHeader — exit 0。PluginDialog ヘッダー／関連 headless テストを実行し、description 型拡張後もグリーンを確認。
 - 2025-11-18 08:34 done: fix/plugin-dialog/presentation-description — PluginPresentation 型と registry を更新し、UI 側の Optional description 参照を正当化。ロールバックは `packages/plugin-presentation/src/{types.ts,index.ts,__tests__/pluginPresentation.test.ts}` と `app/src/services/plugin-presentation.ts` の差分を revert し、上記コマンドを再実行する。
+- 2025-11-18 09:05 progress: task1302 runtime/worker module split — `WorkingCopyTreeNodeOperations.ts` のドラフト/コミット/参照ロジックを `services/working-copy/{draft,commit,cleanup,lookup,edit}Operations.ts` へ分割し、import/export を整理。`pnpm --filter @hierarchidb/runtime-worker typecheck` がグリーンであることを確認。
+- 2025-11-18 09:07 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0。NodeNext 参照ポリシーを満たしたまま分割後の型検証が通ることを確認。
+- 2025-11-18 09:09 command: pnpm --filter @hierarchidb/runtime-worker test -- --run working-copy-cleaner — exit 0（Dexie warning は既知）。working-copy まわりのリファクタ後も undo/redo/cleaner 系がグリーンであることを記録。
+- 2025-11-18 09:18 progress: task1303 TreeConsoleToolbar split — `TreeConsoleToolbar.tsx` を orchestrator だけに縮小し、`components/toolbar/` 配下へ SearchOnlyToolbar/TreeConsoleToolbarContent/ActionButtons/SearchModeMenu/ImportExportMenu/SettingsMenu/TrashMenu を追加。`pnpm --filter @hierarchidb/ui-treeconsole-toolbar build` で dist を再生成。
+- 2025-11-18 09:22 command: pnpm --filter @hierarchidb/ui-treeconsole-toolbar build — exit 0（tsdown define warning は既知）。Toolbar サブコンポーネント分割後もビルド可能であることを確認。
+- 2025-11-18 09:27 command: pnpm --filter '@hierarchidb/ui-treeconsole-*' test — exit 1。`@hierarchidb/ui-treeconsole-base` の `useTreeViewController` 既知失敗（delete/subscribeSubtree の期待差分）が再現したため blocked として記録、該当テスト以外は通過。
+- 2025-11-18 09:30 progress: task1304 plugin dialog steps — route/resolver プラグインの `steps-provider` に shared BasicInfo Step と Build Step を追加し、`RouteBuildStep`/`ResolverBuildStep` を新設。location `ja.ts` の build 翻訳を補完し、types の duplicate を解消。
+- 2025-11-18 09:32 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 2 -> ja 翻訳の build 欠落を補完後に再実行し exit 0。DoD の検証ログとして成功結果を記録。
+- 2025-11-18 09:34 command: pnpm --filter @hierarchidb/route-plugin build — exit 0（tsdown define warning のみ）。Route plugin UI/worker を再ビルドして BasicInfo/Build 追加後の型崩れがないことを確認。
+- 2025-11-18 09:36 command: pnpm --filter @hierarchidb/resolver-plugin build — exit 0。Resolver plugin も新規 Build step 追加後に問題なく bundling できることを確認。
+- 2025-11-18 09:40 command: pnpm --filter @hierarchidb/plugin-ui-host test — exit 0。PluginDialogFooter の Build ラベル統一と Step registry 変更後も headless テストがグリーンであることを再確認。
+- 2025-11-18 09:42 command: pnpm count:lines > artifacts/count-lines-latest.txt — exit 0（tsx IPC pipe のため escalated）。`packages/runtime/worker/src/services` 12,153 行など大規模領域を再計測し、分割対象の優先順位を最新化。
+- 2025-11-18 09:45 done: tasks 1302/1303/1304 — runtime worker 分割・TreeConsoleToolbar 再構成・Route/Resolver BasicInfo + Build step 共通化を完了。ロールバックは各パッケージの新設ファイルを revert し、前述の typecheck/test/build コマンドを再実行して旧構成へ戻す。
+- 2025-11-18 10:05 progress: fix/ui-treeconsole-base-tests — TreeConsoleToolbar 分割後に残っていた `useTreeViewController` の failing spec（state manager delete fallback と prefetch depth 不整合）を調査開始。DoD: stateManager.deleteNode 呼び出し経路の復旧、subscribeSubtree の prefetch depth を 3 へ統一、worker integration テストの期待更新、Kanban/ログ記録。
+- 2025-11-18 10:10 command: pnpm --filter @hierarchidb/ui-treeconsole-base test -- --run useTreeViewController — exit 0。stateManager delete fallback + prefetch depth 修正後にピンポイントでテストが通ることを確認。
+- 2025-11-18 10:15 command: pnpm --filter '@hierarchidb/ui-treeconsole-*' test — exit 0。TreeConsole base/treetable 両方のテストスイートがグリーンであることを再確認。
+- 2025-11-18 10:35 progress: task1302 runtime/worker module split — CommandProcessor から peer entity cleanup/override ロジックを `services/command/peerEntityCleanup.ts` へ切り出し、type 定義とメソッドを削除して本体を 40 行以上削減。WorkingCopyService に続き CommandProcessor も段階分割を継続。
+- 2025-11-18 10:37 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0。peer entity cleanup 切り出し後も NodeNext typecheck が通ることを確認。
 - 2025-11-17 16:41 start: fix/ui-treeconsole/trash-empty-flow — `/t/r/.../trash/empty` でチェックした行を削除してもゴミ箱が空にならず、ダイアログも閉じない回帰の調査と修正に着手。DoD: Kanban/ログ更新、Empty 操作→削除完了→ダイアログクローズ→元 `pageNodeId` 復帰、連続削除成功、`pnpm lint && pnpm format && pnpm typecheck && pnpm test` 成功ログ、ロールバック記述を完了する。
 - 2025-11-17 16:52 progress: fix/ui-treeconsole/trash-empty-flow — TrashDialog が `treeData` 全件（挿入された trash root 行を含む）を `mutationAPI.removeNodes` へ渡しており、trash root 自体の削除を拒否する worker から success=false が返り続けてダイアログが閉じない状態だった。Empty 専用の `emptyTrashBranch` ヘルパーを追加して `removeSubtree` を呼ぶように切り替え、TanStack Router の `navigate` で閉じるリビルド（Cancel 時は reload せず、Empty/Restore では reload 付き）とカウント表示の補正を実装。ユニットテストで `removeSubtree` 呼び出しを検証。
 - 2025-11-17 16:54 command: pnpm format — exit 0。turbo 経由で 83 パッケージの biome format を走らせ、新規ファイルを含めてフォーマットを揃えた。
@@ -8210,6 +8230,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-17 17:00 command: pnpm -C app test -- --run emptyTrashBranch — exit 1。追加した emptyTrashBranch ユニットは pass したが、既存スイートで `@hierarchidb/basemap-plugin/worker-database` 解決不可（registry 未生成）と `developerModeEnabled` 未定義による TreeConsoleToolbar/Router テスト失敗が残存。
 - 2025-11-17 18:55 progress: location-plugin steps-provider を `@hierarchidb/ui-plugin-basic-info` ベースへ統一し、host 側マルチステップに BasicInfo → DataSource 順が挿入されるよう整備。翻訳型の不足項目追加・tsconfig include/exclude 見直しも実施。
 - 2025-11-17 19:08 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 0。`tsc --noEmit` スクリプトを追加して batch/service 層の型崩れが解消されたことを確認。
+- 2025-11-18 09:05 progress: unify/location-batch-manager-runtime — UnifiedLocationBatchManager に runtime bridge（stage/status 正規化）と EphemeralLocationDB 型更新を適用し、pending/session 永続化で progress オブジェクトを保持できるようにした。
+- 2025-11-18 09:08 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 0。batch runtime bridge と Ephemeral DB 型整備後も `tsc --noEmit` がグリーンであることを確認。
 - 2025-11-17 16:30 start: feat/app/devmode-idb-reset — TreeConsole ツールバー右端メニューへ「このアプリが作成したIndexedDBを全削除」を追加し、開発者モード限定で表示・実行できるようにするタスクに着手。IndexedDB 全削除＋結果通知＋トップページ遷移、および `pnpm lint && pnpm typecheck` の成功ログ取得までを DoD とする。
 - 2025-11-17 16:31 blocked: feat/app/devmode-idb-reset — `git checkout -b feat/app/devmode-idb-reset` が `fatal: cannot lock ref 'refs/heads/feat/app/devmode-idb-reset'`（sandbox で `.git/refs/heads/...` ディレクトリ作成不可）で失敗。既存 `main` ブランチ上で作業を継続。
 - 2025-11-17 16:45 command: pnpm lint — exit 0。`turbo run lint` が全パッケージで完走し、既知警告（`@hierarchidb/plugin-ui-host` の `_error` 未使用）以外は発生せず。

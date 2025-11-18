@@ -1221,7 +1221,10 @@ describe('useTreeViewController', () => {
         subscriptionCallback?.({
           type: 'updated',
           nodeId: childNode.id as NodeId,
-          //node: { ...childNode, name: 'Updated Child Node' },
+          node: {
+            ...(childNode as TreeNode),
+            name: 'Updated Child Node',
+          },
           parentId: rootNodeId,
           timestamp: Date.now(),
         });

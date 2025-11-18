@@ -17,21 +17,7 @@ import { WorkerErrorCode } from './command-types.js';
 import { TreeSubscriptionService } from './TreeSubscriptionService.js';
 import { classifyWorkerError, sanitizeMessageText } from './utils/error-adapter.js';
 import { isValidationFailure, validateAndNormalizeEnvelope } from './validation/envelope.js';
-
-type EntitiesDbTable = {
-  delete(id: NodeId): Promise<void> | void;
-};
-
-type EntitiesDbAdapter = {
-  table(name: string): EntitiesDbTable | undefined;
-};
-
-type EntitiesOverrideFactory =
-  | EntitiesDbAdapter
-  | (() => EntitiesDbAdapter | Promise<EntitiesDbAdapter | undefined> | undefined)
-  | (() => Promise<EntitiesDbAdapter | undefined>);
-
-type EntitiesOverrideRegistry = Record<string, EntitiesOverrideFactory>;
+import { deletePeerEntitiesForNodes } from './command/peerEntityCleanup.js';
 
 type ErrorResultExtras = {
   status?: 'COMMIT_CONFLICT' | 'NAME_CONFLICT';
@@ -39,29 +25,6 @@ type ErrorResultExtras = {
   originalVersion?: number;
   wcVersion?: number;
 };
-
-function getEntitiesOverrides(): EntitiesOverrideRegistry | undefined {
-  const globalWithOverrides = globalThis as typeof globalThis & {
-    __HDB_PLUGIN_ENTITY_OVERRIDES__?: EntitiesOverrideRegistry;
-  };
-  return globalWithOverrides.__HDB_PLUGIN_ENTITY_OVERRIDES__;
-}
-
-async function resolveEntitiesOverride(
-  factory: EntitiesOverrideFactory | undefined
-): Promise<EntitiesDbAdapter | null> {
-  if (!factory) return null;
-  try {
-    if (typeof factory === 'function') {
-      const resolved = await factory();
-      return resolved ?? null;
-    }
-    return factory;
-  } catch (error) {
-    console.warn('[CommandProcessor] override resolution failed:', error);
-    return null;
-  }
-}
 
 export class CommandProcessor {
   static async getSingleton(coreDB: CoreDB): Promise<CommandProcessor> {
@@ -217,7 +180,7 @@ export class CommandProcessor {
         coreDB: this.coreDB,
         history: this.history,
         batchOperationSize: PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE,
-        deletePeerEntitiesForNodes: (nodes) => this.deletePeerEntitiesForNodes(nodes),
+        deletePeerEntitiesForNodes: (nodes) => deletePeerEntitiesForNodes(nodes, this.coreDB),
         createErrorResult: (message, code, extra) => this.createErrorResult(message, code, extra),
         getNextSeq: () => this.getNextSeq(),
       }
@@ -358,48 +321,6 @@ export class CommandProcessor {
   }
 
   // Best-effort deletion of peerEntities (permanent delete only)
-  private async deletePeerEntitiesForNodes(
-    nodes: Array<import('@hierarchidb/common-types').TreeNode>
-  ): Promise<void> {
-    const { storeRegistry } = await import('../entity/store-registry.js');
-    for (const n of nodes) {
-      const nodeType = n.nodeType;
-      const nodeId = n.id as NodeId;
-      const store = storeRegistry.getPeer(nodeType);
-      if (store) {
-        await store.delete(nodeId);
-        continue;
-      }
-      // Fallback: direct Dexie access when no PeerStore registered
-      await this.deletePeerEntityDirect(nodeType, nodeId);
-    }
-  }
-
-  private async deletePeerEntityDirect(nodeType: string, nodeId: NodeId): Promise<void> {
-    const overrideFactory = getEntitiesOverrides()?.[nodeType];
-    if (!overrideFactory) {
-      console.warn(
-        '[CommandProcessor] peer-entity cleanup skipped: no override registered for nodeType=',
-        nodeType
-      );
-      return;
-    }
-    try {
-      const db = await resolveEntitiesOverride(overrideFactory);
-      if (db && typeof db.table === 'function') {
-        const table = db.table('peerEntities');
-        await table?.delete?.(nodeId);
-        return;
-      }
-      console.warn(
-        '[CommandProcessor] override provided for',
-        nodeType,
-        'but no table() interface found'
-      );
-    } catch (err) {
-      console.warn('[CommandProcessor] override peer-entity cleanup failed:', err);
-    }
-  }
 
   /**
    * :

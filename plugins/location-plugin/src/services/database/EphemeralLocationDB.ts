@@ -4,7 +4,8 @@
 
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId, Timestamp } from '@hierarchidb/common-types';
+import type { LocationBatchData, UnifiedLocationBatchConfig } from '../batch/types.js';
 
 export interface VectorTileRecord {
   id: string; // tileKey, e.g. loc-mvt-<sessionId>-<z>-<x>-<y>
@@ -21,29 +22,40 @@ export interface VectorTileRecord {
   contentType: 'application/vnd.mapbox-vector-tile';
 }
 
+export interface LocationSessionRecord {
+  sessionId: string;
+  nodeId: NodeId;
+  bbox: [number, number, number, number];
+  zoomMin: number;
+  zoomMax: number;
+  totalPoints: number;
+  createdAt: number;
+  status: 'running' | 'completed' | 'failed' | 'paused' | 'cancelled';
+  tableId?: string;
+  progress?: {
+    total: number;
+    completed: number;
+    failed: number;
+    percentage: number;
+    currentStage?: string;
+    currentTask?: string;
+  };
+  updatedAt?: number;
+  config?: UnifiedLocationBatchConfig;
+}
+
+export interface PendingLocationSession {
+  nodeId: NodeId;
+  points: LocationBatchData['points'];
+  settings: LocationBatchData['settings'];
+  config?: UnifiedLocationBatchConfig;
+  storedAt: Timestamp;
+}
+
 export class EphemeralLocationDB extends Dexie {
   vectorTiles!: Table<VectorTileRecord>;
-  sessions!: Table<{
-    sessionId: string;
-    nodeId: NodeId;
-    bbox: [number, number, number, number];
-    zoomMin: number;
-    zoomMax: number;
-    totalPoints: number;
-    createdAt: number;
-    status: 'running' | 'completed' | 'failed' | 'paused' | 'cancelled';
-    tableId?: string;
-    progress?: number;
-    updatedAt?: number;
-    config?: unknown;
-  }>;
-  pendingSessions!: Table<{
-    nodeId: NodeId;
-    points: unknown;
-    settings: unknown;
-    config?: unknown;
-    storedAt: number;
-  }>;
+  sessions!: Table<LocationSessionRecord>;
+  pendingSessions!: Table<PendingLocationSession>;
 
   constructor() {
     super(getDBName('location-ephemeral-db'));

@@ -14,18 +14,10 @@ import {
 } from '@hierarchidb/common-api';
 import { UnifiedBatchManagerBase, type BatchPersistence, type UnifiedBatchSession } from '@hierarchidb/batch';
 import { LocationBatchSessionManager } from './BatchSessionManager.js';
-import type { LocationPointInput, LocationTileSettings } from './LocationSessionController.js';
 import { getEphemeralLocationDB, type EphemeralLocationDB } from '../database/EphemeralLocationDB.js';
 import { toBatchProgressEvent } from './ProgressAdapter.js';
-
-export interface UnifiedLocationBatchConfig {
-  concurrency?: number;
-}
-
-export interface LocationBatchData {
-  points: LocationPointInput[];
-  settings: LocationTileSettings;
-}
+import type { LocationBatchData, UnifiedLocationBatchConfig } from './types.js';
+import { mapManagerStatusToLocationStatus, mapStageToBatchStage, toProgressSnapshot } from './runtimeBridge.js';
 
 const PENDING_TTL = 24 * 60 * 60 * 1000; // 24 hours
 const VECTOR_TILE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -57,10 +49,10 @@ function createPersistence(
       if (!record) return undefined;
       await db.pendingSessions.delete(nodeId);
       return {
-        config: record.config as UnifiedLocationBatchConfig | undefined,
+        config: record.config,
         data: {
-          points: record.points as LocationPointInput[],
-          settings: record.settings as LocationTileSettings,
+          points: record.points,
+          settings: record.settings,
         },
         storedAt: record.storedAt as Timestamp,
       } satisfies LocationBatchSessionPayload;
@@ -68,9 +60,9 @@ function createPersistence(
     async onSessionProgress(sessionId: BatchSessionId, event: BatchProgressEvent) {
       const db = dbProvider();
       await db.sessions?.update(sessionId, {
-        progress: event.payload?.completed,
+        progress: toProgressSnapshot(event),
         updatedAt: event.timestamp,
-        status: event.phase === 'completed' ? 'completed' : event.phase === 'failed' ? 'failed' : 'running',
+        status: mapManagerStatusToLocationStatus(event.phase),
       });
     },
     async onSessionCompleted(sessionId: BatchSessionId) {
@@ -165,9 +157,12 @@ export class UnifiedLocationBatchManager extends UnifiedBatchManagerBase<Unified
     if (!record && !summary) {
       throw new Error(`Session ${sessionId} not found`);
     }
-    const total = record?.totalPoints ?? summary?.totalPoints ?? 0;
-    const completed = (record?.progress as number | undefined) ?? 0;
-    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const progress = record?.progress && typeof record.progress === 'object'
+      ? record.progress
+      : undefined;
+    const total = progress?.total ?? record?.totalPoints ?? summary?.totalPoints ?? 0;
+    const completed = progress?.completed ?? 0;
+    const percentage = progress?.percentage ?? (total > 0 ? Math.round((completed / total) * 100) : 0);
     const status = record?.status ?? (percentage >= 100 ? 'completed' : 'running');
     return {
       sessionId,
@@ -176,9 +171,10 @@ export class UnifiedLocationBatchManager extends UnifiedBatchManagerBase<Unified
       progress: {
         total,
         completed,
-        failed: 0,
+        failed: progress?.failed ?? 0,
         percentage,
-        currentStage: percentage >= 100 ? 'vectortile' : 'download',
+        currentStage: mapStageToBatchStage(progress?.currentStage),
+        currentTask: progress?.currentTask,
       },
       startedAt: record?.createdAt,
       lastActivity: record?.updatedAt,

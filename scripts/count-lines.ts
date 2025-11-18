@@ -1,6 +1,3 @@
-#!/usr/bin/env node
-/* eslint-disable no-console */
-
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -164,10 +161,10 @@ function main(): void {
   const summaries: Summary[] = [];
 
   // Count src/src if it exists
-  if (fs.existsSync('src/src')) {
-    const appLines = countDirectory('src/src');
+  if (fs.existsSync('app/src')) {
+    const appLines = countDirectory('app/src');
     grandTotal += appLines;
-    summaries.push({ name: 'src/src', lines: appLines });
+    summaries.push({ name: 'app/src', lines: appLines });
   }
 
   // Count each package's src directory (up to 3 levels deep)

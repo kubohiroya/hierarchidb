@@ -214,6 +214,9 @@ export const en: LocationPluginTranslations = {
   },
 
   build: {
+    title: 'Build vector tiles',
+    description:
+      'Prepare the selected locations and start the batch pipeline to generate the basemap layers.',
     actionLabel: 'Build',
     inProgress: 'Building…',
     success: 'Build started (session {sessionId})',
