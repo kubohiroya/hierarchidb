@@ -710,9 +710,9 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
     targetNodeId ??
     data.trashRootNode?.id ??
     null) as NodeId | null;
-  const trashContainerRootId = (data.trashRootNode?.id ?? null) as NodeId | null;
 
   /*
+  const trashContainerRootId = (data.trashRootNode?.id ?? null) as NodeId | null;
   const isTrashContainerRoot =
     Boolean(trashViewRootId) && Boolean(trashContainerRootId)
       ? trashViewRootId === trashContainerRootId

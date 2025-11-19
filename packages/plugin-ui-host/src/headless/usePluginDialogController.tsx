@@ -960,8 +960,7 @@ export function usePluginDialogController(
 
   useEffect(() => {
     if (workingCopy) {
-      const tagsValue = workingCopy.data?.tags;
-      const tags = toStringArray(tagsValue ?? (workingCopy.data as Record<string, unknown>)?.draft?.['tags']);
+      const tags = workingCopy.data?.tags as string[];
       const draft = toRecord(workingCopy.data?.draft);
       const resolvedName =
         typeof workingCopy.name === 'string' && workingCopy.name.length
@@ -1043,7 +1042,7 @@ export function usePluginDialogController(
             .filter((name): name is string => Boolean(name))
         );
         setSiblingNames(values);
-      } catch (_error) {
+      } catch {
         if (!disposed) {
           setSiblingNames(new Set());
         }
