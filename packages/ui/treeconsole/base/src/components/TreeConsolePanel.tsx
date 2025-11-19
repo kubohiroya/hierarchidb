@@ -137,11 +137,19 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     const toTreeNodeInUI = (node: TreeNodeData, fallbackDepth: number): TreeNodeInUI => {
       const resolvedDepth = Number.isFinite(node.depth) ? Number(node.depth) : fallbackDepth;
       const normalizedDepth = Math.max(1, Math.round(resolvedDepth + depthOffset));
+      const originalNameValue =
+        props.useTrashColumns && typeof (node as { originalName?: string }).originalName === 'string'
+          ? (node as { originalName?: string }).originalName
+          : undefined;
+      const displayName =
+        typeof originalNameValue === 'string' && originalNameValue.trim().length > 0
+          ? originalNameValue
+          : node.name || '';
       const base: TreeNodeInUI = {
         ...node,
         nodeType: toNodeType(node.nodeType || node.type || 'folder'),
         type: (node.type || node.nodeType || 'folder') as string,
-        name: node.name || '',
+        name: displayName,
         hasChildren: Boolean(node.hasChildren ?? (Array.isArray(node.children) && node.children.length > 0)),
         depth: normalizedDepth,
         absoluteDepth: resolvedDepth,
