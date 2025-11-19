@@ -170,14 +170,17 @@ export const WorkerRuntimeProvider: React.FC<{ children: ReactNode }> = ({ child
 - 例: `packages/plugins/styler-plugin/src/worker/factory/registerStylerWorkerStores.ts`
   ```ts
   export async function registerStylerWorkerStores({ storeRegistry }: RegisterStylerWorkerStoresOptions = {}) {
-    if (!storeRegistry || typeof indexedDB === 'undefined') return;
-    const { StylerEntitiesDB } = await import('../worker/stylerEntitiesDB.js'); // plugin 内の相対参照（アプリ側には露出しない）
-    const { createStylerPeerStoreDexie } = await import('../worker/stylerPeerStore.dexie.js');
-    const db = new StylerEntitiesDB();
-    await db.open?.();
+    if (!storeRegistry) return;
+    const { createNodePayloadPeerStore } = await import('@hierarchidb/runtime-worker');
     if (!storeRegistry.getPeer('styler')) {
-      storeRegistry.registerPeer('styler', createStylerPeerStoreDexie(db));
+      storeRegistry.registerPeer(
+        'styler',
+        createNodePayloadPeerStore({
+          normalize: (data) => normalizeStylerPeerData(data ?? undefined),
+        })
+      );
     }
+    // groupEntities/relations が必要な場合はここで Dexie DB を開き、registerGroup/registerRelations を呼び出す
   }
   ```
 - `WorkerModuleLoader` は上記ファクトリー関数を `modulePaths.importPluginWorker('styler')` で取得し、実行時に呼び出す。

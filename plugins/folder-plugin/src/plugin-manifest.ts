@@ -52,7 +52,7 @@ export const PLUGIN_MANIFEST: PluginManifest = {
     ],
   },
   worker: {
-    preload: ['registerFolderWorkerStores', 'loadFolderEntitiesDbModule'],
+    preload: ['registerFolderWorkerStores'],
   },
 };
 

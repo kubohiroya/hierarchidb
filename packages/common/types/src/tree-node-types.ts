@@ -52,10 +52,16 @@ export interface DraftProperties {
   isDraft?: boolean;
 }
 
-export type TreeNode = NodeBase &
+export type NodePayload = NodePayloadBase | null;
+
+export type TreeNode<TPayload extends NodePayload = NodePayload> = NodeBase &
   Partial<DraftProperties> &
   Partial<DescendantProperties> &
   Partial<ReferenceProperties> &
+  Partial<{
+    payload: TPayload;
+    draft: TPayload;
+  }> &
   // Holder-based WorkingCopy/Trash meta (indexed lookup)
   Partial<{
     holderType: 'workingCopy' | 'trash';
@@ -67,6 +73,10 @@ export type TreeNode = NodeBase &
     lastTouchedAt: Timestamp;
   }>;
 
-export interface TreeNodeWithChildren extends TreeNode, DescendantProperties {
+export type NodePayloadBase = Record<string, unknown>;
+
+export interface TreeNodeWithChildren<TPayload extends NodePayload = NodePayload>
+  extends TreeNode<TPayload>,
+    DescendantProperties {
   children?: NodeId[];
 }

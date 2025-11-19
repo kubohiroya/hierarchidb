@@ -55,7 +55,7 @@ export const PLUGIN_MANIFEST: PluginManifest = {
     ],
   },
   worker: {
-    preload: ['registerStylerWorkerStores', 'loadStylerEntitiesDbModule'],
+    preload: ['registerStylerWorkerStores'],
   },
 };
 

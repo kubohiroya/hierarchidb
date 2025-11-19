@@ -656,7 +656,7 @@ const TreeConsoleIntegrationInner: React.FC<
             pageTreeNode={pageTreeNode}
             data={[...treeData]}
             nodeIndex={nodeIndex}
-            columns={columns}
+            columnsDeprecated={columns}
             breadcrumbItems={breadcrumbItems}
             loading={state.loading}
             error={state.error || undefined}

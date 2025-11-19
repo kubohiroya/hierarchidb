@@ -44,7 +44,7 @@ export const PLUGIN_MANIFEST: PluginManifest = {
     ],
   },
   worker: {
-    preload: ['registerResolverWorkerStores', 'loadResolverEntitiesDbModule'],
+    preload: ['registerResolverWorkerStores'],
   },
 };
 

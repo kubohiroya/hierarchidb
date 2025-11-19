@@ -38,7 +38,7 @@ export const PLUGIN_MANIFEST: PluginManifest = {
     ],
   },
   worker: {
-    preload: ['registerRouteWorkerStores', 'loadRouteEntitiesDbModule'],
+    preload: ['registerRouteWorkerStores'],
   },
 };
 

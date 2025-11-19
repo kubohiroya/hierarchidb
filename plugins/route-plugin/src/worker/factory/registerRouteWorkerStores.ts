@@ -1,9 +1,15 @@
 /// <reference types="vite/client" />
 
-import type { PeerStore } from '@hierarchidb/plugin-service-sdk';
+import type { PeerStore } from '@hierarchidb/runtime-worker';
+import { createNodePayloadPeerStore } from '@hierarchidb/runtime-worker';
 import type { RoutePeerData } from '../../common/types/index.js';
 
-const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
+const normalizeRoutePeerData = (data?: RoutePeerData | null): RoutePeerData => ({
+  schemaVersion: 1,
+  lastComputedAt: data?.lastComputedAt,
+  metadata: data?.metadata ?? {},
+});
+
 
 // StoreRegistryをRoutePeerDataに特化
 
@@ -37,20 +43,18 @@ async function resolveStoreRegistry(options: RegisterRouteWorkerStoresOptions = 
 }
 
 async function ensureRouteStores(registry: StoreRegistry): Promise<void> {
-  const { RouteEntitiesDB } = await import('../routeEntitiesDB.js');
-  const db = new RouteEntitiesDB();
-  await db.open?.();
-
   if (!registry.getPeer('route')) {
-    const { createRoutePeerStoreDexie } = await import('../routePeerStore.dexie.js');
-    // 型アサートでplugin-types型に変換
-    const store = createRoutePeerStoreDexie(db) as unknown as PeerStore<RoutePeerData>;
-    registry.registerPeer('route', store);
+    registry.registerPeer(
+      'route',
+      createNodePayloadPeerStore({
+        normalize: (data) => normalizeRoutePeerData(data ?? undefined),
+      })
+    );
   }
 }
 
 export async function registerRouteWorkerStores(options: RegisterRouteWorkerStoresOptions = {}): Promise<void> {
-  if (!hasIndexedDB || options.signal?.aborted) {
+  if (options.signal?.aborted) {
     return;
   }
 
@@ -69,7 +73,7 @@ export async function registerRouteWorkerStores(options: RegisterRouteWorkerStor
 }
 
 export async function loadRouteEntitiesDbModule() {
-  return import('../routeEntitiesDB.js');
+  return undefined;
 }
 
 registerRouteWorkerStores().catch(() => {});

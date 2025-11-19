@@ -1,20 +1,42 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Project, SyntaxKind } from 'ts-morph';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const repoRoot = path.resolve(__dirname, '..', '..');
+const repoRoot = path.resolve(__dirname, '..', '..', '..');
 const project = new Project({
-  tsConfigFilePath: path.resolve(repoRoot, '..', 'tsconfig.json'),
+  tsConfigFilePath: path.resolve(repoRoot, 'tsconfig.json'),
   skipAddingFilesFromTsConfig: true,
 });
 
-const handlerPath = path.resolve(repoRoot, '..', 'packages', 'plugins', 'basemap-plugin', 'src', 'handlers', 'BaseMapEntityHandler.ts');
-const peerStorePath = path.resolve(repoRoot, '..', 'packages', 'plugins', 'basemap-plugin', 'src', 'worker', 'basemapPeerStore.dexie.ts');
+const handlerPath = path.resolve(
+  repoRoot,
+  'plugins',
+  'basemap-plugin',
+  'src',
+  'handlers',
+  'BaseMapEntityHandler.ts'
+);
+const peerStorePath = path.resolve(
+  repoRoot,
+  'plugins',
+  'basemap-plugin',
+  'src',
+  'worker',
+  'basemapPeerStore.dexie.ts'
+);
+
+if (!fs.existsSync(handlerPath)) {
+  console.warn('[codemod] BaseMapEntityHandler not found; skipping basemap working copy helper codemod.');
+  process.exit(0);
+}
 
 const handlerFile = project.addSourceFileAtPath(handlerPath);
-const peerStoreFile = project.addSourceFileAtPath(peerStorePath);
+const peerStoreFile = fs.existsSync(peerStorePath)
+  ? project.addSourceFileAtPath(peerStorePath)
+  : null;
 
 function ensureNamedImport(source = handlerFile, moduleSpecifier: string, name: string) {
   const decl = source.getImportDeclaration(moduleSpecifier);
@@ -103,22 +125,24 @@ createWorkingCopyMethod.setBodyText(`{
 // Update peer store normalizer
 ensureNamedImport(peerStoreFile, '@hierarchidb/base-plugin', 'createPeerStoreNormalizer');
 
-const normalizeFn = peerStoreFile.getFunction('normalizeBasemapPeerData');
-if (normalizeFn) {
-  normalizeFn.replaceWithText(`const normalizeBasemapPeerData = createPeerStoreNormalizer<BasemapPeerData>(() => ({
+if (peerStoreFile) {
+  const normalizeFn = peerStoreFile.getFunction('normalizeBasemapPeerData');
+  if (normalizeFn) {
+    normalizeFn.replaceWithText(`const normalizeBasemapPeerData = createPeerStoreNormalizer<BasemapPeerData>(() => ({
   schemaVersion: 1,
   presentation: undefined,
   metadata: {},
 }));`);
-}
-
-peerStoreFile.getStatements().forEach((stmt) => {
-  if (stmt.getKind() === SyntaxKind.VariableStatement) {
-    const text = stmt.getText();
-    if (text.includes('normalizeBasemapPeerData') && text.includes('createPeerStoreNormalizer')) {
-      // already handled
-    }
   }
-});
+
+  peerStoreFile.getStatements().forEach((stmt) => {
+    if (stmt.getKind() === SyntaxKind.VariableStatement) {
+      const text = stmt.getText();
+      if (text.includes('normalizeBasemapPeerData') && text.includes('createPeerStoreNormalizer')) {
+        // already handled
+      }
+    }
+  });
+}
 
 project.saveSync();

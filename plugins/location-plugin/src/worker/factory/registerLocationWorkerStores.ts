@@ -1,8 +1,9 @@
 /// <reference types="vite/client" />
 
-const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
 
 import type { GroupItemBase, GroupStore, PeerStore, RelationBase, RelationStore } from '@hierarchidb/runtime-worker';
+import { createNodePayloadPeerStore } from '@hierarchidb/runtime-worker';
+import { normalizePeerData } from '../normalizers.js';
 import { isDevEnvironment } from '../../common/utils/env.js';
 
 type StoreRegistry = {
@@ -20,8 +21,18 @@ export interface RegisterLocationWorkerStoresOptions {
 }
 
 async function resolveStoreRegistry(options: RegisterLocationWorkerStoresOptions = {}): Promise<StoreRegistry | null> {
-  // Breadth-first rollout: only use explicitly provided registry to avoid new deps
-  return options.storeRegistry ?? null;
+  if (options.storeRegistry) {
+    return options.storeRegistry;
+  }
+  try {
+    const runtime = await import('@hierarchidb/runtime-worker');
+    return runtime.storeRegistry as StoreRegistry;
+  } catch (error) {
+    if (import.meta.env?.DEV) {
+      console.warn('[location-worker] failed to import runtime worker module', error);
+    }
+    return null;
+  }
 }
 
 async function ensureLocationStores(registry: StoreRegistry): Promise<void> {
@@ -30,8 +41,12 @@ async function ensureLocationStores(registry: StoreRegistry): Promise<void> {
   await db.open?.();
 
   if (!registry.getPeer('location')) {
-    const { createLocationPeerStoreDexie } = await import('../locationPeerStore.dexie.js');
-    registry.registerPeer('location', createLocationPeerStoreDexie(db));
+    registry.registerPeer(
+      'location',
+      createNodePayloadPeerStore({
+        normalize: (data) => normalizePeerData(data ?? undefined),
+      })
+    );
   }
   if (!registry.getGroup('location')) {
     const { createLocationGroupStoreDexie } = await import('../locationGroupStore.dexie.js');
@@ -44,7 +59,7 @@ async function ensureLocationStores(registry: StoreRegistry): Promise<void> {
 }
 
 export async function registerLocationWorkerStores(options: RegisterLocationWorkerStoresOptions = {}): Promise<void> {
-  if (!hasIndexedDB || options.signal?.aborted) return;
+  if (options.signal?.aborted) return;
   const registry = await resolveStoreRegistry(options);
   if (!registry) return;
   try {

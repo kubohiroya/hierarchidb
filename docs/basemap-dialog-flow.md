@@ -1,54 +1,61 @@
 # Basemap Dialog Flow
 
-## Create Flow (Default value hydration included)
+TreeNode payload/draft が唯一のソースであり、Dexie `peerEntities` は廃止済み。Basemap ダイアログでは UI 側の state と runtime-worker の WorkingCopy API が以下の順序で連携する。
+
+## Create Flow
 
 ```mermaid
 sequenceDiagram
     participant User as UI (Basemap Dialog)
-    participant React as React State (basicInfo, workingCopy)
-    participant Comlink as Comlink RPC
-    participant Worker as Worker Services (WorkingCopyService)
-    participant Nodes as Dexie.nodes (Ephemeral)
-    participant Peers as Dexie.peerEntities
+    participant React as React State (basicInfo, steps)
+    participant Local as browser localStorage ("zxy")
+    participant Comlink as Worker Bridge (usePluginDialogController)
+    participant Worker as runtime-worker (WorkingCopyService)
+    participant CoreDB as CoreDB TreeNode (payload/draft)
 
-    User->>Comlink: openCreateDialog(parentId,nodeType)
+    User->>Comlink: openCreateDialog(parentId, nodeType="basemap")
     Comlink->>Worker: createDraftWorkingCopy
-    Worker->>Nodes: createDraftWorkingCopyGetOrCreate + resolveDefaultNodeName
-    Nodes-->>Worker: WorkingCopy holder/draft (name=New Basemap)
-    Worker-->>Comlink: WorkingCopy snapshot
-    Comlink-->>React: hydrate basicInfo & step data\n
+    Worker->>CoreDB: createWorkingCopy + resolveDefaultNodeName
+    CoreDB-->>Worker: holder + draft snapshot
+    Worker-->>Comlink: WorkingCopy snapshot (TreeNode.draft/payload)
+    Comlink-->>React: hydrate basic info / steps
+
+    React->>Local: read "zxy" (if present)
+    React->>Comlink: mergeWorkingCopy(draft.viewport) when localStorage value exists
+    Comlink->>Worker: updateWorkingCopy
+    Worker->>CoreDB: update draft.viewport → persistTreeNodeDraft
+    CoreDB-->>Worker: updated snapshot
+    Worker-->>Comlink: workingCopy w/ viewport
+    Comlink-->>React: update Viewport step
+
+    React->>Local: if no cache -> request Geolocation
+    Local-->>React: coordinates or failure
+    React->>Comlink: mergeWorkingCopy(viewport) using geo or fallback (0,0,2)
+    Comlink->>Worker: updateWorkingCopy → CoreDB
 
     User->>React: Step1 input (name/description/tags)
     React->>Comlink: mergeWorkingCopy(draft{name,description}, tags)
-    Comlink->>Worker: updateWorkingCopy
-    Worker->>Nodes: updateWc + touchWorkingCopyByRecord
-    Nodes-->>Worker: updated snapshot
-    Worker-->>Comlink: WorkingCopy data
-    Comlink-->>React: update basicInfo state\n
+    Comlink->>Worker: updateWorkingCopy → CoreDB
+    Worker-->>Comlink: validation state
+    Comlink-->>React: update Step1 validity
 
-    User->>React: Step2 MapStyle selection
-    React->>Comlink: mergeWorkingCopy(draft{mapStyle}, uiState.mapStyleTouched)
-    Comlink->>Worker: updateWorkingCopy
-    Worker->>Nodes: persist mapStyle draft
-    Worker->>Peers: registerPeerData (mapStyle)
-    Worker-->>Comlink: snapshot + validation
-    Comlink-->>React: Step2 filled\n
+    User->>React: Step2 MapStyle edits
+    React->>Comlink: mergeWorkingCopy(draft.mapStyle)
+    Comlink->>Worker: updateWorkingCopy → CoreDB
+    Worker->>Comlink: normalized BasemapPeerData (presentation)
+    Comlink-->>React: Step2 filled
 
-    User->>React: Step3 Viewport adjust (geolocation fallback)
-    React->>Comlink: mergeWorkingCopy(draft{viewport}, uiState.viewportTouched)
-    Comlink->>Worker: updateWorkingCopy
-    Worker->>Nodes: persist viewport draft
-    Worker->>Peers: registerPeerData (viewport)
-    Worker-->>Comlink: snapshot
-    Comlink-->>React: Step3 filled -> Save enabled\n
+    User->>React: Step3 map interactions
+    React->>Local: persistViewportDefaults(viewState → "zxy")
+    React->>Comlink: mergeWorkingCopy(draft.viewport, uiState.viewportTouched)
+    Comlink->>Worker: updateWorkingCopy → CoreDB
 
     User->>React: Save
     React->>Comlink: commitWorkingCopy
     Comlink->>Worker: commitWorkingCopy
-    Worker->>Nodes: commitWorkingCopyV2 (create tree node)
-    Worker->>Peers: syncPeerDataFromNode
+    Worker->>CoreDB: promote draft → payload, create target node
     Worker-->>Comlink: CommitResult(nodeId)
-    Comlink-->>React: success -> close dialog/update tree
+    Comlink-->>React: success → close dialog and refresh tree
 ```
 
 ## Edit Flow
@@ -57,36 +64,38 @@ sequenceDiagram
 sequenceDiagram
     participant User as UI (Basemap Dialog)
     participant React as React State
-    participant Comlink as Comlink RPC
-    participant Worker as Worker Services
-    participant Nodes as Dexie.nodes (Ephemeral)
-    participant Peers as Dexie.peerEntities
+    participant Local as browser localStorage ("zxy")
+    participant Comlink as Worker Bridge
+    participant Worker as runtime-worker
+    participant CoreDB as TreeNode payload/draft
 
     User->>Comlink: openDialog(nodeId)
     Comlink->>Worker: createWorkingCopyFromNode
-    Worker->>Nodes: createWcFromNode + getWorkingCopy
-    Worker-->>Comlink: WorkingCopy snapshot (name/mapStyle/viewport/tags)
-    Comlink-->>React: hydrate basicInfo & steps\n
+    Worker->>CoreDB: load payload/draft for nodeId and WC holder
+    CoreDB-->>Worker: snapshot (includes presentation)
+    Worker-->>Comlink: workingCopy snapshot
+    Comlink-->>React: hydrate Steps 1-3
 
-    User->>React: Step1 edits
-    React->>Comlink: mergeWorkingCopy(draft{name,description})
-    Comlink->>Worker: updateWorkingCopy
-    Worker->>Nodes: persist draft diff
-    Worker-->>Comlink: snapshot
-    Comlink-->>React: basicInfo state update\n
+    React->>Local: read "zxy" but prefer payload.viewport
+    React->>Comlink: mergeWorkingCopy(draft.viewport) only if WC lacks viewport
+    Comlink->>Worker: updateWorkingCopy (no-op when already populated)
 
-    User->>React: Step2/3 edits
-    React->>Comlink: mergeWorkingCopy(draft{mapStyle|viewport}, uiState flags)
-    Comlink->>Worker: updateWorkingCopy
-    Worker->>Nodes: persist draft diff
-    Worker->>Peers: update peerEntities mapStyle/viewport
-    Worker-->>Comlink: snapshot -> validation update\n
+    User->>React: edit Steps 1-3
+    React->>Comlink: mergeWorkingCopy(draft{mapStyle|viewport}, ui flags)
+    Comlink->>Worker: updateWorkingCopy → CoreDB
+    Worker-->>Comlink: validation snapshot
+    Comlink-->>React: update validity/Stepper state
 
     User->>React: Save
     React->>Comlink: commitWorkingCopy
-    Comlink->>Worker: commitWorkingCopy(onNameConflict policy)
-    Worker->>Nodes: commit + merge into base node
-    Worker->>Peers: syncPeerDataFromNode
+    Comlink->>Worker: commitWorkingCopy (handles rename conflicts)
+    Worker->>CoreDB: upsert payload, delete WC draft, sync payload for canonical node
     Worker-->>Comlink: CommitResult
-    Comlink-->>React: success -> close dialog/refresh UI
+    Comlink-->>React: close dialog, update tree, keep "zxy" cache in localStorage for future create flows
 ```
+
+## 仕様メモ
+
+- Basemap payload (`BasemapPeerData`) は `schemaVersion=1` と `presentation` (mapStyle / viewport) のみを保持。UI 表示用フィールド（name/description/tags）は TreeNode の top-level に存在する。
+- `ViewportStep` は `window.localStorage.zxy` → Geolocation API → `[0,0] zoom 2` の順に初期状態を決める。MapLibre の view state 変更イベントで `zxy` を常にリライトする。
+- WorkingCopyService は Step1/2/3 の入力を `TreeNode.draft` に書き込み、`createNodePayloadPeerStore()` の normalize が payload/presentation を整形する。commit 後は `syncPeerDataFromNode()` が新しい payload をストア登録済みの peer store（TreeNode ベース）へ反映する。

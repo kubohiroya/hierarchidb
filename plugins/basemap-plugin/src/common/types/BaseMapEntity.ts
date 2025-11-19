@@ -86,9 +86,9 @@ export interface BaseMapSearchCriteria extends BaseSearchCriteria {
 }
 
 /**
- * Peer data stored in Dexie peerEntities for basemap nodes.
- * schemaVersion must always be present so that future migrations
- * can discriminate payload revisions.
+ * Peer payload persisted directly on TreeNode.payload/draft for basemap nodes.
+ * schemaVersion must always be present so that future migrations can
+ * discriminate payload revisions regardless of local cache state.
  */
 export interface BasemapPeerData extends PeerDataBase {
   schemaVersion: 1;

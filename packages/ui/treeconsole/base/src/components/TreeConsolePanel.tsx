@@ -44,7 +44,11 @@ export interface TreeConsolePanelProps {
   readonly subtreeRootId?: string;
   readonly data: readonly TreeNodeData[];
   readonly nodeIndex: DualKeyMap<NodeId, NodeId, TreeNode>;
-  readonly columns: readonly TreeTableColumn[];
+  /**
+   * @deprecated TreeTableCore builds its own column set; external overrides are ignored.
+   * @see TreeTableCore / createTreeTableColumns
+   */
+  readonly columnsDeprecated?: readonly TreeTableColumn[];
   readonly breadcrumbItems: readonly PanelBreadcrumbNode[];
   readonly loading?: boolean;
   readonly error?: string;

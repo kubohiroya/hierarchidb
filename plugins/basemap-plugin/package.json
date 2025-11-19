@@ -22,9 +22,6 @@
       ],
       "worker": [
         "dist/worker/index.d.ts"
-      ],
-      "worker-database": [
-        "dist/worker/database/index.d.ts"
       ]
     }
   },
@@ -36,10 +33,6 @@
     "./worker": {
       "types": "./dist/worker/index.d.ts",
       "import": "./dist/worker/index.js"
-    },
-    "./worker-database": {
-      "types": "./dist/worker/database/index.d.ts",
-      "import": "./dist/worker/database/index.js"
     },
     "./database": {
       "types": "./dist/services/database/index.d.ts",
@@ -57,7 +50,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts src/services/database/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/worker/basemapEntitiesDB.ts src/worker/database/index.ts src/worker/basemapPeerStore.dexie.ts src/icon/index.ts --config ../../tsdown.config.ts",
+    "build": "tsdown src/index.ts src/services/database/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/icon/index.ts --config ../../tsdown.config.ts",
     "test": "vitest",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
@@ -72,7 +65,6 @@
     "@hierarchidb/ui-plugin-basic-info": "workspace:*"
   },
   "peerDependencies": {
-    "dexie": "^4.2.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^7.3.2",
@@ -93,7 +85,6 @@
     "@hierarchidb/plugin-base": "workspace:*"
   },
   "devDependencies": {
-    "dexie": "^4.2.0",
     "@testing-library/react": "^14.3.1",
     "fake-indexeddb": "^4.0.2",
     "jsdom": "^22.1.0",
@@ -185,10 +176,5 @@
         ]
       }
     }
-  },
-  "tsdown": {
-    "external": [
-      "@hierarchidb/basemap-plugin/worker-database"
-    ]
   }
 }

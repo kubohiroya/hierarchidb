@@ -1,8 +1,14 @@
 /// <reference types="vite/client" />
 
-const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
-
 import type { GroupItemBase, GroupStore, PeerStore, RelationBase, RelationStore } from '@hierarchidb/runtime-worker';
+import { createNodePayloadPeerStore } from '@hierarchidb/runtime-worker';
+import type { ShapePeerData } from '../../common/types/entities.js';
+
+const normalizeShapePeerData = (data?: ShapePeerData | null): ShapePeerData => ({
+  schemaVersion: 1,
+  lastProcessedTile: data?.lastProcessedTile,
+  metadata: data?.metadata ?? {},
+});
 
 type StoreRegistry = {
   getPeer<T = unknown>(nodeType: string): PeerStore<T> | undefined;
@@ -43,10 +49,12 @@ async function ensureShapeStores(registry: StoreRegistry): Promise<void> {
   }
 
   if (!registry.getPeer('shape')) {
-    const { createShapePeerStoreDexie } = (await import('../shapePeerStore.dexie.js')) as {
-      createShapePeerStoreDexie: (db: unknown) => PeerStore<unknown>;
-    };
-    registry.registerPeer('shape', createShapePeerStoreDexie(db));
+    registry.registerPeer(
+      'shape',
+      createNodePayloadPeerStore({
+        normalize: (data) => normalizeShapePeerData(data ?? undefined),
+      })
+    );
   }
 
   if (!registry.getGroup('shape')) {
@@ -65,7 +73,7 @@ async function ensureShapeStores(registry: StoreRegistry): Promise<void> {
 }
 
 export async function registerShapeWorkerStores(options: RegisterShapeWorkerStoresOptions = {}): Promise<void> {
-  if (!hasIndexedDB || options.signal?.aborted) {
+  if (options.signal?.aborted) {
     return;
   }
 

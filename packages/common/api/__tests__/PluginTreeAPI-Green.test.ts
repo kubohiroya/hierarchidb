@@ -82,7 +82,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
             plugins: [],
             error: {
               code: 'TREE_NOT_FOUND',
-              message: `Tree non-existent-tree not found`,
+              message: `Tree ${request.treeId} not found`,
             },
           };
         }

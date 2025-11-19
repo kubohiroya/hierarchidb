@@ -45,42 +45,46 @@ describe('peerDialogPersistence default provider', () => {
   });
 });
 
-const fallbackRows = new Map<string, MockRow>();
+const peerStoreRows = new Map<string, MockRow>();
+
+const peerStoreAdapter = {
+  async get(nodeId: string) {
+    const row = peerStoreRows.get(String(nodeId));
+    if (!row) return undefined;
+    return {
+      nodeId: row.nodeId,
+      dialogWindow: row.dialogWindow ?? null,
+      dialogProgress: row.dialogProgress ?? null,
+      updatedAt: Date.now(),
+    } satisfies { nodeId: string; dialogWindow: unknown; dialogProgress: unknown; updatedAt: number };
+  },
+  async put(entity: { nodeId: string; dialogWindow?: unknown; dialogProgress?: unknown }) {
+    peerStoreRows.set(String(entity.nodeId), {
+      nodeId: String(entity.nodeId),
+      dialogWindow: entity.dialogWindow ?? undefined,
+      dialogProgress: entity.dialogProgress ?? undefined,
+    });
+  },
+  async delete(nodeId: string) {
+    peerStoreRows.delete(String(nodeId));
+  },
+};
 
 vi.mock('@hierarchidb/runtime-worker', () => ({
-  PLUGIN_WORKER_MODULE_IDS: {
-    folder: '@hierarchidb/folder-plugin/worker',
-  },
-  importPluginWorker: (id: string) => {
-    if (id !== 'folder') {
-      return Promise.reject(new Error(`Unhandled plugin id ${id}`));
-    }
-    return import('@hierarchidb/folder-plugin/worker');
+  storeRegistry: {
+    getPeer: (nodeType: string) => (nodeType === 'folder' ? peerStoreAdapter : undefined),
+    registerPeer: () => {},
+    getGroup: () => undefined,
+    registerGroup: () => {},
+    getRelations: () => undefined,
+    registerRelations: () => {},
   },
 }));
 
-vi.mock('@hierarchidb/folder-plugin/worker', () => ({
-  loadFolderEntitiesDbModule: async () => ({
-    FolderEntitiesDB: class {
-      async open() {
-        /* no-op */
-      }
-      table() {
-        return {
-          get: async (id: string) => fallbackRows.get(id) ?? null,
-          put: async (row: MockRow) => {
-            fallbackRows.set(row.nodeId, row);
-          },
-        };
-      }
-    },
-  }),
-}));
-
-describe('peerDialogPersistence EntitiesDB fallback', () => {
+describe('peerDialogPersistence storeRegistry fallback', () => {
   beforeEach(() => {
     delete globalThis.__HDB_PLUGIN_ENTITY_OVERRIDES__;
-    fallbackRows.clear();
+    peerStoreRows.clear();
     const registry = UIPersistence as unknown as {
       providers: Map<string, unknown>;
       dbCache: Map<string, unknown>;
@@ -104,7 +108,7 @@ describe('peerDialogPersistence EntitiesDB fallback', () => {
     registry.setWarningExclusions(['folder']);
   });
 
-  it('falls back to worker EntitiesDB export when no override is provided', async () => {
+  it('falls back to runtime storeRegistry when no override is provided', async () => {
     const nodeId = 'fallback-node';
     await setPeerDisplayMode('folder', nodeId, 'full-screen');
     const mode = await getPeerDisplayMode('folder', nodeId);

@@ -5,12 +5,6 @@ declare module '@hierarchidb/basemap-plugin/icon' {
   export default BasemapPluginIcon;
 }
 
-declare module '@hierarchidb/basemap-plugin/database' {
-  export const BasemapEntitiesDB: unknown;
-  const mod: Record<string, unknown>;
-  export default mod;
-}
-
 declare module '@hierarchidb/folder-plugin/icon' {
   export const FolderPluginIcon: unknown;
   export default FolderPluginIcon;

@@ -171,6 +171,11 @@ export interface FolderPeerData {
   domain: Record<string, unknown>;
 }
 
+export const normalizeFolderPeerData = (data?: FolderPeerData | null): FolderPeerData => ({
+  schemaVersion: 1,
+  domain: data?.domain ?? {},
+});
+
 export function isValidFolderName(name: string): boolean {
   return (
     typeof name === 'string' &&

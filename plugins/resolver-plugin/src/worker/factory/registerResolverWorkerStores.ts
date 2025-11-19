@@ -1,8 +1,15 @@
 /// <reference types="vite/client" />
 
-const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
 
 import type { PeerStore } from '@hierarchidb/runtime-worker';
+import { createNodePayloadPeerStore } from '@hierarchidb/runtime-worker';
+import type { ResolverPeerData } from '../../common/types/index.js';
+
+const normalizeResolverPeerData = (data?: ResolverPeerData | null): ResolverPeerData => ({
+  schemaVersion: 1,
+  lastExecutedAt: data?.lastExecutedAt,
+  metadata: data?.metadata ?? {},
+});
 
 type StoreRegistry = {
   getPeer<T = unknown>(nodeType: string): PeerStore<T> | undefined;
@@ -18,22 +25,30 @@ async function resolveStoreRegistry(options: RegisterResolverWorkerStoresOptions
   if (options.storeRegistry) {
     return options.storeRegistry;
   }
-  return null;
+  try {
+    const runtime = await import('@hierarchidb/runtime-worker');
+    return runtime.storeRegistry as StoreRegistry;
+  } catch (error) {
+    if (import.meta.env?.DEV) {
+      console.warn('[resolver-worker] failed to import runtime worker module', error);
+    }
+    return null;
+  }
 }
 
 async function ensureResolverStores(registry: StoreRegistry): Promise<void> {
-  const { ResolverPeerEntitiesDB } = await import('../resolverPeerEntitiesDB.js');
-  const db = new ResolverPeerEntitiesDB();
-  await db.open?.();
-
   if (!registry.getPeer('resolver')) {
-    const { createResolverPeerStoreDexie } = await import('../resolverPeerStore.dexie.js');
-    registry.registerPeer('resolver', createResolverPeerStoreDexie(db));
+    registry.registerPeer(
+      'resolver',
+      createNodePayloadPeerStore({
+        normalize: (data) => normalizeResolverPeerData(data ?? undefined),
+      })
+    );
   }
 }
 
 export async function registerResolverWorkerStores(options: RegisterResolverWorkerStoresOptions = {}): Promise<void> {
-  if (!hasIndexedDB || options.signal?.aborted) {
+  if (options.signal?.aborted) {
     return;
   }
 
@@ -52,7 +67,7 @@ export async function registerResolverWorkerStores(options: RegisterResolverWork
 }
 
 export async function loadResolverEntitiesDbModule() {
-  return import('../resolverPeerEntitiesDB.js');
+  return undefined;
 }
 
 registerResolverWorkerStores().catch(() => {});

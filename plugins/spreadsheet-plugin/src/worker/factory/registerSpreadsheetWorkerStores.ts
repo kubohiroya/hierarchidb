@@ -1,8 +1,14 @@
 /// <reference types="vite/client" />
 
-const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
-
 import type { GroupItemBase, GroupStore, PeerStore, RelationBase, RelationStore } from '@hierarchidb/runtime-worker';
+import { createNodePayloadPeerStore } from '@hierarchidb/runtime-worker';
+import type { SpreadsheetPeerData } from '../../common/types/index.js';
+
+const normalizeSpreadsheetPeerData = (data?: SpreadsheetPeerData | null): SpreadsheetPeerData => ({
+  schemaVersion: 1,
+  lastViewedSheet: data?.lastViewedSheet,
+  metadata: data?.metadata ?? {},
+});
 
 type StoreRegistry = {
   getPeer<T = unknown>(nodeType: string): PeerStore<T> | undefined;
@@ -44,8 +50,12 @@ async function ensureSpreadsheetStores(registry: StoreRegistry): Promise<void> {
   await db.open?.();
 
   if (!registry.getPeer('spreadsheet')) {
-    const { createSpreadsheetPeerStoreDexie } = await import('../spreadsheetPeerStore.dexie.js');
-    registry.registerPeer('spreadsheet', createSpreadsheetPeerStoreDexie(db));
+    registry.registerPeer(
+      'spreadsheet',
+      createNodePayloadPeerStore({
+        normalize: (data) => normalizeSpreadsheetPeerData(data ?? undefined),
+      })
+    );
   }
 
   if (!registry.getGroup('spreadsheet')) {
@@ -60,7 +70,7 @@ async function ensureSpreadsheetStores(registry: StoreRegistry): Promise<void> {
 }
 
 export async function registerSpreadsheetWorkerStores(options: RegisterSpreadsheetWorkerStoresOptions = {}): Promise<void> {
-  if (!hasIndexedDB || options.signal?.aborted) {
+  if (options.signal?.aborted) {
     return;
   }
 

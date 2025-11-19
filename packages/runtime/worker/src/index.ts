@@ -41,6 +41,7 @@ export type { PluginWorkerModuleLoader } from './di/interfaces.js';
 export { WorkerDiTokens } from './di/tokens.js';
 export { resolveDefaultNodeName } from './utils/default-node-name.js';
 export { registerPeerDataComposer } from './services/peerDataRegistry.js';
+export { createNodePayloadPeerStore } from './entity/createNodePayloadPeerStore.js';
 
 interface PerformanceMemoryStats {
   usedJSHeapSize?: number;

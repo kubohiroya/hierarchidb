@@ -1,16 +1,7 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { DialogProgressState, DialogWindowState } from '@hierarchidb/plugin-service-api';
-import type { ShapePeerData } from '../common/types/entities.js';
 
-export type ShapePeerRow = {
-  nodeId: NodeId;
-  data?: ShapePeerData;
-  updatedAt?: number;
-  dialogWindow?: DialogWindowState | null;
-  dialogProgress?: DialogProgressState | null;
-};
 export type ShapeGroupRow = { nodeId: NodeId; id: string; data?: unknown; updatedAt?: number };
 export type ShapeRelationRow = {
   srcNodeId: NodeId;
@@ -21,14 +12,12 @@ export type ShapeRelationRow = {
 };
 
 export class ShapeEntitiesDB extends Dexie {
-  peerEntities!: Table<ShapePeerRow, NodeId>;
   groupEntities!: Table<ShapeGroupRow, [NodeId, string]>;
   relations!: Table<ShapeRelationRow, [NodeId, string, NodeId]>;
 
   constructor(name = getDBName('shape-entities-db')) {
     super(name);
     this.version(1).stores({
-      peerEntities: '&nodeId, updatedAt',
       groupEntities: '&[nodeId+id], nodeId, id, updatedAt',
       relations: '&[srcNodeId+type+dstNodeId], srcNodeId, dstNodeId, type, updatedAt',
     });

@@ -10,7 +10,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     dependencies: [
         "@hierarchidb/plugin-base",
         "@hierarchidb/ui-plugin-basic-info",
-        "dexie",
         "@emotion/react",
         "@emotion/styled",
         "@mui/icons-material",
@@ -42,7 +41,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "dependencies": [
           "@hierarchidb/plugin-base",
           "@hierarchidb/ui-plugin-basic-info",
-          "dexie",
           "@emotion/react",
           "@emotion/styled",
           "@mui/icons-material",
@@ -93,16 +91,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         },
         "worker": {
           "preload": [
-            "registerBasemapWorkerStores",
-            "loadBasemapEntitiesDbModule"
-          ]
-        },
-        "database": {
-          "prewarm": [
-            {
-              "export": "BasemapEntitiesDB",
-              "specifier": "@hierarchidb/basemap-plugin/worker-database"
-            }
+            "registerBasemapWorkerStores"
           ]
         },
         "packageName": "@hierarchidb/basemap-plugin"
@@ -121,7 +110,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
       },
     database: {
         specifier: "@hierarchidb/basemap-plugin/database",
-        source: "plugins/basemap-plugin/src/worker/database/index.ts",
       },
     icon: {
         specifier: "@hierarchidb/basemap-plugin/icon",
@@ -141,7 +129,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@emotion/styled",
         "@mui/icons-material",
         "@mui/material",
-        "dexie",
         "react",
         "i18next",
         "react-i18next",
@@ -174,7 +161,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@emotion/styled",
           "@mui/icons-material",
           "@mui/material",
-          "dexie",
           "react",
           "i18next",
           "react-i18next",
@@ -222,8 +208,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         },
         "worker": {
           "preload": [
-            "registerFolderWorkerStores",
-            "loadFolderEntitiesDbModule"
+            "registerFolderWorkerStores"
           ]
         },
         "packageName": "@hierarchidb/folder-plugin"
@@ -552,8 +537,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         },
         "worker": {
           "preload": [
-            "registerResolverWorkerStores",
-            "loadResolverEntitiesDbModule"
+            "registerResolverWorkerStores"
           ]
         },
         "database": {
@@ -673,8 +657,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         },
         "worker": {
           "preload": [
-            "registerRouteWorkerStores",
-            "loadRouteEntitiesDbModule"
+            "registerRouteWorkerStores"
           ]
         },
         "database": {
@@ -1103,8 +1086,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         },
         "worker": {
           "preload": [
-            "registerStylerWorkerStores",
-            "loadStylerEntitiesDbModule"
+            "registerStylerWorkerStores"
           ]
         },
         "packageName": "@hierarchidb/styler-plugin"
@@ -1176,8 +1158,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         },
         "worker": {
           "preload": [
-            "registerTimelineWorkerStores",
-            "loadTimelineEntitiesDbModule"
+            "registerTimelineWorkerStores"
           ]
         },
         "dependencies": [
@@ -1292,35 +1273,25 @@ export const pluginIconLoaders: Record<string, () => Promise<unknown>> = {
 };
 
 export const pluginWorkerPreloads: Record<string, string[]> = {
-  "basemap": ["registerBasemapWorkerStores","loadBasemapEntitiesDbModule"],
-  "folder": ["registerFolderWorkerStores","loadFolderEntitiesDbModule"],
+  "basemap": ["registerBasemapWorkerStores"],
+  "folder": ["registerFolderWorkerStores"],
   "linker": ["registerLinkerWorkerStores","loadLinkerEntitiesDbModule"],
   "location": ["registerLocationWorkerStores","loadLocationEntitiesDbModule"],
-  "resolver": ["registerResolverWorkerStores","loadResolverEntitiesDbModule"],
-  "route": ["registerRouteWorkerStores","loadRouteEntitiesDbModule"],
+  "resolver": ["registerResolverWorkerStores"],
+  "route": ["registerRouteWorkerStores"],
   "shape": ["registerShapeWorkerStores","loadShapeEntitiesDbModule"],
   "spreadsheet": ["registerSpreadsheetWorkerStores","loadSpreadsheetEntitiesDbModule"],
-  "styler": ["registerStylerWorkerStores","loadStylerEntitiesDbModule"],
-  "timeline": ["registerTimelineWorkerStores","loadTimelineEntitiesDbModule"],
+  "styler": ["registerStylerWorkerStores"],
+  "timeline": ["registerTimelineWorkerStores"],
 };
 
 export const pluginDatabaseLoaders: Record<string, { moduleSpecifier?: string; loader?: () => Promise<unknown>; prewarm?: { specifier?: string; exportName: string; load: () => Promise<unknown> }[] }> = {
   "basemap": {
-    moduleSpecifier: "@hierarchidb/basemap-plugin/database",
+    moduleSpecifier: "@hierarchidb/basemap-plugin",
     async loader() {
-      const mod = await import("@hierarchidb/basemap-plugin/database");
+      const mod = await import("@hierarchidb/basemap-plugin");
       return mod;
     },
-    prewarm: [
-      {
-        specifier: "@hierarchidb/basemap-plugin/worker-database",
-        exportName: "BasemapEntitiesDB",
-        async load() {
-          const mod = await import("@hierarchidb/basemap-plugin/worker-database");
-          return mod;
-        },
-      },
-    ],
   },
   "folder": {
     moduleSpecifier: "@hierarchidb/folder-plugin",

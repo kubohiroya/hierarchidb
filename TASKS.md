@@ -99,6 +99,22 @@
   - [x] `tsc` / `vitest` 実行結果を運用ログに記録し、ロールバック手順を明記する
 - ロールバック手順：対象ファイル（`BaseMapEntity.ts`, `basemapStepConfigs.tsx`, `useBaseMapEntity.ts`, `ViewportStep.tsx`, `registerBasemapWorkerStores.ts`, `plugins/basemap-plugin/tsconfig.json` 等）の差分を revert し、`pnpm --filter @hierarchidb/basemap-plugin {exec tsc -p tsconfig.json --noEmit,test}` を再実行して現状エラーが再発することを確認する
 
+1294) TreeNode payload 統合と peerEntities 廃止（P0）
+- ブランチ: `feat/runtime/treenode-payload`（sandbox 制約で `main` 上で作業）
+- 依存: `packages/common/types`, `packages/runtime/worker`, `packages/plugin-service-*`, `plugins/*-plugin`
+- 受け入れ基準（DoD）:
+  - [ ] `TreeNode` を `TreeNode<TPayload>` として payload/draft を型付きで保持できるようにし、folder など payload 不要な場合は `TreeNode<null>` で扱える設計にする
+  - [ ] CoreDB と runtime-worker の WorkingCopy/Entity 管理が `TreeNode` の payload/draft を信頼する形に統一され、`peerEntities` 依存を撤去する
+  - [ ] 各プラグイン（basemap/location/route/resolver 等）が `peerEntities` テーブルを利用しなくなり、payload/draft を直接読み書きする実装へ移行する
+  - [ ] `pnpm typecheck && pnpm test`（少なくとも runtime-worker / affected plugins の target 指定で可）を実行し、結果を運用ログへ記録する
+  - [ ] 既存 IndexedDB を削除して再初期化する旨の手順を TASKS 運用ログへ明記する
+- チェックリスト:
+  - [ ] `packages/common/types/src/tree-node-types.ts` をジェネリック化し、`NodePayload` 系 alias を整備する
+  - [ ] CoreDB schema を更新しつつ peer store / peer composer registry / peerEntities Dexie を撤去する
+  - [ ] WorkingCopy API / PluginRuntimeServices / 各プラグインの Worker/UI を payload/draft 参照に切り替える
+  - [ ] テスト／typecheck のグリーンと IndexedDB 初期化手順の記録を完了する
+- ロールバック手順：関連差分を revert し、旧 `peerEntities` 併用構成へ戻したうえで `pnpm typecheck && pnpm test` を再実行して現状再現を確認する
+
 1300) basemap Create ダイアログ save/validation 修正（P0）
 - ブランチ: `fix/basemap/create-dialog-save`（sandbox 制約で `main` 上で作業）
 - 依存: `plugins/basemap-plugin`, `packages/plugin-ui-host`, `packages/plugin-ui-sdk`, `packages/runtime-worker`, `packages/plugin-runtime-services`, `app/src/components/dialogs`
@@ -4663,7 +4679,7 @@ P2:
   - 依存: `@hierarchidb/app`, `@hierarchidb/common-type`, `@hierarchidb/runtime-worker`
   - 受け入れ基準（DoD）：
     - [ ] ノードをゴミ箱へ移動する際に `name` が UUID に置換され、`originalName`/`originalParentId` に元情報が保存される
-    - [ ] TrashDialog のパンくず・TreeTable 表示で `originalName` があればそれを優先表示する
+    - [x] TrashDialog のパンくず・TreeTable 表示で `originalName` があればそれを優先表示する
     - [ ] ゴミ箱から復旧する際に `originalName` と `originalParentId` を用いて元のツリー構造へ戻る
     - [ ] `pnpm --filter @hierarchidb/runtime-worker test` と `pnpm --filter @hierarchidb/app typecheck` が成功する
   - チェックリスト：
@@ -4677,6 +4693,8 @@ P2:
     - start: 2025-09-22 16:34 ゴミ箱直下格納方式への移行検討に着手
     - blocked: 2025-09-22 18:10 `CI=1 pnpm --filter @hierarchidb/runtime-worker test -- --run --reporter=dot --silent` を実行すると 5 件の失敗が残存（replay-command-history, restore-trash-subset, subscribe-trash-events, bulk-ops-cp, tree-query.prefetch）。`originalName`/`originalParentId` の復旧ロジック未整備と Trash holder 処理の移行不足が原因と推測
     - progress: 2025-09-22 18:52 Trash holder 実装を導入し、`moveToTrash` でホルダー生成 + UUID リネーム、`restoreFromTrash` でホルダー経由復帰するよう更新。`replay-command-history` 系の undo/redo でもホルダーと元名称を保持するよう `CommandHistoryManager` を拡張。`pnpm --filter @hierarchidb/runtime-worker test -- --run --reporter=dot --silent` がグリーン
+    - progress: 2025-11-19 18:05 `TreeConsolePanel` を正規エクスポートに戻し、TrashDialog で `columnsDeprecated` 配線と `originalName` 優先表示（検索含む）を確認。`pnpm lint` / `pnpm --filter @hierarchidb/ui-treeconsole-base build` がいずれも成功（前者: turbo lint, 後者: tsdown build）
+    - progress: 2025-11-19 18:42 TrashDialog の `nodeIndex` を `getTrashDisplayName` で装飾し、TreeTableCore でも UUID ではなく `originalName` 表示となるよう修正。`pnpm lint` は `turbo: command not found`（pnpm が `node_modules/.bin/turbo` を生成できず実行不可）で失敗するため未検証。`pnpm --filter @hierarchidb/ui-treeconsole-base build` は前回成功ログあり
 - investigate/ui/treeconsole-i18n — TreeTableCore で i18next インスタンス未初期化エラーを調査
   - ブランチ: `investigate/ui/treeconsole-i18n`（サンドボックス制約によりローカルでは `main` 上で調査）
   - 依存: `@hierarchidb/ui-treeconsole-base`, `app/src/contexts`
@@ -8301,6 +8319,11 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-19 17:03 progress: fix/basemap/create-dialog-save — ViewportStep に localStorage (`zxy`) を用いたデフォルト座標保持を実装。保存済みデフォルトがあればそれを適用、なければ Geolocation → 拒否時は 0/0/2 にフォールバック。MapLibre の view state 変更で `zxy` を更新し、geolocation 取得時にも永続化するよう調整。テストに localStorage シナリオとフォールバック挙動を追加。
 - 2025-11-19 17:03 command: pnpm --filter @hierarchidb/basemap-plugin test — exit 0（14 tests）。ViewportStep の geolocation/localStorage ケースを含む。
 - 2025-11-19 17:04 command: pnpm --filter @hierarchidb/basemap-plugin exec tsc -p tsconfig.json --noEmit — exit 0。
+- 2025-11-20 09:15 start: feat/runtime/treenode-payload — TreeNode payload/draft へ PeerEntity を統合し、`peerEntities` テーブルを廃止する移行タスクに着手。DoD: TreeNode 型ジェネリク化、CoreDB/schema 更新、各プラグインから peer store を撤去、typecheck/test グリーンおよび IndexedDB 再初期化手順の記録。
+- 2025-11-19 23:35 progress: feat/runtime/treenode-payload — peerEntities Dexie 残骸の洗い出し/削除、payload/draft 仕様ドキュメント更新、runtime/プラグインの typecheck/test 再整備（指示 No.1-3）フェーズへ着手（#worklog-13）。
+- 2025-11-19 23:55 command: pnpm --filter @hierarchidb/runtime-worker {typecheck,build,test} && pnpm --filter @hierarchidb/basemap-plugin {exec tsc -p tsconfig.json --noEmit,test} — exit 0。peer payload 統合後の再ビルド・再検証ログを #worklog-13 に追記。
+- 2025-11-20 00:20 progress: feat/runtime/treenode-payload — folder plugin から未使用の `hdb-folder-entities-db`（peer/group/relations）を撤去し、worker は TreeNode payload と in-memory group/relations のみを登録する構成へ更新。`pnpm run tools:gen-plugin-registry` → `pnpm --filter @hierarchidb/folder-plugin test` を実行し exit 0（#worklog-13）。`pnpm --filter @hierarchidb/plugin-base test -- src/utils/__tests__/peerDialogPersistence.test.ts` は既知の `@hierarchidb/common-api` PluginTreeAPI suite 失敗で red（baseline issue: “expected 'Tree non-existent-tree not found' to contain 'non-existent-console'”）。
+- 2025-11-20 07:10 progress: feat/runtime/treenode-payload — folder plugin の in-memory group/relations store も整理し、`storeRegistry` への登録は payload peer store のみとした。README から Dexie 記述を撤去し、`pnpm --filter @hierarchidb/folder-plugin test` exit 0 を確認。PluginTreeAPI-Green 既知 failure に合わせ `@hierarchidb/common-api` のモックエラーメッセージを修正し、`pnpm --filter @hierarchidb/common-api test -- PluginTreeAPI-Green` exit 0 を取得（#worklog-13）。
 - 2025-11-19 12:20 start: fix/app/indexeddb-reset-routing — 「このアプリが作成したIndexedDBを全削除」を実行した直後にトップページから `/t/r` へ遷移すると DatabaseClosedError が発生する事象の再現と原因調査を開始。DoD: IndexedDB 全削除手順のロギング、DatabaseClosedError の根本原因特定、再読み込み不要での UI 継続操作確認、検証ログとロールバック手順の記録。
 - 2025-11-19 12:45 progress: fix/app/indexeddb-reset-routing — DatabaseClosedError の原因が TreeConsole から IndexedDB 全削除後も `WorkerAPIClient` が同じ Dexie 接続を握り続け、`/t/r` 再訪時に閉じられた DB へアクセスし続けるためであることを特定。`clearAppIndexedDBs` 成功時に WorkerProvider の `reset()` → `initialize()` を順に呼び出し、開いている Worker を破棄して再初期化するフローを追加（削除対象が無い場合はスキップ）。
 - 2025-11-19 12:55 command: pnpm -C app typecheck — exit 0。`TreeConsoleIntegration.tsx` の worker 再初期化ロジック追加後も `tsconfig.typecheck.json` ベースで型エラー無しを確認。

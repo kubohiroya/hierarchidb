@@ -53,7 +53,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts src/services/database/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/worker/spreadsheetEntitiesDB.ts src/worker/spreadsheetPeerStore.dexie.ts src/worker/spreadsheetGroupStore.dexie.ts src/worker/spreadsheetRelationStore.dexie.ts src/icon/index.ts --config ../../tsdown.config.ts",
+    "build": "tsdown src/index.ts src/services/database/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/worker/spreadsheetEntitiesDB.ts src/worker/spreadsheetGroupStore.dexie.ts src/worker/spreadsheetRelationStore.dexie.ts src/icon/index.ts --config ../../tsdown.config.ts",
     "test": "vitest",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",

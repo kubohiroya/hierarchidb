@@ -85,7 +85,13 @@ export type {
 } from './tag-entity-types.js';
 export * from './tree-node-event-types.js';
 export * from './tree-node-lifecycle-hooks.js';
-export type { NodeBase, TreeNode, TreeNodeWithChildren } from './tree-node-types.js';
+export type {
+  NodeBase,
+  TreeNode,
+  TreeNodeWithChildren,
+  NodePayloadBase,
+  NodePayload,
+} from './tree-node-types.js';
 export { NODE_TYPES } from './tree-node-types.js';
 export * from './tree-root-node-types.js';
 export type { TreeRootState } from './tree-root-state-types.js';

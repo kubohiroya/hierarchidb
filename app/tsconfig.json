@@ -33,9 +33,6 @@
       "@hierarchidb/basemap-plugin/*": [
         "../plugins/basemap-plugin/src/*"
       ],
-      "@hierarchidb/basemap-plugin/worker-database": [
-        "../plugins/basemap-plugin/src/worker/database/index.ts"
-      ],
       "@hierarchidb/components": [
         "../packages/components/src/index.ts"
       ],

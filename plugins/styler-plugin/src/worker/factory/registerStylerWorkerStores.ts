@@ -1,8 +1,14 @@
 /// <reference types="vite/client" />
 
-const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
+import { createNodePayloadPeerStore } from '@hierarchidb/runtime-worker';
+import type { PeerStore } from '@hierarchidb/runtime-worker';
+import type { StylerPeerData } from '../../common/types/stylerTypes.js';
 
-type PeerStore = unknown;
+const normalizeStylerPeerData = (data?: StylerPeerData | null): StylerPeerData => ({
+  schemaVersion: 1,
+  lastAppliedConfig: data?.lastAppliedConfig,
+  metadata: data?.metadata ?? {},
+});
 
 type StoreRegistry = {
   getPeer(nodeType: string): PeerStore | undefined;
@@ -32,20 +38,20 @@ async function resolveStoreRegistry(
 }
 
 async function ensureStylerStores(registry: StoreRegistry): Promise<void> {
-  const { StylerEntitiesDB } = await import('../stylerEntitiesDB.js');
-  const db = new StylerEntitiesDB();
-  await db.open?.();
-
   if (!registry.getPeer('styler')) {
-    const { createStylerPeerStoreDexie } = await import('../stylerPeerStore.dexie.js');
-    registry.registerPeer('styler', createStylerPeerStoreDexie(db));
+    registry.registerPeer(
+      'styler',
+      createNodePayloadPeerStore({
+        normalize: (data) => normalizeStylerPeerData(data ?? undefined),
+      })
+    );
   }
 }
 
 export async function registerStylerWorkerStores(
   options: RegisterStylerWorkerStoresOptions = {}
 ): Promise<void> {
-  if (!hasIndexedDB || options.signal?.aborted) {
+  if (options.signal?.aborted) {
     return;
   }
 
@@ -64,7 +70,7 @@ export async function registerStylerWorkerStores(
 }
 
 export async function loadStylerEntitiesDbModule() {
-  return import('../stylerEntitiesDB.js');
+  return undefined;
 }
 
 registerStylerWorkerStores().catch(() => {});

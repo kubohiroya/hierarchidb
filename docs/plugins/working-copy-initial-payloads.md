@@ -1,16 +1,13 @@
-# PeerEntity Working Copy Defaults
+# TreeNode Payload / Working Copy Defaults
 
-本ドキュメントでは、ツリーノードを新規作成する際に各プラグインの PeerEntity（ワーキングコピー／ドラフト）がどのような初期値で生成されるかを JSON 形式で整理する。記述している値はリポジトリ内の実装値をそのまま反映しており、タイムスタンプなどの実行時に決定する値はコメントで補足した。
+本ドキュメントは、各プラグインの `TreeNode.payload` とワーキングコピー (`TreeNode.draft`) がどのような初期状態で生成されるかを整理する。2025-11 以降、PeerEntity は Dexie `peerEntities` テーブルではなく `TreeNode<TPayload>` に直接保存されるようになり、各プラグインは `createNodePayloadPeerStore()` で正規化ロジックを登録する。ここでは主に「payload 正規化の結果」と「ワーキングコピーや UI が用意する初期値」を JSON 風スニペットで記載する。
 
-Working Copy と PeerStore の初期化は `@hierarchidb/base-plugin` が提供する `createDraftWorkingCopyBase`／`createPeerStoreNormalizer` で段階的に統一する方針であり、今後はここに記載した既定値をそれらのヘルパーへ実装していく予定である。
-
-> 最終更新: 2025-10-05
+> 最終更新: 2025-11-19
 
 ## folder (`nodeType: "folder"`)
 
-PeerStore には `normalizeFolderPeerData` が適用され、未設定時は以下のデータが書き込まれる。
-
-参照: `packages/plugins/folder-plugin/src/worker/folderPeerStore.ts`
+### Payload 正規化
+参照: `plugins/folder-plugin/src/common/types/types.ts`
 
 ```json
 {
@@ -19,142 +16,90 @@ PeerStore には `normalizeFolderPeerData` が適用され、未設定時は以�
 }
 ```
 
-フォルダは PeerEntity 側で追加メタデータを持たないため、ワーキングコピー作成時に特別な初期化ロジックは存在しない（TreeNode 側の draft ノードに名称や holder 情報が埋め込まれるのみ）。
+`normalizeFolderPeerData()` が空オブジェクトを許容し、TreeNode.payload には常に `schemaVersion` が入る。Folder は UI 表示系の値（name/description 等）を TreeNode 自身が持つため payload は極小のまま維持する。
+
+### Working Copy
+ワーキングコピーの生成（createWorkingCopy）は runtime-worker 側の共通ロジックが担い、Folder 固有の追加フィールドはない。基本情報フォームは UI 側の state で管理され、TreeNode.draft に name/description が書き戻されるのみである。
 
 ## basemap (`nodeType: "basemap"`)
 
-### PeerStore 初期値
-
-参照: `packages/plugins/basemap-plugin/src/worker/basemapPeerStore.dexie.ts`
+### Payload 正規化
+参照: `plugins/basemap-plugin/src/worker/factory/registerBasemapWorkerStores.ts` / `src/worker/utils/presentation.ts`
 
 ```json
 {
   "schemaVersion": 1,
-  "presentation": null,
-  "metadata": {}
+  "presentation": {
+    "style": { "style": "streets" | "satellite" | "terrain" | "dark" | "light" | "custom" },
+    "viewport": {
+      "center": [<lng>, <lat>],
+      "zoom": <number>,
+      "bearing": <number>,
+      "pitch": <number>
+    }
+  }
 }
 ```
 
-### Working Copy ドラフト
+`normalizeBasemapPeerData()` は mapStyle / viewport を `presentation` にまとめ、TreeNode.payload と TreeNode.draft で同じ構造を共有する。UI が `presentation` を書き換えると、`createNodePayloadPeerStore()` が normalize → CoreDB 更新を行う。
 
-参照: `packages/plugins/basemap-plugin/src/handlers/BaseMapEntityHandler.ts`
+### Viewport / Map Style 既定値
+参照: `plugins/basemap-plugin/src/ui/components/steps/ViewportStep.tsx`
 
-```json
-{
-  "name": "New BaseMap",
-  "description": "",
-  "settings": {
-    "allowNestedFolders": true,
-    "maxDepth": 10,
-    "sortOrder": "name"
-  },
-  "mapStyle": {
-    "style": "streets"
-  },
-  "viewport": {
-    "center": [0, 0],
-    "zoom": 2,
-    "bearing": 0,
-    "pitch": 0
-  },
-  "displayOptions": {
-    "show3dBuildings": false,
-    "showTraffic": false,
-    "showTransit": false,
-    "showTerrain": false,
-    "showLabels": true
-  },
-  "tags": []
-}
-```
+1. `LOCAL_STORAGE_KEY = 'zxy'` の JSON (`{ longitude, latitude, zoom }`) が存在すればそれを初期値に採用し、`TreeNode.draft.viewport` を設定する。
+2. 保存済みデフォルトが無い場合は Geolocation API を要求し、許可されれば `accuracy` から算出した zoom と現在地を反映し `localStorage` にも書き込む。
+3. Geolocation が拒否・失敗した場合は `[0, 0] / zoom 2` をフォールバックとして適用する。
+4. MapLibreMap の view state 変更時には `persistViewportDefaults()` が `localStorage` を更新し、次回の create/edit ダイアログで即座に利用される。
+5. Edit モードでは `useBaseMapEntity()` が TreeNode.payload から `viewport` を読み出し、Step3 が空の場合のみ初期化に使用する。
 
-`createdAt` / `updatedAt` などのタイムスタンプ、および holder 情報は実行時に付与される。`mapStyle` や `displayOptions` は `normalizeMapStyle` / `resolveDisplayOptions` の既定値（`streets` スタイル）から生成される。
+Map style の既定は `{ style: 'streets' }`。Basic Info ステップで name/description を編集すると `TreeNode.draft` に書き戻され、Save 時に TreeNode.payload へ commit される。
 
 ## location (`nodeType: "location"`)
 
-### PeerStore 初期値
-
-参照: `packages/plugins/location-plugin/src/worker/normalizers.ts`
+### Payload 正規化
+参照: `plugins/location-plugin/src/worker/normalizers.ts`
 
 ```json
 {
   "schemaVersion": 1,
-  "lastProgress": null,
-  "lastError": null,
-  "metadata": {}
-}
-```
-
-### Working Copy ドラフト
-
-参照: `packages/plugins/location-plugin/src/entities/LocationEntityHandler.ts`
-
-```json
-{
-  "name": "",
-  "category": "infrastructure",
-  "type": "airport",
-  "dataSource": "openstreetmap",
-  "point": {
-    "coordinates": [0, 0],
-    "source": "manual",
-    "timestamp": "<now>"
+  "lastProgress": {
+    "stage": "<string>",
+    "completed": <number?>,
+    "total": <number?>,
+    "updatedAt": <timestamp?>
   },
-  "licenseAgreement": false,
-  "selectedCountries": [],
-  "selectedTypes": [],
-  "checkboxState": {},
-  "searchRadius": 1000,
-  "maxResults": 100,
-  "metadata": {},
-  "customFields": {},
-  "childLocationIds": [],
-  "nearbyLocationIds": [],
-  "searchKeywords": []
+  "lastError": {
+    "message": "<string>",
+    "code": "<string?>"
+  },
+  "metadata": { /* arbitrary */ }
 }
 ```
 
-`copiedAt` / `createdAt` / `updatedAt` / `treeNodeId` などの識別子系プロパティは実行時に付与される。地理的情報と UI 用の初期値を包括的にセットするのが特徴。
+`normalizePeerData()` は過去の dialogWindow/dialogProgress 互換も含めて TreeNode.payload に格納する。Group/Relation は引き続き Dexie テーブルを使用するため、payload にはロングランタスクの進捗と UI ステートのみを残す。
+
+### Working Copy
+`LocationEntityHandler`（`plugins/location-plugin/src/common/entities/LocationEntityHandler.ts`）が `WorkingCopyDraft` を合成し、カテゴリ・データソースなどの初期値を埋める。UI 側は StepCapabilities を参照して stepper 遷移可否を制御する。
 
 ## shape (`nodeType: "shape"`)
 
-### PeerStore 初期値
-
-参照: `packages/plugins/shape-plugin/src/worker/shapePeerStore.dexie.ts`
+### Payload 正規化
+参照: `plugins/shape-plugin/src/worker/factory/registerShapeWorkerStores.ts`
 
 ```json
 {
   "schemaVersion": 1,
-  "lastProcessedTile": null,
+  "lastProcessedTile": "<tileId?>",
   "metadata": {}
 }
 ```
 
-### Working Copy ドラフト
-
-参照: `packages/plugins/shape-plugin/src/worker/handlers/ShapeEntityHandler.ts`
-
-```json
-{
-  "name": "",
-  "dataSourceName": "naturalearth",
-  "licenseAgreement": false,
-  "processingConfig": "<DEFAULT_PROCESSING_CONFIG>",
-  "checkboxState": "",
-  "selectedCountries": [],
-  "adminLevels": [],
-  "urlMetadata": [],
-  "isDraft": true
-}
-```
-
-`DEFAULT_PROCESSING_CONFIG` は形状生成に利用するエンジン設定の定数で、リゾルバや再投影のデフォルトが含まれる。ID 系フィールド（`id`, `nodeId`, `parentId` 等）は作成時に割り当てられる。
+Tile 進捗（`lastProcessedTile`）は UI の再開ポイントに利用される。Group/Relation は Dexie ストアに残り、payload にはジョブ状態のみを保存する。
 
 ## spreadsheet (`nodeType: "spreadsheet"`)
 
-PeerStore の正規化のみが定義されており、ワーキングコピー専用のドラフト初期化はまだ実装されていない。新規ノード作成時は以下のデータが保存される。
-
-参照: `packages/plugins/spreadsheet-plugin/src/worker/spreadsheetPeerStore.dexie.ts`
+### Payload 正規化
+参照: `plugins/spreadsheet-plugin/src/worker/factory/registerSpreadsheetWorkerStores.ts`
 
 ```json
 {
@@ -164,11 +109,12 @@ PeerStore の正規化のみが定義されており、ワーキングコピー�
 }
 ```
 
+UI で最後に表示したシート ID を payload に保持し、Edit 再開時のフォーカスに利用する。Table データそのものは Dexie group store で管理される。
+
 ## route (`nodeType: "route"`)
 
-PeerStore はルート計算の再実行メタを保持するだけで、ドラフト組み立ては UI 側で行われる。
-
-参照: `packages/plugins/route-plugin/src/worker/routePeerStore.dexie.ts`
+### Payload 正規化
+参照: `plugins/route-plugin/src/worker/factory/registerRouteWorkerStores.ts`
 
 ```json
 {
@@ -178,11 +124,12 @@ PeerStore はルート計算の再実行メタを保持するだけで、ドラ�
 }
 ```
 
+Route のバッチ実行時刻のみ payload に保存し、UI の進捗表示や Resume 操作で利用する。
+
 ## resolver (`nodeType: "resolver"`)
 
-Resolver プラグインは既存エンティティのコピーとしてワーキングコピーを生成する（新規ドラフトをゼロから組み立てる API は未実装）。PeerStore は以下の既定で初期化される。
-
-参照: `packages/plugins/resolver-plugin/src/worker/resolverPeerStore.dexie.ts`
+### Payload 正規化
+参照: `plugins/resolver-plugin/src/worker/factory/registerResolverWorkerStores.ts`
 
 ```json
 {
@@ -192,54 +139,25 @@ Resolver プラグインは既存エンティティのコピーとしてワー�
 }
 ```
 
+Resolver は TreeNode.payload に最後の実行時刻を保持し、UI で「最終再解決」時刻を表示する。Group/Relation は引き続き Dexie ベース。
+
 ## styler (`nodeType: "styler"`)
 
-参照: `packages/plugins/styler-plugin/src/worker/stylerPeerStore.dexie.ts`
+### Payload 正規化
+参照: `plugins/styler-plugin/src/worker/factory/registerStylerWorkerStores.ts`
 
 ```json
 {
   "schemaVersion": 1,
-  "lastAppliedConfig": null,
+  "lastAppliedConfig": {
+    /* StylerConfig */
+  },
   "metadata": {}
 }
 ```
 
-## timeline (`nodeType: "timeline"`)
+`normalizeStylerPeerData()` は最後に適用したスタイル設定（`StylerConfig`）と任意の metadata を TreeNode.payload に保持する。UI は payload を直接読んでフォームへ反映し、保存時は `createNodePayloadPeerStore()` を経由して CoreDB へ更新する。
 
-タイムラインプラグインは PeerStore のみ定義されており、ドラフト生成ロジックは未整備。PeerStore の保存形式は次の通りで、実際の初期値は呼び出し側が指定する必要がある。
+---
 
-参照: `packages/plugins/timeline-plugin/src/worker/timelinePeerStore.dexie.ts`
-
-PeerStore には `flamePerSecond` と `restartIntervalInMsec` の 2 つの数値が必須で、デフォルト値は実装されていない。新規作成時は呼び出し側で明示的に値を指定する必要がある（例として `0` を指定するのが一般的）。
-
-## その他のプラグイン
-
-- `linker-plugin` や `route-engine-registry` などの補助プラグインは PeerStore を持たず、Working Copy ドラフトを Worker で直接扱う実装はまだ存在しない。
-- フォルダ以外の `TreeNode` 基本情報（`holderType`, `holderTargetId` など）は `packages/runtime/worker/src/services/WorkingCopyTreeNodeOperations.ts` の `createNewDraftWorkingCopy` で一括生成される。
-
-## まとめ表
-
-| nodeType | PeerStore デフォルト | ドラフト初期化の有無 |
-|:---------|:---------------------|:---------------------|
-| `folder` | `{ "schemaVersion": 1, "domain": {} }` | TreeNode 側のみ |
-| `basemap` | `{ "schemaVersion": 1, "presentation": null, "metadata": {} }` | あり（`new BaseMap` テンプレート） |
-| `location` | `{ "schemaVersion": 1, "lastProgress": null, "lastError": null, "metadata": {} }` | あり（地理情報のデフォルト） |
-| `shape` | `{ "schemaVersion": 1, "lastProcessedTile": null, "metadata": {} }` | あり（Natural Earth プリセット） |
-| `spreadsheet` | `{ "schemaVersion": 1, "lastViewedSheet": null, "metadata": {} }` | なし（UI で補完） |
-| `route` | `{ "schemaVersion": 1, "lastComputedAt": null, "metadata": {} }` | なし（UI で補完） |
-| `resolver` | `{ "schemaVersion": 1, "lastExecutedAt": null, "metadata": {} }` | 既存エンティティのコピーのみ |
-| `styler` | `{ "schemaVersion": 1, "lastAppliedConfig": null, "metadata": {} }` | なし（UI で補完） |
-| `timeline` | `{ "flamePerSecond": 0, "restartIntervalInMsec": 0 }` | なし（呼び出し側で指定） |
-
-上記を基に、ツリーノード作成時に UI / Worker どちらで初期値を埋めるべきかを判断できる。新規プラグインを追加する際は同様の `normalizeFooPeerData`・`createNewDraftWorkingCopy` を用意し、PeerStore/Working Copy 双方でスキーマが欠けないようにすることが推奨される。
-
-## ベースラインガイドライン
-
-- **必須フィールド**: Working Copy は `treeNodeId` / `schemaVersion` / `createdAt` / `updatedAt` / `isDraft` を必ず保持する。Plugin 固有フィールドは draft ペイロードに集約し、トップレベルには UI/既存コード互換のコピーを残す。
-- **ユーティリティ活用**: ドラフト生成は `createDraftWorkingCopyBase` を利用し、必要な更新は `markWorkingCopyUpdated` で反映する。PeerStore 正規化は `createPeerStoreNormalizer` を介して行う。
-- **メソッド命名規約**: `createWorkingCopy` / `commitWorkingCopy` / `discardWorkingCopy` / `updateWorkingCopy` を提供し、Working Copy service から呼ばれることを前提にする。PeerStore は `create<Plugin>PeerStoreDexie` の形式で登録する。
-- **PR チェックリスト**: プラグイン改修時は以下を確認する。
-  1. Working Copy が `WorkingCopyBase` を `extends` しているか。
-  2. Peer データが `PeerDataBase` を `extends` しており、`schemaVersion` の更新手順が記載されているか。
-  3. ドラフト初期化ロジックが共通ヘルパーを利用しているか。
-  4. 本ドキュメントの表に該当プラグインの既定値が追記/更新されているか。
+今後プラグインを追加する際は、(1) `createNodePayloadPeerStore()` の normalize で `schemaVersion` を含めた payload を定義し、(2) UI/Worker の初期値がどこで決まるか（localStorage, geolocation, server defaults 等）を本ドキュメントへ追記すること。

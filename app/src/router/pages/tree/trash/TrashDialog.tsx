@@ -619,7 +619,7 @@ function TrashDialogContent({
         subtreeRootId={trashViewRootId ? String(trashViewRootId) : undefined}
         data={filteredTreeData}
         nodeIndex={nodeIndex}
-          columns={columns}
+          columnsDeprecated={columns}
           breadcrumbItems={breadcrumbItems}
           loading={false}
           selectedIds={selectedIds.map(String)}
@@ -813,6 +813,28 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
     const fallbackParent = (trashViewRootId ??
       (data.trashRootNode?.id as NodeId | undefined) ??
       'trash-root') as NodeId;
+    const decorateForIndex = (node: TreeNodeData): TreeNode => {
+      const source = nodeMap.get(String(node.id)) ?? (node as unknown as TreeNode);
+      const fromTreeData = node as { originalName?: string; originalParentId?: NodeId };
+      const decorated: TreeNode = {
+        ...source,
+        name: getTrashDisplayName(node),
+        originalName:
+          fromTreeData.originalName ??
+          (source as { originalName?: string | undefined }).originalName,
+        originalParentId:
+          fromTreeData.originalParentId ??
+          (source as { originalParentId?: NodeId | undefined }).originalParentId,
+        holderType: 'trash',
+        holderTargetId:
+          (source as { holderTargetId?: NodeId | undefined }).holderTargetId ??
+          (node.id as NodeId),
+        holderMetaParentId:
+          (source as { holderMetaParentId?: NodeId | undefined }).holderMetaParentId ??
+          fromTreeData.originalParentId,
+      };
+      return decorated;
+    };
 
     if (trashViewRootId) {
       const branchNode = nodeMap.get(String(trashViewRootId)) ?? data.trashRootNode;
@@ -824,9 +846,9 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
 
     treeData.forEach((node) => {
       const primary = node.id as NodeId;
-      const sourceNode = nodeMap.get(String(node.id)) ?? (node as unknown as TreeNode);
       const parent = (node.parentId ?? fallbackParent) as NodeId;
-      index.set(primary, sourceNode, parent);
+      const decoratedNode = decorateForIndex(node);
+      index.set(primary, decoratedNode, parent);
     });
     return index;
   }, [data.trashRootNode, nodeMap, trashViewRootId, treeData]);

@@ -235,8 +235,9 @@ describe('WFL command processor undo/redo flow', () => {
     expect(undoRestore.success).toBe(true);
     const nodeAfterUndoRestore = (await queryAPI.getNode(nodeId)) as TreeNode | undefined;
     expect(nodeAfterUndoRestore?.holderType).toBe('trash');
-    expect(nodeAfterUndoRestore?.name).toBe('UndoRedo Headless Renamed');
     expect(nodeAfterUndoRestore?.originalName).toBe('UndoRedo Headless Renamed');
+    expect(typeof nodeAfterUndoRestore?.name).toBe('string');
+    expect(nodeAfterUndoRestore?.name).not.toBe(nodeAfterUndoRestore?.originalName);
     expect(nodeAfterUndoRestore?.originalParentId).toBe(rootId);
     expect(nodeAfterUndoRestore?.parentId).toBe(trashRootId);
 
@@ -272,8 +273,9 @@ describe('WFL command processor undo/redo flow', () => {
     expect(redoMoveToTrash.success).toBe(true);
     const nodeAfterRedoTrash = (await queryAPI.getNode(nodeId)) as TreeNode | undefined;
     expect(nodeAfterRedoTrash?.holderType).toBe('trash');
-    expect(nodeAfterRedoTrash?.name).toBe('UndoRedo Headless Renamed');
     expect(nodeAfterRedoTrash?.originalName).toBe('UndoRedo Headless Renamed');
+    expect(typeof nodeAfterRedoTrash?.name).toBe('string');
+    expect(nodeAfterRedoTrash?.name).not.toBe(nodeAfterRedoTrash?.originalName);
     expect(nodeAfterRedoTrash?.originalParentId).toBe(rootId);
     expect(nodeAfterRedoTrash?.parentId).toBe(trashRootId);
 

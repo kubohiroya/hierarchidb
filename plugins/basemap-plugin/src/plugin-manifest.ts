@@ -54,16 +54,8 @@ export const PLUGIN_MANIFEST: PluginManifest = {
       },
     ],
   },
-  database: {
-    prewarm: [
-      {
-        specifier: '@hierarchidb/basemap-plugin/worker-database',
-        export: 'BasemapEntitiesDB',
-      },
-    ],
-  },
   worker: {
-    preload: ['registerBasemapWorkerStores', 'loadBasemapEntitiesDbModule'],
+    preload: ['registerBasemapWorkerStores'],
   },
 };
 

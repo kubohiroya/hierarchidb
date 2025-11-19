@@ -1,8 +1,19 @@
 /// <reference types="vite/client" />
-import type {PeerStore} from '@hierarchidb/runtime-worker';
+import type { PeerStore } from '@hierarchidb/runtime-worker';
+import { createNodePayloadPeerStore } from '@hierarchidb/runtime-worker';
 
-const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
+type TimelinePeerData = {
+  schemaVersion: 1;
+  flamePerSecond: number;
+  restartIntervalInMsec: number;
+};
 
+const normalizeTimelinePeerData = (data?: TimelinePeerData | null): TimelinePeerData => ({
+  schemaVersion: 1,
+  flamePerSecond: typeof data?.flamePerSecond === 'number' ? data.flamePerSecond : 0,
+  restartIntervalInMsec:
+    typeof data?.restartIntervalInMsec === 'number' ? data.restartIntervalInMsec : 0,
+});
 
 type StoreRegistry = {
   getPeer<T = unknown>(nodeType: string): PeerStore<T> | undefined;
@@ -31,18 +42,18 @@ async function resolveStoreRegistry(options: RegisterTimelineWorkerStoresOptions
 }
 
 async function ensureTimelineStores(registry: StoreRegistry): Promise<void> {
-  const { TimelineEntitiesDB } = await import('../timelineEntitiesDB.js');
-  const db = new TimelineEntitiesDB();
-  await db.open?.();
-
   if (!registry.getPeer('timeline')) {
-    const { createTimelinePeerStoreDexie } = await import('../timelinePeerStore.dexie.js');
-    registry.registerPeer('timeline', createTimelinePeerStoreDexie(db));
+    registry.registerPeer(
+      'timeline',
+      createNodePayloadPeerStore<TimelinePeerData>({
+        normalize: (data) => normalizeTimelinePeerData(data ?? undefined),
+      })
+    );
   }
 }
 
 export async function registerTimelineWorkerStores(options: RegisterTimelineWorkerStoresOptions = {}): Promise<void> {
-  if (!hasIndexedDB || options.signal?.aborted) {
+  if (options.signal?.aborted) {
     return;
   }
 
@@ -61,7 +72,7 @@ export async function registerTimelineWorkerStores(options: RegisterTimelineWork
 }
 
 export async function loadTimelineEntitiesDbModule() {
-  return import('../timelineEntitiesDB.js');
+  return undefined;
 }
 
 // Maintain legacy side-effect registration for existing consumers

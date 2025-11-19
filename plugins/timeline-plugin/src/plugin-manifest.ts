@@ -29,7 +29,7 @@ export const PLUGIN_MANIFEST: PluginManifest = {
     createOrder: 20,
   },
   worker: {
-    preload: ['registerTimelineWorkerStores', 'loadTimelineEntitiesDbModule'],
+    preload: ['registerTimelineWorkerStores'],
   },
 };
 

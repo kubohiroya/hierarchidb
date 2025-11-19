@@ -2,6 +2,7 @@ import type { ListChildrenOptions } from '@hierarchidb/common-api';
 import type {
   NodeId,
   NodeTagAssociation,
+  NodePayload,
   NodeType,
   TagEntity,
   Tree,
@@ -18,7 +19,7 @@ import type { FulltextIndexRecord, FulltextNodeRecord } from './fulltext-types.j
 
 export class CoreDB extends Dexie {
   trees!: Table<Tree, TreeId>;
-  nodes!: Table<TreeNode, NodeId>;
+  nodes!: Table<TreeNode<NodePayload>, NodeId>;
   rootStates!: Table<TreeRootState, NodeId>;
   tags!: Table<TagEntity, TagEntity['id']>;
   tagAssociations!: Table<NodeTagAssociation, [NodeId, TagEntity['id']]>;
@@ -320,6 +321,10 @@ export class CoreDB extends Dexie {
         ...('removedAt' in node && node.removedAt !== undefined
           ? { removedAt: node.removedAt }
           : {}),
+        ...('payload' in node && node.payload !== undefined
+          ? { payload: node.payload }
+          : {}),
+        ...('draft' in node && node.draft !== undefined ? { draft: node.draft } : {}),
       };
       return plainNode;
     }

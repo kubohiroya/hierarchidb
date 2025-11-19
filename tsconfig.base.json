@@ -25,9 +25,6 @@
       "@hierarchidb/basemap-plugin/worker": [
         "plugins/basemap-plugin/src/worker/index.ts"
       ],
-      "@hierarchidb/basemap-plugin/worker-database": [
-        "plugins/basemap-plugin/src/worker/database/index.ts"
-      ],
       "@hierarchidb/basemap-plugin/*": [
         "plugins/basemap-plugin/src/*"
       ],

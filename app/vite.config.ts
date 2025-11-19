@@ -259,7 +259,6 @@ function createRuntimeAliasConfig({
         if (workerDbRel) {
           addAlias(`${specBase}/worker/database`, workerDbRel, { exclude: true });
           addAlias(`${specBase}/database`, workerDbRel, { exclude: true });
-          addAlias(`${specBase}/worker-database`, workerDbRel, { exclude: true });
         }
 
         const uiRel = resolvePluginCandidate(uiCandidates, pluginName);
@@ -352,12 +351,10 @@ function createRuntimeAliasConfig({
         const databaseDistRel = databaseDistCandidates.find((candidate) => fs.existsSync(path.resolve(rootDir, candidate)));
         if (databaseDistRel) {
           addAlias(`${specBase}/database`, databaseDistRel);
-          addAlias(`${specBase}/worker-database`, databaseDistRel);
         } else {
           const databaseSrcRel = resolvePluginCandidate(databaseCandidates, pluginName);
           if (databaseSrcRel) {
             addAlias(`${specBase}/database`, databaseSrcRel, { exclude: true });
-            addAlias(`${specBase}/worker-database`, databaseSrcRel, { exclude: true });
           }
         }
       }

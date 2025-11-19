@@ -1,177 +1,85 @@
-# Plugin Entity Lifecycle Guide (A-Plan)
+# Plugin Entity Lifecycle Guide (NodePayload Edition)
 
-This guide explains how plugin authors should persist Peer entities using the A‑plan:
+このガイドは、TreeNode に統合された Peer payload/draft をプラグイン側でどのように扱うかを説明する。2025-11 以降、PeerEntity は Dexie の `peerEntities` テーブルではなく `TreeNode<TPayload>` に直接格納され、runtime-worker が提供する `createNodePayloadPeerStore()` を通じてアクセスする。
 
-- Each plugin owns a dedicated Dexie DB (e.g. `<plugin>-entities`).
-- Table names are common across plugins (e.g. `peerEntities`).
-- The runtime worker resolves the proper store via `storeRegistry` using `nodeType`.
-- Command lifecycle (commit/paste/import/duplicate) notifies stores behind a feature flag.
+## 基本ポリシー
 
-## 1) Define a Dexie DB for your plugin
+- **TreeNode<TPayload>**: `TreeNode` が `payload`（canonical）と `draft`（working copy）を持つ。payload/draft は `NodePayloadEnvelope<T>` として保存され、UI/Worker 双方が共通の構造を参照する。
+- **PeerStore 登録**: プラグインは Worker 初期化時に `createNodePayloadPeerStore()` で正規化関数を登録する。`storeRegistry.registerPeer(nodeType, createNodePayloadPeerStore({ normalize }))` が唯一の導線。
+- **Group/Relation**: 1:N / N:N データが必要な場合のみ Dexie テーブルを維持する。Peer データは TreeNode に集約する。
+- **Lifecycle Hooks**: runtime-worker は createWorkingCopy / commitWorkingCopy / duplicate / paste / import 等のコマンドで `storeRegistry` に登録された PeerStore を呼び出し、payload/draft を自動的にコピー／削除する。プラグイン側で追加の Dexie 操作を行う必要はない。
 
-```ts
-import Dexie, { Table } from 'dexie';
-import type { NodeId } from '@hierarchidb/common-type';
+## 実装ステップ
 
-export interface MyPeerEntity {
-  nodeId: NodeId;
-  data: unknown; // your domain data
-  updatedAt: number;
-}
-
-export class MyPluginDB extends Dexie {
-  peerEntities!: Table<MyPeerEntity, NodeId>;
-
-  constructor() {
-    super('myplugin-entities');
-    this.version(1).stores({
-      peerEntities: '&nodeId, updatedAt',
-    });
-  }
-}
-```
-
-## 2) Implement a PeerStore
+### 1) payload 型と normalizer を定義
 
 ```ts
-import type { NodeId } from '@hierarchidb/common-type';
-import type { PeerStore, PeerEntity } from '@hierarchidb/runtime-worker/entity/store';
-
-export function createPeerStore(db: MyPluginDB): PeerStore<any> {
-  return {
-    async get(id: NodeId) {
-      return db.peerEntities.get(id) as any;
-    },
-    async put(e: PeerEntity) {
-      await db.peerEntities.put(e as any);
-    },
-    async delete(id: NodeId) {
-      await db.peerEntities.delete(id);
-    },
-    async bulkUpsert(entities: PeerEntity[]) {
-      await db.peerEntities.bulkPut(entities as any);
-    },
-  };
+// plugins/foo-plugin/src/common/types/FooPeerData.ts
+export interface FooPeerData {
+  schemaVersion: 1;
+  settings?: { theme?: 'light' | 'dark' };
+  metadata?: Record<string, unknown>;
 }
-```
 
-`bulkUpsert` is optional but recommended for performance on large duplicate/import operations.
-
-## 3) Register the store
-
-Register your `PeerStore` for the plugin's `nodeType` during plugin initialization (Worker side):
-
-```ts
-import { storeRegistry } from '@hierarchidb/runtime-worker/entity/store-registry';
-
-export function registerStores(db: MyPluginDB) {
-  storeRegistry.registerPeer('my-node-type', createPeerStore(db));
-}
-```
-
-## 4) Runtime behavior
-
-- The worker runtime performs the following entity operations:
-  - On commit (WC→target): upsert Peer to target and delete WC Peer.
-  - On paste/import/duplicate: copy Peer according to the old→new NodeId mapping.
-  - If your store exposes `bulkUpsert`, it will be used automatically for efficiency.
-
-## 5) Notes
-
-- Transactions: Command boundary transactions apply to CoreDB only. Plugin DB writes are best‑effort and should be idempotent.
-- Idempotency: Ensure repeated `put/bulkPut` calls are safe; include `updatedAt`.
-- Versioning/Migrations: Manage your plugin DB schema versions independently of CoreDB.
-
-## 6) Performance: bulk/chunk patterns
-
-- Prefer `bulkUpsert` for Peer/Group/Relations to minimize round‑trips.
-- The runtime will detect `store.bulkUpsert` and pass an array of entities; otherwise it falls back to sequential `put` calls.
-- For Group/Relations, implement `bulkUpsert` in your plugin stores to handle hundreds/thousands of entities per call. If needed, chunk inside your store by 1× `PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE`.
-- Example (Dexie):
-
-```ts
-async function bulkUpsert(entities: PeerEntity[]) {
-  await db.peerEntities.bulkPut(entities as any);
-}
-```
-
-Tip: Keep entities small and avoid denormalized UI fields (name/description) — those live on TreeNode.
-
-## 7) Group/Relations store implementations
-
-Beyond Peer, plugins may persist Group (1:N items per node) and Relations (N:N between nodes). Implement the following minimal stores:
-
-### GroupStore<TItem>
-
-```ts
-import type { NodeId } from '@hierarchidb/common-type';
-import type { GroupStore, GroupItemBase } from '@hierarchidb/runtime-worker/entity/store';
-
-type MyItem = GroupItemBase<{ value?: unknown }>;
-
-export function createGroupStore(db: MyPluginDB): GroupStore<MyItem> {
-  return {
-    async list(nodeId: NodeId) {
-      return db.groupEntities.where('nodeId').equals(nodeId).toArray() as any;
-    },
-    async bulkUpsert(nodeId: NodeId, items: MyItem[]) {
-      const rows = items.map((it) => ({ ...it, nodeId }));
-      await db.groupEntities.bulkPut(rows as any);
-    },
-    async bulkDelete(nodeId: NodeId, itemIds: string[]) {
-      // composite key [nodeId+id] recommended; delete by range or map
-      for (const id of itemIds) await db.groupEntities.delete([nodeId, id] as any);
-    },
-  };
-}
-```
-
-### RelationStore<TRel>
-
-```ts
-import type { NodeId } from '@hierarchidb/common-type';
-import type { RelationStore, RelationBase } from '@hierarchidb/runtime-worker/entity/store';
-
-type MyRel = RelationBase<{ weight?: number }>;
-
-export function createRelationStore(db: MyPluginDB): RelationStore<MyRel> {
-  return {
-    async listByNode(nodeId: NodeId) {
-      return db.relations.where('srcNodeId').equals(nodeId).toArray() as any;
-    },
-    async bulkUpsert(rels: MyRel[]) {
-      await db.relations.bulkPut(rels as any);
-    },
-    async bulkDelete(rels: MyRel[]) {
-      // composite key &[srcNodeId+type+dstNodeId]
-      for (const r of rels) await db.relations.delete([r.srcNodeId, r.type, r.dstNodeId] as any);
-    },
-  };
-}
-```
-
-Runtime behavior: during duplicate/paste/import, the worker will:
-- Group: list(src) → bulkUpsert(dst, items)
-- Relations: listByNode(src) → rebind both ends via idMap → bulkUpsert(filtered)
-
-## 8) Schema versioning & migrations (Dexie)
-
-- Data types should embed `schemaVersion` in Peer payloads (e.g., `{ schemaVersion: 1, ... }`).
-- Dexie schema versioning: bump `.version(N).stores(...)` and define `.upgrade(tx => { ... })` for forward migrations.
-- Guidelines:
-  - Backfill defaults in `upgrade` (e.g., `updatedAt`, new fields in `data/meta`).
-  - Avoid destructive transforms; prefer additive changes and keep readers tolerant of missing fields.
-  - Keep upgrades idempotent; re‑running should not produce duplicates.
-  - Large migrations: chunk reads/writes inside `upgrade` and avoid long transactions when not needed.
-- Example (no‑op template):
-
-```ts
-this.version(2).upgrade(() => {
-  // Example: fill default values or rename properties
+export const normalizeFooPeerData = (data?: FooPeerData | null): FooPeerData => ({
+  schemaVersion: 1,
+  settings: data?.settings ?? { theme: 'light' },
+  metadata: data?.metadata ?? {},
 });
 ```
 
-Testing & rollout:
-- Unit: validate that older rows (schemaVersion=1) are readable under v2 and upgraded rows satisfy new invariants.
-- Staging: open Dexie DB on a copy and measure migration time; add metrics if needed.
-- Rollback: keep readers compatible; if upgrade fails, close DB and retry later.
+### 2) createNodePayloadPeerStore で登録
+
+```ts
+// plugins/foo-plugin/src/worker/factory/registerFooWorkerStores.ts
+import { createNodePayloadPeerStore } from '@hierarchidb/runtime-worker';
+import { normalizeFooPeerData } from '../../common/types/FooPeerData';
+
+export async function registerFooWorkerStores() {
+  const { storeRegistry } = await import('@hierarchidb/runtime-worker');
+  if (!storeRegistry.getPeer('foo')) {
+    storeRegistry.registerPeer(
+      'foo',
+      createNodePayloadPeerStore({
+        normalize: (data) => normalizeFooPeerData(data ?? undefined),
+      })
+    );
+  }
+}
+
+registerFooWorkerStores().catch(() => {});
+```
+
+`createNodePayloadPeerStore()` は内部で `CoreDB.getSingleton()` を用い、`TreeNode.payload` / `TreeNode.draft` を直接読み書きする。normalize 関数は undefined/null 入力を考慮して `schemaVersion` を必ず返すこと。
+
+### 3) UI / Worker からの利用
+
+- **Working Copy 更新**: `updateWorkingCopy` に payload/draft の diff を渡すだけで CoreDB が更新される。プラグイン側で Dexie へ書き込む必要はない。
+- **Dialog state**: `PeerEntity.dialogWindow/dialogProgress` は `createNodePayloadPeerStore()` が TreeNode の envelope に含める。UI から `peerDialogPersistence` を利用する場合でも、裏側は TreeNode payload を介して保存される。
+- **Lifecycle Hooks**: commit/discard/duplicate/paste/import は runtime-worker が `PeerEntityHandler` を通じて TreeNode payload をコピーする。`bulkUpsert` を実装することで大規模操作の効率を向上できる（大量ノードで `store.bulkUpsert()` が呼ばれる）。
+
+## CoreDB 側の動作
+
+- `createWorkingCopy` は対象ノードの payload を読み込み、`TreeNode.draft` として複製する。UI が Stepper で編集した値は `draft` へ記録される。
+- `commitWorkingCopy` は WC ノードの payload をターゲットノードへアップサートし、WC 側の payload/draft をクリアする。同時に `syncPeerDataFromNode()` が登録済み PeerStore を更新するため、UI で subscribe している場合でも常に最新状態を得られる。
+- `deletePeerEntitiesForNodes()` は `storeRegistry` の PeerStore を呼び出す（TreeNode payload を null にする）。Legacy override が登録されていない限り Dexie へは触れない。
+
+## Group / Relation を使う場合
+
+Peer payload 以外に 1:N / N:N データを保持する必要があるプラグイン（location/shape 等）は引き続き Dexie ベースの Group/Relation store を登録する。
+
+```ts
+registry.registerGroup('location', createLocationGroupStoreDexie(db));
+registry.registerRelations('location', createLocationRelationStoreDexie(db));
+```
+
+TreeNode payload とは別のテーブルを扱う際も、Peer payload の normalize は NodePayload に集約する点に注意。
+
+## 既知のベストプラクティス
+
+- **schemaVersion**: すべての payload に `schemaVersion` を含め、将来の migrate/gc を容易にする。
+- **Undefined クリア**: normalize は invalid 値を undefined/null へ落とし、UI が不要な diff を生成しないようにする。
+- **localStorage などの補助記憶**: Basemap の `zxy` のようにブラウザ局所に保持する値は payload には含めず、UI 側で fallback → payload commit の順に適用する。
+- **Testing**: PeerStore が NodePayload を返すため、unit test で `createNodePayloadPeerStore()` の normalize を直接呼び出すとミスを早期検知できる。
+
+Dexie ベースの手順は legacy として `docs/deprecated/` に移動済み。新規プラグインは本ガイドの NodePayload 流儀に従うこと。
