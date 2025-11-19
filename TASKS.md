@@ -8278,6 +8278,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-19 15:20 progress: fix/basemap/create-dialog-save — プラグイン側 BasicInfo ステップを撤去してホスト共通の BasicInfo に委譲し、Step1 の入力が 1 文字で止まる問題を解消する方針へ切り替え。`basemapStepConfigs.tsx` の default viewport を ViewportStep に合わせ 139.767/35.681/zoom10 に更新し、Step3 初期位置も統一。
 - 2025-11-19 15:33 command: pnpm --filter @hierarchidb/basemap-plugin exec tsc -p tsconfig.json --noEmit — exit 0。BasicInfo ステップ撤去後も typecheck グリーンを確認。
 - 2025-11-19 15:34 command: pnpm --filter @hierarchidb/basemap-plugin test — exit 0。`steps-provider.test.ts` を BasicInfo 依存から切り離し、デフォルト viewport 期待値(139.767/35.681/zoom10) を検証する 6 cases を通過。
+- 2025-11-19 16:40 progress: fix/basemap/create-dialog-save — Edit モードで Step2/Step3 が invalid のままになる件を解消するため、`basemapStepConfigs.tsx` の validate を「persisted mapStyle/viewport なら touched 不要」と判定するよう更新し、raw record から WorkingCopy を構築する際に `uiState` 初期値を persisted 値に応じて設定するよう修正。テスト（step provider 8 cases）を更新して edit シナリオ/デフォルト viewport を検証。
+- 2025-11-19 16:41 command: pnpm --filter @hierarchidb/basemap-plugin test — exit 0（13 tests）。Step2/Step3 の新 validate ケースを含む。
+- 2025-11-19 16:42 command: pnpm --filter @hierarchidb/basemap-plugin exec tsc -p tsconfig.json --noEmit — exit 0。
 - 2025-11-19 12:20 start: fix/app/indexeddb-reset-routing — 「このアプリが作成したIndexedDBを全削除」を実行した直後にトップページから `/t/r` へ遷移すると DatabaseClosedError が発生する事象の再現と原因調査を開始。DoD: IndexedDB 全削除手順のロギング、DatabaseClosedError の根本原因特定、再読み込み不要での UI 継続操作確認、検証ログとロールバック手順の記録。
 - 2025-11-19 12:45 progress: fix/app/indexeddb-reset-routing — DatabaseClosedError の原因が TreeConsole から IndexedDB 全削除後も `WorkerAPIClient` が同じ Dexie 接続を握り続け、`/t/r` 再訪時に閉じられた DB へアクセスし続けるためであることを特定。`clearAppIndexedDBs` 成功時に WorkerProvider の `reset()` → `initialize()` を順に呼び出し、開いている Worker を破棄して再初期化するフローを追加（削除対象が無い場合はスキップ）。
 - 2025-11-19 12:55 command: pnpm -C app typecheck — exit 0。`TreeConsoleIntegration.tsx` の worker 再初期化ロジック追加後も `tsconfig.typecheck.json` ベースで型エラー無しを確認。

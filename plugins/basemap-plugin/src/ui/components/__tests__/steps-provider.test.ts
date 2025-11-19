@@ -37,6 +37,16 @@ describe('basemap step provider validation', () => {
     ).toBe(true);
   });
 
+  it('treats persisted map style as valid even if untouched', () => {
+    expect(
+      mapStyleValidate({
+        mapStyle: { style: 'streets' },
+        draft: {},
+        uiState: { mapStyleTouched: false },
+      } as BaseMapWorkingCopy)
+    ).toBe(true);
+  });
+
   it('requires the viewport step to wait for a valid map style selection', () => {
     const baseViewport = {
       center: [0, 0] as [number, number],
@@ -146,5 +156,23 @@ describe('basemap step provider validation', () => {
     const props = node as { props: { value?: { center?: [number, number]; zoom?: number } } };
     expect(props.props.value?.center).toEqual([139.767, 35.681]);
     expect(props.props.value?.zoom).toBe(10);
+  });
+
+  it('treats persisted viewport as valid without manual touch', () => {
+    expect(
+      viewportValidate({
+        mapStyle: { style: 'streets' },
+        viewport: {
+          center: [1, 2],
+          zoom: 9,
+          bearing: 0,
+          pitch: 0,
+        },
+        uiState: {
+          mapStyleTouched: false,
+          viewportTouched: false,
+        },
+      } as BaseMapWorkingCopy)
+    ).toBe(true);
   });
 });

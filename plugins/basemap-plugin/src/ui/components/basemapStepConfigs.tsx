@@ -111,6 +111,8 @@ const ensureWorkingCopy = (
   const normalizedStyle = normalizeMapStyle(record.mapStyle as Partial<MapStyle> | undefined);
   const normalizedViewport = normalizeViewport(record.viewport as Partial<MapViewport> | undefined);
   const overrides = readBasicInfoOverrides(record);
+  const hasPersistedStyle = isRecord(record.mapStyle);
+  const hasPersistedViewport = isRecord(record.viewport);
   return {
     treeNodeId: '' as NodeId,
     createdAt: now,
@@ -126,8 +128,8 @@ const ensureWorkingCopy = (
     },
     tags: overrides.tags ?? toStringArray(record.tags),
     uiState: {
-      mapStyleTouched: false,
-      viewportTouched: false,
+      mapStyleTouched: hasPersistedStyle,
+      viewportTouched: hasPersistedViewport,
     },
   } satisfies BaseMapWorkingCopy;
 };
@@ -199,9 +201,11 @@ export const getBasemapStepConfigs = (): PluginStepConfig<BaseMapWorkingCopy>[] 
         },
         validate: (data?: BaseMapWorkingCopy) => {
           try {
-            const style = data?.draft?.mapStyle?.style;
+            const style = data?.draft?.mapStyle?.style ?? data?.mapStyle?.style;
             if (!style) return false;
-            if (!data?.uiState?.mapStyleTouched) return false;
+            const touched = Boolean(data?.uiState?.mapStyleTouched);
+            const hasPersistedStyle = Boolean(data?.mapStyle?.style);
+            if (!touched && !hasPersistedStyle) return false;
             if (style === 'custom') {
               const url = data?.draft?.mapStyle?.customStyleUrl;
               new URL(String(url));
@@ -240,7 +244,11 @@ export const getBasemapStepConfigs = (): PluginStepConfig<BaseMapWorkingCopy>[] 
             />
           );
         },
-        validate: (data?: BaseMapWorkingCopy) =>
-          Boolean(data?.uiState?.mapStyleTouched) && hasValidViewport(data?.draft?.viewport),
+        validate: (data?: BaseMapWorkingCopy) => {
+          const touchedStyle = Boolean(data?.uiState?.mapStyleTouched || data?.mapStyle);
+          if (!touchedStyle) return false;
+          const viewport = data?.draft?.viewport ?? data?.viewport;
+          return hasValidViewport(viewport);
+        },
       },
     ];
