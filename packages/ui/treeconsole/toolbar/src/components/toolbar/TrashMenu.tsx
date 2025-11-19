@@ -1,4 +1,4 @@
-import { Clear as RemoveIcon, RestoreFromTrash as RecyclingIcon } from '@mui/icons-material';
+import { DeleteForever as EmptyTrashIcon, RestoreFromTrash as RecyclingIcon } from '@mui/icons-material';
 import { ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 
 export interface TrashMenuProps {
@@ -42,7 +42,7 @@ export function TrashMenu({
         aria-label={emptyLabel}
       >
         <ListItemIcon>
-          <RemoveIcon fontSize="small" />
+          <EmptyTrashIcon fontSize="small" />
         </ListItemIcon>
         <ListItemText primary={emptyLabel} />
       </MenuItem>

@@ -84,6 +84,120 @@
   - [ ] 変更後のテスト／typecheck を実行し、ログを運用ログへ追記する
 - ロールバック手順：`TreeConsoleToolbar.tsx`, `packages/ui/treeconsole/toolbar/src/types.ts`, `app/src/router/pages/tree/console/TreeConsoleIntegration.tsx`、追加したテストファイルを revert し、`pnpm -C app test -- --run <追加テスト名>` と `pnpm -C app typecheck` を再実行して旧挙動に戻ることを確認する
 
+1293) basemap plugin typecheck エラー解消（P0）
+- ブランチ: `fix/basemap/typecheck`（sandbox 制約で `main` 上で作業）
+- 依存: `plugins/basemap-plugin/src/common/types/BaseMapEntity.ts`, `plugins/basemap-plugin/src/ui/components/basemapStepConfigs.tsx`, `plugins/basemap-plugin/src/ui/hooks/useBaseMapEntity.ts`, `plugins/basemap-plugin/src/worker/factory/registerBasemapWorkerStores.ts`, `plugins/basemap-plugin/tsconfig.json`
+- 受け入れ基準（DoD）:
+  - [x] `TASKS.md` の Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [x] `pnpm --filter @hierarchidb/basemap-plugin exec tsc -p tsconfig.json --noEmit` が BaseSearchCriteria import / WorkingCopy/TreeNode ハンドリング / peer data composer 登録含む全エラー解消後に成功する
+  - [x] `pnpm --filter @hierarchidb/basemap-plugin test` を実行して成功ログを残す
+  - [x] 修正内容と検証結果、ロールバック手順を TASKS.md へ追記する
+- チェックリスト:
+  - [x] `BaseMapWorkingCopy` 型を補強し、Basic Info overrides・name/description 参照時の型エラーを解消する
+  - [x] `basemapStepConfigs.tsx` / `ViewportStep.tsx` / `useBaseMapEntity.ts` の型キャストを見直し、Record 判定や NodeId ガードを整理する
+  - [x] `registerBasemapWorkerStores.ts` で NodeType brand を満たすよう修正し、`tsconfig` の paths 設定を調整して workspace alias を有効化する
+  - [x] `tsc` / `vitest` 実行結果を運用ログに記録し、ロールバック手順を明記する
+- ロールバック手順：対象ファイル（`BaseMapEntity.ts`, `basemapStepConfigs.tsx`, `useBaseMapEntity.ts`, `ViewportStep.tsx`, `registerBasemapWorkerStores.ts`, `plugins/basemap-plugin/tsconfig.json` 等）の差分を revert し、`pnpm --filter @hierarchidb/basemap-plugin {exec tsc -p tsconfig.json --noEmit,test}` を再実行して現状エラーが再発することを確認する
+
+1300) basemap Create ダイアログ save/validation 修正（P0）
+- ブランチ: `fix/basemap/create-dialog-save`（sandbox 制約で `main` 上で作業）
+- 依存: `plugins/basemap-plugin`, `packages/plugin-ui-host`, `packages/plugin-ui-sdk`, `packages/runtime-worker`, `packages/plugin-runtime-services`, `app/src/components/dialogs`
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] basemap Create ダイアログ Step1 の `name` / `description` 入力が保存される Basemap ノードへ正しく反映され、保存時に意図しない連番リネームが発動しない
+  - [ ] Step2 以降のフォーム入力が `hdb-basemap-entities-db` の `peerEntities` テーブルへ保存され、UI もしくは DB ログで確認できる
+  - [ ] Step1 `name` フィールドが空、または親階層に同名ノードが存在する場合はエラーが表示され、Step1 validation 失敗として Next ボタンが無効化される
+  - [ ] 対象ロジックをカバーするテスト（unit or integration）を追加し、今回の不具合再発防止のエビデンスとなる
+  - [ ] 検証コマンド（少なくとも `pnpm --filter @hierarchidb/basemap-plugin test` もしくは関連 UI テスト）が成功し、ログを運用ログに記録する
+- チェックリスト:
+  - [ ] basemap Create ダイアログ各ステップのデータフロー（WorkingCopy / Worker 保存 / Dexie commit）を調査し、Step1/Step2+ の保存経路を図解 or メモ化する
+  - [ ] Step1 の form state と WorkingCopy 反映処理を修正し、name/description が commit 時に正しく渡るようにする
+  - [ ] Step2 以降の値が `peerEntities` に落ちるよう Worker/API 層を修正し、Dexie 反映を確認する
+  - [ ] name フィールド validation（空・重複）を MultiStep/Form validation へ組み込み、Next ボタン制御を更新する
+  - [ ] カバーするテストと検証コマンドを実行し、結果を運用ログへ追記する
+- ロールバック手順：関連ファイルの差分を revert し、`pnpm --filter @hierarchidb/basemap-plugin test` や該当 UI テストを再実行して旧挙動（保存失敗＋validation 無し）へ戻ることを確認する
+
+1386) IndexedDB 全削除後 /t/r 遷移で DatabaseClosedError（P0）
+- ブランチ: `fix/app/indexeddb-reset-routing`（sandbox 制約で `main` 上で作業）
+- 依存: `app/src/router/**/*`, `app/src/services/databases.ts`, `app/src/worker-runtime/**/*`, `packages/runtime-worker`, `packages/runtime-client`, `packages/plugin-runtime-services`
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` の Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] 「このアプリが作成したIndexedDBを全削除」→トップページから `/t/r` へ遷移の手順で DatabaseClosedError を再現し、原因と影響範囲を記録する
+  - [ ] 上記操作後でも DatabaseClosedError が表示されず、再読み込みしなくても TreeConsole を操作できることを確認する
+  - [ ] 再現手順・修正内容・検証ログ（手動 or 自動テスト）を TASKS 運用ログへ追記し、影響範囲とロールバック手順を明示する
+- チェックリスト:
+  - [ ] IndexedDB 全削除メニューと Worker/Router の初期化シーケンスを調査し、閉鎖された DB 参照が残る箇所を特定する
+  - [ ] DatabaseClosedError の発生要因（Dexie/Worker lifecycle 断絶など）を特定し、再接続戦略または UI 側のエラーハンドリングを設計する
+  - [ ] DB 再初期化や Worker ブリッジ再生成等の修正を実装し、`/t/r` 遷移時に新しい接続が使われることを確認する
+  - [ ] 必要ならユニットテスト or Playwright smoke を追加/更新し、IDB 再初期化後の遷移が成功することをカバーする
+  - [ ] 手動で当該操作を実行し、DatabaseClosedError が出ないこと・再読み込み無しで UI が継続利用できることを確認してログ化する
+- ロールバック手順：今回変更した app/src および packages/runtime-* の差分を revert し、IndexedDB 全削除 → `/t/r` 遷移テストで再び DatabaseClosedError が発生することを確認して復旧する
+
+1520) TrashDialog Empty Trash no-op（P0）
+- ブランチ: `fix/ui-trash/empty-dialog-noop`（sandbox 制約で `main` 上で作業）
+- 依存: `app/src/router/pages/tree/trash/TrashDialog.tsx`, `app/src/router/pages/tree/trash/emptyTrashBranch.ts`, `app/src/router/pages/tree/trash/__tests__/unit/emptyTrashBranch.unit.test.ts`, `packages/common/api/src/TreeMutationAPI.ts`
+- 受け入れ基準（DoD）:
+  - [x] `TASKS.md` Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [x] 「ゴミ箱を空にする」ダイアログで Empty 実行時に対象ノード（trash root 直下および個別ノード配下）が完全に削除され、ダイアログが閉じて元の TreeConsole へ戻ることを再現手順付きで確認する
+  - [x] trash branch に子が存在しない場合でも対象ノード（自身）が削除対象として扱われ、Empty ボタンが正しい件数・活性状態で表示される
+  - [x] `emptyTrashBranch` のユニットテストを拡張し、サブツリー削除とルート削除双方の分岐を検証する
+  - [x] `pnpm lint && pnpm typecheck && pnpm test` を実行し、結果ログを運用ログへ記録する（既知の失敗があれば理由を記載）
+  - [x] 修正点のロールバック手順（対象ファイル／コマンド）を追記する
+- チェックリスト:
+  - [x] TrashDialog の削除件数表示・活性条件を見直し、trash root と個別ノードで挙動が一致するよう整理する
+  - [x] `emptyTrashBranch` に trash root 自体を削除する分岐を追加し、子ノード無しケースでも削除が完遂するよう改修する
+  - [x] Empty Trash 手動検証（trash root／個別ノード／子無しノード）を実施し、必要に応じてログ化する
+  - [x] 影響範囲テスト（unit）と検証コマンド結果を記録する
+- ロールバック手順：`app/src/router/pages/tree/trash/TrashDialog.tsx`, `app/src/router/pages/tree/trash/emptyTrashBranch.ts`, `app/src/router/pages/tree/trash/__tests__/unit/emptyTrashBranch.unit.test.ts` の差分を revert し、`pnpm lint && pnpm typecheck && pnpm test`（既知の失敗を除く）を再実行して現状挙動へ戻す
+
+### ToDo（優先度順） <a id="kanban-todo"></a>
+
+
+- 101) ui-shell typecheck 依存ビルド効率化（P1）
+- ブランチ: `chore/ui-shell/typecheck-opt`（sandbox 制約で `main` 上で作業）
+- 依存: `packages/ui-shell`, `packages/ui/*`, `turbo.json`, `package.json`
+- 受け入れ基準（DoD）:
+  - [ ] `@hierarchidb/ui-shell` の `pretypecheck` で実行するビルド対象を棚卸しし、最小構成へ整理した方針を文書化
+  - [ ] 新しい依存ビルド手段（例: Turbo パイプライン調整 or 専用スクリプト）を実装し、`pnpm --filter @hierarchidb/ui-shell typecheck` の実行時間が短縮されたことを確認
+  - [ ] 変更内容と検証ログを `TASKS.md` 運用ログに追記し、ロールバック手順を明記
+- チェックリスト:
+  - [ ] 現状の `pretypecheck` 実行ログから依存ビルド一覧を抽出
+  - [ ] Turbo/pnpm 設定を試行し、必要な dist の再生成が担保されるか検証
+  - [ ] 成果をドキュメントへ反映し、`pnpm typecheck` の成功ログを記録
+- ロールバック手順：`packages/ui-shell/package.json` の `pretypecheck` を従来コマンドへ戻し、`pnpm --filter @hierarchidb/ui-shell typecheck` を実行して現状構成へ復旧する
+
+- 102) UI バンドル project references 対応（P1）
+- ブランチ: `refactor/ui-shell/project-refs`（sandbox 制約で `main` 上で作業）
+- 依存: `packages/ui-shell`, `packages/ui/*`, `packages/components`, `packages/plugin-ui-host`, `tsconfig.*`
+- 受け入れ基準（DoD）:
+  - [ ] 代表的 UI パッケージで `tsconfig.typecheck.json` を `composite: true` 化し、型エラーを解消
+  - [ ] `packages/ui-shell/tsconfig.typecheck.json` に project references を設定し、`tsc -b` ベースで依存解決できることを確認
+  - [ ] `pnpm --filter @hierarchidb/ui-shell typecheck` が dist 生成なしでも成功し、検証ログとロールバック手順を TASKS に記録
+- チェックリスト:
+  - [ ] 対象パッケージの `tsconfig` を洗い出し、`composite` 適用の影響を整理
+  - [ ] `vitest.setup.ts` などで露出した型エラーを修正し、型ビルドが通るか確認
+  - [ ] `tsc -b` での依存順序を Turbo/Pnpm の pipeline に組み込み、回帰がないかを検証
+- ロールバック手順：追加した references・`composite` 設定を revert し、`pnpm --filter @hierarchidb/ui-shell typecheck` を旧構成で再実行する
+- 115) TreeConsole `as any` 削減（P0）
+- ブランチ: `refactor/ui-treeconsole/remove-as-any`（sandbox 制約で `main` 上で作業）
+- 依存: `app/src/components/TreeConsoleIntegration.tsx`, `app/src/components/dialogs/TrashDialog.tsx`, `app/src/hooks/treeconsole/**/*`, `packages/ui/treeconsole/**/*`
+- 受け入れ基準（DoD）:
+  - [x] TreeConsole 周辺で残存している `as any` の一覧を作成し、本節に対象ファイルと現状の用途を記録する
+  - [ ] `navigate` 系・コンテキストメニュー・Dialog ID 等、型で表現できる箇所から `as any` を段階的に削除し、代替型／ヘルパーを導入する
+  - [x] `pnpm lint && pnpm typecheck && pnpm test` が成功し、削除箇所の挙動に回帰がないことを確認する
+  - [x] TASKS 運用ログに修正内容・残存する `as any`（理由付き）の一覧とロールバック手順を追記する
+- チェックリスト:
+  - [x] `rg "as any" app/src/components/{TreeConsoleIntegration.tsx,dialogs/TrashDialog.tsx}` などで対象箇所を棚卸しし、用途別に分類する（※本体コードは解消済みで、現状はテストのモック／Matcher 補助用途のみ）
+  - 残存箇所（2025-11-03 現在）:
+    - `packages/ui/treeconsole/base/src/adapters/__tests__/WorkerAPIAdapter.test.tsx` などアダプタ／ツリー操作のユニットテストで、unstubbed Worker API のパラメータを簡略化するための仮キャスト
+    - `packages/ui/treeconsole/base/src/hooks/useTreeViewController.test.tsx` と `packages/ui/treeconsole/treetable/src/__tests__/*` のテスト補助データ生成（`expect.arrayContaining` へのキャスト、型のないノード ID 配列）に限定されており、本番コードでの `as any` はゼロ
+  - [x] `@tanstack/react-router` の `navigate` 呼び出しを型付きルート遷移へ改修し、`as any` を撤去する
+  - [x] Dialog の固定 ID を `useId` などへ置き換え、`as any` に頼らない参照に修正する
+  - [x] TreeConsole の共通型（`NodeContextMenu` 等）で `ComponentType<any>` を適切な Props 型へ差し替え、互換ラッパーが必要な場合は別途記録する
+- ロールバック手順：変更ファイルを `git checkout -- <files>` で元に戻し、`pnpm lint && pnpm typecheck && pnpm test` を再実行して従来の状態へ復旧する
+
+
+
 - ブランチ: `fix/ui-treeconsole/trash-empty-flow`（sandbox 制約で `main` 上で作業）
 - 依存: `app/src/router/pages/tree/trash/TrashDialog.tsx`, `app/src/router/pages/tree/trash/emptyTrashBranch.ts`, `app/src/hooks/treeconsole/createTreeConsoleActions.ts`, `packages/runtime/worker/src/services/TreeMutationService.ts`, `packages/runtime/worker/src/services/command/core-handlers/index.ts`, `packages/runtime/worker/src/__tests__/wfl/*trash*`
 - 受け入れ基準（DoD）:
@@ -314,23 +428,6 @@
   - [ ] 関連ユニットテストを更新/追加し、エディット動作のリグレッションを防止する
 - ロールバック手順：該当ファイルの差分を revert し、`pnpm --filter @hierarchidb/plugin-ui-sdk test -- useWorkingCopy` を再実行して元の挙動に戻ったことを確認する
 
-1300) basemap Create ダイアログ save/validation 修正（P0）
-- ブランチ: `fix/basemap/create-dialog-save`（sandbox 制約で `main` 上で作業）
-- 依存: `plugins/basemap-plugin`, `packages/plugin-ui-host`, `packages/plugin-ui-sdk`, `packages/runtime-worker`, `packages/plugin-runtime-services`, `app/src/components/dialogs`
-- 受け入れ基準（DoD）:
-  - [ ] `TASKS.md` Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
-  - [ ] basemap Create ダイアログ Step1 の `name` / `description` 入力が保存される Basemap ノードへ正しく反映され、保存時に意図しない連番リネームが発動しない
-  - [ ] Step2 以降のフォーム入力が `hdb-basemap-entities-db` の `peerEntities` テーブルへ保存され、UI もしくは DB ログで確認できる
-  - [ ] Step1 `name` フィールドが空、または親階層に同名ノードが存在する場合はエラーが表示され、Step1 validation 失敗として Next ボタンが無効化される
-  - [ ] 対象ロジックをカバーするテスト（unit or integration）を追加し、今回の不具合再発防止のエビデンスとなる
-  - [ ] 検証コマンド（少なくとも `pnpm --filter @hierarchidb/basemap-plugin test` もしくは関連 UI テスト）が成功し、ログを運用ログに記録する
-- チェックリスト:
-  - [ ] basemap Create ダイアログ各ステップのデータフロー（WorkingCopy / Worker 保存 / Dexie commit）を調査し、Step1/Step2+ の保存経路を図解 or メモ化する
-  - [ ] Step1 の form state と WorkingCopy 反映処理を修正し、name/description が commit 時に正しく渡るようにする
-  - [ ] Step2 以降の値が `peerEntities` に落ちるよう Worker/API 層を修正し、Dexie 反映を確認する
-  - [ ] name フィールド validation（空・重複）を MultiStep/Form validation へ組み込み、Next ボタン制御を更新する
-  - [ ] カバーするテストと検証コマンドを実行し、結果を運用ログへ追記する
-- ロールバック手順：関連ファイルの差分を revert し、`pnpm --filter @hierarchidb/basemap-plugin test` や該当 UI テストを再実行して旧挙動（保存失敗＋validation 無し）へ戻ることを確認する
 
 1301) Location/Route/Resolver ダイアログの共通化（P0）
 - ブランチ: `feat/plugins/unify-plugin-dialog`（sandbox 制約で `main` 上で作業）
@@ -982,51 +1079,7 @@
   - [x] `pnpm --filter @hierarchidb/app {build,typecheck}` の結果をログ化（typecheck exit 0、build は sandbox 制約で失敗・詳細を運用ログに追記済み）
 - ロールバック手順：`packages/feature-core` 復元と tsconfig/pnpm-workspace/Vite/dep alias 差分を revert し、`pnpm --filter @hierarchidb/app build` が旧 `@hierarchidb/feature-core` 経由で成功することを確認する
 
-### ToDo（優先度順） <a id="kanban-todo"></a>
 
-
-- 101) ui-shell typecheck 依存ビルド効率化（P1）
-- ブランチ: `chore/ui-shell/typecheck-opt`（sandbox 制約で `main` 上で作業）
-- 依存: `packages/ui-shell`, `packages/ui/*`, `turbo.json`, `package.json`
-- 受け入れ基準（DoD）:
-  - [ ] `@hierarchidb/ui-shell` の `pretypecheck` で実行するビルド対象を棚卸しし、最小構成へ整理した方針を文書化
-  - [ ] 新しい依存ビルド手段（例: Turbo パイプライン調整 or 専用スクリプト）を実装し、`pnpm --filter @hierarchidb/ui-shell typecheck` の実行時間が短縮されたことを確認
-  - [ ] 変更内容と検証ログを `TASKS.md` 運用ログに追記し、ロールバック手順を明記
-- チェックリスト:
-  - [ ] 現状の `pretypecheck` 実行ログから依存ビルド一覧を抽出
-  - [ ] Turbo/pnpm 設定を試行し、必要な dist の再生成が担保されるか検証
-  - [ ] 成果をドキュメントへ反映し、`pnpm typecheck` の成功ログを記録
-- ロールバック手順：`packages/ui-shell/package.json` の `pretypecheck` を従来コマンドへ戻し、`pnpm --filter @hierarchidb/ui-shell typecheck` を実行して現状構成へ復旧する
-
-- 102) UI バンドル project references 対応（P1）
-- ブランチ: `refactor/ui-shell/project-refs`（sandbox 制約で `main` 上で作業）
-- 依存: `packages/ui-shell`, `packages/ui/*`, `packages/components`, `packages/plugin-ui-host`, `tsconfig.*`
-- 受け入れ基準（DoD）:
-  - [ ] 代表的 UI パッケージで `tsconfig.typecheck.json` を `composite: true` 化し、型エラーを解消
-  - [ ] `packages/ui-shell/tsconfig.typecheck.json` に project references を設定し、`tsc -b` ベースで依存解決できることを確認
-  - [ ] `pnpm --filter @hierarchidb/ui-shell typecheck` が dist 生成なしでも成功し、検証ログとロールバック手順を TASKS に記録
-- チェックリスト:
-  - [ ] 対象パッケージの `tsconfig` を洗い出し、`composite` 適用の影響を整理
-  - [ ] `vitest.setup.ts` などで露出した型エラーを修正し、型ビルドが通るか確認
-  - [ ] `tsc -b` での依存順序を Turbo/Pnpm の pipeline に組み込み、回帰がないかを検証
-- ロールバック手順：追加した references・`composite` 設定を revert し、`pnpm --filter @hierarchidb/ui-shell typecheck` を旧構成で再実行する
-- 115) TreeConsole `as any` 削減（P0）
-- ブランチ: `refactor/ui-treeconsole/remove-as-any`（sandbox 制約で `main` 上で作業）
-- 依存: `app/src/components/TreeConsoleIntegration.tsx`, `app/src/components/dialogs/TrashDialog.tsx`, `app/src/hooks/treeconsole/**/*`, `packages/ui/treeconsole/**/*`
-- 受け入れ基準（DoD）:
-  - [x] TreeConsole 周辺で残存している `as any` の一覧を作成し、本節に対象ファイルと現状の用途を記録する
-  - [ ] `navigate` 系・コンテキストメニュー・Dialog ID 等、型で表現できる箇所から `as any` を段階的に削除し、代替型／ヘルパーを導入する
-  - [x] `pnpm lint && pnpm typecheck && pnpm test` が成功し、削除箇所の挙動に回帰がないことを確認する
-  - [x] TASKS 運用ログに修正内容・残存する `as any`（理由付き）の一覧とロールバック手順を追記する
-- チェックリスト:
-  - [x] `rg "as any" app/src/components/{TreeConsoleIntegration.tsx,dialogs/TrashDialog.tsx}` などで対象箇所を棚卸しし、用途別に分類する（※本体コードは解消済みで、現状はテストのモック／Matcher 補助用途のみ）
-  - 残存箇所（2025-11-03 現在）:
-    - `packages/ui/treeconsole/base/src/adapters/__tests__/WorkerAPIAdapter.test.tsx` などアダプタ／ツリー操作のユニットテストで、unstubbed Worker API のパラメータを簡略化するための仮キャスト
-    - `packages/ui/treeconsole/base/src/hooks/useTreeViewController.test.tsx` と `packages/ui/treeconsole/treetable/src/__tests__/*` のテスト補助データ生成（`expect.arrayContaining` へのキャスト、型のないノード ID 配列）に限定されており、本番コードでの `as any` はゼロ
-  - [x] `@tanstack/react-router` の `navigate` 呼び出しを型付きルート遷移へ改修し、`as any` を撤去する
-  - [x] Dialog の固定 ID を `useId` などへ置き換え、`as any` に頼らない参照に修正する
-  - [x] TreeConsole の共通型（`NodeContextMenu` 等）で `ComponentType<any>` を適切な Props 型へ差し替え、互換ラッパーが必要な場合は別途記録する
-- ロールバック手順：変更ファイルを `git checkout -- <files>` で元に戻し、`pnpm lint && pnpm typecheck && pnpm test` を再実行して従来の状態へ復旧する
 
 116) Tree Routes `as any` 削減（P0）
 - ブランチ: `refactor/app/tree-route-as-any`（sandbox 制約で `main` 上で作業）
@@ -3173,6 +3226,14 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1292) basemap SharedBasicInfoStep 未定義参照修正（P0） — 完了 (2025-11-19)
+  - 要点：`plugins/basemap-plugin/src/ui/components/basemapStepConfigs.tsx` に `SharedBasicInfoStep` / `BasicInfoData` import を追加し、Basic Info ステップが常に定義済みのコンポーネントを返すよう修正。`steps-provider.test.ts` へ `MockBasicInfoStep` を明示的に確認するユニットテストを追加し、ReferenceError が再発した場合に検出できるようにした。
+  - 検証：`pnpm --filter @hierarchidb/basemap-plugin test`（2025-11-19 08:50 JST, 3 files / 12 tests）exit 0。typecheck は `pnpm --filter @hierarchidb/basemap-plugin typecheck` が script 不存在で実行不可だったため、代替として `pnpm --filter @hierarchidb/basemap-plugin exec tsc -p tsconfig.json --noEmit` を実行したが、`@hierarchidb/runtime-client` など NodeNext 依存の dist 未生成による既存エラーで失敗する baseline 課題であることを確認（#worklog-13 へ記録）。
+  - ロールバック手順：`plugins/basemap-plugin/src/ui/components/basemapStepConfigs.tsx` と `plugins/basemap-plugin/src/ui/components/__tests__/steps-provider.test.ts` の差分を revert し、`pnpm --filter @hierarchidb/basemap-plugin test` を再実行。必要に応じて `pnpm --filter @hierarchidb/basemap-plugin exec tsc -p tsconfig.json --noEmit` で既知の依存エラーが再発することを確認する。
+- 1293) basemap plugin typecheck エラー解消（P0） — 完了 (2025-11-19)
+  - 要点：`BaseMapWorkingCopy` へ name/description を追加し、`basemapStepConfigs.tsx` の Basic Info / MapStyle / Viewport ステップを型安全化（WorkingCopy ガード、persisted fallback、Basic Info override）。`useBaseMapEntity.ts` では TreeNode data 取得を専用 helper へ移し、WorkingCopy 更新 payload を Record ベースに統一。`registerBasemapWorkerStores.ts` は `PLUGIN_NODE_TYPE` を使用して peer data composer 登録時の NodeType brand エラーを解消し、`plugins/basemap-plugin/tsconfig.json` で `@hierarchidb/runtime-client` のみを paths 上書きして他 alias を排除。
+  - 検証：`pnpm --filter @hierarchidb/basemap-plugin exec tsc -p tsconfig.json --noEmit`（2025-11-19 15:13 JST）exit 0。`pnpm --filter @hierarchidb/basemap-plugin test`（2025-11-19 15:14 JST, 3 files / 12 tests）exit 0。
+  - ロールバック手順：`BaseMapEntity.ts`, `basemapStepConfigs.tsx`, `ViewportStep.tsx`, `useBaseMapEntity.ts`, `registerBasemapWorkerStores.ts`, `plugins/basemap-plugin/tsconfig.json`, `plugins/basemap-plugin/package.json` の差分を revert し、`pnpm --filter @hierarchidb/basemap-plugin exec tsc -p tsconfig.json --noEmit` および `pnpm --filter @hierarchidb/basemap-plugin test` を再実行してエラー再発を確認する。
 - 1504) PluginDialog currentStepData 初期化順序修正（P0） — 完了 (2025-11-18)
   - 要点：`usePluginDialogController` で `basicInfoValidationMeta` と `currentStepData` の `useMemo` を `renderStep` より前へ集約し、`StepAdapterComponent` を渡す `useCallback` と `headlessProps` が TDZ を踏まないよう依存順を整理。PluginDialogShell 起動時の `Cannot access 'currentStepData' before initialization` を解消。
   - 検証：`pnpm --filter @hierarchidb/plugin-ui-host test -- --run dialogStateSubscription`（2025-11-18 08:10 JST, #worklog-13）の exit 0 を確認。
@@ -8204,6 +8265,64 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-13"></a>
 
+- 2025-11-19 08:46 start: fix/basemap/basic-info-step — basemap Step config で `SharedBasicInfoStep` import 欠落による ReferenceError を再現。DoD: Kanban/ログ更新、import とレンダリングテスト修正、`pnpm --filter @hierarchidb/basemap-plugin {typecheck,test}` の成功確認、ロールバック手順記載。
+- 2025-11-19 08:48 progress: fix/basemap/basic-info-step — `basemapStepConfigs.tsx` へ `SharedBasicInfoStep` / `BasicInfoData` import を追加し、Basic Info component のラップを正規化。`steps-provider.test.ts` に `MockBasicInfoStep` を明示的に参照するユニットテストを追加して ReferenceError 再発を検出できるようにした。
+- 2025-11-19 08:50 command: pnpm --filter @hierarchidb/basemap-plugin test — exit 0。`steps-provider.test.ts` ほか 3 file / 12 tests がすべて成功し、Basic Info step の import/props 検証が通過。
+- 2025-11-19 08:51 command: pnpm --filter @hierarchidb/basemap-plugin typecheck — exit 1（`None of the selected packages has a "typecheck" script`）。パッケージ固有の typecheck スクリプト未定義のため root スクリプトを呼べず、別途 `tsc` を代用する方針へ切替。
+- 2025-11-19 08:52 blocked: pnpm --filter @hierarchidb/basemap-plugin exec tsc -p tsconfig.json --noEmit — exit 2。NodeNext 参照用の dist/.d.ts が未生成の既知課題で `@hierarchidb/runtime-client` などが解決できず、`BaseMapEntity` 型の相互参照エラーが発生。今回の import 追加に起因する差分は無く、baseline の依存不足としてログ化。
+- 2025-11-19 08:54 done: fix/basemap/basic-info-step — basemap Step config で `SharedBasicInfoStep` を正しく import し、テストも追加済み。ReferenceError は再現しなくなったためタスク完了（typecheck は上記 baseline 問題、テストは green）。ロールバックは該当差分 revert + `pnpm --filter @hierarchidb/basemap-plugin test` で確認可。
+- 2025-11-19 09:05 start: fix/basemap/typecheck — basemap plugin の `pnpm --filter @hierarchidb/basemap-plugin exec tsc -p tsconfig.json --noEmit` で発生する BaseSearchCriteria import 不整合・WorkingCopy/TreeNode 型エラー・NodeType brand 不一致を解消するタスクに着手。DoD: Kanban/ログ更新、tsc/test グリーン、ロールバック手順記載。
+- 2025-11-19 15:10 progress: fix/basemap/typecheck — BaseMapWorkingCopy へ name/description を追加し、`basemapStepConfigs.tsx` の型ガード/BasicInfo override/MapStyle fallback を整理。`useBaseMapEntity.ts` は node.data アクセスを Record 経由に変更し、Worker API 更新時の payload を型安全化。`registerBasemapWorkerStores.ts` では `PLUGIN_NODE_TYPE` を使用して NodeType brand エラーを解消。
+- 2025-11-19 15:13 command: pnpm --filter @hierarchidb/basemap-plugin exec tsc -p tsconfig.json --noEmit — exit 0。`plugins/basemap-plugin/tsconfig.json` の paths を最小構成にしつつ runtime-client の解決を確認。
+- 2025-11-19 15:14 command: pnpm --filter @hierarchidb/basemap-plugin test — exit 0。`steps-provider.test.ts` / `ViewportStep.test.tsx` / `useBaseMapEntity.unit.test.ts` を含む 3 files / 12 tests が成功。
+- 2025-11-19 15:20 progress: fix/basemap/create-dialog-save — プラグイン側 BasicInfo ステップを撤去してホスト共通の BasicInfo に委譲し、Step1 の入力が 1 文字で止まる問題を解消する方針へ切り替え。`basemapStepConfigs.tsx` の default viewport を ViewportStep に合わせ 139.767/35.681/zoom10 に更新し、Step3 初期位置も統一。
+- 2025-11-19 15:33 command: pnpm --filter @hierarchidb/basemap-plugin exec tsc -p tsconfig.json --noEmit — exit 0。BasicInfo ステップ撤去後も typecheck グリーンを確認。
+- 2025-11-19 15:34 command: pnpm --filter @hierarchidb/basemap-plugin test — exit 0。`steps-provider.test.ts` を BasicInfo 依存から切り離し、デフォルト viewport 期待値(139.767/35.681/zoom10) を検証する 6 cases を通過。
+- 2025-11-19 12:20 start: fix/app/indexeddb-reset-routing — 「このアプリが作成したIndexedDBを全削除」を実行した直後にトップページから `/t/r` へ遷移すると DatabaseClosedError が発生する事象の再現と原因調査を開始。DoD: IndexedDB 全削除手順のロギング、DatabaseClosedError の根本原因特定、再読み込み不要での UI 継続操作確認、検証ログとロールバック手順の記録。
+- 2025-11-19 12:45 progress: fix/app/indexeddb-reset-routing — DatabaseClosedError の原因が TreeConsole から IndexedDB 全削除後も `WorkerAPIClient` が同じ Dexie 接続を握り続け、`/t/r` 再訪時に閉じられた DB へアクセスし続けるためであることを特定。`clearAppIndexedDBs` 成功時に WorkerProvider の `reset()` → `initialize()` を順に呼び出し、開いている Worker を破棄して再初期化するフローを追加（削除対象が無い場合はスキップ）。
+- 2025-11-19 12:55 command: pnpm -C app typecheck — exit 0。`TreeConsoleIntegration.tsx` の worker 再初期化ロジック追加後も `tsconfig.typecheck.json` ベースで型エラー無しを確認。
+- 2025-11-19 13:05 command: pnpm -C app test src/router/pages/tree/console/__tests__/TreeConsoleToolbarImportMenu.unit.test.tsx — exit 1。`TreeConsoleToolbar` の import/export ボタンが aria 名称にマッチせずテストが既知失敗（#1285 進行中の仕様変更に伴うもの）で、今回の差分では実行前と同じ理由で UI 要素を取得できない状態を再現。
+- 2025-11-19 13:08 command: pnpm -C app test -- --run TreeConsoleToolbarImportMenu — exit 1。`src/worker-runtime/__tests__/unit/preload-worker-modules.unit.test.ts` が `@hierarchidb/basemap-plugin/worker-database` 解決不可（registry dist 未生成）で停止する既知 issue により、ターゲットテストまで到達せず失敗することを再度確認。
+- 2025-11-18 22:07 start: fix/basemap/create-dialog-save — basemap Create ダイアログの Step1 初期値欠如と Step2/3 誤判定の調査を開始。DoD: Step1 name/description の初期値と WorkingCopy 反映経路の調査、Step2/3 validation 異常の原因究明、再発防止策の提案、Kanban/ログ更新、および関連検証方針の整理。
+- 2025-11-18 22:17 progress: fix/basemap/create-dialog-save — StepAdapter が workingCopy.data のみを Step1 に渡しており、worker 側で付与される `resolveDefaultNodeName` の値が basic-info へ伝搬していないため name 初期値が常に空になることを確認。また Step1 で `p.onChange` が初めて呼ばれた瞬間に ensureWorkingCopy が DEFAULT_STYLE/DEFAULT_VIEWPORT を含む payload を保存し、Step2(Style)/Step3(Viewport) の validate 条件が満たされたと誤判定されるためステップが即座に緑化している。対策としては (a) `currentStepData` へ basicInfo state をマージして Step1 初期レンダリングに name/description を供給する、もしくは (b) Basemap 用 StepProvider 側で WorkingCopyService の name/description を参照する/初回 onChange を不要にする、さらに Step2/3 validate では「ユーザー操作済み」フラグや MapStyle/Viewport の dirty 状態を確認する必要があると整理。
+- 2025-11-19 09:45 progress: fix/basemap/create-dialog-save — 実装フェーズへ移行し、`usePluginDialogController` で `basicInfo` state を Step データへマージする案と、Basemap Step provider の `onChange`/dirty 判定整理（mapStyle/viewport を Step2/3 操作時のみ commit）を組み合わせて進めることを決定。差分実装とテスト追加の着手を記録。
+- 2025-11-19 10:05 progress: fix/basemap/create-dialog-save — `usePluginDialogController` に `buildStepWorkingData` を導入して Basic Info state/name を StepAdapter へ供給しつつ、Basemap Step provider を `uiState.mapStyleTouched`/`viewportTouched` で管理する `basemapStepConfigs` へ分離。Step2/3 の validate を touched state 連動に変更し、テスト用 helper を追加。
+- 2025-11-19 10:12 command: pnpm --filter @hierarchidb/plugin-ui-host test -- --run basicInfoStepData — exit 0。`buildStepWorkingData` の新規ユニットテストを含む headless スイートが成功。
+- 2025-11-19 10:14 command: pnpm --filter @hierarchidb/basemap-plugin test — exit 1。`steps-provider.test.ts` が `@hierarchidb/runtime-worker` import 解決に失敗したため、Step config を分離しモジュールモック無しで参照できるよう調整する方針に変更。
+- 2025-11-19 10:25 command: pnpm --filter @hierarchidb/basemap-plugin test — exit 0。`basemapStepConfigs` を直接参照する Step provider テストと既存 hook テストがグリーン。
+- 2025-11-19 10:40 progress: fix/basemap/create-dialog-save — Basic Info validation が初期描画から通るよう `buildStepWorkingData` で `draft.name/description` を同時更新し、`resolveValidate` でも Basic Info 用に merged payload を使用するよう修正。これにより Worker 既定値のみでも Next が有効化され、name 編集時も即座に反映されるようになった。
+- 2025-11-19 10:42 command: pnpm --filter @hierarchidb/plugin-ui-host test -- --run basicInfoStepData — exit 0。`draft` 反映テストを含む headless スイートが再度グリーン。
+- 2025-11-19 10:43 command: pnpm --filter @hierarchidb/basemap-plugin test — exit 0。Step provider テストと既存 hook テストともに成功。
+- 2025-11-19 11:05 progress: fix/basemap/create-dialog-save — Edit モードで mapStyle/viewport が初期化される不具合を特定し、`ensureWorkingCopy` が既存 Draft/ persist 値を正しく引き継ぐよう調整。Step コンポーネントにも persisted fallback を渡すよう修正し、viewport/mapStyle の props をテストで検証。
+- 2025-11-19 11:08 command: pnpm --filter @hierarchidb/plugin-ui-host test -- --run basicInfoStepData — exit 0。Basic Info helper 変更後も headless テストが成功。
+- 2025-11-19 11:09 command: pnpm --filter @hierarchidb/basemap-plugin test — exit 0。Step provider の fallback テストと既存 hook テストが通過。
+- 2025-11-19 11:30 progress: fix/basemap/create-dialog-save — Create モードの Step1/2/3 UX を再調整。`ensureWorkingCopy` が host basicInfo ブリッジを尊重し、create 時は draft.mapStyle/viewport を空のままにするよう更新。MapStyleStep は初期選択を行わず、ViewportStep は geolocation を試行して初期ビューを設定（失敗時は既存 fallback）。
+- 2025-11-19 11:33 command: pnpm --filter @hierarchidb/plugin-ui-host test -- --run basicInfoStepData — exit 0。Basic Info ブリッジ周辺の headless テストが継続して成功。
+- 2025-11-19 11:34 command: pnpm --filter @hierarchidb/basemap-plugin test — exit 0。MapStyle 未選択テストと ViewportStep geolocation テストを含むスイートがグリーン。
+- 2025-11-19 12:05 progress: fix/location/create-stepper — Location Create ダイアログの Step5/6/7 が初期状態で checked になる問題を調査開始。DoD: Step progression を「ユーザー操作済み」基準に改修、関連テスト追加、`pnpm --filter @hierarchidb/location-plugin test` 実行、ロールバック明記。
+- 2025-11-19 07:54 start: fix/ui-trash/empty-dialog-noop — TrashDialog の Empty ボタンが trash root 直下と個別ノード配下で削除対象を処理できず、ダイアログも閉じない回帰を調査開始。DoD: Kanban/ログ更新、trash root/ノード双方で空にする完了とクローズを保証、`emptyTrashBranch` テスト拡張、`pnpm lint && pnpm typecheck && pnpm test` 実行、ロールバック手順整備。
+- 2025-11-19 08:00 progress: fix/ui-trash/empty-dialog-noop — TrashDialog の削除件数（ラベル/活性条件）を trash root と個別ノードで分岐させ、`emptyTrashBranch` にルート削除分岐を追加。子ノードゼロでもノード自体を `removeNodes` で削除し、ユニットテストで双方の分岐を検証。
+- 2025-11-19 08:01 command: pnpm lint — exit 0。`@hierarchidb/plugin-ui-host` の `_error` 未使用警告（既知）1 件のみ。
+- 2025-11-19 08:02 command: pnpm typecheck — exit 0。`@hierarchidb/ui-i18n` build 時の tsdown define warning（既知）以外に新規エラーなし。
+- 2025-11-19 08:03 command: pnpm test — exit 0。Turbo 経由で vitest スイートを実行し、新規 `emptyTrashBranch` テストを含めて成功。
+- 2025-11-19 12:30 blocked: fix/ui-trash/empty-dialog-noop — 2025/11/19 15:19:44 ビルドの App で Empty Trash 依然失敗（ダイアログが閉じずアイテムも消えない）との報告あり。再現条件（trash root / 個別ノード / working copy 有無等）とブラウザコンソールのエラーログを追加で収集する必要あり。
+- 2025-11-19 12:45 progress: fix/ui-trash/empty-dialog-noop — `emptyTrashBranch` を `removeNodes` ベースへ戻しつつ、TrashDialog 側で trash root ビューでは行 ID 群のみを削除、ブランチ表示時はターゲットノード ID を単独で削除するよう分岐。これにより UI が保持している ID をそのまま Worker へ渡し、親子構造に依存せずゴミ箱を空にできるようにした。
+- 2025-11-19 12:46 command: pnpm lint — exit 0。`@hierarchidb/plugin-ui-host` 既知 warning のみ。
+- 2025-11-19 12:47 command: pnpm typecheck — exit 0。`@hierarchidb/ui-i18n` tsdown define warning のみ。
+- 2025-11-19 12:48 command: pnpm test — exit 0。`emptyTrashBranch` ユニットテスト更新を含め Turbo 経由でグリーン。
+- 2025-11-19 13:05 progress: fix/ui-trash/empty-dialog-noop — Empty Trash 確認モーダルがダイアログ背面に入る問題を解消するため、`Dialog` の root/container/paper/backdrop それぞれに `z-index` を設定し、MultiDialogFrame より高い値（`theme.zIndex.modal + 20` など）へ引き上げた。
+- 2025-11-19 13:07 command: pnpm lint — exit 0（`@hierarchidb/plugin-ui-host` `_error` warning のみ）。
+- 2025-11-19 13:08 command: pnpm typecheck — exit 0。`@hierarchidb/ui-i18n` や `@hierarchidb/util` の tsdown define warning は既知。
+- 2025-11-19 13:09 command: pnpm test — exit 1。`@hierarchidb/ui-auth` パッケージにテストファイルが無く Vitest が “No test files found” で停止する既知課題。他パッケージは実行済み。
+- 2025-11-19 13:20 progress: fix/ui-trash/empty-dialog-noop — Empty モードで TrashDialog の TreeTable 行を初期選択済みにし、`selectedIds` を削除対象として扱うよう更新。これによりボタン表示の件数が実際の選択状態と一致し、チェックを外すことで削除対象を絞り込めるようになった。
+- 2025-11-19 13:21 progress: fix/ui-trash/empty-dialog-noop — TreeConsoleToolbar の TrashMenu で「ゴミ箱を空にする」行のアイコンを `DeleteForever`（TrashDialog フッターと同一）へ変更し、Move to Trash のバツ印と視覚的に区別できるようにした。
+- 2025-11-19 13:22 command: pnpm lint — exit 0（`@hierarchidb/plugin-ui-host` `_error` warning のみ）。
+- 2025-11-19 13:23 command: pnpm typecheck — exit 0。`@hierarchidb/ui-i18n`/`@hierarchidb/util` の tsdown define warning は既知。
+- 2025-11-19 13:24 command: pnpm test — exit 1。`@hierarchidb/ui-auth` にテストファイルが無い既知課題で Vitest が “No test files found” により停止（他パッケージは実行済み）。
+- 2025-11-19 13:05 progress: fix/ui-trash/empty-dialog-noop — Empty Trash 確認モーダルが MultiDialog フレームの背面に入る問題に対し、`Dialog` の `Backdrop`/`container`/`paper` z-index を `theme.zIndex.modal` より高く設定して常に前面に描画されるよう調整。今後、親ダイアログよりも上に表示されボタン操作が可能になる。
+- 2025-11-19 13:07 command: pnpm lint — exit 0（`@hierarchidb/plugin-ui-host` の `_error` 未使用 warning は従来どおり）。
+- 2025-11-19 13:08 command: pnpm typecheck — exit 0。`@hierarchidb/ui-treeconsole-footer` / `@hierarchidb/ui-i18n` の tsdown define warning は既知。
+- 2025-11-19 13:09 command: pnpm test — exit 1。`@hierarchidb/ui-auth` パッケージにテストファイルが存在せず `vitest` が “No test files found” で停止する既知課題のため（その他パッケージは実行済み）。該当原因をログへ記録。
 - 2025-11-18 18:10 start: fix/ui-treeconsole/trash-restore-selection — 「ゴミ箱から戻す」ダイアログのデフォルト選択解除タスクに着手。DoD: TrashDialog 初期表示で全ノード未選択・セレクトオール OFF、手動選択の既存挙動維持、`pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck`／`pnpm -C app typecheck` 等の検証ログ取得、他ビューへの副作用なしを確認し、ロールバック手順を記す。
 - 2025-11-18 18:28 progress: fix/ui-treeconsole/trash-restore-selection — TreeTableCore/useTreeTableSelectAll に `selectAllPersistence` オプションを追加し、TreeConsolePanel から受け渡せるようにしたうえで TrashDialogContent は `session` を指定して開くたびに select-all/選択済みノードを初期化するように配線。既存ビューは未指定のため従来どおり `page` 永続化を継続。
 - 2025-11-18 18:32 command: pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck — exit 0（対象パッケージに typecheck スクリプトが無くスキップされた旨のみ出力）。

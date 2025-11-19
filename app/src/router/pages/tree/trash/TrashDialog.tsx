@@ -483,6 +483,20 @@ function TrashDialogFooter({
         )}
       </Box>
       <Dialog
+        BackdropProps={{
+          sx: {
+            zIndex: (theme) => (theme.zIndex?.modal ?? 1300) + 15,
+          },
+        }}
+        sx={{
+          zIndex: (theme) => (theme.zIndex?.modal ?? 1300) + 20,
+          '& .MuiDialog-container': {
+            zIndex: (theme) => (theme.zIndex?.modal ?? 1300) + 16,
+          },
+          '& .MuiPaper-root': {
+            zIndex: (theme) => (theme.zIndex?.modal ?? 1300) + 17,
+          },
+        }}
         open={confirmOpen}
         onClose={handleConfirmClose}
         aria-labelledby={confirmTitleId}
@@ -696,6 +710,14 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
     targetNodeId ??
     data.trashRootNode?.id ??
     null) as NodeId | null;
+  const trashContainerRootId = (data.trashRootNode?.id ?? null) as NodeId | null;
+
+  /*
+  const isTrashContainerRoot =
+    Boolean(trashViewRootId) && Boolean(trashContainerRootId)
+      ? trashViewRootId === trashContainerRootId
+      : false;
+   */
 
   const [selectedIds, setSelectedIds] = useState<NodeId[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -756,10 +778,35 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
     return nodes;
   }, [data.activeTrashNode, data.trashRootNode, nodeMap, trashViewRootId, treeId]);
 
+  /*
   const removableCount = useMemo(() => {
     return treeData.filter((node) => node.id !== trashViewRootId).length;
   }, [treeData, trashViewRootId]);
-  const hasRemovableNodes = removableCount > 0;
+   */
+
+  const removalNodeIds = useMemo(() => {
+    if (mode !== 'empty') {
+      return selectedIds;
+    }
+    return selectedIds;
+  }, [mode, selectedIds]);
+  const removalTargetCount = removalNodeIds.length;
+  //const hasRemovalTargets = removalTargetCount > 0;
+
+  useEffect(() => {
+    if (mode !== 'empty') {
+      return;
+    }
+    setSelectedIds((prev) => {
+      const next = treeData.map((node) => node.id as NodeId);
+      const nextSet = new Set(next);
+      const filtered = prev.filter((id) => nextSet.has(id));
+      if (filtered.length > 0) {
+        return filtered;
+      }
+      return next;
+    });
+  }, [mode, treeData]);
 
   const nodeIndex = useMemo(() => {
     const index = new DualKeyMap<NodeId, NodeId, TreeNode>();
@@ -929,14 +976,13 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
   }, [closeDialog, selectedIds]);
 
   const handleEmptyAll = useCallback(async () => {
-    if (!hasRemovableNodes) {
+    if (removalNodeIds.length === 0) {
       return;
     }
     setLoading(true);
     try {
       const result = await emptyTrashBranch({
-        trashRootId: trashViewRootId,
-        hasNodes: hasRemovableNodes,
+        nodeIds: removalNodeIds,
         getMutationAPI: async () => {
           const client = WorkerAPIClient.getSingleton();
           return client.getMutationAPI();
@@ -948,7 +994,7 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
     } finally {
       setLoading(false);
     }
-  }, [closeDialog, hasRemovableNodes, trashViewRootId]);
+  }, [closeDialog, removalNodeIds]);
 
   const onToggleExpand = useCallback((nodeId: string, expanded: boolean) => {
     setExpandedIds((prev) => {
@@ -1010,7 +1056,7 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
         <TrashDialogFooter
           {...props}
           mode={mode}
-          totalCount={removableCount}
+          totalCount={removalTargetCount}
           selectedCount={selectedIds.length}
           loading={loading}
           onRestore={handleRestore}
@@ -1018,7 +1064,7 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
         />
       ),
     }),
-    [breadcrumbItems, columns, expandedIds, frameState, handleClose, handleEmptyAll, handleRestore, loading, mode, nodeIndex, onToggleExpand, pageNodeId, removableCount, searchTerm, selectedIds, stepComponents, t, trashViewRootId, treeData, treeId]
+    [breadcrumbItems, columns, expandedIds, frameState, handleClose, handleEmptyAll, handleRestore, loading, mode, nodeIndex, onToggleExpand, pageNodeId, removalTargetCount, searchTerm, selectedIds, stepComponents, t, trashViewRootId, treeData, treeId]
   );
 
   const frameSx = useMemo(

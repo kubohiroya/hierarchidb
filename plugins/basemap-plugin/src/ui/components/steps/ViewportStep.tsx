@@ -29,18 +29,69 @@ const LazyMapLibreMap = lazy(async () => {
   return { default: mod.MapLibreMap };
 });
 
-export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onChange, mode, nodeId }) => {
+export const ViewportStep: React.FC<ViewportStepProps> = ({
+  value,
+  mapStyle,
+  onChange,
+  mode,
+  nodeId,
+}) => {
   const mapRef = useRef<MapLibreMapInstance | null>(null);
   const initialViewStateRef = useRef<MapViewState | null>(null);
   const pendingSyncRef = useRef(false);
+  const geolocationAppliedRef = useRef(false);
   const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
 
   useEffect(() => {
-    if (!value) {
+    if (value) return;
+    if (geolocationAppliedRef.current) return;
+
+    const applyViewport = (next: MapViewport) => {
+      if (value) return;
+      geolocationAppliedRef.current = true;
       pendingSyncRef.current = true;
-      onChange(DEFAULT_VIEWPORT);
+      onChange(next);
+    };
+
+    let cancelled = false;
+
+    if (
+      typeof window !== 'undefined' &&
+      typeof navigator !== 'undefined' &&
+      navigator.geolocation &&
+      typeof navigator.geolocation.getCurrentPosition === 'function'
+    ) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          if (cancelled || value || geolocationAppliedRef.current) return;
+          const { longitude, latitude, accuracy } = pos.coords;
+          const boundedZoom =
+            accuracy && Number.isFinite(accuracy) ? Math.max(5, Math.min(14, 16 - Math.log10(accuracy))) : 10;
+          applyViewport({
+            center: [longitude, latitude],
+            zoom: boundedZoom,
+            bearing: 0,
+            pitch: 0,
+          });
+        },
+        () => {
+          if (cancelled || value || geolocationAppliedRef.current) return;
+          applyViewport(DEFAULT_VIEWPORT);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 60000,
+        }
+      );
+    } else {
+      applyViewport(DEFAULT_VIEWPORT);
     }
-  }, [value, onChange]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [onChange, value]);
 
   const vp: MapViewport = value || DEFAULT_VIEWPORT;
   const selectedStyle = mapStyle || DEFAULT_STYLE;
@@ -95,8 +146,10 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
     );
   }, [value]);
   const shouldHydrateViewport = Boolean(resolvedNodeId) && mode === 'edit' && !hasViewportValue;
-  const { entity: baselineEntity } = useBaseMapEntity(shouldHydrateViewport ? resolvedNodeId : null, {
-    skip: !shouldHydrateViewport,
+  const hydrationNodeId: NodeId | null =
+    shouldHydrateViewport && resolvedNodeId ? resolvedNodeId : null;
+  const { entity: baselineEntity } = useBaseMapEntity(hydrationNodeId, {
+    skip: !hydrationNodeId,
   });
 
   useEffect(() => {

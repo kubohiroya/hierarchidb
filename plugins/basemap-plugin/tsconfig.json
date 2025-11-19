@@ -5,10 +5,12 @@
       "ES2020",
       "DOM"
     ],
-    "rootDir": "./",
     "paths": {
-      "~/*": [
-        "./src/*"
+      "@hierarchidb/runtime-client": [
+        "packages/runtime/client/src/index.ts"
+      ],
+      "@hierarchidb/runtime-client/*": [
+        "packages/runtime/client/src/*"
       ]
     }
   },

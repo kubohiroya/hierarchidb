@@ -75,8 +75,12 @@ type ImportNode = ImportData['nodes'][number];
 
 // Inner component that uses the hook (client is guaranteed to be non-null)
 const TreeConsoleIntegrationInner: React.FC<
-  TreeConsoleIntegrationProps & { client: Remote<WorkerAPI> }
-> = ({ client: workerClient, treeId, pageNodeId, pageTreeNode }) => {
+  TreeConsoleIntegrationProps & {
+    client: Remote<WorkerAPI>;
+    resetWorker: () => void;
+    initializeWorker: () => Promise<void>;
+  }
+> = ({ client: workerClient, treeId, pageNodeId, pageTreeNode, resetWorker, initializeWorker }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation('common');
@@ -266,6 +270,17 @@ const TreeConsoleIntegrationInner: React.FC<
     };
   }, [workerClient, treeId]);
 
+  const refreshWorkerRuntime = useCallback(() => {
+    try {
+      resetWorker();
+    } catch (error) {
+      logIntegrationWarning('Failed to reset worker after IndexedDB clear', error);
+    }
+    void initializeWorker().catch((error) => {
+      logIntegrationWarning('Failed to reinitialize worker after IndexedDB clear', error);
+    });
+  }, [initializeWorker, resetWorker]);
+
   const handleIndexedDbReset = useCallback(async () => {
     if (!developerModeEnabled) return;
     const confirmMessage =
@@ -278,6 +293,10 @@ const TreeConsoleIntegrationInner: React.FC<
     }
     try {
       const result = await clearAppIndexedDBs();
+      const shouldRefreshWorker = result.deleted.length > 0;
+      if (shouldRefreshWorker) {
+        refreshWorkerRuntime();
+      }
       if (result.errors.length > 0) {
         notify.error(
           t('treeConsole.toolbar.developerMenu.clearIndexedDbFailure', {
@@ -308,7 +327,7 @@ const TreeConsoleIntegrationInner: React.FC<
         })
       );
     }
-  }, [developerModeEnabled, navigate, t]);
+  }, [developerModeEnabled, navigate, refreshWorkerRuntime, t]);
 
   // Handle toolbar actions
   const handleToolbarAction = useCallback(
@@ -714,7 +733,7 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
   pageTreeNode,
 }) => {
   // Get the Worker API client from WorkerSingletonProvider
-  const { client: workerClient, isConnected } = useWorker();
+  const { client: workerClient, isConnected, reset, initialize } = useWorker();
 
   // Check connection status
   if (!isConnected || !workerClient) {
@@ -732,6 +751,8 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
       treeId={treeId}
       pageNodeId={pageNodeId}
       pageTreeNode={pageTreeNode}
+      resetWorker={reset}
+      initializeWorker={initialize}
     />
   );
 };

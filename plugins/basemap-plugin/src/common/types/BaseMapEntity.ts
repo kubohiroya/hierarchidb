@@ -4,8 +4,11 @@
  */
 
 import type { BaseEntity, NodeId, Timestamp } from '@hierarchidb/common-types';
-import type { PeerDataBase, WorkingCopyDraft } from '@hierarchidb/plugin-service-api';
-import type { BaseSearchCriteria } from '@hierarchidb/plugin-service-api/types/baseSearchCriteria.js';
+import type {
+  BaseSearchCriteria,
+  PeerDataBase,
+  WorkingCopyDraft,
+} from '@hierarchidb/plugin-service-api';
 
 /**
  * Map style configuration
@@ -50,6 +53,8 @@ export type BaseMapDraftPayload = {
 };
 
 export interface BaseMapWorkingCopy extends WorkingCopyDraft<BaseMapEntity>, BaseMapDraftPayload {
+  name?: string;
+  description?: string;
   tags?: string[];
   draft: WorkingCopyDraft<BaseMapEntity>['draft'] & {
     mapStyle?: MapStyle;
@@ -57,6 +62,12 @@ export interface BaseMapWorkingCopy extends WorkingCopyDraft<BaseMapEntity>, Bas
     name?: string;
     description?: string;
   };
+  uiState?: BasemapWorkingCopyUiState;
+}
+
+export interface BasemapWorkingCopyUiState {
+  mapStyleTouched?: boolean;
+  viewportTouched?: boolean;
 }
 
 /**

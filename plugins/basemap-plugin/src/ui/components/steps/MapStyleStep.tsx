@@ -10,7 +10,7 @@ import {
   Typography,
 } from '@mui/material';
 import type React from 'react';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { BUILT_IN_STYLES } from '../../../common/constants/builtInStyles.js';
 import type { MapStyle } from '../../../common/types/BaseMapEntity.js';
 
@@ -20,13 +20,7 @@ export interface MapStyleStepProps {
 }
 
 export const MapStyleStep: React.FC<MapStyleStepProps> = ({ value, onChange }) => {
-  useEffect(() => {
-    if (!value) {
-      onChange({ style: 'streets' });
-    }
-  }, [value, onChange]);
-
-  const style = value?.style || 'streets';
+  const style = value?.style || '';
   const url = value?.customStyleUrl || '';
 
   const presets = useMemo(
@@ -50,7 +44,7 @@ export const MapStyleStep: React.FC<MapStyleStepProps> = ({ value, onChange }) =
         <ToggleButtonGroup
           exclusive
           fullWidth
-          value={style === 'custom' ? null : style}
+          value={style && style !== 'custom' ? style : null}
           onChange={(_e, next) => {
             if (!next) return;
             onChange({

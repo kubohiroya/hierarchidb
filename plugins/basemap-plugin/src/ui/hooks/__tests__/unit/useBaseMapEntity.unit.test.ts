@@ -20,7 +20,7 @@ describe('useBaseMapEntity helpers', () => {
     const entity = buildBaseMapEntityFromNode(node as TreeNode);
     expect(entity).not.toBeNull();
     expect(entity?.mapStyle.style).toBe('streets');
-    expect(entity?.viewport.zoom).toBe(2);
+    expect(entity?.viewport.zoom).toBe(10);
     expect(entity?.createdAt).toBe(100);
     expect(entity?.updatedAt).toBe(200);
     expect(entity?.version).toBe(3);
@@ -55,7 +55,7 @@ describe('useBaseMapEntity helpers', () => {
 
     const viewport = normalizeViewport({ center: [1, 2] });
     expect(viewport.center).toEqual([1, 2]);
-    expect(viewport.zoom).toBe(2);
+    expect(viewport.zoom).toBe(10);
     expect(viewport.bearing).toBe(0);
   });
 });

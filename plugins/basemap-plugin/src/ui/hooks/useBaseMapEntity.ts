@@ -26,8 +26,8 @@ const DEFAULT_MAP_STYLE: MapStyle = {
 };
 
 const DEFAULT_VIEWPORT: MapViewport = {
-  center: [0, 0],
-  zoom: 2,
+  center: [139.767, 35.681],
+  zoom: 10,
   bearing: 0,
   pitch: 0,
 };
@@ -38,6 +38,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 const toStringArray = (value: unknown): string[] =>
   Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : [];
+
+const readNodeData = (node: TreeNode | Record<string, unknown> | null | undefined): Record<string, unknown> => {
+  if (!node) return {};
+  const nodeRecord = node as unknown as Record<string, unknown>;
+  const rawData = nodeRecord.data;
+  return isRecord(rawData) ? (rawData as Record<string, unknown>) : {};
+};
 
 export function normalizeMapStyle(mapStyle?: Partial<MapStyle>): MapStyle {
   return {
@@ -55,7 +62,7 @@ export function normalizeViewport(viewport?: Partial<MapViewport>): MapViewport 
 
 export function buildBaseMapEntityFromNode(node?: TreeNode | null): BaseMapEntity | null {
   if (!node) return null;
-  const data = isRecord((node as Record<string, unknown>).data) ? (node.data as Record<string, unknown>) : {};
+  const data = readNodeData(node);
   const mapStyle = normalizeMapStyle(data.mapStyle as Partial<MapStyle> | undefined);
   const viewport = normalizeViewport(data.viewport as Partial<MapViewport> | undefined);
   const createdAt: Timestamp = (typeof node.createdAt === 'number' ? node.createdAt : Date.now()) as Timestamp;
@@ -204,15 +211,17 @@ export function useBaseMapEntity(
           viewport: normalizeViewport(updates.viewport ?? current.viewport),
           updatedAt: Date.now() as Timestamp,
         };
-        await apis.workingCopy.updateWorkingCopy(workingCopyId, {
-          data: {
-            ...(isRecord((workingCopyNode as Record<string, unknown>).data)
-              ? (workingCopyNode.data as Record<string, unknown>)
-              : {}),
-            mapStyle: next.mapStyle,
-            viewport: next.viewport,
-          },
-        });
+        const existingData = readNodeData(workingCopyNode);
+        await apis.workingCopy.updateWorkingCopy(
+          workingCopyId,
+          {
+            data: {
+              ...existingData,
+              mapStyle: next.mapStyle,
+              viewport: next.viewport,
+            },
+          } as Partial<TreeNode>
+        );
         await apis.workingCopy.commitWorkingCopy(workingCopyId);
         await fetchEntity();
       } catch (err) {

@@ -5,6 +5,7 @@ const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
 import type { TreeNode } from '@hierarchidb/common-types';
 import type { PeerStore } from '@hierarchidb/runtime-worker';
 import type { BasemapPeerData } from '../../common/types/BaseMapEntity.js';
+import { PLUGIN_NODE_TYPE } from '../../plugin-manifest.js';
 import type { BasemapEntitiesDB } from '../basemapEntitiesDB.js';
 import { extractPresentationFromNodeData, normalizeBasemapPeerData } from '../utils/presentation.js';
 
@@ -82,9 +83,9 @@ async function ensureBasemapStores(registry: StoreRegistry): Promise<void> {
   const db = new BasemapEntitiesDB();
   await db.open?.();
 
-  if (!registry.getPeer('basemap')) {
+  if (!registry.getPeer(PLUGIN_NODE_TYPE)) {
     const { createBasemapPeerStoreDexie } = await import('../basemapPeerStore.dexie.js');
-    registry.registerPeer('basemap', createBasemapPeerStoreDexie(db));
+    registry.registerPeer(PLUGIN_NODE_TYPE, createBasemapPeerStoreDexie(db));
   }
 
   await ensureBasemapPeerComposer();
@@ -97,7 +98,7 @@ async function ensureBasemapPeerComposer(): Promise<void> {
   try {
     const runtime = await import('@hierarchidb/runtime-worker');
     if (typeof runtime.registerPeerDataComposer === 'function') {
-      runtime.registerPeerDataComposer('basemap', composeBasemapPeerData);
+      runtime.registerPeerDataComposer(PLUGIN_NODE_TYPE, composeBasemapPeerData);
       peerComposerRegistered = true;
     }
   } catch (error) {

@@ -102,6 +102,10 @@ export interface PluginDialogControllerState {
 const DEFAULT_SIZE: MultiDialogSize = { width: 960, height: 640 };
 const DEFAULT_VIEWPORT = { width: 1280, height: 720 } as const;
 const DEFAULT_POSITION: MultiDialogPosition = initialPosition(DEFAULT_SIZE, DEFAULT_VIEWPORT);
+const BUILD_ID =
+  (typeof import.meta !== 'undefined' && (import.meta as { env?: Record<string, string> })?.env?.VITE_APP_BUILD_ID) ||
+  (typeof import.meta !== 'undefined' && (import.meta as { env?: Record<string, string> })?.env?.VITE_COMMIT_SHA) ||
+  'sandbox-20251119T0825Z';
 
 const clampIndex = (index: number, length: number) => {
   if (length <= 0) return 0;
@@ -132,11 +136,34 @@ const emptyGuards: StepGuardState = {
   canStartBatch: false,
 };
 
-const BASIC_INFO_META_KEY = '__basicInfoValidation';
+export const BASIC_INFO_META_KEY = '__basicInfoValidation';
 
 type BasicInfoValidationMeta = {
   error: string | null;
   hasConflict: boolean;
+};
+
+export const buildStepWorkingData = (
+  workingCopyData: Record<string, unknown> | undefined,
+  basicInfo: BasicInfoState,
+  meta: BasicInfoValidationMeta
+): StepData => {
+  const baseRecord = workingCopyData ?? {};
+  const base: StepData = {
+    ...baseRecord,
+    ...basicInfo,
+  };
+  const existingDraft = toRecord((baseRecord as { draft?: unknown }).draft);
+  const mergedDraft: Record<string, unknown> = {
+    ...(existingDraft ?? {}),
+    name: basicInfo.name,
+    description: basicInfo.description,
+  };
+  if (Object.keys(mergedDraft).length) {
+    base.draft = mergedDraft;
+  }
+  base[BASIC_INFO_META_KEY] = meta;
+  return base;
 };
 
 const stripReservedDialogKeys = (
@@ -148,11 +175,26 @@ const stripReservedDialogKeys = (
   return clone;
 };
 
-const extractBasicInfoFields = (data?: Record<string, unknown>): BasicInfoState => ({
-  name: typeof data?.name === 'string' ? data.name : '',
-  description: typeof data?.description === 'string' ? data.description : '',
-  tags: toStringArray(data?.tags),
-});
+const extractBasicInfoFields = (data?: Record<string, unknown>): BasicInfoState => {
+  const draft = toRecord((data as { draft?: unknown })?.draft);
+  const nameSource =
+    typeof data?.name === 'string'
+      ? data.name
+      : typeof draft?.name === 'string'
+        ? draft.name
+        : '';
+  const descriptionSource =
+    typeof data?.description === 'string'
+      ? data.description
+      : typeof draft?.description === 'string'
+        ? draft.description
+        : '';
+  return {
+    name: nameSource,
+    description: descriptionSource,
+    tags: toStringArray(data?.tags ?? draft?.tags),
+  };
+};
 
 type StepAdapterProps = {
   cfg: PluginStepConfig;
@@ -903,6 +945,9 @@ export function usePluginDialogController(
 
   const [basicInfo, setBasicInfo] = useState({ name: '', description: '', tags: [] as string[] });
   useEffect(() => {
+    console.log('[PluginDialog] Build ID:', BUILD_ID);
+  }, []);
+  useEffect(() => {
     if (mode === 'create') {
       const fallbackName = resolveDefaultNodeName(nodeType);
       setBasicInfo((prev) => ({
@@ -916,10 +961,23 @@ export function usePluginDialogController(
   useEffect(() => {
     if (workingCopy) {
       const tagsValue = workingCopy.data?.tags;
-      const tags = toStringArray(tagsValue);
+      const tags = toStringArray(tagsValue ?? (workingCopy.data as Record<string, unknown>)?.draft?.['tags']);
+      const draft = toRecord(workingCopy.data?.draft);
+      const resolvedName =
+        typeof workingCopy.name === 'string' && workingCopy.name.length
+          ? workingCopy.name
+          : typeof draft?.name === 'string'
+            ? draft.name
+            : '';
+      const resolvedDescription =
+        typeof workingCopy.description === 'string' && workingCopy.description.length
+          ? workingCopy.description
+          : typeof draft?.description === 'string'
+            ? draft.description
+            : '';
       setBasicInfo({
-        name: workingCopy.name ?? '',
-        description: workingCopy.description ?? '',
+        name: resolvedName,
+        description: resolvedDescription,
         tags,
       });
     }
@@ -1083,11 +1141,14 @@ export function usePluginDialogController(
     setBasicInfo(extractBasicInfoFields(data));
   }, []);
 
-  const currentStepData = useMemo<StepData>(() => {
-    const base = { ...workingCopyDataWithoutMeta };
-    base[BASIC_INFO_META_KEY] = basicInfoValidationMeta;
-    return base;
-  }, [workingCopyDataWithoutMeta, basicInfoValidationMeta]);
+  const currentStepData = useMemo<StepData>(
+    () => buildStepWorkingData(workingCopyDataWithoutMeta, basicInfo, basicInfoValidationMeta),
+    [workingCopyDataWithoutMeta, basicInfo, basicInfoValidationMeta]
+  );
+  const basicInfoValidationPayload = useMemo<StepData>(
+    () => stripReservedDialogKeys(currentStepData),
+    [currentStepData]
+  );
 
   const renderStep = useCallback(
     (cfg: PluginStepConfig) => (
@@ -1135,15 +1196,18 @@ export function usePluginDialogController(
     if (composedConfigs.configs.length) {
       composedConfigs.configs.forEach((cfg) => {
         const isBasicInfoStep = cfg.id === 'basic-info';
+        const validationPayload = isBasicInfoStep
+          ? basicInfoValidationPayload
+          : workingCopyDataWithoutMeta;
         const validateFn = cfg.validate;
         const resolveValidate = (() => {
           if (isBasicInfoStep) {
             if (validateFn) {
-              return () => Boolean(validateFn(workingCopyDataWithoutMeta)) && isBasicInfoValid;
+              return () => Boolean(validateFn(validationPayload)) && isBasicInfoValid;
             }
             return () => isBasicInfoValid;
           }
-          return validateFn ? () => validateFn(workingCopyDataWithoutMeta) : undefined;
+          return validateFn ? () => validateFn(validationPayload) : undefined;
         })();
         result.push({
           id: cfg.id,
@@ -1170,6 +1234,7 @@ export function usePluginDialogController(
     isBasicInfoValid,
     renderStep,
     workingCopyDataWithoutMeta,
+    basicInfoValidationPayload,
   ]);
 
   useEffect(() => {

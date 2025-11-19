@@ -2,9 +2,8 @@ import type { NodeId } from '@hierarchidb/common-types';
 import type { TreeMutationAPI } from '@hierarchidb/common-api';
 
 export type EmptyTrashBranchDeps = {
-  trashRootId: NodeId | null | undefined;
-  hasNodes: boolean;
-  getMutationAPI: () => Promise<Pick<TreeMutationAPI, 'removeSubtree'>>;
+  nodeIds: ReadonlyArray<NodeId>;
+  getMutationAPI: () => Promise<Pick<TreeMutationAPI, 'removeNodes'>>;
 };
 
 export type EmptyTrashBranchResult = {
@@ -12,24 +11,24 @@ export type EmptyTrashBranchResult = {
 };
 
 /**
- * Permanently delete every descendant under the provided trash root.
- * The dialog supplies the currently viewed trash node ID as `trashRootId`.
+ * Permanently delete the provided trash nodes (and their descendants).
  *
- * When the tree is already empty or the root identifier is missing, the helper
- * returns `success: false` without invoking the worker.
+ * `nodeIds` should contain the branch root IDs that need to be removed.
+ * For the trash container view, pass the visible row IDs. For branch views,
+ * pass the branch root identifier.
  */
 export async function emptyTrashBranch({
-  trashRootId,
-  hasNodes,
+  nodeIds,
   getMutationAPI,
 }: EmptyTrashBranchDeps): Promise<EmptyTrashBranchResult> {
-  if (!trashRootId || !hasNodes) {
+  const targets = nodeIds.filter((id): id is NodeId => Boolean(id));
+  if (targets.length === 0) {
     return { success: false };
   }
 
   try {
     const mutationAPI = await getMutationAPI();
-    const result = await mutationAPI.removeSubtree(trashRootId);
+    const result = await mutationAPI.removeNodes(targets);
     if (!result.success) {
       console.error('Empty trash failed:', result.error);
       return { success: false };
