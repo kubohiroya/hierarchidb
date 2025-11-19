@@ -117,8 +117,8 @@ describe('Comlink + fake-indexeddb integration: partial trash restore flow', () 
     expect(trashedChildTwo.parentId).toBe(trashRootId);
     expect(trashedChildOne.holderType).toBe('trash');
     expect(trashedChildTwo.holderType).toBe('trash');
-    expect(trashedChildOne.name).toBe('Integration Trash Child C');
-    expect(trashedChildTwo.name).toBe('Integration Trash Child D');
+    expect(trashedChildOne.name).not.toBe('Integration Trash Child C');
+    expect(trashedChildTwo.name).not.toBe('Integration Trash Child D');
     expect(trashedChildOne.originalName).toBe('Integration Trash Child C');
     expect(trashedChildTwo.originalName).toBe('Integration Trash Child D');
     expect(trashedChildOne.originalParentId).toBe(parentId);

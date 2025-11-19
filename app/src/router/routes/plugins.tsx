@@ -5,7 +5,7 @@ import type { NodeType } from '@hierarchidb/common-types';
 // UIPluginRegistry is legacy; this page now reads vite-generated metadata
 // import { getUIPluginRegistry } from '@hierarchidb/ui-shell/ui-core';
 import { AutoHideFullScreenDialog as FullScreenDialog } from '@hierarchidb/ui-shell/ui-dialog';
-import { getMuiIconWithColor as getMuiIconComponent } from '@hierarchidb/ui-shell/ui-icon';
+import { useIconRegistry } from '@hierarchidb/ui-icon';
 import {
   AccountTree as AccountTreeIcon,
   CheckCircle as CheckCircleIcon,
@@ -129,11 +129,15 @@ function EnhancedPluginRow({
 
   const isFolderPlugin = plugin.nodeType === 'folder';
   const canDelete = !isFolderPlugin;
-  const iconNode = getMuiIconComponent(
-    plugin.icon.muiIconName,
-    plugin.icon.emoji,
-    plugin.iconColor
-  );
+  const { resolveIcon } = useIconRegistry();
+  const iconNode = resolveIcon({
+    nodeType: plugin.nodeType,
+    icon: {
+      muiIconName: plugin.icon.muiIconName,
+      emoji: plugin.icon.emoji,
+      color: plugin.iconColor,
+    },
+  });
   const description = t(`plugins.${plugin.nodeType}.description`, {
     defaultValue: plugin.description || plugin.displayName,
   });
@@ -526,6 +530,7 @@ function DeletePluginDialog({
 export default function PluginsPage() {
   const navigate = useNavigate();
   const { t } = useTranslation('common');
+  const { resolveIcon } = useIconRegistry();
   const [workerPlugins, setWorkerPlugins] = useState<DisplayPlugin[]>([]);
   const [uiPluginsList, setUiPluginsList] = useState<DisplayPlugin[]>([]);
   const [pluginDependencies, setPluginDependencies] = useState<Record<string, string[]>>({});
@@ -878,11 +883,14 @@ export default function PluginsPage() {
                     <TableCell>
                       <Stack direction="row" spacing={1} alignItems="center">
                         <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center' }}>
-                          {getMuiIconComponent(
-                            plugin.icon.muiIconName,
-                            plugin.icon.emoji,
-                            plugin.iconColor
-                          ) ?? <ExtensionIcon fontSize="small" color="primary" />}
+                          {resolveIcon({
+                            nodeType: plugin.nodeType,
+                            icon: {
+                              muiIconName: plugin.icon.muiIconName,
+                              emoji: plugin.icon.emoji,
+                              color: plugin.iconColor,
+                            },
+                          }) ?? <ExtensionIcon fontSize="small" color="primary" />}
                         </Box>
                         <Typography variant="body1" fontWeight="medium">
                           {plugin.nodeType}

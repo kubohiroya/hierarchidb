@@ -4,10 +4,10 @@
   * eria-cartographRowContextMenuMUI
   */
 
-import { type MouseEvent, type ReactElement, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { type MouseEvent, type ReactElement, useEffect, useMemo, useRef, useState } from 'react';
 import { Divider, ListItemIcon, ListItemText, Menu, MenuItem, Tooltip } from '@mui/material';
 import { Add as AddIcon, AssignmentTurnedIn as AssignmentTurnedInIcon, ChevronRight as ChevronRightIcon, Clear as ClearIcon, ContentCopy as ContentCopyIcon, ContentCut as ContentCutIcon, Edit as EditIcon, Folder as FolderIcon, PlayArrow as PlayArrowIcon } from '@mui/icons-material';
-import { getMuiIconWithColor } from '@hierarchidb/ui-icon';
+import { useIconRegistry } from '@hierarchidb/ui-icon';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
 type CreateMenuEntry = { key: string; nodeType: string; label: string; description?: string; icon?: { muiIconName?: string; emoji?: string; color?: string } };
 type CreateMenuBuilder = (treeId?: string) => CreateMenuEntry[];
@@ -93,6 +93,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [addMenuAnchor, setAddMenuAnchor] = useState<HTMLElement | null>(null);
   const { t, language } = useGlobalI18nTranslator();
+  const { resolveIcon } = useIconRegistry();
 
   const translateWithFallback = useMemo(() => {
     return (key: string, fallback: string) => {
@@ -439,7 +440,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
         }}
       >
         {builtCreateItems.map((ci) => {
-          const IconEl: ReactNode = getMuiIconWithColor(ci.icon?.muiIconName, ci.icon?.emoji, ci.icon?.color);
+          const IconEl = resolveIcon({ nodeType: ci.type, icon: ci.icon });
           const localizedLabel = translateWithFallback(`plugins.${ci.type}.name`, ci.label);
           const localizedDescription = translateWithFallback(`plugins.${ci.type}.description`, ci.description ?? '').trim();
 

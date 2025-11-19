@@ -88,6 +88,12 @@
       "@hierarchidb/runtime-worker/*": [
         "../packages/runtime/worker/src/*"
       ],
+      "@hierarchidb/ui-icon": [
+        "../packages/ui/icon/src/index.ts"
+      ],
+      "@hierarchidb/ui-icon/*": [
+        "../packages/ui/icon/src/*"
+      ],
       "@hierarchidb/util": [
         "../packages/util/src/index.ts"
       ],

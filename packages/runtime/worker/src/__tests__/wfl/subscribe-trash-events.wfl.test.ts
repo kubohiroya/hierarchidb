@@ -123,7 +123,7 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     expect(trashedNode).toBeTruthy();
     if (!trashedNode) throw new Error('Trashed node not found');
     expect(trashedNode.holderType).toBe('trash');
-    expect(trashedNode.name).toBe('tmp');
+    expect(trashedNode.name).not.toBe('tmp');
     expect(trashedNode.originalName).toBe('tmp');
     expect(trashedNode.originalParentId).toBe(rootId);
 
@@ -170,7 +170,7 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     expect(trashedAgain).toBeTruthy();
     if (!trashedAgain) throw new Error('Trashed node (second) not found');
     expect(trashedAgain.holderType).toBe('trash');
-    expect(trashedAgain.name).toBe('tmp');
+    expect(trashedAgain.name).not.toBe('tmp');
     expect(trashedAgain.originalName).toBe('tmp');
     expect(trashedAgain.originalParentId).toBe(rootId);
 

@@ -10,6 +10,7 @@ import { LanguageEventsBridge } from './LanguageEventsBridge.js';
 import { AppConfigProvider } from '../contexts/AppConfigContext.js';
 import { BootProgressProvider } from '../contexts/BootProgressProvider.js';
 import { WorkerProvider } from '../contexts/WorkerProvider.js';
+import { AppIconRegistryProvider } from './IconRegistryProvider.js';
 import {
   AuthReadyReporter,
   ConfigReadyReporter,
@@ -56,10 +57,12 @@ export function AppProviders({ children }: { children: ReactNode }) {
                   <UIReadyReporter />
                   <I18nReadyReporter />
                   <AuthReadyReporter />
-                  <WorkerProvider renderOverlay={false} fallback={workerFallback}>
-                    <WorkerProgressReporter />
-                    {children}
-                  </WorkerProvider>
+                  <AppIconRegistryProvider>
+                    <WorkerProvider renderOverlay={false} fallback={workerFallback}>
+                      <WorkerProgressReporter />
+                      {children}
+                    </WorkerProvider>
+                  </AppIconRegistryProvider>
                 </AppThemeProvider>
               </CustomThemeProvider>
             </StyledEngineProvider>

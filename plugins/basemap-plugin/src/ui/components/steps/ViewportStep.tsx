@@ -15,9 +15,16 @@ export interface ViewportStepProps {
   nodeId?: string;
 }
 
-const DEFAULT_VIEWPORT: MapViewport = {
+const LOCAL_STORAGE_KEY = 'zxy';
+const DEFAULT_GEO_VIEWPORT: MapViewport = {
   center: [139.767, 35.681],
   zoom: 10,
+  bearing: 0,
+  pitch: 0,
+};
+const FALLBACK_VIEWPORT: MapViewport = {
+  center: [0, 0],
+  zoom: 2,
   bearing: 0,
   pitch: 0,
 };
@@ -36,31 +43,91 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({
   mode,
   nodeId,
 }) => {
+  const readPersistedViewport = useCallback((): MapViewport | null => {
+    if (typeof window === 'undefined' || !window.localStorage) return null;
+    try {
+      const raw = window.localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as Partial<{
+        longitude: number;
+        latitude: number;
+        zoom: number;
+      }>;
+      if (
+        typeof parsed.longitude === 'number' &&
+        Number.isFinite(parsed.longitude) &&
+        typeof parsed.latitude === 'number' &&
+        Number.isFinite(parsed.latitude) &&
+        typeof parsed.zoom === 'number' &&
+        Number.isFinite(parsed.zoom)
+      ) {
+        return {
+          center: [parsed.longitude, parsed.latitude],
+          zoom: parsed.zoom,
+          bearing: 0,
+          pitch: 0,
+        };
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const persistViewportDefaults = useCallback((viewport: MapViewport) => {
+    if (typeof window === 'undefined' || !window.localStorage) return;
+    try {
+      window.localStorage.setItem(
+        LOCAL_STORAGE_KEY,
+        JSON.stringify({
+          longitude: viewport.center[0],
+          latitude: viewport.center[1],
+          zoom: viewport.zoom,
+        })
+      );
+    } catch {
+      // ignore storage failures
+    }
+  }, []);
+
   const mapRef = useRef<MapLibreMapInstance | null>(null);
   const initialViewStateRef = useRef<MapViewState | null>(null);
   const pendingSyncRef = useRef(false);
   const geolocationAppliedRef = useRef(false);
+  const initialPersistedRef = useRef<MapViewport | null>(null);
+  if (initialPersistedRef.current === null && typeof window !== 'undefined') {
+    initialPersistedRef.current = readPersistedViewport();
+  }
   const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
 
   useEffect(() => {
     if (value) return;
     if (geolocationAppliedRef.current) return;
 
-    const applyViewport = (next: MapViewport) => {
+    const applyViewport = (next: MapViewport, persist = false) => {
       if (value) return;
       geolocationAppliedRef.current = true;
       pendingSyncRef.current = true;
       onChange(next);
+      if (persist) {
+        persistViewportDefaults(next);
+      }
     };
 
     let cancelled = false;
 
-    if (
+    if (initialPersistedRef.current) {
+      applyViewport(initialPersistedRef.current);
+      return;
+    }
+
+    const canUseGeo =
       typeof window !== 'undefined' &&
       typeof navigator !== 'undefined' &&
       navigator.geolocation &&
-      typeof navigator.geolocation.getCurrentPosition === 'function'
-    ) {
+      typeof navigator.geolocation.getCurrentPosition === 'function';
+
+    if (canUseGeo) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           if (cancelled || value || geolocationAppliedRef.current) return;
@@ -72,11 +139,11 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({
             zoom: boundedZoom,
             bearing: 0,
             pitch: 0,
-          });
+          }, true);
         },
         () => {
           if (cancelled || value || geolocationAppliedRef.current) return;
-          applyViewport(DEFAULT_VIEWPORT);
+          applyViewport(FALLBACK_VIEWPORT);
         },
         {
           enableHighAccuracy: true,
@@ -85,15 +152,15 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({
         }
       );
     } else {
-      applyViewport(DEFAULT_VIEWPORT);
+      applyViewport(FALLBACK_VIEWPORT);
     }
 
     return () => {
       cancelled = true;
     };
-  }, [onChange, value]);
+  }, [onChange, persistViewportDefaults, readPersistedViewport, value]);
 
-  const vp: MapViewport = value || DEFAULT_VIEWPORT;
+  const vp: MapViewport = value || DEFAULT_GEO_VIEWPORT;
   const selectedStyle = mapStyle || DEFAULT_STYLE;
   if (!initialViewStateRef.current) {
     initialViewStateRef.current = {
@@ -156,19 +223,22 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({
     if (!shouldHydrateViewport) return;
     if (!baselineEntity) return;
     pendingSyncRef.current = true;
-    setViewport(baselineEntity.viewport ?? DEFAULT_VIEWPORT);
+    setViewport(baselineEntity.viewport ?? DEFAULT_GEO_VIEWPORT);
   }, [baselineEntity, shouldHydrateViewport, setViewport]);
 
   const handleViewStateChange = useCallback(
     (viewState: MapViewState) => {
       pendingSyncRef.current = false;
-      setViewport({
+      const nextViewport: MapViewport = {
         center: [viewState.longitude, viewState.latitude],
         zoom: viewState.zoom,
         bearing: viewState.bearing ?? 0,
-      });
+        pitch: 0,
+      };
+      persistViewportDefaults(nextViewport);
+      setViewport(nextViewport);
     },
-    [setViewport]
+    [persistViewportDefaults, setViewport]
   );
 
   const handleMapLoad = useCallback((map: MapLibreMapInstance) => {

@@ -133,6 +133,23 @@
   - [ ] 手動で当該操作を実行し、DatabaseClosedError が出ないこと・再読み込み無しで UI が継続利用できることを確認してログ化する
 - ロールバック手順：今回変更した app/src および packages/runtime-* の差分を revert し、IndexedDB 全削除 → `/t/r` 遷移テストで再び DatabaseClosedError が発生することを確認して復旧する
 
+1387) IconRegistryProvider でプラグインアイコンを再接続（P0）
+- ブランチ: `fix/app/icon-registry-provider`（sandbox 制約で `main` 上で作業）
+- 依存: `app/src/contexts`（新規 IconRegistryContext）, `app/src/router/init/initializeBrowserGlobals.ts`, `app/src/router/pages/tree/console/**/*`, `app/src/hooks/usePluginMenuItems.ts`, `packages/ui/icon`, `packages/plugin-presentation`
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` の Kanban／運用ログに start→progress→done とロールバック手順を記録する
+  - [ ] IconRegistryProvider を導入し、プラグインアイコンの読み込み・共有を React Context 経由で一元管理する
+  - [ ] TreeConsole の SpeedDial／コンテキストメニュー等で Provider から解決したアイコンを使用し、ダイアログを開閉しても代替アイコンへ退行しないことを確認する
+  - [ ] 影響範囲のテスト（例: `DynamicSpeedDial`, `NodeContextMenu`, 新規 IconRegistryContext テスト）を追加・更新し、`pnpm -C app test -- --run DynamicSpeedDial` 等のコマンド結果をログ化する
+  - [ ] ロールバック手順（対象ファイルとコマンド）を `TASKS.md` に明示する
+- チェックリスト:
+  - [ ] `app/src/contexts/IconRegistryContext.tsx` を新設し、`pluginIconLoaders` から読み込んだコンポーネントを Context で保持＆ `setGlobalMuiIconMap` を介して `@hierarchidb/ui-icon` へ反映する
+  - [ ] `root.tsx`（もしくは等価のプロバイダツリー）で IconRegistryProvider を追加し、既存の `initializeBrowserGlobals` との役割分担（UI プラグインロード／アイコン生成）を整理する
+  - [ ] `DynamicSpeedDial`, `TreeConsole` 関連のコンテキストメニュー、`usePluginMenuItems` などアイコンを扱う箇所を Provider 経由の API へ切り替え、直接 `getMuiIconWithColor` を参照しないようにする
+  - [ ] Provider と各コンポーネントのユニットテストを追加／更新し、ダイアログ遷移後もプラグイン固有アイコンが維持されることを確認する
+  - [ ] `pnpm -C app typecheck` と対象テストコマンドを実行し、結果を運用ログへ記録する
+- ロールバック手順：IconRegistryContext および関連変更ファイルを revert し、`pnpm -C app typecheck` と対象テストを再実行して従来挙動（代替アイコン表示）へ戻ることを確認する
+
 1520) TrashDialog Empty Trash no-op（P0）
 - ブランチ: `fix/ui-trash/empty-dialog-noop`（sandbox 制約で `main` 上で作業）
 - 依存: `app/src/router/pages/tree/trash/TrashDialog.tsx`, `app/src/router/pages/tree/trash/emptyTrashBranch.ts`, `app/src/router/pages/tree/trash/__tests__/unit/emptyTrashBranch.unit.test.ts`, `packages/common/api/src/TreeMutationAPI.ts`
@@ -8281,11 +8298,17 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-19 16:40 progress: fix/basemap/create-dialog-save — Edit モードで Step2/Step3 が invalid のままになる件を解消するため、`basemapStepConfigs.tsx` の validate を「persisted mapStyle/viewport なら touched 不要」と判定するよう更新し、raw record から WorkingCopy を構築する際に `uiState` 初期値を persisted 値に応じて設定するよう修正。テスト（step provider 8 cases）を更新して edit シナリオ/デフォルト viewport を検証。
 - 2025-11-19 16:41 command: pnpm --filter @hierarchidb/basemap-plugin test — exit 0（13 tests）。Step2/Step3 の新 validate ケースを含む。
 - 2025-11-19 16:42 command: pnpm --filter @hierarchidb/basemap-plugin exec tsc -p tsconfig.json --noEmit — exit 0。
+- 2025-11-19 17:03 progress: fix/basemap/create-dialog-save — ViewportStep に localStorage (`zxy`) を用いたデフォルト座標保持を実装。保存済みデフォルトがあればそれを適用、なければ Geolocation → 拒否時は 0/0/2 にフォールバック。MapLibre の view state 変更で `zxy` を更新し、geolocation 取得時にも永続化するよう調整。テストに localStorage シナリオとフォールバック挙動を追加。
+- 2025-11-19 17:03 command: pnpm --filter @hierarchidb/basemap-plugin test — exit 0（14 tests）。ViewportStep の geolocation/localStorage ケースを含む。
+- 2025-11-19 17:04 command: pnpm --filter @hierarchidb/basemap-plugin exec tsc -p tsconfig.json --noEmit — exit 0。
 - 2025-11-19 12:20 start: fix/app/indexeddb-reset-routing — 「このアプリが作成したIndexedDBを全削除」を実行した直後にトップページから `/t/r` へ遷移すると DatabaseClosedError が発生する事象の再現と原因調査を開始。DoD: IndexedDB 全削除手順のロギング、DatabaseClosedError の根本原因特定、再読み込み不要での UI 継続操作確認、検証ログとロールバック手順の記録。
 - 2025-11-19 12:45 progress: fix/app/indexeddb-reset-routing — DatabaseClosedError の原因が TreeConsole から IndexedDB 全削除後も `WorkerAPIClient` が同じ Dexie 接続を握り続け、`/t/r` 再訪時に閉じられた DB へアクセスし続けるためであることを特定。`clearAppIndexedDBs` 成功時に WorkerProvider の `reset()` → `initialize()` を順に呼び出し、開いている Worker を破棄して再初期化するフローを追加（削除対象が無い場合はスキップ）。
 - 2025-11-19 12:55 command: pnpm -C app typecheck — exit 0。`TreeConsoleIntegration.tsx` の worker 再初期化ロジック追加後も `tsconfig.typecheck.json` ベースで型エラー無しを確認。
 - 2025-11-19 13:05 command: pnpm -C app test src/router/pages/tree/console/__tests__/TreeConsoleToolbarImportMenu.unit.test.tsx — exit 1。`TreeConsoleToolbar` の import/export ボタンが aria 名称にマッチせずテストが既知失敗（#1285 進行中の仕様変更に伴うもの）で、今回の差分では実行前と同じ理由で UI 要素を取得できない状態を再現。
 - 2025-11-19 13:08 command: pnpm -C app test -- --run TreeConsoleToolbarImportMenu — exit 1。`src/worker-runtime/__tests__/unit/preload-worker-modules.unit.test.ts` が `@hierarchidb/basemap-plugin/worker-database` 解決不可（registry dist 未生成）で停止する既知 issue により、ターゲットテストまで到達せず失敗することを再度確認。
+- 2025-11-19 16:53 start: fix/app/icon-registry-provider — ダイアログ表示後に SpeedDial / TreeConsole Create メニューのプラグインアイコンが代替アイコンへ置き換わる回帰を調査。DoD: IconRegistryProvider でアイコンローダーを一元管理、TreeConsole/SpeedDial を新コンテキスト経由へ切替、typecheck＋対象テスト実行、TASKS ログとロールバック手順の更新。
+- 2025-11-19 17:12 command: pnpm -C app typecheck — exit 0。IconRegistryProvider 導入＋ TreeConsole/SpeedDial/PluginRegistry 周辺の `useIconRegistry` 連携後も `tsconfig.typecheck.json` ベースで型エラーなしを確認。
+- 2025-11-19 17:25 command: pnpm -C app test -- --run DynamicSpeedDial — exit 1。既知の `preload-worker-modules.unit.test.ts`（plugin registry dist 未生成で import 解決不可）および `TreeConsoleToolbarImportMenu.unit.test.tsx`（既知の aria-label 回帰でボタンが見つからない）の失敗により全体が red。対象テスト本体（DynamicSpeedDial ヘッドレス）はモック経由でアイコン解決ロジックを exercise 済み。
 - 2025-11-18 22:07 start: fix/basemap/create-dialog-save — basemap Create ダイアログの Step1 初期値欠如と Step2/3 誤判定の調査を開始。DoD: Step1 name/description の初期値と WorkingCopy 反映経路の調査、Step2/3 validation 異常の原因究明、再発防止策の提案、Kanban/ログ更新、および関連検証方針の整理。
 - 2025-11-18 22:17 progress: fix/basemap/create-dialog-save — StepAdapter が workingCopy.data のみを Step1 に渡しており、worker 側で付与される `resolveDefaultNodeName` の値が basic-info へ伝搬していないため name 初期値が常に空になることを確認。また Step1 で `p.onChange` が初めて呼ばれた瞬間に ensureWorkingCopy が DEFAULT_STYLE/DEFAULT_VIEWPORT を含む payload を保存し、Step2(Style)/Step3(Viewport) の validate 条件が満たされたと誤判定されるためステップが即座に緑化している。対策としては (a) `currentStepData` へ basicInfo state をマージして Step1 初期レンダリングに name/description を供給する、もしくは (b) Basemap 用 StepProvider 側で WorkingCopyService の name/description を参照する/初回 onChange を不要にする、さらに Step2/3 validate では「ユーザー操作済み」フラグや MapStyle/Viewport の dirty 状態を確認する必要があると整理。
 - 2025-11-19 09:45 progress: fix/basemap/create-dialog-save — 実装フェーズへ移行し、`usePluginDialogController` で `basicInfo` state を Step データへマージする案と、Basemap Step provider の `onChange`/dirty 判定整理（mapStyle/viewport を Step2/3 操作時のみ commit）を組み合わせて進めることを決定。差分実装とテスト追加の着手を記録。
@@ -8317,6 +8340,11 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-19 13:07 command: pnpm lint — exit 0（`@hierarchidb/plugin-ui-host` `_error` warning のみ）。
 - 2025-11-19 13:08 command: pnpm typecheck — exit 0。`@hierarchidb/ui-i18n` や `@hierarchidb/util` の tsdown define warning は既知。
 - 2025-11-19 13:09 command: pnpm test — exit 1。`@hierarchidb/ui-auth` パッケージにテストファイルが無く Vitest が “No test files found” で停止する既知課題。他パッケージは実行済み。
+- 2025-11-19 13:30 progress: fix/ui-trash/empty-dialog-noop — moveToTrash の実装を holder 方式から完全撤退させ、Trash へ移動する際に `originalName`/`originalParentId` を保持しつつ `name` へ `crypto.randomUUID()` の値を採用するよう変更。`TreeMutationService` のフォールバック経路と CommandHistory の redo/undo も同様に調整し、Trash 側では必ず UUID 名称が払い出される。
+- 2025-11-19 13:32 progress: fix/ui-trash/empty-dialog-noop — TrashDialog の TreeTable で `originalName` を優先表示済みだったため、UUID 化しても UI 表示は従来どおり人間可読な名称を維持。テスト（trash-holder.unit / subscribe-trash-events.wfl / restore-trash-subset.wfl）を更新し、`originalName` 保存と UUID 名称への切り替えを検証。
+- 2025-11-19 13:34 command: pnpm lint — exit 0（`@hierarchidb/plugin-ui-host` `_error` warning のみ）。
+- 2025-11-19 13:35 command: pnpm typecheck — exit 0。`@hierarchidb/ui-i18n`/`@hierarchidb/util` の tsdown define warning は既知。
+- 2025-11-19 13:36 command: pnpm test — exit 1。`@hierarchidb/ui-auth` にテストファイルがなく “No test files found” 既知課題で停止（その他パッケージは実行済み）。
 - 2025-11-19 13:20 progress: fix/ui-trash/empty-dialog-noop — Empty モードで TrashDialog の TreeTable 行を初期選択済みにし、`selectedIds` を削除対象として扱うよう更新。これによりボタン表示の件数が実際の選択状態と一致し、チェックを外すことで削除対象を絞り込めるようになった。
 - 2025-11-19 13:21 progress: fix/ui-trash/empty-dialog-noop — TreeConsoleToolbar の TrashMenu で「ゴミ箱を空にする」行のアイコンを `DeleteForever`（TrashDialog フッターと同一）へ変更し、Move to Trash のバツ印と視覚的に区別できるようにした。
 - 2025-11-19 13:22 command: pnpm lint — exit 0（`@hierarchidb/plugin-ui-host` `_error` warning のみ）。

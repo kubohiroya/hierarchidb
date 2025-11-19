@@ -1,8 +1,8 @@
-import { memo, type MouseEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, type MouseEvent, useEffect, useMemo, useRef, useState } from 'react';
 import type { CreateMenuBuilder, GlobalMenuBuilders, CreateMenuEntry } from '@hierarchidb/common-types';
 import { Divider, ListItemIcon, ListItemText, Menu, MenuItem, Tooltip } from '@mui/material';
 import { Add as AddIcon, AssignmentTurnedIn, ChevronRight, Clear as ClearIcon, ContentCopy as ContentCopyIcon, Edit as EditIcon, Folder as FolderIcon, PlayArrow as PlayArrowIcon } from '@mui/icons-material';
-import { getMuiIconWithColor } from '@hierarchidb/ui-icon';
+import { useIconRegistry } from '@hierarchidb/ui-icon';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
 
 // Defer resolving ui-core to runtime to avoid build-time type resolution issues
@@ -42,6 +42,7 @@ export const RowContextMenu = memo(
     const [addMenuOpen, setAddMenuOpen] = useState(false);
     const [addMenuAnchor, setAddMenuAnchor] = useState<HTMLElement | null>(null);
     const { t, language } = useGlobalI18nTranslator();
+    const { resolveIcon } = useIconRegistry();
     const translateWithFallback = useMemo(() => {
       return (key: string, fallback: string) => {
         const safeFallback = fallback?.trim?.() ?? '';
@@ -339,7 +340,7 @@ export const RowContextMenu = memo(
               // Build items from treeId (resources/projects context)
               const items = builder(props.treeId) as CreateMenuEntry[];
               return (items || []).map((i) => {
-                const IconEl: ReactNode = getMuiIconWithColor(i.icon?.muiIconName, i.icon?.emoji, i.icon?.color);
+                const IconEl = resolveIcon({ nodeType: i.nodeType, icon: i.icon });
                 const localizedLabel = translateWithFallback(`plugins.${i.nodeType}.name`, i.label);
                 const localizedDescription = translateWithFallback(`plugins.${i.nodeType}.description`, i.description ?? '').trim();
 

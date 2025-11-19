@@ -7,7 +7,7 @@
 
 import type { TreeId } from '@hierarchidb/common-types';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-shell/ui-i18n';
-import { getMuiIconWithColor as getMuiIconComponent } from '@hierarchidb/ui-shell/ui-icon';
+import { useIconRegistry } from '@hierarchidb/ui-icon';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import { Box, Portal, SpeedDial, SpeedDialAction, SpeedDialIcon } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -66,6 +66,7 @@ export function DynamicSpeedDial({
   // Use VM path only when we actually have menu items
   const useVM = vmItems.length > 0;
   const { t, language } = useGlobalI18nTranslator();
+  const { resolveIcon } = useIconRegistry();
 
   const translateWithFallback = useCallback(
     (key: string, fallback: string) => {
@@ -271,11 +272,7 @@ export function DynamicSpeedDial({
                 return (
                   <SpeedDialAction
                     key={`${item.key}-${language}`}
-                    icon={getMuiIconComponent(
-                      item.icon?.muiIconName,
-                      item.icon?.emoji,
-                      item.icon?.color
-                    )}
+                    icon={resolveIcon({ nodeType: item.nodeType, icon: item.icon })}
                     tooltipTitle={tooltipLabel}
                     onClick={() => handleVMActionClick(item.nodeType)}
                     sx={{

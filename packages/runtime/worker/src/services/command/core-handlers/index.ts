@@ -319,13 +319,17 @@ async function handleMoveToTrash(
       const previousHolderTargetId = node.holderTargetId as NodeId | undefined;
       const previousHolderMetaParentId = node.holderMetaParentId as NodeId | undefined;
 
-      const trashName = node.name;
+      const preservedOriginalName = previousOriginalName ?? node.name;
+      const trashName =
+        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+          ? crypto.randomUUID()
+          : `${node.id as string}-${now}`;
 
       const updatedNode: Parameters<CoreDB['updateNode']>[0] = {
         ...node,
         parentId: trashRootId,
         name: trashName,
-        originalName: previousOriginalName ?? node.name,
+        originalName: preservedOriginalName,
         originalParentId: previousOriginalParentId ?? originalParentId,
         removedAt: now,
         holderType: 'trash',

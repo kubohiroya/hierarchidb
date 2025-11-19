@@ -7,6 +7,12 @@
     "paths": {
       "~/*": [
         "./src/*"
+      ],
+      "@hierarchidb/ui-icon": [
+        "../../../../packages/ui/icon/src/index.ts"
+      ],
+      "@hierarchidb/ui-icon/*": [
+        "../../../../packages/ui/icon/src/*"
       ]
     },
     "jsxImportSource": "react"

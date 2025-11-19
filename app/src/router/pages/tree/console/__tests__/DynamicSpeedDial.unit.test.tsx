@@ -5,11 +5,19 @@ import { DynamicSpeedDial } from '../DynamicSpeedDial.js';
 import type { PluginMenuItem } from '~/hooks/usePluginMenuItems.js';
 import '@testing-library/jest-dom';
 
-const iconModule = vi.hoisted(() => ({
-  getMuiIconWithColor: vi.fn(() => <div data-testid="speed-dial-icon" />),
-}));
+const iconModule = vi.hoisted(() => {
+  const resolveIcon = vi.fn(() => <div data-testid="speed-dial-icon" />);
+  return {
+    useIconRegistry: vi.fn(() => ({
+      resolveIcon,
+      ready: true,
+      error: null,
+    })),
+    __mocks: { resolveIcon },
+  };
+});
 
-vi.mock('@hierarchidb/ui-shell/ui-icon', () => iconModule);
+vi.mock('@hierarchidb/ui-icon', () => iconModule);
 
 vi.mock('@hierarchidb/ui-shell/ui-i18n', () => ({
   useGlobalI18nTranslator: () => ({
@@ -67,7 +75,14 @@ describe('DynamicSpeedDial', () => {
 
     const action = screen.getByTestId('create-basemap-action');
     expect(action).toBeInTheDocument();
-    expect(iconModule.getMuiIconWithColor).toHaveBeenCalledWith('Public', '🗺️', '#123456');
+    expect(iconModule.__mocks.resolveIcon).toHaveBeenCalledWith({
+      nodeType: 'basemap',
+      icon: {
+        muiIconName: 'Public',
+        emoji: '🗺️',
+        color: '#123456',
+      },
+    });
     expect(screen.getByTestId('speed-dial-icon')).toBeInTheDocument();
   });
 });

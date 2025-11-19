@@ -685,11 +685,18 @@ export class TreeMutationService implements TreeMutationAPI {
           continue;
         }
 
+        const preservedOriginalName =
+          (node as { originalName?: string }).originalName ?? node.name;
+        const trashName =
+          typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+            ? crypto.randomUUID()
+            : `${node.id as string}-${now}`;
+
         await this.coreDB.updateNode?.({
           id: node.id,
           parentId: trashRootId,
-          name: node.name,
-          originalName: (node as { originalName?: string }).originalName ?? node.name,
+          name: trashName,
+          originalName: preservedOriginalName,
           originalParentId: originalParentId,
           removedAt: now,
           holderType: 'trash',

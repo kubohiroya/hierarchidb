@@ -1,5 +1,5 @@
 import React from 'react';
-import { describe, expect, it, vi, afterEach } from 'vitest';
+import { describe, expect, it, vi, afterEach, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
 import type { MapStyle } from '../../../../common/types/BaseMapEntity.js';
 import { ViewportStep } from '../ViewportStep.js';
@@ -27,8 +27,14 @@ afterEach(() => {
   });
 });
 
+beforeEach(() => {
+  if (typeof window !== 'undefined') {
+    window.localStorage?.clear();
+  }
+});
+
 describe('ViewportStep geolocation', () => {
-  it('applies geolocation coordinates when available', () => {
+  it('applies geolocation coordinates when available and persists them', () => {
     const onChange = vi.fn();
     const getCurrentPosition = vi.fn().mockImplementation((success: (position: GeolocationPosition) => void) => {
       success({
@@ -59,6 +65,26 @@ describe('ViewportStep geolocation', () => {
         bearing: 0,
       })
     );
+    expect(window.localStorage.getItem('zxy')).toBeTruthy();
+  });
+
+  it('uses persisted localStorage viewport when available', () => {
+    window.localStorage.setItem('zxy', JSON.stringify({ longitude: 50, latitude: -10, zoom: 5 }));
+    const onChange = vi.fn();
+    const getCurrentPosition = vi.fn();
+    Object.defineProperty(global.navigator, 'geolocation', {
+      configurable: true,
+      value: { getCurrentPosition },
+    });
+
+    renderViewportStep({ onChange });
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        center: [50, -10],
+        zoom: 5,
+      })
+    );
+    expect(getCurrentPosition).not.toHaveBeenCalled();
   });
 
   it('falls back to default viewport when geolocation is unavailable', () => {
@@ -71,8 +97,8 @@ describe('ViewportStep geolocation', () => {
     renderViewportStep({ onChange });
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({
-        center: [139.767, 35.681],
-        zoom: 10,
+        center: [0, 0],
+        zoom: 2,
       })
     );
   });
