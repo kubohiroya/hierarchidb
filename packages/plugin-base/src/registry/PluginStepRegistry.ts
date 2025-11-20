@@ -99,6 +99,8 @@ export interface StepComponentProps<TData = unknown> {
 
   /** Set step error message */
   setError: (error: string | null) => void;
+
+  disabled: boolean;
 }
 
 const registerAndResolveLabel = (nodeType: string, cfg: PluginStepConfig): string => {

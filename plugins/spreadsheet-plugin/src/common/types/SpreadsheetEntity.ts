@@ -1,7 +1,7 @@
 import type { BaseEntity, NodeId, Timestamp } from '@hierarchidb/common-types';
 import type { PeerDataBase, WorkingCopyDraft } from '@hierarchidb/plugin-service-api';
-import type { CSVFilterRule, CSVDataResult } from '@hierarchidb/ui-tabular-extract';
-import type { CSVTableMetadata } from '@hierarchidb/tabular-store';
+import type { TabularFilterRule, TabularDataResult } from '@hierarchidb/ui-tabular-extract';
+import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { DATA_SOURCE_TYPES } from '../constants.js';
 
 export type DataSourceType = typeof DATA_SOURCE_TYPES[keyof typeof DATA_SOURCE_TYPES];
@@ -25,19 +25,19 @@ export interface SpreadsheetEntity extends BaseEntity<NodeId> {
   nodeId: NodeId;
   spreadsheetMetadataId?: string;
   dataSource?: DataSourceConfig;
-  filters?: CSVFilterRule[];
+  filters?: TabularFilterRule[];
 }
 
 export interface SpreadsheetWorkingCopy extends WorkingCopyDraft<SpreadsheetEntity> {
   spreadsheetMetadataId?: string;
   dataSource?: DataSourceConfig;
-  filters?: CSVFilterRule[];
-  lastPreview?: CSVDataResult;
+  filters?: TabularFilterRule[];
+  lastPreview?: TabularDataResult;
   file?: UploadedFileSummary;
 }
 
 export type SpreadsheetDialogData = Partial<SpreadsheetWorkingCopy> & {
-  metadata?: CSVTableMetadata | null;
+  metadata?: TabularTableMetadata | null;
 };
 
 export interface SpreadsheetPeerData extends PeerDataBase {

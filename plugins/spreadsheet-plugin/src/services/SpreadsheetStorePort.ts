@@ -7,9 +7,13 @@ import type {
   TabularSchema,
   TabularStorePort,
 } from '@hierarchidb/tabular-source';
-import { TabularWriter, type TabularColumnInfo, type CSVTableMetadataLike } from '@hierarchidb/tabular-store';
+import {
+  TabularWriter,
+  type TabularColumnInfo,
+  type TabularColumnType,
+  type TabularTableMetadataLike,
+} from '@hierarchidb/tabular-store';
 import type { SpreadsheetMetadataManager } from './SpreadsheetMetadataManager.js';
-import type { TabularColumnType } from '@hierarchidb/tabular-store';
 
 interface SpreadsheetStorePortOptions {
   pluginId: string;
@@ -69,7 +73,7 @@ const resolveColumnType = (stats: ColumnStats): TabularColumnType => {
   return 'string';
 };
 
-export class SpreadsheetStorePort implements TabularStorePort<CSVTableMetadataLike> {
+export class SpreadsheetStorePort implements TabularStorePort<TabularTableMetadataLike> {
   private readonly pluginId: string;
   private readonly metadataManager: SpreadsheetMetadataManager;
   private readonly filename: string;
@@ -123,14 +127,14 @@ export class SpreadsheetStorePort implements TabularStorePort<CSVTableMetadataLi
     await current.writer.writeRows(normalizedRows);
   }
 
-  async commit(session: TabularIngestSession, summary: TabularIngestSummary): Promise<TabularIngestResult<CSVTableMetadataLike>> {
+  async commit(session: TabularIngestSession, summary: TabularIngestSummary): Promise<TabularIngestResult<TabularTableMetadataLike>> {
     const current = this.sessions.get(session.id);
     if (!current) {
       throw new Error(`Unknown ingest session: ${session.id}`);
     }
     await current.writer.commit();
 
-    const metadata: CSVTableMetadataLike = {
+    const metadata: TabularTableMetadataLike = {
       id: current.tableId,
       filename: this.filename,
       contentHash: this.contentHash,

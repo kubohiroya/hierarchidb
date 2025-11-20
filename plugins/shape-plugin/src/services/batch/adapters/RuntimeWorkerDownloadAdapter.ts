@@ -51,7 +51,7 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
 
     await batch.mapChunks<DownloadTask, {}>(
       tasks,
-      async (task, index) => {
+      async (task: DownloadTask, index: number) => {
         const lane = (task.config?.dataSource ?? 'default').toLowerCase();
         await this.laneRegistry.runWithLane(lane, async () => {
           if (controls?.waitIfPaused) {

@@ -1,5 +1,5 @@
 import type { BBox, FeatureCollection, MapSourcePort, TileCoord } from '../ports.js';
-import Dexie, { type Table } from 'dexie';
+import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 
 const logDexieShapeWarning = (message: string, error: unknown): void => {

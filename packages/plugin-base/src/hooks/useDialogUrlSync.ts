@@ -32,9 +32,9 @@ export interface UseDialogUrlSyncOptions {
   readFrom?: 'search' | 'hash'; // default 'search'
 }
 
-function debounceFn<T extends (...args: unknown[]) => void>(fn: T, wait: number) {
+function debounceFn<TArgs extends unknown[]>(fn: (...args: TArgs) => void, wait: number) {
   let t: ReturnType<typeof setTimeout> | null = null;
-  return (...args: Parameters<T>) => {
+  return (...args: TArgs) => {
     if (t) clearTimeout(t);
     t = setTimeout(() => fn(...args), wait);
   };

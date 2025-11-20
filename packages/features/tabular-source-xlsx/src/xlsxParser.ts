@@ -40,10 +40,18 @@ export const xlsxParser: TabularParserPort = {
         }
         return bytes.buffer;
       }
-      const globalBuffer = (globalThis as { Buffer?: { from(data: string, encoding: string): Uint8Array & { buffer: ArrayBuffer; byteOffset: number; byteLength: number } } }).Buffer;
-      if (typeof globalBuffer === 'function') {
-        const nodeBuffer = globalBuffer.from(base64, 'base64');
-        return nodeBuffer.buffer.slice(nodeBuffer.byteOffset, nodeBuffer.byteOffset + nodeBuffer.byteLength);
+      type BufferCtor = {
+        from(data: string, encoding: string): Uint8Array & {
+          buffer: ArrayBufferLike;
+          byteOffset: number;
+          byteLength: number;
+        };
+      };
+      const bufferCtor = (globalThis as { Buffer?: BufferCtor }).Buffer;
+      if (bufferCtor && typeof bufferCtor.from === 'function') {
+        const nodeBuffer = bufferCtor.from(base64, 'base64');
+        const { buffer, byteOffset, byteLength } = nodeBuffer;
+        return (buffer as ArrayBuffer).slice(byteOffset, byteOffset + byteLength);
       }
       throw new Error('Base64 decoding is not supported in this environment.');
     };
@@ -52,7 +60,9 @@ export const xlsxParser: TabularParserPort = {
       if (typeof Blob !== 'undefined' && i instanceof Blob) return await i.arrayBuffer();
       if (i instanceof ArrayBuffer) return i;
       if (ArrayBuffer.isView(i)) {
-        return i.buffer.slice(i.byteOffset, i.byteOffset + i.byteLength);
+        const view = i as ArrayBufferView;
+        const buffer = view.buffer as ArrayBuffer;
+        return buffer.slice(view.byteOffset, view.byteOffset + view.byteLength);
       }
       if (typeof i === 'string') {
         if (/^data:/.test(i) || /;base64,/.test(i)) {

@@ -24,7 +24,14 @@ import {
   Layers as LayersIcon,
 } from '@mui/icons-material';
 import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../shared/index.js';
-import type { FeatureFilterMethod, ProcessingConfig, StepProps } from '../../shared/index.js';
+import type {
+  DownloadProcessingConfig,
+  FeatureFilterMethod,
+  ProcessingConfig,
+  SimplificationProcessingConfig,
+  StepProps,
+  TileProcessingConfig,
+} from '../../shared/index.js';
 
 /**
  * Step 4: Processing Configuration
@@ -73,7 +80,7 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
                     downloadConfig: {
                       ...(config.downloadConfig ?? DEFAULT_PROCESSING_CONFIG.downloadConfig),
                       maxConcurrent,
-                    },
+                    } satisfies DownloadProcessingConfig,
                   });
                 }}
                 min={1}
@@ -100,7 +107,7 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
                     downloadConfig: {
                       ...(config.downloadConfig ?? DEFAULT_PROCESSING_CONFIG.downloadConfig),
                       corsProxyUrl,
-                    },
+                    } satisfies DownloadProcessingConfig,
                   });
                 }}
                 fullWidth
@@ -140,7 +147,7 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
                       simplificationConfig: {
                         ...(config.simplificationConfig ?? DEFAULT_PROCESSING_CONFIG.simplificationConfig),
                         enableFiltering,
-                      },
+                      } satisfies SimplificationProcessingConfig,
                     });
                   }}
                   disabled={disabled}
@@ -162,7 +169,7 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
                         simplificationConfig: {
                           ...(config.simplificationConfig ?? DEFAULT_PROCESSING_CONFIG.simplificationConfig),
                           featureFilterMethod: method,
-                        },
+                        } satisfies SimplificationProcessingConfig,
                       });
                     }}
                   >
@@ -198,7 +205,7 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
                         simplificationConfig: {
                           ...(config.simplificationConfig ?? DEFAULT_PROCESSING_CONFIG.simplificationConfig),
                           areaThreshold: threshold,
-                        },
+                        } satisfies SimplificationProcessingConfig,
                       });
                     }}
                     min={0.001}
@@ -242,7 +249,7 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
                     tileConfig: {
                       ...(config.tileConfig ?? DEFAULT_PROCESSING_CONFIG.tileConfig),
                       workers,
-                    },
+                    } satisfies TileProcessingConfig,
                   });
                 }}
                 inputProps={{ min: 1, max: 8 }}
@@ -264,7 +271,7 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
                     tileConfig: {
                       ...(config.tileConfig ?? DEFAULT_PROCESSING_CONFIG.tileConfig),
                       maxZoom,
-                    },
+                    } satisfies TileProcessingConfig,
                   });
                 }}
                 inputProps={{ min: 8, max: 18 }}

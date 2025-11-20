@@ -1,19 +1,21 @@
 import type {
-  CSVDataResult,
-  CSVFilterRule,
-  CSVProcessingConfig,
-  CSVSelectionConfig,
-  CSVTableListResult,
+  TabularDataResult,
+  TabularFilterRule,
+  TabularProcessingConfig,
+  TabularSelectionConfig,
+  TabularTableListResult,
   PaginationOptions,
   TabularDataApi,
 } from '@hierarchidb/ui-tabular-extract';
-import type { CSVTableMetadata } from '@hierarchidb/tabular-store';
-import { getRowStoreDB } from '@hierarchidb/tabular-store';
+import {
+  getRowStoreDB,
+  type SimpleTableMetadataManager,
+  type TabularTableMetadata,
+  type TabularTableMetadataLike,
+} from '@hierarchidb/tabular-store';
 import { TabularService } from '@hierarchidb/tabular-source';
-import type { CSVTableMetadataLike } from '@hierarchidb/tabular-store';
 import { SpreadsheetMetadataManager } from './SpreadsheetMetadataManager.js';
 import { SpreadsheetStorePort } from './SpreadsheetStorePort.js';
-import type { SimpleTableMetadataManager } from '@hierarchidb/tabular-store';
 import { hashFile } from './utils/hash.js';
 import { matchesFilters, normalizeValueForResult, prepareFilters, type PreparedFilter, type TabularRow } from './utils/filtering.js';
 import { SPREADSHEET_PLUGIN_ID } from '../common/constants.js';
@@ -49,7 +51,7 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
     }
   }
 
-  async uploadCSVFile(file: File, config: CSVProcessingConfig = {}): Promise<CSVTableMetadata> {
+  async uploadTabularFile(file: File, config: TabularProcessingConfig = {}): Promise<TabularTableMetadata> {
     const contentHash = await hashFile(file);
     const existing = await this.metadataManager.findByContentHash(contentHash);
     if (existing) {
@@ -75,7 +77,11 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
     return this.toMetadata(result.metadata);
   }
 
-  async downloadCSVFromUrl(url: string, config: CSVProcessingConfig = {}): Promise<CSVTableMetadata> {
+  async uploadCSVFile(file: File, config: TabularProcessingConfig = {}): Promise<TabularTableMetadata> {
+    return this.uploadTabularFile(file, config);
+  }
+
+  async downloadTabularFromUrl(url: string, config: TabularProcessingConfig = {}): Promise<TabularTableMetadata> {
     try {
       const response = await fetch(url);
       if (!response.ok) {
@@ -86,19 +92,23 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
       const file = new File([buffer], filename, {
         type: response.headers.get('content-type') ?? 'text/csv',
       });
-      return await this.uploadCSVFile(file, config);
+      return await this.uploadTabularFile(file, config);
     } catch (error) {
       if (error instanceof Error) throw error;
       throw new Error(String(error));
     }
   }
 
-  async getTableMetadata(id: string): Promise<CSVTableMetadata | null> {
+  async downloadCSVFromUrl(url: string, config: TabularProcessingConfig = {}): Promise<TabularTableMetadata> {
+    return this.downloadTabularFromUrl(url, config);
+  }
+
+  async getTableMetadata(id: string): Promise<TabularTableMetadata | null> {
     const metadata = await this.metadataManager.get(id);
     return metadata ? this.toMetadata(metadata) : null;
   }
 
-  async listTables(pluginId?: string, pagination?: PaginationOptions): Promise<CSVTableListResult> {
+  async listTables(pluginId?: string, pagination?: PaginationOptions): Promise<TabularTableListResult> {
     const records = await this.metadataManager.list();
     const filtered = pluginId
       ? records.filter((entry) => entry.referencingPlugins?.includes(pluginId))
@@ -119,7 +129,7 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
     await this.removeRowData(tableMetadataId);
   }
 
-  async getFilteredPreview(tableId: string, filters: CSVFilterRule[], rowCount: number): Promise<CSVDataResult> {
+  async getFilteredPreview(tableId: string, filters: TabularFilterRule[], rowCount: number): Promise<TabularDataResult> {
     const metadata = await this.metadataManager.get(tableId);
     if (!metadata) {
       throw new Error('Table not found');
@@ -142,7 +152,7 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
     };
   }
 
-  async getFilteredData(tableId: string, selection: CSVSelectionConfig): Promise<CSVDataResult> {
+  async getFilteredData(tableId: string, selection: TabularSelectionConfig): Promise<TabularDataResult> {
     const metadata = await this.metadataManager.get(tableId);
     if (!metadata) throw new Error('Table not found');
     const prepared = prepareFilters(selection.filterRules ?? []);
@@ -177,7 +187,7 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
     return null;
   }
 
-  private toParseOptions(config: CSVProcessingConfig) {
+  private toParseOptions(config: TabularProcessingConfig) {
     const options: Record<string, unknown> = {};
     if (typeof config.delimiter === 'string') options.delimiter = config.delimiter;
     if (typeof config.hasHeader === 'boolean') options.header = config.hasHeader;
@@ -191,7 +201,7 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
     return tail && tail.trim().length > 0 ? tail : 'downloaded.csv';
   }
 
-  private toMetadata(input: CSVTableMetadataLike): CSVTableMetadata {
+  private toMetadata(input: TabularTableMetadataLike): TabularTableMetadata {
     return {
       id: input.id,
       filename: input.filename ?? 'untitled.csv',
@@ -209,7 +219,7 @@ export class SpreadsheetTabularApiDriver implements TabularDataApi {
     };
   }
 
-  private getColumnOrder(metadata: CSVTableMetadataLike): string[] {
+  private getColumnOrder(metadata: TabularTableMetadataLike): string[] {
     return (metadata.columns ?? []).map((column) => column.name);
   }
 

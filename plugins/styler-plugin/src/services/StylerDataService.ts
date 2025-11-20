@@ -8,14 +8,14 @@
 
 import type {
   TabularColumnInfo,
-  CSVTableMetadata,
-  CSVTableMetadataLike,
+  TabularTableMetadata,
+  TabularTableMetadataLike,
 } from '@hierarchidb/tabular-store';
 import type { MapLibreStyle } from '@hierarchidb/ui-map';
 import type {
-  CSVDataResult,
-  CSVFilterRule,
-  CSVProcessingConfig,
+  TabularDataResult,
+  TabularFilterRule,
+  TabularProcessingConfig,
   TabularDataApi,
 } from '@hierarchidb/ui-tabular-extract';
 import type { StylerEntity } from '../common/types/StylerEntity.js';
@@ -52,20 +52,16 @@ export class StylerDataService {
   }
 
   /**
-   * : CSV
-   * : SpreadsheetuploadCSVFile
-   * : Styler
-   * : Spreadsheet
+   * Upload a tabular file and infer Styler defaults.
    */
-  async uploadCSVFile(
+  async uploadTabularFile(
     file: File,
-    config: CSVProcessingConfig = {}
+    config: TabularProcessingConfig = {}
   ): Promise<{
-    tableMetadata: CSVTableMetadata;
+    tableMetadata: TabularTableMetadata;
     suggestedConfig: Partial<StylerConfig>;
   }> {
-    //  SpreadsheetCSV
-    const tableMetadata = await this.tabularApiDriver.uploadCSVFile(file, config);
+    const tableMetadata = await this.tabularApiDriver.uploadTabularFile(file, config);
 
     //  Styler
     const suggestedConfig = this.generateInitialStylerConfig(tableMetadata);
@@ -77,18 +73,16 @@ export class StylerDataService {
   }
 
   /**
-   * : URLCSV
-   * : SpreadsheetdownloadCSVFromUrl
-   * : Spreadsheet
+   * Download a tabular file from URL and ingest it.
    */
-  async downloadCSVFromUrl(
+  async downloadTabularFromUrl(
     url: string,
-    config: CSVProcessingConfig = {}
+    config: TabularProcessingConfig = {}
   ): Promise<{
-    tableMetadata: CSVTableMetadata;
+    tableMetadata: TabularTableMetadata;
     suggestedConfig: Partial<StylerConfig>;
   }> {
-    const tableMetadata = await this.tabularApiDriver.downloadCSVFromUrl(url, config);
+    const tableMetadata = await this.tabularApiDriver.downloadTabularFromUrl(url, config);
     const suggestedConfig = this.generateInitialStylerConfig(tableMetadata);
 
     return {
@@ -106,9 +100,9 @@ export class StylerDataService {
   async getStyledPreview(
     tableId: string,
     stylerConfig: StylerConfig,
-    filters: CSVFilterRule[] = [],
+    filters: TabularFilterRule[] = [],
     rowCount: number = 100
-  ): Promise<{ data: CSVDataResult; styledRows: StyledRow[] }> {
+  ): Promise<{ data: TabularDataResult; styledRows: StyledRow[] }> {
     //  Spreadsheet
     const data = await this.tabularApiDriver.getFilteredPreview(tableId, filters, rowCount);
 
@@ -149,7 +143,7 @@ export class StylerDataService {
       throw new Error('Key column, value column, and target property are required');
     }
 
-    const data = await this.csvApiDriver.getFilteredPreview(tableId, [], 1000);
+    const data = await this.tabularApiDriver.getFilteredPreview(tableId, [], 1000);
     const values = data.rows
       .map((row) => row[selectedValueColumn])
       .filter((val): val is number => typeof val === 'number');
@@ -206,7 +200,7 @@ export class StylerDataService {
    * :
    */
   async addTableReference(tableId: string): Promise<void> {
-    await this.csvApiDriver.addTableReference(tableId, this.pluginId);
+    await this.tabularApiDriver.addTableReference(tableId, this.pluginId);
   }
 
   /**
@@ -215,7 +209,7 @@ export class StylerDataService {
    * :
    */
   async removeTableReference(tableId: string): Promise<void> {
-    await this.csvApiDriver.removeTableReference(tableId, this.pluginId);
+    await this.tabularApiDriver.removeTableReference(tableId, this.pluginId);
   }
 
   /**
@@ -223,8 +217,8 @@ export class StylerDataService {
    * : Styler
    * :
    */
-  async listStylerTables(): Promise<CSVTableMetadata[]> {
-    const allTables = await this.csvApiDriver.listTables();
+  async listStylerTables(): Promise<TabularTableMetadata[]> {
+    const allTables = await this.tabularApiDriver.listTables();
     const filtered = allTables.tables.filter((table) =>
       table.referencingPlugins?.includes(this.pluginId)
     );
@@ -236,7 +230,7 @@ export class StylerDataService {
    * :
    * :
    */
-  private generateInitialStylerConfig(tableMetadata: CSVTableMetadata): Partial<StylerConfig> {
+  private generateInitialStylerConfig(tableMetadata: TabularTableMetadata): Partial<StylerConfig> {
     const numericColumns = tableMetadata.columns.filter(
       (col: TabularColumnInfo) => col.type === 'number'
     );
@@ -272,7 +266,33 @@ export class StylerDataService {
     return cfg;
   }
 
-  private ensureFullMetadata(table: CSVTableMetadataLike): CSVTableMetadata {
+  /**
+   * @deprecated use uploadTabularFile
+   */
+  async uploadCSVFile(
+    file: File,
+    config: TabularProcessingConfig = {}
+  ): Promise<{
+    tableMetadata: TabularTableMetadata;
+    suggestedConfig: Partial<StylerConfig>;
+  }> {
+    return this.uploadTabularFile(file, config);
+  }
+
+  /**
+   * @deprecated use downloadTabularFromUrl
+   */
+  async downloadCSVFromUrl(
+    url: string,
+    config: TabularProcessingConfig = {}
+  ): Promise<{
+    tableMetadata: TabularTableMetadata;
+    suggestedConfig: Partial<StylerConfig>;
+  }> {
+    return this.downloadTabularFromUrl(url, config);
+  }
+
+  private ensureFullMetadata(table: TabularTableMetadataLike): TabularTableMetadata {
     return {
       id: table.id,
       filename: table.filename ?? `${table.id}.csv`,

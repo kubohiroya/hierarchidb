@@ -1,4 +1,4 @@
-import type { CSVFilterRule } from '@hierarchidb/ui-tabular-extract';
+import type { TabularFilterRule } from '@hierarchidb/ui-tabular-extract';
 
 export type TabularRow = {
   [column: string]: string | number | boolean | null;
@@ -6,7 +6,7 @@ export type TabularRow = {
 
 export type PreparedFilter = {
   column: string;
-  operator: CSVFilterRule['operator'];
+  operator: TabularFilterRule['operator'];
   value?: string | number;
   regex?: RegExp;
 };
@@ -15,7 +15,7 @@ const NULL_LIKE_VALUES = new Set(['', 'null', 'undefined']);
 
 const SAFE_NUMBER_REGEX = /^-?\d+(\.\d+)?$/;
 
-export function prepareFilters(rules: CSVFilterRule[]): PreparedFilter[] {
+export function prepareFilters(rules: TabularFilterRule[]): PreparedFilter[] {
   return rules
     .filter((rule) => rule.enabled !== false && rule.column)
     .map((rule) => {

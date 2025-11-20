@@ -20,8 +20,11 @@ export interface PeerEntity {
 }
 
 import type { WorkingCopyDraft } from '@hierarchidb/plugin-service-api';
-import type { CSVFilterRule, CSVDataResult } from '@hierarchidb/ui-tabular-extract';
-import type { CSVTableMetadata } from '@hierarchidb/tabular-store';
+import type {
+  TabularFilterRule,
+  TabularDataResult,
+} from '@hierarchidb/ui-tabular-extract';
+import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import type { BBox, Geometry } from 'geojson';
 
 // ================================
@@ -33,7 +36,7 @@ export interface ShapeEntity extends PeerEntity {
   name?: string;
   description?: string;
   tabularMetadataId?: string;
-  tabularFilters?: CSVFilterRule[];
+  tabularFilters?: TabularFilterRule[];
 
   // Map Position
   zxy?: [number, number, number]; // [zoom, x(longitude), y(latitude)] for initial position
@@ -89,10 +92,10 @@ export type ShapeWorkingCopy = WorkingCopyDraft<ShapeEntity> &
     checkboxState?: boolean[][] | string;
     urlMetadata?: UrlMetadata[];
     tabularMetadataId?: string;
-    tabularFilters?: CSVFilterRule[];
+    tabularFilters?: TabularFilterRule[];
     tabularFile?: TabularFileSummary;
-    tabularLastPreview?: CSVDataResult;
-    tabularMetadata?: CSVTableMetadata | null;
+    tabularLastPreview?: TabularDataResult;
+    tabularMetadata?: TabularTableMetadata | null;
   }>;
 
 export interface StepProps {
