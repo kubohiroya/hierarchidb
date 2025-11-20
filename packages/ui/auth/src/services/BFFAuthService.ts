@@ -366,7 +366,7 @@ export class BFFAuthService {
           },
           credentials: 'include',
         });
-      } catch (_error) {
+      } catch{
         // Ignore revoke errors
       }
     }
@@ -418,7 +418,7 @@ export class BFFAuthService {
       }
 
       return this.parseTokenResponse(data);
-    } catch (_error) {
+    } catch {
       return null;
     }
   }
@@ -435,7 +435,7 @@ export class BFFAuthService {
     try {
       // Parse JWT to get user info (without verification)
       return this.parseTokenToUser(token);
-    } catch (_error) {
+    } catch {
       return null;
     }
   }
@@ -479,7 +479,7 @@ export class BFFAuthService {
         expires_at: (payload.exp || 0) * 1000, // Convert to milliseconds
         provider: payload.provider || 'google',
       };
-    } catch (_error) {
+    } catch {
       throw new Error('Invalid token format');
     }
   }
