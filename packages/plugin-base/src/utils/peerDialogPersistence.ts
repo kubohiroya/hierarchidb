@@ -144,8 +144,8 @@ function clearLegacyDialogFields(row: PeerDialogRow): void {
   delete row.dialogSize;
 }
 
-function createAdapterFromPeerStore<TData>(store: PeerStore<TData>): PeerEntitiesDBAdapter {
-  const mapEntityToRow = (entity: PeerEntity<TData> | undefined): PeerDialogRow | undefined => {
+function createAdapterFromPeerStore(store: PeerStore<unknown>): PeerEntitiesDBAdapter {
+  const mapEntityToRow = (entity: PeerEntity | undefined): PeerDialogRow | undefined => {
     if (!entity) return undefined;
     return {
       nodeId: String(entity.nodeId),
@@ -161,9 +161,8 @@ function createAdapterFromPeerStore<TData>(store: PeerStore<TData>): PeerEntitie
       put: async (row: PeerDialogRow) => {
         const existing = await store.get(row.nodeId as NodeId);
         const nextDialogWindow = normalizeDialogWindow(row.dialogWindow, existing?.dialogWindow);
-        const baseEntity: PeerEntity<TData> =
-          existing ?? ({ nodeId: row.nodeId as NodeId } as PeerEntity<TData>);
-        const next: PeerEntity<TData> = {
+        const baseEntity: PeerEntity = existing ?? ({ nodeId: row.nodeId as NodeId } as PeerEntity);
+        const next: PeerEntity = {
           ...baseEntity,
           dialogWindow: nextDialogWindow,
           dialogProgress: row.dialogProgress ?? existing?.dialogProgress ?? null,

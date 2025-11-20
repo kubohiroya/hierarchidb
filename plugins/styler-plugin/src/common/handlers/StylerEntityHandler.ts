@@ -81,14 +81,12 @@ export class StylerEntityHandler {
     const entity: StylerEntity = {
       ...baseEntity,
       // Prefer requested name if provided
-      name: data?.name ?? baseEntity.name,
       stylerConfig: data?.stylerConfig || StylerConfigDefault,
       selectedKeyColumn: data?.selectedKeyColumn || '',
       selectedValueColumn: data?.selectedValueColumn || '',
       generatedStyle: data?.generatedStyle,
     };
 
-    await this.mirrorToPeerStore(entity).catch(() => {});
     return { success: true, data: entity };
   }
 
@@ -149,7 +147,6 @@ export class StylerEntityHandler {
       }
     }
 
-    if (entity) await this.mirrorToPeerStore(entity).catch(() => {});
     return { success: !!entity, data: entity };
   }
 
@@ -169,24 +166,4 @@ export class StylerEntityHandler {
     return { success: true };
   }
 
-  // Working copy lifecycle is handled by runtime-worker; no plugin-level WC APIs.
-
-  // Best-effort peer mirror for runtime-worker flows (WC/duplicate/paste)
-  private async mirrorToPeerStore(entity: StylerEntity): Promise<void> {
-    try {
-      // Build the module specifier dynamically to avoid TS trying to resolve it at type time
-      const workerModName: string = '@hierarchidb' + '/runtime-worker';
-      // Use variable-based dynamic import to avoid build-time type resolution
-      const mod = await import(/* @vite-ignore */ workerModName as string);
-      const store = mod.storeRegistry.getPeer<StylerEntity>('styler');
-      if (!store) return;
-      await store.put({
-        nodeId: entity.nodeId,
-        data: entity,
-        updatedAt: Date.now(),
-      });
-    } catch {
-      // ignore if worker not present
-    }
-  }
 }

@@ -803,16 +803,19 @@ importers:
 
   packages/plugin-base:
     dependencies:
-      '@hierarchidb/common-types':
-        specifier: workspace:*
-        version: link:../common/types
-      '@hierarchidb/ui-dialog':
-        specifier: workspace:*
-        version: link:../ui/dialog
       react:
         specifier: ^18.3.1
         version: 18.3.1
     devDependencies:
+      '@hierarchidb/common-types':
+        specifier: workspace:*
+        version: link:../common/types
+      '@hierarchidb/runtime-worker':
+        specifier: workspace:*
+        version: link:../runtime/worker
+      '@hierarchidb/ui-dialog':
+        specifier: workspace:*
+        version: link:../ui/dialog
       '@testing-library/react':
         specifier: ^16.1.0
         version: 16.3.0(@testing-library/dom@9.3.4)(@types/react-dom@18.3.7(@types/react@18.3.26))(@types/react@18.3.26)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
