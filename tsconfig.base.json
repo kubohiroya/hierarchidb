@@ -29,10 +29,10 @@
         "plugins/basemap-plugin/src/*"
       ],
       "@hierarchidb/batch": [
-        "packages/features/batch/dist/index.js"
+        "packages/features/batch/dist/index.d.ts"
       ],
       "@hierarchidb/batch-runtime-services": [
-        "packages/batch-runtime-services/dist/index.js"
+        "packages/batch-runtime-services/dist/index.d.ts"
       ],
       "@hierarchidb/batch-runtime-services/*": [
         "packages/batch-runtime-services/dist/*"
@@ -46,24 +46,6 @@
       "@hierarchidb/bff/*": [
         "packages/backend/bff/src/*"
       ],
-      "@hierarchidb/common-api": [
-        "packages/common/api/dist/index.js"
-      ],
-      "@hierarchidb/common-api/*": [
-        "packages/common/api/dist/*"
-      ],
-      "@hierarchidb/common-auth": [
-        "packages/common/auth/dist/index.js"
-      ],
-      "@hierarchidb/common-auth/*": [
-        "packages/common/auth/dist/*"
-      ],
-      "@hierarchidb/common-types": [
-        "packages/common/types/dist/index.js"
-      ],
-      "@hierarchidb/common-types/*": [
-        "packages/common/types/dist/*"
-      ],
       "@hierarchidb/components": [
         "packages/components/src/index.ts"
       ],
@@ -71,7 +53,7 @@
         "packages/components/src/*"
       ],
       "@hierarchidb/compute": [
-        "packages/features/compute/dist/index.js"
+        "packages/features/compute/dist/index.d.ts"
       ],
       "@hierarchidb/compute/*": [
         "packages/features/compute/dist/*"
@@ -83,13 +65,13 @@
         "packages/backend/cors-proxy/src/*"
       ],
       "@hierarchidb/download": [
-        "packages/features/download/dist/index.js"
+        "packages/features/download/dist/index.d.ts"
       ],
       "@hierarchidb/download/*": [
         "packages/features/download/dist/*"
       ],
       "@hierarchidb/feature-registry": [
-        "packages/features/feature-registry/dist/index.js"
+        "packages/features/feature-registry/dist/index.d.ts"
       ],
       "@hierarchidb/feature-registry/*": [
         "packages/features/feature-registry/dist/*"
@@ -116,7 +98,7 @@
         "plugins/folder-plugin/src/*"
       ],
       "@hierarchidb/import-export": [
-        "packages/features/import-export/dist/index.js"
+        "packages/features/import-export/dist/index.d.ts"
       ],
       "@hierarchidb/import-export/*": [
         "packages/features/import-export/dist/*"
@@ -140,7 +122,7 @@
         "packages/features/map-adapter/src/*"
       ],
       "@hierarchidb/map-source": [
-        "packages/features/map-source/dist/index.js"
+        "packages/features/map-source/dist/index.d.ts"
       ],
       "@hierarchidb/map-source/*": [
         "packages/features/map-source/dist/*"
@@ -276,7 +258,7 @@
         "packages/features/tabular/src/index.ts"
       ],
       "@hierarchidb/tabular-source": [
-        "packages/features/tabular-source/dist/index.js"
+        "packages/features/tabular-source/dist/index.d.ts"
       ],
       "@hierarchidb/tabular-source-xlsx": [
         "packages/features/tabular-source-xlsx/src/index.ts"
@@ -288,7 +270,7 @@
         "packages/features/tabular-source/dist/*"
       ],
       "@hierarchidb/tabular-store": [
-        "packages/features/tabular-store/dist/index.js"
+        "packages/features/tabular-store/dist/index.d.ts"
       ],
       "@hierarchidb/tabular-store/*": [
         "packages/features/tabular-store/dist/*"
@@ -297,7 +279,7 @@
         "packages/features/tabular/src/*"
       ],
       "@hierarchidb/tag": [
-        "packages/features/tag/dist/index.js"
+        "packages/features/tag/dist/index.d.ts"
       ],
       "@hierarchidb/tag/*": [
         "packages/features/tag/dist/*"
@@ -513,7 +495,7 @@
         "packages/ui/usermenu/src/*"
       ],
       "@hierarchidb/util": [
-        "packages/util/dist/index.js"
+        "packages/util/dist/index.d.ts"
       ],
       "@hierarchidb/util/*": [
         "packages/util/dist/*"

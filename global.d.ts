@@ -5,12 +5,9 @@ declare module '*.module.css' {
 
 declare module 'maplibre-gl/dist/maplibre-gl.css';
 
-declare module '@hierarchidb/basemap-plugin/worker' {
-  export type RegisterBasemapWorkerStoresOptions = Record<string, unknown>;
-
-  export function registerBasemapWorkerStores(
-    options?: RegisterBasemapWorkerStoresOptions
-  ): Promise<void>;
+declare module '@hierarchidb/fetch-save-metadata/output/*.json' {
+  const data: Record<string, unknown>[];
+  export default data;
 }
 
 declare module 'xlsx/xlsx.mjs' {

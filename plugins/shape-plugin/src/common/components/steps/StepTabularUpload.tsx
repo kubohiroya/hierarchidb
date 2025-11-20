@@ -7,25 +7,30 @@ import { createShapeTabularApi } from '../../../services/tabular/createShapeTabu
 import { SHAPE_PLUGIN_ID } from '../../shared/constants.js';
 import type { ShapeWorkingCopy, TabularFileSummary } from '../../shared/types.js';
 
-type ShapeDialogStepProps = StepComponentProps<Partial<ShapeWorkingCopy> | undefined>;
+type ShapeDialogStepProps = StepComponentProps<Partial<ShapeWorkingCopy>>;
 
 export function StepTabularUpload({
-  data,
+  data: workingCopy,
   onChange,
   setValid,
   setError,
   disabled,
 }: ShapeDialogStepProps): JSX.Element {
-  const workingCopy = (data ?? {}) as Partial<ShapeWorkingCopy>;
+  //const workingCopy = (data ?? {}) as Partial<ShapeWorkingCopy>;
   const tabularApi = useMemo(() => createShapeTabularApi(), []);
   const [localError, setLocalError] = useState<string | null>(null);
 
   const applyMetadata = useCallback(
     (metadata: TabularTableMetadata) => {
+      const inferredType = metadata.filename?.toLowerCase().endsWith('.tsv')
+        ? 'text/tab-separated-values'
+        : metadata.filename?.toLowerCase().endsWith('.json')
+          ? 'application/json'
+          : 'text/csv';
       const nextFile: TabularFileSummary = {
         name: metadata.filename,
         sizeBytes: metadata.fileSizeBytes ?? 0,
-        type: metadata.contentType,
+        type: inferredType,
         lastModifiedAt: Date.now(),
       };
       onChange({
@@ -51,7 +56,7 @@ export function StepTabularUpload({
   );
 
   useEffect(() => {
-    const hasMetadata = Boolean(workingCopy.tabularMetadataId);
+    const hasMetadata = Boolean(workingCopy?.tabularMetadataId);
     if (hasMetadata) {
       setValid?.(true);
       setError?.(null);
@@ -59,7 +64,7 @@ export function StepTabularUpload({
       setValid?.(false);
       setError?.('Upload a dataset before continuing.');
     }
-  }, [localError, setError, setValid, workingCopy.tabularMetadataId]);
+  }, [localError, setError, setValid, workingCopy?.tabularMetadataId]);
 
   return (
     <Box sx={{ p: 3 }}>
@@ -78,7 +83,7 @@ export function StepTabularUpload({
           disabled={disabled}
         />
       </TabularProvider>
-      {!workingCopy.tabularMetadataId && (
+      {!workingCopy?.tabularMetadataId && (
         <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
           Select a file to enable preview and filtering in the next step.
         </Typography>

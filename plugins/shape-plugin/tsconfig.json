@@ -5,9 +5,90 @@
       "ES2020",
       "DOM",
       "WebWorker"
-    ]
+    ],
+    "paths": {
+      "@hierarchidb/common-types": [
+        "../../packages/common/types/dist/index.d.ts"
+      ],
+      "@hierarchidb/common-types/*": [
+        "../../packages/common/types/dist/*"
+      ],
+      "@hierarchidb/common-api": [
+        "../../packages/common/api/dist/index.d.ts"
+      ],
+      "@hierarchidb/common-api/*": [
+        "../../packages/common/api/dist/*"
+      ],
+      "@hierarchidb/common-auth": [
+        "../../packages/common/auth/dist/index.d.ts"
+      ],
+      "@hierarchidb/common-auth/*": [
+        "../../packages/common/auth/dist/*"
+      ],
+      "@hierarchidb/auth-recovery": [
+        "../../packages/features/auth-recovery/dist/index.d.ts"
+      ],
+      "@hierarchidb/auth-recovery/*": [
+        "../../packages/features/auth-recovery/dist/*"
+      ],
+      "@hierarchidb/util": [
+        "../../packages/util/dist/index.d.ts"
+      ],
+      "@hierarchidb/util/*": [
+        "../../packages/util/dist/*"
+      ],
+      "@hierarchidb/tabular-source": [
+        "../../packages/features/tabular-source/dist/index.d.ts"
+      ],
+      "@hierarchidb/tabular-source/*": [
+        "../../packages/features/tabular-source/dist/*"
+      ],
+      "@hierarchidb/tabular-store": [
+        "../../packages/features/tabular-store/dist/index.d.ts"
+      ],
+      "@hierarchidb/tabular-store/*": [
+        "../../packages/features/tabular-store/dist/*"
+      ],
+      "@hierarchidb/import-export": [
+        "../../packages/features/import-export/dist/index.d.ts"
+      ],
+      "@hierarchidb/import-export/*": [
+        "../../packages/features/import-export/dist/*"
+      ],
+      "@hierarchidb/map-source": [
+        "../../packages/features/map-source/dist/index.d.ts"
+      ],
+      "@hierarchidb/map-source/*": [
+        "../../packages/features/map-source/dist/*"
+      ],
+      "@hierarchidb/download": [
+        "../../packages/features/download/dist/index.d.ts"
+      ],
+      "@hierarchidb/feature-registry": [
+        "../../packages/features/feature-registry/dist/index.d.ts"
+      ],
+      "@hierarchidb/batch": [
+        "../../packages/features/batch/dist/index.d.ts"
+      ],
+      "@hierarchidb/batch-runtime-services": [
+        "../../packages/batch-runtime-services/dist/index.d.ts"
+      ],
+      "@hierarchidb/plugin-runtime-services": [
+        "../../packages/plugin-runtime-services/dist/index.d.ts"
+      ],
+      "@hierarchidb/fetch-save-metadata/output": [
+        "../../packages/features/fetch-save-metadata/output"
+      ],
+      "@hierarchidb/fetch-save-metadata/output/*": [
+        "../../packages/features/fetch-save-metadata/output/*"
+      ],
+      "@hierarchidb/fetch-save-metadata/output/*.json": [
+        "../../packages/features/fetch-save-metadata/output/*.json"
+      ]
+    }
   },
   "include": [
+    "../../global.d.ts",
     "src/common/**/*",
     "src/shared/**/*",
     "src/types/**/*",

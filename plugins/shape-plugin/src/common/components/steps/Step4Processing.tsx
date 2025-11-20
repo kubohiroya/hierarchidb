@@ -39,6 +39,25 @@ import type {
  */
 export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, disabled }) => {
   const config = mergeProcessingConfig(workingCopy.processingConfig ?? DEFAULT_PROCESSING_CONFIG);
+  const baseDownloadConfig: DownloadProcessingConfig =
+    config.downloadConfig ??
+    DEFAULT_PROCESSING_CONFIG.downloadConfig ??
+    ({ maxConcurrent: config.concurrentDownloads ?? 2 } as DownloadProcessingConfig);
+  const baseSimplificationConfig: SimplificationProcessingConfig =
+    config.simplificationConfig ??
+    DEFAULT_PROCESSING_CONFIG.simplificationConfig ??
+    ({
+      enableFiltering: config.enableFeatureFiltering ?? false,
+      featureFilterMethod: config.featureFilterMethod ?? 'hybrid',
+      areaThreshold: config.featureAreaThreshold ?? 0.1,
+      level1Workers: config.concurrentProcesses ?? 2,
+      level2Workers: config.concurrentProcesses ?? 2,
+      tolerance: config.simplificationTolerance ?? 0.01,
+    } as SimplificationProcessingConfig);
+  const baseTileConfig: TileProcessingConfig =
+    config.tileConfig ??
+    DEFAULT_PROCESSING_CONFIG.tileConfig ??
+    ({ workers: config.concurrentProcesses ?? 2, maxZoom: config.maxZoomLevel ?? 12 } as TileProcessingConfig);
 
   const applyConfigUpdate = (partial: Partial<ProcessingConfig>) => {
     const next = mergeProcessingConfig({
@@ -72,15 +91,15 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
             <Grid size={{ xs: 12, sm: 6 }}>
               <Typography gutterBottom>Concurrent Downloads</Typography>
               <Slider
-                value={config?.downloadConfig?.maxConcurrent ?? config?.concurrentDownloads ?? 2}
+                value={baseDownloadConfig.maxConcurrent ?? config.concurrentDownloads ?? 2}
                 onChange={(_, value) => {
                   const maxConcurrent = value as number;
                   applyConfigUpdate({
                     concurrentDownloads: maxConcurrent,
                     downloadConfig: {
-                      ...(config.downloadConfig ?? DEFAULT_PROCESSING_CONFIG.downloadConfig),
+                      ...baseDownloadConfig,
                       maxConcurrent,
-                    } satisfies DownloadProcessingConfig,
+                    },
                   });
                 }}
                 min={1}
@@ -99,15 +118,15 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 label="CORS Proxy Base URL"
-                value={config?.corsProxyBaseURL || config.downloadConfig?.corsProxyUrl || ''}
+                value={config?.corsProxyBaseURL || baseDownloadConfig.corsProxyUrl || ''}
                 onChange={(e) => {
                   const corsProxyUrl = e.target.value;
                   applyConfigUpdate({
                     corsProxyBaseURL: corsProxyUrl,
                     downloadConfig: {
-                      ...(config.downloadConfig ?? DEFAULT_PROCESSING_CONFIG.downloadConfig),
+                      ...baseDownloadConfig,
                       corsProxyUrl,
-                    } satisfies DownloadProcessingConfig,
+                    },
                   });
                 }}
                 fullWidth
@@ -139,15 +158,15 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
             <FormControlLabel
               control={
                 <Switch
-                  checked={config?.simplificationConfig?.enableFiltering ?? config?.enableFeatureFiltering ?? false}
+                  checked={baseSimplificationConfig.enableFiltering ?? config.enableFeatureFiltering ?? false}
                   onChange={(e) => {
                     const enableFiltering = e.target.checked;
                     applyConfigUpdate({
                       enableFeatureFiltering: enableFiltering,
                       simplificationConfig: {
-                        ...(config.simplificationConfig ?? DEFAULT_PROCESSING_CONFIG.simplificationConfig),
+                        ...baseSimplificationConfig,
                         enableFiltering,
-                      } satisfies SimplificationProcessingConfig,
+                      },
                     });
                   }}
                   disabled={disabled}
@@ -156,20 +175,20 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
               label="Enable Feature Filtering"
             />
 
-            {(config?.simplificationConfig?.enableFiltering ?? config?.enableFeatureFiltering) && (
+            {(baseSimplificationConfig.enableFiltering ?? config.enableFeatureFiltering) && (
               <>
                 <FormControl component="fieldset">
                   <FormLabel component="legend">Filtering Method</FormLabel>
                   <RadioGroup
-                    value={config?.simplificationConfig?.featureFilterMethod || config?.featureFilterMethod || 'hybrid'}
+                    value={baseSimplificationConfig.featureFilterMethod || config.featureFilterMethod || 'hybrid'}
                     onChange={(e) => {
                       const method = e.target.value as FeatureFilterMethod;
                       applyConfigUpdate({
                         featureFilterMethod: method,
                         simplificationConfig: {
-                          ...(config.simplificationConfig ?? DEFAULT_PROCESSING_CONFIG.simplificationConfig),
+                          ...baseSimplificationConfig,
                           featureFilterMethod: method,
-                        } satisfies SimplificationProcessingConfig,
+                        },
                       });
                     }}
                   >
@@ -197,15 +216,15 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
                 <Box>
                   <Typography gutterBottom>Feature Area Threshold (%)</Typography>
                   <Slider
-                    value={config?.simplificationConfig?.areaThreshold ?? config?.featureAreaThreshold ?? 0.1}
+                    value={baseSimplificationConfig.areaThreshold ?? config.featureAreaThreshold ?? 0.1}
                     onChange={(_, value) => {
                       const threshold = value as number;
                       applyConfigUpdate({
                         featureAreaThreshold: threshold,
                         simplificationConfig: {
-                          ...(config.simplificationConfig ?? DEFAULT_PROCESSING_CONFIG.simplificationConfig),
+                          ...baseSimplificationConfig,
                           areaThreshold: threshold,
-                        } satisfies SimplificationProcessingConfig,
+                        },
                       });
                     }}
                     min={0.001}
@@ -229,7 +248,7 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
             <LayersIcon color="success" />
             <Typography variant="subtitle1">Vector Tile Generation</Typography>
             <Chip
-              label={`${config?.tileConfig?.workers ?? config?.concurrentProcesses ?? 2} concurrent`}
+              label={`${baseTileConfig.workers ?? config.concurrentProcesses ?? 2} concurrent`}
               size="small"
               variant="outlined"
             />
@@ -241,15 +260,15 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
               <TextField
                 label="Concurrent Processes"
                 type="number"
-                value={config?.tileConfig?.workers ?? config?.concurrentProcesses ?? 2}
+                value={baseTileConfig.workers ?? config.concurrentProcesses ?? 2}
                 onChange={(e) => {
                   const workers = parseInt(e.target.value) || 2;
                   applyConfigUpdate({
                     concurrentProcesses: workers,
                     tileConfig: {
-                      ...(config.tileConfig ?? DEFAULT_PROCESSING_CONFIG.tileConfig),
+                      ...baseTileConfig,
                       workers,
-                    } satisfies TileProcessingConfig,
+                    },
                   });
                 }}
                 inputProps={{ min: 1, max: 8 }}
@@ -263,15 +282,15 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
               <TextField
                 label="Max Zoom Level"
                 type="number"
-                value={config?.tileConfig?.maxZoom ?? config?.maxZoomLevel ?? 12}
+                value={baseTileConfig.maxZoom ?? config.maxZoomLevel ?? 12}
                 onChange={(e) => {
                   const maxZoom = parseInt(e.target.value) || 12;
                   applyConfigUpdate({
                     maxZoomLevel: maxZoom,
                     tileConfig: {
-                      ...(config.tileConfig ?? DEFAULT_PROCESSING_CONFIG.tileConfig),
+                      ...baseTileConfig,
                       maxZoom,
-                    } satisfies TileProcessingConfig,
+                    },
                   });
                 }}
                 inputProps={{ min: 8, max: 18 }}

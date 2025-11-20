@@ -1,3 +1,7 @@
+import gadmMetadata from '@hierarchidb/fetch-save-metadata/output/gadm.json' with { type: 'json' };
+import geoboundariesMetadata from '@hierarchidb/fetch-save-metadata/output/geoboundaries.json' with { type: 'json' };
+import naturalearthMetadata from '@hierarchidb/fetch-save-metadata/output/naturalearth.json' with { type: 'json' };
+import osmMetadata from '@hierarchidb/fetch-save-metadata/output/osm.json' with { type: 'json' };
 import type { CountryMetadata, DataSourceName } from '../../common/shared/index.js';
 import { normalizeDataSourceName } from '../../common/shared/index.js';
 
@@ -10,11 +14,11 @@ export class MetadataLoader {
   private metadataCache: Map<DataSourceName, CountryMetadata[]> = new Map();
 
   // Mapping of data source names to metadata file names
-  private readonly dataSourceFileMap: Record<DataSourceName, string> = {
-    gadm: 'gadm.json',
-    geoboundaries: 'geoboundaries.json',
-    naturalearth: 'naturalearth.json',
-    openstreetmap: 'osm.json',
+  private readonly metadataModules: Record<DataSourceName, CountryMetadata[]> = {
+    gadm: gadmMetadata as unknown as CountryMetadata[],
+    geoboundaries: geoboundariesMetadata as unknown as CountryMetadata[],
+    naturalearth: naturalearthMetadata as unknown as CountryMetadata[],
+    openstreetmap: osmMetadata as unknown as CountryMetadata[],
   };
 
   private constructor() {
@@ -43,33 +47,12 @@ export class MetadataLoader {
 
     try {
       // Import metadata from 02-fetch-save-metadata package
-      let rawData: any[];
-
-      switch (normalized) {
-        case 'gadm':
-          rawData = await import('@hierarchidb/fetch-save-metadata/output/gadm.json').then(
-            (m) => m.default,
-          );
-          break;
-        case 'geoboundaries':
-          rawData = await import(
-            '@hierarchidb/fetch-save-metadata/output/geoboundaries.json'
-            ).then((m) => m.default);
-          break;
-        case 'naturalearth':
-          rawData = await import(
-            '@hierarchidb/fetch-save-metadata/output/naturalearth.json'
-            ).then((m) => m.default);
-          break;
-        case 'openstreetmap':
-          rawData = await import('@hierarchidb/fetch-save-metadata/output/osm.json').then(
-            (m) => m.default,
-          );
-          break;
-        default:
-          console.warn(`Unknown data source: ${normalized}`);
-          return [];
+      const moduleData = this.metadataModules[normalized];
+      if (!moduleData) {
+        console.warn(`Unknown data source: ${normalized}`);
+        return [];
       }
+      const rawData = moduleData;
 
       const metadata = this.transformMetadata(rawData, normalized);
 
@@ -157,7 +140,7 @@ export class MetadataLoader {
    * Get all available data sources
    */
   getAvailableDataSources(): string[] {
-    return Object.keys(this.dataSourceFileMap);
+    return Object.keys(this.metadataModules);
   }
 }
 

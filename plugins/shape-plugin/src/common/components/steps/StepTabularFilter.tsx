@@ -7,7 +7,7 @@ import { createShapeTabularApi } from '../../../services/tabular/createShapeTabu
 import { SHAPE_PLUGIN_ID } from '../../shared/constants.js';
 import type { ShapeWorkingCopy } from '../../shared/types.js';
 
-type ShapeDialogStepProps = StepComponentProps<Partial<ShapeWorkingCopy> | undefined>;
+type ShapeDialogStepProps = StepComponentProps<Partial<ShapeWorkingCopy>>;
 
 export function StepTabularFilter({
   data: workingCopy,

@@ -17,7 +17,7 @@ import { StepTabularFilter } from '../../common/components/steps/StepTabularFilt
 
 const registry = PluginStepRegistry.getInstance();
 
-type ShapeDialogStepProps = StepComponentProps<Partial<ShapeWorkingCopy> | undefined>;
+type ShapeDialogStepProps = StepComponentProps<Partial<ShapeWorkingCopy>>;
 
 function createStepAdapter(
   Component: React.ComponentType<{
@@ -51,7 +51,7 @@ const Step3 = createStepAdapter(Step3License);
 const Step4 = createStepAdapter(Step4Processing);
 const Step5 = createStepAdapter(Step5CountrySelection);
 
-registry.registerConfigProvider({
+registry.registerConfigProvider<Partial<ShapeWorkingCopy>>({
   nodeType: 'shape',
   getCreateStepConfigs() {
     return [
@@ -103,7 +103,7 @@ registry.registerConfigProvider({
       },
     ];
   },
-  getEditStepConfigs() {
+  getEditStepConfigs(_nodeId, _data) {
     return this.getCreateStepConfigs();
   },
 });

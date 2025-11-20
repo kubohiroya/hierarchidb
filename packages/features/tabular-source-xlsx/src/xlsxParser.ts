@@ -79,11 +79,17 @@ export const xlsxParser: TabularParserPort = {
     const buf = await toArrayBuffer(input);
     const wb = XLSX.read(buf, { type: 'array' });
     const wsName = wb.SheetNames[0];
+    if (!wsName) {
+      throw new Error('XLSX file does not contain any sheets');
+    }
     const ws = wb.Sheets[wsName];
-    const json = XLSX.utils.sheet_to_json(ws, { defval: '' });
+    if (!ws) {
+      throw new Error(`Worksheet "${wsName}" is missing from XLSX workbook`);
+    }
+    const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: '' });
     const chunkSize = options?.chunkSize ?? 1000;
 
-    const headers = json.length > 0 ? Object.keys(json[0]) : [];
+    const headers = json.length > 0 ? Object.keys(json[0] ?? {}) : [];
     const previewRows: Array<Record<string, unknown>> = json.slice(0, 50);
 
     async function* iterator(): AsyncGenerator<TabularChunk> {
