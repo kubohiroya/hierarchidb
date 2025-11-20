@@ -1,92 +1,8 @@
-import type { NodeId } from '@hierarchidb/common-types';
-import type { CSVFilterRule } from '@hierarchidb/ui-csv-extract';
+import type { TreeNode } from '@hierarchidb/common-types';
+import type { SpreadsheetEntity } from '@hierarchidb/spreadsheet-plugin';
 import type { MapLibreStyle } from '@hierarchidb/ui-map';
-/**
- * : StylerEntity
- * : SpreadsheetEntity
- * : SpreadsheetEntity -> FolderEntity -> BaseEntity
- * :
- */
-//import type { SpreadsheetEntity } from '@hierarchidb/spreadsheet-plugin';
+import type { DialogProgressState, DialogWindowState } from '@hierarchidb/plugin-service-api';
 import type { StylerConfig } from './stylerTypes.js';
-
-// Define SpreadsheetMetadataId locally since plugin-spreadsheet-plugin may not be available
-export type SpreadsheetMetadataId = string & { readonly __brand: 'SpreadsheetMetadataId' };
-
-// Define PersistentPeerEntity locally
-export interface PersistentPeerEntity {
-  nodeId: NodeId;
-  createdAt: number;
-  updatedAt: number;
-  version: number;
-}
-
-/**
- * StylerEntity - Extends spreadsheet-plugin data with visualization configuration
- * Inherits from PeerEntity to link node to spreadsheet-plugin metadata
- */
-
-//  Spreadsheet
-//  SpreadsheetEntityimport
-export interface SpreadsheetEntity {
-  //  FolderEntity
-  id: NodeId;
-  nodeId: NodeId;
-  name: string;
-  description?: string;
-  createdAt: number;
-  updatedAt: number;
-  version: number;
-
-  //  SpreadsheetEntity
-  spreadsheetMetadataId?: string;
-  dataSource: {
-    type: 'file' | 'url' | 'manual';
-    source?: string;
-    delimiter?: string;
-    hasHeader?: boolean;
-  };
-  filters?: {
-    rows: CSVFilterRule[];
-    columns: CSVFilterRule[];
-  };
-}
-
-//  extension/definition.ts
-export interface StylerStyle {
-  backgroundColor?: string;
-  textColor?: string;
-  borderColor?: string;
-  borderWidth?: number;
-  opacity?: number;
-}
-
-export interface StylerColorRule {
-  column: string;
-  operator: 'equals' | 'contains' | 'greaterThan' | 'lessThan' | 'range';
-  value: unknown;
-  maxValue?: unknown; // For range operator
-  style: StylerStyle;
-  label?: string;
-}
-
-export interface StylerStyle {
-  backgroundColor?: string;
-  textColor?: string;
-  borderColor?: string;
-  borderWidth?: number;
-  opacity?: number;
-}
-/*
-export interface StylerColorRule {
-  column: string;
-  operator: 'equals' | 'contains' | 'greaterThan' | 'lessThan' | 'range';
-  value: unknown;
-  maxValue?: unknown; // For range operator
-  style: StylerStyle;
-  label?: string;
-}
- */
 
 /**
  * : StylerEntity
@@ -147,3 +63,12 @@ export interface StylerStyle {
   borderWidth?: number;
   opacity?: number;
 }
+
+export type StylerNodePayload = {
+  data?: StylerEntity | null | undefined;
+  dialogWindow?: DialogWindowState | null;
+  dialogProgress?: DialogProgressState | null;
+  updatedAt?: number;
+};
+
+export type StylerTreeNode = TreeNode<StylerNodePayload>;

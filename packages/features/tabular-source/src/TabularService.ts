@@ -1,13 +1,13 @@
 import type { DetectionResult, FileLike, ParseOptions, TabularParseResult, TabularSchema } from './types.js';
 import { detectFormat, parseWithBest, registerParser } from './registry.js';
-import { createCsvLikeParser } from './parsers/csvLike.js';
+import { createTabularLikeParser } from './parsers/tabularLike.js';
 import { jsonlParser } from './parsers/jsonl.js';
 import type { TabularIngestResult, TabularStorePort } from './store.js';
 import type { TabularContext, TabularProcessor } from './processor.js';
 
 // Register built-in parsers by default
-registerParser(createCsvLikeParser('csv', ','));
-registerParser(createCsvLikeParser('tsv', '\t'));
+registerParser(createTabularLikeParser('csv', ','));
+registerParser(createTabularLikeParser('tsv', '\t'));
 registerParser(jsonlParser);
 
 export class TabularService {

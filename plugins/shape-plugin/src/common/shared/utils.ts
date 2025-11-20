@@ -431,6 +431,8 @@ export function createWorkingCopyFromEntity(entity: ShapeEntity): ShapeWorkingCo
     batchSessionId: entity.batchSessionId,
     processingStatus: entity.processingStatus ?? 'idle',
     licenseAgreedAt: entity.licenseAgreedAt,
+    tabularMetadataId: entity.tabularMetadataId,
+    tabularFilters: entity.tabularFilters,
   };
 
   const treeNodeId = (entity.nodeId ?? entity.id ?? (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`)) as NodeId;
@@ -468,6 +470,8 @@ export function createWorkingCopyFromEntity(entity: ShapeEntity): ShapeWorkingCo
     version: entity.version ?? 1,
     isDraft: false,
     resumeStep: entity.resumeStep,
+    tabularMetadataId: entity.tabularMetadataId,
+    tabularFilters: entity.tabularFilters,
   };
 
   return workingCopy;
@@ -515,6 +519,14 @@ export function mapWorkingCopyToUpdates(
 
   if (source.licenseAgreedAt) {
     updates.licenseAgreedAt = source.licenseAgreedAt;
+  }
+  if (typeof source.tabularMetadataId === 'string') {
+    updates.tabularMetadataId = source.tabularMetadataId;
+  } else if (source.tabularMetadataId === undefined) {
+    updates.tabularMetadataId = undefined;
+  }
+  if (Array.isArray(source.tabularFilters)) {
+    updates.tabularFilters = source.tabularFilters;
   }
 
   return updates;

@@ -1,4 +1,5 @@
 import { Dexie, type Table } from 'dexie';
+import { getDBName } from '@hierarchidb/util';
 
 type DialogDisplayMode = 'normal' | 'maximize' | 'full-screen';
 
@@ -22,7 +23,7 @@ class UIStateDB extends Dexie {
   treetable_properties!: Table<TreeTableProperties, string>;
 
   constructor() {
-    super(`hierarchidb-ui-state`);
+    super(getDBName('ui-state'));
     // v2: current store (also handles migrating and removing legacy table)
     this.version(3)
       .stores({ treetable_properties: '&pageNodeId' });

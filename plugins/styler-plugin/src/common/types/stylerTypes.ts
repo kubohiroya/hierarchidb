@@ -157,16 +157,6 @@ export const StylerConfigDefault: StylerConfig = {
 };
 
 /**
- * Peer payload stored for styler nodes. Always provide schemaVersion and
- * include optional metadata for UI state persistence.
- */
-export interface StylerPeerData {
-  schemaVersion: 1;
-  lastAppliedConfig?: StylerConfig;
-  metadata?: Record<string, unknown>;
-}
-
-/**
  * : MapLibre
  * : MapLibre
  */

@@ -23,7 +23,7 @@ This document summarizes the successful implementation of the `ui-csv-extract` p
 - `CSVColumnMapping` - Column selection and mapping
 - `CSVProcessingConfig` - CSV parsing configuration
 
-**React Context** (`src/context/CSVContext.tsx`):
+**React Context** (`src/context/TabularContext.tsx`):
 - `CSVProvider` - Dependency injection for CSV API implementations
 - `useCSVApi` - Hook to access the injected API
 

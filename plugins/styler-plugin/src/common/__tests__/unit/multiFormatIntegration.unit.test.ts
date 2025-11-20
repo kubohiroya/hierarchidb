@@ -4,13 +4,13 @@
  */
 
 import 'fake-indexeddb/auto';
-import { SpreadsheetCSVApiDriver as StylerCSVApiDriver } from '@hierarchidb/spreadsheet-plugin';
+import { SpreadsheetTabularApiDriver as StylerTabularApiDriver } from '@hierarchidb/spreadsheet-plugin';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SimpleTableMetadataManager } from '../services/SimpleTableMetadataManager.js';
-import { detectFileType } from '../utils/fileProcessingUtils.js';
+import { SimpleTableMetadataManager } from '../../../services/SimpleTableMetadataManager.js';
+import { detectFileType } from '../../utils/fileProcessingUtils.js';
 
 // Mock hashUtils
-vi.mock('../utils/hashUtils', () => ({
+vi.mock('../../utils/hashUtils', () => ({
   hashUtils: {
     generateHash: vi.fn().mockImplementation((content: string) => {
       let hash = 0;
@@ -42,8 +42,8 @@ vi.mock('xlsx', () => ({
 }));
 
 // Mock jszip library for ZIP tests
-vi.mock('jszip', () => ({
-  default: class JSZip {
+vi.mock('jszip', () => {
+  class JSZip {
     files = {
       'data.csv': {
         dir: false,
@@ -54,18 +54,31 @@ vi.mock('jszip', () => ({
         dir: true,
       },
     };
-    static loadAsync = vi.fn().mockImplementation(() => Promise.resolve(new JSZip()));
-    loadAsync = vi.fn().mockImplementation(() => Promise.resolve(this));
-  },
-}));
+
+    async loadAsync() {
+      return this;
+    }
+
+    static async loadAsync() {
+      return new JSZip();
+    }
+  }
+
+  const loadAsync = vi.fn().mockResolvedValue(new JSZip());
+
+  return {
+    default: JSZip,
+    loadAsync,
+  };
+});
 
 describe('Multi-format File Processing Integration', () => {
-  let csvApi: StylerCSVApiDriver;
+  let csvApi: StylerTabularApiDriver;
   let tableManager: SimpleTableMetadataManager;
 
   beforeEach(async () => {
     tableManager = new SimpleTableMetadataManager();
-    csvApi = new StylerCSVApiDriver(tableManager);
+    csvApi = new StylerTabularApiDriver(tableManager);
   });
 
   afterEach(async () => {

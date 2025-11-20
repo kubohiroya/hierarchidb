@@ -24,8 +24,8 @@ export function RouteBatchLaunchForm({
   onLaunched,
 }: RouteBatchLaunchFormProps): JSX.Element {
   const [kind, setKind] = useState<JobKind>('recompute');
-  const [csvUrl, setCsvUrl] = useState('');
-  const [csvUrl2, setCsvUrl2] = useState('');
+  const [tabularUrl, setTabularUrl] = useState('');
+  const [tabularUrl2, setTabularUrl2] = useState('');
   const defaults = useMemo(() => getOsrmEngineDefaults(), []);
   const throttleDefaults = useMemo(() => getOsrmThrottleDefaults(), []);
   const [baseUrl, setBaseUrl] = useState(defaults.osrmBaseUrl || 'https://router.project-osrm.org');
@@ -61,20 +61,20 @@ export function RouteBatchLaunchForm({
       const defaults = { engine: 'osm_route' as const } satisfies RouteBatchSpec['defaults'];
       if (kind === 'recompute') {
         const spec: RouteBatchSpec = {
-          sources: [{ type: 'csv', url: csvUrl }],
+          sources: [{ type: 'csv', url: tabularUrl }],
           defaults: { engine: 'osm_route', mode: 'road_general' },
         };
         const res = await orchestrator.startFromSources(targetNodeId, spec, mgr, config);
         setStatus(`launched ${res.jobId} (${res.count})`);
         onLaunched?.(res);
       } else if (kind === 'matrix') {
-        const origins: RouteBatchSpec = { sources: [{ type: 'csv', url: csvUrl }], defaults };
-        const dests: RouteBatchSpec = { sources: [{ type: 'csv', url: csvUrl2 }], defaults };
+        const origins: RouteBatchSpec = { sources: [{ type: 'csv', url: tabularUrl }], defaults };
+        const dests: RouteBatchSpec = { sources: [{ type: 'csv', url: tabularUrl2 }], defaults };
         const res = await orchestrator.startMatrix(targetNodeId, origins, dests, mgr, config, methodOptions);
         setStatus(`launched ${res.jobId} (${res.count})`);
         onLaunched?.(res);
       } else {
-        const spec: RouteBatchSpec = { sources: [{ type: 'csv', url: csvUrl }], defaults };
+        const spec: RouteBatchSpec = { sources: [{ type: 'csv', url: tabularUrl }], defaults };
         const res = await orchestrator.startEnrich(targetNodeId, spec, mgr, config, {
           smoothing: 0.5,
           elevation: true,
@@ -99,14 +99,14 @@ export function RouteBatchLaunchForm({
         </select>
       </div>
       <div>
-        <label>CSV URL{kind === 'matrix' ? ' (origins)' : ''}:</label>
-        <input value={csvUrl} onChange={(e) => setCsvUrl(e.target.value)} placeholder="https://.../od.csv"
+        <label>Tabular URL{kind === 'matrix' ? ' (origins)' : ''}:</label>
+        <input value={tabularUrl} onChange={(e) => setTabularUrl(e.target.value)} placeholder="https://.../od.csv"
                style={{ width: '100%' }} />
       </div>
       {kind === 'matrix' && (
         <div>
-          <label>CSV URL (destinations):</label>
-          <input value={csvUrl2} onChange={(e) => setCsvUrl2(e.target.value)} placeholder="https://.../dest.csv"
+          <label>Tabular URL (destinations):</label>
+          <input value={tabularUrl2} onChange={(e) => setTabularUrl2(e.target.value)} placeholder="https://.../dest.csv"
                  style={{ width: '100%' }} />
         </div>
       )}

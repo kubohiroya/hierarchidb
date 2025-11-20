@@ -295,6 +295,35 @@ describe('createTreeConsoleActions.handleEdit', () => {
     expect(refreshUndoRedo).toHaveBeenCalled();
     expect(pushPath).toHaveBeenCalledWith('/t/console-1/node-1/wc-new-folder/folder/create');
   });
+
+  it('opens preview dialog targeting preview step in full screen', async () => {
+    const { deps, workingCopyApi, pushPath } = buildDeps({ selectedIds: [] });
+    const actions = createTreeConsoleActions(deps);
+    const node: TreeNodeData = {
+      id: 'node-1',
+      nodeType: 'basemap',
+      name: 'Basemap',
+      parentId: 'parent-1',
+    } as TreeNodeData;
+    // ensure node index reflects basemap type for lookup
+    deps.ssot.nodeIndex?.set(
+      'node-1' as NodeId,
+      {
+        id: 'node-1',
+        nodeType: 'basemap',
+        parentId: 'parent-1',
+        name: 'Basemap',
+      } as unknown as TreeNode,
+      'parent-1' as NodeId
+    );
+
+    await actions.handleContextMenuAction('preview', node, { source: 'treetable' });
+
+    expect(workingCopyApi.getWorkingCopy).toHaveBeenCalled();
+    expect(pushPath).toHaveBeenCalledWith(
+      '/t/console-1/parent-1/node-1/basemap/edit?step=3&d_step=3&d_mode=full'
+    );
+  });
 });
 
 describe('createTreeConsoleActions.handleUndoRedo', () => {

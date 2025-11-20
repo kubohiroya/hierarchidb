@@ -5,37 +5,37 @@
 
 // Types
 export type {
-  CSVFilterOperator,
-  CSVFilterRule,
-  CSVProcessingConfig,
-  CSVSelectionConfig,
-  CSVDataResult,
-  CSVColumnMapping,
-  CSVExtractResult,
+  TabularFilterOperator,
+  TabularFilterRule,
+  TabularProcessingConfig,
+  TabularSelectionConfig,
+  TabularDataResult,
+  TabularColumnMapping,
+  TabularExtractResult,
   PaginationOptions,
-  CSVTableListResult,
-  CSVProcessingStatus,
+  TabularTableListResult,
+  TabularProcessingStatus,
   TabularDataApi,
 } from './types/index.js';
 
 // Context
-export { CSVProvider, useCSVApi } from './context/CSVContext.js';
-export type { CSVProviderProps } from './context/CSVContext.js';
+export { TabularProvider, useTabularApi } from './context/TabularContext.js';
+export type { TabularProviderProps } from './context/TabularContext.js';
 
 // Hooks
-export { useCSVData } from './hooks/useCSVData.js';
-export { useCSVFilter } from './hooks/useCSVFilter.js';
-export type { UseCSVDataOptions, UseCSVDataResult } from './hooks/useCSVData.js';
-export type { UseCSVFilterOptions, UseCSVFilterResult } from './hooks/useCSVFilter.js';
+export { useTabularData } from './hooks/useTabularData.js';
+export { useTabularFilter } from './hooks/useTabularFilter.js';
+export type { UseTabularDataOptions, UseTabularDataResult } from './hooks/useTabularData.js';
+export type { UseTabularFilterOptions, UseTabularFilterResult } from './hooks/useTabularFilter.js';
 
 // Components
 export {
-  CSVFileUploadStep,
-  CSVFilterStep,
-  CSVColumnSelectionStep,
+  TabularFileUploadStep,
+  TabularFilterStep,
+  TabularColumnSelectionStep,
 } from './components/index.js';
 export type {
-  CSVFileUploadStepProps,
-  CSVFilterStepProps,
-  CSVColumnSelectionStepProps,
+  TabularFileUploadStepProps,
+  TabularFilterStepProps,
+  TabularColumnSelectionStepProps,
 } from './components/index.js';

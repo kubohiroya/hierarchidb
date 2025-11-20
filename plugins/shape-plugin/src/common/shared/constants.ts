@@ -4,6 +4,8 @@
 
 import type { DataSourceConfig, ProcessingConfig } from './types.js';
 
+export const SHAPE_PLUGIN_ID = 'shape';
+
 export const DEFAULT_PROCESSING_CONFIG: ProcessingConfig = {
   dataSource: 'naturalearth',
   concurrentDownloads: 2,
@@ -119,6 +121,8 @@ export const STORAGE_CONSTANTS = {
 export const UI_CONSTANTS = {
   DIALOG_MAX_WIDTH: 'lg',
   STEPPER_STEPS: [
+    'Dataset Upload',
+    'Dataset Filter',
     'Basic Information',
     'Data Source',
     'License Agreement',

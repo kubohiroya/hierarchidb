@@ -2,12 +2,12 @@
  * @file StylerDataService.ts
  * @description Styler plugin data service integrating with Spreadsheet CSV API
  * : Styler
- * : SpreadsheetCSVApiDriverCSV
+ * : SpreadsheetTabularApiDriverCSV
  * : Spreadsheet
  */
 
 import type {
-  CSVColumnInfo,
+  TabularColumnInfo,
   CSVTableMetadata,
   CSVTableMetadataLike,
 } from '@hierarchidb/tabular-store';
@@ -44,11 +44,11 @@ type StyledRow = {
  * : Spreadsheet
  */
 export class StylerDataService {
-  private csvApiDriver: TabularDataApi;
+  private tabularApiDriver: TabularDataApi;
   private pluginId: string = 'styler';
 
-  constructor(csvApiDriver: TabularDataApi) {
-    this.csvApiDriver = csvApiDriver;
+  constructor(tabularApiDriver: TabularDataApi) {
+    this.tabularApiDriver = tabularApiDriver;
   }
 
   /**
@@ -65,7 +65,7 @@ export class StylerDataService {
     suggestedConfig: Partial<StylerConfig>;
   }> {
     //  SpreadsheetCSV
-    const tableMetadata = await this.csvApiDriver.uploadCSVFile(file, config);
+    const tableMetadata = await this.tabularApiDriver.uploadCSVFile(file, config);
 
     //  Styler
     const suggestedConfig = this.generateInitialStylerConfig(tableMetadata);
@@ -88,7 +88,7 @@ export class StylerDataService {
     tableMetadata: CSVTableMetadata;
     suggestedConfig: Partial<StylerConfig>;
   }> {
-    const tableMetadata = await this.csvApiDriver.downloadCSVFromUrl(url, config);
+    const tableMetadata = await this.tabularApiDriver.downloadCSVFromUrl(url, config);
     const suggestedConfig = this.generateInitialStylerConfig(tableMetadata);
 
     return {
@@ -110,7 +110,7 @@ export class StylerDataService {
     rowCount: number = 100
   ): Promise<{ data: CSVDataResult; styledRows: StyledRow[] }> {
     //  Spreadsheet
-    const data = await this.csvApiDriver.getFilteredPreview(tableId, filters, rowCount);
+    const data = await this.tabularApiDriver.getFilteredPreview(tableId, filters, rowCount);
 
     const styledRows: StyledRow[] = data.rows.map((row) => {
       const styles: Record<string, StyledCellStyle> = {};
@@ -238,7 +238,7 @@ export class StylerDataService {
    */
   private generateInitialStylerConfig(tableMetadata: CSVTableMetadata): Partial<StylerConfig> {
     const numericColumns = tableMetadata.columns.filter(
-      (col: CSVColumnInfo) => col.type === 'number'
+      (col: TabularColumnInfo) => col.type === 'number'
     );
     const selectedValueColumn = numericColumns[0]?.name;
     if (selectedValueColumn === undefined) {
@@ -260,7 +260,7 @@ export class StylerDataService {
       enabled: true,
       valueColumn: selectedValueColumn,
       keyColumn:
-        tableMetadata.columns.find((col: CSVColumnInfo) => col.name === 'id')?.name ??
+        tableMetadata.columns.find((col: TabularColumnInfo) => col.name === 'id')?.name ??
         tableMetadata.columns[0]?.name,
     };
     if (cfg.valueColumn) {

@@ -178,15 +178,13 @@ export class StylerEntityHandler {
       const workerModName: string = '@hierarchidb' + '/runtime-worker';
       // Use variable-based dynamic import to avoid build-time type resolution
       const mod = await import(/* @vite-ignore */ workerModName as string);
-      const store = mod.storeRegistry.getPeer('styler');
+      const store = mod.storeRegistry.getPeer<StylerEntity>('styler');
       if (!store) return;
-      const payload = {
-        stylerConfig: entity.stylerConfig,
-        selectedKeyColumn: entity.selectedKeyColumn,
-        selectedValueColumn: entity.selectedValueColumn,
-        schemaVersion: 1,
-      };
-      await store.put({ nodeId: entity.nodeId, data: payload, updatedAt: Date.now() });
+      await store.put({
+        nodeId: entity.nodeId,
+        data: entity,
+        updatedAt: Date.now(),
+      });
     } catch {
       // ignore if worker not present
     }

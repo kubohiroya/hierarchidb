@@ -17,8 +17,8 @@ export interface StylerStep5Props {
   data: StylerStep5Data;
   onChange: (data: StylerStep5Data) => void;
   onValidate?: (isValid: boolean) => void;
-  //  CSVspreadsheet
-  csvData?: StylerTableRow[];
+  //  Tabularspreadsheet
+  tabularData?: StylerTableRow[];
   columns?: string[];
 }
 
@@ -32,32 +32,32 @@ export const StylerStep5: React.FC<StylerStep5Props> = ({
   data,
   onChange,
   onValidate,
-  csvData = [],
+  tabularData = [],
   columns = [],
 }) => {
   const currentConfig: StylerConfig = data?.stylerConfig || StylerConfigDefault;
 
   //  :
   // const numericColumns = React.useMemo(() => {
-  //   if (csvData.length === 0) return [];
+  //   if (tabularData.length === 0) return [];
   //
   //   return columns.filter(col => {
   //  //
-  //     const sampleValues = csvData.slice(0, 10).map(row => row[col]);
+  //     const sampleValues = tabularData.slice(0, 10).map(row => row[col]);
   //     return sampleValues.some(val => typeof val === 'number' && !isNaN(val));
   //   });
-  // }, [csvData, columns]);
+  // }, [tabularData, columns]);
 
   //  :
   const sampleValues = React.useMemo(() => {
     const valueColumn = data?.selectedValueColumn;
-    if (!valueColumn || csvData.length === 0) return [];
+    if (!valueColumn || tabularData.length === 0) return [];
 
-    return csvData
+    return tabularData
       .map((row) => row[valueColumn])
       .filter((val): val is number => typeof val === 'number' && !Number.isNaN(val))
       .slice(0, 100);
-  }, [csvData, data?.selectedValueColumn]);
+  }, [tabularData, data?.selectedValueColumn]);
 
   const handleConfigChange = useCallback(
     (newConfig: StylerConfig) => {
@@ -107,7 +107,7 @@ export const StylerStep5: React.FC<StylerStep5Props> = ({
         selectedKeyColumn={data?.selectedKeyColumn}
         selectedValueColumn={data?.selectedValueColumn}
         onColumnSelect={handleColumnSelect}
-        csvData={csvData}
+        tabularData={tabularData}
       />
     </Box>
   );

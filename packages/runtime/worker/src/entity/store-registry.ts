@@ -9,8 +9,6 @@ import type { GroupItemBase, GroupStore, PeerStore, RelationBase, RelationStore 
  * per-plugin Dexie DBs.
  */
 
-const DISABLED_GROUP_RELATION_NODE_TYPES = new Set(['folder']);
-
 class StoreRegistry {
   private peer = new Map<string, PeerStore<unknown>>();
   private group = new Map<string, GroupStore<GroupItemBase<unknown>>>();
@@ -21,9 +19,6 @@ class StoreRegistry {
   }
 
   registerGroup<TItem extends GroupItemBase<unknown>>(nodeType: string, store: GroupStore<TItem>) {
-    if (DISABLED_GROUP_RELATION_NODE_TYPES.has(nodeType)) {
-      return;
-    }
     this.group.set(nodeType, store as GroupStore<GroupItemBase<unknown>>);
   }
 
@@ -31,9 +26,6 @@ class StoreRegistry {
     nodeType: string,
     store: RelationStore<TRel>
   ) {
-    if (DISABLED_GROUP_RELATION_NODE_TYPES.has(nodeType)) {
-      return;
-    }
     this.rel.set(nodeType, store as RelationStore<RelationBase<unknown>>);
   }
 

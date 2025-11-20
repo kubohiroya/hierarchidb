@@ -1,9 +1,4 @@
-/**
- * @file RuntimeWorkerService.ts
- * @description Spreadsheet plugin services export
- */
-
-export { SpreadsheetCSVApiDriver } from './SpreadsheetCSVApiDriver.js';
-export { SimpleTableMetadataManager } from './SimpleTableMetadataManager.js';
-export { SpreadsheetTabularDriver } from './SpreadsheetTabularDriver.js';
-export { SpreadsheetCSVApiAdapter, createSpreadsheetCSVApi } from './SpreadsheetCSVApiAdapter.js';
+export { SpreadsheetTabularApiDriver } from './SpreadsheetTabularApiDriver.js';
+export { SpreadsheetMetadataManager } from './SpreadsheetMetadataManager.js';
+export { SpreadsheetStorePort } from './SpreadsheetStorePort.js';
+export { createSpreadsheetTabularApi } from './spreadsheetTabularApiFactory.js';

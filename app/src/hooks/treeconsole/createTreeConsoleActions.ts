@@ -9,6 +9,7 @@ import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { CommandResult, NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-base';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
+import { PluginStepRegistry } from '@hierarchidb/plugin-base';
 import { DualKeyMap } from '@hierarchidb/util';
 import type { Remote } from 'comlink';
 import { preconnectPluginServices } from '../../services/preconnect.js';
@@ -35,6 +36,56 @@ function ensureClipboard(): ClipboardPayload {
 function getOrCreateIndex(ssot: TreeConsoleSSOTEntry): DualKeyMap<NodeId, NodeId, TreeNode> {
   return ssot.nodeIndex ? ssot.nodeIndex.clone() : new DualKeyMap<NodeId, NodeId, TreeNode>();
 }
+
+type PreviewStepConfig = {
+  stepId?: string;
+  stepIndex?: number;
+};
+
+const PREVIEW_STEP_CONFIG: Record<string, PreviewStepConfig> = {
+  basemap: { stepId: 'viewport', stepIndex: 2 },
+  location: { stepId: 'map-preview', stepIndex: 5 },
+  linker: { stepId: 'preview', stepIndex: 2 },
+  resolver: { stepId: 'preview', stepIndex: 4 },
+  styler: { stepId: 'preview', stepIndex: 4 },
+  timeline: { stepId: 'map', stepIndex: 1 },
+};
+
+const stepRegistry = PluginStepRegistry.getInstance();
+
+const resolvePreviewStepIndex = (options: {
+  nodeType?: string;
+  nodeId?: NodeId;
+}): number | null => {
+  const normalized = options.nodeType?.toLowerCase();
+  if (!normalized) return null;
+  const config = PREVIEW_STEP_CONFIG[normalized];
+  const provider = stepRegistry.getConfigProvider(normalized);
+  if (provider) {
+    const stepList =
+      typeof provider.getEditStepConfigs === 'function'
+        ? provider.getEditStepConfigs(String(options.nodeId ?? ''))
+        : provider.getCreateStepConfigs();
+    if (stepList && stepList.length) {
+      if (config?.stepId) {
+        const matchIndex = stepList.findIndex((cfg) => cfg.id === config.stepId);
+        if (matchIndex >= 0) {
+          return matchIndex;
+        }
+      }
+      const implicitPreview = stepList.findIndex((cfg) =>
+        cfg.id?.toLowerCase().includes('preview')
+      );
+      if (implicitPreview >= 0) {
+        return implicitPreview;
+      }
+    }
+  }
+  if (config?.stepIndex != null) {
+    return config.stepIndex;
+  }
+  return null;
+};
 
 function buildIndexFromNodes(
   nodes: readonly TreeNode[],
@@ -285,7 +336,11 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
     }
   };
 
-  const openEditDialog = async (targetNodeId: NodeId, nodeHint?: TreeNodeData | TreeNode) => {
+  const openEditDialog = async (
+    targetNodeId: NodeId,
+    nodeHint?: TreeNodeData | TreeNode,
+    dialogOptions?: { initialStep?: number; displayMode?: 'full' | 'normal' }
+  ) => {
     if (!client || !pushPath || !treeId) {
       return;
     }
@@ -333,7 +388,18 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         (nodeHint as { holderTargetId?: NodeId } | undefined)?.holderTargetId ??
         targetNodeId;
 
-      pushPath(`/t/${treeId}/${parentForRoute}/${canonicalId}/${nodeType}/edit`);
+      const searchParams = new URLSearchParams();
+      if (typeof dialogOptions?.initialStep === 'number' && dialogOptions.initialStep >= 0) {
+        const stepValue = dialogOptions.initialStep + 1;
+        searchParams.set('step', String(stepValue));
+        searchParams.set('d_step', String(stepValue));
+      }
+      if (dialogOptions?.displayMode === 'full') {
+        searchParams.set('d_mode', 'full');
+      }
+      const query = searchParams.toString();
+      const basePath = `/t/${treeId}/${parentForRoute}/${canonicalId}/${nodeType}/edit`;
+      pushPath(query ? `${basePath}?${query}` : basePath);
     } catch (error) {
       console.error('Failed to launch edit dialog:', error);
       showCommandError('UNKNOWN_ERROR', error instanceof Error ? error.message : String(error));
@@ -645,7 +711,19 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         } catch (error) {
           console.error('Context create failed:', error);
           showCommandError('UNKNOWN_ERROR');
-        }
+      }
+        return;
+      }
+
+      if (normalizedAction === 'preview') {
+        const previewStepIndex = resolvePreviewStepIndex({
+          nodeType: node?.nodeType ?? (node as { type?: string })?.type,
+          nodeId: targetNodeId,
+        });
+        await openEditDialog(targetNodeId, node, {
+          initialStep: previewStepIndex ?? undefined,
+          displayMode: previewStepIndex != null ? 'full' : undefined,
+        });
         return;
       }
 

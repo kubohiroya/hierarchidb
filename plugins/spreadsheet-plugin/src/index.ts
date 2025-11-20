@@ -1,23 +1,7 @@
-export { SpreadsheetExtension } from './common/extension/definition.js';
-export type {
-  DataSourceConfig,
-  FileInfo,
-  FilterOperator,
-  RowFilter,
-  ColumnFilter,
-  FilterConfig,
-  SpreadsheetExtendedFields,
-  ValidationResult,
-  SpreadsheetFormData,
-} from './common/extension/types.js';
-export type { SpreadsheetEntity, SpreadsheetWorkingCopy } from './common/extension/definition.js';
-export * from './common/extension/constants.js';
 export { PLUGIN_MANIFEST as SpreadsheetPluginManifest } from './plugin-manifest.js';
+export * from './common/types/SpreadsheetEntity.js';
+export * from './common/constants.js';
 export * from './services/index.js';
 export * from './ui/index.js';
-
-// Folder dialog extension initializer (optional)
-export { initializeSpreadsheetDialogExtension, spreadsheetDialogExtension } from './common/extensions/index.js';
-
-// Register UI steps-provider for host-composed dialog (idempotent)
-import './ui/index.js';
+export * as worker from './worker/index.js';
+export * from './icon/index.js';

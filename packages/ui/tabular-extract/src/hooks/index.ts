@@ -3,10 +3,10 @@
  * @description Export all CSV hooks
  */
 
-export { useCSVData, useCSVTableList } from './useCSVData.js';
-export type { UseCSVDataOptions, UseCSVDataResult, UseCSVTableListOptions, UseCSVTableListResult } from './useCSVData.js';
+export { useTabularData, useTabularTableList } from './useTabularData.js';
+export type { UseTabularDataOptions, UseTabularDataResult, UseTabularTableListOptions, UseTabularTableListResult } from './useTabularData.js';
 
-export { useCSVFilter, useCSVSelection } from './useCSVFilter.js';
+export { useTabularFilter, useTabularSelection } from './useTabularFilter.js';
 export type {
-  UseCSVFilterOptions, UseCSVFilterResult, UseCSVSelectionOptions, UseCSVSelectionResult,
-} from './useCSVFilter.js';
+  UseTabularFilterOptions, UseTabularFilterResult, UseTabularSelectionOptions, UseTabularSelectionResult,
+} from './useTabularFilter.js';

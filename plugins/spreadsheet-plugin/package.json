@@ -1,8 +1,8 @@
 {
   "name": "@hierarchidb/spreadsheet-plugin",
+  "version": "0.1.0",
+  "description": "Next-generation Spreadsheet plugin built on shared tabular services",
   "type": "module",
-  "version": "0.0.1",
-  "description": "Spreadsheet plugin for HierarchiDB - extends folder plugin",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -16,11 +16,6 @@
       "types": "./dist/worker/index.d.ts",
       "import": "./dist/worker/index.js",
       "default": "./dist/worker/index.js"
-    },
-    "./database": {
-      "types": "./dist/services/database/index.d.ts",
-      "import": "./dist/services/database/index.js",
-      "default": "./dist/services/database/index.js"
     },
     "./icon": {
       "types": "./dist/icon/index.d.ts",
@@ -38,9 +33,6 @@
       "ui": [
         "dist/ui/index.d.ts"
       ],
-      "database": [
-        "dist/services/database/index.d.ts"
-      ],
       "icon": [
         "dist/icon/index.d.ts"
       ],
@@ -53,121 +45,34 @@
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts src/services/database/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/worker/spreadsheetEntitiesDB.ts src/worker/spreadsheetGroupStore.dexie.ts src/worker/spreadsheetRelationStore.dexie.ts src/icon/index.ts --config ../../tsdown.config.ts",
-    "test": "vitest",
-    "test:run": "vitest run",
-    "coverage": "vitest run --coverage",
+    "build": "tsdown src/index.ts src/ui/index.ts src/worker/index.ts src/icon/index.ts --config ../../tsdown.config.ts",
+    "typecheck": "tsc --noEmit --project tsconfig.json",
+    "test": "pnpm vitest",
+    "test:run": "pnpm vitest run",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
-  "dependencies": {
-    "@hierarchidb/plugin-runtime-services": "workspace:*",
-    "@types/pako": "^2.0.3",
-    "pako": "^2.1.0",
-    "@hierarchidb/plugin-base": "workspace:*"
-  },
-  "turbo": {
-    "pipeline": {
-      "build": {
-        "dependsOn": [
-          "@hierarchidb/plugin-base#build",
-          "@hierarchidb/plugin-runtime-services#build"
-        ]
-      }
-    }
-  },
   "peerDependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@mui/icons-material": "^7.3.2",
+    "@mui/material": "^7.3.2",
+    "react": ">=18.0.0",
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/folder-plugin": "workspace:*",
+    "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/tabular-source": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
-    "@hierarchidb/ui-datasource": "workspace:*",
     "@hierarchidb/ui-tabular-extract": "workspace:*",
-    "@hierarchidb/ui-file": "workspace:*",
-    "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/ui-plugin-basic-info": "workspace:*",
-    "@hierarchidb/plugin-ui-sdk": "workspace:*",
-    "@mui/icons-material": "^7.3.2",
-    "@mui/material": "^7.3.2",
-    "i18next": "22.5.0",
-    "react": "^18.3.1",
-    "react-i18next": "12.3.1",
-    "@hierarchidb/plugin-base": "workspace:*"
+    "@hierarchidb/util": "workspace:*"
   },
   "devDependencies": {
-    "@hierarchidb/auth-recovery": "workspace:*",
-    "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/plugin-service-api": "workspace:*",
-    "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/folder-plugin": "workspace:*",
-    "@hierarchidb/runtime-worker": "workspace:*",
-    "@hierarchidb/tabular-source": "workspace:*",
-    "@hierarchidb/tabular-store": "workspace:*",
-    "@hierarchidb/ui-datasource": "workspace:*",
-    "@hierarchidb/ui-tabular-extract": "workspace:*",
-    "@hierarchidb/ui-file": "workspace:*",
-    "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/ui-plugin-basic-info": "workspace:*",
-    "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@mui/icons-material": "^7.3.2",
     "@mui/material": "^7.3.2",
-    "@types/node": "^20.0.0",
-    "@types/react": "^18.2.0",
-    "i18next": "22.5.0",
-    "react": "^18.3.1",
-    "fake-indexeddb": "^6.1.0",
-    "react-i18next": "12.3.1",
-    "typescript": "workspace:^5.9.3",
-    "vitest": "^3.2.4",
-    "@hierarchidb/plugin-base": "workspace:*"
-  },
-  "hierarchidb": {
-    "plugin": {
-      "nodeType": "spreadsheet",
-      "name": "Spreadsheet Plugin",
-      "description": "Import spreadsheet data, apply filtering, and expose the curated tabular items to other workflows.",
-      "icon": {
-        "mui": "Assessment",
-        "emoji": "📈",
-        "color": "#dcbc50",
-        "component": {
-          "specifier": "@hierarchidb/spreadsheet-plugin/icon",
-          "exportName": "SpreadsheetPluginIcon"
-        }
-      },
-      "priority": 600,
-      "category": "data",
-      "extends": "folder",
-      "dependencies": [
-        "folder"
-      ],
-      "capabilities": {
-        "canHaveChildren": false,
-        "canBeRoot": false,
-        "canBeDeleted": true,
-        "canBeRenamed": true,
-        "canBeMoved": true,
-        "canBeCopied": true
-      },
-      "schema": {
-        "inherits": "folder",
-        "fields": [
-          {
-            "name": "spreadsheetData",
-            "type": "object",
-            "required": true
-          },
-          {
-            "name": "formulas",
-            "type": "object",
-            "required": false
-          }
-        ]
-      }
-    }
+    "fake-indexeddb": "^4.0.2",
+    "vitest": "^3.2.4"
   }
 }

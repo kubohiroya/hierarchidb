@@ -1,6 +1,12 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "allowImportingTsExtensions": true,
     "types": [
       "node"
     ],
@@ -10,12 +16,14 @@
       ]
     }
   },
+  "include": [
+    "src"
+  ],
   "exclude": [
     "dist",
     "node_modules",
-    "src/worker/**",
-    "src/services/**",
-    "**/*.test.*",
-    "**/*.spec.*"
+    "src/**/__tests__/**",
+    "src/**/*.stories.ts",
+    "src/**/*.stories.tsx"
   ]
 }

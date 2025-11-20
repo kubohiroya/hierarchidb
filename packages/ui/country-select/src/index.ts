@@ -51,8 +51,7 @@ export type {
 export {
   exportSelections,
   importSelections,
-  selectionsToCSV,
-  csvToSelections,
+  tabularToSelections,
   getSelectionsSummary,
   mergeSelections,
   filterSelections,

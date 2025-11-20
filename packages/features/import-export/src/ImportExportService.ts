@@ -227,7 +227,7 @@ export class ImportExportService implements ImportExportAPI {
           mimeType = 'application/json';
           break;
         case 'csv':
-          exportedData = this.formatAsCSV(collectedNodes, params.csvColumns);
+          exportedData = this.formatAsCSV(collectedNodes, params.tabularColumns);
           mimeType = 'text/csv';
           break;
         case 'xml':

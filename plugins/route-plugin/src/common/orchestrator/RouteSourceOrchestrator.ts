@@ -1,7 +1,7 @@
 import type { DataSourceSpec, DataSourceStrategy, OdPair, ParseTask, RouteBatchSpec, StrategyContext, TaskPlan } from './types.js';
 import type { NetworkPortLike } from '../../services/createRouteBatchManager.js';
 import { getRouteDownloadService, notifyAuthRequired } from '../../services/download/registry.js';
-import { CsvStrategy } from './strategies/CsvStrategy.js';
+import { TabularStrategy } from './strategies/TabularStrategy.js';
 import { GeoJsonStrategy } from './strategies/GeoJsonStrategy.js';
 
 export interface OrchestratorDeps {
@@ -9,7 +9,7 @@ export interface OrchestratorDeps {
 }
 
 export class RouteSourceOrchestrator {
-  private readonly strategies: DataSourceStrategy[] = [new CsvStrategy(), new GeoJsonStrategy()];
+  private readonly strategies: DataSourceStrategy[] = [new TabularStrategy(), new GeoJsonStrategy()];
 
   constructor(private deps: OrchestratorDeps) {
     void this.deps;

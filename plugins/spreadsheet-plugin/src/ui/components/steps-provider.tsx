@@ -1,41 +1,35 @@
-import { PluginStepConfig, PluginStepRegistry, StepComponentProps } from '@hierarchidb/plugin-base';
-import { DataSourceStep, isDataSourceComplete, SpreadsheetDialogData } from './steps/DataSourceStep.js';
-import { STEP_CONFIG } from '../../common/extension/constants.js';
+import { PluginStepRegistry, type PluginStepConfig, type StepComponentProps } from '@hierarchidb/plugin-base';
+import type { SpreadsheetDialogData } from '../../common/types/SpreadsheetEntity.js';
+import { DataSourceStep } from './steps/DataSourceStep.js';
 import { FilteringStep } from './steps/FilteringStep.js';
+import { SPREADSHEET_NODE_TYPE, STEP_LABELS } from '../../common/constants.js';
 
 const registry = PluginStepRegistry.getInstance();
 
-const toDialogData = (value: unknown): Partial<SpreadsheetDialogData> => (
-  typeof value === 'object' && value !== null ? value as Partial<SpreadsheetDialogData> : {}
-);
+const isComplete = (data?: SpreadsheetDialogData): boolean => Boolean(data?.spreadsheetMetadataId);
 
 registry.registerConfigProvider({
-  nodeType: 'spreadsheet',
-  getCreateStepConfigs(): PluginStepConfig[] {
+  nodeType: SPREADSHEET_NODE_TYPE,
+  getCreateStepConfigs(): PluginStepConfig<SpreadsheetDialogData>[] {
     return [
       {
         id: 'data-source',
-        label: STEP_CONFIG.DATA_SOURCE.TITLE,
-        componentFactory: (props: StepComponentProps) => (
-          <DataSourceStep {...props} />
-        ),
-        validate: (dialogData?: unknown) => isDataSourceComplete(toDialogData(dialogData)),
+        label: STEP_LABELS.dataSource,
+        componentFactory: (props: StepComponentProps<SpreadsheetDialogData>) => <DataSourceStep {...props} />,
+        validate: (value?: SpreadsheetDialogData) => isComplete(value),
         capabilities: {
-          canProceedToNext: (dialogData?: unknown) => isDataSourceComplete(toDialogData(dialogData)),
+          canProceedToNext: (value?: SpreadsheetDialogData) => isComplete(value),
         },
       },
       {
         id: 'filtering',
-        label: STEP_CONFIG.FILTERING.TITLE,
-        componentFactory: (props: StepComponentProps) => (
-          <FilteringStep {...props} />
-        ),
-        validate: () => true,
-        optional: STEP_CONFIG.FILTERING.IS_OPTIONAL,
+        label: STEP_LABELS.filtering,
+        componentFactory: (props: StepComponentProps<SpreadsheetDialogData>) => <FilteringStep {...props} />,
+        optional: true,
       },
     ];
   },
-  getEditStepConfigs(_nodeId: string, _data?: unknown): PluginStepConfig[] {
+  getEditStepConfigs(): PluginStepConfig<SpreadsheetDialogData>[] {
     return this.getCreateStepConfigs();
   },
 });

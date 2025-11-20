@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { StylerConfigDefault } from '../types/stylerTypes.js';
+import { StylerConfigDefault } from '../../types/stylerTypes.js';
 import {
   adjustBrightness,
   calculateLinearColor,
@@ -19,7 +19,7 @@ import {
   rgbToHex,
   rgbToHsv,
   valueToColor,
-} from '../utils/colorUtils.js';
+} from '../../utils/colorUtils.js';
 
 describe('Color Utils', () => {
   describe('HSV/RGB Conversion', () => {

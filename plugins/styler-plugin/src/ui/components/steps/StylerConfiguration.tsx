@@ -71,7 +71,7 @@ export interface StylerConfigurationProps {
   selectedKeyColumn?: string;
   selectedValueColumn?: string;
   onColumnSelect?: (column: string, type: 'key' | 'value') => void;
-  csvData?: StylerTableRow[]; //  CSV
+  tabularData?: StylerTableRow[]; //  Tabular
 }
 
 /**
@@ -88,7 +88,7 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
   selectedKeyColumn,
   selectedValueColumn,
   onColumnSelect,
-  csvData = [],
+  tabularData = [],
 }) => {
   const [localConfig, setLocalConfig] = useState<StylerConfig>(() => {
     // Initialize with sample values if available
@@ -184,14 +184,14 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
     : null;
 
   useEffect(() => {
-    if (selectedValueColumn && csvData.length > 0) {
+    if (selectedValueColumn && tabularData.length > 0) {
       setIsAnalyzing(true);
 
       const analyzeAsync = async () => {
         try {
           await new Promise((resolve) => setTimeout(resolve, 300));
 
-          const numericValues = extractNumericValues(csvData, selectedValueColumn);
+          const numericValues = extractNumericValues(tabularData, selectedValueColumn);
           if (numericValues.length > 0) {
             const analysis = analyzeData(numericValues, selectedValueColumn);
             setDataAnalysis(analysis);
@@ -203,7 +203,7 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
 
       analyzeAsync();
     }
-  }, [selectedValueColumn, csvData]);
+  }, [selectedValueColumn, tabularData]);
 
   const applyRecommendation = useCallback(() => {
     if (dataAnalysis?.recommendation) {

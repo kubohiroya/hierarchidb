@@ -7,133 +7,218 @@ import type {
   TabularSchema,
   TabularStorePort,
 } from '@hierarchidb/tabular-source';
-import type { NodeId } from '@hierarchidb/common-types';
-import { SimpleTableMetadataManager } from './SimpleTableMetadataManager.js';
-import { SpreadsheetDatabase } from './database/SpreadsheetDatabase.js';
-import type { CSVColumnInfo, SimpleTableMetadataManager as TableMetadataManagerPublic } from '@hierarchidb/tabular-store';
-type CSVTableMetadataLike = Parameters<TableMetadataManagerPublic['create']>[0];
-import { getDBName } from '@hierarchidb/util';
-import { calculateFileHash, calculateTextHash } from '../common/utils/hashUtils.js';
+import { TabularWriter, type TabularColumnInfo, type CSVTableMetadataLike } from '@hierarchidb/tabular-store';
+import type { SpreadsheetMetadataManager } from './SpreadsheetMetadataManager.js';
+import type { TabularColumnType } from '@hierarchidb/tabular-store';
+
+interface SpreadsheetStorePortOptions {
+  pluginId: string;
+  metadataManager: SpreadsheetMetadataManager;
+  filename: string;
+  fileSizeBytes: number;
+  contentHash: string;
+}
+
+type ColumnStats = {
+  name: string;
+  index: number;
+  numberCount: number;
+  booleanCount: number;
+  dateCount: number;
+  stringCount: number;
+  hasNullValues: boolean;
+  sampleValues: Array<string | number>;
+};
 
 type SessionData = {
-  rawFileMetadataId: NodeId;
-  filename: string;
-  contentHash: string;
-  fileSizeBytes: number;
-  startRowIndex: number;
-  columns: CSVColumnInfo[];
+  writer: TabularWriter;
+  tableId: string;
+  columns: ColumnStats[];
+  createdAt: number;
+};
+
+const SAMPLE_LIMIT = 5;
+
+const isBooleanLike = (value: string): boolean => {
+  const lower = value.toLowerCase();
+  return lower === 'true' || lower === 'false';
+};
+
+const isNumberLike = (value: string): boolean => /^-?\d+(\.\d+)?$/.test(value);
+
+const isDateLike = (value: string): boolean => {
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp);
+};
+
+const trackSampleValue = (stats: ColumnStats, value: string | number): void => {
+  if (stats.sampleValues.length >= SAMPLE_LIMIT) return;
+  stats.sampleValues.push(value);
+};
+
+const resolveColumnType = (stats: ColumnStats): TabularColumnType => {
+  if (stats.numberCount > 0 && stats.stringCount === 0 && stats.booleanCount === 0 && stats.dateCount === 0) {
+    return 'number';
+  }
+  if (stats.booleanCount > 0 && stats.numberCount === 0 && stats.stringCount === 0 && stats.dateCount === 0) {
+    return 'boolean';
+  }
+  if (stats.dateCount > 0 && stats.numberCount === 0 && stats.booleanCount === 0 && stats.stringCount === 0) {
+    return 'date';
+  }
+  return 'string';
 };
 
 export class SpreadsheetStorePort implements TabularStorePort<CSVTableMetadataLike> {
-  private tableManager: SimpleTableMetadataManager;
-  private db: SpreadsheetDatabase;
-  private sessions = new Map<string, SessionData>();
+  private readonly pluginId: string;
+  private readonly metadataManager: SpreadsheetMetadataManager;
+  private readonly filename: string;
+  private readonly fileSizeBytes: number;
+  private readonly contentHash: string;
+  private readonly sessions = new Map<string, SessionData>();
 
-  constructor(private pluginId: string = 'spreadsheet') {
-    const metadataDbName = getDBName('spreadsheet-metadata-db');
-    this.tableManager = new SimpleTableMetadataManager(metadataDbName);
-    this.db = new SpreadsheetDatabase(getDBName('spreadsheet-db'));
+  constructor(options: SpreadsheetStorePortOptions) {
+    this.pluginId = options.pluginId;
+    this.metadataManager = options.metadataManager;
+    this.filename = options.filename;
+    this.fileSizeBytes = options.fileSizeBytes;
+    this.contentHash = options.contentHash;
   }
 
-  async beginIngest(schema: TabularSchema, ctx: TabularIngestContext): Promise<TabularIngestSession> {
-    const filename = ctx.filename || 'unknown.csv';
-    const size = ctx.sizeBytes || 0;
-    let hash = 'na';
-    if (typeof File !== 'undefined' && ctx.source instanceof File) {
-      hash = await calculateFileHash(ctx.source);
-    } else if (typeof ctx.source === 'string') {
-      hash = await calculateTextHash(ctx.source);
+  async beginIngest(schema: TabularSchema, _ctx: TabularIngestContext): Promise<TabularIngestSession> {
+    if (!schema.columns || schema.columns.length === 0) {
+      throw new Error('No columns found in uploaded file');
     }
+    const writer = new TabularWriter(this.pluginId);
+    const tableId = await writer.begin({
+      filename: this.filename,
+      columns: schema.columns.map((column) => column.name),
+    });
 
-    // Create RawFileMetadata
-    const columnSpecs = schema.columns ?? [];
-    const columnInfo: CSVColumnInfo[] = columnSpecs.map((column, index) => ({
+    const columns: ColumnStats[] = schema.columns.map((column, index) => ({
       name: column.name,
       index,
-      type: column.type === 'number' || column.type === 'boolean' || column.type === 'date' ? column.type : 'string',
-      uniqueValues: 0,
+      numberCount: 0,
+      booleanCount: 0,
+      dateCount: 0,
+      stringCount: 0,
       hasNullValues: false,
       sampleValues: [],
     }));
 
-    const rawMeta = await this.db.createRawFileMetadata({
-      fileName: filename,
-      contentHash: hash,
-      fileSize: size,
-      mimeType: ctx.source instanceof File ? ctx.source.type || 'text/csv' : 'text/csv',
-      encoding: 'utf-8',
-      parsingConfig: {
-        delimiter: ',',
-        quoteChar: '"',
-        escapeChar: '\\',
-        hasHeader: true,
-        skipEmptyLines: true,
-      },
-      totalRows: 0,
-      totalColumns: columnInfo.length,
-      chunkCount: 0,
+    this.sessions.set(tableId, {
+      writer,
+      tableId,
+      columns,
+      createdAt: Date.now(),
     });
 
-    const sessionId = String(rawMeta.id);
-    this.sessions.set(sessionId, {
-      rawFileMetadataId: rawMeta.id,
-      filename,
-      contentHash: hash,
-      fileSizeBytes: size,
-      startRowIndex: 0,
-      columns: columnInfo,
-    });
-    return { id: sessionId };
+    return { id: tableId };
   }
 
   async writeChunk(session: TabularIngestSession, chunk: TabularChunk): Promise<void> {
-    const s = this.sessions.get(session.id);
-    if (!s) return;
-    // Serialize rows to ArrayBuffer
-    const json = JSON.stringify(chunk.rows);
-    const enc = new TextEncoder();
-    const buf = enc.encode(json);
-    const binaryData = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
-    await this.db.createRowChunk({
-      rawFileMetadataId: s.rawFileMetadataId,
-      chunkIndex: chunk.index,
-      binaryData,
-      rowCount: chunk.rows.length,
-      startRowIndex: s.startRowIndex,
-      endRowIndex: s.startRowIndex + chunk.rows.length - 1,
-      originalSize: buf.byteLength,
-      compressedSize: buf.byteLength,
-    });
-    s.startRowIndex += chunk.rows.length;
+    const current = this.sessions.get(session.id);
+    if (!current) return;
+    const normalizedRows = chunk.rows.map((row) => this.normalizeRow(row, current.columns));
+    await current.writer.writeRows(normalizedRows);
   }
 
   async commit(session: TabularIngestSession, summary: TabularIngestSummary): Promise<TabularIngestResult<CSVTableMetadataLike>> {
-    const s = this.sessions.get(session.id);
-    if (!s) {
-      throw new Error(`Ingest session not found: ${session.id}`);
+    const current = this.sessions.get(session.id);
+    if (!current) {
+      throw new Error(`Unknown ingest session: ${session.id}`);
     }
-    // Build CSVTableMetadata
+    await current.writer.commit();
+
     const metadata: CSVTableMetadataLike = {
-      id: session.id,
-      filename: s.filename,
-      contentHash: s.contentHash,
-      fileSizeBytes: s.fileSizeBytes || 0,
+      id: current.tableId,
+      filename: this.filename,
+      contentHash: this.contentHash,
+      fileSizeBytes: this.fileSizeBytes,
       totalRows: summary.totalRows,
-      columns: s.columns,
-      createdAt: Date.now(),
+      chunkCount: summary.chunkCount,
+      isChunked: summary.chunkCount > 1,
+      columns: current.columns.map<TabularColumnInfo>((stats, index) => ({
+        name: stats.name,
+        index,
+        type: resolveColumnType(stats),
+        hasNullValues: stats.hasNullValues,
+        sampleValues: [...stats.sampleValues],
+      })),
+      createdAt: current.createdAt,
       referenceCount: 0,
       referencingPlugins: [],
-      isChunked: true,
-      chunkCount: summary.chunkCount,
     };
-    // Persist metadata in table manager
-    const created = await this.tableManager.create(metadata, this.pluginId);
+
+    const saved = await this.metadataManager.create(metadata, this.pluginId);
     this.sessions.delete(session.id);
-    return { session, metadata: created };
+    return {
+      session,
+      metadata: saved,
+    };
   }
 
-  async abort(session: TabularIngestSession, _reason?: string): Promise<void> {
-    // Best-effort cleanup: remove session map; row chunks/metadata GC can be handled separately
+  async abort(session: TabularIngestSession): Promise<void> {
+    const current = this.sessions.get(session.id);
+    if (!current) return;
     this.sessions.delete(session.id);
+  }
+
+  private normalizeRow(
+    row: Record<string, unknown>,
+    columns: ColumnStats[],
+  ): Record<string, string | number | boolean | null> {
+    const normalized: Record<string, string | number | boolean | null> = {};
+    for (const stats of columns) {
+      const raw = row[stats.name];
+      if (raw === undefined || raw === null || raw === '') {
+        stats.hasNullValues = true;
+        normalized[stats.name] = '';
+        continue;
+      }
+      if (typeof raw === 'number' && Number.isFinite(raw)) {
+        stats.numberCount += 1;
+        trackSampleValue(stats, raw);
+        normalized[stats.name] = raw;
+        continue;
+      }
+      if (typeof raw === 'boolean') {
+        stats.booleanCount += 1;
+        trackSampleValue(stats, raw ? 'true' : 'false');
+        normalized[stats.name] = raw;
+        continue;
+      }
+      const value = String(raw).trim();
+      if (!value.length) {
+        stats.hasNullValues = true;
+        normalized[stats.name] = '';
+        continue;
+      }
+      if (isBooleanLike(value)) {
+        stats.booleanCount += 1;
+        const boolValue = value.toLowerCase() === 'true';
+        trackSampleValue(stats, boolValue ? 'true' : 'false');
+        normalized[stats.name] = boolValue;
+        continue;
+      }
+      if (isNumberLike(value)) {
+        stats.numberCount += 1;
+        const numeric = Number(value);
+        trackSampleValue(stats, numeric);
+        normalized[stats.name] = numeric;
+        continue;
+      }
+      if (isDateLike(value)) {
+        stats.dateCount += 1;
+        const iso = new Date(value).toISOString();
+        trackSampleValue(stats, iso);
+        normalized[stats.name] = iso;
+        continue;
+      }
+      stats.stringCount += 1;
+      trackSampleValue(stats, value);
+      normalized[stats.name] = value;
+    }
+    return normalized;
   }
 }

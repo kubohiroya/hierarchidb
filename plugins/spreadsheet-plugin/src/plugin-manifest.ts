@@ -1,17 +1,19 @@
-import type { NodeType } from '@hierarchidb/common-types';
 import type { PluginManifest } from '@hierarchidb/plugin-service-api';
+import type { NodeType } from '@hierarchidb/common-types';
 
-export const PLUGIN_ID = '@hierarchidb/spreadsheet-plugin' as const;
-export const PLUGIN_VERSION = '0.0.1' as const;
-export const PLUGIN_DESCRIPTION = 'Spreadsheet plugin for HierarchiDB - extends folder plugin' as const;
-export const PLUGIN_NODE_TYPE = 'spreadsheet' as NodeType;
+export const SPREADSHEET_PLUGIN_ID = '@hierarchidb/spreadsheet-plugin' as const;
+export const SPREADSHEET_PLUGIN_VERSION = '0.2.0' as const;
+export const SPREADSHEET_NODE_TYPE = 'spreadsheet' as NodeType;
+
+export const PLUGIN_DESCRIPTION =
+  'Spreadsheet plugin powered by the shared tabular ingestion stack' as const;
 
 export const PLUGIN_MANIFEST: PluginManifest = {
-  id: PLUGIN_ID,
+  id: SPREADSHEET_PLUGIN_ID,
   name: 'Spreadsheet Plugin',
   displayName: 'Spreadsheet',
-  nodeType: PLUGIN_NODE_TYPE,
-  version: PLUGIN_VERSION,
+  nodeType: SPREADSHEET_NODE_TYPE,
+  version: SPREADSHEET_PLUGIN_VERSION,
   description: PLUGIN_DESCRIPTION,
   extends: 'folder',
   priority: 600,
@@ -24,17 +26,6 @@ export const PLUGIN_MANIFEST: PluginManifest = {
       specifier: '@hierarchidb/spreadsheet-plugin/icon',
       exportName: 'SpreadsheetPluginIcon',
     },
-  },
-  database: {
-    prewarm: [
-      {
-        specifier: '@hierarchidb/spreadsheet-plugin/database',
-        export: 'SpreadsheetDatabase',
-      },
-    ],
-  },
-  worker: {
-    preload: ['registerSpreadsheetWorkerStores', 'loadSpreadsheetEntitiesDbModule'],
   },
   category: {
     id: 'data',
@@ -53,16 +44,24 @@ export const PLUGIN_MANIFEST: PluginManifest = {
     inherits: 'folder',
     fields: [
       {
-        name: 'spreadsheetData',
-        type: 'object',
-        required: true,
+        name: 'spreadsheetMetadataId',
+        type: 'string',
+        required: false,
       },
       {
-        name: 'formulas',
+        name: 'dataSource',
         type: 'object',
         required: false,
       },
+      {
+        name: 'filters',
+        type: 'array',
+        required: false,
+      },
     ],
+  },
+  worker: {
+    preload: ['registerSpreadsheetWorkerStores'],
   },
 };
 

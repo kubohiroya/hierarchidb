@@ -102,19 +102,15 @@ describe('ResolverEntityService', () => {
       expect(deletedEntity).toBeNull();
     });
 
-    it('should clean up working copies when deleting entity', async () => {
+    it('should delete related data when removing entity', async () => {
       const nodeId = 'node-cleanup' as NodeId;
       const entity = await handler.createEntity(nodeId, {
-        name: 'With Working Copy',
+        name: 'With Related Data',
       });
 
-      const workingCopy = await handler.createWorkingCopy(nodeId);
-      expect(workingCopy).toBeDefined();
-
       await handler.deleteEntity(entity.id);
-
-      const workingCopyAfterDelete = await handler.getWorkingCopy(nodeId);
-      expect(workingCopyAfterDelete).toBeNull();
+      const afterDelete = await handler.getEntity(entity.id);
+      expect(afterDelete).toBeNull();
     });
   });
 
@@ -169,81 +165,7 @@ describe('ResolverEntityService', () => {
     });
   });
 
-  describe('Working Copy Operations', () => {
-    it('should create a working copy of an entity', async () => {
-      const nodeId = 'node-wc' as NodeId;
-      const entity = await handler.createEntity(nodeId, {
-        name: 'Original Entity',
-        sourceSchema: 'OriginalSource',
-      });
-
-      const workingCopy = await handler.createWorkingCopy(nodeId);
-
-      expect(workingCopy).toBeDefined();
-      expect(workingCopy.treeNodeId).toBe(nodeId);
-      expect(workingCopy.draft.name).toBe(entity.name);
-      expect(workingCopy.draft.sourceSchema).toBe(entity.sourceSchema);
-    });
-
-    it('should update a working copy', async () => {
-      const nodeId = 'node-wc-update' as NodeId;
-      await handler.createEntity(nodeId, {
-        name: 'Original',
-      });
-
-      const workingCopy = await handler.createWorkingCopy(nodeId);
-      const updated = await handler.updateWorkingCopy(workingCopy.treeNodeId, {
-        name: 'Modified',
-        sourceSchema: 'NewSource',
-      });
-
-      expect(updated.draft.name).toBe('Modified');
-      expect(updated.draft.sourceSchema).toBe('NewSource');
-    });
-
-    it('should commit working copy changes', async () => {
-      const nodeId = 'node-wc-commit' as NodeId;
-      await handler.createEntity(nodeId, {
-        name: 'Original',
-      });
-
-      const workingCopy = await handler.createWorkingCopy(nodeId);
-      await handler.updateWorkingCopy(workingCopy.treeNodeId, {
-        name: 'Committed',
-      });
-
-      const committed = await handler.commitWorkingCopy(workingCopy.treeNodeId);
-
-      expect(committed.name).toBe('Committed');
-      expect(committed.version).toBe(2);
-
-      // Working copy should be deleted after commit
-      const wcAfterCommit = await handler.getWorkingCopy(nodeId);
-      expect(wcAfterCommit).toBeNull();
-    });
-
-    it('should discard working copy changes', async () => {
-      const nodeId = 'node-wc-discard' as NodeId;
-      const entity = await handler.createEntity(nodeId, {
-        name: 'Original',
-      });
-
-      const workingCopy = await handler.createWorkingCopy(nodeId);
-      await handler.updateWorkingCopy(workingCopy.treeNodeId, {
-        name: 'To Be Discarded',
-      });
-
-      await handler.discardWorkingCopy(workingCopy.treeNodeId);
-
-      // Entity should remain unchanged
-      const unchangedEntity = await handler.getEntity(entity.id);
-      expect(unchangedEntity?.name).toBe('Original');
-
-      // Working copy should be deleted
-      const wcAfterDiscard = await handler.getWorkingCopy(nodeId);
-      expect(wcAfterDiscard).toBeNull();
-    });
-  });
+  // Working copy operations are handled by the shared WorkingCopyAPI (tree node drafts).
 
   describe('duplicate', () => {
     it('should duplicate a Resolver entity', async () => {

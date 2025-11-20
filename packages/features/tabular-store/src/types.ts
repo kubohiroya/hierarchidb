@@ -1,22 +1,22 @@
-export type CSVColumnType = 'string' | 'number' | 'boolean' | 'date';
+export type TabularColumnType = 'string' | 'number' | 'boolean' | 'date';
 
-export interface CSVColumnInfo {
+export interface TabularColumnInfo {
   name: string;
   index?: number;
-  type?: CSVColumnType;
+  type?: TabularColumnType;
   uniqueValues?: number;
   hasNullValues?: boolean;
   sampleValues?: (string | number)[];
 }
 
-export interface CSVTableMetadata {
+export interface TabularTableMetadata {
   id: string;
   filename: string;
   fileUrl?: string;
   contentHash: string;
   fileSizeBytes: number;
   totalRows: number;
-  columns: CSVColumnInfo[];
+  columns: TabularColumnInfo[];
   createdAt: number;
   updatedAt?: number;
   referenceCount: number;
@@ -25,12 +25,12 @@ export interface CSVTableMetadata {
   chunkCount?: number;
 }
 
-export type CSVTableMetadataLike = Partial<CSVTableMetadata> & {
+export type TabularTableMetadataLike = Partial<TabularTableMetadata> & {
   id: string;
   referencingPlugins?: string[];
   referenceCount?: number;
   filename?: string;
-  columns?: CSVColumnInfo[];
+  columns?: TabularColumnInfo[];
   totalRows?: number;
   fileSizeBytes?: number;
   createdAt?: number;

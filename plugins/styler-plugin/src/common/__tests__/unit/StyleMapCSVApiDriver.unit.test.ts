@@ -1,17 +1,17 @@
 /**
- * @file SpreadsheetCSVApiDriver.test.ts
- * @description Integration tests for SpreadsheetCSVApiDriver
+ * @file SpreadsheetTabularApiDriver.test.ts
+ * @description Integration tests for SpreadsheetTabularApiDriver
  */
 
 import 'fake-indexeddb/auto';
-import { SpreadsheetCSVApiDriver } from '@hierarchidb/spreadsheet-plugin';
+import { SpreadsheetTabularApiDriver } from '@hierarchidb/spreadsheet-plugin';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SimpleTableMetadataManager } from '../services/SimpleTableMetadataManager.js';
+import { SimpleTableMetadataManager } from '../../../services/SimpleTableMetadataManager.js';
 
 const originalFetch = global.fetch;
 
 // Mock hashUtils with deterministic hashes based on content
-vi.mock('../utils/hashUtils', () => ({
+vi.mock('../../utils/hashUtils', () => ({
   hashUtils: {
     generateHash: vi.fn().mockImplementation((content: string) => {
       // Generate a deterministic hash based on content
@@ -27,13 +27,13 @@ vi.mock('../utils/hashUtils', () => ({
   },
 }));
 
-describe('SpreadsheetCSVApiDriver', () => {
-  let csvApi: SpreadsheetCSVApiDriver;
+describe('SpreadsheetTabularApiDriver', () => {
+  let csvApi: SpreadsheetTabularApiDriver;
   let tableManager: SimpleTableMetadataManager;
 
   beforeEach(async () => {
     tableManager = new SimpleTableMetadataManager();
-    csvApi = new SpreadsheetCSVApiDriver(tableManager);
+    csvApi = new SpreadsheetTabularApiDriver(tableManager);
   });
 
   afterEach(async () => {

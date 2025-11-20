@@ -9,17 +9,23 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['./src/__tests__/setup.ts'],
+    setupFiles: ['./src/common/__tests__/setup.ts'],
     pool: 'threads',
   },
   resolve: {
     alias: {
       // Cross-plugin import resolution
-      '../../spreadsheet/src/services/SpreadsheetCSVApiDriver': path.resolve(__dirname, '../spreadsheet-plugin/src/services/SpreadsheetCSVApiDriver'),
-      '@hierarchidb/spreadsheet-plugin': path.resolve(__dirname, './src/__tests__/mocks/spreadsheet-plugin.ts'),
+      '../../spreadsheet/src/services/SpreadsheetTabularApiDriver': path.resolve(__dirname, '../spreadsheet-plugin/src/services/SpreadsheetTabularApiDriver'),
+      '@hierarchidb/spreadsheet-plugin': path.resolve(
+        __dirname,
+        './src/common/__tests__/mocks/spreadsheet-plugin.ts'
+      ),
       '@hierarchidb/plugin-sdk': basePluginEntry,
       '~': path.resolve(__dirname, 'src'),
-      '@hierarchidb/ui-csv-extract': path.resolve(workspaceRoot, 'packages/ui/tabular-extract/src/index.ts'),
+      '@hierarchidb/ui-tabular-extract': path.resolve(
+        workspaceRoot,
+        'packages/ui/tabular-extract/src/index.ts'
+      ),
       '@hierarchidb/util': path.resolve(workspaceRoot, 'packages/util/src/index.ts'),
     },
   },

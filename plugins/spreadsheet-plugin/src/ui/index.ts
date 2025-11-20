@@ -1,2 +1,4 @@
-export * from './components/steps-provider.js';
-export { DataSourceStep, FilteringStep, type SpreadsheetDialogData } from './components/steps/index.js';
+import './components/steps-provider.js';
+
+export { DataSourceStep } from './components/steps/DataSourceStep.js';
+export { FilteringStep } from './components/steps/FilteringStep.js';

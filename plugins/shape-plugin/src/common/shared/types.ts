@@ -20,6 +20,8 @@ export interface PeerEntity {
 }
 
 import type { WorkingCopyDraft } from '@hierarchidb/plugin-service-api';
+import type { CSVFilterRule, CSVDataResult } from '@hierarchidb/ui-tabular-extract';
+import type { CSVTableMetadata } from '@hierarchidb/tabular-store';
 import type { BBox, Geometry } from 'geojson';
 
 // ================================
@@ -30,6 +32,8 @@ export interface ShapeEntity extends PeerEntity {
   // Basic Information (Step 1)
   name?: string;
   description?: string;
+  tabularMetadataId?: string;
+  tabularFilters?: CSVFilterRule[];
 
   // Map Position
   zxy?: [number, number, number]; // [zoom, x(longitude), y(latitude)] for initial position
@@ -84,12 +88,24 @@ export type ShapeWorkingCopy = WorkingCopyDraft<ShapeEntity> &
     selectedAdminLevels?: number[];
     checkboxState?: boolean[][] | string;
     urlMetadata?: UrlMetadata[];
+    tabularMetadataId?: string;
+    tabularFilters?: CSVFilterRule[];
+    tabularFile?: TabularFileSummary;
+    tabularLastPreview?: CSVDataResult;
+    tabularMetadata?: CSVTableMetadata | null;
   }>;
 
 export interface StepProps {
   workingCopy: Partial<ShapeWorkingCopy>;
   onUpdate: (updates: Partial<ShapeWorkingCopy>) => void;
   disabled?: boolean;
+}
+
+export interface TabularFileSummary {
+  name: string;
+  sizeBytes: number;
+  type?: string;
+  lastModifiedAt?: number;
 }
 
 // ================================

@@ -1,26 +1,37 @@
 import { defineConfig } from 'vitest/config';
-import * as path from 'path';
+import path from 'path';
 
-const entityServiceEntry = path.resolve(__dirname, '../../packages/plugin-runtime-services/src/index.ts');
+const workspaceRoot = path.resolve(__dirname, '../..');
 
 export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: [],
-    coverage: {
-      provider: 'v8',
-      reportsDirectory: 'coverage',
-      reporter: ['text', 'html', 'lcov'],
-      all: true,
-      include: ['src/**/*.{ts,tsx}'],
-      exclude: ['**/*.test.{ts,tsx}', '**/__tests__/**', '**/*.stories.{ts,tsx}', '**/dist/**'],
+    setupFiles: ['./vitest.setup.ts'],
+    pool: 'threads',
+    poolOptions: {
+      threads: {
+        minThreads: 1,
+        maxThreads: 1,
+      },
     },
   },
   resolve: {
     alias: {
-      '@hierarchidb/plugin-runtime-services': entityServiceEntry,
-      '@hierarchidb/download': path.resolve(__dirname, '../../packages/features/download/src/index.ts'),
+      '~': path.resolve(__dirname, 'src'),
+      '@hierarchidb/util': path.resolve(workspaceRoot, 'packages/util/src/index.ts'),
+      '@hierarchidb/tabular-store': path.resolve(
+        workspaceRoot,
+        'packages/features/tabular-store/src/index.ts'
+      ),
+      '@hierarchidb/tabular-source': path.resolve(
+        workspaceRoot,
+        'packages/features/tabular-source/src/index.ts'
+      ),
+      '@hierarchidb/ui-tabular-extract': path.resolve(
+        workspaceRoot,
+        'packages/ui/tabular-extract/src/index.ts'
+      ),
     },
   },
 });

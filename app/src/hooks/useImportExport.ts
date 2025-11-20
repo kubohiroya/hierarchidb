@@ -260,7 +260,7 @@ export function useImportExport(client?: Remote<WorkerAPI>, ready?: boolean) {
   /**
    * Validate CSV columns
    */
-  const validateCSVColumns = useCallback(
+  const validateTabularColumns = useCallback(
     (data: string[][], options: { requiredColumns: string[] }): ValidationResult => {
       const errors: string[] = [];
 
@@ -306,7 +306,7 @@ export function useImportExport(client?: Remote<WorkerAPI>, ready?: boolean) {
     // Utilities
     detectFileFormat,
     validateImportData,
-    validateCSVColumns,
+    validateTabularColumns,
   };
 }
 

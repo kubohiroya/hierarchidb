@@ -1,18 +1,12 @@
-import type { NodeId, Timestamp } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { Collection, IndexableType, Table } from 'dexie';
-import {
-  BaseEntityService,
-  createDraftWorkingCopyBase,
-  markWorkingCopyUpdated,
-} from '@hierarchidb/plugin-runtime-services';
+import { BaseEntityService } from '@hierarchidb/plugin-runtime-services';
 import { resolverEntitiesDB } from './database/index.js';
 import type {
   DataTransformation,
   DuplicateResolutionStrategy,
   PropertyMappingRule,
   ResolverEntity,
-  ResolverDraftPayload,
-  ResolverWorkingCopy,
   ValidationRule,
 } from '../common/types/index.js';
 
@@ -117,130 +111,8 @@ export class ResolverEntityService extends BaseEntityService<
   /**
    * Clean up Resolver-specific data when entity is deleted
    */
-  protected async cleanupEntityData(entity: ResolverEntity): Promise<void> {
-    // Delete working copies associated with this entity
-    await resolverEntitiesDB.workingCopies.delete(entity.nodeId);
-
-    // Additional cleanup for compiled functions or cached data could go here
-  }
-
-  /**
-   * Create a working copy for editing
-   */
-  async createWorkingCopy(nodeId: NodeId): Promise<ResolverWorkingCopy> {
-    const entity = await this.getEntityByNodeId(nodeId);
-    if (!entity) {
-      throw new Error(`Resolver entity not found for nodeId: ${nodeId}`);
-    }
-
-    const draftPayload: ResolverDraftPayload = { ...entity };
-
-    const base = createDraftWorkingCopyBase<ResolverEntity>({
-      draft: draftPayload,
-      meta: {
-        treeNodeId: entity.nodeId,
-        createdAt: entity.createdAt as Timestamp,
-        updatedAt: entity.updatedAt as Timestamp,
-        originalVersion: entity.version,
-      },
-    });
-
-    const workingCopy: ResolverWorkingCopy = {
-      ...base,
-      ...draftPayload,
-      originalId: entity.id,
-      isDirty: false,
-      treeNodeId: entity.nodeId,
-      workingCopyId: entity.nodeId,
-    };
-
-    if (typeof workingCopy.treeNodeId === 'undefined') {
-      throw new Error('Working copy missing treeNodeId during creation');
-    }
-
-    await resolverEntitiesDB.workingCopies.put(workingCopy, workingCopy.treeNodeId);
-    const stored = await resolverEntitiesDB.workingCopies.get(workingCopy.treeNodeId);
-    if (stored) {
-      return {
-        ...stored,
-        treeNodeId: workingCopy.treeNodeId,
-        originalId: workingCopy.originalId,
-        isDirty: workingCopy.isDirty,
-      } as ResolverWorkingCopy;
-    }
-    return workingCopy;
-  }
-
-  /**
-   * Get working copy by node ID
-   */
-  async getWorkingCopy(nodeId: NodeId): Promise<ResolverWorkingCopy | null> {
-    const existing = await resolverEntitiesDB.workingCopies.get(nodeId);
-    return existing ?? null;
-  }
-
-  /**
-   * Update working copy
-   */
-  async updateWorkingCopy(
-    treeNodeId: NodeId,
-    updates: Partial<ResolverEntity>,
-  ): Promise<ResolverWorkingCopy> {
-    if (typeof treeNodeId !== 'string') {
-      throw new TypeError(`Working copy key must be string, received ${String(treeNodeId)}`);
-    }
-    const workingCopy = await resolverEntitiesDB.workingCopies.get(treeNodeId);
-    if (!workingCopy) {
-      throw new Error(`Working copy not found: ${treeNodeId}`);
-    }
-
-    const timestamp = Date.now() as Timestamp;
-    const base = markWorkingCopyUpdated(workingCopy, updates, timestamp);
-
-    const merged: ResolverWorkingCopy = {
-      ...workingCopy,
-      ...updates,
-      ...base,
-      originalId: (workingCopy as ResolverWorkingCopy).originalId,
-      isDirty: true,
-      treeNodeId: workingCopy.treeNodeId,
-      workingCopyId: workingCopy.workingCopyId ?? workingCopy.treeNodeId,
-    };
-
-    await resolverEntitiesDB.workingCopies.put(merged, merged.treeNodeId);
-    return merged;
-  }
-
-  /**
-   * Commit working copy changes back to the entity
-   */
-  async commitWorkingCopy(workingCopyId: NodeId): Promise<ResolverEntity> {
-    const workingCopy = await resolverEntitiesDB.workingCopies.get(workingCopyId);
-    if (!workingCopy) {
-      throw new Error(`Working copy not found: ${workingCopyId}`);
-    }
-    const entityId = (workingCopy.draft as Partial<ResolverEntity>).id ?? workingCopy.treeNodeId;
-    if (!entityId) {
-      throw new Error('Working copy missing entity id');
-    }
-
-    const entityData: Partial<ResolverEntity> = {
-      ...workingCopy.draft,
-      updatedAt: Date.now(),
-    };
-
-    const updatedEntity = await this.updateEntity(entityId as NodeId, entityData);
-
-    await resolverEntitiesDB.workingCopies.delete(workingCopyId);
-
-    return updatedEntity;
-  }
-
-  /**
-   * Discard working copy changes
-   */
-  async discardWorkingCopy(workingCopyId: NodeId): Promise<void> {
-    await resolverEntitiesDB.workingCopies.delete(workingCopyId);
+  protected async cleanupEntityData(_entity: ResolverEntity): Promise<void> {
+    // No-op for now; working copies are stored via TreeNode drafts.
   }
 
   /**

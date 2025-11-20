@@ -1,6 +1,6 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
-import type { ResolverEntity, ResolverWorkingCopy } from '../../common/types/index.js';
+import type { ResolverEntity } from '../../common/types/index.js';
 
 /**
  * Resolver worker-side storage for resolver definitions and working copies.
@@ -8,13 +8,11 @@ import type { ResolverEntity, ResolverWorkingCopy } from '../../common/types/ind
  */
 export class ResolverEntitiesDB extends Dexie {
   resolvers!: Table<ResolverEntity>;
-  workingCopies!: Table<ResolverWorkingCopy>;
 
   constructor() {
     super(getDBName('resolver-db'));
     this.version(1).stores({
       resolvers: '&id, nodeId, name, createdAt, updatedAt',
-      workingCopies: '&treeNodeId, createdAt, updatedAt',
     });
   }
 }

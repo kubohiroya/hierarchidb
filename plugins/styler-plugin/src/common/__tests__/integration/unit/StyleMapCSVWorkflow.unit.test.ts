@@ -4,9 +4,9 @@
  */
 
 import 'fake-indexeddb/auto';
-import { SpreadsheetCSVApiDriver as StylerCSVApiDriver } from '@hierarchidb/spreadsheet-plugin';
+import { SpreadsheetTabularApiDriver as StylerTabularApiDriver } from '@hierarchidb/spreadsheet-plugin';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SimpleTableMetadataManager } from '../../services/SimpleTableMetadataManager.js';
+import { SimpleTableMetadataManager } from '../../../../services/SimpleTableMetadataManager.js';
 
 // Mock hashUtils
 vi.mock('../../utils/hashUtils', () => ({
@@ -44,14 +44,10 @@ vi.mock('jszip', () => {
     files = {
       'countries.csv': {
         async async() {
-          return {
-            async text() {
-              return `country,population,continent
+          return `country,population,continent
 United States,331900000,North America
 China,1439323776,Asia
 Japan,125800000,Asia`;
-            },
-          };
         },
       },
     };
@@ -59,18 +55,24 @@ Japan,125800000,Asia`;
     async loadAsync() {
       return this;
     }
+
+    static async loadAsync() {
+      return new MockJSZip();
+    }
   }
 
-  return { default: MockJSZip };
+  const loadAsync = vi.fn().mockResolvedValue(new MockJSZip());
+
+  return { default: MockJSZip, loadAsync };
 });
 
 describe('Styler CSV Workflow Integration', () => {
-  let csvApi: StylerCSVApiDriver;
+  let csvApi: StylerTabularApiDriver;
   let tableManager: SimpleTableMetadataManager;
 
   beforeEach(async () => {
     tableManager = new SimpleTableMetadataManager();
-    csvApi = new StylerCSVApiDriver(tableManager);
+    csvApi = new StylerTabularApiDriver(tableManager);
   });
 
   afterEach(async () => {
@@ -136,7 +138,7 @@ Australia,25690000,51812,Oceania,2021`;
     expect(filteredPreview.rows.every((row) => Number(row.population) > 50000000)).toBe(true);
 
     // Step 3: Column selection and mapping
-    const columnMappings: CSVColumnMapping[] = [
+    const columnMappings: TabularColumnMapping[] = [
       {
         sourceColumn: 'country',
         sourceType: 'string',

@@ -24,7 +24,7 @@ export interface TabularPreview<T = Record<string, any>> {
 }
 
 export interface ParseOptions {
-  delimiter?: string; // for CSV/TSV
+  delimiter?: string; // for Tabular/TSV
   header?: boolean; // first row as header (default true)
   encoding?: string; // text encoding hint
   chunkSize?: number; // target rows per chunk, default 1000

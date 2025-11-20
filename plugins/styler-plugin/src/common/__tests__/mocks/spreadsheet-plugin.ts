@@ -1,12 +1,12 @@
 import type {
-  CSVColumnInfo,
+  TabularColumnInfo,
   CSVDataResult,
   CSVFilterRule,
   CSVProcessingConfig,
   CSVSelectionConfig,
   CSVTableListResult,
   CSVTableMetadata,
-} from '@hierarchidb/ui-csv-extract';
+} from '@hierarchidb/ui-tabular-extract';
 import * as JSZipNS from 'jszip';
 import * as XLSX from 'xlsx';
 import type { SimpleTableMetadataManager } from '../../services/SimpleTableMetadataManager.js';
@@ -69,9 +69,9 @@ function parseCSV(text: string, cfg?: CSVProcessingConfig): { headers: string[];
   return { headers, rows };
 }
 
-function detectTypes(headers: string[], rows: CSVRow[]): CSVColumnInfo[] {
+function detectTypes(headers: string[], rows: CSVRow[]): TabularColumnInfo[] {
   return headers.map((h, index) => {
-    let type: CSVColumnInfo['type'] = 'string';
+    let type: TabularColumnInfo['type'] = 'string';
     // Try number if all numeric (ignoring empty)
     const values = rows.map((r) => r[h]).filter((v) => v !== '' && v != null);
     if (
@@ -96,9 +96,9 @@ function detectTypes(headers: string[], rows: CSVRow[]): CSVColumnInfo[] {
   });
 }
 
-type TableDataEntry = { rows: CSVRow[]; columns: CSVColumnInfo[] };
+type TableDataEntry = { rows: CSVRow[]; columns: TabularColumnInfo[] };
 
-export class SpreadsheetCSVApiDriver {
+export class SpreadsheetTabularApiDriver {
   private static tableData: Map<string, TableDataEntry> = new Map();
 
   constructor(private manager: SimpleTableMetadataManager) {}
@@ -134,7 +134,7 @@ export class SpreadsheetCSVApiDriver {
         referencingPlugins: [],
       };
       await this.manager.store(metadata);
-      SpreadsheetCSVApiDriver.tableData.set(id, { rows, columns });
+      SpreadsheetTabularApiDriver.tableData.set(id, { rows, columns });
       return metadata;
     }
     if (name.endsWith('.xlsx') || file.type.includes('excel')) {
@@ -170,7 +170,7 @@ export class SpreadsheetCSVApiDriver {
         referencingPlugins: [],
       };
       await this.manager.store(metadata);
-      SpreadsheetCSVApiDriver.tableData.set(id, { rows: body, columns });
+      SpreadsheetTabularApiDriver.tableData.set(id, { rows: body, columns });
       return metadata;
     }
     if (name.endsWith('.zip') || file.type.includes('zip')) {
@@ -218,7 +218,7 @@ export class SpreadsheetCSVApiDriver {
         referencingPlugins: [],
       };
       await this.manager.store(metadata);
-      SpreadsheetCSVApiDriver.tableData.set(id, { rows, columns });
+      SpreadsheetTabularApiDriver.tableData.set(id, { rows, columns });
       return metadata;
     }
     throw new Error('Unsupported file format');
@@ -230,9 +230,17 @@ export class SpreadsheetCSVApiDriver {
   ): Promise<CSVTableMetadata> {
     const res = await fetch(url);
     if (!res.ok) {
-      throw new Error(`Failed to download: ${res.status} ${res.statusText}`);
+      throw new Error(`CSV download failed: HTTP ${res.status}`);
     }
-    const text = await res.text();
+    let text: string;
+    if (typeof res.arrayBuffer === 'function') {
+      const buffer = await res.arrayBuffer();
+      text = new TextDecoder().decode(buffer);
+    } else if (typeof res.text === 'function') {
+      text = await res.text();
+    } else {
+      throw new Error('Response body cannot be read as text');
+    }
     const file = new File([text], url.split('/').pop() || 'data.csv', { type: 'text/csv' });
     const meta = await this.uploadCSVFile(file, config);
     meta.fileUrl = url;
@@ -295,7 +303,7 @@ export class SpreadsheetCSVApiDriver {
   ): Promise<CSVDataResult> {
     const meta = await this.manager.get(tableId);
     if (!meta) throw new Error('Table not found');
-    const stored = SpreadsheetCSVApiDriver.tableData.get(tableId);
+    const stored = SpreadsheetTabularApiDriver.tableData.get(tableId);
     const rows = stored?.rows ?? [];
     const columns = stored?.columns ?? meta.columns;
     const filtered = this.applyFilters(rows, filters).map((r) => {
@@ -322,7 +330,7 @@ export class SpreadsheetCSVApiDriver {
   async getFilteredData(tableId: string, selection: CSVSelectionConfig): Promise<CSVDataResult> {
     const meta = await this.manager.get(tableId);
     if (!meta) throw new Error('Table not found');
-    const stored = SpreadsheetCSVApiDriver.tableData.get(tableId);
+    const stored = SpreadsheetTabularApiDriver.tableData.get(tableId);
     const allRows = stored?.rows ?? [];
     const allColumns = stored?.columns ?? meta.columns;
     const selectedNames = new Set<string>([selection.keyColumn, ...selection.valueColumns]);
@@ -354,5 +362,5 @@ export class SpreadsheetCSVApiDriver {
 }
 
 // default export shape mimic
-const SpreadsheetPlugin = { SpreadsheetCSVApiDriver };
+const SpreadsheetPlugin = { SpreadsheetTabularApiDriver };
 export { SpreadsheetPlugin };

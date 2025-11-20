@@ -166,6 +166,22 @@
   - [ ] `pnpm -C app typecheck` と対象テストコマンドを実行し、結果を運用ログへ記録する
 - ロールバック手順：IconRegistryContext および関連変更ファイルを revert し、`pnpm -C app typecheck` と対象テストを再実行して従来挙動（代替アイコン表示）へ戻ることを確認する
 
+1388) Resolver working copy を TreeNode draft へ統合（P0）
+- ブランチ: `fix/resolver/working-copy-draft`（sandbox 制約で `main` 上で作業）
+- 依存: `plugins/resolver-plugin/src/worker/database/index.ts`, `plugins/resolver-plugin/src/worker/factory/*`, `packages/plugin-runtime-services`（WorkingCopy API）, `app/src/hooks/resolver/*`
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` の Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] Resolver Dexie スキーマから `workingCopies` テーブルを削除し、WorkingCopy 情報を TreeNode draft（標準 `WorkingCopyDraft`）に統一する
+  - [ ] Resolver の create/edit フローが新構成で機能するよう Worker/UI ロジックを更新し、少なくとも 1 つの動作確認（手動またはユニットテスト）を記録する
+  - [ ] `pnpm -C app typecheck` など影響範囲の検証を実行し、結果を運用ログに追記する
+  - [ ] ロールバック手順（差分ファイルとコマンド）を `TASKS.md` に明示する
+- チェックリスト:
+  - [ ] `plugins/resolver-plugin/src/worker/database/index.ts` から workingCopies 定義を削除し、関連参照を WorkingCopy API へ置き換える
+  - [ ] WorkingCopyService 周辺で Resolver 特有の保存処理を見直し、TreeNode draft へ直接反映されるよう更新する
+  - [ ] UI 側で working copy 取得ロジックに Dexie 参照が残っていないか確認し、必要に応じて削除／簡素化する
+  - [ ] 変更後の Resolver create/edit 手順を実行（手動 or テスト）し、成功ログを TASKS 運用ログへ記録する
+- ロールバック手順：Resolver Dexie スキーマと関連コードを revert し、既存の `workingCopies` テーブルを復元したうえで `pnpm -C app typecheck` と対象テストを再実行する
+
 1520) TrashDialog Empty Trash no-op（P0）
 - ブランチ: `fix/ui-trash/empty-dialog-noop`（sandbox 制約で `main` 上で作業）
 - 依存: `app/src/router/pages/tree/trash/TrashDialog.tsx`, `app/src/router/pages/tree/trash/emptyTrashBranch.ts`, `app/src/router/pages/tree/trash/__tests__/unit/emptyTrashBranch.unit.test.ts`, `packages/common/api/src/TreeMutationAPI.ts`
@@ -1915,6 +1931,9 @@
     - progress: 2025-09-26 05:52 FilteringStep UI を最小実装し、列表示切替と簡易行フィルタ追加を working copy へ反映
     - progress: 2025-09-26 06:18 DataSourceStep/CSVUploadPanel の型を整理し、`@hierarchidb/ui-file` との受け渡しで readonly 配列を直接渡せるよう調整
     - progress: 2025-09-26 06:19 手動入力タブのバリデーションを確認し、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` を再実行してグリーンを確認
+    - start: 2025-11-20 00:30 ExecPlan（plans/spreadsheet-plugin-rebuild.md）を作成し、TabularService + TabularStore 基盤での再実装タスクに着手
+    - progress: 2025-11-20 10:10 `plugins/spreadsheet-plugin/src` を NodeNext 対応で再構成（manifest/index/worker/ui/services/common/types）し、`SpreadsheetTabularApiDriver` と `SpreadsheetStorePort` を TabularService/TabularWriter ベースで実装
+    - progress: 2025-11-20 11:05 `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` および `pnpm --filter @hierarchidb/spreadsheet-plugin test -- run` がローカル Node/Blob polyfill 下でグリーン（CSV ingest→RowStore まで検証済み）
 
 - feat/styler/preview-stub-and-config-io（Styler: プレビュースタブと保存 I/O 確認）
   - ブランチ: `feat/styler/preview-stub-and-config-io`
@@ -3104,7 +3123,7 @@ P2:
   - `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck && build && test` がグリーン
   - 依存: `@hierarchidb/tabular`/`@hierarchidb/auth-recovery` などのAPI整合と UI 依存の peer/external 化
 - チェックリスト（抜粋）:
-  - [ ] `SpreadsheetCSVApiDriver` の upload フロー（既存メタ/新規解析の分岐、プレビュー連携）を統合（今回の応急修正は pass だがプレビュー復元は未実装）
+  - [ ] `SpreadsheetTabularApiDriver` の upload フロー（既存メタ/新規解析の分岐、プレビュー連携）を統合（今回の応急修正は pass だがプレビュー復元は未実装）
   - [ ] Adapter 実装を `TabularDataApi` に完全適合
   - [ ] `provider-i18next` 依存の除去または正規化
   - [ ] `@hierarchidb/runtime-worker` entity store の import 修正（exports に準拠）
@@ -4695,6 +4714,7 @@ P2:
     - progress: 2025-09-22 18:52 Trash holder 実装を導入し、`moveToTrash` でホルダー生成 + UUID リネーム、`restoreFromTrash` でホルダー経由復帰するよう更新。`replay-command-history` 系の undo/redo でもホルダーと元名称を保持するよう `CommandHistoryManager` を拡張。`pnpm --filter @hierarchidb/runtime-worker test -- --run --reporter=dot --silent` がグリーン
     - progress: 2025-11-19 18:05 `TreeConsolePanel` を正規エクスポートに戻し、TrashDialog で `columnsDeprecated` 配線と `originalName` 優先表示（検索含む）を確認。`pnpm lint` / `pnpm --filter @hierarchidb/ui-treeconsole-base build` がいずれも成功（前者: turbo lint, 後者: tsdown build）
     - progress: 2025-11-19 18:42 TrashDialog の `nodeIndex` を `getTrashDisplayName` で装飾し、TreeTableCore でも UUID ではなく `originalName` 表示となるよう修正。`pnpm lint` は `turbo: command not found`（pnpm が `node_modules/.bin/turbo` を生成できず実行不可）で失敗するため未検証。`pnpm --filter @hierarchidb/ui-treeconsole-base build` は前回成功ログあり
+    - progress: 2025-11-20 19:10 shape/import ワークフローへ `TabularDataApi` を導入。`ShapeEntity`/WorkingCopy に `tabularMetadataId`/`tabularFilters` などを追加し、`StepTabularUpload`/`StepTabularFilter` を multi-step dialog に登録。`createShapeCSVApi` で SpreadsheetCSV ドライバを再利用し、UI から CSV アップロード→プレビュー→フィルタ確定→エンティティ保存できる形へ共通化。検証として `pnpm --filter @hierarchidb/shape-plugin typecheck` を実行したが、既存の workspace 課題（`@hierarchidb/tabular-source` や `@hierarchidb/util` の d.ts 欠如、plugin-base 型不整合など）で失敗するため実質未完了。ログは `typecheck` セクション参照（TS7016/TS2339 など既知のモジュール定義不足）。
 - investigate/ui/treeconsole-i18n — TreeTableCore で i18next インスタンス未初期化エラーを調査
   - ブランチ: `investigate/ui/treeconsole-i18n`（サンドボックス制約によりローカルでは `main` 上で調査）
   - 依存: `@hierarchidb/ui-treeconsole-base`, `app/src/contexts`
@@ -5437,7 +5457,7 @@ P2:
     - progress: 2025-09-20 12:17 DynamicSpeedDial/bootLog の環境フラグ処理を型付きにし、App `as any` を 23 件まで削減。`pnpm --filter @hierarchidb/app typecheck` / `pnpm as-any:report` でワークスペース 233 件を確認。
     - progress: 2025-09-20 12:19 LanguageEventsBridge/WorkerAPIClient のグローバルフラグ参照を型付けし、App `as any` を 20 件まで削減。`pnpm --filter @hierarchidb/app typecheck` / `pnpm as-any:report` でワークスペース 230 件を確認。
     - progress: 2025-09-20 12:28 useQuery/useWorkerAPIClient/LanguageSelector/BootProgressProvider の型再整備で App `as any` を 7 件まで削減。`pnpm --filter @hierarchidb/app typecheck` / `pnpm as-any:report` でワークスペース 217 件を確認。
-    - progress: 2025-09-20 12:33 SpreadsheetCSVApiDriver のメタデータ生成を型安全化し、workspace `as any` を 201 件まで削減。`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` / `pnpm as-any:report` で新しい基準値を確認。
+    - progress: 2025-09-20 12:33 SpreadsheetTabularApiDriver のメタデータ生成を型安全化し、workspace `as any` を 201 件まで削減。`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` / `pnpm as-any:report` で新しい基準値を確認。
     - progress: 2025-09-20 13:31 SpreadsheetStorePort と worker Dexie ストアを型付けし、workspace `as any` を 194 件まで削減。`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` / `pnpm as-any:report` を実行。
     - progress: 2025-09-20 14:55 SpreadsheetDatabase のトランザクションヘルパーを型安全化し、Dexie 参照からの `as any` を撤廃。`pnpm as-any:report` でワークスペース合計 182 件（spreadsheet-plugin 実装 0 件）を確認し、docs/shim-any-audit-2025-09.md を更新。
     - blocked: 2025-09-20 14:57 `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` が `Cannot find type definition file for 'node'` で失敗。ローカル sandbox に依存展開がなく、ネットワーク制約で `pnpm install` も実行不能のため、代替検証を継続検討。
@@ -7451,7 +7471,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-22 21:44 progress: batch-runtime-services TS6059 解消 — `ban-tsconfig-paths-dist-dts` ポリシーの趣旨に合わせ、`packages/batch-runtime-services/tsconfig{,.build}.json` の `paths` を空マップ化し base alias を打ち消し。続けて `pnpm --filter @hierarchidb/batch-runtime-services {typecheck,build}` を再実行し、ともに成功（TS6059 再発なし）を確認。
 - 2025-10-22 21:48 done: batch-runtime-services TS6059 解消 — `packages/batch-types/tsconfig.json` の dist 参照 paths を撤去（空マップで上書き）し、`pnpm --filter @hierarchidb/batch-types {typecheck,build}` を実行して API Extractor 含め成功。最後に `pnpm run policy:ban-tsconfig-paths-dist-dts` を実行し、ポリシー違反が解消されたことを確認。
 - 2025-10-22 21:55 start: fix/ui-tabular-extract/csv-filter-build — `pnpm --filter @hierarchidb/ui-tabular-extract build` が `~/types/index.js` 未解決（TS2307）と setState コールバックの暗黙 any（TS7006）で失敗しているため、DoD を定義して修正に着手。
-- 2025-10-22 22:02 progress: fix/ui-tabular-extract/csv-filter-build — `CSVFilterStep.tsx` の import を `../types/index.js` へ変更し、`setNewFilter`/`setFilters` のコールバックに型注釈を追加。tsserver でエラーが消えたことを確認。
+- 2025-10-22 22:02 progress: fix/ui-tabular-extract/csv-filter-build — `TabularFilterStep.tsx` の import を `../types/index.js` へ変更し、`setNewFilter`/`setFilters` のコールバックに型注釈を追加。tsserver でエラーが消えたことを確認。
 - 2025-10-22 22:05 done: fix/ui-tabular-extract/csv-filter-build — `pnpm --filter @hierarchidb/ui-tabular-extract build`（exit 0, tsup + DTS 成功）を実行し、TS2307/TS7006 が再発しないことを確認。DoD/チェックリスト完了。
 - 2025-10-22 22:08 start: fix/plugin-types/dist-paths — `pnpm --filter @hierarchidb/plugin-types typecheck` 実行時に `ae-wrong-input-file-type` および TS6059/TS6307 が発生するため、tsconfig paths を整理して API Extractor が dist `.d.ts` のみを参照できるようにする対応を開始。
 - 2025-10-22 22:10 progress: fix/plugin-types/dist-paths — `packages/plugin-types/tsconfig.json` に `compilerOptions.paths: {}` を追加し、`@hierarchidb/*` エイリアスを解除。`pnpm --filter @hierarchidb/plugin-types typecheck` を再実行して API Extractor のエラーが解消されたことを確認（exit 0）。
@@ -8332,6 +8352,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-19 16:53 start: fix/app/icon-registry-provider — ダイアログ表示後に SpeedDial / TreeConsole Create メニューのプラグインアイコンが代替アイコンへ置き換わる回帰を調査。DoD: IconRegistryProvider でアイコンローダーを一元管理、TreeConsole/SpeedDial を新コンテキスト経由へ切替、typecheck＋対象テスト実行、TASKS ログとロールバック手順の更新。
 - 2025-11-19 17:12 command: pnpm -C app typecheck — exit 0。IconRegistryProvider 導入＋ TreeConsole/SpeedDial/PluginRegistry 周辺の `useIconRegistry` 連携後も `tsconfig.typecheck.json` ベースで型エラーなしを確認。
 - 2025-11-19 17:25 command: pnpm -C app test -- --run DynamicSpeedDial — exit 1。既知の `preload-worker-modules.unit.test.ts`（plugin registry dist 未生成で import 解決不可）および `TreeConsoleToolbarImportMenu.unit.test.tsx`（既知の aria-label 回帰でボタンが見つからない）の失敗により全体が red。対象テスト本体（DynamicSpeedDial ヘッドレス）はモック経由でアイコン解決ロジックを exercise 済み。
+- 2025-11-20 14:18 start: fix/resolver/working-copy-draft — Resolver plugin の `workingCopies` Dexie テーブルを撤去し、WorkingCopyDraft（TreeNode draft）を唯一の保存先にするタスクを開始。DoD: TASKS 更新、Dexie スキーマ更新、Worker/UI ロジックを TreeNode draft 連携へ統一、typecheck/テスト実行、ロールバック手順記録。
+- 2025-11-20 14:40 progress: ResolverEntityService および resolverEntitiesDB から `workingCopies` テーブルと関連メソッドを削除し、WorkingCopy 管理責務を TreeNode draft へ委譲。`plugins/resolver-plugin/src/ui/components/__tests__` の WorkingCopy 専用テストも整理し、`pnpm --filter @hierarchidb/resolver-plugin build` で dist ビルドが成功することを確認。
+- 2025-11-20 14:45 blocked: pnpm -C app typecheck — exit 1。既存の `app/src/hooks/treeconsole/createTreeConsoleActions.ts` で `@hierarchidb/plugin-base` alias 未解決、`plugins/shape-plugin`/`plugins/styler-plugin` 由来の型エラー（`@hierarchidb/ui-tabular-extract` 未解決、Styler handler の型不整合等）が発生し、本タスク変更とは無関係の失敗で停止。必要な場合は既知課題の解消後に再実行する。
+- 2025-11-20 14:48 blocked: pnpm --filter @hierarchidb/resolver-plugin test — exit 1。既存テストが `ResolverEntityService.js`／`SimpleMappingCompiler.js` 等の未実装モジュールに依存しており、Vite import 解析で解決不可となる既知問題のためテストスイートが開始できず。`tsdown build` では成功を確認済み。
 - 2025-11-18 22:07 start: fix/basemap/create-dialog-save — basemap Create ダイアログの Step1 初期値欠如と Step2/3 誤判定の調査を開始。DoD: Step1 name/description の初期値と WorkingCopy 反映経路の調査、Step2/3 validation 異常の原因究明、再発防止策の提案、Kanban/ログ更新、および関連検証方針の整理。
 - 2025-11-18 22:17 progress: fix/basemap/create-dialog-save — StepAdapter が workingCopy.data のみを Step1 に渡しており、worker 側で付与される `resolveDefaultNodeName` の値が basic-info へ伝搬していないため name 初期値が常に空になることを確認。また Step1 で `p.onChange` が初めて呼ばれた瞬間に ensureWorkingCopy が DEFAULT_STYLE/DEFAULT_VIEWPORT を含む payload を保存し、Step2(Style)/Step3(Viewport) の validate 条件が満たされたと誤判定されるためステップが即座に緑化している。対策としては (a) `currentStepData` へ basicInfo state をマージして Step1 初期レンダリングに name/description を供給する、もしくは (b) Basemap 用 StepProvider 側で WorkingCopyService の name/description を参照する/初回 onChange を不要にする、さらに Step2/3 validate では「ユーザー操作済み」フラグや MapStyle/Viewport の dirty 状態を確認する必要があると整理。
 - 2025-11-19 09:45 progress: fix/basemap/create-dialog-save — 実装フェーズへ移行し、`usePluginDialogController` で `basicInfo` state を Step データへマージする案と、Basemap Step provider の `onChange`/dirty 判定整理（mapStyle/viewport を Step2/3 操作時のみ commit）を組み合わせて進めることを決定。差分実装とテスト追加の着手を記録。

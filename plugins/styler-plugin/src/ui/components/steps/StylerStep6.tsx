@@ -23,8 +23,8 @@ export interface StylerStep6Props {
   data: StylerStep6Data;
   onChange: (data: StylerStep6Data) => void;
   onValidate?: (isValid: boolean) => void;
-  //  CSV
-  csvData?: StylerTableRow[];
+  //  Tabular
+  tabularData?: StylerTableRow[];
   columns?: string[];
 }
 
@@ -38,7 +38,7 @@ export const StylerStep6: React.FC<StylerStep6Props> = ({
   data,
   onChange,
   onValidate,
-  csvData = [],
+  tabularData = [],
   // columns = [],
 }) => {
   const config: StylerConfig = data?.stylerConfig || StylerConfigDefault;
@@ -47,8 +47,8 @@ export const StylerStep6: React.FC<StylerStep6Props> = ({
 
   const previewData = useMemo(() => {
     //  1000
-    return csvData.slice(0, 1000);
-  }, [csvData]);
+    return tabularData.slice(0, 1000);
+  }, [tabularData]);
 
   //  :
   const handleColumnSelect = useCallback(
@@ -93,12 +93,12 @@ export const StylerStep6: React.FC<StylerStep6Props> = ({
     );
   }
 
-  if (csvData.length === 0) {
+  if (tabularData.length === 0) {
     return (
       <Box sx={{ p: 3 }}>
         <Alert severity="warning">
           <AlertTitle>No Data Available</AlertTitle>
-          No CSV data is available for preview. Please ensure data has been loaded in previous
+          No Tabular data is available for preview. Please ensure data has been loaded in previous
           steps.
         </Alert>
       </Box>
@@ -119,10 +119,10 @@ export const StylerStep6: React.FC<StylerStep6Props> = ({
 
       {/*
        */}
-      {csvData.length > 1000 && (
+      {tabularData.length > 1000 && (
         <Alert severity="info" sx={{ mt: 2 }}>
           Showing preview of first 1,000 rows. Full dataset contains{' '}
-          {csvData.length.toLocaleString()} rows.
+          {tabularData.length.toLocaleString()} rows.
         </Alert>
       )}
     </Box>

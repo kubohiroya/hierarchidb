@@ -1,16 +1,16 @@
 /**
  * @file types/openstreetmap-type.ts
- * @description Type definitions for CSV data extraction system
+ * @description Type definitions for Tabular data extraction system
  */
-import {CSVColumnInfo, CSVColumnType, CSVTableMetadata, CSVTableMetadataLike} from '@hierarchidb/tabular-store';
+import {TabularColumnInfo, TabularColumnType, TabularTableMetadata, TabularTableMetadataLike} from '@hierarchidb/tabular-store';
 
 /**
- * CSV Filter Rule for row filtering
+ * Tabular Filter Rule for row filtering
  */
 /**
- * CSV Filter Operator
+ * Tabular Filter Operator
  */
-export type CSVFilterOperator =
+export type TabularFilterOperator =
   | 'equals'
   | 'not_equals'
   | 'contains'
@@ -25,13 +25,13 @@ export type CSVFilterOperator =
   | 'is_not_null'
   | 'regex';
 
-export interface CSVFilterRule {
+export interface TabularFilterRule {
   /** Unique identifier for this rule */
   id: string;
   /** Column name to filter on */
   column: string;
   /** Filter operator */
-  operator: CSVFilterOperator;
+  operator: TabularFilterOperator;
   /** Filter value */
   value: string | number;
   /** Whether this rule is enabled */
@@ -39,9 +39,9 @@ export interface CSVFilterRule {
 }
 
 /**
- * CSV Processing Configuration
+ * Tabular Processing Configuration
  */
-export interface CSVProcessingConfig {
+export interface TabularProcessingConfig {
   /** Column delimiter */
   delimiter?: ',' | '	' | ';' | '|';
   /** Text encoding */
@@ -52,7 +52,7 @@ export interface CSVProcessingConfig {
   skipRows?: number;
   /** Maximum number of rows to process (0 = no limit) */
   maxRows?: number;
-  /** Quote character for CSV parsing */
+  /** Quote character for Tabular parsing */
   quoteChar?: '"' | '\'' | '';
   /** Escape character */
   escapeChar?: '\\';
@@ -61,15 +61,15 @@ export interface CSVProcessingConfig {
 }
 
 /**
- * CSV Selection Configuration
+ * Tabular Selection Configuration
  */
-export interface CSVSelectionConfig {
+export interface TabularSelectionConfig {
   /** Key column for mapping (primary key) */
   keyColumn?: string;
   /** Value columns to extract */
   valueColumns: string[];
   /** Filter rules to apply */
-  filterRules: CSVFilterRule[];
+  filterRules: TabularFilterRule[];
   /** Custom key-value mappings */
   customMappings?: Array<{
     key: string;
@@ -79,11 +79,11 @@ export interface CSVSelectionConfig {
 }
 
 /**
- * CSV Data Result - filtered and processed data
+ * Tabular Data Result - filtered and processed data
  */
-export interface CSVDataResult {
+export interface TabularDataResult {
   /** Column information */
-  columns: CSVColumnInfo[];
+  columns: TabularColumnInfo[];
   /** Data rows as key-value objects */
   rows: Array<Record<string, string | number | null>>;
   /** Total number of rows after filtering */
@@ -100,17 +100,17 @@ export interface CSVDataResult {
 }
 
 /**
- * CSV Column Mapping for selection step
+ * Tabular Column Mapping for selection step
  */
-export interface CSVColumnMapping {
+export interface TabularColumnMapping {
   /** Source column name */
   sourceColumn: string;
   /** Source column type */
-  sourceType: CSVColumnType;
+  sourceType: TabularColumnType;
   /** Target column name */
   targetColumn: string;
   /** Target column type */
-  targetType: CSVColumnType;
+  targetType: TabularColumnType;
   /** Whether this column is included in output */
   included: boolean;
   /** Display order */
@@ -120,17 +120,17 @@ export interface CSVColumnMapping {
 }
 
 /**
- * CSV Extract Result - final result for plugin-loader
+ * Tabular Extract Result - final result for plugin-loader
  */
-export interface CSVExtractResult {
+export interface TabularExtractResult {
   /** Table metadata ID for reference */
   tableMetadataId: string;
   /** Table metadata */
-  metadata: CSVTableMetadata;
+  metadata: TabularTableMetadata;
   /** Selection configuration */
-  selection: CSVSelectionConfig;
+  selection: TabularSelectionConfig;
   /** Preview data */
-  previewData: CSVDataResult;
+  previewData: TabularDataResult;
 }
 
 /**
@@ -146,9 +146,9 @@ export interface PaginationOptions {
 /**
  * CSV Table List Result
  */
-export interface CSVTableListResult {
+export interface TabularTableListResult {
   /** List of tables */
-  tables: CSVTableMetadataLike[];
+  tables: TabularTableMetadataLike[];
   /** Total number of tables */
   total: number;
 }
@@ -156,7 +156,7 @@ export interface CSVTableListResult {
 /**
  * CSV Processing Status
  */
-export interface CSVProcessingStatus {
+export interface TabularProcessingStatus {
   /** Processing state */
   status: 'pending' | 'processing' | 'completed' | 'error';
   /** Progress percentage (0-100) */
@@ -174,23 +174,23 @@ export interface TabularDataApi {
   /**
    * Upload and process CSV file
    */
-  uploadCSVFile(
+  uploadTabularFile(
     file: File,
-    config: CSVProcessingConfig,
-  ): Promise<CSVTableMetadata>;
+    config: TabularProcessingConfig,
+  ): Promise<TabularTableMetadata>;
 
   /**
    * Download CSV from URL and process
    */
-  downloadCSVFromUrl(
+  downloadTabularFromUrl(
     url: string,
-    config: CSVProcessingConfig,
-  ): Promise<CSVTableMetadata>;
+    config: TabularProcessingConfig,
+  ): Promise<TabularTableMetadata>;
 
   /**
    * Get CSV table metadata by ID
    */
-  getTableMetadata(id: string): Promise<CSVTableMetadata | null>;
+  getTableMetadata(id: string): Promise<TabularTableMetadata | null>;
 
   /**
    * List available CSV tables
@@ -198,7 +198,7 @@ export interface TabularDataApi {
   listTables(
     pluginId?: string,
     pagination?: PaginationOptions,
-  ): Promise<CSVTableListResult>;
+  ): Promise<TabularTableListResult>;
 
   /**
    * Delete CSV table (force delete, ignoring references)
@@ -210,17 +210,17 @@ export interface TabularDataApi {
    */
   getFilteredPreview(
     tableId: string,
-    filters: CSVFilterRule[],
+    filters: TabularFilterRule[],
     rowCount: number,
-  ): Promise<CSVDataResult>;
+  ): Promise<TabularDataResult>;
 
   /**
    * Get full filtered dataset
    */
   getFilteredData(
     tableId: string,
-    selection: CSVSelectionConfig,
-  ): Promise<CSVDataResult>;
+    selection: TabularSelectionConfig,
+  ): Promise<TabularDataResult>;
 
   /**
    * Add plugin reference to CSV table (reference counting)
@@ -241,5 +241,5 @@ export interface TabularDataApi {
   /**
    * Get processing status for async operations
    */
-  getProcessingStatus?(id: string): Promise<CSVProcessingStatus | null>;
+  getProcessingStatus?(id: string): Promise<TabularProcessingStatus | null>;
 }

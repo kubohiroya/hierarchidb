@@ -95,11 +95,11 @@ export function selectionsToCSV(
 /**
  * Parse CSV format to selections
  */
-export function csvToSelections(
-  csvData: string,
+export function tabularToSelections(
+  tabularData: string,
   columns: MatrixColumn[],
 ): MatrixSelection[] {
-  const lines = csvData.split('\n').filter(line => line.trim());
+  const lines = tabularData.split('\n').filter(line => line.trim());
   if (lines.length < 2) return [];
 
   const headers = lines[0]?.split(',') ?? [];

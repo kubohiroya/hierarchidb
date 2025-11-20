@@ -62,7 +62,6 @@
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
-    "@hierarchidb/plugin-runtime-services": "workspace:*",
     "@mapbox/vector-tile": "^2.0.3",
     "@tanstack/react-virtual": "^3.2.0",
     "@turf/turf": "^7.0.0",
@@ -73,8 +72,7 @@
     "pako": "^2.1.0",
     "pbf": "^4.0.1",
     "topojson-client": "^3.1.0",
-    "topojson-server": "^3.0.1",
-    "@hierarchidb/plugin-base": "workspace:*"
+    "topojson-server": "^3.0.1"
   },
   "peerDependencies": {
     "@hierarchidb/plugin-service-api": "workspace:*",
@@ -87,13 +85,16 @@
     "@hierarchidb/folder-plugin": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
+    "@hierarchidb/plugin-base": "workspace:*",
     "@hierarchidb/ui-accordion-config": "workspace:*",
     "@hierarchidb/ui-datasource": "workspace:*",
+    "@hierarchidb/ui-tabular-extract": "workspace:*",
     "@hierarchidb/ui-license": "workspace:*",
     "@hierarchidb/ui-country-select": "workspace:*",
     "@hierarchidb/ui-lru-splitview": "workspace:*",
     "@hierarchidb/runtime-client": "workspace:*",
     "@hierarchidb/download": "workspace:*",
+    "@hierarchidb/spreadsheet-plugin": "workspace:*",
     "@mui/icons-material": "^7.3.2",
     "@mui/material": "^7.3.2",
     "dexie": "^4.2.0",
@@ -132,13 +133,17 @@
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-accordion-config": "workspace:*",
     "@hierarchidb/ui-datasource": "workspace:*",
+    "@hierarchidb/ui-tabular-extract": "workspace:*",
     "@hierarchidb/ui-license": "workspace:*",
     "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/ui-country-select": "workspace:*",
     "@hierarchidb/ui-lru-splitview": "workspace:*",
     "@hierarchidb/runtime-client": "workspace:*",
     "@hierarchidb/download": "workspace:*",
-    "@hierarchidb/plugin-base": "workspace:*"
+    "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/plugin-runtime-services": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
+    "@hierarchidb/spreadsheet-plugin": "workspace:*"
   },
   "type": "module",
   "hierarchidb": {

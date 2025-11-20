@@ -1,18 +1,11 @@
-/// <reference types="vite/client" />
-
 import { createNodePayloadPeerStore } from '@hierarchidb/runtime-worker';
 import type { PeerStore } from '@hierarchidb/runtime-worker';
-import type { StylerPeerData } from '../../common/types/stylerTypes.js';
-
-const normalizeStylerPeerData = (data?: StylerPeerData | null): StylerPeerData => ({
-  schemaVersion: 1,
-  lastAppliedConfig: data?.lastAppliedConfig,
-  metadata: data?.metadata ?? {},
-});
+import type { StylerEntity } from '../../common/types/StylerEntity.js';
+import { StylerConfigDefault } from '../../common/types/stylerTypes.js';
 
 type StoreRegistry = {
-  getPeer(nodeType: string): PeerStore | undefined;
-  registerPeer(nodeType: string, store: PeerStore): void;
+  getPeer<T = unknown>(nodeType: string): PeerStore<T> | undefined;
+  registerPeer<T = unknown>(nodeType: string, store: PeerStore<T>): void;
 };
 
 export interface RegisterStylerWorkerStoresOptions {
@@ -37,12 +30,22 @@ async function resolveStoreRegistry(
   }
 }
 
+const normalizeStylerEntity = (data?: StylerEntity): StylerEntity | undefined => {
+  if (!data) return undefined;
+  return {
+    ...data,
+    stylerConfig: data.stylerConfig ?? StylerConfigDefault,
+    selectedKeyColumn: data.selectedKeyColumn ?? data.stylerConfig?.keyColumn ?? '',
+    selectedValueColumn: data.selectedValueColumn ?? data.stylerConfig?.valueColumn ?? '',
+  };
+};
+
 async function ensureStylerStores(registry: StoreRegistry): Promise<void> {
   if (!registry.getPeer('styler')) {
     registry.registerPeer(
       'styler',
-      createNodePayloadPeerStore({
-        normalize: (data) => normalizeStylerPeerData(data ?? undefined),
+      createNodePayloadPeerStore<StylerEntity>({
+        normalize: normalizeStylerEntity,
       })
     );
   }

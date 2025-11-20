@@ -1,5 +1,5 @@
 import { SimpleTableMetadataManager } from './SimpleTableMetadataManager.js';
-import type { CSVColumnInfo, CSVTableMetadataLike } from './types.js';
+import type { TabularColumnInfo, TabularTableMetadataLike } from './types.js';
 import { getDBName } from '@hierarchidb/util';
 import { getRowStoreDB, type RowChunk } from './RowStoreDB.js';
 
@@ -26,8 +26,8 @@ export class TabularWriter {
   async begin(schema: { filename?: string; columns: string[]; contentHash?: string }): Promise<string> {
     const id = crypto.randomUUID();
     // Local shape compatible with SimpleTableMetadataManager.create()
-    const columns: CSVColumnInfo[] = schema.columns.map((name, index) => ({ name, index }));
-    const base: CSVTableMetadataLike = {
+    const columns: TabularColumnInfo[] = schema.columns.map((name, index) => ({ name, index }));
+    const base: TabularTableMetadataLike = {
       id,
       filename: schema.filename || `${this.pluginId}-${id}.json`,
       columns,

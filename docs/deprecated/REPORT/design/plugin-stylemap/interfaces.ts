@@ -41,7 +41,7 @@ export interface StylerEntity extends PrimaryResourceEntity {
 }
 
 /**
- * 🟢 Metadata for CSV/TSV table structure
+ * 🟢 Metadata for Tabular/TSV table structure
  */
 export interface TableMetadataEntity {
   /** Unique identifier for the table */

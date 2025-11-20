@@ -5,17 +5,14 @@
       "ES2020",
       "DOM",
       "WebWorker"
-    ],
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ]
-    }
+    ]
   },
   "include": [
+    "src/common/**/*",
     "src/shared/**/*",
     "src/types/**/*",
     "src/services/**/*",
+    "src/ui/**/*",
     "src/worker/api.ts",
     "src/worker/handlers/**/*",
     "src/worker/plugin.ts"

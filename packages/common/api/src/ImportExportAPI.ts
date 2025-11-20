@@ -116,8 +116,8 @@ export interface ExportNodesParams {
   /** Whether to include node metadata */
   includeMetadata?: boolean;
 
-  /** For CSV exports - columns to include */
-  csvColumns?: string[];
+  /** For Tabular exports - columns to include */
+  tabularColumns?: string[];
 
   /** Progress callback */
   onProgress?: (progress: ExportProgress) => void;

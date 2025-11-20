@@ -699,6 +699,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     version: "0.1.0",
     dependencies: [
         "@hierarchidb/plugin-runtime-services",
+        "@hierarchidb/util",
+        "@hierarchidb/spreadsheet-plugin",
         "@mapbox/vector-tile",
         "@tanstack/react-virtual",
         "@turf/turf",
@@ -723,11 +725,13 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/plugin-ui-sdk",
         "@hierarchidb/ui-accordion-config",
         "@hierarchidb/ui-datasource",
+        "@hierarchidb/ui-tabular-extract",
         "@hierarchidb/ui-license",
         "@hierarchidb/ui-country-select",
         "@hierarchidb/ui-lru-splitview",
         "@hierarchidb/runtime-client",
         "@hierarchidb/download",
+        "@hierarchidb/spreadsheet-plugin",
         "@mui/icons-material",
         "@mui/material",
         "dexie",
@@ -746,6 +750,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "priority": 800,
         "dependencies": [
           "@hierarchidb/plugin-runtime-services",
+          "@hierarchidb/util",
+          "@hierarchidb/spreadsheet-plugin",
           "@mapbox/vector-tile",
           "@tanstack/react-virtual",
           "@turf/turf",
@@ -770,11 +776,13 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/plugin-ui-sdk",
           "@hierarchidb/ui-accordion-config",
           "@hierarchidb/ui-datasource",
+          "@hierarchidb/ui-tabular-extract",
           "@hierarchidb/ui-license",
           "@hierarchidb/ui-country-select",
           "@hierarchidb/ui-lru-splitview",
           "@hierarchidb/runtime-client",
           "@hierarchidb/download",
+          "@hierarchidb/spreadsheet-plugin",
           "@mui/icons-material",
           "@mui/material",
           "dexie",
@@ -862,67 +870,49 @@ export const pluginRegistry: PluginRegistryEntry[] = [
   {
     nodeType: "spreadsheet",
     packageName: "@hierarchidb/spreadsheet-plugin",
-    version: "0.0.1",
+    version: "0.2.0",
     dependencies: [
-        "@hierarchidb/plugin-runtime-services",
-        "@types/pako",
-        "pako",
-        "@hierarchidb/plugin-base",
+        "@emotion/react",
+        "@emotion/styled",
+        "@mui/icons-material",
+        "@mui/material",
+        "react",
         "@hierarchidb/auth-recovery",
         "@hierarchidb/common-api",
-        "@hierarchidb/plugin-service-api",
         "@hierarchidb/common-types",
-        "@hierarchidb/folder-plugin",
+        "@hierarchidb/plugin-base",
+        "@hierarchidb/plugin-service-api",
         "@hierarchidb/runtime-worker",
         "@hierarchidb/tabular-source",
         "@hierarchidb/tabular-store",
-        "@hierarchidb/ui-datasource",
         "@hierarchidb/ui-tabular-extract",
-        "@hierarchidb/ui-file",
-        "@hierarchidb/util",
-        "@hierarchidb/ui-plugin-basic-info",
-        "@hierarchidb/plugin-ui-sdk",
-        "@mui/icons-material",
-        "@mui/material",
-        "i18next",
-        "react",
-        "react-i18next",
-        "@hierarchidb/plugin-base"
+        "@hierarchidb/util"
       ],
     manifest: {
         "id": "@hierarchidb/spreadsheet-plugin",
         "name": "Spreadsheet Plugin",
         "displayName": "Spreadsheet",
         "nodeType": "spreadsheet",
-        "version": "0.0.1",
-        "description": "Spreadsheet plugin for HierarchiDB - extends folder plugin",
+        "version": "0.2.0",
+        "description": "Spreadsheet plugin powered by the shared tabular ingestion stack",
         "extends": "folder",
         "priority": 600,
         "dependencies": [
-          "@hierarchidb/plugin-runtime-services",
-          "@types/pako",
-          "pako",
-          "@hierarchidb/plugin-base",
+          "@emotion/react",
+          "@emotion/styled",
+          "@mui/icons-material",
+          "@mui/material",
+          "react",
           "@hierarchidb/auth-recovery",
           "@hierarchidb/common-api",
-          "@hierarchidb/plugin-service-api",
           "@hierarchidb/common-types",
-          "@hierarchidb/folder-plugin",
+          "@hierarchidb/plugin-base",
+          "@hierarchidb/plugin-service-api",
           "@hierarchidb/runtime-worker",
           "@hierarchidb/tabular-source",
           "@hierarchidb/tabular-store",
-          "@hierarchidb/ui-datasource",
           "@hierarchidb/ui-tabular-extract",
-          "@hierarchidb/ui-file",
-          "@hierarchidb/util",
-          "@hierarchidb/ui-plugin-basic-info",
-          "@hierarchidb/plugin-ui-sdk",
-          "@mui/icons-material",
-          "@mui/material",
-          "i18next",
-          "react",
-          "react-i18next",
-          "@hierarchidb/plugin-base"
+          "@hierarchidb/util"
         ],
         "icon": {
           "mui": "Assessment",
@@ -942,29 +932,25 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "inherits": "folder",
           "fields": [
             {
-              "name": "spreadsheetData",
-              "type": "object",
-              "required": true
+              "name": "spreadsheetMetadataId",
+              "type": "string",
+              "required": false
             },
             {
-              "name": "formulas",
+              "name": "dataSource",
               "type": "object",
+              "required": false
+            },
+            {
+              "name": "filters",
+              "type": "array",
               "required": false
             }
           ]
         },
         "worker": {
           "preload": [
-            "registerSpreadsheetWorkerStores",
-            "loadSpreadsheetEntitiesDbModule"
-          ]
-        },
-        "database": {
-          "prewarm": [
-            {
-              "export": "SpreadsheetDatabase",
-              "specifier": "@hierarchidb/spreadsheet-plugin/database"
-            }
+            "registerSpreadsheetWorkerStores"
           ]
         },
         "packageName": "@hierarchidb/spreadsheet-plugin"
@@ -980,10 +966,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     worker: {
         specifier: "@hierarchidb/spreadsheet-plugin/worker",
         source: "plugins/spreadsheet-plugin/src/worker/index.ts",
-      },
-    database: {
-        specifier: "@hierarchidb/spreadsheet-plugin/database",
-        source: "plugins/spreadsheet-plugin/src/services/database/index.ts",
       },
     icon: {
         specifier: "@hierarchidb/spreadsheet-plugin/icon",
@@ -1280,7 +1262,7 @@ export const pluginWorkerPreloads: Record<string, string[]> = {
   "resolver": ["registerResolverWorkerStores"],
   "route": ["registerRouteWorkerStores"],
   "shape": ["registerShapeWorkerStores","loadShapeEntitiesDbModule"],
-  "spreadsheet": ["registerSpreadsheetWorkerStores","loadSpreadsheetEntitiesDbModule"],
+  "spreadsheet": ["registerSpreadsheetWorkerStores"],
   "styler": ["registerStylerWorkerStores"],
   "timeline": ["registerTimelineWorkerStores"],
 };
@@ -1376,21 +1358,11 @@ export const pluginDatabaseLoaders: Record<string, { moduleSpecifier?: string; l
     ],
   },
   "spreadsheet": {
-    moduleSpecifier: "@hierarchidb/spreadsheet-plugin/database",
+    moduleSpecifier: "@hierarchidb/spreadsheet-plugin",
     async loader() {
-      const mod = await import("@hierarchidb/spreadsheet-plugin/database");
+      const mod = await import("@hierarchidb/spreadsheet-plugin");
       return mod;
     },
-    prewarm: [
-      {
-        specifier: "@hierarchidb/spreadsheet-plugin/database",
-        exportName: "SpreadsheetDatabase",
-        async load() {
-          const mod = await import("@hierarchidb/spreadsheet-plugin/database");
-          return mod;
-        },
-      },
-    ],
   },
   "styler": {
     moduleSpecifier: "@hierarchidb/styler-plugin",

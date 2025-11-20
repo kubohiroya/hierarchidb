@@ -13,9 +13,7 @@ describe('Resolver Integration Tests', () => {
   });
 
   afterEach(async () => {
-    // Clean up database after each test
     await resolverEntitiesDB.resolvers.clear();
-    await resolverEntitiesDB.workingCopies.clear();
   });
 
   describe('Entity Creation', () => {
@@ -61,38 +59,7 @@ describe('Resolver Integration Tests', () => {
     });
   });
 
-  describe('Working Copy Management', () => {
-    it('should create a working copy from existing entity', async () => {
-      // First create an entity
-      const entity = await handler.createEntity(testNodeId, {
-        name: 'Test Resolver',
-      });
-
-      // Create working copy
-      const workingCopy = await handler.createWorkingCopy(testNodeId);
-
-      expect(workingCopy).toBeDefined();
-      expect(workingCopy.originalId).toBe(entity.id);
-      expect(workingCopy.name).toBe('Test Resolver');
-      expect(workingCopy.isDirty).toBe(false);
-    });
-
-    it('should commit working copy changes', async () => {
-      await handler.createEntity(testNodeId, {
-        name: 'Original Name',
-      });
-
-      const workingCopy = await handler.createWorkingCopy(testNodeId);
-
-      await handler.updateWorkingCopy(workingCopy.workingCopyId!, {
-        name: 'Updated Resolver',
-      });
-
-      const committed = await handler.commitWorkingCopy(workingCopy.workingCopyId!);
-
-      expect(committed.name).toBe('Updated Resolver');
-    });
-  });
+  // Working copy behavior is exercised via WorkingCopyAPI in integration tests elsewhere.
 
   describe('Mapping Rules', () => {
     it('should handle complex mapping rules', async () => {

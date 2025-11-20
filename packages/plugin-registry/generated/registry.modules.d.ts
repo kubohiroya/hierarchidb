@@ -58,12 +58,6 @@ declare module '@hierarchidb/spreadsheet-plugin/icon' {
   export default SpreadsheetPluginIcon;
 }
 
-declare module '@hierarchidb/spreadsheet-plugin/database' {
-  export const SpreadsheetDatabase: unknown;
-  const mod: Record<string, unknown>;
-  export default mod;
-}
-
 declare module '@hierarchidb/styler-plugin/icon' {
   export const StylerPluginIcon: unknown;
   export default StylerPluginIcon;

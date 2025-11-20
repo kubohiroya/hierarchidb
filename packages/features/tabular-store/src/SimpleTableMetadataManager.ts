@@ -1,14 +1,14 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
-import type { CSVTableMetadataLike } from './types.js';
+import type { TabularTableMetadataLike } from './types.js';
 
 class CSVMetadataDB extends Dexie {
-  csvMetadata!: Table<CSVTableMetadataLike, string>;
+  tabularMetadata!: Table<TabularTableMetadataLike, string>;
 
   constructor(name: string) {
     super(name);
     this.version(1).stores({
-      csvMetadata: '&id, contentHash, filename, createdAt, *referencingPlugins',
+      tabularMetadata: '&id, contentHash, filename, createdAt, *referencingPlugins',
     });
   }
 }
@@ -25,7 +25,7 @@ export class SimpleTableMetadataManager {
   }
 
   // ---- Common helpers ----
-  private ensureRefs(m?: CSVTableMetadataLike): Required<Pick<CSVTableMetadataLike, 'referencingPlugins' | 'referenceCount'>> {
+  private ensureRefs(m?: TabularTableMetadataLike): Required<Pick<TabularTableMetadataLike, 'referencingPlugins' | 'referenceCount'>> {
     return {
       referencingPlugins: Array.isArray(m?.referencingPlugins) ? [...(m!.referencingPlugins as string[])] : [],
       referenceCount: typeof m?.referenceCount === 'number' ? (m!.referenceCount as number) : (m?.referencingPlugins?.length || 0),
@@ -33,10 +33,10 @@ export class SimpleTableMetadataManager {
   }
 
   // ---- Spreadsheet-style API ----
-  async create(metadata: CSVTableMetadataLike, pluginId: string): Promise<CSVTableMetadataLike> {
-    return await this.db.transaction('rw', this.db.csvMetadata, async () => {
+  async create(metadata: TabularTableMetadataLike, pluginId: string): Promise<TabularTableMetadataLike> {
+    return await this.db.transaction('rw', this.db.tabularMetadata, async () => {
       const id = metadata.id || crypto.randomUUID();
-      const base: CSVTableMetadataLike = {
+      const base: TabularTableMetadataLike = {
         ...metadata,
         id,
         createdAt: metadata.createdAt ?? Date.now(),
@@ -45,31 +45,31 @@ export class SimpleTableMetadataManager {
       if (!refs.referencingPlugins.includes(pluginId)) refs.referencingPlugins.push(pluginId);
       base.referencingPlugins = refs.referencingPlugins;
       base.referenceCount = refs.referencingPlugins.length;
-      await this.db.csvMetadata.put(base);
+      await this.db.tabularMetadata.put(base);
       return base;
     });
   }
 
-  async get(id: string): Promise<CSVTableMetadataLike | undefined> {
-    return await this.db.csvMetadata.get(id);
+  async get(id: string): Promise<TabularTableMetadataLike | undefined> {
+    return await this.db.tabularMetadata.get(id);
   }
 
-  async list(): Promise<CSVTableMetadataLike[]> {
-    return await this.db.csvMetadata.orderBy('createdAt').reverse().toArray();
+  async list(): Promise<TabularTableMetadataLike[]> {
+    return await this.db.tabularMetadata.orderBy('createdAt').reverse().toArray();
   }
 
-  async findByHash(contentHash: string): Promise<CSVTableMetadataLike | undefined> {
-    return await this.db.csvMetadata.where('contentHash').equals(contentHash).first();
+  async findByHash(contentHash: string): Promise<TabularTableMetadataLike | undefined> {
+    return await this.db.tabularMetadata.where('contentHash').equals(contentHash).first();
   }
 
   async addReference(tableId: string, pluginId: string): Promise<void> {
-    await this.db.transaction('rw', this.db.csvMetadata, async () => {
-      const m = await this.db.csvMetadata.get(tableId);
+    await this.db.transaction('rw', this.db.tabularMetadata, async () => {
+      const m = await this.db.tabularMetadata.get(tableId);
       if (!m) throw new Error('Table not found');
       const refs = this.ensureRefs(m);
       if (!refs.referencingPlugins.includes(pluginId)) {
         refs.referencingPlugins.push(pluginId);
-        await this.db.csvMetadata.update(tableId, {
+        await this.db.tabularMetadata.update(tableId, {
           referencingPlugins: refs.referencingPlugins,
           referenceCount: refs.referencingPlugins.length,
         });
@@ -82,16 +82,16 @@ export class SimpleTableMetadataManager {
    * Returns true when the record has been deleted.
    */
   async removeReference(tableId: string, pluginId: string): Promise<boolean> {
-    return await this.db.transaction('rw', this.db.csvMetadata, async () => {
-      const m = await this.db.csvMetadata.get(tableId);
+    return await this.db.transaction('rw', this.db.tabularMetadata, async () => {
+      const m = await this.db.tabularMetadata.get(tableId);
       if (!m) throw new Error('Table not found');
       const refs = this.ensureRefs(m);
       const next = refs.referencingPlugins.filter((p) => p !== pluginId);
       if (next.length === 0) {
-        await this.db.csvMetadata.delete(tableId);
+        await this.db.tabularMetadata.delete(tableId);
         return true;
       }
-      await this.db.csvMetadata.update(tableId, {
+      await this.db.tabularMetadata.update(tableId, {
         referencingPlugins: next,
         referenceCount: next.length,
       });
@@ -99,8 +99,8 @@ export class SimpleTableMetadataManager {
     });
   }
 
-  async update(tableId: string, updates: Partial<CSVTableMetadataLike>): Promise<void> {
-    await this.db.csvMetadata.update(tableId, updates);
+  async update(tableId: string, updates: Partial<TabularTableMetadataLike>): Promise<void> {
+    await this.db.tabularMetadata.update(tableId, updates);
   }
 
   async getStatistics(): Promise<{
@@ -109,7 +109,7 @@ export class SimpleTableMetadataManager {
     totalSize: number;
     pluginReferenceCounts: Record<string, number>;
   }> {
-    const all = await this.db.csvMetadata.toArray();
+    const all = await this.db.tabularMetadata.toArray();
     const stats = {
       totalTables: all.length,
       totalRows: all.reduce((s, t) => s + (t.totalRows || 0), 0),
@@ -126,11 +126,11 @@ export class SimpleTableMetadataManager {
 
   async cleanupOrphanedTables(): Promise<string[]> {
     const deleted: string[] = [];
-    await this.db.transaction('rw', this.db.csvMetadata, async () => {
-      const all = await this.db.csvMetadata.toArray();
+    await this.db.transaction('rw', this.db.tabularMetadata, async () => {
+      const all = await this.db.tabularMetadata.toArray();
       for (const t of all) {
         if (!t.referencingPlugins || t.referencingPlugins.length === 0) {
-          await this.db.csvMetadata.delete(t.id);
+          await this.db.tabularMetadata.delete(t.id);
           deleted.push(t.id);
         }
       }
@@ -139,36 +139,36 @@ export class SimpleTableMetadataManager {
   }
 
   async forceDelete(tableId: string): Promise<void> {
-    await this.db.csvMetadata.delete(tableId);
+    await this.db.tabularMetadata.delete(tableId);
   }
 
   // ---- Styler-style compatibility API ----
-  async store(metadata: CSVTableMetadataLike): Promise<void> {
+  async store(metadata: TabularTableMetadataLike): Promise<void> {
     const m = {
       ...metadata,
       id: metadata.id || crypto.randomUUID(),
       createdAt: metadata.createdAt ?? Date.now(),
       referencingPlugins: metadata.referencingPlugins || [],
       referenceCount: metadata.referenceCount ?? (metadata.referencingPlugins?.length || 0),
-    } as CSVTableMetadataLike;
-    await this.db.csvMetadata.put(m);
+    } as TabularTableMetadataLike;
+    await this.db.tabularMetadata.put(m);
   }
 
-  async getAll(): Promise<CSVTableMetadataLike[]> {
-    return await this.db.csvMetadata.toArray();
+  async getAll(): Promise<TabularTableMetadataLike[]> {
+    return await this.db.tabularMetadata.toArray();
   }
 
   async delete(id: string): Promise<void> {
-    await this.db.csvMetadata.delete(id);
+    await this.db.tabularMetadata.delete(id);
   }
 
-  async findByContentHash(hash: string): Promise<CSVTableMetadataLike | null> {
+  async findByContentHash(hash: string): Promise<TabularTableMetadataLike | null> {
     const r = await this.findByHash(hash);
     return r || null;
   }
 
   async clear(): Promise<void> {
-    await this.db.csvMetadata.clear();
+    await this.db.tabularMetadata.clear();
   }
 
   async close(): Promise<void> {
