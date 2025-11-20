@@ -471,14 +471,6 @@ export class CoreDB extends Dexie {
       }
     }
 
-    console.log('[CoreDB.listChildren] returning with descendants', {
-      parentId: String(parentId),
-      requestedDepth: depth,
-      total: result.length,
-      sample: result
-        .slice(0, 10)
-        .map((node) => ({ id: node.id, parentId: node.parentId, depth: node.depth })),
-    });
     return result;
   }
 

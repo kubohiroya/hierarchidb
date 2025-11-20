@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { ChangeEvent, FC } from 'react';
-import { Box, FormControl, FormHelperText, TextField, Typography } from '@mui/material';
+import { Box, FormControl, TextField, Typography } from '@mui/material';
 import { LocalOffer } from '@mui/icons-material';
 import { TagChipsInput } from './TagChipsInput.js';
 
@@ -80,6 +80,7 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
 
   const validationError = validate?.({ name, description, tags });
   const nameError = !name.trim() ? 'Name is required' : null;
+  const mergedNameError = validationError ?? nameError;
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -106,14 +107,14 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
           : 'Update the basic information for this node.'}
       </Typography>
 
-      <FormControl fullWidth error={!!nameError}>
+      <FormControl fullWidth error={!!mergedNameError}>
         <TextField
           label="Name"
           value={name}
           onChange={handleNameChange}
           required
-          error={!!nameError}
-          helperText={nameError}
+          error={!!mergedNameError}
+          helperText={mergedNameError}
           placeholder="Enter a descriptive name"
           variant="outlined"
           inputRef={nameInputRef}
@@ -152,10 +153,6 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
           disabled={disabled}
         />
       </FormControl>
-
-      {(validationError || nameError) && (
-        <FormHelperText error>{validationError ?? nameError}</FormHelperText>
-      )}
     </Box>
   );
 };

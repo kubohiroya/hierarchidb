@@ -178,6 +178,17 @@ function main(): void {
     }
   }
 
+  // Count each plugin's src directory (up to 3 levels deep)
+  if (fs.existsSync('plugins')) {
+    const pluginSrcDirs = findPackageSrcDirs('plugins', 3).sort();
+    for (const srcPath of pluginSrcDirs) {
+      const pluginLines = countDirectory(srcPath);
+      grandTotal += pluginLines;
+      const rel = path.relative(process.cwd(), srcPath) || srcPath;
+      summaries.push({ name: rel, lines: pluginLines });
+    }
+  }
+
   // Print summary
   console.log('\n📊 SUMMARY');
   console.log('='.repeat(60));

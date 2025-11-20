@@ -88,7 +88,6 @@ export class BFFAuthService {
       this.baseUrl = envUrl || '/api/auth';
     }
 
-    console.log('[BFFAuthService] Initialized with baseUrl:', this.baseUrl);
   }
 
   static getInstance(): BFFAuthService {

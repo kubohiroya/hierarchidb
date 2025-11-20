@@ -929,27 +929,11 @@ export class TreeSubscriptionService {
 
     if (options?.prefetch?.depth && options.prefetch.depth > 0) {
       try {
-        console.log('[TreeSubscriptionService][subtree] prefetch start', {
-          rootNodeId: String(rootNodeId),
-          depth: options.prefetch.depth,
-        });
         const nodes = await this.coreDB.listChildren(rootNodeId, {
           prefetch: { depth: options.prefetch.depth },
         });
-        console.log('[TreeSubscriptionService.subscribeSubtree] prefetch snapshot', {
-          rootNodeId: String(rootNodeId),
-          depth: options.prefetch.depth,
-          total: nodes.length,
-          sample: nodes
-            .slice(0, 10)
-            .map((node) => ({ id: node.id, parentId: node.parentId, depth: node.depth })),
-        });
         const timestamp = Date.now() as Timestamp;
         for (const node of nodes) {
-          console.log('[TreeSubscriptionService][subtree] prefetch node', {
-            nodeId: String(node.id),
-            parentId: String(node.parentId ?? ''),
-          });
           callback({
             type: 'updated',
             nodeId: node.id,

@@ -8,6 +8,7 @@ import {
 } from '@hierarchidb/common-types';
 import type { CoreDB } from '../CoreDB.js';
 import { encodeWorkingCopyHolderName } from '../utils/holder-encoding.js';
+import { createNewName, getChildNames } from './nameUtilities.js';
 
 export function createWorkingCopyNodeHolderParentId(treeId: TreeId) {
   return `${treeId}:workingCopy` as NodeId;
@@ -60,6 +61,7 @@ export async function createNewDraftWorkingCopy(
         id: workingCopyNodeId,
         nodeType,
         name: baseName,
+        data: { name: baseName },
         depth: 1,
         createdAt: now,
         updatedAt: now,
@@ -96,6 +98,9 @@ export async function createDraftWorkingCopyGetOrCreate(
   nodeType: NodeType,
   baseName: string
 ): Promise<{ wcHolderId: NodeId; wcNodeId: NodeId; returnedExisting: boolean }> {
+  const siblingNames = await getChildNames(coreDB, parentId);
+  const resolvedBaseName = createNewName(siblingNames, baseName);
+
   const workingCopyRootId = createWorkingCopyNodeHolderParentId(treeId);
   const targetNodeId = generateNodeId();
   const holderName = encodeWorkingCopyHolderName(parentId, targetNodeId);
@@ -129,12 +134,13 @@ export async function createDraftWorkingCopyGetOrCreate(
     if (!child) {
       const wcNodeId = generateNodeId();
       const now = Date.now() as Timestamp;
-      const fallbackName = baseName;
+      const fallbackName = resolvedBaseName;
       await coreDB.createNode({
         id: wcNodeId,
         parentId: existing.id as NodeId,
         nodeType,
         name: fallbackName,
+        data: { name: fallbackName },
         depth: 1,
         createdAt: now,
         updatedAt: now,
@@ -159,7 +165,13 @@ export async function createDraftWorkingCopyGetOrCreate(
     };
   }
 
-  const wcHolderId = await createNewDraftWorkingCopy(coreDB, treeId, parentId, nodeType, baseName);
+  const wcHolderId = await createNewDraftWorkingCopy(
+    coreDB,
+    treeId,
+    parentId,
+    nodeType,
+    resolvedBaseName
+  );
   const children = await coreDB.nodes.where('parentId').equals(wcHolderId).toArray();
   const child = Array.isArray(children) ? children[0] : undefined;
   if (child?.id) {

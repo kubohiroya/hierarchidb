@@ -199,6 +199,19 @@
   - [x] 影響範囲テスト（unit）と検証コマンド結果を記録する
 - ロールバック手順：`app/src/router/pages/tree/trash/TrashDialog.tsx`, `app/src/router/pages/tree/trash/emptyTrashBranch.ts`, `app/src/router/pages/tree/trash/__tests__/unit/emptyTrashBranch.unit.test.ts` の差分を revert し、`pnpm lint && pnpm typecheck && pnpm test`（既知の失敗を除く）を再実行して現状挙動へ戻す
 
+1521) count:lines に plugins を含める（P1）
+- ブランチ: `chore/tools/count-lines-plugins`（sandbox 制約で `main` 上で作業）
+- 依存: `scripts/count-lines.ts`, `package.json`, `plugins/*/src`
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] `pnpm count:lines` が `app/src`・`packages/*/src`・`plugins/*/src` を集計し、出力に plugins 項目が含まれる
+  - [ ] 修正後の集計結果を確認し、必要に応じてコマンドログを運用ログへ記録する
+  - [ ] ロールバック手順（対象ファイルとコマンド）を `TASKS.md` に追記する
+- チェックリスト:
+  - [ ] `scripts/count-lines.ts` の探索対象に `plugins` ディレクトリを追加し、既存の除外規則を維持する
+  - [ ] `pnpm count:lines` 実行結果で plugins が summary に反映されることを確認する
+- ロールバック手順：`scripts/count-lines.ts` の差分を revert し、旧構成の `pnpm count:lines` 出力へ戻ることを確認する
+
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
 
@@ -3280,6 +3293,14 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1611) Create Folder デフォルト名ユニーク化・エラー配置修正（P1） — 完了 (2025-11-20)
+  - 要点：working-copy draft 生成時に `getChildNames` + `createNewName` で衝突しないデフォルト名を自動採番（`New Folder (2)` など）し、BasicInfo Step の name 重複エラーを Name フィールド直下に表示するよう統一。
+  - 検証：`pnpm --filter @hierarchidb/runtime-worker test -- src/services/working-copy/__tests__/draftOperations.unique-name.unit.test.ts` / `pnpm --filter @hierarchidb/plugin-ui-host test -- src/headless/__tests__/basic-info-validation-placement.unit.test.tsx` ともに exit 0。
+  - ロールバック手順：`packages/runtime/worker/src/services/working-copy/draftOperations.ts`, `packages/runtime/worker/src/services/working-copy/__tests__/draftOperations.unique-name.unit.test.ts`, `packages/ui/plugin-basic-info/src/components/BasicInfoStep.tsx`, `packages/plugin-ui-host/src/headless/__tests__/basic-info-validation-placement.unit.test.tsx` を revert し、上記テストを再実行して現状挙動へ戻ることを確認する。
+- 1610) Worker/Tree/BFF ログノイズ抑制（P1） — 完了 (2025-11-20)
+  - 要点：WorkerProvider の進捗/遷移/完了ログと TreeSubscriptionService の prefetch ログ、CoreDB listChildren のデバッグログ、BFFAuthService 初期化ログを削除し、通常起動時のコンソール出力を抑制（warn/error は維持）。
+  - 検証：実行コマンドなし（ログ削除のみ）。挙動影響は無しを目視確認。
+  - ロールバック手順：`app/src/contexts/WorkerProvider.tsx`, `packages/runtime/worker/src/services/TreeSubscriptionService.ts`, `packages/runtime/worker/src/services/CoreDB.ts`, `packages/ui/auth/src/services/BFFAuthService.ts` を revert し、再度起動してコンソールログの復帰を確認する。
 - 1292) basemap SharedBasicInfoStep 未定義参照修正（P0） — 完了 (2025-11-19)
   - 要点：`plugins/basemap-plugin/src/ui/components/basemapStepConfigs.tsx` に `SharedBasicInfoStep` / `BasicInfoData` import を追加し、Basic Info ステップが常に定義済みのコンポーネントを返すよう修正。`steps-provider.test.ts` へ `MockBasicInfoStep` を明示的に確認するユニットテストを追加し、ReferenceError が再発した場合に検出できるようにした。
   - 検証：`pnpm --filter @hierarchidb/basemap-plugin test`（2025-11-19 08:50 JST, 3 files / 12 tests）exit 0。typecheck は `pnpm --filter @hierarchidb/basemap-plugin typecheck` が script 不存在で実行不可だったため、代替として `pnpm --filter @hierarchidb/basemap-plugin exec tsc -p tsconfig.json --noEmit` を実行したが、`@hierarchidb/runtime-client` など NodeNext 依存の dist 未生成による既存エラーで失敗する baseline 課題であることを確認（#worklog-13 へ記録）。
@@ -8322,6 +8343,11 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-13"></a>
 
+- 2025-11-20 23:10 start: chore/logging-trim — WorkerProvider / TreeSubscriptionService / CoreDB / BFFAuthService の過剰コンソールログを抑制するタスクに着手。DoD: Kanban/運用ログ更新とロールバック手順記載、上記4箇所の info ログを削除（warn/error は維持）、影響確認と実行コマンドの有無をログ化。
+- 2025-11-20 23:35 done: chore/logging-trim — 進行状況やプリフェッチの `console.log` を削除（WorkerProvider, TreeSubscriptionService, CoreDB）し、BFFAuthService 初期化ログも抑制。実行コマンドなし。ロールバック: `app/src/contexts/WorkerProvider.tsx`, `packages/runtime/worker/src/services/TreeSubscriptionService.ts`, `packages/runtime/worker/src/services/CoreDB.ts`, `packages/ui/auth/src/services/BFFAuthService.ts` を revert。
+- 2025-11-20 21:14 start: chore/tools/count-lines-plugins — `pnpm count:lines` が `plugins/*` を集計しない問題の対応を開始。DoD: Kanban/ログ更新、scripts/count-lines.ts で plugins/*/src を探索対象へ追加、`pnpm count:lines` 出力に plugins が含まれることを確認、ロールバック手順記載。
+- 2025-11-20 21:50 start: fix/ui-folder/default-name — Create Folder のデフォルト名が常に `New Folder` 固定で重複エラーになる問題を調査。DoD: nameUtilities によるユニーク名生成を Create flow に適用、BasicInfo Step の name 重複エラーをフィールド直下に表示するよう統一、関連テスト追加、ロールバック手順記載。
+- 2025-11-20 22:05 done: fix/ui-folder/default-name — working-copy draft 作成時に `getChildNames` + `createNewName` でデフォルト名を自動採番（`New Folder (2)` など）し、BasicInfo Step の name エラーをフィールド直下に表示するよう修正。検証: `pnpm --filter @hierarchidb/runtime-worker test -- src/services/working-copy/__tests__/draftOperations.unique-name.unit.test.ts` exit 0、`pnpm --filter @hierarchidb/plugin-ui-host test -- src/headless/__tests__/basic-info-validation-placement.unit.test.tsx` exit 0。ロールバック: `packages/runtime/worker/src/services/working-copy/draftOperations.ts`, `packages/runtime/worker/src/services/working-copy/__tests__/draftOperations.unique-name.unit.test.ts`, `packages/ui/plugin-basic-info/src/components/BasicInfoStep.tsx`, `packages/plugin-ui-host/src/headless/__tests__/basic-info-validation-placement.unit.test.tsx` を revert。
 - 2025-11-19 08:46 start: fix/basemap/basic-info-step — basemap Step config で `SharedBasicInfoStep` import 欠落による ReferenceError を再現。DoD: Kanban/ログ更新、import とレンダリングテスト修正、`pnpm --filter @hierarchidb/basemap-plugin {typecheck,test}` の成功確認、ロールバック手順記載。
 - 2025-11-19 08:48 progress: fix/basemap/basic-info-step — `basemapStepConfigs.tsx` へ `SharedBasicInfoStep` / `BasicInfoData` import を追加し、Basic Info component のラップを正規化。`steps-provider.test.ts` に `MockBasicInfoStep` を明示的に参照するユニットテストを追加して ReferenceError 再発を検出できるようにした。
 - 2025-11-19 08:50 command: pnpm --filter @hierarchidb/basemap-plugin test — exit 0。`steps-provider.test.ts` ほか 3 file / 12 tests がすべて成功し、Basic Info step の import/props 検証が通過。

@@ -375,7 +375,6 @@ export const WorkerProvider = ({
         initProgress: detail.progress,
         initMessage: progressMessage,
       }));
-      console.log('[WorkerProvider] progress update', detail);
       bootProgress?.setStepProgress('Worker', detail.progress, progressMessage);
     });
     return unsubscribe;
@@ -416,7 +415,6 @@ export const WorkerProvider = ({
       if (!changed) {
         return prev;
       }
-      console.log('[WorkerProvider] status transition', next);
       return next;
     });
   }, [proxy, proxyState, proxyError]);
@@ -434,7 +432,6 @@ export const WorkerProvider = ({
         initMessage: getWorkerInitCompleteMessage(),
         error: null,
       });
-      console.log('[WorkerProvider] finalizeInitialized complete');
     } catch (error) {
       const normalized = normalizeError(error);
       console.error('[WorkerProvider] finalizeInitialized error', normalized);
@@ -492,7 +489,6 @@ export const WorkerProvider = ({
         isInitialized: true,
         error: null,
       }));
-      console.log('[WorkerProvider] ensureInitialized succeeded');
       await markComplete();
     } catch (error) {
       const normalized = normalizeError(error);
