@@ -42,29 +42,32 @@ export async function createNewDraftWorkingCopy(
     }
 
     await coreDB.transaction('rw', coreDB.nodes, async () => {
-      const workingCopyNodeHolder: TreeNode = {
-        parentId: workingCopyNodeHolderParentId,
-        id: workingCopyNodeHolderId,
-        name: holderName,
-        nodeType,
-        depth: 0,
-        createdAt: now,
-        updatedAt: now,
-        version: 1,
-        holderType: 'workingCopy',
-        holderTargetId: targetNodeId,
-        holderMetaParentId: parentId,
-        lastTouchedAt: now,
-      };
-      const workingCopyNode: TreeNode = {
-        parentId: workingCopyNodeHolderId,
-        id: workingCopyNodeId,
-        nodeType,
-        name: baseName,
-        data: { name: baseName },
-        depth: 1,
-        createdAt: now,
-        updatedAt: now,
+  const workingCopyNodeHolder: TreeNode = {
+    parentId: workingCopyNodeHolderParentId,
+    id: workingCopyNodeHolderId,
+    name: holderName,
+    nodeType,
+    depth: 0,
+    createdAt: now,
+    updatedAt: now,
+    version: 1,
+    holderType: 'workingCopy',
+    holderTargetId: targetNodeId,
+    holderMetaParentId: parentId,
+    lastTouchedAt: now,
+    data: null,
+    draftData: null,
+  };
+  const workingCopyNode: TreeNode = {
+    parentId: workingCopyNodeHolderId,
+    id: workingCopyNodeId,
+    nodeType,
+    name: baseName,
+    data: null,
+    draftData: { name: baseName },
+    depth: 1,
+    createdAt: now,
+    updatedAt: now,
         version: 1,
         lastTouchedAt: now,
       };
@@ -141,6 +144,7 @@ export async function createDraftWorkingCopyGetOrCreate(
         nodeType,
         name: fallbackName,
         data: { name: fallbackName },
+        draftData: { name: fallbackName },
         depth: 1,
         createdAt: now,
         updatedAt: now,

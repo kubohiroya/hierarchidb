@@ -366,7 +366,7 @@ export class BFFAuthService {
           },
           credentials: 'include',
         });
-      } catch{
+      } catch {
         // Ignore revoke errors
       }
     }

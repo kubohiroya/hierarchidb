@@ -1,9 +1,13 @@
 import type { ListChildrenOptions } from '@hierarchidb/common-api';
 import type {
+  DialogProgressState,
+  DialogUIState,
+  DialogWindowState,
   NodeId,
   NodeTagAssociation,
   NodePayload,
   NodeType,
+  PersistedTreeNode,
   TagEntity,
   Tree,
   TreeChangeEvent,
@@ -15,7 +19,62 @@ import { getDBName, SingletonMixin } from '@hierarchidb/util';
 import type { BulkError } from 'dexie';
 import { Dexie, type Table } from 'dexie';
 import { Subject } from 'rxjs';
-import type { FulltextIndexRecord, FulltextNodeRecord } from './fulltext-types.js';
+
+type EnvelopeShape<TData = unknown> = {
+  data?: TData;
+  dialogWindow?: DialogWindowState | null;
+  dialogProgress?: DialogProgressState | null;
+  updatedAt?: number;
+};
+
+const unwrapEnvelope = <TData>(value: unknown): EnvelopeShape<TData> => {
+  if (!value || typeof value !== 'object') return {};
+  const obj = value as Record<string, unknown>;
+  const data = 'data' in obj ? (obj.data as TData) : undefined;
+  const dialogWindow =
+    'dialogWindow' in obj ? (obj.dialogWindow as DialogWindowState | null | undefined) : undefined;
+  const dialogProgress =
+    'dialogProgress' in obj
+      ? (obj.dialogProgress as DialogProgressState | null | undefined)
+      : undefined;
+  const updatedAt = 'updatedAt' in obj ? (obj.updatedAt as number | undefined) : undefined;
+  return { data, dialogWindow, dialogProgress, updatedAt };
+};
+
+const normalizeTreeNodeForPersist = (node: TreeNode): PersistedTreeNode => {
+  const isWorkingCopy = node.holderType === 'workingCopy';
+
+  const rawData = (node as { data?: unknown }).data;
+  const rawDraftData = (node as { draftData?: unknown }).draftData;
+  const legacyPayload = (node as unknown as { payload?: { data?: unknown } }).payload;
+  const legacyDraft = (node as unknown as { draft?: { data?: unknown } }).draft;
+
+  const data = (rawData ?? legacyPayload?.data ?? null) as NodePayload;
+  const draftData = isWorkingCopy
+    ? (((rawDraftData ?? legacyDraft?.data ?? null) as unknown) as NodePayload)
+    : (null as NodePayload);
+
+  const dialogWindow =
+    (node as { dialogUIState?: DialogUIState }).dialogUIState?.dialogWindow ?? undefined;
+  const dialogProgress =
+    (node as { dialogUIState?: DialogUIState }).dialogUIState?.dialogProgress ?? undefined;
+
+  const dialogUIState: DialogUIState | undefined =
+    dialogWindow !== undefined || dialogProgress !== undefined
+      ? {
+          dialogWindow: dialogWindow ?? null,
+          dialogProgress: dialogProgress ?? null,
+        }
+      : undefined;
+
+  return {
+    ...(node as PersistedTreeNode),
+    data,
+    draftData,
+    dialogUIState,
+    ...(isWorkingCopy ? {} : { draftData: null }),
+  };
+};
 
 export class CoreDB extends Dexie {
   trees!: Table<Tree, TreeId>;
@@ -23,8 +82,6 @@ export class CoreDB extends Dexie {
   rootStates!: Table<TreeRootState, NodeId>;
   tags!: Table<TagEntity, TagEntity['id']>;
   tagAssociations!: Table<NodeTagAssociation, [NodeId, TagEntity['id']]>;
-  fulltextNodes!: Table<FulltextNodeRecord, [TreeId, NodeId]>;
-  fulltextIndexes!: Table<FulltextIndexRecord, [TreeId, string]>;
 
   //  Subject
   public readonly changeSubject = new Subject<TreeChangeEvent>();
@@ -42,8 +99,6 @@ export class CoreDB extends Dexie {
       | 'rootStates'
       | 'tags'
       | 'tagAssociations'
-      | 'fulltextNodes'
-      | 'fulltextIndexes'
     >,
     fn: () => Promise<T>
   ): Promise<T> {
@@ -53,8 +108,6 @@ export class CoreDB extends Dexie {
       rootStates: this.rootStates,
       tags: this.tags,
       tagAssociations: this.tagAssociations,
-      fulltextNodes: this.fulltextNodes,
-      fulltextIndexes: this.fulltextIndexes,
     } as const;
 
     const tables = tableNames
@@ -127,26 +180,8 @@ export class CoreDB extends Dexie {
           });
       });
 
-    this.version(3).stores({
-      trees: '&id, rootId, trashRootId, superRootId',
-      nodes: [
-        '&id',
-        'parentId',
-        '&[parentId+name]',
-        '[parentId+updatedAt]',
-        '[holderType+holderTargetId]',
-        'holderType',
-        'lastTouchedAt',
-        '[holderType+lastTouchedAt]',
-        'depth',
-        '*references',
-      ].join(', '),
-      rootStates: '&rootNodeId',
-      tags: '&id, name, category, usageCount, createdAt',
-      tagAssociations: 'nodeId, tagId, createdAt, &[nodeId+tagId]',
-      fulltextNodes: '&[treeId+nodeId], treeId, nodeId, updatedAt',
-      fulltextIndexes: '&[treeId+locale], treeId, locale, dirty',
-    });
+    // Version 3 previously added fulltext tables; now a no-op to avoid creating them.
+    this.version(3).upgrade(() => {});
   }
 
   // console name helper was unused in the current implementation
@@ -198,6 +233,8 @@ export class CoreDB extends Dexie {
               createdAt: now,
               updatedAt: now,
               version: 1,
+              data: null,
+              draftData: null,
             },
             {
               parentId: getRootNodeId(treeId, 'superRoot'),
@@ -208,6 +245,8 @@ export class CoreDB extends Dexie {
               createdAt: now,
               updatedAt: now,
               version: 1,
+              data: null,
+              draftData: null,
             },
             {
               parentId: getRootNodeId(treeId, 'superRoot'),
@@ -218,6 +257,8 @@ export class CoreDB extends Dexie {
               createdAt: now,
               updatedAt: now,
               version: 1,
+              data: null,
+              draftData: null,
             },
           ]) satisfies TreeNode[]
         );
@@ -244,6 +285,37 @@ export class CoreDB extends Dexie {
           }
           throw error;
         }
+      }
+
+      // Cleanup legacy payload/draft/data.draft residues
+      const allNodes = await this.nodes.toArray();
+      const updates: TreeNode[] = [];
+      for (const node of allNodes) {
+        const clone: Record<string, unknown> = { ...(node as unknown as Record<string, unknown>) };
+        let changed = false;
+        if ('payload' in clone) {
+          delete clone.payload;
+          changed = true;
+        }
+        if ('draft' in clone) {
+          delete clone.draft;
+          changed = true;
+        }
+        const dataVal = clone.data as unknown;
+        if (dataVal && typeof dataVal === 'object' && 'draft' in (dataVal as Record<string, unknown>)) {
+          delete (dataVal as Record<string, unknown>).draft;
+          changed = true;
+        }
+        if (clone.holderType !== 'workingCopy' && (clone as { draftData?: unknown }).draftData !== null) {
+          (clone as { draftData?: unknown }).draftData = null;
+          changed = true;
+        }
+        if (changed) {
+          updates.push(clone as unknown as TreeNode);
+        }
+      }
+      if (updates.length > 0) {
+        await this.nodes.bulkPut(updates as TreeNode[]);
       }
     });
   }
@@ -293,114 +365,80 @@ export class CoreDB extends Dexie {
 
     // Ensure we return a plain object that can be serialized by Comlink
     if (node) {
-      const plainNode: TreeNode = {
-        id: node.id,
-        parentId: node.parentId,
-        nodeType: node.nodeType,
-        name: node.name,
-        depth: node.depth,
-        createdAt: node.createdAt,
-        updatedAt: node.updatedAt,
-        version: node.version,
-        ...(node.references && { references: node.references }),
-        ...('holderType' in node && node.holderType !== undefined
-          ? { holderType: node.holderType }
-          : {}),
-        ...('holderTargetId' in node && node.holderTargetId !== undefined
-          ? { holderTargetId: node.holderTargetId }
-          : {}),
-        ...('holderMetaParentId' in node && node.holderMetaParentId !== undefined
-          ? { holderMetaParentId: node.holderMetaParentId }
-          : {}),
-        ...('originalName' in node && node.originalName !== undefined
-          ? { originalName: node.originalName }
-          : {}),
-        ...('originalParentId' in node && node.originalParentId !== undefined
-          ? { originalParentId: node.originalParentId }
-          : {}),
-        ...('removedAt' in node && node.removedAt !== undefined
-          ? { removedAt: node.removedAt }
-          : {}),
-        ...('payload' in node && node.payload !== undefined
-          ? { payload: node.payload }
-          : {}),
-        ...('draft' in node && node.draft !== undefined ? { draft: node.draft } : {}),
-      };
-      return plainNode;
+      return { ...(normalizeTreeNodeForPersist(node) as TreeNode) };
     }
 
     return undefined;
   }
 
   async createNode(node: TreeNode): Promise<NodeId> {
+    const normalized = normalizeTreeNodeForPersist(node);
     // Calculate depth if not provided
-    if (node.depth === undefined || node.depth === null) {
-      if (!node.parentId || node.parentId === ('' as NodeId)) {
+    if (normalized.depth === undefined || normalized.depth === null) {
+      if (!normalized.parentId || normalized.parentId === ('' as NodeId)) {
         // Root nodes have depth 0
-        node.depth = 0;
+        normalized.depth = 0;
       } else {
         // Get parent node to calculate depth
-        const parentNode = await this.nodes.get(node.parentId);
+        const parentNode = await this.nodes.get(normalized.parentId);
         if (parentNode) {
-          node.depth = (parentNode.depth || 0) + 1;
+          normalized.depth = (parentNode.depth || 0) + 1;
         } else {
           // Default to depth 1 if parent not found
-          node.depth = 1;
+          normalized.depth = 1;
         }
       }
     }
 
-    await this.nodes.add(node);
+    await this.nodes.add(normalized);
 
     this.changeSubject.next({
       type: 'node-created' as const,
-      nodeId: node.id,
-      node: node,
-      parentId: node.parentId,
+      nodeId: normalized.id,
+      node: normalized,
+      parentId: normalized.parentId,
       timestamp: Date.now(),
     });
 
-    return node.id;
+    return normalized.id;
   }
 
   async updateNode(node: Pick<TreeNode, 'id'> & Partial<TreeNode>): Promise<void> {
     const oldNode = await this.nodes.get(node.id);
-    const next: TreeNode | undefined = oldNode
-      ? ({ ...oldNode, ...node } as TreeNode)
-      : (node as unknown as TreeNode);
-
-    if (next) {
-      await this.nodes.put(next);
+    if (!oldNode) {
+      throw new Error(`Node not found for update: ${String(node.id)}`);
     }
 
-    if (oldNode) {
-      const changes: {
-        name: { old: string; new: string } | undefined;
-        parentId: { old: NodeId; new: NodeId } | undefined;
-      } = {
-        name: undefined,
-        parentId: undefined,
-      };
-      // Compare against the concrete next value to avoid undefined unions
-      if (oldNode.name !== (next as TreeNode).name) {
-        changes.name = { old: oldNode.name, new: (next as TreeNode).name };
-      }
-      if (oldNode.parentId !== (next as TreeNode).parentId) {
-        changes.parentId = { old: oldNode.parentId, new: (next as TreeNode).parentId };
-      }
+    const merged = { ...oldNode, ...node } as TreeNode;
+    const next = normalizeTreeNodeForPersist(merged) as TreeNode;
 
-      const changeEvent: TreeChangeEvent = {
-        type: 'node-updated' as const,
-        nodeId: node.id,
-        node: next ?? ({ ...oldNode, ...node } as TreeNode),
-        previousNode: oldNode, // Include the previous node
-        parentId: next?.parentId,
-        previousParentId: oldNode.parentId,
-        timestamp: Date.now(),
-      };
+    await this.nodes.put(next);
 
-      this.changeSubject.next(changeEvent);
+    const changes: {
+      name: { old: string; new: string } | undefined;
+      parentId: { old: NodeId; new: NodeId } | undefined;
+    } = {
+      name: undefined,
+      parentId: undefined,
+    };
+    if (oldNode.name !== next.name) {
+      changes.name = { old: oldNode.name, new: next.name };
     }
+    if (oldNode.parentId !== next.parentId) {
+      changes.parentId = { old: oldNode.parentId, new: next.parentId };
+    }
+
+    const changeEvent: TreeChangeEvent = {
+      type: 'node-updated' as const,
+      nodeId: node.id,
+      node: next,
+      previousNode: oldNode,
+      parentId: next.parentId,
+      previousParentId: oldNode.parentId,
+      timestamp: Date.now(),
+    };
+
+    this.changeSubject.next(changeEvent);
   }
 
   async deleteNode(nodeId: NodeId): Promise<void> {
@@ -699,6 +737,8 @@ export class CoreDB extends Dexie {
         parentId: node.parentId,
         nodeType: node.nodeType,
         name: node.name,
+        data: node.data ?? null,
+        draftData: node.draftData ?? null,
         depth: node.depth,
         createdAt: node.createdAt,
         updatedAt: node.updatedAt,

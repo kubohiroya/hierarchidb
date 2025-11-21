@@ -1,4 +1,3 @@
-import { ScreenSearchDesktop as ScreenSearchDesktopIcon, Search as SearchIcon } from '@mui/icons-material';
 import { Box } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useTranslation } from '@hierarchidb/ui-i18n';
@@ -8,7 +7,6 @@ import { ActionButtons } from './ActionButtons.js';
 import { ImportExportMenu } from './ImportExportMenu.js';
 import { SearchField } from './SearchField.js';
 import type { SearchStrings } from './SearchOnlyToolbar.js';
-import { SearchModeMenu } from './SearchModeMenu.js';
 import { SettingsMenu } from './SettingsMenu.js';
 import { TrashMenu } from './TrashMenu.js';
 
@@ -60,7 +58,6 @@ export function TreeConsoleToolbarContent({
   searchStrings,
 }: TreeConsoleToolbarContentProps) {
   const portalContainer = typeof window !== 'undefined' ? document.body : undefined;
-  const [searchModeAnchorEl, setSearchModeAnchorEl] = useState<HTMLElement | null>(null);
   const [trashAnchorEl, setTrashAnchorEl] = useState<HTMLElement | null>(null);
   const { t } = useTranslation('common', { keyPrefix: 'treeConsole.toolbar' });
 
@@ -98,22 +95,7 @@ export function TreeConsoleToolbarContent({
     [controller]
   );
 
-  const currentSearchMode: TreeConsoleSearchMode = controller?.searchMode ?? 'local';
-  const searchModeIcon =
-    currentSearchMode === 'fulltext' ? (
-      <ScreenSearchDesktopIcon fontSize="small" />
-    ) : (
-      <SearchIcon fontSize="small" />
-    );
-
-  const openSearchModeMenu = (event: React.MouseEvent<HTMLElement>) => {
-    setSearchModeAnchorEl(event.currentTarget);
-  };
-  const closeSearchModeMenu = () => setSearchModeAnchorEl(null);
-  const handleSelectSearchMode = (mode: TreeConsoleSearchMode) => {
-    controller?.onSearchModeChange?.(mode);
-    closeSearchModeMenu();
-  };
+  const currentSearchMode: TreeConsoleSearchMode = 'local';
 
   const allowTrash = (typeof canTrash === 'boolean' ? canTrash : undefined) ?? canRemove ?? true;
 
@@ -170,21 +152,6 @@ export function TreeConsoleToolbarContent({
         placeholder={searchStrings.placeholder}
         ariaLabel={searchStrings.ariaLabel}
         searchMode={currentSearchMode}
-        onSearchModeButtonClick={openSearchModeMenu}
-        searchModeIcon={searchModeIcon}
-        searchModeAriaLabel={searchStrings.menuLabel}
-      />
-
-      <SearchModeMenu
-        anchorEl={searchModeAnchorEl}
-        open={Boolean(searchModeAnchorEl)}
-        onClose={closeSearchModeMenu}
-        currentMode={currentSearchMode}
-        onSelect={handleSelectSearchMode}
-        localLabel={searchStrings.localLabel}
-        localDescription={searchStrings.localDescription}
-        fulltextLabel={searchStrings.fulltextLabel}
-        fulltextDescription={searchStrings.fulltextDescription}
       />
 
       <ActionButtons

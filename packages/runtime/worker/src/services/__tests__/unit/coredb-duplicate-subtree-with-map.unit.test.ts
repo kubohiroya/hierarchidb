@@ -14,6 +14,8 @@ function node(
     parentId: parentId as NodeId,
     nodeType: type,
     name,
+    data: {},
+    draftData: null,
     depth,
     createdAt: Date.now(),
     updatedAt: Date.now(),

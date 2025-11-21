@@ -14,6 +14,8 @@ const createNode = (id: string, parentId: string, depth: number): TreeNode => {
     parentId: asNodeId(parentId),
     nodeType: asNodeType('folder'),
     name: id,
+    data: {},
+    draftData: null,
     depth,
     createdAt: now,
     updatedAt: now,

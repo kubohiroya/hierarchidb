@@ -25,7 +25,6 @@ export async function createCommandTestHarness(label: string): Promise<CommandTe
     core,
     cp,
     cleanup: async () => {
-      SingletonMixin.terminate('FulltextIndexService');
       SingletonMixin.terminate('TreeSubscriptionService');
       try {
         await core.delete();

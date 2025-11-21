@@ -2,7 +2,6 @@ import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import { toNodeType } from '@hierarchidb/common-types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CoreDB } from '../../CoreDB.js';
-import type { FulltextIndexService } from '../../FulltextIndexService.js';
 import { TreeQueryService } from '../../TreeQueryService.js';
 
 describe('TreeQueryService.listAncestors', () => {
@@ -21,6 +20,8 @@ describe('TreeQueryService.listAncestors', () => {
       parentId: (options.parentId ?? 'super-root') as NodeId,
       nodeType: toNodeType('folder'),
       name: options.name,
+      data: {},
+      draftData: null,
       depth: options.depth,
       createdAt: now,
       updatedAt: now,
@@ -33,7 +34,7 @@ describe('TreeQueryService.listAncestors', () => {
     const coreDB = {
       getNode: vi.fn(async (id: NodeId) => nodes.get(id)),
     } as unknown as CoreDB;
-    service = new TreeQueryService(coreDB, {} as FulltextIndexService);
+    service = new TreeQueryService(coreDB);
   });
 
   function registerNode(node: TreeNode): void {

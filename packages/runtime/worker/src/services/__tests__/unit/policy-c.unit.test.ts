@@ -2,12 +2,7 @@ import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommandProcessor } from '../../CommandProcessor.js';
 import type { CoreDB } from '../../CoreDB.js';
-import {
-  attachFulltextTables,
-  createFulltextTestDB,
-  destroyFulltextTestDB,
-  type FulltextTables,
-} from '../../test-helpers/fulltextTestDB.js';
+// fulltext tables removed; stub without fulltext support
 import { encodeWorkingCopyHolderName } from '../../utils/holder-encoding.js';
 
 describe('Policy C: block move/remove when WC exists', () => {
@@ -21,13 +16,15 @@ describe('Policy C: block move/remove when WC exists', () => {
     parentId: parentId as NodeId,
     nodeType,
     name,
+    data: {},
+    draftData: null,
     depth: 1,
     createdAt: Date.now(),
     updatedAt: Date.now(),
     version: 1,
   });
 
-  type CoreStubBase = Pick<
+  type CoreStub = Pick<
     CoreDB,
     'getNode' | 'updateNode' | 'deleteNode' | 'createNode' | 'listChildren'
   > & {
@@ -35,14 +32,10 @@ describe('Policy C: block move/remove when WC exists', () => {
     state: Map<NodeId, TreeNode>;
   };
 
-  type CoreStub = CoreStubBase & FulltextTables;
-
   let core: CoreStub;
   let state: Map<NodeId, TreeNode>;
-  let fulltextDb: Awaited<ReturnType<typeof createFulltextTestDB>>;
 
   beforeEach(async () => {
-    fulltextDb = await createFulltextTestDB('policy-c');
     state = new Map<NodeId, TreeNode>();
     state.set('root' as NodeId, makeNode('root', 'super', 'root'));
     state.set('a' as NodeId, makeNode('a', 'root', 'A'));
@@ -55,6 +48,8 @@ describe('Policy C: block move/remove when WC exists', () => {
       parentId: 'r:workingCopy' as NodeId,
       nodeType: 'workingCopy' as NodeType,
       name: encodeWorkingCopyHolderName('root' as NodeId, 'a' as NodeId),
+      data: {},
+      draftData: null,
       depth: 0,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -65,7 +60,7 @@ describe('Policy C: block move/remove when WC exists', () => {
     const listChildren = async (parentId: NodeId): Promise<TreeNode[]> =>
       Array.from(state.values()).filter((node) => node.parentId === parentId);
 
-    const baseCore: CoreStubBase = {
+    const baseCore: CoreStub = {
       state,
       getNode: vi.fn(async (id: NodeId) => state.get(id)),
       updateNode: vi.fn(async (node: Partial<TreeNode> & { id: NodeId }) => {
@@ -86,11 +81,11 @@ describe('Policy C: block move/remove when WC exists', () => {
       },
     };
 
-    core = attachFulltextTables(baseCore, fulltextDb);
+    core = baseCore as CoreStub;
   });
 
   afterEach(async () => {
-    await destroyFulltextTestDB(fulltextDb);
+    // nothing to destroy; no fulltext DB
   });
 
   it('blocks moveNodes when WC under subtree', async () => {

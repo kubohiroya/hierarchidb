@@ -1,15 +1,10 @@
-import {
-  type NodeBase,
-  type NodeId,
-  type Timestamp,
-  type TreeNode,
-} from '@hierarchidb/common-types';
+import { type NodeId, type Timestamp, type TreeNode } from '@hierarchidb/common-types';
 import type { CoreDB } from '../CoreDB.js';
 
 export async function getWorkingCopy(
   coreDB: CoreDB,
   nodeId: NodeId
-): Promise<NodeBase | undefined> {
+): Promise<TreeNode | undefined> {
   const direct = await coreDB.nodes.get(nodeId);
   if (direct) {
     if (direct.holderType === 'workingCopy') {
@@ -39,7 +34,7 @@ export async function getWorkingCopy(
 export async function updateWorkingCopy(
   coreDB: CoreDB,
   nodeId: NodeId,
-  updates: Partial<NodeBase>
+  updates: Partial<TreeNode>
 ): Promise<void> {
   const existing = await getWorkingCopy(coreDB, nodeId);
   if (!existing) {
@@ -52,6 +47,8 @@ export async function updateWorkingCopy(
     ...updates,
     updatedAt: timestamp,
     lastTouchedAt: timestamp,
+    data: updates.data ?? existing.data ?? null,
+    draftData: updates.draftData ?? existing.draftData ?? existing.data ?? null,
   };
 
   await coreDB.nodes.put(updated);

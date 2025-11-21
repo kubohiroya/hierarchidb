@@ -1,37 +1,49 @@
-import type { NodeId, NodePayloadBase, TreeNode } from '@hierarchidb/common-types';
-import type {
-  DialogProgressState,
-  DialogWindowState,
-} from '@hierarchidb/plugin-service-api';
+import type { DialogProgressState, DialogUIState, DialogWindowState, NodeId, TreeNode } from '@hierarchidb/common-types';
 import { CoreDB } from '../services/CoreDB.js';
 import type { PeerEntity, PeerStore } from './store.js';
 
-type NodePayloadEnvelope<TData> = NodePayloadBase & {
-  data?: TData;
-  dialogWindow?: DialogWindowState | null;
-  dialogProgress?: DialogProgressState | null;
+const resolveNodeState = <TData>(node: TreeNode | undefined): ({
+  targetField: 'data' | 'draftData';
+  raw: unknown;
+  dialogUIState?: DialogUIState;
   updatedAt?: number;
-};
-
-const readEnvelope = <TData>(node: TreeNode | undefined): {
-  envelope: NodePayloadEnvelope<TData> | null | undefined;
-  field: 'payload' | 'draft';
-} | null => {
+} & { data: TData | undefined; dialogWindow?: DialogWindowState | null; dialogProgress?: DialogProgressState | null }) | null => {
   if (!node) return null;
-  const field: 'payload' | 'draft' = node.holderType === 'workingCopy' ? 'draft' : 'payload';
-  const envelope = (node as TreeNode<NodePayloadEnvelope<TData>>)[field];
-  return { envelope, field };
-};
+  const isWorkingCopy = node.holderType === 'workingCopy';
+  const targetField: 'data' | 'draftData' = isWorkingCopy ? 'draftData' : 'data';
+  const raw = (node as unknown as Record<string, unknown>)[targetField];
+  const dialogUIState = (node as { dialogUIState?: DialogUIState }).dialogUIState;
+  const dialogWindow =
+    dialogUIState?.dialogWindow ??
+    (raw && typeof raw === 'object' && 'dialogWindow' in raw
+      ? (raw as { dialogWindow?: DialogWindowState | null }).dialogWindow
+      : undefined);
+  const dialogProgress =
+    dialogUIState?.dialogProgress ??
+    (raw && typeof raw === 'object' && 'dialogProgress' in raw
+      ? (raw as { dialogProgress?: DialogProgressState | null }).dialogProgress
+      : undefined);
 
-const normalizeEnvelope = <TData>(
-  envelope: NodePayloadEnvelope<TData> | null | undefined,
-  normalize?: (data: TData | undefined) => TData | undefined
-): NodePayloadEnvelope<TData> | undefined => {
-  if (!envelope) return undefined;
-  const data = normalize ? normalize(envelope.data) : envelope.data;
+  let data: TData | undefined;
+  if (raw && typeof raw === 'object' && 'data' in raw) {
+    data = (raw as { data?: TData }).data;
+  } else {
+    data = raw as TData | undefined;
+  }
+
+  const updatedAt =
+    (raw && typeof raw === 'object' && 'updatedAt' in raw
+      ? (raw as { updatedAt?: number }).updatedAt
+      : undefined) ?? (node as { updatedAt?: number }).updatedAt;
+
   return {
-    ...envelope,
+    targetField,
+    raw,
     data,
+    dialogWindow,
+    dialogProgress,
+    dialogUIState,
+    updatedAt,
   };
 };
 
@@ -46,44 +58,55 @@ export function createNodePayloadPeerStore<TData>(options?: {
     async get(nodeId: NodeId): Promise<PeerEntity<TData> | undefined> {
       const coreDB = await ensureCoreDB();
       const node = await coreDB.getNode(nodeId);
-      const resolved = readEnvelope<TData>(node);
+      const resolved = resolveNodeState<TData>(node);
       if (!resolved) return undefined;
-      const envelope = normalizeEnvelope(resolved.envelope, normalize);
-      if (!envelope) return undefined;
+      const data = normalize ? normalize(resolved.data) : resolved.data;
       return {
         nodeId,
-        data: envelope.data,
-        dialogWindow: envelope.dialogWindow ?? undefined,
-        dialogProgress: envelope.dialogProgress ?? undefined,
-        updatedAt: envelope.updatedAt,
+        data,
+        dialogWindow: resolved.dialogWindow ?? undefined,
+        dialogProgress: resolved.dialogProgress ?? undefined,
+        updatedAt: resolved.updatedAt,
       };
     },
 
     async put(entity: PeerEntity<TData>): Promise<void> {
       const coreDB = await ensureCoreDB();
       const node = await coreDB.getNode(entity.nodeId);
-      const resolved = readEnvelope<TData>(node);
-      const field = resolved?.field ?? 'payload';
-      const envelope: NodePayloadEnvelope<TData> = {
-        data: normalize ? normalize(entity.data) : entity.data,
-        dialogWindow: entity.dialogWindow ?? null,
-        dialogProgress: entity.dialogProgress ?? null,
-        updatedAt: entity.updatedAt ?? Date.now(),
-      };
-      await coreDB.updateNode({
+      if (!node) {
+        throw new Error(`Node not found for peer store put: ${String(entity.nodeId)}`);
+      }
+      const resolved = resolveNodeState<TData>(node);
+      const targetField = resolved?.targetField ?? 'data';
+
+      const dialogUIState: DialogUIState | undefined =
+        entity.dialogWindow !== undefined || entity.dialogProgress !== undefined
+          ? {
+              dialogWindow: entity.dialogWindow ?? null,
+              dialogProgress: entity.dialogProgress ?? null,
+            }
+          : undefined;
+
+      const update: Pick<TreeNode, 'id'> & Partial<TreeNode> = {
         id: entity.nodeId,
-        [field]: envelope,
-      });
+        [targetField]: normalize ? normalize(entity.data) ?? null : entity.data ?? null,
+      };
+      if (dialogUIState) {
+        update.dialogUIState = dialogUIState;
+      }
+
+      await coreDB.updateNode(update);
     },
 
     async delete(nodeId: NodeId): Promise<void> {
       const coreDB = await ensureCoreDB();
       const node = await coreDB.getNode(nodeId);
-      const resolved = readEnvelope<TData>(node);
-      const field = resolved?.field ?? 'payload';
+      if (!node) return;
+      const resolved = resolveNodeState<TData>(node);
+      const targetField = resolved?.targetField ?? 'data';
       await coreDB.updateNode({
         id: nodeId,
-        [field]: null,
+        [targetField]: null,
       });
     },
 

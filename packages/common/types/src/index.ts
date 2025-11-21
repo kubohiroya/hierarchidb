@@ -86,11 +86,15 @@ export type {
 export * from './tree-node-event-types.js';
 export * from './tree-node-lifecycle-hooks.js';
 export type {
+  DialogProgressState,
+  DialogUIState,
+  DialogWindowState,
   NodeBase,
+  NodePayload,
+  NodePayloadBase,
+  PersistedTreeNode,
   TreeNode,
   TreeNodeWithChildren,
-  NodePayloadBase,
-  NodePayload,
 } from './tree-node-types.js';
 export { NODE_TYPES } from './tree-node-types.js';
 export * from './tree-root-node-types.js';

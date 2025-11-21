@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-types';
+import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-types';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CommandProcessor } from '../../services/CommandProcessor.js';
 import { CoreDB } from '../../services/CoreDB.js';
@@ -19,6 +19,12 @@ describe('Headless E2E (Node + fake-indexeddb): CP routing + WC flows', () => {
     // Unique DB per test run
     return await CoreDB.getSingleton(`e2e-${name}-${Date.now()}-${Math.random()}`);
   }
+
+  const withPayload = (node: Omit<TreeNode, 'data' | 'draftData'> & Partial<TreeNode>): TreeNode => ({
+    data: {},
+    draftData: null,
+    ...node,
+  });
 
   it('create → update → move → trash → restore works via CommandProcessor default routing', async () => {
     const core = await newCore('on');
@@ -43,16 +49,18 @@ describe('Headless E2E (Node + fake-indexeddb): CP routing + WC flows', () => {
     );
     expect(updateRes.success).toBe(true);
 
-    const parentId = await core.createNode({
-      id: `p3-${Date.now()}` as NodeId,
-      parentId: 'r:root' as NodeId,
-      nodeType: 'folder' as NodeType,
-      name: 'P3',
-      depth: 1,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      version: 1,
-    });
+    const parentId = await core.createNode(
+      withPayload({
+        id: `p3-${Date.now()}` as NodeId,
+        parentId: 'r:root' as NodeId,
+        nodeType: 'folder' as NodeType,
+        name: 'P3',
+        depth: 1,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        version: 1,
+      })
+    );
     const moveRes = await cp.processCommand(
       cp.createEnvelope('moveNodes', { nodeIds: [nodeId], toParentId: parentId })
     );

@@ -2,12 +2,7 @@ import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommandProcessor } from '../../CommandProcessor.js';
 import type { CoreDB } from '../../CoreDB.js';
-import {
-  attachFulltextTables,
-  createFulltextTestDB,
-  destroyFulltextTestDB,
-  type FulltextTables,
-} from '../../test-helpers/fulltextTestDB.js';
+// fulltext tables removed; stub without fulltext support
 
 describe('Undo/Redo for restoreFromTrash', () => {
   type TrashedNode = TreeNode & {
@@ -23,16 +18,17 @@ describe('Undo/Redo for restoreFromTrash', () => {
     state: Map<NodeId, TrashedNode>;
   };
 
-  type CoreStub = CoreStubBase & FulltextTables;
+  type CoreStub = CoreStubBase;
 
   let core: CoreStub;
-  let fulltextDb: Awaited<ReturnType<typeof createFulltextTestDB>>;
   let state: Map<NodeId, TrashedNode>;
   const makeNode = (id: string, parentId: string, name: string): TrashedNode => ({
     id: id as NodeId,
     parentId: parentId as NodeId,
     nodeType: 'folder' as NodeType,
     name,
+    data: {},
+    draftData: null,
     depth: 1,
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -43,7 +39,6 @@ describe('Undo/Redo for restoreFromTrash', () => {
   });
 
   beforeEach(async () => {
-    fulltextDb = await createFulltextTestDB('undo-redo-restore');
     state = new Map<NodeId, TrashedNode>();
     state.set('t_trash' as NodeId, makeNode('t_trash', 'r_root', 'Trash'));
     state.set('x' as NodeId, makeNode('x', 't_trash', 'X'));
@@ -75,11 +70,11 @@ describe('Undo/Redo for restoreFromTrash', () => {
       }),
     };
 
-    core = attachFulltextTables(baseCore, fulltextDb);
+    core = baseCore as CoreStub;
   });
 
   afterEach(async () => {
-    await destroyFulltextTestDB(fulltextDb);
+    // nothing to destroy; no fulltext DB
   });
 
   it('undo/redo restoreFromTrash', async () => {

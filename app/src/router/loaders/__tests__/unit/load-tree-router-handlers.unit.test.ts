@@ -60,6 +60,8 @@ function createTreeNode(overrides: Partial<TreeNode> = {}): TreeNode {
     parentId: 'console-1:root' as NodeId,
     nodeType: 'folder' as NodeType,
     name: 'Mock Node',
+    data: null,
+    draftData: null,
     depth: 0,
     createdAt: Date.now(),
     updatedAt: Date.now(),

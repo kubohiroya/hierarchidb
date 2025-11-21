@@ -1,7 +1,6 @@
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CoreDB } from '../../CoreDB.js';
-import type { FulltextIndexService } from '../../FulltextIndexService.js';
 import { TreeQueryService } from '../../TreeQueryService.js';
 
 const makeNode = (id: string, parentId: string | null, name: string): TreeNode => ({
@@ -9,6 +8,8 @@ const makeNode = (id: string, parentId: string | null, name: string): TreeNode =
   parentId: parentId ? (parentId as NodeId) : undefined,
   nodeType: 'folder' as TreeNode['nodeType'],
   name,
+  data: {},
+  draftData: null,
   depth: parentId ? 1 : 0,
   createdAt: Date.now(),
   updatedAt: Date.now(),
@@ -22,9 +23,6 @@ describe('TreeQueryService listChildren prefetch', () => {
   const stubCoreDB = {
     listChildren: vi.fn(async (parentId: NodeId) => tree[String(parentId)] || []),
   } as unknown as CoreDB;
-  const stubFulltextService = {
-    search: vi.fn(async () => []),
-  } as unknown as FulltextIndexService;
 
   beforeEach(() => {
     for (const key of Object.keys(tree)) {
@@ -38,7 +36,7 @@ describe('TreeQueryService listChildren prefetch', () => {
     ];
     tree['grand-b1'] = [makeNode('great-b1', 'grand-b1', 'B1-1')];
 
-    service = new TreeQueryService(stubCoreDB, stubFulltextService);
+    service = new TreeQueryService(stubCoreDB);
     (stubCoreDB.listChildren as ReturnType<typeof vi.fn>).mockClear();
   });
 

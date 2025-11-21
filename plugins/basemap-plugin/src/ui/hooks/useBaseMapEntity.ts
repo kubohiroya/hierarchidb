@@ -42,7 +42,7 @@ const toStringArray = (value: unknown): string[] =>
 const readNodeData = (node: TreeNode | Record<string, unknown> | null | undefined): Record<string, unknown> => {
   if (!node) return {};
   const nodeRecord = node as unknown as Record<string, unknown>;
-  const rawData = nodeRecord.data;
+  const rawData = nodeRecord.draftData ?? nodeRecord.data;
   return isRecord(rawData) ? (rawData as Record<string, unknown>) : {};
 };
 
@@ -212,16 +212,16 @@ export function useBaseMapEntity(
           updatedAt: Date.now() as Timestamp,
         };
         const existingData = readNodeData(workingCopyNode);
-        await apis.workingCopy.updateWorkingCopy(
-          workingCopyId,
-          {
-            data: {
-              ...existingData,
-              mapStyle: next.mapStyle,
-              viewport: next.viewport,
-            },
-          } as Partial<TreeNode>
-        );
+        await apis.workingCopy.updateWorkingCopy(workingCopyId, {
+          draftData: {
+            ...existingData,
+            mapStyle: next.mapStyle,
+            viewport: next.viewport,
+            tags: next.tags,
+            name: next.name,
+            description: next.description,
+          },
+        } as Partial<TreeNode>);
         await apis.workingCopy.commitWorkingCopy(workingCopyId);
         await fetchEntity();
       } catch (err) {

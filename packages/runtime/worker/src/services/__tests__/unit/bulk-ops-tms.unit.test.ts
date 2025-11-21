@@ -15,6 +15,8 @@ const makeNode = (id: string, parentId: string, name: string): TreeNode => ({
   parentId: toNodeId(parentId),
   nodeType: toNodeType('folder'),
   name,
+  data: {},
+  draftData: null,
   depth: 1,
   createdAt: Date.now(),
   updatedAt: Date.now(),

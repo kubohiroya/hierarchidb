@@ -2,7 +2,7 @@
  * Types for TreeConsoleToolbar_Deprecated package
  */
 
-export type TreeConsoleSearchMode = 'local' | 'fulltext';
+export type TreeConsoleSearchMode = 'local';
 
 /**
  * Action types and their parameters for TreeConsoleToolbar_Deprecated
@@ -34,13 +34,11 @@ export type TreeConsoleToolbarActionParams =
 
 export interface TreeConsoleToolbarController {
   searchText?: string;
-  searchMode?: TreeConsoleSearchMode;
   handleSearchTextChange?: (value: string) => void;
   /**
    * Called when the search input loses focus to commit the current value.
    */
   handleSearchCommit?: () => void;
-  onSearchModeChange?: (mode: TreeConsoleSearchMode) => void;
 }
 
 export interface TreeConsoleToolbarContext {

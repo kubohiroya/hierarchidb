@@ -1,4 +1,4 @@
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, NodePayload, TreeNode } from '@hierarchidb/common-types';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import { getTrashDisplayName } from './getTrashDisplayName.js';
 
@@ -94,6 +94,8 @@ export function buildTrashTreeData({
       createdAt: node.createdAt,
       updatedAt: node.updatedAt,
       version: node.version,
+      data: ((node as { data?: NodePayload }).data ?? null) as NodePayload,
+      draftData: ((node as { draftData?: NodePayload }).draftData ?? null) as NodePayload,
     });
   });
 

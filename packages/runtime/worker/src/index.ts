@@ -23,7 +23,6 @@ import { CoreDB } from './services/CoreDB.js';
 import { DialogStateService } from './services/DialogStateService.js';
 import { EphemeralDB } from './services/EphemeralDB.js';
 import { bootstrapFeatures } from './services/FeatureBootstrap.js';
-import { FulltextIndexService } from './services/FulltextIndexService.js';
 import { NodeLifecycleManager } from './services/NodeLifecycleManager.js';
 import { TreeMutationService } from './services/TreeMutationService.js';
 import { TreeQueryService } from './services/TreeQueryService.js';
@@ -68,8 +67,6 @@ export class WorkerService {
     return SingletonMixin.getSingleton(WorkerService.name, async () => {
       const coreDB: CoreDB = await CoreDB.getSingleton();
       const ephemeralDB: EphemeralDB = await EphemeralDB.getSingleton();
-      const fulltextIndexService = await FulltextIndexService.getSingleton(coreDB);
-
       // Feature bootstrap (registry-driven). Keeps init order and opt-in capabilities.
       await bootstrapFeatures();
 
@@ -110,10 +107,7 @@ export class WorkerService {
 
       // Query/Mutation services
       const commandProcessor: CommandProcessor = await CommandProcessor.getSingleton(coreDB);
-      const treeQueryService: TreeQueryAPI = await TreeQueryService.getSingleton(
-        coreDB,
-        fulltextIndexService
-      );
+      const treeQueryService: TreeQueryAPI = await TreeQueryService.getSingleton(coreDB);
       const treeMutationService: TreeMutationAPI = await TreeMutationService.getSingleton(
         coreDB,
         commandProcessor
@@ -154,8 +148,7 @@ export class WorkerService {
         tagService,
         nodeLifecycleManager,
         commandProcessor,
-        dialogStateService,
-        fulltextIndexService
+        dialogStateService
       );
     });
   }
@@ -171,8 +164,7 @@ export class WorkerService {
     private tagService: TagAPI,
     private nodeLifecycleManager: NodeLifecycleManager,
     private commandProcessor: CommandProcessor,
-    private dialogStateService: DialogStateAPI,
-    private fulltextService: FulltextIndexService
+    private dialogStateService: DialogStateAPI
   ) {
     this.queryApiFacade = {
       getTree: (treeId: TreeId) => this.queryService.getTree(treeId),
@@ -204,7 +196,6 @@ export class WorkerService {
     // Close databases
     this.coreDB.close();
     this.ephemeralDB.close();
-    this.fulltextService.dispose();
   }
 
   async initialize(): Promise<void> {

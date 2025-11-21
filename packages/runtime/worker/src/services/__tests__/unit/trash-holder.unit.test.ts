@@ -2,12 +2,7 @@ import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommandProcessor } from '../../CommandProcessor.js';
 import type { CoreDB } from '../../CoreDB.js';
-import {
-  attachFulltextTables,
-  createFulltextTestDB,
-  destroyFulltextTestDB,
-  type FulltextTables,
-} from '../../test-helpers/fulltextTestDB.js';
+// fulltext tables removed; test uses core stub only
 
 type TreeNodeState = Record<string, TreeNode>;
 
@@ -21,12 +16,11 @@ interface CoreStubBase {
   trees: { toArray: () => Promise<Array<{ rootId: NodeId; trashRootId: NodeId }>> };
 }
 
-type CoreStub = CoreStubBase & FulltextTables;
+type CoreStub = CoreStubBase;
 
 describe('Trash direct trash storage flow', () => {
   let core: CoreStub;
   let state: TreeNodeState;
-  let fulltextDb: Awaited<ReturnType<typeof createFulltextTestDB>>;
   const now = Date.now();
   const makeNode = (
     id: string,
@@ -38,6 +32,8 @@ describe('Trash direct trash storage flow', () => {
     parentId: parentId as NodeId,
     nodeType,
     name,
+    data: {},
+    draftData: null,
     depth: 1,
     createdAt: now,
     updatedAt: now,
@@ -45,7 +41,6 @@ describe('Trash direct trash storage flow', () => {
   });
 
   beforeEach(async () => {
-    fulltextDb = await createFulltextTestDB('trash-holder');
     state = {};
     state['r:superRoot'] = makeNode('r:superRoot', 'r:superRoot', 'super');
     state['r:root'] = makeNode('r:root', 'r:superRoot', 'root');
@@ -84,11 +79,11 @@ describe('Trash direct trash storage flow', () => {
       },
     };
 
-    core = attachFulltextTables(baseCore, fulltextDb);
+    core = baseCore as CoreStub;
   });
 
   afterEach(async () => {
-    await destroyFulltextTestDB(fulltextDb);
+    // nothing to destroy; no fulltext DB
   });
 
   const findTrashHolderByTarget = (target: NodeId): TreeNode | undefined =>

@@ -19,6 +19,8 @@ function createNode(
     parentId,
     nodeType: (overrides.nodeType ?? 'folder') as TreeNode['nodeType'],
     name: overrides.name ?? `Node ${id}`,
+    data: overrides.data ?? null,
+    draftData: overrides.draftData ?? null,
     depth: overrides.depth ?? 0,
     createdAt: overrides.createdAt ?? now,
     updatedAt: overrides.updatedAt ?? now,

@@ -12,16 +12,23 @@ describe('EntityLifecycleManager.copyPeersByMapping', () => {
 
   it('groups pairs by nodeType and calls bulkUpsertFromIds', async () => {
     const nodeMap = new Map<NodeId, TreeNode>();
-    const makeNode = (id: NodeId, nodeType: NodeType): TreeNode => ({
-      id,
-      parentId: 'root' as NodeId,
-      nodeType,
-      name: String(id),
-      depth: 1,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      version: 1,
-    });
+    const withPayload = (node: Omit<TreeNode, 'data' | 'draftData'> & Partial<TreeNode>): TreeNode =>
+      ({
+        data: {},
+        draftData: null,
+        ...node,
+      });
+    const makeNode = (id: NodeId, nodeType: NodeType): TreeNode =>
+      withPayload({
+        id,
+        parentId: 'root' as NodeId,
+        nodeType,
+        name: String(id),
+        depth: 1,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        version: 1,
+      });
     const toNode = (id: NodeId, nodeType: NodeType) => {
       nodeMap.set(id, makeNode(id, nodeType));
     };

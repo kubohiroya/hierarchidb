@@ -447,6 +447,8 @@ export class CommandHistoryManager {
           nodeType: (payload.nodeType || 'folder') as NodeType,
           name: payload.name,
           description: payload.description,
+          data: null,
+          draftData: null,
           depth: 0,
           createdAt: Date.now() as Timestamp,
           updatedAt: Date.now() as Timestamp,

@@ -34,11 +34,6 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
   const searchStrings: SearchStrings = {
     placeholder: t('search.placeholder'),
     ariaLabel: t('search.ariaLabel'),
-    menuLabel: t('aria.searchModeMenu', 'Select search mode'),
-    localLabel: t('searchMode.local', 'Search expanded nodes'),
-    localDescription: t('searchMode.localDescription', 'Search currently expanded branches'),
-    fulltextLabel: t('searchMode.fulltext', 'Full-text search'),
-    fulltextDescription: t('searchMode.fulltextDescription', 'Search entire subtree'),
   };
   const toolbarAriaLabel = t('aria.toolbarLabel');
 

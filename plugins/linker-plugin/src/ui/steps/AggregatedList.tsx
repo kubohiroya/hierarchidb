@@ -5,14 +5,15 @@ import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-client';
 import type { TreeQueryAPI } from '@hierarchidb/common-api';
-import type {Remote} from 'comlink';
+import type { Remote } from 'comlink';
 
 export interface AggregatedListProps {
   selfNodeId?: NodeId; // Linker node (edit時)
   selected: ResourceSummary[];   // Step2で選択した集合
 }
 
-type LinkerNode = TreeNode & { data?: { likedNodeIdSet?: string[] | Set<string> } };
+type LinkerPayload = { likedNodeIdSet?: string[] | Set<string> };
+type LinkerNode = TreeNode<LinkerPayload>;
 
 function resolveWorkerClient():Remote<WorkerAPI> | null {
   const hook = getWorkerClientHook<WorkerClientRef>() ?? null;
@@ -40,8 +41,8 @@ export const AggregatedList: React.FC<AggregatedListProps> = ({ selfNodeId, sele
         if (client && selfNodeId) {
           const query: TreeQueryAPI = await client.getQueryAPI();
           // 現行APIへ置換: listAncestors/listDescendants を使用し、nodeType でフィルタ
-          const ancestorsAll = (await query.listAncestors(selfNodeId)) as TreeNode[];
-          const descendantsAll = (await query.listDescendants(selfNodeId)) as TreeNode[];
+          const ancestorsAll = (await query.listAncestors(selfNodeId)) as TreeNode<LinkerPayload>[];
+          const descendantsAll = (await query.listDescendants(selfNodeId)) as TreeNode<LinkerPayload>[];
           const linkerAnc = (ancestorsAll || []).filter((n) => n?.nodeType === 'linker');
           const linkerDesc = (descendantsAll || []).filter((n) => n?.nodeType === 'linker');
 

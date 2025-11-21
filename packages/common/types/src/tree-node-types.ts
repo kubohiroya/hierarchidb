@@ -22,61 +22,67 @@ export interface NodeBase {
   version: number;
 }
 
-/**
- * @deprecated Unused across the repository; scheduled for removal.
- */
 export interface DescendantProperties {
   hasChildren?: boolean;
   descendantCount?: number;
   isEstimated?: boolean;
 }
 
-/**
- * @deprecated Unused across the repository; scheduled for removal.
- */
 export interface ReferenceProperties {
   references?: NodeId[];
 }
 
-/**
- * Draft properties for nodes that are being created but not yet complete
- */
-/**
- * @deprecated Unused across the repository; scheduled for removal.
- */
-export interface DraftProperties {
-  /**
-   * Indicates if this is a draft node where entities/sub-entities are incomplete
-   * Managed by specific extension modules
-   */
-  isDraft?: boolean;
+export interface DialogWindowState {
+  mode?: 'normal' | 'maximize' | 'full-screen';
+  position?: { x: number; y: number } | null;
+  size?: { width: number; height: number } | null;
 }
 
+export interface DialogProgressState {
+  /** Zero-based index of the last active step when the dialog was persisted. */
+  activeStepIndex: number;
+}
+
+export interface DialogUIState {
+  dialogWindow?: DialogWindowState | null;
+  dialogProgress?: DialogProgressState | null;
+  // Add minimal UI-only flags here to avoid mixing with domain data.
+}
+
+// Base shape for payloads; keep structural typing while avoiding primitive-only payloads.
+export type NodePayloadBase = Record<string, unknown>;
 export type NodePayload = NodePayloadBase | null;
 
-export type TreeNode<TPayload extends NodePayload = NodePayload> = NodeBase &
-  Partial<DraftProperties> &
-  Partial<DescendantProperties> &
-  Partial<ReferenceProperties> &
-  Partial<{
-    payload: TPayload;
-    draft: TPayload;
-  }> &
-  // Holder-based WorkingCopy/Trash meta (indexed lookup)
-  Partial<{
-    holderType: 'workingCopy' | 'trash';
-    holderTargetId: NodeId; // WC: original nodeId, Trash: trashed nodeId
-    holderMetaParentId: NodeId; // WC: target parentId, Trash: original parentId
-    originalName: string;
-    originalParentId: NodeId;
-    removedAt: Timestamp;
-    lastTouchedAt: Timestamp;
-  }>;
+/**
+ * Dexie nodes table record (single source of truth).
+ * - Domain data lives in `data` (committed) and `draftData` (working copy).
+ * - UI state is scoped to `dialogUIState` and should be cleared on commit/discard.
+ * - Structural metadata stays at the top level and must not be duplicated under data.
+ */
+export type PersistedTreeNode<
+  TData extends NodePayloadBase | null = NodePayloadBase | null
+> = NodeBase & {
+  data: TData;
+  draftData: TData;
+  dialogUIState?: DialogUIState;
+  hasChildren?: boolean;
+  descendantCount?: number;
+  isEstimated?: boolean;
+  references?: NodeId[];
+  holderType?: 'workingCopy' | 'trash';
+  holderTargetId?: NodeId;
+  holderMetaParentId?: NodeId;
+  originalName?: string;
+  originalParentId?: NodeId;
+  removedAt?: Timestamp;
+  lastTouchedAt?: Timestamp;
+};
 
-export type NodePayloadBase = Record<string, unknown>;
+export type TreeNode<TPayload extends NodePayloadBase | null = NodePayload> =
+  PersistedTreeNode<TPayload>;
 
 export interface TreeNodeWithChildren<TPayload extends NodePayload = NodePayload>
-  extends TreeNode<TPayload>,
+  extends PersistedTreeNode<TPayload>,
     DescendantProperties {
   children?: NodeId[];
 }

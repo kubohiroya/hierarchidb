@@ -13,22 +13,15 @@ import type {
 } from '@hierarchidb/common-types';
 import { SingletonMixin } from '@hierarchidb/util';
 import type { CoreDB } from './CoreDB.js';
-import type { FulltextIndexService } from './FulltextIndexService.js';
 
 export class TreeQueryService implements TreeQueryAPI {
-  static async getSingleton(
-    coreDB: CoreDB,
-    fulltextService: FulltextIndexService
-  ): Promise<TreeQueryService> {
+  static async getSingleton(coreDB: CoreDB): Promise<TreeQueryService> {
     return SingletonMixin.getSingleton(TreeQueryService.name, () => {
-      return new TreeQueryService(coreDB, fulltextService);
+      return new TreeQueryService(coreDB);
     });
   }
 
-  constructor(
-    private coreDB: CoreDB,
-    private fulltextService: FulltextIndexService
-  ) {}
+  constructor(private coreDB: CoreDB) {}
 
   // Basic Query Operations
 
@@ -519,11 +512,8 @@ export class TreeQueryService implements TreeQueryAPI {
     maxResults?: number;
     locale?: string;
   }): Promise<TreeNode[]> {
-    return await this.fulltextService.search({
-      rootNodeId: options.rootNodeId,
-      query: options.query,
-      maxResults: options.maxResults,
-      locale: options.locale,
-    });
+    // Fulltext indexing is currently disabled/removed.
+    void options;
+    return [];
   }
 }

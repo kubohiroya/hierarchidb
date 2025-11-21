@@ -45,6 +45,8 @@ describe('EntityLifecycleManager.onImportNodes (Peer via idMap)', () => {
       parentId: 'parent' as NodeId,
       nodeType: folderType,
       name: 'Source',
+      data: {},
+      draftData: null,
       depth: 1,
       createdAt: Date.now(),
       updatedAt: Date.now(),

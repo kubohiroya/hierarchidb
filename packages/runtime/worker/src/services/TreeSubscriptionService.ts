@@ -29,7 +29,6 @@ import {
   share,
 } from 'rxjs';
 import type { CoreDB } from './CoreDB.js';
-import { FulltextIndexService } from './FulltextIndexService.js';
 import { type SubscriptionInfo, SubscriptionRegistry } from './SubscriptionRegistry.js';
 import { TreeQueryService } from './TreeQueryService.js';
 import { TreeSearchService } from './TreeSearchService.js';
@@ -44,12 +43,7 @@ export class TreeSubscriptionService {
     treeQuery?: TreeQueryAPI
   ): Promise<TreeSubscriptionService> {
     return SingletonMixin.getSingleton(TreeSubscriptionService.name, async () => {
-      const resolvedQuery =
-        treeQuery ||
-        (await TreeQueryService.getSingleton(
-          coreDB,
-          await FulltextIndexService.getSingleton(coreDB)
-        ));
+      const resolvedQuery = treeQuery || (await TreeQueryService.getSingleton(coreDB));
       return new TreeSubscriptionService(coreDB, resolvedQuery);
     });
   }

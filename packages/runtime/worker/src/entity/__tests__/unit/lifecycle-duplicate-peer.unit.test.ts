@@ -42,6 +42,8 @@ describe('EntityLifecycleManager.onDuplicateNodes (Peer via idMap)', () => {
       parentId: 'p' as NodeId,
       nodeType: folderType,
       name: String(id),
+      data: {},
+      draftData: null,
       depth: 1,
       createdAt: Date.now(),
       updatedAt: Date.now(),

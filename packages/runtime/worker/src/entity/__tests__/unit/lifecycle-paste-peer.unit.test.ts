@@ -45,6 +45,8 @@ describe('EntityLifecycleManager.onPasteNodes (Peer via idMap)', () => {
       parentId: toNodeId('parent'),
       nodeType: folderType,
       name: 'Source',
+      data: {},
+      draftData: null,
       depth: 1,
       createdAt: Date.now(),
       updatedAt: Date.now(),

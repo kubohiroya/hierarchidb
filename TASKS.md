@@ -203,13 +203,13 @@
 - ブランチ: `chore/tools/count-lines-plugins`（sandbox 制約で `main` 上で作業）
 - 依存: `scripts/count-lines.ts`, `package.json`, `plugins/*/src`
 - 受け入れ基準（DoD）:
-  - [ ] `TASKS.md` Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
-  - [ ] `pnpm count:lines` が `app/src`・`packages/*/src`・`plugins/*/src` を集計し、出力に plugins 項目が含まれる
-  - [ ] 修正後の集計結果を確認し、必要に応じてコマンドログを運用ログへ記録する
-  - [ ] ロールバック手順（対象ファイルとコマンド）を `TASKS.md` に追記する
+  - [x] `TASKS.md` Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [x] `pnpm count:lines` が `app/src`・`packages/*/src`・`plugins/*/src` を集計し、出力に plugins 項目が含まれる
+  - [x] 修正後の集計結果を確認し、必要に応じてコマンドログを運用ログへ記録する
+  - [x] ロールバック手順（対象ファイルとコマンド）を `TASKS.md` に追記する
 - チェックリスト:
-  - [ ] `scripts/count-lines.ts` の探索対象に `plugins` ディレクトリを追加し、既存の除外規則を維持する
-  - [ ] `pnpm count:lines` 実行結果で plugins が summary に反映されることを確認する
+  - [x] `scripts/count-lines.ts` の探索対象に `plugins` ディレクトリを追加し、既存の除外規則を維持する
+  - [x] `pnpm count:lines` 実行結果で plugins が summary に反映されることを確認する
 - ロールバック手順：`scripts/count-lines.ts` の差分を revert し、旧構成の `pnpm count:lines` 出力へ戻ることを確認する
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
@@ -8343,12 +8343,19 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-13"></a>
 
+- 2025-11-21 07:05 progress: feat/runtime/treenode-payload — Dexie TreeNode の SSOT として PersistedTreeNode（data/draftData/dialogUIState）を common-types に定義し、旧 TreeNode/payload 型に deprecated を明示。次: CoreDB/WorkingCopy/peer store の payload/draft 利用箇所を棚卸しして移行プランを固める。
 - 2025-11-20 23:10 start: chore/logging-trim — WorkerProvider / TreeSubscriptionService / CoreDB / BFFAuthService の過剰コンソールログを抑制するタスクに着手。DoD: Kanban/運用ログ更新とロールバック手順記載、上記4箇所の info ログを削除（warn/error は維持）、影響確認と実行コマンドの有無をログ化。
 - 2025-11-20 23:35 done: chore/logging-trim — 進行状況やプリフェッチの `console.log` を削除（WorkerProvider, TreeSubscriptionService, CoreDB）し、BFFAuthService 初期化ログも抑制。実行コマンドなし。ロールバック: `app/src/contexts/WorkerProvider.tsx`, `packages/runtime/worker/src/services/TreeSubscriptionService.ts`, `packages/runtime/worker/src/services/CoreDB.ts`, `packages/ui/auth/src/services/BFFAuthService.ts` を revert。
 - 2025-11-20 21:14 start: chore/tools/count-lines-plugins — `pnpm count:lines` が `plugins/*` を集計しない問題の対応を開始。DoD: Kanban/ログ更新、scripts/count-lines.ts で plugins/*/src を探索対象へ追加、`pnpm count:lines` 出力に plugins が含まれることを確認、ロールバック手順記載。
+- 2025-11-21 07:50 progress: chore/tools/count-lines-plugins — `scripts/count-lines.ts` に plugins 探索ブロックを追加し、packages と同じ `findPackageSrcDirs` で `plugins/*/src` を列挙するようにした。
+- 2025-11-21 07:55 blocked: pnpm count:lines — exit 1。tsx が `/var/.../tsx-501/*.pipe` への IPC ソケット作成で EPERM（sandbox 制約）。権限昇格して再実行する方針に変更。
+- 2025-11-21 07:57 command: pnpm count:lines — exit 0（権限昇格あり）。Summary に `plugins/*-plugin/src` が列出され、GRAND TOTAL 190,925 lines。目的の plugins 集計が確認できた。
+- 2025-11-21 07:58 done: chore/tools/count-lines-plugins — DoD 達成。ロールバックは `scripts/count-lines.ts` を revert し、`pnpm count:lines` を再実行して旧出力へ戻ること。
 - 2025-11-20 21:50 start: fix/ui-folder/default-name — Create Folder のデフォルト名が常に `New Folder` 固定で重複エラーになる問題を調査。DoD: nameUtilities によるユニーク名生成を Create flow に適用、BasicInfo Step の name 重複エラーをフィールド直下に表示するよう統一、関連テスト追加、ロールバック手順記載。
 - 2025-11-20 22:05 done: fix/ui-folder/default-name — working-copy draft 作成時に `getChildNames` + `createNewName` でデフォルト名を自動採番（`New Folder (2)` など）し、BasicInfo Step の name エラーをフィールド直下に表示するよう修正。検証: `pnpm --filter @hierarchidb/runtime-worker test -- src/services/working-copy/__tests__/draftOperations.unique-name.unit.test.ts` exit 0、`pnpm --filter @hierarchidb/plugin-ui-host test -- src/headless/__tests__/basic-info-validation-placement.unit.test.tsx` exit 0。ロールバック: `packages/runtime/worker/src/services/working-copy/draftOperations.ts`, `packages/runtime/worker/src/services/working-copy/__tests__/draftOperations.unique-name.unit.test.ts`, `packages/ui/plugin-basic-info/src/components/BasicInfoStep.tsx`, `packages/plugin-ui-host/src/headless/__tests__/basic-info-validation-placement.unit.test.tsx` を revert。
 - 2025-11-19 08:46 start: fix/basemap/basic-info-step — basemap Step config で `SharedBasicInfoStep` import 欠落による ReferenceError を再現。DoD: Kanban/ログ更新、import とレンダリングテスト修正、`pnpm --filter @hierarchidb/basemap-plugin {typecheck,test}` の成功確認、ロールバック手順記載。
+- 2025-11-21 07:33 progress: feat/runtime/treenode-payload — CoreDB で data/draftData/dialogUIState を SSOT 化し、legacy payload/draft を禁止。FulltextIndexService 全廃（サービス/テスト/ヘルパー削除）、TreeQueryService 依存除去、Linker を `TreeNode<LinkerPayload>` に型合わせ。CoreDB initialize で既存 nodes の legacy フィールドをクリーンアップ（payload/draft/data.draft 削除、非 WC の draftData を null）。`updateNode` は既存ノード必須にし、存在しない nodeId への部分更新でゴミノードができないように修正。Peer store も対象ノード不存在ならエラー/無視。コマンド: `pnpm --filter @hierarchidb/common-types build` exit 0、`pnpm --filter @hierarchidb/runtime-worker typecheck` exit 0、`pnpm -C app typecheck` exit 0。ロールバック: `packages/runtime/worker/src/services/CoreDB.ts`, `packages/runtime/worker/src/entity/createNodePayloadPeerStore.ts`, `packages/runtime/worker/src/services/TreeQueryService.ts`, `packages/runtime/worker/src/index.ts`, `packages/runtime/worker/src/services/test-helpers/commandProcessorHarness.ts`, `plugins/linker-plugin/src/ui/steps/AggregatedList.tsx`, `packages/common/types/src/tree-node-types.ts`, `packages/common/types/src/index.ts`, ならびに削除した fulltext 関連ファイルを revert。
+- 2025-11-21 07:33 progress: feat/runtime/treenode-payload — CoreDB で data/draftData/dialogUIState を SSOT 化し、legacy payload/draft を禁止。FulltextIndexService 全廃（サービス/テスト/ヘルパー削除）、TreeQueryService 依存除去、Linker を `TreeNode<LinkerPayload>` に型合わせ。CoreDB initialize で既存 nodes の legacy フィールドをクリーンアップ（payload/draft/data.draft 削除、非 WC の draftData を null）。`updateNode` は既存ノード必須（不存在なら例外）にし、未知 nodeId への部分更新でゴミノードができないよう修正。Peer store も対象ノード不存在ならエラー/無視。WorkingCopy 作成時は data=null/draftData=source を徹底し、commit で data に確定値、draftData/dialogUIState を null/undefined へクリア。Basemap UI は draftData 優先読み込みに統一。コマンド: `pnpm --filter @hierarchidb/common-types build` exit 0、`pnpm --filter @hierarchidb/runtime-worker typecheck` exit 0、`pnpm -C app typecheck` exit 0。ロールバック: `packages/runtime/worker/src/services/CoreDB.ts`, `packages/runtime/worker/src/entity/createNodePayloadPeerStore.ts`, `packages/runtime/worker/src/services/TreeQueryService.ts`, `packages/runtime/worker/src/services/working-copy/{editOperations.ts,commitOperations.ts}`, `packages/runtime/worker/src/index.ts`, `packages/runtime/worker/src/services/test-helpers/commandProcessorHarness.ts`, `plugins/linker-plugin/src/ui/steps/AggregatedList.tsx`, `plugins/basemap-plugin/src/ui/hooks/useBaseMapEntity.ts`, `packages/common/types/src/tree-node-types.ts`, `packages/common/types/src/index.ts`, ならびに削除した fulltext 関連ファイルを revert。
 - 2025-11-19 08:48 progress: fix/basemap/basic-info-step — `basemapStepConfigs.tsx` へ `SharedBasicInfoStep` / `BasicInfoData` import を追加し、Basic Info component のラップを正規化。`steps-provider.test.ts` に `MockBasicInfoStep` を明示的に参照するユニットテストを追加して ReferenceError 再発を検出できるようにした。
 - 2025-11-19 08:50 command: pnpm --filter @hierarchidb/basemap-plugin test — exit 0。`steps-provider.test.ts` ほか 3 file / 12 tests がすべて成功し、Basic Info step の import/props 検証が通過。
 - 2025-11-19 08:51 command: pnpm --filter @hierarchidb/basemap-plugin typecheck — exit 1（`None of the selected packages has a "typecheck" script`）。パッケージ固有の typecheck スクリプト未定義のため root スクリプトを呼べず、別途 `tsc` を代用する方針へ切替。
@@ -8658,6 +8665,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-10 10:28 progress: fix/app/preview-plugin-db-loader — Vite build の `rollupOptions.external` から各プラグイン database エントリを削除し、`pnpm build`/`preview` で bundler がハッシュ済みチャンクを生成できるよう調整。
 - 2025-11-10 10:29 command: pnpm --filter @hierarchidb/app build — exit 0。plugin-registry 再生成 → vite build まで完走し、`app/dist/assets` に bare specifier が残らないことを確認（preview は sandbox のポート制約で未実行）。
 - 2025-11-10 10:33 progress: fix/app/preview-plugin-db-loader — Location plugin の `@hierarchidb/location-plugin/database` が `getEphemeralLocationDB` を再エクスポートしていなかったため、`plugins/location-plugin/src/database/index.ts` に Ephemeral DB モジュールの export を追加し、`pnpm --filter @hierarchidb/location-plugin build` → `pnpm --filter @hierarchidb/app build` を再実行して dist へ反映。
+- 2025-11-21 09:43 progress: feat/runtime/treenode-payload — TreeNode の data/draftData 必須化に合わせて trash/build ロジックとテストのモックを補強し、WorkingCopy helper の更新で null 初期化を徹底。`pnpm -C app typecheck`（exit 0）と `pnpm --filter @hierarchidb/runtime-worker typecheck`（exit 0）を実行し、payload/draft 整理後の型エラーが解消されたことを確認。
+- 2025-11-21 10:05 progress: feat/runtime/treenode-payload — runtime-worker 配下の残存ユニットテストで TreeNode モックに `data`/`draftData` が不足していた箇所を補完し、`pnpm --filter @hierarchidb/runtime-worker typecheck` 再実行で exit 0 を確認。
 - 2025-11-10 10:45 start: fix/app/reload-browser-route — `/hierarchidb/t/...` 直アクセスやリロードで真っ白画面になる問題を修正するタスクを開始。DoD: dev/prod 両モードで entry script が正しく解決され、browser/hash の直リンク再読込で SPA が復元される。
 - 2025-11-10 10:48 progress: fix/app/reload-browser-route — `app/index.html` のエントリースクリプト参照を一時的に絶対パスへ切り替えて検証したが、ユーザー環境では白画面解消につながらず元に戻した（原因は worker 初期化レイヤーにあると判断）。
 - 2025-11-10 10:58 progress: fix/app/reload-browser-route — `<base href>` 追加によるベースパス制御も効果がないため撤回。現在は WorkerProvider / TanStack Router ローダー周りの初期化レースを重点的に調査中。

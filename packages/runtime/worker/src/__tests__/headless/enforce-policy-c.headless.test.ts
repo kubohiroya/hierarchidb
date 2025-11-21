@@ -21,6 +21,12 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
     return await CoreDB.getSingleton(`pc-${name}-${Date.now()}-${Math.random()}`);
   }
 
+  const withPayload = (node: Omit<TreeNode, 'data' | 'draftData'> & Partial<TreeNode>): TreeNode => ({
+    data: {},
+    draftData: null,
+    ...node,
+  });
+
   it('blocks move/remove when WC holder exists under subtree', async () => {
     const core = await newCore('on');
     const cp = new CommandProcessor(core);
@@ -36,6 +42,8 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
+      data: {},
+      draftData: null,
     };
     await core.createNode(aNode);
 
@@ -51,6 +59,8 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
+      data: {},
+      draftData: null,
     });
     // Create WC child under holder
     await core.createNode({
@@ -62,19 +72,23 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
+      data: {},
+      draftData: null,
     });
 
     // Try move A to a new parent -> should be blocked
-    const p2 = await core.createNode({
-      id: `p2-${Date.now()}` as NodeId,
-      parentId: 'r:root' as NodeId,
-      nodeType: 'folder' as NodeType,
-      name: 'P2',
-      depth: 1,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      version: 1,
-    });
+    const p2 = await core.createNode(
+      withPayload({
+        id: `p2-${Date.now()}` as NodeId,
+        parentId: 'r:root' as NodeId,
+        nodeType: 'folder' as NodeType,
+        name: 'P2',
+        depth: 1,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        version: 1,
+      })
+    );
 
     const move = await cp.processCommand(
       cp.createEnvelope('moveNodes', { nodeIds: [aId], toParentId: p2 as NodeId })
@@ -92,63 +106,73 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
 
     // create node in Projects console (p)
     const px = `px-${Date.now()}` as NodeId;
-    await core.createNode({
-      id: px,
-      parentId: 'p:root' as NodeId,
-      nodeType: 'folder' as NodeType,
-      name: 'PX',
-      depth: 1,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      version: 1,
-    });
+    await core.createNode(
+      withPayload({
+        id: px,
+        parentId: 'p:root' as NodeId,
+        nodeType: 'folder' as NodeType,
+        name: 'PX',
+        depth: 1,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        version: 1,
+      })
+    );
 
     // create WC holder that references a node in Resources console (r)
     const aId = `Ar-${Date.now()}` as NodeId;
-    await core.createNode({
-      id: aId,
-      parentId: 'r:root' as NodeId,
-      nodeType: 'folder' as NodeType,
-      name: 'Ar',
-      depth: 1,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      version: 1,
-    });
+    await core.createNode(
+      withPayload({
+        id: aId,
+        parentId: 'r:root' as NodeId,
+        nodeType: 'folder' as NodeType,
+        name: 'Ar',
+        depth: 1,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        version: 1,
+      })
+    );
     const holderId = `wcH3-${Date.now()}` as NodeId;
     const holderName = encodeWorkingCopyHolderName('r:root' as NodeId, aId);
-    await core.createNode({
-      id: holderId,
-      parentId: 'r:workingCopy' as NodeId,
-      nodeType: 'workingCopy' as NodeType,
-      name: holderName,
-      depth: 0,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      version: 1,
-    });
-    await core.createNode({
-      id: `wcC3-${Date.now()}` as NodeId,
-      parentId: holderId,
-      nodeType: 'folder' as NodeType,
-      name: 'Draft3',
-      depth: 1,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      version: 1,
-    });
+    await core.createNode(
+      withPayload({
+        id: holderId,
+        parentId: 'r:workingCopy' as NodeId,
+        nodeType: 'workingCopy' as NodeType,
+        name: holderName,
+        depth: 0,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        version: 1,
+      })
+    );
+    await core.createNode(
+      withPayload({
+        id: `wcC3-${Date.now()}` as NodeId,
+        parentId: holderId,
+        nodeType: 'folder' as NodeType,
+        name: 'Draft3',
+        depth: 1,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        version: 1,
+      })
+    );
 
     // Move PX within Projects should be allowed
-    const p2 = await core.createNode({
-      id: `p2-${Date.now()}` as NodeId,
-      parentId: 'p:root' as NodeId,
-      nodeType: 'folder' as NodeType,
-      name: 'P2',
-      depth: 1,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      version: 1,
-    });
+    const p2 = await core.createNode(
+      withPayload({
+        id: `p2-${Date.now()}` as NodeId,
+        parentId: 'p:root' as NodeId,
+        nodeType: 'folder' as NodeType,
+        name: 'P2',
+        depth: 1,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        version: 1,
+      })
+    );
     const ok = await cp.processCommand(
       cp.createEnvelope('moveNodes', { nodeIds: [px], toParentId: p2 as NodeId })
     );

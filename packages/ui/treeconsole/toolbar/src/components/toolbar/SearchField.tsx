@@ -1,11 +1,8 @@
 import {
-  IconButton,
-  InputAdornment,
   TextField,
   Box,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import type { MouseEvent, ReactNode } from 'react';
 import { TreeConsoleSearchMode } from '../../types.js';
 
 const BASE_SEARCH_FIELD_WIDTH_PX = 300;
@@ -33,9 +30,6 @@ export interface SearchFieldProps {
   placeholder: string;
   ariaLabel: string;
   searchMode: TreeConsoleSearchMode;
-  onSearchModeButtonClick: (event: MouseEvent<HTMLElement>) => void;
-  searchModeIcon: ReactNode;
-  searchModeAriaLabel: string;
 }
 
 export function SearchField({
@@ -45,10 +39,6 @@ export function SearchField({
   fullWidth,
   placeholder,
   ariaLabel,
-  searchMode,
-  onSearchModeButtonClick,
-  searchModeIcon,
-  searchModeAriaLabel,
 }: SearchFieldProps) {
   return (
     <SearchTextFieldContainer>
@@ -89,19 +79,6 @@ export function SearchField({
             width: `${SEARCH_FIELD_WIDTH_PX}px`,
             borderRadius: '30px',
           },
-          startAdornment: (
-            <InputAdornment position="start">
-              <IconButton
-                size="small"
-                onClick={onSearchModeButtonClick}
-                aria-label={searchModeAriaLabel}
-                aria-pressed={searchMode === 'fulltext'}
-                edge="start"
-              >
-                {searchModeIcon}
-              </IconButton>
-            </InputAdornment>
-          ),
           inputProps: {
             'aria-label': ariaLabel,
             autoComplete: 'new-password',

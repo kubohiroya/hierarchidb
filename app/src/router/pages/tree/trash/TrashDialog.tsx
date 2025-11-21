@@ -772,6 +772,8 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
           createdAt: source.createdAt,
           updatedAt: source.updatedAt,
           version: source.version,
+          data: (source as TreeNode).data ?? null,
+          draftData: (source as TreeNode).draftData ?? null,
         });
       }
     }

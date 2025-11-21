@@ -27,6 +27,8 @@ function createNode(
     originalName: overrides.originalName,
     originalParentId: overrides.originalParentId,
     removedAt: overrides.removedAt,
+    data: overrides.data ?? {},
+    draftData: overrides.draftData ?? null,
   } satisfies TreeNode;
 }
 

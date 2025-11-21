@@ -101,7 +101,6 @@ const TreeConsoleIntegrationInner: React.FC<
     selectedIds,
     expandedIds,
     searchTerm,
-    searchMode,
     viewMode,
     canCreate,
     canEdit,
@@ -625,10 +624,8 @@ const TreeConsoleIntegrationInner: React.FC<
         isResourcesPage={pageTreeNode?.name?.toLowerCase().includes('resource')}
         controller={{
           searchText: searchTerm,
-          searchMode,
           handleSearchTextChange: actions.handleSearchChange,
           handleSearchCommit: actions.handleSearchCommit,
-          onSearchModeChange: actions.handleSearchModeChange,
         }}
         hasTrashItems={hasTrashItems}
         onAction={handleToolbarAction}

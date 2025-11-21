@@ -60,12 +60,18 @@ export async function createWorkingCopyFromNode(
     holderTargetId: sourceNode.id,
     holderMetaParentId: sourceNode.parentId,
     lastTouchedAt: now,
+    data: null,
+    draftData: null,
   };
 
   const workingCopyNode: TreeNode = {
     ...sourceNode,
     parentId: workingCopyNodeHolderId,
     id: workingCopyNodeId,
+    // working copy uses draftData as the editable buffer
+    data: null,
+    draftData: ((sourceNode as { data?: unknown }).data ?? null) as TreeNode['draftData'],
+    dialogUIState: undefined,
     lastTouchedAt: now,
   };
 

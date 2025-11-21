@@ -66,11 +66,16 @@ export async function commitWorkingCopyV2(
 
     const computedDepth = (typeof parentNode.depth === 'number' ? parentNode.depth : 0) + 1;
 
+    const finalizedData = (wcNode as { draftData?: unknown }).draftData ?? (wcNode as { data?: unknown }).data ?? null;
+
     const newNode: TreeNode = {
       ...wcNode,
       id: targetNodeId,
       parentId: targetParentNodeId,
       name: finalName,
+      data: finalizedData as TreeNode['data'],
+      draftData: null,
+      dialogUIState: undefined,
       updatedAt: now,
       version: (wcNode.version || 1) + 1,
       depth: computedDepth,
@@ -99,14 +104,22 @@ export async function commitWorkingCopyV2(
     finalName = createNewName(siblingNames, finalName);
   }
 
-  await coreDB.updateNode({
+  const finalizedData =
+    (wcNode as { draftData?: unknown }).draftData ?? (wcNode as { data?: unknown }).data ?? null;
+
+  const wcUpdate: Pick<TreeNode, 'id'> & Partial<TreeNode> = {
     ...wcNode,
     id: targetNodeId,
     parentId: targetParentNodeId,
     name: finalName,
+    data: finalizedData as TreeNode['data'],
+    draftData: null,
+    dialogUIState: undefined,
     updatedAt: now,
     version: (wcNode.version || 1) + 1,
-  });
+  };
+  delete (wcUpdate as { isDraft?: unknown }).isDraft;
+  await coreDB.updateNode(wcUpdate);
 
   await discardWorkingCopy(coreDB, [holder.id, wcNode.id]);
   const ok: CommitOk = { status: 'ok', nodeId: targetNodeId };
@@ -195,14 +208,15 @@ export async function commitWorkingCopy(
       };
     }
 
-    await coreDB.updateNode({
+    const wcUpdate: Pick<TreeNode, 'id'> & Partial<TreeNode> = {
       ...workingCopyNode,
       id: nodeId,
       parentId,
-      isDraft,
       updatedAt: now,
       version: workingCopyNode.version + 1,
-    });
+    };
+    delete (wcUpdate as { isDraft?: unknown }).isDraft;
+    await coreDB.updateNode(wcUpdate);
 
     await discardWorkingCopy(coreDB, [workingCopyNodeHolder.id, workingCopyNodeId]);
 

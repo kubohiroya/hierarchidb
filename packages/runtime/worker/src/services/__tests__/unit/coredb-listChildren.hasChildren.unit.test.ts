@@ -29,6 +29,8 @@ describe('CoreDB.listChildren hasChildren propagation', () => {
       parentId,
       nodeType: 'folder' as NodeType,
       name: 'Has children node',
+      data: {},
+      draftData: null,
       depth: 1,
       createdAt: Date.now(),
       updatedAt: Date.now(),
