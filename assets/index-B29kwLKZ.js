@@ -1,0 +1,1 @@
+import{S as a}from"./Indexer2-D6QiehLI.js";import{M as e}from"./index14.js";import{S as d}from"./StylerDataService-UmVxZlkj.js";import"./import-wrapper-prod-z5XDHx8J.js";import"./vendor-react-2It2lbss.js";import"./colorUtils-DTv-BVoO.js";class i extends a{constructor(){super(e("styler-metadata-db"))}}export{i as SimpleTableMetadataManager,d as StylerDataService};

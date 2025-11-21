@@ -1,0 +1,1 @@
+import{ad as o,ae as s,j as a,O as r}from"./index14.js";import"./vendor-react-2It2lbss.js";async function n(){await o();const t={},e=Promise.resolve();return{registry:t,servicesReady:e,teardown:async()=>{}}}const l=s({beforeLoad:async()=>(await n(),{uiPluginsReady:!0}),component:()=>a.jsx(r,{})});export{l as rootRoute};

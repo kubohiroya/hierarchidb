@@ -1,0 +1,1 @@
+import{A as e}from"./index-C1w1Lpkv.js";import"./index14.js";import"./vendor-react-2It2lbss.js";async function o(){return await e.getSingleton()}function a(){}export{o as getShapeAuthHandler,a as resetShapeAuthHandler};
