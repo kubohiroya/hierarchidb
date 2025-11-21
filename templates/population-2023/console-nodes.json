@@ -1,0 +1,66 @@
+{
+  "nodes": {
+    "population-folder-2023": {
+      "treeNodeId": "population-folder-2023",
+      "parentTreeNodeId": null,
+      "treeNodeType": "folder",
+      "name": "Total Population by Country",
+      "description": "World population statistics for 2023",
+      "metadata": {
+        "icon": "Public",
+        "color": "#1976d2"
+      }
+    },
+    "population-shapes-2023": {
+      "treeNodeId": "population-shapes-2023",
+      "parentTreeNodeId": "population-folder-2023",
+      "treeNodeType": "shape",
+      "name": "Country Boundaries",
+      "description": "Geographic boundaries for all countries",
+      "metadata": {
+        "featureSource": "naturalearth",
+        "featureCount": 195
+      }
+    },
+    "population-styler-2023": {
+      "treeNodeId": "population-styler-2023",
+      "parentTreeNodeId": "population-folder-2023",
+      "treeNodeType": "styler",
+      "name": "Population Color Map",
+      "description": "Color mapping for population density visualization",
+      "metadata": {
+        "styleType": "gradient",
+        "colorStops": [
+          { "value": 0, "color": "#1976d2" },
+          { "value": 1, "color": "#e53935" }
+        ]
+      }
+    },
+    "population-table-2023": {
+      "treeNodeId": "population-table-2023",
+      "parentTreeNodeId": "population-folder-2023",
+      "treeNodeType": "spreadsheet",
+      "name": "Population Data Table",
+      "description": "Detailed population statistics by country",
+      "metadata": {
+        "columns": [
+          "Country",
+          "ISO_Code",
+          "Population_2023",
+          "Population_2022",
+          "Growth_Rate",
+          "Density_per_km2",
+          "Urban_Population",
+          "Median_Age",
+          "Fertility_Rate",
+          "Life_Expectancy",
+          "GDP_per_Capita",
+          "Region"
+        ]
+      }
+    }
+  },
+  "rootNodeIds": [
+    "population-folder-2023"
+  ]
+}

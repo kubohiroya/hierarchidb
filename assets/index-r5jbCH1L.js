@@ -1,0 +1,2 @@
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/FolderDialog-7Fa2wCR6.js","assets/index14.js","assets/vendor-react-2It2lbss.js","assets/ExtensibleFolderDialog-DM6ac_ex.js","assets/index-C4WT2L8C.js","assets/DialogActions-Com9yAj4.js","assets/index-BCA6LE4Q.js"])))=>i.map(i=>d[i]);
+import{_ as o}from"./index14.js";import"./vendor-react-2It2lbss.js";async function i(){return await o(()=>import("./FolderDialog-7Fa2wCR6.js"),__vite__mapDeps([0,1,2,3,4,5,6]))}export{i as getDialogComponent};

@@ -1,0 +1,1 @@
+import{registerRouteWorkerStores as e}from"./index-SDsHyNbx.js";const r=Object.freeze(Object.defineProperty({__proto__:null,registerRouteWorkerStores:e},Symbol.toStringTag,{value:"Module"}));export{r as i};

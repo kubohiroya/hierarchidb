@@ -1,1 +1,0 @@
-import{loadTimelineEntitiesDbModule as n,registerTimelineWorkerStores as r}from"./index-amzBt7KK.js";const e={nodeType:"timeline",capabilities:{canHaveChildren:!0,canBeRoot:!1,canBeDeleted:!0,canBeRenamed:!0,canBeMoved:!0}};export{e as lifecycle,n as loadTimelineEntitiesDbModule,r as registerTimelineWorkerStores};

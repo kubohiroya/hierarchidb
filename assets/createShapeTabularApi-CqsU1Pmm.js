@@ -1,0 +1,1 @@
+import{S as r}from"./worker-DgIEjRkk.js";import{S as t}from"./Indexer2-DPnxwX33.js";import{c as s}from"../worker.js";import{S as o}from"./constants-DfoTVHd8.js";class p extends t{constructor(e=s("shape-tabular-metadata-db")){super(e)}}function c(){const a=new p;return new r(a,o)}export{p as S,c};
