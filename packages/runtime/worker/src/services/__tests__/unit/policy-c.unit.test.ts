@@ -3,7 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommandProcessor } from '../../CommandProcessor.js';
 import type { CoreDB } from '../../CoreDB.js';
 // fulltext tables removed; stub without fulltext support
-import { encodeWorkingCopyHolderName } from '../../utils/holder-encoding.js';
+const encodeWorkingCopyHolderName = (parentId: NodeId, nodeId: NodeId) =>
+  `${parentId}::${nodeId}`;
 
 describe('Policy C: block move/remove when WC exists', () => {
   const makeNode = (

@@ -27,7 +27,6 @@ import { NodeLifecycleManager } from './services/NodeLifecycleManager.js';
 import { TreeMutationService } from './services/TreeMutationService.js';
 import { TreeQueryService } from './services/TreeQueryService.js';
 import { TreeSubscriptionService } from './services/TreeSubscriptionService.js';
-import { getWorkingCopyCleaner } from './services/WorkingCopyCleaner.js';
 // No direct Comlink types should leak at this boundary
 import { WorkingCopyService } from './services/WorkingCopyService.js';
 
@@ -200,12 +199,7 @@ export class WorkerService {
 
   async initialize(): Promise<void> {
     // Initialization is handled in getSingleton; nothing to do.
-    try {
-      const cleaner = getWorkingCopyCleaner(this.coreDB);
-      await cleaner.cleanStaleEntries();
-    } catch (error) {
-      console.warn('[WorkerService] initial working copy cleanup failed', error);
-    }
+    // no-op: working copy cleaner removed (draftData is retained without TTL)
   }
 
   getQueryAPI(): TreeQueryAPI {

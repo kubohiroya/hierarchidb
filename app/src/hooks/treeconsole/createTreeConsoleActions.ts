@@ -19,6 +19,7 @@ import type { ContextAction, MaybeCP, TreeConsoleActionDeps, TreeConsoleActions 
 
 type ClipboardPayload = { nodeIds: NodeId[]; cut?: boolean };
 
+
 type GlobalWithClipboard = typeof globalThis & { __HDB_CLIPBOARD__?: ClipboardPayload };
 
 function fireCmdEvent() {
@@ -36,6 +37,20 @@ function ensureClipboard(): ClipboardPayload {
 function getOrCreateIndex(ssot: TreeConsoleSSOTEntry): DualKeyMap<NodeId, NodeId, TreeNode> {
   return ssot.nodeIndex ? ssot.nodeIndex.clone() : new DualKeyMap<NodeId, NodeId, TreeNode>();
 }
+
+const createUniqueName = (siblingNames: string[], baseName: string): string => {
+  if (!siblingNames.includes(baseName)) return baseName;
+  const escapedBase = baseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const pattern = new RegExp(`^${escapedBase}\\s*\\((\\d+)\\)$`);
+  const existingNumbers = siblingNames
+    .map((name) => {
+      const match = pattern.exec(name);
+      return match?.[1] ? parseInt(match[1], 10) : 0;
+    })
+    .filter((n) => n > 0);
+  const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 2;
+  return `${baseName} (${nextNumber})`;
+};
 
 type PreviewStepConfig = {
   stepId?: string;
@@ -359,8 +374,14 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
 
     try {
       const wcApi = await client.getWorkingCopyAPI();
+      const queryAPI = await client.getQueryAPI();
 
       const ensureWorkingCopy = async () => {
+        const existingNode = await queryAPI.getNode(targetNodeId);
+        if (!existingNode) {
+          showCommandError('INVALID_OPERATION', 'Target node does not exist');
+          return undefined;
+        }
         const existing = await wcApi.getWorkingCopy(targetNodeId);
         if (existing) return existing;
         await wcApi.createWorkingCopyFromNode(targetNodeId);
@@ -546,11 +567,18 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
       try {
         const nodeType: NodeType = 'folder' as NodeType;
         const mutationAPI = await client.getMutationAPI();
+        const queryAPI = await client.getQueryAPI();
+        const siblings = await queryAPI.listChildren(pageNodeId as NodeId);
+        const siblingNames = siblings
+          .map((n) => (typeof n?.name === 'string' ? n.name : ''))
+          .filter((n) => n);
+        const baseName = 'New Folder';
+        const resolvedName = createUniqueName(siblingNames, baseName);
         const res = await mutationAPI.createNode({
           nodeType,
           treeId: treeId as TreeId,
           parentId: pageNodeId as NodeId,
-          name: 'New Folder',
+          name: resolvedName,
         });
         if (!res?.success) {
           const err = (res as unknown as { error?: string })?.error;
@@ -658,12 +686,19 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         const newType = normalizedAction.replace('create:', '') as NodeType;
         try {
           const mutationAPI = await client.getMutationAPI();
+          const queryAPI = await client.getQueryAPI();
+          const siblings = await queryAPI.listChildren(targetNodeId);
+          const siblingNames = siblings
+            .map((n) => (typeof n?.name === 'string' ? n.name : ''))
+            .filter((n) => n);
           const displayName = newType.charAt(0).toUpperCase() + newType.slice(1);
+          const baseName = `New ${displayName}`;
+          const resolvedName = createUniqueName(siblingNames, baseName);
           const res = await mutationAPI.createNode({
             nodeType: newType,
             treeId: treeId as TreeId,
             parentId: targetNodeId,
-            name: `New ${displayName}`,
+            name: resolvedName,
           });
           if (!res?.success) {
             const err = (res as unknown as { error?: string })?.error;
@@ -711,7 +746,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         } catch (error) {
           console.error('Context create failed:', error);
           showCommandError('UNKNOWN_ERROR');
-      }
+        }
         return;
       }
 

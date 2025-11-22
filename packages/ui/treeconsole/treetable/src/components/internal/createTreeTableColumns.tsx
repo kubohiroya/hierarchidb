@@ -80,6 +80,14 @@ export interface ColumnBuilderParams {
     updated: string;
     removed: string;
   };
+  draftChipLabels: {
+    self: string;
+    descendant: string;
+  };
+  draftFlags: {
+    hasDraft: Set<NodeId>;
+    hasDescendantDraft: (nodeId: NodeId) => boolean;
+  };
   validationMessages: {
     invalidName: string;
     invalidDescription: string;
@@ -461,16 +469,25 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                   {node.name}
                 </Box>
                 <SparkleAnimation showSparkle={showSparkle} />
-                {Boolean(node.isDraft) && (
+                {params.draftFlags.hasDraft.has(node.id as NodeId) ? (
                   <Chip
-                    label="Draft"
+                    label={params.draftChipLabels.self}
+                    size="small"
+                    color="error"
+                    variant="filled"
+                    sx={{ height: 20 }}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ) : params.draftFlags.hasDescendantDraft(node.id as NodeId) ? (
+                  <Chip
+                    label={params.draftChipLabels.descendant}
                     size="small"
                     color="warning"
                     variant="outlined"
                     sx={{ height: 20 }}
                     onClick={(e) => e.stopPropagation()}
                   />
-                )}
+                ) : null}
                 {extractTags(node).map((tag, idx) => (
                   <Chip
                     key={`${node.id}:tag:${idx}`}

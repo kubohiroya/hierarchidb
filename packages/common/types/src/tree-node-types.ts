@@ -69,9 +69,6 @@ export type PersistedTreeNode<
   descendantCount?: number;
   isEstimated?: boolean;
   references?: NodeId[];
-  holderType?: 'workingCopy' | 'trash';
-  holderTargetId?: NodeId;
-  holderMetaParentId?: NodeId;
   originalName?: string;
   originalParentId?: NodeId;
   removedAt?: Timestamp;

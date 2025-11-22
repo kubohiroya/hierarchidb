@@ -122,7 +122,10 @@ describe('useWorkingCopy (create mode)', () => {
     await waitFor(() => result.current.loading === false);
 
     expect(wcAPI.getWorkingCopy).toHaveBeenCalledWith('wc-missing');
-    expect(wcAPI.createDraftWorkingCopy).toHaveBeenCalledWith('folder', 'parent-2', { name: '' });
+    expect(wcAPI.createDraftWorkingCopy).toHaveBeenCalledWith('folder', 'parent-2', {
+      id: 'wc-missing',
+      name: '',
+    });
     expect(result.current.workingCopy?.treeNodeId).toBe('draft-parent-2');
     expect(result.current.error).toBeNull();
   });

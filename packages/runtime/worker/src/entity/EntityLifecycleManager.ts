@@ -11,17 +11,10 @@ import type {
 import type { Dexie, Table } from 'dexie';
 import type { CoreDB } from '../services/CoreDB.js';
 import type { CommandEnvelope } from '../services/command-types.js';
-import { decodeWorkingCopyHolderName } from '../services/utils/holder-encoding.js';
 import { PeerEntityHandler } from './handlers/PeerEntityHandler.js';
 import { storeRegistry } from './store-registry.js';
 import { syncPeerDataFromNode } from '../services/peerDataRegistry.js';
 
-type CreateWorkingCopyPayload = {
-  originalId: NodeId;
-  workingCopyId: NodeId;
-};
-
-type CreateWorkingCopyEnvelope = CommandEnvelope<'createWorkingCopy', CreateWorkingCopyPayload>;
 type DiscardWorkingCopyEnvelope = CommandEnvelope<'discardWorkingCopy', DiscardWorkingCopyPayload>;
 type CommitWorkingCopyEnvelope = CommandEnvelope<'commitWorkingCopy', CommitWorkingCopyPayload>;
 type DuplicateNodesEnvelope = CommandEnvelope<'duplicateNodes', DuplicateNodesPayload>;
@@ -149,8 +142,6 @@ export class EntityLifecycleManager {
 
   async handleCommand(envelope: CommandEnvelope<string, unknown>): Promise<void> {
     switch (envelope.kind) {
-      case 'createWorkingCopy':
-        return this.onCreateWorkingCopy(envelope as CreateWorkingCopyEnvelope);
       case 'discardWorkingCopy':
         return this.onDiscardWorkingCopy(envelope as DiscardWorkingCopyEnvelope);
       case 'commitWorkingCopy':
@@ -163,22 +154,6 @@ export class EntityLifecycleManager {
         return this.onImportNodes(envelope as ImportNodesEnvelope);
       default:
         return;
-    }
-  }
-
-  async onCreateWorkingCopy(env: CreateWorkingCopyEnvelope): Promise<void> {
-    try {
-      const { originalId, workingCopyId } = env.payload;
-      if (!originalId || !workingCopyId) return;
-      const node = await this.coreDB.getNode(originalId);
-      const nodeType = node?.nodeType;
-      if (!nodeType) return;
-      const store = storeRegistry.getPeer(nodeType);
-      if (!store) return;
-      const peer = new PeerEntityHandler(store);
-      await peer.copyPeer(originalId, workingCopyId);
-    } catch {
-      // Lifecycle runs best-effort; swallow errors to avoid breaking callers.
     }
   }
 
@@ -205,15 +180,6 @@ export class EntityLifecycleManager {
       const wcId = env.payload.workingCopyId;
       const wcNode = await this.coreDB.getNode(wcId);
       if (!wcNode) return;
-      const holder = wcNode.parentId ? await this.coreDB.getNode(wcNode.parentId) : undefined;
-      if (!holder) return;
-
-      let targetId: NodeId | undefined = holder.holderTargetId;
-      if (!targetId && holder.name) {
-        const decoded = decodeWorkingCopyHolderName(holder.name);
-        targetId = decoded.targetNodeId;
-      }
-      if (!targetId) return;
 
       const nodeType = wcNode.nodeType;
       if (!nodeType) return;
@@ -221,9 +187,9 @@ export class EntityLifecycleManager {
       const store = storeRegistry.getPeer(nodeType);
       if (!store) return;
       const peer = new PeerEntityHandler(store);
-      await peer.upsertPeer(targetId, wcId);
+      await peer.upsertPeer(wcId, wcId);
       await peer.deletePeer(wcId);
-      const canonicalNode = await this.coreDB.getNode(targetId);
+      const canonicalNode = await this.coreDB.getNode(wcId);
       if (canonicalNode) {
         await syncPeerDataFromNode(canonicalNode);
       }

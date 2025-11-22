@@ -129,11 +129,8 @@ export class TreeMutationService implements TreeMutationAPI {
     description?: string;
   }): Promise<{ success: true; nodeId: NodeId } | { success: false; error: string }> {
     try {
-      // New semantics: create a draft working copy under workingCopy root and return its wc nodeId
-      const { createDraftWorkingCopyGetOrCreate } = await import(
-        './WorkingCopyTreeNodeOperations.js'
-      );
-      const { wcNodeId } = await createDraftWorkingCopyGetOrCreate(
+      const { createDraftWorkingCopy } = await import('./WorkingCopyTreeNodeOperations.js');
+      const wcNodeId = await createDraftWorkingCopy(
         this.coreDB,
         params.treeId,
         params.parentId,

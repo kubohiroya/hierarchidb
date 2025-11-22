@@ -1,44 +1,21 @@
 import { type NodeId, type Timestamp, type TreeNode } from '@hierarchidb/common-types';
 import type { CoreDB } from '../CoreDB.js';
 
-export async function getWorkingCopy(
-  coreDB: CoreDB,
-  nodeId: NodeId
-): Promise<TreeNode | undefined> {
-  const direct = await coreDB.nodes.get(nodeId);
-  if (direct) {
-    if (direct.holderType === 'workingCopy') {
-      const child = await coreDB.nodes.where('parentId').equals(direct.id).first();
-      if (child) {
-        return child;
-      }
-    }
-
-    if (direct.parentId) {
-      const parent = await coreDB.nodes.get(direct.parentId);
-      if (parent?.holderType === 'workingCopy') {
-        return direct;
-      }
-    }
-  }
-
-  const holder = await coreDB.nodes
-    .where('[holderType+holderTargetId]')
-    .equals(['workingCopy', nodeId])
-    .first();
-  if (!holder) return undefined;
-  const child = await coreDB.nodes.where('parentId').equals(holder.id).first();
-  return child ?? undefined;
+export async function getDraft(coreDB: CoreDB, nodeId: NodeId): Promise<TreeNode | undefined> {
+  const node = await coreDB.nodes.get(nodeId);
+  if (!node) return undefined;
+  if (node.draftData === null || node.draftData === undefined) return undefined;
+  return node as TreeNode;
 }
 
-export async function updateWorkingCopy(
+export async function updateDraft(
   coreDB: CoreDB,
   nodeId: NodeId,
   updates: Partial<TreeNode>
 ): Promise<void> {
-  const existing = await getWorkingCopy(coreDB, nodeId);
+  const existing = await getDraft(coreDB, nodeId);
   if (!existing) {
-    throw new Error('Working copy not found');
+    throw new Error('Draft not found');
   }
 
   const timestamp = Date.now() as Timestamp;
@@ -47,19 +24,22 @@ export async function updateWorkingCopy(
     ...updates,
     updatedAt: timestamp,
     lastTouchedAt: timestamp,
-    data: updates.data ?? existing.data ?? null,
-    draftData: updates.draftData ?? existing.draftData ?? existing.data ?? null,
+    // Keep committed data as-is; stash incoming edits into draftData.
+    data: existing.data ?? null,
+    draftData:
+      updates.draftData ??
+      (updates.data as TreeNode['draftData'] | undefined) ??
+      existing.draftData ??
+      existing.data ??
+      null,
   };
 
   await coreDB.nodes.put(updated);
-  if (updated.parentId) {
-    await coreDB.nodes.update(updated.parentId, { lastTouchedAt: timestamp });
-  }
 }
 
-export async function checkWorkingCopyConflict(coreDB: CoreDB, nodeId: NodeId): Promise<boolean> {
-  const workingCopy = await getWorkingCopy(coreDB, nodeId);
-  if (!workingCopy) {
+export async function checkDraftConflict(coreDB: CoreDB, nodeId: NodeId): Promise<boolean> {
+  const draft = await getDraft(coreDB, nodeId);
+  if (!draft) {
     return false;
   }
 
@@ -68,6 +48,6 @@ export async function checkWorkingCopyConflict(coreDB: CoreDB, nodeId: NodeId): 
     return false;
   }
 
-  const originalVersion = workingCopy.version || 1;
+  const originalVersion = draft.version || 1;
   return currentNode.version > originalVersion;
 }

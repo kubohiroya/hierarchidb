@@ -1,9 +1,21 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NodeId, TreeId, TreeNode, NodeType } from '@hierarchidb/common-types';
 import type { WorkingCopyAPI, TreeQueryAPI } from '@hierarchidb/common-api';
 import type { WorkerClientRef } from '@hierarchidb/runtime-client';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import { Remote } from 'comlink';
+
+// Minimal debounce to avoid pulling additional deps in the SDK hook.
+const debounce = <T extends (...args: any[]) => void>(fn: T, wait: number) => {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  return (...args: Parameters<T>) => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => {
+      timer = null;
+      fn(...args);
+    }, wait);
+  };
+};
 
 export interface WorkingCopyData {
   treeNodeId: NodeId;
@@ -51,10 +63,13 @@ export function useDialogWorkingCopy({
   const isRecord = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null;
 
-  const toWorkingCopyData = useCallback((node: Partial<TreeNode> & { data?: unknown }): WorkingCopyData => {
+  const toWorkingCopyData = useCallback((node: Partial<TreeNode> & { data?: unknown; draftData?: unknown }): WorkingCopyData => {
     const treeNodeId = (typeof node?.id === 'string' ? node.id : nodeId) as NodeId;
     const description = typeof node?.description === 'string' ? node.description : undefined;
-    const data = isRecord(node.data) ? node.data : undefined;
+    const draft = isRecord((node as { draftData?: unknown }).draftData)
+      ? ((node as { draftData?: Record<string, unknown> }).draftData as Record<string, unknown>)
+      : undefined;
+    const data = draft ?? (isRecord(node.data) ? node.data : undefined);
     return {
       treeNodeId,
       name: typeof node?.name === 'string' ? node.name : '',
@@ -108,6 +123,18 @@ export function useDialogWorkingCopy({
               setOriginalCopy(copy);
               return;
             }
+            if (!parentId) {
+              throw new Error('Working copy for create target not found');
+            }
+            // Recreate draft using the expected nodeId to keep routing consistent
+            const wcNode = await wcAPI.createDraftWorkingCopy(nodeType as NodeType, parentId, {
+              id: nodeId,
+              name: '',
+            } as Partial<TreeNode>);
+            const copy = toWorkingCopyData(wcNode);
+            setWorkingCopy(copy);
+            setOriginalCopy(copy);
+            return;
           }
 
           if (parentId) {
@@ -136,12 +163,34 @@ export function useDialogWorkingCopy({
     return JSON.stringify(workingCopy) !== JSON.stringify(originalCopy);
   }, [workingCopy, originalCopy]);
 
-  const updateWorkingCopy = useCallback((data: Partial<WorkingCopyData>) => {
-    setWorkingCopy(prev => {
-      if (!prev) return null;
-      return { ...prev, ...data } satisfies WorkingCopyData;
-    });
-  }, []);
+  const persistWorkingCopy = useMemo(
+    () =>
+      debounce(async (next: WorkingCopyData) => {
+        try {
+          const { wc: wcAPI } = await getClient();
+          await wcAPI.updateWorkingCopy(next.treeNodeId, {
+            name: next.name,
+            description: next.description,
+            draftData: next.data as Record<string, unknown> | undefined,
+          } as Partial<TreeNode>);
+        } catch (err) {
+          console.warn('[useWorkingCopy] persist update failed', err);
+        }
+      }, 150),
+    [getClient]
+  );
+
+  const updateWorkingCopy = useCallback(
+    (data: Partial<WorkingCopyData>) => {
+      setWorkingCopy((prev) => {
+        if (!prev) return null;
+        const merged = { ...prev, ...data } satisfies WorkingCopyData;
+        persistWorkingCopy(merged);
+        return merged;
+      });
+    },
+    [persistWorkingCopy]
+  );
 
   const saveWorkingCopy = useCallback(async (data?: Partial<WorkingCopyData>): Promise<NodeId> => {
     if (!workingCopy) throw new Error('No working copy to save');
@@ -169,7 +218,9 @@ export function useDialogWorkingCopy({
       const holder = await query.getNode(wcNode.parentId);
       const targetNodeId: NodeId | undefined = holder?.holderTargetId;
 
-      const res = await wcAPI.commitWorkingCopy(finalData.treeNodeId);
+      const res = await wcAPI.commitWorkingCopy(finalData.treeNodeId, {
+        onNameConflict: 'auto-rename',
+      });
 
       if (res.status === 'ok') {
         const committedNodeId = (res.node?.id as NodeId | undefined)
@@ -202,12 +253,13 @@ export function useDialogWorkingCopy({
   }, [saveWorkingCopy]);
 
   const discardWorkingCopy = useCallback(async () => {
-    if (!workingCopy) return;
+    const targetId = workingCopy?.treeNodeId ?? nodeId;
+    if (!targetId) return;
     const { wc: wcAPI } = await getClient();
-    await wcAPI.discardWorkingCopy(workingCopy.treeNodeId);
+    await wcAPI.discardWorkingCopy(targetId);
     setWorkingCopy(null);
     setOriginalCopy(null);
-  }, [workingCopy, getClient]);
+  }, [workingCopy, nodeId, getClient]);
 
   useEffect(() => {
     workingCopyIdRef.current = workingCopy?.treeNodeId ?? null;

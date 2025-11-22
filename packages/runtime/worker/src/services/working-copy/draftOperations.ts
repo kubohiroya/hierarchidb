@@ -7,211 +7,86 @@ import {
   type Timestamp,
 } from '@hierarchidb/common-types';
 import type { CoreDB } from '../CoreDB.js';
-import { encodeWorkingCopyHolderName } from '../utils/holder-encoding.js';
 import { createNewName, getChildNames } from './nameUtilities.js';
 
-export function createWorkingCopyNodeHolderParentId(treeId: TreeId) {
-  return `${treeId}:workingCopy` as NodeId;
-}
-
-export function createWorkingCopyNodeHolderName(parentId: NodeId, nodeId: NodeId) {
-  return [parentId, nodeId].join('\t') as NodeId;
-}
-
-export async function createNewDraftWorkingCopy(
+/**
+ * Create a draft for a new node. The draft lives directly on the node record.
+ */
+export async function createDraftWorkingCopy(
   coreDB: CoreDB,
   treeId: TreeId,
   parentId: NodeId,
   nodeType: NodeType,
-  baseName: string
+  baseName: string,
+  fixedId?: NodeId
 ): Promise<NodeId> {
-  const workingCopyNodeHolderParentId = createWorkingCopyNodeHolderParentId(treeId);
-  const workingCopyNodeHolderId = generateNodeId();
-  const workingCopyNodeId = generateNodeId();
-  const targetNodeId = generateNodeId();
-  const holderName = encodeWorkingCopyHolderName(parentId, targetNodeId);
-  const now = Date.now() as Timestamp;
+  return await coreDB.runInTx('rw', ['nodes'], async () => {
+    const siblingNames = await getChildNames(coreDB, parentId);
+    const resolvedBaseName = createNewName(siblingNames, baseName);
+    const wcNodeId = fixedId ?? generateNodeId();
+    const now = Date.now() as Timestamp;
+    const parent = await coreDB.nodes.get(parentId);
+    const depth = typeof parent?.depth === 'number' ? (parent.depth ?? 0) + 1 : 1;
 
-  try {
-    const existing = await coreDB.nodes
-      .where('[parentId+name]')
-      .equals([workingCopyNodeHolderParentId, holderName])
-      .first();
-    if (existing) {
-      return (existing.id as NodeId) || workingCopyNodeHolderId;
-    }
-
-    await coreDB.transaction('rw', coreDB.nodes, async () => {
-  const workingCopyNodeHolder: TreeNode = {
-    parentId: workingCopyNodeHolderParentId,
-    id: workingCopyNodeHolderId,
-    name: holderName,
-    nodeType,
-    depth: 0,
-    createdAt: now,
-    updatedAt: now,
-    version: 1,
-    holderType: 'workingCopy',
-    holderTargetId: targetNodeId,
-    holderMetaParentId: parentId,
-    lastTouchedAt: now,
-    data: null,
-    draftData: null,
-  };
-  const workingCopyNode: TreeNode = {
-    parentId: workingCopyNodeHolderId,
-    id: workingCopyNodeId,
-    nodeType,
-    name: baseName,
-    data: null,
-    draftData: { name: baseName },
-    depth: 1,
-    createdAt: now,
-    updatedAt: now,
-        version: 1,
-        lastTouchedAt: now,
-      };
-      await coreDB.nodes.bulkPut([workingCopyNodeHolder, workingCopyNode]);
-    });
-    return workingCopyNodeHolderId;
-  } catch (err: unknown) {
-    const isConstraintError =
-      typeof err === 'object' &&
-      err !== null &&
-      ((
-        'name' in err &&
-        typeof (err as { name?: unknown }).name === 'string' &&
-        (err as { name: string }).name === 'ConstraintError'
-      ) || /Constraint/i.test(String((err as { message?: unknown }).message)));
-    if (isConstraintError) {
-      const holder = await coreDB.nodes
-        .where('[parentId+name]')
-        .equals([workingCopyNodeHolderParentId, holderName])
-        .first();
-      if (holder) return holder.id as NodeId;
-    }
-    throw err;
-  }
-}
-
-export async function createDraftWorkingCopyGetOrCreate(
-  coreDB: CoreDB,
-  treeId: TreeId,
-  parentId: NodeId,
-  nodeType: NodeType,
-  baseName: string
-): Promise<{ wcHolderId: NodeId; wcNodeId: NodeId; returnedExisting: boolean }> {
-  const siblingNames = await getChildNames(coreDB, parentId);
-  const resolvedBaseName = createNewName(siblingNames, baseName);
-
-  const workingCopyRootId = createWorkingCopyNodeHolderParentId(treeId);
-  const targetNodeId = generateNodeId();
-  const holderName = encodeWorkingCopyHolderName(parentId, targetNodeId);
-
-  const existing = await coreDB.nodes
-    .where('[parentId+name]')
-    .equals([workingCopyRootId, holderName])
-    .first();
-
-  if (existing) {
-    const patchedExisting: TreeNode = { ...existing };
-    if (
-      !patchedExisting.holderType ||
-      !patchedExisting.holderTargetId ||
-      !patchedExisting.holderMetaParentId
-    ) {
-      try {
-        const { decodeWorkingCopyHolderName } = await import('../utils/holder-encoding.js');
-        const parsed = decodeWorkingCopyHolderName(existing.name);
-        patchedExisting.holderType = 'workingCopy';
-        patchedExisting.holderTargetId = parsed.targetNodeId;
-        patchedExisting.holderMetaParentId = parsed.targetParentNodeId;
-        await coreDB.nodes.put(patchedExisting);
-      } catch {
-        // ignore
+    // If a fixed ID is provided and the node already exists, reuse it as the draft.
+    if (fixedId) {
+      const existing = await coreDB.nodes.get(fixedId);
+      if (existing) {
+        const needsDraft =
+          (existing as { draftData?: unknown }).draftData === null ||
+          typeof (existing as { draftData?: unknown }).draftData === 'undefined';
+        if (needsDraft) {
+          await coreDB.nodes.update(fixedId, {
+            name: resolvedBaseName,
+            draftData: { ...(existing as { draftData?: Record<string, unknown> | null }).draftData ?? {}, name: resolvedBaseName },
+            updatedAt: now,
+            lastTouchedAt: now,
+          });
+        } else {
+          await coreDB.nodes.update(fixedId, { lastTouchedAt: now, updatedAt: now });
+        }
+        return fixedId;
       }
     }
 
-    const children = await coreDB.nodes.where('parentId').equals(existing.id).toArray();
-    let child = Array.isArray(children) ? children[0] : undefined;
-    if (!child) {
-      const wcNodeId = generateNodeId();
-      const now = Date.now() as Timestamp;
-      const fallbackName = resolvedBaseName;
-      await coreDB.createNode({
-        id: wcNodeId,
-        parentId: existing.id as NodeId,
-        nodeType,
-        name: fallbackName,
-        data: { name: fallbackName },
-        draftData: { name: fallbackName },
-        depth: 1,
-        createdAt: now,
-        updatedAt: now,
-        version: 1,
-        lastTouchedAt: now,
-      });
-      const arr = await coreDB.nodes.where('parentId').equals(existing.id).toArray();
-      child = Array.isArray(arr) ? arr[0] : undefined;
-    }
-    if (child?.id) {
-      await touchWorkingCopyNodes(
-        coreDB,
-        existing.id as NodeId,
-        child.id as NodeId,
-        Date.now() as Timestamp
-      );
-    }
-    return {
-      wcHolderId: existing.id as NodeId,
-      wcNodeId: (child?.id as NodeId) || ('' as NodeId),
-      returnedExisting: true,
-    };
-  }
+    await coreDB.createNode({
+      id: wcNodeId,
+      parentId,
+      nodeType,
+      name: resolvedBaseName,
+      data: null,
+      draftData: { name: resolvedBaseName },
+      depth,
+      createdAt: now,
+      updatedAt: now,
+      version: 1,
+      lastTouchedAt: now,
+    });
 
-  const wcHolderId = await createNewDraftWorkingCopy(
-    coreDB,
-    treeId,
-    parentId,
-    nodeType,
-    resolvedBaseName
-  );
-  const children = await coreDB.nodes.where('parentId').equals(wcHolderId).toArray();
-  const child = Array.isArray(children) ? children[0] : undefined;
-  if (child?.id) {
-    await touchWorkingCopyNodes(coreDB, wcHolderId, child.id as NodeId, Date.now() as Timestamp);
-  }
-  return { wcHolderId, wcNodeId: (child?.id as NodeId) || ('' as NodeId), returnedExisting: false };
+    return wcNodeId;
+  });
 }
 
-export async function touchWorkingCopyNodes(
+export async function touchDraftNodeIds(
   coreDB: CoreDB,
-  holderId: NodeId,
-  wcNodeId: NodeId,
+  nodeIds: NodeId[],
   timestamp: Timestamp = Date.now() as Timestamp
 ): Promise<void> {
-  await Promise.all([
-    coreDB.nodes.update(holderId, { lastTouchedAt: timestamp }),
-    coreDB.nodes.update(wcNodeId, { lastTouchedAt: timestamp }),
-  ]);
+  await Promise.all(nodeIds.map((id) => coreDB.nodes.update(id, { lastTouchedAt: timestamp })));
 }
 
-export async function touchWorkingCopyByRecord(
+export async function touchDraftNode(
   coreDB: CoreDB,
-  wcNode: TreeNode,
+  node: TreeNode,
   timestamp: Timestamp = Date.now() as Timestamp
 ): Promise<void> {
-  const holderId = wcNode.parentId as NodeId | undefined;
-  if (!holderId) return;
-  await touchWorkingCopyNodes(coreDB, holderId, wcNode.id as NodeId, timestamp);
+  await touchDraftNodeIds(coreDB, [node.id], timestamp);
 }
 
-export async function touchWorkingCopyById(
+export async function touchDraftById(
   coreDB: CoreDB,
   wcNodeId: NodeId,
   timestamp: Timestamp = Date.now() as Timestamp
 ): Promise<void> {
-  const node = await coreDB.nodes.get(wcNodeId);
-  if (!node) return;
-  await touchWorkingCopyByRecord(coreDB, node as TreeNode, timestamp);
+  await touchDraftNodeIds(coreDB, [wcNodeId], timestamp);
 }

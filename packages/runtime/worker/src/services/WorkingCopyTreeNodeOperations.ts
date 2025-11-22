@@ -1,11 +1,8 @@
 export {
-  createDraftWorkingCopyGetOrCreate,
-  createNewDraftWorkingCopy,
-  createWorkingCopyNodeHolderName,
-  createWorkingCopyNodeHolderParentId,
-  touchWorkingCopyById,
-  touchWorkingCopyByRecord,
-  touchWorkingCopyNodes,
+  createDraftWorkingCopy,
+  touchDraftById,
+  touchDraftNode,
+  touchDraftNodeIds,
 } from './working-copy/draftOperations.js';
 
 export { createNewName, getChildNames } from './working-copy/nameUtilities.js';
@@ -13,18 +10,13 @@ export { createNewName, getChildNames } from './working-copy/nameUtilities.js';
 export { createWorkingCopyFromNode } from './working-copy/editOperations.js';
 
 export {
-  commitWorkingCopy,
-  commitWorkingCopyV2,
+  commitWorkingCopy as commitDraft,
   type CommitOk,
   type CommitConflict,
-  type CommitResultV2,
+  type CommitResult,
   type NameConflict,
 } from './working-copy/commitOperations.js';
 
 export { discardWorkingCopy } from './working-copy/cleanupOperations.js';
 
-export {
-  checkWorkingCopyConflict,
-  getWorkingCopy,
-  updateWorkingCopy,
-} from './working-copy/lookupOperations.js';
+export { checkDraftConflict, getDraft, updateDraft } from './working-copy/lookupOperations.js';

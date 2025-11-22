@@ -11,22 +11,16 @@ import type {
 import { resolveDefaultNodeName } from '../utils/default-node-name.js';
 import type { CommandProcessor } from './CommandProcessor.js';
 import type { CoreDB } from './CoreDB.js';
-import { getWorkingCopyCleaner, type WorkingCopyCleaner } from './WorkingCopyCleaner.js';
 import {
-  createDraftWorkingCopyGetOrCreate,
+  createDraftWorkingCopy,
   createWorkingCopyFromNode as createWcFromNode,
   discardWorkingCopy as discardWc,
-  getWorkingCopy as getWc,
-  touchWorkingCopyByRecord,
-  updateWorkingCopy as updateWc,
+  getDraft as getWc,
+  touchDraftNode as touchDraft,
+  updateDraft as updateWc,
 } from './WorkingCopyTreeNodeOperations.js';
 import { syncPeerDataFromNode } from './peerDataRegistry.js';
-import {
-  commitWorkingCopyManually,
-  getWorkingCopyContext,
-  mapCommandProcessorResult,
-  mapCommitResultV2,
-} from './working-copy/commitCoordinator.js';
+import { WorkerErrorCode } from './command-types.js';
 
 /**
  * WorkingCopyService - minimal implementation backed by EphemeralDB/CoreDB
@@ -34,33 +28,25 @@ import {
  * Note: This service returns only serializable data. It does not expose ProxyMarked types.
  */
 export class WorkingCopyService implements WorkingCopyAPI {
-  private readonly cleaner: WorkingCopyCleaner;
-
   constructor(
     private coreDB: CoreDB,
     _ephemeralDB: unknown,
     private commandProcessor?: CommandProcessor
-  ) {
-    this.cleaner = getWorkingCopyCleaner(this.coreDB);
-    this.cleaner.start();
-    this.cleaner
-      .cleanStaleEntries()
-      .catch((error) => console.warn('[WorkingCopyCleaner] initial sweep failed', error));
-  }
+  ) {}
 
   async createDraftWorkingCopy(
     nodeType: NodeType,
     parentId: NodeId,
     initialData?: Partial<TreeNode>
   ): Promise<TreeNode> {
-    // Use holder-based create (get-or-create)
     const treeId = parentId.split(':')[0] as TreeId;
-    const { wcNodeId } = await createDraftWorkingCopyGetOrCreate(
+    const wcNodeId = await createDraftWorkingCopy(
       this.coreDB,
       treeId,
       parentId,
       nodeType,
-      initialData?.name?.trim() || resolveDefaultNodeName(nodeType)
+      initialData?.name?.trim() || resolveDefaultNodeName(nodeType),
+      (initialData as { id?: NodeId } | undefined)?.id
     );
     const wc = await this.coreDB.nodes.get(wcNodeId);
     if (!wc) throw new Error('Working copy creation failed');
@@ -78,7 +64,7 @@ export class WorkingCopyService implements WorkingCopyAPI {
   async getWorkingCopy(nodeId: NodeId): Promise<TreeNode | undefined> {
     const wc = await getWc(this.coreDB, nodeId);
     if (wc) {
-      await touchWorkingCopyByRecord(this.coreDB, wc as TreeNode);
+      await touchDraft(this.coreDB, wc as TreeNode);
     }
     return wc ?? undefined;
   }
@@ -94,15 +80,9 @@ export class WorkingCopyService implements WorkingCopyAPI {
   }
 
   async listWorkingCopies(): Promise<TreeNode[]> {
-    // Dev path: scan holders and return children
+    // Drafts are nodes with draftData present
     const allNodes = await this.coreDB.nodes.toArray();
-    const holders = allNodes.filter((node) => node.holderType === 'workingCopy');
-    const children: TreeNode[] = [];
-    for (const holder of holders) {
-      const child = allNodes.find((node) => node.parentId === holder.id);
-      if (child) children.push(child);
-    }
-    return children;
+    return allNodes.filter((node) => node.draftData !== null && node.draftData !== undefined);
   }
 
   async hasWorkingCopy(nodeId: NodeId): Promise<boolean> {
@@ -114,45 +94,34 @@ export class WorkingCopyService implements WorkingCopyAPI {
     workingCopyId: NodeId,
     options?: CommitWorkingCopyOptions
   ): Promise<CommitResult> {
-    const context = await getWorkingCopyContext(this.coreDB, workingCopyId);
     const conflictPolicy: OnNameConflict = options?.onNameConflict ?? 'auto-rename';
-
-    if (this.commandProcessor) {
-      try {
-        const env = this.commandProcessor.createEnvelope('commitWorkingCopy', {
-          workingCopyId,
-          onNameConflict: conflictPolicy,
-        });
-        const res = await this.commandProcessor.processCommand(env);
-        const mapped = await mapCommandProcessorResult(this.coreDB, res, context);
-        if (mapped) {
-          return mapped;
-        }
-      } catch {
-        // fall back to direct path when the command processor path fails
-      }
+    const { commitDraft } = await import('./WorkingCopyTreeNodeOperations.js');
+    const result = await commitDraft(this.coreDB, workingCopyId, conflictPolicy);
+    if (result.status === 'ok') {
+      return { status: 'ok', nodeId: result.nodeId, autoRenameTo: result.autoRenameTo };
     }
-
-    try {
-      const { commitWorkingCopyV2 } = await import('./WorkingCopyTreeNodeOperations.js');
-      const v2Result = await commitWorkingCopyV2(this.coreDB, workingCopyId, conflictPolicy);
-      return await mapCommitResultV2(this.coreDB, v2Result, context);
-    } catch {
-      // Continue to manual fallback below if v2 path throws (e.g. metadata missing)
+    if (result.status === 'NAME_CONFLICT') {
+      return {
+        status: 'NAME_CONFLICT',
+        suggestedName: result.suggestedName,
+      };
     }
-
-    return commitWorkingCopyManually(this.coreDB, workingCopyId, context, conflictPolicy);
+    return {
+      status: 'COMMIT_CONFLICT',
+      originalVersion: result.originalVersion,
+      wcVersion: result.wcVersion,
+    };
   }
 
   async discardWorkingCopy(nodeId: NodeId): Promise<void> {
     const wc = await getWc(this.coreDB, nodeId);
     if (!wc) return;
-    await discardWc(this.coreDB, [wc.parentId, nodeId]);
+    await discardWc(this.coreDB, nodeId);
   }
 
   async discardAllWorkingCopies(): Promise<number> {
     const list = await this.listWorkingCopies();
-    for (const wc of list) await discardWc(this.coreDB, [wc.parentId as NodeId, wc.id as NodeId]);
+    for (const wc of list) await discardWc(this.coreDB, wc.id as NodeId);
     return list.length;
   }
 
@@ -194,7 +163,7 @@ export class WorkingCopyService implements WorkingCopyAPI {
     const now = Date.now();
     return {
       total: list.length,
-      drafts: 0,
+      drafts: list.length,
       edits: list.length,
       oldestTimestamp: list.reduce((min, x) => Math.min(min, x.updatedAt), now),
       newestTimestamp: list.reduce((max, x) => Math.max(max, x.updatedAt), 0),
@@ -204,8 +173,7 @@ export class WorkingCopyService implements WorkingCopyAPI {
   async cleanupOldWorkingCopies(olderThan: number): Promise<number> {
     const list = await this.listWorkingCopies();
     const toDelete = list.filter((x) => x.updatedAt < olderThan);
-    for (const wc of toDelete)
-      await discardWc(this.coreDB, [wc.parentId as NodeId, wc.id as NodeId]);
+    for (const wc of toDelete) await discardWc(this.coreDB, wc.id as NodeId);
     return toDelete.length;
   }
 }

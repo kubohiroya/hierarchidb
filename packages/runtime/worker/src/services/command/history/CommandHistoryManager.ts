@@ -49,9 +49,6 @@ export class CommandHistoryManager {
       previousOriginalName?: string;
       previousOriginalParentId?: NodeId;
       previousRemovedAt?: Timestamp;
-      previousHolderType?: TreeNode['holderType'];
-      previousHolderTargetId?: NodeId;
-      previousHolderMetaParentId?: NodeId;
       trashRootId: NodeId;
       trashRemovedAt: Timestamp;
       trashName: string;
@@ -61,7 +58,6 @@ export class CommandHistoryManager {
     CommandId,
     {
       workingCopy: TreeNode;
-      holder: TreeNode;
       committedNode?: TreeNode;
     }
   >();
@@ -261,9 +257,6 @@ export class CommandHistoryManager {
       previousOriginalName?: string;
       previousOriginalParentId?: NodeId;
       previousRemovedAt?: Timestamp;
-      previousHolderType?: TreeNode['holderType'];
-      previousHolderTargetId?: NodeId;
-      previousHolderMetaParentId?: NodeId;
       trashRootId: NodeId;
       trashRemovedAt: Timestamp;
       trashName: string;
@@ -282,7 +275,6 @@ export class CommandHistoryManager {
     commandId: CommandId,
     snapshot: {
       workingCopy: TreeNode;
-      holder: TreeNode;
       committedNode?: TreeNode;
     }
   ): void {
@@ -291,7 +283,6 @@ export class CommandHistoryManager {
     }
     this.preCommitWorkingCopyState.set(commandId, {
       workingCopy: { ...snapshot.workingCopy },
-      holder: { ...snapshot.holder },
       committedNode: snapshot.committedNode ? { ...snapshot.committedNode } : undefined,
     });
   }
@@ -385,27 +376,24 @@ export class CommandHistoryManager {
 
       case 'moveToTrash': {
         const commandId = command.commandId as CommandId;
-        const entries = this.preMoveToTrashState.get(commandId) || [];
-        for (const entry of entries) {
-          const node = await this.deps.coreDB.getNode?.(entry.nodeId);
-          if (!node) {
-            continue;
-          }
-          await this.deps.coreDB.updateNode?.({
-            ...node,
-            parentId: entry.previousParentId,
-            name: entry.previousName,
-            originalName: entry.previousOriginalName,
-            originalParentId: entry.previousOriginalParentId,
-            removedAt: entry.previousRemovedAt,
-            holderType: entry.previousHolderType,
-            holderTargetId: entry.previousHolderTargetId,
-            holderMetaParentId: entry.previousHolderMetaParentId,
-            updatedAt: Date.now() as Timestamp,
-            version: (node.version || 1) + 1,
-          });
+      const entries = this.preMoveToTrashState.get(commandId) || [];
+      for (const entry of entries) {
+        const node = await this.deps.coreDB.getNode?.(entry.nodeId);
+        if (!node) {
+          continue;
         }
-        break;
+        await this.deps.coreDB.updateNode?.({
+          ...node,
+          parentId: entry.previousParentId,
+          name: entry.previousName,
+          originalName: entry.previousOriginalName,
+          originalParentId: entry.previousOriginalParentId,
+          removedAt: entry.previousRemovedAt,
+          updatedAt: Date.now() as Timestamp,
+          version: (node.version || 1) + 1,
+        });
+      }
+      break;
       }
 
       case 'commitWorkingCopy': {
@@ -414,12 +402,11 @@ export class CommandHistoryManager {
         if (!snapshot) {
           throw new Error('No working copy snapshot recorded for undo');
         }
-        if (snapshot.committedNode) {
-          await this.deps.coreDB.deleteNode?.(snapshot.committedNode.id as NodeId);
-        }
-        await this.restoreNode(snapshot.holder);
-        await this.restoreNode(snapshot.workingCopy);
-        break;
+      if (snapshot.committedNode) {
+        await this.deps.coreDB.deleteNode?.(snapshot.committedNode.id as NodeId);
+      }
+      await this.restoreNode(snapshot.workingCopy);
+      break;
       }
 
       default:
@@ -547,9 +534,6 @@ export class CommandHistoryManager {
             originalName: undefined,
             originalParentId: undefined,
             removedAt: undefined,
-            holderType: undefined,
-            holderTargetId: undefined,
-            holderMetaParentId: undefined,
             updatedAt: Date.now() as Timestamp,
             version: (node.version || 1) + 1,
           });
@@ -574,34 +558,10 @@ export class CommandHistoryManager {
             originalName: entry.previousOriginalName ?? entry.previousName,
             originalParentId: entry.previousOriginalParentId ?? entry.previousParentId,
             removedAt: now,
-            holderType: 'trash',
-            holderTargetId: entry.nodeId,
-            holderMetaParentId: entry.previousParentId,
             updatedAt: now,
             version: (node.version || 1) + 1,
           });
         }
-        break;
-      }
-
-      case 'commitWorkingCopy': {
-        const commandId = command.commandId as CommandId;
-        const snapshot = this.preCommitWorkingCopyState.get(commandId);
-        if (!snapshot) {
-          throw new Error('No working copy snapshot recorded for redo');
-        }
-        const holderId = snapshot.holder.id as NodeId;
-        const workingCopyId = snapshot.workingCopy.id as NodeId;
-        await this.restoreNode(snapshot.holder);
-        await this.restoreNode(snapshot.workingCopy);
-        if (snapshot.committedNode) {
-          const existing = await this.deps.coreDB.getNode?.(snapshot.committedNode.id as NodeId);
-          if (!existing) {
-            await this.deps.coreDB.createNode?.({ ...snapshot.committedNode });
-          }
-        }
-        await this.deps.coreDB.deleteNode?.(holderId);
-        await this.deps.coreDB.deleteNode?.(workingCopyId);
         break;
       }
 

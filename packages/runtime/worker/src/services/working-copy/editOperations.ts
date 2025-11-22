@@ -1,14 +1,7 @@
-import {
-  generateNodeId,
-  type NodeId,
-  type TreeId,
-  type TreeNode,
-  type Timestamp,
-} from '@hierarchidb/common-types';
+import { type NodeId, type TreeId, type TreeNode, type Timestamp } from '@hierarchidb/common-types';
 import { generateUUID } from '@hierarchidb/util';
 import type { CoreDB } from '../CoreDB.js';
-import { encodeWorkingCopyHolderName } from '../utils/holder-encoding.js';
-import { getWorkingCopy } from './lookupOperations.js';
+import { getDraft } from './lookupOperations.js';
 
 /**
  * Create a working copy from an existing node for editing.
@@ -19,11 +12,9 @@ export async function createWorkingCopyFromNode(
   treeId: TreeId,
   nodeId: NodeId
 ): Promise<NodeId> {
-  const workingCopyNodeHolderParentId = `${treeId}:workingCopy` as NodeId;
-
   const sourceNode = await coreDB.getNode(nodeId);
   if (!sourceNode) {
-    const existingWc = await getWorkingCopy(coreDB, nodeId);
+    const existingWc = await getDraft(coreDB, nodeId);
     if (existingWc) {
       return nodeId;
     }
@@ -31,51 +22,21 @@ export async function createWorkingCopyFromNode(
   }
 
   const now = Date.now() as Timestamp;
-  const existingHolder = await coreDB.nodes
-    .where('[holderType+holderTargetId]')
-    .equals(['workingCopy', sourceNode.id])
-    .first();
-  if (existingHolder) {
-    await coreDB.nodes.update(existingHolder.id, { lastTouchedAt: now });
-    const existingChild = await coreDB.nodes.where('parentId').equals(existingHolder.id).first();
-    if (existingChild?.id) {
-      await coreDB.nodes.update(existingChild.id as NodeId, { lastTouchedAt: now });
-    }
+  // Reuse existing draft on the same node if present
+  if (sourceNode.draftData !== null && sourceNode.draftData !== undefined) {
+    await coreDB.nodes.update(sourceNode.id as NodeId, { lastTouchedAt: now, updatedAt: now });
     return nodeId;
   }
 
-  const workingCopyNodeHolderId = generateNodeId();
-  const workingCopyNodeId = generateNodeId();
-
-  const workingCopyNodeHolder: TreeNode = {
-    parentId: workingCopyNodeHolderParentId,
-    id: workingCopyNodeHolderId,
-    name: encodeWorkingCopyHolderName(sourceNode.parentId, sourceNode.id),
-    nodeType: sourceNode.nodeType,
-    depth: 0,
-    createdAt: now,
-    updatedAt: now,
-    version: 1,
-    holderType: 'workingCopy',
-    holderTargetId: sourceNode.id,
-    holderMetaParentId: sourceNode.parentId,
-    lastTouchedAt: now,
-    data: null,
-    draftData: null,
-  };
-
-  const workingCopyNode: TreeNode = {
+  await coreDB.nodes.put({
     ...sourceNode,
-    parentId: workingCopyNodeHolderId,
-    id: workingCopyNodeId,
-    // working copy uses draftData as the editable buffer
-    data: null,
-    draftData: ((sourceNode as { data?: unknown }).data ?? null) as TreeNode['draftData'],
+    // use same node id; draftData is the editable buffer
+    data: sourceNode.data ?? null,
+    draftData: sourceNode.data ?? null,
     dialogUIState: undefined,
     lastTouchedAt: now,
-  };
-
-  coreDB.nodes.bulkPut([workingCopyNodeHolder, workingCopyNode]);
+    updatedAt: now,
+  });
 
   try {
     const { EntityLifecycleManager } = await import('../../entity/EntityLifecycleManager.js');
@@ -84,7 +45,7 @@ export async function createWorkingCopyFromNode(
       commandId: generateUUID(),
       groupId: generateUUID(),
       kind: 'createWorkingCopy',
-      payload: { originalId: nodeId, workingCopyId: workingCopyNode.id },
+      payload: { originalId: nodeId, workingCopyId: nodeId },
       issuedAt: Date.now(),
       type: 'createWorkingCopy',
     });

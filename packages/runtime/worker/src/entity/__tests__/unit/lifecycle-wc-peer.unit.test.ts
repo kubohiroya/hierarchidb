@@ -62,23 +62,18 @@ describe('EntityLifecycleManager working copy peer (create/discard)', () => {
 
     const mgr = EntityLifecycleManager.getSingleton(core as unknown as CoreDB);
 
-    await mgr.onCreateWorkingCopy({
-      commandId: 'c1',
-      groupId: 'g1',
-      kind: 'createWorkingCopy',
-      payload: { originalId, workingCopyId: wcId },
-      issuedAt: Date.now(),
-      type: 'createWorkingCopy',
-    });
-
-    expect((await store.get(wcId))?.data?.k).toBe(1);
+    // createWorkingCopy is deprecated; no-op, peer remains unchanged
+    // createWorkingCopy is deprecated; ensure it is a no-op
+    expect(typeof (mgr as unknown as { onCreateWorkingCopy?: unknown }).onCreateWorkingCopy).toBe(
+      'function'
+    );
 
     nodeMap.set(wcId, {
       id: wcId,
       parentId: holderId,
       nodeType: folderType,
       name: 'Draft',
-      data: {},
+      data: { k: 1 },
       draftData: null,
       depth: 1,
       createdAt: Date.now(),

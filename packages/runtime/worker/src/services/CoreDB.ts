@@ -42,17 +42,11 @@ const unwrapEnvelope = <TData>(value: unknown): EnvelopeShape<TData> => {
 };
 
 const normalizeTreeNodeForPersist = (node: TreeNode): PersistedTreeNode => {
-  const isWorkingCopy = node.holderType === 'workingCopy';
-
   const rawData = (node as { data?: unknown }).data;
   const rawDraftData = (node as { draftData?: unknown }).draftData;
-  const legacyPayload = (node as unknown as { payload?: { data?: unknown } }).payload;
-  const legacyDraft = (node as unknown as { draft?: { data?: unknown } }).draft;
 
-  const data = (rawData ?? legacyPayload?.data ?? null) as NodePayload;
-  const draftData = isWorkingCopy
-    ? (((rawDraftData ?? legacyDraft?.data ?? null) as unknown) as NodePayload)
-    : (null as NodePayload);
+  const data = (rawData ?? null) as NodePayload;
+  const draftData = (rawDraftData ?? null) as NodePayload;
 
   const dialogWindow =
     (node as { dialogUIState?: DialogUIState }).dialogUIState?.dialogWindow ?? undefined;
@@ -72,7 +66,6 @@ const normalizeTreeNodeForPersist = (node: TreeNode): PersistedTreeNode => {
     data,
     draftData,
     dialogUIState,
-    ...(isWorkingCopy ? {} : { draftData: null }),
   };
 };
 
@@ -131,53 +124,29 @@ export class CoreDB extends Dexie {
   private constructor(name: string) {
     super(name);
 
-    // Development: schema v1 (legacy)
-    this.version(1).stores({
-      trees: '&id, rootId, trashRootId, superRootId',
-      nodes: [
-        '&id',
-        'parentId',
-        '&[parentId+name]',
-        '[parentId+updatedAt]',
-        '[holderType+holderTargetId]',
-        'depth',
-        '*references',
-      ].join(', '),
-      rootStates: '&rootNodeId',
-      tags: '&id, name, category, usageCount, createdAt',
-      tagAssociations: 'nodeId, tagId, createdAt, &[nodeId+tagId]',
-    });
-
-    this.version(2)
+    this.version(1)
       .stores({
         trees: '&id, rootId, trashRootId, superRootId',
-        nodes: [
-          '&id',
-          'parentId',
-          '&[parentId+name]',
-          '[parentId+updatedAt]',
-          '[holderType+holderTargetId]',
-          'holderType',
-          'lastTouchedAt',
-          '[holderType+lastTouchedAt]',
-          'depth',
-          '*references',
-        ].join(', '),
+        nodes: ['&id', 'parentId', '&[parentId+name]', '[parentId+updatedAt]', 'depth', '*references'].join(
+          ', '
+        ),
         rootStates: '&rootNodeId',
         tags: '&id, name, category, usageCount, createdAt',
         tagAssociations: 'nodeId, tagId, createdAt, &[nodeId+tagId]',
       })
       .upgrade(async (tx) => {
+        // Drop holder metadata and clear legacy draftData on non-draft nodes
         const nodesTable = tx.table<TreeNode, NodeId>('nodes');
-        const now = Date.now();
-        await nodesTable
-          .where('holderType')
-          .equals('workingCopy')
-          .modify((node) => {
-            if (typeof node.lastTouchedAt !== 'number') {
-              node.lastTouchedAt = node.updatedAt ?? now;
-            }
-          });
+        await nodesTable.toCollection().modify((node) => {
+          if ((node as { holderType?: string }).holderType) {
+            (node as { holderType?: string }).holderType = undefined;
+            (node as { holderTargetId?: string }).holderTargetId = undefined;
+            (node as { holderMetaParentId?: string }).holderMetaParentId = undefined;
+          }
+          if ((node as { draftData?: unknown }).draftData !== null && (node as { draftData?: unknown }).draftData !== undefined) {
+            // keep draftData if present; no special handling needed
+          }
+        });
       });
 
     // Version 3 previously added fulltext tables; now a no-op to avoid creating them.
@@ -217,7 +186,6 @@ export class CoreDB extends Dexie {
             superRootId: getRootNodeId(treeId, 'superRoot'),
             rootId: getRootNodeId(treeId, 'root'),
             trashRootId: getRootNodeId(treeId, 'trash'),
-            workingCopyRootId: getRootNodeId(treeId, 'workingCopy'),
           }))
         );
       }
@@ -241,18 +209,6 @@ export class CoreDB extends Dexie {
               id: getRootNodeId(treeId, 'trash'),
               nodeType: 'trash' as NodeType,
               name: 'Trash',
-              depth: 0, // Trash root also has depth 0
-              createdAt: now,
-              updatedAt: now,
-              version: 1,
-              data: null,
-              draftData: null,
-            },
-            {
-              parentId: getRootNodeId(treeId, 'superRoot'),
-              id: getRootNodeId(treeId, 'workingCopy'),
-              nodeType: 'workingCopy' as NodeType,
-              name: 'workingCopy',
               depth: 0, // Trash root also has depth 0
               createdAt: now,
               updatedAt: now,

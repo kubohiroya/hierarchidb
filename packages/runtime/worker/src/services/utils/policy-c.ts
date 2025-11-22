@@ -1,6 +1,5 @@
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import type { CoreDB } from '../CoreDB.js';
-import { decodeWorkingCopyHolderName } from './holder-encoding.js';
 
 export async function collectSubtreeIds(coreDB: CoreDB, rootId: NodeId): Promise<Set<NodeId>> {
   const ids = new Set<NodeId>();
@@ -19,52 +18,17 @@ export async function collectSubtreeIds(coreDB: CoreDB, rootId: NodeId): Promise
 }
 
 export async function hasWorkingCopyInSubtree(coreDB: CoreDB, rootId: NodeId): Promise<boolean> {
-  // Collect subtree ids
-  const subtree = await collectSubtreeIds(coreDB, rootId);
-
-  // Optimization: use workingCopy root IDs from trees table if available,
-  // then query holders via parentId index (anyOf).
-  const treeRows = (await coreDB.trees?.toArray?.().catch?.(() => undefined)) as
-    | Array<{ workingCopyRootId?: NodeId }>
-    | undefined;
-
-  if (Array.isArray(treeRows) && treeRows.length > 0) {
-    const wcRootIds = treeRows
-      .map((t) => t.workingCopyRootId)
-      .filter((id): id is NodeId => typeof id === 'string' && id.length > 0);
-    if (wcRootIds.length > 0) {
-      const holders = (await coreDB.nodes.where?.('parentId').anyOf?.(wcRootIds).toArray?.()) as
-        | TreeNode[]
-        | undefined;
-      if (Array.isArray(holders)) {
-        for (const h of holders) {
-          try {
-            const { targetParentNodeId, targetNodeId } = decodeWorkingCopyHolderName(h.name);
-            if (subtree.has(targetNodeId) || subtree.has(targetParentNodeId)) return true;
-          } catch {
-            // ignore malformed
-          }
-        }
-        return false;
-      }
-    }
-  }
-
-  // Fallback: full scan (older behavior)
+  // In the draftData model, a working copy is the node itself with draftData present.
   const nodesTable = coreDB.nodes;
   if (!nodesTable || typeof nodesTable.toArray !== 'function') return false;
   const all = (await nodesTable.toArray()) as TreeNode[] | undefined;
   if (!Array.isArray(all)) return false;
-  const holders = all.filter(
-    (n) => typeof n?.parentId === 'string' && (n.parentId as string).endsWith(':workingCopy')
+
+  // Limit check to subtree ids
+  const subtree = await collectSubtreeIds(coreDB, rootId);
+  return all.some(
+    (n) =>
+      (n.draftData !== null && n.draftData !== undefined) &&
+      subtree.has(n.id as NodeId)
   );
-  for (const h of holders) {
-    try {
-      const { targetParentNodeId, targetNodeId } = decodeWorkingCopyHolderName(h.name);
-      if (subtree.has(targetNodeId) || subtree.has(targetParentNodeId)) return true;
-    } catch {
-      // ignore malformed
-    }
-  }
-  return false;
 }

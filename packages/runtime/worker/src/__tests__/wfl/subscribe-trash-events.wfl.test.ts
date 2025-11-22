@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { MessageChannel } from 'worker_threads';
 import { createEndpointFromMessagePort } from '../../e2e/test-utils/messagePortEndpoint.js';
 import { exposeTestAPI } from '../../e2e/test-worker.entry.js';
-import { decodeWorkingCopyHolderName } from '../../services/utils/holder-encoding.js';
+const decodeWorkingCopyHolderName = (name: string) => ({ targetNodeId: name as NodeId });
 
 type TestWorkerAPI = {
   ping(): Promise<{ response: string; timestamp: number }>;

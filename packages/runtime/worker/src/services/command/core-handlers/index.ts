@@ -11,9 +11,7 @@ import type {
 import type { CoreDB } from '../../CoreDB.js';
 import type { CommandEnvelope, CommandResult } from '../../command-types.js';
 import { WorkerErrorCode } from '../../command-types.js';
-import { hasWorkingCopyInSubtree } from '../../utils/policy-c.js';
-import { getWorkingCopyCleaner } from '../../WorkingCopyCleaner.js';
-import { commitWorkingCopyV2, createNewName } from '../../WorkingCopyTreeNodeOperations.js';
+import { commitDraft, createNewName } from '../../WorkingCopyTreeNodeOperations.js';
 import type { CommandExecutionContext } from '../execution/CommandExecutionRunner.js';
 import type { CommandHistoryManager } from '../history/CommandHistoryManager.js';
 
@@ -153,21 +151,12 @@ async function handleMoveNodes(
   deps: CoreCommandDeps
 ): Promise<CommandResult> {
   try {
-    await getWorkingCopyCleaner(deps.coreDB).cleanStaleEntries({ maxEntries: 25 });
+      // no-op: cleaner removed in draftData model
     const payload = envelope.payload as {
       nodeIds: NodeId[];
       toParentId: NodeId;
       onNameConflict?: 'error' | 'auto-rename';
     };
-
-    for (const id of payload.nodeIds) {
-      if (await hasWorkingCopyInSubtree(deps.coreDB, id)) {
-        return deps.createErrorResult(
-          'Blocked by Policy C: working copy exists in subtree',
-          WorkerErrorCode.INVALID_OPERATION
-        );
-      }
-    }
 
     const beforeNodes: TreeNode[] = [];
     const toUpdate: TreeNode[] = [];
@@ -309,7 +298,7 @@ async function handleMoveToTrash(
         continue;
       }
 
-      if (node.holderType === 'trash' && node.parentId === trashRootId) {
+      if ((node as { removedAt?: Timestamp }).removedAt && node.parentId === trashRootId) {
         continue;
       }
 
@@ -317,10 +306,6 @@ async function handleMoveToTrash(
       const previousOriginalName = (node as { originalName?: string }).originalName;
       const previousOriginalParentId = (node as { originalParentId?: NodeId }).originalParentId;
       const previousRemovedAt = (node as { removedAt?: Timestamp }).removedAt;
-      const previousHolderType = node.holderType;
-      const previousHolderTargetId = node.holderTargetId as NodeId | undefined;
-      const previousHolderMetaParentId = node.holderMetaParentId as NodeId | undefined;
-
       const preservedOriginalName = previousOriginalName ?? node.name;
       const trashName =
         typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
@@ -334,9 +319,6 @@ async function handleMoveToTrash(
         originalName: preservedOriginalName,
         originalParentId: previousOriginalParentId ?? originalParentId,
         removedAt: now,
-        holderType: 'trash',
-        holderTargetId: node.id as NodeId,
-        holderMetaParentId: originalParentId,
         updatedAt: now,
         version: (node.version || 1) + 1,
       };
@@ -350,9 +332,6 @@ async function handleMoveToTrash(
         previousOriginalName,
         previousOriginalParentId,
         previousRemovedAt,
-        previousHolderType,
-        previousHolderTargetId,
-        previousHolderMetaParentId,
         trashRootId,
         trashRemovedAt: now,
         trashName,
@@ -376,17 +355,8 @@ async function handleRemove(
   deps: CoreCommandDeps
 ): Promise<CommandResult> {
   try {
-    await getWorkingCopyCleaner(deps.coreDB).cleanStaleEntries({ maxEntries: 25 });
+    // no-op: cleaner removed in draftData model
     const payload = envelope.payload as { nodeIds: NodeId[] };
-
-    for (const id of payload.nodeIds) {
-      if (await hasWorkingCopyInSubtree(deps.coreDB, id)) {
-        return deps.createErrorResult(
-          'Blocked by Policy C: working copy exists in subtree',
-          WorkerErrorCode.INVALID_OPERATION
-        );
-      }
-    }
 
     const beforeNodes: TreeNode[] = [];
     const toDeleteSet = new Set<NodeId>();
@@ -636,19 +606,8 @@ async function handleCommitWorkingCopy(
     if (!wcNode) {
       return deps.createErrorResult('Working copy not found', WorkerErrorCode.INVALID_OPERATION);
     }
-    const holder = wcNode.parentId
-      ? await deps.coreDB.nodes.get(wcNode.parentId as NodeId)
-      : undefined;
-    if (!holder) {
-      return deps.createErrorResult(
-        'Working copy holder not found',
-        WorkerErrorCode.INVALID_OPERATION
-      );
-    }
     const wcSnapshot: TreeNode = { ...wcNode };
-    const holderSnapshot: TreeNode = { ...holder };
-
-    const result = await commitWorkingCopyV2(
+    const result = await commitDraft(
       deps.coreDB,
       payload.workingCopyId,
       payload.onNameConflict ?? 'error'
@@ -664,7 +623,6 @@ async function handleCommitWorkingCopy(
       }
       deps.history.storeCommitWorkingCopySnapshot(envelope.commandId as CommandId, {
         workingCopy: wcSnapshot,
-        holder: holderSnapshot,
         committedNode: committedSnapshot,
       });
       return {

@@ -33,6 +33,7 @@ import {
 } from '@mui/icons-material';
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
 import {
+  Alert,
   Box,
   Button,
   CircularProgress,
@@ -396,6 +397,7 @@ interface TrashDialogFooterProps extends HeadlessFooterRenderProps<TrashStepData
   loading: boolean;
   onRestore: () => void;
   onEmptyAll: () => void;
+  hasDraftsInView: boolean;
 }
 
 function TrashDialogFooter({
@@ -406,6 +408,7 @@ function TrashDialogFooter({
   onRestore,
   onEmptyAll,
   onRequestClose,
+  hasDraftsInView,
 }: TrashDialogFooterProps) {
   const { t } = useTranslation();
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -509,6 +512,12 @@ function TrashDialogFooter({
               ? t('trash.dialog.confirm.empty')
               : t('trash.dialog.confirm.description', { count: totalCount, unit: emptyUnit })}
           </DialogContentText>
+          {hasDraftsInView ? (
+            <DialogContentText sx={{ mt: 1 }} color="warning.main">
+              {t('trash.dialog.confirm.draftWarning') ??
+                'Drafts are present. Emptying the trash will force-delete in-progress edits.'}
+            </DialogContentText>
+          ) : null}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleConfirmClose} color="inherit">
@@ -545,6 +554,7 @@ interface TrashDialogContentProps {
   expandedIds: string[];
   onToggleExpand: (nodeId: string, expanded: boolean) => void;
   nodeIndex: DualKeyMap<NodeId, NodeId, TreeNode>;
+  hasDraftsInView: boolean;
 }
 
 function TrashDialogContent({
@@ -563,6 +573,7 @@ function TrashDialogContent({
   expandedIds,
   onToggleExpand,
   nodeIndex,
+  hasDraftsInView,
 }: TrashDialogContentProps) {
   const { t } = useTranslation();
   const filteredTreeData = useMemo(() => {
@@ -594,6 +605,14 @@ function TrashDialogContent({
         marginBottom: `${TRASH_DIALOG_FOOTER_HEIGHT}px`,
       }}
     >
+      {hasDraftsInView ? (
+        <Box sx={{ px: 2, pt: 1 }}>
+          <Alert severity="warning" variant="outlined" sx={{ mb: 1 }}>
+            {t('trash.dialog.draftWarning') ??
+              'Drafts are included in this view. Deleting will force-remove in-progress edits.'}
+          </Alert>
+        </Box>
+      ) : null}
       <Box sx={{ px: 2, pt: 0, pb: 1 }}>
         <TreeTableSearchInput
           value={searchTerm}
@@ -723,6 +742,7 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [hasDraftsInView, setHasDraftsInView] = useState(false);
 
   const stepComponents = useMemo(
     () =>
@@ -752,6 +772,7 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
     if (!viewRoot) return [] as TreeNodeData[];
 
     const { nodes } = buildTrashTreeData({ treeId: treeId ?? '', rootNode: viewRoot, nodeMap });
+
     if (trashViewRootId && !nodes.some((node) => node.id === trashViewRootId)) {
       const source = nodeMap.get(String(trashViewRootId));
       if (source) {
@@ -779,6 +800,11 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
     }
     return nodes;
   }, [data.activeTrashNode, data.trashRootNode, nodeMap, trashViewRootId, treeId]);
+
+  useEffect(() => {
+    const hasDrafts = treeData.some((node) => (node as TreeNode).draftData);
+    setHasDraftsInView(hasDrafts);
+  }, [treeData]);
 
   /*
   const removableCount = useMemo(() => {
@@ -1074,6 +1100,7 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
           expandedIds={expandedIds}
           onToggleExpand={onToggleExpand}
           nodeIndex={nodeIndex}
+          hasDraftsInView={hasDraftsInView}
         />
       ),
       renderFooter: (props: HeadlessFooterRenderProps<TrashStepData>) => (
@@ -1085,10 +1112,33 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
           loading={loading}
           onRestore={handleRestore}
           onEmptyAll={handleEmptyAll}
+          hasDraftsInView={hasDraftsInView}
         />
       ),
     }),
-    [breadcrumbItems, columns, expandedIds, frameState, handleClose, handleEmptyAll, handleRestore, loading, mode, nodeIndex, onToggleExpand, pageNodeId, removalTargetCount, searchTerm, selectedIds, stepComponents, t, trashViewRootId, treeData, treeId]
+    [
+      breadcrumbItems,
+      columns,
+      expandedIds,
+      frameState,
+      handleClose,
+      handleEmptyAll,
+      handleRestore,
+      loading,
+      mode,
+      nodeIndex,
+      onToggleExpand,
+      pageNodeId,
+      removalTargetCount,
+      searchTerm,
+      selectedIds,
+      stepComponents,
+      t,
+      trashViewRootId,
+      treeData,
+      treeId,
+      hasDraftsInView,
+    ]
   );
 
   const frameSx = useMemo(

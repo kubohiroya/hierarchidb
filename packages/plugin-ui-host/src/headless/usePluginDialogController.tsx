@@ -1038,6 +1038,7 @@ export function usePluginDialogController(
         if (disposed) return;
         const values = new Set(
           siblings
+            .filter((node) => String(node?.id ?? '') !== String(nodeId))
             .map((node) => (typeof node?.name === 'string' ? node.name.trim().toLowerCase() : ''))
             .filter((name): name is string => Boolean(name))
         );
@@ -1051,7 +1052,7 @@ export function usePluginDialogController(
     return () => {
       disposed = true;
     };
-  }, [client, mode, pageNodeId]);
+  }, [client, mode, pageNodeId, nodeId]);
 
   useEffect(() => {
     let disposed = false;
