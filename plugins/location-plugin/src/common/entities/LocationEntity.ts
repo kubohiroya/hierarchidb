@@ -97,6 +97,14 @@ export interface LocationAttributes {
   payload?: Record<string, unknown>;
 }
 
+export interface LocationFeature {
+  id?: string;
+  position: { lat: number; lon: number };
+  kind?: LocationType | string;
+  properties?: Record<string, unknown>;
+  sourceId?: string;
+}
+
 export type LocationProcessingStatus =
   | 'pending'
   | 'searching'
@@ -140,6 +148,11 @@ export interface LocationEntity extends BaseEntity {
   importance?: number;
   processingStatus?: LocationProcessingStatus;
   processedAt?: Timestamp;
+  /** Collection of points associated with this node (multi-point support). */
+  features?: LocationFeature[];
+  /** Tabular pipeline metadata (source storage ID and extract criteria). */
+  tabularSourceId?: string;
+  extractConfig?: Record<string, unknown>;
 }
 
 export type LocationWorkingCopy = WorkingCopyDraft<LocationEntity>;

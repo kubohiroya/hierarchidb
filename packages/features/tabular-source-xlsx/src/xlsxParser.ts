@@ -86,7 +86,7 @@ export const xlsxParser: TabularParserPort = {
     if (!ws) {
       throw new Error(`Worksheet "${wsName}" is missing from XLSX workbook`);
     }
-    const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: '' });
+    const json = XLSX.utils.sheet_to_json(ws, { defval: '' }) as Array<Record<string, unknown>>;
     const chunkSize = options?.chunkSize ?? 1000;
 
     const headers = json.length > 0 ? Object.keys(json[0] ?? {}) : [];

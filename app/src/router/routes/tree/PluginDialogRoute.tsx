@@ -79,16 +79,6 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
         const wcApi = await client.getWorkingCopyAPI();
         let canonicalId = effectiveTargetNodeId as NodeId;
 
-        const node = await query.getNode(effectiveTargetNodeId);
-        if (node) {
-          const parent = node.parentId ? await query.getNode(node.parentId) : null;
-          if (parent?.holderType === 'workingCopy') {
-            canonicalId = (parent.holderTargetId as NodeId) ?? canonicalId;
-          } else if (node.holderType === 'workingCopy' && node.holderTargetId) {
-            canonicalId = node.holderTargetId as NodeId;
-          }
-        }
-
         const existing = await wcApi.getWorkingCopy(canonicalId);
         if (!existing) {
           await wcApi.createWorkingCopyFromNode(canonicalId);

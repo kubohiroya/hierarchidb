@@ -5,6 +5,7 @@
 //  @hierarchidb/common-type
 import type { NodeId } from '@hierarchidb/common-types';
 export type { NodeId } from '@hierarchidb/common-types';
+import type { TabularFilterRule, TabularSelectionConfig } from '@hierarchidb/ui-tabular-extract';
 
 // ================================
 // Entity Types
@@ -22,6 +23,7 @@ import type {
   LocationSearchConfig,
   LocationAddress,
   LocationAttributes,
+  LocationFeature,
 } from '../entities/LocationEntity.js';
 import type { WorkingCopyDraft } from '@hierarchidb/plugin-service-api';
 export type {
@@ -42,11 +44,18 @@ export type {
   LocationSearchConfig,
   LocationAddress,
   LocationAttributes,
+  LocationFeature,
 };
 
 export interface LocationWorkingCopy extends WorkingCopyDraft<LocationEntityDefinition> {
   /** console-level categorisation tags (persisted on the owning TreeNode). */
   tags?: string[];
+  dataSource?: LocationDataSource;
+  tabularSourceId?: string;
+  extractConfig?: {
+    filterRules?: TabularFilterRule[];
+    selection?: TabularSelectionConfig;
+  };
   draft: WorkingCopyDraft<LocationEntityDefinition>['draft'] & {
     tilesMinZoom?: number;
     tilesMaxZoom?: number;

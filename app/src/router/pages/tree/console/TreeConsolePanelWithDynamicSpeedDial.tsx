@@ -90,9 +90,15 @@ export function TreeConsolePanelWithDynamicSpeedDial({
   const speedDialContextNode: TreeNodeData = {
     id: (pageNodeId ?? (treeId ? `${treeId}:root` : 'root')) as NodeId,
     nodeType: (pageTreeNode?.nodeType ?? 'folder') as NodeType,
-    name: pageTreeNode?.name ?? '',
+    metadata: { name: pageTreeNode?.metadata?.name ?? '', description: pageTreeNode?.metadata?.description, tags: pageTreeNode?.metadata?.tags },
+    draftMetadata: null,
+    data: null,
+    draftData: null,
     parentId: parentForSpeedDial as NodeId,
     depth: pageTreeNode?.depth ?? 1,
+    createdAt: pageTreeNode?.createdAt ?? Date.now(),
+    updatedAt: pageTreeNode?.updatedAt ?? Date.now(),
+    version: pageTreeNode?.version ?? 1,
   } as TreeNodeData;
   return (
     <Box sx={{ position: 'relative', height: '100%', minHeight: 0 }}>

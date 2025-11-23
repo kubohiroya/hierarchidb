@@ -12,9 +12,14 @@ describe('EntityLifecycleManager.copyGroupsByMapping', () => {
 
   it('bulkUpserts items for each nodeType present in mapping', async () => {
     const nodeMap = new Map<NodeId, TreeNode>();
-    const withPayload = (node: Omit<TreeNode, 'data' | 'draftData'> & Partial<TreeNode>): TreeNode => ({
+    const withPayload = (
+      node: Omit<TreeNode, 'data' | 'draftData' | 'metadata' | 'draftMetadata'> &
+        Partial<TreeNode> & { name?: string }
+    ): TreeNode => ({
       data: {},
       draftData: null,
+      metadata: { name: node.name ?? 'Untitled', description: undefined, tags: [] },
+      draftMetadata: null,
       ...node,
     });
     const makeNode = (id: NodeId, nodeType: NodeType): TreeNode =>

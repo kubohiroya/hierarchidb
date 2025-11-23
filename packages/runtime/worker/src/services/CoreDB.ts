@@ -1,8 +1,6 @@
 import type { ListChildrenOptions } from '@hierarchidb/common-api';
 import type {
-  DialogProgressState,
   DialogUIState,
-  DialogWindowState,
   NodeId,
   NodeTagAssociation,
   NodePayload,
@@ -20,31 +18,38 @@ import type { BulkError } from 'dexie';
 import { Dexie, type Table } from 'dexie';
 import { Subject } from 'rxjs';
 
-type EnvelopeShape<TData = unknown> = {
-  data?: TData;
-  dialogWindow?: DialogWindowState | null;
-  dialogProgress?: DialogProgressState | null;
-  updatedAt?: number;
-};
-
-const unwrapEnvelope = <TData>(value: unknown): EnvelopeShape<TData> => {
-  if (!value || typeof value !== 'object') return {};
-  const obj = value as Record<string, unknown>;
-  const data = 'data' in obj ? (obj.data as TData) : undefined;
-  const dialogWindow =
-    'dialogWindow' in obj ? (obj.dialogWindow as DialogWindowState | null | undefined) : undefined;
-  const dialogProgress =
-    'dialogProgress' in obj
-      ? (obj.dialogProgress as DialogProgressState | null | undefined)
-      : undefined;
-  const updatedAt = 'updatedAt' in obj ? (obj.updatedAt as number | undefined) : undefined;
-  return { data, dialogWindow, dialogProgress, updatedAt };
-};
-
 const normalizeTreeNodeForPersist = (node: TreeNode): PersistedTreeNode => {
+  const {
+    id,
+    parentId,
+    nodeType,
+    depth,
+    createdAt,
+    updatedAt,
+    version,
+    hasChildren,
+    descendantCount,
+    isEstimated,
+    references,
+    originalName,
+    originalParentId,
+    removedAt,
+    lastTouchedAt,
+  } = node as PersistedTreeNode;
+
+  const rawMetadata = (node as { metadata?: unknown }).metadata;
+  if (!rawMetadata) {
+    throw new Error('metadata is required on TreeNode');
+  }
+  const metadata = rawMetadata as PersistedTreeNode['metadata'];
+  const rawDraftMetadata = (node as { draftMetadata?: unknown }).draftMetadata;
+  const draftMetadata =
+    rawDraftMetadata !== undefined
+      ? (rawDraftMetadata as PersistedTreeNode['draftMetadata'])
+      : null;
+
   const rawData = (node as { data?: unknown }).data;
   const rawDraftData = (node as { draftData?: unknown }).draftData;
-
   const data = (rawData ?? null) as NodePayload;
   const draftData = (rawDraftData ?? null) as NodePayload;
 
@@ -52,7 +57,6 @@ const normalizeTreeNodeForPersist = (node: TreeNode): PersistedTreeNode => {
     (node as { dialogUIState?: DialogUIState }).dialogUIState?.dialogWindow ?? undefined;
   const dialogProgress =
     (node as { dialogUIState?: DialogUIState }).dialogUIState?.dialogProgress ?? undefined;
-
   const dialogUIState: DialogUIState | undefined =
     dialogWindow !== undefined || dialogProgress !== undefined
       ? {
@@ -62,10 +66,26 @@ const normalizeTreeNodeForPersist = (node: TreeNode): PersistedTreeNode => {
       : undefined;
 
   return {
-    ...(node as PersistedTreeNode),
+    id,
+    parentId,
+    nodeType,
+    depth,
+    createdAt,
+    updatedAt,
+    version,
+    metadata,
+    draftMetadata,
     data,
     draftData,
     dialogUIState,
+    hasChildren,
+    descendantCount,
+    isEstimated,
+    references,
+    originalName,
+    originalParentId,
+    removedAt,
+    lastTouchedAt,
   };
 };
 
@@ -124,10 +144,10 @@ export class CoreDB extends Dexie {
   private constructor(name: string) {
     super(name);
 
-    this.version(1)
+    this.version(4)
       .stores({
         trees: '&id, rootId, trashRootId, superRootId',
-        nodes: ['&id', 'parentId', '&[parentId+name]', '[parentId+updatedAt]', 'depth', '*references'].join(
+        nodes: ['&id', 'parentId', '&[parentId+metadata.name]', '[parentId+updatedAt]', 'depth', '*references'].join(
           ', '
         ),
         rootStates: '&rootNodeId',
@@ -150,7 +170,7 @@ export class CoreDB extends Dexie {
       });
 
     // Version 3 previously added fulltext tables; now a no-op to avoid creating them.
-    this.version(3).upgrade(() => {});
+    // Version 4 defines the current schema with metadata-based name index.
   }
 
   // console name helper was unused in the current implementation
@@ -196,27 +216,37 @@ export class CoreDB extends Dexie {
               parentId: getRootNodeId(treeId, 'superRoot'),
               id: getRootNodeId(treeId, 'root'),
               nodeType: 'folder' as NodeType,
-              name: treeId === 'r' ? 'Resources' : 'Projects',
               depth: 0, // Root nodes have depth 0
               createdAt: now,
               updatedAt: now,
               version: 1,
+              metadata: {
+                name: treeId === 'r' ? 'Resources' : 'Projects',
+                description: undefined,
+                tags: [],
+              },
+              draftMetadata: null,
               data: null,
               draftData: null,
-            },
+            } as unknown as TreeNode,
             {
               parentId: getRootNodeId(treeId, 'superRoot'),
               id: getRootNodeId(treeId, 'trash'),
               nodeType: 'trash' as NodeType,
-              name: 'Trash',
               depth: 0, // Trash root also has depth 0
               createdAt: now,
               updatedAt: now,
               version: 1,
+              metadata: {
+                name: 'Trash',
+                description: undefined,
+                tags: [],
+              },
+              draftMetadata: null,
               data: null,
               draftData: null,
-            },
-          ]) satisfies TreeNode[]
+            } as unknown as TreeNode,
+          ])
         );
       }
 
@@ -257,15 +287,20 @@ export class CoreDB extends Dexie {
           delete clone.draft;
           changed = true;
         }
+        if ('holderType' in clone) {
+          delete clone.holderType;
+          changed = true;
+        }
+        if ('holderTargetId' in clone) {
+          delete clone.holderTargetId;
+          changed = true;
+        }
         const dataVal = clone.data as unknown;
         if (dataVal && typeof dataVal === 'object' && 'draft' in (dataVal as Record<string, unknown>)) {
           delete (dataVal as Record<string, unknown>).draft;
           changed = true;
         }
-        if (clone.holderType !== 'workingCopy' && (clone as { draftData?: unknown }).draftData !== null) {
-          (clone as { draftData?: unknown }).draftData = null;
-          changed = true;
-        }
+        // No legacy population; require clean metadata/draftMetadata at creation time
         if (changed) {
           updates.push(clone as unknown as TreeNode);
         }
@@ -377,8 +412,8 @@ export class CoreDB extends Dexie {
       name: undefined,
       parentId: undefined,
     };
-    if (oldNode.name !== next.name) {
-      changes.name = { old: oldNode.name, new: next.name };
+    if (oldNode.metadata.name !== next.metadata.name) {
+      changes.name = { old: oldNode.metadata.name, new: next.metadata.name };
     }
     if (oldNode.parentId !== next.parentId) {
       changes.parentId = { old: oldNode.parentId, new: next.parentId };
@@ -582,7 +617,7 @@ export class CoreDB extends Dexie {
   async bulkUpdateNodes(nodes: TreeNode[]): Promise<void> {
     const oldNodes = await Promise.all(nodes.map((node) => this.nodes.get(node.id)));
 
-    await this.nodes.bulkPut(nodes);
+      await this.nodes.bulkPut(nodes);
 
     nodes.forEach((node, index) => {
       const oldNode = oldNodes[index];
@@ -594,8 +629,11 @@ export class CoreDB extends Dexie {
           name: undefined,
           parentId: undefined,
         };
-        if (oldNode.name !== node.name) {
-          changes.name = { old: oldNode.name, new: node.name };
+        if (oldNode.metadata?.name !== node.metadata?.name) {
+          changes.name = {
+            old: oldNode.metadata?.name ?? '',
+            new: node.metadata?.name ?? '',
+          };
         }
         if (oldNode.parentId !== node.parentId) {
           changes.parentId = { old: oldNode.parentId, new: node.parentId };
@@ -689,16 +727,11 @@ export class CoreDB extends Dexie {
     // Return plain objects
     return nodes.map(
       (node): TreeNode => ({
-        id: node.id,
-        parentId: node.parentId,
-        nodeType: node.nodeType,
-        name: node.name,
+        ...node,
         data: node.data ?? null,
         draftData: node.draftData ?? null,
-        depth: node.depth,
-        createdAt: node.createdAt,
-        updatedAt: node.updatedAt,
-        version: node.version,
+        draftMetadata: node.draftMetadata ?? null,
+        metadata: node.metadata,
         ...(node.references && { references: node.references }),
       })
     );
@@ -811,7 +844,10 @@ export class CoreDB extends Dexie {
       id: duplicatedNodeId,
       parentId: targetParentId,
       depth: targetParent.depth + 1,
-      name: `${sourceNode.name} (Copy)`,
+      metadata: {
+        ...sourceNode.metadata,
+        name: `${sourceNode.metadata.name} (Copy)`,
+      },
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
@@ -904,10 +940,13 @@ export class CoreDB extends Dexie {
         id: newNodeId,
         parentId: newParentId,
         depth: newDepth,
-        name:
-          originalNode.id === sourceRootId && options?.rootNameOverride
-            ? options.rootNameOverride
-            : originalNode.name,
+        metadata: {
+          ...originalNode.metadata,
+          name:
+            originalNode.id === sourceRootId && options?.rootNameOverride
+              ? options.rootNameOverride
+              : originalNode.metadata.name,
+        },
         createdAt: Date.now(),
         updatedAt: Date.now(),
         version: 1,

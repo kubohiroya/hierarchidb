@@ -14,7 +14,7 @@
         "plugins/*-plugin/src/index.ts"
       ],
       "@hierarchidb/auth-recovery": [
-        "packages/features/auth-recovery/dist/index.js"
+        "packages/features/auth-recovery/dist/index.d.ts"
       ],
       "@hierarchidb/auth-recovery/*": [
         "packages/features/auth-recovery/dist/*"
@@ -77,7 +77,7 @@
         "packages/features/feature-registry/dist/*"
       ],
       "@hierarchidb/fetch-save-metadata": [
-        "packages/features/fetch-save-metadata/dist/index.js"
+        "packages/features/fetch-save-metadata/dist/index.d.ts"
       ],
       "@hierarchidb/fetch-save-metadata/*": [
         "packages/features/fetch-save-metadata/dist/*"
@@ -153,7 +153,7 @@
         "packages/plugin-presentation/src/*"
       ],
       "@hierarchidb/plugin-runtime-services": [
-        "packages/plugin-runtime-services/dist/index.js"
+        "packages/plugin-runtime-services/dist/index.d.ts"
       ],
       "@hierarchidb/plugin-runtime-services/*": [
         "packages/plugin-runtime-services/dist/*"
@@ -165,13 +165,13 @@
         "packages/plugin-service-api/src/*"
       ],
       "@hierarchidb/plugin-service-sdk": [
-        "packages/plugin-service-sdk/dist/index.js"
+        "packages/plugin-service-sdk/dist/index.d.ts"
       ],
       "@hierarchidb/plugin-service-sdk/*": [
         "packages/plugin-service-sdk/dist/*"
       ],
       "@hierarchidb/plugin-ui-sdk": [
-        "packages/plugin-ui-sdk/dist/index.js"
+        "packages/plugin-ui-sdk/dist/index.d.ts"
       ],
       "@hierarchidb/plugin-ui-sdk/*": [
         "packages/plugin-ui-sdk/dist/*"
@@ -192,13 +192,13 @@
         "plugins/route-plugin/src/*"
       ],
       "@hierarchidb/route-resolver": [
-        "packages/features/route-resolver/dist/index.js"
+        "packages/features/route-resolver/dist/index.d.ts"
       ],
       "@hierarchidb/route-resolver/*": [
         "packages/features/route-resolver/dist/*"
       ],
       "@hierarchidb/route-searoute": [
-        "packages/features/route-searoute/dist/index.js"
+        "packages/features/route-searoute/dist/index.d.ts"
       ],
       "@hierarchidb/route-searoute/*": [
         "packages/features/route-searoute/dist/*"

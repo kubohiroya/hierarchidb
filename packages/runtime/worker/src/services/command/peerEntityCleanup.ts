@@ -40,10 +40,7 @@ async function resolveEntitiesOverride(
   }
 }
 
-export async function deletePeerEntitiesForNodes(
-  nodes: Array<TreeNode>,
-  coreDB: CoreDB
-): Promise<void> {
+export async function deletePeerEntitiesForNodes(nodes: Array<TreeNode>, _coreDB: CoreDB): Promise<void> {
   const { storeRegistry } = await import('../../entity/store-registry.js');
   for (const n of nodes) {
     const nodeType = n.nodeType;

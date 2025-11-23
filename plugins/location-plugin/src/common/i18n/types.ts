@@ -76,6 +76,8 @@ export interface LocationPluginTranslations {
     subtitle: string;
     alertMessage: string;
     matrixTitle: string;
+    filterTitle?: string;
+    buildLabel?: string;
     settingsTitle: string;
     settingsDescription?: string;
     searchPlaceholder: string;

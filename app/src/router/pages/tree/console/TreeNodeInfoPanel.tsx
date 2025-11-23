@@ -108,8 +108,8 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
   const createdAtLabel = formatTimestamp(node.createdAt);
   const updatedAtLabel = formatTimestamp(node.updatedAt);
   const description =
-    (node.description && node.description.trim().length > 0
-      ? node.description
+    (node.metadata?.description && node.metadata.description.trim().length > 0
+      ? node.metadata.description
       : getString('treeConsole.infoPanel.emptyDescription', 'No description provided.')) ?? '';
   const nodeTypeLabel = node.nodeType ?? 'node';
   const isRootLike =
@@ -179,7 +179,7 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
 
         <Stack spacing={0.5} alignItems="center">
           <Typography variant="h4" component="h2" sx={{ wordBreak: 'break-word' }}>
-            {node.name || unnamedNodeLabel}
+            {node.metadata?.name || unnamedNodeLabel}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             {nodeTypeCaption}
@@ -243,7 +243,7 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
         onClose={handleMenuClose}
         nodeId={menuNode?.id ?? ''}
         nodeType={menuNode?.nodeType ?? 'folder'}
-        nodeName={menuNode?.name ?? ''}
+        nodeName={menuNode?.metadata?.name ?? ''}
         treeId={treeId}
         canCreate={false}
         canEdit={canMutate}

@@ -10,7 +10,8 @@ export type NodeId = string & { readonly __brand: 'NodeId' };
 export type TagId = string & { readonly __brand: 'TagId' };
 
 // Route Category Type
-export type RouteCategory = 'transportation' | 'recreation' | 'logistics' | 'emergency';
+// RouteCategory is currently unused; kept minimal for compatibility
+export type RouteCategory = never;
 
 // ================================
 // Route Types
@@ -34,17 +35,7 @@ export enum RouteType {
 // ================================
 
 export enum TransportMode {
-  CAR = 'car',
-  TRUCK = 'truck',
-  BUS = 'bus',
-  TRAIN = 'train',
-  SUBWAY = 'subway',
-  TRAM = 'tram',
-  FERRY = 'ferry',
-  AIRPLANE = 'airplane',
-  BICYCLE = 'bicycle',
-  PEDESTRIAN = 'pedestrian',
-  MOTORCYCLE = 'motorcycle'
+  NONE = 'none'
 }
 
 // ================================
@@ -82,7 +73,9 @@ export type RouteEntity = {
   };
 
   // Data Source
-  dataSourceName: 'openstreetmap' | 'mapbox' | 'google' | 'custom';
+  dataSourceName: 'openstreetmap' | 'custom';
+  tabularSourceId?: string;
+  extractConfig?: Record<string, unknown>;
 
   // License Agreement
   licenseAgreement: boolean;
@@ -218,7 +211,7 @@ export interface CreateRouteData {
   description?: string;
   routeType: RouteType;
   transportModes: TransportMode[];
-  dataSourceName: 'openstreetmap' | 'mapbox' | 'google' | 'custom';
+  dataSourceName: 'openstreetmap' | 'custom';
   processingConfig: RouteProcessingConfig;
 }
 

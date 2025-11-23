@@ -20,7 +20,6 @@ import {
   updateDraft as updateWc,
 } from './WorkingCopyTreeNodeOperations.js';
 import { syncPeerDataFromNode } from './peerDataRegistry.js';
-import { WorkerErrorCode } from './command-types.js';
 
 /**
  * WorkingCopyService - minimal implementation backed by EphemeralDB/CoreDB
@@ -31,7 +30,7 @@ export class WorkingCopyService implements WorkingCopyAPI {
   constructor(
     private coreDB: CoreDB,
     _ephemeralDB: unknown,
-    private commandProcessor?: CommandProcessor
+    _commandProcessor?: CommandProcessor
   ) {}
 
   async createDraftWorkingCopy(
@@ -40,12 +39,15 @@ export class WorkingCopyService implements WorkingCopyAPI {
     initialData?: Partial<TreeNode>
   ): Promise<TreeNode> {
     const treeId = parentId.split(':')[0] as TreeId;
+    const desiredName =
+      (initialData as { metadata?: { name?: string } } | undefined)?.metadata?.name?.trim() ||
+      resolveDefaultNodeName(nodeType);
     const wcNodeId = await createDraftWorkingCopy(
       this.coreDB,
       treeId,
       parentId,
       nodeType,
-      initialData?.name?.trim() || resolveDefaultNodeName(nodeType),
+      desiredName,
       (initialData as { id?: NodeId } | undefined)?.id
     );
     const wc = await this.coreDB.nodes.get(wcNodeId);

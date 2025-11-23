@@ -148,7 +148,8 @@ describe('TreeSubscriptionService subscribe wrappers', () => {
       id: rootId,
       parentId: 'root-parent' as NodeId,
       nodeType: 'folder' as NodeType,
-      name: 'Root',
+      metadata: { name: 'Root' },
+      draftMetadata: null,
       data: {},
       draftData: null,
       depth: 0,
@@ -161,7 +162,8 @@ describe('TreeSubscriptionService subscribe wrappers', () => {
       id: childId,
       parentId: rootId,
       nodeType: 'folder' as NodeType,
-      name: 'Child',
+      metadata: { name: 'Child' },
+      draftMetadata: null,
       data: {},
       draftData: null,
       depth: 1,
@@ -174,7 +176,8 @@ describe('TreeSubscriptionService subscribe wrappers', () => {
       id: otherId,
       parentId: 'other-parent' as NodeId,
       nodeType: 'folder' as NodeType,
-      name: 'Other',
+      metadata: { name: 'Other' },
+      draftMetadata: null,
       data: {},
       draftData: null,
       depth: 0,
@@ -194,7 +197,7 @@ describe('TreeSubscriptionService subscribe wrappers', () => {
     // Update within subtree
     core.__store.set(childId, {
       ...childNode,
-      name: 'Child Updated',
+      metadata: { ...childNode.metadata, name: 'Child Updated' },
       updatedAt: (Date.now() + 1) as Timestamp,
     });
     core.changeSubject.next({

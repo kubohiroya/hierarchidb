@@ -780,16 +780,17 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
           id: source.id as NodeId,
           parentId: (source.parentId ?? trashViewRootId) as NodeId,
           nodeType: source.nodeType,
-          name: getTrashDisplayName(source),
+          metadata: {
+            name: getTrashDisplayName(source),
+            description: (source as { metadata?: { description?: string } }).metadata?.description,
+            tags: (source as { metadata?: { tags?: string[] } }).metadata?.tags ?? [],
+          },
+          draftMetadata: null,
           depth: typeof source.depth === 'number' ? source.depth : 0,
           originalName: (source as { originalName?: string }).originalName,
           originalParentId: (source as { originalParentId?: NodeId }).originalParentId,
           removedAt: (source as { removedAt?: number }).removedAt,
-          holderType: 'trash',
-          holderTargetId: source.id as NodeId,
-          holderMetaParentId: (source as { originalParentId?: NodeId }).originalParentId,
           hasChildren: Boolean(source.hasChildren),
-          description: source.description,
           createdAt: source.createdAt,
           updatedAt: source.updatedAt,
           version: source.version,
@@ -846,20 +847,16 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
       const fromTreeData = node as { originalName?: string; originalParentId?: NodeId };
       const decorated: TreeNode = {
         ...source,
-        name: getTrashDisplayName(node),
+        metadata: {
+          ...(source as { metadata?: TreeNode['metadata'] }).metadata,
+          name: getTrashDisplayName(node),
+        },
         originalName:
           fromTreeData.originalName ??
           (source as { originalName?: string | undefined }).originalName,
         originalParentId:
           fromTreeData.originalParentId ??
           (source as { originalParentId?: NodeId | undefined }).originalParentId,
-        holderType: 'trash',
-        holderTargetId:
-          (source as { holderTargetId?: NodeId | undefined }).holderTargetId ??
-          (node.id as NodeId),
-        holderMetaParentId:
-          (source as { holderMetaParentId?: NodeId | undefined }).holderMetaParentId ??
-          fromTreeData.originalParentId,
       };
       return decorated;
     };

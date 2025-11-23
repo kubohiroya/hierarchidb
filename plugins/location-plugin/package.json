@@ -56,7 +56,11 @@
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
-    "@hierarchidb/plugin-base": "workspace:*"
+    "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/ui-tabular-extract": "workspace:*",
+    "@hierarchidb/spreadsheet-plugin": "workspace:*",
+    "@hierarchidb/tabular-store": "workspace:*",
+    "@hierarchidb/tabular-source": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^18.2.45",

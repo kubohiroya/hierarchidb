@@ -33,13 +33,22 @@ export function applySortFilterSearch(
 
   if (term) {
     const lower = term.toLowerCase();
-    arr = arr.filter((n) => (n.name || '').toLowerCase().includes(lower));
+    arr = arr.filter((n) => {
+      const name = n.metadata?.name ?? '';
+      const desc = n.metadata?.description ?? '';
+      return name.toLowerCase().includes(lower) || desc.toLowerCase().includes(lower);
+    });
   }
 
   arr.sort((a, b) => {
     const key = sortBy || 'name';
-    const va = (a as unknown as Record<string, unknown>)[key] ?? '';
-    const vb = (b as unknown as Record<string, unknown>)[key] ?? '';
+    const resolve = (node: TreeNodeData): unknown => {
+      if (key === 'name') return node.metadata?.name ?? '';
+      if (key === 'description') return node.metadata?.description ?? '';
+      return (node as unknown as Record<string, unknown>)[key];
+    };
+    const va = resolve(a) ?? '';
+    const vb = resolve(b) ?? '';
     const cmp = String(va).localeCompare(String(vb), undefined, {
       numeric: true,
       sensitivity: 'base',

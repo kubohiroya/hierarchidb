@@ -91,14 +91,14 @@ export function createDefaultColumns(options?: ColumnOptions): TreeTableColumn[]
       label: t('trash.columns.name', 'Name'),
       sortable: true,
       width: 300,
-      render: (_value: unknown, node: TreeNodeData) => node.name,
+      render: (_value: unknown, node: TreeNodeData) => node.metadata?.name ?? '',
     },
     {
       id: 'description',
       label: t('trash.columns.description', 'Description'),
       sortable: true,
       width: 300,
-      render: (_value: unknown, node: TreeNodeData) => node.description || '-',
+      render: (_value: unknown, node: TreeNodeData) => node.metadata?.description || '-',
     },
     {
       id: 'createdAt',
@@ -147,7 +147,7 @@ export function createBreadcrumbFromTreeNode(node: TreeNode): {
 } {
   return {
     id: node.id,
-    name: node.name,
+    name: (node as { metadata?: { name?: string } }).metadata?.name ?? '',
     nodeType: node.nodeType,
     isClickable: true,
   };
@@ -168,7 +168,8 @@ export function filterTreeNodeData(
   const term = caseSensitive ? searchTerm : searchTerm.toLowerCase();
 
   return nodes.filter((node) => {
-    const name = caseSensitive ? node.name : node.name.toLowerCase();
+    const rawName = node.metadata?.name ?? '';
+    const name = caseSensitive ? rawName : rawName.toLowerCase();
     return name.includes(term);
   });
 }
@@ -187,12 +188,12 @@ export function sortTreeNodeData(
 
     switch (sortBy) {
       case 'name':
-        aValue = a.name;
-        bValue = b.name;
+        aValue = a.metadata?.name ?? '';
+        bValue = b.metadata?.name ?? '';
         break;
       case 'description':
-        aValue = a.description || '';
-        bValue = b.description || '';
+        aValue = a.metadata?.description || '';
+        bValue = b.metadata?.description || '';
         break;
       case 'createdAt':
         aValue = a.createdAt || 0;
@@ -216,8 +217,8 @@ export function sortTreeNodeData(
         break;
       }
       default:
-        aValue = a.name;
-        bValue = b.name;
+        aValue = a.metadata?.name ?? '';
+        bValue = b.metadata?.name ?? '';
     }
 
     // Handle string comparison

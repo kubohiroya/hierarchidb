@@ -4,7 +4,7 @@ import type { CoreDB } from '../../../services/CoreDB.js';
 import { EntityLifecycleManager } from '../../EntityLifecycleManager.js';
 
 const makeCore = () => ({
-  getNode: vi.fn(async (): Promise<TreeNode | undefined> => undefined),
+  getNode: vi.fn(async (_id: NodeId) => undefined) as unknown as CoreDB['getNode'],
 });
 
 describe('EntityLifecycleManager.setIdMapping', () => {
@@ -40,7 +40,10 @@ describe('EntityLifecycleManager.setIdMapping', () => {
       id,
       nodeType: 'folder' as NodeType,
       parentId: 'root' as NodeId,
-      name: 'node',
+      metadata: { name: 'node', description: undefined, tags: [] },
+      draftMetadata: null,
+      data: {},
+      draftData: null,
       depth: 1,
       createdAt: Date.now(),
       updatedAt: Date.now(),

@@ -99,8 +99,7 @@
     "@mui/material": "^7.3.2",
     "dexie": "^4.2.0",
     "react": ">=18.0.0",
-    "react-dom": ">=18.0.0",
-    "@hierarchidb/plugin-base": "workspace:*"
+    "react-dom": ">=18.0.0"
   },
   "devDependencies": {
     "dexie": "^4.2.0",
@@ -123,7 +122,6 @@
     "@mui/icons-material": "^7.3.2",
     "vitest": "^3.2.4",
     "@hierarchidb/plugin-service-api": "workspace:*",
-    "@hierarchidb/util": "workspace:*",
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-auth": "workspace:*",
@@ -140,9 +138,7 @@
     "@hierarchidb/ui-lru-splitview": "workspace:*",
     "@hierarchidb/runtime-client": "workspace:*",
     "@hierarchidb/download": "workspace:*",
-    "@hierarchidb/plugin-base": "workspace:*",
     "@hierarchidb/plugin-runtime-services": "workspace:*",
-    "@hierarchidb/util": "workspace:*",
     "@hierarchidb/spreadsheet-plugin": "workspace:*"
   },
   "type": "module",

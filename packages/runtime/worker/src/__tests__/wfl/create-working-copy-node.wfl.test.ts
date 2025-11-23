@@ -56,7 +56,7 @@ describe('Comlink + fake-indexeddb integration: create flow uses workingCopy bef
     expect(created).toBeTruthy();
     if (!created) throw new Error('working copy not created');
     expect(created.id).toBe(newId);
-    expect(created.name).toBe('Created From Test');
+    expect(created.metadata.name).toBe('Created From Test');
     expect(created.nodeType).toBe('folder');
 
     const holder = await queryAPI.getNode(created.parentId as NodeId);

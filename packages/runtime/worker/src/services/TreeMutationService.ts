@@ -17,6 +17,7 @@ import {
 import { SingletonMixin } from '@hierarchidb/util';
 import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';
 import { PERFORMANCE_CONFIG } from '../utils/performance-config.js';
+import { resolveDefaultNodeName } from '../utils/default-node-name.js';
 import type { CommandProcessor } from './CommandProcessor.js';
 import type { CoreDB } from './CoreDB.js';
 import { sanitizeMessageText } from './utils/error-adapter.js';
@@ -130,12 +131,13 @@ export class TreeMutationService implements TreeMutationAPI {
   }): Promise<{ success: true; nodeId: NodeId } | { success: false; error: string }> {
     try {
       const { createDraftWorkingCopy } = await import('./WorkingCopyTreeNodeOperations.js');
+      const desiredName = params.name?.trim() || resolveDefaultNodeName(params.nodeType);
       const wcNodeId = await createDraftWorkingCopy(
         this.coreDB,
         params.treeId,
         params.parentId,
         params.nodeType,
-        params.name
+        desiredName
       );
       return { success: true, nodeId: wcNodeId as NodeId };
     } catch (error) {
@@ -348,7 +350,7 @@ export class TreeMutationService implements TreeMutationAPI {
       const cached = siblingNamesCache.get(parentId);
       if (cached) return cached;
       const siblings = (await this.coreDB.listChildren?.(parentId)) || [];
-      const names = new Set<string>(siblings.map((sibling) => sibling.name));
+      const names = new Set<string>(siblings.map((sibling) => sibling.metadata.name));
       siblingNamesCache.set(parentId, names);
       return names;
     };
@@ -381,9 +383,9 @@ export class TreeMutationService implements TreeMutationAPI {
       }
 
       const siblingNames = await getSiblingNames(toParentId);
-      let desiredName = sourceNode.name;
+      let desiredName = sourceNode.metadata.name;
       while (siblingNames.has(desiredName)) {
-        desiredName = createNewName([...siblingNames], sourceNode.name);
+        desiredName = createNewName([...siblingNames], sourceNode.metadata.name);
         if (!siblingNames.has(desiredName)) break;
       }
       siblingNames.add(desiredName);
@@ -508,7 +510,7 @@ export class TreeMutationService implements TreeMutationAPI {
 
       //  :
       const siblings = (await this.coreDB.listChildren?.(parentId)) || [];
-      const existingNames = new Set<string>(siblings.map((sibling: TreeNode) => sibling.name));
+      const existingNames = new Set<string>(siblings.map((sibling: TreeNode) => sibling.metadata.name));
 
       //  :
       const timestamp = Date.now() as Timestamp;
@@ -531,13 +533,13 @@ export class TreeMutationService implements TreeMutationAPI {
           console.warn(`Source node not found in clipboard data: ${nodeId}`);
           continue;
         }
-        if (!sourceNode.name || typeof sourceNode.name !== 'string') {
+        if (!sourceNode.metadata.name || typeof sourceNode.metadata.name !== 'string') {
           // Generate a fallback name to allow lifecycle-driven tests with minimal stubs.
-          sourceNode.name = 'Untitled';
+          sourceNode.metadata.name = 'Untitled';
         }
 
         const newNodeId = generateNodeId();
-        let newName = sourceNode.name;
+        let newName = sourceNode.metadata.name;
         const generated = newName === 'Untitled';
         if ((onNameConflict === 'auto-rename' || generated) && existingNames.has(newName)) {
           newName = this.resolveNameConflictEfficiently(newName, existingNames);
@@ -557,11 +559,11 @@ export class TreeMutationService implements TreeMutationAPI {
           rel = 2;
         }
 
-        const newNode: TreeNode = {
-          ...(sourceNode as TreeNode),
-          id: newNodeId,
-          parentId: parentId,
-          name: newName,
+       const newNode: TreeNode = {
+         ...(sourceNode as TreeNode),
+         id: newNodeId,
+         parentId: parentId,
+          metadata: { ...sourceNode.metadata, name: newName },
           depth: baseDepth + rel,
           createdAt: timestamp,
           updatedAt: timestamp,
@@ -678,12 +680,12 @@ export class TreeMutationService implements TreeMutationAPI {
         }
         if (!trashRootId) continue;
         const now = Date.now() as Timestamp;
-        if (node.holderType === 'trash' && node.parentId === trashRootId) {
-          continue;
-        }
+      if ((node as { removedAt?: Timestamp }).removedAt && node.parentId === trashRootId) {
+        continue;
+      }
 
         const preservedOriginalName =
-          (node as { originalName?: string }).originalName ?? node.name;
+          (node as { originalName?: string }).originalName ?? node.metadata.name;
         const trashName =
           typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
             ? crypto.randomUUID()
@@ -692,13 +694,10 @@ export class TreeMutationService implements TreeMutationAPI {
         await this.coreDB.updateNode?.({
           id: node.id,
           parentId: trashRootId,
-          name: trashName,
+          metadata: { ...node.metadata, name: trashName },
           originalName: preservedOriginalName,
           originalParentId: originalParentId,
           removedAt: now,
-          holderType: 'trash',
-          holderTargetId: node.id,
-          holderMetaParentId: originalParentId,
           updatedAt: now,
           version: (node.version ?? 1) + 1,
         });
@@ -776,18 +775,18 @@ export class TreeMutationService implements TreeMutationAPI {
       const newParentId = idMapping.get(node.parentId) || toParentId;
 
       // Handle name conflicts
-      let newName = node.name;
+      let newName = node.metadata.name;
       if (onNameConflict === 'auto-rename') {
         const siblings = (await this.coreDB.listChildren?.(newParentId)) || [];
-        const siblingNames = siblings.map((sibling: TreeNode) => sibling.name);
-        newName = createNewName(siblingNames, node.name);
+        const siblingNames = siblings.map((sibling: TreeNode) => sibling.metadata.name);
+        newName = createNewName(siblingNames, node.metadata.name);
       }
 
       await this.coreDB.createNode?.({
         ...node,
         id: newNodeId,
         parentId: newParentId,
-        name: newName,
+        metadata: { ...node.metadata, name: newName },
         depth: baseDepth + getRelDepth(nodeId),
         createdAt: Date.now() as Timestamp,
         updatedAt: Date.now() as Timestamp,

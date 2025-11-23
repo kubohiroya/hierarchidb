@@ -137,7 +137,7 @@ function extractNameFromError(error: unknown): string | null {
       return raw;
     }
   }
-  if (error instanceof Error && error.name) {
+  if (error instanceof Error && typeof error.name === 'string') {
     return error.name;
   }
   return null;

@@ -102,7 +102,7 @@ const runFolderUndoRedoFlow = async () => {
     );
     expect(renameResult.success).toBe(true);
     await waitFor(
-      async () => (await queryAPI.getNode(resolvedNodeId))?.name === 'UndoRedo WFL Renamed'
+      async () => (await queryAPI.getNode(resolvedNodeId))?.metadata.name === 'UndoRedo WFL Renamed'
     );
 
     const trashResult = await commandProcessor.processCommand(
@@ -111,7 +111,7 @@ const runFolderUndoRedoFlow = async () => {
     expect(trashResult.success).toBe(true);
     await waitFor(async () => {
       const node = await queryAPI.getNode(resolvedNodeId);
-      return node?.holderType === 'trash';
+      return Boolean(node?.removedAt);
     });
     await waitFor(async () => {
       const trashChildren = await queryAPI.listChildren(trashRootId);
@@ -128,14 +128,14 @@ const runFolderUndoRedoFlow = async () => {
     expect(restoreResult.success).toBe(true);
     await waitFor(async () => {
       const node = await queryAPI.getNode(resolvedNodeId);
-      return node?.parentId === rootId && node?.holderType === undefined;
+      return node?.parentId === rootId && node?.removedAt === undefined;
     });
     const nodeAfterRestore = await queryAPI.getNode(resolvedNodeId);
-    expect(nodeAfterRestore?.name).toBe('UndoRedo WFL Renamed');
+    expect(nodeAfterRestore?.metadata.name).toBe('UndoRedo WFL Renamed');
 
     const expectInTrash = async () => {
       const node = await queryAPI.getNode(resolvedNodeId);
-      expect(node?.holderType).toBe('trash');
+      expect(node?.removedAt).toBeTruthy();
       const trashChildren = await queryAPI.listChildren(trashRootId);
       expect(trashChildren.some((child) => child.id === resolvedNodeId)).toBe(true);
     };
@@ -143,15 +143,15 @@ const runFolderUndoRedoFlow = async () => {
     const expectInTreeWithRenamed = async () => {
       const node = await queryAPI.getNode(resolvedNodeId);
       expect(node?.parentId).toBe(rootId);
-      expect(node?.holderType).toBeUndefined();
-      expect(node?.name).toBe('UndoRedo WFL Renamed');
+      expect(node?.removedAt).toBeUndefined();
+      expect(node?.metadata.name).toBe('UndoRedo WFL Renamed');
     };
 
     const expectInTreeWithOriginal = async () => {
       const node = await queryAPI.getNode(resolvedNodeId);
       expect(node?.parentId).toBe(rootId);
-      expect(node?.holderType).toBeUndefined();
-      expect(node?.name).toBe('UndoRedo WFL Original');
+      expect(node?.removedAt).toBeUndefined();
+      expect(node?.metadata.name).toBe('UndoRedo WFL Original');
     };
 
     const expectRemoved = async () => {
@@ -162,18 +162,18 @@ const runFolderUndoRedoFlow = async () => {
 
     const undoRestore = await commandProcessor.undo();
     expect(undoRestore.success).toBe(true);
-    await waitFor(async () => (await queryAPI.getNode(resolvedNodeId))?.holderType === 'trash');
+    await waitFor(async () => Boolean((await queryAPI.getNode(resolvedNodeId))?.removedAt));
     await expectInTrash();
 
     const undoTrash = await commandProcessor.undo();
     expect(undoTrash.success).toBe(true);
-    await waitFor(async () => (await queryAPI.getNode(resolvedNodeId))?.holderType === undefined);
+    await waitFor(async () => (await queryAPI.getNode(resolvedNodeId))?.removedAt === undefined);
     await expectInTreeWithRenamed();
 
     const undoRename = await commandProcessor.undo();
     expect(undoRename.success).toBe(true);
     await waitFor(
-      async () => (await queryAPI.getNode(resolvedNodeId))?.name === 'UndoRedo WFL Original'
+      async () => (await queryAPI.getNode(resolvedNodeId))?.metadata.name === 'UndoRedo WFL Original'
     );
     await expectInTreeWithOriginal();
 
@@ -184,25 +184,25 @@ const runFolderUndoRedoFlow = async () => {
     const redoCreate = await commandProcessor.redo();
     expect(redoCreate.success).toBe(true);
     await waitFor(
-      async () => (await queryAPI.getNode(resolvedNodeId))?.name === 'UndoRedo WFL Original'
+      async () => (await queryAPI.getNode(resolvedNodeId))?.metadata.name === 'UndoRedo WFL Original'
     );
     await expectInTreeWithOriginal();
 
     const redoRename = await commandProcessor.redo();
     expect(redoRename.success).toBe(true);
     await waitFor(
-      async () => (await queryAPI.getNode(resolvedNodeId))?.name === 'UndoRedo WFL Renamed'
+      async () => (await queryAPI.getNode(resolvedNodeId))?.metadata.name === 'UndoRedo WFL Renamed'
     );
     await expectInTreeWithRenamed();
 
     const redoTrash = await commandProcessor.redo();
     expect(redoTrash.success).toBe(true);
-    await waitFor(async () => (await queryAPI.getNode(resolvedNodeId))?.holderType === 'trash');
+    await waitFor(async () => Boolean((await queryAPI.getNode(resolvedNodeId))?.removedAt));
     await expectInTrash();
 
     const redoRestore = await commandProcessor.redo();
     expect(redoRestore.success).toBe(true);
-    await waitFor(async () => (await queryAPI.getNode(resolvedNodeId))?.holderType === undefined);
+    await waitFor(async () => (await queryAPI.getNode(resolvedNodeId))?.removedAt === undefined);
     await expectInTreeWithRenamed();
   } finally {
     await cleanup();

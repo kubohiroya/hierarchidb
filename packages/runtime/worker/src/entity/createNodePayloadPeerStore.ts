@@ -9,8 +9,11 @@ const resolveNodeState = <TData>(node: TreeNode | undefined): ({
   updatedAt?: number;
 } & { data: TData | undefined; dialogWindow?: DialogWindowState | null; dialogProgress?: DialogProgressState | null }) | null => {
   if (!node) return null;
-  const isWorkingCopy = node.holderType === 'workingCopy';
-  const targetField: 'data' | 'draftData' = isWorkingCopy ? 'draftData' : 'data';
+  const targetField: 'data' | 'draftData' =
+    (node as { draftData?: unknown }).draftData !== undefined &&
+    (node as { draftData?: unknown }).draftData !== null
+      ? 'draftData'
+      : 'data';
   const raw = (node as unknown as Record<string, unknown>)[targetField];
   const dialogUIState = (node as { dialogUIState?: DialogUIState }).dialogUIState;
   const dialogWindow =

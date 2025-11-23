@@ -20,9 +20,14 @@ describe('Headless E2E (Node + fake-indexeddb): CP routing + WC flows', () => {
     return await CoreDB.getSingleton(`e2e-${name}-${Date.now()}-${Math.random()}`);
   }
 
-  const withPayload = (node: Omit<TreeNode, 'data' | 'draftData'> & Partial<TreeNode>): TreeNode => ({
+  const withPayload = (
+    node: Omit<TreeNode, 'data' | 'draftData' | 'metadata' | 'draftMetadata'> &
+      Partial<TreeNode> & { name?: string }
+  ): TreeNode => ({
     data: {},
     draftData: null,
+    metadata: { name: node.name ?? 'Untitled', description: undefined, tags: [] },
+    draftMetadata: null,
     ...node,
   });
 
@@ -35,7 +40,7 @@ describe('Headless E2E (Node + fake-indexeddb): CP routing + WC flows', () => {
         nodeType: 'folder' as NodeType,
         treeId: 'r' as TreeId,
         parentId: 'r:root' as NodeId,
-        name: 'FolderB',
+        metadata: { name: 'FolderB' },
       })
     );
     expect(createRes.success).toBe(true);
@@ -45,7 +50,7 @@ describe('Headless E2E (Node + fake-indexeddb): CP routing + WC flows', () => {
     const nodeId = createRes.nodeId;
 
     const updateRes = await cp.processCommand(
-      cp.createEnvelope('updateNode', { nodeId, name: 'FolderB1' })
+      cp.createEnvelope('updateNode', { nodeId, metadata: { name: 'FolderB1' } })
     );
     expect(updateRes.success).toBe(true);
 

@@ -60,10 +60,16 @@ function buildImportNodes(data: TemplateFile): ImportData['nodes'] {
       .map((child) => toImportNode(child.treeNodeId))
       .filter((child): child is ImportData['nodes'][number] => child !== null);
     return {
-      name: node.name,
+      name: (node.metadata.name ?? '') as string,
       nodeType: node.treeNodeType,
-      description: node.description,
-      metadata: node.metadata,
+      description:
+        typeof node.metadata.description === 'string' ? node.metadata.description : undefined,
+      metadata: {
+        ...node.metadata,
+        name: (node.metadata.name ?? '') as string,
+        description:
+          typeof node.metadata.description === 'string' ? node.metadata.description : undefined,
+      },
       children: children.length > 0 ? children : undefined,
     };
   };
@@ -139,7 +145,7 @@ describe('WFL paste behavior for imported template', () => {
 
     const rootChildren = await queryAPI.listChildren(rootId);
     const populationFolder = rootChildren.find(
-      (node) => node.name === 'Total Population by Country'
+      (node) => node.metadata.name === 'Total Population by Country'
     );
     if (!populationFolder) throw new Error('Population folder not found');
 
@@ -191,10 +197,10 @@ describe('WFL paste behavior for imported template', () => {
     const rootChildrenAfterPaste = await queryAPI.listChildren(rootId);
     const pastedFolder = rootChildrenAfterPaste.find((child) => child.id === pastedRootId);
     expect(pastedFolder).toBeTruthy();
-    expect(pastedFolder?.name).not.toBe(populationFolder.name);
-    expect(pastedFolder?.name.startsWith(populationFolder.name)).toBe(true);
+    expect(pastedFolder?.metadata.name).not.toBe(populationFolder.metadata.name);
+    expect(pastedFolder?.metadata.name.startsWith(populationFolder.metadata.name)).toBe(true);
 
-    const uniqueNames = new Set(rootChildrenAfterPaste.map((node) => node.name));
+    const uniqueNames = new Set(rootChildrenAfterPaste.map((node) => node.metadata.name));
     expect(uniqueNames.size).toBe(rootChildrenAfterPaste.length);
   }, 30_000);
 });

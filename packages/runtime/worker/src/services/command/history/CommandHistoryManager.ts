@@ -385,7 +385,10 @@ export class CommandHistoryManager {
         await this.deps.coreDB.updateNode?.({
           ...node,
           parentId: entry.previousParentId,
-          name: entry.previousName,
+          metadata: {
+            ...node.metadata,
+            name: entry.previousName ?? node.metadata.name,
+          },
           originalName: entry.previousOriginalName,
           originalParentId: entry.previousOriginalParentId,
           removedAt: entry.previousRemovedAt,
@@ -425,15 +428,18 @@ export class CommandHistoryManager {
         const payload = command.payload as {
           parentId: NodeId;
           nodeType?: NodeType;
-          name: string;
-          description?: string;
+          metadata: { name: string; description?: string; tags?: string[] };
         };
         const restoredNode: TreeNode = {
           id: created,
           parentId: payload.parentId,
           nodeType: (payload.nodeType || 'folder') as NodeType,
-          name: payload.name,
-          description: payload.description,
+          metadata: {
+            name: payload.metadata.name,
+            description: payload.metadata.description,
+            tags: payload.metadata.tags ?? [],
+          },
+          draftMetadata: null,
           data: null,
           draftData: null,
           depth: 0,
@@ -448,17 +454,26 @@ export class CommandHistoryManager {
       case 'updateNode': {
         const payload = command.payload as {
           nodeId: NodeId;
-          name?: string;
-          description?: string;
+          metadata?: { name?: string; description?: string; tags?: string[] };
         };
         const node = await this.deps.coreDB.getNode?.(payload.nodeId);
         if (!node) {
           throw new Error('Node not found');
         }
+        const nextMetadata =
+          payload.metadata && payload.metadata.name !== undefined
+            ? {
+                name: payload.metadata.name,
+                description:
+                  payload.metadata.description !== undefined
+                    ? payload.metadata.description
+                    : node.metadata.description,
+                tags: payload.metadata.tags ?? node.metadata.tags ?? [],
+              }
+            : undefined;
         await this.deps.coreDB.updateNode?.({
           ...node,
-          ...(payload.name && { name: payload.name }),
-          ...(payload.description !== undefined && { description: payload.description }),
+          ...(nextMetadata && { metadata: nextMetadata }),
           updatedAt: Date.now() as Timestamp,
           version: node.version + 1,
         });
@@ -476,18 +491,18 @@ export class CommandHistoryManager {
           if (!node) {
             continue;
           }
-          let nextName = node.name;
+          let nextName = node.metadata.name;
           if (payload.onNameConflict === 'auto-rename') {
             const siblings = (await this.deps.coreDB.listChildren?.(payload.toParentId)) || [];
             nextName = createNewName(
-              siblings.map((sibling) => sibling.name),
-              node.name
+              siblings.map((sibling) => sibling.metadata.name),
+              node.metadata.name
             );
           }
           await this.deps.coreDB.updateNode?.({
             ...node,
             parentId: payload.toParentId,
-            name: nextName,
+            metadata: { ...node.metadata, name: nextName },
             updatedAt: Date.now() as Timestamp,
           });
         }
@@ -526,11 +541,11 @@ export class CommandHistoryManager {
           }
 
           const nextName =
-            storedNext?.nextName ?? (node as { originalName?: string }).originalName ?? node.name;
+            storedNext?.nextName ?? (node as { originalName?: string }).originalName ?? node.metadata.name;
           await this.deps.coreDB.updateNode?.({
             ...node,
             parentId: targetParentId,
-            name: nextName,
+            metadata: { ...node.metadata, name: nextName },
             originalName: undefined,
             originalParentId: undefined,
             removedAt: undefined,
@@ -550,11 +565,11 @@ export class CommandHistoryManager {
             continue;
           }
           const now = Date.now() as Timestamp;
-          const trashName = entry.trashName ?? node.name;
+          const trashName = entry.trashName ?? node.metadata.name;
           await this.deps.coreDB.updateNode?.({
             ...node,
             parentId: entry.trashRootId,
-            name: trashName,
+            metadata: { ...node.metadata, name: trashName },
             originalName: entry.previousOriginalName ?? entry.previousName,
             originalParentId: entry.previousOriginalParentId ?? entry.previousParentId,
             removedAt: now,

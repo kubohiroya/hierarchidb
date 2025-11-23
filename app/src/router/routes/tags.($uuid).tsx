@@ -203,7 +203,7 @@ export default function TagsPage({ uuid }: { uuid?: string }) {
                     color="primary"
                     underline="none"
                   >
-                    {node.name}
+                    {node.metadata?.name}
                   </Link>
                 }
                 secondary={

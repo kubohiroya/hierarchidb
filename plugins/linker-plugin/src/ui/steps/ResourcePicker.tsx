@@ -83,7 +83,7 @@ export const ResourcePicker: React.FC<ResourcePickerProps> = ({ value, onChange,
   const toRows = (nodes: TreeNode[], depth: number): Row[] =>
     (nodes || []).map((node) => ({
       id: String(node.id),
-      name: node.name,
+      name: node.metadata?.name ?? '',
       nodeType: node.nodeType,
       hasChildren: Boolean(node.hasChildren),
       depth,
@@ -161,14 +161,24 @@ export const ResourcePicker: React.FC<ResourcePickerProps> = ({ value, onChange,
       treeData.forEach((row) => {
         const primary = row.id as NodeId;
         const parent = (parentId || 'root') as NodeId;
-        index.set(primary, {
-          id: primary,
-          parentId: parent,
-          nodeType: row.nodeType as TreeNode['nodeType'],
-          name: row.name,
-          depth: row.depth,
-          hasChildren: row.hasChildren,
-        } as TreeNode, parent);
+        index.set(
+          primary,
+          {
+            id: primary,
+            parentId: parent,
+            nodeType: row.nodeType as TreeNode['nodeType'],
+            metadata: { name: row.name },
+            draftMetadata: null,
+            data: null,
+            draftData: null,
+            depth: row.depth,
+            hasChildren: row.hasChildren,
+            createdAt: Date.now() as any,
+            updatedAt: Date.now() as any,
+            version: 1,
+          } as TreeNode,
+          parent
+        );
       });
       return index;
     })(),

@@ -85,7 +85,8 @@ export function TreeLayoutBody({ data }: TreeLayoutBodyProps) {
     }
   };
 
-  const pageName = data.pageNode?.name || data.tree?.name || 'TreeTypes Console';
+  const pageName =
+    data.pageNode?.metadata?.name || data.tree?.name || 'TreeTypes Console';
 
   return (
     <TreeConsoleThemeBoundary treeId={data.tree?.id}>

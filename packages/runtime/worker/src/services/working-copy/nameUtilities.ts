@@ -3,7 +3,7 @@ import type { CoreDB } from '../CoreDB.js';
 
 export async function getChildNames(coreDB: CoreDB, parentId: NodeId): Promise<string[]> {
   const children = await coreDB.listChildren(parentId);
-  return children.map((child: TreeNode) => child.name);
+  return children.map((child: TreeNode) => child.metadata.name);
 }
 
 export function createNewName(siblingNames: string[], baseName: string): string {

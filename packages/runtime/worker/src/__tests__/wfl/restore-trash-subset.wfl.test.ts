@@ -73,7 +73,7 @@ describe('Comlink + fake-indexeddb integration: partial trash restore flow', () 
         throw new Error(`holder missing for ${name}`);
       }
 
-      const { targetNodeId } = decodeWorkingCopyHolderName(holder.name);
+      const { targetNodeId } = decodeWorkingCopyHolderName(holder.metadata.name);
       const canonicalId = targetNodeId as NodeId;
 
       const commitResult = await workingCopyAPI.commitWorkingCopy(createResult.nodeId);
@@ -115,10 +115,10 @@ describe('Comlink + fake-indexeddb integration: partial trash restore flow', () 
     }
     expect(trashedChildOne.parentId).toBe(trashRootId);
     expect(trashedChildTwo.parentId).toBe(trashRootId);
-    expect(trashedChildOne.holderType).toBe('trash');
-    expect(trashedChildTwo.holderType).toBe('trash');
-    expect(trashedChildOne.name).not.toBe('Integration Trash Child C');
-    expect(trashedChildTwo.name).not.toBe('Integration Trash Child D');
+    expect(trashedChildOne.removedAt).toBeTruthy();
+    expect(trashedChildTwo.removedAt).toBeTruthy();
+    expect(trashedChildOne.metadata.name).not.toBe('Integration Trash Child C');
+    expect(trashedChildTwo.metadata.name).not.toBe('Integration Trash Child D');
     expect(trashedChildOne.originalName).toBe('Integration Trash Child C');
     expect(trashedChildTwo.originalName).toBe('Integration Trash Child D');
     expect(trashedChildOne.originalParentId).toBe(parentId);
@@ -140,7 +140,7 @@ describe('Comlink + fake-indexeddb integration: partial trash restore flow', () 
 
     const childTwoAfterRestore = await queryAPI.getNode(childTwoId);
     expect(childTwoAfterRestore?.parentId).toBe(trashRootId);
-    expect(childTwoAfterRestore?.holderType).toBe('trash');
+    expect(childTwoAfterRestore?.removedAt).toBeTruthy();
     expect(childTwoAfterRestore?.originalParentId).toBe(parentId);
     expect(childTwoAfterRestore?.originalName).toBe('Integration Trash Child D');
 

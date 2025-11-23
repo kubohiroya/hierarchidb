@@ -42,20 +42,22 @@ const readBasicInfoOverrides = (
   data?: BaseMapWorkingCopy | Record<string, unknown>
 ): { name?: string; description?: string; tags?: string[] } => {
   const record = isRecord(data) ? data : undefined;
-  const draftRecord = isRecord(record?.draft) ? (record!.draft as Record<string, unknown>) : undefined;
-  const nameCandidate =
-    typeof record?.name === 'string'
-      ? record.name
-      : typeof draftRecord?.name === 'string'
-        ? draftRecord.name
-        : undefined;
-  const descriptionCandidate =
-    typeof record?.description === 'string'
-      ? record.description
-      : typeof draftRecord?.description === 'string'
-        ? draftRecord.description
-        : undefined;
-  const tags = toStringArray(record?.tags ?? draftRecord?.tags);
+  const payload = isRecord((record as any)?.draftData)
+    ? ((record as any).draftData as Record<string, unknown>)
+    : isRecord(record?.draft)
+      ? (record!.draft as Record<string, unknown>)
+      : undefined;
+  const nameCandidate = typeof record?.name === 'string'
+    ? record.name
+    : typeof payload?.name === 'string'
+      ? payload.name
+      : undefined;
+  const descriptionCandidate = typeof record?.description === 'string'
+    ? record.description
+    : typeof payload?.description === 'string'
+      ? payload.description
+      : undefined;
+  const tags = toStringArray(record?.tags ?? payload?.tags);
   return {
     name: nameCandidate,
     description: descriptionCandidate,
@@ -64,47 +66,49 @@ const readBasicInfoOverrides = (
 };
 
 const isBasemapWorkingCopyRecord = (value: unknown): value is BaseMapWorkingCopy =>
-  isRecord(value) &&
-  'draft' in value &&
-  'treeNodeId' in value &&
-  'createdAt' in value &&
-  'updatedAt' in value;
+  isRecord(value) && 'treeNodeId' in value && 'createdAt' in value && 'updatedAt' in value;
 
 const ensureWorkingCopy = (
   data?: BaseMapWorkingCopy | Record<string, unknown>
 ): BaseMapWorkingCopy => {
   const now = Date.now() as Timestamp;
   if (isBasemapWorkingCopyRecord(data)) {
-    const cast = data;
+    const cast = data as any;
     const fallbackTouched = typeof cast.originalVersion === 'number';
+    const payload = isRecord(cast.draftData)
+      ? (cast.draftData as Record<string, unknown>)
+      : isRecord(cast.draft)
+        ? (cast.draft as Record<string, unknown>)
+        : {};
     const normalizedStyle = normalizeMapStyle(
-      cast.draft?.mapStyle ?? cast.mapStyle ?? DEFAULT_STYLE
+      (payload.mapStyle as Partial<MapStyle> | undefined) ?? cast.mapStyle ?? DEFAULT_STYLE
     );
     const normalizedViewport = normalizeViewport(
-      cast.draft?.viewport ?? cast.viewport ?? DEFAULT_VIEWPORT
+      (payload.viewport as Partial<MapViewport> | undefined) ?? cast.viewport ?? DEFAULT_VIEWPORT
     );
     const overrides = readBasicInfoOverrides(cast);
     const rootName = overrides.name ?? cast.name;
     const rootDescription = overrides.description ?? cast.description;
-    const normalizedTags = overrides.tags ?? cast.tags ?? toStringArray((cast.draft as { tags?: unknown })?.tags);
+    const normalizedTags = overrides.tags ?? cast.tags ?? toStringArray(payload.tags);
+    const draftPayload = {
+      ...payload,
+      mapStyle: normalizedStyle,
+      viewport: normalizedViewport,
+      name: typeof payload.name === 'string' ? payload.name : rootName,
+      description: typeof payload.description === 'string' ? payload.description : rootDescription,
+    };
     return {
       ...cast,
       treeNodeId: cast.treeNodeId ?? ('' as NodeId),
       createdAt: cast.createdAt ?? now,
       updatedAt: cast.updatedAt ?? now,
-      draft: {
-        ...(cast.draft ?? {}),
-        mapStyle: normalizedStyle,
-        viewport: normalizedViewport,
-        name: typeof cast.draft?.name === 'string' ? cast.draft.name : rootName,
-        description:
-          typeof cast.draft?.description === 'string' ? cast.draft.description : rootDescription,
-      },
+      draftData: draftPayload,
+      draft: draftPayload as any,
       mapStyle: normalizedStyle,
       viewport: normalizedViewport,
       tags: normalizedTags,
       uiState: normalizeUiState(cast.uiState, fallbackTouched),
-    } satisfies BaseMapWorkingCopy;
+    } satisfies BaseMapWorkingCopy as any;
   }
 
   const record = isRecord(data) ? data : {};
@@ -113,6 +117,13 @@ const ensureWorkingCopy = (
   const overrides = readBasicInfoOverrides(record);
   const hasPersistedStyle = isRecord(record.mapStyle);
   const hasPersistedViewport = isRecord(record.viewport);
+  const draftPayload: Record<string, unknown> = {
+    mapStyle: normalizedStyle,
+    viewport: normalizedViewport,
+    name: overrides.name,
+    description: overrides.description,
+    tags: overrides.tags ?? toStringArray(record.tags),
+  };
   return {
     treeNodeId: '' as NodeId,
     createdAt: now,
@@ -120,18 +131,14 @@ const ensureWorkingCopy = (
     version: 1,
     mapStyle: normalizedStyle,
     viewport: normalizedViewport,
-    draft: {
-      mapStyle: undefined,
-      viewport: undefined,
-      name: overrides.name,
-      description: overrides.description,
-    },
+    draftData: draftPayload,
+    draft: draftPayload as any,
     tags: overrides.tags ?? toStringArray(record.tags),
     uiState: {
       mapStyleTouched: hasPersistedStyle,
       viewportTouched: hasPersistedViewport,
     },
-  } satisfies BaseMapWorkingCopy;
+  } satisfies BaseMapWorkingCopy as any;
 };
 
 const mergeWorkingCopy = (
@@ -140,12 +147,18 @@ const mergeWorkingCopy = (
 ): BaseMapWorkingCopy => ({
   ...current,
   ...updates,
-  draft: {
-    ...(current.draft ?? {}),
-    ...(updates.draft ?? {}),
+  draftData: {
+    ...(current as any).draftData,
+    ...(updates as any).draftData,
   },
-  mapStyle: updates.draft?.mapStyle ?? updates.mapStyle ?? current.mapStyle,
-  viewport: updates.draft?.viewport ?? updates.viewport ?? current.viewport,
+  draft: {
+    ...(current as any).draftData,
+    ...(updates as any).draftData,
+  } as any,
+  mapStyle:
+    (updates as any).draftData?.mapStyle ?? updates.mapStyle ?? (current as any).draftData?.mapStyle ?? current.mapStyle,
+  viewport:
+    (updates as any).draftData?.viewport ?? updates.viewport ?? (current as any).draftData?.viewport ?? current.viewport,
   uiState: {
     mapStyleTouched:
       updates.uiState?.mapStyleTouched ?? current.uiState?.mapStyleTouched ?? false,
@@ -184,8 +197,8 @@ export const getBasemapStepConfigs = (): PluginStepConfig<BaseMapWorkingCopy>[] 
           const handleChange = (next: MapStyle) =>
             p.onChange(
               mergeWorkingCopy(workingCopy, {
-                draft: {
-                  ...workingCopy.draft,
+                draftData: {
+                  ...(workingCopy as any).draftData,
                   mapStyle: next,
                 },
                 uiState: {
@@ -195,19 +208,20 @@ export const getBasemapStepConfigs = (): PluginStepConfig<BaseMapWorkingCopy>[] 
               })
             );
           const selectedStyle =
-            workingCopy.draft?.mapStyle ??
-            (p.mode === 'edit' ? workingCopy.mapStyle : undefined);
+            (workingCopy as any).draftData?.mapStyle ??
+            (p.mode === 'edit' ? (workingCopy as any).mapStyle : undefined);
           return <MapStyleStep value={selectedStyle} onChange={handleChange} />;
         },
         validate: (data?: BaseMapWorkingCopy) => {
           try {
-            const style = data?.draft?.mapStyle?.style ?? data?.mapStyle?.style;
+            const style =
+              (data as any)?.draftData?.mapStyle?.style ?? (data as any)?.mapStyle?.style;
             if (!style) return false;
             const touched = Boolean(data?.uiState?.mapStyleTouched);
             const hasPersistedStyle = Boolean(data?.mapStyle?.style);
             if (!touched && !hasPersistedStyle) return false;
             if (style === 'custom') {
-              const url = data?.draft?.mapStyle?.customStyleUrl;
+              const url = (data as any)?.draftData?.mapStyle?.customStyleUrl;
               new URL(String(url));
             }
             return true;
@@ -224,8 +238,8 @@ export const getBasemapStepConfigs = (): PluginStepConfig<BaseMapWorkingCopy>[] 
           const handleViewportChange = (next: MapViewport) =>
             p.onChange(
               mergeWorkingCopy(workingCopy, {
-                draft: {
-                  ...workingCopy.draft,
+                draftData: {
+                  ...(workingCopy as any).draftData,
                   viewport: next,
                 },
                 uiState: {
@@ -236,8 +250,8 @@ export const getBasemapStepConfigs = (): PluginStepConfig<BaseMapWorkingCopy>[] 
             );
           return (
             <ViewportStep
-              value={workingCopy.draft?.viewport ?? workingCopy.viewport}
-              mapStyle={workingCopy.draft?.mapStyle ?? workingCopy.mapStyle}
+              value={(workingCopy as any).draftData?.viewport ?? workingCopy.viewport}
+              mapStyle={(workingCopy as any).draftData?.mapStyle ?? workingCopy.mapStyle}
               mode={p.mode}
               nodeId={p.nodeId as NodeId | undefined}
               onChange={handleViewportChange}
@@ -247,7 +261,7 @@ export const getBasemapStepConfigs = (): PluginStepConfig<BaseMapWorkingCopy>[] 
         validate: (data?: BaseMapWorkingCopy) => {
           const touchedStyle = Boolean(data?.uiState?.mapStyleTouched || data?.mapStyle);
           if (!touchedStyle) return false;
-          const viewport = data?.draft?.viewport ?? data?.viewport;
+          const viewport = (data as any)?.draftData?.viewport ?? data?.viewport;
           return hasValidViewport(viewport);
         },
       },

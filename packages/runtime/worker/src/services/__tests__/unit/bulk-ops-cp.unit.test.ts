@@ -103,9 +103,6 @@ describe('CommandProcessor bulk operations', () => {
       originalName: 'n1',
       originalParentId: parent.id as NodeId,
       removedAt: Date.now(),
-      holderType: 'trash',
-      holderTargetId: 't1' as NodeId,
-      holderMetaParentId: parent.id as NodeId,
     });
     const trashed2 = await seedNode(core, {
       id: 't2' as NodeId,
@@ -114,10 +111,7 @@ describe('CommandProcessor bulk operations', () => {
       originalName: 'n2',
       originalParentId: parent.id as NodeId,
       removedAt: Date.now(),
-      holderType: 'trash',
-      holderTargetId: 't2' as NodeId,
-      holderMetaParentId: parent.id as NodeId,
-    });
+                      });
 
     const bulkUpdateSpy = vi.spyOn(core, 'bulkUpdateNodes');
     const bulkDeleteSpy = vi.spyOn(core, 'bulkDeleteNodes');
@@ -136,8 +130,8 @@ describe('CommandProcessor bulk operations', () => {
     const restored2 = await core.getNode(trashed2.id as NodeId);
     expect(restored1?.parentId).toBe(parent.id);
     expect(restored2?.parentId).toBe(parent.id);
-    expect(restored1?.holderType).toBeUndefined();
-    expect(restored2?.holderType).toBeUndefined();
+    expect(restored1?.removedAt).toBeUndefined();
+    expect(restored2?.removedAt).toBeUndefined();
   });
 
   it('restoreFromTrash auto-renames conflicting nodes when requested', async () => {
@@ -183,8 +177,8 @@ describe('CommandProcessor bulk operations', () => {
     expect(bulkUpdateSpy).toHaveBeenCalled();
 
     const restoredNames = [
-      (await core.getNode(trashed1.id as NodeId))?.name,
-      (await core.getNode(trashed2.id as NodeId))?.name,
+      (await core.getNode(trashed1.id as NodeId))?.metadata.name,
+      (await core.getNode(trashed2.id as NodeId))?.metadata.name,
     ].filter((name): name is string => typeof name === 'string');
 
     expect(new Set(restoredNames).size).toBe(2);

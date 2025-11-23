@@ -10,12 +10,16 @@ export const NODE_TYPES = {
   // Plugin-specific types will be added dynamically
 } as const;
 
+export interface TreeNodeMetadata {
+  name: string;
+  description?: string;
+  tags?: string[];
+}
+
 export interface NodeBase {
   id: NodeId;
   parentId: NodeId;
   nodeType: NodeType;
-  name: string;
-  description?: string;
   depth: number; // Mandatory depth property for efficient subscription filtering
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -62,6 +66,8 @@ export type NodePayload = NodePayloadBase | null;
 export type PersistedTreeNode<
   TData extends NodePayloadBase | null = NodePayloadBase | null
 > = NodeBase & {
+  metadata: TreeNodeMetadata;
+  draftMetadata: TreeNodeMetadata | null;
   data: TData;
   draftData: TData;
   dialogUIState?: DialogUIState;

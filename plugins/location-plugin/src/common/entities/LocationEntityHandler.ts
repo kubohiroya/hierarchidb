@@ -66,6 +66,9 @@ export class LocationEntityHandler extends BaseEntityHandler<
     const draft = {
       ...entity,
       selectionMatrix: cloneMatrix(entity.selectionMatrix),
+      features: entity.features ?? [],
+      tabularSourceId: entity.tabularSourceId,
+      extractConfig: entity.extractConfig,
     };
 
     const base = createDraftWorkingCopyBase<LocationEntity>({
@@ -90,6 +93,9 @@ export class LocationEntityHandler extends BaseEntityHandler<
       dataSource: 'openstreetmap',
       licenseAgreement: false,
       selectionMatrix: [],
+      features: [],
+      tabularSourceId: undefined,
+      extractConfig: undefined,
       concurrentDownloads: 2,
       batchSessionId: undefined,
       lastProcessedAt: undefined,
@@ -129,6 +135,9 @@ export class LocationEntityHandler extends BaseEntityHandler<
       ...existing,
       ...updates,
       selectionMatrix: cloneMatrix(updates.selectionMatrix ?? existing.selectionMatrix),
+      features: updates.features ?? existing.features ?? [],
+      tabularSourceId: updates.tabularSourceId ?? existing.tabularSourceId,
+      extractConfig: updates.extractConfig ?? existing.extractConfig,
       updatedAt,
     };
 

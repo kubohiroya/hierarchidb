@@ -102,6 +102,11 @@ export class BaseMapDialogExtension extends NodeDialogPlugin<BaseMapDialogPeer> 
   readonly pluginDescription = 'Adds BaseMap step evaluators to plugin console';
   readonly pluginVersion = '1.0.0';
 
+  async initialize(): Promise<void> {
+    // No-op initializer to satisfy NodeDialogPlugin contract
+    return;
+  }
+
   protected getStepStateEvaluator() {
     return {
       getValidatedSteps: (data: BaseMapDialogPeer, stepNumbers?: ReadonlyArray<number>) => {

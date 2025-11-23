@@ -98,7 +98,7 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     expect(wcHolder).toBeTruthy();
     if (!wcHolder) throw new Error('Working copy holder missing');
 
-    const { targetNodeId } = decodeWorkingCopyHolderName(wcHolder.name);
+    const { targetNodeId } = decodeWorkingCopyHolderName(wcHolder.metadata.name);
     const canonicalId = targetNodeId as NodeId;
 
     const commitRes = await wcAPI.commitWorkingCopy(wcNodeId);
@@ -122,8 +122,8 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     const trashedNode = afterTrashChildren.find((node) => node.id === canonicalId);
     expect(trashedNode).toBeTruthy();
     if (!trashedNode) throw new Error('Trashed node not found');
-    expect(trashedNode.holderType).toBe('trash');
-    expect(trashedNode.name).not.toBe('tmp');
+    expect(trashedNode).toBe('trash');
+    expect(trashedNode.metadata.name).not.toBe('tmp');
     expect(trashedNode.originalName).toBe('tmp');
     expect(trashedNode.originalParentId).toBe(rootId);
 
@@ -169,8 +169,8 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     const trashedAgain = afterSecondTrashChildren.find((node) => node.id === canonicalId);
     expect(trashedAgain).toBeTruthy();
     if (!trashedAgain) throw new Error('Trashed node (second) not found');
-    expect(trashedAgain.holderType).toBe('trash');
-    expect(trashedAgain.name).not.toBe('tmp');
+    expect(trashedAgain).toBe('trash');
+    expect(trashedAgain.metadata.name).not.toBe('tmp');
     expect(trashedAgain.originalName).toBe('tmp');
     expect(trashedAgain.originalParentId).toBe(rootId);
 

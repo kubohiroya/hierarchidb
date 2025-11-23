@@ -148,7 +148,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       const displayName =
         typeof originalNameValue === 'string' && originalNameValue.trim().length > 0
           ? originalNameValue
-          : node.name || '';
+          : node.metadata?.name || '';
       const base: TreeNodeInUI = {
         ...node,
         nodeType: toNodeType(node.nodeType || node.type || 'folder'),

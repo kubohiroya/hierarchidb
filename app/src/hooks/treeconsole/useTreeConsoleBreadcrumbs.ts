@@ -69,7 +69,7 @@ export function useTreeConsoleBreadcrumbs({
         const ancestors = await queryAPI.listAncestors(pageTreeNode.id as NodeId);
         let nodes: BreadcrumbNode[] = ancestors.map((n) => ({
           id: n.id,
-          name: n.name,
+          name: n.metadata?.name ?? '',
           nodeType: n.nodeType,
         }));
 
@@ -88,7 +88,7 @@ export function useTreeConsoleBreadcrumbs({
 
         const currentBreadcrumb: BreadcrumbNode = {
           id: pageTreeNode.id,
-          name: pageTreeNode.name,
+          name: pageTreeNode.metadata?.name ?? '',
           nodeType: pageTreeNode.nodeType,
         };
 
@@ -100,7 +100,7 @@ export function useTreeConsoleBreadcrumbs({
           setBreadcrumbItems([
             {
               id: pageTreeNode.id,
-              name: pageTreeNode.name,
+              name: pageTreeNode.metadata?.name ?? '',
               nodeType: pageTreeNode.nodeType,
             },
           ]);

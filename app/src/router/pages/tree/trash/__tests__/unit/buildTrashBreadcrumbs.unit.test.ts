@@ -8,7 +8,7 @@ import { buildTrashBreadcrumbs } from '../../buildTrashBreadcrumbs.js';
 
 function createNode(
   id: string,
-  overrides: Partial<TreeNode> & { parentId?: NodeId; depth?: number } = {}
+  overrides: Partial<TreeNode> & { parentId?: NodeId; depth?: number; name?: string; description?: string } = {}
 ): TreeNode {
   const nodeId = id as NodeId;
   const parentId = overrides.parentId ?? (`parent-${id}` as NodeId);
@@ -18,18 +18,19 @@ function createNode(
     id: nodeId,
     parentId,
     nodeType: (overrides.nodeType ?? 'folder') as TreeNode['nodeType'],
-    name: overrides.name ?? `Node ${id}`,
-    data: overrides.data ?? null,
+    metadata: {
+      name: overrides.name ?? `Node ${id}`,
+      description: overrides.description,
+      tags: [],
+    },
+    draftMetadata: null,
+    data: overrides.data ?? {},
     draftData: overrides.draftData ?? null,
     depth: overrides.depth ?? 0,
     createdAt: overrides.createdAt ?? now,
     updatedAt: overrides.updatedAt ?? now,
     version: overrides.version ?? 1,
-    holderType: overrides.holderType,
-    holderTargetId: overrides.holderTargetId,
-    holderMetaParentId: overrides.holderMetaParentId,
     hasChildren: overrides.hasChildren,
-    description: overrides.description,
     originalName: overrides.originalName,
     originalParentId: overrides.originalParentId,
     removedAt: overrides.removedAt,
@@ -41,7 +42,8 @@ describe('buildTrashBreadcrumbs', () => {
     parentId: 'r:root' as NodeId,
     nodeType: 'trash' as TreeNode['nodeType'],
     depth: 0,
-    name: 'Trash',
+    metadata: { name: 'Trash', description: '', tags: [] },
+    draftMetadata: null,
   });
 
   it('prefers originalName metadata when available', () => {
@@ -74,7 +76,7 @@ describe('buildTrashBreadcrumbs', () => {
     const trashedNode = createNode('node-b', {
       parentId: trashRoot.id,
       originalName: undefined,
-      name: 'Live Name B',
+      metadata: { name: 'Live Name B', description: '', tags: [] },
     });
 
     const nodeMap = new Map<string, TreeNode>([

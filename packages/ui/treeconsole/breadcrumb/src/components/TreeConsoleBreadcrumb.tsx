@@ -336,9 +336,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                 nodeId: nodeIdString,
                 pageNodeId,
                 holderType: node.holderType as 'workingCopy' | 'trash' | undefined,
-                holderMetaParentId: node.holderMetaParentId ?? undefined,
-                holderTargetId: node.holderTargetId ?? undefined,
-                useTrashColumns: useTrashColumnsFlag,
+                                                useTrashColumns: useTrashColumnsFlag,
                 trashAction: trashActionValue,
                 isRootLike,
               };

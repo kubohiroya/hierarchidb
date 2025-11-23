@@ -61,10 +61,16 @@ function buildImportNodes(data: TemplateFile): ImportData['nodes'] {
       .map((child) => toImportNode(child.treeNodeId))
       .filter((child): child is ImportData['nodes'][number] => child !== null);
     return {
-      name: node.name,
+      name: (node.metadata.name ?? '') as string,
       nodeType: node.treeNodeType,
-      description: node.description,
-      metadata: node.metadata,
+      description:
+        typeof node.metadata.description === 'string' ? node.metadata.description : undefined,
+      metadata: {
+        ...node.metadata,
+        name: (node.metadata.name ?? '') as string,
+        description:
+          typeof node.metadata.description === 'string' ? node.metadata.description : undefined,
+      },
       children: children.length > 0 ? children : undefined,
     };
   };
@@ -138,7 +144,7 @@ describe('WFL paste rename behavior for imported template', () => {
 
     const rootChildren = await queryAPI.listChildren(rootId);
     const populationFolder = rootChildren.find(
-      (node) => node.name === 'Total Population by Country'
+      (node) => node.metadata.name === 'Total Population by Country'
     );
     if (!populationFolder) throw new Error('Population folder not found');
 
@@ -162,7 +168,7 @@ describe('WFL paste rename behavior for imported template', () => {
     const rootChildrenAfterPaste = await queryAPI.listChildren(rootId);
     const pastedFolder = rootChildrenAfterPaste.find((child) => child.id === pastedRootId);
     expect(pastedFolder).toBeTruthy();
-    expect(pastedFolder?.name).not.toBe(populationFolder.name);
+    expect(pastedFolder?.metadata.name).not.toBe(populationFolder.metadata.name);
 
     if (!pastedRootId) {
       throw new Error('pasted root id missing');
@@ -175,20 +181,20 @@ describe('WFL paste rename behavior for imported template', () => {
     expect(renameRes.success).toBe(true);
 
     const renamedNode = await queryAPI.getNode(pastedRootId);
-    expect(renamedNode?.name).toBe('Population Folder Copy');
+    expect(renamedNode?.metadata.name).toBe('Population Folder Copy');
 
     const renameConflict = await mutationAPI.updateNode({
       nodeId: pastedRootId,
-      name: populationFolder.name,
+      name: populationFolder.metadata.name,
     });
     expect(renameConflict.success).toBe(false);
     expect(renameConflict.error ?? '').toMatch(/ConstraintError|already exists|NAME_NOT_UNIQUE/);
 
     const finalRootChildren = await queryAPI.listChildren(rootId);
     const originalNameCount = finalRootChildren.filter(
-      (node) => node.name === populationFolder.name
+      (node) => node.metadata.name === populationFolder.metadata.name
     ).length;
     expect(originalNameCount).toBe(1);
-    expect(finalRootChildren.some((node) => node.name === 'Population Folder Copy')).toBe(true);
+    expect(finalRootChildren.some((node) => node.metadata.name === 'Population Folder Copy')).toBe(true);
   }, 30_000);
 });

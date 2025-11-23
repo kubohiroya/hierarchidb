@@ -21,9 +21,14 @@ describe('Headless: Policy C load (moderate subtree)', () => {
     return await CoreDB.getSingleton(`pc-load-${name}-${Date.now()}-${Math.random()}`);
   }
 
-  const withPayload = (node: Omit<TreeNode, 'data' | 'draftData'> & Partial<TreeNode>): TreeNode => ({
+  const withPayload = (
+    node: Omit<TreeNode, 'data' | 'draftData' | 'metadata' | 'draftMetadata'> &
+      Partial<TreeNode> & { name?: string }
+  ): TreeNode => ({
     data: {},
     draftData: null,
+    metadata: { name: node.name ?? 'Untitled', description: undefined, tags: [] },
+    draftMetadata: null,
     ...node,
   });
 

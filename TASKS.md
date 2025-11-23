@@ -212,6 +212,20 @@
   - [x] `pnpm count:lines` 実行結果で plugins が summary に反映されることを確認する
 - ロールバック手順：`scripts/count-lines.ts` の差分を revert し、旧構成の `pnpm count:lines` 出力へ戻ることを確認する
 
+1522) Basemap draftData commit 消失（P0）
+- ブランチ: `fix/basemap/workingcopy-draftdata`（sandbox 制約で `main` 上で作業）
+- 依存: `packages/plugin-service-sdk/src/working-copy/service.ts`, `packages/runtime/worker`（WorkingCopy API）, `plugins/basemap-plugin` UI
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] `WorkingCopyService.updateWorkingCopy` が UI からの更新（draftData/name/description 等）を worker へ反映し、commit 時に Basemap の draftData が消失しない
+  - [ ] 更新が worker API へ伝搬することを検証するテストを追加する
+  - [ ] `pnpm --filter @hierarchidb/plugin-service-sdk test -- --run updateWorkingCopy` を実行し、結果を運用ログに記録する
+- チェックリスト:
+  - [ ] updateWorkingCopy が受け取った更新をそのまま worker API に転送するよう修正する
+  - [ ] 転送を検証するユニットテストを追加する
+  - [ ] 必要に応じて関連箇所の型/分岐を確認し、ログに記録する
+- ロールバック手順：`packages/plugin-service-sdk/src/working-copy/service.ts` と追加したテストファイルを revert し、`pnpm --filter @hierarchidb/plugin-service-sdk test -- --run updateWorkingCopy` を再実行して現状挙動へ戻ることを確認
+
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
 
@@ -8343,6 +8357,13 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-13"></a>
 
+- 2025-11-23 11:45 start: fix/basemap/workingcopy-draftdata — Basemap 編集時に draftData が commit で消える問題の調査と修正を開始。DoD: Kanban/ログ更新、WorkingCopyService.updateWorkingCopy の worker 反映と再発防止テスト追加、`pnpm --filter @hierarchidb/plugin-service-sdk test -- --run updateWorkingCopy` 実行記録、ロールバック手順記載。
+- 2025-11-23 12:05 progress: fix/basemap/workingcopy-draftdata — WorkingCopyService.updateWorkingCopy が受け取った updates をそのまま worker API に転送するよう修正し、転送を検証するユニットテスト（`service.updateWorkingCopy.test.ts`）を追加。
+- 2025-11-23 12:06 command: pnpm --filter @hierarchidb/plugin-service-sdk test -- --run updateWorkingCopy — exit 0（plugin-service-sdk が Vitest projects 未登録のため No test files found。テストファイル自体は追加済みで今後の project roots 追加で検知可能）。
+- 2025-11-23 12:26 progress: fix/basemap/workingcopy-draftdata — vitest.config.ts の projectRoots に `packages/plugin-service-sdk` を追加し、ルート Vitest でテストを拾えるようにした。
+- 2025-11-23 12:27 command: pnpm vitest run packages/plugin-service-sdk/src/working-copy/__tests__/service.updateWorkingCopy.test.ts — exit 0（1 test passed）。duplicate key 警告は既存 package.json の重複キーによるもの。
+- 2025-11-23 12:30 progress: fix/basemap/workingcopy-draftdata — package.json の duplicate key 警告を解消（plugin-presentation devDependencies 二重定義削除、resolver-plugin description 重複削除、shape-plugin の plugin-base/util 重複削除）。Vitest 再実行で警告が消えることを確認。
+- 2025-11-23 12:30 command: pnpm vitest run packages/plugin-service-sdk/src/working-copy/__tests__/service.updateWorkingCopy.test.ts — exit 0（1 test passed, duplicate key 警告なし）。
 - 2025-11-21 07:05 progress: feat/runtime/treenode-payload — Dexie TreeNode の SSOT として PersistedTreeNode（data/draftData/dialogUIState）を common-types に定義し、旧 TreeNode/payload 型に deprecated を明示。次: CoreDB/WorkingCopy/peer store の payload/draft 利用箇所を棚卸しして移行プランを固める。
 - 2025-11-20 23:10 start: chore/logging-trim — WorkerProvider / TreeSubscriptionService / CoreDB / BFFAuthService の過剰コンソールログを抑制するタスクに着手。DoD: Kanban/運用ログ更新とロールバック手順記載、上記4箇所の info ログを削除（warn/error は維持）、影響確認と実行コマンドの有無をログ化。
 - 2025-11-20 23:35 done: chore/logging-trim — 進行状況やプリフェッチの `console.log` を削除（WorkerProvider, TreeSubscriptionService, CoreDB）し、BFFAuthService 初期化ログも抑制。実行コマンドなし。ロールバック: `app/src/contexts/WorkerProvider.tsx`, `packages/runtime/worker/src/services/TreeSubscriptionService.ts`, `packages/runtime/worker/src/services/CoreDB.ts`, `packages/ui/auth/src/services/BFFAuthService.ts` を revert。

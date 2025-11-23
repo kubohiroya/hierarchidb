@@ -11,13 +11,7 @@ import {
   Button,
   Chip,
   CircularProgress,
-  FormControl,
-  FormControlLabel,
-  InputLabel,
-  MenuItem,
-  Select,
   Stack,
-  Switch,
   TextField,
   Typography,
 } from '@mui/material';
@@ -67,11 +61,7 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
     { id: '1', name: t('base-dialog.routeSelection.startPoint', 'Start Point') },
     { id: '2', name: t('base-dialog.routeSelection.endPoint', 'End Point') },
   ]);
-  const [avoidTolls, setAvoidTolls] = useState(false);
-  const [avoidHighways, setAvoidHighways] = useState(false);
-  const [routeAlgorithm, setRouteAlgorithm] = useState<'fastest' | 'shortest' | 'scenic'>(
-    'fastest',
-  );
+  const [routeAlgorithm] = useState<'fastest' | 'shortest' | 'scenic'>('fastest');
   const [isCalculating, setIsCalculating] = useState(false);
 
   const handleAddWaypoint = () => {
@@ -225,50 +215,7 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
         </Box>
       </Box>
 
-      {/* Route Options */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="subtitle1" gutterBottom>
-          {t('base-dialog.routeSelection.routeOptions', 'Route Options')}
-        </Typography>
-
-        <Stack spacing={2}>
-          <FormControl size="small">
-            <InputLabel>{t('base-dialog.routeSelection.algorithm', 'Route Algorithm')}</InputLabel>
-            <Select
-              value={routeAlgorithm}
-              label={t('base-dialog.routeSelection.algorithm', 'Route Algorithm')}
-              onChange={(e) => setRouteAlgorithm(e.target.value as typeof routeAlgorithm)}
-            >
-              <MenuItem value="fastest">
-                {t('base-dialog.routeSelection.fastest', 'Fastest Route')}
-              </MenuItem>
-              <MenuItem value="shortest">
-                {t('base-dialog.routeSelection.shortest', 'Shortest Route')}
-              </MenuItem>
-              <MenuItem value="scenic">
-                {t('base-dialog.routeSelection.scenic', 'Scenic Route')}
-              </MenuItem>
-            </Select>
-          </FormControl>
-
-          <FormControlLabel
-            control={
-              <Switch checked={avoidTolls} onChange={(e) => setAvoidTolls(e.target.checked)} />
-            }
-            label={t('base-dialog.routeSelection.avoidTolls', 'Avoid Tolls')}
-          />
-
-          <FormControlLabel
-            control={
-              <Switch
-                checked={avoidHighways}
-                onChange={(e) => setAvoidHighways(e.target.checked)}
-              />
-            }
-            label={t('base-dialog.routeSelection.avoidHighways', 'Avoid Highways')}
-          />
-        </Stack>
-      </Box>
+      {/* Route Options removed for current scope */}
 
       {/* Route Calculation */}
       <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>

@@ -48,7 +48,7 @@ export async function seedNode(core: CoreDB, input: SeedNodeInput): Promise<Tree
     id: (input.id ?? `node-${Math.random().toString(36).slice(2)}`) as NodeId,
     parentId: (input.parentId ?? ('root' as NodeId)) as NodeId,
     nodeType: input.nodeType ?? ('folder' as NodeType),
-    name: input.name ?? input.id ?? 'node',
+    name: input.metadata.name ?? input.id ?? 'node',
     depth: input.depth ?? 1,
     createdAt: input.createdAt ?? now,
     updatedAt: input.updatedAt ?? now,

@@ -110,7 +110,6 @@
       "name": "Resolver Plugin",
       "description": "Map heterogeneous schemas and properties into a unified structure so downstream plugins read consistent attributes.",
       "displayName": "Resolver",
-      "description": "Property mapping and schema resolution",
       "icon": {
         "mui": "Extension",
         "emoji": "🧩",

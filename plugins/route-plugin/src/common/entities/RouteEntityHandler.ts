@@ -104,6 +104,8 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
       dataSourceId: data.dataSourceId,
       dataSourceName: data.dataSourceName,
       originalData: data.originalData,
+      tabularSourceId: data.tabularSourceId,
+      extractConfig: data.extractConfig,
 
       // Processing
       processedAt: data.processedAt,
@@ -173,7 +175,13 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
       updates.processingStatus = 'completed';
     }
 
-    return super.updateEntity(entityId, updates);
+    const mergedUpdates: Partial<RouteEntity> = {
+      ...updates,
+      tabularSourceId: updates.tabularSourceId ?? existing.tabularSourceId,
+      extractConfig: updates.extractConfig ?? existing.extractConfig,
+    };
+
+    return super.updateEntity(entityId, mergedUpdates);
   }
 
   /**

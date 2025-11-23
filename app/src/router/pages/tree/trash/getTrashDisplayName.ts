@@ -1,9 +1,8 @@
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 
-type TrashLikeNode = Pick<TreeNode, 'name'> & {
+type TrashLikeNode = Pick<TreeNode, 'metadata' | 'originalName'> & {
   id?: NodeId | string;
-  originalName?: string | null;
 };
 
 /**
@@ -16,7 +15,7 @@ export function getTrashDisplayName(node: TrashLikeNode | TreeNodeData | undefin
   if (typeof value === 'string' && value.trim().length > 0) {
     return value;
   }
-  const canonical = typeof node.name === 'string' ? node.name : '';
+  const canonical = (node as { metadata?: { name?: string } }).metadata?.name ?? '';
   if (canonical.trim().length > 0) {
     return canonical;
   }

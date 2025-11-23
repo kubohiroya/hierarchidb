@@ -29,7 +29,7 @@ export async function commitWorkingCopy(
   if (!draft) throw new Error('Draft node not found');
 
   const siblingNames = await getChildNames(coreDB, draft.parentId);
-  let finalName = draft.name;
+  let finalName = draft.metadata?.name ?? '';
   const sameNameCount = siblingNames.filter((name) => name === finalName).length;
   const nameConflicts = sameNameCount > 1;
 
@@ -55,9 +55,13 @@ export async function commitWorkingCopy(
 
   const updatedNode: TreeNode = {
     ...draft,
-    name: finalName,
+    metadata: {
+      ...(draft.metadata ?? { name: finalName, description: undefined, tags: [] }),
+      name: finalName,
+    },
     data: finalizedData as TreeNode['data'],
     draftData: null,
+    draftMetadata: null,
     dialogUIState: undefined,
     updatedAt: now,
     version: originalVersion + 1,

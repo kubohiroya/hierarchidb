@@ -12,13 +12,24 @@ import type {
   LocationDataSource,
 } from '../types/index.js';
 import { useTranslation } from '../i18n/index.js';
-import { LocationDataSourceStep } from './steps/LocationDataSourceStep.js';
 import { LocationLicenseStep } from './steps/LocationLicenseStep.js';
 import { LocationSelectionStep } from './steps/LocationSelectionStep.js';
 import { LocationBatchParametersStep } from './steps/LocationBatchParametersStep.js';
 import { LocationMapPreviewStep } from './steps/LocationMapPreviewStep.js';
 import { LocationVectorTileService } from '../../services/tiles/LocationVectorTileService.js';
 import { listLocationPoints } from '../../services/pointRepository.js';
+import { runLocationTabularBuild } from '../../worker/tabular/task.js';
+import {
+  TabularProvider,
+  TabularFilterStep,
+  TabularColumnSelectionStep,
+  TabularFileUploadStep,
+  type TabularFilterRule,
+  type TabularSelectionConfig,
+  type TabularColumnMapping,
+} from '@hierarchidb/ui-tabular-extract';
+import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
+import { createLocationTabularApi } from '../tabular/createLocationTabularApi.js';
 import {
   HeadlessMultiStepDialog,
   FRAME_CONSTANTS,
@@ -97,6 +108,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
   const [displayMode, setDisplayMode] = useState<DialogDisplayMode>('normal');
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [isBatchStarting, setIsBatchStarting] = useState(false);
+  const [buildStatus, setBuildStatus] = useState<string | null>(null);
 
   const emptyWorkingCopy = useMemo<LocationWorkingCopy>(() => ({
     treeNodeId: '' as NodeId,
@@ -106,6 +118,17 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
   }), []);
 
   const dialogData = useMemo<LocationWorkingCopy>(() => workingCopy ?? emptyWorkingCopy, [emptyWorkingCopy, workingCopy]);
+  const emptyTableMetadata = useMemo<TabularTableMetadata>(() => ({
+    id: dialogData.tabularSourceId ?? 'temp-table',
+    filename: dialogData.tabularSourceId ?? 'temp',
+    contentHash: '',
+    fileSizeBytes: 0,
+    totalRows: 0,
+    columns: [],
+    createdAt: Date.now(),
+    referenceCount: 0,
+    referencingPlugins: [],
+  }), [dialogData.tabularSourceId]);
 
   const applyNormalizedState = useCallback((size: MultiDialogSize, position: MultiDialogPosition) => {
     dialogSizeRef.current = size;
@@ -115,7 +138,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
   }, []);
 
   const handleWorkingCopyPatch = useCallback((patch: Partial<LocationWorkingCopy>) => {
-    setWorkingCopy((prev) => {
+    setWorkingCopy((prev: LocationWorkingCopy | null) => {
       const base = prev ?? emptyWorkingCopy;
 
       const { draft: draftPatch, updatedAt: updatedAtPatch, ...metaPatch } = patch;
@@ -220,8 +243,24 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     {
       id: 'data-source',
       label: translations.dialog.dataSourceLabel,
-      component: ({ data, onChange }: { data: LocationWorkingCopy; onChange: (patch: Partial<LocationWorkingCopy>) => void }) => (
-        <LocationDataSourceStep workingCopy={data} onUpdate={onChange} />
+      component: ({ onChange }: { data: LocationWorkingCopy; onChange: (patch: Partial<LocationWorkingCopy>) => void }) => (
+        <TabularProvider tabularApi={createLocationTabularApi()}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box>
+              <Typography variant="subtitle1">{translations.dialog.dataSourceLabel}</Typography>
+              <Typography variant="caption" color="text.secondary">
+                {translations.dialog.dataSourceDescription ?? 'Choose openstreetmap for OSRM/Overpass or custom for tabular import'}
+              </Typography>
+            </Box>
+            <TabularFileUploadStep
+              pluginId="location"
+              onFileUploaded={(meta: TabularTableMetadata) =>
+                onChange({ tabularSourceId: meta.id, dataSource: 'custom' as any })
+              }
+              onError={(msg: string) => notify.error(msg)}
+            />
+          </Box>
+        </TabularProvider>
       ),
     },
     {
@@ -243,6 +282,89 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
       label: translations.panel.processingSettings,
       component: ({ data, onChange }: { data: LocationWorkingCopy; onChange: (patch: Partial<LocationWorkingCopy>) => void }) => (
         <LocationBatchParametersStep workingCopy={data} onUpdate={onChange} />
+      ),
+    },
+    {
+      id: 'extract',
+      label: translations.selection?.filterTitle ?? translations.selection.title ?? 'Filter & Preview',
+      component: ({ data, onChange }: { data: LocationWorkingCopy; onChange: (patch: Partial<LocationWorkingCopy>) => void }) => (
+        <TabularProvider tabularApi={createLocationTabularApi()}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TabularFilterStep
+              tableMetadata={emptyTableMetadata}
+              pluginId="location"
+              onFiltersChanged={(filters: TabularFilterRule[]) =>
+                onChange({
+                  extractConfig: {
+                    ...(data.extractConfig ?? {}),
+                    filterRules: filters,
+                    selection: data.extractConfig?.selection,
+                  },
+                })
+              }
+              onPreviewData={() => {}}
+            />
+            <TabularColumnSelectionStep
+              tableMetadata={emptyTableMetadata}
+              onSelectionChanged={(selection: TabularColumnMapping[]) => {
+                const mapped: TabularSelectionConfig = {
+                  keyColumn: selection.find((m) => m.included)?.targetColumn,
+                  valueColumns: selection.filter((m) => m.included).map((m) => m.targetColumn),
+                  filterRules: data.extractConfig?.filterRules ?? [],
+                  customMappings: selection.map((m) => ({
+                    key: m.sourceColumn,
+                    value: m.targetColumn,
+                    label: m.targetColumn,
+                  })),
+                };
+                onChange({
+                  extractConfig: {
+                    ...(data.extractConfig ?? {}),
+                    selection: mapped,
+                  },
+                });
+              }}
+            />
+            <Button
+              variant="contained"
+              onClick={async () => {
+                if (!data.tabularSourceId) {
+                  notify.error('No tabular source to build. Download/Upload first.');
+                  return;
+                }
+                setIsBatchStarting(true);
+                setBuildStatus('extracting');
+                try {
+                  const filters = data.extractConfig?.filterRules ?? [];
+                  const selection = data.extractConfig?.selection;
+                  const tabularApi = createLocationTabularApi();
+                  await runLocationTabularBuild(
+                    tabularApi as any,
+                    data.tabularSourceId as string,
+                    filters,
+                    selection,
+                    nodeId as NodeId,
+                    (progress) => {
+                      setBuildStatus(`${progress.stage ?? 'building'} ${progress.completed ?? 0}/${progress.total ?? ''}`);
+                    }
+                  );
+                  notify.success('Build completed');
+                } catch (err) {
+                  notify.error(`Build failed: ${(err as Error).message}`);
+                  setBuildStatus(null);
+                } finally {
+                  setIsBatchStarting(false);
+                  setBuildStatus(null);
+                }
+              }}
+            >
+              {translations.selection?.buildLabel ?? 'Build'}
+            </Button>
+            {buildStatus ? (
+              <Typography variant="caption" color="text.secondary">{buildStatus}</Typography>
+            ) : null}
+          </Box>
+        </TabularProvider>
       ),
     },
     {

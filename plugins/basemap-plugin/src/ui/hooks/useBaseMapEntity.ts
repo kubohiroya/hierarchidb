@@ -69,7 +69,7 @@ export function buildBaseMapEntityFromNode(node?: TreeNode | null): BaseMapEntit
   const updatedAt: Timestamp = (typeof node.updatedAt === 'number' ? node.updatedAt : Date.now()) as Timestamp;
   const name = typeof node.name === 'string' ? node.name : undefined;
   const description = typeof node.description === 'string' ? node.description : undefined;
-  const tags = toStringArray(data.tags);
+  const tags = toStringArray((node as { tags?: unknown }).tags ?? data.tags);
 
   return {
     id: node.id as NodeId,
@@ -211,15 +211,13 @@ export function useBaseMapEntity(
           viewport: normalizeViewport(updates.viewport ?? current.viewport),
           updatedAt: Date.now() as Timestamp,
         };
-        const existingData = readNodeData(workingCopyNode);
         await apis.workingCopy.updateWorkingCopy(workingCopyId, {
+          name: next.name,
+          description: next.description,
+          tags: next.tags,
           draftData: {
-            ...existingData,
             mapStyle: next.mapStyle,
             viewport: next.viewport,
-            tags: next.tags,
-            name: next.name,
-            description: next.description,
           },
         } as Partial<TreeNode>);
         await apis.workingCopy.commitWorkingCopy(workingCopyId);

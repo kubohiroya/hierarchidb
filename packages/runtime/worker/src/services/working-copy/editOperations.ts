@@ -1,4 +1,4 @@
-import { type NodeId, type TreeId, type TreeNode, type Timestamp } from '@hierarchidb/common-types';
+import { type NodeId, type TreeId, type Timestamp } from '@hierarchidb/common-types';
 import { generateUUID } from '@hierarchidb/util';
 import type { CoreDB } from '../CoreDB.js';
 import { getDraft } from './lookupOperations.js';
@@ -9,7 +9,7 @@ import { getDraft } from './lookupOperations.js';
  */
 export async function createWorkingCopyFromNode(
   coreDB: CoreDB,
-  treeId: TreeId,
+  _treeId: TreeId,
   nodeId: NodeId
 ): Promise<NodeId> {
   const sourceNode = await coreDB.getNode(nodeId);

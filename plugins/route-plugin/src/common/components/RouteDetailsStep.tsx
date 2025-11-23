@@ -4,22 +4,11 @@
  */
 
 import { useCallback, useEffect, useMemo } from 'react';
-import {
-  Box,
-  Chip,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  OutlinedInput,
-  Select,
-  TextField,
-  Typography,
-} from '@mui/material';
-import type { SelectChangeEvent } from '@mui/material/Select';
+import { Box, TextField, Typography, MenuItem } from '@mui/material';
 import { Divider } from '@mui/material';
 import { useTranslation } from '../i18n/index.js';
-import type { RouteEntity, RouteWorkingCopy, RouteCategory } from '../types/index.js';
-import { RouteType, TransportMode } from '../types/index.js';
+import type { RouteEntity, RouteWorkingCopy } from '../types/index.js';
+import { RouteType } from '../types/index.js';
 import { getRouteDraft } from '../utils/workingCopy.js';
 
 export interface RouteDetailsStepProps {
@@ -39,13 +28,12 @@ export const RouteDetailsStep: React.FC<RouteDetailsStepProps> = ({
   const draft = useMemo(() => getRouteDraft(workingCopy), [workingCopy]);
 
   const resolvedRouteType = draft.routeType ?? RouteType.ROAD;
-  const resolvedTransportModes = Array.isArray(draft.transportModes) ? draft.transportModes : [];
-  const resolvedCategory = (draft.category as RouteCategory | undefined) ?? 'transportation';
+  const resolvedDataSource = draft.dataSourceName ?? 'openstreetmap';
 
   useEffect(() => {
-    const isValid = Boolean(resolvedRouteType) && resolvedTransportModes.length > 0;
+    const isValid = Boolean(resolvedRouteType) && Boolean(resolvedDataSource);
     onValidationChange(isValid);
-  }, [onValidationChange, resolvedRouteType, resolvedTransportModes.length]);
+  }, [onValidationChange, resolvedRouteType, resolvedDataSource]);
 
   const emitUpdate = useCallback(
     (updates: Partial<RouteEntity>) => {
@@ -64,35 +52,8 @@ export const RouteDetailsStep: React.FC<RouteDetailsStepProps> = ({
     [emitUpdate],
   );
 
-  const handleTransportModesChange = useCallback(
-    (event: SelectChangeEvent<TransportMode | TransportMode[]>) => {
-      const value = event.target.value;
-      const transportModes = Array.isArray(value)
-        ? value
-        : typeof value === 'string'
-          ? (value.split(',') as TransportMode[])
-          : [];
-      emitUpdate({ transportModes });
-    },
-    [emitUpdate],
-  );
-
-  const handleCategoryChange = useCallback(
-    (category: RouteCategory) => {
-      emitUpdate({ category });
-    },
-    [emitUpdate],
-  );
-
   return (
     <Box sx={{ p: 3, maxWidth: 700, margin: '0 auto' }}>
-      <Typography variant="h6" gutterBottom>
-        {translations.basicInfo.nameLabel ?? translations.basicInfo.title}
-      </Typography>
-      <Typography variant="body2" color="text.secondary" paragraph>
-        {translations.basicInfo.descriptionLabel ?? translations.basicInfo.subtitle}
-      </Typography>
-
       <Divider sx={{ my: 2 }} />
 
       <TextField
@@ -114,47 +75,21 @@ export const RouteDetailsStep: React.FC<RouteDetailsStepProps> = ({
         ))}
       </TextField>
 
-      <FormControl required fullWidth disabled={disabled} sx={{ mb: 3 }}>
-        <InputLabel>{translations.basicInfo.transportModesLabel}</InputLabel>
-        <Select
-          multiple
-          value={resolvedTransportModes}
-          onChange={handleTransportModesChange}
-          input={<OutlinedInput label={translations.basicInfo.transportModesLabel} />}
-          renderValue={(selected) => (
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-              {(selected as TransportMode[]).map((mode) => (
-                <Chip key={mode} label={translations.transportModes[mode]} size="small" />
-              ))}
-            </Box>
-          )}
-        >
-          {Object.values(TransportMode).map((mode) => (
-            <MenuItem key={mode} value={mode}>
-              {translations.transportModes[mode]}
-            </MenuItem>
-          ))}
-        </Select>
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, ml: 1.5 }}>
-          {translations.basicInfo.transportModesHelperText}
-        </Typography>
-      </FormControl>
-
       <TextField
         select
-        label={translations.basicInfo.categoryLabel}
-        value={resolvedCategory}
-        onChange={(event) => handleCategoryChange(event.target.value as RouteCategory)}
+        label={translations.basicInfo.dataSourceLabel ?? 'Data source'}
+        value={resolvedDataSource}
+        onChange={(event) => emitUpdate({ dataSourceName: event.target.value as RouteEntity['dataSourceName'] })}
+        required
         fullWidth
         disabled={disabled}
-        helperText={translations.basicInfo.categoryHelperText}
-        SelectProps={{ native: true }}
+        helperText={translations.basicInfo.dataSourceHelperText ?? 'Choose openstreetmap for OSRM/Overpass or custom for tabular import'}
       >
-        <option value="transportation">{translations.categories.transportation}</option>
-        <option value="recreation">{translations.categories.recreation}</option>
-        <option value="logistics">{translations.categories.logistics}</option>
-        <option value="emergency">{translations.categories.emergency}</option>
+        <MenuItem value="openstreetmap">OpenStreetMap</MenuItem>
+        <MenuItem value="custom">Custom (tabular)</MenuItem>
       </TextField>
+
+      {/* transportModes/category removed for current scope */}
     </Box>
   );
 };

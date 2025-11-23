@@ -17,8 +17,9 @@ describe('createDraftWorkingCopy - default name uniqueness', () => {
       {
         id: parentId,
         parentId: `${treeId}:root` as NodeId,
-        name: 'Parent',
         nodeType: 'folder' as NodeType,
+        metadata: { name: 'Parent', description: undefined, tags: [] },
+        draftMetadata: null,
         data: {},
         draftData: null,
         depth: 1,
@@ -30,8 +31,9 @@ describe('createDraftWorkingCopy - default name uniqueness', () => {
       {
         id: `${parentId}:child1` as NodeId,
         parentId,
-        name: 'New Folder',
         nodeType: 'folder' as NodeType,
+        metadata: { name: 'New Folder', description: undefined, tags: [] },
+        draftMetadata: null,
         data: {},
         draftData: null,
         depth: 2,
@@ -57,7 +59,7 @@ describe('createDraftWorkingCopy - default name uniqueness', () => {
     );
 
     const wc = (await core.nodes.get(wcNodeId)) as TreeNode | undefined;
-    expect(wc?.name).toBe('New Folder (2)');
-    expect((wc?.data as { name?: string } | undefined)?.name).toBe('New Folder (2)');
+    expect(wc?.metadata.name).toBe('New Folder (2)');
+    expect(wc?.metadata.name).toBe('New Folder (2)');
   });
 });

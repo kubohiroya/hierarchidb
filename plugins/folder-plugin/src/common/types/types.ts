@@ -159,7 +159,7 @@ export function isFolderEntity(obj: unknown): obj is FolderEntity {
   const identifier = typeof candidate.id === 'string' ? candidate.id : candidate.nodeId;
   return (
     typeof identifier === 'string' &&
-    typeof candidate.name === 'string' &&
+    typeof (candidate as { metadata?: { name?: unknown } }).metadata?.name === 'string' &&
     typeof candidate.createdAt === 'number' &&
     typeof candidate.updatedAt === 'number' &&
     typeof candidate.version === 'number'

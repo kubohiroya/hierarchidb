@@ -100,7 +100,7 @@ export function useTreeConsoleIntegration({
       sample: treeData.slice(0, 10).map((node) => ({
         id: String(node.id),
         parentId: node.parentId ? String(node.parentId) : null,
-        name: node.name,
+        name: node.metadata?.name,
         depth: node.depth,
         nodeType: node.nodeType,
       })),

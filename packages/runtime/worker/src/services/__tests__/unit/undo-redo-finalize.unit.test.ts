@@ -75,6 +75,6 @@ describe('Undo/Redo finalize: create -> undo -> redo', () => {
     const r = await cp.redo();
     expect(r.success).toBe(true);
     expect(core.state[createdId]).toBeDefined();
-    expect(core.state[createdId]?.name).toBe('X');
+    expect(core.state[createdId]?.metadata.name).toBe('X');
   });
 });

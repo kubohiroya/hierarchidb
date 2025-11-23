@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import React from 'react';
+import { describe, expect, it } from 'vitest';
+import * as React from 'react';
 import { BasicInfoStep } from '@hierarchidb/ui-plugin-basic-info';
 
 describe('BasicInfoStep validation placement', () => {

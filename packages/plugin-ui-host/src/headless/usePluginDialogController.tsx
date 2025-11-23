@@ -153,15 +153,6 @@ export const buildStepWorkingData = (
     ...baseRecord,
     ...basicInfo,
   };
-  const existingDraft = toRecord((baseRecord as { draft?: unknown }).draft);
-  const mergedDraft: Record<string, unknown> = {
-    ...(existingDraft ?? {}),
-    name: basicInfo.name,
-    description: basicInfo.description,
-  };
-  if (Object.keys(mergedDraft).length) {
-    base.draft = mergedDraft;
-  }
   base[BASIC_INFO_META_KEY] = meta;
   return base;
 };
@@ -171,28 +162,41 @@ const stripReservedDialogKeys = (
 ): Record<string, unknown> => {
   if (!input) return {};
   const clone: Record<string, unknown> = { ...input };
-  delete clone[BASIC_INFO_META_KEY];
+  const reserved = new Set([
+    BASIC_INFO_META_KEY,
+    'draft',
+    'data',
+    'uiState',
+    'dialogUIState',
+    'dialogProgress',
+    'dialogWindow',
+    'treeNodeId',
+    'holderType',
+    'holderTargetId',
+    'payload',
+    'name',
+    'description',
+    'tags',
+  ]);
+  for (const key of reserved) {
+    delete clone[key];
+  }
   return clone;
 };
 
 const extractBasicInfoFields = (data?: Record<string, unknown>): BasicInfoState => {
-  const draft = toRecord((data as { draft?: unknown })?.draft);
   const nameSource =
     typeof data?.name === 'string'
       ? data.name
-      : typeof draft?.name === 'string'
-        ? draft.name
-        : '';
+      : '';
   const descriptionSource =
     typeof data?.description === 'string'
       ? data.description
-      : typeof draft?.description === 'string'
-        ? draft.description
-        : '';
+      : '';
   return {
     name: nameSource,
     description: descriptionSource,
-    tags: toStringArray(data?.tags ?? draft?.tags),
+    tags: toStringArray(data?.tags),
   };
 };
 
@@ -231,7 +235,7 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
       const record = toRecord(data) ?? {};
       const sanitized = stripReservedDialogKeys(record);
       onDataChange?.(sanitized);
-      updateWorkingCopy({ data: sanitized });
+      updateWorkingCopy({ draftData: sanitized });
     },
     [onDataChange, updateWorkingCopy]
   );
@@ -961,19 +965,14 @@ export function usePluginDialogController(
   useEffect(() => {
     if (workingCopy) {
       const tags = workingCopy.data?.tags as string[];
-      const draft = toRecord(workingCopy.data?.draft);
       const resolvedName =
         typeof workingCopy.name === 'string' && workingCopy.name.length
           ? workingCopy.name
-          : typeof draft?.name === 'string'
-            ? draft.name
-            : '';
+          : '';
       const resolvedDescription =
         typeof workingCopy.description === 'string' && workingCopy.description.length
           ? workingCopy.description
-          : typeof draft?.description === 'string'
-            ? draft.description
-            : '';
+          : '';
       setBasicInfo({
         name: resolvedName,
         description: resolvedDescription,
@@ -1640,7 +1639,7 @@ export function usePluginDialogController(
     stepData: currentStepData,
     onStepDataChange: (patch: Partial<StepData>) =>
       updateWorkingCopy({
-        data: stripReservedDialogKeys({ ...currentStepData, ...patch }),
+        draftData: stripReservedDialogKeys({ ...currentStepData, ...patch }),
       }),
     activeStepIndex,
     onStepNavigate: handleNavigation,

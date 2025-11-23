@@ -55,18 +55,26 @@ function createTree(overrides: Partial<Tree> = {}): Tree {
 }
 
 function createTreeNode(overrides: Partial<TreeNode> = {}): TreeNode {
+  const nameOverride = (overrides as { name?: string }).name;
+  const descOverride = (overrides as { description?: string }).description;
+  const { name, description, ...rest } = overrides as {
+    name?: string;
+    description?: string;
+    [key: string]: unknown;
+  };
   return {
     id: 'node-1' as NodeId,
     parentId: 'console-1:root' as NodeId,
     nodeType: 'folder' as NodeType,
-    name: 'Mock Node',
+    metadata: { name: nameOverride ?? 'Mock Node', description: descOverride ?? '', tags: [] },
+    draftMetadata: null,
     data: null,
     draftData: null,
     depth: 0,
     createdAt: Date.now(),
     updatedAt: Date.now(),
     version: 1,
-    ...overrides,
+    ...(rest as Partial<TreeNode>),
   };
 }
 
@@ -107,7 +115,10 @@ describe('console Loaders for TanStack Router', () => {
 
   describe('loadPageNode', () => {
     it('should load page node with resolved pageNodeId', async () => {
-      const mockPageNode = createTreeNode({ id: 'r:root' as NodeId, name: 'Root' });
+      const mockPageNode = createTreeNode({
+        id: 'r:root' as NodeId,
+        metadata: { name: 'Root', description: '', tags: [] },
+      });
       const loaderModule = await import('~/loader.js');
       vi.mocked(loaderModule.loadPageNode).mockResolvedValue({
         tree: createTree({ id: 'r' as TreeId }),
@@ -124,7 +135,10 @@ describe('console Loaders for TanStack Router', () => {
 
   describe('loadTargetNode', () => {
     it('should load target node data', async () => {
-      const mockTargetNode = createTreeNode({ id: 'target123' as NodeId, name: 'Target' });
+      const mockTargetNode = createTreeNode({
+        id: 'target123' as NodeId,
+        metadata: { name: 'Target', description: '', tags: [] },
+      });
       const loaderModule = await import('~/loader.js');
       vi.mocked(loaderModule.loadTargetNode).mockResolvedValue({
         tree: createTree({ id: 'r' as TreeId }),

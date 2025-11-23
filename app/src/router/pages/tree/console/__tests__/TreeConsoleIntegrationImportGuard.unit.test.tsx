@@ -122,12 +122,15 @@ const buildNode = (overrides: Partial<TreeNode>): TreeNode =>
     id: 'r:node' as NodeId,
     parentId: 'r:root' as NodeId,
     nodeType: 'folder' as NodeType,
-    name: 'Folder',
+    metadata: { name: 'Folder', description: '', tags: [] },
+    draftMetadata: null,
+    data: null,
+    draftData: null,
     depth: 1,
     createdAt: Date.now(),
     updatedAt: Date.now(),
     version: 1,
-    ...overrides,
+    ...(overrides as Partial<TreeNode>),
   }) as TreeNode;
 
 describe('canImportFromNode', () => {
@@ -169,7 +172,10 @@ describe('TreeConsoleIntegration toolbar import guard', () => {
       <TreeConsoleIntegration
         treeId={'r' as TreeId}
         pageNodeId={'r:item' as NodeId}
-        pageTreeNode={buildNode({ nodeType: 'document' as NodeType, name: 'Doc' })}
+        pageTreeNode={buildNode({
+          nodeType: 'document' as NodeType,
+          metadata: { name: 'Doc', description: '', tags: [] },
+        })}
       />
     );
 

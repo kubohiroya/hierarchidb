@@ -41,7 +41,7 @@ async function createCommittedNode(
   const holder = await queryAPI.getNode(wcNode.parentId as NodeId);
   if (!holder) throw new Error('working copy holder missing');
 
-  const { targetNodeId } = decodeWorkingCopyHolderName(holder.name);
+  const { targetNodeId } = decodeWorkingCopyHolderName(holder.metadata.name);
   const canonicalId = targetNodeId as NodeId;
   const commitRes = await workingCopyAPI.commitWorkingCopy(wcNodeId);
   if (commitRes?.status !== 'ok') {
@@ -78,7 +78,7 @@ describe('trash duplicate names handling', () => {
     const trashChildren = await queryAPI.listChildren(trashRootId);
     const names = trashChildren
       .filter((node) => node.id === first || node.id === second)
-      .map((node) => node.name);
+      .map((node) => node.metadata.name);
     expect(new Set(names).size).toBe(names.length);
   }, 20_000);
 });

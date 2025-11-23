@@ -172,8 +172,8 @@ export class TreeQueryService implements TreeQueryAPI {
     for (const node of descendants) {
       if (maxResults && results.length >= maxResults) break;
 
-      const nodeName = caseSensitive ? node.name : node.name.toLowerCase();
-      const rawDescription = node.description ?? '';
+      const nodeName = caseSensitive ? node.metadata.name : node.metadata.name.toLowerCase();
+      const rawDescription = node.metadata.description ?? '';
       const nodeDesc = searchInDescription
         ? caseSensitive
           ? rawDescription
@@ -219,7 +219,7 @@ export class TreeQueryService implements TreeQueryAPI {
         const getComparable = (node: TreeNode): string | number | undefined => {
           switch (sortBy) {
             case 'name':
-              return node.name?.toLowerCase();
+              return node.metadata.name?.toLowerCase();
             case 'createdAt':
               return node.createdAt;
             case 'updatedAt':

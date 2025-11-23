@@ -87,6 +87,8 @@ export interface RouteEntity extends BaseEntity {
   dataSourceId?: string;
   dataSourceName?: string;
   originalData?: Record<string, any>;
+  tabularSourceId?: string;
+  extractConfig?: Record<string, unknown>;
 
   // Processing metadata
   processedAt?: number;

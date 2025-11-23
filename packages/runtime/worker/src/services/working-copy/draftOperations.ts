@@ -14,7 +14,7 @@ import { createNewName, getChildNames } from './nameUtilities.js';
  */
 export async function createDraftWorkingCopy(
   coreDB: CoreDB,
-  treeId: TreeId,
+  _treeId: TreeId,
   parentId: NodeId,
   nodeType: NodeType,
   baseName: string,
@@ -37,8 +37,22 @@ export async function createDraftWorkingCopy(
           typeof (existing as { draftData?: unknown }).draftData === 'undefined';
         if (needsDraft) {
           await coreDB.nodes.update(fixedId, {
-            name: resolvedBaseName,
-            draftData: { ...(existing as { draftData?: Record<string, unknown> | null }).draftData ?? {}, name: resolvedBaseName },
+            metadata: {
+              ...(existing as { metadata?: TreeNode['metadata'] }).metadata ?? {
+                name: resolvedBaseName,
+                description: undefined,
+                tags: [],
+              },
+              name: resolvedBaseName,
+            },
+            draftMetadata: {
+              name: resolvedBaseName,
+              description: undefined,
+              tags: [],
+            },
+            draftData: {
+              ...(existing as { draftData?: Record<string, unknown> | null }).draftData ?? {},
+            },
             updatedAt: now,
             lastTouchedAt: now,
           });
@@ -53,9 +67,18 @@ export async function createDraftWorkingCopy(
       id: wcNodeId,
       parentId,
       nodeType,
-      name: resolvedBaseName,
+      metadata: {
+        name: resolvedBaseName,
+        description: undefined,
+        tags: [],
+      },
+      draftMetadata: {
+        name: resolvedBaseName,
+        description: undefined,
+        tags: [],
+      },
       data: null,
-      draftData: { name: resolvedBaseName },
+      draftData: {},
       depth,
       createdAt: now,
       updatedAt: now,

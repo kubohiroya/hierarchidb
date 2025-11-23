@@ -91,7 +91,7 @@ describe('WFL command processor undo/redo flow', () => {
       nodeType: 'folder' as NodeType,
       treeId,
       parentId: rootId,
-      name: 'UndoRedo Remove Target',
+      metadata: { name: 'UndoRedo Remove Target' },
     });
     const removeTargetId = removeTargetRes.nodeId as NodeId;
 
@@ -100,9 +100,11 @@ describe('WFL command processor undo/redo flow', () => {
     const rootChildrenBeforeCommit = new Set(
       (await queryAPI.listChildren(rootId)).map((node) => node.id)
     );
-    const workingCopy = await workingCopyAPI.createDraftWorkingCopy('folder' as NodeType, rootId, {
-      name: 'UndoRedo Draft',
-    });
+    const workingCopy = await workingCopyAPI.createDraftWorkingCopy(
+      'folder' as NodeType,
+      rootId,
+      { metadata: { name: 'UndoRedo Draft' } } as Partial<TreeNode>
+    );
     await runCommand('commitWorkingCopy', {
       workingCopyId: workingCopy.id,
       onNameConflict: 'auto-rename',
@@ -161,7 +163,7 @@ describe('WFL command processor undo/redo flow', () => {
     const subjectAfterRedo = await queryAPI.getNode(subjectId);
     expect(subjectAfterRedo).toBeTruthy();
     expect(subjectAfterRedo?.parentId).toBe(moveTargetId);
-    expect(subjectAfterRedo?.name).toBe('UndoRedo Subject Renamed');
+    expect(subjectAfterRedo?.metadata.name).toBe('UndoRedo Subject Renamed');
     expect(await queryAPI.getNode(removeTargetId)).toBeUndefined();
     if (committedNodeId) {
       expect(await queryAPI.getNode(committedNodeId)).toBeTruthy();
@@ -224,8 +226,8 @@ describe('WFL command processor undo/redo flow', () => {
     expect(restoreResult.success).toBe(true);
 
     const restoredNode = await queryAPI.getNode(nodeId);
-    expect(restoredNode?.name).toBe('UndoRedo Headless Renamed');
-    expect(restoredNode?.holderType).toBeUndefined();
+    expect(restoredNode?.metadata.name).toBe('UndoRedo Headless Renamed');
+    expect(restoredNode?.removedAt).toBeUndefined();
 
     const trashAfterRestore = await queryAPI.listChildren(trashRootId);
     expect(trashAfterRestore.some((node) => node.id === nodeId)).toBe(false);
@@ -234,24 +236,24 @@ describe('WFL command processor undo/redo flow', () => {
     const undoRestore = await commandProcessor.undo();
     expect(undoRestore.success).toBe(true);
     const nodeAfterUndoRestore = (await queryAPI.getNode(nodeId)) as TreeNode | undefined;
-    expect(nodeAfterUndoRestore?.holderType).toBe('trash');
+    expect(nodeAfterUndoRestore?.removedAt).toBeTruthy();
     expect(nodeAfterUndoRestore?.originalName).toBe('UndoRedo Headless Renamed');
-    expect(typeof nodeAfterUndoRestore?.name).toBe('string');
-    expect(nodeAfterUndoRestore?.name).not.toBe(nodeAfterUndoRestore?.originalName);
+    expect(typeof nodeAfterUndoRestore?.metadata.name).toBe('string');
+    expect(nodeAfterUndoRestore?.metadata.name).not.toBe(nodeAfterUndoRestore?.originalName);
     expect(nodeAfterUndoRestore?.originalParentId).toBe(rootId);
     expect(nodeAfterUndoRestore?.parentId).toBe(trashRootId);
 
     const undoMoveToTrash = await commandProcessor.undo();
     expect(undoMoveToTrash.success).toBe(true);
     const nodeAfterUndoTrash = await queryAPI.getNode(nodeId);
-    expect(nodeAfterUndoTrash?.holderType).toBeUndefined();
+    expect(nodeAfterUndoTrash?.removedAt).toBeUndefined();
     expect(nodeAfterUndoTrash?.parentId).toBe(rootId);
-    expect(nodeAfterUndoTrash?.name).toBe('UndoRedo Headless Renamed');
+    expect(nodeAfterUndoTrash?.metadata.name).toBe('UndoRedo Headless Renamed');
 
     const undoRename = await commandProcessor.undo();
     expect(undoRename.success).toBe(true);
     const nodeAfterUndoRename = await queryAPI.getNode(nodeId);
-    expect(nodeAfterUndoRename?.name).toBe('UndoRedo Headless Original');
+    expect(nodeAfterUndoRename?.metadata.name).toBe('UndoRedo Headless Original');
 
     const undoCreate = await commandProcessor.undo();
     expect(undoCreate.success).toBe(true);
@@ -262,29 +264,29 @@ describe('WFL command processor undo/redo flow', () => {
     const redoCreate = await commandProcessor.redo();
     expect(redoCreate.success).toBe(true);
     const nodeAfterRedoCreate = await queryAPI.getNode(nodeId);
-    expect(nodeAfterRedoCreate?.name).toBe('UndoRedo Headless Original');
+    expect(nodeAfterRedoCreate?.metadata.name).toBe('UndoRedo Headless Original');
 
     const redoRename = await commandProcessor.redo();
     expect(redoRename.success).toBe(true);
     const nodeAfterRedoRename = await queryAPI.getNode(nodeId);
-    expect(nodeAfterRedoRename?.name).toBe('UndoRedo Headless Renamed');
+    expect(nodeAfterRedoRename?.metadata.name).toBe('UndoRedo Headless Renamed');
 
     const redoMoveToTrash = await commandProcessor.redo();
     expect(redoMoveToTrash.success).toBe(true);
     const nodeAfterRedoTrash = (await queryAPI.getNode(nodeId)) as TreeNode | undefined;
-    expect(nodeAfterRedoTrash?.holderType).toBe('trash');
+    expect(nodeAfterRedoTrash?.removedAt).toBeTruthy();
     expect(nodeAfterRedoTrash?.originalName).toBe('UndoRedo Headless Renamed');
-    expect(typeof nodeAfterRedoTrash?.name).toBe('string');
-    expect(nodeAfterRedoTrash?.name).not.toBe(nodeAfterRedoTrash?.originalName);
+    expect(typeof nodeAfterRedoTrash?.metadata.name).toBe('string');
+    expect(nodeAfterRedoTrash?.metadata.name).not.toBe(nodeAfterRedoTrash?.originalName);
     expect(nodeAfterRedoTrash?.originalParentId).toBe(rootId);
     expect(nodeAfterRedoTrash?.parentId).toBe(trashRootId);
 
     const redoRestore = await commandProcessor.redo();
     expect(redoRestore.success).toBe(true);
     const nodeAfterRedoRestore = await queryAPI.getNode(nodeId);
-    expect(nodeAfterRedoRestore?.holderType).toBeUndefined();
+    expect(nodeAfterRedoRestore?.removedAt).toBeUndefined();
     expect(nodeAfterRedoRestore?.parentId).toBe(rootId);
-    expect(nodeAfterRedoRestore?.name).toBe('UndoRedo Headless Renamed');
+    expect(nodeAfterRedoRestore?.metadata.name).toBe('UndoRedo Headless Renamed');
 
     const finalTrashState = await queryAPI.listChildren(trashRootId);
     expect(finalTrashState.some((node) => node.id === nodeId)).toBe(false);

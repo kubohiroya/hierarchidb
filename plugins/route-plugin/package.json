@@ -59,7 +59,8 @@
   "dependencies": {
     "dexie": "^4.2.0",
     "searoute-js": "^0.1.0",
-    "@hierarchidb/plugin-base": "workspace:*"
+    "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/ui-tabular-extract": "workspace:*"
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
@@ -84,7 +85,8 @@
     "@mui/material": "^7.3.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "@hierarchidb/plugin-base": "workspace:*"
+    "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/ui-tabular-extract": "workspace:*"
   },
   "devDependencies": {
     "@hierarchidb/auth-recovery": "workspace:*",
@@ -111,7 +113,8 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "typescript": "workspace:^5.9.3",
-    "@hierarchidb/plugin-base": "workspace:*"
+    "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/ui-tabular-extract": "workspace:*"
   },
   "hierarchidb": {
     "plugin": {

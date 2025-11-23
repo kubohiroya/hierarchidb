@@ -4,15 +4,35 @@
  * Verifies ordering, filtering, and search behaviour for applySortFilterSearch.
  */
 
+import type { NodeId, NodeType, Timestamp } from '@hierarchidb/common-types';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import { describe, expect, it } from 'vitest';
 import { applySortFilterSearch } from '../../sortFilter.js';
 
+const baseNode = (
+  id: string,
+  name: string,
+  nodeType: string,
+  description = ''
+): TreeNodeData => ({
+  id: id as unknown as NodeId,
+  parentId: 'r:root' as unknown as NodeId,
+  nodeType: nodeType as unknown as NodeType,
+  metadata: { name, description, tags: [] },
+  draftMetadata: null,
+  data: null,
+  draftData: null,
+  depth: 1,
+  createdAt: Date.now() as Timestamp,
+  updatedAt: Date.now() as Timestamp,
+  version: 1,
+});
+
 const sampleNodes: TreeNodeData[] = [
-  { id: '1', name: 'Alpha', nodeType: 'folder' } as TreeNodeData,
-  { id: '2', name: 'beta', nodeType: 'basemap' } as TreeNodeData,
-  { id: '3', name: 'Gamma', nodeType: 'folder' } as TreeNodeData,
-  { id: '4', name: 'delta', nodeType: 'shape', description: 'preview' } as TreeNodeData,
+  baseNode('1', 'Alpha', 'folder'),
+  baseNode('2', 'beta', 'basemap'),
+  baseNode('3', 'Gamma', 'folder'),
+  baseNode('4', 'delta', 'shape', 'preview'),
 ];
 
 describe('applySortFilterSearch', () => {
@@ -23,7 +43,7 @@ describe('applySortFilterSearch', () => {
       filterBy: '',
       searchTerm: '',
     });
-    expect(sorted.map((n) => n.name)).toEqual(['Alpha', 'beta', 'delta', 'Gamma']);
+    expect(sorted.map((n) => n.metadata.name)).toEqual(['Alpha', 'beta', 'delta', 'Gamma']);
   });
 
   it('sorts descending when specified', () => {
@@ -33,7 +53,7 @@ describe('applySortFilterSearch', () => {
       filterBy: '',
       searchTerm: '',
     });
-    expect(sorted.map((n) => n.name)).toEqual(['Gamma', 'delta', 'beta', 'Alpha']);
+    expect(sorted.map((n) => n.metadata.name)).toEqual(['Gamma', 'delta', 'beta', 'Alpha']);
   });
 
   it('filters by nodeType and applies search term', () => {

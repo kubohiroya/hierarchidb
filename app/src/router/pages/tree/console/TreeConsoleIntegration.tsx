@@ -534,6 +534,7 @@ const TreeConsoleIntegrationInner: React.FC<
         nodeType?: string;
         type?: string;
         name?: string;
+        metadata?: { name?: string; description?: string; tags?: string[] };
         depth?: number;
       },
       options?: { navigateToParent?: boolean }
@@ -546,9 +547,19 @@ const TreeConsoleIntegrationInner: React.FC<
       const nodeData: TreeNodeData = {
         id: rawId as NodeId,
         nodeType: (breadcrumbNode.nodeType ?? breadcrumbNode.type ?? 'folder') as NodeType,
-        name: breadcrumbNode.name ?? '',
+        metadata: {
+          name: breadcrumbNode.metadata?.name ?? breadcrumbNode.name ?? '',
+          description: breadcrumbNode.metadata?.description,
+          tags: breadcrumbNode.metadata?.tags ?? [],
+        },
+        draftMetadata: null,
+        data: null,
+        draftData: null,
         parentId: parentFallback ? (parentFallback as NodeId) : (pageNodeId as NodeId | undefined),
         depth: breadcrumbNode.depth ?? 1,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        version: 1,
       } as TreeNodeData;
 
       actions.handleContextMenuAction(action, nodeData, options);
@@ -620,8 +631,8 @@ const TreeConsoleIntegrationInner: React.FC<
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       <TreeConsoleToolbar
-        isProjectsPage={pageTreeNode?.name?.toLowerCase().includes('project')}
-        isResourcesPage={pageTreeNode?.name?.toLowerCase().includes('resource')}
+        isProjectsPage={pageTreeNode?.metadata?.name?.toLowerCase().includes('project')}
+        isResourcesPage={pageTreeNode?.metadata?.name?.toLowerCase().includes('resource')}
         controller={{
           searchText: searchTerm,
           handleSearchTextChange: actions.handleSearchChange,
@@ -648,7 +659,7 @@ const TreeConsoleIntegrationInner: React.FC<
           <TreeConsolePanelWithDynamicSpeedDial
             treeId={treeId as TreeId}
             workerClient={workerClient}
-            title={`Tree: ${pageTreeNode?.name || 'Root'}`}
+            title={`Tree: ${pageTreeNode?.metadata?.name || 'Root'}`}
             pageNodeId={pageNodeId}
             pageTreeNode={pageTreeNode}
             data={[...treeData]}

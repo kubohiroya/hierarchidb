@@ -79,7 +79,7 @@ export class WorkingCopyService {
   ): Promise<WorkingCopyState> {
     try {
       const workingCopyAPI = await this.workerAPI.getWorkingCopyAPI();
-      await workingCopyAPI.updateWorkingCopy(nodeId, {});
+      await workingCopyAPI.updateWorkingCopy(nodeId, updates as unknown as Record<string, unknown>);
 
       const prev = this.stateCache.get(nodeId) ?? ({} as WorkingCopyState);
       const merged: WorkingCopyState = {
@@ -217,4 +217,3 @@ export class WorkingCopyService {
     }
   }
 }
-

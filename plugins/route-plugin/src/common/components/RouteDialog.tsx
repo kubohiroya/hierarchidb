@@ -2,10 +2,15 @@
   * Route Dialog Component (ui-dialog variant)
    */
 
-import type React from 'react';
-import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import { useMemo, useCallback, useEffect, useRef } from 'react';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { RouteEntity, RouteWorkingCopy, TagId } from '../types/index.js';
+import {
+  TabularProvider,
+  TabularFilterStep,
+  TabularColumnSelectionStep,
+} from '@hierarchidb/ui-tabular-extract';
+import { createRouteTabularApi } from '../tabular/createRouteTabularApi.js';
 import { createRouteDraftWorkingCopy, mergeRouteWorkingCopy, getRouteDraft } from '../utils/workingCopy.js';
 import { useTranslation } from '../i18n/index.js';
 import { RouteDetailsStep } from './RouteDetailsStep.js';
@@ -15,6 +20,9 @@ import { readRuntimeMode } from '@hierarchidb/util';
 import { notify } from '@hierarchidb/components';
 import { useWorkingCopy } from '@hierarchidb/plugin-ui-sdk';
 import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
+import { runRouteTabularBuild } from '../../worker/tabular/task.js';
+import { TabularFileUploadStep } from '@hierarchidb/ui-tabular-extract';
+import { useState } from 'react';
 import {
   HeadlessMultiStepDialog,
   FRAME_CONSTANTS,
@@ -34,13 +42,14 @@ import {
   type MultiDialogSize,
   type MultiDialogPosition,
 } from '@hierarchidb/ui-dialog';
+import { Button } from '@mui/material';
 
 type DialogStep = { id: string; label: string; component: React.ReactNode; validate?: () => Promise<boolean> };
 
 export interface RouteDialogProps {
   open: boolean;
   onClose: () => void;
-  mode?: 'create' | 'edit';
+  mode: 'create' | 'edit';
   nodeId?: NodeId;
   parentId?: NodeId;
   onSuccess?: (entity: RouteWorkingCopy) => void;
@@ -55,7 +64,7 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
   parentId,
   onSuccess,
   onError,
-}) => {
+}: RouteDialogProps) => {
   const { t } = useTranslation();
   const { workingCopy, setWorkingCopy, init, commit, discard } = useWorkingCopy<RouteWorkingCopy>({
     nodeType: 'route',
@@ -68,6 +77,7 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
 
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [detailsValid, setDetailsValid] = useState(false);
+  const [tabularBuildStatus, setTabularBuildStatus] = useState<string | null>(null);
 
   const updateWorkingCopy = useCallback(
     (updater: (prev: RouteWorkingCopy | null) => RouteWorkingCopy | null) => {
@@ -151,6 +161,20 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
         validate: async () => detailsValid,
       },
       {
+        id: '1-source',
+        label: t('base-dialog.steps.routeDataSource', 'Data Source'),
+        component: (
+          <TabularProvider tabularApi={createRouteTabularApi()}>
+            <TabularFileUploadStep
+              pluginId="route"
+              onFileUploaded={(meta) => handleUpdate({ tabularSourceId: meta.id })}
+              onError={(msg) => notify.error(msg)}
+            />
+          </TabularProvider>
+        ),
+        validate: async () => true,
+      },
+      {
         id: '2',
         label: t('base-dialog.steps.routeSelection', 'Route Selection'),
         component: (
@@ -173,6 +197,58 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
           />
         ),
         validate: async () => isProcessingValid,
+      },
+      {
+        id: '4',
+        label: t('base-dialog.steps.routeTabular', 'Filter & Preview'),
+        component: (
+          <TabularProvider tabularApi={createRouteTabularApi()}>
+            <TabularFilterStep
+              onConfigChange={(filters) => handleUpdate({ extractConfig: filters as any })}
+            />
+            <TabularColumnSelectionStep
+              onConfigChange={(selection) =>
+                handleUpdate({
+                  extractConfig: { ...(workingCopy.extractConfig ?? {}), selection } as any,
+                })
+              }
+            />
+            <Button
+              variant="contained"
+              onClick={async () => {
+                if (!workingCopy.tabularSourceId) {
+                  notify.error('No tabular source to build. Download/Upload first.');
+                  return;
+                }
+                try {
+                  setTabularBuildStatus('extracting');
+                  const filters = (workingCopy.extractConfig as any)?.filterRules ?? [];
+                  const selection = (workingCopy.extractConfig as any)?.selection;
+                  const tabularApi = createRouteTabularApi();
+                  await runRouteTabularBuild(
+                    tabularApi as any,
+                    workingCopy.tabularSourceId as string,
+                    filters,
+                    selection,
+                    (nodeId ?? workingCopy.nodeId) as NodeId,
+                    (progress) => setTabularBuildStatus(`${progress.stage ?? 'building'} ${progress.completed ?? 0}/${progress.total ?? ''}`)
+                  );
+                  notify.success('Build completed');
+                } catch (err) {
+                  notify.error(`Build failed: ${(err as Error).message}`);
+                  setTabularBuildStatus(null);
+                }
+                setTabularBuildStatus(null);
+              }}
+            >
+              {t('base-dialog.actions.build', 'Build')}
+            </Button>
+            {tabularBuildStatus ? (
+              <div style={{ fontSize: '0.75rem', color: '#666' }}>{tabularBuildStatus}</div>
+            ) : null}
+          </TabularProvider>
+        ),
+        validate: async () => true,
       },
     ];
   }, [applyUpdates, detailsValid, handleBasicInfoChange, isBasicValid, isProcessingValid, isSelectionValid, mode, resolvedDescription, resolvedName, resolvedTags, t, workingCopy]);

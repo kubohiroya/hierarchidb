@@ -22,9 +22,15 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
     return await CoreDB.getSingleton(`pc-${name}-${Date.now()}-${Math.random()}`);
   }
 
-  const withPayload = (node: Omit<TreeNode, 'data' | 'draftData'> & Partial<TreeNode>): TreeNode => ({
+  const withPayload = (
+    node: Omit<TreeNode, 'data' | 'draftData' | 'metadata' | 'draftMetadata'> & Partial<TreeNode> & {
+      name?: string;
+    }
+  ): TreeNode => ({
     data: {},
     draftData: null,
+    metadata: { name: node.name ?? 'Untitled', description: undefined, tags: [] },
+    draftMetadata: null,
     ...node,
   });
 
@@ -38,11 +44,12 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
       id: aId,
       parentId: 'r:root' as NodeId,
       nodeType: 'folder' as NodeType,
-      name: 'A',
       depth: 1,
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
+      metadata: { name: 'A', description: undefined, tags: [] },
+      draftMetadata: null,
       data: {},
       draftData: null,
     };
@@ -55,7 +62,8 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
       id: holderId,
       parentId: 'r:workingCopy' as NodeId,
       nodeType: 'workingCopy' as NodeType,
-      name: holderName,
+      metadata: { name: holderName, description: undefined, tags: [] },
+      draftMetadata: null,
       depth: 0,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -68,7 +76,8 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
       id: `wcC-${Date.now()}` as NodeId,
       parentId: holderId,
       nodeType: 'folder' as NodeType,
-      name: 'Draft',
+      metadata: { name: 'Draft', description: undefined, tags: [] },
+      draftMetadata: null,
       depth: 1,
       createdAt: Date.now(),
       updatedAt: Date.now(),

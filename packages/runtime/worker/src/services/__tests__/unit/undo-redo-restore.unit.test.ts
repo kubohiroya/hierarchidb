@@ -26,7 +26,8 @@ describe('Undo/Redo for restoreFromTrash', () => {
     id: id as NodeId,
     parentId: parentId as NodeId,
     nodeType: 'folder' as NodeType,
-    name,
+    metadata: { name },
+    draftMetadata: null,
     data: {},
     draftData: null,
     depth: 1,
@@ -63,7 +64,7 @@ describe('Undo/Redo for restoreFromTrash', () => {
           ...node,
           removedAt: undefined,
           originalParentId: node.parentId,
-          originalName: node.name,
+          originalName: node.metadata.name,
         };
         state.set(node.id, extended);
         return node.id;

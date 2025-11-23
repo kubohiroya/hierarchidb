@@ -20,7 +20,8 @@ describe('Headless E2E (Node + fake-indexeddb): Undo/Redo representative flow', 
       id: `p2-${Date.now()}` as NodeId,
       parentId: 'r:root' as NodeId,
       nodeType: 'folder' as NodeType,
-      name: 'P2',
+      metadata: { name: 'P2', description: undefined, tags: [] },
+      draftMetadata: null,
       data: {},
       draftData: null,
       depth: 1,
@@ -36,7 +37,7 @@ describe('Headless E2E (Node + fake-indexeddb): Undo/Redo representative flow', 
         nodeType: 'folder' as NodeType,
         treeId: rTree,
         parentId: 'r:root' as NodeId,
-        name: 'A',
+        metadata: { name: 'A' },
       })
     );
     expect(createResult.success).toBe(true);
@@ -47,7 +48,7 @@ describe('Headless E2E (Node + fake-indexeddb): Undo/Redo representative flow', 
 
     // rename A -> A1
     const u1 = await cp.processCommand(
-      cp.createEnvelope('updateNode', { nodeId: aId, name: 'A1' })
+      cp.createEnvelope('updateNode', { nodeId: aId, metadata: { name: 'A1' } })
     );
     expect(u1.success).toBe(true);
 
@@ -73,7 +74,7 @@ describe('Headless E2E (Node + fake-indexeddb): Undo/Redo representative flow', 
 
     // final assertions
     const qa = await core.getNode(aId);
-    expect(qa?.name).toBe('A1');
+    expect(qa?.metadata.name).toBe('A1');
     expect(qa?.parentId).toBe(p2);
   });
 });

@@ -570,7 +570,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         const queryAPI = await client.getQueryAPI();
         const siblings = await queryAPI.listChildren(pageNodeId as NodeId);
         const siblingNames = siblings
-          .map((n) => (typeof n?.name === 'string' ? n.name : ''))
+          .map((n) => (typeof n?.metadata?.name === 'string' ? n.metadata.name : ''))
           .filter((n) => n);
         const baseName = 'New Folder';
         const resolvedName = createUniqueName(siblingNames, baseName);
@@ -689,7 +689,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
           const queryAPI = await client.getQueryAPI();
           const siblings = await queryAPI.listChildren(targetNodeId);
           const siblingNames = siblings
-            .map((n) => (typeof n?.name === 'string' ? n.name : ''))
+            .map((n) => (typeof n?.metadata?.name === 'string' ? n.metadata.name : ''))
             .filter((n) => n);
           const displayName = newType.charAt(0).toUpperCase() + newType.slice(1);
           const baseName = `New ${displayName}`;
@@ -762,11 +762,11 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         return;
       }
 
-      if (normalizedAction === 'rename-inline' && node?.id && typeof node.name === 'string') {
+      if (normalizedAction === 'rename-inline' && node?.id && typeof node.metadata?.name === 'string') {
         try {
           const mutationAPI = await client.getMutationAPI();
-          const next = node.name.trim();
-          const current = ssot.nodeIndex?.get(node.id as NodeId)?.name ?? '';
+          const next = node.metadata.name.trim();
+          const current = ssot.nodeIndex?.get(node.id as NodeId)?.metadata?.name ?? '';
           if (next === current) return;
           if (!next) {
             showCommandError('VALIDATION_ERROR', 'Name is required');
@@ -798,12 +798,12 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
       if (
         normalizedAction === 'update-desc-inline' &&
         node?.id &&
-        typeof node.description === 'string'
+        typeof node.metadata?.description === 'string'
       ) {
         try {
           const mutationAPI = await client.getMutationAPI();
-          const next = String(node.description ?? '').trim();
-          const current = ssot.nodeIndex?.get(node.id as NodeId)?.description ?? '';
+          const next = String(node.metadata?.description ?? '').trim();
+          const current = ssot.nodeIndex?.get(node.id as NodeId)?.metadata?.description ?? '';
           if (next === current) return;
           if (next.length > 1000) {
             showCommandError('VALIDATION_ERROR', 'Description is too long (max 1000)');

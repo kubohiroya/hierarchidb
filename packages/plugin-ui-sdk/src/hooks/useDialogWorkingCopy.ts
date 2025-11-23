@@ -22,6 +22,7 @@ export interface WorkingCopyData {
   name: string;
   description?: string;
   data?: Record<string, unknown>;
+  draftData?: Record<string, unknown>;
   isDraft?: boolean;
 }
 
@@ -65,16 +66,22 @@ export function useDialogWorkingCopy({
 
   const toWorkingCopyData = useCallback((node: Partial<TreeNode> & { data?: unknown; draftData?: unknown }): WorkingCopyData => {
     const treeNodeId = (typeof node?.id === 'string' ? node.id : nodeId) as NodeId;
-    const description = typeof node?.description === 'string' ? node.description : undefined;
+    const description: string = String(
+      (node as { metadata?: { description?: string } }).metadata?.description ?? ''
+    );
     const draft = isRecord((node as { draftData?: unknown }).draftData)
       ? ((node as { draftData?: Record<string, unknown> }).draftData as Record<string, unknown>)
       : undefined;
     const data = draft ?? (isRecord(node.data) ? node.data : undefined);
+    const name: string = String(
+      (node as { metadata?: { name?: string } }).metadata?.name ?? ''
+    );
     return {
       treeNodeId,
-      name: typeof node?.name === 'string' ? node.name : '',
+      name,
       description,
       data,
+      draftData: data,
     } satisfies WorkingCopyData;
   }, [nodeId]);
 
@@ -129,7 +136,7 @@ export function useDialogWorkingCopy({
             // Recreate draft using the expected nodeId to keep routing consistent
             const wcNode = await wcAPI.createDraftWorkingCopy(nodeType as NodeType, parentId, {
               id: nodeId,
-              name: '',
+              metadata: { name: '', description: '' },
             } as Partial<TreeNode>);
             const copy = toWorkingCopyData(wcNode);
             setWorkingCopy(copy);
@@ -138,7 +145,9 @@ export function useDialogWorkingCopy({
           }
 
           if (parentId) {
-            const wcNode = await wcAPI.createDraftWorkingCopy(nodeType as NodeType, parentId, { name: '' });
+            const wcNode = await wcAPI.createDraftWorkingCopy(nodeType as NodeType, parentId, {
+              metadata: { name: '', description: '' },
+            });
             const copy = toWorkingCopyData(wcNode);
             setWorkingCopy(copy);
             setOriginalCopy(copy);
@@ -168,10 +177,10 @@ export function useDialogWorkingCopy({
       debounce(async (next: WorkingCopyData) => {
         try {
           const { wc: wcAPI } = await getClient();
+          const payload = (next.draftData ?? next.data) as Record<string, unknown> | undefined;
           await wcAPI.updateWorkingCopy(next.treeNodeId, {
-            name: next.name,
-            description: next.description,
-            draftData: next.data as Record<string, unknown> | undefined,
+            metadata: { name: next.name, description: next.description },
+            draftData: payload,
           } as Partial<TreeNode>);
         } catch (err) {
           console.warn('[useWorkingCopy] persist update failed', err);
@@ -185,6 +194,9 @@ export function useDialogWorkingCopy({
       setWorkingCopy((prev) => {
         if (!prev) return null;
         const merged = { ...prev, ...data } satisfies WorkingCopyData;
+        if (data.draftData && !data.data) {
+          merged.data = data.draftData;
+        }
         persistWorkingCopy(merged);
         return merged;
       });
@@ -200,33 +212,29 @@ export function useDialogWorkingCopy({
       setLoading(true);
       const { wc: wcAPI, query } = await getClient();
 
-      const normalizedData: Record<string, unknown> = { ...(finalData.data ?? {}) };
-      const likedSet = normalizedData['likedNodeIdSet'];
+      const payloadSource = finalData.draftData ?? finalData.data ?? {};
+      const normalizedDraft: Record<string, unknown> = {
+        ...payloadSource,
+      };
+      const likedSet = normalizedDraft['likedNodeIdSet'];
       if (likedSet instanceof Set) {
-        normalizedData['likedNodeIdSet'] = Array.from(likedSet);
+        normalizedDraft['likedNodeIdSet'] = Array.from(likedSet);
       }
 
-      const updatePayload: Partial<TreeNode> & { data?: Record<string, unknown> } = {
-        name: finalData.name,
-        description: finalData.description,
-        data: normalizedData,
+      const updatePayload: Partial<TreeNode> & {
+        draftData?: Record<string, unknown>;
+      } = {
+        metadata: { name: finalData.name, description: finalData.description },
+        draftData: normalizedDraft,
       };
       await wcAPI.updateWorkingCopy(finalData.treeNodeId, updatePayload as Partial<TreeNode>);
-
-      const wcNode = await query.getNode(finalData.treeNodeId);
-      if (!wcNode) throw new Error('Working copy not found');
-      const holder = await query.getNode(wcNode.parentId);
-      const targetNodeId: NodeId | undefined = holder?.holderTargetId;
 
       const res = await wcAPI.commitWorkingCopy(finalData.treeNodeId, {
         onNameConflict: 'auto-rename',
       });
 
       if (res.status === 'ok') {
-        const committedNodeId = (res.node?.id as NodeId | undefined)
-          ?? res.nodeId
-          ?? targetNodeId
-          ?? finalData.treeNodeId;
+        const committedNodeId = (res.node?.id as NodeId | undefined) ?? res.nodeId ?? finalData.treeNodeId;
 
         let refreshedCopy: WorkingCopyData = { ...finalData, treeNodeId: committedNodeId };
         if (res.node) {

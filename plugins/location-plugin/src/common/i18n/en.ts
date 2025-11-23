@@ -77,6 +77,8 @@ export const en: LocationPluginTranslations = {
   // Selection step
   selection: {
     title: 'Location Selection',
+    filterTitle: 'Filter & Preview',
+    buildLabel: 'Build',
     subtitle: 'Select the location data to retrieve. You can specify data by country and location type combinations.',
     alertMessage: 'Select the location data to retrieve. You can specify data by country and location type combinations.',
     matrixTitle: 'Selection Matrix',

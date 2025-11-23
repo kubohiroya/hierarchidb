@@ -43,8 +43,7 @@ const DEFAULT_MAX_DEPTH = 32;
  * @param params.maxDepth Safety cap to avoid infinite loops on malformed data (defaults to 32).
  *
  * @returns Breadcrumb nodes ordered from root to target. The first element always
- *          represents the trash root. Intermediate entries have `holderType: 'trash'`
- *          to indicate that navigating them should keep the dialog in “trash mode”.
+ *          represents the trash root.
  */
 export function buildTrashBreadcrumbs({
   treeId,
@@ -59,9 +58,6 @@ export function buildTrashBreadcrumbs({
     name: 'Trash',
     nodeType: rootNode.nodeType ?? 'trash',
     parentId: `${treeId}:root`,
-    holderType: 'trash',
-    holderTargetId: rootId,
-    holderMetaParentId: `${treeId}:root`,
     isClickable: true,
     depth: 0,
   };
@@ -96,9 +92,6 @@ export function buildTrashBreadcrumbs({
       name: displayName,
       nodeType: currentNode?.nodeType ?? 'trash-item',
       parentId,
-      holderType: 'trash',
-      holderTargetId: currentId,
-      holderMetaParentId: metaParentId,
       isClickable: true,
     });
 

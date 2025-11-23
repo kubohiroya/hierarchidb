@@ -116,6 +116,11 @@ export class StylerDialogExtension extends NodeDialogPlugin<StylerDialogPeer> {
   readonly pluginVersion = '1.0.0';
   protected readonly dependencies = ['spreadsheet-plugin-dialog-extension'];
 
+  async initialize(): Promise<void> {
+    // No-op initializer for dialog extension contract
+    return;
+  }
+
   protected getCreateDialogSteps(): NodeDialogStepDefinition[] {
     return cloneStepDefinitions();
   }

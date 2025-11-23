@@ -346,6 +346,10 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     version: "0.1.0",
     dependencies: [
         "@hierarchidb/plugin-base",
+        "@hierarchidb/ui-tabular-extract",
+        "@hierarchidb/spreadsheet-plugin",
+        "@hierarchidb/tabular-store",
+        "@hierarchidb/tabular-source",
         "dexie",
         "react",
         "react-dom",
@@ -384,6 +388,10 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "priority": 40,
         "dependencies": [
           "@hierarchidb/plugin-base",
+          "@hierarchidb/ui-tabular-extract",
+          "@hierarchidb/spreadsheet-plugin",
+          "@hierarchidb/tabular-store",
+          "@hierarchidb/tabular-source",
           "dexie",
           "react",
           "react-dom",
@@ -581,6 +589,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "dexie",
         "searoute-js",
         "@hierarchidb/plugin-base",
+        "@hierarchidb/ui-tabular-extract",
         "@emotion/react",
         "@emotion/styled",
         "@hierarchidb/auth-recovery",
@@ -603,7 +612,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@mui/material",
         "react",
         "react-dom",
-        "@hierarchidb/plugin-base"
+        "@hierarchidb/plugin-base",
+        "@hierarchidb/ui-tabular-extract"
       ],
     manifest: {
         "id": "@hierarchidb/route-plugin",
@@ -617,6 +627,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "dexie",
           "searoute-js",
           "@hierarchidb/plugin-base",
+          "@hierarchidb/ui-tabular-extract",
           "@emotion/react",
           "@emotion/styled",
           "@hierarchidb/auth-recovery",
@@ -639,7 +650,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@mui/material",
           "react",
           "react-dom",
-          "@hierarchidb/plugin-base"
+          "@hierarchidb/plugin-base",
+          "@hierarchidb/ui-tabular-extract"
         ],
         "icon": {
           "mui": "Route",

@@ -20,8 +20,6 @@
     "test": "vitest run",
     "clean": "rm -rf dist"
   },
-  "devDependencies": {
-  },
   "peerDependencies": {
     "@hierarchidb/ui-icon": "workspace:*"
   },

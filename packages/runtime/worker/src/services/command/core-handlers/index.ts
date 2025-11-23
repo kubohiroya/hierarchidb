@@ -71,8 +71,7 @@ async function handleCreateNode(
       nodeType: NodeType;
       treeId: string;
       parentId: NodeId;
-      name: string;
-      description?: string;
+      metadata: { name: string; description?: string; tags?: string[] };
     };
 
     const createdAt = Date.now() as Timestamp;
@@ -80,14 +79,19 @@ async function handleCreateNode(
       id: crypto.randomUUID() as NodeId,
       parentId: payload.parentId,
       nodeType: payload.nodeType,
-      name: payload.name,
+      metadata: {
+        name: payload.metadata.name,
+        description: payload.metadata.description,
+        tags: payload.metadata.tags ?? [],
+      },
+      draftMetadata: null,
       depth: 0,
       createdAt,
       updatedAt: createdAt,
       version: 1,
       data: {},
       draftData: null,
-      ...(payload.description ? { description: payload.description } : {}),
+      ...(payload.metadata.description ? { description: payload.metadata.description } : {}),
     })) as NodeId;
 
     deps.history.recordCreatedNode(envelope.commandId, nodeId);
@@ -107,22 +111,22 @@ async function handleUpdateNode(
   try {
     const payload = envelope.payload as {
       nodeId: NodeId;
-      name?: string;
-      description?: string;
+      metadata?: { name?: string; description?: string; tags?: string[] };
     };
     const node = await deps.coreDB.getNode?.(payload.nodeId);
     if (!node) {
       return deps.createErrorResult('Node not found', WorkerErrorCode.INVALID_OPERATION);
     }
 
-    if (payload.name && payload.name !== node.name && node.parentId) {
+    const meta = payload.metadata;
+    if (meta?.name && meta.name !== node.metadata.name && node.parentId) {
       const siblings = (await deps.coreDB.listChildren?.(node.parentId)) || [];
       const hasConflict = siblings.some(
-        (sibling) => sibling.id !== node.id && sibling.name === payload.name
+        (sibling) => sibling.id !== node.id && sibling.metadata.name === meta.name
       );
       if (hasConflict) {
         return deps.createErrorResult(
-          `Name conflict: '${payload.name}' already exists`,
+          `Name conflict: '${meta.name}' already exists`,
           WorkerErrorCode.NAME_NOT_UNIQUE
         );
       }
@@ -131,8 +135,13 @@ async function handleUpdateNode(
     deps.history.storePreUpdateState(envelope.commandId, node);
     await deps.coreDB.updateNode?.({
       ...node,
-      ...(payload.name && { name: payload.name }),
-      ...(payload.description !== undefined && { description: payload.description }),
+      ...(meta && {
+        metadata: {
+          name: meta.name ?? node.metadata.name,
+          description: meta.description !== undefined ? meta.description : node.metadata.description,
+          tags: meta.tags ?? node.metadata.tags ?? [],
+        },
+      }),
       updatedAt: Date.now() as Timestamp,
       version: node.version + 1,
     });
@@ -161,7 +170,7 @@ async function handleMoveNodes(
     const beforeNodes: TreeNode[] = [];
     const toUpdate: TreeNode[] = [];
     const siblings = (await deps.coreDB.listChildren?.(payload.toParentId)) || [];
-    const siblingNames = new Set<string>(siblings.map((sibling) => sibling.name));
+    const siblingNames = new Set<string>(siblings.map((sibling) => sibling.metadata.name));
 
     for (const nodeId of payload.nodeIds) {
       const node = await deps.coreDB.getNode?.(nodeId);
@@ -170,11 +179,11 @@ async function handleMoveNodes(
       }
       beforeNodes.push({ ...node });
 
-      let nextName = node.name;
+      let nextName = node.metadata.name;
       let originalNamePatch: string | undefined;
       if (payload.onNameConflict === 'auto-rename') {
         if (siblingNames.has(nextName)) {
-          originalNamePatch = (node as { originalName?: string }).originalName ?? node.name;
+          originalNamePatch = (node as { originalName?: string }).originalName ?? node.metadata.name;
           nextName = createNewName(Array.from(siblingNames), nextName);
         }
         siblingNames.add(nextName);
@@ -227,9 +236,6 @@ async function handleMoveToTrash(
       previousOriginalName?: string;
       previousOriginalParentId?: NodeId;
       previousRemovedAt?: Timestamp;
-      previousHolderType?: TreeNode['holderType'];
-      previousHolderTargetId?: NodeId;
-      previousHolderMetaParentId?: NodeId;
       trashRootId: NodeId;
       trashRemovedAt: Timestamp;
       trashName: string;
@@ -306,7 +312,7 @@ async function handleMoveToTrash(
       const previousOriginalName = (node as { originalName?: string }).originalName;
       const previousOriginalParentId = (node as { originalParentId?: NodeId }).originalParentId;
       const previousRemovedAt = (node as { removedAt?: Timestamp }).removedAt;
-      const preservedOriginalName = previousOriginalName ?? node.name;
+      const preservedOriginalName = previousOriginalName ?? node.metadata.name;
       const trashName =
         typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
           ? crypto.randomUUID()
@@ -315,7 +321,7 @@ async function handleMoveToTrash(
       const updatedNode: Parameters<CoreDB['updateNode']>[0] = {
         ...node,
         parentId: trashRootId,
-        name: trashName,
+        metadata: { ...node.metadata, name: trashName },
         originalName: preservedOriginalName,
         originalParentId: previousOriginalParentId ?? originalParentId,
         removedAt: now,
@@ -328,7 +334,7 @@ async function handleMoveToTrash(
       snapshotEntries.push({
         nodeId: node.id as NodeId,
         previousParentId: originalParentId,
-        previousName: node.name,
+        previousName: node.metadata.name,
         previousOriginalName,
         previousOriginalParentId,
         previousRemovedAt,
@@ -524,11 +530,11 @@ async function handleRestoreFromTrash(
       let siblingNames = siblingNameCache.get(targetParentId);
       if (!siblingNames) {
         const siblings = (await deps.coreDB.listChildren?.(targetParentId)) || [];
-        siblingNames = new Set(siblings.map((s) => s.name));
+        siblingNames = new Set(siblings.map((s) => s.metadata.name));
         siblingNameCache.set(targetParentId, siblingNames);
       }
 
-      const baseName = (node as { originalName?: string }).originalName ?? node.name;
+      const baseName = (node as { originalName?: string }).originalName ?? node.metadata.name;
       let nextName = baseName;
       if (conflictPolicy === 'auto-rename') {
         if (siblingNames.has(nextName)) {

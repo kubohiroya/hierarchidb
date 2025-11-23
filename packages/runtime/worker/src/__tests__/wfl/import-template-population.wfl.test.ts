@@ -48,10 +48,16 @@ function buildImportNodes(data: TemplateFile): ImportData['nodes'] {
       .map((child) => toImportNode(child.treeNodeId))
       .filter((child): child is ImportData['nodes'][number] => child !== null);
     return {
-      name: node.name,
+      name: (node.metadata.name ?? '') as string,
       nodeType: node.treeNodeType,
-      description: node.description,
-      metadata: node.metadata,
+      description:
+        typeof node.metadata.description === 'string' ? node.metadata.description : undefined,
+      metadata: {
+        ...node.metadata,
+        name: (node.metadata.name ?? '') as string,
+        description:
+          typeof node.metadata.description === 'string' ? node.metadata.description : undefined,
+      },
       children: children.length > 0 ? children : undefined,
     };
   };
@@ -89,13 +95,13 @@ describe('WFL import template: Total Population by Country', () => {
 
     const rootChildren = await queryAPI.listChildren(rootId);
     const populationFolder = rootChildren.find(
-      (node) => node.name === 'Total Population by Country'
+      (node) => node.metadata.name === 'Total Population by Country'
     );
     expect(populationFolder).toBeTruthy();
     if (!populationFolder) throw new Error('Population folder not found');
 
     const templateChildren = await queryAPI.listChildren(populationFolder.id as NodeId);
-    const byType = new Map(templateChildren.map((child) => [child.nodeType, child.name]));
+    const byType = new Map(templateChildren.map((child) => [child.nodeType, child.metadata.name]));
     expect(byType.get(toNodeType('shape'))).toBe('Country Boundaries');
     expect(byType.get(toNodeType('styler'))).toBe('Population Color Map');
     expect(byType.get(toNodeType('spreadsheet'))).toBe('Population Data Table');

@@ -19,19 +19,27 @@ export async function updateDraft(
   }
 
   const timestamp = Date.now() as Timestamp;
+  const nextDraftData =
+    updates.draftData ??
+    (updates.data as TreeNode['draftData'] | undefined) ??
+    existing.draftData ??
+    existing.data ??
+    null;
+  const nextDraftMetadata =
+    updates.draftMetadata ??
+    existing.draftMetadata ??
+    existing.metadata ??
+    null;
+
   const updated: TreeNode = {
     ...existing,
     ...updates,
     updatedAt: timestamp,
     lastTouchedAt: timestamp,
-    // Keep committed data as-is; stash incoming edits into draftData.
     data: existing.data ?? null,
-    draftData:
-      updates.draftData ??
-      (updates.data as TreeNode['draftData'] | undefined) ??
-      existing.draftData ??
-      existing.data ??
-      null,
+    draftData: nextDraftData,
+    metadata: existing.metadata,
+    draftMetadata: nextDraftMetadata,
   };
 
   await coreDB.nodes.put(updated);
