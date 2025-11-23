@@ -53,7 +53,7 @@ export function TreeTableContextMenu({
       nodeId={node?.id || ''}
       nodeType={node?.nodeType || 'folder'}
       treeId={treeId}
-      nodeName={node?.name}
+      nodeName={node?.metadata.name}
       canCreate
       canEdit={!isRoot}
       canRemove={!isRoot}

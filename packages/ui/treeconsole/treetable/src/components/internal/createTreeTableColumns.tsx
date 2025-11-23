@@ -55,7 +55,7 @@ export interface ColumnBuilderParams {
   selectionMode: 'single' | 'multiple' | 'none';
   controller: any;
   validateInline: (field: 'name' | 'description', value: string) => { ok: boolean; message?: string };
-  handleStartEdit: (node: TreeNode, field?: 'name' | 'description') => void;
+  handleStartEdit: (node: TreeNodeInUI, field?: 'name' | 'description') => void;
   editingField: 'name' | 'description' | null;
   editingValue: string;
   editingError: string | null;
@@ -66,7 +66,7 @@ export interface ColumnBuilderParams {
   setContextMenuState: React.Dispatch<React.SetStateAction<{
     anchorEl: HTMLElement | null;
     anchorPosition: { left: number; top: number } | null;
-    node: TreeNode | null;
+    node: TreeNodeInUI | null;
   }>>;
   visualSelectionSet: Set<NodeId>;
   useTrashColumns: boolean;
@@ -381,7 +381,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                 }}
                 onBlur={(event) => {
                   const nextValue = event.target.value.trim();
-                  if (nextValue === node.name) {
+                  if (nextValue === node.metadata.name) {
                     setEditingNodeId(null);
                     setEditingField(null);
                     setEditingError(null);
@@ -401,7 +401,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                   if (event.key === 'Enter') {
                     event.stopPropagation();
                     const nextValue = event.currentTarget.value.trim();
-                    if (nextValue === node.name) {
+                    if (nextValue === node.metadata.name) {
                       setEditingNodeId(null);
                       setEditingField(null);
                       setEditingError(null);
@@ -466,7 +466,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                   to={linkHref}
                   sx={{ mr: 0.5, color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
                 >
-                  {node.name}
+                  {node.metadata.name}
                 </Box>
                 <SparkleAnimation showSparkle={showSparkle} />
                 {params.draftFlags.hasDraft.has(node.id as NodeId) ? (
@@ -530,7 +530,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
               }}
               onBlur={(event) => {
                 const nextValue = event.target.value.trim();
-                if ((node.description || '') === nextValue) {
+                if ((node.metadata.description || '') === nextValue) {
                   setEditingNodeId(null);
                   setEditingField(null);
                   setEditingError(null);
@@ -574,7 +574,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
         );
       }
 
-      if (!node.description) return emptyValue;
+      if (!node.metadata.description) return emptyValue;
       return (
         <Box
           sx={{
@@ -589,7 +589,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
             handleStartEdit(node, 'description');
           }}
         >
-          <span>{node.description}</span>
+          <span>{node.metadata.description}</span>
         </Box>
       );
     },

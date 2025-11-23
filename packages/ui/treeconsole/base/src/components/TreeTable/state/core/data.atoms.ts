@@ -25,7 +25,7 @@ export const filteredDataAtom = atom<TreeNode[]>((get) => {
 
   if (!searchTerm) return data;
 
-  return data.filter((item) => item.name?.toLowerCase().includes(searchTerm.toLowerCase()));
+  return data.filter((item) => item.metadata.name?.toLowerCase().includes(searchTerm.toLowerCase()));
 });
 
 /**

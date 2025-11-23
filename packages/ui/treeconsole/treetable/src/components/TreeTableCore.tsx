@@ -13,9 +13,9 @@ import {
   type SortingState,
   useReactTable,
 } from '@tanstack/react-table';
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/common-types';
 import { NodeContextMenu, NodeTypeIcon } from '@hierarchidb/ui-treeconsole-breadcrumb';
-import type { TreeTableCoreProps } from '../types.js';
+import type { TreeNodeInUI, TreeTableCoreProps } from '../types.js';
 import { StyledTable, StyledTableContainer } from './TreeTableStyles.js';
 import { TreeTableRows } from './internal/TreeTableRows.js';
 import { TreeTableHeader } from './internal/TreeTableHeader.js';
@@ -55,7 +55,7 @@ export function TreeTableCore({
   const [contextMenuState, setContextMenuState] = useState<{
     anchorEl: HTMLElement | null;
     anchorPosition: { left: number; top: number } | null;
-    node: TreeNode | null;
+    node: TreeNodeInUI | null;
   }>({
     anchorEl: null,
     anchorPosition: null,
@@ -179,6 +179,13 @@ export function TreeTableCore({
         .filter((n) => (n as { draftData?: unknown }).draftData !== null && (n as { draftData?: unknown }).draftData !== undefined)
         .map((n) => n.id as string as NodeId)
     );
+
+    const removedLabel = (commonT('treeTable.columns.removed', 'Removed') ?? 'Removed') as string;
+    const nameLabel = (commonT('treeTable.columns.name', 'Name') ?? 'Name') as string;
+    const descriptionLabel = (commonT('treeTable.columns.description', 'Description') ?? 'Description') as string;
+    const createdLabel = (commonT('treeTable.columns.created', 'Created') ?? 'Created') as string;
+    const updatedLabel = (commonT('treeTable.columns.updated', 'Updated') ?? 'Updated') as string;
+
     return createTreeTableColumns({
       draftFlags: {
         hasDraft: draftIds,
@@ -231,13 +238,13 @@ export function TreeTableCore({
       useTrashColumns,
       trashAction,
       formatTimestamp,
-      trashRemovedHeader: useTrashColumns ? commonT('treeTable.columns.removed', 'Removed') : undefined,
+      trashRemovedHeader: useTrashColumns ? removedLabel : undefined,
       columnLabels: {
-        name: commonT('treeTable.columns.name', 'Name'),
-        description: commonT('treeTable.columns.description', 'Description'),
-        created: commonT('treeTable.columns.created', 'Created'),
-        updated: commonT('treeTable.columns.updated', 'Updated'),
-        removed: commonT('treeTable.columns.removed', 'Removed'),
+        name: nameLabel,
+        description: descriptionLabel,
+        created: createdLabel,
+        updated: updatedLabel,
+        removed: removedLabel,
       },
       validationMessages: {
         invalidName: commonT('treeTable.validation.invalidName', 'Invalid name'),

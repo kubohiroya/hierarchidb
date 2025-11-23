@@ -12,7 +12,6 @@ import type { TreeTablePlugin } from './plugin/types.js';
 // Base TreeNode interface (simplified from core)
 export interface TreeNodeInUI extends TreeNode {
   type?: string;
-  name: string;
   hasChildren?: boolean;
   children?: NodeId[];
   isExpanded?: boolean;
@@ -147,7 +146,7 @@ export interface TreeTableCoreProps {
   /**
    * Callbacks
    */
-  onRowClick?: (node: TreeNode, event: MouseEvent) => void;
+  onRowClick?: (node: TreeNodeInUI, event: MouseEvent) => void;
   onRowDoubleClick?: (node: TreeNodeInUI, event: MouseEvent) => void;
   onRowContextMenu?: (node: TreeNodeInUI, event: MouseEvent) => void;
 }

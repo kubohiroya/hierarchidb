@@ -223,7 +223,9 @@ export function useCopyPasteOperations(
                 (nodeId) =>
                   ({
                     id: nodeId,
-                    name: `Node ${nodeId}`,
+                    metadata: {
+                      name: `Node ${nodeId}`,
+                    },
                     parentId: targetParentId,
                     nodeType: 'default',
                     createdAt: Date.now(),
@@ -232,7 +234,7 @@ export function useCopyPasteOperations(
                   }) as TreeNode,
               ) || [],
           };
-        } catch (error) {
+        } catch {
           return {
             success: false,
             pastedNodes: [],
@@ -253,7 +255,9 @@ export function useCopyPasteOperations(
         (nodeId) =>
           ({
             id: (nodeId + (clipboardData.operation === 'copy' ? '-copy' : '')) as NodeId,
-            name: `Node ${nodeId} (${clipboardData.operation === 'copy' ? 'Copy' : 'Moved'})`,
+      metadata: {
+        name: `Node ${nodeId} (${clipboardData.operation === 'copy' ? 'Copy' : 'Moved'})`,
+      },
             parentId: targetParentId,
             nodeType: 'default',
             createdAt: Date.now(),

@@ -93,7 +93,7 @@ export class WorkingCopyCommandsAdapter {
       const workingCopy = await workingCopyAPI.createDraftWorkingCopy(
         toNodeType(nodeType),
         parentId,
-        { name },
+        { metadata: {name} },
       );
 
       return {

@@ -110,20 +110,25 @@ export function createInlineEditPlugin(config?: InlineEditPluginConfig): TreeTab
       },
 
       onBeforeNodeUpdate: async (nodeId, newData) => {
-        if (validateBeforeSave && newData.name) {
+        if (validateBeforeSave && newData.metadata?.name) {
           // Create a minimal TreeNodeInUI object for validation
           const node: TreeNodeInUI = {
             id: nodeId as NodeId,
             parentId: '' as NodeId,
             nodeType: 'unknown' as NodeType,
-            name: newData.name,
             hasChildren: false,
             depth: 0,
             createdAt: Date.now(),
             updatedAt: Date.now(),
             version: 1,
+            data: {...newData.data},
+            draftData: {...newData.draftData},
+            metadata: {...newData.metadata},
+            draftMetadata: {
+              ...newData.metadata,
+            },
           };
-          const isValid = await validateBeforeSave(node, newData.name);
+          const isValid = await validateBeforeSave(node, newData.metadata.name);
           return isValid;
         }
         return true;

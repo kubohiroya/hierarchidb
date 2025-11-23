@@ -5,8 +5,7 @@
 
 import { useCallback } from 'react';
 import type { MouseEvent } from 'react';
-import type { TreeNode } from '@hierarchidb/common-types';
-import type { TreeTableController } from '../../types.js';
+import type { TreeTableController, TreeNodeInUI } from '../../types.js';
 import { isElementWithClosest } from '../../utils/treeTableHelpers.js';
 
 interface UseTreeTableRowInteractionsParams {
@@ -14,15 +13,15 @@ interface UseTreeTableRowInteractionsParams {
   rowSelection: Record<string, boolean>;
   selectionMode: 'single' | 'multiple' | 'none';
   rowClickAction: 'Select/Navigate' | 'Edit';
-  onRowClick?: (node: TreeNode, event: MouseEvent) => void;
-  onRowDoubleClick?: (node: TreeNode, event: MouseEvent) => void;
+  onRowClick?: (node: TreeNodeInUI, event: MouseEvent) => void;
+  onRowDoubleClick?: (node: TreeNodeInUI, event: MouseEvent) => void;
   selectAll: boolean;
-  handleStartEdit: (node: TreeNode, field?: 'name' | 'description') => void;
+  handleStartEdit: (node: TreeNodeInUI, field?: 'name' | 'description') => void;
 }
 
 interface UseTreeTableRowInteractionsResult {
-  handleRowClick: (node: TreeNode, event: MouseEvent) => void;
-  handleRowDoubleClick: (node: TreeNode, event: MouseEvent) => void;
+  handleRowClick: (node: TreeNodeInUI, event: MouseEvent) => void;
+  handleRowDoubleClick: (node: TreeNodeInUI, event: MouseEvent) => void;
 }
 
 export function useTreeTableRowInteractions({
@@ -35,7 +34,7 @@ export function useTreeTableRowInteractions({
   selectAll,
   handleStartEdit,
 }: UseTreeTableRowInteractionsParams): UseTreeTableRowInteractionsResult {
-  const handleRowClick = useCallback((node: TreeNode, event: MouseEvent) => {
+  const handleRowClick = useCallback((node: TreeNodeInUI, event: MouseEvent) => {
     const target = (event.target as EventTarget) || null;
     if (isElementWithClosest(target) && target.closest('a[href]')) {
       return;
@@ -71,7 +70,7 @@ export function useTreeTableRowInteractions({
     onRowClick?.(node, event);
   }, [controller, onRowClick, rowClickAction, rowSelection, selectAll, selectionMode]);
 
-  const handleRowDoubleClick = useCallback((node: TreeNode, event: MouseEvent) => {
+  const handleRowDoubleClick = useCallback((node: TreeNodeInUI, event: MouseEvent) => {
     const target = (event.target as EventTarget) || null;
     if (isElementWithClosest(target) && target.closest('a[href]')) {
       return;

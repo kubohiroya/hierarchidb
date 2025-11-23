@@ -45,7 +45,7 @@ export function flattenTree(
   });
 
   children
-    .sort((a, b) => a.name.localeCompare(b.name))
+    .sort((a, b) => a.metadata.name.localeCompare(b.metadata.name))
     .forEach((child) => {
       const childWithDepth = { ...child, depth };
       result.push(childWithDepth);
@@ -130,7 +130,7 @@ export function filterNodesBySearch(nodes: TreeNode[], searchText: string): Tree
   const matchingNodes = new Set<string>();
 
   nodes.forEach((node) => {
-    if (node.name.toLowerCase().includes(lowerSearchText)) {
+    if (node.metadata.name.toLowerCase().includes(lowerSearchText)) {
       matchingNodes.add(node.id);
 
       getAncestorIds(node.id as NodeId, nodes).forEach((ancestorId) => {
@@ -165,7 +165,7 @@ export function getNodePath(
     node,
   ];
 
-  return pathNodes.map((n) => n!.name).join(separator);
+  return pathNodes.map((n) => n!.metadata.name).join(separator);
 }
 
 /**

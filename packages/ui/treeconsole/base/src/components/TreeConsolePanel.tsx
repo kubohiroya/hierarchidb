@@ -153,7 +153,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         ...node,
         nodeType: toNodeType(node.nodeType || node.type || 'folder'),
         type: (node.type || node.nodeType || 'folder') as string,
-        name: displayName,
+        metadata: { ...node.metadata, name: displayName},
         hasChildren: Boolean(node.hasChildren ?? (Array.isArray(node.children) && node.children.length > 0)),
         depth: normalizedDepth,
         absoluteDepth: resolvedDepth,

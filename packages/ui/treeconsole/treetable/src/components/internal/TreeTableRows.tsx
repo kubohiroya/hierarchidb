@@ -117,12 +117,12 @@ export function TreeTableRows({
               to={`/${['t', String(treeId || ''), String(node.id)].filter(Boolean).join('/')}`}
               sx={{ mr: 0.5, color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
             >
-              {node.name}
+              {node.metadata.name}
             </Box>
           </NameCell>
         </TableCell>
         <TableCell sx={{ width: `${columnWidths.description}px`, minWidth: `${columnWidths.description}px`, maxWidth: `${columnWidths.description}px`, paddingLeft: '4px' }}>
-          {node.description || '-'}
+          {node.metadata.description || '-'}
         </TableCell>
         <TableCell sx={{ width: `${columnWidths.createdAt}px`, minWidth: `${columnWidths.createdAt}px`, maxWidth: `${columnWidths.createdAt}px` }}>
           {(() => {

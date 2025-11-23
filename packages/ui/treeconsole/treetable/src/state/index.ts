@@ -21,7 +21,7 @@ export const filteredDataAtom = atom<TreeNode[]>((get) => {
   }
 
   // Simple name-based filtering
-  return data.filter((node) => node.name.toLowerCase().includes(searchText.toLowerCase()));
+  return data.filter((node) => node.metadata.name.toLowerCase().includes(searchText.toLowerCase()));
 });
 
 // === Selection State ===

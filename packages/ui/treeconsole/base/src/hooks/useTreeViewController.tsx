@@ -486,7 +486,7 @@ export function useTreeViewController(
           (event) => {
             void handleEvent(event);
           },
-          { viewId: 'treeconsole-view', prefetchDepth: PREFETCH_DEPTH },
+          { viewId: 'treeconsole-view' },
         );
 
         if (cancelled) {

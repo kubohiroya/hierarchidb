@@ -5,8 +5,7 @@
 
 import { useCallback, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import type { TreeNode } from '@hierarchidb/common-types';
-import type { TreeTableController } from '../../types.js';
+import type { TreeTableController, TreeNodeInUI } from '../../types.js';
 
 interface UseTreeTableEditingParams {
   controller: TreeTableController | null;
@@ -22,7 +21,7 @@ interface UseTreeTableEditingResult {
   editingError: string | null;
   setEditingError: Dispatch<SetStateAction<string | null>>;
   validateInline: (field: 'name' | 'description', value: string) => { ok: boolean; message?: string };
-  handleStartEdit: (node: TreeNode, field?: 'name' | 'description') => void;
+  handleStartEdit: (node: TreeNodeInUI, field?: 'name' | 'description') => void;
 }
 
 export function useTreeTableEditing({ controller }: UseTreeTableEditingParams): UseTreeTableEditingResult {
@@ -42,10 +41,10 @@ export function useTreeTableEditing({ controller }: UseTreeTableEditingParams): 
     return { ok: true };
   }, []);
 
-  const handleStartEdit = useCallback((node: TreeNode, field: 'name' | 'description' = 'name') => {
+  const handleStartEdit = useCallback((node: TreeNodeInUI, field: 'name' | 'description' = 'name') => {
     setEditingNodeId(node.id);
     setEditingField(field);
-    const initial = field === 'name' ? node.name : (node.description || '');
+    const initial = field === 'name' ? node.metadata.name : (node.metadata.description || '');
     setEditingValue(initial);
     controller?.startEdit?.(node.id);
   }, [controller]);
