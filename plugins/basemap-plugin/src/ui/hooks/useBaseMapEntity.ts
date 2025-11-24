@@ -4,9 +4,9 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { NodeId, Timestamp, TreeNode } from '@hierarchidb/common-types';
-import type { TreeQueryAPI, DraftAPI } from '@hierarchidb/common-api';
+import type { NodeId, Timestamp, TreeId, TreeNode } from '@hierarchidb/common-types';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-client';
+import { useDialogDraft } from '@hierarchidb/plugin-ui-sdk';
 import type {
   BaseMapEntity,
   MapStyle,
@@ -111,34 +111,6 @@ function createFallbackEntity(nodeId: NodeId): BaseMapEntity {
   };
 }
 
-async function ensureWorkerApis(
-  ref: WorkerClientRef | null
-): Promise<{ query: TreeQueryAPI; draft: DraftAPI } | null> {
-  if (!ref) return null;
-  try {
-    const api = ref.getAPI();
-    const [query, draft] = await Promise.all([api.getQueryAPI(), api.getDraftAPI()]);
-    return { query, draft };
-  } catch (error) {
-    console.error('[useBaseMapEntity] Failed to acquire worker APIs', error);
-    return null;
-  }
-}
-
-async function ensureDraftNode(
-  nodeId: NodeId,
-  wcAPI: DraftAPI
-): Promise<{ draftId: NodeId; draftNode: TreeNode }> {
-  let wc = await wcAPI.getDraft(nodeId);
-  if (!wc) {
-    wc = await wcAPI.createDraftFromNode(nodeId);
-  }
-  if (!wc) {
-    throw new Error('Working copy creation failed');
-  }
-  return { draftId: (wc.id ?? nodeId) as NodeId, draftNode: wc };
-}
-
 /**
  * Hook to fetch and manage BaseMap entity
  * @param nodeId - Node ID of the BaseMap entity
@@ -171,6 +143,15 @@ export function useBaseMapEntity(
   }, []);
   const workerClient = workerClientHook ? workerClientHook() : null;
 
+  const { draft: wcDraft, updateDraft, saveDraft, discardDraft } = useDialogDraft({
+    mode: 'edit',
+    nodeType: 'basemap',
+    nodeId: nodeId ?? undefined,
+    parentId: nodeId ?? undefined,
+    treeId: (nodeId ?? '') as TreeId,
+    workerClient,
+  });
+
   // Fetch entity
   const fetchEntity = useCallback(async () => {
     if (!nodeId || skip) return;
@@ -178,11 +159,12 @@ export function useBaseMapEntity(
     try {
       setLoading(true);
       setError(null);
-      const apis = await ensureWorkerApis(workerClient);
-      if (!apis) {
-        throw new Error('Worker APIs unavailable');
+      if (!workerClient) {
+        throw new Error('Worker client unavailable');
       }
-      const node = await apis.query.getNode(nodeId);
+      const api = workerClient.getAPI();
+      const query = await api.getQueryAPI();
+      const node = await query.getNode(nodeId);
       const data = buildBaseMapEntityFromNode(node);
       if (!data) {
         throw new Error('BaseMap entity not found');
@@ -205,15 +187,7 @@ export function useBaseMapEntity(
       }
       setLoading(true);
       try {
-        const apis = await ensureWorkerApis(workerClient);
-        if (!apis) {
-          throw new Error('Worker APIs unavailable');
-        }
-        const { draftId, draftNode } = await ensureDraftNode(
-          nodeId,
-          apis.draft
-        );
-        const current = buildBaseMapEntityFromNode(draftNode) ?? createFallbackEntity(nodeId);
+        const current = entity ?? createFallbackEntity(nodeId);
         const next: BaseMapEntity = {
           ...current,
           ...updates,
@@ -221,16 +195,21 @@ export function useBaseMapEntity(
           viewport: normalizeViewport(updates.viewport ?? current.viewport),
           updatedAt: Date.now() as Timestamp,
         };
-        await apis.draft.updateDraft(draftId, {
-          name: next.name,
-          description: next.description,
-          tags: next.tags,
+        if (!wcDraft) {
+          throw new Error('No working copy available for basemap');
+        }
+        await updateDraft({
+          metadata: {
+            name: next.name ?? '',
+            description: next.description,
+            tags: next.tags,
+          },
           draftData: {
             mapStyle: next.mapStyle,
             viewport: next.viewport,
           },
-        } as Partial<TreeNode>);
-        await apis.draft.commitDraft(draftId);
+        });
+        await saveDraft();
         await fetchEntity();
       } catch (err) {
         console.error('Failed to update BaseMap entity:', err);
@@ -247,6 +226,13 @@ export function useBaseMapEntity(
   useEffect(() => {
     fetchEntity();
   }, [fetchEntity]);
+
+  // Cleanup draft on unmount
+  useEffect(() => {
+    return () => {
+      void discardDraft().catch(() => {});
+    };
+  }, [discardDraft]);
 
   // Polling
   useEffect(() => {
