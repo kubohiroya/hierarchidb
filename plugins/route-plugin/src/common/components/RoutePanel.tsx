@@ -23,16 +23,11 @@ import {
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
-  DirectionsBike,
-  DirectionsWalk,
   DriveEta,
   Edit as EditIcon,
   ExpandLess as ExpandLessIcon,
   ExpandMore as ExpandMoreIcon,
-  Flight,
-  LocalShipping,
   Route as RouteIcon,
-  Train,
   Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-types';
@@ -60,24 +55,7 @@ export interface RoutePanelProps {
   onToggleVisibility: () => void;
 }
 
-const getTransportModeIcon = (mode: TransportMode) => {
-  const iconMap: Record<string, React.ElementType> = {
-    [TransportMode.CAR]: DriveEta,
-    [TransportMode.TRUCK]: LocalShipping,
-    [TransportMode.BUS]: DriveEta,
-    [TransportMode.TRAIN]: Train,
-    [TransportMode.SUBWAY]: Train,
-    [TransportMode.TRAM]: Train,
-    [TransportMode.BICYCLE]: DirectionsBike,
-    [TransportMode.PEDESTRIAN]: DirectionsWalk,
-    [TransportMode.MOTORCYCLE]: DriveEta,
-    [TransportMode.AIRPLANE]: Flight,
-    [TransportMode.FERRY]: LocalShipping,
-  };
-
-  const IconComponent = iconMap[mode] || DriveEta;
-  return <IconComponent fontSize="small" />;
-};
+const getTransportModeIcon = (_mode: TransportMode) => <DriveEta fontSize="small" />;
 
 const getRouteTypeColor = (routeType: RouteType): 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info' => {
   const colorMap: Record<RouteType, 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info'> = {
