@@ -1,20 +1,18 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ]
-    },
-    "baseUrl": ".",
-    "jsx": "react-jsx"
+    "experimentalDecorators": true,
+    "allowImportingTsExtensions": true
   },
   "include": [
-    "src*"
+    "src/**/*",
+    "../../global.d.ts"
   ],
   "exclude": [
     "dist",
     "node_modules",
-    "***.test.tsx"
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/__tests__/**/*"
   ]
 }

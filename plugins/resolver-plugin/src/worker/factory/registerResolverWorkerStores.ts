@@ -40,8 +40,8 @@ async function ensureResolverStores(registry: StoreRegistry): Promise<void> {
   if (!registry.getPeer('resolver')) {
     registry.registerPeer(
       'resolver',
-      createNodePayloadPeerStore({
-        normalize: (data) => normalizeResolverPeerData(data ?? undefined),
+      createNodePayloadPeerStore<ResolverPeerData>({
+        normalize: (data?: ResolverPeerData | null) => normalizeResolverPeerData(data ?? undefined),
       })
     );
   }

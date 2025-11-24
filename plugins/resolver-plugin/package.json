@@ -61,7 +61,8 @@
   },
   "dependencies": {
     "@hierarchidb/plugin-runtime-services": "workspace:*",
-    "@hierarchidb/plugin-base": "workspace:*"
+    "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/runtime-client": "workspace:*"
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",

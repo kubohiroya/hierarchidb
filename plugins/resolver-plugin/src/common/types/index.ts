@@ -7,8 +7,8 @@ import type { DraftBase } from '@hierarchidb/plugin-service-api';
 export interface ResolverEntity extends PeerEntity {
   name: string;
   description?: string;
-  sourceSchema: string;
-  targetSchema: string;
+  sourceSchema: SchemaInfo | null;
+  targetSchema: SchemaInfo | null;
   mappingRules: PropertyMappingRule[];
   validationRules: ValidationRule[];
   duplicateResolution: DuplicateResolutionStrategy;
@@ -85,6 +85,8 @@ export type ResolverDraftEntity = DraftBase<ResolverEntity> &
     isDirty?: boolean;
     draftId?: NodeId;
     tags?: string[];
+    sourceSchema: SchemaInfo | null;
+    targetSchema: SchemaInfo | null;
   };
 
 export type ResolverDraft = ResolverDraftEntity;

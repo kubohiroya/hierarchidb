@@ -21,6 +21,16 @@ export interface StylerEntity extends SpreadsheetEntity {
   //  - dataSource: object (SpreadsheetEntity)
   //  - filters?: object (SpreadsheetEntity)
 
+  name?: string;
+  description?: string;
+  tags?: string[];
+
+  metadata?: {
+    name?: string;
+    description?: string;
+    tags?: string[];
+  };
+
   //  Styler
   stylerConfig: StylerConfig;
   selectedKeyColumn?: string;

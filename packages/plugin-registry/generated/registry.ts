@@ -480,6 +480,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     dependencies: [
         "@hierarchidb/plugin-runtime-services",
         "@hierarchidb/plugin-base",
+        "@hierarchidb/runtime-client",
         "@emotion/react",
         "@emotion/styled",
         "@mui/icons-material",
@@ -510,6 +511,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "dependencies": [
           "@hierarchidb/plugin-runtime-services",
           "@hierarchidb/plugin-base",
+          "@hierarchidb/runtime-client",
           "@emotion/react",
           "@emotion/styled",
           "@mui/icons-material",

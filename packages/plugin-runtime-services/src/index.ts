@@ -3,7 +3,7 @@ export {
   createDraftBase,
   markDraftUpdated,
   type CreateDraftBaseParams,
-} from './entity/workingCopy.js';
+} from './entity/draft.js';
 
 export {
   createDownloadService,

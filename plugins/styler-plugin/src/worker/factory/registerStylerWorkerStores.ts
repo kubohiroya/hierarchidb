@@ -23,7 +23,8 @@ async function resolveStoreRegistry(
     const runtime = await import('@hierarchidb/runtime-worker');
     return runtime.storeRegistry as StoreRegistry;
   } catch (error) {
-    if (import.meta.env?.DEV) {
+    const isDev = Boolean((import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV);
+    if (isDev) {
       console.warn('[styler-worker] failed to import runtime worker module', error);
     }
     return null;
@@ -66,7 +67,8 @@ export async function registerStylerWorkerStores(
   try {
     await ensureStylerStores(registry);
   } catch (error) {
-    if (import.meta.env?.DEV) {
+    const isDev = Boolean((import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV);
+    if (isDev) {
       console.warn('[styler-worker] failed to register Dexie stores', error);
     }
   }

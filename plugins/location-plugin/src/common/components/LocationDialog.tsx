@@ -126,7 +126,7 @@ const mergeLocationDraft = (current: LocationDraft, patch: Partial<LocationDraft
 
 const toDraftDataPayload = (value: LocationDraft): Partial<DraftData> => ({
   draftData: value.draft,
-  metadata: {
+  draftMetadata: {
     name: value.draft?.name ?? '',
     description: value.draft?.description,
     tags: value.tags ?? value.draft?.tags,

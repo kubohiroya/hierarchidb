@@ -115,16 +115,14 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
       if (schema) {
         setSourceSchema(schema);
         onSourceSchemaChange(schema);
-        onUpdate({ sourceSchema: value });
-      } else {
-        setSourceError('Invalid JSON format or structure');
-        setSourceSchema(null);
-        onSourceSchemaChange(null);
+        onUpdate({ sourceSchema: schema });
+        return;
       }
-    } else {
-      setSourceSchema(null);
-      onSourceSchemaChange(null);
+      setSourceError('Invalid JSON format or structure');
     }
+    setSourceSchema(null);
+    onSourceSchemaChange(null);
+    onUpdate({ sourceSchema: null });
   }, [parseSchemaFromSample, onSourceSchemaChange, onUpdate]);
 
   const handleTargetInputChange = useCallback((value: string) => {
@@ -136,29 +134,44 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
       if (schema) {
         setTargetSchema(schema);
         onTargetSchemaChange(schema);
-        onUpdate({ targetSchema: value });
-      } else {
-        setTargetError('Invalid JSON format or structure');
-        setTargetSchema(null);
-        onTargetSchemaChange(null);
+        onUpdate({ targetSchema: schema });
+        return;
       }
-    } else {
-      setTargetSchema(null);
-      onTargetSchemaChange(null);
+      setTargetError('Invalid JSON format or structure');
     }
+    setTargetSchema(null);
+    onTargetSchemaChange(null);
+    onUpdate({ targetSchema: null });
   }, [parseSchemaFromSample, onTargetSchemaChange, onUpdate]);
 
   // Initialize from existing data
   useEffect(() => {
-    if (data.sourceSchema && !sourceInput) {
-      setSourceInput(data.sourceSchema);
-      handleSourceInputChange(data.sourceSchema);
+    if (data.sourceSchema && !sourceSchema) {
+      setSourceSchema(data.sourceSchema);
+      onSourceSchemaChange(data.sourceSchema);
+      if (!sourceInput && Array.isArray(data.sourceSchema.sampleData)) {
+        setSourceInput(JSON.stringify(data.sourceSchema.sampleData, null, 2));
+      }
     }
-    if (data.targetSchema && !targetInput) {
-      setTargetInput(data.targetSchema);
-      handleTargetInputChange(data.targetSchema);
+    if (data.targetSchema && !targetSchema) {
+      setTargetSchema(data.targetSchema);
+      onTargetSchemaChange(data.targetSchema);
+      if (!targetInput && Array.isArray(data.targetSchema.sampleData)) {
+        setTargetInput(JSON.stringify(data.targetSchema.sampleData, null, 2));
+      }
     }
-  }, [data.sourceSchema, data.targetSchema, sourceInput, targetInput, handleSourceInputChange, handleTargetInputChange]);
+  }, [
+    data.sourceSchema,
+    data.targetSchema,
+    handleSourceInputChange,
+    handleTargetInputChange,
+    onSourceSchemaChange,
+    onTargetSchemaChange,
+    sourceInput,
+    sourceSchema,
+    targetInput,
+    targetSchema,
+  ]);
 
   // Validation
   useEffect(() => {

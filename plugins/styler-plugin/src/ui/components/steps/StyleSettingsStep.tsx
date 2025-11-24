@@ -3,15 +3,7 @@ import type { StepComponentProps } from '@hierarchidb/plugin-base';
 import { TagChipsInput } from '@hierarchidb/ui-plugin-basic-info';
 import { useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-
-type StyleType = 'point' | 'line' | 'polygon' | 'raster';
-
-export interface StyleSettingsData {
-  styleType?: StyleType;
-  colorScheme?: string;
-  dataSource?: string;
-  styleTags?: string[];
-}
+import type { StylerDialogData, StyleSettingsData, StyleType } from '../types.js';
 
 const STYLE_TYPE_OPTIONS: ReadonlyArray<{ value: StyleType; label: string }> = [
   { value: 'point', label: 'Point Style' },
@@ -45,7 +37,7 @@ export const isStyleSettingsComplete = (dialogData?: unknown): boolean => {
   return Boolean(settings.styleType);
 };
 
-export const StyleSettingsStep: React.FC<StepComponentProps> = ({
+export const StyleSettingsStep: React.FC<StepComponentProps<StylerDialogData>> = ({
   data,
   onChange,
   setValid,

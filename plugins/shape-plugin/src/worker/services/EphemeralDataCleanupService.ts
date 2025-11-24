@@ -3,7 +3,7 @@
  * Manages automatic cleanup of expired Drafts and batch processing data
  */
 
-import type { BatchSession, NodeId, ShapeDraft } from '../../shared/index.ts';
+import type { BatchSession, NodeId, ShapeDraft } from '../../common/shared/index.ts';
 
 export interface CleanupStatistics {
   workingCopiesDeleted: number;
@@ -298,6 +298,5 @@ export class EphemeralDataCleanupService {
 export const ephemeralDataCleanupService = new EphemeralDataCleanupService();
 
 // Auto-start cleanup service in worker environment
-if (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope) {
-  ephemeralDataCleanupService.startAutoCleanup();
-}
+ephemeralDataCleanupService.startAutoCleanup();
+

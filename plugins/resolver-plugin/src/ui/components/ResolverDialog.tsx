@@ -30,6 +30,8 @@ import {
 } from '@hierarchidb/ui-dialog';
 import { readRuntimeMode } from '@hierarchidb/util';
 import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
+import { useDialogDraft, normalizeBasicInfo, type DraftData } from '@hierarchidb/plugin-ui-sdk';
+import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-client';
 
 type ResolverDialogStep = {
   id: string;
@@ -66,6 +68,84 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
   onSave,
   onCancel,
 }) => {
+  const workerClient = useMemo<WorkerClientRef | null>(() => {
+    try {
+      const hook = getWorkerClientHook<WorkerClientRef | null>();
+      return hook();
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const {
+    draft: wcDraft,
+    updateDraft,
+    saveDraft,
+    discardDraft,
+  } = useDialogDraft<ResolverEntity>({
+    mode: entity ? 'edit' : 'create',
+    nodeType: 'resolver',
+    nodeId,
+    parentId: nodeId,
+    workerClient,
+  });
+
+  const normalizeDraft = useCallback(
+    (raw: DraftData<ResolverEntity> | null): Partial<ResolverDraftEntity> => {
+      const meta =
+        (raw?.draftMetadata && typeof raw.draftMetadata === 'object'
+          ? raw.draftMetadata
+          : raw?.metadata && typeof raw.metadata === 'object'
+            ? raw.metadata
+            : undefined) as Record<string, unknown> | undefined;
+      const draftData =
+        (raw?.draftData && typeof raw.draftData === 'object' ? raw.draftData : undefined) as
+          | Record<string, unknown>
+          | undefined;
+
+      const basic = normalizeBasicInfo({
+        metadata: meta,
+        draftData,
+      });
+
+      const resolveSchema = (value: unknown): SchemaInfo | null => {
+        if (value && typeof value === 'object') {
+          const schema = value as Partial<SchemaInfo>;
+          if (Array.isArray(schema.properties) && typeof schema.name === 'string') {
+            return {
+              name: schema.name,
+              properties: schema.properties as SchemaInfo['properties'],
+              sampleData: schema.sampleData,
+            };
+          }
+        }
+        return null;
+      };
+
+      return {
+        nodeId,
+        name: basic.name,
+        description: basic.description,
+        tags: basic.tags ?? [],
+        sourceSchema: resolveSchema(draftData?.sourceSchema),
+        targetSchema: resolveSchema(draftData?.targetSchema),
+        mappingRules: (draftData?.mappingRules as ResolverDraftEntity['mappingRules']) ?? [],
+        validationRules: (draftData?.validationRules as ResolverDraftEntity['validationRules']) ?? [],
+        duplicateResolution:
+          (draftData?.duplicateResolution as ResolverDraftEntity['duplicateResolution']) ?? {
+            strategy: 'ignore',
+          },
+        dataTransformations:
+          (draftData?.dataTransformations as ResolverDraftEntity['dataTransformations']) ?? [],
+        previewConfig:
+          (draftData?.previewConfig as ResolverDraftEntity['previewConfig']) ?? {
+            ...DEFAULT_PREVIEW_CONFIG,
+          },
+      };
+    },
+    [nodeId]
+  );
+
   const [draft, setDraft] = useState<Partial<ResolverDraftEntity>>({});
   const initialDraft = useRef<Partial<ResolverDraftEntity> | null>(null);
   const [sourceSchema, setSourceSchema] = useState<SchemaInfo | null>(null);
@@ -106,6 +186,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
   useEffect(() => {
     if (!open) {
       setActiveStepIndex(0);
+      setDraft(initialDraft.current ?? {});
     }
   }, [open]);
 
@@ -120,14 +201,22 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
         previewConfig: entity.previewConfig ? { ...entity.previewConfig } : { ...DEFAULT_PREVIEW_CONFIG },
       };
       setDraft(copy);
+      setSourceSchema(copy.sourceSchema ?? null);
+      setTargetSchema(copy.targetSchema ?? null);
       initialDraft.current = copy;
+    } else if (wcDraft) {
+      const normalized = normalizeDraft(wcDraft);
+      setDraft(normalized);
+      setSourceSchema(normalized.sourceSchema ?? null);
+      setTargetSchema(normalized.targetSchema ?? null);
+      initialDraft.current = normalized;
     } else {
       const copy: Partial<ResolverDraftEntity> = {
         nodeId,
         name: '',
         description: '',
-        sourceSchema: '',
-        targetSchema: '',
+        sourceSchema: null,
+        targetSchema: null,
         mappingRules: [],
         validationRules: [],
         duplicateResolution: { strategy: 'ignore' },
@@ -135,18 +224,36 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
         previewConfig: { ...DEFAULT_PREVIEW_CONFIG },
       };
       setDraft(copy);
+      setSourceSchema(null);
+      setTargetSchema(null);
       initialDraft.current = copy;
     }
-  }, [entity, nodeId]);
+  }, [entity, nodeId, normalizeDraft, wcDraft]);
 
-  const updateDraft = useCallback((updates: Partial<ResolverDraftEntity>) => {
+  const execUpdateDraft = useCallback((updates: Partial<ResolverDraftEntity>) => {
     setDraft((prev: Partial<ResolverDraftEntity>) => ({ ...prev, ...updates }));
-  }, []);
+    const draftMetadata = {
+      name: updates.name ?? draft?.name ?? '',
+      description: updates.description ?? draft?.description,
+      tags: updates.tags ?? draft?.tags ?? [],
+    };
+    const draftData: Record<string, unknown> = {
+      ...(typeof wcDraft?.draftData === 'object' ? (wcDraft?.draftData as Record<string, unknown>) : {}),
+      ...updates,
+      sourceSchema: updates.sourceSchema ?? draft?.sourceSchema ?? null,
+      targetSchema: updates.targetSchema ?? draft?.targetSchema ?? null,
+    };
+    void updateDraft({
+      draftMetadata,
+      draftData,
+    } as Partial<DraftData<ResolverEntity>>);
+  }, [draft, updateDraft, wcDraft]);
 
   const handleSave = useCallback(async () => {
     if (isSaving) return;
     setIsSaving(true);
     try {
+      await saveDraft();
       await onSave(draft);
       onClose();
     } catch (error) {
@@ -154,14 +261,16 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     } finally {
       setIsSaving(false);
     }
-  }, [isSaving, draft, onSave, onClose]);
+  }, [isSaving, draft, onSave, onClose, saveDraft]);
 
   const handleCancel = useCallback(() => {
-    setDraft(initialDraft.current ?? {});
-    setSourceSchema(null);
-    setTargetSchema(null);
+    const initial = initialDraft.current ?? {};
+    setDraft(initial);
+    setSourceSchema((initial as Partial<ResolverDraftEntity>)?.sourceSchema ?? null);
+    setTargetSchema((initial as Partial<ResolverDraftEntity>)?.targetSchema ?? null);
+    void discardDraft().catch(() => {});
     onCancel();
-  }, [onCancel]);
+  }, [discardDraft, onCancel]);
 
   const basicInfoMode: 'create' | 'edit' = entity ? 'edit' : 'create';
 
@@ -177,13 +286,13 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
 
   const handleBasicInfoChange = useCallback(
     (value: BasicInfoData) => {
-      updateDraft({
+      execUpdateDraft({
         name: value.name,
         description: value.description,
         tags: value.tags,
       });
     },
-    [updateDraft],
+    [execUpdateDraft],
   );
 
   const steps = useMemo((): ResolverDialogStep[] => [

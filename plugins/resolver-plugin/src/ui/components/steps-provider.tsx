@@ -1,4 +1,4 @@
-import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/plugin-base';
+import { PluginStepRegistry, type StepComponentProps, type PluginStepConfig } from '@hierarchidb/plugin-base';
 import {
   BasicInfoStep as SharedBasicInfoStep,
   type BasicInfoData,
@@ -27,10 +27,23 @@ type ResolverData = Partial<ResolverDraftEntity> & {
 type ResolverStepProps = StepComponentProps<ResolverDraft>;
 
 const ensureDraft = (data?: ResolverData): ResolverDraft => {
-  const draft = (data ?? {}) as ResolverDraft;
+  const draft = data ?? {};
   return {
     ...draft,
     tags: draft.tags ?? [],
+    sourceSchema:
+      draft.sourceSchema && typeof draft.sourceSchema === 'object'
+        ? draft.sourceSchema
+        : null,
+    targetSchema:
+      draft.targetSchema && typeof draft.targetSchema === 'object'
+        ? draft.targetSchema
+        : null,
+    mappingRules: draft.mappingRules ?? [],
+    validationRules: draft.validationRules ?? [],
+    duplicateResolution: draft.duplicateResolution ?? { strategy: 'ignore' },
+    dataTransformations: draft.dataTransformations ?? [],
+    previewConfig: draft.previewConfig,
   } as ResolverDraft;
 };
 
@@ -41,11 +54,23 @@ const mergeDraft = (
   ...current,
   ...updates,
   tags: updates.tags ?? current.tags ?? [],
+  sourceSchema:
+    updates.sourceSchema ??
+    current.sourceSchema ??
+    null,
+  targetSchema:
+    updates.targetSchema ??
+    current.targetSchema ??
+    null,
+  mappingRules: updates.mappingRules ?? current.mappingRules ?? [],
+  validationRules: updates.validationRules ?? current.validationRules ?? [],
+  duplicateResolution: updates.duplicateResolution ?? current.duplicateResolution ?? { strategy: 'ignore' },
+  dataTransformations: updates.dataTransformations ?? current.dataTransformations ?? [],
 });
 
-registry.registerConfigProvider({
+registry.registerConfigProvider<ResolverDraft>({
   nodeType: 'resolver',
-  getCreateStepConfigs() {
+  getCreateStepConfigs(): PluginStepConfig<ResolverDraft>[] {
     return [
       {
         id: 'basic-info',
@@ -84,8 +109,12 @@ registry.registerConfigProvider({
                 p.onChange(mergeDraft(currentData, updates))
               }
               onValidationChange={p.setValid}
-              onSourceSchemaChange={(schema: SchemaInfo | null) => p.onChange({ ...currentData, sourceSchema: schema })}
-              onTargetSchemaChange={(schema: SchemaInfo | null) => p.onChange({ ...currentData, targetSchema: schema })}
+              onSourceSchemaChange={(schema: SchemaInfo | null) =>
+                p.onChange(mergeDraft(currentData, { sourceSchema: schema }))
+              }
+              onTargetSchemaChange={(schema: SchemaInfo | null) =>
+                p.onChange(mergeDraft(currentData, { targetSchema: schema }))
+              }
             />
           );
         },

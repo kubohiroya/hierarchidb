@@ -124,7 +124,7 @@ export const StylerSimpleDialog: React.FC<StylerSimpleDialogProps> = ({
         }))
       );
       setDefaultStyle(existingEntity.defaultStyle || { textColor: '', backgroundColor: '' });
-      setDescription(existingEntity.description || '');
+      setDescription(existingEntity.metadata?.description || '');
     }
   }, [existingEntity]);
 

@@ -199,7 +199,7 @@ export function useBaseMapEntity(
           throw new Error('No working copy available for basemap');
         }
         await updateDraft({
-          metadata: {
+          draftMetadata: {
             name: next.name ?? '',
             description: next.description,
             tags: next.tags,

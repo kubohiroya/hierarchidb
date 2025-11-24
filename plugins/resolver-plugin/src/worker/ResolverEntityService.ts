@@ -7,6 +7,7 @@ import type {
   DuplicateResolutionStrategy,
   PropertyMappingRule,
   ResolverEntity,
+  SchemaInfo,
   ValidationRule,
 } from '../common/types/index.js';
 
@@ -27,11 +28,11 @@ export interface ResolverSearchCriteria {
 /**
  * Data required to create a Resolver entity
  */
-export interface CreateResolverData {
+export interface CreateResolverData extends Record<string, unknown> {
   name: string;
   description?: string;
-  sourceSchema?: string;
-  targetSchema?: string;
+  sourceSchema?: SchemaInfo | null;
+  targetSchema?: SchemaInfo | null;
   mappingRules?: PropertyMappingRule[];
   validationRules?: ValidationRule[];
   duplicateResolution?: DuplicateResolutionStrategy;
@@ -64,8 +65,8 @@ export class ResolverEntityService extends BaseEntityService<
       nodeId,
       name: data.name,
       description: data.description || '',
-      sourceSchema: data.sourceSchema || '',
-      targetSchema: data.targetSchema || '',
+      sourceSchema: data.sourceSchema ?? null,
+      targetSchema: data.targetSchema ?? null,
       mappingRules: data.mappingRules || [],
       validationRules: data.validationRules || [],
       duplicateResolution: data.duplicateResolution || { strategy: 'skip' },
@@ -88,15 +89,21 @@ export class ResolverEntityService extends BaseEntityService<
     criteria: ResolverSearchCriteria,
   ): Collection<ResolverEntity, IndexableType, ResolverEntity> {
     if (criteria.sourceSchema) {
-      query = query.filter((entity: ResolverEntity) =>
-        entity.sourceSchema?.toLowerCase().includes(criteria.sourceSchema!.toLowerCase()),
-      );
+      query = query.filter((entity: ResolverEntity) => {
+        const schemaName = entity.sourceSchema?.name;
+        return typeof schemaName === 'string'
+          ? schemaName.toLowerCase().includes(criteria.sourceSchema!.toLowerCase())
+          : false;
+      });
     }
 
     if (criteria.targetSchema) {
-      query = query.filter((entity: ResolverEntity) =>
-        entity.targetSchema?.toLowerCase().includes(criteria.targetSchema!.toLowerCase()),
-      );
+      query = query.filter((entity: ResolverEntity) => {
+        const schemaName = entity.targetSchema?.name;
+        return typeof schemaName === 'string'
+          ? schemaName.toLowerCase().includes(criteria.targetSchema!.toLowerCase())
+          : false;
+      });
     }
 
     if (criteria.isCompiled !== undefined) {

@@ -55,14 +55,14 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
 const normalizeRouteDraft = (
-  raw: DraftData | null,
+  raw: DraftData<RouteEntity> | null,
   nodeId: NodeId,
   parentId?: NodeId
 ): RouteDialogState => {
   if (!raw) return null;
   const base = createRouteDraftBase(nodeId, {}, parentId);
   const payload = isRecord(raw.draftData) ? (raw.draftData as Partial<RouteEntity>) : {};
-  const meta = raw.metadata ?? {};
+  const meta = raw.draftMetadata ?? raw.metadata ?? {};
   const merged: Partial<RouteEntity> = {
     ...payload,
   };
@@ -99,7 +99,7 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
     [effectiveNodeId, nodeId, parentId]
   );
 
-  const { draft, updateDraft, saveDraft, discardDraft } = useDialogDraft({
+  const { draft, updateDraft, saveDraft, discardDraft } = useDialogDraft<RouteEntity>({
     mode,
     nodeType: 'route',
     nodeId,
@@ -122,15 +122,15 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
   const applyUpdates = useCallback(
     (updates: Partial<RouteEntity>) => {
       if (!draft) return;
-      const nextMetadata = { ...(draft.metadata ?? {}) };
+      const nextDraftMetadata = { ...(draft.draftMetadata ?? draft.metadata ?? {}) };
       if (updates.name !== undefined) {
-        nextMetadata.name = updates.name ?? '';
+        nextDraftMetadata.name = updates.name ?? '';
       }
       if (updates.description !== undefined) {
-        nextMetadata.description = updates.description ?? undefined;
+        nextDraftMetadata.description = updates.description ?? undefined;
       }
       if (updates.tags !== undefined) {
-        nextMetadata.tags = Array.isArray(updates.tags)
+        nextDraftMetadata.tags = Array.isArray(updates.tags)
           ? updates.tags.map((tag) => String(tag))
           : undefined;
       }
@@ -140,7 +140,7 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
         ...rest,
       };
       void updateDraft({
-        metadata: nextMetadata,
+        draftMetadata: nextDraftMetadata,
         draftData: nextDraftData,
       });
     },
