@@ -10,7 +10,7 @@ describe('EntityLifecycleManager working copy peer (create/discard)', () => {
     vi.resetModules();
   });
 
-  it('copies peer on createWorkingCopy and deletes on discardWorkingCopy', async () => {
+  it('copies peer on createDraft and deletes on discardDraft', async () => {
     const nodeMap = new Map<NodeId, TreeNode>();
     const core: Pick<CoreDB, 'getNode'> = {
       getNode: vi.fn(async (id: NodeId) => nodeMap.get(id)),
@@ -64,9 +64,9 @@ describe('EntityLifecycleManager working copy peer (create/discard)', () => {
 
     const mgr = EntityLifecycleManager.getSingleton(core as unknown as CoreDB);
 
-    // createWorkingCopy is deprecated; no-op, peer remains unchanged
-    // createWorkingCopy is deprecated; ensure it is a no-op
-    expect(typeof (mgr as unknown as { onCreateWorkingCopy?: unknown }).onCreateWorkingCopy).toBe(
+    // createDraft is deprecated; no-op, peer remains unchanged
+    // createDraft is deprecated; ensure it is a no-op
+    expect(typeof (mgr as unknown as { onCreateDraft?: unknown }).onCreateDraft).toBe(
       'function'
     );
 
@@ -84,13 +84,13 @@ describe('EntityLifecycleManager working copy peer (create/discard)', () => {
       version: 1,
     });
 
-    await mgr.onDiscardWorkingCopy({
+    await mgr.onDiscardDraft({
       commandId: 'c2',
       groupId: 'g1',
-      kind: 'discardWorkingCopy',
-      payload: { workingCopyId: wcId },
+      kind: 'discardDraft',
+      payload: { draftId: wcId },
       issuedAt: Date.now(),
-      type: 'discardWorkingCopy',
+      type: 'discardDraft',
     });
 
     expect(await store.get(wcId)).toBeUndefined();

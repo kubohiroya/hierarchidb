@@ -1,5 +1,5 @@
 import type { NodeId, PeerEntity } from '@hierarchidb/common-types';
-import type { WorkingCopyDraft } from '@hierarchidb/plugin-service-api';
+import type { DraftBase } from '@hierarchidb/plugin-service-api';
 
 /**
  * Resolver entity represents a property mapping configuration
@@ -79,15 +79,15 @@ export interface PreviewConfig {
  */
 export type ResolverDraftPayload = Partial<ResolverEntity>;
 
-export type ResolverWorkingCopyEntity = WorkingCopyDraft<ResolverEntity> &
+export type ResolverDraftEntity = DraftBase<ResolverEntity> &
   Partial<ResolverEntity> & {
     originalId?: NodeId;
     isDirty?: boolean;
-    workingCopyId?: NodeId;
+    draftId?: NodeId;
     tags?: string[];
   };
 
-export type ResolverWorkingCopy = ResolverWorkingCopyEntity;
+export type ResolverDraft = ResolverDraftEntity;
 
 /**
  * Peer payload persisted for resolver nodes.
@@ -205,4 +205,4 @@ export interface StylerIntegration {
   propertyMappings: Record<string, string>; // source property -> style property
 }
 
-export type ResolverWorkingCopyTypes = ResolverWorkingCopyEntity;
+export type ResolverDraftTypes = ResolverDraftEntity;

@@ -59,7 +59,7 @@ describe('Resolver Integration Tests', () => {
     });
   });
 
-  // Working copy behavior is exercised via WorkingCopyAPI in integration tests elsewhere.
+  // Working copy behavior is exercised via DraftAPI in integration tests elsewhere.
 
   describe('Mapping Rules', () => {
     it('should handle complex mapping rules', async () => {

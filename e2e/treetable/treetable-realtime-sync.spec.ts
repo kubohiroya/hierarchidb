@@ -6,7 +6,7 @@ import {
   clearTestData,
   createTestFolder,
   waitForSubTreeUpdate,
-  waitForWorkingCopyUpdate,
+  waitForDraftUpdate,
 } from '../utils/test-helpers';
 
 /**
@@ -206,13 +206,13 @@ test.describe('TreeTable Real-time Synchronization', () => {
 
   test('Working Copy状態でのリアルタイム同期制御', async ({ page }) => {
     // Working Copyを開始
-    await page.locator('[data-testid="start-working-copy"]').click();
-    await waitForWorkingCopyUpdate(page);
+    await page.locator('[data-testid="start-draft"]').click();
+    await waitForDraftUpdate(page);
 
     // Working Copy状態での購読ステータス確認
     await expect(page.locator('[data-testid="subtree-subscription-status"]')).toHaveAttribute(
       'data-status',
-      'working-copy-mode'
+      'draft-mode'
     );
 
     // 外部変更をシミュレート
@@ -236,8 +236,8 @@ test.describe('TreeTable Real-time Synchronization', () => {
     await expect(page.locator('[data-testid="pending-changes-indicator"]')).toBeVisible();
 
     // Working Copyをコミット
-    await page.locator('[data-testid="commit-working-copy"]').click();
-    await waitForWorkingCopyUpdate(page);
+    await page.locator('[data-testid="commit-draft"]').click();
+    await waitForDraftUpdate(page);
 
     // コミット後に外部変更が反映されることを確認
     await waitForSubTreeUpdate(page);

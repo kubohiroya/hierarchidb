@@ -1,5 +1,5 @@
 import type { CommitResult, NodeId, TreeId } from '@hierarchidb/common-types';
-import type { CommitWorkingCopyOptions, WorkerAPI } from '@hierarchidb/common-api';
+import type { CommitDraftOptions, WorkerAPI } from '@hierarchidb/common-api';
 
 export interface StepCapabilitiesState {
   canNavigateToSteps: Map<number, boolean>;
@@ -9,7 +9,7 @@ export interface StepCapabilitiesState {
   canStartBatch: boolean;
 }
 
-export interface WorkingCopyState {
+export interface DraftState {
   nodeId: NodeId;
   treeId: TreeId;
   nodeType: string;
@@ -21,10 +21,10 @@ export interface WorkingCopyState {
   lastModified: number;
 }
 
-export class WorkingCopyService {
+export class DraftService {
   private workerAPI: WorkerAPI;
-  private subscribers: Map<string, (state: WorkingCopyState) => void> = new Map();
-  private stateCache: Map<NodeId, WorkingCopyState> = new Map();
+  private subscribers: Map<string, (state: DraftState) => void> = new Map();
+  private stateCache: Map<NodeId, DraftState> = new Map();
 
   constructor(workerAPI: WorkerAPI) {
     this.workerAPI = workerAPI;
@@ -35,7 +35,7 @@ export class WorkingCopyService {
     // Placeholder for worker-driven subscription wiring.
   }
 
-  private evaluateCapabilities(nodeId: NodeId, state: any): WorkingCopyState {
+  private evaluateCapabilities(nodeId: NodeId, state: any): DraftState {
     return {
       nodeId,
       treeId: state.treeId,
@@ -52,13 +52,13 @@ export class WorkingCopyService {
       },
       isDraft: state.isDraft,
       lastModified: Date.now(),
-    } satisfies WorkingCopyState;
+    } satisfies DraftState;
   }
 
-  async loadWorkingCopy(nodeId: NodeId): Promise<WorkingCopyState> {
+  async loadDraft(nodeId: NodeId): Promise<DraftState> {
     try {
-      const workingCopyAPI = await this.workerAPI.getWorkingCopyAPI();
-      const response = await workingCopyAPI.getWorkingCopy(nodeId);
+      const draftAPI = await this.workerAPI.getDraftAPI();
+      const response = await draftAPI.getDraft(nodeId);
 
       if (!response) {
         throw new Error(`Working copy not found: ${nodeId}`);
@@ -73,16 +73,16 @@ export class WorkingCopyService {
     }
   }
 
-  async updateWorkingCopy(
+  async updateDraft(
     nodeId: NodeId,
-    updates: Partial<WorkingCopyState>,
-  ): Promise<WorkingCopyState> {
+    updates: Partial<DraftState>,
+  ): Promise<DraftState> {
     try {
-      const workingCopyAPI = await this.workerAPI.getWorkingCopyAPI();
-      await workingCopyAPI.updateWorkingCopy(nodeId, updates as unknown as Record<string, unknown>);
+      const draftAPI = await this.workerAPI.getDraftAPI();
+      await draftAPI.updateDraft(nodeId, updates as unknown as Record<string, unknown>);
 
-      const prev = this.stateCache.get(nodeId) ?? ({} as WorkingCopyState);
-      const merged: WorkingCopyState = {
+      const prev = this.stateCache.get(nodeId) ?? ({} as DraftState);
+      const merged: DraftState = {
         nodeId,
         treeId: updates.treeId ?? prev.treeId!,
         nodeType: updates.nodeType ?? prev.nodeType!,
@@ -100,7 +100,7 @@ export class WorkingCopyService {
           },
         isDraft: updates.isDraft ?? prev.isDraft,
         lastModified: Date.now(),
-      } satisfies WorkingCopyState;
+      } satisfies DraftState;
 
       this.stateCache.set(nodeId, merged);
       return merged;
@@ -110,7 +110,7 @@ export class WorkingCopyService {
     }
   }
 
-  subscribe(nodeId: NodeId, callback: (state: WorkingCopyState) => void): () => void {
+  subscribe(nodeId: NodeId, callback: (state: DraftState) => void): () => void {
     const key = nodeId as string;
     this.subscribers.set(key, callback);
     return () => {
@@ -145,14 +145,14 @@ export class WorkingCopyService {
     }
   }
 
-  async saveWorkingCopy(
+  async saveDraft(
     nodeId: NodeId,
     asDraft: boolean = false,
-    options?: CommitWorkingCopyOptions,
+    options?: CommitDraftOptions,
   ): Promise<NodeId> {
     try {
-      const workingCopyAPI = await this.workerAPI.getWorkingCopyAPI();
-      const result = await workingCopyAPI.commitWorkingCopy(nodeId, options);
+      const draftAPI = await this.workerAPI.getDraftAPI();
+      const result = await draftAPI.commitDraft(nodeId, options);
 
       if (result.status === 'ok') {
         const canonicalId = (result.nodeId as NodeId | undefined) ?? nodeId;
@@ -170,7 +170,7 @@ export class WorkingCopyService {
       if (result.status === 'NAME_CONFLICT') {
         const error = new Error(`Save failed: name conflict (suggested: ${result.suggestedName})`);
         Object.assign(error, {
-          name: 'WorkingCopyCommitError',
+          name: 'DraftCommitError',
           status: result.status,
           suggestedName: result.suggestedName,
           onNameConflict: options?.onNameConflict,
@@ -181,7 +181,7 @@ export class WorkingCopyService {
       if (result.status === 'COMMIT_CONFLICT') {
         const error = new Error('Save failed: version conflict detected');
         Object.assign(error, {
-          name: 'WorkingCopyCommitError',
+          name: 'DraftCommitError',
           status: result.status,
           originalVersion: result.originalVersion,
           wcVersion: result.wcVersion,
@@ -193,7 +193,7 @@ export class WorkingCopyService {
       const fallbackResult = result as CommitResult;
       const error = new Error('Save failed: unexpected status');
       Object.assign(error, {
-        name: 'WorkingCopyCommitError',
+        name: 'DraftCommitError',
         status: fallbackResult.status,
         onNameConflict: options?.onNameConflict,
       });
@@ -204,10 +204,10 @@ export class WorkingCopyService {
     }
   }
 
-  async discardWorkingCopy(nodeId: NodeId): Promise<void> {
+  async discardDraft(nodeId: NodeId): Promise<void> {
     try {
-      const workingCopyAPI = await this.workerAPI.getWorkingCopyAPI();
-      await workingCopyAPI.discardWorkingCopy(nodeId);
+      const draftAPI = await this.workerAPI.getDraftAPI();
+      await draftAPI.discardDraft(nodeId);
 
       this.stateCache.delete(nodeId);
       this.subscribers.delete(nodeId as string);

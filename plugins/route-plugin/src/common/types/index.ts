@@ -2,7 +2,7 @@
   * Route Plugin Type Definitions
    */
 
-import type { WorkingCopyDraft } from '@hierarchidb/plugin-service-api';
+import type { DraftBase } from '@hierarchidb/plugin-service-api';
 import type { Timestamp } from '@hierarchidb/common-types';
 
 // Branded types
@@ -110,7 +110,7 @@ export type RouteDraftPayload = Partial<RouteEntity> & {
   version: number;
 };
 
-export type RouteWorkingCopyEntity = WorkingCopyDraft<RouteEntity> & RouteDraftPayload & {
+export type RouteDraftEntity = DraftBase<RouteEntity> & RouteDraftPayload & {
   id: NodeId;
   nodeId: RouteEntity['nodeId'];
   parentId?: NodeId;
@@ -121,7 +121,7 @@ export type RouteWorkingCopyEntity = WorkingCopyDraft<RouteEntity> & RouteDraftP
   processingStatus?: RouteEntity['processingStatus'];
 };
 
-export type RouteWorkingCopy = RouteWorkingCopyEntity;
+export type RouteDraft = RouteDraftEntity;
 
 /**
  * Peer payload stored for route nodes in peerEntities.

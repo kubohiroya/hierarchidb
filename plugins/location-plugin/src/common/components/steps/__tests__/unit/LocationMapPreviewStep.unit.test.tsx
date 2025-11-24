@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { toNodeId } from '@hierarchidb/common-types';
-import type { LocationWorkingCopy } from '../../../types/index.js';
+import type { LocationDraft } from '../../../types/index.js';
 import { en } from '../../../i18n/en.js';
 
 type SessionRecord = {
@@ -121,13 +121,13 @@ beforeAll(async () => {
   ({ LocationMapPreviewStep } = await import('../LocationMapPreviewStep.js'));
 });
 
-const baseWorkingCopy: LocationWorkingCopy = {
+const baseDraft: LocationDraft = {
   id: toNodeId('node-1'),
   treeNodeId: toNodeId('node-1'),
   nodeId: toNodeId('node-1'),
   version: 1,
-  draft: {} as LocationWorkingCopy['draft'],
-} as unknown as LocationWorkingCopy;
+  draft: {} as LocationDraft['draft'],
+} as unknown as LocationDraft;
 
 describe('LocationMapPreviewStep', () => {
   beforeEach(() => {
@@ -161,7 +161,7 @@ describe('LocationMapPreviewStep', () => {
     });
     expect(await db.sessions.count()).toBe(1);
 
-    render(<LocationMapPreviewStep workingCopy={baseWorkingCopy} />);
+    render(<LocationMapPreviewStep draft={baseDraft} />);
 
     await waitFor(() => {
       expect(getEphemeralLocationDBMock).toHaveBeenCalled();
@@ -185,7 +185,7 @@ describe('LocationMapPreviewStep', () => {
     if (!LocationMapPreviewStep) throw new Error('component not loaded');
     listLocationPointsMock.mockResolvedValueOnce([]);
 
-    render(<LocationMapPreviewStep workingCopy={baseWorkingCopy} />);
+    render(<LocationMapPreviewStep draft={baseDraft} />);
 
     await waitFor(() => {
       expect(getEphemeralLocationDBMock).toHaveBeenCalled();
@@ -208,7 +208,7 @@ describe('LocationMapPreviewStep', () => {
 
     getSessionSummary.mockRejectedValueOnce(new Error('network error'));
 
-    render(<LocationMapPreviewStep workingCopy={baseWorkingCopy} />);
+    render(<LocationMapPreviewStep draft={baseDraft} />);
 
     await waitFor(() => {
       expect(getEphemeralLocationDBMock).toHaveBeenCalled();

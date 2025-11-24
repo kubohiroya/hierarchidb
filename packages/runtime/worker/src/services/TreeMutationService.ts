@@ -21,7 +21,7 @@ import { resolveDefaultNodeName } from '../utils/default-node-name.js';
 import type { CommandProcessor } from './CommandProcessor.js';
 import type { CoreDB } from './CoreDB.js';
 import { sanitizeMessageText } from './utils/error-adapter.js';
-import { createNewName } from './WorkingCopyTreeNodeOperations.js';
+import { createNewName } from './DraftTreeNodeOperations.js';
 
 const getCommandError = (result: CoreCommandResult, fallback = 'Unknown error'): string => {
   if (result.success) return fallback;
@@ -130,9 +130,9 @@ export class TreeMutationService implements TreeMutationAPI {
     description?: string;
   }): Promise<{ success: true; nodeId: NodeId } | { success: false; error: string }> {
     try {
-      const { createDraftWorkingCopy } = await import('./WorkingCopyTreeNodeOperations.js');
+      const { createDraftBase } = await import('./DraftTreeNodeOperations.js');
       const desiredName = params.name?.trim() || resolveDefaultNodeName(params.nodeType);
-      const wcNodeId = await createDraftWorkingCopy(
+      const wcNodeId = await createDraftBase(
         this.coreDB,
         params.treeId,
         params.parentId,
@@ -532,10 +532,6 @@ export class TreeMutationService implements TreeMutationAPI {
         if (!sourceNode) {
           console.warn(`Source node not found in clipboard data: ${nodeId}`);
           continue;
-        }
-        if (!sourceNode.metadata.name || typeof sourceNode.metadata.name !== 'string') {
-          // Generate a fallback name to allow lifecycle-driven tests with minimal stubs.
-          sourceNode.metadata.name = 'Untitled';
         }
 
         const newNodeId = generateNodeId();

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { StepComponentProps } from '@hierarchidb/plugin-base';
-import type { BaseMapWorkingCopy } from '../../../common/types/BaseMapEntity.js';
+import type { BaseMapDraft } from '../../../common/types/BaseMapEntity.js';
 const { getBasemapStepConfigs } = await import('../basemapStepConfigs.js');
 
 const configs = getBasemapStepConfigs();
@@ -17,8 +17,8 @@ if (!mapStyleValidate || !viewportValidate) {
   throw new Error('Basemap steps must define validate functions');
 }
 
-const noopSetValid: StepComponentProps<BaseMapWorkingCopy>['setValid'] = () => undefined;
-const noopSetError: StepComponentProps<BaseMapWorkingCopy>['setError'] = () => undefined;
+const noopSetValid: StepComponentProps<BaseMapDraft>['setValid'] = () => undefined;
+const noopSetError: StepComponentProps<BaseMapDraft>['setError'] = () => undefined;
 
 describe('basemap step provider validation', () => {
   it('requires the map style step to be touched before validation passes', () => {
@@ -26,14 +26,14 @@ describe('basemap step provider validation', () => {
       mapStyleValidate({
         draft: { mapStyle: { style: 'streets' } },
         uiState: { mapStyleTouched: false },
-      } as BaseMapWorkingCopy)
+      } as BaseMapDraft)
     ).toBe(false);
 
     expect(
       mapStyleValidate({
         draft: { mapStyle: { style: 'streets' } },
         uiState: { mapStyleTouched: true },
-      } as BaseMapWorkingCopy)
+      } as BaseMapDraft)
     ).toBe(true);
   });
 
@@ -43,7 +43,7 @@ describe('basemap step provider validation', () => {
         mapStyle: { style: 'streets' },
         draft: {},
         uiState: { mapStyleTouched: false },
-      } as BaseMapWorkingCopy)
+      } as BaseMapDraft)
     ).toBe(true);
   });
 
@@ -62,7 +62,7 @@ describe('basemap step provider validation', () => {
           viewport: baseViewport,
         },
         uiState: { mapStyleTouched: false },
-      } as BaseMapWorkingCopy)
+      } as BaseMapDraft)
     ).toBe(false);
 
     expect(
@@ -72,7 +72,7 @@ describe('basemap step provider validation', () => {
           viewport: baseViewport,
         },
         uiState: { mapStyleTouched: true },
-      } as BaseMapWorkingCopy)
+      } as BaseMapDraft)
     ).toBe(true);
   });
 
@@ -91,7 +91,7 @@ describe('basemap step provider validation', () => {
           bearing: 0,
           pitch: 0,
         },
-      } as BaseMapWorkingCopy,
+      } as BaseMapDraft,
       onChange: vi.fn(),
       setValid: noopSetValid,
       setError: noopSetError,
@@ -117,7 +117,7 @@ describe('basemap step provider validation', () => {
         draft: {},
         mapStyle: { style: 'streets' },
         viewport: persistedViewport,
-      } as BaseMapWorkingCopy,
+      } as BaseMapDraft,
       onChange: vi.fn(),
       setValid: noopSetValid,
       setError: noopSetError,
@@ -172,7 +172,7 @@ describe('basemap step provider validation', () => {
           mapStyleTouched: false,
           viewportTouched: false,
         },
-      } as BaseMapWorkingCopy)
+      } as BaseMapDraft)
     ).toBe(true);
   });
 });

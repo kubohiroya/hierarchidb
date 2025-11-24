@@ -42,7 +42,7 @@ export interface StylerEntity extends SpreadsheetEntity {
 }
 
 /**
- * : StylerWorkingCopy
+ * : StylerDraft
  * : Working Copy
  */
 // Working copies are handled by runtime-worker PeerStore; no dedicated type here.

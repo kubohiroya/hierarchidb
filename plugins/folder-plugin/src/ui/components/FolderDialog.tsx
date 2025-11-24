@@ -2,7 +2,7 @@ import type React from 'react';
 import { useEffect } from 'react';
 import type { NodeId } from '@hierarchidb/common-types';
 import { ExtensibleFolderDialog } from './ExtensibleFolderDialog.tsx';
-import { useWorkingCopy } from '@hierarchidb/plugin-ui-sdk';
+import { useDraft } from '@hierarchidb/plugin-ui-sdk';
 import { notify } from '@hierarchidb/components';
 
 export interface FolderDialogProps {
@@ -16,7 +16,7 @@ export interface FolderDialogProps {
 }
 
 export const FolderDialog: React.FC<FolderDialogProps> = ({ open, onClose, mode = 'create', nodeId, parentId, onSuccess, onError }) => {
-  const { init, commit, discard } = useWorkingCopy({
+  const { init, commit, discard } = useDraft({
     nodeType: 'folder',
     mode,
     nodeId: nodeId ? String(nodeId) : undefined,

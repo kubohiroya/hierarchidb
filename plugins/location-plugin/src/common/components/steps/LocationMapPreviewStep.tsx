@@ -9,7 +9,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import type { NodeId } from '@hierarchidb/common-types';
 import { LocationMapPreview } from '../batch/LocationMapPreview.js';
 import type { PreviewLocationPoint } from '../batch/LocationMapPreview.js';
-import type { LocationWorkingCopy, LocationType } from '../../types/index.js';
+import type { LocationDraft, LocationType } from '../../types/index.js';
 import { formatBytes, useTranslation } from '../../i18n/index.js';
 import { getEphemeralLocationDB } from '../../../services/database/EphemeralLocationDB.js';
 import { LocationVectorTileService } from '../../../services/tiles/LocationVectorTileService.js';
@@ -77,17 +77,17 @@ const toPreviewLocationPoint = (point: Awaited<ReturnType<typeof listLocationPoi
 };
 
 interface LocationMapPreviewStepProps {
-  workingCopy: LocationWorkingCopy;
-  onUpdate?: (updates: Partial<LocationWorkingCopy>) => void;
+  draft: LocationDraft;
+  onUpdate?: (updates: Partial<LocationDraft>) => void;
 }
 
 type TileSummary = Awaited<ReturnType<LocationVectorTileService['getSessionSummary']>> & {
   sessionId: string;
 };
 
-export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ workingCopy }) => {
+export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ draft }) => {
   const { translations, locale } = useTranslation();
-  const nodeId = (workingCopy as any)?.treeNodeId ?? (workingCopy as any)?.nodeId ?? 'preview';
+  const nodeId = (draft as any)?.treeNodeId ?? (draft as any)?.nodeId ?? 'preview';
   const [summary, setSummary] = useState<TileSummary | null>(null);
   const [locations, setLocations] = useState<PreviewLocationPoint[]>([]);
   const [loading, setLoading] = useState(false);

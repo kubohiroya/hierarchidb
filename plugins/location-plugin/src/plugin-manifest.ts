@@ -32,7 +32,7 @@ export const PLUGIN_MANIFEST = {
   },
   tags: ['geographic', 'location'],
   capabilities: {
-    workingCopy: true,
+    draft: true,
     batch: true,
     visualization: true,
   },

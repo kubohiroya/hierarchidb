@@ -4,21 +4,19 @@
  */
 
 import { Dexie, type Collection, type IndexableType, type Table } from 'dexie';
-import type { DataSourceName, NodeId, NodeType } from '../../common/shared/index.js';
+import type { DataSourceName, NodeId } from '../../common/shared/index.js';
 import {
   buildShapeEntityFromCreate,
-  createWorkingCopyFromEntity,
+  createDraftFromEntity,
   DEFAULT_PROCESSING_CONFIG,
-  mapWorkingCopyToUpdates,
-  mergeProcessingConfig,
+  mapDraftToUpdates,
   type ProcessingConfig,
   type ShapeEntity,
-  type ShapeWorkingCopy,
+  type ShapeDraft,
 } from '../../common/shared/index.js';
 import {
   BaseEntityService,
-  createDraftWorkingCopyBase,
-  markWorkingCopyUpdated,
+  markDraftUpdated,
 } from '@hierarchidb/plugin-runtime-services';
 import type { Timestamp } from '@hierarchidb/common-types';
 import { getDBName } from '@hierarchidb/util';
@@ -135,75 +133,26 @@ export class ShapeEntityService extends BaseEntityService<
   /**
    * Create working copy from entity
    */
-  async createWorkingCopy(entity: ShapeEntity): Promise<ShapeWorkingCopy> {
-    const workingCopy = createWorkingCopyFromEntity(entity);
+  async createDraft(entity: ShapeEntity): Promise<ShapeDraft> {
+    const draft = createDraftFromEntity(entity);
 
     if (this.ephemeralDB?.workingCopies) {
-      await this.ephemeralDB.workingCopies.put(workingCopy, workingCopy.treeNodeId);
+      await this.ephemeralDB.workingCopies.put(draft, draft.treeNodeId);
     }
 
-    return workingCopy;
-  }
-
-  /**
-   * Create new draft working copy
-   */
-  async createNewDraftWorkingCopy(parentId: NodeId): Promise<ShapeWorkingCopy> {
-    const workingCopyId = (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`) as unknown as NodeId;
-    const now = Date.now() as Timestamp;
-
-    const draft = {
-      name: '',
-      description: '',
-      dataSourceName: 'naturalearth',
-      licenseAgreement: false,
-      processingConfig: mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG),
-      checkboxState: [],
-      processingStatus: 'idle' as ShapeEntity['processingStatus'],
-      createdAt: now,
-      updatedAt: now,
-      version: 1,
-    } satisfies Partial<ShapeEntity>;
-
-    const base = createDraftWorkingCopyBase<ShapeEntity>({
-      draft,
-      meta: {
-        treeNodeId: workingCopyId,
-        createdAt: now,
-        updatedAt: now,
-        originalVersion: 1,
-      },
-    });
-
-    const workingCopy: ShapeWorkingCopy = {
-      ...base,
-      ...draft,
-      id: workingCopyId,
-      parentId,
-      nodeType: 'shape' as NodeType,
-      nodeId: '' as NodeId,
-      depth: 0,
-      copiedAt: now,
-      isDraft: true,
-    };
-
-    if (this.ephemeralDB?.workingCopies) {
-      await this.ephemeralDB.workingCopies.put(workingCopy, workingCopy.treeNodeId);
-    }
-
-    return workingCopy;
+    return draft;
   }
 
   /**
    * Get working copy from EphemeralDB
    */
-  async getWorkingCopy(workingCopyId: NodeId): Promise<ShapeWorkingCopy | undefined> {
+  async getDraft(draftId: NodeId): Promise<ShapeDraft | undefined> {
     try {
       if (!this.ephemeralDB?.workingCopies) {
         return undefined;
       }
-      const workingCopy = await this.ephemeralDB.workingCopies.get(workingCopyId);
-      return workingCopy as ShapeWorkingCopy | undefined;
+      const draft = await this.ephemeralDB.workingCopies.get(draftId);
+      return draft as ShapeDraft | undefined;
     } catch (error) {
       console.error('Failed to get working copy:', error);
       return undefined;
@@ -213,19 +162,19 @@ export class ShapeEntityService extends BaseEntityService<
   /**
    * Update working copy in EphemeralDB
    */
-  async updateWorkingCopy(
-    workingCopyId: NodeId,
+  async updateDraft(
+    draftId: NodeId,
     data: Partial<ShapeEntity>,
-  ): Promise<ShapeWorkingCopy> {
+  ): Promise<ShapeDraft> {
     try {
-      const existing = await this.getWorkingCopy(workingCopyId);
+      const existing = await this.getDraft(draftId);
       if (!existing) {
-        throw new Error(`Working copy not found: ${workingCopyId}`);
+        throw new Error(`Working copy not found: ${draftId}`);
       }
 
       const timestamp = Date.now() as Timestamp;
-      const base = markWorkingCopyUpdated(existing, data, timestamp);
-      const updated: ShapeWorkingCopy = {
+      const base = markDraftUpdated(existing, data, timestamp);
+      const updated: ShapeDraft = {
         ...existing,
         ...data,
         ...base,
@@ -246,43 +195,37 @@ export class ShapeEntityService extends BaseEntityService<
   /**
    * Commit working copy to CoreDB
    */
-  async commitWorkingCopy(workingCopyId: NodeId): Promise<NodeId> {
+  async commitDraft(draftId: NodeId): Promise<void> {
     try {
       // Get working copy from EphemeralDB
-      const workingCopy = await this.getWorkingCopy(workingCopyId);
-      if (!workingCopy) {
-        throw new Error(`Working copy not found: ${workingCopyId}`);
+      const draft = await this.getDraft(draftId);
+      if (!draft) {
+        throw new Error(`Working copy not found: ${draftId}`);
       }
 
-      const updates = mapWorkingCopyToUpdates(workingCopy);
-      let nodeId: NodeId;
+      const updates = mapDraftToUpdates(draft);
 
-      if (workingCopy.isDraft) {
+      if (draft) {
         const entityData: CreateShapeData = {
-          name: updates.name ?? workingCopy.draft.name ?? '',
-          description: updates.description ?? workingCopy.draft.description,
-          dataSourceName: updates.dataSourceName ?? workingCopy.draft.dataSourceName ?? 'naturalearth',
-          processingConfig: updates.processingConfig ?? workingCopy.draft.processingConfig ?? DEFAULT_PROCESSING_CONFIG,
+          name: updates.name ?? draft.draft.name ?? '',
+          description: updates.description ?? draft.draft.description,
+          dataSourceName: updates.dataSourceName ?? draft.draft.dataSourceName ?? 'naturalearth',
+          processingConfig: updates.processingConfig ?? draft.draft.processingConfig ?? DEFAULT_PROCESSING_CONFIG,
         };
 
-        const entity = await this.createEntity(workingCopy.treeNodeId, entityData);
-        nodeId = entity.nodeId;
+        const entity = await this.createEntity(draft.treeNodeId, entityData);
 
         const postCreateUpdates: Partial<ShapeEntity> = {
-          licenseAgreement: updates.licenseAgreement ?? workingCopy.draft.licenseAgreement ?? false,
-          checkboxState: updates.checkboxState ?? workingCopy.draft.checkboxState ?? [],
+          licenseAgreement: updates.licenseAgreement ?? draft.draft.licenseAgreement ?? false,
+          checkboxState: updates.checkboxState ?? draft.draft.checkboxState ?? [],
           batchSessionId: updates.batchSessionId,
           processingStatus: updates.processingStatus ?? 'idle',
         };
         await this.updateEntity(entity.id, postCreateUpdates);
-      } else {
-        const targetNodeId = workingCopy.nodeId || workingCopy.treeNodeId;
-        await this.updateEntity(targetNodeId, updates);
-        nodeId = targetNodeId;
       }
 
-      await this.discardWorkingCopy(workingCopyId);
-      return nodeId;
+      await this.discardDraft(draftId);
+      return;
     } catch (error) {
       console.error('Failed to commit working copy:', error);
       throw error;
@@ -292,10 +235,10 @@ export class ShapeEntityService extends BaseEntityService<
   /**
    * Discard working copy from EphemeralDB
    */
-  async discardWorkingCopy(workingCopyId: NodeId): Promise<void> {
+  async discardDraft(draftId: NodeId): Promise<void> {
     try {
       if (this.ephemeralDB?.workingCopies) {
-        await this.ephemeralDB.workingCopies.delete(workingCopyId);
+        await this.ephemeralDB.workingCopies.delete(draftId);
       }
     } catch (error) {
       console.error('Failed to discard working copy:', error);
@@ -306,8 +249,8 @@ export class ShapeEntityService extends BaseEntityService<
   /**
    * Apply working copy changes to entity
    */
-  async applyWorkingCopy(nodeId: NodeId, workingCopy: ShapeWorkingCopy): Promise<ShapeEntity> {
-    const updates: Partial<ShapeEntity> = mapWorkingCopyToUpdates(workingCopy) as Partial<ShapeEntity>;
+  async applyDraft(nodeId: NodeId, draft: ShapeDraft): Promise<ShapeEntity> {
+    const updates: Partial<ShapeEntity> = mapDraftToUpdates(draft) as Partial<ShapeEntity>;
     return this.updateEntity(nodeId, updates);
   }
 

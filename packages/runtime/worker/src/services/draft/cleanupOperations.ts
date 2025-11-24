@@ -6,8 +6,8 @@ import type { NodeId, Timestamp } from '@hierarchidb/common-types';
 /**
  * Discard a draft by clearing draftData/dialogUIState on the node.
  */
-export async function discardWorkingCopy(coreDB: CoreDB, workingCopyNodeId: NodeId): Promise<void> {
-  const existing = await coreDB.nodes.get(workingCopyNodeId);
+export async function discardDraft(coreDB: CoreDB, draftNodeId: NodeId): Promise<void> {
+  const existing = await coreDB.nodes.get(draftNodeId);
   if (!existing) return;
 
   // If this was a create-only draft (no committed data), delete the node entirely.
@@ -16,20 +16,20 @@ export async function discardWorkingCopy(coreDB: CoreDB, workingCopyNodeId: Node
     (existing as { data?: unknown }).data !== undefined;
 
   if (!hasCommittedData) {
-    await coreDB.nodes.delete(workingCopyNodeId);
+    await coreDB.nodes.delete(draftNodeId);
   } else {
-    await coreDB.nodes.update(workingCopyNodeId, { draftData: null, dialogUIState: undefined });
+    await coreDB.nodes.update(draftNodeId, { draftData: null, dialogUIState: undefined });
   }
   try {
     const { EntityLifecycleManager } = await import('../../entity/EntityLifecycleManager.js');
     const lifecycle = EntityLifecycleManager.getSingleton(coreDB);
-    const envelope: CommandEnvelope<'discardWorkingCopy', { workingCopyId: NodeId }> = {
+    const envelope: CommandEnvelope<'discardDraft', { draftId: NodeId }> = {
       commandId: generateUUID(),
       groupId: generateUUID(),
-      kind: 'discardWorkingCopy',
-      payload: { workingCopyId: workingCopyNodeId },
+      kind: 'discardDraft',
+      payload: { draftId: draftNodeId },
       issuedAt: Date.now() as Timestamp,
-      type: 'discardWorkingCopy',
+      type: 'discardDraft',
     };
     await lifecycle.handleCommand(envelope);
   } catch {}

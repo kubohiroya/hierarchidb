@@ -5,5 +5,5 @@
 
 export type {
   ShapeEntity,
-  ShapeWorkingCopy,
+  ShapeDraft,
 } from '../shared/types.js';

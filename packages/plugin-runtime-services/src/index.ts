@@ -1,8 +1,8 @@
 export { BaseEntityService } from './entity/BaseEntityService.js';
 export {
-  createDraftWorkingCopyBase,
-  markWorkingCopyUpdated,
-  type CreateDraftWorkingCopyParams,
+  createDraftBase,
+  markDraftUpdated,
+  type CreateDraftBaseParams,
 } from './entity/workingCopy.js';
 
 export {

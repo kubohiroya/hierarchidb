@@ -252,7 +252,7 @@ export class CoreDB extends Dexie {
 
       if (rootStatesCount === 0) {
         const rootStateData = ['r', 'p'].flatMap((treeId) =>
-          ['root', 'trash', 'workingCopy'].map((treeRootNodeType) => ({
+          ['root', 'trash', 'draft'].map((treeRootNodeType) => ({
             treeId: treeId as TreeId,
             rootNodeId: getRootNodeId(treeId, treeRootNodeType),
             expanded: {},
@@ -273,41 +273,6 @@ export class CoreDB extends Dexie {
         }
       }
 
-      // Cleanup legacy payload/draft/data.draft residues
-      const allNodes = await this.nodes.toArray();
-      const updates: TreeNode[] = [];
-      for (const node of allNodes) {
-        const clone: Record<string, unknown> = { ...(node as unknown as Record<string, unknown>) };
-        let changed = false;
-        if ('payload' in clone) {
-          delete clone.payload;
-          changed = true;
-        }
-        if ('draft' in clone) {
-          delete clone.draft;
-          changed = true;
-        }
-        if ('holderType' in clone) {
-          delete clone.holderType;
-          changed = true;
-        }
-        if ('holderTargetId' in clone) {
-          delete clone.holderTargetId;
-          changed = true;
-        }
-        const dataVal = clone.data as unknown;
-        if (dataVal && typeof dataVal === 'object' && 'draft' in (dataVal as Record<string, unknown>)) {
-          delete (dataVal as Record<string, unknown>).draft;
-          changed = true;
-        }
-        // No legacy population; require clean metadata/draftMetadata at creation time
-        if (changed) {
-          updates.push(clone as unknown as TreeNode);
-        }
-      }
-      if (updates.length > 0) {
-        await this.nodes.bulkPut(updates as TreeNode[]);
-      }
     });
   }
 

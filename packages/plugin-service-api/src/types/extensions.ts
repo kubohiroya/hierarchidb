@@ -66,7 +66,7 @@ export interface ExtendedFieldDefinition {
 export interface ExtendingNodeTypeDefinition<
   TBase extends PeerEntity = PeerEntity,
   _TExtended = unknown,
-  _TWorkingCopy = unknown,
+  _TDraft = unknown,
 > {
   extends: string;
   nodeType: string;

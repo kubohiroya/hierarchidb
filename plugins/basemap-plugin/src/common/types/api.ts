@@ -4,7 +4,7 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-types';
-import type { BaseMapEntity, BaseMapWorkingCopy } from './BaseMapEntity.js';
+import type { BaseMapEntity, BaseMapDraft } from './BaseMapEntity.js';
 import type { BaseMapConfig } from './types.js';
 
 export interface BaseMapAPI {
@@ -18,18 +18,18 @@ export interface BaseMapAPI {
   deleteBaseMapEntity(entityId: NodeId): Promise<void>;
 
   // Working copy operations
-  createWorkingCopy(entity: BaseMapEntity): Promise<BaseMapWorkingCopy>;
+  createDraft(entity: BaseMapEntity): Promise<BaseMapDraft>;
 
-  getWorkingCopy(workingCopyId: NodeId): Promise<BaseMapWorkingCopy | undefined>;
+  getDraft(draftId: NodeId): Promise<BaseMapDraft | undefined>;
 
-  updateWorkingCopy(
-    workingCopyId: NodeId,
+  updateDraft(
+    draftId: NodeId,
     updates: Partial<BaseMapEntity>
-  ): Promise<BaseMapWorkingCopy>;
+  ): Promise<BaseMapDraft>;
 
-  commitWorkingCopy(workingCopyId: NodeId): Promise<NodeId>;
+  commitDraft(draftId: NodeId): Promise<NodeId>;
 
-  discardWorkingCopy(workingCopyId: NodeId): Promise<void>;
+  discardDraft(draftId: NodeId): Promise<void>;
 
   // Configuration validation
   validateConfiguration(config: BaseMapConfig): Promise<{ isValid: boolean; errors: string[] }>;

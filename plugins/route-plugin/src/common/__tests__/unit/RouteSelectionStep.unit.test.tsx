@@ -1,8 +1,8 @@
 import { describe, expect, vi, it, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { RouteSelectionStep } from '../components/RouteSelectionStep.js';
-import type { RouteEntity, RouteWorkingCopy, NodeId } from '../types/index.js';
-import { createRouteDraftWorkingCopy, mergeRouteWorkingCopy } from '../utils/workingCopy.js';
+import type { RouteEntity, RouteDraft, NodeId } from '../types/index.js';
+import { createRouteDraftBase, mergeRouteDraft } from '../utils/draft.js';
 import { en as enTranslations } from '../i18n/en.js';
 
 vi.mock('../i18n/index.js', () => ({
@@ -12,9 +12,9 @@ vi.mock('../i18n/index.js', () => ({
   }),
 }));
 
-const createWorkingCopy = (overrides: Partial<RouteEntity> = {}): RouteWorkingCopy => {
-  const base = createRouteDraftWorkingCopy('route-node-1' as NodeId);
-  return mergeRouteWorkingCopy(base, overrides);
+const createDraft = (overrides: Partial<RouteEntity> = {}): RouteDraft => {
+  const base = createRouteDraftBase('route-node-1' as NodeId);
+  return mergeRouteDraft(base, overrides);
 };
 
 describe('RouteSelectionStep', () => {
@@ -32,7 +32,7 @@ describe('RouteSelectionStep', () => {
 
     render(
       <RouteSelectionStep
-        workingCopy={createWorkingCopy()}
+        draft={createDraft()}
         onUpdate={onUpdate}
         onValidationChange={vi.fn()}
       />,

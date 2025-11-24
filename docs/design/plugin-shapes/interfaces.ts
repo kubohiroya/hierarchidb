@@ -6,7 +6,7 @@
  * 🔴 eria-cartographパターンからの推測を含む高度な機能
  */
 
-import type { TreeNodeId, BaseEntity, BaseWorkingCopy, Timestamp } from '@hierarchidb/common-core';
+import type { TreeNodeId, BaseEntity, BaseDraft, Timestamp } from '@hierarchidb/common-core';
 
 // ============================================================================
 // Core Entity Types 🟢
@@ -111,7 +111,7 @@ export interface ShapesEntity extends BaseEntity {
 /**
  * Shapes Working Copy - 安全な編集のための一時コピー
  */
-export interface ShapesWorkingCopy extends BaseWorkingCopy {
+export interface ShapesDraft extends BaseDraft {
   // ShapesEntityの全フィールドを含む
   nodeId: TreeNodeId;
   name: string;
@@ -124,8 +124,8 @@ export interface ShapesWorkingCopy extends BaseWorkingCopy {
   stats?: ShapesEntity['stats'];
 
   // Working Copy固有のフィールド
-  workingCopyId: string;
-  workingCopyOf: TreeNodeId;
+  draftId: string;
+  draftOf: TreeNodeId;
   copiedAt: Timestamp;
   isDirty: boolean;
 
@@ -823,7 +823,7 @@ export interface ProcessingSummary {
 export type {
   // EntityTypes
   ShapesEntity,
-  ShapesWorkingCopy,
+  ShapesDraft,
 
   // Styles
   ShapeStyle,

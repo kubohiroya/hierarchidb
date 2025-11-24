@@ -16,8 +16,8 @@ type TestWorkerAPI = {
 
 type SubscriptionEvent = TreeNodeEvent;
 
-describe('Comlink + fake-indexeddb integration: create flow uses workingCopy before commit', () => {
-  it('createNode returns a workingCopy nodeId under workingCopy root; canonical parent remains unchanged until commit', async () => {
+describe('Comlink + fake-indexeddb integration: create flow uses draft before commit', () => {
+  it('createNode returns a draft nodeId under draft root; canonical parent remains unchanged until commit', async () => {
     const { port1, port2 } = new MessageChannel();
     await exposeTestAPI(createEndpointFromMessagePort(port1));
     const client = Comlink.wrap<TestWorkerAPI>(createEndpointFromMessagePort(port2));
@@ -62,7 +62,7 @@ describe('Comlink + fake-indexeddb integration: create flow uses workingCopy bef
     const holder = await queryAPI.getNode(created.parentId as NodeId);
     expect(holder).toBeTruthy();
     if (!holder) throw new Error('holder not found');
-    expect(holder.parentId).toBe((tree.rootId as string).replace(':root', ':workingCopy'));
+    expect(holder.parentId).toBe((tree.rootId as string).replace(':root', ':draft'));
 
     const children = await queryAPI.listChildren(parentId);
     expect(children.some((node) => node.id === newId)).toBe(false);

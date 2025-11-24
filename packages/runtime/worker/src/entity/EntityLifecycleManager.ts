@@ -1,6 +1,6 @@
 import type {
-  CommitWorkingCopyPayload,
-  DiscardWorkingCopyPayload,
+  CommitDraftPayload,
+  DiscardDraftPayload,
   DuplicateNodesPayload,
   ImportNodesPayload,
   NodeId,
@@ -15,8 +15,8 @@ import { PeerEntityHandler } from './handlers/PeerEntityHandler.js';
 import { storeRegistry } from './store-registry.js';
 import { syncPeerDataFromNode } from '../services/peerDataRegistry.js';
 
-type DiscardWorkingCopyEnvelope = CommandEnvelope<'discardWorkingCopy', DiscardWorkingCopyPayload>;
-type CommitWorkingCopyEnvelope = CommandEnvelope<'commitWorkingCopy', CommitWorkingCopyPayload>;
+type DiscardDraftEnvelope = CommandEnvelope<'discardDraft', DiscardDraftPayload>;
+type CommitDraftEnvelope = CommandEnvelope<'commitDraft', CommitDraftPayload>;
 type DuplicateNodesEnvelope = CommandEnvelope<'duplicateNodes', DuplicateNodesPayload>;
 type PasteNodesEnvelope = CommandEnvelope<'pasteNodes', PasteNodesPayload>;
 type ImportNodesEnvelope = CommandEnvelope<'importNodes', ImportNodesPayload>;
@@ -142,10 +142,10 @@ export class EntityLifecycleManager {
 
   async handleCommand(envelope: CommandEnvelope<string, unknown>): Promise<void> {
     switch (envelope.kind) {
-      case 'discardWorkingCopy':
-        return this.onDiscardWorkingCopy(envelope as DiscardWorkingCopyEnvelope);
-      case 'commitWorkingCopy':
-        return this.onCommitWorkingCopy(envelope as CommitWorkingCopyEnvelope);
+      case 'discardDraft':
+        return this.onDiscardDraft(envelope as DiscardDraftEnvelope);
+      case 'commitDraft':
+        return this.onCommitDraft(envelope as CommitDraftEnvelope);
       case 'duplicateNodes':
         return this.onDuplicateNodes(envelope as DuplicateNodesEnvelope);
       case 'pasteNodes':
@@ -157,9 +157,9 @@ export class EntityLifecycleManager {
     }
   }
 
-  async onDiscardWorkingCopy(env: DiscardWorkingCopyEnvelope): Promise<void> {
+  async onDiscardDraft(env: DiscardDraftEnvelope): Promise<void> {
     try {
-      const wcId = env.payload.workingCopyId;
+      const wcId = env.payload.draftId;
       const wcNode = await this.coreDB.getNode(wcId);
       const nodeType = wcNode?.nodeType;
       if (!nodeType) return;
@@ -175,9 +175,9 @@ export class EntityLifecycleManager {
     } catch {}
   }
 
-  async onCommitWorkingCopy(env: CommitWorkingCopyEnvelope): Promise<void> {
+  async onCommitDraft(env: CommitDraftEnvelope): Promise<void> {
     try {
-      const wcId = env.payload.workingCopyId;
+      const wcId = env.payload.draftId;
       const wcNode = await this.coreDB.getNode(wcId);
       if (!wcNode) return;
 

@@ -1,9 +1,9 @@
 import type { NodeId, Timestamp } from '@hierarchidb/common-types';
 import type { Table } from 'dexie';
-import type { LocationEntity, LocationDataSource, LocationWorkingCopy } from './LocationEntity.js';
+import type { LocationEntity, LocationDataSource, LocationDraft } from './LocationEntity.js';
 import { clearLocationPoints } from '../../services/pointRepository.js';
 import { BaseSearchCriteria } from '@hierarchidb/plugin-service-api';
-import { BaseEntityHandler, createDraftWorkingCopyBase } from '@hierarchidb/plugin-service-sdk';
+import { BaseEntityHandler, createDraftBase } from '@hierarchidb/plugin-service-sdk';
 
 export interface CreateLocationData {
   dataSource: LocationDataSource;
@@ -62,7 +62,7 @@ export class LocationEntityHandler extends BaseEntityHandler<
     };
   }
 
-  async createWorkingCopy(entity: LocationEntity): Promise<LocationWorkingCopy> {
+  async createDraft(entity: LocationEntity): Promise<LocationDraft> {
     const draft = {
       ...entity,
       selectionMatrix: cloneMatrix(entity.selectionMatrix),
@@ -71,7 +71,7 @@ export class LocationEntityHandler extends BaseEntityHandler<
       extractConfig: entity.extractConfig,
     };
 
-    const base = createDraftWorkingCopyBase<LocationEntity>({
+    const base = createDraftBase<LocationEntity>({
       draft,
       meta: {
         treeNodeId: entity.nodeId,
@@ -81,10 +81,10 @@ export class LocationEntityHandler extends BaseEntityHandler<
       },
     });
 
-    return { ...draft, ...base } as LocationWorkingCopy;
+    return { ...draft, ...base } as LocationDraft;
   }
 
-  async createNewDraftWorkingCopy(nodeId?: NodeId): Promise<LocationWorkingCopy> {
+  async createNewDraftBase(nodeId?: NodeId): Promise<LocationDraft> {
     const now = Date.now() as Timestamp;
     const targetNodeId = nodeId ?? (crypto.randomUUID() as unknown as NodeId);
 
@@ -105,7 +105,7 @@ export class LocationEntityHandler extends BaseEntityHandler<
       processingStatus: 'pending',
     };
 
-    const base = createDraftWorkingCopyBase<LocationEntity>({
+    const base = createDraftBase<LocationEntity>({
       draft: draft as LocationEntity,
       meta: {
         treeNodeId: targetNodeId,
@@ -114,17 +114,17 @@ export class LocationEntityHandler extends BaseEntityHandler<
       },
     });
 
-    return { ...draft, ...base } as LocationWorkingCopy;
+    return { ...draft, ...base } as LocationDraft;
   }
 
   protected async cleanupEntityData(entity: LocationEntity): Promise<void> {
     await clearLocationPoints(entity.nodeId);
   }
 
-  async updateWorkingCopy(
+  async updateDraft(
     treeNodeId: NodeId,
     updates: Partial<LocationEntity>,
-  ): Promise<LocationWorkingCopy> {
+  ): Promise<LocationDraft> {
     const existing = await this.table.get(treeNodeId);
     if (!existing) {
       throw new Error(`Location entity not found: ${treeNodeId}`);
@@ -143,7 +143,7 @@ export class LocationEntityHandler extends BaseEntityHandler<
 
     await this.table.put(merged, merged.nodeId);
 
-    const base = createDraftWorkingCopyBase<LocationEntity>({
+    const base = createDraftBase<LocationEntity>({
       draft: merged,
       meta: {
         treeNodeId: merged.nodeId,
@@ -153,6 +153,6 @@ export class LocationEntityHandler extends BaseEntityHandler<
       },
     });
 
-    return { ...merged, ...base } as LocationWorkingCopy;
+    return { ...merged, ...base } as LocationDraft;
   }
 }

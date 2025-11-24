@@ -7,7 +7,7 @@ import type { BaseEntity, NodeId, Timestamp } from '@hierarchidb/common-types';
 import type {
   BaseSearchCriteria,
   PeerDataBase,
-  WorkingCopyDraft,
+  DraftBase,
 } from '@hierarchidb/plugin-service-api';
 
 /**
@@ -52,20 +52,20 @@ export type BaseMapDraftPayload = {
   version: number;
 };
 
-export interface BaseMapWorkingCopy extends WorkingCopyDraft<BaseMapEntity>, BaseMapDraftPayload {
+export interface BaseMapDraft extends DraftBase<BaseMapEntity>, BaseMapDraftPayload {
   name?: string;
   description?: string;
   tags?: string[];
-  draft: WorkingCopyDraft<BaseMapEntity>['draft'] & {
+  draft: DraftBase<BaseMapEntity>['draft'] & {
     mapStyle?: MapStyle;
     viewport?: MapViewport;
     name?: string;
     description?: string;
   };
-  uiState?: BasemapWorkingCopyUiState;
+  uiState?: BasemapDraftUiState;
 }
 
-export interface BasemapWorkingCopyUiState {
+export interface BasemapDraftUiState {
   mapStyleTouched?: boolean;
   viewportTouched?: boolean;
 }
@@ -85,15 +85,6 @@ export interface BaseMapSearchCriteria extends BaseSearchCriteria {
   mapStyle?: string;
 }
 
-/**
- * Peer payload persisted directly on TreeNode.payload/draft for basemap nodes.
- * schemaVersion must always be present so that future migrations can
- * discriminate payload revisions regardless of local cache state.
- */
-export interface BasemapPeerData extends PeerDataBase {
+export type BasemapPeerData = PeerDataBase & {
   schemaVersion: 1;
-  presentation?: {
-    viewport?: MapViewport;
-    style?: MapStyle;
-  };
-}
+};

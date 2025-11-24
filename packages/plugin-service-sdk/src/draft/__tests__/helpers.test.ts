@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { NodeId, Timestamp } from '@hierarchidb/common-types';
-import { createDraftWorkingCopyBase, markWorkingCopyUpdated } from '../helpers.js';
-import type { WorkingCopyDraft } from '@hierarchidb/plugin-service-api/working-copy/types.js';
+import { createDraftBase, markDraftUpdated } from '../helpers.js';
+import type { DraftBase } from '@hierarchidb/plugin-service-api';
 
 interface Entity {
   title: string;
@@ -11,15 +11,15 @@ interface Entity {
 
 describe('working copy helpers', () => {
   it('creates a draft working copy with provided metadata intact', () => {
-    const draft: Partial<Entity> = {
+    const draftPayload: Partial<Entity> = {
       title: 'Initial title',
       nested: { value: 1 },
     };
 
     const createdAt = 1000 as Timestamp;
     const updatedAt = 1000 as Timestamp;
-    const base = createDraftWorkingCopyBase<Entity>({
-      draft,
+    const base = createDraftBase<Entity>({
+      draft: draftPayload,
       meta: {
         treeNodeId: 'node-123' as NodeId,
         createdAt,
@@ -28,21 +28,21 @@ describe('working copy helpers', () => {
       },
     });
 
-    const workingCopy: WorkingCopyDraft<Entity> = {
-      ...draft,
+    const draft: DraftBase<Entity> = {
       ...base,
+      ...draftPayload,
     };
 
-    expect(workingCopy.treeNodeId).toBe('node-123');
-    expect(workingCopy.draft).toEqual(draft);
-    expect(workingCopy.createdAt).toBe(createdAt);
-    expect(workingCopy.updatedAt).toBe(updatedAt);
-    expect(workingCopy.originalVersion).toBe(7);
+    expect(draft.treeNodeId).toBe('node-123');
+    expect(draft.draft).toEqual(draftPayload);
+    expect(draft.createdAt).toBe(createdAt);
+    expect(draft.updatedAt).toBe(updatedAt);
+    expect(draft.originalVersion).toBe(7);
   });
 
   it('updates a draft working copy and merges changes', () => {
-    const draftCopy: WorkingCopyDraft<Entity> = {
-      ...createDraftWorkingCopyBase<Entity>({
+    const draft: DraftBase<Entity> = {
+      ...createDraftBase<Entity>({
         draft: {
           title: 'Initial title',
           nested: { value: 2 },
@@ -53,17 +53,13 @@ describe('working copy helpers', () => {
           updatedAt: 2000 as Timestamp,
         },
       }),
-      title: 'Initial title',
-      nested: { value: 2 },
     };
 
     const updatedAt = 3000 as Timestamp;
-    const updatedCopy = markWorkingCopyUpdated(draftCopy, { title: 'Updated title', version: 2 }, updatedAt);
+    const updatedCopy = markDraftUpdated(draft, { title: 'Updated title', version: 2 }, updatedAt);
 
     expect(updatedCopy.draft.title).toBe('Updated title');
     expect(updatedCopy.draft.version).toBe(2);
-    expect(updatedCopy.title).toBe('Updated title');
-    expect(updatedCopy.version).toBe(2);
     expect(updatedCopy.updatedAt).toBe(updatedAt);
   });
 });

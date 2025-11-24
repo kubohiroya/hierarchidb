@@ -20,4 +20,4 @@ export type {
   PeerEntityBase,
   PeerStore,
 } from './peer-store/types.js';
-export type { WorkingCopyBase, WorkingCopyDraft } from './working-copy/types.js';
+export type { DraftBase } from './draft/types.js';

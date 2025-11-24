@@ -373,23 +373,23 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
     await preconnectPluginServices(nodeType).catch(() => {});
 
     try {
-      const wcApi = await client.getWorkingCopyAPI();
+      const wcApi = await client.getDraftAPI();
       const queryAPI = await client.getQueryAPI();
 
-      const ensureWorkingCopy = async () => {
+      const ensureDraft = async () => {
         const existingNode = await queryAPI.getNode(targetNodeId);
         if (!existingNode) {
           showCommandError('INVALID_OPERATION', 'Target node does not exist');
           return undefined;
         }
-        const existing = await wcApi.getWorkingCopy(targetNodeId);
+        const existing = await wcApi.getDraft(targetNodeId);
         if (existing) return existing;
-        await wcApi.createWorkingCopyFromNode(targetNodeId);
-        return await wcApi.getWorkingCopy(targetNodeId);
+        await wcApi.createDraftFromNode(targetNodeId);
+        return await wcApi.getDraft(targetNodeId);
       };
 
-      const workingCopy = await ensureWorkingCopy();
-      if (!workingCopy) {
+      const draft = await ensureDraft();
+      if (!draft) {
         showCommandError('UNKNOWN_ERROR', 'Unable to prepare working copy for edit dialog');
         return;
       }

@@ -3,7 +3,7 @@
    */
 
 //  @hierarchidb/common-type
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId, TreeId } from '@hierarchidb/common-types';
 export type { NodeId } from '@hierarchidb/common-types';
 import type { TabularFilterRule, TabularSelectionConfig } from '@hierarchidb/ui-tabular-extract';
 
@@ -25,7 +25,7 @@ import type {
   LocationAttributes,
   LocationFeature,
 } from '../entities/LocationEntity.js';
-import type { WorkingCopyDraft } from '@hierarchidb/plugin-service-api';
+import type { DraftBase } from '@hierarchidb/plugin-service-api';
 export type {
   LocationPoint,
   LocationPointProperties,
@@ -47,7 +47,7 @@ export type {
   LocationFeature,
 };
 
-export interface LocationWorkingCopy extends WorkingCopyDraft<LocationEntityDefinition> {
+export interface LocationDraft extends DraftBase<LocationEntityDefinition> {
   /** console-level categorisation tags (persisted on the owning TreeNode). */
   tags?: string[];
   dataSource?: LocationDataSource;
@@ -56,7 +56,15 @@ export interface LocationWorkingCopy extends WorkingCopyDraft<LocationEntityDefi
     filterRules?: TabularFilterRule[];
     selection?: TabularSelectionConfig;
   };
-  draft: WorkingCopyDraft<LocationEntityDefinition>['draft'] & {
+  draft: DraftBase<LocationEntityDefinition>['draft'] & {
+    name?: string;
+    description?: string;
+    tags?: string[];
+    selectionMatrix?: boolean[][];
+    concurrentDownloads?: number;
+    licenseAgreement?: boolean;
+    dataSource?: LocationDataSource;
+    tabularSourceId?: string;
     tilesMinZoom?: number;
     tilesMaxZoom?: number;
   };
@@ -82,9 +90,10 @@ export interface LocationDialogProps {
   mode: 'create' | 'edit';
   nodeId?: NodeId;
   parentId?: NodeId;
+  treeId?: TreeId;
   open: boolean;
   onClose: () => void;
-  onSuccess?: (entity: LocationWorkingCopy) => void;
+  onSuccess?: (entity: LocationDraft) => void;
   onError?: (error: Error) => void;
 }
 

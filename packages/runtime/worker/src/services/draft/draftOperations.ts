@@ -12,7 +12,7 @@ import { createNewName, getChildNames } from './nameUtilities.js';
 /**
  * Create a draft for a new node. The draft lives directly on the node record.
  */
-export async function createDraftWorkingCopy(
+export async function createDraftBase(
   coreDB: CoreDB,
   _treeId: TreeId,
   parentId: NodeId,

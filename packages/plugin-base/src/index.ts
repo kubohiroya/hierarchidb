@@ -1,7 +1,7 @@
 // Registry exports
 
 // Re-export atoms for advanced consumers (mainly host integration/tests)
-export * from './atoms/workingCopyAtoms.js';
+export * from './atoms/draftAtoms.js';
 export type { DialogMapState, DialogModeState } from './hooks/useDialogUrlSync.js';
 // Hooks
 export { useDialogUrlSync } from './hooks/useDialogUrlSync.js';

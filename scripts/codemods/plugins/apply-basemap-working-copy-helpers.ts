@@ -53,7 +53,7 @@ function ensureNamedImport(source = handlerFile, moduleSpecifier: string, name: 
 }
 
 // Update handler imports
-ensureNamedImport(handlerFile, '@hierarchidb/base-plugin', 'createDraftWorkingCopyBase');
+ensureNamedImport(handlerFile, '@hierarchidb/base-plugin', 'createDraftBase');
 
 const typesImport = handlerFile
   .getImportDeclaration((decl) => decl.getModuleSpecifierValue() === '../types/index.ts');
@@ -61,20 +61,20 @@ if (typesImport && !typesImport.getNamedImports().some((n) => n.getName() === 'B
   typesImport.addNamedImport('BaseMapDraftPayload');
 }
 
-// Replace createWorkingCopy method body
+// Replace createDraft method body
 const handlerClass = handlerFile.getClass('BaseMapEntityHandler');
 if (!handlerClass) {
   throw new Error('BaseMapEntityHandler class not found');
 }
-const createWorkingCopyMethod = handlerClass.getInstanceMethod('createWorkingCopy');
-if (!createWorkingCopyMethod) {
-  throw new Error('createWorkingCopy method not found');
+const createDraftMethod = handlerClass.getInstanceMethod('createDraft');
+if (!createDraftMethod) {
+  throw new Error('createDraft method not found');
 }
 
-createWorkingCopyMethod.setBodyText(`{
+createDraftMethod.setBodyText(`{
   const entity = await this.getEntityByNodeId(nodeId);
   const now = Date.now();
-  const workingCopyId = crypto.randomUUID() as unknown as NodeId;
+  const draftId = crypto.randomUUID() as unknown as NodeId;
 
   const mapStyle = normalizeMapStyle(entity?.mapStyle);
   const viewport = normalizeViewport(entity?.viewport);
@@ -96,7 +96,7 @@ createWorkingCopyMethod.setBodyText(`{
     displayOptions,
   };
 
-  const base = createDraftWorkingCopyBase<BaseMapDraftPayload, BaseMapEntity>({
+  const base = createDraftBase<BaseMapDraftPayload, BaseMapEntity>({
     draft: draftPayload,
     meta: {
       treeNodeId: nodeId,
@@ -107,19 +107,19 @@ createWorkingCopyMethod.setBodyText(`{
     },
   });
 
-  const workingCopy: BaseMapWorkingCopy = {
+  const draft: BaseMapDraft = {
     ...draftPayload,
     ...base,
-    id: workingCopyId,
-    workingCopyId,
+    id: draftId,
+    draftId,
     nodeId,
     version: entity?.version ?? 1,
     copiedAt: now,
     originalId: entity?.id,
   };
 
-  await this.workingCopyTable.add(workingCopy);
-  return workingCopy;
+  await this.draftTable.add(draft);
+  return draft;
 }`);
 
 // Update peer store normalizer

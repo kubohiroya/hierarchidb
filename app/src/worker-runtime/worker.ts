@@ -14,7 +14,7 @@ import type {
   TreeQueryAPI,
   TreeSubscriptionAPI,
   WorkerAPI,
-  WorkingCopyAPI,
+  DraftAPI,
 } from '@hierarchidb/common-api';
 import {
   getAllRuntimeExports,
@@ -54,7 +54,7 @@ type RuntimeWorkerServices = {
   getQueryAPI: () => TreeQueryAPI;
   getMutationAPI: () => TreeMutationAPI;
   getSubscriptionAPI: () => TreeSubscriptionAPI;
-  getWorkingCopyAPI: () => WorkingCopyAPI;
+  getDraftAPI: () => DraftAPI;
   getPluginLifecycleAPI: () => PluginLifecycleAPI;
   getImportExportAPI: () => ImportExportAPI;
   getTagAPI: () => TagAPI;
@@ -232,7 +232,7 @@ reporter.reportStepProgress('Load Comlink', 0);
         getQueryAPI: () => Comlink.proxy(services.getQueryAPI()),
         getMutationAPI: () => Comlink.proxy(services.getMutationAPI()),
         getSubscriptionAPI: () => Comlink.proxy(services.getSubscriptionAPI()),
-        getWorkingCopyAPI: () => Comlink.proxy(services.getWorkingCopyAPI()),
+        getDraftAPI: () => Comlink.proxy(services.getDraftAPI()),
         getPluginLifecycleAPI: () => Comlink.proxy(services.getPluginLifecycleAPI()),
         getImportExportAPI: () => Comlink.proxy(services.getImportExportAPI()),
         getTagAPI: () => Comlink.proxy(services.getTagAPI()),

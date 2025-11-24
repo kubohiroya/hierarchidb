@@ -6,7 +6,7 @@ import type React from 'react';
 import { useMemo } from 'react';
 import { Box, Typography } from '@mui/material';
 import { DataSourceSelector } from '@hierarchidb/ui-datasource';
-import type { LocationDataSource, LocationWorkingCopy } from '../../types/index.js';
+import type { LocationDataSource, LocationDraft } from '../../types/index.js';
 import { useTranslation } from '../../i18n/index.js';
 import { DataSourceOption } from '@hierarchidb/ui-datasource';
 
@@ -20,16 +20,16 @@ const ORDERED_DATA_SOURCES: LocationDataSource[] = [
 ];
 
 interface LocationDataSourceStepProps {
-  workingCopy: LocationWorkingCopy;
-  onUpdate: (updates: Partial<LocationWorkingCopy>) => void;
+  draft: LocationDraft;
+  onUpdate: (updates: Partial<LocationDraft>) => void;
 }
 
-export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({ workingCopy, onUpdate }) => {
+export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({ draft, onUpdate }) => {
   const { translations } = useTranslation();
 
   const value = useMemo<LocationDataSource>(() => (
-    (workingCopy.draft.dataSource as LocationDataSource) ?? 'openstreetmap'
-  ), [workingCopy.draft.dataSource]);
+    (draft.draft.dataSource as LocationDataSource) ?? 'openstreetmap'
+  ), [draft.draft.dataSource]);
 
   const options = useMemo<DataSourceOption[]>(() => (
     ORDERED_DATA_SOURCES.map((sourceId) => ({

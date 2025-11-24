@@ -5,7 +5,7 @@ import {
   validateProcessingConfig,
   DEFAULT_PROCESSING_CONFIG,
   mergeProcessingConfig,
-  type ShapeWorkingCopy,
+  type ShapeDraft,
 } from '../../common/shared/index.js';
 import { Step1BasicInfo } from '../../common/components/steps/Step1BasicInfo.js';
 import { Step2DataSource } from '../../common/components/steps/Step2DataSource.js';
@@ -17,18 +17,18 @@ import { StepTabularFilter } from '../../common/components/steps/StepTabularFilt
 
 const registry = PluginStepRegistry.getInstance();
 
-type ShapeDialogStepProps = StepComponentProps<Partial<ShapeWorkingCopy>>;
+type ShapeDialogStepProps = StepComponentProps<Partial<ShapeDraft>>;
 
 function createStepAdapter(
   Component: React.ComponentType<{
-    workingCopy: Partial<ShapeWorkingCopy>;
-    onUpdate: (updates: Partial<ShapeWorkingCopy>) => void;
+    draft: Partial<ShapeDraft>;
+    onUpdate: (updates: Partial<ShapeDraft>) => void;
     disabled?: boolean;
   }>,
 ): (props: ShapeDialogStepProps) => JSX.Element {
   return function ShapeStepAdapter(props: ShapeDialogStepProps) {
-    const workingCopy = (props.data ?? {}) as Partial<ShapeWorkingCopy>;
-    const handleUpdate = (updates: Partial<ShapeWorkingCopy>) => {
+    const draft = (props.data ?? {}) as Partial<ShapeDraft>;
+    const handleUpdate = (updates: Partial<ShapeDraft>) => {
       props.onChange({
         ...(props.data ?? {}),
         ...updates,
@@ -37,7 +37,7 @@ function createStepAdapter(
 
     return (
       <Component
-        workingCopy={workingCopy}
+        draft={draft}
         onUpdate={handleUpdate}
         disabled={Boolean(props.disabled)}
       />
@@ -51,7 +51,7 @@ const Step3 = createStepAdapter(Step3License);
 const Step4 = createStepAdapter(Step4Processing);
 const Step5 = createStepAdapter(Step5CountrySelection);
 
-registry.registerConfigProvider<Partial<ShapeWorkingCopy>>({
+registry.registerConfigProvider<Partial<ShapeDraft>>({
   nodeType: 'shape',
   getCreateStepConfigs() {
     return [
@@ -59,37 +59,37 @@ registry.registerConfigProvider<Partial<ShapeWorkingCopy>>({
         id: 'tabular-upload',
         label: 'Dataset Upload',
         componentFactory: (props: ShapeDialogStepProps) => <StepTabularUpload {...props} />,
-        validate: (data?: Partial<ShapeWorkingCopy>) => Boolean(data?.tabularMetadataId),
+        validate: (data?: Partial<ShapeDraft>) => Boolean(data?.tabularMetadataId),
       },
       {
         id: 'tabular-filter',
         label: 'Dataset Filter',
         componentFactory: (props: ShapeDialogStepProps) => <StepTabularFilter {...props} />,
-        validate: (data?: Partial<ShapeWorkingCopy>) => Boolean(data?.tabularMetadataId),
+        validate: (data?: Partial<ShapeDraft>) => Boolean(data?.tabularMetadataId),
       },
       {
         id: 'basic-info',
         label: 'Basic Information',
         componentFactory: (props: ShapeDialogStepProps) => <Step1 {...props} />,
-        validate: (data?: Partial<ShapeWorkingCopy>) => Boolean(data?.name?.trim()),
+        validate: (data?: Partial<ShapeDraft>) => Boolean(data?.name?.trim()),
       },
       {
         id: 'data-source',
         label: 'Data Source',
         componentFactory: (props: ShapeDialogStepProps) => <Step2 {...props} />,
-        validate: (data?: Partial<ShapeWorkingCopy>) => Boolean(data?.dataSourceName),
+        validate: (data?: Partial<ShapeDraft>) => Boolean(data?.dataSourceName),
       },
       {
         id: 'license-agreement',
         label: 'License Agreement',
         componentFactory: (props: ShapeDialogStepProps) => <Step3 {...props} />,
-        validate: (data?: Partial<ShapeWorkingCopy>) => Boolean(data?.licenseAgreement),
+        validate: (data?: Partial<ShapeDraft>) => Boolean(data?.licenseAgreement),
       },
       {
         id: 'processing-configuration',
         label: 'Processing Configuration',
         componentFactory: (props: ShapeDialogStepProps) => <Step4 {...props} />,
-        validate: (data?: Partial<ShapeWorkingCopy>) =>
+        validate: (data?: Partial<ShapeDraft>) =>
           validateProcessingConfig(
             mergeProcessingConfig(data?.processingConfig ?? DEFAULT_PROCESSING_CONFIG),
           ).isValid,
@@ -98,7 +98,7 @@ registry.registerConfigProvider<Partial<ShapeWorkingCopy>>({
         id: 'country-selection',
         label: 'Country Selection',
         componentFactory: (props: ShapeDialogStepProps) => <Step5 {...props} />,
-        validate: (data?: Partial<ShapeWorkingCopy>) =>
+        validate: (data?: Partial<ShapeDraft>) =>
           summarizeCheckboxState(data?.checkboxState).hasSelection,
       },
     ];

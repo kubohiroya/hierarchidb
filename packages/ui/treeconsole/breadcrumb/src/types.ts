@@ -13,7 +13,7 @@ export interface BreadcrumbNode {
   parentId?: string | null;
   isClickable?: boolean;
   depth?: number;
-  holderType?: 'workingCopy' | 'trash';
+  holderType?: 'draft' | 'trash';
   holderTargetId?: string;
   holderMetaParentId?: string;
 }

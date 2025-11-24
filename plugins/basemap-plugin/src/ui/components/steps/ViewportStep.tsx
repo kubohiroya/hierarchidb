@@ -1,18 +1,14 @@
-import type { NodeId } from '@hierarchidb/common-types';
 import { Box, Stack, TextField, Typography } from '@mui/material';
 import type React from 'react';
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { loadMapLibreMap, type MapLibreMapInstance, type MapViewState } from '@hierarchidb/ui-map';
 import type { MapStyle, MapViewport } from '../../../common/types/BaseMapEntity.js';
-import { useBaseMapEntity } from '../../hooks/useBaseMapEntity.js';
 import { resolveMapStyleSource } from '../../utils/mapStyle.js';
 
 export interface ViewportStepProps {
   value: MapViewport | undefined;
   mapStyle?: MapStyle;
   onChange: (next: MapViewport) => void;
-  mode: 'create' | 'edit';
-  nodeId?: string;
 }
 
 const LOCAL_STORAGE_KEY = 'zxy';
@@ -40,8 +36,6 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({
   value,
   mapStyle,
   onChange,
-  mode,
-  nodeId,
 }) => {
   const readPersistedViewport = useCallback((): MapViewport | null => {
     if (typeof window === 'undefined' || !window.localStorage) return null;
@@ -195,36 +189,6 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({
     () => resolveMapStyleSource(selectedStyle),
     [selectedStyle]
   );
-
-  const resolvedNodeId = useMemo(() => {
-    if (mode !== 'edit') return undefined;
-    if (!nodeId || nodeId === 'undefined') return undefined;
-    return nodeId as NodeId;
-  }, [mode, nodeId]);
-  const hasViewportValue = useMemo(() => {
-    if (!value) return false;
-    const [lng, lat] = value.center ?? [];
-    return (
-      Array.isArray(value.center) &&
-      value.center.length === 2 &&
-      Number.isFinite(lng) &&
-      Number.isFinite(lat) &&
-      Number.isFinite(value.zoom)
-    );
-  }, [value]);
-  const shouldHydrateViewport = Boolean(resolvedNodeId) && mode === 'edit' && !hasViewportValue;
-  const hydrationNodeId: NodeId | null =
-    shouldHydrateViewport && resolvedNodeId ? resolvedNodeId : null;
-  const { entity: baselineEntity } = useBaseMapEntity(hydrationNodeId, {
-    skip: !hydrationNodeId,
-  });
-
-  useEffect(() => {
-    if (!shouldHydrateViewport) return;
-    if (!baselineEntity) return;
-    pendingSyncRef.current = true;
-    setViewport(baselineEntity.viewport ?? DEFAULT_GEO_VIEWPORT);
-  }, [baselineEntity, shouldHydrateViewport, setViewport]);
 
   const handleViewStateChange = useCallback(
     (viewState: MapViewState) => {

@@ -1,10 +1,11 @@
-import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/plugin-base';
-import type { NodeId, Timestamp } from '@hierarchidb/common-types';
+import { PluginStepRegistry, type StepComponentProps, type PluginStepConfig } from '@hierarchidb/plugin-base';
+import type { NodeId } from '@hierarchidb/common-types';
 import {
   BasicInfoStep as SharedBasicInfoStep,
   type BasicInfoData,
 } from '@hierarchidb/ui-plugin-basic-info';
-import type { RouteWorkingCopy } from '../../common/types/index.js';
+import type { RouteDraft, TagId } from '../../common/types/index.js';
+import { createRouteDraftBase } from '../../common/utils/draft.js';
 import { translations as routeTranslations } from '../../common/i18n/index.js';
 import { RouteSelectionStep } from '../../common/components/RouteSelectionStep.js';
 import { RouteProcessingStep } from '../../common/components/RouteProcessingStep.js';
@@ -13,44 +14,41 @@ import { RouteBuildStep } from './steps/RouteBuildStep.js';
 
 const registry = PluginStepRegistry.getInstance();
 
-type StepProps = StepComponentProps & { data: RouteWorkingCopy };
+type StepProps = StepComponentProps<RouteDraft>;
 
-const ensureWorkingCopy = (data?: StepComponentProps['data']): RouteWorkingCopy => {
+const ensureDraft = (data?: StepComponentProps['data']): RouteDraft => {
+  const fallbackId = 'route-draft' as NodeId;
   if (data && typeof data === 'object') {
-    const cast = data as RouteWorkingCopy;
-    return {
-      ...cast,
-      treeNodeId: cast.treeNodeId ?? (cast.id as NodeId) ?? ('' as NodeId),
-      draft: { ...(cast.draft ?? {}) },
-      tags: cast.tags ?? [],
-      createdAt: cast.createdAt ?? (Date.now() as Timestamp),
-      updatedAt: cast.updatedAt ?? (Date.now() as Timestamp),
-    } satisfies RouteWorkingCopy;
+    const cast = data as RouteDraft;
+    return createRouteDraftBase(
+      (cast.treeNodeId ?? (cast as { id?: string }).id ?? fallbackId) as NodeId,
+      {
+        ...cast.draft,
+        name: cast.draft?.name ?? '',
+        description: cast.draft?.description ?? '',
+        tags: cast.tags,
+      },
+      (cast as { parentId?: NodeId }).parentId
+    );
   }
-  return {
-    treeNodeId: '' as NodeId,
-    draft: {},
-    tags: [],
-    createdAt: Date.now() as Timestamp,
-    updatedAt: Date.now() as Timestamp,
-  } as RouteWorkingCopy;
+  return createRouteDraftBase(fallbackId, {}, undefined);
 };
 
-const mergeWorkingCopy = (
-  current: RouteWorkingCopy,
-  updates: Partial<RouteWorkingCopy>
-): RouteWorkingCopy => ({
+const mergeDraft = (
+  current: RouteDraft,
+  updates: Partial<RouteDraft>
+): RouteDraft => ({
   ...current,
   ...updates,
   draft: {
     ...(current.draft ?? {}),
     ...(updates.draft ?? {}),
   },
-  tags: updates.tags ?? current.tags ?? [],
+  tags: (updates.tags ?? current.tags ?? []) as TagId[],
 });
 
-const hasRouteDetails = (data?: Record<string, unknown>): boolean => {
-  const wc = data as RouteWorkingCopy | undefined;
+const hasRouteDetails = (data?: RouteDraft): boolean => {
+  const wc = data as RouteDraft | undefined;
   const draft = wc?.draft;
   const routeType = draft && typeof (draft as Record<string, unknown>).routeType === 'string'
     ? (draft as Record<'routeType', string>).routeType
@@ -61,49 +59,49 @@ const hasRouteDetails = (data?: Record<string, unknown>): boolean => {
   return Boolean(routeType && transportModes.length > 0);
 };
 
-registry.registerConfigProvider<RouteWorkingCopy>({
+registry.registerConfigProvider<RouteDraft>({
   nodeType: 'route',
-  getCreateStepConfigs() {
+  getCreateStepConfigs(): PluginStepConfig<RouteDraft>[] {
     const t = routeTranslations;
     return [
       {
         id: 'basic-info',
         label: t.en.basicInfo.title,
         componentFactory: (p: StepProps) => {
-          const workingCopy = ensureWorkingCopy(p.data);
+          const draft = ensureDraft(p.data);
           return (
             <SharedBasicInfoStep
-              name={workingCopy.draft?.name ?? ''}
-              description={workingCopy.draft?.description ?? ''}
-              tags={workingCopy.tags ?? []}
+              name={draft.draft?.name ?? ''}
+              description={draft.draft?.description ?? ''}
+              tags={(draft.tags ?? []) as string[]}
               mode={p.mode}
               validate={({ name }) => (name.trim().length ? null : t.en.errors.nameRequired)}
               onChange={(value: BasicInfoData) =>
                 p.onChange(
-                  mergeWorkingCopy(workingCopy, {
+                  mergeDraft(draft, {
                     draft: {
-                      ...workingCopy.draft,
+                      ...draft.draft,
                       name: value.name,
                       description: value.description,
                     },
-                    tags: value.tags,
+                    tags: (value.tags ?? []).map((tag) => tag as unknown as TagId),
                   })
                 )
               }
             />
           );
         },
-        validate: (data?: RouteWorkingCopy) => Boolean(data?.draft?.name?.trim()),
+        validate: (data?: RouteDraft) => Boolean(data?.draft?.name?.trim()),
       },
       {
         id: 'route-details',
-        label: t.en.routeDetails.title,
+        label: 'Route Settings',
         componentFactory: (p: StepProps) => {
-          const workingCopy = ensureWorkingCopy(p.data);
+          const draft = ensureDraft(p.data);
           return (
             <RouteDetailsStep
-              workingCopy={workingCopy}
-              onUpdate={(updates) => p.onChange(mergeWorkingCopy(workingCopy, updates))}
+              draft={draft}
+              onUpdate={(updates) => p.onChange(mergeDraft(draft, updates))}
               onValidationChange={p.setValid}
             />
           );
@@ -114,11 +112,11 @@ registry.registerConfigProvider<RouteWorkingCopy>({
         id: 'route-selection',
         label: t.en.routeSelection.title,
         componentFactory: (p: StepProps) => {
-          const workingCopy = ensureWorkingCopy(p.data);
+          const draft = ensureDraft(p.data);
           return (
             <RouteSelectionStep
-              workingCopy={workingCopy}
-              onUpdate={(updates) => p.onChange(mergeWorkingCopy(workingCopy, updates))}
+              draft={draft}
+              onUpdate={(updates) => p.onChange(mergeDraft(draft, updates))}
               onValidationChange={p.setValid}
             />
           );
@@ -127,13 +125,13 @@ registry.registerConfigProvider<RouteWorkingCopy>({
       },
       {
         id: 'processing',
-        label: t.en.processing.title,
+        label: 'Processing',
         componentFactory: (p: StepProps) => {
-          const workingCopy = ensureWorkingCopy(p.data);
+          const draft = ensureDraft(p.data);
           return (
             <RouteProcessingStep
-              workingCopy={workingCopy}
-              onUpdate={(updates) => p.onChange(mergeWorkingCopy(workingCopy, updates))}
+              draft={draft}
+              onUpdate={(updates) => p.onChange(mergeDraft(draft, updates))}
               onValidationChange={p.setValid}
             />
           );
@@ -145,11 +143,11 @@ registry.registerConfigProvider<RouteWorkingCopy>({
         label: 'Build',
         optional: true,
         componentFactory: (p: StepProps) => {
-          const workingCopy = ensureWorkingCopy(p.data);
-          return <RouteBuildStep workingCopy={workingCopy} />;
+          const draft = ensureDraft(p.data);
+          return <RouteBuildStep draft={draft} />;
         },
         capabilities: {
-          canStartBatch: (data: RouteWorkingCopy) => {
+          canStartBatch: (data: RouteDraft) => {
             const draft = data?.draft ?? {};
             const hasEssentials = Boolean(
               draft.name?.trim() &&

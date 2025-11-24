@@ -25,12 +25,12 @@ import {
   Typography,
 } from '@mui/material';
 import { PlayArrow, Settings, Stop } from '@mui/icons-material';
-import type { RouteCategory, RouteEntity, RouteWorkingCopy } from '../types/index.js';
+import type { RouteEntity, RouteDraft } from '../types/index.js';
 import { useTranslation } from '../i18n/index.js';
-import { getRouteDraft } from '../utils/workingCopy.js';
+import { getRouteDraft } from '../utils/draft.js';
 
 export interface RouteProcessingStepProps {
-  workingCopy: RouteWorkingCopy;
+  draft: RouteDraft;
   onUpdate: (updates: Partial<RouteEntity>) => void;
   onValidationChange: (isValid: boolean) => void;
 }
@@ -43,25 +43,21 @@ interface ProcessingStatus {
 }
 
 export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
-  workingCopy,
+  draft: draftProp,
   onUpdate,
   onValidationChange,
 }) => {
   const { t } = useTranslation();
-  const draft = useMemo(() => getRouteDraft(workingCopy), [workingCopy]);
+  const draft = useMemo(() => getRouteDraft(draftProp), [draftProp]);
   const draftVersion = draft.version;
   const computeNextVersion = useCallback(() => {
-    const base = typeof draftVersion === 'number'
-      ? draftVersion
-      : typeof workingCopy.originalVersion === 'number'
-        ? workingCopy.originalVersion
-        : 0;
+    const base = typeof draftVersion === 'number' ? draftVersion : 0;
     return typeof base === 'number' ? base + 1 : 0;
-  }, [draftVersion, workingCopy.originalVersion]);
+  }, [draftVersion]);
 
-  const resolvedCategory = (draft.category as RouteCategory | undefined) ?? 'transportation';
+  const resolvedCategory = (draft.category as string | undefined) ?? 'transportation';
 
-  const [category, setCategory] = useState<RouteCategory>(resolvedCategory);
+  const [category, setCategory] = useState<string>(resolvedCategory);
   useEffect(() => {
     setCategory(resolvedCategory);
   }, [resolvedCategory]);
@@ -73,22 +69,22 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
       version: computeNextVersion(),
     });
   }, [computeNextVersion, onUpdate]);
-  const [simplificationLevel, setSimplificationLevel] = useState(3);
-  const [generateElevation, setGenerateElevation] = useState(true);
-  const [generateTurns, setGenerateturns] = useState(true);
-  const [maxFileSize, setMaxFileSize] = useState(50);
+  const [simplificationLevel, setSimplificationLevel] = useState<number>(3);
+  const [generateElevation, setGenerateElevation] = useState<boolean>(true);
+  const [generateTurns, setGenerateturns] = useState<boolean>(true);
+  const [maxFileSize, setMaxFileSize] = useState<number>(50);
   const [processingStatus, setProcessingStatus] = useState<ProcessingStatus>({
     isProcessing: false,
     progress: 0,
     stage: '',
     message: '',
   });
-  const handleCategoryChange = (newCategory: RouteCategory) => {
+  const handleCategoryChange = (newCategory: string) => {
     setCategory(newCategory);
-    emitUpdate({ category: newCategory });
+    emitUpdate({ category: newCategory as unknown as RouteEntity['category'] });
   };
 
-  const handleSimplificationChange = (_event: Event, newValue: number | number[]) => {
+  const handleSimplificationChange = (_event: unknown, newValue: number | number[]) => {
     const value = Array.isArray(newValue) ? newValue[0] : newValue;
     if (typeof value === 'number') {
       setSimplificationLevel(value);
@@ -96,12 +92,15 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
     emitUpdate({});
   };
 
-  const handleProcessingOptionChange = (option: string, value: boolean | number) => {
-    emitUpdate({ [option]: value } as Partial<RouteWorkingCopy>);
+  const handleProcessingOptionChange = (
+    option: 'generateElevation' | 'generateTurns' | 'maxFileSize',
+    value: boolean | number
+  ) => {
+    emitUpdate({ metadata: { ...(draft.metadata ?? {}), [option]: value } as RouteEntity['metadata'] });
 
-    if (option === 'generateElevation') setGenerateElevation(value as boolean);
-    if (option === 'generateTurns') setGenerateturns(value as boolean);
-    if (option === 'maxFileSize') setMaxFileSize(value as number);
+    if (option === 'generateElevation') setGenerateElevation(Boolean(value));
+    if (option === 'generateTurns') setGenerateturns(Boolean(value));
+    if (option === 'maxFileSize') setMaxFileSize(Number(value));
   };
 
   const startProcessing = async () => {
@@ -215,7 +214,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
           <Select
             value={category}
             label={t('base-dialog.processing.category', 'Category')}
-            onChange={(e) => handleCategoryChange(e.target.value as RouteCategory)}
+            onChange={(e) => handleCategoryChange(String(e.target.value))}
           >
             <MenuItem value="transportation">{t('categories.transportation', 'Transportation')}</MenuItem>
             <MenuItem value="recreation">{t('categories.recreation', 'Recreation')}</MenuItem>

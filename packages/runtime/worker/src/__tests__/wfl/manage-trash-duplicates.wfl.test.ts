@@ -6,12 +6,12 @@ import { describe, expect, it } from 'vitest';
 import { MessageChannel } from 'worker_threads';
 import { createEndpointFromMessagePort } from '../../e2e/test-utils/messagePortEndpoint.js';
 import { exposeTestAPI } from '../../e2e/test-worker.entry.js';
-const decodeWorkingCopyHolderName = (name: string) => ({ targetNodeId: name as NodeId });
+const decodeDraftHolderName = (name: string) => ({ targetNodeId: name as NodeId });
 
 type TestWorkerAPI = {
   getQueryAPI(): Promise<import('@hierarchidb/common-api').TreeQueryAPI>;
   getMutationAPI(): Promise<import('@hierarchidb/common-api').TreeMutationAPI>;
-  getWorkingCopyAPI(): Promise<import('@hierarchidb/common-api').WorkingCopyAPI>;
+  getDraftAPI(): Promise<import('@hierarchidb/common-api').DraftAPI>;
 };
 
 async function createCommittedNode(
@@ -20,7 +20,7 @@ async function createCommittedNode(
   name: string
 ): Promise<NodeId> {
   const mutationAPI = await worker.getMutationAPI();
-  const workingCopyAPI = await worker.getWorkingCopyAPI();
+  const draftAPI = await worker.getDraftAPI();
   const queryAPI = await worker.getQueryAPI();
   const treeId = toTreeId('r');
 
@@ -41,11 +41,11 @@ async function createCommittedNode(
   const holder = await queryAPI.getNode(wcNode.parentId as NodeId);
   if (!holder) throw new Error('working copy holder missing');
 
-  const { targetNodeId } = decodeWorkingCopyHolderName(holder.metadata.name);
+  const { targetNodeId } = decodeDraftHolderName(holder.metadata.name);
   const canonicalId = targetNodeId as NodeId;
-  const commitRes = await workingCopyAPI.commitWorkingCopy(wcNodeId);
+  const commitRes = await draftAPI.commitDraft(wcNodeId);
   if (commitRes?.status !== 'ok') {
-    throw new Error(`commitWorkingCopy failed: ${JSON.stringify(commitRes)}`);
+    throw new Error(`commitDraft failed: ${JSON.stringify(commitRes)}`);
   }
 
   return canonicalId;

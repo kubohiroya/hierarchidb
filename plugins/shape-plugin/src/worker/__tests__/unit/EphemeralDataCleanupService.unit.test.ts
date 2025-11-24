@@ -6,7 +6,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EphemeralDataCleanupService } from '../services/EphemeralDataCleanupService.js';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { BatchSession, ShapeWorkingCopy } from '../../shared/index.ts';
+import type { BatchSession, ShapeDraft } from '../../shared/index.ts';
 
 describe('EphemeralDataCleanupService', () => {
   let cleanupService: EphemeralDataCleanupService;
@@ -24,16 +24,16 @@ describe('EphemeralDataCleanupService', () => {
     it('should return cleanup preview-compatible stats', async () => {
       const stats = await cleanupService.getCleanupStats();
 
-      expect(stats).toHaveProperty('totalWorkingCopies');
-      expect(stats).toHaveProperty('expiredWorkingCopies');
+      expect(stats).toHaveProperty('totalDrafts');
+      expect(stats).toHaveProperty('expiredDrafts');
       expect(stats).toHaveProperty('totalBatchSessions');
       expect(stats).toHaveProperty('expiredBatchSessions');
       expect(stats).toHaveProperty('estimatedSpaceUsed');
       expect(stats.lastCleanupAt).toBeDefined();
 
       // Values are non-negative numbers
-      expect(stats.totalWorkingCopies).toBeGreaterThanOrEqual(0);
-      expect(stats.expiredWorkingCopies).toBeGreaterThanOrEqual(0);
+      expect(stats.totalDrafts).toBeGreaterThanOrEqual(0);
+      expect(stats.expiredDrafts).toBeGreaterThanOrEqual(0);
       expect(stats.totalBatchSessions).toBeGreaterThanOrEqual(0);
       expect(stats.expiredBatchSessions).toBeGreaterThanOrEqual(0);
       expect(stats.estimatedSpaceUsed).toBeGreaterThanOrEqual(0);
@@ -153,19 +153,19 @@ describe('EphemeralDataCleanupService', () => {
   });
 
   describe('Data Age Calculation', () => {
-    it('should correctly identify expired WorkingCopies', () => {
+    it('should correctly identify expired Drafts', () => {
       const now = Date.now();
       const expiredTime = now - 25 * 60 * 60 * 1000; // 25 hours ago
       const validTime = now - 12 * 60 * 60 * 1000; // 12 hours ago
 
-      const expiredWorkingCopy: ShapeWorkingCopy = {
+      const expiredDraft: ShapeDraft = {
         id: 'wc-expired' as NodeId,
         name: 'Expired',
         isDraft: true,
         updatedAt: expiredTime,
       } as any;
 
-      const validWorkingCopy: ShapeWorkingCopy = {
+      const validDraft: ShapeDraft = {
         id: 'wc-valid' as NodeId,
         name: 'Valid',
         isDraft: false,
@@ -175,8 +175,8 @@ describe('EphemeralDataCleanupService', () => {
       // Test the internal age calculation logic
       const expiryThreshold = now - 24 * 60 * 60 * 1000; // 24 hours ago
 
-      expect(expiredWorkingCopy.updatedAt).toBeLessThan(expiryThreshold);
-      expect(validWorkingCopy.updatedAt).toBeGreaterThan(expiryThreshold);
+      expect(expiredDraft.updatedAt).toBeLessThan(expiryThreshold);
+      expect(validDraft.updatedAt).toBeGreaterThan(expiryThreshold);
     });
 
     it('should correctly identify expired BatchSessions', () => {
@@ -186,7 +186,7 @@ describe('EphemeralDataCleanupService', () => {
 
       const expiredSession: BatchSession = {
         sessionId: 'session-expired',
-        workingCopyId: 'wc-1' as NodeId,
+        draftId: 'wc-1' as NodeId,
         nodeId: 'node-1' as NodeId,
         status: 'paused',
         config: {} as any,
@@ -201,7 +201,7 @@ describe('EphemeralDataCleanupService', () => {
 
       const validSession: BatchSession = {
         sessionId: 'session-valid',
-        workingCopyId: 'wc-2' as NodeId,
+        draftId: 'wc-2' as NodeId,
         nodeId: 'node-2' as NodeId,
         status: 'running',
         config: {} as any,

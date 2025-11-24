@@ -6,14 +6,14 @@ import { describe, expect, it } from 'vitest';
 import { MessageChannel } from 'worker_threads';
 import { createEndpointFromMessagePort } from '../../e2e/test-utils/messagePortEndpoint.js';
 import { exposeTestAPI } from '../../e2e/test-worker.entry.js';
-const decodeWorkingCopyHolderName = (name: string) => ({ targetNodeId: name as NodeId });
+const decodeDraftHolderName = (name: string) => ({ targetNodeId: name as NodeId });
 
 type TestWorkerAPI = {
   ping(): Promise<{ response: string; timestamp: number }>;
   getQueryAPI(): Promise<import('@hierarchidb/common-api').TreeQueryAPI>;
   getMutationAPI(): Promise<import('@hierarchidb/common-api').TreeMutationAPI>;
   getSubscriptionAPI(): Promise<import('@hierarchidb/common-api').TreeSubscriptionAPI>;
-  getWorkingCopyAPI(): Promise<import('@hierarchidb/common-api').WorkingCopyAPI>;
+  getDraftAPI(): Promise<import('@hierarchidb/common-api').DraftAPI>;
 };
 
 type SubscriptionEvent = TreeNodeEvent;
@@ -43,7 +43,7 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     const queryAPI = await client.getQueryAPI();
     const mutationAPI = await client.getMutationAPI();
     const subscriptionAPI = await client.getSubscriptionAPI();
-    const wcAPI = await client.getWorkingCopyAPI();
+    const wcAPI = await client.getDraftAPI();
 
     const treeId = toTreeId('r');
     const tree = await queryAPI.getTree(treeId);
@@ -98,10 +98,10 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     expect(wcHolder).toBeTruthy();
     if (!wcHolder) throw new Error('Working copy holder missing');
 
-    const { targetNodeId } = decodeWorkingCopyHolderName(wcHolder.metadata.name);
+    const { targetNodeId } = decodeDraftHolderName(wcHolder.metadata.name);
     const canonicalId = targetNodeId as NodeId;
 
-    const commitRes = await wcAPI.commitWorkingCopy(wcNodeId);
+    const commitRes = await wcAPI.commitDraft(wcNodeId);
     expect(commitRes?.status).toBe('ok');
 
     await waitFor(() =>

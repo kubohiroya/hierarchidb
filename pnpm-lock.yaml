@@ -2775,9 +2775,15 @@ importers:
 
   plugins/shape-plugin:
     dependencies:
+      '@hierarchidb/plugin-base':
+        specifier: workspace:*
+        version: link:../../packages/plugin-base
       '@hierarchidb/plugin-ui-sdk':
         specifier: workspace:*
         version: link:../../packages/plugin-ui-sdk
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../../packages/util
       '@mapbox/vector-tile':
         specifier: ^2.0.3
         version: 2.0.4
@@ -2833,9 +2839,6 @@ importers:
       '@hierarchidb/folder-plugin':
         specifier: workspace:*
         version: link:../folder-plugin
-      '@hierarchidb/plugin-base':
-        specifier: workspace:*
-        version: link:../../packages/plugin-base
       '@hierarchidb/plugin-runtime-services':
         specifier: workspace:*
         version: link:../../packages/plugin-runtime-services
@@ -2872,9 +2875,6 @@ importers:
       '@hierarchidb/ui-tabular-extract':
         specifier: workspace:*
         version: link:../../packages/ui/tabular-extract
-      '@hierarchidb/util':
-        specifier: workspace:*
-        version: link:../../packages/util
       '@mui/icons-material':
         specifier: ^7.3.2
         version: 7.3.4(@mui/material@7.3.4(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.26)(react@18.3.1)

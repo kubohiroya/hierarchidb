@@ -111,7 +111,7 @@ interface CommandEnvelope<K, P> {
 ```typescript
 interface TreeChangeEvent {
   type: 'node-added' | 'node-updated' | 'node-deleted' | 
-        'children-changed' | 'subtree-changed' | 'working-copy-changed';
+        'children-changed' | 'subtree-changed' | 'draft-changed';
   nodeId: TreeNodeId;
   node?: TreeNode;                    // Full node data
   changes?: Partial<TreeNode>;        // Changed fields only
@@ -416,7 +416,7 @@ const editors$ = service.observeWorkingCopies({
 });
 
 editors$.subscribe(event => {
-  if (event.type === 'working-copy-changed') {
+  if (event.type === 'draft-changed') {
     updateEditIndicators(event);
   }
 });

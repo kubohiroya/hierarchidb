@@ -5,7 +5,7 @@ import type {
   TreeMutationAPI,
   TreeQueryAPI,
   TreeSubscriptionAPI,
-  WorkingCopyAPI,
+  DraftAPI,
 } from '@hierarchidb/common-api';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-types';
 import {
@@ -28,7 +28,7 @@ import { TreeMutationService } from './services/TreeMutationService.js';
 import { TreeQueryService } from './services/TreeQueryService.js';
 import { TreeSubscriptionService } from './services/TreeSubscriptionService.js';
 // No direct Comlink types should leak at this boundary
-import { WorkingCopyService } from './services/WorkingCopyService.js';
+import { DraftService } from './services/DraftService.js';
 
 export {
   configureWorkerContainer,
@@ -127,8 +127,8 @@ export class WorkerService {
       const iePort = new ImportExportDBPortCoreDBAdapter(coreDB);
       const importExportService: ImportExportAPI = await ImportExportService.getSingleton(iePort);
 
-      // WorkingCopy service (ephemeral-backed)
-      const workingCopyService: WorkingCopyAPI = new WorkingCopyService(
+      // Draft service (ephemeral-backed)
+      const draftService: DraftAPI = new DraftService(
         coreDB,
         ephemeralDB,
         commandProcessor
@@ -143,7 +143,7 @@ export class WorkerService {
         treeMutationService,
         treeSubscriptionService,
         importExportService,
-        workingCopyService,
+        draftService,
         tagService,
         nodeLifecycleManager,
         commandProcessor,
@@ -159,7 +159,7 @@ export class WorkerService {
     private mutationService: TreeMutationAPI,
     private subscriptionService: TreeSubscriptionAPI,
     private importExportService: ImportExportAPI,
-    private workingCopyService: WorkingCopyAPI,
+    private draftService: DraftAPI,
     private tagService: TagAPI,
     private nodeLifecycleManager: NodeLifecycleManager,
     private commandProcessor: CommandProcessor,
@@ -214,8 +214,8 @@ export class WorkerService {
     return this.subscriptionService;
   }
 
-  getWorkingCopyAPI() {
-    return this.workingCopyService;
+  getDraftAPI() {
+    return this.draftService;
   }
 
   getImportExportAPI() {
@@ -286,7 +286,7 @@ export class WorkerService {
       mutation: boolean;
       subscription: boolean;
       plugin: boolean;
-      workingCopy: boolean;
+      draft: boolean;
     };
     memory: { used: number; limit: number };
     uptime: number;
@@ -302,7 +302,7 @@ export class WorkerService {
         mutation: !!this.mutationService,
         subscription: !!this.subscriptionService,
         plugin: !!this.nodeLifecycleManager,
-        workingCopy: !!this.workingCopyService,
+        draft: !!this.draftService,
       },
       memory: { used, limit },
       uptime: Date.now() - this.startTime,

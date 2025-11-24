@@ -1,7 +1,7 @@
 import type { NodeId, Timestamp } from '@hierarchidb/common-types';
-import type { WorkingCopyBase, WorkingCopyDraft } from '@hierarchidb/plugin-service-api';
+import type { DraftBase } from '@hierarchidb/plugin-service-api';
 
-export interface CreateDraftWorkingCopyParams<TEntity> {
+export interface CreateDraftBaseParams<TEntity> {
   draft: Partial<TEntity>;
   meta: {
     treeNodeId: NodeId;
@@ -11,9 +11,9 @@ export interface CreateDraftWorkingCopyParams<TEntity> {
   };
 }
 
-export function createDraftWorkingCopyBase<TEntity>(
-  params: CreateDraftWorkingCopyParams<TEntity>,
-): WorkingCopyBase<TEntity> {
+export function createDraftBase<TEntity>(
+  params: CreateDraftBaseParams<TEntity>,
+): DraftBase<TEntity> {
   const now = Date.now() as Timestamp;
   return {
     treeNodeId: params.meta.treeNodeId,
@@ -24,21 +24,20 @@ export function createDraftWorkingCopyBase<TEntity>(
   };
 }
 
-export function markWorkingCopyUpdated<TEntity>(
-  workingCopy: WorkingCopyDraft<TEntity>,
+export function markDraftUpdated<TEntity>(
+  draft: DraftBase<TEntity>,
   updates: Partial<TEntity>,
   timestamp: Timestamp = Date.now() as Timestamp,
-): WorkingCopyDraft<TEntity> {
-  const draft = {
-    ...workingCopy.draft,
+): DraftBase<TEntity> {
+  const mergedDraft = {
+    ...draft.draft,
     ...updates,
   };
 
   return {
-    treeNodeId: workingCopy.treeNodeId,
-    draft,
-    createdAt: workingCopy.createdAt,
+    ...draft,
+    draft: mergedDraft,
+    ...mergedDraft,
     updatedAt: timestamp,
-    originalVersion: workingCopy.originalVersion,
-  } satisfies WorkingCopyDraft<TEntity>;
+  } satisfies DraftBase<TEntity>;
 }

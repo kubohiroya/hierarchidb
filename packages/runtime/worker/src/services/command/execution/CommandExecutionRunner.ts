@@ -27,7 +27,7 @@ function detectFakeIndexedDB(): boolean {
   }
 }
 
-const NON_TRANSACTIONAL_COMMANDS = new Set(['commitWorkingCopy']);
+const NON_TRANSACTIONAL_COMMANDS = new Set(['commitDraft']);
 
 function shouldUseTransactions(commandKind: string): boolean {
   if (NON_TRANSACTIONAL_COMMANDS.has(commandKind)) {

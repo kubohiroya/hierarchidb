@@ -64,29 +64,29 @@ export type CommandResult =
       wcVersion?: number;
     };
 
-export interface CreateWorkingCopyForCreatePayload {
-  workingCopyOf: NodeId;
+export interface CreateDraftForCreatePayload {
+  draftOf: NodeId;
   parentId: NodeId;
   name: string;
   description?: string;
   nodeType: NodeType;
 }
 
-export interface CreateWorkingCopyPayload {
-  workingCopyId: NodeId;
+export interface CreateDraftPayload {
+  draftId: NodeId;
 }
 
-export interface DiscardWorkingCopyPayload {
-  workingCopyId: NodeId;
+export interface DiscardDraftPayload {
+  draftId: NodeId;
 }
 
-export interface CommitWorkingCopyForCreatePayload {
-  workingCopyId: NodeId;
+export interface CommitDraftForCreatePayload {
+  draftId: NodeId;
   onNameConflict?: OnNameConflict;
 }
 
-export interface CommitWorkingCopyPayload {
-  workingCopyId: NodeId;
+export interface CommitDraftPayload {
+  draftId: NodeId;
   expectedUpdatedAt: Timestamp;
   onNameConflict?: OnNameConflict;
 }
@@ -219,7 +219,7 @@ export interface ObserveSubtreePayload {
   };
 }
 
-export interface ObserveWorkingCopiesPayload {
+export interface ObserveDraftsPayload {
   nodeId?: NodeId;
   includeAllDrafts?: boolean;
 }

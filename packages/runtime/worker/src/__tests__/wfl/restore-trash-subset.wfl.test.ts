@@ -6,12 +6,12 @@ import { describe, expect, it } from 'vitest';
 import { MessageChannel } from 'worker_threads';
 import { createEndpointFromMessagePort } from '../../e2e/test-utils/messagePortEndpoint.js';
 import { exposeTestAPI } from '../../e2e/test-worker.entry.js';
-const decodeWorkingCopyHolderName = (name: string) => ({ targetNodeId: name as NodeId });
+const decodeDraftHolderName = (name: string) => ({ targetNodeId: name as NodeId });
 
 type TestWorkerAPI = {
   getQueryAPI(): Promise<import('@hierarchidb/common-api').TreeQueryAPI>;
   getMutationAPI(): Promise<import('@hierarchidb/common-api').TreeMutationAPI>;
-  getWorkingCopyAPI(): Promise<import('@hierarchidb/common-api').WorkingCopyAPI>;
+  getDraftAPI(): Promise<import('@hierarchidb/common-api').DraftAPI>;
 };
 
 async function waitFor<T>(
@@ -38,7 +38,7 @@ describe('Comlink + fake-indexeddb integration: partial trash restore flow', () 
 
     const queryAPI = await client.getQueryAPI();
     const mutationAPI = await client.getMutationAPI();
-    const workingCopyAPI = await client.getWorkingCopyAPI();
+    const draftAPI = await client.getDraftAPI();
 
     const treeId = toTreeId('r');
     const tree = await queryAPI.getTree(treeId);
@@ -63,20 +63,20 @@ describe('Comlink + fake-indexeddb integration: partial trash restore flow', () 
         throw new Error(`createNode failed for ${name}: ${message}`);
       }
 
-      const workingCopy = await queryAPI.getNode(createResult.nodeId);
-      if (!workingCopy) {
+      const draft = await queryAPI.getNode(createResult.nodeId);
+      if (!draft) {
         throw new Error(`working copy missing for ${name}`);
       }
 
-      const holder = await queryAPI.getNode(workingCopy.parentId as NodeId);
+      const holder = await queryAPI.getNode(draft.parentId as NodeId);
       if (!holder) {
         throw new Error(`holder missing for ${name}`);
       }
 
-      const { targetNodeId } = decodeWorkingCopyHolderName(holder.metadata.name);
+      const { targetNodeId } = decodeDraftHolderName(holder.metadata.name);
       const canonicalId = targetNodeId as NodeId;
 
-      const commitResult = await workingCopyAPI.commitWorkingCopy(createResult.nodeId);
+      const commitResult = await draftAPI.commitDraft(createResult.nodeId);
       expect(commitResult.status).toBe('ok');
       await waitFor(async () => {
         const committed = await queryAPI.getNode(canonicalId);

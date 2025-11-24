@@ -5,12 +5,12 @@ import { TabularProvider, TabularFilterStep, useTabularData } from '@hierarchidb
 import type { TabularFilterRule, TabularDataResult } from '@hierarchidb/ui-tabular-extract';
 import { createShapeTabularApi } from '../../../services/tabular/createShapeTabularApi.js';
 import { SHAPE_PLUGIN_ID } from '../../shared/constants.js';
-import type { ShapeWorkingCopy } from '../../shared/types.js';
+import type { ShapeDraft } from '../../shared/types.js';
 
-type ShapeDialogStepProps = StepComponentProps<Partial<ShapeWorkingCopy>>;
+type ShapeDialogStepProps = StepComponentProps<Partial<ShapeDraft>>;
 
 export function StepTabularFilter({
-  data: workingCopy,
+  data: draft,
   onChange,
   setValid,
   setError,
@@ -18,43 +18,43 @@ export function StepTabularFilter({
   const tabularApi = useMemo(() => createShapeTabularApi(), []);
 
   const { metadata, loading, error } = useTabularData({
-    tableMetadataId: workingCopy?.tabularMetadataId,
+    tableMetadataId: draft?.tabularMetadataId,
     pluginId: SHAPE_PLUGIN_ID,
-    autoload: Boolean(workingCopy?.tabularMetadataId),
+    autoload: Boolean(draft?.tabularMetadataId),
   });
 
   useEffect(() => {
-    if (workingCopy?.tabularMetadataId) {
+    if (draft?.tabularMetadataId) {
       setValid?.(true);
       setError?.(error ?? null);
     } else {
       setValid?.(false);
       setError?.('Upload a dataset before applying filters.');
     }
-  }, [error, setError, setValid, workingCopy?.tabularMetadataId]);
+  }, [error, setError, setValid, draft?.tabularMetadataId]);
 
   const handleFiltersChanged = useCallback(
     (filters: TabularFilterRule[]) => {
       onChange({
-        ...workingCopy,
+        ...draft,
         tabularFilters: filters,
       });
     },
-    [onChange, workingCopy],
+    [onChange, draft],
   );
 
   const handlePreviewData = useCallback(
     (preview: TabularDataResult) => {
       onChange({
-        ...workingCopy,
+        ...draft,
         tabularLastPreview: preview,
       });
     },
-    [onChange, workingCopy],
+    [onChange, draft],
   );
 
   const content = (() => {
-    if (!workingCopy?.tabularMetadataId) {
+    if (!draft?.tabularMetadataId) {
       return (
         <Typography color="text.secondary">
           Upload a dataset in the previous step to configure filters.

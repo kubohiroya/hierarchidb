@@ -66,7 +66,7 @@ export interface ColumnBuilderParams {
   setContextMenuState: React.Dispatch<React.SetStateAction<{
     anchorEl: HTMLElement | null;
     anchorPosition: { left: number; top: number } | null;
-    node: TreeNodeInUI | null;
+    node: TreeNodeInUI | TreeNode | null;
   }>>;
   visualSelectionSet: Set<NodeId>;
   useTrashColumns: boolean;
@@ -436,7 +436,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
               treeId,
               nodeId: node.id,
               pageNodeId,
-              holderType: (node as { holderType?: 'workingCopy' | 'trash' }).holderType,
+              holderType: (node as { holderType?: 'draft' | 'trash' }).holderType,
               holderMetaParentId: (node as { holderMetaParentId?: NodeId }).holderMetaParentId,
               holderTargetId: (node as { holderTargetId?: NodeId }).holderTargetId,
               useTrashColumns,

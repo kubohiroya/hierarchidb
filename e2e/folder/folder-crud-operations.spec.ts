@@ -7,7 +7,7 @@ import {
   createChildFolder,
   moveToTrash,
   waitForSubTreeUpdate,
-  waitForWorkingCopyUpdate,
+  waitForDraftUpdate,
   buildAppUrl,
 } from '../utils/test-helpers';
 
@@ -126,7 +126,7 @@ test.describe('Folder CRUD Operations', () => {
 
     // 名前が変更されることを確認
     await expect(page.locator('[data-testid="folder-plugin-edit-base-dialog"]')).not.toBeVisible();
-    await waitForWorkingCopyUpdate(page);
+    await waitForDraftUpdate(page);
     await expect(page.locator(`[data-testid="tree-node"]:has-text("${newName}")`)).toBeVisible({
       timeout: 5000,
     });

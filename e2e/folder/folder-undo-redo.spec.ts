@@ -8,7 +8,7 @@ import {
   renameFolder,
   moveToTrash,
   restoreFromTrash,
-  waitForWorkingCopyUpdate,
+  waitForDraftUpdate,
   clickUndo,
   clickRedo,
   buildAppUrl,
@@ -44,7 +44,7 @@ test.describe.serial('Folder Undo/Redo Flow', () => {
     const renamedName = await renameFolder(page, originalName, 'UndoRedo Renamed');
 
     await moveToTrash(page, renamedName);
-    await waitForWorkingCopyUpdate(page);
+    await waitForDraftUpdate(page);
     await restoreFromTrash(page, renamedName);
 
     const treeNode = (name: string) =>

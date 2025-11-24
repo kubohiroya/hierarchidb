@@ -6,7 +6,7 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { RouteEntity, RouteGenerationConfig, RouteWorkingCopy } from '../../common/entities/RouteEntity.js';
+import type { RouteEntity, RouteGenerationConfig, RouteDraft } from '../../common/entities/RouteEntity.js';
 
 /**
  * Route cache entry
@@ -53,7 +53,7 @@ export interface PendingRouteSessionRecord {
 
 export class RouteDatabase extends Dexie {
   routes!: Table<RouteEntity, NodeId>;
-  workingCopies!: Table<RouteWorkingCopy, NodeId>;
+  workingCopies!: Table<RouteDraft, NodeId>;
   routeCache!: Table<RouteCacheEntry, string>;
   // Batch session tracking (cursor/progress)
   routeCursors!: Table<RouteCursorRow, string>;
@@ -164,7 +164,7 @@ export class RouteDatabase extends Dexie {
   /**
    * Clean up expired working copies
    */
-  async cleanupExpiredWorkingCopies(maxAge: number = 86400000): Promise<void> {
+  async cleanupExpiredDrafts(maxAge: number = 86400000): Promise<void> {
     const cutoff = Date.now() - maxAge;
     await this.workingCopies
       .where('copiedAt')
@@ -177,11 +177,11 @@ export class RouteDatabase extends Dexie {
    */
   async getStatistics(): Promise<{
     totalRoutes: number;
-    totalWorkingCopies: number;
+    totalDrafts: number;
     totalCacheEntries: number;
     cacheSize: number;
   }> {
-    const [totalRoutes, totalWorkingCopies, totalCacheEntries] = await Promise.all([
+    const [totalRoutes, totalDrafts, totalCacheEntries] = await Promise.all([
       this.routes.count(),
       this.workingCopies.count(),
       this.routeCache.count(),
@@ -195,7 +195,7 @@ export class RouteDatabase extends Dexie {
 
     return {
       totalRoutes,
-      totalWorkingCopies,
+      totalDrafts,
       totalCacheEntries,
       cacheSize,
     };

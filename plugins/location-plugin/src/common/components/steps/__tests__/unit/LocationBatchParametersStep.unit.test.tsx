@@ -1,12 +1,12 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { LocationWorkingCopy } from '../../../types/index.js';
+import type { LocationDraft } from '../../../types/index.js';
 import type { Timestamp } from '@hierarchidb/common-types';
 import { LocationBatchParametersStep } from '../LocationBatchParametersStep.js';
 import { en } from '../../../i18n/en.js';
 
 const timestamp = Date.now() as Timestamp;
-const baseWorkingCopy: LocationWorkingCopy = {
+const baseDraft: LocationDraft = {
   treeNodeId: 'node-1',
   draft: {
     concurrentDownloads: 2,
@@ -21,7 +21,7 @@ const baseWorkingCopy: LocationWorkingCopy = {
 describe('LocationBatchParametersStep', () => {
   it('renders processing description and initial values', () => {
     const onUpdate = vi.fn();
-    render(<LocationBatchParametersStep workingCopy={baseWorkingCopy} onUpdate={onUpdate} />);
+    render(<LocationBatchParametersStep draft={baseDraft} onUpdate={onUpdate} />);
 
     expect(screen.getByText(en.processing.description)).toBeInTheDocument();
     expect(screen.getByLabelText(en.processing.minZoom)).toHaveValue(4);
@@ -30,7 +30,7 @@ describe('LocationBatchParametersStep', () => {
 
   it('clamps concurrency slider changes within allowed range', () => {
     const onUpdate = vi.fn();
-    render(<LocationBatchParametersStep workingCopy={baseWorkingCopy} onUpdate={onUpdate} />);
+    render(<LocationBatchParametersStep draft={baseDraft} onUpdate={onUpdate} />);
 
     const slider = screen.getByRole('slider');
     fireEvent.change(slider, { target: { value: '20' } });
@@ -40,7 +40,7 @@ describe('LocationBatchParametersStep', () => {
 
   it('updates min zoom and enforces max zoom floor', () => {
     const onUpdate = vi.fn();
-    render(<LocationBatchParametersStep workingCopy={baseWorkingCopy} onUpdate={onUpdate} />);
+    render(<LocationBatchParametersStep draft={baseDraft} onUpdate={onUpdate} />);
 
     const minField = screen.getByLabelText(en.processing.minZoom);
     fireEvent.change(minField, { target: { value: '18' } });
@@ -52,9 +52,9 @@ describe('LocationBatchParametersStep', () => {
     const onUpdate = vi.fn();
     render(
       <LocationBatchParametersStep
-        workingCopy={{
-          ...baseWorkingCopy,
-          draft: { ...baseWorkingCopy.draft, tilesMinZoom: 10, tilesMaxZoom: 10 },
+        draft={{
+          ...baseDraft,
+          draft: { ...baseDraft.draft, tilesMinZoom: 10, tilesMaxZoom: 10 },
         }}
         onUpdate={onUpdate}
       />,

@@ -22,8 +22,18 @@ const baseNode: TreeNode = {
   id: 'node-1' as NodeId,
   parentId: null,
   nodeType: 'folder' as NodeType,
-  name: 'Initial name',
-  description: 'Initial description',
+  metadata: {
+    name: 'Initial name',
+    description: 'Initial description',
+    tags: [],
+  },
+  draftMetadata: {
+    name: 'Initial name',
+    description: 'Initial description',
+    tags: [],
+  },
+  data: null,
+  draftData: null,
   depth: 1,
   createdAt: 0 as Timestamp,
   updatedAt: 0 as Timestamp,
@@ -70,7 +80,7 @@ function makeParams(overrides: Partial<ColumnBuilderParams>): ColumnBuilderParam
     validateInline: () => ({ ok: true }),
     handleStartEdit: () => {},
     editingField: 'name',
-    editingValue: baseNode.name,
+    editingValue: baseNode.metadata.name ?? '',
     editingError: null,
     setEditingError: () => {},
     setEditingNodeId: () => {},
@@ -131,7 +141,7 @@ describe('TreeTable inline edit commits', () => {
         startEdit: vi.fn(),
       },
       editingField: 'name',
-      editingValue: baseNode.name,
+      editingValue: baseNode.metadata.name ?? '',
     });
 
     renderCell(params, baseNode);
@@ -156,7 +166,7 @@ describe('TreeTable inline edit commits', () => {
         startEdit: vi.fn(),
       },
       editingField: 'description',
-      editingValue: baseNode.description ?? '',
+      editingValue: baseNode.metadata.description ?? '',
     });
 
     renderCell(params, baseNode, 'description');

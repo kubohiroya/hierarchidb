@@ -7,7 +7,7 @@ import { getDraft } from './lookupOperations.js';
  * Create a working copy from an existing node for editing.
  * Working copy uses the same treeNodeId as the original.
  */
-export async function createWorkingCopyFromNode(
+export async function createDraftFromNode(
   coreDB: CoreDB,
   _treeId: TreeId,
   nodeId: NodeId
@@ -28,11 +28,16 @@ export async function createWorkingCopyFromNode(
     return nodeId;
   }
 
+  const initialDraftData =
+    ((sourceNode as { draftData?: Record<string, unknown> | null | undefined }).draftData ??
+      (sourceNode as { data?: Record<string, unknown> | null | undefined }).data ??
+      {}) as Record<string, unknown>;
+
   await coreDB.nodes.put({
     ...sourceNode,
     // use same node id; draftData is the editable buffer
     data: sourceNode.data ?? null,
-    draftData: sourceNode.data ?? null,
+    draftData: initialDraftData,
     dialogUIState: undefined,
     lastTouchedAt: now,
     updatedAt: now,
@@ -44,10 +49,10 @@ export async function createWorkingCopyFromNode(
     await lifecycle.handleCommand({
       commandId: generateUUID(),
       groupId: generateUUID(),
-      kind: 'createWorkingCopy',
-      payload: { originalId: nodeId, workingCopyId: nodeId },
+      kind: 'createDraft',
+      payload: { originalId: nodeId, draftId: nodeId },
       issuedAt: Date.now(),
-      type: 'createWorkingCopy',
+      type: 'createDraft',
     });
   } catch {}
 

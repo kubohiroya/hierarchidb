@@ -14,14 +14,14 @@ import { TagInput } from './TagInput.tsx';
 // TagId is a local branded string type
 
 export interface FolderBasicInfoStepProps {
-  workingCopy: { name?: string; description?: string; tags?: TagId[] };
-  onUpdate: (updates: Partial<FolderBasicInfoStepProps['workingCopy']>) => void;
+  draft: { name?: string; description?: string; tags?: TagId[] };
+  onUpdate: (updates: Partial<FolderBasicInfoStepProps['draft']>) => void;
   disabled?: boolean;
 }
 
 /**
      */
-export const FolderBasicInfoStep: React.FC<FolderBasicInfoStepProps> = ({ workingCopy, onUpdate, disabled = false }) => {
+export const FolderBasicInfoStep: React.FC<FolderBasicInfoStepProps> = ({ draft, onUpdate, disabled = false }) => {
   const { t } = useTranslation('folderPlugin');
 
   const translate = useCallback(
@@ -56,7 +56,7 @@ export const FolderBasicInfoStep: React.FC<FolderBasicInfoStepProps> = ({ workin
 
       <Stack spacing={3}>
         <BasicInfoFields
-          value={{ name: workingCopy.name, description: workingCopy.description }}
+          value={{ name: draft.name, description: draft.description }}
           onChange={onUpdate}
           disabled={disabled}
           nameLabel={translate('basicInfo.name.label', 'Folder Name')}
@@ -78,7 +78,7 @@ export const FolderBasicInfoStep: React.FC<FolderBasicInfoStepProps> = ({ workin
         <Box>
           <LocalOffer/>
           <TagInput
-            value={workingCopy.tags || []}
+            value={draft.tags || []}
             onChange={handleTagChange}
             placeholder={translate('basicInfo.tags.placeholder', 'Enter or select tags...')}
             label={translate('basicInfo.tags.label', 'Tags')}

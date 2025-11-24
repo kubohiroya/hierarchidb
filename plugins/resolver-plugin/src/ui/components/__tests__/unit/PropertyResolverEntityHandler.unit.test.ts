@@ -165,7 +165,7 @@ describe('ResolverEntityService', () => {
     });
   });
 
-  // Working copy operations are handled by the shared WorkingCopyAPI (tree node drafts).
+  // Working copy operations are handled by the shared DraftAPI (tree node drafts).
 
   describe('duplicate', () => {
     it('should duplicate a Resolver entity', async () => {

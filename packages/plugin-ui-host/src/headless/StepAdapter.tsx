@@ -8,7 +8,7 @@ interface StepAdapterProps {
   nodeId: string;
   parentId: string;
   data: Record<string, unknown> | undefined;
-  updateWorkingCopy: (patch: { draftData: Record<string, unknown> }) => void;
+  updateDraft: (patch: { draftData: Record<string, unknown> }) => void;
 }
 
 export const StepAdapter: React.FC<StepAdapterProps> = ({
@@ -17,7 +17,7 @@ export const StepAdapter: React.FC<StepAdapterProps> = ({
   nodeId,
   parentId,
   data,
-  updateWorkingCopy,
+  updateDraft,
 }) => {
   const [, setValid] = useState<boolean | undefined>();
   const [, setError] = useState<string | null>(null);
@@ -38,7 +38,7 @@ export const StepAdapter: React.FC<StepAdapterProps> = ({
         parentId,
         data,
         onChange: (data: unknown) =>
-          updateWorkingCopy({ draftData: data as Record<string, unknown> }),
+          updateDraft({ draftData: data as Record<string, unknown> }),
         setValid,
         setError,
       })}

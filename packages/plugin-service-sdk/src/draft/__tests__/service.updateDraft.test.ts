@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-types';
-import { WorkingCopyService } from '../service.js';
+import { DraftService } from '../service.js';
 
-describe('WorkingCopyService.updateWorkingCopy', () => {
+describe('DraftService.updateDraft', () => {
   it('forwards updates to worker API and merges state cache', async () => {
-    const workingCopyAPI = {
-      getWorkingCopy: vi.fn().mockResolvedValue({
+    const draftAPI = {
+      getDraft: vi.fn().mockResolvedValue({
         treeId: 'tree-1',
         nodeType: 'basemap',
         data: { draftData: { mapStyle: { style: 'dark' } } },
@@ -14,17 +14,17 @@ describe('WorkingCopyService.updateWorkingCopy', () => {
         completedSteps: [],
         isDraft: true,
       }),
-      updateWorkingCopy: vi.fn().mockResolvedValue(undefined),
+      updateDraft: vi.fn().mockResolvedValue(undefined),
     };
 
     const workerAPI = {
-      getWorkingCopyAPI: vi.fn().mockResolvedValue(workingCopyAPI),
+      getDraftAPI: vi.fn().mockResolvedValue(draftAPI),
     };
 
-    const service = new WorkingCopyService(workerAPI as any);
+    const service = new DraftService(workerAPI as any);
     const nodeId = 'node-1' as NodeId;
 
-    await service.loadWorkingCopy(nodeId);
+    await service.loadDraft(nodeId);
 
     const updates = {
       data: { draftData: { mapStyle: { style: 'satellite' } } },
@@ -33,9 +33,9 @@ describe('WorkingCopyService.updateWorkingCopy', () => {
       isDraft: true,
     };
 
-    const state = await service.updateWorkingCopy(nodeId, updates);
+    const state = await service.updateDraft(nodeId, updates);
 
-    expect(workingCopyAPI.updateWorkingCopy).toHaveBeenCalledWith(nodeId, updates);
+    expect(draftAPI.updateDraft).toHaveBeenCalledWith(nodeId, updates);
     expect(state.currentStep).toBe(1);
     expect(state.completedSteps.has(1)).toBe(true);
     expect(state.data).toEqual(updates.data);

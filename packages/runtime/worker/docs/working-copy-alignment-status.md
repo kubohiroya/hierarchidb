@@ -9,7 +9,7 @@ vk:doc kind=analysis audience=dev scope=worker
 対象範囲
 - Worker レイヤの WorkingCopy 周辺（EphemeralDB バックのサービス実装、および TreeNode ベースの WC 操作ユーティリティ）。
 - 関連ファイル:
-  - `src/services/WorkingCopyService.ts`
+  - `src/services/DraftService.ts`
   - `src/services/EphemeralDB.ts`
   - `src/services/WorkingCopyTreeNodeOperations.ts`
   - `src/RuntimeWorkerService.ts`（`WorkingCopyAPI` の公開）
@@ -19,7 +19,7 @@ vk:doc kind=analysis audience=dev scope=worker
 ## 現行実装（要約）
 
 1) EphemeralDB バックのサービス実装（軽量 API）
-- ファイル: `src/services/WorkingCopyService.ts`
+- ファイル: `src/services/DraftService.ts`
 - ストレージ: `EphemeralDB.workingCopies`（Dexie テーブル）
 - 主な API:
   - `createDraftWorkingCopy(nodeType, parentId, initialData?)`: Ephemeral にドラフトを生成

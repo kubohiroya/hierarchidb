@@ -6,7 +6,7 @@ import { EntityLifecycleManager } from '../../EntityLifecycleManager.js';
 import type { PeerEntity, PeerStore } from '../../store.js';
 import { storeRegistry } from '../../store-registry.js';
 
-describe('EntityLifecycleManager.onCommitWorkingCopy (Peer)', () => {
+describe('EntityLifecycleManager.onCommitDraft (Peer)', () => {
   beforeEach(() => {
     vi.resetModules();
   });
@@ -81,11 +81,11 @@ describe('EntityLifecycleManager.onCommitWorkingCopy (Peer)', () => {
     await store.put({ nodeId: wcId, data: { x: 42 } });
 
     const mgr = EntityLifecycleManager.getSingleton(core as unknown as CoreDB);
-    await mgr.onCommitWorkingCopy({
+    await mgr.onCommitDraft({
       commandId: 'c1',
       groupId: 'g1',
-      kind: 'commitWorkingCopy',
-      payload: { workingCopyId: wcId, expectedUpdatedAt: Date.now() as Timestamp },
+      kind: 'commitDraft',
+      payload: { draftId: wcId, expectedUpdatedAt: Date.now() as Timestamp },
       issuedAt: Date.now(),
     });
 

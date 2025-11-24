@@ -32,7 +32,7 @@ export const PLUGIN_MANIFEST: PluginManifest = {
   },
   tags: ['linker', 'container'],
   capabilities: {
-    workingCopy: true,
+    draft: true,
   },
   worker: {
     preload: ['registerLinkerWorkerStores', 'loadLinkerEntitiesDbModule'],

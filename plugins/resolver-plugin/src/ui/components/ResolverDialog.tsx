@@ -2,7 +2,7 @@ import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/common-types';
 import { Box, FormHelperText, Typography } from '@mui/material';
-import type { ResolverEntity, ResolverWorkingCopyEntity, SchemaInfo, PreviewConfig } from '../../common/types/index.js';
+import type { ResolverEntity, ResolverDraftEntity, SchemaInfo, PreviewConfig } from '../../common/types/index.js';
 import { SchemaSelectionStep } from './steps/SchemaSelectionStep.js';
 import { PropertyMappingStep } from './steps/PropertyMappingStep.js';
 import { ValidationConfigStep } from './steps/ValidationConfigStep.js';
@@ -45,14 +45,14 @@ const DEFAULT_PREVIEW_CONFIG: PreviewConfig = {
   showValidationErrors: true,
 };
 
-const PlaceholderStepComponent: React.FC<StepComponentProps<Partial<ResolverWorkingCopyEntity>>> = () => null;
+const PlaceholderStepComponent: React.FC<StepComponentProps<Partial<ResolverDraftEntity>>> = () => null;
 
 export interface ResolverDialogProps {
   open: boolean;
   nodeId: NodeId;
   entity?: ResolverEntity;
   onClose: () => void;
-  onSave: (entity: Partial<ResolverWorkingCopyEntity>) => Promise<void>;
+  onSave: (entity: Partial<ResolverDraftEntity>) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -66,8 +66,8 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
   onSave,
   onCancel,
 }) => {
-  const [workingCopy, setWorkingCopy] = useState<Partial<ResolverWorkingCopyEntity>>({});
-  const initialWorkingCopy = useRef<Partial<ResolverWorkingCopyEntity> | null>(null);
+  const [draft, setDraft] = useState<Partial<ResolverDraftEntity>>({});
+  const initialDraft = useRef<Partial<ResolverDraftEntity> | null>(null);
   const [sourceSchema, setSourceSchema] = useState<SchemaInfo | null>(null);
   const [targetSchema, setTargetSchema] = useState<SchemaInfo | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -111,7 +111,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
 
   useEffect(() => {
     if (entity) {
-      const copy: Partial<ResolverWorkingCopyEntity> = {
+      const copy: Partial<ResolverDraftEntity> = {
         ...entity,
         mappingRules: entity.mappingRules.map((rule) => ({ ...rule })),
         validationRules: entity.validationRules.map((rule) => ({ ...rule })),
@@ -119,10 +119,10 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
         dataTransformations: entity.dataTransformations.map((transformation) => ({ ...transformation })),
         previewConfig: entity.previewConfig ? { ...entity.previewConfig } : { ...DEFAULT_PREVIEW_CONFIG },
       };
-      setWorkingCopy(copy);
-      initialWorkingCopy.current = copy;
+      setDraft(copy);
+      initialDraft.current = copy;
     } else {
-      const copy: Partial<ResolverWorkingCopyEntity> = {
+      const copy: Partial<ResolverDraftEntity> = {
         nodeId,
         name: '',
         description: '',
@@ -134,30 +134,30 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
         dataTransformations: [],
         previewConfig: { ...DEFAULT_PREVIEW_CONFIG },
       };
-      setWorkingCopy(copy);
-      initialWorkingCopy.current = copy;
+      setDraft(copy);
+      initialDraft.current = copy;
     }
   }, [entity, nodeId]);
 
-  const updateWorkingCopy = useCallback((updates: Partial<ResolverWorkingCopyEntity>) => {
-    setWorkingCopy((prev: Partial<ResolverWorkingCopyEntity>) => ({ ...prev, ...updates }));
+  const updateDraft = useCallback((updates: Partial<ResolverDraftEntity>) => {
+    setDraft((prev: Partial<ResolverDraftEntity>) => ({ ...prev, ...updates }));
   }, []);
 
   const handleSave = useCallback(async () => {
     if (isSaving) return;
     setIsSaving(true);
     try {
-      await onSave(workingCopy);
+      await onSave(draft);
       onClose();
     } catch (error) {
       console.error('Failed to save Resolver:', error);
     } finally {
       setIsSaving(false);
     }
-  }, [isSaving, workingCopy, onSave, onClose]);
+  }, [isSaving, draft, onSave, onClose]);
 
   const handleCancel = useCallback(() => {
-    setWorkingCopy(initialWorkingCopy.current ?? {});
+    setDraft(initialDraft.current ?? {});
     setSourceSchema(null);
     setTargetSchema(null);
     onCancel();
@@ -166,24 +166,24 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
   const basicInfoMode: 'create' | 'edit' = entity ? 'edit' : 'create';
 
   const basicInfoValidationError = useMemo(() => {
-    const name = workingCopy?.name ?? '';
+    const name = draft?.name ?? '';
     if (!name.trim()) return 'Name is required';
     if (name.length > 100) return 'Name must be 100 characters or less';
-    if (workingCopy?.description && workingCopy.description.length > 500) {
+    if (draft?.description && draft.description.length > 500) {
       return 'Description must be 500 characters or less';
     }
     return null;
-  }, [workingCopy?.description, workingCopy?.name]);
+  }, [draft?.description, draft?.name]);
 
   const handleBasicInfoChange = useCallback(
     (value: BasicInfoData) => {
-      updateWorkingCopy({
+      updateDraft({
         name: value.name,
         description: value.description,
         tags: value.tags,
       });
     },
-    [updateWorkingCopy],
+    [updateDraft],
   );
 
   const steps = useMemo((): ResolverDialogStep[] => [
@@ -199,9 +199,9 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
             Provide basic information for your property resolver configuration.
           </Typography>
           <SharedBasicInfoStep
-            name={workingCopy?.name ?? ''}
-            description={workingCopy?.description ?? ''}
-            tags={workingCopy?.tags ?? []}
+            name={draft?.name ?? ''}
+            description={draft?.description ?? ''}
+            tags={draft?.tags ?? []}
             mode={basicInfoMode}
             validate={({ name, description }: BasicInfoData) => {
               if (!name.trim()) return 'Name is required';
@@ -235,36 +235,36 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
       label: STEPS[1]!,
       component: (
         <SchemaSelectionStep
-          data={workingCopy}
-          onUpdate={updateWorkingCopy}
+          data={draft}
+          onUpdate={updateDraft}
           onValidationChange={() => {}}
           onSourceSchemaChange={setSourceSchema}
           onTargetSchemaChange={setTargetSchema}
         />
       ),
-      validate: async () => Boolean(workingCopy?.sourceSchema) && Boolean(workingCopy?.targetSchema),
+      validate: async () => Boolean(draft?.sourceSchema) && Boolean(draft?.targetSchema),
     },
     {
       id: '3',
       label: STEPS[2]!,
       component: (
         <PropertyMappingStep
-          data={workingCopy}
-          onUpdate={updateWorkingCopy}
+          data={draft}
+          onUpdate={updateDraft}
           onValidationChange={() => {}}
           sourceSchema={sourceSchema}
           targetSchema={targetSchema}
         />
       ),
-      validate: async () => Array.isArray(workingCopy?.mappingRules),
+      validate: async () => Array.isArray(draft?.mappingRules),
     },
     {
       id: '4',
       label: STEPS[3]!,
       component: (
         <ValidationConfigStep
-          data={workingCopy}
-          onUpdate={updateWorkingCopy}
+          data={draft}
+          onUpdate={updateDraft}
           onValidationChange={() => {}}
           sourceSchema={sourceSchema}
           targetSchema={targetSchema}
@@ -277,20 +277,20 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
       label: STEPS[4]!,
       component: (
         <DuplicateResolutionStep
-          data={workingCopy}
-          onUpdate={updateWorkingCopy}
+          data={draft}
+          onUpdate={updateDraft}
           onValidationChange={() => {}}
         />
       ),
-      validate: async () => Boolean(workingCopy?.duplicateResolution),
+      validate: async () => Boolean(draft?.duplicateResolution),
     },
     {
       id: '6',
       label: STEPS[5]!,
       component: (
         <PreviewTestStep
-          data={workingCopy}
-          onUpdate={updateWorkingCopy}
+          data={draft}
+          onUpdate={updateDraft}
           onValidationChange={() => {}}
           sourceSchema={sourceSchema}
           targetSchema={targetSchema}
@@ -299,16 +299,16 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
       ),
       validate: async () => true,
     },
-  ], [basicInfoMode, basicInfoValidationError, handleBasicInfoChange, sourceSchema, targetSchema, updateWorkingCopy, workingCopy]);
+  ], [basicInfoMode, basicInfoValidationError, handleBasicInfoChange, sourceSchema, targetSchema, updateDraft, draft]);
 
   const filledSteps = useMemo(() => [
     !basicInfoValidationError,
-    Boolean(workingCopy?.sourceSchema) && Boolean(workingCopy?.targetSchema),
-    Array.isArray(workingCopy?.mappingRules),
+    Boolean(draft?.sourceSchema) && Boolean(draft?.targetSchema),
+    Array.isArray(draft?.mappingRules),
     true,
-    Boolean(workingCopy?.duplicateResolution),
+    Boolean(draft?.duplicateResolution),
     true,
-  ], [basicInfoValidationError, workingCopy]);
+  ], [basicInfoValidationError, draft]);
 
   const enabledMatrix = useMemo(() => [
     true,
@@ -347,7 +347,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     await handleSave();
   }, [handleSave]);
 
-  const renderHeader: HeadlessMultiStepDialogProps<Partial<ResolverWorkingCopyEntity>>['renderHeader'] = useCallback((props: HeadlessHeaderRenderProps<Partial<ResolverWorkingCopyEntity>>) => (
+  const renderHeader: HeadlessMultiStepDialogProps<Partial<ResolverDraftEntity>>['renderHeader'] = useCallback((props: HeadlessHeaderRenderProps<Partial<ResolverDraftEntity>>) => (
     <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #dde1eb' }}>
       <div>
         <strong>Resolver Configuration</strong>
@@ -362,7 +362,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     </header>
   ), [handleNavigation, steps.length]);
 
-  const renderContent: HeadlessMultiStepDialogProps<Partial<ResolverWorkingCopyEntity>>['renderContent'] = useCallback((props: HeadlessContentRenderProps<Partial<ResolverWorkingCopyEntity>>) => (
+  const renderContent: HeadlessMultiStepDialogProps<Partial<ResolverDraftEntity>>['renderContent'] = useCallback((props: HeadlessContentRenderProps<Partial<ResolverDraftEntity>>) => (
     <div style={{ padding: 16 }}>
       {steps[props.activeStepIndex]?.component}
     </div>
@@ -370,7 +370,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
 
   const isTestEnv = useMemo(() => readRuntimeMode() === 'test', []);
 
-  const renderFooter: HeadlessMultiStepDialogProps<Partial<ResolverWorkingCopyEntity>>['renderFooter'] = useCallback((props: HeadlessFooterRenderProps<Partial<ResolverWorkingCopyEntity>>) => {
+  const renderFooter: HeadlessMultiStepDialogProps<Partial<ResolverDraftEntity>>['renderFooter'] = useCallback((props: HeadlessFooterRenderProps<Partial<ResolverDraftEntity>>) => {
     const canSave = filledSteps.every(Boolean) && !isSaving;
 
     return (
@@ -516,30 +516,30 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     }
   }, [applyNormalizedState, displayMode]);
 
-  const initialSnapshot = initialWorkingCopy.current;
+  const initialSnapshot = initialDraft.current;
   const isDirty = useMemo(() => {
     if (!initialSnapshot) return true;
     try {
-      return JSON.stringify(initialSnapshot) !== JSON.stringify(workingCopy);
+      return JSON.stringify(initialSnapshot) !== JSON.stringify(draft);
     } catch {
       return true;
     }
-  }, [workingCopy, initialSnapshot]);
+  }, [draft, initialSnapshot]);
 
   const handleClose = useCallback((reason?: 'close' | 'discard') => {
     void reason;
     handleCancel();
   }, [handleCancel]);
 
-  const stepDescriptors = useMemo<ReadonlyArray<StepComponentDescriptor<Partial<ResolverWorkingCopyEntity>>>>(() => (
+  const stepDescriptors = useMemo<ReadonlyArray<StepComponentDescriptor<Partial<ResolverDraftEntity>>>>(() => (
     steps.map(step => ({ id: step.id, label: step.label ?? step.id, component: PlaceholderStepComponent }))
   ), [steps]);
 
-  const headlessProps: HeadlessMultiStepDialogProps<Partial<ResolverWorkingCopyEntity>> = {
+  const headlessProps: HeadlessMultiStepDialogProps<Partial<ResolverDraftEntity>> = {
     open,
     stepComponents: stepDescriptors,
-    stepData: workingCopy,
-    onStepDataChange: updateWorkingCopy,
+    stepData: draft,
+    onStepDataChange: updateDraft,
     activeStepIndex,
     onStepNavigate: handleNavigation,
     enabledStepIndices,
@@ -576,7 +576,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
 
   return (
     <div style={frameStyle} role="dialog" aria-modal={open}>
-      <HeadlessMultiStepDialog<Partial<ResolverWorkingCopyEntity>> {...headlessProps} />
+      <HeadlessMultiStepDialog<Partial<ResolverDraftEntity>> {...headlessProps} />
     </div>
   );
 };

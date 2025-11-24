@@ -1167,7 +1167,7 @@ describe('useTreeViewController', () => {
         getQueryAPI: vi.fn(async () => mockQueryAPI),
         getSubscriptionAPI: vi.fn(async () => mockSubscriptionAPI),
         getMutationAPI: vi.fn(),
-        getWorkingCopyAPI: vi.fn(),
+        getDraftAPI: vi.fn(),
         getPluginLifecycleAPI: vi.fn(),
         getDialogStateAPI: vi.fn(),
         getImportExportAPI: vi.fn(),
@@ -1183,7 +1183,7 @@ describe('useTreeViewController', () => {
         shutdown: vi.fn(async () => {}),
         getSystemHealth: vi.fn(async () => ({
           databases: { coreDB: true, ephemeralDB: true },
-          services: { query: true, mutation: true, subscription: true, plugin: true, workingCopy: true },
+          services: { query: true, mutation: true, subscription: true, plugin: true, draft: true },
           memory: { used: 0, limit: 0 },
           uptime: 0,
         })),

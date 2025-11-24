@@ -1,7 +1,7 @@
 import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/plugin-base';
 import type { NodeId, Timestamp } from '@hierarchidb/common-types';
 import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
-import type { LocationWorkingCopy } from '../../common/types/index.js';
+import type { LocationDraft } from '../../common/types/index.js';
 import { translations as locationTranslations } from '../../common/i18n/index.js';
 import { LocationDataSourceStep } from '../../common/components/steps/LocationDataSourceStep.js';
 import { LocationLicenseStep } from '../../common/components/steps/LocationLicenseStep.js';
@@ -12,7 +12,7 @@ import { LocationBuildStep } from './steps/LocationBuildStep.js';
 
 const registry = PluginStepRegistry.getInstance();
 
-const ensureWorkingCopy = (data?: LocationWorkingCopy): LocationWorkingCopy => {
+const ensureDraft = (data?: LocationDraft): LocationDraft => {
   if (data) {
     return {
       ...data,
@@ -21,7 +21,7 @@ const ensureWorkingCopy = (data?: LocationWorkingCopy): LocationWorkingCopy => {
       createdAt: data.createdAt ?? (Date.now() as Timestamp),
       updatedAt: data.updatedAt ?? (Date.now() as Timestamp),
       tags: data.tags ?? [],
-    } satisfies LocationWorkingCopy;
+    } satisfies LocationDraft;
   }
   return {
     treeNodeId: '' as NodeId,
@@ -29,13 +29,13 @@ const ensureWorkingCopy = (data?: LocationWorkingCopy): LocationWorkingCopy => {
     createdAt: Date.now() as Timestamp,
     updatedAt: Date.now() as Timestamp,
     tags: [],
-  } satisfies LocationWorkingCopy;
+  } satisfies LocationDraft;
 };
 
-const mergeWorkingCopy = (
-  current: LocationWorkingCopy,
-  updates: Partial<LocationWorkingCopy>
-): LocationWorkingCopy => ({
+const mergeDraft = (
+  current: LocationDraft,
+  updates: Partial<LocationDraft>
+): LocationDraft => ({
   ...current,
   ...updates,
   draft: {
@@ -44,15 +44,15 @@ const mergeWorkingCopy = (
   },
 });
 
-type StepProps = StepComponentProps<LocationWorkingCopy>;
+type StepProps = StepComponentProps<LocationDraft>;
 
-const hasSelection = (data?: LocationWorkingCopy): boolean => {
+const hasSelection = (data?: LocationDraft): boolean => {
   const matrix = data?.draft?.selectionMatrix;
   if (!Array.isArray(matrix)) return false;
   return matrix.some((row) => Array.isArray(row) && row.some(Boolean));
 };
 
-registry.registerConfigProvider<LocationWorkingCopy>({
+registry.registerConfigProvider<LocationDraft>({
   nodeType: 'location',
   getCreateStepConfigs() {
     const t = locationTranslations;
@@ -61,20 +61,20 @@ registry.registerConfigProvider<LocationWorkingCopy>({
         id: 'basic-info',
         label: t.en.basicInfo.title,
         componentFactory: (p: StepProps) => {
-          const workingCopy = ensureWorkingCopy(p.data);
+          const draft = ensureDraft(p.data);
           return (
             <SharedBasicInfoStep
-              name={workingCopy.draft?.name ?? ''}
-              description={workingCopy.draft?.description ?? ''}
-              tags={workingCopy.tags ?? []}
+              name={draft.draft?.name ?? ''}
+              description={draft.draft?.description ?? ''}
+              tags={draft.tags ?? []}
               mode={p.mode}
               tagSuggestions={t.en.basicInfo.tagSuggestions ?? []}
               validate={({ name }) => (name.trim().length ? null : t.en.errors.nameRequired)}
               onChange={(value: BasicInfoData) => {
                 p.onChange(
-                  mergeWorkingCopy(workingCopy, {
+                  mergeDraft(draft, {
                     draft: {
-                      ...workingCopy.draft,
+                      ...draft.draft,
                       name: value.name,
                       description: value.description,
                     },
@@ -85,59 +85,59 @@ registry.registerConfigProvider<LocationWorkingCopy>({
             />
           );
         },
-        validate: (data?: LocationWorkingCopy) => Boolean(data?.draft?.name?.trim()),
+        validate: (data?: LocationDraft) => Boolean(data?.draft?.name?.trim()),
       },
       {
         id: 'data-source',
         label: t.en.dialog.dataSourceLabel,
         componentFactory: (p: StepProps) => {
-          const workingCopy = ensureWorkingCopy(p.data);
+          const draft = ensureDraft(p.data);
           return (
             <LocationDataSourceStep
-              workingCopy={workingCopy}
-              onUpdate={(updates) => p.onChange(mergeWorkingCopy(workingCopy, updates))}
+              draft={draft}
+              onUpdate={(updates) => p.onChange(mergeDraft(draft, updates))}
             />
           );
         },
-        validate: (data?: LocationWorkingCopy) => Boolean(data?.draft?.dataSource),
+        validate: (data?: LocationDraft) => Boolean(data?.draft?.dataSource),
       },
       {
         id: 'license',
         label: t.en.dialog.licenseAgreementLabel,
         componentFactory: (p: StepProps) => {
-          const workingCopy = ensureWorkingCopy(p.data);
+          const draft = ensureDraft(p.data);
           return (
             <LocationLicenseStep
-              workingCopy={workingCopy}
-              onUpdate={(updates) => p.onChange(mergeWorkingCopy(workingCopy, updates))}
+              draft={draft}
+              onUpdate={(updates) => p.onChange(mergeDraft(draft, updates))}
             />
           );
         },
-        validate: (data?: LocationWorkingCopy) => Boolean(data?.draft?.licenseAgreement),
+        validate: (data?: LocationDraft) => Boolean(data?.draft?.licenseAgreement),
       },
       {
         id: 'selection',
         label: t.en.selection.title,
         componentFactory: (p: StepProps) => {
-          const workingCopy = ensureWorkingCopy(p.data);
+          const draft = ensureDraft(p.data);
           return (
             <LocationSelectionStep
-              workingCopy={workingCopy}
-              onUpdate={(updates) => p.onChange(mergeWorkingCopy(workingCopy, updates))}
+              draft={draft}
+              onUpdate={(updates) => p.onChange(mergeDraft(draft, updates))}
             />
           );
         },
-        validate: (data?: LocationWorkingCopy) => hasSelection(data),
+        validate: (data?: LocationDraft) => hasSelection(data),
       },
       {
         id: 'batch-parameters',
         label: t.en.panel.processingSettings,
         componentFactory: (p: StepProps) => {
-          const workingCopy = ensureWorkingCopy(p.data);
+          const draft = ensureDraft(p.data);
           return (
             <LocationBatchParametersStep
-              workingCopy={workingCopy}
-              onUpdate={(updates) => p.onChange(mergeWorkingCopy(workingCopy, updates))}
+              draft={draft}
+              onUpdate={(updates) => p.onChange(mergeDraft(draft, updates))}
             />
           );
         },
@@ -148,8 +148,8 @@ registry.registerConfigProvider<LocationWorkingCopy>({
         label: t.en.mapPreview?.title ?? 'Map Preview',
         optional: true,
         componentFactory: (p: StepProps) => {
-          const workingCopy = ensureWorkingCopy(p.data);
-          return <LocationMapPreviewStep workingCopy={workingCopy} />;
+          const draft = ensureDraft(p.data);
+          return <LocationMapPreviewStep draft={draft} />;
         },
         validate: () => true,
       },
@@ -158,16 +158,16 @@ registry.registerConfigProvider<LocationWorkingCopy>({
         label: t.en.build?.actionLabel ?? 'Build',
         optional: true,
         componentFactory: (p: StepProps) => {
-          const workingCopy = ensureWorkingCopy(p.data);
+          const draft = ensureDraft(p.data);
           return (
             <LocationBuildStep
               nodeId={p.nodeId as NodeId}
-              workingCopy={workingCopy}
+              draft={draft}
             />
           );
         },
         capabilities: {
-          canStartBatch: (data: LocationWorkingCopy) =>
+          canStartBatch: (data: LocationDraft) =>
             Boolean(data?.treeNodeId && data?.draft?.dataSource && data?.draft?.licenseAgreement),
         },
         validate: () => true,

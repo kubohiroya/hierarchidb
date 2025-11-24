@@ -3,14 +3,14 @@
 // and utility types to infer payload/result shapes from a command kind.
 
 import type {
-  CommitWorkingCopyForCreatePayload,
-  CommitWorkingCopyPayload,
+  CommitDraftForCreatePayload,
+  CommitDraftPayload,
   CopyNodesPayload,
   CommandEnvelope as CoreCommandEnvelope,
   CommandResult as CoreCommandResult,
-  CreateWorkingCopyForCreatePayload,
-  CreateWorkingCopyPayload,
-  DiscardWorkingCopyPayload,
+  CreateDraftForCreatePayload,
+  CreateDraftPayload,
+  DiscardDraftPayload,
   DuplicateNodesPayload,
   ExportNodesPayload,
   ImportNodesPayload,
@@ -64,18 +64,18 @@ export interface CommandMap {
     result: CoreCommandResult;
   };
 
-  // WorkingCopy lifecycle (v1)
-  createWorkingCopyForCreate: {
-    payload: CreateWorkingCopyForCreatePayload;
+  // Draft lifecycle (v1)
+  createDraftForCreate: {
+    payload: CreateDraftForCreatePayload;
     result: CoreCommandResult;
   };
-  createWorkingCopy: { payload: CreateWorkingCopyPayload; result: CoreCommandResult };
-  discardWorkingCopy: { payload: DiscardWorkingCopyPayload; result: CoreCommandResult };
-  commitWorkingCopyForCreate: {
-    payload: CommitWorkingCopyForCreatePayload;
+  createDraft: { payload: CreateDraftPayload; result: CoreCommandResult };
+  discardDraft: { payload: DiscardDraftPayload; result: CoreCommandResult };
+  commitDraftForCreate: {
+    payload: CommitDraftForCreatePayload;
     result: CoreCommandResult;
   };
-  commitWorkingCopy: { payload: CommitWorkingCopyPayload; result: CoreCommandResult };
+  commitDraft: { payload: CommitDraftPayload; result: CoreCommandResult };
 }
 
 export type CommandKind = keyof CommandMap;

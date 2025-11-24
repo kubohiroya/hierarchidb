@@ -1,8 +1,8 @@
 import { Alert, Box, Chip, Stack, Typography } from '@mui/material';
-import type { RouteWorkingCopy } from '../../../common/types/index.js';
+import type { RouteDraft } from '../../../common/types/index.js';
 
 interface RouteBuildStepProps {
-  workingCopy: RouteWorkingCopy;
+  draft: RouteDraft;
 }
 
 const toList = (value: unknown): string[] => {
@@ -10,8 +10,8 @@ const toList = (value: unknown): string[] => {
   return [];
 };
 
-export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({ workingCopy }) => {
-  const draft = workingCopy.draft ?? {};
+export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({ draft: draftProp }) => {
+  const draft = draftProp.draft ?? {};
   const routeType = draft.routeType ?? 'unknown';
   const transportModes = toList(draft.transportModes);
   const hasRequiredFields = Boolean(draft.name?.trim() && routeType && transportModes.length);

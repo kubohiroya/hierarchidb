@@ -2,9 +2,9 @@ import 'fake-indexeddb/auto';
 import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-types';
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { CoreDB } from '../../CoreDB.js';
-import { createDraftWorkingCopy } from '../draftOperations.js';
+import { createDraftBase } from '../draftOperations.js';
 
-describe('createDraftWorkingCopy - default name uniqueness', () => {
+describe('createDraftBase - default name uniqueness', () => {
   const treeId = 'tree' as TreeId;
   const parentId = `${treeId}:parent` as NodeId;
   let core: CoreDB;
@@ -50,7 +50,7 @@ describe('createDraftWorkingCopy - default name uniqueness', () => {
   });
 
   it('auto-increments the default name when a sibling with the base name exists', async () => {
-    const wcNodeId = await createDraftWorkingCopy(
+    const wcNodeId = await createDraftBase(
       core,
       treeId,
       parentId,

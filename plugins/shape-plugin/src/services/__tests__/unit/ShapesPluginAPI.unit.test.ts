@@ -58,7 +58,7 @@ vi.mock('../database/ShapeDB', () => {
 // Mock BatchSessionManager  
 vi.mock('../batch/BatchSessionManager', () => ({
   BatchSessionManager: vi.fn().mockImplementation(() => ({
-    createSession: vi.fn().mockImplementation(async (nodeId, config, urlMetadata) => ({
+    createSession: vi.fn().mockImplementation(async (nodeId, config) => ({
       sessionId: 'session-123',
       nodeId: nodeId,
       status: 'running',
@@ -108,7 +108,7 @@ vi.mock('@hierarchidb/runtime-ui-datasource', () => ({
         features: ['boundaries', 'physical_features'],
       },
     ]),
-    getCountryMetadata: vi.fn().mockImplementation((dataSource, countryCode) =>
+    getCountryMetadata: vi.fn().mockImplementation(() =>
       Promise.resolve({
         countries: [
           {
@@ -187,9 +187,9 @@ describe('ShapesPluginAPI', () => {
           update: vi.fn(),
         },
       }),
-      createWorkingCopy: vi.fn(),
-      commitWorkingCopy: vi.fn(),
-      discardWorkingCopy: vi.fn(),
+      createDraft: vi.fn(),
+      commitDraft: vi.fn(),
+      discardDraft: vi.fn(),
     };
 
     api = new ShapesPluginAPI(); // mockPluginAPI

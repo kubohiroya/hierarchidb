@@ -1,5 +1,5 @@
 import type { BaseEntity, NodeId, Timestamp } from '@hierarchidb/common-types';
-import type { PeerDataBase, WorkingCopyDraft } from '@hierarchidb/plugin-service-api';
+import type { PeerDataBase, DraftBase } from '@hierarchidb/plugin-service-api';
 import type { TabularFilterRule, TabularDataResult } from '@hierarchidb/ui-tabular-extract';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { DATA_SOURCE_TYPES } from '../constants.js';
@@ -28,7 +28,7 @@ export interface SpreadsheetEntity extends BaseEntity<NodeId> {
   filters?: TabularFilterRule[];
 }
 
-export interface SpreadsheetWorkingCopy extends WorkingCopyDraft<SpreadsheetEntity> {
+export interface SpreadsheetDraft extends DraftBase<SpreadsheetEntity> {
   spreadsheetMetadataId?: string;
   dataSource?: DataSourceConfig;
   filters?: TabularFilterRule[];
@@ -36,7 +36,7 @@ export interface SpreadsheetWorkingCopy extends WorkingCopyDraft<SpreadsheetEnti
   file?: UploadedFileSummary;
 }
 
-export type SpreadsheetDialogData = Partial<SpreadsheetWorkingCopy> & {
+export type SpreadsheetDialogData = Partial<SpreadsheetDraft> & {
   metadata?: TabularTableMetadata | null;
 };
 

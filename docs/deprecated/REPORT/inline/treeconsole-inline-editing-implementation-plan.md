@@ -203,7 +203,7 @@ const finishEdit = async (nodeId: string, newValue: string) => {
 - `packages/ui/treeconsole/treetable/src/components/TreeTableCore.tsx`
 - `packages/ui/treeconsole/treetable/src/orchestrator/openstreetmap-type.ts` 
 - `packages/ui/treeconsole/treetable/src/state/openstreetmap-type.ts`
-- `packages/ui/treeconsole/base/src/adapters/commands/WorkingCopyCommands.ts`
+- `packages/ui/treeconsole/base/src/adapters/commands/DraftCommands.ts`
 
 ### 関連インターフェース
 - `packages/ui/treeconsole/treetable/src/lifecycle-plugin-definition.ts`

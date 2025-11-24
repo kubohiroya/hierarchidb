@@ -11,11 +11,12 @@ type RouteAuthNotification = DownloadAuthNotification;
 // Export all types
 // Export all types and components
 // Avoid re-exporting names that collide with orchestrator/types (e.g., TransportMode)
-export type { RouteEntity, RouteWorkingCopy, RouteProcessingConfig, RouteParameters, RouteStatistics } from './common/types/index.js';
+export type { RouteEntity, RouteDraft, RouteProcessingConfig, RouteParameters, RouteStatistics } from './common/types/index.js';
 export * from './common/entities/RouteEntityHandler.js';
 export * from './common/i18n/index.js';
 export { ThrottledPort } from './services/net/ThrottledPort.js';
 export * as worker from './worker/index.js';
+export * from './common/utils/draft.js';
 export * from './services/engines/OsrmEngine.js';
 export * from './services/engines/SearouteEngine.js';
 export { createRouteBatchManager } from './services/createRouteBatchManager.js';

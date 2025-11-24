@@ -5,18 +5,18 @@ import { TabularProvider, TabularFileUploadStep } from '@hierarchidb/ui-tabular-
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { createShapeTabularApi } from '../../../services/tabular/createShapeTabularApi.js';
 import { SHAPE_PLUGIN_ID } from '../../shared/constants.js';
-import type { ShapeWorkingCopy, TabularFileSummary } from '../../shared/types.js';
+import type { ShapeDraft, TabularFileSummary } from '../../shared/types.js';
 
-type ShapeDialogStepProps = StepComponentProps<Partial<ShapeWorkingCopy>>;
+type ShapeDialogStepProps = StepComponentProps<Partial<ShapeDraft>>;
 
 export function StepTabularUpload({
-  data: workingCopy,
+  data: draft,
   onChange,
   setValid,
   setError,
   disabled,
 }: ShapeDialogStepProps): JSX.Element {
-  //const workingCopy = (data ?? {}) as Partial<ShapeWorkingCopy>;
+  //const draft = (data ?? {}) as Partial<ShapeDraft>;
   const tabularApi = useMemo(() => createShapeTabularApi(), []);
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -34,7 +34,7 @@ export function StepTabularUpload({
         lastModifiedAt: Date.now(),
       };
       onChange({
-        ...workingCopy,
+        ...draft,
         tabularMetadataId: metadata.id,
         tabularMetadata: metadata,
         tabularFile: nextFile,
@@ -43,7 +43,7 @@ export function StepTabularUpload({
       setError?.(null);
       setValid?.(true);
     },
-    [onChange, setError, setValid, workingCopy],
+    [onChange, setError, setValid, draft],
   );
 
   const handleUploadError = useCallback(
@@ -56,7 +56,7 @@ export function StepTabularUpload({
   );
 
   useEffect(() => {
-    const hasMetadata = Boolean(workingCopy?.tabularMetadataId);
+    const hasMetadata = Boolean(draft?.tabularMetadataId);
     if (hasMetadata) {
       setValid?.(true);
       setError?.(null);
@@ -64,7 +64,7 @@ export function StepTabularUpload({
       setValid?.(false);
       setError?.('Upload a dataset before continuing.');
     }
-  }, [localError, setError, setValid, workingCopy?.tabularMetadataId]);
+  }, [localError, setError, setValid, draft?.tabularMetadataId]);
 
   return (
     <Box sx={{ p: 3 }}>
@@ -83,7 +83,7 @@ export function StepTabularUpload({
           disabled={disabled}
         />
       </TabularProvider>
-      {!workingCopy?.tabularMetadataId && (
+      {!draft?.tabularMetadataId && (
         <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
           Select a file to enable preview and filtering in the next step.
         </Typography>

@@ -139,7 +139,7 @@ export interface TreeTableCoreProps {
   enableAdvancedKeyboardNav?: boolean;
   enableDragDropEnhancements?: boolean;
   enableSearchHighlight?: boolean;
-  enableWorkingCopyIntegration?: boolean;
+  enableDraftIntegration?: boolean;
 
   // No persistenceKey string: Dexie uses pageNodeId as the primary key.
 

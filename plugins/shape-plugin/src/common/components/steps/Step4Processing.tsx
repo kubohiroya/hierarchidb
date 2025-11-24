@@ -37,8 +37,8 @@ import type {
  * Step 4: Processing Configuration
  * Uses @hierarchidb/ui-accordion-config for processing settings
  */
-export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, disabled }) => {
-  const config = mergeProcessingConfig(workingCopy.processingConfig ?? DEFAULT_PROCESSING_CONFIG);
+export const Step4Processing: React.FC<StepProps> = ({ draft, onUpdate, disabled }) => {
+  const config = mergeProcessingConfig(draft.processingConfig ?? DEFAULT_PROCESSING_CONFIG);
   const baseDownloadConfig: DownloadProcessingConfig =
     config.downloadConfig ??
     DEFAULT_PROCESSING_CONFIG.downloadConfig ??

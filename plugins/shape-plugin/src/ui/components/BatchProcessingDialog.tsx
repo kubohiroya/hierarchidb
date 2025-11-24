@@ -5,7 +5,7 @@ export interface BatchProcessingDialogProps {
   open: boolean;
   onClose: () => void;
   sessionId: string;
-  workingCopyId: NodeId;
+  draftId: NodeId;
   onComplete?: (result: 'success' | 'cancelled' | 'error') => void;
   onError?: (error: Error) => void;
 }
@@ -19,7 +19,7 @@ export function BatchProcessingDialog({
   open,
   onClose,
   sessionId,
-  workingCopyId,
+  draftId,
   onComplete,
   onError,
 }: BatchProcessingDialogProps): JSX.Element {
@@ -31,7 +31,7 @@ export function BatchProcessingDialog({
       <DialogTitle>Batch Processing</DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary">
-          Session <strong>{sessionId}</strong> (working copy <strong>{workingCopyId}</strong>)
+          Session <strong>{sessionId}</strong> (working copy <strong>{draftId}</strong>)
           is managed by the runtime worker. Detailed progress monitoring UI is intentionally
           deferred while the plugin migration is in progress.
         </Typography>

@@ -18,14 +18,14 @@ import {
   TextField,
 } from '@mui/material';
 import { Settings } from '@mui/icons-material';
-import type { LocationWorkingCopy } from '../../types/index.js';
+import type { LocationDraft } from '../../types/index.js';
 import { useTranslation } from '../../i18n/index.js';
 import { SelectionMatrix, type Country, type LocationTypeConfig } from '../ui/SelectionMatrix.js';
 import type { LocationType } from '../../types/index.js';
 
 interface LocationSelectionStepProps {
-  workingCopy: LocationWorkingCopy;
-  onUpdate: (updates: Partial<LocationWorkingCopy>) => void;
+  draft: LocationDraft;
+  onUpdate: (updates: Partial<LocationDraft>) => void;
 }
 
 const SAMPLE_COUNTRIES: Country[] = [
@@ -80,7 +80,7 @@ export function normalizeMatrix(matrix: boolean[][] | undefined, countries: Coun
   });
 }
 
-export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ workingCopy, onUpdate }) => {
+export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ draft, onUpdate }) => {
   const { translations } = useTranslation();
   const [activeTab, setActiveTab] = useState(0);
 
@@ -98,7 +98,7 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ wo
     });
   }, [translations]);
 
-  const selectionMatrixSource = useMemo(() => workingCopy.draft.selectionMatrix ?? [], [workingCopy.draft.selectionMatrix]);
+  const selectionMatrixSource = useMemo(() => draft.draft.selectionMatrix ?? [], [draft.draft.selectionMatrix]);
 
   const selectionMatrix = useMemo(() => (
     normalizeMatrix(selectionMatrixSource, SAMPLE_COUNTRIES, locationTypes)

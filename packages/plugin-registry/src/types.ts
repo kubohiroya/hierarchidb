@@ -40,7 +40,7 @@ export interface PluginCapabilities {
   canBeMoved?: boolean;
   canBeCopied?: boolean;
   supportsBatchProcessing?: boolean;
-  workingCopy?: boolean;
+  draft?: boolean;
   batch?: boolean;
   visualization?: boolean;
   [key: string]: boolean | undefined;

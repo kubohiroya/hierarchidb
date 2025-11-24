@@ -93,7 +93,7 @@ test.describe('Route progress controls', () => {
 
         if (!routeNode) {
           const mutationAPI = await client.getMutationAPI();
-          const workingCopyAPI = await client.getWorkingCopyAPI();
+          const draftAPI = await client.getDraftAPI();
           const name = `Route Progress ${Date.now()}`;
           const createResult = await mutationAPI.createNode({
             nodeType: 'route',
@@ -110,7 +110,7 @@ test.describe('Route progress controls', () => {
           const start = { coordinates: [139.751, 35.685] as [number, number], name: 'Start', type: 'custom' as const };
           const end = { coordinates: [139.780, 35.690] as [number, number], name: 'End', type: 'custom' as const };
 
-          await workingCopyAPI.updateWorkingCopy(wcNodeId, {
+          await draftAPI.updateDraft(wcNodeId, {
             name,
             description: 'E2E route progress seed',
             category: { primary: 'road' },
@@ -136,7 +136,7 @@ test.describe('Route progress controls', () => {
             version: 1,
           } as any);
 
-          const commitResult = await workingCopyAPI.commitWorkingCopy(wcNodeId, { onNameConflict: 'auto-rename' });
+          const commitResult = await draftAPI.commitDraft(wcNodeId, { onNameConflict: 'auto-rename' });
           if (commitResult.status !== 'ok') {
             throw new Error(`Route commit failed: ${commitResult.status}`);
           }

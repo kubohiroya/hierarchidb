@@ -1,5 +1,5 @@
 import type {
-  CommitWorkingCopyPayload,
+  CommitDraftPayload,
   DuplicateNodesPayload,
   ImportNodesPayload,
   NodeId,
@@ -18,13 +18,13 @@ describe('EntityLifecycleManager dispatch', () => {
     Reflect.set(EntityLifecycleManager, 'instance', undefined);
   });
 
-  function makeCommitEnvelope(): CommandEnvelope<'commitWorkingCopy', CommitWorkingCopyPayload> {
-    const workingCopyId = 'wc-1' as NodeId;
+  function makeCommitEnvelope(): CommandEnvelope<'commitDraft', CommitDraftPayload> {
+    const draftId = 'wc-1' as NodeId;
     return {
       commandId: 'cmd-commit',
       groupId: 'grp',
-      kind: 'commitWorkingCopy',
-      payload: { workingCopyId, expectedUpdatedAt: Date.now() as Timestamp },
+      kind: 'commitDraft',
+      payload: { draftId, expectedUpdatedAt: Date.now() as Timestamp },
       issuedAt: Date.now() as Timestamp,
     };
   }
@@ -69,9 +69,9 @@ describe('EntityLifecycleManager dispatch', () => {
     };
   }
 
-  it('routes commitWorkingCopy to onCommitWorkingCopy', async () => {
+  it('routes commitDraft to onCommitDraft', async () => {
     const mgr = EntityLifecycleManager.getSingleton({} as unknown as CoreDB);
-    const spy = vi.spyOn(mgr, 'onCommitWorkingCopy').mockResolvedValue();
+    const spy = vi.spyOn(mgr, 'onCommitDraft').mockResolvedValue();
     await mgr.handleCommand(makeCommitEnvelope());
     expect(spy).toHaveBeenCalledOnce();
   });

@@ -4,28 +4,28 @@
  */
 
 import { useCallback, useEffect, useMemo } from 'react';
-import { Box, TextField, Typography, MenuItem } from '@mui/material';
+import { Box, TextField, MenuItem } from '@mui/material';
 import { Divider } from '@mui/material';
 import { useTranslation } from '../i18n/index.js';
-import type { RouteEntity, RouteWorkingCopy } from '../types/index.js';
+import type { RouteEntity, RouteDraft } from '../types/index.js';
 import { RouteType } from '../types/index.js';
-import { getRouteDraft } from '../utils/workingCopy.js';
+import { getRouteDraft } from '../utils/draft.js';
 
 export interface RouteDetailsStepProps {
-  workingCopy: RouteWorkingCopy;
+  draft: RouteDraft;
   onUpdate: (updates: Partial<RouteEntity>) => void;
   onValidationChange: (isValid: boolean) => void;
   disabled?: boolean;
 }
 
 export const RouteDetailsStep: React.FC<RouteDetailsStepProps> = ({
-  workingCopy,
+  draft: draftProp,
   onUpdate,
   onValidationChange,
   disabled = false,
 }) => {
   const { translations } = useTranslation();
-  const draft = useMemo(() => getRouteDraft(workingCopy), [workingCopy]);
+  const draft = useMemo(() => getRouteDraft(draftProp), [draftProp]);
 
   const resolvedRouteType = draft.routeType ?? RouteType.ROAD;
   const resolvedDataSource = draft.dataSourceName ?? 'openstreetmap';
@@ -77,13 +77,13 @@ export const RouteDetailsStep: React.FC<RouteDetailsStepProps> = ({
 
       <TextField
         select
-        label={translations.basicInfo.dataSourceLabel ?? 'Data source'}
+        label="Data source"
         value={resolvedDataSource}
         onChange={(event) => emitUpdate({ dataSourceName: event.target.value as RouteEntity['dataSourceName'] })}
         required
         fullWidth
         disabled={disabled}
-        helperText={translations.basicInfo.dataSourceHelperText ?? 'Choose openstreetmap for OSRM/Overpass or custom for tabular import'}
+        helperText="Choose openstreetmap for OSRM/Overpass or custom for tabular import"
       >
         <MenuItem value="openstreetmap">OpenStreetMap</MenuItem>
         <MenuItem value="custom">Custom (tabular)</MenuItem>

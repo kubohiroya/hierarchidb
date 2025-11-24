@@ -7,7 +7,7 @@ export { WorkerAPIAdapter } from './WorkerAPIAdapter.js';
 
 export { TreeObservableAdapter } from './subscriptions/TreeObservableAdapter.js';
 export { TreeMutationCommandsAdapter } from './commands/TreeMutationCommands.js';
-export { WorkingCopyCommandsAdapter } from './commands/WorkingCopyCommands.js';
+export { DraftCommandsAdapter } from './commands/DraftCommands.js';
 export { SubscriptionManager } from './subscriptions/SubscriptionManager.js';
 
 export type {
@@ -21,7 +21,7 @@ export type {
   TreeConsoleAdapterError,
 } from './types.js';
 
-export type { WorkingCopyEditSession } from './commands/WorkingCopyCommands.js';
+export type { DraftEditSession } from './commands/DraftCommands.js';
 
 export {
   createCommand,

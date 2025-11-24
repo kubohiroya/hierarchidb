@@ -4,7 +4,7 @@
  */
 
 import type { BaseEntity, NodeId, Timestamp } from '@hierarchidb/common-types';
-import type { WorkingCopyDraft } from '@hierarchidb/plugin-service-api';
+import type { DraftBase } from '@hierarchidb/plugin-service-api';
 
 /**
  * Category taxonomy used when importing / classifying locations.
@@ -155,7 +155,7 @@ export interface LocationEntity extends BaseEntity {
   extractConfig?: Record<string, unknown>;
 }
 
-export type LocationWorkingCopy = WorkingCopyDraft<LocationEntity>;
+export type LocationDraft = DraftBase<LocationEntity>;
 
 /**
  * Additional filtering options for batch processing.

@@ -12,7 +12,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-types';
 import { ShapeEntityHandler } from '../../services/ShapeEntityHandler.js';
-import type { ShapeWorkingCopy } from '../../types/ShapeEntity.js';
+import type { ShapeDraft } from '../../types/ShapeEntity.js';
 import type { BatchConfig } from '../../types/BatchConfig.js';
 
 describe('ShapeEntityHandler Migration Tests', () => {
@@ -123,18 +123,18 @@ describe('ShapeEntityHandler Migration Tests', () => {
       });
 
       //  When: Working Copy
-      const workingCopy = await entityHandler.createWorkingCopy(mockNodeId);
+      const draft = await entityHandler.createDraft(mockNodeId);
 
       //  Then: Working Copy
-      expect(workingCopy).toBeDefined();
-      expect(workingCopy.nodeId).toBe(mockNodeId);
-      expect(workingCopy.baseVersion).toBe(baseEntity.version);
-      expect(workingCopy.isModified).toBe(false);
+      expect(draft).toBeDefined();
+      expect(draft.nodeId).toBe(mockNodeId);
+      expect(draft.baseVersion).toBe(baseEntity.version);
+      expect(draft.isModified).toBe(false);
     });
 
     it('Working Copyの変更が正常に追跡される', async () => {
       // Given: Working Copy
-      const workingCopy: ShapeWorkingCopy = {
+      const draft: ShapeDraft = {
         nodeId: mockNodeId,
         baseVersion: 1,
         isModified: false,
@@ -142,15 +142,15 @@ describe('ShapeEntityHandler Migration Tests', () => {
       };
 
       //  When: Working Copy
-      const modifiedWorkingCopy = await entityHandler.modifyWorkingCopy(workingCopy, {
+      const modifiedDraft = await entityHandler.modifyDraft(draft, {
         selectedCountries: ['USA', 'CAN'],
         selectedAdminLevels: [0, 1, 2],
       });
 
       //  Then:
-      expect(modifiedWorkingCopy.isModified).toBe(true);
-      expect(modifiedWorkingCopy.changes.selectedCountries).toEqual(['USA', 'CAN']);
-      expect(modifiedWorkingCopy.changes.selectedAdminLevels).toEqual([0, 1, 2]);
+      expect(modifiedDraft.isModified).toBe(true);
+      expect(modifiedDraft.changes.selectedCountries).toEqual(['USA', 'CAN']);
+      expect(modifiedDraft.changes.selectedAdminLevels).toEqual([0, 1, 2]);
     });
 
     it('Working Copyのコミットが正常に動作する', async () => {
@@ -163,7 +163,7 @@ describe('ShapeEntityHandler Migration Tests', () => {
       });
 
       //  Working Copy
-      const modifiedWorkingCopy: ShapeWorkingCopy = {
+      const modifiedDraft: ShapeDraft = {
         nodeId: mockNodeId,
         baseVersion: 1,
         isModified: true,
@@ -174,7 +174,7 @@ describe('ShapeEntityHandler Migration Tests', () => {
       };
 
       //  When: Working Copy
-      const committedEntity = await entityHandler.commitWorkingCopy(modifiedWorkingCopy);
+      const committedEntity = await entityHandler.commitDraft(modifiedDraft);
 
       //  Then: CoreDB
       expect(committedEntity).toBeDefined();
@@ -185,7 +185,7 @@ describe('ShapeEntityHandler Migration Tests', () => {
 
     it('Working Copyの破棄が正常に動作する', async () => {
       //  Given: Working Copy
-      const workingCopyToDiscard: ShapeWorkingCopy = {
+      const draftToDiscard: ShapeDraft = {
         nodeId: mockNodeId,
         baseVersion: 1,
         isModified: true,
@@ -195,7 +195,7 @@ describe('ShapeEntityHandler Migration Tests', () => {
       };
 
       //  When: Working Copy
-      await entityHandler.discardWorkingCopy(workingCopyToDiscard);
+      await entityHandler.discardDraft(draftToDiscard);
 
       //  Then:
       const originalEntity = await entityHandler.getEntity(mockNodeId);

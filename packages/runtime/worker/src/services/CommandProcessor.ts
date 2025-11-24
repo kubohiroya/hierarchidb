@@ -208,7 +208,7 @@ export class CommandProcessor {
       'remove',
       'restoreFromTrash',
       'removeSubtree',
-      'commitWorkingCopy',
+      'commitDraft',
     ]);
     return LEGACY_SUPPORTED.has(type);
   }

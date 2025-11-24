@@ -1,12 +1,12 @@
 import { Alert, Box, List, ListItem, ListItemText, Typography } from '@mui/material';
-import type { ResolverWorkingCopy } from '../../../common/types/index.js';
+import type { ResolverDraft } from '../../../common/types/index.js';
 
 interface ResolverBuildStepProps {
-  workingCopy: ResolverWorkingCopy;
+  draft: ResolverDraft;
 }
 
-export const ResolverBuildStep: React.FC<ResolverBuildStepProps> = ({ workingCopy }) => {
-  const hasSchemas = Boolean(workingCopy.sourceSchema && workingCopy.targetSchema);
+export const ResolverBuildStep: React.FC<ResolverBuildStepProps> = ({ draft }) => {
+  const hasSchemas = Boolean(draft.sourceSchema && draft.targetSchema);
 
   return (
     <Box display="flex" flexDirection="column" gap={2}>
@@ -19,13 +19,13 @@ export const ResolverBuildStep: React.FC<ResolverBuildStepProps> = ({ workingCop
         <ListItem>
           <ListItemText
             primary="Source Schema"
-            secondary={workingCopy.sourceSchema?.name ?? 'Not selected'}
+            secondary={draft.sourceSchema?.name ?? 'Not selected'}
           />
         </ListItem>
         <ListItem>
           <ListItemText
             primary="Target Schema"
-            secondary={workingCopy.targetSchema?.name ?? 'Not selected'}
+            secondary={draft.targetSchema?.name ?? 'Not selected'}
           />
         </ListItem>
       </List>

@@ -18,7 +18,7 @@ export interface NodeLifecycleHooks<TEntity extends PeerEntity = PeerEntity> {
   beforeDuplicate?: (sourceId: NodeId, targetParentId: NodeId) => Promise<void>;
   afterDuplicate?: (sourceId: NodeId, newNodeId: NodeId) => Promise<void>;
 
-  onWorkingCopyCreated?: (nodeId: NodeId, workingCopy: TEntity) => Promise<void>;
-  onWorkingCopyCommitted?: (nodeId: NodeId, workingCopy: TEntity) => Promise<void>;
-  onWorkingCopyDiscarded?: (nodeId: NodeId) => Promise<void>;
+  onDraftCreated?: (nodeId: NodeId, draft: TEntity) => Promise<void>;
+  onDraftCommitted?: (nodeId: NodeId, draft: TEntity) => Promise<void>;
+  onDraftDiscarded?: (nodeId: NodeId) => Promise<void>;
 }

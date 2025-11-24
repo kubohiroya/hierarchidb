@@ -16,17 +16,17 @@ const createMockWorkerAPI = () =>
     observeNode: vi.fn(),
     observeChildren: vi.fn(),
     observeSubtree: vi.fn(),
-    observeWorkingCopies: vi.fn(),
+    observeDrafts: vi.fn(),
     getActiveSubscriptions: vi.fn(),
     cleanupOrphanedSubscriptions: vi.fn(),
 
     // TreeMutationService methods
-    createWorkingCopyForCreate: vi.fn(),
-    createWorkingCopy: vi.fn(),
-    discardWorkingCopyForCreate: vi.fn(),
-    discardWorkingCopy: vi.fn(),
-    commitWorkingCopyForCreate: vi.fn(),
-    commitWorkingCopy: vi.fn(),
+    createDraftForCreate: vi.fn(),
+    createDraft: vi.fn(),
+    discardDraftForCreate: vi.fn(),
+    discardDraft: vi.fn(),
+    commitDraftForCreate: vi.fn(),
+    commitDraft: vi.fn(),
     moveNodes: vi.fn(),
     duplicateNodes: vi.fn(),
     pasteNodes: vi.fn(),
@@ -46,7 +46,7 @@ const createMockWorkerAPI = () =>
 describe('WorkerAPIAdapter', () => {
   let mockWorkerAPI: any;
   let adapter: WorkerAPIAdapter;
-  let workingCopyAPI: any;
+  let draftAPI: any;
 
   beforeEach(() => {
     mockWorkerAPI = createMockWorkerAPI();
@@ -61,13 +61,13 @@ describe('WorkerAPIAdapter', () => {
       restoreNodesFromTrash: mockWorkerAPI.restoreFromTrash,
     });
 
-    workingCopyAPI = {
-      createWorkingCopyFromNode: vi.fn().mockResolvedValue(undefined),
-      createDraftWorkingCopy: vi.fn().mockResolvedValue({ id: 'wc-1' }),
-      commitWorkingCopy: vi.fn().mockResolvedValue({ status: 'ok', nodeId: 'n:1' }),
-      discardWorkingCopy: vi.fn().mockResolvedValue(undefined),
+    draftAPI = {
+      createDraftFromNode: vi.fn().mockResolvedValue(undefined),
+      createDraftBase: vi.fn().mockResolvedValue({ id: 'wc-1' }),
+      commitDraft: vi.fn().mockResolvedValue({ status: 'ok', nodeId: 'n:1' }),
+      discardDraft: vi.fn().mockResolvedValue(undefined),
     };
-    mockWorkerAPI.getWorkingCopyAPI = vi.fn().mockResolvedValue(workingCopyAPI);
+    mockWorkerAPI.getDraftAPI = vi.fn().mockResolvedValue(draftAPI);
 
     mockWorkerAPI.getQueryAPI = vi.fn().mockReturnValue({
       getNode: vi.fn().mockResolvedValue({ id: 'test-node', updatedAt: Date.now() }),
@@ -201,19 +201,19 @@ describe('WorkerAPIAdapter', () => {
 
   describe('Working Copy Operations', () => {
     it('should handle startNodeEdit correctly', async () => {
-      mockWorkerAPI.createWorkingCopy.mockResolvedValue(undefined);
+      mockWorkerAPI.createDraft.mockResolvedValue(undefined);
 
       const editSession = await adapter.startNodeEdit('test-node' as any);
 
       expect(editSession).toEqual(
         expect.objectContaining({
-          workingCopyId: expect.any(String),
+          draftId: expect.any(String),
           sourceId: 'test-node',
           isCreate: false,
         }),
       );
 
-      expect(workingCopyAPI.createWorkingCopyFromNode).toHaveBeenCalledWith('test-node');
+      expect(draftAPI.createDraftFromNode).toHaveBeenCalledWith('test-node');
     });
 
     it('should handle startNodeCreate correctly', async () => {
@@ -225,7 +225,7 @@ describe('WorkerAPIAdapter', () => {
 
       expect(editSession).toEqual(
         expect.objectContaining({
-          workingCopyId: expect.any(String),
+          draftId: expect.any(String),
           parentId: 'parent-node',
           isCreate: true,
         }),

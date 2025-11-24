@@ -7,7 +7,7 @@ import {
   createTestFolder,
   moveToTrash,
   waitForSubTreeUpdate,
-  waitForWorkingCopyUpdate,
+  waitForDraftUpdate,
   performDragDrop,
   buildAppUrl,
 } from './utils/test-helpers';
@@ -36,7 +36,7 @@ test.describe.serial('CP routing + Working Copy batch flow', () => {
     const nameInput = page.locator('[data-testid="folder-plugin-name-input"]');
     await nameInput.fill(renamedName);
     await page.locator('[data-testid="edit-folder-plugin-confirm"]').click();
-    await waitForWorkingCopyUpdate(page);
+    await waitForDraftUpdate(page);
     await expect(page.locator(nodeSelector(renamedName))).toBeVisible({ timeout: 10000 });
 
     const destinationName = await createTestFolder(page, `Destination ${timestamp}`);
@@ -93,7 +93,7 @@ test.describe.serial('CP routing + Working Copy batch flow', () => {
       await expect(page.locator(nodeSelector(renamedName))).toBeVisible({ timeout: 7000 });
     }
 
-    await waitForWorkingCopyUpdate(page);
+    await waitForDraftUpdate(page);
   }
 
   test('end-to-end operations succeed with CommandProcessor routing enabled by default', async ({ page }) => {

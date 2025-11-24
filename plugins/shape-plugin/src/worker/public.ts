@@ -29,12 +29,12 @@ export interface ShapeWorkerAPI {
   deleteEntity(nodeId: NodeId): Promise<void>;
 
   // Working copies
-  createWorkingCopy(nodeId: NodeId): Promise<NodeId>;
-  createNewDraftWorkingCopy(parentId: NodeId): Promise<NodeId>;
-  getWorkingCopy(workingCopyId: NodeId): Promise<ShapeEntity | undefined>;
-  updateWorkingCopy(workingCopyId: NodeId, data: Partial<ShapeEntity>): Promise<void>;
-  commitWorkingCopy(workingCopyId: NodeId): Promise<NodeId>;
-  discardWorkingCopy(workingCopyId: NodeId): Promise<void>;
+  createDraft(nodeId: NodeId): Promise<NodeId>;
+  createNewDraftBase(parentId: NodeId): Promise<NodeId>;
+  getDraft(draftId: NodeId): Promise<ShapeEntity | undefined>;
+  updateDraft(draftId: NodeId, data: Partial<ShapeEntity>): Promise<void>;
+  commitDraft(draftId: NodeId): Promise<NodeId>;
+  discardDraft(draftId: NodeId): Promise<void>;
 
   // Data sources
   getDataSourceConfigs(): Promise<DataSourceConfig[]>;
@@ -45,16 +45,16 @@ export interface ShapeWorkerAPI {
   validateSelection(countries: string[], adminLevels: number[], dataSource: string): Promise<ValidationResult>;
   calculateSelectionStats(urlMetadata: UrlMetadata[]): Promise<SelectionStats>;
 
-  // Batch processing (WorkingCopy-based)
+  // Batch processing (Draft-based)
   startBatchProcessing(
-    workingCopyId: NodeId,
+    draftId: NodeId,
     config: ProcessingConfig,
     urlMetadata: UrlMetadata[],
     progressCallback?: (event: BatchProgressEvent) => void,
   ): Promise<string>; // returns sessionId
-  pauseBatchProcessing(workingCopyId: NodeId): Promise<void>;
-  resumeBatchProcessing(workingCopyId: NodeId): Promise<string>;
-  cancelBatchProcessing(workingCopyId: NodeId): Promise<void>;
+  pauseBatchProcessing(draftId: NodeId): Promise<void>;
+  resumeBatchProcessing(draftId: NodeId): Promise<string>;
+  cancelBatchProcessing(draftId: NodeId): Promise<void>;
   invokeBatchCommand<K extends ShapeBatchCommand>(command: K, payload: ShapeBatchCommandPayload<K>): Promise<void>;
   getBatchSession(sessionId: string): Promise<BatchSession | undefined>;
   listBatchTasks(sessionId: string): Promise<BatchTask[]>;

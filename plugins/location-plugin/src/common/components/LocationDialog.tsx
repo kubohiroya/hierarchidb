@@ -3,12 +3,12 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { NodeId, Timestamp } from '@hierarchidb/common-types';
+import type { NodeId, Timestamp, TreeId } from '@hierarchidb/common-types';
 import { Box, Button, Grid, Typography } from '@mui/material';
 import { LocationOn } from '@mui/icons-material';
 import type {
   LocationDialogProps,
-  LocationWorkingCopy,
+  LocationDraft,
   LocationDataSource,
 } from '../types/index.js';
 import { useTranslation } from '../i18n/index.js';
@@ -51,12 +51,10 @@ import {
 } from '@hierarchidb/ui-dialog';
 import { notify } from '@hierarchidb/components';
 
-import { useWorkingCopy } from '@hierarchidb/plugin-ui-sdk';
+import { useDialogDraft, type DraftData } from '@hierarchidb/plugin-ui-sdk';
+import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-client';
 import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 // import { useToastNotifications } from '@hierarchidb/components/toast/ToastProvider.js';
-
-const toIdString = (value?: LocationDialogProps['nodeId']): string | undefined =>
-  value ? `${value}` : undefined;
 
 const buildDefaultFrame = (): { size: MultiDialogSize; position: MultiDialogPosition } => {
   const viewport = getViewportSize();
@@ -71,10 +69,93 @@ const DEFAULT_CONCURRENCY = 4;
 const MIN_CONCURRENCY = 1;
 const MAX_CONCURRENCY = 16;
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+type LocationDraftPayload = LocationDraft['draft'];
+
+const normalizeLocationDraft = (raw: DraftData | null): LocationDraft => {
+  const now = Date.now() as Timestamp;
+  const draftData = (raw?.draftData && isRecord(raw.draftData) ? raw.draftData : {}) as Partial<LocationDraftPayload>;
+  const meta = (raw?.metadata && isRecord(raw.metadata) ? raw.metadata : {}) as {
+    name?: unknown;
+    description?: unknown;
+    tags?: unknown;
+  };
+  const tagsFromDraft = Array.isArray(draftData.tags)
+    ? draftData.tags.filter((v): v is string => typeof v === 'string')
+    : undefined;
+  const tags = Array.isArray(meta.tags)
+    ? meta.tags.filter((v): v is string => typeof v === 'string')
+    : tagsFromDraft ?? [];
+
+  const name = typeof draftData.name === 'string'
+    ? draftData.name
+    : typeof meta.name === 'string'
+      ? meta.name
+      : '';
+  const description = typeof draftData.description === 'string'
+    ? draftData.description
+    : typeof meta.description === 'string'
+      ? meta.description
+      : undefined;
+
+  const normalizedDraft: LocationDraftPayload = {
+    ...draftData,
+    name,
+    description,
+    tags,
+  };
+
+  return {
+    treeNodeId: (raw?.treeNodeId ?? '') as NodeId,
+    draft: normalizedDraft,
+    createdAt: (raw as { createdAt?: Timestamp })?.createdAt ?? now,
+    updatedAt: (raw as { updatedAt?: Timestamp })?.updatedAt ?? now,
+    tags,
+    dataSource: normalizedDraft.dataSource,
+    tabularSourceId: normalizedDraft.tabularSourceId,
+    extractConfig: normalizedDraft.extractConfig,
+  };
+};
+
+const mergeLocationDraft = (current: LocationDraft, patch: Partial<LocationDraft>): LocationDraft => {
+  const mergedDraft: LocationDraftPayload = {
+    ...(current.draft ?? {}),
+    ...(patch.draft ?? {}),
+    ...(patch.dataSource ? { dataSource: patch.dataSource } : {}),
+    ...(patch.tabularSourceId ? { tabularSourceId: patch.tabularSourceId } : {}),
+    ...(patch.extractConfig ? { extractConfig: patch.extractConfig } : {}),
+  };
+
+  const nextDataSource = patch.dataSource ?? mergedDraft.dataSource ?? current.dataSource;
+  const nextTabularSourceId = patch.tabularSourceId ?? mergedDraft.tabularSourceId ?? current.tabularSourceId;
+
+  return {
+    ...current,
+    ...patch,
+    draft: mergedDraft,
+    tags: patch.tags ?? current.tags,
+    dataSource: nextDataSource,
+    tabularSourceId: nextTabularSourceId,
+    extractConfig: mergedDraft.extractConfig ?? patch.extractConfig ?? current.extractConfig,
+  };
+};
+
+const toDraftDataPayload = (value: LocationDraft): Partial<DraftData> => ({
+  draftData: value.draft,
+  metadata: {
+    name: value.draft?.name ?? '',
+    description: value.draft?.description,
+    tags: value.tags ?? value.draft?.tags,
+  },
+});
+
 export const LocationDialog: React.FC<LocationDialogProps> = ({
   mode,
   nodeId,
   parentId,
+  treeId,
   open,
   onClose,
   onSuccess,
@@ -83,22 +164,35 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
   const { translations } = useTranslation();
   const { size: initialSize, position: initialPositionValue } = useMemo(buildDefaultFrame, []);
 
+  const workerClient = useMemo<WorkerClientRef | null>(() => {
+    try {
+      const hook = getWorkerClientHook<WorkerClientRef | null>();
+      return hook();
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const effectiveTreeId = useMemo<TreeId>(() => (
+    treeId ?? ((parentId ?? nodeId ?? '') as TreeId)
+  ), [nodeId, parentId, treeId]);
+
   const {
-    workingCopy,
-    setWorkingCopy,
-    init,
-    commit,
-    discard,
-  } = useWorkingCopy<LocationWorkingCopy>({
-    nodeType: 'location',
+    draft: rawDraft,
+    updateDraft,
+    saveDraft,
+    discardDraft,
+  } = useDialogDraft({
     mode,
-    nodeId: toIdString(nodeId),
-    parentId: toIdString(parentId),
+    nodeType: 'location',
+    nodeId,
+    parentId,
+    treeId: effectiveTreeId,
+    workerClient,
   });
   // const notify = useToastNotifications();
 
-  useEffect(() => { if (open) void init(); }, [open, init]);
-  useEffect(() => () => { void discard().catch(() => {}); }, [discard]);
+  useEffect(() => () => { void discardDraft().catch(() => {}); }, [discardDraft]);
 
   const dialogSizeRef = useRef<MultiDialogSize>(initialSize);
   const dialogPositionRef = useRef<MultiDialogPosition>(initialPositionValue);
@@ -110,14 +204,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
   const [isBatchStarting, setIsBatchStarting] = useState(false);
   const [buildStatus, setBuildStatus] = useState<string | null>(null);
 
-  const emptyWorkingCopy = useMemo<LocationWorkingCopy>(() => ({
-    treeNodeId: '' as NodeId,
-    draft: {},
-    createdAt: Date.now() as Timestamp,
-    updatedAt: Date.now() as Timestamp,
-  }), []);
-
-  const dialogData = useMemo<LocationWorkingCopy>(() => workingCopy ?? emptyWorkingCopy, [emptyWorkingCopy, workingCopy]);
+  const dialogData = useMemo<LocationDraft>(() => normalizeLocationDraft(rawDraft), [rawDraft]);
   const emptyTableMetadata = useMemo<TabularTableMetadata>(() => ({
     id: dialogData.tabularSourceId ?? 'temp-table',
     filename: dialogData.tabularSourceId ?? 'temp',
@@ -137,22 +224,10 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     setDialogPosition(position);
   }, []);
 
-  const handleWorkingCopyPatch = useCallback((patch: Partial<LocationWorkingCopy>) => {
-    setWorkingCopy((prev: LocationWorkingCopy | null) => {
-      const base = prev ?? emptyWorkingCopy;
-
-      const { draft: draftPatch, updatedAt: updatedAtPatch, ...metaPatch } = patch;
-      const nextDraft = draftPatch ? { ...base.draft, ...draftPatch } : base.draft;
-      const nextUpdatedAt = updatedAtPatch ?? (prev?.updatedAt ?? (Date.now() as Timestamp));
-
-      return {
-        ...base,
-        ...metaPatch,
-        draft: nextDraft,
-        updatedAt: nextUpdatedAt,
-      } satisfies LocationWorkingCopy;
-    });
-  }, [emptyWorkingCopy, setWorkingCopy]);
+  const handleDraftPatch = useCallback((patch: Partial<LocationDraft>) => {
+    const merged = mergeLocationDraft(dialogData, patch);
+    updateDraft(toDraftDataPayload(merged));
+  }, [dialogData, updateDraft]);
 
   const ensureVectorTileService = useCallback((): LocationVectorTileService => {
     if (!vectorServiceRef.current) {
@@ -215,11 +290,11 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     }
   }, [dialogData, ensureVectorTileService, isBatchStarting]);
 
-  const stepComponents = useMemo<ReadonlyArray<StepComponentDescriptor<LocationWorkingCopy>>>(() => ([
+  const stepComponents = useMemo<ReadonlyArray<StepComponentDescriptor<LocationDraft>>>(() => ([
     {
       id: 'basic-info',
       label: translations.basicInfo.title,
-      component: ({ data, onChange }: { data: LocationWorkingCopy; onChange: (patch: Partial<LocationWorkingCopy>) => void }) => (
+      component: ({ data, onChange }: { data: LocationDraft; onChange: (patch: Partial<LocationDraft>) => void }) => (
         <SharedBasicInfoStep
           name={data.draft?.name ?? ''}
           description={data.draft?.description ?? ''}
@@ -243,7 +318,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     {
       id: 'data-source',
       label: translations.dialog.dataSourceLabel,
-      component: ({ onChange }: { data: LocationWorkingCopy; onChange: (patch: Partial<LocationWorkingCopy>) => void }) => (
+      component: ({ onChange }: { data: LocationDraft; onChange: (patch: Partial<LocationDraft>) => void }) => (
         <TabularProvider tabularApi={createLocationTabularApi()}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Box>
@@ -266,28 +341,28 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     {
       id: 'license',
       label: translations.dialog.licenseAgreementLabel,
-      component: ({ data, onChange }: { data: LocationWorkingCopy; onChange: (patch: Partial<LocationWorkingCopy>) => void }) => (
-        <LocationLicenseStep workingCopy={data} onUpdate={onChange} />
+      component: ({ data, onChange }: { data: LocationDraft; onChange: (patch: Partial<LocationDraft>) => void }) => (
+        <LocationLicenseStep draft={data} onUpdate={onChange} />
       ),
     },
     {
       id: 'selection',
       label: translations.selection.title,
-      component: ({ data, onChange }: { data: LocationWorkingCopy; onChange: (patch: Partial<LocationWorkingCopy>) => void }) => (
-        <LocationSelectionStep workingCopy={data} onUpdate={onChange} />
+      component: ({ data, onChange }: { data: LocationDraft; onChange: (patch: Partial<LocationDraft>) => void }) => (
+        <LocationSelectionStep draft={data} onUpdate={onChange} />
       ),
     },
     {
       id: 'batch-parameters',
       label: translations.panel.processingSettings,
-      component: ({ data, onChange }: { data: LocationWorkingCopy; onChange: (patch: Partial<LocationWorkingCopy>) => void }) => (
-        <LocationBatchParametersStep workingCopy={data} onUpdate={onChange} />
+      component: ({ data, onChange }: { data: LocationDraft; onChange: (patch: Partial<LocationDraft>) => void }) => (
+        <LocationBatchParametersStep draft={data} onUpdate={onChange} />
       ),
     },
     {
       id: 'extract',
       label: translations.selection?.filterTitle ?? translations.selection.title ?? 'Filter & Preview',
-      component: ({ data, onChange }: { data: LocationWorkingCopy; onChange: (patch: Partial<LocationWorkingCopy>) => void }) => (
+      component: ({ data, onChange }: { data: LocationDraft; onChange: (patch: Partial<LocationDraft>) => void }) => (
         <TabularProvider tabularApi={createLocationTabularApi()}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TabularFilterStep
@@ -370,21 +445,11 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     {
       id: 'map-preview',
       label: translations.mapPreview?.title ?? 'Map Preview',
-      component: ({ data }: { data: LocationWorkingCopy }) => (
-        <LocationMapPreviewStep workingCopy={data} />
+      component: ({ data }: { data: LocationDraft }) => (
+        <LocationMapPreviewStep draft={data} />
       ),
     },
-  ]), [
-    translations.basicInfo.title,
-    translations.basicInfo.tagSuggestions,
-    translations.dialog.dataSourceLabel,
-    translations.dialog.licenseAgreementLabel,
-    translations.selection.title,
-    translations.panel.processingSettings,
-    translations.mapPreview?.title,
-    translations.errors?.nameRequired,
-    mode,
-  ]);
+  ]), [translations.basicInfo.title, translations.basicInfo.tagSuggestions, translations.dialog.dataSourceLabel, translations.dialog.licenseAgreementLabel, translations.dialog.dataSourceDescription, translations.selection.title, translations.selection?.filterTitle, translations.selection?.buildLabel, translations.panel.processingSettings, translations.mapPreview?.title, translations.errors.nameRequired, mode, emptyTableMetadata, buildStatus, nodeId]);
 
   const enabledStepIndices = useMemo(() => stepComponents.map((_, index) => index), [stepComponents]);
   const committableStepIndices = useMemo(() => [stepComponents.length - 1], [stepComponents.length]);
@@ -429,7 +494,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
 
   const handleSave = useCallback(async () => {
     try {
-      await commit();
+      await saveDraft(toDraftDataPayload(dialogData));
       onSuccess?.(dialogData);
       notify.success('Location saved successfully');
     } catch (e) {
@@ -438,13 +503,13 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     } finally {
       onClose();
     }
-  }, [commit, dialogData, onClose, onError, onSuccess]);
+  }, [dialogData, onClose, onError, onSuccess, saveDraft]);
 
   const handleCancel = useCallback(async () => {
-    await discard().catch(() => {});
+    await discardDraft().catch(() => {});
     notify.info('Location changes discarded');
     onClose();
-  }, [discard, onClose]);
+  }, [discardDraft, onClose]);
 
   const handleSizeChange = useCallback((next?: MultiDialogSize) => {
     if (!next) return;
@@ -486,7 +551,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     }
   }, [stepComponents.length]);
 
-  const renderHeader: HeadlessMultiStepDialogProps<LocationWorkingCopy>['renderHeader'] = useCallback((propsHeader: HeadlessHeaderRenderProps<LocationWorkingCopy>) => (
+  const renderHeader: HeadlessMultiStepDialogProps<LocationDraft>['renderHeader'] = useCallback((propsHeader: HeadlessHeaderRenderProps<LocationDraft>) => (
     <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ px: 2, py: 1.5, borderBottom: '1px solid #dde1eb' }}>
       <Box display="flex" alignItems="center" gap={1.5}>
         <LocationOn color="primary" />
@@ -505,7 +570,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     </Box>
   ), [mode, translations.dialog.createTitle, translations.dialog.datasetDescription, translations.dialog.editTitle]);
 
-  const renderContent: HeadlessMultiStepDialogProps<LocationWorkingCopy>['renderContent'] = useCallback((propsContent: HeadlessContentRenderProps<LocationWorkingCopy>) => {
+  const renderContent: HeadlessMultiStepDialogProps<LocationDraft>['renderContent'] = useCallback((propsContent: HeadlessContentRenderProps<LocationDraft>) => {
     const ActiveComponent = propsContent.activeStep?.component;
     if (!ActiveComponent) return null;
 
@@ -555,7 +620,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     );
   }, [resolveDataSourceLabel, translations]);
 
-  const renderFooter: HeadlessMultiStepDialogProps<LocationWorkingCopy>['renderFooter'] = useCallback((propsFooter: HeadlessFooterRenderProps<LocationWorkingCopy>) => {
+  const renderFooter: HeadlessMultiStepDialogProps<LocationDraft>['renderFooter'] = useCallback((propsFooter: HeadlessFooterRenderProps<LocationDraft>) => {
     const canCommit = propsFooter.committableStepIndices.includes(propsFooter.activeStepIndex);
     const startBatchLabel = 'Start Batch';
 
@@ -609,11 +674,11 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     translations.dialog.save,
   ]);
 
-  const dialogProps: HeadlessMultiStepDialogProps<LocationWorkingCopy> = {
+  const dialogProps: HeadlessMultiStepDialogProps<LocationDraft> = {
     open,
     stepComponents,
     stepData: dialogData,
-    onStepDataChange: handleWorkingCopyPatch,
+    onStepDataChange: handleDraftPatch,
     activeStepIndex,
     enabledStepIndices,
     validatedStepIndices: [],
@@ -635,6 +700,6 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
   };
 
   return (
-    <HeadlessMultiStepDialog<LocationWorkingCopy> {...dialogProps} />
+    <HeadlessMultiStepDialog<LocationDraft> {...dialogProps} />
   );
 };

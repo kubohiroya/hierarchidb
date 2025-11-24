@@ -11,7 +11,7 @@ src/adapters/
 ├── WorkerAPIAdapter.ts           # メインアダプタークラス
 ├── commands/                     # コマンド変換
 │   ├── TreeMutationCommands.ts  # CRUD系コマンド変換
-│   ├── WorkingCopyCommands.ts   # WorkingCopy系コマンド変換
+│   ├── DraftCommands.ts   # WorkingCopy系コマンド変換
 │   └── HistoryCommands.ts       # Undo/Redo系コマンド変換
 ├── subscriptions/               # サブスクリプション変換
 │   ├── TreeObservableAdapter.ts # Observable → Callback変換
@@ -175,7 +175,7 @@ export class TreeMutationCommandsAdapter {
 - 新しいコード: `createWorkingCopy` → `commitWorkingCopy` フロー
 
 ```typescript
-// adapters/commands/WorkingCopyCommands.ts
+// adapters/commands/DraftCommands.ts
 export class WorkingCopyCommandsAdapter {
   // 🟡 要確認: 既存の編集開始パターン
   async startNodeEdit(
@@ -255,6 +255,6 @@ export class WorkingCopyCommandsAdapter {
 1. **Phase 1**: `fetchSaveMetadata.ts` と `lifecycle-plugin-definition.ts` (基盤)
 2. **Phase 2**: `TreeObservableAdapter.ts` (サブスクリプション変換)
 3. **Phase 3**: `TreeMutationCommands.ts` (基本CRUD)  
-4. **Phase 4**: `WorkingCopyCommands.ts` (編集フロー)
+4. **Phase 4**: `DraftCommands.ts` (編集フロー)
 
 各フェーズの実装において、メソッドごとに既存コードとの対応を確認しながら進めます。

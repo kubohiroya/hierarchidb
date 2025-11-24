@@ -33,18 +33,18 @@ export interface ShapeAPI {
 
   deleteEntity(nodeId: NodeId): Promise<void>;
 
-  //  WorkingCopyTypes management (CopyOnWrite pattern)
-  createWorkingCopy(nodeId: NodeId): Promise<NodeId>;
+  //  DraftTypes management (CopyOnWrite pattern)
+  createDraft(nodeId: NodeId): Promise<NodeId>;
 
-  createNewDraftWorkingCopy(parentId: NodeId): Promise<NodeId>;
+  createNewDraftBase(parentId: NodeId): Promise<NodeId>;
 
-  getWorkingCopy(workingCopyId: NodeId): Promise<ShapeEntity | undefined>;
+  getDraft(draftId: NodeId): Promise<ShapeEntity | undefined>;
 
-  updateWorkingCopy(workingCopyId: NodeId, data: Partial<ShapeEntity>): Promise<void>;
+  updateDraft(draftId: NodeId, data: Partial<ShapeEntity>): Promise<void>;
 
-  commitWorkingCopy(workingCopyId: NodeId): Promise<void>;
+  commitDraft(draftId: NodeId): Promise<void>;
 
-  discardWorkingCopy(workingCopyId: NodeId): Promise<void>;
+  discardDraft(draftId: NodeId): Promise<void>;
 
   // Data source operations
   getDataSourceConfigs(): Promise<DataSourceConfig[]>;
@@ -66,18 +66,18 @@ export interface ShapeAPI {
 
   calculateSelectionStats(urlMetadata: UrlMetadata[]): Promise<SelectionStats>;
 
-  //  Batch processing operations - WorkingCopyTypes-based
+  //  Batch processing operations - DraftTypes-based
   startBatchProcessing(
-    workingCopyId: NodeId,
+    draftId: NodeId,
     config: ProcessingConfig,
     urlMetadata: UrlMetadata[],
   ): Promise<string>;
 
-  pauseBatchProcessing(workingCopyId: NodeId): Promise<void>;
+  pauseBatchProcessing(draftId: NodeId): Promise<void>;
 
-  resumeBatchProcessing(workingCopyId: NodeId): Promise<void>;
+  resumeBatchProcessing(draftId: NodeId): Promise<void>;
 
-  cancelBatchProcessing(workingCopyId: NodeId): Promise<void>;
+  cancelBatchProcessing(draftId: NodeId): Promise<void>;
 
   invokeBatchCommand<K extends ShapeBatchCommand>(command: K, payload: ShapeBatchCommandPayload<K>): Promise<void>;
 
@@ -85,7 +85,7 @@ export interface ShapeAPI {
 
   getBatchTasks(sessionId: string): Promise<BatchTask[]>;
 
-  getBatchProgress(workingCopyId: NodeId): Promise<ProgressInfo>;
+  getBatchProgress(draftId: NodeId): Promise<ProgressInfo>;
 
   //  Batch session recovery for direct link access
   findPendingBatchSessions(nodeId: NodeId): Promise<BatchSession[]>;

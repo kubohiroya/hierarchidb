@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_PROCESSING_CONFIG } from '../../../common/shared/constants.js';
 import {
-  createWorkingCopyFromEntity,
-  mapWorkingCopyToUpdates,
+  createDraftFromEntity,
+  mapDraftToUpdates,
 } from '../../../common/shared/utils.js';
 import type { NodeId, ShapeEntity } from '../../../common/shared/types.js';
 
@@ -27,14 +27,14 @@ const baseEntity = (dataSourceName: string): ShapeEntity => ({
 describe('data source normalization', () => {
   it('normalizes entity data sources when building working copies', () => {
     const entity = baseEntity('geoBoundaries');
-    const workingCopy = createWorkingCopyFromEntity(entity);
-    expect(workingCopy.dataSourceName).toBe('geoboundaries');
+    const draft = createDraftFromEntity(entity);
+    expect(draft.dataSourceName).toBe('geoboundaries');
   });
 
   it('normalizes working copy updates before persisting', () => {
-    const workingCopy = createWorkingCopyFromEntity(baseEntity('naturalearth'));
-    const mutated = { ...workingCopy, dataSourceName: 'GeoBoundaries' } as typeof workingCopy;
-    const updates = mapWorkingCopyToUpdates(mutated);
+    const draft = createDraftFromEntity(baseEntity('naturalearth'));
+    const mutated = { ...draft, dataSourceName: 'GeoBoundaries' } as typeof draft;
+    const updates = mapDraftToUpdates(mutated);
     expect(updates.dataSourceName).toBe('geoboundaries');
   });
 });

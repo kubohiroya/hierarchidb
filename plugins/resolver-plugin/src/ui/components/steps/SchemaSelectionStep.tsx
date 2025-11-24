@@ -17,11 +17,11 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { CheckCircle as CheckIcon, Schema as SchemaIcon } from '@mui/icons-material';
-import type { PropertyInfo, ResolverWorkingCopyEntity, SchemaInfo } from '../../../common/types/index.js';
+import type { PropertyInfo, ResolverDraftEntity, SchemaInfo } from '../../../common/types/index.js';
 
 interface SchemaSelectionStepProps {
-  data: Partial<ResolverWorkingCopyEntity>;
-  onUpdate: (updates: Partial<ResolverWorkingCopyEntity>) => void;
+  data: Partial<ResolverDraftEntity>;
+  onUpdate: (updates: Partial<ResolverDraftEntity>) => void;
   onValidationChange: (isValid: boolean) => void;
   onSourceSchemaChange: (schema: SchemaInfo | null) => void;
   onTargetSchemaChange: (schema: SchemaInfo | null) => void;

@@ -43,14 +43,14 @@ describe('CommandRegistry types: envelope inference', () => {
 
   it('includes working copy lifecycle and trash ops in CommandMap', () => {
     // Working copy lifecycle
-    const c1 = createEnvelope('createWorkingCopyForCreate', {
-      workingCopyOf: 'n1' as NodeId,
+    const c1 = createEnvelope('createDraftForCreate', {
+      draftOf: 'n1' as NodeId,
       parentId: 'p1' as NodeId,
       name: 'x',
       description: 'd',
       nodeType: 'folder' as NodeType,
-    } satisfies PayloadOf<'createWorkingCopyForCreate'>);
-    expectTypeOf(c1.payload).toEqualTypeOf<PayloadOf<'createWorkingCopyForCreate'>>();
+    } satisfies PayloadOf<'createDraftForCreate'>);
+    expectTypeOf(c1.payload).toEqualTypeOf<PayloadOf<'createDraftForCreate'>>();
 
     // Trash related
     const mt = createEnvelope('moveToTrash', {

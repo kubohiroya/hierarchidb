@@ -1,13 +1,13 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { LocationWorkingCopy } from '../../../types/index.js';
+import type { LocationDraft } from '../../../types/index.js';
 import type { Timestamp } from '@hierarchidb/common-types';
 import { LocationSelectionStep } from '../LocationSelectionStep.js';
 import { en } from '../../../i18n/en.js';
 
 describe('LocationSelectionStep (component)', () => {
   const timestamp = Date.now() as Timestamp;
-  const baseWorkingCopy: LocationWorkingCopy = {
+  const baseDraft: LocationDraft = {
     treeNodeId: 'node-1',
     draft: {
       dataSource: 'openstreetmap',
@@ -22,7 +22,7 @@ describe('LocationSelectionStep (component)', () => {
 
   it('renders selection guidance and default location tabs', () => {
     const onUpdate = vi.fn();
-    render(<LocationSelectionStep workingCopy={baseWorkingCopy} onUpdate={onUpdate} />);
+    render(<LocationSelectionStep draft={baseDraft} onUpdate={onUpdate} />);
 
     expect(screen.getByText(en.selection.alertMessage)).toBeInTheDocument();
     expect(screen.getByText(en.selection.matrixTitle)).toBeInTheDocument();
@@ -33,22 +33,22 @@ describe('LocationSelectionStep (component)', () => {
 
   it('notifies parent via onUpdate when a matrix cell is toggled', () => {
     const onUpdate = vi.fn();
-    const { rerender } = render(<LocationSelectionStep workingCopy={baseWorkingCopy} onUpdate={onUpdate} />);
+    const { rerender } = render(<LocationSelectionStep draft={baseDraft} onUpdate={onUpdate} />);
 
     const firstCheckbox = screen.getAllByRole('checkbox')[0];
     fireEvent.click(firstCheckbox);
 
     expect(onUpdate).toHaveBeenCalledTimes(1);
-    const patch = onUpdate.mock.calls[0][0] as Partial<LocationWorkingCopy>;
-    const nextMatrix = patch.draft?.selectionMatrix ?? baseWorkingCopy.draft.selectionMatrix;
+    const patch = onUpdate.mock.calls[0][0] as Partial<LocationDraft>;
+    const nextMatrix = patch.draft?.selectionMatrix ?? baseDraft.draft.selectionMatrix;
     expect(nextMatrix?.[0]?.[0]).toBe(true);
 
     rerender(
       <LocationSelectionStep
-        workingCopy={{
-          ...baseWorkingCopy,
+        draft={{
+          ...baseDraft,
           draft: {
-            ...baseWorkingCopy.draft,
+            ...baseDraft.draft,
             selectionMatrix: nextMatrix,
           },
         }}

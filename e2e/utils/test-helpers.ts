@@ -241,7 +241,7 @@ export async function renameFolder(
   await dialog.locator('[data-testid="edit-folder-plugin-confirm"]').click();
   await expect(dialog).not.toBeVisible({ timeout: 5000 });
 
-  await waitForWorkingCopyUpdate(page);
+  await waitForDraftUpdate(page);
   await expect(
     page.locator('[data-testid="console-node"]').filter({ hasText: nextName }).first()
   ).toBeVisible({ timeout: 5000 });
@@ -274,7 +274,7 @@ export async function restoreFromTrash(page: Page, folderName: string): Promise<
   await page.locator('[data-testid="close-trash-panel"]').click();
   await expect(trashPanel).not.toBeVisible({ timeout: 5000 });
 
-  await waitForWorkingCopyUpdate(page);
+  await waitForDraftUpdate(page);
 }
 
 /**
@@ -344,10 +344,10 @@ export async function selectMultipleNodes(page: Page, nodeSelectors: string[]): 
 /**
  * Waits for Working Copy operations to complete
  */
-export async function waitForWorkingCopyUpdate(page: Page): Promise<void> {
+export async function waitForDraftUpdate(page: Page): Promise<void> {
   // Wait for Working Copy indicator to appear and then stabilize
   try {
-    await expect(page.locator('[data-testid="working-copy-indicator"]')).toBeVisible({
+    await expect(page.locator('[data-testid="draft-indicator"]')).toBeVisible({
       timeout: 2000,
     });
   } catch {
@@ -374,7 +374,7 @@ export async function clickUndo(page: Page): Promise<void> {
   const undoButton = page.locator('[data-testid="treeconsole-toolbar-undo-button"]');
   await expect(undoButton).toBeEnabled({ timeout: 5000 });
   await undoButton.click();
-  await waitForWorkingCopyUpdate(page);
+  await waitForDraftUpdate(page);
 }
 
 /**
@@ -384,7 +384,7 @@ export async function clickRedo(page: Page): Promise<void> {
   const redoButton = page.locator('[data-testid="treeconsole-toolbar-redo-button"]');
   await expect(redoButton).toBeEnabled({ timeout: 5000 });
   await redoButton.click();
-  await waitForWorkingCopyUpdate(page);
+  await waitForDraftUpdate(page);
 }
 
 /**

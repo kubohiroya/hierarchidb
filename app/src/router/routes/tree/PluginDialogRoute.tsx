@@ -75,13 +75,12 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
       if (!client || mode !== 'edit') return;
 
       try {
-        const query = await client.getQueryAPI();
-        const wcApi = await client.getWorkingCopyAPI();
+        const wcApi = await client.getDraftAPI();
         let canonicalId = effectiveTargetNodeId as NodeId;
 
-        const existing = await wcApi.getWorkingCopy(canonicalId);
+        const existing = await wcApi.getDraft(canonicalId);
         if (!existing) {
-          await wcApi.createWorkingCopyFromNode(canonicalId);
+          await wcApi.createDraftFromNode(canonicalId);
         }
       } catch (e) {
         console.warn('[PluginDialogRoute] ensure working copy for edit failed', e);

@@ -1,15 +1,15 @@
 /**
-  * WorkingCopyCommands Adapter
+  * DraftCommands Adapter
   * TreeConsoleWorking CopyWorkerAPICommandEnvelope
  * Working Copy
   */
 
-import type { CommitWorkingCopyOptions, WorkerAPI } from '@hierarchidb/common-api';
+import type { CommitDraftOptions, WorkerAPI } from '@hierarchidb/common-api';
 import type {
   CommitResult,
-  CommitWorkingCopyForCreatePayload,
-  CommitWorkingCopyPayload,
-  DiscardWorkingCopyPayload,
+  CommitDraftForCreatePayload,
+  CommitDraftPayload,
+  DiscardDraftPayload,
   NodeId,
   Timestamp,
   TreeNode,
@@ -19,25 +19,25 @@ import { createAdapterCommandId, createCommand } from '../utils.js';
 import type { CommandAdapterOptions } from '../../types/index.js';
 import { TreeConsoleAdapterError } from '../../types/index.js';
 
-export interface WorkingCopyEditSession {
-  workingCopyId: string;
+export interface DraftEditSession {
+  draftId: string;
   sourceId?: NodeId;
   parentId?: NodeId;
   isCreate: boolean;
   expectedUpdatedAt?: Timestamp;
 }
 
-export class WorkingCopyCommandsAdapter {
+export class DraftCommandsAdapter {
   constructor(private workerAPI: WorkerAPI) {
   }
 
-  private resolveCommitOptions(options: CommandAdapterOptions): CommitWorkingCopyOptions | undefined {
-    const policy = options.context?.onNameConflict as CommitWorkingCopyOptions['onNameConflict'] | undefined;
+  private resolveCommitOptions(options: CommandAdapterOptions): CommitDraftOptions | undefined {
+    const policy = options.context?.onNameConflict as CommitDraftOptions['onNameConflict'] | undefined;
     return policy ? { onNameConflict: policy } : undefined;
   }
 
   /**
-      * Working Copy
+      * Draft
       * @param sourceNodeId ID
    * @param options
    * @returns
@@ -45,19 +45,19 @@ export class WorkingCopyCommandsAdapter {
   async startNodeEdit(
     sourceNodeId: NodeId,
     _options: CommandAdapterOptions,
-  ): Promise<WorkingCopyEditSession> {
+  ): Promise<DraftEditSession> {
     try {
       // Command creation is no longer needed with the new API
-      const workingCopyId = createAdapterCommandId();
+      const draftId = createAdapterCommandId();
 
-      const workingCopyAPI = await this.workerAPI.getWorkingCopyAPI();
-      await workingCopyAPI.createWorkingCopyFromNode(sourceNodeId);
+      const draftAPI = await this.workerAPI.getDraftAPI();
+      await draftAPI.createDraftFromNode(sourceNodeId);
 
       //  expectedUpdatedAt
       const currentNodeData = await this.getCurrentNodeData(sourceNodeId);
 
       return {
-        workingCopyId,
+        draftId,
         sourceId: sourceNodeId,
         isCreate: false,
         expectedUpdatedAt: currentNodeData?.updatedAt,
@@ -85,19 +85,19 @@ export class WorkingCopyCommandsAdapter {
     _description: string | undefined,
     nodeType: string,
     _options: CommandAdapterOptions,
-  ): Promise<WorkingCopyEditSession> {
+  ): Promise<DraftEditSession> {
     try {
       // Command creation is no longer needed with the new API
 
-      const workingCopyAPI = await this.workerAPI.getWorkingCopyAPI();
-      const workingCopy = await workingCopyAPI.createDraftWorkingCopy(
+      const draftAPI = await this.workerAPI.getDraftAPI();
+      const draft = await draftAPI.createDraftBase(
         toNodeType(nodeType),
         parentId,
         { metadata: {name} },
       );
 
       return {
-        workingCopyId: workingCopy.id,
+        draftId: draft.id,
         parentId: parentId,
         isCreate: true,
       };
@@ -111,13 +111,13 @@ export class WorkingCopyCommandsAdapter {
   }
 
   /**
-      * Working Copy
+      * Draft
       * @param editSession
    * @param options
    * @returns Promise<void>
       */
   async commitNodeEdit(
-    editSession: WorkingCopyEditSession,
+    editSession: DraftEditSession,
     options: CommandAdapterOptions,
   ): Promise<void> {
     if (editSession.isCreate) {
@@ -129,22 +129,22 @@ export class WorkingCopyCommandsAdapter {
 
     try {
       const command = createCommand(
-        'commitWorkingCopy',
+        'commitDraft',
         {
-          workingCopyId: editSession.workingCopyId,
+          draftId: editSession.draftId,
           expectedUpdatedAt: editSession.expectedUpdatedAt!,
           onNameConflict: options.context?.onNameConflict,
-        } as CommitWorkingCopyPayload,
+        } as CommitDraftPayload,
         {
           groupId: options.context?.groupId,
           sourceViewId: options.context?.viewId,
         },
       );
 
-      const workingCopyAPI = await this.workerAPI.getWorkingCopyAPI();
+      const draftAPI = await this.workerAPI.getDraftAPI();
       const commitOptions = this.resolveCommitOptions(options);
-      const result = await workingCopyAPI.commitWorkingCopy(
-        command.payload.workingCopyId as NodeId,
+      const result = await draftAPI.commitDraft(
+        command.payload.draftId as NodeId,
         commitOptions,
       );
 
@@ -188,7 +188,7 @@ export class WorkingCopyCommandsAdapter {
         throw error;
       }
       throw new TreeConsoleAdapterError(
-        `Commit edit operation failed for working copy ${editSession.workingCopyId}`,
+        `Commit edit operation failed for working copy ${editSession.draftId}`,
         'COMMIT_NODE_EDIT_ADAPTER_ERROR',
         error as Error,
       );
@@ -202,7 +202,7 @@ export class WorkingCopyCommandsAdapter {
    * @returns Promise<void>
       */
   async commitNodeCreate(
-    editSession: WorkingCopyEditSession,
+    editSession: DraftEditSession,
     options: CommandAdapterOptions,
   ): Promise<void> {
     if (!editSession.isCreate) {
@@ -214,21 +214,21 @@ export class WorkingCopyCommandsAdapter {
 
     try {
       const command = createCommand(
-        'commitWorkingCopyForCreate',
+        'commitDraftForCreate',
         {
-          workingCopyId: editSession.workingCopyId,
+          draftId: editSession.draftId,
           onNameConflict: options.context?.onNameConflict,
-        } as CommitWorkingCopyForCreatePayload,
+        } as CommitDraftForCreatePayload,
         {
           groupId: options.context?.groupId,
           sourceViewId: options.context?.viewId,
         },
       );
 
-      const workingCopyAPI = await this.workerAPI.getWorkingCopyAPI();
+      const draftAPI = await this.workerAPI.getDraftAPI();
       const commitOptions = this.resolveCommitOptions(options);
-      const result = await workingCopyAPI.commitWorkingCopy(
-        command.payload.workingCopyId as NodeId,
+      const result = await draftAPI.commitDraft(
+        command.payload.draftId as NodeId,
         commitOptions,
       );
 
@@ -270,7 +270,7 @@ export class WorkingCopyCommandsAdapter {
         throw error;
       }
       throw new TreeConsoleAdapterError(
-        `Commit create operation failed for working copy ${editSession.workingCopyId}`,
+        `Commit create operation failed for working copy ${editSession.draftId}`,
         'COMMIT_NODE_CREATE_ADAPTER_ERROR',
         error as Error,
       );
@@ -283,31 +283,31 @@ export class WorkingCopyCommandsAdapter {
    * @param options
    * @returns Promise<void>
       */
-  async discardWorkingCopy(
-    editSession: WorkingCopyEditSession,
+  async discardDraft(
+    editSession: DraftEditSession,
     options: CommandAdapterOptions,
   ): Promise<void> {
     try {
       const commandKind = editSession.isCreate
-        ? 'discardWorkingCopyForCreate'
-        : 'discardWorkingCopy';
+        ? 'discardDraftForCreate'
+        : 'discardDraft';
 
       const command = createCommand(
         commandKind,
         {
-          workingCopyId: editSession.workingCopyId,
-        } as DiscardWorkingCopyPayload,
+          draftId: editSession.draftId,
+        } as DiscardDraftPayload,
         {
           groupId: options.context?.groupId,
           sourceViewId: options.context?.viewId,
         },
       );
 
-      const workingCopyAPI = await this.workerAPI.getWorkingCopyAPI();
-      await workingCopyAPI.discardWorkingCopy(command.payload.workingCopyId as NodeId);
+      const draftAPI = await this.workerAPI.getDraftAPI();
+      await draftAPI.discardDraft(command.payload.draftId as NodeId);
     } catch (error) {
       throw new TreeConsoleAdapterError(
-        `Failed to discard working copy ${editSession.workingCopyId}`,
+        `Failed to discard working copy ${editSession.draftId}`,
         'DISCARD_WORKING_COPY_ERROR',
         error as Error,
       );
@@ -321,7 +321,7 @@ export class WorkingCopyCommandsAdapter {
       */
   async getCurrentNodeData(nodeId: NodeId): Promise<TreeNode | undefined> {
     try {
-      return await this.workerAPI.getQueryAPI().getNode(nodeId);
+      return (await this.workerAPI.getQueryAPI()).getNode(nodeId);
     } catch (error) {
       console.error('Failed to get current node data:', error);
       return undefined;

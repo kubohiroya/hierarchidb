@@ -35,11 +35,11 @@ import {
   Storage as StorageIcon,
   Warning as WarningIcon,
 } from '@mui/icons-material';
-import type { MappingPreviewResult, MappingValidationResult, ResolverWorkingCopyEntity, SchemaInfo, PropertyInfo, PropertyMappingRule, ValidationWarning } from '../../../common/types/index.js';
+import type { MappingPreviewResult, MappingValidationResult, ResolverDraftEntity, SchemaInfo, PropertyInfo, PropertyMappingRule, ValidationWarning } from '../../../common/types/index.js';
 
 interface PreviewTestStepProps {
-  data: Partial<ResolverWorkingCopyEntity>;
-  onUpdate: (updates: Partial<ResolverWorkingCopyEntity>) => void;
+  data: Partial<ResolverDraftEntity>;
+  onUpdate: (updates: Partial<ResolverDraftEntity>) => void;
   onValidationChange: (isValid: boolean) => void;
   sourceSchema: SchemaInfo | null;
   targetSchema: SchemaInfo | null;

@@ -7,7 +7,7 @@ export type {
   BaseMapDraftPayload,
   BaseMapEntity,
   BaseMapSearchCriteria,
-  BaseMapWorkingCopy,
+  BaseMapDraft,
   BasemapPeerData,
   CreateBaseMapData,
   MapStyle,

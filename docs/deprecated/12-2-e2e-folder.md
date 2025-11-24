@@ -80,7 +80,7 @@ describe('Folder CRUD Operations', () => {
       await expect(folderNode.locator('[data-testid="folder-plugin-icon"]')).toBeVisible();
 
       // Working Copy の作成確認
-      await expect(page.locator('[data-testid="working-copy-indicator"]')).toBeVisible();
+      await expect(page.locator('[data-testid="draft-indicator"]')).toBeVisible();
     });
 
     test('コンテキストメニューからのフォルダ作成', async ({ page }) => {
@@ -175,7 +175,7 @@ describe('Folder CRUD Operations', () => {
         .not.toBeVisible();
 
       // Working Copy の更新確認
-      await expect(page.locator('[data-testid="working-copy-indicator"]')).toBeVisible();
+      await expect(page.locator('[data-testid="draft-indicator"]')).toBeVisible();
     });
 
     test('編集時のリアルタイムバリデーション', async ({ page }) => {

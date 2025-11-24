@@ -8,7 +8,7 @@ import type { ProxyMarked } from 'comlink';
 /**
  * Working copy data structure
  */
-export interface WorkingCopyData {
+export interface DraftData {
   id: NodeId;
   nodeType: string;
   parentNodeId?: NodeId;
@@ -46,51 +46,51 @@ export interface MultiStepDialogAPI {
    * @param parentNodeId - Optional parent node ID
    * @returns The ID of the created working copy
    */
-  createWorkingCopy(nodeType: string, parentNodeId?: NodeId): Promise<NodeId>;
+  createDraft(nodeType: string, parentNodeId?: NodeId): Promise<NodeId>;
 
   /**
    * Get a working copy by ID
    *
-   * @param workingCopyId - The ID of the working copy
+   * @param draftId - The ID of the working copy
    * @returns The working copy data or undefined if not found
    */
-  getWorkingCopy(workingCopyId: NodeId): Promise<WorkingCopyData | undefined>;
+  getDraft(draftId: NodeId): Promise<DraftData | undefined>;
 
   /**
    * Update a working copy
    *
-   * @param workingCopyId - The ID of the working copy
+   * @param draftId - The ID of the working copy
    * @param updates - Partial updates to apply
    * @returns The updated working copy data
    */
-  updateWorkingCopy(
-    workingCopyId: NodeId,
-    updates: Partial<WorkingCopyData>
-  ): Promise<WorkingCopyData>;
+  updateDraft(
+    draftId: NodeId,
+    updates: Partial<DraftData>
+  ): Promise<DraftData>;
 
   /**
    * Delete a working copy
    *
-   * @param workingCopyId - The ID of the working copy to delete
+   * @param draftId - The ID of the working copy to delete
    */
-  deleteWorkingCopy(workingCopyId: NodeId): Promise<void>;
+  deleteDraft(draftId: NodeId): Promise<void>;
 
   /**
    * Validate multiple working copies
    *
-   * @param workingCopyIds - Array of working copy IDs to validate
+   * @param draftIds - Array of working copy IDs to validate
    * @returns Map of working copy IDs to validation results
    */
-  batchValidate(workingCopyIds: NodeId[]): Promise<Record<NodeId, ValidationResult>>;
+  batchValidate(draftIds: NodeId[]): Promise<Record<NodeId, ValidationResult>>;
 
   /**
    * Evaluate step capabilities for a working copy
    *
-   * @param workingCopyId - The ID of the working copy
+   * @param draftId - The ID of the working copy
    * @param step - The step number (0-based)
    * @returns The capabilities for the specified step
    */
-  evaluateCapabilities(workingCopyId: NodeId, step: number): Promise<StepCapabilities>;
+  evaluateCapabilities(draftId: NodeId, step: number): Promise<StepCapabilities>;
 
   /**
    * Batch evaluate capabilities for multiple working copies and steps
@@ -99,16 +99,16 @@ export interface MultiStepDialogAPI {
    * @returns Map of working copy IDs to step capabilities
    */
   batchEvaluateCapabilities(
-    requests: Array<{ workingCopyId: NodeId; step: number }>
+    requests: Array<{ draftId: NodeId; step: number }>
   ): Promise<Record<NodeId, StepCapabilities>>;
 
   /**
    * Save a working copy as a permanent entity
    *
-   * @param workingCopyId - The ID of the working copy to save
+   * @param draftId - The ID of the working copy to save
    * @returns The ID of the created entity
    */
-  saveWorkingCopy(workingCopyId: NodeId): Promise<NodeId>;
+  saveDraft(draftId: NodeId): Promise<NodeId>;
 }
 
 /**

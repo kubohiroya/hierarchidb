@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommandProcessor } from '../../CommandProcessor.js';
 import type { CoreDB } from '../../CoreDB.js';
 // fulltext tables removed; stub without fulltext support
-const encodeWorkingCopyHolderName = (parentId: NodeId, nodeId: NodeId) =>
+const encodeDraftHolderName = (parentId: NodeId, nodeId: NodeId) =>
   `${parentId}::${nodeId}`;
 
 describe('Policy C: block move/remove when WC exists', () => {
@@ -42,15 +42,15 @@ describe('Policy C: block move/remove when WC exists', () => {
     state.set('root' as NodeId, makeNode('root', 'super', 'root'));
     state.set('a' as NodeId, makeNode('a', 'root', 'A'));
     state.set(
-      'r:workingCopy' as NodeId,
-      makeNode('r:workingCopy', 'super', 'workingCopy', 'workingCopy' as NodeType)
+      'r:draft' as NodeId,
+      makeNode('r:draft', 'super', 'draft', 'draft' as NodeType)
     );
     state.set('wcHolder' as NodeId, {
       id: 'wcHolder' as NodeId,
-      parentId: 'r:workingCopy' as NodeId,
-      nodeType: 'workingCopy' as NodeType,
+      parentId: 'r:draft' as NodeId,
+      nodeType: 'draft' as NodeType,
       metadata: {
-        name: encodeWorkingCopyHolderName('root' as NodeId, 'a' as NodeId),
+        name: encodeDraftHolderName('root' as NodeId, 'a' as NodeId),
         description: undefined,
         tags: [],
       },

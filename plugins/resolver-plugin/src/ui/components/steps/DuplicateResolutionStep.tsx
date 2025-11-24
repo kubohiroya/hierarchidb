@@ -25,11 +25,11 @@ import {
   SkipNext as SkipIcon,
   Update as UpdateIcon,
 } from '@mui/icons-material';
-import type { DuplicateResolutionStrategy, ResolverWorkingCopyEntity, PropertyMappingRule } from '../../../common/types/index.js';
+import type { DuplicateResolutionStrategy, ResolverDraftEntity, PropertyMappingRule } from '../../../common/types/index.js';
 
 interface DuplicateResolutionStepProps {
-  data: Partial<ResolverWorkingCopyEntity>;
-  onUpdate: (updates: Partial<ResolverWorkingCopyEntity>) => void;
+  data: Partial<ResolverDraftEntity>;
+  onUpdate: (updates: Partial<ResolverDraftEntity>) => void;
   onValidationChange: (isValid: boolean) => void;
 }
 

@@ -16,12 +16,12 @@ import {
   Typography,
 } from '@mui/material';
 import { Add, MyLocation, Remove } from '@mui/icons-material';
-import type { RouteEntity, RouteWorkingCopy } from '../types/index.js';
+import type { RouteEntity, RouteDraft } from '../types/index.js';
 import { useTranslation } from '../i18n/index.js';
-import { getRouteDraft } from '../utils/workingCopy.js';
+import { getRouteDraft } from '../utils/draft.js';
 
 export interface RouteSelectionStepProps {
-  workingCopy: RouteWorkingCopy;
+  draft: RouteDraft;
   onUpdate: (updates: Partial<RouteEntity>) => void;
   onValidationChange: (isValid: boolean) => void;
 }
@@ -34,21 +34,17 @@ interface Waypoint {
 }
 
 export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
-  workingCopy,
+  draft: draftProp,
   onUpdate,
   onValidationChange,
 }) => {
   const { t } = useTranslation();
-  const draft = useMemo(() => getRouteDraft(workingCopy), [workingCopy]);
+  const draft = useMemo(() => getRouteDraft(draftProp), [draftProp]);
   const draftVersion = draft.version;
   const computeNextVersion = useCallback(() => {
-    const base = typeof draftVersion === 'number'
-      ? draftVersion
-      : typeof workingCopy.originalVersion === 'number'
-        ? workingCopy.originalVersion
-        : 0;
+    const base = typeof draftVersion === 'number' ? draftVersion : 0;
     return typeof base === 'number' ? base + 1 : 0;
-  }, [draftVersion, workingCopy.originalVersion]);
+  }, [draftVersion]);
 
   const emitUpdate = useCallback((updates: Partial<RouteEntity>) => {
     onUpdate({
@@ -61,7 +57,6 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
     { id: '1', name: t('base-dialog.routeSelection.startPoint', 'Start Point') },
     { id: '2', name: t('base-dialog.routeSelection.endPoint', 'End Point') },
   ]);
-  const [routeAlgorithm] = useState<'fastest' | 'shortest' | 'scenic'>('fastest');
   const [isCalculating, setIsCalculating] = useState(false);
 
   const handleAddWaypoint = () => {

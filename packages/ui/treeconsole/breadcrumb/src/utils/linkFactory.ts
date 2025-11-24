@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-types';
 
-type HolderType = 'workingCopy' | 'trash';
+type HolderType = 'draft' | 'trash';
 
 export interface BuildTreeConsoleLinkOptions {
   treeId?: string | null;

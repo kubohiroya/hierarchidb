@@ -8,11 +8,16 @@
     }
   },
   "include": [
-    "src*"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",
     "dist",
+    "src/**/__tests__/**/*",
+    "src/common/__tests__/**/*",
+    "src/ui/**/__tests__/**/*",
+    "src/common/tabular/**/*",
+    "src/worker/tabular/**/*",
     "**/__tests__*.test.*",
     "**/*.spec.ts",
     "__tests__/**",

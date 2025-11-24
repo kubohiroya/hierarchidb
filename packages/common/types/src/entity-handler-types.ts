@@ -20,11 +20,11 @@ export interface EntityHandler<
 
   deleteGroupEntities?(nodeId: NodeId, groupEntityType: string): Promise<void>;
 
-  createWorkingCopy(nodeId: NodeId): Promise<TEntity>;
+  createDraft(nodeId: NodeId): Promise<TEntity>;
 
-  commitWorkingCopy(nodeId: NodeId, workingCopy: TEntity): Promise<void>;
+  commitDraft(nodeId: NodeId, draft: TEntity): Promise<void>;
 
-  discardWorkingCopy(nodeId: NodeId): Promise<void>;
+  discardDraft(nodeId: NodeId): Promise<void>;
 
   duplicate?(nodeId: NodeId, newNodeId: NodeId): Promise<void>;
 

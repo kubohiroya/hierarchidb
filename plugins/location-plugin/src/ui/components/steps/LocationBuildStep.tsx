@@ -4,12 +4,12 @@ import { Alert, Box, Button, Typography } from '@mui/material';
 import { notify } from '@hierarchidb/components';
 import { listLocationPoints } from '../../../services/pointRepository.js';
 import { LocationVectorTileService } from '../../../services/tiles/LocationVectorTileService.js';
-import type { LocationWorkingCopy } from '../../../common/types/index.js';
+import type { LocationDraft } from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
 
 type Props = {
   nodeId?: NodeId;
-  workingCopy: LocationWorkingCopy;
+  draft: LocationDraft;
 };
 
 const clamp = (value: number, min: number, max: number): number => {
@@ -22,15 +22,15 @@ const MAX_CONCURRENCY = 16;
 const DEFAULT_MIN_ZOOM = 5;
 const DEFAULT_MAX_ZOOM = 12;
 
-export const LocationBuildStep: React.FC<Props> = ({ nodeId, workingCopy }) => {
+export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft: draftProp }) => {
   const { translations } = useTranslation();
   const [isBuilding, setIsBuilding] = useState(false);
   const serviceRef = useRef<LocationVectorTileService | null>(null);
 
-  const draft = useMemo(()=>workingCopy.draft ?? {}, [workingCopy.draft]);
+  const draft = useMemo(() => draftProp.draft ?? {}, [draftProp.draft]);
 
   const canBuild = Boolean(
-    nodeId && draft.licenseAgreement && draft.dataSource && workingCopy.treeNodeId
+    nodeId && draftProp.treeNodeId && draft.licenseAgreement && draft.dataSource
   );
 
   const concurrency = useMemo(() => {

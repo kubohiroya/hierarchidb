@@ -4,7 +4,7 @@ import type {
   NodeId,
   ObserveNodePayload,
   ObserveSubtreePayload,
-  ObserveWorkingCopiesPayload,
+  ObserveDraftsPayload,
   SubscribeChildrenPayload,
   SubscriptionFilter,
   SubscriptionId,
@@ -331,8 +331,8 @@ export class TreeSubscriptionService {
     return resultObservable;
   }
 
-  subscribeWorkingCopies(
-    cmd: CommandEnvelope<'subscribeWorkingCopies', ObserveWorkingCopiesPayload>
+  subscribeDrafts(
+    cmd: CommandEnvelope<'subscribeDrafts', ObserveDraftsPayload>
   ): Observable<TreeChangeEvent> {
     const { nodeId, includeAllDrafts = false } = cmd.payload;
 
@@ -353,14 +353,14 @@ export class TreeSubscriptionService {
 
     // For now, working copy events come through the same change stream
     // In a real implementation, this might have a separate event source
-    const workingCopyObservable = this.globalChangeSubject.pipe(
-      rxFilter((event) => this.isEventRelevantForWorkingCopies(event, nodeId)),
+    const draftObservable = this.globalChangeSubject.pipe(
+      rxFilter((event) => this.isEventRelevantForDrafts(event, nodeId)),
       map((event) => this.transformEventForSubscription(event)),
       share()
     );
 
     // Subscribe to global changes and forward relevant ones
-    const subscription = workingCopyObservable.subscribe({
+    const subscription = draftObservable.subscribe({
       next: (event) => {
         subject.next(event);
         this.updateSubscriptionActivity(subscriptionId);
@@ -555,7 +555,7 @@ export class TreeSubscriptionService {
     return true;
   }
 
-  private isEventRelevantForWorkingCopies(event: TreeChangeEvent, targetNodeId?: NodeId): boolean {
+  private isEventRelevantForDrafts(event: TreeChangeEvent, targetNodeId?: NodeId): boolean {
     // If targetNodeId is specified, only events about that node
     if (targetNodeId && event.nodeId !== targetNodeId) {
       return false;

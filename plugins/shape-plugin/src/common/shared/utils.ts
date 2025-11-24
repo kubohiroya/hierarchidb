@@ -15,9 +15,9 @@ import type {
   UrlMetadata,
   ValidationResult,
 } from './types.js';
-import type { ShapeEntity, ShapeWorkingCopy } from './types.js';
+import type { ShapeEntity, ShapeDraft } from './types.js';
 import type { Timestamp } from '@hierarchidb/common-types';
-import { createDraftWorkingCopyBase } from '@hierarchidb/plugin-runtime-services';
+import { createDraftBase } from '@hierarchidb/plugin-runtime-services';
 import { DEFAULT_DATA_SOURCES, DEFAULT_PROCESSING_CONFIG } from './constants.js';
 
 const KNOWN_DATA_SOURCE_NAMES = new Set<DataSourceName>(
@@ -411,9 +411,9 @@ export function buildShapeEntityFromCreate(
 }
 
 /**
- * Create a ShapeWorkingCopy from an entity (shared mapping)
+ * Create a ShapeDraft from an entity (shared mapping)
  */
-export function createWorkingCopyFromEntity(entity: ShapeEntity): ShapeWorkingCopy {
+export function createDraftFromEntity(entity: ShapeEntity): ShapeDraft {
   const checkboxState = Array.isArray(entity.checkboxState)
     ? entity.checkboxState
     : typeof entity.checkboxState === 'string'
@@ -439,7 +439,7 @@ export function createWorkingCopyFromEntity(entity: ShapeEntity): ShapeWorkingCo
   const createdAt = (entity.createdAt ?? Date.now()) as Timestamp;
   const updatedAt = (entity.updatedAt ?? createdAt) as Timestamp;
 
-  const base = createDraftWorkingCopyBase<ShapeEntity>({
+  const base = createDraftBase<ShapeEntity>({
     draft: {
       ...draftPayload,
       createdAt,
@@ -454,38 +454,38 @@ export function createWorkingCopyFromEntity(entity: ShapeEntity): ShapeWorkingCo
     },
   });
 
-  const workingCopy: ShapeWorkingCopy = {
+  const draft: ShapeDraft = {
     ...base,
     ...draftPayload,
     id: treeNodeId,
-    parentId: treeNodeId,
-    nodeType: 'shape',
+    //parentId: treeNodeId,
+    //nodeType: 'shape',
     nodeId: treeNodeId,
     depth: 0,
-    originalNodeId: treeNodeId,
-    copiedAt: updatedAt,
-    hasEntityCopy: true,
-    entityWorkingCopyId: entity.id,
+    // originalNodeId: treeNodeId,
+    // copiedAt: updatedAt,
+    // hasEntityCopy: true,
+    // entityDraftId: entity.id,
     originalVersion: entity.version,
     version: entity.version ?? 1,
-    isDraft: false,
+    // isDraft: false,
     resumeStep: entity.resumeStep,
     tabularMetadataId: entity.tabularMetadataId,
     tabularFilters: entity.tabularFilters,
   };
 
-  return workingCopy;
+  return draft;
 }
 
 /**
  * Map a working copy back to entity updates (shared mapping)
  */
-export function mapWorkingCopyToUpdates(
-  workingCopy: ShapeWorkingCopy,
+export function mapDraftToUpdates(
+  draft: ShapeDraft,
 ): Partial<ShapeEntity> {
   const source: Partial<ShapeEntity> = {
-    ...workingCopy.draft,
-    ...workingCopy,
+    ...draft.draft,
+    ...draft,
   };
 
   const updates: Partial<ShapeEntity> = {};

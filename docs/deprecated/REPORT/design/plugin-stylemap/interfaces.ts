@@ -81,13 +81,13 @@ export interface RowEntity {
 /**
  * 🟢 Working copy for safe editing
  */
-export interface StylerWorkingCopy extends StylerEntity {
+export interface StylerDraft extends StylerEntity {
   /** Original entity ID this working copy is based on */
   originalId?: TreeNodeId;
   /** Working copy specific ID */
-  workingCopyId: UUID;
+  draftId: UUID;
   /** Whether this is a working copy */
-  isWorkingCopy: true;
+  isDraft: true;
   /** Temporary changes not yet committed */
   pendingChanges?: Partial<StylerEntity>;
 }
@@ -202,7 +202,7 @@ export interface StylerFormData {
  */
 export interface StylerPreviewState {
   /** Working copy ID */
-  workingCopyId: UUID;
+  draftId: UUID;
   /** Calculated style properties for preview */
   styleProperties: Record<string, any>;
   /** Filtered data for preview */
@@ -280,11 +280,11 @@ export interface StyleCalculationResult {
 /**
  * 🟡 Working copy operation result
  */
-export interface WorkingCopyResult<T = any> {
+export interface DraftResult<T = any> {
   /** Success status */
   success: boolean;
   /** Working copy ID */
-  workingCopyId?: UUID;
+  draftId?: UUID;
   /** Result data */
   data?: T;
   /** Error message if operation failed */
@@ -307,19 +307,19 @@ export interface StylerWorkerAPI {
   createStyler(
     parentId: TreeNodeId,
     formData: StylerFormData
-  ): Promise<WorkingCopyResult<StylerEntity>>;
+  ): Promise<DraftResult<StylerEntity>>;
   getStyler(nodeId: TreeNodeId): Promise<StylerEntity | undefined>;
   updateStyler(nodeId: TreeNodeId, updates: Partial<StylerEntity>): Promise<void>;
   deleteStyler(nodeId: TreeNodeId): Promise<void>;
 
   // Working copy operations
-  createWorkingCopy(nodeId: TreeNodeId): Promise<WorkingCopyResult<StylerWorkingCopy>>;
-  updateWorkingCopy(
-    workingCopyId: UUID,
+  createDraft(nodeId: TreeNodeId): Promise<DraftResult<StylerDraft>>;
+  updateDraft(
+    draftId: UUID,
     updates: Partial<StylerEntity>
-  ): Promise<WorkingCopyResult>;
-  commitWorkingCopy(workingCopyId: UUID): Promise<WorkingCopyResult>;
-  discardWorkingCopy(workingCopyId: UUID): Promise<WorkingCopyResult>;
+  ): Promise<DraftResult>;
+  commitDraft(draftId: UUID): Promise<DraftResult>;
+  discardDraft(draftId: UUID): Promise<DraftResult>;
 
   // Style calculation
   calculateStylerping(config: StylerConfig, data: RowEntity[]): Promise<StyleCalculationResult>;
@@ -357,10 +357,10 @@ export interface StylerDB {
   deleteRowsByTable(tableId: UUID): Promise<void>;
 
   // Working copy operations
-  commitWorkingCopy(workingCopy: StylerWorkingCopy): Promise<void>;
-  getWorkingCopy(workingCopyId: UUID): Promise<StylerWorkingCopy | undefined>;
-  updateWorkingCopy(workingCopyId: UUID, updates: Partial<StylerWorkingCopy>): Promise<void>;
-  deleteWorkingCopy(workingCopyId: UUID): Promise<void>;
+  commitDraft(draft: StylerDraft): Promise<void>;
+  getDraft(draftId: UUID): Promise<StylerDraft | undefined>;
+  updateDraft(draftId: UUID, updates: Partial<StylerDraft>): Promise<void>;
+  deleteDraft(draftId: UUID): Promise<void>;
 
   // Cleanup operations
   cleanup(): Promise<void>;
@@ -519,9 +519,9 @@ export interface StylerEntityHandler {
   delete(nodeId: TreeNodeId): Promise<void>;
 
   // Working copy operations
-  createWorkingCopy(nodeId: TreeNodeId): Promise<StylerWorkingCopy>;
-  commitWorkingCopy(workingCopyId: UUID): Promise<void>;
-  discardWorkingCopy(workingCopyId: UUID): Promise<void>;
+  createDraft(nodeId: TreeNodeId): Promise<StylerDraft>;
+  commitDraft(draftId: UUID): Promise<void>;
+  discardDraft(draftId: UUID): Promise<void>;
 
   // Validation
   validate(data: Partial<StylerFormData>): Promise<ValidationResult>;
@@ -693,7 +693,7 @@ export default {
   StylerEntity,
   TableMetadataEntity,
   RowEntity,
-  StylerWorkingCopy,
+  StylerDraft,
 
   // Configuration
   StylerConfig,

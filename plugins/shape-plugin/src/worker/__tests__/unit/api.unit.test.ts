@@ -15,12 +15,12 @@ vi.mock('../handlers', () => ({
     getEntityByNodeId: vi.fn(),
     updateEntity: vi.fn(),
     deleteEntity: vi.fn(),
-    createWorkingCopy: vi.fn(),
-    createNewDraftWorkingCopy: vi.fn(),
-    getWorkingCopy: vi.fn(),
-    updateWorkingCopy: vi.fn(),
-    commitWorkingCopy: vi.fn(),
-    discardWorkingCopy: vi.fn(),
+    createDraft: vi.fn(),
+    createNewDraftBase: vi.fn(),
+    getDraft: vi.fn(),
+    updateDraft: vi.fn(),
+    commitDraft: vi.fn(),
+    discardDraft: vi.fn(),
   })),
 }));
 
@@ -29,8 +29,8 @@ describe('Shape Plugin API', () => {
     vi.clearAllMocks();
   });
 
-  describe('WorkingCopyTypes Management (CopyOnWrite Pattern)', () => {
-    it('should create WorkingCopyTypes for existing entity', async () => {
+  describe('DraftTypes Management (CopyOnWrite Pattern)', () => {
+    it('should create DraftTypes for existing entity', async () => {
       const nodeId = 'node-456' as NodeId;
       const mockEntity = {
         id: 'entity-123' as any,
@@ -51,9 +51,9 @@ describe('Shape Plugin API', () => {
       // Mock the entity handler to return an entity
       const mockHandler = {
         getEntityByNodeId: vi.fn().mockResolvedValue(mockEntity),
-        createWorkingCopy: vi.fn().mockResolvedValue({
+        createDraft: vi.fn().mockResolvedValue({
           ...mockEntity,
-          id: 'working-copy-123',
+          id: 'draft-123',
           isDraft: false,
         }),
       };
@@ -62,64 +62,64 @@ describe('Shape Plugin API', () => {
         ShapeEntityHandler: vi.fn(() => mockHandler),
       }));
 
-      const workingCopyId = await shapePluginAPI.createWorkingCopy(nodeId);
-      expect(typeof workingCopyId).toBe('string');
+      const draftId = await shapePluginAPI.createDraft(nodeId);
+      expect(typeof draftId).toBe('string');
       expect(mockHandler.getEntityByNodeId).toHaveBeenCalledWith(nodeId);
-      expect(mockHandler.createWorkingCopy).toHaveBeenCalledWith(mockEntity);
+      expect(mockHandler.createDraft).toHaveBeenCalledWith(mockEntity);
     });
 
-    it('should create new draft WorkingCopyTypes', async () => {
+    it('should create new draft DraftTypes', async () => {
       const parentId = 'parent-456' as NodeId;
-      const mockWorkingCopy = {
-        id: 'working-copy-new' as any,
+      const mockDraft = {
+        id: 'draft-new' as any,
         name: '',
         isDraft: true,
       };
 
       const mockHandler = {
-        createNewDraftWorkingCopy: vi.fn().mockResolvedValue(mockWorkingCopy),
+        createNewDraftBase: vi.fn().mockResolvedValue(mockDraft),
       };
 
       vi.doMock('../handlers', () => ({
         ShapeEntityHandler: vi.fn(() => mockHandler),
       }));
 
-      const workingCopyId = await shapePluginAPI.createNewDraftWorkingCopy(parentId);
-      expect(typeof workingCopyId).toBe('string');
-      expect(mockHandler.createNewDraftWorkingCopy).toHaveBeenCalledWith(parentId);
+      const draftId = await shapePluginAPI.createNewDraftBase(parentId);
+      expect(typeof draftId).toBe('string');
+      expect(mockHandler.createNewDraftBase).toHaveBeenCalledWith(parentId);
     });
 
-    it('should get WorkingCopyTypes by ID', async () => {
-      const workingCopyId = 'working-copy-123' as any;
-      const mockWorkingCopy = {
-        id: workingCopyId,
+    it('should get DraftTypes by ID', async () => {
+      const draftId = 'draft-123' as any;
+      const mockDraft = {
+        id: draftId,
         name: 'Test Shape',
         isDraft: false,
       };
 
       const mockHandler = {
-        getWorkingCopy: vi.fn().mockResolvedValue(mockWorkingCopy),
+        getDraft: vi.fn().mockResolvedValue(mockDraft),
       };
 
       vi.doMock('../handlers', () => ({
         ShapeEntityHandler: vi.fn(() => mockHandler),
       }));
 
-      const workingCopy = await shapePluginAPI.getWorkingCopy(workingCopyId);
-      expect(workingCopy).toEqual(mockWorkingCopy);
-      expect(mockHandler.getWorkingCopy).toHaveBeenCalledWith(workingCopyId);
+      const draft = await shapePluginAPI.getDraft(draftId);
+      expect(draft).toEqual(mockDraft);
+      expect(mockHandler.getDraft).toHaveBeenCalledWith(draftId);
     });
 
-    it('should update WorkingCopyTypes with new data', async () => {
-      const workingCopyId = 'working-copy-123' as any;
+    it('should update DraftTypes with new data', async () => {
+      const draftId = 'draft-123' as any;
       const updateData: UpdateShapeData = {
         name: 'Updated Shape Name',
         description: 'Updated description',
       };
 
       const mockHandler = {
-        updateWorkingCopy: vi.fn().mockResolvedValue({
-          id: workingCopyId,
+        updateDraft: vi.fn().mockResolvedValue({
+          id: draftId,
           ...updateData,
         }),
       };
@@ -128,47 +128,47 @@ describe('Shape Plugin API', () => {
         ShapeEntityHandler: vi.fn(() => mockHandler),
       }));
 
-      const updated = await shapePluginAPI.updateWorkingCopy(workingCopyId, updateData);
+      const updated = await shapePluginAPI.updateDraft(draftId, updateData);
       expect(updated).toBeDefined();
-      expect(mockHandler.updateWorkingCopy).toHaveBeenCalledWith(workingCopyId, updateData);
+      expect(mockHandler.updateDraft).toHaveBeenCalledWith(draftId, updateData);
     });
 
-    it('should commit WorkingCopyTypes to CoreDB', async () => {
-      const workingCopyId = 'working-copy-123' as any;
+    it('should commit DraftTypes to CoreDB', async () => {
+      const draftId = 'draft-123' as any;
       const expectedNodeId = 'node-456' as NodeId;
 
       const mockHandler = {
-        commitWorkingCopy: vi.fn().mockResolvedValue(expectedNodeId),
+        commitDraft: vi.fn().mockResolvedValue(expectedNodeId),
       };
 
       vi.doMock('../handlers', () => ({
         ShapeEntityHandler: vi.fn(() => mockHandler),
       }));
 
-      const nodeId = await shapePluginAPI.commitWorkingCopy(workingCopyId);
+      const nodeId = await shapePluginAPI.commitDraft(draftId);
       expect(nodeId).toBe(expectedNodeId);
-      expect(mockHandler.commitWorkingCopy).toHaveBeenCalledWith(workingCopyId);
+      expect(mockHandler.commitDraft).toHaveBeenCalledWith(draftId);
     });
 
-    it('should discard WorkingCopyTypes from EphemeralDB', async () => {
-      const workingCopyId = 'working-copy-123' as any;
+    it('should discard DraftTypes from EphemeralDB', async () => {
+      const draftId = 'draft-123' as any;
 
       const mockHandler = {
-        discardWorkingCopy: vi.fn().mockResolvedValue(undefined),
+        discardDraft: vi.fn().mockResolvedValue(undefined),
       };
 
       vi.doMock('../handlers/ShapeEntityHandler', () => ({
         ShapeEntityHandler: vi.fn(() => mockHandler),
       }));
 
-      await shapePluginAPI.discardWorkingCopy(workingCopyId);
-      expect(mockHandler.discardWorkingCopy).toHaveBeenCalledWith(workingCopyId);
+      await shapePluginAPI.discardDraft(draftId);
+      expect(mockHandler.discardDraft).toHaveBeenCalledWith(draftId);
     });
   });
 
-  describe('WorkingCopyTypes-based Batch Processing', () => {
-    it('should start batch processing with WorkingCopyTypes ID', async () => {
-      const workingCopyId = 'working-copy-123' as any;
+  describe('DraftTypes-based Batch Processing', () => {
+    it('should start batch processing with DraftTypes ID', async () => {
+      const draftId = 'draft-123' as any;
       const config = {
         concurrentDownloads: 2,
         corsProxyBaseURL: '',
@@ -189,7 +189,7 @@ describe('Shape Plugin API', () => {
       ];
 
       const sessionId = await shapePluginAPI.startBatchProcessing(
-        workingCopyId,
+        draftId,
         config,
         urlMetadata,
       );
@@ -198,22 +198,22 @@ describe('Shape Plugin API', () => {
     });
 
     it('should pause batch processing', async () => {
-      const workingCopyId = 'working-copy-123' as any;
+      const draftId = 'draft-123' as any;
 
-      await expect(shapePluginAPI.pauseBatchProcessing(workingCopyId)).resolves.not.toThrow();
+      await expect(shapePluginAPI.pauseBatchProcessing(draftId)).resolves.not.toThrow();
     });
 
     it('should resume batch processing', async () => {
-      const workingCopyId = 'working-copy-123' as any;
+      const draftId = 'draft-123' as any;
 
-      const sessionId = await shapePluginAPI.resumeBatchProcessing(workingCopyId);
+      const sessionId = await shapePluginAPI.resumeBatchProcessing(draftId);
       expect(typeof sessionId).toBe('string');
     });
 
     it('should cancel batch processing', async () => {
-      const workingCopyId = 'working-copy-123' as any;
+      const draftId = 'draft-123' as any;
 
-      await expect(shapePluginAPI.cancelBatchProcessing(workingCopyId)).resolves.not.toThrow();
+      await expect(shapePluginAPI.cancelBatchProcessing(draftId)).resolves.not.toThrow();
     });
 
     it('should get batch processing status', async () => {
@@ -240,7 +240,7 @@ describe('Shape Plugin API', () => {
       const mockSessions = [
         {
           sessionId: 'session-1',
-          workingCopyId: 'working-copy-1' as any,
+          draftId: 'draft-1' as any,
           nodeId: nodeId,
           status: 'paused' as const,
           createdAt: Date.now(),
@@ -248,7 +248,7 @@ describe('Shape Plugin API', () => {
         },
         {
           sessionId: 'session-2',
-          workingCopyId: 'working-copy-2' as any,
+          draftId: 'draft-2' as any,
           nodeId: nodeId,
           status: 'running' as const,
           createdAt: Date.now(),
@@ -359,8 +359,8 @@ describe('Shape Plugin API', () => {
       const stats = await shapePluginAPI.getCleanupStats();
 
       expect(stats).toBeDefined();
-      expect(stats.totalWorkingCopies).toBeDefined();
-      expect(stats.expiredWorkingCopies).toBeDefined();
+      expect(stats.totalDrafts).toBeDefined();
+      expect(stats.expiredDrafts).toBeDefined();
       expect(stats.totalBatchSessions).toBeDefined();
       expect(stats.expiredBatchSessions).toBeDefined();
     });

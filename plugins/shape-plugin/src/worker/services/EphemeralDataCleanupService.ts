@@ -1,9 +1,9 @@
 /**
  * Ephemeral Data Cleanup Service
- * Manages automatic cleanup of expired WorkingCopies and batch processing data
+ * Manages automatic cleanup of expired Drafts and batch processing data
  */
 
-import type { BatchSession, NodeId, ShapeWorkingCopy } from '../../shared/index.ts';
+import type { BatchSession, NodeId, ShapeDraft } from '../../shared/index.ts';
 
 export interface CleanupStatistics {
   workingCopiesDeleted: number;
@@ -92,8 +92,8 @@ export class EphemeralDataCleanupService {
 
   // === Backward-compat shims for older tests ===
   async getCleanupStats(): Promise<{
-    totalWorkingCopies: number;
-    expiredWorkingCopies: number;
+    totalDrafts: number;
+    expiredDrafts: number;
     totalBatchSessions: number;
     expiredBatchSessions: number;
     estimatedSpaceUsed: number;
@@ -101,8 +101,8 @@ export class EphemeralDataCleanupService {
   }> {
     const preview = await this.getCleanupPreview();
     return {
-      totalWorkingCopies: preview.expiredWorkingCopies, // approximation in mock
-      expiredWorkingCopies: preview.expiredWorkingCopies,
+      totalDrafts: preview.expiredDrafts, // approximation in mock
+      expiredDrafts: preview.expiredDrafts,
       totalBatchSessions: preview.expiredBatchSessions,
       expiredBatchSessions: preview.expiredBatchSessions,
       estimatedSpaceUsed: preview.estimatedSizeToReclaim,
@@ -121,16 +121,16 @@ export class EphemeralDataCleanupService {
   /**
    * Cleanup specific working copy and related data
    */
-  async cleanupWorkingCopy(workingCopyId: NodeId): Promise<void> {
-    console.log(`Cleaning up working copy: ${workingCopyId}`);
+  async cleanupDraft(draftId: NodeId): Promise<void> {
+    console.log(`Cleaning up working copy: ${draftId}`);
 
     try {
       // Mock implementation - would perform actual cleanup
-      await this.mockCleanupWorkingCopyTransaction(workingCopyId);
+      await this.mockCleanupDraftTransaction(draftId);
 
-      console.log(`Working copy ${workingCopyId} and related data cleaned up successfully`);
+      console.log(`Working copy ${draftId} and related data cleaned up successfully`);
     } catch (error) {
-      console.error(`Failed to cleanup working copy ${workingCopyId}:`, error);
+      console.error(`Failed to cleanup working copy ${draftId}:`, error);
       throw error;
     }
   }
@@ -156,15 +156,13 @@ export class EphemeralDataCleanupService {
    * Get cleanup statistics without performing cleanup
    */
   async getCleanupPreview(): Promise<{
-    expiredWorkingCopies: number;
+    expiredDrafts: number;
     expiredBatchSessions: number;
     estimatedSizeToReclaim: number;
   }> {
-    const expiredThreshold = Date.now() - this.EXPIRY_THRESHOLD_MS;
-
     // Mock implementation - would query actual databases
     return {
-      expiredWorkingCopies: 5,
+      expiredDrafts: 5,
       expiredBatchSessions: 3,
       estimatedSizeToReclaim: 1024 * 1024 * 50, // 50MB
     };
@@ -211,8 +209,8 @@ export class EphemeralDataCleanupService {
     console.log('Mock: Starting cleanup transaction');
 
     // Mock working copies cleanup
-    const expiredWorkingCopies = this.mockFindExpiredWorkingCopies(expiredThreshold);
-    stats.workingCopiesDeleted = expiredWorkingCopies.length;
+    const expiredDrafts = this.mockFindExpiredDrafts(expiredThreshold);
+    stats.workingCopiesDeleted = expiredDrafts.length;
 
     // Mock batch sessions cleanup
     const expiredBatchSessions = this.mockFindExpiredBatchSessions(expiredThreshold);
@@ -222,7 +220,7 @@ export class EphemeralDataCleanupService {
     stats.batchTasksDeleted = expiredBatchSessions.length * 5; // Average 5 tasks per session
 
     // Mock processed results cleanup
-    stats.processedResultsDeleted = expiredWorkingCopies.length * 2; // Average 2 results per working copy
+    stats.processedResultsDeleted = expiredDrafts.length * 2; // Average 2 results per working copy
 
     // Mock size calculation
     stats.totalSizeReclaimed = (stats.workingCopiesDeleted * 1024 * 1024) + // 1MB per working copy
@@ -234,8 +232,8 @@ export class EphemeralDataCleanupService {
     console.log('Mock: Cleanup transaction completed');
   }
 
-  private async mockCleanupWorkingCopyTransaction(workingCopyId: NodeId): Promise<void> {
-    console.log(`Mock: Cleaning up working copy ${workingCopyId} and related data`);
+  private async mockCleanupDraftTransaction(draftId: NodeId): Promise<void> {
+    console.log(`Mock: Cleaning up working copy ${draftId} and related data`);
 
     // Simulate removal of:
     // - Working copy record
@@ -270,11 +268,11 @@ export class EphemeralDataCleanupService {
     await new Promise(resolve => setTimeout(resolve, 200));
   }
 
-  private mockFindExpiredWorkingCopies(expiredThreshold: number): ShapeWorkingCopy[] {
+  private mockFindExpiredDrafts(expiredThreshold: number): ShapeDraft[] {
     // Mock expired working copies
     return [
-      { updatedAt: expiredThreshold - 1000 } as ShapeWorkingCopy,
-      { updatedAt: expiredThreshold - 2000 } as ShapeWorkingCopy,
+      { updatedAt: expiredThreshold - 1000 } as ShapeDraft,
+      { updatedAt: expiredThreshold - 2000 } as ShapeDraft,
     ];
   }
 

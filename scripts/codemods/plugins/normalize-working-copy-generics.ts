@@ -1,4 +1,4 @@
-import { Project, SyntaxKind, Node, TypeReferenceNode, CallExpression } from 'ts-morph';
+import { Project, Node, TypeReferenceNode, CallExpression } from 'ts-morph';
 
 const project = new Project({
   tsConfigFilePath: 'tsconfig.json',
@@ -9,14 +9,14 @@ const targetGlobs = [
   'packages/plugin-loader/**/src/**/*.tsx',
 ];
 
-const shouldRewriteWorkingCopyDraft = (node: TypeReferenceNode) => {
+const shouldRewriteDraftBase = (node: TypeReferenceNode) => {
   const typeName = node.getTypeName().getText();
-  return typeName === 'WorkingCopyDraft' || typeName.endsWith('.WorkingCopyDraft');
+  return typeName === 'DraftBase' || typeName.endsWith('.DraftBase');
 };
 
 const shouldRewriteCreateDraft = (callExpr: CallExpression) => {
   const expressionText = callExpr.getExpression().getText();
-  return expressionText === 'createDraftWorkingCopyBase' || expressionText.endsWith('.createDraftWorkingCopyBase');
+  return expressionText === 'createDraftBase' || expressionText.endsWith('.createDraftBase');
 };
 
 const files = project.getSourceFiles(targetGlobs);
@@ -25,7 +25,7 @@ for (const sourceFile of files) {
   let modified = false;
 
   sourceFile.forEachDescendant((node) => {
-    if (Node.isTypeReferenceNode(node) && shouldRewriteWorkingCopyDraft(node)) {
+    if (Node.isTypeReferenceNode(node) && shouldRewriteDraftBase(node)) {
       const typeArgs = node.getTypeArguments();
       if (typeArgs.length > 1) {
         const lastArgText = typeArgs[typeArgs.length - 1]!.getText();
@@ -50,6 +50,5 @@ for (const sourceFile of files) {
 }
 
 project.save().then(() => {
-  // eslint-disable-next-line no-console
-  console.log('WorkingCopy generics normalization complete.');
+  console.log('Draft generics normalization complete.');
 });

@@ -211,49 +211,40 @@ export const shapePluginAPI = {
   },
 
   // ===================================
-  // WorkingCopyTypes Management (CopyOnWrite)
+  // DraftTypes Management (CopyOnWrite)
   // ===================================
 
-  createWorkingCopy: async (nodeId: NodeId): Promise<NodeId> => {
+  createDraft: async (nodeId: NodeId): Promise<NodeId> => {
     const handler = getShapeEntityHandler();
     const entity = await handler.getEntityByNodeId(nodeId);
     if (!entity || !entity.id) {
       throw new Error(`Shape entity not found for node: ${nodeId}`);
     }
-    const workingCopy = await handler.createWorkingCopy(entity);
-    if (!workingCopy.id) {
+    const draft = await handler.createDraft(entity);
+    if (!draft.id) {
       throw new Error('Failed to create working copy: missing id');
     }
-    return workingCopy.id;
+    return draft.id;
   },
 
-  createNewDraftWorkingCopy: async (parentId: NodeId): Promise<NodeId> => {
+  getDraft: async (draftId: NodeId): Promise<ShapeEntity | undefined> => {
     const handler = getShapeEntityHandler();
-    const workingCopy = await handler.createNewDraftWorkingCopy(parentId);
-    if (!workingCopy.id) {
-      throw new Error('Failed to create draft working copy: missing id');
-    }
-    return workingCopy.id;
+    return await handler.getDraft(draftId);
   },
 
-  getWorkingCopy: async (workingCopyId: NodeId): Promise<ShapeEntity | undefined> => {
+  updateDraft: async (draftId: NodeId, data: Partial<ShapeEntity>): Promise<void> => {
     const handler = getShapeEntityHandler();
-    return await handler.getWorkingCopy(workingCopyId);
+    await handler.updateDraft(draftId, data);
   },
 
-  updateWorkingCopy: async (workingCopyId: NodeId, data: Partial<ShapeEntity>): Promise<void> => {
+  commitDraft: async (draftId: NodeId): Promise<void> => {
     const handler = getShapeEntityHandler();
-    await handler.updateWorkingCopy(workingCopyId, data);
+    return await handler.commitDraft(draftId);
   },
 
-  commitWorkingCopy: async (workingCopyId: NodeId): Promise<NodeId> => {
+  discardDraft: async (draftId: NodeId): Promise<void> => {
     const handler = getShapeEntityHandler();
-    return await handler.commitWorkingCopy(workingCopyId);
-  },
-
-  discardWorkingCopy: async (workingCopyId: NodeId): Promise<void> => {
-    const handler = getShapeEntityHandler();
-    await handler.discardWorkingCopy(workingCopyId);
+    await handler.discardDraft(draftId);
   },
 
   // ===================================
@@ -332,11 +323,11 @@ export const shapePluginAPI = {
   },
 
   // ===================================
-  // WorkingCopyTypes-based Batch Processing
+  // DraftTypes-based Batch Processing
   // ===================================
 
   startBatchProcessing: async (
-    workingCopyId: NodeId,
+    draftId: NodeId,
     config: ProcessingConfig,
     urlMetadata: UrlMetadata[],
     progressCallback?: (event: ShapeBatchProgressEvent) => void,
@@ -348,16 +339,16 @@ export const shapePluginAPI = {
 
     // Get working copy to find the associated nodeId
     const handler = getShapeEntityHandler();
-    const workingCopy = await handler.getWorkingCopy(workingCopyId);
-    if (!workingCopy || !workingCopy.nodeId) {
-      throw new Error(`Working copy not found: ${workingCopyId}`);
+    const draft = await handler.getDraft(draftId);
+    if (!draft || !draft.nodeId) {
+      throw new Error(`Working copy not found: ${draftId}`);
     }
 
     // Convert ProcessingConfig to BatchConfig
     const batchConfig: BatchProcessConfig = {
       corsProxyBaseURL:
         config.downloadConfig?.corsProxyUrl ?? config.corsProxyBaseURL ?? '',
-      dataSource: config.dataSource ?? toDataSourceName(workingCopy.dataSourceName ?? 'naturalearth'),
+      dataSource: config.dataSource ?? toDataSourceName(draft.dataSourceName ?? 'naturalearth'),
       download: {
         concurrentDownloads:
           config.downloadConfig?.maxConcurrent ?? config.concurrentDownloads ?? 4,
@@ -405,11 +396,11 @@ export const shapePluginAPI = {
     const managerWithPrepare = batchSessionManager as unknown as {
       prepareSession?: (nodeId: NodeId, config: BatchProcessConfig, data: typeof batchSessionData) => void;
     };
-    managerWithPrepare.prepareSession?.(workingCopy.nodeId, batchConfig, batchSessionData);
-    const sessionId = await batchSessionManager.startBatchSession(workingCopy.nodeId);
+    managerWithPrepare.prepareSession?.(draft.nodeId, batchConfig, batchSessionData);
+    const sessionId = await batchSessionManager.startBatchSession(draft.nodeId);
 
     const sessionMeta = getOrCreateSessionMeta(sessionId);
-    sessionMeta.treeNodeId = workingCopy.nodeId as unknown as TreeNodeId;
+    sessionMeta.treeNodeId = draft.nodeId as unknown as TreeNodeId;
 
     // Register progress callback if provided
     if (progressCallback) {
@@ -424,55 +415,55 @@ export const shapePluginAPI = {
     }
 
     // Save session ID to working copy
-    await handler.updateWorkingCopy(workingCopyId, {
+    await handler.updateDraft(draftId, {
       batchSessionId: sessionId,
     });
 
     return sessionId;
   },
 
-  pauseBatchProcessing: async (workingCopyId: NodeId): Promise<void> => {
+  pauseBatchProcessing: async (draftId: NodeId): Promise<void> => {
     const handler = getShapeEntityHandler();
-    const workingCopy = await handler.getWorkingCopy(workingCopyId);
-    if (!workingCopy || !workingCopy.batchSessionId) {
-      throw new Error(`No active batch session for working copy: ${workingCopyId}`);
+    const draft = await handler.getDraft(draftId);
+    if (!draft || !draft.batchSessionId) {
+      throw new Error(`No active batch session for working copy: ${draftId}`);
     }
 
     await batchManagerWithDispatch.dispatchCommand?.('session/pause', {
-      sessionId: workingCopy.batchSessionId,
+      sessionId: draft.batchSessionId,
     });
   },
 
-  resumeBatchProcessing: async (workingCopyId: NodeId): Promise<string> => {
+  resumeBatchProcessing: async (draftId: NodeId): Promise<string> => {
     const handler = getShapeEntityHandler();
-    const workingCopy = await handler.getWorkingCopy(workingCopyId);
-    if (!workingCopy || !workingCopy.batchSessionId) {
-      throw new Error(`No batch session to resume for working copy: ${workingCopyId}`);
+    const draft = await handler.getDraft(draftId);
+    if (!draft || !draft.batchSessionId) {
+      throw new Error(`No batch session to resume for working copy: ${draftId}`);
     }
 
     await batchManagerWithDispatch.dispatchCommand?.('session/resume', {
-      sessionId: workingCopy.batchSessionId,
+      sessionId: draft.batchSessionId,
     });
-    return workingCopy.batchSessionId;
+    return draft.batchSessionId;
   },
 
-  cancelBatchProcessing: async (workingCopyId: NodeId): Promise<void> => {
+  cancelBatchProcessing: async (draftId: NodeId): Promise<void> => {
     const handler = getShapeEntityHandler();
-    const workingCopy = await handler.getWorkingCopy(workingCopyId);
-    if (!workingCopy || !workingCopy.batchSessionId) {
-      throw new Error(`No active batch session for working copy: ${workingCopyId}`);
+    const draft = await handler.getDraft(draftId);
+    if (!draft || !draft.batchSessionId) {
+      throw new Error(`No active batch session for working copy: ${draftId}`);
     }
 
     await batchManagerWithDispatch.dispatchCommand?.('session/cancel', {
-      sessionId: workingCopy.batchSessionId,
+      sessionId: draft.batchSessionId,
     });
-    const subscription = progressCallbacks.get(workingCopy.batchSessionId);
+    const subscription = progressCallbacks.get(draft.batchSessionId);
     subscription?.unsubscribe?.();
-    progressCallbacks.delete(workingCopy.batchSessionId);
-    progressSessionMeta.delete(workingCopy.batchSessionId);
+    progressCallbacks.delete(draft.batchSessionId);
+    progressSessionMeta.delete(draft.batchSessionId);
 
     // Clear session ID from working copy
-    await handler.updateWorkingCopy(workingCopyId, {
+    await handler.updateDraft(draftId, {
       batchSessionId: undefined,
     });
   },
@@ -500,7 +491,7 @@ export const shapePluginAPI = {
       const normalizedStatus = mapManagerStatusToShapeStatus(status.status);
       return {
         sessionId: status.sessionId,
-        workingCopyId: nodeId,
+        draftId: nodeId,
         nodeId,
         status: normalizedStatus,
         config,
@@ -533,10 +524,10 @@ export const shapePluginAPI = {
     return [];
   },
 
-  getBatchProgress: async (workingCopyId: NodeId): Promise<ProgressInfo> => {
+  getBatchProgress: async (draftId: NodeId): Promise<ProgressInfo> => {
     const handler = getShapeEntityHandler();
-    const workingCopy = await handler.getWorkingCopy(workingCopyId);
-    if (!workingCopy?.batchSessionId) {
+    const draft = await handler.getDraft(draftId);
+    if (!draft?.batchSessionId) {
       return {
         total: 0,
         completed: 0,
@@ -546,7 +537,7 @@ export const shapePluginAPI = {
       };
     }
     try {
-      const status = await batchSessionManager.getBatchSessionStatus(workingCopy.batchSessionId);
+      const status = await batchSessionManager.getBatchSessionStatus(draft.batchSessionId);
       const progress = status.progress ?? {
         total: 0,
         completed: 0,
@@ -577,7 +568,7 @@ export const shapePluginAPI = {
     sessionId: string,
   ): Promise<{
     sessionId: string;
-    workingCopyId?: NodeId;
+    draftId?: NodeId;
     status: string;
     progress?: number;
     completedTasks?: number;
@@ -588,7 +579,7 @@ export const shapePluginAPI = {
       const normalizedStatus = mapManagerStatusToShapeStatus(status.status);
       return {
         sessionId,
-        workingCopyId: status.nodeId as NodeId,
+        draftId: status.nodeId as NodeId,
         status: normalizedStatus,
         progress: status.progress?.percentage,
         completedTasks: status.progress?.completed,
@@ -660,8 +651,8 @@ export const shapePluginAPI = {
   },
 
   getCleanupStats: async (): Promise<{
-    totalWorkingCopies: number;
-    expiredWorkingCopies: number;
+    totalDrafts: number;
+    expiredDrafts: number;
     totalBatchSessions: number;
     expiredBatchSessions: number;
     estimatedSpaceUsed: number;
@@ -669,8 +660,8 @@ export const shapePluginAPI = {
   }> => {
     console.log('Getting cleanup statistics');
     return {
-      totalWorkingCopies: 0,
-      expiredWorkingCopies: 0,
+      totalDrafts: 0,
+      expiredDrafts: 0,
       totalBatchSessions: 0,
       expiredBatchSessions: 0,
       estimatedSpaceUsed: 0,

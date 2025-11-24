@@ -9,18 +9,18 @@ export type {
 
 // Working copy helpers
 export {
-  createDraftWorkingCopyBase,
-  markWorkingCopyUpdated,
-} from './working-copy/helpers.js';
-export type { EntityWorkingCopyAdapter } from './working-copy/adapter.js';
-export { createEntityWorkingCopyAdapter } from './working-copy/adapter.js';
+  createDraftBase,
+  markDraftUpdated,
+} from './draft/helpers.js';
+export type { EntityDraftAdapter } from './draft/adapter.js';
+export { createEntityDraftAdapter } from './draft/adapter.js';
 export {
-  WorkingCopyService,
-} from './working-copy/service.js';
+  DraftService,
+} from './draft/service.js';
 export type {
-  WorkingCopyState,
+  DraftState,
   StepCapabilitiesState,
-} from './working-copy/service.js';
+} from './draft/service.js';
 
 // Peer store helpers
 export { createPeerStoreNormalizer } from './peer-store/normalizer.js';

@@ -4,7 +4,6 @@ import type { PeerStore } from '@hierarchidb/runtime-worker';
 import { createNodePayloadPeerStore } from '@hierarchidb/runtime-worker';
 import type { BasemapPeerData } from '../../common/types/BaseMapEntity.js';
 import { PLUGIN_NODE_TYPE } from '../../plugin-manifest.js';
-import { normalizeBasemapPeerData } from '../utils/presentation.js';
 
 type StoreRegistry = {
   getPeer<T = unknown>(nodeType: string): PeerStore<T> | undefined;
@@ -36,12 +35,7 @@ async function resolveStoreRegistry(
 
 const ensurePeerStore = (registry: StoreRegistry): void => {
   if (registry.getPeer(PLUGIN_NODE_TYPE)) return;
-  registry.registerPeer(
-    PLUGIN_NODE_TYPE,
-    createNodePayloadPeerStore<BasemapPeerData>({
-      normalize: (data: BasemapPeerData | undefined) => normalizeBasemapPeerData(data ?? undefined),
-    })
-  );
+  registry.registerPeer(PLUGIN_NODE_TYPE, createNodePayloadPeerStore<BasemapPeerData>());
 };
 
 export async function registerBasemapWorkerStores(

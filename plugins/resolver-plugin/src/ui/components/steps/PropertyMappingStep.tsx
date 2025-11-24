@@ -20,11 +20,11 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { Add as AddIcon, Close as CloseIcon, Help as HelpIcon, Preview as PreviewIcon } from '@mui/icons-material';
-import type { MappingPreviewResult, PropertyMappingRule, ResolverWorkingCopyEntity, SchemaInfo, PropertyInfo } from '../../../common/types/index.js';
+import type { MappingPreviewResult, PropertyMappingRule, ResolverDraftEntity, SchemaInfo, PropertyInfo } from '../../../common/types/index.js';
 
 interface PropertyMappingStepProps {
-  data: Partial<ResolverWorkingCopyEntity>;
-  onUpdate: (updates: Partial<ResolverWorkingCopyEntity>) => void;
+  data: Partial<ResolverDraftEntity>;
+  onUpdate: (updates: Partial<ResolverDraftEntity>) => void;
   onValidationChange: (isValid: boolean) => void;
   sourceSchema: SchemaInfo | null;
   targetSchema: SchemaInfo | null;

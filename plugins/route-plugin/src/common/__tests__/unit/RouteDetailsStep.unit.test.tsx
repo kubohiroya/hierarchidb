@@ -1,8 +1,8 @@
 import { describe, expect, vi, it, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { RouteDetailsStep } from '../components/RouteDetailsStep.js';
-import { RouteType, TransportMode, type RouteEntity, type RouteWorkingCopy, type NodeId } from '../types/index.js';
-import { createRouteDraftWorkingCopy, mergeRouteWorkingCopy } from '../utils/workingCopy.js';
+import { RouteType, TransportMode, type RouteEntity, type RouteDraft, type NodeId } from '../types/index.js';
+import { createRouteDraftBase, mergeRouteDraft } from '../utils/draft.js';
 import { en as enTranslations } from '../i18n/en.js';
 import "@testing-library/jest-dom/vitest";
 
@@ -13,9 +13,9 @@ vi.mock('../i18n/index.js', () => ({
   }),
 }));
 
-const createWorkingCopy = (overrides: Partial<RouteEntity> = {}): RouteWorkingCopy => {
-  const base = createRouteDraftWorkingCopy('route-node-1' as NodeId);
-  return mergeRouteWorkingCopy(base, overrides);
+const createDraft = (overrides: Partial<RouteEntity> = {}): RouteDraft => {
+  const base = createRouteDraftBase('route-node-1' as NodeId);
+  return mergeRouteDraft(base, overrides);
 };
 
 describe('RouteDetailsStep', () => {
@@ -24,7 +24,7 @@ describe('RouteDetailsStep', () => {
   });
 
   it('renders draft values for route configuration fields', () => {
-    const workingCopy = createWorkingCopy({
+    const draft = createDraft({
       routeType: RouteType.ROAD,
       transportModes: [TransportMode.CAR, TransportMode.BUS],
       category: 'logistics',
@@ -32,7 +32,7 @@ describe('RouteDetailsStep', () => {
 
     render(
       <RouteDetailsStep
-        workingCopy={workingCopy}
+        draft={draft}
         onUpdate={vi.fn()}
         onValidationChange={vi.fn()}
       />,
@@ -45,11 +45,11 @@ describe('RouteDetailsStep', () => {
 
   it('emits updates when route type changes', () => {
     const onUpdate = vi.fn();
-    const workingCopy = createWorkingCopy({ routeType: RouteType.ROAD });
+    const draft = createDraft({ routeType: RouteType.ROAD });
 
     render(
       <RouteDetailsStep
-        workingCopy={workingCopy}
+        draft={draft}
         onUpdate={onUpdate}
         onValidationChange={vi.fn()}
       />,

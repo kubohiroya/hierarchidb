@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { NodeId, Timestamp, TreeNode } from '@hierarchidb/common-types';
-import type { TreeQueryAPI, WorkingCopyAPI } from '@hierarchidb/common-api';
+import type { TreeQueryAPI, DraftAPI } from '@hierarchidb/common-api';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-client';
 import type {
   BaseMapEntity,
@@ -67,8 +67,18 @@ export function buildBaseMapEntityFromNode(node?: TreeNode | null): BaseMapEntit
   const viewport = normalizeViewport(data.viewport as Partial<MapViewport> | undefined);
   const createdAt: Timestamp = (typeof node.createdAt === 'number' ? node.createdAt : Date.now()) as Timestamp;
   const updatedAt: Timestamp = (typeof node.updatedAt === 'number' ? node.updatedAt : Date.now()) as Timestamp;
-  const name = typeof node.name === 'string' ? node.name : undefined;
-  const description = typeof node.description === 'string' ? node.description : undefined;
+  const name =
+    typeof (node as { name?: unknown }).name === 'string'
+      ? ((node as { name?: string }).name as string)
+      : typeof (node as { metadata?: { name?: unknown } }).metadata?.name === 'string'
+        ? ((node as { metadata?: { name?: string } }).metadata?.name as string)
+        : undefined;
+  const description =
+    typeof (node as { description?: unknown }).description === 'string'
+      ? ((node as { description?: string }).description as string)
+      : typeof (node as { metadata?: { description?: unknown } }).metadata?.description === 'string'
+        ? ((node as { metadata?: { description?: string } }).metadata?.description as string)
+        : undefined;
   const tags = toStringArray((node as { tags?: unknown }).tags ?? data.tags);
 
   return {
@@ -103,30 +113,30 @@ function createFallbackEntity(nodeId: NodeId): BaseMapEntity {
 
 async function ensureWorkerApis(
   ref: WorkerClientRef | null
-): Promise<{ query: TreeQueryAPI; workingCopy: WorkingCopyAPI } | null> {
+): Promise<{ query: TreeQueryAPI; draft: DraftAPI } | null> {
   if (!ref) return null;
   try {
     const api = ref.getAPI();
-    const [query, workingCopy] = await Promise.all([api.getQueryAPI(), api.getWorkingCopyAPI()]);
-    return { query, workingCopy };
+    const [query, draft] = await Promise.all([api.getQueryAPI(), api.getDraftAPI()]);
+    return { query, draft };
   } catch (error) {
     console.error('[useBaseMapEntity] Failed to acquire worker APIs', error);
     return null;
   }
 }
 
-async function ensureWorkingCopyNode(
+async function ensureDraftNode(
   nodeId: NodeId,
-  wcAPI: WorkingCopyAPI
-): Promise<{ workingCopyId: NodeId; workingCopyNode: TreeNode }> {
-  let wc = await wcAPI.getWorkingCopy(nodeId);
+  wcAPI: DraftAPI
+): Promise<{ draftId: NodeId; draftNode: TreeNode }> {
+  let wc = await wcAPI.getDraft(nodeId);
   if (!wc) {
-    wc = await wcAPI.createWorkingCopyFromNode(nodeId);
+    wc = await wcAPI.createDraftFromNode(nodeId);
   }
   if (!wc) {
     throw new Error('Working copy creation failed');
   }
-  return { workingCopyId: (wc.id ?? nodeId) as NodeId, workingCopyNode: wc };
+  return { draftId: (wc.id ?? nodeId) as NodeId, draftNode: wc };
 }
 
 /**
@@ -199,11 +209,11 @@ export function useBaseMapEntity(
         if (!apis) {
           throw new Error('Worker APIs unavailable');
         }
-        const { workingCopyId, workingCopyNode } = await ensureWorkingCopyNode(
+        const { draftId, draftNode } = await ensureDraftNode(
           nodeId,
-          apis.workingCopy
+          apis.draft
         );
-        const current = buildBaseMapEntityFromNode(workingCopyNode) ?? createFallbackEntity(nodeId);
+        const current = buildBaseMapEntityFromNode(draftNode) ?? createFallbackEntity(nodeId);
         const next: BaseMapEntity = {
           ...current,
           ...updates,
@@ -211,7 +221,7 @@ export function useBaseMapEntity(
           viewport: normalizeViewport(updates.viewport ?? current.viewport),
           updatedAt: Date.now() as Timestamp,
         };
-        await apis.workingCopy.updateWorkingCopy(workingCopyId, {
+        await apis.draft.updateDraft(draftId, {
           name: next.name,
           description: next.description,
           tags: next.tags,
@@ -220,7 +230,7 @@ export function useBaseMapEntity(
             viewport: next.viewport,
           },
         } as Partial<TreeNode>);
-        await apis.workingCopy.commitWorkingCopy(workingCopyId);
+        await apis.draft.commitDraft(draftId);
         await fetchEntity();
       } catch (err) {
         console.error('Failed to update BaseMap entity:', err);

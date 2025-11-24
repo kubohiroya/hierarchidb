@@ -206,57 +206,57 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
 
       {/* Working copy cleanup removed - functionality was deprecated */}
       {/* <Dialog
-        open={clearWorkingCopyDialogOpen}
-        onClose={() => setClearWorkingCopyDialogOpen(false)}
+        open={clearDraftDialogOpen}
+        onClose={() => setClearDraftDialogOpen(false)}
         aria-labelledby="clear-workingcopy-base-dialog-title"
         aria-describedby="clear-workingcopy-base-dialog-description"
       >
         <DialogTitle id="clear-workingcopy-base-dialog-title">
-          Clear WorkingCopyTypes Garbage?
+          Clear DraftTypes Garbage?
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="clear-workingcopy-base-dialog-description" component="div">
-            {workingCopyStats ? (
+            {draftStats ? (
               <>
                 <Typography variant="body2" gutterBottom>
-                  Found {workingCopyStats.total} WorkingCopyTypes entities:
+                  Found {draftStats.total} DraftTypes entities:
                 </Typography>
                 <ul style={{ marginTop: 8, marginBottom: 8 }}>
-                  <li>Orphaned (original deleted): {workingCopyStats.orphaned}</li>
-                  <li>Stale (older than 24 hours): {workingCopyStats.stale}</li>
+                  <li>Orphaned (original deleted): {draftStats.orphaned}</li>
+                  <li>Stale (older than 24 hours): {draftStats.stale}</li>
                 </ul>
-                {Object.keys(workingCopyStats.byType).length > 0 && (
+                {Object.keys(draftStats.byType).length > 0 && (
                   <>
                     <Typography variant="body2" gutterBottom>
                       By type:
                     </Typography>
                     <ul style={{ marginTop: 8, marginBottom: 8 }}>
-                      {Object.entries(workingCopyStats.byType).map(([type, count]) => (
+                      {Object.entries(draftStats.byType).map(([type, count]) => (
                         <li key={type}>{type}: {count as number}</li>
                       ))}
                     </ul>
                   </>
                 )}
                 <Typography variant="body2" color="warning.main">
-                  <strong>Note:</strong> This will delete orphaned and stale WorkingCopies.
-                  Active WorkingCopies (less than 24 hours old with existing originals) will be preserved.
+                  <strong>Note:</strong> This will delete orphaned and stale Drafts.
+                  Active Drafts (less than 24 hours old with existing originals) will be preserved.
                 </Typography>
               </>
             ) : (
-              <Typography>Loading WorkingCopyTypes statistics...</Typography>
+              <Typography>Loading DraftTypes statistics...</Typography>
             )}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setClearWorkingCopyDialogOpen(false)}>
+          <Button onClick={() => setClearDraftDialogOpen(false)}>
             Cancel
           </Button>
           <Button 
-            onClick={handleClearWorkingCopies} 
+            onClick={handleClearDrafts} 
             color="warning" 
             variant="contained" 
             autoFocus
-            disabled={!workingCopyStats}
+            disabled={!draftStats}
           >
             Clear Garbage
           </Button>

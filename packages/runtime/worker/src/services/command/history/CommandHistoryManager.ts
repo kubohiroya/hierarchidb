@@ -9,7 +9,7 @@ import type {
 import type { CoreDB } from '../../CoreDB.js';
 import type { CommandEnvelope, CommandEvent, CommandResult } from '../../command-types.js';
 import { WorkerErrorCode } from '../../command-types.js';
-import { createNewName } from '../../WorkingCopyTreeNodeOperations.js';
+import { createNewName } from '../../DraftTreeNodeOperations.js';
 
 type SanitizedLogResult = {
   success: boolean;
@@ -54,10 +54,10 @@ export class CommandHistoryManager {
       trashName: string;
     }>
   >();
-  private readonly preCommitWorkingCopyState = new Map<
+  private readonly preCommitDraftState = new Map<
     CommandId,
     {
-      workingCopy: TreeNode;
+      draft: TreeNode;
       committedNode?: TreeNode;
     }
   >();
@@ -69,7 +69,7 @@ export class CommandHistoryManager {
     'moveToTrash',
     'remove',
     'restoreFromTrash',
-    'commitWorkingCopy',
+    'commitDraft',
   ]);
 
   constructor(
@@ -151,7 +151,7 @@ export class CommandHistoryManager {
     this.preRestoreState.clear();
     this.redoRestoreState.clear();
     this.preMoveToTrashState.clear();
-    this.preCommitWorkingCopyState.clear();
+    this.preCommitDraftState.clear();
   }
 
   async undo(): Promise<CommandResult> {
@@ -271,18 +271,18 @@ export class CommandHistoryManager {
     );
   }
 
-  storeCommitWorkingCopySnapshot(
+  storeCommitDraftSnapshot(
     commandId: CommandId,
     snapshot: {
-      workingCopy: TreeNode;
+      draft: TreeNode;
       committedNode?: TreeNode;
     }
   ): void {
-    if (this.preCommitWorkingCopyState.has(commandId)) {
+    if (this.preCommitDraftState.has(commandId)) {
       return;
     }
-    this.preCommitWorkingCopyState.set(commandId, {
-      workingCopy: { ...snapshot.workingCopy },
+    this.preCommitDraftState.set(commandId, {
+      draft: { ...snapshot.draft },
       committedNode: snapshot.committedNode ? { ...snapshot.committedNode } : undefined,
     });
   }
@@ -399,16 +399,16 @@ export class CommandHistoryManager {
       break;
       }
 
-      case 'commitWorkingCopy': {
+      case 'commitDraft': {
         const commandId = command.commandId as CommandId;
-        const snapshot = this.preCommitWorkingCopyState.get(commandId);
+        const snapshot = this.preCommitDraftState.get(commandId);
         if (!snapshot) {
           throw new Error('No working copy snapshot recorded for undo');
         }
       if (snapshot.committedNode) {
         await this.deps.coreDB.deleteNode?.(snapshot.committedNode.id as NodeId);
       }
-      await this.restoreNode(snapshot.workingCopy);
+      await this.restoreNode(snapshot.draft);
       break;
       }
 

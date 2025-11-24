@@ -113,7 +113,7 @@ export interface RouteEntity extends BaseEntity {
 /**
  * Route working copy metadata shared between UI と Worker.
  */
-export type RouteWorkingCopy = import('../types/index.js').RouteWorkingCopy;
+export type RouteDraft = import('../types/index.js').RouteDraft;
 
 /**
  * Route filter criteria

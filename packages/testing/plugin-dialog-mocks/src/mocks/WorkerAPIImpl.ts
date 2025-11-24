@@ -1,4 +1,4 @@
-import type { MultiStepDialogAPI, StepCapabilities, WorkingCopyData } from '@hierarchidb/common-api';
+import type { MultiStepDialogAPI, StepCapabilities, DraftData } from '@hierarchidb/common-api';
 import type { NodeId, ValidationResult } from '@hierarchidb/common-types';
 
 function genId(prefix: string = 'wc'): NodeId {
@@ -6,7 +6,7 @@ function genId(prefix: string = 'wc'): NodeId {
 }
 
 export class WorkerAPIImpl {
-  private store = new Map<NodeId, WorkingCopyData>();
+  private store = new Map<NodeId, DraftData>();
 
   constructor(private readonly namespace: string) {}
 
@@ -21,14 +21,14 @@ export class WorkerAPIImpl {
   getMultiStepDialogAPI(): MultiStepDialogAPI {
     const self = this;
 
-    async function requireWorkingCopy(id: NodeId): Promise<WorkingCopyData> {
+    async function requireDraft(id: NodeId): Promise<DraftData> {
       const wc = self.store.get(id);
       if (!wc) throw new Error('Working copy not found');
       return wc;
     }
 
     return {
-      async createWorkingCopy(nodeType: string, parentNodeId?: NodeId): Promise<NodeId> {
+      async createDraft(nodeType: string, parentNodeId?: NodeId): Promise<NodeId> {
         const normalized = nodeType.toLowerCase();
         const supported = new Set([
           'folder-plugin',
@@ -48,7 +48,7 @@ export class WorkerAPIImpl {
         }
         const id = genId();
         const now = new Date();
-        const wc: WorkingCopyData = {
+        const wc: DraftData = {
           id,
           nodeType,
           parentNodeId,
@@ -64,30 +64,30 @@ export class WorkerAPIImpl {
         return id;
       },
 
-      async getWorkingCopy(workingCopyId: NodeId): Promise<WorkingCopyData | undefined> {
-        return self.store.get(workingCopyId);
+      async getDraft(draftId: NodeId): Promise<DraftData | undefined> {
+        return self.store.get(draftId);
       },
 
-      async updateWorkingCopy(workingCopyId: NodeId, updates: Partial<WorkingCopyData>): Promise<WorkingCopyData> {
-        const wc = await requireWorkingCopy(workingCopyId);
+      async updateDraft(draftId: NodeId, updates: Partial<DraftData>): Promise<DraftData> {
+        const wc = await requireDraft(draftId);
         const metadata = updates.metadata ? { ...wc.metadata, ...updates.metadata } : { ...wc.metadata };
         metadata.updatedAt = new Date();
-        const next: WorkingCopyData = {
+        const next: DraftData = {
           ...wc,
           ...updates,
           data: updates.data ? { ...wc.data, ...updates.data } : wc.data,
           metadata,
         };
-        self.store.set(workingCopyId, next);
+        self.store.set(draftId, next);
         return next;
       },
 
-      async deleteWorkingCopy(workingCopyId: NodeId): Promise<void> {
-        self.store.delete(workingCopyId);
+      async deleteDraft(draftId: NodeId): Promise<void> {
+        self.store.delete(draftId);
       },
 
-      async evaluateCapabilities(workingCopyId: NodeId, step: number): Promise<StepCapabilities> {
-        const wc = await requireWorkingCopy(workingCopyId);
+      async evaluateCapabilities(draftId: NodeId, step: number): Promise<StepCapabilities> {
+        const wc = await requireDraft(draftId);
         const data = wc.data ?? {};
         const nodeType = wc.nodeType;
 
@@ -190,7 +190,7 @@ export class WorkerAPIImpl {
         for (const id of ids) {
           const validation: ValidationResult = { valid: true, errors: [], warnings: [] } as ValidationResult;
           try {
-            const wc = await requireWorkingCopy(id);
+            const wc = await requireDraft(id);
             const nodeType = wc.nodeType;
             const data = (wc.data ?? {}) as Record<string, any>;
 
@@ -235,17 +235,17 @@ export class WorkerAPIImpl {
         return out;
       },
 
-      async batchEvaluateCapabilities(requests: Array<{ workingCopyId: NodeId; step: number }>) {
+      async batchEvaluateCapabilities(requests: Array<{ draftId: NodeId; step: number }>) {
         const out = Object.create(null) as Record<NodeId, StepCapabilities>;
-        for (const { workingCopyId, step } of requests) {
-          out[workingCopyId] = await this.evaluateCapabilities(workingCopyId, step);
+        for (const { draftId, step } of requests) {
+          out[draftId] = await this.evaluateCapabilities(draftId, step);
         }
         return out;
       },
 
-      async saveWorkingCopy(workingCopyId: NodeId): Promise<NodeId> {
-        await requireWorkingCopy(workingCopyId);
-        return workingCopyId;
+      async saveDraft(draftId: NodeId): Promise<NodeId> {
+        await requireDraft(draftId);
+        return draftId;
       },
     } satisfies MultiStepDialogAPI;
   }

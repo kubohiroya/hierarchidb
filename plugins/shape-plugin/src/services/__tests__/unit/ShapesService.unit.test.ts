@@ -50,9 +50,9 @@ describe('ShapesService', () => {
           }),
         },
       }),
-      createWorkingCopy: vi.fn(),
-      commitWorkingCopy: vi.fn(),
-      discardWorkingCopy: vi.fn(),
+      createDraft: vi.fn(),
+      commitDraft: vi.fn(),
+      discardDraft: vi.fn(),
     };
 
     service = new ShapesService(mockPluginAPI);

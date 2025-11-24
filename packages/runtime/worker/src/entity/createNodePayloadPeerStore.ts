@@ -4,7 +4,6 @@ import type { PeerEntity, PeerStore } from './store.js';
 
 const resolveNodeState = <TData>(node: TreeNode | undefined): ({
   targetField: 'data' | 'draftData';
-  raw: unknown;
   dialogUIState?: DialogUIState;
   updatedAt?: number;
 } & { data: TData | undefined; dialogWindow?: DialogWindowState | null; dialogProgress?: DialogProgressState | null }) | null => {
@@ -14,35 +13,14 @@ const resolveNodeState = <TData>(node: TreeNode | undefined): ({
     (node as { draftData?: unknown }).draftData !== null
       ? 'draftData'
       : 'data';
-  const raw = (node as unknown as Record<string, unknown>)[targetField];
   const dialogUIState = (node as { dialogUIState?: DialogUIState }).dialogUIState;
-  const dialogWindow =
-    dialogUIState?.dialogWindow ??
-    (raw && typeof raw === 'object' && 'dialogWindow' in raw
-      ? (raw as { dialogWindow?: DialogWindowState | null }).dialogWindow
-      : undefined);
-  const dialogProgress =
-    dialogUIState?.dialogProgress ??
-    (raw && typeof raw === 'object' && 'dialogProgress' in raw
-      ? (raw as { dialogProgress?: DialogProgressState | null }).dialogProgress
-      : undefined);
-
-  let data: TData | undefined;
-  if (raw && typeof raw === 'object' && 'data' in raw) {
-    data = (raw as { data?: TData }).data;
-  } else {
-    data = raw as TData | undefined;
-  }
-
-  const updatedAt =
-    (raw && typeof raw === 'object' && 'updatedAt' in raw
-      ? (raw as { updatedAt?: number }).updatedAt
-      : undefined) ?? (node as { updatedAt?: number }).updatedAt;
+  const dialogWindow = dialogUIState?.dialogWindow;
+  const dialogProgress = dialogUIState?.dialogProgress;
+  const updatedAt = (node as { updatedAt?: number }).updatedAt;
 
   return {
     targetField,
-    raw,
-    data,
+    data: node[targetField] as TData | undefined,
     dialogWindow,
     dialogProgress,
     dialogUIState,

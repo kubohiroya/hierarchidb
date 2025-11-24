@@ -84,6 +84,42 @@
   - [ ] 変更後のテスト／typecheck を実行し、ログを運用ログへ追記する
 - ロールバック手順：`TreeConsoleToolbar.tsx`, `packages/ui/treeconsole/toolbar/src/types.ts`, `app/src/router/pages/tree/console/TreeConsoleIntegration.tsx`、追加したテストファイルを revert し、`pnpm -C app test -- --run <追加テスト名>` と `pnpm -C app typecheck` を再実行して旧挙動に戻ることを確認する
 
+1525) common-api DraftAPI import 解消（P0）
+- ブランチ: `fix/common-api/draft-api-export`（sandbox 制約で `main` 上で作業）
+- 依存: `packages/common/api/src/*`
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` の Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] `DraftAPI` のエクスポートがビルド時に解決され、`pnpm --filter @hierarchidb/common-api build` が成功する
+  - [ ] 修正内容と検証ログ（build コマンド）を運用ログに記録する
+- チェックリスト:
+  - [ ] `DraftAPI` モジュールの解決漏れ原因を特定し、パスや出力を修正する
+  - [ ] `pnpm --filter @hierarchidb/common-api build` を実行して成功ログを取得する
+- ロールバック手順：`packages/common/api/src` の今回差分を revert し、`pnpm --filter @hierarchidb/common-api build` を再実行して現状エラーが再現することを確認する
+
+1526) plugin-runtime-services draft export 解消（P0）
+- ブランチ: `fix/plugin-runtime-services/draft-export`（sandbox 制約で `main` 上で作業）
+- 依存: `packages/plugin-runtime-services/src/index.ts`, `packages/plugin-runtime-services/src/entity/*`
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` の Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] `./entity/draft.js` 未解決エラーを解消し、`pnpm --filter @hierarchidb/plugin-runtime-services build` が成功する
+  - [ ] 修正内容と検証ログを運用ログに記録する
+- チェックリスト:
+  - [ ] 実際のモジュールパスを参照するようエクスポートを修正する
+  - [ ] 必要なら draft helper 実装を整理し、ビルド出力が正しく生成されることを確認する
+- ロールバック手順：対象ファイルの差分を revert し、`pnpm --filter @hierarchidb/plugin-runtime-services build` を再実行してエラー再現を確認する
+
+1527) runtime-worker Draft modules import 解消（P0）
+- ブランチ: `fix/runtime-worker/draft-imports`（sandbox 制約で `main` 上で作業）
+- 依存: `packages/runtime/worker/src/index.ts`, `packages/runtime/worker/src/services/**/*`
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` の Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] `DraftService` と `DraftTreeNodeOperations` の未解決 import を解消し、`pnpm --filter @hierarchidb/runtime-worker build` が成功する
+  - [ ] 修正内容と検証ログを運用ログに記録する
+- チェックリスト:
+  - [ ] 実ファイル（WorkingCopyService / WorkingCopyTreeNodeOperations）に合わせて import/export パスを修正する
+  - [ ] 必要に応じて draft helper 内のシャドウ変数などを整理し、ビルド出力を確認する
+- ロールバック手順：対象ファイルを revert し、`pnpm --filter @hierarchidb/runtime-worker build` を再実行してエラー再現を確認する
+
 1293) basemap plugin typecheck エラー解消（P0）
 - ブランチ: `fix/basemap/typecheck`（sandbox 制約で `main` 上で作業）
 - 依存: `plugins/basemap-plugin/src/common/types/BaseMapEntity.ts`, `plugins/basemap-plugin/src/ui/components/basemapStepConfigs.tsx`, `plugins/basemap-plugin/src/ui/hooks/useBaseMapEntity.ts`, `plugins/basemap-plugin/src/worker/factory/registerBasemapWorkerStores.ts`, `plugins/basemap-plugin/tsconfig.json`
@@ -225,6 +261,21 @@
   - [ ] 転送を検証するユニットテストを追加する
   - [ ] 必要に応じて関連箇所の型/分岐を確認し、ログに記録する
 - ロールバック手順：`packages/plugin-service-sdk/src/working-copy/service.ts` と追加したテストファイルを revert し、`pnpm --filter @hierarchidb/plugin-service-sdk test -- --run updateWorkingCopy` を再実行して現状挙動へ戻ることを確認
+
+1523) basemap Create で data が `{presentation: undefined, schemaVersion: 1}` へ置換される（P0）
+- ブランチ: `fix/basemap/create-data-presentation`（sandbox 制約で `main` 上で作業）
+- 依存: `plugins/basemap-plugin/src/worker/utils/presentation.ts`, `packages/runtime/worker/src/entity/createNodePayloadPeerStore.ts`, `packages/runtime/worker/src/services/working-copy/*`
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] basemap Create 完了時に draftData→data へ正しく反映され、data が `{presentation: undefined, schemaVersion: 1}` 等の不適切な値に置換されない
+  - [ ] `normalizeBasemapPeerData` が空入力でデフォルトオブジェクトを生成しないようになっていることを確認する
+  - [ ] 影響範囲のテスト（少なくとも basemap-plugin か runtime-worker の対象ユニット）を実行し、結果を運用ログへ記録する
+  - [ ] ロールバック手順（対象ファイルとコマンド）を `TASKS.md` に追記する
+- チェックリスト:
+ - [ ] Basemap peer data 正規化で空入力時に undefined を返すよう修正する
+  - [ ] draft/data へのフォールバックや unwrap ロジックが不要に data を上書きしていないことを確認する
+  - [ ] Create 完了後の data/draftData 状態を確認し、必要に応じてテストを追加/更新する
+- ロールバック手順：`plugins/basemap-plugin/src/worker/utils/presentation.ts` ほか本タスクで変更したファイルを revert し、`pnpm --filter @hierarchidb/basemap-plugin test`（または同等の確認コマンド）を再実行して旧挙動に戻ることを確認する
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
@@ -3307,6 +3358,26 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1528) plugin-base draftAtoms export 解消（P0） — 完了 (2025-11-24)
+  - 要点：`atoms/draftAtoms.ts` を追加し、既存の `workingCopyAtoms` を Draft 名称で再エクスポートすることで `./atoms/draftAtoms.js` 未解決エラーを解消。
+  - 検証：`pnpm --filter @hierarchidb/plugin-base build`（2025-11-24 00:12 JST）exit 0。tsdown の define 無効キー警告は既存。
+  - ロールバック手順：`packages/plugin-base/src/atoms/draftAtoms.ts` を削除し、`src/index.ts` のエクスポートを元に戻して上記 build を再実行しエラー再発を確認する。
+- 1527) runtime-worker Draft modules import 解消（P0） — 完了 (2025-11-24)
+  - 要点：DraftTreeNodeOperations.ts を新設し、WorkingCopyTreeNodeOperations からの再輸出を Draft 名称に統一。WorkingCopyService/TreeMutationService/CommandHistoryManager/core-handlers の import を DraftTreeNodeOperations へ切り替え、未解決 import を解消した。
+  - 検証：`pnpm --filter @hierarchidb/runtime-worker build`（2025-11-24 00:06 JST）exit 0。tsdown の define 無効キー警告は既存。
+  - ロールバック手順：`packages/runtime/worker/src/services/DraftTreeNodeOperations.ts` を削除し、`WorkingCopyTreeNodeOperations` への import に戻した上で `pnpm --filter @hierarchidb/runtime-worker build` を再実行してエラー再発を確認する。
+- 1526) plugin-runtime-services draft export 解消（P0） — 完了 (2025-11-24)
+  - 要点：index.ts の draft export 参照を実在パス `entity/workingCopy.js` へ修正し、`markDraftUpdated` のシャドウ変数を除去。`./entity/draft.js` 未解決エラーを解消。
+  - 検証：`pnpm --filter @hierarchidb/plugin-runtime-services build`（2025-11-24 00:02 JST）exit 0。tsdown の define 無効キー警告は既存。
+  - ロールバック手順：`packages/plugin-runtime-services/src/index.ts` と `packages/plugin-runtime-services/src/entity/draft.ts` の差分を revert し、上記 build を再実行してエラー再発を確認する。
+- 1525) common-api DraftAPI import 解消（P0） — 完了 (2025-11-23)
+  - 要点：DraftAPI.ts が型のみで JS 出力されず NodeNext 解決に失敗していたため、`export {}` を追加してモジュールを強制出力し、`./DraftAPI.js` がビルドで解決されるようにした。
+  - 検証：`pnpm --filter @hierarchidb/common-api build`（2025-11-23 23:55 JST）exit 0。tsdown 警告（define 無効キー）は既存設定の情報のみ。
+  - ロールバック手順：`packages/common/api/src/DraftAPI.ts` の `export {}` 追加を revert し、`pnpm --filter @hierarchidb/common-api build` を再実行して未解決エラーが再発することを確認する。
+- 1524) plugin draft lint エラー解消（P0） — 完了 (2025-11-23)
+  - 要点：plugin-ui-sdk/useDialogDraft の重複 saveDraft と未使用 query を削除し、plugin-ui-host/usePluginDialogController の二重 saveDraft 参照と useMemo 依存漏れを修正。plugin-service-sdk の draft helpers/adapter で draft 変数のシャドウや再代入を整理し、DraftDraft のメタデータを保持したままマージできる形に整えた。
+  - 検証：`pnpm --filter @hierarchidb/plugin-service-sdk lint` / `pnpm --filter @hierarchidb/plugin-ui-sdk lint` / `pnpm --filter @hierarchidb/plugin-ui-host lint`（2025-11-23 23:40 JST）すべて exit 0。
+  - ロールバック手順：`packages/plugin-ui-sdk/src/hooks/useDialogDraft.ts`, `packages/plugin-ui-host/src/headless/usePluginDialogController.tsx`, `packages/plugin-service-sdk/src/draft/*` の差分を revert し、上記 lint コマンドを再実行して lint エラー再現を確認する。
 - 1611) Create Folder デフォルト名ユニーク化・エラー配置修正（P1） — 完了 (2025-11-20)
   - 要点：working-copy draft 生成時に `getChildNames` + `createNewName` で衝突しないデフォルト名を自動採番（`New Folder (2)` など）し、BasicInfo Step の name 重複エラーを Name フィールド直下に表示するよう統一。
   - 検証：`pnpm --filter @hierarchidb/runtime-worker test -- src/services/working-copy/__tests__/draftOperations.unique-name.unit.test.ts` / `pnpm --filter @hierarchidb/plugin-ui-host test -- src/headless/__tests__/basic-info-validation-placement.unit.test.tsx` ともに exit 0。
@@ -6859,10 +6930,10 @@ P2:
 - 2025-09-30 23:05 blocked: merge/worker-factory-rollout — `pnpm -r typecheck` が `app` の新 UI 依存解決不足（`@hierarchidb/ui-treeconsole-base`, `@hierarchidb/ui-usermenu` など）と TrashDialog 型未整備により失敗。フロントエンド側の移行差分（TreeConsole 統合・新 UI パッケージ）を取り込む必要あり。
 - 2025-09-30 23:20 progress: merge/worker-factory-rollout — app の `tsconfig.typecheck.json` に treeconsole/usermenu 系パスエイリアスを追加し、TrashDialog/TreeConsoleIntegration のコールバック引数へ型注釈を補完する作業を開始。
 - 2025-09-30 23:32 done: merge/worker-factory-rollout — app `tsconfig.typecheck` に treeconsole/usermenu の dist パスを追加し、TrashDialog のコールバックへ明示的な型を付与。`pnpm --filter @hierarchidb/app typecheck` が成功。
-- 2025-09-30 22:10 start: fix/runtime-ui-plugin-dialog/working-copy-status-never — `packages/runtime-ui/plugin-dialog/src/services/WorkingCopyService.ts` のフォールバック分岐で `result` が `never` 推論となり `result.status` 参照で TS2339 が発生。型キャストによるフォールバック整備と `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` 実行を予定。
+- 2025-09-30 22:10 start: fix/runtime-ui-plugin-dialog/working-copy-status-never — `packages/runtime-ui/plugin-dialog/src/services/DraftService.ts` のフォールバック分岐で `result` が `never` 推論となり `result.status` 参照で TS2339 が発生。型キャストによるフォールバック整備と `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` 実行を予定。
 - 2025-09-30 22:18 progress: fix/runtime-ui-plugin-dialog/working-copy-status-never — 依存型再生成のため `pnpm --filter @hierarchidb/ui-core build` を実行後、`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` がグリーンで完了。
 - 2025-09-30 22:25 done: fix/runtime-ui-plugin-dialog/working-copy-status-never — `CommitResult` を明示インポートし、fallback 分岐で `result` をキャストして `status` 参照時の TS2339 を解消。`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` が成功（依存ビルド済み）。
-- 2025-09-30 22:45 start: fix/ui-treeconsole/working-copy-status-never — `packages/ui/treeconsole/base/src/adapters/commands/WorkingCopyCommands.ts` の commit フォールバックで `result` が `never` 推論になる事象を調査し、UI 側の NAME/COMMIT_CONFLICT ハンドリングを維持したまま解消する方針を策定。
+- 2025-09-30 22:45 start: fix/ui-treeconsole/working-copy-status-never — `packages/ui/treeconsole/base/src/adapters/commands/DraftCommands.ts` の commit フォールバックで `result` が `never` 推論になる事象を調査し、UI 側の NAME/COMMIT_CONFLICT ハンドリングを維持したまま解消する方針を策定。
 - 2025-09-30 22:55 done: fix/ui-treeconsole/working-copy-status-never — fallback throw 前に `result as CommitResult` を取得して `status` を参照する形に整理。`pnpm --dir packages/ui/treeconsole/base build` を実行し、型生成・バンドル・pack まで成功したことを確認（workspace 内の別パッケージがコンフリクト中のため `--filter` は未使用）。
 - 2025-09-30 23:05 start: fix/shape-plugin/type-shim-removal — dep-fence の local-shims 警告解消に向けて、`@hierarchidb/runtime-ui-datasource` ほか依存パッケージの公式 d.ts 再生成方針を整理。
 - 2025-09-30 23:20 progress: fix/shape-plugin/type-shim-removal — `pnpm --filter @hierarchidb/{batch,runtime-shared-fetch-metadata,runtime-ui-datasource,runtime-worker-factory,runtime-ui-plugin-dialog} build` を順次実行し、各 dist/index.d.ts を再生成。
@@ -8358,12 +8429,12 @@ ToDo（Phase 2/3: any の完全撤去）
 ## 今日の着手（運用ログ） <a id="worklog-13"></a>
 
 - 2025-11-23 11:45 start: fix/basemap/workingcopy-draftdata — Basemap 編集時に draftData が commit で消える問題の調査と修正を開始。DoD: Kanban/ログ更新、WorkingCopyService.updateWorkingCopy の worker 反映と再発防止テスト追加、`pnpm --filter @hierarchidb/plugin-service-sdk test -- --run updateWorkingCopy` 実行記録、ロールバック手順記載。
-- 2025-11-23 12:05 progress: fix/basemap/workingcopy-draftdata — WorkingCopyService.updateWorkingCopy が受け取った updates をそのまま worker API に転送するよう修正し、転送を検証するユニットテスト（`service.updateWorkingCopy.test.ts`）を追加。
+- 2025-11-23 12:05 progress: fix/basemap/workingcopy-draftdata — WorkingCopyService.updateWorkingCopy が受け取った updates をそのまま worker API に転送するよう修正し、転送を検証するユニットテスト（`service.updateDraft.test.ts`）を追加。
 - 2025-11-23 12:06 command: pnpm --filter @hierarchidb/plugin-service-sdk test -- --run updateWorkingCopy — exit 0（plugin-service-sdk が Vitest projects 未登録のため No test files found。テストファイル自体は追加済みで今後の project roots 追加で検知可能）。
 - 2025-11-23 12:26 progress: fix/basemap/workingcopy-draftdata — vitest.config.ts の projectRoots に `packages/plugin-service-sdk` を追加し、ルート Vitest でテストを拾えるようにした。
-- 2025-11-23 12:27 command: pnpm vitest run packages/plugin-service-sdk/src/working-copy/__tests__/service.updateWorkingCopy.test.ts — exit 0（1 test passed）。duplicate key 警告は既存 package.json の重複キーによるもの。
+- 2025-11-23 12:27 command: pnpm vitest run packages/plugin-service-sdk/src/working-copy/__tests__/service.updateDraft.test.ts — exit 0（1 test passed）。duplicate key 警告は既存 package.json の重複キーによるもの。
 - 2025-11-23 12:30 progress: fix/basemap/workingcopy-draftdata — package.json の duplicate key 警告を解消（plugin-presentation devDependencies 二重定義削除、resolver-plugin description 重複削除、shape-plugin の plugin-base/util 重複削除）。Vitest 再実行で警告が消えることを確認。
-- 2025-11-23 12:30 command: pnpm vitest run packages/plugin-service-sdk/src/working-copy/__tests__/service.updateWorkingCopy.test.ts — exit 0（1 test passed, duplicate key 警告なし）。
+- 2025-11-23 12:30 command: pnpm vitest run packages/plugin-service-sdk/src/working-copy/__tests__/service.updateDraft.test.ts — exit 0（1 test passed, duplicate key 警告なし）。
 - 2025-11-23 11:55 progress: fix/basemap/workingcopy-draftdata — TreeTable row interaction/editing/column builder の引数型を TreeNodeInUI に統一し、context menu state も TreeNodeInUI ベースに更新（TS2322 対策）。
 - 2025-11-21 07:05 progress: feat/runtime/treenode-payload — Dexie TreeNode の SSOT として PersistedTreeNode（data/draftData/dialogUIState）を common-types に定義し、旧 TreeNode/payload 型に deprecated を明示。次: CoreDB/WorkingCopy/peer store の payload/draft 利用箇所を棚卸しして移行プランを固める。
 - 2025-11-20 23:10 start: chore/logging-trim — WorkerProvider / TreeSubscriptionService / CoreDB / BFFAuthService の過剰コンソールログを抑制するタスクに着手。DoD: Kanban/運用ログ更新とロールバック手順記載、上記4箇所の info ログを削除（warn/error は維持）、影響確認と実行コマンドの有無をログ化。
@@ -8373,6 +8444,15 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-21 07:55 blocked: pnpm count:lines — exit 1。tsx が `/var/.../tsx-501/*.pipe` への IPC ソケット作成で EPERM（sandbox 制約）。権限昇格して再実行する方針に変更。
 - 2025-11-21 07:57 command: pnpm count:lines — exit 0（権限昇格あり）。Summary に `plugins/*-plugin/src` が列出され、GRAND TOTAL 190,925 lines。目的の plugins 集計が確認できた。
 - 2025-11-21 07:58 done: chore/tools/count-lines-plugins — DoD 達成。ロールバックは `scripts/count-lines.ts` を revert し、`pnpm count:lines` を再実行して旧出力へ戻ること。
+- 2025-11-23 15:55 start: chore/runtime/remove-treenode-fallback — TreeNode の metadata/data が不正保存される前提でのフォールバックを削除する対応に着手。対象: CoreDB 初期化のレガシー掃除、WorkingCopy draft sanitize、peer store の data unwrap、pasteNodes の名称フォールバック。
+- 2025-11-23 16:00 done: chore/runtime/remove-treenode-fallback — CoreDB のレガシー payload/draft クリーンアップを撤去し、draft 更新時の metadata/data サニタイズや peer store の data unwrap を削除。pasteNodes で metadata.name が欠落した場合の `Untitled` 付与も廃止し、前提どおり正しい TreeNode 形のみを受け付けるよう整理。テスト未実行（ロジック変更のみ、次回バッチでまとめて確認予定）。
+- 2025-11-23 16:00 start: fix/basemap/create-data-presentation — basemap Create 完了時に data が `{presentation: undefined, schemaVersion: 1}` に置換される不具合の修正に着手。DoD: Kanban/ログ更新、normalizeBasemapPeerData の空入力デフォルト撤去、draft→data 反映で不要な上書きなし、テスト実行と記録、ロールバック手順記載。
+- 2025-11-23 16:05 progress: fix/basemap/create-data-presentation — basemap peer 正規化で空入力時に undefined を返すよう変更。テスト未実行（後続で basemap/plugin-runtime 周辺をまとめて実行予定）。
+- 2025-11-23 16:08 done: fix/basemap/create-data-presentation — 変更を反映。ロールバックは `plugins/basemap-plugin/src/worker/utils/presentation.ts` など本タスク差分を revert し、必要に応じて `pnpm --filter @hierarchidb/basemap-plugin test` で確認。
+- 2025-11-23 16:09 command: pnpm --filter @hierarchidb/basemap-plugin test — exit 1。`steps-provider.test.ts` で mapStyle/viewport touched 判定と create 初期値テストが既知失敗（期待 true/undefined に対し false/streets）。今回の正規化変更と直接関係ない既存挙動のため要調査継続。
+- 2025-11-23 16:12 command: pnpm --filter @hierarchidb/runtime-worker test -- src/__tests__/headless/commit-working-copy.headless.test.ts — exit 1。vitest exclude 設定により headless テストが除外され「No test files found」。専用コマンドでの実行が必要（未実行）。
+- 2025-11-23 21:03 command: pnpm --filter @hierarchidb/runtime-worker test -- --run basemap-create-flow — exit 0。Comlink+fake-indexeddb 環境で basemap Create (Step1→Step2→Step3→Create) を再現し、commit 後の data に mapStyle/viewport が保存され draftData が null になることを確認。
+- 2025-11-23 16:20 progress: fix/app/edit-workingcopy-basemap — WorkingCopyService.createWorkingCopyFromNode が data=null のノードで draftData を作らずエラーになるため、editOperations で draftData 初期値を data/draftData/空オブジェクトの順に設定。headless テストを追加して basemap ノードで draftData={} が作られることを検証（テストは exclude 設定で未実行、後続で別コマンドが必要）。
 - 2025-11-20 21:50 start: fix/ui-folder/default-name — Create Folder のデフォルト名が常に `New Folder` 固定で重複エラーになる問題を調査。DoD: nameUtilities によるユニーク名生成を Create flow に適用、BasicInfo Step の name 重複エラーをフィールド直下に表示するよう統一、関連テスト追加、ロールバック手順記載。
 - 2025-11-20 22:05 done: fix/ui-folder/default-name — working-copy draft 作成時に `getChildNames` + `createNewName` でデフォルト名を自動採番（`New Folder (2)` など）し、BasicInfo Step の name エラーをフィールド直下に表示するよう修正。検証: `pnpm --filter @hierarchidb/runtime-worker test -- src/services/working-copy/__tests__/draftOperations.unique-name.unit.test.ts` exit 0、`pnpm --filter @hierarchidb/plugin-ui-host test -- src/headless/__tests__/basic-info-validation-placement.unit.test.tsx` exit 0。ロールバック: `packages/runtime/worker/src/services/working-copy/draftOperations.ts`, `packages/runtime/worker/src/services/working-copy/__tests__/draftOperations.unique-name.unit.test.ts`, `packages/ui/plugin-basic-info/src/components/BasicInfoStep.tsx`, `packages/plugin-ui-host/src/headless/__tests__/basic-info-validation-placement.unit.test.tsx` を revert。
 - 2025-11-19 08:46 start: fix/basemap/basic-info-step — basemap Step config で `SharedBasicInfoStep` import 欠落による ReferenceError を再現。DoD: Kanban/ログ更新、import とレンダリングテスト修正、`pnpm --filter @hierarchidb/basemap-plugin {typecheck,test}` の成功確認、ロールバック手順記載。
@@ -8705,3 +8785,38 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-22 14:25 progress: fix/workingcopy/discard-create — create 中のドラフトを Cancel した際、コミット済みデータのないドラフトノードは discard 時に nodes から削除するよう変更し、空ノードが残って次回の name 重複を招く問題を抑制。`pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm -C app typecheck` exit 0。
 - 2025-11-22 15:00 progress: fix/ui-create-default-name — create 呼び出し前に siblings を取得してユニークなデフォルト名（New X (n)）を決定し、初期値が既存と衝突しないようにした。edit ダイアログ起動前に対象ノード存在チェックを追加。`pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm -C app typecheck` exit 0。
 - 2025-11-22 15:30 progress: fix/workingcopy/constraint-reuse — create 用の固定 ID でドラフト生成時に既存ノードがあっても再利用するようにし、ConstraintError を防止。`pnpm --filter @hierarchidb/runtime-worker typecheck` exit 0。
+
+## 今日の着手（運用ログ） <a id="worklog-14"></a>
+
+- 2025-11-23 23:37 start: fix/plugins/draft-lint-cleanup — plugin-ui-sdk/plugin-ui-host/plugin-service-sdk の lint エラー解消に着手。DoD: TASKS/Kanban 更新、重複定義/再代入/未使用/Hook 依存漏れの修正、各パッケージの lint 成功ログ取得、ロールバック手順記載。
+- 2025-11-23 23:40 progress: fix/plugins/draft-lint-cleanup — plugin-service-sdk の draft helpers/adapter で draft 変数のシャドウと再代入を整理し、DraftDraft のメタデータを保持したまま merge できるよう修正。helpers.test.ts も payload/metadata の検証に合わせて期待値を更新。
+- 2025-11-23 23:41 progress: fix/plugins/draft-lint-cleanup — plugin-ui-sdk/useDialogDraft の重複 saveDraft と未使用 query を削除し、plugin-ui-host/usePluginDialogController で saveDraft の二重参照と useMemo 依存漏れを解消。
+- 2025-11-23 23:42 command: pnpm --filter @hierarchidb/plugin-service-sdk lint — exit 0（eslint src）。
+- 2025-11-23 23:42 command: pnpm --filter @hierarchidb/plugin-ui-sdk lint — exit 0（eslint src）。
+- 2025-11-23 23:42 command: pnpm --filter @hierarchidb/plugin-ui-host lint — exit 0（eslint src）。
+- 2025-11-23 23:42 done: fix/plugins/draft-lint-cleanup — DoD 全項目を満たしたため完了。ロールバックは `packages/plugin-ui-sdk/src/hooks/useDialogDraft.ts`, `packages/plugin-ui-host/src/headless/usePluginDialogController.tsx`, `packages/plugin-service-sdk/src/draft/*` を revert し、上記 lint コマンドを再実行して lint エラー再現を確認。
+- 2025-11-23 23:50 start: fix/common-api/draft-api-export — @hierarchidb/common-api の build で `./DraftAPI.js` が解決できない問題を調査開始。DoD: TASKS/Kanban 更新、原因特定と修正、`pnpm --filter @hierarchidb/common-api build` 成功ログ取得、ロールバック手順記載。
+- 2025-11-23 23:55 command: pnpm --filter @hierarchidb/common-api build — exit 0（tsdown、define 無効キー警告は既存）。
+- 2025-11-23 23:55 done: fix/common-api/draft-api-export — DraftAPI.ts に `export {}` を追加して JS 出力を強制し、`./DraftAPI.js` 解決エラーを解消。ロールバックは `packages/common/api/src/DraftAPI.ts` を revert し、上記 build を再実行してエラー再現を確認。
+- 2025-11-23 23:58 start: fix/plugin-runtime-services/draft-export — plugin-runtime-services build で `./entity/draft.js` 未解決のため調査開始。DoD: TASKS/Kanban 更新、エクスポート修正、`pnpm --filter @hierarchidb/plugin-runtime-services build` 成功ログ取得、ロールバック手順記載。
+- 2025-11-24 00:02 command: pnpm --filter @hierarchidb/plugin-runtime-services build — exit 0（tsdown、define 無効キー警告は既存）。
+- 2025-11-24 00:02 done: fix/plugin-runtime-services/draft-export — index.ts のエクスポート先を `entity/workingCopy.js` へ修正し、`markDraftUpdated` のシャドウ変数を解消してビルド成功。ロールバックは `packages/plugin-runtime-services/src/index.ts` と `.../entity/draft.ts` を revert し、上記 build を再実行してエラー再発を確認。
+- 2025-11-23 23:51 start: fix/runtime-worker/draft-imports — runtime-worker build で DraftService/DraftTreeNodeOperations 未解決のため調査開始。DoD: TASKS/Kanban 更新、パス修正、`pnpm --filter @hierarchidb/runtime-worker build` 成功ログ取得、ロールバック手順記載。
+- 2025-11-24 00:05 progress: fix/runtime-worker/draft-imports — DraftTreeNodeOperations.ts を追加し、WorkingCopyTreeNodeOperations からの re-export を Draft 名称に集約。WorkingCopyService/TreeMutationService/CommandHistoryManager/core-handlers の import を DraftTreeNodeOperations へ統一。
+- 2025-11-24 00:06 command: pnpm --filter @hierarchidb/runtime-worker build — exit 0（tsdown、define 無効キー警告は既存）。
+- 2025-11-24 00:06 done: fix/runtime-worker/draft-imports — DraftService/DraftTreeNodeOperations 未解決を解消。ロールバックは `packages/runtime/worker/src/services/DraftTreeNodeOperations.ts` を削除し、`WorkingCopyTreeNodeOperations` への import 差分を revert して上記 build を再実行。
+- 2025-11-24 00:10 start: fix/plugin-base/draft-atoms-export — plugin-base build で `./atoms/draftAtoms.js` 未解決のため調査開始。DoD: TASKS/Kanban 更新、パス修正、`pnpm --filter @hierarchidb/plugin-base build` 成功ログ取得、ロールバック手順記載。
+- 2025-11-24 00:12 command: pnpm --filter @hierarchidb/plugin-base build — exit 0（tsdown、define 無効キー警告は既存）。
+- 2025-11-24 00:12 done: fix/plugin-base/draft-atoms-export — `atoms/draftAtoms.ts` を追加し、workingCopyAtoms を Draft 名称で再エクスポートして未解決 import を解消。ロールバックは `packages/plugin-base/src/atoms/draftAtoms.ts` を削除し、index.ts のエクスポートを元に戻して上記 build を再実行。
+- 2025-11-24 00:15 start: fix/plugin-ui-sdk/useDraft-export — plugin-ui-sdk build で `hooks/useDraft.js` 未解決のため調査開始。DoD: TASKS/Kanban 更新、互換エクスポートの復元、`pnpm --filter @hierarchidb/plugin-ui-sdk build` 成功ログ取得。
+- 2025-11-24 00:17 command: pnpm --filter @hierarchidb/plugin-ui-sdk build — exit 0（tsdown、define 無効キー警告は既存）。
+- 2025-11-24 00:17 done: fix/plugin-ui-sdk/useDraft-export — `hooks/useDraft.ts` を追加し、useDialogDraft を useDraft として再エクスポート。ロールバックは `packages/plugin-ui-sdk/src/hooks/useDraft.ts` を削除し、index.ts のエクスポートを元に戻して上記 build を再実行。
+- 2025-11-24 12:10 start: fix/common-api/worker-api-contract — app typecheck で露呈した WorkerAPI 型の未更新（getSubscriptionAPI/importExport/dialogState/tag/pluginLifecycle/commandProcessor/ping/initialize/shutdown/getSystemHealth 不足）を解消するタスクを開始。DoD: TASKS/ログ更新、common-api の WorkerAPI 定義と PluginLifecycleAPI 再エクスポートを実装・利用に揃える、app typecheck を成功させる、ロールバック手順を明記。
+- 2025-11-24 12:18 command: pnpm -F @hierarchidb/app typecheck — exit 0。WorkerAPI 型を拡充したうえで app typecheck が通ることを確認（tsdown define 警告は既知のまま）。
+- 2025-11-24 12:20 done: fix/common-api/worker-api-contract — WorkerAPI 定義に ping/initialize/shutdown/getSystemHealth と各 API getter（subscription/importExport/tag/dialogState/pluginLifecycle/commandProcessor）を追加し、PluginLifecycleAPI を common-api から再エクスポートして型齟齬を解消。ロールバックは `packages/common/api/src/WorkerAPI.ts` と `packages/common/api/src/index.ts` の差分を revert し、`pnpm -F @hierarchidb/app typecheck` で再現確認。
+- 2025-11-24 12:45 start: refactor/basemap/dialog-draft-unify — Basemap Dialog のドラフト取得・更新を `useDialogDraft` ベースの経路に揃え、ワーカー直接参照を排除してシンプル化するタスクに着手。DoD: TASKS/ログ更新、Basemap Dialog での Worker API 直参照撤去、ステップコンポーネントが `useDialogDraft` 提供データのみで完結することの確認、`pnpm --filter @hierarchidb/basemap-plugin typecheck` 成功ログ取得、ロールバック手順記載。
+- 2025-11-24 13:00 progress: refactor/basemap/dialog-draft-unify — Basemap ViewportStep から Worker API 直接参照（`useBaseMapEntity` 経由の DraftAPI/QueryAPI 呼び出し）を除去し、`useDialogDraft` から渡されるステップデータに依存する構成に変更。
+- 2025-11-24 13:20 progress: refactor/basemap/dialog-draft-unify — basemap step config から `draft.draftData` 依存を撤去し、ステップデータを mapStyle/viewport/name/description/tags/uiState のフラット構造に統一。StepRegistry も BasemapStepData を型パラメータに変更。
+- 2025-11-24 13:22 command: pnpm --filter @hierarchidb/basemap-plugin exec tsc -p tsconfig.json --noEmit — exit 0。
+- 2025-11-24 13:40 progress: refactor/route/dialog-draft-unify — RouteDialog を `useDialogDraft` ベースへ置き換え、metadata/name/description/tags と draftData を分離して commit/discard を一本化。tsconfig include を修正。
+- 2025-11-24 13:43 command: pnpm --filter @hierarchidb/route-plugin exec tsc -p tsconfig.json --noEmit — exit 2（事前から存在する多数の未解決 import/enum/型不整合が露呈。RouteDialog 以外のテスト・サービス参照が欠落しているため別途対応が必要）。

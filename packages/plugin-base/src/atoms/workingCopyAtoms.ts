@@ -9,7 +9,7 @@ import { atom } from 'jotai';
 /**
  * Working copy data state
  */
-export interface WorkingCopyData {
+export interface DraftData {
   nodeId: NodeId;
   treeId: TreeId;
   parentId?: NodeId;
@@ -62,7 +62,7 @@ export interface DialogState {
  * Current working copy data
  * Loaded from Worker/EphemeralDB - no client-side caching needed
  */
-export const workingCopyAtom = atom<WorkingCopyData | null>(null);
+export const draftAtom = atom<DraftData | null>(null);
 
 /**
  * Dialog navigation state
@@ -203,11 +203,11 @@ export const canGoPreviousAtom = atom((get) => {
 /**
  * Update working copy data
  */
-export const updateWorkingCopyAtom = atom(null, (get, set, update: Partial<WorkingCopyData>) => {
-  const current = get(workingCopyAtom);
+export const updateDraftAtom = atom(null, (get, set, update: Partial<DraftData>) => {
+  const current = get(draftAtom);
   if (!current) return;
 
-  set(workingCopyAtom, {
+  set(draftAtom, {
     ...current,
     ...update,
     lastModified: Date.now(),
@@ -291,7 +291,7 @@ export const markStepCompletedAtom = atom(null, (get, set, stepIndex: number) =>
  * Reset dialog state
  */
 export const resetDialogAtom = atom(null, (_get, set) => {
-  set(workingCopyAtom, null);
+  set(draftAtom, null);
   set(dialogStateAtom, {
     currentStep: 0,
     completedSteps: new Set<number>(),

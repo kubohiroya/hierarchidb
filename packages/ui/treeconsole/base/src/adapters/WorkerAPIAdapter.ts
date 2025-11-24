@@ -8,7 +8,7 @@ import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { NodeId, TreeNodeEvent } from '@hierarchidb/common-types';
 // import { TreeObservableAdapter } from './subscriptions/TreeObservableAdapter.js'; // Currently unused
 import { TreeMutationCommandsAdapter } from './commands/TreeMutationCommands.js';
-import { WorkingCopyCommandsAdapter, type WorkingCopyEditSession } from './commands/WorkingCopyCommands.js';
+import { DraftCommandsAdapter, type DraftEditSession } from './commands/DraftCommands.js';
 import { SubscriptionManager } from './subscriptions/SubscriptionManager.js';
 import { createAdapterGroupId } from './utils.js';
 import type { AdapterContext, CommandAdapterOptions, UnsubscribeFunction, WorkerAPIAdapterConfig } from './types.js';
@@ -23,7 +23,7 @@ export class WorkerAPIAdapter {
   // Individual adapters
   // private _observableAdapter: TreeObservableAdapter; // Currently unused - remove until needed
   private mutationAdapter: TreeMutationCommandsAdapter;
-  private workingCopyAdapter: WorkingCopyCommandsAdapter;
+  private draftAdapter: DraftCommandsAdapter;
   private subscriptionManager: SubscriptionManager;
 
   constructor(config: WorkerAPIAdapterConfig) {
@@ -34,7 +34,7 @@ export class WorkerAPIAdapter {
     // Initialize adapters
     // this._observableAdapter = new TreeObservableAdapter(this.workerAPI); // Currently unused
     this.mutationAdapter = new TreeMutationCommandsAdapter(this.workerAPI);
-    this.workingCopyAdapter = new WorkingCopyCommandsAdapter(this.workerAPI);
+    this.draftAdapter = new DraftCommandsAdapter(this.workerAPI);
     this.subscriptionManager = new SubscriptionManager(this.workerAPI, this.viewId);
   }
 
@@ -176,9 +176,9 @@ export class WorkerAPIAdapter {
   async startNodeEdit(
     sourceNodeId: NodeId,
     contextOverrides?: Partial<AdapterContext>,
-  ): Promise<WorkingCopyEditSession> {
+  ): Promise<DraftEditSession> {
     const options = this.createDefaultOptions(contextOverrides);
-    return this.workingCopyAdapter.startNodeEdit(sourceNodeId, options);
+    return this.draftAdapter.startNodeEdit(sourceNodeId, options);
   }
 
   /**
@@ -189,42 +189,42 @@ export class WorkerAPIAdapter {
     description?: string,
     nodeType: string = 'folder',
     contextOverrides?: Partial<AdapterContext>,
-  ): Promise<WorkingCopyEditSession> {
+  ): Promise<DraftEditSession> {
     const options = this.createDefaultOptions(contextOverrides);
-    return this.workingCopyAdapter.startNodeCreate(parentId, name, description, nodeType, options);
+    return this.draftAdapter.startNodeCreate(parentId, name, description, nodeType, options);
   }
 
   /**
       * Working Copy
       */
   async commitNodeEdit(
-    editSession: WorkingCopyEditSession,
+    editSession: DraftEditSession,
     contextOverrides?: Partial<AdapterContext>,
   ): Promise<void> {
     const options = this.createDefaultOptions(contextOverrides);
-    return this.workingCopyAdapter.commitNodeEdit(editSession, options);
+    return this.draftAdapter.commitNodeEdit(editSession, options);
   }
 
   /**
       * Working Copy
       */
   async commitNodeCreate(
-    editSession: WorkingCopyEditSession,
+    editSession: DraftEditSession,
     contextOverrides?: Partial<AdapterContext>,
   ): Promise<void> {
     const options = this.createDefaultOptions(contextOverrides);
-    return this.workingCopyAdapter.commitNodeCreate(editSession, options);
+    return this.draftAdapter.commitNodeCreate(editSession, options);
   }
 
   /**
       * Working Copy
       */
-  async discardWorkingCopy(
-    editSession: WorkingCopyEditSession,
+  async discardDraft(
+    editSession: DraftEditSession,
     contextOverrides?: Partial<AdapterContext>,
   ): Promise<void> {
     const options = this.createDefaultOptions(contextOverrides);
-    return this.workingCopyAdapter.discardWorkingCopy(editSession, options);
+    return this.draftAdapter.discardDraft(editSession, options);
   }
 
   // =====================

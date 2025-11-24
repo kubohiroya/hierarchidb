@@ -3,7 +3,7 @@ import { BASIC_INFO_META_KEY, buildStepWorkingData } from '../usePluginDialogCon
 
 describe('buildStepWorkingData', () => {
   it('merges basic info fields into working copy data', () => {
-    const workingCopyData = {
+    const draftData = {
       draft: {
         foo: 'bar',
         name: 'Old Name',
@@ -17,7 +17,7 @@ describe('buildStepWorkingData', () => {
     };
     const meta = { error: null, hasConflict: false };
 
-    const result = buildStepWorkingData(workingCopyData, basicInfo, meta);
+    const result = buildStepWorkingData(draftData, basicInfo, meta);
 
     expect(result).toMatchObject({
       draft: { foo: 'bar' },

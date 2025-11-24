@@ -5,7 +5,7 @@ import { makeNode, makeDraftNode } from '../../test-utils/node-helpers.js';
 import { CommandProcessor } from '../../services/CommandProcessor.js';
 import { CoreDB } from '../../services/CoreDB.js';
 import { WorkerErrorCode } from '../../services/command-types.js';
-import { WorkingCopyService } from '../../services/WorkingCopyService.js';
+import { DraftService } from '../../services/DraftService.js';
 import {
   assertCommandFailure,
   assertCommandSuccess,
@@ -14,15 +14,38 @@ import {
   assertCommitOk,
 } from '../../test-utils/assertions.js';
 
-describe('WorkingCopy commit E2E (holder-less)', () => {
+describe('Draft commit E2E (holder-less)', () => {
   let core: CoreDB;
   let cp: CommandProcessor;
-  let wc: WorkingCopyService;
+  let wc: DraftService;
 
   beforeEach(async () => {
     core = await CoreDB.getSingleton('e2e-db');
     cp = new CommandProcessor(core);
-    wc = new WorkingCopyService(core, undefined, cp);
+    wc = new DraftService(core, undefined, cp);
+  });
+
+  it('preserves draftData content when committing a non-folder node (basemap)', async () => {
+    const parentId = 'r:root' as NodeId;
+    const draftPayload = {
+      mapStyle: { style: 'streets' },
+      viewport: { center: [0, 0] as [number, number], zoom: 2, bearing: 0, pitch: 0 },
+    };
+
+    const draft = await wc.createDraftBase(
+      'basemap' as NodeType,
+      parentId,
+      {
+        metadata: { name: uniqueName('Basemap') },
+        draftData: draftPayload,
+      } as Partial<TreeNode>
+    );
+
+    const commitResult = await wc.commitDraft(draft.id);
+    assertCommitOk(commitResult, 'commit basemap draft');
+    const node = await core.nodes.get(commitResult.nodeId as NodeId);
+    expect(node?.draftData).toBeNull();
+    expect(node?.data).toEqual(draftPayload);
   });
 
   function uniqueName(base: string): string {
@@ -31,11 +54,11 @@ describe('WorkingCopy commit E2E (holder-less)', () => {
 
   it('creates and fetches a draft working copy by id', async () => {
     const parentId = 'r:root' as NodeId;
-    const draft = await wc.createDraftWorkingCopy('folder' as NodeType, parentId, {
+    const draft = await wc.createDraftBase('folder' as NodeType, parentId, {
       metadata: { name: uniqueName('Draft Lookup') },
     } as Partial<TreeNode>);
 
-    const byId = await wc.getWorkingCopy(draft.id as NodeId);
+    const byId = await wc.getDraft(draft.id as NodeId);
     expect(byId?.id).toBe(draft.id);
     expect(byId?.draftData).toBeTruthy();
     expect(byId?.data).toBeNull();
@@ -43,12 +66,12 @@ describe('WorkingCopy commit E2E (holder-less)', () => {
 
   it('commits a new draft and clears draftData', async () => {
     const parentId = 'r:root' as NodeId;
-    const draft = await wc.createDraftWorkingCopy('folder' as NodeType, parentId, {
+    const draft = await wc.createDraftBase('folder' as NodeType, parentId, {
       metadata: { name: uniqueName('Draft Folder') },
     } as Partial<TreeNode>);
 
-    const res = await wc.commitWorkingCopy(draft.id);
-    assertCommitOk(res, 'commitWorkingCopy');
+    const res = await wc.commitDraft(draft.id);
+    assertCommitOk(res, 'commitDraft');
     const committed = await core.nodes.get(res.nodeId);
     expect(committed?.draftData).toBeNull();
     expect(committed?.data).toBeTruthy();
@@ -57,10 +80,10 @@ describe('WorkingCopy commit E2E (holder-less)', () => {
 
   it('assigns depth relative to the parent when committing nested drafts', async () => {
     const rootId = 'r:root' as NodeId;
-    const level1Draft = await wc.createDraftWorkingCopy('folder' as NodeType, rootId, {
+    const level1Draft = await wc.createDraftBase('folder' as NodeType, rootId, {
       metadata: { name: uniqueName('Depth L1') },
     } as Partial<TreeNode>);
-    const level1Result = await wc.commitWorkingCopy(level1Draft.id, {
+    const level1Result = await wc.commitDraft(level1Draft.id, {
       onNameConflict: 'auto-rename',
     });
     assertCommitOk(level1Result, 'level1 commit');
@@ -68,10 +91,10 @@ describe('WorkingCopy commit E2E (holder-less)', () => {
     const level1Node = await core.nodes.get(level1Result.nodeId as NodeId);
     expect(level1Node?.depth).toBe(1);
 
-    const level2Draft = await wc.createDraftWorkingCopy('folder' as NodeType, level1Result.nodeId, {
+    const level2Draft = await wc.createDraftBase('folder' as NodeType, level1Result.nodeId, {
       metadata: { name: uniqueName('Depth L2') },
     } as Partial<TreeNode>);
-    const level2Result = await wc.commitWorkingCopy(level2Draft.id, {
+    const level2Result = await wc.commitDraft(level2Draft.id, {
       onNameConflict: 'auto-rename',
     });
     assertCommitOk(level2Result, 'level2 commit');
@@ -87,41 +110,41 @@ describe('WorkingCopy commit E2E (holder-less)', () => {
     const parentId = 'r:root' as NodeId;
     const baseName = uniqueName('Conflict Draft');
 
-    const first = await wc.createDraftWorkingCopy('folder' as NodeType, parentId, {
+    const first = await wc.createDraftBase('folder' as NodeType, parentId, {
       metadata: { name: baseName },
     } as Partial<TreeNode>);
-    const firstResult = await wc.commitWorkingCopy(first.id, { onNameConflict: 'auto-rename' });
+    const firstResult = await wc.commitDraft(first.id, { onNameConflict: 'auto-rename' });
     expect(firstResult.status).toBe('ok');
 
-    const second = await wc.createDraftWorkingCopy('folder' as NodeType, parentId, {
+    const second = await wc.createDraftBase('folder' as NodeType, parentId, {
       metadata: { name: baseName },
     } as Partial<TreeNode>);
-    const conflict = await wc.commitWorkingCopy(second.id, { onNameConflict: 'error' });
+    const conflict = await wc.commitDraft(second.id, { onNameConflict: 'error' });
     assertCommitNameConflict(conflict, 'name conflict policy error');
     expect(conflict.suggestedName).toMatch(new RegExp(`^${baseName}`));
 
-    const workingCopyStillExists = await core.nodes.get(second.id);
-    expect(workingCopyStillExists).toBeTruthy();
+    const draftStillExists = await core.nodes.get(second.id);
+    expect(draftStillExists).toBeTruthy();
   });
 
   it('auto-rename draft commit returns updated node payload', async () => {
     const parentId = 'r:root' as NodeId;
     const baseName = uniqueName('Auto Rename');
 
-    const first = await wc.createDraftWorkingCopy('folder' as NodeType, parentId, {
+    const first = await wc.createDraftBase('folder' as NodeType, parentId, {
       metadata: { name: baseName },
     } as Partial<TreeNode>);
-    const firstRes = await wc.commitWorkingCopy(first.id);
+    const firstRes = await wc.commitDraft(first.id);
     assertCommitOk(firstRes, 'first commit');
 
     const committedFirst = await core.nodes.get(firstRes.nodeId);
     expect(committedFirst?.metadata.name).toBe(baseName);
 
-    const second = await wc.createDraftWorkingCopy('folder' as NodeType, parentId, {
+    const second = await wc.createDraftBase('folder' as NodeType, parentId, {
       metadata: { name: baseName },
     } as Partial<TreeNode>);
 
-    const res = await wc.commitWorkingCopy(second.id, { onNameConflict: 'auto-rename' });
+    const res = await wc.commitDraft(second.id, { onNameConflict: 'auto-rename' });
     assertCommitOk(res, 'second commit');
     expect(res.autoRenameTo).toBeTruthy();
 
@@ -133,21 +156,21 @@ describe('WorkingCopy commit E2E (holder-less)', () => {
     const parentId = 'r:root' as NodeId;
     const baseName = uniqueName('Conflict Edit');
 
-    const draft = await wc.createDraftWorkingCopy(
+    const draft = await wc.createDraftBase(
       'folder' as NodeType,
       parentId,
       makeDraftNode({ name: baseName })
     );
-    const commitResult = await wc.commitWorkingCopy(draft.id);
+    const commitResult = await wc.commitDraft(draft.id);
     assertCommitOk(commitResult, 'initial commit');
     const canonicalId = commitResult.nodeId as NodeId;
 
-    const editWc = await wc.createWorkingCopyFromNode(canonicalId);
+    const editWc = await wc.createDraftFromNode(canonicalId);
     const canonicalNode = await core.nodes.get(canonicalId);
     if (!canonicalNode) throw new Error('Canonical node not found');
     await core.updateNode({ id: canonicalId, version: (canonicalNode.version ?? 1) + 1 });
 
-    const conflict = await wc.commitWorkingCopy(editWc.id as NodeId, {
+    const conflict = await wc.commitDraft(editWc.id as NodeId, {
       onNameConflict: 'auto-rename',
     });
     assertCommitConflict(conflict, 'worker commit conflict');
@@ -158,19 +181,19 @@ describe('WorkingCopy commit E2E (holder-less)', () => {
     const parentId = 'r:root' as NodeId;
     const baseName = uniqueName('CP Conflict');
 
-    const draft = await wc.createDraftWorkingCopy('folder' as NodeType, parentId, {
+    const draft = await wc.createDraftBase('folder' as NodeType, parentId, {
       metadata: { name: baseName },
     } as Partial<TreeNode>);
-    await wc.commitWorkingCopy(draft.id);
+    await wc.commitDraft(draft.id);
 
-    const second = await wc.createDraftWorkingCopy(
+    const second = await wc.createDraftBase(
       'folder' as NodeType,
       parentId,
       makeDraftNode({ name: baseName })
     );
 
-    const envelope = cp.createEnvelope('commitWorkingCopy', {
-      workingCopyId: second.id,
+    const envelope = cp.createEnvelope('commitDraft', {
+      draftId: second.id,
       onNameConflict: 'error',
     });
     const result = await cp.processCommand(envelope);
@@ -184,22 +207,22 @@ describe('WorkingCopy commit E2E (holder-less)', () => {
     const parentId = 'r:root' as NodeId;
     const baseName = uniqueName('CP Commit Conflict');
 
-    const draft = await wc.createDraftWorkingCopy(
+    const draft = await wc.createDraftBase(
       'folder' as NodeType,
       parentId,
       makeDraftNode({ name: baseName })
     );
-    const commitResult = await wc.commitWorkingCopy(draft.id);
+    const commitResult = await wc.commitDraft(draft.id);
     assertCommitOk(commitResult, 'initial commit');
     const canonicalId = commitResult.nodeId as NodeId;
 
-    const editWc = await wc.createWorkingCopyFromNode(canonicalId);
+    const editWc = await wc.createDraftFromNode(canonicalId);
     const canonicalNode = await core.nodes.get(canonicalId);
     if (!canonicalNode) throw new Error('Canonical node not found');
     await core.updateNode({ id: canonicalId, version: (canonicalNode.version ?? 1) + 1 });
 
-    const envelope = cp.createEnvelope('commitWorkingCopy', {
-      workingCopyId: editWc.id as NodeId,
+    const envelope = cp.createEnvelope('commitDraft', {
+      draftId: editWc.id as NodeId,
       onNameConflict: 'auto-rename',
     });
     const result = await cp.processCommand(envelope);

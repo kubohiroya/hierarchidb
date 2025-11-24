@@ -51,7 +51,7 @@ export interface PluginDefinition {
  export interface NodeTypeDefinition<
  TEntity extends PeerEntity = PeerEntity,
  TGroupEntity extends GroupEntity = GroupEntity,
- TWorkingCopy extends TEntity & WorkingCopyProperties = TEntity & WorkingCopyProperties,
+ TDraft extends TEntity & DraftProperties = TEntity & DraftProperties,
  > {
  //
  readonly nodeType: NodeType;
@@ -67,7 +67,7 @@ export interface PluginDefinition {
  version: number;
  };
  //
- readonly entityHandler: EntityHandler<TEntity, TGroupEntity, TWorkingCopy>;
+ readonly entityHandler: EntityHandler<TEntity, TGroupEntity, TDraft>;
  //
  readonly lifecycle: NodeLifecycleHooks<TEntity>;
  // API

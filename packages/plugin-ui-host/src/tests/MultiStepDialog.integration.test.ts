@@ -27,29 +27,29 @@ describe('Multi-Step Dialog Integration', () => {
 
   describe('Working Copy Management', () => {
     it('should create a working copy for folder plugin', async () => {
-      const workingCopyId = await dialogAPI.createWorkingCopy('folder-plugin');
+      const draftId = await dialogAPI.createDraft('folder-plugin');
 
-      expect(workingCopyId).toBeDefined();
-      expect(typeof workingCopyId).toBe('string');
+      expect(draftId).toBeDefined();
+      expect(typeof draftId).toBe('string');
 
-      const workingCopy = await dialogAPI.getWorkingCopy(workingCopyId);
-      expect(workingCopy).toBeDefined();
-      expect(workingCopy?.nodeType).toBe('folder-plugin');
-      expect(workingCopy?.data).toEqual({});
+      const draft = await dialogAPI.getDraft(draftId);
+      expect(draft).toBeDefined();
+      expect(draft?.nodeType).toBe('folder-plugin');
+      expect(draft?.data).toEqual({});
     });
 
     it('should create a working copy for location plugin with parent', async () => {
       const parentId = 'parent-123' as NodeId;
-      const workingCopyId = await dialogAPI.createWorkingCopy('location', parentId);
+      const draftId = await dialogAPI.createDraft('location', parentId);
 
-      const workingCopy = await dialogAPI.getWorkingCopy(workingCopyId);
-      expect(workingCopy).toBeDefined();
-      expect(workingCopy?.nodeType).toBe('location');
-      expect(workingCopy?.parentNodeId).toBe(parentId);
+      const draft = await dialogAPI.getDraft(draftId);
+      expect(draft).toBeDefined();
+      expect(draft?.nodeType).toBe('location');
+      expect(draft?.parentNodeId).toBe(parentId);
     });
 
     it('should update a working copy', async () => {
-      const workingCopyId = await dialogAPI.createWorkingCopy('folder-plugin');
+      const draftId = await dialogAPI.createDraft('folder-plugin');
 
       const updates = {
         data: {
@@ -61,33 +61,33 @@ describe('Multi-Step Dialog Integration', () => {
         },
       };
 
-      const updatedWorkingCopy = await dialogAPI.updateWorkingCopy(workingCopyId, updates);
+      const updatedDraft = await dialogAPI.updateDraft(draftId, updates);
 
-      expect(updatedWorkingCopy.data.name).toBe('Test Folder');
-      expect(updatedWorkingCopy.data.description).toBe('A test folder');
-      expect(updatedWorkingCopy.metadata.currentStep).toBe(1);
+      expect(updatedDraft.data.name).toBe('Test Folder');
+      expect(updatedDraft.data.description).toBe('A test folder');
+      expect(updatedDraft.metadata.currentStep).toBe(1);
     });
 
     it('should delete a working copy', async () => {
-      const workingCopyId = await dialogAPI.createWorkingCopy('folder-plugin');
+      const draftId = await dialogAPI.createDraft('folder-plugin');
 
-      await dialogAPI.deleteWorkingCopy(workingCopyId);
+      await dialogAPI.deleteDraft(draftId);
 
-      const workingCopy = await dialogAPI.getWorkingCopy(workingCopyId);
-      expect(workingCopy).toBeUndefined();
+      const draft = await dialogAPI.getDraft(draftId);
+      expect(draft).toBeUndefined();
     });
   });
 
   describe('Folder Plugin Step Capabilities', () => {
-    let workingCopyId: NodeId;
+    let draftId: NodeId;
 
     beforeEach(async () => {
-      workingCopyId = await dialogAPI.createWorkingCopy('folder-plugin');
+      draftId = await dialogAPI.createDraft('folder-plugin');
     });
 
     it('should evaluate capabilities for step 0 (basic info)', async () => {
       //  -
-      let capabilities = await dialogAPI.evaluateCapabilities(workingCopyId, 0);
+      let capabilities = await dialogAPI.evaluateCapabilities(draftId, 0);
 
       expect(capabilities.canNavigateTo).toBe(true);
       expect(capabilities.canStartBatch).toBe(false);
@@ -95,23 +95,23 @@ describe('Multi-Step Dialog Integration', () => {
       expect(capabilities.canProceedToNext).toBe(false);
       expect(capabilities.canBackToPrevious).toBe(false);
 
-      await dialogAPI.updateWorkingCopy(workingCopyId, {
+      await dialogAPI.updateDraft(draftId, {
         data: { name: 'Test Folder' },
       });
 
-      capabilities = await dialogAPI.evaluateCapabilities(workingCopyId, 0);
+      capabilities = await dialogAPI.evaluateCapabilities(draftId, 0);
       expect(capabilities.canProceedToNext).toBe(true);
     });
 
     it('should evaluate capabilities for step 1 (permissions)', async () => {
-      let capabilities = await dialogAPI.evaluateCapabilities(workingCopyId, 1);
+      let capabilities = await dialogAPI.evaluateCapabilities(draftId, 1);
       expect(capabilities.canNavigateTo).toBe(false);
 
-      await dialogAPI.updateWorkingCopy(workingCopyId, {
+      await dialogAPI.updateDraft(draftId, {
         data: { name: 'Test Folder' },
       });
 
-      capabilities = await dialogAPI.evaluateCapabilities(workingCopyId, 1);
+      capabilities = await dialogAPI.evaluateCapabilities(draftId, 1);
       expect(capabilities.canNavigateTo).toBe(true);
       expect(capabilities.canStartBatch).toBe(true);
       expect(capabilities.canSave).toBe(true);
@@ -120,11 +120,11 @@ describe('Multi-Step Dialog Integration', () => {
     });
 
     it('should evaluate capabilities for step 2 (templates and bookmarks)', async () => {
-      await dialogAPI.updateWorkingCopy(workingCopyId, {
+      await dialogAPI.updateDraft(draftId, {
         data: { name: 'Test Folder' },
       });
 
-      const capabilities = await dialogAPI.evaluateCapabilities(workingCopyId, 2);
+      const capabilities = await dialogAPI.evaluateCapabilities(draftId, 2);
       expect(capabilities.canNavigateTo).toBe(true);
       expect(capabilities.canStartBatch).toBe(true);
       expect(capabilities.canSave).toBe(true);
@@ -134,40 +134,40 @@ describe('Multi-Step Dialog Integration', () => {
   });
 
   describe('Location Plugin Step Capabilities', () => {
-    let workingCopyId: NodeId;
+    let draftId: NodeId;
 
     beforeEach(async () => {
-      workingCopyId = await dialogAPI.createWorkingCopy('location');
+      draftId = await dialogAPI.createDraft('location');
     });
 
     it('should evaluate capabilities for step 0 (basic info)', async () => {
-      let capabilities = await dialogAPI.evaluateCapabilities(workingCopyId, 0);
+      let capabilities = await dialogAPI.evaluateCapabilities(draftId, 0);
       expect(capabilities.canProceedToNext).toBe(false);
 
-      await dialogAPI.updateWorkingCopy(workingCopyId, {
+      await dialogAPI.updateDraft(draftId, {
         data: {
           name: 'Test Location',
           locationType: 'restaurant',
         },
       });
 
-      capabilities = await dialogAPI.evaluateCapabilities(workingCopyId, 0);
+      capabilities = await dialogAPI.evaluateCapabilities(draftId, 0);
       expect(capabilities.canProceedToNext).toBe(true);
     });
 
     it('should evaluate capabilities for step 1 (location info)', async () => {
-      await dialogAPI.updateWorkingCopy(workingCopyId, {
+      await dialogAPI.updateDraft(draftId, {
         data: {
           name: 'Test Location',
           locationType: 'restaurant',
         },
       });
 
-      let capabilities = await dialogAPI.evaluateCapabilities(workingCopyId, 1);
+      let capabilities = await dialogAPI.evaluateCapabilities(draftId, 1);
       expect(capabilities.canProceedToNext).toBe(false);
       expect(capabilities.canSave).toBe(false);
 
-      await dialogAPI.updateWorkingCopy(workingCopyId, {
+      await dialogAPI.updateDraft(draftId, {
         data: {
           name: 'Test Location',
           locationType: 'restaurant',
@@ -176,7 +176,7 @@ describe('Multi-Step Dialog Integration', () => {
         },
       });
 
-      capabilities = await dialogAPI.evaluateCapabilities(workingCopyId, 1);
+      capabilities = await dialogAPI.evaluateCapabilities(draftId, 1);
       expect(capabilities.canProceedToNext).toBe(true);
       expect(capabilities.canSave).toBe(true);
       expect(capabilities.canStartBatch).toBe(true);
@@ -186,32 +186,32 @@ describe('Multi-Step Dialog Integration', () => {
   describe('Batch Operations', () => {
     it('should validate multiple working copies', async () => {
       //  Working Copy
-      const folderWorkingCopyId = await dialogAPI.createWorkingCopy('folder-plugin');
-      await dialogAPI.updateWorkingCopy(folderWorkingCopyId, {
+      const folderDraftId = await dialogAPI.createDraft('folder-plugin');
+      await dialogAPI.updateDraft(folderDraftId, {
         data: { name: 'Valid Folder' },
       });
 
       //  Working Copy
-      const locationWorkingCopyId = await dialogAPI.createWorkingCopy('location');
-      await dialogAPI.updateWorkingCopy(locationWorkingCopyId, {
+      const locationDraftId = await dialogAPI.createDraft('location');
+      await dialogAPI.updateDraft(locationDraftId, {
         data: { name: '', locationType: 'restaurant' },
       });
 
-      const results = await dialogAPI.batchValidate([folderWorkingCopyId, locationWorkingCopyId]);
+      const results = await dialogAPI.batchValidate([folderDraftId, locationDraftId]);
 
-      expect(results[folderWorkingCopyId].valid).toBe(true);
-      expect(results[locationWorkingCopyId].valid).toBe(false);
-      expect(results[locationWorkingCopyId].errors).toContain('ロケーション名は必須です');
+      expect(results[folderDraftId].valid).toBe(true);
+      expect(results[locationDraftId].valid).toBe(false);
+      expect(results[locationDraftId].errors).toContain('ロケーション名は必須です');
     });
 
     it('should batch evaluate capabilities', async () => {
-      const workingCopyId1 = await dialogAPI.createWorkingCopy('folder-plugin');
-      const workingCopyId2 = await dialogAPI.createWorkingCopy('location');
+      const draftId1 = await dialogAPI.createDraft('folder-plugin');
+      const draftId2 = await dialogAPI.createDraft('location');
 
-      await dialogAPI.updateWorkingCopy(workingCopyId1, {
+      await dialogAPI.updateDraft(draftId1, {
         data: { name: 'Test Folder' },
       });
-      await dialogAPI.updateWorkingCopy(workingCopyId2, {
+      await dialogAPI.updateDraft(draftId2, {
         data: {
           name: 'Test Location',
           locationType: 'restaurant',
@@ -221,30 +221,30 @@ describe('Multi-Step Dialog Integration', () => {
       });
 
       const results = await dialogAPI.batchEvaluateCapabilities([
-        { workingCopyId: workingCopyId1, step: 1 },
-        { workingCopyId: workingCopyId2, step: 2 },
+        { draftId: draftId1, step: 1 },
+        { draftId: draftId2, step: 2 },
       ]);
 
-      expect(results[workingCopyId1].canNavigateTo).toBe(true);
-      expect(results[workingCopyId1].canStartBatch).toBe(true);
-      expect(results[workingCopyId2].canNavigateTo).toBe(true);
-      expect(results[workingCopyId2].canStartBatch).toBe(true);
+      expect(results[draftId1].canNavigateTo).toBe(true);
+      expect(results[draftId1].canStartBatch).toBe(true);
+      expect(results[draftId2].canNavigateTo).toBe(true);
+      expect(results[draftId2].canStartBatch).toBe(true);
     });
   });
 
   describe('Validation', () => {
     it('should validate folder data', async () => {
-      const workingCopyId = await dialogAPI.createWorkingCopy('folder-plugin');
+      const draftId = await dialogAPI.createDraft('folder-plugin');
 
-      await dialogAPI.updateWorkingCopy(workingCopyId, {
+      await dialogAPI.updateDraft(draftId, {
         data: {
           name: '',
           permissions: 'invalid',
         },
       });
 
-      const results = await dialogAPI.batchValidate([workingCopyId]);
-      const validation = results[workingCopyId];
+      const results = await dialogAPI.batchValidate([draftId]);
+      const validation = results[draftId];
 
       expect(validation.valid).toBe(false);
       expect(validation.errors).toContain('フォルダー名は必須です');
@@ -252,9 +252,9 @@ describe('Multi-Step Dialog Integration', () => {
     });
 
     it('should validate location data', async () => {
-      const workingCopyId = await dialogAPI.createWorkingCopy('location-plugin');
+      const draftId = await dialogAPI.createDraft('location-plugin');
 
-      await dialogAPI.updateWorkingCopy(workingCopyId, {
+      await dialogAPI.updateDraft(draftId, {
         data: {
           name: 'Test Location',
           locationType: 'restaurant',
@@ -266,8 +266,8 @@ describe('Multi-Step Dialog Integration', () => {
         },
       });
 
-      const results = await dialogAPI.batchValidate([workingCopyId]);
-      const validation = results[workingCopyId];
+      const results = await dialogAPI.batchValidate([draftId]);
+      const validation = results[draftId];
 
       expect(validation.valid).toBe(false);
       expect(validation.errors).toContain('緯度は-90から90の数値である必要があります');
@@ -286,7 +286,7 @@ describe('Multi-Step Dialog Integration', () => {
     });
 
     it('should handle unsupported node type', async () => {
-      await expect(dialogAPI.createWorkingCopy('unsupported-type')).rejects.toThrow(
+      await expect(dialogAPI.createDraft('unsupported-type')).rejects.toThrow(
         'No handler found for node type: unsupported-type'
       );
     });

@@ -3,26 +3,19 @@
    */
 
 import { useMemo, useCallback, useEffect, useRef } from 'react';
-import type { NodeId } from '@hierarchidb/common-types';
-import type { RouteEntity, RouteWorkingCopy, TagId } from '../types/index.js';
-import {
-  TabularProvider,
-  TabularFilterStep,
-  TabularColumnSelectionStep,
-} from '@hierarchidb/ui-tabular-extract';
-import { createRouteTabularApi } from '../tabular/createRouteTabularApi.js';
-import { createRouteDraftWorkingCopy, mergeRouteWorkingCopy, getRouteDraft } from '../utils/workingCopy.js';
+import type { NodeId, TreeId } from '@hierarchidb/common-types';
+import type { RouteEntity, RouteDraft, TagId } from '../types/index.js';
+import { createRouteDraftBase, mergeRouteDraft, getRouteDraft } from '../utils/draft.js';
 import { useTranslation } from '../i18n/index.js';
 import { RouteDetailsStep } from './RouteDetailsStep.js';
 import { RouteSelectionStep } from './RouteSelectionStep.js';
 import { RouteProcessingStep } from './RouteProcessingStep.js';
 import { readRuntimeMode } from '@hierarchidb/util';
 import { notify } from '@hierarchidb/components';
-import { useWorkingCopy } from '@hierarchidb/plugin-ui-sdk';
+import { useDialogDraft, type DraftData } from '@hierarchidb/plugin-ui-sdk';
 import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
-import { runRouteTabularBuild } from '../../worker/tabular/task.js';
-import { TabularFileUploadStep } from '@hierarchidb/ui-tabular-extract';
 import { useState } from 'react';
+import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-client';
 import {
   HeadlessMultiStepDialog,
   FRAME_CONSTANTS,
@@ -35,6 +28,7 @@ import {
   type HeadlessMultiStepDialogProps,
   type StepNavigationEvent,
   type StepComponentDescriptor,
+  type StepComponentProps,
   type HeadlessHeaderRenderProps,
   type HeadlessContentRenderProps,
   type HeadlessFooterRenderProps,
@@ -42,7 +36,6 @@ import {
   type MultiDialogSize,
   type MultiDialogPosition,
 } from '@hierarchidb/ui-dialog';
-import { Button } from '@mui/material';
 
 type DialogStep = { id: string; label: string; component: React.ReactNode; validate?: () => Promise<boolean> };
 
@@ -52,9 +45,32 @@ export interface RouteDialogProps {
   mode: 'create' | 'edit';
   nodeId?: NodeId;
   parentId?: NodeId;
-  onSuccess?: (entity: RouteWorkingCopy) => void;
+  onSuccess?: (entity: RouteDraft) => void;
   onError?: (error: Error) => void;
 }
+
+type RouteDialogState = RouteDraft | null;
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const normalizeRouteDraft = (
+  raw: DraftData | null,
+  nodeId: NodeId,
+  parentId?: NodeId
+): RouteDialogState => {
+  if (!raw) return null;
+  const base = createRouteDraftBase(nodeId, {}, parentId);
+  const payload = isRecord(raw.draftData) ? (raw.draftData as Partial<RouteEntity>) : {};
+  const meta = raw.metadata ?? {};
+  const merged: Partial<RouteEntity> = {
+    ...payload,
+  };
+  if (typeof meta.name === 'string') merged.name = meta.name;
+  if (typeof meta.description === 'string') merged.description = meta.description;
+  if (Array.isArray(meta.tags)) merged.tags = meta.tags as TagId[];
+  return mergeRouteDraft(base, merged);
+};
 
 export const RouteDialog: React.FC<RouteDialogProps> = ({
   open,
@@ -66,61 +82,102 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
   onError,
 }: RouteDialogProps) => {
   const { t } = useTranslation();
-  const { workingCopy, setWorkingCopy, init, commit, discard } = useWorkingCopy<RouteWorkingCopy>({
-    nodeType: 'route',
+  const workerClient = useMemo<WorkerClientRef | null>(() => {
+    try {
+      const hook = getWorkerClientHook<WorkerClientRef | null>();
+      return hook();
+    } catch {
+      return null;
+    }
+  }, []);
+  const effectiveNodeId = useMemo<NodeId>(
+    () => (nodeId ?? parentId ?? (`route-${Date.now()}` as NodeId)) as NodeId,
+    [nodeId, parentId]
+  );
+  const effectiveTreeId = useMemo<TreeId>(
+    () => (parentId ?? nodeId ?? effectiveNodeId) as unknown as TreeId,
+    [effectiveNodeId, nodeId, parentId]
+  );
+
+  const { draft, updateDraft, saveDraft, discardDraft } = useDialogDraft({
     mode,
+    nodeType: 'route',
     nodeId,
     parentId,
+    treeId: effectiveTreeId,
+    workerClient,
   });
-  // Initialize working copy from Worker when dialog opens
-  useEffect(() => { if (open) { void init(); } }, [open, init]);
 
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [detailsValid, setDetailsValid] = useState(false);
-  const [tabularBuildStatus, setTabularBuildStatus] = useState<string | null>(null);
-
-  const updateWorkingCopy = useCallback(
-    (updater: (prev: RouteWorkingCopy | null) => RouteWorkingCopy | null) => {
-      setWorkingCopy((prev: RouteWorkingCopy | null) => updater(prev));
-    },
-    [setWorkingCopy],
+  const routeDraft = useMemo(
+    () => normalizeRouteDraft(draft, effectiveNodeId, parentId),
+    [draft, effectiveNodeId, parentId]
+  );
+  const workingDraft = useMemo(
+    () => routeDraft ?? createRouteDraftBase(effectiveNodeId, {}, parentId),
+    [routeDraft, effectiveNodeId, parentId]
   );
 
-  useEffect(() => {
-    if (!open || workingCopy || mode !== 'create') return;
-    const fallbackNodeId = (nodeId ?? parentId ?? (globalThis.crypto?.randomUUID?.() ?? `route-${Date.now()}`)) as NodeId;
-    setWorkingCopy((prev: RouteWorkingCopy | null) => (
-      prev ?? createRouteDraftWorkingCopy(fallbackNodeId, {}, parentId)
-    ));
-  }, [open, mode, nodeId, parentId, workingCopy, setWorkingCopy]);
+  const applyUpdates = useCallback(
+    (updates: Partial<RouteEntity>) => {
+      if (!draft) return;
+      const nextMetadata = { ...(draft.metadata ?? {}) };
+      if (updates.name !== undefined) {
+        nextMetadata.name = updates.name ?? '';
+      }
+      if (updates.description !== undefined) {
+        nextMetadata.description = updates.description ?? undefined;
+      }
+      if (updates.tags !== undefined) {
+        nextMetadata.tags = Array.isArray(updates.tags)
+          ? updates.tags.map((tag) => String(tag))
+          : undefined;
+      }
+      const { name, description, tags, ...rest } = updates;
+      const nextDraftData = {
+        ...(draft.draftData ?? {}),
+        ...rest,
+      };
+      void updateDraft({
+        metadata: nextMetadata,
+        draftData: nextDraftData,
+      });
+    },
+    [draft, updateDraft]
+  );
 
-  const applyUpdates = useCallback((updates: Partial<RouteEntity>) => {
-    updateWorkingCopy((prev) => (prev ? mergeRouteWorkingCopy(prev, updates) : prev));
-  }, [updateWorkingCopy]);
-
-  // Simple computed validity based on workingCopy to ease testing and determinism
-  const routeDraft = useMemo(() => (workingCopy ? getRouteDraft(workingCopy) : null), [workingCopy]);
-  const resolvedName = typeof routeDraft?.name === 'string' ? routeDraft.name : '';
-  const resolvedDescription = typeof routeDraft?.description === 'string' ? routeDraft.description : '';
+  // Simple computed validity based on draft to ease testing and determinism
+  const routeDraftPayload = useMemo(
+    () => (routeDraft ? getRouteDraft(routeDraft) : getRouteDraft(workingDraft)),
+    [routeDraft, workingDraft]
+  );
+  const resolvedName = typeof routeDraftPayload?.name === 'string' ? routeDraftPayload.name : '';
+  const resolvedDescription =
+    typeof routeDraftPayload?.description === 'string' ? routeDraftPayload.description : '';
   const resolvedTags = useMemo(() => {
-    const draftTags = Array.isArray(routeDraft?.tags) ? routeDraft?.tags : undefined;
-    const wcTags = Array.isArray((workingCopy as RouteWorkingCopy | null)?.tags) ? (workingCopy as RouteWorkingCopy).tags : undefined;
+    const draftTags = Array.isArray(routeDraftPayload?.tags) ? routeDraftPayload?.tags : undefined;
+    const wcTags = Array.isArray((routeDraft as RouteDraft | null)?.tags)
+      ? (routeDraft as RouteDraft).tags
+      : undefined;
     return (draftTags ?? wcTags ?? []) as TagId[];
-  }, [routeDraft?.tags, workingCopy]);
+  }, [routeDraftPayload?.tags, routeDraft]);
 
   const isBasicValid = resolvedName.trim().length > 0;
   const isSelectionValid = true;
   const isProcessingValid = true;
 
   useEffect(() => {
-    if (!routeDraft) {
+    if (!routeDraftPayload) {
       setDetailsValid(false);
       return;
     }
-    const hasRouteType = Boolean(routeDraft.routeType);
-    const transports = Array.isArray(routeDraft.transportModes) ? routeDraft.transportModes : [];
+    const hasRouteType = Boolean(routeDraftPayload.routeType);
+    const transports = Array.isArray(routeDraftPayload.transportModes)
+      ? routeDraftPayload.transportModes
+      : [];
     setDetailsValid(hasRouteType && transports.length > 0);
-  }, [routeDraft]);
+  }, [routeDraftPayload]);
 
   const handleBasicInfoChange = useCallback((data: BasicInfoData) => {
     applyUpdates({
@@ -131,7 +188,7 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
   }, [applyUpdates]);
 
   const steps: DialogStep[] = useMemo(() => {
-    if (!workingCopy) return [];
+    if (!workingDraft) return [];
     const handleUpdate = (updates: Partial<RouteEntity>) => applyUpdates(updates);
     return [
       {
@@ -153,7 +210,7 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
         label: t('base-dialog.steps.routeDetails', 'Route Settings'),
         component: (
           <RouteDetailsStep
-            workingCopy={workingCopy}
+            draft={workingDraft}
             onUpdate={handleUpdate}
             onValidationChange={setDetailsValid}
           />
@@ -161,25 +218,11 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
         validate: async () => detailsValid,
       },
       {
-        id: '1-source',
-        label: t('base-dialog.steps.routeDataSource', 'Data Source'),
-        component: (
-          <TabularProvider tabularApi={createRouteTabularApi()}>
-            <TabularFileUploadStep
-              pluginId="route"
-              onFileUploaded={(meta) => handleUpdate({ tabularSourceId: meta.id })}
-              onError={(msg) => notify.error(msg)}
-            />
-          </TabularProvider>
-        ),
-        validate: async () => true,
-      },
-      {
         id: '2',
         label: t('base-dialog.steps.routeSelection', 'Route Selection'),
         component: (
           <RouteSelectionStep
-            workingCopy={workingCopy}
+            draft={workingDraft}
             onUpdate={handleUpdate}
             onValidationChange={() => {/* computed above */}}
           />
@@ -191,67 +234,28 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
         label: t('base-dialog.steps.processing', 'Processing'),
         component: (
           <RouteProcessingStep
-            workingCopy={workingCopy}
+            draft={workingDraft}
             onUpdate={handleUpdate}
             onValidationChange={() => {/* computed above */}}
           />
         ),
         validate: async () => isProcessingValid,
       },
-      {
-        id: '4',
-        label: t('base-dialog.steps.routeTabular', 'Filter & Preview'),
-        component: (
-          <TabularProvider tabularApi={createRouteTabularApi()}>
-            <TabularFilterStep
-              onConfigChange={(filters) => handleUpdate({ extractConfig: filters as any })}
-            />
-            <TabularColumnSelectionStep
-              onConfigChange={(selection) =>
-                handleUpdate({
-                  extractConfig: { ...(workingCopy.extractConfig ?? {}), selection } as any,
-                })
-              }
-            />
-            <Button
-              variant="contained"
-              onClick={async () => {
-                if (!workingCopy.tabularSourceId) {
-                  notify.error('No tabular source to build. Download/Upload first.');
-                  return;
-                }
-                try {
-                  setTabularBuildStatus('extracting');
-                  const filters = (workingCopy.extractConfig as any)?.filterRules ?? [];
-                  const selection = (workingCopy.extractConfig as any)?.selection;
-                  const tabularApi = createRouteTabularApi();
-                  await runRouteTabularBuild(
-                    tabularApi as any,
-                    workingCopy.tabularSourceId as string,
-                    filters,
-                    selection,
-                    (nodeId ?? workingCopy.nodeId) as NodeId,
-                    (progress) => setTabularBuildStatus(`${progress.stage ?? 'building'} ${progress.completed ?? 0}/${progress.total ?? ''}`)
-                  );
-                  notify.success('Build completed');
-                } catch (err) {
-                  notify.error(`Build failed: ${(err as Error).message}`);
-                  setTabularBuildStatus(null);
-                }
-                setTabularBuildStatus(null);
-              }}
-            >
-              {t('base-dialog.actions.build', 'Build')}
-            </Button>
-            {tabularBuildStatus ? (
-              <div style={{ fontSize: '0.75rem', color: '#666' }}>{tabularBuildStatus}</div>
-            ) : null}
-          </TabularProvider>
-        ),
-        validate: async () => true,
-      },
     ];
-  }, [applyUpdates, detailsValid, handleBasicInfoChange, isBasicValid, isProcessingValid, isSelectionValid, mode, resolvedDescription, resolvedName, resolvedTags, t, workingCopy]);
+  }, [
+    applyUpdates,
+    detailsValid,
+    handleBasicInfoChange,
+    isBasicValid,
+    isProcessingValid,
+    isSelectionValid,
+    mode,
+    resolvedDescription,
+    resolvedName,
+    resolvedTags,
+    t,
+    workingDraft,
+  ]);
 
   const filledSteps = useMemo(
     () => [isBasicValid, detailsValid, isSelectionValid, isProcessingValid],
@@ -307,11 +311,6 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
     }
   }, [open]);
 
-  // Cleanup draft on unmount (best-effort)
-  useEffect(() => {
-    return () => { void (async () => { await discard(); })(); };
-  }, [discard]);
-
   const handleNavigation = useCallback((event: StepNavigationEvent) => {
     switch (event.type) {
       case 'direct':
@@ -328,8 +327,8 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
 
   const handleCommit = useCallback(async () => {
     try {
-      await commit();
-      if (workingCopy) onSuccess?.(workingCopy);
+      await saveDraft();
+      if (routeDraft) onSuccess?.(routeDraft);
       notify.success('Route saved successfully');
     } catch (e) {
       onError?.(e as Error);
@@ -337,21 +336,21 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
       return;
     }
     onClose();
-  }, [commit, workingCopy, onSuccess, onError, onClose]);
+  }, [onClose, onError, onSuccess, routeDraft, saveDraft]);
 
   const handleCancel = useCallback(async () => {
     try {
-      await discard();
+      await discardDraft();
       notify.info('Route changes discarded');
     } catch (e) {
       console.warn('[RouteDialog] discard failed', e);
     }
     onClose();
-  }, [discard, onClose]);
+  }, [discardDraft, onClose]);
 
   const isTestEnv = useMemo(() => readRuntimeMode() === 'test', []);
 
-  const renderHeader: HeadlessMultiStepDialogProps<RouteWorkingCopy | null>['renderHeader'] = useCallback((props: HeadlessHeaderRenderProps<RouteWorkingCopy | null>) => (
+  const renderHeader: HeadlessMultiStepDialogProps<RouteDraft | null>['renderHeader'] = useCallback((props: HeadlessHeaderRenderProps<RouteDraft | null>) => (
     <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #dde1eb' }}>
       <div>
         <strong>{t('base-dialog.title', 'Route Configuration')}</strong>
@@ -366,13 +365,13 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
     </header>
   ), [handleNavigation, steps.length, t]);
 
-  const renderContent: HeadlessMultiStepDialogProps<RouteWorkingCopy | null>['renderContent'] = useCallback((props: HeadlessContentRenderProps<RouteWorkingCopy | null>) => (
+  const renderContent: HeadlessMultiStepDialogProps<RouteDraft | null>['renderContent'] = useCallback((props: HeadlessContentRenderProps<RouteDraft | null>) => (
     <div style={{ padding: 16 }}>
       {steps[props.activeStepIndex]?.component}
     </div>
   ), [steps]);
 
-  const renderFooter: HeadlessMultiStepDialogProps<RouteWorkingCopy | null>['renderFooter'] = useCallback((props: HeadlessFooterRenderProps<RouteWorkingCopy | null>) => {
+  const renderFooter: HeadlessMultiStepDialogProps<RouteDraft | null>['renderFooter'] = useCallback((props: HeadlessFooterRenderProps<RouteDraft | null>) => {
     const allFilled = filledSteps.every(Boolean);
     return (
       <footer style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #dde1eb' }}>
@@ -519,9 +518,15 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
     }
   }, [applyNormalizedState, displayMode]);
 
-  const stepDescriptors = useMemo<ReadonlyArray<StepComponentDescriptor<RouteWorkingCopy | null>>>(() => (
-    steps.map((step) => ({ id: step.id, label: step.label, component: () => null }))
-  ), [steps]);
+  const stepDescriptors = useMemo<ReadonlyArray<StepComponentDescriptor<RouteDraft>>>(() =>
+    steps.map((step) => ({
+      id: step.id,
+      label: step.label,
+      component: (() => step.component as React.ReactElement) as unknown as React.ComponentType<
+        StepComponentProps<RouteDraft>
+      >,
+    }))
+  , [steps]);
 
   const invalidMessageMap = useMemo(() => ({} as Record<string, string>), []);
 
@@ -546,10 +551,10 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
       <HeadlessMultiStepDialog
         open={open}
         stepComponents={stepDescriptors}
-        stepData={workingCopy}
-        onStepDataChange={(patch: Partial<RouteWorkingCopy> | null) => {
-          if (!patch || !workingCopy) return;
-          applyUpdates(patch as Partial<RouteWorkingCopy>);
+        stepData={workingDraft}
+        onStepDataChange={(patch: Partial<RouteDraft>) => {
+          if (!patch) return;
+          applyUpdates(patch as Partial<RouteDraft>);
         }}
         activeStepIndex={activeStepIndex}
         onStepNavigate={handleNavigation}
@@ -565,9 +570,9 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
         onPositionChange={handlePositionChange}
         size={dialogSize}
         onSizeChange={handleSizeChange}
-        renderHeader={renderHeader}
-        renderContent={renderContent}
-        renderFooter={renderFooter}
+        renderHeader={renderHeader as HeadlessMultiStepDialogProps<RouteDraft>['renderHeader']}
+        renderContent={renderContent as HeadlessMultiStepDialogProps<RouteDraft>['renderContent']}
+        renderFooter={renderFooter as HeadlessMultiStepDialogProps<RouteDraft>['renderFooter']}
       />
     </div>
   );

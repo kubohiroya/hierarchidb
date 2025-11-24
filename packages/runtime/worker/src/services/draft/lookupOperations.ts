@@ -19,17 +19,25 @@ export async function updateDraft(
   }
 
   const timestamp = Date.now() as Timestamp;
+  const metaFromUpdates = updates.metadata
+    ? { ...(existing.metadata ?? {}), ...(updates.metadata as TreeNode['metadata']) }
+    : undefined;
   const nextDraftData =
     updates.draftData ??
     (updates.data as TreeNode['draftData'] | undefined) ??
     existing.draftData ??
     existing.data ??
     null;
-  const nextDraftMetadata =
-    updates.draftMetadata ??
-    existing.draftMetadata ??
+  const nextMetadata =
+    metaFromUpdates ??
     existing.metadata ??
     null;
+  const nextDraftMetadata =
+    updates.draftMetadata
+      ? { ...(existing.draftMetadata ?? existing.metadata ?? {}), ...(updates.draftMetadata as TreeNode['draftMetadata']) }
+      : metaFromUpdates
+        ? { ...(existing.draftMetadata ?? existing.metadata ?? {}), ...(metaFromUpdates as TreeNode['draftMetadata']) }
+        : existing.draftMetadata ?? existing.metadata ?? null;
 
   const updated: TreeNode = {
     ...existing,
@@ -38,7 +46,7 @@ export async function updateDraft(
     lastTouchedAt: timestamp,
     data: existing.data ?? null,
     draftData: nextDraftData,
-    metadata: existing.metadata,
+    metadata: nextMetadata ?? existing.metadata,
     draftMetadata: nextDraftMetadata,
   };
 

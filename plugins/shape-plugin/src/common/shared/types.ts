@@ -19,7 +19,7 @@ export interface PeerEntity {
   disabled?: boolean;
 }
 
-import type { WorkingCopyDraft } from '@hierarchidb/plugin-service-api';
+import type { DraftBase } from '@hierarchidb/plugin-service-api';
 import type {
   TabularFilterRule,
   TabularDataResult,
@@ -62,31 +62,31 @@ export interface ShapeEntity extends PeerEntity {
   processingStatus?: 'idle' | 'processing' | 'paused' | 'completed' | 'failed' | 'cancelled';
 }
 
-// ShapeWorkingCopy extends the entity with working copy properties but keeps wizard-derived
+// ShapeDraft extends the entity with working copy properties but keeps wizard-derived
 // values (selectedCountries/adminLevels/urlMetadata) out of the persisted draft. Those values
 // must be derived from `checkboxState` by UI or batch pipelines.
-export type ShapeWorkingCopy = WorkingCopyDraft<ShapeEntity> &
+export type ShapeDraft = DraftBase<ShapeEntity> &
   Omit<ShapeEntity, 'selectedCountries' | 'adminLevels' | 'urlMetadata'> &
   Partial<{
     // TreeNode required properties (from NodeBase)
-    id: NodeId; // Legacy compatibility: TreeNode identifier
-    parentId: NodeId;
-    nodeType: NodeType;
+    //id: NodeId; // Legacy compatibility: TreeNode identifier
+    //parentId: NodeId;
+    //nodeType: NodeType;
     nodeId: NodeId;
-    name: string;
+    // name: string;
     depth: number;
 
     // Working copy metadata compatible with legacy handlers
-    originalNodeId?: NodeId;
-    copiedAt: number;
-    hasEntityCopy?: boolean;
-    entityWorkingCopyId?: NodeId;
+    // originalNodeId?: NodeId;
+    // copiedAt: number;
+    // hasEntityCopy?: boolean;
+    // entityDraftId?: NodeId;
     hasGroupEntityCopy?: Record<string, boolean>;
 
     // Shape-specific working copy metadata
-    isDraft?: boolean;
+    // isDraft?: boolean;
     downloadedMatrix?: boolean[][]; // Cache status
-    resumeStep?: number;
+    // resumeStep?: number;
     selectedCountries?: string[];
     selectedAdminLevels?: number[];
     checkboxState?: boolean[][] | string;
@@ -99,8 +99,8 @@ export type ShapeWorkingCopy = WorkingCopyDraft<ShapeEntity> &
   }>;
 
 export interface StepProps {
-  workingCopy: Partial<ShapeWorkingCopy>;
-  onUpdate: (updates: Partial<ShapeWorkingCopy>) => void;
+  draft: Partial<ShapeDraft>;
+  onUpdate: (updates: Partial<ShapeDraft>) => void;
   disabled?: boolean;
 }
 
@@ -349,7 +349,7 @@ export interface VectorTileTask extends BatchTaskBase {
 
 export interface BatchSession {
   sessionId: string;
-  workingCopyId: NodeId; // WorkingCopyTypes-based processing now keyed by NodeId
+  draftId: NodeId; // DraftTypes-based processing now keyed by NodeId
   nodeId: NodeId;
   status: 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
   config: ProcessingConfig;

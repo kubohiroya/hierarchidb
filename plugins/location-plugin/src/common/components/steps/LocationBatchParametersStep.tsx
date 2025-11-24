@@ -4,12 +4,12 @@
 
 import type React from 'react';
 import { Box, Grid, Slider, TextField, Typography } from '@mui/material';
-import type { LocationWorkingCopy } from '../../types/index.js';
+import type { LocationDraft } from '../../types/index.js';
 import { useTranslation } from '../../i18n/index.js';
 
 interface LocationBatchParametersStepProps {
-  workingCopy: LocationWorkingCopy;
-  onUpdate: (updates: Partial<LocationWorkingCopy>) => void;
+  draft: LocationDraft;
+  onUpdate: (updates: Partial<LocationDraft>) => void;
 }
 
 const MIN_CONCURRENCY = 1;
@@ -22,9 +22,12 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-export const LocationBatchParametersStep: React.FC<LocationBatchParametersStepProps> = ({ workingCopy, onUpdate }) => {
+export const LocationBatchParametersStep: React.FC<LocationBatchParametersStepProps> = ({
+  draft: draftProp,
+  onUpdate,
+}) => {
   const { translations } = useTranslation();
-  const draft = workingCopy.draft ?? {};
+  const draft = draftProp.draft ?? {};
 
   const rawConcurrent = draft.concurrentDownloads ?? 2;
   const concurrentDownloads = clamp(Number(rawConcurrent) || 2, MIN_CONCURRENCY, MAX_CONCURRENCY);

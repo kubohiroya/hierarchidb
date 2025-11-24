@@ -6,7 +6,7 @@ import type { StepProps } from '../../shared/index.js';
  * Step 1: Basic Information
  * Collects name and description for the shape-plugin configuration
  */
-export const Step1BasicInfo: React.FC<StepProps> = ({ workingCopy, onUpdate, disabled }) => {
+export const Step1BasicInfo: React.FC<StepProps> = ({ draft, onUpdate, disabled }) => {
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h6" gutterBottom>
@@ -19,14 +19,14 @@ export const Step1BasicInfo: React.FC<StepProps> = ({ workingCopy, onUpdate, dis
       <Stack spacing={3}>
         <TextField
           label="Name"
-          value={workingCopy.name || ''}
+          value={draft.name || ''}
           onChange={(e) => onUpdate({ name: e.target.value })}
           required
           fullWidth
           disabled={disabled}
-          error={!workingCopy.name}
+          error={!draft.name}
           helperText={
-            !workingCopy.name
+            !draft.name
               ? 'Name is required'
               : 'Enter a descriptive name for this configuration'
           }
@@ -35,7 +35,7 @@ export const Step1BasicInfo: React.FC<StepProps> = ({ workingCopy, onUpdate, dis
 
         <TextField
           label="Description"
-          value={workingCopy.description || ''}
+          value={draft.description || ''}
           onChange={(e) => onUpdate({ description: e.target.value })}
           multiline
           rows={3}

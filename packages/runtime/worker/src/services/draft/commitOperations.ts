@@ -3,7 +3,7 @@ import type { CoreDB } from '../CoreDB.js';
 import type { CommandResult } from '../command-types.js';
 import { WorkerErrorCode } from '../command-types.js';
 import { createNewName, getChildNames } from './nameUtilities.js';
-import { discardWorkingCopy as discardDraft } from './cleanupOperations.js';
+import { discardDraft as discardDraft } from './cleanupOperations.js';
 import { touchDraftById } from './draftOperations.js';
 import { checkDraftConflict } from './lookupOperations.js';
 
@@ -19,13 +19,13 @@ export type CommitResult = CommitOk | CommitConflict | NameConflict;
 /**
  * Commit a draft node by applying draftData -> data and clearing draftData/dialogUIState.
  */
-export async function commitWorkingCopy(
+export async function commitDraft(
   coreDB: CoreDB,
-  workingCopyNodeId: NodeId,
+  draftNodeId: NodeId,
   onNameConflict: OnNameConflict = 'error'
 ): Promise<CommitResult> {
   const now = Date.now() as Timestamp;
-  const draft = await coreDB.nodes.get(workingCopyNodeId);
+  const draft = await coreDB.nodes.get(draftNodeId);
   if (!draft) throw new Error('Draft node not found');
 
   const siblingNames = await getChildNames(coreDB, draft.parentId);
@@ -50,8 +50,7 @@ export async function commitWorkingCopy(
     };
   }
 
-  const finalizedData =
-    (draft as { draftData?: unknown }).draftData ?? (draft as { data?: unknown }).data ?? null;
+  const finalizedData = (draft as { draftData?: unknown }).draftData ?? {};
 
   const updatedNode: TreeNode = {
     ...draft,
@@ -69,7 +68,7 @@ export async function commitWorkingCopy(
   delete (updatedNode as { isDraft?: unknown }).isDraft;
   await coreDB.nodes.put(updatedNode);
 
-  await discardDraft(coreDB, workingCopyNodeId);
+  await discardDraft(coreDB, draftNodeId);
   await touchDraftById(coreDB, updatedNode.id as NodeId, now);
 
   const ok: CommitOk = { status: 'ok', nodeId: updatedNode.id as NodeId };
@@ -77,16 +76,16 @@ export async function commitWorkingCopy(
   return ok;
 }
 
-// Legacy CommandResult path retained for compatibility; delegates to commitWorkingCopyV2.
+// Legacy CommandResult path retained for compatibility; delegates to commitDraftV2.
 // Legacy CommandResult wrapper retained for compatibility with callers expecting CommandResult.
-export async function commitWorkingCopyCommand(
+export async function commitDraftCommand(
   coreDB: CoreDB,
-  workingCopyNodeId: NodeId,
+  draftNodeId: NodeId,
   _isDraft: boolean,
   onNameConflict: OnNameConflict = 'error'
 ): Promise<CommandResult> {
   try {
-    const result = await commitWorkingCopy(coreDB, workingCopyNodeId, onNameConflict);
+    const result = await commitDraft(coreDB, draftNodeId, onNameConflict);
     if (result.status === 'ok') {
       return { success: true, seq: 1 as any, nodeId: result.nodeId };
     }

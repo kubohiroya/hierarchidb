@@ -33,7 +33,7 @@ import {
   getPresentation,
   hydratePresentationDefinitionsFromGlobal,
 } from '@hierarchidb/plugin-presentation';
-import { useDialogWorkingCopy, type WorkingCopyData } from '@hierarchidb/plugin-ui-sdk';
+import { useDialogDraft, type DraftData } from '@hierarchidb/plugin-ui-sdk';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-client';
 import { resolveDefaultNodeName } from '@hierarchidb/runtime-worker';
 import type {
@@ -144,11 +144,11 @@ type BasicInfoValidationMeta = {
 };
 
 export const buildStepWorkingData = (
-  workingCopyData: Record<string, unknown> | undefined,
+  draftData: Record<string, unknown> | undefined,
   basicInfo: BasicInfoState,
   meta: BasicInfoValidationMeta
 ): StepData => {
-  const baseRecord = workingCopyData ?? {};
+  const baseRecord = draftData ?? {};
   const base: StepData = {
     ...baseRecord,
     ...basicInfo,
@@ -206,7 +206,7 @@ type StepAdapterProps = {
   nodeId: string;
   parentId: string;
   workingData: Record<string, unknown> | undefined;
-  updateWorkingCopy: (patch: Partial<WorkingCopyData>) => void;
+  updateDraft: (patch: Partial<DraftData>) => void;
   onDataChange?: (data: Record<string, unknown>) => void;
 };
 
@@ -216,7 +216,7 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
   nodeId,
   parentId,
   workingData,
-  updateWorkingCopy,
+  updateDraft,
   onDataChange,
 }) => {
   const [, setValid] = useState<boolean | undefined>();
@@ -235,9 +235,9 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
       const record = toRecord(data) ?? {};
       const sanitized = stripReservedDialogKeys(record);
       onDataChange?.(sanitized);
-      updateWorkingCopy({ draftData: sanitized });
+      updateDraft({ draftData: sanitized });
     },
-    [onDataChange, updateWorkingCopy]
+    [onDataChange, updateDraft]
   );
 
   return (
@@ -636,15 +636,14 @@ export function usePluginDialogController(
   }, [client]);
 
   const {
-    workingCopy,
+    draft,
     hasUnsavedChanges,
-    updateWorkingCopy,
-    saveWorkingCopy,
+    updateDraft,
     saveDraft,
-    discardWorkingCopy,
+    discardDraft,
     loading,
     error,
-  } = useDialogWorkingCopy({
+  } = useDialogDraft({
     mode,
     nodeType,
     nodeId,
@@ -963,15 +962,15 @@ export function usePluginDialogController(
   }, [mode, nodeType]);
 
   useEffect(() => {
-    if (workingCopy) {
-      const tags = workingCopy.data?.tags as string[];
+    if (draft) {
+      const tags = draft.data?.tags as string[];
       const resolvedName =
-        typeof workingCopy.name === 'string' && workingCopy.name.length
-          ? workingCopy.name
+        typeof draft.name === 'string' && draft.name.length
+          ? draft.name
           : '';
       const resolvedDescription =
-        typeof workingCopy.description === 'string' && workingCopy.description.length
-          ? workingCopy.description
+        typeof draft.description === 'string' && draft.description.length
+          ? draft.description
           : '';
       setBasicInfo({
         name: resolvedName,
@@ -979,11 +978,11 @@ export function usePluginDialogController(
         tags,
       });
     }
-  }, [workingCopy]);
+  }, [draft]);
 
-  const workingCopyDataWithoutMeta = useMemo(
-    () => stripReservedDialogKeys(workingCopy?.data),
-    [workingCopy?.data]
+  const draftDataWithoutMeta = useMemo(
+    () => stripReservedDialogKeys(draft?.data),
+    [draft?.data]
   );
 
   const [tagSuggestions, setTagSuggestions] = useState<string[]>(() => []);
@@ -1096,8 +1095,8 @@ export function usePluginDialogController(
 
   useEffect(() => {
     if (!composedConfigs.hasHostBase) return;
-    if (!workingCopy?.data) return;
-    const info = extractBasicInfoFields(workingCopyDataWithoutMeta);
+    if (!draft?.data) return;
+    const info = extractBasicInfoFields(draftDataWithoutMeta);
     setBasicInfo((prev) => {
       const tagsEqual =
         prev.tags.length === info.tags.length &&
@@ -1107,15 +1106,15 @@ export function usePluginDialogController(
       }
       return info;
     });
-  }, [composedConfigs.hasHostBase, workingCopy?.data, workingCopyDataWithoutMeta]);
+  }, [composedConfigs.hasHostBase, draft?.data, draftDataWithoutMeta]);
 
   const pluginConfigSteps = useMemo(() => {
     void regTick;
     if (mode === 'create') return stepRegistry.getCreateSteps(nodeType);
     if (mode === 'edit')
-      return stepRegistry.getEditSteps(nodeType, String(nodeId), workingCopyDataWithoutMeta);
+      return stepRegistry.getEditSteps(nodeType, String(nodeId), draftDataWithoutMeta);
     return [];
-  }, [mode, nodeType, nodeId, workingCopyDataWithoutMeta, stepRegistry, regTick]);
+  }, [mode, nodeType, nodeId, draftDataWithoutMeta, stepRegistry, regTick]);
 
   const normalizedBasicName = basicInfo.name.trim();
   const normalizedBasicKey = normalizedBasicName.toLowerCase();
@@ -1137,12 +1136,18 @@ export function usePluginDialogController(
   );
 
   const handleBasicInfoBridge = useCallback((data: Record<string, unknown>) => {
-    setBasicInfo(extractBasicInfoFields(data));
-  }, []);
+    const info = extractBasicInfoFields(data);
+    setBasicInfo(info);
+    updateDraft({
+      name: info.name,
+      description: info.description,
+      tags: info.tags,
+    });
+  }, [updateDraft]);
 
   const currentStepData = useMemo<StepData>(
-    () => buildStepWorkingData(workingCopyDataWithoutMeta, basicInfo, basicInfoValidationMeta),
-    [workingCopyDataWithoutMeta, basicInfo, basicInfoValidationMeta]
+    () => buildStepWorkingData(draftDataWithoutMeta, basicInfo, basicInfoValidationMeta),
+    [draftDataWithoutMeta, basicInfo, basicInfoValidationMeta]
   );
   const basicInfoValidationPayload = useMemo<StepData>(
     () => stripReservedDialogKeys(currentStepData),
@@ -1157,11 +1162,11 @@ export function usePluginDialogController(
         nodeId={String(nodeId)}
         parentId={String(pageNodeId)}
         workingData={currentStepData}
-        updateWorkingCopy={updateWorkingCopy}
+        updateDraft={updateDraft}
         onDataChange={cfg.id === 'basic-info' ? handleBasicInfoBridge : undefined}
       />
     ),
-    [currentStepData, handleBasicInfoBridge, mode, nodeId, pageNodeId, updateWorkingCopy]
+    [currentStepData, handleBasicInfoBridge, mode, nodeId, pageNodeId, updateDraft]
   );
 
   const steps: DialogStep[] = useMemo(() => {
@@ -1178,10 +1183,24 @@ export function usePluginDialogController(
             tags={basicInfo.tags}
             tagSuggestions={tagSuggestions}
             onChange={(data) =>
-              setBasicInfo({
-                name: data.name,
-                description: data.description ?? '',
-                tags: data.tags ?? [],
+              setBasicInfo((prev) => {
+                const next = {
+                  name: data.name,
+                  description: data.description ?? '',
+                  tags: data.tags ?? [],
+                };
+                if (
+                  prev.name !== next.name ||
+                  prev.description !== next.description ||
+                  prev.tags.join(',') !== next.tags.join(',')
+                ) {
+                  updateDraft({
+                    name: next.name,
+                    description: next.description,
+                    tags: next.tags,
+                  });
+                }
+                return next;
               })
             }
             mode={mode}
@@ -1197,7 +1216,7 @@ export function usePluginDialogController(
         const isBasicInfoStep = cfg.id === 'basic-info';
         const validationPayload = isBasicInfoStep
           ? basicInfoValidationPayload
-          : workingCopyDataWithoutMeta;
+          : draftDataWithoutMeta;
         const validateFn = cfg.validate;
         const resolveValidate = (() => {
           if (isBasicInfoStep) {
@@ -1232,7 +1251,8 @@ export function usePluginDialogController(
     basicInfoValidationError,
     isBasicInfoValid,
     renderStep,
-    workingCopyDataWithoutMeta,
+    updateDraft,
+    draftDataWithoutMeta,
     basicInfoValidationPayload,
   ]);
 
@@ -1274,7 +1294,7 @@ export function usePluginDialogController(
         const filled = await evaluateValidationState(steps);
         const dialogData = mergeDialogData(
           basicInfo,
-          workingCopyDataWithoutMeta as Record<string, unknown> | undefined
+          draftDataWithoutMeta as Record<string, unknown> | undefined
         );
         const guards = await evaluateStepGuards({
           steps,
@@ -1304,7 +1324,7 @@ export function usePluginDialogController(
     composedConfigs.hostCanSubmit,
     activeStepIndex,
     basicInfo,
-    workingCopyDataWithoutMeta,
+    draftDataWithoutMeta,
   ]);
 
   const enabledStepIndices = useMemo(() => {
@@ -1445,16 +1465,16 @@ export function usePluginDialogController(
       });
     }
     const finalData = {
-      ...workingCopy,
+      ...draft,
       name: basicInfo.name,
       description: basicInfo.description,
-      data: { ...workingCopyDataWithoutMeta, tags: basicInfo.tags },
+      data: { ...draftDataWithoutMeta, tags: basicInfo.tags },
     };
 
-    const savedNodeId = await saveWorkingCopy(finalData);
+    const savedNodeId = await saveDraft(finalData);
 
     try {
-      await discardWorkingCopy();
+      await discardDraft();
     } catch (err) {
       console.warn('[PluginDialogShell] discard after submit failed', err);
     }
@@ -1466,16 +1486,16 @@ export function usePluginDialogController(
 
     onClose();
   }, [
-    workingCopy,
+    draft,
     basicInfo.name,
     basicInfo.description,
     basicInfo.tags,
-    workingCopyDataWithoutMeta,
-    saveWorkingCopy,
+    draftDataWithoutMeta,
+    saveDraft,
     onClose,
     nodeType,
     mode,
-    discardWorkingCopy,
+    discardDraft,
     onSuccess,
     navigateToNode,
   ]);
@@ -1484,7 +1504,7 @@ export function usePluginDialogController(
     try {
       saveDraftInProgress.current = true;
       const draftData = {
-        ...workingCopy,
+        ...draft,
         name: basicInfo.name,
         description: basicInfo.description,
         isDraft: true,
@@ -1494,16 +1514,16 @@ export function usePluginDialogController(
       saveDraftInProgress.current = false;
       throw err;
     }
-  }, [workingCopy, basicInfo, saveDraft]);
+  }, [draft, basicInfo, saveDraft]);
 
   const handleCancel = useCallback(async () => {
     try {
-      await discardWorkingCopy();
+      await discardDraft();
     } catch (err) {
       console.warn('[PluginDialogShell] discard on cancel failed', err);
     }
     onClose();
-  }, [discardWorkingCopy, onClose]);
+  }, [discardDraft, onClose]);
 
   const stepDescriptors = useMemo<ReadonlyArray<StepComponentDescriptor<StepData>>>(
     () =>
@@ -1638,7 +1658,7 @@ export function usePluginDialogController(
     stepComponents: stepDescriptors,
     stepData: currentStepData,
     onStepDataChange: (patch: Partial<StepData>) =>
-      updateWorkingCopy({
+      updateDraft({
         draftData: stripReservedDialogKeys({ ...currentStepData, ...patch }),
       }),
     activeStepIndex,

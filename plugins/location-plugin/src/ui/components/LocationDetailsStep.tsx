@@ -1,7 +1,7 @@
 import type React from 'react';
 import { Box, FormControlLabel, MenuItem, Select, Stack, Switch, TextField, Typography } from '@mui/material';
 import { StorageRounded, Tune } from '@mui/icons-material';
-import type { LocationWorkingCopy } from '../../common/types/index.js';
+import type { LocationDraft } from '../../common/types/index.js';
 import { useTranslation } from '../../common/i18n/index.js';
 
 const DATA_SOURCES = ['openstreetmap', 'geonames', 'wikidata', 'overpass'] as const;
@@ -9,17 +9,17 @@ const DATA_SOURCES = ['openstreetmap', 'geonames', 'wikidata', 'overpass'] as co
 type DataSourceValue = typeof DATA_SOURCES[number];
 
 export interface LocationDetailsStepProps {
-  workingCopy: LocationWorkingCopy;
-  onUpdate: (patch: Partial<LocationWorkingCopy['draft']>) => void;
+  draft: LocationDraft;
+  onUpdate: (patch: Partial<LocationDraft['draft']>) => void;
   disabled?: boolean;
 }
 
-export const LocationDetailsStep: React.FC<LocationDetailsStepProps> = ({ workingCopy, onUpdate, disabled = false }) => {
+export const LocationDetailsStep: React.FC<LocationDetailsStepProps> = ({ draft, onUpdate, disabled = false }) => {
   const { translations } = useTranslation();
-  const draft = workingCopy.draft ?? {};
-  const dataSourceValue: DataSourceValue = (draft.dataSource as DataSourceValue) ?? 'openstreetmap';
-  const concurrentDownloads = draft.concurrentDownloads ?? 2;
-  const licenseAgreement = draft.licenseAgreement ?? false;
+  const draftData = draft.draft ?? {};
+  const dataSourceValue: DataSourceValue = (draftData.dataSource as DataSourceValue) ?? 'openstreetmap';
+  const concurrentDownloads = draftData.concurrentDownloads ?? 2;
+  const licenseAgreement = draftData.licenseAgreement ?? false;
 
   return (
     <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, maxWidth: 640, margin: '0 auto' }}>

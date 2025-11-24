@@ -3,7 +3,7 @@ import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CommandProcessor } from '../../services/CommandProcessor.js';
 import { CoreDB } from '../../services/CoreDB.js';
-const encodeWorkingCopyHolderName = (parentId: NodeId, nodeId: NodeId) =>
+const encodeDraftHolderName = (parentId: NodeId, nodeId: NodeId) =>
   `${parentId}::${nodeId}`;
 
 describe('Headless: Policy C load (moderate subtree)', () => {
@@ -71,12 +71,12 @@ describe('Headless: Policy C load (moderate subtree)', () => {
     const targetChild = toCreate[199];
     // Create WC holder for the deepest child
     const holderId = `wcH-load-${Date.now()}` as NodeId;
-    const holderName = encodeWorkingCopyHolderName(aId, targetChild.id);
+    const holderName = encodeDraftHolderName(aId, targetChild.id);
     await core.createNode(
       withPayload({
         id: holderId,
-        parentId: 'r:workingCopy' as NodeId,
-        nodeType: 'workingCopy' as NodeType,
+        parentId: 'r:draft' as NodeId,
+        nodeType: 'draft' as NodeType,
         name: holderName,
         depth: 0,
         createdAt: Date.now(),

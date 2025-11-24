@@ -11,7 +11,7 @@ import type {
 import type { CoreDB } from '../../CoreDB.js';
 import type { CommandEnvelope, CommandResult } from '../../command-types.js';
 import { WorkerErrorCode } from '../../command-types.js';
-import { commitDraft, createNewName } from '../../WorkingCopyTreeNodeOperations.js';
+import { commitDraft, createNewName } from '../../DraftTreeNodeOperations.js';
 import type { CommandExecutionContext } from '../execution/CommandExecutionRunner.js';
 import type { CommandHistoryManager } from '../history/CommandHistoryManager.js';
 
@@ -53,8 +53,8 @@ export async function executeCoreCommand(
       return handleRemoveSubtree(envelope, context, deps);
     case 'restoreFromTrash':
       return handleRestoreFromTrash(envelope, deps);
-    case 'commitWorkingCopy':
-      return handleCommitWorkingCopy(envelope, deps);
+    case 'commitDraft':
+      return handleCommitDraft(envelope, deps);
     case 'invalidCommand':
       return deps.createErrorResult('Command not supported', WorkerErrorCode.INVALID_OPERATION);
     default:
@@ -597,25 +597,25 @@ async function handleRestoreFromTrash(
   }
 }
 
-async function handleCommitWorkingCopy(
+async function handleCommitDraft(
   envelope: CommandEnvelope<string, unknown>,
   deps: CoreCommandDeps
 ): Promise<CommandResult> {
   try {
     const payload = envelope.payload as {
-      workingCopyId: NodeId;
+      draftId: NodeId;
       expectedUpdatedAt?: Timestamp;
       onNameConflict?: 'error' | 'auto-rename';
     };
 
-    const wcNode = await deps.coreDB.nodes.get(payload.workingCopyId);
+    const wcNode = await deps.coreDB.nodes.get(payload.draftId);
     if (!wcNode) {
       return deps.createErrorResult('Working copy not found', WorkerErrorCode.INVALID_OPERATION);
     }
     const wcSnapshot: TreeNode = { ...wcNode };
     const result = await commitDraft(
       deps.coreDB,
-      payload.workingCopyId,
+      payload.draftId,
       payload.onNameConflict ?? 'error'
     );
 
@@ -627,14 +627,14 @@ async function handleCommitWorkingCopy(
           committedSnapshot = { ...committedNode };
         }
       }
-      deps.history.storeCommitWorkingCopySnapshot(envelope.commandId as CommandId, {
-        workingCopy: wcSnapshot,
+      deps.history.storeCommitDraftSnapshot(envelope.commandId as CommandId, {
+        draft: wcSnapshot,
         committedNode: committedSnapshot,
       });
       return {
         success: true,
         seq: deps.getNextSeq(),
-        nodeId: result.nodeId ?? payload.workingCopyId,
+        nodeId: result.nodeId ?? payload.draftId,
         status: 'ok',
         autoRenameTo: result.autoRenameTo,
       };

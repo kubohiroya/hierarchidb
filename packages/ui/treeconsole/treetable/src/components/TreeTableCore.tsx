@@ -13,7 +13,7 @@ import {
   type SortingState,
   useReactTable,
 } from '@tanstack/react-table';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import { NodeContextMenu, NodeTypeIcon } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import type { TreeNodeInUI, TreeTableCoreProps } from '../types.js';
 import { StyledTable, StyledTableContainer } from './TreeTableStyles.js';
@@ -55,7 +55,7 @@ export function TreeTableCore({
   const [contextMenuState, setContextMenuState] = useState<{
     anchorEl: HTMLElement | null;
     anchorPosition: { left: number; top: number } | null;
-    node: TreeNodeInUI | null;
+    node: TreeNodeInUI | TreeNode | null;
   }>({
     anchorEl: null,
     anchorPosition: null,

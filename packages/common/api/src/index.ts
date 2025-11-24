@@ -19,8 +19,9 @@ export type {
 export type {
   MultiStepDialogAPI,
   StepCapabilities,
-  WorkingCopyData,
+  DraftData,
 } from './MultiStepDialogAPI.js';
+export type { PluginLifecycleAPI } from '@hierarchidb/plugin-service-api';
 // New exports
 // Runtime wiring interfaces for plugin bootstrap (optional capabilities)
 export type { PluginRuntimeWiring } from './RuntimeWiring.js';
@@ -32,5 +33,5 @@ export type {
   TreeQueryAPI,
 } from './TreeQueryAPI.js';
 export type { TreeSubscriptionAPI } from './TreeSubscriptionAPI.js';
-export type { PluginLifecycleAPI, WorkerAPI } from './WorkerAPI.js';
-export type { CommitWorkingCopyOptions, WorkingCopyAPI } from './WorkingCopyAPI.js';
+export type { WorkerAPI } from './WorkerAPI.js';
+export type { CommitDraftOptions, DraftAPI } from './DraftAPI.js';

@@ -32,11 +32,11 @@ import {
   Edit as EditIcon,
   Rule as RuleIcon,
 } from '@mui/icons-material';
-import type { ResolverWorkingCopyEntity, SchemaInfo, ValidationRule } from '../../../common/types/index.js';
+import type { ResolverDraftEntity, SchemaInfo, ValidationRule } from '../../../common/types/index.js';
 
 interface ValidationConfigStepProps {
-  data: Partial<ResolverWorkingCopyEntity>;
-  onUpdate: (updates: Partial<ResolverWorkingCopyEntity>) => void;
+  data: Partial<ResolverDraftEntity>;
+  onUpdate: (updates: Partial<ResolverDraftEntity>) => void;
   onValidationChange: (isValid: boolean) => void;
   sourceSchema: SchemaInfo | null;
   targetSchema: SchemaInfo | null;

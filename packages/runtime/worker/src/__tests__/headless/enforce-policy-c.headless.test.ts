@@ -3,7 +3,7 @@ import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CommandProcessor } from '../../services/CommandProcessor.js';
 import { CoreDB } from '../../services/CoreDB.js';
-const encodeWorkingCopyHolderName = (parentId: NodeId, nodeId: NodeId) =>
+const encodeDraftHolderName = (parentId: NodeId, nodeId: NodeId) =>
   `${parentId}::${nodeId}`;
 
 describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
@@ -55,13 +55,13 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
     };
     await core.createNode(aNode);
 
-    // Create a WC holder under r:workingCopy referring to node A
+    // Create a WC holder under r:draft referring to node A
     const holderId = `wcH-${Date.now()}` as NodeId;
-    const holderName = encodeWorkingCopyHolderName('r:root' as NodeId, aId);
+    const holderName = encodeDraftHolderName('r:root' as NodeId, aId);
     await core.createNode({
       id: holderId,
-      parentId: 'r:workingCopy' as NodeId,
-      nodeType: 'workingCopy' as NodeType,
+      parentId: 'r:draft' as NodeId,
+      nodeType: 'draft' as NodeType,
       metadata: { name: holderName, description: undefined, tags: [] },
       draftMetadata: null,
       depth: 0,
@@ -144,12 +144,12 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
       })
     );
     const holderId = `wcH3-${Date.now()}` as NodeId;
-    const holderName = encodeWorkingCopyHolderName('r:root' as NodeId, aId);
+    const holderName = encodeDraftHolderName('r:root' as NodeId, aId);
     await core.createNode(
       withPayload({
         id: holderId,
-        parentId: 'r:workingCopy' as NodeId,
-        nodeType: 'workingCopy' as NodeType,
+        parentId: 'r:draft' as NodeId,
+        nodeType: 'draft' as NodeType,
         name: holderName,
         depth: 0,
         createdAt: Date.now(),
