@@ -108,7 +108,7 @@ export const StyleSettingsStep: React.FC<StepComponentProps<StylerDialogData>> =
         </Typography>
         <TagChipsInput
           value={settings.styleTags ?? []}
-          onChange={(next) => updateSettings({ styleTags: next })}
+          onChange={(next: string[]) => updateSettings({ styleTags: next })}
           placeholder={t('styleSettings.styleTags.placeholder', 'Add tags to organize different style presets.')||''}
           label=""
         />

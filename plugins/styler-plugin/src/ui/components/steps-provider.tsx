@@ -115,7 +115,7 @@ registry.registerConfigProvider<StylerDialogData>({
                   })
                 )
               }
-              validate={({ name }) => (name.trim().length ? null : 'Name is required')}
+              validate={({ name }: BasicInfoData) => (name.trim().length ? null : 'Name is required')}
             />
           );
         },
