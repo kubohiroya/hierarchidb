@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
 import type { NodeId, NodeType, TreeNode, TreeNodeMetadata } from '@hierarchidb/common-types';
-import { makeNode, makeDraftNode } from '../../test-utils/node-helpers.js';
+import { makeNode } from '../../test-utils/node-helpers.js';
 import { CommandProcessor } from '../../services/CommandProcessor.js';
 import { CoreDB } from '../../services/CoreDB.js';
 import { WorkerErrorCode } from '../../services/command-types.js';
@@ -194,7 +194,7 @@ describe('Draft commit E2E (holder-less)', () => {
     const draft = await createWorkingCopy({
       nodeType: 'folder' as NodeType,
       parentId,
-      metadata: makeDraftNode({ name: baseName }) as TreeNodeMetadata,
+      metadata: { name: baseName, description: '', tags: [] },
     });
     const commitResult = await wc.commitDraft(draft.id);
     assertCommitOk(commitResult, 'initial commit');
@@ -207,7 +207,7 @@ describe('Draft commit E2E (holder-less)', () => {
     if (!canonicalNode) throw new Error('Canonical node not found');
     await core.updateNode({ id: canonicalId, version: (canonicalNode.version ?? 1) + 1 });
 
-    const conflict = await wc.commitDraft(editWc.id as NodeId, {
+    const conflict = await wc.commitDraft(canonicalId, {
       onNameConflict: 'auto-rename',
     });
     assertCommitConflict(conflict, 'worker commit conflict');
@@ -228,7 +228,7 @@ describe('Draft commit E2E (holder-less)', () => {
     const second = await createWorkingCopy({
       nodeType: 'folder' as NodeType,
       parentId,
-      metadata: makeDraftNode({ name: baseName }) as TreeNodeMetadata,
+      metadata: { name: baseName, description: '', tags: [] },
     });
 
     const envelope = cp.createEnvelope('commitDraft', {
@@ -249,7 +249,7 @@ describe('Draft commit E2E (holder-less)', () => {
     const draft = await createWorkingCopy({
       nodeType: 'folder' as NodeType,
       parentId,
-      metadata: makeDraftNode({ name: baseName }) as TreeNodeMetadata,
+      metadata: { name: baseName, description: '', tags: [] },
     });
     const commitResult = await wc.commitDraft(draft.id);
     assertCommitOk(commitResult, 'initial commit');
@@ -263,7 +263,7 @@ describe('Draft commit E2E (holder-less)', () => {
     await core.updateNode({ id: canonicalId, version: (canonicalNode.version ?? 1) + 1 });
 
     const envelope = cp.createEnvelope('commitDraft', {
-      draftId: editWc.id as NodeId,
+      draftId: canonicalId,
       onNameConflict: 'auto-rename',
     });
     const result = await cp.processCommand(envelope);

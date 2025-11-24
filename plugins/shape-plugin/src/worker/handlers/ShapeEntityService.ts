@@ -16,7 +16,6 @@ import {
 } from '../../common/shared/index.js';
 import {
   BaseEntityService,
-  markDraftUpdated,
 } from '@hierarchidb/plugin-runtime-services';
 import type { Timestamp } from '@hierarchidb/common-types';
 import { getDBName } from '@hierarchidb/util';
@@ -173,11 +172,10 @@ export class ShapeEntityService extends BaseEntityService<
       }
 
       const timestamp = Date.now() as Timestamp;
-      const base = markDraftUpdated(existing, data, timestamp);
       const updated: ShapeDraft = {
         ...existing,
         ...data,
-        ...base,
+        draft: { ...existing.draft, ...data },
         updatedAt: timestamp,
       };
 

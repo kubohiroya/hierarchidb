@@ -50,14 +50,13 @@ describe('Comlink + fake-indexeddb: basemap create flow persists data', () => {
       const wcId = createRes.nodeId as NodeId;
 
       // Step2: fill map style (draftData)
-      await draftAPI.updateDraft(wcId, {
-        draftData: { mapStyle: { style: 'streets' } },
-        metadata: { name: 'Basemap WFL', description: 'demo', tags: [] },
-      });
+      await draftAPI.updateTreeNodeDraftData(wcId, { mapStyle: { style: 'streets' } });
+      await draftAPI.updateTreeNodeDraftMetadata(wcId, { name: 'Basemap WFL', description: 'demo', tags: [] });
 
       // Step3: fill viewport and commit (Save/Create button相当)
-      await draftAPI.updateDraft(wcId, {
-        draftData: { mapStyle: { style: 'streets' }, viewport: { center: [0, 0], zoom: 2, bearing: 0, pitch: 0 } },
+      await draftAPI.updateTreeNodeDraftData(wcId, {
+        mapStyle: { style: 'streets' },
+        viewport: { center: [0, 0], zoom: 2, bearing: 0, pitch: 0 },
       });
       const commitRes = await draftAPI.commitDraft(wcId);
       expect(commitRes.status).toBe('ok');

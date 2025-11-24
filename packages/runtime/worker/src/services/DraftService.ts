@@ -20,7 +20,6 @@ import {
   commitDraft as commitDraftOp,
   getTreeNode,
 } from './DraftTreeNodeOperations.js';
-import { syncPeerDataFromNode } from './peerDataRegistry.js';
 
 /**
  * DraftService - minimal implementation backed by EphemeralDB/CoreDB
