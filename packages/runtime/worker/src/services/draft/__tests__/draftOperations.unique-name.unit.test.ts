@@ -2,9 +2,9 @@ import 'fake-indexeddb/auto';
 import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-types';
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { CoreDB } from '../../CoreDB.js';
-import { createDraftBase } from '../draftOperations.js';
+import { initTreeNode } from '../initOperations.js';
 
-describe('createDraftBase - default name uniqueness', () => {
+describe('initTreeNode - default name uniqueness', () => {
   const treeId = 'tree' as TreeId;
   const parentId = `${treeId}:parent` as NodeId;
   let core: CoreDB;
@@ -50,13 +50,7 @@ describe('createDraftBase - default name uniqueness', () => {
   });
 
   it('auto-increments the default name when a sibling with the base name exists', async () => {
-    const wcNodeId = await createDraftBase(
-      core,
-      treeId,
-      parentId,
-      'folder' as NodeType,
-      'New Folder'
-    );
+    const wcNodeId = await initTreeNode(core, treeId, parentId, 'folder' as NodeType, 'New Folder');
 
     const wc = (await core.nodes.get(wcNodeId)) as TreeNode | undefined;
     expect(wc?.metadata.name).toBe('New Folder (2)');

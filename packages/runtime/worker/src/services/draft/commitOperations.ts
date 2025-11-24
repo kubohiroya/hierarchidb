@@ -4,7 +4,6 @@ import type { CommandResult } from '../command-types.js';
 import { WorkerErrorCode } from '../command-types.js';
 import { createNewName, getChildNames } from './nameUtilities.js';
 import { discardTreeNodeDraft as discardDraft } from './cleanupOperations.js';
-import { touchDraftById } from './draftOperations.js';
 import { checkDraftConflict } from './lookupOperations.js';
 
 export type CommitOk = { status: 'ok'; nodeId: NodeId; autoRenameTo?: string };
@@ -55,7 +54,7 @@ export async function commitTreeNodeDraft(
     };
   }
 
-  const finalizedData = (draft as { draftData?: unknown }).draftData ?? {};
+  const finalizedData = (draft as { draftData?: unknown }).draftData ?? null;
   if (typeof console !== 'undefined' && typeof console.debug === 'function') {
     console.debug('[commitDraft] finalizing draft', {
       id: draft.id,
@@ -83,7 +82,6 @@ export async function commitTreeNodeDraft(
   await coreDB.nodes.put(updatedNode);
 
   await discardDraft(coreDB, draftNodeId);
-  await touchDraftById(coreDB, updatedNode.id as NodeId, now);
 
   const ok: CommitOk = { status: 'ok', nodeId: updatedNode.id as NodeId };
   if (nameConflicts && onNameConflict === 'auto-rename') ok.autoRenameTo = finalName;

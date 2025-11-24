@@ -1,9 +1,5 @@
 export { BaseEntityService } from './entity/BaseEntityService.js';
-export {
-  createDraftBase,
-  markDraftUpdated,
-  type CreateDraftBaseParams,
-} from './entity/draft.js';
+// draft helpers removed (TreeNode draft lifecycle is handled by runtime-worker)
 
 export {
   createDownloadService,

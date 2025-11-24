@@ -1,10 +1,3 @@
-export {
-  initTreeNode,
-  touchDraftById,
-  touchDraftNode,
-  touchDraftNodeIds,
-} from './draft/draftOperations.js';
-
 export { createNewName, getChildNames } from './draft/nameUtilities.js';
 
 export {
@@ -23,3 +16,5 @@ export {
   updateTreeNodeDraftData,
   getTreeNode,
 } from './draft/lookupOperations.js';
+
+export { initTreeNode } from './draft/initOperations.js';

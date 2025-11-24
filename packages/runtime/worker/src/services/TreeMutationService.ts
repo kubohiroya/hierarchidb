@@ -130,9 +130,9 @@ export class TreeMutationService implements TreeMutationAPI {
     description?: string;
   }): Promise<{ success: true; nodeId: NodeId } | { success: false; error: string }> {
     try {
-      const { initTreeNode: createDraftBase } = await import('./DraftTreeNodeOperations.js');
+      const { initTreeNode } = await import('./DraftTreeNodeOperations.js');
       const desiredName = params.name?.trim() || resolveDefaultNodeName(params.nodeType);
-      const wcNodeId = await createDraftBase(
+      const wcNodeId = await initTreeNode(
         this.coreDB,
         params.treeId,
         params.parentId,

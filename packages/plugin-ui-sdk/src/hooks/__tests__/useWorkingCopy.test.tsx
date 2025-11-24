@@ -30,28 +30,32 @@ function createMockClient(options: {
   };
 
   const wcAPI = {
-    getDraft: vi.fn(async (id: NodeId) => {
+    getTreeNode: vi.fn(async (id: NodeId) => {
       if (matchesCurrent(id)) {
-        return currentDraft;
+        return currentDraft ?? null;
       }
       return null;
     }),
-    createDraftBase: vi.fn(async (_nodeType: NodeType, parentId: NodeId) => ({
-      id: `draft-${parentId}`,
-      name: '',
-      description: '',
-      data: {},
-    })),
-    createDraftFromNode: vi.fn(async (id: NodeId) => {
+    initTreeNode: vi.fn(async (_nodeType: NodeType, parentId: NodeId, initial?: any) => {
+      const id = (initial as any)?.id ?? `draft-${parentId}`;
       currentDraft = {
-        id: `wc-${id}` as NodeId,
-        name: `Draft ${id}`,
-        description: '',
-        data: {},
+        id,
+        name: (initial as any)?.metadata?.name ?? '',
+        description: (initial as any)?.metadata?.description ?? '',
+        data: (initial as any)?.draftData ?? {},
       };
       return currentDraft;
     }),
-    updateDraft: vi.fn(async () => {}),
+    updateTreeNodeDraftMetadata: vi.fn(async (id: NodeId, updates: Record<string, unknown>) => {
+      if (matchesCurrent(id) && currentDraft) {
+        currentDraft = { ...currentDraft, ...updates };
+      }
+    }),
+    updateTreeNodeDraftData: vi.fn(async (id: NodeId, updates: Record<string, unknown>) => {
+      if (matchesCurrent(id) && currentDraft) {
+        currentDraft = { ...currentDraft, data: { ...(currentDraft.data ?? {}), ...updates } };
+      }
+    }),
     commitDraft: vi.fn(async () => ({ status: 'ok', nodeId: 'n:1' })),
     discardDraft: vi.fn(async () => {}),
   };
@@ -101,9 +105,9 @@ describe('useDraft (create mode)', () => {
 
     await waitFor(() => result.current.loading === false);
 
-    expect(wcAPI.getDraft).toHaveBeenCalledWith(existing.id);
-    expect(wcAPI.createDraftBase).not.toHaveBeenCalled();
-    expect(result.current.draft?.treeNodeId).toBe(existing.id);
+    expect(wcAPI.getTreeNode).toHaveBeenCalledWith(existing.id);
+    expect(wcAPI.initTreeNode).not.toHaveBeenCalled();
+    expect(result.current.draft?.treeNodeId ?? result.current.draft?.id).toBe(existing.id);
     expect(result.current.error).toBeNull();
   });
 
@@ -121,12 +125,12 @@ describe('useDraft (create mode)', () => {
 
     await waitFor(() => result.current.loading === false);
 
-    expect(wcAPI.getDraft).toHaveBeenCalledWith('wc-missing');
-    expect(wcAPI.createDraftBase).toHaveBeenCalledWith('folder', 'parent-2', {
+    expect(wcAPI.getTreeNode).toHaveBeenCalledWith('wc-missing');
+    expect(wcAPI.initTreeNode).toHaveBeenCalledWith('folder', 'parent-2', {
       id: 'wc-missing',
       name: '',
     });
-    expect(result.current.draft?.treeNodeId).toBe('draft-parent-2');
+    expect(result.current.draft?.treeNodeId ?? result.current.draft?.id).toBe('draft-parent-2');
     expect(result.current.error).toBeNull();
   });
 });
@@ -148,9 +152,9 @@ describe('useDialogDraft (edit mode)', () => {
 
     await waitFor(() => result.current.loading === false);
 
-    expect(wcAPI.getDraft).toHaveBeenCalledWith(existing.id);
-    expect(wcAPI.createDraftFromNode).not.toHaveBeenCalled();
-    expect(result.current.draft?.treeNodeId).toBe(existing.id);
+    expect(wcAPI.getTreeNode).toHaveBeenCalledWith(existing.id);
+    expect(wcAPI.initTreeNode).not.toHaveBeenCalled();
+    expect(result.current.draft?.treeNodeId ?? result.current.draft?.id).toBe(existing.id);
   });
 
   it('creates a working copy when only canonical node id is provided', async () => {
@@ -169,9 +173,11 @@ describe('useDialogDraft (edit mode)', () => {
 
     await waitFor(() => result.current.loading === false);
 
-    expect(wcAPI.getDraft).toHaveBeenCalledWith(canonicalId);
-    expect(wcAPI.createDraftFromNode).toHaveBeenCalledWith(canonicalId);
-    expect(result.current.draft?.treeNodeId).toMatch(/^wc-node-canonical/);
+    expect(wcAPI.getTreeNode).toHaveBeenCalledWith(canonicalId);
+    expect(wcAPI.initTreeNode).toHaveBeenCalledWith('folder', undefined as any, {
+      id: canonicalId,
+    });
+    expect(result.current.draft?.treeNodeId ?? result.current.draft?.id).toMatch(/^wc-node-canonical/);
   });
 });
 
@@ -192,8 +198,8 @@ describe('legacy useDraft hook (create mode)', () => {
       await result.current.init();
     });
 
-    expect(wcAPI.getDraft).toHaveBeenCalledWith(existing.id);
-    expect(wcAPI.createDraftBase).not.toHaveBeenCalled();
+    expect(wcAPI.getTreeNode).toHaveBeenCalledWith(existing.id);
+    expect(wcAPI.initTreeNode).not.toHaveBeenCalled();
     expect(result.current.wcId).toBe(existing.id);
     expect(result.current.draft?.name).toBe('Existing');
   });
@@ -213,8 +219,8 @@ describe('legacy useDraft hook (create mode)', () => {
       await result.current.init();
     });
 
-    expect(wcAPI.getDraft).toHaveBeenCalledWith('wc-missing');
-    expect(wcAPI.createDraftBase).toHaveBeenCalledWith('folder', 'parent-legacy', {});
+    expect(wcAPI.getTreeNode).toHaveBeenCalledWith('wc-missing');
+    expect(wcAPI.initTreeNode).toHaveBeenCalledWith('folder', 'parent-legacy', {});
     expect(result.current.wcId).toMatch(/^draft-/);
     expect(result.current.draft).not.toBeNull();
   });

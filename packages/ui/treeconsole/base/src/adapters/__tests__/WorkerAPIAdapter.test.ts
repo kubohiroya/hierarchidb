@@ -62,8 +62,10 @@ describe('WorkerAPIAdapter', () => {
     });
 
     draftAPI = {
-      createDraftFromNode: vi.fn().mockResolvedValue(undefined),
-      createDraftBase: vi.fn().mockResolvedValue({ id: 'wc-1' }),
+      initTreeNode: vi.fn().mockResolvedValue({ id: 'wc-1' }),
+      getTreeNode: vi.fn().mockResolvedValue({ id: 'wc-1' }),
+      updateTreeNodeDraftMetadata: vi.fn().mockResolvedValue(undefined),
+      updateTreeNodeDraftData: vi.fn().mockResolvedValue(undefined),
       commitDraft: vi.fn().mockResolvedValue({ status: 'ok', nodeId: 'n:1' }),
       discardDraft: vi.fn().mockResolvedValue(undefined),
     };

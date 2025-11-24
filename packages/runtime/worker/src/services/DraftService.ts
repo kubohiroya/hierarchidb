@@ -6,6 +6,7 @@ import type {
   OnNameConflict,
   TreeId,
   TreeNode,
+  TreeNodeMetadata,
   ValidationResult,
 } from '@hierarchidb/common-types';
 import { resolveDefaultNodeName } from '../utils/default-node-name.js';
@@ -14,7 +15,6 @@ import type { CoreDB } from './CoreDB.js';
 import {
   initTreeNode,
   discardDraft as discardWc,
-  touchDraftNode as touchDraft,
   updateTreeNodeDraftMetadata,
   updateTreeNodeDraftData,
   commitDraft as commitDraftOp,
@@ -34,7 +34,7 @@ export class DraftService implements DraftAPI {
     _commandProcessor?: CommandProcessor
   ) {}
 
-  async createDraftBase(
+  async initTreeNode(
     nodeType: NodeType,
     parentId: NodeId,
     initialData?: Partial<TreeNode>
@@ -49,47 +49,33 @@ export class DraftService implements DraftAPI {
       parentId,
       nodeType,
       desiredName,
-      (initialData as { id?: NodeId } | undefined)?.id
+      (initialData as { id?: NodeId } | undefined)?.id,
+      initialData
     );
     const wc = await this.coreDB.nodes.get(wcNodeId);
     if (!wc) throw new Error('Working copy creation failed');
     return wc as TreeNode;
   }
 
-  async createDraftFromNode(nodeId: NodeId): Promise<TreeNode> {
+  async getTreeNode(nodeId: NodeId): Promise<TreeNode | undefined> {
     const node = await this.coreDB.nodes.get(nodeId);
-    if (!node) throw new Error('Working copy not created');
-    await touchDraft(this.coreDB, node as TreeNode);
-    return node as TreeNode;
+    return (node ?? undefined) as TreeNode | undefined;
   }
 
-  async getDraft(nodeId: NodeId): Promise<TreeNode | undefined> {
-    const wc = await getTreeNode(this.coreDB, nodeId);
-    if (wc) {
-      await touchDraft(this.coreDB, wc as TreeNode);
-    }
-    return wc ?? undefined;
+  // createDraftFromNode / getDraft / updateDraft are removed in favor of QueryAPI + updater calls.
+
+  async updateTreeNodeDraftMetadata(
+    nodeId: NodeId,
+    updater: Partial<TreeNodeMetadata>
+  ): Promise<void> {
+    await updateTreeNodeDraftMetadata(this.coreDB, nodeId, updater);
   }
 
-  async updateDraft(nodeId: NodeId, updates: Partial<TreeNode>): Promise<TreeNode> {
-    if (updates.metadata || updates.draftMetadata) {
-      await updateTreeNodeDraftMetadata(
-        this.coreDB,
-        nodeId,
-        (updates.draftMetadata ?? updates.metadata) as any
-      );
-    }
-    if (updates.data || updates.draftData) {
-      await updateTreeNodeDraftData(
-        this.coreDB,
-        nodeId,
-        (updates.draftData ?? updates.data ?? {}) as any
-      );
-    }
-    const next = await this.coreDB.nodes.get(nodeId);
-    if (!next) throw new Error('Working copy update failed');
-    await syncPeerDataFromNode(next as TreeNode);
-    return next as TreeNode;
+  async updateTreeNodeDraftData(
+    nodeId: NodeId,
+    updater: Record<string, unknown>
+  ): Promise<void> {
+    await updateTreeNodeDraftData(this.coreDB, nodeId, updater);
   }
 
   async listDrafts(): Promise<TreeNode[]> {

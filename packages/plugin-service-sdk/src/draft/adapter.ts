@@ -1,5 +1,4 @@
 import type { NodeId, Timestamp } from '@hierarchidb/common-types';
-import { createDraftBase, markDraftUpdated } from './helpers.js';
 import type { DraftBase } from '@hierarchidb/plugin-service-api';
 
 export interface EntityDraftAdapter<TEntity, TDraft extends DraftBase<TEntity>> {
@@ -35,6 +34,36 @@ export function createEntityDraftAdapter<TEntity, TDraft extends DraftBase<TEnti
     (value ?? fallback()) as Timestamp
   );
 
+  const buildDraftBase = (
+    treeNodeId: NodeId,
+    draft: Partial<TEntity>,
+    meta: {
+      createdAt?: number;
+      updatedAt?: number;
+      originalVersion?: number;
+    },
+  ): DraftBase<TEntity> => {
+    const createdAt = ensureTimestamp(meta.createdAt, () => Date.now());
+    const updatedAt = ensureTimestamp(meta.updatedAt, () => createdAt);
+    return {
+      treeNodeId,
+      draft,
+      createdAt,
+      updatedAt,
+      originalVersion: meta.originalVersion,
+    };
+  };
+
+  const markDraftUpdated = (
+    draft: DraftBase<TEntity>,
+    updates: Partial<TEntity>,
+    timestamp: Timestamp = Date.now() as Timestamp,
+  ): DraftBase<TEntity> => ({
+    ...draft,
+    draft: { ...draft.draft, ...updates },
+    updatedAt: timestamp,
+  });
+
   const buildDraft = (
     treeNodeId: NodeId,
     draft: Partial<TEntity>,
@@ -47,19 +76,20 @@ export function createEntityDraftAdapter<TEntity, TDraft extends DraftBase<TEnti
     const createdAt = ensureTimestamp(meta.createdAt, () => Date.now());
     const updatedAt = ensureTimestamp(meta.updatedAt, () => createdAt);
 
-    const base = createDraftBase<TEntity>({
-      draft: {
+    const base = buildDraftBase<TEntity>(
+      treeNodeId,
+      {
         ...draft,
         createdAt,
         updatedAt,
       },
-      meta: {
+      {
         treeNodeId,
         createdAt,
         updatedAt,
         originalVersion: meta.originalVersion,
       },
-    });
+    );
 
     return {
       ...base,

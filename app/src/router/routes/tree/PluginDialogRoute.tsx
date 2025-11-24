@@ -41,7 +41,6 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
 
   const useWorkerHook = getWorkerClientHook() ?? (() => null);
   const ref = useWorkerHook();
-  const client = ref?.client ?? null;
 
   const treeId: TreeId | undefined = tree?.id ?? (params.treeId as TreeId | undefined);
   const effectiveTargetNodeId: NodeId | undefined =
@@ -67,37 +66,6 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
   const requestedAction = params.action?.toLowerCase() ?? '';
   const mode: 'create' | 'edit' =
     requestedAction === 'edit' || effectiveAction === NodeAction.UPDATE ? 'edit' : 'create';
-
-  React.useEffect(() => {
-    (async () => {
-      if (!isReady) return;
-
-      if (!client || mode !== 'edit') return;
-
-      try {
-        const wcApi = await client.getDraftAPI();
-        let canonicalId = effectiveTargetNodeId as NodeId;
-
-        const existing = await wcApi.getDraft(canonicalId);
-        if (!existing) {
-          await wcApi.createDraftFromNode(canonicalId);
-        }
-      } catch (e) {
-        console.warn('[PluginDialogRoute] ensure working copy for edit failed', e);
-      }
-    })();
-
-    return () => {
-    };
-  }, [
-    client,
-    isReady,
-    mode,
-    effectiveTargetNodeId,
-    effectivePageNodeId,
-    effectiveNodeType,
-    effectiveAction,
-  ]);
 
   if (!isReady) {
     console.warn('[PluginDialogRoute] Missing required data to render plugin dialog', {

@@ -15,7 +15,7 @@ import type {
   TreeNode,
 } from '@hierarchidb/common-types';
 import { toNodeType } from '@hierarchidb/common-types';
-import { createAdapterCommandId, createCommand } from '../utils.js';
+import { createCommand } from '../utils.js';
 import type { CommandAdapterOptions } from '../../types/index.js';
 import { TreeConsoleAdapterError } from '../../types/index.js';
 
@@ -44,17 +44,20 @@ export class DraftCommandsAdapter {
       */
   async startNodeEdit(
     sourceNodeId: NodeId,
-    _options: CommandAdapterOptions,
+    options: CommandAdapterOptions,
   ): Promise<DraftEditSession> {
     try {
-      // Command creation is no longer needed with the new API
-      const draftId = createAdapterCommandId();
-
       const draftAPI = await this.workerAPI.getDraftAPI();
-      await draftAPI.createDraftFromNode(sourceNodeId);
-
-      //  expectedUpdatedAt
-      const currentNodeData = await this.getCurrentNodeData(sourceNodeId);
+      // Subscription API is expected to keep UI-side node snapshot fresh.
+      // If caller provides the latest snapshot, use it; otherwise no extra fetch.
+      const currentNodeData = options.context?.nodeSnapshot as TreeNode | undefined;
+      const draftId = sourceNodeId;
+      if (currentNodeData?.metadata) {
+        await draftAPI.updateTreeNodeDraftMetadata(sourceNodeId, currentNodeData.metadata);
+      }
+      if (currentNodeData?.data) {
+        await draftAPI.updateTreeNodeDraftData(sourceNodeId, currentNodeData.data as Record<string, unknown>);
+      }
 
       return {
         draftId,
@@ -87,17 +90,15 @@ export class DraftCommandsAdapter {
     _options: CommandAdapterOptions,
   ): Promise<DraftEditSession> {
     try {
-      // Command creation is no longer needed with the new API
-
       const draftAPI = await this.workerAPI.getDraftAPI();
-      const draft = await draftAPI.createDraftBase(
+      const draft = await draftAPI.initTreeNode(
         toNodeType(nodeType),
         parentId,
-        { metadata: {name} },
+        { metadata: { name } } as Partial<TreeNode>,
       );
 
       return {
-        draftId: draft.id,
+        draftId: (draft as { id?: string }).id as string,
         parentId: parentId,
         isCreate: true,
       };

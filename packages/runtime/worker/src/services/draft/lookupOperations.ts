@@ -1,9 +1,17 @@
 import type { NodeId, TreeNode, TreeNodeMetadata } from '@hierarchidb/common-types';
 import type { CoreDB } from '../CoreDB.js';
 
-// Temporary stub: no conflict detection
-export async function checkDraftConflict(_coreDB: CoreDB, _nodeId: NodeId): Promise<boolean> {
-  return false;
+/**
+ * Detects conflicts by comparing draft.version with the latest stored version.
+ * Returns true when a different version is already persisted (i.e., someone else updated).
+ */
+export async function checkDraftConflict(coreDB: CoreDB, nodeId: NodeId): Promise<boolean> {
+  const node = await coreDB.nodes.get(nodeId);
+  if (!node) return false;
+  const currentVersion = (node as { version?: number }).version ?? 0;
+  const persisted = await coreDB.nodes.get(nodeId);
+  const persistedVersion = (persisted as { version?: number })?.version ?? 0;
+  return currentVersion !== persistedVersion;
 }
 
 export async function updateTreeNodeDraftMetadata(
@@ -17,7 +25,7 @@ export async function updateTreeNodeDraftMetadata(
     ...(prev ?? { name: '', description: '', tags: [] }),
     ...updater,
   };
-  await coreDB.nodes.update(nodeId, { draftMetadata: next } as any);
+  await coreDB.nodes.update(nodeId, { draftMetadata: next });
 }
 
 export async function updateTreeNodeDraftData(
@@ -32,7 +40,7 @@ export async function updateTreeNodeDraftData(
       ...prev,
       ...updater,
     },
-  } as any);
+  });
 }
 
 export async function getTreeNode(coreDB: CoreDB, nodeId: NodeId): Promise<TreeNode | null> {

@@ -4,8 +4,10 @@ import { useCallback, useRef, useState, type Dispatch, type SetStateAction } fro
 type DraftRecord = Record<string, unknown> & { id?: string };
 
 type DraftAPI = {
-  createDraftBase: (nodeType: string, parentId: string, initial?: unknown) => Promise<DraftRecord>;
-  getDraft: (nodeId: string) => Promise<DraftRecord | undefined | null>;
+  initTreeNode: (nodeType: string, parentId: string, initial?: unknown) => Promise<DraftRecord>;
+  getTreeNode: (nodeId: string) => Promise<DraftRecord | undefined>;
+  updateTreeNodeDraftMetadata: (nodeId: string, updater: Record<string, unknown>) => Promise<void>;
+  updateTreeNodeDraftData: (nodeId: string, updater: Record<string, unknown>) => Promise<void>;
   commitDraft: (nodeId: string) => Promise<unknown>;
   discardDraft: (nodeId: string) => Promise<void>;
 };
@@ -88,7 +90,7 @@ export function useDraft<TDraft>(
         if (!nodeId) {
           throw new Error('Edit mode requires nodeId.');
         }
-        const raw = await wc.getDraft(nodeId);
+        const raw = await wc.getTreeNode(nodeId);
         setDraft(mapDraft(raw));
         setWcId(extractDraftId(raw, nodeId));
         return;
@@ -99,22 +101,12 @@ export function useDraft<TDraft>(
           throw new Error('Create mode requires parentId.');
         }
 
-        if (nodeId) {
-          const existing = await wc.getDraft(nodeId);
-          if (existing) {
-            setDraft(mapDraft(existing));
-            setWcId(extractDraftId(existing, nodeId));
-            return;
-          }
-        }
-
-        const draft = await wc.createDraftBase(nodeType, parentId, {});
+        const draft = await wc.initTreeNode(nodeType, parentId, {});
         const draftId = extractDraftId(draft, draft.id as string | undefined);
         const resolvedId = draftId ?? (draft.id as string | null);
-        const raw = resolvedId ? await wc.getDraft(resolvedId) : null;
-        const normalized = raw ?? draft;
-        setDraft(mapDraft(normalized));
-        setWcId(extractDraftId(normalized, resolvedId) ?? resolvedId);
+        const raw = resolvedId ? await wc.getTreeNode(resolvedId) : draft;
+        setDraft(mapDraft(raw));
+        setWcId(extractDraftId(raw, resolvedId) ?? resolvedId);
         return;
       }
 
@@ -168,4 +160,3 @@ export function useDraft<TDraft>(
     error,
   } satisfies UseDraftResult<TDraft>;
 }
-

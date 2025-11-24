@@ -66,10 +66,22 @@ export type NodePayload = NodePayloadBase | null;
 export type PersistedTreeNode<
   TData extends NodePayloadBase | null = NodePayloadBase | null
 > = NodeBase & {
+  /**
+   * Committed metadata (name/description/tags) — authoritative
+   */
   metadata: TreeNodeMetadata;
+  /**
+   * Working copy metadata; null when no draft exists
+   */
   draftMetadata: TreeNodeMetadata | null;
+  /**
+   * Committed domain data (plugin-specific payload)
+   */
   data: TData;
-  draftData: TData;
+  /**
+   * Working copy data; null when no draft exists
+   */
+  draftData: TData | null;
   dialogUIState?: DialogUIState;
   hasChildren?: boolean;
   descendantCount?: number;

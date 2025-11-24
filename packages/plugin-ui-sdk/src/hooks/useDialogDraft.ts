@@ -62,31 +62,18 @@ export function useDialogDraft<TPayload = Record<string, unknown>>({
   const isRecord = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null;
 
-  const toDraftData = useCallback((node: Partial<TreeNode> & { data?: unknown; draftData?: unknown; draftMetadata?: unknown; metadata?: unknown }): DraftData<TPayload> => {
-    const treeNodeId = (typeof node?.id === 'string' ? node.id : nodeId) as NodeId;
-    const metaSource = (node as { draftMetadata?: unknown }).draftMetadata ?? (node as { metadata?: unknown }).metadata;
-    const meta: TreeNodeMetadata = {
-      name: String((metaSource as { name?: string })?.name ?? ''),
-      description: (metaSource as { description?: string })?.description ?? undefined,
-      tags: (() => {
-        const tagsDraft = (metaSource as { tags?: unknown })?.tags;
-        if (Array.isArray(tagsDraft)) {
-          return tagsDraft.filter((v): v is string => typeof v === 'string');
-        }
-        return undefined;
-      })(),
-    };
-    const draft: TPayload = isRecord((node as { draftData?: unknown }).draftData)
-      ? ((node as { draftData?: Record<string, unknown> }).draftData as TPayload)
-      : ({} as TPayload);
+  const toDraftData = useCallback((node: TreeNode): DraftData<TPayload> => {
+    const metaSource = (node as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata ?? node.metadata;
+    const draft: TPayload =
+      node.draftData && isRecord(node.draftData) ? (node.draftData as TPayload) : ({} as TPayload);
     return {
-      treeNodeId,
-      draftMetadata: meta,
-      metadata: (node as { metadata?: TreeNodeMetadata }).metadata,
-      data: isRecord((node as { data?: unknown }).data) ? ((node as { data?: Record<string, unknown> }).data as Record<string, unknown>) : undefined,
+      treeNodeId: node.id as NodeId,
+      draftMetadata: metaSource,
+      metadata: node.metadata,
+      data: node.data as Record<string, unknown> | undefined,
       draftData: draft,
     };
-  }, [nodeId]);
+  }, []);
 
   const getClient = useCallback(async (): Promise<{ wc: DraftAPI; query: TreeQueryAPI; remote: Remote<WorkerAPI> }> => {
     if (!workerClient) throw new Error('Worker client not initialized');
@@ -112,49 +99,24 @@ export function useDialogDraft<TPayload = Record<string, unknown>>({
         const { wc: wcAPI } = await getClient();
 
         if (mode === 'edit' && nodeId) {
-          let wc = await wcAPI.getDraft(nodeId);
-          if (!wc) {
-            await wcAPI.createDraftFromNode(nodeId);
-            wc = await wcAPI.getDraft(nodeId);
-          }
-          if (!wc) throw new Error('Failed to create working copy');
-          const copy = toDraftData(wc);
+          const existing = await wcAPI.getTreeNode(nodeId);
+          if (!existing) throw new Error('Working copy not found for edit');
+          const copy = toDraftData(existing);
           setDraft(copy);
           setOriginalCopy(copy);
           return;
         }
 
         if (mode === 'create') {
-          if (nodeId) {
-            const existing = await wcAPI.getDraft(nodeId);
-            if (existing) {
-              const copy = toDraftData(existing);
-              setDraft(copy);
-              setOriginalCopy(copy);
-              return;
-            }
-            if (!parentId) {
-              throw new Error('Working copy for create target not found');
-            }
-            // Recreate draft using the expected nodeId to keep routing consistent
-            const wcNode = await wcAPI.createDraftBase(nodeType as NodeType, parentId, {
-              id: nodeId,
-            } as Partial<TreeNode>);
-            const copy = toDraftData(wcNode);
-            setDraft(copy);
-            setOriginalCopy(copy);
+          if (!parentId) {
+            console.warn('[useDraft] Missing parentId for create mode; working copy not initialized');
             return;
           }
-
-          if (parentId) {
-            const wcNode = await wcAPI.createDraftBase(nodeType as NodeType, parentId);
-            const copy = toDraftData(wcNode);
-            setDraft(copy);
-            setOriginalCopy(copy);
-            return;
-          }
-
-          console.warn('[useDraft] Missing parentId for create mode; working copy not initialized');
+          const wcNode = await wcAPI.initTreeNode(nodeType as NodeType, parentId, nodeId ? { id: nodeId } : {});
+          const copy = toDraftData(wcNode);
+          setDraft(copy);
+          setOriginalCopy(copy);
+          return;
         }
       } catch (err) {
         console.error('Failed to initialize working copy:', err);
@@ -177,10 +139,13 @@ export function useDialogDraft<TPayload = Record<string, unknown>>({
       debounce(async (next: DraftData<TPayload>) => {
         try {
           const { wc: wcAPI } = await getClient();
-          await wcAPI.updateDraft(next.treeNodeId, {
-            draftMetadata: next.draftMetadata,
-            draftData: next.draftData as Record<string, unknown>,
-          } as Partial<TreeNode>);
+          await wcAPI.updateTreeNodeDraftMetadata(next.treeNodeId, next.draftMetadata);
+          if (next.draftData) {
+            await wcAPI.updateTreeNodeDraftData(
+              next.treeNodeId,
+              next.draftData as Record<string, unknown>
+            );
+          }
         } catch (err) {
           console.warn('[useDraft] persist update failed', err);
         }
@@ -219,10 +184,13 @@ export function useDialogDraft<TPayload = Record<string, unknown>>({
       setLoading(true);
       const { wc: wcAPI } = await getClient();
 
-      await wcAPI.updateDraft(finalData.treeNodeId, {
-        draftMetadata: finalData.draftMetadata,
-        draftData: finalData.draftData as Record<string, unknown>,
-      } as Partial<TreeNode>);
+      await wcAPI.updateTreeNodeDraftMetadata(finalData.treeNodeId, finalData.draftMetadata);
+      if (finalData.draftData) {
+        await wcAPI.updateTreeNodeDraftData(
+          finalData.treeNodeId,
+          finalData.draftData as Record<string, unknown>
+        );
+      }
 
       const res = await wcAPI.commitDraft(finalData.treeNodeId, {
         onNameConflict: 'auto-rename',

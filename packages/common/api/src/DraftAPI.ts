@@ -11,6 +11,7 @@ import type {
   NodeType,
   OnNameConflict,
   TreeNode,
+  TreeNodeMetadata,
   ValidationResult,
 } from '@hierarchidb/common-types';
 
@@ -29,17 +30,23 @@ export interface CommitDraftOptions {
  * committed to or discarded from the main database.
  */
 export interface DraftAPI {
-  createDraftBase(
+  initTreeNode(
     nodeType: NodeType,
     parentId: NodeId,
     initialData?: Partial<TreeNode>
   ): Promise<TreeNode>;
 
-  createDraftFromNode(nodeId: NodeId): Promise<TreeNode>;
+  getTreeNode(nodeId: NodeId): Promise<TreeNode | undefined>;
 
-  getDraft(nodeId: NodeId): Promise<TreeNode | undefined>;
+  updateTreeNodeDraftMetadata(
+    nodeId: NodeId,
+    updater: Partial<TreeNodeMetadata>
+  ): Promise<void>;
 
-  updateDraft(nodeId: NodeId, updates: Partial<TreeNode>): Promise<TreeNode>;
+  updateTreeNodeDraftData(
+    nodeId: NodeId,
+    updater: Record<string, unknown>
+  ): Promise<void>;
 
   listDrafts(): Promise<TreeNode[]>;
 

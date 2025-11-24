@@ -100,13 +100,12 @@ describe('WFL command processor undo/redo flow', () => {
     const rootChildrenBeforeCommit = new Set(
       (await queryAPI.listChildren(rootId)).map((node) => node.id)
     );
-    const draft = await draftAPI.createDraftBase(
-      'folder' as NodeType,
-      rootId,
-      { metadata: { name: 'UndoRedo Draft' } } as Partial<TreeNode>
-    );
+    const draftId = await draftAPI.initTreeNode('folder' as NodeType, rootId, {
+      metadata: { name: 'UndoRedo Draft' },
+    } as Partial<TreeNode>);
+    await draftAPI.updateTreeNodeDraftMetadata(draftId.id as NodeId, { name: 'UndoRedo Draft' });
     await runCommand('commitDraft', {
-      draftId: draft.id,
+      draftId: draftId.id,
       onNameConflict: 'auto-rename',
     });
     const rootChildrenAfterCommit = await queryAPI.listChildren(rootId);

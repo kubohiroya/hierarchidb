@@ -3,7 +3,7 @@ import type { Table } from 'dexie';
 import type { LocationEntity, LocationDataSource, LocationDraft } from './LocationEntity.js';
 import { clearLocationPoints } from '../../services/pointRepository.js';
 import { BaseSearchCriteria } from '@hierarchidb/plugin-service-api';
-import { BaseEntityHandler, createDraftBase } from '@hierarchidb/plugin-service-sdk';
+import { BaseEntityHandler } from '@hierarchidb/plugin-service-sdk';
 
 export interface CreateLocationData {
   dataSource: LocationDataSource;
@@ -71,15 +71,13 @@ export class LocationEntityHandler extends BaseEntityHandler<
       extractConfig: entity.extractConfig,
     };
 
-    const base = createDraftBase<LocationEntity>({
+    const base = {
+      treeNodeId: entity.nodeId,
       draft,
-      meta: {
-        treeNodeId: entity.nodeId,
-        createdAt: entity.createdAt,
-        updatedAt: entity.updatedAt,
-        originalVersion: entity.version,
-      },
-    });
+      createdAt: entity.createdAt,
+      updatedAt: entity.updatedAt,
+      originalVersion: entity.version,
+    };
 
     return { ...draft, ...base } as LocationDraft;
   }
@@ -105,14 +103,12 @@ export class LocationEntityHandler extends BaseEntityHandler<
       processingStatus: 'pending',
     };
 
-    const base = createDraftBase<LocationEntity>({
+    const base = {
+      treeNodeId: targetNodeId,
       draft: draft as LocationEntity,
-      meta: {
-        treeNodeId: targetNodeId,
-        createdAt: now,
-        updatedAt: now,
-      },
-    });
+      createdAt: now,
+      updatedAt: now,
+    };
 
     return { ...draft, ...base } as LocationDraft;
   }
@@ -143,15 +139,13 @@ export class LocationEntityHandler extends BaseEntityHandler<
 
     await this.table.put(merged, merged.nodeId);
 
-    const base = createDraftBase<LocationEntity>({
+    const base = {
+      treeNodeId: merged.nodeId,
       draft: merged,
-      meta: {
-        treeNodeId: merged.nodeId,
-        createdAt: merged.createdAt,
-        updatedAt: merged.updatedAt,
-        originalVersion: merged.version,
-      },
-    });
+      createdAt: merged.createdAt,
+      updatedAt: merged.updatedAt,
+      originalVersion: merged.version,
+    };
 
     return { ...merged, ...base } as LocationDraft;
   }

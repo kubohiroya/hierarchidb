@@ -7,11 +7,7 @@ export type {
   TreeNode,
 } from './handlers/HierarchicalEntityHandler.js';
 
-// Working copy helpers
-export {
-  createDraftBase,
-  markDraftUpdated,
-} from './draft/helpers.js';
+// Working copy helpers removed (TreeNode draft lifecycle is handled by runtime-worker)
 export type { EntityDraftAdapter } from './draft/adapter.js';
 export { createEntityDraftAdapter } from './draft/adapter.js';
 export {
