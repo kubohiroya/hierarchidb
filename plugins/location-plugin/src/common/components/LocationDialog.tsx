@@ -51,7 +51,7 @@ import {
 } from '@hierarchidb/ui-dialog';
 import { notify } from '@hierarchidb/components';
 
-import { useDialogDraft, type DraftData } from '@hierarchidb/plugin-ui-sdk';
+import { useDialogDraft, type DraftData, normalizeBasicInfo } from '@hierarchidb/plugin-ui-sdk';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-client';
 import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 // import { useToastNotifications } from '@hierarchidb/components/toast/ToastProvider.js';
@@ -77,34 +77,16 @@ type LocationDraftPayload = LocationDraft['draft'];
 const normalizeLocationDraft = (raw: DraftData | null): LocationDraft => {
   const now = Date.now() as Timestamp;
   const draftData = (raw?.draftData && isRecord(raw.draftData) ? raw.draftData : {}) as Partial<LocationDraftPayload>;
-  const meta = (raw?.metadata && isRecord(raw.metadata) ? raw.metadata : {}) as {
-    name?: unknown;
-    description?: unknown;
-    tags?: unknown;
-  };
-  const tagsFromDraft = Array.isArray(draftData.tags)
-    ? draftData.tags.filter((v): v is string => typeof v === 'string')
-    : undefined;
-  const tags = Array.isArray(meta.tags)
-    ? meta.tags.filter((v): v is string => typeof v === 'string')
-    : tagsFromDraft ?? [];
-
-  const name = typeof draftData.name === 'string'
-    ? draftData.name
-    : typeof meta.name === 'string'
-      ? meta.name
-      : '';
-  const description = typeof draftData.description === 'string'
-    ? draftData.description
-    : typeof meta.description === 'string'
-      ? meta.description
-      : undefined;
+  const basic = normalizeBasicInfo({
+    metadata: raw?.metadata && isRecord(raw.metadata) ? raw.metadata : undefined,
+    draftData,
+  });
 
   const normalizedDraft: LocationDraftPayload = {
     ...draftData,
-    name,
-    description,
-    tags,
+    name: basic.name,
+    description: basic.description,
+    tags: basic.tags,
   };
 
   return {
@@ -112,7 +94,7 @@ const normalizeLocationDraft = (raw: DraftData | null): LocationDraft => {
     draft: normalizedDraft,
     createdAt: (raw as { createdAt?: Timestamp })?.createdAt ?? now,
     updatedAt: (raw as { updatedAt?: Timestamp })?.updatedAt ?? now,
-    tags,
+    tags: basic.tags,
     dataSource: normalizedDraft.dataSource,
     tabularSourceId: normalizedDraft.tabularSourceId,
     extractConfig: normalizedDraft.extractConfig,

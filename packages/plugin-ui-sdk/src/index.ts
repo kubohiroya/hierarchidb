@@ -19,6 +19,8 @@ export type {
   UseDialogDraftResult,
   DraftData,
 } from './hooks/useDialogDraft.js';
+export type { BasicInfo } from './utils/basicInfo.js';
+export { normalizeBasicInfo, mergeBasicInfo } from './utils/basicInfo.js';
 export {
   useStepCapabilities,
 } from './hooks/useStepCapabilities.js';
