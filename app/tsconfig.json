@@ -73,6 +73,18 @@
       "@hierarchidb/plugin-ui-sdk/*": [
         "../packages/plugin-ui-sdk/src/*"
       ],
+      "@hierarchidb/ui-dialog": [
+        "../packages/ui/dialog/src/index.ts"
+      ],
+      "@hierarchidb/ui-dialog/*": [
+        "../packages/ui/dialog/src/*"
+      ],
+      "@hierarchidb/ui-plugin-basic-info": [
+        "../packages/ui/plugin-basic-info/src/index.ts"
+      ],
+      "@hierarchidb/ui-plugin-basic-info/*": [
+        "../packages/ui/plugin-basic-info/src/*"
+      ],
       "@hierarchidb/runtime-client": [
         "../packages/runtime/client/src/index.ts"
       ],

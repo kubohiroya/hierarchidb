@@ -3,6 +3,7 @@
 import type { PeerStore } from '@hierarchidb/runtime-worker';
 import { createNodePayloadPeerStore } from '@hierarchidb/runtime-worker';
 import { normalizeFolderPeerData } from '../../common/types/types.ts';
+import type { FolderPeerData } from '../../common/types/types.ts';
 
 type StoreRegistry = {
   getPeer<T = unknown>(nodeType: string): PeerStore<T> | undefined;
@@ -36,8 +37,8 @@ async function ensureFolderStores(registry: StoreRegistry): Promise<void> {
   if (!registry.getPeer('folder')) {
     registry.registerPeer(
       'folder',
-      createNodePayloadPeerStore({
-        normalize: (data) => normalizeFolderPeerData(data ?? undefined),
+      createNodePayloadPeerStore<FolderPeerData>({
+        normalize: (data) => normalizeFolderPeerData(data ?? null),
       })
     );
   }

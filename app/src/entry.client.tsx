@@ -12,10 +12,6 @@ import { preloadPluginWorkerStores } from './worker-runtime/WorkerModuleLoader.j
  */
 async function initializeApp() {
   initializeBrowserGlobals();
-  const { initializeDefaultNodeDialogExtensions } = await import(
-    '@hierarchidb/folder-plugin'
-  );
-  await initializeDefaultNodeDialogExtensions();
   await preloadPluginWorkerStores();
   const mode = getRouterMode();
   const basename = getBasePath();

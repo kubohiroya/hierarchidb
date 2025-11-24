@@ -1,3 +1,2 @@
-export async function getDialogComponent() {
-  return await import('./components/FolderDialog.tsx');
-}
+export { FolderDialogHost as default } from './FolderDialogHost.js';
+export { FolderDialogHost } from './FolderDialogHost.js';

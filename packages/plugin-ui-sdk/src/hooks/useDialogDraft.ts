@@ -76,9 +76,9 @@ export function useDialogDraft<TPayload = Record<string, unknown>>({
         return undefined;
       })(),
     };
-    const draft = isRecord((node as { draftData?: unknown }).draftData)
+    const draft: TPayload = isRecord((node as { draftData?: unknown }).draftData)
       ? ((node as { draftData?: Record<string, unknown> }).draftData as TPayload)
-      : {};
+      : ({} as TPayload);
     return {
       treeNodeId,
       draftMetadata: meta,

@@ -3,6 +3,7 @@ export type {
   StylerSimpleDialogProps,
 } from './components/StylerSimpleDialog.js';
 export { StylerSimpleDialog } from './components/StylerSimpleDialog.js';
+export { StylerDialog as default } from './components/StylerDialog.js';
 export { StylerDialog } from './components/StylerDialog.js';
 // Register host-composed steps (idempotent)
 import './components/steps-provider.tsx';
