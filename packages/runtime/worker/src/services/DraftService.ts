@@ -12,12 +12,13 @@ import { resolveDefaultNodeName } from '../utils/default-node-name.js';
 import type { CommandProcessor } from './CommandProcessor.js';
 import type { CoreDB } from './CoreDB.js';
 import {
-  createDraftBase,
-  createDraftFromNode as createWcFromNode,
+  initTreeNode,
   discardDraft as discardWc,
-  getDraft as getWc,
   touchDraftNode as touchDraft,
-  updateDraft as updateWc,
+  updateTreeNodeDraftMetadata,
+  updateTreeNodeDraftData,
+  commitDraft as commitDraftOp,
+  getTreeNode,
 } from './DraftTreeNodeOperations.js';
 import { syncPeerDataFromNode } from './peerDataRegistry.js';
 
@@ -42,7 +43,7 @@ export class DraftService implements DraftAPI {
     const desiredName =
       (initialData as { metadata?: { name?: string } } | undefined)?.metadata?.name?.trim() ||
       resolveDefaultNodeName(nodeType);
-    const wcNodeId = await createDraftBase(
+    const wcNodeId = await initTreeNode(
       this.coreDB,
       treeId,
       parentId,
@@ -52,19 +53,18 @@ export class DraftService implements DraftAPI {
     );
     const wc = await this.coreDB.nodes.get(wcNodeId);
     if (!wc) throw new Error('Working copy creation failed');
-    return wc;
+    return wc as TreeNode;
   }
 
   async createDraftFromNode(nodeId: NodeId): Promise<TreeNode> {
-    const treeId = nodeId.split(':')[0] as TreeId;
-    await createWcFromNode(this.coreDB, treeId, nodeId);
-    const wc = await getWc(this.coreDB, nodeId);
-    if (!wc) throw new Error('Working copy not created');
-    return wc;
+    const node = await this.coreDB.nodes.get(nodeId);
+    if (!node) throw new Error('Working copy not created');
+    await touchDraft(this.coreDB, node as TreeNode);
+    return node as TreeNode;
   }
 
   async getDraft(nodeId: NodeId): Promise<TreeNode | undefined> {
-    const wc = await getWc(this.coreDB, nodeId);
+    const wc = await getTreeNode(this.coreDB, nodeId);
     if (wc) {
       await touchDraft(this.coreDB, wc as TreeNode);
     }
@@ -72,13 +72,24 @@ export class DraftService implements DraftAPI {
   }
 
   async updateDraft(nodeId: NodeId, updates: Partial<TreeNode>): Promise<TreeNode> {
-    const current = await getWc(this.coreDB, nodeId);
-    if (!current) throw new Error(`Working copy for ${nodeId} not found`);
-    await updateWc(this.coreDB, nodeId, { ...updates });
+    if (updates.metadata || updates.draftMetadata) {
+      await updateTreeNodeDraftMetadata(
+        this.coreDB,
+        nodeId,
+        (updates.draftMetadata ?? updates.metadata) as any
+      );
+    }
+    if (updates.data || updates.draftData) {
+      await updateTreeNodeDraftData(
+        this.coreDB,
+        nodeId,
+        (updates.draftData ?? updates.data ?? {}) as any
+      );
+    }
     const next = await this.coreDB.nodes.get(nodeId);
     if (!next) throw new Error('Working copy update failed');
     await syncPeerDataFromNode(next as TreeNode);
-    return next;
+    return next as TreeNode;
   }
 
   async listDrafts(): Promise<TreeNode[]> {
@@ -88,7 +99,7 @@ export class DraftService implements DraftAPI {
   }
 
   async hasDraft(nodeId: NodeId): Promise<boolean> {
-    const wc = await getWc(this.coreDB, nodeId);
+    const wc = await getTreeNode(this.coreDB, nodeId);
     return !!wc;
   }
 
@@ -97,8 +108,7 @@ export class DraftService implements DraftAPI {
     options?: CommitDraftOptions
   ): Promise<CommitResult> {
     const conflictPolicy: OnNameConflict = options?.onNameConflict ?? 'auto-rename';
-    const { commitDraft } = await import('./DraftTreeNodeOperations.js');
-    const result = await commitDraft(this.coreDB, draftId, conflictPolicy);
+    const result = await commitDraftOp(this.coreDB, draftId, conflictPolicy);
     if (result.status === 'ok') {
       return { status: 'ok', nodeId: result.nodeId, autoRenameTo: result.autoRenameTo };
     }
@@ -116,7 +126,7 @@ export class DraftService implements DraftAPI {
   }
 
   async discardDraft(nodeId: NodeId): Promise<void> {
-    const wc = await getWc(this.coreDB, nodeId);
+    const wc = await getTreeNode(this.coreDB, nodeId);
     if (!wc) return;
     await discardWc(this.coreDB, nodeId);
   }
@@ -128,12 +138,12 @@ export class DraftService implements DraftAPI {
   }
 
   async validateDraft(nodeId: NodeId): Promise<ValidationResult> {
-    const exists = await getWc(this.coreDB, nodeId);
+    const exists = await getTreeNode(this.coreDB, nodeId);
     return exists ? { valid: true } : { valid: false, message: 'Working copy not found' };
   }
 
   async hasUnsavedChanges(nodeId: NodeId): Promise<boolean> {
-    return !!(await getWc(this.coreDB, nodeId));
+    return !!(await getTreeNode(this.coreDB, nodeId));
   }
 
   async getDraftStats(): Promise<{

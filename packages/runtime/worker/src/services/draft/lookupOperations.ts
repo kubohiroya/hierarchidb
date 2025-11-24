@@ -1,69 +1,43 @@
-import { type NodeId, type Timestamp, type TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, TreeNode, TreeNodeMetadata } from '@hierarchidb/common-types';
 import type { CoreDB } from '../CoreDB.js';
 
-export async function getDraft(coreDB: CoreDB, nodeId: NodeId): Promise<TreeNode | undefined> {
-  const node = await coreDB.nodes.get(nodeId);
-  if (!node) return undefined;
-  if (node.draftData === null || node.draftData === undefined) return undefined;
-  return node as TreeNode;
+// Temporary stub: no conflict detection
+export async function checkDraftConflict(_coreDB: CoreDB, _nodeId: NodeId): Promise<boolean> {
+  return false;
 }
 
-export async function updateDraft(
+export async function updateTreeNodeDraftMetadata(
   coreDB: CoreDB,
   nodeId: NodeId,
-  updates: Partial<TreeNode>
+  updater: Partial<TreeNodeMetadata>
 ): Promise<void> {
-  const existing = await getDraft(coreDB, nodeId);
-  if (!existing) {
-    throw new Error('Draft not found');
-  }
-
-  const timestamp = Date.now() as Timestamp;
-  const metaFromUpdates = updates.metadata
-    ? { ...(existing.metadata ?? {}), ...(updates.metadata as TreeNode['metadata']) }
-    : undefined;
-  const nextDraftData =
-    updates.draftData ??
-    (updates.data as TreeNode['draftData'] | undefined) ??
-    existing.draftData ??
-    existing.data ??
-    null;
-  const nextMetadata =
-    metaFromUpdates ??
-    existing.metadata ??
-    null;
-  const nextDraftMetadata =
-    updates.draftMetadata
-      ? { ...(existing.draftMetadata ?? existing.metadata ?? {}), ...(updates.draftMetadata as TreeNode['draftMetadata']) }
-      : metaFromUpdates
-        ? { ...(existing.draftMetadata ?? existing.metadata ?? {}), ...(metaFromUpdates as TreeNode['draftMetadata']) }
-        : existing.draftMetadata ?? existing.metadata ?? null;
-
-  const updated: TreeNode = {
-    ...existing,
-    ...updates,
-    updatedAt: timestamp,
-    lastTouchedAt: timestamp,
-    data: existing.data ?? null,
-    draftData: nextDraftData,
-    metadata: nextMetadata ?? existing.metadata,
-    draftMetadata: nextDraftMetadata,
+  const current = (await coreDB.nodes.get(nodeId)) as TreeNode | undefined;
+  const prev = (current as { draftMetadata?: TreeNodeMetadata | null })?.draftMetadata ?? null;
+  const next: TreeNodeMetadata = {
+    ...(prev ?? { name: '', description: '', tags: [] }),
+    ...updater,
   };
-
-  await coreDB.nodes.put(updated);
+  await coreDB.nodes.update(nodeId, { draftMetadata: next } as any);
 }
 
-export async function checkDraftConflict(coreDB: CoreDB, nodeId: NodeId): Promise<boolean> {
-  const draft = await getDraft(coreDB, nodeId);
-  if (!draft) {
-    return false;
-  }
-
-  const currentNode = await coreDB.getNode(nodeId);
-  if (!currentNode) {
-    return false;
-  }
-
-  const originalVersion = draft.version || 1;
-  return currentNode.version > originalVersion;
+export async function updateTreeNodeDraftData(
+  coreDB: CoreDB,
+  nodeId: NodeId,
+  updater: Record<string, unknown>
+): Promise<void> {
+  const current = (await coreDB.nodes.get(nodeId)) as TreeNode | undefined;
+  const prev = (current as { draftData?: Record<string, unknown> | null })?.draftData ?? {};
+  await coreDB.nodes.update(nodeId, {
+    draftData: {
+      ...prev,
+      ...updater,
+    },
+  } as any);
 }
+
+export async function getTreeNode(coreDB: CoreDB, nodeId: NodeId): Promise<TreeNode | null> {
+  const node = await coreDB.nodes.get(nodeId);
+  return (node ?? null) as TreeNode | null;
+}
+
+// Compatibility wrappers

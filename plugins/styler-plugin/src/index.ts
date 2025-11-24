@@ -77,21 +77,10 @@ export const PLUGIN_INFO = PLUGIN_MANIFEST;
  * : HierarchiDB
  * :
  */
-/**
- * Legacy initializeStylerPlugin helper has been removed. Consumers should rely on
- * StylerDialogExtension / runtime registration instead of the old extension definition path.
- */
-
 // Optional runtime wiring (no-op)
 export const registerRuntimeWorkerAdapters = async (): Promise<void> => {
   // Styler plugin currently relies on default runtime worker lifecycle behaviour.
 };
-
-// Dialog extension initializer
-export {
-  initializeStylerDialogExtension,
-  stylerDialogExtension,
-} from './common/extensions/StylerDialogExtension.js';
 
 let initialized = false;
 

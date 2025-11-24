@@ -139,7 +139,6 @@ export function useDialogDraft<TPayload = Record<string, unknown>>({
             // Recreate draft using the expected nodeId to keep routing consistent
             const wcNode = await wcAPI.createDraftBase(nodeType as NodeType, parentId, {
               id: nodeId,
-              metadata: { name: '', description: '' },
             } as Partial<TreeNode>);
             const copy = toDraftData(wcNode);
             setDraft(copy);
@@ -148,9 +147,7 @@ export function useDialogDraft<TPayload = Record<string, unknown>>({
           }
 
           if (parentId) {
-            const wcNode = await wcAPI.createDraftBase(nodeType as NodeType, parentId, {
-              metadata: { name: '', description: '' },
-            });
+            const wcNode = await wcAPI.createDraftBase(nodeType as NodeType, parentId);
             const copy = toDraftData(wcNode);
             setDraft(copy);
             setOriginalCopy(copy);

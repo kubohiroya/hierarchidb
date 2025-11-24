@@ -1,7 +1,4 @@
-export { BaseDialogPlugin } from './dialog/BaseDialogPlugin.js';
 export { wrapDialogStepComponent } from './dialog/wrapDialogStepComponent.js';
-export * from './dialog/NodeDialogPlugin.js';
-export * from './dialog/NodeDialogExtensionAPI.js';
 export * from './types.js';
 export { useWorkerAPI } from './hooks/useWorkerAPI.js';
 export {

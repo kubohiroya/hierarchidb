@@ -28,7 +28,7 @@ type FolderDraftData = {
 
 const normalizeDraft = (raw: DraftData<FolderDraftData> | null): FolderDraftData => {
   const basic = normalizeBasicInfo({
-    metadata: raw?.draftMetadata ? { ...raw.draftMetadata } : undefined,
+    metadata: raw?.draftMetadata ?? raw?.metadata ?? undefined,
     draftData: raw?.draftData,
   });
   const draftData = raw?.draftData ?? {};
@@ -81,7 +81,32 @@ export const FolderDialogHost: React.FC<FolderDialogHostProps> = ({
     workerClient,
   });
 
+  useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log('[folder-dialog] host mounted', { mode, nodeId, parentId, open });
+  }, [mode, nodeId, parentId, open]);
+
+  useEffect(() => {
+    if (draft) {
+      // Debug: inspect draft returned from DraftAPI to verify metadata payload
+      // eslint-disable-next-line no-console
+      console.log('[folder-dialog] draft loaded', {
+        id: draft.treeNodeId,
+        draftMetadata: draft.draftMetadata,
+        metadata: draft.metadata,
+        draftData: draft.draftData,
+      });
+    } else {
+      // eslint-disable-next-line no-console
+      console.log('[folder-dialog] draft not yet loaded');
+    }
+  }, [draft]);
+
   const data = useMemo<FolderDraftData>(() => normalizeDraft(draft), [draft]);
+  if (!draft) {
+    // Worker client not ready yet; avoid rendering empty form to prevent blank defaults
+    return null;
+  }
 
   const [dialogSize, setDialogSize] = useState<MultiDialogSize>(initialSize);
   const [dialogPosition, setDialogPosition] = useState<MultiDialogPosition>(initialPositionValue);

@@ -1,5 +1,5 @@
 export {
-  createDraftBase,
+  initTreeNode,
   touchDraftById,
   touchDraftNode,
   touchDraftNodeIds,
@@ -7,16 +7,19 @@ export {
 
 export { createNewName, getChildNames } from './draft/nameUtilities.js';
 
-export { createDraftFromNode } from './draft/editOperations.js';
-
 export {
-  commitDraft as commitDraft,
+  commitTreeNodeDraft as commitDraft,
   type CommitOk,
   type CommitConflict,
   type CommitResult,
   type NameConflict,
 } from './draft/commitOperations.js';
 
-export { discardDraft } from './draft/cleanupOperations.js';
+export { discardTreeNodeDraft as discardDraft } from './draft/cleanupOperations.js';
 
-export { checkDraftConflict, getDraft, updateDraft } from './draft/lookupOperations.js';
+export {
+  checkDraftConflict,
+  updateTreeNodeDraftMetadata,
+  updateTreeNodeDraftData,
+  getTreeNode,
+} from './draft/lookupOperations.js';

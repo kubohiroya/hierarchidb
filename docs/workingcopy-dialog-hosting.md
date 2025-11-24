@@ -3,10 +3,10 @@
 - Creation flow (TreeConsole): `create:<nodeType>` → create working copy node → navigate to `/t/<treeId>/<parentId>/<wcNodeId>/<nodeType>/create`. The dialog UI is resolved from the plugin registry entry (UI export) at runtime.
 - Responsibilities:
   - App/host: renders the dialog shell (HeadlessMultiStepDialog) and drives `useDialogDraft` so Basic Info is written to `draftMetadata` and plugin-specific data to `draftData`.
-  - Plugin: exposes UI entry (via plugin registry) and provides step components/validators (NodeDialogExtension is step-state only).
+  - Plugin: exposes UI entry (via plugin registry) and provides step components/validators. Legacy NodeDialogExtension (step-state only) is deprecated; new hosts use `useDialogDraft` directly.
 - Current state:
-  - Basemap/Route/Location/Resolver: host lives in app; NodeDialogExtension only evaluates steps.
-  - Spreadsheet/Styler: plugin-side dialog hosts were added (`SpreadsheetDialog`, `StylerDialog`) and exported in plugin UI index, but app-side host wiring is not yet in place; registry-driven resolution should load the plugin UI entry once exported.
+  - Basemap/Route/Location/Resolver: host lives in app; legacy NodeDialogExtension is不要。
+  - Spreadsheet/Styler: plugin-side dialog hosts (`SpreadsheetDialog`, `StylerDialog`) are exported via `./ui`; registry-driven resolution loads them.
 - Next steps to align:
   - Ensure plugin UI entries export the dialog host component used at runtime.
   - Regenerate plugin registry if needed (`pnpm tools:gen-plugin-registry`).

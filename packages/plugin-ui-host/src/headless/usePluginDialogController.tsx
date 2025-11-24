@@ -144,44 +144,16 @@ type BasicInfoValidationMeta = {
 };
 
 export const buildStepWorkingData = (
-  draftData: Record<string, unknown> | undefined,
-  basicInfo: BasicInfoState,
-  meta: BasicInfoValidationMeta
+  draftData: Record<string, unknown> | undefined
 ): StepData => {
-  const baseRecord = draftData ?? {};
-  const base: StepData = {
-    ...baseRecord,
-    ...basicInfo,
-  };
-  base[BASIC_INFO_META_KEY] = meta;
-  return base;
+  return draftData ? { ...draftData } : {};
 };
 
 const stripReservedDialogKeys = (
   input?: Record<string, unknown> | null
 ): Record<string, unknown> => {
-  if (!input) return {};
-  const clone: Record<string, unknown> = { ...input };
-  const reserved = new Set([
-    BASIC_INFO_META_KEY,
-    'draft',
-    'data',
-    'uiState',
-    'dialogUIState',
-    'dialogProgress',
-    'dialogWindow',
-    'treeNodeId',
-    'holderType',
-    'holderTargetId',
-    'payload',
-    'name',
-    'description',
-    'tags',
-  ]);
-  for (const key of reserved) {
-    delete clone[key];
-  }
-  return clone;
+  // Legacy helper no longer strips anything; kept to avoid runtime errors.
+  return input ? { ...input } : {};
 };
 
 const extractBasicInfoFields = (data?: Record<string, unknown>): BasicInfoState => {
@@ -233,9 +205,8 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
   const handleChange = useCallback(
     (data: unknown) => {
       const record = toRecord(data) ?? {};
-      const sanitized = stripReservedDialogKeys(record);
-      onDataChange?.(sanitized);
-      updateDraft({ draftData: sanitized });
+      onDataChange?.(record);
+      updateDraft({ draftData: record });
     },
     [onDataChange, updateDraft]
   );
@@ -963,15 +934,22 @@ export function usePluginDialogController(
 
   useEffect(() => {
     if (draft) {
-      const tags = draft.data?.tags as string[];
+      const tags =
+        (Array.isArray(draft.draftMetadata?.tags)
+          ? draft.draftMetadata?.tags
+          : draft.metadata?.tags) ?? [];
       const resolvedName =
-        typeof draft.name === 'string' && draft.name.length
-          ? draft.name
-          : '';
+        typeof draft.draftMetadata?.name === 'string' && draft.draftMetadata.name.length
+          ? draft.draftMetadata.name
+          : typeof draft.metadata?.name === 'string'
+            ? draft.metadata.name
+            : '';
       const resolvedDescription =
-        typeof draft.description === 'string' && draft.description.length
-          ? draft.description
-          : '';
+        typeof draft.draftMetadata?.description === 'string' && draft.draftMetadata.description.length
+          ? draft.draftMetadata.description
+          : typeof draft.metadata?.description === 'string'
+            ? draft.metadata.description
+            : '';
       setBasicInfo({
         name: resolvedName,
         description: resolvedDescription,
@@ -981,8 +959,8 @@ export function usePluginDialogController(
   }, [draft]);
 
   const draftDataWithoutMeta = useMemo(
-    () => stripReservedDialogKeys(draft?.data),
-    [draft?.data]
+    () => (toRecord(draft?.draftData) ?? {}),
+    [draft?.draftData]
   );
 
   const [tagSuggestions, setTagSuggestions] = useState<string[]>(() => []);
@@ -1139,15 +1117,17 @@ export function usePluginDialogController(
     const info = extractBasicInfoFields(data);
     setBasicInfo(info);
     updateDraft({
-      name: info.name,
-      description: info.description,
-      tags: info.tags,
+      draftMetadata: {
+        name: info.name,
+        description: info.description,
+        tags: info.tags,
+      },
     });
   }, [updateDraft]);
 
   const currentStepData = useMemo<StepData>(
-    () => buildStepWorkingData(draftDataWithoutMeta, basicInfo, basicInfoValidationMeta),
-    [draftDataWithoutMeta, basicInfo, basicInfoValidationMeta]
+    () => buildStepWorkingData(draftDataWithoutMeta),
+    [draftDataWithoutMeta]
   );
   const basicInfoValidationPayload = useMemo<StepData>(
     () => stripReservedDialogKeys(currentStepData),
@@ -1195,9 +1175,11 @@ export function usePluginDialogController(
                   prev.tags.join(',') !== next.tags.join(',')
                 ) {
                   updateDraft({
-                    name: next.name,
-                    description: next.description,
-                    tags: next.tags,
+                    draftMetadata: {
+                      name: next.name,
+                      description: next.description,
+                      tags: next.tags,
+                    },
                   });
                 }
                 return next;
@@ -1462,14 +1444,27 @@ export function usePluginDialogController(
       console.debug('[PluginDialogShell] submitting dialog', {
         nodeType,
         mode,
+        payload: {
+          draftMetadata: {
+            ...draft?.draftMetadata,
+            name: basicInfo.name,
+            description: basicInfo.description,
+            tags: basicInfo.tags,
+          },
+          draftData: { ...draftDataWithoutMeta },
+        },
       });
     }
     const finalData = {
       ...draft,
-      name: basicInfo.name,
-      description: basicInfo.description,
-      data: { ...draftDataWithoutMeta, tags: basicInfo.tags },
-    };
+      draftMetadata: {
+        ...draft?.draftMetadata,
+        name: basicInfo.name,
+        description: basicInfo.description,
+        tags: basicInfo.tags,
+      },
+      draftData: { ...draftDataWithoutMeta, tags: basicInfo.tags },
+    } as Partial<DraftData>;
 
     const savedNodeId = await saveDraft(finalData);
 
@@ -1505,16 +1500,23 @@ export function usePluginDialogController(
       saveDraftInProgress.current = true;
       const draftData = {
         ...draft,
-        name: basicInfo.name,
-        description: basicInfo.description,
-        isDraft: true,
-      };
+        draftMetadata: {
+          ...draft?.draftMetadata,
+          name: basicInfo.name,
+          description: basicInfo.description,
+          tags: basicInfo.tags,
+        },
+        draftData: { ...draftDataWithoutMeta },
+      } as Partial<DraftData>;
+      if (typeof console !== 'undefined' && typeof console.debug === 'function') {
+        console.debug('[PluginDialogShell] saveDraft payload', draftData);
+      }
       await saveDraft(draftData);
     } catch (err) {
       saveDraftInProgress.current = false;
       throw err;
     }
-  }, [draft, basicInfo, saveDraft]);
+  }, [draft, basicInfo, draftDataWithoutMeta, saveDraft]);
 
   const handleCancel = useCallback(async () => {
     try {
@@ -1539,6 +1541,7 @@ export function usePluginDialogController(
   const canStartBatch = evaluatedState.guards.canStartBatch;
   const footerPrimaryButtons = footerOptions?.primaryButtons;
   const footerSaveDraftLabel = footerOptions?.saveDraftLabel;
+  const disableDraftButton = nodeType === 'folder'; // Folder は create/edit とも Draft ボタン不要
 
   const HeaderComponent: HeadlessMultiStepDialogProps<StepData>['HeaderComponent'] = useCallback(
     () => (
@@ -1577,13 +1580,15 @@ export function usePluginDialogController(
         mode={mode}
         canCommit={canSaveCurrent}
         onSaveDraft={
-          handleSaveDraft
-            ? () => {
-                handleSaveDraft().catch(() => void 0);
-              }
-            : undefined
+          disableDraftButton
+            ? undefined
+            : handleSaveDraft
+              ? () => {
+                  handleSaveDraft().catch(() => void 0);
+                }
+              : undefined
         }
-        disableDraft={!hasUnsavedChanges}
+        disableDraft={disableDraftButton || !hasUnsavedChanges}
         canStartBatch={canStartBatch}
         primaryButtonOptions={footerPrimaryButtons}
         saveDraftLabel={footerSaveDraftLabel}
@@ -1594,6 +1599,7 @@ export function usePluginDialogController(
       canSaveCurrent,
       handleSaveDraft,
       hasUnsavedChanges,
+      disableDraftButton,
       canStartBatch,
       footerPrimaryButtons,
       footerSaveDraftLabel,
@@ -1659,7 +1665,7 @@ export function usePluginDialogController(
     stepData: currentStepData,
     onStepDataChange: (patch: Partial<StepData>) =>
       updateDraft({
-        draftData: stripReservedDialogKeys({ ...currentStepData, ...patch }),
+        draftData: { ...currentStepData, ...patch },
       }),
     activeStepIndex,
     onStepNavigate: handleNavigation,

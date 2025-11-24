@@ -3,7 +3,7 @@ import type { CoreDB } from '../CoreDB.js';
 import type { CommandResult } from '../command-types.js';
 import { WorkerErrorCode } from '../command-types.js';
 import { createNewName, getChildNames } from './nameUtilities.js';
-import { discardDraft as discardDraft } from './cleanupOperations.js';
+import { discardTreeNodeDraft as discardDraft } from './cleanupOperations.js';
 import { touchDraftById } from './draftOperations.js';
 import { checkDraftConflict } from './lookupOperations.js';
 
@@ -19,7 +19,7 @@ export type CommitResult = CommitOk | CommitConflict | NameConflict;
 /**
  * Commit a draft node by applying draftData -> data and clearing draftData/dialogUIState.
  */
-export async function commitDraft(
+export async function commitTreeNodeDraft(
   coreDB: CoreDB,
   draftNodeId: NodeId,
   onNameConflict: OnNameConflict = 'error'
@@ -28,8 +28,13 @@ export async function commitDraft(
   const draft = await coreDB.nodes.get(draftNodeId);
   if (!draft) throw new Error('Draft node not found');
 
+  const pendingMeta = (draft as { draftMetadata?: unknown }).draftMetadata as
+    | { name?: string; description?: string; tags?: string[] }
+    | null
+    | undefined;
   const siblingNames = await getChildNames(coreDB, draft.parentId);
-  let finalName = draft.metadata?.name ?? '';
+  let finalName =
+    (pendingMeta?.name && pendingMeta.name.trim().length ? pendingMeta.name : draft.metadata?.name) ?? '';
   const sameNameCount = siblingNames.filter((name) => name === finalName).length;
   const nameConflicts = sameNameCount > 1;
 
@@ -51,11 +56,20 @@ export async function commitDraft(
   }
 
   const finalizedData = (draft as { draftData?: unknown }).draftData ?? {};
+  if (typeof console !== 'undefined' && typeof console.debug === 'function') {
+    console.debug('[commitDraft] finalizing draft', {
+      id: draft.id,
+      draftMetadata: pendingMeta,
+      draftData: finalizedData,
+      dataBefore: draft.data,
+    });
+  }
 
   const updatedNode: TreeNode = {
     ...draft,
     metadata: {
       ...(draft.metadata ?? { name: finalName, description: undefined, tags: [] }),
+      ...(pendingMeta ?? {}),
       name: finalName,
     },
     data: finalizedData as TreeNode['data'],
@@ -85,7 +99,7 @@ export async function commitDraftCommand(
   onNameConflict: OnNameConflict = 'error'
 ): Promise<CommandResult> {
   try {
-    const result = await commitDraft(coreDB, draftNodeId, onNameConflict);
+    const result = await commitTreeNodeDraft(coreDB, draftNodeId, onNameConflict);
     if (result.status === 'ok') {
       return { success: true, seq: 1 as any, nodeId: result.nodeId };
     }

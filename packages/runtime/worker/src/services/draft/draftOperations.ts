@@ -10,9 +10,10 @@ import type { CoreDB } from '../CoreDB.js';
 import { createNewName, getChildNames } from './nameUtilities.js';
 
 /**
- * Create a draft for a new node. The draft lives directly on the node record.
+ * Initialize a new tree node builder with default metadata (unique name, empty description, empty tags).
+ * Draft fields start as null. Returns the node id.
  */
-export async function createDraftBase(
+export async function initTreeNode(
   coreDB: CoreDB,
   _treeId: TreeId,
   parentId: NodeId,
@@ -28,37 +29,26 @@ export async function createDraftBase(
     const parent = await coreDB.nodes.get(parentId);
     const depth = typeof parent?.depth === 'number' ? (parent.depth ?? 0) + 1 : 1;
 
-    // If a fixed ID is provided and the node already exists, reuse it as the draft.
+    // If a fixed ID is provided and the node already exists, reuse it.
     if (fixedId) {
       const existing = await coreDB.nodes.get(fixedId);
       if (existing) {
-        const needsDraft =
-          (existing as { draftData?: unknown }).draftData === null ||
-          typeof (existing as { draftData?: unknown }).draftData === 'undefined';
-        if (needsDraft) {
-          await coreDB.nodes.update(fixedId, {
-            metadata: {
-              ...(existing as { metadata?: TreeNode['metadata'] }).metadata ?? {
-                name: resolvedBaseName,
-                description: undefined,
-                tags: [],
-              },
+        await coreDB.nodes.update(fixedId, {
+          metadata: {
+            ...(existing as { metadata?: TreeNode['metadata'] }).metadata ?? {
               name: resolvedBaseName,
-            },
-            draftMetadata: {
-              name: resolvedBaseName,
-              description: undefined,
+              description: '',
               tags: [],
             },
-            draftData: {
-              ...(existing as { draftData?: Record<string, unknown> | null }).draftData ?? {},
-            },
-            updatedAt: now,
-            lastTouchedAt: now,
-          });
-        } else {
-          await coreDB.nodes.update(fixedId, { lastTouchedAt: now, updatedAt: now });
-        }
+            name: resolvedBaseName,
+            description: '',
+            tags: [],
+          },
+          draftMetadata: null,
+          draftData: null,
+          updatedAt: now,
+          lastTouchedAt: now,
+        });
         return fixedId;
       }
     }
@@ -69,16 +59,12 @@ export async function createDraftBase(
       nodeType,
       metadata: {
         name: resolvedBaseName,
-        description: undefined,
+        description: '',
         tags: [],
       },
-      draftMetadata: {
-        name: resolvedBaseName,
-        description: undefined,
-        tags: [],
-      },
+      draftMetadata: null,
       data: null,
-      draftData: {},
+      draftData: null,
       depth,
       createdAt: now,
       updatedAt: now,
@@ -89,6 +75,9 @@ export async function createDraftBase(
     return wcNodeId;
   });
 }
+
+// Backward-compatible alias
+export const createDraftBase = initTreeNode;
 
 export async function touchDraftNodeIds(
   coreDB: CoreDB,
