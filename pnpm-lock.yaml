@@ -987,6 +987,9 @@ importers:
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../ui/dialog
+      '@hierarchidb/ui-plugin-basic-info':
+        specifier: workspace:*
+        version: link:../ui/plugin-basic-info
       comlink:
         specifier: ^4.4.1
         version: 4.4.2
@@ -2836,6 +2839,9 @@ importers:
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../packages/common/types
+      '@hierarchidb/components':
+        specifier: workspace:*
+        version: link:../../packages/components
       '@hierarchidb/download':
         specifier: workspace:*
         version: link:../../packages/features/download
@@ -2848,6 +2854,9 @@ importers:
       '@hierarchidb/plugin-service-api':
         specifier: workspace:*
         version: link:../../packages/plugin-service-api
+      '@hierarchidb/plugin-service-sdk':
+        specifier: workspace:*
+        version: link:../../packages/plugin-service-sdk
       '@hierarchidb/runtime-client':
         specifier: workspace:*
         version: link:../../packages/runtime/client

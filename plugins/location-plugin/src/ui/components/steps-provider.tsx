@@ -1,4 +1,4 @@
-import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/plugin-base';
+import { PluginStepRegistry, type StartBatchContext, type StepComponentProps } from '@hierarchidb/plugin-base';
 import type { NodeId, Timestamp } from '@hierarchidb/common-types';
 import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 import type { LocationDraft } from '../../common/types/index.js';
@@ -9,6 +9,9 @@ import { LocationSelectionStep } from '../../common/components/steps/LocationSel
 import { LocationBatchParametersStep } from '../../common/components/steps/LocationBatchParametersStep.js';
 import { LocationMapPreviewStep } from '../../common/components/steps/LocationMapPreviewStep.js';
 import { LocationBuildStep } from './steps/LocationBuildStep.js';
+import { notify } from '@hierarchidb/components';
+import { listLocationPoints } from '../../services/pointRepository.js';
+import { LocationVectorTileService } from '../../services/tiles/LocationVectorTileService.js';
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -50,6 +53,72 @@ const hasSelection = (data?: LocationDraft): boolean => {
   const matrix = data?.draft?.selectionMatrix;
   if (!Array.isArray(matrix)) return false;
   return matrix.some((row) => Array.isArray(row) && row.some(Boolean));
+};
+
+const clamp = (value: number, min: number, max: number): number => {
+  if (Number.isNaN(value)) return min;
+  return Math.min(max, Math.max(min, value));
+};
+
+const MIN_CONCURRENCY = 1;
+const MAX_CONCURRENCY = 16;
+const DEFAULT_MIN_ZOOM = 5;
+const DEFAULT_MAX_ZOOM = 12;
+
+const startLocationBatch = async (data: LocationDraft, context: StartBatchContext) => {
+  const t = locationTranslations.en;
+  const draft = data.draft ?? {};
+  const nodeId = (context.nodeId ?? data.treeNodeId) as NodeId | undefined;
+
+  if (!nodeId) {
+    notify.error('Save changes before starting a build.');
+    return;
+  }
+
+  if (!(draft.dataSource && draft.licenseAgreement)) {
+    notify.info(
+      t.build?.requiresApproval ??
+        'Provide a data source, accept license terms, and save the node before building.'
+    );
+    return;
+  }
+
+  const pointsRaw = await listLocationPoints(nodeId);
+  if (!pointsRaw.length) {
+    notify.info(t.build?.noPoints ?? 'No location points available to process.');
+    return;
+  }
+
+  const points = pointsRaw.map((point) => ({
+    lon: Number(point.longitude) || 0,
+    lat: Number(point.latitude) || 0,
+    id: point.pid,
+    properties: {
+      name: point.name,
+      kind: point.kind,
+      gid0: point.gid0,
+      gid1: point.gid1,
+      gid2: point.gid2,
+      ...(point.payload ?? {}),
+    },
+  }));
+
+  const settings = {
+    zoomMinGenerate: clamp(Number((draft as Record<string, unknown>).tilesMinZoom ?? DEFAULT_MIN_ZOOM), 0, 24),
+    zoomMaxGenerate: clamp(Number((draft as Record<string, unknown>).tilesMaxZoom ?? DEFAULT_MAX_ZOOM), 0, 24),
+    zoomMaxServe: clamp(Number((draft as Record<string, unknown>).tilesMaxZoom ?? DEFAULT_MAX_ZOOM), 0, 24),
+  } as const;
+
+  const rawConcurrency = Number(draft.concurrentDownloads ?? 4);
+  const concurrency = clamp(rawConcurrency || 4, MIN_CONCURRENCY, MAX_CONCURRENCY);
+
+  const service = new LocationVectorTileService();
+  const summary = await service.startSession(nodeId, points, settings, { concurrency });
+
+  notify.success(
+    t.build?.success?.replace?.('{sessionId}', summary.sessionId) ??
+      `Build started (session ${summary.sessionId})`
+  );
 };
 
 registry.registerConfigProvider<LocationDraft>({
@@ -169,6 +238,7 @@ registry.registerConfigProvider<LocationDraft>({
         capabilities: {
           canStartBatch: (data: LocationDraft) =>
             Boolean(data?.treeNodeId && data?.draft?.dataSource && data?.draft?.licenseAgreement),
+          startBatch: (data, context) => startLocationBatch(data, context),
         },
         validate: () => true,
       },

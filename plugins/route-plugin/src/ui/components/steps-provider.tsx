@@ -1,4 +1,4 @@
-import { PluginStepRegistry, type StepComponentProps, type PluginStepConfig } from '@hierarchidb/plugin-base';
+import { PluginStepRegistry, type StepComponentProps, type PluginStepConfig, type StartBatchContext } from '@hierarchidb/plugin-base';
 import type { NodeId } from '@hierarchidb/common-types';
 import {
   BasicInfoStep as SharedBasicInfoStep,
@@ -11,6 +11,7 @@ import { RouteSelectionStep } from '../../common/components/RouteSelectionStep.j
 import { RouteProcessingStep } from '../../common/components/RouteProcessingStep.js';
 import { RouteDetailsStep } from '../../common/components/RouteDetailsStep.js';
 import { RouteBuildStep } from './steps/RouteBuildStep.js';
+import { notify } from '@hierarchidb/components';
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -57,6 +58,23 @@ const hasRouteDetails = (data?: RouteDraft): boolean => {
     ? ((draft as { transportModes: string[] }).transportModes)
     : [];
   return Boolean(routeType && transportModes.length > 0);
+};
+
+const startRouteBatch = async (data: RouteDraft, _context: StartBatchContext) => {
+  const draft = data?.draft ?? {};
+  const hasEssentials = Boolean(
+    draft.name?.trim() &&
+      draft.routeType &&
+      Array.isArray(draft.transportModes) &&
+      draft.transportModes.length > 0
+  );
+
+  if (!hasEssentials) {
+    notify.info('Complete the required route settings before starting a build.');
+    return;
+  }
+
+  notify.info('Route batch launch is not yet implemented in this dialog.');
 };
 
 registry.registerConfigProvider<RouteDraft>({
@@ -157,6 +175,7 @@ registry.registerConfigProvider<RouteDraft>({
             );
             return hasEssentials;
           },
+          startBatch: (data, context) => startRouteBatch(data, context),
         },
         validate: () => true,
       },

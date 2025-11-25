@@ -33,9 +33,11 @@ export {
   TabularFileUploadStep,
   TabularFilterStep,
   TabularColumnSelectionStep,
+  ModalSelect,
 } from './components/index.js';
 export type {
   TabularFileUploadStepProps,
   TabularFilterStepProps,
   TabularColumnSelectionStepProps,
+  ModalSelectProps,
 } from './components/index.js';

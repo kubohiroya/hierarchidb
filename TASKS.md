@@ -84,6 +84,37 @@
   - [ ] 変更後のテスト／typecheck を実行し、ログを運用ログへ追記する
 - ロールバック手順：`TreeConsoleToolbar.tsx`, `packages/ui/treeconsole/toolbar/src/types.ts`, `app/src/router/pages/tree/console/TreeConsoleIntegration.tsx`、追加したテストファイルを revert し、`pnpm -C app test -- --run <追加テスト名>` と `pnpm -C app typecheck` を再実行して旧挙動に戻ることを確認する
 
+1533) Plugin Dialog Build ボタン配線（P0）
+- ブランチ: `fix/plugin-dialog/build-button`（sandbox 制約で `main` 上で作業）
+- 依存: `packages/plugin-ui-host`（PluginDialogFooter/Controller）、`@hierarchidb/ui-dialog`、`plugins/{shape,location,route}-plugin`
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` の Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] PluginDialogFooter に Build ボタンを表示し、`canStartBatch`/`onStartBatch` で enable/disable と動作が制御される
+  - [ ] usePluginDialogController から Build ボタンに `canStartBatch` とバッチ開始ハンドラが配線される
+  - [ ] shape/location/route プラグインがホスト経由の Build ボタンでバッチ開始でき、`canStartBatch` が成立するまで disabled になる
+  - [ ] 関連テストと `pnpm` 検証コマンドを実行し、ログを運用ログに記録する
+- チェックリスト:
+ - [ ] PluginDialogFooter の中央 Build ボタンを canStartBatch/onStartBatch と連動させ、ラベルを Build で統一する
+  - [ ] usePluginDialogController に onStartBatch 配線を追加し、プラグイン capabilities からバッチ開始ハンドラを取得する
+  - [ ] shape/location/route プラグインの Build ステップをホストボタンに接続し、canStartBatch 条件を整備する
+  - [ ] 追加・更新したテストを実行し、pnpm コマンド結果を運用ログに追記する
+- ロールバック手順：`packages/plugin-ui-host` と `plugins/{shape,location,route}-plugin` の今回差分を revert し、関連テストコマンドを再実行して旧挙動（Build ボタンなし/未配線）へ戻ることを確認する
+
+1543) Spreadsheet Dialog Step2 ドロップダウン修正（P0）
+- ブランチ: `fix/spreadsheet/dialog-dropdown`（sandbox 制約で `main` 上で作業）
+- 依存: `plugins/spreadsheet-plugin/src/ui/components/**/*`, `plugins/spreadsheet-plugin/src/ui/steps/**/*`, `app/src/plugin-registry/**/*`, `app/src/components/dialogs/**/*`
+- 受け入れ基準（DoD）:
+  - [x] `TASKS.md` の Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [x] create spreadsheet ダイアログ Step2 (Data Source) の Upload Method と Tabular Processing Options の選択肢がクリックで開き、別の選択肢へ切り替えできる
+  - [x] 上記挙動を検証するテスト（単体または結合）を追加し、クリックでメニューが開くことを確認する
+  - [x] `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` と追加したテストの実行結果を運用ログに記録する
+- チェックリスト:
+  - [x] Data Source Step の Upload Method/Tabular Processing Options の UI 実装とイベント配線を調査する
+  - [x] 適切なコンポーネント/コントロールへ修正を加え、クリックで選択肢ポップアップが開くようにする
+  - [x] 再発防止のテストを追加し、クリック操作でメニューが開くことを検証する
+  - [x] 検証コマンドを実行し、運用ログへ記録する
+- ロールバック手順：今回変更する Spreadsheet dialog 関連ファイルとテスト差分を revert し、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` と追加テストを再実行して現状挙動（メニューが開かない状態）へ戻ることを確認する
+
 1525) common-api DraftAPI import 解消（P0）
 - ブランチ: `fix/common-api/draft-api-export`（sandbox 制約で `main` 上で作業）
 - 依存: `packages/common/api/src/*`
@@ -116,9 +147,19 @@
   - [ ] `DraftService` と `DraftTreeNodeOperations` の未解決 import を解消し、`pnpm --filter @hierarchidb/runtime-worker build` が成功する
   - [ ] 修正内容と検証ログを運用ログに記録する
 - チェックリスト:
-  - [ ] 実ファイル（WorkingCopyService / WorkingCopyTreeNodeOperations）に合わせて import/export パスを修正する
+ - [ ] 実ファイル（WorkingCopyService / WorkingCopyTreeNodeOperations）に合わせて import/export パスを修正する
   - [ ] 必要に応じて draft helper 内のシャドウ変数などを整理し、ビルド出力を確認する
 - ロールバック手順：対象ファイルを revert し、`pnpm --filter @hierarchidb/runtime-worker build` を再実行してエラー再現を確認する
+
+1542) CoreDB TreeNode metadata null guard（P0）
+- ブランチ: `fix/runtime-worker/treenode-metadata`（sandbox 制約で `main` 上で作業）
+- 依存: `packages/runtime/worker/src/services/CoreDB.ts`, `packages/runtime/worker/src/services/**/*`, `app/src/loader.ts`
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` の Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] `pnpm build && pnpm preview` 実行時に `metadata is required on TreeNode` が発生しないことを再現手順付きで確認する
+  - [ ] metadata 未設定で保存される経路を特定し、必ず metadata/draftMetadata を付与するか安全なデフォルトを入れる実装に修正する
+  - [ ] `pnpm --filter @hierarchidb/runtime-worker typecheck` など関連コマンドを実行し、ログを運用ログに記録する
+  - [ ] ロールバック手順を記載する
 
 1293) basemap plugin typecheck エラー解消（P0）
 - ブランチ: `fix/basemap/typecheck`（sandbox 制約で `main` 上で作業）
@@ -8788,7 +8829,26 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-14"></a>
 
+- 2025-11-25 20:10 start: fix/spreadsheet/dialog-dropdown — create spreadsheet ダイアログ Step2 の Upload Method/Tabular Processing Options が開かない問題の調査・修正を開始。DoD: TASKS/Kanban更新、ドロップダウンがクリックで開くようにする、再発防止テスト追加、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` 等の検証ログ記録、ロールバック手順明記。
+- 2025-11-25 20:22 progress: fix/spreadsheet/dialog-dropdown — TabularFileUploadStep の MUI Select に labelId/portal 指定を追加し、Upload Method と Tabular Processing Options のドロップダウンがクリックで開くように修正。DataSource dropdown の開閉を検証するユニットテストを追加。
+- 2025-11-25 20:22 command: pnpm --filter @hierarchidb/spreadsheet-plugin typecheck — exit 0。
+- 2025-11-25 20:22 command: pnpm --filter @hierarchidb/spreadsheet-plugin test -- --run DataSourceDropdowns — exit 0（TabularFileUploadStep ドロップダウン開閉テスト）。
+- 2025-11-25 20:29 progress: fix/spreadsheet/dialog-dropdown — Select の Menu z-index を backdrop より高く設定し、ポータル先を body に固定してドロップダウンがオーバーレイに隠れないように調整。
+- 2025-11-25 20:29 command: pnpm --filter @hierarchidb/spreadsheet-plugin typecheck — exit 0。
+- 2025-11-25 20:29 command: pnpm --filter @hierarchidb/spreadsheet-plugin test -- --run DataSourceDropdowns — exit 0。
+- 2025-11-25 20:36 progress: fix/spreadsheet/dialog-dropdown — ダイアログ向けの共通コンポーネント DialogSelect を追加し、TabularFileUploadStep の Select を差し替え。Menu z-index を modal より上に強制しつつ portal を body 固定に統一。
+- 2025-11-25 20:36 command: pnpm --filter @hierarchidb/spreadsheet-plugin typecheck — exit 0。
+- 2025-11-25 20:36 command: pnpm --filter @hierarchidb/spreadsheet-plugin test -- --run DataSourceDropdowns — exit 0。
+- 2025-11-25 20:40 progress: fix/spreadsheet/dialog-dropdown — コンポーネント名を ModalSelect にリネームし、汎用化エクスポートを更新。TabularFileUploadStep で置き換えたまま挙動を維持。
+- 2025-11-25 20:40 command: pnpm --filter @hierarchidb/spreadsheet-plugin typecheck — exit 0。
+- 2025-11-25 20:40 command: pnpm --filter @hierarchidb/spreadsheet-plugin test -- --run DataSourceDropdowns — exit 0。
 - 2025-11-24 13:50 start: fix/plugin-dialog/build-button — マルチステップダイアログに Build ボタンを共通実装し、shape/location/route プラグインのバッチ開始と連動させるタスクを開始。DoD: TASKS/Kanban更新、Build ボタンと canStartBatch/onStartBatch 配線、各プラグインでバッチ開始をホスト経由に接続、関連テストと pnpm コマンド実行ログを記録、ロールバック手順明記。
+- 2025-11-24 13:56 progress: fix/plugin-dialog/build-button — PluginDialogFooter/Controller に Build ボタン配線を追加し、canStartBatch 判定と startBatch ハンドラを中央ボタンへ接続。location/route/shape プラグインのステップに startBatch capability を追加し、Build ボタンが表示されるようにした（route/shape は現状 notify のみ）。
+- 2025-11-24 14:00 command: pnpm --filter @hierarchidb/plugin-ui-host test -- --run PluginDialogFooter — exit 0（Build ボタン配線後の footer/controller テストを再実行しグリーン）。
+- 2025-11-24 14:05 command: pnpm --filter @hierarchidb/location-plugin exec tsc -p tsconfig.json --noEmit — exit 0（Location プラグインの startBatch 配線後 typecheck 成功）。
+- 2025-11-24 14:10 start: fix/app/i18n-key-exposure — i18n リソース読込不全で treeConsole.toolbar.search.placeholder などのキーが露出する問題の調査・修正に着手。DoD: TASKS/Kanban更新、原因特定と全言語でのキー解決、必要なテスト/検証コマンドの実行ログ記録、ロールバック手順明記。
+- 2025-11-24 14:22 progress: fix/app/i18n-key-exposure — i18n に common/guidedTour の埋め込みリソースを追加し、en/ja の guidedTour 空ファイルを配置して fallback を保証。`@hierarchidb/ui-i18n` build 実行で成功を確認。
+- 2025-11-24 14:23 command: pnpm --filter @hierarchidb/ui-i18n build — exit 0（警告は既存 define キー）。
 - 2025-11-23 23:37 start: fix/plugins/draft-lint-cleanup — plugin-ui-sdk/plugin-ui-host/plugin-service-sdk の lint エラー解消に着手。DoD: TASKS/Kanban 更新、重複定義/再代入/未使用/Hook 依存漏れの修正、各パッケージの lint 成功ログ取得、ロールバック手順記載。
 - 2025-11-23 23:40 progress: fix/plugins/draft-lint-cleanup — plugin-service-sdk の draft helpers/adapter で draft 変数のシャドウと再代入を整理し、DraftDraft のメタデータを保持したまま merge できるよう修正。helpers.test.ts も payload/metadata の検証に合わせて期待値を更新。
 - 2025-11-23 23:41 progress: fix/plugins/draft-lint-cleanup — plugin-ui-sdk/useDialogDraft の重複 saveDraft と未使用 query を削除し、plugin-ui-host/usePluginDialogController で saveDraft の二重参照と useMemo 依存漏れを解消。
@@ -8830,3 +8890,21 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-25 12:12 progress: fix/plugin-ui-host/basic-info-import — dev alias に `@hierarchidb/ui-plugin-basic-info` が含まれておらず Vite で解決できないため、`app/vite.config.ts` の legacyUiMappings へ同 alias を追加。
 - 2025-11-25 12:13 command: pnpm --filter @hierarchidb/plugin-ui-host lint — exit 0（eslint src）。
 - 2025-11-25 12:14 done: fix/plugin-ui-host/basic-info-import — dev alias 追加で Vite が `@hierarchidb/ui-plugin-basic-info` を src 参照できるようにした。ロールバックは `app/vite.config.ts` の alias 追加差分を戻し、上記 lint を再実行して変化なしを確認。
+- 2025-11-25 12:32 start: fix/runtime-worker/dialog-state-peer-store — basemap commit 時に DialogStateService から peer store への put が `Node not found` で失敗する問題を調査開始。DoD: TASKS/ログ更新、node 不在時の publishState 失敗を防ぐ、typecheck 実行ログ、ロールバック手順記載。
+- 2025-11-25 12:36 progress: fix/runtime-worker/dialog-state-peer-store — `createNodePayloadPeerStore.put` で node 不在の場合は warn を出してスキップするようにし、dialog state 更新で fatal にならないようガードを追加。
+- 2025-11-25 12:40 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0。
+- 2025-11-25 12:42 progress: fix/app/dev-base-prefix-rewrite — dev base `/hierarchidb/` 環境で `/@fs`/`/@id` が base 付きで 404 になる問題に備え、`app/vite.config.ts` に rewrite middleware を追加。
+- 2025-11-25 12:43 done: fix/runtime-worker/dialog-state-peer-store & fix/app/dev-base-prefix-rewrite — peer store put ガードと Vite special prefix rewrite を反映。ロールバックは `packages/runtime/worker/src/entity/createNodePayloadPeerStore.ts` と `app/vite.config.ts` の今回差分を revert し、`pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行して確認。
+- 2025-11-25 12:55 progress: fix/app/dev-base-prefix-rewrite — rewrite middleware を先頭プラグインに移動し、`req.originalUrl` を参照して base 付き `@fs`/`@id` を確実に `/` へ付け替えるよう強化。
+- 2025-11-25 13:05 start: fix/shape-plugin/typecheck — shape-plugin の typecheck エラー（components/plugin-service-sdk 未解決、useShapeProgress 型不整合）を解消するタスクに着手。DoD: TASKS/ログ更新、typecheck 成功、ロールバック手順明記。
+- 2025-11-25 13:15 progress: fix/shape-plugin/typecheck — `UseShapeProgress` の payload/stage 型を拡張し、pollIntervalMs 未対応オプションと未型 unsubscribe を修正。components/plugin-service-sdk を peer/devDependencies に追加。
+- 2025-11-25 13:20 progress: fix/shape-plugin/typecheck — shape-plugin/tsconfig.json の paths を dist 指向で再定義し、components/plugin-service-sdk を含めて workspace alias 解決を保証。
+- 2025-11-25 13:22 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。
+- 2025-11-25 13:23 done: fix/shape-plugin/typecheck — 上記修正で typecheck を解消。ロールバックは `plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts`, `plugins/shape-plugin/package.json`, `plugins/shape-plugin/tsconfig.json` を revert し、typecheck を再実行してエラー再現を確認。
+- 2025-11-25 13:35 progress: fix/shape-plugin/typecheck — policy `ban-tsconfig-paths-dist-dts` 違反を解消するため、shape-plugin/tsconfig.json の paths を空にし、ベースの alias を無効化して package.json 経由の解決に戻した。
+- 2025-11-25 13:36 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0（policy 修正後の再確認）。
+- 2025-11-25 13:45 progress: fix/app/dev-base-prefix-rewrite — dev モードでは base を `/` に固定し、`/hierarchidb/@fs` 系の 404 を根本的に防止（prod は appPrefix ベースのまま）。
+- 2025-11-25 14:05 progress: fix/runtime-worker/commit-discard — create/edit の commit で draft ノードが削除されないよう、`commitTreeNodeDraft` から `discardTreeNodeDraft` 呼び出しを撤去し、commit 時は draft クリアのみとする。
+- 2025-11-25 14:06 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0。
+- 2025-11-25 14:07 done: fix/runtime-worker/commit-discard — commit 正常終了でノード削除が起きないように修正。ロールバックは `packages/runtime/worker/src/services/draft/commitOperations.ts` を revert し、上記 typecheck を再実行して確認。
+- 2025-11-25 14:20 start: fix/runtime-worker/treenode-metadata — `pnpm build && pnpm preview` 実行時に `metadata is required on TreeNode` が発生する件の調査を開始。DoD: TASKS/Kanban 更新、原因特定と再発防止（metadata/draftMetadata の付与または安全なデフォルト）、再現確認、関連コマンド実行ログとロールバック手順の記録。

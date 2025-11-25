@@ -1,4 +1,5 @@
 import 'fake-indexeddb/auto';
+import '@testing-library/jest-dom/vitest';
 import { Blob, File } from 'node:buffer';
 
 const globalTarget = globalThis as any;

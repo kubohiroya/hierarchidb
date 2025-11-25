@@ -427,6 +427,31 @@ function missingSourceMapFallbackPlugin(): Plugin {
   };
 }
 
+function specialPrefixRewritePlugin(base: string): Plugin {
+  const normalizedBase = base.startsWith('/') ? base : `/${base}`;
+  const baseWithSlash = normalizedBase.endsWith('/') ? normalizedBase : `${normalizedBase}/`;
+  const prefixes = ['@fs/', '@id/'];
+
+  return {
+    name: 'hierarchidb:special-prefix-rewrite',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use((req, _res, next) => {
+        const currentUrl = req.url || (req as any).originalUrl || '';
+        if (!currentUrl) return next();
+        for (const prefix of prefixes) {
+          const match = `${baseWithSlash}${prefix}`;
+          if (baseWithSlash !== '/' && currentUrl.startsWith(match)) {
+            req.url = `/${prefix}${currentUrl.slice(match.length)}`;
+            break;
+          }
+        }
+        next();
+      });
+    },
+  };
+}
+
 const pluginManifestWatchPattern = new RegExp(
   `${path.sep}plugins${path.sep}[^${path.sep}]+-plugin${path.sep}(package.json|src${path.sep}plugin-manifest.ts|src${path.sep}extension${path.sep}plugin-manifest.ts)$`,
 );
@@ -479,8 +504,8 @@ export default defineConfig(({ mode, isSsrBuild }) => {
   const env = loadEnv(mode, process.cwd(), '');
   // Prefer VITE_APP_PREFIX if provided; otherwise default to root '/'
   const appPrefix = (env.VITE_APP_PREFIX || env.VITE_APP_NAME || '').replace(/^\/+|\/+$/g, '');
-  const base = appPrefix ? `/${appPrefix}/` : '/';
   const isDev = mode === 'development';
+  const base = isDev ? '/' : appPrefix ? `/${appPrefix}/` : '/';
   const enableWorkspaceAliases = mode === 'development' || mode === 'test';
 
   const ssrExternalDeps = ['@mui/material', '@mui/system', '@mui/utils', 'node-fetch', 'whatwg-url', 'tr46'];
@@ -587,6 +612,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
 
   //  main thread
   const plugins = [
+    specialPrefixRewritePlugin(base),
     pluginRegistryGeneratorPlugin({
       rootDir: repoRoot,
       mode: isDev ? 'package' : 'dist-url',

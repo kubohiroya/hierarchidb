@@ -55,7 +55,13 @@ export function createNodePayloadPeerStore<TData>(options?: {
       const coreDB = await ensureCoreDB();
       const node = await coreDB.getNode(entity.nodeId);
       if (!node) {
-        throw new Error(`Node not found for peer store put: ${String(entity.nodeId)}`);
+        if (typeof console !== 'undefined' && console.warn) {
+          console.warn(
+            '[createNodePayloadPeerStore] node not found; skip dialog payload update',
+            String(entity.nodeId)
+          );
+        }
+        return;
       }
       const resolved = resolveNodeState<TData>(node);
       const targetField = resolved?.targetField ?? 'data';

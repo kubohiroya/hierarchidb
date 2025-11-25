@@ -1,5 +1,8 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material';
+import { useEffect } from 'react';
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material';
 import type { NodeId } from '../../common/shared/index.js';
+import { ShapeBatchProgressDisplay } from './ShapeBatchProgressDisplay.js';
+import { useShapeProgress } from '../hooks/useShapeProgress.js';
 
 export interface BatchProcessingDialogProps {
   open: boolean;
@@ -23,18 +26,31 @@ export function BatchProcessingDialog({
   onComplete,
   onError,
 }: BatchProcessingDialogProps): JSX.Element {
-  void onComplete;
-  void onError;
+  const { status, error } = useShapeProgress(sessionId, { autoSubscribe: open });
+
+  useEffect(() => {
+    if (!onComplete || !status) return;
+    if (status.status === 'completed') onComplete('success');
+    else if (status.status === 'cancelled') onComplete('cancelled');
+    else if (status.status === 'failed') onComplete('error');
+  }, [onComplete, status]);
+
+  useEffect(() => {
+    if (error && onError) {
+      onError(error);
+    }
+  }, [error, onError]);
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Batch Processing</DialogTitle>
       <DialogContent>
-        <Typography variant="body2" color="text.secondary">
-          Session <strong>{sessionId}</strong> (working copy <strong>{draftId}</strong>)
-          is managed by the runtime worker. Detailed progress monitoring UI is intentionally
-          deferred while the plugin migration is in progress.
-        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Typography variant="body2" color="text.secondary">
+            Session <strong>{sessionId}</strong> (working copy <strong>{draftId}</strong>) progress
+          </Typography>
+          <ShapeBatchProgressDisplay sessionId={sessionId} draftId={draftId} />
+        </Box>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Close</Button>

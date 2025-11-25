@@ -3,7 +3,6 @@ import type { CoreDB } from '../CoreDB.js';
 import type { CommandResult } from '../command-types.js';
 import { WorkerErrorCode } from '../command-types.js';
 import { createNewName, getChildNames } from './nameUtilities.js';
-import { discardTreeNodeDraft as discardDraft } from './cleanupOperations.js';
 import { checkDraftConflict } from './lookupOperations.js';
 
 export type CommitOk = { status: 'ok'; nodeId: NodeId; autoRenameTo?: string };
@@ -80,8 +79,6 @@ export async function commitTreeNodeDraft(
   };
   delete (updatedNode as { isDraft?: unknown }).isDraft;
   await coreDB.nodes.put(updatedNode);
-
-  await discardDraft(coreDB, draftNodeId);
 
   const ok: CommitOk = { status: 'ok', nodeId: updatedNode.id as NodeId };
   if (nameConflicts && onNameConflict === 'auto-rename') ok.autoRenameTo = finalName;

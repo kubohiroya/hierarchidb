@@ -10,11 +10,12 @@ import type { DataSourceConfig, SpreadsheetDialogData } from '../../../common/ty
 const coerceDialogData = (value: unknown): SpreadsheetDialogData =>
   (typeof value === 'object' && value !== null ? (value as SpreadsheetDialogData) : {});
 
-export const DataSourceStep: FC<StepComponentProps<SpreadsheetDialogData>> = ({
+export const DataSourceStep: FC<StepComponentProps<SpreadsheetDialogData> & { menuContainer?: Element | DocumentFragment | null }> = ({
   data,
   onChange,
   setValid,
   setError,
+  menuContainer,
 }) => {
   const dialogData = useMemo<SpreadsheetDialogData>(() => coerceDialogData(data), [data]);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -72,6 +73,7 @@ export const DataSourceStep: FC<StepComponentProps<SpreadsheetDialogData>> = ({
         pluginId={SPREADSHEET_NODE_TYPE}
         onFileUploaded={applyMetadata}
         onError={handleUploadError}
+        menuContainer={menuContainer}
       />
     </TabularProvider>
   );

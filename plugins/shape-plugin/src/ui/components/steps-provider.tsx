@@ -1,5 +1,5 @@
 import type React from 'react';
-import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/plugin-base';
+import { PluginStepRegistry, type StartBatchContext, type StepComponentProps } from '@hierarchidb/plugin-base';
 import {
   summarizeCheckboxState,
   validateProcessingConfig,
@@ -14,6 +14,7 @@ import { Step4Processing } from '../../common/components/steps/Step4Processing.j
 import { Step5CountrySelection } from '../../common/components/steps/Step5CountrySelection.js';
 import { StepTabularUpload } from '../../common/components/steps/StepTabularUpload.js';
 import { StepTabularFilter } from '../../common/components/steps/StepTabularFilter.js';
+import { notify } from '@hierarchidb/components';
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -50,6 +51,23 @@ const Step2 = createStepAdapter(Step2DataSource);
 const Step3 = createStepAdapter(Step3License);
 const Step4 = createStepAdapter(Step4Processing);
 const Step5 = createStepAdapter(Step5CountrySelection);
+
+const canStartShapeBatch = (data?: Partial<ShapeDraft>): boolean => {
+  const hasSelection = summarizeCheckboxState(data?.checkboxState).hasSelection;
+  const hasLicense = Boolean(data?.licenseAgreement);
+  const hasDataSource = Boolean(data?.dataSourceName);
+  const hasName = Boolean((data?.name as string | undefined)?.trim());
+  return hasSelection && hasLicense && hasDataSource && hasName;
+};
+
+const startShapeBatch = async (data: Partial<ShapeDraft>, _context: StartBatchContext) => {
+  if (!canStartShapeBatch(data)) {
+    notify.info('Complete required fields and selections before building.');
+    return;
+  }
+
+  notify.info('Shape batch build is not yet implemented in this dialog.');
+};
 
 registry.registerConfigProvider<Partial<ShapeDraft>>({
   nodeType: 'shape',
@@ -100,6 +118,10 @@ registry.registerConfigProvider<Partial<ShapeDraft>>({
         componentFactory: (props: ShapeDialogStepProps) => <Step5 {...props} />,
         validate: (data?: Partial<ShapeDraft>) =>
           summarizeCheckboxState(data?.checkboxState).hasSelection,
+        capabilities: {
+          canStartBatch: canStartShapeBatch,
+          startBatch: (data, context) => startShapeBatch(data, context),
+        },
       },
     ];
   },

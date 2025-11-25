@@ -4,7 +4,7 @@
  */
 
 import type React from 'react';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState, useId } from 'react';
 import {
   Alert,
   Box,
@@ -15,7 +15,6 @@ import {
   InputLabel,
   MenuItem,
   Paper,
-  Select,
   TextField,
   Typography,
 } from '@mui/material';
@@ -23,6 +22,7 @@ import { CloudUpload, Download, InsertDriveFile } from '@mui/icons-material';
 import type { TabularProcessingConfig } from '../types/index.js';
 import { useTabularData } from '../hooks/useTabularData.js';
 import { TabularTableMetadata } from '@hierarchidb/tabular-store';
+import { ModalSelect } from './ModalSelect.js';
 
 export interface TabularFileUploadStepProps {
   onFileUploaded: (metadata: TabularTableMetadata) => void;
@@ -31,6 +31,7 @@ export interface TabularFileUploadStepProps {
   acceptedFileTypes?: string[];
   maxFileSize?: number; // in bytes
   pluginId: string;
+  menuContainer?: Element | DocumentFragment | null;
 }
 
 export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
@@ -40,6 +41,7 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
                                                                       acceptedFileTypes = ['.csv', '.tsv', '.txt'],
                                                                       maxFileSize = 50 * 1024 * 1024, // 50MB default
                                                                       pluginId,
+                                                                      menuContainer,
                                                                     }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [urlInput, setUrlInput] = useState('');
@@ -63,6 +65,16 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
     onUploadSuccess: onFileUploaded,
     onUploadError: onError,
   });
+  const idPrefix = useId();
+  const uploadMethodLabelId = `${idPrefix}-upload-method`;
+  const delimiterLabelId = `${idPrefix}-delimiter`;
+  const encodingLabelId = `${idPrefix}-encoding`;
+  const quoteLabelId = `${idPrefix}-quote-char`;
+  const headerLabelId = `${idPrefix}-has-header`;
+  const skipEmptyLabelId = `${idPrefix}-skip-empty-lines`;
+  const modalRoot = menuContainer ?? (typeof document !== 'undefined'
+    ? document.querySelector('.MuiModal-root')
+    : null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -109,31 +121,34 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
       </Typography>
 
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Choose a Tabular file to upload or provide a URL to download the data from.
-      </Typography>
+      Choose a Tabular file to upload or provide a URL to download the data from.
+    </Typography>
 
-      {/* Upload Method Selection */}
-      <FormControl sx={{ mb: 3, minWidth: 200 }}>
-        <InputLabel>Upload Method</InputLabel>
-        <Select
-          value={uploadMethod}
-          label="Upload Method"
-          onChange={(e) => setUploadMethod(e.target.value as 'file' | 'url')}
-          disabled={disabled || isUploading}
-        >
-          <MenuItem value="file">
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <InsertDriveFile fontSize="small" />
-              Local File
-            </Box>
-          </MenuItem>
-          <MenuItem value="url">
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Download fontSize="small" />
-              URL Download
-            </Box>
-          </MenuItem>
-        </Select>
+    {/* Upload Method Selection */}
+    <FormControl sx={{ mb: 3, minWidth: 200 }}>
+      <InputLabel id={uploadMethodLabelId}>Upload Method</InputLabel>
+      <ModalSelect
+        id={`${uploadMethodLabelId}-select`}
+        labelId={uploadMethodLabelId}
+        value={uploadMethod}
+        label="Upload Method"
+        onChange={(e) => setUploadMethod(e.target.value as 'file' | 'url')}
+        disabled={disabled || isUploading}
+        menuContainer={modalRoot}
+      >
+        <MenuItem value="file">
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <InsertDriveFile fontSize="small" />
+            Local File
+          </Box>
+        </MenuItem>
+        <MenuItem value="url">
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Download fontSize="small" />
+            URL Download
+          </Box>
+        </MenuItem>
+      </ModalSelect>
       </FormControl>
 
       {/* File Upload Section */}
@@ -216,74 +231,89 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
 
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 2, mb: 3 }}>
         <FormControl>
-          <InputLabel>Delimiter</InputLabel>
-          <Select
+          <InputLabel id={delimiterLabelId}>Delimiter</InputLabel>
+          <ModalSelect
+            id={`${delimiterLabelId}-select`}
+            labelId={delimiterLabelId}
             value={processingConfig.delimiter}
             label="Delimiter"
             onChange={(e) => setProcessingConfig(prev => ({ ...prev, delimiter: e.target.value }))}
             disabled={disabled || isUploading}
+            menuContainer={modalRoot}
           >
             <MenuItem value=",">Comma (,)</MenuItem>
             <MenuItem value=";">Semicolon (;)</MenuItem>
             <MenuItem value="\t">Tab</MenuItem>
             <MenuItem value="|">Pipe (|)</MenuItem>
-          </Select>
+          </ModalSelect>
         </FormControl>
 
         <FormControl>
-          <InputLabel>Encoding</InputLabel>
-          <Select
+          <InputLabel id={encodingLabelId}>Encoding</InputLabel>
+          <ModalSelect
+            id={`${encodingLabelId}-select`}
+            labelId={encodingLabelId}
             value={processingConfig.encoding}
             label="Encoding"
             onChange={(e) => setProcessingConfig(prev => ({ ...prev, encoding: e.target.value }))}
             disabled={disabled || isUploading}
+            menuContainer={modalRoot}
           >
             <MenuItem value="utf-8">UTF-8</MenuItem>
             <MenuItem value="iso-8859-1">ISO-8859-1</MenuItem>
             <MenuItem value="windows-1252">Windows-1252</MenuItem>
-          </Select>
+          </ModalSelect>
         </FormControl>
 
         <FormControl>
-          <InputLabel>Quote Character</InputLabel>
-          <Select
+          <InputLabel id={quoteLabelId}>Quote Character</InputLabel>
+          <ModalSelect
+            id={`${quoteLabelId}-select`}
+            labelId={quoteLabelId}
             value={processingConfig.quoteChar}
             label="Quote Character"
             onChange={(e) => setProcessingConfig(prev => ({ ...prev, quoteChar: e.target.value }))}
             disabled={disabled || isUploading}
+            menuContainer={modalRoot}
           >
             <MenuItem value='"'>Double Quote (")</MenuItem>
             <MenuItem value="'">Single Quote (')</MenuItem>
             <MenuItem value="">None</MenuItem>
-          </Select>
+          </ModalSelect>
         </FormControl>
       </Box>
 
       <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
         <FormControl>
-          <InputLabel>Has Header Row</InputLabel>
-          <Select
+          <InputLabel id={headerLabelId}>Has Header Row</InputLabel>
+          <ModalSelect
+            id={`${headerLabelId}-select`}
+            labelId={headerLabelId}
             value={processingConfig.hasHeader ? 'yes' : 'no'}
             label="Has Header Row"
             onChange={(e) => setProcessingConfig(prev => ({ ...prev, hasHeader: e.target.value === 'yes' }))}
             disabled={disabled || isUploading}
+            menuContainer={modalRoot}
           >
             <MenuItem value="yes">Yes</MenuItem>
             <MenuItem value="no">No</MenuItem>
-          </Select>
+          </ModalSelect>
         </FormControl>
 
         <FormControl>
-          <InputLabel>Skip Empty Lines</InputLabel>
-          <Select
+          <InputLabel id={skipEmptyLabelId}>Skip Empty Lines</InputLabel>
+          <ModalSelect
+            id={`${skipEmptyLabelId}-select`}
+            labelId={skipEmptyLabelId}
             value={processingConfig.skipEmptyLines ? 'yes' : 'no'}
             label="Skip Empty Lines"
             onChange={(e) => setProcessingConfig(prev => ({ ...prev, skipEmptyLines: e.target.value === 'yes' }))}
             disabled={disabled || isUploading}
+            menuContainer={modalRoot}
           >
             <MenuItem value="yes">Yes</MenuItem>
             <MenuItem value="no">No</MenuItem>
-          </Select>
+          </ModalSelect>
         </FormControl>
       </Box>
 

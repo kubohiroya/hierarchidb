@@ -5,6 +5,8 @@
 
 export { TabularFileUploadStep } from './TabularFileUploadStep.js';
 export type { TabularFileUploadStepProps } from './TabularFileUploadStep.js';
+export { ModalSelect } from './ModalSelect.js';
+export type { ModalSelectProps } from './ModalSelect.js';
 
 export { TabularFilterStep } from './TabularFilterStep.js';
 export type { TabularFilterStepProps } from './TabularFilterStep.js';

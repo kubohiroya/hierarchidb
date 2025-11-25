@@ -43,6 +43,28 @@ export interface PluginStepConfigProvider<TData = unknown> {
 /**
  * Plugin step configuration
  */
+export interface StartBatchContext {
+  /**
+   * Canonical node id if already persisted. Use this to start worker-side batch jobs.
+   */
+  nodeId?: string;
+
+  /** Parent node id for create-mode dialogs. */
+  parentId?: string;
+
+  /** Tree id of the current working copy. */
+  treeId?: string;
+
+  /** Dialog mode. */
+  mode: 'create' | 'edit';
+
+  /**
+   * Merged dialog data (basic info + working step data).
+   * Useful when the step-level data omits metadata.
+   */
+  dialogData: Record<string, unknown>;
+}
+
 export interface PluginStepConfig<TData = unknown> {
   /** Step ID */
   id: string;
@@ -66,6 +88,7 @@ export interface PluginStepConfig<TData = unknown> {
     canSave?: (data: TData) => boolean | Promise<boolean>;
     canProceedToNext?: (data: TData) => boolean | Promise<boolean>;
     canBackToPrevious?: (data: TData) => boolean | Promise<boolean>;
+    startBatch?: (data: TData, context: StartBatchContext) => void | Promise<void>;
   };
 
   /** Whether step is optional */
@@ -73,6 +96,7 @@ export interface PluginStepConfig<TData = unknown> {
 
   /** Step icon */
   icon?: ReactNode;
+
 }
 
 /**
@@ -101,6 +125,9 @@ export interface StepComponentProps<TData = unknown> {
   setError: (error: string | null) => void;
 
   disabled: boolean;
+
+  dialogRef: React.RefObject<ReactNode>;
+
 }
 
 const registerAndResolveLabel = (nodeType: string, cfg: PluginStepConfig): string => {

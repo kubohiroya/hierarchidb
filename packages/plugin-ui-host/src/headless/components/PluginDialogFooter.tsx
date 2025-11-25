@@ -30,6 +30,7 @@ export interface PluginDialogFooterProps {
   disableDraft?: boolean;
   onStartBatch?: () => void;
   canStartBatch?: boolean;
+  isStartingBatch?: boolean;
   primaryButtonOptions?: PluginDialogFooterPrimaryButtonOptions;
 }
 
@@ -45,6 +46,7 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   disableDraft,
   onStartBatch,
   canStartBatch = true,
+  isStartingBatch = false,
   primaryButtonOptions,
 }) => {
   const ctx = useMultiStepDialogContext<Record<string, unknown>>();
@@ -187,9 +189,9 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
               color="secondary"
               onClick={onStartBatch}
               onPointerDown={stopPointerPropagation}
-              disabled={!canStartBatch}
+              disabled={!canStartBatch || isStartingBatch}
             >
-              Build
+              {isStartingBatch ? 'Building…' : 'Build'}
             </Button>
           )}
         </Box>

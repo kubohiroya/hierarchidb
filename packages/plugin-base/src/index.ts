@@ -10,6 +10,7 @@ export type {
   PluginStepConfig,
   PluginStepProvider,
   StepComponentProps,
+  StartBatchContext,
 } from './registry/PluginStepRegistry.js';
 export { PluginStepRegistry } from './registry/PluginStepRegistry.js';
 // Services
