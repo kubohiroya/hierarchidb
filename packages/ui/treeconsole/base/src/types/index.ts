@@ -356,6 +356,8 @@ export interface AdapterContext {
   viewId?: string;
   onNameConflict?: (name: string) => string;
   prefetchDepth?: number;
+  /** Optional latest node snapshot (metadata/data) already held by the caller */
+  nodeSnapshot?: TreeNode;
 }
 
 export type LegacyCallback<T = unknown> = (data: T) => void;

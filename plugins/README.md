@@ -1,10 +1,18 @@
 # HierarchiDB Node Type Plugin System
 
-最終更新: 2025-09-14 00:00 UTC
+最終更新: 2025-11-25 00:00 UTC
 
 HierarchiDBの拡張可能なノードタイププラグインシステムです。地理情報処理、データ管理、階層構造管理など、様々なドメインに特化したノードタイプを提供し、アプリケーションの機能を拡張します。
 
 ## 🏗️ アーキテクチャ概要
+
+### 最新ガイドライン（2025-11 更新）
+
+- Dialog ホストはすべて `useDialogDraft` を経由し、`./ui` の default export（HeadlessMultiStepDialog ラッパー）で公開する。旧 `NodeDialogExtension`/`ExtensibleFolderDialog` は使用しない。
+- Basic Info（name/description/tags）は `draftMetadata` へ、ドメイン固有ペイロードは `draftData` へ格納する。folder は data/draftData を空オブジェクトのまま扱う。
+- Draft API は `initTreeNode` + `updateTreeNodeDraftMetadata` / `updateTreeNodeDraftData` / `commitDraft` を使用する。`createDraftBase` / `getDraft` / `updateDraft` などの互換 API は撤去済み。
+- プラグインレジストリは `pnpm tools:gen-plugin-registry` で生成し、Vite dev/build が動的に取り込む。生成物（`packages/plugin-registry/generated/registry.ts` 等）はコミットに含める。
+- 旧 peerEntities や NodeDialogExtension 由来のレガシー経路が残っていたら削除対象。UI/Worker はレジストリ経由のホスト + DraftAPI 前提で統一する。
 
 ### プラグインシステムの特徴
 
@@ -20,13 +28,6 @@ HierarchiDBの拡張可能なノードタイププラグインシステムです
 | **ライフサイクル** | プラグインレベルのライフサイクルフック | ✅ 完成 |
 | **依存管理** | プラグイン間依存関係の自動解決 | ✅ 完成 |
 | **データベース抽象化** | Dexie.jsベースの自動スキーマ管理 | ✅ 完成 |
-
-#### Runtime Worker Factory 連携（2025-09 更新）
-
-- 各プラグインは `src/worker/factory/` 配下で `register<Plugin>WorkerStores` や `load<Plugin>EntitiesDbModule` を公開し、`package.json` の `exports` に `./worker-factory` を追加します。
-- アプリ側は `@hierarchidb/runtime-shared-module-paths.importPluginWorker('<id>')` を通じてファクトリを遅延ロードし、`WorkerModuleLoader` が Dexie ストア登録・依存初期化をまとめて処理します。
-- `./worker` エントリはレガシー互換向けに残す場合がありますが、既定の初期化経路は `worker-factory` 越しのモジュール登録です。
-- `RuntimeWiring.registerRuntimeWorkerAdapters` や `WorkerBridge`/`WorkerModuleLoader` がプラグインファクトリを束ね、feature flag（例: `SHAPE_RUNTIME_WORKER`）に応じて安全に初期化します。
 
 ### 3層アーキテクチャ
 
@@ -58,8 +59,7 @@ HierarchiDBの拡張可能なノードタイププラグインシステムです
 本システムのノードタイプ・プラグインは単一継承を基本とし、ケイパビリティは feature のミックスインで段階的に付与します（多重継承は行いません）。UI/Worker は Comlink 経由で疎結合となっており、定義・依存・UI エントリは PluginDefinition で一元管理します。
 
 - 基盤（Foundation）
-  - base-plugin: 継承用の基底（UI 非表示）
-  - folder-plugin: ツリーのコンテナ（拡張/拡張レジストリの基盤）
+- folder-plugin: ツリーのコンテナ（拡張/拡張レジストリの基盤）
 - データ取り込み/変換（Data Ingest & Transform）
   - spreadsheet-plugin: CSV/TSV/Excel 等のソース管理
   - resolver-plugin: プロパティマッピング/スキーマ変換/重複解決
@@ -143,18 +143,18 @@ graph TB
 
 ### 比較表（概要）
 
-| プラグイン | nodeType | 継承元 | データベース名（接頭辞付与） | データソース選択・読み込み | バッチ処理 | 表データ管理 |ベクトルタイル生成 | Mapプレビュー                         | ネットワーク要件 | 備考 |
-|---|---|---|------------|---------------|--------|---|-----|----------------------------------|---|---|
-| base-plugin | base | - | -          | -             | - | -      | -   | - | なし                               | 継承専用（UI 非表示）/共通基盤（BaseEntityHandler 等） |
-| folder-plugin | folder | - | folder-db, folder-entities-db | -             | -                | -      | -         | - | なし                               | 拡張レジストリ |
-| spreadsheet-plugin | spreadsheet | folder | spreadsheet-db, spreadsheet-entities-db | -             | -                | あり     | -      | - | なし（ローカル取り込み想定）                   | CSV/TSV/Excel |
-| styler-plugin | styler | spreadsheet | styler-metadata-db | -             | -                | あり     | -         | - | なし                               | CSVメタDB |
-| basemap-plugin | basemap | folder | basemap-db | -             | -       | -      | -      | supported | タイルサーバ利用時は運用時に必要                 | MapLibre 統合 |
-| shape-plugin | shape | folder | shape-db, shape-entities-db | あり            | Yes           | あり     | create | supported | 作成・編集時はネット必須（運用中は不要）             | 高負荷処理/バッチ |
-| location-plugin | location | folder | location-entities-db | あり| Yes           | あり     | create | supported | 作成・編集時はネット必須（運用中は不要）             | Shape 連携可 |
-| route-plugin | route | folder | route-db   | あり| Yes           | あり     | create | supported | OSRM利用時は必要／searoute-jsのみならオフライン可 | BatchService/AbstractBatchSession/Lane制御 |
-| resolver-plugin | resolver | folder | resolver-db | - | -             | -      | -      | - | なし                               | Schema 検出/前処理 |
-| linker-plugin | linker | folder | linker-db, linker-entities-db | -    | -          | -      | -      | supported | プレビューが basemap に依存する場合あり         | 領域/設定（旧 project-plugin） |
+| プラグイン | nodeType | 継承元 | データベース名（接頭辞付与） | データソース選択・読み込み | バッチ処理 | 表データ管理 | ベクトルタイル生成 | Mapプレビュー | ネット要件 | 備考 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| folder-plugin | folder | - | folder-entities-db | - | - | - | - | - | なし | 拡張レジストリ |
+| spreadsheet-plugin | spreadsheet | folder | spreadsheet-entities-db | - | - | あり | - | - | なし | CSV/TSV/Excel |
+| styler-plugin | styler | spreadsheet | styler-metadata-db | - | - | あり | - | - | なし | スタイルメタ管理 |
+| basemap-plugin | basemap | folder | basemap-db | - | - | - | - | 対応 | タイル利用時は要ネット | MapLibre 連携 |
+| shape-plugin | shape | folder | shape-entities-db | あり | Yes | あり | create | 対応 | 作成/編集は要ネット | 高負荷/バッチ |
+| location-plugin | location | folder | location-entities-db | あり | Yes | あり | create | 対応 | 作成/編集は要ネット | Shape 連携可 |
+| route-plugin | route | folder | route-entities-db | あり | Yes | あり | create | 対応 | OSRM時ネット | BatchSession 対応 |
+| resolver-plugin | resolver | folder | resolver-db | - | - | - | - | - | なし | スキーマ検出/変換 |
+| linker-plugin | linker | folder | linker-entities-db | - | - | - | - | 対応 | ケース依存 | 領域/設定管理 |
+| timeline-plugin | timeline | folder | timeline-entities-db | - | - | - | - | - | なし | 利用最小（ドラフト不要） |
 
 注記:
 - データベース名は `Dexie(getDBName('…'))` に渡すサフィックス（kebab-case）を示しています。接頭辞は `WORKER_DB_PREFIX` → `VITE_APP_PREFIX` → `hidb` の順で自動付与。複数持つ場合はカンマ区切り。
@@ -163,6 +163,28 @@ graph TB
 - バッチは非同期一括処理の仕組み（セッション/レーン/タスク管理等）が実装されている場合に「Yes」。route は `RouteBatchManager/RouteBatchSession` に基づくバッチが実装済みです。
 - ベクトルタイルは当該プラグインがベクトルタイルを生成（create）できるものを示します。
 - Mapプレビューは当該プラグインの UI が地図プレビューに対応している場合に「supported」。
+
+## 🧩 Draft/Working Copy 利用状況（metadata / data）
+
+各プラグインが WorkingCopy をどう扱うかの最新整理。Basic Info は draftMetadata、ドメインペイロードは draftData に格納する共通パターンで統一しています（folder は data/draftData を空オブジェクトで維持）。
+
+| プラグイン | Draft ホスト/フック | draftMetadata の主用途 | draftData の主用途 | 備考 |
+|---|---|---|---|---|
+| basemap | useDialogDraft（BasemapDialogHost） | name/description/tags | mapStyle / viewport / displayOptions | commit 時に data へ転記 |
+| folder | useDialogDraft（FolderDialogHost） | name/description/tags | なし（空オブジェクト） | data/draftData は常に空 |
+| spreadsheet | useDialogDraft（SpreadsheetDialogHost） | name/description/tags | sheet / source 設定 | 標準パターン |
+| styler | useDialogDraft（StylerDialogHost） | name/description/tags | style 設定 | spreadsheet 派生 |
+| shape | useDialogDraft（ShapeDialogHost） | name/description/tags | dataSource / processingConfig / checkboxState 等 | 標準パターン（shared utils 使用） |
+| location | useDialogDraft（LocationDialogHost） | name/description/tags | dataSource / license / filters 等 | 標準パターン |
+| route | useDialogDraft（RouteDialogHost） | name/description/tags | route payload 全般 | 標準パターン |
+| resolver | useDialogDraft（ResolverDialogHost） | name/description/tags | schema / mapping / validation | 標準パターン |
+| linker | useDialogDraft（ResourcePickerDialogHost 等） | name/description/tags | 最小限（metadata 側が主） | draftData 依存低め |
+| timeline | 未使用/最小 | なし | なし | WorkingCopy 非依存 |
+
+補足:
+- Draft の生成・編集は DraftAPI（initTreeNode / updateTreeNodeDraftMetadata / updateTreeNodeDraftData / commitDraft）を経由する。createDraftBase 系は廃止済み。
+- Basic Info の初期表示は draftMetadata を優先し、fallback として metadata を参照する。payload は draftData を優先し data は読み取り専用。
+- 保存後は draftMetadata/draftData を null クリアし、metadata/data に反映するのが正規の commit フロー。
 
 
 ## 🔎 Tabular Preview（Location/Shape/Route 共通）
@@ -180,36 +202,9 @@ location / shape / route の各プラグインは、バッチ処理で正規化�
 - 注意: 表プレビューは検索・検証用途です。ノード群の統合シリアライズ/デシリアライズは従来どおり Import/Export 機能をお使いください。
 
 
-### base-plugin の責務（役割）
+### 共通基盤について
 
-base-plugin は UI に表示されない「共通基盤」です。プラグイン実装から再利用される抽象と補助型を提供します。
-
-- 提供クラス/抽象
-  - `BaseEntityHandler<TEntity, TCreate, TSearch>`: CRUD、検索、ページング、ライフサイクルフック、バッチ更新/削除に対応。
-  - `HierarchicalEntityHandler<...>`: 祖先/子孫/兄弟/ルート/サブツリー/移動/削除など階層ユーティリティを追加。
-- 提供型
-  - `BaseSearchCriteria`, `PaginatedResult<T>`, `OperationResult<T>`, `EntityLifecycleHooks<T>` など。
-- 定義
-  - `BasePluginDefinition`: 継承用の内部定義（UI 非表示）。
-
-これらは `@hierarchidb/base-plugin` から提供され、各プラグイン（folder/shape/route 等）が自前のハンドラ実装で再利用します。
-
-#### 3x2エンティティ管理マトリクス（プラグイン別）
-
-凡例: 列は Persistent(P-)→Ephemeral(E-) の順に、P-Peer, P-Group, P-Relational, E-Peer, E-Group, E-Relational を表します。セルには該当する永続/エフェメラルDB上のテーブル名（またはエンティティ名）を記載しています。
-
-| プラグイン | P-Peer | P-Group | P-Relational | E-Peer | E-Group | E-Relational |
-|---|---|---|---|---|---|---|
-| base-plugin | - | - | - | - | - | - |
-| folder-plugin | folders | - | - | - | - | - |
-| spreadsheet-plugin | peerEntities | groupEntities | relations | - | - | - |
-| styler-plugin | - | - | - | - | - | - |
-| basemap-plugin | baseMaps, workingCopies | - | - | - | - | - |
-| shape-plugin | shapes | - | shapeFeatures, shapeVectorTiles, shapeBatchSessions, shapeBatchTasks, shapeCache | - | - | - |
-| location-plugin | locations, locationWorkingCopies | - | locationBatchSessions, locationBatchTasks | - | - | - |
-| route-plugin | routes, routeWorkingCopies | - | - | - | - | - |
-| resolver-plugin | resolvers | - | - | - | - | - |
-| linker-plugin | projects | - | - | - | - | - |
+旧 base-plugin 依存の設計は撤廃済みです。共通抽象・型は各プラグイン内で直接実装・再利用し、UI に露出しない「基底プラグイン」は提供していません。
 
 
  
