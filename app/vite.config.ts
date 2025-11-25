@@ -87,6 +87,7 @@ function createRuntimeAliasConfig({
     { spec: '@hierarchidb/ui-treeconsole-toolbar', src: '../packages/ui/treeconsole/toolbar/src/index.ts', dist: '../packages/ui/treeconsole/toolbar/dist/index.js' },
     { spec: '@hierarchidb/ui-treeconsole-treetable', src: '../packages/ui/treeconsole/treetable/src/index.ts', dist: '../packages/ui/treeconsole/treetable/dist/index.js' },
     { spec: '@hierarchidb/ui-usermenu', src: '../packages/ui/usermenu/src/index.ts', dist: '../packages/ui/usermenu/dist/index.js' },
+    { spec: '@hierarchidb/ui-plugin-basic-info', src: '../packages/ui/plugin-basic-info/src/index.ts', dist: '../packages/ui/plugin-basic-info/dist/index.js' },
   ] as const;
 
   const legacyFeatureMappings = [

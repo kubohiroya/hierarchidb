@@ -24,6 +24,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/plugin-service-sdk": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/runtime-client": "workspace:*",

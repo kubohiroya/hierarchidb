@@ -33,7 +33,7 @@ import {
   getPresentation,
   hydratePresentationDefinitionsFromGlobal,
 } from '@hierarchidb/plugin-presentation';
-import { useDialogDraft, type DraftData } from '@hierarchidb/plugin-ui-sdk';
+import { BasicInfoStep, useDialogDraft, type DraftData } from '@hierarchidb/plugin-ui-sdk';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-client';
 import { resolveDefaultNodeName } from '@hierarchidb/runtime-worker';
 import type {
@@ -61,7 +61,6 @@ import { useNavigate } from '@tanstack/react-router';
 import { proxy, type Remote, releaseProxy } from 'comlink';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BasicInfoStep } from '@hierarchidb/plugin-ui-sdk/dialog/steps/BasicInfoStep.js';
 import { PluginDialogFooter, PluginDialogHeader } from './components/index.js';
 import type { PluginDialogFooterPrimaryButtonOptions } from './components/PluginDialogFooter.js';
 
@@ -138,11 +137,6 @@ const emptyGuards: StepGuardState = {
 
 export const BASIC_INFO_META_KEY = '__basicInfoValidation';
 
-type BasicInfoValidationMeta = {
-  error: string | null;
-  hasConflict: boolean;
-};
-
 export const buildStepWorkingData = (
   draftData: Record<string, unknown> | undefined
 ): StepData => {
@@ -218,6 +212,7 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
         nodeId,
         parentId,
         data: workingData,
+        disabled: false,
         onChange: handleChange,
         setValid,
         setError,
@@ -1015,7 +1010,7 @@ export function usePluginDialogController(
         const values = new Set(
           siblings
             .filter((node) => String(node?.id ?? '') !== String(nodeId))
-            .map((node) => (typeof node?.name === 'string' ? node.name.trim().toLowerCase() : ''))
+            .map((node) => (typeof node?.metadata.name === 'string' ? node.metadata.name.trim().toLowerCase() : ''))
             .filter((name): name is string => Boolean(name))
         );
         setSiblingNames(values);

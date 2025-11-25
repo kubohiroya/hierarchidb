@@ -37,6 +37,7 @@ export const StepAdapter: React.FC<StepAdapterProps> = ({
         nodeId,
         parentId,
         data,
+        disabled: false,
         onChange: (data: unknown) =>
           updateDraft({ draftData: data as Record<string, unknown> }),
         setValid,

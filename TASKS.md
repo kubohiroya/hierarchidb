@@ -8788,6 +8788,7 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-14"></a>
 
+- 2025-11-24 13:50 start: fix/plugin-dialog/build-button — マルチステップダイアログに Build ボタンを共通実装し、shape/location/route プラグインのバッチ開始と連動させるタスクを開始。DoD: TASKS/Kanban更新、Build ボタンと canStartBatch/onStartBatch 配線、各プラグインでバッチ開始をホスト経由に接続、関連テストと pnpm コマンド実行ログを記録、ロールバック手順明記。
 - 2025-11-23 23:37 start: fix/plugins/draft-lint-cleanup — plugin-ui-sdk/plugin-ui-host/plugin-service-sdk の lint エラー解消に着手。DoD: TASKS/Kanban 更新、重複定義/再代入/未使用/Hook 依存漏れの修正、各パッケージの lint 成功ログ取得、ロールバック手順記載。
 - 2025-11-23 23:40 progress: fix/plugins/draft-lint-cleanup — plugin-service-sdk の draft helpers/adapter で draft 変数のシャドウと再代入を整理し、DraftDraft のメタデータを保持したまま merge できるよう修正。helpers.test.ts も payload/metadata の検証に合わせて期待値を更新。
 - 2025-11-23 23:41 progress: fix/plugins/draft-lint-cleanup — plugin-ui-sdk/useDialogDraft の重複 saveDraft と未使用 query を削除し、plugin-ui-host/usePluginDialogController で saveDraft の二重参照と useMemo 依存漏れを解消。
@@ -8820,3 +8821,12 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-24 13:22 command: pnpm --filter @hierarchidb/basemap-plugin exec tsc -p tsconfig.json --noEmit — exit 0。
 - 2025-11-24 13:40 progress: refactor/route/dialog-draft-unify — RouteDialog を `useDialogDraft` ベースへ置き換え、metadata/name/description/tags と draftData を分離して commit/discard を一本化。tsconfig include を修正。
 - 2025-11-24 13:43 command: pnpm --filter @hierarchidb/route-plugin exec tsc -p tsconfig.json --noEmit — exit 2（事前から存在する多数の未解決 import/enum/型不整合が露呈。RouteDialog 以外のテスト・サービス参照が欠落しているため別途対応が必要）。
+- 2025-11-25 11:45 start: fix/plugin-ui-host/basic-info-import — `packages/plugin-ui-host/src/headless/usePluginDialogController.tsx` の BasicInfoStep import で TS2307 が発生する件に着手。DoD: TASKS/ログ更新、import 解決、lint 実行ログ取得、ロールバック手順明記。
+- 2025-11-25 11:50 command: pnpm --filter @hierarchidb/plugin-ui-host lint — exit 0（eslint src）。
+- 2025-11-25 11:52 done: fix/plugin-ui-host/basic-info-import — BasicInfoStep を `@hierarchidb/plugin-ui-sdk` 直下から import するよう修正し、lint で再発なしを確認。ロールバックは `packages/plugin-ui-host/src/headless/usePluginDialogController.tsx` を revert し、上記 lint コマンドを再実行してエラー再現を確認。
+- 2025-11-25 11:58 progress: fix/plugin-ui-host/basic-info-import — Vite dev で `@hierarchidb/ui-plugin-basic-info` が 404 となるため、依存を plugin-ui-sdk に明示する対応を検討。
+- 2025-11-25 12:00 command: pnpm --filter @hierarchidb/plugin-ui-sdk build — exit 0（tsdown、define 無効キー警告は既知）。
+- 2025-11-25 12:01 done: fix/plugin-ui-host/basic-info-import — `@hierarchidb/plugin-ui-sdk` の dependencies に `@hierarchidb/ui-plugin-basic-info` を追加して解決。ロールバックは `packages/plugin-ui-sdk/package.json` から当該依存を削除し、上記 build を再実行して 404 を再現。
+- 2025-11-25 12:12 progress: fix/plugin-ui-host/basic-info-import — dev alias に `@hierarchidb/ui-plugin-basic-info` が含まれておらず Vite で解決できないため、`app/vite.config.ts` の legacyUiMappings へ同 alias を追加。
+- 2025-11-25 12:13 command: pnpm --filter @hierarchidb/plugin-ui-host lint — exit 0（eslint src）。
+- 2025-11-25 12:14 done: fix/plugin-ui-host/basic-info-import — dev alias 追加で Vite が `@hierarchidb/ui-plugin-basic-info` を src 参照できるようにした。ロールバックは `app/vite.config.ts` の alias 追加差分を戻し、上記 lint を再実行して変化なしを確認。
