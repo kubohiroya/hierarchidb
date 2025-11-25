@@ -536,7 +536,7 @@ it('should be accessible', () => {
 {
   "name": "@hierarchidb/ui-[package-name]",
   "type": "module",
-  "main": "dist/index.ts",
+  "main": "dist/preconnect.ts",
   "types": "dist/index.d.ts",
   "peerDependencies": {
     "react": ">=18.0.0",

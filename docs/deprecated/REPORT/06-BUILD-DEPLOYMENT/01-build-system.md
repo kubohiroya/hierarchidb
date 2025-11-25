@@ -178,7 +178,7 @@ turbo run build --filter=@hierarchidb/worker
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.ts",
+      "import": "./dist/preconnect.ts",
       "require": "./dist/index.cjs"
     },
     "./worker": {
@@ -187,7 +187,7 @@ turbo run build --filter=@hierarchidb/worker
     }
   },
   "main": "./dist/index.cjs",
-  "module": "./dist/index.ts",
+  "module": "./dist/preconnect.ts",
   "types": "./dist/index.d.ts"
 }
 ```

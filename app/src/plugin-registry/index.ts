@@ -28,18 +28,26 @@ export const pluginUiModuleSources: Record<string, string | undefined> = deriveP
   'ui'
 );
 
-const uiModuleGlob = import.meta.glob('../../../plugins/*-plugin/src/**/index.{ts,tsx}');
+const uiSourceGlob = import.meta.glob('../../../plugins/*-plugin/src/**/index.{ts,tsx}');
 
-function resolveUiLoader(sourcePath: string | undefined): (() => Promise<unknown>) | undefined {
-  if (!sourcePath) return undefined;
-  const relativeKey = `../../../${sourcePath}`;
-  return uiModuleGlob[relativeKey];
+function resolveUiLoader(nodeType: string, sourcePath: string | undefined) {
+  // Prefer sourcePath (dev) to avoid failing when packages are not built/linked.
+  if (sourcePath) {
+    const relativeKey = `../../../${sourcePath}`;
+    const loader = uiSourceGlob[relativeKey];
+    if (loader) return loader;
+  }
+  const specifier = pluginUiModuleMap[nodeType];
+  if (specifier) {
+    return () => import(/* @vite-ignore */ specifier);
+  }
+  return undefined;
 }
 
 export const pluginUiLoaders: Record<string, () => Promise<unknown>> = Object.fromEntries(
   Object.entries(pluginUiModuleSources)
     .map(([nodeType, sourcePath]) => {
-      const loader = resolveUiLoader(sourcePath);
+      const loader = resolveUiLoader(nodeType, sourcePath);
       return loader ? ([nodeType, loader] as const) : null;
     })
     .filter((entry): entry is readonly [string, () => Promise<unknown>] => entry !== null)

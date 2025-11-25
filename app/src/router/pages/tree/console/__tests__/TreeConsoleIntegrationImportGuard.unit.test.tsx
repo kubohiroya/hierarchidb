@@ -102,7 +102,7 @@ vi.mock('~/contexts/WorkerProvider.tsx', () => ({
   useWorker: () => ({ client: workerClientStub, isConnected: true }),
 }));
 
-vi.mock('~/services/SubscriptionServices.ts', () => ({
+vi.mock('~/hooks/SubscriptionServices.ts', () => ({
   Subscriptions: {
     subscribe: vi.fn(async () => ({ subId: 'sub-1', created: true })),
     release: vi.fn(async () => {}),

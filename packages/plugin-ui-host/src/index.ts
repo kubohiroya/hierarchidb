@@ -1,16 +1,3 @@
-export {
-  getIconComponent,
-  getPresentation,
-  getPresentations,
-  hydratePresentationDefinitionsFromGlobal,
-  prefetchAllIcons,
-  registerGlobalPluginDefinitions,
-  resetPluginPresentationCache,
-  resetPluginPresentationCacheForTests,
-  setPluginPresentationDefinitions,
-} from '@hierarchidb/plugin-presentation';
-export type { BasicInfoData, BasicInfoStepProps } from './components/steps/BasicInfoStep.js';
-export { BasicInfoStep } from './components/steps/BasicInfoStep.js';
 export type { PluginDialogFooterPrimaryButtonOptions } from './headless/components/PluginDialogFooter.js';
 export { PluginDialogFooter } from './headless/components/PluginDialogFooter.js';
 export { PluginDialogHeader } from './headless/components/PluginDialogHeader.js';

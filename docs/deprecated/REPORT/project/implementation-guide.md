@@ -1001,12 +1001,12 @@ export class ResourceAggregationService {
   "version": "1.0.0",
   "description": "Project Plugin for HierarchiDB - Resource aggregation and map composition",
   "main": "dist/index.cjs",
-  "module": "dist/index.ts",
+  "module": "dist/preconnect.ts",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.ts",
+      "import": "./dist/preconnect.ts",
       "require": "./dist/index.cjs"
     }
   },

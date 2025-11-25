@@ -1,7 +1,6 @@
 import { getWorkerClientHook, registerWorkerClientHook } from '@hierarchidb/runtime-client';
 import { pluginRegistry } from '~/plugin-registry/index.ts';
 import { useWorker } from '../../contexts/WorkerProvider.js';
-import { loadAllUIPlugins } from '../../services/ui-plugin-loader.ts';
 import { bootLog } from '../../utils/bootLog.ts';
 import { APP_VERSION, BUILD_TIME } from '../../version.ts';
 
@@ -52,20 +51,6 @@ export function initializeBrowserGlobals(): void {
 
   const globalWindow = window as BrowserGlobals;
   globalWindow.__HDB_GET_WORKER_CLIENT_HOOK = getWorkerClientHook;
-
-  if (!globalWindow.__HDB_UI_PLUGIN_READY__) {
-    globalWindow.__HDB_UI_PLUGIN_READY__ = (async () => {
-      try {
-        await loadAllUIPlugins();
-        //await autoLoadPlugins();
-        globalWindow.__uiPluginsRegistered = true;
-      } catch (error) {
-        globalWindow.__uiPluginsRegistered = false;
-        logWarning('Failed to register UI plugin-loader', error);
-        throw error;
-      }
-    })();
-  }
 
   void globalWindow.__HDB_UI_PLUGIN_READY__?.catch(() => {
     /* swallow to avoid unhandled rejection */
@@ -132,7 +117,7 @@ export function initializeBrowserGlobals(): void {
   const shouldPrewarm = prewarmFlag === '1' || (import.meta.env.PROD && prewarmFlag !== '0');
 
   if (shouldPrewarm) {
-    void import('~/services/databases.js')
+    void import('~/plugin-host/databases.js')
       .then(async (db) => {
         const nodeTypes = await db.prewarmPluginDatabases();
         window.dispatchEvent(

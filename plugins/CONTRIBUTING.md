@@ -120,11 +120,11 @@ react-i18next, i18next
 
 The `@hierarchidb/shape-plugin` package now ships full ESM builds in `dist/`:
 
-- `dist/index.ts` — main library entry (types: `dist/index.d.ts`)
-- `dist/shared/index.ts` — shared types and helpers (types: `dist/shared/index.d.ts`)
-- `dist/ui/index.ts` — UI exports (components, hooks) (types: `dist/ui/index.d.ts`)
-- `dist/worker/index.ts` — legacy worker entry（互換用）
-- `dist/worker-factory/index.ts` — modulePaths 経由で解決される Worker ファクトリ API
+- `dist/preconnect.ts` — main library entry (types: `dist/index.d.ts`)
+- `dist/shared/preconnect.ts` — shared types and helpers (types: `dist/shared/index.d.ts`)
+- `dist/ui/preconnect.ts` — UI exports (components, hooks) (types: `dist/ui/index.d.ts`)
+- `dist/worker/preconnect.ts` — legacy worker entry（互換用）
+- `dist/worker-factory/preconnect.ts` — modulePaths 経由で解決される Worker ファクトリ API
 - `dist/workers/*.js` — dedicated Worker entry points (Download/Simplify1/Simplify2/VectorTile)
 
 Consumers should import as follows:

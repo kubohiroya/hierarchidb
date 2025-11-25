@@ -19,7 +19,7 @@ When writing complex features or significant refactors, use an ExecPlan (as desc
 The workspace relies on `pnpm`. `app/` contains the main UI, with shared documentation in `app/docs/`. Core libraries live in `packages/` (runtime services, UI components, tooling), feature plugins in `plugins/`, and shared assets inside `docs/`, `reports/`, or package-level `dist/`. Tests are colocated: unit suites in `packages/*/src/__tests__/`, worker flows in `packages/runtime-worker/src/__tests__/wfl/`, and Playwright smoke tests in `e2e/`.
 
 - **モノレポ構成の現況（2025-11 調査メモ）**
-  - `app/` は React + Vite シェルとドキュメント (`app/docs/`) に加えて、プラグイン定義をローディングする `app/src/plugin-registry` や Worker エントリ (`app/src/worker-runtime/worker.ts`) を内包し、UI から Worker までを 1 つのパッケージで束ねている。`plugin-registry/index.ts` は `@hierarchidb/plugin-registry` が提供する `pluginRegistry` を `import.meta.glob` で解決し、UI/Worker/Icon ローダーを同時に export する。
+  - `app/` は React + Vite シェルとドキュメント (`app/docs/`) に加えて、プラグイン定義をローディングする `app/src/plugin-registry` や Worker エントリ (`app/src/worker-runtime/worker.ts`) を内包し、UI から Worker までを 1 つのパッケージで束ねている。`plugin-registry/preconnect.ts` は `@hierarchidb/plugin-registry` が提供する `pluginRegistry` を `import.meta.glob` で解決し、UI/Worker/Icon ローダーを同時に export する。
   - `packages/runtime`（UI/Worker 共有 API 群）・`packages/runtime-worker`（DI+Comlink で Worker サービスを構築）を頂点に、`packages/plugin-service-sdk`（`getWorkerBridge()` と WorkerProvider 連携）、`packages/plugin-ui-host`（MultiStep dialog + `useWorkerSync`）、`packages/plugin-base`（共通エンティティハンドラ）、`packages/plugin-runtime-services` / `plugin-service-api` / `plugin-ui-sdk` などが UI と Worker の橋渡しを担う。
   - `packages/plugin-registry` と `pnpm tools:gen-plugin-registry`（`package.json` script）が `plugins/*-plugin` 配下の `hierarchidb.plugin` メタデータ・Dexie schema・UI/Worker エントリパスを集計し、`pluginRegistry`/`pluginDefinitions` を dist・`app/src/plugin-registry` 双方へ同期する。新規プラグイン追加時は Kanban/TASKS.md と同時にこのコマンドを実行する。
   - `plugins/` 直下には folder/location/shape/... の各ノードタイプが pnpm パッケージとして存在し、`src/{ui,worker,shared,icon}` と Dexie schema を同居させる（`plugins/README.md` の比較表・3 層図を参照）。`package.json` の `turbo.pipeline` で `@hierarchidb/plugin-base` や runtime への `build` 依存を宣言し、`dist/` の `clean: false` 前提で再ビルドを最小化する。
@@ -36,7 +36,7 @@ The workspace relies on `pnpm`. `app/` contains the main UI, with shared documen
 
 - **Registry & Loader**
   - 各プラグインは `package.json` の `hierarchidb.plugin` セクション（例: `plugins/shape-plugin/package.json`）に nodeType・Dexie DB・UI/Worker 入口・依存関係を宣言し、`@hierarchidb/plugin-registry` が `PluginDefinition` / `PluginRegistryEntry` へ変換する。`tools:gen-plugin-registry` 完了後、UI/Worker は同一の JSON を参照するためロード順・依存解決が揃う。
-  - `app/src/plugin-registry/index.ts` はその定義から `pluginDefinitions`・`pluginUi/Worker/IconLoaders`・`pluginDatabaseLoaders` を導出し、`import.meta.glob('../../../plugins/*-plugin/src/**/index.{ts,tsx}')` で遅延 import 可能なファクトリとして公開する。UI のメニュー構築や Dialog 拡張登録はこのモジュール経由で行う。
+  - `app/src/plugin-registry/preconnect.ts` はその定義から `pluginDefinitions`・`pluginUi/Worker/IconLoaders`・`pluginDatabaseLoaders` を導出し、`import.meta.glob('../../../plugins/*-plugin/src/**/index.{ts,tsx}')` で遅延 import 可能なファクトリとして公開する。UI のメニュー構築や Dialog 拡張登録はこのモジュール経由で行う。
   - Worker 起動処理（`app/src/worker-runtime/worker.ts`）は `WorkerInitializationReporter` → `pluginWorkerLoaders` → `@hierarchidb/runtime-worker` の `WorkerModuleLoader` → `wirePluginsFromModules` の順でモジュールを読み込み、deny-list / fallback / legacy defs もここで処理する。結果として `getAllRuntimeExports()` から lifecycle/handler を抽出し、プラグイン定義へ差し戻す。
 
 - **UI レイヤ（`@hierarchidb/plugin-ui-host` / `plugin-ui-sdk`）**
@@ -61,7 +61,7 @@ The workspace relies on `pnpm`. `app/` contains the main UI, with shared documen
 
 - 2025-11 以降、ライブラリ/プラグインの `build` スクリプトはすべて `tsdown … --config ../../../tsdown.config.ts` へ移行済み。`tsup.config.*` や `tsup` CLI の呼び出しが残っていたらレガシー扱いとし、差分に触れたタイミングで撤去する。`pnpm --filter <pkg> build` が唯一のビルド導線であることを前提に作業する。
 - ルートの `tsdown.config.ts` は `dependencies`/`peerDependencies`/`optionalDependencies` をまとめて `external` に追加し、`clean: false`・`sourcemap: true`・`dts: true`・`outExtension` 固定（`.js`/`.d.ts`）を共通設定として注入する。パッケージ固有の override は `package.json` の `tsdown` セクションで行い、`define`/`inject` を指定したい場合は config が自動的に `transform` にマージされる。必要なら `TSDOWN_DEBUG=1 pnpm --filter <pkg> build` で最終設定を出力して確認する。
-- 複数エントリーポイントを持つパッケージは tsdown CLI の引数で明示的に列挙し（例: `tsdown src/index.ts src/stageWorker.entry.ts --config …`）、`dist/` を共有する構成に統一する。`dist` を温存したい理由（ウォームスタートや Dexie schema の比較など）があるため、`clean: false` を維持し、クリーンビルドが必要な場合のみ `pnpm clean && turbo run clean` を使用する。
+- 複数エントリーポイントを持つパッケージは tsdown CLI の引数で明示的に列挙し（例: `tsdown src/preconnect.ts src/stageWorker.entry.ts --config …`）、`dist/` を共有する構成に統一する。`dist` を温存したい理由（ウォームスタートや Dexie schema の比較など）があるため、`clean: false` を維持し、クリーンビルドが必要な場合のみ `pnpm clean && turbo run clean` を使用する。
 - `tsdown` でのビルドが失敗した場合は TASKS 運用ログへコマンド・終了コード・ログ概要を貼り付け、必要に応じて tsdown 導入前のコミットへ revert して `tsup` スクリプトを一時復旧する。その際もロールバック手順と再適用計画（再移行 TODO）を Kanban/ログに追記する。
 
 ## Build, Test, and Development Commands

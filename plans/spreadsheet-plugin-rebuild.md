@@ -41,7 +41,7 @@ We are replacing the legacy spreadsheet plugin with a new implementation that si
 
 1. **Scaffold project configs**
    - Add `tsconfig.json`, `vitest.config.ts`, and optional `README.md` under `plugins/spreadsheet-plugin/`, mirroring the structure used by other plugins (extend `../../tsconfig.base.json`, wire `paths`, and configure vitest with jsdom + fake-indexeddb for driver tests).
-   - Create `src/index.ts`, `src/plugin-manifest.ts`, and folder stubs (`common`, `icon`, `services`, `ui`, `worker`) to host the new code.
+   - Create `src/preconnect.ts`, `src/plugin-manifest.ts`, and folder stubs (`common`, `icon`, `services`, `ui`, `worker`) to host the new code.
 
 2. **Define spreadsheet domain types**
    - Under `src/common/types/SpreadsheetEntity.ts`, describe `DataSourceConfig`, `SpreadsheetDialogData`, `SpreadsheetWorkingCopy`, and `SpreadsheetPeerData`. Keep them free of `Record<string, unknown>` by spelling out fields (metadata id, filters, file info, etc.).
@@ -64,20 +64,20 @@ We are replacing the legacy spreadsheet plugin with a new implementation that si
      - `listTables` should support filtering by pluginId via `referencingPlugins` and paginate with `offset/limit`.
      - `deleteTable` and auto-delete on `removeTableReference` must also purge row chunks/indexes associated with `[pluginId, tableId]` in `RowStoreDB`.
      - Expose helper `toCsvMetadata` to convert `CSVTableMetadataLike` (Dexie) into the full `CSVTableMetadata` structure expected by UI/tests.
-   - Export a simple facade `createSpreadsheetCSVApi(pluginId)` under `src/services/index.ts` that memoizes the driver and returns a `TabularDataApi`.
+   - Export a simple facade `createSpreadsheetCSVApi(pluginId)` under `src/services/preconnect.ts` that memoizes the driver and returns a `TabularDataApi`.
 
 4. **UI components built on shared steps**
    - Within `src/ui/components/steps`, implement:
      - `DataSourceStep.tsx`: wraps `CSVFileUploadStep` from `@hierarchidb/ui/tabular-extract` inside a `CSVProvider` created with `createSpreadsheetCSVApi`, updates `SpreadsheetDialogData` (`spreadsheetMetadataId`, `dataSource`, `file`) via `onChange`, and calls `setValid` when metadata + dataSource is present.
      - `FilteringStep.tsx`: uses `useCSVData` to load metadata by id and renders `CSVFilterStep` plus wiring to persist `filters` and preview payload inside the dialog data.
    - Add `src/ui/components/steps-provider.tsx` registering the spreadsheet step configs (Data Source + Filtering) with `PluginStepRegistry`. Ensure BasicInfo isn’t redefined (honors the shared stepper).
-   - Provide `src/ui/index.ts` to re-export `DataSourceStep`, `FilteringStep`, and `createSpreadsheetCSVApi` for downstream consumers (Styler).
+   - Provide `src/ui/preconnect.ts` to re-export `DataSourceStep`, `FilteringStep`, and `createSpreadsheetCSVApi` for downstream consumers (Styler).
 
 5. **Manifest, worker, icon, and package entry**
-   - Copy the AssessmentIcon export into `src/icon/index.ts`.
+   - Copy the AssessmentIcon export into `src/icon/preconnect.ts`.
    - Author `src/plugin-manifest.ts` mirroring the original manifest but drop unused DB prewarm entries (we no longer preload bespoke Dexie DBs). Keep worker preload referencing the new registration function.
    - Implement `src/worker/factory/registerSpreadsheetWorkerStores.ts` that only registers a peer store via `createNodePayloadPeerStore` (no group/relation Dexie) and exports `loadSpreadsheetEntitiesDbModule` as a no-op (or remove entirely if unused).
-   - Update `src/index.ts` to export the manifest, common types, services, UI components, and worker entry points so existing imports continue to resolve.
+   - Update `src/preconnect.ts` to export the manifest, common types, services, UI components, and worker entry points so existing imports continue to resolve.
 
 6. **Docs and verification**
    - Add/update `plugins/spreadsheet-plugin/README.md` (or section in `docs/plugins/working-copy-initial-payloads.md`) to explain the new architecture, ingestion flow, and how other plugins consume the API.

@@ -16,7 +16,7 @@ const isBrowserEnvironment = (): boolean => typeof window !== 'undefined';
 
 const logDatabaseWarning = (nodeType: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
-  console.warn(`[services/databases] Failed to prewarm ${nodeType} database`, error);
+  console.warn(`[plugin-host/databases] Failed to prewarm ${nodeType} database`, error);
 };
 
 function computePrewarmNodeTypes(): string[] {
@@ -157,9 +157,9 @@ function logPrewarmDescriptorWarning(
   const specifierDetail = descriptor.specifier ? ` from ${descriptor.specifier}` : '';
   const detail = `${message} for ${nodeType} (export ${descriptor.exportName}${specifierDetail})`;
   if (error) {
-    console.warn(`[services/databases] ${detail}`, error);
+    console.warn(`[plugin-host/databases] ${detail}`, error);
   } else {
-    console.warn(`[services/databases] ${detail}`);
+    console.warn(`[plugin-host/databases] ${detail}`);
   }
 }
 

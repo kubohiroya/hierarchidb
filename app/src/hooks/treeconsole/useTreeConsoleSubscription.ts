@@ -13,7 +13,7 @@ import { proxy as comlinkProxy } from 'comlink';
 import { useCallback, useEffect, useRef } from 'react';
 import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms.js';
 import { buildVisibleRows, removeNodeAndDescendants } from '~/state/treeconsole.derive.js';
-import { Subscriptions } from '~/services/SubscriptionServices.ts';
+import { Subscriptions } from '~/hooks/SubscriptionServices.ts';
 
 interface Params {
   client: Remote<WorkerAPI> | undefined;

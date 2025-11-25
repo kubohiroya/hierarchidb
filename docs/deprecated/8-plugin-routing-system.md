@@ -1010,10 +1010,10 @@ packages/plugins/basemap/
   "name": "@hierarchidb/plugin-basemap",
   "version": "1.0.0",
   "type": "module",
-  "main": "./dist/index.ts",
+  "main": "./dist/preconnect.ts",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./dist/index.ts",
+    ".": "./dist/preconnect.ts",
     "./index": "./dist/components/BasemapView.js",
     "./edit": "./dist/components/BasemapEdit.js",
     "./settings": "./dist/components/BasemapSettings.js"

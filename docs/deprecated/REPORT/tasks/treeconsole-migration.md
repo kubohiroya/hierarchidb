@@ -50,14 +50,14 @@ Create `packages/ui-treeconsole/package.json`:
   "version": "1.0.0",
   "description": "TreeConsole containers for HierarchiDB",
   "type": "module",
-  "main": "./dist/index.ts",
+  "main": "./dist/preconnect.ts",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "development": "./src/openstreetmap-type.ts",
-      "import": "./dist/index.ts",
-      "default": "./dist/index.ts"
+      "import": "./dist/preconnect.ts",
+      "default": "./dist/preconnect.ts"
     }
   },
   "scripts": {
@@ -1293,7 +1293,7 @@ pnpm --filter @hierarchidb/ui-treeconsole test:run
 
 # Build verification checklist
 ls -la packages/ui-treeconsole/dist/
-file packages/ui-treeconsole/dist/index.ts
+file packages/ui-treeconsole/dist/preconnect.ts
 file packages/ui-treeconsole/dist/index.d.ts
 ```
 

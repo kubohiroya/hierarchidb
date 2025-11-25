@@ -12,7 +12,7 @@
   📂 middleware/                         375 lines
   📂 utils/                              945 lines
   📄 env-mapper.ts                        56 lines
-  📄 index.ts                            466 lines
+  📄 preconnect.ts                            466 lines
   📄 types.ts                             50 lines
 ──────────────────────────────────────────────────
   Total: 2,575 lines
@@ -34,7 +34,7 @@
   📄 BaseBatchSessionManager.ts          126 lines
   📄 BatchService.ts                      46 lines
   📄 capability.ts                        15 lines
-  📄 index.ts                             85 lines
+  📄 preconnect.ts                             85 lines
   📄 ports.ts                              9 lines
   📄 Progress.ts                          61 lines
   📄 progressAdapters.ts                  39 lines
@@ -49,7 +49,7 @@
   📄 BatchControlAPI.ts                  211 lines
   📄 DialogStateAPI.ts                    36 lines
   📄 ImportExportAPI.ts                  311 lines
-  📄 index.ts                             37 lines
+  📄 preconnect.ts                             37 lines
   📄 MultiStepDialogAPI.ts               118 lines
   📄 RuntimeWiring.ts                      8 lines
   📄 TagAPI.ts                           105 lines
@@ -65,7 +65,7 @@
 📁 packages/common/auth/src:
 ──────────────────────────────────────────────────
   📄 AuthNotificationSystem.ts           307 lines
-  📄 index.ts                             28 lines
+  📄 preconnect.ts                             28 lines
 ──────────────────────────────────────────────────
   Total: 335 lines
 
@@ -86,7 +86,7 @@
   📄 id-types.ts                          27 lines
   📄 id-util.ts                           35 lines
   📄 import-export-types.ts              185 lines
-  📄 index.ts                            103 lines
+  📄 preconnect.ts                            103 lines
   📄 menu-types.ts                        67 lines
   📄 primitive-types.ts                    2 lines
   📄 progress-types.ts                    26 lines
@@ -129,7 +129,7 @@
   📂 toast/                              382 lines
   📂 ToggleButtonItemGroup/               50 lines
   📂 TreeToggleButtonGroup/              262 lines
-  📄 index.ts                             22 lines
+  📄 preconnect.ts                             22 lines
 ──────────────────────────────────────────────────
   Total: 3,210 lines
 
@@ -138,7 +138,7 @@
 ──────────────────────────────────────────────────
   📄 AuthRecoveryService.ts              132 lines
   📄 capability.ts                         3 lines
-  📄 index.ts                             13 lines
+  📄 preconnect.ts                             13 lines
   📄 ports.ts                             15 lines
 ──────────────────────────────────────────────────
   Total: 163 lines
@@ -151,7 +151,7 @@
   📂 progress/                           105 lines
   📂 session/                            244 lines
   📄 BatchService.ts                      97 lines
-  📄 index.ts                              8 lines
+  📄 preconnect.ts                              8 lines
   📄 types.ts                             22 lines
 ──────────────────────────────────────────────────
   Total: 785 lines
@@ -161,7 +161,7 @@
 ──────────────────────────────────────────────────
   📄 capability.ts                        28 lines
   📄 ComputeService.ts                    20 lines
-  📄 index.ts                             13 lines
+  📄 preconnect.ts                             13 lines
   📄 ports.ts                             27 lines
   📄 types.ts                             24 lines
   📄 WorkerPool.ts                       144 lines
@@ -178,7 +178,7 @@
   📄 capability.ts                        15 lines
   📄 createDownloadService.ts             37 lines
   📄 DownloadService.ts                   98 lines
-  📄 index.ts                             25 lines
+  📄 preconnect.ts                             25 lines
   📄 ports.ts                             70 lines
 ──────────────────────────────────────────────────
   Total: 895 lines
@@ -187,7 +187,7 @@
 📁 packages/features/feature-registry/src:
 ──────────────────────────────────────────────────
   📄 FeatureRegistry.ts                   74 lines
-  📄 index.ts                              4 lines
+  📄 preconnect.ts                              4 lines
   📄 types.ts                             21 lines
 ──────────────────────────────────────────────────
   Total: 99 lines
@@ -198,7 +198,7 @@
   📂 types/                               22 lines
   📂 utils/                               41 lines
   📄 fetchSaveMetadata.ts                 54 lines
-  📄 index.ts                              3 lines
+  📄 preconnect.ts                              3 lines
 ──────────────────────────────────────────────────
   Total: 120 lines
 
@@ -208,7 +208,7 @@
   📂 __tests__/                          171 lines
   📄 capability.ts                        48 lines
   📄 ImportExportService.ts              429 lines
-  📄 index.ts                             11 lines
+  📄 preconnect.ts                             11 lines
   📄 ports.ts                             10 lines
 ──────────────────────────────────────────────────
   Total: 669 lines
@@ -217,7 +217,7 @@
 📁 packages/features/map-adapter/src:
 ──────────────────────────────────────────────────
   📂 adapters/                           180 lines
-  📄 index.ts                             13 lines
+  📄 preconnect.ts                             13 lines
   📄 MapViewService.ts                    35 lines
   📄 ports.ts                             30 lines
   📄 types.ts                             28 lines
@@ -228,7 +228,7 @@
 📁 packages/features/map-source/src:
 ──────────────────────────────────────────────────
   📂 adapters/                           229 lines
-  📄 index.ts                             13 lines
+  📄 preconnect.ts                             13 lines
   📄 MapSourceService.ts                  20 lines
   📄 ports.spatial.ts                      6 lines
   📄 ports.ts                             36 lines
@@ -238,21 +238,21 @@
 
 📁 packages/features/route-resolver/src:
 ──────────────────────────────────────────────────
-  📄 index.ts                             33 lines
+  📄 preconnect.ts                             33 lines
 ──────────────────────────────────────────────────
   Total: 33 lines
 
 
 📁 packages/features/route-searoute/src:
 ──────────────────────────────────────────────────
-  📄 index.ts                             20 lines
+  📄 preconnect.ts                             20 lines
 ──────────────────────────────────────────────────
   Total: 20 lines
 
 
 📁 packages/features/tabular-source-xlsx/src:
 ──────────────────────────────────────────────────
-  📄 index.ts                             27 lines
+  📄 preconnect.ts                             27 lines
   📄 xlsxParser.ts                       100 lines
 ──────────────────────────────────────────────────
   Total: 127 lines
@@ -263,7 +263,7 @@
   📂 parsers/                            210 lines
   📂 processors/                          79 lines
   📄 capability.ts                        21 lines
-  📄 index.ts                             18 lines
+  📄 preconnect.ts                             18 lines
   📄 ports.ts                             10 lines
   📄 processor.ts                         26 lines
   📄 registry.ts                          34 lines
@@ -276,7 +276,7 @@
 
 📁 packages/features/tabular-store/src:
 ──────────────────────────────────────────────────
-  📄 index.ts                              5 lines
+  📄 preconnect.ts                              5 lines
   📄 Indexer.ts                           90 lines
   📄 RowStoreDB.ts                        70 lines
   📄 SimpleTableMetadataManager.ts       178 lines
@@ -290,7 +290,7 @@
 📁 packages/features/tag/src:
 ──────────────────────────────────────────────────
   📄 capability.ts                        31 lines
-  📄 index.ts                             11 lines
+  📄 preconnect.ts                             11 lines
   📄 ports.ts                             28 lines
   📄 TagService.ts                       151 lines
 ──────────────────────────────────────────────────
@@ -304,7 +304,7 @@
   📂 registry/                           429 lines
   📂 services/                            59 lines
   📂 utils/                              525 lines
-  📄 index.ts                             27 lines
+  📄 preconnect.ts                             27 lines
 ──────────────────────────────────────────────────
   Total: 1,539 lines
 
@@ -312,7 +312,7 @@
 📁 packages/plugin-presentation/src:
 ──────────────────────────────────────────────────
   📂 __tests__/                           54 lines
-  📄 index.ts                            224 lines
+  📄 preconnect.ts                            224 lines
   📄 types.ts                             40 lines
 ──────────────────────────────────────────────────
   Total: 318 lines
@@ -330,7 +330,7 @@
 ──────────────────────────────────────────────────
   📂 download/                            84 lines
   📂 entity/                             295 lines
-  📄 index.ts                             15 lines
+  📄 preconnect.ts                             15 lines
 ──────────────────────────────────────────────────
   Total: 394 lines
 
@@ -340,7 +340,7 @@
   📂 peer-store/                          28 lines
   📂 types/                            1,691 lines
   📂 working-copy/                        16 lines
-  📄 index.ts                             19 lines
+  📄 preconnect.ts                             19 lines
 ──────────────────────────────────────────────────
   Total: 1,754 lines
 
@@ -353,7 +353,7 @@
   📂 worker/                             249 lines
   📂 working-copy/                       460 lines
   📄 download.ts                          97 lines
-  📄 index.ts                             73 lines
+  📄 preconnect.ts                             73 lines
 ──────────────────────────────────────────────────
   Total: 1,900 lines
 
@@ -364,7 +364,7 @@
   📂 examples/                           329 lines
   📂 headless/                         2,653 lines
   📂 tests/                              469 lines
-  📄 index.ts                             22 lines
+  📄 preconnect.ts                             22 lines
   📄 PluginDialogHost.tsx                 35 lines
 ──────────────────────────────────────────────────
   Total: 3,514 lines
@@ -374,7 +374,7 @@
 ──────────────────────────────────────────────────
   📂 dialog/                             589 lines
   📂 hooks/                              863 lines
-  📄 index.ts                             37 lines
+  📄 preconnect.ts                             37 lines
   📄 types.ts                             68 lines
 ──────────────────────────────────────────────────
   Total: 1,557 lines
@@ -387,7 +387,7 @@
   📂 provider/                           515 lines
   📂 ui/                                  48 lines
   📂 wiring/                             148 lines
-  📄 index.ts                             55 lines
+  📄 preconnect.ts                             55 lines
   📄 types.ts                             74 lines
   📄 utils.ts                             92 lines
   📄 WorkerInitializationChannel.ts      191 lines
@@ -408,7 +408,7 @@
   📂 tools/                                9 lines
   📂 types/                                8 lines
   📂 utils/                              184 lines
-  📄 index.ts                            354 lines
+  📄 preconnect.ts                            354 lines
   📄 module-paths.ts                      88 lines
   📄 stageWorker.entry.ts                 12 lines
   📄 types.ts                            103 lines
@@ -422,7 +422,7 @@
 ──────────────────────────────────────────────────
   📂 mocks/                              255 lines
   📂 stubs/                               24 lines
-  📄 index.ts                              5 lines
+  📄 preconnect.ts                              5 lines
   📄 setupPluginWorkerMock.ts             49 lines
 ──────────────────────────────────────────────────
   Total: 333 lines
@@ -456,7 +456,7 @@
 
 📁 packages/tools/load-plugin-manifest/src:
 ──────────────────────────────────────────────────
-  📄 index.ts                            101 lines
+  📄 preconnect.ts                            101 lines
 ──────────────────────────────────────────────────
   Total: 101 lines
 
@@ -464,7 +464,7 @@
 📁 packages/ui-shell/src:
 ──────────────────────────────────────────────────
   📄 components.ts                         1 lines
-  📄 index.ts                             22 lines
+  📄 preconnect.ts                             22 lines
   📄 plugin-ui-host.ts                     2 lines
   📄 ui-auth.ts                            2 lines
   📄 ui-dialog.ts                          2 lines
@@ -493,7 +493,7 @@
   📂 sections/                           237 lines
   📂 types/                               47 lines
   📂 utils/                               85 lines
-  📄 index.ts                             27 lines
+  📄 preconnect.ts                             27 lines
 ──────────────────────────────────────────────────
   Total: 1,428 lines
 
@@ -506,7 +506,7 @@
   📂 services/                         3,083 lines
   📂 test-shims/                          22 lines
   📂 types/                               63 lines
-  📄 index.ts                             40 lines
+  📄 preconnect.ts                             40 lines
 ──────────────────────────────────────────────────
   Total: 7,953 lines
 
@@ -518,7 +518,7 @@
   📂 hooks/                              171 lines
   📂 types/                              453 lines
   📂 utils/                              256 lines
-  📄 index.ts                             69 lines
+  📄 preconnect.ts                             69 lines
 ──────────────────────────────────────────────────
   Total: 1,794 lines
 
@@ -533,7 +533,7 @@
   📄 CrossViewSnackbar.tsx                54 lines
   📄 CrossViewStyles.ts                  219 lines
   📄 GenericDataGrid.tsx                 650 lines
-  📄 index.ts                             37 lines
+  📄 preconnect.ts                             37 lines
   📄 TabularPreview.tsx                  255 lines
 ──────────────────────────────────────────────────
   Total: 2,541 lines
@@ -544,7 +544,7 @@
   📂 types/                              218 lines
   📄 DataSourceSelectionStep.tsx          44 lines
   📄 DataSourceSelector.tsx               63 lines
-  📄 index.ts                             35 lines
+  📄 preconnect.ts                             35 lines
 ──────────────────────────────────────────────────
   Total: 360 lines
 
@@ -556,7 +556,7 @@
   📂 hooks/                              305 lines
   📂 types/                              331 lines
   📂 utils/                               39 lines
-  📄 index.ts                             18 lines
+  📄 preconnect.ts                             18 lines
 ──────────────────────────────────────────────────
   Total: 3,773 lines
 
@@ -567,7 +567,7 @@
   📂 hooks/                              296 lines
   📂 services/                            50 lines
   📂 utils/                               58 lines
-  📄 index.ts                             11 lines
+  📄 preconnect.ts                             11 lines
 ──────────────────────────────────────────────────
   Total: 1,604 lines
 
@@ -577,7 +577,7 @@
   📂 components/                         331 lines
   📂 hooks/                              398 lines
   📂 types/                               50 lines
-  📄 index.ts                              3 lines
+  📄 preconnect.ts                              3 lines
 ──────────────────────────────────────────────────
   Total: 782 lines
 
@@ -589,7 +589,7 @@
   📂 i18n/                               313 lines
   📂 provider/                           294 lines
   📂 utils/                              356 lines
-  📄 index.ts                             13 lines
+  📄 preconnect.ts                             13 lines
 ──────────────────────────────────────────────────
   Total: 1,102 lines
 
@@ -599,7 +599,7 @@
   📂 __tests__/                           39 lines
   📄 EriaCartLogo.tsx                     16 lines
   📄 getMuiIconComponent.tsx             155 lines
-  📄 index.ts                              8 lines
+  📄 preconnect.ts                              8 lines
 ──────────────────────────────────────────────────
   Total: 218 lines
 
@@ -607,14 +607,14 @@
 📁 packages/ui/layout/src:
 ──────────────────────────────────────────────────
   📂 components/                         135 lines
-  📄 index.ts                              3 lines
+  📄 preconnect.ts                              3 lines
 ──────────────────────────────────────────────────
   Total: 138 lines
 
 
 📁 packages/ui/license/src:
 ──────────────────────────────────────────────────
-  📄 index.ts                              2 lines
+  📄 preconnect.ts                              2 lines
   📄 LicenseAgreementStep.tsx             79 lines
 ──────────────────────────────────────────────────
   Total: 81 lines
@@ -626,7 +626,7 @@
   📂 hooks/                              286 lines
   📂 types/                              121 lines
   📂 utils/                              231 lines
-  📄 index.ts                             37 lines
+  📄 preconnect.ts                             37 lines
 ──────────────────────────────────────────────────
   Total: 966 lines
 
@@ -640,7 +640,7 @@
   📂 stories/                            865 lines
   📂 types/                              531 lines
   📂 utils/                               28 lines
-  📄 index.ts                             63 lines
+  📄 preconnect.ts                             63 lines
 ──────────────────────────────────────────────────
   Total: 2,713 lines
 
@@ -649,7 +649,7 @@
 ──────────────────────────────────────────────────
   📂 hooks/                              261 lines
   📂 services/                           351 lines
-  📄 index.ts                              8 lines
+  📄 preconnect.ts                              8 lines
   📄 MemoryUsageChart.tsx                270 lines
 ──────────────────────────────────────────────────
   Total: 890 lines
@@ -659,7 +659,7 @@
 ──────────────────────────────────────────────────
   📂 components/                       1,605 lines
   📂 utils/                               33 lines
-  📄 index.ts                              8 lines
+  📄 preconnect.ts                              8 lines
 ──────────────────────────────────────────────────
   Total: 1,646 lines
 
@@ -667,7 +667,7 @@
 📁 packages/ui/navigation/src:
 ──────────────────────────────────────────────────
   📂 components/                         135 lines
-  📄 index.ts                              5 lines
+  📄 preconnect.ts                              5 lines
 ──────────────────────────────────────────────────
   Total: 140 lines
 
@@ -676,7 +676,7 @@
 ──────────────────────────────────────────────────
   📂 components/                         730 lines
   📂 types/                              131 lines
-  📄 index.ts                              6 lines
+  📄 preconnect.ts                              6 lines
 ──────────────────────────────────────────────────
   Total: 867 lines
 
@@ -685,7 +685,7 @@
 ──────────────────────────────────────────────────
   📂 components/                       1,423 lines
   📂 config/                              26 lines
-  📄 index.ts                              8 lines
+  📄 preconnect.ts                              8 lines
   📄 test-setup.ts                        40 lines
 ──────────────────────────────────────────────────
   Total: 1,497 lines
@@ -699,7 +699,7 @@
   📂 state/                              346 lines
   📂 stories/                            900 lines
   📂 types/                               85 lines
-  📄 index.ts                              6 lines
+  📄 preconnect.ts                              6 lines
 ──────────────────────────────────────────────────
   Total: 2,279 lines
 
@@ -710,7 +710,7 @@
   📂 context/                             59 lines
   📂 hooks/                              775 lines
   📂 types/                              246 lines
-  📄 index.ts                             42 lines
+  📄 preconnect.ts                             42 lines
 ──────────────────────────────────────────────────
   Total: 2,404 lines
 
@@ -722,7 +722,7 @@
   📂 theme/                              634 lines
   📂 utils/                               49 lines
   📄 constants.ts                         12 lines
-  📄 index.ts                             23 lines
+  📄 preconnect.ts                             23 lines
   📄 types.ts                              8 lines
 ──────────────────────────────────────────────────
   Total: 810 lines
@@ -732,7 +732,7 @@
 ──────────────────────────────────────────────────
   📂 components/                         572 lines
   📂 managers/                            48 lines
-  📄 index.ts                             10 lines
+  📄 preconnect.ts                             10 lines
 ──────────────────────────────────────────────────
   Total: 630 lines
 
@@ -743,7 +743,7 @@
   📂 components/                       5,002 lines
   📂 hooks/                            2,726 lines
   📂 types/                              384 lines
-  📄 index.ts                             34 lines
+  📄 preconnect.ts                             34 lines
 ──────────────────────────────────────────────────
   Total: 9,956 lines
 
@@ -752,7 +752,7 @@
 ──────────────────────────────────────────────────
   📂 components/                       1,117 lines
   📂 utils/                              121 lines
-  📄 index.ts                             28 lines
+  📄 preconnect.ts                             28 lines
   📄 types.ts                            109 lines
 ──────────────────────────────────────────────────
   Total: 1,375 lines
@@ -761,7 +761,7 @@
 📁 packages/ui/treeconsole/footer/src:
 ──────────────────────────────────────────────────
   📂 components/                         196 lines
-  📄 index.ts                             15 lines
+  📄 preconnect.ts                             15 lines
   📄 types.ts                             63 lines
 ──────────────────────────────────────────────────
   Total: 274 lines
@@ -769,7 +769,7 @@
 
 📁 packages/ui/treeconsole/speeddial/src:
 ──────────────────────────────────────────────────
-  📄 index.ts                              4 lines
+  📄 preconnect.ts                              4 lines
 ──────────────────────────────────────────────────
   Total: 4 lines
 
@@ -777,7 +777,7 @@
 📁 packages/ui/treeconsole/toolbar/src:
 ──────────────────────────────────────────────────
   📂 components/                       1,061 lines
-  📄 index.ts                             18 lines
+  📄 preconnect.ts                             18 lines
   📄 types.ts                            151 lines
 ──────────────────────────────────────────────────
   Total: 1,230 lines
@@ -792,7 +792,7 @@
   📂 plugins/                            377 lines
   📂 state/                              227 lines
   📂 utils/                              511 lines
-  📄 index.ts                             42 lines
+  📄 preconnect.ts                             42 lines
   📄 types.ts                            239 lines
 ──────────────────────────────────────────────────
   Total: 6,530 lines
@@ -801,7 +801,7 @@
 📁 packages/ui/usermenu/src:
 ──────────────────────────────────────────────────
   📂 components/                         501 lines
-  📄 index.ts                              3 lines
+  📄 preconnect.ts                              3 lines
 ──────────────────────────────────────────────────
   Total: 504 lines
 
@@ -814,7 +814,7 @@
   📄 env.ts                              133 lines
   📄 format.ts                            47 lines
   📄 generateId.ts                         9 lines
-  📄 index.ts                             22 lines
+  📄 preconnect.ts                             22 lines
   📄 SingletonMixin.ts                    58 lines
   📄 validation.ts                        42 lines
   📄 webCrypto.ts                         89 lines

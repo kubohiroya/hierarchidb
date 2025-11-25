@@ -55,19 +55,19 @@ packages/plugins/my-plugin/
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.ts"
+      "import": "./dist/preconnect.ts"
     },
     "./shared": {
       "types": "./dist/shared/index.d.ts",
-      "import": "./dist/shared/index.ts"
+      "import": "./dist/shared/preconnect.ts"
     },
     "./ui": {
       "types": "./dist/ui/index.d.ts",
-      "import": "./dist/ui/index.ts"
+      "import": "./dist/ui/preconnect.ts"
     },
     "./worker": {
       "types": "./dist/worker/index.d.ts",
-      "import": "./dist/worker/index.ts"
+      "import": "./dist/worker/preconnect.ts"
     }
   },
   

@@ -20,10 +20,10 @@ import { notify } from '@hierarchidb/components';
 import { useTranslation } from 'react-i18next';
 import { TreeConsolePanelWithDynamicSpeedDial } from './TreeConsolePanelWithDynamicSpeedDial.js';
 import { TreeNodeInfoPanel } from './TreeNodeInfoPanel.js';
-import { SubscriptionCallback, Subscriptions } from '~/services/SubscriptionServices.ts';
+import { SubscriptionCallback, Subscriptions } from '~/hooks/SubscriptionServices.ts';
 import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration.ts';
 import { useWorker } from '~/contexts/WorkerProvider.tsx';
-import { clearAppIndexedDBs } from '~/services/clearIndexedDb.ts';
+import { clearAppIndexedDBsViaPlugins } from '~/plugin-host/clearIndexedDb.ts';
 import { resolveDeveloperMode } from '~/utils/developerMode.ts';
 
 
@@ -291,12 +291,12 @@ const TreeConsoleIntegrationInner: React.FC<
       if (!confirmed) return;
     }
     try {
-      const result = await clearAppIndexedDBs();
-      const shouldRefreshWorker = result.deleted.length > 0;
+      const result = await clearAppIndexedDBsViaPlugins();
+      const shouldRefreshWorker = result.invoked.length > 0;
       if (shouldRefreshWorker) {
         refreshWorkerRuntime();
       }
-      if (result.errors.length > 0) {
+      if (result.errors.length > 0 || result.missing.length > 0) {
         notify.error(
           t('treeConsole.toolbar.developerMenu.clearIndexedDbFailure', {
             defaultValue: 'Failed to delete IndexedDB data. See console for details.',
@@ -304,7 +304,7 @@ const TreeConsoleIntegrationInner: React.FC<
         );
         return;
       }
-      if (result.deleted.length > 0) {
+      if (result.invoked.length > 0) {
         notify.success(
           t('treeConsole.toolbar.developerMenu.clearIndexedDbSuccess', {
             defaultValue: 'Deleted IndexedDB data created by this app.',

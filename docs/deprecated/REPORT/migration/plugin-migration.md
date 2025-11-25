@@ -57,10 +57,10 @@ mkdir -p src/worker/{handlers,database,validation,lifecycle}
 {
   "name": "@hierarchidb/plugin-your-plugin",
   "exports": {
-    ".": "./dist/index.ts",
-    "./shared": "./dist/shared/index.ts",
-    "./ui": "./dist/ui/index.ts", 
-    "./worker": "./dist/worker/index.ts"
+    ".": "./dist/preconnect.ts",
+    "./shared": "./dist/shared/preconnect.ts",
+    "./ui": "./dist/ui/preconnect.ts", 
+    "./worker": "./dist/worker/preconnect.ts"
   },
   "sideEffects": false,
   "peerDependencies": {

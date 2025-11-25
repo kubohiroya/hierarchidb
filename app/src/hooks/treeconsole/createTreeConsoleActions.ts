@@ -12,7 +12,7 @@ import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import { PluginStepRegistry } from '@hierarchidb/plugin-base';
 import { DualKeyMap } from '@hierarchidb/util';
 import type { Remote } from 'comlink';
-import { preconnectPluginServices } from '../../services/preconnect.js';
+import { preconnectPluginServices } from './preconnect.ts';
 import type { TreeConsoleSSOTEntry } from '../../state/treeconsole.atoms.js';
 import { buildVisibleRows, syncNodeIndex } from '../../state/treeconsole.derive.js';
 import type { ContextAction, MaybeCP, TreeConsoleActionDeps, TreeConsoleActions } from './types.js';

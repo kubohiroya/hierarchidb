@@ -238,7 +238,7 @@ location / shape / route の各プラグインは、バッチ処理で正規化�
 ### ノード・ダイアログ（現行方針）
 
 - すべてのプラグインは `useDialogDraft`＋`draftMetadata/draftData` を前提に、`HeadlessMultiStepDialog` をラップしたホストを `./ui` default export で公開する。
-- `pnpm tools:gen-plugin-registry` が `plugins/*-plugin/src/ui/index.ts` を収集し、app からは registry 経由で動的にロードする（個別の配線は不要）。
+- `pnpm tools:gen-plugin-registry` が `plugins/*-plugin/src/ui/preconnect.ts` を収集し、app からは registry 経由で動的にロードする（個別の配線は不要）。
 - 旧 `ExtensibleFolderDialog` / `NodeDialogExtensionRegistry` / `initializeDefaultNodeDialogExtensions` は後方互換の名残であり、新規実装では使用しない。
 
 ## Plugin Dev MUSTs（プラグイン実装の必須事項）

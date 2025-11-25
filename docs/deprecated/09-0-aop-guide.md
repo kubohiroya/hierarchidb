@@ -371,14 +371,14 @@ packages/plugins/[plugin-name]/
   "name": "@hierarchidb/plugins[name]",
   "version": "0.1.0",
   "type": "module",
-  "main": "dist/index.ts",
+  "main": "dist/preconnect.ts",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.ts"
+      "require": "./dist/preconnect.ts"
     }
   },
   "dependencies": {

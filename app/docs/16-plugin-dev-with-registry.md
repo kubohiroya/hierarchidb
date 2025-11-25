@@ -59,14 +59,14 @@ export const PLUGIN_MANIFEST: PluginMetadata = {
 - 追加の capability や schema があれば `capabilities` / `schema` フィールドに追記してください。
 
 ### 3) エントリ配置
-- `src/index.ts` – 汎用 API（hooks など）をここで再エクスポート。
-- `src/ui/index.ts` – ステップ登録や UI 拡張の副作用を定義。
-- `src/worker/index.ts` – Worker 側処理。EntitiesDB を公開する場合は `export class FooEntitiesDB` をここで定義。
-- `src/database/index.ts` – UI から直接 Dexie にアクセスする際のヘルパー。
+- `src/preconnect.ts` – 汎用 API（hooks など）をここで再エクスポート。
+- `src/ui/preconnect.ts` – ステップ登録や UI 拡張の副作用を定義。
+- `src/worker/preconnect.ts` – Worker 側処理。EntitiesDB を公開する場合は `export class FooEntitiesDB` をここで定義。
+- `src/database/preconnect.ts` – UI から直接 Dexie にアクセスする際のヘルパー。
 
 ## アプリへの接続（自動化フロー）
 1. `pnpm dev` / `pnpm build` は事前に `scripts/generate-plugin-loader.mjs` を実行し、最新のレジストリを生成します。
-2. Vite の alias プラグインが `@hierarchidb/foo-plugin/ui` → `/@fs/.../packages/plugins/foo-plugin/src/ui/index.ts` のようにマッピング。
+2. Vite の alias プラグインが `@hierarchidb/foo-plugin/ui` → `/@fs/.../packages/plugins/foo-plugin/src/ui/preconnect.ts` のようにマッピング。
 3. UI 起動時は `~/plugin-registry` からメタデータとローダーを読み、順次 import。
 4. Worker bootstrap でも同じレジストリを参照するため、UI/Worker の整合性が保証されます。
 
@@ -180,7 +180,7 @@ await wirePluginsFromModules(modules.filter((entry): entry is { nodeType: string
 1. `packages/plugins/<node>-plugin` を作成し、`package.json` で `@hierarchidb/<node>-plugin` を宣言。
 2. `exports` に必要なサブパス (`./ui`, `./worker`, `./database`) を登録。存在しないものは省略。
 3. `src/plugin-manifest.ts` で `PLUGIN_MANIFEST` を定義し、依存関係や優先度を記述。
-4. UI/Worker のエントリポイントを `src/ui/index.ts`, `src/worker/index.ts` へ配置。
+4. UI/Worker のエントリポイントを `src/ui/preconnect.ts`, `src/worker/preconnect.ts` へ配置。
 5. `pnpm --filter @hierarchidb/<node>-plugin build` で dist を生成。
 6. `pnpm --filter @hierarchidb/app typecheck` / `pnpm --filter @hierarchidb/app test` を実行し、エラーが無いことを確認。
 

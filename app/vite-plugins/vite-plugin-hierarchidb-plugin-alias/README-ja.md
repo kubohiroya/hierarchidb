@@ -27,9 +27,9 @@ export default defineConfig({
 
 エイリアスの例:
 
-- `@hierarchidb/route-plugin/ui` → `/@fs/<repo>/plugins/route-plugin/src/ui/index.ts`
-- `@hierarchidb/route-plugin/worker` → `/@fs/<repo>/plugins/route-plugin/src/worker/index.ts`
-- `@hierarchidb/route-plugin` → `/@fs/<repo>/plugins/route-plugin/src/index.ts`
+- `@hierarchidb/route-plugin/ui` → `/@fs/<repo>/plugins/route-plugin/src/ui/preconnect.ts`
+- `@hierarchidb/route-plugin/worker` → `/@fs/<repo>/plugins/route-plugin/src/worker/preconnect.ts`
+- `@hierarchidb/route-plugin` → `/@fs/<repo>/plugins/route-plugin/src/preconnect.ts`
 
 これにより、開発時は常に `src/` を直接参照でき、ビルド時はパッケージの `exports`（dist）へフォールバックします。
 

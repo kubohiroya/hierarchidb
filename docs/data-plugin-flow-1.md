@@ -7,7 +7,7 @@ sequenceDiagram
     participant RegistryFile as packages/plugin-registry/generated/registry.ts
     participant Host as App Bootstrap (runtime)
     participant Registry as PluginRegistry
-    participant PluginPkg as plugins/*-plugin/src/index.ts
+    participant PluginPkg as plugins/*-plugin/src/preconnect.ts
     participant Manifest as plugins/*-plugin/src/plugin-manifest.ts
     participant Runtime as RuntimeWiring (optional)
     participant WorkerFactory as worker-factory/register*WorkerStores (optional)

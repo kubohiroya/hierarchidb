@@ -15,7 +15,7 @@ const PACKAGE_SKIP_DIRS = new Set([
 ]);
 
 const SRC_ENTRY_CANDIDATES = [
-  'src/index.ts',
+  'src/preconnect.ts',
   'src/index.tsx',
   'src/index.mts',
   'src/index.mjs',

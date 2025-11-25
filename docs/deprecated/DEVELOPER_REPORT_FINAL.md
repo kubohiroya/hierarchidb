@@ -245,11 +245,11 @@ After making changes, ALWAYS run in order:
 // Correct package.json configuration
 {
   "main": "dist/index.cjs",
-  "module": "dist/index.ts",
+  "module": "dist/preconnect.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.ts",
+      "import": "./dist/preconnect.ts",
       "require": "./dist/index.cjs"
     }
   }

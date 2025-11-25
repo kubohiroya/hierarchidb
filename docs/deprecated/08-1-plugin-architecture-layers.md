@@ -398,11 +398,11 @@ packages/plugins/[plugin-name]/
 {
   "name": "@hierarchidb/plugin-basemap",
   "version": "1.0.0",
-  "main": "dist/index.ts",
+  "main": "dist/preconnect.ts",
   "exports": {
-    ".": "./dist/index.ts",
-    "./worker": "./dist/worker/index.ts",
-    "./ui": "./dist/ui/index.ts"
+    ".": "./dist/preconnect.ts",
+    "./worker": "./dist/worker/preconnect.ts",
+    "./ui": "./dist/ui/preconnect.ts"
   },
   "peerDependencies": {
     "@hierarchidb/core": "*",

@@ -18,3 +18,5 @@ export class ResolverEntitiesDB extends Dexie {
 }
 
 export const resolverEntitiesDB = new ResolverEntitiesDB();
+
+export { clearDatabases } from './clear.js';

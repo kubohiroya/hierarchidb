@@ -240,7 +240,7 @@ pnpm dev
 // package.json (プラグイン)
 {
   "name": "@hierarchidb/plugin-basemap",
-  "main": "dist/index.ts",
+  "main": "dist/preconnect.ts",
   "types": "dist/index.d.ts",
   "peerDependencies": {
     "@hierarchidb/core": "^1.0.0",

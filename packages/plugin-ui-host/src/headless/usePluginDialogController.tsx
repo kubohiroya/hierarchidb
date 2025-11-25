@@ -61,7 +61,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { proxy, type Remote, releaseProxy } from 'comlink';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BasicInfoStep } from '../components/steps/BasicInfoStep.js';
+import { BasicInfoStep } from '@hierarchidb/plugin-ui-sdk/dialog/steps/BasicInfoStep.js';
 import { PluginDialogFooter, PluginDialogHeader } from './components/index.js';
 import type { PluginDialogFooterPrimaryButtonOptions } from './components/PluginDialogFooter.js';
 
@@ -1041,8 +1041,8 @@ export function usePluginDialogController(
         const nodeData = toRecord((node as unknown as { data?: unknown }).data);
         const nodeTags = toStringArray(nodeData?.tags);
         setBasicInfo((prev) => ({
-          name: prev.name || node.name || '',
-          description: prev.description || node.description || '',
+          name: prev.name || node.metadata.name || '',
+          description: prev.description || node.metadata.description || '',
           tags: prev.tags.length ? prev.tags : nodeTags,
         }));
       } catch (err) {
@@ -1105,14 +1105,6 @@ export function usePluginDialogController(
       : null;
   const isBasicInfoValid = !basicInfoValidationError;
 
-  const basicInfoValidationMeta = useMemo<BasicInfoValidationMeta>(
-    () => ({
-      error: basicInfoValidationError,
-      hasConflict: hasBasicInfoNameConflict,
-    }),
-    [basicInfoValidationError, hasBasicInfoNameConflict]
-  );
-
   const handleBasicInfoBridge = useCallback((data: Record<string, unknown>) => {
     const info = extractBasicInfoFields(data);
     setBasicInfo(info);
@@ -1162,7 +1154,11 @@ export function usePluginDialogController(
             description={basicInfo.description}
             tags={basicInfo.tags}
             tagSuggestions={tagSuggestions}
-            onChange={(data) =>
+            onChange={(data: {
+              name: string;
+              description: string;
+              tags: string[];
+            }) =>
               setBasicInfo((prev) => {
                 const next = {
                   name: data.name,

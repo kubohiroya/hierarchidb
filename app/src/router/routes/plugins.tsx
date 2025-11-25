@@ -56,7 +56,7 @@ import { useNavigate } from '@tanstack/react-router';
 import type React from 'react';
 import { useCallback, useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getInstalledPlugins } from '~/services/plugin-registry.js';
+import { getInstalledPlugins } from '~/plugin-host/plugin-registry.js';
 
 // Meta function for React Router v7
 export function meta() {
