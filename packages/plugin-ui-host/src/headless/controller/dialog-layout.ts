@@ -36,23 +36,26 @@ export const getInitialDialogState = () => {
   return { size, position };
 };
 
-export const hydratePeerDialogState = ({
+export const hydratePeerDialogState = async ({
+  nodeType,
   nodeId,
-  buildId,
 }: {
+  nodeType: string;
   nodeId: string;
-  buildId: string;
-}): {
+}): Promise<{
   size: MultiDialogSize;
   position: MultiDialogPosition;
   displayMode: PeerDisplayMode;
-} => {
+}> => {
   const viewportSize = getViewportSize();
   const safePosition = initialPosition(DEFAULT_SIZE, viewportSize);
+  const peerSize = (await getPeerDialogSize(nodeType, nodeId)) ?? DEFAULT_SIZE;
+  const peerPosition = (await getPeerDialogPosition(nodeType, nodeId)) ?? safePosition;
+  const peerDisplayMode = (await getPeerDisplayMode(nodeType, nodeId)) ?? 'normal';
   return {
     size: normalizeDialogState(
-      getPeerDialogSize(nodeId) ?? DEFAULT_SIZE,
-      getPeerDialogPosition(nodeId) ?? safePosition,
+      peerSize,
+      peerPosition,
       viewportSize,
       {
         enforceTopLeftMargin: true,
@@ -60,28 +63,29 @@ export const hydratePeerDialogState = ({
         clampSizeToViewport: true,
       }
     ).size,
-    position: getPeerDialogPosition(nodeId) ?? safePosition,
-    displayMode: getPeerDisplayMode(nodeId) ?? 'normal',
+    position: peerPosition,
+    displayMode: peerDisplayMode,
   };
 };
 
 export const persistPeerDialogState = ({
+  nodeType,
   nodeId,
-  buildId,
   size,
   position,
   displayMode,
 }: {
+  nodeType: string;
   nodeId: string;
-  buildId: string;
   size: MultiDialogSize;
   position: MultiDialogPosition;
   displayMode: DialogDisplayMode;
-}) => {
-  setPeerDialogSize(nodeId, size);
-  setPeerDialogPosition(nodeId, position);
-  setPeerDisplayMode(nodeId, displayMode);
-};
+}): Promise<void> => 
+  (async () => {
+  await setPeerDialogSize(nodeType, nodeId, size);
+  await setPeerDialogPosition(nodeType, nodeId, position);
+  await setPeerDisplayMode(nodeType, nodeId, displayMode as PeerDisplayMode);
+  })();
 
 export const normalizeAndUpdateSize = ({
   nextSize,

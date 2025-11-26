@@ -10,7 +10,7 @@
     "jsx": "react-jsx"
   },
   "include": [
-    "src*"
+    "src/**/*"
   ],
   "checkDeps": {
     "allowSkipLibCheck": true,

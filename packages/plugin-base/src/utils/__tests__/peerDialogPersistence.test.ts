@@ -117,7 +117,7 @@ describe('peerDialogPersistence storeRegistry fallback', () => {
 });
 
 describe('UIPersistence warning exclusion list', () => {
-  type RegistryTestHandle = typeof UIPersistence & {
+  type RegistryTestHandle = {
     providers: Map<string, unknown>;
     dbCache: Map<string, unknown>;
     setWarningExclusions: (nodeTypes: Iterable<string>) => void;
@@ -131,7 +131,7 @@ describe('UIPersistence warning exclusion list', () => {
   let previousExclusions: string[];
 
   beforeEach(() => {
-    registry = UIPersistence as RegistryTestHandle;
+    registry = UIPersistence as unknown as RegistryTestHandle;
     previousExclusions = registry.getWarningExclusions();
   });
 

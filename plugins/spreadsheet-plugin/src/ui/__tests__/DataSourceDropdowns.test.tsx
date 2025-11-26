@@ -1,5 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import '@testing-library/jest-dom/vitest';
+import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import {
@@ -34,8 +35,20 @@ const createStubApi = (): TabularDataApi => ({
   getProcessingStatus: vi.fn().mockResolvedValue(null),
 });
 
+let modalRoot: HTMLDivElement | null = null;
+
+afterEach(() => {
+  cleanup();
+  if (modalRoot && modalRoot.parentNode) {
+    modalRoot.parentNode.removeChild(modalRoot);
+  }
+  modalRoot = null;
+});
+
 const renderUploadStep = () => {
   const tabularApi = createStubApi();
+  modalRoot = document.createElement('div');
+  document.body.appendChild(modalRoot);
   render(
     <ThemeProvider theme={createTheme()}>
       <TabularProvider tabularApi={tabularApi}>
@@ -43,6 +56,7 @@ const renderUploadStep = () => {
           pluginId="spreadsheet"
           onFileUploaded={vi.fn()}
           onError={vi.fn()}
+          menuContainer={modalRoot}
         />
       </TabularProvider>
     </ThemeProvider>,

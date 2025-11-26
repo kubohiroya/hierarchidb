@@ -4,7 +4,7 @@
  */
 
 import type { DialogStep } from '@hierarchidb/ui-dialog';
-import type { ReactNode } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import { dialogStepLocalizationRegistry } from './DialogStepLocalizationRegistry.js';
 
 export interface StepLocalizationConfig {
@@ -126,7 +126,7 @@ export interface StepComponentProps<TData = unknown> {
 
   disabled: boolean;
 
-  dialogRef: React.RefObject<ReactNode>;
+  dialogRef?: RefObject<HTMLElement | null>;
 
 }
 

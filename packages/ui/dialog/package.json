@@ -27,7 +27,8 @@
     "storybook": "storybook dev -c ./.storybook --port 6307 --disable-telemetry",
     "storybook:build": "storybook build -c ./.storybook",
     "pretest:playwright": "pnpm storybook:build",
-    "test:playwright": "playwright test -c playwright.config.ts"
+    "test:playwright": "playwright test -c playwright.config.ts",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
     "notistack": "^3.0.2"

@@ -13,14 +13,11 @@ interface LicenseInfo {
 
 async function main() {
   const executionCwd = process.cwd();
-  const initCwd = process.env.INIT_CWD ? path.resolve(process.env.INIT_CWD) : undefined;
+  const initCwdRaw = process.env.INIT_CWD;
+  const initCwd = typeof initCwdRaw === 'string' && initCwdRaw.length > 0 ? path.resolve(initCwdRaw) : undefined;
   const cliStartArgIndex = process.argv.indexOf('--start');
-  let start = executionCwd;
-  if (cliStartArgIndex >= 0 && process.argv[cliStartArgIndex + 1]) {
-    start = path.resolve(process.argv[cliStartArgIndex + 1]);
-  } else if (initCwd) {
-    start = initCwd;
-  }
+  const cliStartArg = cliStartArgIndex >= 0 ? process.argv[cliStartArgIndex + 1] : undefined;
+  const start = cliStartArg ? path.resolve(cliStartArg) : initCwd ?? executionCwd;
 
   const require = createRequire(import.meta.url);
   const checkerBin = require.resolve('license-checker/bin/license-checker');

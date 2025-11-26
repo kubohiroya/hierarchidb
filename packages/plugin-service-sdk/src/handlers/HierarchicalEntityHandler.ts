@@ -272,9 +272,9 @@ export abstract class HierarchicalEntityHandler<
         throw new Error(`Node not found: ${nodeId}`);
       }
 
-      const updates: Partial<TEntity> = {
+      const updates = {
         parentId: newParentId ?? undefined,
-      };
+      } as Partial<TEntity>;
 
       await this.updateEntity(entity.id, updates);
     } catch (error) {

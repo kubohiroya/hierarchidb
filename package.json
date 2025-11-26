@@ -207,7 +207,9 @@
       "sharp",
       "workerd"
     ],
-    "patchedDependencies": {}
+    "patchedDependencies": {
+      "ast-types@0.16.1": "patches/ast-types@0.16.1.patch"
+    }
   },
   "keywords": [
     "hierarchical-data",

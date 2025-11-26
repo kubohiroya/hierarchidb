@@ -27,6 +27,11 @@ overrides:
   '@mui/icons-material': ^7.3.2
   rollup: 4.50.1
 
+patchedDependencies:
+  ast-types@0.16.1:
+    hash: 3124bdfe2be2291e984bf06ba8160ee3f5de54ba198ca8f9b8588ec54f01d142
+    path: patches/ast-types@0.16.1.patch
+
 importers:
 
   .:
@@ -518,6 +523,9 @@ importers:
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../types
+      '@hierarchidb/plugin-service-api':
+        specifier: workspace:*
+        version: link:../../plugin-service-api
       comlink:
         specifier: ^4.4.2
         version: 4.4.2
@@ -933,9 +941,6 @@ importers:
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../runtime/worker
-      '@hierarchidb/testing-plugin-dialog-mocks':
-        specifier: workspace:*
-        version: link:../testing/plugin-dialog-mocks
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../ui/dialog
@@ -1729,6 +1734,9 @@ importers:
 
   packages/ui/plugin-basic-info:
     devDependencies:
+      '@hierarchidb/common-types':
+        specifier: workspace:*
+        version: link:../../common/types
       '@mui/icons-material':
         specifier: ^7.3.2
         version: 7.3.4(@mui/material@7.3.4(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.26)(react@18.3.1)
@@ -14207,7 +14215,7 @@ snapshots:
 
   '@types/jscodeshift@17.3.0':
     dependencies:
-      ast-types: 0.16.1
+      ast-types: 0.16.1(patch_hash=3124bdfe2be2291e984bf06ba8160ee3f5de54ba198ca8f9b8588ec54f01d142)
       recast: 0.23.11
 
   '@types/json-schema@7.0.15': {}
@@ -14979,7 +14987,7 @@ snapshots:
       '@babel/parser': 7.28.5
       pathe: 2.0.3
 
-  ast-types@0.16.1:
+  ast-types@0.16.1(patch_hash=3124bdfe2be2291e984bf06ba8160ee3f5de54ba198ca8f9b8588ec54f01d142):
     dependencies:
       tslib: 2.8.1
 
@@ -17890,7 +17898,7 @@ snapshots:
 
   recast@0.23.11:
     dependencies:
-      ast-types: 0.16.1
+      ast-types: 0.16.1(patch_hash=3124bdfe2be2291e984bf06ba8160ee3f5de54ba198ca8f9b8588ec54f01d142)
       esprima: 4.0.1
       source-map: 0.6.1
       tiny-invariant: 1.3.3

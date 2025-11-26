@@ -16,10 +16,10 @@
     "build": "tsdown src/index.ts --config ../../../../tsdown.config.ts --outDir dist",
     "test": "vitest --passWithNoTests",
     "test:run": "vitest run --passWithNoTests",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "peerDependencies": {
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/components": "workspace:*",

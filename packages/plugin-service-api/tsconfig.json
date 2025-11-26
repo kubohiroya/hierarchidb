@@ -14,9 +14,5 @@
   "exclude": [
     "dist",
     "node_modules"
-  ],
-  "checkDeps": {
-    "allowSkipLibCheck": false,
-    "reason": "API package should fully type-check without skipLibCheck."
-  }
+  ]
 }

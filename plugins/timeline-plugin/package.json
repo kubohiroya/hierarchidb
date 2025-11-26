@@ -45,7 +45,8 @@
   "scripts": {
     "build": "tsdown src/index.ts src/services/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/icon/index.ts --config ../../tsdown.config.ts",
     "clean": "rm -rf dist",
-    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
+    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
     "@hierarchidb/common-types": "workspace:*",
@@ -90,7 +91,7 @@
       "description": "Arrange descendant nodes as timeline frames and play them back as map animations inside a special folder node.",
       "icon": {
         "mui": "AccessTime",
-        "emoji": "🕒",
+        "emoji": "\ud83d\udd52",
         "color": "#8a7cbf",
         "component": {
           "specifier": "@hierarchidb/timeline-plugin/icon",

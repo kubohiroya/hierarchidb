@@ -18,9 +18,8 @@ type TimelineFrameConfig = {
 };
 
 type TimelineData = { basic: { name: string; description?: string }; frames: TimelineFrameConfig[] };
-type P = StepComponentProps & { data: TimelineData };
 
-registry.registerConfigProvider({
+registry.registerConfigProvider<TimelineData>({
   nodeType: 'timeline',
   getCreateStepConfigs() {
     return [
@@ -31,7 +30,7 @@ registry.registerConfigProvider({
           defaultTitle: 'Frames Preview',
           titles: { en: 'Frames Preview', ja: 'フレームプレビュー' },
         },
-        componentFactory: (p: P) => (
+        componentFactory: (p: StepComponentProps<TimelineData>) => (
           <FramesPreviewStep frames={p.data?.frames || []} />
         ),
       },
@@ -42,7 +41,7 @@ registry.registerConfigProvider({
           defaultTitle: 'Map Preview',
           titles: { en: 'Map Preview', ja: '地図プレビュー' },
         },
-        componentFactory: (p: P) => (
+        componentFactory: (p: StepComponentProps<TimelineData>) => (
           <MapPreviewStep frames={p.data?.frames || []} />
         ),
       },
@@ -53,11 +52,13 @@ registry.registerConfigProvider({
           defaultTitle: 'Final Animation',
           titles: { en: 'Final Animation', ja: 'アニメーション確認' },
         },
-        componentFactory: (p: P) => (
+        componentFactory: (p: StepComponentProps<TimelineData>) => (
           <AnimationViewerStep frames={p.data?.frames || []} />
         ),
       },
     ];
   },
-  getEditStepConfigs(_nodeId: string) { return this.getCreateStepConfigs(); },
+  getEditStepConfigs(_nodeId: string, _data?: TimelineData) {
+    return this.getCreateStepConfigs();
+  },
 });

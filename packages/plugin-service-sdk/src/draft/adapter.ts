@@ -76,7 +76,7 @@ export function createEntityDraftAdapter<TEntity, TDraft extends DraftBase<TEnti
     const createdAt = ensureTimestamp(meta.createdAt, () => Date.now());
     const updatedAt = ensureTimestamp(meta.updatedAt, () => createdAt);
 
-    const base = buildDraftBase<TEntity>(
+    const base = buildDraftBase(
       treeNodeId,
       {
         ...draft,
@@ -84,7 +84,6 @@ export function createEntityDraftAdapter<TEntity, TDraft extends DraftBase<TEnti
         updatedAt,
       },
       {
-        treeNodeId,
         createdAt,
         updatedAt,
         originalVersion: meta.originalVersion,
@@ -133,7 +132,7 @@ export function createEntityDraftAdapter<TEntity, TDraft extends DraftBase<TEnti
       updates: Partial<TEntity>,
       timestamp: Timestamp = Date.now() as Timestamp,
     ): TDraft {
-      const base = markDraftUpdated<TEntity>(draft, updates, timestamp);
+      const base = markDraftUpdated(draft, updates, timestamp);
       const mergedDraft = {
         ...draft,
         ...draft.draft,

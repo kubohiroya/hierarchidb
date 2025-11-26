@@ -58,7 +58,8 @@
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "format": "biome check --write src",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
-    "dev:tsc": "tsc --watch"
+    "dev:tsc": "tsc --watch",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
     "jszip": "^3.10.1",
@@ -136,7 +137,7 @@
       "description": "Import spreadsheet data, filter them, and produce styling rules that drive themed visualizations on maps.",
       "icon": {
         "mui": "Palette",
-        "emoji": "🎨",
+        "emoji": "\ud83c\udfa8",
         "color": "#dcbc50",
         "component": {
           "specifier": "@hierarchidb/styler-plugin/icon",

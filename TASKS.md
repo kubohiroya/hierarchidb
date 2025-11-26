@@ -8907,4 +8907,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-25 14:05 progress: fix/runtime-worker/commit-discard — create/edit の commit で draft ノードが削除されないよう、`commitTreeNodeDraft` から `discardTreeNodeDraft` 呼び出しを撤去し、commit 時は draft クリアのみとする。
 - 2025-11-25 14:06 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0。
 - 2025-11-25 14:07 done: fix/runtime-worker/commit-discard — commit 正常終了でノード削除が起きないように修正。ロールバックは `packages/runtime/worker/src/services/draft/commitOperations.ts` を revert し、上記 typecheck を再実行して確認。
+- 2025-11-25 14:30 start: fix/plugin-service-sdk/typecheck — plugin-service-sdk で plugin-service-api 未解決や batch API 型不整合が発生する件を調査開始。
+- 2025-11-25 14:36 progress: fix/plugin-service-sdk/typecheck — tsconfig の paths を base alias に揃え、DraftAdapter のジェネリック誤用・HierarchicalEntityHandler の parentId 更新で型エラーを解消。DraftService を DraftAPI の getTreeNode/updateTreeNodeDraftData に追従。
+- 2025-11-25 14:40 progress: fix/plugin-service-sdk/typecheck — WorkerAPI に batch セッション API を追加し、bridge 側の型不一致を解消。
+- 2025-11-25 14:42 command: pnpm --filter @hierarchidb/plugin-service-sdk typecheck — exit 0。
+- 2025-11-25 14:43 done: fix/plugin-service-sdk/typecheck — 上記対応で typecheck エラーを解消。ロールバックは `packages/plugin-service-sdk/tsconfig.json`, `src/draft/adapter.ts`, `src/draft/service.ts`, `src/handlers/HierarchicalEntityHandler.ts`, `packages/common/api/src/WorkerAPI.ts` を revert し、typecheck を再実行して確認。
 - 2025-11-25 14:20 start: fix/runtime-worker/treenode-metadata — `pnpm build && pnpm preview` 実行時に `metadata is required on TreeNode` が発生する件の調査を開始。DoD: TASKS/Kanban 更新、原因特定と再発防止（metadata/draftMetadata の付与または安全なデフォルト）、再現確認、関連コマンド実行ログとロールバック手順の記録。

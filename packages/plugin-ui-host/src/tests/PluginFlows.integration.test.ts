@@ -6,15 +6,15 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/common-types';
-import { WorkerAPIImpl } from '@hierarchidb/testing-plugin-dialog-mocks';
+import { WorkerAPIMock } from '../__tests__/plugin-dialog-mocks';
 
-type DialogAPI = ReturnType<WorkerAPIImpl['getMultiStepDialogAPI']>;
+type DialogAPI = ReturnType<WorkerAPIMock['getMultiStepDialogAPI']>;
 
-let workerAPI: WorkerAPIImpl | undefined;
+let workerAPI: WorkerAPIMock | undefined;
 let dialogAPI: DialogAPI;
 
 beforeEach(async () => {
-  workerAPI = new WorkerAPIImpl('test-services');
+  workerAPI = new WorkerAPIMock('test-services');
   await workerAPI.initialize();
   dialogAPI = workerAPI.getMultiStepDialogAPI();
 });

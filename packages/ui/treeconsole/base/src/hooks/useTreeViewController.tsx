@@ -1,19 +1,8 @@
-/**
-  * useTreeViewController
-  * TreeConsolehook
- * WorkerAPIAdapterAPI
-   * 1.
- * 2. WorkerAPIAdapter
- * 3.
- * 4.
-  */
-
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { WorkerAPIAdapter } from '../adapters/index.js';
 import type { SelectionMode, TreeViewController, UndoRedoCommand, UndoRedoResult } from '../types/index.js';
 import type { NodeId, TreeNode, TreeNodeEvent } from '@hierarchidb/common-types';
-import type { Remote } from 'comlink';
-import type { WorkerAPI, TreeQueryAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { RowSelectionState } from '@tanstack/react-table';
 import {
   type ClipboardData,
@@ -36,21 +25,9 @@ export interface TreeViewControllerProps {
 }
 
 export interface UseTreeViewControllerOptions {
-  /**
-   * ID
-   */
   rootNodeId?: NodeId;
-  /**
-   * ID
-   */
   initialExpandedNodeIds?: NodeId[];
-  /**
-   * WorkerAPI
-   */
   workerService?: WorkerAPIAdapter | null;
-  /**
-   * WorkerAPIClient
-   */
   workerClient?: unknown;
 }
 
@@ -189,7 +166,8 @@ export function useTreeViewController(
     });
   }, []);
 
-  const queryAPIRef = useRef<Remote<TreeQueryAPI> | null>(null);
+  type QueryAPI = Awaited<ReturnType<WorkerAPI['getQueryAPI']>>;
+  const queryAPIRef = useRef<QueryAPI | null>(null);
   const subscriptionCleanupRef = useRef<(() => void) | null>(null);
 
   // Track if this is the initial render
@@ -401,7 +379,7 @@ export function useTreeViewController(
       return prev.filter((node) => String(node.id) !== String(nodeId));
     };
 
-    const ensureQueryAPI = async (): Promise<Remote<TreeQueryAPI> | null> => {
+    const ensureQueryAPI = async (): Promise<QueryAPI | null> => {
       if (queryAPIRef.current) return queryAPIRef.current;
       try {
         const queryAPI = await api.getQueryAPI();

@@ -5,6 +5,27 @@
     "paths": {
       "~/*": [
         "./src/*"
+      ],
+      "@hierarchidb/common-types": [
+        "packages/common/types/src/index.ts"
+      ],
+      "@hierarchidb/common-types/*": [
+        "packages/common/types/src/*"
+      ],
+      "@hierarchidb/common-api": [
+        "packages/common/api/src/index.ts"
+      ],
+      "@hierarchidb/common-api/*": [
+        "packages/common/api/src/*"
+      ],
+      "@hierarchidb/plugin-service-api": [
+        "packages/plugin-service-api/src/index.ts"
+      ],
+      "@hierarchidb/plugin-service-api/*": [
+        "packages/plugin-service-api/src/*"
+      ],
+      "react-transition-group/Transition": [
+        "packages/plugin-ui-sdk/src/types/react-transition-group.d.ts"
       ]
     }
   },

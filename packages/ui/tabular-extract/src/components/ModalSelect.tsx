@@ -9,10 +9,10 @@ export type ModalSelectProps<T = unknown> = SelectProps<T> & {
    */
   menuZIndexOffset?: number;
   /**
-   * Container for the menu portal. Must point to the dialog/modal root element.
-   * If omitted, falls back to the last `.MuiModal-root` (no body fallback).
-   */
-  menuContainer?: Element | DocumentFragment | null;
+  * Container for the menu portal. Must point to the dialog/modal root element.
+  * If omitted, the menu renders inline (no portal/body fallback).
+  */
+  menuContainer?: Element | null;
   /**
    * Render menu in a portal (default: false). Use true only when you need to escape overflow clipping.
    * Inline rendering keeps the menu within the dialog's stacking context to avoid backdrop blur issues.
@@ -24,14 +24,8 @@ export const ModalSelect = forwardRef<HTMLDivElement, ModalSelectProps<any>>(fun
   { MenuProps, menuZIndexOffset = 1000, menuContainer, usePortal = true, ...rest },
   ref,
 ) {
-  const mergedMenuProps = useMemo(() => {
-    const baseContainer = undefined;
-    const resolveModalContainer = () => {
-      if (menuContainer) return menuContainer;
-      if (typeof document === 'undefined') return baseContainer;
-      const modals = Array.from(document.querySelectorAll('.MuiModal-root'));
-      return (modals[modals.length - 1] as Element | null) ?? baseContainer;
-    };
+  const mergedMenuProps = useMemo<Partial<SelectProps['MenuProps']>>(() => {
+    const shouldUsePortal = Boolean(menuContainer) && usePortal;
     const baseSx: SxProps<Theme> = (theme) => ({
       zIndex: (theme?.zIndex?.modal ?? 1300) + menuZIndexOffset,
     });
@@ -44,8 +38,8 @@ export const ModalSelect = forwardRef<HTMLDivElement, ModalSelectProps<any>>(fun
       : baseSx;
 
     return {
-      disablePortal: !usePortal,
-      container: usePortal ? resolveModalContainer() : undefined,
+      disablePortal: !shouldUsePortal,
+      container: shouldUsePortal ? menuContainer ?? undefined : undefined,
       ...MenuProps,
       PaperProps: {
         ...MenuProps?.PaperProps,

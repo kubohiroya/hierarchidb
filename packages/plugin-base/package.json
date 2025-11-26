@@ -21,10 +21,10 @@
     "clean": "rm -rf dist",
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "peerDependencies": {
     "react": "^18.3.1",
     "jotai": "^2.11.2",

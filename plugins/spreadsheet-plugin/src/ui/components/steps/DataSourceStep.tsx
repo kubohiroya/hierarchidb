@@ -10,12 +10,12 @@ import type { DataSourceConfig, SpreadsheetDialogData } from '../../../common/ty
 const coerceDialogData = (value: unknown): SpreadsheetDialogData =>
   (typeof value === 'object' && value !== null ? (value as SpreadsheetDialogData) : {});
 
-export const DataSourceStep: FC<StepComponentProps<SpreadsheetDialogData> & { menuContainer?: Element | DocumentFragment | null }> = ({
+export const DataSourceStep: FC<StepComponentProps<SpreadsheetDialogData>> = ({
   data,
   onChange,
   setValid,
   setError,
-  menuContainer,
+  dialogRef,
 }) => {
   const dialogData = useMemo<SpreadsheetDialogData>(() => coerceDialogData(data), [data]);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -66,6 +66,11 @@ export const DataSourceStep: FC<StepComponentProps<SpreadsheetDialogData> & { me
       setError(null);
     }
   }, [dialogData.spreadsheetMetadataId, localError, setError, setValid]);
+
+  const menuContainer =
+    dialogRef?.current instanceof HTMLElement
+      ? dialogRef.current.closest('.MuiModal-root') ?? dialogRef.current
+      : null;
 
   return (
     <TabularProvider tabularApi={tabularApi}>

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { NodeId, TreeId } from '@hierarchidb/common-types';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-client';
 import {
@@ -93,7 +93,7 @@ export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
   const [displayMode, setDisplayMode] = useState<DialogDisplayMode>('normal');
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
-  const [modalContainer, setModalContainer] = useState<Element | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
 
   const dialogSizeRef = useRef(dialogSize);
   const dialogPositionRef = useRef(dialogPosition);
@@ -147,13 +147,6 @@ export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
     onClose();
   }, [discardDraft, onClose]);
 
-  useEffect(() => {
-    if (typeof document === 'undefined') return;
-    if (!open) return;
-    const modals = Array.from(document.querySelectorAll('.MuiModal-root'));
-    setModalContainer((modals[modals.length - 1] as Element | null) ?? null);
-  }, [open]);
-
   const steps = useMemo(() => [
     {
       id: 'basic',
@@ -183,7 +176,7 @@ export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
           setValid={() => {}}
           setError={() => {}}
           disabled={false}
-          menuContainer={modalContainer}
+          dialogRef={dialogRef}
         />
       ),
       validate: () => Boolean(data.spreadsheetMetadataId),
@@ -201,11 +194,12 @@ export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
           setValid={() => {}}
           setError={() => {}}
           disabled={false}
+          dialogRef={dialogRef}
         />
       ),
       validate: () => true,
     },
-  ], [data, handleUpdate, modalContainer, mode, nodeId, parentId, persistBasicInfo]);
+  ], [data, handleUpdate, mode, nodeId, parentId, persistBasicInfo]);
 
   const enabledStepIndices = useMemo(() => steps
     .map((step, idx) => (step.validate ? step.validate() : true) ? idx : -1)
@@ -306,7 +300,7 @@ export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
   };
 
   return (
-    <div style={frameStyle} role="dialog" aria-modal={open}>
+    <div style={frameStyle} role="dialog" aria-modal={open} ref={dialogRef}>
       <HeadlessMultiStepDialog<SpreadsheetDialogData> {...headlessProps} />
     </div>
   );

@@ -18,7 +18,8 @@
     "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist",
     "lint": "eslint src",
     "test": "vitest run",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "peerDependencies": {
     "@hierarchidb/ui-icon": "workspace:*"

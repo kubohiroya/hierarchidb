@@ -6,14 +6,8 @@
  * consistent Next/Save guards derived from plugin-provided services.
  */
 
-import type { DialogStateAPI, DialogStateSubscriptionId, WorkerAPI } from '@hierarchidb/common-api';
-import type {
-  DialogStateSubscribeInput,
-  MultiStepDialogState,
-  NodeId,
-  TagEntity,
-  TreeId,
-} from '@hierarchidb/common-types';
+import type { DialogStateAPI, WorkerAPI } from '@hierarchidb/common-api';
+import type { DialogStateSubscribeInput, NodeId, TagEntity, TreeId } from '@hierarchidb/common-types';
 import {
   composeStepConfigs,
   getPeerDialogPosition,
@@ -43,26 +37,38 @@ import type {
   MultiDialogSize,
 } from '@hierarchidb/ui-dialog';
 import {
-  FRAME_CONSTANTS,
-  getPresetSize,
-  getViewportSize,
   type HeadlessContentRenderProps,
   type HeadlessMultiStepDialogProps,
-  initialPosition,
-  normalizeDialogState,
-  positionsEqual,
   type StepComponentDescriptor,
   type StepComponentProps,
   type StepNavigationEvent,
-  sizesEqual,
 } from '@hierarchidb/ui-dialog';
+import { normalizeDialogState, getPresetSize, initialPosition, getViewportSize, FRAME_CONSTANTS, sizesEqual, positionsEqual } from '@hierarchidb/ui-dialog';
 import { Box } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
-import { proxy, type Remote, releaseProxy } from 'comlink';
+import { type Remote } from 'comlink';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PluginDialogFooter, PluginDialogHeader } from './components/index.js';
 import type { PluginDialogFooterPrimaryButtonOptions } from './components/PluginDialogFooter.js';
+import {
+  buildStepWorkingData,
+  evaluateStepGuards,
+  evaluateValidationState,
+  mergeDialogData,
+  extractBasicInfoFields,
+  stripReservedDialogKeys,
+  emptyGuards,
+  toRecord,
+} from './controller/step-guards.js';
+import {
+  clampIndex,
+  DEFAULT_SIZE,
+  DEFAULT_POSITION,
+} from './controller/dialog-layout.js';
+import { subscribeDialogState } from './controller/dialog-state-subscriber.js';
+import type { StepGuardState } from './controller/types.js';
+import type { MultiStepDialogState } from './controller/types.js';
 
 export interface PluginDialogControllerOptions {
   mode: 'create' | 'edit';
@@ -98,74 +104,6 @@ export interface PluginDialogControllerState {
   dialogState?: MultiStepDialogState | null;
 }
 
-const DEFAULT_SIZE: MultiDialogSize = { width: 960, height: 640 };
-const DEFAULT_VIEWPORT = { width: 1280, height: 720 } as const;
-const DEFAULT_POSITION: MultiDialogPosition = initialPosition(DEFAULT_SIZE, DEFAULT_VIEWPORT);
-const BUILD_ID =
-  (typeof import.meta !== 'undefined' && (import.meta as { env?: Record<string, string> })?.env?.VITE_APP_BUILD_ID) ||
-  (typeof import.meta !== 'undefined' && (import.meta as { env?: Record<string, string> })?.env?.VITE_COMMIT_SHA) ||
-  'sandbox-20251119T0825Z';
-
-const clampIndex = (index: number, length: number) => {
-  if (length <= 0) return 0;
-  return Math.min(Math.max(index, 0), length - 1);
-};
-
-const toRecord = (value: unknown): Record<string, unknown> | undefined =>
-  typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : undefined;
-
-const toStringArray = (value: unknown): string[] =>
-  Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
-
-type BasicInfoState = { name: string; description: string; tags: string[] };
-
-type StepGuardState = {
-  enabledSteps: boolean[];
-  canSave: boolean;
-  canProceedNext: boolean;
-  canGoBack: boolean;
-  canStartBatch: boolean;
-};
-
-const emptyGuards: StepGuardState = {
-  enabledSteps: [],
-  canSave: false,
-  canProceedNext: false,
-  canGoBack: false,
-  canStartBatch: false,
-};
-
-export const BASIC_INFO_META_KEY = '__basicInfoValidation';
-
-export const buildStepWorkingData = (
-  draftData: Record<string, unknown> | undefined
-): StepData => {
-  return draftData ? { ...draftData } : {};
-};
-
-const stripReservedDialogKeys = (
-  input?: Record<string, unknown> | null
-): Record<string, unknown> => {
-  // Legacy helper no longer strips anything; kept to avoid runtime errors.
-  return input ? { ...input } : {};
-};
-
-const extractBasicInfoFields = (data?: Record<string, unknown>): BasicInfoState => {
-  const nameSource =
-    typeof data?.name === 'string'
-      ? data.name
-      : '';
-  const descriptionSource =
-    typeof data?.description === 'string'
-      ? data.description
-      : '';
-  return {
-    name: nameSource,
-    description: descriptionSource,
-    tags: toStringArray(data?.tags),
-  };
-};
-
 type StepAdapterProps = {
   cfg: PluginStepConfig;
   mode: 'create' | 'edit';
@@ -174,6 +112,7 @@ type StepAdapterProps = {
   workingData: Record<string, unknown> | undefined;
   updateDraft: (patch: Partial<DraftData>) => void;
   onDataChange?: (data: Record<string, unknown>) => void;
+  dialogRef?: React.RefObject<HTMLElement | null>;
 };
 
 const StepAdapterComponent: React.FC<StepAdapterProps> = ({
@@ -184,6 +123,7 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
   workingData,
   updateDraft,
   onDataChange,
+  dialogRef,
 }) => {
   const [, setValid] = useState<boolean | undefined>();
   const [, setError] = useState<string | null>(null);
@@ -216,286 +156,16 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
         onChange: handleChange,
         setValid,
         setError,
+        dialogRef,
       })}
     </>
   );
 };
 
+const toStringArray = (value: unknown): string[] =>
+  Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
+
 const PlaceholderStep: React.FC<StepComponentProps<StepData>> = () => null;
-
-function mergeDialogData(
-  basic: BasicInfoState,
-  workingData: Record<string, unknown> | null | undefined
-): Record<string, unknown> {
-  const merged: Record<string, unknown> = workingData ? { ...workingData } : {};
-  merged.name = basic.name;
-  merged.description = basic.description;
-  merged.tags = basic.tags;
-  return merged;
-}
-
-async function evaluateValidationState(steps: DialogStep[]): Promise<boolean[]> {
-  if (!steps.length) return [];
-  const results = await Promise.all(
-    steps.map(async (step) => {
-      if (typeof step?.validate === 'function') {
-        try {
-          const outcome = await Promise.resolve(step.validate());
-          return Boolean(outcome);
-        } catch {
-          return false;
-        }
-      }
-      return true;
-    })
-  );
-  return results;
-}
-
-function createStepConfigMap(
-  configs: ReadonlyArray<PluginStepConfig>
-): Map<string, PluginStepConfig> {
-  return new Map(configs.map((cfg) => [cfg.id, cfg]));
-}
-
-function sequentiallyReachable(index: number, steps: DialogStep[], filled: boolean[]): boolean {
-  if (index <= 0) return true;
-  for (let i = 0; i < index; i++) {
-    const step = steps[i];
-    if (!step?.optional && !filled[i]) {
-      return false;
-    }
-  }
-  return true;
-}
-
-async function evaluateStepGuards({
-  steps,
-  configs,
-  filled,
-  activeStepIndex,
-  dialogData,
-  hostCanSubmit,
-}: {
-  steps: DialogStep[];
-  configs: ReadonlyArray<PluginStepConfig>;
-  filled: boolean[];
-  activeStepIndex: number;
-  dialogData: Record<string, unknown>;
-  hostCanSubmit?: (data: unknown) => boolean | Promise<boolean>;
-}): Promise<StepGuardState> {
-  if (!steps.length) {
-    return emptyGuards;
-  }
-
-  const configMap = createStepConfigMap(configs);
-  const enabledSteps: boolean[] = new Array(steps.length).fill(false);
-
-  const activeStep = steps[activeStepIndex];
-  const activeConfig = activeStep ? configMap.get(activeStep.id) : undefined;
-
-  const callBoolean = async <T extends boolean>(
-    fn: ((...args: unknown[]) => T | Promise<T>) | undefined,
-    fallback: boolean
-  ): Promise<boolean> => {
-    if (!fn) return fallback;
-    try {
-      const result = await Promise.resolve(fn(dialogData));
-      return Boolean(result);
-    } catch {
-      return false;
-    }
-  };
-
-  const checkNavigate = async (targetIndex: number): Promise<boolean> => {
-    if (targetIndex === activeStepIndex) return true;
-    if (targetIndex < 0 || targetIndex >= steps.length) return false;
-    const targetStep = steps[targetIndex];
-    const targetConfig = targetStep ? configMap.get(targetStep.id) : undefined;
-    if (targetConfig?.capabilities?.canNavigateTo) {
-      try {
-        const res = await Promise.resolve(
-          targetConfig.capabilities.canNavigateTo(activeStepIndex, dialogData)
-        );
-        return Boolean(res);
-      } catch {
-        return false;
-      }
-    }
-    return sequentiallyReachable(targetIndex, steps, filled);
-  };
-
-  const allRequiredFilled = steps.every((step, idx) => step?.optional || filled[idx]);
-
-  const canSave = await (async () => {
-    if (activeConfig?.capabilities?.canSave) {
-      return callBoolean(activeConfig.capabilities.canSave, false);
-    }
-    if (hostCanSubmit) {
-      try {
-        const hostResult = await Promise.resolve(hostCanSubmit(dialogData));
-        return Boolean(hostResult);
-      } catch {
-        return false;
-      }
-    }
-    return allRequiredFilled;
-  })();
-
-  const nextIndex = activeStepIndex + 1;
-  const defaultCanProceed = nextIndex < steps.length ? await checkNavigate(nextIndex) : false;
-  const canProceedNext = await callBoolean(
-    activeConfig?.capabilities?.canProceedToNext,
-    defaultCanProceed
-  );
-
-  const prevIndex = activeStepIndex - 1;
-  const defaultCanBack = prevIndex >= 0 ? await checkNavigate(prevIndex) : false;
-  const canGoBack = await callBoolean(
-    activeConfig?.capabilities?.canBackToPrevious,
-    defaultCanBack
-  );
-
-  const canStartBatch = await callBoolean(activeConfig?.capabilities?.canStartBatch, false);
-
-  for (let idx = 0; idx < enabledSteps.length; idx++) {
-    let allowed = await checkNavigate(idx);
-    if (idx === prevIndex) {
-      allowed = allowed && canGoBack;
-    }
-    if (idx === nextIndex) {
-      allowed = allowed && canProceedNext;
-    }
-    enabledSteps[idx] = allowed;
-  }
-
-  // Ensure the active step is always considered enabled for context consumers.
-  enabledSteps[activeStepIndex] = true;
-
-  return {
-    enabledSteps,
-    canSave,
-    canProceedNext,
-    canGoBack,
-    canStartBatch,
-  };
-}
-
-type DialogStateApiSubset = Partial<
-  Pick<DialogStateAPI, 'subscribeState' | 'unsubscribeState' | 'getState'>
->;
-
-type DialogStateSubscriptionLogger = Pick<Console, 'warn'> | undefined;
-
-export interface DialogStateSubscriptionDeps {
-  createCallback?: (handler: (state: MultiStepDialogState | null) => void) => unknown;
-  releaseCallback?: (callback: unknown) => void;
-}
-
-export interface SubscribeDialogStateOptions {
-  api: DialogStateApiSubset | null;
-  params: DialogStateSubscribeInput;
-  onSnapshot: (state: MultiStepDialogState | null) => void;
-  logger?: DialogStateSubscriptionLogger;
-  deps?: DialogStateSubscriptionDeps;
-}
-
-const defaultWarn = (...args: unknown[]) => {
-  if (typeof console !== 'undefined' && typeof console.warn === 'function') {
-    console.warn(...args);
-  }
-};
-
-export async function subscribeDialogState({
-  api,
-  params,
-  onSnapshot,
-  logger,
-  deps,
-}: SubscribeDialogStateOptions): Promise<() => void> {
-  const warn = logger?.warn?.bind(logger) ?? defaultWarn;
-
-  if (!api) {
-    const error = new Error('[PluginDialogShell] DialogStateAPI unavailable; cannot subscribe');
-    warn(error.message);
-    throw error;
-  }
-
-  const subscribeFn =
-    typeof api.subscribeState === 'function' ? api.subscribeState.bind(api) : null;
-  const unsubscribeFn =
-    typeof api.unsubscribeState === 'function' ? api.unsubscribeState.bind(api) : null;
-  const getStateFn = typeof api.getState === 'function' ? api.getState.bind(api) : null;
-
-  const createCallback =
-    deps?.createCallback ??
-    ((handler: (state: MultiStepDialogState | null) => void) => proxy(handler));
-  const releaseCallback =
-    deps?.releaseCallback ??
-    ((callback: unknown) => {
-      if (!callback) return;
-      try {
-        const releaser = (callback as { [releaseProxy]?: () => void })[releaseProxy];
-        if (typeof releaser === 'function') {
-          releaser.call(callback);
-        }
-      } catch {
-        // Ignore release errors – callback may not be a proxied function in test environments
-      }
-    });
-
-  if (!subscribeFn || !unsubscribeFn) {
-    if (typeof console !== 'undefined' && typeof console.error === 'function') {
-      console.error('[PluginDialogShell] subscribeState/unsubscribeState missing', {
-        typeofSubscribe: typeof api?.subscribeState,
-        typeofUnsubscribe: typeof api?.unsubscribeState,
-        keys: api ? Object.keys(api as unknown as Record<string, unknown>) : [],
-      });
-    }
-    const error = new Error(
-      '[PluginDialogShell] DialogStateAPI must implement subscribeState/unsubscribeState'
-    );
-    warn(error.message, params);
-    throw error;
-  }
-
-  const callback = createCallback((snapshot: MultiStepDialogState | null) => {
-    onSnapshot(snapshot ?? null);
-  });
-
-  let cleanedUp = false;
-  let subscriptionId: DialogStateSubscriptionId | null = null;
-
-  const cleanup = () => {
-    if (cleanedUp) return;
-    cleanedUp = true;
-    releaseCallback(callback);
-    if (subscriptionId !== null) {
-      Promise.resolve(unsubscribeFn(subscriptionId)).catch(() => {});
-    }
-  };
-
-  try {
-    subscriptionId = await subscribeFn(
-      params,
-      callback as (state: MultiStepDialogState | null) => void
-    );
-    if (getStateFn) {
-      try {
-        const snapshot = await getStateFn(params);
-        onSnapshot(snapshot ?? null);
-      } catch (snapshotError) {
-        warn('[PluginDialogShell] failed to fetch initial dialog state snapshot', snapshotError);
-      }
-    }
-
-    return cleanup;
-  } catch (error) {
-    cleanup();
-    warn('[PluginDialogShell] dialog state subscription failed', error);
-    throw error;
-  }
-}
 
 export function usePluginDialogController(
   options: PluginDialogControllerOptions
@@ -700,6 +370,7 @@ export function usePluginDialogController(
   const [dialogSize, setDialogSize] = useState<MultiDialogSize>(DEFAULT_SIZE);
   const [dialogPosition, setDialogPosition] = useState<MultiDialogPosition>(DEFAULT_POSITION);
 
+  const dialogRef = useRef<HTMLDivElement | null>(null);
   const dialogSizeRef = useRef(dialogSize);
   const dialogPositionRef = useRef(dialogPosition);
   const positionPersistTimeoutRef = useRef<number | null>(null);
@@ -914,9 +585,6 @@ export function usePluginDialogController(
 
   const [basicInfo, setBasicInfo] = useState({ name: '', description: '', tags: [] as string[] });
   useEffect(() => {
-    console.log('[PluginDialog] Build ID:', BUILD_ID);
-  }, []);
-  useEffect(() => {
     if (mode === 'create') {
       const fallbackName = resolveDefaultNodeName(nodeType);
       setBasicInfo((prev) => ({
@@ -1099,6 +767,10 @@ export function usePluginDialogController(
       ? 'A node with this name already exists in this folder'
       : null;
   const isBasicInfoValid = !basicInfoValidationError;
+  const basicInfoMeta = useMemo(
+    () => ({ error: basicInfoValidationError, hasConflict: hasBasicInfoNameConflict }),
+    [basicInfoValidationError, hasBasicInfoNameConflict]
+  );
 
   const handleBasicInfoBridge = useCallback((data: Record<string, unknown>) => {
     const info = extractBasicInfoFields(data);
@@ -1113,12 +785,17 @@ export function usePluginDialogController(
   }, [updateDraft]);
 
   const currentStepData = useMemo<StepData>(
-    () => buildStepWorkingData(draftDataWithoutMeta),
-    [draftDataWithoutMeta]
+    () => buildStepWorkingData(draftDataWithoutMeta, basicInfo, basicInfoMeta),
+    [basicInfo, basicInfoMeta, draftDataWithoutMeta]
   );
   const basicInfoValidationPayload = useMemo<StepData>(
     () => stripReservedDialogKeys(currentStepData),
     [currentStepData]
+  );
+
+  const dialogData = useMemo<StepData>(
+    () => mergeDialogData(basicInfo, draftDataWithoutMeta as Record<string, unknown> | undefined),
+    [basicInfo, draftDataWithoutMeta]
   );
 
   const renderStep = useCallback(
@@ -1131,6 +808,7 @@ export function usePluginDialogController(
         workingData={currentStepData}
         updateDraft={updateDraft}
         onDataChange={cfg.id === 'basic-info' ? handleBasicInfoBridge : undefined}
+        dialogRef={dialogRef}
       />
     ),
     [currentStepData, handleBasicInfoBridge, mode, nodeId, pageNodeId, updateDraft]
@@ -1152,7 +830,7 @@ export function usePluginDialogController(
             onChange={(data: {
               name: string;
               description: string;
-              tags: string[];
+              tags?: string[];
             }) =>
               setBasicInfo((prev) => {
                 const next = {
@@ -1259,16 +937,13 @@ export function usePluginDialogController(
     filled: [],
     guards: emptyGuards,
   });
+  const [isStartingBatch, setIsStartingBatch] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     const evaluate = async () => {
       try {
         const filled = await evaluateValidationState(steps);
-        const dialogData = mergeDialogData(
-          basicInfo,
-          draftDataWithoutMeta as Record<string, unknown> | undefined
-        );
         const guards = await evaluateStepGuards({
           steps,
           configs: composedConfigs.configs,
@@ -1296,8 +971,7 @@ export function usePluginDialogController(
     composedConfigs.configs,
     composedConfigs.hostCanSubmit,
     activeStepIndex,
-    basicInfo,
-    draftDataWithoutMeta,
+    dialogData,
   ]);
 
   const enabledStepIndices = useMemo(() => {
@@ -1319,6 +993,11 @@ export function usePluginDialogController(
   const committableStepIndices = useMemo(
     () => (steps.length ? [steps.length - 1] : []),
     [steps.length]
+  );
+
+  const activeStepConfig = useMemo<PluginStepConfig | undefined>(
+    () => composedConfigs.configs.find((cfg) => cfg.id === steps[activeStepIndex]?.id),
+    [activeStepIndex, composedConfigs.configs, steps]
   );
 
   useEffect(() => {
@@ -1530,9 +1209,32 @@ export function usePluginDialogController(
 
   const canSaveCurrent = evaluatedState.guards.canSave;
   const canStartBatch = evaluatedState.guards.canStartBatch;
+  const activeStartBatch = activeStepConfig?.capabilities?.startBatch;
   const footerPrimaryButtons = footerOptions?.primaryButtons;
   const footerSaveDraftLabel = footerOptions?.saveDraftLabel;
   const disableDraftButton = nodeType === 'folder'; // Folder は create/edit とも Draft ボタン不要
+
+  const handleStartBatch = useCallback(async () => {
+    if (!activeStartBatch) return;
+    setIsStartingBatch(true);
+    try {
+      await Promise.resolve(
+        activeStartBatch(dialogData, {
+          nodeId: nodeId as string | undefined,
+          parentId: pageNodeId as string | undefined,
+          treeId,
+          mode,
+          dialogData,
+        })
+      );
+    } catch (error) {
+      if (typeof console !== 'undefined' && typeof console.error === 'function') {
+        console.error('[PluginDialogShell] start batch failed', error);
+      }
+    } finally {
+      setIsStartingBatch(false);
+    }
+  }, [activeStartBatch, dialogData, mode, nodeId, pageNodeId, treeId]);
 
   const HeaderComponent: HeadlessMultiStepDialogProps<StepData>['HeaderComponent'] = useCallback(
     () => (
@@ -1557,6 +1259,7 @@ export function usePluginDialogController(
             padding: theme.spacing(2),
             backgroundColor: theme.palette.background.default,
           })}
+          ref={dialogRef}
         >
           {step?.component ?? null}
         </Box>
@@ -1580,7 +1283,9 @@ export function usePluginDialogController(
               : undefined
         }
         disableDraft={disableDraftButton || !hasUnsavedChanges}
-        canStartBatch={canStartBatch}
+        onStartBatch={activeStartBatch ? () => { handleStartBatch().catch(() => void 0); } : undefined}
+        canStartBatch={canStartBatch && !isStartingBatch}
+        isStartingBatch={isStartingBatch}
         primaryButtonOptions={footerPrimaryButtons}
         saveDraftLabel={footerSaveDraftLabel}
       />
@@ -1592,6 +1297,9 @@ export function usePluginDialogController(
       hasUnsavedChanges,
       disableDraftButton,
       canStartBatch,
+      activeStartBatch,
+      handleStartBatch,
+      isStartingBatch,
       footerPrimaryButtons,
       footerSaveDraftLabel,
     ]

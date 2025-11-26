@@ -2,7 +2,7 @@ import type { DialogStep } from '@hierarchidb/ui-dialog';
 import type { PluginStepConfig } from './types.js';
 import type { StepGuardState } from './types.js';
 
-const emptyGuards: StepGuardState = {
+export const emptyGuards: StepGuardState = {
   enabledSteps: [],
   canSave: false,
   canProceedNext: false,
@@ -227,4 +227,4 @@ export const extractBasicInfoFields = (data?: Record<string, unknown>): {
   };
 };
 
-export const toRecord = toRecord;
+export { toRecord };

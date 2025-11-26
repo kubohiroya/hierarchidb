@@ -17,6 +17,7 @@
   "scripts": {
     "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
     "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
     "format": "biome check --write src",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
@@ -45,7 +46,6 @@
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
-    "@hierarchidb/testing-plugin-dialog-mocks": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*"
   },
   "peerDependencies": {

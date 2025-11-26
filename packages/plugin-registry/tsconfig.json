@@ -2,15 +2,46 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "baseUrl": ".",
+    "jsx": "react-jsx",
+    "allowImportingTsExtensions": true,
     "paths": {
-      "~/*": [
-        "./src/*"
+      "@hierarchidb/*-plugin": [
+        "../../plugins/*-plugin/src/index.ts"
+      ],
+      "@hierarchidb/*-plugin/icon": [
+        "../../plugins/*-plugin/src/icon/index.ts"
+      ],
+      "@hierarchidb/*-plugin/ui": [
+        "../../plugins/*-plugin/src/ui/index.ts"
+      ],
+      "@hierarchidb/*-plugin/worker": [
+        "../../plugins/*-plugin/src/worker/index.ts"
+      ],
+      "@hierarchidb/*-plugin/common": [
+        "../../plugins/*-plugin/src/common/index.ts"
+      ],
+      "@hierarchidb/*-plugin/database": [
+        "../../plugins/*-plugin/src/database/index.ts",
+        "../../plugins/*-plugin/src/worker/database/index.ts",
+        "../../plugins/*-plugin/src/services/database/index.ts"
+      ],
+      "@hierarchidb/runtime-client": [
+        "../../packages/runtime/client/src/index.ts"
+      ],
+      "@hierarchidb/ui-dialog": [
+        "../../packages/ui/dialog/src/index.ts"
+      ],
+      "@hierarchidb/ui-plugin-basic-info": [
+        "../../packages/ui/plugin-basic-info/src/index.ts"
+      ],
+      "@hierarchidb/plugin-ui-sdk": [
+        "../../packages/plugin-ui-sdk/src/index.ts"
       ]
-    },
-    "jsx": "react-jsx"
+    }
   },
   "include": [
-    "src*.ts",
-    "generated*.ts"
+    "src/**/*",
+    "generated/**/*",
+    "types/**/*.d.ts"
   ]
 }

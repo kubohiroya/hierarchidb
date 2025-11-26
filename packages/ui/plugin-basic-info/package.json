@@ -16,15 +16,18 @@
   ],
   "scripts": {
     "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {},
   "peerDependencies": {
+    "@hierarchidb/common-types": "workspace:*",
     "@mui/icons-material": "^7.3.2",
     "@mui/material": "^7.3.2",
     "react": "^18.3.1"
   },
   "devDependencies": {
+    "@hierarchidb/common-types": "workspace:*",
     "@mui/icons-material": "^7.3.2",
     "@mui/material": "^7.3.2",
     "react": "^18.3.1"

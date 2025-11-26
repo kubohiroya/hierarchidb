@@ -57,7 +57,8 @@
     "test": "vitest",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",
-    "dev:tsc": "tsc --watch"
+    "dev:tsc": "tsc --watch",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
     "@hierarchidb/plugin-base": "workspace:*",
@@ -127,7 +128,7 @@
       "description": "Define hierarchical container nodes that semantically organize various types of nodes and consolidate their functions.",
       "icon": {
         "mui": "Folder",
-        "emoji": "📁",
+        "emoji": "\ud83d\udcc1",
         "color": "#c0eeff",
         "component": {
           "specifier": "@hierarchidb/folder-plugin/icon",

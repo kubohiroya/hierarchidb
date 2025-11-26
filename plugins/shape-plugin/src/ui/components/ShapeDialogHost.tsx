@@ -103,6 +103,7 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
   const [displayMode, setDisplayMode] = useState<DialogDisplayMode>('normal');
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
+  const dialogRootRef = useRef<HTMLDivElement | null>(null);
   const dialogSizeRef = useRef(dialogSize);
   const dialogPositionRef = useRef(dialogPosition);
 
@@ -184,6 +185,7 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
           setValid={() => {}}
           setError={() => {}}
           disabled={false}
+          dialogRef={dialogRootRef}
         />
       ),
       validate: () => Boolean(data.tabularMetadataId),
@@ -199,6 +201,7 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
           setValid={() => {}}
           setError={() => {}}
           disabled={false}
+          dialogRef={dialogRootRef}
         />
       ),
       validate: () => Boolean(data.tabularMetadataId),
@@ -370,7 +373,7 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
   };
 
   return (
-    <div style={frameStyle} role="dialog" aria-modal={open}>
+    <div style={frameStyle} role="dialog" aria-modal={open} ref={dialogRootRef}>
       <HeadlessMultiStepDialog<ShapeDraftData> {...headlessProps} />
     </div>
   );

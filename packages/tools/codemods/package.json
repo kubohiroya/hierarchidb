@@ -10,7 +10,8 @@
   "scripts": {
     "build": "tsdown src/esm-ext-codemod-basic.ts src/esm-ext-codemod.ts --config ../../../tsdown.config.ts --outDir dist --splitting false",
     "clean": "rm -rf dist",
-    "codemod:esm-ext": "pnpm run build && node dist/esm-ext-codemod-basic.js"
+    "codemod:esm-ext": "pnpm run build && node dist/esm-ext-codemod-basic.js",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
     "globby": "^14.1.0",

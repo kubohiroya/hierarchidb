@@ -1,34 +1,92 @@
-import type { DialogStateAPI, DialogStateSubscriptionId, MultiStepDialogState } from './types.js';
-import type { SubscribeDialogStateOptions, SubscribeDialogStateResult } from './types.js';
+import { proxy, releaseProxy } from 'comlink';
+import type {
+  DialogStateAPI,
+  DialogStateSubscriptionId,
+} from '@hierarchidb/common-api';
+import type { MultiStepDialogState } from './types.js';
+import type { DialogStateSubscriptionDeps } from './types.js';
+import { DialogStateSubscribeInput } from '@hierarchidb/common-types';
 
-export const subscribeDialogState = (options: SubscribeDialogStateOptions): SubscribeDialogStateResult => {
-  const { dialogStateApi, onStateChange, logger, deps } = options;
+const defaultWarn = (...args: unknown[]) => {
+  if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+    console.warn(...args);
+  }
+};
 
-  const callback = deps?.createCallback
-    ? deps.createCallback(onStateChange)
-    : ((value: MultiStepDialogState | null) => onStateChange(value));
+export const subscribeDialogState = async ({
+  api,
+  params,
+  onSnapshot,
+  logger,
+  deps,
+}: {
+  api: DialogStateAPI | null;
+  params: DialogStateSubscribeInput;
+  onSnapshot: (state: MultiStepDialogState | null) => void;
+  logger?: Pick<Console, 'warn' | 'error'>;
+  deps?: DialogStateSubscriptionDeps;
+}): Promise<() => void> => {
+  const warn = logger?.warn?.bind(logger) ?? defaultWarn;
 
-  let subscriptionId: DialogStateSubscriptionId | null = null;
-
-  try {
-    subscriptionId = dialogStateApi.subscribeState(callback);
-  } catch (err) {
-    logger?.warn?.('[usePluginDialogController] subscribeState failed', err);
+  if (!api) {
+    const error = new Error('[PluginDialogShell] DialogStateAPI unavailable; cannot subscribe');
+    warn(error.message);
+    throw error;
   }
 
-  const release = () => {
-    if (subscriptionId !== null) {
+  const subscribeFn =
+    typeof api.subscribeState === 'function' ? api.subscribeState.bind(api) : null;
+  const unsubscribeFn =
+    typeof api.unsubscribeState === 'function' ? api.unsubscribeState.bind(api) : null;
+  const getStateFn = typeof api.getState === 'function' ? api.getState.bind(api) : null;
+
+  if (!subscribeFn || !unsubscribeFn) {
+    logger?.error?.('[PluginDialogShell] subscribeState/unsubscribeState missing', {
+      typeofSubscribe: typeof api.subscribeState,
+      typeofUnsubscribe: typeof api.unsubscribeState,
+    });
+    const error = new Error(
+      '[PluginDialogShell] DialogStateAPI must implement subscribeState/unsubscribeState'
+    );
+    warn(error.message, params);
+    throw error;
+  }
+
+  if(! deps?.createCallback){
+    throw new Error('[PluginDialogShell] DialogStateSubscriptionDeps.createCallback is required');
+  }
+
+  const createCallback = ((handler: (state: MultiStepDialogState | null) => void) => proxy(handler));
+  const releaseCallback = ((callback: unknown) => {
+      if (!callback) return;
       try {
-        // @ts-expect-error partial api typing
-        (dialogStateApi as DialogStateAPI).unsubscribeState?.(subscriptionId);
-      } catch (err) {
-        logger?.warn?.('[usePluginDialogController] unsubscribeState failed', err);
+        const releaser = (callback as { [releaseProxy]?: () => void })[releaseProxy];
+        if (typeof releaser === 'function') {
+          releaser.call(callback);
+        }
+      } catch {
+        // ignore
       }
+    });
+
+  const initialState = getStateFn ? await Promise.resolve(getStateFn(params)) : null;
+  onSnapshot(initialState);
+
+  const callback = createCallback(onSnapshot);
+  const subscriptionId: DialogStateSubscriptionId = await subscribeFn(params, callback);
+
+  const release = () => {
+    try {
+      releaseCallback?.(callback);
+    } catch {
+      // ignore release errors
     }
-    if (deps?.releaseCallback) {
-      deps.releaseCallback(callback);
+    try {
+      unsubscribeFn(subscriptionId);
+    } catch {
+      // ignore
     }
   };
 
-  return { id: subscriptionId, release };
+  return release;
 };

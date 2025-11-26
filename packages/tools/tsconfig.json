@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": [
+    "analyze-licenses/**/*",
+    "codemods/**/*",
+    "build-scripts/**/*",
+    "load-plugin-manifest/**/*",
+    "schemas/**/*",
+    "ticketing/**/*"
+  ]
+}

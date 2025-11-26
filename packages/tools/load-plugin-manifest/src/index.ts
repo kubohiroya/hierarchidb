@@ -68,7 +68,7 @@ function evaluateManifestModule(manifestPath: string, { silent = false }: LoadOp
       ?? module.exports.default;
 
     return manifest && typeof manifest === 'object'
-      ? manifest
+      ? (manifest as Record<string, unknown>)
       : undefined;
   } catch (error) {
     if (!silent) {

@@ -8,7 +8,9 @@ function genId(prefix: string = 'wc'): NodeId {
 export class WorkerAPIImpl {
   private store = new Map<NodeId, DraftData>();
 
-  constructor(private readonly namespace: string) {}
+  constructor(private readonly namespace: string) {
+    void this.namespace;
+  }
 
   async initialize(): Promise<void> {
     // no-op for mock environment
@@ -188,7 +190,7 @@ export class WorkerAPIImpl {
       async batchValidate(ids: NodeId[]): Promise<Record<NodeId, ValidationResult>> {
         const out = Object.create(null) as Record<NodeId, ValidationResult>;
         for (const id of ids) {
-          const validation: ValidationResult = { valid: true, errors: [], warnings: [] } as ValidationResult;
+          const validation: ValidationResult = { valid: true } as ValidationResult;
           try {
             const wc = await requireDraft(id);
             const nodeType = wc.nodeType;
@@ -196,10 +198,12 @@ export class WorkerAPIImpl {
 
             const pushError = (message: string) => {
               validation.valid = false;
-              (validation.errors ??= []).push(message);
+              (validation as any).errors ??= [];
+              (validation as any).errors.push(message);
             };
             const pushWarning = (message: string) => {
-              (validation.warnings ??= []).push(message);
+              (validation as any).warnings ??= [];
+              (validation as any).warnings.push(message);
             };
 
             if (nodeType === 'folder' || nodeType === 'folder-plugin') {
@@ -227,7 +231,8 @@ export class WorkerAPIImpl {
               }
             }
           } catch (error) {
-            (validation.errors ??= []).push(error instanceof Error ? error.message : String(error));
+            (validation as any).errors ??= [];
+            (validation as any).errors.push(error instanceof Error ? error.message : String(error));
             validation.valid = false;
           }
           out[id] = validation;

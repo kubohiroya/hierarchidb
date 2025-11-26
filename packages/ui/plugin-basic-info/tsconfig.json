@@ -5,12 +5,18 @@
     "paths": {
       "~/*": [
         "./src/*"
+      ],
+      "@hierarchidb/common-types": [
+        "../../common/types/src/index.ts"
+      ],
+      "@hierarchidb/common-types/*": [
+        "../../common/types/src/*"
       ]
     },
     "baseUrl": ".",
     "jsx": "react-jsx"
   },
   "include": [
-    "src*"
+    "src/**/*"
   ]
 }

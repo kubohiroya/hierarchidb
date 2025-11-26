@@ -20,7 +20,8 @@
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "test": "vitest",
     "test:run": "vitest run",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "devDependencies": {
     "@emotion/react": "^11.14.0",

@@ -15,10 +15,10 @@ import type { HttpBackendOptions } from 'i18next-http-backend';
 import HttpBackend from 'i18next-http-backend';
 import * as ReactI18NextModule from 'react-i18next';
 import { getEnvString, isDevEnv } from '../utils/env.js';
-import enCommon from '../../public/locales/en/common.json' assert { type: 'json' };
-import jaCommon from '../../public/locales/ja/common.json' assert { type: 'json' };
-import enGuidedTour from '../../public/locales/en/guidedTour.json' assert { type: 'json' };
-import jaGuidedTour from '../../public/locales/ja/guidedTour.json' assert { type: 'json' };
+import enCommon from '../../public/locales/en/common.json' with { type: 'json' };
+import jaCommon from '../../public/locales/ja/common.json' with { type: 'json' };
+import enGuidedTour from '../../public/locales/en/guidedTour.json' with { type: 'json' };
+import jaGuidedTour from '../../public/locales/ja/guidedTour.json' with { type: 'json' };
 
 interface AppWindow extends Window {
   __HDB_APP_BASE__?: unknown;

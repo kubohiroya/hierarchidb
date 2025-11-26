@@ -6,6 +6,12 @@ import type { TagAPI } from './TagAPI.js';
 import type { TreeMutationAPI } from './TreeMutationAPI.js';
 import type { TreeQueryAPI } from './TreeQueryAPI.js';
 import type { TreeSubscriptionAPI } from './TreeSubscriptionAPI.js';
+import type {
+  BatchProgressEvent,
+  BatchSessionId,
+  BatchSessionStatus,
+} from './BatchControlAPI.js';
+import type { NodeId, NodeType } from '@hierarchidb/common-types';
 
 export type CommandProcessorAPI = {
   canUndo?: () => boolean;
@@ -40,4 +46,14 @@ export interface WorkerAPI {
   getDialogStateAPI(): Promise<DialogStateAPI>;
   getPluginLifecycleAPI(): Promise<PluginLifecycleAPI>;
   getCommandProcessor(): Promise<CommandProcessorAPI>;
+  startBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus>;
+  getBatchSessionStatus(nodeType: NodeType, sessionId: BatchSessionId): Promise<BatchSessionStatus>;
+  pauseBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
+  resumeBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
+  cancelBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
+  subscribeBatchProgress(
+    nodeType: NodeType,
+    sessionId: BatchSessionId,
+    callback: (event: BatchProgressEvent) => void
+  ): Promise<() => void>;
 }

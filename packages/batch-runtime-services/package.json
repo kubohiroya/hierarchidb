@@ -19,7 +19,8 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {},
   "peerDependencies": {

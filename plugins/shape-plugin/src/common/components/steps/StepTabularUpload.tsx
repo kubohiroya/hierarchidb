@@ -15,6 +15,7 @@ export function StepTabularUpload({
   setValid,
   setError,
   disabled,
+  dialogRef,
 }: ShapeDialogStepProps): JSX.Element {
   //const draft = (data ?? {}) as Partial<ShapeDraft>;
   const tabularApi = useMemo(() => createShapeTabularApi(), []);
@@ -81,6 +82,11 @@ export function StepTabularUpload({
           onFileUploaded={applyMetadata}
           onError={handleUploadError}
           disabled={disabled}
+          menuContainer={
+            dialogRef?.current instanceof HTMLElement
+              ? dialogRef.current.closest('.MuiModal-root') ?? dialogRef.current
+              : null
+          }
         />
       </TabularProvider>
       {!draft?.tabularMetadataId && (

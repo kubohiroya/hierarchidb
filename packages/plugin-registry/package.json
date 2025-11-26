@@ -32,9 +32,11 @@
       "default": "./dist/registry.js"
     }
   },
+  "devDependencies": {},
   "scripts": {
     "build": "pnpm run clean && tsdown generated/registry.ts generated/types.ts generated/derivations.ts --config ../../tsdown.config.ts --outDir dist && node ./scripts/postbuild.mjs",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "turbo": {
     "pipeline": {

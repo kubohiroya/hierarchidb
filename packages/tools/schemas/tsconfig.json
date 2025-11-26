@@ -1,0 +1,11 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "allowJs": true
+  },
+  "include": [
+    "plugin-manifest.schema.json"
+  ]
+}

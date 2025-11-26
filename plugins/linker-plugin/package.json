@@ -43,7 +43,8 @@
     "build": "tsdown src/index.ts src/services/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/icon/index.ts --config ../../tsdown.config.ts",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
     "@hierarchidb/plugin-base": "workspace:*"
@@ -105,12 +106,11 @@
     "plugin": {
       "nodeType": "linker",
       "name": "Linker Plugin",
-      "description": "Link related nodes into reusable sequences so workers and timelines can traverse shared workflows.",
-      "displayName": "Linker",
       "description": "Link compiled resources to map for usage",
+      "displayName": "Linker",
       "icon": {
         "mui": "AccountTree",
-        "emoji": "🌲",
+        "emoji": "\ud83c\udf32",
         "color": "#ffe0f3",
         "component": {
           "specifier": "@hierarchidb/linker-plugin/icon",

@@ -54,7 +54,8 @@
     "build": "tsdown src/index.ts src/services/database/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/icon/index.ts --config ../../tsdown.config.ts",
     "test:watch": "vitest",
     "clean": "rm -rf dist",
-    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
+    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
     "dexie": "^4.2.0",
@@ -123,7 +124,7 @@
       "description": "Import transportation routes from online data sources, analyze them, and present the results in coordinated map views.",
       "icon": {
         "mui": "Route",
-        "emoji": "〰️",
+        "emoji": "\u3030\ufe0f",
         "color": "#a3b030",
         "component": {
           "specifier": "@hierarchidb/route-plugin/icon",

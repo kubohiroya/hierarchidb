@@ -13,7 +13,8 @@
     "gen-plugin-registry": "pnpm run build && node dist/gen-plugin-registry.js",
     "sync-peer-dependencies": "pnpm run build && node dist/sync-peer-dependencies.js",
     "fix-spa-build": "pnpm run build && node dist/env-vite.js",
-    "tsconfig:set-nodenext": "pnpm run build && node dist/tsconfig-set-nodenext.js"
+    "tsconfig:set-nodenext": "pnpm run build && node dist/tsconfig-set-nodenext.js",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
     "globby": "^14.1.0",

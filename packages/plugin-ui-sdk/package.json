@@ -21,7 +21,8 @@
     "clean": "rm -rf dist",
     "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist",
     "lint": "eslint src",
-    "test": "vitest run"
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",

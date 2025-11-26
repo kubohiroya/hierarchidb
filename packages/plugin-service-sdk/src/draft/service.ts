@@ -58,7 +58,7 @@ export class DraftService {
   async loadDraft(nodeId: NodeId): Promise<DraftState> {
     try {
       const draftAPI = await this.workerAPI.getDraftAPI();
-      const response = await draftAPI.getDraft(nodeId);
+      const response = await draftAPI.getTreeNode(nodeId);
 
       if (!response) {
         throw new Error(`Working copy not found: ${nodeId}`);
@@ -79,7 +79,10 @@ export class DraftService {
   ): Promise<DraftState> {
     try {
       const draftAPI = await this.workerAPI.getDraftAPI();
-      await draftAPI.updateDraft(nodeId, updates as unknown as Record<string, unknown>);
+      await draftAPI.updateTreeNodeDraftData(
+        nodeId,
+        updates as unknown as Record<string, unknown>
+      );
 
       const prev = this.stateCache.get(nodeId) ?? ({} as DraftState);
       const merged: DraftState = {

@@ -4,7 +4,7 @@
  */
 
 import type React from 'react';
-import { useMemo, useRef, useState, useId } from 'react';
+import { useRef, useState, useId } from 'react';
 import {
   Alert,
   Box,
@@ -31,7 +31,7 @@ export interface TabularFileUploadStepProps {
   acceptedFileTypes?: string[];
   maxFileSize?: number; // in bytes
   pluginId: string;
-  menuContainer?: Element | DocumentFragment | null;
+  menuContainer?: Element | null;
 }
 
 export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
@@ -72,9 +72,7 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
   const quoteLabelId = `${idPrefix}-quote-char`;
   const headerLabelId = `${idPrefix}-has-header`;
   const skipEmptyLabelId = `${idPrefix}-skip-empty-lines`;
-  const modalRoot = menuContainer ?? (typeof document !== 'undefined'
-    ? document.querySelector('.MuiModal-root')
-    : null);
+  const modalRoot = menuContainer ?? null;
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

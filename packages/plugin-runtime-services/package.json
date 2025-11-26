@@ -1,29 +1,30 @@
 {
   "files": [
     "dist"
-  ], 
-  "main": "dist/index.js", 
-  "name": "@hierarchidb/plugin-runtime-services", 
-  "module": "dist/index.js", 
-  "version": "0.0.1", 
-  "private": true, 
-  "dependencies": {}, 
+  ],
+  "main": "dist/index.js",
+  "name": "@hierarchidb/plugin-runtime-services",
+  "module": "dist/index.js",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {},
   "scripts": {
-    "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist", 
-    "clean": "rm -rf dist"
-  }, 
+    "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
+  },
   "devDependencies": {
-    "dexie": "^4.2.0", 
-    "typescript": "workspace:^5.9.3", 
-    "@hierarchidb/download": "workspace:*", 
-    "@hierarchidb/common-types": "workspace:*", 
+    "dexie": "^4.2.0",
+    "typescript": "workspace:^5.9.3",
+    "@hierarchidb/download": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*"
-  }, 
+  },
   "peerDependencies": {
-    "dexie": ">=4.0.0", 
-    "@hierarchidb/runtime-worker": "workspace:*", 
+    "dexie": ">=4.0.0",
+    "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/download": "workspace:*"
-  }, 
-  "type": "module", 
+  },
+  "type": "module",
   "types": "dist/index.d.ts"
 }

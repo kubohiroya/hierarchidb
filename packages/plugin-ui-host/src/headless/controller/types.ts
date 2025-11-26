@@ -1,11 +1,7 @@
 import type { DialogStateAPI, DialogStateSubscriptionId } from '@hierarchidb/common-api';
 import type { MultiStepDialogState } from '@hierarchidb/common-types';
-import type {
-  PluginStepConfig,
-  PluginDialogFooterOptions,
-  PluginDialogControllerState,
-} from '../usePluginDialogController.js';
 import type { DialogStep } from '@hierarchidb/ui-dialog';
+import { PluginStepConfig } from 'packages/plugin-base/dist/index.js';
 
 export type { DialogStateAPI, DialogStateSubscriptionId, MultiStepDialogState, PluginStepConfig, DialogStep };
 
@@ -22,18 +18,6 @@ export type StepGuardState = {
 export interface DialogStateSubscriptionDeps {
   createCallback?: (handler: (state: MultiStepDialogState | null) => void) => unknown;
   releaseCallback?: (callback: unknown) => void;
-}
-
-export interface SubscribeDialogStateOptions {
-  dialogStateApi: Pick<DialogStateAPI, 'subscribeState'>;
-  onStateChange: (state: MultiStepDialogState | null) => void;
-  logger?: Pick<Console, 'warn'>;
-  deps?: DialogStateSubscriptionDeps;
-}
-
-export interface SubscribeDialogStateResult {
-  id: DialogStateSubscriptionId | null;
-  release: () => void;
 }
 
 export type DialogStateApiSubset = Partial<

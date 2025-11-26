@@ -17,7 +17,8 @@
   "scripts": {
     "start": "node dist/cli.js",
     "build": "tsdown src/cli.ts --config ../../../tsdown.config.ts --outDir dist --splitting false --target node18 --banner.js '#!/usr/bin/env node'",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "devDependencies": {
     "@types/license-checker": "^25.0.6",

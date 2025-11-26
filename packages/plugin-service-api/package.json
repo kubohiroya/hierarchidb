@@ -33,7 +33,8 @@
   ],
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist"
+    "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
     "@hierarchidb/common-types": "workspace:*"

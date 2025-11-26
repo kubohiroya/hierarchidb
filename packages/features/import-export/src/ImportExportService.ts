@@ -1,4 +1,4 @@
-import type { NodeId, NodeType, TreeNode, ValidationResult } from '@hierarchidb/common-types';
+import type { NodeId, NodeType, TreeNode, TreeNodeMetadata, ValidationResult } from '@hierarchidb/common-types';
 import type {
   ExportNodesParams,
   ExportResult,
@@ -68,7 +68,11 @@ export class ImportExportService implements ImportExportAPI {
           return cache;
         }
         const existingNames = await this.db.listChildren(parentId);
-        const cache = new Set(existingNames.map((child) => child.name));
+        const cache = new Set(
+          existingNames
+            .map((child) => child.metadata?.name ?? '')
+            .filter((n): n is string => Boolean(n))
+        );
         nameCache.set(parentId, cache);
         return cache;
       };
@@ -109,16 +113,25 @@ export class ImportExportService implements ImportExportAPI {
           const parentDepth = await resolveParentDepth(params.targetParentId);
           const parentId: NodeId = (params.targetParentId ?? (nodeData as { parentNodeId?: NodeId })?.parentNodeId ?? nodeId) as NodeId;
           const uniqueName = await resolveConflictingName(parentId, nodeData.name);
+          const metadata: TreeNodeMetadata = {
+            name: uniqueName,
+            description: nodeData.description,
+            tags: Array.isArray((nodeData as { tags?: unknown }).tags)
+              ? ((nodeData as { tags?: unknown[] }).tags || []).filter((t): t is string => typeof t === 'string')
+              : undefined,
+          };
           const node: TreeNode = {
             id: nodeId,
             parentId,
             nodeType: (nodeData.nodeType || 'folder') as NodeType,
-            name: uniqueName,
-            description: nodeData.description,
             depth: Math.max(0, parentDepth + 1),
             createdAt: Date.now(),
             updatedAt: Date.now(),
             version: 1,
+            metadata,
+            draftMetadata: null,
+            data: null,
+            draftData: null,
           };
           toCreate.push({ node, children: nodeData.children });
           if (!nameCache.has(node.id)) {
@@ -230,10 +243,6 @@ export class ImportExportService implements ImportExportAPI {
           exportedData = this.formatAsCSV(collectedNodes, params.tabularColumns);
           mimeType = 'text/csv';
           break;
-        case 'xml':
-          exportedData = this.formatAsXML(collectedNodes, params.includeMetadata);
-          mimeType = 'application/xml';
-          break;
         default:
           throw new Error(`Unsupported export format: ${params.format}`);
       }
@@ -263,11 +272,11 @@ export class ImportExportService implements ImportExportAPI {
   }
 
   async getSupportedImportFormats(): Promise<NodeType[]> {
-    return ['json' as NodeType, 'csv' as NodeType, 'xml' as NodeType];
+    return ['json' as NodeType, 'csv' as NodeType];
   }
 
   async getSupportedExportFormats(): Promise<NodeType[]> {
-    return ['json' as NodeType, 'csv' as NodeType, 'xml' as NodeType];
+    return ['json' as NodeType, 'csv' as NodeType];
   }
 
   async validateImportData(params: ValidateImportParams): Promise<ValidationResult> {
@@ -324,7 +333,7 @@ export class ImportExportService implements ImportExportAPI {
 
   private async findNodeByName(parentId: NodeId, name: string): Promise<TreeNode | null> {
     const children = await this.db.listChildren(parentId);
-    return children.find((n) => n.name === name) || null;
+    return children.find((n) => (n.metadata?.name ?? '') === name) || null;
   }
 
   private async collectChildNodes(parentId: NodeId): Promise<TreeNode[]> {
@@ -343,9 +352,9 @@ export class ImportExportService implements ImportExportAPI {
       exportDate: new Date().toISOString(),
       nodeCount: nodes.length,
       nodes: nodes.map((node) => ({
-        name: node.name,
+        name: node.metadata?.name ?? '',
         nodeType: node.nodeType,
-        description: node.description ?? '',
+        description: node.metadata?.description ?? '',
       })),
     };
     return JSON.stringify(exportData, null, 2);
@@ -357,7 +366,11 @@ export class ImportExportService implements ImportExportAPI {
     const rows = nodes.map((node) =>
       cols
         .map((col) => {
-          const record: Record<string, unknown> = node as unknown as Record<string, unknown>;
+          const record: Record<string, unknown> = {
+            name: node.metadata?.name ?? '',
+            description: node.metadata?.description ?? '',
+            nodeType: node.nodeType,
+          } as Record<string, unknown>;
           const value = record[col];
           if (value === null || value === undefined) return '';
           if (
@@ -371,33 +384,6 @@ export class ImportExportService implements ImportExportAPI {
         .join(','),
     );
     return [headers, ...rows].join('\n');
-  }
-
-  private formatAsXML(nodes: TreeNode[], _includeMetadata?: boolean): string {
-    const xml = ['<?xml version="1.0" encoding="UTF-8"?>'];
-    xml.push('<export>');
-    xml.push('  <metadata>');
-    xml.push(`    <version>1.0</version>`);
-    xml.push(`    <exportDate>${new Date().toISOString()}</exportDate>`);
-    xml.push(`    <nodeCount>${nodes.length}</nodeCount>`);
-    xml.push('  </metadata>');
-    xml.push('  <nodes>');
-    for (const node of nodes) {
-      xml.push('    <node>');
-      xml.push(`      <name>${this.escapeXML(node.name)}</name>`);
-      xml.push(`      <nodeType>${node.nodeType}</nodeType>`);
-      if (node.description) {
-        xml.push(`      <description>${this.escapeXML(node.description)}</description>`);
-      }
-      xml.push('    </node>');
-    }
-    xml.push('  </nodes>');
-    xml.push('</export>');
-    return xml.join('\n');
-  }
-
-  private escapeXML(str: string): string {
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
   }
 
   private generateOperationId(): string {
