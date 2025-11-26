@@ -1,6 +1,7 @@
 import type { DialogStep } from '@hierarchidb/ui-dialog';
-import type { PluginStepConfig } from './types.js';
+import type { PluginStepConfig, StepData } from '@hierarchidb/plugin-base';
 import type { StepGuardState } from './types.js';
+import type { BasicInfoMeta } from '../usePluginDialogController/data-types.js';
 
 export const emptyGuards: StepGuardState = {
   enabledSteps: [],
@@ -10,25 +11,26 @@ export const emptyGuards: StepGuardState = {
   canStartBatch: false,
 };
 
-const toRecord = (value: unknown): Record<string, unknown> | undefined =>
-  typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : undefined;
+const toRecord = (
+  value: StepData | Record<string, unknown> | null | undefined | object
+): StepData | undefined => (typeof value === 'object' && value !== null ? (value as StepData) : undefined);
 
 export const BASIC_INFO_META_KEY = '__basicInfoValidation';
 
 export const buildStepWorkingData = (
-  draftData: Record<string, unknown> | undefined,
+  draftData: StepData | undefined,
   basicInfo?: { name: string; description: string; tags: string[] },
-  basicInfoMeta?: Record<string, unknown>
-): Record<string, unknown> => {
-  const base = draftData ? { ...draftData } : {};
-  const draft = (base.draft as Record<string, unknown> | undefined) ?? {};
-  const mergedDraft = {
+  basicInfoMeta?: BasicInfoMeta
+): StepData => {
+  const base: StepData = draftData ? { ...draftData } : {};
+  const draft = (base.draft as StepData | undefined) ?? {};
+  const mergedDraft: StepData = {
     ...draft,
     name: basicInfo?.name ?? (draft.name as string | undefined),
     description: basicInfo?.description ?? (draft.description as string | undefined),
-  } as Record<string, unknown>;
+  };
 
-  const result: Record<string, unknown> = {
+  const result: StepData = {
     ...base,
     name: basicInfo?.name ?? (base as { name?: string }).name,
     description: basicInfo?.description ?? (base as { description?: string }).description,
@@ -43,9 +45,7 @@ export const buildStepWorkingData = (
   return result;
 };
 
-export const stripReservedDialogKeys = (
-  input?: Record<string, unknown> | null
-): Record<string, unknown> => {
+export const stripReservedDialogKeys = (input?: StepData | null): StepData => {
   // Legacy helper no longer strips anything; kept to avoid runtime errors.
   return input ? { ...input } : {};
 };
@@ -97,8 +97,8 @@ export async function evaluateStepGuards({
   configs: ReadonlyArray<PluginStepConfig>;
   filled: boolean[];
   activeStepIndex: number;
-  dialogData: Record<string, unknown>;
-  hostCanSubmit?: (data: unknown) => boolean | Promise<boolean>;
+  dialogData: StepData;
+  hostCanSubmit?: (data: StepData) => boolean | Promise<boolean>;
 }): Promise<StepGuardState> {
   if (!steps.length) {
     return emptyGuards;
@@ -111,7 +111,7 @@ export async function evaluateStepGuards({
   const activeConfig = activeStep ? configMap.get(activeStep.id) : undefined;
 
   const callBoolean = async <T extends boolean>(
-    fn: ((...args: unknown[]) => T | Promise<T>) | undefined,
+    fn: ((payload: StepData) => T | Promise<T>) | undefined,
     fallback: boolean
   ): Promise<boolean> => {
     if (!fn) return fallback;
@@ -198,9 +198,9 @@ export async function evaluateStepGuards({
 
 export const mergeDialogData = (
   basic: { name: string; description: string; tags: string[] },
-  workingData: Record<string, unknown> | null | undefined
-): Record<string, unknown> => {
-  const merged: Record<string, unknown> = workingData ? { ...workingData } : {};
+  workingData: StepData | null | undefined
+): StepData => {
+  const merged: StepData = workingData ? { ...workingData } : {};
   merged.name = basic.name;
   merged.description = basic.description;
   merged.tags = basic.tags;

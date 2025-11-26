@@ -6,11 +6,8 @@
       "DOM"
     ],
     "paths": {
-      "@hierarchidb/runtime-client": [
-        "packages/runtime/client/src/index.ts"
-      ],
-      "@hierarchidb/runtime-client/*": [
-        "packages/runtime/client/src/*"
+      "~/*": [
+        "./src/*"
       ]
     }
   },

@@ -4,13 +4,9 @@
     "paths": {
       "~/*": [
         "./src/*"
-      ],
-      "@hierarchidb/plugin-service-api": [
-        "../plugin-service-api/src/index.ts"
       ]
     },
     "skipLibCheck": false,
-    "baseUrl": ".",
     "jsx": "react-jsx"
   },
   "include": [

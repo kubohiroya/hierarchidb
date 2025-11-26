@@ -15,7 +15,7 @@ const pluginNames = [
   'timeline',
 ];
 
-const testingMocksRoot = path.resolve(__dirname, '../src/__tests__/plugin-dialog-mocks');
+const testingMocksRoot = path.resolve(__dirname, './src/__tests__/plugin-dialog-mocks');
 const workerStubPath = path.join(testingMocksRoot, 'stubs/pluginWorkerStub.ts');
 const runtimeWorkerStubPath = path.join(testingMocksRoot, 'stubs/runtimeWorkerStub.ts');
 

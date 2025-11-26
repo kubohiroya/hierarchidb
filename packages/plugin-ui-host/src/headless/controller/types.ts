@@ -1,9 +1,15 @@
 import type { DialogStateAPI, DialogStateSubscriptionId } from '@hierarchidb/common-api';
 import type { MultiStepDialogState } from '@hierarchidb/common-types';
 import type { DialogStep } from '@hierarchidb/ui-dialog';
-import { PluginStepConfig } from 'packages/plugin-base/dist/index.js';
+import type { PluginStepConfig, StepData } from '@hierarchidb/plugin-base';
 
-export type { DialogStateAPI, DialogStateSubscriptionId, MultiStepDialogState, PluginStepConfig, DialogStep };
+export type {
+  DialogStateAPI,
+  DialogStateSubscriptionId,
+  MultiStepDialogState,
+  PluginStepConfig,
+  DialogStep,
+};
 
 export type BasicInfoState = { name: string; description: string; tags: string[] };
 
@@ -16,8 +22,10 @@ export type StepGuardState = {
 };
 
 export interface DialogStateSubscriptionDeps {
-  createCallback?: (handler: (state: MultiStepDialogState | null) => void) => unknown;
-  releaseCallback?: (callback: unknown) => void;
+  createCallback?: (
+    handler: (state: MultiStepDialogState | null) => void
+  ) => (state: MultiStepDialogState | null) => void;
+  releaseCallback?: (callback: (state: MultiStepDialogState | null) => void) => void;
 }
 
 export type DialogStateApiSubset = Partial<
@@ -29,6 +37,6 @@ export type StepGuardDeps = {
   configs: ReadonlyArray<PluginStepConfig>;
   filled: boolean[];
   activeStepIndex: number;
-  dialogData: Record<string, unknown>;
-  hostCanSubmit?: (data: unknown) => boolean | Promise<boolean>;
+  dialogData: StepData;
+  hostCanSubmit?: (data: StepData) => boolean | Promise<boolean>;
 };

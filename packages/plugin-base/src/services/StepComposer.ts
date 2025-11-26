@@ -1,13 +1,21 @@
 import { HostProfileRegistry } from '../registry/HostProfileRegistry.js';
-import { type PluginStepConfig, PluginStepRegistry } from '../registry/PluginStepRegistry.js';
+import {
+  type PluginStepConfig,
+  type StepData,
+  PluginStepRegistry,
+} from '../registry/PluginStepRegistry.js';
 
 export interface ComposeResult {
-  configs: PluginStepConfig[];
+  configs: PluginStepConfig<StepData>[];
   hasHostBase: boolean;
-  hostCanSubmit?: (data: unknown) => boolean | Promise<boolean>;
+  hostCanSubmit?: (data: StepData) => boolean | Promise<boolean>;
 }
 
-export function composeStepConfigs(nodeType: string, mode: 'create' | 'edit'): ComposeResult {
+export function composeStepConfigs(
+  nodeType: string,
+  mode: 'create' | 'edit',
+  existingData?: StepData
+): ComposeResult {
   const hostReg = HostProfileRegistry.getInstance();
   const pluginReg = PluginStepRegistry.getInstance();
 
@@ -21,14 +29,16 @@ export function composeStepConfigs(nodeType: string, mode: 'create' | 'edit'): C
   const pluginCfgs = cfgp
     ? mode === 'create'
       ? cfgp.getCreateStepConfigs()
-      : cfgp.getEditStepConfigs('')
+      : cfgp.getEditStepConfigs('', existingData)
     : [];
 
   // Deduplicate by step id with "extension/plugin overrides host" policy.
   // Preserve host-provided ordering for base steps, allowing plugin configs to override
   // matching ids. Any additional plugin-defined steps are appended in their declared order.
-  const pluginById = new Map<string, PluginStepConfig>(pluginCfgs.map((cfg) => [cfg.id, cfg]));
-  const merged: PluginStepConfig[] = [];
+  const pluginById = new Map<string, PluginStepConfig<StepData>>(
+    pluginCfgs.map((cfg) => [cfg.id, cfg])
+  );
+  const merged: PluginStepConfig<StepData>[] = [];
   const seen = new Set<string>();
 
   for (const baseCfg of hostBase) {

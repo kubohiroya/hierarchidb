@@ -5,10 +5,12 @@
 
 import type { Collection, IndexableType, Table } from 'dexie';
 import type { BaseEntity, NodeId } from '@hierarchidb/common-types';
-import { EntityLifecycleHooks } from '@hierarchidb/plugin-service-api/types/entityLifecycleHooks.js';
-import { OperationResult } from '@hierarchidb/plugin-service-api/types/operationResult.js';
-import { PaginatedResult } from '@hierarchidb/plugin-service-api/types/paginatedResult.js';
-import { BaseSearchCriteria } from '@hierarchidb/plugin-service-api/types/baseSearchCriteria.js';
+import {
+  EntityLifecycleHooks,
+  OperationResult,
+  PaginatedResult,
+  BaseSearchCriteria,
+} from '@hierarchidb/plugin-service-api';
 
 /**
  * Abstract base class for entity handlers

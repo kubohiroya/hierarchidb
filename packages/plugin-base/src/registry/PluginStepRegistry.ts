@@ -7,6 +7,10 @@ import type { DialogStep } from '@hierarchidb/ui-dialog';
 import type { ReactNode, RefObject } from 'react';
 import { dialogStepLocalizationRegistry } from './DialogStepLocalizationRegistry.js';
 
+export type StepPrimitive = string | number | boolean | null | undefined;
+export type StepDataValue = StepPrimitive | StepDataValue[] | { [key: string]: StepDataValue };
+export type StepData = { [key: string]: StepDataValue };
+
 export interface StepLocalizationConfig {
   defaultTitle?: string;
   titles?: Partial<Record<string, string>>;
@@ -16,7 +20,7 @@ export interface StepLocalizationConfig {
 /**
  * Plugin step provider interface
  */
-export interface PluginStepProvider<TData = unknown> {
+export interface PluginStepProvider<TData extends StepData = StepData> {
   /** Node type this provider handles */
   nodeType: string;
 
@@ -33,7 +37,7 @@ export interface PluginStepProvider<TData = unknown> {
 /**
  * New: Config-based provider that supplies typed component factories.
  */
-export interface PluginStepConfigProvider<TData = unknown> {
+export interface PluginStepConfigProvider<TData extends StepData = StepData> {
   nodeType: string;
   getCreateStepConfigs(): PluginStepConfig<TData>[];
   getEditStepConfigs(nodeId: string, data?: TData): PluginStepConfig<TData>[];
@@ -65,7 +69,7 @@ export interface StartBatchContext {
   dialogData: Record<string, unknown>;
 }
 
-export interface PluginStepConfig<TData = unknown> {
+export interface PluginStepConfig<TData extends StepData = StepData> {
   /** Step ID */
   id: string;
 
@@ -102,7 +106,7 @@ export interface PluginStepConfig<TData = unknown> {
 /**
  * Props passed to step components
  */
-export interface StepComponentProps<TData = unknown> {
+export interface StepComponentProps<TData extends StepData = StepData> {
   /** Dialog mode */
   mode: 'create' | 'edit';
 
@@ -130,7 +134,10 @@ export interface StepComponentProps<TData = unknown> {
 
 }
 
-const registerAndResolveLabel = (nodeType: string, cfg: PluginStepConfig): string => {
+const registerAndResolveLabel = <TData extends StepData>(
+  nodeType: string,
+  cfg: PluginStepConfig<TData>
+): string => {
   const defaultTitle = cfg.localization?.defaultTitle ?? cfg.label ?? cfg.id;
   dialogStepLocalizationRegistry.register(nodeType, {
     id: cfg.id,
@@ -146,8 +153,8 @@ const registerAndResolveLabel = (nodeType: string, cfg: PluginStepConfig): strin
  */
 export class PluginStepRegistry {
   private static instance: PluginStepRegistry;
-  private providers: Map<string, PluginStepProvider<unknown>> = new Map();
-  private configProviders: Map<string, PluginStepConfigProvider<unknown>> = new Map();
+  private providers: Map<string, PluginStepProvider<StepData>> = new Map();
+  private configProviders: Map<string, PluginStepConfigProvider<StepData>> = new Map();
   private listeners: Set<() => void> = new Set();
   private version = 0;
 
@@ -168,20 +175,28 @@ export class PluginStepRegistry {
   /**
    * Register a step provider
    */
-  register<TData>(provider: PluginStepProvider<TData>): void {
+  register<TData extends StepData>(provider: PluginStepProvider<TData>): void {
     if (this.providers.has(provider.nodeType)) {
       return;
     }
-    this.providers.set(provider.nodeType, provider as PluginStepProvider<unknown>);
+    this.providers.set(
+      provider.nodeType,
+      provider as unknown as PluginStepProvider<StepData>
+    );
     this.emitChange();
   }
 
   /** Register a config-based provider (typed componentFactory) */
-  registerConfigProvider<TData>(provider: PluginStepConfigProvider<TData>): void {
+  registerConfigProvider<TData extends StepData>(
+    provider: PluginStepConfigProvider<TData>
+  ): void {
     if (this.configProviders.has(provider.nodeType)) {
       return;
     }
-    this.configProviders.set(provider.nodeType, provider as PluginStepConfigProvider<unknown>);
+    this.configProviders.set(
+      provider.nodeType,
+      provider as unknown as PluginStepConfigProvider<StepData>
+    );
     this.emitChange();
   }
 
@@ -197,11 +212,11 @@ export class PluginStepRegistry {
   /**
    * Get provider for node type
    */
-  getProvider(nodeType: string): PluginStepProvider<unknown> | undefined {
+  getProvider(nodeType: string): PluginStepProvider<StepData> | undefined {
     return this.providers.get(nodeType);
   }
 
-  getConfigProvider(nodeType: string): PluginStepConfigProvider<unknown> | undefined {
+  getConfigProvider(nodeType: string): PluginStepConfigProvider<StepData> | undefined {
     return this.configProviders.get(nodeType);
   }
 
@@ -238,7 +253,7 @@ export class PluginStepRegistry {
   /**
    * Get edit steps for node type
    */
-  getEditSteps(nodeType: string, nodeId: string, data?: unknown): DialogStep[] {
+  getEditSteps(nodeType: string, nodeId: string, data?: StepData): DialogStep[] {
     const cfgp = this.configProviders.get(nodeType);
     if (cfgp) {
       const cfgs = cfgp.getEditStepConfigs(nodeId, data);

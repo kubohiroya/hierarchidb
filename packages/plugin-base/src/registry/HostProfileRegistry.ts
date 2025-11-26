@@ -1,4 +1,4 @@
-import type { PluginStepConfig } from './PluginStepRegistry.js';
+import type { PluginStepConfig, StepData } from './PluginStepRegistry.js';
 
 export type HostName = string;
 
@@ -6,16 +6,19 @@ export interface HostProfileContext {
   nodeType: string;
 }
 
-export interface HostProfileProvider<TData = unknown> {
+export interface HostProfileProvider<TData extends StepData = StepData> {
   name: HostName;
-  getBaseStepConfigs: (mode: 'create' | 'edit', ctx: HostProfileContext) => PluginStepConfig[];
+  getBaseStepConfigs: (
+    mode: 'create' | 'edit',
+    ctx: HostProfileContext
+  ) => PluginStepConfig<TData>[];
   // Optional overall submit guard; host may tighten eligibility
   canSubmit?: (data: TData) => boolean | Promise<boolean>;
 }
 
 export class HostProfileRegistry {
   private static singleton: HostProfileRegistry | null = null;
-  private providers = new Map<HostName, HostProfileProvider<unknown>>();
+  private providers = new Map<HostName, HostProfileProvider<StepData>>();
   private listeners: Set<() => void> = new Set();
   private version = 0;
 
@@ -24,12 +27,12 @@ export class HostProfileRegistry {
     return HostProfileRegistry.singleton;
   }
 
-  register<TData>(provider: HostProfileProvider<TData>): void {
-    this.providers.set(provider.name, provider as HostProfileProvider<unknown>);
+  register<TData extends StepData>(provider: HostProfileProvider<TData>): void {
+    this.providers.set(provider.name, provider as unknown as HostProfileProvider<StepData>);
     this.emitChange();
   }
 
-  get(name: HostName): HostProfileProvider<unknown> | undefined {
+  get(name: HostName): HostProfileProvider<StepData> | undefined {
     return this.providers.get(name);
   }
 
@@ -40,11 +43,12 @@ export class HostProfileRegistry {
   resolveHostForNodeType(nodeType: string): HostName | undefined {
     try {
       type PluginDef = { nodeType: string; config?: { extends?: string; base?: string } };
-      const g = (typeof window !== 'undefined' ? window : ({} as unknown)) as {
-        __HDB_PLUGIN_DEFS__?: PluginDef[];
-      };
-      const defs: PluginDef[] = Array.isArray(g.__HDB_PLUGIN_DEFS__)
-        ? (g.__HDB_PLUGIN_DEFS__ as PluginDef[])
+      const globalObj =
+        typeof window !== 'undefined'
+          ? (window as { __HDB_PLUGIN_DEFS__?: PluginDef[] })
+          : (globalThis as { __HDB_PLUGIN_DEFS__?: PluginDef[] });
+      const defs: PluginDef[] = Array.isArray(globalObj.__HDB_PLUGIN_DEFS__)
+        ? globalObj.__HDB_PLUGIN_DEFS__
         : [];
       const def = defs.find((d) => d.nodeType === nodeType);
       const ext = def?.config?.extends || def?.config?.base || undefined;

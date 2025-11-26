@@ -1,13 +1,10 @@
 import { proxy, releaseProxy } from 'comlink';
-import type {
-  DialogStateAPI,
-  DialogStateSubscriptionId,
-} from '@hierarchidb/common-api';
+import type { DialogStateAPI, DialogStateSubscriptionId } from '@hierarchidb/common-api';
 import type { MultiStepDialogState } from './types.js';
 import type { DialogStateSubscriptionDeps } from './types.js';
 import { DialogStateSubscribeInput } from '@hierarchidb/common-types';
 
-const defaultWarn = (...args: unknown[]) => {
+const defaultWarn = (...args: Array<string | number | boolean | object | null | undefined>) => {
   if (typeof console !== 'undefined' && typeof console.warn === 'function') {
     console.warn(...args);
   }
@@ -52,15 +49,18 @@ export const subscribeDialogState = async ({
     throw error;
   }
 
-  if(! deps?.createCallback){
-    throw new Error('[PluginDialogShell] DialogStateSubscriptionDeps.createCallback is required');
-  }
-
-  const createCallback = ((handler: (state: MultiStepDialogState | null) => void) => proxy(handler));
-  const releaseCallback = ((callback: unknown) => {
+  const createCallback: (handler: (state: MultiStepDialogState | null) => void) => (
+    state: MultiStepDialogState | null
+  ) => void =
+    deps?.createCallback ??
+    ((handler: (state: MultiStepDialogState | null) => void) =>
+      proxy(handler) as (state: MultiStepDialogState | null) => void);
+  const releaseCallback =
+    deps?.releaseCallback ??
+    ((callback: (state: MultiStepDialogState | null) => void) => {
       if (!callback) return;
       try {
-        const releaser = (callback as { [releaseProxy]?: () => void })[releaseProxy];
+        const releaser = (callback as { [key in typeof releaseProxy]?: () => void })[releaseProxy];
         if (typeof releaser === 'function') {
           releaser.call(callback);
         }
@@ -73,7 +73,16 @@ export const subscribeDialogState = async ({
   onSnapshot(initialState);
 
   const callback = createCallback(onSnapshot);
-  const subscriptionId: DialogStateSubscriptionId = await subscribeFn(params, callback);
+  let subscriptionId: DialogStateSubscriptionId | null = null;
+
+  try {
+    subscriptionId = await subscribeFn(params, callback);
+  } catch (error) {
+    const normalized = error instanceof Error ? error : new Error(String(error));
+    warn(normalized);
+    releaseCallback?.(callback);
+    throw normalized;
+  }
 
   const release = () => {
     try {
@@ -82,7 +91,9 @@ export const subscribeDialogState = async ({
       // ignore release errors
     }
     try {
-      unsubscribeFn(subscriptionId);
+      if (subscriptionId) {
+        unsubscribeFn(subscriptionId);
+      }
     } catch {
       // ignore
     }

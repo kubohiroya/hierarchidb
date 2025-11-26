@@ -82,6 +82,7 @@
   - [x] `pnpm -F @hierarchidb/app build` を実行し、成功ログを運用ログに残す
   - [x] ロールバック手順を明文化する
 - ロールバック手順：`packages/plugin-registry` もしくは `app/vite.config.ts` へ加えた差分を revert し、`pnpm -F @hierarchidb/app build` を再実行して現状エラーが再現することを確認する
+
 1284) TreeConsole Breadcrumb ルート表示修正（P0）
 - ブランチ: `fix/ui-treeconsole/breadcrumb-root`（sandbox 制約で `main` 上で作業）
 - 依存: `packages/ui/treeconsole/breadcrumb`, `packages/ui/treeconsole/base`, `app/src/components/TreeConsoleIntegration.tsx`, `app/src/hooks/treeconsole/**/*`
@@ -3428,6 +3429,14 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1548) tsconfig paths 依存ガード警告解消（P1） — 完了 (2025-11-26)
+  - 要点：6パッケージ（batch-runtime-services / plugin-registry / plugin-service-sdk / plugin-ui-sdk / basemap-plugin / spreadsheet-plugin）の tsconfig から baseUrl/paths override を撤去し、必要最小限の `~/*` のみとした。
+  - 検証：`node scripts/run-dependency-guard.mjs`（2025-11-26 11:11 JST）exit 0、WARN 0。
+  - ロールバック手順：対象 tsconfig 差分を revert し、`node scripts/run-dependency-guard.mjs` を再実行して WARN 再現を確認する。
+- 1547) plugin-ui-host dialog controller 分割（P0） — 完了 (2025-11-26)
+  - 要点：`usePluginDialogController` を state/frame/basic-info/steps/capabilities/publish のモジュールへ分割し、ヘッドレス構成を薄いオーケストレーターに整理。テスト向けに `buildStepWorkingData`/`subscribeDialogState` を再エクスポートし、vitest setup のパスを正しいモックディレクトリへ修正。
+  - 検証：`pnpm --filter @hierarchidb/plugin-ui-host test`（2025-11-26 11:06 JST）exit 0。
+  - ロールバック手順：`packages/plugin-ui-host/src/headless/usePluginDialogController.tsx` と同ディレクトリ配下の新規モジュール（`usePluginDialogController/*`）および `packages/plugin-ui-host/src/headless/controller/dialog-state-subscriber.ts`, `packages/plugin-ui-host/vitest.config.ts` の今回差分を revert し、上記テストコマンドを再実行して旧構成へ戻ることを確認する。
 - 1546) ui-map maplibre CSS 型解決（P0） — 完了 (2025-11-26)
   - 要点：ui-map/tsconfig の include をリポジトリ直下の `global.d.ts` へ修正し、maplibre CSS モジュール宣言を確実に読み込むようにして typecheck の未解決エラーを解消。
   - 検証：`pnpm --filter @hierarchidb/ui-map typecheck`（2025-11-26 10:44 JST）exit 0。
@@ -8938,6 +8947,14 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-25 13:36 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0（policy 修正後の再確認）。
 - 2025-11-25 13:45 progress: fix/app/dev-base-prefix-rewrite — dev モードでは base を `/` に固定し、`/hierarchidb/@fs` 系の 404 を根本的に防止（prod は appPrefix ベースのまま）。
 - 2025-11-25 14:05 progress: fix/runtime-worker/commit-discard — create/edit の commit で draft ノードが削除されないよう、`commitTreeNodeDraft` から `discardTreeNodeDraft` 呼び出しを撤去し、commit 時は draft クリアのみとする。
+- 2025-11-26 10:55 start: fix/plugin-ui-host/dialog-controller-modularization — `usePluginDialogController` の責務分割タスクを開始。DoD: TASKS/Kanban 更新、API 互換のままモジュール分割、`pnpm --filter @hierarchidb/plugin-ui-host test` green、ロールバック手順明記。git branch 作成は `.git/refs/heads/refactor/plugin-ui-host/dialog-controller-modularization` 作成失敗のため main で継続。
+- 2025-11-26 10:55 progress: fix/plugin-ui-host/dialog-controller-modularization — 分割方針を state/capabilities/actions/sync/steps のモジュール＋index 組み立てで設計。capabilities/steps は純粋関数、actions/sync に副作用を集約し、index で API を束ねる構成で進行する。
+- 2025-11-26 11:05 progress: fix/plugin-ui-host/dialog-controller-modularization — usePluginDialogController を modules（state bridge/frame/basic-info/steps/capabilities/publish）へ分割し、テスト用の buildStepWorkingData/subscribeDialogState を再エクスポート。vitest setup のモックパスを `packages/plugin-ui-host/src/__tests__/plugin-dialog-mocks` へ修正。
+- 2025-11-26 11:06 command: pnpm --filter @hierarchidb/plugin-ui-host test — exit 0。
+- 2025-11-26 11:10 start: chore/tsconfig-paths-dep-guard — dependency guard WARN（tsconfig paths/baseUrl override）解消に着手。DoD: TASKS/Kanban更新、対象 tsconfig を `~/*` 以外の override なしに統一、`node scripts/run-dependency-guard.mjs` WARN 0、ロールバック手順明記。
+- 2025-11-26 11:11 progress: chore/tsconfig-paths-dep-guard — 対象6パッケージの tsconfig から baseUrl/paths override を削除し、必要な場合のみ `~/*` を残す形へ統一。
+- 2025-11-26 11:11 command: node scripts/run-dependency-guard.mjs — exit 0（WARN 0 を確認）。
+- 2025-11-26 11:12 progress: chore/tsconfig-paths-dep-guard — dependency-guard 実行時に出る npm Unknown env config 警告（npm-globalconfig/verify-deps-before-run/_jsr-registry）を抑制するため、`scripts/run-dependency-guard.mjs` の環境変数サニタイズ対象に npm_globalconfig を追加し再実行、警告消失を確認。
 - 2025-11-25 14:06 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0。
 - 2025-11-25 14:07 done: fix/runtime-worker/commit-discard — commit 正常終了でノード削除が起きないように修正。ロールバックは `packages/runtime/worker/src/services/draft/commitOperations.ts` を revert し、上記 typecheck を再実行して確認。
 - 2025-11-25 14:30 start: fix/plugin-service-sdk/typecheck — plugin-service-sdk で plugin-service-api 未解決や batch API 型不整合が発生する件を調査開始。
