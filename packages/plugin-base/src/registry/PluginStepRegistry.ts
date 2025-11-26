@@ -7,9 +7,8 @@ import type { DialogStep } from '@hierarchidb/ui-dialog';
 import type { ReactNode, RefObject } from 'react';
 import { dialogStepLocalizationRegistry } from './DialogStepLocalizationRegistry.js';
 
-export type StepPrimitive = string | number | boolean | null | undefined;
-export type StepDataValue = StepPrimitive | StepDataValue[] | { [key: string]: StepDataValue };
-export type StepData = { [key: string]: StepDataValue };
+// Abstract step payload shape. Concrete plugins should extend this with their own dialog data types.
+export type StepData = object;
 
 export interface StepLocalizationConfig {
   defaultTitle?: string;

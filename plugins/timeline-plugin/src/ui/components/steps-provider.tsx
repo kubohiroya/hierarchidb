@@ -1,4 +1,4 @@
-import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/plugin-base';
+import { PluginStepRegistry, type StepComponentProps, type StepData } from '@hierarchidb/plugin-base';
 import { FramesPreviewStep } from '../steps/FramesPreviewStep.js';
 import { MapPreviewStep } from '../steps/MapPreviewStep.js';
 import { AnimationViewerStep } from '../steps/AnimationViewerStep.js';
@@ -17,7 +17,7 @@ type TimelineFrameConfig = {
   };
 };
 
-type TimelineData = { basic: { name: string; description?: string }; frames: TimelineFrameConfig[] };
+type TimelineData = StepData & { basic: { name: string; description?: string }; frames: TimelineFrameConfig[] };
 
 registry.registerConfigProvider<TimelineData>({
   nodeType: 'timeline',

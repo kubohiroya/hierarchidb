@@ -1,4 +1,10 @@
-import { PluginStepRegistry, type StepComponentProps, type PluginStepConfig, type StartBatchContext } from '@hierarchidb/plugin-base';
+import {
+  PluginStepRegistry,
+  type StepComponentProps,
+  type PluginStepConfig,
+  type StartBatchContext,
+  type StepData,
+} from '@hierarchidb/plugin-base';
 import type { NodeId } from '@hierarchidb/common-types';
 import {
   BasicInfoStep as SharedBasicInfoStep,
@@ -15,13 +21,15 @@ import { notify } from '@hierarchidb/components';
 
 const registry = PluginStepRegistry.getInstance();
 
-type StepProps = StepComponentProps<RouteDraft>;
+type RouteStepData = StepData & Partial<RouteDraft>;
 
-const ensureDraft = (data?: StepComponentProps['data']): RouteDraft => {
+type StepProps = StepComponentProps<RouteStepData>;
+
+const ensureDraft = (data?: StepComponentProps['data']): RouteStepData => {
   const fallbackId = 'route-draft' as NodeId;
   if (data && typeof data === 'object') {
-    const cast = data as RouteDraft;
-    return createRouteDraftBase(
+    const cast = data as RouteStepData;
+    const base = createRouteDraftBase(
       (cast.treeNodeId ?? (cast as { id?: string }).id ?? fallbackId) as NodeId,
       {
         ...cast.draft,
@@ -31,25 +39,51 @@ const ensureDraft = (data?: StepComponentProps['data']): RouteDraft => {
       },
       (cast as { parentId?: NodeId }).parentId
     );
+    return {
+      ...(base as RouteStepData),
+      processingConfig: base.processingConfig ? { ...base.processingConfig } : undefined,
+      draft: {
+        ...(base.draft ?? {}),
+        processingConfig: base.draft?.processingConfig ? { ...base.draft.processingConfig } : undefined,
+      },
+    };
   }
-  return createRouteDraftBase(fallbackId, {}, undefined);
+  const base = createRouteDraftBase(fallbackId, {}, undefined);
+  return {
+    ...(base as RouteStepData),
+    processingConfig: base.processingConfig ? { ...base.processingConfig } : undefined,
+    draft: {
+      ...(base.draft ?? {}),
+      processingConfig: base.draft?.processingConfig ? { ...base.draft.processingConfig } : undefined,
+    },
+  };
 };
 
 const mergeDraft = (
-  current: RouteDraft,
-  updates: Partial<RouteDraft>
-): RouteDraft => ({
+  current: RouteStepData,
+  updates: Partial<RouteStepData>
+): RouteStepData => ({
   ...current,
   ...updates,
   draft: {
     ...(current.draft ?? {}),
     ...(updates.draft ?? {}),
+    processingConfig: updates.draft?.processingConfig
+      ? { ...updates.draft.processingConfig }
+      : current.draft?.processingConfig
+      ? { ...current.draft.processingConfig }
+      : undefined,
   },
   tags: (updates.tags ?? current.tags ?? []) as TagId[],
+  processingConfig: updates.processingConfig
+    ? { ...updates.processingConfig }
+    : current.processingConfig
+    ? { ...current.processingConfig }
+    : undefined,
 });
 
-const hasRouteDetails = (data?: RouteDraft): boolean => {
-  const wc = data as RouteDraft | undefined;
+const hasRouteDetails = (data?: RouteStepData): boolean => {
+  const wc = data as RouteStepData | undefined;
   const draft = wc?.draft;
   const routeType = draft && typeof (draft as Record<string, unknown>).routeType === 'string'
     ? (draft as Record<'routeType', string>).routeType
@@ -60,10 +94,11 @@ const hasRouteDetails = (data?: RouteDraft): boolean => {
   return Boolean(routeType && transportModes.length > 0);
 };
 
-const startRouteBatch = async (data: RouteDraft, _context: StartBatchContext) => {
+const startRouteBatch = async (data: RouteStepData, _context: StartBatchContext) => {
   const draft = data?.draft ?? {};
   const hasEssentials = Boolean(
-    draft.name?.trim() &&
+    typeof draft.name === 'string' &&
+      draft.name.trim() &&
       draft.routeType &&
       Array.isArray(draft.transportModes) &&
       draft.transportModes.length > 0
@@ -77,9 +112,9 @@ const startRouteBatch = async (data: RouteDraft, _context: StartBatchContext) =>
   notify.info('Route batch launch is not yet implemented in this dialog.');
 };
 
-registry.registerConfigProvider<RouteDraft>({
+registry.registerConfigProvider<RouteStepData>({
   nodeType: 'route',
-  getCreateStepConfigs(): PluginStepConfig<RouteDraft>[] {
+  getCreateStepConfigs(): PluginStepConfig<RouteStepData>[] {
     const t = routeTranslations;
     return [
       {
@@ -91,9 +126,10 @@ registry.registerConfigProvider<RouteDraft>({
             <SharedBasicInfoStep
               name={draft.draft?.name ?? ''}
               description={draft.draft?.description ?? ''}
-              tags={(draft.tags ?? []) as string[]}
+              tags={Array.isArray(draft.tags) ? (draft.tags as string[]) : []}
               mode={p.mode}
-              validate={({ name }) => (name.trim().length ? null : t.en.errors.nameRequired)}
+              validate={({ name }) =>
+                typeof name === 'string' && name.trim().length ? null : t.en.errors.nameRequired}
               onChange={(value: BasicInfoData) =>
                 p.onChange(
                   mergeDraft(draft, {
@@ -109,7 +145,8 @@ registry.registerConfigProvider<RouteDraft>({
             />
           );
         },
-        validate: (data?: RouteDraft) => Boolean(data?.draft?.name?.trim()),
+        validate: (data?: RouteStepData) =>
+          typeof data?.draft?.name === 'string' ? Boolean(data.draft.name.trim()) : false,
       },
       {
         id: 'route-details',
@@ -118,8 +155,8 @@ registry.registerConfigProvider<RouteDraft>({
           const draft = ensureDraft(p.data);
           return (
             <RouteDetailsStep
-              draft={draft}
-              onUpdate={(updates) => p.onChange(mergeDraft(draft, updates))}
+              draft={draft as unknown as RouteDraft}
+              onUpdate={(updates) => p.onChange(mergeDraft(draft, updates as Partial<RouteStepData>))}
               onValidationChange={p.setValid}
             />
           );
@@ -133,8 +170,8 @@ registry.registerConfigProvider<RouteDraft>({
           const draft = ensureDraft(p.data);
           return (
             <RouteSelectionStep
-              draft={draft}
-              onUpdate={(updates) => p.onChange(mergeDraft(draft, updates))}
+              draft={draft as unknown as RouteDraft}
+              onUpdate={(updates) => p.onChange(mergeDraft(draft, updates as Partial<RouteStepData>))}
               onValidationChange={p.setValid}
             />
           );
@@ -148,8 +185,8 @@ registry.registerConfigProvider<RouteDraft>({
           const draft = ensureDraft(p.data);
           return (
             <RouteProcessingStep
-              draft={draft}
-              onUpdate={(updates) => p.onChange(mergeDraft(draft, updates))}
+              draft={draft as unknown as RouteDraft}
+              onUpdate={(updates) => p.onChange(mergeDraft(draft, updates as Partial<RouteStepData>))}
               onValidationChange={p.setValid}
             />
           );
@@ -162,20 +199,21 @@ registry.registerConfigProvider<RouteDraft>({
         optional: true,
         componentFactory: (p: StepProps) => {
           const draft = ensureDraft(p.data);
-          return <RouteBuildStep draft={draft} />;
+          return <RouteBuildStep draft={draft as unknown as RouteDraft} />;
         },
         capabilities: {
-          canStartBatch: (data: RouteDraft) => {
+          canStartBatch: (data: RouteStepData) => {
             const draft = data?.draft ?? {};
             const hasEssentials = Boolean(
-              draft.name?.trim() &&
+              typeof draft.name === 'string' &&
+                draft.name.trim() &&
                 draft.routeType &&
                 Array.isArray(draft.transportModes) &&
                 draft.transportModes.length > 0
             );
             return hasEssentials;
           },
-          startBatch: (data, context) => startRouteBatch(data, context),
+          startBatch: (data, context) => startRouteBatch(data as RouteStepData, context),
         },
         validate: () => true,
       },

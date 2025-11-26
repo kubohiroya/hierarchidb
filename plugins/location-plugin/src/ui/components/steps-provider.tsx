@@ -1,4 +1,4 @@
-import { PluginStepRegistry, type StartBatchContext, type StepComponentProps } from '@hierarchidb/plugin-base';
+import { PluginStepRegistry, type StartBatchContext, type StepComponentProps, type StepData } from '@hierarchidb/plugin-base';
 import type { NodeId, Timestamp } from '@hierarchidb/common-types';
 import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 import type { LocationDraft } from '../../common/types/index.js';
@@ -15,7 +15,9 @@ import { LocationVectorTileService } from '../../services/tiles/LocationVectorTi
 
 const registry = PluginStepRegistry.getInstance();
 
-const ensureDraft = (data?: LocationDraft): LocationDraft => {
+type LocationStepData = StepData & LocationDraft;
+
+const ensureDraft = (data?: LocationDraft): LocationStepData => {
   if (data) {
     return {
       ...data,
@@ -38,7 +40,7 @@ const ensureDraft = (data?: LocationDraft): LocationDraft => {
 const mergeDraft = (
   current: LocationDraft,
   updates: Partial<LocationDraft>
-): LocationDraft => ({
+): LocationStepData => ({
   ...current,
   ...updates,
   draft: {
@@ -47,7 +49,7 @@ const mergeDraft = (
   },
 });
 
-type StepProps = StepComponentProps<LocationDraft>;
+type StepProps = StepComponentProps<LocationStepData>;
 
 const hasSelection = (data?: LocationDraft): boolean => {
   const matrix = data?.draft?.selectionMatrix;
@@ -65,7 +67,7 @@ const MAX_CONCURRENCY = 16;
 const DEFAULT_MIN_ZOOM = 5;
 const DEFAULT_MAX_ZOOM = 12;
 
-const startLocationBatch = async (data: LocationDraft, context: StartBatchContext) => {
+const startLocationBatch = async (data: LocationStepData, context: StartBatchContext) => {
   const t = locationTranslations.en;
   const draft = data.draft ?? {};
   const nodeId = (context.nodeId ?? data.treeNodeId) as NodeId | undefined;

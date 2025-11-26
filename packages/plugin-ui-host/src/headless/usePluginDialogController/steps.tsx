@@ -169,14 +169,7 @@ export function useDialogSteps({
     });
 
     return result;
-  }, [
-    composedConfigs.hasHostBase,
-    normalizedConfigs,
-    isBasicInfoValid,
-    basicInfoValidationPayload,
-    draftDataWithoutMeta,
-    basicInfoValidationError,
-  ]);
+  }, [composedConfigs.hasHostBase, normalizedConfigs, isBasicInfoValid, basicInfoValidationPayload, draftDataWithoutMeta]);
 
   const stepDescriptors = useMemo<ReadonlyArray<StepComponentDescriptor<DialogStepData>>>(() => {
     const descriptors: StepComponentDescriptor<DialogStepData>[] = [];

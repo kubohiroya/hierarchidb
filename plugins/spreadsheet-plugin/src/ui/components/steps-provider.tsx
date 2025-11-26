@@ -1,5 +1,7 @@
-import { PluginStepRegistry, type PluginStepConfig, type StepComponentProps } from '@hierarchidb/plugin-base';
+import { PluginStepRegistry, type PluginStepConfig, type StepComponentProps, type StepData } from '@hierarchidb/plugin-base';
 import type { SpreadsheetDialogData } from '../../common/types/SpreadsheetEntity.js';
+
+type SpreadsheetStepData = StepData & SpreadsheetDialogData;
 import { DataSourceStep } from './steps/DataSourceStep.js';
 import { FilteringStep } from './steps/FilteringStep.js';
 import { SPREADSHEET_NODE_TYPE, STEP_LABELS } from '../../common/constants.js';
@@ -10,26 +12,26 @@ const isComplete = (data?: SpreadsheetDialogData): boolean => Boolean(data?.spre
 
 registry.registerConfigProvider({
   nodeType: SPREADSHEET_NODE_TYPE,
-  getCreateStepConfigs(): PluginStepConfig<SpreadsheetDialogData>[] {
+  getCreateStepConfigs(): PluginStepConfig<SpreadsheetStepData>[] {
     return [
       {
         id: 'data-source',
         label: STEP_LABELS.dataSource,
-        componentFactory: (props: StepComponentProps<SpreadsheetDialogData>) => <DataSourceStep {...props} />,
-        validate: (value?: SpreadsheetDialogData) => isComplete(value),
+        componentFactory: (props: StepComponentProps<SpreadsheetStepData>) => <DataSourceStep {...props} />,
+        validate: (value?: SpreadsheetStepData) => isComplete(value),
         capabilities: {
-          canProceedToNext: (value?: SpreadsheetDialogData) => isComplete(value),
+          canProceedToNext: (value?: SpreadsheetStepData) => isComplete(value),
         },
       },
       {
         id: 'filtering',
         label: STEP_LABELS.filtering,
-        componentFactory: (props: StepComponentProps<SpreadsheetDialogData>) => <FilteringStep {...props} />,
+        componentFactory: (props: StepComponentProps<SpreadsheetStepData>) => <FilteringStep {...props} />,
         optional: true,
       },
     ];
   },
-  getEditStepConfigs(): PluginStepConfig<SpreadsheetDialogData>[] {
+  getEditStepConfigs(): PluginStepConfig<SpreadsheetStepData>[] {
     return this.getCreateStepConfigs();
   },
 });

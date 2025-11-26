@@ -1,4 +1,4 @@
-import { PluginStepRegistry, type StepComponentProps, type PluginStepConfig } from '@hierarchidb/plugin-base';
+import { PluginStepRegistry, type StepComponentProps, type PluginStepConfig, type StepData } from '@hierarchidb/plugin-base';
 import {
   BasicInfoStep as SharedBasicInfoStep,
   type BasicInfoData,
@@ -18,7 +18,7 @@ import { ResolverBuildStep } from './steps/ResolverBuildStep.js';
 
 const registry = PluginStepRegistry.getInstance();
 
-type ResolverData = Partial<ResolverDraftEntity> & {
+type ResolverData = StepData & Partial<ResolverDraftEntity> & {
   sourceSchema?: SchemaInfo | null;
   targetSchema?: SchemaInfo | null;
   lastValidation?: MappingValidationResult | null;

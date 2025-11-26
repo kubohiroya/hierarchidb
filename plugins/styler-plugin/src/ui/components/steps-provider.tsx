@@ -1,4 +1,4 @@
-import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/plugin-base';
+import { PluginStepRegistry, type StepComponentProps, type StepData } from '@hierarchidb/plugin-base';
 // Reuse Spreadsheet steps as Step 2,3
 import {
   DataSourceStep as SpreadsheetDataSourceStep,
@@ -11,6 +11,8 @@ import { StylerStep5 } from './steps/StylerStep5.js';
 import { StylerStep6 } from './steps/StylerStep6.js';
 import { StyleSettingsStep, isStyleSettingsComplete } from './steps/StyleSettingsStep.js';
 import type { StylerDialogData } from './types.js';
+
+type StylerStepData = StepData & StylerDialogData;
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -56,7 +58,7 @@ const mergeDialogData = (
   };
 };
 
-const renderDataSourceStep = (p: StepComponentProps<StylerDialogData>) => (
+const renderDataSourceStep = (p: StepComponentProps<StylerStepData>) => (
   <SpreadsheetDataSourceStep
     {...(p as unknown as StepComponentProps<SpreadsheetDialogData>)}
     data={toSpreadsheetDialogData(p.data)}
@@ -71,7 +73,7 @@ const renderDataSourceStep = (p: StepComponentProps<StylerDialogData>) => (
   />
 );
 
-const renderFilteringStep = (p: StepComponentProps<StylerDialogData>) => (
+const renderFilteringStep = (p: StepComponentProps<StylerStepData>) => (
   <SpreadsheetFilteringStep
     {...(p as unknown as StepComponentProps<SpreadsheetDialogData>)}
     data={toSpreadsheetDialogData(p.data)}

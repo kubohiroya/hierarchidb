@@ -1,5 +1,5 @@
 import type React from 'react';
-import { PluginStepRegistry, type StartBatchContext, type StepComponentProps } from '@hierarchidb/plugin-base';
+import { PluginStepRegistry, type StartBatchContext, type StepComponentProps, type StepData } from '@hierarchidb/plugin-base';
 import {
   summarizeCheckboxState,
   validateProcessingConfig,
@@ -18,7 +18,8 @@ import { notify } from '@hierarchidb/components';
 
 const registry = PluginStepRegistry.getInstance();
 
-type ShapeDialogStepProps = StepComponentProps<Partial<ShapeDraft>>;
+type ShapeStepData = StepData & Partial<ShapeDraft>;
+type ShapeDialogStepProps = StepComponentProps<ShapeStepData>;
 
 function createStepAdapter(
   Component: React.ComponentType<{

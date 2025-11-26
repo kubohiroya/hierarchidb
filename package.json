@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "check:deps": "pnpm exec dep-fence --strict",
-    "guard:deps:extra": "node scripts/run-dependency-guard.mjs",
+    "guard:deps:extra": "pnpm run guard:deps:extra:exec",
+    "guard:deps:extra:exec": "node scripts/run-dependency-guard.mjs",
     "fix:tsconfig": "node scripts/normalize-tsconfig.mjs",
     "check:deps:pkg": "pnpm exec dep-fence",
     "arch:dc": "npx dependency-cruiser -c .dependency-cruiser.cjs packages app",

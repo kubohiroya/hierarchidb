@@ -8871,6 +8871,8 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-14"></a>
 
+- 2025-11-26 12:55 start: chore/build/guard-wrapper — `pnpm build` 前処理で Dependency Guard を `pnpm run guard:deps:extra` 経由で実行するよう統一するタスクを開始。ロールバックは package.json の scripts を元の `guard:deps:extra`（node 直接呼び出し）のみへ戻す。
+- 2025-11-26 12:56 done: chore/build/guard-wrapper — package.json の `guard:deps:extra` を pnpm ラッパー化し、実体を `guard:deps:extra:exec`（node 実行）へ分離。`pnpm build` からガードを呼ぶ際に常に pnpm スクリプト経由となる。ロールバックは scripts の追加分を削除して元に戻す。
 - 2025-11-25 20:10 start: fix/spreadsheet/dialog-dropdown — create spreadsheet ダイアログ Step2 の Upload Method/Tabular Processing Options が開かない問題の調査・修正を開始。DoD: TASKS/Kanban更新、ドロップダウンがクリックで開くようにする、再発防止テスト追加、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` 等の検証ログ記録、ロールバック手順明記。
 - 2025-11-25 20:22 progress: fix/spreadsheet/dialog-dropdown — TabularFileUploadStep の MUI Select に labelId/portal 指定を追加し、Upload Method と Tabular Processing Options のドロップダウンがクリックで開くように修正。DataSource dropdown の開閉を検証するユニットテストを追加。
 - 2025-11-25 20:22 command: pnpm --filter @hierarchidb/spreadsheet-plugin typecheck — exit 0。
