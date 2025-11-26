@@ -53,6 +53,35 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1545) dep-fence WARN 解消（P1）
+- ブランチ: `chore/dep-fence/warn-cleanup`
+- 依存: `packages/common/api/tsconfig*`, `packages/ui/map`, `packages/ui/plugin-basic-info`
+- 受け入れ基準（DoD）:
+  - [x] `TASKS.md` の Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [x] `pnpm exec dep-fence --strict` の WARN（common-api paths-direct-src / ui-map local-shims / ui-plugin-basic-info paths-direct-src）を解消する
+  - [x] 変更後に `pnpm exec dep-fence --strict` を実行し、該当 WARN が消えたログを運用ログへ追記する
+  - [x] 影響範囲とロールバック方法を TASKS.md に記載する
+- チェックリスト:
+  - [x] `@hierarchidb/common-api` の tsconfig から plugin-service-api/src 直参照を撤去し、ビルドに影響しない alias/paths へ修正する
+  - [x] `@hierarchidb/ui-map` の maplibre-css.d.ts シムについて方針を整理し、可能なら撤去または共通型へ移設する
+  - [x] `@hierarchidb/ui-plugin-basic-info` の common-types/src 直参照 paths をリポジトリ標準設定へ揃える
+  - [x] dep-fence 再実行で WARN が解消されたことを確認しログ化する
+- ロールバック手順：今回変更する tsconfig や型シム差分を revert し、`pnpm exec dep-fence --strict` で WARN 再現を確認する
+
+1544) app build maplibre 解決（P0）
+- ブランチ: `fix/app/maplibre-resolve`
+- 依存: `packages/plugin-registry`, `app/vite.config.ts`, `@hierarchidb/app` build 時の外部化設定
+- 受け入れ基準（DoD）:
+  - [x] `TASKS.md` の Kanban／運用ログへ start→progress→done を記録し、ロールバック手順を明記する
+  - [x] `maplibre-gl` 未解決の原因を特定し、依存追加または external 設定などソース修正で根本解消する
+  - [x] `pnpm -F @hierarchidb/app build` が成功することを確認し、ログを運用ログへ追記する
+  - [x] 影響範囲とロールバック方法を TASKS.md に記載する
+- チェックリスト:
+  - [x] plugin-registry 出力の `feature-identification.js` で `maplibre-gl` が外部解決されない原因を調査する（依存漏れ/alias/外部化設定）
+  - [x] 必要に応じて `maplibre-gl` を依存に追加または Rollup external 設定を整備する
+  - [x] `pnpm -F @hierarchidb/app build` を実行し、成功ログを運用ログに残す
+  - [x] ロールバック手順を明文化する
+- ロールバック手順：`packages/plugin-registry` もしくは `app/vite.config.ts` へ加えた差分を revert し、`pnpm -F @hierarchidb/app build` を再実行して現状エラーが再現することを確認する
 1284) TreeConsole Breadcrumb ルート表示修正（P0）
 - ブランチ: `fix/ui-treeconsole/breadcrumb-root`（sandbox 制約で `main` 上で作業）
 - 依存: `packages/ui/treeconsole/breadcrumb`, `packages/ui/treeconsole/base`, `app/src/components/TreeConsoleIntegration.tsx`, `app/src/hooks/treeconsole/**/*`
@@ -3399,6 +3428,10 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1546) ui-map maplibre CSS 型解決（P0） — 完了 (2025-11-26)
+  - 要点：ui-map/tsconfig の include をリポジトリ直下の `global.d.ts` へ修正し、maplibre CSS モジュール宣言を確実に読み込むようにして typecheck の未解決エラーを解消。
+  - 検証：`pnpm --filter @hierarchidb/ui-map typecheck`（2025-11-26 10:44 JST）exit 0。
+  - ロールバック手順：`packages/ui/map/tsconfig.json` の include 差分を revert し、`pnpm --filter @hierarchidb/ui-map typecheck` を再実行してエラー再発を確認する。
 - 1528) plugin-base draftAtoms export 解消（P0） — 完了 (2025-11-24)
   - 要点：`atoms/draftAtoms.ts` を追加し、既存の `workingCopyAtoms` を Draft 名称で再エクスポートすることで `./atoms/draftAtoms.js` 未解決エラーを解消。
   - 検証：`pnpm --filter @hierarchidb/plugin-base build`（2025-11-24 00:12 JST）exit 0。tsdown の define 無効キー警告は既存。
@@ -8912,4 +8945,16 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-25 14:40 progress: fix/plugin-service-sdk/typecheck — WorkerAPI に batch セッション API を追加し、bridge 側の型不一致を解消。
 - 2025-11-25 14:42 command: pnpm --filter @hierarchidb/plugin-service-sdk typecheck — exit 0。
 - 2025-11-25 14:43 done: fix/plugin-service-sdk/typecheck — 上記対応で typecheck エラーを解消。ロールバックは `packages/plugin-service-sdk/tsconfig.json`, `src/draft/adapter.ts`, `src/draft/service.ts`, `src/handlers/HierarchicalEntityHandler.ts`, `packages/common/api/src/WorkerAPI.ts` を revert し、typecheck を再実行して確認。
+- 2025-11-25 15:20 start: fix/app/maplibre-resolve — @hierarchidb/app build で maplibre-gl が解決できない件の調査を開始。DoD: TASKS/Kanban 更新、原因特定と修正、`pnpm -F @hierarchidb/app build` 成功ログ、ロールバック手順記載。
+- 2025-11-25 15:35 progress: fix/app/maplibre-resolve — app/package.json で maplibre-gl と @vis.gl/react-maplibre を dependencies へ移動し、ランタイム解決を保証。
+- 2025-11-25 16:05 progress: fix/app/maplibre-resolve — plugin-registry/postbuild を強化し、stageWorker.entry.js の Worker URL 置換を全 JS 出力に適用。
+- 2025-11-25 16:10 command: pnpm -F @hierarchidb/app build — exit 0（maplibre-gl 解決・stageWorker 参照修正後に成功）
+- 2025-11-25 16:10 done: fix/app/maplibre-resolve — maplibre-gl を app 依存へ昇格し、plugin-registry の Worker URL ポストビルドを全 JS に適用してビルド成功。ロールバックは app/package.json の依存差分と packages/plugin-registry/scripts/postbuild.mjs の置換ロジックを revert し、`pnpm -F @hierarchidb/app build` で再現確認。
+- 2025-11-25 16:15 start: chore/dep-fence/warn-cleanup — dep-fence WARN（common-api paths-direct-src、ui-map local-shims、ui-plugin-basic-info paths-direct-src）の解消に着手。DoD: WARN解消と dep-fence 再実行ログ、TASKS/ロールバック記載。
+- 2025-11-25 16:25 progress: chore/dep-fence/warn-cleanup — common-api の tsconfig から plugin-service-api/src 直参照を削除、ui-plugin-basic-info の common-types 直参照 paths を撤去、ui-map の maplibre-css.d.ts シムを削除（root global.d.ts に集約）。
+- 2025-11-25 16:27 command: pnpm exec dep-fence --strict — exit 0（WARN 解消を確認）。
+- 2025-11-25 16:28 done: chore/dep-fence/warn-cleanup — 上記修正で dep-fence WARN を解消。ロールバックは `packages/common/api/tsconfig.json`, `packages/ui/plugin-basic-info/tsconfig.json`, `packages/ui/map/src/types/maplibre-css.d.ts` の差分を revert し、`pnpm exec dep-fence --strict` で WARN 再現を確認。
 - 2025-11-25 14:20 start: fix/runtime-worker/treenode-metadata — `pnpm build && pnpm preview` 実行時に `metadata is required on TreeNode` が発生する件の調査を開始。DoD: TASKS/Kanban 更新、原因特定と再発防止（metadata/draftMetadata の付与または安全なデフォルト）、再現確認、関連コマンド実行ログとロールバック手順の記録。
+- 2025-11-26 10:43 start: fix/ui-map/maplibre-css-resolve — ui-map typecheck で `maplibre-gl/dist/maplibre-gl.css` が解決できない問題を調査開始。DoD: TASKS/Kanban 更新、型宣言参照の整備と `pnpm --filter @hierarchidb/ui-map typecheck` green、検証ログ記録、ロールバック手順明記。git branch 作成時に `.git/refs/heads/fix/ui-map/maplibre-css-resolve` を作れず main で継続（詳細調査中）。
+- 2025-11-26 10:44 progress: fix/ui-map/maplibre-css-resolve — ルート `global.d.ts` に maplibre CSS の module 宣言が存在する一方、ui-map/tsconfig の include が `../../global.d.ts`（実際は存在しないパス）となっており、共通宣言が拾えていないことを確認。include を root の `global.d.ts` へ向け直す方向で検討。
+- 2025-11-26 10:44 command: pnpm --filter @hierarchidb/ui-map typecheck — exit 0（tsconfig include を root global.d.ts へ修正後、maplibre CSS 型エラー解消を確認）。

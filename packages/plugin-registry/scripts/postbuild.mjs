@@ -14,10 +14,12 @@ const rewriteImport = (source, replacements) => {
   return text;
 };
 
-const workerEntryFiles = readdirSync(distDir).filter((file) => file.startsWith('dist-') && file.endsWith('.js'));
-for (const file of workerEntryFiles) {
+const jsFiles = readdirSync(distDir).filter((file) => file.endsWith('.js'));
+for (const file of jsFiles) {
   const fullPath = path.join(distDir, file);
   const original = readFileSync(fullPath, 'utf-8');
+  if (!original.includes('stageWorker.entry.js')) continue;
+
   const replaced = rewriteImport(original, [
     [/(new Worker\(new URL\(\"\.\/stageWorker\.entry\.js\", import\.meta\.url\), \{ type: \"module\" \}\))/g, "new Worker(new URL('@hierarchidb/runtime-worker/stage-worker', import.meta.url), { type: 'module' })"]
   ]);

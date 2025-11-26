@@ -7,9 +7,6 @@
     "paths": {
       "~/*": [
         "./src/*"
-      ],
-      "@hierarchidb/plugin-service-api": [
-        "../../plugin-service-api/src/index.ts"
       ]
     },
     "baseUrl": ".",
