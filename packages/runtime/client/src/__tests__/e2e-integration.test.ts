@@ -274,18 +274,25 @@ describe('Worker Initialization Integration Tests', () => {
     });
 
     it('should handle dispose during initialization', async () => {
+      vi.useFakeTimers();
       const initPromise = channel.waitForInitialization({
         worker: worker as unknown as Worker,
-        timeout: 10000,
+        timeout: 200,
         debug: false,
       });
 
       // Dispose immediately
       channel.dispose();
 
-      // Should still complete
-      const result = await initPromise;
-      expect(result.success).toBe(true);
+      // Timeout should fire because the channel no longer listens for completion
+      vi.advanceTimersByTime(201);
+      await expect(initPromise).rejects.toMatchObject({
+        success: false,
+        error: expect.objectContaining({
+          message: expect.stringContaining('timeout'),
+        }),
+      });
+      vi.useRealTimers();
     });
   });
 

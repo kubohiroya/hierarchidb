@@ -40,13 +40,13 @@
   "devDependencies": {
     "@types/node": "^20.11.5",
     "@types/react": "^18.2.48",
-    "@types/react-dom": "^18.2.18",
+    "@types/react-dom": "^18.3.7",
     "@vitest/ui": "^3.2.4",
     "comlink": "^4.4.1",
     "fake-indexeddb": "^5.0.2",
     "prettier": "^3.2.4",
     "react": "^18.3.1",
-    "react-dom": "^18.2.0",
+    "react-dom": "^18.3.1",
     "typescript": "workspace:^5.9.3",
     "vite": "^5.0.11",
     "vitest": "^3.2.4",
@@ -57,7 +57,7 @@
   "peerDependencies": {
     "comlink": "^4.4.1",
     "react": "^18.3.1",
-    "react-dom": "^18.2.0",
+    "react-dom": "^18.3.1",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*"

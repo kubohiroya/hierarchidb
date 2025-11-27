@@ -14,7 +14,6 @@
     }
   },
   "files": [
-    "dist",
     "dist"
   ],
   "scripts": {
@@ -29,8 +28,7 @@
     "@hierarchidb/plugin-service-sdk": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/runtime-client": "workspace:*",
-    "@hierarchidb/ui-dialog": "workspace:*",
-    "comlink": "^4.4.1"
+    "@hierarchidb/ui-dialog": "workspace:*"
   },
   "peerDependencies": {
     "dexie": "^4.2.0",
@@ -41,7 +39,8 @@
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/download": "workspace:*"
+    "@hierarchidb/download": "workspace:*",
+    "comlink": "^4.4.1"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
@@ -62,6 +61,7 @@
     "@hierarchidb/runtime-client": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "vitest": "^3.2.4",
-    "@testing-library/react": "^16.1.0"
+    "@testing-library/react": "^16.1.0",
+    "comlink": "^4.4.1"
   }
 }

@@ -267,6 +267,10 @@ export abstract class HierarchicalEntityHandler<
    */
   async moveNode(nodeId: NodeId, newParentId: NodeId | null): Promise<void> {
     try {
+      const descendants = await this.getDescendants(nodeId);
+      if (newParentId && descendants.some((child) => child.nodeId === newParentId)) {
+        throw new Error('Cannot move node to its descendant');
+      }
       const entity = await this.getEntityByNodeId(nodeId);
       if (!entity) {
         throw new Error(`Node not found: ${nodeId}`);

@@ -21,17 +21,17 @@ const noopSetValid: StepComponentProps<BaseMapDraft>['setValid'] = () => undefin
 const noopSetError: StepComponentProps<BaseMapDraft>['setError'] = () => undefined;
 
 describe('basemap step provider validation', () => {
-  it('requires the map style step to be touched before validation passes', () => {
+  it('treats any defined map style as valid (touch state no longer required)', () => {
     expect(
       mapStyleValidate({
-        draft: { mapStyle: { style: 'streets' } },
+        mapStyle: { style: 'streets' },
         uiState: { mapStyleTouched: false },
       } as BaseMapDraft)
-    ).toBe(false);
+    ).toBe(true);
 
     expect(
       mapStyleValidate({
-        draft: { mapStyle: { style: 'streets' } },
+        mapStyle: { style: 'streets' },
         uiState: { mapStyleTouched: true },
       } as BaseMapDraft)
     ).toBe(true);
@@ -47,7 +47,7 @@ describe('basemap step provider validation', () => {
     ).toBe(true);
   });
 
-  it('requires the viewport step to wait for a valid map style selection', () => {
+  it('requires a map style and a valid viewport', () => {
     const baseViewport = {
       center: [0, 0] as [number, number],
       zoom: 5,
@@ -57,20 +57,16 @@ describe('basemap step provider validation', () => {
 
     expect(
       viewportValidate({
-        draft: {
-          mapStyle: { style: 'streets' },
-          viewport: baseViewport,
-        },
+        mapStyle: { style: 'streets' },
+        viewport: baseViewport,
         uiState: { mapStyleTouched: false },
       } as BaseMapDraft)
-    ).toBe(false);
+    ).toBe(true);
 
     expect(
       viewportValidate({
-        draft: {
-          mapStyle: { style: 'streets' },
-          viewport: baseViewport,
-        },
+        mapStyle: { style: 'streets' },
+        viewport: baseViewport,
         uiState: { mapStyleTouched: true },
       } as BaseMapDraft)
     ).toBe(true);
@@ -139,7 +135,7 @@ describe('basemap step provider validation', () => {
       setValid: noopSetValid,
       setError: noopSetError,
     });
-    expect((node as { props: { value?: unknown } }).props.value).toBeUndefined();
+    expect((node as { props: { value?: { style?: string } } }).props.value?.style).toBe('streets');
     expect(onChange).not.toHaveBeenCalled();
   });
 

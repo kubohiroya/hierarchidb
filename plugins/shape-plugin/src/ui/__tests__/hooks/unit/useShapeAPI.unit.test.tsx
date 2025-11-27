@@ -4,7 +4,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useShapeAPI, useShapeAPIGetter } from '../../hooks/useShapeAPI.js';
+import { useShapeAPI, useShapeAPIGetter } from '../../../hooks/useShapeAPI.js';
 import { registerWorkerClientHook } from '@hierarchidb/runtime-client';
 import type { ShapeAPI } from '../../../shared/index.ts';
 

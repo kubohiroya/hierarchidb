@@ -43,32 +43,15 @@ export interface BaseMapEntity extends BaseEntity<NodeId> {
 
 /**
  * BaseMap working copy for edit operations
+ * Prefer Partial<BaseMapEntity> / TreeNodeUpdater<BaseMapEntity>; keep minimal draft shape for compatibility.
  */
-export type BaseMapDraftPayload = {
-  mapStyle: MapStyle;
-  viewport: MapViewport;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  version: number;
+export type BaseMapDraftPayload = Partial<Pick<BaseMapEntity, 'mapStyle' | 'viewport' | 'name' | 'description' | 'tags'>> & {
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+  version?: number;
 };
 
-export interface BaseMapDraft extends DraftBase<BaseMapEntity>, BaseMapDraftPayload {
-  name?: string;
-  description?: string;
-  tags?: string[];
-  draft: DraftBase<BaseMapEntity>['draft'] & {
-    mapStyle?: MapStyle;
-    viewport?: MapViewport;
-    name?: string;
-    description?: string;
-  };
-  uiState?: BasemapDraftUiState;
-}
-
-export interface BasemapDraftUiState {
-  mapStyleTouched?: boolean;
-  viewportTouched?: boolean;
-}
+export type BaseMapDraft = DraftBase<BaseMapEntity> & BaseMapDraftPayload;
 
 /**
  * Data for creating a new BaseMap

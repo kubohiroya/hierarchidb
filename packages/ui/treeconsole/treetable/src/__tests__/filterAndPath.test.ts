@@ -15,6 +15,7 @@ const createNode = (
 ): TreeNode => ({
   id: toNodeId(id),
   name,
+  metadata: { name },
   nodeType: toNodeType(nodeType),
   parentId: parentId === null ? ROOT_PARENT_ID : toNodeId(parentId),
   depth,

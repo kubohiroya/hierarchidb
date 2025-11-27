@@ -21,7 +21,6 @@ import { TagDBPortCoreDBAdapter } from './services/adapters/TagDBPortCoreDBAdapt
 import { CommandProcessor } from './services/CommandProcessor.js';
 import { CoreDB } from './services/CoreDB.js';
 import { DialogStateService } from './services/DialogStateService.js';
-import { EphemeralDB } from './services/EphemeralDB.js';
 import { bootstrapFeatures } from './services/FeatureBootstrap.js';
 import { NodeLifecycleManager } from './services/NodeLifecycleManager.js';
 import { TreeMutationService } from './services/TreeMutationService.js';
@@ -65,7 +64,6 @@ export class WorkerService {
   static async getSingleton(plugins: PluginDefinition[]): Promise<WorkerService> {
     return SingletonMixin.getSingleton(WorkerService.name, async () => {
       const coreDB: CoreDB = await CoreDB.getSingleton();
-      const ephemeralDB: EphemeralDB = await EphemeralDB.getSingleton();
       // Feature bootstrap (registry-driven). Keeps init order and opt-in capabilities.
       await bootstrapFeatures();
 
@@ -127,10 +125,8 @@ export class WorkerService {
       const iePort = new ImportExportDBPortCoreDBAdapter(coreDB);
       const importExportService: ImportExportAPI = await ImportExportService.getSingleton(iePort);
 
-      // Draft service (ephemeral-backed)
       const draftService: DraftAPI = new DraftService(
         coreDB,
-        ephemeralDB,
         commandProcessor
       );
 
@@ -138,7 +134,6 @@ export class WorkerService {
 
       return new WorkerService(
         coreDB,
-        ephemeralDB,
         treeQueryService,
         treeMutationService,
         treeSubscriptionService,
@@ -154,7 +149,6 @@ export class WorkerService {
 
   constructor(
     private coreDB: CoreDB,
-    private ephemeralDB: EphemeralDB,
     private queryService: TreeQueryAPI,
     private mutationService: TreeMutationAPI,
     private subscriptionService: TreeSubscriptionAPI,
@@ -194,7 +188,7 @@ export class WorkerService {
 
     // Close databases
     this.coreDB.close();
-    this.ephemeralDB.close();
+    // No secondary DB to close
   }
 
   async initialize(): Promise<void> {
@@ -280,7 +274,7 @@ export class WorkerService {
   }
 
   async getSystemHealth(): Promise<{
-    databases: { coreDB: boolean; ephemeralDB: boolean };
+    databases: { coreDB: boolean };
     services: {
       query: boolean;
       mutation: boolean;
@@ -295,7 +289,6 @@ export class WorkerService {
     return {
       databases: {
         coreDB: this.coreDB.isOpen?.() ?? true,
-        ephemeralDB: this.ephemeralDB.isOpen?.() ?? true,
       },
       services: {
         query: !!this.queryService,
@@ -335,6 +328,14 @@ export {
   createStageWorkerClient,
   getStageProcessingClient,
 } from './services/StageProcessingService.js';
+// CoreDB and draft utilities (for plugin-side usage)
+export { CoreDB } from './services/CoreDB.js';
+export { discardTreeNodeDraft } from './services/draft/cleanupOperations.js';
+export {
+  getTreeNode,
+  updateTreeNodeDraftData,
+  updateTreeNodeDraftMetadata,
+} from './services/draft/lookupOperations.js';
 // Re-export stage worker API contracts for clients (adapters)
 export type { DownloadWorkerAPI, SimplifyWorkerAPI, VectorTileWorkerAPI } from './types.js';
 export type { WorkerAPI } from './WorkerAPI.js';

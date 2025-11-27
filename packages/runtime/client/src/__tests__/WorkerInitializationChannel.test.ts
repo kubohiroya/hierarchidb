@@ -122,7 +122,9 @@ describe('WorkerInitializationChannel', () => {
         worker: mockWorker as unknown as Worker,
       };
 
-      await channel.waitForInitialization(config);
+      const initPromise = channel.waitForInitialization(config);
+      mockWorker.simulateMessage({ type: 'INIT_COMPLETE' });
+      await initPromise;
       const pingPromise = channel.ping();
 
       mockWorker.simulateMessage({ type: 'PING_RESPONSE' });

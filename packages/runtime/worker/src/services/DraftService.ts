@@ -22,14 +22,12 @@ import {
 } from './DraftTreeNodeOperations.js';
 
 /**
- * DraftService - minimal implementation backed by EphemeralDB/CoreDB
- *
+ * DraftService - minimal implementation backed by CoreDB TreeNodes.
  * Note: This service returns only serializable data. It does not expose ProxyMarked types.
  */
 export class DraftService implements DraftAPI {
   constructor(
     private coreDB: CoreDB,
-    _ephemeralDB: unknown,
     _commandProcessor?: CommandProcessor
   ) {}
 

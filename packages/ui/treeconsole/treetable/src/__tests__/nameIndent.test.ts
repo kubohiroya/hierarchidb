@@ -90,6 +90,14 @@ describe('TreeTable Name column indentation', () => {
     updated: 'Updated',
     removed: 'Removed',
   },
+  draftChipLabels: {
+    self: 'Draft',
+    descendant: 'Draft child',
+  },
+  draftFlags: {
+    hasDraft: new Set(),
+    hasDescendantDraft: () => false,
+  },
   validationMessages: {
     invalidName: 'Invalid name',
     invalidDescription: 'Invalid description',
@@ -106,6 +114,7 @@ describe('TreeTable Name column indentation', () => {
     parentId: 'parent' as NodeId,
     nodeType: 'folder' as NodeType,
     name: 'Level node',
+    metadata: { name: 'Level node' },
     depth: 1,
     createdAt: 0 as Timestamp,
     updatedAt: 0 as Timestamp,

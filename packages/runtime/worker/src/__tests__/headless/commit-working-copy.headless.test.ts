@@ -22,7 +22,7 @@ describe('Draft commit E2E (holder-less)', () => {
   beforeEach(async () => {
     core = await CoreDB.getSingleton('e2e-db');
     cp = new CommandProcessor(core);
-    wc = new DraftService(core, undefined, cp);
+    wc = new DraftService(core, cp);
   });
 
   async function createWorkingCopy(params: {

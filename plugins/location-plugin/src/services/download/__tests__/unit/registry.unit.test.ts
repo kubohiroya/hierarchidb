@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { getLocationDownloadService, registerLocationDownloadServiceFactory, configureLocationDownloadDefaults } from '../../download/registry.js';
-import type { LocationDownloadService } from '../../download/registry.js';
+import { getLocationDownloadService, registerLocationDownloadServiceFactory, configureLocationDownloadDefaults } from '../../registry';
+import type { LocationDownloadService } from '../../download/registry';
 import { DownloadService, FetchNetworkPort } from '@hierarchidb/download';
 import type { StoragePort } from '@hierarchidb/download';
 

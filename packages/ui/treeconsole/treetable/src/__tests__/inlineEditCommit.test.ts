@@ -107,6 +107,14 @@ function makeParams(overrides: Partial<ColumnBuilderParams>): ColumnBuilderParam
       descriptionEdit: 'Press Ctrl+Enter to confirm / Esc to cancel',
     },
     emptyValue: '-',
+    draftChipLabels: {
+      self: 'Draft',
+      descendant: 'Draft child',
+    },
+    draftFlags: {
+      hasDraft: new Set(),
+      hasDescendantDraft: () => false,
+    },
     ...overrides,
   };
 }
@@ -199,7 +207,7 @@ describe('TreeTable inline edit commits', () => {
     const input = document.querySelector('input') as HTMLInputElement;
     expect(input).toBeTruthy();
 
-    fireEvent.keyDown(input, { key: 'Escape' });
+    fireEvent.keyDown(input, { key: 'Escape', bubbles: true });
     expect(finishEdit).not.toHaveBeenCalled();
     expect(cancelEdit).toHaveBeenCalledTimes(1);
   });

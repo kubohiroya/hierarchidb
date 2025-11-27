@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { waitFor } from '@testing-library/react';
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-types';
-import type { LocationPointInput, LocationTileSettings, SessionSummary } from '../types.js';
+import type { LocationPointInput, LocationTileSettings, SessionSummary } from '../../types';
 
 vi.mock('@hierarchidb/tabular-source-store', () => ({
   TabularWriter: class {
@@ -75,20 +75,14 @@ function createMockDb(): [any, MockDbTables] {
   return [db, { pending, sessions, vectorTiles }];
 }
 
-vi.mock('../database/EphemeralLocationDB.js', () => ({
+vi.mock('../../database/EphemeralLocationDB', () => ({
   __esModule: true,
   getEphemeralLocationDB: () => mockDb,
   closeEphemeralLocationDB,
 }));
 
-vi.mock('../database/EphemeralLocationDB', () => ({
-  __esModule: true,
-  getEphemeralLocationDB: () => mockDb,
-  closeEphemeralLocationDB,
-}));
-
-const { UnifiedLocationBatchManager } = await import('../UnifiedLocationBatchManager.js');
-const { LocationBatchSessionManager } = await import('../BatchSessionManager.js');
+const { UnifiedLocationBatchManager } = await import('../../UnifiedLocationBatchManager');
+const { LocationBatchSessionManager } = await import('../../BatchSessionManager');
 
 describe('UnifiedLocationBatchManager.onBatchProgress', () => {
   beforeEach(() => {
@@ -243,7 +237,15 @@ describe('UnifiedLocationBatchManager persistence contract', () => {
     await waitFor(() => {
       expect(mockDb.sessions.update).toHaveBeenCalledWith(sessionId, expect.objectContaining({
         status: 'running',
-        progress: 4,
+        updatedAt: expect.any(Number),
+        progress: expect.objectContaining({
+          total: 10,
+          completed: 4,
+          failed: 0,
+          percentage: 40,
+          currentStage: 'normalize',
+          currentTask: 'normalizing',
+        }),
       }));
     });
 

@@ -19,18 +19,8 @@ describe('buildStepWorkingData', () => {
 
     const result = buildStepWorkingData(draftData, basicInfo, meta);
 
-    expect(result).toMatchObject({
-      draft: { foo: 'bar' },
-      name: 'New Basemap',
-      description: 'Default description',
-      tags: ['basemap'],
-    });
-    expect(result.draft).toMatchObject({
-      foo: 'bar',
-      name: 'New Basemap',
-      description: 'Default description',
-    });
-    expect(result[BASIC_INFO_META_KEY]).toEqual(meta);
+    expect(result).toEqual(draftData);
+    expect(result[BASIC_INFO_META_KEY]).toBeUndefined();
   });
 
   it('creates a fresh record when working data is undefined', () => {
@@ -43,15 +33,7 @@ describe('buildStepWorkingData', () => {
 
     const result = buildStepWorkingData(undefined, basicInfo, meta);
 
-    expect(result).toMatchObject({
-      name: 'Fallback Name',
-      description: '',
-      tags: [],
-    });
-    expect(result.draft).toMatchObject({
-      name: 'Fallback Name',
-      description: '',
-    });
-    expect(result[BASIC_INFO_META_KEY]).toEqual(meta);
+    expect(result).toEqual({});
+    expect(result[BASIC_INFO_META_KEY]).toBeUndefined();
   });
 });

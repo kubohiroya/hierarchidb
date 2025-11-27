@@ -1,21 +1,13 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { LocationDraft } from '../../../types/index.js';
-import type { Timestamp } from '@hierarchidb/common-types';
-import { LocationBatchParametersStep } from '../LocationBatchParametersStep.js';
-import { en } from '../../../i18n/en.js';
+import type { LocationEntity } from '../../../types/index';
+import { LocationBatchParametersStep } from '../../LocationBatchParametersStep';
+import { en } from '../../../../i18n/en';
 
-const timestamp = Date.now() as Timestamp;
-const baseDraft: LocationDraft = {
-  treeNodeId: 'node-1',
-  draft: {
-    concurrentDownloads: 2,
-    tilesMinZoom: 4,
-    tilesMaxZoom: 12,
-  },
-  createdAt: timestamp,
-  updatedAt: timestamp,
-  originalVersion: 1,
+const baseDraft: Partial<LocationEntity> = {
+  concurrentDownloads: 2,
+  tilesMinZoom: 4,
+  tilesMaxZoom: 12,
 };
 
 describe('LocationBatchParametersStep', () => {
@@ -35,7 +27,7 @@ describe('LocationBatchParametersStep', () => {
     const slider = screen.getByRole('slider');
     fireEvent.change(slider, { target: { value: '20' } });
 
-    expect(onUpdate).toHaveBeenCalledWith({ draft: { concurrentDownloads: 16 } });
+    expect(onUpdate).toHaveBeenCalledWith({ concurrentDownloads: 16 });
   });
 
   it('updates min zoom and enforces max zoom floor', () => {
@@ -45,7 +37,7 @@ describe('LocationBatchParametersStep', () => {
     const minField = screen.getByLabelText(en.processing.minZoom);
     fireEvent.change(minField, { target: { value: '18' } });
 
-    expect(onUpdate).toHaveBeenCalledWith({ draft: { tilesMinZoom: 18, tilesMaxZoom: 18 } });
+    expect(onUpdate).toHaveBeenCalledWith({ tilesMinZoom: 18, tilesMaxZoom: 18 });
   });
 
   it('updates max zoom and enforces min zoom ceiling', () => {
@@ -54,7 +46,8 @@ describe('LocationBatchParametersStep', () => {
       <LocationBatchParametersStep
         draft={{
           ...baseDraft,
-          draft: { ...baseDraft.draft, tilesMinZoom: 10, tilesMaxZoom: 10 },
+          tilesMinZoom: 10,
+          tilesMaxZoom: 10,
         }}
         onUpdate={onUpdate}
       />,
@@ -63,6 +56,6 @@ describe('LocationBatchParametersStep', () => {
     const maxField = screen.getByLabelText(en.processing.maxZoom);
     fireEvent.change(maxField, { target: { value: '5' } });
 
-    expect(onUpdate).toHaveBeenCalledWith({ draft: { tilesMinZoom: 5, tilesMaxZoom: 5 } });
+    expect(onUpdate).toHaveBeenCalledWith({ tilesMinZoom: 5, tilesMaxZoom: 5 });
   });
 });

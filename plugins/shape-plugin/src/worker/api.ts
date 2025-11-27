@@ -37,7 +37,6 @@ import { metadataLoader } from '../services/metadata/MetadataLoader.js';
 import { createShapeBatchManager } from '../services/batch/UnifiedShapeBatchManager.js';
 import type { BatchProcessConfig } from '../services/batch/types.js';
 import { getEphemeralShapeDB } from '../services/database/EphemeralShapeDB.js';
-import { ShapeDB } from '../services/database/ShapeDB.js';
 import type { TreeNodeId } from '@hierarchidb/common-types';
 import type { BatchStage, BatchTaskStatus } from '../common/types/BatchTaskLike.js';
 import type { BatchProgressEvent as RuntimeBatchProgressEvent } from '@hierarchidb/common-api';
@@ -59,12 +58,7 @@ interface ProgressSessionMeta {
 const progressCallbacks = new Map<string, ProgressSubscription>();
 const progressSessionMeta = new Map<string, ProgressSessionMeta>();
 
-const shapeEntitiesDB = new ShapeDB();
-void shapeEntitiesDB.open();
-const shapeEntityHandlerSingleton = new ShapeEntityHandler(
-  shapeEntitiesDB.shapeEntities as any,
-  getEphemeralShapeDB(),
-);
+const shapeEntityHandlerSingleton = new ShapeEntityHandler();
 const getShapeEntityHandler = (): ShapeEntityHandler => shapeEntityHandlerSingleton;
 
 const getOrCreateSessionMeta = (sessionId: string): ProgressSessionMeta => {
@@ -216,11 +210,7 @@ export const shapePluginAPI = {
 
   createDraft: async (nodeId: NodeId): Promise<NodeId> => {
     const handler = getShapeEntityHandler();
-    const entity = await handler.getEntityByNodeId(nodeId);
-    if (!entity || !entity.id) {
-      throw new Error(`Shape entity not found for node: ${nodeId}`);
-    }
-    const draft = await handler.createDraft(entity);
+    const draft = await handler.createDraft(nodeId);
     if (!draft.id) {
       throw new Error('Failed to create working copy: missing id');
     }
@@ -229,7 +219,7 @@ export const shapePluginAPI = {
 
   getDraft: async (draftId: NodeId): Promise<ShapeEntity | undefined> => {
     const handler = getShapeEntityHandler();
-    return await handler.getDraft(draftId);
+    return (await handler.getEntityByNodeId(draftId)) ?? undefined;
   },
 
   updateDraft: async (draftId: NodeId, data: Partial<ShapeEntity>): Promise<void> => {
@@ -632,7 +622,7 @@ export const shapePluginAPI = {
   },
 
   // ===================================
-  // EphemeralDB Cleanup
+  // Cleanup (mock/no-op placeholder)
   // ===================================
 
   performCleanup: async (): Promise<{
@@ -641,7 +631,7 @@ export const shapePluginAPI = {
     totalSpaceRecovered: number;
     timestamp: number;
   }> => {
-    console.log('Performing EphemeralDB cleanup');
+    console.log('Performing draft cleanup (mock)');
     return {
       workingCopiesRemoved: 0,
       batchSessionsRemoved: 0,
@@ -658,7 +648,7 @@ export const shapePluginAPI = {
     estimatedSpaceUsed: number;
     lastCleanupAt?: number;
   }> => {
-    console.log('Getting cleanup statistics');
+    console.log('Getting cleanup statistics (mock)');
     return {
       totalDrafts: 0,
       expiredDrafts: 0,
@@ -702,7 +692,7 @@ export const shapePluginAPI = {
     totalSpaceRecovered: number;
     timestamp: number;
   }> => {
-    console.log('Force cleaning all EphemeralDB data');
+    console.log('Force cleaning all transient data (mock)');
     return {
       workingCopiesRemoved: 0,
       batchSessionsRemoved: 0,

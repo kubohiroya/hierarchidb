@@ -1,8 +1,6 @@
 import { defineConfig } from 'vitest/config';
 import * as path from 'path';
 
-const entityServiceEntry = path.resolve(__dirname, '../../packages/plugin-runtime-services/src/index.ts');
-
 export default defineConfig({
   esbuild: {
     jsx: 'automatic',
@@ -51,7 +49,6 @@ export default defineConfig({
       '@hierarchidb/plugin-ui-host': path.resolve(__dirname, '../../packages/plugin-ui-host/src/index.ts'),
       '@hierarchidb/runtime-ui-datasource': path.resolve(__dirname, '../../packages/runtime-ui/datasource/src/index.ts'),
       '@hierarchidb/ui-lru-splitview': path.resolve(__dirname, '../../packages/ui/lru-splitview/src/index.ts'),
-      '@hierarchidb/plugin-runtime-services': entityServiceEntry,
       '@hierarchidb/download': path.resolve(
         __dirname,
         '../../packages/features/download/src/index.ts',

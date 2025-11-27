@@ -24,8 +24,7 @@
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
-    "@hierarchidb/plugin-service-api": "workspace:*",
-    "comlink": "^4.4.1"
+    "@hierarchidb/plugin-service-api": "workspace:*"
   },
   "peerDependencies": {
     "dexie": "^4.2.0",

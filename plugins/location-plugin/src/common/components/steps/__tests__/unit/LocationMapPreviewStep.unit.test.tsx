@@ -1,8 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { toNodeId } from '@hierarchidb/common-types';
-import type { LocationDraft } from '../../../types/index.js';
-import { en } from '../../../i18n/en.js';
+import type { LocationEntity } from '../../../../types/index';
+import { en } from '../../../../i18n/en';
 
 type SessionRecord = {
   sessionId: string;
@@ -84,50 +84,47 @@ const {
   };
 });
 
-vi.mock('../../../../services/database/EphemeralLocationDB.js', () => ({
+vi.mock('../../../../../services/database/EphemeralLocationDB', () => ({
   __esModule: true,
   getEphemeralLocationDB: getEphemeralLocationDBMock,
 }));
 
-vi.mock('../../../../services/database/EphemeralLocationDB', () => ({
+vi.mock('../../../../../services/database/EphemeralLocationDB', () => ({
   __esModule: true,
   getEphemeralLocationDB: getEphemeralLocationDBMock,
 }));
 
-vi.mock('../../../../services/tiles/LocationVectorTileService.js', () => ({
+vi.mock('../../../../../services/tiles/LocationVectorTileService', () => ({
   LocationVectorTileService: vi.fn(() => ({
     getSessionSummary,
   })),
 }));
 
-vi.mock('../../../../services/tiles/LocationVectorTileService', () => ({
+vi.mock('../../../../../services/tiles/LocationVectorTileService', () => ({
   LocationVectorTileService: vi.fn(() => ({
     getSessionSummary,
   })),
 }));
 
-vi.mock('../../../../services/pointRepository.js', () => ({
+vi.mock('../../../../../services/pointRepository', () => ({
   __esModule: true,
   listLocationPoints: listLocationPointsMock,
 }));
 
-vi.mock('../../../../services/pointRepository', () => ({
+vi.mock('../../../../../services/pointRepository', () => ({
   __esModule: true,
   listLocationPoints: listLocationPointsMock,
 }));
-let LocationMapPreviewStep: (typeof import('../LocationMapPreviewStep.js'))['LocationMapPreviewStep'];
+let LocationMapPreviewStep: (typeof import('../../LocationMapPreviewStep'))['LocationMapPreviewStep'];
 
 beforeAll(async () => {
-  ({ LocationMapPreviewStep } = await import('../LocationMapPreviewStep.js'));
+  ({ LocationMapPreviewStep } = await import('../../LocationMapPreviewStep'));
 });
 
-const baseDraft: LocationDraft = {
-  id: toNodeId('node-1'),
-  treeNodeId: toNodeId('node-1'),
-  nodeId: toNodeId('node-1'),
-  version: 1,
-  draft: {} as LocationDraft['draft'],
-} as unknown as LocationDraft;
+const nodeId = toNodeId('node-1');
+const baseDraft: Partial<LocationEntity> = {
+  nodeId,
+};
 
 describe('LocationMapPreviewStep', () => {
   beforeEach(() => {
@@ -155,13 +152,13 @@ describe('LocationMapPreviewStep', () => {
     const db = getEphemeralLocationDBMock();
     await db.sessions.put({
       sessionId: 'session-1',
-      nodeId: toNodeId('node-1'),
+      nodeId,
       createdAt: Date.now(),
       status: 'running',
     });
     expect(await db.sessions.count()).toBe(1);
 
-    render(<LocationMapPreviewStep draft={baseDraft} />);
+    render(<LocationMapPreviewStep draft={baseDraft} nodeId={nodeId} />);
 
     await waitFor(() => {
       expect(getEphemeralLocationDBMock).toHaveBeenCalled();
@@ -177,7 +174,7 @@ describe('LocationMapPreviewStep', () => {
 
     const tilesLabel = await screen.findByText(/Generated tiles:/i);
     expect(tilesLabel.textContent).toContain('3');
-    expect(listLocationPointsMock).toHaveBeenCalledWith(toNodeId('node-1'));
+    expect(listLocationPointsMock).toHaveBeenCalledWith(nodeId);
     expect(screen.getByText(/Layers: location_points/i)).toBeInTheDocument();
   });
 
@@ -185,7 +182,7 @@ describe('LocationMapPreviewStep', () => {
     if (!LocationMapPreviewStep) throw new Error('component not loaded');
     listLocationPointsMock.mockResolvedValueOnce([]);
 
-    render(<LocationMapPreviewStep draft={baseDraft} />);
+    render(<LocationMapPreviewStep draft={baseDraft} nodeId={nodeId} />);
 
     await waitFor(() => {
       expect(getEphemeralLocationDBMock).toHaveBeenCalled();
@@ -193,7 +190,7 @@ describe('LocationMapPreviewStep', () => {
 
     const message = await screen.findByText(en.mapPreview.summary.noData);
     expect(message).toBeInTheDocument();
-    expect(listLocationPointsMock).toHaveBeenCalledWith(toNodeId('node-1'));
+    expect(listLocationPointsMock).toHaveBeenCalledWith(nodeId);
   });
 
   it('shows error message when fetching summary fails', async () => {
@@ -201,14 +198,14 @@ describe('LocationMapPreviewStep', () => {
     const db = getEphemeralLocationDBMock();
     await db.sessions.put({
       sessionId: 'session-1',
-      nodeId: toNodeId('node-1'),
+      nodeId,
       createdAt: Date.now(),
     });
     expect(await db.sessions.count()).toBe(1);
 
     getSessionSummary.mockRejectedValueOnce(new Error('network error'));
 
-    render(<LocationMapPreviewStep draft={baseDraft} />);
+    render(<LocationMapPreviewStep draft={baseDraft} nodeId={nodeId} />);
 
     await waitFor(() => {
       expect(getEphemeralLocationDBMock).toHaveBeenCalled();
@@ -220,6 +217,6 @@ describe('LocationMapPreviewStep', () => {
 
     const errorMessage = await screen.findByText(/Failed to load map preview: network error/i);
     expect(errorMessage).toBeInTheDocument();
-    expect(listLocationPointsMock).toHaveBeenCalledWith(toNodeId('node-1'));
+    expect(listLocationPointsMock).toHaveBeenCalledWith(nodeId);
   });
 });

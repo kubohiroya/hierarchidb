@@ -326,15 +326,6 @@
   Total: 184 lines
 
 
-📁 packages/plugin-runtime-services/src:
-──────────────────────────────────────────────────
-  📂 download/                            84 lines
-  📂 entity/                             295 lines
-  📄 preconnect.ts                             15 lines
-──────────────────────────────────────────────────
-  Total: 394 lines
-
-
 📁 packages/plugin-service-api/src:
 ──────────────────────────────────────────────────
   📂 peer-store/                          28 lines
@@ -849,7 +840,6 @@
   packages/plugin-base/src                 1,539 lines
   packages/plugin-presentation/src           318 lines
   packages/plugin-registry/src               184 lines
-  packages/plugin-runtime-services/src        394 lines
   packages/plugin-service-api/src          1,754 lines
   packages/plugin-service-sdk/src          1,900 lines
   packages/plugin-ui-host/src              3,514 lines
@@ -896,4 +886,3 @@
 ============================================================
   🎯 GRAND TOTAL:                      107,380 lines
 ============================================================
-

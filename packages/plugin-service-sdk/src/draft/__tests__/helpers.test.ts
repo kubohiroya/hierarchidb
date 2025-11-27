@@ -45,11 +45,7 @@ describe('working copy helpers', () => {
     }) as DraftBase<Entity>;
 
     const updatedAt = 3000 as Timestamp;
-    const updatedCopy = adapter.merge(
-      draft as DraftBase<Entity>,
-      { title: 'Updated title', version: 2 },
-      updatedAt,
-    );
+    const updatedCopy = adapter.merge(draft as DraftBase<Entity>, { title: 'Updated title', version: 2 }, updatedAt);
 
     expect(updatedCopy.draft.title).toBe('Updated title');
     expect(updatedCopy.draft.version).toBe(2);

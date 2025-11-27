@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toBatchProgressEvent } from '../ProgressAdapter.js';
+import { toBatchProgressEvent } from '../../ProgressAdapter';
 
 describe('ProgressAdapter', () => {
   it('maps known stages to shared vocabulary and computes percentage from completed/total', () => {

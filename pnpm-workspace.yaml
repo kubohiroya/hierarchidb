@@ -20,7 +20,6 @@ packages:
   - packages/ui-shell
   - packages/backend/*
   - packages/features/*
-  - packages/plugin-runtime-services
   - packages/plugin-ui-sdk
   - packages/plugin-types
   - packages/batch-runtime-services

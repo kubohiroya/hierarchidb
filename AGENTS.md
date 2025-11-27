@@ -21,7 +21,7 @@ The workspace relies on `pnpm`. `app/` contains the main UI, with shared documen
 
 - **モノレポ構成の現況（2025-11 調査メモ）**
   - `app/` は React + Vite シェルとドキュメント (`app/docs/`) に加えて、プラグイン定義をローディングする `app/src/plugin-registry` や Worker エントリ (`app/src/worker-runtime/worker.ts`) を内包し、UI から Worker までを 1 つのパッケージで束ねている。`plugin-registry/preconnect.ts` は `@hierarchidb/plugin-registry` が提供する `pluginRegistry` を `import.meta.glob` で解決し、UI/Worker/Icon ローダーを同時に export する。
-  - `packages/runtime`（UI/Worker 共有 API 群）・`packages/runtime-worker`（DI+Comlink で Worker サービスを構築）を頂点に、`packages/plugin-service-sdk`（`getWorkerBridge()` と WorkerProvider 連携）、`packages/plugin-ui-host`（MultiStep dialog + `useWorkerSync`）、`packages/plugin-base`（共通エンティティハンドラ）、`packages/plugin-runtime-services` / `plugin-service-api` / `plugin-ui-sdk` などが UI と Worker の橋渡しを担う。
+  - `packages/runtime`（UI/Worker 共有 API 群）・`packages/runtime-worker`（DI+Comlink で Worker サービスを構築）を頂点に、`packages/plugin-service-sdk`（`getWorkerBridge()` と WorkerProvider 連携）、`packages/plugin-ui-host`（MultiStep dialog + `useWorkerSync`）、`packages/plugin-base`（共通エンティティハンドラ）、`packages/plugin-service-api` / `plugin-ui-sdk` などが UI と Worker の橋渡しを担う。
   - `packages/plugin-registry` と `pnpm tools:gen-plugin-registry`（`package.json` script）が `plugins/*-plugin` 配下の `hierarchidb.plugin` メタデータ・Dexie schema・UI/Worker エントリパスを集計し、`pluginRegistry`/`pluginDefinitions` を dist・`app/src/plugin-registry` 双方へ同期する。新規プラグイン追加時は Kanban/TASKS.md と同時にこのコマンドを実行する。
   - `plugins/` 直下には folder/location/shape/... の各ノードタイプが pnpm パッケージとして存在し、`src/{ui,worker,shared,icon}` と Dexie schema を同居させる（`plugins/README.md` の比較表・3 層図を参照）。`package.json` の `turbo.pipeline` で `@hierarchidb/plugin-base` や runtime への `build` 依存を宣言し、`dist/` の `clean: false` 前提で再ビルドを最小化する。
   - `config/` は Feature Flag や Turbo パイプライン (pipeline) の実行順、`scripts/env/*.sh` は dev/build で読み込む環境変数を保持。`docs/` と `app/docs/` はアーキテクチャ設計、Worker 初期化、プラグイン実装ガイドの一次情報。
@@ -42,12 +42,11 @@ The workspace relies on `pnpm`. `app/` contains the main UI, with shared documen
 
 - **UI レイヤ（`@hierarchidb/plugin-ui-host` / `plugin-ui-sdk`）**
   - `packages/plugin-ui-host/docs/ARCHITECTURE.md` の MultiStep ダイアログが UI のコア。Jotai Atom (`workingCopyAtom`, `dialogStateAtom`, `validationResultsAtom`, `stepCapabilitiesAtom`) と `useWorkerSync` が 100ms デバウンスの Comlink RPC をラップし、`StepCapabilities`（`canNavigateTo`/`canStartBatch` 等）をプラグインごとに合成する。
-  - EphemeralDB（Worker 側 Dexie）がワーキングコピーの唯一の永続層であり、UI では URL Query でステップ位置を保持、Jotai でリアクティブな状態管理を行う。`plugins/README.md` の 3 層アーキ図にある通り、UI ↔ Worker 間は Comlink + MessageChannel の RPC のみを使用し、プレビューや Progress 表示は `WorkerBridge` を経由する。
+  - ワーキングコピーは CoreDB の TreeNode `draftData`/`draftMetadata` を正とする。UI では URL Query でステップ位置を保持し、Jotai でリアクティブに管理する。`plugins/README.md` の 3 層アーキ図にある通り、UI ↔ Worker 間は Comlink + MessageChannel の RPC のみを使用し、プレビューや Progress 表示は `WorkerBridge` を経由する。
 
-- **Worker レイヤ（`@hierarchidb/runtime-worker` / `plugin-service-sdk` / `plugin-runtime-services`）**
+- **Worker レイヤ（`@hierarchidb/runtime-worker` / `plugin-service-sdk`）**
   - `packages/plugin-service-sdk/src/worker/bridge.ts` の `getWorkerBridge()` は `window.__HDB_WORKER_CLIENT_REF__`（`WorkerProvider` が注入）の Remote を捕捉し、`startBatchSession`/`getBatchSessionStatus`/`pause`/`resume`/`cancel`/`subscribeBatchProgress` を UI に提供する。`plugins/location-plugin/src/common/hooks/useLocationProgress.ts` 等の hook はこの Bridge を介して進捗イベントを購読する。
   - `@hierarchidb/runtime-worker` は IoC コンテナ (`WorkerDiTokens`) で Plugin loader を DI し、`PluginWorkerModuleLoader` が Dexie ストア登録や `register<Plugin>WorkerStores` 呼び出しを担う。`@hierarchidb/runtime-client` の `wirePluginsFromModules` が EntityHandler/Lifecycle hook を登録し、Undo/Redo・Import/Export・WorkingCopy API を 1 か所で公開する。
-  - バッチ処理は `@hierarchidb/plugin-runtime-services` の `AbstractBatchSession` + Download アダプタを共有することで shape/location/route 等で実装が共通化されており、`plugins/README.md` Runtime Worker Factory セクションの `register<Plugin>WorkerStores` / `load<Plugin>EntitiesDbModule` が UI 起動前に呼び出される。
 
 ## Turbo ベースの開発・ビルド・型チェックフロー
 

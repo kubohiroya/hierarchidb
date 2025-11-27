@@ -20,7 +20,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/runtime-client",
         "@hierarchidb/plugin-service-api",
         "@hierarchidb/plugin-service-sdk",
-        "@hierarchidb/plugin-runtime-services",
         "@hierarchidb/plugin-ui-sdk",
         "@hierarchidb/folder-plugin",
         "@hierarchidb/runtime-worker",
@@ -51,7 +50,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/runtime-client",
           "@hierarchidb/plugin-service-api",
           "@hierarchidb/plugin-service-sdk",
-          "@hierarchidb/plugin-runtime-services",
           "@hierarchidb/plugin-ui-sdk",
           "@hierarchidb/folder-plugin",
           "@hierarchidb/runtime-worker",
@@ -478,7 +476,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     packageName: "@hierarchidb/resolver-plugin",
     version: "1.0.0",
     dependencies: [
-        "@hierarchidb/plugin-runtime-services",
         "@hierarchidb/plugin-base",
         "@hierarchidb/runtime-client",
         "@emotion/react",
@@ -509,7 +506,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "extends": "folder",
         "priority": 60,
         "dependencies": [
-          "@hierarchidb/plugin-runtime-services",
           "@hierarchidb/plugin-base",
           "@hierarchidb/runtime-client",
           "@emotion/react",

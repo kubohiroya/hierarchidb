@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { BatchProgressEvent } from '@hierarchidb/runtime-shared-batch-processor';
-import { useShapeProgress } from '../../hooks/useShapeProgress.js';
+import { useShapeProgress } from '../../../hooks/useShapeProgress.js';
 
 const unsubscribeSpy = vi.fn();
 let progressCallback: ((event: BatchProgressEvent) => void) | undefined;

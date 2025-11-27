@@ -12,7 +12,7 @@ import {
   serializeCheckboxState,
   validateProcessingConfig,
   validateShapeName,
-} from '../utils.js';
+} from '../../utils.js';
 import type { CountryMetadata, ProcessingConfig, UrlMetadata } from '../types.js';
 
 describe('validateShapeName', () => {

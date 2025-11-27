@@ -132,18 +132,7 @@ export function createEntityDraftAdapter<TEntity, TDraft extends DraftBase<TEnti
       updates: Partial<TEntity>,
       timestamp: Timestamp = Date.now() as Timestamp,
     ): TDraft {
-      const base = markDraftUpdated(draft, updates, timestamp);
-      const mergedDraft = {
-        ...draft,
-        ...draft.draft,
-        ...updates,
-        updatedAt: timestamp,
-      } as Partial<TEntity>;
-      return {
-        ...draft,
-        ...base,
-        ...mergedDraft,
-      } as TDraft;
+      return markDraftUpdated(draft, updates, timestamp) as TDraft;
     },
   };
 }

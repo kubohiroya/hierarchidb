@@ -1,4 +1,4 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, it, expect, vi } from 'vitest';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { WorkerClientRef } from '@hierarchidb/runtime-client';
@@ -90,7 +90,7 @@ afterEach(() => {
 });
 
 describe('useDraft (create mode)', () => {
-  it('reuses an existing working copy when nodeId already references one', async () => {
+  it('initializes a working copy via initTreeNode when nodeId is supplied', async () => {
     const existing = { id: 'wc-existing' as NodeId, name: 'Existing', description: 'desc', data: { foo: 'bar' } };
     const { workerClient, wcAPI } = createMockClient({ existingDraft: existing });
 
@@ -105,8 +105,8 @@ describe('useDraft (create mode)', () => {
 
     await waitFor(() => result.current.loading === false);
 
-    expect(wcAPI.getTreeNode).toHaveBeenCalledWith(existing.id);
-    expect(wcAPI.initTreeNode).not.toHaveBeenCalled();
+    expect(wcAPI.initTreeNode).toHaveBeenCalledWith('folder', 'parent-1', { id: existing.id });
+    expect(wcAPI.getTreeNode).not.toHaveBeenCalled();
     expect(result.current.draft?.treeNodeId ?? result.current.draft?.id).toBe(existing.id);
     expect(result.current.error).toBeNull();
   });
@@ -125,12 +125,9 @@ describe('useDraft (create mode)', () => {
 
     await waitFor(() => result.current.loading === false);
 
-    expect(wcAPI.getTreeNode).toHaveBeenCalledWith('wc-missing');
-    expect(wcAPI.initTreeNode).toHaveBeenCalledWith('folder', 'parent-2', {
-      id: 'wc-missing',
-      name: '',
-    });
-    expect(result.current.draft?.treeNodeId ?? result.current.draft?.id).toBe('draft-parent-2');
+    expect(wcAPI.initTreeNode).toHaveBeenCalledWith('folder', 'parent-2', { id: 'wc-missing' });
+    expect(wcAPI.getTreeNode).not.toHaveBeenCalled();
+    expect(result.current.draft?.treeNodeId ?? result.current.draft?.id).toBe('wc-missing');
     expect(result.current.error).toBeNull();
   });
 });
@@ -174,54 +171,48 @@ describe('useDialogDraft (edit mode)', () => {
     await waitFor(() => result.current.loading === false);
 
     expect(wcAPI.getTreeNode).toHaveBeenCalledWith(canonicalId);
-    expect(wcAPI.initTreeNode).toHaveBeenCalledWith('folder', undefined as any, {
-      id: canonicalId,
-    });
-    expect(result.current.draft?.treeNodeId ?? result.current.draft?.id).toMatch(/^wc-node-canonical/);
+    expect(wcAPI.initTreeNode).not.toHaveBeenCalled();
+    expect(result.current.draft).toBeNull();
+    expect(result.current.error).toBeInstanceOf(Error);
   });
 });
 
 describe('legacy useDraft hook (create mode)', () => {
-  it('reuses an existing working copy when nodeId is supplied', async () => {
+  it('is an alias of useDialogDraft and initializes via initTreeNode', async () => {
     const existing = { id: 'wc-existing' as NodeId, name: 'Existing', description: 'desc', data: { alpha: 1 } };
     const { workerClient, wcAPI } = createMockClient({ existingDraft: existing });
-    mockWorkerClientRef = workerClient;
 
     const { result } = renderHook(() => useDraft<Record<string, unknown>>({
       nodeType: 'folder',
       mode: 'create',
       nodeId: existing.id,
       parentId: 'parent-legacy' as NodeId,
+      workerClient,
     }));
 
-    await act(async () => {
-      await result.current.init();
-    });
+    await waitFor(() => result.current.loading === false);
 
-    expect(wcAPI.getTreeNode).toHaveBeenCalledWith(existing.id);
-    expect(wcAPI.initTreeNode).not.toHaveBeenCalled();
-    expect(result.current.wcId).toBe(existing.id);
-    expect(result.current.draft?.name).toBe('Existing');
+    expect(wcAPI.initTreeNode).toHaveBeenCalledWith('folder', 'parent-legacy', { id: existing.id });
+    expect(result.current.draft?.treeNodeId).toBe(existing.id);
+    expect(typeof result.current.updateDraft).toBe('function');
+    expect(typeof result.current.saveDraft).toBe('function');
   });
 
-  it('creates a draft working copy when none exists', async () => {
+  it('creates a draft when none exists using the dialog draft workflow', async () => {
     const { workerClient, wcAPI } = createMockClient({ existingDraft: undefined });
-    mockWorkerClientRef = workerClient;
 
     const { result } = renderHook(() => useDraft<Record<string, unknown>>({
       nodeType: 'folder',
       mode: 'create',
       nodeId: 'wc-missing' as NodeId,
       parentId: 'parent-legacy' as NodeId,
+      workerClient,
     }));
 
-    await act(async () => {
-      await result.current.init();
-    });
+    await waitFor(() => result.current.loading === false);
 
-    expect(wcAPI.getTreeNode).toHaveBeenCalledWith('wc-missing');
-    expect(wcAPI.initTreeNode).toHaveBeenCalledWith('folder', 'parent-legacy', {});
-    expect(result.current.wcId).toMatch(/^draft-/);
-    expect(result.current.draft).not.toBeNull();
+    expect(wcAPI.initTreeNode).toHaveBeenCalledWith('folder', 'parent-legacy', { id: 'wc-missing' });
+    expect(result.current.draft?.treeNodeId).toBe('wc-missing');
+    expect(result.current.error).toBeNull();
   });
 });

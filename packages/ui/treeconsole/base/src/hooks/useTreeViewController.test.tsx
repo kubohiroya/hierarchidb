@@ -1213,7 +1213,7 @@ describe('useTreeViewController', () => {
       expect(mockSubscriptionAPI.subscribeSubtree).toHaveBeenCalledWith(
         rootNodeId,
         expect.any(Function),
-        expect.objectContaining({ prefetch: { depth: 3 } }),
+        expect.objectContaining({ prefetch: { depth: 2 } }),
       );
       expect(subscriptionCallback).toBeTruthy();
 

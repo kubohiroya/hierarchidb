@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { buildCheckboxState, normalizeMatrix } from '../LocationSelectionStep.js';
-import type { LocationType } from '../../../types/index.js';
-import type { Country, LocationTypeConfig } from '../../ui/SelectionMatrix.js';
+import { buildCheckboxState, normalizeMatrix } from '../../LocationSelectionStep';
+import type { LocationType } from '../../../types/index';
+import type { Country, LocationTypeConfig } from '../../ui/SelectionMatrix';
 
 const mockCountries: Country[] = [
   { code: 'AAA', name: 'Alpha', continent: 'Test' },

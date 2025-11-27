@@ -35,7 +35,6 @@
 | `packages/features/tabular-store` | tsconfig.json, tsconfig.typecheck.json |
 | `packages/features/tag` | tsconfig.json, tsconfig.typecheck.json |
 | `app/src/plugin-registry` | — |
-| `packages/plugin-runtime-services` | tsconfig.json |
 | `packages/plugin-types` | tsconfig.json |
 | `packages/plugin-ui-sdk` | tsconfig.json |
 | `packages/runtime/basic-info` | tsconfig.json, tsconfig.typecheck.json |

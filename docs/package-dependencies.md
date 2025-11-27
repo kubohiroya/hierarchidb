@@ -55,9 +55,6 @@ graph LR
   subgraph G_packages_plugin_registry["packages/plugin-registry"]
     N26["@hierarchidb/plugin-registry"]
   end
-  subgraph G_packages_plugin_runtime_services["packages/plugin-runtime-services"]
-    N27["@hierarchidb/plugin-runtime-services"]
-  end
   subgraph G_packages_plugin_service_api["packages/plugin-service-api"]
     N28["@hierarchidb/plugin-service-api"]
   end

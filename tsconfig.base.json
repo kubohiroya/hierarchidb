@@ -152,12 +152,6 @@
       "@hierarchidb/plugin-presentation/*": [
         "packages/plugin-presentation/src/*"
       ],
-      "@hierarchidb/plugin-runtime-services": [
-        "packages/plugin-runtime-services/dist/index.d.ts"
-      ],
-      "@hierarchidb/plugin-runtime-services/*": [
-        "packages/plugin-runtime-services/dist/*"
-      ],
       "@hierarchidb/plugin-service-api": [
         "packages/plugin-service-api/src/index.ts"
       ],

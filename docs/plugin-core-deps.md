@@ -4,7 +4,6 @@ graph LR
   PSA["@hierarchidb/plugin-service-api"]
   PSS["@hierarchidb/plugin-service-sdk"]
   PUI["@hierarchidb/plugin-ui-sdk"]
-  PRS["@hierarchidb/plugin-runtime-services"]
   PTS["@hierarchidb/plugin-types"]
   PR["@hierarchidb/plugin-registry"]
 
@@ -40,10 +39,6 @@ graph LR
   PUI --> PSA
   PUI --> CT
 
-  PRS --> PSA
-  PRS --> CT
-  PRS --> DL
-
   PTS --> PSA
 
   %% Runtime dependencies
@@ -69,5 +64,4 @@ graph LR
   RC --> CT
 
   PR --> PSA
-  PR --> PRS
 ```

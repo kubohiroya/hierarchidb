@@ -19,8 +19,6 @@ export type {
 } from './draft/service.js';
 
 // Peer store helpers
-export { createPeerStoreNormalizer } from './peer-store/normalizer.js';
-
 // Plugin definitions and metadata
 export const BasePluginDefinition = {
   nodeType: 'base',

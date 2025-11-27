@@ -15,6 +15,8 @@ describe('DraftService.updateDraft', () => {
         isDraft: true,
       }),
       updateDraft: vi.fn().mockResolvedValue(undefined),
+      updateTreeNodeDraftData: vi.fn().mockResolvedValue(undefined),
+      getTreeNode: vi.fn().mockResolvedValue({ id: 'node-1', treeId: 'tree-1' }),
     };
 
     const workerAPI = {
@@ -35,7 +37,7 @@ describe('DraftService.updateDraft', () => {
 
     const state = await service.updateDraft(nodeId, updates);
 
-    expect(draftAPI.updateDraft).toHaveBeenCalledWith(nodeId, updates);
+    expect(draftAPI.updateTreeNodeDraftData).toHaveBeenCalledWith(nodeId, updates);
     expect(state.currentStep).toBe(1);
     expect(state.completedSteps.has(1)).toBe(true);
     expect(state.data).toEqual(updates.data);

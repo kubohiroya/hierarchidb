@@ -140,7 +140,6 @@
     "@hierarchidb/ui-lru-splitview": "workspace:*",
     "@hierarchidb/runtime-client": "workspace:*",
     "@hierarchidb/download": "workspace:*",
-    "@hierarchidb/plugin-runtime-services": "workspace:*",
     "@hierarchidb/spreadsheet-plugin": "workspace:*",
     "@hierarchidb/plugin-service-sdk": "workspace:*",
     "@hierarchidb/components": "workspace:*"
@@ -209,8 +208,7 @@
     "pipeline": {
       "build": {
         "dependsOn": [
-          "@hierarchidb/plugin-base#build",
-          "@hierarchidb/plugin-runtime-services#build"
+          "@hierarchidb/plugin-base#build"
         ]
       }
     }

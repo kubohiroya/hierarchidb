@@ -1,28 +1,38 @@
 /**
- * Shape Entity Handler - Worker Layer
- * Manages CRUD operations for Shape entities in Worker environment
+ * Shape Entity Service backed by TreeNode payloads (data/draftData + metadata/draftMetadata).
+ * Aligns shape-plugin with the common Draft API flow (basemap-style).
  */
 
-import { Dexie, type Collection, type IndexableType, type Table } from 'dexie';
+import type { TreeId, TreeNode, TreeNodeMetadata, Timestamp } from '@hierarchidb/common-types';
+import { toNodeType } from '@hierarchidb/common-types';
 import type { DataSourceName, NodeId } from '../../common/shared/index.js';
 import {
   buildShapeEntityFromCreate,
   createDraftFromEntity,
   DEFAULT_PROCESSING_CONFIG,
-  mapDraftToUpdates,
+  mergeProcessingConfig,
+  normalizeDataSourceName,
+  parseCheckboxState,
   type ProcessingConfig,
   type ShapeEntity,
   type ShapeDraft,
 } from '../../common/shared/index.js';
+import { CoreDB } from '../../../../../packages/runtime/worker/src/services/CoreDB.js';
 import {
-  BaseEntityService,
-} from '@hierarchidb/plugin-runtime-services';
-import type { Timestamp } from '@hierarchidb/common-types';
-import { getDBName } from '@hierarchidb/util';
+  commitTreeNodeDraft,
+  type CommitResult as DraftCommitResult,
+} from '../../../../../packages/runtime/worker/src/services/draft/commitOperations.js';
+import { discardTreeNodeDraft } from '../../../../../packages/runtime/worker/src/services/draft/cleanupOperations.js';
+import {
+  getTreeNode,
+  updateTreeNodeDraftData,
+  updateTreeNodeDraftMetadata,
+} from '../../../../../packages/runtime/worker/src/services/draft/lookupOperations.js';
+import { initTreeNode } from '../../../../../packages/runtime/worker/src/services/draft/initOperations.js';
 
-/**
- * Create shape data interface
- */
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
 export interface CreateShapeData {
   name: string;
   description?: string;
@@ -30,9 +40,6 @@ export interface CreateShapeData {
   processingConfig?: Partial<ProcessingConfig>;
 }
 
-/**
- * Shape filter criteria for searching entities
- */
 export interface ShapeFilterCriteria {
   name?: string;
   dataSource?: DataSourceName;
@@ -40,311 +47,350 @@ export interface ShapeFilterCriteria {
   hasActiveBatch?: boolean;
 }
 
-/**
- * Entity service for Shape plugin in Worker layer
- * Extends BaseEntityService for common CRUD operations
- */
-export class ShapeEntityService extends BaseEntityService<
-  ShapeEntity,
-  CreateShapeData,
-  ShapeFilterCriteria
-> {
-  protected table: Table<ShapeEntity, NodeId>;
-  private ephemeralDB: any; // EphemeralDB reference for working copies
+export class ShapeEntityService {
+  private coreDBPromise: Promise<CoreDB>;
 
-  private static defaultDb: Dexie | null = null;
-
-  private static ensureDefaultTable(): Table<ShapeEntity, NodeId> {
-    if (!ShapeEntityService.defaultDb) {
-      const db = new Dexie(getDBName('shape-entity-service'));
-      db.version(1).stores({
-        shapeEntities: '&id, nodeId',
-      });
-      ShapeEntityService.defaultDb = db;
-    }
-    return ShapeEntityService.defaultDb.table('shapeEntities') as Table<ShapeEntity, NodeId>;
+  constructor(coreDB?: CoreDB) {
+    this.coreDBPromise = coreDB ? Promise.resolve(coreDB) : CoreDB.getSingleton();
   }
 
-  constructor(table?: Table<ShapeEntity, NodeId>, ephemeralDB?: any) {
-    super();
-    this.table = table ?? ShapeEntityService.ensureDefaultTable();
-    this.ephemeralDB = ephemeralDB;
+  private async ensureCoreDB(): Promise<CoreDB> {
+    return this.coreDBPromise;
   }
 
-  /**
-   * Build shape entity from creation data
-   */
-  protected buildEntity(
+  private async readNode(nodeId: NodeId): Promise<TreeNode | null> {
+    const coreDB = await this.ensureCoreDB();
+    return getTreeNode(coreDB, nodeId);
+  }
+
+  private toEntity(node: TreeNode | null): ShapeEntity | null {
+    if (!node) return null;
+    const payload = isRecord((node as { draftData?: unknown }).draftData)
+      ? ((node as { draftData?: Record<string, unknown> }).draftData ?? {})
+      : isRecord((node as { data?: unknown }).data)
+        ? ((node as { data?: Record<string, unknown> }).data ?? {})
+        : {};
+    const payloadRecord = payload as Record<string, unknown>;
+    const metadata = ((node as { metadata?: TreeNodeMetadata }).metadata ?? {}) as TreeNodeMetadata;
+    const now = Date.now() as Timestamp;
+    const dataSource =
+      normalizeDataSourceName((payloadRecord as { dataSourceName?: unknown }).dataSourceName as
+        | DataSourceName
+        | undefined) ?? 'naturalearth';
+    const processingConfig = mergeProcessingConfig(
+      (payloadRecord as { processingConfig?: ProcessingConfig }).processingConfig ??
+        DEFAULT_PROCESSING_CONFIG,
+    );
+    const checkboxState = (payloadRecord as { checkboxState?: unknown }).checkboxState;
+    const normalizedCheckbox =
+      typeof checkboxState === 'string' || Array.isArray(checkboxState)
+        ? checkboxState
+        : [];
+
+    return {
+      ...(payloadRecord as Partial<ShapeEntity>),
+      id: node.id as NodeId,
+      nodeId: node.id as NodeId,
+      name:
+        typeof (payloadRecord as { name?: unknown }).name === 'string'
+          ? (payloadRecord as { name?: string }).name!
+          : metadata.name ?? '',
+      description:
+        typeof (payloadRecord as { description?: unknown }).description === 'string'
+          ? (payloadRecord as { description?: string }).description
+          : metadata.description,
+      dataSourceName: dataSource,
+      processingConfig,
+      licenseAgreement:
+        typeof (payloadRecord as { licenseAgreement?: unknown }).licenseAgreement === 'boolean'
+          ? (payloadRecord as { licenseAgreement?: boolean }).licenseAgreement!
+          : false,
+      checkboxState: normalizedCheckbox,
+      batchSessionId: (payloadRecord as { batchSessionId?: string }).batchSessionId,
+      processingStatus:
+        (payloadRecord as { processingStatus?: ShapeEntity['processingStatus'] }).processingStatus ??
+        'idle',
+      createdAt:
+        (node as { createdAt?: number }).createdAt !== undefined
+          ? ((node as { createdAt?: number }).createdAt as Timestamp)
+          : now,
+      updatedAt:
+        (node as { updatedAt?: number }).updatedAt !== undefined
+          ? ((node as { updatedAt?: number }).updatedAt as Timestamp)
+          : now,
+      version: (node as { version?: number }).version ?? (payloadRecord as { version?: number }).version ?? 1,
+    };
+  }
+
+  private async writeDraft(
     nodeId: NodeId,
-    _entityId: NodeId,
-    data: CreateShapeData,
-  ): ShapeEntity {
-    return buildShapeEntityFromCreate({
+    payload: ShapeEntity,
+    metadataPatch?: Partial<TreeNodeMetadata>,
+  ): Promise<void> {
+    const coreDB = await this.ensureCoreDB();
+    if (metadataPatch && Object.keys(metadataPatch).length > 0) {
+      await updateTreeNodeDraftMetadata(coreDB, nodeId, metadataPatch);
+    }
+    await updateTreeNodeDraftData(coreDB, nodeId, payload as unknown as Record<string, unknown>);
+  }
+
+  private buildEntity(nodeId: NodeId, data: Partial<CreateShapeData>, base?: ShapeEntity): ShapeEntity {
+    const now = Date.now() as Timestamp;
+    const mergedProcessing = mergeProcessingConfig(
+      data.processingConfig ?? base?.processingConfig ?? DEFAULT_PROCESSING_CONFIG,
+    );
+    const dataSource =
+      normalizeDataSourceName(data.dataSourceName ?? base?.dataSourceName ?? 'naturalearth') ??
+      'naturalearth';
+
+    return {
+      ...base,
+      id: nodeId,
       nodeId,
-      data: {
-        name: data.name,
-        description: data.description,
-        dataSourceName: data.dataSourceName,
-        processingConfig: data.processingConfig as Partial<ProcessingConfig>,
-      },
+      name: data.name ?? base?.name ?? '',
+      description: data.description ?? base?.description ?? '',
+      dataSourceName: dataSource,
+      licenseAgreement: base?.licenseAgreement ?? false,
+      processingConfig: mergedProcessing,
+      checkboxState: base?.checkboxState ?? [],
+      batchSessionId: base?.batchSessionId,
+      processingStatus: base?.processingStatus ?? 'idle',
+      selectedCountries: base?.selectedCountries ?? [],
+      adminLevels: base?.adminLevels ?? [],
+      urlMetadata: base?.urlMetadata ?? [],
+      tabularMetadataId: base?.tabularMetadataId,
+      tabularFilters: base?.tabularFilters,
+      createdAt: base?.createdAt ?? now,
+      updatedAt: now,
+      version: (base?.version ?? 0) + 1,
+    };
+  }
+
+  async getEntityByNodeId(nodeId: NodeId): Promise<ShapeEntity | null> {
+    const node = await this.readNode(nodeId);
+    return this.toEntity(node);
+  }
+
+  async createEntity(nodeId: NodeId, data: CreateShapeData): Promise<ShapeEntity> {
+    const baseNode = await this.readNode(nodeId);
+    if (!baseNode) {
+      throw new Error(`TreeNode not found: ${String(nodeId)}`);
+    }
+    const current = this.toEntity(baseNode) ?? undefined;
+    const entity = this.buildEntity(nodeId, data, current ?? undefined);
+    await this.writeDraft(nodeId, entity, {
+      name: data.name ?? baseNode.metadata?.name,
+      description: data.description ?? baseNode.metadata?.description,
+    });
+    return entity;
+  }
+
+  async updateEntity(nodeId: NodeId, updates: Partial<CreateShapeData>): Promise<ShapeEntity> {
+    const current = await this.getEntityByNodeId(nodeId);
+    if (!current) {
+      throw new Error(`Shape entity not found: ${nodeId}`);
+    }
+    const entity = this.buildEntity(nodeId, updates, current);
+    await this.writeDraft(nodeId, entity, {
+      name: updates.name,
+      description: updates.description,
+    });
+    return entity;
+  }
+
+  async deleteEntity(nodeId: NodeId): Promise<void> {
+    const coreDB = await this.ensureCoreDB();
+    const node = await this.readNode(nodeId);
+    if (!node) return;
+    await coreDB.updateNode({ id: nodeId, draftData: null, data: null, draftMetadata: null });
+    await discardTreeNodeDraft(coreDB, nodeId);
+  }
+
+  async searchEntities(criteria: ShapeFilterCriteria): Promise<ShapeEntity[]> {
+    const coreDB = await this.ensureCoreDB();
+    const nodes = (await coreDB.nodes.where('nodeType').equals('shape').toArray()) as TreeNode[];
+    const entities = nodes
+      .map((node: TreeNode) => this.toEntity(node))
+      .filter((entity): entity is ShapeEntity => !!entity);
+
+    return entities.filter(entity => {
+      if (criteria.name && !entity.name?.toLowerCase().includes(criteria.name.toLowerCase())) {
+        return false;
+      }
+      if (criteria.dataSource && entity.dataSourceName !== criteria.dataSource) {
+        return false;
+      }
+      if (criteria.processingStatus && entity.processingStatus !== criteria.processingStatus) {
+        return false;
+      }
+      if (criteria.hasActiveBatch !== undefined) {
+        const hasBatch = !!entity.batchSessionId;
+        if (criteria.hasActiveBatch !== hasBatch) return false;
+      }
+      return true;
     });
   }
 
-  /**
-   * Get Shape entity by node ID
-   */
-  async getEntityByNodeId(nodeId: NodeId): Promise<ShapeEntity | null> {
-    try {
-      const entity = await this.table.where('nodeId').equals(nodeId).first();
-      return entity || null;
-    } catch (error) {
-      console.error('Failed to get Shape entity by node ID:', error);
-      throw error;
+  async createDraft(nodeId: NodeId): Promise<ShapeDraft> {
+    const baseNode = await this.readNode(nodeId);
+    if (!baseNode) {
+      throw new Error(`TreeNode not found: ${String(nodeId)}`);
     }
+    const entity =
+      this.toEntity(baseNode) ??
+      buildShapeEntityFromCreate({
+        nodeId,
+        data: {
+          name: baseNode.metadata?.name ?? '',
+          description: baseNode.metadata?.description ?? '',
+          dataSourceName: 'naturalearth',
+          processingConfig: DEFAULT_PROCESSING_CONFIG,
+        },
+      });
+    await this.writeDraft(nodeId, entity, {
+      name: entity.name,
+      description: entity.description,
+    });
+    return createDraftFromEntity(entity);
   }
 
-  protected applyAdditionalSearchCriteria(
-    query: Collection<ShapeEntity, IndexableType, ShapeEntity>,
-    criteria: ShapeFilterCriteria,
-  ): Collection<ShapeEntity, IndexableType, ShapeEntity> {
-    if (criteria.name) {
-      const needle = criteria.name.toLowerCase();
-      query = query.filter(entity => (entity.name ?? '').toLowerCase().includes(needle));
-    }
-
-    if (criteria.dataSource) {
-      query = query.filter(entity => entity.dataSourceName === criteria.dataSource);
-    }
-
-    if (criteria.processingStatus) {
-      query = query.filter(entity => entity.processingStatus === criteria.processingStatus);
-    }
-
-    if (criteria.hasActiveBatch !== undefined) {
-      query = query.filter(entity =>
-        criteria.hasActiveBatch ? !!entity.batchSessionId : !entity.batchSessionId,
-      );
-    }
-
-    return query;
+  async createNewDraftBase(parentId: NodeId): Promise<ShapeDraft> {
+    const coreDB = await this.ensureCoreDB();
+    const treeId = (parentId.toString().split(':')[0] ?? 'r') as TreeId;
+    const nodeType = toNodeType('shape');
+    const baseName = 'New Shape';
+    const wcId = await initTreeNode(coreDB, treeId, parentId, nodeType, baseName);
+    const entity = buildShapeEntityFromCreate({
+      nodeId: wcId,
+      data: {
+        name: baseName,
+        description: '',
+        dataSourceName: 'naturalearth',
+        processingConfig: DEFAULT_PROCESSING_CONFIG,
+      },
+    });
+    await this.writeDraft(wcId, entity, { name: baseName, description: '' });
+    return createDraftFromEntity(entity);
   }
 
-  /**
-   * Create working copy from entity
-   */
-  async createDraft(entity: ShapeEntity): Promise<ShapeDraft> {
-    const draft = createDraftFromEntity(entity);
-
-    if (this.ephemeralDB?.workingCopies) {
-      await this.ephemeralDB.workingCopies.put(draft, draft.treeNodeId);
-    }
-
-    return draft;
-  }
-
-  /**
-   * Get working copy from EphemeralDB
-   */
   async getDraft(draftId: NodeId): Promise<ShapeDraft | undefined> {
-    try {
-      if (!this.ephemeralDB?.workingCopies) {
-        return undefined;
-      }
-      const draft = await this.ephemeralDB.workingCopies.get(draftId);
-      return draft as ShapeDraft | undefined;
-    } catch (error) {
-      console.error('Failed to get working copy:', error);
-      return undefined;
-    }
+    const node = await this.readNode(draftId);
+    const entity = this.toEntity(node);
+    if (!entity) return undefined;
+    return createDraftFromEntity(entity);
   }
 
-  /**
-   * Update working copy in EphemeralDB
-   */
-  async updateDraft(
-    draftId: NodeId,
-    data: Partial<ShapeEntity>,
-  ): Promise<ShapeDraft> {
-    try {
-      const existing = await this.getDraft(draftId);
-      if (!existing) {
-        throw new Error(`Working copy not found: ${draftId}`);
-      }
-
-      const timestamp = Date.now() as Timestamp;
-      const updated: ShapeDraft = {
-        ...existing,
-        ...data,
-        draft: { ...existing.draft, ...data },
-        updatedAt: timestamp,
-      };
-
-      if (this.ephemeralDB?.workingCopies) {
-        await this.ephemeralDB.workingCopies.put(updated, updated.treeNodeId);
-      }
-
-      return updated;
-    } catch (error) {
-      console.error('Failed to update working copy:', error);
-      throw error;
+  async updateDraft(draftId: NodeId, data: Partial<ShapeEntity>): Promise<ShapeDraft> {
+    const current = await this.getEntityByNodeId(draftId);
+    if (!current) {
+      throw new Error(`Working copy not found: ${draftId}`);
     }
+    const mergedCheckboxState =
+      data.checkboxState !== undefined
+        ? data.checkboxState
+        : current.checkboxState ?? [];
+    const mergedProcessing = mergeProcessingConfig(
+      (data.processingConfig ?? current.processingConfig ?? DEFAULT_PROCESSING_CONFIG) as
+        | Partial<ProcessingConfig>
+        | ProcessingConfig,
+    );
+    const dataSource =
+      normalizeDataSourceName(
+        (data.dataSourceName ?? current.dataSourceName ?? 'naturalearth') as DataSourceName,
+      ) ?? 'naturalearth';
+    const updated: ShapeEntity = {
+      ...current,
+      ...data,
+      dataSourceName: dataSource,
+      processingConfig: mergedProcessing,
+      checkboxState: Array.isArray(mergedCheckboxState) || typeof mergedCheckboxState === 'string'
+        ? mergedCheckboxState
+        : parseCheckboxState(mergedCheckboxState as any),
+      updatedAt: Date.now() as Timestamp,
+    };
+
+    await this.writeDraft(draftId, updated, {
+      name: data.name,
+      description: data.description,
+    });
+    return createDraftFromEntity(updated);
   }
 
-  /**
-   * Commit working copy to CoreDB
-   */
   async commitDraft(draftId: NodeId): Promise<void> {
-    try {
-      // Get working copy from EphemeralDB
-      const draft = await this.getDraft(draftId);
-      if (!draft) {
-        throw new Error(`Working copy not found: ${draftId}`);
-      }
-
-      const updates = mapDraftToUpdates(draft);
-
-      if (draft) {
-        const entityData: CreateShapeData = {
-          name: updates.name ?? draft.draft.name ?? '',
-          description: updates.description ?? draft.draft.description,
-          dataSourceName: updates.dataSourceName ?? draft.draft.dataSourceName ?? 'naturalearth',
-          processingConfig: updates.processingConfig ?? draft.draft.processingConfig ?? DEFAULT_PROCESSING_CONFIG,
-        };
-
-        const entity = await this.createEntity(draft.treeNodeId, entityData);
-
-        const postCreateUpdates: Partial<ShapeEntity> = {
-          licenseAgreement: updates.licenseAgreement ?? draft.draft.licenseAgreement ?? false,
-          checkboxState: updates.checkboxState ?? draft.draft.checkboxState ?? [],
-          batchSessionId: updates.batchSessionId,
-          processingStatus: updates.processingStatus ?? 'idle',
-        };
-        await this.updateEntity(entity.id, postCreateUpdates);
-      }
-
-      await this.discardDraft(draftId);
-      return;
-    } catch (error) {
-      console.error('Failed to commit working copy:', error);
-      throw error;
+    const coreDB = await this.ensureCoreDB();
+    const result: DraftCommitResult = await commitTreeNodeDraft(coreDB, draftId, 'auto-rename');
+    if (result.status === 'ok') return;
+    if (result.status === 'NAME_CONFLICT') {
+      throw new Error(`Name conflict: ${result.suggestedName}`);
     }
+    throw new Error('Commit conflict');
   }
 
-  /**
-   * Discard working copy from EphemeralDB
-   */
   async discardDraft(draftId: NodeId): Promise<void> {
-    try {
-      if (this.ephemeralDB?.workingCopies) {
-        await this.ephemeralDB.workingCopies.delete(draftId);
-      }
-    } catch (error) {
-      console.error('Failed to discard working copy:', error);
-      throw error;
-    }
+    const coreDB = await this.ensureCoreDB();
+    await discardTreeNodeDraft(coreDB, draftId);
   }
 
-  /**
-   * Apply working copy changes to entity
-   */
   async applyDraft(nodeId: NodeId, draft: ShapeDraft): Promise<ShapeEntity> {
-    const updates: Partial<ShapeEntity> = mapDraftToUpdates(draft) as Partial<ShapeEntity>;
-    return this.updateEntity(nodeId, updates);
+    const parsedCheckbox =
+      typeof draft.checkboxState === 'string' || Array.isArray(draft.checkboxState)
+        ? draft.checkboxState
+        : parseCheckboxState(draft.checkboxState as any);
+    const payload: ShapeEntity = {
+      ...draft,
+      id: nodeId,
+      nodeId,
+      checkboxState: parsedCheckbox,
+    };
+    await this.writeDraft(nodeId, payload, {
+      name: draft.name,
+      description: draft.description,
+    });
+    return payload;
   }
 
-  /**
-   * Update processing status for batch operations
-   */
   async updateProcessingStatus(
     nodeId: NodeId,
     status: 'idle' | 'processing' | 'completed' | 'failed',
     batchSessionId?: string,
   ): Promise<void> {
-    const updates: Partial<ShapeEntity> = {
-      processingStatus: status,
-    };
-
-    if (batchSessionId !== undefined) {
-      updates.batchSessionId = batchSessionId;
+    const coreDB = await this.ensureCoreDB();
+    const node = await this.readNode(nodeId);
+    if (!node) {
+      throw new Error(`TreeNode not found: ${nodeId}`);
     }
-
-    await this.updateEntity(nodeId, updates);
+    const hasDraft = (node as { draftData?: unknown }).draftData !== null &&
+      typeof (node as { draftData?: unknown }).draftData !== 'undefined';
+    const targetField = hasDraft ? 'draftData' : 'data';
+    const targetValue = (node as unknown as Record<string, unknown>)[targetField];
+    const payload = isRecord(targetValue)
+      ? (targetValue as Record<string, unknown>)
+      : {};
+    const updated = {
+      ...payload,
+      processingStatus: status,
+      ...(batchSessionId !== undefined ? { batchSessionId } : {}),
+    };
+    await coreDB.updateNode({
+      id: nodeId,
+      [targetField]: updated,
+    });
   }
 
-  /**
-   * Get processing statistics for entity
-   */
   async getProcessingStats(nodeId: NodeId): Promise<{
     featureCount: number;
     tileCount: number;
     storageUsed: number;
     lastProcessed?: number;
   }> {
-    // In real implementation, would query related tables for statistics
-    console.log(`Getting processing stats for entity: ${nodeId}`);
+    console.debug('[shapeEntityService] getProcessingStats not implemented; returning defaults', {
+      nodeId,
+    });
     return {
       featureCount: 0,
       tileCount: 0,
       storageUsed: 0,
     };
-  }
-
-  /**
-   * Override delete to handle batch session cleanup
-   */
-  async deleteEntity(nodeId: NodeId): Promise<void> {
-    try {
-      const entity = await this.table.get(nodeId);
-      if (!entity) {
-        throw new Error(`Shape entity not found: ${nodeId}`);
-      }
-
-      // Cancel any active batch sessions
-      if (entity.batchSessionId) {
-        await this.cancelBatchSession(entity.batchSessionId);
-      }
-
-      // Cleanup related data
-      await this.cleanupEntityData(entity);
-
-      // Call parent delete method
-      await super.deleteEntity(nodeId);
-
-      console.log(`Deleted Shape entity: ${nodeId}`);
-    } catch (error) {
-      console.error('Failed to delete Shape entity:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Protected helper: Cancel batch session
-   */
-  protected async cancelBatchSession(sessionId: string): Promise<void> {
-    try {
-      console.log(`Cancelling batch session: ${sessionId}`);
-      // Would cancel active workers and cleanup session
-    } catch (error) {
-      console.error('Failed to cancel batch session:', error);
-      // Don't throw - cleanup is best effort
-    }
-  }
-
-  /**
-   * Protected helper: Cleanup entity data
-   */
-  protected async cleanupEntityData(entity: ShapeEntity): Promise<void> {
-    try {
-      console.log(`Cleaning up data for Shape entity: ${entity.id}`);
-      // Would cleanup:
-      // 1. Feature data
-      // 2. Vector tiles
-      // 3. Cache entries
-      // 4. Batch sessions
-    } catch (error) {
-      console.error('Error during entity cleanup:', error);
-      // Don't throw - cleanup is best effort
-    }
   }
 }
 

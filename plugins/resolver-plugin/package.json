@@ -61,7 +61,6 @@
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
-    "@hierarchidb/plugin-runtime-services": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*",
     "@hierarchidb/runtime-client": "workspace:*"
   },

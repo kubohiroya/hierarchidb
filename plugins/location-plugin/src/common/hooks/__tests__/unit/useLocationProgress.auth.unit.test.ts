@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AuthNotificationFactory, AuthNotificationRegistry } from '@hierarchidb/common-auth';
 import { act, renderHook } from '@testing-library/react';
-import { useLocationProgress } from '../../hooks/useLocationProgress.js';
+import { useLocationProgress } from '../../useLocationProgress.js';
 
 const bridgeMock = {
   initialize: vi.fn().mockResolvedValue(undefined),

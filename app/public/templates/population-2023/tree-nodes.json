@@ -39,20 +39,14 @@
             "description": "Detailed population statistics by country"
           },
           "draftData": {
-            "columns": [
-              "Country",
-              "ISO_Code",
-              "Population_2023",
-              "Population_2022",
-              "Growth_Rate",
-              "Density_per_km2",
-              "Urban_Population",
-              "Median_Age",
-              "Fertility_Rate",
-              "Life_Expectancy",
-              "GDP_per_Capita",
-              "Region"
-            ]
+            "spreadsheetMetadataId": null,
+            "dataSource": {
+              "type": "url",
+              "source": "https://example.com/population_2023.csv",
+              "filename": "population_2023.csv",
+              "sizeBytes": 0
+            },
+            "filters": []
           }
         }
       ]

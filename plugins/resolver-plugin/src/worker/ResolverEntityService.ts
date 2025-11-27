@@ -1,7 +1,11 @@
-import type { NodeId } from '@hierarchidb/common-types';
-import type { Collection, IndexableType, Table } from 'dexie';
-import { BaseEntityService } from '@hierarchidb/plugin-runtime-services';
-import { resolverEntitiesDB } from './database/index.js';
+import type { NodeId, TreeNode, TreeNodeMetadata } from '@hierarchidb/common-types';
+import {
+  CoreDB,
+  discardTreeNodeDraft,
+  getTreeNode,
+  updateTreeNodeDraftData,
+  updateTreeNodeDraftMetadata,
+} from '@hierarchidb/runtime-worker';
 import type {
   DataTransformation,
   DuplicateResolutionStrategy,
@@ -12,7 +16,7 @@ import type {
 } from '../common/types/index.js';
 
 /**
- * Search criteria specific to Resolver entities
+ * Search criteria specific to Resolver entities.
  */
 export interface ResolverSearchCriteria {
   name?: string;
@@ -26,7 +30,7 @@ export interface ResolverSearchCriteria {
 }
 
 /**
- * Data required to create a Resolver entity
+ * Data required to create or update a Resolver entity.
  */
 export interface CreateResolverData extends Record<string, unknown> {
   name: string;
@@ -40,93 +44,160 @@ export interface CreateResolverData extends Record<string, unknown> {
 }
 
 /**
- * EntityHandler implementation for Resolver plugin
- * Built on top of the shared BaseEntityService to avoid plugin-ui-sdk runtime dependency.
+ * Resolver entity handler backed by TreeNode payloads (data/draftData + metadata/draftMetadata).
  */
-export class ResolverEntityService extends BaseEntityService<
-  ResolverEntity,
-  CreateResolverData,
-  ResolverSearchCriteria
-> {
-  protected table: Table<ResolverEntity, NodeId> = resolverEntitiesDB.resolvers;
+export class ResolverEntityService {
+  private coreDBPromise: Promise<CoreDB>;
 
-  /**
-   * Build a Resolver entity from creation data
-   */
-  public buildEntity(
-    nodeId: NodeId,
-    entityId: NodeId,
-    data: CreateResolverData,
-  ): ResolverEntity {
+  constructor(coreDB?: CoreDB) {
+    this.coreDBPromise = coreDB ? Promise.resolve(coreDB) : CoreDB.getSingleton();
+  }
+
+  private async ensureCoreDB(): Promise<CoreDB> {
+    return this.coreDBPromise;
+  }
+
+  private buildEntity(nodeId: NodeId, payload: CreateResolverData, base?: ResolverEntity): ResolverEntity {
     const now = Date.now();
-
     return {
-      id: entityId,
+      id: nodeId,
       nodeId,
-      name: data.name,
-      description: data.description || '',
-      sourceSchema: data.sourceSchema ?? null,
-      targetSchema: data.targetSchema ?? null,
-      mappingRules: data.mappingRules || [],
-      validationRules: data.validationRules || [],
-      duplicateResolution: data.duplicateResolution || { strategy: 'skip' },
-      dataTransformations: data.dataTransformations || [],
-      isCompiled: false,
-      lastCompiled: undefined,
-      compiledFunction: undefined,
-      compiledMetadata: undefined,
-      createdAt: now,
+      name: payload.name ?? base?.name ?? '',
+      description: payload.description ?? base?.description ?? '',
+      sourceSchema: payload.sourceSchema ?? base?.sourceSchema ?? null,
+      targetSchema: payload.targetSchema ?? base?.targetSchema ?? null,
+      mappingRules: payload.mappingRules ?? base?.mappingRules ?? [],
+      validationRules: payload.validationRules ?? base?.validationRules ?? [],
+      duplicateResolution: payload.duplicateResolution ?? base?.duplicateResolution ?? { strategy: 'skip' },
+      dataTransformations: payload.dataTransformations ?? base?.dataTransformations ?? [],
+      isCompiled: base?.isCompiled ?? false,
+      lastCompiled: base?.lastCompiled,
+      compiledFunction: base?.compiledFunction,
+      compiledMetadata: base?.compiledMetadata,
+      createdAt: base?.createdAt ?? now,
       updatedAt: now,
-      version: 1,
+      version: (base?.version ?? 0) + 1,
     };
   }
 
-  /**
-   * Apply Resolver-specific search criteria
-   */
-  protected applyAdditionalSearchCriteria(
-    query: Collection<ResolverEntity, IndexableType, ResolverEntity>,
-    criteria: ResolverSearchCriteria,
-  ): Collection<ResolverEntity, IndexableType, ResolverEntity> {
-    if (criteria.sourceSchema) {
-      query = query.filter((entity: ResolverEntity) => {
-        const schemaName = entity.sourceSchema?.name;
-        return typeof schemaName === 'string'
-          ? schemaName.toLowerCase().includes(criteria.sourceSchema!.toLowerCase())
-          : false;
-      });
-    }
+  private async readNode(nodeId: NodeId): Promise<TreeNode | null> {
+    const coreDB = await this.ensureCoreDB();
+    return getTreeNode(coreDB, nodeId);
+  }
 
-    if (criteria.targetSchema) {
-      query = query.filter((entity: ResolverEntity) => {
-        const schemaName = entity.targetSchema?.name;
-        return typeof schemaName === 'string'
-          ? schemaName.toLowerCase().includes(criteria.targetSchema!.toLowerCase())
-          : false;
-      });
-    }
+  private toPayload(node: TreeNode | null): ResolverEntity | null {
+    if (!node) return null;
+    const draft = (node as { draftData?: unknown }).draftData as ResolverEntity | undefined;
+    const data = (node as { data?: unknown }).data as ResolverEntity | undefined;
+    return draft ?? data ?? null;
+  }
 
-    if (criteria.isCompiled !== undefined) {
-      query = query.filter((entity: ResolverEntity) =>
-        entity.isCompiled === criteria.isCompiled,
-      );
+  private async writeDraft(
+    nodeId: NodeId,
+    payload: ResolverEntity,
+    metadataPatch?: Partial<TreeNodeMetadata>,
+  ): Promise<void> {
+    const coreDB = await this.ensureCoreDB();
+    if (metadataPatch && Object.keys(metadataPatch).length > 0) {
+      await updateTreeNodeDraftMetadata(coreDB, nodeId, metadataPatch);
     }
-
-    return query;
+    await updateTreeNodeDraftData(coreDB, nodeId, payload as unknown as Record<string, unknown>);
   }
 
   /**
-   * Clean up Resolver-specific data when entity is deleted
+   * Build and persist resolver draft payload to the TreeNode.
    */
-  protected async cleanupEntityData(_entity: ResolverEntity): Promise<void> {
-    // No-op for now; working copies are stored via TreeNode drafts.
+  public async createEntity(nodeId: NodeId, data: CreateResolverData): Promise<ResolverEntity> {
+    const baseNode = await this.readNode(nodeId);
+    if (!baseNode) {
+      throw new Error(`TreeNode not found: ${String(nodeId)}`);
+    }
+    const basePayload = this.toPayload(baseNode) ?? undefined;
+    const entity = this.buildEntity(nodeId, data, basePayload);
+    await this.writeDraft(nodeId, entity, {
+      name: data.name ?? baseNode.metadata.name,
+      description: data.description ?? baseNode.metadata.description,
+    });
+    return entity;
   }
 
   /**
-   * Duplicate a Resolver entity
+   * Get resolver payload (prefers draftData, fallback to data).
+   */
+  public async getEntity(nodeId: NodeId): Promise<ResolverEntity | null> {
+    const node = await this.readNode(nodeId);
+    return this.toPayload(node);
+  }
+
+  /**
+   * Update resolver draft payload; metadata(name/description) is optionally synced to draftMetadata.
+   */
+  public async updateEntity(
+    nodeId: NodeId,
+    update: Partial<CreateResolverData>,
+  ): Promise<ResolverEntity> {
+    const current = await this.getEntity(nodeId);
+    if (!current) throw new Error('Entity not found');
+    const entity = this.buildEntity(nodeId, { ...current, ...update }, current);
+    await this.writeDraft(nodeId, entity, {
+      name: update.name,
+      description: update.description,
+    });
+    return entity;
+  }
+
+  /**
+   * Delete resolver payload (draft/data cleared).
+   */
+  public async deleteEntity(nodeId: NodeId): Promise<void> {
+    const coreDB = await this.ensureCoreDB();
+    const node = await this.readNode(nodeId);
+    if (!node) return;
+    await coreDB.updateNode({ id: nodeId, draftData: null, data: null });
+    await discardTreeNodeDraft(coreDB, nodeId);
+  }
+
+  /**
+   * Search resolver payloads on TreeNodes (resolver nodeType only).
+   */
+  public async searchEntities(criteria: ResolverSearchCriteria): Promise<ResolverEntity[]> {
+    const coreDB = await this.ensureCoreDB();
+    const nodes = await coreDB.nodes.where('nodeType').equals('resolver').toArray();
+    const entities: ResolverEntity[] = [];
+    nodes.forEach((node) => {
+      const payload = this.toPayload(node as TreeNode);
+      if (!payload) return;
+      entities.push(payload);
+    });
+
+    return entities.filter((entity) => {
+      if (criteria.name && !entity.name.toLowerCase().includes(criteria.name.toLowerCase())) {
+        return false;
+      }
+      if (criteria.sourceSchema) {
+        const schemaName = entity.sourceSchema?.name ?? '';
+        if (!schemaName.toLowerCase().includes(criteria.sourceSchema.toLowerCase())) return false;
+      }
+      if (criteria.targetSchema) {
+        const schemaName = entity.targetSchema?.name ?? '';
+        if (!schemaName.toLowerCase().includes(criteria.targetSchema.toLowerCase())) return false;
+      }
+      if (criteria.isCompiled !== undefined && entity.isCompiled !== criteria.isCompiled) {
+        return false;
+      }
+      if (criteria.createdAfter && (entity.createdAt ?? 0) < criteria.createdAfter) return false;
+      if (criteria.createdBefore && (entity.createdAt ?? 0) > criteria.createdBefore) return false;
+      if (criteria.updatedAfter && (entity.updatedAt ?? 0) < criteria.updatedAfter) return false;
+      if (criteria.updatedBefore && (entity.updatedAt ?? 0) > criteria.updatedBefore) return false;
+      return true;
+    });
+  }
+
+  /**
+   * Duplicate resolver payload into another node (draft).
    */
   async duplicate(nodeId: NodeId, newNodeId: NodeId): Promise<ResolverEntity> {
-    const entity = await this.getEntityByNodeId(nodeId);
+    const entity = await this.getEntity(nodeId);
     if (!entity) {
       throw new Error(`Resolver entity not found for nodeId: ${nodeId}`);
     }
@@ -142,11 +213,26 @@ export class ResolverEntityService extends BaseEntityService<
       dataTransformations: [...entity.dataTransformations],
     };
 
-    return await this.createEntity(newNodeId, duplicateData);
+    const coreDB = await this.ensureCoreDB();
+    const targetNode = await coreDB.getNode(newNodeId);
+    if (!targetNode) {
+      throw new Error(`Target TreeNode not found for duplicate: ${newNodeId}`);
+    }
+
+    const duplicate = this.buildEntity(newNodeId, duplicateData, {
+      ...entity,
+      version: 0,
+      createdAt: undefined,
+    } as ResolverEntity);
+    await this.writeDraft(newNodeId, duplicate, {
+      name: duplicateData.name,
+      description: duplicateData.description,
+    });
+    return duplicate;
   }
 
   /**
-   * Compile the Resolver mapping rules
+   * Compile the Resolver mapping rules.
    */
   async compileMapping(entityId: NodeId): Promise<void> {
     const entity = await this.getEntity(entityId);
@@ -154,20 +240,19 @@ export class ResolverEntityService extends BaseEntityService<
       throw new Error(`Resolver entity not found: ${entityId}`);
     }
 
-    // Compilation logic would go here
-    // For now, just mark as compiled
+    const now = Date.now();
     await this.updateEntity(entityId, {
       isCompiled: true,
-      lastCompiled: Date.now(),
+      lastCompiled: now,
       compiledMetadata: {
         compiledBy: 'system',
-        compilationTime: Date.now(),
+        compilationTime: now,
       },
     });
   }
 
   /**
-   * Clear compiled mapping data
+   * Clear compiled mapping data.
    */
   async clearCompiledMapping(entityId: NodeId): Promise<void> {
     await this.updateEntity(entityId, {
@@ -179,7 +264,7 @@ export class ResolverEntityService extends BaseEntityService<
   }
 
   /**
-   * Validate mapping rules
+   * Validate mapping rules.
    */
   async validateMapping(entityId: NodeId): Promise<{
     isValid: boolean;
@@ -194,7 +279,6 @@ export class ResolverEntityService extends BaseEntityService<
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    // Basic validation checks
     if (!entity.sourceSchema) {
       errors.push('Source schema is required');
     }
@@ -207,7 +291,6 @@ export class ResolverEntityService extends BaseEntityService<
       warnings.push('No mapping rules defined');
     }
 
-    // Check for duplicate target properties
     const targetProperties = new Set<string>();
     for (const rule of entity.mappingRules) {
       if (targetProperties.has(rule.targetProperty)) {
