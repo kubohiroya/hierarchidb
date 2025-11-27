@@ -6,19 +6,19 @@ import type React from 'react';
 import { Box, Typography } from '@mui/material';
 import { LicenseAgreementStep } from '@hierarchidb/ui-license';
 import type { Timestamp } from '@hierarchidb/common-types';
-import type { LocationDraft } from '../../types/index.js';
+import type { LocationEntity } from '../../types/index.js';
 import { useTranslation } from '../../i18n/index.js';
 import { getLocationDataSource } from '../../datasources/LocationDataSourceDefinitions.js';
 
 interface LocationLicenseStepProps {
-  draft: LocationDraft;
-  onUpdate: (updates: Partial<LocationDraft>) => void;
+  draft: Partial<LocationEntity>;
+  onUpdate: (updates: Partial<LocationEntity>) => void;
 }
 
 export const LocationLicenseStep: React.FC<LocationLicenseStepProps> = ({ draft, onUpdate }) => {
   const { translations } = useTranslation();
 
-  const dataSourceId = draft.draft.dataSource ?? 'openstreetmap';
+  const dataSourceId = draft.dataSource ?? 'openstreetmap';
   const dataSource = getLocationDataSource(dataSourceId);
 
   if (!dataSource) {
@@ -40,15 +40,13 @@ export const LocationLicenseStep: React.FC<LocationLicenseStepProps> = ({ draft,
         url: dataSource.licenseUrl,
       }}
       state={{
-        agreed: Boolean(draft.draft.licenseAgreement),
-        agreedAt: draft.draft.licenseAgreedAt ? new Date(draft.draft.licenseAgreedAt).toISOString() : undefined,
+        agreed: Boolean(draft.licenseAgreement),
+        agreedAt: draft.licenseAgreedAt ? new Date(draft.licenseAgreedAt).toISOString() : undefined,
       }}
       onAgree={() => {
         onUpdate({
-          draft: {
-            licenseAgreement: true,
-            licenseAgreedAt: Date.now() as Timestamp,
-          },
+          licenseAgreement: true,
+          licenseAgreedAt: Date.now() as Timestamp,
         });
       }}
     />

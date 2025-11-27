@@ -5,7 +5,7 @@ import { TabularProvider, TabularFileUploadStep } from '@hierarchidb/ui-tabular-
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { createSpreadsheetTabularApi } from '../../../services/spreadsheetTabularApiFactory.js';
 import { SPREADSHEET_NODE_TYPE } from '../../../common/constants.js';
-import type { DataSourceConfig, SpreadsheetDialogData } from '../../../common/types/SpreadsheetEntity.js';
+import type { SpreadSheetDataSourceConfig, SpreadsheetDialogData } from '../../../common/types/SpreadsheetEntity.js';
 
 const coerceDialogData = (value: unknown): SpreadsheetDialogData =>
   (typeof value === 'object' && value !== null ? (value as SpreadsheetDialogData) : {});
@@ -23,7 +23,7 @@ export const DataSourceStep: FC<StepComponentProps<SpreadsheetDialogData>> = ({
 
   const applyMetadata = useCallback(
     (metadata: TabularTableMetadata) => {
-      const nextDataSource: DataSourceConfig = {
+      const nextDataSource: SpreadSheetDataSourceConfig = {
         type: 'file',
         source: metadata.fileUrl ?? metadata.filename,
         filename: metadata.filename,

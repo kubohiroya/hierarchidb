@@ -31,16 +31,9 @@ export interface ExtendedColumnMapping extends ColumnMapping {
   defaultValue?: string | number | boolean | null;
 }
 
-export type StylerDialogData = Omit<SpreadsheetDialogData, 'metadata'> &
+// Basic info (name/description/tags) is supplied by the host; this dialog data covers only styling payload.
+export type StylerDialogData = SpreadsheetDialogData &
   Partial<StylerEntity> & {
     spreadsheetMetadata?: SpreadsheetDialogData['metadata'];
-    basicInfo?: {
-      name?: string;
-      description?: string;
-      tags?: string[];
-    };
-    name?: string;
-    description?: string;
-    tags?: string[];
     styleSettings?: StyleSettingsData;
   };

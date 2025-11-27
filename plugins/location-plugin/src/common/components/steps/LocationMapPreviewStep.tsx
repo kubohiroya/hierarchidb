@@ -9,7 +9,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import type { NodeId } from '@hierarchidb/common-types';
 import { LocationMapPreview } from '../batch/LocationMapPreview.js';
 import type { PreviewLocationPoint } from '../batch/LocationMapPreview.js';
-import type { LocationDraft, LocationType } from '../../types/index.js';
+import type { LocationEntity, LocationType } from '../../types/index.js';
 import { formatBytes, useTranslation } from '../../i18n/index.js';
 import { getEphemeralLocationDB } from '../../../services/database/EphemeralLocationDB.js';
 import { LocationVectorTileService } from '../../../services/tiles/LocationVectorTileService.js';
@@ -77,17 +77,18 @@ const toPreviewLocationPoint = (point: Awaited<ReturnType<typeof listLocationPoi
 };
 
 interface LocationMapPreviewStepProps {
-  draft: LocationDraft;
-  onUpdate?: (updates: Partial<LocationDraft>) => void;
+  draft: Partial<LocationEntity>;
+  nodeId?: NodeId;
+  onUpdate?: (updates: Partial<LocationEntity>) => void;
 }
 
 type TileSummary = Awaited<ReturnType<LocationVectorTileService['getSessionSummary']>> & {
   sessionId: string;
 };
 
-export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ draft }) => {
+export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ draft: _draft, nodeId }) => {
   const { translations, locale } = useTranslation();
-  const nodeId = (draft as any)?.treeNodeId ?? (draft as any)?.nodeId ?? 'preview';
+  const previewNodeId = nodeId ?? 'preview';
   const [summary, setSummary] = useState<TileSummary | null>(null);
   const [locations, setLocations] = useState<PreviewLocationPoint[]>([]);
   const [loading, setLoading] = useState(false);
@@ -108,13 +109,13 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       return;
     }
 
-    if (!nodeId || nodeId === 'preview') {
+    if (!previewNodeId || previewNodeId === 'preview') {
       setSummary(null);
       setLocations([]);
       return;
     }
 
-    const resolvedNodeId = nodeId as NodeId;
+    const resolvedNodeId = previewNodeId as NodeId;
 
     setLoading(true);
     setError(null);
@@ -129,7 +130,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
         return;
       }
 
-      const records = await sessions.where('nodeId').equals(nodeId).toArray();
+      const records = await sessions.where('nodeId').equals(previewNodeId).toArray();
       if (!records?.length) {
         setSummary(null);
         const pointRecords = await listLocationPoints(resolvedNodeId);
@@ -168,7 +169,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
         setLoading(false);
       }
     }
-  }, [nodeId]);
+  }, [previewNodeId]);
 
   useEffect(() => () => {
     isMountedRef.current = false;
@@ -264,7 +265,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       <Divider />
 
       <Box flex={1} minHeight={320}>
-        <LocationMapPreview nodeId={nodeId as any} locations={locations} />
+        <LocationMapPreview nodeId={previewNodeId as any} locations={locations} />
       </Box>
     </Box>
   );

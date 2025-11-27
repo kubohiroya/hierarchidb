@@ -136,6 +136,9 @@ export interface LocationEntity extends BaseEntity {
   licenseAgreement: boolean;
   licenseAgreedAt?: Timestamp;
   selectionMatrix: boolean[][];
+  /** Optional tiling zoom range for batch downloads. */
+  tilesMinZoom?: number;
+  tilesMaxZoom?: number;
   concurrentDownloads: number;
   batchSessionId?: string;
   lastProcessedAt?: Timestamp;

@@ -53,6 +53,21 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1550) Spreadsheet import template 編集中ノードの状態表示・キャンセル挙動調査（P0）
+- ブランチ: `fix/spreadsheet/import-template-draft-state`（sandbox 制約で `main` 上で作業）
+- 依存: `plugins/spreadsheet-plugin`, `packages/plugin-ui-host`, `packages/runtime/worker`, `app/src/components/dialogs/**/*`, `app/src/hooks/treeconsole/**/*`
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` の Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] Import template で取り込んだ spreadsheet ノードに Editing チップが出ない原因を特定し、関連ファイル/データフロー（draftData・draftMetadata 判定経路等）を明示する
+  - [ ] 編集ダイアログを開いて保存せずに閉じた際にノード自体が削除される原因を特定し、関与するモジュール・条件・再現手順を示す
+  - [ ] 上記2件それぞれに対し、具体的な修正方針（どこをどう変え、どの検証を行うか）を提示する（今回のタスクでは実装しない）
+  - [ ] 後続実装時の検証/ロールバック手順案を整理して記録する
+- チェックリスト:
+  - [ ] UI 側の draft 判定ロジックと Worker 側の draft 保存/破棄フローを突合し、Editing 表示の欠落理由を特定する
+  - [ ] Edit ダイアログ閉鎖時の discard/commit 経路でノード削除が発生する条件を洗い出し、期待動作との差分を整理する
+  - [ ] 調査結果と修正案を TASKS 運用ログへ記載し、必要なテスト・手動確認案を列挙する
+- ロールバック手順：調査・記録のみのタスクのため差分なし。記載内容を戻す場合は本タスクのエントリと運用ログ追記を削除する。
+
 1545) dep-fence WARN 解消（P1）
 - ブランチ: `chore/dep-fence/warn-cleanup`
 - 依存: `packages/common/api/tsconfig*`, `packages/ui/map`, `packages/ui/plugin-basic-info`
@@ -8977,3 +8992,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-26 10:43 start: fix/ui-map/maplibre-css-resolve — ui-map typecheck で `maplibre-gl/dist/maplibre-gl.css` が解決できない問題を調査開始。DoD: TASKS/Kanban 更新、型宣言参照の整備と `pnpm --filter @hierarchidb/ui-map typecheck` green、検証ログ記録、ロールバック手順明記。git branch 作成時に `.git/refs/heads/fix/ui-map/maplibre-css-resolve` を作れず main で継続（詳細調査中）。
 - 2025-11-26 10:44 progress: fix/ui-map/maplibre-css-resolve — ルート `global.d.ts` に maplibre CSS の module 宣言が存在する一方、ui-map/tsconfig の include が `../../global.d.ts`（実際は存在しないパス）となっており、共通宣言が拾えていないことを確認。include を root の `global.d.ts` へ向け直す方向で検討。
 - 2025-11-26 10:44 command: pnpm --filter @hierarchidb/ui-map typecheck — exit 0（tsconfig include を root global.d.ts へ修正後、maplibre CSS 型エラー解消を確認）。
+- 2025-11-27 08:15 start: fix/ui-trash/i18n-dialog-hierarchy — trash dialog の翻訳キー階層不一致（`trash.dialog.*` vs `dialogs.trash.*`）を調査開始。DoD: キー階層統一、主要画面でキー表示が出ないことを確認、ロールバック手順記載。
+- 2025-11-27 08:45 done: fix/ui-trash/i18n-dialog-hierarchy — TrashDialog のキー参照を `dialogs.trash.*` に統一し、en/ja の locales を同階層へ集約（重複していた `trash.dialog` ブロックを削除）して翻訳キー表示を解消。ロールバックは `app/src/router/pages/tree/trash/TrashDialog.tsx`, `app/public/locales/{en,ja}/common.json`, `packages/ui/i18n/public/locales/{en,ja}/common.json` を revert すること。
+- 2025-11-27 12:30 start: fix/ui-trash/remove-trash-root-selection — TrashDialog が trash ルート（r:trash/p:trash）を表示データへ補正挿入し、そのまま Empty 対象に含めて削除してしまう不具合を調査開始。DoD: 補正ロジックを撤去し、trash ルートが削除対象に入らないようにする。ロールバック手順を記載する。
+- 2025-11-27 12:40 done: fix/ui-trash/remove-trash-root-selection — TrashDialog の `treeData` 補正で trash ルートを `nodes.unshift` 追加する処理を削除し、r/p いずれの trash ルートも Empty 対象に入らないようにした。ロールバックは `app/src/router/pages/tree/trash/TrashDialog.tsx` の今回差分を revert して元の補正を復元する。
+- 2025-11-27 13:52 start: fix/spreadsheet/import-template-draft-state — Import template 取り込みノードの Editing 表示欠落と、編集ダイアログを保存せず閉じた際にノード自体が削除される問題の原因調査を開始（実装なし）。

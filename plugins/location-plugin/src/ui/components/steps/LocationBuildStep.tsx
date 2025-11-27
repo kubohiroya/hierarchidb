@@ -1,21 +1,20 @@
 import { useMemo } from 'react';
-import type { NodeId } from '@hierarchidb/common-types';
 import { Alert, Box, Typography } from '@mui/material';
-import type { LocationDraft } from '../../../common/types/index.js';
+import type { LocationEntity } from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
 
 type Props = {
-  nodeId?: NodeId;
-  draft: LocationDraft;
+  nodeId?: string;
+  draft: Partial<LocationEntity>;
 };
 
 export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft: draftProp }) => {
   const { translations } = useTranslation();
-  const draft = useMemo(() => draftProp.draft ?? {}, [draftProp.draft]);
+  const draft = useMemo(() => draftProp ?? {}, [draftProp]);
 
   const canBuild = useMemo(
-    () => Boolean(nodeId && draftProp.treeNodeId && draft.licenseAgreement && draft.dataSource),
-    [draftProp.treeNodeId, draft.dataSource, draft.licenseAgreement, nodeId]
+    () => Boolean(nodeId && draft.licenseAgreement && draft.dataSource),
+    [draft.dataSource, draft.licenseAgreement, nodeId]
   );
 
   return (

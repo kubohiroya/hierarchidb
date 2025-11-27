@@ -13,26 +13,13 @@ import {
   Typography,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
+import { StylerStepData } from '../../../common/types/stylerTypes.js';
 import type React from 'react';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { StylerStepProps } from './StylerStepProps.js';
 
-export interface StylerStepData {
-  styleType?: 'choropleth' | 'heatmap' | 'points' | 'lines';
-  dataSource?: string;
-  colorScheme?: string;
-  opacity?: number;
-  strokeWidth?: number;
-}
-
-interface StylerExtensionStepProps {
-  data: StylerStepData;
-  onChange: (data: StylerStepData) => void;
-  errors?: string[];
-  isSubmitting?: boolean;
-}
-
-export const StylerExtensionStep: React.FC<StylerExtensionStepProps> = ({
+export const StylerExtensionStep: React.FC<StylerStepProps> = ({
   data,
   onChange,
   errors,
@@ -48,7 +35,17 @@ export const StylerExtensionStep: React.FC<StylerExtensionStepProps> = ({
 
   const handleDataSourceChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      onChange({ ...data, dataSource: event.target.value });
+      const next: StylerStepData = {
+        ...data,
+        dataSource: {
+          ...(typeof data.dataSource === 'object' && data.dataSource !== null
+            ? data.dataSource
+            : {}),
+          type: 'url',
+          source: event.target.value,
+        },
+      };
+      onChange(next);
     },
     [data, onChange]
   );

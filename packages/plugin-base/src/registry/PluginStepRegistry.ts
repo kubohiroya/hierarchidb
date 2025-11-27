@@ -36,17 +36,17 @@ export interface PluginStepProvider<TData extends StepData = StepData> {
 /**
  * New: Config-based provider that supplies typed component factories.
  */
-export interface PluginStepConfigProvider<TData extends StepData = StepData> {
+export interface PluginStepConfigProvider<TData extends StepData = StepData, TUiState = unknown> {
   nodeType: string;
-  getCreateStepConfigs(): PluginStepConfig<TData>[];
-  getEditStepConfigs(nodeId: string, data?: TData): PluginStepConfig<TData>[];
+  getCreateStepConfigs(): PluginStepConfig<TData, TUiState>[];
+  getEditStepConfigs(nodeId: string, data?: TData): PluginStepConfig<TData, TUiState>[];
   validateAccess?(nodeId?: string): Promise<boolean>;
 }
 
 /**
  * Plugin step configuration
  */
-export interface StartBatchContext {
+export interface StartBatchContext<TData extends StepData = StepData, TUiState = unknown> {
   /**
    * Canonical node id if already persisted. Use this to start worker-side batch jobs.
    */
@@ -65,10 +65,15 @@ export interface StartBatchContext {
    * Merged dialog data (basic info + working step data).
    * Useful when the step-level data omits metadata.
    */
-  dialogData: Record<string, unknown>;
+  dialogData: TData;
+
+  /**
+   * Ephemeral UI state (validation, button enables, etc.). Not persisted.
+   */
+  uiState?: TUiState;
 }
 
-export interface PluginStepConfig<TData extends StepData = StepData> {
+export interface PluginStepConfig<TData extends StepData = StepData, TUiState = unknown> {
   /** Step ID */
   id: string;
 
@@ -79,19 +84,19 @@ export interface PluginStepConfig<TData extends StepData = StepData> {
   localization?: StepLocalizationConfig;
 
   /** Step component factory */
-  componentFactory: (props: StepComponentProps<TData>) => ReactNode;
+  componentFactory: (props: StepComponentProps<TData, TUiState>) => ReactNode;
 
   /** Validation function */
   validate?: (data?: TData) => boolean | Promise<boolean>;
 
   /** Step capabilities */
   capabilities?: {
-    canNavigateTo?: (fromStep: number, data: TData) => boolean | Promise<boolean>;
-    canStartBatch?: (data: TData) => boolean | Promise<boolean>;
-    canSave?: (data: TData) => boolean | Promise<boolean>;
-    canProceedToNext?: (data: TData) => boolean | Promise<boolean>;
-    canBackToPrevious?: (data: TData) => boolean | Promise<boolean>;
-    startBatch?: (data: TData, context: StartBatchContext) => void | Promise<void>;
+    canNavigateTo?: (fromStep: number, data: TData, uiState?: TUiState) => boolean | Promise<boolean>;
+    canStartBatch?: (data: TData, uiState?: TUiState) => boolean | Promise<boolean>;
+    canSave?: (data: TData, uiState?: TUiState) => boolean | Promise<boolean>;
+    canProceedToNext?: (data: TData, uiState?: TUiState) => boolean | Promise<boolean>;
+    canBackToPrevious?: (data: TData, uiState?: TUiState) => boolean | Promise<boolean>;
+    startBatch?: (data: TData, context: StartBatchContext<TData, TUiState>) => void | Promise<void>;
   };
 
   /** Whether step is optional */
@@ -105,7 +110,7 @@ export interface PluginStepConfig<TData extends StepData = StepData> {
 /**
  * Props passed to step components
  */
-export interface StepComponentProps<TData extends StepData = StepData> {
+export interface StepComponentProps<TData extends StepData = StepData, TUiState = unknown> {
   /** Dialog mode */
   mode: 'create' | 'edit';
 
@@ -118,8 +123,14 @@ export interface StepComponentProps<TData extends StepData = StepData> {
   /** Current data */
   data: TData;
 
+  /** Optional UI state shared across steps (not persisted) */
+  uiState?: TUiState;
+
   /** Update data */
   onChange: (data: TData) => void;
+
+  /** Update UI state */
+  onUiStateChange?: (uiState: TUiState) => void;
 
   /** Mark step as valid/invalid */
   setValid: (valid: boolean) => void;

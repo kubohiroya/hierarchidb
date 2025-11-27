@@ -7,7 +7,7 @@
   "scripts": {
     "check:deps": "pnpm exec dep-fence --strict",
     "guard:deps:extra": "pnpm run guard:deps:extra:exec",
-    "guard:deps:extra:exec": "node scripts/run-dependency-guard.mjs",
+    "guard:deps:extra:exec": "node scripts/with-clean-npm-config.mjs node scripts/run-dependency-guard.mjs",
     "fix:tsconfig": "node scripts/normalize-tsconfig.mjs",
     "check:deps:pkg": "pnpm exec dep-fence",
     "arch:dc": "npx dependency-cruiser -c .dependency-cruiser.cjs packages app",
@@ -51,7 +51,7 @@
     "clean": "turbo run clean",
     "storybook": "storybook dev -p 6006",
     "build:storybook": "storybook build",
-    "check:licenses": "npx license-checker --production --summary",
+    "check:licenses": "node scripts/with-clean-npm-config.mjs npx license-checker --production --summary",
     "analyze:licenses": "pnpm --filter @hierarchidb/analyze-licenses run build && pnpm --filter @hierarchidb/analyze-licenses exec node dist/cli.js",
     "as-any:report": "node scripts/report-as-any.mjs",
     "as-any:check": "node scripts/report-as-any.mjs --max=975",

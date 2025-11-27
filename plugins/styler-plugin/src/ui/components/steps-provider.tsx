@@ -1,62 +1,30 @@
-import { PluginStepRegistry, type StepComponentProps, type StepData } from '@hierarchidb/plugin-base';
+import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/plugin-base';
 // Reuse Spreadsheet steps as Step 2,3
 import {
   DataSourceStep as SpreadsheetDataSourceStep,
   FilteringStep as SpreadsheetFilteringStep,
   type SpreadsheetDialogData,
 } from '@hierarchidb/spreadsheet-plugin';
-import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
-import { normalizeBasicInfo } from '@hierarchidb/plugin-ui-sdk';
 import { StylerStep5 } from './steps/StylerStep5.js';
 import { StylerStep6 } from './steps/StylerStep6.js';
 import { StyleSettingsStep, isStyleSettingsComplete } from './steps/StyleSettingsStep.js';
-import type { StylerDialogData } from './types.js';
-
-type StylerStepData = StepData & StylerDialogData;
+import { StylerStepData } from '../../common/types/stylerTypes.js';
 
 const registry = PluginStepRegistry.getInstance();
 
-const normalizeDialogData = (value?: StylerDialogData): StylerDialogData => {
-  const basic = normalizeBasicInfo({
-    metadata: value?.basicInfo ?? {
-      name: value?.name,
-      description: value?.description,
-      tags: value?.tags,
-    },
-  });
-  return {
-    ...(value ?? {}),
-    spreadsheetMetadata: value?.spreadsheetMetadata ?? null,
-    basicInfo: {
-      name: basic.name,
-      description: basic.description,
-      tags: basic.tags,
-    },
-    name: basic.name,
-    description: basic.description,
-    tags: basic.tags,
-  };
-};
-
-const toSpreadsheetDialogData = (value?: StylerDialogData): SpreadsheetDialogData => ({
-  ...(normalizeDialogData(value)),
-  metadata: normalizeDialogData(value).spreadsheetMetadata ?? null,
+const toSpreadsheetDialogData = (value?: StylerStepData): SpreadsheetDialogData => ({
+  ...(value ?? {}),
+  metadata: (value?.spreadsheetMetadata ?? null) as SpreadsheetDialogData['metadata'],
 });
 
 const mergeDialogData = (
-  current: StylerDialogData | undefined,
-  next: Partial<StylerDialogData>
-): StylerDialogData => {
-  const normalized = normalizeDialogData(current);
-  return {
-    ...normalized,
-    ...next,
-    spreadsheetMetadata: next.spreadsheetMetadata ?? normalized.spreadsheetMetadata,
-    name: next.name ?? normalized.name,
-    description: next.description ?? normalized.description,
-    tags: next.tags ?? normalized.tags,
-  };
-};
+  current: StylerStepData | undefined,
+  next: Partial<StylerStepData>
+): StylerStepData => ({
+  ...(current ?? {}),
+  ...next,
+  spreadsheetMetadata: next.spreadsheetMetadata ?? current?.spreadsheetMetadata ?? null,
+});
 
 const renderDataSourceStep = (p: StepComponentProps<StylerStepData>) => (
   <SpreadsheetDataSourceStep
@@ -65,7 +33,7 @@ const renderDataSourceStep = (p: StepComponentProps<StylerStepData>) => (
     onChange={(next) =>
       p.onChange(
         mergeDialogData(p.data, {
-          ...(next as Partial<StylerDialogData>),
+          ...(next as Partial<StylerStepData>),
           spreadsheetMetadata: next.metadata ?? null,
         })
       )
@@ -80,7 +48,7 @@ const renderFilteringStep = (p: StepComponentProps<StylerStepData>) => (
     onChange={(next) =>
       p.onChange(
         mergeDialogData(p.data, {
-          ...(next as Partial<StylerDialogData>),
+          ...(next as Partial<StylerStepData>),
           spreadsheetMetadata: next.metadata ?? null,
         })
       )
@@ -88,60 +56,10 @@ const renderFilteringStep = (p: StepComponentProps<StylerStepData>) => (
   />
 );
 
-registry.registerConfigProvider<StylerDialogData>({
+registry.registerConfigProvider<StylerStepData>({
   nodeType: 'styler',
   getCreateStepConfigs() {
     return [
-      {
-        id: 'basic-info',
-        label: 'Basic Information',
-        componentFactory: (p: StepComponentProps<StylerDialogData>) => {
-          const dialogData = normalizeDialogData(p.data);
-          return (
-            <SharedBasicInfoStep
-              name={dialogData.name ?? ''}
-              description={dialogData.description ?? ''}
-              tags={dialogData.tags ?? []}
-              mode={p.mode}
-              onChange={(value: BasicInfoData) =>
-                p.onChange(
-                  mergeDialogData(dialogData, {
-                    basicInfo: {
-                      name: value.name,
-                      description: value.description,
-                      tags: value.tags,
-                    },
-                    name: value.name,
-                    description: value.description,
-                    tags: value.tags,
-                  })
-                )
-              }
-              validate={({ name }: BasicInfoData) => (name.trim().length ? null : 'Name is required')}
-            />
-          );
-        },
-        validate: (dialogData?: StylerDialogData) => {
-          const normalized = normalizeDialogData(dialogData);
-          return Boolean(normalized.name?.trim());
-        },
-        capabilities: {
-          canProceedToNext: (dialogData?: StylerDialogData) => {
-            const normalized = normalizeDialogData(dialogData);
-            return Boolean(normalized.name?.trim());
-          },
-        },
-      },
-      {
-        id: 'style-settings',
-        label: 'Style Settings',
-        componentFactory: (p: StepComponentProps<StylerDialogData>) => <StyleSettingsStep {...p} />,
-        validate: (dialogData?: unknown) => isStyleSettingsComplete(dialogData),
-        capabilities: {
-          canProceedToNext: (dialogData?: unknown) => isStyleSettingsComplete(dialogData),
-        },
-      },
-      // Step 2: Spreadsheet Data Source
       {
         id: 'data-source',
         label: 'Data Source',
@@ -157,7 +75,7 @@ registry.registerConfigProvider<StylerDialogData>({
       {
         id: 'style-mapping',
         label: 'Style Mapping',
-        componentFactory: (p: StepComponentProps<StylerDialogData>) => (
+        componentFactory: (p: StepComponentProps<StylerStepData>) => (
           <StylerStep5
             data={p.data}
             onChange={p.onChange}
@@ -172,7 +90,7 @@ registry.registerConfigProvider<StylerDialogData>({
       {
         id: 'preview',
         label: 'Preview',
-        componentFactory: (p: StepComponentProps<StylerDialogData>) => (
+        componentFactory: (p: StepComponentProps<StylerStepData>) => (
           <StylerStep6
             data={p.data}
             onChange={p.onChange}
@@ -184,6 +102,15 @@ registry.registerConfigProvider<StylerDialogData>({
             }}
           />
         ),
+      },
+      {
+        id: 'style-settings',
+        label: 'Style Settings',
+        componentFactory: (p: StepComponentProps<StylerStepData>) => <StyleSettingsStep {...p} />,
+        validate: (dialogData?: unknown) => isStyleSettingsComplete(dialogData),
+        capabilities: {
+          canProceedToNext: (dialogData?: unknown) => isStyleSettingsComplete(dialogData),
+        },
       },
     ];
   },

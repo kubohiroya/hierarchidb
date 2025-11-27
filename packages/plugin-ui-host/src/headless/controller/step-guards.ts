@@ -19,30 +19,10 @@ export const BASIC_INFO_META_KEY = '__basicInfoValidation';
 
 export const buildStepWorkingData = (
   draftData: StepData | undefined,
-  basicInfo?: { name: string; description: string; tags: string[] },
-  basicInfoMeta?: BasicInfoMeta
+  _basicInfo?: { name: string; description: string; tags: string[] },
+  _basicInfoMeta?: BasicInfoMeta
 ): StepData => {
-  const base: StepData = draftData ? { ...draftData } : {};
-  const draft = (base.draft as StepData | undefined) ?? {};
-  const mergedDraft: StepData = {
-    ...draft,
-    name: basicInfo?.name ?? (draft.name as string | undefined),
-    description: basicInfo?.description ?? (draft.description as string | undefined),
-  };
-
-  const result: StepData = {
-    ...base,
-    name: basicInfo?.name ?? (base as { name?: string }).name,
-    description: basicInfo?.description ?? (base as { description?: string }).description,
-    tags: basicInfo?.tags ?? (base as { tags?: string[] }).tags,
-    draft: mergedDraft,
-  };
-
-  if (basicInfoMeta) {
-    result[BASIC_INFO_META_KEY] = basicInfoMeta;
-  }
-
-  return result;
+  return draftData ? { ...draftData } : {};
 };
 
 export const stripReservedDialogKeys = (input?: StepData | null): StepData => {
@@ -197,14 +177,10 @@ export async function evaluateStepGuards({
 }
 
 export const mergeDialogData = (
-  basic: { name: string; description: string; tags: string[] },
+  _basic: { name: string; description: string; tags: string[] },
   workingData: StepData | null | undefined
 ): StepData => {
-  const merged: StepData = workingData ? { ...workingData } : {};
-  merged.name = basic.name;
-  merged.description = basic.description;
-  merged.tags = basic.tags;
-  return merged;
+  return workingData ? { ...workingData } : {};
 };
 
 export const extractBasicInfoFields = (data?: Record<string, unknown>): {

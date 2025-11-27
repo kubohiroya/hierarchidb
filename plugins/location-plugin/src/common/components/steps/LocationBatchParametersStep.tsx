@@ -4,12 +4,12 @@
 
 import type React from 'react';
 import { Box, Grid, Slider, TextField, Typography } from '@mui/material';
-import type { LocationDraft } from '../../types/index.js';
+import type { LocationEntity } from '../../types/index.js';
 import { useTranslation } from '../../i18n/index.js';
 
 interface LocationBatchParametersStepProps {
-  draft: LocationDraft;
-  onUpdate: (updates: Partial<LocationDraft>) => void;
+  draft: Partial<LocationEntity>;
+  onUpdate: (updates: Partial<LocationEntity>) => void;
 }
 
 const MIN_CONCURRENCY = 1;
@@ -27,33 +27,33 @@ export const LocationBatchParametersStep: React.FC<LocationBatchParametersStepPr
   onUpdate,
 }) => {
   const { translations } = useTranslation();
-  const draft = draftProp.draft ?? {};
+  const draft = draftProp ?? {};
 
   const rawConcurrent = draft.concurrentDownloads ?? 2;
   const concurrentDownloads = clamp(Number(rawConcurrent) || 2, MIN_CONCURRENCY, MAX_CONCURRENCY);
-  const rawMinZoom = (draft as any).tilesMinZoom ?? 4;
-  const rawMaxZoom = (draft as any).tilesMaxZoom ?? 12;
+  const rawMinZoom = draft.tilesMinZoom ?? 4;
+  const rawMaxZoom = draft.tilesMaxZoom ?? 12;
   const minZoom = clamp(Number(rawMinZoom) || 4, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
   const maxZoom = clamp(Number(rawMaxZoom) || 12, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
 
   const handleConcurrentDownloadsChange = (_: Event, value: number | number[]) => {
     const rawValue = Array.isArray(value) ? value[0] ?? concurrentDownloads : value ?? concurrentDownloads;
     const next = clamp(rawValue, MIN_CONCURRENCY, MAX_CONCURRENCY);
-    onUpdate({ draft: { concurrentDownloads: next } });
+    onUpdate({ concurrentDownloads: next });
   };
 
   const handleMinZoomChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const raw = Number(event.target.value);
     const nextMin = clamp(raw, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
     const adjustedMax = Math.max(nextMin, maxZoom);
-    onUpdate({ draft: { tilesMinZoom: nextMin, tilesMaxZoom: adjustedMax } });
+    onUpdate({ tilesMinZoom: nextMin, tilesMaxZoom: adjustedMax });
   };
 
   const handleMaxZoomChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const raw = Number(event.target.value);
     const nextMax = clamp(raw, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
     const adjustedMin = Math.min(nextMax, minZoom);
-    onUpdate({ draft: { tilesMinZoom: adjustedMin, tilesMaxZoom: nextMax } });
+    onUpdate({ tilesMinZoom: adjustedMin, tilesMaxZoom: nextMax });
   };
 
   return (

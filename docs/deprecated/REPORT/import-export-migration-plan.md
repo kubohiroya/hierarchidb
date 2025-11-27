@@ -178,7 +178,7 @@ export class ExportService {
     
     // console-nodes.json作成
     const nodes = await this.collectNodes(nodeIds);
-    zip.file('console-nodes.json', JSON.stringify(nodes, null, 2));
+    zip.file('tree-nodes.json', JSON.stringify(nodes, null, 2));
     
     // ZIPファイル生成
     return await zip.generateAsync({ type: 'blob' });

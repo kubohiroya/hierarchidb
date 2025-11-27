@@ -1,14 +1,15 @@
 import { PluginStepRegistry, type PluginStepConfig, type StepComponentProps, type StepData } from '@hierarchidb/plugin-base';
 import type { SpreadsheetDialogData } from '../../common/types/SpreadsheetEntity.js';
-
-type SpreadsheetStepData = StepData & SpreadsheetDialogData;
 import { DataSourceStep } from './steps/DataSourceStep.js';
 import { FilteringStep } from './steps/FilteringStep.js';
 import { SPREADSHEET_NODE_TYPE, STEP_LABELS } from '../../common/constants.js';
 
 const registry = PluginStepRegistry.getInstance();
 
-const isComplete = (data?: SpreadsheetDialogData): boolean => Boolean(data?.spreadsheetMetadataId);
+// Basic Info (name/description/tags) is provided by the host; this step data is Step2+ only.
+type SpreadsheetStepData = StepData & Omit<SpreadsheetDialogData, 'name' | 'description' | 'tags'>;
+
+const isComplete = (data?: SpreadsheetStepData): boolean => Boolean(data?.spreadsheetMetadataId);
 
 registry.registerConfigProvider({
   nodeType: SPREADSHEET_NODE_TYPE,

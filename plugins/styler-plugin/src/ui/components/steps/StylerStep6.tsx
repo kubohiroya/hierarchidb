@@ -9,32 +9,14 @@
 import { wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
 import { Alert, AlertTitle, Box } from '@mui/material';
 import React, { useCallback, useMemo } from 'react';
-import type { StylerConfig, StylerTableRow } from '../../../common/types/stylerTypes.js';
+import type { StylerConfig, StylerStepData } from '../../../common/types/stylerTypes.js';
 import { StylerConfigDefault } from '../../../common/types/stylerTypes.js';
-import type { StylerStep5Data } from './StylerStep5.js';
 import { StylerTablePreview } from './StylerTablePreview.js';
 
-/**
- * : Step6
- */
-export interface StylerStep6Data extends StylerStep5Data {}
+import { StylerStepProps } from './StylerStepProps.js';
 
-export interface StylerStep6Props {
-  data: StylerStep6Data;
-  onChange: (data: StylerStep6Data) => void;
-  onValidate?: (isValid: boolean) => void;
-  //  Tabular
-  tabularData?: StylerTableRow[];
-  columns?: string[];
-}
 
-/**
- * : Styler Step6
- * : StylerTablePreview
- * :
- * :
- */
-export const StylerStep6: React.FC<StylerStep6Props> = ({
+export const StylerStep6: React.FC<StylerStepProps> = ({
   data,
   onChange,
   onValidate,
@@ -53,7 +35,7 @@ export const StylerStep6: React.FC<StylerStep6Props> = ({
   //  :
   const handleColumnSelect = useCallback(
     (columnName: string, type: 'key' | 'value') => {
-      const updatedData: StylerStep6Data = {
+      const updatedData: StylerStepData = {
         ...data,
         [type === 'key' ? 'selectedKeyColumn' : 'selectedValueColumn']: columnName,
       };
@@ -139,7 +121,7 @@ export const StylerStep6Definition = {
   title: 'Preview with Style Mapping',
   component: StylerStep6Component,
   validation: {
-    validate: async (_data: StylerStep6Data) => {
+    validate: async (_data: StylerStepData) => {
       //  OK
       return { isValid: true, errors: [] };
     },

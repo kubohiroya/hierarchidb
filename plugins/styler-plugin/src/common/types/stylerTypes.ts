@@ -1,15 +1,6 @@
-/**
- * @file stylerTypes.ts
- * @description Styler plugin type definitions
- * : Styler
- * : eria-cartographHierarchiDB
- * :
- */
+import { type StepData } from '@hierarchidb/plugin-base';
+import { SpreadSheetDataSourceConfig, type SpreadsheetDialogData } from '@hierarchidb/spreadsheet-plugin';
 
-/**
- * : MapLibre style property
- * : MapLibre GL JS
- */
 export type MapLibreStyleProperty =
   | 'fill-color'
   | 'fill-opacity'
@@ -274,3 +265,15 @@ export const MAPLIBRE_PROPERTY_GROUPS: PropertyGroup[] = [
     properties: ['text-color', 'text-halo-color', 'text-halo-width'],
   },
 ];
+
+export type StylerStepData = {
+  styleType?: 'choropleth' | 'heatmap' | 'points' | 'lines';
+  dataSource?: SpreadSheetDataSourceConfig;
+  spreadsheetMetadata?: SpreadsheetDialogData['metadata'] | null;
+  colorScheme?: string;
+  opacity?: number;
+  strokeWidth?: number;
+  stylerConfig?: StylerConfig;
+  selectedKeyColumn?: string;
+  selectedValueColumn?: string;
+} & StepData;

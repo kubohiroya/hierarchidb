@@ -1,7 +1,6 @@
-import { PluginStepRegistry, type StartBatchContext, type StepComponentProps, type StepData } from '@hierarchidb/plugin-base';
-import type { NodeId, Timestamp } from '@hierarchidb/common-types';
-import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
-import type { LocationDraft } from '../../common/types/index.js';
+import { PluginStepRegistry, type StartBatchContext, type StepComponentProps } from '@hierarchidb/plugin-base';
+import type { NodeId } from '@hierarchidb/common-types';
+import type { LocationEntity } from '../../common/types/index.js';
 import { translations as locationTranslations } from '../../common/i18n/index.js';
 import { LocationDataSourceStep } from '../../common/components/steps/LocationDataSourceStep.js';
 import { LocationLicenseStep } from '../../common/components/steps/LocationLicenseStep.js';
@@ -15,44 +14,25 @@ import { LocationVectorTileService } from '../../services/tiles/LocationVectorTi
 
 const registry = PluginStepRegistry.getInstance();
 
-type LocationStepData = StepData & LocationDraft;
+// Step payload = Partial<LocationEntity>; treeNode metadataはホスト Basic Info で管理する。
+type LocationStepData = Partial<LocationEntity>;
 
-const ensureDraft = (data?: LocationDraft): LocationStepData => {
-  if (data) {
-    return {
-      ...data,
-      treeNodeId: data.treeNodeId ?? ('' as NodeId),
-      draft: { ...(data.draft ?? {}) },
-      createdAt: data.createdAt ?? (Date.now() as Timestamp),
-      updatedAt: data.updatedAt ?? (Date.now() as Timestamp),
-      tags: data.tags ?? [],
-    } satisfies LocationDraft;
-  }
-  return {
-    treeNodeId: '' as NodeId,
-    draft: {},
-    createdAt: Date.now() as Timestamp,
-    updatedAt: Date.now() as Timestamp,
-    tags: [],
-  } satisfies LocationDraft;
-};
+const ensureData = (data?: LocationStepData): LocationStepData => ({
+  ...(data ?? {}),
+});
 
-const mergeDraft = (
-  current: LocationDraft,
-  updates: Partial<LocationDraft>
+const mergeData = (
+  current: LocationStepData,
+  updates: Partial<LocationStepData>
 ): LocationStepData => ({
   ...current,
   ...updates,
-  draft: {
-    ...(current.draft ?? {}),
-    ...(updates.draft ?? {}),
-  },
 });
 
 type StepProps = StepComponentProps<LocationStepData>;
 
-const hasSelection = (data?: LocationDraft): boolean => {
-  const matrix = data?.draft?.selectionMatrix;
+const hasSelection = (data?: LocationStepData): boolean => {
+  const matrix = data?.selectionMatrix;
   if (!Array.isArray(matrix)) return false;
   return matrix.some((row) => Array.isArray(row) && row.some(Boolean));
 };
@@ -69,8 +49,8 @@ const DEFAULT_MAX_ZOOM = 12;
 
 const startLocationBatch = async (data: LocationStepData, context: StartBatchContext) => {
   const t = locationTranslations.en;
-  const draft = data.draft ?? {};
-  const nodeId = (context.nodeId ?? data.treeNodeId) as NodeId | undefined;
+  const draft = data ?? {};
+  const nodeId = context.nodeId as NodeId | undefined;
 
   if (!nodeId) {
     notify.error('Save changes before starting a build.');
@@ -106,12 +86,12 @@ const startLocationBatch = async (data: LocationStepData, context: StartBatchCon
   }));
 
   const settings = {
-    zoomMinGenerate: clamp(Number((draft as Record<string, unknown>).tilesMinZoom ?? DEFAULT_MIN_ZOOM), 0, 24),
-    zoomMaxGenerate: clamp(Number((draft as Record<string, unknown>).tilesMaxZoom ?? DEFAULT_MAX_ZOOM), 0, 24),
-    zoomMaxServe: clamp(Number((draft as Record<string, unknown>).tilesMaxZoom ?? DEFAULT_MAX_ZOOM), 0, 24),
+    zoomMinGenerate: draft.tilesMinZoom ?? DEFAULT_MIN_ZOOM,
+    zoomMaxGenerate: draft.tilesMaxZoom ?? DEFAULT_MAX_ZOOM,
+    zoomMaxServe: draft.tilesMaxZoom ?? DEFAULT_MAX_ZOOM,
   } as const;
 
-  const rawConcurrency = Number(draft.concurrentDownloads ?? 4);
+  const rawConcurrency = draft.concurrentDownloads ?? 4;
   const concurrency = clamp(rawConcurrency || 4, MIN_CONCURRENCY, MAX_CONCURRENCY);
 
   const service = new LocationVectorTileService();
@@ -123,92 +103,62 @@ const startLocationBatch = async (data: LocationStepData, context: StartBatchCon
   );
 };
 
-registry.registerConfigProvider<LocationDraft>({
+registry.registerConfigProvider<LocationStepData>({
   nodeType: 'location',
   getCreateStepConfigs() {
     const t = locationTranslations;
     return [
       {
-        id: 'basic-info',
-        label: t.en.basicInfo.title,
-        componentFactory: (p: StepProps) => {
-          const draft = ensureDraft(p.data);
-          return (
-            <SharedBasicInfoStep
-              name={draft.draft?.name ?? ''}
-              description={draft.draft?.description ?? ''}
-              tags={draft.tags ?? []}
-              mode={p.mode}
-              tagSuggestions={t.en.basicInfo.tagSuggestions ?? []}
-              validate={({ name }) => (name.trim().length ? null : t.en.errors.nameRequired)}
-              onChange={(value: BasicInfoData) => {
-                p.onChange(
-                  mergeDraft(draft, {
-                    draft: {
-                      ...draft.draft,
-                      name: value.name,
-                      description: value.description,
-                    },
-                    tags: value.tags,
-                  })
-                );
-              }}
-            />
-          );
-        },
-        validate: (data?: LocationDraft) => Boolean(data?.draft?.name?.trim()),
-      },
-      {
         id: 'data-source',
         label: t.en.dialog.dataSourceLabel,
         componentFactory: (p: StepProps) => {
-          const draft = ensureDraft(p.data);
+          const draft = ensureData(p.data);
           return (
             <LocationDataSourceStep
               draft={draft}
-              onUpdate={(updates) => p.onChange(mergeDraft(draft, updates))}
+              onUpdate={(updates) => p.onChange(mergeData(draft, updates))}
             />
           );
         },
-        validate: (data?: LocationDraft) => Boolean(data?.draft?.dataSource),
+        validate: (data?: LocationStepData) => Boolean(data?.dataSource),
       },
       {
         id: 'license',
         label: t.en.dialog.licenseAgreementLabel,
         componentFactory: (p: StepProps) => {
-          const draft = ensureDraft(p.data);
+          const draft = ensureData(p.data);
           return (
             <LocationLicenseStep
               draft={draft}
-              onUpdate={(updates) => p.onChange(mergeDraft(draft, updates))}
+              onUpdate={(updates) => p.onChange(mergeData(draft, updates))}
             />
           );
         },
-        validate: (data?: LocationDraft) => Boolean(data?.draft?.licenseAgreement),
+        validate: (data?: LocationStepData) => Boolean(data?.licenseAgreement),
       },
       {
         id: 'selection',
         label: t.en.selection.title,
         componentFactory: (p: StepProps) => {
-          const draft = ensureDraft(p.data);
+          const draft = ensureData(p.data);
           return (
             <LocationSelectionStep
               draft={draft}
-              onUpdate={(updates) => p.onChange(mergeDraft(draft, updates))}
+              onUpdate={(updates) => p.onChange(mergeData(draft, updates))}
             />
           );
         },
-        validate: (data?: LocationDraft) => hasSelection(data),
+        validate: (data?: LocationStepData) => hasSelection(data),
       },
       {
         id: 'batch-parameters',
         label: t.en.panel.processingSettings,
         componentFactory: (p: StepProps) => {
-          const draft = ensureDraft(p.data);
+          const draft = ensureData(p.data);
           return (
             <LocationBatchParametersStep
               draft={draft}
-              onUpdate={(updates) => p.onChange(mergeDraft(draft, updates))}
+              onUpdate={(updates) => p.onChange(mergeData(draft, updates))}
             />
           );
         },
@@ -219,8 +169,13 @@ registry.registerConfigProvider<LocationDraft>({
         label: t.en.mapPreview?.title ?? 'Map Preview',
         optional: true,
         componentFactory: (p: StepProps) => {
-          const draft = ensureDraft(p.data);
-          return <LocationMapPreviewStep draft={draft} />;
+          const draft = ensureData(p.data);
+          return (
+            <LocationMapPreviewStep
+              draft={draft}
+              nodeId={p.nodeId as unknown as NodeId | undefined}
+            />
+          );
         },
         validate: () => true,
       },
@@ -229,17 +184,17 @@ registry.registerConfigProvider<LocationDraft>({
         label: t.en.build?.actionLabel ?? 'Build',
         optional: true,
         componentFactory: (p: StepProps) => {
-          const draft = ensureDraft(p.data);
+          const draft = ensureData(p.data);
           return (
             <LocationBuildStep
-              nodeId={p.nodeId as NodeId}
+              nodeId={p.nodeId}
               draft={draft}
             />
           );
         },
         capabilities: {
-          canStartBatch: (data: LocationDraft) =>
-            Boolean(data?.treeNodeId && data?.draft?.dataSource && data?.draft?.licenseAgreement),
+          canStartBatch: (data: LocationStepData) =>
+            Boolean(data?.dataSource && data?.licenseAgreement),
           startBatch: (data, context) => startLocationBatch(data, context),
         },
         validate: () => true,

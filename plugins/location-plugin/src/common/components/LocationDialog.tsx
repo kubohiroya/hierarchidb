@@ -10,6 +10,7 @@ import type {
   LocationDialogProps,
   LocationDraft,
   LocationDataSource,
+  LocationEntity,
 } from '../types/index.js';
 import { useTranslation } from '../i18n/index.js';
 import { LocationLicenseStep } from './steps/LocationLicenseStep.js';
@@ -51,7 +52,7 @@ import {
 } from '@hierarchidb/ui-dialog';
 import { notify } from '@hierarchidb/components';
 
-import { useDialogDraft, type DraftData, normalizeBasicInfo } from '@hierarchidb/plugin-ui-sdk';
+import { useDialogDraft, type DraftData } from '@hierarchidb/plugin-ui-sdk';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-client';
 import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 // import { useToastNotifications } from '@hierarchidb/components/toast/ToastProvider.js';
@@ -69,24 +70,14 @@ const DEFAULT_CONCURRENCY = 4;
 const MIN_CONCURRENCY = 1;
 const MAX_CONCURRENCY = 16;
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null;
-
-type LocationDraftPayload = LocationDraft['draft'];
+type LocationDraftPayload = Partial<LocationEntity>;
 
 const normalizeLocationDraft = (raw: DraftData | null): LocationDraft => {
   const now = Date.now() as Timestamp;
-  const draftData = (raw?.draftData && isRecord(raw.draftData) ? raw.draftData : {}) as Partial<LocationDraftPayload>;
-  const basic = normalizeBasicInfo({
-    metadata: raw?.metadata && isRecord(raw.metadata) ? raw.metadata : undefined,
-    draftData,
-  });
+  const draftData = (raw?.draftData ?? {}) as LocationDraftPayload;
 
   const normalizedDraft: LocationDraftPayload = {
     ...draftData,
-    name: basic.name,
-    description: basic.description,
-    tags: basic.tags,
   };
 
   return {
@@ -94,7 +85,7 @@ const normalizeLocationDraft = (raw: DraftData | null): LocationDraft => {
     draft: normalizedDraft,
     createdAt: (raw as { createdAt?: Timestamp })?.createdAt ?? now,
     updatedAt: (raw as { updatedAt?: Timestamp })?.updatedAt ?? now,
-    tags: basic.tags,
+    tags: undefined,
     dataSource: normalizedDraft.dataSource,
     tabularSourceId: normalizedDraft.tabularSourceId,
     extractConfig: normalizedDraft.extractConfig,
@@ -102,9 +93,10 @@ const normalizeLocationDraft = (raw: DraftData | null): LocationDraft => {
 };
 
 const mergeLocationDraft = (current: LocationDraft, patch: Partial<LocationDraft>): LocationDraft => {
+  const patchDraft = (patch.draft ?? patch) as LocationDraftPayload;
   const mergedDraft: LocationDraftPayload = {
     ...(current.draft ?? {}),
-    ...(patch.draft ?? {}),
+    ...patchDraft,
     ...(patch.dataSource ? { dataSource: patch.dataSource } : {}),
     ...(patch.tabularSourceId ? { tabularSourceId: patch.tabularSourceId } : {}),
     ...(patch.extractConfig ? { extractConfig: patch.extractConfig } : {}),
@@ -126,11 +118,6 @@ const mergeLocationDraft = (current: LocationDraft, patch: Partial<LocationDraft
 
 const toDraftDataPayload = (value: LocationDraft): Partial<DraftData> => ({
   draftData: value.draft,
-  draftMetadata: {
-    name: value.draft?.name ?? '',
-    description: value.draft?.description,
-    tags: value.tags ?? value.draft?.tags,
-  },
 });
 
 export const LocationDialog: React.FC<LocationDialogProps> = ({

@@ -6,7 +6,7 @@ import type React from 'react';
 import { useMemo } from 'react';
 import { Box, Typography } from '@mui/material';
 import { DataSourceSelector } from '@hierarchidb/ui-datasource';
-import type { LocationDataSource, LocationDraft } from '../../types/index.js';
+import type { LocationDataSource, LocationEntity } from '../../types/index.js';
 import { useTranslation } from '../../i18n/index.js';
 import { DataSourceOption } from '@hierarchidb/ui-datasource';
 
@@ -20,16 +20,16 @@ const ORDERED_DATA_SOURCES: LocationDataSource[] = [
 ];
 
 interface LocationDataSourceStepProps {
-  draft: LocationDraft;
-  onUpdate: (updates: Partial<LocationDraft>) => void;
+  draft: Partial<LocationEntity>;
+  onUpdate: (updates: Partial<LocationEntity>) => void;
 }
 
 export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({ draft, onUpdate }) => {
   const { translations } = useTranslation();
 
   const value = useMemo<LocationDataSource>(() => (
-    (draft.draft.dataSource as LocationDataSource) ?? 'openstreetmap'
-  ), [draft.draft.dataSource]);
+    (draft.dataSource as LocationDataSource) ?? 'openstreetmap'
+  ), [draft.dataSource]);
 
   const options = useMemo<DataSourceOption[]>(() => (
     ORDERED_DATA_SOURCES.map((sourceId) => ({
@@ -43,11 +43,9 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({ 
   const handleChange = (next: string) => {
     const nextSource = next as LocationDataSource;
     onUpdate({
-      draft: {
-        dataSource: nextSource,
-        licenseAgreement: false,
-        licenseAgreedAt: undefined,
-      },
+      dataSource: nextSource,
+      licenseAgreement: false,
+      licenseAgreedAt: undefined,
     });
   };
 

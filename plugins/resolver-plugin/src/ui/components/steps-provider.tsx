@@ -1,8 +1,4 @@
 import { PluginStepRegistry, type StepComponentProps, type PluginStepConfig, type StepData } from '@hierarchidb/plugin-base';
-import {
-  BasicInfoStep as SharedBasicInfoStep,
-  type BasicInfoData,
-} from '@hierarchidb/ui-plugin-basic-info';
 import { SchemaSelectionStep } from './steps/SchemaSelectionStep.js';
 import { PropertyMappingStep } from './steps/PropertyMappingStep.js';
 import { ValidationConfigStep } from './steps/ValidationConfigStep.js';
@@ -72,32 +68,6 @@ registry.registerConfigProvider<ResolverDraft>({
   nodeType: 'resolver',
   getCreateStepConfigs(): PluginStepConfig<ResolverDraft>[] {
     return [
-      {
-        id: 'basic-info',
-        label: 'Basic Information',
-        componentFactory: (p: ResolverStepProps) => {
-          const draft = ensureDraft(p.data);
-          return (
-            <SharedBasicInfoStep
-              name={draft.name ?? ''}
-              description={draft.description ?? ''}
-              tags={draft.tags ?? []}
-              mode={p.mode}
-              onChange={(value: BasicInfoData) =>
-                p.onChange(
-                  mergeDraft(draft, {
-                    name: value.name,
-                    description: value.description,
-                    tags: value.tags,
-                  })
-                )
-              }
-              validate={({ name }) => (name.trim().length ? null : 'Name is required')}
-            />
-          );
-        },
-        validate: (data?: ResolverDraft) => Boolean(data?.name?.trim()),
-      },
       {
         id: 'schema', label: 'Schema Selection', validate: () => true,
         componentFactory: (p: ResolverStepProps) => {

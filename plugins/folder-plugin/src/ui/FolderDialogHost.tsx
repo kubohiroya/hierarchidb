@@ -146,7 +146,7 @@ export const FolderDialogHost: React.FC<FolderDialogHostProps> = ({
     {
       id: 'basic',
       label: 'Basic Information',
-      component: (
+      component: (() => (
         <BasicInfoStep
           name={data.name ?? ''}
           description={data.description ?? ''}
@@ -155,7 +155,7 @@ export const FolderDialogHost: React.FC<FolderDialogHostProps> = ({
           onChange={persistBasicInfo}
           validate={(value: BasicInfoData) => (value.name.trim().length ? null : 'Name is required')}
         />
-      ),
+      )) as React.ComponentType,
       validate: () => Boolean(data.name?.trim()),
     },
   ], [data.description, data.name, data.tags, mode, persistBasicInfo]);

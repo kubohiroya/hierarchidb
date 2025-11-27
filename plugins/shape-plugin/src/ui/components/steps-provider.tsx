@@ -7,7 +7,6 @@ import {
   mergeProcessingConfig,
   type ShapeDraft,
 } from '../../common/shared/index.js';
-import { Step1BasicInfo } from '../../common/components/steps/Step1BasicInfo.js';
 import { Step2DataSource } from '../../common/components/steps/Step2DataSource.js';
 import { Step3License } from '../../common/components/steps/Step3License.js';
 import { Step4Processing } from '../../common/components/steps/Step4Processing.js';
@@ -47,7 +46,6 @@ function createStepAdapter(
   };
 }
 
-const Step1 = createStepAdapter(Step1BasicInfo);
 const Step2 = createStepAdapter(Step2DataSource);
 const Step3 = createStepAdapter(Step3License);
 const Step4 = createStepAdapter(Step4Processing);
@@ -57,8 +55,7 @@ const canStartShapeBatch = (data?: Partial<ShapeDraft>): boolean => {
   const hasSelection = summarizeCheckboxState(data?.checkboxState).hasSelection;
   const hasLicense = Boolean(data?.licenseAgreement);
   const hasDataSource = Boolean(data?.dataSourceName);
-  const hasName = Boolean((data?.name as string | undefined)?.trim());
-  return hasSelection && hasLicense && hasDataSource && hasName;
+  return hasSelection && hasLicense && hasDataSource;
 };
 
 const startShapeBatch = async (data: Partial<ShapeDraft>, _context: StartBatchContext) => {
@@ -85,12 +82,6 @@ registry.registerConfigProvider<Partial<ShapeDraft>>({
         label: 'Dataset Filter',
         componentFactory: (props: ShapeDialogStepProps) => <StepTabularFilter {...props} />,
         validate: (data?: Partial<ShapeDraft>) => Boolean(data?.tabularMetadataId),
-      },
-      {
-        id: 'basic-info',
-        label: 'Basic Information',
-        componentFactory: (props: ShapeDialogStepProps) => <Step1 {...props} />,
-        validate: (data?: Partial<ShapeDraft>) => Boolean(data?.name?.trim()),
       },
       {
         id: 'data-source',

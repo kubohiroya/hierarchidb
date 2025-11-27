@@ -21,6 +21,9 @@ type TemplateNode = {
   name: string;
   description?: string;
   metadata?: Record<string, unknown>;
+  draftData?: Record<string, unknown> | null;
+  draftMetadata?: Record<string, unknown> | null;
+  data?: Record<string, unknown> | null;
 };
 
 type TemplateFile = {
@@ -29,7 +32,7 @@ type TemplateFile = {
 };
 
 const templateUrl = new URL(
-  '../../../../../../app/public/templates/population-2023/console-nodes.json',
+  '../../../../../../app/public/templates/population-2023/tree-nodes.json',
   import.meta.url
 );
 
@@ -47,17 +50,25 @@ function buildImportNodes(data: TemplateFile): ImportData['nodes'] {
       .filter((child) => child?.parentTreeNodeId === id)
       .map((child) => toImportNode(child.treeNodeId))
       .filter((child): child is ImportData['nodes'][number] => child !== null);
+    const metadata = (node.metadata && typeof node.metadata === 'object' ? node.metadata : undefined) as
+      | Record<string, unknown>
+      | undefined;
+    const draftData =
+      (node.draftData && typeof node.draftData === 'object' ? node.draftData : undefined) ??
+      undefined;
+    const draftMetadata =
+      (node.draftMetadata && typeof node.draftMetadata === 'object' ? node.draftMetadata : undefined) ??
+      undefined;
+    const dataPayload = node.data && typeof node.data === 'object' ? node.data : undefined;
+
     return {
-      name: (node.metadata.name ?? '') as string,
+      name: node.name,
       nodeType: node.treeNodeType,
-      description:
-        typeof node.metadata.description === 'string' ? node.metadata.description : undefined,
-      metadata: {
-        ...node.metadata,
-        name: (node.metadata.name ?? '') as string,
-        description:
-          typeof node.metadata.description === 'string' ? node.metadata.description : undefined,
-      },
+      description: node.description,
+      metadata,
+      draftData: draftData ?? undefined,
+      draftMetadata: draftMetadata ?? undefined,
+      data: dataPayload ?? undefined,
       children: children.length > 0 ? children : undefined,
     };
   };

@@ -243,14 +243,17 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     }
   })();
 
-  const fallbackAnchorPosition = !safeAnchorEl && anchorPosition ? anchorPosition : null;
+  const hasAnchorPosition = Boolean(anchorPosition);
+  const anchorReference: 'anchorEl' | 'anchorPosition' = hasAnchorPosition ? 'anchorPosition' : 'anchorEl';
+  const resolvedAnchorPosition = hasAnchorPosition ? anchorPosition : null;
+  const anchorForMenu = anchorReference === 'anchorEl' ? safeAnchorEl : null;
 
   // If anchor is invalid while menu is open, close it proactively
   useEffect(() => {
-    if (open && !safeAnchorEl && !fallbackAnchorPosition) {
+    if (anchorReference === 'anchorEl' && open && !anchorForMenu) {
       requestAnimationFrame(() => onClose());
     }
-  }, [open, safeAnchorEl, fallbackAnchorPosition, onClose]);
+  }, [anchorReference, open, anchorForMenu, onClose]);
 
   const isFolder =
     nodeType === 'folder' || nodeType === 'folder-plugin' || nodeType === 'ProjectFolder' || nodeType === 'ResourceFolder';
@@ -282,11 +285,11 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     <>
       {/*
 */}
-        <Menu
-          anchorEl={safeAnchorEl}
-          anchorReference={fallbackAnchorPosition ? 'anchorPosition' : 'anchorEl'}
-          anchorPosition={fallbackAnchorPosition ?? undefined}
-          open={open && (!!safeAnchorEl || !!fallbackAnchorPosition)}
+      <Menu
+        anchorEl={anchorForMenu}
+        anchorReference={anchorReference}
+        anchorPosition={resolvedAnchorPosition ?? undefined}
+        open={open && (anchorReference === 'anchorPosition' ? !!resolvedAnchorPosition : !!anchorForMenu)}
         onClose={handleMainMenuClose}
         disablePortal={false}
         keepMounted={false}

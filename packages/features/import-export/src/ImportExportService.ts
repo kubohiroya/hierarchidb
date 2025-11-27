@@ -112,14 +112,36 @@ export class ImportExportService implements ImportExportAPI {
           const nodeId = generateUUID() as NodeId;
           const parentDepth = await resolveParentDepth(params.targetParentId);
           const parentId: NodeId = (params.targetParentId ?? (nodeData as { parentNodeId?: NodeId })?.parentNodeId ?? nodeId) as NodeId;
-          const uniqueName = await resolveConflictingName(parentId, nodeData.name);
+          const metaObj =
+            (nodeData.metadata && typeof nodeData.metadata === 'object'
+              ? (nodeData.metadata as Record<string, unknown>)
+              : {}) as Record<string, unknown>;
+          const sourceName =
+            (typeof (nodeData as { name?: unknown }).name === 'string'
+              ? (nodeData as { name?: string }).name
+              : (metaObj as { name?: string }).name) ?? '';
+          const sourceDescription =
+            typeof (nodeData as { description?: unknown }).description === 'string'
+              ? (nodeData as { description?: string }).description
+              : (metaObj as { description?: string }).description;
+          const sourceTags = Array.isArray((nodeData as { tags?: unknown }).tags)
+            ? ((nodeData as { tags?: unknown[] }).tags || []).filter((t): t is string => typeof t === 'string')
+            : Array.isArray((metaObj as { tags?: unknown }).tags)
+              ? (((metaObj as { tags?: unknown[] }).tags || []).filter((t): t is string => typeof t === 'string'))
+              : undefined;
+
+          const uniqueName = await resolveConflictingName(parentId, sourceName);
           const metadata: TreeNodeMetadata = {
             name: uniqueName,
-            description: nodeData.description,
-            tags: Array.isArray((nodeData as { tags?: unknown }).tags)
-              ? ((nodeData as { tags?: unknown[] }).tags || []).filter((t): t is string => typeof t === 'string')
-              : undefined,
+            description: sourceDescription,
+            tags: sourceTags,
           };
+          const draftDataFromTemplate =
+            ((nodeData as { draftData?: Record<string, unknown> | null }).draftData as
+              | Record<string, unknown>
+              | null
+              | undefined) ?? null;
+
           const node: TreeNode = {
             id: nodeId,
             parentId,
@@ -129,9 +151,13 @@ export class ImportExportService implements ImportExportAPI {
             updatedAt: Date.now(),
             version: 1,
             metadata,
-            draftMetadata: null,
-            data: null,
-            draftData: null,
+            draftMetadata:
+              ((nodeData as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata as TreeNodeMetadata | null | undefined) ??
+              null,
+            data:
+              ((nodeData as { data?: Record<string, unknown> | null }).data as Record<string, unknown> | null | undefined) ??
+              null,
+            draftData: draftDataFromTemplate ?? null,
           };
           toCreate.push({ node, children: nodeData.children });
           if (!nameCache.has(node.id)) {

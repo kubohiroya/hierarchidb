@@ -18,14 +18,14 @@ import {
   TextField,
 } from '@mui/material';
 import { Settings } from '@mui/icons-material';
-import type { LocationDraft } from '../../types/index.js';
+import type { LocationEntity } from '../../types/index.js';
 import { useTranslation } from '../../i18n/index.js';
 import { SelectionMatrix, type Country, type LocationTypeConfig } from '../ui/SelectionMatrix.js';
 import type { LocationType } from '../../types/index.js';
 
 interface LocationSelectionStepProps {
-  draft: LocationDraft;
-  onUpdate: (updates: Partial<LocationDraft>) => void;
+  draft: Partial<LocationEntity>;
+  onUpdate: (updates: Partial<LocationEntity>) => void;
 }
 
 const SAMPLE_COUNTRIES: Country[] = [
@@ -98,14 +98,14 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ dr
     });
   }, [translations]);
 
-  const selectionMatrixSource = useMemo(() => draft.draft.selectionMatrix ?? [], [draft.draft.selectionMatrix]);
+  const selectionMatrixSource = useMemo(() => draft.selectionMatrix ?? [], [draft.selectionMatrix]);
 
   const selectionMatrix = useMemo(() => (
     normalizeMatrix(selectionMatrixSource, SAMPLE_COUNTRIES, locationTypes)
   ), [locationTypes, selectionMatrixSource]);
 
   const handleMatrixChange = useCallback((matrix: boolean[][]) => {
-    onUpdate({ draft: { selectionMatrix: matrix } });
+    onUpdate({ selectionMatrix: matrix });
   }, [onUpdate]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {

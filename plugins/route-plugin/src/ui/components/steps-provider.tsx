@@ -6,10 +6,6 @@ import {
   type StepData,
 } from '@hierarchidb/plugin-base';
 import type { NodeId } from '@hierarchidb/common-types';
-import {
-  BasicInfoStep as SharedBasicInfoStep,
-  type BasicInfoData,
-} from '@hierarchidb/ui-plugin-basic-info';
 import type { RouteDraft, TagId } from '../../common/types/index.js';
 import { createRouteDraftBase } from '../../common/utils/draft.js';
 import { translations as routeTranslations } from '../../common/i18n/index.js';
@@ -117,37 +113,6 @@ registry.registerConfigProvider<RouteStepData>({
   getCreateStepConfigs(): PluginStepConfig<RouteStepData>[] {
     const t = routeTranslations;
     return [
-      {
-        id: 'basic-info',
-        label: t.en.basicInfo.title,
-        componentFactory: (p: StepProps) => {
-          const draft = ensureDraft(p.data);
-          return (
-            <SharedBasicInfoStep
-              name={draft.draft?.name ?? ''}
-              description={draft.draft?.description ?? ''}
-              tags={Array.isArray(draft.tags) ? (draft.tags as string[]) : []}
-              mode={p.mode}
-              validate={({ name }) =>
-                typeof name === 'string' && name.trim().length ? null : t.en.errors.nameRequired}
-              onChange={(value: BasicInfoData) =>
-                p.onChange(
-                  mergeDraft(draft, {
-                    draft: {
-                      ...draft.draft,
-                      name: value.name,
-                      description: value.description,
-                    },
-                    tags: (value.tags ?? []).map((tag) => tag as unknown as TagId),
-                  })
-                )
-              }
-            />
-          );
-        },
-        validate: (data?: RouteStepData) =>
-          typeof data?.draft?.name === 'string' ? Boolean(data.draft.name.trim()) : false,
-      },
       {
         id: 'route-details',
         label: 'Route Settings',

@@ -372,45 +372,52 @@ const TreeConsoleIntegrationInner: React.FC<
 
           let templateData: TemplateData | undefined;
           let lastErr: unknown;
+          const candidates = ['tree-nodes.json'];
           for (const b of candidateBases) {
-            const u = `${String(b).replace(/\/+$/, '/')}templates/${templateId}/tree-nodes.json`;
-            try {
-              templateData = await tryFetch(u);
-              break;
-            } catch (e) {
-              lastErr = e;
+            for (const fname of candidates) {
+              const u = `${String(b).replace(/\/+$/, '/')}templates/${templateId}/${fname}`;
+              try {
+                templateData = await tryFetch(u);
+                break;
+              } catch (e) {
+                lastErr = e;
+              }
             }
+            if (templateData) break;
           }
           if (!templateData) {
             throw new Error(`Failed to load template: ${templateId} (${String(lastErr)})`);
           }
 
-          // Convert template structure (flat map + parent refs) to ImportData format
-          const nodesMap: Record<string, TemplateNode> = templateData.nodes ?? {};
-          const rootIds: string[] = templateData.rootNodeIds ?? [];
-
-          // Build nested nodes and set depth so that
-          //  - top-level imported nodes (under current page node) start at depth 1
-          //  - their children are depth 2, and so on
-          const buildTree = (id: string, depth: number): ImportNode | null => {
-            const n = nodesMap[id];
-            if (!n) return null;
-            const children = Object.values(nodesMap)
-              .filter((child) => child?.parentTreeNodeId === id)
-              .map((child) => buildTree(child.treeNodeId, depth + 1))
-              .filter((child): child is ImportNode => Boolean(child));
+          const toImportNode = (n: any): ImportNode => {
+            if (!n || typeof n !== 'object') throw new Error('Invalid template node');
+            if (!n.metadata || typeof n.metadata !== 'object') throw new Error('Template node missing metadata');
+            if (typeof n.metadata.name !== 'string' || n.metadata.name.trim().length === 0) {
+              throw new Error('Template node missing metadata.name');
+            }
+            const name = n.metadata.name as string;
+            const description =
+              typeof n.metadata.description === 'string' ? (n.metadata.description as string) : undefined;
+            const children = Array.isArray(n.children)
+              ? n.children.map((c: any) => toImportNode(c)).filter(Boolean)
+              : undefined;
             return {
-              name: n.name,
-              nodeType: (n.treeNodeType ?? 'folder') as NodeType,
-              description: n.description,
-              metadata: { ...(n.metadata ?? {}), depth },
-              children: children.length > 0 ? children : undefined,
+              name,
+              nodeType: (n.nodeType ?? n.treeNodeType ?? 'folder') as NodeType,
+              description,
+              metadata: n.metadata,
+              draftMetadata: n.draftMetadata,
+              draftData: n.draftData,
+              data: n.data,
+              children: children && children.length ? children : undefined,
             };
           };
 
-          const importNodes: ImportData['nodes'] = rootIds
-            .map((rid) => buildTree(rid, 1))
-            .filter((node): node is ImportNode => node !== null);
+          if (!Array.isArray(templateData.nodes)) {
+            throw new Error('Template nodes must be an array with nested children.');
+          }
+
+          const importNodes: ImportData['nodes'] = templateData.nodes.map((n) => toImportNode(n));
 
           if (!workerClient) throw new Error('Worker client not ready');
           const importExportAPI = await workerClient.getImportExportAPI();

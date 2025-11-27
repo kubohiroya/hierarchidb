@@ -13,7 +13,7 @@ export interface UploadedFileSummary {
   lastModifiedAt?: Timestamp;
 }
 
-export interface DataSourceConfig {
+export interface SpreadSheetDataSourceConfig {
   type: DataSourceType;
   source?: string;
   filename?: string;
@@ -24,13 +24,13 @@ export interface DataSourceConfig {
 export interface SpreadsheetEntity extends BaseEntity<NodeId> {
   nodeId: NodeId;
   spreadsheetMetadataId?: string;
-  dataSource?: DataSourceConfig;
+  dataSource?: SpreadSheetDataSourceConfig;
   filters?: TabularFilterRule[];
 }
 
 export interface SpreadsheetDraft extends DraftBase<SpreadsheetEntity> {
   spreadsheetMetadataId?: string;
-  dataSource?: DataSourceConfig;
+  dataSource?: SpreadSheetDataSourceConfig;
   filters?: TabularFilterRule[];
   lastPreview?: TabularDataResult;
   file?: UploadedFileSummary;

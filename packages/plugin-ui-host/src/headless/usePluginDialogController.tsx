@@ -18,7 +18,7 @@ import {
   getPresentation,
   hydratePresentationDefinitionsFromGlobal,
 } from '@hierarchidb/plugin-presentation';
-import { useDialogDraft, type DraftData } from '@hierarchidb/plugin-ui-sdk';
+import { useDialogDraft } from '@hierarchidb/plugin-ui-sdk';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-client';
 import type {
   DialogDisplayMode,
@@ -46,7 +46,11 @@ import { useBasicInfoState } from './usePluginDialogController/basic-info.js';
 import { useDialogSteps } from './usePluginDialogController/steps.js';
 import { useStepCapabilities } from './usePluginDialogController/capabilities.js';
 import { useDialogStatePublisher } from './usePluginDialogController/publish-dialog-state.js';
-import type { DialogStepData } from './usePluginDialogController/data-types.js';
+import type {
+  DialogStepData,
+  TreeNodeUpdater,
+  TreeNodeUpdatePayload,
+} from './usePluginDialogController/data-types.js';
 import type { MultiStepDialogState } from './controller/types.js';
 export { subscribeDialogState } from './controller/dialog-state-subscriber.js';
 export { BASIC_INFO_META_KEY, buildStepWorkingData } from './controller/step-guards.js';
@@ -128,7 +132,7 @@ export function usePluginDialogController(
     discardDraft,
     loading,
     error,
-  } = useDialogDraft({
+  } = useDialogDraft<DialogStepData>({
     mode,
     nodeType,
     nodeId,
@@ -136,6 +140,30 @@ export function usePluginDialogController(
     treeId,
     workerClient: ref ?? null,
   });
+
+  const treeUpdater: TreeNodeUpdater<DialogStepData> | null = useMemo(
+    () =>
+      draft
+        ? {
+            id: draft.treeNodeId,
+            draftMetadata: draft.draftMetadata ?? null,
+            draftData: draft.draftData ?? null,
+          }
+        : null,
+    [draft]
+  );
+
+  const applyUpdateDraft = useCallback(
+    (patch: TreeNodeUpdatePayload<DialogStepData>) => {
+      const payload: Record<string, unknown> = {
+        treeNodeId: treeUpdater?.id ?? nodeId,
+      };
+      if (patch.draftMetadata !== undefined) payload.draftMetadata = patch.draftMetadata;
+      if (patch.draftData !== undefined) payload.draftData = patch.draftData;
+      updateDraft(payload as any);
+    },
+    [nodeId, treeUpdater?.id, updateDraft]
+  );
 
   const {
     activeStepIndex,
@@ -174,9 +202,8 @@ export function usePluginDialogController(
     nodeId,
     pageNodeId,
     client,
-    draft,
-    draftDataWithoutMeta,
-    updateDraft,
+    draft: treeUpdater,
+    updateDraft: applyUpdateDraft,
   });
 
   const [regTick, setRegTick] = useState(0);
@@ -212,7 +239,7 @@ export function usePluginDialogController(
     nodeId,
     pageNodeId,
     draftDataWithoutMeta,
-    updateDraft,
+    updateDraft: applyUpdateDraft,
     handleBasicInfoBridge,
     dialogRef,
   });
@@ -331,17 +358,17 @@ export function usePluginDialogController(
       });
     }
     const finalData = {
-      ...draft,
+      id: treeUpdater?.id ?? nodeId,
       draftMetadata: {
-        ...draft?.draftMetadata,
+        ...(treeUpdater?.draftMetadata ?? {}),
         name: basicInfo.name,
         description: basicInfo.description,
         tags: basicInfo.tags,
       },
       draftData: { ...draftDataWithoutMeta, tags: basicInfo.tags },
-    } as Partial<DraftData>;
+    };
 
-    const savedNodeId = await saveDraft(finalData);
+    const savedNodeId = await saveDraft(finalData as any);
 
     try {
       await discardDraft();
@@ -355,43 +382,30 @@ export function usePluginDialogController(
     }
 
     onClose();
-  }, [
-    draft,
-    basicInfo.name,
-    basicInfo.description,
-    basicInfo.tags,
-    draftDataWithoutMeta,
-    saveDraft,
-    onClose,
-    nodeType,
-    mode,
-    discardDraft,
-    onSuccess,
-    navigateToNode,
-  ]);
+  }, [treeUpdater?.id, treeUpdater?.draftMetadata, nodeId, basicInfo.name, basicInfo.description, basicInfo.tags, draftDataWithoutMeta, saveDraft, onClose, nodeType, mode, draft?.draftMetadata, discardDraft, onSuccess, navigateToNode]);
 
   const handleSaveDraft = useCallback(async () => {
     try {
       saveDraftInProgress.current = true;
       const draftData = {
-        ...draft,
+        id: treeUpdater?.id ?? nodeId,
         draftMetadata: {
-          ...draft?.draftMetadata,
+          ...(treeUpdater?.draftMetadata ?? {}),
           name: basicInfo.name,
           description: basicInfo.description,
           tags: basicInfo.tags,
         },
         draftData: { ...draftDataWithoutMeta },
-      } as Partial<DraftData>;
+      };
       if (typeof console !== 'undefined' && typeof console.debug === 'function') {
         console.debug('[PluginDialogShell] saveDraft payload', draftData);
       }
-      await saveDraft(draftData);
+      await saveDraft(draftData as any);
     } catch (err) {
       saveDraftInProgress.current = false;
       throw err;
     }
-  }, [draft, basicInfo, draftDataWithoutMeta, saveDraft]);
+  }, [treeUpdater?.id, treeUpdater?.draftMetadata, nodeId, basicInfo.name, basicInfo.description, basicInfo.tags, draftDataWithoutMeta, saveDraft]);
 
   const handleCancel = useCallback(async () => {
     try {
@@ -446,7 +460,9 @@ export function usePluginDialogController(
 
   const renderContent = useCallback(
     (propsContent: HeadlessContentRenderProps<DialogStepData>) => {
-      const step = steps[propsContent.activeStepIndex];
+      const descriptor = propsContent.steps[propsContent.activeStepIndex];
+      if (!descriptor) return null;
+      const StepComp = descriptor.component;
       return (
         <Box
           sx={(theme) => ({
@@ -457,11 +473,18 @@ export function usePluginDialogController(
           })}
           ref={dialogRef}
         >
-          {step?.component ?? null}
+          <StepComp
+            stepIndex={propsContent.activeStepIndex}
+            stepId={descriptor.id}
+            label={descriptor.label}
+            data={propsContent.stepData}
+            onChange={propsContent.onStepDataChange}
+            invalidMessages={propsContent.invalidMessageMap}
+          />
         </Box>
       );
     },
-    [steps, dialogRef]
+    [dialogRef]
   );
 
   const FooterComponent: HeadlessMultiStepDialogProps<DialogStepData>['FooterComponent'] = useCallback(

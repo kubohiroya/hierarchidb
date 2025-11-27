@@ -40,6 +40,38 @@
       "actions": {
         "close": "Close dialog",
         "exitFullscreen": "Exit full screen"
+      },
+      "title": {
+        "empty": "Empty Trash",
+        "restore": "Restore from Trash"
+      },
+      "confirm": {
+        "title": "Empty Trash?",
+        "description": "Delete {{count}} {{unit}} permanently?",
+        "empty": "This will permanently delete all items in the trash.",
+        "draftWarning": "Drafts are present. Emptying the trash will force-delete in-progress edits."
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "confirmDelete": "Empty trash",
+        "restore": "Restore",
+        "restoreWithCount": "Restore ({{count}})",
+        "empty": "Empty",
+        "emptyWithCount": "Empty ({{count}})"
+      },
+      "searchPlaceholder": "Search in trash…",
+      "panelTitle": "Trash",
+      "stepLabel": "Trash",
+      "draftWarning": "Drafts are included in this view. Deleting will force-remove in-progress edits.",
+      "aria": {
+        "restore": "Restore selection",
+        "restoreWithCount": "Restore {{count}} {{unit}}",
+        "empty": "Empty trash",
+        "emptyWithCount": "Empty {{count}} {{unit}}"
+      },
+      "units": {
+        "item_one": "item",
+        "item_other": "items"
       }
     }
   },
@@ -222,51 +254,6 @@
       "moveToTrash": "Move to Trash",
       "checkReference": "Check reference",
       "preview": "Preview"
-    }
-  },
-  "trash": {
-    "columns": {
-      "name": "Name",
-      "type": "Type",
-      "removedAt": "Removed"
-    },
-    "timestamps": {
-      "today": "Today {{time}}",
-      "yesterday": "Yesterday {{time}}",
-      "twoDaysAgo": "Two days ago {{time}}",
-      "dateTime": "{{date}} {{time}}"
-    },
-    "dialog": {
-      "stepLabel": "Trash",
-      "panelTitle": "Trash",
-      "title": {
-        "restore": "Restore from Trash",
-        "empty": "Empty Trash"
-      },
-      "searchPlaceholder": "Search trash items",
-      "buttons": {
-        "cancel": "Cancel",
-        "restore": "Restore",
-        "restoreWithCount": "Restore ({{count}})",
-        "empty": "Empty Trash",
-        "emptyWithCount": "Empty Trash ({{count}})",
-        "confirmDelete": "Permanently delete"
-      },
-      "aria": {
-        "restore": "Restore",
-        "restoreWithCount": "Restore {{count}} {{unit}}",
-        "empty": "Empty Trash",
-        "emptyWithCount": "Empty Trash {{count}} {{unit}}"
-      },
-      "confirm": {
-        "title": "Delete all items?",
-        "empty": "There are no items in the trash.",
-        "description": "This will permanently delete {{count}} {{unit}} from the trash. This action cannot be undone."
-      },
-      "units": {
-        "item_one": "item",
-        "item_other": "items"
-      }
     }
   }
 }

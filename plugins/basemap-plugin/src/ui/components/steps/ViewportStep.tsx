@@ -190,6 +190,20 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({
     [selectedStyle]
   );
 
+  const mapInteractionOptions = useMemo(
+    () => ({
+      interactive: true,
+      scrollZoom: true,
+      dragPan: true,
+      dragRotate: false,
+      doubleClickZoom: true,
+      touchZoomRotate: true,
+    }),
+    []
+  );
+
+  const navigationControls = useMemo(() => ({ navigation: { position: 'top-right' } }), []);
+
   const handleViewStateChange = useCallback(
     (viewState: MapViewState) => {
       pendingSyncRef.current = false;
@@ -229,8 +243,10 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({
       if (!(target instanceof Node)) return;
       if (!container.contains(target)) return;
       if (event.defaultPrevented) return;
-      event.preventDefault();
-      event.stopPropagation();
+      if (event.cancelable) {
+        // Avoid dialog scroll without blocking MapLibre's touch handlers.
+        event.preventDefault();
+      }
     };
 
     container.addEventListener('wheel', handleWheel, { passive: false });
@@ -347,15 +363,8 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({
             mapStyle={mapStyleSource}
             width="100%"
             height="100%"
-            mapOptions={{
-              interactive: true,
-              scrollZoom: true,
-              dragPan: true,
-              dragRotate: false,
-              doubleClickZoom: true,
-              touchZoomRotate: true,
-            }}
-            controls={{ navigation: { position: 'top-right' } }}
+            mapOptions={mapInteractionOptions}
+            controls={navigationControls}
             onLoad={handleMapLoad}
             onViewStateChange={handleViewStateChange}
           />

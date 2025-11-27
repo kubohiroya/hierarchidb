@@ -3,10 +3,9 @@ import type { NodeId } from '@hierarchidb/common-types';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import { resolveDefaultNodeName } from '@hierarchidb/runtime-worker';
-import type { DraftData } from '@hierarchidb/plugin-ui-sdk';
 import { toRecord } from '../controller/step-guards.js';
 import type { BasicInfoMeta, BasicInfoState } from './types.js';
-import type { DialogStepData } from './data-types.js';
+import type { DialogStepData, TreeNodeUpdater } from './data-types.js';
 import type { TagEntity } from '@hierarchidb/common-types';
 import type React from 'react';
 
@@ -16,15 +15,9 @@ interface Params {
   nodeId: NodeId;
   pageNodeId: NodeId;
   client: Remote<WorkerAPI> | null;
-  draft: DraftData | null;
-  draftDataWithoutMeta: DialogStepData;
-  updateDraft: (patch: Partial<DraftData>) => void;
+  draft: TreeNodeUpdater<DialogStepData> | null;
+  updateDraft: (patch: import('./data-types.js').TreeNodeUpdatePayload<DialogStepData>) => void;
 }
-
-const toStringArray = (
-  value: DialogStepData | DialogStepData[keyof DialogStepData] | null | undefined
-): string[] =>
-  Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
 
 export function useBasicInfoState({
   mode,
@@ -33,7 +26,6 @@ export function useBasicInfoState({
   pageNodeId,
   client,
   draft,
-  draftDataWithoutMeta,
   updateDraft,
 }: Params): {
   basicInfo: BasicInfoState;
@@ -63,29 +55,21 @@ export function useBasicInfoState({
   }, [mode, nodeType]);
 
   useEffect(() => {
-    if (draft) {
-      const tags =
-        (Array.isArray(draft.draftMetadata?.tags)
-          ? draft.draftMetadata?.tags
-          : draft.metadata?.tags) ?? [];
-      const resolvedName =
-        typeof draft.draftMetadata?.name === 'string' && draft.draftMetadata.name.length
-          ? draft.draftMetadata.name
-          : typeof draft.metadata?.name === 'string'
-            ? draft.metadata.name
-            : '';
-      const resolvedDescription =
-        typeof draft.draftMetadata?.description === 'string' && draft.draftMetadata.description.length
-          ? draft.draftMetadata.description
-          : typeof draft.metadata?.description === 'string'
-            ? draft.metadata.description
-            : '';
-      setBasicInfo({
-        name: resolvedName,
-        description: resolvedDescription,
-        tags,
-      });
-    }
+    if (!draft) return;
+    const tags = Array.isArray(draft.draftMetadata?.tags) ? draft.draftMetadata.tags : [];
+    const resolvedName =
+      typeof draft.draftMetadata?.name === 'string' && draft.draftMetadata.name.length
+        ? draft.draftMetadata.name
+        : '';
+    const resolvedDescription =
+      typeof draft.draftMetadata?.description === 'string' && draft.draftMetadata.description.length
+        ? draft.draftMetadata.description
+        : '';
+    setBasicInfo({
+      name: resolvedName,
+      description: resolvedDescription,
+      tags,
+    });
   }, [draft]);
 
   const [tagSuggestions, setTagSuggestions] = useState<string[]>(() => []);
@@ -157,32 +141,6 @@ export function useBasicInfoState({
     };
   }, [client, mode, pageNodeId, nodeId]);
 
-  useEffect(() => {
-    let disposed = false;
-    (async () => {
-      try {
-        if (!client || !nodeId) return;
-        const query = await client.getQueryAPI();
-        const node = await query.getNode(nodeId);
-        if (!node || disposed) return;
-        const nodeData = toRecord(
-          typeof node === 'object' && node !== null ? (node as { data?: DialogStepData }).data : undefined
-        );
-        const nodeTags = toStringArray(nodeData?.tags);
-        setBasicInfo((prev) => ({
-          name: prev.name || node.metadata.name || '',
-          description: prev.description || node.metadata.description || '',
-          tags: prev.tags.length ? prev.tags : nodeTags,
-        }));
-      } catch (err) {
-        console.warn('[PluginDialogShell] prefill from QueryAPI failed', err);
-      }
-    })();
-    return () => {
-      disposed = true;
-    };
-  }, [client, nodeId]);
-
   const normalizedBasicName = basicInfo.name.trim();
   const normalizedBasicKey = normalizedBasicName.toLowerCase();
   const hasBasicInfoNameConflict =
@@ -201,10 +159,12 @@ export function useBasicInfoState({
   const handleBasicInfoBridge = useCallback(
     (data: DialogStepData) => {
       const info = toRecord(data) ?? {};
-      const name = typeof info.name === 'string' ? info.name : '';
-      const description = typeof info.description === 'string' ? info.description : '';
-      const tags = Array.isArray(info.tags)
-        ? info.tags.filter((v: DialogStepData[keyof DialogStepData]): v is string => typeof v === 'string')
+      const rawName = (info as { name?: unknown }).name;
+      const name: string = typeof rawName === 'string' ? rawName : '';
+      const rawDescription = (info as { description?: unknown }).description;
+      const description: string = typeof rawDescription === 'string' ? rawDescription : '';
+      const tags: string[] = Array.isArray((info as { tags?: unknown }).tags)
+        ? ((info as { tags?: unknown }).tags as unknown[]).filter((v): v is string => typeof v === 'string')
         : [];
       const next: BasicInfoState = { name, description, tags };
       setBasicInfo(next);
@@ -220,28 +180,31 @@ export function useBasicInfoState({
   );
 
   useEffect(() => {
-    if (!draft?.data) return;
+    if (!draft?.draftMetadata) return;
     setBasicInfo((prev) => {
-      const info = toRecord(draftDataWithoutMeta);
-      if (!info) return prev;
-      const name = typeof info.name === 'string' ? info.name : prev.name;
-      const description = typeof info.description === 'string' ? info.description : prev.description;
-      const tags =
-        Array.isArray(info.tags) && info.tags.every((v: DialogStepData[keyof DialogStepData]): v is string => typeof v === 'string')
-          ? (info.tags as string[])
-          : prev.tags;
+      const nextName =
+        typeof draft.draftMetadata?.name === 'string' && draft.draftMetadata.name.length
+          ? draft.draftMetadata.name
+          : prev.name;
+      const nextDescription =
+        typeof draft.draftMetadata?.description === 'string' && draft.draftMetadata.description.length
+          ? draft.draftMetadata.description
+          : prev.description;
+      const nextTags = Array.isArray(draft.draftMetadata?.tags)
+        ? draft.draftMetadata.tags.filter((v): v is string => typeof v === 'string')
+        : prev.tags;
       const tagsEqual =
-        prev.tags.length === tags.length && prev.tags.every((tag, idx) => tag === tags[idx]);
-      if (prev.name === name && prev.description === description && tagsEqual) {
+        prev.tags.length === nextTags.length && prev.tags.every((tag, idx) => tag === nextTags[idx]);
+      if (prev.name === nextName && prev.description === nextDescription && tagsEqual) {
         return prev;
       }
       return {
-        name,
-        description,
-        tags,
+        name: nextName,
+        description: nextDescription,
+        tags: nextTags,
       };
     });
-  }, [draft?.data, draftDataWithoutMeta]);
+  }, [draft?.draftMetadata]);
 
   return {
     basicInfo,

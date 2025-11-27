@@ -30,9 +30,12 @@ type TemplateNode = {
   treeNodeId: string;
   parentTreeNodeId: string | null;
   treeNodeType: string;
-  name: string;
+  name?: string;
   description?: string;
   metadata?: Record<string, unknown>;
+  draftData?: Record<string, unknown> | null;
+  draftMetadata?: Record<string, unknown> | null;
+  data?: Record<string, unknown> | null;
 };
 
 type TemplateFile = {
@@ -41,7 +44,7 @@ type TemplateFile = {
 };
 
 const templateUrl = new URL(
-  '../../../../../../app/public/templates/population-2023/console-nodes.json',
+  '../../../../../../app/public/templates/population-2023/tree-nodes.json',
   import.meta.url
 );
 
@@ -55,21 +58,39 @@ function buildImportNodes(data: TemplateFile): ImportData['nodes'] {
   const toImportNode = (id: string): ImportData['nodes'][number] | null => {
     const node = nodes[id];
     if (!node) return null;
+    const meta =
+      node.metadata && typeof node.metadata === 'object'
+        ? (node.metadata as Record<string, unknown>)
+        : undefined;
+    const resolvedName =
+      typeof node.name === 'string'
+        ? node.name
+        : (meta?.name as string | undefined) ?? '';
+    const resolvedDescription =
+      typeof node.description === 'string'
+        ? node.description
+        : (meta?.description as string | undefined);
     const children = Object.values(nodes)
       .filter((child) => child?.parentTreeNodeId === id)
       .map((child) => toImportNode(child.treeNodeId))
       .filter((child): child is ImportData['nodes'][number] => child !== null);
+    const metadata = meta;
+    const draftData =
+      node.draftData && typeof node.draftData === 'object' ? (node.draftData as Record<string, unknown>) : undefined;
+    const draftMetadata =
+      node.draftMetadata && typeof node.draftMetadata === 'object'
+        ? (node.draftMetadata as Record<string, unknown>)
+        : undefined;
+    const dataPayload = node.data && typeof node.data === 'object' ? (node.data as Record<string, unknown>) : undefined;
+
     return {
-      name: (node.metadata.name ?? '') as string,
+      name: resolvedName,
       nodeType: node.treeNodeType,
-      description:
-        typeof node.metadata.description === 'string' ? node.metadata.description : undefined,
-      metadata: {
-        ...node.metadata,
-        name: (node.metadata.name ?? '') as string,
-        description:
-          typeof node.metadata.description === 'string' ? node.metadata.description : undefined,
-      },
+      description: resolvedDescription,
+      metadata,
+      draftData,
+      draftMetadata,
+      data: dataPayload,
       children: children.length > 0 ? children : undefined,
     };
   };

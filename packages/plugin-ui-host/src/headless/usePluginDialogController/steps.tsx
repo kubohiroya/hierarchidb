@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo } from 'react';
-import { BasicInfoStep, type DraftData } from '@hierarchidb/plugin-ui-sdk';
+import React, { useCallback, useMemo, useState } from 'react';
+import { BasicInfoStep } from '@hierarchidb/plugin-ui-sdk';
 import type {
   PluginStepConfig,
   composeStepConfigs,
@@ -23,15 +23,19 @@ import type {
   BasicInfoMeta,
   BasicInfoState,
   DialogStepData,
+  DialogUiState,
+  TreeNodeUpdatePayload,
 } from './data-types.js';
 
 type StepAdapterProps = {
-  cfg: PluginStepConfig<DialogStepData>;
+  cfg: PluginStepConfig<DialogStepData, DialogUiState>;
   mode: 'create' | 'edit';
   nodeId: string;
   parentId: string;
   workingData?: DialogStepData;
-  updateDraft: (patch: Partial<DraftData>) => void;
+  uiState: DialogUiState;
+  updateDraft: (patch: TreeNodeUpdatePayload<DialogStepData>) => void;
+  updateUiState: (next: DialogUiState) => void;
   onDataChange?: (data: DialogStepData) => void;
   dialogRef?: React.RefObject<HTMLElement | null>;
   stepProps: HeadlessStepComponentProps<DialogStepData>;
@@ -43,7 +47,9 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
   nodeId,
   parentId,
   workingData,
+  uiState,
   updateDraft,
+  updateUiState,
   onDataChange,
   dialogRef,
   stepProps,
@@ -65,12 +71,14 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
         nodeId,
         parentId,
         data: stepProps.data ?? workingData ?? {},
+        uiState,
         disabled: false,
         onChange: handleChange,
+        onUiStateChange: updateUiState,
         setValid: () => {},
         setError: () => {},
         dialogRef,
-      } satisfies PluginStepComponentProps<DialogStepData>)}
+      } satisfies PluginStepComponentProps<DialogStepData, DialogUiState>)}
     </>
   );
 };
@@ -87,7 +95,7 @@ interface Params {
   nodeId: NodeId;
   pageNodeId: NodeId;
   draftDataWithoutMeta: DialogStepData;
-  updateDraft: (patch: Partial<DraftData>) => void;
+  updateDraft: (patch: TreeNodeUpdatePayload<DialogStepData>) => void;
   handleBasicInfoBridge: (data: DialogStepData) => void;
   dialogRef: React.RefObject<HTMLDivElement | null>;
 }
@@ -105,18 +113,19 @@ export function useDialogSteps({
   pageNodeId,
   draftDataWithoutMeta,
   updateDraft,
- handleBasicInfoBridge,
- dialogRef,
+  handleBasicInfoBridge,
+  dialogRef,
 }: Params): StepCompositionResult {
-  const normalizedConfigs = useMemo<PluginStepConfig<DialogStepData>[]>(() => {
-    return (composedConfigs.configs ?? []).map((cfg) => {
-      return {
+  const [uiState, setUiState] = useState<DialogUiState>({});
+  const normalizedConfigs = useMemo<PluginStepConfig<DialogStepData, DialogUiState>[]>(() => {
+    return (composedConfigs.configs ?? []).map(
+      (cfg: PluginStepConfig<DialogStepData, DialogUiState>) => ({
         ...cfg,
         validate: cfg.validate
           ? (data?: DialogStepData) => Boolean(cfg.validate?.(data ?? {}))
           : undefined,
-      };
-    });
+      })
+    );
   }, [composedConfigs.configs]);
 
   const currentStepData = useMemo<DialogStepData>(
@@ -227,7 +236,9 @@ export function useDialogSteps({
             nodeId={String(nodeId)}
             parentId={String(pageNodeId)}
             workingData={currentStepData}
+            uiState={uiState}
             updateDraft={updateDraft}
+            updateUiState={setUiState}
             onDataChange={cfg.id === 'basic-info' ? handleBasicInfoBridge : undefined}
             dialogRef={dialogRef}
             stepProps={stepProps}
@@ -237,23 +248,7 @@ export function useDialogSteps({
     });
 
     return descriptors;
-  }, [
-    composedConfigs.hasHostBase,
-    normalizedConfigs,
-    basicInfo.name,
-    basicInfo.description,
-    basicInfo.tags,
-    tagSuggestions,
-    mode,
-    basicInfoValidationError,
-    updateDraft,
-    setBasicInfo,
-    nodeId,
-    pageNodeId,
-    currentStepData,
-    handleBasicInfoBridge,
-    dialogRef,
-  ]);
+  }, [composedConfigs.hasHostBase, normalizedConfigs, basicInfo.name, basicInfo.description, basicInfo.tags, tagSuggestions, mode, setBasicInfo, updateDraft, basicInfoValidationError, nodeId, pageNodeId, currentStepData, uiState, handleBasicInfoBridge, dialogRef]);
 
   return {
     steps,

@@ -60,6 +60,38 @@
       "actions": {
         "close": "ダイアログを閉じる",
         "exitFullscreen": "全画面を終了"
+      },
+      "title": {
+        "empty": "ゴミ箱を空にする",
+        "restore": "ゴミ箱から復元"
+      },
+      "confirm": {
+        "title": "ゴミ箱を空にしますか?",
+        "description": "{{unit}}を{{count}}件、完全に削除しますか?",
+        "empty": "ゴミ箱内の項目をすべて完全に削除します。",
+        "draftWarning": "ドラフトが含まれています。削除すると編集中の内容も失われます。"
+      },
+      "buttons": {
+        "cancel": "キャンセル",
+        "confirmDelete": "ゴミ箱を空にする",
+        "restore": "復元",
+        "restoreWithCount": "復元 ({{count}})",
+        "empty": "削除",
+        "emptyWithCount": "削除 ({{count}})"
+      },
+      "searchPlaceholder": "ゴミ箱を検索…",
+      "panelTitle": "ゴミ箱",
+      "stepLabel": "ゴミ箱",
+      "draftWarning": "ドラフトが含まれています。削除すると編集中の内容も失われます。",
+      "aria": {
+        "restore": "選択した項目を復元",
+        "restoreWithCount": "{{unit}}を{{count}}件復元",
+        "empty": "ゴミ箱を空にする",
+        "emptyWithCount": "{{unit}}を{{count}}件削除"
+      },
+      "units": {
+        "item_one": "項目",
+        "item_other": "項目"
       }
     }
   },

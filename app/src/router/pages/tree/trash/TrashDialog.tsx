@@ -422,24 +422,24 @@ function TrashDialogFooter({
   const isRestoreMode = mode === 'restore';
   const restoreDisabled = loading || selectedCount === 0;
   const emptyDisabled = loading || totalCount === 0;
-  const restoreUnit = t('trash.dialog.units.item', { count: selectedCount });
-  const emptyUnit = t('trash.dialog.units.item', { count: totalCount });
+  const restoreUnit = t('dialogs.trash.units.item', { count: selectedCount });
+  const emptyUnit = t('dialogs.trash.units.item', { count: totalCount });
   const restoreLabel =
     selectedCount === 0
-      ? t('trash.dialog.buttons.restore')
-      : t('trash.dialog.buttons.restoreWithCount', { count: selectedCount });
+      ? t('dialogs.trash.buttons.restore')
+      : t('dialogs.trash.buttons.restoreWithCount', { count: selectedCount });
   const emptyLabel =
     totalCount === 0
-      ? t('trash.dialog.buttons.empty')
-      : t('trash.dialog.buttons.emptyWithCount', { count: totalCount });
+      ? t('dialogs.trash.buttons.empty')
+      : t('dialogs.trash.buttons.emptyWithCount', { count: totalCount });
   const restoreAria =
     selectedCount === 0
-      ? t('trash.dialog.aria.restore')
-      : t('trash.dialog.aria.restoreWithCount', { count: selectedCount, unit: restoreUnit });
+      ? t('dialogs.trash.aria.restore')
+      : t('dialogs.trash.aria.restoreWithCount', { count: selectedCount, unit: restoreUnit });
   const emptyAria =
     totalCount === 0
-      ? t('trash.dialog.aria.empty')
-      : t('trash.dialog.aria.emptyWithCount', { count: totalCount, unit: emptyUnit });
+      ? t('dialogs.trash.aria.empty')
+      : t('dialogs.trash.aria.emptyWithCount', { count: totalCount, unit: emptyUnit });
 
   const confirmTitleId = useId();
   const confirmContentId = useId();
@@ -460,7 +460,7 @@ function TrashDialogFooter({
         }}
       >
         <Button variant="contained" color="inherit" onClick={() => onRequestClose('close')}>
-          {t('trash.dialog.buttons.cancel')}
+          {t('dialogs.trash.buttons.cancel')}
         </Button>
         {isRestoreMode ? (
           <Button
@@ -505,23 +505,23 @@ function TrashDialogFooter({
         aria-labelledby={confirmTitleId}
         aria-describedby={confirmContentId}
       >
-        <DialogTitle id={confirmTitleId}>{t('trash.dialog.confirm.title')}</DialogTitle>
+        <DialogTitle id={confirmTitleId}>{t('dialogs.trash.confirm.title')}</DialogTitle>
         <DialogContent>
           <DialogContentText id={confirmContentId}>
             {totalCount === 0
-              ? t('trash.dialog.confirm.empty')
-              : t('trash.dialog.confirm.description', { count: totalCount, unit: emptyUnit })}
+              ? t('dialogs.trash.confirm.empty')
+              : t('dialogs.trash.confirm.description', { count: totalCount, unit: emptyUnit })}
           </DialogContentText>
           {hasDraftsInView ? (
             <DialogContentText sx={{ mt: 1 }} color="warning.main">
-              {t('trash.dialog.confirm.draftWarning') ??
+              {t('dialogs.trash.confirm.draftWarning') ??
                 'Drafts are present. Emptying the trash will force-delete in-progress edits.'}
             </DialogContentText>
           ) : null}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleConfirmClose} color="inherit">
-            {t('trash.dialog.buttons.cancel')}
+            {t('dialogs.trash.buttons.cancel')}
           </Button>
           <Button
             onClick={handleConfirmDelete}
@@ -529,7 +529,7 @@ function TrashDialogFooter({
             variant="contained"
             disabled={emptyDisabled}
           >
-            {t('trash.dialog.buttons.confirmDelete')}
+            {t('dialogs.trash.buttons.confirmDelete')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -608,7 +608,7 @@ function TrashDialogContent({
       {hasDraftsInView ? (
         <Box sx={{ px: 2, pt: 1 }}>
           <Alert severity="warning" variant="outlined" sx={{ mb: 1 }}>
-            {t('trash.dialog.draftWarning') ??
+            {t('dialogs.trash.draftWarning') ??
               'Drafts are included in this view. Deleting will force-remove in-progress edits.'}
           </Alert>
         </Box>
@@ -618,7 +618,7 @@ function TrashDialogContent({
           value={searchTerm}
           onChange={onSearchTermChange}
           onClear={() => onSearchTermChange('')}
-          placeholder={t('trash.dialog.searchPlaceholder') ?? ''}
+          placeholder={t('dialogs.trash.searchPlaceholder') ?? ''}
           sx={{ width: 260 }}
         />
       </Box>
@@ -632,7 +632,7 @@ function TrashDialogContent({
         }}
       >
         <TreeConsolePanel
-          title={t('trash.dialog.panelTitle') ?? ''}
+          title={t('dialogs.trash.panelTitle') ?? ''}
         treeId={treeId}
         pageNodeId={pageNodeId ? String(pageNodeId) : undefined}
         subtreeRootId={trashViewRootId ? String(trashViewRootId) : undefined}
@@ -749,7 +749,7 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
       [
         {
           id: 'trash-root',
-          label: t('trash.dialog.stepLabel'),
+          label: t('dialogs.trash.stepLabel'),
           component: () => null,
         },
       ] as const,
@@ -772,35 +772,8 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
     if (!viewRoot) return [] as TreeNodeData[];
 
     const { nodes } = buildTrashTreeData({ treeId: treeId ?? '', rootNode: viewRoot, nodeMap });
-
-    if (trashViewRootId && !nodes.some((node) => node.id === trashViewRootId)) {
-      const source = nodeMap.get(String(trashViewRootId));
-      if (source) {
-        nodes.unshift({
-          id: source.id as NodeId,
-          parentId: (source.parentId ?? trashViewRootId) as NodeId,
-          nodeType: source.nodeType,
-          metadata: {
-            name: getTrashDisplayName(source),
-            description: (source as { metadata?: { description?: string } }).metadata?.description,
-            tags: (source as { metadata?: { tags?: string[] } }).metadata?.tags ?? [],
-          },
-          draftMetadata: null,
-          depth: typeof source.depth === 'number' ? source.depth : 0,
-          originalName: (source as { originalName?: string }).originalName,
-          originalParentId: (source as { originalParentId?: NodeId }).originalParentId,
-          removedAt: (source as { removedAt?: number }).removedAt,
-          hasChildren: Boolean(source.hasChildren),
-          createdAt: source.createdAt,
-          updatedAt: source.updatedAt,
-          version: source.version,
-          data: (source as TreeNode).data ?? null,
-          draftData: (source as TreeNode).draftData ?? null,
-        });
-      }
-    }
     return nodes;
-  }, [data.activeTrashNode, data.trashRootNode, nodeMap, trashViewRootId, treeId]);
+  }, [data.activeTrashNode, data.trashRootNode, nodeMap, treeId]);
 
   useEffect(() => {
     const hasDrafts = treeData.some((node) => (node as TreeNode).draftData);
@@ -1075,7 +1048,9 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
         <TrashDialogHeader
           {...props}
           title={
-            mode === 'restore' ? t('trash.dialog.title.restore') : t('trash.dialog.title.empty')
+            mode === 'restore'
+              ? t('dialogs.trash.title.restore')
+              : t('dialogs.trash.title.empty')
           }
         />
       ),

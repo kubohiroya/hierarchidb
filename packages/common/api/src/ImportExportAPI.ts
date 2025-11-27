@@ -88,7 +88,14 @@ export interface ImportData {
     name: string;
     nodeType?: string;
     description?: string;
+    /** Tree-level metadata (name/description/tags 等)。name/description は上位フィールドが優先される。 */
     metadata?: Record<string, unknown>;
+    /** Persisted data payload for the node. */
+    data?: Record<string, unknown> | null;
+    /** Draft payload for the node (optional). */
+    draftData?: Record<string, unknown> | null;
+    /** Draft metadata for the node (optional). */
+    draftMetadata?: Record<string, unknown> | null;
     children?: ImportData['nodes'];
   }>;
 

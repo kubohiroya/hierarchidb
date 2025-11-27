@@ -1,34 +1,12 @@
 import { wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
-// import { wrapDialogStepComponent } from '@hierarchidb/plugin-api';
 import { Box } from '@mui/material';
 import React, { useCallback } from 'react';
-// import { StylerConfiguration } from '../../components/step5/StylerConfiguration.js';
-import type { StylerConfig, StylerTableRow } from '../../../common/types/stylerTypes.js';
+import type { StylerConfig, StylerStepData } from '../../../common/types/stylerTypes.js';
 import { StylerConfigDefault } from '../../../common/types/stylerTypes.js';
 import { StylerConfiguration } from './StylerConfiguration.js';
+import { StylerStepProps } from './StylerStepProps.js';
 
-export interface StylerStep5Data {
-  stylerConfig?: StylerConfig;
-  selectedKeyColumn?: string;
-  selectedValueColumn?: string;
-}
-
-export interface StylerStep5Props {
-  data: StylerStep5Data;
-  onChange: (data: StylerStep5Data) => void;
-  onValidate?: (isValid: boolean) => void;
-  //  Tabularspreadsheet
-  tabularData?: StylerTableRow[];
-  columns?: string[];
-}
-
-/**
- * : Styler Step5
- * : StylerConfiguration
- * :
- * : Spreadsheet
- */
-export const StylerStep5: React.FC<StylerStep5Props> = ({
+export const StylerStep5: React.FC<StylerStepProps> = ({
   data,
   onChange,
   onValidate,
@@ -61,7 +39,7 @@ export const StylerStep5: React.FC<StylerStep5Props> = ({
 
   const handleConfigChange = useCallback(
     (newConfig: StylerConfig) => {
-      const updatedData: StylerStep5Data = {
+      const updatedData: StylerStepData = {
         ...data,
         stylerConfig: newConfig,
       };
@@ -78,7 +56,7 @@ export const StylerStep5: React.FC<StylerStep5Props> = ({
 
   const handleColumnSelect = useCallback(
     (column: string, type: 'key' | 'value') => {
-      const updatedData: StylerStep5Data = {
+      const updatedData: StylerStepData = {
         ...data,
         [type === 'key' ? 'selectedKeyColumn' : 'selectedValueColumn']: column,
         stylerConfig: {
@@ -124,7 +102,7 @@ export const StylerStep5Definition = {
   title: 'Style Mapping Configuration',
   component: StylerStep5Component,
   validation: {
-    validate: async (data: StylerStep5Data) => {
+    validate: async (data: StylerStepData) => {
       const config = data?.stylerConfig;
 
       if (!config?.targetProperty) {
