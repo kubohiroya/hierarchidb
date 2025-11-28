@@ -1,4 +1,4 @@
-import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import { describe, expect, it, vi } from 'vitest';
 import type { CoreDB } from '../../../services/CoreDB.js';
 import { EntityLifecycleManager } from '../../EntityLifecycleManager.js';

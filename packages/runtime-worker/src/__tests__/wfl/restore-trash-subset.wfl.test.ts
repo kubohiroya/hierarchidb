@@ -21,7 +21,6 @@ async function waitFor<T>(
   const timeout = opts?.timeout ?? 10000;
   const interval = opts?.interval ?? 25;
   const start = Date.now();
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     const value = await predicate();
     if (value) return value;

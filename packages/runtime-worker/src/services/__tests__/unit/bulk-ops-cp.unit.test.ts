@@ -3,8 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CommandTestHarness } from '../../test-helpers/commandProcessorHarness.js';
 import { createCommandTestHarness, seedNode } from '../../test-helpers/commandProcessorHarness.js';
 
-const FOLDER_TYPE = 'folder' as NodeType;
-
 describe('CommandProcessor bulk operations', () => {
   let harness: CommandTestHarness;
   let rootId: NodeId;

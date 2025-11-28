@@ -1,5 +1,5 @@
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { CoreDB } from '../../CoreDB.js';
 // fulltext tables removed; core stub only
 

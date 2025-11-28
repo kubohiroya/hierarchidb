@@ -58,7 +58,6 @@ describe('transaction wrapper', () => {
 
   it('falls back when runInTx is unavailable', async () => {
     const { core } = harness;
-    const cp = new CommandProcessor(core);
     const node = await seedNode(core, {
       id: 'a' as NodeId,
       parentId: rootId,

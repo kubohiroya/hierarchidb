@@ -1,14 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
 import type { NodeId, NodeType, TreeNode, TreeNodeMetadata } from '@hierarchidb/common-types';
-import { makeNode } from '../../test-utils/node-helpers.js';
 import { CommandProcessor } from '../../services/CommandProcessor.js';
 import { CoreDB } from '../../services/CoreDB.js';
 import { WorkerErrorCode } from '../../services/command-types.js';
 import { DraftService } from '../../services/DraftService.js';
 import {
   assertCommandFailure,
-  assertCommandSuccess,
   assertCommitConflict,
   assertCommitNameConflict,
   assertCommitOk,

@@ -92,6 +92,34 @@ note over useDialogDraft,DraftService(Worker): saveDraft() は上記2APIの後\n
 DraftService(Worker)-->>Dexie(CoreDB.nodes): commitDraft (wc -> main node)
 ```
 
+## 📂 標準ディレクトリレイアウト（`src/`）
+
+各プラグインは UI・Worker・共有資産を明確に分けた下記レイアウトを推奨する。`package.json` の `"hierarchidb.plugin"` や `exports` もこの構成を前提にする。
+
+```
+src/
+  common/      # UI/Worker 共有の型・定数・小さなユーティリティ（React/MUI 依存を避ける）
+  ui/          # Dialogホスト・ステップ・hooks。default export で HeadlessMultiStepDialog を公開
+  worker/      # handler/factory/DB登録など Worker 実装一式
+  icon/        # アイコンエントリ（TreeConsole メニュー等）
+  services/    # ドメイン固有サービス（必要な場合のみ）。UI/Worker から共有利用
+  types/       # 公開したい型。`common/types` と統合でも可
+  database/    # プラグイン専用 Dexie 定義がある場合
+  __tests__/   # 単体/統合テスト（UI/worker 配下に近い場所へ置くのが望ましい）
+```
+
+- 必須: `ui/`, `worker/`, `icon/`（メニュー表示用）、`common/`（共有資産）
+- 任意: `services/`, `types/`, `database/`, `__tests__/`（設置場所は対象に近づける）
+- `exports` は `./ui`, `./worker`, `./icon`（必要に応じ `./shared`）を想定。UI/Worker は dist ではなく src を参照する。
+
+### 現状の逸脱・補足
+
+- `spreadsheet-plugin`: ルート直下に `src/__tests__/` があり、UI/Worker 配下ではない（移動検討余地）。
+- `timeline-plugin`: `types/` ディレクトリを持たず、共有型は最小限。必要なら `common/types` 追加を検討。
+- `linker-plugin`: `types/` がなく、共通型を `common/` にまとめている。公開型を増やす場合は `types/` 新設を推奨。
+- `resolver-plugin`: 専用 `types/` はなく `common/types` のみ。問題ではないが公開面を増やす際は整理対象。
+- 上記以外は `common/ui/worker/icon` の基本構成を維持している。
+
 ## 📦 プラグイン一覧と分類（最新版）
 
 本システムのノードタイプ・プラグインは単一継承を基本とし、ケイパビリティは feature のミックスインで段階的に付与します（多重継承は行いません）。UI/Worker は Comlink 経由で疎結合となっており、定義・依存・UI エントリは PluginDefinition で一元管理します。
