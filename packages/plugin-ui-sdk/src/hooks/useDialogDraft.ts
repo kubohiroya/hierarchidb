@@ -137,12 +137,13 @@ export function useDialogDraft<TPayload = Record<string, unknown>>({
   const persistDraft = useMemo(
     () =>
       debounce(async (next: DraftData<TPayload>) => {
+        if (!nodeId) return;
         try {
           const { wc: wcAPI } = await getClient();
-          await wcAPI.updateTreeNodeDraftMetadata(next.treeNodeId, next.draftMetadata);
+          await wcAPI.updateTreeNodeDraftMetadata(nodeId, next.draftMetadata);
           if (next.draftData) {
             await wcAPI.updateTreeNodeDraftData(
-              next.treeNodeId,
+              nodeId,
               next.draftData as Record<string, unknown>
             );
           }
@@ -150,7 +151,7 @@ export function useDialogDraft<TPayload = Record<string, unknown>>({
           console.warn('[useDraft] persist update failed', err);
         }
       }, 150),
-    [getClient]
+    [getClient, nodeId]
   );
 
   const updateDraft = useCallback(
@@ -178,26 +179,27 @@ export function useDialogDraft<TPayload = Record<string, unknown>>({
 
   const saveDraft = useCallback(async (data?: Partial<DraftData<TPayload>>): Promise<NodeId> => {
     if (!draft) throw new Error('No working copy to save');
+    if (!nodeId) throw new Error('nodeId is required to save draft');
     const finalData = data ? { ...draft, ...data } : draft;
 
     try {
       setLoading(true);
       const { wc: wcAPI } = await getClient();
 
-      await wcAPI.updateTreeNodeDraftMetadata(finalData.treeNodeId, finalData.draftMetadata);
+      await wcAPI.updateTreeNodeDraftMetadata(nodeId, finalData.draftMetadata);
       if (finalData.draftData) {
         await wcAPI.updateTreeNodeDraftData(
-          finalData.treeNodeId,
+          nodeId,
           finalData.draftData as Record<string, unknown>
         );
       }
 
-      const res = await wcAPI.commitDraft(finalData.treeNodeId, {
+      const res = await wcAPI.commitDraft(nodeId, {
         onNameConflict: 'auto-rename',
       });
 
       if (res.status === 'ok') {
-        const committedNodeId = (res.node?.id as NodeId | undefined) ?? res.nodeId ?? finalData.treeNodeId;
+        const committedNodeId = (res.node?.id as NodeId | undefined) ?? res.nodeId ?? nodeId;
 
         let refreshedCopy: DraftData<TPayload> = { ...finalData, treeNodeId: committedNodeId };
         if (res.node) {
@@ -219,21 +221,20 @@ export function useDialogDraft<TPayload = Record<string, unknown>>({
   }, [draft, getClient, toDraftData]);
 
   const discardDraft = useCallback(async () => {
-    const targetId = draft?.treeNodeId ?? nodeId;
-    if (!targetId) return;
+    if (!nodeId) return;
     const { wc: wcAPI } = await getClient();
-    await wcAPI.discardDraft(targetId);
+    await wcAPI.discardDraft(nodeId);
     setDraft(null);
     setOriginalCopy(null);
-  }, [draft, nodeId, getClient]);
+  }, [nodeId, getClient]);
 
   useEffect(() => {
-    draftIdRef.current = draft?.treeNodeId ?? null;
-  }, [draft?.treeNodeId]);
+    draftIdRef.current = nodeId ?? null;
+  }, [nodeId]);
 
   useEffect(() => {
     // Skip if worker client is unavailable or no working copy has been established yet
-    if (!workerClient || !draft?.treeNodeId) {
+    if (!workerClient || !nodeId) {
       return undefined;
     }
 
@@ -267,7 +268,7 @@ export function useDialogDraft<TPayload = Record<string, unknown>>({
       window.removeEventListener('pagehide', handlePageHide);
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [getClient, workerClient, draft?.treeNodeId]);
+  }, [getClient, workerClient, nodeId]);
 
   return {
     draft,
