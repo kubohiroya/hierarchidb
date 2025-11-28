@@ -110,6 +110,7 @@ export class SamplePluginProvider implements PluginStepProvider {
             onChange={() => {}}
             setValid={() => {}}
             setError={() => {}}
+            disabled={false}
           />
         ),
         validate: () => true,
@@ -146,6 +147,7 @@ export class SamplePluginProvider implements PluginStepProvider {
             onChange={() => {}}
             setValid={() => {}}
             setError={() => {}}
+            disabled={false}
           />
         ),
         optional: true,
@@ -182,6 +184,7 @@ export class SamplePluginProvider implements PluginStepProvider {
             onChange={() => {}}
             setValid={() => {}}
             setError={() => {}}
+            disabled={false}
           />
         ),
         optional: true,
@@ -222,6 +225,7 @@ export class SamplePluginProvider implements PluginStepProvider {
             onChange={() => {}}
             setValid={() => {}}
             setError={() => {}}
+            disabled={false}
           />
         ),
         validate: () => true,
@@ -248,6 +252,7 @@ export class SamplePluginProvider implements PluginStepProvider {
             onChange={() => {}}
             setValid={() => {}}
             setError={() => {}}
+            disabled={false}
           />
         ),
         optional: true,
@@ -282,6 +287,7 @@ export class SamplePluginProvider implements PluginStepProvider {
             onChange={() => {}}
             setValid={() => {}}
             setError={() => {}}
+            disabled={false}
           />
         ),
         optional: true,
