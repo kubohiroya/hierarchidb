@@ -53,6 +53,21 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1553) runtime-client を ui-worker-client/ui-worker-provider へリネームし、ui-shell を ui-plugin-shell へ改称（P0）
+- ブランチ: `refactor/ui/worker-client-provider-rename`
+- 依存: `packages/runtime/client`, `packages/ui-shell`, 全パッケージの import/alias/tsconfig/turbo/vite 設定
+- 受け入れ基準（DoD）:
+  - [ ] TASKS Kanban／運用ログを更新し、start→progress→done とロールバック手順を記載する
+  - [ ] `@hierarchidb/runtime-client` を廃止し、`@hierarchidb/ui-worker-client`（UI 側 Comlink クライアント/イベントブリッジ/wirePlugins）と `@hierarchidb/ui-worker-provider`（React Provider/Hooks）へ分割する
+  - [ ] `packages/ui-shell` を `packages/ui/plugin-shell`（`@hierarchidb/ui-plugin-shell`）へ改称し、依存先をすべて置換する
+  - [ ] 全リポジトリの import/paths/alias/turbo/vite/vitest config を新パッケージ名へ置換し、破壊的変更として一貫させる
+  - [ ] 代表的な検証（少なくとも `pnpm typecheck` と関連パッケージのテスト）を実行し、成功ログを運用ログに記録する
+- チェックリスト:
+  - [ ] packages/runtime/client の内容を `packages/ui/worker-client`（型・イベント・wirePlugins 等）と `packages/ui/worker-provider`（React Provider/Hooks）に移設し、package.json/tsconfig を新設する
+  - [ ] paths/alias/workspace/turbo/vite/vitest 設定から runtime-client を除去し、新パッケージのエントリへ差し替える
+  - [ ] `packages/ui-shell` ディレクトリを `packages/ui/plugin-shell` へ移動し、name/export/import/paths を更新する
+  - [ ] 全コードの import を `@hierarchidb/ui-worker-client` / `@hierarchidb/ui-worker-provider` / `@hierarchidb/ui-plugin-shell` に置換し、ビルド/型チェック/テストを通す
+- ロールバック手順：`packages/ui/worker-client`・`packages/ui/worker-provider`・`packages/ui/plugin-shell` の追加/変更と import 置換を revert し、`@hierarchidb/runtime-client` と `@hierarchidb/ui-shell` に戻した上で `pnpm typecheck` などを再実行して復旧を確認する
 1552) shape BaseEntityService 廃止と ShapeEntityService 再実装（P0）
 - ブランチ: `refactor/shape/shape-entity-service`（sandbox 制約で `main` 上で作業）
 - 依存: `plugins/shape-plugin/src/worker/handlers/ShapeEntityService.ts`, `plugins/shape-plugin/src/worker/factory/*`, `packages/deprecated-common-runtime`, `packages/runtime/worker`, basemap-plugin の EntityService 実装
@@ -8901,6 +8916,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-26 17:12 command: pnpm --filter @hierarchidb/shape-plugin test — exit 0（UI hook テストは ENABLE_SHAPE_UI_TESTS=0 のため skip、その他ユニットテスト通過）。
 - 2025-11-26 17:11 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。
 - 2025-11-26 17:10 progress: refactor/shape/shape-entity-service — ShapeEntityService を CoreDB/DraftService ベースの TreeNode data/draft 実装へ刷新し、BaseEntityService と EphemeralDB ワーキングコピー依存を排除。API createDraft/commitDraft のフローを DraftAPI 前提に揃え、関連テストの import パスを修正。
+- 2025-11-26 18:05 start: refactor/ui/worker-client-provider-rename — runtime-client を廃止し、ui-worker-client/ui-worker-provider へ分割、ui-shell を ui-plugin-shell へ改称するタスクを開始。DoD: Kanban/運用ログ更新、全 import/alias/tsconfig 等の置換、代表 typecheck/test 成功ログ記録、ロールバック手順記載。
 - 2025-11-26 17:38 progress: BaseEntityService/EphemeralDB デッドコード整理 — deprecated-common-runtime から BaseEntityService を削除し、runtime-worker から EphemeralDB 実装・依存を撤去（DraftService/WorkerService を CoreDB のみで駆動）。Shape プラグインの EphemeralDataCleanupService を削除し、AGENTS.md も CoreDB draft 前提に更新。
 - 2025-11-26 17:39 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0。
 - 2025-11-26 17:40 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。

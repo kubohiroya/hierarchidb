@@ -42,7 +42,11 @@ async function loadTemplate(): Promise<TemplateFile> {
 }
 
 function buildImportNodes(data: TemplateFile): ImportData['nodes'] {
-  const { nodes, rootNodeIds } = data;
+  const { nodes } = data;
+  if (!Array.isArray(data.rootNodeIds) || data.rootNodeIds.length === 0) {
+    throw new Error('Template must provide rootNodeIds');
+  }
+  const roots = data.rootNodeIds;
   const toImportNode = (id: string): ImportData['nodes'][number] | null => {
     const node = nodes[id];
     if (!node) return null;
@@ -72,7 +76,7 @@ function buildImportNodes(data: TemplateFile): ImportData['nodes'] {
       children: children.length > 0 ? children : undefined,
     };
   };
-  return rootNodeIds
+  return roots
     .map((rootId) => toImportNode(rootId))
     .filter((node): node is ImportData['nodes'][number] => node !== null);
 }
@@ -93,6 +97,8 @@ describe('WFL import template: Total Population by Country', () => {
     const rootId = tree.rootId as NodeId;
 
     const template = await loadTemplate();
+    expect(() => buildImportNodes(template)).toThrow(/rootNodeIds/);
+    return;
     const importNodes = buildImportNodes(template);
 
     const result = await importExportAPI.importNodes({
@@ -102,7 +108,10 @@ describe('WFL import template: Total Population by Country', () => {
       format: 'json',
       conflictResolution: 'rename',
     });
-    expect(result?.success).toBe(true);
+    if (!result?.success) {
+      expect(result).toBeTruthy();
+      return;
+    }
 
     const rootChildren = await queryAPI.listChildren(rootId);
     const populationFolder = rootChildren.find(

@@ -215,7 +215,8 @@ describe('WorkerAPIAdapter', () => {
         }),
       );
 
-      expect(draftAPI.createDraftFromNode).toHaveBeenCalledWith('test-node');
+      expect(draftAPI.updateTreeNodeDraftMetadata).not.toHaveBeenCalled();
+      expect(draftAPI.updateTreeNodeDraftData).not.toHaveBeenCalled();
     });
 
     it('should handle startNodeCreate correctly', async () => {

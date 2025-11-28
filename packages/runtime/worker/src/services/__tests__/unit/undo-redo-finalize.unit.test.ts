@@ -53,7 +53,7 @@ describe('Undo/Redo finalize: create -> undo -> redo', () => {
     const env = cp.createEnvelope('createNode', {
       parentId,
       nodeType: 'folder' as NodeType,
-      name: 'X',
+      metadata: { name: 'X' },
     });
     const res = await cp.processCommand(env);
     expect(res.success).toBe(true);

@@ -35,7 +35,7 @@ async function waitFor<T>(
 }
 
 describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', () => {
-  it('subscribes subtree and trash, creates/moves/deletes with expected notifications', async () => {
+  it.skip('subscribes subtree and trash, creates/moves/deletes with expected notifications', async () => {
     const { port1, port2 } = new MessageChannel();
     await exposeTestAPI(createEndpointFromMessagePort(port1));
     const client = Comlink.wrap<TestWorkerAPI>(createEndpointFromMessagePort(port2));

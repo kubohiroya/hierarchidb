@@ -13,6 +13,7 @@ HierarchiDBの拡張可能なノードタイププラグインシステムです
 - Draft API は `initTreeNode` + `updateTreeNodeDraftMetadata` / `updateTreeNodeDraftData` / `commitDraft` を使用する。`createDraftBase` / `getDraft` / `updateDraft` などの互換 API は撤去済み。
 - プラグインレジストリは `pnpm tools:gen-plugin-registry` で生成し、Vite dev/build が動的に取り込む。生成物（`packages/plugin-registry/generated/registry.ts` 等）はコミットに含める。
 - 旧 peerEntities や NodeDialogExtension 由来のレガシー経路が残っていたら削除対象。UI/Worker はレジストリ経由のホスト + DraftAPI 前提で統一する。
+- MultiStep ダイアログでのドラフト更新は共通: Step の `onUpdate` → `useDialogDraft.updateDraft` → Worker DraftService → Dexie `nodes.draftData` 更新。保存時は `saveDraft` → `commitDraft` まで一気通し。
 
 ### プラグインシステムの特徴
 
@@ -52,6 +53,43 @@ HierarchiDBの拡張可能なノードタイププラグインシステムです
 │  │   CoreDB     │ │ EphemeralDB  │ │   Plugin Databases   │ │
 │  └──────────────┘ └──────────────┘ └──────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
+```
+
+## 🧭 共通ドラフト保存フロー（全プラグイン共通）
+
+MultiStepDialog の各ステップで入力を更新すると、下記の経路で Dexie まで反映される。
+
+1) UI (plugin-ui-host / plugin-ui-sdk)  
+   - ステップ `onUpdate` → `useDialogDraft.updateDraft`。`draftData` にパッチをマージし、必要に応じて `draftMetadata`（name/description/tags）も更新。  
+   - `updateDraft` はローカル state を更新しつつ 150ms デバウンスの `persistDraft` を起動。  
+   - `persistDraft` は Worker クライアント (`wc`) に対し `updateTreeNodeDraftMetadata` → `updateTreeNodeDraftData` を送る。  
+   - `saveDraft`（ダイアログ確定）は同じ 2 API を送った後に `commitDraft` を呼ぶ（auto-rename で衝突回避）。
+
+2) Worker (runtime-worker)  
+   - DraftService が DraftAPI を実装。`updateTreeNodeDraftData/Metadata` は `DraftTreeNodeOperations` を呼び、CoreDB(Dexie) の `nodes` テーブルを更新。`draftData` は `{ ...prev, ...updater }` でマージ。  
+   - `commitDraft` は working copy を本番ノードへ反映し、完了後のノードを UI に返す。
+
+3) Dexie (CoreDB)  
+   - `nodes.draftData` / `nodes.draftMetadata` に保存され、以降の表示や commit に利用される。
+
+ポイント: 「フォーム更新→updateDraft→Worker DraftService→Dexie」が即時同期、保存時は `commitDraft` まで一気通し。Shape/Location/Route などすべてのプラグインで同じパスを踏む。
+
+### シーケンス図（共通フロー）
+```
+participant UI(Step:onUpdate)
+participant useDialogDraft
+participant WorkerClient(wc)
+participant DraftService(Worker)
+participant Dexie(CoreDB.nodes)
+
+UI(Step:onUpdate)->>useDialogDraft: updateDraft(patch)
+useDialogDraft->>useDialogDraft: state merge (draftData/draftMetadata)
+useDialogDraft-->>WorkerClient(wc): persistDraft (debounced)\nupdateTreeNodeDraftMetadata\nupdateTreeNodeDraftData
+WorkerClient(wc)-->>DraftService(Worker): updateTreeNodeDraftMetadata\nupdateTreeNodeDraftData
+DraftService(Worker)->>Dexie(CoreDB.nodes): merge draftMetadata/draftData
+
+note over useDialogDraft,DraftService(Worker): saveDraft() は上記2APIの後\ncommitDraft() を実行（auto-rename考慮）
+DraftService(Worker)-->>Dexie(CoreDB.nodes): commitDraft (wc -> main node)
 ```
 
 ## 📦 プラグイン一覧と分類（最新版）

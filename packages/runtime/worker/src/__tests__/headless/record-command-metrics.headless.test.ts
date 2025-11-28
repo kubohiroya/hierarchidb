@@ -24,7 +24,7 @@ describe('Headless metrics (command latency)', () => {
         nodeType: 'folder' as NodeType,
         treeId: 'r' as TreeId,
         parentId: 'r:root' as NodeId,
-        name: 'X',
+        metadata: { name: 'X' },
       })
     );
     // Ping (registered success)

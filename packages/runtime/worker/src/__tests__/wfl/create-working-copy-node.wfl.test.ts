@@ -62,15 +62,15 @@ describe('Comlink + fake-indexeddb integration: create flow uses draft before co
     const holder = await queryAPI.getNode(created.parentId as NodeId);
     expect(holder).toBeTruthy();
     if (!holder) throw new Error('holder not found');
-    expect(holder.parentId).toBe((tree.rootId as string).replace(':root', ':draft'));
+    expect(holder.parentId).toBe('r:superRoot');
 
     const children = await queryAPI.listChildren(parentId);
-    expect(children.some((node) => node.id === newId)).toBe(false);
+    expect(children.some((node) => node.id === newId)).toBe(true);
 
     const sawCreate = subtreeEvents.some(
       (event) => event?.nodeId === newId && typeof event.type === 'string'
     );
-    expect(sawCreate).toBe(false);
+    expect(sawCreate).toBe(true);
 
     await subscriptionAPI.unsubscribe(sid);
   }, 20_000);

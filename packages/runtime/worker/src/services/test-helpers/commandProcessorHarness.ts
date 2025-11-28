@@ -44,15 +44,29 @@ export type SeedNodeInput = Partial<TreeNode> & {
 
 export async function seedNode(core: CoreDB, input: SeedNodeInput): Promise<TreeNode> {
   const now = Date.now() as Timestamp;
+  const metadataName =
+    (typeof input.metadata?.name === 'string' && input.metadata.name.length > 0
+      ? input.metadata.name
+      : undefined) ??
+    (typeof input.name === 'string' && input.name.length > 0 ? input.name : undefined) ??
+    input.id ??
+    'node';
+  const metadata = {
+    name: metadataName,
+    description: '',
+    tags: [],
+    ...(input.metadata ?? {}),
+  };
   const node: TreeNode = {
     id: (input.id ?? `node-${Math.random().toString(36).slice(2)}`) as NodeId,
     parentId: (input.parentId ?? ('root' as NodeId)) as NodeId,
     nodeType: input.nodeType ?? ('folder' as NodeType),
-    name: input.metadata.name ?? input.id ?? 'node',
+    name: metadataName,
     depth: input.depth ?? 1,
     createdAt: input.createdAt ?? now,
     updatedAt: input.updatedAt ?? now,
     version: input.version ?? 1,
+    metadata,
     ...input,
   } as TreeNode;
 

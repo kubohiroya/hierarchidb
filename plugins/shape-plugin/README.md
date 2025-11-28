@@ -57,6 +57,24 @@ Shape バッチ機能の新アーキテクチャ概要と利用メモ。
 - simplify2: タイル境界クリップの導入
 - map-source: R木/LOD で抽出高速化
 
+ドラフト保存フロー（UI→Worker→Dexie）
+--------------------------------------
+- 対象: Shape の MultiStepDialog（Step2 以降のフォーム更新）。
+- UI フロー:
+  - 各ステップの `onUpdate` は `ShapeDialogHost` の `handleUpdate` を呼ぶ。
+  - `handleUpdate` は `useDialogDraft.updateDraft` にパッチを渡し、`draftData` をマージしつつ `draftMetadata`（name/description/tags）も更新する。
+  - BasicInfoStep は `persistBasicInfo` 経由で `draftMetadata` のみを更新。
+  - `saveDraft` は最後に `commitDraft` を実行し、必要なら auto-rename で確定。
+- plugin-ui-sdk `useDialogDraft`:
+  - `updateDraft` はローカル state を更新し、150ms デバウンスの `persistDraft` を起動。
+  - `persistDraft` は Worker クライアント (`wc`) に対し `updateTreeNodeDraftMetadata` → `updateTreeNodeDraftData` を送る。
+  - `saveDraft` も同じ 2 API を送った後に `commitDraft` を呼ぶ。
+- Worker 側:
+  - DraftService（runtime-worker）が DraftAPI を実装。`updateTreeNodeDraftData/Metadata` は `DraftTreeNodeOperations` を呼ぶ。
+  - `DraftTreeNodeOperations.updateTreeNodeDraftData` は CoreDB(Dexie) の `nodes` テーブルで `draftData` をマージ更新（`{ ...prev, ...updater }`）。`draftMetadata` も同様にマージ。
+  - `commitDraft` は working copy を本番ノードへ反映し、`useDialogDraft` は返却ノードを `toDraftData` で再正規化して state を更新。
+- ポイント: Form 入力 → `updateDraft` → Worker DraftService → Dexie `nodes.draftData` までが即時同期され、`saveDraft` で `commitDraft` まで進む構造。
+
 依存管理とインポート規約（重要）
 --------------------------------
 共通方針は packages/plugins/CONTRIBUTING.md を参照。要点:

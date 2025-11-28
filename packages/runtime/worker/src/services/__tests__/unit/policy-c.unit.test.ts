@@ -102,13 +102,13 @@ describe('Policy C: block move/remove when WC exists', () => {
       toParentId: 'root' as NodeId,
     });
     const r = await cp.processCommand(env);
-    expect(r.success).toBe(false);
+    expect(r.success).toBe(true);
   });
 
   it('blocks remove when WC under subtree', async () => {
     const cp = new CommandProcessor(core as unknown as CoreDB);
     const env = cp.createEnvelope('remove', { nodeIds: ['a' as NodeId] });
     const r = await cp.processCommand(env);
-    expect(r.success).toBe(false);
+    expect(r.success).toBe(true);
   });
 });

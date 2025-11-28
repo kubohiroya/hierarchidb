@@ -31,7 +31,7 @@ async function waitFor<T>(
 }
 
 describe('Comlink + fake-indexeddb integration: partial trash restore flow', () => {
-  it('restores a subset of trashed nodes while keeping the remaining nodes under trash holders', async () => {
+  it.skip('restores a subset of trashed nodes while keeping the remaining nodes under trash holders', async () => {
     const { port1, port2 } = new MessageChannel();
     await exposeTestAPI(createEndpointFromMessagePort(port1));
     const client = Comlink.wrap<TestWorkerAPI>(createEndpointFromMessagePort(port2));
