@@ -175,7 +175,7 @@ const custom = [
         rule: 'import-path-ban',
         options: {
           forbid: [
-            '^@hierarchidb/runtime-client(?:/|$)',
+            '^@hierarchidb/ui-worker-client(?:/|$)',
             '^@hierarchidb/plugin-service-(?:api|sdk)(?:/|$)',
             '^@hierarchidb/common-api(?:/|$)',
             '^comlink(?:/|$)',

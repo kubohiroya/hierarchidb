@@ -4,8 +4,8 @@
  */
 
 import { NodeAction, type NodeId, type TreeId } from '@hierarchidb/common-types';
-import { getWorkerClientHook } from '@hierarchidb/runtime-client';
-import { PluginDialogHost } from '@hierarchidb/ui-shell/plugin-ui-host';
+import { getWorkerClientHook } from '@hierarchidb/ui-worker-provider';
+import { PluginDialogHost } from '@hierarchidb/ui-plugin-shell/plugin-ui-host';
 import { useLoaderData, useLocation, useNavigate } from '@tanstack/react-router';
 import React from 'react';
 import type { LoadNodeActionReturn } from '../../loaders/treeLoaders.js';
@@ -40,7 +40,6 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
   const [isOpen, setIsOpen] = React.useState(true);
 
   const useWorkerHook = getWorkerClientHook() ?? (() => null);
-  const ref = useWorkerHook();
 
   const treeId: TreeId | undefined = tree?.id ?? (params.treeId as TreeId | undefined);
   const effectiveTargetNodeId: NodeId | undefined =

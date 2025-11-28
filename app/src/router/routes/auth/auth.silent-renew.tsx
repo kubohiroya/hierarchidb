@@ -2,7 +2,7 @@
  * IFrame
  */
 
-import { useAuth } from '@hierarchidb/ui-shell/ui-auth';
+import { useAuth } from '@hierarchidb/ui-plugin-shell/ui-auth';
 import { useEffect } from 'react';
 
 export default function SilentRenewRoute() {

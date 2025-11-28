@@ -1,4 +1,4 @@
-declare module '@hierarchidb/runtime-client' {
+declare module '@hierarchidb/ui-worker-provider' {
   export { getWorkerClientHook, type WorkerClientRef } from '../../../packages/runtime/client/src/index.js';
 }
 

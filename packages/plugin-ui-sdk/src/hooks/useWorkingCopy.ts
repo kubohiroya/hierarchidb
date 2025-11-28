@@ -1,4 +1,4 @@
-import { getWorkerClientHook, WorkerClientRef } from '@hierarchidb/runtime-client';
+import { getWorkerClientHook, WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import { useCallback, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 
 type DraftRecord = Record<string, unknown> & { id?: string };

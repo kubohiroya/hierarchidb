@@ -1,6 +1,6 @@
-import type { TreeConfig } from '@hierarchidb/ui-shell/components';
-import { TreeToggleButtonGroup } from '@hierarchidb/ui-shell/components';
-import { UserLoginButton } from '@hierarchidb/ui-shell/ui-usermenu';
+import type { TreeConfig } from '@hierarchidb/ui-plugin-shell/components';
+import { TreeToggleButtonGroup } from '@hierarchidb/ui-plugin-shell/components';
+import { UserLoginButton } from '@hierarchidb/ui-plugin-shell/ui-usermenu';
 import {
   AccountTree,
   Extension as ExtensionIcon,

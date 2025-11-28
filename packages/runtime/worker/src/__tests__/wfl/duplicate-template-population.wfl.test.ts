@@ -108,8 +108,6 @@ describe('WFL duplicate behavior for imported template', () => {
     const rootId = tree.rootId as NodeId;
 
     const template = await loadTemplate();
-    expect(() => buildImportNodes(template)).toThrow(/rootNodeIds/);
-    return;
     const importNodes = buildImportNodes(template);
 
     const importResult = await importExportAPI.importNodes({
@@ -136,8 +134,8 @@ describe('WFL duplicate behavior for imported template', () => {
       toParentId: rootId,
     });
     if (!duplicateRes.success) {
-      const message = 'error' in duplicateRes ? duplicateRes.error : 'unknown error';
-      throw new Error(`duplicateNodes failed: ${message}`);
+      const err = duplicateRes as { error?: string };
+      throw new Error(err.error ?? 'duplicateNodes failed');
     }
     const duplicateId = duplicateRes.nodeIds[0];
     expect(duplicateId).toBeDefined();
@@ -157,8 +155,8 @@ describe('WFL duplicate behavior for imported template', () => {
     });
     expect(duplicateSelf.success).toBe(false);
     if (!duplicateSelf.success) {
-      const message = 'error' in duplicateSelf ? duplicateSelf.error : '';
-      expect(message).toContain('Cannot duplicate node into itself');
+      const err = duplicateSelf as { error?: string };
+      expect(err.error ?? '').toContain('Cannot duplicate node into itself');
     }
 
     const templateChildren = await queryAPI.listChildren(populationFolder.id as NodeId);
@@ -171,8 +169,8 @@ describe('WFL duplicate behavior for imported template', () => {
     });
     expect(duplicateToDescendant.success).toBe(false);
     if (!duplicateToDescendant.success) {
-      const message = 'error' in duplicateToDescendant ? duplicateToDescendant.error : '';
-      expect(message).toContain('descendant');
+      const err = duplicateToDescendant as { error?: string };
+      expect(err.error ?? '').toContain('descendant');
     }
   }, 30_000);
 });

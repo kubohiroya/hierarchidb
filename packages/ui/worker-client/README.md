@@ -1,4 +1,4 @@
-# @hierarchidb/runtime-client
+# @hierarchidb/ui-worker-client
 
 A robust Worker initialization detection system for Web Workers that provides reliable, Comlink-independent initialization status reporting and React integration.
 

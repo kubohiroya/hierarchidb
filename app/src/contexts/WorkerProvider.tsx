@@ -7,10 +7,8 @@
  */
 
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import type {
-  WorkerClientRef,
-  WorkerInitializationChannel,
-} from '@hierarchidb/runtime-client';
+import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';
+import type { WorkerInitializationChannel } from '@hierarchidb/ui-worker-client';
 import type { Remote } from 'comlink';
 import type { CSSProperties, ReactNode } from 'react';
 import {
@@ -23,7 +21,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { useTranslation } from '@hierarchidb/ui-shell/ui-i18n';
+import { useTranslation } from '@hierarchidb/ui-plugin-shell/ui-i18n';
 
 type BootWindow = Window & {
   __HDB_INIT_COMPLETE__?: boolean;

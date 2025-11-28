@@ -147,7 +147,7 @@ PluginStepRegistry.getInstance().registerConfigProvider<RouteData>({
 ```ts
 import { getWorkerContainer, WorkerDiTokens } from '@hierarchidb/runtime-worker';
 import { pluginDefinitions } from '~/plugin-registry';
-import { wirePluginsFromModules } from '@hierarchidb/runtime-client';
+import { wirePluginsFromModules } from '@hierarchidb/ui-worker-client';
 
 const workerContainer = getWorkerContainer();
 const moduleLoader = workerContainer.get(WorkerDiTokens.PluginWorkerModuleLoader);

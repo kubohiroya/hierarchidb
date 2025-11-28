@@ -1,7 +1,7 @@
 {
-  "name": "@hierarchidb/runtime-client",
+  "name": "@hierarchidb/ui-worker-client",
   "version": "0.0.1",
-  "description": "Worker initialization notification system for reliable Worker-UI communication",
+  "description": "UI-side worker client utilities (Comlink bridges, runtime wiring)",
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -39,14 +39,10 @@
   "dependencies": {},
   "devDependencies": {
     "@types/node": "^20.11.5",
-    "@types/react": "^18.2.48",
-    "@types/react-dom": "^18.3.7",
     "@vitest/ui": "^3.2.4",
     "comlink": "^4.4.1",
     "fake-indexeddb": "^5.0.2",
     "prettier": "^3.2.4",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
     "typescript": "workspace:^5.9.3",
     "vite": "^5.0.11",
     "vitest": "^3.2.4",
@@ -56,8 +52,6 @@
   },
   "peerDependencies": {
     "comlink": "^4.4.1",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*"

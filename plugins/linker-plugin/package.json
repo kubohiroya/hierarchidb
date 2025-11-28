@@ -82,7 +82,7 @@
     "@deck.gl/mapbox": "^9.0.0",
     "@deck.gl/mesh-layers": "^9.0.0",
     "@hierarchidb/runtime-worker": "workspace:*",
-    "@hierarchidb/runtime-client": "workspace:*",
+    "@hierarchidb/ui-worker-provider": "workspace:*",
     "@mui/icons-material": "^7.3.2",
     "@mui/material": "^7.3.2",
     "@types/d3-scale": "^4.0.0",

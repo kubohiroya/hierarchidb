@@ -67,7 +67,7 @@ function createRuntimeAliasConfig({
   workspacePackages: WorkspacePackageMeta[];
 }): RuntimeAliasConfig {
   const aliasMap = new Map<string, AliasEntry>();
-  const optimizeExclude = new Set<string>(['@hierarchidb/runtime-client']);
+  const optimizeExclude = new Set<string>(['@hierarchidb/ui-worker-client', '@hierarchidb/ui-worker-provider']);
 
   const legacyUiMappings = [
     { spec: '@hierarchidb/components', src: '../packages/components/src/index.ts', dist: '../packages/components/dist/index.js' },
@@ -95,7 +95,8 @@ function createRuntimeAliasConfig({
     { spec: '@hierarchidb/common-auth', src: '../packages/common/auth/src/index.ts', dist: '../packages/common/auth/dist/index.js' },
     { spec: '@hierarchidb/common-types', src: '../packages/common/types/src/index.ts', dist: '../packages/common/types/dist/index.js' },
     { spec: '@hierarchidb/util', src: '../packages/util/src/index.ts', dist: '../packages/util/dist/index.js' },
-    { spec: '@hierarchidb/runtime-client', src: '../packages/runtime/client/src/index.ts', dist: '../packages/runtime/client/dist/index.js' },
+    { spec: '@hierarchidb/ui-worker-client', src: '../packages/ui/worker-client/src/index.ts', dist: '../packages/ui/worker-client/dist/index.js' },
+    { spec: '@hierarchidb/ui-worker-provider', src: '../packages/ui/worker-provider/src/index.ts', dist: '../packages/ui/worker-provider/dist/index.js' },
     { spec: '@hierarchidb/runtime-worker', src: '../packages/runtime/worker/src/index.ts', dist: '../packages/runtime/worker/dist/index.js' },
     { spec: '@hierarchidb/map-adapter', src: '../packages/features/map-adapter/src/index.ts', dist: '../packages/features/map-adapter/dist/index.js' },
     { spec: '@hierarchidb/plugin-presentation', src: '../packages/plugin-presentation/src/index.ts', dist: '../packages/plugin-presentation/dist/index.js' },
@@ -179,7 +180,11 @@ function createRuntimeAliasConfig({
       exclude: true,
       exact: true,
     });
-    registerDevPackage('@hierarchidb/runtime-client', '../packages/runtime/client/src/index.ts', {
+    registerDevPackage('@hierarchidb/ui-worker-client', '../packages/ui/worker-client/src/index.ts', {
+      group: 'runtime',
+      exclude: true,
+    });
+    registerDevPackage('@hierarchidb/ui-worker-provider', '../packages/ui/worker-provider/src/index.ts', {
       group: 'runtime',
       exclude: true,
     });
@@ -191,11 +196,11 @@ function createRuntimeAliasConfig({
       group: 'features',
       exclude: true,
     });
-    registerDevPackage('@hierarchidb/ui-shell/ui-i18n', '../packages/ui/i18n/src/index.ts', {
+    registerDevPackage('@hierarchidb/ui-plugin-shell/ui-i18n', '../packages/ui/i18n/src/index.ts', {
       group: 'ui',
       exclude: true,
     });
-    registerDevPackage('@hierarchidb/ui-shell/ui-icon', '../packages/ui/icon/src/index.ts', {
+    registerDevPackage('@hierarchidb/ui-plugin-shell/ui-icon', '../packages/ui/icon/src/index.ts', {
       group: 'ui',
       exclude: true,
     });
@@ -279,10 +284,11 @@ function createRuntimeAliasConfig({
       exclude: true,
       exact: true,
     });
-    addAlias('@hierarchidb/runtime-client', '../packages/runtime/client/dist/index.js', { exact: true });
+    addAlias('@hierarchidb/ui-worker-client', '../packages/ui/worker-client/dist/index.js', { exact: true });
+    addAlias('@hierarchidb/ui-worker-provider', '../packages/ui/worker-provider/dist/index.js', { exact: true });
     addAlias('@hierarchidb/map-adapter', '../packages/features/map-adapter/dist/index.js', { exclude: true, exact: true });
     addAlias('@hierarchidb/tabular-source-xlsx', '../packages/features/tabular-source-xlsx/dist/index.js', { exclude: true, exact: true });
-    addAlias('@hierarchidb/ui-shell/ui-i18n', '../packages/ui/i18n/dist/index.js', { exclude: true, exact: true });
+    addAlias('@hierarchidb/ui-plugin-shell/ui-i18n', '../packages/ui/i18n/dist/index.js', { exclude: true, exact: true });
 
     for (const mapping of [...legacyUiMappings, ...legacyFeatureMappings]) {
       addAlias(mapping.spec, mapping.dist, { exclude: true, exact: true });
@@ -374,7 +380,7 @@ function createRuntimeAliasConfig({
 
 const facadePrefixMap = [
   { prefix: '@hierarchidb/', targetPrefix: '@hierarchidb/' },
-  { prefix: '@hierarchidb/ui-shell/', targetPrefix: '@hierarchidb/' },
+  { prefix: '@hierarchidb/ui-plugin-shell/', targetPrefix: '@hierarchidb/' },
 ] as const;
 
 function facadeAliasPlugin(): Plugin {
@@ -901,7 +907,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         ...runtimeAliasConfig.aliases,
         // Icons utility (always point to src for now)
         {
-          find: '@hierarchidb/ui-shell/ui-icon',
+          find: '@hierarchidb/ui-plugin-shell/ui-icon',
           replacement: path.resolve(
             __dirname,
             isDev ? '../packages/ui/icon/src/index.ts' : '../packages/ui/icon/dist/index.js',

@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { NodeId, Timestamp, TreeId, TreeNode } from '@hierarchidb/common-types';
-import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-client';
+import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import { useDialogDraft } from '@hierarchidb/plugin-ui-sdk';
 import type {
   BaseMapEntity,

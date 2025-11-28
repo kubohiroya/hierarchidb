@@ -1,4 +1,4 @@
-import { getWorkerClientHook, registerWorkerClientHook } from '@hierarchidb/runtime-client';
+import { getWorkerClientHook, registerWorkerClientHook } from '@hierarchidb/ui-worker-provider';
 import { pluginRegistry } from '~/plugin-registry/index.ts';
 import { useWorker } from '../../contexts/WorkerProvider.js';
 import { bootLog } from '../../utils/bootLog.ts';

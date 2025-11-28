@@ -158,8 +158,6 @@ describe('WFL paste behavior for imported template', () => {
     const rootId = tree.rootId as NodeId;
 
     const template = await loadTemplate();
-    expect(() => buildImportNodes(template)).toThrow(/rootNodeIds/);
-    return;
     const importNodes = buildImportNodes(template);
     const importResult = await importExportAPI.importNodes({
       treeId,
@@ -190,8 +188,8 @@ describe('WFL paste behavior for imported template', () => {
       })
     );
     if (!pasteSelf.success) {
-      const message = 'error' in pasteSelf ? pasteSelf.error : 'unknown error';
-      throw new Error(`pasteNodes self failed: ${message}`);
+      const err = pasteSelf as { error?: string };
+      throw new Error(err.error ?? 'pasteNodes self failed');
     }
     expect(pasteSelf.newNodeIds?.length).toBe(clipboard.nodeIds.length);
 
@@ -218,8 +216,8 @@ describe('WFL paste behavior for imported template', () => {
       })
     );
     if (!pasteRoot.success) {
-      const message = 'error' in pasteRoot ? pasteRoot.error : 'unknown error';
-      throw new Error(`pasteNodes to root failed: ${message}`);
+      const err = pasteRoot as { error?: string };
+      throw new Error(err.error ?? 'pasteNodes to root failed');
     }
     const pastedRootId = pasteRoot.newNodeIds?.[0];
     expect(pastedRootId).toBeDefined();

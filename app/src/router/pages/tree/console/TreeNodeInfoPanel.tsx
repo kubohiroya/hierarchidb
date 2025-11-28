@@ -7,7 +7,7 @@ import {
   NodeTypeIcon,
   getPluginIconColor,
   isFolderNodeType,
-} from '@hierarchidb/ui-shell/ui-treeconsole-breadcrumb';
+} from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import type { TreeId, TreeNode } from '@hierarchidb/common-types';
 import {
   type TreeConsolePanelProps,

@@ -1,5 +1,5 @@
 import type { Tree } from '@hierarchidb/common-types';
-import { UserLoginButton } from '@hierarchidb/ui-shell/ui-usermenu';
+import { UserLoginButton } from '@hierarchidb/ui-plugin-shell/ui-usermenu';
 import { Folder as FolderIcon, AccountTree as TreeIcon } from '@mui/icons-material';
 import {
   AppBar,

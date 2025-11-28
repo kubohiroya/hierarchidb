@@ -14,7 +14,7 @@
 4. 型情報は従来どおり静的に配布し、`import type` を活用して `any` へ退避しない設計を保つ。
 
 ## 4. スコープ
-- 対象: `@hierarchidb/app`, `@hierarchidb/runtime-worker`, `@hierarchidb/runtime-client`, `packages/plugins/*`、関連ユーティリティ (`WorkerAPIClient`, `WorkerProvider`, `storeRegistry` 等)。
+- 対象: `@hierarchidb/app`, `@hierarchidb/runtime-worker`, `@hierarchidb/ui-worker-client`, `packages/plugins/*`、関連ユーティリティ (`WorkerAPIClient`, `WorkerProvider`, `storeRegistry` 等)。
 - 含む: React Provider/Hook 層の再設計、Worker ローダーの新規実装、プラグイン worker のファクトリ化、テスト/型更新、ドキュメント整備。
 - 含まない: プラグイン個別仕様の大幅変更、既存ビジネスロジックの改修、SSR 全面対応（影響調査と最小差分対応のみ）。
 

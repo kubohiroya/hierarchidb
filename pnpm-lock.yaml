@@ -307,9 +307,6 @@ importers:
       '@hierarchidb/route-plugin':
         specifier: workspace:*
         version: link:../plugins/route-plugin
-      '@hierarchidb/runtime-client':
-        specifier: workspace:*
-        version: link:../packages/runtime/client
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../packages/runtime/worker
@@ -331,9 +328,12 @@ importers:
       '@hierarchidb/ui-i18n':
         specifier: workspace:*
         version: link:../packages/ui/i18n
-      '@hierarchidb/ui-shell':
+      '@hierarchidb/ui-plugin-shell':
         specifier: workspace:*
-        version: link:../packages/ui-shell
+        version: link:../packages/ui/plugin-shell
+      '@hierarchidb/ui-worker-client':
+        specifier: workspace:*
+        version: link:../packages/ui/worker-client
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../packages/util
@@ -917,9 +917,6 @@ importers:
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../common/types
-      '@hierarchidb/runtime-client':
-        specifier: workspace:*
-        version: link:../runtime/client
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../runtime/worker
@@ -932,6 +929,9 @@ importers:
       '@hierarchidb/ui-plugin-basic-info':
         specifier: workspace:*
         version: link:../ui/plugin-basic-info
+      '@hierarchidb/ui-worker-provider':
+        specifier: workspace:*
+        version: link:../ui/worker-provider
       '@mui/icons-material':
         specifier: ^7.3.2
         version: 7.3.4(@mui/material@7.3.4(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.26)(react@18.3.1)
@@ -968,15 +968,15 @@ importers:
       '@hierarchidb/plugin-service-sdk':
         specifier: workspace:*
         version: link:../plugin-service-sdk
-      '@hierarchidb/runtime-client':
-        specifier: workspace:*
-        version: link:../runtime/client
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../ui/dialog
       '@hierarchidb/ui-plugin-basic-info':
         specifier: workspace:*
         version: link:../ui/plugin-basic-info
+      '@hierarchidb/ui-worker-provider':
+        specifier: workspace:*
+        version: link:../ui/worker-provider
     devDependencies:
       '@hierarchidb/common-api':
         specifier: workspace:*
@@ -1023,54 +1023,6 @@ importers:
       typescript:
         specifier: 5.9.3
         version: 5.9.3
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)
-
-  packages/runtime/client:
-    devDependencies:
-      '@hierarchidb/common-api':
-        specifier: workspace:*
-        version: link:../../common/api
-      '@hierarchidb/common-types':
-        specifier: workspace:*
-        version: link:../../common/types
-      '@hierarchidb/runtime-worker':
-        specifier: workspace:*
-        version: link:../worker
-      '@types/node':
-        specifier: 18.19.123
-        version: 18.19.123
-      '@types/react':
-        specifier: ^18.3.24
-        version: 18.3.26
-      '@types/react-dom':
-        specifier: ^18.3.7
-        version: 18.3.7(@types/react@18.3.26)
-      '@vitest/ui':
-        specifier: ^3.2.4
-        version: 3.2.4(vitest@3.2.4)
-      comlink:
-        specifier: ^4.4.1
-        version: 4.4.2
-      fake-indexeddb:
-        specifier: ^5.0.2
-        version: 5.0.2
-      prettier:
-        specifier: ^3.2.4
-        version: 3.6.2
-      react:
-        specifier: ^18.3.1
-        version: 18.3.1
-      react-dom:
-        specifier: ^18.3.1
-        version: 18.3.1(react@18.3.1)
-      typescript:
-        specifier: 5.9.3
-        version: 5.9.3
-      vite:
-        specifier: 5.4.19
-        version: 5.4.19(@types/node@18.19.123)
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)
@@ -1248,64 +1200,6 @@ importers:
         version: 5.9.3
 
   packages/tools/schemas: {}
-
-  packages/ui-shell:
-    dependencies:
-      '@hierarchidb/components':
-        specifier: workspace:*
-        version: link:../components
-      '@hierarchidb/plugin-ui-host':
-        specifier: workspace:*
-        version: link:../plugin-ui-host
-      '@hierarchidb/ui-auth':
-        specifier: workspace:*
-        version: link:../ui/auth
-      '@hierarchidb/ui-dialog':
-        specifier: workspace:*
-        version: link:../ui/dialog
-      '@hierarchidb/ui-i18n':
-        specifier: workspace:*
-        version: link:../ui/i18n
-      '@hierarchidb/ui-icon':
-        specifier: workspace:*
-        version: link:../ui/icon
-      '@hierarchidb/ui-layout':
-        specifier: workspace:*
-        version: link:../ui/layout
-      '@hierarchidb/ui-map':
-        specifier: workspace:*
-        version: link:../ui/map
-      '@hierarchidb/ui-navigation':
-        specifier: workspace:*
-        version: link:../ui/navigation
-      '@hierarchidb/ui-routing':
-        specifier: workspace:*
-        version: link:../ui/routing
-      '@hierarchidb/ui-theme':
-        specifier: workspace:*
-        version: link:../ui/theme
-      '@hierarchidb/ui-tour':
-        specifier: workspace:*
-        version: link:../ui/tour
-      '@hierarchidb/ui-treeconsole-base':
-        specifier: workspace:*
-        version: link:../ui/treeconsole/base
-      '@hierarchidb/ui-treeconsole-breadcrumb':
-        specifier: workspace:*
-        version: link:../ui/treeconsole/breadcrumb
-      '@hierarchidb/ui-treeconsole-toolbar':
-        specifier: workspace:*
-        version: link:../ui/treeconsole/toolbar
-      '@hierarchidb/ui-treeconsole-treetable':
-        specifier: workspace:*
-        version: link:../ui/treeconsole/treetable
-      '@hierarchidb/ui-usermenu':
-        specifier: workspace:*
-        version: link:../ui/usermenu
-    devDependencies:
-      typescript:
-        specifier: 5.9.3
-        version: 5.9.3
 
   packages/ui/accordion-config:
     devDependencies:
@@ -1728,6 +1622,64 @@ importers:
       react:
         specifier: ^18.3.1
         version: 18.3.1
+
+  packages/ui/plugin-shell:
+    dependencies:
+      '@hierarchidb/components':
+        specifier: workspace:*
+        version: link:../../components
+      '@hierarchidb/plugin-ui-host':
+        specifier: workspace:*
+        version: link:../../plugin-ui-host
+      '@hierarchidb/ui-auth':
+        specifier: workspace:*
+        version: link:../auth
+      '@hierarchidb/ui-dialog':
+        specifier: workspace:*
+        version: link:../dialog
+      '@hierarchidb/ui-i18n':
+        specifier: workspace:*
+        version: link:../i18n
+      '@hierarchidb/ui-icon':
+        specifier: workspace:*
+        version: link:../icon
+      '@hierarchidb/ui-layout':
+        specifier: workspace:*
+        version: link:../layout
+      '@hierarchidb/ui-map':
+        specifier: workspace:*
+        version: link:../map
+      '@hierarchidb/ui-navigation':
+        specifier: workspace:*
+        version: link:../navigation
+      '@hierarchidb/ui-routing':
+        specifier: workspace:*
+        version: link:../routing
+      '@hierarchidb/ui-theme':
+        specifier: workspace:*
+        version: link:../theme
+      '@hierarchidb/ui-tour':
+        specifier: workspace:*
+        version: link:../tour
+      '@hierarchidb/ui-treeconsole-base':
+        specifier: workspace:*
+        version: link:../treeconsole/base
+      '@hierarchidb/ui-treeconsole-breadcrumb':
+        specifier: workspace:*
+        version: link:../treeconsole/breadcrumb
+      '@hierarchidb/ui-treeconsole-toolbar':
+        specifier: workspace:*
+        version: link:../treeconsole/toolbar
+      '@hierarchidb/ui-treeconsole-treetable':
+        specifier: workspace:*
+        version: link:../treeconsole/treetable
+      '@hierarchidb/ui-usermenu':
+        specifier: workspace:*
+        version: link:../usermenu
+    devDependencies:
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
 
   packages/ui/routing:
     devDependencies:
@@ -2241,6 +2193,94 @@ importers:
         specifier: 5.4.19
         version: 5.4.19(@types/node@18.19.123)
 
+  packages/ui/worker-client:
+    devDependencies:
+      '@hierarchidb/common-api':
+        specifier: workspace:*
+        version: link:../../common/api
+      '@hierarchidb/common-types':
+        specifier: workspace:*
+        version: link:../../common/types
+      '@hierarchidb/runtime-worker':
+        specifier: workspace:*
+        version: link:../../runtime/worker
+      '@types/node':
+        specifier: 18.19.123
+        version: 18.19.123
+      '@vitest/ui':
+        specifier: ^3.2.4
+        version: 3.2.4(vitest@3.2.4)
+      comlink:
+        specifier: ^4.4.1
+        version: 4.4.2
+      fake-indexeddb:
+        specifier: ^5.0.2
+        version: 5.0.2
+      prettier:
+        specifier: ^3.2.4
+        version: 3.6.2
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vite:
+        specifier: 5.4.19
+        version: 5.4.19(@types/node@18.19.123)
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)
+
+  packages/ui/worker-provider:
+    dependencies:
+      '@hierarchidb/ui-worker-client':
+        specifier: workspace:*
+        version: link:../worker-client
+    devDependencies:
+      '@hierarchidb/common-api':
+        specifier: workspace:*
+        version: link:../../common/api
+      '@hierarchidb/common-types':
+        specifier: workspace:*
+        version: link:../../common/types
+      '@hierarchidb/runtime-worker':
+        specifier: workspace:*
+        version: link:../../runtime/worker
+      '@types/node':
+        specifier: 18.19.123
+        version: 18.19.123
+      '@types/react':
+        specifier: ^18.3.24
+        version: 18.3.26
+      '@types/react-dom':
+        specifier: ^18.3.7
+        version: 18.3.7(@types/react@18.3.26)
+      '@vitest/ui':
+        specifier: ^3.2.4
+        version: 3.2.4(vitest@3.2.4)
+      comlink:
+        specifier: ^4.4.1
+        version: 4.4.2
+      fake-indexeddb:
+        specifier: ^5.0.2
+        version: 5.0.2
+      prettier:
+        specifier: ^3.2.4
+        version: 3.6.2
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vite:
+        specifier: 5.4.19
+        version: 5.4.19(@types/node@18.19.123)
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)
+
   packages/util:
     devDependencies:
       '@types/node':
@@ -2286,9 +2326,6 @@ importers:
       '@hierarchidb/plugin-ui-sdk':
         specifier: workspace:*
         version: link:../../packages/plugin-ui-sdk
-      '@hierarchidb/runtime-client':
-        specifier: workspace:*
-        version: link:../../packages/runtime/client
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../../packages/runtime/worker
@@ -2298,6 +2335,9 @@ importers:
       '@hierarchidb/ui-map':
         specifier: workspace:*
         version: link:../../packages/ui/map
+      '@hierarchidb/ui-worker-provider':
+        specifier: workspace:*
+        version: link:../../packages/ui/worker-provider
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../packages/util
@@ -2359,9 +2399,6 @@ importers:
       '@hierarchidb/plugin-ui-sdk':
         specifier: workspace:*
         version: link:../../packages/plugin-ui-sdk
-      '@hierarchidb/runtime-client':
-        specifier: workspace:*
-        version: link:../../packages/runtime/client
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../../packages/runtime/worker
@@ -2374,6 +2411,9 @@ importers:
       '@hierarchidb/ui-plugin-basic-info':
         specifier: workspace:*
         version: link:../../packages/ui/plugin-basic-info
+      '@hierarchidb/ui-worker-provider':
+        specifier: workspace:*
+        version: link:../../packages/ui/worker-provider
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../packages/util
@@ -2453,9 +2493,6 @@ importers:
       '@hierarchidb/plugin-service-api':
         specifier: workspace:*
         version: link:../../packages/plugin-service-api
-      '@hierarchidb/runtime-client':
-        specifier: workspace:*
-        version: link:../../packages/runtime/client
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../../packages/runtime/worker
@@ -2465,6 +2502,9 @@ importers:
       '@hierarchidb/ui-treeconsole-base':
         specifier: workspace:*
         version: link:../../packages/ui/treeconsole/base
+      '@hierarchidb/ui-worker-provider':
+        specifier: workspace:*
+        version: link:../../packages/ui/worker-provider
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../packages/util
@@ -2607,9 +2647,9 @@ importers:
       '@hierarchidb/plugin-ui-sdk':
         specifier: workspace:*
         version: link:../../packages/plugin-ui-sdk
-      '@hierarchidb/runtime-client':
+      '@hierarchidb/ui-worker-provider':
         specifier: workspace:*
-        version: link:../../packages/runtime/client
+        version: link:../../packages/ui/worker-provider
     devDependencies:
       '@hierarchidb/common-api':
         specifier: workspace:*
@@ -2717,9 +2757,6 @@ importers:
       '@hierarchidb/plugin-ui-sdk':
         specifier: workspace:*
         version: link:../../packages/plugin-ui-sdk
-      '@hierarchidb/runtime-client':
-        specifier: workspace:*
-        version: link:../../packages/runtime/client
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../../packages/runtime/worker
@@ -2735,6 +2772,9 @@ importers:
       '@hierarchidb/ui-plugin-basic-info':
         specifier: workspace:*
         version: link:../../packages/ui/plugin-basic-info
+      '@hierarchidb/ui-worker-provider':
+        specifier: workspace:*
+        version: link:../../packages/ui/worker-provider
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../packages/util
@@ -2838,9 +2878,6 @@ importers:
       '@hierarchidb/plugin-service-sdk':
         specifier: workspace:*
         version: link:../../packages/plugin-service-sdk
-      '@hierarchidb/runtime-client':
-        specifier: workspace:*
-        version: link:../../packages/runtime/client
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../../packages/runtime/worker
@@ -2868,6 +2905,9 @@ importers:
       '@hierarchidb/ui-tabular-extract':
         specifier: workspace:*
         version: link:../../packages/ui/tabular-extract
+      '@hierarchidb/ui-worker-provider':
+        specifier: workspace:*
+        version: link:../../packages/ui/worker-provider
       '@mui/icons-material':
         specifier: ^7.3.2
         version: 7.3.4(@mui/material@7.3.4(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.26)(react@18.3.1)

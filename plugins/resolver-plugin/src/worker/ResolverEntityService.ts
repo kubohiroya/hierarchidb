@@ -222,7 +222,6 @@ export class ResolverEntityService {
     const duplicate = this.buildEntity(newNodeId, duplicateData, {
       ...entity,
       version: 0,
-      createdAt: undefined,
     } as ResolverEntity);
     await this.writeDraft(newNodeId, duplicate, {
       name: duplicateData.name,

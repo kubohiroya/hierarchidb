@@ -71,7 +71,7 @@ graph LR
     N32["@hierarchidb/runtime-worker"]
   end
   subgraph G_packages_runtime_client["packages/runtime/client"]
-    N33["@hierarchidb/runtime-client"]
+    N33["@hierarchidb/ui-worker-client"]
   end
   subgraph G_packages_testing["packages/testing"]
     N34["@hierarchidb/testing-plugin-dialog-mocks"]

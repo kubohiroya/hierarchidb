@@ -8,9 +8,9 @@ _Last updated: 2025-10-30_
 | --- | --- | --- | --- |
 | **Author SDK** | `packages/plugin-ui-sdk/src/dialog` | プラグイン作者向け API（`BaseDialogPlugin`, `NodeDialogPlugin`, `NodeDialogExtensionAPI` 等）<br>Dialog ステップの定義・登録、WorkingCopy とのブリッジ | `@hierarchidb/plugin-service-api`, コア型 (`PeerEntity` など) |
 | **Presentation API** | `packages/plugin-presentation/src` | `getPresentation`, `getIconComponent`, `prefetchAllIcons` 等プレゼンテーションメタデータの取得とキャッシュ | `@hierarchidb/ui-icon` |
-| **Runtime Host UI** | `packages/plugin-ui-host/src` | `PluginDialogHost`（ファサード）, `PluginDialogShell`, `PluginDialogFooter`, `PluginDialogHeader` 等ホストアプリ向け UI / プレゼンテーション層 | `react`, `@mui/*`, `@tanstack/react-router`, `@hierarchidb/runtime-client` |
+| **Runtime Host UI** | `packages/plugin-ui-host/src` | `PluginDialogHost`（ファサード）, `PluginDialogShell`, `PluginDialogFooter`, `PluginDialogHeader` 等ホストアプリ向け UI / プレゼンテーション層 | `react`, `@mui/*`, `@tanstack/react-router`, `@hierarchidb/ui-worker-client` |
 | **Generic Dialog Components** | `packages/ui/dialog/src` | 共通ダイアログコンポーネント（`CommonDialog`, `AutoHideFullScreenDialog` 等）<br>プラグイン固有の知識は持たず UI スタイルに特化 | `@mui/*` |
-| **App Host Wiring** | `app/src/router/routes/tree/PluginDialogRoute.tsx` | React Router との接続、WorkingCopy ID リダイレクト、完了時ナビゲーション<br>`PluginDialogHost` ファサード経由でホスト固有オプションを注入 | `@tanstack/react-router`, `@hierarchidb/runtime-client`, `@hierarchidb/plugin-ui-host` |
+| **App Host Wiring** | `app/src/router/routes/tree/PluginDialogRoute.tsx` | React Router との接続、WorkingCopy ID リダイレクト、完了時ナビゲーション<br>`PluginDialogHost` ファサード経由でホスト固有オプションを注入 | `@tanstack/react-router`, `@hierarchidb/ui-worker-client`, `@hierarchidb/plugin-ui-host` |
 
 ### 1.1 現状の問題点
 - ヘッドレスロジックが `plugin-ui-sdk` と `ui/plugin-dialog` の双方に散在し、責務境界が不明瞭。

@@ -157,8 +157,6 @@ describe('WFL paste rename behavior for imported template', () => {
     const rootId = tree.rootId as NodeId;
 
     const template = await loadTemplate();
-    expect(() => buildImportNodes(template)).toThrow(/rootNodeIds/);
-    return;
     const importNodes = buildImportNodes(template);
     const importResult = await importExportAPI.importNodes({
       treeId,
@@ -189,8 +187,8 @@ describe('WFL paste rename behavior for imported template', () => {
       })
     );
     if (!pasteRoot.success) {
-      const message = 'error' in pasteRoot ? pasteRoot.error : 'unknown error';
-      throw new Error(`pasteNodes failed: ${message}`);
+      const err = pasteRoot as { error?: string };
+      throw new Error(err.error ?? 'pasteNodes failed');
     }
     const pastedRootId = pasteRoot.newNodeIds?.[0] as NodeId | undefined;
     expect(pastedRootId).toBeDefined();

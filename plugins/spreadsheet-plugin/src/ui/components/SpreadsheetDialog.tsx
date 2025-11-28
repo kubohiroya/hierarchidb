@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { NodeId, TreeId } from '@hierarchidb/common-types';
-import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-client';
+import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import {
   HeadlessMultiStepDialog,
   FRAME_CONSTANTS,

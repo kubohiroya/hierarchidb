@@ -13,8 +13,8 @@
  * - Maintain browser history for navigation
  */
 
-import type { MapLibreMapInstance, MapViewState } from '@hierarchidb/ui-shell/ui-map';
-import { loadMapLibreMap } from '@hierarchidb/ui-shell/ui-map';
+import type { MapLibreMapInstance, MapViewState } from '@hierarchidb/ui-plugin-shell/ui-map';
+import { loadMapLibreMap } from '@hierarchidb/ui-plugin-shell/ui-map';
 import { Box } from '@mui/material';
 import { useLoaderData, useNavigate, useSearch } from '@tanstack/react-router';
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';

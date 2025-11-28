@@ -19,7 +19,7 @@ const iconModule = vi.hoisted(() => {
 
 vi.mock('@hierarchidb/ui-icon', () => iconModule);
 
-vi.mock('@hierarchidb/ui-shell/ui-i18n', () => ({
+vi.mock('@hierarchidb/ui-plugin-shell/ui-i18n', () => ({
   useGlobalI18nTranslator: () => ({
     t: (_key: string, fallback?: string) => fallback ?? _key,
     language: 'en',

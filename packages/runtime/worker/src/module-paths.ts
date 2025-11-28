@@ -13,7 +13,7 @@ import { pluginWorkerModuleMap } from './plugin-registry/index.js';
 
 export const RUNTIME_MODULE_IDS = {
   runtimeWorker: '@hierarchidb/runtime-worker',
-  runtimeWorkerBootstrap: '@hierarchidb/runtime-client',
+  runtimeWorkerBootstrap: '@hierarchidb/ui-worker-client',
 } as const;
 
 export const OPTIONAL_FEATURE_MODULE_IDS = {
@@ -46,7 +46,7 @@ export type PluginWorkerModule = Record<string, unknown>;
 const runtimeWorkerImporter = () =>
   import('@hierarchidb/runtime-worker') as Promise<RuntimeWorkerModule>;
 const runtimeWorkerBootstrapImporter = () =>
-  import('@hierarchidb/runtime-client') as Promise<Record<string, unknown>>;
+  import('@hierarchidb/ui-worker-client') as Promise<Record<string, unknown>>;
  */
 
 const optionalFeatureImporters: Record<OptionalFeatureId, () => Promise<OptionalFeatureModule>> = {

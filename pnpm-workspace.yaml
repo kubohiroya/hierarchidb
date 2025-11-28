@@ -17,7 +17,7 @@ packages:
   - packages/plugin-ui-host
   - packages/plugin-presentation
   - packages/plugin-base
-  - packages/ui-shell
+  - packages/ui/plugin-shell
   - packages/backend/*
   - packages/features/*
   - packages/plugin-ui-sdk

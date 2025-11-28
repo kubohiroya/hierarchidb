@@ -1,4 +1,4 @@
-import { AutoHideFullScreenDialog as FullScreenDialog } from '@hierarchidb/ui-shell/ui-dialog';
+import { AutoHideFullScreenDialog as FullScreenDialog } from '@hierarchidb/ui-plugin-shell/ui-dialog';
 import { Info as InfoIcon } from '@mui/icons-material';
 import { Box, Divider, Link, Typography } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';

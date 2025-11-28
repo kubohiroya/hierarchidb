@@ -240,7 +240,7 @@ sequenceDiagram
    - 実装を動的 import するときは `import type { StylerWorkerFactoryModule } from '@hierarchidb/styler-plugin/worker-types';` → `const mod: StylerWorkerFactoryModule = await import(...)` のように `as` でキャストせず型安全に取得する。
 
 4. **Caller 側ユーティリティ**
-   - `WorkerClientProxy.ensureInitialized()` の戻り値型は `Promise<WorkerClientRef>` で固定し、`WorkerClientRef` は `@hierarchidb/runtime-client` の型を静的に参照する。呼び出し側で `await` すれば `any` を介さず利用できる。
+   - `WorkerClientProxy.ensureInitialized()` の戻り値型は `Promise<WorkerClientRef>` で固定し、`WorkerClientRef` は `@hierarchidb/ui-worker-client` の型を静的に参照する。呼び出し側で `await` すれば `any` を介さず利用できる。
    - `Suspense` 内で `useAsyncValue<WorkerClientRef>()` のような Hook を用意すると、JSX 内でも型推論が効く。
 
 ### 9.2 型専用パッケージ／モジュール構成案
@@ -308,7 +308,7 @@ export async function loadWorkerRuntime(): Promise<WorkerClientRef> {
 | `@hierarchidb/spreadsheet-plugin` | `src/database/SpreadsheetDatabase.ts` (`crypto.randomUUID`) | ブランド型 `NodeId` に変換するため | `const entityId = crypto.randomUUID() as unknown as NodeId;` | `NodeId` は `string & { __brand: 'NodeId' }` 形式。ファクトリー関数を用意すれば置き換え可。 |
 | `@hierarchidb/spreadsheet-plugin` | `src/services/SpreadsheetTabularDriver.ts` / `SpreadsheetCSVApiAdapter.ts` | tabular ドライバが File API の代替インターフェイスを受け取るため | `file as unknown as FileLike`、`... as unknown as CSVTableMetadata` | input/output を共通 DTO に変換するラッパーを用意すると `unknown` なしで済む。 |
 | `@hierarchidb/resolver-plugin` | `src/handlers/ResolverEntityHandler.ts` | `crypto.randomUUID()` → `NodeId` ブランド化 | `crypto.randomUUID() as unknown as NodeId` | 上記と同様。 |
-| `@hierarchidb/runtime-client` | シリアライズ対象 | Worker チャネル越しに送るメッセージは JSON 互換 (`unknown`) として扱い、受信側で `zod` スキーマによる Narrowing を計画 | `Envelope['payload']` は `unknown` | 動的 import 後も `z.infer` で確定させる想定。 |
+| `@hierarchidb/ui-worker-client` | シリアライズ対象 | Worker チャネル越しに送るメッセージは JSON 互換 (`unknown`) として扱い、受信側で `zod` スキーマによる Narrowing を計画 | `Envelope['payload']` は `unknown` | 動的 import 後も `z.infer` で確定させる想定。 |
 
 > **対応方針**: いずれの箇所も `any` の常態化は避け、ブランド型変換や外部ライブラリ境界で `unknown` → 安全な Narrowing を行う。必要に応じて `zod` などのスキーマで構造を保証し、`eslint` の `no-explicit-any` を維持する。
 
@@ -372,7 +372,7 @@ flowchart LR
 
 進捗ログ（Phase 1）
 - 2025-09-25: `packages/runtime-worker/worker*` を `packages/runtime/worker` / `packages/runtime/worker-bootstrap` へ移行し、ESLint / Vitest / tsconfig / Vite / pnpm-lock を新パスへ更新
-- 2025-09-26: Phase 1 の移行後点検として `pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm --filter @hierarchidb/runtime-client typecheck` / `pnpm -C app typecheck` を再実行し、`docs/design/worker-dynamic-import-architecture.md` と `TASKS.md` に検証結果を反映
+- 2025-09-26: Phase 1 の移行後点検として `pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm --filter @hierarchidb/ui-worker-client typecheck` / `pnpm -C app typecheck` を再実行し、`docs/design/worker-dynamic-import-architecture.md` と `TASKS.md` に検証結果を反映
 
 ### 12.4 Phase 2a – 代表プラグインでの試験移行
 - [ ] 1〜2 個のプラグイン（例: folder, resolver）を `ui-static` / `ui-dynamic` / `worker-factory` / `types` へ再配置

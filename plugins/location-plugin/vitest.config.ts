@@ -9,7 +9,7 @@ export default defineConfig({
       '@hierarchidb/tabular-store': path.resolve(__dirname, 'src/common/test-shims/external-mocks.ts'),
       '@hierarchidb/plugin-ui-sdk': basePluginEntry,
       '@hierarchidb/runtime-worker': path.resolve(__dirname, 'src/common/test-shims/runtime-worker.ts'),
-      '@hierarchidb/runtime-client': path.resolve(__dirname, 'src/common/test-shims/runtime-worker.ts'),
+      '@hierarchidb/ui-worker-client': path.resolve(__dirname, 'src/common/test-shims/runtime-worker.ts'),
       '@hierarchidb/map-adapter': path.resolve(__dirname, 'src/common/test-shims/optional-features.ts'),
       '@hierarchidb/tabular-xlsx': path.resolve(__dirname, 'src/common/test-shims/optional-features.ts'),
       '@hierarchidb/basemap-plugin/worker': path.resolve(__dirname, 'src/common/test-shims/plugin-worker-factory.ts'),

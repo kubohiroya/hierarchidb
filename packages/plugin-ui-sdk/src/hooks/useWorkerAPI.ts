@@ -4,7 +4,7 @@ import type { WorkerAPI } from '@hierarchidb/common-api';
 import {
   getWorkerClientHook,
   type WorkerClientRef,
-} from '@hierarchidb/runtime-client';
+} from '@hierarchidb/ui-worker-provider';
 
 interface UseWorkerAPIResult {
   api: Remote<WorkerAPI> | null;

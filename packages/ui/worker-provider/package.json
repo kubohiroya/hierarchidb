@@ -1,0 +1,74 @@
+{
+  "name": "@hierarchidb/ui-worker-provider",
+  "version": "0.0.1",
+  "description": "React providers/hooks for runtime worker client",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "coverage": "vitest run --coverage",
+    "lint": "eslint src",
+    "format": "biome check --write src",
+    "clean": "rm -rf dist",
+    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
+  },
+  "keywords": [
+    "worker",
+    "initialization",
+    "message-channel",
+    "notification",
+    "web-worker"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@hierarchidb/ui-worker-client": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "@types/react": "^18.2.48",
+    "@types/react-dom": "^18.3.7",
+    "@vitest/ui": "^3.2.4",
+    "comlink": "^4.4.1",
+    "fake-indexeddb": "^5.0.2",
+    "prettier": "^3.2.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "typescript": "workspace:^5.9.3",
+    "vite": "^5.0.11",
+    "vitest": "^3.2.4",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/ui-worker-client": "workspace:*"
+  },
+  "peerDependencies": {
+    "comlink": "^4.4.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/ui-worker-client": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "comlink": {
+      "optional": true
+    }
+  }
+}

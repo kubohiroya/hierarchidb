@@ -20,7 +20,7 @@ import {
   getAllRuntimeExports,
   WorkerInitializationReporter,
   wirePluginsFromModules,
-} from '@hierarchidb/runtime-client';
+} from '@hierarchidb/ui-worker-client';
 import {
   getWorkerContainer,
   configureWorkerContainer,

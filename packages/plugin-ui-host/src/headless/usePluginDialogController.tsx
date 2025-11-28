@@ -19,7 +19,7 @@ import {
   hydratePresentationDefinitionsFromGlobal,
 } from '@hierarchidb/plugin-presentation';
 import { useDialogDraft } from '@hierarchidb/plugin-ui-sdk';
-import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-client';
+import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type {
   DialogDisplayMode,
   MultiDialogPosition,

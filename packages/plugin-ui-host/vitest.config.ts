@@ -48,7 +48,7 @@ const baseAliasEntries: Alias[] = [
   { find: '@hierarchidb/runtime-worker/WorkerAPIImpl', replacement: runtimeWorkerStubPath },
   { find: '@hierarchidb/runtime-worker', replacement: runtimeWorkerStubPath },
   { find: 'node-fetch', replacement: path.resolve(__dirname, '../../app/src/virtual/node-fetch.ts') },
-  { find: '@hierarchidb/runtime-client', replacement: path.resolve(__dirname, '../runtime/client/src/index.ts') },
+  { find: '@hierarchidb/ui-worker-provider', replacement: path.resolve(__dirname, '../runtime/client/src/index.ts') },
   { find: '@hierarchidb/map-adapter', replacement: path.resolve(__dirname, '../features/map-adapter/src/index.ts') },
   {
     find: '@hierarchidb/tabular-xlsx',

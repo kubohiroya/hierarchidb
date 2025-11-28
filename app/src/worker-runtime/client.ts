@@ -8,7 +8,7 @@ import { bootLog } from '~/utils/bootLog.ts';
 import { APP_VERSION } from '~/version.ts';
 import workerScriptUrl from './worker.ts?worker&url';
 
-// Mirrors WorkerInitMessageType defined in @hierarchidb/runtime-client to avoid `any` fallbacks
+// Mirrors WorkerInitMessageType defined in @hierarchidb/ui-worker-client to avoid `any` fallbacks
 // while the package-level re-export remains unavailable to the app bundler during typecheck.
 type WorkerInitMessageType =
   | 'INIT_REQUEST'
@@ -18,7 +18,7 @@ type WorkerInitMessageType =
   | 'PING'
   | 'PING_RESPONSE';
 
-// Mirrors WorkerInitMessage from @hierarchidb/runtime-client. Keep in sync with the upstream type.
+// Mirrors WorkerInitMessage from @hierarchidb/ui-worker-client. Keep in sync with the upstream type.
 type WorkerInitMessage = {
   type: WorkerInitMessageType;
   payload?: {

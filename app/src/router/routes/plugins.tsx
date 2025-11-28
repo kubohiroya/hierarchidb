@@ -3,8 +3,8 @@
 // import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { NodeType } from '@hierarchidb/common-types';
 // UIPluginRegistry is legacy; this page now reads vite-generated metadata
-// import { getUIPluginRegistry } from '@hierarchidb/ui-shell/ui-core';
-import { AutoHideFullScreenDialog as FullScreenDialog } from '@hierarchidb/ui-shell/ui-dialog';
+// import { getUIPluginRegistry } from '@hierarchidb/ui-plugin-shell/ui-core';
+import { AutoHideFullScreenDialog as FullScreenDialog } from '@hierarchidb/ui-plugin-shell/ui-dialog';
 import { useIconRegistry } from '@hierarchidb/ui-icon';
 import {
   AccountTree as AccountTreeIcon,

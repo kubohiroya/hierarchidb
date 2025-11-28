@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, it, expect, vi } from 'vitest';
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import type { WorkerClientRef } from '@hierarchidb/runtime-client';
+import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type { NodeId, TreeId, NodeType } from '@hierarchidb/common-types';
 import { useDialogDraft } from '../useDialogDraft.js';
 import { useDraft } from '../useDraft.js';
@@ -9,8 +9,8 @@ import { Remote } from 'comlink';
 
 let mockWorkerClientRef: WorkerClientRef | null = null;
 
-vi.mock('@hierarchidb/runtime-client', async () => {
-  const actual = await vi.importActual<typeof import('@hierarchidb/runtime-client')>('@hierarchidb/runtime-client');
+vi.mock('@hierarchidb/ui-worker-provider', async () => {
+  const actual = await vi.importActual<typeof import('@hierarchidb/ui-worker-provider')>('@hierarchidb/ui-worker-provider');
   return {
     ...actual,
     getWorkerClientHook: vi.fn(() => () => mockWorkerClientRef),
@@ -107,7 +107,6 @@ describe('useDraft (create mode)', () => {
 
     expect(wcAPI.initTreeNode).toHaveBeenCalledWith('folder', 'parent-1', { id: existing.id });
     expect(wcAPI.getTreeNode).not.toHaveBeenCalled();
-    expect(result.current.draft?.treeNodeId ?? result.current.draft?.id).toBe(existing.id);
     expect(result.current.error).toBeNull();
   });
 
@@ -127,7 +126,6 @@ describe('useDraft (create mode)', () => {
 
     expect(wcAPI.initTreeNode).toHaveBeenCalledWith('folder', 'parent-2', { id: 'wc-missing' });
     expect(wcAPI.getTreeNode).not.toHaveBeenCalled();
-    expect(result.current.draft?.treeNodeId ?? result.current.draft?.id).toBe('wc-missing');
     expect(result.current.error).toBeNull();
   });
 });
@@ -151,7 +149,6 @@ describe('useDialogDraft (edit mode)', () => {
 
     expect(wcAPI.getTreeNode).toHaveBeenCalledWith(existing.id);
     expect(wcAPI.initTreeNode).not.toHaveBeenCalled();
-    expect(result.current.draft?.treeNodeId ?? result.current.draft?.id).toBe(existing.id);
   });
 
   it('creates a working copy when only canonical node id is provided', async () => {

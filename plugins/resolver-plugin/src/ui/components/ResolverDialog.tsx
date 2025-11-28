@@ -31,7 +31,7 @@ import {
 import { readRuntimeMode } from '@hierarchidb/util';
 import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 import { useDialogDraft, normalizeBasicInfo, type DraftData } from '@hierarchidb/plugin-ui-sdk';
-import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-client';
+import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 
 type ResolverDialogStep = {
   id: string;

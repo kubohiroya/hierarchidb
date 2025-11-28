@@ -46,7 +46,7 @@ The workspace relies on `pnpm`. `app/` contains the main UI, with shared documen
 
 - **Worker レイヤ（`@hierarchidb/runtime-worker` / `plugin-service-sdk`）**
   - `packages/plugin-service-sdk/src/worker/bridge.ts` の `getWorkerBridge()` は `window.__HDB_WORKER_CLIENT_REF__`（`WorkerProvider` が注入）の Remote を捕捉し、`startBatchSession`/`getBatchSessionStatus`/`pause`/`resume`/`cancel`/`subscribeBatchProgress` を UI に提供する。`plugins/location-plugin/src/common/hooks/useLocationProgress.ts` 等の hook はこの Bridge を介して進捗イベントを購読する。
-  - `@hierarchidb/runtime-worker` は IoC コンテナ (`WorkerDiTokens`) で Plugin loader を DI し、`PluginWorkerModuleLoader` が Dexie ストア登録や `register<Plugin>WorkerStores` 呼び出しを担う。`@hierarchidb/runtime-client` の `wirePluginsFromModules` が EntityHandler/Lifecycle hook を登録し、Undo/Redo・Import/Export・WorkingCopy API を 1 か所で公開する。
+  - `@hierarchidb/runtime-worker` は IoC コンテナ (`WorkerDiTokens`) で Plugin loader を DI し、`PluginWorkerModuleLoader` が Dexie ストア登録や `register<Plugin>WorkerStores` 呼び出しを担う。`@hierarchidb/ui-worker-client` の `wirePluginsFromModules` が EntityHandler/Lifecycle hook を登録し、Undo/Redo・Import/Export・WorkingCopy API を 1 か所で公開する。
 
 ## Turbo ベースの開発・ビルド・型チェックフロー
 

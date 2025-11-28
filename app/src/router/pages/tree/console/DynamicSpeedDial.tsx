@@ -6,7 +6,7 @@
  */
 
 import type { TreeId } from '@hierarchidb/common-types';
-import { useGlobalI18nTranslator } from '@hierarchidb/ui-shell/ui-i18n';
+import { useGlobalI18nTranslator } from '@hierarchidb/ui-plugin-shell/ui-i18n';
 import { useIconRegistry } from '@hierarchidb/ui-icon';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import { Box, Portal, SpeedDial, SpeedDialAction, SpeedDialIcon } from '@mui/material';

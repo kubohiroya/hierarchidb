@@ -2,7 +2,7 @@
  * OAuth2/OIDC
  */
 
-import { BFFAuthService } from '@hierarchidb/ui-shell/ui-auth';
+import { BFFAuthService } from '@hierarchidb/ui-plugin-shell/ui-auth';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';

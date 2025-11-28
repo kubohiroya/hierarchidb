@@ -14,7 +14,7 @@ import type {
   TreeNode,
 } from '@hierarchidb/common-types';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
-import type { BreadcrumbNode } from '@hierarchidb/ui-shell/ui-treeconsole-breadcrumb';
+import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import type { Remote } from 'comlink';
 import type { Dispatch, SetStateAction } from 'react';
 import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms.js';

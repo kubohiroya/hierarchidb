@@ -10,7 +10,7 @@ vi.mock('@hierarchidb/ui-treeconsole-toolbar', () => ({
   TreeConsoleToolbar: (props: TreeConsoleToolbarProps) => toolbarMock(props) || null,
 }));
 
-vi.mock('@hierarchidb/ui-shell/ui-treeconsole-breadcrumb', () => ({
+vi.mock('@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb', () => ({
   TreeConsoleBreadcrumb: () => null,
 }));
 

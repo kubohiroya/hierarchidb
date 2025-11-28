@@ -2,7 +2,7 @@
  * TurnstileOAuth2
  */
 
-import { LoginForm, useAuth } from '@hierarchidb/ui-shell/ui-auth';
+import { LoginForm, useAuth } from '@hierarchidb/ui-plugin-shell/ui-auth';
 import { Box, Container, Paper } from '@mui/material';
 import { useLocation } from '@tanstack/react-router';
 import { useState } from 'react';

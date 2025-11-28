@@ -3,7 +3,7 @@ import {
   getStoredThemeMode,
   type ThemeMode,
   useThemeMode,
-} from '@hierarchidb/ui-shell/ui-theme';
+} from '@hierarchidb/ui-plugin-shell/ui-theme';
 import { CssBaseline, ThemeProvider as MuiThemeProvider } from '@mui/material';
 import { type PropsWithChildren, useEffect, useMemo } from 'react';
 

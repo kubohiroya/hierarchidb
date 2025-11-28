@@ -10,7 +10,7 @@ import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-typ
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import type { TreeConsoleToolbarActionParams } from '@hierarchidb/ui-treeconsole-toolbar';
 import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
-import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-shell/ui-treeconsole-breadcrumb';
+import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import { Alert, Box, CircularProgress } from '@mui/material';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import type { Remote } from 'comlink';

@@ -1058,7 +1058,7 @@ total occurrences: 0
   - `pnpm as-any:report` で 0 件を確認。あわせて以下を実行し、対応パッケージの型検証がすべてグリーンであることを確認済み。
     - `pnpm --filter @hierarchidb/compute typecheck`
     - `pnpm --filter @hierarchidb/util typecheck`
-    - `pnpm --filter @hierarchidb/runtime-client typecheck`
+    - `pnpm --filter @hierarchidb/ui-worker-client typecheck`
     - `pnpm --filter @hierarchidb/vite-plugin-hierarchidb-plugin-alias run build`（旧 `@hierarchidb/tools-vite-plugin-package-reader` の typecheck 相当）
     - `pnpm --filter @hierarchidb/auth-recovery typecheck`
     - `pnpm --filter @hierarchidb/tabular-xlsx typecheck`
@@ -1102,7 +1102,7 @@ total occurrences: 0
 
 ## 推奨アクション
 
-1. **App shim の段階削減** — `@hierarchidb/common-type` / `@hierarchidb/util` / `@hierarchidb/runtime-client` など、すでに dist 型があるものから順に置換。`virtual:plugin-*` は `scripts/generate-virtual-dts.mjs` の強化が必要。
+1. **App shim の段階削減** — `@hierarchidb/common-type` / `@hierarchidb/util` / `@hierarchidb/ui-worker-client` など、すでに dist 型があるものから順に置換。`virtual:plugin-*` は `scripts/generate-virtual-dts.mjs` の強化が必要。
 2. **Node-type shim の統合** — 上表の shim をそれぞれ公式 d.ts へ移行。特に plugin-dialog 関連 shim を早期に撤去。
 3. **UI ambient の縮退** — `@hierarchidb/ui-icon` 等、軽量な UI パッケージの dist 型公開を確認し `ambient-ui.d.ts` を縮小。
 4. **`as any` の削減プラン** — runtime-worker（14 件）→ ui/treeconsole（12 件）→ node-type/linker-plugin（8 件）の順で重点的に型付け。型公開済みの API から優先して `as any` を排除する。

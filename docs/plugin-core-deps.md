@@ -9,7 +9,7 @@ graph LR
 
   %% Runtime consumers
   RW["@hierarchidb/runtime-worker"]
-  RC["@hierarchidb/runtime-client"]
+  RC["@hierarchidb/ui-worker-client"]
 
   %% Shared libraries (light nodes)
   CT["@hierarchidb/common-types"]

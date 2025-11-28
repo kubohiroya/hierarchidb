@@ -1,7 +1,7 @@
-import { NotificationSystem } from '@hierarchidb/ui-shell/components';
-import { SimpleBFFAuthProvider } from '@hierarchidb/ui-shell/ui-auth';
-import { LanguageProvider } from '@hierarchidb/ui-shell/ui-i18n';
-import { ThemeProvider as CustomThemeProvider } from '@hierarchidb/ui-shell/ui-theme';
+import { NotificationSystem } from '@hierarchidb/ui-plugin-shell/components';
+import { SimpleBFFAuthProvider } from '@hierarchidb/ui-plugin-shell/ui-auth';
+import { LanguageProvider } from '@hierarchidb/ui-plugin-shell/ui-i18n';
+import { ThemeProvider as CustomThemeProvider } from '@hierarchidb/ui-plugin-shell/ui-theme';
 import { Box, CircularProgress, CssBaseline } from '@mui/material';
 import { StyledEngineProvider } from '@mui/material/styles';
 import type { ReactNode } from 'react';

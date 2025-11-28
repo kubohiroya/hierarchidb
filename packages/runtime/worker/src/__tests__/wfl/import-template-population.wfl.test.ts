@@ -97,8 +97,6 @@ describe('WFL import template: Total Population by Country', () => {
     const rootId = tree.rootId as NodeId;
 
     const template = await loadTemplate();
-    expect(() => buildImportNodes(template)).toThrow(/rootNodeIds/);
-    return;
     const importNodes = buildImportNodes(template);
 
     const result = await importExportAPI.importNodes({

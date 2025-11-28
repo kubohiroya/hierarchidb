@@ -1,4 +1,4 @@
-import { useSimpleBFFAuth } from '@hierarchidb/ui-shell/ui-auth';
+import { useSimpleBFFAuth } from '@hierarchidb/ui-plugin-shell/ui-auth';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBootProgress } from '../contexts/BootProgressProvider.js';

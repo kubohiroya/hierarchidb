@@ -13,7 +13,7 @@ import {
   type MultiDialogSize,
   normalizeDialogState,
   useMultiStepDialogContext,
-} from '@hierarchidb/ui-shell/ui-dialog';
+} from '@hierarchidb/ui-plugin-shell/ui-dialog';
 import {
   TreeConsolePanel,
   type TreeConsolePanelBreadcrumbRendererProps,
@@ -22,7 +22,7 @@ import {
   type TreeTableColumn,
   TreeTableSearchInput,
 } from '@hierarchidb/ui-treeconsole-base';
-import type { BreadcrumbNode } from '@hierarchidb/ui-shell/ui-treeconsole-breadcrumb';
+import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import { DualKeyMap } from '@hierarchidb/util';
 import {
   Close as CloseIcon,

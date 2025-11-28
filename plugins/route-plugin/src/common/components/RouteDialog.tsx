@@ -15,7 +15,7 @@ import { notify } from '@hierarchidb/components';
 import { useDialogDraft, type DraftData } from '@hierarchidb/plugin-ui-sdk';
 import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 import { useState } from 'react';
-import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-client';
+import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import {
   HeadlessMultiStepDialog,
   FRAME_CONSTANTS,

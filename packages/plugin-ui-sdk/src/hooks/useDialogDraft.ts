@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NodeId, TreeId, TreeNode, NodeType, TreeNodeMetadata } from '@hierarchidb/common-types';
 import type { DraftAPI, TreeQueryAPI } from '@hierarchidb/common-api';
-import type { WorkerClientRef } from '@hierarchidb/runtime-client';
+import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import { Remote } from 'comlink';
 

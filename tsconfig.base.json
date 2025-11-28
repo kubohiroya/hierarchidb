@@ -197,11 +197,17 @@
       "@hierarchidb/route-searoute/*": [
         "packages/features/route-searoute/dist/*"
       ],
-      "@hierarchidb/runtime-client": [
-        "packages/runtime/client/src/index.ts"
+      "@hierarchidb/ui-worker-client": [
+        "packages/ui/worker-client/src/index.ts"
       ],
-      "@hierarchidb/runtime-client/*": [
-        "packages/runtime/client/src/*"
+      "@hierarchidb/ui-worker-client/*": [
+        "packages/ui/worker-client/src/*"
+      ],
+      "@hierarchidb/ui-worker-provider": [
+        "packages/ui/worker-provider/src/index.ts"
+      ],
+      "@hierarchidb/ui-worker-provider/*": [
+        "packages/ui/worker-provider/src/*"
       ],
       "@hierarchidb/runtime-shared-fetch-metadata": [
         "packages/runtime-shared/fetch-metadata/src/index.ts"
@@ -416,11 +422,11 @@
       "@hierarchidb/ui-routing/*": [
         "packages/ui/routing/src/*"
       ],
-      "@hierarchidb/ui-shell": [
-        "packages/ui-shell/src/index.ts"
+      "@hierarchidb/ui-plugin-shell": [
+        "packages/ui/plugin-shell/src/index.ts"
       ],
-      "@hierarchidb/ui-shell/*": [
-        "packages/ui-shell/src/*"
+      "@hierarchidb/ui-plugin-shell/*": [
+        "packages/ui/plugin-shell/src/*"
       ],
       "@hierarchidb/ui-search-result-window": [
         "packages/ui/search-result-window/src/index.ts"
