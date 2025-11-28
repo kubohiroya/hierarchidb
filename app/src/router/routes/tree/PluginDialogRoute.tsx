@@ -39,8 +39,6 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
   // State
   const [isOpen, setIsOpen] = React.useState(true);
 
-  const useWorkerHook = getWorkerClientHook() ?? (() => null);
-
   const treeId: TreeId | undefined = tree?.id ?? (params.treeId as TreeId | undefined);
   const effectiveTargetNodeId: NodeId | undefined =
     targetNodeId ?? (params.targetNodeId as NodeId | undefined);
