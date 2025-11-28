@@ -1,18 +1,20 @@
 import { useMemo } from 'react';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import {
-  getWorkerClientHook,
-  type WorkerClientRef,
-} from '@hierarchidb/ui-worker-provider';
+import { getWorkerClientHook, type WorkerClientRef } from '../ui/workerClientHook.js';
 
-interface UseWorkerAPIResult {
+export interface UseWorkerAPIResult {
   api: Remote<WorkerAPI> | null;
   loading: boolean;
   error: Error | null;
   initialize: () => Promise<void>;
 }
 
+/**
+ * Convenience hook to access the shared Worker API from components that rely on
+ * WorkerProvider/WorkerClientProvider. Lives in ui-worker-provider so it stays
+ * co-located with the registration mechanism.
+ */
 export function useWorkerAPI(): UseWorkerAPIResult {
   const client = useMemo(() => {
     try {
@@ -49,4 +51,3 @@ export function useWorkerAPI(): UseWorkerAPIResult {
     initialize: client.initialize,
   } satisfies UseWorkerAPIResult;
 }
-

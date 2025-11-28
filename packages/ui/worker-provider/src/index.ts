@@ -5,3 +5,4 @@ export { WorkerSingletonProvider, useWorker } from './provider/WorkerSingletonPr
 export type { WorkerProviderProps } from './provider/WorkerProvider.js';
 export type { WorkerClientHook, WorkerClientRef } from './ui/workerClientHook.js';
 export { getWorkerClientHook, registerWorkerClientHook } from './ui/workerClientHook.js';
+export { useWorkerAPI } from './hooks/useWorkerAPI.js';

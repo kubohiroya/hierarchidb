@@ -1,6 +1,5 @@
 export { wrapDialogStepComponent } from './dialog/wrapDialogStepComponent.js';
 export * from './types.js';
-export { useWorkerAPI } from './hooks/useWorkerAPI.js';
 export {
   useDraft,
 } from './hooks/useDraft.js';
@@ -20,12 +19,6 @@ export type { BasicInfo } from './utils/basicInfo.js';
 export { normalizeBasicInfo, mergeBasicInfo } from './utils/basicInfo.js';
 export { BasicInfoStep } from './dialog/steps/BasicInfoStep.js';
 export type { BasicInfoStepProps } from './dialog/steps/BasicInfoStep.js';
-export {
-  useStepCapabilities,
-} from './hooks/useStepCapabilities.js';
-export type {
-  UseStepCapabilitiesResult,
-} from './hooks/useStepCapabilities.js';
 export type {
   PluginDefinition,
   TreePluginInfo,

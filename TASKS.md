@@ -8913,6 +8913,10 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-14"></a>
 
+- 2025-11-27 09:40 progress: refactor/ui/worker-client-provider-rename — plugin-ui-sdk から useWorkerAPI/useStepCapabilities/DialogStateChannel のホスト寄り API を除去し、重複していた型定義を plugin-service-api への forward export に一本化。useWorkerAPI を ui-worker-provider へ移設し、新しいエクスポートを追加。
+- 2025-11-27 09:38 command: pnpm --filter @hierarchidb/plugin-ui-sdk typecheck — exit 0。
+- 2025-11-27 09:37 command: pnpm --filter @hierarchidb/ui-worker-provider typecheck — exit 0。
+- 2025-11-27 09:36 command: pnpm --filter @hierarchidb/plugin-ui-host typecheck — exit 0。
 - 2025-11-26 17:12 command: pnpm --filter @hierarchidb/shape-plugin test — exit 0（UI hook テストは ENABLE_SHAPE_UI_TESTS=0 のため skip、その他ユニットテスト通過）。
 - 2025-11-26 17:11 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。
 - 2025-11-26 17:10 progress: refactor/shape/shape-entity-service — ShapeEntityService を CoreDB/DraftService ベースの TreeNode data/draft 実装へ刷新し、BaseEntityService と EphemeralDB ワーキングコピー依存を排除。API createDraft/commitDraft のフローを DraftAPI 前提に揃え、関連テストの import パスを修正。
