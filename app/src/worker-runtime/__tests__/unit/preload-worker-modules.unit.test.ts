@@ -22,7 +22,7 @@ const mockStoreRegistry = {
   registerPeer: vi.fn(),
 };
 
-vi.mock('@hierarchidb/runtime-worker', () => ({
+vi.mock('@hierarchidb/runtime-worker-worker', () => ({
   importPluginWorker: importPluginWorkerMock,
   storeRegistry: mockStoreRegistry,
 }));

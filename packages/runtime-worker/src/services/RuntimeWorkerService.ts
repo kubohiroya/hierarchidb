@@ -1,5 +1,5 @@
 /**
- * TODO(runtime-worker-factory): add vitest coverage for
+ * TODO(runtime-worker-worker-factory): add vitest coverage for
  * register/get/unregister (positive + fallback) and ensure the new
  * registry works across multiple nodeType consumers without leaking
  * per-package state. Tests should live under `src/__tests__` once

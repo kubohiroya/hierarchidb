@@ -2,7 +2,7 @@ import { Dexie } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { StoragePort } from '../ports.js';
 
-// runtime-only; keep types in comments to avoid TS noUnusedLocals
+// runtime-worker-only; keep types in comments to avoid TS noUnusedLocals
 // type FileMeta = { id: string; sizeBytes?: number; committed?: boolean; createdAt: number; updatedAt: number; extra?: Record<string, any> };
 // type FileChunk = { fileId: string; index: number; data: ArrayBuffer };
 

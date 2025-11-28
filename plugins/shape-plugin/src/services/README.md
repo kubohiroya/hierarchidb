@@ -204,7 +204,7 @@ export class ShapesWorkerExtensions implements WorkerAPIExtension {
     // データベース初期化
     await this.service.initialize();
     
-    // runtime-worker を用いた統合。従来の WorkerPool 初期化は廃止済み。
+    // runtime-worker-worker を用いた統合。従来の WorkerPool 初期化は廃止済み。
   }
   
   getPluginAPI(): ShapesPluginAPI {

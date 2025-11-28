@@ -56,5 +56,5 @@ export const BASEMAP_CONSTANTS = {
 // Plugin information
 export const PLUGIN_INFO = BaseMapPluginManifest;
 
-// Optional runtime wiring (no-op)
+// Optional runtime-worker wiring (no-op)
 export class RuntimeWiring {}

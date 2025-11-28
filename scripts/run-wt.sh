@@ -14,7 +14,7 @@ set -euo pipefail
 #   scripts/run-wt.sh open <branch>
 #
 # Notes:
-# - <repo-dir> is a directory inside this repo (e.g. packages/runtime-worker)
+# - <repo-dir> is a directory inside this repo (e.g. packages/runtime-worker-worker)
 # - Worktree path default: "${WT_BASE:-../wt-<repo>}/<repo-dir>/<branch>"
 # - Branch is created from <base> (default: origin/main if exists, otherwise main/master)
 

@@ -1,7 +1,7 @@
 /**
- * App-local module identifiers and helpers for runtime/workers.
+ * App-local module identifiers and helpers for runtime-worker/workers.
  *
- * This file supersedes the former @hierarchidb/runtime-shared-module-paths package
+ * This file supersedes the former @hierarchidb/runtime-worker-shared-module-paths package
  * for the application bundle. It resolves plugin workers via the static
  * registry emitted by scripts/generate-plugin-loader.mjs.
  */
@@ -12,7 +12,7 @@ import { WorkerDiTokens } from './di/tokens.js';
 import { pluginWorkerModuleMap } from './plugin-registry/index.js';
 
 export const RUNTIME_MODULE_IDS = {
-  runtimeWorker: '@hierarchidb/runtime-worker',
+  runtimeWorker: '@hierarchidb/runtime-worker-worker',
   runtimeWorkerBootstrap: '@hierarchidb/ui-worker-client',
 } as const;
 
@@ -44,7 +44,7 @@ export type PluginWorkerModule = Record<string, unknown>;
 
 /*
 const runtimeWorkerImporter = () =>
-  import('@hierarchidb/runtime-worker') as Promise<RuntimeWorkerModule>;
+  import('@hierarchidb/runtime-worker-worker') as Promise<RuntimeWorkerModule>;
 const runtimeWorkerBootstrapImporter = () =>
   import('@hierarchidb/ui-worker-client') as Promise<Record<string, unknown>>;
  */
@@ -55,7 +55,7 @@ const optionalFeatureImporters: Record<OptionalFeatureId, () => Promise<Optional
 };
 
 /**
- * Dynamically import the runtime worker bootstrap utilities.
+ * Dynamically import the runtime-worker worker bootstrap utilities.
 export function importRuntimeWorkerBootstrap() {
   return runtimeWorkerBootstrapImporter();
 }

@@ -7,7 +7,7 @@ export type {
   TreeNode,
 } from './handlers/HierarchicalEntityHandler.js';
 
-// Working copy helpers removed (TreeNode draft lifecycle is handled by runtime-worker)
+// Working copy helpers removed (TreeNode draft lifecycle is handled by runtime-worker-worker)
 export type { EntityDraftAdapter } from './draft/adapter.js';
 export { createEntityDraftAdapter } from './draft/adapter.js';
 export {
@@ -45,14 +45,6 @@ export type {
 // Plugin registry API types
 export { PluginExtensionRegistry } from './extensions/PluginExtensionRegistry.js';
 
-// Worker bridge utilities
-export {
-  getWorkerBridge,
-  __setWorkerBridgeClientRef,
-  __getWorkerBridgeClientRef,
-  ensureWorkerAPI,
-} from './worker/bridge.js';
-export type { WorkerBridge } from './worker/bridge.js';
 export {
   createComlinkEventBridge,
 } from './worker/comlinkEventBridge.js';

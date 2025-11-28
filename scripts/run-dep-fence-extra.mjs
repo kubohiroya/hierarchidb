@@ -2,7 +2,7 @@
 // Extra dependency guards complementing dep-fence policies.
 // - Enforce workspace:* for @hierarchidb/* intra-repo deps
 // - For React Router v7+, forbid @types/react-router (v5 types)
-// - Detect unresolved runtime dependencies (installed-but-not-resolvable)
+// - Detect unresolved runtime-worker dependencies (installed-but-not-resolvable)
 // - Advise when lockfile is newer than node_modules (restart + install)
 
 import fs from 'fs';

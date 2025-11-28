@@ -70,7 +70,7 @@ const peerStoreAdapter = {
   },
 };
 
-vi.mock('@hierarchidb/runtime-worker', () => ({
+vi.mock('@hierarchidb/runtime-worker-worker', () => ({
   storeRegistry: {
     getPeer: (nodeType: string) => (nodeType === 'folder' ? peerStoreAdapter : undefined),
     registerPeer: () => {},
@@ -108,7 +108,7 @@ describe('peerDialogPersistence storeRegistry fallback', () => {
     registry.setWarningExclusions(['folder']);
   });
 
-  it('falls back to runtime storeRegistry when no override is provided', async () => {
+  it('falls back to runtime-worker storeRegistry when no override is provided', async () => {
     const nodeId = 'fallback-node';
     await setPeerDisplayMode('folder', nodeId, 'full-screen');
     const mode = await getPeerDisplayMode('folder', nodeId);

@@ -159,7 +159,7 @@ export interface PluginLifecycleAPI {
   // ==================
 
   /**
-   * Register a plugin definition with the runtime.
+   * Register a plugin definition with the runtime-worker.
    * @param definition - Plugin manifest and wiring information to register.
    * @returns A promise that resolves with registration details including the assigned node type.
    */

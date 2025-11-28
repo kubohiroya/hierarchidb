@@ -2,7 +2,7 @@
  * TreeConsole subscription hook.
  *
  * Manages live worker subscriptions and keeps the SSOT snapshots updated
- * when change events stream in from the runtime.
+ * when change events stream in from the runtime-worker.
  */
 
 import type { WorkerAPI } from '@hierarchidb/common-api';

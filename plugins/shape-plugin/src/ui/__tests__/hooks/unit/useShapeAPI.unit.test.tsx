@@ -8,7 +8,7 @@ import { useShapeAPI, useShapeAPIGetter } from '../../../hooks/useShapeAPI.js';
 import { registerWorkerClientHook } from '@hierarchidb/ui-worker-provider';
 import type { ShapeAPI } from '../../../shared/index.ts';
 
-// Mock @hierarchidb/runtime-shared-client
+// Mock @hierarchidb/runtime-worker-shared-client
 const mockWorkerAPI = {
   getPluginRegistryAPI: vi.fn(),
 };

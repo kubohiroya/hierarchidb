@@ -21,7 +21,7 @@ for (const file of jsFiles) {
   if (!original.includes('stageWorker.entry.js')) continue;
 
   const replaced = rewriteImport(original, [
-    [/(new Worker\(new URL\(\"\.\/stageWorker\.entry\.js\", import\.meta\.url\), \{ type: \"module\" \}\))/g, "new Worker(new URL('@hierarchidb/runtime-worker/stage-worker', import.meta.url), { type: 'module' })"]
+    [/(new Worker\(new URL\(\"\.\/stageWorker\.entry\.js\", import\.meta\.url\), \{ type: \"module\" \}\))/g, "new Worker(new URL('@hierarchidb/runtime-worker-worker/stage-worker', import.meta.url), { type: 'module' })"]
   ]);
   if (original !== replaced) {
     writeFileSync(fullPath, replaced, 'utf-8');

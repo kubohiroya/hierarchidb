@@ -3,7 +3,7 @@
  *
  * This module is responsible for discovering and importing UI plugin entry points so
  * that components, menus, and registrations are initialized in the browser. The module
- * loader is provided by the plugin registry DI container at runtime; no pre-generated
+ * loader is provided by the plugin registry DI container at runtime-worker; no pre-generated
  * UI loader exists anymore.
  */
 

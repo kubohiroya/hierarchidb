@@ -36,14 +36,14 @@ const custom = [
     ],
   },
 
-  // Shared/common/runtime packages must not import node-type plugin-loader (avoid dependency loops)
+  // Shared/common/runtime-worker packages must not import node-type plugin-loader (avoid dependency loops)
   {
     id: 'no-plugin-imports-from-shared',
     when: (ctx) => {
       const name = ctx.pkg?.name || '';
-      return name.startsWith('@hierarchidb/runtime-') || name.startsWith('@hierarchidb/common-');
+      return name.startsWith('@hierarchidb/runtime-worker-') || name.startsWith('@hierarchidb/common-');
     },
-    because: 'Shared/common/runtime packages must not depend on node-type plugin-loader to avoid cycles.',
+    because: 'Shared/common/runtime-worker packages must not depend on node-type plugin-loader to avoid cycles.',
     rules: [
       { rule: 'import-path-ban', options: { forbid: ['^@hierarchidb/.+-plugin(?:/|$)'] }, severity: 'ERROR' },
     ],
@@ -124,7 +124,7 @@ const custom = [
         rule: 'import-path-ban',
         options: {
           forbid: [
-            '^@hierarchidb/(common-(?:api|auth|types)|util|runtime-(?:client|worker)|plugin-(?:presentation|registry|ui-sdk)|map-adapter|(?:basemap|folder|linker|location|resolver|route|shape|spreadsheet|styler|timeline)-plugin|tabular-source-xlsx)(?:/|$)',
+            '^@hierarchidb/(common-(?:api|auth|types)|util|runtime-worker-(?:client|worker)|plugin-(?:presentation|registry|ui-sdk)|map-adapter|(?:basemap|folder|linker|location|resolver|route|shape|spreadsheet|styler|timeline)-plugin|tabular-source-xlsx)(?:/|$)',
           ],
           message: 'Use @hierarchidb/features-core/{module} instead of {importPath}.',
         },

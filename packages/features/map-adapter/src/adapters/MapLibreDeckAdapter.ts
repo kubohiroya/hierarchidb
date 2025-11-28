@@ -1,5 +1,5 @@
 // Lightweight adapter to bind MapLibre GL JS and deck.gl together on demand.
-// Heavy libs are peerDependencies; pass constructors at runtime to avoid bundling.
+// Heavy libs are peerDependencies; pass constructors at runtime-worker to avoid bundling.
 
 import type { MapAdapterPort } from '../ports.js';
 import type { DeckLayerSpec, MapStyleSpec, ViewState } from '../types.js';
@@ -119,7 +119,7 @@ export class MapLibreDeckAdapter implements MapAdapterPort {
       this._Deck = this.opts.Deck;
       return { maplibregl: this._maplibregl, Deck: this._Deck };
     }
-    // Lazy load at runtime. Allow overrides via env/global or options.
+    // Lazy load at runtime-worker. Allow overrides via env/global or options.
     const globalOverrides = globalThis as EnvOverrides;
     const viteEnv = (typeof import.meta !== 'undefined'
       ? ((import.meta as { env?: ViteEnvOverrides }).env ?? {})
@@ -145,7 +145,7 @@ export class MapLibreDeckAdapter implements MapAdapterPort {
     const modDeck = await import(/* @vite-ignore */ deckName);
     const maplibregl = resolveMapLibreCtor(modMap);
     const Deck = resolveDeckCtor(modDeck);
-    if (!maplibregl?.Map || !Deck) throw new Error('Failed to load maplibre-gl/deck.gl at runtime');
+    if (!maplibregl?.Map || !Deck) throw new Error('Failed to load maplibre-gl/deck.gl at runtime-worker');
     this._maplibregl = maplibregl;
     this._Deck = Deck;
     return { maplibregl, Deck };

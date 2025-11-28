@@ -6,7 +6,7 @@ import type {
   UnifiedProgressInfo,
 } from '@hierarchidb/common-api';
 import { useBatchProgress, createAdapterFromProgressSubscribe } from '@hierarchidb/batch';
-import { getWorkerBridge, type WorkerBridge } from '@hierarchidb/plugin-service-sdk';
+import { getWorkerBridge, type WorkerBridge } from '@hierarchidb/ui-worker-client';
 
 export interface ShapeProgress {
   total: number;

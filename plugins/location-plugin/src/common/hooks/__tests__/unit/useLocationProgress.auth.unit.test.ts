@@ -10,7 +10,7 @@ const bridgeMock = {
   getBatchSessionStatus: vi.fn(),
 };
 
-vi.mock('@hierarchidb/plugin-service-sdk', () => ({
+vi.mock('@hierarchidb/ui-worker-client', () => ({
   getWorkerBridge: () => bridgeMock,
 }));
 

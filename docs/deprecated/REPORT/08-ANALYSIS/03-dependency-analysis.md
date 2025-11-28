@@ -46,7 +46,7 @@ Update Status:
 ### Production Dependencies
 
 ```typescript
-// Critical runtime dependencies
+// Critical runtime-worker dependencies
 const coreDependencies = {
   react: {
     version: '19.0.0',

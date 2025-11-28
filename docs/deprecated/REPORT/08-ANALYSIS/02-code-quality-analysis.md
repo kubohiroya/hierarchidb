@@ -345,11 +345,11 @@ const architectureViolations = [
   },
   
   {
-    violation: 'Core package has runtime dependencies',
+    violation: 'Core package has runtime-worker dependencies',
     severity: 'Critical',
     issue: 'Core should be types-only',
     dependencies: ['nanoid'],
-    fix: 'Move runtime code to worker package'
+    fix: 'Move runtime-worker code to worker package'
   },
   
   {

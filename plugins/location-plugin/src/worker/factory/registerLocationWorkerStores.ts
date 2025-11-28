@@ -29,7 +29,7 @@ async function resolveStoreRegistry(options: RegisterLocationWorkerStoresOptions
     return runtime.storeRegistry as StoreRegistry;
   } catch (error) {
     if (import.meta.env?.DEV) {
-      console.warn('[location-worker] failed to import runtime worker module', error);
+      console.warn('[location-worker] failed to import runtime-worker worker module', error);
     }
     return null;
   }

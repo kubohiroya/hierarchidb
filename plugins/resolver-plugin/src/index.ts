@@ -45,9 +45,9 @@ export { PLUGIN_MANIFEST as ResolverPluginManifest } from './plugin-manifest.js'
 
 // Plugin definition exports removed: metadata is sourced from package.json
 
-// Optional runtime wiring (register stub for runtime worker integration)
+// Optional runtime-worker wiring (register stub for runtime-worker worker integration)
 export class RuntimeWiring {
   static async registerRuntimeWorkerAdapters(): Promise<void> {
-    // No resolver-specific runtime worker adapters are required at this point.
+    // No resolver-specific runtime-worker worker adapters are required at this point.
   }
 }

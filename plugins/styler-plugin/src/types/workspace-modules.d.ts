@@ -1,5 +1,5 @@
 declare module '@hierarchidb/ui-worker-provider' {
-  export { getWorkerClientHook, type WorkerClientRef } from '../../../packages/runtime/client/src/index.js';
+  export { getWorkerClientHook, type WorkerClientRef } from '../../../packages/runtime-worker/client/src/index.js';
 }
 
 declare module '@hierarchidb/ui-dialog' {

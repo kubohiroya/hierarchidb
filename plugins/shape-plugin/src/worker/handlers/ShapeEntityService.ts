@@ -17,18 +17,18 @@ import {
   type ShapeEntity,
   type ShapeDraft,
 } from '../../common/shared/index.js';
-import { CoreDB } from '../../../../../packages/runtime/worker/src/services/CoreDB.js';
+import { CoreDB } from '../../../../../packages/runtime-worker/src/services/CoreDB.js';
 import {
   commitTreeNodeDraft,
   type CommitResult as DraftCommitResult,
-} from '../../../../../packages/runtime/worker/src/services/draft/commitOperations.js';
-import { discardTreeNodeDraft } from '../../../../../packages/runtime/worker/src/services/draft/cleanupOperations.js';
+} from '../../../../../packages/runtime-worker/src/services/draft/commitOperations.js';
+import { discardTreeNodeDraft } from '../../../../../packages/runtime-worker/src/services/draft/cleanupOperations.js';
 import {
   getTreeNode,
   updateTreeNodeDraftData,
   updateTreeNodeDraftMetadata,
-} from '../../../../../packages/runtime/worker/src/services/draft/lookupOperations.js';
-import { initTreeNode } from '../../../../../packages/runtime/worker/src/services/draft/initOperations.js';
+} from '../../../../../packages/runtime-worker/src/services/draft/lookupOperations.js';
+import { initTreeNode } from '../../../../../packages/runtime-worker/src/services/draft/initOperations.js';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;

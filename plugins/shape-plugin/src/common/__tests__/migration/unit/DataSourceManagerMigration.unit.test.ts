@@ -4,7 +4,7 @@
    * - fetch-metadataDataSourceManager
  * - GeoBoundariesOpenStreetMap
  * -
-   * - @hierarchidb/runtime-ui-datasource
+   * - @hierarchidb/runtime-worker-ui-datasource
  * - fetch-save-metadata
  * - DataSourceManager
   */

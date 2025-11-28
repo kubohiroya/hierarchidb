@@ -6,7 +6,7 @@ import {
 } from '@hierarchidb/runtime-worker';
 
 /**
- * TODO(location-runtime-worker-integration): consider adding a local
+ * TODO(location-runtime-worker-worker-integration): consider adding a local
  * smoke test that ensures getLocationRuntimeWorkerClient returns a
  * runner configured via registerLocationRuntimeWorkerAdapters when the
  * LOCATION_RUNTIME_WORKER flag is enabled. This will replace the manual

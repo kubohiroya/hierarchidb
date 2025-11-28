@@ -21,8 +21,8 @@ const projectRoots = [
   'packages/backend/bff',
   'packages/common/api',
   'packages/common/types',
-  'packages/runtime/client',
-  'packages/runtime/worker',
+  'packages/runtime-worker/client',
+  'packages/runtime-worker/worker',
   'packages/plugin-ui-host',
   'packages/plugin-ui-sdk',
   'packages/plugin-presentation',
@@ -89,8 +89,8 @@ export default defineConfig({
     alias: {
       // Map frequently referenced workspace packages to source to avoid prebuilding
       '@hierarchidb/ui-dialog': path.resolve(__dirname, './packages/ui/dialog/src/index.ts'),
-      '@hierarchidb/runtime-ui-plugin-dialog': path.resolve(__dirname, './packages/runtime-ui/plugin-dialog/src/index.ts'),
-      '@hierarchidb/ui-worker-client': path.resolve(__dirname, './packages/runtime/client/src/index.ts'),
+      '@hierarchidb/runtime-ui-plugin-dialog': path.resolve(__dirname, './packages/runtime-worker-ui/plugin-dialog/src/index.ts'),
+      '@hierarchidb/ui-worker-client': path.resolve(__dirname, './packages/runtime-worker/client/src/index.ts'),
       '@hierarchidb/common-api': path.resolve(__dirname, './packages/common/api/src/index.ts'),
       '@hierarchidb/ui-core': path.resolve(__dirname, './packages/ui/core/src/index.ts'),
       '@hierarchidb/util': path.resolve(__dirname, './packages/util/src/index.ts'),

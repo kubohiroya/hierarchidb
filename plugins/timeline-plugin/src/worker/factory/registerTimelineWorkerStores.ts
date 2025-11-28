@@ -35,7 +35,7 @@ async function resolveStoreRegistry(options: RegisterTimelineWorkerStoresOptions
     return (runtimeModule as unknown as { storeRegistry?: StoreRegistry }).storeRegistry ?? null;
   } catch (error) {
     if (import.meta.env?.DEV) {
-      console.warn('[timeline-worker] failed to resolve runtime worker module', error);
+      console.warn('[timeline-worker] failed to resolve runtime-worker worker module', error);
     }
     return null;
   }

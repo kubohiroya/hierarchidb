@@ -80,7 +80,7 @@ async function resolveStoreRegistry(): Promise<StoreRegistryShim | null> {
         }
       } catch (error) {
         if (typeof console !== 'undefined') {
-          console.debug('[UIPersistenceRegistry] runtime-worker storeRegistry unavailable', error);
+          console.debug('[UIPersistenceRegistry] runtime-worker-worker storeRegistry unavailable', error);
         }
       }
       return null;

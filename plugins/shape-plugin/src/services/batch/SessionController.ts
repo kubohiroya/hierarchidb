@@ -68,15 +68,15 @@ export class SessionController {
       throw new Error(`Session ${this.sessionId} already initialized`);
     }
 
-    // Prefer runtime-worker adapters when a client is available; otherwise optionally fall back to WorkerPool-backed ones
+    // Prefer runtime-worker-worker adapters when a client is available; otherwise optionally fall back to WorkerPool-backed ones
     const client = await getShapeRuntimeWorkerClient();
     if (client) {
       this.simplify1Adapter = new RuntimeWorkerSimplify1Adapter();
       this.simplify2Adapter = new RuntimeWorkerSimplify2Adapter();
       this.vectorTileAdapter = new RuntimeWorkerVectorTileAdapter();
     } else {
-      // No runtime-worker: raise explicit guidance (fallback path removed)
-      throw new Error('Shape runtime worker unavailable. Legacy WorkerPool fallback has been removed.');
+      // No runtime-worker-worker: raise explicit guidance (fallback path removed)
+      throw new Error('Shape runtime-worker worker unavailable. Legacy WorkerPool fallback has been removed.');
     }
   }
 

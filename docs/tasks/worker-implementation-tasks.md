@@ -1734,7 +1734,7 @@ describe('Worker Integration Tests', () => {
     // modulePaths と WorkerModuleLoader を経由し、アプリ本番と同一ルートで Worker を初期化する。
     const modulePaths = await import('@hierarchidb/runtime-shared-module-paths');
     await modulePaths.importRuntimeWorker();
-    const { ensureWorkerRuntime } = await import('../../app/src/worker-runtime/WorkerModuleLoader');
+    const { ensureWorkerRuntime } = await import('../../app/src/worker-runtime-worker/WorkerModuleLoader');
     api = await ensureWorkerRuntime();
   });
   

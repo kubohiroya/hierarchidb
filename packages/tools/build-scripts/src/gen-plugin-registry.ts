@@ -1,13 +1,13 @@
 /**
  * Script: gen-plugin-registry
  * Purpose: Generate the canonical plugin registry artefact consumed by both the app and
- *          runtime worker. The registry is emitted to `packages/plugin-registry/generated/registry.ts`
- *          and other consumers derive runtime data from that single source.
+ *          runtime-worker worker. The registry is emitted to `packages/plugin-registry/generated/registry.ts`
+ *          and other consumers derive runtime-worker data from that single source.
  * Invocation: executed via `pnpm --filter @hierarchidb/tools-build-scripts run gen-plugin-registry`
  *             (root alias: `pnpm run tools:gen-plugin-registry`).
  * Output: writes `packages/plugin-registry/generated/registry.ts`. Legacy artefacts
  *         under `app/src/generated/*`, `app/src/plugin-registry/generated/*`,
- *         `packages/runtime/worker/src/generated/*`, and `types/generated/*` are removed.
+ *         `packages/runtime-worker/worker/src/generated/*`, and `types/generated/*` are removed.
  */
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
@@ -922,7 +922,7 @@ async function removeLegacyArtifacts(): Promise<void> {
   const legacyPaths = [
     path.join(appDir, 'src', 'generated'),
     path.join(appDir, 'src', 'plugin-registry', 'generated'),
-    path.join(repoRoot, 'packages', 'runtime/worker', 'src', 'generated'),
+    path.join(repoRoot, 'packages', 'runtime-worker/worker', 'src', 'generated'),
     path.join(repoRoot, 'types', 'generated'),
   ];
 

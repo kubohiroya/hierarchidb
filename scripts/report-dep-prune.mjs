@@ -50,7 +50,6 @@ async function loadConfigIgnores(pkgName) {
       argvIgnores.push(...v.split(',').map((s)=>s.trim()).filter(Boolean));
     } else if (arg === '--ignore') {
       // support next token style: --ignore a,b
-      // eslint-disable-next-line no-constant-condition
       continue;
     }
   }
@@ -150,7 +149,6 @@ let any = false;
 for (const r of results) {
   if ((r.candidatesRemove.length + r.candidatesMoveToDev.length) === 0) continue;
   any = true;
-  // eslint-disable-next-line no-console
   console.log(`\n${r.name} (${path.relative(repoRoot, r.pkgDir)})`);
   if (r.candidatesRemove.length) {
     console.log('  Remove (not referenced):');
@@ -162,4 +160,4 @@ for (const r of results) {
   }
 }
 
-if (!any) console.log('No unused runtime dependencies detected.');
+if (!any) console.log('No unused runtime-worker dependencies detected.');

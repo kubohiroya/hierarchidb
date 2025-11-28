@@ -66,7 +66,7 @@ const staticMap: Record<string, React.ComponentType<SvgIconProps> | undefined> =
   Timeline: AccessTimeIcon,
 };
 
-// Dynamic icon resolution now relies on the global map populated at runtime
+// Dynamic icon resolution now relies on the global map populated at runtime-worker
 // (set via setGlobalMuiIconMap from app startup) plus a small static fallback map.
 
 export function getMuiIconComponent(muiIconName?: string, emoji?: string): ReactNode {

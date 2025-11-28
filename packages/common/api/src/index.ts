@@ -21,7 +21,6 @@ export type {
   StepCapabilities,
   DraftData,
 } from './MultiStepDialogAPI.js';
-export type { PluginLifecycleAPI } from '@hierarchidb/plugin-service-api';
 // New exports
 // Runtime wiring interfaces for plugin bootstrap (optional capabilities)
 export type { PluginRuntimeWiring } from './RuntimeWiring.js';

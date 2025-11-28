@@ -3,7 +3,7 @@
 // Usage:
 //   node scripts/start-wt.mjs <repo-dir> [--type feat|fix|refactor|chore|docs] [--base origin/main] [--wt-base ../wt-<repo>]
 // Example:
-//   node scripts/start-wt.mjs packages/runtime-worker --type feat
+//   node scripts/start-wt.mjs packages/runtime-worker-worker --type feat
 
 import { readFileSync, existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';

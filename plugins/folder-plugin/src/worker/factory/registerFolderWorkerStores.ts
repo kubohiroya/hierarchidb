@@ -27,7 +27,7 @@ async function resolveStoreRegistry(options: RegisterFolderWorkerStoresOptions =
     return runtime.storeRegistry ?? null;
   } catch (error) {
     if (import.meta.env?.DEV) {
-      console.warn('[folder-worker] failed to import runtime worker module', error);
+      console.warn('[folder-worker] failed to import runtime-worker worker module', error);
     }
     return null;
   }

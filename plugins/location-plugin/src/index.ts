@@ -25,7 +25,7 @@ export { LocationBatchSessionManager } from './services/batch/BatchSessionManage
 // Import and re-export the plugin definition
 // Plugin definition exports removed: metadata is provided via src/plugin-manifest.ts
 
-// Optional runtime wiring for shared bootstrap (no shared imports)
+// Optional runtime-worker wiring for shared bootstrap (no shared imports)
 type GlobalScope = Record<string, unknown>;
 
 export class RuntimeWiring {

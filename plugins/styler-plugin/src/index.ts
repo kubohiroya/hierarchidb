@@ -77,9 +77,9 @@ export const PLUGIN_INFO = PLUGIN_MANIFEST;
  * : HierarchiDB
  * :
  */
-// Optional runtime wiring (no-op)
+// Optional runtime-worker wiring (no-op)
 export const registerRuntimeWorkerAdapters = async (): Promise<void> => {
-  // Styler plugin currently relies on default runtime worker lifecycle behaviour.
+  // Styler plugin currently relies on default runtime-worker worker lifecycle behaviour.
 };
 
 let initialized = false;
@@ -88,5 +88,5 @@ export async function onRegister(): Promise<void> {
   if (initialized) return;
   initialized = true;
   // Styler plugin currently has no pre-load side effects; this hook
-  // exists so the runtime executes once for symmetry with other plugins.
+  // exists so the runtime-worker executes once for symmetry with other plugins.
 }

@@ -309,7 +309,7 @@ importers:
         version: link:../plugins/route-plugin
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
-        version: link:../packages/runtime/worker
+        version: link:../packages/runtime-worker
       '@hierarchidb/shape-plugin':
         specifier: workspace:*
         version: link:../plugins/shape-plugin
@@ -820,7 +820,7 @@ importers:
         version: link:../common/types
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
-        version: link:../runtime/worker
+        version: link:../runtime-worker
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../ui/dialog
@@ -919,7 +919,7 @@ importers:
         version: link:../common/types
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
-        version: link:../runtime/worker
+        version: link:../runtime-worker
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../ui/dialog
@@ -1027,17 +1027,14 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)
 
-  packages/runtime/worker:
+  packages/runtime-worker:
     dependencies:
       '@hierarchidb/plugin-registry':
         specifier: workspace:*
-        version: link:../../plugin-registry
+        version: link:../plugin-registry
       '@hierarchidb/plugin-service-api':
         specifier: workspace:*
-        version: link:../../plugin-service-api
-      '@maplibre/vt-pbf':
-        specifier: ^4.0.3
-        version: 4.0.3
+        version: link:../plugin-service-api
       comlink:
         specifier: ^4.4.2
         version: 4.4.2
@@ -1074,43 +1071,46 @@ importers:
         version: 2.2.0
       '@hierarchidb/auth-recovery':
         specifier: workspace:*
-        version: link:../../features/auth-recovery
+        version: link:../features/auth-recovery
       '@hierarchidb/common-api':
         specifier: workspace:*
-        version: link:../../common/api
+        version: link:../common/api
       '@hierarchidb/common-types':
         specifier: workspace:*
-        version: link:../../common/types
+        version: link:../common/types
       '@hierarchidb/compute':
         specifier: workspace:*
-        version: link:../../features/compute
+        version: link:../features/compute
       '@hierarchidb/download':
         specifier: workspace:*
-        version: link:../../features/download
+        version: link:../features/download
       '@hierarchidb/feature-registry':
         specifier: workspace:*
-        version: link:../../features/feature-registry
+        version: link:../features/feature-registry
       '@hierarchidb/import-export':
         specifier: workspace:*
-        version: link:../../features/import-export
+        version: link:../features/import-export
       '@hierarchidb/map-adapter':
         specifier: workspace:*
-        version: link:../../features/map-adapter
+        version: link:../features/map-adapter
       '@hierarchidb/map-source':
         specifier: workspace:*
-        version: link:../../features/map-source
+        version: link:../features/map-source
       '@hierarchidb/tabular-source':
         specifier: workspace:*
-        version: link:../../features/tabular-source
+        version: link:../features/tabular-source
       '@hierarchidb/tabular-store':
         specifier: workspace:*
-        version: link:../../features/tabular-store
+        version: link:../features/tabular-store
       '@hierarchidb/tag':
         specifier: workspace:*
-        version: link:../../features/tag
+        version: link:../features/tag
       '@hierarchidb/util':
         specifier: workspace:*
-        version: link:../../util
+        version: link:../util
+      '@maplibre/vt-pbf':
+        specifier: ^4.0.3
+        version: 4.0.3
       '@types/lunr':
         specifier: ^2.3.7
         version: 2.3.7
@@ -1125,14 +1125,14 @@ importers:
         version: 3.1.0
       fake-indexeddb:
         specifier: ^6.2.2
-        version: 6.2.3
+        version: 6.2.5
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)
     optionalDependencies:
       '@hierarchidb/tabular-source-xlsx':
         specifier: workspace:*
-        version: link:../../features/tabular-source-xlsx
+        version: link:../features/tabular-source-xlsx
 
   packages/testing/plugin-dialog-mocks:
     dependencies:
@@ -2203,7 +2203,7 @@ importers:
         version: link:../../common/types
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
-        version: link:../../runtime/worker
+        version: link:../../runtime-worker
       '@types/node':
         specifier: 18.19.123
         version: 18.19.123
@@ -2243,7 +2243,7 @@ importers:
         version: link:../../common/types
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
-        version: link:../../runtime/worker
+        version: link:../../runtime-worker
       '@types/node':
         specifier: 18.19.123
         version: 18.19.123
@@ -2328,7 +2328,7 @@ importers:
         version: link:../../packages/plugin-ui-sdk
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
-        version: link:../../packages/runtime/worker
+        version: link:../../packages/runtime-worker
       '@hierarchidb/ui-data-grid':
         specifier: workspace:*
         version: link:../../packages/ui/data-grid
@@ -2401,7 +2401,7 @@ importers:
         version: link:../../packages/plugin-ui-sdk
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
-        version: link:../../packages/runtime/worker
+        version: link:../../packages/runtime-worker
       '@hierarchidb/tag':
         specifier: workspace:*
         version: link:../../packages/features/tag
@@ -2495,7 +2495,7 @@ importers:
         version: link:../../packages/plugin-service-api
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
-        version: link:../../packages/runtime/worker
+        version: link:../../packages/runtime-worker
       '@hierarchidb/ui-map':
         specifier: workspace:*
         version: link:../../packages/ui/map
@@ -2607,7 +2607,7 @@ importers:
         version: link:../../packages/plugin-ui-sdk
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
-        version: link:../../packages/runtime/worker
+        version: link:../../packages/runtime-worker
       '@hierarchidb/ui-data-grid':
         specifier: workspace:*
         version: link:../../packages/ui/data-grid
@@ -2623,6 +2623,9 @@ importers:
       '@hierarchidb/ui-plugin-basic-info':
         specifier: workspace:*
         version: link:../../packages/ui/plugin-basic-info
+      '@hierarchidb/ui-worker-client':
+        specifier: workspace:*
+        version: link:../../packages/ui/worker-client
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../packages/util
@@ -2662,7 +2665,7 @@ importers:
         version: link:../../packages/plugin-service-api
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
-        version: link:../../packages/runtime/worker
+        version: link:../../packages/runtime-worker
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../packages/ui/dialog
@@ -2759,7 +2762,7 @@ importers:
         version: link:../../packages/plugin-ui-sdk
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
-        version: link:../../packages/runtime/worker
+        version: link:../../packages/runtime-worker
       '@hierarchidb/tabular-store':
         specifier: workspace:*
         version: link:../../packages/features/tabular-store
@@ -2772,6 +2775,9 @@ importers:
       '@hierarchidb/ui-plugin-basic-info':
         specifier: workspace:*
         version: link:../../packages/ui/plugin-basic-info
+      '@hierarchidb/ui-worker-client':
+        specifier: workspace:*
+        version: link:../../packages/ui/worker-client
       '@hierarchidb/ui-worker-provider':
         specifier: workspace:*
         version: link:../../packages/ui/worker-provider
@@ -2880,7 +2886,7 @@ importers:
         version: link:../../packages/plugin-service-sdk
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
-        version: link:../../packages/runtime/worker
+        version: link:../../packages/runtime-worker
       '@hierarchidb/spreadsheet-plugin':
         specifier: workspace:*
         version: link:../spreadsheet-plugin
@@ -2905,6 +2911,9 @@ importers:
       '@hierarchidb/ui-tabular-extract':
         specifier: workspace:*
         version: link:../../packages/ui/tabular-extract
+      '@hierarchidb/ui-worker-client':
+        specifier: workspace:*
+        version: link:../../packages/ui/worker-client
       '@hierarchidb/ui-worker-provider':
         specifier: workspace:*
         version: link:../../packages/ui/worker-provider
@@ -2991,7 +3000,7 @@ importers:
         version: link:../../packages/plugin-service-api
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
-        version: link:../../packages/runtime/worker
+        version: link:../../packages/runtime-worker
       '@hierarchidb/tabular-source':
         specifier: workspace:*
         version: link:../../packages/features/tabular-source
@@ -3059,7 +3068,7 @@ importers:
         version: link:../../packages/plugin-ui-sdk
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
-        version: link:../../packages/runtime/worker
+        version: link:../../packages/runtime-worker
       '@hierarchidb/spreadsheet-plugin':
         specifier: workspace:*
         version: link:../spreadsheet-plugin
@@ -3128,7 +3137,7 @@ importers:
         version: link:../../packages/plugin-service-api
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
-        version: link:../../packages/runtime/worker
+        version: link:../../packages/runtime-worker
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../packages/ui/dialog
@@ -14682,7 +14691,7 @@ snapshots:
       std-env: 3.10.0
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)
+      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@16.8.1)(jsdom@26.1.0)
     transitivePeerDependencies:
       - supports-color
 

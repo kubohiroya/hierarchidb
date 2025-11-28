@@ -54,8 +54,7 @@
     "vitest": "^3.2.4",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/runtime-worker": "workspace:*",
-    "@hierarchidb/ui-worker-client": "workspace:*"
+    "@hierarchidb/runtime-worker": "workspace:*"
   },
   "peerDependencies": {
     "comlink": "^4.4.1",
@@ -63,8 +62,7 @@
     "react-dom": "^18.3.1",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/runtime-worker": "workspace:*",
-    "@hierarchidb/ui-worker-client": "workspace:*"
+    "@hierarchidb/runtime-worker": "workspace:*"
   },
   "peerDependenciesMeta": {
     "comlink": {

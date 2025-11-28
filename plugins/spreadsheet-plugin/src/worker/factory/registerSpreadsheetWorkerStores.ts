@@ -29,7 +29,7 @@ async function resolveStoreRegistry(options: RegisterSpreadsheetWorkerStoresOpti
     const runtime = await import('@hierarchidb/runtime-worker');
     return runtime.storeRegistry as StoreRegistry;
   } catch (error) {
-    console.warn('[spreadsheet-worker] failed to resolve runtime worker store registry', error);
+    console.warn('[spreadsheet-worker] failed to resolve runtime-worker worker store registry', error);
     return null;
   }
 }

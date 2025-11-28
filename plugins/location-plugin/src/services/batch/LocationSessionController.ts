@@ -107,10 +107,10 @@ export class LocationSessionController {
       return;
     }
 
-    // 2) Delegate tile generation to runtime-worker
+    // 2) Delegate tile generation to runtime-worker-worker
     const client = await getLocationRuntimeWorkerClient();
     if (!client) {
-      console.warn('[Location][Session] runtime worker client unavailable; skipping worker delegation');
+      console.warn('[Location][Session] runtime-worker worker client unavailable; skipping worker delegation');
       return;
     }
     const tileClient = client.vectortile;
@@ -210,7 +210,7 @@ function computeBbox(pts: LocationPointInput[]): [number, number, number, number
   return [minLon, minLat, maxLon, maxLat];
 }
 
-// Note: tile range enumeration and vt encoding moved to runtime-worker side.
+// Note: tile range enumeration and vt encoding moved to runtime-worker-worker side.
 
 // Build columns and rows from normalized features
 function determineColumns(features: any[], allow?: string[]): string[] {

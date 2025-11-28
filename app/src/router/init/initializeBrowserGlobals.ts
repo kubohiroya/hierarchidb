@@ -134,4 +134,4 @@ export function initializeBrowserGlobals(): void {
   bootLog('Browser globals initialized');
 }
 
-// Icon map initialization is handled by AppIconRegistryProvider at runtime.
+// Icon map initialization is handled by AppIconRegistryProvider at runtime-worker.

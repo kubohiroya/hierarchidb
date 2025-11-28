@@ -83,7 +83,8 @@
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
-    "@hierarchidb/plugin-base": "workspace:*"
+    "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/ui-worker-client": "workspace:*"
   },
   "peerDependencies": {
     "dexie": "^4.2.0",
@@ -111,7 +112,8 @@
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
-    "@hierarchidb/plugin-base": "workspace:*"
+    "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/ui-worker-client": "workspace:*"
   },
   "hierarchidb": {
     "plugin": {

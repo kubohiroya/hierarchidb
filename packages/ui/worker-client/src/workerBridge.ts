@@ -21,16 +21,12 @@ export interface WorkerBridge {
   ): Promise<() => void>;
 }
 
-interface WorkerClientRefLike {
+type WorkerClientRefLike = {
   client: Remote<WorkerAPI> | null;
   isInitialized: boolean;
   initialize: () => Promise<void>;
   getAPI: () => Remote<WorkerAPI>;
-}
-
-interface WorkerBridgeWindow extends Window {
-  __HDB_WORKER_CLIENT_REF__?: WorkerClientRefLike;
-}
+};
 
 let injectedRef: WorkerClientRefLike | null = null;
 
@@ -39,12 +35,13 @@ function resolveWorkerClientRef(): WorkerClientRefLike {
     return injectedRef;
   }
   if (typeof window !== 'undefined') {
-    const win = window as WorkerBridgeWindow;
-    if (win.__HDB_WORKER_CLIENT_REF__) {
-      return win.__HDB_WORKER_CLIENT_REF__;
-    }
+    const win = window as typeof window & { __HDB_WORKER_CLIENT_REF__?: WorkerClientRefLike };
+    const ref = win.__HDB_WORKER_CLIENT_REF__;
+    if (ref) return ref as WorkerClientRefLike;
   }
-  throw new Error('[WorkerBridge] Worker client reference is unavailable. Ensure WorkerProvider is mounted before invoking worker operations.');
+  throw new Error(
+    '[WorkerBridge] Worker client reference is unavailable. Ensure WorkerProvider is mounted before invoking worker operations.'
+  );
 }
 
 export async function ensureWorkerAPI(): Promise<Remote<WorkerAPI>> {
@@ -118,6 +115,9 @@ export function getWorkerBridge(): WorkerBridge {
   return bridgeInstance;
 }
 
+/**
+ * Test-only injection to provide a WorkerClientRef without touching the global window.
+ */
 export function __setWorkerBridgeClientRef(ref: WorkerClientRefLike | null): void {
   injectedRef = ref;
 }
@@ -125,4 +125,3 @@ export function __setWorkerBridgeClientRef(ref: WorkerClientRefLike | null): voi
 export function __getWorkerBridgeClientRef(): WorkerClientRefLike {
   return resolveWorkerClientRef();
 }
-

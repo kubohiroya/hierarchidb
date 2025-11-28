@@ -7,7 +7,7 @@ import type {
   BatchSessionId,
   BatchSessionStatus,
 } from '@hierarchidb/common-api';
-import { getWorkerBridge } from '@hierarchidb/plugin-service-sdk';
+import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 
 interface BatchBridge {
   initialize(): Promise<void>;

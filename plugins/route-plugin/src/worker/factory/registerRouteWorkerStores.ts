@@ -36,7 +36,7 @@ async function resolveStoreRegistry(options: RegisterRouteWorkerStoresOptions = 
     return null;
   } catch (error) {
     if (import.meta.env?.DEV) {
-      console.warn('[route-worker] failed to import runtime worker module', error);
+      console.warn('[route-worker] failed to import runtime-worker worker module', error);
     }
     return null;
   }

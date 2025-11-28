@@ -38,7 +38,7 @@ export default defineConfig({
       '@hierarchidb/folder-plugin': path.resolve(__dirname, '../folder-plugin/src/index.ts'),
       '@hierarchidb/ui-worker-client': path.resolve(
         workspaceRoot,
-        'packages/runtime/client/src/index.ts'
+        'packages/runtime-worker/client/src/index.ts'
       ),
     },
   },

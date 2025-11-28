@@ -25,7 +25,7 @@ async function resolveStoreRegistry(
   } catch (error) {
     const isDev = Boolean((import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV);
     if (isDev) {
-      console.warn('[styler-worker] failed to import runtime worker module', error);
+      console.warn('[styler-worker] failed to import runtime-worker worker module', error);
     }
     return null;
   }

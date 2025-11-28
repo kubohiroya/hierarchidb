@@ -269,7 +269,7 @@ flowchart LR
 ### 9.3 any を避けるための実装例
 
 ```ts
-// @hierarchidb/runtime-worker-loader.ts
+// @hierarchidb/runtime-worker-worker-loader.ts
 import type { StoreRegistry, WorkerClientRef } from '@hierarchidb/runtime-worker/types';
 import type { WorkerPeerLoader } from '@hierarchidb/plugin-loader-styler-plugin/worker-types';
 

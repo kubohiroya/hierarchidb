@@ -194,7 +194,7 @@ function buildDataSourceUrl(
   const baseUrls = {
     naturalearth: 'https://www.naturalearthdata.com/http//www.naturalearthdata.com/download',
     geoboundaries: 'https://www.geoboundaries.org/api/gbOpen',
-    // Use GADM v4.1 GPKG endpoint to align with runtime workers/tests
+    // Use GADM v4.1 GPKG endpoint to align with runtime-worker workers/tests
     gadm: 'https://geodata.ucdavis.edu/gadm/gadm4.1/gpkg',
     openstreetmap: 'https://download.geofabrik.de',
   } as const;

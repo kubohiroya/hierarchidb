@@ -32,8 +32,8 @@ const pluginBasicInfoRoot = path.resolve(__dirname, '../ui/plugin-basic-info/src
 const basicInfoAliasEntries: Alias[] = [
   { find: '@hierarchidb/ui-plugin-basic-info', replacement: path.join(pluginBasicInfoRoot, 'index.ts') },
   { find: '@hierarchidb/ui-plugin-basic-info/src', replacement: pluginBasicInfoRoot },
-  { find: '@hierarchidb/runtime-basic-info', replacement: path.join(pluginBasicInfoRoot, 'index.ts') },
-  { find: '@hierarchidb/runtime-basic-info/src', replacement: pluginBasicInfoRoot },
+  { find: '@hierarchidb/runtime-worker-basic-info', replacement: path.join(pluginBasicInfoRoot, 'index.ts') },
+  { find: '@hierarchidb/runtime-worker-basic-info/src', replacement: pluginBasicInfoRoot },
 ];
 
 const testingAliasEntries: Alias[] = [
@@ -45,10 +45,10 @@ const testingAliasEntries: Alias[] = [
 ];
 
 const baseAliasEntries: Alias[] = [
-  { find: '@hierarchidb/runtime-worker/WorkerAPIImpl', replacement: runtimeWorkerStubPath },
-  { find: '@hierarchidb/runtime-worker', replacement: runtimeWorkerStubPath },
+  { find: '@hierarchidb/runtime-worker-worker/WorkerAPIImpl', replacement: runtimeWorkerStubPath },
+  { find: '@hierarchidb/runtime-worker-worker', replacement: runtimeWorkerStubPath },
   { find: 'node-fetch', replacement: path.resolve(__dirname, '../../app/src/virtual/node-fetch.ts') },
-  { find: '@hierarchidb/ui-worker-provider', replacement: path.resolve(__dirname, '../runtime/client/src/index.ts') },
+  { find: '@hierarchidb/ui-worker-provider', replacement: path.resolve(__dirname, '../runtime-worker/client/src/index.ts') },
   { find: '@hierarchidb/map-adapter', replacement: path.resolve(__dirname, '../features/map-adapter/src/index.ts') },
   {
     find: '@hierarchidb/tabular-xlsx',

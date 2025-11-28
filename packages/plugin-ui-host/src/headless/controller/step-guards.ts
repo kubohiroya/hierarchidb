@@ -26,7 +26,7 @@ export const buildStepWorkingData = (
 };
 
 export const stripReservedDialogKeys = (input?: StepData | null): StepData => {
-  // Legacy helper no longer strips anything; kept to avoid runtime errors.
+  // Legacy helper no longer strips anything; kept to avoid runtime-worker errors.
   return input ? { ...input } : {};
 };
 

@@ -84,7 +84,7 @@ export type LoadNodeActionReturn = {
 
 /**
  * Retry mechanism for Comlink method calls
- * Handles runtime communication errors that can occur after initial connection
+ * Handles runtime-worker communication errors that can occur after initial connection
  */
 async function retryComlinkCall<T>(
   operation: () => Promise<T>,
@@ -152,7 +152,7 @@ async function retryComlinkCall<T>(
 
 export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> {
   // Coordinate concurrent loader calls during hard-refresh/direct-access
-  // by sharing a single wait promise for INIT_COMPLETE across the app runtime.
+  // by sharing a single wait promise for INIT_COMPLETE across the app runtime-worker.
   const bootWindow = getBootWindow();
   if (bootWindow && typeof bootWindow.__HDB_INIT_WAIT__ === 'undefined') {
     bootWindow.__HDB_INIT_WAIT__ = null;

@@ -46,11 +46,11 @@ const buildSourceNodeMap = (
 };
 
 // Plugin-specific EntitiesDB loaders are not wired in the worker package to avoid
-// hard dependencies on app-selected plugin-loader. The app build/runtime may register
+// hard dependencies on app-selected plugin-loader. The app build/runtime-worker may register
 // loaders via an extension point when bundling with Vite.
 const peerDbLoaders = new Map<NodeType, PeerDbLoader>();
 
-// Optional extension API for registering loaders at runtime (e.g., by the app)
+// Optional extension API for registering loaders at runtime-worker (e.g., by the app)
 export const registerPeerDbLoader = (nodeType: NodeType, loader: PeerDbLoader): void => {
   peerDbLoaders.set(nodeType, loader);
 };
@@ -176,7 +176,7 @@ export class EntityLifecycleManager {
   }
 
   async onCommitDraft(env: CommitDraftEnvelope): Promise<void> {
-    try {
+
       const wcId = env.payload.draftId;
       const wcNode = await this.coreDB.getNode(wcId);
       if (!wcNode) return;
@@ -193,7 +193,7 @@ export class EntityLifecycleManager {
       if (canonicalNode) {
         await syncPeerDataFromNode(canonicalNode);
       }
-    } catch {}
+
   }
 
   async onDuplicateNodes(env: DuplicateNodesEnvelope): Promise<void> {

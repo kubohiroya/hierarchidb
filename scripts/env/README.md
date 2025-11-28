@@ -65,7 +65,7 @@ export VITE_NEW_FEATURE_ENABLED="${VITE_NEW_FEATURE_ENABLED:-false}"
 # ステージングでは新機能を有効化
 export VITE_NEW_FEATURE_ENABLED="true"
 
-## Worker features flags (runtime-worker)
+## Worker features flags (runtime-worker-worker)
 
 ### セキュアな値を追加
 

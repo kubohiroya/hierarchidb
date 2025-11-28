@@ -31,7 +31,7 @@ export { BatchSessionManager as ShapeBatchSessionManager } from './services/batc
 export { TabularQueryService as ShapeTableQueryService } from '@hierarchidb/tabular-store';
 export * from './services/tiles/RuntimeTileClient.js';
 
-// Optional runtime wiring for shared bootstrap (no shared imports)
+// Optional runtime-worker wiring for shared bootstrap (no shared imports)
 export class RuntimeWiring {
   static async registerRuntimeWorkerAdapters(): Promise<void> {
     try {

@@ -1,7 +1,8 @@
 import type { DownloadWorkerAPI, SimplifyWorkerAPI, VectorTileWorkerAPI } from '../types.js';
+import type { Tile } from 'geojson-vt';
 
-// Use @types/vt-pbf for typing while importing '@maplibre/vt-pbf' at runtime
-import type vtPbfNS = require('vt-pbf');
+// Use @types/vt-pbf for typing while importing '@maplibre/vt-pbf' at runtime-worker
+import type vtPbfNS = require('@maplibre/vt-pbf');
 
 import type { SharedDownloadService } from './downloadAdapter.js';
 import { createSharedDownloadService } from './downloadAdapter.js';
@@ -138,8 +139,10 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
     for (let x = x1; x <= x2; x++) {
       for (let y = y1; y <= y2; y++) {
         const tile = index.getTile(z, x, y);
-        if (tile?.features?.length) {
-          const pbf = vtpbf.fromGeojsonVt({ layer0: tile }, { version: 2 });
+        const layer = tile && Array.isArray((tile as any).features) ? (tile as unknown as Tile) : null;
+        if (layer?.features?.length) {
+          const layers: Record<string, Tile> = { layer0: layer };
+          const pbf = vtpbf.fromGeojsonVt(layers as unknown as Tile[], { version: 2 });
           const bytes = pbf as Uint8Array;
           tiles++;
           totalBytes += bytes.byteLength;

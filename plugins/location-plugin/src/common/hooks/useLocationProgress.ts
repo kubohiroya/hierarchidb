@@ -3,7 +3,7 @@ import type { NodeType, ProgressEvent } from '@hierarchidb/common-types';
 import type { UnifiedProgressInfo } from '@hierarchidb/common-api';
 import { useBatchProgress, createAdapterFromProgressSubscribe } from '@hierarchidb/batch';
 import { AuthNotificationRegistry } from '@hierarchidb/common-auth';
-import { getWorkerBridge, type WorkerBridge } from '@hierarchidb/plugin-service-sdk';
+import { getWorkerBridge, type WorkerBridge } from '@hierarchidb/ui-worker-client';
 
 export interface UseLocationProgressOptions {
   autoSubscribe?: boolean;

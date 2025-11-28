@@ -12,7 +12,7 @@ const bridgeMock = {
   getBatchSessionStatus: vi.fn(),
 };
 
-vi.mock('@hierarchidb/plugin-service-sdk', () => ({
+vi.mock('@hierarchidb/ui-worker-client', () => ({
   getWorkerBridge: () => bridgeMock,
 }));
 
@@ -58,7 +58,7 @@ const emit = async (event: BatchProgressEvent) => {
   });
 };
 
-  it('updates progress and status from runtime worker events', async () => {
+  it('updates progress and status from runtime-worker worker events', async () => {
     const { result } = renderHook(() => useShapeProgress('session-1', {
       autoSubscribe: false,
       enablePollingFallback: false,
@@ -135,7 +135,7 @@ const emit = async (event: BatchProgressEvent) => {
     expect(result.current.progress?.failed).toBeGreaterThan(0);
   });
 
-  it('unsubscribes from runtime updates', async () => {
+  it('unsubscribes from runtime-worker updates', async () => {
     const { result, unmount } = renderHook(() => useShapeProgress('session-unsub', {
       autoSubscribe: false,
       enablePollingFallback: false,

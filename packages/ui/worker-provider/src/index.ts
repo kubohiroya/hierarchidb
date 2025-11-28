@@ -1,4 +1,4 @@
-// React provider/hooks for runtime worker client
+// React provider/hooks for runtime-worker worker client
 export { createWorkerProvider } from './provider/WorkerProvider.js';
 export { createWorkerClientProvider } from './provider/WorkerClientProvider.js';
 export { WorkerSingletonProvider, useWorker } from './provider/WorkerSingletonProvider.js';

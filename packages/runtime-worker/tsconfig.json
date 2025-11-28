@@ -1,5 +1,5 @@
 {
-  "extends": "../../../tsconfig.base.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "lib": [
       "ES2022",
@@ -33,7 +33,7 @@
   ],
   "references": [
     {
-      "path": "../../plugin-service-api"
+      "path": "../plugin-service-api"
     }
   ]
 }

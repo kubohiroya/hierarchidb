@@ -1,6 +1,6 @@
 /**
  * @file registerRuntimeWorker.ts
- * @description Scaffolding for runtime worker registration (features-flagged, no-op safe) for Route plugin
+ * @description Scaffolding for runtime-worker worker registration (features-flagged, no-op safe) for Route plugin
  */
 
 import { readRuntimeEnvValue } from '@hierarchidb/util';
@@ -17,7 +17,7 @@ function isFlagEnabled(name: string, fallback = false): boolean {
 /**
  * Register Route plugin stage adapters backed by a Web Worker.
  * - Guarded by `ROUTE_RUNTIME_WORKER` (default: off)
- * - Safe to call even if runtime-worker package is unavailable
+ * - Safe to call even if runtime-worker-worker package is unavailable
  */
 export async function registerRouteRuntimeWorkerAdapters(): Promise<void> {
   registerRouteRuntimeWorkerClient(async (): Promise<RouteRuntimeWorkerClient | null> => {
@@ -25,14 +25,14 @@ export async function registerRouteRuntimeWorkerAdapters(): Promise<void> {
       return null;
     }
     try {
-      const name = '@' + 'hierarchidb/runtime-worker';
+      const name = '@' + 'hierarchidb/runtime-worker-worker';
       const mod: unknown = await import(/* @vite-ignore */ name);
       if (isRuntimeWorkerModule(mod) && typeof mod.createStageWorkerClient === 'function') {
         const client = await mod.createStageWorkerClient();
         return client as RouteRuntimeWorkerClient;
       }
     } catch {
-      // Silently ignore when runtime-worker is not available (dev/offline)
+      // Silently ignore when runtime-worker-worker is not available (dev/offline)
     }
     return null;
   });

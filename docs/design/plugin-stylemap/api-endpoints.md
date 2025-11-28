@@ -672,7 +672,7 @@ async function updatePreviewRealtime(
 
 ```typescript
 // All API inputs are validated using TypeScript interfaces
-// and runtime validation functions
+// and runtime-worker validation functions
 
 function validateStylerFormData(data: StylerFormData): ValidationResult {
   const errors: Record<string, string[]> = {};

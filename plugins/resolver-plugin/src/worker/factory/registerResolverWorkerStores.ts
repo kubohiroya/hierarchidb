@@ -30,7 +30,7 @@ async function resolveStoreRegistry(options: RegisterResolverWorkerStoresOptions
     return runtime.storeRegistry as StoreRegistry;
   } catch (error) {
     if (import.meta.env?.DEV) {
-      console.warn('[resolver-worker] failed to import runtime worker module', error);
+      console.warn('[resolver-worker] failed to import runtime-worker worker module', error);
     }
     return null;
   }

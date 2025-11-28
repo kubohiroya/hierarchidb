@@ -36,3 +36,10 @@ export {
 } from './wiring/runtime-export-registry.js';
 export { wirePluginsFromModules } from './wiring/wirePlugins.js';
 export * from './utils.js';
+export {
+  getWorkerBridge,
+  ensureWorkerAPI,
+  __getWorkerBridgeClientRef,
+  __setWorkerBridgeClientRef,
+} from './workerBridge.js';
+export type { WorkerBridge } from './workerBridge.js';

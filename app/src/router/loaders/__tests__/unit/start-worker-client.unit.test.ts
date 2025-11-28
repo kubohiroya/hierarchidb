@@ -14,7 +14,7 @@ import {
 } from '~/i18n/workerInitMessages.js';
 
 // Mock the WorkerStateStore module
-vi.mock('../../../../worker-runtime/WorkerStateStore.js', () => ({
+vi.mock('../../../../worker-runtime-worker/WorkerStateStore.js', () => ({
   ensureWorkerInitialized: vi.fn(),
   getWorkerSnapshot: vi.fn(() => ({
     state: 'uninitialized',

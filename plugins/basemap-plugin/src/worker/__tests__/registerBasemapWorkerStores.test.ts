@@ -11,7 +11,7 @@ const peerStoreStub: PeerStore<BasemapPeerData> = {
   bulkUpsert: vi.fn(),
 };
 
-vi.mock('@hierarchidb/runtime-worker', () => ({
+vi.mock('@hierarchidb/runtime-worker-worker', () => ({
   createNodePayloadPeerStore: () => peerStoreStub,
 }));
 

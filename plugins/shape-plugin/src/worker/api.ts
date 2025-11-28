@@ -246,7 +246,7 @@ export const shapePluginAPI = {
   },
 
   getCountryMetadata: async (dataSource: string | DataSourceName): Promise<CountryMetadata[]> => {
-    // Load from pre-fetched metadata files provided by @hierarchidb/runtime-shared-fetch-metadata
+    // Load from pre-fetched metadata files provided by @hierarchidb/runtime-worker-shared-fetch-metadata
     // Use the centralized MetadataLoader service for caching and transformation
     try {
       const data = await metadataLoader.loadMetadata(toDataSourceName(dataSource));

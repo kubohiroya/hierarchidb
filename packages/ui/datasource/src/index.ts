@@ -24,7 +24,7 @@ export type {
   DataSourceInfo,
 } from './types/DataSource.js';
 
-// Service TYPES only (no runtime implementations here)
+// Service TYPES only (no runtime-worker implementations here)
 export type {
   DataSourceStrategy,
   CountryMetadata,

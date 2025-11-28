@@ -1,7 +1,7 @@
 /**
  * Ensure React Refresh globals exist when the worker bundle evaluates files transformed
  * by react-refresh/babel. In dev mode Vite injects calls to $RefreshSig$/$RefreshReg$
- * before the React Router runtime has a chance to run, so we install safe no-ops here.
+ * before the React Router runtime-worker has a chance to run, so we install safe no-ops here.
  */
 
 if (import.meta.env.DEV && typeof globalThis !== 'undefined') {

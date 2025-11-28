@@ -79,12 +79,12 @@ const runtimeWorkerMocks = vi.hoisted(() => {
   };
   return { CoreDB, getTreeNode, updateTreeNodeDraftData, updateTreeNodeDraftMetadata, discardTreeNodeDraft };
 });
-vi.mock('@hierarchidb/runtime-worker', () => runtimeWorkerMocks);
-const { CoreDB, getTreeNode, updateTreeNodeDraftData, updateTreeNodeDraftMetadata, discardTreeNodeDraft } = runtimeWorkerMocks;
+vi.mock('@hierarchidb/runtime-worker-worker', () => runtimeWorkerMocks);
+const { CoreDB } = runtimeWorkerMocks;
 
 describe('Resolver Integration Tests', () => {
   let handler: ResolverEntityService;
-  let coreDB: CoreDB;
+  let coreDB;
   let idCounter = 0;
 
   beforeEach(async () => {

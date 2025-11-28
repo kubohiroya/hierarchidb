@@ -16,7 +16,7 @@ export interface BatchProcessingDialogProps {
 /**
  * Minimal placeholder dialog shown while the batch processing UI is being redesigned.
  * It surfaces the identifiers so that debugging remains possible without pulling in
- * heavy runtime dependencies that the legacy implementation relied on.
+ * heavy runtime-worker dependencies that the legacy implementation relied on.
  */
 export function BatchProcessingDialog({
   open,

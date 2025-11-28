@@ -51,7 +51,7 @@
 アプリケーション配下 (`/app`) のテストだけを素早く検証したい場合は、新設した `app/vitest.config.ts` を利用できます。ルートで下記を実行すると、`~` や `~/plugin-registry` エイリアス、`node-fetch` スタブなどが自動適用された状態で対象ファイルのみを走らせられます。
 
 ```bash
-# 例: plugin-presentation と worker-runtime のテスト群のみ実行
+# 例: plugin-presentation と worker-runtime-worker のテスト群のみ実行
 pnpm -C app test -- --run app/src/services/__tests__/plugin-presentation.test.ts
 ```
 

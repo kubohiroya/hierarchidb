@@ -222,13 +222,13 @@
         "packages/runtime-ui/license/src/*"
       ],
       "@hierarchidb/runtime-worker": [
-        "packages/runtime/worker/src/index.ts"
+        "packages/runtime-worker/src/index.ts"
       ],
       "@hierarchidb/runtime-worker/stage-worker": [
-        "packages/runtime/worker/src/stageWorker.entry.ts"
+        "packages/runtime-worker/src/stageWorker.entry.ts"
       ],
       "@hierarchidb/runtime-worker/*": [
-        "packages/runtime/worker/src/*"
+        "packages/runtime-worker/src/*"
       ],
       "@hierarchidb/shape-plugin": [
         "plugins/shape-plugin/src/index.ts"

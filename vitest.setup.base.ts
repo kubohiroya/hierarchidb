@@ -122,7 +122,7 @@ try {
   logVitestSetupWarning('Failed to mark window.crypto as configurable', error);
 }
 
-// fetch polyfill (only when not provided by the runtime)
+// fetch polyfill (only when not provided by the runtime-worker)
 void (async () => {
   if (typeof globalThis.fetch !== 'function') {
     try {

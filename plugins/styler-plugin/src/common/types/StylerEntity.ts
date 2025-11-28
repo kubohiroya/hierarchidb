@@ -55,7 +55,7 @@ export interface StylerEntity extends SpreadsheetEntity {
  * : StylerDraft
  * : Working Copy
  */
-// Working copies are handled by runtime-worker PeerStore; no dedicated type here.
+// Working copies are handled by runtime-worker-worker PeerStore; no dedicated type here.
 
 export interface StylerColorRule {
   column: string;

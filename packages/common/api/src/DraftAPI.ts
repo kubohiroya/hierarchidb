@@ -63,5 +63,5 @@ export interface DraftAPI {
   hasUnsavedChanges(nodeId: NodeId): Promise<boolean>;
 }
 
-// Ensure a runtime module is emitted for NodeNext resolution
+// Ensure a runtime-worker module is emitted for NodeNext resolution
 export {};

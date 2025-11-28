@@ -8913,6 +8913,16 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-14"></a>
 
+- 2025-11-28 23:16 start: investigation/plugin-service-usage — `@hierarchidb/plugin-service-sdk` / `@hierarchidb/plugin-service-api` の参照箇所棚卸しを開始。DoD: 利用ファイルの網羅リスト化と用途メモ、旧アーキ依存の有無判定メモを作成。
+- 2025-11-28 23:32 progress: investigation/plugin-service-usage — `plugin-ui-sdk` と `common-api` にあった plugin-service-api の再エクスポートを削除し、利用箇所を直接 import に置換。`app/src/hooks/usePluginsForTree.ts` / `usePluginRegistry.ts` / `app/src/worker-runtime/worker.ts` を plugin-service-api 直参照に変更し、`wrapDialogStepComponent` も StepComponent を直接参照する形へ修正。
+- 2025-11-28 23:34 command: pnpm --filter @hierarchidb/app typecheck — exit 0（plugin-base build 時の define 警告は既存）。
+- 2025-11-28 23:35 done: investigation/plugin-service-usage — DoD 達成。ロールバックは `packages/plugin-ui-sdk/src/index.ts` / `packages/plugin-ui-sdk/src/types.ts` / `packages/plugin-ui-sdk/src/dialog/wrapDialogStepComponent.ts` / `packages/common/api/src/index.ts` / `app/src/hooks/usePluginsForTree.ts` / `app/src/hooks/usePluginRegistry.ts` / `app/src/worker-runtime/worker.ts` を revert し、`pnpm --filter @hierarchidb/app typecheck` を再実行。
+- 2025-11-28 23:50 start: refactor/ui-worker-bridge-move — UI 向け WorkerBridge を plugin-service-sdk から ui-worker-client へ移設し、利用元を切り替えるタスクを開始。DoD: bridge 移設、plugin-service-sdk からの再輸出除去、利用側 import 置換、依存追加、代表 typecheck 実行。
+- 2025-11-28 23:59 progress: refactor/ui-worker-bridge-move — ui-worker-client に WorkerBridge を新設し、app/WorkerProvider でグローバル参照を公開。location/route/shape 向け進捗フック・サービスの import を ui-worker-client へ置換し、該当プラグインの package.json に ui-worker-client を追加。plugin-service-sdk から旧 bridge を削除。
+- 2025-11-29 00:01 command: pnpm --filter @hierarchidb/app typecheck — exit 0（plugin-base build 時の define 警告は既存）。
+- 2025-11-29 00:02 done: refactor/ui-worker-bridge-move — DoD 達成。ロールバックは `packages/ui/worker-client/src/workerBridge.ts` / 同 index エクスポート / `packages/plugin-service-sdk/src/index.ts` / `packages/plugin-service-sdk/src/worker/bridge.ts`（削除復元）/ `app/src/contexts/WorkerProvider.tsx` / 各プラグインの import 差分 / `package.json` の依存追加 を戻し、`pnpm --filter @hierarchidb/app typecheck` を再実行。
+- 2025-11-29 00:35 progress: refactor/ui-worker-bridge-move — ui-worker-provider tsconfig の他パッケージ src 直参照 paths を削除（vibe dep-fence WARN 対応）。`pnpm --filter @hierarchidb/ui-worker-provider typecheck` exit 0。
+- 2025-11-28 23:45 progress: investigation/plugin-service-usage — plugin-ui-sdk の空再エクスポート (`export * from './types.js'`) を削除。
 - 2025-11-27 09:40 progress: refactor/ui/worker-client-provider-rename — plugin-ui-sdk から useWorkerAPI/useStepCapabilities/DialogStateChannel のホスト寄り API を除去し、重複していた型定義を plugin-service-api への forward export に一本化。useWorkerAPI を ui-worker-provider へ移設し、新しいエクスポートを追加。
 - 2025-11-27 09:38 command: pnpm --filter @hierarchidb/plugin-ui-sdk typecheck — exit 0。
 - 2025-11-27 09:37 command: pnpm --filter @hierarchidb/ui-worker-provider typecheck — exit 0。

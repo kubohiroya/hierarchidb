@@ -1,5 +1,4 @@
 export { wrapDialogStepComponent } from './dialog/wrapDialogStepComponent.js';
-export * from './types.js';
 export {
   useDraft,
 } from './hooks/useDraft.js';
@@ -19,12 +18,3 @@ export type { BasicInfo } from './utils/basicInfo.js';
 export { normalizeBasicInfo, mergeBasicInfo } from './utils/basicInfo.js';
 export { BasicInfoStep } from './dialog/steps/BasicInfoStep.js';
 export type { BasicInfoStepProps } from './dialog/steps/BasicInfoStep.js';
-export type {
-  PluginDefinition,
-  TreePluginInfo,
-  PluginInfo,
-  PluginManifest,
-  PluginManifestDatabaseConfig,
-  PluginManifestDatabasePrewarmConfig,
-  ExtendingNodeTypeDefinition,
-} from '@hierarchidb/plugin-service-api';

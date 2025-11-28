@@ -8,7 +8,8 @@ packages:
   - packages/vite-plugins/*
   - app/vite-plugins/*
   - packages/testing/*
-  - packages/runtime/*
+  - packages/runtime-worker
+  - packages/runtime-worker/*
   - packages/ui/*
   - packages/ui/treeconsole/*
   - packages/plugin-registry
@@ -22,6 +23,7 @@ packages:
   - packages/features/*
   - packages/plugin-ui-sdk
   - packages/plugin-types
+  - packages/batch-runtime-worker-services
   - packages/batch-runtime-services
   - packages/batch-types
   - plugins/*

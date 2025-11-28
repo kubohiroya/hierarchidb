@@ -4,7 +4,7 @@
  */
 
 import type { NodeType } from '@hierarchidb/common-types';
-import type { PluginInfo } from '@hierarchidb/plugin-ui-sdk';
+import type { PluginInfo } from '@hierarchidb/plugin-service-api';
 import { useEffect, useState } from 'react';
 
 /**

@@ -8,7 +8,6 @@ import type { PluginDefinition } from '@hierarchidb/plugin-registry/types';
 import type {
   DialogStateAPI,
   ImportExportAPI,
-  PluginLifecycleAPI,
   TagAPI,
   TreeMutationAPI,
   TreeQueryAPI,
@@ -16,6 +15,7 @@ import type {
   WorkerAPI,
   DraftAPI,
 } from '@hierarchidb/common-api';
+import type { PluginLifecycleAPI } from '@hierarchidb/plugin-service-api';
 import {
   getAllRuntimeExports,
   WorkerInitializationReporter,
@@ -247,7 +247,7 @@ reporter.reportStepProgress('Load Comlink', 0);
       reporter.reportComplete();
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
-      console.warn('[worker bootstrap] runtime-worker wiring failed:', msg);
+      console.warn('[worker bootstrap] runtime-worker-worker wiring failed:', msg);
       throw error;
     }
   } catch (error) {

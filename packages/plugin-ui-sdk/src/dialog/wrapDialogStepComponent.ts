@@ -1,5 +1,5 @@
 import { createElement, type ComponentType } from 'react';
-import type { StepComponent } from '../types.js';
+import type { StepComponent } from '@hierarchidb/plugin-service-api';
 
 export const wrapDialogStepComponent = <TProps extends object>(
   Component: ComponentType<TProps>,

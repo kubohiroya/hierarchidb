@@ -1,6 +1,6 @@
 /**
  * @file registerRuntimeWorker.ts
- * @description Scaffolding for runtime worker registration (features-flagged, no-op safe)
+ * @description Scaffolding for runtime-worker worker registration (features-flagged, no-op safe)
  */
 
 import { readRuntimeEnvValue } from '@hierarchidb/util';
@@ -24,7 +24,7 @@ function isFlagEnabled(name: string, fallback = false): boolean {
 /**
  * Register Location plugin stage adapters backed by a Web Worker.
  * - Guarded by `LOCATION_RUNTIME_WORKER` (default: off)
- * - Safe to call even if runtime-worker package is unavailable
+ * - Safe to call even if runtime-worker-worker package is unavailable
  */
 export async function registerLocationRuntimeWorkerAdapters(): Promise<void> {
   registerLocationRuntimeWorkerClient(async (): Promise<LocationRuntimeWorkerClient | null> => {
@@ -32,7 +32,7 @@ export async function registerLocationRuntimeWorkerAdapters(): Promise<void> {
       return null;
     }
     try {
-      const name = '@' + 'hierarchidb/runtime-worker';
+      const name = '@' + 'hierarchidb/runtime-worker-worker';
       const mod = await import(/* @vite-ignore */ (name as string)) as {
         createStageWorkerClient?: () => Promise<LocationRuntimeWorkerClient>;
       };
@@ -40,7 +40,7 @@ export async function registerLocationRuntimeWorkerAdapters(): Promise<void> {
         return await mod.createStageWorkerClient();
       }
     } catch {
-      // Silently ignore when runtime-worker is not available (dev/offline)
+      // Silently ignore when runtime-worker-worker is not available (dev/offline)
     }
     return null;
   });

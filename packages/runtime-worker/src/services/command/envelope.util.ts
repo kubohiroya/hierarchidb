@@ -1,5 +1,5 @@
 // Type-safe envelope creator that infers the payload type from the command kind.
-// Keeps the runtime behavior unchanged; this is a typing utility only.
+// Keeps the runtime-worker behavior unchanged; this is a typing utility only.
 
 import type { Timestamp } from '@hierarchidb/common-types';
 import type { CommandEnvelope, CommandKind, EnvelopeInit, PayloadOf } from './registry.types.js';

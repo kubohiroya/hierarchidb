@@ -98,13 +98,13 @@ export default [
     },
   },
 
-  // Type-aware deprecation checks (runtime-worker)
+  // Type-aware deprecation checks (runtime-worker-worker)
   {
-    files: ['packages/runtime/worker/**/*.{ts,tsx}'],
+    files: ['packages/runtime-worker/worker/**/*.{ts,tsx}'],
     languageOptions: {
       parserOptions: {
         tsconfigRootDir: new URL('.', import.meta.url).pathname,
-        project: ['./packages/runtime/worker/tsconfig.json'],
+        project: ['./packages/runtime-worker/worker/tsconfig.json'],
         warnOnUnsupportedTypeScriptVersion: false,
       },
     },

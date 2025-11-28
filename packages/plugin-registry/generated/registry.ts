@@ -373,7 +373,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/runtime-worker",
         "@hierarchidb/ui-dialog",
         "@hierarchidb/plugin-ui-sdk",
-        "@hierarchidb/plugin-base"
+        "@hierarchidb/plugin-base",
+        "@hierarchidb/ui-worker-client"
       ],
     manifest: {
         "id": "@hierarchidb/location-plugin",
@@ -415,7 +416,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/runtime-worker",
           "@hierarchidb/ui-dialog",
           "@hierarchidb/plugin-ui-sdk",
-          "@hierarchidb/plugin-base"
+          "@hierarchidb/plugin-base",
+          "@hierarchidb/ui-worker-client"
         ],
         "icon": {
           "mui": "LocationOn",
@@ -599,6 +601,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/plugin-service-sdk",
         "@hierarchidb/ui-worker-provider",
         "@hierarchidb/runtime-worker",
+        "@hierarchidb/ui-worker-client",
         "@hierarchidb/ui-plugin-basic-info",
         "@hierarchidb/ui-data-grid",
         "@hierarchidb/components",
@@ -637,6 +640,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/plugin-service-sdk",
           "@hierarchidb/ui-worker-provider",
           "@hierarchidb/runtime-worker",
+          "@hierarchidb/ui-worker-client",
           "@hierarchidb/ui-plugin-basic-info",
           "@hierarchidb/ui-data-grid",
           "@hierarchidb/components",
@@ -741,6 +745,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/spreadsheet-plugin",
         "@hierarchidb/plugin-service-sdk",
         "@hierarchidb/components",
+        "@hierarchidb/ui-worker-client",
         "@mui/icons-material",
         "@mui/material",
         "dexie",
@@ -790,6 +795,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/spreadsheet-plugin",
           "@hierarchidb/plugin-service-sdk",
           "@hierarchidb/components",
+          "@hierarchidb/ui-worker-client",
           "@mui/icons-material",
           "@mui/material",
           "dexie",

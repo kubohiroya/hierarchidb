@@ -97,7 +97,7 @@ function createRuntimeAliasConfig({
     { spec: '@hierarchidb/util', src: '../packages/util/src/index.ts', dist: '../packages/util/dist/index.js' },
     { spec: '@hierarchidb/ui-worker-client', src: '../packages/ui/worker-client/src/index.ts', dist: '../packages/ui/worker-client/dist/index.js' },
     { spec: '@hierarchidb/ui-worker-provider', src: '../packages/ui/worker-provider/src/index.ts', dist: '../packages/ui/worker-provider/dist/index.js' },
-    { spec: '@hierarchidb/runtime-worker', src: '../packages/runtime/worker/src/index.ts', dist: '../packages/runtime/worker/dist/index.js' },
+    { spec: '@hierarchidb/runtime-worker-worker', src: '../packages/runtime-worker/worker/src/index.ts', dist: '../packages/runtime-worker/worker/dist/index.js' },
     { spec: '@hierarchidb/map-adapter', src: '../packages/features/map-adapter/src/index.ts', dist: '../packages/features/map-adapter/dist/index.js' },
     { spec: '@hierarchidb/plugin-presentation', src: '../packages/plugin-presentation/src/index.ts', dist: '../packages/plugin-presentation/dist/index.js' },
     { spec: '@hierarchidb/plugin-registry', src: '../packages/plugin-registry/generated/registry.ts', dist: '../packages/plugin-registry/dist/registry.js' },
@@ -172,20 +172,20 @@ function createRuntimeAliasConfig({
   };
 
   if (isDev) {
-    registerDevPackage('@hierarchidb/runtime-worker', '../packages/runtime/worker/src/index.ts', {
-      group: 'runtime',
+    registerDevPackage('@hierarchidb/runtime-worker-worker', '../packages/runtime-worker/worker/src/index.ts', {
+      group: 'runtime-worker',
       exclude: true,
     });
-    addAlias('@hierarchidb/runtime-worker/stage-worker', '../packages/runtime/worker/src/stageWorker.entry.ts', {
+    addAlias('@hierarchidb/runtime-worker-worker/stage-worker', '../packages/runtime-worker/worker/src/stageWorker.entry.ts', {
       exclude: true,
       exact: true,
     });
     registerDevPackage('@hierarchidb/ui-worker-client', '../packages/ui/worker-client/src/index.ts', {
-      group: 'runtime',
+      group: 'runtime-worker',
       exclude: true,
     });
     registerDevPackage('@hierarchidb/ui-worker-provider', '../packages/ui/worker-provider/src/index.ts', {
-      group: 'runtime',
+      group: 'runtime-worker',
       exclude: true,
     });
     registerDevPackage('@hierarchidb/map-adapter', '../packages/features/map-adapter/src/index.ts', {
@@ -279,8 +279,8 @@ function createRuntimeAliasConfig({
       }
     }
   } else {
-    addAlias('@hierarchidb/runtime-worker', '../packages/runtime/worker/dist/index.js', { exact: true });
-    addAlias('@hierarchidb/runtime-worker/stage-worker', '../packages/runtime/worker/dist/stageWorker.entry.js', {
+    addAlias('@hierarchidb/runtime-worker-worker', '../packages/runtime-worker/worker/dist/index.js', { exact: true });
+    addAlias('@hierarchidb/runtime-worker-worker/stage-worker', '../packages/runtime-worker/worker/dist/stageWorker.entry.js', {
       exclude: true,
       exact: true,
     });
@@ -658,7 +658,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
     faviconPlugin(), // Add favicon plugin to serve favicon at root
     missingSourceMapFallbackPlugin(),
     comlink(), // Add Comlink plugin for Worker support
-    // tsconfigPaths is appended after runtime alias configuration.
+    // tsconfigPaths is appended after runtime-worker alias configuration.
     // It is re-injected below after dev alias filtering.
   ];
 
@@ -877,7 +877,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       return {
         __APP_VERSION__: JSON.stringify(appVersion),
         __BUILD_TIME__: JSON.stringify(buildTime),
-        // Expose selected non-VITE_ envs for client/runtime packages that check them
+        // Expose selected non-VITE_ envs for client/runtime-worker packages that check them
         'import.meta.env.HDB_LOCAL_PROXY': JSON.stringify(env.HDB_LOCAL_PROXY || process.env.HDB_LOCAL_PROXY || ''),
       } as Record<string, string>;
     })(),
@@ -892,8 +892,8 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         '@emotion/styled',
         'provider',
         'provider-dom',
-        // Ensure a single instance for plugin dialog runtime across app and plugin-loader
-        '@hierarchidb/runtime-ui-plugin-dialog',
+        // Ensure a single instance for plugin dialog runtime-worker across app and plugin-loader
+        '@hierarchidb/runtime-worker-ui-plugin-dialog',
       ],
       alias: [
         { find: '~', replacement: path.resolve(__dirname, './src') },
@@ -914,10 +914,10 @@ export default defineConfig(({ mode, isSsrBuild }) => {
           ),
         },
         {
-          find: '@hierarchidb/runtime-worker',
+          find: '@hierarchidb/runtime-worker-worker',
           replacement: path.resolve(
             __dirname,
-            isDev ? '../packages/runtime/worker/src/index.ts' : '../packages/runtime/worker/dist/index.js',
+            isDev ? '../packages/runtime-worker/worker/src/index.ts' : '../packages/runtime-worker/worker/dist/index.js',
           ),
         },
         {
@@ -927,8 +927,8 @@ export default defineConfig(({ mode, isSsrBuild }) => {
             isDev ? '../packages/util/src/index.ts' : '../packages/util/dist/index.js',
           ),
         },
-        // Unify plugin-dialog runtime to a single module instance to avoid split singletons
-        { find: '@hierarchidb/runtime-ui-plugin-dialog', replacement: path.resolve(__dirname, '../packages/plugin-ui-sdk/dist/index.js') },
+        // Unify plugin-dialog runtime-worker to a single module instance to avoid split singletons
+        { find: '@hierarchidb/runtime-worker-ui-plugin-dialog', replacement: path.resolve(__dirname, '../packages/plugin-ui-sdk/dist/index.js') },
         // Base plugin is an internal helper library; if it accidentally appears in a virtual import,
         // make it resolvable to its built output to avoid dev server crashes.
         { find: '@hierarchidb/base-plugin', replacement: path.resolve(__dirname, '../packages/plugin-loader/base-plugin/dist/index.ts') },
@@ -968,6 +968,11 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         comlink(),
       ],
       rollupOptions: {
+        external: [
+          path.resolve(__dirname, '../packages/runtime-worker/dist/StageProcessingService.js'),
+          '@hierarchidb/runtime-worker/dist/StageProcessingService.js',
+          '@maplibre/vt-pbf',
+        ],
         output: {
           entryFileNames: '[name].js',
         },
@@ -984,6 +989,10 @@ export default defineConfig(({ mode, isSsrBuild }) => {
           // Peer deps referenced by workspace libs (ui-dialog) that should resolve from app
           'react-resizable',
           'react-draggable',
+          // Stage processing worker (Node env) should stay external in browser build
+          path.resolve(__dirname, '../packages/runtime-worker/dist/StageProcessingService.js'),
+          '@hierarchidb/runtime-worker/dist/StageProcessingService.js',
+          '@maplibre/vt-pbf',
         ],
         output: {
           entryFileNames: 'assets/[name].js',
@@ -1011,7 +1020,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       },
     },
     // Prevent Vite SSR build from externalizing workspace packages,
-    // which would otherwise cause runtime failures when loaded in the browser.
+    // which would otherwise cause runtime-worker failures when loaded in the browser.
     ssr: {
       external: ssrExternalDeps,
       // Keep workspace and Emotion packages bundled; maplibre/MUI are externalized above.

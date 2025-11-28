@@ -4,9 +4,9 @@ import type { Remote } from 'comlink';
 import { pluginWorkerPreloads } from '~/plugin-registry/index.ts';
 import { loadWorkerAPIClientModule } from './workerApiClientLoader.js';
 
-// NOTE: Worker runtime and plugin worker modules are no longer imported through
+// NOTE: Worker runtime-worker and plugin worker modules are no longer imported through
 // legacy `*/worker` subpath specifiers.  Instead we delegate to the
-// `@hierarchidb/runtime-worker` module-path helpers so that both the runtime
+// `@hierarchidb/runtime-worker-worker` module-path helpers so that both the runtime-worker
 // bundle and each plugin worker can be resolved via a single, versioned entry
 // point.  This loader keeps the cache warm and preloads the optional peer store
 // registration helpers for the plugin-loader that still expose Dexie-backed stores.

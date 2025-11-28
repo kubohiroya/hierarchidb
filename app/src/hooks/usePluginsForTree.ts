@@ -7,7 +7,7 @@
 
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { TreeId } from '@hierarchidb/common-types';
-import type { PluginDefinition, TreePluginInfo } from '@hierarchidb/plugin-ui-sdk';
+import type { PluginDefinition, TreePluginInfo } from '@hierarchidb/plugin-service-api';
 import type { Remote } from 'comlink';
 import { useCallback, useEffect, useState } from 'react';
 

@@ -32,11 +32,11 @@ export interface DataSourceInfo extends DataSourceConfig {
   coverage?: string;
 }
 
-// Internal mutable registry to support optional runtime injection
+// Internal mutable registry to support optional runtime-worker injection
 let __DATA_SOURCE_REGISTRY: Record<DataSourceName, DataSourceConfig> = {};
 
 /**
- * Inject a registry defined by actual plugins at runtime.
+ * Inject a registry defined by actual plugins at runtime-worker.
  * This keeps this module free from concrete definitions while
  * allowing existing selector utilities to function with provided data.
  */

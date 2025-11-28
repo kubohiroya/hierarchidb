@@ -2,7 +2,7 @@ import type { NodeType } from '@hierarchidb/common-types';
 
 /**
  * Taggable capability registry
- * - Keeps a minimal, runtime registry of node types that opted into tagging.
+ * - Keeps a minimal, runtime-worker registry of node types that opted into tagging.
  * - Other packages can query via `isTaggable(nodeType)` to toggle UI/commands.
  */
 const taggableSet = new Set<NodeType>();

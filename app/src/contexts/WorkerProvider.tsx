@@ -612,6 +612,17 @@ export const WorkerProvider = ({
     return <InitializingOverlay progress={status.initProgress} message={status.initMessage} />;
   }, [fallback, renderOverlay, status.error, status.initMessage, status.initProgress]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const win = window as BootWindow & { __HDB_WORKER_CLIENT_REF__?: WorkerContextValue };
+    win.__HDB_WORKER_CLIENT_REF__ = contextValue;
+    return () => {
+      if (win.__HDB_WORKER_CLIENT_REF__ === contextValue) {
+        delete win.__HDB_WORKER_CLIENT_REF__;
+      }
+    };
+  }, [contextValue]);
+
   return (
     <WorkerContext.Provider value={contextValue}>
       <Suspense fallback={suspenseFallback}>

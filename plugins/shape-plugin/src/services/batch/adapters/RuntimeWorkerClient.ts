@@ -6,8 +6,8 @@ import {
 } from '@hierarchidb/runtime-worker';
 
 /**
- * TODO(shape-runtime-worker-integration): ensure the shape plugin's
- * adapter tests exercise the shared factory path (both runtime worker
+ * TODO(shape-runtime-worker-worker-integration): ensure the shape plugin's
+ * adapter tests exercise the shared factory path (both runtime-worker worker
  * and local client fallbacks) once end-to-end coverage is added.
  */
 

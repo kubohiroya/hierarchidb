@@ -9,7 +9,7 @@ export interface TagInputProps {
 }
 
 export const TagInput: React.FC<TagInputProps> = ({ value = [], placeholder }) => {
-  // Minimal stub: render a readonly list to avoid runtime crashes in plugin-loader that expect TagInput.
+  // Minimal stub: render a readonly list to avoid runtime-worker crashes in plugin-loader that expect TagInput.
   return (
     <div data-stub="TagInput" style={{ border: '1px dashed #ccc', padding: 8, borderRadius: 4 }}>
       <strong>TagInput (stub)</strong>

@@ -31,13 +31,13 @@ This package ensures that Comlink communication only begins after the Worker is 
 
 ```bash
 # npm
-npm install @hierarchidb/runtime-worker-init-notifier
+npm install @hierarchidb/runtime-worker-worker-init-notifier
 
 # pnpm
-pnpm add @hierarchidb/runtime-worker-init-notifier
+pnpm add @hierarchidb/runtime-worker-worker-init-notifier
 
 # yarn
-yarn add @hierarchidb/runtime-worker-init-notifier
+yarn add @hierarchidb/runtime-worker-worker-init-notifier
 ```
 
 ## 🚀 Quick Start
@@ -89,10 +89,10 @@ try {
 ```typescript
 // main.ts (HierarchiDB での利用例)
 import { WorkerInitializationChannel } from '@hierarchidb/runtime-worker-init-notifier';
-import { ensureWorkerRuntime, getWorkerRuntimePromise } from '../app/src/worker-runtime/WorkerModuleLoader';
-import { loadWorkerAPIClientModule } from '../app/src/worker-runtime/workerApiClientLoader';
+import { ensureWorkerRuntime, getWorkerRuntimePromise } from '../app/src/worker-runtime-worker/WorkerModuleLoader';
+import { loadWorkerAPIClientModule } from '../app/src/worker-runtime-worker/workerApiClientLoader';
 
-// Ensure the runtime is booted (spawns the shared worker via WorkerModuleLoader)
+// Ensure the runtime-worker is booted (spawns the shared worker via WorkerModuleLoader)
 await ensureWorkerRuntime();
 
 const { WorkerAPIClient } = await loadWorkerAPIClientModule();

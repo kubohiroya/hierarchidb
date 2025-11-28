@@ -50,7 +50,7 @@ export interface PluginManifestValidationConfig {
 
 /**
  * Lightweight, publish-stable metadata that plugin-loader may expose for discovery.
- * Keep this independent from runtime handler wiring so UI/registry can read it
+ * Keep this independent from runtime-worker handler wiring so UI/registry can read it
  * without importing heavy worker-side code.
  */
 export interface PluginManifest {

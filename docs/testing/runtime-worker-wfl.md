@@ -5,11 +5,11 @@ cp-routing バッチフローの Worker-level 結合テスト（WFL）を CI / �
 ## 実行コマンド
 
 ```bash
-# ワークスペース全体から runtime-worker の WFL を実行
-pnpm wfl --filter @hierarchidb/runtime-worker
+# ワークスペース全体から runtime-worker-worker の WFL を実行
+pnpm wfl --filter @hierarchidb/runtime-worker-worker
 
 # あるいは個別に
-pnpm --filter @hierarchidb/runtime-worker wfl
+pnpm --filter @hierarchidb/runtime-worker-worker wfl
 ```
 
 内部では `vitest run src/__tests__/wfl/cp-routing-wc.wfl.test.ts` を呼び出し、Jest 互換の JUnit レポートを `reports/runtime-worker/cp-routing-wfl.xml` に出力します。CI で WARN / FAIL が発生した場合はこの XML を参照してください。

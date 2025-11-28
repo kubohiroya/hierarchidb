@@ -5,30 +5,6 @@
     "paths": {
       "~/*": [
         "./src/*"
-      ],
-      "@hierarchidb/ui-worker-client": [
-        "../worker-client/src/index.ts"
-      ],
-      "@hierarchidb/ui-worker-client/*": [
-        "../worker-client/src/*"
-      ],
-      "@hierarchidb/common-api": [
-        "../../common/api/src/index.ts"
-      ],
-      "@hierarchidb/common-api/*": [
-        "../../common/api/src/*"
-      ],
-      "@hierarchidb/common-types": [
-        "../../common/types/src/index.ts"
-      ],
-      "@hierarchidb/common-types/*": [
-        "../../common/types/src/*"
-      ],
-      "@hierarchidb/runtime-worker": [
-        "../../runtime/worker/src/index.ts"
-      ],
-      "@hierarchidb/runtime-worker/*": [
-        "../../runtime/worker/src/*"
       ]
     }
   },

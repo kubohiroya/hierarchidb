@@ -70,7 +70,7 @@ export function createLazySingletonInitializer<T>(
  */
 export const DEFAULT_INIT_STEPS: InitializationStep[] = [
   { name: 'Loading core modules', weight: 10 },
-  { name: 'Initializing runtime', weight: 20 },
+  { name: 'Initializing runtime-worker', weight: 20 },
   { name: 'Setting up message handlers', weight: 10 },
   { name: 'Preparing API', weight: 20 },
   { name: 'Initializing singleton instance', weight: 30 },

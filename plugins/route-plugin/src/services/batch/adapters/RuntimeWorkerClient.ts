@@ -6,8 +6,8 @@ import {
 } from '@hierarchidb/runtime-worker';
 
 /**
- * TODO(route-runtime-worker-integration): expand test coverage so that
- * batch session execution exercises the runtime-worker factory path
+ * TODO(route-runtime-worker-worker-integration): expand test coverage so that
+ * batch session execution exercises the runtime-worker-worker factory path
  * (real Comlink client when flag ON, local stage client when flag OFF).
  */
 

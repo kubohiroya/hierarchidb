@@ -1,4 +1,4 @@
-// Type-only replicas of runtime service contracts for UI consumers.
+// Type-only replicas of runtime-worker service contracts for UI consumers.
 // Do not include any implementations here.
 
 import type { DataSourceName } from './DataSource.js';

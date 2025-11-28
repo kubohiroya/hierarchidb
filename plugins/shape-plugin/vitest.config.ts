@@ -44,10 +44,10 @@ export default defineConfig({
       '@hierarchidb/core': path.resolve(__dirname, '../../packages/common/types/src/index.ts'),
       '@hierarchidb/common-types': path.resolve(__dirname, '../../packages/common/types/src/index.ts'),
       '@hierarchidb/common-api': path.resolve(__dirname, '../../packages/common/api/src/index.ts'),
-      '@hierarchidb/ui-worker-client': path.resolve(__dirname, '../../packages/runtime/client/src/index.ts'),
-      '@hierarchidb/runtime-worker': path.resolve(__dirname, '../../packages/runtime/worker/src/index.ts'),
+      '@hierarchidb/ui-worker-client': path.resolve(__dirname, '../../packages/runtime-worker/client/src/index.ts'),
+      '@hierarchidb/runtime-worker': path.resolve(__dirname, '../../packages/runtime-worker/worker/src/index.ts'),
       '@hierarchidb/plugin-ui-host': path.resolve(__dirname, '../../packages/plugin-ui-host/src/index.ts'),
-      '@hierarchidb/runtime-ui-datasource': path.resolve(__dirname, '../../packages/runtime-ui/datasource/src/index.ts'),
+      '@hierarchidb/runtime-ui-datasource': path.resolve(__dirname, '../../packages/runtime-worker-ui/datasource/src/index.ts'),
       '@hierarchidb/ui-lru-splitview': path.resolve(__dirname, '../../packages/ui/lru-splitview/src/index.ts'),
       '@hierarchidb/download': path.resolve(
         __dirname,

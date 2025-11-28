@@ -10,7 +10,7 @@ vi.mock('../../loaders/uiPlugins.js', () => ({
   }),
 }));
 
-vi.mock('@hierarchidb/runtime-worker', () => ({
+vi.mock('@hierarchidb/runtime-worker-worker', () => ({
   storeRegistry: {
     getPeer: vi.fn(() => undefined),
   },

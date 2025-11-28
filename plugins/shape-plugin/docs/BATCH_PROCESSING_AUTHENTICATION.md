@@ -148,7 +148,7 @@ export type AuthNotification = AuthRequiredNotification | AuthSuccessNotificatio
 ### 2. Worker側認証エラー検出
 
 ```typescript
-// packages/runtime/worker/src/auth/WorkerAuthHandler.ts
+// packages/runtime-worker/worker/src/auth/WorkerAuthHandler.ts
 export class WorkerAuthHandler {
   private authCallbacks = new Map<string, (notification: AuthNotification) => void>();
   

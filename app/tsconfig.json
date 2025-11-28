@@ -103,17 +103,11 @@
       "@hierarchidb/ui-plugin-basic-info/*": [
         "../packages/ui/plugin-basic-info/src/*"
       ],
-      "@hierarchidb/ui-worker-client": [
-        "../packages/runtime/client/src/index.ts"
-      ],
-      "@hierarchidb/ui-worker-client/*": [
-        "../packages/runtime/client/src/*"
-      ],
       "@hierarchidb/runtime-worker": [
-        "../packages/runtime/worker/src/index.ts"
+        "../packages/runtime-worker/src/index.ts"
       ],
       "@hierarchidb/runtime-worker/*": [
-        "../packages/runtime/worker/src/*"
+        "../packages/runtime-worker/src/*"
       ],
       "@hierarchidb/ui-icon": [
         "../packages/ui/icon/src/index.ts"

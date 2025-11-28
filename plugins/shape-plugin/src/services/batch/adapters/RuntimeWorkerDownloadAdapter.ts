@@ -9,9 +9,9 @@ import { getShapeRuntimeWorkerClient } from './RuntimeWorkerClient.js';
 /**
  * RuntimeWorkerDownloadAdapter
  *
- * Scaffolds a runtime-worker based download stage behind a stable adapter.
+ * Scaffolds a runtime-worker-worker based download stage behind a stable adapter.
  * For now it leverages the shared DownloadService and keeps progress semantics.
- * Later this will dispatch tasks to @hierarchidb/runtime-worker workers.
+ * Later this will dispatch tasks to @hierarchidb/runtime-worker-worker workers.
  */
 export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
   private readonly laneRegistry = createLaneSemaphoreRegistry({
@@ -33,7 +33,7 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
     onProgress: (p: ProgressInfo) => void,
     controls?: StageControls,
   ): Promise<DownloadStageAdapterResult> {
-    // Require a runtime worker client (no fallback here)
+    // Require a runtime-worker worker client (no fallback here)
     const client = await getShapeRuntimeWorkerClient();
     const downloadClient = client?.download;
     if (!downloadClient) {
