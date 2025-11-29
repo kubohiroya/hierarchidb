@@ -175,8 +175,16 @@ export function TreeTableCore({
 
   const columns = useMemo(() => {
     const draftIds = new Set(
-      structure.tableData
-        .filter((n) => (n as { draftData?: unknown }).draftData !== null && (n as { draftData?: unknown }).draftData !== undefined)
+      structure.rawData
+        .filter((n) => {
+          const draftData = (n as { draftData?: unknown }).draftData;
+          const draftMetadata = (n as { draftMetadata?: unknown }).draftMetadata;
+          return (
+            draftData !== null && draftData !== undefined
+          ) || (
+            draftMetadata !== null && draftMetadata !== undefined
+          );
+        })
         .map((n) => n.id as string as NodeId)
     );
 
@@ -195,7 +203,7 @@ export function TreeTableCore({
         },
       },
       draftChipLabels: {
-        self: commonT('treeTable.chips.draftSelf', 'Editing'),
+        self: commonT('treeTable.chips.draftSelf', 'Draft'),
         descendant: commonT('treeTable.chips.draftDescendant', 'Editing in subtree'),
       },
       columnWidths,

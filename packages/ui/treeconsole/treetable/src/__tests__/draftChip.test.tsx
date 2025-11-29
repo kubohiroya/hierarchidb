@@ -55,28 +55,36 @@ describe('TreeTable Draft chip', () => {
     setEditingNodeId: () => {},
     setEditingField: () => {},
     treeId: 'console',
-  setContextMenuState: () => {},
-  visualSelectionSet: new Set(),
-  useTrashColumns: false,
-  trashAction: 'restore',
-  formatTimestamp: () => '-',
-  columnLabels: {
-    name: 'Name',
-    description: 'Description',
-    created: 'Created',
-    updated: 'Updated',
-    removed: 'Removed',
-  },
-  validationMessages: {
-    invalidName: 'Invalid name',
-    invalidDescription: 'Invalid description',
-  },
-  placeholders: {
-    nameEdit: 'Press Enter to confirm / Esc to cancel',
-    descriptionEdit: 'Press Ctrl+Enter to confirm / Esc to cancel',
-  },
-  emptyValue: '-',
-};
+    setContextMenuState: () => {},
+    visualSelectionSet: new Set(),
+    useTrashColumns: false,
+    trashAction: 'restore',
+    formatTimestamp: () => '-',
+    columnLabels: {
+      name: 'Name',
+      description: 'Description',
+      created: 'Created',
+      updated: 'Updated',
+      removed: 'Removed',
+    },
+    draftChipLabels: {
+      self: 'Draft',
+      descendant: 'Draft in subtree',
+    },
+    draftFlags: {
+      hasDraft: new Set(),
+      hasDescendantDraft: () => false,
+    },
+    validationMessages: {
+      invalidName: 'Invalid name',
+      invalidDescription: 'Invalid description',
+    },
+    placeholders: {
+      nameEdit: 'Press Enter to confirm / Esc to cancel',
+      descriptionEdit: 'Press Ctrl+Enter to confirm / Esc to cancel',
+    },
+    emptyValue: '-',
+  };
 
   const buildNode = (overrides: Partial<TreeNode> = {}): TreeNode => ({
     id: 'node-1' as NodeId,
@@ -90,8 +98,13 @@ describe('TreeTable Draft chip', () => {
     ...overrides,
   });
 
-  const renderNameCell = (node: TreeNode) => {
-    const columns = createTreeTableColumns(defaultParams);
+  const renderNameCell = (node: TreeNode, overrides: Partial<ColumnBuilderParams> = {}) => {
+    const columns = createTreeTableColumns({
+      ...defaultParams,
+      ...overrides,
+      draftFlags: overrides.draftFlags ?? defaultParams.draftFlags,
+      draftChipLabels: overrides.draftChipLabels ?? defaultParams.draftChipLabels,
+    });
     const nameColumn = columns.find((column) => column.id === 'name');
     if (!nameColumn || typeof nameColumn.cell !== 'function') {
       throw new Error('name column renderer is not available');
@@ -103,13 +116,23 @@ describe('TreeTable Draft chip', () => {
     render(<>{cell}</>);
   };
 
-  it('renders Draft chip when node is marked as draft', () => {
-    renderNameCell(buildNode({ isDraft: true }));
+  it('renders Draft chip when node has draftData without explicit draft flag', () => {
+    renderNameCell(buildNode({ draftData: { foo: 'bar' } }));
     expect(screen.getByText('Draft')).toBeTruthy();
   });
 
-  it('does not render Draft chip for regular nodes', () => {
-    renderNameCell(buildNode({ isDraft: false }));
+  it('renders Draft chip when draft flag set for node', () => {
+    renderNameCell(buildNode(), {
+      draftFlags: {
+        hasDraft: new Set<NodeId>(['node-1' as NodeId]),
+        hasDescendantDraft: () => false,
+      },
+    });
+    expect(screen.getByText('Draft')).toBeTruthy();
+  });
+
+  it('does not render Draft chip for nodes without draft data or flags', () => {
+    renderNameCell(buildNode());
     expect(screen.queryByText('Draft')).toBeNull();
   });
 });

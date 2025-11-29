@@ -17,11 +17,11 @@ export const pluginWorkerSourceMap: Record<string, string | undefined> = deriveP
   'worker'
 );
 
-const workerModuleGlob = import.meta.glob('../../../../../plugins/*-plugin/src/**/index.{ts,tsx}');
+const workerModuleGlob = import.meta.glob('../../../../plugins/*-plugin/src/**/index.{ts,tsx}');
 
 function resolveWorkerLoader(sourcePath: string | undefined): (() => Promise<unknown>) | undefined {
   if (!sourcePath) return undefined;
-  const relativeKey = `../../../../../${sourcePath}`;
+  const relativeKey = `../../../../${sourcePath}`;
   return workerModuleGlob[relativeKey];
 }
 

@@ -53,6 +53,50 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1556) plugin worker preload 解決（P0）
+- ブランチ: `fix/runtime-worker/plugin-worker-loader-path`（sandbox 制約で `main` 上で作業：git branch 作成に失敗）
+- 依存: `packages/runtime-worker/src/plugin-registry/index.ts`, `packages/runtime-worker/src/di/PluginWorkerModuleLoader.ts`, `app/src/worker-runtime/WorkerModuleLoader.ts`（状況確認用）
+- 受け入れ基準（DoD）:
+  - [ ] TASKS Kanban／運用ログを更新し、start→progress→done とロールバック手順を記載する
+  - [ ] `pnpm dev` 起動時に shape/spreadsheet/styler/timeline の worker preload で `Failed to resolve module specifier '@hierarchidb/*-plugin/worker'` 警告が出ない
+  - [ ] Plugin worker loader がプラグインソースの direct loader から解決でき、bare spec fallback が不要になることを確認する（必要な検証手順をログに記録）
+  - [ ] 代表的な検証（`pnpm --filter @hierarchidb/runtime-worker typecheck` など）の結果を運用ログへ記録する
+- チェックリスト:
+  - [x] plugin worker source loader の import.meta.glob パスを修正し、`pluginWorkerLoaders` から shape/spreadsheet/styler/timeline を含む全 nodeType を解決できるようにする
+  - [ ] preload 実行経路で bare spec fallback が発火しないことを確認するための手順/検証結果を記録する
+  - [x] 影響範囲の typecheck などを実行し、結果を運用ログへ追記する
+- ロールバック手順：`packages/runtime-worker/src/plugin-registry/index.ts`（必要なら `app/src/worker-runtime/WorkerModuleLoader.ts` の変更も）を revert し、`pnpm --filter @hierarchidb/runtime-worker typecheck` などを再実行して現象再現を確認する
+
+1555) Auth authorize 404 調査・修正（P0）
+- ブランチ: `fix/auth/authorize-route`（sandbox 制約で branch 作成不可の場合は main 上で作業）
+- 依存: `app/src/router`、`app/src/pages/auth` など認証ルーティング/ミドルウェア周辺
+- 受け入れ基準（DoD）:
+  - [ ] `/auth/authorize/<provider>` へのアクセスが 404 にならない原因を特定する（例: ルート欠如・base/path 設定不整合・dev/prod 差分など）
+  - [ ] `/auth/authorize/google?code_challenge=...` 等で 200 もしくは適切なリダイレクト応答となるよう修正する
+  - [ ] ルーティング/ミドルウェア/設定の変更点を最小差分で反映し、必要に応じてテスト（ルーティング/ミドルウェア周辺の単体 or e2e 相当）を追加・更新する
+  - [ ] 主要検証コマンド（例: `pnpm -C app test` または該当パッケージの typecheck/test）を実行し、成功ログを運用ログに記載する
+  - [ ] ロールバック手順（差分を revert し検証コマンドを再実行する方法）を `TASKS.md` に明記する
+- チェックリスト:
+  - [ ] `/auth/authorize/*` ルートとハンドラの解決経路を確認し、404 の発生要因（base path、router mode、server rewrite など）を洗い出す
+  - [ ] 必要なルート/設定/ミドルウェアを追加または修正して 404 を解消する
+  - [ ] 修正箇所に対するテストまたは手動確認手順を整備し、検証コマンドを実行する
+  - [ ] 運用ログへ start→progress→done と検証ログ、ロールバック手順を追記する
+- ロールバック手順：本タスクで変更した認証ルーティング/ミドルウェア/設定ファイルの差分を revert し、実行した検証コマンド（例: `pnpm -C app test` など）を再実行して現状の 404 状態へ戻ることを確認する
+
+1554) TreeConsole Draft チップ表示（P0）
+- ブランチ: `fix/ui-treeconsole/draft-chip`（sandbox 制約で `main` 上で作業：git branch 作成に失敗したため）
+- 依存: `packages/ui/treeconsole/treetable`, `app/src/hooks/treeconsole`, `app/src/router/pages/tree/console/*`, MUI Chip 表示部
+- 受け入れ基準（DoD）:
+  - [ ] draft が null かつ draftData が存在するノードでのみ、名前の右側に MUI Chip で “Draft” を表示する
+  - [ ] 上記以外の状態ではチップを表示しない（既存レイアウト/アクセシビリティを崩さない）
+  - [ ] 追加した判定・表示の検証結果（テストまたは画面確認手順）を運用ログに記録する
+  - [ ] TASKS Kanban／運用ログに start→progress→done とロールバック手順を記載する
+- チェックリスト:
+  - [ ] TreeConsole のノード名レンダリング箇所に draftData のみ保持するケースを判定するガードを追加する
+  - [ ] 条件を満たす場合に “Draft” Chip を名前右側へ表示し、スタイル崩れがないことを確認する
+  - [ ] 影響範囲の typecheck/必要なテストを実行するか手動確認し、結果を運用ログへ追記する
+- ロールバック手順：今回変更する TreeConsole のノード表示関連ファイル（例: treetable の Name 列レンダラや関連 hook）を revert し、実行した検証コマンドを再実行して現状挙動（Draft 表示なし）へ戻ることを確認する
+
 1553) ui-worker-client/ui-worker-provider への分割と ui-plugin-shell への改称（P0）
 - ブランチ: `refactor/ui/worker-client-provider-rename`
 - 依存: `packages/runtime/client`, `packages/ui-shell`, 全パッケージの import/alias/tsconfig/turbo/vite 設定
@@ -8913,6 +8957,19 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-14"></a>
 
+- 2025-11-29 14:20 start: fix/runtime-worker/plugin-worker-loader-path — dev コンソールで shape/spreadsheet/styler/timeline の worker preload が `@hierarchidb/*-plugin/worker` 未解決になる問題の調査を開始。DoD/チェックリストを Kanban に追加。
+- 2025-11-29 14:21 progress: fix/runtime-worker/plugin-worker-loader-path — `git checkout -b fix/runtime-worker/plugin-worker-loader-path` が `.git/refs/heads/...` 作成不可で失敗したため、main 上で作業継続（Kanban に記載）。
+- 2025-11-29 14:32 progress: fix/runtime-worker/plugin-worker-loader-path — runtime-worker の plugin worker loader が参照する `import.meta.glob` の相対パスを `../../../../plugins/*-plugin/src/**/index.{ts,tsx}` へ修正し、loaderMap がプラグインソースを解決できるようにした（bare spec fallback 依存を排除）。
+- 2025-11-29 14:33 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0（tsc -p tsconfig.typecheck.json）。
+- 2025-11-29 07:34 start: fix/auth/authorize-route — `/auth/authorize/<provider>` が 404 となる問題の調査を開始。DoD: 原因特定とルート修正、`/auth/authorize/google?...` での 200/適切リダイレクト確認、関連テスト/検証コマンドの実行ログ記録、ロールバック手順明記。
+- 2025-11-29 07:35 progress: fix/auth/authorize-route — `git checkout -b fix/auth/authorize-route` が `.git/refs/heads/...` 作成不可で失敗したため、main 上で作業継続する方針に変更（Kanban に明記済み）。
+- 2025-11-29 07:40 progress: fix/auth/authorize-route — Vite dev proxy の `/auth` ルールを更新し、`VITE_BFF_BASE_URL` に `/api/auth` などパス付き URL を指定した場合でも `/auth` 二重付与にならず正しく `/api/auth/authorize` へ転送されるよう rewrite を追加。
+- 2025-11-29 07:41 command: pnpm -C app test -- --run configure-router-mode.unit.test.ts — exit 1（既存課題）。`@hierarchidb/runtime-worker` 解決不可で worker 起動系テストが失敗、TreeConsoleToolbar import メニューの aria ボタン未検出・trash breadcrumb の期待値違いも既存 red。今回の proxy 変更による新規エラーではないことを確認。
+- 2025-11-29 07:29 start: fix/ui-treeconsole/draft-chip — TreeConsole で draft:null & draftData 有のノードに “Draft” Chip を表示する対応を開始。`git checkout -b fix/ui-treeconsole/draft-chip` は `unable to create directory for .git/refs/heads/...` で失敗したため sandbox 制約下で main 作業とし、Kanban に明記。
+- 2025-11-29 07:37 progress: fix/ui-treeconsole/draft-chip — draftData/draftMetadata を持つノードを rawData 全体から検出して Draft チップを出すよう TreeTableCore を更新し、name セル側でも draftData/draftMetadata 判定でフォールバック。self チップのデフォルトラベルを “Draft” に変更。`pnpm --filter @hierarchidb/ui-treeconsole-treetable test -- --run draftChip`（exit 0）で確認。
+- 2025-11-29 07:50 progress: fix/ui-treeconsole/draft-chip — 表示ラベルを “Draft” へ確定し直し、`pnpm --filter @hierarchidb/ui-treeconsole-treetable test -- --run draftChip`（exit 0）を再実行して確認。
+- 2025-11-29 07:29 progress: fix/spreadsheet/import-template-draft-state — DraftAPI 経由の Edit で更新せずキャンセルした際にノードごと削除される原因を特定。`packages/runtime-worker/src/services/draft/cleanupOperations.ts` の `discardTreeNodeDraft` が `data` の有無で「作成ドラフトか既存ノードか」を判定しており、payload を持たないノード（folder など `data: null`）でも create-only と誤判定して `coreDB.nodes.delete` を呼ぶ。`useDialogDraft` の cancel/ページ離脱で常に discard が走るため、metadata-only ノードを Edit→Cancel すると IndexedDB から消える。ロールバック/対処案: hasCommittedData 判定を version など別指標に変更する、もしくは metadata-only ノードを除外する。
+- 2025-11-29 07:40 progress: fix/spreadsheet/import-template-draft-state — `discardTreeNodeDraft` の create-only 判定を version/createdAt vs updatedAt と payload でガードするよう修正し、metadata-only ノードの Edit→Cancel では draft クリアのみになるテスト（cleanupOperations.unit.test）を追加。検証: `pnpm --filter @hierarchidb/runtime-worker test -- --run discardTreeNodeDraft` は既知の @hierarchidb/util 解決不可による大量失敗で red（テスト自体は収集されるが環境依存の alias 問題、今回の差分起因ではない）。ロールバック: cleanupOperations.ts と追加テストファイルを revert の上、同コマンド再実行で現状再現。
 - 2025-11-28 23:16 start: investigation/plugin-service-usage — `@hierarchidb/plugin-service-sdk` / `@hierarchidb/plugin-service-api` の参照箇所棚卸しを開始。DoD: 利用ファイルの網羅リスト化と用途メモ、旧アーキ依存の有無判定メモを作成。
 - 2025-11-28 23:32 progress: investigation/plugin-service-usage — `plugin-ui-sdk` と `common-api` にあった plugin-service-api の再エクスポートを削除し、利用箇所を直接 import に置換。`app/src/hooks/usePluginsForTree.ts` / `usePluginRegistry.ts` / `app/src/worker-runtime/worker.ts` を plugin-service-api 直参照に変更し、`wrapDialogStepComponent` も StepComponent を直接参照する形へ修正。
 - 2025-11-28 23:34 command: pnpm --filter @hierarchidb/app typecheck — exit 0（plugin-base build 時の define 警告は既存）。

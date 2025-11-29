@@ -15,24 +15,20 @@ type TestWorkerAPI = {
 };
 
 type TemplateNode = {
-  treeNodeId: string;
-  parentTreeNodeId: string | null;
-  treeNodeType: string;
-  name: string;
-  description?: string;
-  metadata?: Record<string, unknown>;
+  nodeType: string;
+  metadata?: { name?: string; description?: string } | Record<string, unknown>;
   draftData?: Record<string, unknown> | null;
   draftMetadata?: Record<string, unknown> | null;
   data?: Record<string, unknown> | null;
+  children?: TemplateNode[];
 };
 
 type TemplateFile = {
-  nodes: Record<string, TemplateNode>;
-  rootNodeIds: string[];
+  nodes: TemplateNode[];
 };
 
 const templateUrl = new URL(
-  '../../../../../../app/public/templates/population-2023/tree-nodes.json',
+  '../../../../../app/public/templates/population-2023/tree-nodes.json',
   import.meta.url
 );
 
@@ -42,43 +38,37 @@ async function loadTemplate(): Promise<TemplateFile> {
 }
 
 function buildImportNodes(data: TemplateFile): ImportData['nodes'] {
-  const { nodes } = data;
-  if (!Array.isArray(data.rootNodeIds) || data.rootNodeIds.length === 0) {
-    throw new Error('Template must provide rootNodeIds');
-  }
-  const roots = data.rootNodeIds;
-  const toImportNode = (id: string): ImportData['nodes'][number] | null => {
-    const node = nodes[id];
-    if (!node) return null;
-    const children = Object.values(nodes)
-      .filter((child) => child?.parentTreeNodeId === id)
-      .map((child) => toImportNode(child.treeNodeId))
-      .filter((child): child is ImportData['nodes'][number] => child !== null);
-    const metadata = (node.metadata && typeof node.metadata === 'object' ? node.metadata : undefined) as
-      | Record<string, unknown>
-      | undefined;
+  const toImportNode = (node: TemplateNode): ImportData['nodes'][number] => {
+    const metadata =
+      node.metadata && typeof node.metadata === 'object' ? (node.metadata as Record<string, unknown>) : undefined;
     const draftData =
-      (node.draftData && typeof node.draftData === 'object' ? node.draftData : undefined) ??
-      undefined;
+      node.draftData && typeof node.draftData === 'object' ? (node.draftData as Record<string, unknown>) : undefined;
     const draftMetadata =
-      (node.draftMetadata && typeof node.draftMetadata === 'object' ? node.draftMetadata : undefined) ??
-      undefined;
-    const dataPayload = node.data && typeof node.data === 'object' ? node.data : undefined;
+      node.draftMetadata && typeof node.draftMetadata === 'object'
+        ? (node.draftMetadata as Record<string, unknown>)
+        : undefined;
+    const dataPayload = node.data && typeof node.data === 'object' ? (node.data as Record<string, unknown>) : undefined;
+    const children =
+      node.children?.map((child) => toImportNode(child)).filter((child): child is ImportData['nodes'][number] => !!child) ??
+      [];
 
     return {
-      name: node.name,
-      nodeType: node.treeNodeType,
-      description: node.description,
+      name: (metadata as { name?: string })?.name ?? 'Untitled',
+      nodeType: node.nodeType,
+      description: (metadata as { description?: string })?.description,
       metadata,
-      draftData: draftData ?? undefined,
-      draftMetadata: draftMetadata ?? undefined,
-      data: dataPayload ?? undefined,
+      draftData: draftData,
+      draftMetadata: draftMetadata,
+      data: dataPayload,
       children: children.length > 0 ? children : undefined,
     };
   };
-  return roots
-    .map((rootId) => toImportNode(rootId))
-    .filter((node): node is ImportData['nodes'][number] => node !== null);
+
+  if (!Array.isArray(data.nodes) || data.nodes.length === 0) {
+    throw new Error('Template must provide nodes');
+  }
+
+  return data.nodes.map((node) => toImportNode(node));
 }
 
 describe('WFL import template: Total Population by Country', () => {

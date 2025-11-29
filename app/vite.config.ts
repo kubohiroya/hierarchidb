@@ -279,19 +279,20 @@ function createRuntimeAliasConfig({
       }
     }
   } else {
-    addAlias('@hierarchidb/runtime-worker-worker', '../packages/runtime-worker/worker/dist/index.js', { exact: true });
-    addAlias('@hierarchidb/runtime-worker-worker/stage-worker', '../packages/runtime-worker/worker/dist/stageWorker.entry.js', {
+    // Productionも原則srcを参照する（ビルド済みdistへのエイリアスは依存解決順や存在に依存し脆弱）
+    addAlias('@hierarchidb/runtime-worker-worker', '../packages/runtime-worker/worker/src/index.ts', { exact: true });
+    addAlias('@hierarchidb/runtime-worker-worker/stage-worker', '../packages/runtime-worker/worker/src/stageWorker.entry.ts', {
       exclude: true,
       exact: true,
     });
-    addAlias('@hierarchidb/ui-worker-client', '../packages/ui/worker-client/dist/index.js', { exact: true });
-    addAlias('@hierarchidb/ui-worker-provider', '../packages/ui/worker-provider/dist/index.js', { exact: true });
-    addAlias('@hierarchidb/map-adapter', '../packages/features/map-adapter/dist/index.js', { exclude: true, exact: true });
-    addAlias('@hierarchidb/tabular-source-xlsx', '../packages/features/tabular-source-xlsx/dist/index.js', { exclude: true, exact: true });
-    addAlias('@hierarchidb/ui-plugin-shell/ui-i18n', '../packages/ui/i18n/dist/index.js', { exclude: true, exact: true });
+    addAlias('@hierarchidb/ui-worker-client', '../packages/ui/worker-client/src/index.ts', { exact: true });
+    addAlias('@hierarchidb/ui-worker-provider', '../packages/ui/worker-provider/src/index.ts', { exact: true });
+    addAlias('@hierarchidb/map-adapter', '../packages/features/map-adapter/src/index.ts', { exclude: true, exact: true });
+    addAlias('@hierarchidb/tabular-source-xlsx', '../packages/features/tabular-source-xlsx/src/index.ts', { exclude: true, exact: true });
+    addAlias('@hierarchidb/ui-plugin-shell/ui-i18n', '../packages/ui/i18n/src/index.ts', { exclude: true, exact: true });
 
     for (const mapping of [...legacyUiMappings, ...legacyFeatureMappings]) {
-      addAlias(mapping.spec, mapping.dist, { exclude: true, exact: true });
+      addAlias(mapping.spec, mapping.src, { exclude: true, exact: true });
     }
 
     const pluginPkgRoot = path.resolve(rootDir, '../plugins');
@@ -307,62 +308,29 @@ function createRuntimeAliasConfig({
 
         const pluginName = entry.name;
         const specBase = `@hierarchidb/${pluginName}`;
-        const rootDistRel = `../plugins/${pluginName}/dist/index.js`;
-        const rootDistAbs = path.resolve(rootDir, rootDistRel);
-        if (fs.existsSync(rootDistAbs)) {
-          addAlias(specBase, rootDistRel, { exact: true });
-        } else {
-          const rootSrcRel = resolvePluginCandidate(rootCandidates, pluginName);
-          if (rootSrcRel) {
-            addAlias(specBase, rootSrcRel);
-          }
+        const rootSrcRel = resolvePluginCandidate(rootCandidates, pluginName);
+        if (rootSrcRel) {
+          addAlias(specBase, rootSrcRel, { exclude: true, exact: true });
         }
 
-        const workerDistRel = `../plugins/${pluginName}/dist/worker/index.js`;
-        const workerDistAbs = path.resolve(rootDir, workerDistRel);
-        if (fs.existsSync(workerDistAbs)) {
-          addAlias(`${specBase}/worker`, workerDistRel);
-        } else {
-          const workerSrcRel = resolvePluginCandidate(workerEntryCandidates, pluginName);
-          if (workerSrcRel) {
-            addAlias(`${specBase}/worker`, workerSrcRel, { exclude: true });
-          }
-        }
-        const uiDistRel = `../plugins/${pluginName}/dist/ui/index.js`;
-        const uiDistAbs = path.resolve(rootDir, uiDistRel);
-        if (fs.existsSync(uiDistAbs)) {
-          addAlias(`${specBase}/ui`, uiDistRel);
-        } else {
-          const uiSrcRel = resolvePluginCandidate(uiCandidates, pluginName);
-          if (uiSrcRel) {
-            addAlias(`${specBase}/ui`, uiSrcRel, { exclude: true });
-          }
+        const workerSrcRel = resolvePluginCandidate(workerEntryCandidates, pluginName);
+        if (workerSrcRel) {
+          addAlias(`${specBase}/worker`, workerSrcRel, { exclude: true, exact: true });
         }
 
-        const iconDistCandidates = [`../plugins/${pluginName}/dist/icon/index.js`];
-        const iconDistRel = iconDistCandidates.find((candidate) => fs.existsSync(path.resolve(rootDir, candidate)));
-        if (iconDistRel) {
-          addAlias(`${specBase}/icon`, iconDistRel);
-        } else {
-          const iconSrcRel = resolvePluginCandidate(iconCandidates, pluginName);
-          if (iconSrcRel) {
-            addAlias(`${specBase}/icon`, iconSrcRel, { exclude: true });
-          }
+        const uiSrcRel = resolvePluginCandidate(uiCandidates, pluginName);
+        if (uiSrcRel) {
+          addAlias(`${specBase}/ui`, uiSrcRel, { exclude: true, exact: true });
         }
 
-        const databaseDistCandidates = [
-          `../plugins/${pluginName}/dist/services/database/index.js`,
-          `../plugins/${pluginName}/dist/worker/database/index.js`,
-          `../plugins/${pluginName}/dist/database/index.js`,
-        ];
-        const databaseDistRel = databaseDistCandidates.find((candidate) => fs.existsSync(path.resolve(rootDir, candidate)));
-        if (databaseDistRel) {
-          addAlias(`${specBase}/database`, databaseDistRel);
-        } else {
-          const databaseSrcRel = resolvePluginCandidate(databaseCandidates, pluginName);
-          if (databaseSrcRel) {
-            addAlias(`${specBase}/database`, databaseSrcRel, { exclude: true });
-          }
+        const iconSrcRel = resolvePluginCandidate(iconCandidates, pluginName);
+        if (iconSrcRel) {
+          addAlias(`${specBase}/icon`, iconSrcRel, { exclude: true, exact: true });
+        }
+
+        const databaseSrcRel = resolvePluginCandidate(databaseCandidates, pluginName);
+        if (databaseSrcRel) {
+          addAlias(`${specBase}/database`, databaseSrcRel, { exclude: true, exact: true });
         }
       }
     }
@@ -955,11 +923,29 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       },
       // Dev proxy for BFF endpoints
       proxy: {
-        '/auth': {
-          target: env.VITE_BFF_BASE_URL || 'http://localhost:8787',
-          changeOrigin: true,
-          secure: true,
-        },
+        '/auth': (() => {
+          // Support BFF endpoints that may already live under a base path (e.g. /api/auth)
+          const rawBffUrl = env.VITE_BFF_BASE_URL || 'http://localhost:8787/api/auth';
+          let bffUrl: URL;
+          try {
+            bffUrl = new URL(rawBffUrl);
+          } catch {
+            bffUrl = new URL('http://localhost:8787/api/auth');
+          }
+          const origin = `${bffUrl.protocol}//${bffUrl.host}`;
+          const basePath = bffUrl.pathname.replace(/\/$/, '');
+
+          return {
+            target: origin,
+            changeOrigin: true,
+            secure: true,
+            rewrite: (path) => {
+              const stripped = path.replace(/^\/auth/, '');
+              const upstreamBase = basePath || '/auth';
+              return `${upstreamBase}${stripped}`;
+            },
+          };
+        })(),
       },
     },
     worker: {

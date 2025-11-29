@@ -261,6 +261,13 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
       const iconColor = isFolderNodeType(nodeType) ? baseIconColor : (manifestIconColor ?? baseIconColor);
       const updatedAtValue = typeof node.updatedAt === 'number' ? node.updatedAt : undefined;
       const showSparkle = typeof updatedAtValue === 'number' ? Date.now() - updatedAtValue <= 5000 : false;
+      const draftData = (node as { draftData?: unknown }).draftData;
+      const draftMetadata = (node as { draftMetadata?: unknown }).draftMetadata;
+      const hasSelfDraft =
+        params.draftFlags.hasDraft.has(node.id as NodeId) ||
+        draftData !== null && draftData !== undefined ||
+        draftMetadata !== null && draftMetadata !== undefined;
+      const hasDescendantDraft = params.draftFlags.hasDescendantDraft(node.id as NodeId);
 
       return (
         <NameCell>
@@ -469,7 +476,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                   {node.metadata.name}
                 </Box>
                 <SparkleAnimation showSparkle={showSparkle} />
-                {params.draftFlags.hasDraft.has(node.id as NodeId) ? (
+                {hasSelfDraft ? (
                   <Chip
                     label={params.draftChipLabels.self}
                     size="small"
@@ -478,7 +485,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                     sx={{ height: 20 }}
                     onClick={(e) => e.stopPropagation()}
                   />
-                ) : params.draftFlags.hasDescendantDraft(node.id as NodeId) ? (
+                ) : hasDescendantDraft ? (
                   <Chip
                     label={params.draftChipLabels.descendant}
                     size="small"

@@ -11,12 +11,23 @@ export async function discardTreeNodeDraft(coreDB: CoreDB, draftNodeId: NodeId):
   const existing = await coreDB.nodes.get(draftNodeId);
   if (!existing) return;
 
-  // If this was a create-only draft (no committed data), delete the node entirely.
-  const hasCommittedData =
-    (existing as { data?: unknown }).data !== null &&
-    (existing as { data?: unknown }).data !== undefined;
+  const data = (existing as { data?: unknown }).data;
+  const draftData = (existing as { draftData?: unknown }).draftData;
+  const version = (existing as { version?: number }).version ?? 0;
+  const createdAt = (existing as { createdAt?: number }).createdAt;
+  const updatedAt = (existing as { updatedAt?: number }).updatedAt;
+  const hasCommittedData = data !== null && data !== undefined;
+  const hasCommittedVersion = version > 1;
+  const hasCommittedTimestamps =
+    typeof createdAt === 'number' && typeof updatedAt === 'number' && createdAt !== updatedAt;
 
-  if (!hasCommittedData) {
+  // Treat as create-only draft only when there is no committed payload/version/timestamp signal.
+  const hasDraftPayload =
+    draftData !== null &&
+    draftData !== undefined &&
+    (typeof draftData !== 'object' || Object.keys(draftData as Record<string, unknown>).length > 0);
+
+  if (!hasCommittedData && !hasCommittedVersion && !hasCommittedTimestamps && !hasDraftPayload) {
     await coreDB.nodes.delete(draftNodeId);
   } else {
     await coreDB.nodes.update(draftNodeId, {
