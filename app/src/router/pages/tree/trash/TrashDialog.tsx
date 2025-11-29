@@ -1009,7 +1009,7 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
         },
       });
       if (result.success) {
-        closeDialog({ reload: true });
+        closeDialog();
       }
     } finally {
       setLoading(false);

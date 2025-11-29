@@ -43,7 +43,7 @@ export interface BaseMapEntity extends BaseEntity<NodeId> {
 
 /**
  * BaseMap working copy for edit operations
- * Prefer Partial<BaseMapEntity> / TreeNodeUpdater<BaseMapEntity>; keep minimal draft shape for compatibility.
+ * Prefer Partial<BaseMapEntity> / TreeNodeUpdaterPayload<BaseMapEntity>; keep minimal draft shape for compatibility.
  */
 export type BaseMapDraftPayload = Partial<Pick<BaseMapEntity, 'mapStyle' | 'viewport' | 'name' | 'description' | 'tags'>> & {
   createdAt?: Timestamp;

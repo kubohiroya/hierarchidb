@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { BASIC_INFO_META_KEY, buildStepWorkingData } from '../usePluginDialogController.js';
 
 describe('buildStepWorkingData', () => {
-  it('merges basic info fields into working copy data', () => {
+  it('leaves step data untouched (basic info is not merged into plugin data)', () => {
     const draftData = {
       draft: {
         foo: 'bar',
@@ -19,16 +19,12 @@ describe('buildStepWorkingData', () => {
 
     const result = buildStepWorkingData(draftData, basicInfo, meta);
 
-    expect(result).toEqual({
-      ...draftData,
-      name: 'New Basemap',
-      description: 'Default description',
-      tags: ['basemap'],
-    });
+    // Basic info fields are no longer merged into step data.
+    expect(result).toEqual(draftData);
     expect(result[BASIC_INFO_META_KEY]).toBeUndefined(); // meta key is reserved but not emitted
   });
 
-  it('creates a fresh record when working data is undefined', () => {
+  it('returns empty object when working data is undefined', () => {
     const basicInfo = {
       name: 'Fallback Name',
       description: '',
@@ -38,11 +34,7 @@ describe('buildStepWorkingData', () => {
 
     const result = buildStepWorkingData(undefined, basicInfo, meta);
 
-    expect(result).toEqual({
-      name: 'Fallback Name',
-      description: '',
-      tags: [],
-    });
+    expect(result).toEqual({});
     expect(result[BASIC_INFO_META_KEY]).toBeUndefined(); // meta key is reserved but not emitted
   });
 });

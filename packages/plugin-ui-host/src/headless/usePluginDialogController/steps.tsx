@@ -6,38 +6,35 @@ import type {
   composeStepConfigs,
   StepComponentProps as PluginStepComponentProps,
 } from '@hierarchidb/plugin-base';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId, TreeNodeMetadata } from '@hierarchidb/common-types';
 import type {
   DialogStep,
   StepComponentDescriptor,
   StepValidationFn,
   StepComponentProps as HeadlessStepComponentProps,
 } from '@hierarchidb/ui-dialog';
-import {
-  buildStepWorkingData,
-  mergeDialogData,
-  stripReservedDialogKeys,
-  toRecord,
-} from '../controller/step-guards.js';
+import { buildStepWorkingData, mergeDialogData, toRecord } from '../controller/step-guards.js';
 import type {
   StepCompositionResult,
   BasicInfoMeta,
-  BasicInfoState,
-  DialogStepData,
   DialogUiState,
 } from './data-types.js';
 
+type PluginDefinedEntity = object;
+
 type StepAdapterProps = {
-  cfg: PluginStepConfig<DialogStepData, DialogUiState>;
+  cfg: PluginStepConfig<Partial<PluginDefinedEntity>, DialogUiState>;
   mode: 'create' | 'edit';
   nodeId: string;
   parentId: string;
+  basicInfo: TreeNodeMetadata;
   uiState: DialogUiState;
-  setDraftData: React.Dispatch<React.SetStateAction<DialogStepData>>;
+  setDraftData: React.Dispatch<React.SetStateAction<Partial<PluginDefinedEntity>>>;
   updateUiState: (next: DialogUiState) => void;
-  onDataChange?: (data: DialogStepData) => void;
+  onDataChange?: (data: TreeNodeMetadata | Partial<PluginDefinedEntity>) => void;
   dialogRef?: React.RefObject<HTMLElement | null>;
-  stepProps: HeadlessStepComponentProps<DialogStepData>;
+  stepProps: HeadlessStepComponentProps<Partial<PluginDefinedEntity>>;
+  stepData: TreeNodeMetadata | Partial<PluginDefinedEntity>
 };
 
 const StepAdapterComponent: React.FC<StepAdapterProps> = ({
@@ -50,24 +47,31 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
   updateUiState,
   onDataChange,
   dialogRef,
-  stepProps,
+  stepData,
 }) => {
-  const draftAtom = useMemo(() => atom(stepProps.data ?? {}), [stepProps.data]);
+  const isBasicInfoStep = cfg.id === 'basic-info';
+  const draftAtom = useMemo(() => atom(stepData), [stepData]);
   const [, setSlice] = useAtom(draftAtom);
 
   useEffect(() => {
-    setSlice(toRecord(stepProps.data) ?? {});
-  }, [setSlice, stepProps.data]);
+    setSlice(toRecord(stepData) ?? {});
+  }, [setSlice, stepData]);
 
   const handleChange = useCallback(
-    (patch: Partial<DialogStepData>) => {
-      const current = toRecord(stepProps.data) ?? {};
-      const nextData: DialogStepData = { ...current, ...patch };
+    (patch: TreeNodeMetadata | Partial<PluginDefinedEntity>) => {
+      const current = toRecord(stepData) ?? {};
+      const nextData: Partial<PluginDefinedEntity> = { ...current, ...(patch as object) };
       onDataChange?.(nextData);
       setSlice(nextData);
-      setDraftData(nextData);
+      if (!isBasicInfoStep) {
+        const { name, description, tags, ...rest } = nextData as Record<string, unknown>;
+        void name;
+        void description;
+        void tags;
+        setDraftData(rest as Partial<PluginDefinedEntity>);
+      }
     },
-    [onDataChange, stepProps.data, setDraftData, setSlice]
+    [isBasicInfoStep, onDataChange, stepData, setDraftData, setSlice]
   );
 
   return (
@@ -76,7 +80,7 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
         mode,
         nodeId,
         parentId,
-        data: stepProps.data ?? {},
+        data: stepData ?? {},
         uiState,
         disabled: false,
         onChange: handleChange,
@@ -84,15 +88,15 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
         setValid: () => {},
         setError: () => {},
         dialogRef,
-      } satisfies PluginStepComponentProps<DialogStepData, DialogUiState>)}
+      } satisfies PluginStepComponentProps<Partial<PluginDefinedEntity>, DialogUiState>)}
     </>
   );
 };
 
 interface Params {
   composedConfigs: ReturnType<typeof composeStepConfigs>;
-  basicInfo: BasicInfoState;
-  setBasicInfo: React.Dispatch<React.SetStateAction<BasicInfoState>>;
+  basicInfo: TreeNodeMetadata;
+  setBasicInfo: React.Dispatch<React.SetStateAction<TreeNodeMetadata>>;
   basicInfoMeta: BasicInfoMeta;
   basicInfoValidationError: string | null;
   isBasicInfoValid: boolean;
@@ -100,9 +104,9 @@ interface Params {
   mode: 'create' | 'edit';
   nodeId: NodeId;
   pageNodeId: NodeId;
-  draftData: DialogStepData;
-  setDraftData: React.Dispatch<React.SetStateAction<DialogStepData>>;
-  handleBasicInfoBridge: (data: DialogStepData) => void;
+  draftData: Partial<PluginDefinedEntity>;
+  setDraftData: React.Dispatch<React.SetStateAction<Partial<PluginDefinedEntity>>>;
+  handleBasicInfoBridge: (data: TreeNodeMetadata) => void;
   dialogRef: React.RefObject<HTMLDivElement | null>;
 }
 
@@ -121,7 +125,7 @@ export function useDialogSteps({
   setDraftData,
   handleBasicInfoBridge,
   dialogRef,
-}: Params): StepCompositionResult {
+}: Params): StepCompositionResult<PluginDefinedEntity> {
   const [uiState, setUiState] = useState<DialogUiState>({});
   const [draftAtom] = useState(() => atom(buildStepWorkingData(draftData, basicInfo, basicInfoMeta)));
   const [, setDraftAtomValue] = useAtom(draftAtom);
@@ -129,31 +133,27 @@ export function useDialogSteps({
   useEffect(() => {
     setDraftAtomValue(buildStepWorkingData(draftData, basicInfo, basicInfoMeta));
   }, [draftData, basicInfo, basicInfoMeta, setDraftAtomValue]);
-  const normalizedConfigs = useMemo<PluginStepConfig<DialogStepData, DialogUiState>[]>(() => {
+  const normalizedConfigs = useMemo<PluginStepConfig<Partial<PluginDefinedEntity>, DialogUiState>[]>(() => {
     return (composedConfigs.configs ?? []).map(
-      (cfg: PluginStepConfig<DialogStepData, DialogUiState>) => ({
+      (cfg: PluginStepConfig<Partial<PluginDefinedEntity>, DialogUiState>) => ({
         ...cfg,
         validate: cfg.validate
-          ? (data?: DialogStepData) => Boolean(cfg.validate?.(data ?? {}))
+          ? (data?: Partial<PluginDefinedEntity>) => Boolean(cfg.validate?.(data ?? {}))
           : undefined,
       })
     );
   }, [composedConfigs.configs]);
 
-  const currentStepData = useMemo<DialogStepData>(() => buildStepWorkingData(draftData, basicInfo, basicInfoMeta), [
-    basicInfo,
-    basicInfoMeta,
-    draftData,
-  ]);
-  const basicInfoValidationPayload = useMemo<DialogStepData>(
-    () => stripReservedDialogKeys(currentStepData),
-    [currentStepData]
+  const currentStepData = useMemo<Partial<PluginDefinedEntity>>(
+    () => buildStepWorkingData(draftData, basicInfo, basicInfoMeta),
+    [basicInfo, basicInfoMeta, draftData]
   );
+  const basicInfoValidationPayload = useMemo<TreeNodeMetadata>(() => basicInfo, [basicInfo]);
 
-  const dialogData = useMemo<DialogStepData>(() => mergeDialogData(basicInfo, draftData), [
-    basicInfo,
-    draftData,
-  ]);
+  const dialogData = useMemo<Partial<PluginDefinedEntity>>(
+    () => mergeDialogData(basicInfo, draftData),
+    [basicInfo, draftData]
+  );
 
   const steps = useMemo<DialogStep[]>(() => {
     const result: DialogStep[] = [];
@@ -241,43 +241,47 @@ export function useDialogSteps({
     [draftAtom]
   );
 
-  const basicInfoDescriptor = useMemo<StepComponentDescriptor<DialogStepData> | null>(() => {
+  const basicInfoDescriptor = useMemo<StepComponentDescriptor<Partial<PluginDefinedEntity>> | null>(() => {
     if (composedConfigs.hasHostBase) return null;
 
-    const Component: React.FC<HeadlessStepComponentProps<DialogStepData>> = React.memo((props) => {
-      const [name, setName] = useAtom(nameAtom);
-      const [description, setDescription] = useAtom(descriptionAtom);
-      const [tags, setTags] = useAtom(tagsAtom);
+    const Component: React.FC<HeadlessStepComponentProps<Partial<PluginDefinedEntity>>> = React.memo(
+      (props) => {
+        const [name, setName] = useAtom(nameAtom);
+        const [description, setDescription] = useAtom(descriptionAtom);
+        const [tags, setTags] = useAtom(tagsAtom);
 
-      const handleChange = useCallback(
-        (data: { name: string; description: string; tags?: string[] }) => {
-          const nextTags = data.tags ?? [];
-          setName(data.name);
-          setDescription(data.description ?? '');
-          setTags(nextTags);
-          handleBasicInfoChange(data);
-          props.onChange({ name: data.name, description: data.description ?? '', tags: nextTags });
-        },
-        [props, setName, setDescription, setTags]
-      );
+        const handleChange = useCallback(
+          (data: { name: string; description: string; tags?: string[] }) => {
+            const nextTags = data.tags ?? [];
+            setName(data.name);
+            setDescription(data.description ?? '');
+            setTags(nextTags);
+            handleBasicInfoChange(data);
+            props.onChange({ name: data.name, description: data.description ?? '', tags: nextTags });
+          },
+          [props, setName, setDescription, setTags]
+        );
 
-      return (
-        <BasicInfoStep
-          name={name}
-          description={description}
-          tags={tags}
-          tagSuggestions={tagSuggestions}
-          onChange={handleChange}
-          mode={mode}
-          validate={() => basicInfoValidationError}
-        />
-      );
-    });
+        return (
+          <BasicInfoStep
+            name={name}
+            description={description}
+            tags={tags}
+            tagSuggestions={tagSuggestions}
+            onChange={handleChange}
+            mode={mode}
+            validate={() => basicInfoValidationError}
+          />
+        );
+      }
+    );
     return { id: 'basic-info', label: 'Basic Information', component: Component };
   }, [composedConfigs.hasHostBase, nameAtom, descriptionAtom, tagsAtom, tagSuggestions, handleBasicInfoChange, mode, basicInfoValidationError]);
 
-  const stepDescriptors = useMemo<ReadonlyArray<StepComponentDescriptor<DialogStepData>>>(() => {
-    const descriptors: StepComponentDescriptor<DialogStepData>[] = [];
+  const stepDescriptors = useMemo<
+    ReadonlyArray<StepComponentDescriptor<Partial<PluginDefinedEntity>>>
+  >(() => {
+    const descriptors: StepComponentDescriptor<Partial<PluginDefinedEntity>>[] = [];
 
     if (basicInfoDescriptor) {
       descriptors.push(basicInfoDescriptor);
@@ -287,20 +291,26 @@ export function useDialogSteps({
       descriptors.push({
         id: cfg.id,
         label: cfg.label ?? cfg.id,
-        component: (stepProps: HeadlessStepComponentProps<DialogStepData>) => (
+        component: (stepProps: HeadlessStepComponentProps<Partial<PluginDefinedEntity>>) => (
           <StepAdapterComponent
             cfg={cfg}
-            mode={mode}
-            nodeId={String(nodeId)}
-            parentId={String(pageNodeId)}
-            uiState={uiState}
-            setDraftData={setDraftData}
-            updateUiState={setUiState}
-            onDataChange={cfg.id === 'basic-info' ? handleBasicInfoBridge : undefined}
-            dialogRef={dialogRef}
-            stepProps={stepProps}
-          />
-        ),
+        mode={mode}
+        nodeId={String(nodeId)}
+        parentId={String(pageNodeId)}
+        basicInfo={basicInfo}
+        uiState={uiState}
+        setDraftData={setDraftData}
+        updateUiState={setUiState}
+        onDataChange={
+          cfg.id === 'basic-info'
+            ? (data) => handleBasicInfoBridge(data as TreeNodeMetadata)
+            : undefined
+        }
+        dialogRef={dialogRef}
+        stepProps={stepProps}
+        stepData={cfg.id === 'basic-info' ? basicInfo : stepProps.data ?? {}}
+      />
+    ),
       });
     });
 
@@ -308,6 +318,7 @@ export function useDialogSteps({
   }, [
     basicInfoDescriptor,
     normalizedConfigs,
+    basicInfo,
     mode,
     nodeId,
     pageNodeId,

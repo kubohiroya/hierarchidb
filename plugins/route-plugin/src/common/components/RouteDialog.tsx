@@ -3,7 +3,7 @@
    */
 
 import { useMemo, useCallback, useEffect, useRef } from 'react';
-import type { NodeId, TreeId } from '@hierarchidb/common-types';
+import type { NodeId, TreeId, TreeNodeMetadata } from '@hierarchidb/common-types';
 import type { RouteEntity, RouteDraft, TagId } from '../types/index.js';
 import { createRouteDraftBase, mergeRouteDraft, getRouteDraft } from '../utils/draft.js';
 import { useTranslation } from '../i18n/index.js';
@@ -62,13 +62,19 @@ const normalizeRouteDraft = (
   if (!raw) return null;
   const base = createRouteDraftBase(nodeId, {}, parentId);
   const payload = isRecord(raw.draftData) ? (raw.draftData as Partial<RouteEntity>) : {};
-  const meta = raw.draftMetadata ?? raw.metadata ?? {};
+  const sourceMeta = (raw.draftMetadata ?? raw.metadata ?? {}) as Partial<TreeNodeMetadata>;
+  const normalizedMeta: TreeNodeMetadata = {
+    name: typeof sourceMeta.name === 'string' ? sourceMeta.name : '',
+    description: typeof sourceMeta.description === 'string' ? sourceMeta.description : '',
+    tags: Array.isArray(sourceMeta.tags) ? sourceMeta.tags.map((tag) => tag as TagId) : [],
+  };
+  const normalizedTags = normalizedMeta.tags as TagId[];
   const merged: Partial<RouteEntity> = {
     ...payload,
+    name: normalizedMeta.name,
+    description: normalizedMeta.description,
+    tags: normalizedTags,
   };
-  if (typeof meta.name === 'string') merged.name = meta.name;
-  if (typeof meta.description === 'string') merged.description = meta.description;
-  if (Array.isArray(meta.tags)) merged.tags = meta.tags as TagId[];
   return mergeRouteDraft(base, merged);
 };
 
@@ -122,7 +128,12 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
   const applyUpdates = useCallback(
     (updates: Partial<RouteEntity>) => {
       if (!draft) return;
-      const nextDraftMetadata = { ...(draft.draftMetadata ?? draft.metadata ?? {}) };
+      const baseMeta = (draft.draftMetadata ?? draft.metadata ?? {}) as Partial<TreeNodeMetadata>;
+      const nextDraftMetadata: TreeNodeMetadata = {
+        name: typeof baseMeta.name === 'string' ? baseMeta.name : '',
+        description: typeof baseMeta.description === 'string' ? baseMeta.description : '',
+        tags: Array.isArray(baseMeta.tags) ? baseMeta.tags.map((tag) => tag as TagId) : [],
+      };
       if (updates.name !== undefined) {
         nextDraftMetadata.name = updates.name ?? '';
       }

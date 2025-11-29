@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId, TreeNodeMetadata } from '@hierarchidb/common-types';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import { resolveDefaultNodeName } from '@hierarchidb/runtime-worker';
 import { toRecord } from '../controller/step-guards.js';
-import type { BasicInfoMeta, BasicInfoState } from './types.js';
-import type { DialogStepData, TreeNodeUpdater } from './data-types.js';
+import type { BasicInfoMeta } from './data-types.js';
+import type { TreeNodeUpdaterPayload } from './data-types.js';
 import type { TagEntity } from '@hierarchidb/common-types';
 import type React from 'react';
 
@@ -15,8 +15,8 @@ interface Params {
   nodeId: NodeId;
   pageNodeId: NodeId;
   client: Remote<WorkerAPI> | null;
-  draft: TreeNodeUpdater<DialogStepData> | null;
-  updateDraft: (patch: import('./data-types.js').TreeNodeUpdatePayload<DialogStepData>) => void;
+  draft: TreeNodeUpdaterPayload | null;
+  updateDraft: (patch: import('./data-types.js').TreeNodeUpdatePayload) => void;
 }
 
 export function useBasicInfoState({
@@ -28,48 +28,37 @@ export function useBasicInfoState({
   draft,
   updateDraft,
 }: Params): {
-  basicInfo: BasicInfoState;
-  setBasicInfo: React.Dispatch<React.SetStateAction<BasicInfoState>>;
+  basicInfo: TreeNodeMetadata;
+  setBasicInfo: React.Dispatch<React.SetStateAction<TreeNodeMetadata>>;
   basicInfoValidationError: string | null;
   isBasicInfoValid: boolean;
   basicInfoMeta: BasicInfoMeta;
   tagSuggestions: string[];
   siblingNames: Set<string>;
-  handleBasicInfoBridge: (data: DialogStepData) => void;
+  handleBasicInfoBridge: (data: TreeNodeMetadata) => void;
 } {
-  const [basicInfo, setBasicInfo] = useState<BasicInfoState>({
-    name: '',
+  const [basicInfo, setBasicInfo] = useState<TreeNodeMetadata>({
+    name: mode === 'create' ? resolveDefaultNodeName(nodeType) : '',
     description: '',
     tags: [],
   });
 
   useEffect(() => {
-    if (mode === 'create') {
-      const fallbackName = resolveDefaultNodeName(nodeType);
-      setBasicInfo((prev) => ({
-        name: prev.name || fallbackName,
-        description: prev.description,
-        tags: prev.tags,
-      }));
-    }
-  }, [mode, nodeType]);
-
-  useEffect(() => {
     if (!draft) return;
     const tags = Array.isArray(draft.draftMetadata?.tags) ? draft.draftMetadata.tags : [];
-    const resolvedName =
-      typeof draft.draftMetadata?.name === 'string' && draft.draftMetadata.name.length
+    const nameFromDraft =
+      typeof draft.draftMetadata?.name === 'string' && draft.draftMetadata.name.trim().length
         ? draft.draftMetadata.name
-        : '';
-    const resolvedDescription =
+        : undefined;
+    const descFromDraft =
       typeof draft.draftMetadata?.description === 'string' && draft.draftMetadata.description.length
         ? draft.draftMetadata.description
-        : '';
-    setBasicInfo({
-      name: resolvedName,
-      description: resolvedDescription,
-      tags,
-    });
+        : undefined;
+    setBasicInfo((prev: TreeNodeMetadata) => ({
+      name: nameFromDraft ?? prev.name ?? '',
+      description: descFromDraft ?? prev.description ?? '',
+      tags: tags.length ? tags : Array.isArray(prev.tags) ? prev.tags : [],
+    }));
   }, [draft]);
 
   const [tagSuggestions, setTagSuggestions] = useState<string[]>(() => []);
@@ -93,7 +82,10 @@ export function useBasicInfoState({
             .map((t: TagEntity) => t.name)
             .filter((name: string): name is string => typeof name === 'string');
           if (!disposed && names.length)
-            setBasicInfo((prev) => ({ ...prev, tags: prev.tags.length ? prev.tags : names }));
+            setBasicInfo((prev: TreeNodeMetadata) => ({
+              ...prev,
+              tags: Array.isArray(prev.tags) && prev.tags.length ? prev.tags : names,
+            }));
         }
       } catch (err) {
         console.warn('[PluginDialogShell] load tag suggestions failed', err);
@@ -157,7 +149,7 @@ export function useBasicInfoState({
   );
 
   const handleBasicInfoBridge = useCallback(
-    (data: DialogStepData) => {
+    (data: TreeNodeMetadata) => {
       const info = toRecord(data) ?? {};
       const rawName = (info as { name?: unknown }).name;
       const name: string = typeof rawName === 'string' ? rawName : '';
@@ -166,14 +158,10 @@ export function useBasicInfoState({
       const tags: string[] = Array.isArray((info as { tags?: unknown }).tags)
         ? ((info as { tags?: unknown }).tags as unknown[]).filter((v): v is string => typeof v === 'string')
         : [];
-      const next: BasicInfoState = { name, description, tags };
+      const next: TreeNodeMetadata = { name, description, tags };
       setBasicInfo(next);
       updateDraft({
-        draftMetadata: {
-          name: next.name,
-          description: next.description,
-          tags: next.tags,
-        },
+        draftMetadata: next,
       });
     },
     [setBasicInfo, updateDraft]
@@ -181,7 +169,7 @@ export function useBasicInfoState({
 
   useEffect(() => {
     if (!draft?.draftMetadata) return;
-    setBasicInfo((prev) => {
+    setBasicInfo((prev: TreeNodeMetadata) => {
       const nextName =
         typeof draft.draftMetadata?.name === 'string' && draft.draftMetadata.name.length
           ? draft.draftMetadata.name
@@ -192,9 +180,14 @@ export function useBasicInfoState({
           : prev.description;
       const nextTags = Array.isArray(draft.draftMetadata?.tags)
         ? draft.draftMetadata.tags.filter((v): v is string => typeof v === 'string')
-        : prev.tags;
+        : Array.isArray(prev.tags)
+          ? prev.tags
+          : [];
       const tagsEqual =
-        prev.tags.length === nextTags.length && prev.tags.every((tag, idx) => tag === nextTags[idx]);
+        (Array.isArray(prev.tags) ? prev.tags : []).length === nextTags.length &&
+        (Array.isArray(prev.tags) ? prev.tags : []).every(
+          (tag: string, idx: number) => tag === nextTags[idx]
+        );
       if (prev.name === nextName && prev.description === nextDescription && tagsEqual) {
         return prev;
       }

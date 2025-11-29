@@ -1,22 +1,21 @@
 import { useEffect, useMemo, useState } from 'react';
 import { evaluateStepGuards, evaluateValidationState, emptyGuards } from '../controller/step-guards.js';
 import type { PluginStepConfig, composeStepConfigs } from '@hierarchidb/plugin-base';
-import type { StepData } from './types.js';
 import type { DialogStep } from '@hierarchidb/ui-dialog';
 
-interface Params {
+interface Params<T extends object = object> {
   steps: DialogStep[];
   composedConfigs: ReturnType<typeof composeStepConfigs>;
   activeStepIndex: number;
-  dialogData: StepData;
+  dialogData: Partial<T>;
 }
 
-export function useStepCapabilities({
+export function useStepCapabilities<T extends object = object>({
   steps,
   composedConfigs,
   activeStepIndex,
   dialogData,
-}: Params) {
+}: Params<T>) {
   const [evaluatedState, setEvaluatedState] = useState<{
     filled: boolean[];
     guards: Awaited<ReturnType<typeof evaluateStepGuards>>;

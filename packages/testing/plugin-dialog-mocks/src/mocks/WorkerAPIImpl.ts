@@ -1,4 +1,5 @@
-import type { MultiStepDialogAPI, StepCapabilities, DraftData } from '@hierarchidb/common-api';
+import type { MultiStepDialogAPI, StepCapabilities } from '@hierarchidb/common-api';
+import type { TreeNodeUpdater, TreeNodeUpdaterPayload } from '@hierarchidb/common-types';
 import type { NodeId, ValidationResult } from '@hierarchidb/common-types';
 
 function genId(prefix: string = 'wc'): NodeId {
@@ -6,7 +7,7 @@ function genId(prefix: string = 'wc'): NodeId {
 }
 
 export class WorkerAPIImpl {
-  private store = new Map<NodeId, DraftData>();
+  private store = new Map<NodeId, TreeNodeUpdater & { nodeType?: string }>();
 
   constructor(private readonly namespace: string) {
     void this.namespace;
@@ -23,7 +24,7 @@ export class WorkerAPIImpl {
   getMultiStepDialogAPI(): MultiStepDialogAPI {
     const self = this;
 
-    async function requireDraft(id: NodeId): Promise<DraftData> {
+    async function requireDraft(id: NodeId): Promise<TreeNodeUpdater & { nodeType?: string }> {
       const wc = self.store.get(id);
       if (!wc) throw new Error('Working copy not found');
       return wc;
@@ -49,36 +50,46 @@ export class WorkerAPIImpl {
           throw new Error(`No handler found for node type: ${nodeType}`);
         }
         const id = genId();
-        const now = new Date();
-        const wc: DraftData = {
+        const payload: TreeNodeUpdaterPayload = {
           id,
+          draftMetadata: { name: '', description: '', tags: [] },
+          draftData: {},
+        };
+        const wc: TreeNodeUpdater & { nodeType?: string } = {
+          payload,
+          parentNodeId: parentNodeId ?? ('root' as NodeId),
+          dialogUIState: undefined,
+          version: 0,
           nodeType,
-          parentNodeId,
-          data: {},
-          metadata: {
-            createdAt: now,
-            updatedAt: now,
-            currentStep: 0,
-            validationState: {},
-          },
         };
         self.store.set(id, wc);
         return id;
       },
 
-      async getDraft(draftId: NodeId): Promise<DraftData | undefined> {
+      async getDraft(draftId: NodeId): Promise<TreeNodeUpdater | undefined> {
         return self.store.get(draftId);
       },
 
-      async updateDraft(draftId: NodeId, updates: Partial<DraftData>): Promise<DraftData> {
+      async updateDraft(
+        draftId: NodeId,
+        updates: Partial<TreeNodeUpdater>
+      ): Promise<TreeNodeUpdater> {
         const wc = await requireDraft(draftId);
-        const metadata = updates.metadata ? { ...wc.metadata, ...updates.metadata } : { ...wc.metadata };
-        metadata.updatedAt = new Date();
-        const next: DraftData = {
+        const nextPayload: TreeNodeUpdaterPayload = {
+          ...wc.payload,
+          draftMetadata: updates.payload?.draftMetadata
+            ? { ...(wc.payload.draftMetadata ?? {}), ...updates.payload.draftMetadata }
+            : wc.payload.draftMetadata ?? null,
+          draftData: updates.payload?.draftData
+            ? { ...(wc.payload.draftData ?? {}), ...updates.payload.draftData }
+            : wc.payload.draftData ?? {},
+        };
+        const next: TreeNodeUpdater & { nodeType?: string } = {
           ...wc,
-          ...updates,
-          data: updates.data ? { ...wc.data, ...updates.data } : wc.data,
-          metadata,
+          payload: nextPayload,
+          parentNodeId: updates.parentNodeId ?? wc.parentNodeId,
+          dialogUIState: updates.dialogUIState ?? wc.dialogUIState,
+          version: updates.version ?? wc.version,
         };
         self.store.set(draftId, next);
         return next;
@@ -90,8 +101,8 @@ export class WorkerAPIImpl {
 
       async evaluateCapabilities(draftId: NodeId, step: number): Promise<StepCapabilities> {
         const wc = await requireDraft(draftId);
-        const data = wc.data ?? {};
-        const nodeType = wc.nodeType;
+        const data = wc.payload.draftData ?? {};
+        const nodeType = wc.nodeType ?? 'folder';
 
         if (nodeType === 'project') {
           return {
@@ -194,7 +205,7 @@ export class WorkerAPIImpl {
           try {
             const wc = await requireDraft(id);
             const nodeType = wc.nodeType;
-            const data = (wc.data ?? {}) as Record<string, any>;
+            const data = (wc.payload?.draftData ?? {}) as Record<string, any>;
 
             const pushError = (message: string) => {
               validation.valid = false;

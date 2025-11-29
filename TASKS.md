@@ -53,6 +53,19 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1577) 非 folder ページ表示中に Trash 移動後は親へ遷移（P0）
+- ブランチ: `fix/ui-treeconsole/trash-navigate-parent`（sandbox 制約で main 上で作業）
+- 依存: `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx`, `app/src/hooks/treeconsole/createTreeConsoleActions.ts`
+- 受け入れ基準（DoD）:
+  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] folder 以外の pageId を表示中に該当ノードを Trash へ移動した場合、親ノード（parentNodeId）を pageId とする階層へ遷移する
+  - [ ] Trash への移動後もエラーなく上位階層が表示される
+  - [ ] 既存のフォルダ表示や他の遷移パターンに回帰がない
+- チェックリスト:
+  - [ ] Trash 操作時に navigateToParent オプションを設定し、親階層への遷移を行う
+  - [ ] 手動確認（非 folder page → Trash → 親遷移）を実施し運用ログに記録する
+- ロールバック手順：今回変更する `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx` を revert し、動作が元に戻ることを確認する
+
 1576) Dialog Esc キーで Cancel/Close 同等動作（P0）
 - ブランチ: `fix/ui-dialog/esc-cancel`（sandbox 制約で main 上で作業）
 - 依存: `packages/ui/dialog/src/headless/MultiDialogFrame.tsx`、PluginDialogShell/TrashDialog 呼び出し元
@@ -80,6 +93,20 @@
   - [x] hidb-core-db 再作成が行われない理由を特定し、初期化フローを修正する
   - [x] 検証結果とロールバック手順を運用ログへ記載する
 - ロールバック手順：今回変更する clear/init 周辺ファイルの差分を revert し、再度 IndexedDB 全削除→`/t/r` で現象再現を確認する
+
+1563) basemap Create Step3 maplibre container error 修正（P0）
+- ブランチ: `fix/basemap/step3-maplibre-container`（sandbox 制約で main 上で作業）
+- 依存: `plugins/basemap-plugin`（UI Step3 maplibre 初期化箇所）
+- 受け入れ基準（DoD）:
+  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] Create basemap Step3 で maplibre 初期化時に「'container' must be a String or HTMLElement」エラーが発生しない
+  - [ ] container が null/未マウントの場合のガードまたは初期化順序を整備する
+  - [ ] 代表検証（関連テストまたは手動確認）を実行しログ化する
+- チェックリスト:
+  - [ ] Step3 の maplibre 初期化コードを特定し、container 取得タイミングと依存 state を確認する
+  - [ ] 不正 container で initialize しないように修正する（必要なら遅延初期化/guard）
+  - [ ] 検証結果とロールバック手順を運用ログに記載する
+- ロールバック手順：変更ファイルを revert し、再度 Create basemap Step3 を実行してエラー再現を確認する
 
 1561) Plugin dialog Step1 metadata 初期値欠落と入力不安定調査（P0）
 - ブランチ: `fix/plugin-dialog/metadata-init`（sandbox 制約で main 上で作業）
@@ -9089,6 +9116,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-29 14:52 done: fix/plugin-dialog/metadata-init — `buildStepWorkingData` で basicInfo(name/description/tags) を draftData と統合し、`useDialogSteps` の draftAtom 初期化/同期も同じ merged データを使用するよう更新。これにより metadata 由来の初期値が反映され、他ステップ更新による name/description リセットが発生しない。検証: `pnpm --filter @hierarchidb/plugin-ui-host test -- --run basicInfoStepData` exit 0。ロールバック: `packages/plugin-ui-host/src/headless/controller/step-guards.ts` と `packages/plugin-ui-host/src/headless/usePluginDialogController/steps.tsx`、`packages/plugin-ui-host/src/headless/__tests__/basicInfoStepData.test.ts` を revert し、同コマンドを再実行。
 - 2025-11-29 14:31 start: fix/app/hidb-core-reinit — 「このアプリが作成したIndexedDBを全て削除」後に `/t/r` へ遷移しても hidb-core-db が自動初期化されず TreeTable が開かない問題の調査を開始。DoD: Kanban/運用ログ更新、再現確認、原因特定と修正、検証ログ、ロールバック手順を記載。branch 作成不可のため main 上で作業。
 - 2025-11-29 14:52 done: fix/app/hidb-core-reinit — WorkerProvider の reset が WorkerStateStore を初期化できず、IndexedDB 全削除後も WorkerStateStore が「ready」状態を保持したまま再初期化されないため hidb-core-db が再作成されない問題を修正。`WorkerStateStore.resetWorkerState` を追加し、`WorkerModuleLoader.resetWorkerRuntime` で runtimePromise をクリア、WorkerProvider の reset/retry で両方を呼ぶようにして再初期化を強制。Dexie.closeAll は型安全な optional 呼び出しへ変更。検証: `pnpm --filter @hierarchidb/app typecheck` exit 0。ロールバック: `app/src/worker-runtime/WorkerStateStore.ts`, `app/src/worker-runtime/WorkerModuleLoader.ts`, `app/src/contexts/WorkerProvider.tsx`, `app/src/plugin-host/clearIndexedDb.ts` を revert し、同コマンドを再実行。
+- 2025-11-29 15:05 progress: fix/app/hidb-core-reinit — IndexedDB 全削除後に `/t/r` 遷移で React 警告「Cannot update a component (WorkerProvider) while rendering WorkerClientGate」が発生するため、WorkerClientGate で render 中に `proxy.ensureInitialized` を呼ばず、エフェクトで初期化を開始し待機中はオーバーレイを返すように変更。再度 `pnpm --filter @hierarchidb/app typecheck` exit 0。
+- 2025-11-29 17:19 start: fix/basemap/step3-maplibre-container — Create basemap の Step3 で maplibre が「'container' must be a String or HTMLElement」エラーになる問題の調査を開始。DoD: Kanban/運用ログ更新、原因特定と修正、検証ログとロールバック手順を記載。branch 作成不可のため main で作業。
 
 ## 今日の着手（運用ログ） <a id="worklog-14"></a>
 
@@ -9249,3 +9278,4 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-16"></a>
 - 2025-11-29 15:30 start: fix/ui-dialog/esc-cancel — trash/create/edit ダイアログで Esc キーが Cancel/Close と同等に動作するよう対応開始。DoD: Kanban/運用ログ更新、未保存時の確認ダイアログ表示/未保存なし即閉、回帰なし確認、ロールバック手順記載。
+- 2025-11-29 16:00 start: fix/ui-treeconsole/trash-navigate-parent — 非 folder pageId 表示中に該当ノードを Trash へ移動した場合、親 (parentNodeId) を pageId とする階層へ遷移する対応を開始。DoD: Kanban/運用ログ更新、Trash 後に親へ遷移、エラーなし、回帰なし、ロールバック手順記載。

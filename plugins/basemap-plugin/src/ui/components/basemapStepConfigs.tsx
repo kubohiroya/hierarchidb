@@ -1,5 +1,5 @@
-import type { PluginStepConfig, StepComponentProps, StepData } from '@hierarchidb/plugin-base';
-import type { MapStyle, MapViewport } from '../../common/types/BaseMapEntity.js';
+import type { PluginStepConfig, StepComponentProps } from '@hierarchidb/plugin-base';
+import type { BaseMapEntity, MapStyle, MapViewport } from '../../common/types/BaseMapEntity.js';
 import { MapStyleStep } from './steps/MapStyleStep.js';
 import { ViewportStep } from './steps/ViewportStep.js';
 import { normalizeMapStyle, normalizeViewport } from '../hooks/useBaseMapEntity.js';
@@ -16,10 +16,8 @@ const pickDraft = (input: Record<string, unknown>): Record<string, unknown> => {
   };
 };
 
-export type BasemapStepData = StepData & {
-  mapStyle: MapStyle;
-  viewport: MapViewport;
-};
+// Use the concrete entity type directly to avoid ambiguous step data shapes.
+export type BasemapStepData = Partial<BaseMapEntity>;
 
 const ensureDraft = (data?: Record<string, unknown>): BasemapStepData => {
   const record = isRecord(data) ? data : {};

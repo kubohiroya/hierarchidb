@@ -96,6 +96,8 @@ export type {
   TreeNode,
   TreeNodeMetadata,
   TreeNodeWithChildren,
+  TreeNodeUpdater,
+  TreeNodeUpdaterPayload,
 } from './tree-node-types.js';
 export { NODE_TYPES } from './tree-node-types.js';
 export * from './tree-root-node-types.js';

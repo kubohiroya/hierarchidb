@@ -72,7 +72,10 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
   const handleContextMenuTrigger = useCallback(
     (action: string, options?: Parameters<ContextMenuHandler>[2]) => {
       if (!nodeData) return;
-      onContextMenuAction(action, nodeData, options ?? { navigateToParent: false });
+      const navigateToParent =
+        options?.navigateToParent ??
+        (action === 'trash' && !isFolderNodeType(nodeData.nodeType ?? ''));
+      onContextMenuAction(action, nodeData, { navigateToParent });
     },
     [nodeData, onContextMenuAction]
   );

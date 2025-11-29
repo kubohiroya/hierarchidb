@@ -19,7 +19,6 @@ export type {
 export type {
   MultiStepDialogAPI,
   StepCapabilities,
-  DraftData,
 } from './MultiStepDialogAPI.js';
 // New exports
 // Runtime wiring interfaces for plugin bootstrap (optional capabilities)

@@ -264,18 +264,28 @@ function WorkerClientGate({
     }
   }, [status.isInitialized]);
 
-  if (status.error) {
-    if (renderOverlay) {
-      return <ErrorOverlay error={status.error} onRetry={onRetry} />;
+  useEffect(() => {
+    if (!status.client || !status.isInitialized) {
+      if (!initPromiseRef.current) {
+        const promise = proxy.ensureInitialized();
+        initPromiseRef.current = promise;
+        promise.catch(() => {
+          if (initPromiseRef.current === promise) {
+            initPromiseRef.current = null;
+          }
+        });
+      }
     }
-    throw status.error;
+  }, [proxy, status.client, status.isInitialized]);
+
+  if (status.error) {
+    return renderOverlay ? <ErrorOverlay error={status.error} onRetry={onRetry} /> : null;
   }
 
   if (!status.client || !status.isInitialized) {
-    if (!initPromiseRef.current) {
-      initPromiseRef.current = proxy.ensureInitialized();
-    }
-    throw initPromiseRef.current;
+    return renderOverlay ? (
+      <InitializingOverlay progress={status.initProgress} message={status.initMessage} />
+    ) : null;
   }
 
   return <>{children}</>;

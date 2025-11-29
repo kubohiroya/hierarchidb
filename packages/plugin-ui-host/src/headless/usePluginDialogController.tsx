@@ -46,11 +46,7 @@ import { useBasicInfoState } from './usePluginDialogController/basic-info.js';
 import { useDialogSteps } from './usePluginDialogController/steps.js';
 import { useStepCapabilities } from './usePluginDialogController/capabilities.js';
 import { useDialogStatePublisher } from './usePluginDialogController/publish-dialog-state.js';
-import type {
-  DialogStepData,
-  TreeNodeUpdater,
-  TreeNodeUpdatePayload,
-} from './usePluginDialogController/data-types.js';
+import type { TreeNodeUpdaterPayload, TreeNodeUpdatePayload } from './usePluginDialogController/data-types.js';
 import type { MultiStepDialogState } from './controller/types.js';
 export { subscribeDialogState } from './controller/dialog-state-subscriber.js';
 export { BASIC_INFO_META_KEY, buildStepWorkingData } from './controller/step-guards.js';
@@ -73,9 +69,11 @@ export interface PluginDialogFooterOptions {
   saveDraftLabel?: string;
 }
 
+type PluginDefinedEntity = object;
+
 export interface PluginDialogControllerState {
-  headlessProps: HeadlessMultiStepDialogProps<DialogStepData>;
-  stepDescriptors: ReadonlyArray<StepComponentDescriptor<DialogStepData>>;
+  headlessProps: HeadlessMultiStepDialogProps<Partial<PluginDefinedEntity>>;
+  stepDescriptors: ReadonlyArray<StepComponentDescriptor<Partial<PluginDefinedEntity>>>;
   loading: boolean;
   error: unknown;
   icon?: React.ReactNode;
@@ -132,7 +130,7 @@ export function usePluginDialogController(
     discardDraft,
     loading,
     error,
-  } = useDialogDraft<DialogStepData>({
+  } = useDialogDraft<Partial<PluginDefinedEntity>>({
     mode,
     nodeType,
     nodeId,
@@ -141,7 +139,7 @@ export function usePluginDialogController(
     workerClient: ref ?? null,
   });
 
-  const treeUpdater: TreeNodeUpdater<DialogStepData> | null = useMemo(
+  const treeUpdater: TreeNodeUpdaterPayload<PluginDefinedEntity> | null = useMemo(
     () =>
       draft
         ? {
@@ -154,7 +152,7 @@ export function usePluginDialogController(
   );
 
   const applyUpdateDraft = useCallback(
-    (patch: TreeNodeUpdatePayload<DialogStepData>) => {
+    (patch: TreeNodeUpdatePayload<PluginDefinedEntity>) => {
       const payload: Record<string, unknown> = {
         treeNodeId: treeUpdater?.id ?? nodeId,
       };
@@ -183,12 +181,14 @@ export function usePluginDialogController(
     initialStep,
   });
 
-  const draftDataWithoutMeta = useMemo(
-    () => (toRecord(draft?.draftData) ?? {}),
+  const draftDataWithoutMeta = useMemo<Partial<PluginDefinedEntity>>(
+    () => (toRecord(draft?.draftData ?? null) as Partial<PluginDefinedEntity>) ?? {},
     [draft?.draftData]
   );
 
-  const [localDraftData, setLocalDraftData] = useState<DialogStepData>(() => draftDataWithoutMeta);
+  const [localDraftData, setLocalDraftData] = useState<Partial<PluginDefinedEntity>>(
+    () => draftDataWithoutMeta
+  );
   useEffect(() => {
     setLocalDraftData(draftDataWithoutMeta);
   }, [draftDataWithoutMeta]);
@@ -300,7 +300,7 @@ export function usePluginDialogController(
     setDialogStateError,
   });
 
-  const safeStepDescriptors: ReadonlyArray<StepComponentDescriptor<DialogStepData>> = useMemo(
+  const safeStepDescriptors: ReadonlyArray<StepComponentDescriptor<Partial<PluginDefinedEntity>>> = useMemo(
     () =>
       stepDescriptors.length
         ? stepDescriptors
@@ -320,8 +320,10 @@ export function usePluginDialogController(
   }, [workerDialogState, validatedStepIndices.length, setActiveStepIndex]);
 
   const flushDraftOnce = useCallback(async () => {
-    const payload = {
-      id: treeUpdater?.id ?? nodeId,
+    const payload: Partial<
+      import('@hierarchidb/plugin-ui-sdk').DraftData<Partial<PluginDefinedEntity>>
+    > = {
+      treeNodeId: (treeUpdater?.id ?? nodeId) as NodeId,
       draftMetadata: {
         ...(treeUpdater?.draftMetadata ?? {}),
         name: basicInfo.name,
@@ -330,8 +332,17 @@ export function usePluginDialogController(
       },
       draftData: { ...localDraftData, tags: basicInfo.tags },
     };
-    await saveDraft(payload as any);
-  }, [basicInfo.description, basicInfo.name, basicInfo.tags, localDraftData, nodeId, saveDraft, treeUpdater?.draftMetadata, treeUpdater?.id]);
+    await saveDraft(payload);
+  }, [
+    basicInfo.description,
+    basicInfo.name,
+    basicInfo.tags,
+    localDraftData,
+    nodeId,
+    saveDraft,
+    treeUpdater?.draftMetadata,
+    treeUpdater?.id,
+  ]);
 
   const handleNavigation = useCallback(
     (event: StepNavigationEvent) => {
@@ -445,7 +456,7 @@ export function usePluginDialogController(
     }
   }, [activeStartBatch, dialogData, mode, nodeId, pageNodeId, treeId]);
 
-  const HeaderComponent: HeadlessMultiStepDialogProps<DialogStepData>['HeaderComponent'] = useCallback(
+  const HeaderComponent: HeadlessMultiStepDialogProps<Partial<PluginDefinedEntity>>['HeaderComponent'] = useCallback(
     () => (
       <PluginDialogHeader
         title={dialogTitle}
@@ -458,7 +469,7 @@ export function usePluginDialogController(
   );
 
   const renderContent = useCallback(
-    (propsContent: HeadlessContentRenderProps<DialogStepData>) => {
+    (propsContent: HeadlessContentRenderProps<Partial<PluginDefinedEntity>>) => {
       const descriptor = propsContent.steps[propsContent.activeStepIndex];
       if (!descriptor) return null;
       const StepComp = descriptor.component;
@@ -486,42 +497,43 @@ export function usePluginDialogController(
     [dialogRef]
   );
 
-  const FooterComponent: HeadlessMultiStepDialogProps<DialogStepData>['FooterComponent'] = useCallback(
-    () => (
-      <PluginDialogFooter
-        mode={mode}
-        canCommit={canSaveCurrent}
-        onSaveDraft={
-          disableDraftButton
-            ? undefined
-            : handleSaveDraft
-              ? () => {
-                  handleSaveDraft().catch(() => void 0);
-                }
-              : undefined
-        }
-        disableDraft={disableDraftButton || !hasUnsavedChanges}
-        onStartBatch={activeStartBatch ? () => { handleStartBatch().catch(() => void 0); } : undefined}
-        canStartBatch={canStartBatch && !isStartingBatch}
-        isStartingBatch={isStartingBatch}
-        primaryButtonOptions={footerPrimaryButtons}
-        saveDraftLabel={footerSaveDraftLabel}
-      />
-    ),
-    [
-      mode,
-      canSaveCurrent,
-      handleSaveDraft,
-      hasUnsavedChanges,
-      disableDraftButton,
-      canStartBatch,
-      activeStartBatch,
-      handleStartBatch,
-      isStartingBatch,
-      footerPrimaryButtons,
-      footerSaveDraftLabel,
-    ]
-  );
+  const FooterComponent: HeadlessMultiStepDialogProps<Partial<PluginDefinedEntity>>['FooterComponent'] =
+    useCallback(
+      () => (
+        <PluginDialogFooter
+          mode={mode}
+          canCommit={canSaveCurrent}
+          onSaveDraft={
+            disableDraftButton
+              ? undefined
+              : handleSaveDraft
+                ? () => {
+                    handleSaveDraft().catch(() => void 0);
+                  }
+                : undefined
+          }
+          disableDraft={disableDraftButton || !hasUnsavedChanges}
+          onStartBatch={activeStartBatch ? () => { handleStartBatch().catch(() => void 0); } : undefined}
+          canStartBatch={canStartBatch && !isStartingBatch}
+          isStartingBatch={isStartingBatch}
+          primaryButtonOptions={footerPrimaryButtons}
+          saveDraftLabel={footerSaveDraftLabel}
+        />
+      ),
+      [
+        mode,
+        canSaveCurrent,
+        handleSaveDraft,
+        hasUnsavedChanges,
+        disableDraftButton,
+        canStartBatch,
+        activeStartBatch,
+        handleStartBatch,
+        isStartingBatch,
+        footerPrimaryButtons,
+        footerSaveDraftLabel,
+      ]
+    );
 
   const handleCloseRequest = useCallback(() => {
     if (saveDraftInProgress.current) {
@@ -532,11 +544,11 @@ export function usePluginDialogController(
     handleCancel().catch(() => void 0);
   }, [handleCancel, onClose]);
 
-  const headlessProps: HeadlessMultiStepDialogProps<DialogStepData> = {
+  const headlessProps: HeadlessMultiStepDialogProps<Partial<PluginDefinedEntity>> = {
     open,
     stepComponents: safeStepDescriptors,
     stepData: currentStepData,
-    onStepDataChange: (patch: Partial<DialogStepData>) =>
+    onStepDataChange: (patch: Partial<Partial<PluginDefinedEntity>>) =>
       setLocalDraftData((prev) => ({ ...(toRecord(prev) ?? {}), ...patch })),
     activeStepIndex,
     onStepNavigate: handleNavigation,

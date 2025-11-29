@@ -19,21 +19,10 @@ export const BASIC_INFO_META_KEY = '__basicInfoValidation';
 
 export const buildStepWorkingData = (
   draftData: StepData | undefined,
-  basicInfo?: { name: string; description: string; tags: string[] },
+  _basicInfo?: import('@hierarchidb/common-types').TreeNodeMetadata | null,
   _basicInfoMeta?: BasicInfoMeta
 ): StepData => {
-  const next: StepData = draftData ? { ...draftData } : {};
-  if (basicInfo) {
-    next.name = basicInfo.name ?? '';
-    next.description = basicInfo.description ?? '';
-    next.tags = basicInfo.tags ?? [];
-  }
-  return next;
-};
-
-export const stripReservedDialogKeys = (input?: StepData | null): StepData => {
-  // Legacy helper no longer strips anything; kept to avoid runtime-worker errors.
-  return input ? { ...input } : {};
+  return draftData ? { ...draftData } : {};
 };
 
 export async function evaluateValidationState(steps: DialogStep[]): Promise<boolean[]> {
@@ -183,7 +172,7 @@ export async function evaluateStepGuards({
 }
 
 export const mergeDialogData = (
-  _basic: { name: string; description: string; tags: string[] },
+  _basic: import('@hierarchidb/common-types').TreeNodeMetadata,
   workingData: StepData | null | undefined
 ): StepData => {
   return workingData ? { ...workingData } : {};

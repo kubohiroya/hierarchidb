@@ -2,24 +2,8 @@
  * API for managing multi-step dialog workflows with working copies.
  */
 
-import type { NodeId, ValidationResult } from '@hierarchidb/common-types';
+import type { NodeId, ValidationResult, TreeNodeUpdater } from '@hierarchidb/common-types';
 import type { ProxyMarked } from 'comlink';
-
-/**
- * Working copy data structure
- */
-export interface DraftData {
-  id: NodeId;
-  nodeType: string;
-  parentNodeId?: NodeId;
-  data: Record<string, unknown>;
-  metadata: {
-    createdAt: Date;
-    updatedAt: Date;
-    currentStep: number;
-    validationState: Record<string, unknown>;
-  };
-}
 
 /**
  * Step capabilities
@@ -54,7 +38,7 @@ export interface MultiStepDialogAPI {
    * @param draftId - The ID of the working copy
    * @returns The working copy data or undefined if not found
    */
-  getDraft(draftId: NodeId): Promise<DraftData | undefined>;
+  getDraft(draftId: NodeId): Promise<TreeNodeUpdater | undefined>;
 
   /**
    * Update a working copy
@@ -65,8 +49,8 @@ export interface MultiStepDialogAPI {
    */
   updateDraft(
     draftId: NodeId,
-    updates: Partial<DraftData>
-  ): Promise<DraftData>;
+    updates: Partial<TreeNodeUpdater>
+  ): Promise<TreeNodeUpdater>;
 
   /**
    * Delete a working copy

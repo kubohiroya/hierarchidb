@@ -93,6 +93,11 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({
     initialPersistedRef.current = readPersistedViewport();
   }
   const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
+  const [canRenderMap, setCanRenderMap] = useState(false);
+
+  useEffect(() => {
+    setCanRenderMap(true);
+  }, []);
 
   useEffect(() => {
     if (value) return;
@@ -342,33 +347,48 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({
           minHeight: 280,
         }}
       >
-        <Suspense
-          fallback={
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '100%',
-              }}
-            >
-              <Typography variant="caption" color="text.secondary">
-                Loading interactive map…
-              </Typography>
-            </Box>
-          }
-        >
-          <LazyMapLibreMap
-            initialViewState={initialViewStateRef.current!}
-            mapStyle={mapStyleSource}
-            width="100%"
-            height="100%"
-            mapOptions={mapInteractionOptions}
-            controls={navigationControls}
-            onLoad={handleMapLoad}
-            onViewStateChange={handleViewStateChange}
-          />
-        </Suspense>
+        {canRenderMap ? (
+          <Suspense
+            fallback={
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: '100%',
+                }}
+              >
+                <Typography variant="caption" color="text.secondary">
+                  Loading interactive map…
+                </Typography>
+              </Box>
+            }
+          >
+            <LazyMapLibreMap
+              initialViewState={initialViewStateRef.current!}
+              mapStyle={mapStyleSource}
+              width="100%"
+              height="100%"
+              mapOptions={mapInteractionOptions}
+              controls={navigationControls}
+              onLoad={handleMapLoad}
+              onViewStateChange={handleViewStateChange}
+            />
+          </Suspense>
+        ) : (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+            }}
+          >
+            <Typography variant="caption" color="text.secondary">
+              Preparing map…
+            </Typography>
+          </Box>
+        )}
         <Box
           sx={{
             position: 'absolute',

@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-types';
 import { CoreDB } from '../../CoreDB.js';
 import { DraftService } from '../../DraftService.js';
+import { assertCommitOk } from '../../../test-utils/assertions.js';
 
 describe('create dialog commit (draft survives discard)', () => {
   const treeId = 'r' as TreeId;
@@ -42,7 +43,7 @@ describe('create dialog commit (draft survives discard)', () => {
     await drafts.updateTreeNodeDraftData(draft.id as NodeId, { foo: 'bar' });
 
     const result = await drafts.commitDraft(draft.id as NodeId);
-    expect(result.status).toBe('ok');
+    assertCommitOk(result, 'commitDraft');
     const committedId = result.nodeId as NodeId;
 
     await drafts.discardDraft(committedId, { forceDelete: true });

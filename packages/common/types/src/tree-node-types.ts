@@ -101,3 +101,22 @@ export interface TreeNodeWithChildren<TPayload extends NodePayload = NodePayload
     DescendantProperties {
   children?: NodeId[];
 }
+
+/**
+ * Working copy payload (drafted metadata/data) used across UI/Worker dialog flows.
+ */
+export interface TreeNodeUpdaterPayload<T extends object = object> {
+  id: NodeId;
+  draftMetadata: TreeNodeMetadata | null;
+  draftData: Partial<T> | null;
+}
+
+/**
+ * Working copy container exposed over dialog APIs.
+ */
+export interface TreeNodeUpdater<T extends object = object> {
+  payload: TreeNodeUpdaterPayload<T>;
+  parentNodeId: NodeId;
+  dialogUIState?: DialogUIState;
+  version: number;
+}
