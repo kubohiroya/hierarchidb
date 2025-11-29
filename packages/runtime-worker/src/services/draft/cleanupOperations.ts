@@ -36,17 +36,17 @@ export async function discardTreeNodeDraft(coreDB: CoreDB, draftNodeId: NodeId):
       dialogUIState: undefined,
     });
   }
-  try {
-    const { EntityLifecycleManager } = await import('../../entity/EntityLifecycleManager.js');
-    const lifecycle = EntityLifecycleManager.getSingleton(coreDB);
-    const envelope: CommandEnvelope<'discardDraft', { draftId: NodeId }> = {
-      commandId: generateUUID(),
-      groupId: generateUUID(),
-      kind: 'discardDraft',
-      payload: { draftId: draftNodeId },
-      issuedAt: Date.now() as Timestamp,
-      type: 'discardDraft',
-    };
-    await lifecycle.handleCommand(envelope);
-  } catch {}
+
+  const { EntityLifecycleManager } = await import('../../entity/EntityLifecycleManager.js');
+  const lifecycle = EntityLifecycleManager.getSingleton(coreDB);
+  const envelope: CommandEnvelope<'discardDraft', { draftId: NodeId }> = {
+    commandId: generateUUID(),
+    groupId: generateUUID(),
+    kind: 'discardDraft',
+    payload: { draftId: draftNodeId },
+    issuedAt: Date.now() as Timestamp,
+    type: 'discardDraft',
+  };
+  await lifecycle.handleCommand(envelope);
+
 }
