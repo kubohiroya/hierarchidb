@@ -210,35 +210,38 @@ export function useDialogSteps({
   const nameAtom = useMemo(
     () =>
       atom(
-        (get) => (get(draftAtom) as { name?: string })?.name ?? '',
+        (get) => (get(draftAtom) as { name?: string })?.name ?? basicInfo.name ?? '',
         (get, set, val: string) => {
           const prev = (get(draftAtom) as any) ?? {};
           set(draftAtom, { ...prev, name: val });
         }
       ),
-    [draftAtom]
+    [draftAtom, basicInfo.name]
   );
   const descriptionAtom = useMemo(
     () =>
       atom(
-        (get) => (get(draftAtom) as { description?: string })?.description ?? '',
+        (get) =>
+          (get(draftAtom) as { description?: string })?.description ??
+          basicInfo.description ??
+          '',
         (get, set, val: string) => {
           const prev = (get(draftAtom) as any) ?? {};
           set(draftAtom, { ...prev, description: val });
         }
       ),
-    [draftAtom]
+    [draftAtom, basicInfo.description]
   );
   const tagsAtom = useMemo(
     () =>
       atom(
-        (get) => (get(draftAtom) as { tags?: string[] })?.tags ?? [],
+        (get) => (get(draftAtom) as { tags?: string[] })?.tags ?? basicInfo.tags ?? [],
         (get, set, val: string[]) => {
           const prev = (get(draftAtom) as any) ?? {};
           set(draftAtom, { ...prev, tags: val });
         }
       ),
-    [draftAtom]
+    [draftAtom, basicInfo.tags]
   );
 
   const basicInfoDescriptor = useMemo<StepComponentDescriptor<Partial<PluginDefinedEntity>> | null>(() => {

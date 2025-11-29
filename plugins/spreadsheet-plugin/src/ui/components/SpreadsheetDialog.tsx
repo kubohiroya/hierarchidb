@@ -48,7 +48,7 @@ const defaultDialogState = () => {
 
 const normalizeDraft = (raw: DraftData<SpreadsheetDialogDraft> | null): SpreadsheetDialogDraft => {
   const basic = normalizeBasicInfo({
-    metadata: raw?.draftMetadata ? { ...raw.draftMetadata } : undefined,
+    metadata: raw?.draftMetadata ?? raw?.metadata ?? undefined,
     draftData: raw?.draftData,
   });
   const draftData = raw?.draftData ?? {};

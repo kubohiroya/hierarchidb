@@ -50,7 +50,7 @@ type StylerDialogDraft = StylerDialogData & {
 
 const normalizeDraft = (raw: DraftData<StylerDialogDraft> | null): StylerDialogDraft => {
   const basic = normalizeBasicInfo({
-    metadata: raw?.draftMetadata ? { ...raw.draftMetadata } : undefined,
+    metadata: raw?.draftMetadata ?? raw?.metadata ?? undefined,
     draftData: raw?.draftData,
   });
   const draftData = raw?.draftData ?? {};

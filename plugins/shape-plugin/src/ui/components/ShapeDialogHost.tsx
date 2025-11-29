@@ -50,7 +50,7 @@ type ShapeDraftData = Partial<ShapeDraft> & {
 
 const normalizeDraft = (raw: DraftData<ShapeDraftData> | null): ShapeDraftData => {
   const basic = normalizeBasicInfo({
-    metadata: raw?.draftMetadata ? { ...raw.draftMetadata } : undefined,
+    metadata: raw?.draftMetadata ?? raw?.metadata ?? undefined,
     draftData: raw?.draftData,
   });
   const draftData = raw?.draftData ?? {};

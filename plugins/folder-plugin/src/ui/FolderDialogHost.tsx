@@ -18,6 +18,7 @@ import {
 } from '@hierarchidb/ui-dialog';
 import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 import { useDialogDraft, normalizeBasicInfo, type DraftData } from '@hierarchidb/plugin-ui-sdk';
+import { resolveDefaultNodeName } from '@hierarchidb/runtime-worker';
 
 type FolderDraftData = {
   nodeId?: NodeId;
@@ -32,11 +33,12 @@ const normalizeDraft = (raw: DraftData<FolderDraftData> | null): FolderDraftData
     draftData: raw?.draftData,
   });
   const draftData = raw?.draftData ?? {};
+  const defaultName = resolveDefaultNodeName('folder');
   return {
     ...draftData,
-    name: basic.name,
-    description: basic.description,
-    tags: basic.tags,
+    name: basic.name?.trim().length ? basic.name : defaultName,
+    description: basic.description ?? '',
+    tags: basic.tags ?? [],
   };
 };
 
