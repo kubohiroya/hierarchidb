@@ -51,15 +51,41 @@ describe('discardTreeNodeDraft', () => {
     CoreDB.resetInstance();
   });
 
-  it('deletes create-only drafts without committed state', async () => {
+  it('deletes create-only drafts without committed state when forced', async () => {
     const draftId = await initTreeNode(core, treeId, parentId, 'folder' as NodeType, 'New Folder');
     const before = await core.nodes.get(draftId);
     expect(before).toBeDefined();
 
-    await discardTreeNodeDraft(core, draftId);
+    await discardTreeNodeDraft(core, draftId, { forceDelete: true });
 
     const after = await core.nodes.get(draftId);
     expect(after).toBeUndefined();
+  });
+
+  it('keeps create drafts with committed-like payload when forceDelete is set but committed signals exist', async () => {
+    const now = Date.now();
+    const nodeId = `${parentId}:with-data` as NodeId;
+    await core.nodes.put({
+      id: nodeId,
+      parentId,
+      nodeType: 'shape' as NodeType,
+      metadata: { name: 'Draft with data', description: undefined, tags: [] },
+      draftMetadata: { name: 'Draft with data', description: undefined, tags: [] },
+      data: { foo: 'bar' },
+      draftData: { foo: 'bar' },
+      depth: 2,
+      createdAt: now,
+      updatedAt: now,
+      version: 1,
+      lastTouchedAt: now,
+    });
+
+    await discardTreeNodeDraft(core, nodeId, { forceDelete: true });
+
+    const stored = await core.nodes.get(nodeId);
+    expect(stored).toBeDefined();
+    expect((stored as { draftData?: unknown }).draftData).toBeNull();
+    expect((stored as { data?: unknown }).data).toEqual({ foo: 'bar' });
   });
 
   it('preserves committed metadata-only nodes and clears draft fields', async () => {

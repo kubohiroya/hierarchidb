@@ -23,6 +23,14 @@ export interface CommitDraftOptions {
   onNameConflict?: OnNameConflict;
 }
 
+export interface DiscardDraftOptions {
+  /**
+   * If true, delete uncommitted drafts even when they still carry draft payloads.
+   * Useful for canceling create flows where the node was never committed.
+   */
+  forceDelete?: boolean;
+}
+
 /**
  * Working copy management API
  *
@@ -54,7 +62,7 @@ export interface DraftAPI {
 
   commitDraft(nodeId: NodeId, options?: CommitDraftOptions): Promise<CommitResult>;
 
-  discardDraft(nodeId: NodeId): Promise<void>;
+  discardDraft(nodeId: NodeId, options?: DiscardDraftOptions): Promise<void>;
 
   discardAllDrafts(): Promise<number>;
 

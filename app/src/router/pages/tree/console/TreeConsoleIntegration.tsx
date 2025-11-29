@@ -291,12 +291,18 @@ const TreeConsoleIntegrationInner: React.FC<
       if (!confirmed) return;
     }
     try {
+      try {
+        resetWorker();
+      } catch (error) {
+        logIntegrationWarning('Failed to reset worker before IndexedDB clear', error);
+      }
       const result = await clearAppIndexedDBsViaPlugins();
       const shouldRefreshWorker = result.invoked.length > 0;
       if (shouldRefreshWorker) {
         refreshWorkerRuntime();
       }
-      if (result.errors.length > 0 || result.missing.length > 0) {
+      if (result.errors.length > 0) {
+        logIntegrationWarning('IndexedDB clear encountered errors', result.errors);
         notify.error(
           t('treeConsole.toolbar.developerMenu.clearIndexedDbFailure', {
             defaultValue: 'Failed to delete IndexedDB data. See console for details.',
@@ -310,7 +316,7 @@ const TreeConsoleIntegrationInner: React.FC<
             defaultValue: 'Deleted IndexedDB data created by this app.',
           })
         );
-      } else {
+      } else if (result.missing.length === 0) {
         notify.info(
           t('treeConsole.toolbar.developerMenu.clearIndexedDbEmpty', {
             defaultValue: 'No IndexedDB databases were found for this app.',
@@ -326,7 +332,7 @@ const TreeConsoleIntegrationInner: React.FC<
         })
       );
     }
-  }, [developerModeEnabled, navigate, refreshWorkerRuntime, t]);
+  }, [developerModeEnabled, navigate, refreshWorkerRuntime, resetWorker, t]);
 
   // Handle toolbar actions
   const handleToolbarAction = useCallback(

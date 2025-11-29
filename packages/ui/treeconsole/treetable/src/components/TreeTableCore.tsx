@@ -204,7 +204,10 @@ export function TreeTableCore({
       },
       draftChipLabels: {
         self: commonT('treeTable.chips.draftSelf', 'Draft'),
-        descendant: commonT('treeTable.chips.draftDescendant', 'Editing in subtree'),
+        descendant: {
+          singular: commonT('treeTable.chips.draftDescendantSingular', 'Draft in Subtree'),
+          plural: commonT('treeTable.chips.draftDescendantPlural', 'Drafts in Subtree'),
+        },
       },
       columnWidths,
       selectAll,

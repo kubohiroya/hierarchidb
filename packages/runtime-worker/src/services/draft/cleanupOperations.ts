@@ -1,17 +1,24 @@
 import { generateUUID } from '@hierarchidb/util';
+import type { DiscardDraftOptions } from '@hierarchidb/common-api';
+import type { NodeId, Timestamp } from '@hierarchidb/common-types';
 import type { CommandEnvelope } from '../command-types.js';
 import type { CoreDB } from '../CoreDB.js';
-import type { NodeId, Timestamp } from '@hierarchidb/common-types';
 
 /**
  * Discard a draft by clearing draftMetadata/draftData/dialogUIState on the node.
- * If the node has no committed data, delete it entirely.
+ * Optionally delete uncommitted drafts when `forceDelete` is set; otherwise
+ * only deletes nodes with neither committed nor draft state.
  */
-export async function discardTreeNodeDraft(coreDB: CoreDB, draftNodeId: NodeId): Promise<void> {
+export async function discardTreeNodeDraft(
+  coreDB: CoreDB,
+  draftNodeId: NodeId,
+  options?: DiscardDraftOptions
+): Promise<void> {
   const existing = await coreDB.nodes.get(draftNodeId);
   if (!existing) return;
 
   const data = (existing as { data?: unknown }).data;
+  const draftMetadata = (existing as { draftMetadata?: unknown }).draftMetadata;
   const draftData = (existing as { draftData?: unknown }).draftData;
   const version = (existing as { version?: number }).version ?? 0;
   const createdAt = (existing as { createdAt?: number }).createdAt;
@@ -21,13 +28,20 @@ export async function discardTreeNodeDraft(coreDB: CoreDB, draftNodeId: NodeId):
   const hasCommittedTimestamps =
     typeof createdAt === 'number' && typeof updatedAt === 'number' && createdAt !== updatedAt;
 
-  // Treat as create-only draft only when there is no committed payload/version/timestamp signal.
   const hasDraftPayload =
     draftData !== null &&
     draftData !== undefined &&
     (typeof draftData !== 'object' || Object.keys(draftData as Record<string, unknown>).length > 0);
+  const hasDraftState = hasDraftPayload || draftMetadata !== null;
 
-  if (!hasCommittedData && !hasCommittedVersion && !hasCommittedTimestamps && !hasDraftPayload) {
+  const hasCommittedState = hasCommittedData || hasCommittedVersion || hasCommittedTimestamps;
+
+  const shouldDelete =
+    options?.forceDelete === true
+      ? !hasCommittedState
+      : !hasCommittedData && !hasCommittedVersion && !hasCommittedTimestamps && !hasDraftState;
+
+  if (shouldDelete) {
     await coreDB.nodes.delete(draftNodeId);
   } else {
     await coreDB.nodes.update(draftNodeId, {

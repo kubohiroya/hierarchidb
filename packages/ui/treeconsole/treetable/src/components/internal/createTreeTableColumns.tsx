@@ -82,7 +82,10 @@ export interface ColumnBuilderParams {
   };
   draftChipLabels: {
     self: string;
-    descendant: string;
+    descendant: {
+      singular: string;
+      plural: string;
+    };
   };
   draftFlags: {
     hasDraft: Set<NodeId>;
@@ -267,7 +270,14 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
         params.draftFlags.hasDraft.has(node.id as NodeId) ||
         draftData !== null && draftData !== undefined ||
         draftMetadata !== null && draftMetadata !== undefined;
-      const hasDescendantDraft = params.draftFlags.hasDescendantDraft(node.id as NodeId);
+      const descendantDraftCount = collectDescendantIds(node.id as NodeId).reduce(
+        (count, id) => (params.draftFlags.hasDraft.has(id as NodeId) ? count + 1 : count),
+        0,
+      );
+      const hasDescendantDraft = descendantDraftCount > 0;
+      const descendantDraftLabel = descendantDraftCount === 1
+        ? params.draftChipLabels.descendant.singular
+        : params.draftChipLabels.descendant.plural;
 
       return (
         <NameCell>
@@ -487,7 +497,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                   />
                 ) : hasDescendantDraft ? (
                   <Chip
-                    label={params.draftChipLabels.descendant}
+                    label={descendantDraftLabel}
                     size="small"
                     color="warning"
                     variant="outlined"

@@ -188,6 +188,11 @@ export function usePluginDialogController(
     [draft?.draftData]
   );
 
+  const [localDraftData, setLocalDraftData] = useState<DialogStepData>(() => draftDataWithoutMeta);
+  useEffect(() => {
+    setLocalDraftData(draftDataWithoutMeta);
+  }, [draftDataWithoutMeta]);
+
   const {
     basicInfo,
     setBasicInfo,
@@ -203,7 +208,10 @@ export function usePluginDialogController(
     pageNodeId,
     client,
     draft: treeUpdater,
-    updateDraft: applyUpdateDraft,
+    updateDraft: (patch) => {
+      setLocalDraftData((prev) => ({ ...toRecord(prev) ?? {}, ...patch.draftData }));
+      applyUpdateDraft(patch);
+    },
   });
 
   const [regTick, setRegTick] = useState(0);
@@ -238,8 +246,8 @@ export function usePluginDialogController(
     mode,
     nodeId,
     pageNodeId,
-    draftDataWithoutMeta,
-    updateDraft: applyUpdateDraft,
+    draftData: localDraftData,
+    setDraftData: setLocalDraftData,
     handleBasicInfoBridge,
     dialogRef,
   });
@@ -311,6 +319,20 @@ export function usePluginDialogController(
     }
   }, [workerDialogState, validatedStepIndices.length, setActiveStepIndex]);
 
+  const flushDraftOnce = useCallback(async () => {
+    const payload = {
+      id: treeUpdater?.id ?? nodeId,
+      draftMetadata: {
+        ...(treeUpdater?.draftMetadata ?? {}),
+        name: basicInfo.name,
+        description: basicInfo.description,
+        tags: basicInfo.tags,
+      },
+      draftData: { ...localDraftData, tags: basicInfo.tags },
+    };
+    await saveDraft(payload as any);
+  }, [basicInfo.description, basicInfo.name, basicInfo.tags, localDraftData, nodeId, saveDraft, treeUpdater?.draftMetadata, treeUpdater?.id]);
+
   const handleNavigation = useCallback(
     (event: StepNavigationEvent) => {
       let nextIndex = activeStepIndex;
@@ -326,10 +348,12 @@ export function usePluginDialogController(
           break;
       }
       if (nextIndex === activeStepIndex) return;
-      setActiveStepIndex(nextIndex);
-      setUrlStep(nextIndex);
+      void flushDraftOnce().finally(() => {
+        setActiveStepIndex(nextIndex);
+        setUrlStep(nextIndex);
+      });
     },
-    [activeStepIndex, setActiveStepIndex, setUrlStep, steps.length]
+    [activeStepIndex, setActiveStepIndex, setUrlStep, steps.length, flushDraftOnce]
   );
 
   const navigateToNode = useCallback(
@@ -342,6 +366,7 @@ export function usePluginDialogController(
   const saveDraftInProgress = useRef(false);
 
   const handleSubmit = useCallback(async () => {
+    await flushDraftOnce();
     if (typeof console !== 'undefined' && typeof console.debug === 'function') {
       console.debug('[PluginDialogShell] submitting dialog', {
         nodeType,
@@ -357,18 +382,7 @@ export function usePluginDialogController(
         },
       });
     }
-    const finalData = {
-      id: treeUpdater?.id ?? nodeId,
-      draftMetadata: {
-        ...(treeUpdater?.draftMetadata ?? {}),
-        name: basicInfo.name,
-        description: basicInfo.description,
-        tags: basicInfo.tags,
-      },
-      draftData: { ...draftDataWithoutMeta, tags: basicInfo.tags },
-    };
-
-    const savedNodeId = await saveDraft(finalData as any);
+    const savedNodeId = treeUpdater?.id ?? nodeId;
 
     try {
       await discardDraft();
@@ -382,37 +396,21 @@ export function usePluginDialogController(
     }
 
     onClose();
-  }, [treeUpdater?.id, treeUpdater?.draftMetadata, nodeId, basicInfo.name, basicInfo.description, basicInfo.tags, draftDataWithoutMeta, saveDraft, onClose, nodeType, mode, draft?.draftMetadata, discardDraft, onSuccess, navigateToNode]);
+  }, [flushDraftOnce, treeUpdater?.id, nodeId, onClose, nodeType, mode, draft?.draftMetadata, basicInfo.name, basicInfo.description, basicInfo.tags, draftDataWithoutMeta, discardDraft, onSuccess, navigateToNode]);
 
   const handleSaveDraft = useCallback(async () => {
     try {
       saveDraftInProgress.current = true;
-      const draftData = {
-        id: treeUpdater?.id ?? nodeId,
-        draftMetadata: {
-          ...(treeUpdater?.draftMetadata ?? {}),
-          name: basicInfo.name,
-          description: basicInfo.description,
-          tags: basicInfo.tags,
-        },
-        draftData: { ...draftDataWithoutMeta },
-      };
-      if (typeof console !== 'undefined' && typeof console.debug === 'function') {
-        console.debug('[PluginDialogShell] saveDraft payload', draftData);
-      }
-      await saveDraft(draftData as any);
+      await flushDraftOnce();
     } catch (err) {
       saveDraftInProgress.current = false;
       throw err;
     }
-  }, [treeUpdater?.id, treeUpdater?.draftMetadata, nodeId, basicInfo.name, basicInfo.description, basicInfo.tags, draftDataWithoutMeta, saveDraft]);
+  }, [flushDraftOnce]);
 
   const handleCancel = useCallback(async () => {
-    try {
-      await discardDraft();
-    } catch (err) {
-      console.warn('[PluginDialogShell] discard on cancel failed', err);
-    }
+    // Cancel: create は forceDelete、edit は draft clear（現行 discardDraft が内部で判断）
+    await discardDraft();
     onClose();
   }, [discardDraft, onClose]);
 
@@ -538,9 +536,7 @@ export function usePluginDialogController(
     stepComponents: safeStepDescriptors,
     stepData: currentStepData,
     onStepDataChange: (patch: Partial<DialogStepData>) =>
-      updateDraft({
-        draftData: { ...currentStepData, ...patch },
-      }),
+      setLocalDraftData((prev) => ({ ...(toRecord(prev) ?? {}), ...patch })),
     activeStepIndex,
     onStepNavigate: handleNavigation,
     enabledStepIndices,

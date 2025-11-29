@@ -69,7 +69,10 @@ describe('TreeTable Draft chip', () => {
     },
     draftChipLabels: {
       self: 'Draft',
-      descendant: 'Draft in subtree',
+      descendant: {
+        singular: 'Draft in Subtree',
+        plural: 'Drafts in Subtree',
+      },
     },
     draftFlags: {
       hasDraft: new Set(),
@@ -134,5 +137,27 @@ describe('TreeTable Draft chip', () => {
   it('does not render Draft chip for nodes without draft data or flags', () => {
     renderNameCell(buildNode());
     expect(screen.queryByText('Draft')).toBeNull();
+  });
+
+  it('renders singular descendant Draft chip when one descendant has draft', () => {
+    renderNameCell(buildNode(), {
+      collectDescendantIds: () => ['node-1', 'child-1'],
+      draftFlags: {
+        hasDraft: new Set<NodeId>(['child-1' as NodeId]),
+        hasDescendantDraft: () => true,
+      },
+    });
+    expect(screen.getByText('Draft in Subtree')).toBeTruthy();
+  });
+
+  it('renders plural descendant Draft chip when multiple descendants have draft', () => {
+    renderNameCell(buildNode(), {
+      collectDescendantIds: () => ['node-1', 'child-1', 'child-2'],
+      draftFlags: {
+        hasDraft: new Set<NodeId>(['child-1' as NodeId, 'child-2' as NodeId]),
+        hasDescendantDraft: () => true,
+      },
+    });
+    expect(screen.getByText('Drafts in Subtree')).toBeTruthy();
   });
 });

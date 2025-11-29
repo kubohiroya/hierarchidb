@@ -1,4 +1,4 @@
-import type { CommitDraftOptions, DraftAPI } from '@hierarchidb/common-api';
+import type { CommitDraftOptions, DiscardDraftOptions, DraftAPI } from '@hierarchidb/common-api';
 import type {
   CommitResult,
   NodeId,
@@ -108,15 +108,15 @@ export class DraftService implements DraftAPI {
     };
   }
 
-  async discardDraft(nodeId: NodeId): Promise<void> {
+  async discardDraft(nodeId: NodeId, options?: DiscardDraftOptions): Promise<void> {
     const wc = await getTreeNode(this.coreDB, nodeId);
     if (!wc) return;
-    await discardWc(this.coreDB, nodeId);
+    await discardWc(this.coreDB, nodeId, options);
   }
 
   async discardAllDrafts(): Promise<number> {
     const list = await this.listDrafts();
-    for (const wc of list) await discardWc(this.coreDB, wc.id as NodeId);
+    for (const wc of list) await discardWc(this.coreDB, wc.id as NodeId, { forceDelete: true });
     return list.length;
   }
 
@@ -150,7 +150,7 @@ export class DraftService implements DraftAPI {
   async cleanupOldDrafts(olderThan: number): Promise<number> {
     const list = await this.listDrafts();
     const toDelete = list.filter((x) => x.updatedAt < olderThan);
-    for (const wc of toDelete) await discardWc(this.coreDB, wc.id as NodeId);
+    for (const wc of toDelete) await discardWc(this.coreDB, wc.id as NodeId, { forceDelete: true });
     return toDelete.length;
   }
 }

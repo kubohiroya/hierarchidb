@@ -163,4 +163,45 @@ describe('PluginDialogHeader', () => {
     const activeStepButton = screen.getByRole('link', { name: /Step Two/i });
     expect(activeStepButton).toHaveAttribute('aria-current', 'step');
   });
+
+  it('shows a grey validated icon when the step is valid but disabled due to a previous invalid step', () => {
+    const contextValue = {
+      open: true,
+      stepComponents: [
+        { id: 'basic', label: 'Step One', component: () => null },
+        { id: 'details', label: 'Step Two', component: () => null },
+        { id: 'review', label: 'Step Three', component: () => null },
+      ],
+      stepData: {},
+      onStepDataChange: vi.fn(),
+      activeStepIndex: 0,
+      enabledStepIndices: [0],
+      validatedStepIndices: [1],
+      committableStepIndices: [2],
+      invalidMessageMap: {},
+      isDirty: true,
+      onStepNavigate: vi.fn(),
+      onRequestClose: vi.fn(),
+      onRequestCommit: vi.fn(),
+      displayMode: 'normal' as const,
+      onDisplayModeChange: vi.fn(),
+      onDragHandlePointerDown: vi.fn(),
+    } satisfies Parameters<typeof MultiStepDialogProvider>[0]['value'];
+
+    render(
+      <ThemeProvider theme={createTheme()}>
+        <MultiStepDialogProvider value={contextValue}>
+          <PluginDialogHeader title="Edit Item" />
+        </MultiStepDialogProvider>
+      </ThemeProvider>
+    );
+
+    const validatedDisabledIcon = screen.getByTestId('plugin-dialog-step-icon-2');
+    expect(validatedDisabledIcon).toHaveAttribute('data-validated', 'true');
+    expect(validatedDisabledIcon).toHaveAttribute('data-valid-disabled', 'true');
+    expect(validatedDisabledIcon).toHaveAttribute('data-active', 'false');
+
+    const disabledStep = screen.getByRole('link', { name: /Step Two/i });
+    expect(disabledStep).toHaveAttribute('aria-disabled', 'true');
+  });
 });

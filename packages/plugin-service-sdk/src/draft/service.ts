@@ -1,5 +1,5 @@
 import type { CommitResult, NodeId, TreeId } from '@hierarchidb/common-types';
-import type { CommitDraftOptions, WorkerAPI } from '@hierarchidb/common-api';
+import type { CommitDraftOptions, DiscardDraftOptions, WorkerAPI } from '@hierarchidb/common-api';
 
 export interface StepCapabilitiesState {
   canNavigateToSteps: Map<number, boolean>;
@@ -207,10 +207,10 @@ export class DraftService {
     }
   }
 
-  async discardDraft(nodeId: NodeId): Promise<void> {
+  async discardDraft(nodeId: NodeId, options?: DiscardDraftOptions): Promise<void> {
     try {
       const draftAPI = await this.workerAPI.getDraftAPI();
-      await draftAPI.discardDraft(nodeId);
+      await draftAPI.discardDraft(nodeId, options);
 
       this.stateCache.delete(nodeId);
       this.subscribers.delete(nodeId as string);

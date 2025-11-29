@@ -88,6 +88,17 @@ const defaultParams: ColumnBuilderParams = {
     updated: 'Updated',
     removed: 'Removed',
   },
+  draftChipLabels: {
+    self: 'Draft',
+    descendant: {
+      singular: 'Draft in Subtree',
+      plural: 'Drafts in Subtree',
+    },
+  },
+  draftFlags: {
+    hasDraft: new Set(),
+    hasDescendantDraft: () => false,
+  },
   validationMessages: {
     invalidName: 'Invalid name',
     invalidDescription: 'Invalid description',

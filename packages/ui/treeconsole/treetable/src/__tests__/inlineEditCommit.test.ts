@@ -109,7 +109,10 @@ function makeParams(overrides: Partial<ColumnBuilderParams>): ColumnBuilderParam
     emptyValue: '-',
     draftChipLabels: {
       self: 'Draft',
-      descendant: 'Draft child',
+      descendant: {
+        singular: 'Draft child',
+        plural: 'Draft children',
+      },
     },
     draftFlags: {
       hasDraft: new Set(),

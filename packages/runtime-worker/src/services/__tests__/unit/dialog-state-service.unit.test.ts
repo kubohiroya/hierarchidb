@@ -110,7 +110,7 @@ describe('DialogStateService', () => {
     expect(callback).toHaveBeenCalledTimes(2);
   });
 
-  it('warns when peer store is missing but does not throw', async () => {
+  it('no-ops when peer store is missing (no warn, no throw)', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     await expect(
@@ -121,9 +121,6 @@ describe('DialogStateService', () => {
       })
     ).resolves.toBeUndefined();
 
-    expect(warnSpy).toHaveBeenCalledWith(
-      '[DialogStateService] no peer store registered for nodeType',
-      'unknown-node-type'
-    );
+    expect(warnSpy).not.toHaveBeenCalled();
   });
 });

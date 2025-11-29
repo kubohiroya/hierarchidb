@@ -1,3 +1,5 @@
+import { Dexie } from 'dexie';
+import { getDBName } from '@hierarchidb/util';
 import { pluginDatabaseLoaders } from '~/plugin-registry/index.ts';
 
 type ClearFn = () => Promise<void> | void;
@@ -27,10 +29,32 @@ const asClearFn = (mod: ClearModule): ClearFn | undefined => {
   return undefined;
 };
 
+const CORE_DB_SUFFIXES = ['core-db'];
+
+async function clearCoreDatabases(): Promise<void> {
+  for (const suffix of CORE_DB_SUFFIXES) {
+    await Dexie.delete(getDBName(suffix));
+  }
+}
+
 export async function clearAppIndexedDBsViaPlugins(): Promise<ClearResult> {
   const invoked: string[] = [];
   const missing: string[] = [];
   const errors: Array<{ nodeType: string; error: unknown }> = [];
+
+  // Best-effort: close any open Dexie connections in this tab before deletion.
+  try {
+    Dexie.closeAll();
+  } catch {
+    // ignore close failures; delete will attempt to recover
+  }
+
+  try {
+    await clearCoreDatabases();
+    invoked.push('core');
+  } catch (error) {
+    errors.push({ nodeType: 'core', error });
+  }
 
   const entries = Object.entries(pluginDatabaseLoaders ?? {});
 

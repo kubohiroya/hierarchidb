@@ -24,9 +24,7 @@ export class DialogStateService implements DialogStateAPI {
   async publishState({ nodeId, nodeType, state }: DialogStateUpdateInput): Promise<void> {
     const store = storeRegistry.getPeer(nodeType);
     if (!store) {
-      if (typeof console !== 'undefined' && console.warn) {
-        console.warn('[DialogStateService] no peer store registered for nodeType', nodeType);
-      }
+      // No peer store registered: silently ignore to avoid noisy warnings.
       return;
     }
 

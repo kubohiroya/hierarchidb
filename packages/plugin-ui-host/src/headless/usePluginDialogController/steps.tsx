@@ -1,4 +1,5 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { atom, useAtom } from 'jotai';
 import { BasicInfoStep } from '@hierarchidb/plugin-ui-sdk';
 import type {
   PluginStepConfig,
@@ -24,7 +25,6 @@ import type {
   BasicInfoState,
   DialogStepData,
   DialogUiState,
-  TreeNodeUpdatePayload,
 } from './data-types.js';
 
 type StepAdapterProps = {
@@ -32,9 +32,8 @@ type StepAdapterProps = {
   mode: 'create' | 'edit';
   nodeId: string;
   parentId: string;
-  workingData?: DialogStepData;
   uiState: DialogUiState;
-  updateDraft: (patch: TreeNodeUpdatePayload<DialogStepData>) => void;
+  setDraftData: React.Dispatch<React.SetStateAction<DialogStepData>>;
   updateUiState: (next: DialogUiState) => void;
   onDataChange?: (data: DialogStepData) => void;
   dialogRef?: React.RefObject<HTMLElement | null>;
@@ -46,22 +45,29 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
   mode,
   nodeId,
   parentId,
-  workingData,
   uiState,
-  updateDraft,
+  setDraftData,
   updateUiState,
   onDataChange,
   dialogRef,
   stepProps,
 }) => {
+  const draftAtom = useMemo(() => atom(stepProps.data ?? {}), [stepProps.data]);
+  const [, setSlice] = useAtom(draftAtom);
+
+  useEffect(() => {
+    setSlice(toRecord(stepProps.data) ?? {});
+  }, [setSlice, stepProps.data]);
+
   const handleChange = useCallback(
     (patch: Partial<DialogStepData>) => {
-      const current = toRecord(stepProps.data) ?? workingData ?? {};
+      const current = toRecord(stepProps.data) ?? {};
       const nextData: DialogStepData = { ...current, ...patch };
       onDataChange?.(nextData);
-      updateDraft({ draftData: nextData });
+      setSlice(nextData);
+      setDraftData(nextData);
     },
-    [onDataChange, stepProps.data, workingData, updateDraft]
+    [onDataChange, stepProps.data, setDraftData, setSlice]
   );
 
   return (
@@ -70,7 +76,7 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
         mode,
         nodeId,
         parentId,
-        data: stepProps.data ?? workingData ?? {},
+        data: stepProps.data ?? {},
         uiState,
         disabled: false,
         onChange: handleChange,
@@ -94,8 +100,8 @@ interface Params {
   mode: 'create' | 'edit';
   nodeId: NodeId;
   pageNodeId: NodeId;
-  draftDataWithoutMeta: DialogStepData;
-  updateDraft: (patch: TreeNodeUpdatePayload<DialogStepData>) => void;
+  draftData: DialogStepData;
+  setDraftData: React.Dispatch<React.SetStateAction<DialogStepData>>;
   handleBasicInfoBridge: (data: DialogStepData) => void;
   dialogRef: React.RefObject<HTMLDivElement | null>;
 }
@@ -111,12 +117,18 @@ export function useDialogSteps({
   mode,
   nodeId,
   pageNodeId,
-  draftDataWithoutMeta,
-  updateDraft,
+  draftData,
+  setDraftData,
   handleBasicInfoBridge,
   dialogRef,
 }: Params): StepCompositionResult {
   const [uiState, setUiState] = useState<DialogUiState>({});
+  const [draftAtom] = useState(() => atom(draftData));
+  const [, setDraftAtomValue] = useAtom(draftAtom);
+
+  useEffect(() => {
+    setDraftAtomValue(draftData);
+  }, [draftData, setDraftAtomValue]);
   const normalizedConfigs = useMemo<PluginStepConfig<DialogStepData, DialogUiState>[]>(() => {
     return (composedConfigs.configs ?? []).map(
       (cfg: PluginStepConfig<DialogStepData, DialogUiState>) => ({
@@ -128,18 +140,19 @@ export function useDialogSteps({
     );
   }, [composedConfigs.configs]);
 
-  const currentStepData = useMemo<DialogStepData>(
-    () => buildStepWorkingData(draftDataWithoutMeta, basicInfo, basicInfoMeta),
-    [basicInfo, basicInfoMeta, draftDataWithoutMeta]
-  );
+  const currentStepData = useMemo<DialogStepData>(() => buildStepWorkingData(draftData, basicInfo, basicInfoMeta), [
+    basicInfo,
+    basicInfoMeta,
+    draftData,
+  ]);
   const basicInfoValidationPayload = useMemo<DialogStepData>(
     () => stripReservedDialogKeys(currentStepData),
     [currentStepData]
   );
 
-  const dialogData = useMemo<DialogStepData>(() => mergeDialogData(basicInfo, draftDataWithoutMeta), [
+  const dialogData = useMemo<DialogStepData>(() => mergeDialogData(basicInfo, draftData), [
     basicInfo,
-    draftDataWithoutMeta,
+    draftData,
   ]);
 
   const steps = useMemo<DialogStep[]>(() => {
@@ -156,7 +169,7 @@ export function useDialogSteps({
 
     normalizedConfigs.forEach((cfg) => {
       const isBasicInfoStep = cfg.id === 'basic-info';
-      const validationPayload = isBasicInfoStep ? basicInfoValidationPayload : draftDataWithoutMeta;
+      const validationPayload = isBasicInfoStep ? basicInfoValidationPayload : draftData;
       const validateFn = cfg.validate;
       const resolveValidate: StepValidationFn | undefined = (() => {
         if (isBasicInfoStep) {
@@ -178,51 +191,96 @@ export function useDialogSteps({
     });
 
     return result;
-  }, [composedConfigs.hasHostBase, normalizedConfigs, isBasicInfoValid, basicInfoValidationPayload, draftDataWithoutMeta]);
+  }, [composedConfigs.hasHostBase, normalizedConfigs, isBasicInfoValid, basicInfoValidationPayload, draftData]);
 
-  const stepDescriptors = useMemo<ReadonlyArray<StepComponentDescriptor<DialogStepData>>>(() => {
-    const descriptors: StepComponentDescriptor<DialogStepData>[] = [];
+  const handleBasicInfoChange = useCallback(
+    (data: { name: string; description: string; tags?: string[] }) => {
+      setBasicInfo(() => {
+        const next = {
+          name: data.name,
+          description: data.description ?? '',
+          tags: data.tags ?? [],
+        };
+        return next;
+      });
+    },
+    [setBasicInfo]
+  );
 
-    if (!composedConfigs.hasHostBase) {
-      const BasicInfoDescriptor: React.FC<HeadlessStepComponentProps<DialogStepData>> = (props) => (
+  const nameAtom = useMemo(
+    () =>
+      atom(
+        (get) => (get(draftAtom) as { name?: string })?.name ?? '',
+        (get, set, val: string) => {
+          const prev = (get(draftAtom) as any) ?? {};
+          set(draftAtom, { ...prev, name: val });
+        }
+      ),
+    [draftAtom]
+  );
+  const descriptionAtom = useMemo(
+    () =>
+      atom(
+        (get) => (get(draftAtom) as { description?: string })?.description ?? '',
+        (get, set, val: string) => {
+          const prev = (get(draftAtom) as any) ?? {};
+          set(draftAtom, { ...prev, description: val });
+        }
+      ),
+    [draftAtom]
+  );
+  const tagsAtom = useMemo(
+    () =>
+      atom(
+        (get) => (get(draftAtom) as { tags?: string[] })?.tags ?? [],
+        (get, set, val: string[]) => {
+          const prev = (get(draftAtom) as any) ?? {};
+          set(draftAtom, { ...prev, tags: val });
+        }
+      ),
+    [draftAtom]
+  );
+
+  const basicInfoDescriptor = useMemo<StepComponentDescriptor<DialogStepData> | null>(() => {
+    if (composedConfigs.hasHostBase) return null;
+
+    const Component: React.FC<HeadlessStepComponentProps<DialogStepData>> = React.memo((props) => {
+      const [name, setName] = useAtom(nameAtom);
+      const [description, setDescription] = useAtom(descriptionAtom);
+      const [tags, setTags] = useAtom(tagsAtom);
+
+      const handleChange = useCallback(
+        (data: { name: string; description: string; tags?: string[] }) => {
+          const nextTags = data.tags ?? [];
+          setName(data.name);
+          setDescription(data.description ?? '');
+          setTags(nextTags);
+          handleBasicInfoChange(data);
+          props.onChange({ name: data.name, description: data.description ?? '', tags: nextTags });
+        },
+        [props, setName, setDescription, setTags]
+      );
+
+      return (
         <BasicInfoStep
-          name={basicInfo.name}
-          description={basicInfo.description}
-          tags={basicInfo.tags}
+          name={name}
+          description={description}
+          tags={tags}
           tagSuggestions={tagSuggestions}
-          onChange={(data: { name: string; description: string; tags?: string[] }) => {
-            setBasicInfo((prev) => {
-              const next = {
-                name: data.name,
-                description: data.description ?? '',
-                tags: data.tags ?? [],
-              };
-              if (
-                prev.name !== next.name ||
-                prev.description !== next.description ||
-                prev.tags.join(',') !== next.tags.join(',')
-              ) {
-                updateDraft({
-                  draftMetadata: {
-                    name: next.name,
-                    description: next.description,
-                    tags: next.tags,
-                  },
-                });
-              }
-              return next;
-            });
-            props.onChange({ name: data.name, description: data.description ?? '', tags: data.tags ?? [] });
-          }}
+          onChange={handleChange}
           mode={mode}
           validate={() => basicInfoValidationError}
         />
       );
-      descriptors.push({
-        id: 'basic-info',
-        label: 'Basic Information',
-        component: BasicInfoDescriptor,
-      });
+    });
+    return { id: 'basic-info', label: 'Basic Information', component: Component };
+  }, [composedConfigs.hasHostBase, nameAtom, descriptionAtom, tagsAtom, tagSuggestions, handleBasicInfoChange, mode, basicInfoValidationError]);
+
+  const stepDescriptors = useMemo<ReadonlyArray<StepComponentDescriptor<DialogStepData>>>(() => {
+    const descriptors: StepComponentDescriptor<DialogStepData>[] = [];
+
+    if (basicInfoDescriptor) {
+      descriptors.push(basicInfoDescriptor);
     }
 
     normalizedConfigs.forEach((cfg) => {
@@ -235,9 +293,8 @@ export function useDialogSteps({
             mode={mode}
             nodeId={String(nodeId)}
             parentId={String(pageNodeId)}
-            workingData={currentStepData}
             uiState={uiState}
-            updateDraft={updateDraft}
+            setDraftData={setDraftData}
             updateUiState={setUiState}
             onDataChange={cfg.id === 'basic-info' ? handleBasicInfoBridge : undefined}
             dialogRef={dialogRef}
@@ -248,7 +305,17 @@ export function useDialogSteps({
     });
 
     return descriptors;
-  }, [composedConfigs.hasHostBase, normalizedConfigs, basicInfo.name, basicInfo.description, basicInfo.tags, tagSuggestions, mode, setBasicInfo, updateDraft, basicInfoValidationError, nodeId, pageNodeId, currentStepData, uiState, handleBasicInfoBridge, dialogRef]);
+  }, [
+    basicInfoDescriptor,
+    normalizedConfigs,
+    mode,
+    nodeId,
+    pageNodeId,
+    uiState,
+    setDraftData,
+    handleBasicInfoBridge,
+    dialogRef,
+  ]);
 
   return {
     steps,

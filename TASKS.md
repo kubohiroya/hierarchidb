@@ -53,6 +53,65 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1560) usePluginDialogController steps useMemo 構造修正（P0）
+- ブランチ: `fix/plugin-ui-host/usememo-nesting`（sandbox 制約で main 上で作業）
+- 依存: `packages/plugin-ui-host/src/headless/usePluginDialogController/steps.tsx`
+- 受け入れ基準（DoD）:
+ 受け入れ基準（DoD）:
+  - [x] TASKS Kanban／運用ログに start→done とロールバック手順を記載する
+  - [x] `usePluginDialogController/steps.tsx` のネストした `useMemo` を解消し、副作用なしで同等のメモ化構造に整理する
+  - [x] `pnpm --filter @hierarchidb/plugin-ui-host lint` または `typecheck` を実行し、結果を運用ログに記録する
+  - [x] ロールバック手順（差分 revert と再実行コマンド）を TASKS.md に明記する
+- チェックリスト:
+  - [x] 現状の `useMemo` ネスト箇所を特定し、フック規約に沿った構造へリファクタする
+  - [x] 検証コマンドの実行と結果を運用ログへ追記する
+- ロールバック手順：本タスクで変更する `packages/plugin-ui-host/src/headless/usePluginDialogController/steps.tsx` を revert し、実行した検証コマンド（lint/typecheck）を再実行して現状挙動へ戻す
+
+1559) Edit ダイアログ Cancel 時のドラフト削除/保持制御（P0）
+- ブランチ: `fix/workingcopy/dialog-cancel-behavior`（sandbox 制約で main 上で作業：`git checkout -b` が `.git/refs/heads/...` 作成不可で失敗）
+- 依存: `packages/runtime/worker/src/services/draft/*`（commit/discard/cleanup）、`packages/runtime/worker/src/services/workingcopy/*`、`packages/plugin-ui-host` の dialog discard ハンドラ、`app/src/hooks/treeconsole` での cancel 挙動
+- 受け入れ基準（DoD）:
+  - [x] create で事前生成したドラフトノードを Edit ダイアログから編集せず閉じた場合、ノード（data/draftData も含む）が削除される
+  - [x] Import template でドラフト状態のノードを作成した場合、Edit ダイアログを閉じてもノードが削除されない（draft/data/metadata は維持）
+  - [x] Import template で valid ノードを作成した場合、Edit ダイアログを閉じると draft が null 化され、ノードは残る
+  - [x] 上記挙動を再現するテストまたは手動確認手順を整備し、運用ログに結果を記録する
+  - [x] ロールバック手順と影響範囲を TASKS.md に記載する
+- チェックリスト:
+  - [x] discard/commit まわりの create-only 判定と draft null 化ロジックを棚卸しし、期待挙動との齟齬を特定する
+  - [x] 上記3パターンの挙動をカバーするユニットテストまたは結合テストを追加/更新する
+  - [x] 影響箇所の typecheck/対象テストを実行し、結果を運用ログに記録する
+- ロールバック手順：今回変更する draft discard/cleanup/workingcopy 周辺の差分と追加テストを revert し、実行した検証コマンドを再実行して現状挙動へ戻ることを確認する
+
+1557) TreeTable Subtree Draft Chip 文言調整（P0）
+- ブランチ: `fix/ui-treeconsole/treetable-draft-chip-label`（sandbox 制約で `main` 上で作業）
+- 依存: `packages/ui/treeconsole/treetable`, `app/src/hooks/treeconsole`, `app/src/router/pages/tree/console/*`, draft カウント計算箇所
+- 受け入れ基準（DoD）:
+  - [ ] TASKS Kanban／運用ログに start→progress→done とロールバック手順を記載する
+  - [x] TreeTable Name カラムの Chip が draft ノード数 1 件時に “Draft in Subtree”、2 件以上時に “Drafts in Subtree” を表示し、0 件時は既存動作を維持する
+  - [ ] 文言変更以外の UI レイアウトやアクセシビリティを崩さない
+  - [x] 変更ロジックの手動確認または表示確認結果を運用ログへ記録する
+- チェックリスト:
+  - [x] draft ノード数を用いる表示条件を確認し、単数/複数形を返す分岐を追加する
+  - [ ] 0 件時の表示可否が従来と同じであることを確認する
+  - [x] 影響範囲の typecheck など必要な検証を実行し、結果を運用ログへ記録する
+- ロールバック手順：TreeTable Name カラム Chip の文言切り替えに関する差分を revert し、必要なら関連の検証コマンドを再実行する
+
+1558) IndexedDB 全削除スナック誤警告抑制（P0）
+- ブランチ: `fix/app/indexeddb-clear-missing-handling`（sandbox 制約で `main` 上で作業）
+- 依存: `app/src/plugin-host/clearIndexedDb.ts`, `app/src/router/pages/tree/console/TreeConsoleIntegration.tsx`, 各プラグインの clearDatabases 実装
+- 受け入れ基準（DoD）:
+  - [ ] TASKS Kanban／運用ログに start→progress→done とロールバック手順を記載する
+  - [ ] IndexedDB 全削除で clear 関数未実装プラグインがあっても不要なエラースナックを表示しない（実削除できたものは success、未提供は info/ok 扱い）
+  - [ ] Dexie の「Another connection wants to delete database…」ログに起因する誤失敗を防ぎ、本当に例外が発生した場合のみエラー表示する
+  - [ ] 動作確認（手動または代替テスト）の結果を運用ログに記録する
+- チェックリスト:
+  - [x] clearAppIndexedDBsViaPlugins の戻り値ハンドリングを見直し、missing のみでは failure としない
+  - [x] 実際の例外/errors だけを failure として通知し、成功/空の場合のスナックを適切に出し分ける
+  - [x] core DB（hidb-core-db）を削除対象に含める
+  - [ ] Dexie 接続を本タブで close してから削除する（他タブ接続があっても可能な限り削除を完了させる）
+  - [ ] 影響範囲の確認（手動実行 or 代替テスト）を行い、結果を運用ログへ記録する
+- ロールバック手順：`app/src/plugin-host/clearIndexedDb.ts` と `app/src/router/pages/tree/console/TreeConsoleIntegration.tsx` の差分を revert し、IndexedDB 全削除を再実行して現行のエラースナック表示が戻ることを確認する
+
 1556) plugin worker preload 解決（P0）
 - ブランチ: `fix/runtime-worker/plugin-worker-loader-path`（sandbox 制約で `main` 上で作業：git branch 作成に失敗）
 - 依存: `packages/runtime-worker/src/plugin-registry/index.ts`, `packages/runtime-worker/src/di/PluginWorkerModuleLoader.ts`, `app/src/worker-runtime/WorkerModuleLoader.ts`（状況確認用）
@@ -3519,6 +3578,10 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1558) Plugin Dialog Stepper valid-disabled 表示追加（P0） — 完了 (2025-11-29)
+  - 要点：PluginDialogHeader の Stepper に、前ステップ未完了で当該ステップが valid かつ disabled の場合に灰色円＋チェックの valid-disabled 状態を追加し、既存 active/invalid/validated 表示は維持。
+  - 検証：`pnpm --filter @hierarchidb/plugin-ui-host exec vitest run src/headless/__tests__/PluginDialogHeader.test.tsx`（2025-11-29 09:27 JST）exit 0。`pnpm --filter @hierarchidb/plugin-ui-host test -- --run PluginDialogHeader` は既存の `@hierarchidb/ui-worker-provider` 未解決で fail（basicInfoStepData/dialogStateSubscription が収集時に停止）。
+  - ロールバック手順：`packages/plugin-ui-host/src/headless/components/PluginDialogHeader.tsx` と `packages/plugin-ui-host/src/headless/__tests__/PluginDialogHeader.test.tsx` の差分を revert し、上記単体テストを再実行する。
 - 1548) tsconfig paths 依存ガード警告解消（P1） — 完了 (2025-11-26)
   - 要点：6パッケージ（batch-runtime-services / plugin-registry / plugin-service-sdk / plugin-ui-sdk / basemap-plugin / spreadsheet-plugin）の tsconfig から baseUrl/paths override を撤去し、必要最小限の `~/*` のみとした。
   - 検証：`node scripts/run-dependency-guard.mjs`（2025-11-26 11:11 JST）exit 0、WARN 0。
@@ -8954,6 +9017,31 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-22 14:25 progress: fix/workingcopy/discard-create — create 中のドラフトを Cancel した際、コミット済みデータのないドラフトノードは discard 時に nodes から削除するよう変更し、空ノードが残って次回の name 重複を招く問題を抑制。`pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm -C app typecheck` exit 0。
 - 2025-11-22 15:00 progress: fix/ui-create-default-name — create 呼び出し前に siblings を取得してユニークなデフォルト名（New X (n)）を決定し、初期値が既存と衝突しないようにした。edit ダイアログ起動前に対象ノード存在チェックを追加。`pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm -C app typecheck` exit 0。
 - 2025-11-22 15:30 progress: fix/workingcopy/constraint-reuse — create 用の固定 ID でドラフト生成時に既存ノードがあっても再利用するようにし、ConstraintError を防止。`pnpm --filter @hierarchidb/runtime-worker typecheck` exit 0。
+
+## 今日の着手（運用ログ） <a id="worklog-15"></a>
+
+- 2025-11-29 09:10 start: fix/ui-treeconsole/treetable-draft-chip-label — TreeTable Name カラムの Chip 文言を draft 件数で単数/複数に切り替える対応に着手。DoD: Kanban/運用ログ更新、1件 Draft in Subtree / 2件以上 Drafts in Subtree / 0件は既存動作維持、UI 崩れなし、確認結果とロールバック手順を記録。
+- 2025-11-29 09:13 progress: fix/ui-treeconsole/treetable-draft-chip-label — descendant Draft chip を draft 件数で単数/複数表示に変更し、fallback 文言を “Draft in Subtree”/“Drafts in Subtree” へ更新。検証: `pnpm --filter @hierarchidb/ui-treeconsole-treetable test -- --run draftChip`（exit 0）。
+- 2025-11-29 09:20 start: fix/app/indexeddb-clear-missing-handling — IndexedDB 全削除で clear 未実装プラグインが存在するだけでエラースナックが出る問題を修正するタスクに着手。DoD: Kanban/運用ログ更新、missing のみで error を出さない、実エラー時のみ error スナック、検証ログとロールバック手順記載。
+- 2025-11-29 09:23 start: fix/plugin-stepper/valid-disabled-state — Plugin Edit の Stepper で前ステップ invalid かつ当該ステップ valid の場合に灰色円＋チェックを表示する対応に着手（branch なしで main 作業）。DoD: Kanban/ログ更新、表示追加と既存状態維持、テスト/検証ログ記録、ロールバック手順明記。
+- 2025-11-29 09:26 progress: fix/app/indexeddb-clear-missing-handling — TreeConsoleIntegration の IndexedDB 全削除後ハンドリングを更新し、missing だけでは error スナックを出さず、errors のみ error 扱いに変更。missing は warn ログのみで、invoked>0 なら success、invoked=0 かつ missing 以外なしなら empty スナック。テスト未実施（UI手動確認まだ）。
+- 2025-11-29 09:36 progress: fix/app/indexeddb-clear-missing-handling — clearAppIndexedDBsViaPlugins に core DB (hidb-core-db) の削除を追加し、実行前に resetWorker で接続を閉じてから削除するように変更。missing ログは出さず、errors のみ error スナック。手動確認未実施。
+- 2025-11-29 09:38 progress: fix/app/indexeddb-clear-missing-handling — 全削除前に Dexie.closeAll で本タブの接続を閉じるようにし、他タブに接続が残っていても可能な限り削除を進める実装を追加。手動確認未実施。
+- 2025-11-29 09:27 progress: fix/plugin-stepper/valid-disabled-state — PluginDialogHeader Stepper に valid-disabled 状態を追加。前ステップ未完了のまま該当ステップが valid で disable な場合、灰色円＋チェック（`data-valid-disabled` 付き）で表示し、既存 active/invalid/validated 表示は維持。
+- 2025-11-29 09:27 command: pnpm --filter @hierarchidb/plugin-ui-host test -- --run PluginDialogHeader — exit 1（既存課題: `@hierarchidb/ui-worker-provider` 未解決により basicInfoStepData/dialogStateSubscription が fail。新規追加テストは収集前にブロック）。
+- 2025-11-29 09:27 command: pnpm --filter @hierarchidb/plugin-ui-host exec vitest run src/headless/__tests__/PluginDialogHeader.test.tsx — exit 0（PluginDialogHeader 単体の4テストが通過、新規 valid-disabled 状態を含む）。
+- 2025-11-29 09:27 done: fix/plugin-stepper/valid-disabled-state — valid-disabled 表示とテスト追加を完了。ロールバック: `packages/plugin-ui-host/src/headless/components/PluginDialogHeader.tsx` と `packages/plugin-ui-host/src/headless/__tests__/PluginDialogHeader.test.tsx` を revert し、上記単体テストを再実行。
+- 2025-11-29 09:32 progress: fix/app/indexeddb-clear-missing-handling — missing ログ出力を削除し、不要なコンソール警告を抑止。Dexie の delete 再接続警告は残るが、スナックは success/empty のみとなる想定。手動確認未実施。
+- 2025-11-29 09:49 start: fix/workingcopy/dialog-cancel-behavior — create/import template のドラフト/valid ノードを Edit ダイアログでキャンセルした際の挙動を是正するタスクを開始。DoD: create draft は cancel 時にノードごと削除、import draft は残す、import valid は draft を null 化しノード維持。branch 作成は `.git/refs/heads/fix/workingcopy/dialog-cancel-behavior` 作成不可で main 継続。
+- 2025-11-29 10:02 progress: fix/workingcopy/dialog-cancel-behavior — DraftAPI.discardDraft に forceDelete オプションを追加し、create モードでは uncommitted ノードを強制削除、edit モードかつ committed data なしの場合は discard を呼ばずノードを保持するよう useDialogDraft の cancel/auto-discard を調整。cleanup/discardAllDrafts も forceDelete=true で呼び出すよう変更。
+- 2025-11-29 10:03 command: pnpm --filter @hierarchidb/common-api build — exit 0（tsdown 警告: define 無効キー、既知）。
+- 2025-11-29 10:04 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0。
+- 2025-11-29 10:05 command: pnpm --filter @hierarchidb/plugin-ui-sdk test -- --run useWorkingCopy — exit 0（discard 挙動の新規テストを追加）。
+- 2025-11-29 10:06 done: fix/workingcopy/dialog-cancel-behavior — create cancel で forceDelete により未コミットノードを必ず削除、import draft/edit モードでは committed data が無い場合 discard をスキップしノード維持、valid ノードは draft を null 化。検証: `pnpm --filter @hierarchidb/common-api build`（exit 0、tsdown define 警告既知）、`pnpm --filter @hierarchidb/runtime-worker typecheck`（exit 0）、`pnpm --filter @hierarchidb/plugin-ui-sdk test -- --run useWorkingCopy`（exit 0）。ロールバック: `packages/runtime-worker/src/services/draft/cleanupOperations.ts`, `DraftService.ts`, `packages/plugin-service-sdk/src/draft/service.ts`, `packages/plugin-ui-sdk/src/hooks/useDialogDraft.ts`, `packages/plugin-ui-sdk/src/hooks/__tests__/useWorkingCopy.test.tsx`, `packages/common/api/src/DraftAPI.ts`, `packages/common/api/src/index.ts` を revert し、上記コマンドを再実行。
+- 2025-11-29 10:12 progress: fix/workingcopy/dialog-cancel-behavior — forceDelete 時は無条件削除に戻し、create cancel で payload を持つドラフトも確実に削除。DraftService discardAll/cleanup は forceDelete=true。`pnpm --filter @hierarchidb/runtime-worker test -- --run cancel-create.headless`（exit 0, 35ファイル中の一部 skipped 既存）で create cancel 挙動の結合テストを追加。`pnpm --filter @hierarchidb/plugin-ui-sdk test -- --run useWorkingCopy` 再実行（exit 0）で create discard の forceDelete を確認。
+- 2025-11-29 10:19 progress: fix/workingcopy/dialog-cancel-behavior — create/import/edit のキャンセル期待を網羅する headless 結合テストを追加 (`packages/runtime-worker/src/__tests__/headless/cancel-dialog-behavior.headless.test.ts`)。create draft は forceDelete で削除、import draft/edit draft は残存、import valid/edit valid は draft を null 化してノードを維持する挙動を確認。`pnpm --filter @hierarchidb/runtime-worker test -- --run cancel-dialog-behavior.headless` exit 0（既存 skip/警告は従来）。`pnpm --filter @hierarchidb/plugin-ui-sdk test -- --run useWorkingCopy` 再実行（exit 0）。
+- 2025-11-29 13:04 start: fix/plugin-ui-host/usememo-nesting — usePluginDialogController steps でネストした `useMemo` を解消するリファクタを開始。DoD: Kanban/運用ログ更新、ネスト解消と同等挙動維持、`pnpm --filter @hierarchidb/plugin-ui-host lint` または typecheck 実行ログ、ロールバック手順を記録。sandbox 制約で main 作業。
+- 2025-11-29 13:10 done: fix/plugin-ui-host/usememo-nesting — usePluginDialogController steps で name/description/tags の atom をトップレベルへ移動し、ネストした `useMemo` を解消。検証: `pnpm --filter @hierarchidb/plugin-ui-host lint` exit 0。ロールバック: `packages/plugin-ui-host/src/headless/usePluginDialogController/steps.tsx` を revert し、同コマンドを再実行。
 
 ## 今日の着手（運用ログ） <a id="worklog-14"></a>
 

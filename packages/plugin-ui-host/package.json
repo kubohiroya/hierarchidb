@@ -46,7 +46,8 @@
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
-    "@hierarchidb/plugin-ui-sdk": "workspace:*"
+    "@hierarchidb/plugin-ui-sdk": "workspace:*",
+    "jotai": "^2.0.5"
   },
   "peerDependencies": {
     "react": "^18.3.1",
@@ -62,7 +63,8 @@
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
-    "@hierarchidb/plugin-ui-sdk": "workspace:*"
+    "@hierarchidb/plugin-ui-sdk": "workspace:*",
+    "jotai": "^2.0.5"
   },
   "turbo": {
     "pipeline": {}

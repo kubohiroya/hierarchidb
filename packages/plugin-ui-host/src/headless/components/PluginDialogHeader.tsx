@@ -18,6 +18,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import type { StepIconProps } from '@mui/material/StepIcon';
 import { alpha, useTheme } from '@mui/material/styles';
 import { Link, useLocation } from '@tanstack/react-router';
 import type React from 'react';
@@ -97,10 +98,25 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
   );
 
   const StepStatusIcon = useCallback(
-    (props: { active?: boolean; completed?: boolean; icon?: React.ReactNode }) => {
-      const { active, completed, icon: iconProp } = props;
-      const baseColor = completed ? theme.palette.success.main : theme.palette.background.paper;
-      const textColor = completed ? theme.palette.common.white : theme.palette.text.primary;
+    (
+      props: StepIconProps & {
+        variant?: 'validated-disabled';
+      }
+    ) => {
+      const { active, completed, icon: iconProp, variant } = props;
+      const isValidatedDisabled = variant === 'validated-disabled';
+      const baseColor = isValidatedDisabled
+        ? theme.palette.mode === 'dark'
+          ? theme.palette.grey[700]
+          : theme.palette.grey[300]
+        : completed
+          ? theme.palette.success.main
+          : theme.palette.background.paper;
+      const textColor = isValidatedDisabled
+        ? theme.palette.text.secondary
+        : completed
+          ? theme.palette.common.white
+          : theme.palette.text.primary;
       const borderColor = active ? theme.palette.primary.main : theme.palette.divider;
       const boxShadow = active
         ? `0 0 0 2px ${alpha(
@@ -114,6 +130,7 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
           data-testid={`plugin-dialog-step-icon-${iconProp}`}
           data-active={active ? 'true' : 'false'}
           data-validated={completed ? 'true' : 'false'}
+          data-valid-disabled={isValidatedDisabled ? 'true' : 'false'}
           sx={{
             width: 30,
             height: 30,
@@ -225,6 +242,23 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
                 const label = workerStep?.title ?? step.label ?? step.id;
                 const stepLink = buildStepLink(index);
                 const isActive = index === ctx.activeStepIndex;
+                const previousWorkerStep =
+                  index > 0
+                    ? workerStepMap?.get(ctx.stepComponents[index - 1]?.id ?? '') ??
+                      dialogState?.steps?.[index - 1]
+                    : null;
+                const previousCompleted =
+                  index === 0
+                    ? true
+                    : previousWorkerStep?.completed ??
+                      ctx.validatedStepIndices.includes(index - 1);
+                const isValidatedButDisabled = completed && !canNavigate && index > 0 && !previousCompleted;
+                const StepIconComponent = (iconProps: StepIconProps) => (
+                  <StepStatusIcon
+                    {...iconProps}
+                    variant={isValidatedButDisabled ? 'validated-disabled' : undefined}
+                  />
+                );
                 return (
                   <Step key={step.id} completed={completed}>
                     <StepButton
@@ -236,7 +270,7 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
                       aria-current={isActive ? 'step' : undefined}
                       sx={{ padding: 0, margin: 0 }}
                     >
-                      <StepLabel StepIconComponent={StepStatusIcon as never}>
+                      <StepLabel StepIconComponent={StepIconComponent as never}>
                         <Typography
                           variant="caption"
                           noWrap
