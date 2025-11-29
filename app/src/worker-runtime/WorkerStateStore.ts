@@ -4,7 +4,7 @@ import {
   getWorkerInitCompleteMessage,
   getWorkerInitStartMessage,
 } from '~/i18n/workerInitMessages.js';
-import { ensureWorkerRuntime } from './WorkerModuleLoader.js';
+import { ensureWorkerRuntime, resetWorkerRuntime } from './WorkerModuleLoader.js';
 import { getWorkerAPIClientModule, loadWorkerAPIClientModule } from './workerApiClientLoader.js';
 
 export type WorkerRuntimeState = 'uninitialized' | 'initializing' | 'ready' | 'failed';
@@ -89,6 +89,18 @@ let initializationPromise: Promise<Remote<WorkerAPI>> | null = null;
 
 export function getWorkerSnapshot(): WorkerStateSnapshot {
   return snapshot;
+}
+
+export function resetWorkerState(): void {
+  initializationPromise = null;
+  resetWorkerRuntime();
+  const resetSnapshot: WorkerStateSnapshot = {
+    state: 'uninitialized',
+    client: null,
+    error: null,
+    progress: getDefaultProgress(),
+  };
+  notifySnapshot(resetSnapshot, snapshot);
 }
 
 function notifySnapshot(next: WorkerStateSnapshot, previous: WorkerStateSnapshot): void {

@@ -70,6 +70,15 @@ export function MultiDialogFrame<TData>(props: MultiDialogFrameComponentProps<TD
 
   const [isInteracting, setIsInteracting] = useState(false);
 
+  const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!open) return;
+    if (event.defaultPrevented) return;
+    if (event.key !== 'Escape') return;
+
+    event.stopPropagation();
+    headlessProps.onRequestClose?.('close');
+  }, [headlessProps, open]);
+
   useEffect(() => {
     if (!isBrowser) return;
     if (!open) return;
@@ -303,6 +312,7 @@ export function MultiDialogFrame<TData>(props: MultiDialogFrameComponentProps<TD
       sx={combinedFrameSx}
       role="dialog"
       aria-modal="true"
+      onKeyDown={handleKeyDown}
     >
       <HeadlessMultiStepDialog {...augmentedHeadlessProps} />
       {!fullScreen && (

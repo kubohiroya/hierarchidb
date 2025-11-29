@@ -118,3 +118,7 @@ export async function ensureWorkerRuntime(): Promise<Remote<WorkerAPI>> {
 
   return runtimePromise;
 }
+
+export function resetWorkerRuntime(): void {
+  runtimePromise = null;
+}

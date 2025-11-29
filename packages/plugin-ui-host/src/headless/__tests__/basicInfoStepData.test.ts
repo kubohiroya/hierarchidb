@@ -19,8 +19,13 @@ describe('buildStepWorkingData', () => {
 
     const result = buildStepWorkingData(draftData, basicInfo, meta);
 
-    expect(result).toEqual(draftData);
-    expect(result[BASIC_INFO_META_KEY]).toBeUndefined();
+    expect(result).toEqual({
+      ...draftData,
+      name: 'New Basemap',
+      description: 'Default description',
+      tags: ['basemap'],
+    });
+    expect(result[BASIC_INFO_META_KEY]).toBeUndefined(); // meta key is reserved but not emitted
   });
 
   it('creates a fresh record when working data is undefined', () => {
@@ -33,7 +38,11 @@ describe('buildStepWorkingData', () => {
 
     const result = buildStepWorkingData(undefined, basicInfo, meta);
 
-    expect(result).toEqual({});
-    expect(result[BASIC_INFO_META_KEY]).toBeUndefined();
+    expect(result).toEqual({
+      name: 'Fallback Name',
+      description: '',
+      tags: [],
+    });
+    expect(result[BASIC_INFO_META_KEY]).toBeUndefined(); // meta key is reserved but not emitted
   });
 });

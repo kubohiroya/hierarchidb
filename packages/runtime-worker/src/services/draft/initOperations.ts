@@ -94,7 +94,7 @@ export async function initTreeNode(
       depth,
       createdAt: now,
       updatedAt: now,
-      version: 1,
+      version: 0,
       lastTouchedAt: now,
     });
 

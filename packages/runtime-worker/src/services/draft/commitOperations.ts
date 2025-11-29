@@ -43,7 +43,7 @@ export async function commitTreeNodeDraft(
     finalName = createNewName(siblingNames, finalName);
   }
 
-  const originalVersion = draft.version || 1;
+  const originalVersion = typeof draft.version === 'number' ? draft.version : 0;
   const hasConflict = await checkDraftConflict(coreDB, draft.id as NodeId);
   if (hasConflict) {
     return {

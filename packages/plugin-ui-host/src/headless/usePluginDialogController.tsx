@@ -410,9 +410,10 @@ export function usePluginDialogController(
 
   const handleCancel = useCallback(async () => {
     // Cancel: create は forceDelete、edit は draft clear（現行 discardDraft が内部で判断）
-    await discardDraft();
+    const forceDelete = mode === 'create';
+    await discardDraft(forceDelete ? { forceDelete: true } : undefined);
     onClose();
-  }, [discardDraft, onClose]);
+  }, [discardDraft, mode, onClose]);
 
   const canSaveCurrent = evaluatedState.guards.canSave;
   const canStartBatch = evaluatedState.guards.canStartBatch;

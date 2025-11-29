@@ -44,6 +44,7 @@ import {
   getWorkerAPIClientModule,
   loadWorkerAPIClientModule,
 } from '../worker-runtime/workerApiClientLoader.js';
+import { resetWorkerState } from '../worker-runtime/WorkerStateStore.js';
 import { useOptionalBootProgress } from './BootProgressProvider.js';
 import { WorkerClientProxy, WorkerInitializationProgress } from '~/worker-runtime/WorkerClientProxy.ts';
 import {
@@ -500,6 +501,7 @@ export const WorkerProvider = ({
   const retryInitialization = useCallback(() => {
     bootLog('WorkerProvider retry requested');
     resetWorkerClient();
+    resetWorkerState();
     initCompleted = false;
     initStarted = false;
     latestProgressRef.current = 0;
@@ -519,6 +521,7 @@ export const WorkerProvider = ({
   const reset = useCallback(() => {
     bootLog('WorkerProvider reset requested');
     resetWorkerClient();
+    resetWorkerState();
     initCompleted = false;
     initStarted = false;
     latestProgressRef.current = 0;

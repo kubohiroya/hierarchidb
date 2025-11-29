@@ -123,12 +123,12 @@ export function useDialogSteps({
   dialogRef,
 }: Params): StepCompositionResult {
   const [uiState, setUiState] = useState<DialogUiState>({});
-  const [draftAtom] = useState(() => atom(draftData));
+  const [draftAtom] = useState(() => atom(buildStepWorkingData(draftData, basicInfo, basicInfoMeta)));
   const [, setDraftAtomValue] = useAtom(draftAtom);
 
   useEffect(() => {
-    setDraftAtomValue(draftData);
-  }, [draftData, setDraftAtomValue]);
+    setDraftAtomValue(buildStepWorkingData(draftData, basicInfo, basicInfoMeta));
+  }, [draftData, basicInfo, basicInfoMeta, setDraftAtomValue]);
   const normalizedConfigs = useMemo<PluginStepConfig<DialogStepData, DialogUiState>[]>(() => {
     return (composedConfigs.configs ?? []).map(
       (cfg: PluginStepConfig<DialogStepData, DialogUiState>) => ({

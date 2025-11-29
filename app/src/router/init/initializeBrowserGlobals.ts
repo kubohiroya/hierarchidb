@@ -85,6 +85,12 @@ export function initializeBrowserGlobals(): void {
         name: manifest.name ?? entry.packageName,
         packageName: entry.packageName,
         version: manifest.version ?? entry.version,
+        label: manifest.displayName ?? manifest.name ?? entry.nodeType,
+        manifest: {
+          ...manifest,
+          icon,
+        },
+        createOrder: typeof manifest.priority === 'number' ? manifest.priority : undefined,
         config: {
           displayName: manifest.displayName ?? manifest.name ?? entry.nodeType,
           name: manifest.name ?? entry.packageName,

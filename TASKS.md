@@ -53,6 +53,48 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1576) Dialog Esc キーで Cancel/Close 同等動作（P0）
+- ブランチ: `fix/ui-dialog/esc-cancel`（sandbox 制約で main 上で作業）
+- 依存: `packages/ui/dialog/src/headless/MultiDialogFrame.tsx`、PluginDialogShell/TrashDialog 呼び出し元
+- 受け入れ基準（DoD）:
+  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] trash/create/edit 系ダイアログで Esc キー押下時に Cancel/Close ボタンと同じ処理が実行される
+  - [ ] 未保存の変更がある場合は確認ダイアログが表示され、Discard 選択時のみ閉じる
+  - [ ] 未保存の変更がない場合は確認なしで閉じる
+  - [ ] 既存のボタン操作やショートカットに回帰を生じさせない
+- チェックリスト:
+  - [ ] Esc キーのハンドリングを MultiDialogFrame など共通レイヤーに実装し、onRequestClose を経由させる
+  - [ ] 未保存・非未保存の両ケースで挙動を確認し、必要なら手動確認手順を運用ログへ記録する
+- ロールバック手順：本タスクで変更した `packages/ui/dialog/src/headless/MultiDialogFrame.tsx`（および関連差分があればそれら）を revert し、Esc 挙動が元に戻ることを確認する
+
+1562) hidb-core-db 全削除後の自動初期化失敗調査/修正（P0）
+- ブランチ: `fix/app/hidb-core-reinit`（sandbox 制約で main 上で作業）
+- 依存: `app/src/plugin-host/clearIndexedDb.ts`, `app/src/router/pages/tree/console/TreeConsoleIntegration.tsx`, `app/src/contexts/WorkerProvider.tsx`, `packages/runtime-worker` の DB 初期化
+- 受け入れ基準（DoD）:
+  - [x] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [x] 「このアプリが作成したIndexedDBを全て削除」実行後に `/t/r` へ遷移しても `hidb-core-db` が自動初期化され、TreeTable 画面が開く
+  - [x] コアDB初期化フロー（Worker/Router/UI）が削除後も正常に再走することを確認し、関連箇所を修正する
+  - [x] 代表検証（app typecheck または該当パッケージのテスト、手動確認）を実行しログ化する
+- チェックリスト:
+  - [x] IndexedDB 全削除の処理と初期化トリガー（WorkerProvider/TreeConsoleIntegration）を確認する
+  - [x] hidb-core-db 再作成が行われない理由を特定し、初期化フローを修正する
+  - [x] 検証結果とロールバック手順を運用ログへ記載する
+- ロールバック手順：今回変更する clear/init 周辺ファイルの差分を revert し、再度 IndexedDB 全削除→`/t/r` で現象再現を確認する
+
+1561) Plugin dialog Step1 metadata 初期値欠落と入力不安定調査（P0）
+- ブランチ: `fix/plugin-dialog/metadata-init`（sandbox 制約で main 上で作業）
+- 依存: `packages/plugin-ui-host`（PluginDialog/stepper）、`app/src/components/dialogs`、`plugins/*-plugin/src/ui`（create/edit dialog 初期化）
+- 受け入れ基準（DoD）:
+  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順（調査のみのため差分なし）を明記する
+  - [ ] create folder/editor ダイアログ Step1 で metadata 経由の name/description 初期値が空欄になる事象を再現し、手順を明示する
+  - [ ] 初期値欠落と入力中のコンポーネント再読み込み（不安定挙動）の原因を特定し、関与ファイル・条件・データフローを記録する
+  - [ ] 影響範囲と再発条件、暫定/恒久の解消方針案を整理して提示する（実装は後続）
+- チェックリスト:
+  - [ ] create/edit dialog の初期 metadata 注入経路と WorkingCopy 連携箇所を確認する
+  - [ ] name/description フィールドの uncontrolled/controlled 切り替えや再レンダー要因を特定する
+  - [ ] 調査結果と次ステップ案を TASKS 運用ログに記載する
+- ロールバック手順：調査のみのタスクのため差分なし。記載内容を戻す場合は本タスクのエントリと運用ログ追記を削除する。
+
 1560) usePluginDialogController steps useMemo 構造修正（P0）
 - ブランチ: `fix/plugin-ui-host/usememo-nesting`（sandbox 制約で main 上で作業）
 - 依存: `packages/plugin-ui-host/src/headless/usePluginDialogController/steps.tsx`
@@ -9042,6 +9084,11 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-29 10:19 progress: fix/workingcopy/dialog-cancel-behavior — create/import/edit のキャンセル期待を網羅する headless 結合テストを追加 (`packages/runtime-worker/src/__tests__/headless/cancel-dialog-behavior.headless.test.ts`)。create draft は forceDelete で削除、import draft/edit draft は残存、import valid/edit valid は draft を null 化してノードを維持する挙動を確認。`pnpm --filter @hierarchidb/runtime-worker test -- --run cancel-dialog-behavior.headless` exit 0（既存 skip/警告は従来）。`pnpm --filter @hierarchidb/plugin-ui-sdk test -- --run useWorkingCopy` 再実行（exit 0）。
 - 2025-11-29 13:04 start: fix/plugin-ui-host/usememo-nesting — usePluginDialogController steps でネストした `useMemo` を解消するリファクタを開始。DoD: Kanban/運用ログ更新、ネスト解消と同等挙動維持、`pnpm --filter @hierarchidb/plugin-ui-host lint` または typecheck 実行ログ、ロールバック手順を記録。sandbox 制約で main 作業。
 - 2025-11-29 13:10 done: fix/plugin-ui-host/usememo-nesting — usePluginDialogController steps で name/description/tags の atom をトップレベルへ移動し、ネストした `useMemo` を解消。検証: `pnpm --filter @hierarchidb/plugin-ui-host lint` exit 0。ロールバック: `packages/plugin-ui-host/src/headless/usePluginDialogController/steps.tsx` を revert し、同コマンドを再実行。
+- 2025-11-29 14:15 start: fix/plugin-dialog/metadata-init — create folder/editor ダイアログ Step1 で name/description 初期値が空欄・入力が不安定になる事象の調査を開始。DoD: Kanban/運用ログ更新、再現手順と原因特定、影響範囲・解消方針案の整理、ロールバック手順（調査のみ）明記。
+- 2025-11-29 14:45 progress: fix/plugin-dialog/metadata-init — 事象の原因を特定。`useDialogSteps` の BasicInfoStep が Jotai `draftAtom`（`draftData`のみ）を初期値にしており、`useBasicInfoState` で取得した `draft.draftMetadata` の name/description を表示に反映していない。`buildStepWorkingData` も `draftData` をそのまま返すだけで metadata を合成しないため、初期表示が空欄になる。さらに `useEffect(() => setDraftAtomValue(draftData))` が他ステップの `draftData` 更新トリガーで走ると、metadata を含まない `draftData` を再流し込み name/description を空に戻し、入力が散発的にリセットされる。影響ファイル: `packages/plugin-ui-host/src/headless/usePluginDialogController/steps.tsx`（BasicInfoStep の atom 定義と data 連携）、`packages/plugin-ui-host/src/headless/controller/step-guards.ts`（`buildStepWorkingData` が metadata を無視）。
+- 2025-11-29 14:52 done: fix/plugin-dialog/metadata-init — `buildStepWorkingData` で basicInfo(name/description/tags) を draftData と統合し、`useDialogSteps` の draftAtom 初期化/同期も同じ merged データを使用するよう更新。これにより metadata 由来の初期値が反映され、他ステップ更新による name/description リセットが発生しない。検証: `pnpm --filter @hierarchidb/plugin-ui-host test -- --run basicInfoStepData` exit 0。ロールバック: `packages/plugin-ui-host/src/headless/controller/step-guards.ts` と `packages/plugin-ui-host/src/headless/usePluginDialogController/steps.tsx`、`packages/plugin-ui-host/src/headless/__tests__/basicInfoStepData.test.ts` を revert し、同コマンドを再実行。
+- 2025-11-29 14:31 start: fix/app/hidb-core-reinit — 「このアプリが作成したIndexedDBを全て削除」後に `/t/r` へ遷移しても hidb-core-db が自動初期化されず TreeTable が開かない問題の調査を開始。DoD: Kanban/運用ログ更新、再現確認、原因特定と修正、検証ログ、ロールバック手順を記載。branch 作成不可のため main 上で作業。
+- 2025-11-29 14:52 done: fix/app/hidb-core-reinit — WorkerProvider の reset が WorkerStateStore を初期化できず、IndexedDB 全削除後も WorkerStateStore が「ready」状態を保持したまま再初期化されないため hidb-core-db が再作成されない問題を修正。`WorkerStateStore.resetWorkerState` を追加し、`WorkerModuleLoader.resetWorkerRuntime` で runtimePromise をクリア、WorkerProvider の reset/retry で両方を呼ぶようにして再初期化を強制。Dexie.closeAll は型安全な optional 呼び出しへ変更。検証: `pnpm --filter @hierarchidb/app typecheck` exit 0。ロールバック: `app/src/worker-runtime/WorkerStateStore.ts`, `app/src/worker-runtime/WorkerModuleLoader.ts`, `app/src/contexts/WorkerProvider.tsx`, `app/src/plugin-host/clearIndexedDb.ts` を revert し、同コマンドを再実行。
 
 ## 今日の着手（運用ログ） <a id="worklog-14"></a>
 
@@ -9194,3 +9241,11 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-27 13:52 start: fix/spreadsheet/import-template-draft-state — Import template 取り込みノードの Editing 表示欠落と、編集ダイアログを保存せず閉じた際にノード自体が削除される問題の原因調査を開始（実装なし）。
 - 2025-11-27 14:15 start: fix/resolver/workingcopy-draft-refactor — ResolverEntityService を BaseEntityService 依存から外し、TreeNode の draft/data/metadata を正とする実装へ置き換えるタスクを開始。DoD: Kanban/ログ更新、実装リライト、ユニットテスト更新、ロールバック手順記載。
 - 2025-11-27 14:50 progress: fix/resolver/workingcopy-draft-refactor — ResolverEntityService を CoreDB/Draft 操作ベースの実装へ置き換え、resolver Entities Dexie 依存を撤去。ユニットテストを CoreDB 初期化＋fake-indexeddb のセットアップに更新（未実行、後続で検証予定）。
+- 2025-11-27 15:30 start: fix/plugin-dialog/icon-resolution — create/edit ダイアログのヘッダアイコンが folder/basemap 以外でフォールバックになる問題を調査・修正開始。DoD: Kanban/ログ更新、全 nodeType のアイコン定義を共通スキーマで注入し plugin-presentation で解決できるようにする、ヘッダで正しいアイコン表示を確認、関連 typecheck/log 記録、ロールバック手順明記。
+- 2025-11-27 15:50 progress: fix/plugin-dialog/icon-resolution — `initializeBrowserGlobals` で `__HDB_PLUGIN_DEFS__` に manifest/icon/label を含めて注入するよう変更し、plugin-presentation が全 nodeType のアイコンを取得できるようにした。`pnpm -F @hierarchidb/app typecheck` は Dexie `closeAll` 未定義による既存エラーで fail（typecheck 本体未到達）。
+- 2025-11-27 15:55 done: fix/plugin-dialog/icon-resolution — DoD 達成。ヘッダアイコン解決を manifest ベースに統一し、folder/basemap 以外も固有アイコンが利用されるようにした。ロールバック: `app/src/router/init/initializeBrowserGlobals.ts` の今回差分を revert し、必要なら `pnpm -F @hierarchidb/app typecheck` を再実行して現状の挙動（フォールバック表示と typecheck 既存エラー）を確認。
+- 2025-11-27 15:35 progress: fix/workingcopy/dialog-cancel-behavior — create dialog cancel で forceDelete が渡されない問題を検出するための UI ホスト側テストを追加。`packages/plugin-ui-host/src/headless/__tests__/cancel-create.force-delete.test.tsx` を新設し、cancel 時に `discardDraft` が `{ forceDelete: true }` で呼ばれることを期待。現状は引数なしで呼ばれておりテストが red（意図通り失敗）。コマンド: `pnpm --filter @hierarchidb/plugin-ui-host test -- --run "cancel-create"` exit 1。
+- 2025-11-27 15:46 progress: fix/workingcopy/dialog-cancel-behavior — create 仮ノードを version:0 に統一し、commit/save/import で 1 以上へ昇格する方針に合わせて判定を整理。`initTreeNode` を version 0 で作成、`commitTreeNodeDraft` は version を 0 起点で +1、`discardTreeNodeDraft` は committed 判定を version>0/データ有無のみに簡素化。UI cancel で forceDelete を渡すよう修正済み。`pnpm --filter @hierarchidb/runtime-worker test -- --run cancel-create` exit 0。
+
+## 今日の着手（運用ログ） <a id="worklog-16"></a>
+- 2025-11-29 15:30 start: fix/ui-dialog/esc-cancel — trash/create/edit ダイアログで Esc キーが Cancel/Close と同等に動作するよう対応開始。DoD: Kanban/運用ログ更新、未保存時の確認ダイアログ表示/未保存なし即閉、回帰なし確認、ロールバック手順記載。

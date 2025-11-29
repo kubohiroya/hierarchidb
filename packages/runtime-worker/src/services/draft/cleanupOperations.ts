@@ -21,12 +21,8 @@ export async function discardTreeNodeDraft(
   const draftMetadata = (existing as { draftMetadata?: unknown }).draftMetadata;
   const draftData = (existing as { draftData?: unknown }).draftData;
   const version = (existing as { version?: number }).version ?? 0;
-  const createdAt = (existing as { createdAt?: number }).createdAt;
-  const updatedAt = (existing as { updatedAt?: number }).updatedAt;
   const hasCommittedData = data !== null && data !== undefined;
   const hasCommittedVersion = version > 1;
-  const hasCommittedTimestamps =
-    typeof createdAt === 'number' && typeof updatedAt === 'number' && createdAt !== updatedAt;
 
   const hasDraftPayload =
     draftData !== null &&
@@ -34,12 +30,12 @@ export async function discardTreeNodeDraft(
     (typeof draftData !== 'object' || Object.keys(draftData as Record<string, unknown>).length > 0);
   const hasDraftState = hasDraftPayload || draftMetadata !== null;
 
-  const hasCommittedState = hasCommittedData || hasCommittedVersion || hasCommittedTimestamps;
+  const hasCommittedState = hasCommittedData || hasCommittedVersion;
 
   const shouldDelete =
     options?.forceDelete === true
       ? !hasCommittedState
-      : !hasCommittedData && !hasCommittedVersion && !hasCommittedTimestamps && !hasDraftState;
+      : !hasCommittedData && !hasCommittedVersion && !hasDraftState;
 
   if (shouldDelete) {
     await coreDB.nodes.delete(draftNodeId);

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NodeId, TreeId, TreeNode, NodeType, TreeNodeMetadata } from '@hierarchidb/common-types';
-import type { DraftAPI, TreeQueryAPI } from '@hierarchidb/common-api';
+import type { DiscardDraftOptions, DraftAPI, TreeQueryAPI } from '@hierarchidb/common-api';
 import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import { Remote } from 'comlink';
@@ -40,7 +40,7 @@ export interface UseDialogDraftResult<TPayload = Record<string, unknown>> {
   hasUnsavedChanges: boolean;
   updateDraft: (data: Partial<DraftData<TPayload>>) => void;
   saveDraft: (data?: Partial<DraftData<TPayload>>) => Promise<NodeId>;
-  discardDraft: () => Promise<void>;
+  discardDraft: (options?: DiscardDraftOptions) => Promise<void>;
   loading: boolean;
   error: Error | null;
 }
@@ -220,10 +220,10 @@ export function useDialogDraft<TPayload = Record<string, unknown>>({
     }
   }, [draft, getClient, toDraftData]);
 
-  const discardDraft = useCallback(async () => {
+  const discardDraft = useCallback(async (options?: DiscardDraftOptions) => {
     if (!nodeId) return;
     const { wc: wcAPI } = await getClient();
-    await wcAPI.discardDraft(nodeId);
+    await wcAPI.discardDraft(nodeId, options);
     setDraft(null);
     setOriginalCopy(null);
   }, [nodeId, getClient]);

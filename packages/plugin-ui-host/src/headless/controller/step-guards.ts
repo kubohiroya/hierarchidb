@@ -19,10 +19,16 @@ export const BASIC_INFO_META_KEY = '__basicInfoValidation';
 
 export const buildStepWorkingData = (
   draftData: StepData | undefined,
-  _basicInfo?: { name: string; description: string; tags: string[] },
+  basicInfo?: { name: string; description: string; tags: string[] },
   _basicInfoMeta?: BasicInfoMeta
 ): StepData => {
-  return draftData ? { ...draftData } : {};
+  const next: StepData = draftData ? { ...draftData } : {};
+  if (basicInfo) {
+    next.name = basicInfo.name ?? '';
+    next.description = basicInfo.description ?? '';
+    next.tags = basicInfo.tags ?? [];
+  }
+  return next;
 };
 
 export const stripReservedDialogKeys = (input?: StepData | null): StepData => {
