@@ -121,14 +121,14 @@ export class ImportExportService implements ImportExportAPI {
               ? (nodeData as { name?: string }).name
               : (metaObj as { name?: string }).name) ?? '';
           const sourceDescription =
-            typeof (nodeData as { description?: unknown }).description === 'string'
+            (typeof (nodeData as { description?: unknown }).description === 'string'
               ? (nodeData as { description?: string }).description
-              : (metaObj as { description?: string }).description;
+              : (metaObj as { description?: string }).description) ?? '';
           const sourceTags = Array.isArray((nodeData as { tags?: unknown }).tags)
             ? ((nodeData as { tags?: unknown[] }).tags || []).filter((t): t is string => typeof t === 'string')
             : Array.isArray((metaObj as { tags?: unknown }).tags)
               ? (((metaObj as { tags?: unknown[] }).tags || []).filter((t): t is string => typeof t === 'string'))
-              : undefined;
+              : [];
 
           const uniqueName = await resolveConflictingName(parentId, sourceName);
           const metadata: TreeNodeMetadata = {

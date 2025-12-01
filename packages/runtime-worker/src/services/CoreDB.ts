@@ -5,12 +5,11 @@ import type {
   NodeTagAssociation,
   NodePayload,
   NodeType,
-  PersistedTreeNode,
+  TreeNode,
   TagEntity,
   Tree,
   TreeChangeEvent,
   TreeId,
-  TreeNode,
   TreeRootState,
 } from '@hierarchidb/common-types';
 import { getDBName, SingletonMixin } from '@hierarchidb/util';
@@ -18,7 +17,7 @@ import type { BulkError } from 'dexie';
 import { Dexie, type Table } from 'dexie';
 import { Subject } from 'rxjs';
 
-const normalizeTreeNodeForPersist = (node: TreeNode): PersistedTreeNode => {
+const normalizeTreeNodeForPersist = (node: TreeNode): TreeNode => {
   const {
     id,
     parentId,
@@ -35,17 +34,17 @@ const normalizeTreeNodeForPersist = (node: TreeNode): PersistedTreeNode => {
     originalParentId,
     removedAt,
     lastTouchedAt,
-  } = node as PersistedTreeNode;
+  } = node as TreeNode;
 
   const rawMetadata = (node as { metadata?: unknown }).metadata;
   if (!rawMetadata) {
     throw new Error('metadata is required on TreeNode');
   }
-  const metadata = rawMetadata as PersistedTreeNode['metadata'];
+  const metadata = rawMetadata as TreeNode['metadata'];
   const rawDraftMetadata = (node as { draftMetadata?: unknown }).draftMetadata;
   const draftMetadata =
     rawDraftMetadata !== undefined
-      ? (rawDraftMetadata as PersistedTreeNode['draftMetadata'])
+      ? (rawDraftMetadata as TreeNode['draftMetadata'])
       : null;
 
   const rawData = (node as { data?: unknown }).data;

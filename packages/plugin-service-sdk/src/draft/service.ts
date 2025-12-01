@@ -9,22 +9,21 @@ export interface StepCapabilitiesState {
   canStartBatch: boolean;
 }
 
-export interface DraftState {
+export interface DialogState<T> {
   nodeId: NodeId;
   treeId: TreeId;
   nodeType: string;
-  data: any;
+  data: T;
   currentStep: number;
   completedSteps: Set<number>;
   capabilities: StepCapabilitiesState;
-  isDraft?: boolean;
   lastModified: number;
 }
 
-export class DraftService {
+export class DialogService<T> {
   private workerAPI: WorkerAPI;
-  private subscribers: Map<string, (state: DraftState) => void> = new Map();
-  private stateCache: Map<NodeId, DraftState> = new Map();
+  private subscribers: Map<string, (state: DialogState<T>) => void> = new Map();
+  private stateCache: Map<NodeId, DialogState<T>> = new Map();
 
   constructor(workerAPI: WorkerAPI) {
     this.workerAPI = workerAPI;
@@ -35,12 +34,13 @@ export class DraftService {
     // Placeholder for worker-driven subscription wiring.
   }
 
-  private evaluateCapabilities(nodeId: NodeId, state: any): DraftState {
+  /*
+  private evaluateCapabilities(treeId: TreeId, nodeId: NodeId, treeNode: TreeNode<T>): DialogState<T> {
     return {
       nodeId,
-      treeId: state.treeId,
-      nodeType: state.nodeType,
-      data: state.data,
+      treeId,
+      nodeType: treeNode.nodeType,
+      data: treeNode.data,
       currentStep: state.currentStep || 0,
       completedSteps: new Set(state.completedSteps || []),
       capabilities: {
@@ -50,23 +50,24 @@ export class DraftService {
         canSave: true,
         canStartBatch: false,
       },
-      isDraft: state.isDraft,
       lastModified: Date.now(),
-    } satisfies DraftState;
+    } satisfies DialogState<T>;
   }
+   */
 
-  async loadDraft(nodeId: NodeId): Promise<DraftState> {
+  async loadDraft<T>(nodeId: NodeId): Promise<DialogState<T>|null> {
     try {
       const draftAPI = await this.workerAPI.getDraftAPI();
-      const response = await draftAPI.getTreeNode(nodeId);
+      const treeNode = await draftAPI.getTreeNode(nodeId);
 
-      if (!response) {
-        throw new Error(`Working copy not found: ${nodeId}`);
+      if (!treeNode) {
+        throw new Error(`TreeNode not found: ${nodeId}`);
       }
 
-      const state = this.evaluateCapabilities(nodeId, response);
-      this.stateCache.set(nodeId, state);
-      return state;
+      //const state = this.evaluateCapabilities(treeId, nodeId, treeNode);
+      //this.stateCache.set(nodeId, state);
+      //return state;
+      return null;
     } catch (error) {
       console.error('Failed to load working copy:', error);
       throw error;
@@ -75,8 +76,8 @@ export class DraftService {
 
   async updateDraft(
     nodeId: NodeId,
-    updates: Partial<DraftState>,
-  ): Promise<DraftState> {
+    updates: DialogState<T>,
+  ): Promise<DialogState<T>> {
     try {
       const draftAPI = await this.workerAPI.getDraftAPI();
       await draftAPI.updateTreeNodeDraftData(
@@ -84,12 +85,12 @@ export class DraftService {
         updates as unknown as Record<string, unknown>
       );
 
-      const prev = this.stateCache.get(nodeId) ?? ({} as DraftState);
-      const merged: DraftState = {
+      const prev = this.stateCache.get(nodeId) ?? ({} as DialogState<T>);
+      const merged: DialogState<T> = {
         nodeId,
         treeId: updates.treeId ?? prev.treeId!,
         nodeType: updates.nodeType ?? prev.nodeType!,
-        data: updates.data ?? prev.data ?? {},
+        data: updates.data ?? prev.data,
         currentStep: updates.currentStep ?? prev.currentStep ?? 0,
         completedSteps: updates.completedSteps ?? prev.completedSteps ?? new Set(),
         capabilities:
@@ -101,9 +102,8 @@ export class DraftService {
             canSave: true,
             canStartBatch: false,
           },
-        isDraft: updates.isDraft ?? prev.isDraft,
         lastModified: Date.now(),
-      } satisfies DraftState;
+      } satisfies DialogState<T>;
 
       this.stateCache.set(nodeId, merged);
       return merged;
@@ -113,7 +113,7 @@ export class DraftService {
     }
   }
 
-  subscribe(nodeId: NodeId, callback: (state: DraftState) => void): () => void {
+  subscribe(nodeId: NodeId, callback: (state: DialogState<T>) => void): () => void {
     const key = nodeId as string;
     this.subscribers.set(key, callback);
     return () => {
@@ -124,7 +124,7 @@ export class DraftService {
   async evaluateStepCapabilities(
     _nodeId: NodeId,
     _stepIndex: number,
-    _data: any,
+    _data: T,
   ): Promise<StepCapabilitiesState> {
     try {
       const capabilities: StepCapabilitiesState = {

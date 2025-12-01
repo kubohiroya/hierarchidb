@@ -17,7 +17,7 @@ import {
   type HeadlessMultiStepDialogProps,
 } from '@hierarchidb/ui-dialog';
 import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
-import { useDialogDraft, normalizeBasicInfo, type DraftData } from '@hierarchidb/plugin-ui-sdk';
+import { useDialogDraft, type DraftData } from '@hierarchidb/plugin-ui-sdk';
 import { resolveDefaultNodeName } from '@hierarchidb/runtime-worker';
 
 type FolderDraftData = {
@@ -28,17 +28,14 @@ type FolderDraftData = {
 };
 
 const normalizeDraft = (raw: DraftData<FolderDraftData> | null): FolderDraftData => {
-  const basic = normalizeBasicInfo({
-    metadata: raw?.draftMetadata ?? raw?.metadata ?? undefined,
-    draftData: raw?.draftData,
-  });
+  const meta = raw?.draftMetadata ?? raw?.metadata ?? { name: '', description: '', tags: [] };
   const draftData = raw?.draftData ?? {};
   const defaultName = resolveDefaultNodeName('folder');
   return {
     ...draftData,
-    name: basic.name?.trim().length ? basic.name : defaultName,
-    description: basic.description ?? '',
-    tags: basic.tags ?? [],
+    name: meta.name?.trim().length ? meta.name : defaultName,
+    description: meta.description ?? '',
+    tags: Array.isArray(meta.tags) ? meta.tags : [],
   };
 };
 

@@ -104,6 +104,12 @@ export interface MapEventHandlers {
   /** Callback when view state changes (pan, zoom, rotate) */
   onViewStateChange?: (viewState: MapViewState) => void;
 
+  /** Callback fired continuously while the map is moving */
+  onMove?: (viewState: MapViewState) => void;
+
+  /** Callback fired after map movement ends */
+  onMoveEnd?: (viewState: MapViewState) => void;
+
   /** Callback when map is clicked */
   onClick?: (event: MapClickEvent) => void;
 }
@@ -153,6 +159,9 @@ export interface MapIdentifyProps {
 export interface BaseMapProps extends MapDimensionsProps, MapEventHandlers, MapIdentifyProps {
   /** Initial view state for the map */
   initialViewState: MapViewState;
+
+  /** Controlled view state for the map (when provided, map becomes controlled) */
+  viewState?: MapViewState;
 
   /** Map style URL or style object */
   mapStyle?: string | MapLibreStyle;

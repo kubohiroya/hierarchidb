@@ -1,12 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-types';
-
-/**
- * Minimal shape for peer data persisted by plugin-loader.
- */
-export interface PeerDataBase {
-  schemaVersion: number;
-  metadata?: Record<string, unknown>;
-}
+import type { NodeId, TreeNodeMetadata } from '@hierarchidb/common-types';
 
 export interface DialogWindowState {
   mode?: 'normal' | 'maximize' | 'full-screen';
@@ -21,15 +13,16 @@ export interface DialogProgressState {
   activeStepIndex: number;
 }
 
-export interface PeerEntityBase<TData extends PeerDataBase = PeerDataBase> {
-  nodeId: NodeId;
+export interface PeerEntityBase<TData> {
+  id: NodeId;
+  metadata?: TreeNodeMetadata;
   data?: TData;
   updatedAt?: number;
   dialogWindow?: DialogWindowState | null;
   dialogProgress?: DialogProgressState | null;
 }
 
-export interface PeerStore<TData extends PeerDataBase = PeerDataBase> {
+export interface PeerStore<TData> {
   get(nodeId: NodeId): Promise<PeerEntityBase<TData> | undefined>;
   put(entity: PeerEntityBase<TData>): Promise<void>;
   delete(nodeId: NodeId): Promise<void>;

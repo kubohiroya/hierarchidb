@@ -30,7 +30,7 @@ import {
 } from '@hierarchidb/ui-dialog';
 import { readRuntimeMode } from '@hierarchidb/util';
 import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
-import { useDialogDraft, normalizeBasicInfo, type DraftData } from '@hierarchidb/plugin-ui-sdk';
+import { useDialogDraft, type DraftData } from '@hierarchidb/plugin-ui-sdk';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 
 type ResolverDialogStep = {
@@ -92,21 +92,17 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
 
   const normalizeDraft = useCallback(
     (raw: DraftData<ResolverEntity> | null): Partial<ResolverDraftEntity> => {
-      const meta =
-        (raw?.draftMetadata && typeof raw.draftMetadata === 'object'
-          ? raw.draftMetadata
-          : raw?.metadata && typeof raw.metadata === 'object'
-            ? raw.metadata
-            : undefined) as Record<string, unknown> | undefined;
       const draftData =
         (raw?.draftData && typeof raw.draftData === 'object' ? raw.draftData : undefined) as
           | Record<string, unknown>
           | undefined;
 
-      const basic = normalizeBasicInfo({
-        metadata: meta,
-        draftData,
-      });
+      const meta = (raw?.draftMetadata ?? raw?.metadata ?? { name: '', description: '', tags: [] }) as {
+        name?: string;
+        description?: string;
+        tags?: unknown;
+      };
+      const tags = Array.isArray(meta.tags) ? meta.tags.filter((t): t is string => typeof t === 'string') : [];
 
       const resolveSchema = (value: unknown): SchemaInfo | null => {
         if (value && typeof value === 'object') {
@@ -124,9 +120,9 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
 
       return {
         nodeId,
-        name: basic.name,
-        description: basic.description,
-        tags: basic.tags ?? [],
+        name: meta.name ?? '',
+        description: meta.description ?? '',
+        tags,
         sourceSchema: resolveSchema(draftData?.sourceSchema),
         targetSchema: resolveSchema(draftData?.targetSchema),
         mappingRules: (draftData?.mappingRules as ResolverDraftEntity['mappingRules']) ?? [],

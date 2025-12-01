@@ -5,10 +5,8 @@
 
 import type { NodeId } from '@hierarchidb/common-types';
 import type { Table } from 'dexie';
-import { BaseEntityHandler } from '@hierarchidb/plugin-service-sdk';
 import type { BaseSearchCriteria } from '@hierarchidb/plugin-service-api';
 import type {
-  RouteEntity,
   RouteGenerationConfig,
   RouteGenerationMethod,
   RoutePoint,
@@ -41,7 +39,7 @@ export interface RouteSearchCriteria extends BaseSearchCriteria, MetadataSearchC
 /**
  * Route entity handler with metadata support
  */
-export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<RouteEntity>, RouteSearchCriteria> {
+export class RouteEntityHandler<RouteEntity> {
   // Dexie Table typing differs across versions; use a broad compatible shape here
   protected table: any;
   private routeDB: RouteDatabase;
@@ -50,7 +48,7 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
 
 
   constructor() {
-    super();
+    // super();
     this.routeDB = new RouteDatabase();
     this.table = this.routeDB.routes as unknown as Table<RouteEntity, NodeId>;
     this.routeGenerator = new RouteGenerator();

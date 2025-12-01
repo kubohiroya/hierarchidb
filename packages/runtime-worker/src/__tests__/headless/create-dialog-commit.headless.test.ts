@@ -37,7 +37,7 @@ describe('Create dialog commit flow', () => {
 
   it('creates draft, commits, and keeps node when dialog closes after Create', async () => {
     const draft = await drafts.initTreeNode('folder' as NodeType, rootId, {
-      metadata: { name: 'New Folder' },
+      metadata: { name: 'New Folder', description: '', tags: [] },
     });
     await drafts.updateTreeNodeDraftData(draft.id as NodeId, { foo: 'bar' });
 

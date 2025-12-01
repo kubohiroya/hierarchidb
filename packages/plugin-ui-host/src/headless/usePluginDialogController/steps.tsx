@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { atom, useAtom } from 'jotai';
-import { BasicInfoStep } from '@hierarchidb/plugin-ui-sdk';
+import { BasicInfoStep } from '@hierarchidb/ui-plugin-basic-info';
 import type {
   PluginStepConfig,
   composeStepConfigs,
@@ -49,7 +49,6 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
   dialogRef,
   stepData,
 }) => {
-  const isBasicInfoStep = cfg.id === 'basic-info';
   const draftAtom = useMemo(() => atom(stepData), [stepData]);
   const [, setSlice] = useAtom(draftAtom);
 
@@ -63,6 +62,7 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
       const nextData: Partial<PluginDefinedEntity> = { ...current, ...(patch as object) };
       onDataChange?.(nextData);
       setSlice(nextData);
+      const isBasicInfoStep = cfg.id === 'basic-info';
       if (!isBasicInfoStep) {
         const { name, description, tags, ...rest } = nextData as Record<string, unknown>;
         void name;
@@ -71,7 +71,7 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
         setDraftData(rest as Partial<PluginDefinedEntity>);
       }
     },
-    [isBasicInfoStep, onDataChange, stepData, setDraftData, setSlice]
+    [cfg.id, onDataChange, stepData, setDraftData, setSlice]
   );
 
   return (
@@ -131,7 +131,10 @@ export function useDialogSteps({
   const [, setDraftAtomValue] = useAtom(draftAtom);
 
   useEffect(() => {
-    setDraftAtomValue(buildStepWorkingData(draftData, basicInfo, basicInfoMeta));
+    setDraftAtomValue((prev) => ({
+      ...(toRecord(prev) ?? {}),
+      ...buildStepWorkingData(draftData, basicInfo, basicInfoMeta),
+    }));
   }, [draftData, basicInfo, basicInfoMeta, setDraftAtomValue]);
   const normalizedConfigs = useMemo<PluginStepConfig<Partial<PluginDefinedEntity>, DialogUiState>[]>(() => {
     return (composedConfigs.configs ?? []).map(
@@ -210,48 +213,51 @@ export function useDialogSteps({
   const nameAtom = useMemo(
     () =>
       atom(
-        (get) => (get(draftAtom) as { name?: string })?.name ?? basicInfo.name ?? '',
+        (get) => (get(draftAtom) as { name?: string })?.name ?? '',
         (get, set, val: string) => {
           const prev = (get(draftAtom) as any) ?? {};
           set(draftAtom, { ...prev, name: val });
         }
       ),
-    [draftAtom, basicInfo.name]
+    [draftAtom]
   );
   const descriptionAtom = useMemo(
     () =>
       atom(
-        (get) =>
-          (get(draftAtom) as { description?: string })?.description ??
-          basicInfo.description ??
-          '',
+        (get) => (get(draftAtom) as { description?: string })?.description ?? '',
         (get, set, val: string) => {
           const prev = (get(draftAtom) as any) ?? {};
           set(draftAtom, { ...prev, description: val });
         }
       ),
-    [draftAtom, basicInfo.description]
+    [draftAtom]
   );
   const tagsAtom = useMemo(
     () =>
       atom(
-        (get) => (get(draftAtom) as { tags?: string[] })?.tags ?? basicInfo.tags ?? [],
+        (get) => (get(draftAtom) as { tags?: string[] })?.tags ?? [],
         (get, set, val: string[]) => {
           const prev = (get(draftAtom) as any) ?? {};
           set(draftAtom, { ...prev, tags: val });
         }
       ),
-    [draftAtom, basicInfo.tags]
+    [draftAtom]
   );
 
   const basicInfoDescriptor = useMemo<StepComponentDescriptor<Partial<PluginDefinedEntity>> | null>(() => {
     if (composedConfigs.hasHostBase) return null;
 
     const Component: React.FC<HeadlessStepComponentProps<Partial<PluginDefinedEntity>>> = React.memo(
-      (props) => {
-        const [name, setName] = useAtom(nameAtom);
-        const [description, setDescription] = useAtom(descriptionAtom);
-        const [tags, setTags] = useAtom(tagsAtom);
+    (props) => {
+      const [name, setName] = useAtom(nameAtom);
+      const [description, setDescription] = useAtom(descriptionAtom);
+      const [tags, setTags] = useAtom(tagsAtom);
+
+      useEffect(() => {
+        setName(basicInfo.name ?? '');
+        setDescription(basicInfo.description ?? '');
+        setTags(Array.isArray(basicInfo.tags) ? basicInfo.tags : []);
+      }, [setDescription, setName, setTags]);
 
         const handleChange = useCallback(
           (data: { name: string; description: string; tags?: string[] }) => {
@@ -279,7 +285,7 @@ export function useDialogSteps({
       }
     );
     return { id: 'basic-info', label: 'Basic Information', component: Component };
-  }, [composedConfigs.hasHostBase, nameAtom, descriptionAtom, tagsAtom, tagSuggestions, handleBasicInfoChange, mode, basicInfoValidationError]);
+  }, [composedConfigs.hasHostBase, nameAtom, descriptionAtom, tagsAtom, basicInfo, tagSuggestions, mode, handleBasicInfoChange, basicInfoValidationError]);
 
   const stepDescriptors = useMemo<
     ReadonlyArray<StepComponentDescriptor<Partial<PluginDefinedEntity>>>

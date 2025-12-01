@@ -88,7 +88,8 @@ export function buildTrashTreeData({
       hasChildren: Boolean(node.hasChildren),
       metadata: {
         name: displayName,
-        description: (node as { metadata?: { description?: string } }).metadata?.description,
+        description:
+          (node as { metadata?: { description?: string } }).metadata?.description ?? '',
         tags: (node as { metadata?: { tags?: string[] } }).metadata?.tags ?? [],
       },
       draftMetadata: null,

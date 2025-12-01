@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { NodeId, Timestamp } from '@hierarchidb/common-types';
 import type { DraftBase } from '@hierarchidb/plugin-service-api';
-import { createEntityDraftAdapter } from '../adapter.js';
+import { createEntityDraftAdapter } from '../adapter';
 
 interface Entity {
   title: string;

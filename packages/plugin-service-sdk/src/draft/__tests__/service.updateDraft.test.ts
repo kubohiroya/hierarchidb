@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-types';
-import { DraftService } from '../service.js';
+import { DialogService } from '../service';
 
 describe('DraftService.updateDraft', () => {
   it('forwards updates to worker API and merges state cache', async () => {
@@ -23,7 +23,7 @@ describe('DraftService.updateDraft', () => {
       getDraftAPI: vi.fn().mockResolvedValue(draftAPI),
     };
 
-    const service = new DraftService(workerAPI as any);
+    const service = new DialogService(workerAPI as any);
     const nodeId = 'node-1' as NodeId;
 
     await service.loadDraft(nodeId);

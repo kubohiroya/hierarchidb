@@ -3,8 +3,8 @@
  * @description React hook for fetching and managing BaseMap entity data
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { NodeId, Timestamp, TreeId, TreeNode } from '@hierarchidb/common-types';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { NodeId, TreeId, TreeNode, TreeNodeUpdater } from '@hierarchidb/common-types';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import { useDialogDraft } from '@hierarchidb/plugin-ui-sdk';
 import type {
@@ -18,16 +18,16 @@ export interface UseBaseMapEntityResult {
   loading: boolean;
   error: Error | null;
   refetch: () => void;
-  updateEntity: (updates: Partial<BaseMapEntity>) => Promise<void>;
+  updateEntity: (id: NodeId, updates: TreeNodeUpdater<BaseMapEntity>) => Promise<void>;
 }
 
-const DEFAULT_MAP_STYLE: MapStyle = {
+export const DEFAULT_MAP_STYLE: MapStyle = {
   style: 'streets',
 };
 
-const DEFAULT_VIEWPORT: MapViewport = {
-  center: [139.767, 35.681],
-  zoom: 10,
+export const DEFAULT_VIEWPORT: MapViewport = {
+  center: [0, 0],
+  zoom: 1,
   bearing: 0,
   pitch: 0,
 };
@@ -36,78 +36,46 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
-const toStringArray = (value: unknown): string[] =>
-  Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : [];
+const coerceMapStyle = (value: unknown): MapStyle => {
+  if (isRecord(value) && typeof (value as { style?: unknown }).style === 'string') {
+    return { ...(value as unknown as MapStyle) };
+  }
+  return { ...DEFAULT_MAP_STYLE };
+};
 
-const readNodeData = (node: TreeNode | Record<string, unknown> | null | undefined): Record<string, unknown> => {
+const coerceViewport = (value: unknown): MapViewport | undefined => {
+  if (!isRecord(value)) return undefined;
+  const center = (value as { center?: unknown }).center;
+  const zoom = (value as { zoom?: unknown }).zoom;
+  if (
+    Array.isArray(center) &&
+    center.length === 2 &&
+    typeof center[0] === 'number' &&
+    typeof center[1] === 'number' &&
+    typeof zoom === 'number'
+  ) {
+    return { ...(value as unknown as MapViewport) };
+  }
+  return undefined;
+};
+
+const readNodeData = (
+  node: TreeNode | Record<string, unknown> | null | undefined
+): Record<string, unknown> => {
   if (!node) return {};
   const nodeRecord = node as unknown as Record<string, unknown>;
   const rawData = nodeRecord.draftData ?? nodeRecord.data;
   return isRecord(rawData) ? (rawData as Record<string, unknown>) : {};
 };
 
-export function normalizeMapStyle(mapStyle?: Partial<MapStyle>): MapStyle {
-  return {
-    ...DEFAULT_MAP_STYLE,
-    ...(mapStyle ?? {}),
-  };
-}
-
-export function normalizeViewport(viewport?: Partial<MapViewport>): MapViewport {
-  return {
-    ...DEFAULT_VIEWPORT,
-    ...(viewport ?? {}),
-  };
-}
-
-export function buildBaseMapEntityFromNode(node?: TreeNode | null): BaseMapEntity | null {
+export function buildBaseMapEntityFromNode(node?: TreeNode | null): BaseMapEntity | null{
   if (!node) return null;
   const data = readNodeData(node);
-  const mapStyle = normalizeMapStyle(data.mapStyle as Partial<MapStyle> | undefined);
-  const viewport = normalizeViewport(data.viewport as Partial<MapViewport> | undefined);
-  const createdAt: Timestamp = (typeof node.createdAt === 'number' ? node.createdAt : Date.now()) as Timestamp;
-  const updatedAt: Timestamp = (typeof node.updatedAt === 'number' ? node.updatedAt : Date.now()) as Timestamp;
-  const name =
-    typeof (node as { name?: unknown }).name === 'string'
-      ? ((node as { name?: string }).name as string)
-      : typeof (node as { metadata?: { name?: unknown } }).metadata?.name === 'string'
-        ? ((node as { metadata?: { name?: string } }).metadata?.name as string)
-        : undefined;
-  const description =
-    typeof (node as { description?: unknown }).description === 'string'
-      ? ((node as { description?: string }).description as string)
-      : typeof (node as { metadata?: { description?: unknown } }).metadata?.description === 'string'
-        ? ((node as { metadata?: { description?: string } }).metadata?.description as string)
-        : undefined;
-  const tags = toStringArray((node as { tags?: unknown }).tags ?? data.tags);
-
+  const mapStyle = coerceMapStyle(data.mapStyle);
+  const viewport = coerceViewport(data.viewport);
   return {
-    id: node.id as NodeId,
-    nodeId: node.id as NodeId,
     mapStyle,
     viewport,
-    name,
-    description,
-    tags,
-    createdAt,
-    updatedAt,
-    version: typeof node.version === 'number' ? node.version : 1,
-  };
-}
-
-function createFallbackEntity(nodeId: NodeId): BaseMapEntity {
-  const now = Date.now() as Timestamp;
-  return {
-    id: nodeId,
-    nodeId,
-    mapStyle: { ...DEFAULT_MAP_STYLE },
-    viewport: { ...DEFAULT_VIEWPORT },
-    name: '',
-    description: '',
-    tags: [],
-    createdAt: now,
-    updatedAt: now,
-    version: 1,
   };
 }
 
@@ -133,6 +101,7 @@ export function useBaseMapEntity(
   const [entity, setEntity] = useState<BaseMapEntity | null>(initialData || null);
   const [loading, setLoading] = useState(!initialData && !skip);
   const [error, setError] = useState<Error | null>(null);
+  const askedGeolocationRef = useRef(false);
 
   const workerClientHook = useMemo(() => {
     try {
@@ -143,13 +112,21 @@ export function useBaseMapEntity(
   }, []);
   const workerClient = workerClientHook ? workerClientHook() : null;
 
-  const { draft: wcDraft, updateDraft, saveDraft, discardDraft } = useDialogDraft({
+  const {
+    treeNodeUpdater: treeNodeUpdater,
+    updateTreeNodeUpdater,
+    commitTreeNodeUpdater,
+    discardDraft,
+  } = useDialogDraft<BaseMapEntity>({
     mode: 'edit',
     nodeType: 'basemap',
-    nodeId: nodeId ?? undefined,
     parentId: nodeId ?? undefined,
     treeId: (nodeId ?? '') as TreeId,
     workerClient,
+    initialDraftData: {
+      mapStyle: { ...DEFAULT_MAP_STYLE },
+      viewport: undefined,
+    },
   });
 
   // Fetch entity
@@ -179,37 +156,68 @@ export function useBaseMapEntity(
     }
   }, [nodeId, skip, workerClient]);
 
+  const resolveViewport = useCallback(async (): Promise<MapViewport> => {
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      try {
+        const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
+          navigator.geolocation.getCurrentPosition(resolve, reject)
+        );
+        const { latitude, longitude } = pos.coords;
+        return {
+          center: [longitude || 0, latitude || 0],
+          zoom: 1,
+          bearing: 0,
+          pitch: 0,
+        };
+      } catch {
+        // ignore and fallback
+      }
+    }
+    return DEFAULT_VIEWPORT;
+  }, []);
+
+  // Cache geolocation result for the session to reuse across steps
+  const geolocationCacheRef = useRef<MapViewport | null>(null);
+
+  const getOrResolveViewport = useCallback(async (): Promise<MapViewport> => {
+    if (geolocationCacheRef.current) {
+      return geolocationCacheRef.current;
+    }
+    const viewport = await resolveViewport();
+    geolocationCacheRef.current = viewport;
+    return viewport;
+  }, [resolveViewport]);
+
   // Update entity
   const updateEntity = useCallback(
-    async (updates: Partial<BaseMapEntity>) => {
+    async (id: NodeId, updater: TreeNodeUpdater<BaseMapEntity>) => {
       if (!nodeId) {
         throw new Error('Cannot update entity without nodeId');
       }
       setLoading(true);
       try {
-        const current = entity ?? createFallbackEntity(nodeId);
-        const next: BaseMapEntity = {
-          ...current,
-          ...updates,
-          mapStyle: normalizeMapStyle(updates.mapStyle ?? current.mapStyle),
-          viewport: normalizeViewport(updates.viewport ?? current.viewport),
-          updatedAt: Date.now() as Timestamp,
+        /*
+        const updating: Partial<BaseMapEntity> =
+        const next: Partial<BaseMapEntity> = {
+          ...updating,
         };
-        if (!wcDraft) {
+         */
+        if (!treeNodeUpdater) {
           throw new Error('No working copy available for basemap');
         }
-        await updateDraft({
+        updateTreeNodeUpdater({
+          id,
           draftMetadata: {
-            name: next.name ?? '',
-            description: next.description,
-            tags: next.tags,
+            name: updater.payload.draftMetadata?.name ?? '',
+            description: updater.payload.draftMetadata?.description ?? '',
+            tags: updater.payload.draftMetadata?.tags ?? [],
           },
-          draftData: {
-            mapStyle: next.mapStyle,
-            viewport: next.viewport,
+          draftData:  {
+            mapStyle: updater.payload.draftData?.mapStyle ?? { ...DEFAULT_MAP_STYLE },
+            viewport: updater.payload.draftData?.viewport,
           },
         });
-        await saveDraft();
+        await commitTreeNodeUpdater();
         await fetchEntity();
       } catch (err) {
         console.error('Failed to update BaseMap entity:', err);
@@ -222,10 +230,83 @@ export function useBaseMapEntity(
     [fetchEntity, nodeId, workerClient]
   );
 
-  // Initial fetch
+  // Initial fetch and viewport hydration (defer to Geolocation when allowed)
   useEffect(() => {
-    fetchEntity();
-  }, [fetchEntity]);
+    fetchEntity().then(() => {
+      if (!entity || entity.viewport) return;
+      if (askedGeolocationRef.current) return;
+      askedGeolocationRef.current = true;
+
+      // If we already have a cached geolocation and viewport is still undefined, apply it immediately.
+      if (geolocationCacheRef.current) {
+        const cached = geolocationCacheRef.current;
+        setEntity((prev) =>
+          prev
+            ? {
+                ...prev,
+                viewport: cached,
+              }
+            : prev
+        );
+        if (treeNodeUpdater) {
+          void updateTreeNodeUpdater({
+            draftData: {
+              ...(treeNodeUpdater.draftData ?? {}),
+              viewport: cached,
+            },
+          });
+        }
+        return;
+      }
+
+      // Show map immediately with fallback viewport
+      const fallbackViewport = DEFAULT_VIEWPORT;
+      setEntity((prev) =>
+        prev
+          ? {
+              ...prev,
+              viewport: fallbackViewport,
+            }
+          : prev
+      );
+      if (treeNodeUpdater) {
+        void updateTreeNodeUpdater({
+          draftData: {
+            ...(treeNodeUpdater.draftData ?? {}),
+            viewport: fallbackViewport,
+          },
+        });
+      }
+
+      // Then (once) ask and resolve geolocation; cache result for reuse
+      if (typeof window !== 'undefined') {
+        window.setTimeout(async () => {
+          if (!navigator?.geolocation) return;
+          const shouldUseGeo = window.confirm(
+            'Use your current location to set the initial basemap view?'
+          );
+          if (!shouldUseGeo) return;
+          const geoViewport = await getOrResolveViewport();
+          setEntity((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  viewport: geoViewport,
+                }
+              : prev
+          );
+          if (treeNodeUpdater) {
+            updateTreeNodeUpdater({
+              draftData: {
+                ...(treeNodeUpdater.draftData ?? {}),
+                viewport: geoViewport,
+              },
+            });
+          }
+        }, 0);
+      }
+    });
+  }, [entity, fetchEntity, getOrResolveViewport, treeNodeUpdater, updateTreeNodeUpdater]);
 
   // Cleanup draft on unmount
   useEffect(() => {
@@ -344,7 +425,5 @@ export function useBaseMapValidation(config: Partial<BaseMapEntity>) {
 }
 
 export const __testUtils = {
-  normalizeMapStyle,
-  normalizeViewport,
   buildBaseMapEntityFromNode,
 };

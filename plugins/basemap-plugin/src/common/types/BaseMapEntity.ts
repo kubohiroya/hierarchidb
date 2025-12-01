@@ -3,7 +3,7 @@
  * @description BaseMap entity types focused on persistent basemap configuration
  */
 
-import type { BaseEntity, NodeId, Timestamp } from '@hierarchidb/common-types';
+import type { Timestamp } from '@hierarchidb/common-types';
 import type {
   BaseSearchCriteria,
   PeerDataBase,
@@ -32,34 +32,22 @@ export interface MapViewport {
 /**
  * BaseMap entity persisted for each tree node
  */
-export interface BaseMapEntity extends BaseEntity<NodeId> {
-  nodeId: NodeId;
+export interface BaseMapEntity {
   mapStyle: MapStyle;
-  viewport: MapViewport;
-  name?: string;
-  description?: string;
-  tags?: string[];
+  viewport?: MapViewport;
 }
 
 /**
  * BaseMap working copy for edit operations
  * Prefer Partial<BaseMapEntity> / TreeNodeUpdaterPayload<BaseMapEntity>; keep minimal draft shape for compatibility.
  */
-export type BaseMapDraftPayload = Partial<Pick<BaseMapEntity, 'mapStyle' | 'viewport' | 'name' | 'description' | 'tags'>> & {
+export type BaseMapDraftPayload = Partial<BaseMapEntity> & {
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
   version?: number;
 };
 
 export type BaseMapDraft = DraftBase<BaseMapEntity> & BaseMapDraftPayload;
-
-/**
- * Data for creating a new BaseMap
- */
-export interface CreateBaseMapData extends Partial<BaseMapEntity> {
-  mapStyle?: MapStyle;
-  viewport?: MapViewport;
-}
 
 /**
  * Search criteria for BaseMap entities

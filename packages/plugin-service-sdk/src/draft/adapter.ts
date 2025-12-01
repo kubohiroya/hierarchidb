@@ -1,18 +1,17 @@
 import type { NodeId, Timestamp } from '@hierarchidb/common-types';
-import type { DraftBase } from '@hierarchidb/plugin-service-api';
 
-export interface EntityDraftAdapter<TEntity, TDraft extends DraftBase<TEntity>> {
-  fromEntity(entity: TEntity): TDraft;
-  createDraft(treeNodeId: NodeId, overrides?: Partial<TEntity>): TDraft;
-  merge(draft: TDraft, updates: Partial<TEntity>, timestamp?: Timestamp): TDraft;
+export interface EntityDraftAdapter<TEntity> {
+  fromEntity(entity: Partial<TEntity>): Partial<TEntity>;
+  createDraft(treeNodeId: NodeId, overrides?: Partial<TEntity>): Partial<TEntity>;
+  merge(draft: Partial<TEntity>, updates: Partial<TEntity>, timestamp?: Timestamp): Partial<TEntity>;
 }
 
-export interface EntityAdapterOptions<TEntity, TDraft extends DraftBase<TEntity>> {
+export interface EntityAdapterOptions<TEntity> {
   /**
    * Produce a partial snapshot (draft payload) from the entity.
    * Must include domain fields that should remain mutable in the working copy.
    */
-  draftFromEntity(entity: TEntity): Partial<TEntity>;
+  draftFromEntity(entity: Partial<TEntity>): Partial<TEntity>;
   /**
    * Produce a draft payload for new working copies (create flow).
    */
@@ -20,33 +19,33 @@ export interface EntityAdapterOptions<TEntity, TDraft extends DraftBase<TEntity>
   /**
    * Optional hook when creating a working copy from entity.
    */
-  finalize?(draft: TDraft, source: TEntity): TDraft;
+  finalize?(draft: Partial<TEntity>, source: Partial<TEntity>): Partial<TEntity>;
   /**
    * Optional hook when creating a draft working copy.
    */
-  finalizeDraft?(draft: TDraft, treeNodeId: NodeId): TDraft;
+  finalizeDraft?(draft: Partial<TEntity>, treeNodeId: NodeId): TEntity;
 }
-
-export function createEntityDraftAdapter<TEntity, TDraft extends DraftBase<TEntity>>(
-  options: EntityAdapterOptions<TEntity, TDraft>,
-): EntityDraftAdapter<TEntity, TDraft> {
+/*
+export function createEntityDraftAdapter<TEntity>(
+  options: EntityAdapterOptions<TEntity>,
+): EntityDraftAdapter<TEntity> {
   const ensureTimestamp = (value: number | undefined, fallback: () => number): Timestamp => (
     (value ?? fallback()) as Timestamp
   );
-
+*/
+  /*
   const buildDraftBase = (
-    treeNodeId: NodeId,
+    //treeNodeId: NodeId,
     draft: Partial<TEntity>,
     meta: {
       createdAt?: number;
       updatedAt?: number;
       originalVersion?: number;
     },
-  ): DraftBase<TEntity> => {
+  ): Partial<TEntity> => {
     const createdAt = ensureTimestamp(meta.createdAt, () => Date.now());
     const updatedAt = ensureTimestamp(meta.updatedAt, () => createdAt);
     return {
-      treeNodeId,
       draft,
       createdAt,
       updatedAt,
@@ -55,12 +54,12 @@ export function createEntityDraftAdapter<TEntity, TDraft extends DraftBase<TEnti
   };
 
   const markDraftUpdated = (
-    draft: DraftBase<TEntity>,
+    draft: Partial<TEntity>,
     updates: Partial<TEntity>,
     timestamp: Timestamp = Date.now() as Timestamp,
-  ): DraftBase<TEntity> => ({
+  ): Partial<TEntity> => ({
     ...draft,
-    draft: { ...draft.draft, ...updates },
+    draft: { ...draft, ...updates },
     updatedAt: timestamp,
   });
 
@@ -72,7 +71,7 @@ export function createEntityDraftAdapter<TEntity, TDraft extends DraftBase<TEnti
       updatedAt?: number;
       originalVersion?: number;
     },
-  ): TDraft => {
+  ): Partial<TEntity> => {
     const createdAt = ensureTimestamp(meta.createdAt, () => Date.now());
     const updatedAt = ensureTimestamp(meta.updatedAt, () => createdAt);
 
@@ -93,11 +92,11 @@ export function createEntityDraftAdapter<TEntity, TDraft extends DraftBase<TEnti
     return {
       ...base,
       ...draft,
-    } as unknown as TDraft;
+    } as Partial<TEntity>;
   };
 
   return {
-    fromEntity(entity: TEntity): TDraft {
+    fromEntity(entity: TEntity): Partial<TEntity> {
       const draftPayload = options.draftFromEntity(entity);
       const nodeId =
         (draftPayload as { nodeId?: NodeId }).nodeId ??
@@ -114,7 +113,7 @@ export function createEntityDraftAdapter<TEntity, TDraft extends DraftBase<TEnti
       return draftWithMeta;
     },
 
-    createDraft(treeNodeId: NodeId, overrides?: Partial<TEntity>): TDraft {
+    createDraft(treeNodeId: NodeId, overrides?: Partial<TEntity>): Partial<TEntity> {
       const draftPayload = options.draftDefaults(treeNodeId, overrides);
       let draftWithMeta = buildDraft(treeNodeId, draftPayload, {
         createdAt: (draftPayload as any)?.createdAt,
@@ -128,11 +127,12 @@ export function createEntityDraftAdapter<TEntity, TDraft extends DraftBase<TEnti
     },
 
     merge(
-      draft: TDraft,
+      draft: Partial<TEntity>,
       updates: Partial<TEntity>,
       timestamp: Timestamp = Date.now() as Timestamp,
-    ): TDraft {
-      return markDraftUpdated(draft, updates, timestamp) as TDraft;
+    ): Partial<TEntity> {
+      return markDraftUpdated(draft, updates, timestamp) as Partial<TEntity>;
     },
   };
 }
+   */

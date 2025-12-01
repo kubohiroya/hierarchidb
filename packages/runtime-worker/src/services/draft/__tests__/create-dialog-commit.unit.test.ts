@@ -38,7 +38,7 @@ describe('create dialog commit (draft survives discard)', () => {
 
   it('keeps committed node even if discardDraft is called with forceDelete after Create', async () => {
     const draft = await drafts.initTreeNode('folder' as NodeType, rootId, {
-      metadata: { name: 'New Folder' },
+      metadata: { name: 'New Folder', description: '', tags: [] },
     });
     await drafts.updateTreeNodeDraftData(draft.id as NodeId, { foo: 'bar' });
 

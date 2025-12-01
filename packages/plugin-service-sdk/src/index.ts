@@ -1,4 +1,5 @@
 // Handlers
+/*
 export { BaseEntityHandler } from './handlers/BaseEntityHandler.js';
 export { HierarchicalEntityHandler } from './handlers/HierarchicalEntityHandler.js';
 export type {
@@ -6,18 +7,19 @@ export type {
   HierarchicalSearchCriteria,
   TreeNode,
 } from './handlers/HierarchicalEntityHandler.js';
+*/
 
-// Working copy helpers removed (TreeNode draft lifecycle is handled by runtime-worker-worker)
-export type { EntityDraftAdapter } from './draft/adapter.js';
-export { createEntityDraftAdapter } from './draft/adapter.js';
+/*
 export {
-  DraftService,
-} from './draft/service.js';
+  DialogService,
+} from './draft/service.ts';
 export type {
-  DraftState,
+  DialogState,
   StepCapabilitiesState,
-} from './draft/service.js';
+} from './draft/service.ts';
 
+ */
+/*
 // Peer store helpers
 // Plugin definitions and metadata
 export const BasePluginDefinition = {
@@ -30,6 +32,7 @@ export const BasePluginDefinition = {
     showInPluginList: false,
   },
 };
+ */
 
 // Download helpers
 export {
@@ -43,7 +46,7 @@ export type {
 } from './download.js';
 
 // Plugin registry API types
-export { PluginExtensionRegistry } from './extensions/PluginExtensionRegistry.js';
+//export { PluginExtensionRegistry } from './extensions/PluginExtensionRegistry.js';
 
 export {
   createComlinkEventBridge,

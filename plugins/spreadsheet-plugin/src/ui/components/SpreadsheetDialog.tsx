@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import type { NodeId, TreeId } from '@hierarchidb/common-types';
+import type { NodeId, TreeId, TreeNodeMetadata } from '@hierarchidb/common-types';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import {
   HeadlessMultiStepDialog,
@@ -17,17 +17,11 @@ import {
   type HeadlessMultiStepDialogProps,
 } from '@hierarchidb/ui-dialog';
 import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
-import { useDialogDraft, normalizeBasicInfo, type DraftData } from '@hierarchidb/plugin-ui-sdk';
-import type { SpreadsheetDialogData } from '../../common/types/SpreadsheetEntity.js';
+import { useDialogDraft, type DraftData } from '@hierarchidb/plugin-ui-sdk';
+//import type { SpreadsheetDialogData } from '../../common/types/SpreadsheetEntity.js';
 import { DataSourceStep } from './steps/DataSourceStep.js';
 import { FilteringStep } from './steps/FilteringStep.js';
 // import { HTMLDivElement } from 'happy-dom';
-
-type SpreadsheetDialogDraft = SpreadsheetDialogData & {
-  name?: string;
-  description?: string;
-  tags?: string[];
-};
 
 export interface SpreadsheetDialogProps {
   open: boolean;
@@ -36,7 +30,7 @@ export interface SpreadsheetDialogProps {
   parentId?: NodeId;
   treeId?: TreeId;
   onClose: () => void;
-  onSave: (data: SpreadsheetDialogData) => Promise<void>;
+  onSave: (data: TreeNodeMetadata) => Promise<void>;
 }
 
 const defaultDialogState = () => {
@@ -47,16 +41,13 @@ const defaultDialogState = () => {
 };
 
 const normalizeDraft = (raw: DraftData<SpreadsheetDialogDraft> | null): SpreadsheetDialogDraft => {
-  const basic = normalizeBasicInfo({
-    metadata: raw?.draftMetadata ?? raw?.metadata ?? undefined,
-    draftData: raw?.draftData,
-  });
+  const meta = raw?.draftMetadata ?? raw?.metadata ?? { name: '', description: '', tags: [] };
   const draftData = raw?.draftData ?? {};
   return {
     ...draftData,
-    name: basic.name,
-    description: basic.description,
-    tags: basic.tags,
+    name: meta.name ?? '',
+    description: meta.description ?? '',
+    tags: Array.isArray(meta.tags) ? meta.tags : [],
   };
 };
 
@@ -105,8 +96,8 @@ export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
       void updateDraft({
         draftMetadata: {
           name: value.name,
-          description: value.description,
-          tags: value.tags,
+          description: value.description ?? '',
+          tags: value.tags ?? [],
         },
       });
     },
@@ -122,8 +113,8 @@ export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
         },
         draftMetadata: {
           name: data.name ?? '',
-          description: data.description,
-          tags: data.tags,
+          description: data.description ?? '',
+          tags: data.tags ?? [],
         },
       });
     },

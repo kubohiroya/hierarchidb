@@ -66,6 +66,19 @@
   - [ ] 手動確認（非 folder page → Trash → 親遷移）を実施し運用ログに記録する
 - ロールバック手順：今回変更する `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx` を revert し、動作が元に戻ることを確認する
 
+1578) basemap create 初期ドラフト値補正（P0）
+- ブランチ: `fix/basemap/create-defaults`（sandbox 制約で main 上で作業）
+- 依存: `plugins/basemap-plugin/src/ui/components/basemapStepConfigs.tsx`
+- 受け入れ基準（DoD）:
+  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] basemap create で Step2 進行時に `data: null`, `draftData: BaseMapEntity デフォルト` となる（data/draftData 片方が空 `{}` や null のままにならない）
+  - [ ] 既存の入力フローや Step1/Step2 の遷移に回帰がない
+  - [ ] 型チェック/関連テストを実行し、結果を運用ログへ記録する
+- チェックリスト:
+  - [ ] StepData 初期化時に mapStyle/viewport のデフォルトを draftData へ反映する処理を追加する
+  - [ ] 手動確認または関連テストで初期値が設定されることを確認し、運用ログへ記録する
+- ロールバック手順：`plugins/basemap-plugin/src/ui/components/basemapStepConfigs.tsx` の差分を revert し、現状の挙動（data:{} draftData:null）に戻ることを確認する
+
 1576) Dialog Esc キーで Cancel/Close 同等動作（P0）
 - ブランチ: `fix/ui-dialog/esc-cancel`（sandbox 制約で main 上で作業）
 - 依存: `packages/ui/dialog/src/headless/MultiDialogFrame.tsx`、PluginDialogShell/TrashDialog 呼び出し元
@@ -539,7 +552,7 @@
 
 1522) Basemap draftData commit 消失（P0）
 - ブランチ: `fix/basemap/workingcopy-draftdata`（sandbox 制約で `main` 上で作業）
-- 依存: `packages/plugin-service-sdk/src/working-copy/service.ts`, `packages/runtime/worker`（WorkingCopy API）, `plugins/basemap-plugin` UI
+- 依存: `packages/plugin-service-sdk/src/working-copy/service._ts`, `packages/runtime/worker`（WorkingCopy API）, `plugins/basemap-plugin` UI
 - 受け入れ基準（DoD）:
   - [ ] `TASKS.md` Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
   - [ ] `WorkingCopyService.updateWorkingCopy` が UI からの更新（draftData/name/description 等）を worker へ反映し、commit 時に Basemap の draftData が消失しない
@@ -549,7 +562,7 @@
   - [ ] updateWorkingCopy が受け取った更新をそのまま worker API に転送するよう修正する
   - [ ] 転送を検証するユニットテストを追加する
   - [ ] 必要に応じて関連箇所の型/分岐を確認し、ログに記録する
-- ロールバック手順：`packages/plugin-service-sdk/src/working-copy/service.ts` と追加したテストファイルを revert し、`pnpm --filter @hierarchidb/plugin-service-sdk test -- --run updateWorkingCopy` を再実行して現状挙動へ戻ることを確認
+- ロールバック手順：`packages/plugin-service-sdk/src/working-copy/service._ts` と追加したテストファイルを revert し、`pnpm --filter @hierarchidb/plugin-service-sdk test -- --run updateWorkingCopy` を再実行して現状挙動へ戻ることを確認
 
 1523) basemap Create で data が `{presentation: undefined, schemaVersion: 1}` へ置換される（P0）
 - ブランチ: `fix/basemap/create-data-presentation`（sandbox 制約で `main` 上で作業）
@@ -1513,7 +1526,7 @@
 
 117) plugin-service WorkingCopy `as any` 削減（P0）
 - ブランチ: `refactor/plugin-service/working-copy-any`（sandbox 制約で `main` 上で作業）
-- 依存: `packages/plugin-service-sdk/src/working-copy/adapter.ts`, `packages/plugin-service-sdk/src/worker/**/*`
+- 依存: `packages/plugin-service-sdk/src/working-copy/adapter._ts`, `packages/plugin-service-sdk/src/worker/**/*`
 - 受け入れ基準（DoD）:
   - [ ] WorkingCopy アダプタの `entity as any` 参照を型安全なフィールドアクセスに改修する
   - [ ] `pnpm --filter @hierarchidb/plugin-service-sdk {typecheck,test}` が成功し、挙動に回帰が無いことを確認する
@@ -4136,7 +4149,7 @@ P2:
 - refactor/worker/error-model-unify（P1） — CommandProcessor/TreeMutationService を Core `CommandResult` 準拠のエラーモデルへ統一
   - ブランチ: `main`（サンドボックス制約下で直編集）
   - 要点:
-    - `services/utils/error-adapter.ts` を新設し、例外→`WorkerErrorCode` の分類（コード/名前/メッセージヒューリスティック）とメッセージサニタイズを共通化。
+    - `services/utils/error-adapter._ts` を新設し、例外→`WorkerErrorCode` の分類（コード/名前/メッセージヒューリスティック）とメッセージサニタイズを共通化。
     - CommandProcessor ならびに TreeMutationService が常に `classifyWorkerError` 経由で `CommandResult` を返却するよう改修。
     - `docs/error-codes.md` を更新し、コード一覧・分類ルール・整流ポリシーを明文化。
   - 検証:
@@ -4144,7 +4157,7 @@ P2:
     - [x] `pnpm --filter /runtime-worker test -- --run command-processor-error-model`（既存 WFL 含む全テストがグリーン、Dexie 再初期化の警告のみ）
     - [x] `pnpm --filter /runtime-worker build`
   - ロールバック手順:
-    - `services/utils/error-adapter.ts` の追加と CommandProcessor / TreeMutationService の呼び出し差分、`docs/error-codes.md` の改訂をリバートし、上記検証コマンドを再実行。
+    - `services/utils/error-adapter._ts` の追加と CommandProcessor / TreeMutationService の呼び出し差分、`docs/error-codes.md` の改訂をリバートし、上記検証コマンドを再実行。
 - refactor/router/tanstack-migrate（P1） — UI/Runtime パッケージの React Router 依存を除去し TanStack Router へ統一
   - ブランチ: `main`（サンドボックス制約のため直接作業）
   - 要点:
@@ -7759,7 +7772,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-19 13:40 progress: fix/location-plugin/import-paths — DownloadService 利用箇所を `DownloadServiceBundle` ベースに切り替え、テスト/ambient d.ts も新型へ更新。`pnpm --filter @hierarchidb/location-plugin build` を実行し、型生成とバンドルが `dist/` 配下に出力されることを確認。
 - 2025-10-19 11:20 progress: fix/timeline-plugin/typecheck-regression — JS shim (`tsup.base.config.js`, `packages/ui/floating-window/tsup.config.js`) を削除し、全 tsup 設定を `tsup.base.config.ts` 参照に統一。`pnpm --filter @hierarchidb/{timeline-plugin,runtime-plugin-dialog,ui-floating-window} build:bundle` を実行し、いずれも成功。
 - 2025-10-19 11:32 progress: fix/timeline-plugin/typecheck-regression — tsup 実行を `NODE_OPTIONS="--loader ts-node/esm"` 付きに統一。各 package.json の `tsup` 系スクリプトを環境変数経由で loader 登録するよう更新し、上記 3 パッケージの `build:bundle` を再実行して正常終了を確認。
-- 2025-10-04 23:45 progress: refactor/worker/error-model-unify — `services/utils/error-adapter.ts` を新設し、CommandProcessor/TreeMutationService のエラー整流処理を新ユーティリティへ切替。
+- 2025-10-04 23:45 progress: refactor/worker/error-model-unify — `services/utils/error-adapter._ts` を新設し、CommandProcessor/TreeMutationService のエラー整流処理を新ユーティリティへ切替。
 - 2025-10-04 23:48 progress: refactor/worker/error-model-unify — `command-processor-error-model.test.ts` を追加して未知エラー/ConstraintError の分類を検証。
 - 2025-10-04 23:52 progress: refactor/worker/error-model-unify — `pnpm --filter @hierarchidb/runtime-worker typecheck` を実行し成功（tsc --noEmit）。
 - 2025-10-05 00:00 progress: refactor/worker/error-model-unify — 権限昇格で `pnpm --filter @hierarchidb/runtime-worker test -- --run command-processor-error-model` を実行し、既存WFL含む全テストがグリーン（Dexie 再初期化警告のみ）。
@@ -9106,7 +9119,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-29 10:03 command: pnpm --filter @hierarchidb/common-api build — exit 0（tsdown 警告: define 無効キー、既知）。
 - 2025-11-29 10:04 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0。
 - 2025-11-29 10:05 command: pnpm --filter @hierarchidb/plugin-ui-sdk test -- --run useWorkingCopy — exit 0（discard 挙動の新規テストを追加）。
-- 2025-11-29 10:06 done: fix/workingcopy/dialog-cancel-behavior — create cancel で forceDelete により未コミットノードを必ず削除、import draft/edit モードでは committed data が無い場合 discard をスキップしノード維持、valid ノードは draft を null 化。検証: `pnpm --filter @hierarchidb/common-api build`（exit 0、tsdown define 警告既知）、`pnpm --filter @hierarchidb/runtime-worker typecheck`（exit 0）、`pnpm --filter @hierarchidb/plugin-ui-sdk test -- --run useWorkingCopy`（exit 0）。ロールバック: `packages/runtime-worker/src/services/draft/cleanupOperations.ts`, `DraftService.ts`, `packages/plugin-service-sdk/src/draft/service.ts`, `packages/plugin-ui-sdk/src/hooks/useDialogDraft.ts`, `packages/plugin-ui-sdk/src/hooks/__tests__/useWorkingCopy.test.tsx`, `packages/common/api/src/DraftAPI.ts`, `packages/common/api/src/index.ts` を revert し、上記コマンドを再実行。
+- 2025-11-29 10:06 done: fix/workingcopy/dialog-cancel-behavior — create cancel で forceDelete により未コミットノードを必ず削除、import draft/edit モードでは committed data が無い場合 discard をスキップしノード維持、valid ノードは draft を null 化。検証: `pnpm --filter @hierarchidb/common-api build`（exit 0、tsdown define 警告既知）、`pnpm --filter @hierarchidb/runtime-worker typecheck`（exit 0）、`pnpm --filter @hierarchidb/plugin-ui-sdk test -- --run useWorkingCopy`（exit 0）。ロールバック: `packages/runtime-worker/src/services/draft/cleanupOperations.ts`, `DraftService.ts`, `packages/plugin-service-sdk/src/draft/service._ts`, `packages/plugin-ui-sdk/src/hooks/useDialogDraft.ts`, `packages/plugin-ui-sdk/src/hooks/__tests__/useWorkingCopy.test.tsx`, `packages/common/api/src/DraftAPI.ts`, `packages/common/api/src/index.ts` を revert し、上記コマンドを再実行。
 - 2025-11-29 10:12 progress: fix/workingcopy/dialog-cancel-behavior — forceDelete 時は無条件削除に戻し、create cancel で payload を持つドラフトも確実に削除。DraftService discardAll/cleanup は forceDelete=true。`pnpm --filter @hierarchidb/runtime-worker test -- --run cancel-create.headless`（exit 0, 35ファイル中の一部 skipped 既存）で create cancel 挙動の結合テストを追加。`pnpm --filter @hierarchidb/plugin-ui-sdk test -- --run useWorkingCopy` 再実行（exit 0）で create discard の forceDelete を確認。
 - 2025-11-29 10:19 progress: fix/workingcopy/dialog-cancel-behavior — create/import/edit のキャンセル期待を網羅する headless 結合テストを追加 (`packages/runtime-worker/src/__tests__/headless/cancel-dialog-behavior.headless.test.ts`)。create draft は forceDelete で削除、import draft/edit draft は残存、import valid/edit valid は draft を null 化してノードを維持する挙動を確認。`pnpm --filter @hierarchidb/runtime-worker test -- --run cancel-dialog-behavior.headless` exit 0（既存 skip/警告は従来）。`pnpm --filter @hierarchidb/plugin-ui-sdk test -- --run useWorkingCopy` 再実行（exit 0）。
 - 2025-11-29 13:04 start: fix/plugin-ui-host/usememo-nesting — usePluginDialogController steps でネストした `useMemo` を解消するリファクタを開始。DoD: Kanban/運用ログ更新、ネスト解消と同等挙動維持、`pnpm --filter @hierarchidb/plugin-ui-host lint` または typecheck 実行ログ、ロールバック手順を記録。sandbox 制約で main 作業。
@@ -9118,6 +9131,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-29 14:52 done: fix/app/hidb-core-reinit — WorkerProvider の reset が WorkerStateStore を初期化できず、IndexedDB 全削除後も WorkerStateStore が「ready」状態を保持したまま再初期化されないため hidb-core-db が再作成されない問題を修正。`WorkerStateStore.resetWorkerState` を追加し、`WorkerModuleLoader.resetWorkerRuntime` で runtimePromise をクリア、WorkerProvider の reset/retry で両方を呼ぶようにして再初期化を強制。Dexie.closeAll は型安全な optional 呼び出しへ変更。検証: `pnpm --filter @hierarchidb/app typecheck` exit 0。ロールバック: `app/src/worker-runtime/WorkerStateStore.ts`, `app/src/worker-runtime/WorkerModuleLoader.ts`, `app/src/contexts/WorkerProvider.tsx`, `app/src/plugin-host/clearIndexedDb.ts` を revert し、同コマンドを再実行。
 - 2025-11-29 15:05 progress: fix/app/hidb-core-reinit — IndexedDB 全削除後に `/t/r` 遷移で React 警告「Cannot update a component (WorkerProvider) while rendering WorkerClientGate」が発生するため、WorkerClientGate で render 中に `proxy.ensureInitialized` を呼ばず、エフェクトで初期化を開始し待機中はオーバーレイを返すように変更。再度 `pnpm --filter @hierarchidb/app typecheck` exit 0。
 - 2025-11-29 17:19 start: fix/basemap/step3-maplibre-container — Create basemap の Step3 で maplibre が「'container' must be a String or HTMLElement」エラーになる問題の調査を開始。DoD: Kanban/運用ログ更新、原因特定と修正、検証ログとロールバック手順を記載。branch 作成不可のため main で作業。
+- 2025-11-29 17:24 progress: fix/basemap/step3-maplibre-container — ViewportStep で maplibre をマウント後にだけ描画するガードを追加し、未マウント DOM で初期化しないように修正。マップ準備中はプレースホルダー表示。既存 headless 依存テストは Registry/icon 解決不可など従前の失敗が残るが ViewportStep 自体のテストは pass。`pnpm --filter @hierarchidb/app typecheck` exit 0、`pnpm --filter @hierarchidb/basemap-plugin test -- --run ViewportStep --passWithNoTests` は既知の import 解決不可で fail（新規差分起因ではない）。
+- 2025-11-29 17:28 fix: import-export の TreeNodeMetadata description/tags を空文字/空配列にフォールバックし、typecheck エラーを解消。`pnpm --filter @hierarchidb/import-export typecheck` exit 0。
+- 2025-11-29 17:33 fix: route-plugin RouteDialog の draftMetadata.tags/description を必ず配列/文字列で保持するように修正（undefined を避ける）し、`pnpm --filter @hierarchidb/route-plugin typecheck` exit 0。
 
 ## 今日の着手（運用ログ） <a id="worklog-14"></a>
 
@@ -9249,7 +9265,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-25 14:36 progress: fix/plugin-service-sdk/typecheck — tsconfig の paths を base alias に揃え、DraftAdapter のジェネリック誤用・HierarchicalEntityHandler の parentId 更新で型エラーを解消。DraftService を DraftAPI の getTreeNode/updateTreeNodeDraftData に追従。
 - 2025-11-25 14:40 progress: fix/plugin-service-sdk/typecheck — WorkerAPI に batch セッション API を追加し、bridge 側の型不一致を解消。
 - 2025-11-25 14:42 command: pnpm --filter @hierarchidb/plugin-service-sdk typecheck — exit 0。
-- 2025-11-25 14:43 done: fix/plugin-service-sdk/typecheck — 上記対応で typecheck エラーを解消。ロールバックは `packages/plugin-service-sdk/tsconfig.json`, `src/draft/adapter.ts`, `src/draft/service.ts`, `src/handlers/HierarchicalEntityHandler.ts`, `packages/common/api/src/WorkerAPI.ts` を revert し、typecheck を再実行して確認。
+- 2025-11-25 14:43 done: fix/plugin-service-sdk/typecheck — 上記対応で typecheck エラーを解消。ロールバックは `packages/plugin-service-sdk/tsconfig.json`, `src/draft/adapter._ts`, `src/draft/service._ts`, `src/handlers/HierarchicalEntityHandler.ts`, `packages/common/api/src/WorkerAPI.ts` を revert し、typecheck を再実行して確認。
 - 2025-11-25 15:20 start: fix/app/maplibre-resolve — @hierarchidb/app build で maplibre-gl が解決できない件の調査を開始。DoD: TASKS/Kanban 更新、原因特定と修正、`pnpm -F @hierarchidb/app build` 成功ログ、ロールバック手順記載。
 - 2025-11-25 15:35 progress: fix/app/maplibre-resolve — app/package.json で maplibre-gl と @vis.gl/react-maplibre を dependencies へ移動し、ランタイム解決を保証。
 - 2025-11-25 16:05 progress: fix/app/maplibre-resolve — plugin-registry/postbuild を強化し、stageWorker.entry.js の Worker URL 置換を全 JS 出力に適用。
@@ -9279,3 +9295,7 @@ ToDo（Phase 2/3: any の完全撤去）
 ## 今日の着手（運用ログ） <a id="worklog-16"></a>
 - 2025-11-29 15:30 start: fix/ui-dialog/esc-cancel — trash/create/edit ダイアログで Esc キーが Cancel/Close と同等に動作するよう対応開始。DoD: Kanban/運用ログ更新、未保存時の確認ダイアログ表示/未保存なし即閉、回帰なし確認、ロールバック手順記載。
 - 2025-11-29 16:00 start: fix/ui-treeconsole/trash-navigate-parent — 非 folder pageId 表示中に該当ノードを Trash へ移動した場合、親 (parentNodeId) を pageId とする階層へ遷移する対応を開始。DoD: Kanban/運用ログ更新、Trash 後に親へ遷移、エラーなし、回帰なし、ロールバック手順記載。
+- 2025-11-29 16:20 start: fix/basemap/create-defaults — basemap create の Step2 進行時に `data:{}, draftData:null` となる問題を調査・修正開始。DoD: Kanban/運用ログ更新、デフォルト draftData (BaseMapEntity) を設定し data は null、回帰なし、型/関連テスト実行とログ記録、ロールバック手順明記。
+- 2025-11-29 16:40 progress: fix/basemap/create-defaults — Worker 側の createNode で basemap の draftData を `{ mapStyle:{style:'streets'}, viewport: undefined }` で初期化するよう変更。UI 側ステップの場当たり水和を撤去し、初期値は Worker で一度だけ付与する形に整理。テスト未実行（要: `pnpm --filter @hierarchidb/basemap-plugin typecheck` など）。
+- 2025-11-30 11:20 progress: fix/basemap/create-defaults — useDialogDraft を treeNodeUpdater API へ再実装し、create 時に initialDraftData を渡して basemap draftData を `{mapStyle:{style:'streets'}, viewport:undefined}` で保存するように変更。usePluginDialogController から basemap create 時に初期 draft を注入。`pnpm --filter @hierarchidb/plugin-ui-sdk build`（tsdown define 警告のみ）/`typecheck` exit 0, `pnpm --filter @hierarchidb/plugin-ui-host typecheck` exit 0, `pnpm --filter @hierarchidb/basemap-plugin typecheck` exit 0 を実行。
+- 2025-11-30 11:35 progress: fix/basemap/step3-maplibre-container — ui-map を viewState/Move イベント対応の制御モードに拡張し、ViewportStep を controlled viewState + OSM raster で双方向同期するように修正。`pnpm --filter @hierarchidb/ui-map typecheck` exit 0。ロールバック: `packages/ui/map/src/components/MapLibreMap.tsx`, `plugins/basemap-plugin/src/ui/components/steps/ViewportStep.tsx` を revert し typecheck 再実行。

@@ -138,12 +138,12 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
         nextDraftMetadata.name = updates.name ?? '';
       }
       if (updates.description !== undefined) {
-        nextDraftMetadata.description = updates.description ?? undefined;
+        nextDraftMetadata.description = updates.description ?? '';
       }
       if (updates.tags !== undefined) {
         nextDraftMetadata.tags = Array.isArray(updates.tags)
           ? updates.tags.map((tag) => String(tag))
-          : undefined;
+          : [];
       }
       const { name, description, tags, ...rest } = updates;
       const nextDraftData = {

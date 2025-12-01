@@ -44,14 +44,14 @@ export async function initTreeNode(
             metadata: {
               ...(existing as { metadata?: TreeNode['metadata'] }).metadata ?? {
                 name: resolvedBaseName,
-                description: undefined,
+                description: '',
                 tags: [],
               },
               name: resolvedBaseName,
             },
             draftMetadata: {
               name: resolvedBaseName,
-              description: undefined,
+              description: '',
               tags: [],
               ...(initial?.draftMetadata ?? initial?.metadata ?? {}),
             },
@@ -70,8 +70,8 @@ export async function initTreeNode(
 
     const initialMeta = (initial?.metadata ?? {}) as Partial<TreeNode['metadata']>;
     const metadata = {
-      description: initialMeta.description ?? undefined,
-      tags: initialMeta.tags ?? [],
+      description: initialMeta.description ?? '',
+      tags: Array.isArray(initialMeta.tags) ? initialMeta.tags : [],
       ...initialMeta,
       name: initialMeta.name ?? resolvedBaseName,
     };
@@ -83,7 +83,7 @@ export async function initTreeNode(
       metadata,
       draftMetadata: {
         name: resolvedBaseName,
-        description: undefined,
+        description: '',
         tags: [],
         ...(initial?.draftMetadata ?? initial?.metadata ?? {}),
       },

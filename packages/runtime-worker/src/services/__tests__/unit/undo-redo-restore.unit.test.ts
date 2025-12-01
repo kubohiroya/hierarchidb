@@ -26,7 +26,7 @@ describe('Undo/Redo for restoreFromTrash', () => {
     id: id as NodeId,
     parentId: parentId as NodeId,
     nodeType: 'folder' as NodeType,
-    metadata: { name },
+    metadata: { name, description: '', tags: [] },
     draftMetadata: null,
     data: {},
     draftData: null,

@@ -81,7 +81,7 @@ async function handleCreateNode(
       nodeType: payload.nodeType,
       metadata: {
         name: payload.metadata.name,
-        description: payload.metadata.description,
+        description: payload.metadata.description ?? '',
         tags: payload.metadata.tags ?? [],
       },
       draftMetadata: null,

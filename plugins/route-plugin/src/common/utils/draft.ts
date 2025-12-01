@@ -87,10 +87,6 @@ const adapter = createEntityDraftAdapter<RouteEntity, RouteDraft>({
   },
 });
 
-export function createRouteDraftFromEntity(entity: RouteEntity): RouteDraft {
-  return adapter.fromEntity(entity);
-}
-
 export function createRouteDraftBase(
   nodeId: NodeId,
   overrides: Partial<RouteDraftPayload> = {},

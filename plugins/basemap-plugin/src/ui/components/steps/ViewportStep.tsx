@@ -1,198 +1,96 @@
 import { Box, Stack, TextField, Typography } from '@mui/material';
 import type React from 'react';
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { loadMapLibreMap, type MapLibreMapInstance, type MapViewState } from '@hierarchidb/ui-map';
-import type { MapStyle, MapViewport } from '../../../common/types/BaseMapEntity.js';
-import { resolveMapStyleSource } from '../../utils/mapStyle.js';
+import {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+import { loadMapLibreMap, type MapViewState } from '@hierarchidb/ui-map';
+import type { MapViewport } from '../../../common/types/BaseMapEntity.js';
 
 export interface ViewportStepProps {
   value: MapViewport | undefined;
-  mapStyle?: MapStyle;
+  mapStyle?: unknown;
   onChange: (next: MapViewport) => void;
 }
 
-const LOCAL_STORAGE_KEY = 'zxy';
-const DEFAULT_GEO_VIEWPORT: MapViewport = {
-  center: [139.767, 35.681],
-  zoom: 10,
-  bearing: 0,
-  pitch: 0,
-};
 const FALLBACK_VIEWPORT: MapViewport = {
   center: [0, 0],
-  zoom: 2,
+  zoom: 1,
   bearing: 0,
   pitch: 0,
 };
 
-const DEFAULT_STYLE: MapStyle = { style: 'streets' };
+const OSM_RASTER_STYLE = {
+  version: 8,
+  name: 'osm-basemap',
+  sources: {
+    osm: {
+      type: 'raster',
+      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+      tileSize: 256,
+      attribution: '© OpenStreetMap contributors',
+    },
+  },
+  layers: [
+    {
+      id: 'osm',
+      type: 'raster',
+      source: 'osm',
+    },
+  ],
+} as const;
 
+let mapLibreComponentPromise: Promise<{ default: React.ComponentType<any> }> | null = null;
 const LazyMapLibreMap = lazy(async () => {
-  const mod = await loadMapLibreMap();
-  return { default: mod.MapLibreMap };
+  if (!mapLibreComponentPromise) {
+    mapLibreComponentPromise = loadMapLibreMap().then((mod) => ({ default: mod.MapLibreMap }));
+  }
+  return mapLibreComponentPromise;
 });
 
-export const ViewportStep: React.FC<ViewportStepProps> = ({
-  value,
-  mapStyle,
-  onChange,
-}) => {
-  const readPersistedViewport = useCallback((): MapViewport | null => {
-    if (typeof window === 'undefined' || !window.localStorage) return null;
-    try {
-      const raw = window.localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (!raw) return null;
-      const parsed = JSON.parse(raw) as Partial<{
-        longitude: number;
-        latitude: number;
-        zoom: number;
-      }>;
-      if (
-        typeof parsed.longitude === 'number' &&
-        Number.isFinite(parsed.longitude) &&
-        typeof parsed.latitude === 'number' &&
-        Number.isFinite(parsed.latitude) &&
-        typeof parsed.zoom === 'number' &&
-        Number.isFinite(parsed.zoom)
-      ) {
-        return {
-          center: [parsed.longitude, parsed.latitude],
-          zoom: parsed.zoom,
-          bearing: 0,
-          pitch: 0,
-        };
-      }
-      return null;
-    } catch {
-      return null;
-    }
-  }, []);
+const areViewStatesEqual = (a: MapViewState, b: MapViewState) => {
+  const eps = 1e-6;
+  return (
+    Math.abs(a.longitude - b.longitude) < eps &&
+    Math.abs(a.latitude - b.latitude) < eps &&
+    Math.abs(a.zoom - b.zoom) < eps &&
+    Math.abs((a.bearing ?? 0) - (b.bearing ?? 0)) < eps
+  );
+};
 
-  const persistViewportDefaults = useCallback((viewport: MapViewport) => {
-    if (typeof window === 'undefined' || !window.localStorage) return;
-    try {
-      window.localStorage.setItem(
-        LOCAL_STORAGE_KEY,
-        JSON.stringify({
-          longitude: viewport.center[0],
-          latitude: viewport.center[1],
-          zoom: viewport.zoom,
-        })
-      );
-    } catch {
-      // ignore storage failures
-    }
-  }, []);
+export const ViewportStep: React.FC<ViewportStepProps> = ({ value, onChange }) => {
+  const initial = useMemo<MapViewState>(
+    () => ({
+      longitude: value?.center[0] ?? FALLBACK_VIEWPORT.center[0],
+      latitude: value?.center[1] ?? FALLBACK_VIEWPORT.center[1],
+      zoom: value?.zoom ?? FALLBACK_VIEWPORT.zoom,
+      bearing: value?.bearing ?? FALLBACK_VIEWPORT.bearing,
+      pitch: 0,
+    }),
+    [value]
+  );
 
-  const mapRef = useRef<MapLibreMapInstance | null>(null);
-  const initialViewStateRef = useRef<MapViewState | null>(null);
-  const pendingSyncRef = useRef(false);
-  const geolocationAppliedRef = useRef(false);
-  const initialPersistedRef = useRef<MapViewport | null>(null);
-  if (initialPersistedRef.current === null && typeof window !== 'undefined') {
-    initialPersistedRef.current = readPersistedViewport();
-  }
-  const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
-  const [canRenderMap, setCanRenderMap] = useState(false);
+  const [viewState, setViewState] = useState<MapViewState>(initial);
 
+  // Sync local viewState when parent value changes
   useEffect(() => {
-    setCanRenderMap(true);
-  }, []);
-
-  useEffect(() => {
-    if (value) return;
-    if (geolocationAppliedRef.current) return;
-
-    const applyViewport = (next: MapViewport, persist = false) => {
-      if (value) return;
-      geolocationAppliedRef.current = true;
-      pendingSyncRef.current = true;
-      onChange(next);
-      if (persist) {
-        persistViewportDefaults(next);
-      }
-    };
-
-    let cancelled = false;
-
-    if (initialPersistedRef.current) {
-      applyViewport(initialPersistedRef.current);
-      return;
-    }
-
-    const canUseGeo =
-      typeof window !== 'undefined' &&
-      typeof navigator !== 'undefined' &&
-      navigator.geolocation &&
-      typeof navigator.geolocation.getCurrentPosition === 'function';
-
-    if (canUseGeo) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          if (cancelled || value || geolocationAppliedRef.current) return;
-          const { longitude, latitude, accuracy } = pos.coords;
-          const boundedZoom =
-            accuracy && Number.isFinite(accuracy) ? Math.max(5, Math.min(14, 16 - Math.log10(accuracy))) : 10;
-          applyViewport({
-            center: [longitude, latitude],
-            zoom: boundedZoom,
-            bearing: 0,
-            pitch: 0,
-          }, true);
-        },
-        () => {
-          if (cancelled || value || geolocationAppliedRef.current) return;
-          applyViewport(FALLBACK_VIEWPORT);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 5000,
-          maximumAge: 60000,
-        }
-      );
-    } else {
-      applyViewport(FALLBACK_VIEWPORT);
-    }
-
-    return () => {
-      cancelled = true;
-    };
-  }, [onChange, persistViewportDefaults, readPersistedViewport, value]);
-
-  const vp: MapViewport = value || DEFAULT_GEO_VIEWPORT;
-  const selectedStyle = mapStyle || DEFAULT_STYLE;
-  if (!initialViewStateRef.current) {
-    initialViewStateRef.current = {
-      longitude: vp.center[0],
-      latitude: vp.center[1],
-      zoom: vp.zoom,
-      bearing: vp.bearing ?? 0,
+    const next: MapViewState = {
+      longitude: value?.center[0] ?? FALLBACK_VIEWPORT.center[0],
+      latitude: value?.center[1] ?? FALLBACK_VIEWPORT.center[1],
+      zoom: value?.zoom ?? FALLBACK_VIEWPORT.zoom,
+      bearing: value?.bearing ?? FALLBACK_VIEWPORT.bearing,
       pitch: 0,
     };
-  }
-
-  const setViewport = useCallback(
-    (next: Partial<MapViewport>) => {
-      onChange({
-        ...vp,
-        ...next,
-        pitch: 0,
-      });
-    },
-    [onChange, vp]
-  );
-
-  const setViewportFromInput = useCallback(
-    (next: Partial<MapViewport>) => {
-      pendingSyncRef.current = true;
-      setViewport(next);
-    },
-    [setViewport]
-  );
+    setViewState((prev) => (areViewStatesEqual(prev, next) ? prev : next));
+  }, [value]);
 
   const mapStyleSource = useMemo(
-    () => resolveMapStyleSource(selectedStyle),
-    [selectedStyle]
+    () => OSM_RASTER_STYLE as unknown as Record<string, unknown>,
+    []
   );
 
   const mapInteractionOptions = useMemo(
@@ -209,71 +107,58 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({
 
   const navigationControls = useMemo(() => ({ navigation: { position: 'top-right' } }), []);
 
-  const handleViewStateChange = useCallback(
-    (viewState: MapViewState) => {
-      pendingSyncRef.current = false;
-      const nextViewport: MapViewport = {
-        center: [viewState.longitude, viewState.latitude],
-        zoom: viewState.zoom,
-        bearing: viewState.bearing ?? 0,
+  const propagate = useCallback(
+    (next: MapViewState, source: 'form' | 'map-move' | 'map-end') => {
+      console.log('[Viewport] propagate', { source, next });
+      setViewState((prev) => {
+        if (areViewStatesEqual(prev, next)) return prev;
+        return next;
+      });
+      onChange({
+        center: [next.longitude, next.latitude],
+        zoom: next.zoom,
+        bearing: next.bearing ?? 0,
         pitch: 0,
-      };
-      persistViewportDefaults(nextViewport);
-      setViewport(nextViewport);
+      });
     },
-    [persistViewportDefaults, setViewport]
+    [onChange]
   );
 
-  const handleMapLoad = useCallback((map: MapLibreMapInstance) => {
-    mapRef.current = map;
-    setMapInstance(map);
-  }, []);
+  const handleViewStateChange = useCallback(
+    (next: MapViewState) => {
+      console.log('[Viewport] onMove', next);
+      propagate(next, 'map-move');
+    },
+    [propagate]
+  );
 
-  useEffect(() => {
-    if (!mapInstance) return;
-    const container = mapInstance.getContainer();
-    if (!container) return;
+  const handleViewStateChangeEnd = useCallback(
+    (next: MapViewState) => {
+      console.log('[Viewport] onMoveEnd', next);
+      propagate(next, 'map-end');
+    },
+    [propagate]
+  );
 
-    const handleWheel = (event: WheelEvent) => {
-      const target = event.target;
-      if (!(target instanceof Node)) return;
-      if (!container.contains(target)) return;
-      if (event.defaultPrevented) return;
-      event.preventDefault();
-      event.stopPropagation();
-    };
+  const setViewportFromInput = useCallback(
+    (next: Partial<MapViewport>) => {
+      const updated: MapViewState = {
+        longitude: next.center?.[0] ?? viewState.longitude,
+        latitude: next.center?.[1] ?? viewState.latitude,
+        zoom: next.zoom ?? viewState.zoom,
+        bearing: next.bearing ?? viewState.bearing ?? 0,
+        pitch: 0,
+      };
+      console.log('[Viewport] form input', updated);
+      propagate(updated, 'form');
+    },
+    [propagate, viewState]
+  );
 
-    const handleTouchMove = (event: TouchEvent) => {
-      const target = event.target;
-      if (!(target instanceof Node)) return;
-      if (!container.contains(target)) return;
-      if (event.defaultPrevented) return;
-      if (event.cancelable) {
-        // Avoid dialog scroll without blocking MapLibre's touch handlers.
-        event.preventDefault();
-      }
-    };
-
-    container.addEventListener('wheel', handleWheel, { passive: false });
-    container.addEventListener('touchmove', handleTouchMove, { passive: false });
-
-    return () => {
-      container.removeEventListener('wheel', handleWheel);
-      container.removeEventListener('touchmove', handleTouchMove);
-    };
-  }, [mapInstance]);
-
-  useEffect(() => {
-    if (!mapRef.current) return;
-    if (!pendingSyncRef.current) return;
-    mapRef.current.flyTo({
-      center: vp.center as [number, number],
-      zoom: vp.zoom,
-      bearing: vp.bearing ?? 0,
-      pitch: 0,
-    });
-    pendingSyncRef.current = false;
-  }, [vp.center, vp.zoom, vp.bearing]);
+  const formatCoord = (val: number, digits: number = 4) => {
+    if (!Number.isFinite(val)) return '0.0000';
+    return val.toFixed(digits);
+  };
 
   return (
     <Box
@@ -289,17 +174,17 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({
       }}
     >
       <Typography variant="body2" color="text.secondary" sx={{ flexShrink: 0 }}>
-        Fine-tune the initial viewport. Enter values directly or drag / zoom the map below.
+        Fine-tune the initial viewport. Enter values directly or use the map preview below.
       </Typography>
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ flexShrink: 0 }}>
         <TextField
           label="Longitude"
           type="number"
-          inputProps={{ step: 0.0001, min: -180, max: 180 }}
-          value={vp.center[0]}
+          inputProps={{ step: 0.01, min: -180, max: 180 }}
+          value={viewState.longitude}
           onChange={(e) =>
             setViewportFromInput({
-              center: [Number(e.target.value), vp.center[1]],
+              center: [Number(e.target.value), viewState.latitude],
             })
           }
           fullWidth
@@ -307,11 +192,11 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({
         <TextField
           label="Latitude"
           type="number"
-          inputProps={{ step: 0.0001, min: -90, max: 90 }}
-          value={vp.center[1]}
+          inputProps={{ step: 0.01, min: -90, max: 90 }}
+          value={viewState.latitude}
           onChange={(e) =>
             setViewportFromInput({
-              center: [vp.center[0], Number(e.target.value)],
+              center: [viewState.longitude, Number(e.target.value)],
             })
           }
           fullWidth
@@ -319,8 +204,8 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({
         <TextField
           label="Zoom"
           type="number"
-          inputProps={{ step: 0.1, min: 0, max: 24 }}
-          value={vp.zoom}
+          inputProps={{ step: 1, min: 0, max: 24 }}
+          value={viewState.zoom}
           onChange={(e) => setViewportFromInput({ zoom: Number(e.target.value) })}
           fullWidth
         />
@@ -328,7 +213,7 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({
           label="Bearing"
           type="number"
           inputProps={{ step: 1, min: -180, max: 180 }}
-          value={vp.bearing}
+          value={viewState.bearing ?? 0}
           onChange={(e) => setViewportFromInput({ bearing: Number(e.target.value) })}
           fullWidth
         />
@@ -347,48 +232,37 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({
           minHeight: 280,
         }}
       >
-        {canRenderMap ? (
-          <Suspense
-            fallback={
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  height: '100%',
-                }}
-              >
-                <Typography variant="caption" color="text.secondary">
-                  Loading interactive map…
-                </Typography>
-              </Box>
-            }
-          >
-            <LazyMapLibreMap
-              initialViewState={initialViewStateRef.current!}
-              mapStyle={mapStyleSource}
-              width="100%"
-              height="100%"
-              mapOptions={mapInteractionOptions}
-              controls={navigationControls}
-              onLoad={handleMapLoad}
-              onViewStateChange={handleViewStateChange}
-            />
-          </Suspense>
-        ) : (
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '100%',
+        <Suspense
+          fallback={
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%',
+              }}
+            >
+              <Typography variant="caption" color="text.secondary">
+                Loading map…
+              </Typography>
+            </Box>
+          }
+        >
+          <LazyMapLibreMap
+            initialViewState={initial}
+            viewState={viewState}
+            mapStyle={mapStyleSource}
+            width="100%"
+            height="100%"
+            mapOptions={mapInteractionOptions}
+            controls={navigationControls}
+            onLoad={() => {
+              // no-op
             }}
-          >
-            <Typography variant="caption" color="text.secondary">
-              Preparing map…
-            </Typography>
-          </Box>
-        )}
+            onViewStateChange={handleViewStateChange}
+            onMoveEnd={handleViewStateChangeEnd}
+          />
+        </Suspense>
         <Box
           sx={{
             position: 'absolute',
@@ -418,6 +292,13 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({
             },
           }}
         />
+      </Box>
+
+      <Box sx={{ textAlign: 'center', color: 'text.secondary' }}>
+        <Typography variant="caption">
+          Center: {formatCoord(viewState.longitude)}, {formatCoord(viewState.latitude)} / Zoom:{' '}
+          {viewState.zoom} / Bearing: {viewState.bearing ?? 0}
+        </Typography>
       </Box>
     </Box>
   );

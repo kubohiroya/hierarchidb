@@ -122,11 +122,21 @@ export function usePluginDialogController(
     nodeId,
   });
 
+  const initialDraftData = useMemo(() => {
+    if (mode === 'create' && nodeType === 'basemap') {
+      return {
+        mapStyle: { style: 'streets' },
+        viewport: undefined,
+      } as Record<string, unknown>;
+    }
+    return undefined;
+  }, [mode, nodeType]);
+
   const {
-    draft,
+    treeNodeUpdater: draft,
     hasUnsavedChanges,
-    updateDraft,
-    saveDraft,
+    updateTreeNodeUpdater,
+    commitTreeNodeUpdater,
     discardDraft,
     loading,
     error,
@@ -137,6 +147,7 @@ export function usePluginDialogController(
     parentId: pageNodeId,
     treeId,
     workerClient: ref ?? null,
+    initialDraftData,
   });
 
   const treeUpdater: TreeNodeUpdaterPayload<PluginDefinedEntity> | null = useMemo(
@@ -158,9 +169,9 @@ export function usePluginDialogController(
       };
       if (patch.draftMetadata !== undefined) payload.draftMetadata = patch.draftMetadata;
       if (patch.draftData !== undefined) payload.draftData = patch.draftData;
-      updateDraft(payload as any);
+      updateTreeNodeUpdater(payload as any);
     },
-    [nodeId, treeUpdater?.id, updateDraft]
+    [nodeId, treeUpdater?.id, updateTreeNodeUpdater]
   );
 
   const {
@@ -321,7 +332,7 @@ export function usePluginDialogController(
 
   const flushDraftOnce = useCallback(async () => {
     const payload: Partial<
-      import('@hierarchidb/plugin-ui-sdk').DraftData<Partial<PluginDefinedEntity>>
+      import('@hierarchidb/plugin-ui-sdk').TreeNodeUpdaterState<Partial<PluginDefinedEntity>>
     > = {
       treeNodeId: (treeUpdater?.id ?? nodeId) as NodeId,
       draftMetadata: {
@@ -330,16 +341,16 @@ export function usePluginDialogController(
         description: basicInfo.description,
         tags: basicInfo.tags,
       },
-      draftData: { ...localDraftData, tags: basicInfo.tags },
+      draftData: { ...localDraftData },
     };
-    await saveDraft(payload);
+    await commitTreeNodeUpdater(payload);
   }, [
     basicInfo.description,
     basicInfo.name,
     basicInfo.tags,
     localDraftData,
     nodeId,
-    saveDraft,
+    commitTreeNodeUpdater,
     treeUpdater?.draftMetadata,
     treeUpdater?.id,
   ]);

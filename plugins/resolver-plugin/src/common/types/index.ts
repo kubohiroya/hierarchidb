@@ -1,5 +1,4 @@
 import type { NodeId, PeerEntity } from '@hierarchidb/common-types';
-import type { DraftBase } from '@hierarchidb/plugin-service-api';
 
 /**
  * Resolver entity represents a property mapping configuration
@@ -79,8 +78,7 @@ export interface PreviewConfig {
  */
 export type ResolverDraftPayload = Partial<ResolverEntity>;
 
-export type ResolverDraftEntity = DraftBase<ResolverEntity> &
-  Partial<ResolverEntity> & {
+export type ResolverDraftEntity = Partial<ResolverEntity> & {
     originalId?: NodeId;
     isDirty?: boolean;
     draftId?: NodeId;

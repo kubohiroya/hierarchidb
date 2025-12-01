@@ -12,8 +12,8 @@ export const NODE_TYPES = {
 
 export interface TreeNodeMetadata {
   name: string;
-  description?: string;
-  tags?: string[];
+  description: string;
+  tags: string[];
 }
 
 export interface NodeBase {
@@ -54,8 +54,7 @@ export interface DialogUIState {
 }
 
 // Base shape for payloads; keep structural typing while avoiding primitive-only payloads.
-export type NodePayloadBase = Record<string, unknown>;
-export type NodePayload = NodePayloadBase | null;
+export type NodePayload = Record<string, unknown>;
 
 /**
  * Dexie nodes table record (single source of truth).
@@ -63,8 +62,8 @@ export type NodePayload = NodePayloadBase | null;
  * - UI state is scoped to `dialogUIState` and should be cleared on commit/discard.
  * - Structural metadata stays at the top level and must not be duplicated under data.
  */
-export type PersistedTreeNode<
-  TData extends NodePayloadBase | null = NodePayloadBase | null
+export type TreeNode<
+  TData extends NodePayload | null = NodePayload | null
 > = NodeBase & {
   /**
    * Committed metadata (name/description/tags) — authoritative
@@ -77,7 +76,7 @@ export type PersistedTreeNode<
   /**
    * Committed domain data (plugin-specific payload)
    */
-  data: TData;
+  data: TData | null;
   /**
    * Working copy data; null when no draft exists
    */
@@ -93,11 +92,8 @@ export type PersistedTreeNode<
   lastTouchedAt?: Timestamp;
 };
 
-export type TreeNode<TPayload extends NodePayloadBase | null = NodePayload> =
-  PersistedTreeNode<TPayload>;
-
-export interface TreeNodeWithChildren<TPayload extends NodePayload = NodePayload>
-  extends PersistedTreeNode<TPayload>,
+export interface TreeNodeWithChildren<TData extends NodePayload | null = NodePayload | null>
+  extends TreeNode<TData>,
     DescendantProperties {
   children?: NodeId[];
 }

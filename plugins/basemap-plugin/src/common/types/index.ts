@@ -9,7 +9,6 @@ export type {
   BaseMapSearchCriteria,
   BaseMapDraft,
   BasemapPeerData,
-  CreateBaseMapData,
   MapStyle,
   MapViewport,
 } from './BaseMapEntity.js';

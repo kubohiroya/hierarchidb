@@ -132,12 +132,15 @@ export class TreeMutationService implements TreeMutationAPI {
     try {
       const { initTreeNode } = await import('./DraftTreeNodeOperations.js');
       const desiredName = params.name?.trim() || resolveDefaultNodeName(params.nodeType);
+      const initialDraftData = this.resolveInitialDraftData(params.nodeType);
       const wcNodeId = await initTreeNode(
         this.coreDB,
         params.treeId,
         params.parentId,
         params.nodeType,
-        desiredName
+        desiredName,
+        undefined,
+        initialDraftData ? { draftData: initialDraftData } : undefined
       );
       return { success: true, nodeId: wcNodeId as NodeId };
     } catch (error) {
@@ -583,17 +586,17 @@ export class TreeMutationService implements TreeMutationAPI {
         }
       }
 
-      try {
-        const idMap = new Map<NodeId, NodeId>();
-        for (let i = 0; i < nodeIds.length; i++) {
-          const src = nodeIds[i];
-          const dst = newNodeIds[i];
-          if (src && dst) idMap.set(src, dst);
-        }
-        EntityLifecycleManager.setIdMapping(cmd.commandId, idMap);
-        const lifecycle = EntityLifecycleManager.getSingleton(this.coreDB);
-        await lifecycle.handleCommand(cmd);
-      } catch {}
+
+      const idMap = new Map<NodeId, NodeId>();
+      for (let i = 0; i < nodeIds.length; i++) {
+        const src = nodeIds[i];
+        const dst = newNodeIds[i];
+        if (src && dst) idMap.set(src, dst);
+      }
+      EntityLifecycleManager.setIdMapping(cmd.commandId, idMap);
+      const lifecycle = EntityLifecycleManager.getSingleton(this.coreDB);
+      await lifecycle.handleCommand(cmd);
+
 
       // Recompute destination ancestors hasChildren
       await this.recomputeAncestorsHasChildrenFromParent(parentId);
@@ -835,5 +838,20 @@ export class TreeMutationService implements TreeMutationAPI {
     } catch {
       // noop: console unavailable or locked down in this environment
     }
+  }
+
+  /**
+   * Provide node-type-specific default draft payloads for newly created working copies.
+   * This keeps data null while seeding draftData with sensible defaults.
+   */
+  private resolveInitialDraftData(nodeType: NodeType): Record<string, unknown> | undefined {
+    if (nodeType === 'basemap') {
+      return {
+        mapStyle: { style: 'streets' },
+        // Let UI hydrate viewport via Geolocation/API. Keep undefined to allow late fill.
+        viewport: undefined,
+      };
+    }
+    return undefined;
   }
 }

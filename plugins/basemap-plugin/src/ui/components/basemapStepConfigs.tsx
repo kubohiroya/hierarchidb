@@ -2,50 +2,33 @@ import type { PluginStepConfig, StepComponentProps } from '@hierarchidb/plugin-b
 import type { BaseMapEntity, MapStyle, MapViewport } from '../../common/types/BaseMapEntity.js';
 import { MapStyleStep } from './steps/MapStyleStep.js';
 import { ViewportStep } from './steps/ViewportStep.js';
-import { normalizeMapStyle, normalizeViewport } from '../hooks/useBaseMapEntity.js';
+import { DEFAULT_MAP_STYLE, DEFAULT_VIEWPORT } from '../hooks/useBaseMapEntity.js';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
-const pickDraft = (input: Record<string, unknown>): Record<string, unknown> => {
-  const mapStyle = normalizeMapStyle(input.mapStyle as Partial<MapStyle> | undefined);
-  const viewport = normalizeViewport(input.viewport as Partial<MapViewport> | undefined);
-  return {
-    mapStyle,
-    viewport,
-  };
-};
-
 // Use the concrete entity type directly to avoid ambiguous step data shapes.
-export type BasemapStepData = Partial<BaseMapEntity>;
+// export type BasemapStepData = Partial<BaseMapEntity>;
 
-const ensureDraft = (data?: Record<string, unknown>): BasemapStepData => {
+const ensureDraft = (data?: Record<string, unknown>): Partial<BaseMapEntity> => {
   const record = isRecord(data) ? data : {};
-  const normalized = pickDraft(record);
   return {
-    mapStyle: normalized.mapStyle as MapStyle,
-    viewport: normalized.viewport as MapViewport,
+    mapStyle: (record.mapStyle as MapStyle) ?? DEFAULT_MAP_STYLE,
+    viewport: (record.viewport as MapViewport) ?? DEFAULT_VIEWPORT,
   };
 };
 
 const mergeDraft = (
-  current: BasemapStepData,
-  updates: Partial<BasemapStepData>
-): BasemapStepData => {
-  const mergedDraft = pickDraft({
-    ...current,
-    ...updates,
-    mapStyle: updates.mapStyle ?? current.mapStyle,
-    viewport: updates.viewport ?? current.viewport,
-  });
-
+  current: Partial<BaseMapEntity>,
+  updates: Partial<BaseMapEntity>
+): Partial<BaseMapEntity> => {
   return {
-    mapStyle: mergedDraft.mapStyle as MapStyle,
-    viewport: mergedDraft.viewport as MapViewport,
+    mapStyle: (updates.mapStyle as MapStyle) ?? current.mapStyle ?? DEFAULT_MAP_STYLE,
+    viewport: (updates.viewport as MapViewport) ?? current.viewport ?? DEFAULT_VIEWPORT,
   };
 };
 
-type StepProps = StepComponentProps<BasemapStepData>;
+type StepProps = StepComponentProps<Partial<BaseMapEntity>>;
 
 const hasValidViewport = (value?: MapViewport): boolean => {
   if (!value) return false;
@@ -66,7 +49,7 @@ const hasValidViewport = (value?: MapViewport): boolean => {
   );
 };
 
-export const getBasemapStepConfigs = (): PluginStepConfig<BasemapStepData>[] => [
+export const getBasemapStepConfigs = (): PluginStepConfig<Partial<BaseMapEntity>>[] => [
   {
     id: 'map-style',
     label: 'Map Style',
@@ -81,7 +64,7 @@ export const getBasemapStepConfigs = (): PluginStepConfig<BasemapStepData>[] => 
       const selectedStyle = draft.mapStyle ?? (p.mode === 'edit' ? draft.mapStyle : undefined);
       return <MapStyleStep value={selectedStyle} onChange={handleChange} />;
     },
-    validate: (data?: BasemapStepData) => {
+    validate: (data?: Partial<BaseMapEntity>) => {
       try {
         const style = data?.mapStyle?.style;
         if (!style) return false;
@@ -106,6 +89,9 @@ export const getBasemapStepConfigs = (): PluginStepConfig<BasemapStepData>[] => 
             viewport: next,
           })
         );
+      if (!draft.viewport) {
+        throw new Error('[Basemap] Viewport is not initialized');
+      }
       return (
         <ViewportStep
           value={draft.viewport}
@@ -114,7 +100,7 @@ export const getBasemapStepConfigs = (): PluginStepConfig<BasemapStepData>[] => 
         />
       );
     },
-    validate: (data?: BasemapStepData) => {
+    validate: (data?: Partial<BaseMapEntity>) => {
       if (!data?.mapStyle) return false;
       const viewport = data?.viewport;
       return hasValidViewport(viewport);

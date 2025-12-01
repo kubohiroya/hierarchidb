@@ -4,7 +4,6 @@ import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type { NodeId, TreeId, NodeType } from '@hierarchidb/common-types';
 import { useDialogDraft } from '../useDialogDraft.js';
-import { useDraft } from '../useDraft.js';
 import { Remote } from 'comlink';
 
 let mockWorkerClientRef: WorkerClientRef | null = null;
@@ -169,47 +168,7 @@ describe('useDialogDraft (edit mode)', () => {
 
     expect(wcAPI.getTreeNode).toHaveBeenCalledWith(canonicalId);
     expect(wcAPI.initTreeNode).not.toHaveBeenCalled();
-    expect(result.current.draft).toBeNull();
+    expect(result.current.treeNodeUpdater).toBeNull();
     expect(result.current.error).toBeInstanceOf(Error);
-  });
-});
-
-describe('legacy useDraft hook (create mode)', () => {
-  it('is an alias of useDialogDraft and initializes via initTreeNode', async () => {
-    const existing = { id: 'wc-existing' as NodeId, name: 'Existing', description: 'desc', data: { alpha: 1 } };
-    const { workerClient, wcAPI } = createMockClient({ existingDraft: existing });
-
-    const { result } = renderHook(() => useDraft<Record<string, unknown>>({
-      nodeType: 'folder',
-      mode: 'create',
-      nodeId: existing.id,
-      parentId: 'parent-legacy' as NodeId,
-      workerClient,
-    }));
-
-    await waitFor(() => result.current.loading === false);
-
-    expect(wcAPI.initTreeNode).toHaveBeenCalledWith('folder', 'parent-legacy', { id: existing.id });
-    expect(result.current.draft?.treeNodeId).toBe(existing.id);
-    expect(typeof result.current.updateDraft).toBe('function');
-    expect(typeof result.current.saveDraft).toBe('function');
-  });
-
-  it('creates a draft when none exists using the dialog draft workflow', async () => {
-    const { workerClient, wcAPI } = createMockClient({ existingDraft: undefined });
-
-    const { result } = renderHook(() => useDraft<Record<string, unknown>>({
-      nodeType: 'folder',
-      mode: 'create',
-      nodeId: 'wc-missing' as NodeId,
-      parentId: 'parent-legacy' as NodeId,
-      workerClient,
-    }));
-
-    await waitFor(() => result.current.loading === false);
-
-    expect(wcAPI.initTreeNode).toHaveBeenCalledWith('folder', 'parent-legacy', { id: 'wc-missing' });
-    expect(result.current.draft?.treeNodeId).toBe('wc-missing');
-    expect(result.current.error).toBeNull();
   });
 });

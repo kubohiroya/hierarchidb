@@ -17,7 +17,7 @@ import {
   type HeadlessMultiStepDialogProps,
 } from '@hierarchidb/ui-dialog';
 import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
-import { useDialogDraft, normalizeBasicInfo, type DraftData } from '@hierarchidb/plugin-ui-sdk';
+import { useDialogDraft, type DraftData } from '@hierarchidb/plugin-ui-sdk';
 import type { ShapeDraft, ShapeEntity } from '../../common/shared/index.js';
 import {
   DEFAULT_PROCESSING_CONFIG,
@@ -49,16 +49,13 @@ type ShapeDraftData = Partial<ShapeDraft> & {
 };
 
 const normalizeDraft = (raw: DraftData<ShapeDraftData> | null): ShapeDraftData => {
-  const basic = normalizeBasicInfo({
-    metadata: raw?.draftMetadata ?? raw?.metadata ?? undefined,
-    draftData: raw?.draftData,
-  });
+  const meta = raw?.draftMetadata ?? raw?.metadata ?? { name: '', description: '', tags: [] };
   const draftData = raw?.draftData ?? {};
   return {
     ...draftData,
-    name: basic.name,
-    description: basic.description,
-    tags: basic.tags,
+    name: meta.name ?? '',
+    description: meta.description ?? '',
+    tags: Array.isArray(meta.tags) ? meta.tags : [],
   };
 };
 

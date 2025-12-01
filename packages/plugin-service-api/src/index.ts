@@ -16,8 +16,6 @@ export * from './types/PluginTreeAPI.js';
 export type {
   DialogProgressState,
   DialogWindowState,
-  PeerDataBase,
   PeerEntityBase,
   PeerStore,
 } from './peer-store/types.js';
-export type { DraftBase } from './draft/types.js';

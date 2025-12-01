@@ -6,10 +6,10 @@ const discardDraft = vi.fn();
 
 vi.mock('@hierarchidb/plugin-ui-sdk', () => ({
   useDialogDraft: vi.fn(() => ({
-    draft: { treeNodeId: 'draft-1', draftMetadata: null, draftData: {} },
+    treeNodeUpdater: { treeNodeId: 'draft-1', draftMetadata: null, draftData: {} },
     hasUnsavedChanges: true,
-    updateDraft: vi.fn(),
-    saveDraft: vi.fn(),
+    updateTreeNodeUpdater: vi.fn(),
+    commitTreeNodeUpdater: vi.fn(),
     discardDraft,
     loading: false,
     error: null,

@@ -90,12 +90,12 @@ export function createEmptyFolderEntity(nodeId: NodeId): FolderEntity {
     depth: 0,
     metadata: {
       name: '',
-      description: undefined,
+      description: '',
       tags: [],
     },
     draftMetadata: {
       name: '',
-      description: undefined,
+      description: '',
       tags: [],
     },
     draftData: {},

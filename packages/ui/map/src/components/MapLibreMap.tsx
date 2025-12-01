@@ -14,6 +14,7 @@ import {
   type MapClickEvent,
   type MapFeatureIdentifyResult,
   type MapFeatureIdentifyConfig,
+  type MapViewState,
 } from '../types/unified-map-props.js';
 import { DEFAULT_IDENTIFY_RADIUS, resolveIdentifyCandidates } from '../lib/feature-identification.js';
 import { loadMapLibreModule } from '../utils/maplibre-loader.js';
@@ -46,11 +47,14 @@ const { mapStyle: defaultMapStyle, interactionOptions: defaultMapOptions } = DEF
 
 export const MapLibreMap: React.FC<MapLibreMapProps> = ({
                                                           initialViewState,
+                                                          viewState,
                                                           mapStyle = defaultMapStyle,
                                                           width = DEFAULT_MAP_CONFIG.dimensions.width,
                                                           height = DEFAULT_MAP_CONFIG.dimensions.height,
                                                           style,
                                                           onLoad,
+                                                          onMove,
+                                                          onMoveEnd,
                                                           onViewStateChange,
                                                           onClick,
                                                           children,
@@ -98,18 +102,24 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
     onLoad?.(map);
   }, [onLoad, controls]);
 
-  const handleViewStateChange = useCallback((event: any) => {
-    if (onViewStateChange) {
-      const { longitude, latitude, zoom, bearing, pitch } = event.viewState;
-      onViewStateChange({
-        longitude,
-        latitude,
-        zoom,
-        bearing,
-        pitch,
-      });
-    }
-  }, [onViewStateChange]);
+  const handleMove = useCallback(
+    (event: any) => {
+      const { longitude, latitude, zoom, bearing, pitch } = event.viewState as MapViewState;
+      const nextState: MapViewState = { longitude, latitude, zoom, bearing, pitch };
+      onMove?.(nextState);
+      onViewStateChange?.(nextState);
+    },
+    [onMove, onViewStateChange]
+  );
+
+  const handleMoveEnd = useCallback(
+    (event: any) => {
+      const { longitude, latitude, zoom, bearing, pitch } = event.viewState as MapViewState;
+      const nextState: MapViewState = { longitude, latitude, zoom, bearing, pitch };
+      onMoveEnd?.(nextState);
+    },
+    [onMoveEnd]
+  );
 
   const handleMapClick = useCallback(
     (event: any) => {
@@ -174,8 +184,10 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
           style={mapStyleForMapLibre}
           mapStyle={resolvedMapStyle}
           initialViewState={initialViewState}
+          viewState={viewState}
           onLoad={handleMapLoad}
-          onMove={handleViewStateChange}
+          onMove={handleMove}
+          onMoveEnd={handleMoveEnd}
           onClick={handleMapClick}
           interactive={mapOptions.interactive}
           scrollZoom={mapOptions.scrollZoom}

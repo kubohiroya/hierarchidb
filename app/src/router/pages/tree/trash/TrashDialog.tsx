@@ -818,12 +818,20 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
     const decorateForIndex = (node: TreeNodeData): TreeNode => {
       const source = nodeMap.get(String(node.id)) ?? (node as unknown as TreeNode);
       const fromTreeData = node as { originalName?: string; originalParentId?: NodeId };
-      const decorated: TreeNode = {
-        ...source,
-        metadata: {
-          ...(source as { metadata?: TreeNode['metadata'] }).metadata,
-          name: getTrashDisplayName(node),
-        },
+        const decorated: TreeNode = {
+          ...source,
+          metadata: {
+            ...(source as { metadata?: TreeNode['metadata'] }).metadata,
+            name: getTrashDisplayName(node),
+            description:
+              ((source as { metadata?: TreeNode['metadata'] }).metadata as
+                | TreeNode['metadata']
+                | undefined)?.description ?? '',
+            tags:
+              ((source as { metadata?: TreeNode['metadata'] }).metadata as
+                | TreeNode['metadata']
+                | undefined)?.tags ?? [],
+          },
         originalName:
           fromTreeData.originalName ??
           (source as { originalName?: string | undefined }).originalName,

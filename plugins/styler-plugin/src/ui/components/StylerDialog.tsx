@@ -17,7 +17,7 @@ import {
   type HeadlessMultiStepDialogProps,
 } from '@hierarchidb/ui-dialog';
 import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
-import { useDialogDraft, normalizeBasicInfo, type DraftData } from '@hierarchidb/plugin-ui-sdk';
+import { useDialogDraft, type DraftData } from '@hierarchidb/plugin-ui-sdk';
 import type { StylerDialogData } from './types.js';
 import type { SpreadsheetDialogData } from '@hierarchidb/spreadsheet-plugin';
 import { StyleSettingsStep } from './steps/StyleSettingsStep.js';
@@ -49,16 +49,13 @@ type StylerDialogDraft = StylerDialogData & {
 };
 
 const normalizeDraft = (raw: DraftData<StylerDialogDraft> | null): StylerDialogDraft => {
-  const basic = normalizeBasicInfo({
-    metadata: raw?.draftMetadata ?? raw?.metadata ?? undefined,
-    draftData: raw?.draftData,
-  });
+  const meta = raw?.draftMetadata ?? raw?.metadata ?? { name: '', description: '', tags: [] };
   const draftData = raw?.draftData ?? {};
   return {
     ...draftData,
-    name: basic.name,
-    description: basic.description,
-    tags: basic.tags,
+    name: meta.name ?? '',
+    description: meta.description ?? '',
+    tags: Array.isArray(meta.tags) ? meta.tags : [],
   };
 };
 

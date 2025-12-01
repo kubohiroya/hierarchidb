@@ -1,20 +1,14 @@
 export { wrapDialogStepComponent } from './dialog/wrapDialogStepComponent.js';
 export {
-  useDraft,
-} from './hooks/useDraft.js';
-export type {
-  UseDraftOptions,
-  UseDraftResult,
-} from './hooks/useDraft.js';
-export {
-  useDialogDraft,
+  useTreeNodeUpdater as useDialogDraft,
+  useTreeNodeUpdater,
 } from './hooks/useDialogDraft.js';
 export type {
-  UseDialogDraftOptions,
-  UseDialogDraftResult,
+  UseTreeNodeUpdaterOptions as UseDialogDraftOptions,
+  UseTreeNodeUpdaterOptions,
+  UseTreeNodeUpdaterResult as UseDialogDraftResult,
+  UseTreeNodeUpdaterResult,
+  TreeNodeUpdaterState,
   DraftData,
 } from './hooks/useDialogDraft.js';
-export type { BasicInfo } from './utils/basicInfo.js';
-export { normalizeBasicInfo, mergeBasicInfo } from './utils/basicInfo.js';
-export { BasicInfoStep } from './dialog/steps/BasicInfoStep.js';
 export type { BasicInfoStepProps } from './dialog/steps/BasicInfoStep.js';
