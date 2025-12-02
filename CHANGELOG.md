@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+- breaking: DraftAPI renamed to TreeNodeUpdaterAPI, `getDraftAPI` removed
+  - WorkerAPI now exposes only `getTreeNodeUpdaterAPI`; no compatibility shim.
+  - Updated runtime-worker, plugin-ui-sdk, plugin-service-sdk, treeconsole, and E2E route spec to use updater API naming.
+  - Typechecks run: common-api build, runtime-worker typecheck, plugin-ui-sdk typecheck, ui-treeconsole-base typecheck, plugin-service-sdk typecheck.
+
 ## 2025-09-04
 
 - tools: vite-plugin-package-reader v0.1.0 — BREAKING: remove default export; use named exports only (e.g., `import { vitePluginPackageReader } from '@hierarchidb/tools-vite-plugin-package-reader'`). No internal usages relied on default export.

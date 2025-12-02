@@ -10,7 +10,7 @@ import { assertCommandSuccess, type CommandResultSuccess } from '../../test-util
 type WorkerTestAPI = {
   getQueryAPI(): Promise<import('@hierarchidb/common-api').TreeQueryAPI>;
   getMutationAPI(): Promise<import('@hierarchidb/common-api').TreeMutationAPI>;
-  getDraftAPI(): Promise<import('@hierarchidb/common-api').DraftAPI>;
+  getTreeNodeUpdaterAPI(): Promise<import('@hierarchidb/common-api').TreeNodeUpdaterAPI>;
   getCommandProcessor(): Promise<import('../../services/CommandProcessor.js').CommandProcessor>;
 };
 
@@ -31,7 +31,7 @@ describe('WFL command processor undo/redo flow', () => {
     const client = Comlink.wrap<WorkerTestAPI>(createEndpointFromMessagePort(port2));
 
     const queryAPI = await client.getQueryAPI();
-    const draftAPI = await client.getDraftAPI();
+    const updaterAPI = await client.getTreeNodeUpdaterAPI();
     const commandProcessor = await client.getCommandProcessor();
 
     const treeId = 'r' as TreeId;
@@ -103,10 +103,10 @@ describe('WFL command processor undo/redo flow', () => {
     const rootChildrenBeforeCommit = new Set(
       (await queryAPI.listChildren(rootId)).map((node) => node.id)
     );
-    const draftId = await draftAPI.initTreeNode('folder' as NodeType, rootId, {
+    const draftId = await updaterAPI.initTreeNode('folder' as NodeType, rootId, {
       metadata: { name: 'UndoRedo Draft' },
     } as Partial<TreeNode>);
-    await draftAPI.updateTreeNodeDraftMetadata(draftId.id as NodeId, { name: 'UndoRedo Draft' });
+    await updaterAPI.updateTreeNodeDraftMetadata(draftId.id as NodeId, { name: 'UndoRedo Draft' });
     await runCommand('commitDraft', {
       draftId: draftId.id,
       onNameConflict: 'auto-rename',

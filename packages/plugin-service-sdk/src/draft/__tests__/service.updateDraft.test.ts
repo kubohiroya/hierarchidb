@@ -4,7 +4,7 @@ import { DialogService } from '../service';
 
 describe('DraftService.updateDraft', () => {
   it('forwards updates to worker API and merges state cache', async () => {
-    const draftAPI = {
+    const updaterAPI = {
       getDraft: vi.fn().mockResolvedValue({
         treeId: 'tree-1',
         nodeType: 'basemap',
@@ -20,7 +20,7 @@ describe('DraftService.updateDraft', () => {
     };
 
     const workerAPI = {
-      getDraftAPI: vi.fn().mockResolvedValue(draftAPI),
+      getTreeNodeUpdaterAPI: vi.fn().mockResolvedValue(updaterAPI),
     };
 
     const service = new DialogService(workerAPI as any);
@@ -37,7 +37,7 @@ describe('DraftService.updateDraft', () => {
 
     const state = await service.updateDraft(nodeId, updates);
 
-    expect(draftAPI.updateTreeNodeDraftData).toHaveBeenCalledWith(nodeId, updates);
+    expect(updaterAPI.updateTreeNodeDraftData).toHaveBeenCalledWith(nodeId, updates);
     expect(state.currentStep).toBe(1);
     expect(state.completedSteps.has(1)).toBe(true);
     expect(state.data).toEqual(updates.data);

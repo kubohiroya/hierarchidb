@@ -5,7 +5,7 @@ import type {
   TreeMutationAPI,
   TreeQueryAPI,
   TreeSubscriptionAPI,
-  DraftAPI,
+  TreeNodeUpdaterAPI,
 } from '@hierarchidb/common-api';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-types';
 import {
@@ -125,7 +125,7 @@ export class WorkerService {
       const iePort = new ImportExportDBPortCoreDBAdapter(coreDB);
       const importExportService: ImportExportAPI = await ImportExportService.getSingleton(iePort);
 
-      const draftService: DraftAPI = new DraftService(
+      const draftService: TreeNodeUpdaterAPI = new DraftService(
         coreDB,
         commandProcessor
       );
@@ -150,14 +150,14 @@ export class WorkerService {
   constructor(
     private coreDB: CoreDB,
     private queryService: TreeQueryAPI,
-    private mutationService: TreeMutationAPI,
-    private subscriptionService: TreeSubscriptionAPI,
-    private importExportService: ImportExportAPI,
-    private draftService: DraftAPI,
-    private tagService: TagAPI,
-    private nodeLifecycleManager: NodeLifecycleManager,
-    private commandProcessor: CommandProcessor,
-    private dialogStateService: DialogStateAPI
+  private mutationService: TreeMutationAPI,
+  private subscriptionService: TreeSubscriptionAPI,
+  private importExportService: ImportExportAPI,
+  private draftService: TreeNodeUpdaterAPI,
+  private tagService: TagAPI,
+  private nodeLifecycleManager: NodeLifecycleManager,
+  private commandProcessor: CommandProcessor,
+  private dialogStateService: DialogStateAPI
   ) {
     this.queryApiFacade = {
       getTree: (treeId: TreeId) => this.queryService.getTree(treeId),
@@ -208,7 +208,7 @@ export class WorkerService {
     return this.subscriptionService;
   }
 
-  getDraftAPI() {
+  getTreeNodeUpdaterAPI() {
     return this.draftService;
   }
 

@@ -13,7 +13,7 @@ type TestWorkerAPI = {
   getQueryAPI(): Promise<import('@hierarchidb/common-api').TreeQueryAPI>;
   getMutationAPI(): Promise<import('@hierarchidb/common-api').TreeMutationAPI>;
   getSubscriptionAPI(): Promise<import('@hierarchidb/common-api').TreeSubscriptionAPI>;
-  getDraftAPI(): Promise<import('@hierarchidb/common-api').DraftAPI>;
+  getTreeNodeUpdaterAPI(): Promise<import('@hierarchidb/common-api').TreeNodeUpdaterAPI>;
 };
 
 type SubscriptionEvent = TreeNodeEvent;
@@ -42,7 +42,7 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     const queryAPI = await client.getQueryAPI();
     const mutationAPI = await client.getMutationAPI();
     const subscriptionAPI = await client.getSubscriptionAPI();
-    const wcAPI = await client.getDraftAPI();
+    const wcAPI = await client.getTreeNodeUpdaterAPI();
 
     const treeId = toTreeId('r');
     const tree = await queryAPI.getTree(treeId);

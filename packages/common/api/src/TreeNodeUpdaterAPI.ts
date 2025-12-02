@@ -1,10 +1,3 @@
-/**
- * Working copy management API for draft and edit operations.
- *
- * Manages working copies for node editing, providing isolation from main data
- * until changes are committed or discarded.
- */
-
 import type {
   CommitResult,
   NodeId,
@@ -15,29 +8,13 @@ import type {
   ValidationResult,
 } from '@hierarchidb/common-types';
 
-export interface CommitDraftOptions {
-  /**
-   * Policy for resolving name conflicts during commit operations.
-   * Defaults to `'auto-rename'` for backward compatibility.
-   */
-  onNameConflict?: OnNameConflict;
-}
-
-export interface DiscardDraftOptions {
-  /**
-   * If true, delete uncommitted drafts even when they still carry draft payloads.
-   * Useful for canceling create flows where the node was never committed.
-   */
-  forceDelete?: boolean;
-}
-
 /**
- * Working copy management API
+ * Tree node updater API (formerly DraftAPI).
  *
- * Provides isolated editing capabilities through working copies that can be
- * committed to or discarded from the main database.
+ * Provides isolated editing capabilities through drafts that can be committed
+ * or discarded without touching the committed tree node until requested.
  */
-export interface DraftAPI {
+export interface TreeNodeUpdaterAPI {
   initTreeNode(
     nodeType: NodeType,
     parentId: NodeId,
@@ -69,6 +46,22 @@ export interface DraftAPI {
   validateDraft(nodeId: NodeId): Promise<ValidationResult>;
 
   hasUnsavedChanges(nodeId: NodeId): Promise<boolean>;
+}
+
+export interface CommitDraftOptions {
+  /**
+   * Policy for resolving name conflicts during commit operations.
+   * Defaults to `'auto-rename'` for backward compatibility.
+   */
+  onNameConflict?: OnNameConflict;
+}
+
+export interface DiscardDraftOptions {
+  /**
+   * If true, delete uncommitted drafts even when they still carry draft payloads.
+   * Useful for canceling create flows where the node was never committed.
+   */
+  forceDelete?: boolean;
 }
 
 // Ensure a runtime-worker module is emitted for NodeNext resolution

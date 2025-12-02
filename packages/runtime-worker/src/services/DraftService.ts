@@ -1,4 +1,4 @@
-import type { CommitDraftOptions, DiscardDraftOptions, DraftAPI } from '@hierarchidb/common-api';
+import type { CommitDraftOptions, DiscardDraftOptions, TreeNodeUpdaterAPI } from '@hierarchidb/common-api';
 import type {
   CommitResult,
   NodeId,
@@ -25,7 +25,7 @@ import {
  * DraftService - minimal implementation backed by CoreDB TreeNodes.
  * Note: This service returns only serializable data. It does not expose ProxyMarked types.
  */
-export class DraftService implements DraftAPI {
+export class DraftService implements TreeNodeUpdaterAPI {
   constructor(
     private coreDB: CoreDB,
     _commandProcessor?: CommandProcessor

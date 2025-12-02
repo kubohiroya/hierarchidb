@@ -1167,7 +1167,7 @@ describe('useTreeViewController', () => {
         getQueryAPI: vi.fn(async () => mockQueryAPI),
         getSubscriptionAPI: vi.fn(async () => mockSubscriptionAPI),
         getMutationAPI: vi.fn(),
-        getDraftAPI: vi.fn(),
+        getTreeNodeUpdaterAPI: vi.fn(),
         getPluginLifecycleAPI: vi.fn(),
         getDialogStateAPI: vi.fn(),
         getImportExportAPI: vi.fn(),

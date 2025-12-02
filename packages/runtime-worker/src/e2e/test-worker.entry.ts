@@ -7,7 +7,7 @@ import type {
   TreeMutationAPI,
   TreeQueryAPI,
   TreeSubscriptionAPI,
-  DraftAPI,
+  TreeNodeUpdaterAPI,
 } from '@hierarchidb/common-api';
 import type { Endpoint as ComlinkEndpoint } from 'comlink';
 import { expose, proxy } from 'comlink';
@@ -26,7 +26,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
     getMutationAPI: (): TreeMutationAPI => proxy(svc.getMutationAPI()),
     getSubscriptionAPI: (): TreeSubscriptionAPI => proxy(svc.getSubscriptionAPI()),
     getImportExportAPI: (): ImportExportAPI => proxy(svc.getImportExportAPI()),
-    getDraftAPI: (): DraftAPI => proxy(svc.getDraftAPI()),
+    getTreeNodeUpdaterAPI: (): TreeNodeUpdaterAPI => proxy(svc.getTreeNodeUpdaterAPI()),
     getDialogStateAPI: (): DialogStateAPI => proxy(svc.getDialogStateAPI()),
     getCommandProcessor: (): CommandProcessor => proxy(svc.getCommandProcessor()),
   };

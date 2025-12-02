@@ -13,7 +13,7 @@ import type {
   TreeQueryAPI,
   TreeSubscriptionAPI,
   WorkerAPI,
-  DraftAPI,
+  TreeNodeUpdaterAPI,
 } from '@hierarchidb/common-api';
 import type { PluginLifecycleAPI } from '@hierarchidb/plugin-service-api';
 import {
@@ -54,7 +54,7 @@ type RuntimeWorkerServices = {
   getQueryAPI: () => TreeQueryAPI;
   getMutationAPI: () => TreeMutationAPI;
   getSubscriptionAPI: () => TreeSubscriptionAPI;
-  getDraftAPI: () => DraftAPI;
+  getTreeNodeUpdaterAPI: () => TreeNodeUpdaterAPI;
   getPluginLifecycleAPI: () => PluginLifecycleAPI;
   getImportExportAPI: () => ImportExportAPI;
   getTagAPI: () => TagAPI;
@@ -232,7 +232,7 @@ reporter.reportStepProgress('Load Comlink', 0);
         getQueryAPI: () => Comlink.proxy(services.getQueryAPI()),
         getMutationAPI: () => Comlink.proxy(services.getMutationAPI()),
         getSubscriptionAPI: () => Comlink.proxy(services.getSubscriptionAPI()),
-        getDraftAPI: () => Comlink.proxy(services.getDraftAPI()),
+    getTreeNodeUpdaterAPI: () => Comlink.proxy(services.getTreeNodeUpdaterAPI()),
         getPluginLifecycleAPI: () => Comlink.proxy(services.getPluginLifecycleAPI()),
         getImportExportAPI: () => Comlink.proxy(services.getImportExportAPI()),
         getTagAPI: () => Comlink.proxy(services.getTagAPI()),

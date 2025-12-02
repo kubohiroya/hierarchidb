@@ -11,7 +11,7 @@ const decodeDraftHolderName = (name: string) => ({ targetNodeId: name as NodeId 
 type TestWorkerAPI = {
   getQueryAPI(): Promise<import('@hierarchidb/common-api').TreeQueryAPI>;
   getMutationAPI(): Promise<import('@hierarchidb/common-api').TreeMutationAPI>;
-  getDraftAPI(): Promise<import('@hierarchidb/common-api').DraftAPI>;
+  getTreeNodeUpdaterAPI(): Promise<import('@hierarchidb/common-api').TreeNodeUpdaterAPI>;
 };
 
 async function createCommittedNode(
@@ -20,7 +20,7 @@ async function createCommittedNode(
   name: string
 ): Promise<NodeId> {
   const mutationAPI = await worker.getMutationAPI();
-  const draftAPI = await worker.getDraftAPI();
+  const updaterAPI = await worker.getTreeNodeUpdaterAPI();
   const queryAPI = await worker.getQueryAPI();
   const treeId = toTreeId('r');
 
@@ -43,7 +43,7 @@ async function createCommittedNode(
 
   const { targetNodeId } = decodeDraftHolderName(holder.metadata.name);
   const canonicalId = targetNodeId as NodeId;
-  const commitRes = await draftAPI.commitDraft(wcNodeId);
+  const commitRes = await updaterAPI.commitDraft(wcNodeId);
   if (commitRes?.status !== 'ok') {
     throw new Error(`commitDraft failed: ${JSON.stringify(commitRes)}`);
   }

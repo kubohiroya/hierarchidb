@@ -46,7 +46,7 @@ const createMockWorkerAPI = () =>
 describe('WorkerAPIAdapter', () => {
   let mockWorkerAPI: any;
   let adapter: WorkerAPIAdapter;
-  let draftAPI: any;
+  let updaterAPI: any;
 
   beforeEach(() => {
     mockWorkerAPI = createMockWorkerAPI();
@@ -61,7 +61,7 @@ describe('WorkerAPIAdapter', () => {
       restoreNodesFromTrash: mockWorkerAPI.restoreFromTrash,
     });
 
-    draftAPI = {
+    updaterAPI = {
       initTreeNode: vi.fn().mockResolvedValue({ id: 'wc-1' }),
       getTreeNode: vi.fn().mockResolvedValue({ id: 'wc-1' }),
       updateTreeNodeDraftMetadata: vi.fn().mockResolvedValue(undefined),
@@ -69,7 +69,7 @@ describe('WorkerAPIAdapter', () => {
       commitDraft: vi.fn().mockResolvedValue({ status: 'ok', nodeId: 'n:1' }),
       discardDraft: vi.fn().mockResolvedValue(undefined),
     };
-    mockWorkerAPI.getDraftAPI = vi.fn().mockResolvedValue(draftAPI);
+    mockWorkerAPI.getTreeNodeUpdaterAPI = vi.fn().mockResolvedValue(updaterAPI);
 
     mockWorkerAPI.getQueryAPI = vi.fn().mockReturnValue({
       getNode: vi.fn().mockResolvedValue({ id: 'test-node', updatedAt: Date.now() }),
@@ -215,8 +215,8 @@ describe('WorkerAPIAdapter', () => {
         }),
       );
 
-      expect(draftAPI.updateTreeNodeDraftMetadata).not.toHaveBeenCalled();
-      expect(draftAPI.updateTreeNodeDraftData).not.toHaveBeenCalled();
+      expect(updaterAPI.updateTreeNodeDraftMetadata).not.toHaveBeenCalled();
+      expect(updaterAPI.updateTreeNodeDraftData).not.toHaveBeenCalled();
     });
 
     it('should handle startNodeCreate correctly', async () => {

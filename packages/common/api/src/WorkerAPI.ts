@@ -1,4 +1,4 @@
-import type { DraftAPI } from './DraftAPI.js';
+import type { TreeNodeUpdaterAPI } from './TreeNodeUpdaterAPI.js';
 import type { DialogStateAPI } from './DialogStateAPI.js';
 import type { ImportExportAPI } from './ImportExportAPI.js';
 import type { PluginLifecycleAPI } from '@hierarchidb/plugin-service-api';
@@ -40,7 +40,7 @@ export interface WorkerAPI {
   getMutationAPI(): Promise<TreeMutationAPI>;
   getQueryAPI(): Promise<TreeQueryAPI>;
   getSubscriptionAPI(): Promise<TreeSubscriptionAPI>;
-  getDraftAPI(): Promise<DraftAPI>;
+  getTreeNodeUpdaterAPI(): Promise<TreeNodeUpdaterAPI>;
   getImportExportAPI(): Promise<ImportExportAPI>;
   getTagAPI(): Promise<TagAPI>;
   getDialogStateAPI(): Promise<DialogStateAPI>;

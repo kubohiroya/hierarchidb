@@ -11,7 +11,7 @@ const decodeDraftHolderName = (name: string) => ({ targetNodeId: name as NodeId 
 type TestWorkerAPI = {
   getQueryAPI(): Promise<import('@hierarchidb/common-api').TreeQueryAPI>;
   getMutationAPI(): Promise<import('@hierarchidb/common-api').TreeMutationAPI>;
-  getDraftAPI(): Promise<import('@hierarchidb/common-api').DraftAPI>;
+  getTreeNodeUpdaterAPI(): Promise<import('@hierarchidb/common-api').TreeNodeUpdaterAPI>;
 };
 
 async function waitFor<T>(
@@ -37,7 +37,7 @@ describe('Comlink + fake-indexeddb integration: partial trash restore flow', () 
 
     const queryAPI = await client.getQueryAPI();
     const mutationAPI = await client.getMutationAPI();
-    const draftAPI = await client.getDraftAPI();
+    const updaterAPI = await client.getTreeNodeUpdaterAPI();
 
     const treeId = toTreeId('r');
     const tree = await queryAPI.getTree(treeId);
@@ -75,7 +75,7 @@ describe('Comlink + fake-indexeddb integration: partial trash restore flow', () 
       const { targetNodeId } = decodeDraftHolderName(holder.metadata.name);
       const canonicalId = targetNodeId as NodeId;
 
-      const commitResult = await draftAPI.commitDraft(createResult.nodeId);
+      const commitResult = await updaterAPI.commitDraft(createResult.nodeId);
       expect(commitResult.status).toBe('ok');
       await waitFor(async () => {
         const committed = await queryAPI.getNode(canonicalId);

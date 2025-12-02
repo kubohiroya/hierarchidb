@@ -57,8 +57,8 @@ export class DialogService<T> {
 
   async loadDraft<T>(nodeId: NodeId): Promise<DialogState<T>|null> {
     try {
-      const draftAPI = await this.workerAPI.getDraftAPI();
-      const treeNode = await draftAPI.getTreeNode(nodeId);
+      const updaterAPI = await this.workerAPI.getTreeNodeUpdaterAPI();
+      const treeNode = await updaterAPI.getTreeNode(nodeId);
 
       if (!treeNode) {
         throw new Error(`TreeNode not found: ${nodeId}`);
@@ -79,8 +79,8 @@ export class DialogService<T> {
     updates: DialogState<T>,
   ): Promise<DialogState<T>> {
     try {
-      const draftAPI = await this.workerAPI.getDraftAPI();
-      await draftAPI.updateTreeNodeDraftData(
+      const updaterAPI = await this.workerAPI.getTreeNodeUpdaterAPI();
+      await updaterAPI.updateTreeNodeDraftData(
         nodeId,
         updates as unknown as Record<string, unknown>
       );
@@ -154,8 +154,8 @@ export class DialogService<T> {
     options?: CommitDraftOptions,
   ): Promise<NodeId> {
     try {
-      const draftAPI = await this.workerAPI.getDraftAPI();
-      const result = await draftAPI.commitDraft(nodeId, options);
+      const updaterAPI = await this.workerAPI.getTreeNodeUpdaterAPI();
+      const result = await updaterAPI.commitDraft(nodeId, options);
 
       if (result.status === 'ok') {
         const canonicalId = (result.nodeId as NodeId | undefined) ?? nodeId;
@@ -209,8 +209,8 @@ export class DialogService<T> {
 
   async discardDraft(nodeId: NodeId, options?: DiscardDraftOptions): Promise<void> {
     try {
-      const draftAPI = await this.workerAPI.getDraftAPI();
-      await draftAPI.discardDraft(nodeId, options);
+      const updaterAPI = await this.workerAPI.getTreeNodeUpdaterAPI();
+      await updaterAPI.discardDraft(nodeId, options);
 
       this.stateCache.delete(nodeId);
       this.subscribers.delete(nodeId as string);

@@ -7,7 +7,7 @@ import {
   TreeNodeMetadata,
   TreeNodeUpdaterPayload,
 } from '@hierarchidb/common-types';
-import type { DiscardDraftOptions, DraftAPI, TreeQueryAPI } from '@hierarchidb/common-api';
+import type { DiscardDraftOptions, TreeNodeUpdaterAPI, TreeQueryAPI } from '@hierarchidb/common-api';
 import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import { Remote } from 'comlink';
@@ -125,10 +125,10 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
     };
   }, []);
 
-  const getClient = useCallback(async (): Promise<{ wc: DraftAPI; query: TreeQueryAPI; remote: Remote<WorkerAPI> }> => {
+  const getClient = useCallback(async (): Promise<{ wc: TreeNodeUpdaterAPI; query: TreeQueryAPI; remote: Remote<WorkerAPI> }> => {
     if (!workerClient) throw new Error('Worker client not initialized');
     const api = workerClient.getAPI();
-    const wc = await api.getDraftAPI();
+    const wc = await api.getTreeNodeUpdaterAPI();
     const query = await api.getQueryAPI();
     return { wc, query, remote: api };
   }, [workerClient]);

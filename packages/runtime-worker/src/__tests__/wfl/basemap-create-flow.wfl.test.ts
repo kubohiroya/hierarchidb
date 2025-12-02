@@ -7,7 +7,7 @@ import type {
   TreeMutationAPI,
   TreeQueryAPI,
   TreeSubscriptionAPI,
-  DraftAPI,
+  TreeNodeUpdaterAPI,
 } from '@hierarchidb/common-api';
 import { createEndpointFromMessagePort } from '../../e2e/test-utils/messagePortEndpoint.js';
 import { exposeTestAPI } from '../../e2e/test-worker.entry.js';
@@ -16,7 +16,7 @@ type TestWorkerAPI = {
   getQueryAPI(): Promise<TreeQueryAPI>;
   getMutationAPI(): Promise<TreeMutationAPI>;
   getSubscriptionAPI(): Promise<TreeSubscriptionAPI>;
-  getDraftAPI(): Promise<DraftAPI>;
+  getTreeNodeUpdaterAPI(): Promise<TreeNodeUpdaterAPI>;
 };
 
 describe('Comlink + fake-indexeddb: basemap create flow persists data', () => {
@@ -27,10 +27,10 @@ describe('Comlink + fake-indexeddb: basemap create flow persists data', () => {
       await exposeTestAPI(createEndpointFromMessagePort(port1));
       const client = Comlink.wrap<TestWorkerAPI>(createEndpointFromMessagePort(port2));
 
-      const [queryAPI, mutationAPI, draftAPI] = await Promise.all([
+      const [queryAPI, mutationAPI, updaterAPI] = await Promise.all([
         client.getQueryAPI(),
         client.getMutationAPI(),
-        client.getDraftAPI(),
+        client.getTreeNodeUpdaterAPI(),
       ]);
 
       const treeId: TreeId = toTreeId('r');
@@ -50,15 +50,15 @@ describe('Comlink + fake-indexeddb: basemap create flow persists data', () => {
       const wcId = createRes.nodeId as NodeId;
 
       // Step2: fill map style (draftData)
-      await draftAPI.updateTreeNodeDraftData(wcId, { mapStyle: { style: 'streets' } });
-      await draftAPI.updateTreeNodeDraftMetadata(wcId, { name: 'Basemap WFL', description: 'demo', tags: [] });
+      await updaterAPI.updateTreeNodeDraftData(wcId, { mapStyle: { style: 'streets' } });
+      await updaterAPI.updateTreeNodeDraftMetadata(wcId, { name: 'Basemap WFL', description: 'demo', tags: [] });
 
       // Step3: fill viewport and commit (Save/Create button相当)
-      await draftAPI.updateTreeNodeDraftData(wcId, {
+      await updaterAPI.updateTreeNodeDraftData(wcId, {
         mapStyle: { style: 'streets' },
         viewport: { center: [0, 0], zoom: 2, bearing: 0, pitch: 0 },
       });
-      const commitRes = await draftAPI.commitDraft(wcId);
+      const commitRes = await updaterAPI.commitDraft(wcId);
       expect(commitRes.status).toBe('ok');
 
       const canonical = await queryAPI.getNode(wcId);

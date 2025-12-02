@@ -1,112 +1,55 @@
-# プラグイン層アーキテクチャ図
+# プラグイン層アーキテクチャ図（2025-12 更新）
 
-以下では、プラグイン実装に関わる 6 層を色分けし、現状の構成と理想的な共通アーキテクチャ像を整理します。
+TreeNodeUpdaterAPI / useDialogDraft への一本化を踏まえ、プラグイン間で共通化すべき層と接続点を整理します。
 
-## 凡例
-- 🟥 UI ホスト層 (a)
-- 🟧 UI プラグイン層／プロキシーファクトリ (b)
-- 🟨 Worker 共通フレームワーク (c)
-- 🟩 Worker プラグイン固有サービス (d)
-- 🟦 Worker データベース／スキーマ (e)
-- 🟪 孫 Worker（バッチ処理用 Comlink ワーカー）(f)
+## 凡例（共通の 6 層）
+- 🟥 UI ホスト: app shell + plugin-ui-host（HeadlessMultiStepDialog）
+- 🟧 UI プラグイン: ダイアログ/ステップ/アイコン（useDialogDraft + TreeNodeUpdaterAPI）
+- 🟨 Worker 共通: runtime-worker bootstrap（wirePluginsFromModules, DraftService, Query/Mutation/Subscription）
+- 🟩 Worker ドメイン: EntityHandler / BatchManager / Lifecycle
+- 🟦 Worker Dexie: プラグイン専用スキーマ/ストア
+- 🟪 Stage Worker: 孫Worker（バッチ/タイル/処理系）
 
----
+## 共通リファレンスフロー
+```
+🟥 UI host (HeadlessMultiStepDialog)
+   └─ useDialogDraft (TreeNodeUpdaterAPI)
+      ├ updateTreeNodeDraftMetadata
+      ├ updateTreeNodeDraftData
+      └ commitDraft / discardDraft
+🟨 runtime-worker DraftService (TreeNodeUpdaterAPI impl)
+   └─ CoreDB.nodes draftMetadata/draftData マージ
+🟩 EntityHandler / BatchManager
+   └─ QueryAPI / MutationAPI / StageProcessingFacade を利用
+🟦 Dexie schema
+🟪 Stage worker (必要な場合のみ)
+```
 
-## 現状: shape プラグイン
+## プラグイン別の接続状況と次アクション
+- **linker (🟧未実装)**: ダイアログ追加時は useDialogDraft + TreeNodeUpdaterAPI を必須化し、draftMetadata/draftData を唯一の経路にする。Stage worker は不要ならスキップ。
+- **location (部分的)**: 独自更新をやめ、MultiStep 化して onUpdate→useDialogDraft→updateTreeNodeDraftData/Metadata に統一。進捗/プレビューも draftData から描画。
+- **shape (legacy doc)**: WorkingCopy 表記を削除し、TreeNodeUpdater 用語に置換。UI/Worker を useDialogDraft + DraftService 経路へリプレース。stageWorker 呼び出しも Facade 経由に整理。
+- **styler (未マルチステップ)**: ダイアログ導入時に useDialogDraft を先に組み込み、スタイル一時データを draftData に集約。commit は TreeNodeUpdaterAPI 経由。プレビューもドラフトから参照。
+- **timeline (未導入)**: 実装開始時に TreeNodeUpdaterAPI を前提としたダイアログ骨格を用意し、ファイル取込/プレビューを draftData ベースにする。
+- **resolver/route/basemap/spreadsheet**: 既に draftMetadata/draftData 経路で統一済み。維持。
+
+## 理想的な層構成（全プラグイン共通の型）
 ```
 🟥 App Shell / RuntimeWiring
-   │  registerRuntimeWorkerAdapters (flag)
-   ▼
-🟧 ShapeRuntimeWorkerClient (薄いファクトリ)
-   │  ↳ registerShapeRuntimeWorkerClient()
-   ▼
-🟨 runtime-worker StageProcessingService (getStageProcessingClient)
-   │  ↳ singleton fallback
-   └─(flag ON)→ createStageWorkerClient() → Comlink wrap
-          │
-          ▼
-🟪 stageWorker.entry.js (孫Worker)
-   │  exposes download/simplify/vectortile
-   ▼
-🟩 Shape SessionController / EntityHandler
-   │  call client.download/simplify/…
-   ▼
-🟦 Shape Dexie DB 群
+   └─ PluginDefinition → plugin-registry → UI/Worker エントリ解決
+🟧 UI Plugin (useDialogDraft + TreeNodeUpdaterAPI)
+   └─ Step onUpdate → draftMetadata/draftData にマージ
+🟨 runtime-worker bootstrap (wirePluginsFromModules)
+   └─ registerRuntimeExports({ createEntityHandler, lifecycle, batch? })
+🟩 Plugin Worker Services (EntityHandler / BatchManager)
+   └─ Query/Mutation/Subscription API, StageProcessingFacade を利用
+🟦 Dexie schema (storeRegistry.registerPeer)
+🟪 Stage worker (必要時のみ Comlink.expose)
 ```
 
-## 現状: location プラグイン
-```
-🟥 App Shell / RuntimeWiring
-   │  registerLocationRuntimeWorkerAdapters (flag)
-   ▼
-🟧 (欠如) — 直接呼び出し
-   │
-   ▼
-🟨 runtime-worker StageProcessingService
-   │  getStageProcessingClient() 直呼び
-   └─(flag ON)→ createStageWorkerClient() 呼ぶだけ（戻り値未配線）
-          │
-          ▼
-🟪 stageWorker.entry.js
-   │  vectortile API 提供
-   ▼
-🟩 Location SessionController
-   │  getStageProcessingClient() を毎回取得
-   ▼
-🟦 Location Dexie DB 群
-```
-
-## 現状: route プラグイン
-```
-🟥 App Shell / RuntimeWiring
-   │  registerRouteRuntimeWorkerAdapters (flag)
-   ▼
-🟧 (欠如) — プレースホルダのみ
-   │
-   ▼
-🟨 runtime-worker StageProcessingService
-   │  createStageWorkerClient() 呼ぶのみ
-   └─戻り値未利用
-          │
-          ▼
-🟪 stageWorker.entry.js
-   │
-   ▼
-🟩 Route BatchManager / EntityHandler / Lifecycle
-   │  既存処理は同期ルートのみ
-   ▼
-🟦 Route Dexie DB 群
-```
-
-## 理想像: プラグイン共通アーキテクチャ
-```
-🟥 App Shell / RuntimeWiring
-   │  ├─ load PluginDefinition (flag 判定)
-   │  └─ RuntimeWorkerFactory.register(nodeType, factory)
-   ▼
-🟧 PluginRuntimeWorkerFactory (共通)
-  │  ├─ getClient(nodeType) -> StageProcessingFacade
-  │  └─ registerAdapter(nodeType, provider)
-   ▼
-🟨 runtime-worker Bootstrap (wirePluginsFromModules)
-   │  ├─ registerRuntimeExports(nodeType, { createEntityHandler, createBatchManager, lifecycle })
-   │  └─ expose StageProcessingService API
-   ▼
-🟩 Plugin Worker Services
-   │  ├─ EntityHandler / BatchManager (Comlink 対応)
-   │  └─ Lifecycle hooks
-   ▼
-🟦 Plugin Dexie Schemas
-   │  └─ storeRegistry.registerPeer(nodeType, schema)
-   ▼
-🟪 Stage Worker (孫Worker)
-   │  ├─ Comlink.expose({ download, simplify, vectortile, … })
-   │  └─ 共通 StageProcessingService 実装
-```
-
----
-
-## 次のアクション指針
-1. プラグインごとに欠落している層（特に 🟧 層）に空のファクトリコードを配置し、処理の流れを結線する。
-2. 共通となるファクトリ API を整備し、各プラグインで横展開する。
-3. Worker 側の `wirePluginsFromModules` で取得するエクスポートを標準化し、RuntimeWorkerFactory と連携させる。
+## 実装チェックリスト
+- UI: useDialogDraft 経由で TreeNodeUpdaterAPI の update/commit を呼んでいるか
+- Worker: DraftService( TreeNodeUpdaterAPI ) 経由で draftMetadata/draftData をマージしているか
+- Export: plugin-registry で UI/Worker/Icon/DB entry を登録しているか
+- Stage worker: 孫Workerが必要な場合のみ Facade を経由させ、直接 import しない
+- 用語: working copy / DraftAPI は使用しない。draftMetadata/draftData / TreeNodeUpdaterAPI に統一

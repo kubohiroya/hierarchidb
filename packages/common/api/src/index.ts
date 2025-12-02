@@ -32,4 +32,4 @@ export type {
 } from './TreeQueryAPI.js';
 export type { TreeSubscriptionAPI } from './TreeSubscriptionAPI.js';
 export type { WorkerAPI } from './WorkerAPI.js';
-export type { CommitDraftOptions, DiscardDraftOptions, DraftAPI } from './DraftAPI.js';
+export type { CommitDraftOptions, DiscardDraftOptions, TreeNodeUpdaterAPI } from './TreeNodeUpdaterAPI.js';

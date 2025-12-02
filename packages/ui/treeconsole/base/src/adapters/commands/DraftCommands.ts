@@ -47,16 +47,16 @@ export class DraftCommandsAdapter {
     options: CommandAdapterOptions,
   ): Promise<DraftEditSession> {
     try {
-      const draftAPI = await this.workerAPI.getDraftAPI();
+      const updaterAPI = await this.workerAPI.getTreeNodeUpdaterAPI();
       // Subscription API is expected to keep UI-side node snapshot fresh.
       // If caller provides the latest snapshot, use it; otherwise no extra fetch.
       const currentNodeData = options.context?.nodeSnapshot as TreeNode | undefined;
       const draftId = sourceNodeId;
       if (currentNodeData?.metadata) {
-        await draftAPI.updateTreeNodeDraftMetadata(sourceNodeId, currentNodeData.metadata);
+        await updaterAPI.updateTreeNodeDraftMetadata(sourceNodeId, currentNodeData.metadata);
       }
       if (currentNodeData?.data) {
-        await draftAPI.updateTreeNodeDraftData(sourceNodeId, currentNodeData.data as Record<string, unknown>);
+        await updaterAPI.updateTreeNodeDraftData(sourceNodeId, currentNodeData.data as Record<string, unknown>);
       }
 
       return {
@@ -90,8 +90,8 @@ export class DraftCommandsAdapter {
     _options: CommandAdapterOptions,
   ): Promise<DraftEditSession> {
     try {
-      const draftAPI = await this.workerAPI.getDraftAPI();
-      const draft = await draftAPI.initTreeNode(
+      const updaterAPI = await this.workerAPI.getTreeNodeUpdaterAPI();
+      const draft = await updaterAPI.initTreeNode(
         toNodeType(nodeType),
         parentId,
         { metadata: { name } } as Partial<TreeNode>,
@@ -142,9 +142,9 @@ export class DraftCommandsAdapter {
         },
       );
 
-      const draftAPI = await this.workerAPI.getDraftAPI();
+      const updaterAPI = await this.workerAPI.getTreeNodeUpdaterAPI();
       const commitOptions = this.resolveCommitOptions(options);
-      const result = await draftAPI.commitDraft(
+      const result = await updaterAPI.commitDraft(
         command.payload.draftId as NodeId,
         commitOptions,
       );
@@ -226,9 +226,9 @@ export class DraftCommandsAdapter {
         },
       );
 
-      const draftAPI = await this.workerAPI.getDraftAPI();
+      const updaterAPI = await this.workerAPI.getTreeNodeUpdaterAPI();
       const commitOptions = this.resolveCommitOptions(options);
-      const result = await draftAPI.commitDraft(
+      const result = await updaterAPI.commitDraft(
         command.payload.draftId as NodeId,
         commitOptions,
       );
@@ -304,8 +304,8 @@ export class DraftCommandsAdapter {
         },
       );
 
-      const draftAPI = await this.workerAPI.getDraftAPI();
-      await draftAPI.discardDraft(command.payload.draftId as NodeId);
+      const updaterAPI = await this.workerAPI.getTreeNodeUpdaterAPI();
+      await updaterAPI.discardDraft(command.payload.draftId as NodeId);
     } catch (error) {
       throw new TreeConsoleAdapterError(
         `Failed to discard draft ${editSession.draftId}`,

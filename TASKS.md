@@ -3729,6 +3729,11 @@ P2:
   - ロールバック手順：`packages/runtime/worker/src/services/DraftTreeNodeOperations.ts` を削除し、`WorkingCopyTreeNodeOperations` への import に戻した上で `pnpm --filter @hierarchidb/runtime-worker build` を再実行してエラー再発を確認する。
 - 1525) common-api DraftAPI import 解消（P0） — 完了 (2025-11-23)
   - 要点：DraftAPI.ts が型のみで JS 出力されず NodeNext 解決に失敗していたため、`export {}` を追加してモジュールを強制出力し、`./DraftAPI.js` がビルドで解決されるようにした。
+
+- 2025-12-XX done: breaking-change TreeNodeUpdaterAPI への改名
+  - 内容: DraftAPI を完全撤廃し、TreeNodeUpdaterAPI にリネーム。WorkerAPI の `getDraftAPI` を削除し `getTreeNodeUpdaterAPI` のみ提供。関連パッケージ（runtime-worker / plugin-ui-sdk / plugin-service-sdk / treeconsole / e2e）を全て updaterAPI へ置換し、typecheck 通過を確認。
+  - 破壊的変更: 旧メソッド/型は互換提供なし。利用側は `getTreeNodeUpdaterAPI` と TreeNodeUpdaterAPI 型へ移行すること。
+  - 検証: `pnpm --filter @hierarchidb/common-api build`、`pnpm --filter @hierarchidb/runtime-worker typecheck`、`pnpm --filter @hierarchidb/plugin-ui-sdk typecheck`、`pnpm --filter @hierarchidb/ui-treeconsole-base typecheck`、`pnpm --filter @hierarchidb/plugin-service-sdk typecheck` すべて成功。
   - 検証：`pnpm --filter @hierarchidb/common-api build`（2025-11-23 23:55 JST）exit 0。tsdown 警告（define 無効キー）は既存設定の情報のみ。
   - ロールバック手順：`packages/common/api/src/DraftAPI.ts` の `export {}` 追加を revert し、`pnpm --filter @hierarchidb/common-api build` を再実行して未解決エラーが再発することを確認する。
 - 1524) plugin draft lint エラー解消（P0） — 完了 (2025-11-23)
