@@ -15,7 +15,7 @@ export interface LocationPanelProps {
 }
 
 export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) => {
-  const { translations, locale } = useTranslation();
+  const { translations } = useTranslation();
 
   const entity = useMemo<LocationEntity>(() => ({
     id: nodeId,
@@ -24,16 +24,7 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
     licenseAgreement: true,
     selectionMatrix: [],
     concurrentDownloads: 2,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-    version: 1,
   }), [nodeId]);
-
-  const formatDate = (timestamp?: number) => {
-    if (!timestamp) return '-';
-    const formatterLocale = locale === 'ja' ? 'ja-JP' : 'en-US';
-    return new Date(timestamp).toLocaleString(formatterLocale);
-  };
 
   return (
     <Grid container direction="column" wrap="nowrap" sx={{ height: '100%' }}>
@@ -100,13 +91,13 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
                 <ListItem>
                   <ListItemText
                     primary={translations.panel.createdAt}
-                    secondary={formatDate(entity.createdAt)}
+                    secondary="-"
                   />
                 </ListItem>
                 <ListItem>
                   <ListItemText
                     primary={translations.panel.updatedAt}
-                    secondary={formatDate(entity.updatedAt)}
+                    secondary="-"
                   />
                 </ListItem>
               </List>

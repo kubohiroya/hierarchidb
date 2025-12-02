@@ -3,7 +3,7 @@
  * Aligns shape-plugin with the common Draft API flow (basemap-style).
  */
 
-import type { TreeId, TreeNode, TreeNodeMetadata, Timestamp } from '@hierarchidb/common-types';
+import type { TreeId, TreeNode, TreeNodeMetadata } from '@hierarchidb/common-types';
 import { toNodeType } from '@hierarchidb/common-types';
 import type { DataSourceName, NodeId } from '../../common/shared/index.js';
 import {
@@ -72,7 +72,6 @@ export class ShapeEntityService {
         : {};
     const payloadRecord = payload as Record<string, unknown>;
     const metadata = ((node as { metadata?: TreeNodeMetadata }).metadata ?? {}) as TreeNodeMetadata;
-    const now = Date.now() as Timestamp;
     const dataSource =
       normalizeDataSourceName((payloadRecord as { dataSourceName?: unknown }).dataSourceName as
         | DataSourceName
@@ -110,15 +109,6 @@ export class ShapeEntityService {
       processingStatus:
         (payloadRecord as { processingStatus?: ShapeEntity['processingStatus'] }).processingStatus ??
         'idle',
-      createdAt:
-        (node as { createdAt?: number }).createdAt !== undefined
-          ? ((node as { createdAt?: number }).createdAt as Timestamp)
-          : now,
-      updatedAt:
-        (node as { updatedAt?: number }).updatedAt !== undefined
-          ? ((node as { updatedAt?: number }).updatedAt as Timestamp)
-          : now,
-      version: (node as { version?: number }).version ?? (payloadRecord as { version?: number }).version ?? 1,
     };
   }
 
@@ -127,7 +117,8 @@ export class ShapeEntityService {
     payload: ShapeEntity,
     metadataPatch?: Partial<TreeNodeMetadata>,
   ): Promise<void> {
-    const { version: _omitVersion, ...payloadWithoutVersion } = payload;
+    const { version: _omitVersion, createdAt: _omitCreatedAt, updatedAt: _omitUpdatedAt, ...payloadWithoutVersion } =
+      payload as ShapeEntity & { createdAt?: number; updatedAt?: number; version?: number };
     const coreDB = await this.ensureCoreDB();
     if (metadataPatch && Object.keys(metadataPatch).length > 0) {
       await updateTreeNodeDraftMetadata(coreDB, nodeId, metadataPatch);
@@ -136,7 +127,6 @@ export class ShapeEntityService {
   }
 
   private buildEntity(nodeId: NodeId, data: Partial<CreateShapeData>, base?: ShapeEntity): ShapeEntity {
-    const now = Date.now() as Timestamp;
     const mergedProcessing = mergeProcessingConfig(
       data.processingConfig ?? base?.processingConfig ?? DEFAULT_PROCESSING_CONFIG,
     );
@@ -161,9 +151,6 @@ export class ShapeEntityService {
       urlMetadata: base?.urlMetadata ?? [],
       tabularMetadataId: base?.tabularMetadataId,
       tabularFilters: base?.tabularFilters,
-      createdAt: base?.createdAt ?? now,
-      updatedAt: now,
-      version: (base?.version ?? 0) + 1,
     };
   }
 
@@ -307,7 +294,6 @@ export class ShapeEntityService {
       checkboxState: Array.isArray(mergedCheckboxState) || typeof mergedCheckboxState === 'string'
         ? mergedCheckboxState
         : parseCheckboxState(mergedCheckboxState as any),
-      updatedAt: Date.now() as Timestamp,
     };
 
     await this.writeDraft(draftId, updated, {
@@ -337,15 +323,10 @@ export class ShapeEntityService {
       typeof draft.checkboxState === 'string' || Array.isArray(draft.checkboxState)
         ? draft.checkboxState
         : parseCheckboxState(draft.checkboxState as any);
-    const now = Date.now() as Timestamp;
     const payload: ShapeEntity = {
       ...draft,
       id: nodeId,
       nodeId,
-        createdAt: draft.createdAt ?? now,
-        updatedAt: draft.updatedAt ?? now,
-        // version:0 is the draft-only state used by shared discard logic; keep it if absent.
-        version: draft.version ?? 0,
       checkboxState: parsedCheckbox,
     };
     await this.writeDraft(nodeId, payload, {

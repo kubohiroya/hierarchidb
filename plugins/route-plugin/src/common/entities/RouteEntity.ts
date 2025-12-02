@@ -3,7 +3,7 @@
  * @description Route entity definition extending Shape plugin
  */
 
-import type { BaseEntity, NodeId, Timestamp, TreeNodeUpdaterPayload } from '@hierarchidb/common-types';
+import type { NodeId, TreeNodeUpdaterPayload } from '@hierarchidb/common-types';
 export const ROUTE_TYPES = {
   ROAD: 'road',
   RAILWAY: 'railway',
@@ -53,7 +53,7 @@ export interface RouteCategory {
 /**
  * Route entity extending base and metadata entities
  */
-export interface RouteEntity extends BaseEntity {
+export interface RouteEntity {
   // Entity ID
   id: NodeId;
   nodeId: NodeId;
@@ -68,9 +68,6 @@ export interface RouteEntity extends BaseEntity {
   // Metadata fields
   metadata?: Record<string, any>;
   customFields?: Record<string, any>;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  version: number;
 
   // Hybrid location management
   startLocationId?: NodeId;     // Location plugin reference

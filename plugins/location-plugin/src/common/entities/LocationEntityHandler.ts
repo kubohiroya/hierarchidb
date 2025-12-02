@@ -36,17 +36,12 @@ export class LocationEntityHandler {
   }
 
   protected buildEntity(nodeId: NodeId, entityId: NodeId, data: CreateLocationData): LocationEntity {
-    const now = Date.now() as Timestamp;
-
     return {
       id: entityId,
       nodeId,
-      createdAt: now,
-      updatedAt: now,
-      version: 1,
       dataSource: data.dataSource,
       licenseAgreement: Boolean(data.licenseAgreement),
-      licenseAgreedAt: data.licenseAgreement ? (data.licenseAgreedAt ?? now) : data.licenseAgreedAt,
+      licenseAgreedAt: data.licenseAgreement ? (data.licenseAgreedAt ?? Date.now() as Timestamp) : data.licenseAgreedAt,
       selectionMatrix: cloneMatrix(data.selectionMatrix),
       concurrentDownloads: data.concurrentDownloads ?? 2,
       batchSessionId: data.batchSessionId,
@@ -67,16 +62,12 @@ export class LocationEntityHandler {
     const base = {
       treeNodeId: entity.nodeId,
       draft,
-      createdAt: entity.createdAt,
-      updatedAt: entity.updatedAt,
-      originalVersion: entity.version,
     };
 
     return { ...draft, ...base } as LocationDraft;
   }
 
   async createNewDraftBase(nodeId?: NodeId): Promise<LocationDraft> {
-    const now = Date.now() as Timestamp;
     const targetNodeId = nodeId ?? (crypto.randomUUID() as unknown as NodeId);
 
     const draft: Partial<LocationEntity> = {
@@ -90,17 +81,12 @@ export class LocationEntityHandler {
       concurrentDownloads: 2,
       batchSessionId: undefined,
       lastProcessedAt: undefined,
-      createdAt: now,
-      updatedAt: now,
-      version: 1,
       processingStatus: 'pending',
     };
 
     const base = {
       treeNodeId: targetNodeId,
       draft: draft as LocationEntity,
-      createdAt: now,
-      updatedAt: now,
     };
 
     return { ...draft, ...base } as LocationDraft;
@@ -119,7 +105,6 @@ export class LocationEntityHandler {
       throw new Error(`Location entity not found: ${treeNodeId}`);
     }
 
-    const updatedAt = Date.now() as Timestamp;
     const merged: LocationEntity = {
       ...existing,
       ...updates,
@@ -127,7 +112,6 @@ export class LocationEntityHandler {
       features: updates.features ?? existing.features ?? [],
       tabularSourceId: updates.tabularSourceId ?? existing.tabularSourceId,
       extractConfig: updates.extractConfig ?? existing.extractConfig,
-      updatedAt,
     };
 
     await this.table.put(merged, merged.nodeId);
@@ -135,9 +119,6 @@ export class LocationEntityHandler {
     const base = {
       treeNodeId: merged.nodeId,
       draft: merged,
-      createdAt: merged.createdAt,
-      updatedAt: merged.updatedAt,
-      originalVersion: merged.version,
     };
 
     return { ...merged, ...base } as LocationDraft;

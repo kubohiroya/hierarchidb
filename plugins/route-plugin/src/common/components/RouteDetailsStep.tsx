@@ -39,7 +39,6 @@ export const RouteDetailsStep: React.FC<RouteDetailsStepProps> = ({
     (updates: Partial<RouteEntity>) => {
       onUpdate({
         ...updates,
-        updatedAt: Date.now(),
       });
     },
     [onUpdate],

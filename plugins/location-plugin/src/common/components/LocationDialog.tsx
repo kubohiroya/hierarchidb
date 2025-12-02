@@ -3,7 +3,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { NodeId, Timestamp, TreeId } from '@hierarchidb/common-types';
+import type { NodeId, TreeId } from '@hierarchidb/common-types';
 import { Box, Button, Grid, Typography } from '@mui/material';
 import { LocationOn } from '@mui/icons-material';
 import type {
@@ -73,7 +73,6 @@ const MAX_CONCURRENCY = 16;
 type LocationDraftPayload = Partial<LocationEntity>;
 
 const normalizeLocationDraft = (raw: DraftData<LocationEntity> | null): LocationDraft => {
-  const now = Date.now() as Timestamp;
   const draftData = (raw?.draftData ?? {}) as LocationDraftPayload;
 
   const normalizedDraft: LocationDraftPayload = {
@@ -83,8 +82,6 @@ const normalizeLocationDraft = (raw: DraftData<LocationEntity> | null): Location
   return {
     treeNodeId: (raw?.treeNodeId ?? '') as NodeId,
     draft: normalizedDraft,
-    createdAt: (raw as { createdAt?: Timestamp })?.createdAt ?? now,
-    updatedAt: (raw as { updatedAt?: Timestamp })?.updatedAt ?? now,
     tags: undefined,
     dataSource: normalizedDraft.dataSource,
     tabularSourceId: normalizedDraft.tabularSourceId,
@@ -118,6 +115,7 @@ const mergeLocationDraft = (current: LocationDraft, patch: Partial<LocationDraft
 
 const toDraftDataPayload = (value: LocationDraft): Partial<DraftData<LocationEntity>> => ({
   draftData: value.draft as LocationEntity | undefined,
+  treeNodeId: value.treeNodeId,
 });
 
 export const LocationDialog: React.FC<LocationDialogProps> = ({

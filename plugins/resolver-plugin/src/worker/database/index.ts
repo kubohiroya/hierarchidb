@@ -12,7 +12,7 @@ export class ResolverEntitiesDB extends Dexie {
   constructor() {
     super(getDBName('resolver-db'));
     this.version(1).stores({
-      resolvers: '&id, nodeId, name, createdAt, updatedAt',
+      resolvers: '&id, nodeId, name',
     });
   }
 }

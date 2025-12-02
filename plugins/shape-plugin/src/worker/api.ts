@@ -754,7 +754,7 @@ export const shapePluginAPI = {
 
     return {
       status: entity.processingStatus || 'idle',
-      lastProcessed: entity.updatedAt,
+      lastProcessed: undefined,
       totalFeatures: undefined,
       totalVectorTiles: undefined,
       storageUsed: undefined,

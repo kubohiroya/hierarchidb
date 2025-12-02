@@ -10,9 +10,6 @@ export type NodeType = string;
 export interface PeerEntity {
   id: NodeId;
   nodeId: NodeId;
-  createdAt: number;
-  updatedAt: number;
-  version: number;
   dialogMode?: 'normal' | 'full';
   resumeStep?: number;
   mapParams?: { zoom: number; lng: number; lat: number };

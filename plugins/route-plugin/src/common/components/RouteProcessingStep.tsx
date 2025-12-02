@@ -49,12 +49,6 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
 }) => {
   const { t } = useTranslation();
   const draft = useMemo(() => getRouteDraft(draftProp), [draftProp]);
-  const draftVersion = draft.version;
-  const computeNextVersion = useCallback(() => {
-    const base = typeof draftVersion === 'number' ? draftVersion : 0;
-    return typeof base === 'number' ? base + 1 : 0;
-  }, [draftVersion]);
-
   const resolvedCategory = (draft.category as string | undefined) ?? 'transportation';
 
   const [category, setCategory] = useState<string>(resolvedCategory);
@@ -65,10 +59,8 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
   const emitUpdate = useCallback((updates: Partial<RouteEntity>) => {
     onUpdate({
       ...updates,
-      updatedAt: Date.now(),
-      version: computeNextVersion(),
     });
-  }, [computeNextVersion, onUpdate]);
+  }, [onUpdate]);
   const [simplificationLevel, setSimplificationLevel] = useState<number>(3);
   const [generateElevation, setGenerateElevation] = useState<boolean>(true);
   const [generateTurns, setGenerateturns] = useState<boolean>(true);

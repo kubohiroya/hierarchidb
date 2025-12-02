@@ -142,7 +142,6 @@ describe('ResolverEntityService', () => {
       expect(entity.sourceSchema).toBe(data.sourceSchema);
       expect(entity.targetSchema).toBe(data.targetSchema);
       expect(entity.isCompiled).toBe(false);
-      expect(entity.version).toBe(1);
     });
 
     it('should create entity with default values when minimal data provided', async () => {
@@ -178,8 +177,7 @@ describe('ResolverEntityService', () => {
 
       expect(updatedEntity.name).toBe('Updated Name');
       expect(updatedEntity.sourceSchema).toBe('UpdatedSource');
-      expect(updatedEntity.version).toBe(2);
-      expect(updatedEntity.updatedAt).toBeGreaterThanOrEqual(entity.updatedAt);
+      expect(updatedEntity.version).toBeUndefined();
     });
 
     it('should throw error when updating non-existent entity', async () => {
@@ -305,7 +303,7 @@ describe('ResolverEntityService', () => {
       expect(duplicate.sourceSchema).toBe('SourceSchema');
       expect(duplicate.targetSchema).toBe('TargetSchema');
       expect(duplicate.mappingRules).toHaveLength(1);
-      expect(duplicate.version).toBe(1);
+      expect(duplicate.version).toBeUndefined();
     });
   });
 

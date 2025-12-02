@@ -1,9 +1,11 @@
-import type { NodeId, PeerEntity } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/common-types';
 
 /**
  * Resolver entity represents a property mapping configuration
  */
-export interface ResolverEntity extends PeerEntity {
+export interface ResolverEntity {
+  nodeId: NodeId;
+  id: NodeId;
   name: string;
   description?: string;
   sourceSchema: SchemaInfo | null;
@@ -79,12 +81,14 @@ export interface PreviewConfig {
 export type ResolverDraftPayload = Partial<ResolverEntity>;
 
 export type ResolverDraftEntity = Partial<ResolverEntity> & {
+    treeNodeId?: NodeId;
     originalId?: NodeId;
     isDirty?: boolean;
     draftId?: NodeId;
     tags?: string[];
     sourceSchema: SchemaInfo | null;
     targetSchema: SchemaInfo | null;
+    lastValidation?: MappingValidationResult | null;
   };
 
 export type ResolverDraft = ResolverDraftEntity;

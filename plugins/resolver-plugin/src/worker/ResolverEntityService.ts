@@ -23,10 +23,6 @@ export interface ResolverSearchCriteria {
   sourceSchema?: string;
   targetSchema?: string;
   isCompiled?: boolean;
-  createdAfter?: number;
-  createdBefore?: number;
-  updatedAfter?: number;
-  updatedBefore?: number;
 }
 
 /**
@@ -58,7 +54,6 @@ export class ResolverEntityService {
   }
 
   private buildEntity(nodeId: NodeId, payload: CreateResolverData, base?: ResolverEntity): ResolverEntity {
-    const now = Date.now();
     return {
       id: nodeId,
       nodeId,
@@ -74,9 +69,6 @@ export class ResolverEntityService {
       lastCompiled: base?.lastCompiled,
       compiledFunction: base?.compiledFunction,
       compiledMetadata: base?.compiledMetadata,
-      createdAt: base?.createdAt ?? now,
-      updatedAt: now,
-      version: (base?.version ?? 0) + 1,
     };
   }
 
@@ -97,11 +89,14 @@ export class ResolverEntityService {
     payload: ResolverEntity,
     metadataPatch?: Partial<TreeNodeMetadata>,
   ): Promise<void> {
+    // Avoid persisting TreeNode-managed fields (version/timestamps) into draftData.
+    const { version: _omitVersion, createdAt: _omitCreatedAt, updatedAt: _omitUpdatedAt, ...payloadWithoutVersion } =
+      payload as ResolverEntity & { createdAt?: number; updatedAt?: number; version?: number };
     const coreDB = await this.ensureCoreDB();
     if (metadataPatch && Object.keys(metadataPatch).length > 0) {
       await updateTreeNodeDraftMetadata(coreDB, nodeId, metadataPatch);
     }
-    await updateTreeNodeDraftData(coreDB, nodeId, payload as unknown as Record<string, unknown>);
+    await updateTreeNodeDraftData(coreDB, nodeId, payloadWithoutVersion as unknown as Record<string, unknown>);
   }
 
   /**
@@ -185,10 +180,6 @@ export class ResolverEntityService {
       if (criteria.isCompiled !== undefined && entity.isCompiled !== criteria.isCompiled) {
         return false;
       }
-      if (criteria.createdAfter && (entity.createdAt ?? 0) < criteria.createdAfter) return false;
-      if (criteria.createdBefore && (entity.createdAt ?? 0) > criteria.createdBefore) return false;
-      if (criteria.updatedAfter && (entity.updatedAt ?? 0) < criteria.updatedAfter) return false;
-      if (criteria.updatedBefore && (entity.updatedAt ?? 0) > criteria.updatedBefore) return false;
       return true;
     });
   }

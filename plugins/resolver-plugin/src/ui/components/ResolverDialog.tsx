@@ -227,23 +227,42 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
   }, [entity, nodeId, normalizeDraft, wcDraft]);
 
   const execUpdateDraft = useCallback((updates: Partial<ResolverDraftEntity>) => {
+    const { lastValidation, ...restUpdates } = updates;
     setDraft((prev: Partial<ResolverDraftEntity>) => ({ ...prev, ...updates }));
     const draftMetadata = {
-      name: updates.name ?? draft?.name ?? '',
-      description: updates.description ?? draft?.description,
-      tags: updates.tags ?? draft?.tags ?? [],
+      name: restUpdates.name ?? draft?.name ?? '',
+      description: restUpdates.description ?? draft?.description,
+      tags: restUpdates.tags ?? draft?.tags ?? [],
     };
-    const draftData: Record<string, unknown> = {
-      ...(typeof wcDraft?.draftData === 'object' ? (wcDraft?.draftData as Record<string, unknown>) : {}),
-      ...updates,
-      sourceSchema: updates.sourceSchema ?? draft?.sourceSchema ?? null,
-      targetSchema: updates.targetSchema ?? draft?.targetSchema ?? null,
+    const baseNodeId = (wcDraft?.treeNodeId ?? restUpdates.treeNodeId ?? draft?.nodeId ?? nodeId ?? '') as NodeId;
+    const prevDraftData =
+      typeof wcDraft?.draftData === 'object' ? (wcDraft.draftData as Partial<ResolverEntity>) : {};
+    const draftData: ResolverEntity = {
+      nodeId: baseNodeId,
+      id: baseNodeId,
+      name: draftMetadata.name,
+      description: draftMetadata.description ?? '',
+      sourceSchema: restUpdates.sourceSchema ?? draft?.sourceSchema ?? prevDraftData.sourceSchema ?? null,
+      targetSchema: restUpdates.targetSchema ?? draft?.targetSchema ?? prevDraftData.targetSchema ?? null,
+      mappingRules: restUpdates.mappingRules ?? draft?.mappingRules ?? prevDraftData.mappingRules ?? [],
+      validationRules: restUpdates.validationRules ?? draft?.validationRules ?? prevDraftData.validationRules ?? [],
+      duplicateResolution:
+        restUpdates.duplicateResolution ?? draft?.duplicateResolution ?? prevDraftData.duplicateResolution ?? {
+          strategy: 'skip',
+        },
+      dataTransformations:
+        restUpdates.dataTransformations ?? draft?.dataTransformations ?? prevDraftData.dataTransformations ?? [],
+      isCompiled: restUpdates.isCompiled ?? draft?.isCompiled ?? prevDraftData.isCompiled ?? false,
+      lastCompiled: restUpdates.lastCompiled ?? draft?.lastCompiled ?? prevDraftData.lastCompiled,
+      compiledFunction: restUpdates.compiledFunction ?? draft?.compiledFunction ?? prevDraftData.compiledFunction,
+      compiledMetadata: restUpdates.compiledMetadata ?? draft?.compiledMetadata ?? prevDraftData.compiledMetadata,
+      previewConfig: restUpdates.previewConfig ?? draft?.previewConfig ?? prevDraftData.previewConfig,
     };
     void updateDraft({
       draftMetadata,
       draftData,
     } as Partial<DraftData<ResolverEntity>>);
-  }, [draft, updateDraft, wcDraft]);
+  }, [draft, nodeId, updateDraft, wcDraft]);
 
   const handleSave = useCallback(async () => {
     if (isSaving) return;

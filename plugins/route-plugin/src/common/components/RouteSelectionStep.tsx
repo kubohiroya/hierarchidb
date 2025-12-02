@@ -40,19 +40,11 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
 }) => {
   const { t } = useTranslation();
   const draft = useMemo(() => getRouteDraft(draftProp), [draftProp]);
-  const draftVersion = draft.version;
-  const computeNextVersion = useCallback(() => {
-    const base = typeof draftVersion === 'number' ? draftVersion : 0;
-    return typeof base === 'number' ? base + 1 : 0;
-  }, [draftVersion]);
-
   const emitUpdate = useCallback((updates: Partial<RouteEntity>) => {
     onUpdate({
       ...updates,
-      updatedAt: Date.now(),
-      version: computeNextVersion(),
     });
-  }, [computeNextVersion, onUpdate]);
+  }, [onUpdate]);
   const [waypoints, setWaypoints] = useState<Waypoint[]>([
     { id: '1', name: t('base-dialog.routeSelection.startPoint', 'Start Point') },
     { id: '2', name: t('base-dialog.routeSelection.endPoint', 'End Point') },

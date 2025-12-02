@@ -41,9 +41,6 @@ export function ShapeDialog({
         selectedCountries: [],
         adminLevels: [],
         urlMetadata: [],
-        createdAt: now,
-        updatedAt: now,
-        version: 1,
       };
       onSuccess?.(entity);
       onClose();

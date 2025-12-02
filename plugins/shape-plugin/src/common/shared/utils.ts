@@ -16,7 +16,6 @@ import type {
   ValidationResult,
 } from './types.js';
 import type { ShapeEntity, ShapeDraft } from './types.js';
-import type { Timestamp } from '@hierarchidb/common-types';
 import { DEFAULT_DATA_SOURCES, DEFAULT_PROCESSING_CONFIG } from './constants.js';
 
 const KNOWN_DATA_SOURCE_NAMES = new Set<DataSourceName>(
@@ -383,10 +382,8 @@ export function buildShapeEntityFromCreate(
       dataSourceName: DataSourceName;
       processingConfig?: Partial<ProcessingConfig> | ProcessingConfig;
     };
-    now?: number;
   },
 ): ShapeEntity {
-  const now = params.now ?? Date.now();
   const merged = mergeProcessingConfig(
     (params.data.processingConfig as Partial<ProcessingConfig>) || {},
   );
@@ -403,9 +400,6 @@ export function buildShapeEntityFromCreate(
     adminLevels: [],
     urlMetadata: [],
     processingStatus: 'idle',
-    createdAt: now,
-    updatedAt: now,
-    version: 1,
   };
 }
 
@@ -435,30 +429,16 @@ export function createDraftFromEntity(entity: ShapeEntity): ShapeDraft {
   };
 
   const treeNodeId = (entity.nodeId ?? entity.id ?? (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`)) as NodeId;
-  const createdAt = (entity.createdAt ?? Date.now()) as Timestamp;
-  const updatedAt = (entity.updatedAt ?? createdAt) as Timestamp;
 
-  const base = {
+  const draft: ShapeDraft = {
     treeNodeId,
     draft: {
       ...draftPayload,
-      createdAt,
-      updatedAt,
-      version: entity.version ?? 1,
     },
-    createdAt,
-    updatedAt,
-    originalVersion: entity.version,
-  };
-
-  const draft: ShapeDraft = {
-    ...base,
     ...draftPayload,
     id: treeNodeId,
     nodeId: treeNodeId,
     depth: 0,
-    originalVersion: entity.version,
-    version: entity.version ?? 1,
     resumeStep: entity.resumeStep,
     tabularMetadataId: entity.tabularMetadataId,
     tabularFilters: entity.tabularFilters,
