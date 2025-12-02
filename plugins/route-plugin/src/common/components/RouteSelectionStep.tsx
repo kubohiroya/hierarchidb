@@ -16,12 +16,12 @@ import {
   Typography,
 } from '@mui/material';
 import { Add, MyLocation, Remove } from '@mui/icons-material';
-import type { RouteEntity, RouteDraft } from '../entities/RouteEntity.js';
+import type { RouteEntity, RouteUpdaterPayload } from '../entities/RouteEntity.js';
 import { useTranslation } from '../i18n/index.js';
-import { getRouteDraft } from '../utils/draft.js';
+import { getRouteUpdaterPayload } from '../utils/draft.js';
 
 export interface RouteSelectionStepProps {
-  draft: RouteDraft;
+  draft: RouteUpdaterPayload;
   onUpdate: (updates: Partial<RouteEntity>) => void;
   onValidationChange: (isValid: boolean) => void;
 }
@@ -39,7 +39,7 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
   onValidationChange,
 }) => {
   const { t } = useTranslation();
-  const draft = useMemo(() => getRouteDraft(draftProp), [draftProp]);
+  const draft = useMemo(() => getRouteUpdaterPayload(draftProp), [draftProp]);
   const emitUpdate = useCallback((updates: Partial<RouteEntity>) => {
     onUpdate({
       ...updates,

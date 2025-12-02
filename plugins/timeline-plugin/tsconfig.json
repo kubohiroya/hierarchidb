@@ -2,19 +2,14 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "lib": [
-      "ES2020",
+      "ES2022",
       "DOM"
     ],
+    "experimentalDecorators": true,
     "strictNullChecks": true,
     "strictFunctionTypes": true,
     "noImplicitReturns": true,
     "jsxImportSource": "react",
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ]
-    },
-    "baseUrl": ".",
     "jsx": "react-jsx"
   }
 }

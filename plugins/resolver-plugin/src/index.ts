@@ -1,8 +1,7 @@
 
 export type {
   ResolverEntity,
-  ResolverDraftEntity,
-  ResolverDraft,
+  ResolverUpdaterPayload,
   PropertyMappingRule,
   ValidationRule,
   DuplicateResolutionStrategy,

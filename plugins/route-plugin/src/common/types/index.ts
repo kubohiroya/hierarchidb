@@ -15,6 +15,5 @@ export type {
   TransportMode,
 } from '../entities/RouteEntity.js';
 
-export type RouteDraft = TreeNodeUpdaterPayload<RouteEntity>;
-export type RouteDraftPayload = RouteDraft;
+export type RouteUpdaterPayload = TreeNodeUpdaterPayload<RouteEntity>;
 export type TagId = string;

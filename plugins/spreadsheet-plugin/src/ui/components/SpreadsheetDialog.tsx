@@ -17,7 +17,7 @@ import {
   type HeadlessMultiStepDialogProps,
 } from '@hierarchidb/ui-dialog';
 import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
-import { useDialogDraft, type DraftData } from '@hierarchidb/plugin-ui-sdk';
+import { useDialogDraft, type DraftData, buildDialogDraftUpdater } from '@hierarchidb/plugin-ui-sdk';
 import type { SpreadsheetDialogData } from '../../common/types/SpreadsheetEntity.js';
 import { DataSourceStep } from './steps/DataSourceStep.js';
 import { FilteringStep } from './steps/FilteringStep.js';
@@ -90,35 +90,41 @@ export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
   const dialogPositionRef = useRef(dialogPosition);
 
   const data = useMemo<SpreadsheetDialogData>(() => normalizeDraft(draft), [draft]);
+  const { updatePayload, updateMetadata } = useMemo(
+    () => buildDialogDraftUpdater<SpreadsheetDialogData>(updateDraft),
+    [updateDraft]
+  );
 
   const persistBasicInfo = useCallback(
     (value: BasicInfoData) => {
-      void updateDraft({
-        draftMetadata: {
+      const baseMeta = draft?.draftMetadata ?? draft?.metadata;
+      updateMetadata(
+        {
           name: value.name,
           description: value.description ?? '',
           tags: value.tags ?? [],
         },
-      });
+        baseMeta ?? { name: '', description: '', tags: [] }
+      );
     },
-    [updateDraft]
+    [draft?.draftMetadata, draft?.metadata, updateMetadata]
   );
 
   const handleUpdate = useCallback(
     (patch: Partial<SpreadsheetDialogData>) => {
-      void updateDraft({
-        draftData: {
-          ...(draft?.draftData ?? {}),
-          ...patch,
-        },
-        draftMetadata: {
+      const basePayload = (draft?.draftData ?? {}) as SpreadsheetDialogData;
+      const baseMeta = draft?.draftMetadata ?? draft?.metadata ?? { name: '', description: '', tags: [] };
+      updatePayload({ ...patch }, basePayload);
+      updateMetadata(
+        {
           name: data.name ?? '',
           description: data.description ?? '',
           tags: data.tags ?? [],
         },
-      });
+        baseMeta
+      );
     },
-    [data.description, data.name, data.tags, draft?.draftData, updateDraft]
+    [data.description, data.name, data.tags, draft?.draftData, draft?.draftMetadata, draft?.metadata, updateMetadata, updatePayload]
   );
 
   const handleSave = useCallback(async () => {

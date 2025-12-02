@@ -20,11 +20,11 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { Add as AddIcon, Close as CloseIcon, Help as HelpIcon, Preview as PreviewIcon } from '@mui/icons-material';
-import type { MappingPreviewResult, PropertyMappingRule, ResolverDraftEntity, SchemaInfo, PropertyInfo } from '../../../common/types/index.js';
+import type { MappingPreviewResult, PropertyMappingRule, ResolverUpdaterPayload, SchemaInfo, PropertyInfo } from '../../../common/types/index.js';
 
 interface PropertyMappingStepProps {
-  data: Partial<ResolverDraftEntity>;
-  onUpdate: (updates: Partial<ResolverDraftEntity>) => void;
+  data: Partial<ResolverUpdaterPayload>;
+  onUpdate: (updates: Partial<ResolverUpdaterPayload>) => void;
   onValidationChange: (isValid: boolean) => void;
   sourceSchema: SchemaInfo | null;
   targetSchema: SchemaInfo | null;
@@ -37,6 +37,7 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
                                                                           sourceSchema,
                                                                           targetSchema,
                                                                         }) => {
+  const draftData = data.draftData ?? {};
   const [mappingText, setMappingText] = useState<string>('');
   const [mappingErrors, setMappingErrors] = useState<string[]>([]);
   const [showHelp, setShowHelp] = useState(false);
@@ -98,10 +99,10 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
 
   // Initialize mapping text from existing rules
   useEffect(() => {
-    if (data.mappingRules && data.mappingRules.length > 0 && !mappingText) {
-      setMappingText(formatMappingRules(data.mappingRules));
+    if (draftData.mappingRules && draftData.mappingRules.length > 0 && !mappingText) {
+      setMappingText(formatMappingRules(draftData.mappingRules));
     }
-  }, [data.mappingRules, mappingText, formatMappingRules]);
+  }, [draftData.mappingRules, mappingText, formatMappingRules]);
 
   // Parse and validate mapping text
   const handleMappingTextChange = useCallback((text: string) => {
@@ -109,13 +110,13 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
 
     if (!text.trim()) {
       setMappingErrors([]);
-      onUpdate({ mappingRules: [] });
+      onUpdate({ draftData: { mappingRules: [] } });
       return;
     }
 
     const { rules, errors } = parseMappingRules(text);
     setMappingErrors(errors);
-    onUpdate({ mappingRules: rules });
+    onUpdate({ draftData: { mappingRules: rules } });
   }, [parseMappingRules, onUpdate]);
 
   // Validation
@@ -165,14 +166,14 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
 
   // Mock preview generation
   const generatePreview = useCallback(() => {
-    if (!sourceSchema || !data.mappingRules) return;
+    if (!sourceSchema || !draftData.mappingRules) return;
 
     // Create mock preview result
     const mockPreview: MappingPreviewResult = {
       success: true,
       mappedData: sourceSchema.sampleData?.slice(0, 3).map((sample: Record<string, unknown>) => {
         const mapped: Record<string, unknown> = {};
-        data.mappingRules!.forEach((rule: PropertyMappingRule) => {
+        draftData.mappingRules!.forEach((rule: PropertyMappingRule) => {
           if (sample && typeof sample === 'object' && rule.sourceProperty in sample) {
             mapped[rule.targetProperty] = (sample as Record<string, unknown>)[rule.sourceProperty];
           }
@@ -180,12 +181,12 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
         return mapped;
       }) || [],
       unmappedProperties: sourceSchema.properties
-        .filter((prop: PropertyInfo) => !data.mappingRules!.some((rule: PropertyMappingRule) => rule.sourceProperty === prop.name))
+        .filter((prop: PropertyInfo) => !draftData.mappingRules!.some((rule: PropertyMappingRule) => rule.sourceProperty === prop.name))
         .map((prop: PropertyInfo) => prop.name),
-      errors: mappingErrors,
+      errors: mappingErrors.map((message) => ({ property: 'mapping', message })),
       statistics: {
         totalRecords: sourceSchema.sampleData?.length || 0,
-        successfulMappings: data.mappingRules!.length,
+        successfulMappings: draftData.mappingRules!.length,
         failedMappings: mappingErrors.length,
         duplicatesFound: 0,
         duplicatesResolved: 0,
@@ -194,7 +195,7 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
 
     setPreviewResult(mockPreview);
     setShowPreview(true);
-  }, [sourceSchema, data.mappingRules, mappingErrors]);
+  }, [sourceSchema, draftData.mappingRules, mappingErrors]);
 
   if (!sourceSchema || !targetSchema) {
     return (
@@ -413,16 +414,16 @@ date -> created_at | parse_date
                 <Grid size={{ xs: 6 }}>
                   <Typography variant="subtitle2" sx={{ mb: 1 }}>Statistics</Typography>
                   <Paper sx={{ p: 2 }}>
-                    <Typography variant="body2">Total Records: {previewResult.statistics.totalRecords}</Typography>
+                    <Typography variant="body2">Total Records: {previewResult.statistics?.totalRecords ?? 0}</Typography>
                     <Typography variant="body2">Successful
-                      Mappings: {previewResult.statistics.successfulMappings}</Typography>
-                    <Typography variant="body2">Failed Mappings: {previewResult.statistics.failedMappings}</Typography>
+                      Mappings: {previewResult.statistics?.successfulMappings ?? 0}</Typography>
+                    <Typography variant="body2">Failed Mappings: {previewResult.statistics?.failedMappings ?? 0}</Typography>
 
-                    {previewResult.unmappedProperties.length > 0 && (
+                    {(previewResult.unmappedProperties?.length ?? 0) > 0 && (
                       <Box sx={{ mt: 2 }}>
                         <Typography variant="body2" sx={{ mb: 1 }}>Unmapped Source Properties:</Typography>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {previewResult.unmappedProperties.map((prop: string) => (
+                    {previewResult.unmappedProperties?.map((prop: string) => (
                             <Chip key={prop} label={prop} size="small" color="warning" variant="outlined" />
                           ))}
                         </Box>

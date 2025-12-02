@@ -54,6 +54,7 @@ export class ResolverEntityService {
   }
 
   private buildEntity(nodeId: NodeId, payload: CreateResolverData, base?: ResolverEntity): ResolverEntity {
+    const now = Date.now();
     return {
       id: nodeId,
       nodeId,
@@ -69,6 +70,11 @@ export class ResolverEntityService {
       lastCompiled: base?.lastCompiled,
       compiledFunction: base?.compiledFunction,
       compiledMetadata: base?.compiledMetadata,
+      createdAt: base?.createdAt ?? now,
+      updatedAt: now,
+      version: base?.version ?? 0,
+      lastValidation: base?.lastValidation ?? null,
+      tags: base?.tags,
     };
   }
 

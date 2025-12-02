@@ -2,14 +2,10 @@ import { useMemo } from 'react';
 import { Box, Chip, IconButton, Paper, Slider, Stack, Switch, TextField, Tooltip, Typography } from '@mui/material';
 import { Map as MapIcon, PlayArrow, Pause, SkipNext, SkipPrevious } from '@mui/icons-material';
 import { useFramePlayer } from '../utils/useFramePlayer.js';
-import type { TimelineFrameViewState } from './MapPreviewStep.js';
+import type { TimelineFrame } from '../../common/types/index.js';
 
 export interface AnimationViewerStepProps {
-  frames: Array<{
-    id: string;
-    name: string;
-    viewState?: TimelineFrameViewState;
-  }>;
+  frames: TimelineFrame[];
   initialIndex?: number;
   initialFps?: number;
   loop?: boolean;

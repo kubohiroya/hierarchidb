@@ -35,11 +35,11 @@ import {
   Storage as StorageIcon,
   Warning as WarningIcon,
 } from '@mui/icons-material';
-import type { MappingPreviewResult, MappingValidationResult, ResolverDraftEntity, SchemaInfo, PropertyInfo, PropertyMappingRule, ValidationWarning } from '../../../common/types/index.js';
+import type { MappingPreviewResult, MappingValidationResult, ResolverUpdaterPayload, SchemaInfo, PropertyInfo, PropertyMappingRule, ValidationWarning } from '../../../common/types/index.js';
 
 interface PreviewTestStepProps {
-  data: Partial<ResolverDraftEntity>;
-  onUpdate: (updates: Partial<ResolverDraftEntity>) => void;
+  data: Partial<ResolverUpdaterPayload>;
+  onUpdate: (updates: Partial<ResolverUpdaterPayload>) => void;
   onValidationChange: (isValid: boolean) => void;
   sourceSchema: SchemaInfo | null;
   targetSchema: SchemaInfo | null;
@@ -68,6 +68,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                                                                   targetSchema,
                                                                   onValidationResult,
                                                                 }) => {
+  const draftData = data.draftData ?? {};
   const [isRunning, setIsRunning] = useState(false);
   const [previewResult, setPreviewResult] = useState<MappingPreviewResult | null>(null);
   const [validationResult, setValidationResult] = useState<MappingValidationResult | null>(null);
@@ -82,7 +83,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
   }, [onValidationChange]);
 
   const runPreview = useCallback(async () => {
-    if (!sourceSchema || !targetSchema || !data.mappingRules) {
+    if (!sourceSchema || !targetSchema || !draftData.mappingRules) {
       return;
     }
 
@@ -99,7 +100,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
         success: true,
         mappedData: sourceSchema.sampleData?.slice(0, 5).map((sample: Record<string, unknown>, index: number) => {
           const mapped: Record<string, unknown> = {};
-          data.mappingRules!.forEach((rule: PropertyMappingRule) => {
+          draftData.mappingRules!.forEach((rule: PropertyMappingRule) => {
             if (sample && typeof sample === 'object' && rule.sourceProperty in sample) {
               let value = (sample as Record<string, unknown>)[rule.sourceProperty];
 
@@ -121,12 +122,12 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
           return mapped;
         }) || [],
         unmappedProperties: sourceSchema.properties
-          .filter((prop: PropertyInfo) => !data.mappingRules!.some((rule: PropertyMappingRule) => rule.sourceProperty === prop.name))
+          .filter((prop: PropertyInfo) => !draftData.mappingRules!.some((rule: PropertyMappingRule) => rule.sourceProperty === prop.name))
           .map((prop: PropertyInfo) => prop.name),
         errors: [],
         statistics: {
           totalRecords: sourceSchema.sampleData?.length || 0,
-          successfulMappings: data.mappingRules!.length,
+          successfulMappings: draftData.mappingRules!.length,
           failedMappings: 0,
           duplicatesFound: Math.floor(Math.random() * 5),
           duplicatesResolved: Math.floor(Math.random() * 3),
@@ -137,19 +138,18 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
 
       // Generate validation result
       const mockValidation: MappingValidationResult = {
-        isValid: mockResult.errors.length === 0,
-        errors: mockResult.errors.map((err: string) => ({
-          ruleId: crypto.randomUUID(),
-          property: 'unknown',
-          message: err,
-          severity: 'error',
+        isValid: (mockResult.errors ?? []).length === 0,
+        errors: (mockResult.errors ?? []).map((err) => ({
+          property: err.property ?? 'mapping',
+          message: err.message,
+          suggestion: err.suggestion,
         })),
-        warnings: mockResult.unmappedProperties.length > 0 ? [{
+        warnings: mockResult.unmappedProperties && mockResult.unmappedProperties.length > 0 ? [{
           property: 'unmapped',
           message: `${mockResult.unmappedProperties.length} source properties are not mapped`,
           suggestion: 'Consider mapping all source properties for complete data transformation',
         }] : [],
-        coverage: (data.mappingRules!.length / sourceSchema.properties.length) * 100,
+        coverage: (draftData.mappingRules!.length / sourceSchema.properties.length) * 100,
       };
 
       setValidationResult(mockValidation);
@@ -168,7 +168,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
         success: false,
         mappedData: [],
         unmappedProperties: [],
-        errors: ['Failed to execute mapping preview'],
+        errors: [{ property: 'mapping', message: 'Failed to execute mapping preview' }],
         statistics: {
           totalRecords: 0,
           successfulMappings: 0,
@@ -182,7 +182,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
     } finally {
       setIsRunning(false);
     }
-  }, [sourceSchema, targetSchema, data.mappingRules, onValidationResult]);
+  }, [sourceSchema, targetSchema, draftData.mappingRules, onValidationResult]);
 
   const toggleRowExpansion = (rowIndex: number) => {
     const newExpanded = new Set(expandedRows);
@@ -210,7 +210,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
     );
   }
 
-  if (!data.mappingRules || data.mappingRules.length === 0) {
+  if (!draftData.mappingRules || draftData.mappingRules.length === 0) {
     return (
       <Alert severity="warning">
         Please define mapping rules in the Property Mapping step before running preview tests.
@@ -295,7 +295,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                     Coverage
                   </Typography>
                   <Typography variant="h6">
-                    {validationResult ? `${validationResult.coverage.toFixed(1)}%` : '0%'}
+                    {validationResult ? `${(validationResult.coverage ?? 0).toFixed(1)}%` : '0%'}
                   </Typography>
                 </Box>
               </Box>
@@ -333,7 +333,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {previewResult.mappedData.map((row: Record<string, unknown>, index: number) => (
+                  {(previewResult.mappedData ?? []).map((row: Record<string, unknown>, index: number) => (
                     <React.Fragment key={index}>
                       <TableRow hover>
                         <TableCell>
@@ -344,11 +344,11 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                             {expandedRows.has(index) ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                           </IconButton>
                         </TableCell>
-                        {targetSchema.properties.slice(0, 5).map((prop: PropertyInfo) => (
-                          <TableCell key={prop.name}>
-                            {String(row[prop.name] ?? '-')}
-                          </TableCell>
-                        ))}
+                    {targetSchema.properties.slice(0, 5).map((prop: PropertyInfo) => (
+                      <TableCell key={prop.name}>
+                        {String(row[prop.name] ?? '-')}
+                      </TableCell>
+                    ))}
                         {targetSchema.properties.length > 5 && (
                           <TableCell>...</TableCell>
                         )}
@@ -396,13 +396,13 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                   )}
                 </Box>
 
-                {validationResult.errors.length > 0 && (
+                {(validationResult?.errors?.length ?? 0) > 0 && (
                   <Box sx={{ mb: 2 }}>
                     <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                      Errors ({validationResult.errors.length})
+                      Errors ({validationResult?.errors?.length ?? 0})
                     </Typography>
                     <List dense>
-                      {validationResult.errors.map((error: MappingValidationResult['errors'][number], index: number) => (
+                      {(validationResult?.errors ?? []).map((error: MappingValidationResult['errors'][number], index: number) => (
                         <ListItem key={index}>
                           <ListItemIcon>
                             <ErrorIcon color="error" fontSize="small" />
@@ -417,13 +417,13 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                   </Box>
                 )}
 
-                {validationResult.warnings.length > 0 && (
+                {(validationResult?.warnings?.length ?? 0) > 0 && (
                   <Box>
                     <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                      Warnings ({validationResult.warnings.length})
+                      Warnings ({validationResult?.warnings?.length ?? 0})
                     </Typography>
                     <List dense>
-                      {validationResult.warnings.map((warning: ValidationWarning, index: number) => (
+                      {(validationResult?.warnings ?? []).map((warning: ValidationWarning, index: number) => (
                         <ListItem key={index}>
                           <ListItemIcon>
                             <WarningIcon color="warning" fontSize="small" />
@@ -438,7 +438,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                   </Box>
                 )}
 
-                {validationResult.isValid && validationResult.warnings.length === 0 && (
+                {validationResult?.isValid && (validationResult.warnings?.length ?? 0) === 0 && (
                   <Alert severity="success">
                     All validation checks passed successfully.
                   </Alert>
@@ -456,7 +456,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                     Total Records
                   </Typography>
                   <Typography variant="h6">
-                    {previewResult.statistics.totalRecords}
+                    {previewResult.statistics?.totalRecords ?? 0}
                   </Typography>
                 </Grid>
                 <Grid size={{ xs: 6 }}>
@@ -464,7 +464,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                     Successful Mappings
                   </Typography>
                   <Typography variant="h6">
-                    {previewResult.statistics.successfulMappings}
+                    {previewResult.statistics?.successfulMappings ?? 0}
                   </Typography>
                 </Grid>
                 <Grid size={{ xs: 6 }}>
@@ -472,7 +472,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                     Failed Mappings
                   </Typography>
                   <Typography variant="h6">
-                    {previewResult.statistics.failedMappings}
+                    {previewResult.statistics?.failedMappings ?? 0}
                   </Typography>
                 </Grid>
                 <Grid size={{ xs: 6 }}>
@@ -480,7 +480,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                     Duplicates Found
                   </Typography>
                   <Typography variant="h6">
-                    {previewResult.statistics.duplicatesFound}
+                    {previewResult.statistics?.duplicatesFound ?? 0}
                   </Typography>
                 </Grid>
                 <Grid size={{ xs: 6 }}>
@@ -488,7 +488,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                     Duplicates Resolved
                   </Typography>
                   <Typography variant="h6">
-                    {previewResult.statistics.duplicatesResolved}
+                    {previewResult.statistics?.duplicatesResolved ?? 0}
                   </Typography>
                 </Grid>
                 <Grid size={{ xs: 6 }}>
@@ -496,18 +496,18 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                     Unmapped Properties
                   </Typography>
                   <Typography variant="h6">
-                    {previewResult.unmappedProperties.length}
+                    {previewResult.unmappedProperties?.length ?? 0}
                   </Typography>
                 </Grid>
               </Grid>
 
-              {previewResult.unmappedProperties.length > 0 && (
+              {(previewResult.unmappedProperties?.length ?? 0) > 0 && (
                 <Box sx={{ mt: 3 }}>
                   <Typography variant="subtitle2" sx={{ mb: 1 }}>
                     Unmapped Source Properties
                   </Typography>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {previewResult.unmappedProperties.map((prop: string) => (
+                    {previewResult.unmappedProperties?.map((prop: string) => (
                       <Chip
                         key={prop}
                         label={prop}

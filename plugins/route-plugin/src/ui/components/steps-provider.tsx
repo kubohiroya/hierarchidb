@@ -6,8 +6,8 @@ import {
   type StepData,
 } from '@hierarchidb/plugin-base';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { RouteDraft } from '../../common/types/index.js';
-import { normalizeRouteDraft } from '../../common/utils/draft.js';
+import type { RouteUpdaterPayload } from '../../common/types/index.js';
+import { toRouteUpdaterPayload } from '../../common/utils/draft.js';
 import { translations as routeTranslations } from '../../common/i18n/index.js';
 import { RouteSelectionStep } from '../../common/components/RouteSelectionStep.js';
 import { RouteProcessingStep } from '../../common/components/RouteProcessingStep.js';
@@ -17,25 +17,25 @@ import { notify } from '@hierarchidb/components';
 
 const registry = PluginStepRegistry.getInstance();
 
-type RouteStepData = StepData & RouteDraft;
+type RouteStepData = StepData & RouteUpdaterPayload;
 
 type StepProps = StepComponentProps<RouteStepData>;
 
 const ensureDraft = (data?: StepComponentProps['data']): RouteStepData => {
   const fallbackId = 'route-draft' as NodeId;
   if (data && typeof data === 'object') {
-    const cast = data as Partial<RouteDraft> & { id?: string; parentId?: NodeId };
-    const base = normalizeRouteDraft(
-      cast as RouteDraft,
+    const cast = data as Partial<RouteUpdaterPayload> & { id?: string; parentId?: NodeId };
+    const base = toRouteUpdaterPayload(
+      cast as RouteUpdaterPayload,
       (cast.treeNodeId ?? cast.id ?? fallbackId) as NodeId,
     );
     return {
-      ...(base as RouteDraft),
+      ...(base as RouteUpdaterPayload),
     };
   }
-  const base = normalizeRouteDraft(null, fallbackId);
+  const base = toRouteUpdaterPayload(null, fallbackId);
   return {
-    ...(base as RouteDraft),
+    ...(base as RouteUpdaterPayload),
   };
 };
 
@@ -94,7 +94,7 @@ registry.registerConfigProvider<RouteStepData>({
           const draft = ensureDraft(p.data);
           return (
             <RouteDetailsStep
-              draft={draft as unknown as RouteDraft}
+              draft={draft as unknown as RouteUpdaterPayload}
               onUpdate={(updates) => p.onChange(mergeDraft(draft, { draftData: updates }))}
               onValidationChange={p.setValid}
             />
@@ -109,7 +109,7 @@ registry.registerConfigProvider<RouteStepData>({
           const draft = ensureDraft(p.data);
           return (
             <RouteSelectionStep
-              draft={draft as unknown as RouteDraft}
+              draft={draft as unknown as RouteUpdaterPayload}
               onUpdate={(updates) => p.onChange(mergeDraft(draft, { draftData: updates }))}
               onValidationChange={p.setValid}
             />
@@ -124,7 +124,7 @@ registry.registerConfigProvider<RouteStepData>({
           const draft = ensureDraft(p.data);
           return (
             <RouteProcessingStep
-              draft={draft as unknown as RouteDraft}
+              draft={draft as unknown as RouteUpdaterPayload}
               onUpdate={(updates) => p.onChange(mergeDraft(draft, { draftData: updates }))}
               onValidationChange={p.setValid}
             />
@@ -138,7 +138,7 @@ registry.registerConfigProvider<RouteStepData>({
         optional: true,
         componentFactory: (p: StepProps) => {
           const draft = ensureDraft(p.data);
-          return <RouteBuildStep draft={draft as unknown as RouteDraft} />;
+          return <RouteBuildStep draft={draft as unknown as RouteUpdaterPayload} />;
         },
         capabilities: {
           canStartBatch: (data: RouteStepData) => {

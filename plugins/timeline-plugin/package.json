@@ -55,7 +55,9 @@
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
-    "@hierarchidb/plugin-base": "workspace:*"
+    "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/plugin-ui-sdk": "workspace:*",
+    "@hierarchidb/ui-worker-provider": "workspace:*"
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
@@ -69,7 +71,9 @@
     "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
-    "@hierarchidb/plugin-base": "workspace:*"
+    "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/plugin-ui-sdk": "workspace:*",
+    "@hierarchidb/ui-worker-provider": "workspace:*"
   },
   "devDependencies": {
     "@types/react-transition-group": "^4.4.12",
@@ -82,7 +86,9 @@
     "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
-    "@hierarchidb/plugin-base": "workspace:*"
+    "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/plugin-ui-sdk": "workspace:*",
+    "@hierarchidb/ui-worker-provider": "workspace:*"
   },
   "hierarchidb": {
     "plugin": {

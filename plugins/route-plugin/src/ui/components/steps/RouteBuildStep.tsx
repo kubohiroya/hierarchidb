@@ -1,8 +1,8 @@
 import { Alert, Box, Chip, Stack, Typography } from '@mui/material';
-import type { RouteDraft } from '../../../common/entities/RouteEntity.js';
+import type { RouteUpdaterPayload } from '../../../common/entities/RouteEntity.js';
 
 interface RouteBuildStepProps {
-  draft: RouteDraft;
+  draft: RouteUpdaterPayload;
 }
 
 const toList = (value: unknown): string[] => {

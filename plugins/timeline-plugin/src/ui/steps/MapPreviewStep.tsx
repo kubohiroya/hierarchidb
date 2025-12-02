@@ -1,23 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Box, Slider, Stack, Switch, TextField, Typography, FormControlLabel, Paper, Chip } from '@mui/material';
 import { Map as MapIcon } from '@mui/icons-material';
+import type { TimelineFrame } from '../../common/types/index.js';
 
 export interface MapPreviewStepProps {
-  frames: Array<{
-    id: string;
-    name: string;
-    viewState?: TimelineFrameViewState;
-  }>;
+  frames: TimelineFrame[];
   initialIndex?: number;
   onIndexChange?: (index: number) => void;
-}
-
-export interface TimelineFrameViewState {
-  longitude: number;
-  latitude: number;
-  zoom?: number;
-  bearing?: number;
-  pitch?: number;
 }
 
 export function MapPreviewStep({ frames, initialIndex = 0, onIndexChange }: MapPreviewStepProps) {

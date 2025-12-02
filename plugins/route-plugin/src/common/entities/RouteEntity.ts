@@ -125,7 +125,7 @@ export interface RouteEntity {
   tags?: string[];
 }
 
-export type RouteDraft = TreeNodeUpdaterPayload<RouteEntity>;
+export type RouteUpdaterPayload = TreeNodeUpdaterPayload<RouteEntity>;
 
 /**
  * Route filter criteria

@@ -22,5 +22,5 @@ export interface FolderEditData {
 }
 
 // Export entity definition
-export * from './FolderEntity.ts';
-export * from './types.ts';
+export * from './FolderEntity.js';
+export * from './types.js';

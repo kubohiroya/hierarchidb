@@ -1,12 +1,12 @@
 import { Alert, Box, List, ListItem, ListItemText, Typography } from '@mui/material';
-import type { ResolverDraft } from '../../../common/types/index.js';
+import type { ResolverUpdaterPayload } from '../../../common/types/index.js';
 
 interface ResolverBuildStepProps {
-  draft: ResolverDraft;
+  draft: ResolverUpdaterPayload;
 }
 
 export const ResolverBuildStep: React.FC<ResolverBuildStepProps> = ({ draft }) => {
-  const hasSchemas = Boolean(draft.sourceSchema && draft.targetSchema);
+  const hasSchemas = Boolean(draft.draftData?.sourceSchema && draft.draftData?.targetSchema);
 
   return (
     <Box display="flex" flexDirection="column" gap={2}>
@@ -19,13 +19,13 @@ export const ResolverBuildStep: React.FC<ResolverBuildStepProps> = ({ draft }) =
         <ListItem>
           <ListItemText
             primary="Source Schema"
-            secondary={draft.sourceSchema?.name ?? 'Not selected'}
+            secondary={draft.draftData?.sourceSchema?.name ?? 'Not selected'}
           />
         </ListItem>
         <ListItem>
           <ListItemText
             primary="Target Schema"
-            secondary={draft.targetSchema?.name ?? 'Not selected'}
+            secondary={draft.draftData?.targetSchema?.name ?? 'Not selected'}
           />
         </ListItem>
       </List>

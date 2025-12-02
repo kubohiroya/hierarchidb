@@ -120,6 +120,25 @@ src/
 - `resolver-plugin`: 専用 `types/` はなく `common/types` のみ。問題ではないが公開面を増やす際は整理対象。
 - 上記以外は `common/ui/worker/icon` の基本構成を維持している。
 
+## 共通コード利用状況（TreeNodeUpdater/draft, 2025-12-02）
+
+`TreeNodeUpdater*` 利用と `working copy` 表記残存の簡易スキャン結果。今後の移行優先度を決めるための現況メモ。
+
+| プラグイン | TreeNodeUpdater/draft 利用 | working copy 表記残存 | 備考/次アクション |
+|------------|---------------------------|-----------------------|------------------|
+| basemap    | ○（`rg TreeNodeUpdater` ヒット 12 件） | なし | useDialogDraft へ統一済み。現状維持で良い。 |
+| folder     | △（ヒット 0 件） | なし | ドメインなしのため明示利用は不要だが、UI 拡張時は TreeNodeUpdater 前提で追加する。 |
+| linker     | ×（ヒット 0 件） | なし（TODO に表記のみ） | コードはクリーン。今後の実装時は TreeNodeUpdater 用語と useDialogDraft を採用。 |
+| location   | △（ヒット 0 件） | なし | 表記はクリーンだが TreeNodeUpdater 利用未確認。ダイアログ経路を共通フローに寄せる。 |
+| resolver   | △（ヒット 0 件） | なし | Core 側 refactor 進行中。TreeNodeUpdater/draft への明示移行を継続。 |
+| route      | ○（ヒット 4 件） | なし | TreeNodeUpdater + draftMetadata/draftData へ統一済み。 |
+| shape      | ×（ヒット 0 件） | なし（README/旧ドキュメントに表記のみ） | コードはクリーン。ドキュメント更新と TreeNodeUpdater への実装移行を優先。 |
+| spreadsheet| ○（ヒット 2 件） | なし | 部分的に利用済み。全ステップで共通フローに揃っているか確認を推奨。 |
+| styler     | △（ヒット 0 件） | なし | 表記はクリーンだが TreeNodeUpdater 利用未確認。マルチステップ化時は共通フロー採用を必須に。 |
+| timeline   | ×（ヒット 0 件） | なし（TODO に表記のみ） | コードはクリーン。実装時は TreeNodeUpdater 用語とドラフトフロー統合が前提。 |
+
+注: 「ヒット数」は `rg TreeNodeUpdater plugins/<name>` ベースの目安。詳細は各プラグインのダイアログ/Worker 実装を別途確認すること。
+
 ## 📦 プラグイン一覧と分類（最新版）
 
 本システムのノードタイプ・プラグインは単一継承を基本とし、ケイパビリティは feature のミックスインで段階的に付与します（多重継承は行いません）。UI/Worker は Comlink 経由で疎結合となっており、定義・依存・UI エントリは PluginDefinition で一元管理します。

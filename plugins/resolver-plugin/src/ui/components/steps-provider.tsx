@@ -4,69 +4,60 @@ import { PropertyMappingStep } from './steps/PropertyMappingStep.js';
 import { ValidationConfigStep } from './steps/ValidationConfigStep.js';
 import { DuplicateResolutionStep } from './steps/DuplicateResolutionStep.js';
 import { PreviewTestStep } from './steps/PreviewTestStep.js';
-import type {
-  ResolverDraftEntity,
-  SchemaInfo,
-  MappingValidationResult,
-  ResolverDraft,
-} from '../../common/types/index.js';
+import type { ResolverUpdaterPayload, SchemaInfo, MappingValidationResult } from '../../common/types/index.js';
+import type { NodeId } from '@hierarchidb/common-types';
 import { ResolverBuildStep } from './steps/ResolverBuildStep.js';
 
 const registry = PluginStepRegistry.getInstance();
 
-type ResolverData = StepData & Partial<ResolverDraftEntity> & {
-  sourceSchema?: SchemaInfo | null;
-  targetSchema?: SchemaInfo | null;
+type ResolverData = StepData & ResolverUpdaterPayload & {
   lastValidation?: MappingValidationResult | null;
 };
 
-type ResolverStepProps = StepComponentProps<ResolverDraft>;
+type ResolverStepProps = StepComponentProps<ResolverUpdaterPayload>;
 
-const ensureDraft = (data?: ResolverData): ResolverDraft => {
-  const draft = data ?? {};
+const ensureDraft = (data?: ResolverData): ResolverData => {
+  const draft = data ?? ({} as ResolverData);
   return {
-    ...draft,
-    tags: draft.tags ?? [],
-    sourceSchema:
-      draft.sourceSchema && typeof draft.sourceSchema === 'object'
-        ? draft.sourceSchema
-        : null,
-    targetSchema:
-      draft.targetSchema && typeof draft.targetSchema === 'object'
-        ? draft.targetSchema
-        : null,
-    mappingRules: draft.mappingRules ?? [],
-    validationRules: draft.validationRules ?? [],
-    duplicateResolution: draft.duplicateResolution ?? { strategy: 'ignore' },
-    dataTransformations: draft.dataTransformations ?? [],
-    previewConfig: draft.previewConfig,
-  } as ResolverDraft;
+    treeNodeId: (draft.treeNodeId ?? '') as NodeId,
+    draftMetadata: draft.draftMetadata ?? { name: '', description: '', tags: [] },
+    draftData: {
+      sourceSchema: draft.draftData?.sourceSchema ?? null,
+      targetSchema: draft.draftData?.targetSchema ?? null,
+      mappingRules: draft.draftData?.mappingRules ?? [],
+      validationRules: draft.draftData?.validationRules ?? [],
+      duplicateResolution: draft.draftData?.duplicateResolution ?? { strategy: 'ignore' },
+      dataTransformations: draft.draftData?.dataTransformations ?? [],
+      previewConfig: draft.draftData?.previewConfig,
+    },
+    lastValidation: draft.lastValidation ?? null,
+  } as ResolverData;
 };
 
 const mergeDraft = (
-  current: ResolverDraft,
-  updates: Partial<ResolverDraftEntity>
-): ResolverDraft => ({
-  ...current,
-  ...updates,
-  tags: updates.tags ?? current.tags ?? [],
-  sourceSchema:
-    updates.sourceSchema ??
-    current.sourceSchema ??
-    null,
-  targetSchema:
-    updates.targetSchema ??
-    current.targetSchema ??
-    null,
-  mappingRules: updates.mappingRules ?? current.mappingRules ?? [],
-  validationRules: updates.validationRules ?? current.validationRules ?? [],
-  duplicateResolution: updates.duplicateResolution ?? current.duplicateResolution ?? { strategy: 'ignore' },
-  dataTransformations: updates.dataTransformations ?? current.dataTransformations ?? [],
-});
+  current: ResolverData,
+  updates: Partial<ResolverUpdaterPayload>
+): ResolverData => {
+  const nextDraftMetadata = {
+    ...(current.draftMetadata ?? { name: '', description: '', tags: [] }),
+    ...(updates.draftMetadata ?? {}),
+  };
+  const nextDraftData = {
+    ...(current.draftData ?? {}),
+    ...(updates.draftData ?? {}),
+  };
+  return {
+    ...current,
+    treeNodeId: updates.treeNodeId ?? current.treeNodeId,
+    draftMetadata: nextDraftMetadata,
+    draftData: nextDraftData,
+    lastValidation: updates.lastValidation ?? current.lastValidation ?? null,
+  } as ResolverData;
+};
 
-registry.registerConfigProvider<ResolverDraft>({
+registry.registerConfigProvider<ResolverUpdaterPayload>({
   nodeType: 'resolver',
-  getCreateStepConfigs(): PluginStepConfig<ResolverDraft>[] {
+  getCreateStepConfigs(): PluginStepConfig<ResolverUpdaterPayload>[] {
     return [
       {
         id: 'schema', label: 'Schema Selection', validate: () => true,
@@ -75,15 +66,15 @@ registry.registerConfigProvider<ResolverDraft>({
           return (
             <SchemaSelectionStep
               data={currentData}
-              onUpdate={(updates: Partial<ResolverDraftEntity>) =>
+              onUpdate={(updates: Partial<ResolverUpdaterPayload>) =>
                 p.onChange(mergeDraft(currentData, updates))
               }
               onValidationChange={p.setValid}
               onSourceSchemaChange={(schema: SchemaInfo | null) =>
-                p.onChange(mergeDraft(currentData, { sourceSchema: schema }))
+                p.onChange(mergeDraft(currentData, { draftData: { sourceSchema: schema } }))
               }
               onTargetSchemaChange={(schema: SchemaInfo | null) =>
-                p.onChange(mergeDraft(currentData, { targetSchema: schema }))
+                p.onChange(mergeDraft(currentData, { draftData: { targetSchema: schema } }))
               }
             />
           );
@@ -96,12 +87,12 @@ registry.registerConfigProvider<ResolverDraft>({
           return (
             <PropertyMappingStep
               data={currentData}
-              onUpdate={(updates: Partial<ResolverDraftEntity>) =>
+              onUpdate={(updates: Partial<ResolverUpdaterPayload>) =>
                 p.onChange(mergeDraft(currentData, updates))
               }
               onValidationChange={p.setValid}
-              sourceSchema={currentData.sourceSchema ?? null}
-              targetSchema={currentData.targetSchema ?? null}
+              sourceSchema={currentData.draftData?.sourceSchema ?? null}
+              targetSchema={currentData.draftData?.targetSchema ?? null}
             />
           );
         },
@@ -113,12 +104,12 @@ registry.registerConfigProvider<ResolverDraft>({
           return (
             <ValidationConfigStep
               data={currentData}
-              onUpdate={(updates: Partial<ResolverDraftEntity>) =>
+              onUpdate={(updates: Partial<ResolverUpdaterPayload>) =>
                 p.onChange(mergeDraft(currentData, updates))
               }
               onValidationChange={p.setValid}
-              sourceSchema={currentData.sourceSchema ?? null}
-              targetSchema={currentData.targetSchema ?? null}
+              sourceSchema={currentData.draftData?.sourceSchema ?? null}
+              targetSchema={currentData.draftData?.targetSchema ?? null}
             />
           );
         },
@@ -130,7 +121,7 @@ registry.registerConfigProvider<ResolverDraft>({
           return (
             <DuplicateResolutionStep
               data={currentData}
-              onUpdate={(updates: Partial<ResolverDraftEntity>) =>
+              onUpdate={(updates: Partial<ResolverUpdaterPayload>) =>
                 p.onChange(mergeDraft(currentData, updates))
               }
               onValidationChange={p.setValid}
@@ -145,12 +136,12 @@ registry.registerConfigProvider<ResolverDraft>({
           return (
             <PreviewTestStep
               data={currentData}
-              onUpdate={(updates: Partial<ResolverDraftEntity>) =>
+              onUpdate={(updates: Partial<ResolverUpdaterPayload>) =>
                 p.onChange(mergeDraft(currentData, updates))
               }
               onValidationChange={p.setValid}
-              sourceSchema={currentData.sourceSchema ?? null}
-              targetSchema={currentData.targetSchema ?? null}
+              sourceSchema={currentData.draftData?.sourceSchema ?? null}
+              targetSchema={currentData.draftData?.targetSchema ?? null}
               onValidationResult={(result: MappingValidationResult | null) =>
                 p.onChange({ ...currentData, lastValidation: result })
               }
@@ -167,8 +158,8 @@ registry.registerConfigProvider<ResolverDraft>({
           return <ResolverBuildStep draft={currentData} />;
         },
         capabilities: {
-          canStartBatch: (data: ResolverDraft) =>
-            Boolean(data?.name?.trim() && data?.sourceSchema && data?.targetSchema),
+          canStartBatch: (data: ResolverUpdaterPayload) =>
+            Boolean(data?.draftMetadata?.name?.trim() && data?.draftData?.sourceSchema && data?.draftData?.targetSchema),
         },
         validate: () => true,
       },

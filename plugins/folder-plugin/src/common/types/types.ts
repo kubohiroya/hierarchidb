@@ -3,7 +3,7 @@
   */
 
 import type { NodeId, Timestamp } from '@hierarchidb/common-types';
-import { FolderEntity } from './FolderEntity.ts';
+import { FolderEntity } from './FolderEntity.js';
 
 // Re-export existing types from the entities directory
 export type {

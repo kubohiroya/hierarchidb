@@ -1,23 +1,16 @@
 import { PluginStepRegistry, type StepComponentProps, type StepData } from '@hierarchidb/plugin-base';
+import type { TimelineDraft, TimelineFrame } from '../../common/types/index.js';
 import { FramesPreviewStep } from '../steps/FramesPreviewStep.js';
 import { MapPreviewStep } from '../steps/MapPreviewStep.js';
 import { AnimationViewerStep } from '../steps/AnimationViewerStep.js';
 
 const registry = PluginStepRegistry.getInstance();
 
-type TimelineFrameConfig = {
-  id: string;
-  name: string;
-  viewState?: {
-    longitude: number;
-    latitude: number;
-    zoom?: number;
-    bearing?: number;
-    pitch?: number;
+type TimelineData = StepData &
+  Pick<TimelineDraft, 'treeNodeId' | 'draftMetadata'> &
+  Partial<Pick<TimelineDraft, 'draftData'>> & {
+    frames?: TimelineFrame[];
   };
-};
-
-type TimelineData = StepData & { basic: { name: string; description?: string }; frames: TimelineFrameConfig[] };
 
 registry.registerConfigProvider<TimelineData>({
   nodeType: 'timeline',
@@ -31,7 +24,7 @@ registry.registerConfigProvider<TimelineData>({
           titles: { en: 'Frames Preview', ja: 'フレームプレビュー' },
         },
         componentFactory: (p: StepComponentProps<TimelineData>) => (
-          <FramesPreviewStep frames={p.data?.frames || []} />
+          <FramesPreviewStep frames={p.data?.frames || p.data?.draftData?.frames || []} />
         ),
       },
       {
@@ -42,7 +35,7 @@ registry.registerConfigProvider<TimelineData>({
           titles: { en: 'Map Preview', ja: '地図プレビュー' },
         },
         componentFactory: (p: StepComponentProps<TimelineData>) => (
-          <MapPreviewStep frames={p.data?.frames || []} />
+          <MapPreviewStep frames={p.data?.frames || p.data?.draftData?.frames || []} />
         ),
       },
       {
@@ -53,7 +46,7 @@ registry.registerConfigProvider<TimelineData>({
           titles: { en: 'Final Animation', ja: 'アニメーション確認' },
         },
         componentFactory: (p: StepComponentProps<TimelineData>) => (
-          <AnimationViewerStep frames={p.data?.frames || []} />
+          <AnimationViewerStep frames={p.data?.frames || p.data?.draftData?.frames || []} />
         ),
       },
     ];

@@ -58,11 +58,36 @@ export interface UseTreeNodeUpdaterResult<TPayload extends object = Record<strin
 }
 
 export type DraftData<TPayload extends object = Record<string, unknown>> = TreeNodeUpdaterState<TPayload>;
+// Shared alias for dialog payloads; intentionally does not include metadata/version/timestamps.
+export type PluginDialogData<TPayload extends object = Record<string, unknown>> = TPayload;
 
 // Re-export legacy draft hook types for compatibility
 export type UseDraftOptions<TPayload extends object = Record<string, unknown>> = UseTreeNodeUpdaterOptions<TPayload>;
 export type UseDraftResult<TPayload extends object = Record<string, unknown>> = UseTreeNodeUpdaterResult<TPayload>;
 export const useDraft = useTreeNodeUpdater;
+
+export const buildDialogDraftUpdater = <TPayload extends object = Record<string, unknown>>(
+  updateDraft: (data: Partial<TreeNodeUpdaterState<TPayload>>) => void
+) => {
+  const updatePayload = (patch: Partial<TPayload>, base?: TPayload) => {
+    const next = { ...(base ?? ({} as TPayload)), ...patch } as TPayload;
+    updateDraft({ draftData: next });
+  };
+  const updateMetadata = (patch: Partial<TreeNodeMetadata>, base?: TreeNodeMetadata) => {
+    const fallback: TreeNodeMetadata = { name: '', description: '', tags: [] };
+    updateDraft({ draftMetadata: { ...(base ?? fallback), ...patch } });
+  };
+  const updatePayloadAndMetadata = (
+    payloadPatch: Partial<TPayload>,
+    metadataPatch: Partial<TreeNodeMetadata>,
+    base?: { payload?: TPayload; metadata?: TreeNodeMetadata }
+  ) => {
+    updatePayload(payloadPatch, base?.payload);
+    updateMetadata(metadataPatch, base?.metadata);
+  };
+
+  return { updatePayload, updateMetadata, updatePayloadAndMetadata };
+};
 
 export function useTreeNodeUpdater<TPayload extends object = Record<string, unknown>>({
   mode,

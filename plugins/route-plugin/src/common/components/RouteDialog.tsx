@@ -4,16 +4,16 @@
 
 import { useMemo, useCallback, useEffect, useRef } from 'react';
 import type { NodeId, TreeId, TreeNodeMetadata } from '@hierarchidb/common-types';
-import type { RouteEntity, RouteDraft } from '../entities/RouteEntity.js';
+import type { RouteEntity, RouteUpdaterPayload } from '../entities/RouteEntity.js';
 import type { TagId } from '../types/index.js';
-import { getRouteDraft, normalizeRouteDraft } from '../utils/draft.js';
+import { getRouteUpdaterPayload, toRouteUpdaterPayload } from '../utils/draft.js';
 import { useTranslation } from '../i18n/index.js';
 import { RouteDetailsStep } from './RouteDetailsStep.js';
 import { RouteSelectionStep } from './RouteSelectionStep.js';
 import { RouteProcessingStep } from './RouteProcessingStep.js';
 import { readRuntimeMode } from '@hierarchidb/util';
 import { notify } from '@hierarchidb/components';
-import { useDialogDraft } from '@hierarchidb/plugin-ui-sdk';
+import { useDialogDraft, buildDialogDraftUpdater } from '@hierarchidb/plugin-ui-sdk';
 import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 import { useState } from 'react';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
@@ -46,7 +46,7 @@ export interface RouteDialogProps {
   mode: 'create' | 'edit';
   nodeId?: NodeId;
   parentId?: NodeId;
-  onSuccess?: (entity: RouteDraft) => void;
+  onSuccess?: (entity: RouteUpdaterPayload) => void;
   onError?: (error: Error) => void;
 }
 
@@ -89,10 +89,10 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [detailsValid, setDetailsValid] = useState(false);
   const routeDraft = useMemo(
-    () => normalizeRouteDraft(draft, effectiveNodeId),
+    () => toRouteUpdaterPayload(draft, effectiveNodeId),
     [draft, effectiveNodeId]
   );
-  const workingDraft = useMemo<RouteDraft>(() => {
+  const workingDraft = useMemo<RouteUpdaterPayload>(() => {
     return (
       routeDraft ?? {
         treeNodeId: effectiveNodeId,
@@ -101,6 +101,10 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
       }
     );
   }, [routeDraft, effectiveNodeId]);
+  const { updatePayload, updateMetadata } = useMemo(
+    () => buildDialogDraftUpdater<RouteEntity>(updateDraft),
+    [updateDraft]
+  );
 
   const applyUpdates = useCallback(
     (updates: Partial<RouteEntity>) => {
@@ -111,33 +115,26 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
         description: typeof baseMeta.description === 'string' ? baseMeta.description : '',
         tags: Array.isArray(baseMeta.tags) ? baseMeta.tags.map((tag) => tag as TagId) : [],
       };
-      if (updates.name !== undefined) {
-        nextDraftMetadata.name = updates.name ?? '';
-      }
-      if (updates.description !== undefined) {
-        nextDraftMetadata.description = updates.description ?? '';
-      }
-      if (updates.tags !== undefined) {
-        nextDraftMetadata.tags = Array.isArray(updates.tags)
-          ? updates.tags.map((tag) => String(tag))
-          : [];
-      }
       const { name, description, tags, ...rest } = updates;
-      const nextDraftData = {
-        ...(draft.draftData ?? {}),
-        ...rest,
-      };
-      void updateDraft({
-        draftMetadata: nextDraftMetadata,
-        draftData: nextDraftData,
-      });
+      updatePayload(rest, (draft.draftData ?? {}) as RouteEntity);
+      updateMetadata(
+        {
+          ...nextDraftMetadata,
+          ...(name !== undefined ? { name: name ?? '' } : {}),
+          ...(description !== undefined ? { description: description ?? '' } : {}),
+          ...(tags !== undefined
+            ? { tags: Array.isArray(tags) ? tags.map((tag) => String(tag)) : [] }
+            : {}),
+        },
+        nextDraftMetadata
+      );
     },
-    [draft, updateDraft]
+    [draft, updateMetadata, updatePayload]
   );
 
   // Simple computed validity based on draft to ease testing and determinism
   const routeDraftPayload = useMemo(
-    () => (routeDraft ? getRouteDraft(routeDraft) : getRouteDraft(workingDraft)),
+    () => (routeDraft ? getRouteUpdaterPayload(routeDraft) : getRouteUpdaterPayload(workingDraft)),
     [routeDraft, workingDraft]
   );
   const resolvedName = typeof routeDraftPayload?.name === 'string' ? routeDraftPayload.name : '';
@@ -335,7 +332,7 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
 
   const isTestEnv = useMemo(() => readRuntimeMode() === 'test', []);
 
-  const renderHeader: HeadlessMultiStepDialogProps<RouteDraft | null>['renderHeader'] = useCallback((props: HeadlessHeaderRenderProps<RouteDraft | null>) => (
+  const renderHeader: HeadlessMultiStepDialogProps<RouteUpdaterPayload | null>['renderHeader'] = useCallback((props: HeadlessHeaderRenderProps<RouteUpdaterPayload | null>) => (
     <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #dde1eb' }}>
       <div>
         <strong>{t('base-dialog.title', 'Route Configuration')}</strong>
@@ -350,13 +347,13 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
     </header>
   ), [handleNavigation, steps.length, t]);
 
-  const renderContent: HeadlessMultiStepDialogProps<RouteDraft | null>['renderContent'] = useCallback((props: HeadlessContentRenderProps<RouteDraft | null>) => (
+  const renderContent: HeadlessMultiStepDialogProps<RouteUpdaterPayload | null>['renderContent'] = useCallback((props: HeadlessContentRenderProps<RouteUpdaterPayload | null>) => (
     <div style={{ padding: 16 }}>
       {steps[props.activeStepIndex]?.component}
     </div>
   ), [steps]);
 
-  const renderFooter: HeadlessMultiStepDialogProps<RouteDraft | null>['renderFooter'] = useCallback((props: HeadlessFooterRenderProps<RouteDraft | null>) => {
+  const renderFooter: HeadlessMultiStepDialogProps<RouteUpdaterPayload | null>['renderFooter'] = useCallback((props: HeadlessFooterRenderProps<RouteUpdaterPayload | null>) => {
     const allFilled = filledSteps.every(Boolean);
     return (
       <footer style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #dde1eb' }}>
@@ -503,12 +500,12 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
     }
   }, [applyNormalizedState, displayMode]);
 
-  const stepDescriptors = useMemo<ReadonlyArray<StepComponentDescriptor<RouteDraft>>>(() =>
+  const stepDescriptors = useMemo<ReadonlyArray<StepComponentDescriptor<RouteUpdaterPayload>>>(() =>
     steps.map((step) => ({
       id: step.id,
       label: step.label,
       component: (() => step.component as React.ReactElement) as unknown as React.ComponentType<
-        StepComponentProps<RouteDraft>
+        StepComponentProps<RouteUpdaterPayload>
       >,
     }))
   , [steps]);
@@ -537,7 +534,7 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
         open={open}
         stepComponents={stepDescriptors}
         stepData={workingDraft}
-        onStepDataChange={(patch: Partial<RouteDraft>) => {
+        onStepDataChange={(patch: Partial<RouteUpdaterPayload>) => {
           if (!patch) return;
           const nextDraftMetadata =
             patch.draftMetadata ?? workingDraft.draftMetadata ?? { name: '', description: '', tags: [] };
@@ -565,9 +562,9 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
         onPositionChange={handlePositionChange}
         size={dialogSize}
         onSizeChange={handleSizeChange}
-        renderHeader={renderHeader as HeadlessMultiStepDialogProps<RouteDraft>['renderHeader']}
-        renderContent={renderContent as HeadlessMultiStepDialogProps<RouteDraft>['renderContent']}
-        renderFooter={renderFooter as HeadlessMultiStepDialogProps<RouteDraft>['renderFooter']}
+        renderHeader={renderHeader as HeadlessMultiStepDialogProps<RouteUpdaterPayload>['renderHeader']}
+        renderContent={renderContent as HeadlessMultiStepDialogProps<RouteUpdaterPayload>['renderContent']}
+        renderFooter={renderFooter as HeadlessMultiStepDialogProps<RouteUpdaterPayload>['renderFooter']}
       />
     </div>
   );

@@ -1,8 +1,8 @@
 import { describe, expect, vi, it, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { RouteDetailsStep } from '../components/RouteDetailsStep.js';
-import { RouteType, TransportMode, type RouteEntity, type RouteDraft, type NodeId } from '../types/index.js';
-import { createRouteDraftBase, mergeRouteDraft } from '../utils/draft.js';
+import { RouteType, TransportMode, type RouteEntity, type RouteUpdaterPayload, type NodeId } from '../types/index.js';
+import { createRouteUpdaterPayloadBase, mergeRouteUpdaterPayload } from '../utils/draft.js';
 import { en as enTranslations } from '../i18n/en.js';
 import "@testing-library/jest-dom/vitest";
 
@@ -13,9 +13,9 @@ vi.mock('../i18n/index.js', () => ({
   }),
 }));
 
-const createDraft = (overrides: Partial<RouteEntity> = {}): RouteDraft => {
-  const base = createRouteDraftBase('route-node-1' as NodeId);
-  return mergeRouteDraft(base, overrides);
+const createDraft = (overrides: Partial<RouteEntity> = {}): RouteUpdaterPayload => {
+  const base = createRouteUpdaterPayloadBase('route-node-1' as NodeId);
+  return mergeRouteUpdaterPayload(base, overrides);
 };
 
 describe('RouteDetailsStep', () => {

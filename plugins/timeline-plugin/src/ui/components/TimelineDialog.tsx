@@ -20,9 +20,13 @@ import {
   type MultiDialogPosition,
 } from '@hierarchidb/ui-dialog';
 import { BasicInfoStep, type BasicInfoValues } from '../steps/BasicInfoStep.js';
-import { FramesPreviewStep, type TimelineFrame } from '../steps/FramesPreviewStep.js';
+import { FramesPreviewStep } from '../steps/FramesPreviewStep.js';
 import { MapPreviewStep } from '../steps/MapPreviewStep.js';
 import { AnimationViewerStep } from '../steps/AnimationViewerStep.js';
+import { useDialogDraft } from '@hierarchidb/plugin-ui-sdk';
+import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
+import type { NodeId } from '@hierarchidb/common-types';
+import type { TimelineDraft, TimelineEntity, TimelineFrame } from '../../common/types/index.js';
 
 export interface TimelineDialogProps {
   mode: 'create' | 'edit';
@@ -41,12 +45,42 @@ type TimelineDialogStep = {
 };
 
 export function TimelineDialog(props: TimelineDialogProps) {
-  const [basic, setBasic] = useState<BasicInfoValues>({ name: 'New Timeline', description: '' });
-  const [frames] = useState<TimelineFrame[]>([
-    { id: 'f1', name: 'Frame A' },
-    { id: 'f2', name: 'Frame B' },
-    { id: 'f3', name: 'Frame C' },
-  ]);
+  const workerClient = useMemo<WorkerClientRef | null>(() => {
+    try {
+      const hook = getWorkerClientHook<WorkerClientRef | null>();
+      return hook();
+    } catch {
+      return null;
+    }
+  }, []);
+  const effectiveNodeId = useMemo<NodeId>(
+    () => (props.nodeId ?? props.parentId ?? (`timeline-${Date.now()}` as NodeId)) as NodeId,
+    [props.nodeId, props.parentId]
+  );
+  const { draft, updateDraft, saveDraft, discardDraft } = useDialogDraft<Partial<TimelineEntity>>({
+    mode: props.mode,
+    nodeType: 'timeline',
+    nodeId: props.nodeId as NodeId | undefined,
+    parentId: props.parentId as NodeId | undefined,
+    workerClient,
+  });
+  const workingDraft = useMemo<TimelineDraft>(() => {
+    return (
+      draft ?? {
+        treeNodeId: effectiveNodeId,
+        draftMetadata: { name: 'New Timeline', description: '', tags: [] },
+        draftData: { frames: [] },
+      }
+    );
+  }, [draft, effectiveNodeId]);
+  const frames = useMemo<TimelineFrame[]>(() => workingDraft.draftData?.frames ?? [], [workingDraft]);
+  const basic = useMemo<BasicInfoValues>(
+    () => ({
+      name: workingDraft.draftMetadata?.name ?? 'New Timeline',
+      description: workingDraft.draftMetadata?.description ?? '',
+    }),
+    [workingDraft.draftMetadata]
+  );
   const [activeStepIndex, setActiveStepIndex] = useState(0);
 
   const viewportOnMount = getViewportSize();
@@ -84,13 +118,27 @@ export function TimelineDialog(props: TimelineDialogProps) {
     {
       id: 'basic',
       label: 'Basic Information',
-      component: <BasicInfoStep values={basic} onChange={setBasic} />,
+      component: (
+        <BasicInfoStep
+          values={basic}
+          onChange={(next) => {
+            void updateDraft({
+              treeNodeId: workingDraft.treeNodeId,
+              draftMetadata: {
+                ...(workingDraft.draftMetadata ?? { name: '', description: '', tags: [] }),
+                name: next.name,
+                description: next.description ?? '',
+              },
+            });
+          }}
+        />
+      ),
       validate: async () => (basic?.name || '').trim().length > 0,
     },
     { id: 'frames', label: 'Frames Preview', component: <FramesPreviewStep frames={frames} /> },
     { id: 'map', label: 'Map Preview', component: <MapPreviewStep frames={frames} /> },
     { id: 'final', label: 'Final Animation', component: <AnimationViewerStep frames={frames} /> },
-  ], [basic, frames]);
+  ], [basic, frames, updateDraft, workingDraft.draftMetadata, workingDraft.treeNodeId]);
 
   const filledSteps = useMemo(() => [
     (basic?.name || '').trim().length > 0,
@@ -125,9 +173,15 @@ export function TimelineDialog(props: TimelineDialogProps) {
     }
   }, [steps.length]);
 
-  const handleCommit = useCallback(() => {
-    props.onSuccess(props.nodeId || 'timeline-new');
-  }, [props]);
+  const handleCommit = useCallback(async () => {
+    const savedNodeId = await saveDraft({
+      treeNodeId: workingDraft.treeNodeId,
+      draftMetadata:
+        workingDraft.draftMetadata ?? { name: basic.name, description: basic.description ?? '', tags: [] },
+      draftData: (workingDraft.draftData ?? { frames }) as Partial<TimelineEntity>,
+    });
+    props.onSuccess(savedNodeId || (workingDraft.treeNodeId as unknown as string));
+  }, [basic.description, basic.name, frames, props, saveDraft, workingDraft.draftData, workingDraft.draftMetadata, workingDraft.treeNodeId]);
 
   const stepDescriptors = useMemo<ReadonlyArray<StepComponentDescriptor<any>>>(() => (
     steps.map((step) => ({ id: step.id, label: step.label, component: () => null }))
@@ -156,11 +210,19 @@ export function TimelineDialog(props: TimelineDialogProps) {
     const allValid = filledSteps.every(Boolean);
     return (
       <footer style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #dde1eb' }}>
-        <button type="button" onClick={() => propsFooter.onRequestClose?.('close')}>Cancel</button>
+        <button
+          type="button"
+          onClick={() => {
+            void discardDraft();
+            propsFooter.onRequestClose?.('close');
+          }}
+        >
+          Cancel
+        </button>
         <button type="button" onClick={() => propsFooter.onRequestCommit?.()} disabled={!allValid}>Save</button>
       </footer>
     );
-  }, [filledSteps]);
+  }, [discardDraft, filledSteps]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;

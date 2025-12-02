@@ -7,12 +7,12 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { Box, TextField, MenuItem } from '@mui/material';
 import { Divider } from '@mui/material';
 import { useTranslation } from '../i18n/index.js';
-import type { RouteEntity, RouteDraft, RouteType } from '../entities/RouteEntity.js';
+import type { RouteEntity, RouteUpdaterPayload, RouteType } from '../entities/RouteEntity.js';
 import { ROUTE_TYPES } from '../entities/RouteEntity.js';
-import { getRouteDraft } from '../utils/draft.js';
+import { getRouteUpdaterPayload } from '../utils/draft.js';
 
 export interface RouteDetailsStepProps {
-  draft: RouteDraft;
+  draft: RouteUpdaterPayload;
   onUpdate: (updates: Partial<RouteEntity>) => void;
   onValidationChange: (isValid: boolean) => void;
   disabled?: boolean;
@@ -25,7 +25,7 @@ export const RouteDetailsStep: React.FC<RouteDetailsStepProps> = ({
   disabled = false,
 }) => {
   const { translations } = useTranslation();
-  const draft = useMemo(() => getRouteDraft(draftProp), [draftProp]);
+  const draft = useMemo(() => getRouteUpdaterPayload(draftProp), [draftProp]);
 
   const resolvedRouteType = (draft.routeType as RouteType | undefined) ?? ROUTE_TYPES.ROAD;
   const resolvedDataSource = draft.dataSourceName ?? 'openstreetmap';

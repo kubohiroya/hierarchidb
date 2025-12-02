@@ -1,8 +1,8 @@
 import { describe, expect, vi, it, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { RouteSelectionStep } from '../components/RouteSelectionStep.js';
-import type { RouteEntity, RouteDraft, NodeId } from '../types/index.js';
-import { createRouteDraftBase, mergeRouteDraft } from '../utils/draft.js';
+import type { RouteEntity, RouteUpdaterPayload, NodeId } from '../types/index.js';
+import { createRouteUpdaterPayloadBase, mergeRouteUpdaterPayload } from '../utils/draft.js';
 import { en as enTranslations } from '../i18n/en.js';
 
 vi.mock('../i18n/index.js', () => ({
@@ -12,9 +12,9 @@ vi.mock('../i18n/index.js', () => ({
   }),
 }));
 
-const createDraft = (overrides: Partial<RouteEntity> = {}): RouteDraft => {
-  const base = createRouteDraftBase('route-node-1' as NodeId);
-  return mergeRouteDraft(base, overrides);
+const createDraft = (overrides: Partial<RouteEntity> = {}): RouteUpdaterPayload => {
+  const base = createRouteUpdaterPayloadBase('route-node-1' as NodeId);
+  return mergeRouteUpdaterPayload(base, overrides);
 };
 
 describe('RouteSelectionStep', () => {

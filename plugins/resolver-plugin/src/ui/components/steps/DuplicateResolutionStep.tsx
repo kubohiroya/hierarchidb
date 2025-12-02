@@ -25,11 +25,11 @@ import {
   SkipNext as SkipIcon,
   Update as UpdateIcon,
 } from '@mui/icons-material';
-import type { DuplicateResolutionStrategy, ResolverDraftEntity, PropertyMappingRule } from '../../../common/types/index.js';
+import type { DuplicateResolutionStrategy, ResolverUpdaterPayload, PropertyMappingRule } from '../../../common/types/index.js';
 
 interface DuplicateResolutionStepProps {
-  data: Partial<ResolverDraftEntity>;
-  onUpdate: (updates: Partial<ResolverDraftEntity>) => void;
+  data: Partial<ResolverUpdaterPayload>;
+  onUpdate: (updates: Partial<ResolverUpdaterPayload>) => void;
   onValidationChange: (isValid: boolean) => void;
 }
 
@@ -71,14 +71,15 @@ export const DuplicateResolutionStep: React.FC<DuplicateResolutionStepProps> = (
                                                                                   onUpdate,
                                                                                   onValidationChange,
                                                                                 }) => {
+  const draftData = data.draftData ?? {};
   const [strategy, setStrategy] = useState<DuplicateResolutionStrategy['strategy']>(
-    data.duplicateResolution?.strategy || 'ignore',
+    draftData.duplicateResolution?.strategy || 'ignore',
   );
   const [customFunction, setCustomFunction] = useState<string>(
-    data.duplicateResolution?.customFunction || '',
+    draftData.duplicateResolution?.customFunction || '',
   );
   const [mergeProperties, setMergeProperties] = useState<string>(
-    data.duplicateResolution?.mergeProperties?.join(', ') || '',
+    draftData.duplicateResolution?.mergeProperties?.join(', ') || '',
   );
   const [enableDuplicateDetection, setEnableDuplicateDetection] = useState(true);
   const [customFunctionError, setCustomFunctionError] = useState<string>('');
@@ -93,7 +94,7 @@ export const DuplicateResolutionStep: React.FC<DuplicateResolutionStepProps> = (
         : undefined,
     };
 
-    onUpdate({ duplicateResolution });
+    onUpdate({ draftData: { duplicateResolution } });
   }, [strategy, customFunction, mergeProperties, onUpdate]);
 
   // Validation

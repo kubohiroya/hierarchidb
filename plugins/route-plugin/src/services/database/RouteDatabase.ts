@@ -6,7 +6,7 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { RouteEntity, RouteGenerationConfig, RouteDraft } from '../../common/entities/RouteEntity.js';
+import type { RouteEntity, RouteGenerationConfig, RouteUpdaterPayload } from '../../common/entities/RouteEntity.js';
 
 /**
  * Route cache entry
@@ -53,7 +53,7 @@ export interface PendingRouteSessionRecord {
 
 export class RouteDatabase extends Dexie {
   routes!: Table<RouteEntity, NodeId>;
-  workingCopies!: Table<RouteDraft, NodeId>;
+  workingCopies!: Table<RouteUpdaterPayload, NodeId>;
   routeCache!: Table<RouteCacheEntry, string>;
   // Batch session tracking (cursor/progress)
   routeCursors!: Table<RouteCursorRow, string>;

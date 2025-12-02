@@ -1,2 +1,2 @@
 // Common utilities for the linker plugin (currently placeholder).
-export {};
+export * from './types/index.js';

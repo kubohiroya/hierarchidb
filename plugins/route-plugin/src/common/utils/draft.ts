@@ -1,16 +1,16 @@
 import type { NodeId, TreeNodeMetadata } from '@hierarchidb/common-types';
-import type { RouteDraft, RouteEntity } from '../entities/RouteEntity.js';
+import type { RouteUpdaterPayload, RouteEntity } from '../entities/RouteEntity.js';
 
-export function normalizeRouteDraft(
-  routeDraft: RouteDraft | null,
+export function toRouteUpdaterPayload(
+  routeDraft: RouteUpdaterPayload | null,
   effectiveNodeId: NodeId,
-): RouteDraft {
+): RouteUpdaterPayload {
   if (!routeDraft) {
     return {
       treeNodeId: effectiveNodeId,
       draftMetadata: { name: '', description: '', tags: [] },
       draftData: {},
-    } as RouteDraft;
+    } as RouteUpdaterPayload;
   }
 
   const baseMeta = (routeDraft.draftMetadata ?? {}) as Partial<TreeNodeMetadata>;
@@ -27,10 +27,10 @@ export function normalizeRouteDraft(
     treeNodeId: routeDraft.treeNodeId ?? effectiveNodeId,
     draftMetadata: nextDraftMetadata,
     draftData: nextDraftData,
-  } as RouteDraft;
+  } as RouteUpdaterPayload;
 }
 
-export function getRouteDraft(draft: RouteDraft): Partial<RouteEntity> {
+export function getRouteUpdaterPayload(draft: RouteUpdaterPayload): Partial<RouteEntity> {
   if (draft && typeof draft === 'object' && 'draftData' in draft && draft.draftData) {
     return draft.draftData as Partial<RouteEntity>;
   }

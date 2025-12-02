@@ -11,7 +11,9 @@ export type {
   UseTreeNodeUpdaterResult,
   TreeNodeUpdaterState,
   DraftData,
+  PluginDialogData,
   UseDraftOptions,
   UseDraftResult,
 } from './hooks/useDialogDraft.js';
+export { buildDialogDraftUpdater } from './hooks/useDialogDraft.js';
 export type { BasicInfoStepProps } from './dialog/steps/BasicInfoStep.js';

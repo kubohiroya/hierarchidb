@@ -17,11 +17,11 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { CheckCircle as CheckIcon, Schema as SchemaIcon } from '@mui/icons-material';
-import type { PropertyInfo, ResolverDraftEntity, SchemaInfo } from '../../../common/types/index.js';
+import type { PropertyInfo, ResolverUpdaterPayload, SchemaInfo } from '../../../common/types/index.js';
 
 interface SchemaSelectionStepProps {
-  data: Partial<ResolverDraftEntity>;
-  onUpdate: (updates: Partial<ResolverDraftEntity>) => void;
+  data: Partial<ResolverUpdaterPayload>;
+  onUpdate: (updates: Partial<ResolverUpdaterPayload>) => void;
   onValidationChange: (isValid: boolean) => void;
   onSourceSchemaChange: (schema: SchemaInfo | null) => void;
   onTargetSchemaChange: (schema: SchemaInfo | null) => void;
@@ -40,12 +40,13 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
                                                                           onSourceSchemaChange,
                                                                           onTargetSchemaChange,
                                                                         }) => {
+  const draftData = data.draftData ?? {};
   const [sourceInputMethod, setSourceInputMethod] = useState<string>('sample');
   const [targetInputMethod, setTargetInputMethod] = useState<string>('sample');
   const [sourceInput, setSourceInput] = useState<string>('');
   const [targetInput, setTargetInput] = useState<string>('');
-  const [sourceSchema, setSourceSchema] = useState<SchemaInfo | null>(null);
-  const [targetSchema, setTargetSchema] = useState<SchemaInfo | null>(null);
+  const [sourceSchema, setSourceSchema] = useState<SchemaInfo | null>(draftData.sourceSchema ?? null);
+  const [targetSchema, setTargetSchema] = useState<SchemaInfo | null>(draftData.targetSchema ?? null);
   const [sourceError, setSourceError] = useState<string>('');
   const [targetError, setTargetError] = useState<string>('');
 
@@ -115,14 +116,14 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
       if (schema) {
         setSourceSchema(schema);
         onSourceSchemaChange(schema);
-        onUpdate({ sourceSchema: schema });
+        onUpdate({ draftData: { sourceSchema: schema } });
         return;
       }
       setSourceError('Invalid JSON format or structure');
     }
     setSourceSchema(null);
     onSourceSchemaChange(null);
-    onUpdate({ sourceSchema: null });
+    onUpdate({ draftData: { sourceSchema: null } });
   }, [parseSchemaFromSample, onSourceSchemaChange, onUpdate]);
 
   const handleTargetInputChange = useCallback((value: string) => {
@@ -134,35 +135,35 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
       if (schema) {
         setTargetSchema(schema);
         onTargetSchemaChange(schema);
-        onUpdate({ targetSchema: schema });
+        onUpdate({ draftData: { targetSchema: schema } });
         return;
       }
       setTargetError('Invalid JSON format or structure');
     }
     setTargetSchema(null);
     onTargetSchemaChange(null);
-    onUpdate({ targetSchema: null });
+    onUpdate({ draftData: { targetSchema: null } });
   }, [parseSchemaFromSample, onTargetSchemaChange, onUpdate]);
 
   // Initialize from existing data
   useEffect(() => {
-    if (data.sourceSchema && !sourceSchema) {
-      setSourceSchema(data.sourceSchema);
-      onSourceSchemaChange(data.sourceSchema);
-      if (!sourceInput && Array.isArray(data.sourceSchema.sampleData)) {
-        setSourceInput(JSON.stringify(data.sourceSchema.sampleData, null, 2));
+    if (draftData.sourceSchema && !sourceSchema) {
+      setSourceSchema(draftData.sourceSchema);
+      onSourceSchemaChange(draftData.sourceSchema);
+      if (!sourceInput && Array.isArray(draftData.sourceSchema.sampleData)) {
+        setSourceInput(JSON.stringify(draftData.sourceSchema.sampleData, null, 2));
       }
     }
-    if (data.targetSchema && !targetSchema) {
-      setTargetSchema(data.targetSchema);
-      onTargetSchemaChange(data.targetSchema);
-      if (!targetInput && Array.isArray(data.targetSchema.sampleData)) {
-        setTargetInput(JSON.stringify(data.targetSchema.sampleData, null, 2));
+    if (draftData.targetSchema && !targetSchema) {
+      setTargetSchema(draftData.targetSchema);
+      onTargetSchemaChange(draftData.targetSchema);
+      if (!targetInput && Array.isArray(draftData.targetSchema.sampleData)) {
+        setTargetInput(JSON.stringify(draftData.targetSchema.sampleData, null, 2));
       }
     }
   }, [
-    data.sourceSchema,
-    data.targetSchema,
+    draftData.sourceSchema,
+    draftData.targetSchema,
     handleSourceInputChange,
     handleTargetInputChange,
     onSourceSchemaChange,

@@ -32,11 +32,11 @@ import {
   Edit as EditIcon,
   Rule as RuleIcon,
 } from '@mui/icons-material';
-import type { ResolverDraftEntity, SchemaInfo, ValidationRule } from '../../../common/types/index.js';
+import type { ResolverUpdaterPayload, SchemaInfo, ValidationRule } from '../../../common/types/index.js';
 
 interface ValidationConfigStepProps {
-  data: Partial<ResolverDraftEntity>;
-  onUpdate: (updates: Partial<ResolverDraftEntity>) => void;
+  data: Partial<ResolverUpdaterPayload>;
+  onUpdate: (updates: Partial<ResolverUpdaterPayload>) => void;
   onValidationChange: (isValid: boolean) => void;
   sourceSchema: SchemaInfo | null;
   targetSchema: SchemaInfo | null;
@@ -64,6 +64,7 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
                                                                             sourceSchema,
                                                                             targetSchema,
                                                                           }) => {
+  const draftData = data.draftData ?? {};
   const [validationRules, setValidationRules] = useState<ValidationRule[]>([]);
   const [showRuleDialog, setShowRuleDialog] = useState(false);
   const [editingRule, setEditingRule] = useState<ValidationRule | null>(null);
@@ -77,14 +78,14 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
 
   // Initialize validation rules from data
   useEffect(() => {
-    if (data.validationRules) {
-      setValidationRules(data.validationRules);
+    if (draftData.validationRules) {
+      setValidationRules(draftData.validationRules);
     }
-  }, [data.validationRules]);
+  }, [draftData.validationRules]);
 
   // Update parent data when validation rules change
   useEffect(() => {
-    onUpdate({ validationRules });
+    onUpdate({ draftData: { validationRules } });
   }, [validationRules, onUpdate]);
 
   // Always consider this step valid (validation is optional)

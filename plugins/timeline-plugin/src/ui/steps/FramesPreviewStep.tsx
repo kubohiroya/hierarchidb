@@ -1,10 +1,6 @@
 import { useMemo } from 'react';
 import { Box, List, ListItem, ListItemText, Typography } from '@mui/material';
-
-export interface TimelineFrame {
-  id: string;
-  name: string;
-}
+import type { TimelineFrame } from '../../common/types/index.js';
 
 export function FramesPreviewStep({
   frames,
