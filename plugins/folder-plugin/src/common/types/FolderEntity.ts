@@ -34,13 +34,3 @@ export interface FolderSearchQuery {
   limit?: number;
   offset?: number;
 }
-
-export interface FolderStatsSummary {
-  totalFolders: number;
-}
-
-export interface FolderStructureNode {
-  nodeId: NodeId;
-  name: string;
-  children?: FolderStructureNode[];
-}

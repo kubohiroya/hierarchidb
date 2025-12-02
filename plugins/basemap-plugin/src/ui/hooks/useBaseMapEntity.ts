@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId, TreeId, TreeNode, TreeNodeUpdater } from '@hierarchidb/common-types';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
-import { useDialogDraft } from '@hierarchidb/plugin-ui-sdk';
+import { useTreeNodeUpdater, createTreeNodeUpdaterActions } from '@hierarchidb/plugin-ui-sdk';
 import type {
   BaseMapEntity,
   MapStyle,
@@ -117,7 +117,7 @@ export function useBaseMapEntity(
     updateTreeNodeUpdater,
     commitTreeNodeUpdater,
     discardDraft,
-  } = useDialogDraft<BaseMapEntity>({
+  } = useTreeNodeUpdater<BaseMapEntity>({
     mode: 'edit',
     nodeType: 'basemap',
     parentId: nodeId ?? undefined,
@@ -128,6 +128,10 @@ export function useBaseMapEntity(
       viewport: undefined,
     },
   });
+  const { updatePayload, updatePayloadAndMetadata } = useMemo(
+    () => createTreeNodeUpdaterActions<BaseMapEntity>(updateTreeNodeUpdater),
+    [updateTreeNodeUpdater],
+  );
 
   // Fetch entity
   const fetchEntity = useCallback(async () => {
@@ -205,18 +209,18 @@ export function useBaseMapEntity(
         if (!treeNodeUpdater) {
           throw new Error('No draft available for basemap');
         }
-        updateTreeNodeUpdater({
-          treeNodeId: id,
-          draftMetadata: {
+        updateTreeNodeUpdater({ treeNodeId: id });
+        updatePayloadAndMetadata(
+          {
+            mapStyle: updater.payload.draftData?.mapStyle ?? { ...DEFAULT_MAP_STYLE },
+            viewport: updater.payload.draftData?.viewport,
+          },
+          {
             name: updater.payload.draftMetadata?.name ?? '',
             description: updater.payload.draftMetadata?.description ?? '',
             tags: updater.payload.draftMetadata?.tags ?? [],
           },
-          draftData:  {
-            mapStyle: updater.payload.draftData?.mapStyle ?? { ...DEFAULT_MAP_STYLE },
-            viewport: updater.payload.draftData?.viewport,
-          },
-        });
+        );
         await commitTreeNodeUpdater();
         await fetchEntity();
       } catch (err) {
@@ -249,12 +253,7 @@ export function useBaseMapEntity(
             : prev
         );
         if (treeNodeUpdater) {
-          void updateTreeNodeUpdater({
-            draftData: {
-              ...(treeNodeUpdater.draftData ?? {}),
-              viewport: cached,
-            },
-          });
+          void updatePayload({ viewport: cached }, treeNodeUpdater.draftData ?? undefined);
         }
         return;
       }
@@ -270,12 +269,7 @@ export function useBaseMapEntity(
           : prev
       );
       if (treeNodeUpdater) {
-        void updateTreeNodeUpdater({
-          draftData: {
-            ...(treeNodeUpdater.draftData ?? {}),
-            viewport: fallbackViewport,
-          },
-        });
+        void updatePayload({ viewport: fallbackViewport }, treeNodeUpdater.draftData ?? undefined);
       }
 
       // Then (once) ask and resolve geolocation; cache result for reuse
@@ -296,12 +290,7 @@ export function useBaseMapEntity(
               : prev
           );
           if (treeNodeUpdater) {
-            updateTreeNodeUpdater({
-              draftData: {
-                ...(treeNodeUpdater.draftData ?? {}),
-                viewport: geoViewport,
-              },
-            });
+            updatePayload({ viewport: geoViewport }, treeNodeUpdater.draftData ?? undefined);
           }
         }, 0);
       }

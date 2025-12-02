@@ -17,7 +17,7 @@ import {
   type HeadlessMultiStepDialogProps,
 } from '@hierarchidb/ui-dialog';
 import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
-import { useDialogDraft, type DraftData } from '@hierarchidb/plugin-ui-sdk';
+import { useTreeNodeUpdater, type DraftData } from '@hierarchidb/plugin-ui-sdk';
 import { resolveDefaultNodeName } from '@hierarchidb/runtime-worker';
 
 type FolderDraftData = {
@@ -72,7 +72,7 @@ export const FolderDialogHost: React.FC<FolderDialogHostProps> = ({
     return { size, position };
   }, []);
 
-  const { draft, updateDraft, saveDraft, discardDraft } = useDialogDraft<FolderDraftData>({
+  const { draft, updateDraft, saveDraft, discardDraft } = useTreeNodeUpdater<FolderDraftData>({
     mode,
     nodeType: 'folder',
     nodeId,

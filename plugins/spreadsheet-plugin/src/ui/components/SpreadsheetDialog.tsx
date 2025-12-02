@@ -17,11 +17,10 @@ import {
   type HeadlessMultiStepDialogProps,
 } from '@hierarchidb/ui-dialog';
 import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
-import { useDialogDraft, type DraftData, buildDialogDraftUpdater } from '@hierarchidb/plugin-ui-sdk';
+import { useTreeNodeUpdater, type DraftData, createTreeNodeUpdaterActions } from '@hierarchidb/plugin-ui-sdk';
 import type { SpreadsheetDialogData } from '../../common/types/SpreadsheetEntity.js';
 import { DataSourceStep } from './steps/DataSourceStep.js';
 import { FilteringStep } from './steps/FilteringStep.js';
-// import { HTMLDivElement } from 'happy-dom';
 
 export interface SpreadsheetDialogProps {
   open: boolean;
@@ -70,7 +69,7 @@ export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
   }, []);
 
   const { size: initialSize, position: initialPositionValue } = useMemo(defaultDialogState, []);
-  const { draft, updateDraft, saveDraft, discardDraft } = useDialogDraft<SpreadsheetDialogData>({
+  const { draft, updateDraft, saveDraft, discardDraft } = useTreeNodeUpdater<SpreadsheetDialogData>({
     mode,
     nodeType: 'spreadsheet',
     nodeId,
@@ -91,7 +90,7 @@ export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
 
   const data = useMemo<SpreadsheetDialogData>(() => normalizeDraft(draft), [draft]);
   const { updatePayload, updateMetadata } = useMemo(
-    () => buildDialogDraftUpdater<SpreadsheetDialogData>(updateDraft),
+    () => createTreeNodeUpdaterActions<SpreadsheetDialogData>(updateDraft),
     [updateDraft]
   );
 
@@ -114,7 +113,7 @@ export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
     (patch: Partial<SpreadsheetDialogData>) => {
       const basePayload = (draft?.draftData ?? {}) as SpreadsheetDialogData;
       const baseMeta = draft?.draftMetadata ?? draft?.metadata ?? { name: '', description: '', tags: [] };
-      updatePayload({ ...patch }, basePayload);
+      updatePayload(patch, basePayload);
       updateMetadata(
         {
           name: data.name ?? '',

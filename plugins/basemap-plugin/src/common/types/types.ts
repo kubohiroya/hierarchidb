@@ -10,14 +10,6 @@ export interface MapViewport {
   pitch: number;
 }
 
-export interface MapStyle {
-  id: string;
-  name: string;
-  url: string;
-  attribution?: string;
-  preview?: string;
-}
-
 export type BaseMapStylePreset = 'streets' | 'satellite' | 'terrain' | 'dark' | 'light' | 'custom';
 
 export interface BaseMapConfig {

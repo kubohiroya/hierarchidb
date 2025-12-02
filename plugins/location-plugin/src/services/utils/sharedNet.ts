@@ -1,4 +1,3 @@
-import { type DownloadServiceOptions, type DownloadServiceBundle, createDownloadService } from '@hierarchidb/download';
 import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
 
 type DownloadRegistryModule = typeof import('../download/registry.js');
@@ -49,8 +48,4 @@ export async function postJson(url: string, body: string | object, headers?: Rec
   const res = await auth.fetchWithAuth(url, init, { pluginType: 'shape' });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
-}
-
-export async function createSharedDownloadService(opts?: DownloadServiceOptions): Promise<DownloadServiceBundle> {
-  return createDownloadService(opts);
 }

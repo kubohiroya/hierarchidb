@@ -19,59 +19,25 @@ import {
 import { Category as CategoryIcon } from '@mui/icons-material';
 
 export interface CategoryOption<T extends string> {
-  /**
-      */
   value: T;
-  /**
-      */
   label: string;
-  /**
-      */
   description?: string;
-  /**
-      */
   icon?: React.ReactNode;
-  /**
-      */
   color?: string;
-  /**
-      */
   disabled?: boolean;
 }
 
 export interface CategorySelectorProps<T extends string> {
-  /**
-      */
   value: T | null;
-  /**
-      */
   onChange: (category: T) => void;
-  /**
-      */
   options: CategoryOption<T>[];
-  /**
-      */
   label?: string;
-  /**
-      */
   placeholder?: string;
-  /**
-      */
   required?: boolean;
-  /**
-      */
   disabled?: boolean;
-  /**
-      */
   error?: boolean;
-  /**
-      */
   helperText?: string;
-  /**
-      */
   variant?: 'select' | 'chips';
-  /**
-      */
   fullWidth?: boolean;
 }
 

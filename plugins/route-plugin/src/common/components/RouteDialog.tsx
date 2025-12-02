@@ -13,7 +13,7 @@ import { RouteSelectionStep } from './RouteSelectionStep.js';
 import { RouteProcessingStep } from './RouteProcessingStep.js';
 import { readRuntimeMode } from '@hierarchidb/util';
 import { notify } from '@hierarchidb/components';
-import { useDialogDraft, buildDialogDraftUpdater } from '@hierarchidb/plugin-ui-sdk';
+import { createTreeNodeUpdaterActions, useTreeNodeUpdater } from '@hierarchidb/plugin-ui-sdk';
 import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 import { useState } from 'react';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
@@ -77,7 +77,7 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
     [effectiveNodeId, nodeId, parentId]
   );
 
-  const { draft, updateDraft, saveDraft, discardDraft } = useDialogDraft<RouteEntity>({
+  const { draft, updateDraft, saveDraft, discardDraft } = useTreeNodeUpdater<RouteEntity>({
     mode,
     nodeType: 'route',
     nodeId,
@@ -102,7 +102,7 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
     );
   }, [routeDraft, effectiveNodeId]);
   const { updatePayload, updateMetadata } = useMemo(
-    () => buildDialogDraftUpdater<RouteEntity>(updateDraft),
+    () => createTreeNodeUpdaterActions<RouteEntity>(updateDraft),
     [updateDraft]
   );
 

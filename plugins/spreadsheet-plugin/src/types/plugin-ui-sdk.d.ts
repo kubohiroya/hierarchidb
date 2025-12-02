@@ -2,7 +2,7 @@ declare module '@hierarchidb/plugin-ui-sdk' {
   import type { TreeNodeMetadata } from '@hierarchidb/common-types';
   import type { TreeNodeUpdaterState } from '@hierarchidb/plugin-ui-sdk';
 
-  export const buildDialogDraftUpdater: <TPayload extends object = Record<string, unknown>>(
+  export const createTreeNodeUpdaterActions: <TPayload extends object = Record<string, unknown>>(
     updateDraft: (data: Partial<TreeNodeUpdaterState<TPayload>>) => void
   ) => {
     updatePayload: (patch: Partial<TPayload>, base?: TPayload) => void;

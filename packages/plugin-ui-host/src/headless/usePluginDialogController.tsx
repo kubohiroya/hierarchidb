@@ -18,7 +18,7 @@ import {
   getPresentation,
   hydratePresentationDefinitionsFromGlobal,
 } from '@hierarchidb/plugin-presentation';
-import { useDialogDraft } from '@hierarchidb/plugin-ui-sdk';
+import { useTreeNodeUpdater } from '@hierarchidb/plugin-ui-sdk';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type {
   DialogDisplayMode,
@@ -140,7 +140,7 @@ export function usePluginDialogController(
     discardDraft,
     loading,
     error,
-  } = useDialogDraft<Partial<PluginDefinedEntity>>({
+  } = useTreeNodeUpdater<Partial<PluginDefinedEntity>>({
     mode,
     nodeType,
     nodeId,

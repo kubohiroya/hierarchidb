@@ -5,7 +5,7 @@ import { usePluginDialogController } from '../usePluginDialogController.js';
 const discardDraft = vi.fn();
 
 vi.mock('@hierarchidb/plugin-ui-sdk', () => ({
-  useDialogDraft: vi.fn(() => ({
+  useTreeNodeUpdater: vi.fn(() => ({
     treeNodeUpdater: { treeNodeId: 'draft-1', draftMetadata: null, draftData: {} },
     hasUnsavedChanges: true,
     updateTreeNodeUpdater: vi.fn(),

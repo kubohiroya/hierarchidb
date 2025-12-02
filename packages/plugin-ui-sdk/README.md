@@ -1,7 +1,7 @@
 # @hierarchidb/plugin-ui-sdk
 
 ## Purpose (Inner logic)
-- Shared **inside-the-dialog** utilities: `useDialogDraft`, Basic Info normalization, common hooks/components used by dialog hosts.
+- Shared **inside-the-dialog** utilities: `useTreeNodeUpdater`, Basic Info normalization, common hooks/components used by dialog hosts.
 - Field-level helpers and form logic that multiple plugin dialogs reuse.
 
 ## Boundaries

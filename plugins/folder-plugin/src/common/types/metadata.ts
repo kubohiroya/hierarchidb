@@ -57,10 +57,3 @@ export const FolderUIConfig = {
   // Toolbar items
   toolbarItems: ['create_folder', 'search', 'view_mode', 'sort_order', 'refresh'],
 };
-
-export const FolderPerformanceProfile = {
-  memoryUsage: 'low',
-  cpuUsage: 'low',
-  diskUsage: 'low',
-  networkUsage: 'none',
-};

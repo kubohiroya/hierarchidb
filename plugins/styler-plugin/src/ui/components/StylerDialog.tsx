@@ -17,7 +17,7 @@ import {
   type HeadlessMultiStepDialogProps,
 } from '@hierarchidb/ui-dialog';
 import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
-import { useDialogDraft, type DraftData } from '@hierarchidb/plugin-ui-sdk';
+import { useTreeNodeUpdater, type DraftData, createTreeNodeUpdaterActions } from '@hierarchidb/plugin-ui-sdk';
 import type { StylerDialogData } from './types.js';
 import type { SpreadsheetDialogData } from '@hierarchidb/spreadsheet-plugin';
 import { StyleSettingsStep } from './steps/StyleSettingsStep.js';
@@ -78,7 +78,7 @@ export const StylerDialog: React.FC<StylerDialogProps> = ({
   }, []);
 
   const { size: initialSize, position: initialPositionValue } = useMemo(defaultDialogState, []);
-  const { draft, updateDraft, saveDraft, discardDraft } = useDialogDraft<StylerDialogDraft>({
+  const { draft, updateDraft, saveDraft, discardDraft } = useTreeNodeUpdater<StylerDialogDraft>({
     mode,
     nodeType: 'styler',
     nodeId,
@@ -101,35 +101,39 @@ export const StylerDialog: React.FC<StylerDialogProps> = ({
     ...data,
     metadata: data.spreadsheetMetadata ?? undefined,
   }), [data]);
+  const { updatePayload, updateMetadata } = useMemo(
+    () => createTreeNodeUpdaterActions<StylerDialogDraft>(updateDraft),
+    [updateDraft]
+  );
 
   const persistBasicInfo = useCallback(
     (value: BasicInfoData) => {
-      void updateDraft({
-        draftMetadata: {
+      updateMetadata(
+        {
           name: value.name,
           description: value.description,
-          tags: value.tags,
+          tags: value.tags ?? [],
         },
-      });
+        { name: '', description: '', tags: [] }
+      );
     },
-    [updateDraft]
+    [updateMetadata]
   );
 
   const handleUpdate = useCallback(
     (patch: Partial<StylerDialogData>) => {
-      void updateDraft({
-        draftData: {
-          ...(draft?.draftData ?? {}),
-          ...patch,
-        },
-        draftMetadata: {
+      const basePayload = (draft?.draftData ?? {}) as StylerDialogData;
+      updatePayload(patch, basePayload);
+      updateMetadata(
+        {
           name: data.name ?? '',
           description: data.description,
-          tags: data.tags,
+          tags: data.tags ?? [],
         },
-      });
+        { name: '', description: '', tags: [] },
+      );
     },
-    [data.description, data.name, data.tags, draft?.draftData, updateDraft]
+    [data.description, data.name, data.tags, draft?.draftData, updateMetadata, updatePayload]
   );
 
   const handleSave = useCallback(async () => {

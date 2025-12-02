@@ -1,10 +1,10 @@
 # プラグイン層アーキテクチャ図（2025-12 更新）
 
-TreeNodeUpdaterAPI / useDialogDraft への一本化を踏まえ、プラグイン間で共通化すべき層と接続点を整理します。
+TreeNodeUpdaterAPI / useTreeNodeUpdater への一本化を踏まえ、プラグイン間で共通化すべき層と接続点を整理します。
 
 ## 凡例（共通の 6 層）
 - 🟥 UI ホスト: app shell + plugin-ui-host（HeadlessMultiStepDialog）
-- 🟧 UI プラグイン: ダイアログ/ステップ/アイコン（useDialogDraft + TreeNodeUpdaterAPI）
+- 🟧 UI プラグイン: ダイアログ/ステップ/アイコン（useTreeNodeUpdater + TreeNodeUpdaterAPI）
 - 🟨 Worker 共通: runtime-worker bootstrap（wirePluginsFromModules, DraftService, Query/Mutation/Subscription）
 - 🟩 Worker ドメイン: EntityHandler / BatchManager / Lifecycle
 - 🟦 Worker Dexie: プラグイン専用スキーマ/ストア
@@ -13,7 +13,7 @@ TreeNodeUpdaterAPI / useDialogDraft への一本化を踏まえ、プラグイ�
 ## 共通リファレンスフロー
 ```
 🟥 UI host (HeadlessMultiStepDialog)
-   └─ useDialogDraft (TreeNodeUpdaterAPI)
+   └─ useTreeNodeUpdater (TreeNodeUpdaterAPI)
       ├ updateTreeNodeDraftMetadata
       ├ updateTreeNodeDraftData
       └ commitDraft / discardDraft
@@ -26,10 +26,10 @@ TreeNodeUpdaterAPI / useDialogDraft への一本化を踏まえ、プラグイ�
 ```
 
 ## プラグイン別の接続状況と次アクション
-- **linker (🟧未実装)**: ダイアログ追加時は useDialogDraft + TreeNodeUpdaterAPI を必須化し、draftMetadata/draftData を唯一の経路にする。Stage worker は不要ならスキップ。
-- **location (部分的)**: 独自更新をやめ、MultiStep 化して onUpdate→useDialogDraft→updateTreeNodeDraftData/Metadata に統一。進捗/プレビューも draftData から描画。
-- **shape (legacy doc)**: WorkingCopy 表記を削除し、TreeNodeUpdater 用語に置換。UI/Worker を useDialogDraft + DraftService 経路へリプレース。stageWorker 呼び出しも Facade 経由に整理。
-- **styler (未マルチステップ)**: ダイアログ導入時に useDialogDraft を先に組み込み、スタイル一時データを draftData に集約。commit は TreeNodeUpdaterAPI 経由。プレビューもドラフトから参照。
+- **linker (🟧未実装)**: ダイアログ追加時は useTreeNodeUpdater + TreeNodeUpdaterAPI を必須化し、draftMetadata/draftData を唯一の経路にする。Stage worker は不要ならスキップ。
+- **location (部分的)**: 独自更新をやめ、MultiStep 化して onUpdate→useTreeNodeUpdater→updateTreeNodeDraftData/Metadata に統一。進捗/プレビューも draftData から描画。
+- **shape (legacy doc)**: WorkingCopy 表記を削除し、TreeNodeUpdater 用語に置換。UI/Worker を useTreeNodeUpdater + DraftService 経路へリプレース。stageWorker 呼び出しも Facade 経由に整理。
+- **styler (未マルチステップ)**: ダイアログ導入時に useTreeNodeUpdater を先に組み込み、スタイル一時データを draftData に集約。commit は TreeNodeUpdaterAPI 経由。プレビューもドラフトから参照。
 - **timeline (未導入)**: 実装開始時に TreeNodeUpdaterAPI を前提としたダイアログ骨格を用意し、ファイル取込/プレビューを draftData ベースにする。
 - **resolver/route/basemap/spreadsheet**: 既に draftMetadata/draftData 経路で統一済み。維持。
 
@@ -37,7 +37,7 @@ TreeNodeUpdaterAPI / useDialogDraft への一本化を踏まえ、プラグイ�
 ```
 🟥 App Shell / RuntimeWiring
    └─ PluginDefinition → plugin-registry → UI/Worker エントリ解決
-🟧 UI Plugin (useDialogDraft + TreeNodeUpdaterAPI)
+🟧 UI Plugin (useTreeNodeUpdater + TreeNodeUpdaterAPI)
    └─ Step onUpdate → draftMetadata/draftData にマージ
 🟨 runtime-worker bootstrap (wirePluginsFromModules)
    └─ registerRuntimeExports({ createEntityHandler, lifecycle, batch? })
@@ -48,7 +48,7 @@ TreeNodeUpdaterAPI / useDialogDraft への一本化を踏まえ、プラグイ�
 ```
 
 ## 実装チェックリスト
-- UI: useDialogDraft 経由で TreeNodeUpdaterAPI の update/commit を呼んでいるか
+- UI: useTreeNodeUpdater 経由で TreeNodeUpdaterAPI の update/commit を呼んでいるか
 - Worker: DraftService( TreeNodeUpdaterAPI ) 経由で draftMetadata/draftData をマージしているか
 - Export: plugin-registry で UI/Worker/Icon/DB entry を登録しているか
 - Stage worker: 孫Workerが必要な場合のみ Facade を経由させ、直接 import しない

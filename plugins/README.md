@@ -8,12 +8,12 @@ HierarchiDBの拡張可能なノードタイププラグインシステムです
 
 ### 最新ガイドライン（2025-11 更新）
 
-- Dialog ホストはすべて `useDialogDraft` を経由し、`./ui` の default export（HeadlessMultiStepDialog ラッパー）で公開する。旧 `NodeDialogExtension`/`ExtensibleFolderDialog` は使用しない。
+- Dialog ホストはすべて `useTreeNodeUpdater` を経由し、`./ui` の default export（HeadlessMultiStepDialog ラッパー）で公開する。旧 `NodeDialogExtension`/`ExtensibleFolderDialog` は使用しない。
 - Basic Info（name/description/tags）は `draftMetadata` へ、ドメイン固有ペイロードは `draftData` へ格納する。folder は data/draftData を空オブジェクトのまま扱う。
 - TreeNodeUpdaterAPI を共通インターフェースとして利用する。WorkerAPI は `getTreeNodeUpdaterAPI` のみを公開し、旧 `getDraftAPI` は撤去済み。`initTreeNode` / `updateTreeNodeDraftMetadata` / `updateTreeNodeDraftData` / `commitDraft` / `discardDraft` を使う。
 - プラグインレジストリは `pnpm tools:gen-plugin-registry` で生成し、Vite dev/build が動的に取り込む。生成物（`packages/plugin-registry/generated/registry.ts` 等）はコミットに含める。
 - 旧 peerEntities や NodeDialogExtension 由来のレガシー経路が残っていたら削除対象。UI/Worker はレジストリ経由のホスト + TreeNodeUpdaterAPI 前提で統一する。
-- MultiStep ダイアログでのドラフト更新は共通: Step の `onUpdate` → `useDialogDraft.updateDraft` → Worker DraftService(TreeNodeUpdaterAPI 実装) → Dexie `nodes.draftData` 更新。保存時は `saveDraft` → `commitDraft` まで一気通し。
+- MultiStep ダイアログでのドラフト更新は共通: Step の `onUpdate` → `useTreeNodeUpdater.updateDraft` → Worker DraftService(TreeNodeUpdaterAPI 実装) → Dexie `nodes.draftData` 更新。保存時は `saveDraft` → `commitDraft` まで一気通し。
 
 ### プラグインシステムの特徴
 
@@ -60,7 +60,7 @@ HierarchiDBの拡張可能なノードタイププラグインシステムです
 MultiStepDialog の各ステップで入力を更新すると、下記の経路で Dexie まで反映される。
 
 1) UI (plugin-ui-host / plugin-ui-sdk)  
-   - ステップ `onUpdate` → `useDialogDraft.updateDraft`。`draftData` にパッチをマージし、必要に応じて `draftMetadata`（name/description/tags）も更新。  
+   - ステップ `onUpdate` → `useTreeNodeUpdater.updateDraft`。`draftData` にパッチをマージし、必要に応じて `draftMetadata`（name/description/tags）も更新。  
    - `updateDraft` はローカル state を更新しつつ 150ms デバウンスの `persistDraft` を起動。  
    - `persistDraft` は Worker クライアント (`wc`) に対し `updateTreeNodeDraftMetadata` → `updateTreeNodeDraftData` を送る（TreeNodeUpdaterAPI）。  
    - `saveDraft`（ダイアログ確定）は同じ 2 API を送った後に `commitDraft` を呼ぶ（auto-rename で衝突回避）。
@@ -77,18 +77,18 @@ MultiStepDialog の各ステップで入力を更新すると、下記の経路�
 ### シーケンス図（共通フロー）
 ```
 participant UI(Step:onUpdate)
-participant useDialogDraft
+participant useTreeNodeUpdater
 participant WorkerClient(wc)
 participant DraftService(Worker)
 participant Dexie(CoreDB.nodes)
 
-UI(Step:onUpdate)->>useDialogDraft: updateDraft(patch)
-useDialogDraft->>useDialogDraft: state merge (draftData/draftMetadata)
-useDialogDraft-->>WorkerClient(wc): persistDraft (debounced)\nupdateTreeNodeDraftMetadata\nupdateTreeNodeDraftData
+UI(Step:onUpdate)->>useTreeNodeUpdater: updateDraft(patch)
+useTreeNodeUpdater->>useTreeNodeUpdater: state merge (draftData/draftMetadata)
+useTreeNodeUpdater-->>WorkerClient(wc): persistDraft (debounced)\nupdateTreeNodeDraftMetadata\nupdateTreeNodeDraftData
 WorkerClient(wc)-->>DraftService(Worker): updateTreeNodeDraftMetadata\nupdateTreeNodeDraftData
 DraftService(Worker)->>Dexie(CoreDB.nodes): merge draftMetadata/draftData
 
-note over useDialogDraft,DraftService(Worker): saveDraft() は上記2APIの後\ncommitDraft() を実行（auto-rename考慮）
+note over useTreeNodeUpdater,DraftService(Worker): saveDraft() は上記2APIの後\ncommitDraft() を実行（auto-rename考慮）
 DraftService(Worker)-->>Dexie(CoreDB.nodes): commitDraft (wc -> main node)
 ```
 
@@ -126,16 +126,16 @@ TreeNodeUpdaterAPI と draftMetadata/draftData 経路の採用状況。`rg TreeN
 
 | プラグイン | TreeNodeUpdater/draft 利用 | 備考/次アクション |
 |------------|---------------------------|------------------|
-| basemap    | ○ | useDialogDraft 経由で統一済み。維持。 |
+| basemap    | ○ | useTreeNodeUpdater 経由で統一済み。維持。 |
 | folder     | △ | ドメインなしだが、UI 拡張時は TreeNodeUpdater 経路で実装。 |
-| linker     | △ | ダイアログ未実装。新規追加時は `useDialogDraft` + TreeNodeUpdaterAPI でドラフト作成/更新/commit を統一し、既存の補助フロー（メニュー/パネル）も `draftMetadata`/`draftData` を前提に設計する。 |
-| location   | △ | 既存 UI は独自更新が残るため、ダイアログを MultiStep 化して `useDialogDraft` → `updateTreeNodeDraftMetadata/Data` に寄せる。進捗 API も TreeNodeUpdater 経由のドラフト同期に付け替え。 |
+| linker     | △ | ダイアログ未実装。新規追加時は `useTreeNodeUpdater` + TreeNodeUpdaterAPI でドラフト作成/更新/commit を統一し、既存の補助フロー（メニュー/パネル）も `draftMetadata`/`draftData` を前提に設計する。 |
+| location   | △ | 既存 UI は独自更新が残るため、ダイアログを MultiStep 化して `useTreeNodeUpdater` → `updateTreeNodeDraftMetadata/Data` に寄せる。進捗 API も TreeNodeUpdater 経由のドラフト同期に付け替え。 |
 | resolver   | ○ | draftMetadata/draftData へ統一済み。更なる共通化を継続。 |
 | route      | ○ | TreeNodeUpdater + draftMetadata/draftData へ統一済み。 |
-| shape      | △ | 旧 WorkingCopy 依存の記述を TreeNodeUpdater 用語に更新し、UI/Worker 実装を `useDialogDraft`/DraftService ベースに置換。Shape の import/export 手順も draftMetadata/draftData で再検証する。 |
+| shape      | △ | 旧 WorkingCopy 依存の記述を TreeNodeUpdater 用語に更新し、UI/Worker 実装を `useTreeNodeUpdater`/DraftService ベースに置換。Shape の import/export 手順も draftMetadata/draftData で再検証する。 |
 | spreadsheet| ○ | 部分利用済み。全ステップが共通フローか確認を推奨。 |
-| styler     | △ | 既存ダイアログをマルチステップ化する際に `useDialogDraft` を導入し、スタイル定義の一時データを draftData に集約。commit は TreeNodeUpdaterAPI で行い、プレビューもドラフトから描画する。 |
-| timeline   | △ | 新規実装時は TreeNodeUpdaterAPI でドラフトを管理し、ファイル取込やプレビューも draftData から読む。既存 TODO の導入順序に沿って `useDialogDraft` を最初に組み込む。 |
+| styler     | △ | 既存ダイアログをマルチステップ化する際に `useTreeNodeUpdater` を導入し、スタイル定義の一時データを draftData に集約。commit は TreeNodeUpdaterAPI で行い、プレビューもドラフトから描画する。 |
+| timeline   | △ | 新規実装時は TreeNodeUpdaterAPI でドラフトを管理し、ファイル取込やプレビューも draftData から読む。既存 TODO の導入順序に沿って `useTreeNodeUpdater` を最初に組み込む。 |
 
 メモ: working copy 表記は全プラグインでコード上解消済み。残っていればドキュメントの表記のみとして扱う。
 
@@ -255,15 +255,15 @@ graph TB
 
 | プラグイン | Draft ホスト/フック | draftMetadata の主用途 | draftData の主用途 | 備考 |
 |---|---|---|---|---|
-| basemap | useDialogDraft（BasemapDialogHost） | name/description/tags | mapStyle / viewport / displayOptions | commit 時に data へ転記 |
-| folder | useDialogDraft（FolderDialogHost） | name/description/tags | なし（空オブジェクト） | data/draftData は常に空 |
-| spreadsheet | useDialogDraft（SpreadsheetDialogHost） | name/description/tags | sheet / source 設定 | 標準パターン |
-| styler | useDialogDraft（StylerDialogHost） | name/description/tags | style 設定 | spreadsheet 派生 |
-| shape | useDialogDraft（ShapeDialogHost） | name/description/tags | dataSource / processingConfig / checkboxState 等 | 標準パターン（shared utils 使用） |
-| location | useDialogDraft（LocationDialogHost） | name/description/tags | dataSource / license / filters 等 | 標準パターン |
-| route | useDialogDraft（RouteDialogHost） | name/description/tags | route payload 全般 | 標準パターン |
-| resolver | useDialogDraft（ResolverDialogHost） | name/description/tags | schema / mapping / validation | 標準パターン |
-| linker | useDialogDraft（ResourcePickerDialogHost 等） | name/description/tags | 最小限（metadata 側が主） | draftData 依存低め |
+| basemap | useTreeNodeUpdater（BasemapDialogHost） | name/description/tags | mapStyle / viewport / displayOptions | commit 時に data へ転記 |
+| folder | useTreeNodeUpdater（FolderDialogHost） | name/description/tags | なし（空オブジェクト） | data/draftData は常に空 |
+| spreadsheet | useTreeNodeUpdater（SpreadsheetDialogHost） | name/description/tags | sheet / source 設定 | 標準パターン |
+| styler | useTreeNodeUpdater（StylerDialogHost） | name/description/tags | style 設定 | spreadsheet 派生 |
+| shape | useTreeNodeUpdater（ShapeDialogHost） | name/description/tags | dataSource / processingConfig / checkboxState 等 | 標準パターン（shared utils 使用） |
+| location | useTreeNodeUpdater（LocationDialogHost） | name/description/tags | dataSource / license / filters 等 | 標準パターン |
+| route | useTreeNodeUpdater（RouteDialogHost） | name/description/tags | route payload 全般 | 標準パターン |
+| resolver | useTreeNodeUpdater（ResolverDialogHost） | name/description/tags | schema / mapping / validation | 標準パターン |
+| linker | useTreeNodeUpdater（ResourcePickerDialogHost 等） | name/description/tags | 最小限（metadata 側が主） | draftData 依存低め |
 | timeline | 未使用/最小 | なし | なし | WorkingCopy 非依存 |
 
 補足:
@@ -322,7 +322,7 @@ location / shape / route の各プラグインは、バッチ処理で正規化�
 
 ### ノード・ダイアログ（現行方針）
 
-- すべてのプラグインは `useDialogDraft`＋`draftMetadata/draftData` を前提に、`HeadlessMultiStepDialog` をラップしたホストを `./ui` default export で公開する。
+- すべてのプラグインは `useTreeNodeUpdater`＋`draftMetadata/draftData` を前提に、`HeadlessMultiStepDialog` をラップしたホストを `./ui` default export で公開する。
 - `pnpm tools:gen-plugin-registry` が `plugins/*-plugin/src/ui/preconnect.ts` を収集し、app からは registry 経由で動的にロードする（個別の配線は不要）。
 - 旧 `ExtensibleFolderDialog` / `NodeDialogExtensionRegistry` / `initializeDefaultNodeDialogExtensions` は後方互換の名残であり、新規実装では使用しない。
 

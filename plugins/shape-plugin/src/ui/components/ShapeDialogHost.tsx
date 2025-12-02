@@ -17,7 +17,7 @@ import {
   type HeadlessMultiStepDialogProps,
 } from '@hierarchidb/ui-dialog';
 import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
-import { useDialogDraft, type DraftData } from '@hierarchidb/plugin-ui-sdk';
+import { useTreeNodeUpdater, type DraftData, createTreeNodeUpdaterActions } from '@hierarchidb/plugin-ui-sdk';
 import type { ShapeDraft, ShapeEntity } from '../../common/shared/index.js';
 import {
   DEFAULT_PROCESSING_CONFIG,
@@ -84,16 +84,20 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
     return { size, position };
   }, []);
 
-  const { draft, updateDraft, saveDraft, discardDraft } = useDialogDraft<ShapeDraftData>({
-    mode,
-    nodeType: 'shape',
-    nodeId,
-    parentId,
-    treeId,
-    workerClient,
-  });
+const { draft, updateDraft, saveDraft, discardDraft } = useTreeNodeUpdater<ShapeDraftData>({
+  mode,
+  nodeType: 'shape',
+  nodeId,
+  parentId,
+  treeId,
+  workerClient,
+});
 
-  const data = useMemo<ShapeDraftData>(() => normalizeDraft(draft), [draft]);
+const data = useMemo<ShapeDraftData>(() => normalizeDraft(draft), [draft]);
+const { updatePayload, updateMetadata } = useMemo(
+  () => createTreeNodeUpdaterActions<ShapeDraftData>(updateDraft),
+  [updateDraft],
+);
 
   const [dialogSize, setDialogSize] = useState<MultiDialogSize>(initialSize);
   const [dialogPosition, setDialogPosition] = useState<MultiDialogPosition>(initialPositionValue);
@@ -106,15 +110,16 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
 
   const persistBasicInfo = useCallback(
     (value: BasicInfoData) => {
-      void updateDraft({
-        draftMetadata: {
+      updateMetadata(
+        {
           name: value.name,
-          description: value.description,
-          tags: value.tags,
+          description: value.description ?? '',
+          tags: value.tags ?? [],
         },
-      });
+        { name: '', description: '', tags: [] }
+      );
     },
-    [updateDraft]
+    [updateMetadata]
   );
 
   const handleSave = useCallback(async () => {
@@ -155,19 +160,18 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
 
   const handleUpdate = useCallback(
     (patch: Partial<ShapeDraft>) => {
-      void updateDraft({
-        draftData: {
-          ...(draft?.draftData ?? {}),
-          ...patch,
-        },
-        draftMetadata: {
+      const basePayload = (draft?.draftData ?? {}) as ShapeDraft;
+      updatePayload(patch, basePayload);
+      updateMetadata(
+        {
           name: data.name ?? '',
           description: data.description,
-          tags: data.tags,
+          tags: data.tags ?? [],
         },
-      });
+        { name: '', description: '', tags: [] }
+      );
     },
-    [data.description, data.name, data.tags, draft?.draftData, updateDraft]
+    [data.description, data.name, data.tags, draft?.draftData, updateMetadata, updatePayload]
   );
 
   const steps = useMemo(() => [

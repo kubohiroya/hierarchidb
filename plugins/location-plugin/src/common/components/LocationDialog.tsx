@@ -52,7 +52,7 @@ import {
 } from '@hierarchidb/ui-dialog';
 import { notify } from '@hierarchidb/components';
 
-import { useDialogDraft, type DraftData } from '@hierarchidb/plugin-ui-sdk';
+import { useTreeNodeUpdater, type DraftData, createTreeNodeUpdaterActions } from '@hierarchidb/plugin-ui-sdk';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 // import { useToastNotifications } from '@hierarchidb/components/toast/ToastProvider.js';
@@ -149,14 +149,14 @@ const {
   updateDraft,
   saveDraft,
   discardDraft,
-} = useDialogDraft<LocationEntity>({
+} = useTreeNodeUpdater<LocationEntity>({
   mode,
   nodeType: 'location',
   nodeId,
   parentId,
   treeId: effectiveTreeId,
-    workerClient,
-  });
+  workerClient,
+});
   // const notify = useToastNotifications();
 
   useEffect(() => () => { void discardDraft().catch(() => {}); }, [discardDraft]);
@@ -191,10 +191,24 @@ const {
     setDialogPosition(position);
   }, []);
 
+  const { updatePayload, updateMetadata } = useMemo(
+    () => createTreeNodeUpdaterActions<LocationEntity>(updateDraft),
+    [updateDraft],
+  );
+
   const handleDraftPatch = useCallback((patch: Partial<LocationDraft>) => {
     const merged = mergeLocationDraft(dialogData, patch);
-    updateDraft(toDraftDataPayload(merged));
-  }, [dialogData, updateDraft]);
+    const payload = toDraftDataPayload(merged);
+    updatePayload(payload.draftData ?? {}, dialogData.draft as LocationEntity | undefined);
+    updateMetadata(
+      {
+        name: dialogData.name ?? '',
+        description: dialogData.description ?? '',
+        tags: dialogData.tags ?? [],
+      },
+      { name: '', description: '', tags: [] },
+    );
+  }, [dialogData, updateMetadata, updatePayload]);
 
   const ensureVectorTileService = useCallback((): LocationVectorTileService => {
     if (!vectorServiceRef.current) {

@@ -30,7 +30,7 @@ import {
 } from '@hierarchidb/ui-dialog';
 import { readRuntimeMode } from '@hierarchidb/util';
 import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
-import { useDialogDraft, type DraftData } from '@hierarchidb/plugin-ui-sdk';
+import { useTreeNodeUpdater, type DraftData, createTreeNodeUpdaterActions } from '@hierarchidb/plugin-ui-sdk';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 
 type ResolverDialogStep = {
@@ -99,7 +99,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     updateDraft,
     saveDraft,
     discardDraft,
-  } = useDialogDraft<ResolverEntity>({
+  } = useTreeNodeUpdater<ResolverEntity>({
     mode: entity ? 'edit' : 'create',
     nodeType: 'resolver',
     nodeId,
@@ -284,6 +284,13 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     [createDefaultDraft, updateDraft],
   );
 
+  const { updateMetadata } = useMemo(
+    () => createTreeNodeUpdaterActions<ResolverEntity>((updates) =>
+      execUpdateDraft({ draftData: updates } as Partial<ResolverUpdaterPayload>)
+    ),
+    [execUpdateDraft],
+  );
+
   const fallbackDraft = useMemo<ResolverUpdaterPayload>(() => {
     const base = draft ?? initialDraft.current ?? createDefaultDraft();
     return {
@@ -357,15 +364,16 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
 
   const handleBasicInfoChange = useCallback(
     (value: BasicInfoData) => {
-      execUpdateDraft({
-        draftMetadata: {
+      updateMetadata(
+        {
           name: value.name,
           description: value.description ?? '',
           tags: value.tags ?? [],
         },
-      });
+        fallbackDraft.draftMetadata ?? { name: '', description: '', tags: [] },
+      );
     },
-    [execUpdateDraft],
+    [fallbackDraft.draftMetadata, updateMetadata],
   );
 
   const steps = useMemo((): ResolverDialogStep[] => {

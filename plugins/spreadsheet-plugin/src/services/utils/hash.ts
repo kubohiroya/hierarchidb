@@ -15,10 +15,6 @@ async function digest(buffer: ArrayBuffer): Promise<string> {
   throw new Error('Web Crypto API is not available');
 }
 
-export async function hashArrayBuffer(buffer: ArrayBuffer): Promise<string> {
-  return await digest(buffer);
-}
-
 export async function hashFile(file: Blob): Promise<string> {
   if (typeof file.arrayBuffer === 'function') {
     const buffer = await file.arrayBuffer();

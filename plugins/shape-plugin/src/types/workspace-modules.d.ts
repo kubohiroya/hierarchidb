@@ -22,7 +22,8 @@ declare module '@hierarchidb/ui-plugin-basic-info' {
 
 declare module '@hierarchidb/plugin-ui-sdk' {
   export {
-    useDialogDraft,
+    useTreeNodeUpdater,
+    createTreeNodeUpdaterActions,
     type DraftData,
   } from '../../../packages/plugin-ui-sdk/src/index.js';
 }

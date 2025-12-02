@@ -61,12 +61,7 @@ export type DraftData<TPayload extends object = Record<string, unknown>> = TreeN
 // Shared alias for dialog payloads; intentionally does not include metadata/version/timestamps.
 export type PluginDialogData<TPayload extends object = Record<string, unknown>> = TPayload;
 
-// Re-export legacy draft hook types for compatibility
-export type UseDraftOptions<TPayload extends object = Record<string, unknown>> = UseTreeNodeUpdaterOptions<TPayload>;
-export type UseDraftResult<TPayload extends object = Record<string, unknown>> = UseTreeNodeUpdaterResult<TPayload>;
-export const useDraft = useTreeNodeUpdater;
-
-export const buildDialogDraftUpdater = <TPayload extends object = Record<string, unknown>>(
+export const createTreeNodeUpdaterActions = <TPayload extends object = Record<string, unknown>>(
   updateDraft: (data: Partial<TreeNodeUpdaterState<TPayload>>) => void
 ) => {
   const updatePayload = (patch: Partial<TPayload>, base?: TPayload) => {
@@ -155,7 +150,7 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
 
         if (mode === 'create') {
           if (!parentId) {
-            console.warn('[useDialogDraft] Missing parentId for create mode; draft not initialized');
+            console.warn('[useTreeNodeUpdater] Missing parentId for create mode; draft not initialized');
             return;
           }
           const initialPayload: Partial<TreeNode> = {
@@ -210,7 +205,7 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
             (next.draftData ?? {}) as Record<string, unknown>
           );
         } catch (err) {
-          console.warn('[useDialogDraft] persist update failed', err);
+          console.warn('[useTreeNodeUpdater] persist update failed', err);
         }
       }, 150),
     [getClient, workingNodeId]

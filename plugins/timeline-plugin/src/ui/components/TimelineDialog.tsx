@@ -23,7 +23,7 @@ import { BasicInfoStep, type BasicInfoValues } from '../steps/BasicInfoStep.js';
 import { FramesPreviewStep } from '../steps/FramesPreviewStep.js';
 import { MapPreviewStep } from '../steps/MapPreviewStep.js';
 import { AnimationViewerStep } from '../steps/AnimationViewerStep.js';
-import { useDialogDraft } from '@hierarchidb/plugin-ui-sdk';
+import { useTreeNodeUpdater } from '@hierarchidb/plugin-ui-sdk';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { TimelineDraft, TimelineEntity, TimelineFrame } from '../../common/types/index.js';
@@ -57,7 +57,7 @@ export function TimelineDialog(props: TimelineDialogProps) {
     () => (props.nodeId ?? props.parentId ?? (`timeline-${Date.now()}` as NodeId)) as NodeId,
     [props.nodeId, props.parentId]
   );
-  const { draft, updateDraft, saveDraft, discardDraft } = useDialogDraft<Partial<TimelineEntity>>({
+  const { draft, updateDraft, saveDraft, discardDraft } = useTreeNodeUpdater<Partial<TimelineEntity>>({
     mode: props.mode,
     nodeType: 'timeline',
     nodeId: props.nodeId as NodeId | undefined,
