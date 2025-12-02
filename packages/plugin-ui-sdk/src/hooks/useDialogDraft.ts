@@ -25,7 +25,6 @@ const debounce = <T extends (...args: any[]) => void>(fn: T, wait: number) => {
 
 export interface TreeNodeUpdaterState<TPayload extends object = Record<string, unknown>>
   extends TreeNodeUpdaterPayload<TPayload> {
-  id: NodeId;
   treeNodeId: NodeId;
   metadata?: TreeNodeMetadata;
   data?: Record<string, unknown>;
@@ -60,6 +59,11 @@ export interface UseTreeNodeUpdaterResult<TPayload extends object = Record<strin
 
 export type DraftData<TPayload extends object = Record<string, unknown>> = TreeNodeUpdaterState<TPayload>;
 
+// Re-export legacy draft hook types for compatibility
+export type UseDraftOptions<TPayload extends object = Record<string, unknown>> = UseTreeNodeUpdaterOptions<TPayload>;
+export type UseDraftResult<TPayload extends object = Record<string, unknown>> = UseTreeNodeUpdaterResult<TPayload>;
+export const useDraft = useTreeNodeUpdater;
+
 export function useTreeNodeUpdater<TPayload extends object = Record<string, unknown>>({
   mode,
   nodeType,
@@ -88,7 +92,6 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
     const draftData: TPayload =
       node.draftData && isRecord(node.draftData) ? (node.draftData as TPayload) : ({} as TPayload);
     return {
-      id: node.id as NodeId,
       treeNodeId: node.id as NodeId,
       draftMetadata,
       metadata: node.metadata,
@@ -127,7 +130,7 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
 
         if (mode === 'create') {
           if (!parentId) {
-            console.warn('[useDialogDraft] Missing parentId for create mode; working copy not initialized');
+            console.warn('[useDialogDraft] Missing parentId for create mode; draft not initialized');
             return;
           }
           const initialPayload: Partial<TreeNode> = {
@@ -150,7 +153,7 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
           return;
         }
       } catch (err) {
-        console.error('Failed to initialize working copy:', err);
+        console.error('Failed to initialize draft:', err);
         setError(err as Error);
       } finally {
         setLoading(false);
@@ -202,7 +205,6 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
             ? ({ ...(prev.draftData ?? ({} as TPayload)), ...data.draftData } as TPayload)
             : prev.draftData) ?? ({} as TPayload);
         const merged: TreeNodeUpdaterState<TPayload> = {
-          id: prev.id,
           treeNodeId: prev.treeNodeId,
           draftMetadata: nextDraftMetadata,
           draftData: nextDraftData,
@@ -217,7 +219,7 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
   );
 
   const commitTreeNodeUpdater = useCallback(async (data?: Partial<TreeNodeUpdaterState<TPayload>>): Promise<NodeId> => {
-    if (!draft) throw new Error('No working copy to save');
+    if (!draft) throw new Error('No draft to save');
     const targetId = (data?.treeNodeId ?? draft.treeNodeId ?? workingNodeId) as NodeId | null;
     if (!targetId) throw new Error('nodeId is required to save draft');
     const finalData = data
@@ -243,11 +245,10 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
 
         let refreshedCopy: TreeNodeUpdaterState<TPayload> = {
           ...finalData,
-          id: committedNodeId,
           treeNodeId: committedNodeId,
         };
         if (res.node) {
-          refreshedCopy = { ...toUpdater(res.node), id: committedNodeId, treeNodeId: committedNodeId };
+          refreshedCopy = { ...toUpdater(res.node), treeNodeId: committedNodeId };
         }
 
         setDraft(refreshedCopy);

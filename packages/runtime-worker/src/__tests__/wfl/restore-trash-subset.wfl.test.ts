@@ -62,12 +62,12 @@ describe('Comlink + fake-indexeddb integration: partial trash restore flow', () 
         throw new Error(`createNode failed for ${name}: ${message}`);
       }
 
-      const draft = await queryAPI.getNode(createResult.nodeId);
-      if (!draft) {
-        throw new Error(`working copy missing for ${name}`);
+      const draftNode = await queryAPI.getNode(createResult.nodeId);
+      if (!draftNode) {
+        throw new Error(`draft node missing for ${name}`);
       }
 
-      const holder = await queryAPI.getNode(draft.parentId as NodeId);
+      const holder = await queryAPI.getNode(draftNode.parentId as NodeId);
       if (!holder) {
         throw new Error(`holder missing for ${name}`);
       }

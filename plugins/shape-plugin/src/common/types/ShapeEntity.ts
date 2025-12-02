@@ -1,6 +1,6 @@
 /**
  * @file ShapeEntity.ts
- * @description Re-export canonical Shape entity and working copy types.
+ * @description Re-export canonical Shape entity and draft types.
  */
 
 export type {

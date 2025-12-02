@@ -47,7 +47,7 @@ export function BatchProcessingDialog({
       <DialogContent>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <Typography variant="body2" color="text.secondary">
-            Session <strong>{sessionId}</strong> (working copy <strong>{draftId}</strong>) progress
+            Session <strong>{sessionId}</strong> (draft <strong>{draftId}</strong>) progress
           </Typography>
           <ShapeBatchProgressDisplay sessionId={sessionId} draftId={draftId} />
         </Box>

@@ -120,7 +120,7 @@ export const StylerSimpleDialog: React.FC<StylerSimpleDialogProps> = ({
       setColorRules(
         (existingEntity.colorRules || []).map((rule, index) => ({
           ...rule,
-          _id: `${existingEntity.id}-rule-${index}`,
+          _id: `${existingEntity.nodeId}-rule-${index}`,
         }))
       );
       setDefaultStyle(existingEntity.defaultStyle || { textColor: '', backgroundColor: '' });

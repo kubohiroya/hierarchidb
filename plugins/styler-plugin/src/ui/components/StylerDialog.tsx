@@ -99,7 +99,7 @@ export const StylerDialog: React.FC<StylerDialogProps> = ({
   const data = useMemo<StylerDialogDraft>(() => normalizeDraft(draft), [draft]);
   const spreadsheetData = useMemo<SpreadsheetDialogData>(() => ({
     ...data,
-    metadata: data.spreadsheetMetadata ?? null,
+    metadata: data.spreadsheetMetadata ?? undefined,
   }), [data]);
 
   const persistBasicInfo = useCallback(
@@ -193,7 +193,7 @@ export const StylerDialog: React.FC<StylerDialogProps> = ({
           data={spreadsheetData}
           onChange={(next) => {
             const { metadata, ...rest } = next;
-            handleUpdate({ ...rest, spreadsheetMetadata: metadata ?? null });
+            handleUpdate({ ...rest, spreadsheetMetadata: metadata ?? undefined });
           }}
           setValid={() => {}}
           setError={() => {}}
@@ -213,7 +213,7 @@ export const StylerDialog: React.FC<StylerDialogProps> = ({
           data={spreadsheetData}
           onChange={(next) => {
             const { metadata, ...rest } = next;
-            handleUpdate({ ...rest, spreadsheetMetadata: metadata ?? null });
+            handleUpdate({ ...rest, spreadsheetMetadata: metadata ?? undefined });
           }}
           setValid={() => {}}
           setError={() => {}}

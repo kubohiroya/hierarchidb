@@ -9,7 +9,7 @@ interface Entity {
   nested?: { value: number };
 }
 
-describe('working copy helpers', () => {
+describe('draft helpers', () => {
   const adapter = createEntityDraftAdapter<Entity, DraftBase<Entity>>({
     draftFromEntity: (entity) => ({ ...entity }),
     draftDefaults: (_treeNodeId, overrides) => ({
@@ -19,7 +19,7 @@ describe('working copy helpers', () => {
     }),
   });
 
-  it('creates a draft working copy with provided metadata intact', () => {
+  it('creates a draft state with provided metadata intact', () => {
     const draft = adapter.createDraft('node-123' as NodeId, {
       title: 'Initial title',
       nested: { value: 1 },
@@ -36,7 +36,7 @@ describe('working copy helpers', () => {
     expect(draft.originalVersion).toBe(7);
   });
 
-  it('updates a draft working copy and merges changes', () => {
+  it('updates a draft state and merges changes', () => {
     const draft: DraftBase<Entity> = adapter.createDraft('node-789' as NodeId, {
       title: 'Initial title',
       nested: { value: 2 },

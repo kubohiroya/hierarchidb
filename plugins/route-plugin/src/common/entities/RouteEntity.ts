@@ -3,7 +3,21 @@
  * @description Route entity definition extending Shape plugin
  */
 
-import type { BaseEntity, NodeId, Timestamp } from '@hierarchidb/common-types';
+import type { BaseEntity, NodeId, Timestamp, TreeNodeUpdaterPayload } from '@hierarchidb/common-types';
+export const ROUTE_TYPES = {
+  ROAD: 'road',
+  RAILWAY: 'railway',
+  WATERWAY: 'waterway',
+  AIRWAY: 'airway',
+  WALKING: 'walking',
+  CYCLING: 'cycling',
+  HIKING: 'hiking',
+  SHIPPING: 'shipping',
+  PIPELINE: 'pipeline',
+  POWERLINE: 'powerline',
+} as const;
+
+export type RouteType = typeof ROUTE_TYPES[keyof typeof ROUTE_TYPES];
 
 /**
  * Transport mode types
@@ -43,6 +57,7 @@ export interface RouteEntity extends BaseEntity {
   // Entity ID
   id: NodeId;
   nodeId: NodeId;
+  parentId?: NodeId;
 
   // Basic information
   name: string;
@@ -75,6 +90,8 @@ export interface RouteEntity extends BaseEntity {
 
   // Transport-specific metadata
   transportMode: TransportMode;
+  routeType?: RouteType;
+  transportModes?: TransportMode[];
   operator?: string;
   routeNumber?: string;
   frequency?: {
@@ -108,12 +125,10 @@ export interface RouteEntity extends BaseEntity {
   parentRouteId?: NodeId;  // For route segments
   childRouteIds?: NodeId[]; // Sub-routes
   relatedShapeId?: NodeId; // Parent Shape entity
+  tags?: string[];
 }
 
-/**
- * Route working copy metadata shared between UI と Worker.
- */
-export type RouteDraft = import('../types/index.js').RouteDraft;
+export type RouteDraft = TreeNodeUpdaterPayload<RouteEntity>;
 
 /**
  * Route filter criteria

@@ -16,7 +16,7 @@ interface Params {
   pageNodeId: NodeId;
   client: Remote<WorkerAPI> | null;
   draft: TreeNodeUpdaterPayload | null;
-  updateDraft: (patch: import('./data-types.js').TreeNodeUpdatePayload) => void;
+  updateDraft: (patch: import('./data-types.js').TreeNodeUpdaterPatch) => void;
 }
 
 export function useBasicInfoState({

@@ -31,7 +31,7 @@ describe('data source normalization', () => {
     expect(draft.dataSourceName).toBe('geoboundaries');
   });
 
-  it('normalizes working copy updates before persisting', () => {
+  it('normalizes draft updates before persisting', () => {
     const draft = createDraftFromEntity(baseEntity('naturalearth'));
     const mutated = { ...draft, dataSourceName: 'GeoBoundaries' } as typeof draft;
     const updates = mapDraftToUpdates(mutated);

@@ -1,17 +1,7 @@
 /**
  * Type definitions for Styler components
  */
-import type { SpreadsheetDialogData } from '@hierarchidb/spreadsheet-plugin';
-import type { StylerEntity } from '../../common/types/StylerEntity.js';
-
-export type StyleType = 'point' | 'line' | 'polygon' | 'raster';
-
-export interface StyleSettingsData {
-  styleType?: StyleType;
-  colorScheme?: string;
-  dataSource?: string;
-  styleTags?: string[];
-}
+export type { StylerDialogData, StylerStepData, StyleType, StyleSettingsData } from '../../common/types/stylerTypes.js';
 
 /** Column mapping configuration */
 export interface ColumnMapping {
@@ -30,10 +20,3 @@ export interface ExtendedColumnMapping extends ColumnMapping {
   transformFunction?: string;
   defaultValue?: string | number | boolean | null;
 }
-
-// Basic info (name/description/tags) is supplied by the host; this dialog data covers only styling payload.
-export type StylerDialogData = SpreadsheetDialogData &
-  Partial<StylerEntity> & {
-    spreadsheetMetadata?: SpreadsheetDialogData['metadata'];
-    styleSettings?: StyleSettingsData;
-  };

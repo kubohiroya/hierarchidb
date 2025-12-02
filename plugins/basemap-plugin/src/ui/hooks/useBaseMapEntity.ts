@@ -203,10 +203,10 @@ export function useBaseMapEntity(
         };
          */
         if (!treeNodeUpdater) {
-          throw new Error('No working copy available for basemap');
+          throw new Error('No draft available for basemap');
         }
         updateTreeNodeUpdater({
-          id,
+          treeNodeId: id,
           draftMetadata: {
             name: updater.payload.draftMetadata?.name ?? '',
             description: updater.payload.draftMetadata?.description ?? '',

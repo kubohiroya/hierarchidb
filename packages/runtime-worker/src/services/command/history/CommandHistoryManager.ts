@@ -403,7 +403,7 @@ export class CommandHistoryManager {
         const commandId = command.commandId as CommandId;
         const snapshot = this.preCommitDraftState.get(commandId);
         if (!snapshot) {
-          throw new Error('No working copy snapshot recorded for undo');
+          throw new Error('No draft snapshot recorded for undo');
         }
       if (snapshot.committedNode) {
         await this.deps.coreDB.deleteNode?.(snapshot.committedNode.id as NodeId);

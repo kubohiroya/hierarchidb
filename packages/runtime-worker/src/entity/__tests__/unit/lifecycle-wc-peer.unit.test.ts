@@ -5,7 +5,7 @@ import { EntityLifecycleManager } from '../../EntityLifecycleManager.js';
 import type { PeerEntity, PeerStore } from '../../store.js';
 import { storeRegistry } from '../../store-registry.js';
 
-describe('EntityLifecycleManager working copy peer (create/discard)', () => {
+describe('EntityLifecycleManager draft peer (create/discard)', () => {
   beforeEach(() => {
     vi.resetModules();
   });

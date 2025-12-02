@@ -1,5 +1,6 @@
 import type { NodeId, Timestamp } from '@hierarchidb/common-types';
 import type { TabularFilterRule, TabularDataResult } from '@hierarchidb/ui-tabular-extract';
+import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { DATA_SOURCE_TYPES } from '../constants.js';
 
 export type DataSourceType = typeof DATA_SOURCE_TYPES[keyof typeof DATA_SOURCE_TYPES];
@@ -28,10 +29,15 @@ export interface SpreadsheetEntity {
   file?: UploadedFileSummary;
 }
 
-/*
-export interface SpreadsheetPeerData extends PeerDataBase {
+export interface SpreadsheetPeerData {
   schemaVersion: 1;
   metadataId?: string;
   lastReferencedAt?: Timestamp;
 }
- */
+
+export interface SpreadsheetDialogData extends Partial<SpreadsheetEntity> {
+  name?: string;
+  description?: string;
+  tags?: string[];
+  metadata?: TabularTableMetadata;
+}

@@ -4,15 +4,16 @@
 
 import { useMemo, useCallback, useEffect, useRef } from 'react';
 import type { NodeId, TreeId, TreeNodeMetadata } from '@hierarchidb/common-types';
-import type { RouteEntity, RouteDraft, TagId } from '../types/index.js';
-import { createRouteDraftBase, mergeRouteDraft, getRouteDraft } from '../utils/draft.js';
+import type { RouteEntity, RouteDraft } from '../entities/RouteEntity.js';
+import type { TagId } from '../types/index.js';
+import { getRouteDraft, normalizeRouteDraft } from '../utils/draft.js';
 import { useTranslation } from '../i18n/index.js';
 import { RouteDetailsStep } from './RouteDetailsStep.js';
 import { RouteSelectionStep } from './RouteSelectionStep.js';
 import { RouteProcessingStep } from './RouteProcessingStep.js';
 import { readRuntimeMode } from '@hierarchidb/util';
 import { notify } from '@hierarchidb/components';
-import { useDialogDraft, type DraftData } from '@hierarchidb/plugin-ui-sdk';
+import { useDialogDraft } from '@hierarchidb/plugin-ui-sdk';
 import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 import { useState } from 'react';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
@@ -48,35 +49,6 @@ export interface RouteDialogProps {
   onSuccess?: (entity: RouteDraft) => void;
   onError?: (error: Error) => void;
 }
-
-type RouteDialogState = RouteDraft | null;
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null;
-
-const normalizeRouteDraft = (
-  raw: DraftData<RouteEntity> | null,
-  nodeId: NodeId,
-  parentId?: NodeId
-): RouteDialogState => {
-  if (!raw) return null;
-  const base = createRouteDraftBase(nodeId, {}, parentId);
-  const payload = isRecord(raw.draftData) ? (raw.draftData as Partial<RouteEntity>) : {};
-  const sourceMeta = (raw.draftMetadata ?? raw.metadata ?? {}) as Partial<TreeNodeMetadata>;
-  const normalizedMeta: TreeNodeMetadata = {
-    name: typeof sourceMeta.name === 'string' ? sourceMeta.name : '',
-    description: typeof sourceMeta.description === 'string' ? sourceMeta.description : '',
-    tags: Array.isArray(sourceMeta.tags) ? sourceMeta.tags.map((tag) => tag as TagId) : [],
-  };
-  const normalizedTags = normalizedMeta.tags as TagId[];
-  const merged: Partial<RouteEntity> = {
-    ...payload,
-    name: normalizedMeta.name,
-    description: normalizedMeta.description,
-    tags: normalizedTags,
-  };
-  return mergeRouteDraft(base, merged);
-};
 
 export const RouteDialog: React.FC<RouteDialogProps> = ({
   open,
@@ -117,18 +89,23 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [detailsValid, setDetailsValid] = useState(false);
   const routeDraft = useMemo(
-    () => normalizeRouteDraft(draft, effectiveNodeId, parentId),
-    [draft, effectiveNodeId, parentId]
+    () => normalizeRouteDraft(draft, effectiveNodeId),
+    [draft, effectiveNodeId]
   );
-  const workingDraft = useMemo(
-    () => routeDraft ?? createRouteDraftBase(effectiveNodeId, {}, parentId),
-    [routeDraft, effectiveNodeId, parentId]
-  );
+  const workingDraft = useMemo<RouteDraft>(() => {
+    return (
+      routeDraft ?? {
+        treeNodeId: effectiveNodeId,
+        draftMetadata: { name: '', description: '', tags: [] },
+        draftData: {},
+      }
+    );
+  }, [routeDraft, effectiveNodeId]);
 
   const applyUpdates = useCallback(
     (updates: Partial<RouteEntity>) => {
       if (!draft) return;
-      const baseMeta = (draft.draftMetadata ?? draft.metadata ?? {}) as Partial<TreeNodeMetadata>;
+      const baseMeta = (draft.draftMetadata ?? {}) as Partial<TreeNodeMetadata>;
       const nextDraftMetadata: TreeNodeMetadata = {
         name: typeof baseMeta.name === 'string' ? baseMeta.name : '',
         description: typeof baseMeta.description === 'string' ? baseMeta.description : '',
@@ -167,12 +144,9 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
   const resolvedDescription =
     typeof routeDraftPayload?.description === 'string' ? routeDraftPayload.description : '';
   const resolvedTags = useMemo(() => {
-    const draftTags = Array.isArray(routeDraftPayload?.tags) ? routeDraftPayload?.tags : undefined;
-    const wcTags = Array.isArray((routeDraft as RouteDraft | null)?.tags)
-      ? (routeDraft as RouteDraft).tags
-      : undefined;
-    return (draftTags ?? wcTags ?? []) as TagId[];
-  }, [routeDraftPayload?.tags, routeDraft]);
+    const metaTags = workingDraft?.draftMetadata?.tags;
+    return Array.isArray(metaTags) ? (metaTags.map(String) as TagId[]) : [];
+  }, [workingDraft]);
 
   const isBasicValid = resolvedName.trim().length > 0;
   const isSelectionValid = true;
@@ -565,7 +539,17 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
         stepData={workingDraft}
         onStepDataChange={(patch: Partial<RouteDraft>) => {
           if (!patch) return;
-          applyUpdates(patch as Partial<RouteDraft>);
+          const nextDraftMetadata =
+            patch.draftMetadata ?? workingDraft.draftMetadata ?? { name: '', description: '', tags: [] };
+          const nextDraftData = {
+            ...(workingDraft.draftData ?? {}),
+            ...(patch.draftData ?? {}),
+          } as RouteEntity;
+          void updateDraft({
+            treeNodeId: patch.treeNodeId ?? workingDraft.treeNodeId,
+            draftMetadata: nextDraftMetadata,
+            draftData: nextDraftData,
+          });
         }}
         activeStepIndex={activeStepIndex}
         onStepNavigate={handleNavigation}

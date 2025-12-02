@@ -59,7 +59,7 @@ export interface DialogState {
 // ============================================================================
 
 /**
- * Current working copy data
+ * Current draft data
  * Loaded from Worker/EphemeralDB - no client-side caching needed
  */
 export const draftAtom = atom<DraftData | null>(null);
@@ -201,7 +201,7 @@ export const canGoPreviousAtom = atom((get) => {
 // ============================================================================
 
 /**
- * Update working copy data
+ * Update draft data
  */
 export const updateDraftAtom = atom(null, (get, set, update: Partial<DraftData>) => {
   const current = get(draftAtom);

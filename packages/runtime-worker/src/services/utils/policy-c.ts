@@ -18,7 +18,7 @@ export async function collectSubtreeIds(coreDB: CoreDB, rootId: NodeId): Promise
 }
 
 export async function hasDraftInSubtree(coreDB: CoreDB, rootId: NodeId): Promise<boolean> {
-  // In the draftData model, a working copy is the node itself with draftData present.
+  // In the draftData model, a draft is the node itself with draftData present.
   const nodesTable = coreDB.nodes;
   if (!nodesTable || typeof nodesTable.toArray !== 'function') return false;
   const all = (await nodesTable.toArray()) as TreeNode[] | undefined;

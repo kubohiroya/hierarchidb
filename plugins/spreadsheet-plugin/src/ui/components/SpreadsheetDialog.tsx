@@ -18,7 +18,7 @@ import {
 } from '@hierarchidb/ui-dialog';
 import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 import { useDialogDraft, type DraftData } from '@hierarchidb/plugin-ui-sdk';
-//import type { SpreadsheetDialogData } from '../../common/types/SpreadsheetEntity.js';
+import type { SpreadsheetDialogData } from '../../common/types/SpreadsheetEntity.js';
 import { DataSourceStep } from './steps/DataSourceStep.js';
 import { FilteringStep } from './steps/FilteringStep.js';
 // import { HTMLDivElement } from 'happy-dom';
@@ -40,7 +40,7 @@ const defaultDialogState = () => {
   return { size, position };
 };
 
-const normalizeDraft = (raw: DraftData<SpreadsheetDialogDraft> | null): SpreadsheetDialogDraft => {
+const normalizeDraft = (raw: DraftData<SpreadsheetDialogData> | null): SpreadsheetDialogData => {
   const meta = raw?.draftMetadata ?? raw?.metadata ?? { name: '', description: '', tags: [] };
   const draftData = raw?.draftData ?? {};
   return {
@@ -70,7 +70,7 @@ export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
   }, []);
 
   const { size: initialSize, position: initialPositionValue } = useMemo(defaultDialogState, []);
-  const { draft, updateDraft, saveDraft, discardDraft } = useDialogDraft<SpreadsheetDialogDraft>({
+  const { draft, updateDraft, saveDraft, discardDraft } = useDialogDraft<SpreadsheetDialogData>({
     mode,
     nodeType: 'spreadsheet',
     nodeId,
@@ -89,7 +89,7 @@ export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
   const dialogSizeRef = useRef(dialogSize);
   const dialogPositionRef = useRef(dialogPosition);
 
-  const data = useMemo<SpreadsheetDialogDraft>(() => normalizeDraft(draft), [draft]);
+  const data = useMemo<SpreadsheetDialogData>(() => normalizeDraft(draft), [draft]);
 
   const persistBasicInfo = useCallback(
     (value: BasicInfoData) => {
@@ -125,8 +125,12 @@ export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
     if (isSaving) return;
     setIsSaving(true);
     try {
-      const savedId = await saveDraft();
-      await onSave({ ...data, nodeId: savedId as NodeId } as SpreadsheetDialogData);
+      await saveDraft();
+      await onSave({
+        name: data.name ?? '',
+        description: data.description ?? '',
+        tags: data.tags ?? [],
+      });
       onClose();
     } finally {
       setIsSaving(false);

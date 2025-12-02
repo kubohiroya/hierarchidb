@@ -27,7 +27,7 @@ export interface UseDraftOptions<TDraft> {
   mode: 'create' | 'edit';
   nodeId?: string;
   parentId?: string;
-  /** Optional mapper that converts raw worker payloads into desired working copy shape. */
+  /** Optional mapper that converts raw worker payloads into desired draft shape. */
   mapFromWorker?: (raw: unknown) => TDraft;
 }
 
@@ -110,7 +110,7 @@ export function useDraft<TDraft>(
         return;
       }
 
-      throw new Error(`Unsupported working copy mode: ${mode}`);
+      throw new Error(`Unsupported draft mode: ${mode}`);
     } catch (err) {
       setError(err);
       setDraft(null);
@@ -123,7 +123,7 @@ export function useDraft<TDraft>(
   const commit = useCallback(async () => {
     const targetId = wcId ?? nodeId ?? null;
     if (!targetId) {
-      throw new Error('No working copy id available to commit.');
+      throw new Error('No draft id available to commit.');
     }
 
     setLoading(true);

@@ -193,7 +193,7 @@ export class WorkerService {
 
   async initialize(): Promise<void> {
     // Initialization is handled in getSingleton; nothing to do.
-    // no-op: working copy cleaner removed (draftData is retained without TTL)
+    // no-op: draft cleaner removed (draftData is retained without TTL)
   }
 
   getQueryAPI(): TreeQueryAPI {

@@ -4,7 +4,6 @@
  */
 
 import type { BaseEntity, NodeId, Timestamp } from '@hierarchidb/common-types';
-import type { DraftBase } from '@hierarchidb/plugin-service-api';
 
 /**
  * Category taxonomy used when importing / classifying locations.
@@ -158,7 +157,11 @@ export interface LocationEntity extends BaseEntity {
   extractConfig?: Record<string, unknown>;
 }
 
-export type LocationDraft = DraftBase<LocationEntity>;
+export type LocationDraft = Partial<LocationEntity> & {
+  treeNodeId: NodeId;
+  draft?: LocationEntity;
+  originalVersion?: number;
+};
 
 /**
  * Additional filtering options for batch processing.

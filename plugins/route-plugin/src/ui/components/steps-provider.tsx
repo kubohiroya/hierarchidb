@@ -6,8 +6,8 @@ import {
   type StepData,
 } from '@hierarchidb/plugin-base';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { RouteDraft, TagId } from '../../common/types/index.js';
-import { createRouteDraftBase } from '../../common/utils/draft.js';
+import type { RouteDraft } from '../../common/types/index.js';
+import { normalizeRouteDraft } from '../../common/utils/draft.js';
 import { translations as routeTranslations } from '../../common/i18n/index.js';
 import { RouteSelectionStep } from '../../common/components/RouteSelectionStep.js';
 import { RouteProcessingStep } from '../../common/components/RouteProcessingStep.js';
@@ -17,81 +17,55 @@ import { notify } from '@hierarchidb/components';
 
 const registry = PluginStepRegistry.getInstance();
 
-type RouteStepData = StepData & Partial<RouteDraft>;
+type RouteStepData = StepData & RouteDraft;
 
 type StepProps = StepComponentProps<RouteStepData>;
 
 const ensureDraft = (data?: StepComponentProps['data']): RouteStepData => {
   const fallbackId = 'route-draft' as NodeId;
   if (data && typeof data === 'object') {
-    const cast = data as RouteStepData;
-    const base = createRouteDraftBase(
-      (cast.treeNodeId ?? (cast as { id?: string }).id ?? fallbackId) as NodeId,
-      {
-        ...cast.draft,
-        name: cast.draft?.name ?? '',
-        description: cast.draft?.description ?? '',
-        tags: cast.tags,
-      },
-      (cast as { parentId?: NodeId }).parentId
+    const cast = data as Partial<RouteDraft> & { id?: string; parentId?: NodeId };
+    const base = normalizeRouteDraft(
+      cast as RouteDraft,
+      (cast.treeNodeId ?? cast.id ?? fallbackId) as NodeId,
     );
     return {
-      ...(base as RouteStepData),
-      processingConfig: base.processingConfig ? { ...base.processingConfig } : undefined,
-      draft: {
-        ...(base.draft ?? {}),
-        processingConfig: base.draft?.processingConfig ? { ...base.draft.processingConfig } : undefined,
-      },
+      ...(base as RouteDraft),
     };
   }
-  const base = createRouteDraftBase(fallbackId, {}, undefined);
+  const base = normalizeRouteDraft(null, fallbackId);
   return {
-    ...(base as RouteStepData),
-    processingConfig: base.processingConfig ? { ...base.processingConfig } : undefined,
-    draft: {
-      ...(base.draft ?? {}),
-      processingConfig: base.draft?.processingConfig ? { ...base.draft.processingConfig } : undefined,
-    },
+    ...(base as RouteDraft),
   };
 };
 
-const mergeDraft = (
-  current: RouteStepData,
-  updates: Partial<RouteStepData>
-): RouteStepData => ({
-  ...current,
-  ...updates,
-  draft: {
-    ...(current.draft ?? {}),
-    ...(updates.draft ?? {}),
-    processingConfig: updates.draft?.processingConfig
-      ? { ...updates.draft.processingConfig }
-      : current.draft?.processingConfig
-      ? { ...current.draft.processingConfig }
-      : undefined,
-  },
-  tags: (updates.tags ?? current.tags ?? []) as TagId[],
-  processingConfig: updates.processingConfig
-    ? { ...updates.processingConfig }
-    : current.processingConfig
-    ? { ...current.processingConfig }
-    : undefined,
-});
+const mergeDraft = (current: RouteStepData, updates: Partial<RouteStepData>): RouteStepData => {
+  const nextDraftMetadata = updates.draftMetadata ?? current.draftMetadata ?? null;
+  const nextDraftData = {
+    ...(current.draftData ?? {}),
+    ...(updates.draftData ?? {}),
+  };
+  return {
+    ...current,
+    ...updates,
+    draftMetadata: nextDraftMetadata,
+    draftData: nextDraftData,
+  };
+};
 
 const hasRouteDetails = (data?: RouteStepData): boolean => {
-  const wc = data as RouteStepData | undefined;
-  const draft = wc?.draft;
-  const routeType = draft && typeof (draft as Record<string, unknown>).routeType === 'string'
-    ? (draft as Record<'routeType', string>).routeType
+  const draftData = data?.draftData ?? {};
+  const routeType = typeof (draftData as Record<string, unknown>).routeType === 'string'
+    ? (draftData as Record<'routeType', string>).routeType
     : undefined;
-  const transportModes = Array.isArray((draft as Record<string, unknown>).transportModes)
-    ? ((draft as { transportModes: string[] }).transportModes)
+  const transportModes = Array.isArray((draftData as Record<string, unknown>).transportModes)
+    ? ((draftData as { transportModes: string[] }).transportModes)
     : [];
   return Boolean(routeType && transportModes.length > 0);
 };
 
 const startRouteBatch = async (data: RouteStepData, _context: StartBatchContext) => {
-  const draft = data?.draft ?? {};
+  const draft = data?.draftData ?? {};
   const hasEssentials = Boolean(
     typeof draft.name === 'string' &&
       draft.name.trim() &&
@@ -121,7 +95,7 @@ registry.registerConfigProvider<RouteStepData>({
           return (
             <RouteDetailsStep
               draft={draft as unknown as RouteDraft}
-              onUpdate={(updates) => p.onChange(mergeDraft(draft, updates as Partial<RouteStepData>))}
+              onUpdate={(updates) => p.onChange(mergeDraft(draft, { draftData: updates }))}
               onValidationChange={p.setValid}
             />
           );
@@ -136,7 +110,7 @@ registry.registerConfigProvider<RouteStepData>({
           return (
             <RouteSelectionStep
               draft={draft as unknown as RouteDraft}
-              onUpdate={(updates) => p.onChange(mergeDraft(draft, updates as Partial<RouteStepData>))}
+              onUpdate={(updates) => p.onChange(mergeDraft(draft, { draftData: updates }))}
               onValidationChange={p.setValid}
             />
           );
@@ -151,7 +125,7 @@ registry.registerConfigProvider<RouteStepData>({
           return (
             <RouteProcessingStep
               draft={draft as unknown as RouteDraft}
-              onUpdate={(updates) => p.onChange(mergeDraft(draft, updates as Partial<RouteStepData>))}
+              onUpdate={(updates) => p.onChange(mergeDraft(draft, { draftData: updates }))}
               onValidationChange={p.setValid}
             />
           );
@@ -168,7 +142,7 @@ registry.registerConfigProvider<RouteStepData>({
         },
         capabilities: {
           canStartBatch: (data: RouteStepData) => {
-            const draft = data?.draft ?? {};
+            const draft = data?.draftData ?? {};
             const hasEssentials = Boolean(
               typeof draft.name === 'string' &&
                 draft.name.trim() &&

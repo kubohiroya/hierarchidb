@@ -25,7 +25,7 @@ import {
   Typography,
 } from '@mui/material';
 import { PlayArrow, Settings, Stop } from '@mui/icons-material';
-import type { RouteEntity, RouteDraft } from '../types/index.js';
+import type { RouteEntity, RouteDraft } from '../entities/RouteEntity.js';
 import { useTranslation } from '../i18n/index.js';
 import { getRouteDraft } from '../utils/draft.js';
 

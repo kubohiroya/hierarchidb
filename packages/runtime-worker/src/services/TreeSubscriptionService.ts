@@ -129,7 +129,6 @@ export class TreeSubscriptionService {
     }
 
     // Clean up subscription when unsubscribed
-    /* eslint-disable deprecation/deprecation */
     const originalSubscribe = resultObservable.subscribe.bind(resultObservable);
     const customSubscribe = (
       ...args: Parameters<typeof originalSubscribe>
@@ -230,7 +229,6 @@ export class TreeSubscriptionService {
     }
 
     // Set up unsubscribe handler
-    /* eslint-disable deprecation/deprecation */
     const originalSubscribe = resultObservable.subscribe.bind(resultObservable);
     resultObservable.subscribe = ((...args: Parameters<typeof originalSubscribe>) => {
       const sub = originalSubscribe(...args);
@@ -314,7 +312,6 @@ export class TreeSubscriptionService {
     }
 
     // Set up unsubscribe handler
-    /* eslint-disable deprecation/deprecation */
     const originalSubscribe = resultObservable.subscribe.bind(resultObservable);
     resultObservable.subscribe = ((...args: Parameters<typeof originalSubscribe>) => {
       const sub = originalSubscribe(...args);
@@ -326,7 +323,6 @@ export class TreeSubscriptionService {
       };
       return sub;
     }) as typeof resultObservable.subscribe;
-    /* eslint-enable deprecation/deprecation */
 
     return resultObservable;
   }
@@ -351,7 +347,7 @@ export class TreeSubscriptionService {
     };
     this.registry.register(subscriptionInfo);
 
-    // For now, working copy events come through the same change stream
+    // For now, draft events come through the same change stream
     // In a real implementation, this might have a separate event source
     const draftObservable = this.globalChangeSubject.pipe(
       rxFilter((event) => this.isEventRelevantForDrafts(event, nodeId)),

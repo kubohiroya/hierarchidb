@@ -19,33 +19,33 @@ export interface StepCapabilities {
 /**
  * Multi-Step Dialog API interface
  *
- * Provides methods for managing working copies and evaluating
+ * Provides methods for managing draft states and evaluating
  * capabilities for multi-step dialog workflows.
  */
 export interface MultiStepDialogAPI {
   /**
-   * Create a new working copy
+   * Create a new draft node
    *
    * @param nodeType - The type of node to create
    * @param parentNodeId - Optional parent node ID
-   * @returns The ID of the created working copy
+   * @returns The ID of the created draft
    */
   createDraft(nodeType: string, parentNodeId?: NodeId): Promise<NodeId>;
 
   /**
-   * Get a working copy by ID
+   * Get a draft by ID
    *
-   * @param draftId - The ID of the working copy
-   * @returns The working copy data or undefined if not found
+   * @param draftId - The ID of the draft
+   * @returns The draft data or undefined if not found
    */
   getDraft(draftId: NodeId): Promise<TreeNodeUpdater | undefined>;
 
   /**
-   * Update a working copy
+   * Update a draft
    *
-   * @param draftId - The ID of the working copy
+   * @param draftId - The ID of the draft
    * @param updates - Partial updates to apply
-   * @returns The updated working copy data
+   * @returns The updated draft data
    */
   updateDraft(
     draftId: NodeId,
@@ -53,43 +53,43 @@ export interface MultiStepDialogAPI {
   ): Promise<TreeNodeUpdater>;
 
   /**
-   * Delete a working copy
+   * Delete a draft
    *
-   * @param draftId - The ID of the working copy to delete
+   * @param draftId - The ID of the draft to delete
    */
   deleteDraft(draftId: NodeId): Promise<void>;
 
   /**
-   * Validate multiple working copies
+   * Validate multiple drafts
    *
-   * @param draftIds - Array of working copy IDs to validate
-   * @returns Map of working copy IDs to validation results
+   * @param draftIds - Array of draft IDs to validate
+   * @returns Map of draft IDs to validation results
    */
   batchValidate(draftIds: NodeId[]): Promise<Record<NodeId, ValidationResult>>;
 
   /**
-   * Evaluate step capabilities for a working copy
+   * Evaluate step capabilities for a draft
    *
-   * @param draftId - The ID of the working copy
+   * @param draftId - The ID of the draft
    * @param step - The step number (0-based)
    * @returns The capabilities for the specified step
    */
   evaluateCapabilities(draftId: NodeId, step: number): Promise<StepCapabilities>;
 
   /**
-   * Batch evaluate capabilities for multiple working copies and steps
+   * Batch evaluate capabilities for multiple drafts and steps
    *
-   * @param requests - Array of working copy ID and step pairs
-   * @returns Map of working copy IDs to step capabilities
+   * @param requests - Array of draft ID and step pairs
+   * @returns Map of draft IDs to step capabilities
    */
   batchEvaluateCapabilities(
     requests: Array<{ draftId: NodeId; step: number }>
   ): Promise<Record<NodeId, StepCapabilities>>;
 
   /**
-   * Save a working copy as a permanent entity
+   * Save a draft as a permanent entity
    *
-   * @param draftId - The ID of the working copy to save
+   * @param draftId - The ID of the draft to save
    * @returns The ID of the created entity
    */
   saveDraft(draftId: NodeId): Promise<NodeId>;

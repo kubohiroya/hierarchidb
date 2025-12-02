@@ -4,12 +4,12 @@ export type DialogUiState = unknown;
 
 // Draft container: basic info goes to draftMetadata, plugin data goes to draftData (Partial of plugin entity).
 export interface TreeNodeUpdaterPayload<T extends object = object> {
-  id: NodeId;
+  treeNodeId: NodeId;
   draftMetadata: TreeNodeMetadata | null;
   draftData: Partial<T> | null;
 }
 
-export interface TreeNodeUpdatePayload<T extends object = object> {
+export interface TreeNodeUpdaterPatch<T extends object = object> {
   draftMetadata?: TreeNodeMetadata | null;
   draftData?: Partial<T> | null;
 }

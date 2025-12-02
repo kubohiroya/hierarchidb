@@ -58,7 +58,7 @@ export type NodePayload = Record<string, unknown>;
 
 /**
  * Dexie nodes table record (single source of truth).
- * - Domain data lives in `data` (committed) and `draftData` (working copy).
+ * - Domain data lives in `data` (committed) and `draftData` (draft state).
  * - UI state is scoped to `dialogUIState` and should be cleared on commit/discard.
  * - Structural metadata stays at the top level and must not be duplicated under data.
  */
@@ -102,7 +102,7 @@ export interface TreeNodeWithChildren<TData extends NodePayload | null = NodePay
  * Working copy payload (drafted metadata/data) used across UI/Worker dialog flows.
  */
 export interface TreeNodeUpdaterPayload<T extends object = object> {
-  id: NodeId;
+  treeNodeId: NodeId;
   draftMetadata: TreeNodeMetadata | null;
   draftData: Partial<T> | null;
 }

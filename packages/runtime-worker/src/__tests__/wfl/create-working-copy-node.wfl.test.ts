@@ -54,7 +54,7 @@ describe('Comlink + fake-indexeddb integration: create flow uses draft before co
 
     const created = await queryAPI.getNode(newId);
     expect(created).toBeTruthy();
-    if (!created) throw new Error('working copy not created');
+    if (!created) throw new Error('draft node not created');
     expect(created.id).toBe(newId);
     expect(created.metadata.name).toBe('Created From Test');
     expect(created.nodeType).toBe('folder');

@@ -2,8 +2,6 @@ import type { NodeId, Timestamp } from '@hierarchidb/common-types';
 import type { Table } from 'dexie';
 import type { LocationEntity, LocationDataSource, LocationDraft } from './LocationEntity.js';
 import { clearLocationPoints } from '../../services/pointRepository.js';
-import { BaseSearchCriteria } from '@hierarchidb/plugin-service-api';
-import { BaseEntityHandler } from '@hierarchidb/plugin-service-sdk';
 
 export interface CreateLocationData {
   dataSource: LocationDataSource;
@@ -19,15 +17,10 @@ function cloneMatrix(matrix?: boolean[][]): boolean[][] {
   return matrix ? matrix.map((row) => [...row]) : [];
 }
 
-export class LocationEntityHandler extends BaseEntityHandler<
-  LocationEntity,
-  CreateLocationData,
-  BaseSearchCriteria
-> {
+export class LocationEntityHandler {
   private tableRef: Table<LocationEntity, NodeId, LocationEntity> | null;
 
   constructor(table?: Table<LocationEntity, NodeId, LocationEntity>) {
-    super();
     this.tableRef = table ?? null;
   }
 

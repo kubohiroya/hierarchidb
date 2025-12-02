@@ -2,6 +2,7 @@ export { wrapDialogStepComponent } from './dialog/wrapDialogStepComponent.js';
 export {
   useTreeNodeUpdater as useDialogDraft,
   useTreeNodeUpdater,
+  useDraft,
 } from './hooks/useDialogDraft.js';
 export type {
   UseTreeNodeUpdaterOptions as UseDialogDraftOptions,
@@ -10,5 +11,7 @@ export type {
   UseTreeNodeUpdaterResult,
   TreeNodeUpdaterState,
   DraftData,
+  UseDraftOptions,
+  UseDraftResult,
 } from './hooks/useDialogDraft.js';
 export type { BasicInfoStepProps } from './dialog/steps/BasicInfoStep.js';

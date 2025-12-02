@@ -55,14 +55,14 @@ export interface StartBatchContext<TData extends StepData = StepData, TUiState =
   /** Parent node id for create-mode dialogs. */
   parentId?: string;
 
-  /** Tree id of the current working copy. */
+  /** Tree id of the current draft (TreeNodeUpdater). */
   treeId?: string;
 
   /** Dialog mode. */
   mode: 'create' | 'edit';
 
   /**
-   * Merged dialog data (basic info + working step data).
+   * Merged dialog data (basic info + draft step data).
    * Useful when the step-level data omits metadata.
    */
   dialogData: TData;

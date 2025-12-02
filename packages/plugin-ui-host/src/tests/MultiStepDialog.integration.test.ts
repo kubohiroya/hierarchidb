@@ -26,7 +26,7 @@ describe('Multi-Step Dialog Integration', () => {
   });
 
   describe('Working Copy Management', () => {
-    it('should create a working copy for folder plugin', async () => {
+    it('should create a draft (TreeNodeUpdater) for folder plugin', async () => {
       const draftId = await dialogAPI.createDraft('folder-plugin');
 
       expect(draftId).toBeDefined();
@@ -38,7 +38,7 @@ describe('Multi-Step Dialog Integration', () => {
       expect(draft?.data).toEqual({});
     });
 
-    it('should create a working copy for location plugin with parent', async () => {
+    it('should create a draft (TreeNodeUpdater) for location plugin with parent', async () => {
       const parentId = 'parent-123' as NodeId;
       const draftId = await dialogAPI.createDraft('location', parentId);
 
@@ -48,7 +48,7 @@ describe('Multi-Step Dialog Integration', () => {
       expect(draft?.parentNodeId).toBe(parentId);
     });
 
-    it('should update a working copy', async () => {
+    it('should update a draft (TreeNodeUpdater)', async () => {
       const draftId = await dialogAPI.createDraft('folder-plugin');
 
       const updates = {
@@ -68,7 +68,7 @@ describe('Multi-Step Dialog Integration', () => {
       expect(updatedDraft.metadata.currentStep).toBe(1);
     });
 
-    it('should delete a working copy', async () => {
+    it('should delete a draft (TreeNodeUpdater)', async () => {
       const draftId = await dialogAPI.createDraft('folder-plugin');
 
       await dialogAPI.deleteDraft(draftId);
@@ -277,7 +277,7 @@ describe('Multi-Step Dialog Integration', () => {
   });
 
   describe('Error Handling', () => {
-    it('should handle non-existent working copy', async () => {
+    it('should handle non-existent draft (TreeNodeUpdater)', async () => {
       const nonExistentId = 'non-existent-id' as NodeId;
 
       await expect(dialogAPI.evaluateCapabilities(nonExistentId, 0)).rejects.toThrow(

@@ -9,19 +9,19 @@ export interface EntityDraftAdapter<TEntity> {
 export interface EntityAdapterOptions<TEntity> {
   /**
    * Produce a partial snapshot (draft payload) from the entity.
-   * Must include domain fields that should remain mutable in the working copy.
+   * Must include domain fields that should remain mutable in the draft state.
    */
   draftFromEntity(entity: Partial<TEntity>): Partial<TEntity>;
   /**
-   * Produce a draft payload for new working copies (create flow).
+   * Produce a draft payload for new draft entries (create flow).
    */
   draftDefaults(treeNodeId: NodeId, overrides?: Partial<TEntity>): Partial<TEntity>;
   /**
-   * Optional hook when creating a working copy from entity.
+   * Optional hook when creating a draft from an entity.
    */
   finalize?(draft: Partial<TEntity>, source: Partial<TEntity>): Partial<TEntity>;
   /**
-   * Optional hook when creating a draft working copy.
+   * Optional hook when creating a draft node.
    */
   finalizeDraft?(draft: Partial<TEntity>, treeNodeId: NodeId): TEntity;
 }

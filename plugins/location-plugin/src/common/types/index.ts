@@ -25,7 +25,6 @@ import type {
   LocationAttributes,
   LocationFeature,
 } from '../entities/LocationEntity.js';
-import type { DraftBase } from '@hierarchidb/plugin-service-api';
 export type {
   LocationPoint,
   LocationPointProperties,
@@ -47,7 +46,8 @@ export type {
   LocationFeature,
 };
 
-export interface LocationDraft extends DraftBase<LocationEntityDefinition> {
+export interface LocationDraft extends Partial<LocationEntityDefinition> {
+  treeNodeId: NodeId;
   /** console-level categorisation tags (persisted on the owning TreeNode). */
   tags?: string[];
   dataSource?: LocationDataSource;
@@ -56,7 +56,7 @@ export interface LocationDraft extends DraftBase<LocationEntityDefinition> {
     filterRules?: TabularFilterRule[];
     selection?: TabularSelectionConfig;
   };
-  draft: DraftBase<LocationEntityDefinition>['draft'] & {
+  draft: Partial<LocationEntityDefinition> & {
     name?: string;
     description?: string;
     tags?: string[];

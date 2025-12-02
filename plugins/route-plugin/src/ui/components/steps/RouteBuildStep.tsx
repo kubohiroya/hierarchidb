@@ -1,5 +1,5 @@
 import { Alert, Box, Chip, Stack, Typography } from '@mui/material';
-import type { RouteDraft } from '../../../common/types/index.js';
+import type { RouteDraft } from '../../../common/entities/RouteEntity.js';
 
 interface RouteBuildStepProps {
   draft: RouteDraft;
@@ -11,10 +11,10 @@ const toList = (value: unknown): string[] => {
 };
 
 export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({ draft: draftProp }) => {
-  const draft = draftProp.draft ?? {};
-  const routeType = draft.routeType ?? 'unknown';
-  const transportModes = toList(draft.transportModes);
-  const hasRequiredFields = Boolean(draft.name?.trim() && routeType && transportModes.length);
+  const draft = draftProp.draftData ?? {};
+  const routeType = (draft as { routeType?: string }).routeType ?? 'unknown';
+  const transportModes = toList((draft as { transportModes?: unknown }).transportModes);
+  const hasRequiredFields = Boolean(routeType && transportModes.length);
 
   return (
     <Box display="flex" flexDirection="column" gap={2}>

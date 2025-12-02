@@ -51,7 +51,7 @@ export class WorkerAPIImpl {
         }
         const id = genId();
         const payload: TreeNodeUpdaterPayload = {
-          id,
+          treeNodeId: id,
           draftMetadata: { name: '', description: '', tags: [] },
           draftData: {},
         };
@@ -77,6 +77,7 @@ export class WorkerAPIImpl {
         const wc = await requireDraft(draftId);
         const nextPayload: TreeNodeUpdaterPayload = {
           ...wc.payload,
+          treeNodeId: wc.payload.treeNodeId ?? draftId,
           draftMetadata: updates.payload?.draftMetadata
             ? { ...(wc.payload.draftMetadata ?? {}), ...updates.payload.draftMetadata }
             : wc.payload.draftMetadata ?? null,

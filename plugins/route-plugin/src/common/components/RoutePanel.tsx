@@ -31,8 +31,8 @@ import {
   Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { RouteEntity, RouteType } from '../types/index.js';
-import { TransportMode } from '../types/index.js';
+import type { RouteEntity, RouteType } from '../entities/RouteEntity.js';
+import { TransportMode } from '../entities/RouteEntity.js';
 import { RouteDatabase } from '../../services/database/RouteDatabase.js';
 import { useTranslation } from '../i18n/index.js';
 import { RouteBatchLaunchForm } from '../../ui/components/RouteBatchLaunchForm.js';
@@ -57,7 +57,7 @@ export interface RoutePanelProps {
 
 const getTransportModeIcon = (_mode: TransportMode) => <DriveEta fontSize="small" />;
 
-const getRouteTypeColor = (routeType: RouteType): 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info' => {
+const getRouteTypeColor = (routeType?: RouteType): 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info' => {
   const colorMap: Record<RouteType, 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info'> = {
     road: 'primary',
     railway: 'info',
@@ -71,7 +71,7 @@ const getRouteTypeColor = (routeType: RouteType): 'primary' | 'secondary' | 'suc
     powerline: 'warning',
   };
 
-  return colorMap[routeType] || 'primary';
+  return routeType ? colorMap[routeType] ?? 'primary' : 'primary';
 };
 
 export const RoutePanel: React.FC<RoutePanelProps> = ({
@@ -141,13 +141,15 @@ export const RoutePanel: React.FC<RoutePanelProps> = ({
           </Box>
 
           {/* Route Type */}
-          <Box sx={{ mb: 2 }}>
-            <Chip
-              label={t(`routeTypes.${entity.routeType}`, entity.routeType)}
-              color={getRouteTypeColor(entity.routeType)}
-              size="small"
-            />
-          </Box>
+          {entity.routeType && (
+            <Box sx={{ mb: 2 }}>
+              <Chip
+                label={t(`routeTypes.${entity.routeType}`, entity.routeType)}
+                color={getRouteTypeColor(entity.routeType)}
+                size="small"
+              />
+            </Box>
+          )}
 
           {/* Transport Modes */}
           {entity.transportModes && entity.transportModes.length > 0 && (
@@ -222,7 +224,12 @@ export const RoutePanel: React.FC<RoutePanelProps> = ({
                       {t('panel.waypoints', 'Waypoints')} ({entity.waypoints.length})
                     </Typography>
                     <List dense>
-                      {entity.waypoints.slice(0, showDetails ? undefined : 3).map((waypoint, index) => (
+                      {entity.waypoints.slice(0, showDetails ? undefined : 3).map((waypoint, index) => {
+                        const coords =
+                          'coordinates' in waypoint && Array.isArray(waypoint.coordinates)
+                            ? waypoint.coordinates
+                            : (waypoint as unknown as [number, number]);
+                        return (
                         <ListItem key={index} sx={{ px: 0 }}>
                           <ListItemIcon sx={{ minWidth: 32 }}>
                             <Chip
@@ -234,12 +241,13 @@ export const RoutePanel: React.FC<RoutePanelProps> = ({
                           </ListItemIcon>
                           <ListItemText
                             primary={`Waypoint ${index + 1}`}
-                            secondary={`${waypoint[1].toFixed(4)}, ${waypoint[0].toFixed(4)}`}
+                            secondary={`${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}`}
                             primaryTypographyProps={{ variant: 'body2' }}
                             secondaryTypographyProps={{ variant: 'caption' }}
                           />
                         </ListItem>
-                      ))})
+                        );
+                      })}
 
                       {!showDetails && entity.waypoints.length > 3 && (
                         <ListItem sx={{ px: 0 }}>
@@ -262,7 +270,7 @@ export const RoutePanel: React.FC<RoutePanelProps> = ({
                   </Typography>
                   <Stack spacing={1}>
                     <Typography variant="body2">
-                      {t('panel.category', 'Category')}: {t(`categories.${entity.category}`, entity.category)}
+                    {t('panel.category', 'Category')}: {t(`categories.${entity.category}`, String(entity.category))}
                     </Typography>
                   </Stack>
                 </Box>

@@ -69,7 +69,7 @@ export class DialogService<T> {
       //return state;
       return null;
     } catch (error) {
-      console.error('Failed to load working copy:', error);
+      console.error('Failed to load draft state:', error);
       throw error;
     }
   }
@@ -108,7 +108,7 @@ export class DialogService<T> {
       this.stateCache.set(nodeId, merged);
       return merged;
     } catch (error) {
-      console.error('Failed to update working copy:', error);
+      console.error('Failed to update draft state:', error);
       throw error;
     }
   }
@@ -202,7 +202,7 @@ export class DialogService<T> {
       });
       throw error;
     } catch (error) {
-      console.error('Failed to save working copy:', error);
+      console.error('Failed to save draft state:', error);
       throw error;
     }
   }
@@ -215,7 +215,7 @@ export class DialogService<T> {
       this.stateCache.delete(nodeId);
       this.subscribers.delete(nodeId as string);
     } catch (error) {
-      console.error('Failed to discard working copy:', error);
+      console.error('Failed to discard draft state:', error);
       throw error;
     }
   }

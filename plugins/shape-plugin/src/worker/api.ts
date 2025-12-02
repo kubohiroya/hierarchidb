@@ -212,7 +212,7 @@ export const shapePluginAPI = {
     const handler = getShapeEntityHandler();
     const draft = await handler.createDraft(nodeId);
     if (!draft.id) {
-      throw new Error('Failed to create working copy: missing id');
+      throw new Error('Failed to create draft: missing id');
     }
     return draft.id;
   },
@@ -327,7 +327,7 @@ export const shapePluginAPI = {
       throw new Error(`Invalid processing config: ${validation.errors?.join(', ')}`);
     }
 
-    // Get working copy to find the associated nodeId
+    // Get draft to find the associated nodeId
     const handler = getShapeEntityHandler();
     const draft = await handler.getDraft(draftId);
     if (!draft || !draft.nodeId) {
@@ -404,7 +404,7 @@ export const shapePluginAPI = {
       progressCallbacks.set(sessionId, { unsubscribe });
     }
 
-    // Save session ID to working copy
+    // Save session ID to draft
     await handler.updateDraft(draftId, {
       batchSessionId: sessionId,
     });
@@ -416,7 +416,7 @@ export const shapePluginAPI = {
     const handler = getShapeEntityHandler();
     const draft = await handler.getDraft(draftId);
     if (!draft || !draft.batchSessionId) {
-      throw new Error(`No active batch session for working copy: ${draftId}`);
+      throw new Error(`No active batch session for draft: ${draftId}`);
     }
 
     await batchManagerWithDispatch.dispatchCommand?.('session/pause', {
@@ -428,7 +428,7 @@ export const shapePluginAPI = {
     const handler = getShapeEntityHandler();
     const draft = await handler.getDraft(draftId);
     if (!draft || !draft.batchSessionId) {
-      throw new Error(`No batch session to resume for working copy: ${draftId}`);
+      throw new Error(`No batch session to resume for draft: ${draftId}`);
     }
 
     await batchManagerWithDispatch.dispatchCommand?.('session/resume', {
@@ -441,7 +441,7 @@ export const shapePluginAPI = {
     const handler = getShapeEntityHandler();
     const draft = await handler.getDraft(draftId);
     if (!draft || !draft.batchSessionId) {
-      throw new Error(`No active batch session for working copy: ${draftId}`);
+      throw new Error(`No active batch session for draft: ${draftId}`);
     }
 
     await batchManagerWithDispatch.dispatchCommand?.('session/cancel', {
@@ -452,7 +452,7 @@ export const shapePluginAPI = {
     progressCallbacks.delete(draft.batchSessionId);
     progressSessionMeta.delete(draft.batchSessionId);
 
-    // Clear session ID from working copy
+    // Clear session ID from draft
     await handler.updateDraft(draftId, {
       batchSessionId: undefined,
     });

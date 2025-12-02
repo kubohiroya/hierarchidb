@@ -19,7 +19,6 @@ export interface PeerEntity {
   disabled?: boolean;
 }
 
-import type { DraftBase } from '@hierarchidb/plugin-service-api';
 import type {
   TabularFilterRule,
   TabularDataResult,
@@ -62,41 +61,18 @@ export interface ShapeEntity extends PeerEntity {
   processingStatus?: 'idle' | 'processing' | 'paused' | 'completed' | 'failed' | 'cancelled';
 }
 
-// ShapeDraft extends the entity with working copy properties but keeps wizard-derived
+// ShapeDraft extends the entity with draft properties but keeps wizard-derived
 // values (selectedCountries/adminLevels/urlMetadata) out of the persisted draft. Those values
 // must be derived from `checkboxState` by UI or batch pipelines.
-export type ShapeDraft = DraftBase<ShapeEntity> &
-  Omit<ShapeEntity, 'selectedCountries' | 'adminLevels' | 'urlMetadata'> &
-  Partial<{
-    // TreeNode required properties (from NodeBase)
-    //id: NodeId; // Legacy compatibility: TreeNode identifier
-    //parentId: NodeId;
-    //nodeType: NodeType;
-    nodeId: NodeId;
-    // name: string;
-    depth: number;
-
-    // Working copy metadata compatible with legacy handlers
-    // originalNodeId?: NodeId;
-    // copiedAt: number;
-    // hasEntityCopy?: boolean;
-    // entityDraftId?: NodeId;
-    hasGroupEntityCopy?: Record<string, boolean>;
-
-    // Shape-specific working copy metadata
-    // isDraft?: boolean;
-    downloadedMatrix?: boolean[][]; // Cache status
-    // resumeStep?: number;
-    selectedCountries?: string[];
-    selectedAdminLevels?: number[];
-    checkboxState?: boolean[][] | string;
-    urlMetadata?: UrlMetadata[];
-    tabularMetadataId?: string;
-    tabularFilters?: TabularFilterRule[];
-    tabularFile?: TabularFileSummary;
-    tabularLastPreview?: TabularDataResult;
-    tabularMetadata?: TabularTableMetadata | null;
-  }>;
+export type ShapeDraft = Partial<ShapeEntity> & {
+  treeNodeId?: NodeId;
+  draft?: Partial<ShapeEntity>;
+  originalVersion?: number;
+  depth?: number;
+  tabularLastPreview?: TabularDataResult;
+  tabularMetadata?: TabularTableMetadata | null;
+  tabularFile?: TabularFileSummary;
+};
 
 export interface StepProps {
   draft: Partial<ShapeDraft>;

@@ -127,11 +127,12 @@ export class ShapeEntityService {
     payload: ShapeEntity,
     metadataPatch?: Partial<TreeNodeMetadata>,
   ): Promise<void> {
+    const { version: _omitVersion, ...payloadWithoutVersion } = payload;
     const coreDB = await this.ensureCoreDB();
     if (metadataPatch && Object.keys(metadataPatch).length > 0) {
       await updateTreeNodeDraftMetadata(coreDB, nodeId, metadataPatch);
     }
-    await updateTreeNodeDraftData(coreDB, nodeId, payload as unknown as Record<string, unknown>);
+    await updateTreeNodeDraftData(coreDB, nodeId, payloadWithoutVersion as unknown as Record<string, unknown>);
   }
 
   private buildEntity(nodeId: NodeId, data: Partial<CreateShapeData>, base?: ShapeEntity): ShapeEntity {
@@ -336,10 +337,15 @@ export class ShapeEntityService {
       typeof draft.checkboxState === 'string' || Array.isArray(draft.checkboxState)
         ? draft.checkboxState
         : parseCheckboxState(draft.checkboxState as any);
+    const now = Date.now() as Timestamp;
     const payload: ShapeEntity = {
       ...draft,
       id: nodeId,
       nodeId,
+        createdAt: draft.createdAt ?? now,
+        updatedAt: draft.updatedAt ?? now,
+        // version:0 is the draft-only state used by shared discard logic; keep it if absent.
+        version: draft.version ?? 0,
       checkboxState: parsedCheckbox,
     };
     await this.writeDraft(nodeId, payload, {

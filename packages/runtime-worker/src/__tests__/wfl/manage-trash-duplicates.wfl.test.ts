@@ -37,9 +37,9 @@ async function createCommittedNode(
 
   const wcNodeId = res.nodeId as NodeId;
   const wcNode = await queryAPI.getNode(wcNodeId);
-  if (!wcNode) throw new Error('working copy node missing');
+  if (!wcNode) throw new Error('draft node missing');
   const holder = await queryAPI.getNode(wcNode.parentId as NodeId);
-  if (!holder) throw new Error('working copy holder missing');
+  if (!holder) throw new Error('draft holder missing');
 
   const { targetNodeId } = decodeDraftHolderName(holder.metadata.name);
   const canonicalId = targetNodeId as NodeId;

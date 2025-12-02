@@ -1,7 +1,7 @@
 // Standardized UI-side exports (polymorphic contract)
 import { createElement } from 'react';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { RouteEntity } from '../common/types/index.js';
+import type { RouteEntity } from '../common/entities/RouteEntity.js';
 import type { RoutePanelProps } from '../common/components/RoutePanel.js';
 
 type PluginDialogComponent = (props: HostPluginDialogProps) => JSX.Element | null;

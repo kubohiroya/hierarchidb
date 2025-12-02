@@ -189,7 +189,7 @@ export class DraftCommandsAdapter {
         throw error;
       }
       throw new TreeConsoleAdapterError(
-        `Commit edit operation failed for working copy ${editSession.draftId}`,
+        `Commit edit operation failed for draft ${editSession.draftId}`,
         'COMMIT_NODE_EDIT_ADAPTER_ERROR',
         error as Error,
       );
@@ -271,7 +271,7 @@ export class DraftCommandsAdapter {
         throw error;
       }
       throw new TreeConsoleAdapterError(
-        `Commit create operation failed for working copy ${editSession.draftId}`,
+        `Commit create operation failed for draft ${editSession.draftId}`,
         'COMMIT_NODE_CREATE_ADAPTER_ERROR',
         error as Error,
       );
@@ -308,7 +308,7 @@ export class DraftCommandsAdapter {
       await draftAPI.discardDraft(command.payload.draftId as NodeId);
     } catch (error) {
       throw new TreeConsoleAdapterError(
-        `Failed to discard working copy ${editSession.draftId}`,
+        `Failed to discard draft ${editSession.draftId}`,
         'DISCARD_WORKING_COPY_ERROR',
         error as Error,
       );

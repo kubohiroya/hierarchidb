@@ -7,8 +7,8 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { Box, TextField, MenuItem } from '@mui/material';
 import { Divider } from '@mui/material';
 import { useTranslation } from '../i18n/index.js';
-import type { RouteEntity, RouteDraft } from '../types/index.js';
-import { RouteType } from '../types/index.js';
+import type { RouteEntity, RouteDraft, RouteType } from '../entities/RouteEntity.js';
+import { ROUTE_TYPES } from '../entities/RouteEntity.js';
 import { getRouteDraft } from '../utils/draft.js';
 
 export interface RouteDetailsStepProps {
@@ -27,7 +27,7 @@ export const RouteDetailsStep: React.FC<RouteDetailsStepProps> = ({
   const { translations } = useTranslation();
   const draft = useMemo(() => getRouteDraft(draftProp), [draftProp]);
 
-  const resolvedRouteType = draft.routeType ?? RouteType.ROAD;
+  const resolvedRouteType = (draft.routeType as RouteType | undefined) ?? ROUTE_TYPES.ROAD;
   const resolvedDataSource = draft.dataSourceName ?? 'openstreetmap';
 
   useEffect(() => {
@@ -68,7 +68,7 @@ export const RouteDetailsStep: React.FC<RouteDetailsStepProps> = ({
         error={!resolvedRouteType}
         sx={{ mb: 3 }}
       >
-        {Object.values(RouteType).map((type) => (
+        {Object.values(ROUTE_TYPES).map((type) => (
           <MenuItem key={type} value={type}>
             {translations.routeTypes[type]}
           </MenuItem>

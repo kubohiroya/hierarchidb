@@ -4,11 +4,7 @@
  */
 
 import type { Timestamp } from '@hierarchidb/common-types';
-import type {
-  BaseSearchCriteria,
-  PeerDataBase,
-  DraftBase,
-} from '@hierarchidb/plugin-service-api';
+import type { BaseSearchCriteria } from '@hierarchidb/plugin-service-api';
 
 /**
  * Map style configuration
@@ -38,7 +34,7 @@ export interface BaseMapEntity {
 }
 
 /**
- * BaseMap working copy for edit operations
+ * BaseMap draft payload for edit operations
  * Prefer Partial<BaseMapEntity> / TreeNodeUpdaterPayload<BaseMapEntity>; keep minimal draft shape for compatibility.
  */
 export type BaseMapDraftPayload = Partial<BaseMapEntity> & {
@@ -47,7 +43,11 @@ export type BaseMapDraftPayload = Partial<BaseMapEntity> & {
   version?: number;
 };
 
-export type BaseMapDraft = DraftBase<BaseMapEntity> & BaseMapDraftPayload;
+export type BaseMapDraft = BaseMapDraftPayload & {
+  treeNodeId: string;
+  draft?: BaseMapEntity;
+  originalVersion?: number;
+};
 
 /**
  * Search criteria for BaseMap entities
@@ -56,6 +56,6 @@ export interface BaseMapSearchCriteria extends BaseSearchCriteria {
   mapStyle?: string;
 }
 
-export type BasemapPeerData = PeerDataBase & {
+export type BasemapPeerData = {
   schemaVersion: 1;
 };

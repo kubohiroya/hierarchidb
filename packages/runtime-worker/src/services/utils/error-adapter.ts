@@ -59,7 +59,7 @@ export function classifyWorkerError(
     }
   }
 
-  if (/working copy/i.test(message)) {
+  if (/draft|working copy/i.test(message)) {
     return { code: WorkerErrorCode.WORKING_COPY_NOT_FOUND, message };
   }
 

@@ -19,7 +19,7 @@ export default defineConfig({
       const ex: string[] = [];
       if (process.env.WORKER_E2E !== '1') {
         ex.push('src/**/*.headless.test.ts');
-        // Gate the semi-e2e working copy commit test as well
+        // Gate the semi-e2e draft commit test as well
         ex.push('src/__tests__/headless/commit-draft.headless.test.ts');
       }
       if (process.env.WORKER_ENTITY_TESTS !== '1') {

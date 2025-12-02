@@ -204,18 +204,18 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
         </DialogActions>
       </Dialog>
 
-      {/* Working copy cleanup removed - functionality was deprecated */}
+      {/* Draft cleanup removed - functionality was deprecated */}
       {/* <Dialog
         open={clearDraftDialogOpen}
         onClose={() => setClearDraftDialogOpen(false)}
-        aria-labelledby="clear-workingcopy-base-dialog-title"
-        aria-describedby="clear-workingcopy-base-dialog-description"
+        aria-labelledby="clear-draft-base-dialog-title"
+        aria-describedby="clear-draft-base-dialog-description"
       >
-        <DialogTitle id="clear-workingcopy-base-dialog-title">
+        <DialogTitle id="clear-draft-base-dialog-title">
           Clear DraftTypes Garbage?
         </DialogTitle>
         <DialogContent>
-          <DialogContentText id="clear-workingcopy-base-dialog-description" component="div">
+          <DialogContentText id="clear-draft-base-dialog-description" component="div">
             {draftStats ? (
               <>
                 <Typography variant="body2" gutterBottom>

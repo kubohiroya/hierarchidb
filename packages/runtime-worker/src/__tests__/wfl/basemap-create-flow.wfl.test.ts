@@ -21,7 +21,7 @@ type TestWorkerAPI = {
 
 describe('Comlink + fake-indexeddb: basemap create flow persists data', () => {
   it(
-    'creates basemap working copy, fills steps, commits, and persists data',
+    'creates basemap draft node, fills steps, commits, and persists data',
     async () => {
       const { port1, port2 } = new MessageChannel();
       await exposeTestAPI(createEndpointFromMessagePort(port1));
@@ -38,7 +38,7 @@ describe('Comlink + fake-indexeddb: basemap create flow persists data', () => {
       expect(tree?.rootId).toBeDefined();
       const parentId = tree?.rootId as NodeId;
 
-      // Step1: create working copy via mutation API (Create button相当)
+      // Step1: create draft node via mutation API (Create button相当)
       const createRes = await mutationAPI.createNode({
         nodeType: toNodeType('basemap'),
         treeId,

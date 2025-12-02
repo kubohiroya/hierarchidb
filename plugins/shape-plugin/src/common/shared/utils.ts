@@ -16,7 +16,6 @@ import type {
   ValidationResult,
 } from './types.js';
 import type { ShapeEntity, ShapeDraft } from './types.js';
-import type { DraftBase } from '@hierarchidb/plugin-service-api';
 import type { Timestamp } from '@hierarchidb/common-types';
 import { DEFAULT_DATA_SOURCES, DEFAULT_PROCESSING_CONFIG } from './constants.js';
 
@@ -439,7 +438,7 @@ export function createDraftFromEntity(entity: ShapeEntity): ShapeDraft {
   const createdAt = (entity.createdAt ?? Date.now()) as Timestamp;
   const updatedAt = (entity.updatedAt ?? createdAt) as Timestamp;
 
-  const base: DraftBase<ShapeEntity> = {
+  const base = {
     treeNodeId,
     draft: {
       ...draftPayload,
@@ -469,13 +468,13 @@ export function createDraftFromEntity(entity: ShapeEntity): ShapeDraft {
 }
 
 /**
- * Map a working copy back to entity updates (shared mapping)
+ * Map a draft back to entity updates (shared mapping)
  */
 export function mapDraftToUpdates(
   draft: ShapeDraft,
 ): Partial<ShapeEntity> {
   const source: Partial<ShapeEntity> = {
-    ...draft.draft,
+    ...(draft.draft ?? {}),
     ...draft,
   };
 

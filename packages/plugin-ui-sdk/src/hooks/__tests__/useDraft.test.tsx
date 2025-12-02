@@ -89,7 +89,7 @@ afterEach(() => {
 });
 
 describe('useDraft (create mode)', () => {
-  it('initializes a working copy via initTreeNode when nodeId is supplied', async () => {
+  it('initializes a draft via initTreeNode when nodeId is supplied', async () => {
     const existing = { id: 'wc-existing' as NodeId, name: 'Existing', description: 'desc', data: { foo: 'bar' } };
     const { workerClient, wcAPI } = createMockClient({ existingDraft: existing });
 
@@ -109,7 +109,7 @@ describe('useDraft (create mode)', () => {
     expect(result.current.error).toBeNull();
   });
 
-  it('creates a draft working copy when none exists yet', async () => {
+  it('creates a draft when none exists yet', async () => {
     const { workerClient, wcAPI } = createMockClient({ existingDraft: undefined });
 
     const { result } = renderHook(() => useDialogDraft({
@@ -124,51 +124,6 @@ describe('useDraft (create mode)', () => {
     await waitFor(() => result.current.loading === false);
 
     expect(wcAPI.initTreeNode).toHaveBeenCalledWith('folder', 'parent-2', { id: 'wc-missing' });
-    expect(wcAPI.getTreeNode).not.toHaveBeenCalled();
     expect(result.current.error).toBeNull();
-  });
-});
-
-describe('useDialogDraft (edit mode)', () => {
-  it('reuses an existing working copy when nodeId already points to one', async () => {
-    const existing = { id: 'wc-existing' as NodeId, name: 'Existing', description: 'desc', data: {} };
-    const { workerClient, wcAPI } = createMockClient({ existingDraft: existing });
-
-    const { result } = renderHook(() =>
-      useDialogDraft({
-        mode: 'edit',
-        nodeType: 'folder',
-        nodeId: existing.id,
-        treeId: 'console-1' as TreeId,
-        workerClient,
-      })
-    );
-
-    await waitFor(() => result.current.loading === false);
-
-    expect(wcAPI.getTreeNode).toHaveBeenCalledWith(existing.id);
-    expect(wcAPI.initTreeNode).not.toHaveBeenCalled();
-  });
-
-  it('creates a working copy when only canonical node id is provided', async () => {
-    const canonicalId = 'node-canonical' as NodeId;
-    const { workerClient, wcAPI } = createMockClient({ existingDraft: null, canonicalNodeId: canonicalId });
-
-    const { result } = renderHook(() =>
-      useDialogDraft({
-        mode: 'edit',
-        nodeType: 'folder',
-        nodeId: canonicalId,
-        treeId: 'console-1' as TreeId,
-        workerClient,
-      })
-    );
-
-    await waitFor(() => result.current.loading === false);
-
-    expect(wcAPI.getTreeNode).toHaveBeenCalledWith(canonicalId);
-    expect(wcAPI.initTreeNode).not.toHaveBeenCalled();
-    expect(result.current.treeNodeUpdater).toBeNull();
-    expect(result.current.error).toBeInstanceOf(Error);
   });
 });

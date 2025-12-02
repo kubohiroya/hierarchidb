@@ -341,7 +341,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
       component: (
         <SchemaSelectionStep
           data={draft}
-          onUpdate={updateDraft}
+          onUpdate={execUpdateDraft}
           onValidationChange={() => {}}
           onSourceSchemaChange={setSourceSchema}
           onTargetSchemaChange={setTargetSchema}
@@ -355,7 +355,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
       component: (
         <PropertyMappingStep
           data={draft}
-          onUpdate={updateDraft}
+          onUpdate={execUpdateDraft}
           onValidationChange={() => {}}
           sourceSchema={sourceSchema}
           targetSchema={targetSchema}
@@ -369,7 +369,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
       component: (
         <ValidationConfigStep
           data={draft}
-          onUpdate={updateDraft}
+          onUpdate={execUpdateDraft}
           onValidationChange={() => {}}
           sourceSchema={sourceSchema}
           targetSchema={targetSchema}
@@ -383,7 +383,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
       component: (
         <DuplicateResolutionStep
           data={draft}
-          onUpdate={updateDraft}
+          onUpdate={execUpdateDraft}
           onValidationChange={() => {}}
         />
       ),
@@ -395,7 +395,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
       component: (
         <PreviewTestStep
           data={draft}
-          onUpdate={updateDraft}
+          onUpdate={execUpdateDraft}
           onValidationChange={() => {}}
           sourceSchema={sourceSchema}
           targetSchema={targetSchema}
@@ -404,7 +404,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
       ),
       validate: async () => true,
     },
-  ], [basicInfoMode, basicInfoValidationError, handleBasicInfoChange, sourceSchema, targetSchema, updateDraft, draft]);
+  ], [draft, basicInfoMode, handleBasicInfoChange, basicInfoValidationError, execUpdateDraft, sourceSchema, targetSchema]);
 
   const filledSteps = useMemo(() => [
     !basicInfoValidationError,
@@ -644,7 +644,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     open,
     stepComponents: stepDescriptors,
     stepData: draft,
-    onStepDataChange: updateDraft,
+    onStepDataChange: execUpdateDraft,
     activeStepIndex,
     onStepNavigate: handleNavigation,
     enabledStepIndices,

@@ -72,7 +72,7 @@ const MAX_CONCURRENCY = 16;
 
 type LocationDraftPayload = Partial<LocationEntity>;
 
-const normalizeLocationDraft = (raw: DraftData | null): LocationDraft => {
+const normalizeLocationDraft = (raw: DraftData<LocationEntity> | null): LocationDraft => {
   const now = Date.now() as Timestamp;
   const draftData = (raw?.draftData ?? {}) as LocationDraftPayload;
 
@@ -116,8 +116,8 @@ const mergeLocationDraft = (current: LocationDraft, patch: Partial<LocationDraft
   };
 };
 
-const toDraftDataPayload = (value: LocationDraft): Partial<DraftData> => ({
-  draftData: value.draft,
+const toDraftDataPayload = (value: LocationDraft): Partial<DraftData<LocationEntity>> => ({
+  draftData: value.draft as LocationEntity | undefined,
 });
 
 export const LocationDialog: React.FC<LocationDialogProps> = ({
@@ -146,17 +146,17 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     treeId ?? ((parentId ?? nodeId ?? '') as TreeId)
   ), [nodeId, parentId, treeId]);
 
-  const {
-    draft: rawDraft,
-    updateDraft,
-    saveDraft,
-    discardDraft,
-  } = useDialogDraft({
-    mode,
-    nodeType: 'location',
-    nodeId,
-    parentId,
-    treeId: effectiveTreeId,
+const {
+  draft: rawDraft,
+  updateDraft,
+  saveDraft,
+  discardDraft,
+} = useDialogDraft<LocationEntity>({
+  mode,
+  nodeType: 'location',
+  nodeId,
+  parentId,
+  treeId: effectiveTreeId,
     workerClient,
   });
   // const notify = useToastNotifications();

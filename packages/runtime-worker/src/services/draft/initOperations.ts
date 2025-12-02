@@ -10,7 +10,7 @@ import type { CoreDB } from '../CoreDB.js';
 import { createNewName, getChildNames } from './nameUtilities.js';
 
 /**
-  * Initialize a working-copy TreeNode for creation.
+  * Initialize a draft TreeNode (TreeNodeUpdater) for creation.
   * - Ensures sibling name uniqueness.
   * - Seeds metadata/draftMetadata with name/description/tags defaults.
   * - Seeds draftData with provided payload or an empty object.

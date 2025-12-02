@@ -53,6 +53,49 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1586) WorkingCopy 用語整理（TreeNodeUpdater への置換コーデモッド準備）（P1）
+- ブランチ: `chore/codemod/workingcopy-rename`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/plugin-service-sdk/src/draft/**`（現行ソースのみ）、`packages/common/types`、`packages/plugin-ui-*` の用語整合、ドキュメントは現行ガイドのみ（deprecated/docs/deprecated は除外）
+- 受け入れ基準（DoD）:
+  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] 現行ソースから WorkingCopy/working copy 表記を `TreeNodeUpdater`/`draftMetadata`/`draftData` 系に置換するコーデモッドを準備・適用する（deprecated/dist を除外）
+  - [ ] `packages/plugin-service-sdk/src/draft/**` の命名・コメントを新用語へ更新し、ビルドアウトプットは再ビルドで同期する
+  - [ ] 主要パッケージの typecheck を実行し、結果を運用ログへ記録する
+- チェックリスト:
+  - [ ] `rg "working[- ]?copy"` で現行ソースの残存箇所を棚卸し（deprecated/dist/coverage を除外）
+  - [ ] ts-morph コーデモッドを作成し、対象パスを現行ソースに限定して実行（dry run→write）
+  - [ ] 再ビルド（必要範囲）と typecheck を実行し、ログを記載する
+- ロールバック手順：コーデモッドと適用差分を revert し、実行したビルド/typecheck を再実行して現状へ戻す
+1585) TreeNodeUpdater 型命名統一コーデモッド（P1）
+- ブランチ: `chore/codemod/treenode-updater-renames`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/common/types`, `packages/plugin-ui-sdk`, `packages/plugin-ui-host`, 各プラグイン/UI の TreeNodeUpdater 利用箇所
+- 受け入れ基準（DoD）:
+  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] `TreeNodeUpdaterPayload` の `id` を `treeNodeId` に AST ベースで置換し、参照揺れが残らない
+  - [ ] パッチ型を `TreeNodeUpdatePayload` から `TreeNodeUpdaterPatch` にリネームし、全参照を統一する
+  - [ ] plugin-ui-host 側の重複型を共通命名に揃える（可能なら共通型へ集約）
+  - [ ] 型チェック（全体または touched パッケージ）を実行し、結果を運用ログに記録する
+- チェックリスト:
+  - [ ] ts-morph ベースのコーデモッドスクリプトを作成し、対象パスを packages/app/plugins 全体に設定する
+  - [ ] コーデモッド実行後に差分を確認し、手動修正なしで命名揺れが解消されていることを確認する
+  - [ ] `pnpm typecheck` または触れたパッケージの typecheck を実行し、結果を記録する
+- ロールバック手順：コーデモッドスクリプトと生成差分を revert し、実行した typecheck を再実行して元に戻ることを確認する
+
+1584) Plugin Entity/Dialog 命名整理ドキュメント & 移行計画（P1）
+- ブランチ: `chore/docs/plugin-entity-dialog-guidelines`（sandbox 制約で branch 作成失敗のため main 上で作業）
+- 依存: `docs/plugins` 配下の既存 WC/ダイアログ資料、`packages/common/types` の TreeNodeUpdater 型、`packages/plugin-ui-sdk` / `plugin-ui-host` の dialog フロー、各プラグインの Entity/Dialog 実装（basemap/location/spreadsheet/styler 等）
+- 受け入れ基準（DoD）:
+  - [x] TASKS Kanban／運用ログに start→done を記録し、ロールバック手順を明記する
+  - [x] 現状の命名（PluginNameDialogData/State/PeerData 等）の利用状況を主要プラグイン単位で整理し、差分を要約する
+  - [x] 望ましい設計（PluginNameEntity を中心に TreeNodeUpdaterPayload/State を共通利用する型構成、命名規約、ファイル配置）を日本語ドキュメント化する
+  - [x] 新規プラグイン開発と既存移行のガイドラインを作成し、コード例（英語コメント）を含めて提示する
+  - [x] 段階的移行計画（フラグ/依存/検証コマンド/ロールバック方針を含む）を記載する
+- チェックリスト:
+  - [x] basemap/location/spreadsheet/styler など代表プラグインの命名バリエーションを棚卸しし、課題を列挙する
+  - [x] PluginNameEntity/TreeNodeUpdater を軸としたターゲット構成と命名ガイドをまとめる
+  - [x] 実装ガイド（新規/移行）と移行手順を docs に追加する
+- ロールバック手順：本タスクで追加・更新するドキュメント（TASKS.md エントリと新規/更新ファイル）を revert し、Kanban/運用ログの記載も元に戻す
+
 1577) 非 folder ページ表示中に Trash 移動後は親へ遷移（P0）
 - ブランチ: `fix/ui-treeconsole/trash-navigate-parent`（sandbox 制約で main 上で作業）
 - 依存: `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx`, `app/src/hooks/treeconsole/createTreeConsoleActions.ts`
@@ -9293,6 +9336,33 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-27 15:46 progress: fix/workingcopy/dialog-cancel-behavior — create 仮ノードを version:0 に統一し、commit/save/import で 1 以上へ昇格する方針に合わせて判定を整理。`initTreeNode` を version 0 で作成、`commitTreeNodeDraft` は version を 0 起点で +1、`discardTreeNodeDraft` は committed 判定を version>0/データ有無のみに簡素化。UI cancel で forceDelete を渡すよう修正済み。`pnpm --filter @hierarchidb/runtime-worker test -- --run cancel-create` exit 0。
 
 ## 今日の着手（運用ログ） <a id="worklog-16"></a>
+- 2025-12-02 06:10 start: chore/codemod/workingcopy-rename — 現行ソースの WorkingCopy 用語を TreeNodeUpdater/draftMetadata/draftData へ置換するコーデモッド準備を開始。DoD: Kanban/ログ更新、コーデモッド作成・適用、plugin-service-sdk/src/draft/** 等の命名/コメント更新、typecheck 実行と記録、ロールバック手順明記。deprecated/dist は除外。branch 作成不可なら main 作業。
+- 2025-12-02 05:15 start: chore/codemod/treenode-updater-renames — TreeNodeUpdaterPayload.id→treeNodeId、TreeNodeUpdatePayload→TreeNodeUpdaterPatch の AST コーデモッドを実施するタスクを開始。DoD: Kanban/ログ更新、コーデモッド適用で命名揺れ解消、重複型統一、typecheck 実行と記録、ロールバック手順明記。branch 作成不可なら main で作業。
+- 2025-12-02 05:28 progress: chore/codemod/treenode-updater-renames — ts-morph コーデモッド `packages/tools/codemods/src/rename-tree-node-updater-id.ts` を追加し、build スクリプトへ組み込み。まだドライラン/適用は未実行（TreeNodeUpdatePayload→TreeNodeUpdaterPatch の扱いは再計画中）。
+- 2025-12-02 05:33 progress: chore/codemod/treenode-updater-renames — `pnpm --filter @hierarchidb/tools-codemods run codemod:treenode-updater-id -- --roots packages app plugins` を実行（dry run）。tsdown build は成功、コーデモッド本体は repoRoot 解決修正後も OOM で Abort (Node heap)。原因: globby/ts-morph で packages+app+plugins を一括読み込みしており、4GB 近くで枯渇。対策案: (1) `NODE_OPTIONS=--max-old-space-size=8192` などで再実行, (2) roots を段階分割（common/types + plugin-ui-sdk + plugin-ui-host → 主要プラグイン単位）して複数回実行, (3) プロジェクト追加を chunk 化してメモリ使用を抑制。再計画のうえ再実行予定。
+- 2025-12-02 05:45 progress: chore/codemod/treenode-updater-renames — コーデモッドを chunk 処理に改修し、`NODE_OPTIONS=--max-old-space-size=8192` で `packages/common/types`, `packages/plugin-ui-sdk`, `packages/plugin-ui-host` に write 適用（3ファイル, 3 props）。プラグイン主要5種は dry-run 0件確認。
+- 2025-12-02 05:48 progress: chore/codemod/treenode-updater-renames — 追加チャンク（plugins/folder, project, propertyresolver）を dry-run 実行、対象 0 件（project/propertyresolver はファイルなし）。残りプラグインは軽いものから順次小分けで実行予定。
+- 2025-12-02 06:12 progress: chore/codemod/workingcopy-rename — plugin-service-sdk/src/draft 内の "working copy" 表記を draft state 用語に置換（log/コメント/テスト文言）。typecheck 実行: `pnpm --filter @hierarchidb/plugin-service-sdk typecheck` exit 0。コーデモッド化は未着手（対象が少数のため手動置換で処理）。
+- 2025-12-02 06:25 progress: chore/codemod/workingcopy-rename — useWorkingCopy.ts を useDraft.ts にリネームし、useDialogDraft の treeNodeId 重複を解消。MultiStepDialogAPI コメントを draft 用語へ更新。typecheck: `pnpm --filter @hierarchidb/plugin-ui-sdk typecheck` exit 0。
+- 2025-12-02 06:35 progress: chore/codemod/workingcopy-rename — runtime-worker の一部メッセージ/コメントを draft 用語へ置換（CommandHistoryManager undo エラー文言、TreeSubscriptionService コメント、policy-c コメント）。未実行: runtime-worker 全体 typecheck。
+- 2025-12-02 06:50 progress: chore/codemod/workingcopy-rename — runtime-worker headless テストを draft 命名にリネーム（commit-working-copy.headless.test.ts→commit-draft.headless.test.ts）、vitest config コメント修正。typecheck: `pnpm --filter @hierarchidb/runtime-worker typecheck` exit 0。
+- 2025-12-02 07:10 progress: chore/codemod/workingcopy-rename — basemap/shape/route plugin のコメント/メッセージを draft 用語に更新（basemap useBaseMapEntity, shape shared types/worker api/BatchProcessingDialog, route entityコメント）。treeconsole DraftCommands エラー文言を draft に変更。plugin-base コメント修正。typecheck: `pnpm --filter @hierarchidb/plugin-base typecheck` exit 0, `pnpm --filter @hierarchidb/runtime-worker typecheck` exit 0。`pnpm --filter @hierarchidb/route-plugin typecheck` は元からの型崩れで失敗（RouteEntityHandler 型不整合/DraftBase 未解決）、未修正のまま。
+- 2025-12-02 04:59 start: chore/docs/plugin-entity-dialog-guidelines — PluginNameEntity/TreeNodeUpdater を軸にダイアログ命名整理ドキュメント作成を開始。DoD: Kanban/ログ更新、現状命名の整理、望ましい設計/ガイドライン/移行計画のドキュメント化、ロールバック手順明記。ブランチ作成は sandbox 制約で失敗し main で作業。
+- 2025-12-02 05:02 progress: chore/docs/plugin-entity-dialog-guidelines — docs/plugins/plugin-entity-dialog-guidelines.md を追加し、現状課題（命名バラツキ・共通型重複・責務混在）と PluginNameEntity/TreeNodeUpdater 基軸の型構成・命名ガイド・実装例を記載。TreeDataUpdater エイリアス導入と移行フェーズ案を明文化。
+- 2025-12-02 05:02 progress: chore/docs/plugin-entity-dialog-guidelines — TreeNodeUpdater への一本化方針を明示（TreeDataUpdater エイリアス案は撤回）。プラグインホストでの共通利用と重複実装削減を目的に追記。
+- 2025-12-02 05:02 done: chore/docs/plugin-entity-dialog-guidelines — ガイドライン/移行計画をドキュメント化し、DoD/チェックリスト完了。ロールバックは TASKS.md の当該エントリと docs/plugins/plugin-entity-dialog-guidelines.md を revert して元に戻す。
+- 2025-12-02 07:50 progress: chore/codemod/treenode-updater-renames — route-plugin の RouteDialog/steps/panel を TreeNodeUpdater + draftMetadata/draftData へ統一し、RouteDraft/RouteEntity を正とした。削除済み handler/adapter に依存せず、`TreeNodeUpdaterPayload` の `treeNodeId` 命名へ揃え。command: `NODE_OPTIONS=\"--max-old-space-size=65536\" pnpm --filter @hierarchidb/route-plugin typecheck` — exit 0。
+- 2025-12-02 08:20 progress: chore/codemod/treenode-updater-renames — ts-morph コーデモッド（TreeNodeUpdaterPayload.id→treeNodeId）を plugins/{basemap,location,shape,spreadsheet,styler,timeline,resolver,linker,folder,route} に --write で実行（全て対象 0 件）。合わせて testing/mock WorkerAPIImpl の payload treeNodeId を補正。
+- 2025-12-02 08:22 command: NODE_OPTIONS=\"--max-old-space-size=65536\" pnpm --filter @hierarchidb/testing-plugin-dialog-mocks typecheck — exit 0（WorkerAPIImpl payload 修正後の検証）。
+- 2025-12-02 10:19 progress: chore/codemod/treenode-updater-renames — ts-morph 26 で削除された TypeGuards に追従し、TypeLiteral 判定を asKind(SyntaxKind.TypeLiteral) + Node.isPropertySignature へ置換。`pnpm --filter @hierarchidb/tools-codemods typecheck` exit 0（rename-tree-node-updater-id.ts 型エラー解消）。ロールバック: `packages/tools/codemods/src/rename-tree-node-updater-id.ts` を revert し、同コマンドを再実行。
+- 2025-12-02 10:27 progress: chore/codemod/workingcopy-rename — spreadsheet-plugin の dialog/types を TreeNodeUpdater 用語に揃え、SpreadsheetDialogData/PeerData を共通 types に追加。useDialogDraft の型を payload ベースに修正し、onSave は metadata のみを渡す形に整理。command: `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` — exit 0。ロールバック: `plugins/spreadsheet-plugin/src/common/types/SpreadsheetEntity.ts`, `src/ui/components/SpreadsheetDialog.tsx` を revert し、同コマンドを再実行。
+- 2025-12-02 10:34 progress: chore/codemod/treenode-updater-renames — styler/resolver 連携の型崩れを修正。StylerDataService の layer id を nodeId 基準に変更し、ResolverDialog の Step onUpdate/onStepDataChange を TreeNodeUpdater の updateDraft ラッパー (execUpdateDraft) に統一。commands: `pnpm --filter @hierarchidb/resolver-plugin typecheck` exit 0。ロールバック: `plugins/styler-plugin/src/services/StylerDataService.ts`, `plugins/resolver-plugin/src/ui/components/ResolverDialog.tsx` を revert し、同コマンドを再実行。
+- 2025-12-02 10:45 progress: chore/codemod/workingcopy-rename — location-plugin の DraftBase/BaseEntityHandler 依存を排除し、TreeNodeUpdater State に揃えた draft 型へ再定義。useDialogDraft に LocationEntity を型指定し、LocationEntityHandler をスタンドアロン実装に変更。command: `pnpm --filter @hierarchidb/location-plugin typecheck` — exit 0。ロールバック: `plugins/location-plugin/src/common/entities/{LocationEntity.ts,LocationEntityHandler.ts}`, `src/common/types/index.ts`, `src/common/components/LocationDialog.tsx` を revert し、同コマンドを再実行。
+- 2025-12-02 10:55 progress: chore/codemod/workingcopy-rename — basemap-plugin の DraftBase/PeerDataBase 依存を撤去し、TreeNodeUpdater 対応の draft 型へ更新。useBaseMapEntity で id→treeNodeId に合わせてアップデータを修正。command: `pnpm --filter @hierarchidb/basemap-plugin typecheck` — exit 0。ロールバック: `plugins/basemap-plugin/src/common/types/BaseMapEntity.ts`, `src/ui/hooks/useBaseMapEntity.ts` を revert し、同コマンドを再実行。
+- 2025-12-02 11:05 progress: chore/codemod/workingcopy-rename — styler-plugin の dialog/step 型を SpreadsheetDialogData に揃え、metadata を null 許容へ調整。StylerStepData を StylerDialogData 拡張に変更し、StyleSettingsStep の型整合と SimpleDialog の id→nodeId 参照を修正。command: `pnpm --filter @hierarchidb/styler-plugin typecheck` — exit 0。ロールバック: `plugins/styler-plugin/src/common/types/stylerTypes.ts`, `src/ui/components/{types.ts,StylerDialog.tsx,steps-provider.tsx,steps/StyleSettingsStep.tsx,StylerSimpleDialog.tsx}` を revert し、同コマンドを再実行。
+- 2025-12-02 11:18 progress: chore/codemod/workingcopy-rename — shape-plugin の DraftBase 依存を除去し、TreeNodeUpdater 向けにシンプルな Partial ベースの ShapeDraft（treeNodeId/draft/originalVersion 等を任意プロパティとして保持）へ再定義。normalize/commit 系ユーティリティと StepTabular* が期待するフィールドを optional で許容。command: `pnpm --filter @hierarchidb/shape-plugin typecheck` — exit 0。ロールバック: `plugins/shape-plugin/src/common/shared/{types.ts,utils.ts}` を revert し、同コマンドを再実行。
+- 2025-12-02 11:25 progress: chore/codemod/workingcopy-rename — shape-plugin の draft→entity 変換で version 未指定時に 0 を保持し、create 直後の破棄ロジックと整合させるよう修正。command: `pnpm --filter @hierarchidb/shape-plugin typecheck` — exit 0。ロールバック: `plugins/shape-plugin/src/worker/handlers/ShapeEntityService.ts` を revert し、同コマンドを再実行。
+- 2025-12-02 11:35 progress: chore/codemod/workingcopy-rename — 全プラグインの draftData への version 混入なしを確認（resolver は payload.version のみ、TreeNode version には触れず）。ドラフト分離ポリシーを docs/draft-handling-policy.md に明文化。command: `pnpm --filter @hierarchidb/shape-plugin typecheck` — exit 0（変更後の確認）。ロールバック: `docs/draft-handling-policy.md` と shape-plugin の今回差分を revert。
 - 2025-11-29 15:30 start: fix/ui-dialog/esc-cancel — trash/create/edit ダイアログで Esc キーが Cancel/Close と同等に動作するよう対応開始。DoD: Kanban/運用ログ更新、未保存時の確認ダイアログ表示/未保存なし即閉、回帰なし確認、ロールバック手順記載。
 - 2025-11-29 16:00 start: fix/ui-treeconsole/trash-navigate-parent — 非 folder pageId 表示中に該当ノードを Trash へ移動した場合、親 (parentNodeId) を pageId とする階層へ遷移する対応を開始。DoD: Kanban/運用ログ更新、Trash 後に親へ遷移、エラーなし、回帰なし、ロールバック手順記載。
 - 2025-11-29 16:20 start: fix/basemap/create-defaults — basemap create の Step2 進行時に `data:{}, draftData:null` となる問題を調査・修正開始。DoD: Kanban/運用ログ更新、デフォルト draftData (BaseMapEntity) を設定し data は null、回帰なし、型/関連テスト実行とログ記録、ロールバック手順明記。

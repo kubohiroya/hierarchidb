@@ -46,7 +46,7 @@ import { useBasicInfoState } from './usePluginDialogController/basic-info.js';
 import { useDialogSteps } from './usePluginDialogController/steps.js';
 import { useStepCapabilities } from './usePluginDialogController/capabilities.js';
 import { useDialogStatePublisher } from './usePluginDialogController/publish-dialog-state.js';
-import type { TreeNodeUpdaterPayload, TreeNodeUpdatePayload } from './usePluginDialogController/data-types.js';
+import type { TreeNodeUpdaterPayload, TreeNodeUpdaterPatch } from './usePluginDialogController/data-types.js';
 import type { MultiStepDialogState } from './controller/types.js';
 export { subscribeDialogState } from './controller/dialog-state-subscriber.js';
 export { BASIC_INFO_META_KEY, buildStepWorkingData } from './controller/step-guards.js';
@@ -154,7 +154,7 @@ export function usePluginDialogController(
     () =>
       draft
         ? {
-            id: draft.treeNodeId,
+            treeNodeId: draft.treeNodeId,
             draftMetadata: draft.draftMetadata ?? null,
             draftData: draft.draftData ?? null,
           }
@@ -163,15 +163,15 @@ export function usePluginDialogController(
   );
 
   const applyUpdateDraft = useCallback(
-    (patch: TreeNodeUpdatePayload<PluginDefinedEntity>) => {
+    (patch: TreeNodeUpdaterPatch<PluginDefinedEntity>) => {
       const payload: Record<string, unknown> = {
-        treeNodeId: treeUpdater?.id ?? nodeId,
+        treeNodeId: treeUpdater?.treeNodeId ?? nodeId,
       };
       if (patch.draftMetadata !== undefined) payload.draftMetadata = patch.draftMetadata;
       if (patch.draftData !== undefined) payload.draftData = patch.draftData;
       updateTreeNodeUpdater(payload as any);
     },
-    [nodeId, treeUpdater?.id, updateTreeNodeUpdater]
+    [nodeId, treeUpdater?.treeNodeId, updateTreeNodeUpdater]
   );
 
   const {
@@ -334,7 +334,7 @@ export function usePluginDialogController(
     const payload: Partial<
       import('@hierarchidb/plugin-ui-sdk').TreeNodeUpdaterState<Partial<PluginDefinedEntity>>
     > = {
-      treeNodeId: (treeUpdater?.id ?? nodeId) as NodeId,
+      treeNodeId: (treeUpdater?.treeNodeId ?? nodeId) as NodeId,
       draftMetadata: {
         ...(treeUpdater?.draftMetadata ?? {}),
         name: basicInfo.name,
@@ -352,7 +352,7 @@ export function usePluginDialogController(
     nodeId,
     commitTreeNodeUpdater,
     treeUpdater?.draftMetadata,
-    treeUpdater?.id,
+    treeUpdater?.treeNodeId,
   ]);
 
   const handleNavigation = useCallback(
@@ -404,7 +404,7 @@ export function usePluginDialogController(
         },
       });
     }
-    const savedNodeId = treeUpdater?.id ?? nodeId;
+    const savedNodeId = treeUpdater?.treeNodeId ?? nodeId;
 
     try {
       await discardDraft();
@@ -418,7 +418,7 @@ export function usePluginDialogController(
     }
 
     onClose();
-  }, [flushDraftOnce, treeUpdater?.id, nodeId, onClose, nodeType, mode, draft?.draftMetadata, basicInfo.name, basicInfo.description, basicInfo.tags, draftDataWithoutMeta, discardDraft, onSuccess, navigateToNode]);
+  }, [flushDraftOnce, treeUpdater?.treeNodeId, nodeId, onClose, nodeType, mode, draft?.draftMetadata, basicInfo.name, basicInfo.description, basicInfo.tags, draftDataWithoutMeta, discardDraft, onSuccess, navigateToNode]);
 
   const handleSaveDraft = useCallback(async () => {
     try {

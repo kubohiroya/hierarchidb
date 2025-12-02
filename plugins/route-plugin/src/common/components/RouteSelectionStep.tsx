@@ -16,7 +16,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Add, MyLocation, Remove } from '@mui/icons-material';
-import type { RouteEntity, RouteDraft } from '../types/index.js';
+import type { RouteEntity, RouteDraft } from '../entities/RouteEntity.js';
 import { useTranslation } from '../i18n/index.js';
 import { getRouteDraft } from '../utils/draft.js';
 
@@ -121,10 +121,19 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
       // Simulate route calculation
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
+      const routePoints = waypoints
+        .map((wp) =>
+          Array.isArray(wp.coordinates)
+            ? { coordinates: wp.coordinates, name: wp.name }
+            : null
+        )
+        .filter(
+          (wp): wp is { coordinates: [number, number]; name: string } =>
+            wp !== null && Array.isArray(wp.coordinates)
+        );
+
       emitUpdate({
-        waypoints: waypoints
-          .map((wp) => wp.coordinates)
-          .filter((coords): coords is [number, number] => Array.isArray(coords)) as [number, number][],
+        waypoints: routePoints as RouteEntity['waypoints'],
       });
       onValidationChange(true);
     } catch (error) {
