@@ -327,7 +327,7 @@ export function useDialogSteps({
           handleBasicInfoChange(data);
           props.onChange({ name: data.name, description: data.description ?? '', tags: nextTags });
         },
-        [handleBasicInfoChange, props, setDescription, setName, setTags]
+        [props, setDescription, setName, setTags]
       );
 
       return (

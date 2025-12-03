@@ -722,26 +722,7 @@ export function usePluginDialogController(
           />
         </>
       ),
-      [
-        resumeDialogOpen,
-        handleResumeCancel,
-        handleStartFreshDraft,
-        handleResumeExistingDraft,
-        conflictDialog.open,
-        conflictDialog.updatedAt,
-        closeConflictDialog,
-        mode,
-        canSaveCurrent,
-        handleSaveDraft,
-        hasUnsavedChanges,
-        disableDraftButton,
-        canStartBatch,
-        activeStartBatch,
-        handleStartBatch,
-        isStartingBatch,
-        footerPrimaryButtons,
-        footerSaveDraftLabel,
-      ]
+      [resumeDialogOpen, handleResumeCancel, foregroundDialogSx, t, handleStartFreshDraft, handleResumeExistingDraft, conflictDialog.open, conflictDialog.updatedAt, mode, canSaveCurrent, disableDraftButton, handleSaveDraft, hasUnsavedChanges, activeStartBatch, canStartBatch, isStartingBatch, footerPrimaryButtons, footerSaveDraftLabel, closeConflictDialog, handleStartBatch]
     );
 
   const handleCloseRequest = useCallback(() => {
