@@ -53,6 +53,33 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1588) Basemap Edit 再開/競合ダイアログ実装（P0）
+- ブランチ: `fix/basemap/edit-draft-resume`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/plugin-ui-host`（ダイアログ制御）、`packages/plugin-ui-sdk`（useTreeNodeUpdater）、`plugins/basemap-plugin` の Edit フロー
+- 受け入れ基準（DoD）:
+  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] Edit basemap で既存 draftMetadata/draftData がある場合、「編集を再開しますか？」ダイアログ（デフォルト: 以前の編集を再開）が表示され、選択に応じて再開/新規開始/キャンセルが動作する
+  - [ ] Back/Next/Save/Stepper 遷移時に TreeNode version を照合し、永続化側が新しければ競合ダイアログを表示し、選択に応じてキャンセル or 自身を優先が動作する（警告文言指定に従う）
+  - [ ] 永続化済み metadata/data が Edit 開始時に draftMetadata/draftData へコピーされ、name 欄が空欄にならない
+  - [ ] 関連パッケージ typecheck（少なくとも `pnpm --filter @hierarchidb/basemap-plugin typecheck`）を実行し、結果を運用ログに記録する
+- チェックリスト:
+  - [ ] useTreeNodeUpdater で metadata/data/version/updatedAt を draft へフォールバックし、既存ドラフト有無を検出する
+  - [ ] PluginDialogController に再開/競合ダイアログとガード処理（ナビゲーション・保存前の version チェック）を追加する
+  - [ ] 手動確認: 既存 draft あり/なし、競合あり/なしの各パスを確認する
+- ロールバック手順：本タスクで変更する `packages/plugin-ui-host/src/headless/usePluginDialogController.tsx` と `packages/plugin-ui-sdk/src/hooks/useTreeNodeUpdater.ts` の差分を revert し、実行した typecheck を再実行する
+1587) Vite dev import 解決エラー修正（P0）
+- ブランチ: `fix/app/vite-import-errors`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/runtime-worker/src/index.ts`（@hierarchidb/* import）、`packages/runtime-worker/src/services/FeatureBootstrap.ts`、`packages/ui/map/src/components/MapLibreMap.tsx`（maplibre-gl CSS import）、Vite dev server の alias/tsconfig.paths、plugin registry 生成物
+- 受け入れ基準（DoD）:
+  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] `pnpm dev` 時に @hierarchidb/import-export・tag・auth-recovery 等の解決エラーと maplibre-gl CSS の 404/500 が発生しない（dev server 上で当該モジュールが読み込まれる）
+  - [ ] 原因を特定し、最小差分で修正する（依存・alias・エントリーパス・生成物の再出力など）
+  - [ ] 代表検証（関連パッケージ typecheck もしくは `pnpm typecheck`）を実行し、起動確認結果を運用ログに記録する
+- チェックリスト:
+  - [ ] Vite の解決ログと runtime-worker/FeatureBootstrap の import を確認し、欠損パッケージや alias 設定漏れを特定する
+  - [ ] maplibre-gl CSS の解決経路（node_modules 配下のパス/alias）を確認し、必要なら依存追加やパス修正を行う
+  - [ ] 修正後に dev 起動と typecheck を実行し、エラーが消えることを確認する
+- ロールバック手順：本タスクで変更した設定/依存/エントリーパスを revert し、再度 `pnpm dev` を実行して元のエラーが再現することを確認する
 1586) WorkingCopy 用語整理（TreeNodeUpdater への置換コーデモッド準備）（P1）
 - ブランチ: `chore/codemod/workingcopy-rename`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `packages/plugin-service-sdk/src/draft/**`（現行ソースのみ）、`packages/common/types`、`packages/plugin-ui-*` の用語整合、ドキュメントは現行ガイドのみ（deprecated/docs/deprecated は除外）
@@ -9341,6 +9368,11 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-27 15:46 progress: fix/workingcopy/dialog-cancel-behavior — create 仮ノードを version:0 に統一し、commit/save/import で 1 以上へ昇格する方針に合わせて判定を整理。`initTreeNode` を version 0 で作成、`commitTreeNodeDraft` は version を 0 起点で +1、`discardTreeNodeDraft` は committed 判定を version>0/データ有無のみに簡素化。UI cancel で forceDelete を渡すよう修正済み。`pnpm --filter @hierarchidb/runtime-worker test -- --run cancel-create` exit 0。
 
 ## 今日の着手（運用ログ） <a id="worklog-16"></a>
+- 2025-12-03 08:04 start: fix/app/vite-import-errors — pnpm dev 時に @hierarchidb/* モジュール解決と maplibre-gl CSS import で 404/500 が発生する問題を調査開始。DoD: Kanban/ログ更新、原因特定と最小修正、typecheck/起動確認、ロールバック手順記載。
+- 2025-12-03 08:14 progress: fix/app/vite-import-errors — dev alias が features 配下を対象外にしていたため @hierarchidb/import-export 等が解決できていなかったので、`config/dev-aliases.json` に `features` グループを追加し workspace feature パッケージを alias 対象にした。maplibre-gl は node_modules にシンボリックリンクを追加（`.pnpm/maplibre-gl@5.9.0/...` へのリンク）して CSS import が解決できるようにした。`pnpm install --frozen-lockfile` は registry.npmjs.org ENOTFOUND で失敗し symlink 再生成不可、`pnpm --filter @hierarchidb/app typecheck` は tsdown 未リンク（install 失敗起因）で実行不可。現状: 設定修正済み、typecheck は依存不足で未達成。
+- 2025-12-03 08:58 start: fix/basemap/edit-draft-resume — basemap Edit で既存 draft を再開/新規選択するダイアログと version 競合警告を追加する対応を開始。DoD: Kanban/ログ更新、既存 draft の再開/新規選択ダイアログ、Back/Next/Save/Stepper 前の version 競合警告ダイアログ、永続化 metadata/data を draft へ初期コピー、typecheck 実行と結果記録、ロールバック手順明記。
+- 2025-12-03 08:59 progress: fix/basemap/edit-draft-resume — useTreeNodeUpdater で draftMetadata/draftData が null 時に committed metadata/data へフォールバックし、version/updatedAt/hasRemoteDraft を保持するように修正。PluginDialogController にドラフト再開ダイアログ（デフォルト: 以前の編集を再開）と version 競合ダイアログ（指定文言・自己破棄で閉じる/自己優先で続行）を追加し、Back/Next/Save/Stepper 前に version チェックを挟むようにした。テスト/typecheck は node_modules 不備（`tsdown` 未リンク、pnpm install が ENOTFOUND で失敗）で未実行。
+- 2025-12-03 09:05 progress: fix/basemap/edit-draft-resume — ダイアログ文言を i18n 化し、`common.dialogs.pluginDraft.*` を app/ui i18n locale（en/ja）へ追加。残課題: node_modules 不備解消後に typecheck 実行。
 - 2025-12-02 06:10 start: chore/codemod/workingcopy-rename — 現行ソースの WorkingCopy 用語を TreeNodeUpdater/draftMetadata/draftData へ置換するコーデモッド準備を開始。DoD: Kanban/ログ更新、コーデモッド作成・適用、plugin-service-sdk/src/draft/** 等の命名/コメント更新、typecheck 実行と記録、ロールバック手順明記。deprecated/dist は除外。branch 作成不可なら main 作業。
 - 2025-12-02 05:15 start: chore/codemod/treenode-updater-renames — TreeNodeUpdaterPayload.id→treeNodeId、TreeNodeUpdatePayload→TreeNodeUpdaterPatch の AST コーデモッドを実施するタスクを開始。DoD: Kanban/ログ更新、コーデモッド適用で命名揺れ解消、重複型統一、typecheck 実行と記録、ロールバック手順明記。branch 作成不可なら main で作業。
 - 2025-12-02 05:28 progress: chore/codemod/treenode-updater-renames — ts-morph コーデモッド `packages/tools/codemods/src/rename-tree-node-updater-id.ts` を追加し、build スクリプトへ組み込み。まだドライラン/適用は未実行（TreeNodeUpdatePayload→TreeNodeUpdaterPatch の扱いは再計画中）。

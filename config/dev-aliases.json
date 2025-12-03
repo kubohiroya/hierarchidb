@@ -1,7 +1,8 @@
 {
   "groups": [
     "runtime",
-    "ui"
+    "ui",
+    "features"
   ],
   "packages": [
     "@hierarchidb/runtime-worker",

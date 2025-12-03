@@ -6,6 +6,7 @@ import {
   NodeType,
   TreeNodeMetadata,
   TreeNodeUpdaterPayload,
+  Timestamp,
 } from '@hierarchidb/common-types';
 import type { DiscardDraftOptions, TreeNodeUpdaterAPI, TreeQueryAPI } from '@hierarchidb/common-api';
 import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';
@@ -30,6 +31,9 @@ export interface TreeNodeUpdaterState<TPayload extends object = Record<string, u
   data?: Record<string, unknown>;
   draftMetadata: TreeNodeMetadata;
   draftData: TPayload;
+  version?: number;
+  updatedAt?: Timestamp;
+  hasRemoteDraft?: boolean;
 }
 
 export interface UseTreeNodeUpdaterOptions<TPayload extends object = Record<string, unknown>> {
@@ -106,17 +110,26 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
     typeof value === 'object' && value !== null;
 
   const toUpdater = useCallback((node: TreeNode): TreeNodeUpdaterState<TPayload> => {
+    const hasRemoteDraft = Boolean(node.draftData) || Boolean(node.draftMetadata);
     const draftMetadata: TreeNodeMetadata =
       (node as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata ??
+      node.metadata ??
       ({ name: '' } as TreeNodeMetadata);
     const draftData: TPayload =
-      node.draftData && isRecord(node.draftData) ? (node.draftData as TPayload) : ({} as TPayload);
+      node.draftData && isRecord(node.draftData)
+        ? (node.draftData as TPayload)
+        : node.data && isRecord(node.data)
+          ? (node.data as TPayload)
+          : ({} as TPayload);
     return {
       treeNodeId: node.id as NodeId,
       draftMetadata,
       metadata: node.metadata,
       data: node.data as Record<string, unknown> | undefined,
       draftData,
+      version: node.version,
+      updatedAt: node.updatedAt,
+      hasRemoteDraft,
     };
   }, []);
 
@@ -230,6 +243,9 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
           draftData: nextDraftData,
           metadata: data.metadata ?? prev.metadata,
           data: prev.data,
+          version: data.version ?? prev.version,
+          updatedAt: data.updatedAt ?? prev.updatedAt,
+          hasRemoteDraft: data.hasRemoteDraft ?? prev.hasRemoteDraft,
         };
         persistTreeNodeUpdater(merged);
         return merged;

@@ -854,6 +854,36 @@ importers:
 
   packages/plugin-registry:
     dependencies:
+      '@hierarchidb/basemap-plugin':
+        specifier: workspace:*
+        version: link:../../plugins/basemap-plugin
+      '@hierarchidb/folder-plugin':
+        specifier: workspace:*
+        version: link:../../plugins/folder-plugin
+      '@hierarchidb/linker-plugin':
+        specifier: workspace:*
+        version: link:../../plugins/linker-plugin
+      '@hierarchidb/location-plugin':
+        specifier: workspace:*
+        version: link:../../plugins/location-plugin
+      '@hierarchidb/resolver-plugin':
+        specifier: workspace:*
+        version: link:../../plugins/resolver-plugin
+      '@hierarchidb/route-plugin':
+        specifier: workspace:*
+        version: link:../../plugins/route-plugin
+      '@hierarchidb/shape-plugin':
+        specifier: workspace:*
+        version: link:../../plugins/shape-plugin
+      '@hierarchidb/spreadsheet-plugin':
+        specifier: workspace:*
+        version: link:../../plugins/spreadsheet-plugin
+      '@hierarchidb/styler-plugin':
+        specifier: workspace:*
+        version: link:../../plugins/styler-plugin
+      '@hierarchidb/timeline-plugin':
+        specifier: workspace:*
+        version: link:../../plugins/timeline-plugin
       maplibre-gl:
         specifier: ^5.7.3
         version: 5.9.0
@@ -3138,12 +3168,18 @@ importers:
       '@hierarchidb/plugin-service-api':
         specifier: workspace:*
         version: link:../../packages/plugin-service-api
+      '@hierarchidb/plugin-ui-sdk':
+        specifier: workspace:*
+        version: link:../../packages/plugin-ui-sdk
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../../packages/runtime-worker
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../packages/ui/dialog
+      '@hierarchidb/ui-worker-provider':
+        specifier: workspace:*
+        version: link:../../packages/ui/worker-provider
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../packages/util
@@ -14694,7 +14730,7 @@ snapshots:
       std-env: 3.10.0
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)
+      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@16.8.1)(jsdom@26.1.0)
     transitivePeerDependencies:
       - supports-color
 

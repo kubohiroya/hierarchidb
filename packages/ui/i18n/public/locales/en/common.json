@@ -108,6 +108,25 @@
         "item_one": "item",
         "item_other": "items"
       }
+    },
+    "pluginDraft": {
+      "resume": {
+        "title": "Resume editing?",
+        "description": "A previous edit exists as a draft. Resume it or start a fresh edit?",
+        "buttons": {
+          "cancel": "Cancel",
+          "startFresh": "Start a fresh edit",
+          "resumePrevious": "Resume previous edit"
+        }
+      },
+      "conflict": {
+        "title": "Edit conflict detected",
+        "description": "Another tab saved this node at {{timestamp}}. Discard your changes to cancel, or keep your changes to continue.",
+        "buttons": {
+          "discardSelf": "Discard my changes",
+          "keepSelf": "Keep my changes"
+        }
+      }
     }
   },
   "treeConsole": {

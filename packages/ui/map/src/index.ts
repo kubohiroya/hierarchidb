@@ -10,6 +10,8 @@ export const loadMapLibreMap = () =>
   import('./components/MapLibreMap.js') as Promise<typeof import('./components/MapLibreMap.js')>;
 export const loadMapWithVectorTiles = () =>
   import('./components/MapWithVectorTiles.js') as Promise<typeof import('./components/MapWithVectorTiles.js')>;
+// Direct component exports
+export { MapLibreMap } from './components/MapLibreMap.js';
 
 // Type exports - unified props
 export type {

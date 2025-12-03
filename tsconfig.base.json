@@ -173,11 +173,11 @@
       "@hierarchidb/resolver-plugin": [
         "plugins/resolver-plugin/src/index.ts"
       ],
-      "@hierarchidb/resolver-plugin/database": [
-        "plugins/resolver-plugin/src/worker/database/index.ts"
-      ],
       "@hierarchidb/resolver-plugin/*": [
         "plugins/resolver-plugin/src/*"
+      ],
+      "@hierarchidb/resolver-plugin/database": [
+        "plugins/resolver-plugin/src/worker/database/index.ts"
       ],
       "@hierarchidb/route-plugin": [
         "plugins/route-plugin/src/index.ts"

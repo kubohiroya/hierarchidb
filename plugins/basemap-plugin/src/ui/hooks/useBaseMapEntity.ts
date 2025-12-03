@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { NodeId, TreeId, TreeNode, TreeNodeUpdater } from '@hierarchidb/common-types';
+import type { NodeId, TreeId, TreeNode, TreeNodeUpdater, TreeNodeMetadata } from '@hierarchidb/common-types';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import { useTreeNodeUpdater, createTreeNodeUpdaterActions } from '@hierarchidb/plugin-ui-sdk';
 import type {
@@ -68,14 +68,17 @@ const readNodeData = (
   return isRecord(rawData) ? (rawData as Record<string, unknown>) : {};
 };
 
-export function buildBaseMapEntityFromNode(node?: TreeNode | null): BaseMapEntity | null{
+export function buildBaseMapEntityFromNode(node?: TreeNode | null): (BaseMapEntity & { draftMetadata?: TreeNodeMetadata }) | null{
   if (!node) return null;
   const data = readNodeData(node);
   const mapStyle = coerceMapStyle(data.mapStyle);
   const viewport = coerceViewport(data.viewport);
+  const draftMetadata = (node as { draftMetadata?: unknown }).draftMetadata;
+  const committedMetadata = (node as { metadata?: unknown }).metadata;
   return {
     mapStyle,
     viewport,
+    draftMetadata: (draftMetadata || committedMetadata || { name: '', description: '', tags: [] }) as any,
   };
 }
 
@@ -118,7 +121,7 @@ export function useBaseMapEntity(
     commitTreeNodeUpdater,
     discardDraft,
   } = useTreeNodeUpdater<BaseMapEntity>({
-    mode: 'edit',
+    mode: nodeId ? 'edit' : 'create',
     nodeType: 'basemap',
     parentId: nodeId ?? undefined,
     treeId: (nodeId ?? '') as TreeId,
@@ -127,6 +130,9 @@ export function useBaseMapEntity(
       mapStyle: { ...DEFAULT_MAP_STYLE },
       viewport: undefined,
     },
+    initialDraftMetadata: nodeId
+      ? { name: '', description: '', tags: [] }
+      : undefined,
   });
   const { updatePayload, updatePayloadAndMetadata } = useMemo(
     () => createTreeNodeUpdaterActions<BaseMapEntity>(updateTreeNodeUpdater),
@@ -149,6 +155,16 @@ export function useBaseMapEntity(
       const data = buildBaseMapEntityFromNode(node);
       if (!data) {
         throw new Error('BaseMap entity not found');
+      }
+      // Seed draft with committed metadata if draftMetadata is empty
+      if (treeNodeUpdater && data.draftMetadata) {
+        void updateTreeNodeUpdater({
+          draftMetadata: {
+            name: (data.draftMetadata as { name?: string }).name ?? '',
+            description: (data.draftMetadata as { description?: string }).description ?? '',
+            tags: (data.draftMetadata as { tags?: string[] }).tags ?? [],
+          },
+        });
       }
       setEntity(data);
     } catch (err) {

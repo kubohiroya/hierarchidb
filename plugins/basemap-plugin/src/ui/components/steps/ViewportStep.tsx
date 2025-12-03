@@ -1,14 +1,7 @@
 import { Box, Stack, TextField, Typography } from '@mui/material';
 import type React from 'react';
-import {
-  Suspense,
-  lazy,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
-import { loadMapLibreMap, type MapViewState } from '@hierarchidb/ui-map';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { MapLibreMap, type MapViewState } from '@hierarchidb/ui-map';
 import type { MapViewport } from '../../../common/types/BaseMapEntity.js';
 
 export interface ViewportStepProps {
@@ -44,14 +37,6 @@ const OSM_RASTER_STYLE = {
   ],
 } as const;
 
-let mapLibreComponentPromise: Promise<{ default: React.ComponentType<any> }> | null = null;
-const LazyMapLibreMap = lazy(async () => {
-  if (!mapLibreComponentPromise) {
-    mapLibreComponentPromise = loadMapLibreMap().then((mod) => ({ default: mod.MapLibreMap }));
-  }
-  return mapLibreComponentPromise;
-});
-
 const areViewStatesEqual = (a: MapViewState, b: MapViewState) => {
   const eps = 1e-6;
   return (
@@ -76,6 +61,10 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, onChange }) =
 
   const [viewState, setViewState] = useState<MapViewState>(initial);
 
+  useEffect(() => {
+    // no-op; MapLibreMap handles client-only rendering internally
+  }, []);
+
   // Sync local viewState when parent value changes
   useEffect(() => {
     const next: MapViewState = {
@@ -89,7 +78,7 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, onChange }) =
   }, [value]);
 
   const mapStyleSource = useMemo(
-    () => OSM_RASTER_STYLE as unknown as Record<string, unknown>,
+    () => OSM_RASTER_STYLE as unknown as any,
     []
   );
 
@@ -105,7 +94,10 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, onChange }) =
     []
   );
 
-  const navigationControls = useMemo(() => ({ navigation: { position: 'top-right' } }), []);
+  const navigationControls = useMemo(
+    () => ({ navigation: { position: 'top-right' as const } }),
+    []
+  );
 
   const propagate = useCallback(
     (next: MapViewState, source: 'form' | 'map-move' | 'map-end') => {
@@ -232,37 +224,20 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, onChange }) =
           minHeight: 280,
         }}
       >
-        <Suspense
-          fallback={
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '100%',
-              }}
-            >
-              <Typography variant="caption" color="text.secondary">
-                Loading map…
-              </Typography>
-            </Box>
-          }
-        >
-          <LazyMapLibreMap
-            initialViewState={initial}
-            viewState={viewState}
-            mapStyle={mapStyleSource}
-            width="100%"
-            height="100%"
-            mapOptions={mapInteractionOptions}
-            controls={navigationControls}
-            onLoad={() => {
-              // no-op
-            }}
-            onViewStateChange={handleViewStateChange}
-            onMoveEnd={handleViewStateChangeEnd}
-          />
-        </Suspense>
+        <MapLibreMap
+          initialViewState={initial}
+          viewState={viewState}
+          mapStyle={mapStyleSource}
+          width="100%"
+          height="100%"
+          mapOptions={mapInteractionOptions}
+          controls={navigationControls}
+          onLoad={() => {
+            // no-op
+          }}
+          onViewStateChange={handleViewStateChange}
+          onMoveEnd={handleViewStateChangeEnd}
+        />
         <Box
           sx={{
             position: 'absolute',

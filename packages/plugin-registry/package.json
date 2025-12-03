@@ -34,7 +34,17 @@
   },
   "devDependencies": {},
   "dependencies": {
-    "maplibre-gl": "^5.7.3"
+    "maplibre-gl": "^5.7.3",
+    "@hierarchidb/resolver-plugin": "workspace:*",
+    "@hierarchidb/basemap-plugin": "workspace:*",
+    "@hierarchidb/folder-plugin": "workspace:*",
+    "@hierarchidb/linker-plugin": "workspace:*",
+    "@hierarchidb/location-plugin": "workspace:*",
+    "@hierarchidb/route-plugin": "workspace:*",
+    "@hierarchidb/shape-plugin": "workspace:*",
+    "@hierarchidb/spreadsheet-plugin": "workspace:*",
+    "@hierarchidb/styler-plugin": "workspace:*",
+    "@hierarchidb/timeline-plugin": "workspace:*"
   },
   "scripts": {
     "build": "pnpm run clean && tsdown generated/registry.ts generated/types.ts generated/derivations.ts --config ../../tsdown.config.ts --outDir dist && node ./scripts/postbuild.mjs",
@@ -44,6 +54,18 @@
   "turbo": {
     "pipeline": {
       "build": {
+        "dependsOn": [
+          "@hierarchidb/basemap-plugin#build",
+          "@hierarchidb/folder-plugin#build",
+          "@hierarchidb/linker-plugin#build",
+          "@hierarchidb/location-plugin#build",
+          "@hierarchidb/resolver-plugin#build",
+          "@hierarchidb/route-plugin#build",
+          "@hierarchidb/shape-plugin#build",
+          "@hierarchidb/spreadsheet-plugin#build",
+          "@hierarchidb/styler-plugin#build",
+          "@hierarchidb/timeline-plugin#build"
+        ],
         "outputs": [
           "dist/**"
         ]

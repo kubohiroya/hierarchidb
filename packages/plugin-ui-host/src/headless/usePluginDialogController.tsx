@@ -31,11 +31,20 @@ import {
   type HeadlessContentRenderProps,
   type HeadlessMultiStepDialogProps,
 } from '@hierarchidb/ui-dialog';
-import { Box } from '@mui/material';
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Typography,
+} from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import { type Remote } from 'comlink';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PluginDialogFooter, PluginDialogHeader } from './components/index.js';
 import type { PluginDialogFooterPrimaryButtonOptions } from './components/PluginDialogFooter.js';
 import { clampIndex } from './controller/dialog-layout.js';
@@ -87,6 +96,13 @@ export interface PluginDialogControllerState {
 
 const PlaceholderStep: React.FC = () => null;
 
+const formatTimestamp = (timestamp?: number): string => {
+  if (!timestamp) return '';
+  const date = new Date(timestamp);
+  const pad = (v: number) => `${v}`.padStart(2, '0');
+  return `${date.getFullYear()}/${pad(date.getMonth() + 1)}/${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+};
+
 export function usePluginDialogController(
   options: PluginDialogControllerOptions
 ): PluginDialogControllerState {
@@ -103,6 +119,7 @@ export function usePluginDialogController(
     footerOptions,
   } = options;
 
+  const { t } = useTranslation('common');
   const navigate = useNavigate();
   const stepRegistry = PluginStepRegistry.getInstance();
   const hostRegistry = HostProfileRegistry.getInstance();
@@ -149,6 +166,13 @@ export function usePluginDialogController(
     workerClient: ref ?? null,
     initialDraftData,
   });
+
+  const acknowledgedVersionRef = useRef<number>(draft?.version ?? 0);
+  useEffect(() => {
+    if (draft?.version !== undefined) {
+      acknowledgedVersionRef.current = draft.version;
+    }
+  }, [draft?.version]);
 
   const treeUpdater: TreeNodeUpdaterPayload<PluginDefinedEntity> | null = useMemo(
     () =>
@@ -330,6 +354,101 @@ export function usePluginDialogController(
     }
   }, [workerDialogState, validatedStepIndices.length, setActiveStepIndex]);
 
+  const [resumeDialogOpen, setResumeDialogOpen] = useState(false);
+  const resumeDialogShownRef = useRef(false);
+
+  useEffect(() => {
+    if (mode !== 'edit') return;
+    if (!draft) return;
+    if (resumeDialogShownRef.current) return;
+    if (!draft.hasRemoteDraft) return;
+    resumeDialogShownRef.current = true;
+    setResumeDialogOpen(true);
+  }, [draft, mode]);
+
+  const handleResumeExistingDraft = useCallback(() => {
+    setResumeDialogOpen(false);
+  }, []);
+
+  const handleStartFreshDraft = useCallback(() => {
+    if (!draft) {
+      setResumeDialogOpen(false);
+      return;
+    }
+    const fallbackMetadata = draft.metadata ?? { name: '', description: '', tags: [] };
+    const baselineData =
+      (draft.data as Partial<PluginDefinedEntity> | undefined) ?? ({} as Partial<PluginDefinedEntity>);
+    updateTreeNodeUpdater({
+      treeNodeId: draft.treeNodeId,
+      draftMetadata: fallbackMetadata,
+      draftData: baselineData,
+      version: draft.version,
+      updatedAt: draft.updatedAt,
+      hasRemoteDraft: false,
+    } as any);
+    setResumeDialogOpen(false);
+  }, [draft, updateTreeNodeUpdater]);
+
+  const handleResumeCancel = useCallback(() => {
+    setResumeDialogOpen(false);
+    onClose();
+  }, [onClose]);
+
+  const [conflictDialog, setConflictDialog] = useState<{
+    open: boolean;
+    latestVersion: number;
+    updatedAt?: number;
+  }>({ open: false, latestVersion: 0, updatedAt: undefined });
+  const conflictResolverRef = useRef<((decision: 'discard' | 'continue') => void) | null>(null);
+
+  const requestConflictResolution = useCallback(
+    (latestVersion: number, updatedAt?: number) =>
+      new Promise<'discard' | 'continue'>((resolve) => {
+        conflictResolverRef.current = resolve;
+        setConflictDialog({ open: true, latestVersion, updatedAt });
+      }),
+    []
+  );
+
+  const closeConflictDialog = useCallback(() => {
+    setConflictDialog((prev) => ({ ...prev, open: false }));
+  }, []);
+
+  const fetchLatestVersion = useCallback(async () => {
+    if (mode !== 'edit') return null;
+    if (!client) return null;
+    try {
+      const query = await client.getQueryAPI();
+      const latest = await query.getNode(nodeId);
+      if (!latest) return null;
+      return { version: latest.version ?? 0, updatedAt: latest.updatedAt };
+    } catch (err) {
+      console.warn('[PluginDialogShell] failed to fetch latest node for version check', err);
+      return null;
+    }
+  }, [client, mode, nodeId]);
+
+  const ensureNoConflict = useCallback(async (): Promise<boolean> => {
+    const latest = await fetchLatestVersion();
+    if (!latest) return true;
+    const localVersion = acknowledgedVersionRef.current ?? draft?.version ?? 0;
+    if (latest.version > localVersion) {
+      const decision = await requestConflictResolution(latest.version, latest.updatedAt);
+      closeConflictDialog();
+      if (decision === 'discard') {
+        await discardDraft();
+        onClose();
+        return false;
+      }
+      acknowledgedVersionRef.current = latest.version;
+      updateTreeNodeUpdater({
+        version: latest.version,
+        updatedAt: latest.updatedAt,
+      } as any);
+    }
+    return true;
+  }, [closeConflictDialog, discardDraft, draft?.version, fetchLatestVersion, onClose, requestConflictResolution, updateTreeNodeUpdater]);
+
   const flushDraftOnce = useCallback(async () => {
     const payload: Partial<
       import('@hierarchidb/plugin-ui-sdk').TreeNodeUpdaterState<Partial<PluginDefinedEntity>>
@@ -357,25 +476,29 @@ export function usePluginDialogController(
 
   const handleNavigation = useCallback(
     (event: StepNavigationEvent) => {
-      let nextIndex = activeStepIndex;
-      switch (event.type) {
-        case 'direct':
-          nextIndex = clampIndex(event.targetIndex ?? activeStepIndex, steps.length);
-          break;
-        case 'next':
-          nextIndex = clampIndex(activeStepIndex + 1, steps.length);
-          break;
-        case 'back':
-          nextIndex = clampIndex(activeStepIndex - 1, steps.length);
-          break;
-      }
-      if (nextIndex === activeStepIndex) return;
-      void flushDraftOnce().finally(() => {
-        setActiveStepIndex(nextIndex);
-        setUrlStep(nextIndex);
-      });
+      void (async () => {
+        const ok = await ensureNoConflict();
+        if (!ok) return;
+        let nextIndex = activeStepIndex;
+        switch (event.type) {
+          case 'direct':
+            nextIndex = clampIndex(event.targetIndex ?? activeStepIndex, steps.length);
+            break;
+          case 'next':
+            nextIndex = clampIndex(activeStepIndex + 1, steps.length);
+            break;
+          case 'back':
+            nextIndex = clampIndex(activeStepIndex - 1, steps.length);
+            break;
+        }
+        if (nextIndex === activeStepIndex) return;
+        void flushDraftOnce().finally(() => {
+          setActiveStepIndex(nextIndex);
+          setUrlStep(nextIndex);
+        });
+      })();
     },
-    [activeStepIndex, setActiveStepIndex, setUrlStep, steps.length, flushDraftOnce]
+    [activeStepIndex, ensureNoConflict, setActiveStepIndex, setUrlStep, steps.length, flushDraftOnce]
   );
 
   const navigateToNode = useCallback(
@@ -388,6 +511,8 @@ export function usePluginDialogController(
   const saveDraftInProgress = useRef(false);
 
   const handleSubmit = useCallback(async () => {
+    const ok = await ensureNoConflict();
+    if (!ok) return;
     await flushDraftOnce();
     if (typeof console !== 'undefined' && typeof console.debug === 'function') {
       console.debug('[PluginDialogShell] submitting dialog', {
@@ -418,17 +543,19 @@ export function usePluginDialogController(
     }
 
     onClose();
-  }, [flushDraftOnce, treeUpdater?.treeNodeId, nodeId, onClose, nodeType, mode, draft?.draftMetadata, basicInfo.name, basicInfo.description, basicInfo.tags, draftDataWithoutMeta, discardDraft, onSuccess, navigateToNode]);
+  }, [ensureNoConflict, flushDraftOnce, treeUpdater?.treeNodeId, nodeId, onClose, nodeType, mode, draft?.draftMetadata, basicInfo.name, basicInfo.description, basicInfo.tags, draftDataWithoutMeta, discardDraft, onSuccess, navigateToNode]);
 
   const handleSaveDraft = useCallback(async () => {
     try {
+      const ok = await ensureNoConflict();
+      if (!ok) return;
       saveDraftInProgress.current = true;
       await flushDraftOnce();
     } catch (err) {
       saveDraftInProgress.current = false;
       throw err;
     }
-  }, [flushDraftOnce]);
+  }, [ensureNoConflict, flushDraftOnce]);
 
   const handleCancel = useCallback(async () => {
     // Cancel: create は forceDelete、edit は draft clear（現行 discardDraft が内部で判断）
@@ -511,27 +638,87 @@ export function usePluginDialogController(
   const FooterComponent: HeadlessMultiStepDialogProps<Partial<PluginDefinedEntity>>['FooterComponent'] =
     useCallback(
       () => (
-        <PluginDialogFooter
-          mode={mode}
-          canCommit={canSaveCurrent}
-          onSaveDraft={
-            disableDraftButton
-              ? undefined
-              : handleSaveDraft
-                ? () => {
-                    handleSaveDraft().catch(() => void 0);
-                  }
-                : undefined
-          }
-          disableDraft={disableDraftButton || !hasUnsavedChanges}
-          onStartBatch={activeStartBatch ? () => { handleStartBatch().catch(() => void 0); } : undefined}
-          canStartBatch={canStartBatch && !isStartingBatch}
-          isStartingBatch={isStartingBatch}
-          primaryButtonOptions={footerPrimaryButtons}
-          saveDraftLabel={footerSaveDraftLabel}
-        />
+        <>
+          <Dialog open={resumeDialogOpen} onClose={handleResumeCancel}>
+            <DialogTitle>{t('dialogs.pluginDraft.resume.title')}</DialogTitle>
+            <DialogContent>
+              <Typography variant="body2">{t('dialogs.pluginDraft.resume.description')}</Typography>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleResumeCancel}>{t('dialogs.pluginDraft.resume.buttons.cancel')}</Button>
+              <Button onClick={handleStartFreshDraft}>{t('dialogs.pluginDraft.resume.buttons.startFresh')}</Button>
+              <Button variant="contained" onClick={handleResumeExistingDraft} autoFocus>
+                {t('dialogs.pluginDraft.resume.buttons.resumePrevious')}
+              </Button>
+            </DialogActions>
+          </Dialog>
+
+          <Dialog
+            open={conflictDialog.open}
+            onClose={() => {
+              conflictResolverRef.current?.('continue');
+              closeConflictDialog();
+            }}
+          >
+            <DialogTitle>{t('dialogs.pluginDraft.conflict.title')}</DialogTitle>
+            <DialogContent>
+              <Typography variant="body2">
+                {t('dialogs.pluginDraft.conflict.description', {
+                  timestamp: formatTimestamp(conflictDialog.updatedAt),
+                })}
+              </Typography>
+            </DialogContent>
+            <DialogActions>
+              <Button
+                color="secondary"
+                onClick={() => {
+                  conflictResolverRef.current?.('discard');
+                  closeConflictDialog();
+                }}
+              >
+                {t('dialogs.pluginDraft.conflict.buttons.discardSelf')}
+              </Button>
+              <Button
+                variant="contained"
+                onClick={() => {
+                  conflictResolverRef.current?.('continue');
+                  closeConflictDialog();
+                }}
+              >
+                {t('dialogs.pluginDraft.conflict.buttons.keepSelf')}
+              </Button>
+            </DialogActions>
+          </Dialog>
+
+          <PluginDialogFooter
+            mode={mode}
+            canCommit={canSaveCurrent}
+            onSaveDraft={
+              disableDraftButton
+                ? undefined
+                : handleSaveDraft
+                  ? () => {
+                      handleSaveDraft().catch(() => void 0);
+                    }
+                  : undefined
+            }
+            disableDraft={disableDraftButton || !hasUnsavedChanges}
+            onStartBatch={activeStartBatch ? () => { handleStartBatch().catch(() => void 0); } : undefined}
+            canStartBatch={canStartBatch && !isStartingBatch}
+            isStartingBatch={isStartingBatch}
+            primaryButtonOptions={footerPrimaryButtons}
+            saveDraftLabel={footerSaveDraftLabel}
+          />
+        </>
       ),
       [
+        resumeDialogOpen,
+        handleResumeCancel,
+        handleStartFreshDraft,
+        handleResumeExistingDraft,
+        conflictDialog.open,
+        conflictDialog.updatedAt,
+        closeConflictDialog,
         mode,
         canSaveCurrent,
         handleSaveDraft,

@@ -67,6 +67,8 @@
     "count:lines": "tsx scripts/count-lines.ts",
     "policy:ban-tsconfig-paths-dist-dts": "node scripts/policy/ban-tsconfig-paths-dist-dts.mjs",
     "policy:all": "pnpm policy:ban-tsconfig-paths-dist-dts",
+    "b": "pnpm run build",
+    "t": "pnpm run typecheck",
     "wt:start": "bash scripts/run-wt.sh start",
     "wt:remove": "bash scripts/run-wt.sh remove",
     "wt:list": "bash scripts/run-wt.sh list",

@@ -73,6 +73,25 @@
         "item_one": "項目",
         "item_other": "項目"
       }
+    },
+    "pluginDraft": {
+      "resume": {
+        "title": "編集を再開しますか？",
+        "description": "以前の編集内容がドラフトとして保存されています。再開するか、新しく編集をやり直すかを選んでください。",
+        "buttons": {
+          "cancel": "キャンセル",
+          "startFresh": "新規の編集を開始",
+          "resumePrevious": "以前の編集を再開"
+        }
+      },
+      "conflict": {
+        "title": "他の編集と競合しています",
+        "description": "別のタブで同じノードの編集が {{timestamp}} に保存されています。（自身の内容を破棄・相手の内容を優先してこの編集をキャンセル｜相手の内容を破棄・自身の内容を優先してこの編集を続行）",
+        "buttons": {
+          "discardSelf": "自身の内容を破棄",
+          "keepSelf": "自身の内容を優先"
+        }
+      }
     }
   },
   "trash": {
