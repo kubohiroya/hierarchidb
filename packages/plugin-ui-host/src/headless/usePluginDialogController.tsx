@@ -40,6 +40,7 @@ import {
   DialogTitle,
   Typography,
 } from '@mui/material';
+import type { Theme } from '@mui/material/styles';
 import { useNavigate } from '@tanstack/react-router';
 import { type Remote } from 'comlink';
 import type React from 'react';
@@ -509,6 +510,15 @@ export function usePluginDialogController(
   );
 
   const saveDraftInProgress = useRef(false);
+  const foregroundDialogSx = useMemo(
+    () => ({
+      zIndex: (theme: Theme) => theme.zIndex.modal + 2,
+      '& .MuiBackdrop-root': {
+        zIndex: (theme: Theme) => theme.zIndex.modal + 1,
+      },
+    }),
+    []
+  );
 
   const handleSubmit = useCallback(async () => {
     const ok = await ensureNoConflict();
@@ -639,7 +649,7 @@ export function usePluginDialogController(
     useCallback(
       () => (
         <>
-          <Dialog open={resumeDialogOpen} onClose={handleResumeCancel}>
+          <Dialog open={resumeDialogOpen} onClose={handleResumeCancel} sx={foregroundDialogSx}>
             <DialogTitle>{t('dialogs.pluginDraft.resume.title')}</DialogTitle>
             <DialogContent>
               <Typography variant="body2">{t('dialogs.pluginDraft.resume.description')}</Typography>
@@ -659,6 +669,7 @@ export function usePluginDialogController(
               conflictResolverRef.current?.('continue');
               closeConflictDialog();
             }}
+            sx={foregroundDialogSx}
           >
             <DialogTitle>{t('dialogs.pluginDraft.conflict.title')}</DialogTitle>
             <DialogContent>

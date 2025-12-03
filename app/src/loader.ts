@@ -282,12 +282,12 @@ export async function ensureDialogStateAPI(client: Remote<WorkerAPI>): Promise<v
         typeofUnsubscribe: typeof api?.unsubscribeState,
         keys: api ? Object.keys(api as unknown as Record<string, unknown>) : null,
       };
-      console.error('[loadWorkerAPIClient] DialogStateAPI verification failed', snapshot);
+      console.error('DialogStateAPI verification failed', snapshot);
       throw new Error(
-        `[loadWorkerAPIClient] DialogStateAPI is missing required methods: ${missing.join(', ')}`
+        `DialogStateAPI is missing required methods: ${missing.join(', ')}`
       );
     }
-    console.log('[loadWorkerAPIClient] DialogStateAPI verified');
+    console.log('DialogStateAPI verified');
     dialogStateApiVerified = true;
     lastVerifiedClient = client;
   })();

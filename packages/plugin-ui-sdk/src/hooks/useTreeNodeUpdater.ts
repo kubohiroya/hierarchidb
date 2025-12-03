@@ -264,7 +264,7 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
 
     try {
       setLoading(true);
-      const { wc: wcAPI } = await getClient();
+      const { wc: wcAPI, query } = await getClient();
 
       await wcAPI.updateTreeNodeDraftMetadata(targetId, finalData.draftMetadata ?? {});
       await wcAPI.updateTreeNodeDraftData(
@@ -279,13 +279,16 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
       if (res.status === 'ok') {
         const committedNodeId = (res.node?.id as NodeId | undefined) ?? res.nodeId ?? targetId;
 
-        let refreshedCopy: TreeNodeUpdaterState<TPayload> = {
-          ...finalData,
-          treeNodeId: committedNodeId,
-        };
-        if (res.node) {
-          refreshedCopy = { ...toUpdater(res.node), treeNodeId: committedNodeId };
-        }
+        const latestNode = (await query.getNode(committedNodeId)) ?? res.node;
+
+        const refreshedCopy: TreeNodeUpdaterState<TPayload> = latestNode
+          ? toUpdater(latestNode as TreeNode)
+          : {
+              ...finalData,
+              treeNodeId: committedNodeId,
+              version: typeof finalData.version === 'number' ? finalData.version + 1 : 1,
+              updatedAt: Date.now() as Timestamp,
+            };
 
         setDraft(refreshedCopy);
         setOriginalCopy(refreshedCopy);

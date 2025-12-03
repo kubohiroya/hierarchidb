@@ -86,7 +86,7 @@
       },
       "conflict": {
         "title": "Edit conflict detected",
-        "description": "Another tab saved this node at {{timestamp}}. Discard your changes to cancel, or keep your changes to continue.",
+        "description": "Another tab saved this node at {{timestamp}}. You can cancel and keep their changes, or continue while keeping your own edits.",
         "buttons": {
           "discardSelf": "Discard my changes",
           "keepSelf": "Keep my changes"

@@ -19,10 +19,12 @@ export const BASIC_INFO_META_KEY = '__basicInfoValidation';
 
 export const buildStepWorkingData = (
   draftData: StepData | undefined,
-  _basicInfo?: import('@hierarchidb/common-types').TreeNodeMetadata | null,
+  basicInfo?: import('@hierarchidb/common-types').TreeNodeMetadata | null,
   _basicInfoMeta?: BasicInfoMeta
 ): StepData => {
-  return draftData ? { ...draftData } : {};
+  const baseSource = toRecord(basicInfo) ?? {};
+  const base = basicInfo ? extractBasicInfoFields(baseSource as Record<string, unknown>) : {};
+  return draftData ? { ...base, ...draftData } : base;
 };
 
 export async function evaluateValidationState(steps: DialogStep[]): Promise<boolean[]> {

@@ -78,8 +78,10 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
     [emitChange],
   );
 
-  const validationError = validate?.({ name, description, tags });
-  const nameError = !name.trim() ? 'Name is required' : null;
+  const normalizedName = typeof name === 'string' ? name : '';
+  const normalizedDescription = typeof description === 'string' ? description : '';
+  const validationError = validate?.({ name: normalizedName, description: normalizedDescription, tags });
+  const nameError = !normalizedName.trim() ? 'Name is required' : null;
   const mergedNameError = validationError ?? nameError;
 
   useEffect(() => {
@@ -110,7 +112,7 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
       <FormControl fullWidth error={!!mergedNameError}>
         <TextField
           label="Name"
-          value={name}
+          value={normalizedName}
           onChange={handleNameChange}
           required
           error={!!mergedNameError}
@@ -126,13 +128,13 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
       <FormControl fullWidth>
         <TextField
           label="Description"
-          value={description}
+          value={normalizedDescription}
           onChange={handleDescriptionChange}
           multiline
           rows={4}
           placeholder="Enter an optional description"
           variant="outlined"
-          helperText={`${description.length}/1000 characters`}
+          helperText={`${normalizedDescription.length}/1000 characters`}
           inputProps={{ maxLength: 1000 }}
           disabled={disabled}
         />

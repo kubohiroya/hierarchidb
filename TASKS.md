@@ -3730,6 +3730,10 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1590) BasicInfo name/description 入力でフォーカス喪失（P0） — 完了 (2025-12-03)
+  - 要点：BasicInfo ステップで入力のたびに atom が再生成されコンポーネントが再マウントしフォーカスを失う問題を、StepAdapter の atom を useRef で固定化し BasicInfo コンポーネント参照も安定化することで解消。metadata を working data へマージし、BasicInfoStep の name/description を安全に正規化した。
+  - 検証：`pnpm --filter @hierarchidb/plugin-ui-host test -- --run "basic-info-focus"`（2025-12-03 17:38 JST）exit 0、`pnpm --filter @hierarchidb/plugin-ui-host typecheck`（同 17:38 JST）exit 0。
+  - ロールバック手順：`packages/plugin-ui-host/src/headless/usePluginDialogController/steps.tsx`, `packages/plugin-ui-host/src/headless/controller/step-guards.ts`, `packages/ui/plugin-basic-info/src/components/BasicInfoStep.tsx`, `packages/plugin-ui-host/src/headless/__tests__/basic-info-focus.unit.test.tsx` の差分を revert し、上記テスト/typecheck を再実行してフォーカス喪失が再現することを確認する。
 - 1558) Plugin Dialog Stepper valid-disabled 表示追加（P0） — 完了 (2025-11-29)
   - 要点：PluginDialogHeader の Stepper に、前ステップ未完了で当該ステップが valid かつ disabled の場合に灰色円＋チェックの valid-disabled 状態を追加し、既存 active/invalid/validated 表示は維持。
   - 検証：`pnpm --filter @hierarchidb/plugin-ui-host exec vitest run src/headless/__tests__/PluginDialogHeader.test.tsx`（2025-11-29 09:27 JST）exit 0。`pnpm --filter @hierarchidb/plugin-ui-host test -- --run PluginDialogHeader` は既存の `@hierarchidb/ui-worker-provider` 未解決で fail（basicInfoStepData/dialogStateSubscription が収集時に停止）。
@@ -9373,6 +9377,16 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-03 08:58 start: fix/basemap/edit-draft-resume — basemap Edit で既存 draft を再開/新規選択するダイアログと version 競合警告を追加する対応を開始。DoD: Kanban/ログ更新、既存 draft の再開/新規選択ダイアログ、Back/Next/Save/Stepper 前の version 競合警告ダイアログ、永続化 metadata/data を draft へ初期コピー、typecheck 実行と結果記録、ロールバック手順明記。
 - 2025-12-03 08:59 progress: fix/basemap/edit-draft-resume — useTreeNodeUpdater で draftMetadata/draftData が null 時に committed metadata/data へフォールバックし、version/updatedAt/hasRemoteDraft を保持するように修正。PluginDialogController にドラフト再開ダイアログ（デフォルト: 以前の編集を再開）と version 競合ダイアログ（指定文言・自己破棄で閉じる/自己優先で続行）を追加し、Back/Next/Save/Stepper 前に version チェックを挟むようにした。テスト/typecheck は node_modules 不備（`tsdown` 未リンク、pnpm install が ENOTFOUND で失敗）で未実行。
 - 2025-12-03 09:05 progress: fix/basemap/edit-draft-resume — ダイアログ文言を i18n 化し、`common.dialogs.pluginDraft.*` を app/ui i18n locale（en/ja）へ追加。残課題: node_modules 不備解消後に typecheck 実行。
+- 2025-12-03 12:10 progress: fix/basemap/edit-draft-resume — 別タブ編集ダイアログの文言自然化・誤検知修正・z-index 前面化の調査を着手。想定: Edit Basemap Step2→Step3 に限らず、全プラグインの edit モードで draftData 更新時に Worker 側の競合判定が過剰に発火している可能性を確認する。DoD: 文言修正、誤検知の判定基準修正、z-index 前面化、typecheck/手動確認ログ、ロールバック手順記載。
+- 2025-12-03 12:40 progress: fix/basemap/edit-draft-resume — 競合ダイアログ文言を自然な形に修正（en/ja locale 両方）、競合/再開ダイアログの z-index をホストダイアログより前面に固定。useTreeNodeUpdater の commitDraft 後に QueryAPI で最新 node を取得して version/updatedAt を反映し、自己更新による誤検知を防止。
+- 2025-12-03 12:41 command: pnpm --filter @hierarchidb/plugin-ui-sdk typecheck — exit 0。
+- 2025-12-03 12:42 command: pnpm --filter @hierarchidb/plugin-ui-sdk build — exit 0（tsdown define 警告は既存）。
+- 2025-12-03 12:43 command: pnpm --filter @hierarchidb/plugin-ui-host typecheck — exit 0。
+- 2025-12-03 17:16 start: fix/plugin-dialog/basicinfo-focus — Create/Edit BasicInfo の name/description 入力で1文字ごとにフォーカスが外れる問題の調査を開始。DoD: TASKS/ログ更新、フォーカス維持（Create/Edit・Folder/Basemap で確認）、副作用なし、関連 typecheck/test 実行と記録、ロールバック手順明記。git branch 作成は `.git/refs/heads/fix/plugin-dialog/basicinfo-focus` 作成失敗のため main で作業継続。
+- 2025-12-03 17:30 progress: fix/plugin-dialog/basicinfo-focus — BasicInfo ステップで入力ごとに Jotai atom/コンポーネントが再生成されフォーカスが外れる原因を特定し、StepAdapter の atom を useRef で固定化して再マウントを防止。BasicInfo コンポーネント参照を安定化し、metadata を working data へ統合、BasicInfoStep の name/description を安全に正規化。
+- 2025-12-03 17:38 done: fix/plugin-dialog/basicinfo-focus — 上記修正を反映。検証: `pnpm --filter @hierarchidb/plugin-ui-host test -- --run "basic-info-focus"` exit 0、`pnpm --filter @hierarchidb/plugin-ui-host typecheck` exit 0。
+- 2025-12-03 17:50 progress: fix/plugin-dialog/basicinfo-focus — Step2 以降のプラグインステップでも再マウントしないよう、StepAdapter のコンポーネント参照をステップIDごとに useRef 固定化し、cfg/uiState などは最新値を ref から読む形に統一。追加テストでプラグインステップのコンポーネント安定性を検証。
+- 2025-12-03 17:51 done: fix/plugin-dialog/basicinfo-focus — 再マウント抑止を全ステップに適用。検証: `pnpm --filter @hierarchidb/plugin-ui-host test -- --run "basic-info-focus"` exit 0、`pnpm --filter @hierarchidb/plugin-ui-host typecheck` exit 0。
 - 2025-12-02 06:10 start: chore/codemod/workingcopy-rename — 現行ソースの WorkingCopy 用語を TreeNodeUpdater/draftMetadata/draftData へ置換するコーデモッド準備を開始。DoD: Kanban/ログ更新、コーデモッド作成・適用、plugin-service-sdk/src/draft/** 等の命名/コメント更新、typecheck 実行と記録、ロールバック手順明記。deprecated/dist は除外。branch 作成不可なら main 作業。
 - 2025-12-02 05:15 start: chore/codemod/treenode-updater-renames — TreeNodeUpdaterPayload.id→treeNodeId、TreeNodeUpdatePayload→TreeNodeUpdaterPatch の AST コーデモッドを実施するタスクを開始。DoD: Kanban/ログ更新、コーデモッド適用で命名揺れ解消、重複型統一、typecheck 実行と記録、ロールバック手順明記。branch 作成不可なら main で作業。
 - 2025-12-02 05:28 progress: chore/codemod/treenode-updater-renames — ts-morph コーデモッド `packages/tools/codemods/src/rename-tree-node-updater-id.ts` を追加し、build スクリプトへ組み込み。まだドライラン/適用は未実行（TreeNodeUpdatePayload→TreeNodeUpdaterPatch の扱いは再計画中）。
