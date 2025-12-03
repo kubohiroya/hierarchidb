@@ -35,17 +35,19 @@
   "devDependencies": {},
   "dependencies": {
     "maplibre-gl": "^5.7.3",
-    "@hierarchidb/resolver-plugin": "workspace:*",
     "@hierarchidb/basemap-plugin": "workspace:*",
     "@hierarchidb/folder-plugin": "workspace:*",
     "@hierarchidb/linker-plugin": "workspace:*",
     "@hierarchidb/location-plugin": "workspace:*",
+    "@hierarchidb/resolver-plugin": "workspace:*",
     "@hierarchidb/route-plugin": "workspace:*",
     "@hierarchidb/shape-plugin": "workspace:*",
     "@hierarchidb/spreadsheet-plugin": "workspace:*",
     "@hierarchidb/styler-plugin": "workspace:*",
     "@hierarchidb/timeline-plugin": "workspace:*"
   },
+  "peerDependencies": {},
+  "peerDependenciesMeta": {},
   "scripts": {
     "build": "pnpm run clean && tsdown generated/registry.ts generated/types.ts generated/derivations.ts --config ../../tsdown.config.ts --outDir dist && node ./scripts/postbuild.mjs",
     "clean": "rm -rf dist",

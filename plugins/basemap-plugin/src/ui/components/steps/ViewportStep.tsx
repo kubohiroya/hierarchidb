@@ -1,12 +1,17 @@
 import { Box, Stack, TextField, Typography } from '@mui/material';
 import type React from 'react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { MapLibreMap, type MapViewState } from '@hierarchidb/ui-map';
-import type { MapViewport } from '../../../common/types/BaseMapEntity.js';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  loadMapLibreMap,
+  type MapLibreMapInstance,
+  type MapViewState,
+} from '@hierarchidb/ui-map';
+import type { MapStyle, MapViewport } from '../../../common/types/BaseMapEntity.js';
+import { resolveMapStyleSource } from '../../utils/mapStyle.js';
 
 export interface ViewportStepProps {
   value: MapViewport | undefined;
-  mapStyle?: unknown;
+  mapStyle?: MapStyle;
   onChange: (next: MapViewport) => void;
 }
 
@@ -47,7 +52,12 @@ const areViewStatesEqual = (a: MapViewState, b: MapViewState) => {
   );
 };
 
-export const ViewportStep: React.FC<ViewportStepProps> = ({ value, onChange }) => {
+const LazyMapLibreMap = lazy(async () => {
+  const mod = await loadMapLibreMap();
+  return { default: mod.MapLibreMap };
+});
+
+export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onChange }) => {
   const initial = useMemo<MapViewState>(
     () => ({
       longitude: value?.center[0] ?? FALLBACK_VIEWPORT.center[0],
@@ -60,9 +70,13 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, onChange }) =
   );
 
   const [viewState, setViewState] = useState<MapViewState>(initial);
+  const [canRenderMap, setCanRenderMap] = useState(false);
+  const lastEmittedRef = useRef<MapViewState>(initial);
+  const mapRef = useRef<MapLibreMapInstance | null>(null);
 
   useEffect(() => {
-    // no-op; MapLibreMap handles client-only rendering internally
+    // Ensure we only render the map after the component is mounted in the browser.
+    setCanRenderMap(true);
   }, []);
 
   // Sync local viewState when parent value changes
@@ -75,12 +89,30 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, onChange }) =
       pitch: 0,
     };
     setViewState((prev) => (areViewStatesEqual(prev, next) ? prev : next));
+    lastEmittedRef.current = next;
+    if (mapRef.current) {
+      const mapState: MapViewState = {
+        longitude: mapRef.current.getCenter().lng,
+        latitude: mapRef.current.getCenter().lat,
+        zoom: mapRef.current.getZoom(),
+        bearing: mapRef.current.getBearing(),
+        pitch: mapRef.current.getPitch(),
+      };
+      if (!areViewStatesEqual(mapState, next)) {
+        mapRef.current.jumpTo({
+          center: [next.longitude, next.latitude],
+          zoom: next.zoom,
+          bearing: next.bearing ?? 0,
+          pitch: 0,
+        });
+      }
+    }
   }, [value]);
 
-  const mapStyleSource = useMemo(
-    () => OSM_RASTER_STYLE as unknown as any,
-    []
-  );
+  const mapStyleSource = useMemo(() => {
+    if (mapStyle) return resolveMapStyleSource(mapStyle);
+    return OSM_RASTER_STYLE as unknown as any;
+  }, [mapStyle]);
 
   const mapInteractionOptions = useMemo(
     () => ({
@@ -106,6 +138,16 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, onChange }) =
         if (areViewStatesEqual(prev, next)) return prev;
         return next;
       });
+      if (areViewStatesEqual(lastEmittedRef.current, next)) return;
+      lastEmittedRef.current = next;
+      if (source === 'form' && mapRef.current) {
+        mapRef.current.jumpTo({
+          center: [next.longitude, next.latitude],
+          zoom: next.zoom,
+          bearing: next.bearing ?? 0,
+          pitch: 0,
+        });
+      }
       onChange({
         center: [next.longitude, next.latitude],
         zoom: next.zoom,
@@ -115,6 +157,10 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, onChange }) =
     },
     [onChange]
   );
+
+  const handleMapLoad = useCallback((map: MapLibreMapInstance) => {
+    mapRef.current = map;
+  }, []);
 
   const handleViewStateChange = useCallback(
     (next: MapViewState) => {
@@ -224,20 +270,51 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, onChange }) =
           minHeight: 280,
         }}
       >
-        <MapLibreMap
-          initialViewState={initial}
-          viewState={viewState}
-          mapStyle={mapStyleSource}
-          width="100%"
-          height="100%"
-          mapOptions={mapInteractionOptions}
-          controls={navigationControls}
-          onLoad={() => {
-            // no-op
-          }}
-          onViewStateChange={handleViewStateChange}
-          onMoveEnd={handleViewStateChangeEnd}
-        />
+        {canRenderMap ? (
+          <Suspense
+            fallback={
+              <Box
+                sx={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'text.secondary',
+                  fontSize: 12,
+                }}
+              >
+                Loading map…
+              </Box>
+            }
+          >
+            <LazyMapLibreMap
+              initialViewState={initial}
+              mapStyle={mapStyleSource}
+              width="100%"
+              height="100%"
+              mapOptions={mapInteractionOptions}
+              controls={navigationControls}
+              onLoad={handleMapLoad}
+              onViewStateChange={handleViewStateChange}
+              onMoveEnd={handleViewStateChangeEnd}
+            />
+          </Suspense>
+        ) : (
+          <Box
+            sx={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'text.secondary',
+              fontSize: 12,
+            }}
+          >
+            Preparing map…
+          </Box>
+        )}
         <Box
           sx={{
             position: 'absolute',

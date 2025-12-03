@@ -30,7 +30,6 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\""
   },
   "dependencies": {
-    "@hierarchidb/plugin-registry": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
     "comlink": "^4.4.2",
     "dexie": "^4.2.0",
@@ -43,6 +42,7 @@
     "zod": "^3.22.3"
   },
   "peerDependencies": {
+    "@hierarchidb/plugin-registry": "workspace:*",
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
@@ -93,9 +93,6 @@
   "turbo": {
     "pipeline": {
       "build": {
-        "dependsOn": [
-          "@hierarchidb/plugin-registry#build"
-        ],
         "outputs": [
           "dist/**"
         ]

@@ -74,9 +74,14 @@ export interface MapLibreMapInstance {
   queryRenderedFeatures(geometry?: MapLibreQueryGeometry, parameters?: { layers?: string[]; filter?: MapLibreFilter }): MapLibreGeoJSONFeature[];
 
   // Commonly used convenience methods (subset of MapLibre Map API)
+  getCenter(): { lng: number; lat: number };
+  getZoom(): number;
+  getBearing(): number;
+  getPitch(): number;
   zoomIn(): void;
   zoomOut(): void;
   flyTo(opts: { center?: [number, number]; zoom?: number; bearing?: number; pitch?: number; speed?: number }): void;
+  jumpTo(opts: { center?: [number, number]; zoom?: number; bearing?: number; pitch?: number }): void;
   setPitch(pitch: number): void;
   setStyle(style: string | MapLibreStyle): void;
   fitBounds(bounds: [[number, number], [number, number]], options?: { padding?: number }): void;

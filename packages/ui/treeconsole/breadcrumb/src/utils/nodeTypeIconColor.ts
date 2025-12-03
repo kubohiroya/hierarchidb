@@ -1,6 +1,3 @@
-import { pluginRegistry } from '@hierarchidb/plugin-registry';
-import type { PluginRegistryEntry } from '@hierarchidb/plugin-registry/types';
-
 const folderNodeTypeAliases = new Set<string>([
   'folder',
   'folder-plugin',
@@ -18,16 +15,22 @@ function normalizeColor(value: unknown): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
-const pluginIconColorMap: ReadonlyMap<string, string> = (() => {
-  const pairs: Array<[string, string]> = [];
-  for (const entry of pluginRegistry as readonly PluginRegistryEntry[]) {
-    const color = normalizeColor(entry.manifest?.icon?.color);
-    if (color) {
-      pairs.push([entry.nodeType, color]);
-    }
-  }
-  return new Map(pairs);
-})();
+// Static map sourced from plugin manifests to avoid a dependency edge on plugin-registry.
+// Keep values in sync with plugins/*-plugin/package.json icon.color fields.
+const pluginIconColorMap: ReadonlyMap<string, string> = new Map(
+  [
+    ['basemap', '#b0b3d9'],
+    ['folder', '#c0eeff'],
+    ['linker', '#ffe0f3'],
+    ['location', '#a3b030'],
+    ['resolver', '#ffb3c1'],
+    ['route', '#a3b030'],
+    ['shape', '#a3b030'],
+    ['spreadsheet', '#a3b030'], // spreadsheet inherits shape color
+    ['styler', '#dcbc50'],
+    ['timeline', '#8a7cbf'],
+  ].map(([nodeType, color]) => [nodeType, normalizeColor(color)!])
+);
 
 export function isFolderNodeType(nodeType?: string | null): boolean {
   if (!nodeType) return false;
