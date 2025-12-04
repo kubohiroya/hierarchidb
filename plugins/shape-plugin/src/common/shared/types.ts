@@ -75,6 +75,16 @@ export interface StepProps {
   draft: Partial<ShapeDraft>;
   onUpdate: (updates: Partial<ShapeDraft>) => void;
   disabled?: boolean;
+  mode?: 'create' | 'edit';
+}
+
+export interface ValidationResult {
+  data?: boolean;
+  filters?: boolean;
+  licenses?: boolean;
+  processing?: boolean;
+  processedData?: boolean;
+  source?: boolean;
 }
 
 export interface TabularFileSummary {
@@ -113,6 +123,7 @@ export interface ProcessingConfig extends ProcessingConfigLegacyFields {
   simplificationConfig?: SimplificationProcessingConfig;
   tileConfig?: TileProcessingConfig;
   cleanupConfig?: CleanupProcessingConfig;
+  source?: string;
 }
 
 export interface ProcessingConfigLegacyFields {

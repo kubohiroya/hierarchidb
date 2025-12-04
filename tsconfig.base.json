@@ -209,6 +209,9 @@
       "@hierarchidb/ui-worker-provider/*": [
         "packages/ui/worker-provider/src/*"
       ],
+      "react-transition-group/Transition": [
+        "types/react-transition-group/Transition.d.ts"
+      ],
       "@hierarchidb/runtime-shared-fetch-metadata": [
         "packages/runtime-shared/fetch-metadata/src/index.ts"
       ],

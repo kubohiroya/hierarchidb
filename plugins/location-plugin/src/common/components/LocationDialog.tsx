@@ -137,7 +137,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
 }) => {
   const { translations } = useTranslation();
   const { size: initialSize, position: initialPositionValue } = useMemo(buildDefaultFrame, []);
-  const { dialogState, updateDialogState } = useDialogViewState({
+  const { dialogViewState, updateDialogViewState } = useDialogViewState({
     initialSize,
     initialPosition: initialPositionValue,
     initialDisplayMode: 'normal',
@@ -174,10 +174,10 @@ const {
 
   useEffect(() => () => { void discardDraft().catch(() => {}); }, [discardDraft]);
 
-  const dialogSizeRef = useRef<MultiDialogSize>(dialogState.size);
-  const dialogPositionRef = useRef<MultiDialogPosition>(dialogState.position);
+  const dialogSizeRef = useRef<MultiDialogSize>(dialogViewState.size);
+  const dialogPositionRef = useRef<MultiDialogPosition>(dialogViewState.position);
   const vectorServiceRef = useRef<LocationVectorTileService | null>(null);
-  const { size: dialogSize, position: dialogPosition, displayMode, activeStepIndex } = dialogState;
+  const { size: dialogSize, position: dialogPosition, displayMode, activeStepIndex } = dialogViewState;
   const [isBatchStarting, setIsBatchStarting] = useState(false);
   const [buildStatus, setBuildStatus] = useState<string | null>(null);
 
@@ -197,8 +197,8 @@ const {
   const applyNormalizedState = useCallback((size: MultiDialogSize, position: MultiDialogPosition) => {
     dialogSizeRef.current = size;
     dialogPositionRef.current = position;
-    updateDialogState({ patch: { size, position } });
-  }, [updateDialogState]);
+    updateDialogViewState({ patch: { size, position } });
+  }, [updateDialogViewState]);
 
   const { updatePayload, updateMetadata } = useMemo(
     () => createTreeNodeUpdaterActions<LocationEntity>(updateDraft),
@@ -479,8 +479,8 @@ const {
       applyNormalizedState(normalized.size, normalized.position);
     }
 
-    updateDialogState({ patch: { displayMode: mode } });
-  }, [applyNormalizedState, updateDialogState]);
+    updateDialogViewState({ patch: { displayMode: mode } });
+  }, [applyNormalizedState, updateDialogViewState]);
 
   const handleSave = useCallback(async () => {
     try {
@@ -528,22 +528,22 @@ const {
   const handleStepNavigate = useCallback((event: StepNavigationEvent) => {
     switch (event.type) {
       case 'direct':
-        updateDialogState({ patch: { activeStepIndex: event.targetIndex } });
+        updateDialogViewState({ patch: { activeStepIndex: event.targetIndex } });
         break;
       case 'next':
-        updateDialogState({
+        updateDialogViewState({
           patch: { activeStepIndex: Math.min(activeStepIndex + 1, stepComponents.length - 1) },
         });
         break;
       case 'back':
-        updateDialogState({
+        updateDialogViewState({
           patch: { activeStepIndex: Math.max(activeStepIndex - 1, 0) },
         });
         break;
       default:
         break;
     }
-  }, [activeStepIndex, stepComponents.length, updateDialogState]);
+  }, [activeStepIndex, stepComponents.length, updateDialogViewState]);
 
   const renderHeader: HeadlessMultiStepDialogProps<LocationDraft>['renderHeader'] = useCallback((propsHeader: HeadlessHeaderRenderProps<LocationDraft>) => (
     <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ px: 2, py: 1.5, borderBottom: '1px solid #dde1eb' }}>

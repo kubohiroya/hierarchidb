@@ -10,3 +10,9 @@ export type {
 } from './hooks/useTreeNodeUpdater.js';
 export { createTreeNodeUpdaterActions } from './hooks/useTreeNodeUpdater.js';
 export type { BasicInfoStepProps } from './dialog/steps/BasicInfoStep.js';
+export {
+  useTreeNodeDialog,
+  type DialogStepConfig,
+  type DialogStepFactoryArgs,
+  type UseTreeNodeDialogOptions,
+} from './hooks/useTreeNodeDialog.js';

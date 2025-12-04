@@ -35,11 +35,7 @@ import {
  * Step 5: Country & Admin Level Selection
  * Uses real country metadata from @hierarchidb/fetch-save-metadata
  */
-export const Step5CountrySelection: React.FC<StepProps> = ({
-                                                             draft,
-                                                             onUpdate,
-                                                             disabled,
-                                                           }) => {
+export const Step5CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, disabled }) => {
   const { enqueueSnackbar } = useSnackbar();
 
   // Load country metadata from 02-fetch-save-metadata

@@ -14,9 +14,9 @@ export interface UseDialogViewStateOptions {
 }
 
 export interface UseDialogViewStateResult {
-  dialogState: DialogViewState;
-  updateDialogState: (input: DialogViewStatePatchInput) => void;
-  resetDialogState: () => void;
+  dialogViewState: DialogViewState;
+  updateDialogViewState: (input: DialogViewStatePatchInput) => void;
+  resetDialogViewState: () => void;
 }
 
 /**
@@ -41,14 +41,14 @@ export function useDialogViewState(options: UseDialogViewStateOptions = {}): Use
     multiStepState: null,
   });
 
-  const [dialogState, setDialogState] = useState<DialogViewState>(initialStateRef.current);
+  const [dialogViewState, setDialogViewState] = useState<DialogViewState>(initialStateRef.current);
 
-  const resetDialogState = useCallback(() => {
-    setDialogState(initialStateRef.current);
+  const resetDialogViewState = useCallback(() => {
+    setDialogViewState(initialStateRef.current);
   }, []);
 
-  const updateDialogState = useCallback((input: DialogViewStatePatchInput) => {
-    setDialogState((prev: DialogViewState) => {
+  const updateDialogViewState = useCallback((input: DialogViewStatePatchInput) => {
+    setDialogViewState((prev: DialogViewState) => {
       const base = input.reset ? initialStateRef.current : prev;
       return { ...base, ...input.patch };
     });
@@ -56,10 +56,10 @@ export function useDialogViewState(options: UseDialogViewStateOptions = {}): Use
 
   return useMemo(
     () => ({
-      dialogState,
-      updateDialogState,
-      resetDialogState,
+      dialogViewState,
+      updateDialogViewState,
+      resetDialogViewState,
     }),
-    [dialogState, updateDialogState, resetDialogState]
+    [dialogViewState, updateDialogViewState, resetDialogViewState]
   );
 }

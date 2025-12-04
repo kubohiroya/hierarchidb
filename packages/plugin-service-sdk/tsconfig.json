@@ -2,6 +2,10 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "skipLibCheck": false,
+    "types": [
+      "node",
+      "react-transition-group"
+    ],
     "paths": {
       "~/*": [
         "./src/*"
@@ -9,7 +13,8 @@
     }
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "../../types/react-transition-group/**/*.d.ts"
   ],
   "exclude": [
     "node_modules",

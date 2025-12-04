@@ -1,35 +1,16 @@
-import { useCallback, useMemo, useRef } from 'react';
-import type { NodeId, TreeId } from '@hierarchidb/common-types';
-import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
-import {
-  HeadlessMultiStepDialog,
-  FRAME_CONSTANTS,
-  getViewportSize,
-  getPresetSize,
-  normalizeDialogState,
-  initialPosition,
-  sizesEqual,
-  positionsEqual,
-  type DialogDisplayMode,
-  type MultiDialogPosition,
-  type MultiDialogSize,
-  type StepNavigationEvent,
-  type HeadlessMultiStepDialogProps,
-} from '@hierarchidb/ui-dialog';
+import type { NodeId, TreeId, TreeNodeMetadata } from '@hierarchidb/common-types';
+import { HeadlessMultiStepDialog } from '@hierarchidb/ui-dialog';
 import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
-import {
-  useTreeNodeUpdater,
-  type TreeNodeUpdaterState,
-  createTreeNodeUpdaterActions,
-} from '@hierarchidb/plugin-ui-sdk';
-import { useDialogViewState } from '@hierarchidb/plugin-base';
+import { useTreeNodeDialog } from '@hierarchidb/plugin-ui-sdk';
 import type { ShapeDraft, ShapeEntity } from '../../common/shared/index.js';
 import {
   DEFAULT_PROCESSING_CONFIG,
   mergeProcessingConfig,
   validateProcessingConfig,
-  summarizeCheckboxState,
 } from '../../common/shared/index.js';
+import type { ValidationResult } from '../../common/shared/types.js';
+import type { StepComponentProps } from '@hierarchidb/plugin-base';
+import type { DialogStepConfig } from '@hierarchidb/plugin-ui-sdk';
 import { StepTabularUpload } from '../../common/components/steps/StepTabularUpload.js';
 import { StepTabularFilter } from '../../common/components/steps/StepTabularFilter.js';
 import { Step2DataSource } from '../../common/components/steps/Step2DataSource.js';
@@ -53,17 +34,6 @@ type ShapeDraftData = Partial<ShapeDraft> & {
   tags?: string[];
 };
 
-const normalizeDraft = (raw: TreeNodeUpdaterState<ShapeDraftData> | null): ShapeDraftData => {
-  const meta = raw?.draftMetadata ?? raw?.metadata ?? { name: '', description: '', tags: [] };
-  const draftData = raw?.draftData ?? {};
-  return {
-    ...draftData,
-    name: meta.name ?? '',
-    description: meta.description ?? '',
-    tags: Array.isArray(meta.tags) ? meta.tags : [],
-  };
-};
-
 export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
   open,
   mode,
@@ -73,318 +43,220 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
   onClose,
   onSave,
 }) => {
-  const workerClient = useMemo<WorkerClientRef | null>(() => {
-    try {
-      const hook = getWorkerClientHook<WorkerClientRef | null>();
-      return hook();
-    } catch {
-      return null;
-    }
-  }, []);
+  type ShapeStepProps = StepComponentProps<ShapeDraftData>;
 
-  const { size: initialSize, position: initialPositionValue } = useMemo(() => {
-    const viewport = getViewportSize();
-    const size = getPresetSize('normal', viewport);
-    const position = initialPosition(size, viewport);
-    return { size, position };
-  }, []);
-
-  const { dialogState, updateDialogState } = useDialogViewState({
-    initialSize,
-    initialPosition: initialPositionValue,
-    initialDisplayMode: 'normal',
-    initialActiveStepIndex: 0,
-  });
-
-const { draft, updateDraft, saveDraft, discardDraft } = useTreeNodeUpdater<ShapeDraftData>({
-  mode,
-  nodeType: 'shape',
-  nodeId,
-  parentId,
-  treeId,
-  workerClient,
-});
-
-const data = useMemo<ShapeDraftData>(() => normalizeDraft(draft), [draft]);
-const { updatePayload, updateMetadata } = useMemo(
-  () => createTreeNodeUpdaterActions<ShapeDraftData>(updateDraft),
-  [updateDraft],
-);
-
-  const { size: dialogSize, position: dialogPosition, displayMode, activeStepIndex, isSaving } = dialogState;
-  const dialogRootRef = useRef<HTMLDivElement | null>(null);
-  const dialogSizeRef = useRef(dialogSize);
-  const dialogPositionRef = useRef(dialogPosition);
-
-  const persistBasicInfo = useCallback(
-    (value: BasicInfoData) => {
-      updateMetadata(
-        {
-          name: value.name,
-          description: value.description ?? '',
-          tags: value.tags ?? [],
-        },
-        { name: '', description: '', tags: [] }
-      );
-    },
-    [updateMetadata]
+  const UploadStep: React.FC<ShapeStepProps> = (props) => (
+    <StepTabularUpload
+      {...props}
+      mode={mode}
+      data={props.data}
+      onChange={(patch) =>
+        props.onChange({
+          ...patch,
+          processingConfig: mergeProcessingConfig(
+            (patch as ShapeDraftData).processingConfig ?? props.data.processingConfig ?? DEFAULT_PROCESSING_CONFIG
+          ),
+        })
+      }
+    />
   );
 
-  const handleSave = useCallback(async () => {
-    if (isSaving) return;
-    updateDialogState({ patch: { isSaving: true } });
-    try {
-      const savedId = await saveDraft();
+  const FilterStep: React.FC<ShapeStepProps> = (props) => (
+    <StepTabularFilter {...props} mode={mode} data={props.data} />
+  );
+
+  const DataSourceStep: React.FC<ShapeStepProps> = (props) => (
+    <Step2DataSource draft={props.data} onUpdate={(patch) => props.onChange(patch)} disabled={props.disabled} mode={mode} />
+  );
+
+  const LicenseStep: React.FC<ShapeStepProps> = (props) => (
+    <Step3License draft={props.data} onUpdate={(patch) => props.onChange(patch)} disabled={props.disabled} />
+  );
+
+  const ProcessingStep: React.FC<ShapeStepProps> = (props) => (
+    <Step4Processing
+      draft={props.data}
+      onUpdate={(patch) =>
+        props.onChange({
+          ...patch,
+          processingConfig: mergeProcessingConfig(
+            patch.processingConfig ?? props.data.processingConfig ?? DEFAULT_PROCESSING_CONFIG
+          ),
+        })
+      }
+      disabled={props.disabled}
+      mode={mode}
+    />
+  );
+
+  const CountryStep: React.FC<ShapeStepProps> = (props) => (
+    <Step5CountrySelection draft={props.data} onUpdate={(patch) => props.onChange(patch)} disabled={props.disabled} />
+  );
+
+  const { frameStyle, dialogRef, headlessProps } = useTreeNodeDialog<ShapeDraftData>({
+    open,
+    mode,
+    nodeType: 'shape',
+    nodeId,
+    parentId,
+    treeId,
+    initialDraftData: {
+      processingConfig: mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG),
+    } as ShapeDraftData,
+    onClose,
+    buildSteps: ({
+      data,
+      metadata,
+      updatePayload,
+      persistBasicInfo,
+      dialogRef: _dialogRef,
+      mode,
+      nodeId: _nodeId,
+      parentId: _parentId,
+    }) => {
+      const validations = validateProcessingConfig(data.processingConfig ?? {}) as ValidationResult;
+
+      const steps: DialogStepConfig[] = [
+        {
+          id: 'basic',
+          label: 'Basic Information',
+          component: (
+            <BasicInfoStep
+              name={metadata?.name ?? ''}
+              description={metadata?.description ?? ''}
+              tags={metadata?.tags ?? []}
+              mode={mode}
+              onChange={({ name, description, tags }: BasicInfoData) =>
+                persistBasicInfo({
+                  name,
+                  description: description ?? '',
+                  tags: tags ?? [],
+                })
+              }
+              validate={(value: BasicInfoData) => (value.name.trim().length ? null : 'Name is required')}
+            />
+          ),
+          validate: () => Boolean(metadata?.name?.trim()),
+        },
+        {
+          id: 'upload',
+          label: 'Tabular Upload',
+          component: (
+            <UploadStep
+              data={data}
+              onChange={updatePayload}
+              setValid={() => {}}
+              setError={() => {}}
+              disabled={false}
+              dialogRef={dialogRef}
+              mode={mode}
+            />
+          ),
+          validate: () => Boolean(data?.processingConfig?.source),
+        },
+        {
+          id: 'filter',
+          label: 'Tabular Filter',
+          component: (
+            <FilterStep
+              data={data}
+              onChange={updatePayload}
+              setValid={() => {}}
+              setError={() => {}}
+              disabled={false}
+              dialogRef={dialogRef}
+              mode={mode}
+            />
+          ),
+          validate: () => Boolean(validations.filters),
+        },
+        {
+          id: 'source',
+          label: 'Data Source',
+          component: (
+            <DataSourceStep
+              data={data}
+              onChange={updatePayload}
+              setValid={() => {}}
+              setError={() => {}}
+              disabled={false}
+              dialogRef={dialogRef}
+              mode={mode}
+            />
+          ),
+          validate: () => Boolean(validations.data),
+        },
+        {
+          id: 'license',
+          label: 'License & Consent',
+          component: (
+            <LicenseStep
+              data={data}
+              onChange={updatePayload}
+              setValid={() => {}}
+              setError={() => {}}
+              disabled={false}
+              dialogRef={dialogRef}
+              mode={mode}
+            />
+          ),
+          validate: () => Boolean(validations.licenses),
+        },
+        {
+          id: 'process',
+          label: 'Processing',
+          component: (
+            <ProcessingStep
+              data={data}
+              onChange={updatePayload}
+              setValid={() => {}}
+              setError={() => {}}
+              disabled={false}
+              dialogRef={dialogRef}
+              mode={mode}
+            />
+          ),
+          validate: () => Boolean(validations.processing),
+        },
+        {
+          id: 'country',
+          label: 'Country Selection',
+          component: (
+            <CountryStep
+              data={data}
+              onChange={updatePayload}
+              setValid={() => {}}
+              setError={() => {}}
+              disabled={false}
+              dialogRef={dialogRef}
+              mode={mode}
+            />
+          ),
+          validate: () => Boolean(validations.processedData),
+        },
+      ];
+
+      if (mode === 'edit') {
+        const uploadIndex = steps.findIndex(({ id }) => id === 'upload');
+        if (uploadIndex !== -1) steps.splice(uploadIndex, 1);
+      }
+
+      return steps;
+    },
+    onSave: async (_meta: TreeNodeMetadata, savedId?: NodeId) => {
+      const mergedProcessing = mergeProcessingConfig(headlessProps.stepData?.processingConfig ?? DEFAULT_PROCESSING_CONFIG);
       if (onSave) {
-        const now = Date.now();
         await onSave({
-          id: savedId,
-          nodeId: savedId,
-          name: data.name ?? '',
-          description: data.description ?? '',
-          tags: data.tags ?? [],
-          dataSourceName: 'naturalearth',
-          licenseAgreement: true,
-          processingConfig: mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG),
-          checkboxState: [],
-          selectedCountries: [],
-          adminLevels: [],
-          urlMetadata: [],
-          createdAt: now,
-          updatedAt: now,
-          version: 1,
+          ...(headlessProps.stepData ?? {}),
+          processingConfig: mergedProcessing,
+          nodeId: (savedId ?? nodeId) as NodeId,
         } as ShapeEntity);
       }
-      onClose();
-    } finally {
-      updateDialogState({ patch: { isSaving: false } });
-    }
-  }, [data.description, data.name, data.tags, isSaving, onClose, onSave, saveDraft, updateDialogState]);
-
-  const handleDiscard = useCallback(() => {
-    void discardDraft().catch(() => {});
-    onClose();
-  }, [discardDraft, onClose]);
-
-  const handleUpdate = useCallback(
-    (patch: Partial<ShapeDraft>) => {
-      const basePayload = (draft?.draftData ?? {}) as ShapeDraft;
-      updatePayload(patch, basePayload);
-      updateMetadata(
-        {
-          name: data.name ?? '',
-          description: data.description,
-          tags: data.tags ?? [],
-        },
-        { name: '', description: '', tags: [] }
-      );
     },
-    [data.description, data.name, data.tags, draft?.draftData, updateMetadata, updatePayload]
-  );
-
-  const steps = useMemo(() => [
-    {
-      id: 'tabular-upload',
-      label: 'Dataset Upload',
-      component: () => (
-        <StepTabularUpload
-          mode={mode}
-          data={data}
-          onChange={handleUpdate}
-          setValid={() => {}}
-          setError={() => {}}
-          disabled={false}
-          dialogRef={dialogRootRef}
-        />
-      ),
-      validate: () => Boolean(data.tabularMetadataId),
-    },
-    {
-      id: 'tabular-filter',
-      label: 'Dataset Filter',
-      component: () => (
-        <StepTabularFilter
-          mode={mode}
-          data={data}
-          onChange={handleUpdate}
-          setValid={() => {}}
-          setError={() => {}}
-          disabled={false}
-          dialogRef={dialogRootRef}
-        />
-      ),
-      validate: () => Boolean(data.tabularMetadataId),
-    },
-    {
-      id: 'basic',
-      label: 'Basic Information',
-      component: () => (
-        <BasicInfoStep
-          name={data.name ?? ''}
-          description={data.description ?? ''}
-          tags={data.tags ?? []}
-          mode={mode}
-          onChange={persistBasicInfo}
-          validate={({ name }: BasicInfoData) => (name.trim().length ? null : 'Name is required')}
-        />
-      ),
-      validate: () => Boolean(data.name?.trim()),
-    },
-    {
-      id: 'data-source',
-      label: 'Data Source',
-      component: () => (
-        <Step2DataSource
-          draft={data}
-          onUpdate={handleUpdate}
-          disabled={false}
-        />
-      ),
-      validate: () => Boolean(data.dataSourceName),
-    },
-    {
-      id: 'license',
-      label: 'License Agreement',
-      component: () => (
-        <Step3License
-          draft={data}
-          onUpdate={handleUpdate}
-          disabled={false}
-        />
-      ),
-      validate: () => Boolean(data.licenseAgreement),
-    },
-    {
-      id: 'processing',
-      label: 'Processing Configuration',
-      component: () => (
-        <Step4Processing
-          draft={data}
-          onUpdate={handleUpdate}
-          disabled={false}
-        />
-      ),
-      validate: () =>
-        validateProcessingConfig(
-          mergeProcessingConfig(data.processingConfig ?? DEFAULT_PROCESSING_CONFIG)
-        ).isValid,
-    },
-    {
-      id: 'country-selection',
-      label: 'Country Selection',
-      component: () => (
-        <Step5CountrySelection
-          draft={data}
-          onUpdate={handleUpdate}
-          disabled={false}
-        />
-      ),
-      validate: () => summarizeCheckboxState(data.checkboxState).hasSelection,
-    },
-  ], [data, handleUpdate, mode, persistBasicInfo]);
-
-  const enabledStepIndices = useMemo(() => steps
-    .map((step, idx) => (step.validate ? step.validate() : true) ? idx : -1)
-    .filter((idx) => idx >= 0), [steps]);
-
-  const handleNavigation = useCallback((event: StepNavigationEvent) => {
-    switch (event.type) {
-      case 'direct':
-        updateDialogState({ patch: { activeStepIndex: event.targetIndex } });
-        break;
-      case 'next':
-        updateDialogState({
-          patch: { activeStepIndex: Math.min(activeStepIndex + 1, steps.length - 1) },
-        });
-        break;
-      case 'back':
-        updateDialogState({
-          patch: { activeStepIndex: Math.max(activeStepIndex - 1, 0) },
-        });
-        break;
-    }
-  }, [activeStepIndex, steps.length, updateDialogState]);
-
-  const handleSizeChange = useCallback((next?: MultiDialogSize) => {
-    if (!next) return;
-    const normalized = normalizeDialogState(
-      next,
-      dialogPositionRef.current,
-      getViewportSize(),
-      {
-        enforceTopLeftMargin: displayMode === 'normal',
-        minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
-        clampSizeToViewport: true,
-      },
-    );
-    if (!sizesEqual(dialogSizeRef.current, normalized.size) || !positionsEqual(dialogPositionRef.current, normalized.position)) {
-      dialogSizeRef.current = normalized.size;
-      dialogPositionRef.current = normalized.position;
-      updateDialogState({ patch: { size: normalized.size, position: normalized.position } });
-    }
-  }, [displayMode, updateDialogState]);
-
-  const handlePositionChange = useCallback((next?: MultiDialogPosition) => {
-    if (!next) return;
-    const normalized = normalizeDialogState(
-      dialogSizeRef.current,
-      next,
-      getViewportSize(),
-      {
-        enforceTopLeftMargin: displayMode === 'normal',
-        minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
-        clampSizeToViewport: true,
-      },
-    );
-    if (!sizesEqual(dialogSizeRef.current, normalized.size) || !positionsEqual(dialogPositionRef.current, normalized.position)) {
-      dialogSizeRef.current = normalized.size;
-      dialogPositionRef.current = normalized.position;
-      updateDialogState({ patch: { size: normalized.size, position: normalized.position } });
-    }
-  }, [displayMode, updateDialogState]);
-
-  const headlessProps: HeadlessMultiStepDialogProps<ShapeDraftData> = {
-    open,
-    stepComponents: steps.map((step) => ({
-      id: step.id,
-      label: step.label,
-      component: step.component,
-    })),
-    stepData: data,
-    onStepDataChange: () => {},
-    activeStepIndex,
-    onStepNavigate: handleNavigation,
-    enabledStepIndices,
-    validatedStepIndices: enabledStepIndices,
-    committableStepIndices: [steps.length - 1],
-    invalidMessageMap: {},
-    onRequestClose: handleDiscard,
-    onRequestCommit: handleSave,
-    isDirty: true,
-    position: dialogPosition,
-    onPositionChange: handlePositionChange,
-    size: dialogSize,
-    onSizeChange: handleSizeChange,
-    displayMode,
-    onDisplayModeChange: (mode: DialogDisplayMode) => updateDialogState({ patch: { displayMode: mode } }),
-  };
-
-  const fullScreen = displayMode === 'full-screen';
-  const frameStyle: React.CSSProperties = {
-    width: fullScreen ? '100%' : `${dialogSize.width}px`,
-    maxWidth: fullScreen ? '100%' : 'min(calc(100vw - 48px), 1280px)',
-    height: fullScreen ? '100%' : `${dialogSize.height}px`,
-    maxHeight: fullScreen ? '100%' : 'calc(100vh - 48px)',
-    display: 'flex',
-    flexDirection: 'column',
-    borderRadius: fullScreen ? 0 : 12,
-    boxShadow: fullScreen ? 'none' : '0 22px 80px rgba(10, 14, 36, 0.38)',
-    overflow: 'hidden',
-    backgroundColor: '#fff',
-  };
+  });
 
   return (
-    <div style={frameStyle} role="dialog" aria-modal={open} ref={dialogRootRef}>
+    <div style={frameStyle} role="dialog" aria-modal={open} ref={dialogRef}>
       <HeadlessMultiStepDialog<ShapeDraftData> {...headlessProps} />
     </div>
   );
