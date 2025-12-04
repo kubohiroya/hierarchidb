@@ -178,7 +178,15 @@ export const shapePluginAPI = {
 
   createEntity: async (nodeId: NodeId, data: CreateShapeData): Promise<ShapeEntity> => {
     const handler = getShapeEntityHandler();
-    return await handler.createEntity(nodeId, data);
+    const payload = {
+      treeNodeId: nodeId,
+      draftData: {
+        dataSourceName: data.dataSourceName,
+        processingConfig: data.processingConfig,
+      },
+      draftMetadata: { name: '', description: '', tags: [] },
+    } as any;
+    return await handler.createEntity(nodeId, payload);
   },
 
   getEntity: async (nodeId: NodeId): Promise<ShapeEntity | undefined> => {
@@ -192,7 +200,12 @@ export const shapePluginAPI = {
     if (!entity || !entity.id) {
       throw new Error(`Shape entity not found for node: ${nodeId}`);
     }
-    await handler.updateEntity(entity.id, data);
+    const payload = {
+      treeNodeId: nodeId,
+      draftData: data as Partial<ShapeEntity>,
+      draftMetadata: undefined,
+    } as any;
+    await handler.updateEntity(entity.id, payload);
   },
 
   deleteEntity: async (nodeId: NodeId): Promise<void> => {
@@ -211,10 +224,10 @@ export const shapePluginAPI = {
   createDraft: async (nodeId: NodeId): Promise<NodeId> => {
     const handler = getShapeEntityHandler();
     const draft = await handler.createDraft(nodeId);
-    if (!draft.id) {
-      throw new Error('Failed to create draft: missing id');
+    if (!draft.treeNodeId) {
+      throw new Error('Failed to create draft: missing treeNodeId');
     }
-    return draft.id;
+    return draft.treeNodeId;
   },
 
   getDraft: async (draftId: NodeId): Promise<ShapeEntity | undefined> => {
@@ -330,27 +343,22 @@ export const shapePluginAPI = {
     // Get draft to find the associated nodeId
     const handler = getShapeEntityHandler();
     const draft = await handler.getDraft(draftId);
-    if (!draft || !draft.nodeId) {
+    if (!draft) {
       throw new Error(`Working copy not found: ${draftId}`);
     }
 
-    // Convert ProcessingConfig to BatchConfig
+    // Convert ProcessingConfig to BatchConfig (legacy fields removed)
     const batchConfig: BatchProcessConfig = {
-      corsProxyBaseURL:
-        config.downloadConfig?.corsProxyUrl ?? config.corsProxyBaseURL ?? '',
-      dataSource: config.dataSource ?? toDataSourceName(draft.dataSourceName ?? 'naturalearth'),
+      corsProxyBaseURL: config.downloadConfig?.corsProxyUrl ?? '',
+      dataSource: config.dataSource ?? toDataSourceName((draft as any).draftData?.dataSourceName ?? 'naturalearth'),
       download: {
-        concurrentDownloads:
-          config.downloadConfig?.maxConcurrent ?? config.concurrentDownloads ?? 4,
+        concurrentDownloads: config.downloadConfig?.maxConcurrent ?? 4,
         deleteOnComplete: config.cleanupConfig?.deleteDownloadedFiles ?? false,
       },
       simplify1: {
-        concurrentProcesses:
-          config.simplificationConfig?.level1Workers ?? config.concurrentProcesses ?? 2,
-        enableFeatureFiltering:
-          config.simplificationConfig?.enableFiltering ?? config.enableFeatureFiltering ?? true,
-        featureAreaThreshold:
-          config.simplificationConfig?.areaThreshold ?? config.featureAreaThreshold ?? 0.5,
+        concurrentProcesses: config.simplificationConfig?.level1Workers ?? 2,
+        enableFeatureFiltering: config.simplificationConfig?.enableFiltering ?? true,
+        featureAreaThreshold: config.simplificationConfig?.areaThreshold ?? 0.5,
         minVertexCountForAreaFilter: 25,
         aspectRatioThreshold: 5,
         featureFilterMethod: 'hybrid',
@@ -364,18 +372,16 @@ export const shapePluginAPI = {
         deleteOnComplete: false,
       },
       simplify2: {
-        concurrentProcesses:
-          config.simplificationConfig?.level2Workers ?? config.concurrentProcesses ?? 2,
+        concurrentProcesses: config.simplificationConfig?.level2Workers ?? 2,
         quantize: 1e4,
-        simplify: config.simplificationConfig?.tolerance ?? config.simplificationTolerance ?? 0.01,
+        simplify: config.simplificationConfig?.tolerance ?? 0.01,
         tolerance: config.simplificationConfig?.tolerance ?? 0.1,
         enablePerFeatureSimplification: true,
         deleteOnComplete: false,
       },
       vectorTiles: {
-        concurrentProcesses:
-          config.tileConfig?.workers ?? config.concurrentProcesses ?? 2,
-        maxZoom: config.tileConfig?.maxZoom ?? config.maxZoomLevel ?? 14,
+        concurrentProcesses: config.tileConfig?.workers ?? 2,
+        maxZoom: config.tileConfig?.maxZoom ?? 14,
         tileCountThresholdForZoomStop: 5000,
       },
     };
@@ -386,11 +392,12 @@ export const shapePluginAPI = {
     const managerWithPrepare = batchSessionManager as unknown as {
       prepareSession?: (nodeId: NodeId, config: BatchProcessConfig, data: typeof batchSessionData) => void;
     };
-    managerWithPrepare.prepareSession?.(draft.nodeId, batchConfig, batchSessionData);
-    const sessionId = await batchSessionManager.startBatchSession(draft.nodeId);
+    const nodeForSession = (draft as any)?.nodeId ?? (draft as any)?.treeNodeId ?? draftId;
+    managerWithPrepare.prepareSession?.(nodeForSession, batchConfig, batchSessionData);
+    const sessionId = await batchSessionManager.startBatchSession(nodeForSession);
 
     const sessionMeta = getOrCreateSessionMeta(sessionId);
-    sessionMeta.treeNodeId = draft.nodeId as unknown as TreeNodeId;
+    sessionMeta.treeNodeId = nodeForSession as unknown as TreeNodeId;
 
     // Register progress callback if provided
     if (progressCallback) {
@@ -405,9 +412,7 @@ export const shapePluginAPI = {
     }
 
     // Save session ID to draft
-    await handler.updateDraft(draftId, {
-      batchSessionId: sessionId,
-    });
+    await handler.updateDraft(draftId, { batchSessionId: sessionId } as Partial<ShapeEntity>);
 
     return sessionId;
   },
@@ -415,47 +420,48 @@ export const shapePluginAPI = {
   pauseBatchProcessing: async (draftId: NodeId): Promise<void> => {
     const handler = getShapeEntityHandler();
     const draft = await handler.getDraft(draftId);
-    if (!draft || !draft.batchSessionId) {
+    const batchSessionId = (draft as any)?.batchSessionId ?? (draft as any)?.draftData?.batchSessionId;
+    if (!draft || !batchSessionId) {
       throw new Error(`No active batch session for draft: ${draftId}`);
     }
 
     await batchManagerWithDispatch.dispatchCommand?.('session/pause', {
-      sessionId: draft.batchSessionId,
+      sessionId: batchSessionId,
     });
   },
 
   resumeBatchProcessing: async (draftId: NodeId): Promise<string> => {
     const handler = getShapeEntityHandler();
     const draft = await handler.getDraft(draftId);
-    if (!draft || !draft.batchSessionId) {
+    const batchSessionId = (draft as any)?.batchSessionId ?? (draft as any)?.draftData?.batchSessionId;
+    if (!draft || !batchSessionId) {
       throw new Error(`No batch session to resume for draft: ${draftId}`);
     }
 
     await batchManagerWithDispatch.dispatchCommand?.('session/resume', {
-      sessionId: draft.batchSessionId,
+      sessionId: batchSessionId,
     });
-    return draft.batchSessionId;
+    return batchSessionId;
   },
 
   cancelBatchProcessing: async (draftId: NodeId): Promise<void> => {
     const handler = getShapeEntityHandler();
     const draft = await handler.getDraft(draftId);
-    if (!draft || !draft.batchSessionId) {
+    const batchSessionId = (draft as any)?.batchSessionId ?? (draft as any)?.draftData?.batchSessionId;
+    if (!draft || !batchSessionId) {
       throw new Error(`No active batch session for draft: ${draftId}`);
     }
 
     await batchManagerWithDispatch.dispatchCommand?.('session/cancel', {
-      sessionId: draft.batchSessionId,
+      sessionId: batchSessionId,
     });
-    const subscription = progressCallbacks.get(draft.batchSessionId);
+    const subscription = progressCallbacks.get(batchSessionId);
     subscription?.unsubscribe?.();
-    progressCallbacks.delete(draft.batchSessionId);
-    progressSessionMeta.delete(draft.batchSessionId);
+    progressCallbacks.delete(batchSessionId);
+    progressSessionMeta.delete(batchSessionId);
 
     // Clear session ID from draft
-    await handler.updateDraft(draftId, {
-      batchSessionId: undefined,
-    });
+    await handler.updateDraft(draftId, { batchSessionId: undefined } as Partial<ShapeEntity>);
   },
 
   invokeBatchCommand: async <K extends ShapeBatchCommand>(
@@ -517,7 +523,9 @@ export const shapePluginAPI = {
   getBatchProgress: async (draftId: NodeId): Promise<ProgressInfo> => {
     const handler = getShapeEntityHandler();
     const draft = await handler.getDraft(draftId);
-    if (!draft?.batchSessionId) {
+    const batchSessionId =
+      (draft as any)?.batchSessionId ?? (draft as any)?.draftData?.batchSessionId;
+    if (!draft || !batchSessionId) {
       return {
         total: 0,
         completed: 0,
@@ -527,7 +535,7 @@ export const shapePluginAPI = {
       };
     }
     try {
-      const status = await batchSessionManager.getBatchSessionStatus(draft.batchSessionId);
+      const status = await batchSessionManager.getBatchSessionStatus(batchSessionId);
       const progress = status.progress ?? {
         total: 0,
         completed: 0,

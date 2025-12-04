@@ -306,8 +306,10 @@ export function generateMockSimplifyTasks(countries: string[], adminLevels: numb
         stage: BatchTaskStage.WAIT,
         countryCode,
         adminLevel: level,
-        featureCount: Math.floor(Math.random() * 10000) + 1000,
-        processedFeatures: 0,
+        config: {
+          inputBufferId: `${countryCode}-${level}-input`,
+          minimumArea: Math.random() * 0.5,
+        },
       });
     });
   });

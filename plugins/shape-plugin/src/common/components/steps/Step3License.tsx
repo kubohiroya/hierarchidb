@@ -9,7 +9,8 @@ import { DATA_SOURCE_CONFIGS } from '../../mock/data.js';
  * Uses @hierarchidb/_app-datasource components for license display
  */
 export const Step3License: React.FC<StepProps> = ({ draft, onUpdate, disabled }) => {
-  const dataSourceKey = draft.dataSourceName ?? '';
+  const draftData = draft ?? {};
+  const dataSourceKey = draftData.dataSourceName ?? '';
   const dataSource = dataSourceKey ? DATA_SOURCE_CONFIGS[dataSourceKey] : undefined;
 
   if (!dataSource) {
@@ -46,8 +47,8 @@ export const Step3License: React.FC<StepProps> = ({ draft, onUpdate, disabled })
           url: dataSource.licenseUrl,
         }}
         state={{
-          agreed: Boolean(draft.licenseAgreement),
-          agreedAt: draft.licenseAgreedAt,
+          agreed: Boolean(draftData.licenseAgreement),
+          agreedAt: draftData.licenseAgreedAt,
         }}
         onAgree={handleLicenseAgreement}
         disabled={disabled}

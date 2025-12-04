@@ -1,50 +1,20 @@
 import type React from 'react';
-import { Box, Stack, TextField, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import type { StepProps } from '../../shared/index.js';
 
 /**
- * Step 1: Basic Information
- * Collects name and description for the shape-plugin configuration
+ * Legacy placeholder: Basic info (name/description/tags) is now handled by TreeNode metadata
+ * in the dialog host. This step intentionally renders a notice only.
  */
-export const Step1BasicInfo: React.FC<StepProps> = ({ draft, onUpdate, disabled }) => {
+export const Step1BasicInfo: React.FC<StepProps> = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h6" gutterBottom>
         Basic Information
       </Typography>
-      <Typography variant="body2" color="text.secondary" paragraph>
-        Provide basic information for this geographic data configuration.
+      <Typography variant="body2" color="text.secondary">
+        Name/description are managed by the host BasicInfo step (TreeNode metadata).
       </Typography>
-
-      <Stack spacing={3}>
-        <TextField
-          label="Name"
-          value={draft.name || ''}
-          onChange={(e) => onUpdate({ name: e.target.value })}
-          required
-          fullWidth
-          disabled={disabled}
-          error={!draft.name}
-          helperText={
-            !draft.name
-              ? 'Name is required'
-              : 'Enter a descriptive name for this configuration'
-          }
-          inputProps={{ maxLength: 100 }}
-        />
-
-        <TextField
-          label="Description"
-          value={draft.description || ''}
-          onChange={(e) => onUpdate({ description: e.target.value })}
-          multiline
-          rows={3}
-          fullWidth
-          disabled={disabled}
-          helperText="Optional description of this geographic data configuration"
-          inputProps={{ maxLength: 500 }}
-        />
-      </Stack>
     </Box>
   );
 };

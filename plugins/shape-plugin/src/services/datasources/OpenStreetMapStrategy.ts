@@ -208,7 +208,7 @@ export class OpenStreetMapStrategy extends BaseDataSourceStrategy<OSMRawData, OS
       }
 
       //  ShapeEntity
-      const entities: ShapeEntity[] = filteredFeatures.map((feature, index) => {
+      const entities: ShapeEntity[] = filteredFeatures.map((feature) => {
         const properties = feature.properties || {};
         const osmElement = feature.osmElement as OSMElement;
 
@@ -218,8 +218,6 @@ export class OpenStreetMapStrategy extends BaseDataSourceStrategy<OSMRawData, OS
         return {
           id: entityId,
           nodeId,
-          name: this.extractName(osmElement),
-          description: this.extractDescription(osmElement),
           geometry: feature.geometry,
           properties: {
             ...properties,
@@ -232,11 +230,9 @@ export class OpenStreetMapStrategy extends BaseDataSourceStrategy<OSMRawData, OS
             osmTimestamp: osmElement.timestamp,
           },
           metadata: {
-            source: 'osm-overpass',
-            originalIndex: index,
-            downloadedAt: rawData.metadata.downloadedAt,
-            processedAt: new Date().toISOString(),
-            osmGenerator: rawData.metadata.generator,
+            name: this.extractName(osmElement) ?? 'OSM feature',
+            description: this.extractDescription(osmElement) ?? '',
+            tags: [],
           },
           createdAt: Date.now(),
           updatedAt: Date.now(),

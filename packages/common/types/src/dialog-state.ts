@@ -1,5 +1,17 @@
 import type { NodeId } from './id-types.js';
-import type { DialogDisplayMode, MultiDialogPosition, MultiDialogSize } from '@hierarchidb/ui-dialog';
+
+// Minimal dialog layout/display contracts (duplicated to avoid UI package dependency cycles)
+export type DialogDisplayMode = 'normal' | 'maximize' | 'full-screen';
+
+export interface MultiDialogPosition {
+  x: number;
+  y: number;
+}
+
+export interface MultiDialogSize {
+  width: number;
+  height: number;
+}
 
 /**
  * Step-level status snapshot shared between worker and UI layers.

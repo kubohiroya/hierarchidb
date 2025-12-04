@@ -14,8 +14,8 @@ import type {
   SelectionStats,
   UrlMetadata,
   ValidationResult,
-  TreeNodeMetadata,
 } from './types.js';
+import type { TreeNodeMetadata } from '@hierarchidb/common-types';
 import type { ShapeEntity, ShapeDraft } from './types/core.js';
 import { DEFAULT_DATA_SOURCES, DEFAULT_PROCESSING_CONFIG } from './constants.js';
 
@@ -358,10 +358,9 @@ export function buildShapeEntityFromCreate(
   params: {
     nodeId: NodeId;
     data: {
-      name: string;
-      description?: string;
       dataSourceName: DataSourceName;
       processingConfig?: Partial<ProcessingConfig> | ProcessingConfig;
+      metadata: TreeNodeMetadata;
     };
   },
 ): ShapeEntity {
@@ -371,8 +370,7 @@ export function buildShapeEntityFromCreate(
   return {
     id: params.nodeId,
     nodeId: params.nodeId,
-    name: params.data.name,
-    description: params.data.description || '',
+    metadata: params.data.metadata,
     dataSourceName: params.data.dataSourceName,
     licenseAgreement: false,
     processingConfig: merged,
@@ -412,11 +410,7 @@ export function createDraftFromEntity(entity: ShapeEntity): ShapeDraft {
   const draft: ShapeDraft = {
     treeNodeId,
     draftData: draftPayload,
-    draftMetadata: {
-      name: entity.metadata?.name ?? '',
-      description: entity.metadata?.description ?? '',
-      tags: entity.metadata?.tags ?? [],
-    },
+    draftMetadata: entity.metadata ?? { name: '', description: '', tags: [] },
   };
 
   return draft;

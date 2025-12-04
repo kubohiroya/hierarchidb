@@ -11,15 +11,12 @@ import { SPREADSHEET_NODE_TYPE } from '../../../common/constants.js';
 const coerceDialogData = (value: unknown): SpreadsheetEntity =>
   (typeof value === 'object' && value !== null ? (value as SpreadsheetEntity) : {});
 
-export const FilteringStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
-  data,
-  onChange,
-  setValid,
-  setError,
-}) => {
-  const dialogData = useMemo<SpreadsheetEntity>(() => coerceDialogData(data), [data]);
-  const tabularApi = useMemo(() => createSpreadsheetTabularApi(SPREADSHEET_NODE_TYPE), []);
-
+const FilteringStepContent: FC<{
+  dialogData: SpreadsheetEntity;
+  onChange: (data: SpreadsheetEntity) => void;
+  setValid: (valid: boolean) => void;
+  setError: (error: string | null) => void;
+}> = ({ dialogData, onChange, setValid, setError }) => {
   const { tabularTableMetadata, loading, error } = useTabularData({
     tableMetadataId: dialogData.spreadsheetMetadataId,
     pluginId: SPREADSHEET_NODE_TYPE,
@@ -51,51 +48,64 @@ export const FilteringStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
     [dialogData, onChange],
   );
 
-  const content = (() => {
-    if (!dialogData.spreadsheetMetadataId) {
-      return (
-        <Typography color="text.secondary">
-          Upload a dataset in Step 1 to configure filters.
-        </Typography>
-      );
-    }
-    if (loading) {
-      return (
-        <Box display="flex" alignItems="center" gap={1}>
-          <CircularProgress size={18} />
-          <Typography variant="body2" color="text.secondary">
-            Loading table metadata...
-          </Typography>
-        </Box>
-      );
-    }
-    if (error) {
-      return (
-        <Typography color="error">
-          {error}
-        </Typography>
-      );
-    }
-    if (!tabularTableMetadata) {
-      return (
-        <Typography color="text.secondary">
-          No table metadata found for the selected dataset.
-        </Typography>
-      );
-    }
+  if (!dialogData.spreadsheetMetadataId) {
     return (
-      <TabularFilterStep
-        tableMetadata={tabularTableMetadata}
-        pluginId={SPREADSHEET_NODE_TYPE}
-        onFiltersChanged={handleFiltersChanged}
-        onPreviewData={handlePreviewData}
-      />
+      <Typography color="text.secondary">
+        Upload a dataset in Step 1 to configure filters.
+      </Typography>
     );
-  })();
+  }
+  if (loading) {
+    return (
+      <Box display="flex" alignItems="center" gap={1}>
+        <CircularProgress size={18} />
+        <Typography variant="body2" color="text.secondary">
+          Loading table metadata...
+        </Typography>
+      </Box>
+    );
+  }
+  if (error) {
+    return (
+      <Typography color="error">
+        {error}
+      </Typography>
+    );
+  }
+  if (!tabularTableMetadata) {
+    return (
+      <Typography color="text.secondary">
+        No table metadata found for the selected dataset.
+      </Typography>
+    );
+  }
+  return (
+    <TabularFilterStep
+      tableMetadata={tabularTableMetadata}
+      pluginId={SPREADSHEET_NODE_TYPE}
+      onFiltersChanged={handleFiltersChanged}
+      onPreviewData={handlePreviewData}
+    />
+  );
+};
+
+export const FilteringStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
+  data,
+  onChange,
+  setValid,
+  setError,
+}) => {
+  const dialogData = useMemo<SpreadsheetEntity>(() => coerceDialogData(data), [data]);
+  const tabularApi = useMemo(() => createSpreadsheetTabularApi(SPREADSHEET_NODE_TYPE), []);
 
   return (
     <TabularProvider tabularApi={tabularApi}>
-      {content}
+      <FilteringStepContent
+        dialogData={dialogData}
+        onChange={onChange}
+        setValid={setValid}
+        setError={setError}
+      />
     </TabularProvider>
   );
 };

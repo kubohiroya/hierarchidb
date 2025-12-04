@@ -14,6 +14,7 @@ import { DATA_SOURCE_CONFIGS } from '../../mock/data.js';
  * Uses @hierarchidb/_app-datasource components for data source selection
  */
 export const Step2DataSource: React.FC<StepProps> = ({ draft, onUpdate, disabled }) => {
+  const draftData = draft ?? {};
   const sources = Object.values(DATA_SOURCE_CONFIGS) as DataSourceConfig[];
   const options: DataSourceOption[] = sources.map((source) => ({
     id: source.name,
@@ -35,7 +36,7 @@ export const Step2DataSource: React.FC<StepProps> = ({ draft, onUpdate, disabled
     });
   };
 
-  const normalizedValue = normalizeDataSourceName(draft.dataSourceName);
+  const normalizedValue = normalizeDataSourceName(draftData.dataSourceName);
   const defaultGeoBoundaries = options.find((option) => option.id === 'geoboundaries')?.id;
   const fallbackValue = defaultGeoBoundaries ?? options[0]?.id ?? '';
 

@@ -2,7 +2,7 @@ import type { TreeNodeMetadata, TreeNodeUpdaterPayload, NodeId as CommonNodeId }
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import type { TabularDataResult } from '@hierarchidb/ui-tabular-extract';
 import type { BBox, Geometry } from 'geojson';
-import type { DataSourceName } from './data-source.js';
+import type { DataSourceName, UrlMetadata } from './data-source.js';
 import type { ProcessingConfig } from './processing.js';
 
 export type NodeId = CommonNodeId;
@@ -43,7 +43,7 @@ export interface ShapeEntity extends PeerEntity {
   checkboxState?: boolean[][] | string;
   selectedCountries?: string[];
   adminLevels?: number[];
-  urlMetadata?: unknown;
+  urlMetadata?: UrlMetadata[];
 
   // Processing Status
   batchSessionId?: string;
@@ -54,7 +54,7 @@ export interface ShapeEntity extends PeerEntity {
 export type ShapeDraft = TreeNodeUpdaterPayload<ShapeEntity>;
 
 export interface StepProps {
-  draft: Partial<ShapeDraft['draftData']>;
+  draft: Partial<ShapeDraft['draftData']> | null;
   onUpdate: (updates: Partial<ShapeDraft['draftData']>) => void;
   disabled?: boolean;
   mode?: 'create' | 'edit';

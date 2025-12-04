@@ -32,6 +32,12 @@ export interface TabularFileUploadStepProps {
   maxFileSize?: number; // in bytes
   pluginId: string;
   menuContainer?: Element | null;
+  initialUploadMethod?: 'file' | 'url';
+  initialUrl?: string;
+  initialProcessingConfig?: TabularProcessingConfig;
+  onProcessingConfigChange?: (config: TabularProcessingConfig) => void;
+  onUploadMethodChange?: (method: 'file' | 'url') => void;
+  onUrlChange?: (url: string) => void;
 }
 
 export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
@@ -42,18 +48,26 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
                                                                       maxFileSize = 50 * 1024 * 1024, // 50MB default
                                                                       pluginId,
                                                                       menuContainer,
+                                                                      initialUploadMethod = 'file',
+                                                                      initialUrl = '',
+                                                                      initialProcessingConfig,
+                                                                      onProcessingConfigChange,
+                                                                      onUploadMethodChange,
+                                                                      onUrlChange,
                                                                     }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [urlInput, setUrlInput] = useState('');
-  const [uploadMethod, setUploadMethod] = useState<'file' | 'url'>('file');
-  const [processingConfig, setProcessingConfig] = useState<TabularProcessingConfig>({
-    delimiter: ',',
-    encoding: 'utf-8',
-    hasHeader: true,
-    quoteChar: '"',
-    escapeChar: '\\',
-    skipEmptyLines: true,
-  });
+  const [urlInput, setUrlInput] = useState(initialUrl);
+  const [uploadMethod, setUploadMethod] = useState<'file' | 'url'>(initialUploadMethod);
+  const [processingConfig, setProcessingConfig] = useState<TabularProcessingConfig>(
+    initialProcessingConfig ?? {
+      delimiter: ',',
+      encoding: 'utf-8',
+      hasHeader: true,
+      quoteChar: '"',
+      escapeChar: '\\',
+      skipEmptyLines: true,
+    }
+  );
 
   const {
     uploadTabularFile,
@@ -123,17 +137,21 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
     </Typography>
 
     {/* Upload Method Selection */}
-    <FormControl sx={{ mb: 3, minWidth: 200 }}>
-      <InputLabel id={uploadMethodLabelId}>Upload Method</InputLabel>
-      <ModalSelect
-        id={`${uploadMethodLabelId}-select`}
-        labelId={uploadMethodLabelId}
-        value={uploadMethod}
-        label="Upload Method"
-        onChange={(e) => setUploadMethod(e.target.value as 'file' | 'url')}
-        disabled={disabled || isUploading}
-        menuContainer={modalRoot}
-      >
+  <FormControl sx={{ mb: 3, minWidth: 200 }}>
+    <InputLabel id={uploadMethodLabelId}>Upload Method</InputLabel>
+    <ModalSelect
+      id={`${uploadMethodLabelId}-select`}
+      labelId={uploadMethodLabelId}
+      value={uploadMethod}
+      label="Upload Method"
+      onChange={(e) => {
+        const method = e.target.value as 'file' | 'url';
+        setUploadMethod(method);
+        onUploadMethodChange?.(method);
+      }}
+      disabled={disabled || isUploading}
+      menuContainer={modalRoot}
+    >
         <MenuItem value="file">
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <InsertDriveFile fontSize="small" />
@@ -165,7 +183,7 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
               bgcolor: 'action.hover',
             },
           }}
-          onClick={disabled || isUploading ? undefined : handleUploadClick}
+            onClick={disabled || isUploading ? undefined : handleUploadClick}
         >
           <input
             ref={fileInputRef}
@@ -203,11 +221,14 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
             fullWidth
             label="Tabular File URL"
             placeholder="https://example.com/data.csv"
-            value={urlInput}
-            onChange={(e) => setUrlInput(e.target.value)}
-            disabled={disabled || isUploading}
-            sx={{ mb: 2 }}
-          />
+          value={urlInput}
+          onChange={(e) => {
+            setUrlInput(e.target.value);
+            onUrlChange?.(e.target.value);
+          }}
+          disabled={disabled || isUploading}
+          sx={{ mb: 2 }}
+        />
 
           <Button
             variant="contained"
@@ -235,7 +256,13 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
             labelId={delimiterLabelId}
             value={processingConfig.delimiter}
             label="Delimiter"
-            onChange={(e) => setProcessingConfig(prev => ({ ...prev, delimiter: e.target.value }))}
+            onChange={(e) => {
+              setProcessingConfig(prev => {
+                const next = { ...prev, delimiter: e.target.value };
+                onProcessingConfigChange?.(next);
+                return next;
+              });
+            }}
             disabled={disabled || isUploading}
             menuContainer={modalRoot}
           >
@@ -253,7 +280,13 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
             labelId={encodingLabelId}
             value={processingConfig.encoding}
             label="Encoding"
-            onChange={(e) => setProcessingConfig(prev => ({ ...prev, encoding: e.target.value }))}
+            onChange={(e) => {
+              setProcessingConfig(prev => {
+                const next = { ...prev, encoding: e.target.value };
+                onProcessingConfigChange?.(next);
+                return next;
+              });
+            }}
             disabled={disabled || isUploading}
             menuContainer={modalRoot}
           >
@@ -270,7 +303,13 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
             labelId={quoteLabelId}
             value={processingConfig.quoteChar}
             label="Quote Character"
-            onChange={(e) => setProcessingConfig(prev => ({ ...prev, quoteChar: e.target.value }))}
+            onChange={(e) => {
+              setProcessingConfig(prev => {
+                const next = { ...prev, quoteChar: e.target.value };
+                onProcessingConfigChange?.(next);
+                return next;
+              });
+            }}
             disabled={disabled || isUploading}
             menuContainer={modalRoot}
           >
@@ -289,7 +328,13 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
             labelId={headerLabelId}
             value={processingConfig.hasHeader ? 'yes' : 'no'}
             label="Has Header Row"
-            onChange={(e) => setProcessingConfig(prev => ({ ...prev, hasHeader: e.target.value === 'yes' }))}
+            onChange={(e) => {
+              setProcessingConfig(prev => {
+                const next = { ...prev, hasHeader: e.target.value === 'yes' };
+                onProcessingConfigChange?.(next);
+                return next;
+              });
+            }}
             disabled={disabled || isUploading}
             menuContainer={modalRoot}
           >
@@ -305,7 +350,13 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
             labelId={skipEmptyLabelId}
             value={processingConfig.skipEmptyLines ? 'yes' : 'no'}
             label="Skip Empty Lines"
-            onChange={(e) => setProcessingConfig(prev => ({ ...prev, skipEmptyLines: e.target.value === 'yes' }))}
+            onChange={(e) => {
+              setProcessingConfig(prev => {
+                const next = { ...prev, skipEmptyLines: e.target.value === 'yes' };
+                onProcessingConfigChange?.(next);
+                return next;
+              });
+            }}
             disabled={disabled || isUploading}
             menuContainer={modalRoot}
           >

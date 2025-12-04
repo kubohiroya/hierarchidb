@@ -45,6 +45,69 @@ export interface BatchTaskBase {
 
 export type BatchTask = BatchTaskBase;
 
+export interface DownloadTaskConfig {
+  url?: string;
+  dataSource?: string;
+  inputBufferId?: string;
+}
+
+export interface DownloadTask extends BatchTaskBase {
+  taskType: 'download';
+  url?: string;
+  countryCode?: string;
+  adminLevel?: number;
+  fileSize?: number;
+  downloadedBytes?: number;
+  config?: DownloadTaskConfig;
+}
+
+export interface SimplifyTaskConfig {
+  inputBufferId?: string;
+  tolerance?: number;
+  minimumArea?: number;
+  zoomLevels?: number[];
+  tileSize?: number;
+}
+
+export interface SimplifyTask extends BatchTaskBase {
+  taskType: 'simplify1' | 'simplify2';
+  countryCode?: string;
+  adminLevel?: number;
+  inputBufferId?: string;
+  tolerance?: number;
+  minArea?: number;
+  zoomLevels?: number[];
+  tileSize?: number;
+  config?: SimplifyTaskConfig;
+}
+
+export interface Simplify1Task extends SimplifyTask {
+  taskType: 'simplify1';
+}
+
+export interface Simplify2Task extends SimplifyTask {
+  taskType: 'simplify2';
+}
+
+export interface VectorTileTaskConfig {
+  inputBufferId?: string;
+  zoomLevels?: number[];
+  tileSize?: number;
+  compression?: boolean;
+  format?: 'mvt' | 'pbf';
+  outputBufferId?: string;
+}
+
+export interface VectorTileTask extends BatchTaskBase {
+  taskType: 'vectortile';
+  countryCode?: string;
+  adminLevel?: number;
+  zoomLevel?: number;
+  tileCount?: number;
+  generatedTiles?: number;
+  config?: VectorTileTaskConfig;
+}
+
 export interface BatchSession {
   sessionId: string;
   draftId: NodeId;
@@ -109,3 +172,6 @@ export interface ErrorInfo {
   stage: ProcessingStage;
   retryable: boolean;
 }
+
+// Backward compatibility aliases
+export type TileSimplifyConfig = SimplifyTaskConfig;

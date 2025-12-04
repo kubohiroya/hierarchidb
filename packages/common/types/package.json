@@ -32,7 +32,6 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/ui-dialog": "workspace:*"
+    "@hierarchidb/util": "workspace:*"
   }
 }

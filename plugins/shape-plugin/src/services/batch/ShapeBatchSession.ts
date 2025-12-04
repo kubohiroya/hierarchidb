@@ -54,7 +54,7 @@ export class ShapeBatchSession extends AbstractBatchSession<ShapeBatchConfig> {
   }
 
   protected onBatchProgressEvent(event: BatchProgressEvent): void {
-    const payload = event.payload ?? {};
+    const payload = event.payload ?? { total: 0, completed: 0, failed: 0, currentTask: '' };
     const total = payload.total ?? 0;
     const completed = payload.completed ?? 0;
     const failed = payload.failed ?? 0;

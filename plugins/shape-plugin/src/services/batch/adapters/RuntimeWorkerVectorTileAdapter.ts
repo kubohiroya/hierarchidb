@@ -15,22 +15,15 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
         await controls.waitIfPaused();
       }
       try {
-        const inputBufferId =
-          task.inputBufferId ??
-          task.config?.inputBufferId ??
-          task.config?.tileBufferId ??
-          '';
-        const compression = task.compression ?? task.config?.compression ?? false;
-        const format = (task.outputFormat ?? task.config?.format ?? 'mvt') as 'mvt';
+        const inputBufferId = task.config?.inputBufferId ?? '';
+        const compression = task.config?.compression ?? false;
+        const format = (task.config?.format ?? 'mvt') as 'mvt';
         const tileSize = task.config?.tileSize ?? 256;
-        await vectorTileClient.generateTiles(
-          inputBufferId,
-          {
-            format,
-            compression: compression ? 'gzip' : 'none',
-            tileSize,
-          } as any,
-        );
+        await vectorTileClient.generateTiles(inputBufferId, {
+          format,
+          compression: compression ? 'gzip' : 'none',
+          tileSize,
+        });
         completed++;
       } catch {
         failed++;

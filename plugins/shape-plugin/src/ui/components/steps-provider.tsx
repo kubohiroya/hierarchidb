@@ -20,13 +20,7 @@ const registry = PluginStepRegistry.getInstance();
 type ShapeStepData = StepData & Partial<ShapeEntity>;
 type ShapeDialogStepProps = StepComponentProps<ShapeStepData>;
 
-function createStepAdapter(
-  Component: React.ComponentType<{
-    draft: Partial<ShapeEntity>;
-    onUpdate: (updates: Partial<ShapeEntity>) => void;
-    disabled?: boolean;
-  }>,
-): (props: ShapeDialogStepProps) => JSX.Element {
+function createStepAdapter(Component: React.ComponentType<any>): (props: ShapeDialogStepProps) => JSX.Element {
   return function ShapeStepAdapter(props: ShapeDialogStepProps) {
     const draft = (props.data ?? {}) as Partial<ShapeEntity>;
     const handleUpdate = (updates: Partial<ShapeEntity>) => {

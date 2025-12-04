@@ -8,15 +8,6 @@ export const SHAPE_PLUGIN_ID = 'shape';
 
 export const DEFAULT_PROCESSING_CONFIG: ProcessingConfig = {
   dataSource: 'naturalearth',
-  concurrentDownloads: 2,
-  corsProxyBaseURL: '',
-  enableFeatureFiltering: false,
-  featureFilterMethod: 'hybrid',
-  featureAreaThreshold: 0.1,
-  concurrentProcesses: 2,
-  maxZoomLevel: 12,
-  tileBufferSize: 256,
-  simplificationTolerance: 0.01,
   downloadConfig: {
     maxConcurrent: 2,
     corsProxyUrl: '',

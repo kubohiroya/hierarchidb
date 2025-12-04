@@ -88,8 +88,9 @@ export interface VectorTileWorkerAPI {
   generateTiles(
     inputBufferId: string,
     config: {
-      format: 'mvt';
+      format: 'mvt' | 'pbf';
       compression?: 'gzip' | 'none';
+      tileSize?: number;
     }
   ): Promise<{ tilesGenerated: number; totalBytes?: number }>;
   getTile(sessionId: string, z: number, x: number, y: number): Promise<Uint8Array | null>;

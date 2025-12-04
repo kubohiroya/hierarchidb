@@ -44,12 +44,13 @@ async function loadPluginWorkers(): Promise<void> {
 
   const modulePaths = await loadModulePaths();
 
-  const loadTasks = PLUGINS_TO_PRELOAD.map(async (pluginId) => {
+  // Run preload hooks sequentially to avoid concurrent storeRegistry mutations across plugins.
+  for (const pluginId of PLUGINS_TO_PRELOAD) {
     const preloadExports = pluginWorkerPreloadMap[pluginId] ?? [];
     try {
       const mod = await modulePaths.importPluginWorker(pluginId);
       if (preloadExports.length === 0) {
-        return;
+        continue;
       }
       const storeRegistry = modulePaths.storeRegistry ?? null;
       const loaderOptions = storeRegistry ? { storeRegistry } : undefined;
@@ -66,9 +67,7 @@ async function loadPluginWorkers(): Promise<void> {
     } catch (error) {
       console.warn(`[WorkerModuleLoader] failed to preload plugin worker: ${pluginId}`, error);
     }
-  });
-
-  await Promise.allSettled(loadTasks);
+  }
 }
 
 function startPluginWorkerPreloads(): Promise<void> {

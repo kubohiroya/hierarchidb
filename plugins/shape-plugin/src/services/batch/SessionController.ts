@@ -304,10 +304,8 @@ export class SessionController {
       status: 'waiting',
       index,
       progress: 0,
-      inputBufferId: `${this.sessionId}-simplify2-${index}`,
-      outputFormat: 'mvt',
-      compression: true,
       config: {
+        inputBufferId: `${this.sessionId}-simplify2-${index}`,
         zoomLevel: 10,
         tileX: 0,
         tileY: 0,

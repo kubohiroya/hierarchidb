@@ -3,7 +3,7 @@
  * Aligns shape-plugin with the common Draft API flow (basemap-style).
  */
 
-import type { TreeId, TreeNode, TreeNodeMetadata } from '@hierarchidb/common-types';
+import type { TreeId, TreeNode, TreeNodeMetadata, TreeNodeUpdaterPayload } from '@hierarchidb/common-types';
 import { toNodeType } from '@hierarchidb/common-types';
 import type { DataSourceName, NodeId } from '../../common/shared/index.js';
 import {
@@ -33,12 +33,7 @@ import { initTreeNode } from '../../../../../packages/runtime-worker/src/service
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
-export interface CreateShapeData {
-  name: string;
-  description?: string;
-  dataSourceName: DataSourceName;
-  processingConfig?: Partial<ProcessingConfig>;
-}
+export type CreateShapeData = TreeNodeUpdaterPayload<ShapeEntity>;
 
 export interface ShapeFilterCriteria {
   name?: string;
@@ -90,14 +85,11 @@ export class ShapeEntityService {
       ...(payloadRecord as Partial<ShapeEntity>),
       id: node.id as NodeId,
       nodeId: node.id as NodeId,
-      name:
-        typeof (payloadRecord as { name?: unknown }).name === 'string'
-          ? (payloadRecord as { name?: string }).name!
-          : metadata.name ?? '',
-      description:
-        typeof (payloadRecord as { description?: unknown }).description === 'string'
-          ? (payloadRecord as { description?: string }).description
-          : metadata.description,
+      metadata: {
+        name: metadata.name ?? '',
+        description: metadata.description ?? '',
+        tags: metadata.tags ?? [],
+      },
       dataSourceName: dataSource,
       processingConfig,
       licenseAgreement:
@@ -128,29 +120,37 @@ export class ShapeEntityService {
 
   private buildEntity(nodeId: NodeId, data: Partial<CreateShapeData>, base?: ShapeEntity): ShapeEntity {
     const mergedProcessing = mergeProcessingConfig(
-      data.processingConfig ?? base?.processingConfig ?? DEFAULT_PROCESSING_CONFIG,
+      (data.draftData?.processingConfig as ProcessingConfig | undefined) ??
+        base?.processingConfig ??
+        DEFAULT_PROCESSING_CONFIG,
     );
     const dataSource =
-      normalizeDataSourceName(data.dataSourceName ?? base?.dataSourceName ?? 'naturalearth') ??
+      normalizeDataSourceName(
+        (data.draftData as Partial<ShapeEntity> | undefined)?.dataSourceName ??
+          base?.dataSourceName ??
+          'naturalearth',
+      ) ??
       'naturalearth';
+
+    const metadata = data.draftMetadata ?? base?.metadata ?? { name: '', description: '', tags: [] };
+    const draftData = (data.draftData as Partial<ShapeEntity> | undefined) ?? {};
 
     return {
       ...base,
       id: nodeId,
       nodeId,
-      name: data.name ?? base?.name ?? '',
-      description: data.description ?? base?.description ?? '',
+      metadata,
       dataSourceName: dataSource,
       licenseAgreement: base?.licenseAgreement ?? false,
       processingConfig: mergedProcessing,
-      checkboxState: base?.checkboxState ?? [],
-      batchSessionId: base?.batchSessionId,
-      processingStatus: base?.processingStatus ?? 'idle',
-      selectedCountries: base?.selectedCountries ?? [],
-      adminLevels: base?.adminLevels ?? [],
-      urlMetadata: base?.urlMetadata ?? [],
-      tabularMetadataId: base?.tabularMetadataId,
-      tabularFilters: base?.tabularFilters,
+      checkboxState: draftData.checkboxState ?? base?.checkboxState ?? [],
+      batchSessionId: draftData.batchSessionId ?? base?.batchSessionId,
+      processingStatus: draftData.processingStatus ?? base?.processingStatus ?? 'idle',
+      selectedCountries: draftData.selectedCountries ?? base?.selectedCountries ?? [],
+      adminLevels: draftData.adminLevels ?? base?.adminLevels ?? [],
+      urlMetadata: draftData.urlMetadata ?? base?.urlMetadata ?? [],
+      tabularMetadataId: draftData.tabularMetadataId ?? base?.tabularMetadataId,
+      tabularFilters: draftData.tabularFilters ?? base?.tabularFilters,
     };
   }
 
@@ -166,10 +166,7 @@ export class ShapeEntityService {
     }
     const current = this.toEntity(baseNode) ?? undefined;
     const entity = this.buildEntity(nodeId, data, current ?? undefined);
-    await this.writeDraft(nodeId, entity, {
-      name: data.name ?? baseNode.metadata?.name,
-      description: data.description ?? baseNode.metadata?.description,
-    });
+    await this.writeDraft(nodeId, entity, data.draftMetadata ?? baseNode.metadata);
     return entity;
   }
 
@@ -179,10 +176,7 @@ export class ShapeEntityService {
       throw new Error(`Shape entity not found: ${nodeId}`);
     }
     const entity = this.buildEntity(nodeId, updates, current);
-    await this.writeDraft(nodeId, entity, {
-      name: updates.name,
-      description: updates.description,
-    });
+    await this.writeDraft(nodeId, entity, updates.draftMetadata ?? current.metadata);
     return entity;
   }
 
@@ -202,7 +196,7 @@ export class ShapeEntityService {
       .filter((entity): entity is ShapeEntity => !!entity);
 
     return entities.filter(entity => {
-      if (criteria.name && !entity.name?.toLowerCase().includes(criteria.name.toLowerCase())) {
+      if (criteria.name && !entity.metadata?.name?.toLowerCase().includes(criteria.name.toLowerCase())) {
         return false;
       }
       if (criteria.dataSource && entity.dataSourceName !== criteria.dataSource) {
@@ -229,16 +223,12 @@ export class ShapeEntityService {
       buildShapeEntityFromCreate({
         nodeId,
         data: {
-          name: baseNode.metadata?.name ?? '',
-          description: baseNode.metadata?.description ?? '',
           dataSourceName: 'naturalearth',
           processingConfig: DEFAULT_PROCESSING_CONFIG,
+          metadata: baseNode.metadata ?? { name: '', description: '', tags: [] },
         },
       });
-    await this.writeDraft(nodeId, entity, {
-      name: entity.name,
-      description: entity.description,
-    });
+    await this.writeDraft(nodeId, entity, baseNode.metadata);
     return createDraftFromEntity(entity);
   }
 
@@ -251,13 +241,12 @@ export class ShapeEntityService {
     const entity = buildShapeEntityFromCreate({
       nodeId: wcId,
       data: {
-        name: baseName,
-        description: '',
         dataSourceName: 'naturalearth',
         processingConfig: DEFAULT_PROCESSING_CONFIG,
+        metadata: { name: baseName, description: '', tags: [] },
       },
     });
-    await this.writeDraft(wcId, entity, { name: baseName, description: '' });
+    await this.writeDraft(wcId, entity, { name: baseName, description: '', tags: [] });
     return createDraftFromEntity(entity);
   }
 
@@ -296,10 +285,7 @@ export class ShapeEntityService {
         : parseCheckboxState(mergedCheckboxState as any),
     };
 
-    await this.writeDraft(draftId, updated, {
-      name: data.name,
-      description: data.description,
-    });
+    await this.writeDraft(draftId, updated, data.metadata ?? current.metadata);
     return createDraftFromEntity(updated);
   }
 
@@ -320,19 +306,17 @@ export class ShapeEntityService {
 
   async applyDraft(nodeId: NodeId, draft: ShapeDraft): Promise<ShapeEntity> {
     const parsedCheckbox =
-      typeof draft.checkboxState === 'string' || Array.isArray(draft.checkboxState)
-        ? draft.checkboxState
-        : parseCheckboxState(draft.checkboxState as any);
+      typeof draft.draftData?.checkboxState === 'string' || Array.isArray(draft.draftData?.checkboxState)
+        ? draft.draftData?.checkboxState
+        : parseCheckboxState(draft.draftData?.checkboxState as any);
     const payload: ShapeEntity = {
-      ...draft,
+      ...(draft.draftData ?? {}),
       id: nodeId,
       nodeId,
       checkboxState: parsedCheckbox,
-    };
-    await this.writeDraft(nodeId, payload, {
-      name: draft.name,
-      description: draft.description,
-    });
+      metadata: draft.draftMetadata ?? { name: '', description: '', tags: [] },
+    } as ShapeEntity;
+    await this.writeDraft(nodeId, payload, draft.draftMetadata ?? { name: '', description: '', tags: [] });
     return payload;
   }
 

@@ -32,8 +32,11 @@ export function ShapeDialog({
       const entity: ShapeEntity = {
         id,
         nodeId: id,
-        name: name.trim() || (mode === 'create' ? 'New shape' : 'Shape'),
-        description: '',
+        metadata: {
+          name: name.trim() || (mode === 'create' ? 'New shape' : 'Shape'),
+          description: '',
+          tags: [],
+        },
         dataSourceName: 'naturalearth',
         licenseAgreement: true,
         processingConfig: mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG),

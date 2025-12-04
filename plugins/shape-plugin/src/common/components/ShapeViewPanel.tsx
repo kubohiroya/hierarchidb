@@ -55,11 +55,12 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
   const checkboxSummary = useMemo(() => summarizeCheckboxState(entity.checkboxState), [entity.checkboxState]);
 
   const derivedCountries = useMemo(() => {
-    if (!entity.urlMetadata?.length) {
+    const urlMetas = Array.isArray(entity.urlMetadata) ? entity.urlMetadata : [];
+    if (!urlMetas.length) {
       return [] as string[];
     }
     const codes = new Set<string>();
-    entity.urlMetadata.forEach((meta: UrlMetadata) => {
+    urlMetas.forEach((meta: UrlMetadata) => {
       if (meta?.countryCode) {
         codes.add(meta.countryCode);
       }
@@ -469,13 +470,16 @@ function buildBatchConfig(entity: ShapeEntity): BatchProcessConfig {
   if (!processing) {
     return base;
   }
+  const download = processing.downloadConfig;
+  const simplify = processing.simplificationConfig;
+  const tile = processing.tileConfig;
   return {
     ...base,
-    workerPoolSize: processing.workerPoolSize,
-    enableFeatureExtraction: processing.enableFeatureFiltering,
-    simplificationLevels: processing.simplificationLevels,
-    tileZoomRange: processing.tileZoomRange,
-    corsProxy: processing.corsProxyBaseURL,
+    workerPoolSize: simplify?.level1Workers,
+    enableFeatureExtraction: simplify?.enableFiltering,
+    simplificationLevels: simplify ? [simplify.level1Workers, simplify.level2Workers] : undefined,
+    tileZoomRange: tile?.maxZoom ? [tile.maxZoom, tile.maxZoom] : undefined,
+    corsProxy: download?.corsProxyUrl,
   };
 }
 

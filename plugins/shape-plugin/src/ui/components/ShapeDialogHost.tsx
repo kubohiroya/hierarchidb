@@ -37,57 +37,79 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
   onClose,
   onSave,
 }) => {
-  type ShapeStepProps = StepComponentProps<ShapeEntity>;
+  type ShapeStepProps = StepComponentProps<Partial<ShapeEntity>>;
 
-  const UploadStep: React.FC<ShapeStepProps> = (props) => (
+  const UploadStep: React.FC<ShapeStepProps> = ({ data: stepData, onChange, ...rest }) => (
     <StepTabularUpload
-      {...props}
+      {...rest}
       mode={mode}
-      data={props.data}
+      data={(stepData ?? {}) as ShapeEntity}
       onChange={(patch) =>
-        props.onChange({
-          ...patch,
+        onChange({
+          ...(patch ?? {}),
           processingConfig: mergeProcessingConfig(
-            (patch as ShapeEntity).processingConfig ?? props.data.processingConfig ?? DEFAULT_PROCESSING_CONFIG
+            (patch as ShapeEntity | null | undefined)?.processingConfig ??
+              (stepData as ShapeEntity | null | undefined)?.processingConfig ??
+              DEFAULT_PROCESSING_CONFIG
           ),
-        })
+        } as Partial<ShapeEntity>)
       }
     />
   );
 
-  const FilterStep: React.FC<ShapeStepProps> = (props) => (
-    <StepTabularFilter {...props} mode={mode} data={props.data} />
+  const FilterStep: React.FC<ShapeStepProps> = ({ data: stepData, onChange, ...rest }) => (
+    <StepTabularFilter
+      {...rest}
+      mode={mode}
+      data={(stepData ?? {}) as ShapeEntity}
+      onChange={(patch) => onChange(patch ?? {})}
+    />
   );
 
-  const DataSourceStep: React.FC<ShapeStepProps> = (props) => (
-    <Step2DataSource draft={props.data} onUpdate={(patch) => props.onChange(patch)} disabled={props.disabled} mode={mode} />
-  );
-
-  const LicenseStep: React.FC<ShapeStepProps> = (props) => (
-    <Step3License draft={props.data} onUpdate={(patch) => props.onChange(patch)} disabled={props.disabled} />
-  );
-
-  const ProcessingStep: React.FC<ShapeStepProps> = (props) => (
-    <Step4Processing
-      draft={props.data}
-      onUpdate={(patch) =>
-        props.onChange({
-          ...patch,
-          processingConfig: mergeProcessingConfig(
-            patch.processingConfig ?? props.data.processingConfig ?? DEFAULT_PROCESSING_CONFIG
-          ),
-        })
-      }
-      disabled={props.disabled}
+  const DataSourceStep: React.FC<ShapeStepProps> = ({ data: stepData, onChange, ...rest }) => (
+    <Step2DataSource
+      {...rest}
+      draft={(stepData ?? {}) as ShapeEntity}
+      onUpdate={(patch) => onChange(patch ?? {})}
       mode={mode}
     />
   );
 
-  const CountryStep: React.FC<ShapeStepProps> = (props) => (
-    <Step5CountrySelection draft={props.data} onUpdate={(patch) => props.onChange(patch)} disabled={props.disabled} />
+  const LicenseStep: React.FC<ShapeStepProps> = ({ data: stepData, onChange, ...rest }) => (
+    <Step3License
+      {...rest}
+      draft={(stepData ?? {}) as ShapeEntity}
+      onUpdate={(patch) => onChange(patch ?? {})}
+    />
   );
 
-  const { frameStyle, dialogRef, headlessProps, metadata } = useTreeNodeDialog<ShapeEntity>({
+  const ProcessingStep: React.FC<ShapeStepProps> = ({ data: stepData, onChange, ...rest }) => (
+    <Step4Processing
+      {...rest}
+      draft={(stepData ?? {}) as ShapeEntity}
+      onUpdate={(patch) =>
+        onChange({
+          ...(patch ?? {}),
+          processingConfig: mergeProcessingConfig(
+            (patch as ShapeEntity | null | undefined)?.processingConfig ??
+              (stepData as ShapeEntity | null | undefined)?.processingConfig ??
+              DEFAULT_PROCESSING_CONFIG
+          ),
+        } as Partial<ShapeEntity>)
+      }
+      mode={mode}
+    />
+  );
+
+  const CountryStep: React.FC<ShapeStepProps> = ({ data: stepData, onChange, ...rest }) => (
+    <Step5CountrySelection
+      {...rest}
+      draft={(stepData ?? {}) as ShapeEntity}
+      onUpdate={(patch) => onChange(patch ?? {})}
+    />
+  );
+
+  const { frameStyle, dialogRef, headlessProps, metadata } = useTreeNodeDialog<Partial<ShapeEntity>>({
     open,
     mode,
     nodeType: 'shape',
@@ -138,8 +160,8 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
           label: 'Tabular Upload',
           component: (
             <UploadStep
-              data={draftData}
-              onChange={updatePayload}
+              data={(draftData ?? {}) as ShapeEntity}
+              onChange={(patch) => updatePayload((patch ?? {}) as Partial<ShapeEntity>)}
               setValid={() => {}}
               setError={() => {}}
               disabled={false}
@@ -154,8 +176,8 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
           label: 'Tabular Filter',
           component: (
             <FilterStep
-              data={draftData}
-              onChange={updatePayload}
+              data={(draftData ?? {}) as ShapeEntity}
+              onChange={(patch) => updatePayload((patch ?? {}) as Partial<ShapeEntity>)}
               setValid={() => {}}
               setError={() => {}}
               disabled={false}
@@ -170,8 +192,8 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
           label: 'Data Source',
           component: (
             <DataSourceStep
-              data={draftData}
-              onChange={updatePayload}
+              data={(draftData ?? {}) as ShapeEntity}
+              onChange={(patch) => updatePayload((patch ?? {}) as Partial<ShapeEntity>)}
               setValid={() => {}}
               setError={() => {}}
               disabled={false}
@@ -186,8 +208,8 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
           label: 'License & Consent',
           component: (
             <LicenseStep
-              data={draftData}
-              onChange={updatePayload}
+              data={(draftData ?? {}) as ShapeEntity}
+              onChange={(patch) => updatePayload((patch ?? {}) as Partial<ShapeEntity>)}
               setValid={() => {}}
               setError={() => {}}
               disabled={false}
@@ -202,8 +224,8 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
           label: 'Processing',
           component: (
             <ProcessingStep
-              data={draftData}
-              onChange={updatePayload}
+              data={(draftData ?? {}) as ShapeEntity}
+              onChange={(patch) => updatePayload((patch ?? {}) as Partial<ShapeEntity>)}
               setValid={() => {}}
               setError={() => {}}
               disabled={false}
@@ -239,7 +261,9 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
       return steps;
     },
     onSave: async (draftMeta: TreeNodeMetadata, savedId?: NodeId) => {
-      const mergedProcessing = mergeProcessingConfig(headlessProps.stepData?.processingConfig ?? DEFAULT_PROCESSING_CONFIG);
+      const mergedProcessing = mergeProcessingConfig(
+        (headlessProps.stepData as Partial<ShapeEntity> | undefined)?.processingConfig ?? DEFAULT_PROCESSING_CONFIG
+      );
       const nodeIdToUse = (savedId ?? nodeId) as NodeId;
       const finalMetadata = draftMeta ?? metadata;
       if (onSave) {
@@ -253,9 +277,15 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
     },
   });
 
+  // ensure stepData is Partial for HeadlessMultiStepDialog
+  const partialHeadlessProps = {
+    ...headlessProps,
+    stepData: (headlessProps.stepData ?? {}) as Partial<ShapeEntity>,
+  };
+
   return (
     <div style={frameStyle} role="dialog" aria-modal={open} ref={dialogRef}>
-      <HeadlessMultiStepDialog<ShapeEntity> {...headlessProps} />
+      <HeadlessMultiStepDialog<Partial<ShapeEntity>> {...(partialHeadlessProps as any)} />
     </div>
   );
 };

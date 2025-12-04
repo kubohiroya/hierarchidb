@@ -1,5 +1,5 @@
 import type { Timestamp } from '@hierarchidb/common-types';
-import type { TabularFilterRule, TabularDataResult } from '@hierarchidb/ui-tabular-extract';
+import type { TabularFilterRule, TabularDataResult, TabularProcessingConfig } from '@hierarchidb/ui-tabular-extract';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { DATA_SOURCE_TYPES } from '../constants.js';
 
@@ -26,5 +26,6 @@ export interface SpreadsheetEntity {
   filters?: TabularFilterRule[];
   lastPreview?: TabularDataResult;
   file?: UploadedFileSummary;
-  metadata?: TabularTableMetadata;
+  tabularTableMetadata?: TabularTableMetadata;
+  tabularProcessingConfig?: TabularProcessingConfig;
 }

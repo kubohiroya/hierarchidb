@@ -36,10 +36,11 @@ import {
  * Uses real country metadata from @hierarchidb/fetch-save-metadata
  */
 export const Step5CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, disabled }) => {
+  const draftData = draft ?? {};
   const { enqueueSnackbar } = useSnackbar();
 
   // Load country metadata from 02-fetch-save-metadata
-  const dataSourceKey = normalizeDataSourceName(draft.dataSourceName) ?? 'gadm';
+  const dataSourceKey = normalizeDataSourceName(draftData.dataSourceName) ?? 'gadm';
   const {
     metadata: countries,
     loading,
@@ -53,8 +54,8 @@ export const Step5CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, di
 
   // Initialize checkbox matrix
   const checkboxMatrix = useMemo<boolean[][]>(() => {
-    if (Array.isArray(draft.checkboxState)) {
-      return (draft.checkboxState as unknown[]).map((row: unknown): boolean[] => {
+    if (Array.isArray(draftData.checkboxState)) {
+      return (draftData.checkboxState as unknown[]).map((row: unknown): boolean[] => {
         if (!Array.isArray(row)) {
           return Array.from({ length: maxAdminLevel + 1 }, () => false);
         }
@@ -63,7 +64,7 @@ export const Step5CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, di
     }
     // Initialize empty matrix based on loaded countries
     return countries.map(() => Array.from({ length: maxAdminLevel + 1 }, () => false));
-  }, [draft.checkboxState, countries, maxAdminLevel]);
+  }, [draftData.checkboxState, countries, maxAdminLevel]);
 
   // Calculate statistics
   const stats = useMemo(() => {

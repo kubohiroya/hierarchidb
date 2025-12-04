@@ -10,14 +10,14 @@ import type { ShapeEntity, TabularFileSummary } from '../../shared/types.js';
 type ShapeDialogStepProps = StepComponentProps<Partial<ShapeEntity>>;
 
 export function StepTabularUpload({
-  data: draft,
+  data,
   onChange,
   setValid,
   setError,
   disabled,
   dialogRef,
 }: ShapeDialogStepProps): JSX.Element {
-  //const draft = (data ?? {}) as Partial<ShapeDraft>;
+  const draft = useMemo(()=>(data ?? {}) as Partial<ShapeEntity>, [data]);
   const tabularApi = useMemo(() => createShapeTabularApi(), []);
   const [localError, setLocalError] = useState<string | null>(null);
 

@@ -154,7 +154,6 @@ export function usePluginDialogController(
     treeNodeUpdater: draft,
     hasUnsavedChanges,
     updateTreeNodeUpdater,
-    commitTreeNodeUpdater,
     discardDraft,
     loading,
     error,
@@ -450,29 +449,26 @@ export function usePluginDialogController(
     return true;
   }, [closeConflictDialog, discardDraft, draft?.version, fetchLatestVersion, onClose, requestConflictResolution, updateTreeNodeUpdater]);
 
-  const flushDraftOnce = useCallback(async () => {
-    const payload: Partial<
-      import('@hierarchidb/plugin-ui-sdk').TreeNodeUpdaterState<Partial<PluginDefinedEntity>>
-    > = {
-      treeNodeId: (treeUpdater?.treeNodeId ?? nodeId) as NodeId,
+  const updateLocalDraft = useCallback(async () => {
+    if (!treeUpdater) return;
+    updateTreeNodeUpdater({
+      treeNodeId: (treeUpdater.treeNodeId ?? nodeId) as NodeId,
       draftMetadata: {
-        ...(treeUpdater?.draftMetadata ?? {}),
+        ...(treeUpdater.draftMetadata ?? {}),
         name: basicInfo.name,
         description: basicInfo.description,
         tags: basicInfo.tags,
       },
       draftData: { ...localDraftData },
-    };
-    await commitTreeNodeUpdater(payload);
+    } as any);
   }, [
     basicInfo.description,
     basicInfo.name,
     basicInfo.tags,
     localDraftData,
     nodeId,
-    commitTreeNodeUpdater,
-    treeUpdater?.draftMetadata,
-    treeUpdater?.treeNodeId,
+    treeUpdater,
+    updateTreeNodeUpdater,
   ]);
 
   const handleNavigation = useCallback(
@@ -493,13 +489,13 @@ export function usePluginDialogController(
             break;
         }
         if (nextIndex === activeStepIndex) return;
-        void flushDraftOnce().finally(() => {
+        void updateLocalDraft().finally(() => {
           setActiveStepIndex(nextIndex);
           setUrlStep(nextIndex);
         });
       })();
     },
-    [activeStepIndex, ensureNoConflict, setActiveStepIndex, setUrlStep, steps.length, flushDraftOnce]
+    [activeStepIndex, ensureNoConflict, setActiveStepIndex, setUrlStep, steps.length, updateLocalDraft]
   );
 
   const navigateToNode = useCallback(
@@ -523,7 +519,7 @@ export function usePluginDialogController(
   const handleSubmit = useCallback(async () => {
     const ok = await ensureNoConflict();
     if (!ok) return;
-    await flushDraftOnce();
+    await updateLocalDraft();
     if (typeof console !== 'undefined' && typeof console.debug === 'function') {
       console.debug('[PluginDialogShell] submitting dialog', {
         nodeType,
@@ -553,19 +549,35 @@ export function usePluginDialogController(
     }
 
     onClose();
-  }, [ensureNoConflict, flushDraftOnce, treeUpdater?.treeNodeId, nodeId, onClose, nodeType, mode, draft?.draftMetadata, basicInfo.name, basicInfo.description, basicInfo.tags, draftDataWithoutMeta, discardDraft, onSuccess, navigateToNode]);
+  }, [
+    ensureNoConflict,
+    updateLocalDraft,
+    treeUpdater?.treeNodeId,
+    nodeId,
+    onClose,
+    nodeType,
+    mode,
+    draft?.draftMetadata,
+    basicInfo.name,
+    basicInfo.description,
+    basicInfo.tags,
+    draftDataWithoutMeta,
+    discardDraft,
+    onSuccess,
+    navigateToNode,
+  ]);
 
   const handleSaveDraft = useCallback(async () => {
     try {
       const ok = await ensureNoConflict();
       if (!ok) return;
       saveDraftInProgress.current = true;
-      await flushDraftOnce();
+      await updateLocalDraft();
     } catch (err) {
       saveDraftInProgress.current = false;
       throw err;
     }
-  }, [ensureNoConflict, flushDraftOnce]);
+  }, [ensureNoConflict, updateLocalDraft]);
 
   const handleCancel = useCallback(async () => {
     // Cancel: create は forceDelete、edit は draft clear（現行 discardDraft が内部で判断）

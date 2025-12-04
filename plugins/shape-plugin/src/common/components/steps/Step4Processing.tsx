@@ -11,7 +11,7 @@ import { CleanupConfigSection } from './Step4Processing/CleanupConfigSection.js'
  * Step 4: Processing Configuration (modern config only)
  */
 export const Step4Processing: React.FC<StepProps> = ({ draft, onUpdate, disabled }) => {
-  const config = mergeProcessingConfig(draft.processingConfig ?? DEFAULT_PROCESSING_CONFIG);
+  const config = mergeProcessingConfig(draft?.processingConfig ?? DEFAULT_PROCESSING_CONFIG);
 
   const handleChange = (nextConfig: ProcessingConfig) => {
     onUpdate({ processingConfig: nextConfig });
