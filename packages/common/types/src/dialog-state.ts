@@ -1,4 +1,5 @@
 import type { NodeId } from './id-types.js';
+import type { DialogDisplayMode, MultiDialogPosition, MultiDialogSize } from '@hierarchidb/ui-dialog';
 
 /**
  * Step-level status snapshot shared between worker and UI layers.
@@ -56,4 +57,32 @@ export interface DialogStateRequestInput {
 export interface DialogStateSubscribeInput extends DialogStateRequestInput {
   /** Optional debounce interval in milliseconds for worker-side emissions */
   throttleMs?: number;
+}
+
+/**
+ * UI dialog runtime state to keep layout/navigation/save flags together.
+ */
+export interface DialogViewState {
+  /** Dialog size (pixels) */
+  size: MultiDialogSize;
+  /** Dialog position (pixels) */
+  position: MultiDialogPosition;
+  /** Current display mode (e.g. normal/full-screen) */
+  displayMode: DialogDisplayMode;
+  /** Current active step index */
+  activeStepIndex: number;
+  /** Whether a save/commit is in-flight */
+  isSaving: boolean;
+  /** Optional multi-step status snapshot from worker/UI coordination */
+  multiStepState?: MultiStepDialogState | null;
+}
+
+/**
+ * Input for patching dialog state in UI.
+ */
+export interface DialogViewStatePatchInput {
+  /** Partial update for DialogViewState */
+  patch: Partial<DialogViewState>;
+  /** Optional flag to reset to defaults before applying patch */
+  reset?: boolean;
 }

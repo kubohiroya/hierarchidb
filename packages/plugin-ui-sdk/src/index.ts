@@ -6,7 +6,6 @@ export type {
   UseTreeNodeUpdaterOptions,
   UseTreeNodeUpdaterResult,
   TreeNodeUpdaterState,
-  DraftData,
   PluginDialogData,
 } from './hooks/useTreeNodeUpdater.js';
 export { createTreeNodeUpdaterActions } from './hooks/useTreeNodeUpdater.js';

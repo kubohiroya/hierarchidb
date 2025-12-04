@@ -8,6 +8,7 @@ import {
   clearTestData,
   buildAppUrl,
 } from '../utils/test-helpers';
+import { toNodeType } from '../../packages/common/types/dist';
 
 type Scenario = {
   name: string;
@@ -75,7 +76,7 @@ test.describe('Route progress controls', () => {
       await waitForTreeTableLoad(page);
 
       const routeNode = await page.evaluate(async () => {
-        const mod = await import('/src/WorkerAPIClient.js');
+        const mod = await import('../../app/src/worker-runtime/WorkerAPIClient.js');
         const { WorkerAPIClient } = mod;
         const client = await WorkerAPIClient.getOrInit();
         const queryAPI = await client.getQueryAPI();
@@ -86,7 +87,7 @@ test.describe('Route progress controls', () => {
 
         const pickExisting = async () => {
           const existing = await queryAPI.listDescendants(rootId, 4);
-          return existing.find((node) => node.nodeType === 'route' && !node.isRemoved && !node.isDraft);
+          return existing.find((node) => node.nodeType === 'route' && !node.removedAt);
         };
 
         let routeNode = await pickExisting();
@@ -96,13 +97,13 @@ test.describe('Route progress controls', () => {
           const updaterAPI = await client.getTreeNodeUpdaterAPI();
           const name = `Route Progress ${Date.now()}`;
           const createResult = await mutationAPI.createNode({
-            nodeType: 'route',
+            nodeType: toNodeType('route'),
             treeId: tree.id,
             parentId: rootId,
             name,
           });
           if (!createResult.success) {
-            throw new Error(`Failed to create route node: ${createResult.error ?? 'unknown error'}`);
+            throw new Error(`Failed to create route node: ${createResult ?? 'unknown error'}`);
           }
 
           const wcNodeId = createResult.nodeId;

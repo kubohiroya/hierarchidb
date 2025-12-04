@@ -4,23 +4,23 @@ import { Box, CircularProgress, Typography } from '@mui/material';
 import { StepComponentProps } from '@hierarchidb/plugin-base';
 import { TabularProvider, TabularFilterStep, useTabularData } from '@hierarchidb/ui-tabular-extract';
 import type { TabularFilterRule, TabularDataResult } from '@hierarchidb/ui-tabular-extract';
-import type { SpreadsheetDialogData } from '../../../common/types/SpreadsheetEntity.js';
+import type { SpreadsheetEntity } from '../../../common/types/SpreadsheetEntity.js';
 import { createSpreadsheetTabularApi } from '../../../services/spreadsheetTabularApiFactory.js';
 import { SPREADSHEET_NODE_TYPE } from '../../../common/constants.js';
 
-const coerceDialogData = (value: unknown): SpreadsheetDialogData =>
-  (typeof value === 'object' && value !== null ? (value as SpreadsheetDialogData) : {});
+const coerceDialogData = (value: unknown): SpreadsheetEntity =>
+  (typeof value === 'object' && value !== null ? (value as SpreadsheetEntity) : {});
 
-export const FilteringStep: FC<StepComponentProps<SpreadsheetDialogData>> = ({
+export const FilteringStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
   data,
   onChange,
   setValid,
   setError,
 }) => {
-  const dialogData = useMemo<SpreadsheetDialogData>(() => coerceDialogData(data), [data]);
+  const dialogData = useMemo<SpreadsheetEntity>(() => coerceDialogData(data), [data]);
   const tabularApi = useMemo(() => createSpreadsheetTabularApi(SPREADSHEET_NODE_TYPE), []);
 
-  const { metadata, loading, error } = useTabularData({
+  const { tabularTableMetadata, loading, error } = useTabularData({
     tableMetadataId: dialogData.spreadsheetMetadataId,
     pluginId: SPREADSHEET_NODE_TYPE,
     autoload: Boolean(dialogData.spreadsheetMetadataId),
@@ -76,7 +76,7 @@ export const FilteringStep: FC<StepComponentProps<SpreadsheetDialogData>> = ({
         </Typography>
       );
     }
-    if (!metadata) {
+    if (!tabularTableMetadata) {
       return (
         <Typography color="text.secondary">
           No table metadata found for the selected dataset.
@@ -85,7 +85,7 @@ export const FilteringStep: FC<StepComponentProps<SpreadsheetDialogData>> = ({
     }
     return (
       <TabularFilterStep
-        tableMetadata={metadata}
+        tableMetadata={tabularTableMetadata}
         pluginId={SPREADSHEET_NODE_TYPE}
         onFiltersChanged={handleFiltersChanged}
         onPreviewData={handlePreviewData}

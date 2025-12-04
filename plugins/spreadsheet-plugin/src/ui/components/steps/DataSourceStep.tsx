@@ -5,39 +5,39 @@ import { TabularProvider, TabularFileUploadStep } from '@hierarchidb/ui-tabular-
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { createSpreadsheetTabularApi } from '../../../services/spreadsheetTabularApiFactory.js';
 import { SPREADSHEET_NODE_TYPE } from '../../../common/constants.js';
-import type { SpreadSheetDataSourceConfig, SpreadsheetDialogData } from '../../../common/types/SpreadsheetEntity.js';
+import type { SpreadSheetDataSourceConfig, SpreadsheetEntity } from '../../../common/types/SpreadsheetEntity.js';
 
-const coerceDialogData = (value: unknown): SpreadsheetDialogData =>
-  (typeof value === 'object' && value !== null ? (value as SpreadsheetDialogData) : {});
+const coerceDialogData = (value: unknown): SpreadsheetEntity =>
+  (typeof value === 'object' && value !== null ? (value as SpreadsheetEntity) : {});
 
-export const DataSourceStep: FC<StepComponentProps<SpreadsheetDialogData>> = ({
+export const DataSourceStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
   data,
   onChange,
   setValid,
   setError,
   dialogRef,
 }) => {
-  const dialogData = useMemo<SpreadsheetDialogData>(() => coerceDialogData(data), [data]);
+  const dialogData = useMemo<SpreadsheetEntity>(() => coerceDialogData(data), [data]);
   const [localError, setLocalError] = useState<string | null>(null);
   const tabularApi = useMemo(() => createSpreadsheetTabularApi(SPREADSHEET_NODE_TYPE), []);
 
   const applyMetadata = useCallback(
-    (metadata: TabularTableMetadata) => {
+    (tabularTableMetadata: TabularTableMetadata) => {
       const nextDataSource: SpreadSheetDataSourceConfig = {
         type: 'file',
-        source: metadata.fileUrl ?? metadata.filename,
-        filename: metadata.filename,
-        sizeBytes: metadata.fileSizeBytes ?? 0,
-        contentHash: metadata.contentHash,
+        source: tabularTableMetadata.fileUrl ?? tabularTableMetadata.filename,
+        filename: tabularTableMetadata.filename,
+        sizeBytes: tabularTableMetadata.fileSizeBytes ?? 0,
+        contentHash: tabularTableMetadata.contentHash,
       };
       onChange({
         ...dialogData,
-        spreadsheetMetadataId: metadata.id,
+        spreadsheetMetadataId: tabularTableMetadata.id,
         dataSource: nextDataSource,
-        metadata,
+        metadata: tabularTableMetadata,
         file: {
-          name: metadata.filename,
-          sizeBytes: metadata.fileSizeBytes ?? 0,
+          name: tabularTableMetadata.filename,
+          sizeBytes: tabularTableMetadata.fileSizeBytes ?? 0,
           lastModifiedAt: Date.now(),
         },
       });

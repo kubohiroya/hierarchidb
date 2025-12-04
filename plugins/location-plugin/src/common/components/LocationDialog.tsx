@@ -52,9 +52,14 @@ import {
 } from '@hierarchidb/ui-dialog';
 import { notify } from '@hierarchidb/components';
 
-import { useTreeNodeUpdater, type DraftData, createTreeNodeUpdaterActions } from '@hierarchidb/plugin-ui-sdk';
+import {
+  useTreeNodeUpdater,
+  type TreeNodeUpdaterState,
+  createTreeNodeUpdaterActions,
+} from '@hierarchidb/plugin-ui-sdk';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
+import { useDialogViewState } from '@hierarchidb/plugin-base';
 // import { useToastNotifications } from '@hierarchidb/components/toast/ToastProvider.js';
 
 const buildDefaultFrame = (): { size: MultiDialogSize; position: MultiDialogPosition } => {
@@ -72,7 +77,7 @@ const MAX_CONCURRENCY = 16;
 
 type LocationDraftPayload = Partial<LocationEntity>;
 
-const normalizeLocationDraft = (raw: DraftData<LocationEntity> | null): LocationDraft => {
+const normalizeLocationDraft = (raw: TreeNodeUpdaterState<LocationEntity> | null): LocationDraft => {
   const draftData = (raw?.draftData ?? {}) as LocationDraftPayload;
 
   const normalizedDraft: LocationDraftPayload = {
@@ -113,7 +118,9 @@ const mergeLocationDraft = (current: LocationDraft, patch: Partial<LocationDraft
   };
 };
 
-const toDraftDataPayload = (value: LocationDraft): Partial<DraftData<LocationEntity>> => ({
+const toDraftDataPayload = (
+  value: LocationDraft
+): Partial<TreeNodeUpdaterState<LocationEntity>> => ({
   draftData: value.draft as LocationEntity | undefined,
   treeNodeId: value.treeNodeId,
 });
@@ -130,6 +137,12 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
 }) => {
   const { translations } = useTranslation();
   const { size: initialSize, position: initialPositionValue } = useMemo(buildDefaultFrame, []);
+  const { dialogState, updateDialogState } = useDialogViewState({
+    initialSize,
+    initialPosition: initialPositionValue,
+    initialDisplayMode: 'normal',
+    initialActiveStepIndex: 0,
+  });
 
   const workerClient = useMemo<WorkerClientRef | null>(() => {
     try {
@@ -161,13 +174,10 @@ const {
 
   useEffect(() => () => { void discardDraft().catch(() => {}); }, [discardDraft]);
 
-  const dialogSizeRef = useRef<MultiDialogSize>(initialSize);
-  const dialogPositionRef = useRef<MultiDialogPosition>(initialPositionValue);
+  const dialogSizeRef = useRef<MultiDialogSize>(dialogState.size);
+  const dialogPositionRef = useRef<MultiDialogPosition>(dialogState.position);
   const vectorServiceRef = useRef<LocationVectorTileService | null>(null);
-  const [dialogSize, setDialogSize] = useState<MultiDialogSize>(initialSize);
-  const [dialogPosition, setDialogPosition] = useState<MultiDialogPosition>(initialPositionValue);
-  const [displayMode, setDisplayMode] = useState<DialogDisplayMode>('normal');
-  const [activeStepIndex, setActiveStepIndex] = useState(0);
+  const { size: dialogSize, position: dialogPosition, displayMode, activeStepIndex } = dialogState;
   const [isBatchStarting, setIsBatchStarting] = useState(false);
   const [buildStatus, setBuildStatus] = useState<string | null>(null);
 
@@ -187,9 +197,8 @@ const {
   const applyNormalizedState = useCallback((size: MultiDialogSize, position: MultiDialogPosition) => {
     dialogSizeRef.current = size;
     dialogPositionRef.current = position;
-    setDialogSize(size);
-    setDialogPosition(position);
-  }, []);
+    updateDialogState({ patch: { size, position } });
+  }, [updateDialogState]);
 
   const { updatePayload, updateMetadata } = useMemo(
     () => createTreeNodeUpdaterActions<LocationEntity>(updateDraft),
@@ -470,8 +479,8 @@ const {
       applyNormalizedState(normalized.size, normalized.position);
     }
 
-    setDisplayMode(mode);
-  }, [applyNormalizedState]);
+    updateDialogState({ patch: { displayMode: mode } });
+  }, [applyNormalizedState, updateDialogState]);
 
   const handleSave = useCallback(async () => {
     try {
@@ -519,18 +528,22 @@ const {
   const handleStepNavigate = useCallback((event: StepNavigationEvent) => {
     switch (event.type) {
       case 'direct':
-        setActiveStepIndex(event.targetIndex);
+        updateDialogState({ patch: { activeStepIndex: event.targetIndex } });
         break;
       case 'next':
-        setActiveStepIndex((prev) => Math.min(prev + 1, stepComponents.length - 1));
+        updateDialogState({
+          patch: { activeStepIndex: Math.min(activeStepIndex + 1, stepComponents.length - 1) },
+        });
         break;
       case 'back':
-        setActiveStepIndex((prev) => Math.max(prev - 1, 0));
+        updateDialogState({
+          patch: { activeStepIndex: Math.max(activeStepIndex - 1, 0) },
+        });
         break;
       default:
         break;
     }
-  }, [stepComponents.length]);
+  }, [activeStepIndex, stepComponents.length, updateDialogState]);
 
   const renderHeader: HeadlessMultiStepDialogProps<LocationDraft>['renderHeader'] = useCallback((propsHeader: HeadlessHeaderRenderProps<LocationDraft>) => (
     <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ px: 2, py: 1.5, borderBottom: '1px solid #dde1eb' }}>

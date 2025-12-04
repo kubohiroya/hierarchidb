@@ -1,23 +1,31 @@
 /**
- * Working Copy Atoms for Jotai state management
+ * Atoms for Jotai state management
  */
 
 import type { NodeId, TreeId } from '@hierarchidb/common-types';
 import type { DialogStep } from '@hierarchidb/ui-dialog';
 import { atom } from 'jotai';
+import type { DialogViewState } from '@hierarchidb/common-types';
 
 /**
  * Working copy data state
  */
-export interface DraftData {
+export interface DraftData<TMetadata = unknown, TData = unknown> {
   nodeId: NodeId;
   treeId: TreeId;
   parentId?: NodeId;
   nodeType: string;
-  name: string;
-  description?: string;
-  data: Record<string, unknown>;
+  /** Committed metadata received from worker (TreeNode metadata). */
+  metadata?: TMetadata;
+  /** Draft metadata being edited. */
+  draftMetadata?: TMetadata;
+  /** Committed node payload. */
+  data?: TData;
+  /** Draft node payload being edited. */
+  draftData?: TData;
+  /** Whether this record represents an unsaved draft. */
   isDraft?: boolean;
+  /** Last modified timestamp (ms) for UI bookkeeping. */
   lastModified: number;
 }
 
@@ -44,15 +52,22 @@ export interface StepCapabilities {
 }
 
 /**
- * Dialog state
+ * Step state
  */
-export interface DialogState {
+export interface StepState {
   currentStep: number;
   completedSteps: Set<number>;
   visitedSteps: Set<number>;
   isSubmitting: boolean;
   hasUnsavedChanges: boolean;
 }
+
+/**
+ * Dialog-level state (layout/step/save) to keep UI concerns together.
+ * Complements draftAtom (node data) and stepStateAtom (navigation),
+ * and can be derived from or synced to MultiStepDialogState when needed.
+ */
+export type DialogViewStateAtom = DialogViewState;
 
 // ============================================================================
 // Base Atoms
@@ -65,9 +80,9 @@ export interface DialogState {
 export const draftAtom = atom<DraftData | null>(null);
 
 /**
- * Dialog navigation state
+ * Step navigation state
  */
-export const dialogStateAtom = atom<DialogState>({
+export const stepStateAtom = atom<StepState>({
   currentStep: 0,
   completedSteps: new Set<number>(),
   visitedSteps: new Set<number>([0]),
@@ -108,11 +123,11 @@ export const workerConnectionAtom = atom<{
  * Current step validation state
  */
 export const currentStepValidationAtom = atom((get) => {
-  const dialogState = get(dialogStateAtom);
+  const stepState = get(stepStateAtom);
   const validationResults = get(validationResultsAtom);
   const steps = get(dialogStepsAtom);
 
-  const currentStep = steps[dialogState.currentStep];
+  const currentStep = steps[stepState.currentStep];
   if (!currentStep) return null;
 
   return validationResults.get(currentStep.id);
@@ -122,11 +137,11 @@ export const currentStepValidationAtom = atom((get) => {
  * Current step capabilities
  */
 export const currentStepCapabilitiesAtom = atom((get) => {
-  const dialogState = get(dialogStateAtom);
+  const stepState = get(stepStateAtom);
   const capabilities = get(stepCapabilitiesAtom);
 
   return (
-    capabilities.get(dialogState.currentStep) || {
+    capabilities.get(stepState.currentStep) || {
       canNavigateTo: false,
       canProceedToNext: false,
       canBackToPrevious: false,
@@ -146,12 +161,12 @@ export const dialogStepsAtom = atom<DialogStep[]>([]);
  */
 export const canSaveAtom = atom((get) => {
   const capabilities = get(currentStepCapabilitiesAtom);
-  const dialogState = get(dialogStateAtom);
+  const stepState = get(stepStateAtom);
   const validationResults = get(validationResultsAtom);
 
   // Check if current step is valid
   const steps = get(dialogStepsAtom);
-  const currentStep = steps[dialogState.currentStep];
+  const currentStep = steps[stepState.currentStep];
   if (currentStep) {
     const validation = validationResults.get(currentStep.id);
     if (validation && !validation.isValid) {
@@ -160,7 +175,7 @@ export const canSaveAtom = atom((get) => {
   }
 
   // Check capabilities
-  return capabilities.canSave && !dialogState.isSubmitting;
+  return capabilities.canSave && !stepState.isSubmitting;
 });
 
 /**
@@ -168,9 +183,9 @@ export const canSaveAtom = atom((get) => {
  */
 export const canStartBatchAtom = atom((get) => {
   const capabilities = get(currentStepCapabilitiesAtom);
-  const dialogState = get(dialogStateAtom);
+  const stepState = get(stepStateAtom);
 
-  return capabilities.canStartBatch && !dialogState.isSubmitting;
+  return capabilities.canStartBatch && !stepState.isSubmitting;
 });
 
 /**
@@ -178,12 +193,12 @@ export const canStartBatchAtom = atom((get) => {
  */
 export const canGoNextAtom = atom((get) => {
   const capabilities = get(currentStepCapabilitiesAtom);
-  const dialogState = get(dialogStateAtom);
+  const stepState = get(stepStateAtom);
   const steps = get(dialogStepsAtom);
 
-  const isLastStep = dialogState.currentStep === steps.length - 1;
+  const isLastStep = stepState.currentStep === steps.length - 1;
 
-  return !isLastStep && capabilities.canProceedToNext && !dialogState.isSubmitting;
+  return !isLastStep && capabilities.canProceedToNext && !stepState.isSubmitting;
 });
 
 /**
@@ -191,9 +206,9 @@ export const canGoNextAtom = atom((get) => {
  */
 export const canGoPreviousAtom = atom((get) => {
   const capabilities = get(currentStepCapabilitiesAtom);
-  const dialogState = get(dialogStateAtom);
+  const stepState = get(stepStateAtom);
 
-  return dialogState.currentStep > 0 && capabilities.canBackToPrevious && !dialogState.isSubmitting;
+  return stepState.currentStep > 0 && capabilities.canBackToPrevious && !stepState.isSubmitting;
 });
 
 // ============================================================================
@@ -214,17 +229,17 @@ export const updateDraftAtom = atom(null, (get, set, update: Partial<DraftData>)
   });
 
   // Mark as having unsaved changes
-  set(dialogStateAtom, (prev: DialogState) => ({
+  set(stepStateAtom, (prev: StepState) => ({
     ...prev,
     hasUnsavedChanges: true,
   }));
 });
 
 /**
- * Update dialog state
+ * Update step state
  */
-export const updateDialogStateAtom = atom(null, (_get, set, update: Partial<DialogState>) => {
-  set(dialogStateAtom, (prev: DialogState) => ({
+export const updateStepStateAtom = atom(null, (_get, set, update: Partial<StepState>) => {
+  set(stepStateAtom, (prev: StepState) => ({
     ...prev,
     ...update,
   }));
@@ -262,12 +277,12 @@ export const setStepCapabilitiesAtom = atom(
  * Navigate to step
  */
 export const navigateToStepAtom = atom(null, (get, set, stepIndex: number) => {
-  const dialogState = get(dialogStateAtom);
-  const visitedSteps = new Set(dialogState.visitedSteps);
+  const stepState = get(stepStateAtom);
+  const visitedSteps = new Set(stepState.visitedSteps);
   visitedSteps.add(stepIndex);
 
-  set(dialogStateAtom, {
-    ...dialogState,
+  set(stepStateAtom, {
+    ...stepState,
     currentStep: stepIndex,
     visitedSteps,
   });
@@ -277,22 +292,22 @@ export const navigateToStepAtom = atom(null, (get, set, stepIndex: number) => {
  * Mark step as completed
  */
 export const markStepCompletedAtom = atom(null, (get, set, stepIndex: number) => {
-  const dialogState = get(dialogStateAtom);
-  const completedSteps = new Set(dialogState.completedSteps);
+  const stepState = get(stepStateAtom);
+  const completedSteps = new Set(stepState.completedSteps);
   completedSteps.add(stepIndex);
 
-  set(dialogStateAtom, {
-    ...dialogState,
+  set(stepStateAtom, {
+    ...stepState,
     completedSteps,
   });
 });
 
 /**
- * Reset dialog state
+ * Reset step state
  */
-export const resetDialogAtom = atom(null, (_get, set) => {
+export const resetStepStateAtom = atom(null, (_get, set) => {
   set(draftAtom, null);
-  set(dialogStateAtom, {
+  set(stepStateAtom, {
     currentStep: 0,
     completedSteps: new Set<number>(),
     visitedSteps: new Set<number>([0]),

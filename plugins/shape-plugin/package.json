@@ -72,7 +72,14 @@
     "pako": "^2.1.0",
     "pbf": "^4.0.1",
     "topojson-client": "^3.1.0",
-    "topojson-server": "^3.0.1"
+    "topojson-server": "^3.0.1",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/plugin-service-api": "workspace:*",
+    "@hierarchidb/plugin-ui-sdk": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/ui-plugin-basic-info": "workspace:*",
+    "@hierarchidb/ui-worker-provider": "workspace:*"
   },
   "peerDependencies": {
     "@hierarchidb/plugin-service-api": "workspace:*",
@@ -98,6 +105,8 @@
     "@hierarchidb/plugin-service-sdk": "workspace:*",
     "@hierarchidb/components": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@mui/icons-material": "^7.3.2",
     "@mui/material": "^7.3.2",
     "dexie": "^4.2.0",
@@ -144,7 +153,10 @@
     "@hierarchidb/spreadsheet-plugin": "workspace:*",
     "@hierarchidb/plugin-service-sdk": "workspace:*",
     "@hierarchidb/components": "workspace:*",
-    "@hierarchidb/ui-worker-client": "workspace:*"
+    "@hierarchidb/ui-worker-client": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/ui-plugin-basic-info": "workspace:*",
+    "@hierarchidb/plugin-ui-sdk": "workspace:*"
   },
   "type": "module",
   "hierarchidb": {

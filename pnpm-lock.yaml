@@ -268,24 +268,12 @@ importers:
       '@emotion/styled':
         specifier: 11.14.0
         version: 11.14.0(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react@18.3.1)
-      '@hierarchidb/basemap-plugin':
-        specifier: workspace:*
-        version: link:../plugins/basemap-plugin
       '@hierarchidb/common-api':
         specifier: workspace:*
         version: link:../packages/common/api
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../packages/common/types
-      '@hierarchidb/folder-plugin':
-        specifier: workspace:*
-        version: link:../plugins/folder-plugin
-      '@hierarchidb/linker-plugin':
-        specifier: workspace:*
-        version: link:../plugins/linker-plugin
-      '@hierarchidb/location-plugin':
-        specifier: workspace:*
-        version: link:../plugins/location-plugin
       '@hierarchidb/plugin-base':
         specifier: workspace:*
         version: link:../packages/plugin-base
@@ -301,30 +289,12 @@ importers:
       '@hierarchidb/plugin-ui-sdk':
         specifier: workspace:*
         version: link:../packages/plugin-ui-sdk
-      '@hierarchidb/resolver-plugin':
-        specifier: workspace:*
-        version: link:../plugins/resolver-plugin
-      '@hierarchidb/route-plugin':
-        specifier: workspace:*
-        version: link:../plugins/route-plugin
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../packages/runtime-worker
-      '@hierarchidb/shape-plugin':
-        specifier: workspace:*
-        version: link:../plugins/shape-plugin
-      '@hierarchidb/spreadsheet-plugin':
-        specifier: workspace:*
-        version: link:../plugins/spreadsheet-plugin
-      '@hierarchidb/styler-plugin':
-        specifier: workspace:*
-        version: link:../plugins/styler-plugin
       '@hierarchidb/tag':
         specifier: workspace:*
         version: link:../packages/features/tag
-      '@hierarchidb/timeline-plugin':
-        specifier: workspace:*
-        version: link:../plugins/timeline-plugin
       '@hierarchidb/ui-i18n':
         specifier: workspace:*
         version: link:../packages/ui/i18n
@@ -1987,9 +1957,6 @@ importers:
 
   packages/ui/treeconsole/breadcrumb:
     dependencies:
-      '@hierarchidb/plugin-registry':
-        specifier: workspace:*
-        version: link:../../../plugin-registry
       '@hierarchidb/ui-i18n':
         specifier: workspace:*
         version: link:../../i18n
@@ -3050,6 +3017,18 @@ importers:
         specifier: '>=18.0.0'
         version: 18.3.1
     devDependencies:
+      '@hierarchidb/plugin-ui-sdk':
+        specifier: workspace:*
+        version: link:../../packages/plugin-ui-sdk
+      '@hierarchidb/ui-dialog':
+        specifier: workspace:*
+        version: link:../../packages/ui/dialog
+      '@hierarchidb/ui-plugin-basic-info':
+        specifier: workspace:*
+        version: link:../../packages/ui/plugin-basic-info
+      '@hierarchidb/ui-worker-provider':
+        specifier: workspace:*
+        version: link:../../packages/ui/worker-provider
       '@mui/icons-material':
         specifier: ^7.3.2
         version: 7.3.4(@mui/material@7.3.4(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.26)(react@18.3.1)

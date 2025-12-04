@@ -11,5 +11,9 @@
     "noImplicitReturns": true,
     "jsxImportSource": "react",
     "jsx": "react-jsx"
-  }
+  },
+  "include": [
+    "../../global.d.ts",
+    "src/**/*"
+  ]
 }

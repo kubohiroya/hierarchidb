@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import type { NodeId, TreeId } from '@hierarchidb/common-types';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import {
@@ -17,7 +17,12 @@ import {
   type HeadlessMultiStepDialogProps,
 } from '@hierarchidb/ui-dialog';
 import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
-import { useTreeNodeUpdater, type DraftData, createTreeNodeUpdaterActions } from '@hierarchidb/plugin-ui-sdk';
+import {
+  useTreeNodeUpdater,
+  type TreeNodeUpdaterState,
+  createTreeNodeUpdaterActions,
+} from '@hierarchidb/plugin-ui-sdk';
+import { useDialogViewState } from '@hierarchidb/plugin-base';
 import type { ShapeDraft, ShapeEntity } from '../../common/shared/index.js';
 import {
   DEFAULT_PROCESSING_CONFIG,
@@ -48,7 +53,7 @@ type ShapeDraftData = Partial<ShapeDraft> & {
   tags?: string[];
 };
 
-const normalizeDraft = (raw: DraftData<ShapeDraftData> | null): ShapeDraftData => {
+const normalizeDraft = (raw: TreeNodeUpdaterState<ShapeDraftData> | null): ShapeDraftData => {
   const meta = raw?.draftMetadata ?? raw?.metadata ?? { name: '', description: '', tags: [] };
   const draftData = raw?.draftData ?? {};
   return {
@@ -84,6 +89,13 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
     return { size, position };
   }, []);
 
+  const { dialogState, updateDialogState } = useDialogViewState({
+    initialSize,
+    initialPosition: initialPositionValue,
+    initialDisplayMode: 'normal',
+    initialActiveStepIndex: 0,
+  });
+
 const { draft, updateDraft, saveDraft, discardDraft } = useTreeNodeUpdater<ShapeDraftData>({
   mode,
   nodeType: 'shape',
@@ -99,11 +111,7 @@ const { updatePayload, updateMetadata } = useMemo(
   [updateDraft],
 );
 
-  const [dialogSize, setDialogSize] = useState<MultiDialogSize>(initialSize);
-  const [dialogPosition, setDialogPosition] = useState<MultiDialogPosition>(initialPositionValue);
-  const [displayMode, setDisplayMode] = useState<DialogDisplayMode>('normal');
-  const [activeStepIndex, setActiveStepIndex] = useState(0);
-  const [isSaving, setIsSaving] = useState(false);
+  const { size: dialogSize, position: dialogPosition, displayMode, activeStepIndex, isSaving } = dialogState;
   const dialogRootRef = useRef<HTMLDivElement | null>(null);
   const dialogSizeRef = useRef(dialogSize);
   const dialogPositionRef = useRef(dialogPosition);
@@ -124,7 +132,7 @@ const { updatePayload, updateMetadata } = useMemo(
 
   const handleSave = useCallback(async () => {
     if (isSaving) return;
-    setIsSaving(true);
+    updateDialogState({ patch: { isSaving: true } });
     try {
       const savedId = await saveDraft();
       if (onSave) {
@@ -149,9 +157,9 @@ const { updatePayload, updateMetadata } = useMemo(
       }
       onClose();
     } finally {
-      setIsSaving(false);
+      updateDialogState({ patch: { isSaving: false } });
     }
-  }, [data.description, data.name, data.tags, isSaving, onClose, onSave, saveDraft]);
+  }, [data.description, data.name, data.tags, isSaving, onClose, onSave, saveDraft, updateDialogState]);
 
   const handleDiscard = useCallback(() => {
     void discardDraft().catch(() => {});
@@ -178,7 +186,7 @@ const { updatePayload, updateMetadata } = useMemo(
     {
       id: 'tabular-upload',
       label: 'Dataset Upload',
-      component: (
+      component: () => (
         <StepTabularUpload
           mode={mode}
           data={data}
@@ -194,7 +202,7 @@ const { updatePayload, updateMetadata } = useMemo(
     {
       id: 'tabular-filter',
       label: 'Dataset Filter',
-      component: (
+      component: () => (
         <StepTabularFilter
           mode={mode}
           data={data}
@@ -210,7 +218,7 @@ const { updatePayload, updateMetadata } = useMemo(
     {
       id: 'basic',
       label: 'Basic Information',
-      component: (
+      component: () => (
         <BasicInfoStep
           name={data.name ?? ''}
           description={data.description ?? ''}
@@ -225,7 +233,7 @@ const { updatePayload, updateMetadata } = useMemo(
     {
       id: 'data-source',
       label: 'Data Source',
-      component: (
+      component: () => (
         <Step2DataSource
           draft={data}
           onUpdate={handleUpdate}
@@ -237,7 +245,7 @@ const { updatePayload, updateMetadata } = useMemo(
     {
       id: 'license',
       label: 'License Agreement',
-      component: (
+      component: () => (
         <Step3License
           draft={data}
           onUpdate={handleUpdate}
@@ -249,7 +257,7 @@ const { updatePayload, updateMetadata } = useMemo(
     {
       id: 'processing',
       label: 'Processing Configuration',
-      component: (
+      component: () => (
         <Step4Processing
           draft={data}
           onUpdate={handleUpdate}
@@ -264,7 +272,7 @@ const { updatePayload, updateMetadata } = useMemo(
     {
       id: 'country-selection',
       label: 'Country Selection',
-      component: (
+      component: () => (
         <Step5CountrySelection
           draft={data}
           onUpdate={handleUpdate}
@@ -282,16 +290,20 @@ const { updatePayload, updateMetadata } = useMemo(
   const handleNavigation = useCallback((event: StepNavigationEvent) => {
     switch (event.type) {
       case 'direct':
-        setActiveStepIndex(event.targetIndex);
+        updateDialogState({ patch: { activeStepIndex: event.targetIndex } });
         break;
       case 'next':
-        setActiveStepIndex((prev) => Math.min(prev + 1, steps.length - 1));
+        updateDialogState({
+          patch: { activeStepIndex: Math.min(activeStepIndex + 1, steps.length - 1) },
+        });
         break;
       case 'back':
-        setActiveStepIndex((prev) => Math.max(prev - 1, 0));
+        updateDialogState({
+          patch: { activeStepIndex: Math.max(activeStepIndex - 1, 0) },
+        });
         break;
     }
-  }, [steps.length]);
+  }, [activeStepIndex, steps.length, updateDialogState]);
 
   const handleSizeChange = useCallback((next?: MultiDialogSize) => {
     if (!next) return;
@@ -308,10 +320,9 @@ const { updatePayload, updateMetadata } = useMemo(
     if (!sizesEqual(dialogSizeRef.current, normalized.size) || !positionsEqual(dialogPositionRef.current, normalized.position)) {
       dialogSizeRef.current = normalized.size;
       dialogPositionRef.current = normalized.position;
-      setDialogSize(normalized.size);
-      setDialogPosition(normalized.position);
+      updateDialogState({ patch: { size: normalized.size, position: normalized.position } });
     }
-  }, [displayMode]);
+  }, [displayMode, updateDialogState]);
 
   const handlePositionChange = useCallback((next?: MultiDialogPosition) => {
     if (!next) return;
@@ -328,10 +339,9 @@ const { updatePayload, updateMetadata } = useMemo(
     if (!sizesEqual(dialogSizeRef.current, normalized.size) || !positionsEqual(dialogPositionRef.current, normalized.position)) {
       dialogSizeRef.current = normalized.size;
       dialogPositionRef.current = normalized.position;
-      setDialogSize(normalized.size);
-      setDialogPosition(normalized.position);
+      updateDialogState({ patch: { size: normalized.size, position: normalized.position } });
     }
-  }, [displayMode]);
+  }, [displayMode, updateDialogState]);
 
   const headlessProps: HeadlessMultiStepDialogProps<ShapeDraftData> = {
     open,
@@ -356,7 +366,7 @@ const { updatePayload, updateMetadata } = useMemo(
     size: dialogSize,
     onSizeChange: handleSizeChange,
     displayMode,
-    onDisplayModeChange: (mode: DialogDisplayMode) => setDisplayMode(mode),
+    onDisplayModeChange: (mode: DialogDisplayMode) => updateDialogState({ patch: { displayMode: mode } }),
   };
 
   const fullScreen = displayMode === 'full-screen';

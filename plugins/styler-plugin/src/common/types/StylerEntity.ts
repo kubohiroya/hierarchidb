@@ -1,8 +1,9 @@
-import type { TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import type { SpreadsheetEntity } from '@hierarchidb/spreadsheet-plugin';
 import type { MapLibreStyle } from '@hierarchidb/ui-map';
 import type { DialogProgressState, DialogWindowState } from '@hierarchidb/plugin-service-api';
 import type { StylerConfig } from './stylerTypes.js';
+import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 
 /**
  * : StylerEntity
@@ -21,15 +22,12 @@ export interface StylerEntity extends SpreadsheetEntity {
   //  - dataSource: object (SpreadsheetEntity)
   //  - filters?: object (SpreadsheetEntity)
 
+  nodeId?: NodeId;
   name?: string;
   description?: string;
   tags?: string[];
-
-  metadata?: {
-    name?: string;
-    description?: string;
-    tags?: string[];
-  };
+  /** Tabular table metadata associated with this styler */
+  metadata?: TabularTableMetadata;
 
   //  Styler
   stylerConfig: StylerConfig;

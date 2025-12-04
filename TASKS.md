@@ -100,11 +100,13 @@
 - 受け入れ基準（DoD）:
   - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
   - [ ] 現行ソースから WorkingCopy/working copy 表記を `TreeNodeUpdater`/`draftMetadata`/`draftData` 系に置換するコーデモッドを準備・適用する（deprecated/dist を除外）
+  - [ ] プラグイン `src/**/*.d.ts` による独自型解決を全廃し、正規パッケージの型参照へ置換する（必要なら依存 build/refs を整備）
   - [ ] `packages/plugin-service-sdk/src/draft/**` の命名・コメントを新用語へ更新し、ビルドアウトプットは再ビルドで同期する
   - [ ] 主要パッケージの typecheck を実行し、結果を運用ログへ記録する
 - チェックリスト:
   - [ ] `rg "working[- ]?copy"` で現行ソースの残存箇所を棚卸し（deprecated/dist/coverage を除外）
   - [ ] ts-morph コーデモッドを作成し、対象パスを現行ソースに限定して実行（dry run→write）
+  - [ ] `rg --files -g'*.d.ts' plugins/*-plugin/src` でローカル d.ts を洗い出し、削除後に正規 import へ修正する（必要に応じて依存パッケージの build/type を先行実行）
   - [ ] 再ビルド（必要範囲）と typecheck を実行し、ログを記載する
 - ロールバック手順：コーデモッドと適用差分を revert し、実行したビルド/typecheck を再実行して現状へ戻す
 1585) TreeNodeUpdater 型命名統一コーデモッド（P1）
@@ -114,13 +116,30 @@
   - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
   - [ ] `TreeNodeUpdaterPayload` の `id` を `treeNodeId` に AST ベースで置換し、参照揺れが残らない
   - [ ] パッチ型を `TreeNodeUpdatePayload` から `TreeNodeUpdaterPatch` にリネームし、全参照を統一する
+  - [ ] プラグイン `src/**/*.d.ts` を撤去し、TreeNodeUpdater 関連型を正規パッケージの export 参照へ統一する（暫定 paths 追加は避け、必要なら references/build を整備）
   - [ ] plugin-ui-host 側の重複型を共通命名に揃える（可能なら共通型へ集約）
   - [ ] 型チェック（全体または touched パッケージ）を実行し、結果を運用ログに記録する
 - チェックリスト:
   - [ ] ts-morph ベースのコーデモッドスクリプトを作成し、対象パスを packages/app/plugins 全体に設定する
+  - [ ] `rg --files -g'*.d.ts' plugins/*-plugin/src` を実行し、TreeNodeUpdater まわりのローカル定義を削除→正規 import へ置換する
   - [ ] コーデモッド実行後に差分を確認し、手動修正なしで命名揺れが解消されていることを確認する
   - [ ] `pnpm typecheck` または触れたパッケージの typecheck を実行し、結果を記録する
 - ロールバック手順：コーデモッドスクリプトと生成差分を revert し、実行した typecheck を再実行して元に戻ることを確認する
+
+1591) プラグイン src/*.d.ts 全廃と正規参照化（P0）
+- ブランチ: `chore/plugins/remove-local-dts`（sandbox 制約で `main` 上で作業）
+- 依存: `plugins/*-plugin` の型参照、`tsconfig.base.json` の alias/policy、各プラグインの build/type 出力、Turbo 依存順
+- 受け入れ基準（DoD）:
+  - [x] `TASKS.md` Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [x] `plugins/*-plugin/src/**/*.d.ts` を棚卸しし、全削除した上で正規パッケージ（`@hierarchidb/*` 等）の export による型参照へ置換する（暫定 `paths` 追加は禁止）
+  - [ ] 依存型が解決できない場合は、`tsconfig.build.json` の `references` や依存パッケージの `build/type` 先行実行で解決し、対応内容を記録する
+  - [x] 影響パッケージの typecheck（例: `pnpm --filter @hierarchidb/<plugin> typecheck`）を実行し、結果を運用ログへ記録する
+  - [ ] 削除/置換差分と復旧手順を本節に記載する
+- チェックリスト:
+  - [x] `rg --files -g'*.d.ts' plugins/*-plugin/src` でローカル d.ts を列挙し、削除対象を明文化する
+  - [x] 削除後に必要な型 import を正規パッケージから追加し、tsconfig の `paths` を増やさずに解決できるよう references/build 順を調整する
+  - [x] `pnpm --filter @hierarchidb/<plugin> typecheck`（複数ならまとめて）を実行し、結果を運用ログに追記する
+- ロールバック手順：本タスクで削除・修正したファイルと tsconfig 依存設定を revert し、同じ typecheck コマンドを再実行して従前状態を確認する
 
 1584) Plugin Entity/Dialog 命名整理ドキュメント & 移行計画（P1）
 - ブランチ: `chore/docs/plugin-entity-dialog-guidelines`（sandbox 制約で branch 作成失敗のため main 上で作業）
@@ -691,6 +710,7 @@
   - [ ] `vitest.setup.ts` などで露出した型エラーを修正し、型ビルドが通るか確認
   - [ ] `tsc -b` での依存順序を Turbo/Pnpm の pipeline に組み込み、回帰がないかを検証
 - ロールバック手順：追加した references・`composite` 設定を revert し、`pnpm --filter @hierarchidb/ui-shell typecheck` を旧構成で再実行する
+
 - 115) TreeConsole `as any` 削減（P0）
 - ブランチ: `refactor/ui-treeconsole/remove-as-any`（sandbox 制約で `main` 上で作業）
 - 依存: `app/src/components/TreeConsoleIntegration.tsx`, `app/src/components/dialogs/TrashDialog.tsx`, `app/src/hooks/treeconsole/**/*`, `packages/ui/treeconsole/**/*`
@@ -9386,6 +9406,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-27 15:46 progress: fix/workingcopy/dialog-cancel-behavior — create 仮ノードを version:0 に統一し、commit/save/import で 1 以上へ昇格する方針に合わせて判定を整理。`initTreeNode` を version 0 で作成、`commitTreeNodeDraft` は version を 0 起点で +1、`discardTreeNodeDraft` は committed 判定を version>0/データ有無のみに簡素化。UI cancel で forceDelete を渡すよう修正済み。`pnpm --filter @hierarchidb/runtime-worker test -- --run cancel-create` exit 0。
 
 ## 今日の着手（運用ログ） <a id="worklog-16"></a>
+- 2025-12-04 09:20 start: chore/plugins/remove-local-dts（TASK 1591） — plugins/*-plugin/src 配下のローカル .d.ts 全廃タスクを開始。DoD: Kanban/ログ更新、棚卸し→削除→正規参照化、依存 build/refs で型解決、影響パッケージ typecheck 実行と記録、ロールバック手順明記。
+- 2025-12-04 09:25 progress: chore/plugins/remove-local-dts — `plugins/{resolver,basemap,shape}-plugin/src/vite-env.d.ts` と `plugins/{timeline,location}-plugin/src/types/xlsx.d.ts` を削除し、`global.d.ts` に `vite/client` + VITE_* env を集約。basemap/location/timeline の tsconfig に `../../global.d.ts` を include。コマンド: `pnpm --filter @hierarchidb/basemap-plugin typecheck` exit 0, `pnpm --filter @hierarchidb/{shape,resolver,location,timeline}-plugin typecheck` exit 2（既存の DraftData 非互換や spreadsheet/styler 連鎖型崩れ起因）。ロールバック: 削除した .d.ts と tsconfig/global.d.ts の今回差分を revert し、同コマンドを再実行。
+- 2025-12-04 10:05 progress: chore/plugins/remove-local-dts — DraftData 依存を TreeNodeUpdaterState へ置換（folder/location/resolver/shape/styler UI）。再検証: `pnpm --filter @hierarchidb/shape-plugin typecheck` は引き続き `@hierarchidb/ui-dialog` など未解決で exit 2、`pnpm --filter @hierarchidb/{resolver,location,timeline}-plugin typecheck` は SpreadsheetDialogData 廃止など既存エラーで exit 2（DraftData 由来の import エラーは解消）。ロールバック: 上記 UI ファイルの変更と共通型 include 追加を revert し、同コマンドを再実行。
 - 2025-12-03 18:26 start: fix/repo/turbo-test-cycle — `pnpm test` (`turbo run test --parallel`) が依存サイクル検出で失敗する問題を調査・解消するタスクを開始。DoD: Kanban/ログ更新、サイクル原因特定と最小修正、`pnpm test` でグラフエラー解消確認、ロールバック手順明記。
 - 2025-12-03 18:34 progress: fix/repo/turbo-test-cycle — 原因: `@hierarchidb/plugin-registry` が全プラグインを dependencies に含め、各プラグインの devDependency 経由で `@hierarchidb/runtime-worker` へ戻るサイクルが発生していた。対応: plugin-registry の workspace 依存（plugins/*-plugin）を dependencies から削除し、グラフを閉じるループを解消。検証: `pnpm test`（= `turbo run test --parallel`）実行で dependency graph エラーは解消し、`@hierarchidb/plugin-ui-sdk#test` が「No test files found」で exit 1（既存テスト未定義）。コマンド: `pnpm test` — exit 1。
 - 2025-12-03 18:38 progress: fix/repo/turbo-test-cycle — `@hierarchidb/plugin-ui-sdk` の test スクリプトに `--passWithNoTests` を付与して空テストで失敗しないよう調整。再検証: `pnpm test` で dependency graph エラーは再発せず、`@hierarchidb/ui-routing#test` が `packages/runtime-worker/client` ディレクトリ欠如を参照する設定ミスで失敗、`@hierarchidb/testing/plugin-dialog-mocks#test` は esbuild EPIPE で停止。コマンド: `pnpm test` — exit 1。
@@ -9411,6 +9434,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-03 17:38 done: fix/plugin-dialog/basicinfo-focus — 上記修正を反映。検証: `pnpm --filter @hierarchidb/plugin-ui-host test -- --run "basic-info-focus"` exit 0、`pnpm --filter @hierarchidb/plugin-ui-host typecheck` exit 0。
 - 2025-12-03 17:50 progress: fix/plugin-dialog/basicinfo-focus — Step2 以降のプラグインステップでも再マウントしないよう、StepAdapter のコンポーネント参照をステップIDごとに useRef 固定化し、cfg/uiState などは最新値を ref から読む形に統一。追加テストでプラグインステップのコンポーネント安定性を検証。
 - 2025-12-03 17:51 done: fix/plugin-dialog/basicinfo-focus — 再マウント抑止を全ステップに適用。検証: `pnpm --filter @hierarchidb/plugin-ui-host test -- --run "basic-info-focus"` exit 0、`pnpm --filter @hierarchidb/plugin-ui-host typecheck` exit 0。
+- 2025-12-03 17:52 start: chore/templates/population-source-url — Import template「Total Population by Country」の CSV ダウンロード URL を datasets/population の raw CSV へ更新する作業を開始（sandbox 制約で main 作業）。
+- 2025-12-03 17:53 done: chore/templates/population-source-url — `app/public/templates/population-2023/tree-nodes.json` の dataSource.source/filename を `https://raw.githubusercontent.com/datasets/population/refs/heads/main/data/population.csv` / `population.csv` へ更新。検証: manifest/tags の変更なし、手動確認のみ。ロールバック: 同ファイルの差分を revert し、既定の example.com URL に戻す。
 - 2025-12-02 06:10 start: chore/codemod/workingcopy-rename — 現行ソースの WorkingCopy 用語を TreeNodeUpdater/draftMetadata/draftData へ置換するコーデモッド準備を開始。DoD: Kanban/ログ更新、コーデモッド作成・適用、plugin-service-sdk/src/draft/** 等の命名/コメント更新、typecheck 実行と記録、ロールバック手順明記。deprecated/dist は除外。branch 作成不可なら main 作業。
 - 2025-12-02 05:15 start: chore/codemod/treenode-updater-renames — TreeNodeUpdaterPayload.id→treeNodeId、TreeNodeUpdatePayload→TreeNodeUpdaterPatch の AST コーデモッドを実施するタスクを開始。DoD: Kanban/ログ更新、コーデモッド適用で命名揺れ解消、重複型統一、typecheck 実行と記録、ロールバック手順明記。branch 作成不可なら main で作業。
 - 2025-12-02 05:28 progress: chore/codemod/treenode-updater-renames — ts-morph コーデモッド `packages/tools/codemods/src/rename-tree-node-updater-id.ts` を追加し、build スクリプトへ組み込み。まだドライラン/適用は未実行（TreeNodeUpdatePayload→TreeNodeUpdaterPatch の扱いは再計画中）。

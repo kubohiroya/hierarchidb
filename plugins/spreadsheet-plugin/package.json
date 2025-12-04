@@ -61,18 +61,26 @@
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/ui-plugin-basic-info":"workspace:*",
+    "@hierarchidb/ui-dialog":"workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/tabular-source": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/ui-tabular-extract": "workspace:*",
-    "@hierarchidb/util": "workspace:*"
+    "@hierarchidb/util": "workspace:*",
+    "@hierarchidb/ui-worker-provider":"workspace:*"
   },
   "devDependencies": {
     "@mui/icons-material": "^7.3.2",
     "@mui/material": "^7.3.2",
     "fake-indexeddb": "^4.0.2",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "@hierarchidb/plugin-ui-sdk": "workspace:*",
+    "@hierarchidb/ui-plugin-basic-info":"workspace:*",
+    "@hierarchidb/ui-dialog":"workspace:*",
+    "@hierarchidb/ui-worker-provider":"workspace:*"
   }
 }

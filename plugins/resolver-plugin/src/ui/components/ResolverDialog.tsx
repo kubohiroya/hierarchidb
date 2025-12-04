@@ -30,7 +30,11 @@ import {
 } from '@hierarchidb/ui-dialog';
 import { readRuntimeMode } from '@hierarchidb/util';
 import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
-import { useTreeNodeUpdater, type DraftData, createTreeNodeUpdaterActions } from '@hierarchidb/plugin-ui-sdk';
+import {
+  useTreeNodeUpdater,
+  type TreeNodeUpdaterState,
+  createTreeNodeUpdaterActions,
+} from '@hierarchidb/plugin-ui-sdk';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 
 type ResolverDialogStep = {
@@ -108,7 +112,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
   });
 
   const toResolverUpdaterPayload = useCallback(
-    (raw: DraftData<ResolverEntity> | null): ResolverUpdaterPayload => {
+    (raw: TreeNodeUpdaterState<ResolverEntity> | null): ResolverUpdaterPayload => {
       const draftData = (raw?.draftData ?? {}) as Partial<ResolverEntity>;
       const meta = (raw?.draftMetadata ?? { name: '', description: '', tags: [] }) as {
         name?: string;

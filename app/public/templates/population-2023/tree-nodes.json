@@ -42,8 +42,8 @@
             "spreadsheetMetadataId": null,
             "dataSource": {
               "type": "url",
-              "source": "https://example.com/population_2023.csv",
-              "filename": "population_2023.csv",
+              "source": "https://raw.githubusercontent.com/datasets/population/refs/heads/main/data/population.csv",
+              "filename": "population.csv",
               "sizeBytes": 0
             },
             "filters": []

@@ -3,7 +3,6 @@ import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/plugin
 import {
   DataSourceStep as SpreadsheetDataSourceStep,
   FilteringStep as SpreadsheetFilteringStep,
-  type SpreadsheetDialogData,
 } from '@hierarchidb/spreadsheet-plugin';
 import { StylerStep5 } from './steps/StylerStep5.js';
 import { StylerStep6 } from './steps/StylerStep6.js';
@@ -12,29 +11,24 @@ import { StylerStepData } from '../../common/types/stylerTypes.js';
 
 const registry = PluginStepRegistry.getInstance();
 
-const toSpreadsheetDialogData = (value?: StylerStepData): SpreadsheetDialogData => ({
-  ...(value ?? {}),
-  metadata: (value?.spreadsheetMetadata ?? null) as SpreadsheetDialogData['metadata'],
-});
-
 const mergeDialogData = (
   current: StylerStepData | undefined,
   next: Partial<StylerStepData>
 ): StylerStepData => ({
   ...(current ?? {}),
   ...next,
-  spreadsheetMetadata: next.spreadsheetMetadata ?? current?.spreadsheetMetadata ?? null,
+  spreadsheetMetadata: next.spreadsheetMetadata ?? current?.spreadsheetMetadata ?? undefined,
 });
 
 const renderDataSourceStep = (p: StepComponentProps<StylerStepData>) => (
   <SpreadsheetDataSourceStep
-    {...(p as unknown as StepComponentProps<SpreadsheetDialogData>)}
-    data={toSpreadsheetDialogData(p.data)}
+    {...(p as StepComponentProps<StylerStepData>)}
+    data={p.data}
     onChange={(next) =>
       p.onChange(
         mergeDialogData(p.data, {
           ...(next as Partial<StylerStepData>),
-          spreadsheetMetadata: next.metadata ?? null,
+          spreadsheetMetadata: (next as StylerStepData).spreadsheetMetadata ?? undefined,
         })
       )
     }
@@ -43,13 +37,13 @@ const renderDataSourceStep = (p: StepComponentProps<StylerStepData>) => (
 
 const renderFilteringStep = (p: StepComponentProps<StylerStepData>) => (
   <SpreadsheetFilteringStep
-    {...(p as unknown as StepComponentProps<SpreadsheetDialogData>)}
-    data={toSpreadsheetDialogData(p.data)}
+    {...(p as StepComponentProps<StylerStepData>)}
+    data={p.data}
     onChange={(next) =>
       p.onChange(
         mergeDialogData(p.data, {
           ...(next as Partial<StylerStepData>),
-          spreadsheetMetadata: next.metadata ?? null,
+          spreadsheetMetadata: (next as StylerStepData).spreadsheetMetadata ?? undefined,
         })
       )
     }

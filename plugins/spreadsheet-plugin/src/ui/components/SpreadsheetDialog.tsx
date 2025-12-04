@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import type { NodeId, TreeId, TreeNodeMetadata } from '@hierarchidb/common-types';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import {
@@ -17,8 +17,10 @@ import {
   type HeadlessMultiStepDialogProps,
 } from '@hierarchidb/ui-dialog';
 import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
-import { useTreeNodeUpdater, type DraftData, createTreeNodeUpdaterActions } from '@hierarchidb/plugin-ui-sdk';
-import type { SpreadsheetDialogData } from '../../common/types/SpreadsheetEntity.js';
+import { useTreeNodeUpdater, createTreeNodeUpdaterActions } from '@hierarchidb/plugin-ui-sdk';
+import { useDialogViewState } from '@hierarchidb/plugin-base';
+import type { TreeNodeUpdaterPayload } from '@hierarchidb/common-types';
+import type { SpreadsheetEntity } from '../../common/types/SpreadsheetEntity.js';
 import { DataSourceStep } from './steps/DataSourceStep.js';
 import { FilteringStep } from './steps/FilteringStep.js';
 
@@ -37,17 +39,6 @@ const defaultDialogState = () => {
   const size = getPresetSize('normal', viewport);
   const position = initialPosition(size, viewport);
   return { size, position };
-};
-
-const normalizeDraft = (raw: DraftData<SpreadsheetDialogData> | null): SpreadsheetDialogData => {
-  const meta = raw?.draftMetadata ?? raw?.metadata ?? { name: '', description: '', tags: [] };
-  const draftData = raw?.draftData ?? {};
-  return {
-    ...draftData,
-    name: meta.name ?? '',
-    description: meta.description ?? '',
-    tags: Array.isArray(meta.tags) ? meta.tags : [],
-  };
 };
 
 export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
@@ -69,7 +60,15 @@ export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
   }, []);
 
   const { size: initialSize, position: initialPositionValue } = useMemo(defaultDialogState, []);
-  const { draft, updateDraft, saveDraft, discardDraft } = useTreeNodeUpdater<SpreadsheetDialogData>({
+
+  const { dialogState, updateDialogState } = useDialogViewState({
+    initialSize,
+    initialPosition: initialPositionValue,
+    initialDisplayMode: 'normal',
+    initialActiveStepIndex: 0,
+  });
+
+  const { treeNodeUpdater, updateDraft, saveDraft, discardDraft } = useTreeNodeUpdater<SpreadsheetEntity>({
     mode,
     nodeType: 'spreadsheet',
     nodeId,
@@ -78,25 +77,24 @@ export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
     workerClient,
   });
 
-  const [dialogSize, setDialogSize] = useState<MultiDialogSize>(initialSize);
-  const [dialogPosition, setDialogPosition] = useState<MultiDialogPosition>(initialPositionValue);
-  const [displayMode, setDisplayMode] = useState<DialogDisplayMode>('normal');
-  const [activeStepIndex, setActiveStepIndex] = useState(0);
-  const [isSaving, setIsSaving] = useState(false);
+  const { size: dialogSize, position: dialogPosition, displayMode, activeStepIndex, isSaving } = dialogState;
   const dialogRef = useRef<HTMLDivElement | null>(null);
 
   const dialogSizeRef = useRef(dialogSize);
   const dialogPositionRef = useRef(dialogPosition);
 
-  const data = useMemo<SpreadsheetDialogData>(() => normalizeDraft(draft), [draft]);
+  const dialogData = useMemo<TreeNodeUpdaterPayload<SpreadsheetEntity>['draftData']>(
+    () => ((treeNodeUpdater?.draftData ?? treeNodeUpdater?.data ?? null) as SpreadsheetEntity | null),
+    [treeNodeUpdater?.data, treeNodeUpdater?.draftData]
+  );
   const { updatePayload, updateMetadata } = useMemo(
-    () => createTreeNodeUpdaterActions<SpreadsheetDialogData>(updateDraft),
+    () => createTreeNodeUpdaterActions<SpreadsheetEntity>(updateDraft),
     [updateDraft]
   );
 
   const persistBasicInfo = useCallback(
     (value: BasicInfoData) => {
-      const baseMeta = draft?.draftMetadata ?? draft?.metadata;
+      const baseMeta = treeNodeUpdater?.draftMetadata ?? treeNodeUpdater?.metadata;
       updateMetadata(
         {
           name: value.name,
@@ -106,46 +104,46 @@ export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
         baseMeta ?? { name: '', description: '', tags: [] }
       );
     },
-    [draft?.draftMetadata, draft?.metadata, updateMetadata]
+    [treeNodeUpdater?.draftMetadata, treeNodeUpdater?.metadata, updateMetadata]
   );
 
   const handleUpdate = useCallback(
-    (patch: Partial<SpreadsheetDialogData>) => {
-      const basePayload = (draft?.draftData ?? {}) as SpreadsheetDialogData;
-      const baseMeta = draft?.draftMetadata ?? draft?.metadata ?? { name: '', description: '', tags: [] };
+    (patch: Partial<SpreadsheetEntity>) => {
+      const basePayload = (treeNodeUpdater?.draftData ?? treeNodeUpdater?.data ?? {}) as SpreadsheetEntity;
+      const baseMeta = treeNodeUpdater?.draftMetadata ?? treeNodeUpdater?.metadata ?? { name: '', description: '', tags: [] };
       updatePayload(patch, basePayload);
       updateMetadata(
-        {
-          name: data.name ?? '',
-          description: data.description ?? '',
-          tags: data.tags ?? [],
-        },
+        baseMeta,
         baseMeta
       );
     },
-    [data.description, data.name, data.tags, draft?.draftData, draft?.draftMetadata, draft?.metadata, updateMetadata, updatePayload]
+    [treeNodeUpdater?.data, treeNodeUpdater?.draftData, treeNodeUpdater?.draftMetadata, treeNodeUpdater?.metadata, updateMetadata, updatePayload]
   );
 
   const handleSave = useCallback(async () => {
     if (isSaving) return;
-    setIsSaving(true);
+    updateDialogState({ patch: { isSaving: true } });
+    const baseMeta = treeNodeUpdater?.draftMetadata ?? treeNodeUpdater?.metadata ?? { name: '', description: '', tags: [] };
     try {
       await saveDraft();
       await onSave({
-        name: data.name ?? '',
-        description: data.description ?? '',
-        tags: data.tags ?? [],
+        name: baseMeta.name ?? '',
+        description: baseMeta.description ?? '',
+        tags: baseMeta.tags ?? [],
       });
       onClose();
     } finally {
-      setIsSaving(false);
+      updateDialogState({ patch: { isSaving: false } });
     }
-  }, [data, isSaving, onClose, onSave, saveDraft]);
+  }, [treeNodeUpdater?.draftMetadata, treeNodeUpdater?.metadata, isSaving, onClose, onSave, saveDraft, updateDialogState]);
 
   const handleDiscard = useCallback(() => {
     void discardDraft().catch(() => {});
     onClose();
   }, [discardDraft, onClose]);
+
+  const metadata = treeNodeUpdater?.draftMetadata ?? treeNodeUpdater?.metadata;
+  const data = dialogData ?? {};
 
   const steps = useMemo(() => [
     {
@@ -153,15 +151,15 @@ export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
       label: 'Basic Information',
       component: (
         <BasicInfoStep
-          name={data.name ?? ''}
-          description={data.description ?? ''}
-          tags={data.tags ?? []}
+          name={metadata?.name ?? ''}
+          description={metadata?.description ?? ''}
+          tags={metadata?.tags ?? []}
           mode={mode}
           onChange={persistBasicInfo}
           validate={({ name }: BasicInfoData) => (name.trim().length ? null : 'Name is required')}
         />
       ),
-      validate: () => Boolean(data.name?.trim()),
+      validate: () => Boolean(metadata?.name?.trim()),
     },
     {
       id: 'data-source',
@@ -179,7 +177,7 @@ export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
           dialogRef={dialogRef}
         />
       ),
-      validate: () => Boolean(data.spreadsheetMetadataId),
+      validate: () => Boolean(data?.spreadsheetMetadataId),
     },
     {
       id: 'filtering',
@@ -199,7 +197,7 @@ export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
       ),
       validate: () => true,
     },
-  ], [data, handleUpdate, mode, nodeId, parentId, persistBasicInfo]);
+  ], [data, handleUpdate, metadata?.description, metadata?.name, metadata?.tags, mode, nodeId, parentId, persistBasicInfo]);
 
   const enabledStepIndices = useMemo(() => steps
     .map((step, idx) => (step.validate ? step.validate() : true) ? idx : -1)
@@ -208,16 +206,20 @@ export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
   const handleNavigation = useCallback((event: StepNavigationEvent) => {
     switch (event.type) {
       case 'direct':
-        setActiveStepIndex(event.targetIndex);
+        updateDialogState({ patch: { activeStepIndex: event.targetIndex } });
         break;
       case 'next':
-        setActiveStepIndex((prev) => Math.min(prev + 1, steps.length - 1));
+        updateDialogState({
+          patch: { activeStepIndex: Math.min(activeStepIndex + 1, steps.length - 1) },
+        });
         break;
       case 'back':
-        setActiveStepIndex((prev) => Math.max(prev - 1, 0));
+        updateDialogState({
+          patch: { activeStepIndex: Math.max(activeStepIndex - 1, 0) },
+        });
         break;
     }
-  }, [steps.length]);
+  }, [activeStepIndex, steps.length, updateDialogState]);
 
   const handleSizeChange = useCallback((next?: MultiDialogSize) => {
     if (!next) return;
@@ -234,10 +236,9 @@ export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
     if (!sizesEqual(dialogSizeRef.current, normalized.size) || !positionsEqual(dialogPositionRef.current, normalized.position)) {
       dialogSizeRef.current = normalized.size;
       dialogPositionRef.current = normalized.position;
-      setDialogSize(normalized.size);
-      setDialogPosition(normalized.position);
+      updateDialogState({ patch: { size: normalized.size, position: normalized.position } });
     }
-  }, [displayMode]);
+  }, [displayMode, updateDialogState]);
 
   const handlePositionChange = useCallback((next?: MultiDialogPosition) => {
     if (!next) return;
@@ -254,12 +255,11 @@ export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
     if (!sizesEqual(dialogSizeRef.current, normalized.size) || !positionsEqual(dialogPositionRef.current, normalized.position)) {
       dialogSizeRef.current = normalized.size;
       dialogPositionRef.current = normalized.position;
-      setDialogSize(normalized.size);
-      setDialogPosition(normalized.position);
+      updateDialogState({ patch: { size: normalized.size, position: normalized.position } });
     }
-  }, [displayMode]);
+  }, [displayMode, updateDialogState]);
 
-  const headlessProps: HeadlessMultiStepDialogProps<SpreadsheetDialogData> = {
+  const headlessProps: HeadlessMultiStepDialogProps<SpreadsheetEntity> = {
     open,
     stepComponents: steps.map((step) => ({
       id: step.id,
@@ -282,7 +282,7 @@ export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
     size: dialogSize,
     onSizeChange: handleSizeChange,
     displayMode,
-    onDisplayModeChange: (mode: DialogDisplayMode) => setDisplayMode(mode),
+    onDisplayModeChange: (mode: DialogDisplayMode) => updateDialogState({ patch: { displayMode: mode } }),
   };
 
   const fullScreen = displayMode === 'full-screen';
@@ -301,7 +301,7 @@ export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
 
   return (
     <div style={frameStyle} role="dialog" aria-modal={open} ref={dialogRef}>
-      <HeadlessMultiStepDialog<SpreadsheetDialogData> {...headlessProps} />
+      <HeadlessMultiStepDialog<SpreadsheetEntity> {...headlessProps} />
     </div>
   );
 };

@@ -33,7 +33,7 @@ export interface UseTabularDataOptions {
  */
 export interface UseTabularDataResult {
   /** Table metadata */
-  metadata: TabularTableMetadata | null;
+  tabularTableMetadata: TabularTableMetadata | null;
   /** Loading state */
   loading: boolean;
   /** Error message */
@@ -64,7 +64,7 @@ export const useTabularData = (options: UseTabularDataOptions): UseTabularDataRe
   const { tableMetadataId, autoload = true, pluginId, onUploadSuccess, onUploadError } = options;
   const tabularApi = useTabularApi();
 
-  const [metadata, setMetadata] = useState<TabularTableMetadata | null>(null);
+  const [tabularTableMetadata, setTabularTableMetadata] = useState<TabularTableMetadata | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -79,7 +79,7 @@ export const useTabularData = (options: UseTabularDataOptions): UseTabularDataRe
       setError(null);
 
       const data = await tabularApi.getTableMetadata(id);
-      setMetadata(data);
+      setTabularTableMetadata(data);
 
       if (!data) {
         setError(`Table metadata not found: ${id}`);
@@ -87,7 +87,7 @@ export const useTabularData = (options: UseTabularDataOptions): UseTabularDataRe
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load metadata';
       setError(message);
-      setMetadata(null);
+      setTabularTableMetadata(null);
     } finally {
       setLoading(false);
     }
@@ -112,7 +112,7 @@ export const useTabularData = (options: UseTabularDataOptions): UseTabularDataRe
       };
 
       const newMetadata = await tabularApi.uploadTabularFile(file, defaultConfig);
-      setMetadata(newMetadata);
+      setTabularTableMetadata(newMetadata);
 
       // Add reference for this plugin
       await tabularApi.addTableReference(newMetadata.id, pluginId);
@@ -150,7 +150,7 @@ export const useTabularData = (options: UseTabularDataOptions): UseTabularDataRe
       };
 
       const newMetadata = await tabularApi.downloadTabularFromUrl(url, defaultConfig);
-      setMetadata(newMetadata);
+      setTabularTableMetadata(newMetadata);
 
       // Add reference for this plugin
       await tabularApi.addTableReference(newMetadata.id, pluginId);
@@ -173,18 +173,18 @@ export const useTabularData = (options: UseTabularDataOptions): UseTabularDataRe
    * Reload current metadata
    */
   const reload = useCallback(async () => {
-    if (metadata?.id) {
-      await loadMetadata(metadata.id);
+    if (tabularTableMetadata?.id) {
+      await loadMetadata(tabularTableMetadata.id);
     }
-  }, [loadMetadata, metadata?.id]);
+  }, [loadMetadata, tabularTableMetadata?.id]);
 
   /**
    * Add reference to current table
    */
   const addReference = useCallback(async () => {
-    if (metadata?.id) {
+    if (tabularTableMetadata?.id) {
       try {
-        await tabularApi.addTableReference(metadata.id, pluginId);
+        await tabularApi.addTableReference(tabularTableMetadata.id, pluginId);
         // Reload to get updated reference count
         await reload();
       } catch (err) {
@@ -193,31 +193,31 @@ export const useTabularData = (options: UseTabularDataOptions): UseTabularDataRe
         throw err;
       }
     }
-  }, [tabularApi, metadata?.id, pluginId, reload]);
+  }, [tabularApi, tabularTableMetadata?.id, pluginId, reload]);
 
   /**
    * Remove reference from current table
    */
   const removeReference = useCallback(async () => {
-    if (metadata?.id) {
+    if (tabularTableMetadata?.id) {
       try {
-        await tabularApi.removeTableReference(metadata.id, pluginId);
+        await tabularApi.removeTableReference(tabularTableMetadata.id, pluginId);
         // Note: Table might be auto-deleted if reference count reaches zero
         // So we don't reload here, just clear local state
-        setMetadata(null);
+        setTabularTableMetadata(null);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to remove reference';
         setError(message);
         throw err;
       }
     }
-  }, [tabularApi, metadata?.id, pluginId]);
+  }, [tabularApi, tabularTableMetadata?.id, pluginId]);
 
   /**
    * Clear current data
    */
   const clear = useCallback(() => {
-    setMetadata(null);
+    setTabularTableMetadata(null);
     setError(null);
     setLoading(false);
   }, []);
@@ -230,7 +230,7 @@ export const useTabularData = (options: UseTabularDataOptions): UseTabularDataRe
   }, [autoload, tableMetadataId, loadMetadata]);
 
   return {
-    metadata,
+    tabularTableMetadata,
     loading,
     error,
     uploadTabularFile,

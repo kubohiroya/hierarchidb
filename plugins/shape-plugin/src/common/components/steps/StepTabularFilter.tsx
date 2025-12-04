@@ -17,7 +17,7 @@ export function StepTabularFilter({
 }: ShapeDialogStepProps): JSX.Element {
   const tabularApi = useMemo(() => createShapeTabularApi(), []);
 
-  const { metadata, loading, error } = useTabularData({
+  const { tabularTableMetadata, loading, error } = useTabularData({
     tableMetadataId: draft?.tabularMetadataId,
     pluginId: SHAPE_PLUGIN_ID,
     autoload: Boolean(draft?.tabularMetadataId),
@@ -78,7 +78,7 @@ export function StepTabularFilter({
         </Typography>
       );
     }
-    if (!metadata) {
+    if (!tabularTableMetadata) {
       return (
         <Typography color="text.secondary">
           No table metadata found for the selected dataset.
@@ -87,7 +87,7 @@ export function StepTabularFilter({
     }
     return (
       <TabularFilterStep
-        tableMetadata={metadata}
+        tableMetadata={tabularTableMetadata}
         pluginId={SHAPE_PLUGIN_ID}
         onFiltersChanged={handleFiltersChanged}
         onPreviewData={handlePreviewData}

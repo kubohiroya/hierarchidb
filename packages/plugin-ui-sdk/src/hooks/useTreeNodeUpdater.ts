@@ -61,7 +61,6 @@ export interface UseTreeNodeUpdaterResult<TPayload extends object = Record<strin
   saveDraft: (data?: Partial<TreeNodeUpdaterState<TPayload>>) => Promise<NodeId>;
 }
 
-export type DraftData<TPayload extends object = Record<string, unknown>> = TreeNodeUpdaterState<TPayload>;
 // Shared alias for dialog payloads; intentionally does not include metadata/version/timestamps.
 export type PluginDialogData<TPayload extends object = Record<string, unknown>> = TPayload;
 

@@ -56,7 +56,14 @@ export class DraftService implements TreeNodeUpdaterAPI {
 
   async getTreeNode(nodeId: NodeId): Promise<TreeNode | undefined> {
     const node = await this.coreDB.nodes.get(nodeId);
-    return (node ?? undefined) as TreeNode | undefined;
+    if (!node) return undefined;
+    const hasDraftData = node.draftData !== null && node.draftData !== undefined;
+    if (!hasDraftData && node.data) {
+      // IMPORTANT: preserve draftData on the persisted node for downstream reads.
+      await this.coreDB.nodes.update(nodeId, { draftData: node.data });
+      return { ...node, draftData: node.data } as TreeNode;
+    }
+    return node as TreeNode;
   }
 
   // createDraftFromNode / getDraft / updateDraft are removed in favor of QueryAPI + updater calls.

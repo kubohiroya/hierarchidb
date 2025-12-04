@@ -65,7 +65,9 @@
     "jszip": "^3.10.1",
     "react-window": "^1.8.10",
     "xlsx": "^0.18.5",
-    "@hierarchidb/plugin-base": "workspace:*"
+    "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/ui-worker-provider": "workspace:*"
   },
   "peerDependencies": {
     "@mui/icons-material": "^7.3.2",
@@ -86,7 +88,9 @@
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/components": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*",
-    "@hierarchidb/ui-map": "workspace:*"
+    "@hierarchidb/ui-map": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/ui-worker-provider": "workspace:*"
   },
   "devDependencies": {
     "@hierarchidb/plugin-service-api": "workspace:*",
@@ -110,7 +114,9 @@
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/components": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*",
-    "@hierarchidb/ui-map": "workspace:*"
+    "@hierarchidb/ui-map": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/ui-worker-provider": "workspace:*"
   },
   "keywords": [
     "hierarchidb",

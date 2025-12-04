@@ -2,21 +2,21 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "lib": [
-      "ES2020",
-      "DOM"
+      "ES2022",
+      "DOM",
+      "DOM.Iterable",
+      "WebWorker"
     ],
+    "allowImportingTsExtensions": true,
+    "experimentalDecorators": true,
     "strictNullChecks": true,
     "strictFunctionTypes": true,
     "noImplicitReturns": true,
     "jsxImportSource": "react",
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ]
-    }
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "../../global.d.ts"
   ],
   "exclude": [
     "dist",

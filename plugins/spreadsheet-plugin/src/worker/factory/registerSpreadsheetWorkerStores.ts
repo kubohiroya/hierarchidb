@@ -1,7 +1,8 @@
-import type { PeerStore, GroupStore, RelationStore, GroupItemBase, RelationBase } from '@hierarchidb/runtime-worker';
-import { createNodePayloadPeerStore } from '@hierarchidb/runtime-worker';
-import type { SpreadsheetPeerData } from '../../common/types/SpreadsheetEntity.js';
-import { SPREADSHEET_NODE_TYPE } from '../../common/constants.js';
+//import type { PeerStore, GroupStore, RelationStore, GroupItemBase, RelationBase } from '@hierarchidb/runtime-worker';
+//import { createNodePayloadPeerStore } from '@hierarchidb/runtime-worker';
+//import type { SpreadsheetPeerData } from '../../common/types/SpreadsheetEntity.js';
+//import { SPREADSHEET_NODE_TYPE } from '../../common/constants.js';
+/*
 
 type StoreRegistry = {
   getPeer<T = unknown>(nodeType: string): PeerStore<T> | undefined;
@@ -10,11 +11,11 @@ type StoreRegistry = {
   getRelations<T extends RelationBase<any>>(nodeType: string): RelationStore<T> | undefined;
 };
 
+
 export interface RegisterSpreadsheetWorkerStoresOptions {
   storeRegistry?: StoreRegistry;
   signal?: AbortSignal;
 }
-
 const normalizeSpreadsheetPeerData = (data?: SpreadsheetPeerData | null): SpreadsheetPeerData => ({
   schemaVersion: 1,
   metadataId: data?.metadataId,
@@ -51,9 +52,9 @@ export async function registerSpreadsheetWorkerStores(options: RegisterSpreadshe
   if (!registry) return;
   await ensurePeerStore(registry);
 }
-
 export async function loadSpreadsheetEntitiesDbModule(): Promise<null> {
   return null;
 }
+*/
 
-registerSpreadsheetWorkerStores().catch(() => {});
+//registerSpreadsheetWorkerStores().catch(() => {});

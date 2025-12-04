@@ -98,6 +98,7 @@ export type {
   TreeNodeUpdaterPayload,
 } from './tree-node-types.js';
 export { NODE_TYPES } from './tree-node-types.js';
+export * from './dialog-state.js';
 export * from './tree-root-node-types.js';
 export type { TreeRootState } from './tree-root-state-types.js';
 export { SortOrder } from './tree-root-state-types.js';

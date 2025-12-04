@@ -17,9 +17,12 @@ import {
   type HeadlessMultiStepDialogProps,
 } from '@hierarchidb/ui-dialog';
 import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
-import { useTreeNodeUpdater, type DraftData, createTreeNodeUpdaterActions } from '@hierarchidb/plugin-ui-sdk';
+import {
+  useTreeNodeUpdater,
+  type TreeNodeUpdaterState,
+  createTreeNodeUpdaterActions,
+} from '@hierarchidb/plugin-ui-sdk';
 import type { StylerDialogData } from './types.js';
-import type { SpreadsheetDialogData } from '@hierarchidb/spreadsheet-plugin';
 import { StyleSettingsStep } from './steps/StyleSettingsStep.js';
 import { StylerStep5 } from './steps/StylerStep5.js';
 import { StylerStep6 } from './steps/StylerStep6.js';
@@ -48,7 +51,7 @@ type StylerDialogDraft = StylerDialogData & {
   tags?: string[];
 };
 
-const normalizeDraft = (raw: DraftData<StylerDialogDraft> | null): StylerDialogDraft => {
+const normalizeDraft = (raw: TreeNodeUpdaterState<StylerDialogDraft> | null): StylerDialogDraft => {
   const meta = raw?.draftMetadata ?? raw?.metadata ?? { name: '', description: '', tags: [] };
   const draftData = raw?.draftData ?? {};
   return {
@@ -97,10 +100,6 @@ export const StylerDialog: React.FC<StylerDialogProps> = ({
   const dialogPositionRef = useRef(dialogPosition);
 
   const data = useMemo<StylerDialogDraft>(() => normalizeDraft(draft), [draft]);
-  const spreadsheetData = useMemo<SpreadsheetDialogData>(() => ({
-    ...data,
-    metadata: data.spreadsheetMetadata ?? undefined,
-  }), [data]);
   const { updatePayload, updateMetadata } = useMemo(
     () => createTreeNodeUpdaterActions<StylerDialogDraft>(updateDraft),
     [updateDraft]
@@ -157,7 +156,7 @@ export const StylerDialog: React.FC<StylerDialogProps> = ({
     {
       id: 'basic',
       label: 'Basic Information',
-      component: (
+      component: () => (
         <BasicInfoStep
           name={data.name ?? ''}
           description={data.description ?? ''}
@@ -172,7 +171,7 @@ export const StylerDialog: React.FC<StylerDialogProps> = ({
     {
       id: 'style-settings',
       label: 'Style Settings',
-      component: (
+      component: () => (
         <StyleSettingsStep
           mode={mode}
           nodeId={nodeId}
@@ -189,15 +188,17 @@ export const StylerDialog: React.FC<StylerDialogProps> = ({
     {
       id: 'data-source',
       label: 'Data Source',
-      component: (
+      component: () => (
         <SpreadsheetDataSourceStep
           mode={mode}
           nodeId={nodeId}
           parentId={parentId}
-          data={spreadsheetData}
+          data={data}
           onChange={(next) => {
-            const { metadata, ...rest } = next;
-            handleUpdate({ ...rest, spreadsheetMetadata: metadata ?? undefined });
+            handleUpdate({
+              ...(next as StylerDialogData),
+              spreadsheetMetadata: (next as StylerDialogData).metadata ?? undefined,
+            });
           }}
           setValid={() => {}}
           setError={() => {}}
@@ -209,15 +210,17 @@ export const StylerDialog: React.FC<StylerDialogProps> = ({
     {
       id: 'filtering',
       label: 'Filtering',
-      component: (
+      component: () => (
         <SpreadsheetFilteringStep
           mode={mode}
           nodeId={nodeId}
           parentId={parentId}
-          data={spreadsheetData}
+          data={data}
           onChange={(next) => {
-            const { metadata, ...rest } = next;
-            handleUpdate({ ...rest, spreadsheetMetadata: metadata ?? undefined });
+            handleUpdate({
+              ...(next as StylerDialogData),
+              spreadsheetMetadata: (next as StylerDialogData).metadata ?? undefined,
+            });
           }}
           setValid={() => {}}
           setError={() => {}}
@@ -229,7 +232,7 @@ export const StylerDialog: React.FC<StylerDialogProps> = ({
     {
       id: 'style-mapping',
       label: 'Style Mapping',
-      component: (
+      component: () => (
         <StylerStep5
           data={data}
           onChange={handleUpdate}
@@ -241,7 +244,7 @@ export const StylerDialog: React.FC<StylerDialogProps> = ({
     {
       id: 'preview',
       label: 'Preview',
-      component: (
+      component: () => (
         <StylerStep6
           data={data}
           onChange={handleUpdate}
@@ -250,7 +253,7 @@ export const StylerDialog: React.FC<StylerDialogProps> = ({
       ),
       validate: () => true,
     },
-  ], [data, handleUpdate, mode, nodeId, parentId, persistBasicInfo, spreadsheetData]);
+  ], [data, handleUpdate, mode, nodeId, parentId, persistBasicInfo]);
 
   const enabledStepIndices = useMemo(() => steps
     .map((step, idx) => (step.validate ? step.validate() : true) ? idx : -1)

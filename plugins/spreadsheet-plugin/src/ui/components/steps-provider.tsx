@@ -1,38 +1,35 @@
-import { PluginStepRegistry, type PluginStepConfig, type StepComponentProps, type StepData } from '@hierarchidb/plugin-base';
-import type { SpreadsheetDialogData } from '../../common/types/SpreadsheetEntity.js';
+import { PluginStepRegistry, type PluginStepConfig, type StepComponentProps } from '@hierarchidb/plugin-base';
+import type { SpreadsheetEntity } from '../../common/types/SpreadsheetEntity.js';
 import { DataSourceStep } from './steps/DataSourceStep.js';
 import { FilteringStep } from './steps/FilteringStep.js';
 import { SPREADSHEET_NODE_TYPE, STEP_LABELS } from '../../common/constants.js';
 
 const registry = PluginStepRegistry.getInstance();
 
-// Basic Info (name/description/tags) is provided by the host; this step data is Step2+ only.
-type SpreadsheetStepData = StepData & Omit<SpreadsheetDialogData, 'name' | 'description' | 'tags'>;
-
-const isComplete = (data?: SpreadsheetStepData): boolean => Boolean(data?.spreadsheetMetadataId);
+const isComplete = (data?: SpreadsheetEntity): boolean => Boolean(data?.spreadsheetMetadataId);
 
 registry.registerConfigProvider({
   nodeType: SPREADSHEET_NODE_TYPE,
-  getCreateStepConfigs(): PluginStepConfig<SpreadsheetStepData>[] {
+  getCreateStepConfigs(): PluginStepConfig<SpreadsheetEntity>[] {
     return [
       {
         id: 'data-source',
         label: STEP_LABELS.dataSource,
-        componentFactory: (props: StepComponentProps<SpreadsheetStepData>) => <DataSourceStep {...props} />,
-        validate: (value?: SpreadsheetStepData) => isComplete(value),
+        componentFactory: (props: StepComponentProps<SpreadsheetEntity>) => <DataSourceStep {...props} />,
+        validate: (data?: SpreadsheetEntity) => isComplete(data),
         capabilities: {
-          canProceedToNext: (value?: SpreadsheetStepData) => isComplete(value),
+          canProceedToNext: (value?: SpreadsheetEntity) => isComplete(value),
         },
       },
       {
         id: 'filtering',
         label: STEP_LABELS.filtering,
-        componentFactory: (props: StepComponentProps<SpreadsheetStepData>) => <FilteringStep {...props} />,
+        componentFactory: (props: StepComponentProps<SpreadsheetEntity>) => <FilteringStep {...props} />,
         optional: true,
       },
     ];
   },
-  getEditStepConfigs(): PluginStepConfig<SpreadsheetStepData>[] {
+  getEditStepConfigs(): PluginStepConfig<SpreadsheetEntity>[] {
     return this.getCreateStepConfigs();
   },
 });

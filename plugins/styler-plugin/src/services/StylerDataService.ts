@@ -158,7 +158,7 @@ export class StylerDataService {
       sources: {},
       layers: [
         {
-          id: `styler-layer-${entity.nodeId}`,
+          id: `styler-layer-${(entity as { treeNodeId?: string; id?: string }).treeNodeId ?? (entity as { id?: string }).id ?? 'styler'}`,
           type: 'fill',
           paint: {},
         },

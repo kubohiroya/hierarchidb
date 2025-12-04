@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
+import { useCallback, useMemo, useRef, useEffect } from 'react';
 import type { NodeId } from '@hierarchidb/common-types';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import {
@@ -15,9 +15,11 @@ import {
   type MultiDialogSize,
   type StepNavigationEvent,
   type HeadlessMultiStepDialogProps,
+  type StepComponentProps,
 } from '@hierarchidb/ui-dialog';
 import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
-import { useTreeNodeUpdater, type DraftData } from '@hierarchidb/plugin-ui-sdk';
+import { useTreeNodeUpdater, type TreeNodeUpdaterState } from '@hierarchidb/plugin-ui-sdk';
+import { useDialogViewState } from '@hierarchidb/plugin-base';
 import { resolveDefaultNodeName } from '@hierarchidb/runtime-worker';
 
 type FolderDraftData = {
@@ -27,7 +29,7 @@ type FolderDraftData = {
   tags?: string[];
 };
 
-const normalizeDraft = (raw: DraftData<FolderDraftData> | null): FolderDraftData => {
+const normalizeDraft = (raw: TreeNodeUpdaterState<FolderDraftData> | null): FolderDraftData => {
   const meta = raw?.draftMetadata ?? raw?.metadata ?? { name: '', description: '', tags: [] };
   const draftData = raw?.draftData ?? {};
   const defaultName = resolveDefaultNodeName('folder');
@@ -72,6 +74,13 @@ export const FolderDialogHost: React.FC<FolderDialogHostProps> = ({
     return { size, position };
   }, []);
 
+  const { dialogState, updateDialogState } = useDialogViewState({
+    initialSize,
+    initialPosition: initialPositionValue,
+    initialDisplayMode: 'normal',
+    initialActiveStepIndex: 0,
+  });
+
   const { draft, updateDraft, saveDraft, discardDraft } = useTreeNodeUpdater<FolderDraftData>({
     mode,
     nodeType: 'folder',
@@ -100,11 +109,7 @@ export const FolderDialogHost: React.FC<FolderDialogHostProps> = ({
 
   const data = useMemo<FolderDraftData>(() => normalizeDraft(draft), [draft]);
 
-  const [dialogSize, setDialogSize] = useState<MultiDialogSize>(initialSize);
-  const [dialogPosition, setDialogPosition] = useState<MultiDialogPosition>(initialPositionValue);
-  const [displayMode, setDisplayMode] = useState<DialogDisplayMode>('normal');
-  const [activeStepIndex, setActiveStepIndex] = useState(0);
-  const [isSaving, setIsSaving] = useState(false);
+  const { size: dialogSize, position: dialogPosition, displayMode, activeStepIndex, isSaving } = dialogState;
 
   const dialogSizeRef = useRef(dialogSize);
   const dialogPositionRef = useRef(dialogPosition);
@@ -115,7 +120,7 @@ export const FolderDialogHost: React.FC<FolderDialogHostProps> = ({
         draftMetadata: {
           name: value.name,
           description: value.description,
-          tags: value.tags,
+          tags: value.tags ?? [],
         },
       });
     },
@@ -124,7 +129,7 @@ export const FolderDialogHost: React.FC<FolderDialogHostProps> = ({
 
   const handleSave = useCallback(async () => {
     if (isSaving) return;
-    setIsSaving(true);
+    updateDialogState({ patch: { isSaving: true } });
     try {
       const savedId = await saveDraft();
       if (onSave) {
@@ -132,9 +137,9 @@ export const FolderDialogHost: React.FC<FolderDialogHostProps> = ({
       }
       onClose();
     } finally {
-      setIsSaving(false);
+      updateDialogState({ patch: { isSaving: false } });
     }
-  }, [data, isSaving, onClose, onSave, saveDraft]);
+  }, [data, isSaving, onClose, onSave, saveDraft, updateDialogState]);
 
   const handleDiscard = useCallback(() => {
     void discardDraft().catch(() => {});
@@ -145,7 +150,7 @@ export const FolderDialogHost: React.FC<FolderDialogHostProps> = ({
     {
       id: 'basic',
       label: 'Basic Information',
-      component: (() => (
+      component: ((_props: StepComponentProps<FolderDraftData>) => (
         <BasicInfoStep
           name={data.name ?? ''}
           description={data.description ?? ''}
@@ -154,7 +159,7 @@ export const FolderDialogHost: React.FC<FolderDialogHostProps> = ({
           onChange={persistBasicInfo}
           validate={(value: BasicInfoData) => (value.name.trim().length ? null : 'Name is required')}
         />
-      )) as React.ComponentType,
+      )) as import('react').ComponentType<StepComponentProps<FolderDraftData>>,
       validate: () => Boolean(data.name?.trim()),
     },
   ], [data.description, data.name, data.tags, mode, persistBasicInfo]);
@@ -166,16 +171,20 @@ export const FolderDialogHost: React.FC<FolderDialogHostProps> = ({
   const handleNavigation = useCallback((event: StepNavigationEvent) => {
     switch (event.type) {
       case 'direct':
-        setActiveStepIndex(event.targetIndex);
+        updateDialogState({ patch: { activeStepIndex: event.targetIndex } });
         break;
       case 'next':
-        setActiveStepIndex((prev) => Math.min(prev + 1, steps.length - 1));
+        updateDialogState({
+          patch: { activeStepIndex: Math.min(activeStepIndex + 1, steps.length - 1) },
+        });
         break;
       case 'back':
-        setActiveStepIndex((prev) => Math.max(prev - 1, 0));
+        updateDialogState({
+          patch: { activeStepIndex: Math.max(activeStepIndex - 1, 0) },
+        });
         break;
     }
-  }, [steps.length]);
+  }, [activeStepIndex, steps.length, updateDialogState]);
 
   const handleSizeChange = useCallback((next?: MultiDialogSize) => {
     if (!next) return;
@@ -192,10 +201,9 @@ export const FolderDialogHost: React.FC<FolderDialogHostProps> = ({
     if (!sizesEqual(dialogSizeRef.current, normalized.size) || !positionsEqual(dialogPositionRef.current, normalized.position)) {
       dialogSizeRef.current = normalized.size;
       dialogPositionRef.current = normalized.position;
-      setDialogSize(normalized.size);
-      setDialogPosition(normalized.position);
+      updateDialogState({ patch: { size: normalized.size, position: normalized.position } });
     }
-  }, [displayMode]);
+  }, [displayMode, updateDialogState]);
 
   const handlePositionChange = useCallback((next?: MultiDialogPosition) => {
     if (!next) return;
@@ -212,10 +220,9 @@ export const FolderDialogHost: React.FC<FolderDialogHostProps> = ({
     if (!sizesEqual(dialogSizeRef.current, normalized.size) || !positionsEqual(dialogPositionRef.current, normalized.position)) {
       dialogSizeRef.current = normalized.size;
       dialogPositionRef.current = normalized.position;
-      setDialogSize(normalized.size);
-      setDialogPosition(normalized.position);
+      updateDialogState({ patch: { size: normalized.size, position: normalized.position } });
     }
-  }, [displayMode]);
+  }, [displayMode, updateDialogState]);
 
   const headlessProps: HeadlessMultiStepDialogProps<FolderDraftData> = {
     open,
@@ -240,7 +247,7 @@ export const FolderDialogHost: React.FC<FolderDialogHostProps> = ({
     size: dialogSize,
     onSizeChange: handleSizeChange,
     displayMode,
-    onDisplayModeChange: (mode: DialogDisplayMode) => setDisplayMode(mode),
+    onDisplayModeChange: (mode: DialogDisplayMode) => updateDialogState({ patch: { displayMode: mode } }),
   };
 
   const fullScreen = displayMode === 'full-screen';

@@ -5,6 +5,8 @@ export * from './atoms/draftAtoms.js';
 export type { DialogMapState, DialogModeState } from './hooks/useDialogUrlSync.js';
 // Hooks
 export { useDialogUrlSync } from './hooks/useDialogUrlSync.js';
+export { useDialogViewState } from './hooks/useDialogViewState.js';
+export type { UseDialogViewStateOptions, UseDialogViewStateResult } from './hooks/useDialogViewState.js';
 export { HostProfileRegistry } from './registry/HostProfileRegistry.js';
 export type {
   PluginStepConfig,
