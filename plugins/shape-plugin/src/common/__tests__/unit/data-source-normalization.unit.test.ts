@@ -28,12 +28,15 @@ describe('data source normalization', () => {
   it('normalizes entity data sources when building working copies', () => {
     const entity = baseEntity('geoBoundaries');
     const draft = createDraftFromEntity(entity);
-    expect(draft.dataSourceName).toBe('geoboundaries');
+    expect(draft.draftData.dataSourceName).toBe('geoboundaries');
   });
 
   it('normalizes draft updates before persisting', () => {
     const draft = createDraftFromEntity(baseEntity('naturalearth'));
-    const mutated = { ...draft, dataSourceName: 'GeoBoundaries' } as typeof draft;
+    const mutated = {
+      ...draft,
+      draftData: { ...draft.draftData, dataSourceName: 'GeoBoundaries' },
+    } as typeof draft;
     const updates = mapDraftToUpdates(mutated);
     expect(updates.dataSourceName).toBe('geoboundaries');
   });

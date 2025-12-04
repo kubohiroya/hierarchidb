@@ -2,7 +2,7 @@ import type { NodeId, TreeId, TreeNodeMetadata } from '@hierarchidb/common-types
 import { HeadlessMultiStepDialog } from '@hierarchidb/ui-dialog';
 import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 import { useTreeNodeDialog } from '@hierarchidb/plugin-ui-sdk';
-import type { ShapeDraft, ShapeEntity } from '../../common/shared/index.js';
+import type { ShapeDraftData as ShapeDraftPayload, ShapeEntity } from '../../common/shared/index.js';
 import {
   DEFAULT_PROCESSING_CONFIG,
   mergeProcessingConfig,
@@ -28,11 +28,7 @@ export interface ShapeDialogProps {
   onSave?: (entity: ShapeEntity) => Promise<void>;
 }
 
-type ShapeDraftData = Partial<ShapeDraft> & {
-  name?: string;
-  description?: string;
-  tags?: string[];
-};
+type ShapeDraftData = ShapeDraftPayload;
 
 export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
   open,

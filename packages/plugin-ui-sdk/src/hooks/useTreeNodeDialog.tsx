@@ -1,0 +1,404 @@
+import {
+  type CSSProperties,
+  type ReactNode,
+  type RefObject,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import type {
+  DialogViewState,
+  DialogViewStatePatchInput,
+  NodeId,
+  TreeId,
+  TreeNodeMetadata,
+} from '@hierarchidb/common-types';
+import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
+import {
+  type DialogDisplayMode,
+  FRAME_CONSTANTS,
+  getPresetSize,
+  getViewportSize,
+  type HeadlessMultiStepDialogProps,
+  initialPosition,
+  type MultiDialogPosition,
+  type MultiDialogSize,
+  normalizeDialogState,
+  positionsEqual,
+  sizesEqual,
+  type StepNavigationEvent,
+} from '@hierarchidb/ui-dialog';
+import {
+  createTreeNodeUpdaterActions,
+  useTreeNodeUpdater,
+  type UseTreeNodeUpdaterResult,
+} from './useTreeNodeUpdater.js';
+
+export interface DialogStepConfig {
+  id: string;
+  label: string;
+  component: ReactNode;
+  validate?: () => boolean;
+}
+
+export interface DialogStepFactoryArgs<TPayload extends object> {
+  data: TPayload;
+  metadata?: TreeNodeMetadata;
+  persistBasicInfo: (meta: TreeNodeMetadata) => void;
+  updatePayload: (patch: Partial<TPayload>) => void;
+  dialogRef: RefObject<HTMLDivElement>;
+  mode: 'create' | 'edit';
+  nodeId?: NodeId;
+  parentId?: NodeId;
+}
+
+export interface UseTreeNodeDialogOptions<TPayload extends object> {
+  open: boolean;
+  mode: 'create' | 'edit';
+  nodeType: string;
+  nodeId?: NodeId;
+  parentId?: NodeId;
+  treeId?: TreeId;
+  onClose: () => void;
+  onSave: (data: TreeNodeMetadata, nodeId?: NodeId) => Promise<void>;
+  initialDraftData?: TPayload;
+  initialDraftMetadata?: TreeNodeMetadata;
+  buildSteps: (args: DialogStepFactoryArgs<TPayload>) => DialogStepConfig[];
+}
+
+interface UseDialogViewStateOptions {
+  initialSize?: MultiDialogSize;
+  initialPosition?: MultiDialogPosition;
+  initialDisplayMode?: DialogDisplayMode;
+  initialActiveStepIndex?: number;
+}
+
+interface UseDialogViewStateResult {
+  dialogViewState: DialogViewState;
+  updateDialogViewState: (input: DialogViewStatePatchInput) => void;
+  resetDialogViewState: () => void;
+}
+
+const DEFAULT_SIZE: MultiDialogSize = { width: 960, height: 640 };
+const DEFAULT_POSITION: MultiDialogPosition = { x: 64, y: 64 };
+const DEFAULT_DISPLAY_MODE: DialogDisplayMode = 'normal';
+
+const useDialogViewState = (options: UseDialogViewStateOptions = {}): UseDialogViewStateResult => {
+  const {
+    initialSize = DEFAULT_SIZE,
+    initialPosition = DEFAULT_POSITION,
+    initialDisplayMode = DEFAULT_DISPLAY_MODE,
+    initialActiveStepIndex = 0,
+  } = options;
+
+  const initialStateRef = useRef<DialogViewState>({
+    size: initialSize,
+    position: initialPosition,
+    displayMode: initialDisplayMode,
+    activeStepIndex: initialActiveStepIndex,
+    isSaving: false,
+    multiStepState: null,
+  });
+
+  const [dialogViewState, setDialogViewState] = useState<DialogViewState>(initialStateRef.current);
+
+  const resetDialogViewState = useCallback(() => {
+    setDialogViewState(initialStateRef.current);
+  }, []);
+
+  const updateDialogViewState = useCallback((input: DialogViewStatePatchInput) => {
+    setDialogViewState((prev: DialogViewState) => {
+      const base = input.reset ? initialStateRef.current : prev;
+      return { ...base, ...input.patch };
+    });
+  }, []);
+
+  return useMemo(
+    () => ({
+      dialogViewState,
+      updateDialogViewState,
+      resetDialogViewState,
+    }),
+    [dialogViewState, updateDialogViewState, resetDialogViewState]
+  );
+};
+
+const defaultDialogState = () => {
+  const viewport = getViewportSize();
+  const size = getPresetSize('normal', viewport);
+  const position = initialPosition(size, viewport);
+  return { size, position };
+};
+
+export function useTreeNodeDialog<TPayload extends object>(
+  options: UseTreeNodeDialogOptions<TPayload>
+): {
+  frameStyle: CSSProperties;
+  dialogRef: RefObject<HTMLDivElement>;
+  headlessProps: HeadlessMultiStepDialogProps<TPayload>;
+  data: TPayload;
+  metadata?: TreeNodeMetadata;
+  workerClient: WorkerClientRef | null;
+  persistBasicInfo: (meta: TreeNodeMetadata) => void;
+  updatePayload: (patch: Partial<TPayload>) => void;
+  updateMetadata: (patch: Partial<TreeNodeMetadata>, base?: TreeNodeMetadata) => void;
+  treeNodeUpdater: UseTreeNodeUpdaterResult<TPayload>['treeNodeUpdater'];
+  saveDraft: () => Promise<NodeId | undefined>;
+  discardDraft: () => Promise<void>;
+  dialogViewState: DialogViewState;
+  updateDialogViewState: (input: DialogViewStatePatchInput) => void;
+  resetDialogViewState: () => void;
+} {
+  const {
+    open,
+    mode,
+    nodeType,
+    nodeId,
+    parentId,
+    treeId,
+    onClose,
+    onSave,
+    initialDraftData,
+    initialDraftMetadata,
+    buildSteps,
+  } = options;
+
+  const workerClient = useMemo<WorkerClientRef | null>(() => {
+    try {
+      const hook = getWorkerClientHook<WorkerClientRef | null>();
+      return hook();
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const { size: initialSize, position: initialPositionValue } = useMemo(defaultDialogState, []);
+
+  const { dialogViewState, updateDialogViewState, resetDialogViewState } = useDialogViewState({
+    initialSize,
+    initialPosition: initialPositionValue,
+    initialDisplayMode: 'normal',
+    initialActiveStepIndex: 0,
+  });
+
+  const { treeNodeUpdater, updateDraft, saveDraft, discardDraft } = useTreeNodeUpdater<TPayload>({
+    mode,
+    nodeType,
+    nodeId,
+    parentId,
+    treeId,
+    workerClient,
+    initialDraftData,
+    initialDraftMetadata,
+  });
+
+  const { size: dialogSize, position: dialogPosition, displayMode, activeStepIndex, isSaving } = dialogViewState;
+  const dialogRef = useRef<HTMLDivElement>(null!);
+
+  const dialogSizeRef = useRef(dialogSize);
+  const dialogPositionRef = useRef(dialogPosition);
+
+  const data = useMemo<TPayload>(
+    () => (treeNodeUpdater?.draftData || treeNodeUpdater?.data || ({} as TPayload)) as TPayload,
+    [treeNodeUpdater?.data, treeNodeUpdater?.draftData]
+  );
+
+  const { updatePayload, updateMetadata } = useMemo(
+    () => createTreeNodeUpdaterActions<TPayload>(updateDraft),
+    [updateDraft]
+  );
+
+  const persistBasicInfo = useCallback(
+    (meta: TreeNodeMetadata) => {
+      const baseMeta = treeNodeUpdater?.draftMetadata ?? treeNodeUpdater?.metadata;
+      updateMetadata(
+        {
+          name: meta.name ?? '',
+          description: meta.description ?? '',
+          tags: meta.tags ?? [],
+        },
+        baseMeta ?? { name: '', description: '', tags: [] }
+      );
+    },
+    [treeNodeUpdater?.draftMetadata, treeNodeUpdater?.metadata, updateMetadata]
+  );
+
+  const handleUpdate = useCallback(
+    (patch: Partial<TPayload>) => {
+      const basePayload = (treeNodeUpdater?.draftData ?? treeNodeUpdater?.data ?? {}) as TPayload;
+      updatePayload(patch, basePayload);
+    },
+    [treeNodeUpdater?.data, treeNodeUpdater?.draftData, updatePayload]
+  );
+
+  const handleSave = useCallback(async () => {
+    if (isSaving) return;
+    updateDialogViewState({ patch: { isSaving: true } });
+    const baseMeta = treeNodeUpdater?.draftMetadata ?? treeNodeUpdater?.metadata ?? { name: '', description: '', tags: [] };
+    try {
+      const savedId = await saveDraft();
+      await onSave(
+        {
+          name: baseMeta.name ?? '',
+          description: baseMeta.description ?? '',
+          tags: baseMeta.tags ?? [],
+        },
+        (savedId ?? treeNodeUpdater?.treeNodeId ?? nodeId ?? '') as NodeId
+      );
+      onClose();
+    } finally {
+      updateDialogViewState({ patch: { isSaving: false } });
+    }
+  }, [treeNodeUpdater?.draftMetadata, treeNodeUpdater?.metadata, isSaving, onClose, onSave, saveDraft, updateDialogViewState, treeNodeUpdater?.treeNodeId, nodeId]);
+
+  const handleDiscard = useCallback(() => {
+    void discardDraft().catch(() => {});
+    onClose();
+  }, [discardDraft, onClose]);
+
+  const metadata = treeNodeUpdater?.draftMetadata ?? treeNodeUpdater?.metadata;
+
+  const steps = useMemo(
+    () =>
+      buildSteps({
+        data,
+        metadata,
+        persistBasicInfo,
+        updatePayload: handleUpdate,
+        dialogRef,
+        mode,
+        nodeId,
+        parentId,
+      }),
+    [buildSteps, data, handleUpdate, metadata, mode, nodeId, parentId, persistBasicInfo]
+  );
+
+  const enabledStepIndices = useMemo(
+    () =>
+      steps
+        .map((step, idx) => ((step.validate ? step.validate() : true) ? idx : -1))
+        .filter((idx) => idx >= 0),
+    [steps]
+  );
+
+  const handleNavigation = useCallback(
+    (event: StepNavigationEvent) => {
+      switch (event.type) {
+        case 'direct':
+          updateDialogViewState({ patch: { activeStepIndex: event.targetIndex } });
+          break;
+        case 'next':
+          updateDialogViewState({
+            patch: { activeStepIndex: Math.min(activeStepIndex + 1, steps.length - 1) },
+          });
+          break;
+        case 'back':
+          updateDialogViewState({
+            patch: { activeStepIndex: Math.max(activeStepIndex - 1, 0) },
+          });
+          break;
+      }
+    },
+    [activeStepIndex, steps.length, updateDialogViewState]
+  );
+
+  const handleSizeChange = useCallback(
+    (next?: MultiDialogSize) => {
+      if (!next) return;
+      const normalized = normalizeDialogState(next, dialogPositionRef.current, getViewportSize(), {
+        enforceTopLeftMargin: displayMode === 'normal',
+        minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        clampSizeToViewport: true,
+      });
+      if (
+        !sizesEqual(dialogSizeRef.current, normalized.size) ||
+        !positionsEqual(dialogPositionRef.current, normalized.position)
+      ) {
+        dialogSizeRef.current = normalized.size;
+        dialogPositionRef.current = normalized.position;
+        updateDialogViewState({ patch: { size: normalized.size, position: normalized.position } });
+      }
+    },
+    [displayMode, updateDialogViewState]
+  );
+
+  const handlePositionChange = useCallback(
+    (next?: MultiDialogPosition) => {
+      if (!next) return;
+      const normalized = normalizeDialogState(dialogSizeRef.current, next, getViewportSize(), {
+        enforceTopLeftMargin: displayMode === 'normal',
+        minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        clampSizeToViewport: true,
+      });
+      if (
+        !sizesEqual(dialogSizeRef.current, normalized.size) ||
+        !positionsEqual(dialogPositionRef.current, normalized.position)
+      ) {
+        dialogSizeRef.current = normalized.size;
+        dialogPositionRef.current = normalized.position;
+        updateDialogViewState({ patch: { size: normalized.size, position: normalized.position } });
+      }
+    },
+    [displayMode, updateDialogViewState]
+  );
+
+  const headlessProps: HeadlessMultiStepDialogProps<TPayload> = {
+    open,
+    stepComponents: steps.map((step) => ({
+      id: step.id,
+      label: step.label,
+      component: () => step.component,
+    })),
+    stepData: data,
+    onStepDataChange: () => {},
+    activeStepIndex,
+    onStepNavigate: handleNavigation,
+    enabledStepIndices,
+    validatedStepIndices: enabledStepIndices,
+    committableStepIndices: [steps.length - 1],
+    invalidMessageMap: {},
+    onRequestClose: handleDiscard,
+    onRequestCommit: handleSave,
+    isDirty: true,
+    position: dialogPosition,
+    onPositionChange: handlePositionChange,
+    size: dialogSize,
+    onSizeChange: handleSizeChange,
+    displayMode,
+    onDisplayModeChange: (nextMode: DialogDisplayMode) =>
+      updateDialogViewState({ patch: { displayMode: nextMode } }),
+  };
+
+  const fullScreen = displayMode === 'full-screen';
+  const frameStyle: React.CSSProperties = {
+    width: fullScreen ? '100%' : `${dialogSize.width}px`,
+    maxWidth: fullScreen ? '100%' : 'min(calc(100vw - 48px), 1280px)',
+    height: fullScreen ? '100%' : `${dialogSize.height}px`,
+    maxHeight: fullScreen ? '100%' : 'calc(100vh - 48px)',
+    display: 'flex',
+    flexDirection: 'column',
+    borderRadius: fullScreen ? 0 : 12,
+    boxShadow: fullScreen ? 'none' : '0 22px 80px rgba(10, 14, 36, 0.38)',
+    overflow: 'hidden',
+    backgroundColor: '#fff',
+  };
+
+  return {
+    frameStyle,
+    dialogRef,
+    headlessProps,
+    data,
+    metadata,
+    workerClient,
+    persistBasicInfo,
+    updatePayload: handleUpdate,
+    updateMetadata,
+    treeNodeUpdater,
+    saveDraft,
+    discardDraft,
+    dialogViewState,
+    updateDialogViewState,
+    resetDialogViewState,
+  };
+}

@@ -5,12 +5,7 @@
     "types": [
       "node",
       "react-transition-group"
-    ],
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ]
-    }
+    ]
   },
   "include": [
     "src/**/*",

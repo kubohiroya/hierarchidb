@@ -2,7 +2,7 @@
    * DATA_SOURCE_STRATEGY_DESIGN.md
   */
 
-import type { ShapeEntity } from '../../common/shared/types.js';
+import type { ShapeEntity, ValidationResult } from '../../common/shared/types.js';
 
 export interface DataSourceConfig {
   id: string;
@@ -140,12 +140,6 @@ export interface GeographicFilter {
   type: 'bbox' | 'circle' | 'polygon';
   coordinates: number[] | number[][];
   radius?: number;
-}
-
-export interface ValidationResult {
-  isValid: boolean;
-  errors: string[];
-  warnings?: string[];
 }
 
 export interface SaveTarget {

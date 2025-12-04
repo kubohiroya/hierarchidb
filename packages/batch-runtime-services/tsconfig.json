@@ -5,11 +5,6 @@
       "node",
       "react-transition-group"
     ],
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ]
-    },
     "skipLibCheck": false,
     "jsx": "react-jsx"
   },

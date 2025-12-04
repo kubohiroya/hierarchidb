@@ -5,9 +5,9 @@ import { TabularProvider, TabularFilterStep, useTabularData } from '@hierarchidb
 import type { TabularFilterRule, TabularDataResult } from '@hierarchidb/ui-tabular-extract';
 import { createShapeTabularApi } from '../../../services/tabular/createShapeTabularApi.js';
 import { SHAPE_PLUGIN_ID } from '../../shared/constants.js';
-import type { ShapeDraft } from '../../shared/types.js';
+import type { ShapeDraftData } from '../../shared/types.js';
 
-type ShapeDialogStepProps = StepComponentProps<Partial<ShapeDraft>>;
+type ShapeDialogStepProps = StepComponentProps<Partial<ShapeDraftData>>;
 
 export function StepTabularFilter({
   data: draft,

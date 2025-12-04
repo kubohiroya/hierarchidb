@@ -14,6 +14,7 @@ import type {
   SelectionStats,
   UrlMetadata,
   ValidationResult,
+  ShapeDraftData,
 } from './types.js';
 import type { ShapeEntity, ShapeDraft } from './types.js';
 import { DEFAULT_DATA_SOURCES, DEFAULT_PROCESSING_CONFIG } from './constants.js';
@@ -414,9 +415,7 @@ export function createDraftFromEntity(entity: ShapeEntity): ShapeDraft {
       : [];
 
   const normalizedDataSource = normalizeDataSourceName(entity.dataSourceName);
-  const draftPayload: Partial<ShapeEntity> = {
-    name: entity.name ?? '',
-    description: entity.description ?? '',
+  const draftPayload: ShapeDraftData = {
     dataSourceName: normalizedDataSource ?? 'naturalearth',
     licenseAgreement: entity.licenseAgreement ?? false,
     processingConfig: mergeProcessingConfig(entity.processingConfig ?? {}),
@@ -432,16 +431,13 @@ export function createDraftFromEntity(entity: ShapeEntity): ShapeDraft {
 
   const draft: ShapeDraft = {
     treeNodeId,
-    draft: {
-      ...draftPayload,
+    draftData: draftPayload,
+    draftMetadata: {
+      name: entity.name ?? '',
+      description: entity.description ?? '',
     },
-    ...draftPayload,
-    id: treeNodeId,
-    nodeId: treeNodeId,
     depth: 0,
     resumeStep: entity.resumeStep,
-    tabularMetadataId: entity.tabularMetadataId,
-    tabularFilters: entity.tabularFilters,
   };
 
   return draft;
@@ -451,21 +447,19 @@ export function createDraftFromEntity(entity: ShapeEntity): ShapeDraft {
  * Map a draft back to entity updates (shared mapping)
  */
 export function mapDraftToUpdates(
-  draft: ShapeDraft,
+  draft: ShapeDraft | ShapeDraftData,
+  metadata?: { name?: string; description?: string; tags?: string[] },
 ): Partial<ShapeEntity> {
-  const source: Partial<ShapeEntity> = {
-    ...(draft.draft ?? {}),
-    ...draft,
-  };
+  const source: ShapeDraftData =
+    'draftData' in draft ? (draft.draftData ?? {}) : (draft as ShapeDraftData);
 
   const updates: Partial<ShapeEntity> = {};
 
-  if (typeof source.name === 'string') {
-    updates.name = source.name;
+  if (metadata) {
+    if (typeof metadata.name === 'string') updates.name = metadata.name;
+    if (typeof metadata.description === 'string') updates.description = metadata.description;
   }
-  if (typeof source.description === 'string') {
-    updates.description = source.description;
-  }
+
   const normalizedDataSource = normalizeDataSourceName(source.dataSourceName);
   if (normalizedDataSource) {
     updates.dataSourceName = normalizedDataSource;

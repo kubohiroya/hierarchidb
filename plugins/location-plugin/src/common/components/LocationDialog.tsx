@@ -1,5 +1,6 @@
 /**
  * Location Dialog Component composed with the headless multi-step dialog shell.
+ * (Temporarily reverted to original implementation; common hook migration pending)
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -60,7 +61,6 @@ import {
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 import { useDialogViewState } from '@hierarchidb/plugin-base';
-// import { useToastNotifications } from '@hierarchidb/components/toast/ToastProvider.js';
 
 const buildDefaultFrame = (): { size: MultiDialogSize; position: MultiDialogPosition } => {
   const viewport = getViewportSize();
@@ -157,20 +157,19 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     treeId ?? ((parentId ?? nodeId ?? '') as TreeId)
   ), [nodeId, parentId, treeId]);
 
-const {
-  draft: rawDraft,
-  updateDraft,
-  saveDraft,
-  discardDraft,
-} = useTreeNodeUpdater<LocationEntity>({
-  mode,
-  nodeType: 'location',
-  nodeId,
-  parentId,
-  treeId: effectiveTreeId,
-  workerClient,
-});
-  // const notify = useToastNotifications();
+  const {
+    draft: rawDraft,
+    updateDraft,
+    saveDraft,
+    discardDraft,
+  } = useTreeNodeUpdater<LocationEntity>({
+    mode,
+    nodeType: 'location',
+    nodeId,
+    parentId,
+    treeId: effectiveTreeId,
+    workerClient,
+  });
 
   useEffect(() => () => { void discardDraft().catch(() => {}); }, [discardDraft]);
 

@@ -58,17 +58,26 @@ export interface ShapeEntity extends PeerEntity {
   processingStatus?: 'idle' | 'processing' | 'paused' | 'completed' | 'failed' | 'cancelled';
 }
 
-// ShapeDraft extends the entity with draft properties but keeps wizard-derived
-// values (selectedCountries/adminLevels/urlMetadata) out of the persisted draft. Those values
-// must be derived from `checkboxState` by UI or batch pipelines.
-export type ShapeDraft = Partial<ShapeEntity> & {
+// Draft payload shared between UI/Worker. Name/description should live in TreeNode metadata; keep
+// draftData focused on ShapeEntity fields plus transient tabular info.
+export type ShapeDraftData = Partial<ShapeEntity> & {
+  tabularMetadata?: TabularTableMetadata | null;
+  tabularFile?: TabularFileSummary;
+  tabularLastPreview?: TabularDataResult;
+};
+
+export type ShapeDraft = ShapeDraftData & {
+  id?: NodeId;
+  nodeId?: NodeId;
   treeNodeId?: NodeId;
-  draft?: Partial<ShapeEntity>;
+  draftData?: ShapeDraftData;
+  draftMetadata?: { name?: string; description?: string; tags?: string[] };
   originalVersion?: number;
   depth?: number;
   tabularLastPreview?: TabularDataResult;
   tabularMetadata?: TabularTableMetadata | null;
   tabularFile?: TabularFileSummary;
+  resumeStep?: number;
 };
 
 export interface StepProps {
@@ -76,15 +85,6 @@ export interface StepProps {
   onUpdate: (updates: Partial<ShapeDraft>) => void;
   disabled?: boolean;
   mode?: 'create' | 'edit';
-}
-
-export interface ValidationResult {
-  data?: boolean;
-  filters?: boolean;
-  licenses?: boolean;
-  processing?: boolean;
-  processedData?: boolean;
-  source?: boolean;
 }
 
 export interface TabularFileSummary {
@@ -366,6 +366,12 @@ export interface ValidationResult {
   isValid: boolean;
   errors?: string[];
   warnings?: string[];
+  data?: boolean;
+  filters?: boolean;
+  licenses?: boolean;
+  processing?: boolean;
+  processedData?: boolean;
+  source?: boolean;
 }
 
 export interface SelectionStats {

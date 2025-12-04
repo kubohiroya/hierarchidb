@@ -1,12 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "skipLibCheck": false,
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ]
-    }
+    "skipLibCheck": false
   },
   "include": [
     "src/**/*"
