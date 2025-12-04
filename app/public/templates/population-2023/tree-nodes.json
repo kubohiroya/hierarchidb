@@ -39,12 +39,19 @@
             "description": "Detailed population statistics by country"
           },
           "draftData": {
-            "spreadsheetMetadataId": null,
             "dataSource": {
               "type": "url",
               "source": "https://raw.githubusercontent.com/datasets/population/refs/heads/main/data/population.csv",
               "filename": "population.csv",
               "sizeBytes": 0
+            },
+            "tabularProcessingConfig": {
+              "delimiter": ",",
+              "encoding": "utf-8",
+              "hasHeader": true,
+              "quoteChar": "\"",
+              "escapeChar": "\\\\",
+              "skipEmptyLines": true
             },
             "filters": []
           }
