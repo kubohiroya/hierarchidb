@@ -19,7 +19,6 @@ import {
 import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 import { useTreeNodeUpdater, createTreeNodeUpdaterActions } from '@hierarchidb/plugin-ui-sdk';
 import { useDialogViewState } from '@hierarchidb/plugin-base';
-import type { TreeNodeUpdaterPayload } from '@hierarchidb/common-types';
 import type { SpreadsheetEntity } from '../../common/types/SpreadsheetEntity.js';
 import { DataSourceStep } from './steps/DataSourceStep.js';
 import { FilteringStep } from './steps/FilteringStep.js';
@@ -83,8 +82,13 @@ export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
   const dialogSizeRef = useRef(dialogSize);
   const dialogPositionRef = useRef(dialogPosition);
 
-  const dialogData = useMemo<TreeNodeUpdaterPayload<SpreadsheetEntity>['draftData']>(
-    () => ((treeNodeUpdater?.draftData ?? treeNodeUpdater?.data ?? null) as SpreadsheetEntity | null),
+  const data = useMemo<SpreadsheetEntity>(
+    () =>
+      ((treeNodeUpdater?.draftData || treeNodeUpdater?.data || {
+        spreadsheetMetadataId: null,
+        dataSource: undefined,
+        filters: [],
+      }) ?? {}) as SpreadsheetEntity,
     [treeNodeUpdater?.data, treeNodeUpdater?.draftData]
   );
   const { updatePayload, updateMetadata } = useMemo(
@@ -110,14 +114,9 @@ export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
   const handleUpdate = useCallback(
     (patch: Partial<SpreadsheetEntity>) => {
       const basePayload = (treeNodeUpdater?.draftData ?? treeNodeUpdater?.data ?? {}) as SpreadsheetEntity;
-      const baseMeta = treeNodeUpdater?.draftMetadata ?? treeNodeUpdater?.metadata ?? { name: '', description: '', tags: [] };
       updatePayload(patch, basePayload);
-      updateMetadata(
-        baseMeta,
-        baseMeta
-      );
     },
-    [treeNodeUpdater?.data, treeNodeUpdater?.draftData, treeNodeUpdater?.draftMetadata, treeNodeUpdater?.metadata, updateMetadata, updatePayload]
+    [treeNodeUpdater?.data, treeNodeUpdater?.draftData, updatePayload]
   );
 
   const handleSave = useCallback(async () => {
@@ -143,9 +142,8 @@ export const SpreadsheetDialog: React.FC<SpreadsheetDialogProps> = ({
   }, [discardDraft, onClose]);
 
   const metadata = treeNodeUpdater?.draftMetadata ?? treeNodeUpdater?.metadata;
-  const data = dialogData ?? {};
 
-  const steps = useMemo(() => [
+  const steps = useMemo(() => data === null ? []:[
     {
       id: 'basic',
       label: 'Basic Information',
