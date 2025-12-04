@@ -5,9 +5,9 @@ import { TabularProvider, TabularFileUploadStep } from '@hierarchidb/ui-tabular-
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { createShapeTabularApi } from '../../../services/tabular/createShapeTabularApi.js';
 import { SHAPE_PLUGIN_ID } from '../../shared/constants.js';
-import type { ShapeDraftData, TabularFileSummary } from '../../shared/types.js';
+import type { ShapeEntity, TabularFileSummary } from '../../shared/types.js';
 
-type ShapeDialogStepProps = StepComponentProps<Partial<ShapeDraftData>>;
+type ShapeDialogStepProps = StepComponentProps<Partial<ShapeEntity>>;
 
 export function StepTabularUpload({
   data: draft,

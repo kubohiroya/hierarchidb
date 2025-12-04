@@ -29,13 +29,14 @@ import {
   Storage as StorageIcon,
   Timeline as TimelineIcon,
 } from '@mui/icons-material';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId, TreeNodeMetadata } from '@hierarchidb/common-types';
 import { summarizeCheckboxState, type ShapeEntity, type UrlMetadata } from '../shared/index.js';
 import type { BatchStatus, BatchProcessConfig, StageStatus } from '../../services/types.js';
 
 export interface ShapeViewPanelProps {
   nodeId: NodeId;
   entity: ShapeEntity;
+  metadata?: TreeNodeMetadata;
   onEdit: () => void;
   onRefresh: () => void;
 }
@@ -43,6 +44,7 @@ export interface ShapeViewPanelProps {
 export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
   nodeId,
   entity,
+  metadata,
   onEdit,
   onRefresh,
 }) => {
@@ -151,7 +153,7 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [entity.batchSessionId, entity.processingStatus, entity, nodeId]);
+  }, [entity, nodeId]);
 
   // Auto-refresh batch status
   useEffect(() => {
@@ -219,7 +221,7 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h5" component="h2">
-          {entity.name}
+          {metadata?.name ?? '(no title)'}
         </Typography>
         <Stack direction="row" spacing={1}>
           <Tooltip title="Edit Configuration">
@@ -297,13 +299,13 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
             </Grid>
           </Grid>
 
-          {entity.description && (
+          {metadata?.description && (
             <>
               <Divider sx={{ my: 2 }} />
               <Typography variant="body2" color="text.secondary">
                 Description
               </Typography>
-              <Typography variant="body1">{entity.description}</Typography>
+              <Typography variant="body1">{metadata.description}</Typography>
             </>
           )}
         </CardContent>

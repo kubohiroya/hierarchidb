@@ -14,9 +14,9 @@ import type {
   SelectionStats,
   UrlMetadata,
   ValidationResult,
-  ShapeDraftData,
+  TreeNodeMetadata,
 } from './types.js';
-import type { ShapeEntity, ShapeDraft } from './types.js';
+import type { ShapeEntity, ShapeDraft } from './types/core.js';
 import { DEFAULT_DATA_SOURCES, DEFAULT_PROCESSING_CONFIG } from './constants.js';
 
 const KNOWN_DATA_SOURCE_NAMES = new Set<DataSourceName>(
@@ -62,31 +62,31 @@ export function validateProcessingConfig(config: Partial<ProcessingConfig>): Val
   const errors: string[] = [];
   const warnings: string[] = [];
 
-  const downloadConcurrency = config.downloadConfig?.maxConcurrent ?? config.concurrentDownloads;
+  const downloadConcurrency = config.downloadConfig?.maxConcurrent;
   if (downloadConcurrency !== undefined) {
     if (downloadConcurrency < 1 || downloadConcurrency > 10) {
       errors.push('Concurrent downloads must be between 1 and 10');
     }
   }
 
-  const simplifyWorkers = config.simplificationConfig?.level1Workers ?? config.concurrentProcesses;
+  const simplifyWorkers = config.simplificationConfig?.level1Workers;
   if (simplifyWorkers !== undefined) {
     if (simplifyWorkers < 1 || simplifyWorkers > 8) {
       errors.push('Concurrent processes must be between 1 and 8');
     }
   }
 
-  const maxZoom = config.tileConfig?.maxZoom ?? config.maxZoomLevel;
+  const maxZoom = config.tileConfig?.maxZoom;
   if (maxZoom !== undefined) {
     if (maxZoom < 8 || maxZoom > 18) {
       errors.push('Max zoom level must be between 8 and 18');
-    }
+      }
     if (maxZoom > 14) {
       warnings.push('High zoom levels may require significant storage and processing time');
     }
   }
 
-  const areaThreshold = config.simplificationConfig?.areaThreshold ?? config.featureAreaThreshold;
+  const areaThreshold = config.simplificationConfig?.areaThreshold;
   if (areaThreshold !== undefined) {
     if (areaThreshold < 0 || areaThreshold > 1) {
       errors.push('Feature area threshold must be between 0 and 1');
@@ -255,9 +255,8 @@ function estimateDataSize(
  * Merge processing config with defaults
  */
 export function mergeProcessingConfig(config: Partial<ProcessingConfig>): ProcessingConfig {
-  const merged: ProcessingConfig = {
-    ...DEFAULT_PROCESSING_CONFIG,
-    ...config,
+  return {
+    dataSource: config.dataSource ?? DEFAULT_PROCESSING_CONFIG.dataSource,
     downloadConfig: {
       ...(DEFAULT_PROCESSING_CONFIG.downloadConfig ?? { maxConcurrent: 2 }),
       ...(config.downloadConfig ?? {}),
@@ -284,27 +283,8 @@ export function mergeProcessingConfig(config: Partial<ProcessingConfig>): Proces
       ...(DEFAULT_PROCESSING_CONFIG.cleanupConfig ?? {}),
       ...(config.cleanupConfig ?? {}),
     },
+    source: config.source ?? DEFAULT_PROCESSING_CONFIG.source,
   };
-
-  merged.dataSource = config.dataSource ?? DEFAULT_PROCESSING_CONFIG.dataSource;
-
-  if (merged.downloadConfig) {
-    merged.concurrentDownloads = merged.downloadConfig.maxConcurrent;
-    merged.corsProxyBaseURL = merged.downloadConfig.corsProxyUrl;
-  }
-  if (merged.simplificationConfig) {
-    merged.enableFeatureFiltering = merged.simplificationConfig.enableFiltering;
-    merged.featureFilterMethod = merged.simplificationConfig.featureFilterMethod;
-    merged.featureAreaThreshold = merged.simplificationConfig.areaThreshold;
-    merged.simplificationTolerance = merged.simplificationConfig.tolerance;
-    merged.concurrentProcesses = merged.simplificationConfig.level1Workers;
-  }
-  if (merged.tileConfig) {
-    merged.maxZoomLevel = merged.tileConfig.maxZoom;
-    merged.tileBufferSize = merged.tileConfig.bufferSize;
-  }
-
-  return merged;
 }
 
 /**
@@ -415,7 +395,7 @@ export function createDraftFromEntity(entity: ShapeEntity): ShapeDraft {
       : [];
 
   const normalizedDataSource = normalizeDataSourceName(entity.dataSourceName);
-  const draftPayload: ShapeDraftData = {
+  const draftPayload: Partial<ShapeEntity> = {
     dataSourceName: normalizedDataSource ?? 'naturalearth',
     licenseAgreement: entity.licenseAgreement ?? false,
     processingConfig: mergeProcessingConfig(entity.processingConfig ?? {}),
@@ -433,11 +413,10 @@ export function createDraftFromEntity(entity: ShapeEntity): ShapeDraft {
     treeNodeId,
     draftData: draftPayload,
     draftMetadata: {
-      name: entity.name ?? '',
-      description: entity.description ?? '',
+      name: entity.metadata?.name ?? '',
+      description: entity.metadata?.description ?? '',
+      tags: entity.metadata?.tags ?? [],
     },
-    depth: 0,
-    resumeStep: entity.resumeStep,
   };
 
   return draft;
@@ -447,50 +426,33 @@ export function createDraftFromEntity(entity: ShapeEntity): ShapeDraft {
  * Map a draft back to entity updates (shared mapping)
  */
 export function mapDraftToUpdates(
-  draft: ShapeDraft | ShapeDraftData,
-  metadata?: { name?: string; description?: string; tags?: string[] },
+  draft: ShapeDraft,
+  metadata?: TreeNodeMetadata | null,
 ): Partial<ShapeEntity> {
-  const source: ShapeDraftData =
-    'draftData' in draft ? (draft.draftData ?? {}) : (draft as ShapeDraftData);
+  const source: Partial<ShapeEntity> = draft.draftData ?? {};
 
   const updates: Partial<ShapeEntity> = {};
 
-  if (metadata) {
-    if (typeof metadata.name === 'string') updates.name = metadata.name;
-    if (typeof metadata.description === 'string') updates.description = metadata.description;
-  }
-
   const normalizedDataSource = normalizeDataSourceName(source.dataSourceName);
-  if (normalizedDataSource) {
-    updates.dataSourceName = normalizedDataSource;
-  }
-  if (typeof source.licenseAgreement === 'boolean') {
-    updates.licenseAgreement = source.licenseAgreement;
-  }
-  if (source.processingConfig) {
-    updates.processingConfig = mergeProcessingConfig(source.processingConfig);
-  }
-  if (source.checkboxState !== undefined) {
-    updates.checkboxState = source.checkboxState;
-  }
+  if (normalizedDataSource) updates.dataSourceName = normalizedDataSource;
+  if (typeof source.licenseAgreement === 'boolean') updates.licenseAgreement = source.licenseAgreement;
+  if (source.processingConfig) updates.processingConfig = mergeProcessingConfig(source.processingConfig);
+  if (source.checkboxState !== undefined) updates.checkboxState = source.checkboxState;
+  if (typeof source.batchSessionId === 'string') updates.batchSessionId = source.batchSessionId;
+  if (typeof source.processingStatus === 'string') updates.processingStatus = source.processingStatus;
+  if (source.licenseAgreedAt) updates.licenseAgreedAt = source.licenseAgreedAt;
+  if (typeof source.tabularMetadataId === 'string') updates.tabularMetadataId = source.tabularMetadataId;
+  if (Array.isArray(source.tabularFilters)) updates.tabularFilters = source.tabularFilters;
+  if (source.tabularFile) updates.tabularFile = source.tabularFile;
+  if (source.tabularMetadata) updates.tabularMetadata = source.tabularMetadata;
+  if (source.tabularLastPreview) updates.tabularLastPreview = source.tabularLastPreview;
 
-  if (typeof source.batchSessionId === 'string') {
-    updates.batchSessionId = source.batchSessionId;
-  }
-  if (typeof source.processingStatus === 'string') {
-    updates.processingStatus = source.processingStatus;
-  }
-
-  if (source.licenseAgreedAt) {
-    updates.licenseAgreedAt = source.licenseAgreedAt;
-  }
-  if (typeof source.tabularMetadataId === 'string') {
-    updates.tabularMetadataId = source.tabularMetadataId;
-  } else if (source.tabularMetadataId === undefined) {
-    updates.tabularMetadataId = undefined;
-  }
-  if (Array.isArray(source.tabularFilters)) {
-    updates.tabularFilters = source.tabularFilters;
+  if (metadata) {
+    updates.metadata = {
+      name: metadata.name,
+      description: metadata.description,
+      tags: metadata.tags,
+    };
   }
 
   return updates;

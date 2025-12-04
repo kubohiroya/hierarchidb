@@ -2,7 +2,7 @@ import type { NodeId, TreeId, TreeNodeMetadata } from '@hierarchidb/common-types
 import { HeadlessMultiStepDialog } from '@hierarchidb/ui-dialog';
 import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 import { useTreeNodeDialog } from '@hierarchidb/plugin-ui-sdk';
-import type { ShapeDraftData as ShapeDraftPayload, ShapeEntity } from '../../common/shared/index.js';
+import type { ShapeEntity } from '../../common/shared/index.js';
 import {
   DEFAULT_PROCESSING_CONFIG,
   mergeProcessingConfig,
@@ -28,8 +28,6 @@ export interface ShapeDialogProps {
   onSave?: (entity: ShapeEntity) => Promise<void>;
 }
 
-type ShapeDraftData = ShapeDraftPayload;
-
 export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
   open,
   mode,
@@ -39,7 +37,7 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
   onClose,
   onSave,
 }) => {
-  type ShapeStepProps = StepComponentProps<ShapeDraftData>;
+  type ShapeStepProps = StepComponentProps<ShapeEntity>;
 
   const UploadStep: React.FC<ShapeStepProps> = (props) => (
     <StepTabularUpload
@@ -50,7 +48,7 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
         props.onChange({
           ...patch,
           processingConfig: mergeProcessingConfig(
-            (patch as ShapeDraftData).processingConfig ?? props.data.processingConfig ?? DEFAULT_PROCESSING_CONFIG
+            (patch as ShapeEntity).processingConfig ?? props.data.processingConfig ?? DEFAULT_PROCESSING_CONFIG
           ),
         })
       }
@@ -89,7 +87,7 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
     <Step5CountrySelection draft={props.data} onUpdate={(patch) => props.onChange(patch)} disabled={props.disabled} />
   );
 
-  const { frameStyle, dialogRef, headlessProps } = useTreeNodeDialog<ShapeDraftData>({
+  const { frameStyle, dialogRef, headlessProps, metadata } = useTreeNodeDialog<ShapeEntity>({
     open,
     mode,
     nodeType: 'shape',
@@ -98,7 +96,7 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
     treeId,
     initialDraftData: {
       processingConfig: mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG),
-    } as ShapeDraftData,
+    },
     onClose,
     buildSteps: ({
       data,
@@ -110,7 +108,8 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
       nodeId: _nodeId,
       parentId: _parentId,
     }) => {
-      const validations = validateProcessingConfig(data.processingConfig ?? {}) as ValidationResult;
+      const draftData = data ?? {};
+      const validations = validateProcessingConfig(draftData.processingConfig ?? {}) as ValidationResult;
 
       const steps: DialogStepConfig[] = [
         {
@@ -139,7 +138,7 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
           label: 'Tabular Upload',
           component: (
             <UploadStep
-              data={data}
+              data={draftData}
               onChange={updatePayload}
               setValid={() => {}}
               setError={() => {}}
@@ -148,14 +147,14 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
               mode={mode}
             />
           ),
-          validate: () => Boolean(data?.processingConfig?.source),
+          validate: () => Boolean(draftData.processingConfig?.source),
         },
         {
           id: 'filter',
           label: 'Tabular Filter',
           component: (
             <FilterStep
-              data={data}
+              data={draftData}
               onChange={updatePayload}
               setValid={() => {}}
               setError={() => {}}
@@ -171,7 +170,7 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
           label: 'Data Source',
           component: (
             <DataSourceStep
-              data={data}
+              data={draftData}
               onChange={updatePayload}
               setValid={() => {}}
               setError={() => {}}
@@ -187,7 +186,7 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
           label: 'License & Consent',
           component: (
             <LicenseStep
-              data={data}
+              data={draftData}
               onChange={updatePayload}
               setValid={() => {}}
               setError={() => {}}
@@ -203,7 +202,7 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
           label: 'Processing',
           component: (
             <ProcessingStep
-              data={data}
+              data={draftData}
               onChange={updatePayload}
               setValid={() => {}}
               setError={() => {}}
@@ -219,7 +218,7 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
           label: 'Country Selection',
           component: (
             <CountryStep
-              data={data}
+              data={draftData}
               onChange={updatePayload}
               setValid={() => {}}
               setError={() => {}}
@@ -239,13 +238,16 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
 
       return steps;
     },
-    onSave: async (_meta: TreeNodeMetadata, savedId?: NodeId) => {
+    onSave: async (draftMeta: TreeNodeMetadata, savedId?: NodeId) => {
       const mergedProcessing = mergeProcessingConfig(headlessProps.stepData?.processingConfig ?? DEFAULT_PROCESSING_CONFIG);
+      const nodeIdToUse = (savedId ?? nodeId) as NodeId;
+      const finalMetadata = draftMeta ?? metadata;
       if (onSave) {
         await onSave({
           ...(headlessProps.stepData ?? {}),
           processingConfig: mergedProcessing,
-          nodeId: (savedId ?? nodeId) as NodeId,
+          metadata: finalMetadata,
+          nodeId: nodeIdToUse,
         } as ShapeEntity);
       }
     },
@@ -253,7 +255,7 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
 
   return (
     <div style={frameStyle} role="dialog" aria-modal={open} ref={dialogRef}>
-      <HeadlessMultiStepDialog<ShapeDraftData> {...headlessProps} />
+      <HeadlessMultiStepDialog<ShapeEntity> {...headlessProps} />
     </div>
   );
 };
