@@ -67,6 +67,14 @@ export function MultiDialogFrame<TData>(props: MultiDialogFrameComponentProps<TD
   const isBrowser = typeof document !== 'undefined';
   const theme = useTheme();
   const fadeDuration = transitionDuration ?? theme.transitions.duration.shorter;
+  const hasMountedRef = useRef(false);
+  const lastOpenRef = useRef(open);
+  useEffect(() => {
+    hasMountedRef.current = true;
+    lastOpenRef.current = open;
+  }, [open]);
+  const shouldAnimateBackdrop = !hasMountedRef.current || lastOpenRef.current !== open;
+  const backdropTimeout = shouldAnimateBackdrop ? fadeDuration : 0;
 
   const [isInteracting, setIsInteracting] = useState(false);
 
@@ -428,7 +436,13 @@ export function MultiDialogFrame<TData>(props: MultiDialogFrameComponentProps<TD
   const portalTarget = portalContainer ?? (isBrowser ? document.body : null);
 
   const dialogNode = (
-    <Fade in={open} timeout={fadeDuration} mountOnEnter unmountOnExit>
+    <Fade
+      in={open}
+      timeout={backdropTimeout}
+      appear={shouldAnimateBackdrop}
+      mountOnEnter
+      unmountOnExit
+    >
       <Box
         sx={combinedBackdropSx}
         role="presentation"
