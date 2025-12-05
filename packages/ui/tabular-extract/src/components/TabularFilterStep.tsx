@@ -3,7 +3,7 @@
  * @description Filter rule creation and preview for Tabular data
  */
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Accordion,
   AccordionDetails,
@@ -38,6 +38,7 @@ import {
 import { useTabularFilter } from '../hooks/useTabularFilter.js';
 import { TabularColumnInfo, TabularColumnType, TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { TabularDataResult, TabularFilterOperator, TabularFilterRule } from '../types/index.js';
+import { ModalSelect } from './ModalSelect.js';
 
 export interface TabularFilterStepProps {
   tableMetadata: TabularTableMetadata;
@@ -64,12 +65,12 @@ const FILTER_OPERATORS: { value: TabularFilterOperator; label: string; types: Ta
 ];
 
 export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
-                                                              tableMetadata,
-                                                              onFiltersChanged,
-                                                              onPreviewData,
-                                                              pluginId,
-                                                              maxPreviewRows = 100,
-                                                            }) => {
+  tableMetadata,
+  onFiltersChanged,
+  onPreviewData,
+  pluginId,
+  maxPreviewRows = 100,
+}) => {
   const [filters, setFilters] = useState<TabularFilterRule[]>([]);
   const [newFilter, setNewFilter] = useState<Partial<TabularFilterRule>>({
     column: '',
@@ -90,6 +91,12 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
     maxPreviewRows,
   });
 
+  const hasPreviewColumns = Boolean(previewData?.columns && previewData.columns.length > 0);
+  const columnOptions: TabularColumnInfo[] = hasPreviewColumns
+    ? previewData!.columns
+    : (tableMetadata.columns ?? []);
+  const previewColumns: TabularColumnInfo[] = hasPreviewColumns ? previewData!.columns : columnOptions;
+
   // Update parent when filters change
   useEffect(() => {
     onFiltersChanged(filters);
@@ -102,15 +109,32 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
     }
   }, [previewData, onPreviewData]);
 
+  // Ensure a default column is selected once options are available
+  useEffect(() => {
+    if (columnOptions.length === 0) return;
+    setNewFilter((prev) => {
+      if (prev.column && columnOptions.some(col => col.name === prev.column)) {
+        return prev;
+      }
+      const [firstColumn] = columnOptions;
+      if (!firstColumn) return prev;
+      return {
+        ...prev,
+        column: firstColumn.name,
+        operator: prev.operator ?? 'equals',
+      };
+    });
+  }, [columnOptions]);
+
   const normalizeType = (type?: TabularColumnType): TabularColumnType => type ?? 'string';
 
-  const getAvailableOperators = (columnName: string) => {
-    const column = tableMetadata.columns?.find((col: TabularColumnInfo) => col.name === columnName);
+  const getAvailableOperators = useCallback((columnName: string) => {
+    const column = columnOptions.find((col: TabularColumnInfo) => col.name === columnName);
     if (!column) return FILTER_OPERATORS;
 
     const columnType = normalizeType(column.type);
     return FILTER_OPERATORS.filter(op => op.types.includes(columnType));
-  };
+  }, [columnOptions]);
 
   const handleAddFilter = () => {
     if (!newFilter.column || !newFilter.operator) return;
@@ -138,6 +162,21 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
       enabled: true,
     });
   };
+
+  // Align operator with the selected column type
+  useEffect(() => {
+    if (!newFilter.column) return;
+    const available = getAvailableOperators(newFilter.column);
+    if (available.length === 0) return;
+    const [firstAvailable] = available;
+    if (!firstAvailable) return;
+    if (!available.some(op => op.value === newFilter.operator)) {
+      setNewFilter((prev) => ({
+        ...prev,
+        operator: firstAvailable.value,
+      }));
+    }
+  }, [columnOptions, getAvailableOperators, newFilter.column, newFilter.operator]);
 
   const handleRemoveFilter = (filterId: string) => {
     setFilters((prev: TabularFilterRule[]) => prev.filter(f => f.id !== filterId));
@@ -169,7 +208,7 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
       return null; // No value input needed for null checks
     }
 
-    const column = tableMetadata.columns?.find((col: TabularColumnInfo) => col.name === filter.column);
+    const column = columnOptions.find((col: TabularColumnInfo) => col.name === filter.column);
 
     if (column?.type === 'boolean') {
       return (
@@ -244,23 +283,25 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', mb: 2 }}>
           <FormControl size="small" sx={{ minWidth: 150 }}>
             <InputLabel>Column</InputLabel>
-            <Select
+            <ModalSelect
               value={newFilter.column || ''}
+              usePortal={true}
               label="Column"
-              onChange={(e) => setNewFilter((prev: Partial<TabularFilterRule>) => ({ ...prev, column: e.target.value }))}
-            >
-              {(tableMetadata.columns ?? []).map((col: TabularColumnInfo) => (
+        onChange={(e) => setNewFilter((prev: Partial<TabularFilterRule>) => ({ ...prev, column: e.target.value }))}
+      >
+              {columnOptions.map((col: TabularColumnInfo) => (
                 <MenuItem key={col.name} value={col.name}>
                   {col.name} ({col.type})
                 </MenuItem>
               ))}
-            </Select>
+            </ModalSelect>
           </FormControl>
 
           <FormControl size="small" sx={{ minWidth: 150 }}>
             <InputLabel>Operator</InputLabel>
-            <Select
+            <ModalSelect
               value={newFilter.operator || 'equals'}
+              usePortal={true}
               label="Operator"
               onChange={(e) => setNewFilter((prev: Partial<TabularFilterRule>) => ({ ...prev, operator: e.target.value as TabularFilterOperator }))}
               disabled={!newFilter.column}
@@ -270,7 +311,7 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
                   {op.label}
                 </MenuItem>
               ))}
-            </Select>
+            </ModalSelect>
           </FormControl>
 
           <TextField
@@ -382,7 +423,7 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    {previewData.columns.map((col: TabularColumnInfo) => (
+                    {previewColumns.map((col: TabularColumnInfo) => (
                       <TableCell key={col.name}>
                         <Typography variant="subtitle2">
                           {col.name}
@@ -397,7 +438,7 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
                 <TableBody>
                   {previewData.rows.map((row: Record<string, string | number | null>, index: number) => (
                     <TableRow key={index}>
-                      {previewData.columns.map((col: TabularColumnInfo) => (
+                      {previewColumns.map((col: TabularColumnInfo) => (
                         <TableCell key={col.name}>
                           {row[col.name]?.toString() || ''}
                         </TableCell>
@@ -437,7 +478,7 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
                 Total Columns
               </Typography>
               <Typography variant="h6">
-                {previewData.columns.length}
+                {(previewData.columns?.length ?? columnOptions.length).toLocaleString()}
               </Typography>
             </Box>
             <Box>

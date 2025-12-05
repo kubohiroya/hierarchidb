@@ -26,14 +26,18 @@ const FilteringStepContent: FC<{
 
   const tableMetadata = useMemo(() => {
     if (!tabularTableMetadata) return null;
-    const hasColumns = (tabularTableMetadata.columns?.length ?? 0) > 0;
-    if (hasColumns) return tabularTableMetadata;
 
+    // Use server metadata when columns are present
+    if ((tabularTableMetadata.columns?.length ?? 0) > 0) {
+      return tabularTableMetadata;
+    }
+
+    // Fallback to preview columns (Step2) when metadata.columns is empty
     const previewColumns = dialogData.lastPreview?.columns;
     if (previewColumns && previewColumns.length > 0) {
       const columnsFromPreview: TabularColumnInfo[] = previewColumns.map((col, index) => {
         if (typeof col === 'string') {
-          return { name: col, index, type: 'string' as TabularColumnType };
+          return { name: col, index, type: 'string' };
         }
         if (typeof col === 'object' && col) {
           const asInfo = col as Partial<TabularColumnInfo>;
@@ -45,16 +49,35 @@ const FilteringStepContent: FC<{
             sampleValues: asInfo.sampleValues,
           };
         }
-        return { name: String(col), index, type: 'string' as TabularColumnType };
+        return { name: String(col), index, type: 'string' };
       });
 
       return {
         ...tabularTableMetadata,
         columns: columnsFromPreview,
-      } as TabularTableMetadata;
+      } satisfies TabularTableMetadata;
     }
+
+    // If still no columns, synthesize placeholder columns from lastPreview rows
+    const previewRows = dialogData.lastPreview?.rows;
+    if (Array.isArray(previewRows) && previewRows.length > 0) {
+      const firstRow = previewRows[0] as Record<string, unknown>;
+      const keys = Object.keys(firstRow);
+      if (keys.length > 0) {
+        const columnsFromRows: TabularColumnInfo[] = keys.map((key, index) => ({
+          name: key,
+          index,
+          type: 'string',
+        }));
+        return {
+          ...tabularTableMetadata,
+          columns: columnsFromRows,
+        } satisfies TabularTableMetadata;
+      }
+    }
+
     return tabularTableMetadata;
-  }, [dialogData.lastPreview?.columns, tabularTableMetadata]);
+  }, [dialogData.lastPreview?.columns, dialogData.lastPreview?.rows, tabularTableMetadata]);
 
   useEffect(() => {
     setValid(true);

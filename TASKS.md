@@ -76,10 +76,14 @@
   - [ ] デフォルト値/選択状態が保持され、ルール追加・保存で反映される
   - [ ] 代表検証（手動確認＋関連 typecheck）を実施しログを記録する
 - チェックリスト:
-  - [ ] Column options を生成する処理（Step3 UI/状態管理）を特定し、読み込み済みテーブルヘッダーを反映させる
-  - [ ] デフォルト選択・再描画時の保持を確認し、必要ならフォールバック/初期値を補正する
+  - [x] Column options を生成する処理（Step3 UI/状態管理）を特定し、読み込み済みテーブルヘッダーを反映させる
+  - [x] デフォルト選択・再描画時の保持を確認し、必要ならフォールバック/初期値を補正する
   - [ ] 手動確認（Step2でテーブルプレビュー→Step3でColumn選択が可能、ルール追加ができる）と型チェックを実施
 - ロールバック手順：修正した plugin UI の差分を revert し、再現手順で元の挙動（Column選択肢が空）に戻ることを確認する
+- 運用ログ：
+  - start: 2025-12-05 23:45 JST Column 選択肢空問題の調査と補正を開始（main 上で作業）
+  - progress: 2025-12-05 23:47 JST FilteringStep で metadata→lastPreview→rows から columns をフォールバック生成し、TabularFilterStep で columnOptions を優先・デフォルト選択を自動補正。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` / `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` を実行し exit 0 を確認（手動確認未実施）。
+  - progress: 2025-12-05 23:49 JST TabularFilterStep で previewData.columns を最優先に columnOptions を組み立て（プレビュー取得済みなら必ず候補表示）、typecheck を再実行し exit 0 を確認。
 
 1594) Edit Spreadsheet Step2 Download 後にリロードが発生して data:{} / draft:null になる問題調査（P0）
 - ブランチ: `fix/spreadsheet/edit-step2-download`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -9310,6 +9314,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-05 10:25 progress: investigation/spreadsheet-step3-scroll-confirm — SpreadsheetDialog を MultiDialogFrame（backdrop/stopWheelPropagation 付き）でラップし、プレビュー TableContainer に maxHeight+overflowY と onWheelCapture(stopPropagation) を付与してホイールイベントが背面へ漏れないように修正。検証コマンドは未実行（UI 観察前提のため）。
 - 2025-12-05 10:40 progress: investigation/spreadsheet-step3-scroll-confirm — TabularFilterStep ルートコンテナに maxHeight/overflowY/overscrollBehavior と onWheelCapture(stopPropagation) を追加し、ダイアログ内でスクロールを完結させるよう調整。引き続き UI 手動確認が必要。
 - 2025-12-05 10:55 progress: investigation/spreadsheet-step3-scroll-confirm — SpreadsheetDialog で disablePortal を外し、MultiDialogFrame の frame/backdrop に overscrollBehavior: contain を付与してバックドロップが常に最前面で wheel を吸収するように調整。要手動確認。
+- 2025-12-05 11:05 progress: investigation/spreadsheet-step3-scroll-confirm — plugin-service-sdk の bridge.test が古いパスを参照していたため、ui-worker-client の workerBridge へ import を修正し、devDependencies に追加。テスト実行は未実施。
 - 2025-11-29 14:20 start: fix/runtime-worker/plugin-worker-loader-path — dev コンソールで shape/spreadsheet/styler/timeline の worker preload が `@hierarchidb/*-plugin/worker` 未解決になる問題の調査を開始。DoD/チェックリストを Kanban に追加。
 - 2025-11-29 14:21 progress: fix/runtime-worker/plugin-worker-loader-path — `git checkout -b fix/runtime-worker/plugin-worker-loader-path` が `.git/refs/heads/...` 作成不可で失敗したため、main 上で作業継続（Kanban に記載）。
 - 2025-11-29 14:32 progress: fix/runtime-worker/plugin-worker-loader-path — runtime-worker の plugin worker loader が参照する `import.meta.glob` の相対パスを `../../../../plugins/*-plugin/src/**/index.{ts,tsx}` へ修正し、loaderMap がプラグインソースを解決できるようにした（bare spec fallback 依存を排除）。

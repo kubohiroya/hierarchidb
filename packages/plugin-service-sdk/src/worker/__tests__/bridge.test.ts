@@ -6,7 +6,7 @@ import {
   __setWorkerBridgeClientRef,
   ensureWorkerAPI,
   getWorkerBridge,
-} from '../bridge.js';
+} from '@hierarchidb/ui-worker-client';
 
 function createMockWorkerAPI() {
   return {
@@ -67,4 +67,3 @@ describe('worker bridge', () => {
     expect((api.subscribeBatchProgress as any).mock.calls.length).toBe(1);
   });
 });
-
