@@ -3,7 +3,7 @@
  * @description Filter rule creation and preview for Tabular data
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Accordion,
   AccordionDetails,
@@ -92,9 +92,9 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
   });
 
   const hasPreviewColumns = Boolean(previewData?.columns && previewData.columns.length > 0);
-  const columnOptions: TabularColumnInfo[] = hasPreviewColumns
+  const columnOptions: TabularColumnInfo[] = useMemo(()=>hasPreviewColumns
     ? previewData!.columns
-    : (tableMetadata.columns ?? []);
+    : (tableMetadata.columns ?? []), [hasPreviewColumns, previewData, tableMetadata.columns]);
   const previewColumns: TabularColumnInfo[] = hasPreviewColumns ? previewData!.columns : columnOptions;
 
   // Update parent when filters change
