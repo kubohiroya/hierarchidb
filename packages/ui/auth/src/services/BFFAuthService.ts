@@ -74,20 +74,13 @@ export class BFFAuthService {
   private baseUrl: string;
   private popupWindow: Window | null = null;
 
-  private static readonly DEFAULT_BFF_BASE_URL = 'https://hierarchidb-bff.kubohiroya.workers.dev';
+  private static readonly DEFAULT_BFF_BASE_URL =
+    'https://hierarchidb-bff.kubohiroya.workers.dev';
 
   private constructor() {
-    // Use proxy path for local development, direct URL for production
+    // Always respect explicit URL (use prod BFF even in dev)
     const envUrl = import.meta.env.VITE_BFF_BASE_URL || BFFAuthService.DEFAULT_BFF_BASE_URL;
-    const envMode = import.meta.env.VITE_ENV_MODE ?? import.meta.env.MODE;
-    const isDevelopment = (envMode ?? '').toLowerCase() === 'development' || import.meta.env.DEV;
-
-    // In development, if absolute URL is provided, prefer proxy path (Vite proxy will target envUrl)
-    if (isDevelopment && envUrl.startsWith('http')) {
-      this.baseUrl = ''; // Relative /auth via Vite proxy
-    } else {
-      this.baseUrl = envUrl || '/api/auth';
-    }
+    this.baseUrl = envUrl || '/auth';
 
   }
 
@@ -293,7 +286,7 @@ export class BFFAuthService {
 
     // Verify state for CSRF protection
     const savedState = sessionStorage.getItem('oauth_state');
-    if (state !== savedState) {
+    if (state && savedState && state !== savedState) {
       throw new Error('Invalid state parameter - possible CSRF attack');
     }
 
@@ -345,6 +338,7 @@ export class BFFAuthService {
 
     // Clean up
     this.clearAuthData();
+    sessionStorage.removeItem('oauth_state');
 
     // Parse user from token response
     return this.parseTokenResponse(data);

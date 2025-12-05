@@ -53,6 +53,20 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1592) BFF Google authorize 404 調査/修正（P0）
+- ブランチ: `fix/auth/bff-google-404`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: app dev/prod BFF 設定（本番BFFを利用）、auth redirect URI/コードチャレンジ生成、`app/src` の auth エンドポイント定義、`packages/ui/auth` の BFFAuthService
+- 受け入れ基準（DoD）:
+  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] `pnpm dev`（本番BFF利用）で `/auth/authorize/google` が 404 にならず、callback まで遷移できることを手動確認する
+  - [ ] 404 の原因（ルート未マウント、base URL/redirect URI 不整合、proxy 設定漏れ等）を特定し、最小差分で解消する
+  - [ ] 修正後の検証ログ（手動確認 + 必要な typecheck など）を運用ログに記録する
+- チェックリスト:
+  - [ ] 再現手順と 404 レスポンスの詳細を確認し、BFF 側 URL/パスの実態を突き合わせる
+  - [ ] dev/prod 両方の BFF base URL・redirect_uri 設定を見直し、誤りがあれば修正する
+  - [ ] 必要に応じて auth ルートのパス/クエリ（code_challenge, redirect_uri, provider）を補正し、実機で再確認する
+- ロールバック手順：本タスクで変更した設定/コードを revert し、`pnpm dev` で `/auth/authorize/google` が 404 へ戻ることを確認する
+
 1589) Turbo test dependency cycle 解消（P0）
 - ブランチ: `fix/repo/turbo-test-cycle`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `turbo.json` の pipeline/dependsOn、`package.json` の test スクリプト（`pnpm test` → `turbo run test --parallel`）、test ターゲットとなる各パッケージの build/typecheck 依存
@@ -9408,6 +9422,9 @@ ToDo（Phase 2/3: any の完全撤去）
 ## 今日の着手（運用ログ） <a id="worklog-16"></a>
 - 2025-12-05 09:02 start: fix/auth/authorize-route（TASK 1555） — 右上のBFF認証リンク `/auth/authorize/<provider>` が 404 になる問題の調査を開始。DoD: 404原因特定と解消、検証コマンド実行とログ記録、ロールバック手順明記。
 - 2025-12-05 09:20 progress: fix/auth/authorize-route — VITE_BFF_BASE_URL 未定義時のデフォルトを Cloudflare BFF（https://hierarchidb-bff.kubohiroya.workers.dev）へ変更。対象: scripts/env/base.sh, app/vite.config.ts の dev proxy デフォルト, packages/ui/auth BFFAuthService の fallback。ロールバック: 上記3ファイルの差分を revert し、必要なら再ビルド/再起動。
+- 2025-12-05 12:16 start: fix/auth/bff-google-404（TASK 1592） — 本番BFF利用の `pnpm dev` で `/auth/authorize/google` が 404 になる問題の調査を開始。DoD: Kanban/ログ更新、404 原因特定と解消、callback 到達を手動確認、検証ログとロールバック手順を記載。
+- 2025-12-05 12:22 progress: fix/auth/bff-google-404 — BFF デフォルト URL を `/auth` ベースに戻し（scripts/env/{base,development,production}.sh, packages/ui/auth BFFAuthService, app/vite.config.ts proxy デフォルト）、SimpleBFFAuthContext で `/api/auth` 指定時は `/auth` に正規化するよう対応。authorize/logout/refresh は buildAuthUrl で `/auth/*` を強制し、過剰なプレフィックスで 404 にならないようにした。検証: `pnpm --filter @hierarchidb/ui-auth typecheck` exit 0。
+- 2025-12-05 13:00 progress: fix/auth/bff-google-404 — BFFAuthService の dev 環境強制プロキシ分岐を撤去し、絶対 URL（デフォルトの Cloudflare BFF を含む）をそのまま利用するよう変更。これにより dev でも `/auth/authorize` が BFF へ直行し、ローカル 404 を回避。検証: `pnpm --filter @hierarchidb/ui-auth typecheck` exit 0。
 - 2025-12-04 09:20 start: chore/plugins/remove-local-dts（TASK 1591） — plugins/*-plugin/src 配下のローカル .d.ts 全廃タスクを開始。DoD: Kanban/ログ更新、棚卸し→削除→正規参照化、依存 build/refs で型解決、影響パッケージ typecheck 実行と記録、ロールバック手順明記。
 - 2025-12-04 09:25 progress: chore/plugins/remove-local-dts — `plugins/{resolver,basemap,shape}-plugin/src/vite-env.d.ts` と `plugins/{timeline,location}-plugin/src/types/xlsx.d.ts` を削除し、`global.d.ts` に `vite/client` + VITE_* env を集約。basemap/location/timeline の tsconfig に `../../global.d.ts` を include。コマンド: `pnpm --filter @hierarchidb/basemap-plugin typecheck` exit 0, `pnpm --filter @hierarchidb/{shape,resolver,location,timeline}-plugin typecheck` exit 2（既存の DraftData 非互換や spreadsheet/styler 連鎖型崩れ起因）。ロールバック: 削除した .d.ts と tsconfig/global.d.ts の今回差分を revert し、同コマンドを再実行。
 - 2025-12-04 10:05 progress: chore/plugins/remove-local-dts — DraftData 依存を TreeNodeUpdaterState へ置換（folder/location/resolver/shape/styler UI）。再検証: `pnpm --filter @hierarchidb/shape-plugin typecheck` は引き続き `@hierarchidb/ui-dialog` など未解決で exit 2、`pnpm --filter @hierarchidb/{resolver,location,timeline}-plugin typecheck` は SpreadsheetDialogData 廃止など既存エラーで exit 2（DraftData 由来の import エラーは解消）。ロールバック: 上記 UI ファイルの変更と共通型 include 追加を revert し、同コマンドを再実行。

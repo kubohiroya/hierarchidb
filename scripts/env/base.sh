@@ -28,7 +28,7 @@ export VITE_GITHUB_CLIENT_ID="354fd9072f37d7ebe63d"
 # 環境別のデフォルト値（各環境スクリプトで上書き可能）
 # ================================================================
 
-# BFF設定のデフォルト
+# BFF設定のデフォルト（ルート /auth ベース）
 export VITE_BFF_BASE_URL="${VITE_BFF_BASE_URL:-https://hierarchidb-bff.kubohiroya.workers.dev}"
 
 # ルーティング設定のデフォルト

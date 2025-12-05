@@ -953,6 +953,13 @@ export default defineConfig(({ mode, isSsrBuild }) => {
               const upstreamBase = basePath || '/auth';
               return `${upstreamBase}${stripped}`;
             },
+            // Avoid proxying SPA callback to BFF to prevent redirect loop
+            bypass: (req) => {
+              if (req.url?.startsWith('/auth/callback')) {
+                return req.url;
+              }
+              return undefined;
+            },
           };
         })(),
       },

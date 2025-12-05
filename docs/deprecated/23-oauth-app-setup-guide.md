@@ -283,17 +283,18 @@ VITE_GITHUB_CLIENT_ID=your-github-client-id
 ### Debug Commands
 
 ```bash
-# Check BFF configuration
-wrangler config --config wrangler.hierarchidb.toml
-
-# View real-time logs
-wrangler tail --config wrangler.hierarchidb.toml --env production
-
-# Test OAuth endpoint
-curl https://hierarchidb-bff.kubohiroya.workers.dev/health
+# Test BFF endpoint (health)
+# Note: `/health` is not exposed; use the root path.
+curl https://hierarchidb-bff.kubohiroya.workers.dev/
 
 # Verify secrets are set (lists names only)
-wrangler secret list --config wrangler.hierarchidb.toml
+wrangler secret list --config wrangler.hierarchidb.toml --env production
+
+# Check authenticated account (wrangler global config)
+wrangler whoami
+
+# Tail logs for the deployed BFF
+wrangler tail --config wrangler.hierarchidb.toml --env production
 ```
 
 ## Migration from Existing OAuth Apps

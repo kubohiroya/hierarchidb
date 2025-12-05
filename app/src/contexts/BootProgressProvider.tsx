@@ -30,12 +30,12 @@ type BootProgressContextValue = {
 };
 
 const defaultSteps: BootStep[] = [
-  { name: 'Config', weight: 5, progress: 0, done: false },
-  { name: 'Theme', weight: 5, progress: 0, done: false },
+  { name: 'Config', weight: 10, progress: 0, done: false },
+  { name: 'Theme', weight: 10, progress: 0, done: false },
   { name: 'I18n', weight: 10, progress: 0, done: false },
   { name: 'Auth', weight: 10, progress: 0, done: false },
   { name: 'UI', weight: 10, progress: 0, done: false },
-  { name: 'Worker', weight: 60, progress: 0, done: false },
+  { name: 'Worker', weight: 50, progress: 0, done: false },
 ];
 
 const BootProgressContext = createContext<BootProgressContextValue | null>(null);
@@ -51,6 +51,14 @@ export const useOptionalBootProgress = (): BootProgressContextValue | null => {
 };
 
 export const BootProgressProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const formatTimeWithMs = (date: Date) => {
+    const hh = String(date.getHours()).padStart(2, '0');
+    const mm = String(date.getMinutes()).padStart(2, '0');
+    const ss = String(date.getSeconds()).padStart(2, '0');
+    const ms = String(date.getMilliseconds()).padStart(3, '0');
+    return `${hh}:${mm}:${ss}.${ms}`;
+  };
+
   const [steps, setSteps] = useState<Record<StepName, BootStep>>(() => {
     const base = Object.fromEntries(defaultSteps.map((s) => [s.name, { ...s }])) as Record<
       StepName,
@@ -59,7 +67,7 @@ export const BootProgressProvider: React.FC<{ children: React.ReactNode }> = ({ 
     // Persisted flags to survive remounts during dev/hydration
     const bootWindow = typeof window !== 'undefined' ? (window as BootWindow) : undefined;
     if (bootWindow?.__HDB_INIT_COMPLETE__) {
-      base.Worker.progress = 100;
+      base.Worker.progress = base.Worker.weight;
       base.Worker.done = true;
       base.Worker.message = getWorkerInitCompleteMessage();
     }
@@ -74,8 +82,9 @@ export const BootProgressProvider: React.FC<{ children: React.ReactNode }> = ({ 
       if (!cur) return prev;
       // If already done, ignore further updates to avoid churn from multiple sources
       if (cur.done) return prev;
-      const clamped = Math.max(0, Math.min(100, Math.round(progress)));
-      const nextDone = cur.done || clamped >= 100;
+      const maxProgress = name === 'Worker' ? cur.weight || 100 : 100;
+      const clamped = Math.max(0, Math.min(maxProgress, Math.round(progress)));
+      const nextDone = cur.done || clamped >= maxProgress;
       const nextMsg = message ?? cur.message;
       // Bail out if nothing actually changes
       if (cur.progress === clamped && cur.done === nextDone && cur.message === nextMsg) {
@@ -103,7 +112,11 @@ export const BootProgressProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const overallProgress = useMemo(() => {
     const list = Object.values(steps);
     const totalWeight = list.reduce((sum, s) => sum + s.weight, 0) || 1;
-    const acc = list.reduce((sum, s) => sum + (s.weight * (s.progress || 0)) / 100, 0);
+    const acc = list.reduce((sum, s) => {
+      const normalizedProgress =
+        s.name === 'Worker' && s.weight > 0 ? (100 * (s.progress || 0)) / s.weight : s.progress;
+      return sum + (s.weight * (normalizedProgress || 0)) / 100;
+    }, 0);
     return Math.round((acc / totalWeight) * 100);
   }, [steps]);
 
@@ -118,6 +131,35 @@ export const BootProgressProvider: React.FC<{ children: React.ReactNode }> = ({ 
       overallLoggedRef.current = false;
     }
   }, [overallProgress]);
+
+  const stepProgressLogRef = useRef<Record<StepName, number>>({
+    Config: 0,
+    Theme: 0,
+    I18n: 0,
+    Auth: 0,
+    UI: 0,
+    Worker: 0,
+  });
+
+  useEffect(() => {
+    if (typeof console === 'undefined') return;
+    const timestamp = formatTimeWithMs(new Date());
+    Object.values(steps).forEach((step) => {
+      const last = stepProgressLogRef.current[step.name];
+      if (last !== step.progress) {
+        stepProgressLogRef.current[step.name] = step.progress;
+        console.log(
+          '[BootProgress]',
+          timestamp,
+          `step=${step.name}`,
+          `progress=${step.progress}`,
+          step.message ? `message=${step.message}` : undefined,
+          `done=${step.done}`,
+          `overall=${overallProgress}`
+        );
+      }
+    });
+  }, [steps, overallProgress]);
 
   const value: BootProgressContextValue = useMemo(
     () => ({
@@ -141,7 +183,7 @@ export const BootProgressProvider: React.FC<{ children: React.ReactNode }> = ({ 
         const next = { ...prev } as typeof prev;
         next.Worker = {
           ...prev.Worker,
-          progress: 100,
+          progress: prev.Worker?.weight || 100,
           done: true,
           message: prev.Worker.message || getWorkerInitCompleteMessage(),
         };
@@ -198,7 +240,7 @@ const BootOverlay: React.FC = () => {
   const currentMessage = (() => {
     // Show the first step that is not yet 100, else show last completed
     const list = Object.values(steps);
-    const firstPending = list.find((s) => s.progress < 100);
+    const firstPending = list.find((s) => s.progress < (s.name === 'Worker' ? s.weight : 100));
     return firstPending?.message || firstPending?.name || 'Initializing...';
   })();
 

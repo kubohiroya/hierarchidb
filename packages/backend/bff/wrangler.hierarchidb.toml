@@ -1,5 +1,5 @@
 name = "hierarchidb-bff"
-main = "src/RuntimeWorkerService.ts"
+main = "src/index.ts"
 workers_dev = true
 compatibility_date = "2025-06-28"
 
@@ -86,6 +86,56 @@ GOOGLE_CLIENT_ID = "116194448043-hesk0hio07cec1qdgm510kurefh0gh61.apps.googleuse
 GITHUB_CLIENT_ID = "YOUR_HIERARCHIDB_GITHUB_CLIENT_ID"
 
 # ================================================================
+# Production environment (wrangler deploy --env production)
+# Vars must be duplicated under env.production.vars; top-level [vars]
+# is only used for wrangler dev / default env.
+# ================================================================
+[env.production]
+name = "hierarchidb-bff"
+
+[env.production.vars]
+JWT_ISSUER = "hierarchidb-bff"
+SESSION_DURATION_HOURS = "48"
+ALLOWED_ORIGINS = """
+http://localhost:3000,
+http://localhost:4200,
+http://localhost:5173,
+http://127.0.0.1:3000,
+http://127.0.0.1:4200,
+http://127.0.0.1:5173,
+https://kubohiroya.github.io,
+https://hierarchidb.vercel.app,
+https://hierarchidb.netlify.app,
+https://hierarchidb-staging.vercel.app,
+https://hierarchidb-dev.vercel.app
+"""
+PRODUCTION_ORIGINS = "https://kubohiroya.github.io,https://hierarchidb.vercel.app"
+STAGING_ORIGINS = "https://hierarchidb-staging.vercel.app,https://hierarchidb-dev.vercel.app"
+DEVELOPMENT_ORIGINS = "http://localhost:3000,http://localhost:4200,http://localhost:5173"
+BFF_BASE_URL = "https://hierarchidb-bff.kubohiroya.workers.dev"
+REDIRECT_URI = "https://hierarchidb-bff.kubohiroya.workers.dev/auth/callback"
+GITHUB_REDIRECT_URI = "https://hierarchidb-bff.kubohiroya.workers.dev/auth/github/callback"
+APP_BASE_URLS = """
+http://localhost:4200,
+https://kubohiroya.github.io/hierarchidb,
+https://hierarchidb.vercel.app,
+https://hierarchidb.netlify.app
+"""
+STATIC_CALLBACK_PATH = "/auth/callback.html"
+USE_HISTORY_WORKAROUND = "true"
+ENABLE_RATE_LIMIT = "true"
+RATE_LIMIT_PER_MINUTE = "30"
+RATE_LIMIT_PER_HOUR = "500"
+ENABLE_AUDIT_LOG = "true"
+LOG_LEVEL = "info"
+JWT_EXPIRY_HOURS_PROD = "2"
+JWT_EXPIRY_HOURS_STAGING = "8"
+JWT_EXPIRY_HOURS_DEV = "24"
+ENABLE_SECURITY_HEADERS = "true"
+CSP_REPORT_URI = "https://hierarchidb-bff.kubohiroya.workers.dev/csp-report"
+GOOGLE_CLIENT_ID = "116194448043-hesk0hio07cec1qdgm510kurefh0gh61.apps.googleusercontent.com"
+GITHUB_CLIENT_ID = "YOUR_HIERARCHIDB_GITHUB_CLIENT_ID"
+# ================================================================
 # KV Namespaces（必要に応じて作成）
 # ================================================================
 # レート制限用KV
@@ -126,26 +176,6 @@ http://localhost:5173,
 http://127.0.0.1:3000,
 http://127.0.0.1:4200,
 http://127.0.0.1:5173
-"""
-
-# ================================================================
-# Production environment（本番環境設定）
-# ================================================================
-[env.production]
-name = "hierarchidb-bff"
-
-[env.production.vars]
-JWT_ISSUER = "hierarchidb-bff"
-SESSION_DURATION_HOURS = "48"
-LOG_LEVEL = "warn"  # 本番環境では警告以上のみログ
-RATE_LIMIT_PER_MINUTE = "20"  # 本番環境では厳しく制限
-RATE_LIMIT_PER_HOUR = "300"
-
-# 本番環境では本番デプロイ先のみ許可
-ALLOWED_ORIGINS = """
-https://kubohiroya.github.io,
-https://hierarchidb.vercel.app,
-https://hierarchidb.netlify.app
 """
 
 # ================================================================

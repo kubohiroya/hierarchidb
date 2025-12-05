@@ -11,27 +11,35 @@ const logInitReporterWarning = (message: string, error: unknown): void => {
 
 type StepName = 'Config' | 'Theme' | 'I18n' | 'Auth' | 'UI' | 'Worker';
 
-export const MarkStepDoneOnMount: React.FC<{ step: StepName; message?: string }> = ({
-  step,
-  message,
-}) => {
-  const { markStepDone } = useBootProgress();
+export const MarkStepDoneOnMount: React.FC<{
+  step: StepName;
+  message?: string;
+  startProgress?: number;
+}> = ({ step, message, startProgress }) => {
+  const { setStepProgress, markStepDone } = useBootProgress();
   useEffect(() => {
+    if (typeof startProgress === 'number') {
+      setStepProgress(step, startProgress, message);
+      const t = window.setTimeout(() => {
+        markStepDone(step, message);
+      }, 50);
+      return () => window.clearTimeout(t);
+    }
     markStepDone(step, message);
-  }, [markStepDone, message, step]);
+  }, [markStepDone, message, setStepProgress, startProgress, step]);
   return null;
 };
 
 export const ThemeReadyReporter: React.FC = () => (
-  <MarkStepDoneOnMount step="Theme" message="Theme ready" />
+  <MarkStepDoneOnMount step="Theme" message="Theme ready" startProgress={30} />
 );
 
 export const ConfigReadyReporter: React.FC = () => (
-  <MarkStepDoneOnMount step="Config" message="Config loaded" />
+  <MarkStepDoneOnMount step="Config" message="Config loaded" startProgress={30} />
 );
 
 export const UIReadyReporter: React.FC = () => (
-  <MarkStepDoneOnMount step="UI" message="UI plugins registered" />
+  <MarkStepDoneOnMount step="UI" message="UI plugins registered" startProgress={30} />
 );
 
 export const I18nReadyReporter: React.FC = () => {
@@ -72,16 +80,18 @@ export const AuthReadyReporter: React.FC = () => {
 };
 
 export const WorkerProgressReporter: React.FC = () => {
-  const { setStepProgress, markStepDone } = useBootProgress();
+  const { setStepProgress, markStepDone, steps } = useBootProgress();
   const { initProgress, isInitialized, initMessage } = useWorker();
   const { t } = useTranslation();
+  const workerWeight = steps.Worker?.weight ?? 50;
   // Reflect Provider progress
   useEffect(() => {
     const fallbackMessage = t('workerInit.progressFallback');
     const readyLabel = t('workerInit.status.ready');
-    setStepProgress('Worker', initProgress || 0, initMessage || fallbackMessage);
+    const scaledProgress = Math.round(((initProgress || 0) * workerWeight) / 100);
+    setStepProgress('Worker', scaledProgress, initMessage || fallbackMessage);
     if (isInitialized) markStepDone('Worker', readyLabel);
-  }, [initProgress, isInitialized, initMessage, markStepDone, setStepProgress, t]);
+  }, [initProgress, isInitialized, initMessage, markStepDone, setStepProgress, t, workerWeight]);
 
   // Fallbacks: event and polling
   useEffect(() => {

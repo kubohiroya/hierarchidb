@@ -8,6 +8,7 @@ const SimpleBFFAuthContext = React.createContext<AuthContextType | null>(null);
 
 const STORAGE_KEY = 'bff-auth-user';
 const TOKEN_KEY = 'bff-auth-token';
+const DEFAULT_BFF_BASE_URL = 'https://hierarchidb-bff.kubohiroya.workers.dev';
 
 /**
  * Normalize Google profile photo URL for better reliability
@@ -110,6 +111,41 @@ async function generateCodeChallenge(verifier: string): Promise<string> {
     .replace(/=/g, '');
 }
 
+const isAbsoluteUrl = (value: string): boolean => /^https?:\/\//i.test(value);
+
+const normalizeAuthBase = (rawBase?: string): string => {
+  const base = (rawBase || '').trim().replace(/\/$/, '');
+  if (isAbsoluteUrl(base)) {
+    const url = new URL(base);
+    const origin = `${url.protocol}//${url.host}`;
+    const path = url.pathname.replace(/\/$/, '');
+    // If the upstream is configured with /api/auth, call /auth to match BFF routes
+    if (path.endsWith('/api/auth')) {
+      return `${origin}/auth`;
+    }
+    if (path.endsWith('/auth')) {
+      return `${origin}${path}`;
+    }
+    return `${origin}/auth`;
+  }
+  const sanitized = base.startsWith('/') ? base : `/${base}`;
+  if (sanitized.endsWith('/api/auth')) {
+    return '/auth';
+  }
+  if (sanitized.endsWith('/auth')) {
+    return sanitized;
+  }
+  return `${sanitized}/auth`;
+};
+
+const buildAuthUrl = (authBase: string, path: string): URL => {
+  const suffix = path.startsWith('/') ? path : `/${path}`;
+  if (isAbsoluteUrl(authBase)) {
+    return new URL(`${authBase}${suffix}`);
+  }
+  return new URL(`${authBase}${suffix}`, window.location.origin);
+};
+
 export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuthProviderProps) {
   const [user, setUser] = React.useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -155,7 +191,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
 
         // If we have token and userinfo but no stored user, reconstruct from session
         if (!storedUser && storedToken && userInfo) {
-          try {
+
             const userData = JSON.parse(userInfo);
             const authUser: AuthUser = {
               id: userData.sub || userData.id,
@@ -175,7 +211,6 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
             // Mark as authenticated
             setIsAuthenticating(false);
             return; // Exit early to prevent further processing
-          } catch (_error) {}
         }
 
         if (storedUser && storedToken) {
@@ -190,7 +225,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
           // Ensure isAuthenticating is false if no user
           setIsAuthenticating(false);
         }
-      } catch (_error) {
+      } catch {
         setIsAuthenticating(false);
       } finally {
         setIsLoading(false);
@@ -294,10 +329,12 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
         sessionStorage.setItem('auth_provider', provider);
 
         // Get configuration
-        const bffBaseUrl = import.meta.env.VITE_BFF_BASE_URL || 'http://localhost:8787';
+        const bffBaseUrl =
+          import.meta.env.VITE_BFF_BASE_URL || DEFAULT_BFF_BASE_URL;
+        const authBase = normalizeAuthBase(bffBaseUrl);
 
         // Build authorization URL
-        const authUrl = new URL(`${bffBaseUrl}/auth/authorize/${provider}`);
+        const authUrl = buildAuthUrl(authBase, `/authorize/${provider}`);
 
         // Get the appropriate client ID based on provider
         let clientId: string | undefined;
@@ -386,13 +423,9 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
             if (event.key === 'auth_popup_success' || event.key === 'auth_popup_success_final') {
               cleanupPopupListeners();
               setIsAuthenticating(false);
-              try {
                 if (!popup.closed) {
                   popup.close();
                 }
-              } catch (_e: unknown) {
-                // Could not close popup (COOP)
-              }
             } else if (event.key === 'auth_popup_error') {
               cleanupPopupListeners();
               setIsAuthenticating(false);
@@ -493,7 +526,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
                   }
                 }, 200);
               }
-            } catch (_error: unknown) {
+            } catch {
               consecutiveErrors++;
 
               // COOP error - we can't check popup.closed, so rely on other methods
@@ -526,8 +559,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
         } else {
           // For GitHub, first check if the endpoint exists
           if (provider === 'github') {
-            try {
-              const checkUrl = new URL(`${bffBaseUrl}/auth/authorize/${provider}`);
+              const checkUrl = buildAuthUrl(authBase, `/authorize/${provider}`);
               const response = await fetch(checkUrl.toString(), {
                 method: 'HEAD',
               });
@@ -535,9 +567,6 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
                 setIsAuthenticating(false);
                 return;
               }
-            } catch (_e: unknown) {
-              // Could not verify endpoint availability, proceed anyway
-            }
           }
 
           // Redirect to BFF authorization endpoint using replace to avoid history entry
@@ -547,7 +576,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
             window.location.replace(authUrl.toString());
           }, 100);
         }
-      } catch (_error) {
+      } catch {
         setIsAuthenticating(false);
 
         // Mark for force cleanup on next attempt
@@ -585,11 +614,13 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
       setIsAuthenticating(false);
 
       // Optional: Call BFF logout endpoint
-      const bffBaseUrl = import.meta.env.VITE_BFF_BASE_URL || 'http://localhost:8787';
+      const authBase = normalizeAuthBase(
+        import.meta.env.VITE_BFF_BASE_URL || DEFAULT_BFF_BASE_URL
+      );
       const token = sessionStorage.getItem(TOKEN_KEY);
 
       if (token) {
-        await fetch(`${bffBaseUrl}/auth/logout`, {
+        await fetch(buildAuthUrl(authBase, '/logout').toString(), {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,
@@ -601,7 +632,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
 
       // Redirect to home using replace to avoid history entry
       window.location.replace(homeUrl);
-    } catch (_error) {
+    } catch {
       // Still clear local state - CRITICAL: Must reset isAuthenticating
       setUser(null);
       setIsAuthenticating(false);
@@ -643,10 +674,12 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
     lastRefreshAttemptRef.current = now;
 
     try {
-      const bffBaseUrl = import.meta.env.VITE_BFF_BASE_URL || 'http://localhost:8787';
+      const authBase = normalizeAuthBase(
+        import.meta.env.VITE_BFF_BASE_URL || DEFAULT_BFF_BASE_URL
+      );
 
       // Call BFF refresh endpoint
-      const response = await fetch(`${bffBaseUrl}/auth/refresh`, {
+      const response = await fetch(buildAuthUrl(authBase, '/refresh').toString(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -703,7 +736,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
       } else {
         throw new Error('No access token in refresh response');
       }
-    } catch (_error) {
+    } catch {
       return false;
     } finally {
       refreshInProgressRef.current = false;

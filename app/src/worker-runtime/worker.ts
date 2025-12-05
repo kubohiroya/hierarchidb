@@ -150,6 +150,8 @@ reporter.reportStepProgress('Load Comlink', 0);
         try {
           const mod = await localLoader();
           moduleEntries.push({ nodeType, mod });
+          const progress = Math.round((moduleEntries.length / pluginDefinitions.length) * 100);
+          reporter.reportStepProgress('Load plugin-loader', progress);
           continue;
         } catch (loaderError) {
           const msg = loaderError instanceof Error ? loaderError.message : String(loaderError);
@@ -166,6 +168,8 @@ reporter.reportStepProgress('Load Comlink', 0);
       try {
         const mod = await moduleLoader.importModule(nodeType);
         moduleEntries.push({ nodeType, mod });
+        const progress = Math.round((moduleEntries.length / pluginDefinitions.length) * 100);
+        reporter.reportStepProgress('Load plugin-loader', progress);
       } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
         const softFailure = /document is not defined|Grid2|does not provide an export/i.test(msg);
@@ -180,6 +184,10 @@ reporter.reportStepProgress('Load Comlink', 0);
 
     if (moduleEntries.length > 0) {
       await wirePluginsFromModules(moduleEntries);
+    }
+
+    if (pluginDefinitions.length > 0) {
+      reporter.reportStepProgress('Load plugin-loader', 100);
     }
 
     const exportsByType = getAllRuntimeExports() as Record<string, RuntimeExportEntry>;
@@ -214,9 +222,11 @@ reporter.reportStepProgress('Load Comlink', 0);
       }
 
       const { WorkerService } = runtimeModule;
+      reporter.reportStepProgress('Bootstrap services', 10);
       const services = await WorkerService.getSingleton(
         enrichedDefinitions.length > 0 ? enrichedDefinitions : pluginDefinitions
       );
+      reporter.reportStepProgress('Bootstrap services', 60);
       reporter.reportStepProgress('Bootstrap services', 100);
 
       const messagePort = self as WorkerMessagePort;

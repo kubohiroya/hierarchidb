@@ -10,7 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/base.sh"
 
 # 本番環境固有の設定（上書き）
-# HierarchiDB専用BFF（複数デプロイ先対応）
+# HierarchiDB専用BFF（複数デプロイ先対応、/auth ベース）
 export VITE_BFF_BASE_URL="https://hierarchidb-bff.kubohiroya.workers.dev"
 export VITE_USE_HASH_ROUTING="true"
 export VITE_APP_NAME="hierarchidb"
