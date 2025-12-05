@@ -22,7 +22,7 @@ See `plans/spreadsheet-plugin-rebuild.md` for the active ExecPlan.
 - `lastPreview?: TabularDataResult`
 
 不要フィールド削除:
-- `downloadUrl` / `uploadMethod` は廃止。URL・方式は `dataSource.type` と `dataSource.source` で一元管理。
+- `downloadUrl` / `importMethod` は廃止。URL・方式は `dataSource.type` と `dataSource.source` で一元管理。
 
 ## ダイアログステップ仕様（表示番号）
 

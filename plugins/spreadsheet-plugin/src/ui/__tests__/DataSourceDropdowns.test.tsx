@@ -64,11 +64,11 @@ const renderUploadStep = () => {
 };
 
 describe('TabularFileUploadStep dropdowns', () => {
-  it('opens Upload Method menu on click', async () => {
+  it('opens Import Method menu on click', async () => {
     renderUploadStep();
     const user = userEvent.setup();
 
-    await user.click(screen.getByLabelText(/Upload Method/i));
+    await user.click(screen.getByLabelText(/Import Method/i));
 
     expect(await screen.findByRole('option', { name: /URL Download/i })).toBeVisible();
     expect(await screen.findByRole('option', { name: /Local File/i })).toBeVisible();

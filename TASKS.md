@@ -67,6 +67,34 @@
   - [ ] 必要に応じて auth ルートのパス/クエリ（code_challenge, redirect_uri, provider）を補正し、実機で再確認する
 - ロールバック手順：本タスクで変更した設定/コードを revert し、`pnpm dev` で `/auth/authorize/google` が 404 へ戻ることを確認する
 
+1593) Spreadsheet Filter で Column 選択肢が空になる問題修正（P0）
+- ブランチ: `fix/spreadsheet/filter-column-options`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/spreadsheet-plugin` UI（Filter Tabular Data Step3）、Step2 のテーブルプレビュー取得ロジック、フォーム状態保持
+- 受け入れ基準（DoD）:
+  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] Step3「Add Filter Rule」の Column 選択肢が、読み込んだテーブルの列（1行目ヘッダー想定）で正しく表示・選択できる
+  - [ ] デフォルト値/選択状態が保持され、ルール追加・保存で反映される
+  - [ ] 代表検証（手動確認＋関連 typecheck）を実施しログを記録する
+- チェックリスト:
+  - [ ] Column options を生成する処理（Step3 UI/状態管理）を特定し、読み込み済みテーブルヘッダーを反映させる
+  - [ ] デフォルト選択・再描画時の保持を確認し、必要ならフォールバック/初期値を補正する
+  - [ ] 手動確認（Step2でテーブルプレビュー→Step3でColumn選択が可能、ルール追加ができる）と型チェックを実施
+- ロールバック手順：修正した plugin UI の差分を revert し、再現手順で元の挙動（Column選択肢が空）に戻ることを確認する
+
+1594) Edit Spreadsheet Step2 Download 後にリロードが発生して data:{} / draft:null になる問題調査（P0）
+- ブランチ: `fix/spreadsheet/edit-step2-download`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/spreadsheet-plugin` Edit Spreadsheet Dialog（Step2 Download/Preview）、テンプレート由来 Spreadsheet の初期化、IndexedDB 永続化と draft 管理
+- 受け入れ基準（DoD）:
+  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] 再現条件（テンプレート Spreadsheet、Step2 Download 直後のリロード様挙動）を記録し、原因と発生範囲（関与モジュール/イベント/ストレージ破損箇所）を特定する
+  - [ ] 修正方針を具体化し、リスクとロールバック手順を提示する（必要に応じ暫定回避策も併記）
+  - [ ] 調査結果を運用ログに記載し、必要な追試やテスト案を示す
+- チェックリスト:
+  - [ ] Step2 Download ボタンのイベントハンドラと遷移/再読み込みトリガーを確認する
+  - [ ] download/preview 時の state 永続化フロー（draftMetadata/draftData や IndexedDB 更新）を特定し、どこで `{}`/`null` が書き込まれるかを突き止める
+  - [ ] 原因に対する修正方針とロールバック/暫定回避策をまとめる
+- ロールバック手順：本調査で行うコード/ドキュメント差分を revert し、運用ログの追記を削除する（調査のみの場合は差分なし）
+
 1589) Turbo test dependency cycle 解消（P0）
 - ブランチ: `fix/repo/turbo-test-cycle`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `turbo.json` の pipeline/dependsOn、`package.json` の test スクリプト（`pnpm test` → `turbo run test --parallel`）、test ターゲットとなる各パッケージの build/typecheck 依存
@@ -95,6 +123,20 @@
   - [ ] PluginDialogController に再開/競合ダイアログとガード処理（ナビゲーション・保存前の version チェック）を追加する
   - [ ] 手動確認: 既存 draft あり/なし、競合あり/なしの各パスを確認する
 - ロールバック手順：本タスクで変更する `packages/plugin-ui-host/src/headless/usePluginDialogController.tsx` と `packages/plugin-ui-sdk/src/hooks/useTreeNodeUpdater.ts` の差分を revert し、実行した typecheck を再実行する
+
+1595) Basemap Dialog Step 遷移時に TreeConsole 部分がブリンクする問題の抑止（P0）
+- ブランチ: `fix/basemap/dialog-step-blink`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: Basemap Dialog UI（app/src 配下の TreeConsole/WorkerProvider 連携、plugins/basemap-plugin UI ステップ）、step ナビゲーション時の再描画・モーダル重ね処理
+- 受け入れ基準（DoD）:
+  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] Basemap Dialog で Step 間ナビゲーション時、AppBar は従来通り、TreeConsole 部分がブリンクしない（ちらつきが目視で解消される）
+  - [ ] 原因/発生範囲を説明し、修正箇所と影響を記載する
+  - [ ] 手動確認と必要な typecheck を実施し、結果を運用ログに記録する
+- チェックリスト:
+  - [ ] Step 遷移時に TreeConsole が再マウント/再描画されるトリガー（dialog state reset, viewport scroll lock, modal overlay 等）を特定する
+  - [ ] 再レンダリングを抑止する修正（state の安定化やコンテナ位置固定など）を適用し、視覚的ブリンクを解消する
+  - [ ] 影響範囲とロールバック手順を記載し、必要な検証を実施する
+- ロールバック手順：本タスクで変更するファイル差分を revert し、同手順でブリンク再現を確認する
 1587) Vite dev import 解決エラー修正（P0）
 - ブランチ: `fix/app/vite-import-errors`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `packages/runtime-worker/src/index.ts`（@hierarchidb/* import）、`packages/runtime-worker/src/services/FeatureBootstrap.ts`、`packages/ui/map/src/components/MapLibreMap.tsx`（maplibre-gl CSS import）、Vite dev server の alias/tsconfig.paths、plugin registry 生成物
@@ -495,11 +537,11 @@
 - 依存: `plugins/spreadsheet-plugin/src/ui/components/**/*`, `plugins/spreadsheet-plugin/src/ui/steps/**/*`, `app/src/plugin-registry/**/*`, `app/src/components/dialogs/**/*`
 - 受け入れ基準（DoD）:
   - [x] `TASKS.md` の Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
-  - [x] create spreadsheet ダイアログ Step2 (Data Source) の Upload Method と Tabular Processing Options の選択肢がクリックで開き、別の選択肢へ切り替えできる
+  - [x] create spreadsheet ダイアログ Step2 (Data Source) の Import Method と Tabular Processing Options の選択肢がクリックで開き、別の選択肢へ切り替えできる
   - [x] 上記挙動を検証するテスト（単体または結合）を追加し、クリックでメニューが開くことを確認する
   - [x] `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` と追加したテストの実行結果を運用ログに記録する
 - チェックリスト:
-  - [x] Data Source Step の Upload Method/Tabular Processing Options の UI 実装とイベント配線を調査する
+  - [x] Data Source Step の Import Method/Tabular Processing Options の UI 実装とイベント配線を調査する
   - [x] 適切なコンポーネント/コントロールへ修正を加え、クリックで選択肢ポップアップが開くようにする
   - [x] 再発防止のテストを追加し、クリック操作でメニューが開くことを検証する
   - [x] 検証コマンドを実行し、運用ログへ記録する
@@ -9264,6 +9306,10 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-14"></a>
 
+- 2025-12-05 10:00 start: investigation/spreadsheet-step3-scroll-confirm — Edit Spreadsheet Step3 のプレビュー表をスクロールすると背面に確認ダイアログが一瞬表示されて消える問題を調査開始。sandbox 制約のため main 上で作業。DoD: 原因と発生箇所を特定し、修正とロールバック手順を記載。
+- 2025-12-05 10:25 progress: investigation/spreadsheet-step3-scroll-confirm — SpreadsheetDialog を MultiDialogFrame（backdrop/stopWheelPropagation 付き）でラップし、プレビュー TableContainer に maxHeight+overflowY と onWheelCapture(stopPropagation) を付与してホイールイベントが背面へ漏れないように修正。検証コマンドは未実行（UI 観察前提のため）。
+- 2025-12-05 10:40 progress: investigation/spreadsheet-step3-scroll-confirm — TabularFilterStep ルートコンテナに maxHeight/overflowY/overscrollBehavior と onWheelCapture(stopPropagation) を追加し、ダイアログ内でスクロールを完結させるよう調整。引き続き UI 手動確認が必要。
+- 2025-12-05 10:55 progress: investigation/spreadsheet-step3-scroll-confirm — SpreadsheetDialog で disablePortal を外し、MultiDialogFrame の frame/backdrop に overscrollBehavior: contain を付与してバックドロップが常に最前面で wheel を吸収するように調整。要手動確認。
 - 2025-11-29 14:20 start: fix/runtime-worker/plugin-worker-loader-path — dev コンソールで shape/spreadsheet/styler/timeline の worker preload が `@hierarchidb/*-plugin/worker` 未解決になる問題の調査を開始。DoD/チェックリストを Kanban に追加。
 - 2025-11-29 14:21 progress: fix/runtime-worker/plugin-worker-loader-path — `git checkout -b fix/runtime-worker/plugin-worker-loader-path` が `.git/refs/heads/...` 作成不可で失敗したため、main 上で作業継続（Kanban に記載）。
 - 2025-11-29 14:32 progress: fix/runtime-worker/plugin-worker-loader-path — runtime-worker の plugin worker loader が参照する `import.meta.glob` の相対パスを `../../../../plugins/*-plugin/src/**/index.{ts,tsx}` へ修正し、loaderMap がプラグインソースを解決できるようにした（bare spec fallback 依存を排除）。
@@ -9302,8 +9348,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-26 13:20 start: refactor/shape/shape-entity-service — ShapeEntityService を BaseEntityService 依存から脱却し、TreeNode の data/draftData/metadata/draftMetadata を正とする新実装へ移行するタスクを開始。DoD: TASKS/Kanban 更新、CoreDB/DraftService ベースの再実装、shape-plugin typecheck/test の成功ログ取得、ロールバック手順記載。
 - 2025-11-26 12:55 start: chore/build/guard-wrapper — `pnpm build` 前処理で Dependency Guard を `pnpm run guard:deps:extra` 経由で実行するよう統一するタスクを開始。ロールバックは package.json の scripts を元の `guard:deps:extra`（node 直接呼び出し）のみへ戻す。
 - 2025-11-26 12:56 done: chore/build/guard-wrapper — package.json の `guard:deps:extra` を pnpm ラッパー化し、実体を `guard:deps:extra:exec`（node 実行）へ分離。`pnpm build` からガードを呼ぶ際に常に pnpm スクリプト経由となる。ロールバックは scripts の追加分を削除して元に戻す。
-- 2025-11-25 20:10 start: fix/spreadsheet/dialog-dropdown — create spreadsheet ダイアログ Step2 の Upload Method/Tabular Processing Options が開かない問題の調査・修正を開始。DoD: TASKS/Kanban更新、ドロップダウンがクリックで開くようにする、再発防止テスト追加、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` 等の検証ログ記録、ロールバック手順明記。
-- 2025-11-25 20:22 progress: fix/spreadsheet/dialog-dropdown — TabularFileUploadStep の MUI Select に labelId/portal 指定を追加し、Upload Method と Tabular Processing Options のドロップダウンがクリックで開くように修正。DataSource dropdown の開閉を検証するユニットテストを追加。
+- 2025-11-25 20:10 start: fix/spreadsheet/dialog-dropdown — create spreadsheet ダイアログ Step2 の Import Method/Tabular Processing Options が開かない問題の調査・修正を開始。DoD: TASKS/Kanban更新、ドロップダウンがクリックで開くようにする、再発防止テスト追加、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` 等の検証ログ記録、ロールバック手順明記。
+- 2025-11-25 20:22 progress: fix/spreadsheet/dialog-dropdown — TabularFileUploadStep の MUI Select に labelId/portal 指定を追加し、Import Method と Tabular Processing Options のドロップダウンがクリックで開くように修正。DataSource dropdown の開閉を検証するユニットテストを追加。
 - 2025-11-25 20:22 command: pnpm --filter @hierarchidb/spreadsheet-plugin typecheck — exit 0。
 - 2025-11-25 20:22 command: pnpm --filter @hierarchidb/spreadsheet-plugin test -- --run DataSourceDropdowns — exit 0（TabularFileUploadStep ドロップダウン開閉テスト）。
 - 2025-11-25 20:29 progress: fix/spreadsheet/dialog-dropdown — Select の Menu z-index を backdrop より高く設定し、ポータル先を body に固定してドロップダウンがオーバーレイに隠れないように調整。
@@ -9425,6 +9471,15 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-05 12:16 start: fix/auth/bff-google-404（TASK 1592） — 本番BFF利用の `pnpm dev` で `/auth/authorize/google` が 404 になる問題の調査を開始。DoD: Kanban/ログ更新、404 原因特定と解消、callback 到達を手動確認、検証ログとロールバック手順を記載。
 - 2025-12-05 12:22 progress: fix/auth/bff-google-404 — BFF デフォルト URL を `/auth` ベースに戻し（scripts/env/{base,development,production}.sh, packages/ui/auth BFFAuthService, app/vite.config.ts proxy デフォルト）、SimpleBFFAuthContext で `/api/auth` 指定時は `/auth` に正規化するよう対応。authorize/logout/refresh は buildAuthUrl で `/auth/*` を強制し、過剰なプレフィックスで 404 にならないようにした。検証: `pnpm --filter @hierarchidb/ui-auth typecheck` exit 0。
 - 2025-12-05 13:00 progress: fix/auth/bff-google-404 — BFFAuthService の dev 環境強制プロキシ分岐を撤去し、絶対 URL（デフォルトの Cloudflare BFF を含む）をそのまま利用するよう変更。これにより dev でも `/auth/authorize` が BFF へ直行し、ローカル 404 を回避。検証: `pnpm --filter @hierarchidb/ui-auth typecheck` exit 0。
+- 2025-12-05 16:10 progress: fix/spreadsheet/filter-column-options — FilteringStep で metadata.columns が空の場合、Step2 プレビューの columns から TabularColumnInfo を再構築して TabularFilterStep へ渡すフォールバックを追加。検証: `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0。
+- 2025-12-05 17:50 start: fix/spreadsheet/edit-step2-download — Edit Spreadsheet Dialog Step2 の Download 直後にリロード様の遷移が発生し、復帰後に data:{} / draft:null となる問題を調査開始。DoD: 再現条件記録、原因/発生範囲特定、修正方針＋リスク/ロールバック提示、必要なら暫定回避策を示す。ロールバック: 本調査で行う差分を revert し、運用ログ追記を削除する（調査のみ想定）。
+- 2025-12-05 18:15 progress: fix/spreadsheet/edit-step2-download — edit ダイアログの beforeunload/pagehide で自動 discard していたのがドラフト喪失の直接原因と判断し、`useTreeNodeUpdater` の auto discard をデフォルト無効化（オプション `autoDiscardOnUnload` を追加し既定 false）。リロードで draft/data が消えないようにする。ロールバック: `packages/plugin-ui-sdk/src/hooks/useTreeNodeUpdater.ts` の今回差分を revert。
+- 2025-12-05 18:35 progress: fix/basemap/dialog-step-blink — TreeConsole が location.search の変化（Dialog step 更新など）だけで再ロードされ loading スピナーを出していたため、検索クエリ `q` のみに依存するよう useTreeConsoleIntegration の初期ロードを絞り込み。非検索系の query 変更では TreeConsole が再ロードされずブリンクしないようにした。ロールバック: `app/src/hooks/useTreeConsoleIntegration.ts` の今回差分を revert。
+- 2025-12-05 19:05 progress: fix/spreadsheet/dialog-overlay-flicker — SpreadsheetDialog を Basemap と同じ構造（MultiDialogFrame 単体、frameStyle wrapper なし）に揃え、独自フェード/背景指定を撤去。背景濃度を共通挙動に合わせる。ロールバック: `plugins/spreadsheet-plugin/src/ui/components/SpreadsheetDialog.tsx` を revert。
+- 2025-12-05 19:25 progress: fix/spreadsheet/dialog-overlay-flicker — SpreadsheetDialog を Basemap と同じ PluginDialogShell パターンに統一し、プラグイン側の MultiDialogFrame 自前レンダリングを廃止。backdrop 不透明度をホスト共通に揃える。ロールバック: `plugins/spreadsheet-plugin/src/ui/components/SpreadsheetDialog.tsx` を revert。
+- 2025-12-05 19:45 progress: fix/spreadsheet/dialog-overlay-flicker — Basemap と同様に UI エントリから SpreadsheetDialog の export を削除し、steps-provider 登録のみの構成に変更。プラグイン側でダイアログを二重に定義しないようにした。ロールバック: `plugins/spreadsheet-plugin/src/ui/index.ts` の今回差分を revert。
+- 2025-12-05 20:05 progress: fix/spreadsheet/dialog-overlay-flicker — SpreadsheetDialog.tsx 自体を削除し、Basemap と同様に「UI エントリは steps-provider 登録のみ」の構成に固定。typecheck で @hierarchidb/plugin-ui-host 未解決エラーも解消する。ロールバック: `plugins/spreadsheet-plugin/src/ui/components/SpreadsheetDialog.tsx` を復元。
+- 2025-12-05 20:20 progress: fix/spreadsheet/dialog-overlay-flicker — Basemap と同様、root index から ui/worker/icon の再エクスポートを撤去し、UI モジュールの重複読み込みを防止。dist を clean → build、typecheck 再実行（どちらも成功）。ロールバック: `plugins/spreadsheet-plugin/src/index.ts` の今回差分を revert し、再ビルド。
 - 2025-12-04 09:20 start: chore/plugins/remove-local-dts（TASK 1591） — plugins/*-plugin/src 配下のローカル .d.ts 全廃タスクを開始。DoD: Kanban/ログ更新、棚卸し→削除→正規参照化、依存 build/refs で型解決、影響パッケージ typecheck 実行と記録、ロールバック手順明記。
 - 2025-12-04 09:25 progress: chore/plugins/remove-local-dts — `plugins/{resolver,basemap,shape}-plugin/src/vite-env.d.ts` と `plugins/{timeline,location}-plugin/src/types/xlsx.d.ts` を削除し、`global.d.ts` に `vite/client` + VITE_* env を集約。basemap/location/timeline の tsconfig に `../../global.d.ts` を include。コマンド: `pnpm --filter @hierarchidb/basemap-plugin typecheck` exit 0, `pnpm --filter @hierarchidb/{shape,resolver,location,timeline}-plugin typecheck` exit 2（既存の DraftData 非互換や spreadsheet/styler 連鎖型崩れ起因）。ロールバック: 削除した .d.ts と tsconfig/global.d.ts の今回差分を revert し、同コマンドを再実行。
 - 2025-12-04 10:05 progress: chore/plugins/remove-local-dts — DraftData 依存を TreeNodeUpdaterState へ置換（folder/location/resolver/shape/styler UI）。再検証: `pnpm --filter @hierarchidb/shape-plugin typecheck` は引き続き `@hierarchidb/ui-dialog` など未解決で exit 2、`pnpm --filter @hierarchidb/{resolver,location,timeline}-plugin typecheck` は SpreadsheetDialogData 廃止など既存エラーで exit 2（DraftData 由来の import エラーは解消）。ロールバック: 上記 UI ファイルの変更と共通型 include 追加を revert し、同コマンドを再実行。

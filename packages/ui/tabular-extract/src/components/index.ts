@@ -3,8 +3,8 @@
  * @description Export all CSV UI components
  */
 
-export { TabularFileUploadStep } from './TabularFileUploadStep.js';
-export type { TabularFileUploadStepProps } from './TabularFileUploadStep.js';
+export { TabularFileImportStep } from './TabularFileImportStep.js';
+export type { TabularFileImportStepProps } from './TabularFileImportStep.js';
 export { ModalSelect } from './ModalSelect.js';
 export type { ModalSelectProps } from './ModalSelect.js';
 

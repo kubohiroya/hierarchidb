@@ -3,6 +3,7 @@ import type { FC } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { StepComponentProps } from '@hierarchidb/plugin-base';
 import { TabularProvider, TabularFilterStep, useTabularData } from '@hierarchidb/ui-tabular-extract';
+import type { TabularColumnInfo, TabularColumnType, TabularTableMetadata } from '@hierarchidb/tabular-store';
 import type { TabularFilterRule, TabularDataResult } from '@hierarchidb/ui-tabular-extract';
 import type { SpreadsheetEntity } from '../../../common/types/SpreadsheetEntity.js';
 import { createSpreadsheetTabularApi } from '../../../services/spreadsheetTabularApiFactory.js';
@@ -22,6 +23,38 @@ const FilteringStepContent: FC<{
     pluginId: SPREADSHEET_NODE_TYPE,
     autoload: Boolean(dialogData.spreadsheetMetadataId),
   });
+
+  const tableMetadata = useMemo(() => {
+    if (!tabularTableMetadata) return null;
+    const hasColumns = (tabularTableMetadata.columns?.length ?? 0) > 0;
+    if (hasColumns) return tabularTableMetadata;
+
+    const previewColumns = dialogData.lastPreview?.columns;
+    if (previewColumns && previewColumns.length > 0) {
+      const columnsFromPreview: TabularColumnInfo[] = previewColumns.map((col, index) => {
+        if (typeof col === 'string') {
+          return { name: col, index, type: 'string' as TabularColumnType };
+        }
+        if (typeof col === 'object' && col) {
+          const asInfo = col as Partial<TabularColumnInfo>;
+          return {
+            name: asInfo.name ?? `col_${index}`,
+            index: typeof asInfo.index === 'number' ? asInfo.index : index,
+            type: (asInfo.type as TabularColumnType) ?? 'string',
+            hasNullValues: asInfo.hasNullValues,
+            sampleValues: asInfo.sampleValues,
+          };
+        }
+        return { name: String(col), index, type: 'string' as TabularColumnType };
+      });
+
+      return {
+        ...tabularTableMetadata,
+        columns: columnsFromPreview,
+      } as TabularTableMetadata;
+    }
+    return tabularTableMetadata;
+  }, [dialogData.lastPreview?.columns, tabularTableMetadata]);
 
   useEffect(() => {
     setValid(true);
@@ -72,7 +105,7 @@ const FilteringStepContent: FC<{
       </Typography>
     );
   }
-  if (!tabularTableMetadata) {
+  if (!tableMetadata) {
     return (
       <Typography color="text.secondary">
         No table metadata found for the selected dataset.
@@ -81,7 +114,7 @@ const FilteringStepContent: FC<{
   }
   return (
     <TabularFilterStep
-      tableMetadata={tabularTableMetadata}
+      tableMetadata={tableMetadata}
       pluginId={SPREADSHEET_NODE_TYPE}
       onFiltersChanged={handleFiltersChanged}
       onPreviewData={handlePreviewData}

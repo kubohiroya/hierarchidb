@@ -363,6 +363,7 @@ export function usePluginDialogController(
     if (!draft) return;
     if (resumeDialogShownRef.current) return;
     if (!draft.hasRemoteDraft) return;
+    if (draft.draftData == null) return;
     resumeDialogShownRef.current = true;
     setResumeDialogOpen(true);
   }, [draft, mode]);
@@ -666,7 +667,25 @@ export function usePluginDialogController(
     useCallback(
       () => (
         <>
-          <Dialog open={resumeDialogOpen} onClose={handleResumeCancel} sx={foregroundDialogSx}>
+          <Dialog
+            open={resumeDialogOpen}
+            onClose={handleResumeCancel}
+            sx={{
+              ...foregroundDialogSx,
+              zIndex: (theme) => (theme.zIndex?.modal ?? 1300) + 1001,
+            }}
+            slotProps={{
+              backdrop: {
+                sx: {
+                  backgroundColor: 'rgba(9, 12, 28, 0.45)',
+                  zIndex: (theme) => (theme.zIndex?.modal ?? 1300) + 1000,
+                },
+              },
+              paper: {
+                sx: { zIndex: (theme) => (theme.zIndex?.modal ?? 1300) + 1002 },
+              },
+            }}
+          >
             <DialogTitle>{t('dialogs.pluginDraft.resume.title')}</DialogTitle>
             <DialogContent>
               <Typography variant="body2">{t('dialogs.pluginDraft.resume.description')}</Typography>
@@ -686,7 +705,21 @@ export function usePluginDialogController(
               conflictResolverRef.current?.('continue');
               closeConflictDialog();
             }}
-            sx={foregroundDialogSx}
+            sx={{
+              ...foregroundDialogSx,
+              zIndex: (theme) => (theme.zIndex?.modal ?? 1300) + 1001,
+            }}
+            slotProps={{
+              backdrop: {
+                sx: {
+                  backgroundColor: 'rgba(9, 12, 28, 0.45)',
+                  zIndex: (theme) => (theme.zIndex?.modal ?? 1300) + 1000,
+                },
+              },
+              paper: {
+                sx: { zIndex: (theme) => (theme.zIndex?.modal ?? 1300) + 1002 },
+              },
+            }}
           >
             <DialogTitle>{t('dialogs.pluginDraft.conflict.title')}</DialogTitle>
             <DialogContent>

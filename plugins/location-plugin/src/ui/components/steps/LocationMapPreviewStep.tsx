@@ -8,7 +8,7 @@ import { Box, Button, CircularProgress, Divider, Stack, Typography } from '@mui/
 import RefreshIcon from '@mui/icons-material/Refresh';
 import type { NodeId } from '@hierarchidb/common-types';
 import { LocationMapPreview } from '../batch/LocationMapPreview.js';
-import type { PreviewLocationPoint } from '../../../common/components/batch/LocationMapPreview.js';
+import type { PreviewLocationPoint } from '../batch/LocationMapPreview.js';
 import type { LocationEntity, LocationType } from '../../../common/types/index.js';
 import { formatBytes, useTranslation } from '../../../common/i18n/index.js';
 import { getEphemeralLocationDB } from '../../../services/database/EphemeralLocationDB.js';

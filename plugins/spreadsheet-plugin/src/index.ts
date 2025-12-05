@@ -2,6 +2,4 @@ export { PLUGIN_MANIFEST as SpreadsheetPluginManifest } from './plugin-manifest.
 export * from './common/types/SpreadsheetEntity.js';
 export * from './common/constants.js';
 export * from './services/index.js';
-export * from './ui/index.js';
-export * as worker from './worker/index.js';
-export * from './icon/index.js';
+export { DataSourceStep, FilteringStep } from './ui/index.js';

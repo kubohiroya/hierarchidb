@@ -25,7 +25,7 @@ import {
   TabularProvider,
   TabularFilterStep,
   TabularColumnSelectionStep,
-  TabularFileUploadStep,
+  TabularFileImportStep,
   type TabularFilterRule,
   type TabularSelectionConfig,
   type TabularColumnMapping,
@@ -316,9 +316,9 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
                 {translations.dialog.dataSourceDescription ?? 'Choose openstreetmap for OSRM/Overpass or custom for tabular import'}
               </Typography>
             </Box>
-            <TabularFileUploadStep
+            <TabularFileImportStep
               pluginId="location"
-              onFileUploaded={(meta: TabularTableMetadata) =>
+              onFileImported={(meta: TabularTableMetadata) =>
                 onChange({ tabularSourceId: meta.id, dataSource: 'custom' as any })
               }
               onError={(msg: string) => notify.error(msg)}

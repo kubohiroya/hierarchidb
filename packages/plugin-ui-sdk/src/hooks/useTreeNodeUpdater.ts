@@ -45,6 +45,8 @@ export interface UseTreeNodeUpdaterOptions<TPayload extends object = Record<stri
   workerClient?: WorkerClientRef | null;
   initialDraftData?: TPayload;
   initialDraftMetadata?: TreeNodeMetadata;
+  /** If true, discard draft on pagehide/beforeunload (defaults to false to preserve edits). */
+  autoDiscardOnUnload?: boolean;
 }
 
 export interface UseTreeNodeUpdaterResult<TPayload extends object = Record<string, unknown>> {
@@ -96,6 +98,7 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
   workerClient,
   initialDraftData,
   initialDraftMetadata,
+  autoDiscardOnUnload = false,
 }: UseTreeNodeUpdaterOptions<TPayload>): UseTreeNodeUpdaterResult<TPayload> {
   const [draft, setDraft] = useState<TreeNodeUpdaterState<TPayload> | null>(null);
   const [originalCopy, setOriginalCopy] = useState<TreeNodeUpdaterState<TPayload> | null>(null);
@@ -321,7 +324,7 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
   }, [nodeId, workingNodeId]);
 
   useEffect(() => {
-    if (!workerClient || !nodeId) {
+    if (!autoDiscardOnUnload || !workerClient || !nodeId) {
       return undefined;
     }
 
@@ -355,7 +358,7 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
       window.removeEventListener('pagehide', handlePageHide);
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [getClient, workerClient, nodeId]);
+  }, [autoDiscardOnUnload, getClient, workerClient, nodeId]);
 
   return {
     treeNodeUpdater: draft,

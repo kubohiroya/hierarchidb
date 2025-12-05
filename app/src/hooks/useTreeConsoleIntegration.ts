@@ -60,6 +60,15 @@ export function useTreeConsoleIntegration({
   const defaultFilters = useMemo(() => getMenuSpec('resources').order, []);
   const { t, i18n } = useTranslation();
   const locale = i18n.resolvedLanguage ?? i18n.language ?? 'en';
+  const searchQuery = useMemo(() => {
+    try {
+      if (!locationSearch) return '';
+      const params = new URLSearchParams(locationSearch);
+      return params.get('q') || '';
+    } catch {
+      return '';
+    }
+  }, [locationSearch]);
 
   const [state, setState] = useState<TreeConsoleState>({
     loading: ssot.loading,
@@ -174,24 +183,20 @@ export function useTreeConsoleIntegration({
       setSSOT({ loading: true, error: null });
 
       try {
-        if (locationSearch) {
-          const params = new URLSearchParams(locationSearch);
-          const q = params.get('q') || '';
-          if (q) {
-            const queryAPI = await client.getQueryAPI();
-            const results = (await queryAPI.searchNodes({
-              rootNodeId: pageNodeId as NodeId,
-              query: q,
-              mode: 'partial',
-              maxResults: 200,
-            })) as TreeNode[];
-            const index = new DualKeyMap<NodeId, NodeId, TreeNode>();
-            syncNodeIndex(index, pageNodeId as NodeId, results);
-            setSSOT({ nodeIndex: index });
-            setState((prev) => ({ ...prev, loading: false }));
-            setSSOT({ loading: false, searchTerm: q });
-            return;
-          }
+        if (searchQuery) {
+          const queryAPI = await client.getQueryAPI();
+          const results = (await queryAPI.searchNodes({
+            rootNodeId: pageNodeId as NodeId,
+            query: searchQuery,
+            mode: 'partial',
+            maxResults: 200,
+          })) as TreeNode[];
+          const index = new DualKeyMap<NodeId, NodeId, TreeNode>();
+          syncNodeIndex(index, pageNodeId as NodeId, results);
+          setSSOT({ nodeIndex: index });
+          setState((prev) => ({ ...prev, loading: false }));
+          setSSOT({ loading: false, searchTerm: searchQuery });
+          return;
         }
 
         await loadChildrenOf(pageNodeId as NodeId);
@@ -208,7 +213,7 @@ export function useTreeConsoleIntegration({
     };
 
     void load();
-  }, [client, locationSearch, loadChildrenOf, pageNodeId, setSSOT]);
+  }, [client, loadChildrenOf, pageNodeId, searchQuery, setSSOT]);
 
   useEffect(() => {
     if (!clientReady || !pageNodeId) return;

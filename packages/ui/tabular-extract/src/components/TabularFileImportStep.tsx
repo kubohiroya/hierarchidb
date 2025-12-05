@@ -1,6 +1,6 @@
 /**
- * @file TabularFileUploadStep.tsx
- * @description File upload/URL download interface for Tabular processing
+ * @file TabularFileImportStep.tsx
+ * @description File import interface for Tabular processing
  */
 
 import type React from 'react';
@@ -18,46 +18,48 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { CloudUpload, Download, InsertDriveFile } from '@mui/icons-material';
+import { CheckCircle, CloudUpload, Download, InsertDriveFile } from '@mui/icons-material';
 import type { TabularProcessingConfig } from '../types/index.js';
 import { useTabularData } from '../hooks/useTabularData.js';
 import { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { ModalSelect } from './ModalSelect.js';
 
-export interface TabularFileUploadStepProps {
-  onFileUploaded: (metadata: TabularTableMetadata) => void;
+export interface TabularFileImportStepProps {
+  onFileImported: (metadata: TabularTableMetadata) => void;
   onError: (error: string) => void;
   disabled?: boolean;
   acceptedFileTypes?: string[];
   maxFileSize?: number; // in bytes
   pluginId: string;
   menuContainer?: Element | null;
-  initialUploadMethod?: 'file' | 'url';
+  initialImportMethod?: 'file' | 'url';
   initialUrl?: string;
   initialProcessingConfig?: TabularProcessingConfig;
   onProcessingConfigChange?: (config: TabularProcessingConfig) => void;
-  onUploadMethodChange?: (method: 'file' | 'url') => void;
+  onImportMethodChange?: (method: 'file' | 'url') => void;
   onUrlChange?: (url: string) => void;
+  downloadSucceeded?: boolean;
 }
 
-export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
-                                                                      onFileUploaded,
+export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
+                                                                      onFileImported,
                                                                       onError,
                                                                       disabled = false,
                                                                       acceptedFileTypes = ['.csv', '.tsv', '.txt'],
                                                                       maxFileSize = 50 * 1024 * 1024, // 50MB default
                                                                       pluginId,
                                                                       menuContainer,
-                                                                      initialUploadMethod = 'file',
+                                                                      initialImportMethod = 'file',
                                                                       initialUrl = '',
                                                                       initialProcessingConfig,
                                                                       onProcessingConfigChange,
-                                                                      onUploadMethodChange,
+                                                                      onImportMethodChange,
                                                                       onUrlChange,
+                                                                      downloadSucceeded = false,
                                                                     }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [urlInput, setUrlInput] = useState(initialUrl);
-  const [uploadMethod, setUploadMethod] = useState<'file' | 'url'>(initialUploadMethod);
+  const [importMethod, setImportMethod] = useState<'file' | 'url'>(initialImportMethod);
   const [processingConfig, setProcessingConfig] = useState<TabularProcessingConfig>(
     initialProcessingConfig ?? {
       delimiter: ',',
@@ -70,23 +72,24 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
   );
 
   const {
-    uploadTabularFile,
+    importTabularFile,
     downloadTabularFromUrl,
-    isUploading,
-    uploadError,
+    isImporting,
+    imortError,
   } = useTabularData({
     pluginId,
-    onUploadSuccess: onFileUploaded,
-    onUploadError: onError,
+    onImportSuccess: onFileImported,
+    onImportError: onError,
   });
   const idPrefix = useId();
-  const uploadMethodLabelId = `${idPrefix}-upload-method`;
+  const importMethodLabelId = `${idPrefix}-import-method`;
   const delimiterLabelId = `${idPrefix}-delimiter`;
   const encodingLabelId = `${idPrefix}-encoding`;
   const quoteLabelId = `${idPrefix}-quote-char`;
   const headerLabelId = `${idPrefix}-has-header`;
   const skipEmptyLabelId = `${idPrefix}-skip-empty-lines`;
   const modalRoot = menuContainer ?? null;
+  const showDownloadSuccess = importMethod === 'url' && downloadSucceeded;
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -105,7 +108,7 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
       return;
     }
 
-    uploadTabularFile(file, processingConfig);
+    importTabularFile(file, processingConfig);
   };
 
   const handleUrlDownload = () => {
@@ -122,34 +125,34 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
     }
   };
 
-  const handleUploadClick = () => {
+  const handleImportClick = () => {
     fileInputRef.current?.click();
   };
 
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h6" gutterBottom>
-        Upload Tabular Data
+        Import Tabular Data
       </Typography>
 
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-      Choose a Tabular file to upload or provide a URL to download the data from.
+      Choose a file or provide a URL to import tabular data.
     </Typography>
 
-    {/* Upload Method Selection */}
+    {/* Import Method Selection */}
   <FormControl sx={{ mb: 3, minWidth: 200 }}>
-    <InputLabel id={uploadMethodLabelId}>Upload Method</InputLabel>
+    <InputLabel id={importMethodLabelId}>Import Method</InputLabel>
     <ModalSelect
-      id={`${uploadMethodLabelId}-select`}
-      labelId={uploadMethodLabelId}
-      value={uploadMethod}
-      label="Upload Method"
+      id={`${importMethodLabelId}-select`}
+      labelId={importMethodLabelId}
+      value={importMethod}
+      label="Import Method"
       onChange={(e) => {
         const method = e.target.value as 'file' | 'url';
-        setUploadMethod(method);
-        onUploadMethodChange?.(method);
+        setImportMethod(method);
+        onImportMethodChange?.(method);
       }}
-      disabled={disabled || isUploading}
+      disabled={disabled || isImporting}
       menuContainer={modalRoot}
     >
         <MenuItem value="file">
@@ -167,8 +170,8 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
       </ModalSelect>
       </FormControl>
 
-      {/* File Upload Section */}
-      {uploadMethod === 'file' && (
+      {/* File Import Section */}
+      {importMethod === 'file' && (
         <Paper
           variant="outlined"
           sx={{
@@ -177,13 +180,13 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
             border: '2px dashed',
             borderColor: 'divider',
             textAlign: 'center',
-            cursor: disabled || isUploading ? 'not-allowed' : 'pointer',
-            '&:hover': disabled || isUploading ? {} : {
+            cursor: disabled || isImporting ? 'not-allowed' : 'pointer',
+            '&:hover': disabled || isImporting ? {} : {
               borderColor: 'primary.main',
               bgcolor: 'action.hover',
             },
           }}
-            onClick={disabled || isUploading ? undefined : handleUploadClick}
+            onClick={disabled || isImporting ? undefined : handleImportClick}
         >
           <input
             ref={fileInputRef}
@@ -191,13 +194,13 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
             accept={acceptedFileTypes.join(',')}
             onChange={handleFileSelect}
             style={{ display: 'none' }}
-            disabled={disabled || isUploading}
+            disabled={disabled || isImporting}
           />
 
           <CloudUpload sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
 
           <Typography variant="h6" gutterBottom>
-            {isUploading ? 'Processing...' : 'Click to select a file'}
+            {isImporting ? 'Processing...' : 'Click to select a file'}
           </Typography>
 
           <Typography variant="body2" color="text.secondary">
@@ -206,7 +209,7 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
             Maximum size: {Math.round(maxFileSize / 1024 / 1024)}MB
           </Typography>
 
-          {isUploading && (
+          {isImporting && (
             <Box sx={{ mt: 2 }}>
               <CircularProgress size={24} />
             </Box>
@@ -215,7 +218,7 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
       )}
 
       {/* URL Download Section */}
-      {uploadMethod === 'url' && (
+      {importMethod === 'url' && (
         <Box sx={{ mb: 3 }}>
           <TextField
             fullWidth
@@ -226,17 +229,18 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
             setUrlInput(e.target.value);
             onUrlChange?.(e.target.value);
           }}
-          disabled={disabled || isUploading}
+          disabled={disabled || isImporting}
           sx={{ mb: 2 }}
         />
 
           <Button
             variant="contained"
-            startIcon={isUploading ? <CircularProgress size={16} /> : <Download />}
+            startIcon={isImporting ? <CircularProgress size={16} /> : <Download />}
+            endIcon={showDownloadSuccess ? <CheckCircle color="success" /> : undefined}
             onClick={handleUrlDownload}
-            disabled={disabled || isUploading || !urlInput.trim()}
+            disabled={disabled || isImporting || !urlInput.trim()}
           >
-            {isUploading ? 'Downloading...' : 'Download Tabular'}
+            {isImporting ? 'Downloading...' : 'Download Tabular'}
           </Button>
         </Box>
       )}
@@ -263,7 +267,7 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
                 return next;
               });
             }}
-            disabled={disabled || isUploading}
+            disabled={disabled || isImporting}
             menuContainer={modalRoot}
           >
             <MenuItem value=",">Comma (,)</MenuItem>
@@ -287,7 +291,7 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
                 return next;
               });
             }}
-            disabled={disabled || isUploading}
+            disabled={disabled || isImporting}
             menuContainer={modalRoot}
           >
             <MenuItem value="utf-8">UTF-8</MenuItem>
@@ -310,7 +314,7 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
                 return next;
               });
             }}
-            disabled={disabled || isUploading}
+            disabled={disabled || isImporting}
             menuContainer={modalRoot}
           >
             <MenuItem value='"'>Double Quote (")</MenuItem>
@@ -335,7 +339,7 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
                 return next;
               });
             }}
-            disabled={disabled || isUploading}
+            disabled={disabled || isImporting}
             menuContainer={modalRoot}
           >
             <MenuItem value="yes">Yes</MenuItem>
@@ -357,7 +361,7 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
                 return next;
               });
             }}
-            disabled={disabled || isUploading}
+            disabled={disabled || isImporting}
             menuContainer={modalRoot}
           >
             <MenuItem value="yes">Yes</MenuItem>
@@ -367,9 +371,9 @@ export const TabularFileUploadStep: React.FC<TabularFileUploadStepProps> = ({
       </Box>
 
       {/* Error Display */}
-      {uploadError && (
+      {imortError && (
         <Alert severity="error" sx={{ mt: 3 }}>
-          {uploadError}
+          {imortError}
         </Alert>
       )}
     </Box>

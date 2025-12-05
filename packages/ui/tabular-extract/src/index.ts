@@ -30,13 +30,13 @@ export type { UseTabularFilterOptions, UseTabularFilterResult } from './hooks/us
 
 // Components
 export {
-  TabularFileUploadStep,
+  TabularFileImportStep,
   TabularFilterStep,
   TabularColumnSelectionStep,
   ModalSelect,
 } from './components/index.js';
 export type {
-  TabularFileUploadStepProps,
+  TabularFileImportStepProps,
   TabularFilterStepProps,
   TabularColumnSelectionStepProps,
   ModalSelectProps,

@@ -38,6 +38,8 @@ export interface DialogOverlayFrameProps {
   enableDrag?: boolean;
   enableResize?: boolean;
   backdropZIndex?: number;
+  /** Override backdrop color; defaults to dark translucent overlay. */
+  backdropColor?: string;
 }
 
 const DEFAULT_SIZE: MultiDialogSize = { width: 960, height: 640 };
@@ -48,6 +50,7 @@ export const DialogOverlayFrame: React.FC<DialogOverlayFrameProps> = ({
   enableDrag = true,
   enableResize = true,
   backdropZIndex,
+  backdropColor,
 }) => {
   const isBrowser = typeof document !== 'undefined';
   const guards = useDialogInteractionGuards({
@@ -337,7 +340,7 @@ export const DialogOverlayFrame: React.FC<DialogOverlayFrameProps> = ({
         position: 'fixed',
         inset: 0,
         zIndex: backdropZIndex ?? theme.zIndex.modal + 10,
-        backgroundColor: 'rgba(9, 12, 28, 0.45)',
+        backgroundColor: backdropColor ?? 'rgba(9, 12, 28, 0.45)',
         backdropFilter: 'blur(2px)',
         pointerEvents: headlessProps.open ? 'auto' : 'none',
       })}

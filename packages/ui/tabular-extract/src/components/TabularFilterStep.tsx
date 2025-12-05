@@ -222,7 +222,10 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box
+      sx={{ p: 3, maxHeight: '70vh', overflowY: 'auto', overscrollBehavior: 'contain' }}
+      onWheelCapture={(event) => event.stopPropagation()}
+    >
       <Typography variant="h6" gutterBottom>
         Filter Tabular Data
       </Typography>
@@ -370,7 +373,12 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
             </Typography>
           </AccordionSummary>
           <AccordionDetails>
-            <TableContainer component={Paper} variant="outlined">
+            <TableContainer
+              component={Paper}
+              variant="outlined"
+              sx={{ maxHeight: 360, overflowY: 'auto', overscrollBehavior: 'contain' }}
+              onWheelCapture={(event) => event.stopPropagation()}
+            >
               <Table size="small">
                 <TableHead>
                   <TableRow>

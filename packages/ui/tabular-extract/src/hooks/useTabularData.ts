@@ -23,9 +23,9 @@ export interface UseTabularDataOptions {
   /** Plugin ID for reference management */
   pluginId: string;
   /** Callback when upload succeeds */
-  onUploadSuccess?: (metadata: TabularTableMetadata) => void;
+  onImportSuccess?: (metadata: TabularTableMetadata) => void;
   /** Callback when upload fails */
-  onUploadError?: (error: string) => void;
+  onImportError?: (error: string) => void;
 }
 
 /**
@@ -40,7 +40,7 @@ export interface UseTabularDataResult {
   error: string | null;
 
   /** Upload Tabular file */
-  uploadTabularFile: (file: File, config?: TabularProcessingConfig) => Promise<TabularTableMetadata>;
+  importTabularFile: (file: File, config?: TabularProcessingConfig) => Promise<TabularTableMetadata>;
   /** Download Tabular from URL */
   downloadTabularFromUrl: (url: string, config?: TabularProcessingConfig) => Promise<TabularTableMetadata>;
   /** Reload current metadata */
@@ -53,15 +53,15 @@ export interface UseTabularDataResult {
   clear: () => void;
 
   // Upload state management
-  isUploading: boolean;
-  uploadError: string | null;
+  isImporting: boolean;
+  imortError: string | null;
 }
 
 /**
  * Hook for managing Tabular table metadata
  */
 export const useTabularData = (options: UseTabularDataOptions): UseTabularDataResult => {
-  const { tableMetadataId, autoload = true, pluginId, onUploadSuccess, onUploadError } = options;
+  const { tableMetadataId, autoload = true, pluginId, onImportSuccess, onImportError } = options;
   const tabularApi = useTabularApi();
 
   const [tabularTableMetadata, setTabularTableMetadata] = useState<TabularTableMetadata | null>(null);
@@ -118,13 +118,13 @@ export const useTabularData = (options: UseTabularDataOptions): UseTabularDataRe
       await tabularApi.addTableReference(newMetadata.id, pluginId);
 
       // Call success callback
-      onUploadSuccess?.(newMetadata);
+      onImportSuccess?.(newMetadata);
 
       return newMetadata;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to upload file';
       setUploadError(message);
-      onUploadError?.(message);
+      onImportError?.(message);
       throw err;
     } finally {
       setIsUploading(false);
@@ -156,13 +156,13 @@ export const useTabularData = (options: UseTabularDataOptions): UseTabularDataRe
       await tabularApi.addTableReference(newMetadata.id, pluginId);
 
       // Call success callback
-      onUploadSuccess?.(newMetadata);
+      onImportSuccess?.(newMetadata);
 
       return newMetadata;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to download from URL';
       setUploadError(message);
-      onUploadError?.(message);
+      onImportError?.(message);
       throw err;
     } finally {
       setIsUploading(false);
@@ -233,14 +233,14 @@ export const useTabularData = (options: UseTabularDataOptions): UseTabularDataRe
     tabularTableMetadata,
     loading,
     error,
-    uploadTabularFile,
+    importTabularFile: uploadTabularFile,
     downloadTabularFromUrl,
     reload,
     addReference,
     removeReference,
     clear,
-    isUploading,
-    uploadError,
+    isImporting: isUploading,
+    imortError: uploadError,
   };
 };
 

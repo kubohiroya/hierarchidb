@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import type { StepComponentProps } from '@hierarchidb/plugin-base';
-import { TabularProvider, TabularFileUploadStep } from '@hierarchidb/ui-tabular-extract';
+import { TabularProvider, TabularFileImportStep } from '@hierarchidb/ui-tabular-extract';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { createShapeTabularApi } from '../../../services/tabular/createShapeTabularApi.js';
 import { SHAPE_PLUGIN_ID } from '../../../common/shared/constants.js';
@@ -77,9 +77,9 @@ export function StepTabularUpload({
         in the shared tabular store so other plugins can reuse it.
       </Typography>
       <TabularProvider tabularApi={tabularApi}>
-        <TabularFileUploadStep
+        <TabularFileImportStep
           pluginId={SHAPE_PLUGIN_ID}
-          onFileUploaded={applyMetadata}
+          onFileImported={applyMetadata}
           onError={handleUploadError}
           disabled={disabled}
           menuContainer={

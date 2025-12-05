@@ -30,28 +30,36 @@ export const DataSourceStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
   const [localError, setLocalError] = useState<string | null>(null);
   const tabularApi = useMemo(() => createSpreadsheetTabularApi(SPREADSHEET_NODE_TYPE), []);
   const derivedUploadMethod: 'file' | 'url' =
-    dialogData.dataSource?.type === 'url' ? 'url' : 'file';
+    dialogData.dataSource?.type === 'url' || dialogData.dataSource?.source?.startsWith('http') ? 'url' : 'file';
   const derivedUrl = dialogData.dataSource?.source ?? '';
   const derivedProcessing = dialogData.tabularProcessingConfig;
 
   const [uploadMethod, setUploadMethod] = useState<'file' | 'url'>(derivedUploadMethod);
   const [downloadUrl, setDownloadUrl] = useState(derivedUrl);
+  const [lastSuccessfulUrl, setLastSuccessfulUrl] = useState<string | null>(() => {
+    const source = dialogData.dataSource?.source ?? null;
+    const hasMetadata = Boolean(dialogData.spreadsheetMetadataId && source);
+    const sourceLooksLikeUrl = source?.startsWith('http');
+    const persistedAsUrl = dialogData.dataSource?.type === 'url' || derivedUploadMethod === 'url';
+    return hasMetadata && (persistedAsUrl || sourceLooksLikeUrl) ? source : null;
+  });
   const [processingConfig, setProcessingConfig] = useState<TabularProcessingConfig | undefined>(derivedProcessing);
+  const downloadSucceeded = Boolean(lastSuccessfulUrl && lastSuccessfulUrl === downloadUrl);
 
   const applyMetadata = useCallback(
     (tabularTableMetadata: TabularTableMetadata) => {
       const nextDataSource: SpreadSheetDataSourceConfig = {
-        type: 'file',
+        type: uploadMethod,
         source: uploadMethod === 'url' ? downloadUrl : (tabularTableMetadata.fileUrl ?? tabularTableMetadata.filename),
         filename: tabularTableMetadata.filename,
         sizeBytes: tabularTableMetadata.fileSizeBytes ?? 0,
         contentHash: tabularTableMetadata.contentHash,
       };
-    onChange({
-      ...dialogData,
-      spreadsheetMetadataId: tabularTableMetadata.id,
-      dataSource: nextDataSource,
-      tabularTableMetadata: tabularTableMetadata,
+      onChange({
+        ...dialogData,
+        spreadsheetMetadataId: tabularTableMetadata.id,
+        dataSource: nextDataSource,
+        tabularTableMetadata: tabularTableMetadata,
         file: {
           name: tabularTableMetadata.filename,
           sizeBytes: tabularTableMetadata.fileSizeBytes ?? 0,
@@ -59,6 +67,9 @@ export const DataSourceStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
         },
         tabularProcessingConfig: processingConfig,
       });
+      if (uploadMethod === 'url') {
+        setLastSuccessfulUrl(downloadUrl);
+      }
       setLocalError(null);
       setValid(true);
       setError(null);
@@ -105,7 +116,7 @@ export const DataSourceStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
         skipEmptyLines: true,
       },
     });
-  }, [dialogData, downloadUrl, onChange, processingConfig, uploadMethod]);
+  }, [dialogData, onChange, processingConfig]);
 
   return (
     <TabularProvider tabularApi={tabularApi}>
@@ -129,6 +140,9 @@ export const DataSourceStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
         }}
         onUrlChange={(url: string) => {
           setDownloadUrl(url);
+          if (lastSuccessfulUrl && url !== lastSuccessfulUrl) {
+            setLastSuccessfulUrl(null);
+          }
           onChange({
             ...dialogData,
             dataSource: {
@@ -142,6 +156,7 @@ export const DataSourceStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
           setProcessingConfig(cfg);
           onChange({ ...dialogData, tabularProcessingConfig: cfg });
         }}
+        downloadSucceeded={downloadSucceeded}
       />
     </TabularProvider>
   );
