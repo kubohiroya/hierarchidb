@@ -11,7 +11,7 @@ import {
 import type { ValidationResult } from '../../common/shared/types.js';
 import type { StepComponentProps } from '@hierarchidb/plugin-base';
 import type { DialogStepConfig } from '@hierarchidb/plugin-ui-sdk';
-import { StepTabularUpload } from './steps/StepTabularUpload.js';
+import { StepTabularImport } from './steps/StepTabularImport.tsx';
 import { StepTabularFilter } from './steps/StepTabularFilter.js';
 import { Step2DataSource } from './steps/Step2DataSource.js';
 import { Step3License } from './steps/Step3License.js';
@@ -40,7 +40,7 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
   type ShapeStepProps = StepComponentProps<Partial<ShapeEntity>>;
 
   const UploadStep: React.FC<ShapeStepProps> = ({ data: stepData, onChange, ...rest }) => (
-    <StepTabularUpload
+    <StepTabularImport
       {...rest}
       mode={mode}
       data={(stepData ?? {}) as ShapeEntity}

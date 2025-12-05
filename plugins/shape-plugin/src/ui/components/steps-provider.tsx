@@ -11,7 +11,7 @@ import { Step2DataSource } from './steps/Step2DataSource.js';
 import { Step3License } from './steps/Step3License.js';
 import { Step4Processing } from './steps/Step4Processing.js';
 import { Step5CountrySelection } from './steps/Step5CountrySelection.js';
-import { StepTabularUpload } from './steps/StepTabularUpload.js';
+import { StepTabularImport } from './steps/StepTabularImport.tsx';
 import { StepTabularFilter } from './steps/StepTabularFilter.js';
 import { notify } from '@hierarchidb/components';
 
@@ -69,7 +69,7 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
       {
         id: 'tabular-upload',
         label: 'Dataset Upload',
-        componentFactory: (props: ShapeDialogStepProps) => <StepTabularUpload {...props} />,
+        componentFactory: (props: ShapeDialogStepProps) => <StepTabularImport {...props} />,
         validate: (data?: Partial<ShapeEntity>) => Boolean(data?.tabularMetadataId),
       },
       {

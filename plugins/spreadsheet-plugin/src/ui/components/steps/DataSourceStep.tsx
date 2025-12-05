@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { FC } from 'react';
 import { StepComponentProps } from '@hierarchidb/plugin-base';
-import { TabularProvider, TabularFileUploadStep, type TabularProcessingConfig, type TabularFileUploadStepProps } from '@hierarchidb/ui-tabular-extract';
+import { TabularProvider, TabularFileImportStep, type TabularProcessingConfig, type TabularFileImportStepProps } from '@hierarchidb/ui-tabular-extract';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { createSpreadsheetTabularApi } from '../../../services/spreadsheetTabularApiFactory.js';
 import { SPREADSHEET_NODE_TYPE } from '../../../common/constants.js';
@@ -10,14 +10,12 @@ import type { SpreadSheetDataSourceConfig, SpreadsheetEntity } from '../../../co
 const coerceDialogData = (value: unknown): SpreadsheetEntity =>
   (typeof value === 'object' && value !== null ? (value as SpreadsheetEntity) : {});
 
-type ExtendedUploadProps = TabularFileUploadStepProps & {
-  initialUploadMethod?: 'file' | 'url';
+type ExtendedImportProps = TabularFileImportStepProps & {
   initialProcessingConfig?: TabularProcessingConfig;
   onProcessingConfigChange?: (config: TabularProcessingConfig) => void;
-  onUploadMethodChange?: (method: 'file' | 'url') => void;
 };
 
-const UploadStep = TabularFileUploadStep as unknown as React.FC<ExtendedUploadProps>;
+const ImportStep = TabularFileImportStep as unknown as React.FC<ExtendedImportProps>;
 
 export const DataSourceStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
   data,
@@ -29,28 +27,28 @@ export const DataSourceStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
   const dialogData = useMemo<SpreadsheetEntity>(() => coerceDialogData(data), [data]);
   const [localError, setLocalError] = useState<string | null>(null);
   const tabularApi = useMemo(() => createSpreadsheetTabularApi(SPREADSHEET_NODE_TYPE), []);
-  const derivedUploadMethod: 'file' | 'url' =
+  const derivedImportMethod: 'file' | 'url' =
     dialogData.dataSource?.type === 'url' || dialogData.dataSource?.source?.startsWith('http') ? 'url' : 'file';
   const derivedUrl = dialogData.dataSource?.source ?? '';
   const derivedProcessing = dialogData.tabularProcessingConfig;
 
-  const [uploadMethod, setUploadMethod] = useState<'file' | 'url'>(derivedUploadMethod);
+  const [importMethod, setImportMethod] = useState<'file' | 'url'>(derivedImportMethod);
   const [downloadUrl, setDownloadUrl] = useState(derivedUrl);
   const [lastSuccessfulUrl, setLastSuccessfulUrl] = useState<string | null>(() => {
     const source = dialogData.dataSource?.source ?? null;
     const hasMetadata = Boolean(dialogData.spreadsheetMetadataId && source);
     const sourceLooksLikeUrl = source?.startsWith('http');
-    const persistedAsUrl = dialogData.dataSource?.type === 'url' || derivedUploadMethod === 'url';
+    const persistedAsUrl = dialogData.dataSource?.type === 'url' || derivedImportMethod === 'url';
     return hasMetadata && (persistedAsUrl || sourceLooksLikeUrl) ? source : null;
   });
   const [processingConfig, setProcessingConfig] = useState<TabularProcessingConfig | undefined>(derivedProcessing);
-  const downloadSucceeded = Boolean(lastSuccessfulUrl && lastSuccessfulUrl === downloadUrl);
+  const importSucceeded = Boolean(lastSuccessfulUrl && lastSuccessfulUrl === downloadUrl);
 
   const applyMetadata = useCallback(
     (tabularTableMetadata: TabularTableMetadata) => {
       const nextDataSource: SpreadSheetDataSourceConfig = {
-        type: uploadMethod,
-        source: uploadMethod === 'url' ? downloadUrl : (tabularTableMetadata.fileUrl ?? tabularTableMetadata.filename),
+        type: importMethod,
+        source: importMethod === 'url' ? downloadUrl : (tabularTableMetadata.fileUrl ?? tabularTableMetadata.filename),
         filename: tabularTableMetadata.filename,
         sizeBytes: tabularTableMetadata.fileSizeBytes ?? 0,
         contentHash: tabularTableMetadata.contentHash,
@@ -67,14 +65,14 @@ export const DataSourceStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
         },
         tabularProcessingConfig: processingConfig,
       });
-      if (uploadMethod === 'url') {
+      if (importMethod === 'url') {
         setLastSuccessfulUrl(downloadUrl);
       }
       setLocalError(null);
       setValid(true);
       setError(null);
     },
-    [dialogData, onChange, setError, setValid, uploadMethod, downloadUrl, processingConfig],
+    [dialogData, onChange, setError, setValid, importMethod, downloadUrl, processingConfig],
   );
 
   const handleUploadError = useCallback(
@@ -120,16 +118,16 @@ export const DataSourceStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
 
   return (
     <TabularProvider tabularApi={tabularApi}>
-      <UploadStep
+      <ImportStep
         pluginId={SPREADSHEET_NODE_TYPE}
-        onFileUploaded={applyMetadata}
+        onFileImported={applyMetadata}
         onError={handleUploadError}
         menuContainer={menuContainer}
-        initialUploadMethod={uploadMethod}
+        initialImportMethod={derivedImportMethod}
         initialUrl={downloadUrl}
         initialProcessingConfig={processingConfig}
-        onUploadMethodChange={(method: 'file' | 'url') => {
-          setUploadMethod(method);
+        onImportMethodChange={(method: 'file' | 'url') => {
+          setImportMethod(method);
           onChange({
             ...dialogData,
             dataSource: {
@@ -156,7 +154,7 @@ export const DataSourceStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
           setProcessingConfig(cfg);
           onChange({ ...dialogData, tabularProcessingConfig: cfg });
         }}
-        downloadSucceeded={downloadSucceeded}
+        importSucceeded={importSucceeded}
       />
     </TabularProvider>
   );

@@ -9,7 +9,7 @@ import type { ShapeEntity, TabularFileSummary } from '../../../common/shared/typ
 
 type ShapeDialogStepProps = StepComponentProps<Partial<ShapeEntity>>;
 
-export function StepTabularUpload({
+export function StepTabularImport({
   data,
   onChange,
   setValid,

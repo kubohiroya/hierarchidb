@@ -4,7 +4,7 @@
  */
 
 import type React from 'react';
-import { useRef, useState, useId } from 'react';
+import { useEffect, useRef, useState, useId } from 'react';
 import {
   Alert,
   Box,
@@ -12,9 +12,11 @@ import {
   CircularProgress,
   Divider,
   FormControl,
+  FormControlLabel,
   InputLabel,
   MenuItem,
   Paper,
+  Switch,
   TextField,
   Typography,
 } from '@mui/material';
@@ -38,7 +40,7 @@ export interface TabularFileImportStepProps {
   onProcessingConfigChange?: (config: TabularProcessingConfig) => void;
   onImportMethodChange?: (method: 'file' | 'url') => void;
   onUrlChange?: (url: string) => void;
-  downloadSucceeded?: boolean;
+  importSucceeded?: boolean;
 }
 
 export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
@@ -55,7 +57,7 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
                                                                       onProcessingConfigChange,
                                                                       onImportMethodChange,
                                                                       onUrlChange,
-                                                                      downloadSucceeded = false,
+                                                                      importSucceeded = false,
                                                                     }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [urlInput, setUrlInput] = useState(initialUrl);
@@ -86,10 +88,12 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
   const delimiterLabelId = `${idPrefix}-delimiter`;
   const encodingLabelId = `${idPrefix}-encoding`;
   const quoteLabelId = `${idPrefix}-quote-char`;
-  const headerLabelId = `${idPrefix}-has-header`;
-  const skipEmptyLabelId = `${idPrefix}-skip-empty-lines`;
   const modalRoot = menuContainer ?? null;
-  const showDownloadSuccess = importMethod === 'url' && downloadSucceeded;
+  const showDownloadSuccess = importMethod === 'url' && importSucceeded;
+
+  useEffect(() => {
+    setImportMethod(initialImportMethod);
+  }, [initialImportMethod]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -158,7 +162,7 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
         <MenuItem value="file">
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <InsertDriveFile fontSize="small" />
-            Local File
+            Local File Import
           </Box>
         </MenuItem>
         <MenuItem value="url">
@@ -325,49 +329,41 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
       </Box>
 
       <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-        <FormControl>
-          <InputLabel id={headerLabelId}>Has Header Row</InputLabel>
-          <ModalSelect
-            id={`${headerLabelId}-select`}
-            labelId={headerLabelId}
-            value={processingConfig.hasHeader ? 'yes' : 'no'}
-            label="Has Header Row"
-            onChange={(e) => {
-              setProcessingConfig(prev => {
-                const next = { ...prev, hasHeader: e.target.value === 'yes' };
-                onProcessingConfigChange?.(next);
-                return next;
-              });
-            }}
-            disabled={disabled || isImporting}
-            menuContainer={modalRoot}
-          >
-            <MenuItem value="yes">Yes</MenuItem>
-            <MenuItem value="no">No</MenuItem>
-          </ModalSelect>
-        </FormControl>
+        <FormControlLabel
+          control={(
+            <Switch
+              checked={processingConfig.hasHeader}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setProcessingConfig(prev => {
+                  const next = { ...prev, hasHeader: checked };
+                  onProcessingConfigChange?.(next);
+                  return next;
+                });
+              }}
+              disabled={disabled || isImporting}
+            />
+          )}
+          label="Has Header Row"
+        />
 
-        <FormControl>
-          <InputLabel id={skipEmptyLabelId}>Skip Empty Lines</InputLabel>
-          <ModalSelect
-            id={`${skipEmptyLabelId}-select`}
-            labelId={skipEmptyLabelId}
-            value={processingConfig.skipEmptyLines ? 'yes' : 'no'}
-            label="Skip Empty Lines"
-            onChange={(e) => {
-              setProcessingConfig(prev => {
-                const next = { ...prev, skipEmptyLines: e.target.value === 'yes' };
-                onProcessingConfigChange?.(next);
-                return next;
-              });
-            }}
-            disabled={disabled || isImporting}
-            menuContainer={modalRoot}
-          >
-            <MenuItem value="yes">Yes</MenuItem>
-            <MenuItem value="no">No</MenuItem>
-          </ModalSelect>
-        </FormControl>
+        <FormControlLabel
+          control={(
+            <Switch
+              checked={processingConfig.skipEmptyLines}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setProcessingConfig(prev => {
+                  const next = { ...prev, skipEmptyLines: checked };
+                  onProcessingConfigChange?.(next);
+                  return next;
+                });
+              }}
+              disabled={disabled || isImporting}
+            />
+          )}
+          label="Skip Empty Lines"
+        />
       </Box>
 
       {/* Error Display */}
