@@ -29,14 +29,15 @@ import {
 if (!process.listenerCount('uncaughtException')) {
   process.on('uncaughtException', (error) => {
     console.error('[vite.config] uncaught exception', error?.message);
-    if (error && typeof (error as any).url === 'string') {
-      console.error('[vite.config] error url:', (error as any).url);
+    const errObj = error as Partial<{ url?: unknown; code?: unknown; stack?: unknown }>;
+    if (errObj && typeof errObj.url === 'string') {
+      console.error('[vite.config] error url:', errObj.url);
     }
-    if (error && typeof (error as any).code === 'string') {
-      console.error('[vite.config] error code:', (error as any).code);
+    if (errObj && typeof errObj.code === 'string') {
+      console.error('[vite.config] error code:', errObj.code);
     }
-    if (error && typeof (error as any).stack === 'string') {
-      console.error('[vite.config] stack:', (error as any).stack);
+    if (errObj && typeof errObj.stack === 'string') {
+      console.error('[vite.config] stack:', errObj.stack);
     }
     process.exit(1);
   });
@@ -674,7 +675,10 @@ export default defineConfig(({ mode, isSsrBuild }) => {
   }
 
   if (process.env.DEBUG_WORKER_HMR === '1') {
-    console.log('[vite.config] main plugin order', plugins.map((p) => p && (p as any).name));
+    console.log(
+      '[vite.config] main plugin order',
+      plugins.map((p) => (p && typeof p === 'object' && 'name' in p ? (p as Plugin).name : undefined))
+    );
   }
 
   // beacon values captured in closure
@@ -819,7 +823,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
           const body = resp.body;
           if (body) {
             const { Readable } = await import('node:stream');
-            Readable.fromWeb(body as any).pipe(res);
+            Readable.fromWeb(body as ReadableStream<Uint8Array>).pipe(res);
           } else {
             const buf = Buffer.from(await resp.arrayBuffer());
             res.end(buf);
@@ -929,7 +933,8 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       proxy: {
         '/auth': (() => {
           // Support BFF endpoints that may already live under a base path (e.g. /api/auth)
-          const rawBffUrl = env.VITE_BFF_BASE_URL || 'http://localhost:8787/api/auth';
+          const rawBffUrl =
+            env.VITE_BFF_BASE_URL || 'https://hierarchidb-bff.kubohiroya.workers.dev';
           let bffUrl: URL;
           try {
             bffUrl = new URL(rawBffUrl);

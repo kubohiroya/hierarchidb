@@ -57,6 +57,56 @@ describe('Edit dialog cancel behavior by node origin', () => {
     expect(await core.nodes.get(draft.id as NodeId)).toBeUndefined();
   });
 
+  it('create draft with version 0 is deleted on cancel', async () => {
+    const now = Date.now();
+    const nodeId = `${rootId}:version-0` as NodeId;
+    await core.nodes.put({
+      id: nodeId,
+      parentId: rootId,
+      nodeType: 'spreadsheet' as NodeType,
+      metadata: { name: 'Temp', description: undefined, tags: [] },
+      draftMetadata: { name: 'Temp', description: undefined, tags: [] },
+      data: null,
+      draftData: { foo: 'draft' },
+      depth: 1,
+      createdAt: now,
+      updatedAt: now,
+      version: 0,
+      lastTouchedAt: now,
+    });
+
+    await cancelDialog('create', nodeId);
+
+    expect(await core.nodes.get(nodeId)).toBeUndefined();
+  });
+
+  it('create draft imported from template (version > 0) is kept on cancel', async () => {
+    const now = Date.now();
+    const nodeId = `${rootId}:template-import` as NodeId;
+    await core.nodes.put({
+      id: nodeId,
+      parentId: rootId,
+      nodeType: 'spreadsheet' as NodeType,
+      metadata: { name: 'Template Sheet', description: undefined, tags: [] },
+      draftMetadata: { name: 'Template Sheet', description: undefined, tags: [] },
+      data: null,
+      draftData: { dataSource: { type: 'url', source: 'https://example.com/data.csv' } },
+      depth: 1,
+      createdAt: now,
+      updatedAt: now,
+      version: 1,
+      lastTouchedAt: now,
+    });
+
+    await cancelDialog('create', nodeId);
+
+    const stored = await core.nodes.get(nodeId);
+    expect(stored).toBeDefined();
+    expect((stored as { draftData?: unknown }).draftData).toEqual({
+      dataSource: { type: 'url', source: 'https://example.com/data.csv' },
+    });
+  });
+
   it('import draft node is kept on cancel', async () => {
     const now = Date.now();
     const nodeId = `${rootId}:import-draft` as NodeId;

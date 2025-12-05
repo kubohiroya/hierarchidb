@@ -20,16 +20,26 @@ import {
 import { createTheme, ThemeProvider, useTheme } from '@mui/material/styles';
 import { Outlet, useLoaderData, useNavigate } from '@tanstack/react-router';
 import type { MouseEvent, ReactNode } from 'react';
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import AppLogoIcon from '~/components/AppLogoIcon.js';
 import { useOptionalBootProgress } from '~/contexts/BootProgressProvider.js';
 import { useWorker } from '~/contexts/WorkerProvider.js';
+import { memo } from 'react';
 import type { LoadPageNodeReturn } from '../loaders/treeLoaders.js';
+import type { TreeConsoleIntegrationProps } from '~/router/pages/tree/console/TreeConsoleIntegration.js';
 
 const LazyTreeConsoleIntegration = lazy(async () => {
   const mod = await import('~/router/pages/tree/console/TreeConsoleIntegration.js');
   return { default: mod.TreeConsoleIntegration };
 });
+
+const MemoizedTreeConsoleIntegration = memo<TreeConsoleIntegrationProps>(
+  (props) => <LazyTreeConsoleIntegration {...props} />,
+  (prev, next) =>
+    prev.treeId === next.treeId &&
+    prev.pageNodeId === next.pageNodeId &&
+    (prev.pageTreeNode?.id ?? null) === (next.pageTreeNode?.id ?? null)
+);
 
 type LoaderData = LoadPageNodeReturn;
 
@@ -87,6 +97,10 @@ export function TreeLayoutBody({ data }: TreeLayoutBodyProps) {
 
   const pageName =
     data.pageNode?.metadata?.name || data.tree?.name || 'TreeTypes Console';
+
+  const dialogStableKeyRef = useRef(
+    `${data.tree?.id ?? ''}:${data.pageNodeId ?? ''}`
+  );
 
   return (
     <TreeConsoleThemeBoundary treeId={data.tree?.id}>
@@ -204,8 +218,8 @@ export function TreeLayoutBody({ data }: TreeLayoutBodyProps) {
                 </Box>
               }
             >
-              <LazyTreeConsoleIntegration
-                key={`${data.tree?.id ?? ''}:${data.pageNodeId ?? ''}`}
+              <MemoizedTreeConsoleIntegration
+                key={dialogStableKeyRef.current}
                 treeId={data.tree?.id}
                 pageNodeId={data.pageNodeId}
                 pageTreeNode={data.pageNode}

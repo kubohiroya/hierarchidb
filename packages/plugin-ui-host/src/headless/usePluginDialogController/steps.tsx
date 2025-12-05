@@ -79,7 +79,7 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
   dialogRef,
   stepData,
 }) => {
-  const draftAtom = useRef(atom(stepData));
+  const draftAtom = useRef(atom<StepData>(stepData ?? {}));
   const [, setSlice] = useAtom(draftAtom.current);
 
   useEffect(() => {
@@ -280,7 +280,7 @@ export function useDialogSteps({
       atom(
         (get) => (get(draftAtom) as { name?: string })?.name ?? '',
         (get, set, val: string) => {
-          const prev = (get(draftAtom) as any) ?? {};
+          const prev = (get(draftAtom) as Record<string, unknown>) ?? {};
           set(draftAtom, { ...prev, name: val });
         }
       ),
@@ -291,7 +291,7 @@ export function useDialogSteps({
       atom(
         (get) => (get(draftAtom) as { description?: string })?.description ?? '',
         (get, set, val: string) => {
-          const prev = (get(draftAtom) as any) ?? {};
+          const prev = (get(draftAtom) as Record<string, unknown>) ?? {};
           set(draftAtom, { ...prev, description: val });
         }
       ),
@@ -302,7 +302,7 @@ export function useDialogSteps({
       atom(
         (get) => (get(draftAtom) as { tags?: string[] })?.tags ?? [],
         (get, set, val: string[]) => {
-          const prev = (get(draftAtom) as any) ?? {};
+          const prev = (get(draftAtom) as Record<string, unknown>) ?? {};
           set(draftAtom, { ...prev, tags: val });
         }
       ),

@@ -14,10 +14,10 @@ import type {
   LocationEntity,
 } from '../types/index.js';
 import { useTranslation } from '../i18n/index.js';
-import { LocationLicenseStep } from './steps/LocationLicenseStep.js';
-import { LocationSelectionStep } from './steps/LocationSelectionStep.js';
-import { LocationBatchParametersStep } from './steps/LocationBatchParametersStep.js';
-import { LocationMapPreviewStep } from './steps/LocationMapPreviewStep.js';
+import { LocationLicenseStep } from '../../ui/components/steps/LocationLicenseStep.js';
+import { LocationSelectionStep } from '../../ui/components/steps/LocationSelectionStep.js';
+import { LocationBatchParametersStep } from '../../ui/components/steps/LocationBatchParametersStep.js';
+import { LocationMapPreviewStep } from '../../ui/components/steps/LocationMapPreviewStep.js';
 import { LocationVectorTileService } from '../../services/tiles/LocationVectorTileService.js';
 import { listLocationPoints } from '../../services/pointRepository.js';
 import { runLocationTabularBuild } from '../../worker/tabular/task.js';

@@ -74,16 +74,17 @@ export class BFFAuthService {
   private baseUrl: string;
   private popupWindow: Window | null = null;
 
+  private static readonly DEFAULT_BFF_BASE_URL = 'https://hierarchidb-bff.kubohiroya.workers.dev';
+
   private constructor() {
     // Use proxy path for local development, direct URL for production
-    const envUrl = import.meta.env.VITE_BFF_BASE_URL ?? '';
+    const envUrl = import.meta.env.VITE_BFF_BASE_URL || BFFAuthService.DEFAULT_BFF_BASE_URL;
     const envMode = import.meta.env.VITE_ENV_MODE ?? import.meta.env.MODE;
     const isDevelopment = (envMode ?? '').toLowerCase() === 'development' || import.meta.env.DEV;
 
-    // In development, use relative URL for proxy; in production, use full URL
-    if (isDevelopment && (!envUrl || envUrl.startsWith('http'))) {
-      // Use proxy path in development
-      this.baseUrl = ''; // Empty string to use relative paths with proxy
+    // In development, if absolute URL is provided, prefer proxy path (Vite proxy will target envUrl)
+    if (isDevelopment && envUrl.startsWith('http')) {
+      this.baseUrl = ''; // Relative /auth via Vite proxy
     } else {
       this.baseUrl = envUrl || '/api/auth';
     }

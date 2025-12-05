@@ -96,7 +96,7 @@ export async function commitDraftCommand(
   try {
     const result = await commitTreeNodeDraft(coreDB, draftNodeId, onNameConflict);
     if (result.status === 'ok') {
-      return { success: true, seq: 1 as any, nodeId: result.nodeId };
+      return { success: true, seq: 1, nodeId: result.nodeId };
     }
     if (result.status === 'NAME_CONFLICT') {
       return {

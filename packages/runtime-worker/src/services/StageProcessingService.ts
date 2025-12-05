@@ -139,7 +139,10 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
     for (let x = x1; x <= x2; x++) {
       for (let y = y1; y <= y2; y++) {
         const tile = index.getTile(z, x, y);
-        const layer = tile && Array.isArray((tile as any).features) ? (tile as unknown as Tile) : null;
+        const layer =
+          tile && Array.isArray((tile as { features?: unknown[] }).features)
+            ? (tile as Tile)
+            : null;
         if (layer?.features?.length) {
           const layers: Record<string, Tile> = { layer0: layer };
           const pbf = vtpbf.fromGeojsonVt(layers as unknown as Tile[], { version: 2 });

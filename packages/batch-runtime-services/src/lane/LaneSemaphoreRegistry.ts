@@ -157,7 +157,10 @@ export class LaneSemaphoreRegistry {
 
     try {
       // Vite/webpack define import.meta.env
-      const im: any = (import.meta as any);
+      const im = import.meta as unknown as { env?: Record<string, unknown> } & Record<
+        string,
+        unknown
+      >;
       const fromImportMeta = im?.env?.[envKey] ?? im?.[envKey];
       if (typeof fromImportMeta === 'string') text = fromImportMeta;
     } catch {
@@ -166,8 +169,10 @@ export class LaneSemaphoreRegistry {
 
     if (text === undefined) {
       try {
-        const g: any = (globalThis as any) ?? {};
-        const fromGlobal = g[envKey] ?? g.process?.env?.[envKey];
+        const g = globalThis as Record<string, unknown> & {
+          process?: { env?: Record<string, unknown> };
+        };
+        const fromGlobal = g?.[envKey] ?? g.process?.env?.[envKey];
         if (typeof fromGlobal === 'string') text = fromGlobal;
       } catch {
         console.log('Failed to read lane limits from global');

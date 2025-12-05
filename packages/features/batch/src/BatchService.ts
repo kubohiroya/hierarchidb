@@ -66,22 +66,30 @@ function toAsyncIterator<T>(input: Iterable<T> | AsyncIterable<T>): AsyncIterato
 }
 
 function isAsyncIterable<T>(value: unknown): value is AsyncIterable<T> {
-  return Boolean(value && typeof (value as any)[Symbol.asyncIterator] === 'function');
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as { [Symbol.asyncIterator]?: unknown };
+  return typeof candidate[Symbol.asyncIterator] === 'function';
 }
 
 function isIterable<T>(value: unknown): value is Iterable<T> {
-  return Boolean(value && typeof (value as any)[Symbol.iterator] === 'function');
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as { [Symbol.iterator]?: unknown };
+  return typeof candidate[Symbol.iterator] === 'function';
 }
 
 function inferTotalLength(input: Iterable<unknown> | AsyncIterable<unknown>): number | undefined {
   if (Array.isArray(input)) {
     return input.length;
   }
-  if (typeof (input as any)?.length === 'number') {
-    return Number((input as any).length);
-  }
-  if (typeof (input as any)?.size === 'number') {
-    return Number((input as any).size);
+  if (input && typeof input === 'object') {
+    const len = (input as { length?: unknown }).length;
+    if (typeof len === 'number') {
+      return Number(len);
+    }
+    const size = (input as { size?: unknown }).size;
+    if (typeof size === 'number') {
+      return Number(size);
+    }
   }
   return undefined;
 }

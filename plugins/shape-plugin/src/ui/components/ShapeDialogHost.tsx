@@ -11,12 +11,12 @@ import {
 import type { ValidationResult } from '../../common/shared/types.js';
 import type { StepComponentProps } from '@hierarchidb/plugin-base';
 import type { DialogStepConfig } from '@hierarchidb/plugin-ui-sdk';
-import { StepTabularUpload } from '../../common/components/steps/StepTabularUpload.js';
-import { StepTabularFilter } from '../../common/components/steps/StepTabularFilter.js';
-import { Step2DataSource } from '../../common/components/steps/Step2DataSource.js';
-import { Step3License } from '../../common/components/steps/Step3License.js';
-import { Step4Processing } from '../../common/components/steps/Step4Processing.js';
-import { Step5CountrySelection } from '../../common/components/steps/Step5CountrySelection.js';
+import { StepTabularUpload } from './steps/StepTabularUpload.js';
+import { StepTabularFilter } from './steps/StepTabularFilter.js';
+import { Step2DataSource } from './steps/Step2DataSource.js';
+import { Step3License } from './steps/Step3License.js';
+import { Step4Processing } from './steps/Step4Processing.js';
+import { Step5CountrySelection } from './steps/Step5CountrySelection.js';
 
 export interface ShapeDialogProps {
   open: boolean;

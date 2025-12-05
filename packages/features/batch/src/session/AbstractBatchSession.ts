@@ -182,6 +182,11 @@ export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = Bas
   }
 
   protected emitProgress(event: Partial<BatchProgressEvent>): void {
+    const errorPayload = event.error;
+    const formattedError =
+      errorPayload && typeof errorPayload === 'object' && 'code' in (errorPayload as object)
+        ? formatProgressError(errorPayload)
+        : event.error;
     const full: BatchProgressEvent = {
       sessionId: this.sessionId,
       nodeId: this.nodeId,
@@ -190,7 +195,7 @@ export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = Bas
       timestamp: Date.now(),
       payload: event.payload,
       message: event.message,
-      error: event.error,
+      error: formattedError,
     };
     for (const listener of this.progressListeners) {
       listener(full);

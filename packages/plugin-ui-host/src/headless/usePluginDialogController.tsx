@@ -18,7 +18,7 @@ import {
   getPresentation,
   hydratePresentationDefinitionsFromGlobal,
 } from '@hierarchidb/plugin-presentation';
-import { useTreeNodeUpdater } from '@hierarchidb/plugin-ui-sdk';
+import { useTreeNodeUpdater, type TreeNodeUpdaterState } from '@hierarchidb/plugin-ui-sdk';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type {
   DialogDisplayMode,
@@ -56,6 +56,7 @@ import { useBasicInfoState } from './usePluginDialogController/basic-info.js';
 import { useDialogSteps } from './usePluginDialogController/steps.js';
 import { useStepCapabilities } from './usePluginDialogController/capabilities.js';
 import { useDialogStatePublisher } from './usePluginDialogController/publish-dialog-state.js';
+import { evaluateCancelPolicy } from './cancelDraftPolicy.js';
 import type { TreeNodeUpdaterPayload, TreeNodeUpdaterPatch } from './usePluginDialogController/data-types.js';
 import type { MultiStepDialogState } from './controller/types.js';
 export { subscribeDialogState } from './controller/dialog-state-subscriber.js';
@@ -179,8 +180,8 @@ export function usePluginDialogController(
       draft
         ? {
             treeNodeId: draft.treeNodeId,
-            draftMetadata: draft.draftMetadata ?? null,
-            draftData: draft.draftData ?? null,
+            draftMetadata: draft.draftMetadata ?? undefined,
+            draftData: draft.draftData ?? undefined,
           }
         : null,
     [draft]
@@ -188,12 +189,12 @@ export function usePluginDialogController(
 
   const applyUpdateDraft = useCallback(
     (patch: TreeNodeUpdaterPatch<PluginDefinedEntity>) => {
-      const payload: Record<string, unknown> = {
-        treeNodeId: treeUpdater?.treeNodeId ?? nodeId,
+      const payload: Partial<TreeNodeUpdaterState<PluginDefinedEntity>> = {
+        treeNodeId: (treeUpdater?.treeNodeId ?? nodeId) as NodeId,
       };
-      if (patch.draftMetadata !== undefined) payload.draftMetadata = patch.draftMetadata;
-      if (patch.draftData !== undefined) payload.draftData = patch.draftData;
-      updateTreeNodeUpdater(payload as any);
+      if (patch.draftMetadata !== undefined) payload.draftMetadata = patch.draftMetadata ?? undefined;
+      if (patch.draftData !== undefined) payload.draftData = patch.draftData ?? undefined;
+      updateTreeNodeUpdater(payload);
     },
     [nodeId, treeUpdater?.treeNodeId, updateTreeNodeUpdater]
   );
@@ -444,14 +445,14 @@ export function usePluginDialogController(
       updateTreeNodeUpdater({
         version: latest.version,
         updatedAt: latest.updatedAt,
-      } as any);
+      });
     }
     return true;
   }, [closeConflictDialog, discardDraft, draft?.version, fetchLatestVersion, onClose, requestConflictResolution, updateTreeNodeUpdater]);
 
   const updateLocalDraft = useCallback(async () => {
     if (!treeUpdater) return;
-    updateTreeNodeUpdater({
+    const nextPatch: Partial<TreeNodeUpdaterState<PluginDefinedEntity>> = {
       treeNodeId: (treeUpdater.treeNodeId ?? nodeId) as NodeId,
       draftMetadata: {
         ...(treeUpdater.draftMetadata ?? {}),
@@ -459,8 +460,9 @@ export function usePluginDialogController(
         description: basicInfo.description,
         tags: basicInfo.tags,
       },
-      draftData: { ...localDraftData },
-    } as any);
+      draftData: { ...(localDraftData ?? {}) },
+    };
+    updateTreeNodeUpdater(nextPatch);
   }, [
     basicInfo.description,
     basicInfo.name,
@@ -580,11 +582,14 @@ export function usePluginDialogController(
   }, [ensureNoConflict, updateLocalDraft]);
 
   const handleCancel = useCallback(async () => {
-    // Cancel: create は forceDelete、edit は draft clear（現行 discardDraft が内部で判断）
-    const forceDelete = mode === 'create';
-    await discardDraft(forceDelete ? { forceDelete: true } : undefined);
+    const decision = evaluateCancelPolicy(mode, draft);
+    if (decision === 'discard-force-delete') {
+      await discardDraft({ forceDelete: true });
+    } else if (decision === 'discard-draft-only') {
+      await discardDraft();
+    }
     onClose();
-  }, [discardDraft, mode, onClose]);
+  }, [discardDraft, mode, onClose, draft]);
 
   const canSaveCurrent = evaluatedState.guards.canSave;
   const canStartBatch = evaluatedState.guards.canStartBatch;

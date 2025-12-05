@@ -141,13 +141,29 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
           bootLog('client:recv %s', messageType);
         }
 
-        if (isWorkerInitMessage(data) && data.type === 'INIT_COMPLETE') {
-          workerInitCompleted = true;
-          const bootWindow = getBootWindow();
-          if (bootWindow) {
-            bootWindow.__HDB_INIT_COMPLETE__ = true;
-            bootLog('client:set __HDB_INIT_COMPLETE__=true');
-            bootWindow.dispatchEvent(new Event('hierarchidb-worker-init-complete'));
+        if (isWorkerInitMessage(data)) {
+          if (data.type === 'INIT_PROGRESS') {
+            const bootWindow = getBootWindow();
+            if (bootWindow) {
+              bootWindow.dispatchEvent(
+                new CustomEvent('hierarchidb-worker-init-progress', {
+                  detail: {
+                    progress: data.payload?.progress,
+                    message: data.payload?.message,
+                  },
+                })
+              );
+            }
+          }
+
+          if (data.type === 'INIT_COMPLETE') {
+            workerInitCompleted = true;
+            const bootWindow = getBootWindow();
+            if (bootWindow) {
+              bootWindow.__HDB_INIT_COMPLETE__ = true;
+              bootLog('client:set __HDB_INIT_COMPLETE__=true');
+              bootWindow.dispatchEvent(new Event('hierarchidb-worker-init-complete'));
+            }
           }
         }
         if (isWorkerServicesReadyMessage(data)) {

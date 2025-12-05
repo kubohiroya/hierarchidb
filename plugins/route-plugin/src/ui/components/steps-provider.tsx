@@ -9,9 +9,9 @@ import type { NodeId } from '@hierarchidb/common-types';
 import type { RouteUpdaterPayload } from '../../common/types/index.js';
 import { toRouteUpdaterPayload } from '../../common/utils/draft.js';
 import { translations as routeTranslations } from '../../common/i18n/index.js';
-import { RouteSelectionStep } from '../../common/components/RouteSelectionStep.js';
-import { RouteProcessingStep } from '../../common/components/RouteProcessingStep.js';
-import { RouteDetailsStep } from '../../common/components/RouteDetailsStep.js';
+import { RouteSelectionStep } from './steps/RouteSelectionStep.js';
+import { RouteProcessingStep } from './steps/RouteProcessingStep.js';
+import { RouteDetailsStep } from './steps/RouteDetailsStep.js';
 import { RouteBuildStep } from './steps/RouteBuildStep.js';
 import { notify } from '@hierarchidb/components';
 

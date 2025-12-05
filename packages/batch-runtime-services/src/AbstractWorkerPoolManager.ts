@@ -197,7 +197,12 @@ export abstract class AbstractWorkerPoolManager<
       this.onTaskSuccess(workerId, task, { taskId: task.id, success: true, data: result as any, duration } as TResult);
     } catch (error: any) {
       const duration = performance.now() - start;
-      this.onTaskFailure(workerId, task, { taskId: task.id, success: false, error: String(error), duration } as TResult);
+      this.onTaskFailure(workerId, task, {
+        taskId: task.id,
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        duration,
+      } as TResult);
     } finally {
       state.status = 'idle';
       state.currentTask = undefined;
@@ -223,7 +228,9 @@ export abstract class AbstractWorkerPoolManager<
 
     const pending = this.pendingTasks.get(task.id);
     if (pending) {
-      pending.reject(new Error((result as any).error ?? 'Task failed'));
+      const message =
+        (result as Partial<WorkerTaskResult>).error ?? 'Task failed';
+      pending.reject(new Error(message));
       this.pendingTasks.delete(task.id);
     }
   }

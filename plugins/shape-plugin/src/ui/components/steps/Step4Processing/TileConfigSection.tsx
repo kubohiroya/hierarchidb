@@ -1,0 +1,100 @@
+import React from 'react';
+import { Accordion, AccordionDetails, AccordionSummary, Chip, Grid, Slider, Stack, Typography } from '@mui/material';
+import { Layers as LayersIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
+import type { ProcessingConfig, TileProcessingConfig } from '../../../../common/shared/index.js';
+import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../../common/shared/index.js';
+
+type Props = {
+  config: ProcessingConfig;
+  disabled?: boolean;
+  onChange: (next: ProcessingConfig) => void;
+};
+
+export const TileConfigSection: React.FC<Props> = ({ config, disabled, onChange }) => {
+  const baseTileConfig: TileProcessingConfig = config.tileConfig ?? DEFAULT_PROCESSING_CONFIG.tileConfig!;
+
+  const update = (partial: Partial<ProcessingConfig>) => {
+    onChange(mergeProcessingConfig({ ...config, ...partial }));
+  };
+
+  return (
+    <Accordion>
+      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+        <Stack direction="row" spacing={2} alignItems="center">
+          <LayersIcon color="primary" />
+          <Typography variant="subtitle1">Tile Generation</Typography>
+          <Chip label={`Workers: ${config?.tileConfig?.workers ?? 2}`} size="small" variant="outlined" />
+        </Stack>
+      </AccordionSummary>
+      <AccordionDetails>
+        <Grid container spacing={3}>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Typography gutterBottom>Tile Workers</Typography>
+            <Slider
+              value={baseTileConfig.workers ?? 2}
+              onChange={(_, value) => {
+                const workers = value as number;
+                update({
+                  tileConfig: {
+                    ...baseTileConfig,
+                    workers,
+                  },
+                });
+              }}
+              min={1}
+              max={8}
+              step={1}
+              marks={[{ value: 1, label: '1' }, { value: 4, label: '4' }, { value: 8, label: '8' }]}
+              valueLabelDisplay="auto"
+              disabled={disabled}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Typography gutterBottom>Max Zoom Level</Typography>
+            <Slider
+              value={baseTileConfig.maxZoom ?? 12}
+              onChange={(_, value) => {
+                const maxZoom = value as number;
+                update({
+                  tileConfig: {
+                    ...baseTileConfig,
+                    maxZoom,
+                  },
+                });
+              }}
+              min={8}
+              max={18}
+              step={1}
+              marks={[{ value: 8, label: '8' }, { value: 12, label: '12' }, { value: 18, label: '18' }]}
+              valueLabelDisplay="auto"
+              disabled={disabled}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Typography gutterBottom>Tile Buffer Size (px)</Typography>
+            <Slider
+              value={baseTileConfig.bufferSize ?? 256}
+              onChange={(_, value) => {
+                const bufferSize = value as number;
+                update({
+                  tileConfig: {
+                    ...baseTileConfig,
+                    bufferSize,
+                  },
+                });
+              }}
+              min={0}
+              max={512}
+              step={32}
+              marks={[{ value: 0, label: '0' }, { value: 256, label: '256' }, { value: 512, label: '512' }]}
+              valueLabelDisplay="auto"
+              disabled={disabled}
+            />
+          </Grid>
+        </Grid>
+      </AccordionDetails>
+    </Accordion>
+  );
+};

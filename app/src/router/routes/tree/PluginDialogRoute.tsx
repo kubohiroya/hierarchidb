@@ -4,7 +4,6 @@
  */
 
 import { NodeAction, type NodeId, type TreeId } from '@hierarchidb/common-types';
-import { getWorkerClientHook } from '@hierarchidb/ui-worker-provider';
 import { PluginDialogHost } from '@hierarchidb/ui-plugin-shell/plugin-ui-host';
 import { useLoaderData, useLocation, useNavigate } from '@tanstack/react-router';
 import React from 'react';
@@ -56,7 +55,11 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
   // Parse query params for additional context
   const searchParams = new URLSearchParams(location.searchStr ? location.searchStr.slice(1) : '');
   const stepParam = searchParams.get('step');
-  const currentStep = stepParam ? parseInt(stepParam, 10) - 1 : 0; // Convert to 0-based index
+  // Only change initialStep when step actually changes; memoize to avoid re-render ripple to background.
+  const currentStep = React.useMemo(
+    () => (stepParam ? parseInt(stepParam, 10) - 1 : 0),
+    [stepParam]
+  ); // Convert to 0-based index
 
   // Determine mode based on action with guard:
   // If action=create but target node already exists (canonical), treat as edit.

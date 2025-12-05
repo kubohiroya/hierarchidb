@@ -23,105 +23,122 @@ export interface EntityAdapterOptions<TEntity> {
   /**
    * Optional hook when creating a draft node.
    */
-  finalizeDraft?(draft: Partial<TEntity>, treeNodeId: NodeId): TEntity;
+  finalizeDraft?(draft: Partial<TEntity>, treeNodeId: NodeId): Partial<TEntity>;
 }
-/*
-export function createEntityDraftAdapter<TEntity>(
-  options: EntityAdapterOptions<TEntity>,
-): EntityDraftAdapter<TEntity> {
-  const ensureTimestamp = (value: number | undefined, fallback: () => number): Timestamp => (
-    (value ?? fallback()) as Timestamp
-  );
-*/
-  /*
-  const buildDraftBase = (
-    //treeNodeId: NodeId,
-    draft: Partial<TEntity>,
-    meta: {
-      createdAt?: number;
-      updatedAt?: number;
-      originalVersion?: number;
-    },
-  ): Partial<TEntity> => {
-    const createdAt = ensureTimestamp(meta.createdAt, () => Date.now());
-    const updatedAt = ensureTimestamp(meta.updatedAt, () => createdAt);
-    return {
-      draft,
-      createdAt,
-      updatedAt,
-      originalVersion: meta.originalVersion,
-    };
-  };
 
-  const markDraftUpdated = (
-    draft: Partial<TEntity>,
-    updates: Partial<TEntity>,
-    timestamp: Timestamp = Date.now() as Timestamp,
-  ): Partial<TEntity> => ({
-    ...draft,
-    draft: { ...draft, ...updates },
-    updatedAt: timestamp,
-  });
+type MetaFields = {
+  id?: NodeId;
+  nodeId?: NodeId;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+  version?: number;
+};
 
-  const buildDraft = (
-    treeNodeId: NodeId,
-    draft: Partial<TEntity>,
-    meta: {
-      createdAt?: number;
-      updatedAt?: number;
-      originalVersion?: number;
-    },
-  ): Partial<TEntity> => {
-    const createdAt = ensureTimestamp(meta.createdAt, () => Date.now());
-    const updatedAt = ensureTimestamp(meta.updatedAt, () => createdAt);
+type DraftEnvelope<TEntity> = Partial<TEntity> & {
+  treeNodeId: NodeId;
+  draft: Partial<TEntity>;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  originalVersion?: number;
+};
 
-    const base = buildDraftBase(
-      treeNodeId,
-      {
-        ...draft,
-        createdAt,
-        updatedAt,
-      },
-      {
-        createdAt,
-        updatedAt,
-        originalVersion: meta.originalVersion,
-      },
-    );
+const ensureTimestamp = (value: number | undefined, fallback: () => number): Timestamp =>
+  (value ?? fallback()) as Timestamp;
 
-    return {
-      ...base,
-      ...draft,
-    } as Partial<TEntity>;
-  };
+const resolveNodeId = <TEntity>(payload: Partial<TEntity>, entity: Partial<TEntity>): NodeId => {
+  const fromPayload = (payload as Partial<MetaFields>).nodeId ?? (payload as Partial<MetaFields>).id;
+  const fromEntity = (entity as Partial<MetaFields>).nodeId ?? (entity as Partial<MetaFields>).id;
+  return (fromPayload ?? fromEntity ?? '') as NodeId;
+};
 
+const extractMeta = <T>(source: Partial<T>): MetaFields => ({
+  id: (source as Partial<MetaFields>).id,
+  nodeId: (source as Partial<MetaFields>).nodeId,
+  createdAt: (source as Partial<MetaFields>).createdAt,
+  updatedAt: (source as Partial<MetaFields>).updatedAt,
+  version: (source as Partial<MetaFields>).version,
+});
+
+const buildDraft = <TEntity>(
+  treeNodeId: NodeId,
+  draftPayload: Partial<TEntity>,
+  meta: MetaFields
+): DraftEnvelope<TEntity> => {
+  const createdAt = ensureTimestamp(meta.createdAt, () => Date.now());
+  const updatedAt = ensureTimestamp(meta.updatedAt, () => createdAt);
   return {
-    fromEntity(entity: TEntity): Partial<TEntity> {
+    treeNodeId,
+    draft: { ...draftPayload },
+    createdAt,
+    updatedAt,
+    originalVersion: meta.version,
+    ...draftPayload,
+  };
+};
+
+const markDraftUpdated = <TEntity>(
+  draft: Partial<TEntity>,
+  updates: Partial<TEntity>,
+  timestamp: Timestamp = Date.now() as Timestamp
+): DraftEnvelope<TEntity> => {
+  const meta = extractMeta(draft);
+  const currentDraft =
+    (draft as Partial<{ draft?: Partial<TEntity> }>).draft ?? (draft as Partial<TEntity>);
+  const treeNodeId = meta.nodeId ?? meta.id ?? (draft as { treeNodeId?: NodeId }).treeNodeId ?? '' as NodeId;
+  return {
+    ...draft,
+    treeNodeId,
+    draft: { ...(currentDraft ?? {}), ...updates },
+    updatedAt: timestamp,
+    createdAt: ensureTimestamp(meta.createdAt, () => Date.now()),
+    originalVersion: meta.version,
+  };
+};
+
+const coerceDraftEnvelope = <TEntity>(
+  treeNodeId: NodeId,
+  value: Partial<TEntity>,
+  meta: MetaFields
+): DraftEnvelope<TEntity> => {
+  const metaFromValue = extractMeta(value);
+  const mergedMeta: MetaFields = {
+    ...meta,
+    ...metaFromValue,
+  };
+  const draftPayload =
+    (value as Partial<{ draft?: Partial<TEntity> }>).draft ?? (value as Partial<TEntity>);
+  return buildDraft(treeNodeId, draftPayload ?? {}, mergedMeta);
+};
+
+export function createEntityDraftAdapter<TEntity>(
+  options: EntityAdapterOptions<TEntity>
+): EntityDraftAdapter<TEntity> {
+  return {
+    fromEntity(entity: Partial<TEntity>): Partial<TEntity> {
       const draftPayload = options.draftFromEntity(entity);
-      const nodeId =
-        (draftPayload as { nodeId?: NodeId }).nodeId ??
-        (entity as { nodeId?: NodeId }).nodeId ??
-        (entity as any).id;
-      let draftWithMeta = buildDraft(nodeId, draftPayload, {
-        createdAt: (entity as any).createdAt,
-        updatedAt: (entity as any).updatedAt,
-        originalVersion: (entity as any).version,
-      });
+      const meta = extractMeta(entity);
+      const nodeId = resolveNodeId(draftPayload, entity);
+      let draftWithMeta = buildDraft(nodeId, draftPayload, meta);
       if (options.finalize) {
-        draftWithMeta = options.finalize(draftWithMeta, entity);
+        draftWithMeta = coerceDraftEnvelope(
+          nodeId,
+          options.finalize(draftWithMeta, entity),
+          meta
+        );
       }
       return draftWithMeta;
     },
 
     createDraft(treeNodeId: NodeId, overrides?: Partial<TEntity>): Partial<TEntity> {
       const draftPayload = options.draftDefaults(treeNodeId, overrides);
-      let draftWithMeta = buildDraft(treeNodeId, draftPayload, {
-        createdAt: (draftPayload as any)?.createdAt,
-        updatedAt: (draftPayload as any)?.updatedAt,
-        originalVersion: (draftPayload as any)?.version,
-      });
+      const meta = extractMeta(draftPayload);
+      let draftWithMeta = buildDraft(treeNodeId, draftPayload, meta);
       if (options.finalizeDraft) {
-        draftWithMeta = options.finalizeDraft(draftWithMeta, treeNodeId);
+        draftWithMeta = coerceDraftEnvelope(
+          treeNodeId,
+          options.finalizeDraft(draftWithMeta, treeNodeId),
+          meta
+        );
       }
       return draftWithMeta;
     },
@@ -129,10 +146,9 @@ export function createEntityDraftAdapter<TEntity>(
     merge(
       draft: Partial<TEntity>,
       updates: Partial<TEntity>,
-      timestamp: Timestamp = Date.now() as Timestamp,
+      timestamp: Timestamp = Date.now() as Timestamp
     ): Partial<TEntity> {
-      return markDraftUpdated(draft, updates, timestamp) as Partial<TEntity>;
+      return markDraftUpdated(draft, updates, timestamp);
     },
   };
 }
-   */

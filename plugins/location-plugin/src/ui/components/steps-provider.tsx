@@ -2,11 +2,11 @@ import { PluginStepRegistry, type StartBatchContext, type StepComponentProps } f
 import type { NodeId } from '@hierarchidb/common-types';
 import type { LocationEntity } from '../../common/types/index.js';
 import { translations as locationTranslations } from '../../common/i18n/index.js';
-import { LocationDataSourceStep } from '../../common/components/steps/LocationDataSourceStep.js';
-import { LocationLicenseStep } from '../../common/components/steps/LocationLicenseStep.js';
-import { LocationSelectionStep } from '../../common/components/steps/LocationSelectionStep.js';
-import { LocationBatchParametersStep } from '../../common/components/steps/LocationBatchParametersStep.js';
-import { LocationMapPreviewStep } from '../../common/components/steps/LocationMapPreviewStep.js';
+import { LocationDataSourceStep } from './steps/LocationDataSourceStep.js';
+import { LocationLicenseStep } from './steps/LocationLicenseStep.js';
+import { LocationSelectionStep } from './steps/LocationSelectionStep.js';
+import { LocationBatchParametersStep } from './steps/LocationBatchParametersStep.js';
+import { LocationMapPreviewStep } from './steps/LocationMapPreviewStep.js';
 import { LocationBuildStep } from './steps/LocationBuildStep.js';
 import { notify } from '@hierarchidb/components';
 import { listLocationPoints } from '../../services/pointRepository.js';

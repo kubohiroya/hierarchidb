@@ -29,7 +29,7 @@ export VITE_GITHUB_CLIENT_ID="354fd9072f37d7ebe63d"
 # ================================================================
 
 # BFF設定のデフォルト
-export VITE_BFF_BASE_URL="${VITE_BFF_BASE_URL:-http://localhost:8787/api/auth}"
+export VITE_BFF_BASE_URL="${VITE_BFF_BASE_URL:-https://hierarchidb-bff.kubohiroya.workers.dev}"
 
 # ルーティング設定のデフォルト
 export VITE_USE_HASH_ROUTING="${VITE_USE_HASH_ROUTING:-true}"
