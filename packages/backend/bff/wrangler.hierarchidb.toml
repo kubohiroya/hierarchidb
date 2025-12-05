@@ -97,17 +97,11 @@ name = "hierarchidb-bff"
 JWT_ISSUER = "hierarchidb-bff"
 SESSION_DURATION_HOURS = "48"
 ALLOWED_ORIGINS = """
-http://localhost:3000,
-http://localhost:4200,
-http://localhost:5173,
-http://127.0.0.1:3000,
-http://127.0.0.1:4200,
-http://127.0.0.1:5173,
 https://kubohiroya.github.io,
 https://hierarchidb.vercel.app,
 https://hierarchidb.netlify.app,
-https://hierarchidb-staging.vercel.app,
-https://hierarchidb-dev.vercel.app
+http://localhost:4200,
+http://127.0.0.1:4200
 """
 PRODUCTION_ORIGINS = "https://kubohiroya.github.io,https://hierarchidb.vercel.app"
 STAGING_ORIGINS = "https://hierarchidb-staging.vercel.app,https://hierarchidb-dev.vercel.app"
@@ -189,11 +183,15 @@ http://127.0.0.1:5173
 # - wrangler secret put GOOGLE_CLIENT_SECRET --env production
 # - wrangler secret put GITHUB_CLIENT_SECRET --env production
 # - wrangler secret put JWT_SECRET --env production
+# - wrangler secret put MICROSOFT_CLIENT_SECRET --env production
+# - wrangler secret put MICROSOFT_CLIENT_ID --env production (if not set as var)
 #
 # For development:
 # - wrangler secret put GOOGLE_CLIENT_SECRET --env development
 # - wrangler secret put GITHUB_CLIENT_SECRET --env development
 # - wrangler secret put JWT_SECRET --env development
+# - wrangler secret put MICROSOFT_CLIENT_SECRET --env development
+# - wrangler secret put MICROSOFT_CLIENT_ID --env development (if not set as var)
 #
 # Generate JWT_SECRET:
 # openssl rand -base64 32

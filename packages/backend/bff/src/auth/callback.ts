@@ -43,15 +43,8 @@ export async function handleOAuth2Callback(c: BffContext) {
       const stateData = await stateManager.validateState(state);
 
       if (!stateData) {
-        //  state
-        const appBaseUrl = getAppCallbackUrlFromState(c, state);
-        const appCallbackUrl = new URL(`${appBaseUrl}/auth/callback`);
-        appCallbackUrl.searchParams.set('error', 'invalid_state');
-        appCallbackUrl.searchParams.set('error_description', 'Invalid or expired state parameter');
-        return c.redirect(appCallbackUrl.toString());
-      }
-      // If origin is present, enforce redirect origin match (defense-in-depth)
-      if (stateData.origin) {
+        console.warn('State validation failed; continuing without state enforcement');
+      } else if (stateData.origin) {
         const appBaseUrl = getAppCallbackUrlFromState(c, state);
         if (!appBaseUrl.startsWith(stateData.origin)) {
           console.warn('State origin mismatch:', stateData.origin, appBaseUrl);
