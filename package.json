@@ -168,7 +168,7 @@
     "tsc-alias": "^1.8.16",
     "tsdown": "^0.14.2",
     "tsx": "^4.20.6",
-    "turbo": "^2.6.0",
+    "turbo": "^2.6.3",
     "typescript": "5.9.3",
     "vite": "5.4.19",
     "vite-plugin-checker": "^0.8.0",
@@ -201,7 +201,7 @@
       "type-fest@*": "0.21.3",
       "i18next": "22.5.0",
       "react-i18next": "12.3.1",
-      "@mui/icons-material": "^7.3.2",
+      "@mui/icons-material": "^7.3.6",
       "rollup": "4.50.1"
     },
     "ignoredBuiltDependencies": [

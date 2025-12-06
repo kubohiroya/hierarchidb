@@ -8,12 +8,19 @@ import { useTreeNodeUpdater } from './useTreeNodeUpdater.js';
 
 type DraftShape<TPayload extends object> = Partial<TPayload>;
 
-const isObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null;
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const shallowEqual = (a: unknown, b: unknown): boolean => {
   if (a === b) return true;
-  if (!isObject(a) || !isObject(b)) return false;
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i += 1) {
+      if (a[i] !== b[i]) return false;
+    }
+    return true;
+  }
+  if (!isRecord(a) || !isRecord(b)) return false;
   const aKeys = Object.keys(a);
   const bKeys = Object.keys(b);
   if (aKeys.length !== bKeys.length) return false;

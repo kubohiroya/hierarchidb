@@ -3,14 +3,13 @@ import {
   type DialogDisplayMode,
   FRAME_CONSTANTS,
   getViewportSize,
-  type HeadlessContentRenderProps,
   type HeadlessFooterRenderProps,
   type HeadlessHeaderRenderProps,
   type HeadlessMultiStepDialogProps,
   initialPosition,
-  MultiDialogFrame,
-  type MultiDialogPosition,
-  type MultiDialogSize,
+  MultiStepDialogFrame,
+  type MultiStepDialogPosition,
+  type MultiStepDialogSize,
   normalizeDialogState,
   useMultiStepDialogContext,
 } from '@hierarchidb/ui-plugin-shell/ui-dialog';
@@ -130,7 +129,7 @@ export type TrashDialogData = LoadTreeReturn & {
 
 type TrashStepData = Record<string, never>;
 
-const DEFAULT_SIZE: MultiDialogSize = { width: 960, height: 640 };
+const DEFAULT_SIZE: MultiStepDialogSize = { width: 960, height: 640 };
 
 function createTreeNodeMap(nodes: TreeNode[] | undefined): Map<string, TreeNode> {
   const map = new Map<string, TreeNode>();
@@ -144,15 +143,15 @@ function createTreeNodeMap(nodes: TreeNode[] | undefined): Map<string, TreeNode>
 
 function useTrashFrameState(initialMode: DialogDisplayMode = 'normal') {
   const [displayMode, setDisplayMode] = useState<DialogDisplayMode>(initialMode);
-  const [dialogSize, setDialogSize] = useState<MultiDialogSize>(DEFAULT_SIZE);
-  const [dialogPosition, setDialogPosition] = useState<MultiDialogPosition>(
+  const [dialogSize, setDialogSize] = useState<MultiStepDialogSize>(DEFAULT_SIZE);
+  const [dialogPosition, setDialogPosition] = useState<MultiStepDialogPosition>(
     initialPosition(DEFAULT_SIZE, getViewportSize())
   );
   const sizeRef = useRef(dialogSize);
   const positionRef = useRef(dialogPosition);
 
   const applyNormalizedState = useCallback(
-    (size: MultiDialogSize, position: MultiDialogPosition) => {
+    (size: MultiStepDialogSize, position: MultiStepDialogPosition) => {
       sizeRef.current = size;
       positionRef.current = position;
       setDialogSize(size);
@@ -162,7 +161,7 @@ function useTrashFrameState(initialMode: DialogDisplayMode = 'normal') {
   );
 
   const normalizeFromState = useCallback(
-    (mode: DialogDisplayMode, nextSize?: MultiDialogSize, nextPosition?: MultiDialogPosition) => {
+    (mode: DialogDisplayMode, nextSize?: MultiStepDialogSize, nextPosition?: MultiStepDialogPosition) => {
       const viewport = getViewportSize();
       const baseSize = nextSize ?? sizeRef.current;
       const basePosition = nextPosition ?? positionRef.current;
@@ -200,7 +199,7 @@ function useTrashFrameState(initialMode: DialogDisplayMode = 'normal') {
     (mode: DialogDisplayMode) => {
       const viewport = getViewportSize();
       if (mode === 'full-screen') {
-        const size: MultiDialogSize = {
+        const size: MultiStepDialogSize = {
           width: Math.max(viewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
           height: Math.max(viewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
         };
@@ -241,7 +240,7 @@ function useTrashFrameState(initialMode: DialogDisplayMode = 'normal') {
   );
 
   const handleSizeChange = useCallback(
-    (size?: MultiDialogSize) => {
+    (size?: MultiStepDialogSize) => {
       if (!size) return;
       const normalized = normalizeDialogState(size, positionRef.current, getViewportSize(), {
         enforceTopLeftMargin: displayMode === 'normal',
@@ -254,7 +253,7 @@ function useTrashFrameState(initialMode: DialogDisplayMode = 'normal') {
   );
 
   const handlePositionChange = useCallback(
-    (position?: MultiDialogPosition) => {
+    (position?: MultiStepDialogPosition) => {
       if (!position) return;
       const normalized = normalizeDialogState(dialogSize, position, getViewportSize(), {
         enforceTopLeftMargin: displayMode === 'normal',
@@ -744,18 +743,6 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
   const [loading, setLoading] = useState(false);
   const [hasDraftsInView, setHasDraftsInView] = useState(false);
 
-  const stepComponents = useMemo(
-    () =>
-      [
-        {
-          id: 'trash-root',
-          label: t('dialogs.trash.stepLabel'),
-          component: () => null,
-        },
-      ] as const,
-    [t]
-  );
-
   const nodeMap = useMemo(() => {
     const map = createTreeNodeMap(data.trashItems);
     if (data.trashRootNode?.id) {
@@ -1036,6 +1023,56 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
     });
   }, []);
 
+  const stepComponents = useMemo(
+    () =>
+      [
+        {
+          id: 'trash-root',
+          label: t('dialogs.trash.stepLabel'),
+          component: () => (
+            <TrashDialogContent
+              loading={loading}
+              treeData={treeData}
+              columns={columns}
+              breadcrumbItems={breadcrumbItems}
+              selectedIds={selectedIds}
+              setSelectedIds={(updater) => setSelectedIds(updater)}
+              treeId={treeId}
+              pageNodeId={pageNodeId}
+              trashViewRootId={trashViewRootId}
+              searchTerm={searchTerm}
+              onSearchTermChange={setSearchTerm}
+              mode={mode}
+              onRestore={handleRestore}
+              expandedIds={expandedIds}
+              onToggleExpand={onToggleExpand}
+              nodeIndex={nodeIndex}
+              hasDraftsInView={hasDraftsInView}
+            />
+          ),
+        },
+      ] as const,
+    [
+      breadcrumbItems,
+      columns,
+      expandedIds,
+      handleRestore,
+      hasDraftsInView,
+      loading,
+      mode,
+      nodeIndex,
+      onToggleExpand,
+      pageNodeId,
+      searchTerm,
+      selectedIds,
+      setSearchTerm,
+      t,
+      trashViewRootId,
+      treeData,
+      treeId,
+    ]
+  );
+
   const headlessProps: HeadlessMultiStepDialogProps<TrashStepData> = useMemo(
     () => ({
       open: true,
@@ -1060,27 +1097,6 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
               ? t('dialogs.trash.title.restore')
               : t('dialogs.trash.title.empty')
           }
-        />
-      ),
-      renderContent: (_props: HeadlessContentRenderProps<TrashStepData>) => (
-        <TrashDialogContent
-          loading={loading}
-          treeData={treeData}
-          columns={columns}
-          breadcrumbItems={breadcrumbItems}
-          selectedIds={selectedIds}
-          setSelectedIds={(updater) => setSelectedIds(updater)}
-          treeId={treeId}
-          pageNodeId={pageNodeId}
-          trashViewRootId={trashViewRootId}
-          searchTerm={searchTerm}
-          onSearchTermChange={setSearchTerm}
-          mode={mode}
-          onRestore={handleRestore}
-          expandedIds={expandedIds}
-          onToggleExpand={onToggleExpand}
-          nodeIndex={nodeIndex}
-          hasDraftsInView={hasDraftsInView}
         />
       ),
       renderFooter: (props: HeadlessFooterRenderProps<TrashStepData>) => (
@@ -1132,7 +1148,7 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
     [frameState.displayMode]
   );
 
-  return <MultiDialogFrame headlessProps={headlessProps} frameSx={frameSx} />;
+  return <MultiStepDialogFrame headlessProps={headlessProps} frameSx={frameSx} />;
 }
 
 export default TrashDialog;

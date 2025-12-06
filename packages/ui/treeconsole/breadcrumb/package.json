@@ -29,7 +29,7 @@
     "@tanstack/react-router": "^1.132.33",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
-    "@mui/icons-material": "^7.3.2",
+    "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.2",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
@@ -45,7 +45,7 @@
     "@tanstack/react-router": "^1.132.33",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
-    "@mui/icons-material": "^7.3.2",
+    "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.2",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0"

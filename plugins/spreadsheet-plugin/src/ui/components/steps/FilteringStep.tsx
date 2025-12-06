@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { FC } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { StepComponentProps } from '@hierarchidb/plugin-base';
@@ -11,6 +11,26 @@ import { SPREADSHEET_NODE_TYPE } from '../../../common/constants.js';
 
 const coerceDialogData = (value: unknown): SpreadsheetEntity =>
   (typeof value === 'object' && value !== null ? (value as SpreadsheetEntity) : {});
+
+const shallowEqualFilters = (a?: TabularFilterRule[], b?: TabularFilterRule[]): boolean => {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    const left = a[i]!;
+    const right = b[i]!;
+    if (
+      left.id !== right.id ||
+      left.column !== right.column ||
+      left.operator !== right.operator ||
+      left.value !== right.value ||
+      left.enabled !== right.enabled
+    ) {
+      return false;
+    }
+  }
+  return true;
+};
 
 const FilteringStepContent: FC<{
   dialogData: SpreadsheetEntity;
@@ -151,7 +171,15 @@ export const FilteringStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
   setError,
 }) => {
   const dialogData = useMemo<SpreadsheetEntity>(() => coerceDialogData(data), [data]);
-  const memoizedFilters = useMemo<TabularFilterRule[]>(() => dialogData.filters ?? [], [dialogData.filters]);
+  const filtersRef = useRef<TabularFilterRule[]>(dialogData.filters ?? []);
+  const memoizedFilters = useMemo<TabularFilterRule[]>(() => {
+    const next = dialogData.filters ?? [];
+    if (shallowEqualFilters(filtersRef.current, next)) {
+      return filtersRef.current;
+    }
+    filtersRef.current = next;
+    return next;
+  }, [dialogData.filters]);
   const tabularApi = useMemo(() => createSpreadsheetTabularApi(SPREADSHEET_NODE_TYPE), []);
 
   return (

@@ -7,8 +7,8 @@ import {
   positionsEqual,
   sizesEqual,
   type DialogDisplayMode,
-  type MultiDialogPosition,
-  type MultiDialogSize,
+  type MultiStepDialogPosition,
+  type MultiStepDialogSize,
 } from '@hierarchidb/ui-dialog';
 import {
   getPeerDialogPosition,
@@ -20,9 +20,9 @@ import {
 } from '@hierarchidb/plugin-base';
 import type { PeerDisplayMode } from '@hierarchidb/plugin-base';
 
-export const DEFAULT_SIZE: MultiDialogSize = { width: 960, height: 640 };
+export const DEFAULT_SIZE: MultiStepDialogSize = { width: 960, height: 640 };
 export const DEFAULT_VIEWPORT = { width: 1280, height: 720 } as const;
-export const DEFAULT_POSITION: MultiDialogPosition = initialPosition(DEFAULT_SIZE, DEFAULT_VIEWPORT);
+export const DEFAULT_POSITION: MultiStepDialogPosition = initialPosition(DEFAULT_SIZE, DEFAULT_VIEWPORT);
 
 export const clampIndex = (index: number, length: number) => {
   if (length <= 0) return 0;
@@ -43,8 +43,8 @@ export const hydratePeerDialogState = async ({
   nodeType: string;
   nodeId: string;
 }): Promise<{
-  size: MultiDialogSize;
-  position: MultiDialogPosition;
+  size: MultiStepDialogSize;
+  position: MultiStepDialogPosition;
   displayMode: PeerDisplayMode;
 }> => {
   const viewportSize = getViewportSize();
@@ -77,8 +77,8 @@ export const persistPeerDialogState = ({
 }: {
   nodeType: string;
   nodeId: string;
-  size: MultiDialogSize;
-  position: MultiDialogPosition;
+  size: MultiStepDialogSize;
+  position: MultiStepDialogPosition;
   displayMode: DialogDisplayMode;
 }): Promise<void> => 
   (async () => {
@@ -95,12 +95,12 @@ export const normalizeAndUpdateSize = ({
   setDialogSize,
   setDialogPosition,
 }: {
-  nextSize?: MultiDialogSize;
-  currentSize: MultiDialogSize;
-  dialogPositionRef: React.MutableRefObject<MultiDialogPosition>;
+  nextSize?: MultiStepDialogSize;
+  currentSize: MultiStepDialogSize;
+  dialogPositionRef: React.MutableRefObject<MultiStepDialogPosition>;
   displayMode: DialogDisplayMode;
-  setDialogSize: (size: MultiDialogSize) => void;
-  setDialogPosition: (pos: MultiDialogPosition) => void;
+  setDialogSize: (size: MultiStepDialogSize) => void;
+  setDialogPosition: (pos: MultiStepDialogPosition) => void;
 }) => {
   if (!nextSize) return;
   const normalized = normalizeDialogState(
@@ -127,11 +127,11 @@ export const normalizeAndUpdatePosition = ({
   setDialogSize,
   setDialogPosition,
 }: {
-  nextPos?: MultiDialogPosition;
-  dialogSizeRef: React.MutableRefObject<MultiDialogSize>;
+  nextPos?: MultiStepDialogPosition;
+  dialogSizeRef: React.MutableRefObject<MultiStepDialogSize>;
   displayMode: DialogDisplayMode;
-  setDialogSize: (size: MultiDialogSize) => void;
-  setDialogPosition: (pos: MultiDialogPosition) => void;
+  setDialogSize: (size: MultiStepDialogSize) => void;
+  setDialogPosition: (pos: MultiStepDialogPosition) => void;
 }) => {
   if (!nextPos) return;
   const normalized = normalizeDialogState(

@@ -3,12 +3,12 @@ import type { NodeId } from './id-types.js';
 // Minimal dialog layout/display contracts (duplicated to avoid UI package dependency cycles)
 export type DialogDisplayMode = 'normal' | 'maximize' | 'full-screen';
 
-export interface MultiDialogPosition {
+export interface MultiStepDialogPosition {
   x: number;
   y: number;
 }
 
-export interface MultiDialogSize {
+export interface MultiStepDialogSize {
   width: number;
   height: number;
 }
@@ -76,9 +76,9 @@ export interface DialogStateSubscribeInput extends DialogStateRequestInput {
  */
 export interface DialogViewState {
   /** Dialog size (pixels) */
-  size: MultiDialogSize;
+  size: MultiStepDialogSize;
   /** Dialog position (pixels) */
-  position: MultiDialogPosition;
+  position: MultiStepDialogPosition;
   /** Current display mode (e.g. normal/full-screen) */
   displayMode: DialogDisplayMode;
   /** Current active step index */

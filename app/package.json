@@ -38,7 +38,7 @@
     "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*",
     "@hierarchidb/ui-plugin-shell": "workspace:*",
-    "@mui/icons-material": "^7.3.2",
+    "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.2",
     "@tanstack/react-router": "^1.132.33",
     "comlink": "^4.4.2",

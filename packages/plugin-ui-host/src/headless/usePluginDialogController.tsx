@@ -22,13 +22,13 @@ import { useTreeNodeUpdater, type TreeNodeUpdaterState } from '@hierarchidb/plug
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type {
   DialogDisplayMode,
-  MultiDialogPosition,
-  MultiDialogSize,
+  MultiStepDialogPosition,
+  MultiStepDialogSize,
   StepComponentDescriptor,
   StepNavigationEvent,
 } from '@hierarchidb/ui-dialog';
 import {
-  type HeadlessContentRenderProps,
+  MultiStepDialogContent,
   type HeadlessMultiStepDialogProps,
 } from '@hierarchidb/ui-dialog';
 import {
@@ -634,32 +634,20 @@ export function usePluginDialogController(
     [dialogTitle, headerSubtitle, icon, workerDialogState]
   );
 
-  const renderContent = useCallback(
-    (propsContent: HeadlessContentRenderProps<Partial<PluginDefinedEntity>>) => {
-      const descriptor = propsContent.steps[propsContent.activeStepIndex];
-      if (!descriptor) return null;
-      const StepComp = descriptor.component;
-      return (
-        <Box
-          sx={(theme) => ({
-            flex: 1,
-            overflow: 'auto',
-            padding: theme.spacing(2),
-            backgroundColor: theme.palette.background.default,
-          })}
-          ref={dialogRef}
-        >
-          <StepComp
-            stepIndex={propsContent.activeStepIndex}
-            stepId={descriptor.id}
-            label={descriptor.label}
-            data={propsContent.stepData}
-            onChange={propsContent.onStepDataChange}
-            invalidMessages={propsContent.invalidMessageMap}
-          />
-        </Box>
-      );
-    },
+  const ContentComponent: HeadlessMultiStepDialogProps<Partial<PluginDefinedEntity>>['ContentComponent'] = useCallback(
+    () => (
+      <Box
+        sx={(theme) => ({
+          flex: 1,
+          overflow: 'auto',
+          padding: theme.spacing(2),
+          backgroundColor: theme.palette.background.default,
+        })}
+        ref={dialogRef}
+      >
+        <MultiStepDialogContent />
+      </Box>
+    ),
     [dialogRef]
   );
 
@@ -802,15 +790,15 @@ export function usePluginDialogController(
     },
     isDirty: hasUnsavedChanges,
     position: dialogPosition,
-    onPositionChange: handlePositionChange as (next?: MultiDialogPosition) => void,
+    onPositionChange: handlePositionChange as (next?: MultiStepDialogPosition) => void,
     size: dialogSize,
-    onSizeChange: handleSizeChange as (next?: MultiDialogSize) => void,
+    onSizeChange: handleSizeChange as (next?: MultiStepDialogSize) => void,
     displayMode,
     onDisplayModeChange: (mode: DialogDisplayMode) => {
       void transitionDisplayMode(mode);
     },
     HeaderComponent,
-    renderContent,
+    ContentComponent,
     FooterComponent,
   };
 

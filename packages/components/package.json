@@ -21,7 +21,7 @@
   },
   "dependencies": {},
   "peerDependencies": {
-    "@mui/icons-material": "^7.3.2",
+    "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.2",
     "@tanstack/react-router": "^1.132.33",
     "react": "^18.3.1",
@@ -35,7 +35,7 @@
   "author": "HierarchiDB Team",
   "license": "MIT",
   "devDependencies": {
-    "@mui/icons-material": "^7.3.2",
+    "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.2",
     "@tanstack/react-router": "^1.132.33",
     "react": "^18.3.1",

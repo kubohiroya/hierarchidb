@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { useMultiStepDialogContext } from './context.js';
+import { useMultiStepDialogContext } from '../hooks/useMultiStepDialogContext.js';
 import type { HeadlessFooterRenderProps, HeadlessMultiStepDialogFooterProps } from './types.js';
 
 function buildFooterRenderProps<TData>(ctx: ReturnType<typeof useMultiStepDialogContext<TData>>): HeadlessFooterRenderProps<TData> {

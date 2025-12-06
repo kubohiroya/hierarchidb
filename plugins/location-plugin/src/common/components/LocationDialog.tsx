@@ -5,12 +5,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId, TreeId } from '@hierarchidb/common-types';
-import { Box, Button, Grid, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import { LocationOn } from '@mui/icons-material';
 import type {
   LocationDialogProps,
   LocationDraft,
-  LocationDataSource,
   LocationEntity,
 } from '../types/index.js';
 import { useTranslation } from '../i18n/index.js';
@@ -41,13 +40,12 @@ import {
   initialPosition,
   sizesEqual,
   positionsEqual,
-  type HeadlessContentRenderProps,
   type HeadlessFooterRenderProps,
   type HeadlessHeaderRenderProps,
   type HeadlessMultiStepDialogProps,
   type DialogDisplayMode,
-  type MultiDialogPosition,
-  type MultiDialogSize,
+  type MultiStepDialogPosition,
+  type MultiStepDialogSize,
   type StepNavigationEvent,
   type StepComponentDescriptor,
 } from '@hierarchidb/ui-dialog';
@@ -62,7 +60,7 @@ import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worke
 import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 import { useDialogViewState } from '@hierarchidb/plugin-base';
 
-const buildDefaultFrame = (): { size: MultiDialogSize; position: MultiDialogPosition } => {
+const buildDefaultFrame = (): { size: MultiStepDialogSize; position: MultiStepDialogPosition } => {
   const viewport = getViewportSize();
   const size = getPresetSize('normal', viewport);
   const position = initialPosition(size, viewport);
@@ -173,8 +171,8 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
 
   useEffect(() => () => { void discardDraft().catch(() => {}); }, [discardDraft]);
 
-  const dialogSizeRef = useRef<MultiDialogSize>(dialogViewState.size);
-  const dialogPositionRef = useRef<MultiDialogPosition>(dialogViewState.position);
+  const dialogSizeRef = useRef<MultiStepDialogSize>(dialogViewState.size);
+  const dialogPositionRef = useRef<MultiStepDialogPosition>(dialogViewState.position);
   const vectorServiceRef = useRef<LocationVectorTileService | null>(null);
   const { size: dialogSize, position: dialogPosition, displayMode, activeStepIndex } = dialogViewState;
   const [isBatchStarting, setIsBatchStarting] = useState(false);
@@ -193,7 +191,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     referencingPlugins: [],
   }), [dialogData.tabularSourceId]);
 
-  const applyNormalizedState = useCallback((size: MultiDialogSize, position: MultiDialogPosition) => {
+  const applyNormalizedState = useCallback((size: MultiStepDialogSize, position: MultiStepDialogPosition) => {
     dialogSizeRef.current = size;
     dialogPositionRef.current = position;
     updateDialogViewState({ patch: { size, position } });
@@ -443,18 +441,13 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
   const enabledStepIndices = useMemo(() => stepComponents.map((_, index) => index), [stepComponents]);
   const committableStepIndices = useMemo(() => [stepComponents.length - 1], [stepComponents.length]);
 
-  const resolveDataSourceLabel = useCallback((value?: LocationDataSource) => {
-    if (!value) return '—';
-    return translations.dataSources?.[value] ?? value;
-  }, [translations.dataSources]);
-
   const canStartBatch = Boolean(dialogData.treeNodeId && dialogData.draft?.licenseAgreement && dialogData.draft?.dataSource);
 
   const transitionDisplayMode = useCallback((mode: DialogDisplayMode) => {
     const viewport = getViewportSize();
 
     if (mode === 'full-screen') {
-      const size: MultiDialogSize = {
+      const size: MultiStepDialogSize = {
         width: Math.max(viewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
         height: Math.max(viewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
       };
@@ -500,7 +493,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     onClose();
   }, [discardDraft, onClose]);
 
-  const handleSizeChange = useCallback((next?: MultiDialogSize) => {
+  const handleSizeChange = useCallback((next?: MultiStepDialogSize) => {
     if (!next) return;
     const normalized = normalizeDialogState(next, dialogPositionRef.current, getViewportSize(), {
       enforceTopLeftMargin: displayMode === 'normal',
@@ -512,7 +505,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     }
   }, [applyNormalizedState, displayMode]);
 
-  const handlePositionChange = useCallback((next?: MultiDialogPosition) => {
+  const handlePositionChange = useCallback((next?: MultiStepDialogPosition) => {
     if (!next) return;
     const normalized = normalizeDialogState(dialogSizeRef.current, next, getViewportSize(), {
       enforceTopLeftMargin: displayMode === 'normal',
@@ -562,56 +555,6 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
       </Button>
     </Box>
   ), [mode, translations.dialog.createTitle, translations.dialog.datasetDescription, translations.dialog.editTitle]);
-
-  const renderContent: HeadlessMultiStepDialogProps<LocationDraft>['renderContent'] = useCallback((propsContent: HeadlessContentRenderProps<LocationDraft>) => {
-    const ActiveComponent = propsContent.activeStep?.component;
-    if (!ActiveComponent) return null;
-
-    const draft = propsContent.stepData?.draft ?? {};
-
-    const dataSourceKey = (draft.dataSource as LocationDataSource) ?? 'openstreetmap';
-    const licenseAgreementValue = Boolean(draft.licenseAgreement);
-    const concurrentDownloadsValue = draft.concurrentDownloads ?? 2;
-    const selectionMatrix = draft.selectionMatrix ?? [];
-    const selectionCount = selectionMatrix.reduce((count: number, row: boolean[]) => (
-      count + row.filter(Boolean).length
-    ), 0);
-
-    return (
-      <Box sx={{ pt: 2, px: 2 }}>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          {translations.dialog.datasetDescription}
-        </Typography>
-        <Grid container columnSpacing={2} sx={{ mb: 3 }} columns={{ xs: 12 }}>
-          <Grid size={{ xs: 12, md: 3 }}>
-            <Typography variant="caption" color="text.secondary">{translations.dialog.dataSourceLabel}</Typography>
-            <Typography variant="body2">{resolveDataSourceLabel(dataSourceKey)}</Typography>
-          </Grid>
-          <Grid size={{ xs: 12, md: 3 }}>
-            <Typography variant="caption" color="text.secondary">{translations.dialog.licenseAgreementLabel}</Typography>
-            <Typography variant="body2">{licenseAgreementValue ? translations.common.enabled : translations.common.disabled}</Typography>
-          </Grid>
-          <Grid size={{ xs: 12, md: 3 }}>
-            <Typography variant="caption" color="text.secondary">{translations.panel.concurrentDownloads}</Typography>
-            <Typography variant="body2">{concurrentDownloadsValue}</Typography>
-          </Grid>
-          <Grid size={{ xs: 12, md: 3 }}>
-            <Typography variant="caption" color="text.secondary">{translations.selection?.selectedCount ?? 'Selected entries'}</Typography>
-            <Typography variant="body2">{selectionCount}</Typography>
-          </Grid>
-        </Grid>
-
-        <ActiveComponent
-          stepIndex={propsContent.activeStepIndex ?? 0}
-          stepId={propsContent.activeStep?.id ?? ''}
-          label={propsContent.activeStep?.label ?? ''}
-          data={propsContent.stepData}
-          onChange={propsContent.onStepDataChange}
-          invalidMessages={propsContent.invalidMessageMap}
-        />
-      </Box>
-    );
-  }, [resolveDataSourceLabel, translations]);
 
   const renderFooter: HeadlessMultiStepDialogProps<LocationDraft>['renderFooter'] = useCallback((propsFooter: HeadlessFooterRenderProps<LocationDraft>) => {
     const canCommit = propsFooter.committableStepIndices.includes(propsFooter.activeStepIndex);
@@ -682,7 +625,6 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     onRequestClose: () => { void handleCancel(); },
     onRequestCommit: () => { void handleSave(); },
     renderHeader,
-    renderContent,
     renderFooter,
     size: dialogSize,
     onSizeChange: handleSizeChange,

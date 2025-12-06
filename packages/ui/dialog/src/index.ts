@@ -6,12 +6,13 @@ export * from './components/UnsavedChangesDialog.js';
 export * from './types/MultiStepDialog.types.js';
 export * from './types/stepper-dialog-types.js';
 export * from './headless/MultiStepDialog.js';
-export * from './headless/MultiDialogContent.js';
+export * from './headless/MultiStepDialogContent.js';
 export * from './headless/MultiStepDialogHeader.js';
 export * from './headless/MultiStepDialogFooter.js';
 export * from './headless/types.js';
-export * from './headless/context.js';
-export * from './headless/hooks.js';
+export * from './hooks/useMultiStepDialogContext.js';
 export * from './headless/frameHelpers.js';
-export * from './headless/MultiDialogFrame.js';
+export * from './headless/MultiStepDialogFrame.js';
 export * from './utils/dialogSurfaceColor.js';
+export { useDialogInteractionGuards } from './hooks/useDialogInteractionGuards.js';
+

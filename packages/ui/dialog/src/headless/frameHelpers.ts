@@ -2,8 +2,8 @@ import { useCallback } from 'react';
 import type { MutableRefObject } from 'react';
 import type {
   DialogDisplayMode,
-  MultiDialogPosition,
-  MultiDialogSize,
+  MultiStepDialogPosition,
+  MultiStepDialogSize,
 } from './types.js';
 
 export const FRAME_CONSTANTS = {
@@ -22,7 +22,7 @@ export function getViewportSize(): { width: number; height: number } {
 export function getPresetSize(
   mode: DialogDisplayMode,
   viewport: { width: number; height: number },
-): MultiDialogSize {
+): MultiStepDialogSize {
   switch (mode) {
     case 'maximize':
       return {
@@ -47,15 +47,15 @@ export function getPresetSize(
 }
 
 export function normalizeDialogState(
-  size: MultiDialogSize,
-  position: MultiDialogPosition,
+  size: MultiStepDialogSize,
+  position: MultiStepDialogPosition,
   viewport: { width: number; height: number },
   options: {
     enforceTopLeftMargin?: boolean;
     minPosition?: number;
     clampSizeToViewport?: boolean;
   } = {},
-): { size: MultiDialogSize; position: MultiDialogPosition } {
+): { size: MultiStepDialogSize; position: MultiStepDialogPosition } {
   const {
     enforceTopLeftMargin = true,
     minPosition = 0,
@@ -82,7 +82,7 @@ export function normalizeDialogState(
     ? Math.max(viewport.height - FRAME_CONSTANTS.NON_STANDARD_MARGIN, minY)
     : Number.POSITIVE_INFINITY;
 
-  const normalizedPosition: MultiDialogPosition = {
+  const normalizedPosition: MultiStepDialogPosition = {
     x: Math.min(Math.max(position.x, minX), maxX),
     y: Math.min(Math.max(position.y, minY), maxY),
   };
@@ -94,29 +94,29 @@ export function normalizeDialogState(
 }
 
 export function initialPosition(
-  size: MultiDialogSize,
+  size: MultiStepDialogSize,
   viewport: { width: number; height: number },
-): MultiDialogPosition {
+): MultiStepDialogPosition {
   const centeredX = Math.max((viewport.width - size.width) / 2, 0);
   const centeredY = Math.max((viewport.height - size.height) / 2, 0);
   return { x: centeredX, y: centeredY };
 }
 
-export function sizesEqual(a: MultiDialogSize, b: MultiDialogSize): boolean {
+export function sizesEqual(a: MultiStepDialogSize, b: MultiStepDialogSize): boolean {
   return Math.abs(a.width - b.width) < 0.5 && Math.abs(a.height - b.height) < 0.5;
 }
 
-export function positionsEqual(a: MultiDialogPosition, b: MultiDialogPosition): boolean {
+export function positionsEqual(a: MultiStepDialogPosition, b: MultiStepDialogPosition): boolean {
   return Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) < 0.5;
 }
 
 interface TransitionOptions {
   displayMode: DialogDisplayMode;
   setDisplayMode: (mode: DialogDisplayMode) => void;
-  sizeRef: MutableRefObject<MultiDialogSize>;
-  positionRef: MutableRefObject<MultiDialogPosition>;
-  onSizeChange?: (size: MultiDialogSize) => void;
-  onPositionChange?: (position: MultiDialogPosition) => void;
+  sizeRef: MutableRefObject<MultiStepDialogSize>;
+  positionRef: MutableRefObject<MultiStepDialogPosition>;
+  onSizeChange?: (size: MultiStepDialogSize) => void;
+  onPositionChange?: (position: MultiStepDialogPosition) => void;
   viewportResolver?: () => { width: number; height: number };
   nonStandardMargin?: number;
 }
@@ -136,7 +136,7 @@ export function useDialogDisplayTransition(options: TransitionOptions) {
   const handleDisplayModeChange = useCallback(async (mode: DialogDisplayMode) => {
     const viewport = viewportResolver();
 
-    const apply = (size: MultiDialogSize, position: MultiDialogPosition) => {
+    const apply = (size: MultiStepDialogSize, position: MultiStepDialogPosition) => {
       sizeRef.current = size;
       positionRef.current = position;
       onSizeChange?.(size);
@@ -144,7 +144,7 @@ export function useDialogDisplayTransition(options: TransitionOptions) {
     };
 
     if (mode === 'full-screen') {
-      const size: MultiDialogSize = {
+      const size: MultiStepDialogSize = {
         width: Math.max(viewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
         height: Math.max(viewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
       };

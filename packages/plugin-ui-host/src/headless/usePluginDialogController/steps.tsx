@@ -14,7 +14,7 @@ import type {
   StepValidationFn,
   StepComponentProps as HeadlessStepComponentProps,
 } from '@hierarchidb/ui-dialog';
-import { buildStepWorkingData, mergeDialogData, toRecord } from '../controller/step-guards.js';
+import { buildStepWorkingData, mergeDialogData, toRecord, isShallowEqualStepData } from '../controller/step-guards.js';
 import type {
   StepCompositionResult,
   BasicInfoMeta,
@@ -218,10 +218,15 @@ export function useDialogSteps({
   );
   const basicInfoValidationPayload = useMemo<TreeNodeMetadata>(() => basicInfo, [basicInfo]);
 
-  const dialogData = useMemo<Partial<PluginDefinedEntity>>(
-    () => mergeDialogData(basicInfo, draftData),
-    [basicInfo, draftData]
-  );
+  const dialogDataRef = useRef<Partial<PluginDefinedEntity>>({});
+  const dialogData = useMemo<Partial<PluginDefinedEntity>>(() => {
+    const merged = mergeDialogData(basicInfo, draftData);
+    if (isShallowEqualStepData(dialogDataRef.current, merged)) {
+      return dialogDataRef.current;
+    }
+    dialogDataRef.current = merged;
+    return merged;
+  }, [basicInfo, draftData]);
 
   const steps = useMemo<DialogStep[]>(() => {
     const result: DialogStep[] = [];

@@ -10,12 +10,12 @@ import { useTheme } from '@mui/material/styles';
 import type { SxProps, Theme } from '@mui/material/styles';
 import { createPortal } from 'react-dom';
 import { FRAME_CONSTANTS } from './frameHelpers.js';
-import { useDialogInteractionGuards } from './hooks.js';
 import { HeadlessMultiStepDialog } from './MultiStepDialog.js';
 import type { HeadlessMultiStepDialogProps } from './types.js';
 import { getDialogSurfaceColor } from '../utils/dialogSurfaceColor.js';
+import { useDialogInteractionGuards } from '../hooks/useDialogInteractionGuards.js';
 
-export interface MultiDialogFrameComponentProps<TData> {
+export interface MultiStepDialogFrameComponentProps<TData> {
   headlessProps: HeadlessMultiStepDialogProps<TData>;
   /** Additional styles applied to the dialog frame container. */
   frameSx?: SxProps<Theme>;
@@ -49,7 +49,7 @@ interface ResizeDirection {
   vertical: ResizeVertical;
 }
 
-export function MultiDialogFrame<TData>(props: MultiDialogFrameComponentProps<TData>) {
+export function MultiStepDialogFrame<TData>(props: MultiStepDialogFrameComponentProps<TData>) {
   const {
     headlessProps,
     frameSx,

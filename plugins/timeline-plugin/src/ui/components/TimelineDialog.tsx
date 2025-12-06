@@ -114,25 +114,6 @@ export function TimelineDialog(props: TimelineDialogProps) {
           </div>
         </header>
       ),
-      renderContent: (propsContent) => (
-        <div style={{ padding: 16 }}>
-          {(() => {
-            const active = headlessProps.stepComponents[propsContent.activeStepIndex];
-            if (!active?.component) return null;
-            const StepComponent = active.component;
-            return (
-              <StepComponent
-                stepIndex={propsContent.activeStepIndex}
-                stepId={active.id}
-                label={active.label}
-                data={headlessProps.stepData}
-                onChange={() => {}}
-                invalidMessages={headlessProps.invalidMessageMap ?? {}}
-              />
-            );
-          })()}
-        </div>
-      ),
       renderFooter: (propsFooter) => (
         <footer
           style={{

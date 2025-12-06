@@ -10,8 +10,6 @@ import {
   AccordionSummary,
   Alert,
   Box,
-  Button,
-  CircularProgress,
   GlobalStyles,
   Paper,
   Table,
@@ -22,7 +20,7 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { ExpandMore as ExpandMoreIcon, ArrowDownward as ArrowDownwardIcon } from '@mui/icons-material';
+import { ExpandMore as ExpandMoreIcon, Abc, Pin, CheckBox } from '@mui/icons-material';
 import { useTabularFilter } from '../hooks/useTabularFilter.js';
 import { TabularColumnInfo, TabularColumnType, TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { TabularDataResult, TabularFilterRule } from '../types/index.js';
@@ -64,12 +62,15 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
   onFiltersChanged,
   onPreviewData,
   pluginId,
-  maxPreviewRows = 100,
+  maxPreviewRows = Number.MAX_SAFE_INTEGER,
   initialFilters = [],
   onSyncFilters,
 }) => {
   const [filters, setFilters] = useState<TabularFilterRule[]>(initialFilters);
+  const [previewDirty, setPreviewDirty] = useState(false);
+  const [scrollTop, setScrollTop] = useState(0);
   const filtersRef = useRef(filters);
+  const tableContainerRef = useRef<HTMLDivElement | null>(null);
 
   const {
     previewData,
@@ -91,6 +92,25 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
     [hasMetadataColumns, previewData?.columns, tableMetadata.columns],
   );
   const previewColumns: TabularColumnInfo[] = hasPreviewColumns ? previewData!.columns : columnOptions;
+  const rowHeight = 44;
+  const totalRows = previewData?.rows.length ?? 0;
+  const containerHeight = tableContainerRef.current?.clientHeight ?? 420;
+  const overscan = 8;
+  const startIndex = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan);
+  const endIndex = Math.min(totalRows, Math.ceil((scrollTop + containerHeight) / rowHeight) + overscan);
+  const visibleRows = previewData ? previewData.rows.slice(startIndex, endIndex) : [];
+  const columnWidth = previewColumns.length > 0 ? `${100 / previewColumns.length}%` : 'auto';
+  const [tableMaxHeight, setTableMaxHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    const contentEl = tableContainerRef.current?.closest('.MuiDialogContent-root') as HTMLElement | null;
+    if (!contentEl) return;
+    const updateHeight = () => setTableMaxHeight(contentEl.clientHeight);
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(contentEl);
+    return () => observer.disconnect();
+  }, []);
 
   // filters のスナップショットを常に保持（アンマウント時の同期に利用）
   useEffect(() => {
@@ -136,6 +156,7 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
 
   const handleFiltersChange = useCallback((next: TabularFilterRule[]) => {
     setFilters(next);
+    setPreviewDirty(true);
   }, []);
 
   // 親に明示的に同期するためのヘルパー
@@ -158,13 +179,11 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
     const validation = validateFilters(enabledFilters);
     if (!validation.isValid) return;
     getFilteredPreview(enabledFilters);
+    setPreviewDirty(false);
   }, [enabledFilters, getFilteredPreview, syncFilters, validateFilters]);
 
   return (
-    <Box
-      sx={{ p: 3, maxHeight: '70vh', overflowY: 'auto', overscrollBehavior: 'contain' }}
-      onWheelCapture={(event) => event.stopPropagation()}
-    >
+    <Box sx={{ p: 3 }}>
       <GlobalStyles
         styles={{
           '.MuiPopover-root[aria-hidden="true"], .MuiModal-root[aria-hidden="true"]': {
@@ -180,18 +199,10 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
         onChange={handleFiltersChange}
         columns={columnOptions}
         operatorOptions={FILTER_OPERATORS}
+        onPreview={handlePreview}
+        previewDisabled={isLoading || enabledFilters.length === 0 || !previewDirty}
+        previewLoading={isLoading}
       />
-
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-        <Button
-          variant="outlined"
-          startIcon={isLoading ? <CircularProgress size={16} /> : <ArrowDownwardIcon />}
-          onClick={handlePreview}
-          disabled={isLoading || enabledFilters.length === 0}
-        >
-          {isLoading ? 'Loading Preview...' : 'Preview Filtered Data'}
-        </Button>
-      </Box>
 
       {error && (
         <Alert severity="error" sx={{ mb: 3, mt: 2 }}>
@@ -202,81 +213,75 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
       {previewData && (
         <Accordion defaultExpanded>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography variant="subtitle1">
-              Preview Results ({previewData.rows.length} rows)
-            </Typography>
+            <Box>
+              <Typography variant="subtitle1">
+                Preview Results ({previewData.rows.length} rows)
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Total Rows: {previewData.totalRows.toLocaleString()} • Filters Applied: {enabledFilters.length}
+              </Typography>
+            </Box>
           </AccordionSummary>
           <AccordionDetails>
             <TableContainer
               component={Paper}
               variant="outlined"
-              sx={{ maxHeight: 360, overflowY: 'auto', overscrollBehavior: 'contain' }}
+              ref={tableContainerRef}
+              sx={{
+                maxHeight: tableMaxHeight ? `${tableMaxHeight}px` : 'calc(100vh - 320px)',
+                height: tableMaxHeight ? `${tableMaxHeight}px` : 'calc(100vh - 320px)',
+                overflowY: 'auto',
+                overscrollBehavior: 'contain',
+              }}
               onWheelCapture={(event) => event.stopPropagation()}
+              onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
             >
-              <Table size="small">
+              <Table size="small" sx={{ tableLayout: 'fixed', width: '100%' }}>
                 <TableHead>
-                  <TableRow>
+                  <TableRow sx={{ display: 'table', tableLayout: 'fixed', width: '100%' }}>
                     {previewColumns.map((col: TabularColumnInfo) => (
-                      <TableCell key={col.name}>
-                        <Typography variant="subtitle2">{col.name}</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {normalizeType(col.type)}
+                      <TableCell key={col.name} sx={{ width: columnWidth, whiteSpace: 'nowrap' }}>
+                        <Typography variant="subtitle2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          {normalizeType(col.type) === 'number' && <Pin fontSize="small" />}
+                          {normalizeType(col.type) === 'boolean' && <CheckBox fontSize="small" />}
+                          {(normalizeType(col.type) === 'string' || normalizeType(col.type) === 'date') && <Abc fontSize="small" />}
+                          {col.name}
                         </Typography>
                       </TableCell>
                     ))}
                   </TableRow>
                 </TableHead>
-                <TableBody>
-                  {previewData.rows.map((row: Record<string, string | number | null>, index: number) => (
-                    <TableRow key={index}>
-                      {previewColumns.map((col: TabularColumnInfo) => (
-                        <TableCell key={col.name}>{row[col.name]?.toString() || ''}</TableCell>
-                      ))}
-                    </TableRow>
-                  ))}
+                <TableBody
+                  sx={{ display: 'block', position: 'relative', height: totalRows * rowHeight }}
+                >
+                  {visibleRows.map((row, virtualIdx) => {
+                    const absoluteIndex = startIndex + virtualIdx;
+                    const top = absoluteIndex * rowHeight;
+                    return (
+                      <TableRow
+                        key={absoluteIndex}
+                        sx={{
+                          position: 'absolute',
+                          top,
+                          left: 0,
+                          width: '100%',
+                          display: 'table',
+                          tableLayout: 'fixed',
+                        }}
+                      >
+                        {previewColumns.map((col: TabularColumnInfo) => (
+                          <TableCell key={`${absoluteIndex}-${col.name}`} sx={{ whiteSpace: 'nowrap', width: columnWidth }}>
+                            {row?.[col.name]?.toString() ?? ''}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </TableContainer>
-
-            {previewData.totalRows > previewData.rows.length && (
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                Showing first {previewData.rows.length} of {previewData.totalRows} rows
-              </Typography>
-            )}
           </AccordionDetails>
         </Accordion>
-      )}
-
-      {previewData && (
-        <Box
-          sx={{ mt: 3, p: 2, bgcolor: 'background.paper', borderRadius: 1, border: 1, borderColor: 'divider' }}
-        >
-          <Typography variant="subtitle2" gutterBottom>
-            Data Summary
-          </Typography>
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 2 }}>
-            <Box>
-              <Typography variant="body2" color="text.secondary">
-                Total Rows
-              </Typography>
-              <Typography variant="h6">{previewData.totalRows.toLocaleString()}</Typography>
-            </Box>
-            <Box>
-              <Typography variant="body2" color="text.secondary">
-                Total Columns
-              </Typography>
-              <Typography variant="h6">
-                {(previewData.columns?.length ?? columnOptions.length).toLocaleString()}
-              </Typography>
-            </Box>
-            <Box>
-              <Typography variant="body2" color="text.secondary">
-                Filters Applied
-              </Typography>
-              <Typography variant="h6">{enabledFilters.length}</Typography>
-            </Box>
-          </Box>
-        </Box>
       )}
     </Box>
   );

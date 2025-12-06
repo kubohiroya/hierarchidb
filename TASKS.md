@@ -292,7 +292,7 @@
 
 1576) Dialog Esc キーで Cancel/Close 同等動作（P0）
 - ブランチ: `fix/ui-dialog/esc-cancel`（sandbox 制約で main 上で作業）
-- 依存: `packages/ui/dialog/src/headless/MultiDialogFrame.tsx`、PluginDialogShell/TrashDialog 呼び出し元
+- 依存: `packages/ui/dialog/src/headless/MultiStepDialogFrame.tsx`、PluginDialogShell/TrashDialog 呼び出し元
 - 受け入れ基準（DoD）:
   - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
   - [ ] trash/create/edit 系ダイアログで Esc キー押下時に Cancel/Close ボタンと同じ処理が実行される
@@ -300,9 +300,9 @@
   - [ ] 未保存の変更がない場合は確認なしで閉じる
   - [ ] 既存のボタン操作やショートカットに回帰を生じさせない
 - チェックリスト:
-  - [ ] Esc キーのハンドリングを MultiDialogFrame など共通レイヤーに実装し、onRequestClose を経由させる
+  - [ ] Esc キーのハンドリングを MultiStepDialogFrame など共通レイヤーに実装し、onRequestClose を経由させる
   - [ ] 未保存・非未保存の両ケースで挙動を確認し、必要なら手動確認手順を運用ログへ記録する
-- ロールバック手順：本タスクで変更した `packages/ui/dialog/src/headless/MultiDialogFrame.tsx`（および関連差分があればそれら）を revert し、Esc 挙動が元に戻ることを確認する
+- ロールバック手順：本タスクで変更した `packages/ui/dialog/src/headless/MultiStepDialogFrame.tsx`（および関連差分があればそれら）を revert し、Esc 挙動が元に戻ることを確認する
 
 1562) hidb-core-db 全削除後の自動初期化失敗調査/修正（P0）
 - ブランチ: `fix/app/hidb-core-reinit`（sandbox 制約で main 上で作業）
@@ -4918,11 +4918,11 @@ P2:
   - ブランチ: `feat/ui-dialog/dialog-frame-unification`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/ui-dialog`, `@hierarchidb/runtime-ui-plugin-dialog`, `@hierarchidb/app`
   - 受け入れ基準（DoD）：
-    - [x] `@hierarchidb/ui-dialog` に共通フレームコンポーネント（仮称 `MultiDialogFrame`）を追加し、ドラッグ/リサイズ/BG スタイルを提供
+    - [x] `@hierarchidb/ui-dialog` に共通フレームコンポーネント（仮称 `MultiStepDialogFrame`）を追加し、ドラッグ/リサイズ/BG スタイルを提供
     - [x] プラグインダイアログと TrashDialog の双方が新フレームを利用し、背景色・インタラクションが統一される
     - [x] 既存のフレームロジックから重複コードを削除し、`pnpm --filter @hierarchidb/ui-dialog typecheck` / `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog lint` / `pnpm -C app typecheck` が成功
   - チェックリスト：
-    - [x] `MultiDialogFrame`（仮）を実装し、ドラッグ/リサイズ/position 監視 API を整理
+    - [x] `MultiStepDialogFrame`（仮）を実装し、ドラッグ/リサイズ/position 監視 API を整理
     - [x] PluginDialogShell を新フレームでラップするよう更新
     - [x] TrashDialogV2 のフレーム実装を除去し、新フレームへ移行
     - [x] 共通化後のテーマ切替と操作性を手動確認（2025-09-26 09:52 ローカル手動確認でドラッグ/リサイズ/テーマ切替を検証）
@@ -4930,7 +4930,7 @@ P2:
     - 新規コンポーネントと呼び出し変更を差分前に戻し、旧フレームの実装へ復帰
   - 運用ログ：
     - start: 2025-09-24 10:47 TrashDialog を共通フレームへ統合する作業に着手
-    - progress: 2025-09-24 11:02 ui-dialog に `MultiDialogFrame` を追加し、PluginDialogShell を共通フレーム利用へ更新
+    - progress: 2025-09-24 11:02 ui-dialog に `MultiStepDialogFrame` を追加し、PluginDialogShell を共通フレーム利用へ更新
     - progress: 2025-09-24 11:08 TrashDialogV2 を共通フレームへ移行し、独自フレーム/ポインタ処理を除去
     - progress: 2025-09-24 11:12 `pnpm --filter @hierarchidb/ui-dialog typecheck` / `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog lint` / `pnpm -C app typecheck` を実行し成功（テーマ切替の手動確認は未実施）
     - progress: 2025-09-24 11:28 TrashDialog ヘッダーにゴミ箱アイコンを追加し、`pnpm -C app typecheck` を再実行（成功）
@@ -5120,21 +5120,21 @@ P2:
     - start: 2025-09-25 23:42 MultiStepDialog 状態通知共通化タスクに着手（現状調査と要件整理を実施）
     - progress: 2025-09-25 23:58 共有型/Worker API/Runtime UI を実装し、`pnpm --filter @hierarchidb/common-type build` → `@hierarchidb/common-api build` → `@hierarchidb/runtime-worker {typecheck,build}` → `@hierarchidb/runtime-ui-plugin-dialog typecheck` → `pnpm -C app typecheck` を順次実行してグリーンを確認
     - progress: 2025-09-26 01:28 `packages/runtime-ui/plugin-dialog/README.md` に Dialog State Channel の利用方法とロールバック手順を追記
-- fix/ui-dialog/frame-handle-area — MultiDialogFrame のリサイズハンドル領域改善
+- fix/ui-dialog/frame-handle-area — MultiStepDialogFrame のリサイズハンドル領域改善
   - ブランチ: `fix/ui-dialog/frame-handle-area`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/ui-dialog`, `@hierarchidb/runtime-ui-plugin-dialog`, `@hierarchidb/app`
   - 受け入れ基準（DoD）：
-    - [x] MultiDialogFrame の上下左右各辺が端から端までリサイズハンドルとして機能し、既存のドラッグ/ホバー挙動が維持されている
+    - [x] MultiStepDialogFrame の上下左右各辺が端から端までリサイズハンドルとして機能し、既存のドラッグ/ホバー挙動が維持されている
     - [x] 左右上下の四隅ハンドルが従来比で約 1.5 倍の領域となり、カーソル表示とリサイズ操作が容易になる
     - [x] `pnpm --filter @hierarchidb/ui-dialog typecheck` が成功する
   - チェックリスト：
-    - [x] MultiDialogFrame の辺ハンドル領域スタイルを全長カバーへ変更する
+    - [x] MultiStepDialogFrame の辺ハンドル領域スタイルを全長カバーへ変更する
     - [x] 角ハンドルを拡張し、辺ハンドルより優先してポインタを表示できるよう重なり順を調整する
     - [x] 手動確認が困難な場合は差分と意図を運用ログへ記録する
   - ロールバック手順：
     - ハンドル関連スタイルの変更を差分前へ戻し、`pnpm --filter @hierarchidb/ui-dialog typecheck` を再実行
   - 運用ログ：
-    - start: 2025-09-24 12:05 MultiDialogFrame のリサイズハンドル領域拡張対応に着手
+    - start: 2025-09-24 12:05 MultiStepDialogFrame のリサイズハンドル領域拡張対応に着手
     - progress: 2025-09-24 12:16 辺ハンドルの適用範囲をフルレングスに変更し、角ハンドルを約 1.5 倍へ拡大
     - progress: 2025-09-24 12:20 `pnpm --filter @hierarchidb/ui-dialog typecheck` を実行し成功（手動操作確認はローカル制限のため未実施）
     - progress: 2025-09-24 12:32 ドラッグ/リサイズ中はフレームの CSS トランジションを無効化し、追従遅延を抑制（`pnpm --filter @hierarchidb/ui-dialog typecheck` 成功）
@@ -5446,14 +5446,14 @@ P2:
     - progress: 2025-09-21 18:07 TrashDialog の TreeTable を SubscriptionAPI ベースで自動更新できるようにし、ゴミ箱サブツリーの購読と再描画を Worker 経由で実装。`pnpm --filter @hierarchidb/app typecheck` を実行して成功を確認
     - progress: 2025-09-21 18:22 runtime-worker の `trash-holder` 結合テストを拡張し、孫ノード（2階層目以降）がゴミ箱から復帰した際に元親へ戻ることを検証するケースを追加。`pnpm --filter @hierarchidb/runtime-worker test:run -- trash-holder.test.ts` を実行し成功（既存テスト出力の SubscriptionService 警告は従来どおり）
     - progress: 2025-09-21 19:05 runtime-worker の Comlink/fake-indexeddb 結合テスト `restore-trash-subset.wfl.test.ts` を追加し、まとめてゴミ箱へ移動したノード群から一部のみ復元できることを検証。`pnpm --filter @hierarchidb/runtime-worker test:run -- restore-trash-subset.wfl.test.ts` を実行して成功（command processor の undo-state subscribe 警告は既知のログ）
-    - progress: 2025-09-21 19:44 `@hierarchidb/ui-dialog` に汎用リサイズ対応フレーム `MultiDialogFrame` を追加し、TrashDialog はこれを `FrameComponent` として利用する形にリファクタ。`pnpm --filter @hierarchidb/ui-dialog build` と `pnpm --filter @hierarchidb/app build` を再実行してグリーンを確認
+    - progress: 2025-09-21 19:44 `@hierarchidb/ui-dialog` に汎用リサイズ対応フレーム `MultiStepDialogFrame` を追加し、TrashDialog はこれを `FrameComponent` として利用する形にリファクタ。`pnpm --filter @hierarchidb/ui-dialog build` と `pnpm --filter @hierarchidb/app build` を再実行してグリーンを確認
     - progress: 2025-09-21 19:55 `@hierarchidb/ui-dialog` に表示モード遷移ユーティリティ `useDialogDisplayTransition`・`fullscreen` ヘルパを実装し、TrashDialog からサイズ補正・位置補正・FullScreen API 呼び出しロジックを移管。`pnpm --filter @hierarchidb/ui-dialog typecheck && pnpm --filter @hierarchidb/app build` で確認
     - progress: 2025-09-21 20:05 プラグイン系ダイアログ（`usePluginDialogController`）でも `useDialogDisplayTransition` を適用し、表示モード切替・サイズ補正ロジックを共通化。`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` を実行し成功
-    - progress: 2025-09-21 20:18 RouteDialog / ResolverDialog を `useDialogDisplayTransition` ＋ `MultiDialogFrame` 対応に更新し、表示モードとリサイズ挙動を統一。`pnpm --filter @hierarchidb/route-plugin typecheck` と `pnpm --filter @hierarchidb/resolver-plugin typecheck` を実行し成功
+    - progress: 2025-09-21 20:18 RouteDialog / ResolverDialog を `useDialogDisplayTransition` ＋ `MultiStepDialogFrame` 対応に更新し、表示モードとリサイズ挙動を統一。`pnpm --filter @hierarchidb/route-plugin typecheck` と `pnpm --filter @hierarchidb/resolver-plugin typecheck` を実行し成功
     - progress: 2025-09-21 20:32 resolver dialog の共通化差分がリセットされていたため再適用。`pnpm --filter @hierarchidb/resolver-plugin typecheck` と `pnpm --filter @hierarchidb/app typecheck` を再確認
-    - progress: 2025-09-21 20:40 timeline dialog / plugin shell でも `MultiDialogFrame` + `useDialogDisplayTransition` を適用し、全プラグインダイアログの表示モード挙動を統一。`pnpm --filter @hierarchidb/timeline-plugin typecheck` と `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` を実行し成功
-    - progress: 2025-09-21 22:11 RouteDialog の `MultiDialogFrame` 対応を再確認し、初期レイアウト正規化・表示モード遷移ロジックを最新ユーティリティへ移行。`pnpm exec tsc --noEmit -p packages/plugins/route-plugin/tsconfig.json` を実行して成功（`pnpm --filter` は依存再インストール不可のため実行不能）
-    - progress: 2025-09-21 22:24 LocationDialog を HeadlessMultiStepDialog + `MultiDialogFrame` へ全面リファクタし、サイズ調整・フルスクリーン化・フォーム再描画を共通化。`pnpm exec tsc --noEmit -p packages/plugins/location-plugin/tsconfig.json` を実行し成功、`package.json` へ `@hierarchidb/ui-dialog` 依存を追加
+    - progress: 2025-09-21 20:40 timeline dialog / plugin shell でも `MultiStepDialogFrame` + `useDialogDisplayTransition` を適用し、全プラグインダイアログの表示モード挙動を統一。`pnpm --filter @hierarchidb/timeline-plugin typecheck` と `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` を実行し成功
+    - progress: 2025-09-21 22:11 RouteDialog の `MultiStepDialogFrame` 対応を再確認し、初期レイアウト正規化・表示モード遷移ロジックを最新ユーティリティへ移行。`pnpm exec tsc --noEmit -p packages/plugins/route-plugin/tsconfig.json` を実行して成功（`pnpm --filter` は依存再インストール不可のため実行不能）
+    - progress: 2025-09-21 22:24 LocationDialog を HeadlessMultiStepDialog + `MultiStepDialogFrame` へ全面リファクタし、サイズ調整・フルスクリーン化・フォーム再描画を共通化。`pnpm exec tsc --noEmit -p packages/plugins/location-plugin/tsconfig.json` を実行し成功、`package.json` へ `@hierarchidb/ui-dialog` 依存を追加
 - fix/ui-treeconsole/treetable-select-all-overlay — TreeTable select-all 状態の永続化と表示オーバーレイ実装
   - ブランチ: `fix/ui-treeconsole/treetable-select-all-overlay`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: @hierarchidb/ui-treeconsole-treetable / hidb_ui_state Dexie schema
@@ -5548,7 +5548,7 @@ P2:
     - progress: 2025-09-21 17:28 TrashDialog 向けの `buildTrashTreeData` を追加し、TreeTable でも Trash 階層を再構築（展開状態の管理も導入）
     - progress: 2025-09-21 17:42 TrashBreadcrumb コンポーネントを作成し、TrashDialog 表示で専用パンくずを描画（TreeConsolePanel とは独立）
     - progress: 2025-09-21 20:40 TreeConsolePanel に `breadcrumbRenderer` を実装し、TrashDialog からカスタムパンくずを受け取るよう統合。`pnpm --filter @hierarchidb/ui-treeconsole-base typecheck` / `build` / `test:run -- --run TreeConsolePanel.breadcrumbRenderer.test.tsx` と `pnpm -C app typecheck` / `build` を順に実行し、すべて成功を確認
-    - progress: 2025-09-21 21:35 runtime-ui/plugin-dialog と node-type ({location,resolver,route,timeline}) のダイアログを headless API ベースへ更新し、`MultiDialogFrame` / `useDialogDisplayTransition` 依存を解消。`pnpm --filter @hierarchidb/ui-dialog build` / `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog {build,typecheck}` / `pnpm --filter @hierarchidb/{resolver,route,timeline}-plugin typecheck` を実施。`@hierarchidb/location-plugin typecheck` は既存の runtime-shared-batch-processor 型未整備により継続失敗（詳細は報告済み）
+    - progress: 2025-09-21 21:35 runtime-ui/plugin-dialog と node-type ({location,resolver,route,timeline}) のダイアログを headless API ベースへ更新し、`MultiStepDialogFrame` / `useDialogDisplayTransition` 依存を解消。`pnpm --filter @hierarchidb/ui-dialog build` / `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog {build,typecheck}` / `pnpm --filter @hierarchidb/{resolver,route,timeline}-plugin typecheck` を実施。`@hierarchidb/location-plugin typecheck` は既存の runtime-shared-batch-processor 型未整備により継続失敗（詳細は報告済み）
     - progress: 2025-09-21 22:05 TrashDialogContent で footer 高さを手動控除していた処理を撤去し、コンテンツ領域が余白なく TreeTable に割り当てられるよう調整。`pnpm -C app typecheck` を再実行し成功
     - progress: 2025-09-21 22:12 TrashDialog 表示中は `document.body` のスクロールを抑止し、背景側 TreeTable へのホイール伝播を防止。`pnpm -C app typecheck` を再実行し成功
     - progress: 2025-09-21 22:35 TrashDialog → TreeConsolePanel 階層の flex 子要素へ `minWidth: 0` を付与し、リサイズ時に TreeTable へ正しく ResizeObserver 通知が届くよう調整。`pnpm -C app typecheck` / `pnpm --filter @hierarchidb/ui-treeconsole-base typecheck` を再実行し成功
@@ -7576,10 +7576,10 @@ P2:
 - 2025-09-24 09:55 start: feat/ui-dialog/dialog-surface-contrast — Trash/Plugin ダイアログの背景色をテーマモード別に調整する検討を開始
 - 2025-09-24 10:45 blocked: feat/ui-dialog/dialog-surface-contrast — TrashDialog が独自フレーム継続のため背景同期が不十分
 - 2025-09-24 10:47 start: feat/ui-dialog/dialog-frame-unification — 共通フレーム化タスクを開始
-- 2025-09-24 11:02 progress: feat/ui-dialog/dialog-frame-unification — `MultiDialogFrame` を実装し PluginDialogShell へ適用
+- 2025-09-24 11:02 progress: feat/ui-dialog/dialog-frame-unification — `MultiStepDialogFrame` を実装し PluginDialogShell へ適用
 - 2025-09-24 11:08 progress: feat/ui-dialog/dialog-frame-unification — TrashDialogV2 を共通フレームへ移行し旧フレームコードを削除
 - 2025-09-24 11:12 progress: feat/ui-dialog/dialog-frame-unification — 共通フレーム化後の typecheck/lint を実行し成功（テーマ切替は未確認）
-- 2025-09-24 12:05 start: fix/ui-dialog/frame-handle-area — MultiDialogFrame のリサイズハンドル領域拡張対応に着手
+- 2025-09-24 12:05 start: fix/ui-dialog/frame-handle-area — MultiStepDialogFrame のリサイズハンドル領域拡張対応に着手
 - 2025-09-24 12:16 progress: fix/ui-dialog/frame-handle-area — 辺ハンドルを全長カバーに調整し、角ハンドルを約 1.5 倍へ拡大
 - 2025-09-24 12:20 progress: fix/ui-dialog/frame-handle-area — `pnpm --filter @hierarchidb/ui-dialog typecheck` を実行し成功（手動操作確認は環境制約のため未実施）
 - 2025-09-24 12:32 progress: fix/ui-dialog/frame-handle-area — ドラッグ/リサイズ中のトランジションを無効化し、追従遅延を抑制（`pnpm --filter @hierarchidb/ui-dialog typecheck` 再実行で成功）
@@ -7939,6 +7939,19 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-5"></a>
 
+- 2025-12-06 18:45 progress: 1594 fix/spreadsheet/edit-step2-download — TabularFileImportStep の URL 行を1行レイアウトに統合し、Download ボタンのアイコンを Download/Downloading/DownloadDone で切り替え。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` を実行し exit 0。
+- 2025-12-06 18:52 progress: 1594 fix/spreadsheet/edit-step2-download — Tabular Processing Options を1レーンで左寄せ並びにし、5コンポーネントが横並び（wrap付き）になるよう調整。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` を再実行し exit 0。
+- 2025-12-06 19:00 progress: 1594 fix/spreadsheet/edit-step2-download — Filter Step 外側のスクロール枠を撤去し、DialogContent のスクロールのみとするよう TabularFilterStep コンテナの overflow/maxHeight を削除。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` を実行し exit 0。
+- 2025-12-06 19:20 progress: 1594 fix/spreadsheet/edit-step2-download — FilterRulesTable のヘッダ行を削除し、PreviewボタンをAddボタン右側に配置・プレビュー後は自動でdisabled/フィルタ変更で再度enabledとなるよう制御。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` を再実行し exit 0。
+- 2025-12-06 19:32 progress: 1594 fix/spreadsheet/edit-step2-download — Data Summary セクションを削除し、Preview Results 見出し下に Total Rows / Filters Applied をサブタイトル表示するよう調整。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` を再実行し exit 0。
+- 2025-12-06 19:50 progress: 1594 fix/spreadsheet/edit-step2-download — Preview Results を全行表示+簡易バーチャルスクロール化（固定行高44px、overscan 8）、maxPreviewRows デフォルトを無制限に変更。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` を再実行し exit 0。
+- 2025-12-06 20:05 progress: 1594 fix/spreadsheet/edit-step2-download — プレビューのヘッダ/ボディ幅を固定レイアウトで揃え、テーブル高さをダイアログ領域の最大値（calc(100vh-320px)）に制限。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` を再実行し exit 0。
+- 2025-12-06 20:15 progress: 1594 fix/spreadsheet/edit-step2-download — FilterRulesTable のセル余白を小さく（py=3px, px=4px）し、テーブルの行高さを圧縮。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` 再実行し exit 0。
+- 2025-12-06 20:25 progress: 1594 fix/spreadsheet/edit-step2-download — Value入力時のフォーカス喪失を防ぐため、FilterRulesTable のカラム定義を draftValues 依存で再生成しないようリファクタし、draftValuesRef を参照する形に変更。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` 再実行し exit 0。
+- 2025-12-06 20:40 progress: 1594 fix/spreadsheet/edit-step2-download — Previewヘッダの型文字列を廃止し、型アイコン（string:Abc/number:PushPin/boolean:CheckBox）を先頭に表示。DialogContentの実高さに追従するようプレビューの最大高さをResizeObserverで計算。Value入力のフォーカス喪失対策リファクタを維持。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` 再実行し exit 0。
+- 2025-12-06 20:52 progress: 1598 plugin-ui-sdk/useSingleSourceDialogAtom — shallowEqual を配列対応の共通ガードに強化し、全プラグイン/ステップで既定ONの同値ガードを共通レイヤに集約。`pnpm --filter @hierarchidb/plugin-ui-sdk typecheck` 実行し exit 0。
+- 2025-12-06 21:05 progress: 1596 dialog step URL 同期統合 — useDialogSteps で dialogData を shallowEqualStepData で参照安定化し、同一内容なら新規オブジェクトを作らないように修正。HMR 後の最大更新深さループ抑止狙い。`pnpm --filter @hierarchidb/plugin-ui-host typecheck` 実行し exit 0。
+- 2025-12-06 21:20 progress: 1594 fix/spreadsheet/edit-step2-download — FilteringStep で filters 配列を shallowEqual し参照再利用するよう安定化。`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` 実行し exit 0。
 - 2025-11-01 10:06 start: fix/folder-plugin/uuid-shim-policy — `scripts/check-shims.mjs` で uuid シムが検出される経緯と folder-plugin 側の対応方針を調査開始。
 - 2025-11-01 10:10 progress: fix/folder-plugin/uuid-shim-policy — `scripts/check-shims.mjs` の allow list と検出条件を確認し、対象シムが唯一 `packages/node-type/folder-plugin/src/types/uuid-shim.d.ts` であること、レポ内で `uuid` import が未使用であることを洗い出し。
 - 2025-11-01 10:11 done: fix/folder-plugin/uuid-shim-policy — uuid シムファイルを削除し、`pnpm shims:check` が `[shim-check] ok` で成功することを確認。
@@ -9072,7 +9085,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-19 12:46 command: pnpm lint — exit 0。`@hierarchidb/plugin-ui-host` 既知 warning のみ。
 - 2025-11-19 12:47 command: pnpm typecheck — exit 0。`@hierarchidb/ui-i18n` tsdown define warning のみ。
 - 2025-11-19 12:48 command: pnpm test — exit 0。`emptyTrashBranch` ユニットテスト更新を含め Turbo 経由でグリーン。
-- 2025-11-19 13:05 progress: fix/ui-trash/empty-dialog-noop — Empty Trash 確認モーダルがダイアログ背面に入る問題を解消するため、`Dialog` の root/container/paper/backdrop それぞれに `z-index` を設定し、MultiDialogFrame より高い値（`theme.zIndex.modal + 20` など）へ引き上げた。
+- 2025-11-19 13:05 progress: fix/ui-trash/empty-dialog-noop — Empty Trash 確認モーダルがダイアログ背面に入る問題を解消するため、`Dialog` の root/container/paper/backdrop それぞれに `z-index` を設定し、MultiStepDialogFrame より高い値（`theme.zIndex.modal + 20` など）へ引き上げた。
 - 2025-11-19 13:07 command: pnpm lint — exit 0（`@hierarchidb/plugin-ui-host` `_error` warning のみ）。
 - 2025-11-19 13:08 command: pnpm typecheck — exit 0。`@hierarchidb/ui-i18n` や `@hierarchidb/util` の tsdown define warning は既知。
 - 2025-11-19 13:09 command: pnpm test — exit 1。`@hierarchidb/ui-auth` パッケージにテストファイルが無く Vitest が “No test files found” で停止する既知課題。他パッケージは実行済み。
@@ -9376,9 +9389,9 @@ ToDo（Phase 2/3: any の完全撤去）
 ## 今日の着手（運用ログ） <a id="worklog-14"></a>
 
 - 2025-12-05 10:00 start: investigation/spreadsheet-step3-scroll-confirm — Edit Spreadsheet Step3 のプレビュー表をスクロールすると背面に確認ダイアログが一瞬表示されて消える問題を調査開始。sandbox 制約のため main 上で作業。DoD: 原因と発生箇所を特定し、修正とロールバック手順を記載。
-- 2025-12-05 10:25 progress: investigation/spreadsheet-step3-scroll-confirm — SpreadsheetDialog を MultiDialogFrame（backdrop/stopWheelPropagation 付き）でラップし、プレビュー TableContainer に maxHeight+overflowY と onWheelCapture(stopPropagation) を付与してホイールイベントが背面へ漏れないように修正。検証コマンドは未実行（UI 観察前提のため）。
+- 2025-12-05 10:25 progress: investigation/spreadsheet-step3-scroll-confirm — SpreadsheetDialog を MultiStepDialogFrame（backdrop/stopWheelPropagation 付き）でラップし、プレビュー TableContainer に maxHeight+overflowY と onWheelCapture(stopPropagation) を付与してホイールイベントが背面へ漏れないように修正。検証コマンドは未実行（UI 観察前提のため）。
 - 2025-12-05 10:40 progress: investigation/spreadsheet-step3-scroll-confirm — TabularFilterStep ルートコンテナに maxHeight/overflowY/overscrollBehavior と onWheelCapture(stopPropagation) を追加し、ダイアログ内でスクロールを完結させるよう調整。引き続き UI 手動確認が必要。
-- 2025-12-05 10:55 progress: investigation/spreadsheet-step3-scroll-confirm — SpreadsheetDialog で disablePortal を外し、MultiDialogFrame の frame/backdrop に overscrollBehavior: contain を付与してバックドロップが常に最前面で wheel を吸収するように調整。要手動確認。
+- 2025-12-05 10:55 progress: investigation/spreadsheet-step3-scroll-confirm — SpreadsheetDialog で disablePortal を外し、MultiStepDialogFrame の frame/backdrop に overscrollBehavior: contain を付与してバックドロップが常に最前面で wheel を吸収するように調整。要手動確認。
 - 2025-12-05 11:05 progress: investigation/spreadsheet-step3-scroll-confirm — plugin-service-sdk の bridge.test が古いパスを参照していたため、ui-worker-client の workerBridge へ import を修正し、devDependencies に追加。テスト実行は未実施。
 - 2025-11-29 14:20 start: fix/runtime-worker/plugin-worker-loader-path — dev コンソールで shape/spreadsheet/styler/timeline の worker preload が `@hierarchidb/*-plugin/worker` 未解決になる問題の調査を開始。DoD/チェックリストを Kanban に追加。
 - 2025-11-29 14:21 progress: fix/runtime-worker/plugin-worker-loader-path — `git checkout -b fix/runtime-worker/plugin-worker-loader-path` が `.git/refs/heads/...` 作成不可で失敗したため、main 上で作業継続（Kanban に記載）。
@@ -9548,8 +9561,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-05 17:50 start: fix/spreadsheet/edit-step2-download — Edit Spreadsheet Dialog Step2 の Download 直後にリロード様の遷移が発生し、復帰後に data:{} / draft:null となる問題を調査開始。DoD: 再現条件記録、原因/発生範囲特定、修正方針＋リスク/ロールバック提示、必要なら暫定回避策を示す。ロールバック: 本調査で行う差分を revert し、運用ログ追記を削除する（調査のみ想定）。
 - 2025-12-05 18:15 progress: fix/spreadsheet/edit-step2-download — edit ダイアログの beforeunload/pagehide で自動 discard していたのがドラフト喪失の直接原因と判断し、`useTreeNodeUpdater` の auto discard をデフォルト無効化（オプション `autoDiscardOnUnload` を追加し既定 false）。リロードで draft/data が消えないようにする。ロールバック: `packages/plugin-ui-sdk/src/hooks/useTreeNodeUpdater.ts` の今回差分を revert。
 - 2025-12-05 18:35 progress: fix/basemap/dialog-step-blink — TreeConsole が location.search の変化（Dialog step 更新など）だけで再ロードされ loading スピナーを出していたため、検索クエリ `q` のみに依存するよう useTreeConsoleIntegration の初期ロードを絞り込み。非検索系の query 変更では TreeConsole が再ロードされずブリンクしないようにした。ロールバック: `app/src/hooks/useTreeConsoleIntegration.ts` の今回差分を revert。
-- 2025-12-05 19:05 progress: fix/spreadsheet/dialog-overlay-flicker — SpreadsheetDialog を Basemap と同じ構造（MultiDialogFrame 単体、frameStyle wrapper なし）に揃え、独自フェード/背景指定を撤去。背景濃度を共通挙動に合わせる。ロールバック: `plugins/spreadsheet-plugin/src/ui/components/SpreadsheetDialog.tsx` を revert。
-- 2025-12-05 19:25 progress: fix/spreadsheet/dialog-overlay-flicker — SpreadsheetDialog を Basemap と同じ PluginDialogShell パターンに統一し、プラグイン側の MultiDialogFrame 自前レンダリングを廃止。backdrop 不透明度をホスト共通に揃える。ロールバック: `plugins/spreadsheet-plugin/src/ui/components/SpreadsheetDialog.tsx` を revert。
+- 2025-12-05 19:05 progress: fix/spreadsheet/dialog-overlay-flicker — SpreadsheetDialog を Basemap と同じ構造（MultiStepDialogFrame 単体、frameStyle wrapper なし）に揃え、独自フェード/背景指定を撤去。背景濃度を共通挙動に合わせる。ロールバック: `plugins/spreadsheet-plugin/src/ui/components/SpreadsheetDialog.tsx` を revert。
+- 2025-12-05 19:25 progress: fix/spreadsheet/dialog-overlay-flicker — SpreadsheetDialog を Basemap と同じ PluginDialogShell パターンに統一し、プラグイン側の MultiStepDialogFrame 自前レンダリングを廃止。backdrop 不透明度をホスト共通に揃える。ロールバック: `plugins/spreadsheet-plugin/src/ui/components/SpreadsheetDialog.tsx` を revert。
 - 2025-12-05 19:45 progress: fix/spreadsheet/dialog-overlay-flicker — Basemap と同様に UI エントリから SpreadsheetDialog の export を削除し、steps-provider 登録のみの構成に変更。プラグイン側でダイアログを二重に定義しないようにした。ロールバック: `plugins/spreadsheet-plugin/src/ui/index.ts` の今回差分を revert。
 - 2025-12-05 20:05 progress: fix/spreadsheet/dialog-overlay-flicker — SpreadsheetDialog.tsx 自体を削除し、Basemap と同様に「UI エントリは steps-provider 登録のみ」の構成に固定。typecheck で @hierarchidb/plugin-ui-host 未解決エラーも解消する。ロールバック: `plugins/spreadsheet-plugin/src/ui/components/SpreadsheetDialog.tsx` を復元。
 - 2025-12-05 20:20 progress: fix/spreadsheet/dialog-overlay-flicker — Basemap と同様、root index から ui/worker/icon の再エクスポートを撤去し、UI モジュールの重複読み込みを防止。dist を clean → build、typecheck 再実行（どちらも成功）。ロールバック: `plugins/spreadsheet-plugin/src/index.ts` の今回差分を revert し、再ビルド。

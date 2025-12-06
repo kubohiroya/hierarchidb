@@ -19,14 +19,13 @@ import {
   positionsEqual,
   type HeadlessMultiStepDialogProps,
   type HeadlessHeaderRenderProps,
-  type HeadlessContentRenderProps,
   type HeadlessFooterRenderProps,
   type StepNavigationEvent,
   type StepComponentDescriptor,
   type StepComponentProps,
   type DialogDisplayMode,
-  type MultiDialogSize,
-  type MultiDialogPosition,
+  type MultiStepDialogSize,
+  type MultiStepDialogPosition,
 } from '@hierarchidb/ui-dialog';
 import { readRuntimeMode } from '@hierarchidb/util';
 import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
@@ -182,13 +181,13 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
   );
 
   const [displayMode, setDisplayModeState] = useState<DialogDisplayMode>('normal');
-  const [dialogSize, setDialogSize] = useState<MultiDialogSize>(initialLayout.size);
-  const [dialogPosition, setDialogPosition] = useState<MultiDialogPosition>(initialLayout.position);
+  const [dialogSize, setDialogSize] = useState<MultiStepDialogSize>(initialLayout.size);
+  const [dialogPosition, setDialogPosition] = useState<MultiStepDialogPosition>(initialLayout.position);
 
   const dialogSizeRef = useRef(dialogSize);
   const dialogPositionRef = useRef(dialogPosition);
 
-  const applyNormalizedState = useCallback((size: MultiDialogSize, position: MultiDialogPosition) => {
+  const applyNormalizedState = useCallback((size: MultiStepDialogSize, position: MultiStepDialogPosition) => {
     dialogSizeRef.current = size;
     dialogPositionRef.current = position;
     setDialogSize(size);
@@ -549,12 +548,6 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     </header>
   ), [handleNavigation, steps.length]);
 
-  const renderContent: HeadlessMultiStepDialogProps<ResolverUpdaterPayload>['renderContent'] = useCallback((props: HeadlessContentRenderProps<ResolverUpdaterPayload>) => (
-    <div style={{ padding: 16 }}>
-      {steps[props.activeStepIndex]?.component}
-    </div>
-  ), [steps]);
-
   const isTestEnv = useMemo(() => readRuntimeMode() === 'test', []);
 
   const renderFooter: HeadlessMultiStepDialogProps<ResolverUpdaterPayload>['renderFooter'] = useCallback((props: HeadlessFooterRenderProps<ResolverUpdaterPayload>) => {
@@ -582,7 +575,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     const viewport = getViewportSize();
 
     if (mode === 'full-screen') {
-      const size: MultiDialogSize = {
+      const size: MultiStepDialogSize = {
         width: Math.max(viewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
         height: Math.max(viewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
       };
@@ -669,7 +662,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     };
   }, [applyNormalizedState, displayMode]);
 
-  const handleSizeChange = useCallback((next?: MultiDialogSize) => {
+  const handleSizeChange = useCallback((next?: MultiStepDialogSize) => {
     if (!next) return;
     const normalized = normalizeDialogState(
       next,
@@ -686,7 +679,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     }
   }, [applyNormalizedState, displayMode]);
 
-  const handlePositionChange = useCallback((next?: MultiDialogPosition) => {
+  const handlePositionChange = useCallback((next?: MultiStepDialogPosition) => {
     if (!next) return;
     const normalized = normalizeDialogState(
       dialogSizeRef.current,
@@ -743,7 +736,6 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     displayMode,
     onDisplayModeChange: (mode) => { transitionDisplayMode(mode); },
     renderHeader,
-    renderContent,
     renderFooter,
   };
 

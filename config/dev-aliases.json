@@ -5,13 +5,7 @@
     "features"
   ],
   "packages": [
-    "@hierarchidb/runtime-worker",
-    "@hierarchidb/ui-worker-client",
-    "@hierarchidb/ui-worker-provider",
-    "@hierarchidb/map-adapter",
-    "@hierarchidb/tabular-source-xlsx",
-    "@hierarchidb/ui-plugin-shell/ui-i18n",
-    "@hierarchidb/ui-plugin-shell/ui-icon"
+    "*"
   ],
   "plugins": [
     "*"

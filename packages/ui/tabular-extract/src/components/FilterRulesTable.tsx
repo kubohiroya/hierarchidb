@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import {
   Accordion,
@@ -7,11 +7,11 @@ import {
   Box,
   Button,
   Checkbox,
+  CircularProgress,
   IconButton,
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableRow,
   TextField,
   Typography,
@@ -21,6 +21,7 @@ import {
   Delete as DeleteIcon,
   DragIndicator as DragIndicatorIcon,
   ExpandMore as ExpandMoreIcon,
+  ArrowDownward as ArrowDownwardIcon,
 } from '@mui/icons-material';
 import { type ColumnDef, type Row, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import type { TabularColumnInfo, TabularColumnType } from '@hierarchidb/tabular-store';
@@ -38,6 +39,9 @@ type FilterRulesTableProps = {
   columns: TabularColumnInfo[];
   operatorOptions: FilterOperatorOption[];
   defaultExpanded?: boolean;
+  onPreview?: () => void;
+  previewDisabled?: boolean;
+  previewLoading?: boolean;
 };
 
 const requiresValue = (operator: TabularFilterOperator): boolean => {
@@ -89,9 +93,18 @@ export function FilterRulesTable({
   columns,
   operatorOptions,
   defaultExpanded = true,
+  onPreview,
+  previewDisabled,
+  previewLoading,
 }: FilterRulesTableProps): ReactElement {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [draftValues, setDraftValues] = useState<Record<string, string>>({});
+  const draftValuesRef = useRef<Record<string, string>>({});
+  const normalizedRulesRef = useRef<TabularFilterRule[]>(filters);
+
+  useEffect(() => {
+    draftValuesRef.current = draftValues;
+  }, [draftValues]);
 
   const firstColumnName = columns[0]?.name ?? '';
 
@@ -107,8 +120,10 @@ export function FilterRulesTable({
         if (current === undefined) changed = true;
       }
       if (Object.keys(prev).length !== Object.keys(next).length || changed) {
+        draftValuesRef.current = next;
         return next;
       }
+      draftValuesRef.current = prev;
       return prev;
     });
   }, [filters]);
@@ -147,7 +162,18 @@ export function FilterRulesTable({
     [firstColumnName, operatorOptions, columns]
   );
 
-  const normalizedRules = useMemo<TabularFilterRule[]>(() => filters.map(ensureRule), [filters, ensureRule]);
+  const normalizedRules = useMemo<TabularFilterRule[]>(() => {
+    const next = filters.map(ensureRule);
+    if (rulesEqual(next, normalizedRulesRef.current)) {
+      return normalizedRulesRef.current;
+    }
+    normalizedRulesRef.current = next;
+    return next;
+  }, [filters, ensureRule]);
+
+  useEffect(() => {
+    normalizedRulesRef.current = normalizedRules;
+  }, [normalizedRules]);
 
   const paginationState = useMemo(
     () => ({
@@ -159,12 +185,31 @@ export function FilterRulesTable({
 
   const handleUpdateRule = useCallback(
     (id: string, updater: (current: TabularFilterRule) => TabularFilterRule) => {
-      const next = normalizedRules.map((rule) => (rule.id === id ? ensureRule(updater(rule)) : rule));
-      if (!rulesEqual(next, normalizedRules)) {
+      const currentRules = normalizedRulesRef.current;
+      const next = currentRules.map((rule) => (rule.id === id ? ensureRule(updater(rule)) : rule));
+      if (!rulesEqual(next, currentRules)) {
         onChange(next);
       }
     },
-    [normalizedRules, ensureRule, onChange]
+    [ensureRule, onChange]
+  );
+
+  const commitDraftValue = useCallback(
+    (ruleId: string) => {
+      const currentRules = normalizedRulesRef.current;
+      const target = currentRules.find((rule) => rule.id === ruleId);
+      if (!target) return;
+      const pending = draftValuesRef.current[ruleId];
+      const nextValue = pending ?? '';
+      const needsValue = requiresValue(target.operator);
+      const nextEnabled = needsValue ? target.enabled && nextValue.trim().length > 0 : target.enabled;
+      handleUpdateRule(ruleId, (current) => ({
+        ...current,
+        value: nextValue,
+        enabled: nextEnabled,
+      }));
+    },
+    [handleUpdateRule]
   );
 
   const handleAddRule = useCallback(() => {
@@ -358,7 +403,7 @@ export function FilterRulesTable({
           const rule = row.original;
           const operator = rule.operator;
           const needsValue = requiresValue(operator);
-          const value = draftValues[rule.id] ?? String(rule.value ?? '');
+          const value = draftValuesRef.current[rule.id] ?? String(rule.value ?? '');
           return (
             <TextField
               fullWidth
@@ -368,13 +413,18 @@ export function FilterRulesTable({
               disabled={!needsValue}
               onChange={(event) => {
                 const nextValue = event.target.value;
-                const nextEnabled = needsValue ? rule.enabled && nextValue.trim().length > 0 : rule.enabled;
-                setDraftValues((prev) => ({ ...prev, [rule.id]: nextValue }));
-                handleUpdateRule(rule.id, (current) => ({
-                  ...current,
-                  value: nextValue,
-                  enabled: nextEnabled,
-                }));
+                setDraftValues((prev) => {
+                  const next = { ...prev, [rule.id]: nextValue };
+                  draftValuesRef.current = next;
+                  return next;
+                });
+              }}
+              onBlur={() => commitDraftValue(rule.id)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  commitDraftValue(rule.id);
+                }
               }}
               inputProps={{
                 'aria-label': 'Value',
@@ -401,7 +451,7 @@ export function FilterRulesTable({
         size: 48,
       },
     ],
-    [draftValues, handleDeleteRule, handleUpdateRule, operatorOptions, columns]
+    [handleDeleteRule, handleUpdateRule, operatorOptions, columns]
   );
 
   const table = useReactTable({
@@ -430,26 +480,14 @@ export function FilterRulesTable({
     <Accordion defaultExpanded={defaultExpanded} disableGutters>
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
-          <Typography variant="subtitle1">Filter Rules</Typography>
+          <Typography variant="subtitle1">Filter Rules (Enabled {totalEnabled}/{normalizedRules.length})</Typography>
           <Typography variant="caption" color="text.secondary">
-            Enabled {totalEnabled}/{normalizedRules.length}
           </Typography>
         </Box>
       </AccordionSummary>
       <AccordionDetails>
         <Box sx={{ width: '100%', overflowX: 'auto' }}>
           <Table size="small" stickyHeader>
-            <TableHead>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableCell key={header.id} sx={{ whiteSpace: 'nowrap', fontWeight: 600 }}>
-                      {flexRender(header.column.columnDef.header, header.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableHead>
             <TableBody>
               {table.getRowModel().rows.map((row) => (
                 <TableRow
@@ -462,7 +500,7 @@ export function FilterRulesTable({
                   }}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} sx={{ verticalAlign: 'middle' }}>
+                    <TableCell key={cell.id} sx={{ verticalAlign: 'middle', py: '5px', px: '4px' }}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
@@ -472,7 +510,7 @@ export function FilterRulesTable({
           </Table>
         </Box>
 
-        <Box sx={{ display: 'flex', justifyContent: 'flex-start', mt: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-start', gap: 1.5, mt: 2, flexWrap: 'wrap' }}>
           <Button
             variant="outlined"
             startIcon={<AddIcon />}
@@ -481,6 +519,17 @@ export function FilterRulesTable({
           >
             Add Filter Rule
           </Button>
+
+          {onPreview && (
+            <Button
+              variant="outlined"
+              startIcon={previewLoading ? <CircularProgress size={16} /> : <ArrowDownwardIcon />}
+              onClick={onPreview}
+              disabled={previewDisabled}
+            >
+              {previewLoading ? 'Loading Preview...' : 'Preview Filtered Data'}
+            </Button>
+          )}
         </Box>
       </AccordionDetails>
     </Accordion>

@@ -22,8 +22,8 @@ import {
   getViewportSize,
   type HeadlessMultiStepDialogProps,
   initialPosition,
-  type MultiDialogPosition,
-  type MultiDialogSize,
+  type MultiStepDialogPosition,
+  type MultiStepDialogSize,
   normalizeDialogState,
   positionsEqual,
   sizesEqual,
@@ -68,8 +68,8 @@ export interface UseTreeNodeDialogOptions<TPayload extends object> {
 }
 
 interface UseDialogViewStateOptions {
-  initialSize?: MultiDialogSize;
-  initialPosition?: MultiDialogPosition;
+  initialSize?: MultiStepDialogSize;
+  initialPosition?: MultiStepDialogPosition;
   initialDisplayMode?: DialogDisplayMode;
   initialActiveStepIndex?: number;
 }
@@ -80,8 +80,8 @@ interface UseDialogViewStateResult {
   resetDialogViewState: () => void;
 }
 
-const DEFAULT_SIZE: MultiDialogSize = { width: 960, height: 640 };
-const DEFAULT_POSITION: MultiDialogPosition = { x: 64, y: 64 };
+const DEFAULT_SIZE: MultiStepDialogSize = { width: 960, height: 640 };
+const DEFAULT_POSITION: MultiStepDialogPosition = { x: 64, y: 64 };
 const DEFAULT_DISPLAY_MODE: DialogDisplayMode = 'normal';
 
 const useDialogViewState = (options: UseDialogViewStateOptions = {}): UseDialogViewStateResult => {
@@ -304,7 +304,7 @@ export function useTreeNodeDialog<TPayload extends object>(
   );
 
   const handleSizeChange = useCallback(
-    (next?: MultiDialogSize) => {
+    (next?: MultiStepDialogSize) => {
       if (!next) return;
       const normalized = normalizeDialogState(next, dialogPositionRef.current, getViewportSize(), {
         enforceTopLeftMargin: displayMode === 'normal',
@@ -324,7 +324,7 @@ export function useTreeNodeDialog<TPayload extends object>(
   );
 
   const handlePositionChange = useCallback(
-    (next?: MultiDialogPosition) => {
+    (next?: MultiStepDialogPosition) => {
       if (!next) return;
       const normalized = normalizeDialogState(dialogSizeRef.current, next, getViewportSize(), {
         enforceTopLeftMargin: displayMode === 'normal',

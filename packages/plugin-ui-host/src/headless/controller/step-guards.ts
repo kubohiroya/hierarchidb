@@ -11,9 +11,33 @@ export const emptyGuards: StepGuardState = {
   canStartBatch: false,
 };
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const shallowEqualStepData = (a?: StepData, b?: StepData): boolean => {
+  if (a === b) return true;
+  if (!isRecord(a) || !isRecord(b)) return false;
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return false;
+  for (const key of aKeys) {
+    if (Array.isArray(a[key]) && Array.isArray(b[key])) {
+      const arrA = a[key] as unknown[];
+      const arrB = b[key] as unknown[];
+      if (arrA.length !== arrB.length) return false;
+      for (let i = 0; i < arrA.length; i += 1) {
+        if (arrA[i] !== arrB[i]) return false;
+      }
+      continue;
+    }
+    if (a[key] !== b[key]) return false;
+  }
+  return true;
+};
+
 const toRecord = (
   value: StepData | Record<string, unknown> | null | undefined | object
-): StepData | undefined => (typeof value === 'object' && value !== null ? (value as StepData) : undefined);
+): StepData | undefined => (isRecord(value) ? (value as StepData) : undefined);
 
 export const BASIC_INFO_META_KEY = '__basicInfoValidation';
 
@@ -179,6 +203,8 @@ export const mergeDialogData = (
 ): StepData => {
   return workingData ? { ...workingData } : {};
 };
+
+export const isShallowEqualStepData = shallowEqualStepData;
 
 export const extractBasicInfoFields = (data?: Record<string, unknown>): {
   name: string;

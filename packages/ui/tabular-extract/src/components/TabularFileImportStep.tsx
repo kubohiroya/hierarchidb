@@ -20,7 +20,13 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { CheckCircle, CloudUpload, Download, InsertDriveFile } from '@mui/icons-material';
+import {
+  CloudUpload,
+  Download,
+  DownloadDone,
+  Downloading,
+  InsertDriveFile,
+} from '@mui/icons-material';
 import type { TabularProcessingConfig } from '../types/index.js';
 import { useTabularData } from '../hooks/useTabularData.js';
 import { TabularTableMetadata } from '@hierarchidb/tabular-store';
@@ -224,28 +230,35 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
       {/* URL Download Section */}
       {importMethod === 'url' && (
         <Box sx={{ mb: 3 }}>
-          <TextField
-            fullWidth
-            label="Tabular File URL"
-            placeholder="https://example.com/data.csv"
-          value={urlInput}
-          onChange={(e) => {
-            setUrlInput(e.target.value);
-            onUrlChange?.(e.target.value);
-          }}
-          disabled={disabled || isImporting}
-          sx={{ mb: 2 }}
-        />
-
-          <Button
-            variant="contained"
-            startIcon={isImporting ? <CircularProgress size={16} /> : <Download />}
-            endIcon={showDownloadSuccess ? <CheckCircle color="success" /> : undefined}
-            onClick={handleUrlDownload}
-            disabled={disabled || isImporting || !urlInput.trim()}
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: '1fr auto',
+              alignItems: 'center',
+              gap: 2,
+            }}
           >
-            {isImporting ? 'Downloading...' : 'Download Tabular'}
-          </Button>
+            <TextField
+              fullWidth
+              label="Tabular File URL"
+              placeholder="https://example.com/data.csv"
+              value={urlInput}
+              onChange={(e) => {
+                setUrlInput(e.target.value);
+                onUrlChange?.(e.target.value);
+              }}
+              disabled={disabled || isImporting}
+            />
+
+            <Button
+              variant="contained"
+              endIcon={isImporting ? <Downloading /> : showDownloadSuccess ? <DownloadDone /> : <Download />}
+              onClick={handleUrlDownload}
+              disabled={disabled || isImporting || !urlInput.trim()}
+            >
+              {isImporting ? 'Downloading...' : 'Download'}
+            </Button>
+          </Box>
         </Box>
       )}
 
@@ -256,8 +269,8 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
         Tabular Processing Options
       </Typography>
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 2, mb: 3 }}>
-        <FormControl>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center', mb: 3 }}>
+        <FormControl sx={{ minWidth: 180 }}>
           <InputLabel id={delimiterLabelId}>Delimiter</InputLabel>
           <ModalSelect
             id={`${delimiterLabelId}-select`}
@@ -281,7 +294,7 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
           </ModalSelect>
         </FormControl>
 
-        <FormControl>
+        <FormControl sx={{ minWidth: 180 }}>
           <InputLabel id={encodingLabelId}>Encoding</InputLabel>
           <ModalSelect
             id={`${encodingLabelId}-select`}
@@ -304,7 +317,7 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
           </ModalSelect>
         </FormControl>
 
-        <FormControl>
+        <FormControl sx={{ minWidth: 180 }}>
           <InputLabel id={quoteLabelId}>Quote Character</InputLabel>
           <ModalSelect
             id={`${quoteLabelId}-select`}
@@ -326,9 +339,6 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
             <MenuItem value="">None</MenuItem>
           </ModalSelect>
         </FormControl>
-      </Box>
-
-      <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
         <FormControlLabel
           control={(
             <Switch

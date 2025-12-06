@@ -1,14 +1,14 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import type { DialogDisplayMode, MultiDialogPosition, MultiDialogSize } from '@hierarchidb/ui-dialog';
+import type { DialogDisplayMode, MultiStepDialogPosition, MultiStepDialogSize } from '@hierarchidb/ui-dialog';
 import type { DialogViewState, DialogViewStatePatchInput } from '@hierarchidb/common-types';
 
-const DEFAULT_SIZE: MultiDialogSize = { width: 960, height: 640 };
-const DEFAULT_POSITION: MultiDialogPosition = { x: 64, y: 64 };
+const DEFAULT_SIZE: MultiStepDialogSize = { width: 960, height: 640 };
+const DEFAULT_POSITION: MultiStepDialogPosition = { x: 64, y: 64 };
 const DEFAULT_DISPLAY_MODE: DialogDisplayMode = 'normal';
 
 export interface UseDialogViewStateOptions {
-  initialSize?: MultiDialogSize;
-  initialPosition?: MultiDialogPosition;
+  initialSize?: MultiStepDialogSize;
+  initialPosition?: MultiStepDialogPosition;
   initialDisplayMode?: DialogDisplayMode;
   initialActiveStepIndex?: number;
 }

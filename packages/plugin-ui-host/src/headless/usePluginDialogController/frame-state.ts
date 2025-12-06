@@ -8,7 +8,7 @@ import {
   sizesEqual,
   positionsEqual,
 } from '@hierarchidb/ui-dialog';
-import type { DialogDisplayMode, MultiDialogPosition, MultiDialogSize } from '@hierarchidb/ui-dialog';
+import type { DialogDisplayMode, MultiStepDialogPosition, MultiStepDialogSize } from '@hierarchidb/ui-dialog';
 import type { NodeId } from '@hierarchidb/common-types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type React from 'react';
@@ -30,11 +30,11 @@ export function useDialogFrameState({
   setActiveStepIndex: (value: number) => void;
   setUrlStep: (next: number) => void;
   displayMode: DialogDisplayMode;
-  dialogSize: MultiDialogSize;
-  dialogPosition: MultiDialogPosition;
+  dialogSize: MultiStepDialogSize;
+  dialogPosition: MultiStepDialogPosition;
   transitionDisplayMode: (mode: DialogDisplayMode) => Promise<void>;
-  handleSizeChange: (next?: MultiDialogSize) => void;
-  handlePositionChange: (next?: MultiDialogPosition) => void;
+  handleSizeChange: (next?: MultiStepDialogSize) => void;
+  handlePositionChange: (next?: MultiStepDialogPosition) => void;
   dialogRef: React.RefObject<HTMLDivElement | null>;
 } {
   const {
@@ -57,8 +57,8 @@ export function useDialogFrameState({
   }, [urlStep]);
 
   const [displayMode, setDisplayModeState] = useState<DialogDisplayMode>('normal');
-  const [dialogSize, setDialogSize] = useState<MultiDialogSize>(DEFAULT_SIZE);
-  const [dialogPosition, setDialogPosition] = useState<MultiDialogPosition>(DEFAULT_POSITION);
+  const [dialogSize, setDialogSize] = useState<MultiStepDialogSize>(DEFAULT_SIZE);
+  const [dialogPosition, setDialogPosition] = useState<MultiStepDialogPosition>(DEFAULT_POSITION);
 
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const dialogSizeRef = useRef(dialogSize);
@@ -124,7 +124,7 @@ export function useDialogFrameState({
   );
 
   const persistPosition = useCallback(
-    (next: MultiDialogPosition) => {
+    (next: MultiStepDialogPosition) => {
       setDialogPosition(next);
       dialogPositionRef.current = next;
 
@@ -144,7 +144,7 @@ export function useDialogFrameState({
   );
 
   const persistSize = useCallback(
-    (next: MultiDialogSize) => {
+    (next: MultiStepDialogSize) => {
       setDialogSize(next);
       dialogSizeRef.current = next;
       setPeerDialogSize(nodeType, String(nodeId), next).catch(() => void 0);
@@ -156,7 +156,7 @@ export function useDialogFrameState({
     async (mode: DialogDisplayMode) => {
       const viewport = getViewportSize();
 
-      const applyNormalizedState = (size: MultiDialogSize, position: MultiDialogPosition) => {
+      const applyNormalizedState = (size: MultiStepDialogSize, position: MultiStepDialogPosition) => {
         dialogSizeRef.current = size;
         dialogPositionRef.current = position;
         persistSize(size);
@@ -164,14 +164,14 @@ export function useDialogFrameState({
       };
 
       if (mode === 'full-screen') {
-        const fullSize: MultiDialogSize = {
+        const fullSize: MultiStepDialogSize = {
           width: Math.max(viewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
           height: Math.max(viewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
         };
         applyNormalizedState(fullSize, { x: 0, y: 0 });
       } else if (mode === 'maximize') {
         const size = getPresetSize('maximize', viewport);
-        const position: MultiDialogPosition = {
+        const position: MultiStepDialogPosition = {
           x: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
           y: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
         };
@@ -274,7 +274,7 @@ export function useDialogFrameState({
   }, [displayMode, persistPosition, persistSize]);
 
   const handleSizeChange = useCallback(
-    (next?: MultiDialogSize) => {
+    (next?: MultiStepDialogSize) => {
       if (!next) return;
       const viewport = getViewportSize();
       const normalized = normalizeDialogState(next, dialogPositionRef.current, viewport, {
@@ -293,7 +293,7 @@ export function useDialogFrameState({
   );
 
   const handlePositionChange = useCallback(
-    (next?: MultiDialogPosition) => {
+    (next?: MultiStepDialogPosition) => {
       if (!next) return;
       const viewport = getViewportSize();
       const normalized = normalizeDialogState(dialogSizeRef.current, next, viewport, {

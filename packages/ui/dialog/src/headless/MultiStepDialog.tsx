@@ -1,14 +1,13 @@
 import { Fragment } from 'react';
-import { MultiStepDialogProvider } from './context.js';
+import { MultiStepDialogProvider } from '../hooks/useMultiStepDialogContext.js';
 import type {
-  HeadlessContentRenderProps,
   HeadlessFooterRenderProps,
   HeadlessHeaderRenderProps,
   HeadlessMultiStepDialogProps,
   HeadlessMultiStepDialogContextValue,
 } from './types.js';
 import { MultiStepDialogHeader } from './MultiStepDialogHeader.js';
-import { MultiDialogContent } from './MultiDialogContent.js';
+import { MultiStepDialogContent } from './MultiStepDialogContent.js';
 import { MultiStepDialogFooter } from './MultiStepDialogFooter.js';
 
 function asReadonlyArray(source?: ReadonlyArray<number>): ReadonlyArray<number> {
@@ -40,10 +39,9 @@ export function HeadlessMultiStepDialog<TData>(props: HeadlessMultiStepDialogPro
     onRequestClose,
     onRequestCommit,
     HeaderComponent = MultiStepDialogHeader,
-    ContentComponent = MultiDialogContent,
+    ContentComponent = MultiStepDialogContent,
     FooterComponent = MultiStepDialogFooter,
     renderHeader,
-    renderContent,
     renderFooter,
     ...frameProps
   } = props;
@@ -71,9 +69,7 @@ export function HeadlessMultiStepDialog<TData>(props: HeadlessMultiStepDialogPro
     </HeaderComponent>
   );
   const contentElement = (
-    <ContentComponent>
-      {renderContent as ((props: HeadlessContentRenderProps<TData>) => React.ReactNode) | undefined}
-    </ContentComponent>
+    <ContentComponent />
   );
   const footerElement = (
     <FooterComponent>

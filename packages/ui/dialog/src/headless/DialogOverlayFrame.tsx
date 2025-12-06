@@ -2,6 +2,7 @@ import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Box } from '@mui/material';
+import { ThemeProvider, createTheme, useTheme } from '@mui/material/styles';
 import { HeadlessMultiStepDialog } from './MultiStepDialog.js';
 import {
   FRAME_CONSTANTS,
@@ -9,12 +10,13 @@ import {
   normalizeDialogState,
   initialPosition,
 } from './frameHelpers.js';
-import { useDialogInteractionGuards } from './hooks.js';
 import type {
   HeadlessMultiStepDialogProps,
-  MultiDialogPosition,
-  MultiDialogSize,
+  MultiStepDialogPosition,
+  MultiStepDialogSize,
 } from './types.js';
+import { getDialogSurfaceColor } from '../utils/dialogSurfaceColor.js';
+import { useDialogInteractionGuards } from '~/hooks/useDialogInteractionGuards.js';
 
 type ResizeDirection =
   | 'top'
@@ -34,7 +36,7 @@ interface ResizeHandleConfig {
 
 export interface DialogOverlayFrameProps {
   headlessProps: HeadlessMultiStepDialogProps<any>;
-  defaultSize?: MultiDialogSize;
+  defaultSize?: MultiStepDialogSize;
   enableDrag?: boolean;
   enableResize?: boolean;
   backdropZIndex?: number;
@@ -42,7 +44,7 @@ export interface DialogOverlayFrameProps {
   backdropColor?: string;
 }
 
-const DEFAULT_SIZE: MultiDialogSize = { width: 960, height: 640 };
+const DEFAULT_SIZE: MultiStepDialogSize = { width: 960, height: 640 };
 
 export const DialogOverlayFrame: React.FC<DialogOverlayFrameProps> = ({
   headlessProps,
@@ -72,8 +74,8 @@ export const DialogOverlayFrame: React.FC<DialogOverlayFrameProps> = ({
     pointerId: number;
     originX: number;
     originY: number;
-    start: MultiDialogPosition;
-    size: MultiDialogSize;
+    start: MultiStepDialogPosition;
+    size: MultiStepDialogSize;
     displayMode: 'normal' | 'maximize' | 'full-screen';
   } | null>(null);
 
@@ -81,8 +83,8 @@ export const DialogOverlayFrame: React.FC<DialogOverlayFrameProps> = ({
     pointerId: number;
     originX: number;
     originY: number;
-    startSize: MultiDialogSize;
-    startPosition: MultiDialogPosition;
+    startSize: MultiStepDialogSize;
+    startPosition: MultiStepDialogPosition;
     displayMode: 'normal' | 'maximize' | 'full-screen';
     direction: ResizeDirection;
   } | null>(null);
@@ -94,7 +96,7 @@ export const DialogOverlayFrame: React.FC<DialogOverlayFrameProps> = ({
       return headlessProps.position;
     }
     if (!isBrowser) {
-      return { x: 0, y: 0 } satisfies MultiDialogPosition;
+      return { x: 0, y: 0 } satisfies MultiStepDialogPosition;
     }
     const viewport = getViewportSize();
     const preset = initialPosition(defaultSize, viewport);
@@ -129,7 +131,7 @@ export const DialogOverlayFrame: React.FC<DialogOverlayFrameProps> = ({
       const state = dragStateRef.current;
       if (!state || moveEvent.pointerId !== pointerId) return;
       const viewport = getViewportSize();
-      const proposed: MultiDialogPosition = {
+      const proposed: MultiStepDialogPosition = {
         x: state.start.x + (moveEvent.clientX - state.originX),
         y: state.start.y + (moveEvent.clientY - state.originY),
       };
@@ -212,12 +214,12 @@ export const DialogOverlayFrame: React.FC<DialogOverlayFrameProps> = ({
         nextY = state.startPosition.y + deltaY;
       }
 
-      const proposedSize: MultiDialogSize = {
+      const proposedSize: MultiStepDialogSize = {
         width: Math.max(nextWidth, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
         height: Math.max(nextHeight, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
       };
 
-      const proposedPosition: MultiDialogPosition = {
+      const proposedPosition: MultiStepDialogPosition = {
         x: nextX,
         y: nextY,
       };
@@ -290,13 +292,28 @@ export const DialogOverlayFrame: React.FC<DialogOverlayFrameProps> = ({
     guards.handleBackdropClick();
   }, [guards]);
 
-  if (!headlessProps.open) {
-    return null;
-  }
-
   const fullScreen = augmentedHeadlessProps.displayMode === 'full-screen';
   const dialogSize = augmentedHeadlessProps.size ?? defaultSize;
   const dialogPosition = augmentedHeadlessProps.position ?? fallbackPosition;
+  const outerTheme = useTheme();
+  const dialogTheme = useMemo(
+    () => createTheme({
+      ...outerTheme,
+      palette: {
+        ...outerTheme.palette,
+        background: {
+          ...outerTheme.palette.background,
+          // Match header/footer base tone for content as requested
+          paper: getDialogSurfaceColor(outerTheme),
+        },
+      },
+    }),
+    [outerTheme],
+  );
+
+  if (!headlessProps.open) {
+    return null;
+  }
 
   const frameNode = (
     <Box
@@ -313,13 +330,15 @@ export const DialogOverlayFrame: React.FC<DialogOverlayFrameProps> = ({
         borderRadius: fullScreen ? 0 : theme.shape.borderRadius,
         boxShadow: fullScreen ? 'none' : theme.shadows[8],
         overflow: 'hidden',
-        backgroundColor: theme.palette.background.paper,
+        backgroundColor: getDialogSurfaceColor(theme),
         transition: theme.transitions.create(['top', 'left', 'width', 'height'], { duration: theme.transitions.duration.shortest }),
       })}
       role="dialog"
       aria-modal="true"
     >
-      <HeadlessMultiStepDialog {...augmentedHeadlessProps} />
+      <ThemeProvider theme={dialogTheme}>
+        <HeadlessMultiStepDialog {...augmentedHeadlessProps} />
+      </ThemeProvider>
       {enableResize && !fullScreen && resizeHandles.map((handle) => (
         <Box
           key={handle.key}
