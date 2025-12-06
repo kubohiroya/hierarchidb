@@ -29,8 +29,8 @@ export interface TreeNodeUpdaterState<TPayload extends object = Record<string, u
   treeNodeId: NodeId;
   metadata?: TreeNodeMetadata;
   data?: Record<string, unknown>;
-  draftMetadata: TreeNodeMetadata;
-  draftData: TPayload;
+  draftMetadata: TreeNodeMetadata | null;
+  draftData: TPayload | null;
   version?: number;
   updatedAt?: Timestamp;
   hasRemoteDraft?: boolean;
@@ -112,17 +112,10 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
     typeof value === 'object' && value !== null;
 
   const toUpdater = useCallback((node: TreeNode): TreeNodeUpdaterState<TPayload> => {
-    const hasRemoteDraft = Boolean(node.draftData) || Boolean(node.draftMetadata);
-    const draftMetadata: TreeNodeMetadata =
-      (node as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata ??
-      node.metadata ??
-      ({ name: '' } as TreeNodeMetadata);
-    const draftData: TPayload =
-      node.draftData && isRecord(node.draftData)
-        ? (node.draftData as TPayload)
-        : node.data && isRecord(node.data)
-          ? (node.data as TPayload)
-          : ({} as TPayload);
+    const hasRemoteDraft = node.draftData != null || node.draftMetadata != null;
+    const draftMetadata = (node as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata ?? null;
+    const draftData =
+      node.draftData && isRecord(node.draftData) ? (node.draftData as TPayload) : null;
     return {
       treeNodeId: node.id as NodeId,
       draftMetadata,
@@ -230,19 +223,25 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
     (data: Partial<TreeNodeUpdaterState<TPayload>>) => {
       setDraft((prev) => {
         if (!prev) return null;
-        const nextDraftMetadata: TreeNodeMetadata = {
-          ...(prev.draftMetadata ?? {}),
-          ...(data.metadata ?? {}),
-          ...(data.draftMetadata ?? {}),
-        };
-        const nextDraftData: TPayload =
-          (data.draftData
-            ? ({ ...(prev.draftData ?? ({} as TPayload)), ...data.draftData } as TPayload)
-            : prev.draftData) ?? ({} as TPayload);
+
+        const nextDraftMetadata =
+          data.draftMetadata !== undefined
+            ? data.draftMetadata
+            : data.metadata
+              ? { ...(prev.draftMetadata ?? null), ...data.metadata }
+              : prev.draftMetadata ?? null;
+
+        const nextDraftData =
+          data.draftData !== undefined
+            ? data.draftData
+            : data.draftData === null
+              ? null
+              : prev.draftData ?? null;
+
         const merged: TreeNodeUpdaterState<TPayload> = {
           treeNodeId: prev.treeNodeId,
-          draftMetadata: nextDraftMetadata,
-          draftData: nextDraftData,
+          draftMetadata: nextDraftMetadata ?? null,
+          draftData: nextDraftData ?? null,
           metadata: data.metadata ?? prev.metadata,
           data: prev.data,
           version: data.version ?? prev.version,
@@ -268,11 +267,13 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
       setLoading(true);
       const { wc: wcAPI, query } = await getClient();
 
-      await wcAPI.updateTreeNodeDraftMetadata(targetId, finalData.draftMetadata ?? {});
-      await wcAPI.updateTreeNodeDraftData(
-        targetId,
-        (finalData.draftData ?? {}) as Record<string, unknown>
-      );
+      const outgoingDraftMetadata =
+        finalData.draftMetadata === null ? null : (finalData.draftMetadata ?? {});
+      const outgoingDraftData =
+        finalData.draftData === null ? null : (finalData.draftData ?? {});
+
+      await wcAPI.updateTreeNodeDraftMetadata(targetId, outgoingDraftMetadata as any);
+      await wcAPI.updateTreeNodeDraftData(targetId, outgoingDraftData as any);
 
       const res = await wcAPI.commitDraft(targetId, {
         onNameConflict: 'auto-rename',
@@ -288,24 +289,40 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
           refreshedCopy = toUpdater(latestNode as TreeNode);
           // If the backend returns a node without draftData (committed),
           // ensure draftData is cleared locally as well.
-          if (!latestNode.draftData) {
-            refreshedCopy = {
-              ...refreshedCopy,
-              draftData: {} as TPayload,
-              hasRemoteDraft: false,
-            };
-          }
         } else {
           // Fallback when latest node cannot be fetched: treat current draftData as committed data
           refreshedCopy = {
             ...finalData,
             treeNodeId: committedNodeId,
             data: (finalData.draftData ?? finalData.data) as Record<string, unknown>,
-            draftData: {} as TPayload,
-            hasRemoteDraft: false,
             version: typeof finalData.version === 'number' ? finalData.version + 1 : 1,
             updatedAt: Date.now() as Timestamp,
           };
+        }
+
+        // After commit, move any draft payload/metadata into committed fields and clear draft.
+        const committedPayload =
+          (refreshedCopy.data as Record<string, unknown> | undefined) ??
+          ((refreshedCopy.draftData ?? {}) as Record<string, unknown>);
+        const committedMetadata: TreeNodeMetadata = {
+          ...(refreshedCopy.metadata ?? { name: '', description: '', tags: [] }),
+          ...(refreshedCopy.draftMetadata ?? {}),
+        };
+        refreshedCopy = {
+          ...refreshedCopy,
+          metadata: committedMetadata,
+          data: committedPayload,
+          draftMetadata: null as any,
+          draftData: null as any,
+          hasRemoteDraft: false,
+        };
+
+        // Explicitly clear draft on the server so subsequent fetches do not return draftData/draftMetadata.
+        try {
+          await wcAPI.updateTreeNodeDraftMetadata(committedNodeId, null as any);
+          await wcAPI.updateTreeNodeDraftData(committedNodeId, null as any);
+        } catch (clearErr) {
+          console.warn('[useTreeNodeUpdater] failed to clear server draft after commit', clearErr);
         }
 
         setDraft(refreshedCopy);

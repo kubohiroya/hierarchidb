@@ -14,24 +14,50 @@ export const emptyGuards: StepGuardState = {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
 const shallowEqualStepData = (a?: StepData, b?: StepData): boolean => {
   if (a === b) return true;
   if (!isRecord(a) || !isRecord(b)) return false;
-  const aKeys = Object.keys(a);
-  const bKeys = Object.keys(b);
-  if (aKeys.length !== bKeys.length) return false;
-  for (const key of aKeys) {
-    if (Array.isArray(a[key]) && Array.isArray(b[key])) {
-      const arrA = a[key] as unknown[];
-      const arrB = b[key] as unknown[];
+
+  const stack: Array<{ left: unknown; right: unknown }> = [{ left: a, right: b }];
+
+  while (stack.length > 0) {
+    const { left, right } = stack.pop()!;
+    if (left === right) continue;
+
+    const leftIsArray = Array.isArray(left);
+    const rightIsArray = Array.isArray(right);
+    if (leftIsArray || rightIsArray) {
+      if (!leftIsArray || !rightIsArray) return false;
+      const arrA = left as unknown[];
+      const arrB = right as unknown[];
       if (arrA.length !== arrB.length) return false;
       for (let i = 0; i < arrA.length; i += 1) {
-        if (arrA[i] !== arrB[i]) return false;
+        stack.push({ left: arrA[i], right: arrB[i] });
       }
       continue;
     }
-    if (a[key] !== b[key]) return false;
+
+    const leftIsObj = isPlainObject(left);
+    const rightIsObj = isPlainObject(right);
+    if (leftIsObj || rightIsObj) {
+      if (!leftIsObj || !rightIsObj) return false;
+      const aKeys = Object.keys(left);
+      const bKeys = Object.keys(right);
+      if (aKeys.length !== bKeys.length) return false;
+      for (const key of aKeys) {
+        if (!Object.prototype.hasOwnProperty.call(right, key)) return false;
+        stack.push({ left: (left as Record<string, unknown>)[key], right: (right as Record<string, unknown>)[key] });
+      }
+      continue;
+    }
+
+    // Primitive and function/Date/etc. default comparison
+    if (left !== right) return false;
   }
+
   return true;
 };
 

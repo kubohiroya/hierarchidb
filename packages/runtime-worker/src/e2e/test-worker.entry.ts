@@ -11,8 +11,8 @@ import type {
 } from '@hierarchidb/common-api';
 import type { Endpoint as ComlinkEndpoint } from 'comlink';
 import { expose, proxy } from 'comlink';
-import { WorkerService } from '../index.js';
 import type { CommandProcessor } from '../services/CommandProcessor.js';
+import { WorkerService } from '../WorkerService.js';
 
 type Endpoint = MessagePort | Worker | ComlinkEndpoint;
 

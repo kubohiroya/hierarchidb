@@ -3,7 +3,7 @@ import 'fake-indexeddb/auto';
 import type { NodeId, NodeType, TreeNode, TreeNodeMetadata, Timestamp } from '@hierarchidb/common-types';
 import { CommandProcessor } from '../../services/CommandProcessor.js';
 import { CoreDB } from '../../services/CoreDB.js';
-import { DraftService } from '../../services/DraftService.js';
+import { TreeNodeUpdaterService } from '../../services/TreeNodeUpdaterService.js';
 import {
   assertCommitConflict,
   assertCommitNameConflict,
@@ -13,12 +13,12 @@ import {
 describe('Draft commit E2E (holder-less)', () => {
   let core: CoreDB;
   let cp: CommandProcessor;
-  let draftService: DraftService;
+  let draftService: TreeNodeUpdaterService;
 
   beforeEach(async () => {
     core = await CoreDB.getSingleton('e2e-db');
     cp = new CommandProcessor(core);
-    draftService = new DraftService(core, cp);
+    draftService = new TreeNodeUpdaterService(core, cp);
   });
 
   async function createDraftNode(params: {

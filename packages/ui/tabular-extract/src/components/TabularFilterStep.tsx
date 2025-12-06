@@ -200,7 +200,6 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
   useEffect(() => {
     if (!previewDirty) return;
     const timer = window.setTimeout(() => {
-      console.log('Auto-preview triggered');
       handlePreviewRef.current();
     }, 500);
     return () => window.clearTimeout(timer);

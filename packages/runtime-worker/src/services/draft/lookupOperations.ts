@@ -17,8 +17,12 @@ export async function checkDraftConflict(coreDB: CoreDB, nodeId: NodeId): Promis
 export async function updateTreeNodeDraftMetadata(
   coreDB: CoreDB,
   nodeId: NodeId,
-  updater: Partial<TreeNodeMetadata>
+  updater: Partial<TreeNodeMetadata> | null
 ): Promise<void> {
+  if (updater === null) {
+    await coreDB.nodes.update(nodeId, { draftMetadata: null });
+    return;
+  }
   const current = (await coreDB.nodes.get(nodeId)) as TreeNode | undefined;
   const prev = (current as { draftMetadata?: TreeNodeMetadata | null })?.draftMetadata ?? null;
   const next: TreeNodeMetadata = {
@@ -31,8 +35,12 @@ export async function updateTreeNodeDraftMetadata(
 export async function updateTreeNodeDraftData(
   coreDB: CoreDB,
   nodeId: NodeId,
-  updater: Record<string, unknown>
+  updater: Record<string, unknown> | null
 ): Promise<void> {
+  if (updater === null) {
+    await coreDB.nodes.update(nodeId, { draftData: null });
+    return;
+  }
   const current = (await coreDB.nodes.get(nodeId)) as TreeNode | undefined;
   const prev = (current as { draftData?: Record<string, unknown> | null })?.draftData ?? {};
   await coreDB.nodes.update(nodeId, {

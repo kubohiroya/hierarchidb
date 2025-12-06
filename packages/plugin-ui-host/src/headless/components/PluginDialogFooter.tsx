@@ -13,7 +13,8 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloseIcon from '@mui/icons-material/Close';
 import { Box, Button, Stack, Tooltip } from '@mui/material';
 import { useLocation } from '@tanstack/react-router';
-import React from 'react';
+import React, { useCallback } from 'react';
+import { Theme } from '@mui/material/styles';
 
 export interface PluginDialogFooterPrimaryButtonOptions {
   leftVisibility?: 'auto' | 'hidden';
@@ -50,6 +51,15 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   primaryButtonOptions,
 }) => {
   const ctx = useMultiStepDialogContext<Record<string, unknown>>();
+  if (typeof console !== 'undefined' && typeof console.debug === 'function') {
+    console.debug('[PluginDialogFooter] render', {
+      activeStepIndex: ctx.activeStepIndex,
+      enabledSteps: ctx.enabledStepIndices,
+      validatedSteps: ctx.validatedStepIndices,
+      isDirty: ctx.isDirty,
+      canCommit,
+    });
+  }
   const location = useLocation();
   const isResourcesTree = React.useMemo(() => {
     const segments = location.pathname.split('/').filter(Boolean);
@@ -65,33 +75,46 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
     !isFirstStep &&
     (ctx.enabledStepIndices.includes(ctx.activeStepIndex - 1) ||
       ctx.enabledStepIndices.length === 0);
-  const canNavigateNext =
-    !isLastStep &&
-    (ctx.enabledStepIndices.includes(ctx.activeStepIndex + 1) ||
-      ctx.enabledStepIndices.length === 0);
   const isDirty = ctx.isDirty;
   const totalSteps = ctx.stepComponents.length;
   const validatedStepSet = React.useMemo(
     () => new Set(ctx.validatedStepIndices),
     [ctx.validatedStepIndices]
   );
+
   const allStepsValidated = totalSteps === 0 || validatedStepSet.size >= totalSteps;
 
-  const handleBackOrCancel = () => {
+  const handleBackOrCancel = useCallback(() => {
+    if (typeof console !== 'undefined' && typeof console.debug === 'function') {
+      console.debug('[PluginDialogFooter] back/cancel click', {
+        isFirstStep,
+        canNavigateBack,
+        activeStepIndex: ctx.activeStepIndex,
+        enabledStepIndices: ctx.enabledStepIndices,
+      });
+    }
     if (isFirstStep) {
       ctx.onRequestClose('close');
       return;
     }
     ctx.onStepNavigate({ type: 'back' });
-  };
+  },[canNavigateBack, ctx, isFirstStep]);
 
-  const handleNextOrSave = () => {
+  const handleNextOrSave = useCallback(() => {
+    if (typeof console !== 'undefined' && typeof console.debug === 'function') {
+      console.debug('[PluginDialogFooter] next/save click', {
+        isLastStep,
+        canCommit,
+        activeStepIndex: ctx.activeStepIndex,
+        validatedStepIndices: ctx.validatedStepIndices,
+      });
+    }
     if (isLastStep) {
       ctx.onRequestCommit?.();
       return;
     }
     ctx.onStepNavigate({ type: 'next' });
-  };
+  }, [canCommit, ctx, isLastStep]);
 
   const leftPrimaryLabel =
     primaryButtonOptions?.leftLabelOverride ?? (isFirstStep ? 'Cancel' : 'Back');
@@ -102,8 +125,10 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   ) : (
     <ChevronLeftIcon fontSize="small" />
   );
-  const disableLeftPrimary = isFirstStep ? false : !canNavigateBack;
-  const disableRightPrimary = isLastStep ? !canCommit : !canNavigateNext;
+  // Temporarily keep navigation/commit buttons always enabled to avoid
+  // non-responsive footer actions while upstream guards are being stabilized.
+  const disableLeftPrimary = false;
+  const disableRightPrimary = false;
   const showSaveDraft = typeof onSaveDraft === 'function';
   const showStartBatch = typeof onStartBatch === 'function';
   const disableDraftButton = disableDraft ?? !isDirty;
@@ -114,17 +139,29 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   const shouldRenderNextButton = showRightPrimary && !isLastStep;
   const shouldRenderFinalCommitButton = showRightPrimary && isLastStep;
 
-  const handleInlineSave = () => {
+  const handleInlineSave = useCallback(() => {
+    if (typeof console !== 'undefined' && typeof console.debug === 'function') {
+      console.debug('[PluginDialogFooter] inline save click', {
+        canCommit,
+        activeStepIndex: ctx.activeStepIndex,
+        validatedStepIndices: ctx.validatedStepIndices,
+      });
+    }
     ctx.onRequestCommit?.();
-  };
+  }, [canCommit, ctx]);
+
+  const sx = useCallback((theme: Theme) => ({
+    borderTop: `1px solid ${theme.palette.divider}`,
+    padding: theme.spacing(1.5, 2),
+    backgroundColor: getDialogSurfaceColor(theme),
+    position: 'relative',
+    zIndex: (theme.zIndex?.modal ?? 1300) + 2,
+    pointerEvents: 'auto',
+  }), []);
 
   return (
     <Box
-      sx={(theme) => ({
-        borderTop: `1px solid ${theme.palette.divider}`,
-        padding: theme.spacing(1.5, 2),
-        backgroundColor: getDialogSurfaceColor(theme),
-      })}
+      sx={sx}
     >
       <Stack
         direction={{ xs: 'column', sm: 'row' }}

@@ -7953,6 +7953,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-06 21:05 progress: 1596 dialog step URL 同期統合 — useDialogSteps で dialogData を shallowEqualStepData で参照安定化し、同一内容なら新規オブジェクトを作らないように修正。HMR 後の最大更新深さループ抑止狙い。`pnpm --filter @hierarchidb/plugin-ui-host typecheck` 実行し exit 0。
 - 2025-12-06 21:20 progress: 1594 fix/spreadsheet/edit-step2-download — FilteringStep で filters 配列を shallowEqual し参照再利用するよう安定化。`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` 実行し exit 0。
 - 2025-12-06 21:28 progress: 1594 fix/spreadsheet/edit-step2-download — FilteringStep で table metadata 取得後に setValid(true) を明示し、エラー時/ロード中は setValid(false) と setError を同期。Back/Save/SaveDraft が無効化される問題への対処。`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` 実行し exit 0。
+- 2025-12-06 21:38 progress: 1596 dialog step URL 同期統合 — フッターが非クリックになる疑いに対応し、PluginDialogFooter を z-index/pointerEvents 明示で前面に固定。`pnpm --filter @hierarchidb/plugin-ui-host typecheck` 再実行し exit 0。
+- 2025-12-06 21:50 progress: 1596 dialog step URL 同期統合 — useStepCapabilities で filled/guards の同値ガードを追加し、同じ結果なら setState をスキップして再レンダリングを抑制。`pnpm --filter @hierarchidb/plugin-ui-host typecheck` 再実行し exit 0。
 - 2025-11-01 10:06 start: fix/folder-plugin/uuid-shim-policy — `scripts/check-shims.mjs` で uuid シムが検出される経緯と folder-plugin 側の対応方針を調査開始。
 - 2025-11-01 10:10 progress: fix/folder-plugin/uuid-shim-policy — `scripts/check-shims.mjs` の allow list と検出条件を確認し、対象シムが唯一 `packages/node-type/folder-plugin/src/types/uuid-shim.d.ts` であること、レポ内で `uuid` import が未使用であることを洗い出し。
 - 2025-11-01 10:11 done: fix/folder-plugin/uuid-shim-policy — uuid シムファイルを削除し、`pnpm shims:check` が `[shim-check] ok` で成功することを確認。

@@ -83,7 +83,7 @@ const rulesEqual = (a: TabularFilterRule[], b: TabularFilterRule[]): boolean => 
   return true;
 };
 
-export function FilterRulesTable({
+function FilterRulesTableComponent({
   filters,
   onChange,
   onDirty,
@@ -99,6 +99,8 @@ export function FilterRulesTable({
   const [draftValues, setDraftValues] = useState<Record<string, string>>({});
   const draftValuesRef = useRef<Record<string, string>>({});
   const normalizedRulesRef = useRef<TabularFilterRule[]>(filters);
+  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const activeInputIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     draftValuesRef.current = draftValues;
@@ -209,6 +211,17 @@ export function FilterRulesTable({
     },
     [handleUpdateRule]
   );
+
+  // Ensure any pending draft input values are committed when the table unmounts
+  // (e.g., dialog close or step change) so edits are not lost.
+  useEffect(() => {
+    return () => {
+      const current = normalizedRulesRef.current;
+      current.forEach((rule) => {
+        commitDraftValue(rule.id);
+      });
+    };
+  }, [commitDraftValue]);
 
   const handleAddRule = useCallback(() => {
     const columnName = firstColumnName;
@@ -416,18 +429,31 @@ export function FilterRulesTable({
                   draftValuesRef.current = next;
                   return next;
                 });
-                notifyDirty();
+                activeInputIdRef.current = rule.id;
                 if (needsValue && nextValue.trim().length > 0 && !rule.enabled) {
                   // Only flip enabled; commit of value happens on blur/Enter to avoid focus loss.
                   handleUpdateRule(rule.id, (current) => ({ ...current, enabled: true }));
                 }
               }}
-              onBlur={() => commitDraftValue(rule.id)}
+              onFocus={() => {
+                activeInputIdRef.current = rule.id;
+              }}
+              onBlur={() => {
+                commitDraftValue(rule.id);
+                notifyDirty();
+                if (activeInputIdRef.current === rule.id) {
+                  activeInputIdRef.current = null;
+                }
+              }}
               onKeyDown={(event) => {
                 if (event.key === 'Enter') {
                   event.preventDefault();
                   commitDraftValue(rule.id);
+                  notifyDirty();
                 }
+              }}
+              inputRef={(el) => {
+                inputRefs.current[rule.id] = el;
               }}
               inputProps={{
                 'aria-label': 'Value',
@@ -454,8 +480,24 @@ export function FilterRulesTable({
         size: 48,
       },
     ],
-    [handleUpdateRule, columns, operatorOptions, commitDraftValue, handleDeleteRule]
+    [handleUpdateRule, columns, operatorOptions, notifyDirty, commitDraftValue, handleDeleteRule]
   );
+
+  // Restore focus if a re-render causes the active input to lose focus.
+  useEffect(() => {
+    const activeId = activeInputIdRef.current;
+    if (!activeId) return;
+    const el = inputRefs.current[activeId];
+    if (el && document.activeElement !== el) {
+      el.focus({ preventScroll: true });
+      const len = el.value.length;
+      try {
+        el.setSelectionRange(len, len);
+      } catch {
+        // no-op
+      }
+    }
+  });
 
   const table = useReactTable({
     data: normalizedRules,
@@ -527,3 +569,14 @@ export function FilterRulesTable({
     </Accordion>
   );
 }
+
+export const FilterRulesTable = React.memo(
+  FilterRulesTableComponent,
+  (prev, next) =>
+    rulesEqual(prev.filters, next.filters) &&
+    prev.columns === next.columns &&
+    prev.operatorOptions === next.operatorOptions &&
+    prev.onChange === next.onChange &&
+    prev.onDirty === next.onDirty &&
+    prev.defaultExpanded === next.defaultExpanded
+);

@@ -164,6 +164,10 @@ export function useDialogSteps({
   basicInfoValidationErrorRef.current = basicInfoValidationError;
   const tagSuggestionsRef = useRef<string[]>(tagSuggestions);
   tagSuggestionsRef.current = tagSuggestions;
+  const draftDataRef = useRef<Partial<PluginDefinedEntity>>(draftData);
+  draftDataRef.current = draftData;
+  const basicInfoValidationPayloadRef = useRef<TreeNodeMetadata>(basicInfo);
+  basicInfoValidationPayloadRef.current = basicInfo;
   const modeRef = useRef<'create' | 'edit'>(mode);
   modeRef.current = mode;
   const stepContextRef = useRef<StepContextSnapshot>({
@@ -216,8 +220,6 @@ export function useDialogSteps({
     () => buildStepWorkingData(draftData, basicInfo, basicInfoMeta),
     [basicInfo, basicInfoMeta, draftData]
   );
-  const basicInfoValidationPayload = useMemo<TreeNodeMetadata>(() => basicInfo, [basicInfo]);
-
   const dialogDataRef = useRef<Partial<PluginDefinedEntity>>({});
   const dialogData = useMemo<Partial<PluginDefinedEntity>>(() => {
     const merged = mergeDialogData(basicInfo, draftData);
@@ -242,17 +244,17 @@ export function useDialogSteps({
 
     normalizedConfigs.forEach((cfg) => {
       const isBasicInfoStep = cfg.id === 'basic-info';
-      const validationPayload = isBasicInfoStep ? basicInfoValidationPayload : draftData;
       const validateFn = cfg.validate;
       const resolveValidate: StepValidationFn | undefined = (() => {
         if (isBasicInfoStep) {
           if (validateFn) {
-            return () => Boolean(validateFn(validationPayload)) && isBasicInfoValid;
+            return () =>
+              Boolean(validateFn(basicInfoValidationPayloadRef.current)) && isBasicInfoValid;
           }
           return () => isBasicInfoValid;
         }
         if (!validateFn) return undefined;
-        return () => Boolean(validateFn(validationPayload));
+        return () => Boolean(validateFn(draftDataRef.current));
       })();
       result.push({
         id: cfg.id,
@@ -264,7 +266,7 @@ export function useDialogSteps({
     });
 
     return result;
-  }, [composedConfigs.hasHostBase, normalizedConfigs, isBasicInfoValid, basicInfoValidationPayload, draftData]);
+  }, [composedConfigs.hasHostBase, normalizedConfigs, isBasicInfoValid]);
 
   const handleBasicInfoChange = useCallback(
     (data: { name: string; description: string; tags?: string[] }) => {
@@ -438,7 +440,7 @@ export function useDialogSteps({
     steps,
     stepDescriptors,
     currentStepData,
-    basicInfoValidationPayload,
+    basicInfoValidationPayload: basicInfoValidationPayloadRef.current,
     dialogData,
   };
 }

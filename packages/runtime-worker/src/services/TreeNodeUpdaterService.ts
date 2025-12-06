@@ -25,7 +25,7 @@ import {
  * DraftService - minimal implementation backed by CoreDB TreeNodes.
  * Note: This service returns only serializable data. It does not expose ProxyMarked types.
  */
-export class DraftService implements TreeNodeUpdaterAPI {
+export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
   constructor(
     private coreDB: CoreDB,
     _commandProcessor?: CommandProcessor
@@ -57,12 +57,6 @@ export class DraftService implements TreeNodeUpdaterAPI {
   async getTreeNode(nodeId: NodeId): Promise<TreeNode | undefined> {
     const node = await this.coreDB.nodes.get(nodeId);
     if (!node) return undefined;
-    const hasDraftData = node.draftData !== null && node.draftData !== undefined;
-    if (!hasDraftData && node.data) {
-      // IMPORTANT: preserve draftData on the persisted node for downstream reads.
-      await this.coreDB.nodes.update(nodeId, { draftData: node.data });
-      return { ...node, draftData: node.data } as TreeNode;
-    }
     return node as TreeNode;
   }
 
@@ -70,14 +64,14 @@ export class DraftService implements TreeNodeUpdaterAPI {
 
   async updateTreeNodeDraftMetadata(
     nodeId: NodeId,
-    updater: Partial<TreeNodeMetadata>
+    updater: Partial<TreeNodeMetadata> | null
   ): Promise<void> {
     await updateTreeNodeDraftMetadata(this.coreDB, nodeId, updater);
   }
 
   async updateTreeNodeDraftData(
     nodeId: NodeId,
-    updater: Record<string, unknown>
+    updater: Record<string, unknown> | null
   ): Promise<void> {
     await updateTreeNodeDraftData(this.coreDB, nodeId, updater);
   }
@@ -98,7 +92,33 @@ export class DraftService implements TreeNodeUpdaterAPI {
     options?: CommitDraftOptions
   ): Promise<CommitResult> {
     const conflictPolicy: OnNameConflict = options?.onNameConflict ?? 'auto-rename';
+    if (typeof console !== 'undefined' && typeof console.debug === 'function') {
+      console.debug('[DraftService] commitDraft request', {
+        draftId,
+        conflictPolicy,
+      });
+    }
     const result = await commitDraftOp(this.coreDB, draftId, conflictPolicy);
+    if (typeof console !== 'undefined' && typeof console.debug === 'function') {
+      const node = result.status === 'ok' ? await getTreeNode(this.coreDB, result.nodeId as NodeId) : null;
+      console.debug('[DraftService] commitDraft result', {
+        status: result.status,
+        nodeId: result.status === 'ok' ? result.nodeId : undefined,
+        autoRenameTo: (result as any)?.autoRenameTo,
+        suggestedName: (result as any)?.suggestedName,
+        originalVersion: (result as any)?.originalVersion,
+        wcVersion: (result as any)?.wcVersion,
+        persistedNode: node
+          ? {
+              id: node.id,
+              metadata: node.metadata,
+              data: node.data,
+              draftMetadata: (node as any).draftMetadata,
+              draftData: (node as any).draftData,
+            }
+          : null,
+      });
+    }
     if (result.status === 'ok') {
       return { status: 'ok', nodeId: result.nodeId, autoRenameTo: result.autoRenameTo };
     }

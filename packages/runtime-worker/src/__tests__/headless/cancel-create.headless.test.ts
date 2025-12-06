@@ -2,19 +2,19 @@ import 'fake-indexeddb/auto';
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-types';
 import { CoreDB } from '../../services/CoreDB.js';
-import { DraftService } from '../../services/DraftService.js';
+import { TreeNodeUpdaterService } from '../../services/TreeNodeUpdaterService.js';
 import { discardTreeNodeDraft } from '../../services/draft/cleanupOperations.js';
 
 describe('create dialog cancel discards draft nodes', () => {
   const treeId = 'r' as TreeId;
   const parentId = `${treeId}:root` as NodeId;
   let core: CoreDB;
-  let draftService: DraftService;
+  let draftService: TreeNodeUpdaterService;
 
   beforeEach(async () => {
     CoreDB.resetInstance();
     core = await CoreDB.getSingleton(`${treeId}-cancel-create`);
-    draftService = new DraftService(core);
+    draftService = new TreeNodeUpdaterService(core);
     const now = Date.now();
     await core.nodes.put({
       id: parentId,

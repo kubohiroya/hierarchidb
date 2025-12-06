@@ -155,6 +155,7 @@ export function usePluginDialogController(
     treeNodeUpdater: draft,
     hasUnsavedChanges,
     updateTreeNodeUpdater,
+    commitTreeNodeUpdater,
     discardDraft,
     loading,
     error,
@@ -180,8 +181,8 @@ export function usePluginDialogController(
       draft
         ? {
             treeNodeId: draft.treeNodeId,
-            draftMetadata: draft.draftMetadata ?? undefined,
-            draftData: draft.draftData ?? undefined,
+            draftMetadata: draft.draftMetadata ?? null,
+            draftData: draft.draftData ?? null,
           }
         : null,
     [draft]
@@ -474,31 +475,78 @@ export function usePluginDialogController(
     updateTreeNodeUpdater,
   ]);
 
+  const canSaveCurrent = evaluatedState.guards.canSave;
+  const canStartBatch = evaluatedState.guards.canStartBatch;
+  const activeStartBatch = activeStepConfig?.capabilities?.startBatch;
+  const footerPrimaryButtons = footerOptions?.primaryButtons;
+  const footerSaveDraftLabel = footerOptions?.saveDraftLabel;
+  const disableDraftButton = nodeType === 'folder';
+  const [isStartingBatch, setIsStartingBatch] = useState(false);
+
+  const ensureNoConflictRef = useRef(ensureNoConflict);
+  useEffect(() => {
+    ensureNoConflictRef.current = ensureNoConflict;
+  }, [ensureNoConflict]);
+
+  const updateLocalDraftRef = useRef(updateLocalDraft);
+  useEffect(() => {
+    updateLocalDraftRef.current = updateLocalDraft;
+  }, [updateLocalDraft]);
+
+  const setActiveStepIndexRef = useRef(setActiveStepIndex);
+  const setUrlStepRef = useRef(setUrlStep);
+  useEffect(() => {
+    setActiveStepIndexRef.current = setActiveStepIndex;
+    setUrlStepRef.current = setUrlStep;
+  }, [setActiveStepIndex, setUrlStep]);
+
+  const activeStepIndexRef = useRef(activeStepIndex);
+  activeStepIndexRef.current = activeStepIndex;
+  const enabledStepsRef = useRef(enabledStepIndices);
+  enabledStepsRef.current = enabledStepIndices;
+  const validatedStepsRef = useRef(validatedStepIndices);
+  validatedStepsRef.current = validatedStepIndices;
+  const stepsLengthRef = useRef(steps.length);
+  stepsLengthRef.current = steps.length;
+  const canSaveRef = useRef(canSaveCurrent);
+  canSaveRef.current = canSaveCurrent;
+  const handleSubmitRef = useRef<(() => Promise<void>) | null>(null);
+
   const handleNavigation = useCallback(
     (event: StepNavigationEvent) => {
       void (async () => {
-        const ok = await ensureNoConflict();
+        const ok = await ensureNoConflictRef.current();
         if (!ok) return;
-        let nextIndex = activeStepIndex;
+        let nextIndex = activeStepIndexRef.current;
         switch (event.type) {
           case 'direct':
-            nextIndex = clampIndex(event.targetIndex ?? activeStepIndex, steps.length);
+            nextIndex = clampIndex(event.targetIndex ?? activeStepIndexRef.current, stepsLengthRef.current);
             break;
           case 'next':
-            nextIndex = clampIndex(activeStepIndex + 1, steps.length);
+            nextIndex = clampIndex(activeStepIndexRef.current + 1, stepsLengthRef.current);
             break;
           case 'back':
-            nextIndex = clampIndex(activeStepIndex - 1, steps.length);
+            nextIndex = clampIndex(activeStepIndexRef.current - 1, stepsLengthRef.current);
             break;
         }
-        if (nextIndex === activeStepIndex) return;
-        void updateLocalDraft().finally(() => {
-          setActiveStepIndex(nextIndex);
-          setUrlStep(nextIndex);
+        if (typeof console !== 'undefined' && typeof console.debug === 'function') {
+          console.debug('[PluginDialogShell] navigation', {
+            type: event.type,
+            activeStepIndex: activeStepIndexRef.current,
+            nextIndex,
+            enabledStepIndices: enabledStepsRef.current,
+            validatedStepIndices: validatedStepsRef.current,
+            canSave: canSaveRef.current,
+          });
+        }
+        if (nextIndex === activeStepIndexRef.current) return;
+        void updateLocalDraftRef.current?.().finally(() => {
+          setActiveStepIndexRef.current(nextIndex);
+          setUrlStepRef.current(nextIndex);
         });
       })();
     },
-    [activeStepIndex, ensureNoConflict, setActiveStepIndex, setUrlStep, steps.length, updateLocalDraft]
+    []
   );
 
   const navigateToNode = useCallback(
@@ -538,25 +586,14 @@ export function usePluginDialogController(
         },
       });
     }
-    const savedNodeId = treeUpdater?.treeNodeId ?? nodeId;
-
-    try {
-      await discardDraft();
-    } catch (err) {
-      console.warn('[PluginDialogShell] discard after submit failed', err);
-    }
-
-    if (savedNodeId) {
-      onSuccess?.(savedNodeId);
-      navigateToNode(savedNodeId);
-    }
-
+    const savedNodeId = await commitTreeNodeUpdater();
+    onSuccess?.(savedNodeId);
+    navigateToNode(savedNodeId);
     onClose();
   }, [
     ensureNoConflict,
     updateLocalDraft,
-    treeUpdater?.treeNodeId,
-    nodeId,
+    commitTreeNodeUpdater,
     onClose,
     nodeType,
     mode,
@@ -565,10 +602,13 @@ export function usePluginDialogController(
     basicInfo.description,
     basicInfo.tags,
     draftDataWithoutMeta,
-    discardDraft,
     onSuccess,
     navigateToNode,
   ]);
+
+  useEffect(() => {
+    handleSubmitRef.current = handleSubmit;
+  }, [handleSubmit]);
 
   const handleSaveDraft = useCallback(async () => {
     try {
@@ -576,11 +616,19 @@ export function usePluginDialogController(
       if (!ok) return;
       saveDraftInProgress.current = true;
       await updateLocalDraft();
+      // Apply draft metadata into committed metadata and clear draftMetadata; leave draftData as-is.
+      updateTreeNodeUpdater({
+        metadata: {
+          ...(draft?.metadata ?? { name: '', description: '', tags: [] }),
+          ...(draft?.draftMetadata ?? {}),
+        },
+        draftMetadata: null as any,
+      });
     } catch (err) {
       saveDraftInProgress.current = false;
       throw err;
     }
-  }, [ensureNoConflict, updateLocalDraft]);
+  }, [ensureNoConflict, updateLocalDraft, updateTreeNodeUpdater, draft?.metadata, draft?.draftMetadata]);
 
   const handleCancel = useCallback(async () => {
     const decision = evaluateCancelPolicy(mode, draft);
@@ -591,14 +639,6 @@ export function usePluginDialogController(
     }
     onClose();
   }, [discardDraft, mode, onClose, draft]);
-
-  const canSaveCurrent = evaluatedState.guards.canSave;
-  const canStartBatch = evaluatedState.guards.canStartBatch;
-  const activeStartBatch = activeStepConfig?.capabilities?.startBatch;
-  const footerPrimaryButtons = footerOptions?.primaryButtons;
-  const footerSaveDraftLabel = footerOptions?.saveDraftLabel;
-  const disableDraftButton = nodeType === 'folder';
-  const [isStartingBatch, setIsStartingBatch] = useState(false);
 
   const handleStartBatch = useCallback(async () => {
     if (!activeStartBatch) return;
@@ -772,22 +812,39 @@ export function usePluginDialogController(
     handleCancel().catch(() => void 0);
   }, [handleCancel, onClose]);
 
+  const handleStepDataChange = useCallback(
+    (patch: Partial<Partial<PluginDefinedEntity>>) => {
+      setLocalDraftData((prev) => ({ ...(toRecord(prev) ?? {}), ...patch }));
+    },
+    [setLocalDraftData]
+  );
+
+  const handleRequestCommit = useCallback(() => {
+    if (typeof console !== 'undefined' && typeof console.debug === 'function') {
+      console.debug('[PluginDialogShell] commit click', {
+        activeStepIndex: activeStepIndexRef.current,
+        canSave: canSaveRef.current,
+        validatedStepIndices: validatedStepsRef.current,
+      });
+    }
+    handleSubmitRef.current?.().catch(() => void 0);
+  }, []);
+
+  const invalidMessageMap = useMemo(() => ({}), []);
+
   const headlessProps: HeadlessMultiStepDialogProps<Partial<PluginDefinedEntity>> = {
     open,
     stepComponents: safeStepDescriptors,
     stepData: currentStepData,
-    onStepDataChange: (patch: Partial<Partial<PluginDefinedEntity>>) =>
-      setLocalDraftData((prev) => ({ ...(toRecord(prev) ?? {}), ...patch })),
+    onStepDataChange: handleStepDataChange,
     activeStepIndex,
     onStepNavigate: handleNavigation,
     enabledStepIndices,
     validatedStepIndices,
     committableStepIndices,
-    invalidMessageMap: {},
+    invalidMessageMap,
     onRequestClose: handleCloseRequest,
-    onRequestCommit: () => {
-      handleSubmit().catch(() => void 0);
-    },
+    onRequestCommit: handleRequestCommit,
     isDirty: hasUnsavedChanges,
     position: dialogPosition,
     onPositionChange: handlePositionChange as (next?: MultiStepDialogPosition) => void,

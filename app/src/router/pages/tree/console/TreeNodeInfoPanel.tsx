@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { MouseEvent } from 'react';
-import { Button, Divider, Paper, Stack, Tooltip, Typography, Alert, Box, IconButton } from '@mui/material';
+import { Button, Divider, Paper, Stack, Tooltip, Typography, Alert, Box, IconButton, Chip } from '@mui/material';
 import { Edit as EditIcon, PlayArrow as PlayArrowIcon, Close as CloseIcon } from '@mui/icons-material';
 import {
   NodeContextMenu,
@@ -145,6 +145,7 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
   const nodeIconColor = isFolderNodeType(nodeTypeLabel)
     ? baseIconColor
     : manifestIconColor ?? baseIconColor;
+  const isDraft = Boolean(node.draftData);
 
   return (
     <Box
@@ -195,6 +196,15 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
           <Typography variant="h4" component="h2" sx={{ wordBreak: 'break-word' }}>
             {node.metadata?.name || unnamedNodeLabel}
           </Typography>
+          {isDraft && (
+            <Chip
+              label="Draft"
+              size="small"
+              color="error"
+              variant="filled"
+              sx={{ height: 20 }}
+            />
+          )}
           <Typography variant="body2" color="text.secondary">
             {nodeTypeCaption}
           </Typography>

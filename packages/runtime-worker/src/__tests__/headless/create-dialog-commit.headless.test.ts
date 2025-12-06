@@ -2,18 +2,18 @@ import 'fake-indexeddb/auto';
 import { beforeEach, afterEach, describe, expect, it } from 'vitest';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-types';
 import { CoreDB } from '../../services/CoreDB.js';
-import { DraftService } from '../../services/DraftService.js';
+import { TreeNodeUpdaterService } from '../../services/TreeNodeUpdaterService.js';
 
 describe('Create dialog commit flow', () => {
   const treeId = 'r' as TreeId;
   const rootId = `${treeId}:root` as NodeId;
   let core: CoreDB;
-  let drafts: DraftService;
+  let drafts: TreeNodeUpdaterService;
 
   beforeEach(async () => {
     CoreDB.resetInstance();
     core = await CoreDB.getSingleton(`${treeId}-create-commit`);
-    drafts = new DraftService(core);
+    drafts = new TreeNodeUpdaterService(core);
     const now = Date.now();
     await core.nodes.put({
       id: rootId,
