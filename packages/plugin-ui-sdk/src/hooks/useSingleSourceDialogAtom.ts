@@ -1,0 +1,160 @@
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import type { PrimitiveAtom, Store } from 'jotai';
+import { atom, createStore } from 'jotai';
+import type { NodeId, TreeNodeMetadata } from '@hierarchidb/common-types';
+import type { UseTreeNodeUpdaterOptions } from './useTreeNodeUpdater.js';
+import { useTreeNodeUpdater } from './useTreeNodeUpdater.js';
+
+type DraftShape<TPayload extends object> = Partial<TPayload>;
+
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const shallowEqual = (a: unknown, b: unknown): boolean => {
+  if (a === b) return true;
+  if (!isObject(a) || !isObject(b)) return false;
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return false;
+  for (const key of aKeys) {
+    if (a[key] !== b[key]) return false;
+  }
+  return true;
+};
+
+export interface SingleSourceDialogAtomResult<TEntity extends object> {
+  store: Store;
+  draftAtom: PrimitiveAtom<DraftShape<TEntity>>;
+  metadataAtom: PrimitiveAtom<TreeNodeMetadata>;
+  hasUnsavedChanges: boolean;
+  loading: boolean;
+  error: Error | null;
+  treeNodeId?: NodeId;
+  commit: () => Promise<NodeId | undefined>;
+  discard: () => Promise<void>;
+  setDraft: (updater: (prev: DraftShape<TEntity>) => DraftShape<TEntity>) => void;
+  setMetadata: (updater: (prev: TreeNodeMetadata) => TreeNodeMetadata) => void;
+}
+
+export type UseSingleSourceDialogAtomOptions<TEntity extends object> =
+  UseTreeNodeUpdaterOptions<TEntity>;
+
+/**
+ * Single-source dialog state hook backed by TreeNodeUpdater.
+ * Exposes jotai atoms for draftData/draftMetadata with equality guards
+ * to avoid redundant updates and render loops.
+ */
+export function useSingleSourceDialogAtom<TEntity extends object = Record<string, unknown>>(
+  options: UseSingleSourceDialogAtomOptions<TEntity>
+): SingleSourceDialogAtomResult<TEntity> {
+  const {
+    treeNodeUpdater,
+    hasUnsavedChanges,
+    updateTreeNodeUpdater,
+    commitTreeNodeUpdater,
+    discardDraft,
+    loading,
+    error,
+  } = useTreeNodeUpdater<TEntity>(options);
+
+  const storeRef = useRef<Store>();
+  if (!storeRef.current) {
+    storeRef.current = createStore();
+  }
+  const store = storeRef.current;
+
+  const draftAtomRef = useRef<PrimitiveAtom<DraftShape<TEntity>>>();
+  const metadataAtomRef = useRef<PrimitiveAtom<TreeNodeMetadata>>();
+
+  const draftAtom = useMemo(() => {
+    const initial = (treeNodeUpdater?.draftData ??
+      ({} as DraftShape<TEntity>)) as DraftShape<TEntity>;
+    const created = atom<DraftShape<TEntity>>(initial);
+    draftAtomRef.current = created;
+    return created;
+    // regenerate only when the treenode changes
+  }, [treeNodeUpdater?.treeNodeId]);
+
+  const metadataAtom = useMemo(() => {
+    const initial = (treeNodeUpdater?.draftMetadata ??
+      ({ name: '', description: '', tags: [] } as TreeNodeMetadata)) as TreeNodeMetadata;
+    const created = atom<TreeNodeMetadata>(initial);
+    metadataAtomRef.current = created;
+    return created;
+  }, [treeNodeUpdater?.treeNodeId]);
+
+  // Sync atoms from TreeNodeUpdater when the backend state changes
+  useEffect(() => {
+    if (!treeNodeUpdater) return;
+    if (draftAtomRef.current) {
+      const prev = store.get(draftAtomRef.current);
+      const next = (treeNodeUpdater.draftData ?? ({} as DraftShape<TEntity>)) as DraftShape<TEntity>;
+      if (!shallowEqual(prev as Record<string, unknown>, next as Record<string, unknown>)) {
+        store.set(draftAtomRef.current, next);
+      }
+    }
+    if (metadataAtomRef.current) {
+      const prev = store.get(metadataAtomRef.current);
+      const next =
+        (treeNodeUpdater.draftMetadata ??
+          ({ name: '', description: '', tags: [] } as TreeNodeMetadata)) as TreeNodeMetadata;
+      if (!shallowEqual(prev as Record<string, unknown>, next as Record<string, unknown>)) {
+        store.set(metadataAtomRef.current, next);
+      }
+    }
+  }, [store, treeNodeUpdater?.draftData, treeNodeUpdater?.draftMetadata, treeNodeUpdater?.treeNodeId]);
+
+  const setDraft = useCallback(
+    (updater: (prev: DraftShape<TEntity>) => DraftShape<TEntity>) => {
+      if (!draftAtomRef.current) return;
+      const prev = store.get(draftAtomRef.current);
+      const next = updater(prev);
+      if (shallowEqual(prev as Record<string, unknown>, next as Record<string, unknown>)) {
+        return;
+      }
+      store.set(draftAtomRef.current, next);
+      updateTreeNodeUpdater({ draftData: next as TEntity });
+    },
+    [store, updateTreeNodeUpdater]
+  );
+
+  const setMetadata = useCallback(
+    (updater: (prev: TreeNodeMetadata) => TreeNodeMetadata) => {
+      if (!metadataAtomRef.current) return;
+      const prev = store.get(metadataAtomRef.current);
+      const next = updater(prev);
+      if (shallowEqual(prev as Record<string, unknown>, next as Record<string, unknown>)) {
+        return;
+      }
+      store.set(metadataAtomRef.current, next);
+      updateTreeNodeUpdater({ draftMetadata: next });
+    },
+    [store, updateTreeNodeUpdater]
+  );
+
+  const commit = useCallback(
+    async () => {
+      const result = await commitTreeNodeUpdater();
+      return result;
+    },
+    [commitTreeNodeUpdater]
+  );
+
+  const discard = useCallback(async () => {
+    await discardDraft();
+  }, [discardDraft]);
+
+  return {
+    store,
+    draftAtom,
+    metadataAtom,
+    hasUnsavedChanges,
+    loading,
+    error,
+    treeNodeId: treeNodeUpdater?.treeNodeId,
+    commit,
+    discard,
+    setDraft,
+    setMetadata,
+  };
+}

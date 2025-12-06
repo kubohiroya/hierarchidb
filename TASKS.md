@@ -67,6 +67,21 @@
   - [ ] useDialogUrlSync / ステッパーのリンク周りを `step` 前提で確認し、ドキュメント/コメントも整合させる
 - ロールバック手順：本タスクで変更した URL 同期関連ファイルを revert し、リロードでステップが初期化される従前挙動に復旧する（同じ手順で再現を確認）
 
+1598) plugin-ui-sdk に useSingleSourceDialogAtom を追加（P0）
+- ブランチ: `feat/plugin-ui-sdk/single-source-dialog-atom`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/plugin-ui-sdk/src/hooks/useTreeNodeUpdater.ts`, jotai 依存追加, TreeNodeUpdaterPayload パターン
+- 受け入れ基準（DoD）:
+  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] `useSingleSourceDialogAtom<TEntity>` を追加し、TreeNodeUpdater を単一ソースとした atom + store を提供する
+  - [ ] 同値ガード付きで draft/metadata 更新を行い、不要な setState ループを防ぐ（手動確認で Step3 などが update depth exceeded を出さない）
+  - [ ] `pnpm --filter @hierarchidb/plugin-ui-sdk typecheck`（または `pnpm -C app typecheck`）を実行し、結果を運用ログに記録する
+- チェックリスト:
+  - [ ] jotai を plugin-ui-sdk の dependency/peer に追加する
+  - [ ] useSingleSourceDialogAtom を新設し、draft/metadata atom と commit/discard をラップする
+  - [ ] 同値チェック（patch 無しで参照維持）とジェネリクス対応を実装する
+  - [ ] index.ts へ export を追加する
+- ロールバック手順：`packages/plugin-ui-sdk` への依存追加と新規 hook ファイル・export を revert し、typecheck を再実行して復旧を確認する
+
 1597) MultiStepDialog Stepper 表示調整（P0）
 - ブランチ: `fix/ui-dialog/stepper-active-style`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `packages/plugin-ui-host/src/headless/components/PluginDialogHeader.tsx`、`@mui/material` Stepper
@@ -9521,6 +9536,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-27 15:46 progress: fix/workingcopy/dialog-cancel-behavior — create 仮ノードを version:0 に統一し、commit/save/import で 1 以上へ昇格する方針に合わせて判定を整理。`initTreeNode` を version 0 で作成、`commitTreeNodeDraft` は version を 0 起点で +1、`discardTreeNodeDraft` は committed 判定を version>0/データ有無のみに簡素化。UI cancel で forceDelete を渡すよう修正済み。`pnpm --filter @hierarchidb/runtime-worker test -- --run cancel-create` exit 0。
 
 ## 今日の着手（運用ログ） <a id="worklog-16"></a>
+- 2025-12-06 17:10 start: feat/plugin-ui-sdk/single-source-dialog-atom — TreeNodeUpdater 単一ソースの jotai hook `useSingleSourceDialogAtom` を追加し、ステップ内ローカルとの多重管理を解消する作業を開始（main 上で作業）。DoD: 新hook追加、同値ガード/ジェネリクス対応、typecheck実行。
 - 2025-12-05 09:02 start: fix/auth/authorize-route（TASK 1555） — 右上のBFF認証リンク `/auth/authorize/<provider>` が 404 になる問題の調査を開始。DoD: 404原因特定と解消、検証コマンド実行とログ記録、ロールバック手順明記。
 - 2025-12-05 09:20 progress: fix/auth/authorize-route — VITE_BFF_BASE_URL 未定義時のデフォルトを Cloudflare BFF（https://hierarchidb-bff.kubohiroya.workers.dev）へ変更。対象: scripts/env/base.sh, app/vite.config.ts の dev proxy デフォルト, packages/ui/auth BFFAuthService の fallback。ロールバック: 上記3ファイルの差分を revert し、必要なら再ビルド/再起動。
 - 2025-12-05 12:16 start: fix/auth/bff-google-404（TASK 1592） — 本番BFF利用の `pnpm dev` で `/auth/authorize/google` が 404 になる問題の調査を開始。DoD: Kanban/ログ更新、404 原因特定と解消、callback 到達を手動確認、検証ログとロールバック手順を記載。

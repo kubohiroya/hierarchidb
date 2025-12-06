@@ -8,6 +8,11 @@ export type {
   TreeNodeUpdaterState,
   PluginDialogData,
 } from './hooks/useTreeNodeUpdater.js';
+export {
+  useSingleSourceDialogAtom,
+  type UseSingleSourceDialogAtomOptions,
+  type SingleSourceDialogAtomResult,
+} from './hooks/useSingleSourceDialogAtom.js';
 export { createTreeNodeUpdaterActions } from './hooks/useTreeNodeUpdater.js';
 export type { BasicInfoStepProps } from './dialog/steps/BasicInfoStep.js';
 export {

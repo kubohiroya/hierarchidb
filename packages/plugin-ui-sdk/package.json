@@ -28,7 +28,8 @@
     "@hierarchidb/plugin-service-sdk": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/ui-worker-provider": "workspace:*",
-    "@hierarchidb/ui-dialog": "workspace:*"
+    "@hierarchidb/ui-dialog": "workspace:*",
+    "jotai": "^2.13.1"
   },
   "peerDependencies": {
     "dexie": "^4.2.0",
@@ -40,7 +41,8 @@
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/download": "workspace:*",
-    "comlink": "^4.4.1"
+    "comlink": "^4.4.1",
+    "jotai": "^2.13.1"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
@@ -60,6 +62,7 @@
     "@hierarchidb/download": "workspace:*",
     "@hierarchidb/ui-worker-provider": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
+    "jotai": "^2.13.1",
     "vitest": "^3.2.4",
     "@testing-library/react": "^16.1.0",
     "comlink": "^4.4.1"
