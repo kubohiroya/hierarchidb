@@ -14,7 +14,7 @@ export interface DialogMapState {
 }
 
 export interface UseDialogUrlSyncOptions {
-  namespace?: string; // prefix for params, default: 'd'
+  namespace?: string; // prefix for params, default: '' (no prefix)
   defaults?: {
     step?: number;
     mode?: DialogModeState;
@@ -41,7 +41,7 @@ function debounceFn<TArgs extends unknown[]>(fn: (...args: TArgs) => void, wait:
 }
 
 export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
-  const { namespace = 'd', defaults, debounce, history, readFrom = 'search' } = options;
+  const { namespace = '', defaults, debounce, history, readFrom = 'search' } = options;
 
   const [step, setStep] = useState<number>(defaults?.step ?? 0);
   const [mode, setMode] = useState<DialogModeState>(defaults?.mode ?? 'normal');
@@ -64,7 +64,7 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
   const readUrl = useCallback(() => {
     if (!isBrowser) return;
     const q = makeParams();
-    const ns = (k: string) => `${namespace}_${k}`;
+    const ns = (k: string) => (namespace ? `${namespace}_${k}` : k);
     const s = q.get(ns('step'));
     if (s !== null) {
       const n = Number(s);
@@ -98,7 +98,7 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
       which: 'step' | 'mode' | 'map'
     ) => {
       if (!isBrowser) return;
-      const ns = (k: string) => `${namespace}_${k}`;
+      const ns = (k: string) => (namespace ? `${namespace}_${k}` : k);
       const url = new URL(window.location.href);
       const q = (() => {
         if (readFrom === 'hash') {
@@ -174,17 +174,24 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
   const clearParams = useCallback(() => {
     if (!isBrowser) return;
     const url = new URL(window.location.href);
-    const ns = `${namespace}_`;
+      const ns = namespace ? `${namespace}_` : '';
     if (readFrom === 'hash') {
       const [head] = (url.hash ?? '').split('?');
       const base = head && head.length > 0 ? head : '#';
       url.hash = base;
     } else {
       const q = new URLSearchParams(url.search);
-      [...q.keys()].forEach((k) => {
-        if (k.startsWith(ns)) q.delete(k);
-      });
-      url.search = q.toString();
+      if (ns) {
+        [...q.keys()].forEach((k) => {
+          if (k.startsWith(ns)) q.delete(k);
+        });
+        url.search = q.toString();
+      } else {
+        q.delete('step');
+        q.delete('mode');
+        q.delete('map');
+        url.search = q.toString();
+      }
     }
     window.history.replaceState(null, '', url);
   }, [isBrowser, namespace, readFrom]);

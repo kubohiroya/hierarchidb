@@ -19,7 +19,6 @@
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },
-  "dependencies": {},
   "peerDependencies": {
     "@hierarchidb/common-types": "workspace:*",
     "@mui/icons-material": "^7.3.2",

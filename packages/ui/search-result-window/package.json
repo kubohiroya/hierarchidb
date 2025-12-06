@@ -23,16 +23,14 @@
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },
-  "dependencies": {},
   "devDependencies": {
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/ui-floating-window": "workspace:*",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
-    "@storybook/react": "^8.4.7",
-    "@storybook/react-vite": "^8.4.7",
-    "storybook": "^8.4.7",
+    "@storybook/react-vite": "^10.1.4",
+    "storybook": "^10.1.4",
     "typescript": "workspace:^5.9.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

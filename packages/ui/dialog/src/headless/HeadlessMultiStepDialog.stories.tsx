@@ -84,14 +84,14 @@ export const Default: Story = {
   args: {
     initialDisplayMode: 'normal',
   },
-  render: args => <HeadlessStory {...args} />,
+  render: (args: Story['args']) => <HeadlessStory {...args} />,
 };
 
 export const MaximizedByDefault: Story = {
   args: {
     initialDisplayMode: 'maximize',
   },
-  render: args => <HeadlessStory {...args} />,
+  render: (args: Story['args']) => <HeadlessStory {...args} />,
 };
 
 type HeadlessStoryProps = {

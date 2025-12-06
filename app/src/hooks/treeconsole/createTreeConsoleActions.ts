@@ -398,9 +398,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
 
       const searchParams = new URLSearchParams();
       if (typeof dialogOptions?.initialStep === 'number' && dialogOptions.initialStep >= 0) {
-        const stepValue = dialogOptions.initialStep + 1;
-        searchParams.set('step', String(stepValue));
-        searchParams.set('d_step', String(stepValue));
+        searchParams.set('step', String(dialogOptions.initialStep));
       }
       if (dialogOptions?.displayMode === 'full') {
         searchParams.set('d_mode', 'full');
@@ -878,6 +876,10 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
       }
 
       if (normalizedAction === 'navigate') {
+        if (options?.navigateToParent) {
+          navigateTo(parentId ?? null);
+          return;
+        }
         navigateTo(targetNodeId);
         return;
       }

@@ -53,6 +53,34 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1596) Dialog step URL 同期統合（P0）
+- ブランチ: `fix/app/dialog-step-sync`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `app/src/router/routes/tree/PluginDialogRoute.tsx`, `app/src/hooks/treeconsole/createTreeConsoleActions.ts`, `packages/plugin-base/src/hooks/useDialogUrlSync.ts`, `packages/plugin-ui-host/src/headless` 系
+- 受け入れ基準（DoD）:
+  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] URL クエリのステップ同期を `step`（0 ベース）に一本化し、リロード/HMR でステップが 0 に戻らないことを手動確認する
+  - [ ] 旧 `d_step` は廃止し、必要ならフォールバック仕様を明文化する
+  - [ ] 影響範囲の型チェック（例: `pnpm -C app typecheck` など）を実行し、結果を運用ログに記録する
+- チェックリスト:
+  - [ ] PluginDialogRoute で `step`（0 ベース）から初期ステップを決定する
+  - [ ] dialog 起動時の URL 付与（createTreeConsoleActions など）を `step` 0 ベースに揃える
+  - [ ] useDialogUrlSync / ステッパーのリンク周りを `step` 前提で確認し、ドキュメント/コメントも整合させる
+- ロールバック手順：本タスクで変更した URL 同期関連ファイルを revert し、リロードでステップが初期化される従前挙動に復旧する（同じ手順で再現を確認）
+
+1597) MultiStepDialog Stepper 表示調整（P0）
+- ブランチ: `fix/ui-dialog/stepper-active-style`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/plugin-ui-host/src/headless/components/PluginDialogHeader.tsx`、`@mui/material` Stepper
+- 受け入れ基準（DoD）:
+  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] 現在ステップのアイコン背景が primary 色となり、ラベルも青色で表示される
+  - [ ] Stepper のボタン表示は番号のみとし、検証済みステップは右上のチェックアイコンで示す
+  - [ ] 影響範囲の簡易確認（表示手動確認または対象パッケージの typecheck）を実施し、運用ログに記録する
+- チェックリスト:
+  - [ ] StepStatusIcon を現在ステップ primary 背景＋番号表示＋右上チェックオーバーレイに変更する
+  - [ ] 完了済みステップは背景を変えずチェックオーバーレイのみで表示する
+  - [ ] ラベル色は現在ステップで青、その他は従来通り
+- ロールバック手順：`packages/plugin-ui-host/src/headless/components/PluginDialogHeader.tsx` の差分を revert し、StepStatusIcon を元の緑背景＋チェック表示へ戻す
+
 1592) BFF Google authorize 404 調査/修正（P0）
 - ブランチ: `fix/auth/bff-google-404`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: app dev/prod BFF 設定（本番BFFを利用）、auth redirect URI/コードチャレンジ生成、`app/src` の auth エンドポイント定義、`packages/ui/auth` の BFFAuthService
@@ -84,6 +112,11 @@
   - start: 2025-12-05 23:45 JST Column 選択肢空問題の調査と補正を開始（main 上で作業）
   - progress: 2025-12-05 23:47 JST FilteringStep で metadata→lastPreview→rows から columns をフォールバック生成し、TabularFilterStep で columnOptions を優先・デフォルト選択を自動補正。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` / `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` を実行し exit 0 を確認（手動確認未実施）。
   - progress: 2025-12-05 23:49 JST TabularFilterStep で previewData.columns を最優先に columnOptions を組み立て（プレビュー取得済みなら必ず候補表示）、typecheck を再実行し exit 0 を確認。
+  - progress: 2025-12-06 00:02 JST TabularFilterStep に initialFilters を追加してフィルタの保存・復元を有効化し、Spreadsheet FilteringStep から既存 filters を受け渡すよう更新。`pnpm --filter @hierarchidb/ui-tabular-extract build`（tsdown 警告: define キー無視）後、`pnpm --filter @hierarchidb/{ui-tabular-extract,spreadsheet-plugin} typecheck` を再実行し exit 0。手動確認は未実施。
+  - progress: 2025-12-06 00:18 JST columnOptions を tableMetadata.columns 優先 + previewColumns フォールバックに変更し、保存列のずれを防止。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` → build（tsdown define 警告）→ `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` を再実行し exit 0。手動確認未実施。
+  - progress: 2025-12-06 00:32 JST Spreadsheet step registry で Filtering step に validate/capabilities を付与し、最終ステップが常に committable になるよう修正。`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0。手動確認未実施。
+  - progress: 2025-12-06 00:40 JST commitDraft 後に draftData が残り data が null のままになる問題に備え、`useTreeNodeUpdater` の commit 処理で最新ノードが取れない場合でも draftData を data へ反映し draftData を空にするフォールバックを追加。最新ノード取得時に draftData が消えていればローカルでも hasRemoteDraft=false/draftData={} に調整。`pnpm --filter @hierarchidb/plugin-ui-sdk typecheck` → build（tsdown define 警告）→ `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` 再実行し exit 0。手動確認未実施。
+  - progress: 2025-12-06 00:55 JST ModalSelect がダイアログ外へポータルしている疑いに対処するため、TabularFilterStep の Column/Operator で menuContainer を dialogRef に渡し、ポータル描画を dialog 内へ固定。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` → build（tsdown define 警告）→ `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` を再実行し exit 0。手動確認未実施。
 
 1594) Edit Spreadsheet Step2 Download 後にリロードが発生して data:{} / draft:null になる問題調査（P0）
 - ブランチ: `fix/spreadsheet/edit-step2-download`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -3382,6 +3415,23 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
 
 ## 今日の着手（運用ログ） <a id="worklog-1"></a>
 
+- 2025-12-06 13:05 start: fix/app/dialog-step-sync — ダイアログ URL ステップ同期を 0 ベース `step` に統一する調査を開始（main 上で作業）。現象: HMR/リロード後にステップが 0 に戻る。
+- 2025-12-06 13:25 progress: fix/app/dialog-step-sync — PluginDialogRoute で初期ステップ取得を `step`（0ベース）優先に変更し、createTreeConsoleActions で dialog 起動時も `step` のみを付与するよう調整。`pnpm -C app typecheck` 実行（plugin-base build で既知の tsdown define 警告あり、exit 0）。
+- 2025-12-06 13:45 progress: fix/app/dialog-step-sync — useDialogUrlSync を namespace なしで `step`/`mode`/`map` を直接同期するよう変更し、ステッパーリンクも `step` で統一。`pnpm -C app typecheck` 再実行（plugin-base build の define 警告あり、exit 0）。
+- 2025-12-06 14:05 start: fix/ui-dialog/stepper-active-style — MultiStepDialog Stepper の現在ステップ表示を primary 背景＋番号、検証済みは右上チェックに揃える対応を開始（main 上で作業）。
+- 2025-12-06 14:25 progress: fix/ui-dialog/stepper-active-style — StepStatusIcon を現在ステップ primary 背景＋番号表示にし、完了は右上チェックオーバーレイで表示するよう変更。`pnpm -C app typecheck` 再実行（plugin-base build の define 警告あり、exit 0）。
+- 2025-12-06 14:35 progress: fix/ui-dialog/stepper-active-style — 完了チェック位置を水平方向に +8px シフト（右上オーバーレイ調整）。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
+- 2025-12-06 14:45 progress: fix/ui-dialog/stepper-active-style — 完了チェック位置を上方向に 4px シフト（右上オーバーレイ調整）。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
+- 2025-12-06 15:00 progress: fix/ui-dialog/stepper-active-style — FilterRulesTable の無限更新警告調査で、ensureRule を useCallback 化して依存安定化。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
+- 2025-12-06 15:15 progress: fix/ui-dialog/stepper-active-style — FilterRulesTable で columns 定義を useMemo 化し、react-table の autoReset* を無効化して再帰セットを防止。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
+- 2025-12-06 15:25 progress: fix/ui-dialog/stepper-active-style — FilterRulesTable の draftValues 同期で変更なしの場合は state 更新をスキップするよう最適化。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
+- 2025-12-06 15:35 progress: fix/ui-dialog/stepper-active-style — FilterRulesTable の normalizedRules を安定化（同値なら前回配列を再利用）して react-table のリセットトリガーを抑制。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
+- 2025-12-06 15:45 progress: fix/ui-dialog/stepper-active-style — FilterRulesTable に pagination state を明示（manualPagination + autoReset すべて off）して RowPagination の自動リセットを抑制。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
+- 2025-12-06 15:55 progress: fix/ui-dialog/stepper-active-style — FilterRulesTable の外部 filters 変更に対し、内容が同じ場合は setLocalFilters をスキップするガードを追加。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
+- 2025-12-06 16:05 progress: fix/ui-dialog/stepper-active-style — FilterRulesTable から pagination state を撤去（小規模テーブル前提）し、react-table の内部リセット連鎖を遮断。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
+- 2025-12-06 16:20 progress: fix/ui-dialog/stepper-active-style — FilterRulesTable を filters 単一ソースに簡素化（ローカルコピー/draftValues 廃止）し、等価チェックで onChange 重複発火を抑制。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
+- 2025-12-06 16:40 progress: fix/ui-dialog/stepper-active-style — 共通方針（TreeNodeUpdater を単一ソース、同値ガード、ステップ入出時のハンドオフ、副作用同値チェック）を他プラグインにも展開する設計改善を開始（コード側はタブular共有コンポーネントから簡素化を先行）。
+- 2025-12-06 16:55 progress: fix/ui-dialog/stepper-active-style — FilterRulesTable を完全に純粋化（親 filters をそのまま表示し、manualPagination + autoReset 無効＋同値チェック onChange）。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
 - 2025-10-22 14:05 start: fix/app/plugin-type-resolution — `app/src/types/plugin-shims.d.ts` 依存を廃し、プラグインの UI/worker/database をビルド成果物から直接参照できるよう解決経路を整理。`pnpm -C app typecheck` エラー再発を防ぐ構成を検証予定。
 - 2025-10-22 14:32 progress: fix/app/plugin-type-resolution — `scripts/generate-plugin-loader.mjs` にプラグイン exports 情報から `.d.ts` を再エクスポートする自動生成処理を追加し、`app/src/types/generated/plugin-modules.d.ts` を生成。モジュール解決では dist の型をそのまま再利用する方針に切り替え、`any` を排除。
 - 2025-10-22 14:48 done: fix/app/plugin-type-resolution — 生成処理を `pnpm run tools:generate-plugin-loader` へ集約し、差分が無ければファイル書き換えをスキップする構成に更新。`packages/plugin-registry` の `prebuild` で同スクリプトを自動実行するようにし、CI/ローカルのビルドで手動実行が不要に。`pnpm --filter @hierarchidb/plugin-registry build` で TS5055 が再発しないことを確認。ロールバック: スクリプトと `package.json` 変更を戻し、旧 shim 方式に復帰。
@@ -9518,6 +9568,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-03 17:53 done: chore/templates/population-source-url — `app/public/templates/population-2023/tree-nodes.json` の dataSource.source/filename を `https://raw.githubusercontent.com/datasets/population/refs/heads/main/data/population.csv` / `population.csv` へ更新。検証: manifest/tags の変更なし、手動確認のみ。ロールバック: 同ファイルの差分を revert し、既定の example.com URL に戻す。
 - 2025-12-03 18:10 start: fix/spreadsheet/download-tabular-check — SpreadsheetDialog で Download Tabular 成功時にボタン横へ CheckCircle を表示する対応を開始。DoD: Kanban/ログ更新、成功判定の誤表示なし、UI 回帰なしを手動確認、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` ログ記録、ロールバック手順記載。ブランチ作成不可なら main 作業。
 - 2025-12-03 18:32 progress: fix/spreadsheet/download-tabular-check — Download Tabular 成功時の CheckCircle 表示を TabularFileImportStep に追加し、draftData の dataSource.type/source から Import Method 初期値を復元するように修正。既存 URL 変更時は成功フラグをリセット。検証: `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0。
+- 2025-12-03 18:50 progress: fix/spreadsheet/download-tabular-check — Worker 側 Comlink メッセージに dev 専用の debug ログを追加（apply 失敗のパス/ターゲット型を追跡）。検証: `pnpm --filter @hierarchidb/app typecheck` exit 0（build 時に tsdown define warning 既存）。
+- 2025-12-03 19:05 progress: fix/spreadsheet/download-tabular-check — Comlink デバッグリスナーを削除（エラー再現しなくなったため常時ログを停止）。検証: `pnpm --filter @hierarchidb/app typecheck` exit 0（tsdown define warning 既存）。
 - 2025-12-02 06:10 start: chore/codemod/workingcopy-rename — 現行ソースの WorkingCopy 用語を TreeNodeUpdater/draftMetadata/draftData へ置換するコーデモッド準備を開始。DoD: Kanban/ログ更新、コーデモッド作成・適用、plugin-service-sdk/src/draft/** 等の命名/コメント更新、typecheck 実行と記録、ロールバック手順明記。deprecated/dist は除外。branch 作成不可なら main 作業。
 - 2025-12-02 05:15 start: chore/codemod/treenode-updater-renames — TreeNodeUpdaterPayload.id→treeNodeId、TreeNodeUpdatePayload→TreeNodeUpdaterPatch の AST コーデモッドを実施するタスクを開始。DoD: Kanban/ログ更新、コーデモッド適用で命名揺れ解消、重複型統一、typecheck 実行と記録、ロールバック手順明記。branch 作成不可なら main で作業。
 - 2025-12-02 05:28 progress: chore/codemod/treenode-updater-renames — ts-morph コーデモッド `packages/tools/codemods/src/rename-tree-node-updater-id.ts` を追加し、build スクリプトへ組み込み。まだドライラン/適用は未実行（TreeNodeUpdatePayload→TreeNodeUpdaterPatch の扱いは再計画中）。

@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Provider } from 'jotai';
 import { SearchResultTable } from '../components/SearchResultTable.js';
 import type { SearchResult } from '../types/index.js';

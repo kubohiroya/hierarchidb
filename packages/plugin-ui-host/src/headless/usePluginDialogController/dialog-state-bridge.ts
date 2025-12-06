@@ -39,6 +39,7 @@ export function useDialogStateBridge({
     (async () => {
       try {
         const api = await client.getDialogStateAPI();
+        /*
         if (typeof console !== 'undefined' && typeof console.debug === 'function') {
           console.debug('[PluginDialogShell] dialogStateAPI snapshot', {
             apiType: typeof api,
@@ -48,6 +49,7 @@ export function useDialogStateBridge({
             keys: Object.keys(api ?? {}),
           });
         }
+         */
         if (cancelled) {
           return;
         }

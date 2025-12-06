@@ -26,7 +26,7 @@ const pluginIconColorMap: ReadonlyMap<string, string> = new Map<string, string>(
     ['resolver', normalizeColor('#ffb3c1')],
     ['route', normalizeColor('#a3b030')],
     ['shape', normalizeColor('#a3b030')],
-    ['spreadsheet', normalizeColor('#a3b030')], // spreadsheet inherits shape color
+    ['spreadsheet', normalizeColor('#dcbc50')],
     ['styler', normalizeColor('#dcbc50')],
     ['timeline', normalizeColor('#8a7cbf')],
   ].map(

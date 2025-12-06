@@ -252,6 +252,7 @@ reporter.reportStepProgress('Load Comlink', 0);
 
       reporter.reportStepProgress('Create API facade', 100);
       reporter.reportStepProgress('Expose API', 10);
+
       Comlink.expose(api);
       reporter.reportStepProgress('Expose API', 100);
       reporter.reportComplete();

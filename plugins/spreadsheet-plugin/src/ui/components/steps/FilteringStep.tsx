@@ -17,7 +17,8 @@ const FilteringStepContent: FC<{
   onChange: (data: SpreadsheetEntity) => void;
   setValid: (valid: boolean) => void;
   setError: (error: string | null) => void;
-}> = ({ dialogData, onChange, setValid, setError }) => {
+  initialFilters: TabularFilterRule[];
+}> = ({ dialogData, onChange, setValid, setError, initialFilters }) => {
   const { tabularTableMetadata, loading, error } = useTabularData({
     tableMetadataId: dialogData.spreadsheetMetadataId,
     pluginId: SPREADSHEET_NODE_TYPE,
@@ -84,15 +85,12 @@ const FilteringStepContent: FC<{
     setError(null);
   }, [setError, setValid]);
 
-  const handleFiltersChanged = useCallback(
-    (filters: TabularFilterRule[]) => {
-      onChange({
-        ...dialogData,
-        filters,
-      });
-    },
-    [dialogData, onChange],
-  );
+  const syncFilters = useCallback((filters: TabularFilterRule[]) => {
+    onChange({
+      ...dialogData,
+      filters,
+    });
+  }, [dialogData, onChange]);
 
   const handlePreviewData = useCallback(
     (preview: TabularDataResult) => {
@@ -139,8 +137,9 @@ const FilteringStepContent: FC<{
     <TabularFilterStep
       tableMetadata={tableMetadata}
       pluginId={SPREADSHEET_NODE_TYPE}
-      onFiltersChanged={handleFiltersChanged}
       onPreviewData={handlePreviewData}
+      initialFilters={initialFilters}
+      onSyncFilters={syncFilters}
     />
   );
 };
@@ -152,6 +151,7 @@ export const FilteringStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
   setError,
 }) => {
   const dialogData = useMemo<SpreadsheetEntity>(() => coerceDialogData(data), [data]);
+  const memoizedFilters = useMemo<TabularFilterRule[]>(() => dialogData.filters ?? [], [dialogData.filters]);
   const tabularApi = useMemo(() => createSpreadsheetTabularApi(SPREADSHEET_NODE_TYPE), []);
 
   return (
@@ -161,6 +161,7 @@ export const FilteringStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
         onChange={onChange}
         setValid={setValid}
         setError={setError}
+        initialFilters={memoizedFilters}
       />
     </TabularProvider>
   );

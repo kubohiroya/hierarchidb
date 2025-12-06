@@ -43,6 +43,7 @@ export function useDialogFrameState({
     mode: urlMode,
     setMode: setUrlMode,
   } = useDialogUrlSync({
+    namespace: '',
     defaults: { step: initialStep, mode: 'normal' },
     debounce: { map: 0 },
     history: { step: 'replace' },

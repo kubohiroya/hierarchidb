@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { MouseEvent } from 'react';
-import { Button, Divider, Paper, Stack, Tooltip, Typography, Alert, Box } from '@mui/material';
-import { Edit as EditIcon, PlayArrow as PlayArrowIcon } from '@mui/icons-material';
+import { Button, Divider, Paper, Stack, Tooltip, Typography, Alert, Box, IconButton } from '@mui/material';
+import { Edit as EditIcon, PlayArrow as PlayArrowIcon, Close as CloseIcon } from '@mui/icons-material';
 import {
   NodeContextMenu,
   NodeTypeIcon,
@@ -132,6 +132,7 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
   const previewLabel = getString('treeConsole.infoPanel.previewLabel', 'Play');
   const previewAria = getString('treeConsole.infoPanel.previewButton', 'Preview node');
   const unnamedNodeLabel = getString('treeConsole.infoPanel.unnamedNode', 'Untitled node');
+  const closeAria = getString('treeConsole.infoPanel.closeButton', 'Close and navigate to parent');
   const depthForColor = (() => {
     const depthCandidate = nodeData?.depth ?? node?.depth;
     if (typeof depthCandidate === 'number' && Number.isFinite(depthCandidate)) {
@@ -165,8 +166,18 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
           display: 'flex',
           flexDirection: 'column',
           gap: 2.5,
+          position: 'relative',
         }}
       >
+        <IconButton
+          aria-label={closeAria}
+          size="small"
+          onClick={() => handleContextMenuTrigger('navigate', { navigateToParent: true })}
+          disabled={isRootLike}
+          sx={{ position: 'absolute', top: 8, right: 8 }}
+        >
+          <CloseIcon fontSize="small" />
+        </IconButton>
         <Tooltip title={iconTooltip}>
           <span style={{ display: 'inline-flex', justifyContent: 'center' }}>
             <NodeTypeIcon

@@ -148,6 +148,7 @@ export const BootProgressProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const last = stepProgressLogRef.current[step.name];
       if (last !== step.progress) {
         stepProgressLogRef.current[step.name] = step.progress;
+        /*
         console.log(
           '[BootProgress]',
           timestamp,
@@ -157,6 +158,7 @@ export const BootProgressProvider: React.FC<{ children: React.ReactNode }> = ({ 
           `done=${step.done}`,
           `overall=${overallProgress}`
         );
+         */
       }
     });
   }, [steps, overallProgress]);

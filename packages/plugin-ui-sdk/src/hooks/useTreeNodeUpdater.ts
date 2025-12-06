@@ -283,14 +283,30 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
 
         const latestNode = (await query.getNode(committedNodeId)) ?? res.node;
 
-        const refreshedCopy: TreeNodeUpdaterState<TPayload> = latestNode
-          ? toUpdater(latestNode as TreeNode)
-          : {
-              ...finalData,
-              treeNodeId: committedNodeId,
-              version: typeof finalData.version === 'number' ? finalData.version + 1 : 1,
-              updatedAt: Date.now() as Timestamp,
+        let refreshedCopy: TreeNodeUpdaterState<TPayload>;
+        if (latestNode) {
+          refreshedCopy = toUpdater(latestNode as TreeNode);
+          // If the backend returns a node without draftData (committed),
+          // ensure draftData is cleared locally as well.
+          if (!latestNode.draftData) {
+            refreshedCopy = {
+              ...refreshedCopy,
+              draftData: {} as TPayload,
+              hasRemoteDraft: false,
             };
+          }
+        } else {
+          // Fallback when latest node cannot be fetched: treat current draftData as committed data
+          refreshedCopy = {
+            ...finalData,
+            treeNodeId: committedNodeId,
+            data: (finalData.draftData ?? finalData.data) as Record<string, unknown>,
+            draftData: {} as TPayload,
+            hasRemoteDraft: false,
+            version: typeof finalData.version === 'number' ? finalData.version + 1 : 1,
+            updatedAt: Date.now() as Timestamp,
+          };
+        }
 
         setDraft(refreshedCopy);
         setOriginalCopy(refreshedCopy);

@@ -79,7 +79,7 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
     (index: number) => {
       const rawSearch = location.searchStr ? location.searchStr.slice(1) : '';
       const params = new URLSearchParams(rawSearch);
-      params.set('d_step', String(index));
+      params.set('step', String(index));
       const query = params.toString();
       return `${location.pathname}${query ? `?${query}` : ''}${location.hash ?? ''}`;
     },
@@ -101,22 +101,19 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
     (
       props: StepIconProps & {
         variant?: 'validated-disabled';
+        stepIndex?: number;
       }
     ) => {
-      const { active, completed, icon: iconProp, variant } = props;
+      const { active, completed, icon: iconProp, variant, stepIndex } = props;
       const isValidatedDisabled = variant === 'validated-disabled';
-      const baseColor = isValidatedDisabled
-        ? theme.palette.mode === 'dark'
-          ? theme.palette.grey[700]
-          : theme.palette.grey[300]
-        : completed
-          ? theme.palette.success.main
+      const baseColor = active
+        ? theme.palette.primary.main
+        : isValidatedDisabled
+          ? theme.palette.mode === 'dark'
+            ? theme.palette.grey[700]
+            : theme.palette.grey[300]
           : theme.palette.background.paper;
-      const textColor = isValidatedDisabled
-        ? theme.palette.text.secondary
-        : completed
-          ? theme.palette.common.white
-          : theme.palette.text.primary;
+      const textColor = active ? theme.palette.common.white : theme.palette.text.primary;
       const borderColor = active ? theme.palette.primary.main : theme.palette.divider;
       const boxShadow = active
         ? `0 0 0 2px ${alpha(
@@ -148,9 +145,27 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
               duration: theme.transitions.duration.short,
             }),
             boxShadow,
+            position: 'relative',
           }}
         >
-          {completed ? <CheckIcon fontSize="inherit" /> : iconProp}
+          {typeof stepIndex === 'number' ? stepIndex + 1 : iconProp}
+          {completed && (
+            <CheckIcon
+              fontSize="inherit"
+              sx={{
+                position: 'absolute',
+                top: -10,
+                right: -14,
+                width: 16,
+                height: 16,
+                bgcolor: theme.palette.background.paper,
+                color: theme.palette.success.main,
+                borderRadius: '50%',
+                border: `1px solid ${theme.palette.success.main}`,
+                p: 0.25,
+              }}
+            />
+          )}
         </Box>
       );
     },
@@ -253,12 +268,19 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
                     : previousWorkerStep?.completed ??
                       ctx.validatedStepIndices.includes(index - 1);
                 const isValidatedButDisabled = completed && !canNavigate && index > 0 && !previousCompleted;
-                const StepIconComponent = (iconProps: StepIconProps) => (
-                  <StepStatusIcon
-                    {...iconProps}
-                    variant={isValidatedButDisabled ? 'validated-disabled' : undefined}
-                  />
-                );
+                const StepIconComponent = (iconProps: StepIconProps) => {
+                  const indexNumber =
+                    typeof iconProps.icon === 'number'
+                      ? Number(iconProps.icon) - 1
+                      : index;
+                  return (
+                    <StepStatusIcon
+                      {...iconProps}
+                      stepIndex={indexNumber}
+                      variant={isValidatedButDisabled ? 'validated-disabled' : undefined}
+                    />
+                  );
+                };
                 return (
                   <Step key={step.id} completed={completed}>
                     <StepButton

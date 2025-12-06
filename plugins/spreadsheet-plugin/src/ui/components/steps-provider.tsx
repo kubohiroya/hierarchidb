@@ -26,6 +26,11 @@ registry.registerConfigProvider({
         label: STEP_LABELS.filtering,
         componentFactory: (props: StepComponentProps<SpreadsheetEntity>) => <FilteringStep {...props} />,
         optional: true,
+        capabilities: {
+          canProceedToNext: () => true,
+          canSave: () => true,
+        },
+        validate: () => true,
       },
     ];
   },

@@ -55,11 +55,14 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
   // Parse query params for additional context
   const searchParams = new URLSearchParams(location.searchStr ? location.searchStr.slice(1) : '');
   const stepParam = searchParams.get('step');
-  // Only change initialStep when step actually changes; memoize to avoid re-render ripple to background.
-  const currentStep = React.useMemo(
-    () => (stepParam ? parseInt(stepParam, 10) - 1 : 0),
-    [stepParam]
-  ); // Convert to 0-based index
+  // Only change initialStep when param actually changes; memoize to avoid re-render ripple to background.
+  const currentStep = React.useMemo(() => {
+    if (stepParam !== null) {
+      const n = parseInt(stepParam, 10);
+      return Number.isFinite(n) && n >= 0 ? n : 0;
+    }
+    return 0;
+  }, [stepParam]);
 
   // Determine mode based on action with guard:
   // If action=create but target node already exists (canonical), treat as edit.
