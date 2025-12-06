@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import type { PrimitiveAtom, Store } from 'jotai';
-import { atom, createStore } from 'jotai';
+import type { PrimitiveAtom } from 'jotai';
+import { atom } from 'jotai';
+import { createStore } from 'jotai/vanilla';
 import type { NodeId, TreeNodeMetadata } from '@hierarchidb/common-types';
 import type { UseTreeNodeUpdaterOptions } from './useTreeNodeUpdater.js';
 import { useTreeNodeUpdater } from './useTreeNodeUpdater.js';
@@ -23,7 +24,7 @@ const shallowEqual = (a: unknown, b: unknown): boolean => {
 };
 
 export interface SingleSourceDialogAtomResult<TEntity extends object> {
-  store: Store;
+  store: ReturnType<typeof createStore>;
   draftAtom: PrimitiveAtom<DraftShape<TEntity>>;
   metadataAtom: PrimitiveAtom<TreeNodeMetadata>;
   hasUnsavedChanges: boolean;
@@ -57,7 +58,7 @@ export function useSingleSourceDialogAtom<TEntity extends object = Record<string
     error,
   } = useTreeNodeUpdater<TEntity>(options);
 
-  const storeRef = useRef<Store>();
+  const storeRef = useRef<ReturnType<typeof createStore>>();
   if (!storeRef.current) {
     storeRef.current = createStore();
   }
@@ -89,7 +90,7 @@ export function useSingleSourceDialogAtom<TEntity extends object = Record<string
     if (draftAtomRef.current) {
       const prev = store.get(draftAtomRef.current);
       const next = (treeNodeUpdater.draftData ?? ({} as DraftShape<TEntity>)) as DraftShape<TEntity>;
-      if (!shallowEqual(prev as Record<string, unknown>, next as Record<string, unknown>)) {
+      if (!shallowEqual(prev, next)) {
         store.set(draftAtomRef.current, next);
       }
     }
@@ -98,7 +99,7 @@ export function useSingleSourceDialogAtom<TEntity extends object = Record<string
       const next =
         (treeNodeUpdater.draftMetadata ??
           ({ name: '', description: '', tags: [] } as TreeNodeMetadata)) as TreeNodeMetadata;
-      if (!shallowEqual(prev as Record<string, unknown>, next as Record<string, unknown>)) {
+      if (!shallowEqual(prev, next)) {
         store.set(metadataAtomRef.current, next);
       }
     }
@@ -109,7 +110,7 @@ export function useSingleSourceDialogAtom<TEntity extends object = Record<string
       if (!draftAtomRef.current) return;
       const prev = store.get(draftAtomRef.current);
       const next = updater(prev);
-      if (shallowEqual(prev as Record<string, unknown>, next as Record<string, unknown>)) {
+      if (shallowEqual(prev, next)) {
         return;
       }
       store.set(draftAtomRef.current, next);
@@ -123,7 +124,7 @@ export function useSingleSourceDialogAtom<TEntity extends object = Record<string
       if (!metadataAtomRef.current) return;
       const prev = store.get(metadataAtomRef.current);
       const next = updater(prev);
-      if (shallowEqual(prev as Record<string, unknown>, next as Record<string, unknown>)) {
+      if (shallowEqual(prev, next)) {
         return;
       }
       store.set(metadataAtomRef.current, next);

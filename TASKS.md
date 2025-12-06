@@ -9537,6 +9537,7 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-16"></a>
 - 2025-12-06 17:10 start: feat/plugin-ui-sdk/single-source-dialog-atom — TreeNodeUpdater 単一ソースの jotai hook `useSingleSourceDialogAtom` を追加し、ステップ内ローカルとの多重管理を解消する作業を開始（main 上で作業）。DoD: 新hook追加、同値ガード/ジェネリクス対応、typecheck実行。
+- 2025-12-06 17:40 progress: feat/plugin-ui-sdk/single-source-dialog-atom — `useSingleSourceDialogAtom` を新設し、TreeNodeUpdater を単一ソースとした draft/metadata atom と commit/discard ラッパーを提供。jotai を plugin-ui-sdk 依存に追加し、同値ガードで不要な更新をスキップするよう実装。`pnpm --filter @hierarchidb/plugin-ui-sdk typecheck` exit 0（tsdown define 警告は既知）。
 - 2025-12-05 09:02 start: fix/auth/authorize-route（TASK 1555） — 右上のBFF認証リンク `/auth/authorize/<provider>` が 404 になる問題の調査を開始。DoD: 404原因特定と解消、検証コマンド実行とログ記録、ロールバック手順明記。
 - 2025-12-05 09:20 progress: fix/auth/authorize-route — VITE_BFF_BASE_URL 未定義時のデフォルトを Cloudflare BFF（https://hierarchidb-bff.kubohiroya.workers.dev）へ変更。対象: scripts/env/base.sh, app/vite.config.ts の dev proxy デフォルト, packages/ui/auth BFFAuthService の fallback。ロールバック: 上記3ファイルの差分を revert し、必要なら再ビルド/再起動。
 - 2025-12-05 12:16 start: fix/auth/bff-google-404（TASK 1592） — 本番BFF利用の `pnpm dev` で `/auth/authorize/google` が 404 になる問題の調査を開始。DoD: Kanban/ログ更新、404 原因特定と解消、callback 到達を手動確認、検証ログとロールバック手順を記載。
