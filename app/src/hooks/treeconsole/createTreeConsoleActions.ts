@@ -7,7 +7,7 @@
 
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { CommandResult, NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-types';
-import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-base';
+import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-toolbar';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import { PluginStepRegistry } from '@hierarchidb/plugin-base';
 import { DualKeyMap } from '@hierarchidb/util';

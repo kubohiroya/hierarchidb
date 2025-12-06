@@ -6,7 +6,7 @@
  */
 
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
-import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-base';
+import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-toolbar';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import { DualKeyMap } from '@hierarchidb/util';
 import { useEffect, useMemo, useRef, useState } from 'react';

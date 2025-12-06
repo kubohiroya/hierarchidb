@@ -8,14 +8,12 @@ import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { NodeId, NodeType, TreeChangeEvent, TreeNode } from '@hierarchidb/common-types';
 import type { DualKeyMap } from '@hierarchidb/util';
 import type { RowSelectionState } from '@tanstack/react-table';
-import type { NodeContextMenuProps } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import type { ReactNode } from 'react';
+import type { NodeContextMenuProps } from '@hierarchidb/ui-treeconsole-breadcrumb';
 
 /**
  */
 export type SelectionMode = 'none' | 'checkbox' | 'radio' | 'row-click';
-
-export type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-toolbar';
 
 /**
  * TreeTableConsolePanel Props

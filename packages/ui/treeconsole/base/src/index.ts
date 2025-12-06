@@ -26,5 +26,4 @@ export type {
   NavigationState,
   LoadingState,
   ErrorState,
-  TreeConsoleSearchMode,
 } from './types/index.js';

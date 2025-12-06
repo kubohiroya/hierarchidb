@@ -6,7 +6,7 @@
  */
 
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-base';
+import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-toolbar';
 import type {
   CommandResult,
   NodeId,
