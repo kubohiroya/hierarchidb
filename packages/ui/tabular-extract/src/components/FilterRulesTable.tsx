@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactElement } from 'react';
 import {
   Accordion,
@@ -91,16 +91,34 @@ export function FilterRulesTable({
   defaultExpanded = true,
 }: FilterRulesTableProps): ReactElement {
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [draftValues, setDraftValues] = useState<Record<string, string>>({});
 
-  const safeColumns = columns ?? [];
-  const firstColumnName = safeColumns[0]?.name ?? '';
+  const firstColumnName = columns[0]?.name ?? '';
+
+  // Keep local draft values in sync with incoming filters (add new, drop removed; preserve in-flight edits).
+  useEffect(() => {
+    setDraftValues((prev) => {
+      const next: Record<string, string> = {};
+      let changed = false;
+      for (const rule of filters) {
+        const current = prev[rule.id];
+        const fallback = String(rule.value ?? '');
+        next[rule.id] = current ?? fallback;
+        if (current === undefined) changed = true;
+      }
+      if (Object.keys(prev).length !== Object.keys(next).length || changed) {
+        return next;
+      }
+      return prev;
+    });
+  }, [filters]);
 
   const ensureRule = useCallback(
     (rule: TabularFilterRule): TabularFilterRule => {
-      const columnName = rule.column && safeColumns.some((c) => c.name === rule.column)
+      const columnName = rule.column && columns.some((c) => c.name === rule.column)
         ? rule.column
         : firstColumnName;
-      const columnType = normalizeType(safeColumns.find((c) => c.name === columnName)?.type);
+      const columnType = normalizeType(columns.find((c) => c.name === columnName)?.type);
       const availableOps = operatorOptions.filter((op) => op.types.includes(columnType));
       const operator = availableOps.some((op) => op.value === rule.operator)
         ? rule.operator
@@ -126,7 +144,7 @@ export function FilterRulesTable({
         enabled,
       };
     },
-    [firstColumnName, operatorOptions, safeColumns]
+    [firstColumnName, operatorOptions, columns]
   );
 
   const normalizedRules = useMemo<TabularFilterRule[]>(() => filters.map(ensureRule), [filters, ensureRule]);
@@ -151,7 +169,7 @@ export function FilterRulesTable({
 
   const handleAddRule = useCallback(() => {
     const columnName = firstColumnName;
-    const columnType = normalizeType(safeColumns.find((c) => c.name === columnName)?.type);
+    const columnType = normalizeType(columns.find((c) => c.name === columnName)?.type);
     const availableOps = operatorOptions.filter((op) => op.types.includes(columnType));
     const operator = availableOps[0]?.value ?? 'equals';
     const newRule: TabularFilterRule = {
@@ -163,7 +181,7 @@ export function FilterRulesTable({
     };
     const next = [...normalizedRules, newRule];
     onChange(next);
-  }, [firstColumnName, normalizedRules, onChange, operatorOptions, safeColumns]);
+  }, [firstColumnName, normalizedRules, onChange, operatorOptions, columns]);
 
   const handleDeleteRule = useCallback(
     (id: string) => {
@@ -249,7 +267,7 @@ export function FilterRulesTable({
               label="Column"
               onChange={(event) => {
                 const nextColumn = event.target.value;
-                const columnType = normalizeType(safeColumns.find((c) => c.name === nextColumn)?.type);
+                const columnType = normalizeType(columns.find((c) => c.name === nextColumn)?.type);
                 const availableOps = operatorOptions.filter((op) => op.types.includes(columnType));
                 const nextOperator = availableOps.some((op) => op.value === rule.operator)
                   ? rule.operator
@@ -274,7 +292,7 @@ export function FilterRulesTable({
                 name: `filter-column-${rule.id}`,
               }}
             >
-              {safeColumns.map((column) => (
+              {columns.map((column) => (
                 <option key={column.name} value={column.name}>
                   {column.name}
                 </option>
@@ -289,7 +307,7 @@ export function FilterRulesTable({
         header: 'Operator',
         cell: ({ row }: { row: Row<TabularFilterRule> }) => {
           const rule = row.original;
-          const columnType = normalizeType(safeColumns.find((c) => c.name === rule.column)?.type);
+          const columnType = normalizeType(columns.find((c) => c.name === rule.column)?.type);
           const availableOps = operatorOptions.filter((op) => op.types.includes(columnType));
           return (
             <TextField
@@ -340,7 +358,7 @@ export function FilterRulesTable({
           const rule = row.original;
           const operator = rule.operator;
           const needsValue = requiresValue(operator);
-          const value = String(rule.value ?? '');
+          const value = draftValues[rule.id] ?? String(rule.value ?? '');
           return (
             <TextField
               fullWidth
@@ -351,6 +369,7 @@ export function FilterRulesTable({
               onChange={(event) => {
                 const nextValue = event.target.value;
                 const nextEnabled = needsValue ? rule.enabled && nextValue.trim().length > 0 : rule.enabled;
+                setDraftValues((prev) => ({ ...prev, [rule.id]: nextValue }));
                 handleUpdateRule(rule.id, (current) => ({
                   ...current,
                   value: nextValue,
@@ -382,7 +401,7 @@ export function FilterRulesTable({
         size: 48,
       },
     ],
-    [handleDeleteRule, handleUpdateRule, operatorOptions, safeColumns]
+    [draftValues, handleDeleteRule, handleUpdateRule, operatorOptions, columns]
   );
 
   const table = useReactTable({
@@ -458,7 +477,7 @@ export function FilterRulesTable({
             variant="outlined"
             startIcon={<AddIcon />}
             onClick={handleAddRule}
-            disabled={safeColumns.length === 0}
+            disabled={columns.length === 0}
           >
             Add Filter Rule
           </Button>

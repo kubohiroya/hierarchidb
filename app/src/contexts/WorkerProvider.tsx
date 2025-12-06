@@ -10,7 +10,7 @@ import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type { WorkerInitializationChannel } from '@hierarchidb/ui-worker-client';
 import type { Remote } from 'comlink';
-import type { CSSProperties, ReactNode } from 'react';
+import React, { type CSSProperties, type ReactNode } from 'react';
 import {
   createContext,
   Suspense,
