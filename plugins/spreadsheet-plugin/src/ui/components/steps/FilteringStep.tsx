@@ -45,6 +45,20 @@ const FilteringStepContent: FC<{
     autoload: Boolean(dialogData.spreadsheetMetadataId),
   });
 
+  useEffect(() => {
+    if (error) {
+      setValid(false);
+      setError(error);
+      return;
+    }
+    if (loading) {
+      setValid(false);
+      return;
+    }
+    setValid(Boolean(tabularTableMetadata));
+    setError(null);
+  }, [error, loading, setError, setValid, tabularTableMetadata]);
+
   const tableMetadata = useMemo(() => {
     if (!tabularTableMetadata) return null;
 

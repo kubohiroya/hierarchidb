@@ -7,7 +7,6 @@ import {
   Box,
   Button,
   Checkbox,
-  CircularProgress,
   IconButton,
   Table,
   TableBody,
@@ -21,7 +20,6 @@ import {
   Delete as DeleteIcon,
   DragIndicator as DragIndicatorIcon,
   ExpandMore as ExpandMoreIcon,
-  ArrowDownward as ArrowDownwardIcon,
 } from '@mui/icons-material';
 import { type ColumnDef, type Row, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import type { TabularColumnInfo, TabularColumnType } from '@hierarchidb/tabular-store';
@@ -36,12 +34,10 @@ export type FilterOperatorOption = {
 type FilterRulesTableProps = {
   filters: TabularFilterRule[];
   onChange: (rules: TabularFilterRule[]) => void;
+  onDirty?: () => void;
   columns: TabularColumnInfo[];
   operatorOptions: FilterOperatorOption[];
   defaultExpanded?: boolean;
-  onPreview?: () => void;
-  previewDisabled?: boolean;
-  previewLoading?: boolean;
 };
 
 const requiresValue = (operator: TabularFilterOperator): boolean => {
@@ -90,13 +86,15 @@ const rulesEqual = (a: TabularFilterRule[], b: TabularFilterRule[]): boolean => 
 export function FilterRulesTable({
   filters,
   onChange,
+  onDirty,
   columns,
   operatorOptions,
   defaultExpanded = true,
-  onPreview,
-  previewDisabled,
-  previewLoading,
 }: FilterRulesTableProps): ReactElement {
+  const notifyDirty = useCallback(() => {
+    onDirty?.();
+  }, [onDirty]);
+
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [draftValues, setDraftValues] = useState<Record<string, string>>({});
   const draftValuesRef = useRef<Record<string, string>>({});
@@ -202,7 +200,7 @@ export function FilterRulesTable({
       const pending = draftValuesRef.current[ruleId];
       const nextValue = pending ?? '';
       const needsValue = requiresValue(target.operator);
-      const nextEnabled = needsValue ? target.enabled && nextValue.trim().length > 0 : target.enabled;
+      const nextEnabled = needsValue ? nextValue.trim().length > 0 : target.enabled;
       handleUpdateRule(ruleId, (current) => ({
         ...current,
         value: nextValue,
@@ -418,6 +416,11 @@ export function FilterRulesTable({
                   draftValuesRef.current = next;
                   return next;
                 });
+                notifyDirty();
+                if (needsValue && nextValue.trim().length > 0 && !rule.enabled) {
+                  // Only flip enabled; commit of value happens on blur/Enter to avoid focus loss.
+                  handleUpdateRule(rule.id, (current) => ({ ...current, enabled: true }));
+                }
               }}
               onBlur={() => commitDraftValue(rule.id)}
               onKeyDown={(event) => {
@@ -451,7 +454,7 @@ export function FilterRulesTable({
         size: 48,
       },
     ],
-    [handleDeleteRule, handleUpdateRule, operatorOptions, columns]
+    [handleUpdateRule, columns, operatorOptions, commitDraftValue, handleDeleteRule]
   );
 
   const table = useReactTable({
@@ -519,17 +522,6 @@ export function FilterRulesTable({
           >
             Add Filter Rule
           </Button>
-
-          {onPreview && (
-            <Button
-              variant="outlined"
-              startIcon={previewLoading ? <CircularProgress size={16} /> : <ArrowDownwardIcon />}
-              onClick={onPreview}
-              disabled={previewDisabled}
-            >
-              {previewLoading ? 'Loading Preview...' : 'Preview Filtered Data'}
-            </Button>
-          )}
         </Box>
       </AccordionDetails>
     </Accordion>

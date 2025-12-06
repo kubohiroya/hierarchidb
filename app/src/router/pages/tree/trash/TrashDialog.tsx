@@ -1112,29 +1112,7 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
         />
       ),
     }),
-    [
-      breadcrumbItems,
-      columns,
-      expandedIds,
-      frameState,
-      handleClose,
-      handleEmptyAll,
-      handleRestore,
-      loading,
-      mode,
-      nodeIndex,
-      onToggleExpand,
-      pageNodeId,
-      removalTargetCount,
-      searchTerm,
-      selectedIds,
-      stepComponents,
-      t,
-      trashViewRootId,
-      treeData,
-      treeId,
-      hasDraftsInView,
-    ]
+    [frameState, handleClose, handleEmptyAll, handleRestore, loading, mode, removalTargetCount, selectedIds, stepComponents, t, hasDraftsInView]
   );
 
   const frameSx = useMemo(

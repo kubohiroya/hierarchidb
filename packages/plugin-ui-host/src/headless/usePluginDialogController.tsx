@@ -641,7 +641,7 @@ export function usePluginDialogController(
           flex: 1,
           overflow: 'auto',
           padding: theme.spacing(2),
-          backgroundColor: theme.palette.background.default,
+          // backgroundColor: theme.palette.background.default,
         })}
         ref={dialogRef}
       >

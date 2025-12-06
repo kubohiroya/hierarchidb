@@ -25,6 +25,7 @@ import { useTabularFilter } from '../hooks/useTabularFilter.js';
 import { TabularColumnInfo, TabularColumnType, TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { TabularDataResult, TabularFilterRule } from '../types/index.js';
 import { FilterRulesTable, type FilterOperatorOption } from './FilterRulesTable.js';
+import {LinearProgress} from "@mui/material";
 
 export interface TabularFilterStepProps {
   tableMetadata: TabularTableMetadata;
@@ -74,7 +75,6 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
 
   const {
     previewData,
-    isLoading,
     error,
     getFilteredPreview,
     validateFilters,
@@ -153,6 +153,8 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
   }, [columnOptions]);
 
   const enabledFilters = useMemo(() => filters.filter((f) => f.enabled), [filters]);
+  const effectiveFilters = enabledFilters.length > 0 ? enabledFilters : filters;
+  const hasAnyFilters = filters.length > 0;
 
   const handleFiltersChange = useCallback((next: TabularFilterRule[]) => {
     setFilters(next);
@@ -175,12 +177,34 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
 
   const handlePreview = useCallback(() => {
     syncFilters();
-    if (enabledFilters.length === 0) return;
-    const validation = validateFilters(enabledFilters);
-    if (!validation.isValid) return;
-    getFilteredPreview(enabledFilters);
+    if (!hasAnyFilters) {
+      setPreviewDirty(false);
+      return;
+    }
+    const validation = validateFilters(effectiveFilters);
+    if (!validation.isValid) {
+      setPreviewDirty(false);
+      return;
+    }
+    getFilteredPreview(effectiveFilters);
     setPreviewDirty(false);
-  }, [enabledFilters, getFilteredPreview, syncFilters, validateFilters]);
+  }, [effectiveFilters, getFilteredPreview, hasAnyFilters, syncFilters, validateFilters]);
+
+  // Keep latest preview handler in a ref to avoid resetting debounce on dependency changes.
+  const handlePreviewRef = useRef(handlePreview);
+  useEffect(() => {
+    handlePreviewRef.current = handlePreview;
+  }, [handlePreview]);
+
+  // Auto-preview with debounce after edits.
+  useEffect(() => {
+    if (!previewDirty) return;
+    const timer = window.setTimeout(() => {
+      console.log('Auto-preview triggered');
+      handlePreviewRef.current();
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [previewDirty]);
 
   return (
     <Box sx={{ p: 3 }}>
@@ -197,11 +221,9 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
       <FilterRulesTable
         filters={filters}
         onChange={handleFiltersChange}
+        onDirty={() => setPreviewDirty(true)}
         columns={columnOptions}
         operatorOptions={FILTER_OPERATORS}
-        onPreview={handlePreview}
-        previewDisabled={isLoading || enabledFilters.length === 0 || !previewDirty}
-        previewLoading={isLoading}
       />
 
       {error && (
@@ -220,6 +242,7 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
               <Typography variant="body2" color="text.secondary">
                 Total Rows: {previewData.totalRows.toLocaleString()} • Filters Applied: {enabledFilters.length}
               </Typography>
+              {previewDirty && <LinearProgress variant={"indeterminate"}/>}
             </Box>
           </AccordionSummary>
           <AccordionDetails>
