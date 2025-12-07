@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useId } from 'react';
 import {
   Alert,
   Box,
@@ -35,8 +35,9 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
                                                                           onUpdate,
                                                                           onValidationChange,
                                                                           sourceSchema,
-                                                                          targetSchema,
-                                                                        }) => {
+  targetSchema,
+}) => {
+  const controlId = useId();
   const draftData = data.draftData ?? {};
   const [mappingText, setMappingText] = useState<string>('');
   const [mappingErrors, setMappingErrors] = useState<string[]>([]);
@@ -241,12 +242,15 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
             fullWidth
             multiline
             rows={12}
+            id={`${controlId}-mapping-rules`}
+            name="mapping-rules"
             value={mappingText}
             onChange={(e) => handleMappingTextChange(e.target.value)}
             placeholder="# Define your mapping rules here (one per line)&#10;id -> user_id&#10;name -> full_name&#10;age -> years&#10;email -> email_address | lowercase"
             error={mappingErrors.length > 0}
             helperText={mappingErrors.length > 0 ? `${mappingErrors.length} error(s) found` : 'One mapping rule per line'}
             sx={{ fontFamily: 'monospace' }}
+            inputProps={{ id: `${controlId}-mapping-rules`, name: 'mapping-rules' }}
           />
 
           {mappingErrors.length > 0 && (

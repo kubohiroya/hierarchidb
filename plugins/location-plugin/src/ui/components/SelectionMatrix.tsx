@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useId } from 'react';
 import { Box, Checkbox, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
 import type { LocationType } from '../../common/types/index.js';
 import { useTranslation } from '../../common/i18n/index.js';
@@ -34,6 +34,7 @@ export const SelectionMatrix: React.FC<SelectionMatrixProps> = ({
   onChange,
   disabled = false,
 }) => {
+  const controlId = useId();
   const { translations } = useTranslation();
 
   const handleToggle = useCallback((countryIndex: number, typeIndex: number) => {
@@ -80,6 +81,11 @@ export const SelectionMatrix: React.FC<SelectionMatrixProps> = ({
                     checked={Boolean(value[rowIndex]?.[columnIndex])}
                     onChange={() => handleToggle(rowIndex, columnIndex)}
                     disabled={disabled}
+                    inputProps={{
+                      id: `${controlId}-${country.code}-${columnIndex}`,
+                      name: `${country.code}-${columnIndex}`,
+                      'aria-label': `${country.name} ${locationTypes[columnIndex]?.name ?? ''}`,
+                    }}
                   />
                 </TableCell>
               ))}

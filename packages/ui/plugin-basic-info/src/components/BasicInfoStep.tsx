@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useId } from 'react';
 import type { ChangeEvent, FC } from 'react';
 import { Box, FormControl, TextField, Typography } from '@mui/material';
 import { LocalOffer } from '@mui/icons-material';
@@ -44,6 +44,9 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
   disabled = false,
 }) => {
   const nameInputRef = useRef<HTMLInputElement | null>(null);
+  const fieldId = useId();
+  const nameInputId = `${fieldId}-name`;
+  const descriptionInputId = `${fieldId}-description`;
 
   const emitChange = useCallback(
     (updates: Partial<BasicInfoData>) => {
@@ -112,6 +115,8 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
       <FormControl fullWidth error={!!mergedNameError}>
         <TextField
           label="Name"
+          id={nameInputId}
+          name="name"
           value={normalizedName}
           onChange={handleNameChange}
           required
@@ -120,7 +125,7 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
           placeholder="Enter a descriptive name"
           variant="outlined"
           inputRef={nameInputRef}
-          inputProps={{ maxLength: 255 }}
+          inputProps={{ maxLength: 255, id: nameInputId, name: 'name' }}
           disabled={disabled}
         />
       </FormControl>
@@ -128,6 +133,8 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
       <FormControl fullWidth>
         <TextField
           label="Description"
+          id={descriptionInputId}
+          name="description"
           value={normalizedDescription}
           onChange={handleDescriptionChange}
           multiline
@@ -135,7 +142,7 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
           placeholder="Enter an optional description"
           variant="outlined"
           helperText={`${normalizedDescription.length}/1000 characters`}
-          inputProps={{ maxLength: 1000 }}
+          inputProps={{ maxLength: 1000, id: descriptionInputId, name: 'description' }}
           disabled={disabled}
         />
       </FormControl>

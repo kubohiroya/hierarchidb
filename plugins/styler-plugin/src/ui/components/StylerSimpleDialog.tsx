@@ -17,7 +17,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useId } from 'react';
 import type {
   StylerColorRule,
   StylerEntity,
@@ -46,6 +46,7 @@ export const StylerSimpleDialog: React.FC<StylerSimpleDialogProps> = ({
   onSave,
   existingEntity,
 }) => {
+  const controlId = useId();
   type ColorRuleState = StylerColorRule & { _id: string };
   const generateRuleId = useCallback(
     () =>
@@ -136,10 +137,13 @@ export const StylerSimpleDialog: React.FC<StylerSimpleDialogProps> = ({
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
           <TextField
             label="Key Column"
+            id={`${controlId}-key-column`}
+            name="key-column"
             value={keyColumn}
             onChange={(e) => setKeyColumn(e.target.value)}
             fullWidth
             required
+            inputProps={{ id: `${controlId}-key-column`, name: 'key-column' }}
           />
 
           <Paper sx={{ p: 2 }}>
@@ -156,13 +160,18 @@ export const StylerSimpleDialog: React.FC<StylerSimpleDialogProps> = ({
               <Box key={rule._id} sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'center' }}>
                 <TextField
                   label="Column"
+                  id={`${controlId}-rule-${rule._id}-column`}
+                  name={`rule-${rule._id}-column`}
                   value={rule.column}
                   onChange={(e) => handleUpdateColorRule(index, { column: e.target.value })}
                   size="small"
+                  inputProps={{ id: `${controlId}-rule-${rule._id}-column`, name: `rule-${rule._id}-column` }}
                 />
                 <FormControl sx={{ minWidth: 120 }}>
-                  <InputLabel>Operator</InputLabel>
+                  <InputLabel id={`${controlId}-rule-${rule._id}-operator-label`}>Operator</InputLabel>
                   <Select
+                    labelId={`${controlId}-rule-${rule._id}-operator-label`}
+                    id={`${controlId}-rule-${rule._id}-operator`}
                     value={rule.operator}
                     onChange={(e) =>
                       handleUpdateColorRule(index, {
@@ -171,6 +180,7 @@ export const StylerSimpleDialog: React.FC<StylerSimpleDialogProps> = ({
                     }
                     label="Operator"
                     size="small"
+                    inputProps={{ id: `${controlId}-rule-${rule._id}-operator`, name: `rule-${rule._id}-operator` }}
                   >
                     <MenuItem value="equals">Equals</MenuItem>
                     <MenuItem value="contains">Contains</MenuItem>
@@ -180,13 +190,18 @@ export const StylerSimpleDialog: React.FC<StylerSimpleDialogProps> = ({
                 </FormControl>
                 <TextField
                   label="Value"
+                  id={`${controlId}-rule-${rule._id}-value`}
+                  name={`rule-${rule._id}-value`}
                   value={rule.value}
                   onChange={(e) => handleUpdateColorRule(index, { value: e.target.value })}
                   size="small"
+                  inputProps={{ id: `${controlId}-rule-${rule._id}-value`, name: `rule-${rule._id}-value` }}
                 />
                 <TextField
                   label="Color"
                   type="color"
+                  id={`${controlId}-rule-${rule._id}-color`}
+                  name={`rule-${rule._id}-color`}
                   value={rule.style.backgroundColor || '#ffffff'}
                   onChange={(e) =>
                     handleUpdateColorRule(index, {
@@ -195,6 +210,7 @@ export const StylerSimpleDialog: React.FC<StylerSimpleDialogProps> = ({
                   }
                   size="small"
                   sx={{ width: 80 }}
+                  inputProps={{ id: `${controlId}-rule-${rule._id}-color`, name: `rule-${rule._id}-color` }}
                 />
                 <IconButton onClick={() => handleRemoveColorRule(index)} color="error" size="small">
                   <Delete />

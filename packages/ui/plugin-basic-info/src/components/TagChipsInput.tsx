@@ -1,4 +1,4 @@
-import { type KeyboardEvent, useMemo, useState, type ReactNode } from 'react'
+import { type KeyboardEvent, useMemo, useState, useId, type ReactNode } from 'react'
 import { Box, Chip, Stack, TextField, Typography, useTheme } from '@mui/material';
 
 export interface TagChipsInputProps {
@@ -28,6 +28,9 @@ export const TagChipsInput: React.FC<TagChipsInputProps> = ({
 }) => {
   const theme = useTheme();
   const [input, setInput] = useState('');
+  const controlId = useId();
+  const inputId = `${controlId}-tags`;
+  const labelId = `${controlId}-label`;
 
   const addTag = (tag: string) => {
     const t = tag.trim();
@@ -52,7 +55,7 @@ export const TagChipsInput: React.FC<TagChipsInputProps> = ({
   return (
     <Box data-ui-core="TagChipsInput" sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
       {label && (
-        <Typography variant="subtitle2">
+        <Typography id={labelId} variant="subtitle2">
           {label}{required ? ' *' : ''}
         </Typography>
       )}
@@ -73,6 +76,8 @@ export const TagChipsInput: React.FC<TagChipsInputProps> = ({
 
       {/* Input */}
       <TextField
+        id={inputId}
+        name="tags"
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
@@ -83,6 +88,7 @@ export const TagChipsInput: React.FC<TagChipsInputProps> = ({
         helperText={helperText}
         variant="outlined"
         size="small"
+        inputProps={{ 'aria-labelledby': labelId, id: inputId, name: 'tags' }}
         sx={{
           maxWidth: 480,
           // Let MUI theme control colors; ensure contrast in dark mode

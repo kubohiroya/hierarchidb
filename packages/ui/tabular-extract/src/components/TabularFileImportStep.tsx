@@ -96,6 +96,11 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
   const quoteLabelId = `${idPrefix}-quote-char`;
   const modalRoot = menuContainer ?? null;
   const showDownloadSuccess = importMethod === 'url' && importSucceeded;
+  const urlFieldId = `${idPrefix}-tabular-url`;
+  const importMethodSelectId = `${importMethodLabelId}-select`;
+  const delimiterSelectId = `${delimiterLabelId}-select`;
+  const encodingSelectId = `${encodingLabelId}-select`;
+  const quoteSelectId = `${quoteLabelId}-select`;
 
   useEffect(() => {
     setImportMethod(initialImportMethod);
@@ -216,22 +221,22 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
       Choose a file or provide a URL to import tabular data.
     </Typography>
 
-    {/* Import Method Selection */}
-  <FormControl sx={{ mb: 3, minWidth: 200 }}>
-    <InputLabel id={importMethodLabelId}>Import Method</InputLabel>
-    <ModalSelect
-      id={`${importMethodLabelId}-select`}
-      labelId={importMethodLabelId}
-      value={importMethod}
-      label="Import Method"
-      onChange={(e) => {
-        const method = e.target.value as 'file' | 'url';
-        setImportMethod(method);
-        onImportMethodChange?.(method);
-      }}
-      disabled={disabled || isImporting}
-      menuContainer={modalRoot}
-    >
+      {/* Import Method Selection */}
+      <FormControl sx={{ mb: 3, minWidth: 200 }}>
+        <InputLabel id={importMethodLabelId} htmlFor={importMethodSelectId}>Import Method</InputLabel>
+        <ModalSelect
+          id={importMethodSelectId}
+          labelId={importMethodLabelId}
+          value={importMethod}
+          label="Import Method"
+          onChange={(e) => {
+            const method = e.target.value as 'file' | 'url';
+            setImportMethod(method);
+            onImportMethodChange?.(method);
+          }}
+          disabled={disabled || isImporting}
+          menuContainer={modalRoot}
+        >
         <MenuItem value="file">
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <InsertDriveFile fontSize="small" />
@@ -312,6 +317,8 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
             <TextField
               fullWidth
               label="Tabular File URL"
+              id={urlFieldId}
+              name="tabular-file-url"
               placeholder="https://example.com/data.csv"
               value={urlInput}
               onChange={(e) => {
@@ -342,9 +349,9 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
 
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center', mb: 3 }}>
         <FormControl sx={{ minWidth: 180 }}>
-          <InputLabel id={delimiterLabelId}>Delimiter</InputLabel>
+          <InputLabel id={delimiterLabelId} htmlFor={delimiterSelectId}>Delimiter</InputLabel>
           <ModalSelect
-            id={`${delimiterLabelId}-select`}
+            id={delimiterSelectId}
             labelId={delimiterLabelId}
             value={processingConfig.delimiter}
             label="Delimiter"
@@ -366,9 +373,9 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
         </FormControl>
 
         <FormControl sx={{ minWidth: 180 }}>
-          <InputLabel id={encodingLabelId}>Encoding</InputLabel>
+          <InputLabel id={encodingLabelId} htmlFor={encodingSelectId}>Encoding</InputLabel>
           <ModalSelect
-            id={`${encodingLabelId}-select`}
+            id={encodingSelectId}
             labelId={encodingLabelId}
             value={processingConfig.encoding}
             label="Encoding"
@@ -389,9 +396,9 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
         </FormControl>
 
         <FormControl sx={{ minWidth: 180 }}>
-          <InputLabel id={quoteLabelId}>Quote Character</InputLabel>
+          <InputLabel id={quoteLabelId} htmlFor={quoteSelectId}>Quote Character</InputLabel>
           <ModalSelect
-            id={`${quoteLabelId}-select`}
+            id={quoteSelectId}
             labelId={quoteLabelId}
             value={processingConfig.quoteChar}
             label="Quote Character"

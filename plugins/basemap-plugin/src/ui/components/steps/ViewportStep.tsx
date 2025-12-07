@@ -1,6 +1,6 @@
 import { Box, Stack, TextField, Typography } from '@mui/material';
 import type React from 'react';
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, useId } from 'react';
 import {
   loadMapLibreMap,
   type MapLibreMapInstance,
@@ -58,6 +58,7 @@ const LazyMapLibreMap = lazy(async () => {
 });
 
 export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onChange }) => {
+  const controlId = useId();
   const initial = useMemo<MapViewState>(
     () => ({
       longitude: value?.center[0] ?? FALLBACK_VIEWPORT.center[0],
@@ -218,7 +219,9 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
         <TextField
           label="Longitude"
           type="number"
-          inputProps={{ step: 0.01, min: -180, max: 180 }}
+          id={`${controlId}-longitude`}
+          name="longitude"
+          inputProps={{ step: 0.01, min: -180, max: 180, id: `${controlId}-longitude`, name: 'longitude' }}
           value={viewState.longitude}
           onChange={(e) =>
             setViewportFromInput({
@@ -230,7 +233,9 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
         <TextField
           label="Latitude"
           type="number"
-          inputProps={{ step: 0.01, min: -90, max: 90 }}
+          id={`${controlId}-latitude`}
+          name="latitude"
+          inputProps={{ step: 0.01, min: -90, max: 90, id: `${controlId}-latitude`, name: 'latitude' }}
           value={viewState.latitude}
           onChange={(e) =>
             setViewportFromInput({
@@ -242,7 +247,9 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
         <TextField
           label="Zoom"
           type="number"
-          inputProps={{ step: 1, min: 0, max: 24 }}
+          id={`${controlId}-zoom`}
+          name="zoom"
+          inputProps={{ step: 1, min: 0, max: 24, id: `${controlId}-zoom`, name: 'zoom' }}
           value={viewState.zoom}
           onChange={(e) => setViewportFromInput({ zoom: Number(e.target.value) })}
           fullWidth
@@ -250,7 +257,9 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
         <TextField
           label="Bearing"
           type="number"
-          inputProps={{ step: 1, min: -180, max: 180 }}
+          id={`${controlId}-bearing`}
+          name="bearing"
+          inputProps={{ step: 1, min: -180, max: 180, id: `${controlId}-bearing`, name: 'bearing' }}
           value={viewState.bearing ?? 0}
           onChange={(e) => setViewportFromInput({ bearing: Number(e.target.value) })}
           fullWidth

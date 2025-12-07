@@ -11,7 +11,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Delete as DeleteIcon, Info } from '@mui/icons-material';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 
 export interface CacheStats {
   itemCount: number;
@@ -47,6 +47,7 @@ export function CacheSection({
                                sx = {},
                                severity = 'warning',
                              }: CacheSectionProps) {
+  const switchId = useId();
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteResult, setDeleteResult] = useState<{
     success: boolean;
@@ -102,6 +103,10 @@ export function CacheSection({
                 checked={deleteOnComplete}
                 onChange={(e) => onDeleteOnCompleteChange(e.target.checked)}
                 size="small"
+                inputProps={{
+                  id: `${switchId}-delete-on-complete`,
+                  name: 'delete-on-complete',
+                }}
               />
             }
             label="Delete cache automatically when this session completes"

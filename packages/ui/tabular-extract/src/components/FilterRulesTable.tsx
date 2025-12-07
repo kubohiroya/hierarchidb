@@ -91,6 +91,7 @@ function FilterRulesTableComponent({
   operatorOptions,
   defaultExpanded = true,
 }: FilterRulesTableProps): ReactElement {
+  const controlId = React.useId();
   const notifyDirty = useCallback(() => {
     onDirty?.();
   }, [onDirty]);
@@ -297,8 +298,8 @@ function FilterRulesTableComponent({
               disabled={!canEnable}
               inputProps={{
                 'aria-label': 'Enable filter rule',
-                id: `filter-enabled-${rule.id}`,
-                name: `filter-enabled-${rule.id}`,
+                id: `${controlId}-filter-enabled-${rule.id}`,
+                name: `${controlId}-filter-enabled-${rule.id}`,
               }}
               onChange={(event) => {
                 const nextEnabled = event.target.checked;
@@ -344,8 +345,8 @@ function FilterRulesTableComponent({
               }}
               inputProps={{
                 'aria-label': 'Column',
-                id: `filter-column-${rule.id}`,
-                name: `filter-column-${rule.id}`,
+                id: `${controlId}-filter-column-${rule.id}`,
+                name: `${controlId}-filter-column-${rule.id}`,
               }}
             >
               {columns.map((column) => (
@@ -393,8 +394,8 @@ function FilterRulesTableComponent({
               }}
               inputProps={{
                 'aria-label': 'Operator',
-                id: `filter-operator-${rule.id}`,
-                name: `filter-operator-${rule.id}`,
+                id: `${controlId}-filter-operator-${rule.id}`,
+                name: `${controlId}-filter-operator-${rule.id}`,
               }}
             >
               {availableOps.map((op) => (
@@ -420,6 +421,8 @@ function FilterRulesTableComponent({
               fullWidth
               size="small"
               label="Value"
+              id={`${controlId}-filter-value-${rule.id}`}
+              name={`${controlId}-filter-value-${rule.id}`}
               value={value}
               disabled={!needsValue}
               onChange={(event) => {
@@ -480,7 +483,7 @@ function FilterRulesTableComponent({
         size: 48,
       },
     ],
-    [handleUpdateRule, columns, operatorOptions, notifyDirty, commitDraftValue, handleDeleteRule]
+    [controlId, handleUpdateRule, columns, operatorOptions, commitDraftValue, notifyDirty, handleDeleteRule]
   );
 
   // Restore focus if a re-render causes the active input to lose focus.

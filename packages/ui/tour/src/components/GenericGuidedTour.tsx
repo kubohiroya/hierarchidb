@@ -1,7 +1,7 @@
 import { Close as CloseIcon } from '@mui/icons-material';
 import { Box, Checkbox, FormControlLabel, GlobalStyles, IconButton, Portal } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { type MouseEvent, useCallback, useEffect, useState } from 'react';
+import { type MouseEvent, useCallback, useEffect, useId, useState } from 'react';
 import Joyride, { type CallBackProps, STATUS, type Step } from 'react-joyride';
 import { GuidedTourStateManager } from '../managers/GuidedTourStateManager.js';
 
@@ -25,6 +25,7 @@ export const GenericGuidedTour = ({
   const theme = useTheme();
   const [internalStepIndex, setInternalStepIndex] = useState(0);
   const [showOnNextStartup, setShowOnNextStartup] = useState(true);
+  const checkboxId = useId();
 
   // Get tour state manager instance
   const tourManager = GuidedTourStateManager.getInstance();
@@ -252,6 +253,10 @@ export const GenericGuidedTour = ({
                   checked={showOnNextStartup}
                   onChange={(e) => handleCheckboxChange(e.target.checked)}
                   size="medium"
+                  inputProps={{
+                    id: `${checkboxId}-show-on-next-startup`,
+                    name: 'show-on-next-startup',
+                  }}
                 />
               }
               label="Show tour on next startup"
@@ -288,13 +293,7 @@ export const GenericGuidedTour = ({
         </Box>
       );
     },
-    [
-      showOnNextStartup,
-      handleCheckboxChange,
-      handleFooterPrimaryEnter,
-      handleFooterPrimaryLeave,
-      theme,
-    ]
+    [theme.palette.mode, theme.palette.grey, theme.palette.divider, theme.palette.text.disabled, theme.palette.text.secondary, theme.palette.primary.main, theme.palette.primary.contrastText, showOnNextStartup, checkboxId, handleFooterPrimaryEnter, handleFooterPrimaryLeave, handleCheckboxChange]
   );
 
   // Tooltip render function

@@ -10,6 +10,7 @@ import {
   Typography,
 } from '@mui/material';
 import type React from 'react';
+import { useId } from 'react';
 
 type AuthProviderType = 'google' | 'microsoft' | 'github';
 
@@ -57,6 +58,9 @@ export const UrlDownloadSection: React.FC<UrlDownloadSectionProps> = ({
   onMouseLeave,
   compact = false,
 }) => {
+  const controlId = useId();
+  const urlInputId = `${controlId}-download-url`;
+
   // Check if URL is populated but download hasn't been executed
   const hasUrlNotDownloaded =
     downloadUrl.trim() && !downloadSuccess && !isDownloading && !downloadError;
@@ -105,6 +109,8 @@ export const UrlDownloadSection: React.FC<UrlDownloadSectionProps> = ({
             <TextField
               fullWidth
               label="File URL"
+              id={urlInputId}
+              name="file-url"
               placeholder="https://example.com/data.csv"
               value={downloadUrl}
               onChange={(e) => onUrlChange(e.target.value)}

@@ -392,6 +392,8 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
             <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
               <TextField
                 size="small"
+                id={`${node.id}-edit-name`}
+                name="node-name"
                 defaultValue={editingValue}
                 onChange={() => {
                   if (editingError) setEditingError(null);
@@ -541,6 +543,8 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
               fullWidth
               multiline
               minRows={2}
+              id={`${node.id}-edit-description`}
+              name="node-description"
               defaultValue={editingValue}
               onChange={() => {
                 if (editingError) setEditingError(null);

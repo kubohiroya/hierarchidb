@@ -10,7 +10,7 @@ import {
   Typography,
 } from '@mui/material';
 import type React from 'react';
-import { useMemo } from 'react';
+import { useMemo, useId } from 'react';
 import { BUILT_IN_STYLES } from '../../../common/constants/builtInStyles.js';
 import type { MapStyle } from '../../../common/types/BaseMapEntity.js';
 
@@ -20,6 +20,7 @@ export interface MapStyleStepProps {
 }
 
 export const MapStyleStep: React.FC<MapStyleStepProps> = ({ value, onChange }) => {
+  const controlId = useId();
   const style = value?.style || '';
   const url = value?.customStyleUrl || '';
 
@@ -110,6 +111,8 @@ export const MapStyleStep: React.FC<MapStyleStepProps> = ({ value, onChange }) =
                 <TextField
                   sx={{ mt: 2 }}
                   label="Custom Style URL"
+                  id={`${controlId}-custom-style-url`}
+                  name="custom-style-url"
                   placeholder="https://example.com/style.json"
                   value={url}
                   onChange={(e) =>
@@ -120,6 +123,7 @@ export const MapStyleStep: React.FC<MapStyleStepProps> = ({ value, onChange }) =
                     })
                   }
                   fullWidth
+                  inputProps={{ id: `${controlId}-custom-style-url`, name: 'custom-style-url' }}
                 />
               )}
             </CardContent>

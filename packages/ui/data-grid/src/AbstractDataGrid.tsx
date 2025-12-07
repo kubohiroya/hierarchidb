@@ -5,7 +5,7 @@
  * completely decoupled from specific data types or storage implementations.
  */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, useId, type ReactElement } from 'react';
 import {
   Alert,
   Box,
@@ -186,6 +186,7 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
   const [columns, setColumns] = useState(initialColumns);
   const [showFilters, setShowFilters] = useState(false);
   const [showColumnSelector, setShowColumnSelector] = useState(false);
+  const controlId = useId();
 
   // Refs
   const parentRef = useRef<HTMLDivElement>(null);
@@ -422,9 +423,12 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
           <TextField
             size="small"
             placeholder="Search..."
+            id={`${controlId}-search`}
+            name="search"
             value={search}
             onChange={(e) => handleSearchChange(e.target.value)}
             InputProps={{
+              inputProps: { 'aria-label': 'Search', id: `${controlId}-search`, name: 'search' },
               startAdornment: (
                 <InputAdornment position="start">
                   <Search />
@@ -565,6 +569,8 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
                         size="small"
                         fullWidth
                         placeholder={`Filter ${column.header}`}
+                        id={`${controlId}-filter-${String(column.field)}`}
+                        name={`filter-${String(column.field)}`}
                         value={filters.find((f) => f.field === String(column.field))?.value || ''}
                         onChange={(e) => handleFilterChange(String(column.field), e.target.value)}
                       />

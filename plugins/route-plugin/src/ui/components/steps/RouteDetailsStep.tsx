@@ -3,7 +3,7 @@
  * @description Route configuration step following the shared BasicInfo step.
  */
 
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useId } from 'react';
 import { Box, TextField, MenuItem } from '@mui/material';
 import { Divider } from '@mui/material';
 import { useTranslation } from '../../../common/i18n/index.js';
@@ -25,6 +25,7 @@ export const RouteDetailsStep: React.FC<RouteDetailsStepProps> = ({
   disabled = false,
 }) => {
   const { translations } = useTranslation();
+  const fieldId = useId();
   const draft = useMemo(() => getRouteUpdaterPayload(draftProp), [draftProp]);
 
   const resolvedRouteType = (draft.routeType as RouteType | undefined) ?? ROUTE_TYPES.ROAD;
@@ -58,6 +59,8 @@ export const RouteDetailsStep: React.FC<RouteDetailsStepProps> = ({
       <TextField
         select
         label={translations.basicInfo.routeTypeLabel}
+        id={`${fieldId}-route-type`}
+        name="route-type"
         value={resolvedRouteType}
         onChange={(event) => handleRouteTypeChange(event.target.value as RouteType)}
         required
@@ -66,6 +69,7 @@ export const RouteDetailsStep: React.FC<RouteDetailsStepProps> = ({
         helperText={translations.basicInfo.routeTypeHelperText}
         error={!resolvedRouteType}
         sx={{ mb: 3 }}
+        inputProps={{ id: `${fieldId}-route-type`, name: 'route-type' }}
       >
         {Object.values(ROUTE_TYPES).map((type) => (
           <MenuItem key={type} value={type}>
@@ -77,12 +81,15 @@ export const RouteDetailsStep: React.FC<RouteDetailsStepProps> = ({
       <TextField
         select
         label="Data source"
+        id={`${fieldId}-data-source`}
+        name="data-source"
         value={resolvedDataSource}
         onChange={(event) => emitUpdate({ dataSourceName: event.target.value as RouteEntity['dataSourceName'] })}
         required
         fullWidth
         disabled={disabled}
         helperText="Choose openstreetmap for OSRM/Overpass or custom for tabular import"
+        inputProps={{ id: `${fieldId}-data-source`, name: 'data-source' }}
       >
         <MenuItem value="openstreetmap">OpenStreetMap</MenuItem>
         <MenuItem value="custom">Custom (tabular)</MenuItem>

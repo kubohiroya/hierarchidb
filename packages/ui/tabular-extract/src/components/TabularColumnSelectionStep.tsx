@@ -4,7 +4,7 @@
  */
 
 import type React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useId } from 'react';
 import {
   Accordion,
   AccordionDetails,
@@ -56,10 +56,11 @@ export const TabularColumnSelectionStep: React.FC<TabularColumnSelectionStepProp
                                                                                 targetColumns = [],
                                                                                 onSelectionChanged,
                                                                                 onPreviewChanged,
-                                                                                allowRename = true,
-                                                                                allowTypeChange = true,
-                                                                                maxPreviewRows = 50,
-                                                                              }) => {
+  allowRename = true,
+  allowTypeChange = true,
+  maxPreviewRows = 50,
+}) => {
+  const controlId = useId();
   const [columnMappings, setColumnMappings] = useState<TabularColumnMapping[]>([]);
   const [showPreview, setShowPreview] = useState(true);
   const [selectAll, setSelectAll] = useState(true);
@@ -271,26 +272,29 @@ export const TabularColumnSelectionStep: React.FC<TabularColumnSelectionStepProp
                     <Chip size="small" label={mapping.sourceType} variant="outlined" />
                   </TableCell>
 
-                  {allowRename && (
-                    <TableCell>
-                      <TextField
-                        size="small"
-                        value={mapping.targetColumn}
-                        onChange={(e) => handleColumnRename(mapping.sourceColumn, e.target.value)}
-                        disabled={!mapping.included}
-                        placeholder="Target column name"
-                      />
+         {allowRename && (
+            <TableCell>
+              <TextField
+                size="small"
+                id={`${controlId}-target-column-${mapping.sourceColumn}`}
+                name={`target-column-${mapping.sourceColumn}`}
+                value={mapping.targetColumn}
+                onChange={(e) => handleColumnRename(mapping.sourceColumn, e.target.value)}
+                disabled={!mapping.included}
+                placeholder="Target column name"
+              />
                     </TableCell>
                   )}
 
                   {allowTypeChange && (
                     <TableCell>
-                      <FormControl size="small" sx={{ minWidth: 100 }}>
-                        <Select
-                          value={mapping.targetType}
-                          onChange={(e) => handleTypeChange(mapping.sourceColumn, e.target.value)}
-                          disabled={!mapping.included}
-                        >
+              <FormControl size="small" sx={{ minWidth: 100 }}>
+                <Select
+                  id={`${controlId}-type-${mapping.sourceColumn}`}
+                  value={mapping.targetType}
+                  onChange={(e) => handleTypeChange(mapping.sourceColumn, e.target.value)}
+                  disabled={!mapping.included}
+                >
                           <MenuItem value="string">String</MenuItem>
                           <MenuItem value="number">Number</MenuItem>
                           <MenuItem value="date">Date</MenuItem>
@@ -302,13 +306,14 @@ export const TabularColumnSelectionStep: React.FC<TabularColumnSelectionStepProp
 
                   {targetColumns.length > 0 && (
                     <TableCell>
-                      <FormControl size="small" sx={{ minWidth: 150 }}>
-                        <Select
-                          value={mapping.targetColumn}
-                          onChange={(e) => handleTargetMapping(mapping.sourceColumn, e.target.value)}
-                          disabled={!mapping.included}
-                          displayEmpty
-                        >
+              <FormControl size="small" sx={{ minWidth: 150 }}>
+                <Select
+                  id={`${controlId}-mapping-${mapping.sourceColumn}`}
+                  value={mapping.targetColumn}
+                  onChange={(e) => handleTargetMapping(mapping.sourceColumn, e.target.value)}
+                  disabled={!mapping.included}
+                  displayEmpty
+                >
                           <MenuItem value="">
                             <em>Select target...</em>
                           </MenuItem>
@@ -326,14 +331,16 @@ export const TabularColumnSelectionStep: React.FC<TabularColumnSelectionStepProp
                   )}
 
                   <TableCell>
-                    <TextField
-                      type="number"
-                      size="small"
-                      value={mapping.order}
-                      onChange={(e) => handleOrderChange(mapping.sourceColumn, parseInt(e.target.value))}
-                      disabled={!mapping.included}
-                      inputProps={{ min: 0, max: columnMappings.length - 1, style: { width: 60 } }}
-                    />
+            <TextField
+              type="number"
+              size="small"
+              id={`${controlId}-order-${mapping.sourceColumn}`}
+              name={`order-${mapping.sourceColumn}`}
+              value={mapping.order}
+              onChange={(e) => handleOrderChange(mapping.sourceColumn, parseInt(e.target.value))}
+              disabled={!mapping.included}
+              inputProps={{ min: 0, max: columnMappings.length - 1, style: { width: 60 } }}
+            />
                   </TableCell>
 
                   <TableCell>

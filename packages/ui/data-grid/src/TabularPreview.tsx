@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, useState, useId, type ReactElement } from 'react';
 import {
   Box,
   Checkbox,
@@ -47,6 +47,7 @@ export function TabularPreview({ pluginId, tableId }: {
   const [filters, setFilters] = useState<Array<{ column: string; op: Op; value: string }>>([]);
   // Column visibility
   const [visibleCols, setVisibleCols] = useState<string[] | null>(null);
+  const controlId = useId();
 
   // Minimal column type compatible with GenericDataGrid
   type GridCol = {
@@ -199,22 +200,22 @@ export function TabularPreview({ pluginId, tableId }: {
         {filters.map((f, i) => (
           <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <FormControl size="small" sx={{ minWidth: 140 }}>
-              <InputLabel id={`col-${i}`}>列</InputLabel>
-              <Select labelId={`col-${i}`} label="列" value={f.column}
+              <InputLabel id={`${controlId}-col-${i}`} htmlFor={`${controlId}-col-select-${i}`}>列</InputLabel>
+              <Select labelId={`${controlId}-col-${i}`} id={`${controlId}-col-select-${i}`} label="列" value={f.column}
                       onChange={(e) => updateFilter(i, { column: String(e.target.value) })}>
                 <MenuItem value=""><em>選択</em></MenuItem>
                 {columns.map((c) => (<MenuItem key={c} value={c}>{c}</MenuItem>))}
               </Select>
             </FormControl>
             <FormControl size="small" sx={{ minWidth: 120 }}>
-              <InputLabel id={`op-${i}`}>条件</InputLabel>
-              <Select labelId={`op-${i}`} label="条件" value={f.op}
+              <InputLabel id={`${controlId}-op-${i}`} htmlFor={`${controlId}-op-select-${i}`}>条件</InputLabel>
+              <Select labelId={`${controlId}-op-${i}`} id={`${controlId}-op-select-${i}`} label="条件" value={f.op}
                       onChange={(e) => updateFilter(i, { op: e.target.value as Op })}>
                 {(['eq', 'contains', 'gt', 'gte', 'lt', 'lte', 'neq'] as Op[]).map((op) => (
                   <MenuItem key={op} value={op}>{op}</MenuItem>))}
               </Select>
             </FormControl>
-            <TextField size="small" label="値" value={f.value}
+            <TextField size="small" label="値" id={`${controlId}-value-${i}`} name={`value-${i}`} value={f.value}
                        onChange={(e) => updateFilter(i, { value: e.target.value })} />
             <Tooltip title="削除"><IconButton size="small" onClick={() => removeFilter(i)}><Delete
               fontSize="small" /></IconButton></Tooltip>

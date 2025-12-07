@@ -1,5 +1,6 @@
 import { Box, FormControlLabel, IconButton, Slider, Switch, Tooltip, Typography } from '@mui/material';
 import { Calculate, Info } from '@mui/icons-material';
+import { useId } from 'react';
 import type { ChangeEvent } from 'react';
 
 export interface ConcurrencyConfig {
@@ -52,6 +53,7 @@ export const ConcurrencySection = ({
                                      onUseDefaultChange,
                                      sx = {},
                                    }: ConcurrencySectionProps) => {
+  const switchId = useId();
   const finalConfig = { ...defaultConfig, ...config };
   const { label, tooltipText, defaultLabel, icon, min, max, defaultConcurrency } = finalConfig;
 
@@ -72,7 +74,14 @@ export const ConcurrencySection = ({
       <FormControlLabel
         sx={{ mb: 1, color: 'text.secondary' }}
         control={
-          <Switch checked={useDefault} onChange={onUseDefaultChange} />
+          <Switch
+            checked={useDefault}
+            onChange={onUseDefaultChange}
+            inputProps={{
+              id: `${switchId}-use-default-concurrency`,
+              name: 'use-default-concurrency',
+            }}
+          />
         }
         label={`${defaultLabel} (${defaultConcurrency})`}
       />

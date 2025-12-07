@@ -54,6 +54,7 @@ export interface UseTreeNodeUpdaterResult<TPayload extends object = Record<strin
   hasUnsavedChanges: boolean;
   updateTreeNodeUpdater: (data: Partial<TreeNodeUpdaterState<TPayload>>) => void;
   commitTreeNodeUpdater: (data?: Partial<TreeNodeUpdaterState<TPayload>>) => Promise<NodeId>;
+  saveDraftTreeNodeUpdater: (data?: Partial<TreeNodeUpdaterState<TPayload>>) => Promise<void>;
   discardDraft: (options?: DiscardDraftOptions) => Promise<void>;
   loading: boolean;
   error: Error | null;
@@ -107,6 +108,7 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
   const [error, setError] = useState<Error | null>(null);
   const draftIdRef = useRef<NodeId | null>(nodeId ?? null);
   const [hasUnsaved, setHasUnsaved] = useState(false);
+  const persistDisableUntilRef = useRef<number>(0);
 
   const isRecord = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null;
@@ -205,12 +207,16 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
       debounce(async (next: TreeNodeUpdaterState<TPayload>) => {
         const targetId = next.treeNodeId ?? workingNodeId;
         if (!targetId) return;
+        if (persistDisableUntilRef.current > Date.now()) return;
         try {
           const { wc: wcAPI } = await getClient();
-          await wcAPI.updateTreeNodeDraftMetadata(targetId, next.draftMetadata ?? {});
+          await wcAPI.updateTreeNodeDraftMetadata(
+            targetId,
+            (next.draftMetadata === null ? null : (next.draftMetadata ?? {})) as any
+          );
           await wcAPI.updateTreeNodeDraftData(
             targetId,
-            (next.draftData ?? {}) as Record<string, unknown>
+            (next.draftData === null ? null : (next.draftData ?? {})) as any
           );
         } catch (err) {
           console.warn('[useTreeNodeUpdater] persist update failed', err);
@@ -259,21 +265,33 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
     if (!draft) throw new Error('No draft to save');
     const targetId = (data?.treeNodeId ?? draft.treeNodeId ?? workingNodeId) as NodeId | null;
     if (!targetId) throw new Error('nodeId is required to save draft');
-    const finalData = data
-      ? { ...draft, ...data, id: targetId, treeNodeId: targetId }
-      : { ...draft, id: targetId, treeNodeId: targetId };
+
+    // Final payload is explicitly constructed so caller can pass latest step data/metadata
+    // and so we can clear drafts synchronously before commit.
+    const finalData: TreeNodeUpdaterState<TPayload> = {
+      ...draft,
+      ...data,
+      treeNodeId: targetId,
+      draftData: data?.draftData ?? draft.draftData ?? null,
+      draftMetadata: data?.draftMetadata ?? draft.draftMetadata ?? null,
+      metadata: data?.metadata ?? draft.metadata,
+      data: data?.data ?? draft.data,
+    };
 
     try {
       setLoading(true);
+      persistDisableUntilRef.current = Date.now() + 300;
       const { wc: wcAPI, query } = await getClient();
 
-      const outgoingDraftMetadata =
-        finalData.draftMetadata === null ? null : (finalData.draftMetadata ?? {});
-      const outgoingDraftData =
-        finalData.draftData === null ? null : (finalData.draftData ?? {});
-
-      await wcAPI.updateTreeNodeDraftMetadata(targetId, outgoingDraftMetadata as any);
-      await wcAPI.updateTreeNodeDraftData(targetId, outgoingDraftData as any);
+      // Push the latest values synchronously (no debounce) before commit.
+      await wcAPI.updateTreeNodeDraftMetadata(
+        targetId,
+        (finalData.draftMetadata === null ? null : (finalData.draftMetadata ?? {})) as any
+      );
+      await wcAPI.updateTreeNodeDraftData(
+        targetId,
+        (finalData.draftData === null ? null : (finalData.draftData ?? {})) as any
+      );
 
       const res = await wcAPI.commitDraft(targetId, {
         onNameConflict: 'auto-rename',
@@ -287,10 +305,7 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
         let refreshedCopy: TreeNodeUpdaterState<TPayload>;
         if (latestNode) {
           refreshedCopy = toUpdater(latestNode as TreeNode);
-          // If the backend returns a node without draftData (committed),
-          // ensure draftData is cleared locally as well.
         } else {
-          // Fallback when latest node cannot be fetched: treat current draftData as committed data
           refreshedCopy = {
             ...finalData,
             treeNodeId: committedNodeId,
@@ -337,9 +352,38 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
       setError(err as Error);
       throw err;
     } finally {
+      persistDisableUntilRef.current = 0;
       setLoading(false);
     }
   }, [draft, getClient, toUpdater, workingNodeId]);
+
+  const saveDraftTreeNodeUpdater = useCallback(async (data?: Partial<TreeNodeUpdaterState<TPayload>>): Promise<void> => {
+    if (!draft) throw new Error('No draft to save');
+    const targetId = (data?.treeNodeId ?? draft.treeNodeId ?? workingNodeId) as NodeId | null;
+    if (!targetId) throw new Error('nodeId is required to save draft');
+
+    const next: TreeNodeUpdaterState<TPayload> = {
+      ...draft,
+      ...data,
+      treeNodeId: targetId,
+      draftData: data?.draftData ?? draft.draftData ?? null,
+      draftMetadata: data?.draftMetadata ?? draft.draftMetadata ?? null,
+      // metadata/data are intentionally left as-is (per Save Draft semantics)
+    };
+
+    const { wc: wcAPI } = await getClient();
+    persistDisableUntilRef.current = Date.now() + 300;
+    await wcAPI.updateTreeNodeDraftMetadata(
+      targetId,
+      (next.draftMetadata === null ? null : (next.draftMetadata ?? {})) as any
+    );
+    await wcAPI.updateTreeNodeDraftData(
+      targetId,
+      (next.draftData === null ? null : (next.draftData ?? {})) as any
+    );
+    persistDisableUntilRef.current = 0;
+    setDraft((prev) => (prev?.treeNodeId === targetId ? { ...prev, ...next } : prev));
+  }, [draft, getClient, workingNodeId]);
 
   const discardDraft = useCallback(async (options?: DiscardDraftOptions) => {
     const targetId = draft?.treeNodeId ?? workingNodeId;
@@ -398,6 +442,7 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
     hasUnsavedChanges: hasUnsaved,
     updateTreeNodeUpdater,
     commitTreeNodeUpdater,
+    saveDraftTreeNodeUpdater,
     discardDraft,
     loading,
     error,

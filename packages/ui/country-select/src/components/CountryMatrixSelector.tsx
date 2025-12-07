@@ -4,7 +4,7 @@
  */
 
 import type React from 'react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, useId } from 'react';
 import {
   Box,
   Button,
@@ -85,9 +85,10 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
                                                                               showBulkTools = true,
                                                                               showCountryInfo = true,
                                                                               rowHeight = 56,
-                                                                            }) => {
+}) => {
   const [filter, setFilter] = useState<CountryFilter>(initialFilter);
   const [showFilters, setShowFilters] = useState(false);
+  const controlId = useId();
 
   // Convert selections array to lookup map
   const selectionsMap = useMemo(() => {
@@ -296,6 +297,11 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
               checked={rowSelections[column.id] || false}
               onChange={(e) => handleSelectionChange(country.code, column.id, e.target.checked)}
               size="small"
+              inputProps={{
+                id: `${controlId}-select-${country.code}-${column.id}`,
+                name: `${country.code}-${column.id}`,
+                'aria-label': `Select ${country.name} for ${column.label}`,
+              }}
             />
           </Box>
         ))}
@@ -309,9 +315,12 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
       <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
         <TextField
           placeholder="Search countries..."
+          id={`${controlId}-search`}
+          name="search"
           value={filter.searchQuery || ''}
           onChange={(e) => setFilter(prev => ({ ...prev, searchQuery: e.target.value }))}
           InputProps={{
+            inputProps: { 'aria-label': 'Search countries', id: `${controlId}-search`, name: 'search' },
             startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />,
           }}
           sx={{ minWidth: 200 }}
@@ -360,8 +369,10 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
           </Typography>
           <Stack direction="row" spacing={2} flexWrap="wrap">
             <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel>Continent</InputLabel>
+              <InputLabel id={`${controlId}-continent-label`} htmlFor={`${controlId}-continent-select`}>Continent</InputLabel>
               <Select
+                id={`${controlId}-continent-select`}
+                labelId={`${controlId}-continent-label`}
                 value={filter.continent || ''}
                 onChange={(e) => setFilter(prev => ({
                   ...prev,
@@ -379,6 +390,8 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
 
             <TextField
               label="Min Population (millions)"
+              id={`${controlId}-min-pop`}
+              name="min-population"
               type="number"
               size="small"
               value={filter.minPopulation ? filter.minPopulation / 1000000 : ''}
@@ -391,6 +404,8 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
 
             <TextField
               label="Max Population (millions)"
+              id={`${controlId}-max-pop`}
+              name="max-population"
               type="number"
               size="small"
               value={filter.maxPopulation ? filter.maxPopulation / 1000000 : ''}

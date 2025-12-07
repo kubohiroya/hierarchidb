@@ -17,6 +17,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { useId } from 'react';
 
 // import { AuthService } from "@/shared/auth/services/AuthService"; // TODO: Implement AuthService
 const AuthService = {
@@ -28,6 +29,7 @@ const AuthService = {
 export function AuthMethodSettings() {
   const authService = AuthService.getInstance();
   const currentMethod = authService.getAuthMethod();
+  const controlId = useId();
 
   return (
     <Paper sx={{ p: 3, mb: 3 }}>
@@ -46,8 +48,12 @@ export function AuthMethodSettings() {
       </Alert>
 
       <FormControl component="fieldset" disabled>
-        <FormLabel component="legend">Select authentication method</FormLabel>
+        <FormLabel component="legend" id={`${controlId}-auth-method-label`}>
+          Select authentication method
+        </FormLabel>
         <RadioGroup
+          aria-labelledby={`${controlId}-auth-method-label`}
+          name="auth-method"
           value={currentMethod}
           onChange={() => {
             // No-op as changing is disabled
@@ -55,7 +61,7 @@ export function AuthMethodSettings() {
         >
           <FormControlLabel
             value="popup"
-            control={<Radio />}
+            control={<Radio inputProps={{ id: `${controlId}-auth-method-popup`, name: 'auth-method' }} />}
             label={
               <Box>
                 <Typography>Popup Window (Recommended)</Typography>
@@ -64,10 +70,11 @@ export function AuthMethodSettings() {
                 </Typography>
               </Box>
             }
+            htmlFor={`${controlId}-auth-method-popup`}
           />
           <FormControlLabel
             value="redirect"
-            control={<Radio />}
+            control={<Radio inputProps={{ id: `${controlId}-auth-method-redirect`, name: 'auth-method' }} />}
             label={
               <Box>
                 <Typography>Page Redirect</Typography>
@@ -76,6 +83,7 @@ export function AuthMethodSettings() {
                 </Typography>
               </Box>
             }
+            htmlFor={`${controlId}-auth-method-redirect`}
           />
         </RadioGroup>
       </FormControl>

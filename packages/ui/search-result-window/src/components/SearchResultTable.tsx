@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useId } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import {
   Box,
@@ -86,6 +86,7 @@ export const SearchResultTable: React.FC<SearchResultTableProps> = ({
                                                                       onResultSelect,
                                                                       onMapFocus,
                                                                     }) => {
+  const controlId = useId();
   // Jotai atoms
   const [, setSearchResults] = useAtom(searchResultsAtom);
   const selectedNodeIds = useAtomValue(selectedNodeIdsAtom);
@@ -208,6 +209,11 @@ export const SearchResultTable: React.FC<SearchResultTableProps> = ({
                 checked={allSelected}
                 onChange={handleSelectAll}
                 size="small"
+                inputProps={{
+                  'aria-label': 'Select all search results',
+                  id: `${controlId}-select-all`,
+                  name: 'select-all-results',
+                }}
               />
             </TableCell>
             <CompactCell>Styler</CompactCell>
@@ -236,6 +242,11 @@ export const SearchResultTable: React.FC<SearchResultTableProps> = ({
                     checked={isSelected}
                     size="small"
                     onClick={(event) => event.stopPropagation()}
+                    inputProps={{
+                      'aria-label': `Select ${result.nodeName}`,
+                      id: `${controlId}-${result.nodeId}`,
+                      name: `select-${result.nodeId}`,
+                    }}
                   />
                 </TableCell>
 

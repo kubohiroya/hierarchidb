@@ -2,6 +2,7 @@ import { Accordion, AccordionDetails, AccordionSummary, Grid, Slider, Stack, Tex
 import { CloudDownload as CloudDownloadIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
 import type { DownloadProcessingConfig, ProcessingConfig } from '../../../../common/shared/index.js';
 import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../../common/shared/index.js';
+import { useId } from 'react';
 
 type Props = {
   config: ProcessingConfig;
@@ -10,6 +11,8 @@ type Props = {
 };
 
 export const DownloadConfigSection: React.FC<Props> = ({ config, disabled, onChange }) => {
+  const fieldId = useId();
+
   const baseDownloadConfig: DownloadProcessingConfig =
     config.downloadConfig ?? DEFAULT_PROCESSING_CONFIG.downloadConfig!;
 
@@ -61,6 +64,8 @@ export const DownloadConfigSection: React.FC<Props> = ({ config, disabled, onCha
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
               label="CORS Proxy Base URL"
+              id={`${fieldId}-cors-proxy-url`}
+              name="cors-proxy-url"
               value={baseDownloadConfig.corsProxyUrl || ''}
               onChange={(e) => {
                 const corsProxyUrl = e.target.value;
@@ -75,6 +80,7 @@ export const DownloadConfigSection: React.FC<Props> = ({ config, disabled, onCha
               disabled={disabled}
               placeholder="https://cors-anywhere.herokuapp.com/"
               helperText="Optional proxy for cross-origin requests"
+              inputProps={{ id: `${fieldId}-cors-proxy-url`, name: 'cors-proxy-url' }}
             />
           </Grid>
         </Grid>

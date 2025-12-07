@@ -3,6 +3,7 @@
  */
 
 import type React from 'react';
+import { useId } from 'react';
 import { Box, Grid, Slider, TextField, Typography } from '@mui/material';
 import type { LocationEntity } from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
@@ -26,6 +27,7 @@ export const LocationBatchParametersStep: React.FC<LocationBatchParametersStepPr
   draft: draftProp,
   onUpdate,
 }) => {
+  const fieldId = useId();
   const { translations } = useTranslation();
   const draft = draftProp ?? {};
 
@@ -85,8 +87,10 @@ export const LocationBatchParametersStep: React.FC<LocationBatchParametersStepPr
               <TextField
                 type="number"
                 label={translations.processing?.minZoom ?? 'Min zoom'}
+                id={`${fieldId}-min-zoom`}
+                name="min-zoom"
                 value={minZoom}
-                inputProps={{ min: MIN_ZOOM_LEVEL, max: MAX_ZOOM_LEVEL }}
+                inputProps={{ min: MIN_ZOOM_LEVEL, max: MAX_ZOOM_LEVEL, id: `${fieldId}-min-zoom`, name: 'min-zoom' }}
                 onChange={handleMinZoomChange}
               />
             </Grid>
@@ -94,8 +98,10 @@ export const LocationBatchParametersStep: React.FC<LocationBatchParametersStepPr
               <TextField
                 type="number"
                 label={translations.processing?.maxZoom ?? 'Max zoom'}
+                id={`${fieldId}-max-zoom`}
+                name="max-zoom"
                 value={maxZoom}
-                inputProps={{ min: MIN_ZOOM_LEVEL, max: MAX_ZOOM_LEVEL }}
+                inputProps={{ min: MIN_ZOOM_LEVEL, max: MAX_ZOOM_LEVEL, id: `${fieldId}-max-zoom`, name: 'max-zoom' }}
                 onChange={handleMaxZoomChange}
               />
             </Grid>

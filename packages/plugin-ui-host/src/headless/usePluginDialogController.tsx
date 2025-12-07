@@ -586,25 +586,26 @@ export function usePluginDialogController(
         },
       });
     }
-    const savedNodeId = await commitTreeNodeUpdater();
+    const normalizedData =
+      nodeType === 'folder'
+        ? null
+        : dialogData && Object.keys(dialogData).length > 0
+          ? (dialogData as Record<string, unknown>)
+          : null;
+    const savedNodeId = await commitTreeNodeUpdater({
+      metadata: {
+        name: basicInfo.name,
+        description: basicInfo.description,
+        tags: basicInfo.tags,
+      },
+      data: normalizedData === null ? undefined : normalizedData,
+      draftMetadata: null,
+      draftData: null,
+    });
     onSuccess?.(savedNodeId);
     navigateToNode(savedNodeId);
     onClose();
-  }, [
-    ensureNoConflict,
-    updateLocalDraft,
-    commitTreeNodeUpdater,
-    onClose,
-    nodeType,
-    mode,
-    draft?.draftMetadata,
-    basicInfo.name,
-    basicInfo.description,
-    basicInfo.tags,
-    draftDataWithoutMeta,
-    onSuccess,
-    navigateToNode,
-  ]);
+  }, [ensureNoConflict, updateLocalDraft, nodeType, dialogData, commitTreeNodeUpdater, basicInfo.name, basicInfo.description, basicInfo.tags, onSuccess, navigateToNode, onClose, mode, draft?.draftMetadata, draftDataWithoutMeta]);
 
   useEffect(() => {
     handleSubmitRef.current = handleSubmit;
@@ -616,19 +617,19 @@ export function usePluginDialogController(
       if (!ok) return;
       saveDraftInProgress.current = true;
       await updateLocalDraft();
-      // Apply draft metadata into committed metadata and clear draftMetadata; leave draftData as-is.
+      // Save Draft: keep data untouched, put latest step data into draftData, clear draftMetadata
       updateTreeNodeUpdater({
-        metadata: {
-          ...(draft?.metadata ?? { name: '', description: '', tags: [] }),
-          ...(draft?.draftMetadata ?? {}),
-        },
+        draftData:
+          nodeType === 'folder'
+            ? null
+            : (dialogData as Record<string, unknown>),
         draftMetadata: null as any,
       });
     } catch (err) {
       saveDraftInProgress.current = false;
       throw err;
     }
-  }, [ensureNoConflict, updateLocalDraft, updateTreeNodeUpdater, draft?.metadata, draft?.draftMetadata]);
+  }, [ensureNoConflict, updateLocalDraft, updateTreeNodeUpdater, dialogData, nodeType]);
 
   const handleCancel = useCallback(async () => {
     const decision = evaluateCancelPolicy(mode, draft);

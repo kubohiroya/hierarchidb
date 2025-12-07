@@ -3,7 +3,7 @@
  * Shared name/description form fields for Step1 across plugin-loader.
  */
 
-import { useMemo } from 'react';
+import { useMemo, useId } from 'react';
 import { Box, FormControl, TextField, Typography } from '@mui/material';
 
 export interface BasicInfoValue {
@@ -46,7 +46,10 @@ export const BasicInfoFields: React.FC<BasicInfoFieldsProps> = ({
                                                                   descriptionPlaceholder,
                                                                   title,
                                                                   subtitle,
-                                                                }) => {
+}) => {
+  const controlId = useId();
+  const nameInputId = `${controlId}-name`;
+  const descriptionInputId = `${controlId}-description`;
   const texts = useMemo(() => ({
     title: title ?? 'Basic Information',
     subtitle: subtitle ?? 'Enter a name and optional description.',
@@ -93,6 +96,8 @@ export const BasicInfoFields: React.FC<BasicInfoFieldsProps> = ({
       <FormControl fullWidth>
         <TextField
           label={texts.nameLabel}
+          id={nameInputId}
+          name="name"
           value={name}
           onChange={(e) => onChange({ name: e.target.value })}
           required
@@ -100,7 +105,7 @@ export const BasicInfoFields: React.FC<BasicInfoFieldsProps> = ({
           disabled={disabled}
           error={nameError}
           helperText={nameError ? texts.nameRequiredText : texts.nameHelperText}
-          inputProps={{ maxLength: nameMaxLength }}
+          inputProps={{ maxLength: nameMaxLength, id: nameInputId, name: 'name' }}
           placeholder={texts.namePlaceholder}
         />
       </FormControl>
@@ -108,6 +113,8 @@ export const BasicInfoFields: React.FC<BasicInfoFieldsProps> = ({
       <FormControl fullWidth>
         <TextField
           label={texts.descriptionLabel}
+          id={descriptionInputId}
+          name="description"
           value={description}
           onChange={(e) => onChange({ description: e.target.value })}
           multiline
@@ -115,7 +122,7 @@ export const BasicInfoFields: React.FC<BasicInfoFieldsProps> = ({
           fullWidth
           disabled={disabled}
           helperText={texts.descriptionHelperText}
-          inputProps={{ maxLength: descriptionMaxLength }}
+          inputProps={{ maxLength: descriptionMaxLength, id: descriptionInputId, name: 'description' }}
           placeholder={texts.descriptionPlaceholder}
         />
       </FormControl>

@@ -17,6 +17,7 @@ import {
 import { FilterAlt as FilterAltIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
 import type { FeatureFilterMethod, ProcessingConfig, SimplificationProcessingConfig } from '../../../../common/shared/index.js';
 import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../../common/shared/index.js';
+import { useId } from 'react';
 
 type Props = {
   config: ProcessingConfig;
@@ -25,6 +26,7 @@ type Props = {
 };
 
 export const SimplificationConfigSection: React.FC<Props> = ({ config, disabled, onChange }) => {
+  const controlId = useId();
   const baseSimplificationConfig: SimplificationProcessingConfig =
     config.simplificationConfig ?? DEFAULT_PROCESSING_CONFIG.simplificationConfig!;
 
@@ -62,6 +64,10 @@ export const SimplificationConfigSection: React.FC<Props> = ({ config, disabled,
                   });
                 }}
                 disabled={disabled}
+                inputProps={{
+                  id: `${controlId}-enable-filtering`,
+                  name: 'enable-filtering',
+                }}
               />
             }
             label="Enable Feature Filtering"
@@ -70,8 +76,12 @@ export const SimplificationConfigSection: React.FC<Props> = ({ config, disabled,
           {baseSimplificationConfig.enableFiltering && (
             <>
               <FormControl component="fieldset">
-                <FormLabel component="legend">Filtering Method</FormLabel>
+                <FormLabel component="legend" id={`${controlId}-filtering-method`}>
+                  Filtering Method
+                </FormLabel>
                 <RadioGroup
+                  aria-labelledby={`${controlId}-filtering-method`}
+                  name="filtering-method"
                   value={baseSimplificationConfig.featureFilterMethod || 'hybrid'}
                   onChange={(e) => {
                     const method = e.target.value as FeatureFilterMethod;
@@ -83,9 +93,27 @@ export const SimplificationConfigSection: React.FC<Props> = ({ config, disabled,
                     });
                   }}
                 >
-                  <FormControlLabel value="bbox_only" control={<Radio />} label="Bounding Box Only (Fastest)" disabled={disabled} />
-                  <FormControlLabel value="polygon_only" control={<Radio />} label="Polygon Only" disabled={disabled} />
-                  <FormControlLabel value="hybrid" control={<Radio />} label="Hybrid (Recommended)" disabled={disabled} />
+                  <FormControlLabel
+                    value="bbox_only"
+                    control={<Radio inputProps={{ id: `${controlId}-filtering-bbox-only`, name: 'filtering-method' }} />}
+                    label="Bounding Box Only (Fastest)"
+                    disabled={disabled}
+                    htmlFor={`${controlId}-filtering-bbox-only`}
+                  />
+                  <FormControlLabel
+                    value="polygon_only"
+                    control={<Radio inputProps={{ id: `${controlId}-filtering-polygon-only`, name: 'filtering-method' }} />}
+                    label="Polygon Only"
+                    disabled={disabled}
+                    htmlFor={`${controlId}-filtering-polygon-only`}
+                  />
+                  <FormControlLabel
+                    value="hybrid"
+                    control={<Radio inputProps={{ id: `${controlId}-filtering-hybrid`, name: 'filtering-method' }} />}
+                    label="Hybrid (Recommended)"
+                    disabled={disabled}
+                    htmlFor={`${controlId}-filtering-hybrid`}
+                  />
                 </RadioGroup>
               </FormControl>
 

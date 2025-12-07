@@ -3,7 +3,7 @@
  */
 
 import type React from 'react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, useId } from 'react';
 import {
   Alert,
   Box,
@@ -82,6 +82,7 @@ export function normalizeMatrix(matrix: boolean[][] | undefined, countries: Coun
 
 export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ draft, onUpdate }) => {
   const { translations } = useTranslation();
+  const controlId = useId();
   const [activeTab, setActiveTab] = useState(0);
 
   const locationTypes = useMemo<LocationTypeConfig[]>(() => {
@@ -179,13 +180,45 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ dr
             {activeType.id === 'airport' && (
               <Grid container spacing={3} columns={{ xs: 12 }}>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <FormControlLabel control={<Switch defaultChecked />} label={translations.selectionSettings.airport.includeHeliports} />
+                  <FormControlLabel
+                    control={(
+                      <Switch
+                        defaultChecked
+                        inputProps={{
+                          id: `${controlId}-airport-include-heliports`,
+                          name: 'airport-include-heliports',
+                        }}
+                      />
+                    )}
+                    label={translations.selectionSettings.airport.includeHeliports}
+                  />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <FormControlLabel control={<Switch defaultChecked />} label={translations.selectionSettings.airport.activeOnly} />
+                  <FormControlLabel
+                    control={(
+                      <Switch
+                        defaultChecked
+                        inputProps={{
+                          id: `${controlId}-airport-active-only`,
+                          name: 'airport-active-only',
+                        }}
+                      />
+                    )}
+                    label={translations.selectionSettings.airport.activeOnly}
+                  />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <FormControlLabel control={<Switch />} label={translations.selectionSettings.airport.commercialOnly} />
+                  <FormControlLabel
+                    control={(
+                      <Switch
+                        inputProps={{
+                          id: `${controlId}-airport-commercial-only`,
+                          name: 'airport-commercial-only',
+                        }}
+                      />
+                    )}
+                    label={translations.selectionSettings.airport.commercialOnly}
+                  />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <Box>
@@ -201,16 +234,58 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ dr
             {activeType.id === 'railway_station' && (
               <Grid container spacing={3} columns={{ xs: 12 }}>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <FormControlLabel control={<Switch defaultChecked />} label={translations.selectionSettings.railwayStation.includeMetro} />
+                  <FormControlLabel
+                    control={(
+                      <Switch
+                        defaultChecked
+                        inputProps={{
+                          id: `${controlId}-railway-include-metro`,
+                          name: 'railway-include-metro',
+                        }}
+                      />
+                    )}
+                    label={translations.selectionSettings.railwayStation.includeMetro}
+                  />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <FormControlLabel control={<Switch />} label={translations.selectionSettings.railwayStation.includeAbandoned} />
+                  <FormControlLabel
+                    control={(
+                      <Switch
+                        inputProps={{
+                          id: `${controlId}-railway-include-abandoned`,
+                          name: 'railway-include-abandoned',
+                        }}
+                      />
+                    )}
+                    label={translations.selectionSettings.railwayStation.includeAbandoned}
+                  />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <FormControlLabel control={<Switch />} label={translations.selectionSettings.railwayStation.intercityOnly} />
+                  <FormControlLabel
+                    control={(
+                      <Switch
+                        inputProps={{
+                          id: `${controlId}-railway-intercity-only`,
+                          name: 'railway-intercity-only',
+                        }}
+                      />
+                    )}
+                    label={translations.selectionSettings.railwayStation.intercityOnly}
+                  />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField type="number" label={translations.selectionSettings.railwayStation.minPlatformsLabel} defaultValue={1} size="small" />
+                  <TextField
+                    type="number"
+                    label={translations.selectionSettings.railwayStation.minPlatformsLabel}
+                    defaultValue={1}
+                    size="small"
+                    id={`${controlId}-railway-min-platforms`}
+                    name="railway-min-platforms"
+                    inputProps={{
+                      id: `${controlId}-railway-min-platforms`,
+                      name: 'railway-min-platforms',
+                    }}
+                  />
                 </Grid>
               </Grid>
             )}

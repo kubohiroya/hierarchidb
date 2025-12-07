@@ -275,6 +275,7 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
                                            toolbarComponent,
                                          }: GenericDataGridProps<T>): ReactElement {
   const [showFilters, setShowFilters] = useState(false);
+  const controlId = React.useId();
   void onRowHover; // keep optional callbacks referenced to satisfy noUnusedParameters
   void onRowLeave;
   const [localSearchValue, setLocalSearchValue] = useState(searchValue);
@@ -420,6 +421,8 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
           <TextField
             size="small"
             placeholder="Search..."
+            id={`${controlId}-search`}
+            name="search"
             value={onSearchChange ? searchValue : localSearchValue}
             onChange={(e) => {
               if (onSearchChange) {
@@ -429,6 +432,7 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
               }
             }}
             InputProps={{
+              inputProps: { 'aria-label': 'Search', id: `${controlId}-search`, name: 'search' },
               startAdornment: (
                 <InputAdornment position="start">
                   <Search />
@@ -537,6 +541,8 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
                         size="small"
                         fullWidth
                         placeholder={`Filter ${column.label}`}
+                        id={`${controlId}-filter-${String(column.id)}`}
+                        name={`filter-${String(column.id)}`}
                         value={filters[String(column.id)] || ''}
                         onChange={(e) => {
                           const newFilters = { ...filters, [String(column.id)]: e.target.value };

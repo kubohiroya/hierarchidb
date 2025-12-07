@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useId } from 'react';
 import { TextField, InputAdornment, IconButton, type SxProps, type Theme } from '@mui/material';
 import { Search as SearchIcon, Clear as ClearIcon } from '@mui/icons-material';
 
@@ -26,17 +26,25 @@ export const TreeTableSearchInput = memo(function TreeTableSearchInput(
     disabled = false,
     sx,
   } = props;
+  const controlId = useId();
 
   return (
     <TextField
       size="small"
       placeholder={placeholder}
       label={label}
+      id={controlId}
+      name="tree-table-search"
       value={value}
       onChange={(event) => onChange(event.target.value)}
       autoFocus={autoFocus}
       disabled={disabled}
       InputProps={{
+        inputProps: {
+          'aria-label': label || placeholder || 'Search',
+          id: controlId,
+          name: 'tree-table-search',
+        },
         startAdornment: (
           <InputAdornment position="start">
             <SearchIcon fontSize="small" />

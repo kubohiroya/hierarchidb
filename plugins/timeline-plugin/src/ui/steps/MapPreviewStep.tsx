@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useId } from 'react';
 import { Box, Slider, Stack, Switch, TextField, Typography, FormControlLabel, Paper, Chip } from '@mui/material';
 import { Map as MapIcon } from '@mui/icons-material';
 import type { TimelineFrame } from '../../common/types/index.js';
@@ -10,6 +10,7 @@ export interface MapPreviewStepProps {
 }
 
 export function MapPreviewStep({ frames, initialIndex = 0, onIndexChange }: MapPreviewStepProps) {
+  const controlId = useId();
   const [index, setIndex] = useState(Math.min(initialIndex, Math.max(0, frames.length - 1)));
   const [fps, setFps] = useState(12);
   const [loop, setLoop] = useState(true);
@@ -111,12 +112,23 @@ export function MapPreviewStep({ frames, initialIndex = 0, onIndexChange }: MapP
             label="FPS"
             size="small"
             type="number"
-            InputProps={{ inputProps: { min: 1, max: 60 } }}
+            id={`${controlId}-fps`}
+            name="fps"
+            InputProps={{ inputProps: { min: 1, max: 60, id: `${controlId}-fps`, name: 'fps' } }}
             value={fps}
             onChange={(e) => setFps(Math.max(1, Math.min(60, Number(e.target.value) || 1)))}
             sx={{ width: 120 }}
           />
-          <FormControlLabel control={<Switch checked={loop} onChange={(e) => setLoop(e.target.checked)} />} label="Loop" />
+          <FormControlLabel
+            control={(
+              <Switch
+                checked={loop}
+                onChange={(e) => setLoop(e.target.checked)}
+                inputProps={{ id: `${controlId}-loop`, name: 'loop' }}
+              />
+            )}
+            label="Loop"
+          />
         </Stack>
       </Box>
     </Stack>
