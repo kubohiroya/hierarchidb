@@ -11,13 +11,14 @@ import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import type { TreeConsoleToolbarActionParams } from '@hierarchidb/ui-treeconsole-toolbar';
 import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
 import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
-import { Alert, Box, CircularProgress } from '@mui/material';
+import { Alert, Box, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography } from '@mui/material';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import type { Remote } from 'comlink';
 import { proxy as comlinkProxy } from 'comlink';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { notify } from '@hierarchidb/components';
 import { useTranslation } from 'react-i18next';
+import { convertTreeNodeToTreeNodeData } from '~/utils/treeNodeConverter.js';
 import { TreeConsolePanelWithDynamicSpeedDial } from './TreeConsolePanelWithDynamicSpeedDial.js';
 import { TreeNodeInfoPanel } from './TreeNodeInfoPanel.js';
 import { SubscriptionCallback, Subscriptions } from '~/hooks/SubscriptionServices.ts';
@@ -142,6 +143,50 @@ const TreeConsoleIntegrationInner: React.FC<
   const developerModeEnabled = useMemo(
     () => resolveDeveloperMode(location.searchStr),
     [location.searchStr]
+  );
+  const [resumeDialog, setResumeDialog] = useState<{
+    open: boolean;
+    nodeId: NodeId | null;
+    nodeName: string;
+    node?: TreeNode;
+  }>({ open: false, nodeId: null, nodeName: '' });
+  const [pendingEditNav, setPendingEditNav] = useState<null | (() => void)>(null);
+
+  const requestEdit = useCallback(
+    async (targetNodeId?: NodeId, nodeHint?: TreeNodeData | TreeNode) => {
+      if (!workerClient || !targetNodeId) {
+        actions.handleEdit?.();
+        return;
+      }
+      try {
+        const queryAPI = await workerClient.getQueryAPI();
+        const target = await queryAPI.getNode(targetNodeId);
+        const sourceNode = (target as TreeNode | undefined) ?? (nodeHint as TreeNode | undefined);
+        if (!sourceNode) {
+          actions.handleEdit?.();
+          return;
+        }
+        const nodeData = convertTreeNodeToTreeNodeData(sourceNode);
+        const navigateToEdit = () =>
+          actions.handleContextMenuAction('edit', nodeData, { navigateToParent: false });
+        const hasDraft = Boolean((target as any)?.draftData) || Boolean((target as any)?.draftMetadata);
+        if (hasDraft) {
+          setResumeDialog({
+            open: true,
+            nodeId: targetNodeId,
+            nodeName: target?.metadata?.name ?? '',
+            node: target ?? (nodeHint as TreeNode | undefined),
+          });
+          setPendingEditNav(() => navigateToEdit);
+          return;
+        }
+        navigateToEdit();
+      } catch (error) {
+        logIntegrationWarning('Failed to check draft state before edit', error);
+        actions.handleEdit?.();
+      }
+    },
+    [actions, workerClient]
   );
 
   // Check for trash items when worker client is available
@@ -488,6 +533,14 @@ const TreeConsoleIntegrationInner: React.FC<
           });
           break;
         }
+        case 'edit': {
+          const targetId =
+            params && typeof params === 'object' && 'nodeId' in params
+              ? (params.nodeId as NodeId)
+              : currentPageNodeId;
+          void requestEdit(targetId as NodeId, params as any);
+          break;
+        }
         case 'undo':
           actions.handleUndo?.();
           break;
@@ -527,14 +580,20 @@ const TreeConsoleIntegrationInner: React.FC<
           );
       }
     },
-    [pageNodeId, workerClient, treeId, actions, navigate, handleIndexedDbReset, developerModeEnabled]
+    [pageNodeId, workerClient, treeId, actions, developerModeEnabled, navigate, requestEdit, handleIndexedDbReset]
   );
 
   const handleContextMenuAction = useCallback(
     (action: string, node: TreeNodeData, options?: { navigateToParent?: boolean }) => {
+      if (action === 'edit') {
+        void (async () => {
+          await requestEdit(node.id as NodeId, node);
+        })();
+        return;
+      }
       actions.handleContextMenuAction(action, node, options);
     },
-    [actions]
+    [actions, requestEdit]
   );
 
   const handleBreadcrumbContextAction = useCallback(
@@ -743,6 +802,71 @@ const TreeConsoleIntegrationInner: React.FC<
           </Box>
         )}
       </Box>
+      <Dialog
+        open={resumeDialog.open}
+        onClose={() => {
+          setResumeDialog({ open: false, nodeId: null, nodeName: '' });
+          setPendingEditNav(null);
+        }}
+      >
+        <DialogTitle>{t('dialogs.pluginDraft.resume.title')}</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">{t('dialogs.pluginDraft.resume.description')}</Typography>
+          {resumeDialog.nodeName && (
+            <Typography variant="subtitle2" sx={{ mt: 1 }}>
+              {resumeDialog.nodeName}
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setResumeDialog({ open: false, nodeId: null, nodeName: '' });
+              setPendingEditNav(null);
+            }}
+          >
+            {t('dialogs.pluginDraft.resume.buttons.cancel')}
+          </Button>
+          <Button
+            onClick={async () => {
+              // Start fresh: seed draft from committed metadata/data
+              if (resumeDialog.nodeId && workerClient) {
+                try {
+                  const queryAPI = await workerClient.getQueryAPI();
+                  const updaterAPI = await workerClient.getTreeNodeUpdaterAPI();
+          const node = resumeDialog.node ?? (await queryAPI.getNode(resumeDialog.nodeId));
+          if (node) {
+            const nextDraftMetadata = node.metadata ?? { name: '', description: '', tags: [] };
+            const rawDraftData = (node as any).draftData ?? (node as any).data ?? {};
+            const nextDraftData = (rawDraftData ?? {}) as Record<string, unknown>;
+            await updaterAPI.updateTreeNodeDraftMetadata(resumeDialog.nodeId, nextDraftMetadata);
+            await updaterAPI.updateTreeNodeDraftData(resumeDialog.nodeId, nextDraftData);
+          }
+                } catch (error) {
+                  logIntegrationWarning('Failed to seed fresh draft before edit', error);
+                }
+              }
+              const fn = pendingEditNav;
+              setPendingEditNav(null);
+              setResumeDialog({ open: false, nodeId: null, nodeName: '' });
+              fn?.();
+            }}
+          >
+            {t('dialogs.pluginDraft.resume.buttons.startFresh')}
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              const fn = pendingEditNav;
+              setPendingEditNav(null);
+              setResumeDialog({ open: false, nodeId: null, nodeName: '' });
+              fn?.();
+            }}
+          >
+            {t('dialogs.pluginDraft.resume.buttons.resumePrevious')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

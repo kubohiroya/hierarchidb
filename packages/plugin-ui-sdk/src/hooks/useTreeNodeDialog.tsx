@@ -217,10 +217,10 @@ export function useTreeNodeDialog<TPayload extends object>(
 
   const treeNodeUpdater = activeSingle?.treeNodeUpdater ?? activeFallback?.treeNodeUpdater ?? null;
   const updateTreeNodeUpdater =
-    activeSingle?.updateTreeNodeUpdater ?? activeFallback?.updateTreeNodeUpdater ?? (() => {});
+    useMemo(()=>activeSingle?.updateTreeNodeUpdater ?? activeFallback?.updateTreeNodeUpdater ?? (() => {}),[activeFallback?.updateTreeNodeUpdater, activeSingle?.updateTreeNodeUpdater]);
   const commitTreeNodeUpdater =
     activeSingle?.commit ?? activeFallback?.commitTreeNodeUpdater ?? (async () => undefined);
-  const discardDraft = activeSingle?.discard ?? activeFallback?.discardDraft ?? (async () => {});
+  const discardDraft = useMemo(()=>activeSingle?.discard ?? activeFallback?.discardDraft ?? (async () => {}),[activeFallback?.discardDraft, activeSingle?.discard]);
   const saveDraft = activeFallback?.saveDraft ?? commitTreeNodeUpdater;
 
   const { size: dialogSize, position: dialogPosition, displayMode, activeStepIndex, isSaving } = dialogViewState;
@@ -277,14 +277,18 @@ export function useTreeNodeDialog<TPayload extends object>(
     const baseMeta = treeNodeUpdater?.draftMetadata ?? treeNodeUpdater?.metadata ?? { name: '', description: '', tags: [] };
     try {
       const payload: Partial<TreeNodeUpdaterState<TPayload>> = {
-        metadata: {
+        draftMetadata: {
           name: baseMeta.name ?? '',
           description: baseMeta.description ?? '',
           tags: baseMeta.tags ?? [],
         },
-        draftMetadata: null,
-        draftData: null,
       };
+      if (nodeType === 'folder') {
+        payload.draftData = null;
+      }
+      if (activeSingle) {
+        activeSingle.updateTreeNodeUpdater?.(payload);
+      }
       const savedId = activeSingle
         ? await activeSingle.commit()
         : await commitTreeNodeUpdater(payload);
@@ -300,7 +304,7 @@ export function useTreeNodeDialog<TPayload extends object>(
     } finally {
       updateDialogViewState({ patch: { isSaving: false } });
     }
-  }, [treeNodeUpdater?.draftMetadata, treeNodeUpdater?.metadata, isSaving, onClose, onSave, saveDraft, updateDialogViewState, treeNodeUpdater?.treeNodeId, nodeId, activeSingle]);
+  }, [isSaving, updateDialogViewState, treeNodeUpdater?.draftMetadata, treeNodeUpdater?.metadata, treeNodeUpdater?.treeNodeId, nodeType, activeSingle, commitTreeNodeUpdater, onSave, nodeId, onClose]);
 
   const handleDiscard = useCallback(() => {
     const action = activeSingle ? activeSingle.discard : discardDraft;

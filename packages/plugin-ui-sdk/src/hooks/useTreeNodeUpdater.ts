@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   NodeId,
   TreeId,
@@ -12,17 +12,6 @@ import type { DiscardDraftOptions, TreeNodeUpdaterAPI, TreeQueryAPI } from '@hie
 import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import { Remote } from 'comlink';
-
-const debounce = <T extends (...args: any[]) => void>(fn: T, wait: number) => {
-  let timer: ReturnType<typeof setTimeout> | null = null;
-  return (...args: Parameters<T>) => {
-    if (timer) clearTimeout(timer);
-    timer = setTimeout(() => {
-      timer = null;
-      fn(...args);
-    }, wait);
-  };
-};
 
 export interface TreeNodeUpdaterState<TPayload extends object = Record<string, unknown>>
   extends TreeNodeUpdaterPayload<TPayload> {
@@ -150,6 +139,32 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
         if (mode === 'edit' && nodeId) {
           const existing = await wcAPI.getTreeNode(nodeId);
           if (!existing) throw new Error('Working copy not found for edit');
+
+          // If drafts are empty, seed them from committed values so the dialog edits a draft copy.
+          const needsDraftMeta =
+            ((existing as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata ?? null) === null &&
+            (existing.metadata ? Object.keys(existing.metadata).length > 0 : false);
+          const needsDraftData =
+            ((existing as { draftData?: Record<string, unknown> | null }).draftData ?? null) === null &&
+            // Skip seeding when committed data is null (template-driven nodes often have draftData prefilled)
+            existing.data !== null &&
+            (existing.data ? Object.keys(existing.data as Record<string, unknown>).length > 0 : false);
+          if (needsDraftMeta) {
+            await wcAPI.updateTreeNodeDraftMetadata(nodeId, existing.metadata as TreeNodeMetadata);
+            (existing as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata = {
+              ...(existing.metadata ?? { name: '', description: '', tags: [] }),
+            };
+          }
+          if (needsDraftData) {
+            await wcAPI.updateTreeNodeDraftData(
+              nodeId,
+              (existing.data ?? {}) as Record<string, unknown>
+            );
+            (existing as { draftData?: Record<string, unknown> | null }).draftData = {
+              ...(existing.data as Record<string, unknown>),
+            };
+          }
+
           const copy = toUpdater(existing);
           setDraft(copy);
           setOriginalCopy(copy);
@@ -202,26 +217,25 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
     setHasUnsaved(computeUnsaved());
   }, [computeUnsaved, draft, originalCopy]);
 
-  const persistTreeNodeUpdater = useMemo(
-    () =>
-      debounce(async (next: TreeNodeUpdaterState<TPayload>) => {
-        const targetId = next.treeNodeId ?? workingNodeId;
-        if (!targetId) return;
-        if (persistDisableUntilRef.current > Date.now()) return;
-        try {
-          const { wc: wcAPI } = await getClient();
-          await wcAPI.updateTreeNodeDraftMetadata(
-            targetId,
-            (next.draftMetadata === null ? null : (next.draftMetadata ?? {})) as any
-          );
-          await wcAPI.updateTreeNodeDraftData(
-            targetId,
-            (next.draftData === null ? null : (next.draftData ?? {})) as any
-          );
-        } catch (err) {
-          console.warn('[useTreeNodeUpdater] persist update failed', err);
-        }
-      }, 150),
+  const persistTreeNodeUpdater = useCallback(
+    async (next: TreeNodeUpdaterState<TPayload>) => {
+      const targetId = next.treeNodeId ?? workingNodeId;
+      if (!targetId) return;
+      if (persistDisableUntilRef.current > Date.now()) return;
+      try {
+        const { wc: wcAPI } = await getClient();
+        await wcAPI.updateTreeNodeDraftMetadata(
+          targetId,
+          (next.draftMetadata === null ? null : (next.draftMetadata ?? {})) as any
+        );
+        await wcAPI.updateTreeNodeDraftData(
+          targetId,
+          (next.draftData === null ? null : (next.draftData ?? {})) as any
+        );
+      } catch (err) {
+        console.warn('[useTreeNodeUpdater] persist update failed', err);
+      }
+    },
     [getClient, workingNodeId]
   );
 
@@ -254,7 +268,7 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
           updatedAt: data.updatedAt ?? prev.updatedAt,
           hasRemoteDraft: data.hasRemoteDraft ?? prev.hasRemoteDraft,
         };
-        persistTreeNodeUpdater(merged);
+        void persistTreeNodeUpdater(merged);
         return merged;
       });
     },

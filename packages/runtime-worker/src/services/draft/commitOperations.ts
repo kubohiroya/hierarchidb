@@ -53,7 +53,13 @@ export async function commitTreeNodeDraft(
     };
   }
 
-  const finalizedData = (draft as { draftData?: unknown }).draftData ?? null;
+  const finalizedData = (() => {
+    const candidate = (draft as { draftData?: unknown }).draftData ?? null;
+    if (candidate && typeof candidate === 'object' && Object.keys(candidate as Record<string, unknown>).length === 0) {
+      return null;
+    }
+    return candidate;
+  })();
   if (typeof console !== 'undefined' && typeof console.debug === 'function') {
     console.debug('[commitDraft] finalizing draft', {
       id: draft.id,
@@ -78,7 +84,7 @@ export async function commitTreeNodeDraft(
     version: originalVersion + 1,
   };
   delete (updatedNode as { isDraft?: unknown }).isDraft;
-  await coreDB.nodes.put(updatedNode);
+  await coreDB.updateNode(updatedNode);
 
   const ok: CommitOk = { status: 'ok', nodeId: updatedNode.id as NodeId };
   if (nameConflicts && onNameConflict === 'auto-rename') ok.autoRenameTo = finalName;

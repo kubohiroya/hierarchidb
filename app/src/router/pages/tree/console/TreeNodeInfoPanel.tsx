@@ -8,7 +8,7 @@ import {
   getPluginIconColor,
   isFolderNodeType,
 } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
-import type { TreeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
 import {
   type TreeConsolePanelProps,
   type TreeNodeData,
@@ -16,6 +16,9 @@ import {
 import { useTranslation } from 'react-i18next';
 import { convertTreeNodeToTreeNodeData } from '~/utils/treeNodeConverter.js';
 import { rainbowColors } from '@hierarchidb/ui-theme';
+import { useWorker } from '~/contexts/WorkerProvider.tsx';
+import { Subscriptions } from '~/hooks/SubscriptionServices.ts';
+import { proxy as comlinkProxy } from 'comlink';
 
 type ContextMenuHandler = NonNullable<TreeConsolePanelProps['onContextMenuAction']>;
 
@@ -28,14 +31,73 @@ export interface TreeNodeInfoPanelProps {
 export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNodeInfoPanelProps) {
   const { t, i18n } = useTranslation();
   const locale = i18n?.resolvedLanguage ?? i18n?.language ?? 'en';
-  const nodeData = useMemo(() => (node ? convertTreeNodeToTreeNodeData(node) : undefined), [node]);
+  const workerCtx = useWorker();
+  const workerClient = workerCtx?.client ?? null;
+  const [currentNode, setCurrentNode] = useState<TreeNode | undefined>(node);
+  const nodeData = useMemo(
+    () => (currentNode ? convertTreeNodeToTreeNodeData(currentNode) : undefined),
+    [currentNode]
+  );
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
   const [menuNode, setMenuNode] = useState<TreeNodeData | null>(nodeData ?? null);
 
   useEffect(() => {
-    setMenuNode(nodeData ?? null);
+    setCurrentNode(node);
     setMenuAnchorEl(null);
+  }, [node]);
+
+  useEffect(() => {
+    setMenuNode(nodeData ?? null);
   }, [nodeData]);
+
+  // Keep in sync with worker updates via subscription
+  useEffect(() => {
+    if (!workerClient || !node?.id) return;
+    let disposed = false;
+    let subId: string | null = null;
+
+    const cb = comlinkProxy((ev: unknown) => {
+      if (disposed) return;
+      const event = ev as { nodeId?: NodeId; node?: TreeNode } | null;
+      if (event?.node) {
+        setCurrentNode(event.node);
+      } else if (event?.nodeId === node.id) {
+        void (async () => {
+          try {
+            const queryAPI = await workerClient.getQueryAPI();
+            const latest = await queryAPI.getNode(node.id as NodeId);
+            if (!disposed && latest) setCurrentNode(latest);
+          } catch (error) {
+            console.warn('[TreeNodeInfoPanel] failed to refetch node on subscription event', error);
+          }
+        })();
+      }
+    });
+
+    const setup = async () => {
+      try {
+        // Reuse existing subscription if present
+        const existing = Subscriptions.getActive('page', node.id as NodeId);
+        if (existing) {
+          subId = existing.subId as string;
+          return;
+        }
+        const result = await Subscriptions.subscribe('page', workerClient, node.id as NodeId, cb);
+        subId = result.subId as string;
+      } catch (error) {
+        console.warn('[TreeNodeInfoPanel] subscription failed', error);
+      }
+    };
+
+    void setup();
+
+    return () => {
+      disposed = true;
+      if (subId) {
+        void Subscriptions.release('page', workerClient, node.id as NodeId).catch(() => {});
+      }
+    };
+  }, [workerClient, node]);
 
   const getString = useCallback(
     (key: string, defaultValue: string, options?: Record<string, unknown>) => {
@@ -95,7 +157,7 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
     setMenuAnchorEl(null);
   }, []);
 
-  if (!node) {
+  if (!currentNode) {
     return (
       <Box sx={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
         <Alert severity="info">
@@ -108,19 +170,19 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
     );
   }
 
-  const createdAtLabel = formatTimestamp(node.createdAt);
-  const updatedAtLabel = formatTimestamp(node.updatedAt);
+  const createdAtLabel = formatTimestamp(currentNode.createdAt);
+  const updatedAtLabel = formatTimestamp(currentNode.updatedAt);
   const description =
-    (node.metadata?.description && node.metadata.description.trim().length > 0
-      ? node.metadata.description
+    (currentNode.metadata?.description && currentNode.metadata.description.trim().length > 0
+      ? currentNode.metadata.description
       : getString('treeConsole.infoPanel.emptyDescription', 'No description provided.')) ?? '';
-  const nodeTypeLabel = node.nodeType ?? 'node';
+  const nodeTypeLabel = currentNode.nodeType ?? 'node';
   const isRootLike =
-    !node.parentId ||
+    !currentNode.parentId ||
     !nodeData ||
     nodeData.depth === 0 ||
-    /root/i.test(node.nodeType ?? '') ||
-    /trash/i.test(node.nodeType ?? '');
+    /root/i.test(currentNode.nodeType ?? '') ||
+    /trash/i.test(currentNode.nodeType ?? '');
 
   const canMutate = !isRootLike;
   const iconTooltip = getString('treeConsole.infoPanel.openContextMenu', 'Node actions');
@@ -145,7 +207,7 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
   const nodeIconColor = isFolderNodeType(nodeTypeLabel)
     ? baseIconColor
     : manifestIconColor ?? baseIconColor;
-  const isDraft = Boolean(node.draftData);
+  const isDraft = Boolean(currentNode.draftData);
 
   return (
     <Box
@@ -194,7 +256,7 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
 
         <Stack spacing={0.5} alignItems="center">
           <Typography variant="h4" component="h2" sx={{ wordBreak: 'break-word' }}>
-            {node.metadata?.name || unnamedNodeLabel}
+            {currentNode.metadata?.name || unnamedNodeLabel}
           </Typography>
           {isDraft && (
             <Chip

@@ -356,47 +356,6 @@ export function usePluginDialogController(
     }
   }, [workerDialogState, validatedStepIndices.length, setActiveStepIndex]);
 
-  const [resumeDialogOpen, setResumeDialogOpen] = useState(false);
-  const resumeDialogShownRef = useRef(false);
-
-  useEffect(() => {
-    if (mode !== 'edit') return;
-    if (!draft) return;
-    if (resumeDialogShownRef.current) return;
-    if (!draft.hasRemoteDraft) return;
-    if (draft.draftData == null) return;
-    resumeDialogShownRef.current = true;
-    setResumeDialogOpen(true);
-  }, [draft, mode]);
-
-  const handleResumeExistingDraft = useCallback(() => {
-    setResumeDialogOpen(false);
-  }, []);
-
-  const handleStartFreshDraft = useCallback(() => {
-    if (!draft) {
-      setResumeDialogOpen(false);
-      return;
-    }
-    const fallbackMetadata = draft.metadata ?? { name: '', description: '', tags: [] };
-    const baselineData =
-      (draft.data as Partial<PluginDefinedEntity> | undefined) ?? ({} as Partial<PluginDefinedEntity>);
-    updateTreeNodeUpdater({
-      treeNodeId: draft.treeNodeId,
-      draftMetadata: fallbackMetadata,
-      draftData: baselineData,
-      version: draft.version,
-      updatedAt: draft.updatedAt,
-      hasRemoteDraft: false,
-    } as any);
-    setResumeDialogOpen(false);
-  }, [draft, updateTreeNodeUpdater]);
-
-  const handleResumeCancel = useCallback(() => {
-    setResumeDialogOpen(false);
-    onClose();
-  }, [onClose]);
-
   const [conflictDialog, setConflictDialog] = useState<{
     open: boolean;
     latestVersion: number;
@@ -454,6 +413,7 @@ export function usePluginDialogController(
 
   const updateLocalDraft = useCallback(async () => {
     if (!treeUpdater) return;
+    // BasicInfoは draftMetadata にのみ保持。plugin固有データは draftData にのみ保持。
     const nextPatch: Partial<TreeNodeUpdaterState<PluginDefinedEntity>> = {
       treeNodeId: (treeUpdater.treeNodeId ?? nodeId) as NodeId,
       draftMetadata: {
@@ -462,7 +422,7 @@ export function usePluginDialogController(
         description: basicInfo.description,
         tags: basicInfo.tags,
       },
-      draftData: { ...(localDraftData ?? {}) },
+      draftData: nodeType === 'folder' ? null : { ...(localDraftData ?? {}) },
     };
     updateTreeNodeUpdater(nextPatch);
   }, [
@@ -473,6 +433,7 @@ export function usePluginDialogController(
     nodeId,
     treeUpdater,
     updateTreeNodeUpdater,
+    nodeType,
   ]);
 
   const canSaveCurrent = evaluatedState.guards.canSave;
@@ -592,15 +553,20 @@ export function usePluginDialogController(
         : dialogData && Object.keys(dialogData).length > 0
           ? (dialogData as Record<string, unknown>)
           : null;
+
+    // For single-source path, ensure upstream state is aligned before commit
     const savedNodeId = await commitTreeNodeUpdater({
-      metadata: {
+      // commitTreeNodeUpdater pushes draft fields synchronously before commit.
+      // draftMetadata carries basic info so commitDraft can apply it to metadata,
+      // and commit will clear draftMetadata/draftData afterward.
+      draftMetadata: {
         name: basicInfo.name,
         description: basicInfo.description,
         tags: basicInfo.tags,
       },
+      draftData: nodeType === 'folder' ? null : (normalizedData ?? null),
       data: normalizedData === null ? undefined : normalizedData,
-      draftMetadata: null,
-      draftData: null,
+      metadata: undefined,
     });
     onSuccess?.(savedNodeId);
     navigateToNode(savedNodeId);
@@ -619,17 +585,19 @@ export function usePluginDialogController(
       await updateLocalDraft();
       // Save Draft: keep data untouched, put latest step data into draftData, clear draftMetadata
       updateTreeNodeUpdater({
-        draftData:
-          nodeType === 'folder'
-            ? null
-            : (dialogData as Record<string, unknown>),
-        draftMetadata: null as any,
+        draftData: nodeType === 'folder' ? null : (dialogData as Record<string, unknown>),
+        draftMetadata: {
+          ...(treeUpdater?.draftMetadata ?? {}),
+          name: basicInfo.name,
+          description: basicInfo.description,
+          tags: basicInfo.tags,
+        },
       });
     } catch (err) {
       saveDraftInProgress.current = false;
       throw err;
     }
-  }, [ensureNoConflict, updateLocalDraft, updateTreeNodeUpdater, dialogData, nodeType]);
+  }, [ensureNoConflict, updateLocalDraft, updateTreeNodeUpdater, nodeType, dialogData, treeUpdater?.draftMetadata, basicInfo.name, basicInfo.description, basicInfo.tags]);
 
   const handleCancel = useCallback(async () => {
     const decision = evaluateCancelPolicy(mode, draft);
@@ -696,38 +664,6 @@ export function usePluginDialogController(
     useCallback(
       () => (
         <>
-          <Dialog
-            open={resumeDialogOpen}
-            onClose={handleResumeCancel}
-            sx={{
-              ...foregroundDialogSx,
-              zIndex: (theme) => (theme.zIndex?.modal ?? 1300) + 1001,
-            }}
-            slotProps={{
-              backdrop: {
-                sx: {
-                  backgroundColor: 'rgba(9, 12, 28, 0.45)',
-                  zIndex: (theme) => (theme.zIndex?.modal ?? 1300) + 1000,
-                },
-              },
-              paper: {
-                sx: { zIndex: (theme) => (theme.zIndex?.modal ?? 1300) + 1002 },
-              },
-            }}
-          >
-            <DialogTitle>{t('dialogs.pluginDraft.resume.title')}</DialogTitle>
-            <DialogContent>
-              <Typography variant="body2">{t('dialogs.pluginDraft.resume.description')}</Typography>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleResumeCancel}>{t('dialogs.pluginDraft.resume.buttons.cancel')}</Button>
-              <Button onClick={handleStartFreshDraft}>{t('dialogs.pluginDraft.resume.buttons.startFresh')}</Button>
-              <Button variant="contained" onClick={handleResumeExistingDraft} autoFocus>
-                {t('dialogs.pluginDraft.resume.buttons.resumePrevious')}
-              </Button>
-            </DialogActions>
-          </Dialog>
-
           <Dialog
             open={conflictDialog.open}
             onClose={() => {
@@ -801,7 +737,7 @@ export function usePluginDialogController(
           />
         </>
       ),
-      [resumeDialogOpen, handleResumeCancel, foregroundDialogSx, t, handleStartFreshDraft, handleResumeExistingDraft, conflictDialog.open, conflictDialog.updatedAt, mode, canSaveCurrent, disableDraftButton, handleSaveDraft, hasUnsavedChanges, activeStartBatch, canStartBatch, isStartingBatch, footerPrimaryButtons, footerSaveDraftLabel, closeConflictDialog, handleStartBatch]
+      [foregroundDialogSx, t, conflictDialog.open, conflictDialog.updatedAt, mode, canSaveCurrent, disableDraftButton, handleSaveDraft, hasUnsavedChanges, activeStartBatch, canStartBatch, isStartingBatch, footerPrimaryButtons, footerSaveDraftLabel, closeConflictDialog, handleStartBatch]
     );
 
   const handleCloseRequest = useCallback(() => {
@@ -815,9 +751,14 @@ export function usePluginDialogController(
 
   const handleStepDataChange = useCallback(
     (patch: Partial<Partial<PluginDefinedEntity>>) => {
+      // Folder は常に draftData null としたいのでローカルは空扱いにする
+      if (nodeType === 'folder') {
+        setLocalDraftData({});
+        return;
+      }
       setLocalDraftData((prev) => ({ ...(toRecord(prev) ?? {}), ...patch }));
     },
-    [setLocalDraftData]
+    [setLocalDraftData, nodeType]
   );
 
   const handleRequestCommit = useCallback(() => {
