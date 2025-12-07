@@ -30,6 +30,7 @@ export function TimelineDialog(props: TimelineDialogProps) {
     open: props.open,
     mode: props.mode,
     nodeType: 'timeline',
+    useSingleSource: true,
     nodeId: props.nodeId as NodeId | undefined,
     parentId: props.parentId as NodeId | undefined,
     onClose: props.onClose,

@@ -113,6 +113,7 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
     open,
     mode,
     nodeType: 'shape',
+    useSingleSource: true,
     nodeId,
     parentId,
     treeId,

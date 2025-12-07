@@ -33,6 +33,7 @@ export function useSpreadsheetDialog(options: UseSpreadsheetDialogOptions): {
     ...options,
     nodeType: SPREADSHEET_NODE_TYPE,
     initialDraftData: defaultSpreadsheetDraft,
+    useSingleSource: true,
     buildSteps: ({ data, metadata, persistBasicInfo, updatePayload, dialogRef, mode, nodeId, parentId }) => [
       {
         id: 'basic',

@@ -101,10 +101,7 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
     setImportMethod(initialImportMethod);
   }, [initialImportMethod]);
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
+  const processFile = (file: File) => {
     // Validate file type
     const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
     if (!acceptedFileTypes.includes(fileExtension)) {
@@ -119,6 +116,12 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
     }
 
     importTabularFile(file, processingConfig);
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    processFile(file);
   };
 
   const handleUrlDownload = () => {
@@ -137,6 +140,70 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
 
   const handleImportClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const [dragActive, setDragActive] = useState(false);
+  const [dragError, setDragError] = useState(false);
+  const dragDepthRef = useRef(0);
+
+  const hasFileItems = (dt: DataTransfer | null): boolean => {
+    if (!dt) return false;
+    if (dt.items && dt.items.length) {
+      return Array.from(dt.items).some((item) => item.kind === 'file');
+    }
+    if (dt.types?.includes?.('Files')) return true;
+    if (dt.files && dt.files.length > 0) return true;
+    return false;
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setDragActive(false);
+    setDragError(false);
+    dragDepthRef.current = 0;
+    if (disabled || isImporting) return;
+    const file = event.dataTransfer.files?.[0];
+    if (!file) return;
+    processFile(file);
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    if (!hasFileItems(event.dataTransfer)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (disabled || isImporting) return;
+    setDragActive(true);
+  };
+
+  const handleDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
+    if (!hasFileItems(event.dataTransfer)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (disabled || isImporting) return;
+    dragDepthRef.current += 1;
+    const item = event.dataTransfer?.items?.[0];
+    const file = item?.kind === 'file' ? item.getAsFile() : null;
+    const name = file?.name || item?.type || '';
+    const ext = name.includes('.') ? `.${name.split('.').pop()?.toLowerCase()}` : '';
+    const matches = ext !== '' && acceptedFileTypes.includes(ext);
+    setDragActive(matches);
+    setDragError(!matches);
+  };
+
+  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    if (!hasFileItems(event.dataTransfer)) {
+      setDragActive(false);
+      setDragError(false);
+      dragDepthRef.current = 0;
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    if (dragDepthRef.current === 0) {
+      setDragActive(false);
+      setDragError(false);
+    }
   };
 
   return (
@@ -188,7 +255,7 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
             p: 3,
             mb: 3,
             border: '2px dashed',
-            borderColor: 'divider',
+            borderColor: dragError ? 'error.main' : dragActive ? 'success.main' : 'divider',
             textAlign: 'center',
             cursor: disabled || isImporting ? 'not-allowed' : 'pointer',
             '&:hover': disabled || isImporting ? {} : {
@@ -197,6 +264,10 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
             },
           }}
             onClick={disabled || isImporting ? undefined : handleImportClick}
+            onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
         >
           <input
             ref={fileInputRef}

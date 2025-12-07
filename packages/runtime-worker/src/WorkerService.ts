@@ -14,7 +14,7 @@ import { TreeNodeUpdaterService } from './services/TreeNodeUpdaterService.js';
 import { DialogStateService } from './services/DialogStateService.js';
 import { PluginDefinition, PluginLifecycleAPI } from '@hierarchidb/plugin-service-api';
 import { DialogStateAPI, ImportExportAPI, TagAPI, TreeMutationAPI, TreeNodeUpdaterAPI, TreeQueryAPI, TreeSubscriptionAPI } from '@hierarchidb/common-api';
-import { NodeType } from 'packages/common/types/dist/index.js';
+import type { NodeType } from '@hierarchidb/common-types';
 
 interface PerformanceMemoryStats {
   usedJSHeapSize?: number;

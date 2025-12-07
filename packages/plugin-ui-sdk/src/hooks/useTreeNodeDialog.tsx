@@ -34,6 +34,10 @@ import {
   useTreeNodeUpdater,
   type UseTreeNodeUpdaterResult,
 } from './useTreeNodeUpdater.js';
+import {
+  useSingleSourceDialogAtom,
+  type SingleSourceDialogAtomResult,
+} from './useSingleSourceDialogAtom.js';
 
 export interface DialogStepConfig {
   id: string;
@@ -65,6 +69,7 @@ export interface UseTreeNodeDialogOptions<TPayload extends object> {
   initialDraftData?: TPayload;
   initialDraftMetadata?: TreeNodeMetadata;
   buildSteps: (args: DialogStepFactoryArgs<TPayload>) => DialogStepConfig[];
+  useSingleSource?: boolean;
 }
 
 interface UseDialogViewStateOptions {
@@ -144,6 +149,7 @@ export function useTreeNodeDialog<TPayload extends object>(
   updatePayload: (patch: Partial<TPayload>) => void;
   updateMetadata: (patch: Partial<TreeNodeMetadata>, base?: TreeNodeMetadata) => void;
   treeNodeUpdater: UseTreeNodeUpdaterResult<TPayload>['treeNodeUpdater'];
+  singleSource?: SingleSourceDialogAtomResult<TPayload>;
   saveDraft: () => Promise<NodeId | undefined>;
   discardDraft: () => Promise<void>;
   dialogViewState: DialogViewState;
@@ -162,6 +168,7 @@ export function useTreeNodeDialog<TPayload extends object>(
     initialDraftData,
     initialDraftMetadata,
     buildSteps,
+    useSingleSource = false,
   } = options;
 
   const workerClient = useMemo<WorkerClientRef | null>(() => {
@@ -182,16 +189,39 @@ export function useTreeNodeDialog<TPayload extends object>(
     initialActiveStepIndex: 0,
   });
 
-  const { treeNodeUpdater, updateDraft, saveDraft, discardDraft } = useTreeNodeUpdater<TPayload>({
-    mode,
-    nodeType,
-    nodeId,
-    parentId,
-    treeId,
-    workerClient,
-    initialDraftData,
-    initialDraftMetadata,
-  });
+  const singleSource = useSingleSource
+    ? useSingleSourceDialogAtom<TPayload>({
+        mode,
+        nodeType,
+        nodeId,
+        parentId,
+        treeId,
+        workerClient,
+        initialDraftData,
+        initialDraftMetadata,
+      })
+    : null;
+
+  const fallbackUpdater = !singleSource
+    ? useTreeNodeUpdater<TPayload>({
+        mode,
+        nodeType,
+        nodeId,
+        parentId,
+        treeId,
+        workerClient,
+        initialDraftData,
+        initialDraftMetadata,
+      })
+    : null;
+
+  const treeNodeUpdater = singleSource?.treeNodeUpdater ?? fallbackUpdater?.treeNodeUpdater ?? null;
+  const updateTreeNodeUpdater =
+    singleSource?.updateTreeNodeUpdater ?? fallbackUpdater?.updateTreeNodeUpdater ?? (() => {});
+  const commitTreeNodeUpdater =
+    singleSource?.commit ?? fallbackUpdater?.commitTreeNodeUpdater ?? (async () => undefined);
+  const discardDraft = singleSource?.discard ?? fallbackUpdater?.discardDraft ?? (async () => {});
+  const saveDraft = fallbackUpdater?.saveDraft ?? commitTreeNodeUpdater;
 
   const { size: dialogSize, position: dialogPosition, displayMode, activeStepIndex, isSaving } = dialogViewState;
   const dialogRef = useRef<HTMLDivElement>(null!);
@@ -204,10 +234,19 @@ export function useTreeNodeDialog<TPayload extends object>(
     [treeNodeUpdater?.data, treeNodeUpdater?.draftData]
   );
 
-  const { updatePayload, updateMetadata } = useMemo(
-    () => createTreeNodeUpdaterActions<TPayload>(updateDraft),
-    [updateDraft]
-  );
+  const { updatePayload, updateMetadata } = useMemo(() => {
+    if (singleSource) {
+      return {
+        updatePayload: (patch: Partial<TPayload>, base?: TPayload) => {
+          singleSource.setDraft((prev) => ({ ...(base ?? prev), ...patch }));
+        },
+        updateMetadata: (patch: Partial<TreeNodeMetadata>, base?: TreeNodeMetadata) => {
+          singleSource.setMetadata((prev) => ({ ...(base ?? prev), ...patch }));
+        },
+      };
+    }
+    return createTreeNodeUpdaterActions<TPayload>(updateTreeNodeUpdater);
+  }, [singleSource, updateTreeNodeUpdater]);
 
   const persistBasicInfo = useCallback(
     (meta: TreeNodeMetadata) => {
@@ -237,7 +276,7 @@ export function useTreeNodeDialog<TPayload extends object>(
     updateDialogViewState({ patch: { isSaving: true } });
     const baseMeta = treeNodeUpdater?.draftMetadata ?? treeNodeUpdater?.metadata ?? { name: '', description: '', tags: [] };
     try {
-      const savedId = await saveDraft();
+      const savedId = singleSource ? await singleSource.commit() : await saveDraft();
       await onSave(
         {
           name: baseMeta.name ?? '',
@@ -250,12 +289,13 @@ export function useTreeNodeDialog<TPayload extends object>(
     } finally {
       updateDialogViewState({ patch: { isSaving: false } });
     }
-  }, [treeNodeUpdater?.draftMetadata, treeNodeUpdater?.metadata, isSaving, onClose, onSave, saveDraft, updateDialogViewState, treeNodeUpdater?.treeNodeId, nodeId]);
+  }, [treeNodeUpdater?.draftMetadata, treeNodeUpdater?.metadata, isSaving, onClose, onSave, saveDraft, updateDialogViewState, treeNodeUpdater?.treeNodeId, nodeId, singleSource]);
 
   const handleDiscard = useCallback(() => {
-    void discardDraft().catch(() => {});
+    const action = singleSource ? singleSource.discard : discardDraft;
+    void action().catch(() => {});
     onClose();
-  }, [discardDraft, onClose]);
+  }, [discardDraft, onClose, singleSource]);
 
   const metadata = treeNodeUpdater?.draftMetadata ?? treeNodeUpdater?.metadata;
 
@@ -360,7 +400,7 @@ export function useTreeNodeDialog<TPayload extends object>(
     invalidMessageMap: {},
     onRequestClose: handleDiscard,
     onRequestCommit: handleSave,
-    isDirty: true,
+    isDirty: singleSource?.hasUnsavedChanges ?? fallbackUpdater?.hasUnsavedChanges ?? true,
     position: dialogPosition,
     onPositionChange: handlePositionChange,
     size: dialogSize,
@@ -395,6 +435,7 @@ export function useTreeNodeDialog<TPayload extends object>(
     updatePayload: handleUpdate,
     updateMetadata,
     treeNodeUpdater,
+    singleSource: singleSource ?? undefined,
     saveDraft,
     discardDraft,
     dialogViewState,

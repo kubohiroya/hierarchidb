@@ -34,6 +34,8 @@ export {
   createStageWorkerClient,
   getStageProcessingClient,
 } from './services/StageProcessingService.js';
+// Worker service (public API for worker bootstrap)
+export { WorkerService } from './WorkerService.js';
 // CoreDB and draft utilities (for plugin-side usage)
 export { CoreDB } from './services/CoreDB.js';
 export { discardTreeNodeDraft } from './services/draft/cleanupOperations.js';
@@ -42,5 +44,4 @@ export {
   updateTreeNodeDraftData,
   updateTreeNodeDraftMetadata,
 } from './services/draft/lookupOperations.js';
-
 

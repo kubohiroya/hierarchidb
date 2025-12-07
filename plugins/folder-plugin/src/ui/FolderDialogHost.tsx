@@ -32,6 +32,7 @@ export const FolderDialogHost: React.FC<FolderDialogHostProps> = ({
     open,
     mode,
     nodeType: 'folder',
+    useSingleSource: true,
     nodeId,
     parentId,
     onClose,

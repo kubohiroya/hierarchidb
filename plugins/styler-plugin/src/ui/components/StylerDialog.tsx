@@ -51,6 +51,7 @@ export const StylerDialog: React.FC<StylerDialogProps> = ({
     open,
     mode,
     nodeType: 'styler',
+    useSingleSource: true,
     nodeId,
     parentId,
     treeId,

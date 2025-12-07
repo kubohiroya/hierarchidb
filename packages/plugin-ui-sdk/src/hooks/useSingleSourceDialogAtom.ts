@@ -34,6 +34,8 @@ export interface SingleSourceDialogAtomResult<TEntity extends object> {
   store: ReturnType<typeof createStore>;
   draftAtom: PrimitiveAtom<DraftShape<TEntity>>;
   metadataAtom: PrimitiveAtom<TreeNodeMetadata>;
+  treeNodeUpdater: ReturnType<typeof useTreeNodeUpdater<TEntity>>['treeNodeUpdater'];
+  updateTreeNodeUpdater: ReturnType<typeof useTreeNodeUpdater<TEntity>>['updateTreeNodeUpdater'];
   hasUnsavedChanges: boolean;
   loading: boolean;
   error: Error | null;
@@ -157,6 +159,8 @@ export function useSingleSourceDialogAtom<TEntity extends object = Record<string
     draftAtom,
     metadataAtom,
     hasUnsavedChanges,
+    treeNodeUpdater,
+    updateTreeNodeUpdater,
     loading,
     error,
     treeNodeId: treeNodeUpdater?.treeNodeId,
