@@ -1,0 +1,1 @@
+import{S as a}from"./index-0f0LluTd.js";import{g as e}from"../worker.js";import{S}from"./StylerDataService-DtOU_Qi-.js";import"../../../../packages/runtime-worker/dist/StageProcessingService.js";import"./colorUtils-DvLFxGnw.js";class s extends a{constructor(){super(e("styler-metadata-db"))}}export{s as SimpleTableMetadataManager,S as StylerDataService};

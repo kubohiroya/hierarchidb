@@ -1,0 +1,1 @@
+import{j as o}from"./jsx-runtime-Dp4RrBKh.js";import{c as r}from"./createSvgIcon-DMGR10qF.js";import"./index-C1aSX2kT.js";import"../worker.js";import"../../../../packages/runtime-worker/dist/StageProcessingService.js";var t=r(o.jsx("path",{d:"M22 11V3h-7v3H9V3H2v8h7V8h2v10h4v3h7v-8h-7v3h-2V8h2v3z"}));const m=t;export{m as LinkerPluginIcon,m as default};

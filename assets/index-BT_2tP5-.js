@@ -1,0 +1,1 @@
+const i={ROAD:"road",RAILWAY:"railway",WATERWAY:"waterway",AIRWAY:"airway",WALKING:"walking",CYCLING:"cycling",HIKING:"hiking",SHIPPING:"shipping",PIPELINE:"pipeline",POWERLINE:"powerline"};export{i as ROUTE_TYPES};

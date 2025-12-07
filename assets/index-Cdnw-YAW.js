@@ -1,0 +1,1 @@
+import{r as m}from"./registerFolderWorkerStores-DVDc6nk8.js";import"../worker.js";import"../../../../packages/runtime-worker/dist/StageProcessingService.js";import"./index-BpU0tMy1.js";export{m as registerFolderWorkerStores};

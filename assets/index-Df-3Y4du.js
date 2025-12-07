@@ -1,0 +1,1 @@
+import{A as e}from"../worker.js";import"../../../../packages/runtime-worker/dist/StageProcessingService.js";async function n(){return await e.getSingleton()}function a(){}export{n as getShapeAuthHandler,a as resetShapeAuthHandler};

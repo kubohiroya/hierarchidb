@@ -1,1 +1,0 @@
-import{A as h}from"./index-C1w1Lpkv.js";import"./index14.js";import"./vendor-react-2It2lbss.js";async function n(t,e){return(await h.getSingleton()).fetchWithAuth(t,e,{pluginType:"shape"})}export{n as authFetch};

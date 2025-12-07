@@ -1,0 +1,1 @@
+import{r as a}from"./registerTimelineWorkerStores-BenZcZDA.js";import"../worker.js";import"../../../../packages/runtime-worker/dist/StageProcessingService.js";const t={nodeType:"timeline",capabilities:{canHaveChildren:!0,canBeRoot:!1,canBeDeleted:!0,canBeRenamed:!0,canBeMoved:!0}};export{t as lifecycle,a as registerTimelineWorkerStores};
