@@ -21,17 +21,27 @@ export default function AuthCallbackRoute() {
   useEffect(() => {
     async function processCallback() {
       try {
-        //  URL
         const code = searchParams.get('code');
-        //const state = searchParams.get('state');
         const error = searchParams.get('error');
+
+        // If neither code nor error is present, assume a stray render and navigate away quietly.
+        if (!code && !error) {
+          const returnUrl = localStorage.getItem('auth_return_url') || '/';
+          localStorage.removeItem('auth_return_url');
+          navigate({ to: returnUrl, replace: true });
+          return;
+        }
 
         if (error) {
           throw new Error(`Authentication error: ${error}`);
         }
 
         if (!code) {
-          throw new Error('No authorization code received');
+          // Nothing to process; go home without throwing.
+          const returnUrl = localStorage.getItem('auth_return_url') || '/';
+          localStorage.removeItem('auth_return_url');
+          navigate({ to: returnUrl, replace: true });
+          return;
         }
 
         const authService = BFFAuthService.getInstance();

@@ -22,7 +22,7 @@
   },
   "peerDependencies": {
     "@mui/icons-material": "^7.3.6",
-    "@mui/material": "^7.3.2",
+    "@mui/material": "^7.3.6",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0"
   },
@@ -44,7 +44,7 @@
   "devDependencies": {
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
-    "@mui/material": "^7.3.2",
-    "@mui/icons-material": "^7.3.2"
+    "@mui/material": "^7.3.6",
+    "@mui/icons-material": "^7.3.6"
   }
 }

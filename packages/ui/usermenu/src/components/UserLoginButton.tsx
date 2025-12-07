@@ -4,23 +4,15 @@ import {
   UserAvatar,
   useAuth,
 } from '@hierarchidb/ui-auth';
-import { SUPPORTED_LANGUAGES, useLanguage } from '@hierarchidb/ui-i18n';
+import { ThemeContext, type ThemeContextType } from '@hierarchidb/ui-theme';
 import {
-  getThemeDisplayName,
-  getThemeIcon,
-  ThemeContext,
-  type ThemeContextType,
-  type ThemeMode,
-} from '@hierarchidb/ui-theme';
-import {
-  Check as CheckIcon,
-  ChevronRight as ChevronRightIcon,
+  DarkMode as DarkModeIcon,
   DeleteForever as DeleteForeverIcon,
   Language as LanguageIcon,
+  LightMode as LightModeIcon,
   Login as LoginIcon,
   Logout as LogoutIcon,
-  Memory as MemoryIcon,
-  MemoryOutlined as MemoryOutlinedIcon,
+  SettingsBrightness as SystemThemeIcon,
 } from '@mui/icons-material';
 import {
   Box,
@@ -37,111 +29,136 @@ import {
   Menu,
   MenuItem,
 } from '@mui/material';
-import React, { useCallback, useContext, useEffect, useId, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useId, useState } from 'react';
 
-type LanguageConfig = (typeof SUPPORTED_LANGUAGES)[number];
+const createSafeFileName = (key: string) =>
+  btoa(unescape(encodeURIComponent(key))).replace(/=+/g, '');
+
+type ThemeMode = 'system' | 'light' | 'dark';
+type LanguageCode = 'system' | 'en' | 'ja';
 
 export const UserLoginButton: React.FC = () => {
-  const hasDom =
-    typeof document !== 'undefined' && typeof window !== 'undefined' && !!document.body;
-
+  const hasDom = typeof document !== 'undefined' && typeof window !== 'undefined' && !!document.body;
   const { user, signIn, signOut, auth } = useAuth();
-
   const themeContext = useContext<ThemeContextType | null>(ThemeContext);
-  // nst  = ;
-  ///{ mode: themeMode, setMode: setThemeMode }
 
-  const languageContext = useLanguage();
-  const fallbackLanguage: LanguageConfig = useMemo(
-    () =>
-      SUPPORTED_LANGUAGES[0] ?? {
-        code: 'en',
-        name: 'English',
-        nativeName: 'English',
-        flag: '🇺🇸',
-        direction: 'ltr' as const,
-        dateLocale: undefined,
-      },
-    []
-  );
-
-  // Load memory monitor visibility state on mount
-  useEffect(() => {
-    const savedVisibility = localStorage.getItem('memoryMonitorVisible');
-    if (savedVisibility === 'true') {
-      setMemoryMonitorVisible(true);
-    }
-  }, []);
-
-  // Menu state management
+  // Hooks (single declaration block for stable order)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [themeMenuAnchorEl, setThemeMenuAnchorEl] = React.useState<null | HTMLElement>(null);
-  const [languageMenuAnchorEl, setLanguageMenuAnchorEl] = React.useState<null | HTMLElement>(null);
-  const [authProviderDialogOpen, setAuthProviderDialogOpen] = React.useState(false);
-  const [clearCacheDialogOpen, setClearCacheDialogOpen] = React.useState(false);
+  const [authProviderDialogOpen, setAuthProviderDialogOpen] = useState(false);
+  const [clearCacheDialogOpen, setClearCacheDialogOpen] = useState(false);
+  const [themeMenuAnchorEl, setThemeMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [languageMenuAnchorEl, setLanguageMenuAnchorEl] = useState<null | HTMLElement>(null);
   const clearDialogTitleId = useId();
   const clearDialogDescriptionId = useId();
-  const [memoryMonitorVisible, setMemoryMonitorVisible] = React.useState(false);
+  const userEmail = user?.profile?.email || '';
+  const userName = user?.profile?.name || userEmail || 'User';
+  const userPicture = user?.profile?.picture;
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(userPicture || undefined);
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
+    if (typeof window === 'undefined') return 'system';
+    const stored = localStorage.getItem('app.theme');
+    return (stored as ThemeMode) || 'system';
+  });
+  const [language, setLanguage] = useState<LanguageCode>(() => {
+    if (typeof window === 'undefined') return 'system';
+    const stored = localStorage.getItem('app.lang') as LanguageCode | null;
+    return stored || 'system';
+  });
 
-  const currentLanguage = languageContext.currentLanguage ?? fallbackLanguage;
-  const supportedLanguages = languageContext.supportedLanguages ?? SUPPORTED_LANGUAGES;
-  const changeLanguage = languageContext.changeLanguage ?? (async () => {});
+  // Avatar OPFS cache
+  useEffect(() => {
+    let revokedUrl: string | undefined;
+    let aborted = false;
+    const run = async () => {
+      const pictureUrl = userPicture;
+      if (!pictureUrl || !hasDom) {
+        setAvatarUrl(pictureUrl || undefined);
+        return;
+      }
+      const storageAny = (navigator as unknown as { storage?: { getDirectory?: () => Promise<unknown> } }).storage;
+      if (!storageAny?.getDirectory) {
+        setAvatarUrl(pictureUrl);
+        return;
+      }
+      try {
+        const root = (await storageAny.getDirectory()) as FileSystemDirectoryHandle;
+        const dir = await root.getDirectoryHandle('avatars', { create: true });
+        const fileName = `${createSafeFileName(userEmail || userName || 'user')}.bin`;
+        try {
+          const fileHandle = await dir.getFileHandle(fileName);
+          const file = await fileHandle.getFile();
+          const url = URL.createObjectURL(file);
+          if (!aborted) {
+            revokedUrl = url;
+            setAvatarUrl(url);
+            return;
+          }
+        } catch {
+          // cache miss
+        }
+        const res = await fetch(pictureUrl, { mode: 'cors' });
+        if (!res.ok) {
+          setAvatarUrl(pictureUrl);
+          return;
+        }
+        const blob = await res.blob();
+        const fileHandle = await dir.getFileHandle(fileName, { create: true });
+        const writable = await fileHandle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        const url = URL.createObjectURL(blob);
+        if (!aborted) {
+          revokedUrl = url;
+          setAvatarUrl(url);
+        }
+      } catch {
+        setAvatarUrl(pictureUrl);
+      }
+    };
+    void run();
+    return () => {
+      aborted = true;
+      if (revokedUrl) URL.revokeObjectURL(revokedUrl);
+    };
+  }, [hasDom, userEmail, userName, userPicture]);
+
   const isLoading = auth.isLoading;
   const isAuthenticated = auth.isAuthenticated;
 
-  const handleToggleMemoryMonitor = useCallback(() => {
-    const newVisibility = !memoryMonitorVisible;
-    setMemoryMonitorVisible(newVisibility);
-    localStorage.setItem('memoryMonitorVisible', newVisibility.toString());
-    // Dispatch custom event to notify MemoryUsageMonitor component
-    window.dispatchEvent(
-      new CustomEvent('memoryMonitorToggle', {
-        detail: { visible: newVisibility },
-      })
-    );
-  }, [memoryMonitorVisible]);
-  // Event handlers
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
+  // Theme/Language apply and sync
+  const applyTheme = (mode: ThemeMode) => {
+    setThemeMode(mode);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('app.theme', mode);
+      window.dispatchEvent(new CustomEvent('hierarchidb-theme-change', { detail: { mode } }));
+    }
+    setThemeMenuAnchorEl(null);
     setAnchorEl(null);
-    setThemeMenuAnchorEl(null);
+  };
+
+  const applyLanguage = (lang: LanguageCode) => {
+    setLanguage(lang);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('app.lang', lang);
+      window.dispatchEvent(new CustomEvent('hierarchidb-language-change', { detail: { lang } }));
+    }
     setLanguageMenuAnchorEl(null);
+    setAnchorEl(null);
   };
 
-  const handleThemeMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setThemeMenuAnchorEl(event.currentTarget);
-  };
-
-  const handleThemeMenuClose = () => {
-    setThemeMenuAnchorEl(null);
-  };
-
-  const handleLanguageMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setLanguageMenuAnchorEl(event.currentTarget);
-  };
-
-  const handleLanguageMenuClose = () => {
-    setLanguageMenuAnchorEl(null);
-  };
-
-  const handleThemeChange = (newTheme: ThemeMode) => {
-    if (!themeContext) return;
-    themeContext.setMode(newTheme);
-    handleThemeMenuClose();
-    handleMenuClose();
-  };
-
-  const handleLanguageChange = async (languageCode: string) => {
-    await changeLanguage(languageCode);
-    handleLanguageMenuClose();
-    handleMenuClose();
-  };
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);
+  const handleMenuClose = () => setAnchorEl(null);
 
   const handleLogout = async () => {
     signOut();
+    // Explicitly clear stored tokens
+    try {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token_id');
+      sessionStorage.removeItem('access_token');
+    } catch {
+      // ignore storage errors
+    }
     handleMenuClose();
   };
 
@@ -151,33 +168,26 @@ export const UserLoginButton: React.FC = () => {
 
   const handleClearCache = async () => {
     try {
-      // Clear Cache API
       if ('caches' in window) {
         const cacheNames = await caches.keys();
         await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
       }
-
-      // Clear IndexedDB
       if ('indexedDB' in window) {
         const databases = await indexedDB.databases();
         await Promise.all(
           databases.map((db) => {
             if (db.name) {
               return new Promise<void>((resolve, reject) => {
-                const deleteReq = indexedDB.deleteDatabase(db.name || '');
-                deleteReq.onsuccess = () => resolve();
-                deleteReq.onerror = () => reject(deleteReq.error);
+                const req = indexedDB.deleteDatabase(db.name || '');
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
               });
             }
             return Promise.resolve();
           })
         );
       }
-
-      // Clear localStorage
       localStorage.clear();
-
-      // Close base-dialog and reload page to apply changes
       setClearCacheDialogOpen(false);
       window.location.reload();
     } catch {
@@ -185,23 +195,13 @@ export const UserLoginButton: React.FC = () => {
     }
   };
 
-  if (!themeContext) {
-    return null;
-  }
-  if (!hasDom) {
-    return null;
-  }
+  if (!themeContext || !hasDom) return null;
 
-  // Show loading state during authentication
   if (isLoading) {
     return (
       <IconButton
         disabled
-        sx={{
-          bgcolor: 'grey.300',
-          color: 'grey.600',
-          borderRadius: '50%',
-        }}
+        sx={{ bgcolor: 'grey.300', color: 'grey.600', borderRadius: '50%' }}
         aria-label="Loading authentication..."
       >
         <LoginIcon />
@@ -209,7 +209,6 @@ export const UserLoginButton: React.FC = () => {
     );
   }
 
-  // Show login button when not authenticated
   if (!isAuthenticated) {
     return (
       <>
@@ -221,9 +220,7 @@ export const UserLoginButton: React.FC = () => {
           sx={{
             bgcolor: 'primary.main',
             color: 'white',
-            '&:hover': {
-              bgcolor: 'primary.dark',
-            },
+            '&:hover': { bgcolor: 'primary.dark' },
             borderRadius: '50%',
           }}
           aria-label="Login"
@@ -239,120 +236,41 @@ export const UserLoginButton: React.FC = () => {
     );
   }
 
-  // Show user menu when authenticated
-  const userEmail = user?.profile?.email || '';
-  const userName = user?.profile?.name || userEmail || 'User';
-  const userPicture = user?.profile?.picture;
-
   return (
     <>
       <IconButton onClick={handleMenuOpen} sx={{ p: 0 }} aria-label="User menu">
-        <UserAvatar pictureUrl={userPicture} email={userEmail} name={userName} size={40} />
+        <UserAvatar pictureUrl={avatarUrl} email={userEmail} name={userName} size={40} />
       </IconButton>
 
-      {/* Main User Menu */}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
         <Box sx={{ px: 2, py: 1 }}>
           <strong>{userName}</strong>
-          {userEmail && (
-            <Box sx={{ fontSize: '0.875rem', color: 'text.secondary' }}>{userEmail}</Box>
-          )}
+          {userEmail && <Box sx={{ fontSize: '0.875rem', color: 'text.secondary' }}>{userEmail}</Box>}
         </Box>
         <Divider />
 
-        {/* Theme Selection */}
-        <MenuItem onClick={handleThemeMenuOpen} aria-label="Theme Selection">
-          <ListItemIcon>{getThemeIcon(themeContext.mode)}</ListItemIcon>
-          <ListItemText>
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                width: '100%',
-              }}
-            >
-              <span>Theme</span>
-              <ChevronRightIcon fontSize="small" />
-            </Box>
-          </ListItemText>
+        <MenuItem onClick={(e) => setThemeMenuAnchorEl(e.currentTarget)} aria-label="Theme Selection">
+          <ListItemIcon>
+            {themeMode === 'dark' ? <DarkModeIcon fontSize="small" /> : themeMode === 'light' ? <LightModeIcon fontSize="small" /> : <SystemThemeIcon fontSize="small" />}
+          </ListItemIcon>
+          <ListItemText primary="Theme" secondary={themeMode} />
         </MenuItem>
 
-        {/* Language Selection */}
-        {supportedLanguages.length > 0 && (
-          <MenuItem onClick={handleLanguageMenuOpen} aria-label="Language Selection">
-            <ListItemIcon>
-              <LanguageIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  width: '100%',
-                }}
-              >
-                <span>{currentLanguage.flag} Language</span>
-                <ChevronRightIcon fontSize="small" />
-              </Box>
-            </ListItemText>
-          </MenuItem>
-        )}
-
-        {/* Memory Monitor Toggle - Only shown in development mode */}
-        {false && <Divider />}
-        {false && (
-          <MenuItem
-            onClick={handleToggleMemoryMonitor}
-            aria-label={memoryMonitorVisible ? 'Hide Memory Monitor' : 'Show Memory Monitor'}
-          >
-            <ListItemIcon>
-              {memoryMonitorVisible ? (
-                <MemoryIcon fontSize="small" />
-              ) : (
-                <MemoryOutlinedIcon fontSize="small" />
-              )}
-            </ListItemIcon>
-            <ListItemText>
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  width: '100%',
-                }}
-              >
-                <span>{memoryMonitorVisible ? 'Hide Memory Monitor' : 'Show Memory Monitor'}</span>
-                {memoryMonitorVisible && (
-                  <CheckIcon
-                    fontSize="small"
-                    sx={{
-                      color: 'success.main',
-                      ml: 1,
-                    }}
-                  />
-                )}
-              </Box>
-            </ListItemText>
-          </MenuItem>
-        )}
+        <MenuItem onClick={(e) => setLanguageMenuAnchorEl(e.currentTarget)} aria-label="Language Selection">
+          <ListItemIcon>
+            <LanguageIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary="Language" secondary={language} />
+        </MenuItem>
 
         <Divider />
 
-        {/* Clear All Data */}
         <MenuItem onClick={() => setClearCacheDialogOpen(true)} aria-label="Clear All Data">
           <ListItemIcon>
             <DeleteForeverIcon fontSize="small" />
@@ -362,7 +280,6 @@ export const UserLoginButton: React.FC = () => {
 
         <Divider />
 
-        {/* Logout */}
         <MenuItem onClick={handleLogout} aria-label="Logout">
           <ListItemIcon>
             <LogoutIcon fontSize="small" />
@@ -371,104 +288,51 @@ export const UserLoginButton: React.FC = () => {
         </MenuItem>
       </Menu>
 
-      {/* Theme Selection Submenu */}
       <Menu
         anchorEl={themeMenuAnchorEl}
         open={Boolean(themeMenuAnchorEl)}
-        onClose={handleThemeMenuClose}
-        anchorOrigin={{
-          vertical: 'top',
-          horizontal: 'left',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
+        onClose={() => setThemeMenuAnchorEl(null)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        {(['system', 'light', 'dark'] as ThemeMode[]).map((mode) => (
-          <MenuItem
-            key={mode}
-            onClick={() => handleThemeChange(mode)}
-            aria-label={`Select ${getThemeDisplayName(mode)} theme`}
-          >
-            <ListItemText>
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  width: '100%',
-                }}
-              >
-                <span>
-                  {getThemeIcon(mode)} {getThemeDisplayName(mode)}
-                </span>
-                {themeContext.mode === mode && (
-                  <CheckIcon
-                    fontSize="small"
-                    sx={{
-                      color: 'success.main',
-                      ml: 1,
-                    }}
-                  />
-                )}
-              </Box>
-            </ListItemText>
-          </MenuItem>
-        ))}
+        <MenuItem selected={themeMode === 'system'} onClick={() => applyTheme('system')}>
+          <ListItemIcon>
+            <SystemThemeIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>System</ListItemText>
+        </MenuItem>
+        <MenuItem selected={themeMode === 'light'} onClick={() => applyTheme('light')}>
+          <ListItemIcon>
+            <LightModeIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Light</ListItemText>
+        </MenuItem>
+        <MenuItem selected={themeMode === 'dark'} onClick={() => applyTheme('dark')}>
+          <ListItemIcon>
+            <DarkModeIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Dark</ListItemText>
+        </MenuItem>
       </Menu>
 
-      {/* Language Selection Submenu */}
-      {supportedLanguages.length > 0 && (
-        <Menu
-          anchorEl={languageMenuAnchorEl}
-          open={Boolean(languageMenuAnchorEl)}
-          onClose={handleLanguageMenuClose}
-          anchorOrigin={{
-            vertical: 'top',
-            horizontal: 'left',
-          }}
-          transformOrigin={{
-            vertical: 'top',
-            horizontal: 'right',
-          }}
-        >
-          {supportedLanguages.map((language: LanguageConfig) => (
-            <MenuItem
-              key={language.code}
-              onClick={() => handleLanguageChange(language.code)}
-              aria-label={`Select ${language.nativeName} language`}
-            >
-              <ListItemText>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    width: '100%',
-                    minWidth: 150,
-                  }}
-                >
-                  <span>
-                    {language.flag} {language.nativeName}
-                  </span>
-                  {currentLanguage.code === language.code && (
-                    <CheckIcon
-                      fontSize="small"
-                      sx={{
-                        color: 'success.main',
-                        ml: 1,
-                      }}
-                    />
-                  )}
-                </Box>
-              </ListItemText>
-            </MenuItem>
-          ))}
-        </Menu>
-      )}
+      <Menu
+        anchorEl={languageMenuAnchorEl}
+        open={Boolean(languageMenuAnchorEl)}
+        onClose={() => setLanguageMenuAnchorEl(null)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <MenuItem selected={language === 'system'} onClick={() => applyLanguage('system')}>
+          <ListItemText>System</ListItemText>
+        </MenuItem>
+        <MenuItem selected={language === 'en'} onClick={() => applyLanguage('en')}>
+          <ListItemText>English</ListItemText>
+        </MenuItem>
+        <MenuItem selected={language === 'ja'} onClick={() => applyLanguage('ja')}>
+          <ListItemText>日本語</ListItemText>
+        </MenuItem>
+      </Menu>
 
-      {/* Clear Cache Confirmation Dialog */}
       <Dialog
         open={clearCacheDialogOpen}
         onClose={() => setClearCacheDialogOpen(false)}
@@ -484,8 +348,8 @@ export const UserLoginButton: React.FC = () => {
               <li>All IndexedDB databases (projects, maps, shapes, etc.)</li>
               <li>localStorage data</li>
             </ul>
-            <strong>Warning:</strong> This action cannot be undone and will delete all your local
-            data. The page will reload after clearing the cache.
+            <strong>Warning:</strong> This action cannot be undone and will delete all your local data. The page
+            will reload after clearing the cache.
           </DialogContentText>
         </DialogContent>
         <DialogActions>

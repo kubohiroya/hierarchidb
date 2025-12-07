@@ -26,8 +26,8 @@
   },
   "peerDependencies": {
     "react": "^18.3.1",
-    "@mui/material": "^7.3.2",
-    "@mui/icons-material": "^7.3.2"
+    "@mui/material": "^7.3.6",
+    "@mui/icons-material": "^7.3.6"
   },
   "keywords": [
     "hierarchidb",
@@ -42,7 +42,7 @@
   "license": "MIT",
   "devDependencies": {
     "react": "^18.3.1",
-    "@mui/material": "^7.3.2",
-    "@mui/icons-material": "^7.3.2"
+    "@mui/material": "^7.3.6",
+    "@mui/icons-material": "^7.3.6"
   }
 }

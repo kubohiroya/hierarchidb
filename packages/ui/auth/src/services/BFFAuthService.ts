@@ -71,6 +71,11 @@ const generateCodeChallenge = async (verifier: string): Promise<string> => {
  */
 export class BFFAuthService {
   private static instance: BFFAuthService | null = null;
+  private static codeExchangePromises = new Map<string, Promise<BFFUser>>();
+  private readonly USERINFO_STORAGE_KEYS = {
+    userinfo: 'userinfo',
+    user: 'bff-auth-user',
+  } as const;
   private baseUrl: string;
   private popupWindow: Window | null = null;
 
@@ -130,6 +135,23 @@ export class BFFAuthService {
 
     // Wait for authentication to complete
     return this.waitForPopupAuth(popup);
+  }
+
+  private persistUser(user: BFFUser): void {
+    try {
+      const payload = {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        picture: user.picture,
+        provider: user.provider,
+        expires_at: user.expires_at,
+      };
+      sessionStorage.setItem(this.USERINFO_STORAGE_KEYS.userinfo, JSON.stringify(payload));
+      localStorage.setItem(this.USERINFO_STORAGE_KEYS.user, JSON.stringify(payload));
+    } catch {
+      // Ignore storage errors (e.g., quota)
+    }
   }
 
   /**
@@ -284,64 +306,95 @@ export class BFFAuthService {
       throw new Error('No authorization code received');
     }
 
+    // If we already have a token (e.g., callback executed once and re-rendered),
+    // short-circuit to avoid double-exchanging the same code.
+    const existingToken = sessionStorage.getItem('access_token');
+    if (existingToken) {
+      try {
+        return this.parseTokenToUser(existingToken);
+      } catch {
+        // fall through and retry exchange
+      }
+    }
+
+    // Deduplicate concurrent/double-invoked exchanges (e.g., React Strict Mode)
+    const existingPromise = BFFAuthService.codeExchangePromises.get(code);
+    if (existingPromise) {
+      return existingPromise;
+    }
+
     // Verify state for CSRF protection
     const savedState = sessionStorage.getItem('oauth_state');
     if (state && savedState && state !== savedState) {
       console.warn('State mismatch detected; proceeding (BFF validates state)');
     }
 
-    // Get stored PKCE verifier
-    const codeVerifier =
-      localStorage.getItem('pkce_code_verifier') || sessionStorage.getItem('pkce_code_verifier');
-    if (!codeVerifier) {
-      throw new Error('No PKCE code verifier found');
+    const exchangePromise = (async () => {
+      // Get stored PKCE verifier
+      const codeVerifier =
+        localStorage.getItem('pkce_code_verifier') || sessionStorage.getItem('pkce_code_verifier');
+      if (!codeVerifier) {
+        throw new Error('No PKCE code verifier found');
+      }
+
+      // Get provider
+      const provider = localStorage.getItem('auth_provider') || 'google';
+
+      // Exchange code for tokens via BFF
+      const { isAbsolute, authBase } = this.resolveAuthBase();
+      const tokenUrl = isAbsolute ? `${authBase}/token` : `${authBase}/token`;
+      const response = await fetch(tokenUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code,
+          state,
+          code_verifier: codeVerifier,
+          provider,
+          redirect_uri: `${window.location.origin}${this.getAppBasePrefix()}/auth/callback`,
+        }),
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.error_description || `Token exchange failed: ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+
+      // Store tokens
+      if (data.access_token) {
+        sessionStorage.setItem('access_token', data.access_token);
+        localStorage.setItem('access_token', data.access_token);
+      }
+      if (data.refresh_token_id) {
+        localStorage.setItem('refresh_token_id', data.refresh_token_id);
+      }
+
+      // Clean up
+      this.clearAuthData();
+      sessionStorage.removeItem('oauth_state');
+
+      // Parse user from token response
+      const user = this.parseTokenResponse(data);
+      this.persistUser(user);
+      return user;
+    })();
+
+    BFFAuthService.codeExchangePromises.set(code, exchangePromise);
+    try {
+      return await exchangePromise;
+    } finally {
+      // Keep successful promise for reuse; drop on failure
+      exchangePromise.catch(() => {
+        BFFAuthService.codeExchangePromises.delete(code);
+      });
     }
-
-    // Get provider
-    const provider = localStorage.getItem('auth_provider') || 'google';
-
-    // Exchange code for tokens via BFF
-    const { isAbsolute, authBase } = this.resolveAuthBase();
-    const tokenUrl = isAbsolute ? `${authBase}/token` : `${authBase}/token`;
-    const response = await fetch(tokenUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        code,
-        state,
-        code_verifier: codeVerifier,
-        provider,
-        redirect_uri: `${window.location.origin}${this.getAppBasePrefix()}/auth/callback`,
-      }),
-      credentials: 'include',
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.error_description || `Token exchange failed: ${response.statusText}`
-      );
-    }
-
-    const data = await response.json();
-
-    // Store tokens
-    if (data.access_token) {
-      sessionStorage.setItem('access_token', data.access_token);
-      localStorage.setItem('access_token', data.access_token);
-    }
-    if (data.refresh_token_id) {
-      localStorage.setItem('refresh_token_id', data.refresh_token_id);
-    }
-
-    // Clean up
-    this.clearAuthData();
-    sessionStorage.removeItem('oauth_state');
-
-    // Parse user from token response
-    return this.parseTokenResponse(data);
   }
 
   /**
@@ -368,6 +421,8 @@ export class BFFAuthService {
 
     // Clear local storage
     this.clearAuthData();
+    sessionStorage.removeItem(this.USERINFO_STORAGE_KEYS.userinfo);
+    localStorage.removeItem(this.USERINFO_STORAGE_KEYS.user);
   }
 
   /**
@@ -412,7 +467,9 @@ export class BFFAuthService {
         localStorage.setItem('refresh_token_id', data.refresh_token_id);
       }
 
-      return this.parseTokenResponse(data);
+      const user = this.parseTokenResponse(data);
+      this.persistUser(user);
+      return user;
     } catch {
       return null;
     }
@@ -422,6 +479,32 @@ export class BFFAuthService {
    * Get current user info
    */
   async getCurrentUser(): Promise<BFFUser | null> {
+    // Prefer persisted user info if available
+    try {
+      const persisted =
+        localStorage.getItem(this.USERINFO_STORAGE_KEYS.user) ||
+        sessionStorage.getItem(this.USERINFO_STORAGE_KEYS.userinfo);
+      if (persisted) {
+        const parsed = JSON.parse(persisted) as Partial<BFFUser> & { expires_at?: number };
+        const token =
+          sessionStorage.getItem('access_token') || localStorage.getItem('access_token') || '';
+        if (token && parsed.id) {
+          return {
+            id: parsed.id,
+            email: parsed.email || '',
+            name: parsed.name || parsed.email || '',
+            picture: parsed.picture,
+            access_token: token,
+            refresh_token: localStorage.getItem('refresh_token_id') || undefined,
+            expires_at: parsed.expires_at || Date.now() + 3600 * 1000,
+            provider: (parsed.provider as AuthProviderType | undefined) || 'google',
+          };
+        }
+      }
+    } catch {
+      // ignore parse errors
+    }
+
     const token = localStorage.getItem('access_token');
     if (!token) {
       return null;

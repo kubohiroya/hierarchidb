@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useId } from 'react';
 import {
   Alert,
   Box,
@@ -38,8 +38,9 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
                                                                           onUpdate,
                                                                           onValidationChange,
                                                                           onSourceSchemaChange,
-                                                                          onTargetSchemaChange,
-                                                                        }) => {
+  onTargetSchemaChange,
+}) => {
+  const controlId = useId();
   const draftData = data.draftData ?? {};
   const [sourceInputMethod, setSourceInputMethod] = useState<string>('sample');
   const [targetInputMethod, setTargetInputMethod] = useState<string>('sample');
@@ -237,8 +238,10 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
           </Typography>
 
           <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Input Method</InputLabel>
+            <InputLabel id={`${controlId}-source-input-method-label`}>Input Method</InputLabel>
             <Select
+              labelId={`${controlId}-source-input-method-label`}
+              id={`${controlId}-source-input-method`}
               value={sourceInputMethod}
               onChange={(e) => setSourceInputMethod(e.target.value)}
               label="Input Method"
@@ -256,11 +259,14 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
             multiline
             rows={8}
             label="Paste sample JSON data"
+            id={`${controlId}-source-sample-json`}
+            name="source-sample-json"
             value={sourceInput}
             onChange={(e) => handleSourceInputChange(e.target.value)}
             placeholder="[{&quot;id&quot;: 1, &quot;name&quot;: &quot;John&quot;, &quot;age&quot;: 30}, ...]"
             error={!!sourceError}
             helperText={sourceError || 'Paste sample JSON data to auto-detect schema'}
+            inputProps={{ id: `${controlId}-source-sample-json`, name: 'source-sample-json' }}
           />
 
           {sourceSchema && <SchemaPreview schema={sourceSchema} title="Source Schema Detected" />}
@@ -274,8 +280,10 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
           </Typography>
 
           <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Input Method</InputLabel>
+            <InputLabel id={`${controlId}-target-input-method-label`}>Input Method</InputLabel>
             <Select
+              labelId={`${controlId}-target-input-method-label`}
+              id={`${controlId}-target-input-method`}
               value={targetInputMethod}
               onChange={(e) => setTargetInputMethod(e.target.value)}
               label="Input Method"
@@ -293,11 +301,14 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
             multiline
             rows={8}
             label="Paste sample JSON data"
+            id={`${controlId}-target-sample-json`}
+            name="target-sample-json"
             value={targetInput}
             onChange={(e) => handleTargetInputChange(e.target.value)}
             placeholder="[{&quot;user_id&quot;: 1, &quot;full_name&quot;: &quot;John Doe&quot;, &quot;years&quot;: 30}, ...]"
             error={!!targetError}
             helperText={targetError || 'Paste sample JSON data to auto-detect schema'}
+            inputProps={{ id: `${controlId}-target-sample-json`, name: 'target-sample-json' }}
           />
 
           {targetSchema && <SchemaPreview schema={targetSchema} title="Target Schema Detected" />}

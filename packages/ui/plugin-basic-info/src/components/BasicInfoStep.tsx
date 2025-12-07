@@ -125,7 +125,15 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
           placeholder="Enter a descriptive name"
           variant="outlined"
           inputRef={nameInputRef}
-          inputProps={{ maxLength: 255, id: nameInputId, name: 'name' }}
+          autoComplete="organization"
+          inputProps={{ maxLength: 255, id: nameInputId, name: 'name', autoComplete: 'organization' }}
+          slotProps={{
+            input: {
+              id: nameInputId,
+              name: 'name',
+              autoComplete: 'organization',
+            },
+          }}
           disabled={disabled}
         />
       </FormControl>
@@ -142,7 +150,15 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
           placeholder="Enter an optional description"
           variant="outlined"
           helperText={`${normalizedDescription.length}/1000 characters`}
-          inputProps={{ maxLength: 1000, id: descriptionInputId, name: 'description' }}
+          autoComplete="off"
+          inputProps={{ maxLength: 1000, id: descriptionInputId, name: 'description', autoComplete: 'off' }}
+          slotProps={{
+            input: {
+              id: descriptionInputId,
+              name: 'description',
+              autoComplete: 'off',
+            },
+          }}
           disabled={disabled}
         />
       </FormControl>

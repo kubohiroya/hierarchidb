@@ -235,9 +235,11 @@ export async function exchangeCodeForToken(c: BffContext) {
 
     const env = getEnv(c);
 
+    const effectiveRedirectUri = env.REDIRECT_URI || redirect_uri;
+
     const { userInfo, tokens } = await getAuthorizationCode({
       provider,
-      redirect_uri,
+      redirect_uri: effectiveRedirectUri,
       code,
       code_verifier,
       c,

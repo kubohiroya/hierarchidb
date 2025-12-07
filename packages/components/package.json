@@ -22,7 +22,7 @@
   "dependencies": {},
   "peerDependencies": {
     "@mui/icons-material": "^7.3.6",
-    "@mui/material": "^7.3.2",
+    "@mui/material": "^7.3.6",
     "@tanstack/react-router": "^1.132.33",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -36,7 +36,7 @@
   "license": "MIT",
   "devDependencies": {
     "@mui/icons-material": "^7.3.6",
-    "@mui/material": "^7.3.2",
+    "@mui/material": "^7.3.6",
     "@tanstack/react-router": "^1.132.33",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

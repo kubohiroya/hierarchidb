@@ -1,8 +1,12 @@
 import {
   DeleteForever,
+  DarkMode as DarkModeIcon,
   KeyboardArrowDown as KeyboardArrowDownIcon,
+  LightMode as LightModeIcon,
   Login as LoginIcon,
   Logout as LogoutIcon,
+  SettingsBrightness as SystemThemeIcon,
+  Translate as TranslateIcon,
 } from '@mui/icons-material';
 import {
   Box,
@@ -17,7 +21,7 @@ import {
   MenuItem,
   Typography,
 } from '@mui/material';
-import { type ReactNode, useCallback, useId, useMemo, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { type AuthContextProps, withAuth } from 'react-oidc-context';
 import { UserAvatar } from './UserAvatar.js';
 
@@ -52,13 +56,66 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
   const [clearCacheDialogOpen, setClearCacheDialogOpen] = useState(false);
   // Working copy cleanup removed - functionality was deprecated
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [themeAnchorEl, setThemeAnchorEl] = useState<null | HTMLElement>(null);
+  const [languageAnchorEl, setLanguageAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const handleClick = useCallback((event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   }, []);
-  const handleClose = useCallback(() => {
+  const handleCloseAll = useCallback(() => {
     setAnchorEl(null);
+    setThemeAnchorEl(null);
+    setLanguageAnchorEl(null);
   }, []);
+
+  const [themeMode, setThemeMode] = useState<'system' | 'light' | 'dark'>(() => {
+    if (typeof window === 'undefined') return 'system';
+    const stored = localStorage.getItem('app.theme');
+    return (stored as 'system' | 'light' | 'dark') ?? 'system';
+  });
+  const [language, setLanguage] = useState<string>(() => {
+    if (typeof window === 'undefined') return 'system';
+    return localStorage.getItem('app.lang') ?? 'system';
+  });
+
+  useEffect(() => {
+    // Sync with external changes (e.g., TreeConsole dispatch)
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { mode?: string; lang?: string };
+      if (detail?.mode && (detail.mode === 'system' || detail.mode === 'light' || detail.mode === 'dark')) {
+        setThemeMode(detail.mode);
+      }
+      if (detail?.lang) {
+        setLanguage(detail.lang);
+      }
+    };
+    window.addEventListener('hierarchidb-theme-change', handler);
+    window.addEventListener('hierarchidb-language-change', handler);
+    return () => {
+      window.removeEventListener('hierarchidb-theme-change', handler);
+      window.removeEventListener('hierarchidb-language-change', handler);
+    };
+  }, []);
+
+  const selectTheme = (mode: 'system' | 'light' | 'dark') => {
+    setThemeMode(mode);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('app.theme', mode);
+      window.dispatchEvent(new CustomEvent('hierarchidb-theme-change', { detail: { mode } }));
+    }
+    setThemeAnchorEl(null);
+    setAnchorEl(null);
+  };
+
+  const selectLanguage = (lang: string) => {
+    setLanguage(lang);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('app.lang', lang);
+      window.dispatchEvent(new CustomEvent('hierarchidb-language-change', { detail: { lang } }));
+    }
+    setLanguageAnchorEl(null);
+    setAnchorEl(null);
+  };
 
   const handleClearCache = async () => {
     try {
@@ -105,21 +162,7 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
 
   const userMenu: MenuEntry[] = useMemo(
     () => [
-      {
-        kind: 'item',
-        id: 'logout',
-        label: 'Logout', //  : namelabel
-        icon: <LogoutIcon />,
-        onClick: () => signOut(),
-      },
-      { kind: 'divider', id: 'divider-cache' },
-      {
-        kind: 'item',
-        id: 'clear-cache',
-        label: 'Clear All Cache', //  : namelabel
-        icon: <DeleteForever />,
-        onClick: () => setClearCacheDialogOpen(true),
-      },
+      { kind: 'item', id: 'logout', label: 'Logout', icon: <LogoutIcon />, onClick: () => signOut() },
     ],
     [signOut]
   );
@@ -165,7 +208,21 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
         </Box>
         <Typography>{auth.user?.profile.name}</Typography>
       </Button>
-      <Menu id={menuId} anchorEl={anchorEl} open={open} onClose={handleClose}>
+      <Menu id={menuId} anchorEl={anchorEl} open={open} onClose={handleCloseAll}>
+        <MenuItem onClick={(e) => setThemeAnchorEl(e.currentTarget)}>
+          <SystemThemeIcon fontSize="small" sx={{ mr: 1 }} />
+          Theme
+        </MenuItem>
+        <MenuItem onClick={(e) => setLanguageAnchorEl(e.currentTarget)}>
+          <TranslateIcon fontSize="small" sx={{ mr: 1 }} />
+          Language
+        </MenuItem>
+        <Divider />
+        <MenuItem onClick={() => setClearCacheDialogOpen(true)}>
+          <DeleteForever sx={{ mr: 1 }} />
+          Clear All Cache
+        </MenuItem>
+        <Divider />
         {userMenu.map((entry) =>
           entry.kind === 'item' ? (
             <MenuItem key={entry.id} onClick={entry.onClick} disabled={entry.disabled}>
@@ -176,6 +233,37 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
             <Divider key={entry.id} />
           )
         )}
+      </Menu>
+
+      <Menu anchorEl={themeAnchorEl} open={Boolean(themeAnchorEl)} onClose={() => setThemeAnchorEl(null)}>
+        <MenuItem selected={themeMode === 'system'} onClick={() => selectTheme('system')}>
+          <SystemThemeIcon fontSize="small" sx={{ mr: 1 }} />
+          System
+        </MenuItem>
+        <MenuItem selected={themeMode === 'light'} onClick={() => selectTheme('light')}>
+          <LightModeIcon fontSize="small" sx={{ mr: 1 }} />
+          Light
+        </MenuItem>
+        <MenuItem selected={themeMode === 'dark'} onClick={() => selectTheme('dark')}>
+          <DarkModeIcon fontSize="small" sx={{ mr: 1 }} />
+          Dark
+        </MenuItem>
+      </Menu>
+
+      <Menu
+        anchorEl={languageAnchorEl}
+        open={Boolean(languageAnchorEl)}
+        onClose={() => setLanguageAnchorEl(null)}
+      >
+        <MenuItem selected={language === 'system'} onClick={() => selectLanguage('system')}>
+          System
+        </MenuItem>
+        <MenuItem selected={language === 'en'} onClick={() => selectLanguage('en')}>
+          English
+        </MenuItem>
+        <MenuItem selected={language === 'ja'} onClick={() => selectLanguage('ja')}>
+          日本語
+        </MenuItem>
       </Menu>
       <Dialog
         open={clearCacheDialogOpen}

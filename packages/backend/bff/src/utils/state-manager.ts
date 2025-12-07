@@ -104,50 +104,55 @@ export class StateManager {
     return btoa(JSON.stringify(signedState));
   }
 
+  private static decodeSignedState(state: string): SignedState | null {
+    try {
+      // Accept both base64 and base64url
+      const normalized = state.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
+      return JSON.parse(atob(padded)) as SignedState;
+    } catch (error) {
+      console.warn('State decode failed; skipping validation', error instanceof Error ? error.message : error);
+      return null;
+    }
+  }
+
   /**
    * stateKVS
    */
   async validateState(state: string): Promise<StateData | null> {
-    try {
-      //  Base64
-      const signedState: SignedState = JSON.parse(atob(state));
-
-      //  10
-      const now = Date.now();
-      if (now - signedState.timestamp > StateManager.STATE_TTL) {
-        console.warn('State expired:', signedState.nonce);
-        return null;
-      }
-
-      const stateData: StateData = {
-        origin: signedState.origin,
-        timestamp: signedState.timestamp,
-        nonce: signedState.nonce,
-      };
-
-      const isValid = await this.verifySignature(stateData, signedState.signature);
-
-      if (!isValid) {
-        console.warn('Invalid state signature:', signedState.nonce);
-        return null;
-      }
-
-      return stateData;
-    } catch (error) {
-      console.error('State validation error:', error);
+    const signedState = StateManager.decodeSignedState(state);
+    if (!signedState) {
       return null;
     }
+
+    //  10
+    const now = Date.now();
+    if (now - signedState.timestamp > StateManager.STATE_TTL) {
+      console.warn('State expired:', signedState.nonce);
+      return null;
+    }
+
+    const stateData: StateData = {
+      origin: signedState.origin,
+      timestamp: signedState.timestamp,
+      nonce: signedState.nonce,
+    };
+
+    const isValid = await this.verifySignature(stateData, signedState.signature);
+
+    if (!isValid) {
+      console.warn('Invalid state signature:', signedState.nonce);
+      return null;
+    }
+
+    return stateData;
   }
 
   /**
    * stateorigin
    */
   static extractOriginFromState(state: string): string | undefined {
-    try {
-      const signedState: SignedState = JSON.parse(atob(state));
-      return signedState.origin;
-    } catch {
-      return undefined;
-    }
+    const signedState = StateManager.decodeSignedState(state);
+    return signedState?.origin;
   }
 }

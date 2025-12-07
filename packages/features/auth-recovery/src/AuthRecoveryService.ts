@@ -48,6 +48,15 @@ export class AuthRecoveryService implements AuthHeadersProvider {
   }
 
   getAuthHeaders(): Record<string, string> {
+    // Fallback: if no in-memory token, reuse BFF access_token persisted by UI (sessionStorage/localStorage).
+    if (!this.currentToken?.token) {
+      const storedToken =
+        (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('access_token')) ||
+        (typeof localStorage !== 'undefined' && localStorage.getItem('access_token'));
+      if (storedToken) {
+        this.setToken(storedToken, 'Bearer');
+      }
+    }
     return this.currentToken?.token ? { Authorization: `${this.currentToken.type} ${this.currentToken.token}` } : {};
   }
 

@@ -29,7 +29,7 @@
     "@tanstack/react-table": "^8.21.3",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
-    "@mui/material": "^7.3.2",
+    "@mui/material": "^7.3.6",
     "@mui/icons-material": "^7.3.6",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0"
@@ -41,8 +41,8 @@
     "@tanstack/react-table": "^8.21.3",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
-    "@mui/material": "^7.3.2",
-    "@mui/icons-material": "^7.3.2"
+    "@mui/material": "^7.3.6",
+    "@mui/icons-material": "^7.3.6"
   },
   "keywords": [
     "hierarchidb",

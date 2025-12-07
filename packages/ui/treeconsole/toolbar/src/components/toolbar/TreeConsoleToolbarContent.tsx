@@ -54,7 +54,6 @@ export function TreeConsoleToolbarContent({
   canRemove,
   availableTemplates,
   allowImport,
-  developerModeEnabled,
   searchStrings,
 }: TreeConsoleToolbarContentProps) {
   const portalContainer = typeof window !== 'undefined' ? document.body : undefined;
@@ -197,18 +196,12 @@ export function TreeConsoleToolbarContent({
           rowClickAction={rowClickAction}
           onRowClickActionChange={onRowClickActionChange}
           onAction={handleAction}
-          developerModeEnabled={developerModeEnabled}
           portalContainer={portalContainer}
           labels={{
             settingsButton: settingsButtonLabel,
             rowClickTitle: labels.rowClickTitle,
             rowClickSelectNavigate: labels.rowClickSelectNavigate,
             rowClickEdit: labels.rowClickEdit,
-            themeTitle: labels.themeTitle,
-            themeModes: labels.themeModes,
-            languageTitle: labels.languageTitle,
-            languageModes: labels.languageModes,
-            developerMenuLabel: labels.developerMenuLabel,
           }}
         />
       </Box>

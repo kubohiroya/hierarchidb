@@ -71,7 +71,7 @@
   },
   "peerDependencies": {
     "@mui/icons-material": "^7.3.6",
-    "@mui/material": "^7.3.2",
+    "@mui/material": "^7.3.6",
     "react": "^18.3.1",
     "react-dom": ">=18.0.0",
     "dexie": "^4.2.0",
@@ -100,7 +100,7 @@
     "vitest": "^3.2.4",
     "react": "^18.3.1",
     "react-dom": ">=18.0.0",
-    "@mui/material": "^7.3.2",
+    "@mui/material": "^7.3.6",
     "@mui/icons-material": "^7.3.6",
     "dexie": "^4.2.0",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
