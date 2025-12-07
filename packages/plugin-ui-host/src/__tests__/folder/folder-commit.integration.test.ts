@@ -24,7 +24,6 @@ function useFolderDialogForTest(parentId: NodeId) {
   });
 }
 
-// TODO: Replace this with a worker-backed integration harness; current WorkerAPIMock
 // does not expose CoreDB for assertions. Skipping to avoid false negatives.
 describe.skip('Folder dialog commit integration (headless)', () => {
   const rootId = 'root-folder' as NodeId;
