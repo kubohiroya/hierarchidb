@@ -219,7 +219,7 @@ export function useTreeNodeDialog<TPayload extends object>(
   const updateTreeNodeUpdater =
     useMemo(()=>activeSingle?.updateTreeNodeUpdater ?? activeFallback?.updateTreeNodeUpdater ?? (() => {}),[activeFallback?.updateTreeNodeUpdater, activeSingle?.updateTreeNodeUpdater]);
   const commitTreeNodeUpdater =
-    activeSingle?.commit ?? activeFallback?.commitTreeNodeUpdater ?? (async () => undefined);
+    useMemo(()=>activeSingle?.commit ?? activeFallback?.commitTreeNodeUpdater ?? (async () => undefined), [activeFallback?.commitTreeNodeUpdater, activeSingle?.commit]);
   const discardDraft = useMemo(()=>activeSingle?.discard ?? activeFallback?.discardDraft ?? (async () => {}),[activeFallback?.discardDraft, activeSingle?.discard]);
   const saveDraft = activeFallback?.saveDraft ?? commitTreeNodeUpdater;
 
