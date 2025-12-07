@@ -48,10 +48,13 @@ export async function exchangeCodeForTokens(
   const params: Record<string, string> = {
     code,
     client_id: config.clientId,
-    client_secret: config.clientSecret,
     redirect_uri: config.redirectUri,
     grant_type: 'authorization_code',
   };
+
+  if (config.clientSecret) {
+    params.client_secret = config.clientSecret;
+  }
 
   if (codeVerifier) {
     params.code_verifier = codeVerifier;

@@ -115,6 +115,7 @@ const getAuthorizationCode = async ({
   env,
   redirect_uri,
   code,
+  code_verifier,
   c,
 }: {
   provider: string;
@@ -128,6 +129,7 @@ const getAuthorizationCode = async ({
   };
   redirect_uri: string;
   code: string;
+  code_verifier?: string;
   c: BffContext;
 }): Promise<GetAuthorizationCodeReturn> => {
   switch (provider) {
@@ -141,7 +143,7 @@ const getAuthorizationCode = async ({
         redirectUri: redirect_uri || getDynamicRedirectUri(c, 'google'),
       };
 
-      const tokens = await exchangeCodeForTokens(code, config);
+      const tokens = await exchangeCodeForTokens(code, config, code_verifier);
       const userInfo = await getGoogleUserInfo(tokens.access_token);
       return {
         tokens,
@@ -213,7 +215,7 @@ const getAuthorizationCode = async ({
 export async function exchangeCodeForToken(c: BffContext) {
   try {
     const body = await c.req.json();
-    const { code, redirect_uri, provider = 'google' } = body;
+    const { code, redirect_uri, provider = 'google', code_verifier } = body;
 
     if (!code) {
       return c.json({ error: 'Missing authorization code' }, 400);
@@ -237,6 +239,7 @@ export async function exchangeCodeForToken(c: BffContext) {
       provider,
       redirect_uri,
       code,
+      code_verifier,
       c,
       env,
     });
