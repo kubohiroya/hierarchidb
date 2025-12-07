@@ -1,0 +1,1 @@
+import{P as t}from"./Palette-BjjlyGqh.js";import"./jsx-runtime-Dp4RrBKh.js";import"./index-C1aSX2kT.js";import"../worker.js";import"../../../../packages/runtime-worker/dist/StageProcessingService.js";import"./createSvgIcon-DMGR10qF.js";const a=t;export{a as StylerPluginIcon,a as default};

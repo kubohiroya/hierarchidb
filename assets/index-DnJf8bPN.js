@@ -1,1 +1,0 @@
-import{registerTimelineWorkerStores as n}from"./index-Br3iQYWK.js";import"../worker.js";const r={nodeType:"timeline",capabilities:{canHaveChildren:!0,canBeRoot:!1,canBeDeleted:!0,canBeRenamed:!0,canBeMoved:!0}};export{r as lifecycle,n as registerTimelineWorkerStores};

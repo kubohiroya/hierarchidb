@@ -1,0 +1,1 @@
+import{R as m}from"./RouteDatabase-C5IeadAs.js";import{D as a,g as e}from"../worker.js";import"../../../../packages/runtime-worker/dist/StageProcessingService.js";async function r(){await a.delete(e("route-db"))}export{m as RouteDatabase,r as clearDatabases};

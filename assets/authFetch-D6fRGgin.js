@@ -1,0 +1,1 @@
+import{A as h}from"../worker.js";import"../../../../packages/runtime-worker/dist/StageProcessingService.js";async function o(t,e){return(await h.getSingleton()).fetchWithAuth(t,e,{pluginType:"shape"})}export{o as authFetch};
