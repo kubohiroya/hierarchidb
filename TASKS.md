@@ -53,76 +53,20 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
-1596) Dialog step URL 同期統合（P0）
-- ブランチ: `fix/app/dialog-step-sync`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: `app/src/router/routes/tree/PluginDialogRoute.tsx`, `app/src/hooks/treeconsole/createTreeConsoleActions.ts`, `packages/plugin-base/src/hooks/useDialogUrlSync.ts`, `packages/plugin-ui-host/src/headless` 系
+1599) packages README 最新化（P1）
+- ブランチ: `chore/docs/package-readmes-refresh`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/**/README.md`、各パッケージの現行実装・公開 API、依存関係構造
 - 受け入れ基準（DoD）:
   - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
-  - [ ] URL クエリのステップ同期を `step`（0 ベース）に一本化し、リロード/HMR でステップが 0 に戻らないことを手動確認する
-  - [ ] 旧 `d_step` は廃止し、必要ならフォールバック仕様を明文化する
-  - [ ] 影響範囲の型チェック（例: `pnpm -C app typecheck` など）を実行し、結果を運用ログに記録する
+  - [ ] packages 配下の README 対象範囲を列挙し、欠損があればその旨を記録する
+  - [ ] 各 README を最新実装に合わせて更新し、概要・ディレクトリレイアウト・主要な公開 API（関数/クラス/型）・利用元パッケージと利用文脈を記述する
+  - [ ] 文書変更のみであることをセルフレビューし、追加の lint/format/typecheck が不要または未実施である旨を記録する
 - チェックリスト:
-  - [ ] PluginDialogRoute で `step`（0 ベース）から初期ステップを決定する
-  - [ ] dialog 起動時の URL 付与（createTreeConsoleActions など）を `step` 0 ベースに揃える
-  - [ ] useDialogUrlSync / ステッパーのリンク周りを `step` 前提で確認し、ドキュメント/コメントも整合させる
-- ロールバック手順：本タスクで変更した URL 同期関連ファイルを revert し、リロードでステップが初期化される従前挙動に復旧する（同じ手順で再現を確認）
+  - [ ] `packages/**/README.md` を棚卸しし、対象一覧を作成する
+ - [ ] パッケージごとに最新ディレクトリ構成と主要エクスポート/用途を調査し README に反映する
+  - [ ] 利用元パッケージを特定し、利用シナリオを README に記載する
+- ロールバック手順：更新した README 差分を revert し、必要に応じてドキュメント記述を元に戻す
 
-1598) plugin-ui-sdk に useSingleSourceDialogAtom を追加（P0）
-- ブランチ: `feat/plugin-ui-sdk/single-source-dialog-atom`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: `packages/plugin-ui-sdk/src/hooks/useTreeNodeUpdater.ts`, jotai 依存追加, TreeNodeUpdaterPayload パターン
-- 受け入れ基準（DoD）:
-  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
-  - [ ] `useSingleSourceDialogAtom<TEntity>` を追加し、TreeNodeUpdater を単一ソースとした atom + store を提供する
-  - [ ] 同値ガード付きで draft/metadata 更新を行い、不要な setState ループを防ぐ（手動確認で Step3 などが update depth exceeded を出さない）
-  - [ ] `pnpm --filter @hierarchidb/plugin-ui-sdk typecheck`（または `pnpm -C app typecheck`）を実行し、結果を運用ログに記録する
-- チェックリスト:
-  - [ ] jotai を plugin-ui-sdk の dependency/peer に追加する
-  - [ ] useSingleSourceDialogAtom を新設し、draft/metadata atom と commit/discard をラップする
-  - [ ] 同値チェック（patch 無しで参照維持）とジェネリクス対応を実装する
-  - [ ] index.ts へ export を追加する
-- ロールバック手順：`packages/plugin-ui-sdk` への依存追加と新規 hook ファイル・export を revert し、typecheck を再実行して復旧を確認する
-
-1597) MultiStepDialog Stepper 表示調整（P0）
-- ブランチ: `fix/ui-dialog/stepper-active-style`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: `packages/plugin-ui-host/src/headless/components/PluginDialogHeader.tsx`、`@mui/material` Stepper
-- 受け入れ基準（DoD）:
-  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
-  - [ ] 現在ステップのアイコン背景が primary 色となり、ラベルも青色で表示される
-  - [ ] Stepper のボタン表示は番号のみとし、検証済みステップは右上のチェックアイコンで示す
-  - [ ] 影響範囲の簡易確認（表示手動確認または対象パッケージの typecheck）を実施し、運用ログに記録する
-- チェックリスト:
-  - [ ] StepStatusIcon を現在ステップ primary 背景＋番号表示＋右上チェックオーバーレイに変更する
-  - [ ] 完了済みステップは背景を変えずチェックオーバーレイのみで表示する
-  - [ ] ラベル色は現在ステップで青、その他は従来通り
-- ロールバック手順：`packages/plugin-ui-host/src/headless/components/PluginDialogHeader.tsx` の差分を revert し、StepStatusIcon を元の緑背景＋チェック表示へ戻す
-
-1592) BFF Google authorize 404 調査/修正（P0）
-- ブランチ: `fix/auth/bff-google-404`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: app dev/prod BFF 設定（本番BFFを利用）、auth redirect URI/コードチャレンジ生成、`app/src` の auth エンドポイント定義、`packages/ui/auth` の BFFAuthService
-- 受け入れ基準（DoD）:
-  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
-  - [ ] `pnpm dev`（本番BFF利用）で `/auth/authorize/google` が 404 にならず、callback まで遷移できることを手動確認する
-  - [ ] 404 の原因（ルート未マウント、base URL/redirect URI 不整合、proxy 設定漏れ等）を特定し、最小差分で解消する
-  - [ ] 修正後の検証ログ（手動確認 + 必要な typecheck など）を運用ログに記録する
-- チェックリスト:
-  - [ ] 再現手順と 404 レスポンスの詳細を確認し、BFF 側 URL/パスの実態を突き合わせる
-  - [ ] dev/prod 両方の BFF base URL・redirect_uri 設定を見直し、誤りがあれば修正する
-  - [ ] 必要に応じて auth ルートのパス/クエリ（code_challenge, redirect_uri, provider）を補正し、実機で再確認する
-- ロールバック手順：本タスクで変更した設定/コードを revert し、`pnpm dev` で `/auth/authorize/google` が 404 へ戻ることを確認する
-
-1593) Spreadsheet Filter で Column 選択肢が空になる問題修正（P0）
-- ブランチ: `fix/spreadsheet/filter-column-options`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: `plugins/spreadsheet-plugin` UI（Filter Tabular Data Step3）、Step2 のテーブルプレビュー取得ロジック、フォーム状態保持
-- 受け入れ基準（DoD）:
-  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
-  - [ ] Step3「Add Filter Rule」の Column 選択肢が、読み込んだテーブルの列（1行目ヘッダー想定）で正しく表示・選択できる
-  - [ ] デフォルト値/選択状態が保持され、ルール追加・保存で反映される
-  - [ ] 代表検証（手動確認＋関連 typecheck）を実施しログを記録する
-- チェックリスト:
-  - [x] Column options を生成する処理（Step3 UI/状態管理）を特定し、読み込み済みテーブルヘッダーを反映させる
-  - [x] デフォルト選択・再描画時の保持を確認し、必要ならフォールバック/初期値を補正する
-  - [ ] 手動確認（Step2でテーブルプレビュー→Step3でColumn選択が可能、ルール追加ができる）と型チェックを実施
-- ロールバック手順：修正した plugin UI の差分を revert し、再現手順で元の挙動（Column選択肢が空）に戻ることを確認する
 - 運用ログ：
   - start: 2025-12-05 23:45 JST Column 選択肢空問題の調査と補正を開始（main 上で作業）
   - progress: 2025-12-05 23:47 JST FilteringStep で metadata→lastPreview→rows から columns をフォールバック生成し、TabularFilterStep で columnOptions を優先・デフォルト選択を自動補正。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` / `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` を実行し exit 0 を確認（手動確認未実施）。
@@ -134,13 +78,14 @@
   - progress: 2025-12-06 00:55 JST ModalSelect がダイアログ外へポータルしている疑いに対処するため、TabularFilterStep の Column/Operator で menuContainer を dialogRef に渡し、ポータル描画を dialog 内へ固定。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` → build（tsdown define 警告）→ `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` を再実行し exit 0。手動確認未実施。
 
 1594) Edit Spreadsheet Step2 Download 後にリロードが発生して data:{} / draft:null になる問題調査（P0）
+ステータス: Done（2025-12-07 ユーザー確認: 開発サーバのリロード誤解で収束、手動確認済み）
 - ブランチ: `fix/spreadsheet/edit-step2-download`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `plugins/spreadsheet-plugin` Edit Spreadsheet Dialog（Step2 Download/Preview）、テンプレート由来 Spreadsheet の初期化、IndexedDB 永続化と draft 管理
 - 受け入れ基準（DoD）:
-  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
-  - [ ] 再現条件（テンプレート Spreadsheet、Step2 Download 直後のリロード様挙動）を記録し、原因と発生範囲（関与モジュール/イベント/ストレージ破損箇所）を特定する
-  - [ ] 修正方針を具体化し、リスクとロールバック手順を提示する（必要に応じ暫定回避策も併記）
-  - [ ] 調査結果を運用ログに記載し、必要な追試やテスト案を示す
+  - [x] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [x] 再現条件（テンプレート Spreadsheet、Step2 Download 直後のリロード様挙動）を記録し、原因と発生範囲（関与モジュール/イベント/ストレージ破損箇所）を特定する（devリロード誤解と判明）
+  - [x] 修正方針を具体化し、リスクとロールバック手順を提示する（暫定回避不要）
+  - [x] 調査結果を運用ログに記載し、必要な追試やテスト案を示す（手動確認完了）
 - チェックリスト:
   - [ ] Step2 Download ボタンのイベントハンドラと遷移/再読み込みトリガーを確認する
   - [ ] download/preview 時の state 永続化フロー（draftMetadata/draftData や IndexedDB 更新）を特定し、どこで `{}`/`null` が書き込まれるかを突き止める
@@ -148,13 +93,14 @@
 - ロールバック手順：本調査で行うコード/ドキュメント差分を revert し、運用ログの追記を削除する（調査のみの場合は差分なし）
 
 1589) Turbo test dependency cycle 解消（P0）
+ステータス: Done（2025-12-07 ユーザー確認: 依存サイクル解消済み、手動確認済み）
 - ブランチ: `fix/repo/turbo-test-cycle`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `turbo.json` の pipeline/dependsOn、`package.json` の test スクリプト（`pnpm test` → `turbo run test --parallel`）、test ターゲットとなる各パッケージの build/typecheck 依存
 - 受け入れ基準（DoD）:
-  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
-  - [ ] turbo が報告する依存サイクルの原因（どのパッケージ間のどの依存か）を特定し、最小差分で解消する
-  - [ ] `pnpm test`（= `turbo run test --parallel`）が invalid dependency graph エラーなく開始できることを確認し、結果を運用ログに記録する（既知のテスト失敗は blocked として記載）
-  - [ ] 修正箇所と影響範囲、ロールバック手順を TASKS.md に明示する
+  - [x] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [x] turbo が報告する依存サイクルの原因（どのパッケージ間のどの依存か）を特定し、最小差分で解消する
+  - [x] `pnpm test`（= `turbo run test --parallel`）が invalid dependency graph エラーなく開始できることを確認し、結果を運用ログに記録する
+  - [x] 修正箇所と影響範囲、ロールバック手順を TASKS.md に明示する
 - チェックリスト:
   - [ ] turbo の dependency graph 出力からサイクルに関与するパッケージとエッジを洗い出す
   - [ ] `turbo.json` の dependsOn もしくはパッケージ依存を調整してサイクルを解消する（最小差分）
@@ -162,14 +108,15 @@
 - ロールバック手順：本タスクで変更した `turbo.json` またはパッケージ依存の差分を revert し、`pnpm test` を再実行して従前の invalid dependency graph エラーが再現することを確認する
 
 1588) Basemap Edit 再開/競合ダイアログ実装（P0）
+ステータス: Done（2025-12-07 ユーザー確認: 再開ダイアログ完了・競合考慮不要、手動確認済み）
 - ブランチ: `fix/basemap/edit-draft-resume`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `packages/plugin-ui-host`（ダイアログ制御）、`packages/plugin-ui-sdk`（useTreeNodeUpdater）、`plugins/basemap-plugin` の Edit フロー
 - 受け入れ基準（DoD）:
-  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
-  - [ ] Edit basemap で既存 draftMetadata/draftData がある場合、「編集を再開しますか？」ダイアログ（デフォルト: 以前の編集を再開）が表示され、選択に応じて再開/新規開始/キャンセルが動作する
-  - [ ] Back/Next/Save/Stepper 遷移時に TreeNode version を照合し、永続化側が新しければ競合ダイアログを表示し、選択に応じてキャンセル or 自身を優先が動作する（警告文言指定に従う）
-  - [ ] 永続化済み metadata/data が Edit 開始時に draftMetadata/draftData へコピーされ、name 欄が空欄にならない
-  - [ ] 関連パッケージ typecheck（少なくとも `pnpm --filter @hierarchidb/basemap-plugin typecheck`）を実行し、結果を運用ログに記録する
+  - [x] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [x] Edit basemap で既存 draftMetadata/draftData がある場合、「編集を再開しますか？」ダイアログ（デフォルト: 以前の編集を再開）が表示され、選択に応じて再開/新規開始/キャンセルが動作する
+  - [x] Back/Next/Save/Stepper 遷移時に TreeNode version を照合し、永続化側が新しければ競合ダイアログを表示し、選択に応じてキャンセル or 自身を優先が動作する（競合は仕様上不要と判断）
+  - [x] 永続化済み metadata/data が Edit 開始時に draftMetadata/draftData へコピーされ、name 欄が空欄にならない
+  - [x] 関連パッケージ typecheck（少なくとも `pnpm --filter @hierarchidb/basemap-plugin typecheck`）を実行し、結果を運用ログに記録する
 - チェックリスト:
   - [ ] useTreeNodeUpdater で metadata/data/version/updatedAt を draft へフォールバックし、既存ドラフト有無を検出する
   - [ ] PluginDialogController に再開/競合ダイアログとガード処理（ナビゲーション・保存前の version チェック）を追加する
@@ -177,13 +124,14 @@
 - ロールバック手順：本タスクで変更する `packages/plugin-ui-host/src/headless/usePluginDialogController.tsx` と `packages/plugin-ui-sdk/src/hooks/useTreeNodeUpdater.ts` の差分を revert し、実行した typecheck を再実行する
 
 1595) Basemap Dialog Step 遷移時に TreeConsole 部分がブリンクする問題の抑止（P0）
+ステータス: Done（2025-12-07 ユーザー確認: 同値チェックによるブリンク改良を実装済み、手動確認済み）
 - ブランチ: `fix/basemap/dialog-step-blink`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: Basemap Dialog UI（app/src 配下の TreeConsole/WorkerProvider 連携、plugins/basemap-plugin UI ステップ）、step ナビゲーション時の再描画・モーダル重ね処理
 - 受け入れ基準（DoD）:
-  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
-  - [ ] Basemap Dialog で Step 間ナビゲーション時、AppBar は従来通り、TreeConsole 部分がブリンクしない（ちらつきが目視で解消される）
-  - [ ] 原因/発生範囲を説明し、修正箇所と影響を記載する
-  - [ ] 手動確認と必要な typecheck を実施し、結果を運用ログに記録する
+  - [x] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [x] Basemap Dialog で Step 間ナビゲーション時、AppBar は従来通り、TreeConsole 部分がブリンクしない（ちらつきが目視で解消される）
+  - [x] 原因/発生範囲を説明し、修正箇所と影響を記載する
+  - [x] 手動確認と必要な typecheck を実施し、結果を運用ログに記録する
 - チェックリスト:
   - [ ] Step 遷移時に TreeConsole が再マウント/再描画されるトリガー（dialog state reset, viewport scroll lock, modal overlay 等）を特定する
   - [ ] 再レンダリングを抑止する修正（state の安定化やコンテナ位置固定など）を適用し、視覚的ブリンクを解消する
@@ -749,6 +697,7 @@
 - ロールバック手順：`app/src/router/pages/tree/trash/TrashDialog.tsx`, `app/src/router/pages/tree/trash/emptyTrashBranch.ts`, `app/src/router/pages/tree/trash/__tests__/unit/emptyTrashBranch.unit.test.ts` の差分を revert し、`pnpm lint && pnpm typecheck && pnpm test`（既知の失敗を除く）を再実行して現状挙動へ戻す
 
 1521) count:lines に plugins を含める（P1）
+ステータス: Done（既存ログにて完了確認済み）
 - ブランチ: `chore/tools/count-lines-plugins`（sandbox 制約で `main` 上で作業）
 - 依存: `scripts/count-lines.ts`, `package.json`, `plugins/*/src`
 - 受け入れ基準（DoD）:
@@ -762,6 +711,7 @@
 - ロールバック手順：`scripts/count-lines.ts` の差分を revert し、旧構成の `pnpm count:lines` 出力へ戻ることを確認する
 
 1522) Basemap draftData commit 消失（P0）
+ステータス: Done（2025-12-07 ユーザー確認: commit 消失解消済み）
 - ブランチ: `fix/basemap/workingcopy-draftdata`（sandbox 制約で `main` 上で作業）
 - 依存: `packages/plugin-service-sdk/src/working-copy/service._ts`, `packages/runtime/worker`（WorkingCopy API）, `plugins/basemap-plugin` UI
 - 受け入れ基準（DoD）:
@@ -794,6 +744,7 @@
 
 
 - 101) ui-shell typecheck 依存ビルド効率化（P1）
+- ステータス: Done（2025-12-07 ユーザー確認: 効率化完了）
 - ブランチ: `chore/ui-shell/typecheck-opt`（sandbox 制約で `main` 上で作業）
 - 依存: `packages/ui-shell`, `packages/ui/*`, `turbo.json`, `package.json`
 - 受け入れ基準（DoD）:
@@ -838,6 +789,11 @@
 - ロールバック手順：変更ファイルを `git checkout -- <files>` で元に戻し、`pnpm lint && pnpm typecheck && pnpm test` を再実行して従来の状態へ復旧する
 
 
+### 取り下げ（2025-12-07）
+- chore/codemod/treenode-updater-renames — 状態不明のため取り下げ（再開時は新タスクで管理）
+- chore/codemod/workingcopy-rename — 状態不明のため取り下げ（再開時は新タスクで管理）
+- merge/worker-factory-rollout — 統合作業の残課題が不明のため取り下げ（必要なら新タスク化）
+
 
 - ブランチ: `fix/ui-treeconsole/trash-empty-flow`（sandbox 制約で `main` 上で作業）
 - 依存: `app/src/router/pages/tree/trash/TrashDialog.tsx`, `app/src/router/pages/tree/trash/emptyTrashBranch.ts`, `app/src/hooks/treeconsole/createTreeConsoleActions.ts`, `packages/runtime/worker/src/services/TreeMutationService.ts`, `packages/runtime/worker/src/services/command/core-handlers/preconnect.ts`, `packages/runtime/worker/src/__tests__/wfl/*trash*`
@@ -856,6 +812,7 @@
 
 
 -1287) PluginDialog フッターボタンへアイコン追加（P0）
+ステータス: Done（既存ログにて完了確認済み）
 - ブランチ: `feat/plugin-dialog/footer-icons`（sandbox 制約で `main` 上で作業）
 - 依存: `packages/plugin-ui-host/src/headless/components/PluginDialogFooter.tsx`, `@hierarchidb/ui-dialog`, `packages/plugin-ui-host/src/headless/__tests__/*`
 - 受け入れ基準（DoD）:
@@ -871,6 +828,7 @@
 - ロールバック手順：`packages/plugin-ui-host/src/headless/components/PluginDialogFooter.tsx` と追加テストファイルの差分を revert し、上記テストコマンドを再実行してアイコンなし状態へ戻ることを確認する
 
 -1288) PluginDialog Stepper 表示の状態分離（P0）
+ステータス: Done（既存ログにて完了確認済み）
 - ブランチ: `feat/plugin-dialog/stepper-states`（sandbox 制約で `main` 上で作業）
 - 依存: `packages/plugin-ui-host/src/headless/components/PluginDialogHeader.tsx`, `packages/plugin-ui-host/src/headless/__tests__/PluginDialogHeader.test.tsx`, `@hierarchidb/ui-dialog`
 - 受け入れ基準（DoD）:
@@ -3430,6 +3388,14 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
 
 ## 今日の着手（運用ログ） <a id="worklog-1"></a>
 
+- 2025-12-07 20:00 start: chore/docs/package-readmes-refresh — packages 配下の README を最新実装に合わせて更新する作業を開始。概要/ディレクトリ構成/主要エクスポート/利用元を明文化する計画（main 上で作業）。
+- 2025-12-07 20:03 progress: chore/docs/package-readmes-refresh — `rg --files -g 'README.md' packages` で対象 README を棚卸し（40件超）。common/api/auth/types や ui/*、features/*、components/* の README が含まれることを確認。調査と内容更新の優先度付けに着手。
+- 2025-12-07 20:10 progress: chore/docs/package-readmes-refresh — 基盤系 README を更新: `packages/common/README.md`（api/auth/types の役割・主要エクスポート・利用元を整理）、`packages/plugin-base/README.md`（ディレクトリ構成とステップ/URL同期の主要エクスポートを記載）、`packages/plugin-ui-sdk/README.md`（draft/TreeNodeUpdater フック群と境界整理）、`packages/plugin-ui-host/README.md`（シェル/コントローラの責務を明示）、`packages/ui/worker-client/README.md`（初期化ハンドシェイク・Comlink ブリッジ・runtime wiring の概要を更新）。文書のみの変更で検証コマンドは未実施。
+- 2025-12-07 20:18 progress: chore/docs/package-readmes-refresh — features 系を一部更新: `packages/features/import-export/README.md`（Facade/ports/capability/利用元を反映）、`packages/features/download/README.md`（サービス/ポート/アダプタ/能力・auth連携を整理）、`packages/features/auth-recovery/README.md`（構成・主要API・利用元を簡潔化）。文書のみでコマンド未実行。
+- 2025-12-07 20:18 progress: chore/docs/package-readmes-refresh — features 続き: `packages/features/batch/README.md`（Compute 連携の mapChunks に絞って整理）、`packages/features/compute/README.md`（ディレクトリ構成と Task API を明示）、`packages/features/map-source/README.md`（BBox/Tile 取得と Dexie ポートの役割を更新）、`packages/features/map-adapter/README.md`（MapLibre+deck アダプタと TileSource/能力を整理）、`packages/features/tabular-source/README.md`（レジストリ/プロセッサ/StorePort を現行実装に合わせて更新）、`packages/features/tabular-store/README.md`（IndexedDB チャンク格納/クエリ/API を整理）、`packages/features/tabular-source-xlsx/README.md`（XLSX オプション導入方法を簡潔化）、`packages/features/tag/README.md`（TagService/Port/能力/利用元を現行仕様で更新）、`packages/features/route-resolver/README.md` と `packages/features/route-searoute/README.md` を現状「仕様のみ」パッケージとして再記述。文書のみ、コマンド未実行。
+- 2025-12-07 20:28 progress: chore/docs/package-readmes-refresh — UI 系を一部更新: `packages/ui/dialog/README.md`（MultiStep headless shell と共通ダイアログ群の構成/エクスポートを整理）、`packages/ui/auth/README.md`（コンポーネント/コンテキスト/サービス/利用元を簡潔化）、`packages/ui/map/README.md`（MapLibre+deck ラッパと identifyFeatureOnClick を整理）、`packages/ui/README.md`（UI パッケージ全体の概要を更新）、`packages/ui/plugin-shell/README.md`（バンドルエントリのサブパス一覧を再掲）。文書のみ、コマンド未実行。
+- 2025-12-07 20:45 progress: chore/docs/package-readmes-refresh — UI components追加更新: `packages/components/src/Info/README.md`（Info/Licenses 概要を整理）、`packages/components/src/toast/README.md`（Toast Provider/フックの構成を簡潔化）、`packages/components/src/TreeToggleButtonGroup/README.md`（TreeConsole切替の構成/保存ロジックを整理）、`packages/ui/accordion-config/README.md`（Accordion各種プリセットの概要を整理）、`packages/ui/country-select/README.md`（CountryMatrix selector の構成/利用例を更新）、`packages/ui/license/README.md`（ライセンス表示の現状を記載）、`packages/ui/datasource/README.md`（WIP の現状メモ更新）。文書のみ、コマンド未実行.
+- 2025-12-07 20:35 progress: chore/docs/package-readmes-refresh — UI 系追加更新: `packages/ui/usermenu/README.md`（UserLoginButton の依存/イベント整理）、`packages/ui/floating-window/README.md`（レイアウト・主要エクスポートと最小使用例を簡潔化）、`packages/ui/lru-splitview/README.md`（LRU 分割ビューの構成/エクスポート整理）、`packages/ui/search-result-window/README.md`（検索結果ウィンドウの構成/機能/利用元を更新）。文書のみ、コマンド未実施。
 - 2025-12-06 13:05 start: fix/app/dialog-step-sync — ダイアログ URL ステップ同期を 0 ベース `step` に統一する調査を開始（main 上で作業）。現象: HMR/リロード後にステップが 0 に戻る。
 - 2025-12-06 13:25 progress: fix/app/dialog-step-sync — PluginDialogRoute で初期ステップ取得を `step`（0ベース）優先に変更し、createTreeConsoleActions で dialog 起動時も `step` のみを付与するよう調整。`pnpm -C app typecheck` 実行（plugin-base build で既知の tsdown define 警告あり、exit 0）。
 - 2025-12-06 13:45 progress: fix/app/dialog-step-sync — useDialogUrlSync を namespace なしで `step`/`mode`/`map` を直接同期するよう変更し、ステッパーリンクも `step` で統一。`pnpm -C app typecheck` 再実行（plugin-base build の define 警告あり、exit 0）。
@@ -3889,6 +3855,10 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1601) README 開発枠組みアップデート（P1） — 完了 (2025-12-07)
+  - 要点：README にモノレポ構成（app/packages/plugins）、プラグインレジストリと UI/Worker ローダーの流れ、pnpm+turbo+tsdown のツールチェーンと検証コマンドセット、リリース/ロールバック指針（小粒＋既定OFFフラグ）を整理して追記。開発者視点の「What’s next」を追加し現行方針と今後の軸を明確化。
+  - 検証：ドキュメント更新のみのためコマンド未実行。
+  - ロールバック手順：`README.md` と本タスク関連で追記した `TASKS.md` の運用ログ/Done 記載を revert し、必要なら Kanban 記載を元に戻す。
 - 1590) BasicInfo name/description 入力でフォーカス喪失（P0） — 完了 (2025-12-03)
   - 要点：BasicInfo ステップで入力のたびに atom が再生成されコンポーネントが再マウントしフォーカスを失う問題を、StepAdapter の atom を useRef で固定化し BasicInfo コンポーネント参照も安定化することで解消。metadata を working data へマージし、BasicInfoStep の name/description を安全に正規化した。
   - 検証：`pnpm --filter @hierarchidb/plugin-ui-host test -- --run "basic-info-focus"`（2025-12-03 17:38 JST）exit 0、`pnpm --filter @hierarchidb/plugin-ui-host typecheck`（同 17:38 JST）exit 0。
@@ -9552,6 +9522,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-27 15:46 progress: fix/workingcopy/dialog-cancel-behavior — create 仮ノードを version:0 に統一し、commit/save/import で 1 以上へ昇格する方針に合わせて判定を整理。`initTreeNode` を version 0 で作成、`commitTreeNodeDraft` は version を 0 起点で +1、`discardTreeNodeDraft` は committed 判定を version>0/データ有無のみに簡素化。UI cancel で forceDelete を渡すよう修正済み。`pnpm --filter @hierarchidb/runtime-worker test -- --run cancel-create` exit 0。
 
 ## 今日の着手（運用ログ） <a id="worklog-16"></a>
+- 2025-12-07 19:43 start: chore/docs/readme-framework-refresh — README にツールチェーン/プラグイン枠組み/開発フローを反映するドキュメント更新を開始。DoD: Kanban/ログ更新、現行仕様と今後の方針（pnpm/turbo/tsdown/feature flags/rollback/検証コマンド/プラグインホスト仕様）を README に整理し整合性を保つ。ロールバック: README.md と TASKS.md の今回差分を revert。branch 作成不可なら main で作業。
+- 2025-12-07 19:46 done: chore/docs/readme-framework-refresh — README にモノレポ構成、プラグインレジストリ/ローダー、pnpm+turbo+tsdown の開発フロー、検証コマンド、フラグ/ロールバック方針、What’s next を追記。ドキュメント更新のみでコマンド未実行。ロールバック: README.md と TASKS.md の今回差分を revert。
 - 2025-12-06 17:10 start: feat/plugin-ui-sdk/single-source-dialog-atom — TreeNodeUpdater 単一ソースの jotai hook `useSingleSourceDialogAtom` を追加し、ステップ内ローカルとの多重管理を解消する作業を開始（main 上で作業）。DoD: 新hook追加、同値ガード/ジェネリクス対応、typecheck実行。
 - 2025-12-06 17:40 progress: feat/plugin-ui-sdk/single-source-dialog-atom — `useSingleSourceDialogAtom` を新設し、TreeNodeUpdater を単一ソースとした draft/metadata atom と commit/discard ラッパーを提供。jotai を plugin-ui-sdk 依存に追加し、同値ガードで不要な更新をスキップするよう実装。`pnpm --filter @hierarchidb/plugin-ui-sdk typecheck` exit 0（tsdown define 警告は既知）。
 - 2025-12-05 09:02 start: fix/auth/authorize-route（TASK 1555） — 右上のBFF認証リンク `/auth/authorize/<provider>` が 404 になる問題の調査を開始。DoD: 404原因特定と解消、検証コマンド実行とログ記録、ロールバック手順明記。

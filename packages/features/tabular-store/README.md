@@ -1,33 +1,25 @@
 # @hierarchidb/tabular-store
 
-Shared tabular persistence for plugin tables (location/shape/route). Provides chunked row storage, simple query API, and optional index-assisted lookups.
+Shared tabular persistence used by plugins (location/shape/route). Stores chunked rows in IndexedDB/Dexie with optional per-column indexes and simple query APIs.
 
-## Concepts
-- Row chunks: JSON-encoded rows stored in IndexedDB (`rowChunks`), keyed by `(pluginId, tableId)`.
-- Table metadata: stored via `@hierarchidb/table-metadata` (columns, totalRows, etc.).
-- Inverted index (optional): `rowIndexes` maps `(pluginId, tableId, column, value)` to `rowIds[]` for fast `eq` filters (built lazily).
-
-## APIs
-
-```ts
-import { TabularWriter, TabularQueryService } from '@hierarchidb/tabular-source-store';
-
-// Write
-const writer = new TabularWriter('location', { indexColumns: ['type','countryCode'] });
-const tableId = await writer.begin({ filename: 'location-table.json', columns: ['id','lon','lat','type','countryCode'] });
-await writer.writeRows(rows); // can be called multiple times
-await writer.commit();
-
-// Query
-const svc = new TabularQueryService('location');
-const out = await svc.query(tableId, [
-  { column: 'type', op: 'eq', value: 'airport' },
-  { column: 'countryCode', op: 'eq', value: 'JPN' },
-], 1000);
+## Directory layout
+```
+TabularWriter.ts        Chunked writer
+TabularQueryService.ts  Query with optional indexes
+indexes/                Inverted index helpers
+metadata/               Table metadata helpers
+index.ts                Public exports
 ```
 
-## Notes
-- Indexes are built lazily per column on the first `eq` filter. Initial query may cost more; subsequent queries speed up.
-- Non-`eq` ops (contains/gt/gte/lt/lte/neq) currently fall back to scanning row chunks.
-- Intended for search/inspection. Use node-level Import/Export to serialize entire projects.
+## Key exports
+- `TabularWriter` — `begin`, `writeRows`, `commit`, `abort`; supports indexColumns.
+- `TabularQueryService` — `query(tableId, filters, limit?)` with lazy-built `eq` indexes.
+- Types/helpers for table metadata and row chunk storage.
 
+## Consumers / usage
+- Spreadsheet and tabular plugins ingest via `@hierarchidb/tabular-source` then persist/query with this store.
+- Location/route/shape plugins use it to keep parsed table data for filtering/search.
+
+## Notes
+- Indexes build lazily on first `eq` query; non-`eq` currently scans chunks.
+- Intended for local search/preview; use project-level import/export for full backups.

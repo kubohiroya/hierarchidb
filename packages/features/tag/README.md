@@ -1,50 +1,26 @@
 @hierarchidb/tag
 =================
 
-Tagging feature as a reusable capability. Centralizes tag CRUD and node–tag associations behind a small Facade + DB Port so any node-type can opt in without coupling to folder or worker internals.
+Reusable tagging capability. Centralizes tag CRUD and node–tag associations behind a facade + DB port so any node type can opt in.
 
-Why
----
-- Tags are cross-cutting, not folder-specific. Keeping them inside a node-type bloats responsibilities and blocks reuse.
-- Facade + Port isolates persistence (Dexie/CoreDB now; server later) while giving UI/commands a stable API.
-
-Architecture
-------------
-- Facade: `TagService` implements `TagAPI` (from `@hierarchidb/common-api`).
-- Port: `TagDBPort` abstracts storage:
-  - `createTag/getTag/updateTag/deleteTag/getAllTags`
-  - associations: `createTagAssociation/getTagAssociation/remove*/get*ForNode/Tag`
-- Capability: lightweight registry to declare which node types are taggable:
-  - `registerTaggable(nodeType)`, `isTaggable(nodeType)`
-
-Quick start
------------
-```ts
-import { TagService } from '@hierarchidb/tag';
-import { MyCoreDBPort } from './db/MyCoreDBPort'; // implements TagDBPort
-
-const tag = await TagService.getSingleton(new MyCoreDBPort());
-const t = await tag.createTag({ name: 'Important', color: '#f44336', category: 'user' });
-await tag.addTagToNode({ nodeId, tagId: t.id });
+## Directory layout
+```
+TagService.ts   Facade implementing TagAPI
+ports.ts        TagDBPort contract
+capability.ts   register/isTaggable helpers
+index.ts        Public exports + FeatureDefinition
 ```
 
-Integration notes
------------------
-- runtime-worker uses a CoreDB adapter to wire `TagService` to IndexedDB via Dexie.
-- UI should use capabilities to toggle chips/menus rather than hardcoding node-type checks.
+## Key exports
+- `TagService` — `create/get/update/delete` tags; `addTagToNode/removeTagFromNode/getTagsForNode/getNodesForTag`.
+- Port: `TagDBPort` for persistence.
+- Capability: `registerTaggable`, `isTaggable`.
+- `FeatureDefinition.manifest` (`provides: ['tag']`).
 
-Stability and scope
--------------------
-- Public API conforms to `@hierarchidb/common-api/TagAPI` and is frozen (v0.1). Port allows swapping persistence without breaking callers.
+## Consumers / usage
+- Worker runtime wires `TagService` to CoreDB/Dexie; UI uses TagAPI from `@hierarchidb/common-api`.
+- Plugins toggle tag UI via `registerTaggable(nodeType)` instead of hardcoding.
 
-Caveats
--------
-- No server sync yet; conflict resolution is out of scope.
-- Usage counts are best-effort; heavy batch ops may be eventually consistent.
-
-Roadmap
--------
-- Processor hooks for auto-tags (regex, rulesets)
-- Batch tagging helper (`bulkAdd/bulkRemove` with progress)
-- Optional remote store port
-
+## Notes / roadmap
+- API frozen to TagAPI v0.1; no server sync yet.
+- Future: auto-tag processors, batch helpers, optional remote store port.

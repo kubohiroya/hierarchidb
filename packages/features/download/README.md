@@ -1,58 +1,31 @@
-@hierarchidb/download
-======================
+# @hierarchidb/download
 
-Reliable download foundation with resume-ready design. Provides a Facade + Ports for network, storage, and integrity so environments can plug in the right implementations (browser, worker, server).
+Download foundation with pluggable network/storage/integrity ports. Ships capability hooks and default adapters for browser environments.
 
-Goals
------
-- Centralize download logic: retries, range support, integrity verification, and progress.
-- Keep network and storage pluggable, allowing IndexedDB/Cache API/FS in different builds.
-
-Architecture
-------------
-- Facade: `DownloadService`
-- Ports: `NetworkPort`, `StoragePort`, `IntegrityPort`
-- Today: minimal serial download; multi-part range and resume are planned.
-
-Quick start
------------
-```ts
-import { DownloadService } from '@hierarchidb/download';
-
-const svc = new DownloadService(myNetworkPort, myStoragePort, myIntegrityPort);
-const res = await svc.download('https://example.com/data.csv', 'file-001', { expectedHash: undefined });
-console.log(res);
+## Directory layout
+```
+DownloadService.ts         Facade (progress, retries, integrity hook)
+ports.ts                   NetworkPort / StoragePort / IntegrityPort contracts
+capability.ts              Enable/disable download capability
+createDownloadService.ts   Helper to build a service with defaults
+cas/                       Content-addressable storage helpers (hashing)
+adapters/                  FetchNetworkPort, CacheAPICachePort, Dexie ports, NobleSha3 hash
+helpers/auth.ts            Auth-aware network port helper
+index.ts                   Public exports + FeatureDefinition manifest
 ```
 
-Dev CORS escape hatch
----------------------
-If you set `HDB_LOCAL_PROXY=1` when launching the app’s Vite dev server, the
-download feature will route cross-origin HTTP/HTTPS requests through the local
-dev proxy endpoint (`${BASE_URL}/proxy`), which removes browser CORS limits in
-development. Same-origin requests are not proxied. Make sure the app has the
-Vite proxy middleware enabled.
+## Key exports
+- `DownloadService` — orchestrates download with progress; accepts ports.
+- Ports: `NetworkPort`, `StoragePort`, `IntegrityPort`.
+- Adapters: `FetchNetworkPort`, `CacheAPICachePort`, `DexieChunkStoragePort`, `DexieContentIndexPort`, `NobleSha3HashPort`.
+- Helpers: `createDownloadService`, `createAuthAwareNetworkPort`.
+- Capability: `FeatureDefinition.manifest` (`provides: ['download','cas','net.port']`); `FeatureDefinition.init` optionally provides default `net.port`.
 
-Usage notes
------------
-- Provide `NetworkPort` wrappers over `fetch` (or Axios) and a `StoragePort` (e.g., IndexedDB buckets) for persistence.
-- Integrity is optional; WebCrypto SHA-256 is recommended.
+## Consumers / usage
+- Worker runtime and plugins (shape/route/location/etc.) compose `DownloadService` with Fetch + Dexie ports for offline persistence.
+- `@hierarchidb/auth-recovery` pairs via `createAuthAwareNetworkPort` to attach Authorization and auto-retry on 401.
+- App dev server can proxy CORS with `HDB_LOCAL_PROXY=1` (`/proxy`).
 
-Roadmap
--------
-- HTTP range-based multi-part downloads
-- Bandwidth/concurrency limits and per-host throttling
-- Zip/tar/gzip processors as optional steps
-
-Auth Integration
-----------------
-- Use with `@hierarchidb/auth-recovery` to attach Authorization headers and recover on 401.
-- Quick helper:
-```ts
-import { createAuthAwareNetworkPort, DownloadService } from '@hierarchidb/download';
-import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
-
-const auth = await AuthRecoveryService.getSingleton();
-const net = createAuthAwareNetworkPort(auth, { perHostConcurrency: 4 });
-const store = /* your StoragePort */;
-const svc = new DownloadService(net, store);
-```
+## Notes
+- Currently serial downloads; range/resume and bandwidth controls are on the roadmap.
+- Integrity verification pluggable (e.g., WebCrypto SHA-256 via `NobleSha3HashPort`).

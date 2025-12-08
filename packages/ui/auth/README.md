@@ -1,15 +1,28 @@
-| 項目                | useBaseAuth                    | useAuthLib (OIDC)         | useAuthGoogle     | useAuthBFF              | useAuthMulti    | useAuthWithFallback         | useSimplifiedAuth     |
-  |-------------------|--------------------------------|---------------------------|-------------------|-------------------------|-----------------|-----------------------------|-----------------------|
-| 認証プロバイダー          | 汎用（抽象化）                        | OIDC (react-oidc-context) | Google OAuth      | BFF経由の認証                | 複数プロバイダー対応      | useAuthLib + フォールバック        | OIDC簡略版               |
-| 返却インターフェース        | AuthContext準拠                  | User型                     | AuthContext準拠     | BFFUser型                | AuthContext準拠   | useAuthLib互換                | 簡略User型               |
-| signIn引数          | {returnUrl?, isUserInitiated?} | 同左                        | なし（Google固有）      | {returnUrl?, provider?} | 同左（基底継承）        | 同左                          | 引数なし                  |
-| 認証方式              | popup/redirect両対応              | popup/redirect両対応         | popup/redirect    | popup/redirect          | popup/redirect  | popup→redirect自動フォールバック     | popup優先→redirect      |
-| リダイレクトURL保存       | localStorage                   | localStorage              | localStorage      | -                       | localStorage    | localStorage                | -                     |
-| トークン取得            | getIdToken()                   | getIdToken()              | getIdToken()      | getIdToken()            | getIdToken()    | useAuthLib経由                | -                     |
-| ストレージキー           | カスタマイズ可能                       | oidc.user:*               | google-auth-*     | access_token            | oidc-auth-user  | useAuthLib準拠                | -                     |
-| トークン自動更新          | なし                             | signinSilent()            | なし                | なし                      | なし              | useAuthLib経由                | signinSilent()        |
-| ポップアップ検出          | なし                             | なし                        | なし                | なし                      | なし              | PopupDetectionService       | PopupDetectionService |
-| エラーハンドリング         | 基本的                            | popup失敗時redirect          | なし                | なし                      | 基底委譲            | 高度（自動フォールバック）               | popup失敗時redirect      |
-| resumeAfterSignIn | あり                             | あり                        | なし                | なし                      | あり（基底継承）        | useAuthLib経由                | なし                    |
-| 特徴的な機能            | 基底クラス的役割                       | GitHub Pages対応            | Google専用シンプル実装    | マルチプロバイダー対応             | OIDC Context統合  | ポップアップブロック自動検出              | IndexedDB不要の簡略版       |
-| 依存関係              | なし（抽象）                         | oidc-client-ts            | GoogleAuthContext | SimpleBFFAuth           | OIDCAuthContext | useAuthLib + PopupDetection | 最小限の依存                |
+# @hierarchidb/ui-auth
+
+UI auth components, contexts, and services (OIDC/Google/BFF/multi-provider) plus popup-detection and auth-recovery hooks.
+
+## Directory layout
+```
+components/   Auth dialogs/prompts/forms/avatar, OAuth callback handler
+contexts/     OIDCAuthProvider, GoogleAuthProvider, MultiAuthProvider, SimpleBFFAuthProvider
+hooks/        useAuth, getIdToken
+services/     AuthService, BFFAuthService, AuthCallbackHandler, PopupDetectionService, UIAuthRecoveryClient
+types/        AuthUser, AuthProviderType/Config/ContextType
+index.ts      Public exports
+```
+
+## Key exports
+- Components: `AuthProviderDialog/Options/Prompt`, `AuthRequiredDialog`, `AuthErrorBoundary/Listener`, `LoginForm`, `OAuthCallback`, `UserAvatar/UserAvatarMenu`, `AuthMethodSettings`.
+- Contexts/hooks: `OIDCAuthProvider`/`useOIDCAuth`, `GoogleAuthProvider`/`useGoogleAuth`, `MultiAuthProvider`/`useMultiAuth`, `SimpleBFFAuthProvider`/`useSimpleBFFAuth`, `useAuth`, `getIdToken`.
+- Services: `AuthService` (provider-agnostic), `BFFAuthService`, `AuthCallbackHandler`, `PopupDetectionService`, `registerAuthUIHandlers` (ties into `@hierarchidb/auth-recovery` notifications).
+- Types: `AuthUser`, `AuthProviderType`, `AuthProviderConfig`, `AuthContextType`, `BFFAuthResponse`, `BFFSignInOptions`, `BFFUser`.
+
+## Consumers / usage
+- App shell provides providers (OIDC/Google/BFF) at the root; plugin UIs consume `useAuth`/`useMultiAuth`.
+- `@hierarchidb/auth-recovery` uses `registerAuthUIHandlers` to bridge 401 recovery prompts.
+- User menu/profile components in `@hierarchidb/ui-usermenu` reuse `UserAvatar` and `useAuth`.
+
+## Notes
+- Supports popup/redirect flows; `PopupDetectionService` falls back to redirect on blocked popups.
+- Token retrieval via `getIdToken`; silent renew available for OIDC contexts.

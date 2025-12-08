@@ -1,17 +1,27 @@
 # @hierarchidb/plugin-ui-host
 
-## Purpose (Host layer)
-- Provides the **shell** for plugin dialogs (HeadlessMultiStepDialog wrapper, header/footer/shell components, controller hooks).
-- Manages dialog lifecycle and step navigation; does **not** own form logic or draft state handling.
+Headless dialog host for plugin UIs. Provides the shell (header/footer/stepper), controller, and headless components to drive MultiStep dialogs; leaves field/draft logic to `@hierarchidb/plugin-ui-sdk` and plugins.
+
+## Directory layout
+```
+headless/   Shell components and controller (`PluginDialogShell`, Header/Footer, Stepper, usePluginDialogController)
+examples/   Example host wiring
+tests/      Unit tests for headless components
+PluginDialogHost.tsx  Convenience host wrapper
+index.ts    Public exports
+```
+
+## Key exports
+- Components: `PluginDialogShell`, `PluginDialogHeader`, `PluginDialogFooter`, `PluginDialogStepper`, `StepStatusIcon` (headless MUI-based shell).
+- Controller: `usePluginDialogController` — orchestrates step navigation, validation, capabilities (committable, cancellable), peer dialog handling; integrates with `PluginStepRegistry`.
+- Helpers: `cancelDraftPolicy`, headless `PluginDialogHost` wrapper.
 
 ## Boundaries
-- Host is about the outer container. Shared form logic, draft handling, and field normalization live in `@hierarchidb/plugin-ui-sdk`.
-- Presentation data (icons/labels) is consumed from `@hierarchidb/plugin-presentation`; host should not become a grab-bag of utilities.
+- Shell/navigation only; draft/data normalization lives in `@hierarchidb/plugin-ui-sdk`.
+- Presentation data (labels/icons) comes from `@hierarchidb/plugin-presentation` or app-level registries.
+- Plugin-specific form components should remain in each plugin package.
 
-## When to use
-- Building a plugin dialog host (e.g., `BasemapDialogHost`, `ShapeDialogHost`) that wraps steps provided by the plugin.
-- Reusing the headless components (`PluginDialogShell`, `PluginDialogFooter/Header`, controller hooks) for custom shells.
-
-## Avoid
-- Putting draft/data normalizationやステップの中身のロジック here — place those in `plugin-ui-sdk`.
-- Adding plugin-specific form components; keep this package focused on shell and navigation concerns.
+## Consumers / usage
+- `app/src` dialog routes and TreeConsole hosts embed `PluginDialogHost` / headless components.
+- Feature plugins supply step components and use this host to render MultiStep dialogs (basemap, shape, route, spreadsheet, location, timeline, resolver, styler, etc.).
+- Works with `@hierarchidb/plugin-base` step registry and URL/view-state hooks.

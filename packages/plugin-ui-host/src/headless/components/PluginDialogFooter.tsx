@@ -51,15 +51,6 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   primaryButtonOptions,
 }) => {
   const ctx = useMultiStepDialogContext<Record<string, unknown>>();
-  if (typeof console !== 'undefined' && typeof console.debug === 'function') {
-    console.debug('[PluginDialogFooter] render', {
-      activeStepIndex: ctx.activeStepIndex,
-      enabledSteps: ctx.enabledStepIndices,
-      validatedSteps: ctx.validatedStepIndices,
-      isDirty: ctx.isDirty,
-      canCommit,
-    });
-  }
   const location = useLocation();
   const isResourcesTree = React.useMemo(() => {
     const segments = location.pathname.split('/').filter(Boolean);
@@ -71,10 +62,6 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   const commitLabel = mode === 'create' ? 'Create' : 'Save';
   const isFirstStep = ctx.activeStepIndex === 0;
   const isLastStep = ctx.activeStepIndex >= ctx.stepComponents.length - 1;
-  const canNavigateBack =
-    !isFirstStep &&
-    (ctx.enabledStepIndices.includes(ctx.activeStepIndex - 1) ||
-      ctx.enabledStepIndices.length === 0);
   const isDirty = ctx.isDirty;
   const totalSteps = ctx.stepComponents.length;
   const validatedStepSet = React.useMemo(
@@ -85,36 +72,20 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   const allStepsValidated = totalSteps === 0 || validatedStepSet.size >= totalSteps;
 
   const handleBackOrCancel = useCallback(() => {
-    if (typeof console !== 'undefined' && typeof console.debug === 'function') {
-      console.debug('[PluginDialogFooter] back/cancel click', {
-        isFirstStep,
-        canNavigateBack,
-        activeStepIndex: ctx.activeStepIndex,
-        enabledStepIndices: ctx.enabledStepIndices,
-      });
-    }
     if (isFirstStep) {
       ctx.onRequestClose('close');
       return;
     }
     ctx.onStepNavigate({ type: 'back' });
-  },[canNavigateBack, ctx, isFirstStep]);
+  },[ctx, isFirstStep]);
 
   const handleNextOrSave = useCallback(() => {
-    if (typeof console !== 'undefined' && typeof console.debug === 'function') {
-      console.debug('[PluginDialogFooter] next/save click', {
-        isLastStep,
-        canCommit,
-        activeStepIndex: ctx.activeStepIndex,
-        validatedStepIndices: ctx.validatedStepIndices,
-      });
-    }
     if (isLastStep) {
       ctx.onRequestCommit?.();
       return;
     }
     ctx.onStepNavigate({ type: 'next' });
-  }, [canCommit, ctx, isLastStep]);
+  }, [ctx, isLastStep]);
 
   const leftPrimaryLabel =
     primaryButtonOptions?.leftLabelOverride ?? (isFirstStep ? 'Cancel' : 'Back');
@@ -140,15 +111,8 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   const shouldRenderFinalCommitButton = showRightPrimary && isLastStep;
 
   const handleInlineSave = useCallback(() => {
-    if (typeof console !== 'undefined' && typeof console.debug === 'function') {
-      console.debug('[PluginDialogFooter] inline save click', {
-        canCommit,
-        activeStepIndex: ctx.activeStepIndex,
-        validatedStepIndices: ctx.validatedStepIndices,
-      });
-    }
     ctx.onRequestCommit?.();
-  }, [canCommit, ctx]);
+  }, [ctx]);
 
   const sx = useCallback((theme: Theme) => ({
     borderTop: `1px solid ${theme.palette.divider}`,

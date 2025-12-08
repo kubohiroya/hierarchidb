@@ -1,123 +1,26 @@
 # @hierarchidb/ui-lru-splitview
 
-An intelligent, LRU-managed split view component system for complex multi-pane interfaces. Features automatic pane management, progress tracking, and customizable auto-expand behavior.
+LRU-managed split view for multi-pane interfaces with auto-expansion and progress-aware behavior.
 
-## Overview
-
-This package provides a sophisticated split view system designed for applications that need to display multiple related processes or information streams simultaneously. It uses LRU (Least Recently Used) logic to intelligently manage pane visibility and expansion, ensuring optimal screen real estate usage.
-
-## Key Features
-
-- 🧠 **LRU-based Pane Management** - Automatically manages which panes are expanded based on usage patterns
-- 📊 **Progress Tracking** - Built-in support for task progress display and auto-expansion
-- 🔄 **Auto-expand Logic** - Intelligent expansion based on completion, task start, or custom rules
-- ⚡ **Performance Optimized** - Efficient rendering and smooth transitions using Allotment
-- 🎨 **Highly Customizable** - Flexible pane headers, content, and styling options
-- 📱 **Responsive** - Adapts to different screen sizes and orientations
-
-## Installation
-
-```bash
-pnpm add @hierarchidb/ui-lru-splitview
+## Directory layout
+```
+components/   LRUSplitView, PaneHeader
+hooks/        useLRUPanes
+types/        PaneConfig/State/Progress, props
+utils/        createPane/createProgress, sizing + auto-expand helpers
+index.ts      Public exports
 ```
 
-## Quick Start
+## Key exports
+- `LRUSplitView` — controlled panes with `maxExpandedPanes`, `autoExpand`, `progress`, `vertical`, `height`.
+- Helpers: `createPane`, `createProgress`, `AutoExpandPresets`, sizing/ordering utilities.
+- Hook: `useLRUPanes` to manage pane state externally.
 
-### Basic Usage
+## Consumers / usage
+- Used for download/process/result panels in app dialogs; can drive expansion based on progress.
 
-```tsx
-import React, { useState } from 'react';
-import { 
-  LRUSplitView, 
-  createPane, 
-  createProgress 
-} from '@hierarchidb/ui-lru-splitview';
-
-function MyApp() {
-  const [progress, setProgress] = useState([
-    createProgress('pane1', 75, { taskCount: 10, completedCount: 7 }),
-    createProgress('pane2', 30, { taskCount: 5, completedCount: 2 }),
-  ]);
-
-  const panes = [
-    createPane('pane1', 'Download Tasks', <div>Download content here</div>),
-    createPane('pane2', 'Processing Tasks', <div>Processing content here</div>),
-    createPane('pane3', 'Results', <div>Results content here</div>),
-  ];
-
-  return (
-    <LRUSplitView
-      panes={panes}
-      progress={progress}
-      maxExpandedPanes={2}
-      autoExpand={{
-        onComplete: true,
-        onStart: true,
-      }}
-      height="600px"
-    />
-  );
-}
-```
-
-### Advanced Configuration
-
-```tsx
-import React from 'react';
-import {
-  LRUSplitView,
-  createPane,
-  AutoExpandPresets,
-} from '@hierarchidb/ui-lru-splitview';
-import { Download, Process, Check } from '@mui/icons-material';
-
-function AdvancedSplitView() {
-  const panes = [
-    createPane('download', 'File Downloads', <DownloadPanel />, {
-      icon: <Download />,
-      color: '#e3f2fd',
-      defaultExpanded: true,
-      headerActions: <DownloadActions />,
-    }),
-    createPane('process', 'Data Processing', <ProcessPanel />, {
-      icon: <Process />,
-      color: '#f3e5f5',
-      collapsedSize: 80,
-    }),
-    createPane('results', 'Results & Export', <ResultsPanel />, {
-      icon: <Check />,
-      color: '#e8f5e8',
-      customHeader: <CustomResultsHeader />,
-    }),
-  ];
-
-  return (
-    <LRUSplitView
-      panes={panes}
-      maxExpandedPanes={2}
-      autoExpand={AutoExpandPresets.sequential}
-      onPaneToggle={(paneId, expanded) => {
-        console.log(`Pane ${paneId} ${expanded ? 'expanded' : 'collapsed'}`);
-      }}
-      vertical={false}
-      height="100vh"
-    />
-  );
-}
-```
-
-## Auto-Expand Presets
-
-The package includes several predefined auto-expand behaviors:
-
-```tsx
-import { AutoExpandPresets } from '@hierarchidb/ui-lru-splitview';
-
-// No automatic expansion
-autoExpand: AutoExpandPresets.none
-
-// Sequential workflow - expand next pane when previous completes
-autoExpand: AutoExpandPresets.sequential
+## Notes
+- Built on Allotment for splitter layout; pass `progress` to auto-expand on start/complete.
 
 // Expand when tasks start processing
 autoExpand: AutoExpandPresets.onStart

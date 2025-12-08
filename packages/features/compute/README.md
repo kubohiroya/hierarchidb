@@ -1,38 +1,26 @@
 @hierarchidb/compute
 ====================
 
-Worker-pool and task execution feature. Provides a minimal, portable execution layer (Facade + basic pool) to run CPU-bound steps with cancellation and progress, and to back higher-level batch orchestration.
+Task execution feature with a minimal pool and progress/cancellation. Currently runs in-thread but exposes a stable API to swap in real Worker environments later.
 
-Design goals
-------------
-- Simple default pool (in-thread executor today; WebWorker-backed in future) with stable Task API.
-- Decouple scheduling/execution from business logic.
-
-Architecture
-------------
-- Facade: `ComputeService` with an internal `WorkerPool`
-- Ports: `WorkerEnvPort`, `ClockPort` (future: real Worker integration)
-- Types: `TaskSpec`, `TaskHandle`, `TaskStatus`
-
-Quick start
------------
-```ts
-import { ComputeService } from '@hierarchidb/compute';
-
-const compute = new ComputeService({ concurrency: 3 });
-const handle = compute.submit({ input: 21, fn: async (x, signal, report) => { report(50); return x * 2; } });
-handle.onProgress(p => console.log('progress', p));
-const out = await handle.result();
+## Directory layout
+```
+ComputeService.ts  Facade with internal WorkerPool
+types.ts           TaskSpec/TaskHandle/TaskStatus
+ports.ts           WorkerEnvPort, ClockPort (for future Worker-backed pools)
+index.ts           Public exports + FeatureDefinition
 ```
 
-Notes
------
-- Current implementation runs tasks in-thread (no real Workers yet) to provide a stable API surface. It is a drop-in once WorkerEnvPort is provided.
-- Cancellation uses `AbortController`; your functions should observe `signal`.
+## Key exports
+- `ComputeService` — `submit({ input, fn, signal? })` returns `TaskHandle` with `onProgress`, `cancel`, `result`.
+- Types: `TaskSpec`, `TaskHandle`, `TaskStatus`.
+- Ports: `WorkerEnvPort`, `ClockPort`.
+- `FeatureDefinition.manifest` (`provides: ['compute']`).
 
-Roadmap
--------
-- Browser WebWorker + module URL pool via `WorkerEnvPort`
-- Retry policies and priorities
-- Resource-aware scheduling (CPU time budgets)
+## Consumers / usage
+- Used by `@hierarchidb/batch` to parallelize chunk processing.
+- Plugins can wrap CPU-heavy steps (e.g., geometry transforms) and hook progress.
 
+## Notes / roadmap
+- Current executor is synchronous (no real Workers); swap in `WorkerEnvPort` to run off-thread.
+- Observe `AbortSignal` in task functions for cancellation. Future work: retry/policy/priorities.

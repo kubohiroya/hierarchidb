@@ -1,4 +1,6 @@
-# @hierarchidb/ui-datasource (WIP)
+# @hierarchidb/ui-datasource
 
-This package will host shared data-source selection components used by
-Shape/Location/Route dialogs. Implementation pending.
+Shared data source selection components (planned) for Shape/Location/Route dialogs.
+
+## Status
+- WIP placeholder; will provide reusable selectors and type-safe configs for data sources.

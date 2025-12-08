@@ -1,203 +1,38 @@
 # @hierarchidb/ui-worker-client
 
-A robust Worker initialization detection system for Web Workers that provides reliable, Comlink-independent initialization status reporting and React integration.
+UI-side utilities for HierarchiDB’s worker runtime. Provides initialization handshakes, Comlink-safe event/command bridges, runtime export wiring, and worker bridge helpers.
 
-## 📋 Overview
-
-This package solves the critical timing issue in Web Worker applications where the UI thread may attempt Comlink RPC communication before the Worker has completed its asynchronous initialization. It provides a two-way communication channel using native browser APIs (MessageChannel) to ensure proper initialization sequencing.
-
-## 🎯 Problem It Solves
-
-In typical Worker-based architectures:
-1. UI creates a Worker instance
-2. Worker starts loading and initializing (async process)
-3. UI attempts to communicate via Comlink
-4. **Race Condition**: If Worker hasn't finished initialization, Comlink calls fail
-
-This package ensures that Comlink communication only begins after the Worker is fully initialized and ready.
-
-## ✨ Features
-
-- 🔄 **Bidirectional Communication**: Worker reports progress, UI receives updates
-- 🔌 **Comlink-Independent**: Uses native MessageChannel API
-- ⚡ **Progress Tracking**: Real-time initialization progress reporting
-- 🛡️ **Error Handling**: Proper error propagation and recovery
-- ⏱️ **Timeout Protection**: Configurable timeouts prevent indefinite waiting
-- ⚛️ **React Integration**: Ready-to-use React hooks and providers
-- 🔄 **Retry Logic**: Automatic retry on initialization failure
-- 📊 **Detailed Status**: Step-based progress with custom messages
-
-## 📦 Installation
-
-```bash
-# npm
-npm install @hierarchidb/runtime-worker-worker-init-notifier
-
-# pnpm
-pnpm add @hierarchidb/runtime-worker-worker-init-notifier
-
-# yarn
-yarn add @hierarchidb/runtime-worker-worker-init-notifier
+## Directory layout
+```
+WorkerInitializationChannel.ts  UI-side init handshake (MessageChannel-based)
+WorkerInitializationReporter.ts Worker-side reporter to emit init progress/events
+workerBridge.ts                 Bridge getter/setter for the Worker remote proxy
+events/                        Comlink event/command bridges
+wiring/                        Runtime export registry & plugin wiring helpers
+utils.ts, types.ts             Shared helpers and message types
 ```
 
-## 🚀 Quick Start
+## Key exports
+- Initialization:
+  - `WorkerInitializationChannel` — wait for worker readiness with timeout/progress.
+  - `WorkerInitializationReporter` — post init steps/errors from the worker thread.
+- Runtime bridge:
+  - `getWorkerBridge`, `ensureWorkerAPI`, `__getWorkerBridgeClientRef`, `__setWorkerBridgeClientRef`, `WorkerBridge` type.
+  - `getRuntimeExports`, `registerRuntimeExports`, `getAllRuntimeExports` for runtime export discovery.
+  - `wirePluginsFromModules` — wire plugin UI/worker exports into the runtime registry.
+- Comlink helpers:
+  - `createComlinkCommandBridge`, `createComlinkEventBridge` and related types for bridging commands/events across Comlink boundaries.
+- Types:
+  - `WorkerInitConfig`, `InitializationResult`, `InitializationStep`, `WorkerInitState`, `WorkerInitMessageType`, etc.
 
-> **HierarchiDB integration note**: 本モノレポでは `app/src/worker-runtime/WorkerModuleLoader.ts`
-> と `@hierarchidb/runtime-shared-module-paths` が Worker の生成と初期化を統括します。
-> 以下のサンプルはスタンドアロン環境向けの参考実装です。HierarchiDB では
-> `WorkerModuleLoader.ensureWorkerRuntime()` と `WorkerInitializationChannel`
-> を組み合わせて利用してください。
+## Consumers / usage
+- App runtime boot (`app/src/worker-runtime/worker.ts`, `workerApiClientLoader`) uses the initialization channel before exposing Comlink APIs.
+- `@hierarchidb/runtime-worker` and plugins register exports via `wirePluginsFromModules` / runtime export registry.
+- UI dialog hosts and plugin UIs obtain the worker bridge through `@hierarchidb/plugin-service-sdk` which relies on this package.
 
-### Basic Usage (Vanilla JavaScript)
-
-#### Worker Side
-```typescript
-// worker.ts
-import { WorkerInitializationReporter } from '@hierarchidb/runtime-worker-init-notifier';
-
-// Create reporter at the start of your worker
-const initReporter = new WorkerInitializationReporter();
-
-// Report progress during initialization
-async function initializeWorker() {
-  initReporter.reportStepProgress('Loading modules...', 25);
-  await loadModules();
-  
-  initReporter.reportStepProgress('Connecting to database...', 50);
-  await connectDatabase();
-  
-  initReporter.reportStepProgress('Setting up API...', 75);
-  await setupAPI();
-  
-  // Report completion when ready
-  initReporter.reportComplete();
-  
-  // Now expose your Worker API via Comlink
-  Comlink.expose(workerAPI);
-}
-
-// Handle initialization errors
-try {
-  await initializeWorker();
-} catch (error) {
-  initReporter.reportError(error.message);
-  throw error;
-}
-```
-
-#### UI Side
-```typescript
-// main.ts (HierarchiDB での利用例)
-import { WorkerInitializationChannel } from '@hierarchidb/runtime-worker-init-notifier';
-import { ensureWorkerRuntime, getWorkerRuntimePromise } from '../app/src/worker-runtime-worker/WorkerModuleLoader';
-import { loadWorkerAPIClientModule } from '../app/src/worker-runtime-worker/workerApiClientLoader';
-
-// Ensure the runtime-worker is booted (spawns the shared worker via WorkerModuleLoader)
-await ensureWorkerRuntime();
-
-const { WorkerAPIClient } = await loadWorkerAPIClientModule();
-const rawWorker = WorkerAPIClient.getRawWorkerInstance();
-
-// Create initialization channel
-const channel = new WorkerInitializationChannel();
-
-// Wait for worker to be ready
-const result = await channel.waitForInitialization({
-  worker: rawWorker,
-  timeout: 10000,
-  debug: true,
-});
-
-if (result.success) {
-  console.log(`Worker ready in ${result.duration}ms`);
-  const api = await getWorkerRuntimePromise();
-  // Use your API via Comlink proxy…
-} else {
-  console.error('Worker initialization failed:', result.error);
-}
-```
-
-## ⚛️ React Integration
-
-### Complete Example with React
-
-```tsx
-// App.tsx
-import React from 'react';
-import { WorkerSingletonProvider } from '@hierarchidb/runtime-worker-init-notifier';
-import { WorkerAPIClient } from './WorkerAPIClient';
-import { MainApp } from './MainApp';
-
-// Custom loading component
-const LoadingScreen = ({ progress, message }) => (
-  <div className="loading-screen">
-    <h2>Initializing Application...</h2>
-    <progress value={progress} max={100} />
-    <p>{message}</p>
-  </div>
-);
-
-// Custom error component
-const ErrorScreen = ({ error }) => (
-  <div className="error-screen">
-    <h2>Initialization Failed</h2>
-    <p>{error.message}</p>
-    <button onClick={() => window.location.reload()}>
-      Retry
-    </button>
-  </div>
-);
-
-function App() {
-  return (
-    <WorkerSingletonProvider
-      getWorkerClient={async () => {
-        // Initialize your worker client
-        await WorkerAPIClient.initialize();
-        return WorkerAPIClient.getSingleton();
-      }}
-      getRawWorker={() => {
-        // Return the raw Worker instance for initialization detection
-        return WorkerAPIClient.getRawWorkerInstance();
-      }}
-      loadingComponent={<LoadingScreen />}
-      errorComponent={ErrorScreen}
-    >
-      <MainApp />
-    </WorkerSingletonProvider>
-  );
-}
-```
-
-### Using the Hook
-
-```tsx
-// Component.tsx
-import { useWorker } from '@hierarchidb/runtime-worker-init-notifier';
-
-function MyComponent() {
-  const { client, isReady, error, progress, message } = useWorker();
-  
-  if (!isReady) {
-    return <div>Loading... {progress}%</div>;
-  }
-  
-  if (error) {
-    return <div>Error: {error.message}</div>;
-  }
-  
-  // Worker is ready, use the client
-  return (
-    <button onClick={() => client.doSomething()}>
-      Use Worker API
-    </button>
-  );
-}
-```
-
-## 🔧 Advanced Configuration
-
-### Custom Progress Steps
+## Notes
+- Designed to be Comlink-agnostic where possible (init channel uses native MessageChannel).
+- Keep initialization synchronized: reporter must run at worker startup, channel must wait before issuing Comlink calls.
 
 ```typescript
 // Worker side with detailed progress tracking

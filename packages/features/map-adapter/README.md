@@ -1,50 +1,28 @@
 @hierarchidb/map-adapter
 =====================
 
-Map rendering adapter with MapLibre GL JS + deck.gl integration as an optional, reusable capability. Keeps rendering concerns behind a Facade + Adapter so UIs can display maps without hard dependencies in core packages.
+Map rendering adapter for MapLibre GL JS + deck.gl. Keeps rendering behind a facade/port so UIs can draw maps without hard dependencies in core packages.
 
-Design intent
--------------
-- Decouple data (map-source) from rendering (map-view).
-- Avoid bundling heavy render libs unless needed: use peerDependencies and pass constructors at runtime.
-- Provide a small, stable API: initialize map, set view/style, update deck layers.
-
-Architecture
-------------
-- Facade: `MapViewService`
-  - `init({ container, initialViewState, mapStyle })`
-  - `setView(view)`, `setStyle(style)`, `setLayers(deckLayers)`, `destroy()`
-- Port: `MapAdapterPort` (render backend)
-  - `init/destroy/setView/setStyle/addDeckLayers/updateDeckLayers/removeDeckLayers`
-- Adapter: `MapLibreDeckAdapter`
-  - Requires `maplibre-gl` and `deck.gl` (peerDependencies)
-  - Constructors can be passed via options or lazily loaded at `init()`
-  - Strongly typed via `import type` (no `any` usage)
-
-Usage
------
-```ts
-import { MapViewService, MapLibreDeckAdapter } from '@hierarchidb/map-adapter';
-import * as maplibregl from 'maplibre-gl';
-import { Deck } from 'deck.gl';
-
-const adapter = new MapLibreDeckAdapter({ maplibregl, Deck });
-const map = new MapViewService(adapter);
-await map.init({ container: el, initialViewState: { longitude: 139.76, latitude: 35.68, zoom: 9 } });
-await map.setLayers([{ id: 'geojson', type: 'GeoJsonLayer', props: { data: featureCollection } }]);
+## Directory layout
+```
+MapViewService.ts     Facade
+ports.ts              MapAdapterPort contract
+adapters/             MapLibreDeckAdapter (maplibre-gl + deck.gl)
+TileSourceProvider.ts Tile source abstraction
+index.ts              Public exports + FeatureDefinition
 ```
 
-Notes
------
-- Does not hard-bundle maplibre-gl/deck.gl. You can pass constructors, or omit them and let the adapter lazily import packages at `init()`.
-  - Overrides: `MAP_ADAPTER_MAPLIBRE_PKG` / `MAP_ADAPTER_DECK_PKG` (env/global) or `maplibrePackageName` / `deckPackageName` (options). Defaults are `maplibre-gl` and `deck.gl`.
- - Tile sources: use `TileSourceProvider` to decouple UI rendering from tile generation (worker/plugins).
-   - `{ kind: 'template', template: 'https://.../{z}/{x}/{y}.pbf' }`
-   - `{ kind: 'function', getTile: (z,x,y) => Promise<ArrayBuffer> }`
-- Data retrieval (Dexie等)は @hierarchidb/map-source から取得して渡してください。
+## Key exports
+- `MapViewService` — `init`, `setView`, `setStyle`, `setLayers`, `destroy`.
+- Port: `MapAdapterPort`.
+- Adapter: `MapLibreDeckAdapter` (constructors passed or lazily imported); env overrides `MAP_ADAPTER_MAPLIBRE_PKG` / `MAP_ADAPTER_DECK_PKG`.
+- `TileSourceProvider` for template/function tile sources.
+- `FeatureDefinition.manifest` (`provides: ['map-adapter']`).
 
-Roadmap
--------
-- Adapter for custom controllers and sync between MapLibre/deck view states
-- Built-in layer factories for common patterns (heatmap, point cluster)
-- Offscreen rendering hooks for export
+## Consumers / usage
+- `@hierarchidb/ui-map` uses this to render layers; map data is supplied via `@hierarchidb/map-source`.
+- Plugins (basemap/route/shape) pass GeoJSON/tile sources to `MapViewService`.
+
+## Notes / roadmap
+- No bundled maplibre/deck; supply constructors or allow lazy imports.
+- Future: built-in layer factories, view-state sync helpers, offscreen export hooks.

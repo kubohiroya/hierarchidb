@@ -56,4 +56,26 @@ Dive deeper with the in-app documentation located under [`app/docs/`](./app/docs
 - [Collaboration and permissions](./app/docs/10-collaboration.md)
 - [Settings, shortcuts, and troubleshooting](./app/docs/11-settings.md)
 
+## Architecture and plugin framework (for contributors)
+- **Monorepo layout:** `app/` (React + Vite shell, plugin loader, worker entry) sits alongside `packages/` (runtime services, UI host/SDK, tooling) and `plugins/` (feature packages that ship UI/worker/icon/database entries). Shared docs and scripts live in `docs/`, `config/`, and `scripts/env`.
+- **Plugin registry as single source of truth:** Each plugin declares `hierarchidb.plugin` metadata in its `package.json`. Run `pnpm tools:gen-plugin-registry` to aggregate definitions into `@hierarchidb/plugin-registry` and `app/src/plugin-registry`, then UI/worker/icon/database loaders import from the same registry via `import.meta.glob` for consistent resolution.
+- **UI ↔ Worker bridge:** `@hierarchidb/runtime-worker` wires plugin worker modules and Dexie stores; `@hierarchidb/plugin-ui-host` and `plugin-ui-sdk` provide MultiStep dialog scaffolding, Jotai-based working copy state, and Comlink RPC helpers. WorkerProvider injects the bridge so dialogs stay in sync without bespoke messaging.
+- **Tooling baseline:** `pnpm` + `turbo` orchestrate builds/tests; `tsdown` (configured at `tsdown.config.ts`) is the unified bundler for packages and plugins. TypeScript paths point to `src/` only, with NodeNext resolution and project references to generate `.d.ts` before consumers compile.
+
+## Development workflow
+- Install and validate: `pnpm install --frozen-lockfile` → `pnpm lint && pnpm format && pnpm typecheck && pnpm test`. Use `pnpm --filter @hierarchidb/<pkg> <task>` for targeted checks (e.g., `typecheck`, `build`, `test`).
+- Run locally: `pnpm dev` loads env from `scripts/env/development.sh` and starts the app worker shell; `pnpm dev:with-watch` keeps Turbo build/watch and Vite aligned. For production-like checks use `pnpm build` then `pnpm preview`.
+- Plugin lifecycle: add metadata, implement `src/{ui,worker,icon,shared}` entries, regenerate the registry, and ensure loaders resolve in both UI and worker contexts. Keep feature toggles default-off and document them under `config/feature-flags.ts`.
+- Tests and coverage: unit suites live beside sources in `packages/*/src/__tests__/` and `plugins/*-plugin/src/**/__tests__/`; worker flows run via `packages/runtime-worker/src/__tests__/wfl/`; Playwright smoke tests live in `e2e/`.
+
+## Release and rollback principles
+- Ship small, reversible changes behind default-off flags; record branch and task status in `TASKS.md` before editing.
+- Prefer registry regeneration + targeted package builds over ad-hoc path tweaks; if a change regresses, revert the touched files and rerun the same `pnpm` commands you used for verification.
+- Default validation set before review: `pnpm lint && pnpm format && pnpm typecheck && pnpm test` (or scoped equivalents), plus any package-specific checks you touched.
+
+## What’s next
+- Stabilise NodeNext type graphs and keep `tsdown` as the single bundler across packages/plugins.
+- Maintain a single plugin registry source, ensuring UI and worker loaders stay in lockstep after new plugins or schema changes.
+- Keep feature flags and rollback notes current in `TASKS.md`, and expand tests around plugin dialogs and worker flows as new capabilities land.
+
 HierarchiDB puts every layer of your project within reach—so you and your team can plan, analyse, and deliver without friction.

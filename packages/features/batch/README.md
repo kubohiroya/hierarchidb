@@ -1,35 +1,22 @@
 @hierarchidb/batch
 ===================
 
-High-level batch orchestration on top of `@hierarchidb/compute`. Includes minimal `mapChunks` today and is designed to grow into pipelines/DAGs with checkpointing and resume.
+Lightweight batch orchestration on top of `@hierarchidb/compute`. Currently offers a minimal `mapChunks` helper; designed to evolve toward pipelines/DAGs with checkpointing.
 
-Design intent
--------------
-- Make parallel map/reduce style processing easy and predictable (concurrency caps, progress).
-- Keep storage/environment pluggable via ports (checkpointing later).
-
-Architecture
-------------
-- Facade: `BatchService`
-  - `mapChunks(source, fn, { concurrency, progress })` → Promise<O[]>
-- Port (future): `CheckpointPort` to persist intermediate progress/state
-
-Quick start
------------
-```ts
-import { BatchService } from '@hierarchidb/batch';
-
-const batch = new BatchService();
-const res = await batch.mapChunks([1,2,3,4], async (n) => n * 2, { concurrency: 2, progress: c => console.log(c) });
+## Directory layout
+```
+BatchService.ts   Facade
+index.ts          Public exports + FeatureDefinition
 ```
 
-Integration
------------
-- Combine with `@hierarchidb/download` for URL lists and `@hierarchidb/compute` for CPU steps.
+## Key exports
+- `BatchService`
+  - `mapChunks(source, fn, { concurrency, progress })` — parallel map with progress + abort support.
+- `FeatureDefinition.manifest` (`provides: ['batch']`).
 
-Roadmap
--------
-- Pipelines with fan-out/fan-in
-- DAG execution with per-node concurrency
-- Checkpointing + resume via `CheckpointPort`
+## Consumers / usage
+- Pair with `@hierarchidb/compute` for task execution; compose with `@hierarchidb/download` to process URL lists.
+- Plugins (e.g., route/shape) can wrap long-running steps with `mapChunks`.
 
+## Notes / roadmap
+- Future: checkpoint/resume via `CheckpointPort`, DAG fan-out/fan-in, priorities.
