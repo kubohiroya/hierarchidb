@@ -1,15 +1,14 @@
-import { Box, FormControl, FormHelperText, InputLabel, MenuItem, Select, TextField, Typography } from '@mui/material';
+import { Box, FormControl, FormHelperText, InputLabel, MenuItem, Select, Typography } from '@mui/material';
 import type { StepComponentProps } from '@hierarchidb/plugin-base';
-import { TagChipsInput } from '@hierarchidb/ui-plugin-basic-info';
 import { useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { StylerStepData, StyleSettingsData, StyleType } from '../types.js';
+import type { StylerStepData, StyleType } from '../types.js';
 
 const STYLE_TYPE_OPTIONS: ReadonlyArray<{ value: StyleType; label: string }> = [
-  { value: 'point', label: 'Point Style' },
-  { value: 'line', label: 'Line Style' },
-  { value: 'polygon', label: 'Polygon Style' },
-  { value: 'raster', label: 'Raster Style' },
+  { value: 'choropleth', label: 'Choropleth Map' },
+  { value: 'heatmap', label: 'Heat Map' },
+  { value: 'points', label: 'Point Map' },
+  { value: 'lines', label: 'Line Map' },
 ];
 
 /*
@@ -28,13 +27,10 @@ const COLOR_SCHEME_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
-const toStyleSettings = (value: unknown): StyleSettingsData =>
-  isRecord(value) ? (value as StyleSettingsData) : {};
-
 export const isStyleSettingsComplete = (dialogData?: unknown): boolean => {
   if (!isRecord(dialogData)) return false;
-  const settings = toStyleSettings(dialogData.styleSettings ?? dialogData);
-  return Boolean(settings.styleType);
+  const maybeData = dialogData as Partial<StylerStepData>;
+  return Boolean(maybeData.styleType);
 };
 
 export const StyleSettingsStep: React.FC<StepComponentProps<StylerStepData>> = ({
@@ -45,14 +41,21 @@ export const StyleSettingsStep: React.FC<StepComponentProps<StylerStepData>> = (
 }) => {
   const { t } = useTranslation('styler-plugin');
   const pluginData = useMemo(() => (isRecord(data) ? (data as Record<string, unknown>) : {}), [data]);
-  const settings = useMemo(() => toStyleSettings(pluginData.styleSettings), [pluginData]);
+  const settings = useMemo(
+    () =>
+      ({
+        styleType: pluginData.styleType,
+        colorScheme: pluginData.colorScheme,
+      }) as Pick<StylerStepData, 'styleType' | 'colorScheme'>,
+    [pluginData],
+  );
 
   const updateSettings = useCallback(
-    (patch: Partial<StyleSettingsData>) => {
+    (patch: Partial<Pick<StylerStepData, 'styleType' | 'colorScheme'>>) => {
       const next = { ...settings, ...patch };
       onChange({
-        ...pluginData,
-        styleSettings: next,
+        ...(pluginData as StylerStepData),
+        ...next,
       });
     },
     [pluginData, settings, onChange],
@@ -92,30 +95,6 @@ export const StyleSettingsStep: React.FC<StepComponentProps<StylerStepData>> = (
           {t('styleSettings.styleType.help', 'Select the geometry that this style targets.')}
         </FormHelperText>
       </FormControl>
-
-      <TextField
-        fullWidth
-        label={t('styleSettings.dataSource.label', 'Style Data Source')}
-        value={settings.dataSource ?? ''}
-        onChange={(event) => updateSettings({ dataSource: event.target.value || undefined })}
-        placeholder={t('styleSettings.dataSource.placeholder', 'e.g., Census dataset or OSM layer')||''}
-        helperText={t('styleSettings.dataSource.help', 'Optional note describing where the styling data originates.')}
-      />
-
-      <Box>
-        <Typography variant="subtitle2" gutterBottom>
-          {t('styleSettings.styleTags.label', 'Style Tags')}
-        </Typography>
-        <TagChipsInput
-          value={settings.styleTags ?? []}
-          onChange={(next: string[]) => updateSettings({ styleTags: next })}
-          placeholder={t('styleSettings.styleTags.placeholder', 'Add tags to organize different style presets.')||''}
-          label=""
-        />
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-          {t('styleSettings.styleTags.help', 'Tags are stored separately from node tags and help classify visual presets.')}
-        </Typography>
-      </Box>
     </Box>
   );
 };

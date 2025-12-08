@@ -2,14 +2,7 @@ import { type StepData } from '@hierarchidb/plugin-base';
 import { SpreadSheetDataSourceConfig } from '@hierarchidb/spreadsheet-plugin';
 import type { StylerEntity } from './StylerEntity.js';
 
-export type StyleType = 'point' | 'line' | 'polygon' | 'raster';
-
-export interface StyleSettingsData {
-  styleType?: StyleType;
-  colorScheme?: string;
-  dataSource?: string;
-  styleTags?: string[];
-}
+export type StyleType = 'choropleth' | 'heatmap' | 'points' | 'lines';
 
 export type MapLibreStyleProperty =
   | 'fill-color'
@@ -107,10 +100,7 @@ export interface PropertyGroup {
 export type StylerTablePrimitive = string | number | boolean | null | undefined;
 export type StylerTableRow = Record<string, StylerTablePrimitive>;
 
-export type StylerDialogData = Partial<StylerEntity> & {
-  spreadsheetMetadata?: StylerEntity['metadata'];
-  styleSettings?: StyleSettingsData;
-};
+export type StylerDialogData = Partial<StylerEntity>;
 
 /**
  * :
@@ -283,9 +273,8 @@ export const MAPLIBRE_PROPERTY_GROUPS: PropertyGroup[] = [
 
 export type StylerStepData = StylerDialogData &
   StepData & {
-    styleType?: 'choropleth' | 'heatmap' | 'points' | 'lines';
+    styleType?: StyleType;
     dataSource?: SpreadSheetDataSourceConfig;
-    spreadsheetMetadata?: StylerEntity['metadata'];
     colorScheme?: string;
     opacity?: number;
     strokeWidth?: number;

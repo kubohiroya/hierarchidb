@@ -88,23 +88,6 @@ export const StylerDialog: React.FC<StylerDialogProps> = ({
           validate: () => Boolean((metadata?.name ?? '').trim()),
         },
         {
-          id: 'style-settings',
-          label: 'Style Settings',
-          component: (
-            <StyleSettingsStep
-              mode={mode}
-              nodeId={nodeId}
-              parentId={parentId}
-              data={data}
-              onChange={handleUpdate}
-              setValid={() => {}}
-              setError={() => {}}
-              disabled={false}
-            />
-          ),
-          validate: () => Boolean(data.styleSettings?.styleType),
-        },
-        {
           id: 'data-source',
           label: 'Data Source',
           component: (
@@ -116,7 +99,6 @@ export const StylerDialog: React.FC<StylerDialogProps> = ({
               onChange={(next) => {
                 handleUpdate({
                   ...(next as StylerDialogData),
-                  spreadsheetMetadata: (next as StylerDialogData).metadata ?? undefined,
                 });
               }}
               setValid={() => {}}
@@ -138,7 +120,6 @@ export const StylerDialog: React.FC<StylerDialogProps> = ({
               onChange={(next) => {
                 handleUpdate({
                   ...(next as StylerDialogData),
-                  spreadsheetMetadata: (next as StylerDialogData).metadata ?? undefined,
                 });
               }}
               setValid={() => {}}
@@ -149,16 +130,33 @@ export const StylerDialog: React.FC<StylerDialogProps> = ({
           validate: () => true,
         },
         {
+          id: 'style-settings',
+          label: 'Style Settings',
+          component: (
+            <StyleSettingsStep
+              mode={mode}
+              nodeId={nodeId}
+              parentId={parentId}
+              data={data}
+              onChange={handleUpdate}
+              setValid={() => {}}
+              setError={() => {}}
+              disabled={false}
+            />
+          ),
+          validate: () => Boolean(data.styleType),
+        },
+        {
           id: 'style-mapping',
           label: 'Style Mapping',
           component: <StylerStep5 data={data} onChange={handleUpdate} onValidate={() => {}} />,
-          validate: () => Boolean(data.styleSettings),
+          validate: () => Boolean(data.styleType),
         },
         {
           id: 'preview',
           label: 'Preview & Save',
           component: <StylerStep6 data={data} onChange={handleUpdate} />,
-          validate: () => Boolean(data.styleSettings),
+          validate: () => Boolean(data.styleType),
         },
       ];
     },

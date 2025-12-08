@@ -1,7 +1,7 @@
 /**
  * Type definitions for Styler components
  */
-export type { StylerDialogData, StylerStepData, StyleType, StyleSettingsData } from '../../common/types/stylerTypes.js';
+export type { StylerDialogData, StylerStepData, StyleType } from '../../common/types/stylerTypes.js';
 
 /** Column mapping configuration */
 export interface ColumnMapping {

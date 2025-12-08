@@ -15,7 +15,6 @@ export type {
   MapLibreStyleProperty,
   PropertyGroup,
   StylerConfig,
-  StylerMapping,
 } from '../../../common/types/stylerTypes.js';
 export {
   MAPLIBRE_PROPERTY_GROUPS,
@@ -35,10 +34,10 @@ export {
   rgbToHsv,
   valueToColor,
 } from '../../../common/utils/colorUtils.js';
-export type { StylerConfigurationProps } from './StylerConfiguration.js';
+export type { StylerMappingProps } from './StylerMapping.js';
 
 // Re-export components for direct use
-export { StylerConfiguration } from './StylerConfiguration.js';
+export { StylerMapping } from './StylerMapping.js';
 export type { StylerStepProps } from './StylerStepProps.js';
 // Step 5: Style Mapping Configuration
 export { StylerStep5, StylerStep5Definition } from './StylerStep5.js';

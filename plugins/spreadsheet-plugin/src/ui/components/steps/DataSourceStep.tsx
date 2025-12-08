@@ -6,9 +6,17 @@ import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { createSpreadsheetTabularApi } from '../../../services/spreadsheetTabularApiFactory.js';
 import { SPREADSHEET_NODE_TYPE } from '../../../common/constants.js';
 import type { SpreadSheetDataSourceConfig, SpreadsheetEntity } from '../../../common/types/SpreadsheetEntity.js';
+import { Box, Typography } from '@mui/material';
 
 const coerceDialogData = (value: unknown): SpreadsheetEntity =>
   (typeof value === 'object' && value !== null ? (value as SpreadsheetEntity) : {});
+
+const formatBytes = (value?: number | null): string => {
+  const bytes = typeof value === 'number' && Number.isFinite(value) ? value : 0;
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${bytes} B`;
+};
 
 type ExtendedImportProps = TabularFileImportStepProps & {
   initialProcessingConfig?: TabularProcessingConfig;
@@ -156,6 +164,31 @@ export const DataSourceStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
         }}
         importSucceeded={importSucceeded}
       />
+
+      {dialogData.spreadsheetMetadataId && dialogData.dataSource ? (
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: 1.5,
+            alignItems: 'center',
+            mt: 2,
+          }}
+        >
+          <Typography variant="body2" color="text.secondary">
+            filename: {dialogData.dataSource.filename ?? dialogData.tabularTableMetadata?.filename ?? '—'}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            size: {formatBytes(dialogData.dataSource.sizeBytes ?? dialogData.tabularTableMetadata?.fileSizeBytes)}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            lastModified: {dialogData.tabularTableMetadata?.createdAt ? new Date(dialogData.tabularTableMetadata.createdAt).toLocaleString() : '—'}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ wordBreak: 'break-all' }}>
+            contentHash: {dialogData.dataSource.contentHash ?? dialogData.tabularTableMetadata?.contentHash ?? '—'}
+          </Typography>
+        </Box>
+      ) : null}
     </TabularProvider>
   );
 };

@@ -3,7 +3,7 @@ import { Box } from '@mui/material';
 import React, { useCallback } from 'react';
 import type { StylerConfig, StylerStepData } from '../../../common/types/stylerTypes.js';
 import { StylerConfigDefault } from '../../../common/types/stylerTypes.js';
-import { StylerConfiguration } from './StylerConfiguration.js';
+import { StylerMapping } from './StylerMapping.js';
 import { StylerStepProps } from './StylerStepProps.js';
 
 export const StylerStep5: React.FC<StylerStepProps> = ({
@@ -77,7 +77,7 @@ export const StylerStep5: React.FC<StylerStepProps> = ({
 
   return (
     <Box sx={{ width: '100%', p: 2 }}>
-      <StylerConfiguration
+      <StylerMapping
         config={currentConfig}
         onChange={handleConfigChange}
         values={sampleValues}

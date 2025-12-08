@@ -117,15 +117,16 @@ export const StylerSimpleDialog: React.FC<StylerSimpleDialogProps> = ({
 
   React.useEffect(() => {
     if (existingEntity) {
-      setKeyColumn(existingEntity.keyColumn || '');
+      setKeyColumn(existingEntity.stylerConfig.keyColumn || '');
+      /*
       setColorRules(
-        (existingEntity.colorRules || []).map((rule, index) => ({
+        (existingEntity.stylerConfig..colorRules || []).map((rule, index) => ({
           ...rule,
           _id: `${existingEntity.nodeId}-rule-${index}`,
         }))
       );
-      setDefaultStyle(existingEntity.defaultStyle || { textColor: '', backgroundColor: '' });
-      setDescription(existingEntity.description || '');
+      setDefaultStyle(existingEntity.stylerConfig.defaultStyle || { textColor: '', backgroundColor: '' });
+       */
     }
   }, [existingEntity]);
 

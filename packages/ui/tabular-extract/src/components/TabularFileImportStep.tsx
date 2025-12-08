@@ -257,22 +257,21 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
         <Paper
           variant="outlined"
           sx={{
-            p: 3,
-            mb: 3,
+            p: 1.25,
+            mb: 2,
             border: '2px dashed',
             borderColor: dragError ? 'error.main' : dragActive ? 'success.main' : 'divider',
-            textAlign: 'center',
             cursor: disabled || isImporting ? 'not-allowed' : 'pointer',
             '&:hover': disabled || isImporting ? {} : {
               borderColor: 'primary.main',
               bgcolor: 'action.hover',
             },
           }}
-            onClick={disabled || isImporting ? undefined : handleImportClick}
-            onDragOver={handleDragOver}
-            onDragEnter={handleDragEnter}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
+          onClick={disabled || isImporting ? undefined : handleImportClick}
+          onDragOver={handleDragOver}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
         >
           <input
             ref={fileInputRef}
@@ -283,23 +282,29 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
             disabled={disabled || isImporting}
           />
 
-          <CloudUpload sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-
-          <Typography variant="h6" gutterBottom>
-            {isImporting ? 'Processing...' : 'Click to select a file'}
-          </Typography>
-
-          <Typography variant="body2" color="text.secondary">
-            Supported formats: {acceptedFileTypes.join(', ')}
-            <br />
-            Maximum size: {Math.round(maxFileSize / 1024 / 1024)}MB
-          </Typography>
-
-          {isImporting && (
-            <Box sx={{ mt: 2 }}>
-              <CircularProgress size={24} />
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: '48px 1fr',
+              gap: 1,
+              alignItems: 'center',
+            }}
+          >
+            <CloudUpload sx={{ fontSize: 32, color: 'text.secondary', justifySelf: 'center' }} />
+            <Box sx={{ display: 'grid', gap: 0.3, textAlign: 'left' }}>
+              <Typography variant="subtitle1">
+                {isImporting ? 'Processing...' : 'Click to select a file'}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {acceptedFileTypes.join(', ')} · {Math.round(maxFileSize / 1024 / 1024)}MB max
+              </Typography>
             </Box>
-          )}
+            {isImporting && (
+              <Box sx={{ gridColumn: '1 / span 2', justifySelf: 'start', pl: 0.5 }}>
+                <CircularProgress size={18} />
+              </Box>
+            )}
+          </Box>
         </Paper>
       )}
 

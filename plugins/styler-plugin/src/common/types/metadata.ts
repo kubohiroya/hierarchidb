@@ -20,7 +20,6 @@ export const StylerMetadata: PluginManifest = {
   entityHints: {
     //  TreeNode: 'nodeId' ()
     //  RelationalEntity: 'relRef'
-    //  StylerEntity.spreadsheetMetadataId -> 'relRef'
     relRefField: 'spreadsheetMetadataId',
   },
 };

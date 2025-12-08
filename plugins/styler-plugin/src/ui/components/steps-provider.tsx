@@ -17,7 +17,6 @@ const mergeDialogData = (
 ): StylerStepData => ({
   ...(current ?? {}),
   ...next,
-  spreadsheetMetadata: next.spreadsheetMetadata ?? current?.spreadsheetMetadata ?? undefined,
 });
 
 const renderDataSourceStep = (p: StepComponentProps<StylerStepData>) => (
@@ -28,7 +27,6 @@ const renderDataSourceStep = (p: StepComponentProps<StylerStepData>) => (
       p.onChange(
         mergeDialogData(p.data, {
           ...(next as Partial<StylerStepData>),
-          spreadsheetMetadata: (next as StylerStepData).spreadsheetMetadata ?? undefined,
         })
       )
     }
@@ -43,7 +41,6 @@ const renderFilteringStep = (p: StepComponentProps<StylerStepData>) => (
       p.onChange(
         mergeDialogData(p.data, {
           ...(next as Partial<StylerStepData>),
-          spreadsheetMetadata: (next as StylerStepData).spreadsheetMetadata ?? undefined,
         })
       )
     }
@@ -59,13 +56,20 @@ registry.registerConfigProvider<StylerStepData>({
         label: 'Data Source',
         componentFactory: renderDataSourceStep,
       },
-      // Step 3: Spreadsheet Filtering
       {
         id: 'filtering',
         label: 'Filtering',
         componentFactory: renderFilteringStep,
       },
-      // Step 4: Styler mapping (original Step2)
+      {
+        id: 'style-settings',
+        label: 'Style Settings',
+        componentFactory: (p: StepComponentProps<StylerStepData>) => <StyleSettingsStep {...p} />,
+        validate: (dialogData?: unknown) => isStyleSettingsComplete(dialogData),
+        capabilities: {
+          canProceedToNext: (dialogData?: unknown) => isStyleSettingsComplete(dialogData),
+        },
+      },
       {
         id: 'style-mapping',
         label: 'Style Mapping',
@@ -80,7 +84,6 @@ registry.registerConfigProvider<StylerStepData>({
           />
         ),
       },
-      // Step 5: Preview (original Step3)
       {
         id: 'preview',
         label: 'Preview',
@@ -96,15 +99,6 @@ registry.registerConfigProvider<StylerStepData>({
             }}
           />
         ),
-      },
-      {
-        id: 'style-settings',
-        label: 'Style Settings',
-        componentFactory: (p: StepComponentProps<StylerStepData>) => <StyleSettingsStep {...p} />,
-        validate: (dialogData?: unknown) => isStyleSettingsComplete(dialogData),
-        capabilities: {
-          canProceedToNext: (dialogData?: unknown) => isStyleSettingsComplete(dialogData),
-        },
       },
     ];
   },

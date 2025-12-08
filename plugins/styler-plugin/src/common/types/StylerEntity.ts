@@ -1,9 +1,8 @@
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { SpreadsheetEntity } from '@hierarchidb/spreadsheet-plugin';
 import type { MapLibreStyle } from '@hierarchidb/ui-map';
-import type { DialogProgressState, DialogWindowState } from '@hierarchidb/plugin-service-api';
-import type { StylerConfig } from './stylerTypes.js';
-import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
+//import type { DialogProgressState, DialogWindowState } from '@hierarchidb/plugin-service-api';
+import type { StylerConfig, StyleType } from './stylerTypes.js';
 
 /**
  * : StylerEntity
@@ -12,25 +11,19 @@ import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
  * :
  */
 export interface StylerEntity extends SpreadsheetEntity {
-  //  SpreadsheetEntity ()
-  //  - id: NodeId (PeerEntity)
-  //  - nodeId: NodeId (PeerEntity)
-  //  - name: string (SpreadsheetEntity)
-  //  - description?: string (SpreadsheetEntity)
-  //  - createdAt, updatedAt, version: number (PeerEntity)
   //  - spreadsheetMetadataId?: string (SpreadsheetEntity)
   //  - dataSource: object (SpreadsheetEntity)
   //  - filters?: object (SpreadsheetEntity)
 
   nodeId?: NodeId;
-  name?: string;
-  description?: string;
-  tags?: string[];
-  /** Tabular table metadata associated with this styler */
-  metadata?: TabularTableMetadata;
 
   //  Styler
   stylerConfig: StylerConfig;
+  /** Optional style preset metadata kept alongside the entity */
+  styleType?: StyleType;
+  colorScheme?: string;
+  opacity?: number;
+  strokeWidth?: number;
   selectedKeyColumn?: string;
   selectedValueColumn?: string;
 
@@ -40,13 +33,6 @@ export interface StylerEntity extends SpreadsheetEntity {
     lastUpdated: number;
   };
 
-  //  deprecated
-  /** @deprecated Use stylerConfig instead */
-  keyColumn?: string;
-  /** @deprecated Use stylerConfig instead */
-  colorRules?: StylerColorRule[];
-  /** @deprecated Use stylerConfig instead */
-  defaultStyle?: StylerStyle;
 }
 
 /**
@@ -71,12 +57,3 @@ export interface StylerStyle {
   borderWidth?: number;
   opacity?: number;
 }
-
-export type StylerNodePayload = {
-  data?: StylerEntity | null | undefined;
-  dialogWindow?: DialogWindowState | null;
-  dialogProgress?: DialogProgressState | null;
-  updatedAt?: number;
-};
-
-export type StylerTreeNode = TreeNode<StylerNodePayload>;
