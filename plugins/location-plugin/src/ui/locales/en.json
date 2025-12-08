@@ -1,0 +1,60 @@
+{
+  "steps": {
+    "dataSource": { "label": "Data Source" },
+    "license": { "label": "License Agreement" },
+    "selection": { "label": "Location Selection" },
+    "batchParameters": { "label": "Processing Settings" },
+    "mapPreview": { "label": "Map Preview" },
+    "build": { "label": "Build" }
+  },
+  "dataSource": {
+    "description": "Choose a dataset source to fetch location data.",
+    "descriptionFallback": "Select a data source",
+    "options": {
+      "openstreetmap": { "name": "OpenStreetMap" },
+      "overpass": { "name": "Overpass API" },
+      "geonames": { "name": "GeoNames" },
+      "wikidata": { "name": "Wikidata" },
+      "custom": { "name": "Custom" },
+      "manual": { "name": "Manual" }
+    }
+  },
+  "license": {
+    "title": "License Agreement",
+    "accept": "I have reviewed and accept the license terms.",
+    "requiresDataSource": "Select a data source before accepting the license."
+  },
+  "selection": {
+    "title": "Location Selection",
+    "description": "Select the location data to retrieve. You can specify data by country and location type combinations.",
+    "waypoints": "Locations",
+    "matrixTitle": "Selection Matrix",
+    "settingsTitle": "Detailed Settings by Location Type",
+    "searchPlaceholder": "Search by country name...",
+    "showSelectedOnly": "Show Selected Only",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All"
+  },
+  "selectionMatrix": {
+    "columnHeader": "Country / Type"
+  },
+  "batch": {
+    "settings": "Processing Settings",
+    "concurrency": "Concurrent downloads",
+    "zoomMin": "Min zoom to generate",
+    "zoomMax": "Max zoom to generate"
+  },
+  "mapPreview": {
+    "title": "Map Preview",
+    "loading": "Loading map preview…"
+  },
+  "build": {
+    "action": "Build",
+    "requiresApproval": "Provide a data source, accept license terms, and save the node before building.",
+    "noPoints": "No location points available to process.",
+    "success": "Build started (session {{sessionId}})",
+    "errors": {
+      "saveFirst": "Save changes before starting a build."
+    }
+  }
+}

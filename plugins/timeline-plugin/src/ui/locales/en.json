@@ -1,0 +1,47 @@
+{
+  "steps": {
+    "basic": { "label": "Basic Information" },
+    "frames": { "label": "Frames Preview" },
+    "map": { "label": "Map Preview" },
+    "final": { "label": "Final Animation" }
+  },
+  "header": {
+    "create": "Create Timeline",
+    "edit": "Edit Timeline",
+    "stepCounter": "Step {{current}} / {{total}}"
+  },
+  "buttons": {
+    "back": "Back",
+    "next": "Next",
+    "cancel": "Cancel",
+    "save": "Save"
+  },
+  "basic": {
+    "title": "Basic Information",
+    "name": "Name",
+    "description": "Description",
+    "defaultName": "New Timeline"
+  },
+  "frames": {
+    "title": "Frames (flattened descendants)",
+    "empty": "No frames found"
+  },
+  "map": {
+    "title": "Map Preview",
+    "timeline": "Timeline",
+    "fps": "FPS",
+    "loop": "Loop",
+    "frame": "Frame",
+    "activeSelections": "Active selections: {{count}}",
+    "bearingPitch": "Bearing {{bearing}}°, Pitch {{pitch}}°"
+  },
+  "animation": {
+    "title": "Final Animation Preview",
+    "frameLabel": "{{name}} ({{index}}/{{total}})",
+    "playback": "Playback {{state}} at {{fps}} fps",
+    "loop": "Loop animation",
+    "fpsLabel": "FPS",
+    "running": "running",
+    "paused": "paused"
+  }
+}

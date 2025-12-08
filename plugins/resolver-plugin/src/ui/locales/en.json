@@ -1,0 +1,26 @@
+{
+  "steps": {
+    "basicInfo": { "label": "Basic Information" },
+    "schemaSelection": { "label": "Schema Selection" },
+    "propertyMapping": { "label": "Property Mapping" },
+    "validationRules": { "label": "Validation Rules" },
+    "duplicateResolution": { "label": "Duplicate Resolution" },
+    "previewTest": { "label": "Preview & Test" }
+  },
+  "header": {
+    "title": "Resolver Configuration",
+    "stepCounter": "Step {{current}} / {{total}}"
+  },
+  "buttons": {
+    "back": "Back",
+    "next": "Next",
+    "cancel": "Cancel",
+    "save": "Save"
+  },
+  "basicInfo": {
+    "title": "Basic Information",
+    "description": "Provide basic information for your property resolver configuration.",
+    "whatIs": "What is Property Resolver?",
+    "about": "Property Resolver allows you to create mapping rules between different data schemas. It's useful when you need to transform data properties from one format to another, validate data integrity, handle duplicates, and preview the mapping results."
+  }
+}

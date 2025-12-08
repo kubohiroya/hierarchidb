@@ -1,0 +1,47 @@
+{
+  "steps": {
+    "basic": { "label": "基本情報" },
+    "frames": { "label": "フレームプレビュー" },
+    "map": { "label": "マッププレビュー" },
+    "final": { "label": "最終アニメーション" }
+  },
+  "header": {
+    "create": "タイムライン作成",
+    "edit": "タイムライン編集",
+    "stepCounter": "ステップ {{current}} / {{total}}"
+  },
+  "buttons": {
+    "back": "戻る",
+    "next": "次へ",
+    "cancel": "キャンセル",
+    "save": "保存"
+  },
+  "basic": {
+    "title": "基本情報",
+    "name": "名前",
+    "description": "説明",
+    "defaultName": "新規タイムライン"
+  },
+  "frames": {
+    "title": "フレーム一覧（フラット）",
+    "empty": "フレームがありません"
+  },
+  "map": {
+    "title": "マッププレビュー",
+    "timeline": "タイムライン",
+    "fps": "FPS",
+    "loop": "ループ",
+    "frame": "フレーム",
+    "activeSelections": "選択中: {{count}}",
+    "bearingPitch": "方位 {{bearing}}° / ピッチ {{pitch}}°"
+  },
+  "animation": {
+    "title": "最終アニメーションプレビュー",
+    "frameLabel": "{{name}} ({{index}}/{{total}})",
+    "playback": "再生は {{state}} / {{fps}} fps",
+    "loop": "アニメーションをループ",
+    "fpsLabel": "FPS",
+    "running": "再生中",
+    "paused": "一時停止"
+  }
+}

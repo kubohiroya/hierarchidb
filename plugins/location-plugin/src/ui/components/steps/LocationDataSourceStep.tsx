@@ -7,8 +7,8 @@ import { useMemo } from 'react';
 import { Box, Typography } from '@mui/material';
 import { DataSourceSelector } from '@hierarchidb/ui-datasource';
 import type { LocationDataSource, LocationEntity } from '../../../common/types/index.js';
-import { useTranslation } from '../../../common/i18n/index.js';
 import { DataSourceOption } from '@hierarchidb/ui-datasource';
+import { useTranslation } from '../../../common/i18n/index.js';
 
 const ORDERED_DATA_SOURCES: LocationDataSource[] = [
   'openstreetmap',
@@ -25,7 +25,7 @@ interface LocationDataSourceStepProps {
 }
 
 export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({ draft, onUpdate }) => {
-  const { translations } = useTranslation();
+  const { t } = useTranslation();
 
   const value = useMemo<LocationDataSource>(() => (
     (draft.dataSource as LocationDataSource) ?? 'openstreetmap'
@@ -34,11 +34,13 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({ 
   const options = useMemo<DataSourceOption[]>(() => (
     ORDERED_DATA_SOURCES.map((sourceId) => ({
       id: sourceId,
-      name: translations.dataSources?.[sourceId] ?? sourceId,
-      description: translations.dataSourceDescriptions?.[sourceId]
-        ?? translations.dialog.datasetDescription,
+      name: t(`dataSource.options.${sourceId}.name`, sourceId),
+      description: t(
+        `dataSource.options.${sourceId}.description`,
+        t('dataSource.descriptionFallback', 'Select a data source')
+      ),
     }))
-  ), [translations.dataSources, translations.dataSourceDescriptions, translations.dialog.datasetDescription]);
+  ), [t]);
 
   const handleChange = (next: string) => {
     const nextSource = next as LocationDataSource;
@@ -52,7 +54,7 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({ 
   return (
     <Box display="flex" flexDirection="column" gap={3}>
       <Typography variant="body2" color="text.secondary">
-        {translations.dialog.dataSourceDescription ?? translations.dialog.datasetDescription}
+        {t('dataSource.description', 'Choose a dataset source to fetch location data.')}
       </Typography>
 
       <DataSourceSelector

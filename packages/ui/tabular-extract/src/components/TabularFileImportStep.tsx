@@ -20,6 +20,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material/Select';
 import {
   CloudUpload,
   Download,
@@ -30,7 +31,7 @@ import {
 import type { TabularProcessingConfig } from '../types/index.js';
 import { useTabularData } from '../hooks/useTabularData.js';
 import { TabularTableMetadata } from '@hierarchidb/tabular-store';
-import { ModalSelect } from './ModalSelect.js';
+import { ModalSelect } from '@hierarchidb/ui-modal-select';
 
 export interface TabularFileImportStepProps {
   onFileImported: (metadata: TabularTableMetadata) => void;
@@ -213,13 +214,9 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h6" gutterBottom>
-        Import Tabular Data
-      </Typography>
-
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
       Choose a file or provide a URL to import tabular data.
-    </Typography>
+      </Typography>
 
       {/* Import Method Selection */}
       <FormControl sx={{ mb: 3, minWidth: 200 }}>
@@ -229,7 +226,7 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
           labelId={importMethodLabelId}
           value={importMethod}
           label="Import Method"
-          onChange={(e) => {
+          onChange={(e: SelectChangeEvent) => {
             const method = e.target.value as 'file' | 'url';
             setImportMethod(method);
             onImportMethodChange?.(method);
@@ -284,27 +281,28 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
 
           <Box
             sx={{
-              display: 'grid',
-              gridTemplateColumns: '48px 1fr',
-              gap: 1,
+              display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1.25,
+              textAlign: 'center',
             }}
           >
-            <CloudUpload sx={{ fontSize: 32, color: 'text.secondary', justifySelf: 'center' }} />
-            <Box sx={{ display: 'grid', gap: 0.3, textAlign: 'left' }}>
+            <CloudUpload sx={{ fontSize: 32, color: 'text.secondary' }} />
+            <Box sx={{ display: 'grid', gap: 0.3 }}>
               <Typography variant="subtitle1">
-                {isImporting ? 'Processing...' : 'Click to select a file'}
+                {isImporting ? 'Processing...' : 'Drag & Drop or Click to select a file'}
               </Typography>
               <Typography variant="caption" color="text.secondary">
                 {acceptedFileTypes.join(', ')} · {Math.round(maxFileSize / 1024 / 1024)}MB max
               </Typography>
             </Box>
-            {isImporting && (
-              <Box sx={{ gridColumn: '1 / span 2', justifySelf: 'start', pl: 0.5 }}>
-                <CircularProgress size={18} />
-              </Box>
-            )}
           </Box>
+          {isImporting && (
+            <Box sx={{ mt: 1, display: 'flex', justifyContent: 'center' }}>
+              <CircularProgress size={18} />
+            </Box>
+          )}
         </Paper>
       )}
 
@@ -352,17 +350,28 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
         Tabular Processing Options
       </Typography>
 
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center', mb: 3 }}>
-        <FormControl sx={{ minWidth: 180 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 1.5,
+          alignItems: 'center',
+          mb: 2,
+        }}
+      >
+        <FormControl size="small" sx={{ minWidth: 140 }}>
           <InputLabel id={delimiterLabelId} htmlFor={delimiterSelectId}>Delimiter</InputLabel>
           <ModalSelect
             id={delimiterSelectId}
             labelId={delimiterLabelId}
             value={processingConfig.delimiter}
             label="Delimiter"
-            onChange={(e) => {
+            onChange={(e: SelectChangeEvent<string>) => {
               setProcessingConfig(prev => {
-                const next = { ...prev, delimiter: e.target.value };
+                const next: TabularProcessingConfig = {
+                  ...prev,
+                  delimiter: e.target.value as TabularProcessingConfig['delimiter'],
+                };
                 onProcessingConfigChange?.(next);
                 return next;
               });
@@ -377,16 +386,19 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
           </ModalSelect>
         </FormControl>
 
-        <FormControl sx={{ minWidth: 180 }}>
+        <FormControl size="small" sx={{ minWidth: 140 }}>
           <InputLabel id={encodingLabelId} htmlFor={encodingSelectId}>Encoding</InputLabel>
           <ModalSelect
             id={encodingSelectId}
             labelId={encodingLabelId}
             value={processingConfig.encoding}
             label="Encoding"
-            onChange={(e) => {
+            onChange={(e: SelectChangeEvent<string>) => {
               setProcessingConfig(prev => {
-                const next = { ...prev, encoding: e.target.value };
+                const next: TabularProcessingConfig = {
+                  ...prev,
+                  encoding: e.target.value as TabularProcessingConfig['encoding'],
+                };
                 onProcessingConfigChange?.(next);
                 return next;
               });
@@ -400,16 +412,19 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
           </ModalSelect>
         </FormControl>
 
-        <FormControl sx={{ minWidth: 180 }}>
+        <FormControl size="small" sx={{ minWidth: 140 }}>
           <InputLabel id={quoteLabelId} htmlFor={quoteSelectId}>Quote Character</InputLabel>
           <ModalSelect
             id={quoteSelectId}
             labelId={quoteLabelId}
             value={processingConfig.quoteChar}
             label="Quote Character"
-            onChange={(e) => {
+            onChange={(e: SelectChangeEvent<string>) => {
               setProcessingConfig(prev => {
-                const next = { ...prev, quoteChar: e.target.value };
+                const next: TabularProcessingConfig = {
+                  ...prev,
+                  quoteChar: e.target.value as TabularProcessingConfig['quoteChar'],
+                };
                 onProcessingConfigChange?.(next);
                 return next;
               });

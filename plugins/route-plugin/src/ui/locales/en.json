@@ -1,0 +1,129 @@
+{
+  "steps": {
+    "details": { "label": "Route Settings" },
+    "selection": { "label": "Route Selection" },
+    "processing": { "label": "Processing" },
+    "build": { "label": "Build" }
+  },
+  "messages": {
+    "completeBeforeBuild": "Complete the required route settings before starting a build.",
+    "batchNotImplemented": "Route batch launch is not yet implemented in this dialog."
+  },
+  "selection": {
+    "title": "Route Selection",
+    "description": "Configure waypoints and route options",
+    "waypoints": "Waypoints",
+    "startPoint": "Start Point",
+    "endPoint": "End Point",
+    "waypoint": "Waypoint",
+    "startPlaceholder": "Enter start location",
+    "endPlaceholder": "Enter destination",
+    "waypointPlaceholder": "Enter waypoint location",
+    "currentLocation": "Current",
+    "addWaypoint": "Add Waypoint",
+    "calculating": "Calculating...",
+    "calculateRoute": "Calculate Route",
+    "routeCalculated": "Route calculated successfully!"
+  },
+  "processing": {
+    "title": "Route Processing",
+    "description": "Configure processing options for route generation",
+    "routeCategory": "Route Category",
+    "category": "Category",
+    "options": "Processing Options",
+    "simplificationLevel": "Simplification Level",
+    "min": "Min",
+    "med": "Med",
+    "max": "Max",
+    "generateElevation": "Generate Elevation Profile",
+    "generateTurns": "Generate Turn Instructions",
+    "maxFileSize": "Max File Size (MB)",
+    "status": "Processing Status",
+    "complete": "complete",
+    "startProcessing": "Start Processing",
+    "stopProcessing": "Stop Processing",
+    "advancedSettings": "Advanced Settings",
+    "successMessage": "Route has been processed successfully and is ready to use!",
+    "initializing": "Initializing route processing...",
+    "fetchingData": "Fetching route data...",
+    "calculating": "Calculating route segments...",
+    "elevation": "Processing elevation data...",
+    "simplifying": "Simplifying route geometry...",
+    "optimizing": "Optimizing route data...",
+    "finalizing": "Finalizing route...",
+    "completed": "Route processing completed!",
+    "error": "Processing failed. Please try again.",
+    "stopped": "Processing stopped by user."
+  },
+  "details": {
+    "routeTypeLabel": "Route Type",
+    "routeTypeHelperText": "Select the type of route",
+    "dataSourceLabel": "Data source",
+    "dataSourceHelperText": "Choose openstreetmap for OSRM/Overpass or custom for tabular import"
+  },
+  "build": {
+    "review": "Review the configuration and press Build to start the batch route generation.",
+    "routeType": "Route Type:",
+    "transportModes": "Transport Modes:",
+    "notConfigured": "Not configured",
+    "missing": "Provide a name, route type, and at least one transport mode before building.",
+    "start": "When ready, click the Build button below to start the batch session."
+  },
+  "categories": {
+    "transportation": "Transportation",
+    "recreation": "Recreation",
+    "logistics": "Logistics",
+    "emergency": "Emergency"
+  },
+  "routeTypes": {
+    "road": "Road",
+    "railway": "Railway",
+    "waterway": "Waterway",
+    "airway": "Airway",
+    "walking": "Walking",
+    "cycling": "Cycling",
+    "hiking": "Hiking",
+    "shipping": "Shipping",
+    "pipeline": "Pipeline",
+    "powerline": "Power Line"
+  },
+  "batch": {
+    "pause": "Pause",
+    "resume": "Resume",
+    "pauseTooltip": "Pause processing",
+    "resumeTooltip": "Resume processing",
+    "stages": {
+      "planning": "Route Planning",
+      "routing": "Route Generation",
+      "optimization": "Optimization",
+      "validation": "Validation",
+      "resolving_locations": "Resolving Locations",
+      "generating_routes": "Generating Routes",
+      "validating": "Validating Results",
+      "download": "Download",
+      "simplify1": "Simplifying Geometry",
+      "simplify2": "Validating Geometry",
+      "vectortile": "Vector Tile Generation"
+    },
+    "phases": {
+      "running": "Running",
+      "queued": "Queued",
+      "completed": "Completed",
+      "failed": "Failed",
+      "paused": "Paused",
+      "cancelled": "Cancelled"
+    },
+    "summary": {
+      "completedLabel": "Completed",
+      "totalLabel": "Total",
+      "failedLabel": "Failed",
+      "resultsLabel": "Results",
+      "lastErrorLabel": "Last error",
+      "noneLabel": "None"
+    }
+  },
+  "errors": {
+    "geolocationNotSupported": "Geolocation is not supported",
+    "geolocationError": "Failed to get current location"
+  }
+}

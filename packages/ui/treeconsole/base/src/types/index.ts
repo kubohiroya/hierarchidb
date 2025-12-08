@@ -373,6 +373,7 @@ export type SubTreeChange = unknown; // TODO: Define proper type
 export interface TreeConsolePanelProps extends TreeTableConsolePanelProps {
   readonly subtreeRootId?: NodeId;
   readonly nodeIndex: DualKeyMap<NodeId, NodeId, TreeNode>;
+  readonly selectAllIdPrefix?: string;
   /** Move nodes under a new parent (DnD) */
   onMoveNodes?: (nodeIds: NodeId[], targetParentId: NodeId) => void;
   onBreadcrumbContextAction?: (

@@ -33,13 +33,11 @@ export {
   TabularFileImportStep,
   TabularFilterStep,
   TabularColumnSelectionStep,
-  ModalSelect,
   FilterRulesTable,
 } from './components/index.js';
 export type {
   TabularFileImportStepProps,
   TabularFilterStepProps,
   TabularColumnSelectionStepProps,
-  ModalSelectProps,
   FilterOperatorOption,
 } from './components/index.js';

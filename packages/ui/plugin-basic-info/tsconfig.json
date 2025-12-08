@@ -2,11 +2,6 @@
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
     "emitDeclarationOnly": false,
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ]
-    },
     "baseUrl": ".",
     "jsx": "react-jsx"
   },

@@ -6,6 +6,7 @@ import type { WorkerAPI } from '@hierarchidb/common-api';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type { TreeQueryAPI } from '@hierarchidb/common-api';
 import type { Remote } from 'comlink';
+import { useTranslation } from '../../common/i18n/index.js';
 
 export interface AggregatedListProps {
   selfNodeId?: NodeId; // Linker node (edit時)
@@ -27,6 +28,7 @@ function resolveWorkerClient():Remote<WorkerAPI> | null {
 }
 
 export const AggregatedList: React.FC<AggregatedListProps> = ({ selfNodeId, selected }) => {
+  const { t } = useTranslation();
   const [items, setItems] = useState<ResourceSummary[]>([]);
   const client = resolveWorkerClient();
 
@@ -76,7 +78,7 @@ export const AggregatedList: React.FC<AggregatedListProps> = ({ selfNodeId, sele
   return (
     <Box sx={{ p: 2 }}>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-        Aggregated resources from ancestors/self/descendants ({count} items)
+        {t('aggregated.description', 'Aggregated resources from ancestors/self/descendants ({{count}} items)', { count })}
       </Typography>
       <List dense>
         {items.map((it) => (

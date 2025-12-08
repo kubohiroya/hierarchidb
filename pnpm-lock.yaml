@@ -1585,6 +1585,18 @@ importers:
         specifier: ^18.3.1
         version: 18.3.1
 
+  packages/ui/modal-select:
+    devDependencies:
+      '@mui/material':
+        specifier: ^7.3.6
+        version: 7.3.6(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react:
+        specifier: '>=18.0.0'
+        version: 18.3.1
+      react-dom:
+        specifier: '>=18.0.0'
+        version: 18.3.1(react@18.3.1)
+
   packages/ui/monitoring:
     dependencies:
       '@emotion/react':
@@ -1826,6 +1838,9 @@ importers:
       '@hierarchidb/ui-file':
         specifier: workspace:*
         version: link:../file
+      '@hierarchidb/ui-modal-select':
+        specifier: workspace:*
+        version: link:../modal-select
       '@mui/icons-material':
         specifier: ^7.3.6
         version: 7.3.6(@mui/material@7.3.6(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.26)(react@18.3.1)
@@ -3080,6 +3095,9 @@ importers:
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../packages/ui/dialog
+      '@hierarchidb/ui-modal-select':
+        specifier: workspace:*
+        version: link:../../packages/ui/modal-select
       '@hierarchidb/ui-worker-provider':
         specifier: workspace:*
         version: link:../../packages/ui/worker-provider
@@ -14700,7 +14718,7 @@ snapshots:
       std-env: 3.10.0
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)
+      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@16.8.1)(jsdom@26.1.0)
     transitivePeerDependencies:
       - supports-color
 

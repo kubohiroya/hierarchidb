@@ -2,11 +2,13 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "experimentalDecorators": true,
-    "allowImportingTsExtensions": true
+    "allowImportingTsExtensions": true,
+    "allowArbitraryExtensions": true,
+    "jsx": "react-jsx"
   },
   "include": [
-    "src/**/*",
-    "../../global.d.ts"
+    "../../global.d.ts",
+    "src/**/*"
   ],
   "exclude": [
     "dist",

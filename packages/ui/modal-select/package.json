@@ -1,0 +1,39 @@
+{
+  "name": "@hierarchidb/ui-modal-select",
+  "version": "0.1.0",
+  "type": "module",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
+  },
+  "peerDependencies": {
+    "@mui/material": "^7.3.6",
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@mui/material": "^7.3.6",
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "description": "Modal-friendly Select component with controllable portal container and z-index adjustments for dialog usage.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kubohiroya/hierarchidb.git",
+    "directory": "packages/ui/modal-select"
+  },
+  "license": "MIT"
+}

@@ -35,6 +35,7 @@ import {
   createTreeNodeUpdaterActions,
 } from '@hierarchidb/plugin-ui-sdk';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
+import { useTranslation } from '../../common/i18n/index.js';
 
 type ResolverDialogStep = {
   id: string;
@@ -60,8 +61,6 @@ export interface ResolverDialogProps {
   onSave: (entity: ResolverUpdaterPayload) => Promise<void>;
   onCancel: () => void;
 }
-
-const STEPS = ['Basic Information', 'Schema Selection', 'Property Mapping', 'Validation Rules', 'Duplicate Resolution', 'Preview & Test'];
 
 export const ResolverDialog: React.FC<ResolverDialogProps> = ({
   open,
@@ -379,19 +378,20 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     [fallbackDraft.draftMetadata, updateMetadata],
   );
 
+  const { t } = useTranslation();
   const steps = useMemo((): ResolverDialogStep[] => {
     const currentDraft = fallbackDraft;
     return [
     {
       id: '1',
-      label: STEPS[0]!,
+      label: t('steps.basicInfo.label', 'Basic Information'),
       component: (
         <Box sx={{ maxWidth: 600 }}>
           <Typography variant="h6" gutterBottom>
-            Basic Information
+            {t('basicInfo.title', 'Basic Information')}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Provide basic information for your property resolver configuration.
+            {t('basicInfo.description', 'Provide basic information for your property resolver configuration.')}
           </Typography>
           <SharedBasicInfoStep
             mode={entity ? 'edit' : 'create'}
@@ -403,12 +403,13 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
         />
           <Box sx={{ mt: 2, p: 2, bgcolor: 'info.main', color: 'info.contrastText', borderRadius: 1 }}>
             <Typography variant="subtitle2" sx={{ mb: 1 }}>
-              What is Property Resolver?
+              {t('basicInfo.whatIs', 'What is Property Resolver?')}
             </Typography>
             <Typography variant="body2">
-              Property Resolver allows you to create mapping rules between different data schemas.
-              It&apos;s useful when you need to transform data properties from one format to another,
-              validate data integrity, handle duplicates, and preview the mapping results.
+              {t(
+                'basicInfo.about',
+                'Property Resolver allows you to create mapping rules between different data schemas. It\'s useful when you need to transform data properties from one format to another, validate data integrity, handle duplicates, and preview the mapping results.'
+              )}
             </Typography>
           </Box>
         </Box>
@@ -417,7 +418,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     },
     {
       id: '2',
-      label: STEPS[1]!,
+      label: t('steps.schemaSelection.label', 'Schema Selection'),
       component: (
         <SchemaSelectionStep
           data={currentDraft}
@@ -431,7 +432,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     },
     {
       id: '3',
-      label: STEPS[2]!,
+      label: t('steps.propertyMapping.label', 'Property Mapping'),
       component: (
         <PropertyMappingStep
           data={currentDraft}
@@ -445,7 +446,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     },
     {
       id: '4',
-      label: STEPS[3]!,
+      label: t('steps.validationRules.label', 'Validation Rules'),
       component: (
         <ValidationConfigStep
           data={currentDraft}
@@ -459,7 +460,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     },
     {
       id: '5',
-      label: STEPS[4]!,
+      label: t('steps.duplicateResolution.label', 'Duplicate Resolution'),
       component: (
         <DuplicateResolutionStep
           data={currentDraft}
@@ -471,7 +472,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     },
     {
       id: '6',
-      label: STEPS[5]!,
+      label: t('steps.previewTest.label', 'Preview & Test'),
       component: (
         <PreviewTestStep
           data={currentDraft}
@@ -485,7 +486,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
       validate: async () => true,
     },
   ];
-  }, [fallbackDraft, entity, handleBasicInfoChange, execUpdateDraft, sourceSchema, targetSchema, basicInfoValidationError]);
+  }, [fallbackDraft, t, entity, handleBasicInfoChange, execUpdateDraft, sourceSchema, targetSchema, basicInfoValidationError]);
 
   const filledSteps = useMemo(() => [
     !basicInfoValidationError,
@@ -536,17 +537,17 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
   const renderHeader: HeadlessMultiStepDialogProps<ResolverUpdaterPayload>['renderHeader'] = useCallback((props: HeadlessHeaderRenderProps<ResolverUpdaterPayload>) => (
     <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #dde1eb' }}>
       <div>
-        <strong>Resolver Configuration</strong>
+        <strong>{t('header.title', 'Resolver Configuration')}</strong>
         <div style={{ fontSize: 12, color: '#64748b' }}>
-          Step {props.activeStepIndex + 1} / {steps.length}
+          {t('header.stepCounter', 'Step {{current}} / {{total}}', { current: props.activeStepIndex + 1, total: steps.length })}
         </div>
       </div>
       <div style={{ display: 'flex', gap: 8 }}>
-        <button type="button" onClick={() => handleNavigation({ type: 'back' })} disabled={props.activeStepIndex === 0}>Back</button>
-        <button type="button" onClick={() => handleNavigation({ type: 'next' })} disabled={props.activeStepIndex >= steps.length - 1}>Next</button>
+        <button type="button" onClick={() => handleNavigation({ type: 'back' })} disabled={props.activeStepIndex === 0}>{t('buttons.back', 'Back')}</button>
+        <button type="button" onClick={() => handleNavigation({ type: 'next' })} disabled={props.activeStepIndex >= steps.length - 1}>{t('buttons.next', 'Next')}</button>
       </div>
     </header>
-  ), [handleNavigation, steps.length]);
+  ), [handleNavigation, steps.length, t]);
 
   const isTestEnv = useMemo(() => readRuntimeMode() === 'test', []);
 
@@ -555,19 +556,19 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
 
     return (
       <footer style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #dde1eb' }}>
-        <button type="button" onClick={() => props.onRequestClose?.('close')} disabled={isSaving}>Cancel</button>
-        <button type="button" onClick={() => props.onRequestCommit?.()} disabled={!canSave}>Save</button>
+        <button type="button" onClick={() => props.onRequestClose?.('close')} disabled={isSaving}>{t('buttons.cancel', 'Cancel')}</button>
+        <button type="button" onClick={() => props.onRequestCommit?.()} disabled={!canSave}>{t('buttons.save', 'Save')}</button>
         {isTestEnv && (
           <div style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>
             {/* Hidden controls for Vitest: see docs/testing/resolver-dialog-headless-e2e.md */}
-            <button aria-label="Next" onClick={() => handleNavigation({ type: 'next' })}>Next</button>
-            <button aria-label="Complete" onClick={() => props.onRequestCommit?.()}>Complete</button>
-            <button aria-label="Cancel" onClick={() => props.onRequestClose?.('close')}>Cancel</button>
+            <button aria-label="Next" onClick={() => handleNavigation({ type: 'next' })}>{t('buttons.next', 'Next')}</button>
+            <button aria-label="Complete" onClick={() => props.onRequestCommit?.()}>{t('buttons.save', 'Save')}</button>
+            <button aria-label="Cancel" onClick={() => props.onRequestClose?.('close')}>{t('buttons.cancel', 'Cancel')}</button>
           </div>
         )}
       </footer>
     );
-  }, [filledSteps, handleNavigation, isSaving, isTestEnv]);
+  }, [filledSteps, handleNavigation, isSaving, isTestEnv, t]);
 
   const invalidMessageMap = useMemo<Record<string, string>>(() => ({}), []);
 

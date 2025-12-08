@@ -9,10 +9,7 @@
     "allowImportingTsExtensions": true,
     "types": [
       "node"
-    ],
-    "paths": {
-      "~/*": ["./src/*"]
-    }
+    ]
   },
   "include": [
     "src",

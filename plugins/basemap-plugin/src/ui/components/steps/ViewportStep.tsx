@@ -8,6 +8,7 @@ import {
 } from '@hierarchidb/ui-map';
 import type { MapStyle, MapViewport } from '../../../common/types/BaseMapEntity.js';
 import { resolveMapStyleSource } from '../../utils/mapStyle.js';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 
 export interface ViewportStepProps {
   value: MapViewport | undefined;
@@ -58,6 +59,7 @@ const LazyMapLibreMap = lazy(async () => {
 });
 
 export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onChange }) => {
+  const { t } = useTranslation('basemap-plugin');
   const controlId = useId();
   const initial = useMemo<MapViewState>(
     () => ({
@@ -213,11 +215,14 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
       }}
     >
       <Typography variant="body2" color="text.secondary" sx={{ flexShrink: 0 }}>
-        Fine-tune the initial viewport. Enter values directly or use the map preview below.
+        {t(
+          'viewport.description',
+          'Fine-tune the initial viewport. Enter values directly or use the map preview below.'
+        )}
       </Typography>
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ flexShrink: 0 }}>
         <TextField
-          label="Longitude"
+          label={t('viewport.fields.longitude.label', 'Longitude')}
           type="number"
           id={`${controlId}-longitude`}
           name="longitude"
@@ -231,7 +236,7 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
           fullWidth
         />
         <TextField
-          label="Latitude"
+          label={t('viewport.fields.latitude.label', 'Latitude')}
           type="number"
           id={`${controlId}-latitude`}
           name="latitude"
@@ -245,7 +250,7 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
           fullWidth
         />
         <TextField
-          label="Zoom"
+          label={t('viewport.fields.zoom.label', 'Zoom')}
           type="number"
           id={`${controlId}-zoom`}
           name="zoom"
@@ -255,7 +260,7 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
           fullWidth
         />
         <TextField
-          label="Bearing"
+          label={t('viewport.fields.bearing.label', 'Bearing')}
           type="number"
           id={`${controlId}-bearing`}
           name="bearing"
@@ -293,7 +298,7 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
                   fontSize: 12,
                 }}
               >
-                Loading map…
+                {t('viewport.loading', 'Loading map…')}
               </Box>
             }
           >
@@ -321,7 +326,7 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
               fontSize: 12,
             }}
           >
-            Preparing map…
+            {t('viewport.preparing', 'Preparing map…')}
           </Box>
         )}
         <Box
@@ -357,8 +362,12 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
 
       <Box sx={{ textAlign: 'center', color: 'text.secondary' }}>
         <Typography variant="caption">
-          Center: {formatCoord(viewState.longitude)}, {formatCoord(viewState.latitude)} / Zoom:{' '}
-          {viewState.zoom} / Bearing: {viewState.bearing ?? 0}
+          {t('viewport.summary', 'Center: {{lng}}, {{lat}} / Zoom: {{zoom}} / Bearing: {{bearing}}', {
+            lng: formatCoord(viewState.longitude),
+            lat: formatCoord(viewState.latitude),
+            zoom: viewState.zoom,
+            bearing: viewState.bearing ?? 0,
+          })}
         </Typography>
       </Box>
     </Box>

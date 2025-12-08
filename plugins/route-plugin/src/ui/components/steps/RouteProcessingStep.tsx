@@ -100,31 +100,31 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
       isProcessing: true,
       progress: 0,
       stage: 'initializing',
-      message: t('base-dialog.processing.initializing', 'Initializing route processing...'),
+      message: t('processing.initializing', 'Initializing route processing...'),
     });
 
     const stages = [
       {
         key: 'fetching',
-        message: t('base-dialog.processing.fetchingData', 'Fetching route data...'),
+        message: t('processing.fetchingData', 'Fetching route data...'),
       },
       {
         key: 'calculating',
-        message: t('base-dialog.processing.calculating', 'Calculating route segments...'),
+        message: t('processing.calculating', 'Calculating route segments...'),
       },
       {
         key: 'elevation',
-        message: t('base-dialog.processing.elevation', 'Processing elevation data...'),
+        message: t('processing.elevation', 'Processing elevation data...'),
       },
       {
         key: 'simplifying',
-        message: t('base-dialog.processing.simplifying', 'Simplifying route geometry...'),
+        message: t('processing.simplifying', 'Simplifying route geometry...'),
       },
       {
         key: 'optimizing',
-        message: t('base-dialog.processing.optimizing', 'Optimizing route data...'),
+        message: t('processing.optimizing', 'Optimizing route data...'),
       },
-      { key: 'finalizing', message: t('base-dialog.processing.finalizing', 'Finalizing route...') },
+      { key: 'finalizing', message: t('processing.finalizing', 'Finalizing route...') },
     ];
 
     try {
@@ -147,7 +147,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
         isProcessing: false,
         progress: 100,
         stage: 'completed',
-        message: t('base-dialog.processing.completed', 'Route processing completed!'),
+        message: t('processing.completed', 'Route processing completed!'),
       });
 
       emitUpdate({});
@@ -157,7 +157,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
         isProcessing: false,
         progress: 0,
         stage: 'error',
-        message: t('base-dialog.processing.error', 'Processing failed. Please try again.'),
+        message: t('processing.error', 'Processing failed. Please try again.'),
       });
       console.error('Route processing error:', error);
     }
@@ -168,17 +168,17 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
       isProcessing: false,
       progress: 0,
       stage: 'stopped',
-      message: t('base-dialog.processing.stopped', 'Processing stopped by user.'),
+      message: t('processing.stopped', 'Processing stopped by user.'),
     });
   };
 
   const getSimplificationLabel = (value: number) => {
     const labels = [
-      t('base-dialog.processing.minimal', 'Minimal'),
-      t('base-dialog.processing.low', 'Low'),
-      t('base-dialog.processing.medium', 'Medium'),
-      t('base-dialog.processing.high', 'High'),
-      t('base-dialog.processing.maximum', 'Maximum'),
+      t('processing.min', 'Minimal'),
+      t('processing.min', 'Low'),
+      t('processing.med', 'Medium'),
+      t('processing.high', 'High'),
+      t('processing.max', 'Maximum'),
     ];
     return labels[Math.min(value - 1, labels.length - 1)] || labels[2];
   };
@@ -186,26 +186,23 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
   return (
     <Box sx={{ width: '100%' }}>
       <Typography variant="h6" gutterBottom>
-        {t('base-dialog.processing.title', 'Route Processing')}
+        {t('processing.title', 'Route Processing')}
       </Typography>
 
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        {t(
-          'base-dialog.processing.description',
-          'Configure processing options for route generation',
-        )}
+        {t('processing.description', 'Configure processing options for route generation')}
       </Typography>
 
       {/* Route Category */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="subtitle1" gutterBottom>
-          {t('base-dialog.processing.routeCategory', 'Route Category')}
+          {t('processing.routeCategory', 'Route Category')}
         </Typography>
         <FormControl fullWidth size="small">
-          <InputLabel>{t('base-dialog.processing.category', 'Category')}</InputLabel>
+          <InputLabel>{t('processing.category', 'Category')}</InputLabel>
           <Select
             value={category}
-            label={t('base-dialog.processing.category', 'Category')}
+            label={t('processing.category', 'Category')}
             onChange={(e) => handleCategoryChange(String(e.target.value))}
           >
             <MenuItem value="transportation">{t('categories.transportation', 'Transportation')}</MenuItem>
@@ -219,14 +216,14 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
       {/* Processing Options */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="subtitle1" gutterBottom>
-          {t('base-dialog.processing.options', 'Processing Options')}
+          {t('processing.options', 'Processing Options')}
         </Typography>
 
         <Stack spacing={3}>
           {/* Simplification Level */}
           <Box>
             <Typography variant="body2" gutterBottom>
-              {t('base-dialog.processing.simplificationLevel', 'Simplification Level')}:{' '}
+              {t('processing.simplificationLevel', 'Simplification Level')}:{' '}
               {getSimplificationLabel(simplificationLevel)}
             </Typography>
             <Slider
@@ -236,9 +233,9 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
               max={5}
               step={1}
               marks={[
-                { value: 1, label: t('base-dialog.processing.min', 'Min') },
-                { value: 3, label: t('base-dialog.processing.med', 'Med') },
-                { value: 5, label: t('base-dialog.processing.max', 'Max') },
+                { value: 1, label: t('processing.min', 'Min') },
+                { value: 3, label: t('processing.med', 'Med') },
+                { value: 5, label: t('processing.max', 'Max') },
               ]}
             />
           </Box>
@@ -253,7 +250,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
                 }
               />
             }
-            label={t('base-dialog.processing.generateElevation', 'Generate Elevation Profile')}
+            label={t('processing.generateElevation', 'Generate Elevation Profile')}
           />
 
           <FormControlLabel
@@ -263,12 +260,12 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
                 onChange={(e) => handleProcessingOptionChange('generateTurns', e.target.checked)}
               />
             }
-            label={t('base-dialog.processing.generateTurns', 'Generate Turn Instructions')}
+            label={t('processing.generateTurns', 'Generate Turn Instructions')}
           />
 
           {/* File Size Limit */}
           <TextField
-            label={t('base-dialog.processing.maxFileSize', 'Max File Size (MB)')}
+            label={t('processing.maxFileSize', 'Max File Size (MB)')}
             type="number"
             value={maxFileSize}
             onChange={(e) => handleProcessingOptionChange('maxFileSize', Number(e.target.value))}
@@ -283,7 +280,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
         <Card sx={{ mb: 3 }}>
           <CardContent>
             <Typography variant="subtitle2" gutterBottom>
-              {t('base-dialog.processing.status', 'Processing Status')}
+              {t('processing.status', 'Processing Status')}
             </Typography>
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
@@ -310,7 +307,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
             />
             <Typography variant="caption" color="text.secondary">
               {Math.round(processingStatus.progress)}%{' '}
-              {t('base-dialog.processing.complete', 'complete')}
+              {t('processing.complete', 'complete')}
             </Typography>
           </CardContent>
         </Card>
@@ -325,13 +322,13 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
             onClick={startProcessing}
             disabled={!Array.isArray(draft.waypoints) || draft.waypoints.length < 2}
           >
-            {t('base-dialog.processing.startProcessing', 'Start Processing')}
+            {t('processing.startProcessing', 'Start Processing')}
           </Button>
         )}
 
         {processingStatus.isProcessing && (
           <Button variant="outlined" color="error" startIcon={<Stop />} onClick={stopProcessing}>
-            {t('base-dialog.processing.stopProcessing', 'Stop Processing')}
+            {t('processing.stopProcessing', 'Stop Processing')}
           </Button>
         )}
 
@@ -340,7 +337,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
           startIcon={<Settings />}
           disabled={processingStatus.isProcessing}
         >
-          {t('base-dialog.processing.advancedSettings', 'Advanced Settings')}
+          {t('processing.advancedSettings', 'Advanced Settings')}
         </Button>
       </Box>
 
@@ -348,10 +345,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
       {processingStatus.progress === 100 && !processingStatus.isProcessing && (
         <Alert severity="success" sx={{ mt: 2 }}>
           <Typography variant="body2">
-            {t(
-              'base-dialog.processing.successMessage',
-              'Route has been processed successfully and is ready to use!',
-            )}
+            {t('processing.successMessage', 'Route has been processed successfully and is ready to use!')}
           </Typography>
         </Alert>
       )}

@@ -24,7 +24,7 @@ export const RouteDetailsStep: React.FC<RouteDetailsStepProps> = ({
   onValidationChange,
   disabled = false,
 }) => {
-  const { translations } = useTranslation();
+  const { t } = useTranslation();
   const fieldId = useId();
   const draft = useMemo(() => getRouteUpdaterPayload(draftProp), [draftProp]);
 
@@ -58,7 +58,7 @@ export const RouteDetailsStep: React.FC<RouteDetailsStepProps> = ({
 
       <TextField
         select
-        label={translations.basicInfo.routeTypeLabel}
+        label={t('details.routeTypeLabel', 'Route Type')}
         id={`${fieldId}-route-type`}
         name="route-type"
         value={resolvedRouteType}
@@ -66,21 +66,21 @@ export const RouteDetailsStep: React.FC<RouteDetailsStepProps> = ({
         required
         fullWidth
         disabled={disabled}
-        helperText={translations.basicInfo.routeTypeHelperText}
+        helperText={t('details.routeTypeHelperText', 'Select the type of route')}
         error={!resolvedRouteType}
         sx={{ mb: 3 }}
         inputProps={{ id: `${fieldId}-route-type`, name: 'route-type' }}
       >
         {Object.values(ROUTE_TYPES).map((type) => (
           <MenuItem key={type} value={type}>
-            {translations.routeTypes[type]}
+            {t(`routeTypes.${type}`, type)}
           </MenuItem>
         ))}
       </TextField>
 
       <TextField
         select
-        label="Data source"
+        label={t('details.dataSourceLabel', 'Data source')}
         id={`${fieldId}-data-source`}
         name="data-source"
         value={resolvedDataSource}
@@ -88,7 +88,7 @@ export const RouteDetailsStep: React.FC<RouteDetailsStepProps> = ({
         required
         fullWidth
         disabled={disabled}
-        helperText="Choose openstreetmap for OSRM/Overpass or custom for tabular import"
+        helperText={t('details.dataSourceHelperText', 'Choose openstreetmap for OSRM/Overpass or custom for tabular import')}
         inputProps={{ id: `${fieldId}-data-source`, name: 'data-source' }}
       >
         <MenuItem value="openstreetmap">OpenStreetMap</MenuItem>

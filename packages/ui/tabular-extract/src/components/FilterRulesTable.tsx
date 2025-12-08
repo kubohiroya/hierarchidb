@@ -20,6 +20,7 @@ import {
   Delete as DeleteIcon,
   DragIndicator as DragIndicatorIcon,
   ExpandMore as ExpandMoreIcon,
+  FilterAlt as FilterAltIcon,
 } from '@mui/icons-material';
 import { type ColumnDef, type Row, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import type { TabularColumnInfo, TabularColumnType } from '@hierarchidb/tabular-store';
@@ -522,13 +523,14 @@ function FilterRulesTableComponent({
     setDraggingId(null);
   };
 
-  const totalEnabled = normalizedRules.filter((rule) => rule.enabled).length;
-
   return (
     <Accordion defaultExpanded={defaultExpanded} disableGutters>
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
-          <Typography variant="subtitle1">Filter Rules (Enabled {totalEnabled}/{normalizedRules.length})</Typography>
+          <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <FilterAltIcon fontSize="small" />
+            Filter Rules
+          </Typography>
           <Typography variant="caption" color="text.secondary">
           </Typography>
         </Box>

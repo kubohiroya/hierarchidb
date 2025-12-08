@@ -421,7 +421,11 @@ export function MultiStepDialogFrame<TData>(props: MultiStepDialogFrameComponent
           ].map((handle) => (
             <Box
               key={handle.key}
-              sx={{ position: 'absolute', zIndex: 1, ...handle.sx }}
+              sx={(theme) => ({
+                position: 'absolute',
+                zIndex: (theme.zIndex?.modal ?? 1300) + 5,
+                ...handle.sx,
+              })}
               onPointerDown={(event) => {
                 handleResizePointerDown(handle.direction, event);
                 headlessProps.onResizeHandlePointerDown?.(event);

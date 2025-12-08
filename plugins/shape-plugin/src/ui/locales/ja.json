@@ -1,0 +1,22 @@
+{
+  "steps": {
+    "tabularUpload": { "label": "データセットアップロード" },
+    "tabularFilter": { "label": "データセットフィルター" },
+    "dataSource": { "label": "データソース" },
+    "licenseAgreement": { "label": "ライセンス同意" },
+    "processing": { "label": "処理設定" },
+    "countrySelection": { "label": "国選択" }
+  },
+  "messages": {
+    "completeRequired": "ビルド前に必須項目と選択を完了してください。",
+    "notImplemented": "Shape のバッチビルドはこのダイアログでは未実装です。"
+  },
+  "dialog": {
+    "createTitle": "Shape を作成",
+    "editTitle": "Shape を編集",
+    "name": "名前",
+    "cancel": "キャンセル",
+    "save": "保存",
+    "defaultName": "新規 shape"
+  }
+}

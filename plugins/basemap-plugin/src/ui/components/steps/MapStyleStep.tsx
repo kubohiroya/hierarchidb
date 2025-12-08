@@ -13,6 +13,7 @@ import type React from 'react';
 import { useMemo, useId } from 'react';
 import { BUILT_IN_STYLES } from '../../../common/constants/builtInStyles.js';
 import type { MapStyle } from '../../../common/types/BaseMapEntity.js';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 
 export interface MapStyleStepProps {
   value: MapStyle | undefined;
@@ -20,6 +21,7 @@ export interface MapStyleStepProps {
 }
 
 export const MapStyleStep: React.FC<MapStyleStepProps> = ({ value, onChange }) => {
+  const { t } = useTranslation('basemap-plugin');
   const controlId = useId();
   const style = value?.style || '';
   const url = value?.customStyleUrl || '';
@@ -37,8 +39,10 @@ export const MapStyleStep: React.FC<MapStyleStepProps> = ({ value, onChange }) =
   return (
     <Box sx={{ p: 2 }}>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Choose one of the bundled MapLibre styles or switch to “Custom” to reference your own style
-        JSON.
+        {t(
+          'mapStyle.description',
+          'Choose one of the bundled MapLibre styles or switch to “Custom” to reference your own style JSON.'
+        )}
       </Typography>
 
       <Stack spacing={2}>
@@ -71,11 +75,13 @@ export const MapStyleStep: React.FC<MapStyleStepProps> = ({ value, onChange }) =
                   color: 'primary.contrastText',
                 },
               }}
-            >
+              >
               <Stack spacing={0.5} alignItems="flex-start">
-                <Typography variant="subtitle2">{preset.label}</Typography>
+                <Typography variant="subtitle2">
+                  {t(`mapStyle.presets.${preset.key}.label`, preset.label)}
+                </Typography>
                 <Typography variant="caption" sx={{ textAlign: 'left' }}>
-                  {preset.description}
+                  {t(`mapStyle.presets.${preset.key}.description`, preset.description)}
                 </Typography>
               </Stack>
             </ToggleButton>
@@ -97,24 +103,28 @@ export const MapStyleStep: React.FC<MapStyleStepProps> = ({ value, onChange }) =
                 style: 'custom',
               })
             }
-            disableRipple
-          >
-            <CardContent>
-              <Typography variant="subtitle2" gutterBottom>
-                Custom Style
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Reference your own MapLibre style JSON (hosted URL or inline config). Ideal when you
-                need branded colors or licensed tile providers.
-              </Typography>
-              {style === 'custom' && (
-                <TextField
-                  sx={{ mt: 2 }}
-                  label="Custom Style URL"
-                  id={`${controlId}-custom-style-url`}
-                  name="custom-style-url"
-                  placeholder="https://example.com/style.json"
-                  value={url}
+              disableRipple
+            >
+              <CardContent>
+                <Typography variant="subtitle2" gutterBottom>
+                  {t('mapStyle.custom.title', 'Custom Style')}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {t(
+                    'mapStyle.custom.description',
+                    'Reference your own MapLibre style JSON (hosted URL or inline config). Ideal when you need branded colors or licensed tile providers.'
+                  )}
+                </Typography>
+                {style === 'custom' && (
+                  <TextField
+                    sx={{ mt: 2 }}
+                    label={String(t('mapStyle.custom.urlLabel', 'Custom Style URL'))}
+                    id={`${controlId}-custom-style-url`}
+                    name="custom-style-url"
+                    placeholder={String(
+                      t('mapStyle.custom.urlPlaceholder', 'https://example.com/style.json')
+                    )}
+                    value={url}
                   onChange={(e) =>
                     onChange({
                       ...(value || { style: 'custom' }),

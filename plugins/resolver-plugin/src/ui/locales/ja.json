@@ -1,0 +1,26 @@
+{
+  "steps": {
+    "basicInfo": { "label": "基本情報" },
+    "schemaSelection": { "label": "スキーマ選択" },
+    "propertyMapping": { "label": "プロパティマッピング" },
+    "validationRules": { "label": "検証ルール" },
+    "duplicateResolution": { "label": "重複解決" },
+    "previewTest": { "label": "プレビューとテスト" }
+  },
+  "header": {
+    "title": "リゾルバー設定",
+    "stepCounter": "ステップ {{current}} / {{total}}"
+  },
+  "buttons": {
+    "back": "戻る",
+    "next": "次へ",
+    "cancel": "キャンセル",
+    "save": "保存"
+  },
+  "basicInfo": {
+    "title": "基本情報",
+    "description": "プロパティリゾルバーの基本情報を入力してください。",
+    "whatIs": "Property Resolver とは？",
+    "about": "Property Resolver は異なるデータスキーマ間でマッピングルールを作成できます。プロパティの変換、データ検証、重複処理、プレビューに役立ちます。"
+  }
+}

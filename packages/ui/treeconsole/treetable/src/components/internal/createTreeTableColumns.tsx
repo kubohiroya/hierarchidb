@@ -39,6 +39,7 @@ export interface ColumnBuilderParams {
     select: string;
     clear: string;
   };
+  selectionIdPrefix: string;
   hasSelectedAncestor: (nodeId: TreeNode['id']) => boolean;
   rowSelection: Record<string, boolean>;
   collectDescendantIds: (nodeId: NodeId) => string[];
@@ -149,6 +150,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
     pageNodeId,
     selectAllHydrated,
     selectAllLabels,
+    selectionIdPrefix,
     hasSelectedAncestor,
     rowSelection,
     collectDescendantIds,
@@ -184,13 +186,15 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
     placeholders,
     emptyValue,
   } = params;
+  const selectionCheckboxPrefix = selectionIdPrefix || 'row-selection';
+  const selectionAllCheckboxId = `${selectionCheckboxPrefix}-all`;
 
   const selectionColumn: ColumnDef<TreeNode> = {
     id: 'selection',
     header: () => (
       <Tooltip title={selectAll ? selectAllLabels.clear : selectAllLabels.select} placement="right">
         <Checkbox
-          id={`row-selection-all`}
+          id={selectionAllCheckboxId}
           checked={selectAll ? true : allRowsSelected}
           indeterminate={!selectAll && someSelected}
           onChange={() => handleSelectAll(!selectAll)}
@@ -207,7 +211,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
       const disableCheckbox = forcedSelectAll || inheritedSelection || (!!pageNodeId && !selectAllHydrated);
       return (
         <Checkbox
-          id={`row-selection-${row.original.id}`}
+          id={`${selectionCheckboxPrefix}-${row.original.id}`}
           checked={visuallyChecked}
           disabled={disableCheckbox}
           onChange={(e) => {

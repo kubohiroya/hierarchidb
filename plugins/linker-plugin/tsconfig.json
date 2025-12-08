@@ -5,18 +5,19 @@
       "vite/client",
       "node"
     ],
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ]
-    },
-    "baseUrl": ".",
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "allowImportingTsExtensions": true,
+    "allowArbitraryExtensions": true,
+    "experimentalDecorators": true
   },
   "checkDeps": {
     "allowSkipLibCheck": true,
     "reason": "Deck.gl/luma + date-fns v3 d.ts require TS5; isolate to this package"
   },
+  "include": [
+    "../../global.d.ts",
+    "src/**/*"
+  ],
   "exclude": [
     "node_modules",
     "dist",

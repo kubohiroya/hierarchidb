@@ -1,0 +1,19 @@
+{
+  "steps": {
+    "resources": { "label": "Select Resources" },
+    "aggregated": { "label": "Aggregated Paths" },
+    "preview": { "label": "Map Preview" }
+  },
+  "resourcePicker": {
+    "title": "Resources",
+    "notice": "Select resources from the console. Multiple selection is allowed. Data is read-only.",
+    "columns": { "name": "Name" }
+  },
+  "aggregated": {
+    "description": "Aggregated resources from ancestors/self/descendants ({{count}} items)"
+  },
+  "preview": {
+    "description": "Preview of aggregated resources on the map (generalized).",
+    "loading": "Loading map preview…"
+  }
+}

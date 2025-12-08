@@ -6,7 +6,7 @@ import {
 } from '@hierarchidb/spreadsheet-plugin';
 import { StylerStep5 } from './steps/StylerStep5.js';
 import { StylerStep6 } from './steps/StylerStep6.js';
-import { StyleSettingsStep, isStyleSettingsComplete } from './steps/StyleSettingsStep.js';
+import { StyleSettingsStep, isStyleMappingComplete } from './steps/StyleSettingsStep.js';
 import { StylerStepData } from '../../common/types/stylerTypes.js';
 
 const registry = PluginStepRegistry.getInstance();
@@ -63,16 +63,16 @@ registry.registerConfigProvider<StylerStepData>({
       },
       {
         id: 'style-settings',
-        label: 'Style Settings',
+        label: 'Style Mapping',
         componentFactory: (p: StepComponentProps<StylerStepData>) => <StyleSettingsStep {...p} />,
-        validate: (dialogData?: unknown) => isStyleSettingsComplete(dialogData),
+        validate: (dialogData?: unknown) => isStyleMappingComplete(dialogData),
         capabilities: {
-          canProceedToNext: (dialogData?: unknown) => isStyleSettingsComplete(dialogData),
+          canProceedToNext: (dialogData?: unknown) => isStyleMappingComplete(dialogData),
         },
       },
       {
         id: 'style-mapping',
-        label: 'Style Mapping',
+        label: 'Style Algorithm',
         componentFactory: (p: StepComponentProps<StylerStepData>) => (
           <StylerStep5
             data={p.data}

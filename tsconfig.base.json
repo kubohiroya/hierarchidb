@@ -443,6 +443,12 @@
       "@hierarchidb/ui-tabular-extract/*": [
         "packages/ui/tabular-extract/src/*"
       ],
+      "@hierarchidb/ui-modal-select": [
+        "packages/ui/modal-select/src/index.ts"
+      ],
+      "@hierarchidb/ui-modal-select/*": [
+        "packages/ui/modal-select/src/*"
+      ],
       "@hierarchidb/ui-theme": [
         "packages/ui/theme/src/index.ts"
       ],

@@ -8,7 +8,7 @@ import {
 import type { NodeId } from '@hierarchidb/common-types';
 import type { RouteUpdaterPayload } from '../../common/types/index.js';
 import { toRouteUpdaterPayload } from '../../common/utils/draft.js';
-import { translations as routeTranslations } from '../../common/i18n/index.js';
+import { useTranslation as getTranslation } from '../../common/i18n/index.js';
 import { RouteSelectionStep } from './steps/RouteSelectionStep.js';
 import { RouteProcessingStep } from './steps/RouteProcessingStep.js';
 import { RouteDetailsStep } from './steps/RouteDetailsStep.js';
@@ -65,6 +65,7 @@ const hasRouteDetails = (data?: RouteStepData): boolean => {
 };
 
 const startRouteBatch = async (data: RouteStepData, _context: StartBatchContext) => {
+  const { t } = getTranslation();
   const draft = data?.draftData ?? {};
   const hasEssentials = Boolean(
     typeof draft.name === 'string' &&
@@ -75,21 +76,21 @@ const startRouteBatch = async (data: RouteStepData, _context: StartBatchContext)
   );
 
   if (!hasEssentials) {
-    notify.info('Complete the required route settings before starting a build.');
+    notify.info(t('messages.completeBeforeBuild', 'Complete the required route settings before starting a build.'));
     return;
   }
 
-  notify.info('Route batch launch is not yet implemented in this dialog.');
+  notify.info(t('messages.batchNotImplemented', 'Route batch launch is not yet implemented in this dialog.'));
 };
 
 registry.registerConfigProvider<RouteStepData>({
   nodeType: 'route',
   getCreateStepConfigs(): PluginStepConfig<RouteStepData>[] {
-    const t = routeTranslations;
+    const { t } = getTranslation();
     return [
       {
         id: 'route-details',
-        label: 'Route Settings',
+        label: t('steps.details.label', 'Route Settings'),
         componentFactory: (p: StepProps) => {
           const draft = ensureDraft(p.data);
           return (
@@ -104,7 +105,7 @@ registry.registerConfigProvider<RouteStepData>({
       },
       {
         id: 'route-selection',
-        label: t.en.routeSelection.title,
+        label: t('steps.selection.label', 'Route Selection'),
         componentFactory: (p: StepProps) => {
           const draft = ensureDraft(p.data);
           return (
@@ -119,7 +120,7 @@ registry.registerConfigProvider<RouteStepData>({
       },
       {
         id: 'processing',
-        label: 'Processing',
+        label: t('steps.processing.label', 'Processing'),
         componentFactory: (p: StepProps) => {
           const draft = ensureDraft(p.data);
           return (
@@ -134,7 +135,7 @@ registry.registerConfigProvider<RouteStepData>({
       },
       {
         id: 'build',
-        label: 'Build',
+        label: t('steps.build.label', 'Build'),
         optional: true,
         componentFactory: (p: StepProps) => {
           const draft = ensureDraft(p.data);

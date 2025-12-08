@@ -3,6 +3,7 @@ import { createElement } from 'react';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { RouteEntity } from '../common/entities/RouteEntity.js';
 import type { RoutePanelProps } from '../common/components/RoutePanel.js';
+import './i18n.js';
 
 type PluginDialogComponent = (props: HostPluginDialogProps) => JSX.Element | null;
 type PluginPanelComponent = (props: HostPluginPanelProps) => JSX.Element | null;

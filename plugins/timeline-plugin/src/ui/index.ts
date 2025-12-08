@@ -7,3 +7,4 @@ export { TimelineDialog, getDialogComponent } from './components/TimelineDialog.
 export type { TimelineFrame, TimelineFrameViewState } from '../common/types/index.js';
 // Register host-composed steps on import (idempotent)
 import './components/steps-provider.js';
+import './i18n.js';

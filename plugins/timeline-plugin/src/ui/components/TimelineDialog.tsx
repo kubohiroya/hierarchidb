@@ -7,6 +7,7 @@ import { BasicInfoStep, type BasicInfoValues } from '../steps/BasicInfoStep.js';
 import { FramesPreviewStep } from '../steps/FramesPreviewStep.js';
 import { MapPreviewStep } from '../steps/MapPreviewStep.js';
 import { AnimationViewerStep } from '../steps/AnimationViewerStep.js';
+import { useTranslation } from '../../common/i18n/index.js';
 
 export interface TimelineDialogProps {
   mode: 'create' | 'edit';
@@ -20,6 +21,7 @@ export interface TimelineDialogProps {
 type TimelineDialogData = Partial<TimelineEntity>;
 
 export function TimelineDialog(props: TimelineDialogProps) {
+  const { t } = useTranslation();
   const latestNodeIdRef = useRef<NodeId | undefined>(props.nodeId as NodeId | undefined);
 
   const {
@@ -35,7 +37,7 @@ export function TimelineDialog(props: TimelineDialogProps) {
     parentId: props.parentId as NodeId | undefined,
     onClose: props.onClose,
     initialDraftData: { frames: [] },
-    initialDraftMetadata: { name: 'New Timeline', description: '', tags: [] },
+    initialDraftMetadata: { name: t('basic.defaultName', 'New Timeline'), description: '', tags: [] },
     onSave: async (_meta: TreeNodeMetadata, savedId?: NodeId) => {
       const effectiveId = savedId ?? latestNodeIdRef.current;
       if (effectiveId) {
@@ -45,7 +47,7 @@ export function TimelineDialog(props: TimelineDialogProps) {
     buildSteps: ({ data, metadata, persistBasicInfo }) => {
       const frames = (data.frames ?? []) as TimelineFrame[];
       const basic: BasicInfoValues = {
-        name: metadata?.name ?? 'New Timeline',
+        name: metadata?.name ?? t('basic.defaultName', 'New Timeline'),
         description: metadata?.description ?? '',
       };
 
@@ -60,7 +62,7 @@ export function TimelineDialog(props: TimelineDialogProps) {
       return [
         {
           id: 'basic',
-          label: 'Basic Information',
+          label: t('steps.basic.label', 'Basic Information'),
           component: (
             <BasicInfoStep
               values={basic}
@@ -69,9 +71,9 @@ export function TimelineDialog(props: TimelineDialogProps) {
           ),
           validate: () => Boolean(basic.name?.trim()),
         },
-        { id: 'frames', label: 'Frames Preview', component: <FramesPreviewStep frames={frames} /> },
-        { id: 'map', label: 'Map Preview', component: <MapPreviewStep frames={frames} /> },
-        { id: 'final', label: 'Final Animation', component: <AnimationViewerStep frames={frames} /> },
+        { id: 'frames', label: t('steps.frames.label', 'Frames Preview'), component: <FramesPreviewStep frames={frames} /> },
+        { id: 'map', label: t('steps.map.label', 'Map Preview'), component: <MapPreviewStep frames={frames} /> },
+        { id: 'final', label: t('steps.final.label', 'Final Animation'), component: <AnimationViewerStep frames={frames} /> },
       ];
     },
   });
@@ -94,7 +96,7 @@ export function TimelineDialog(props: TimelineDialogProps) {
           <div>
             <strong>{props.mode === 'create' ? 'Create Timeline' : 'Edit Timeline'}</strong>
             <div style={{ fontSize: 12, color: '#64748b' }}>
-              Step {propsHeader.activeStepIndex + 1} / {headlessProps.stepComponents.length}
+              {t('header.stepCounter', 'Step {{current}} / {{total}}', { current: propsHeader.activeStepIndex + 1, total: headlessProps.stepComponents.length })}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -103,14 +105,14 @@ export function TimelineDialog(props: TimelineDialogProps) {
               onClick={() => headlessProps.onStepNavigate?.({ type: 'back' })}
               disabled={propsHeader.activeStepIndex === 0}
             >
-              Back
+              {t('buttons.back', 'Back')}
             </button>
             <button
               type="button"
               onClick={() => headlessProps.onStepNavigate?.({ type: 'next' })}
               disabled={propsHeader.activeStepIndex >= headlessProps.stepComponents.length - 1}
             >
-              Next
+              {t('buttons.next', 'Next')}
             </button>
           </div>
         </header>
@@ -125,7 +127,7 @@ export function TimelineDialog(props: TimelineDialogProps) {
           }}
         >
           <button type="button" onClick={() => propsFooter.onRequestClose?.('close')}>
-            Cancel
+            {t('buttons.cancel', 'Cancel')}
           </button>
           <button
             type="button"
@@ -135,12 +137,12 @@ export function TimelineDialog(props: TimelineDialogProps) {
               headlessProps.validatedStepIndices.length < headlessProps.stepComponents.length
             }
           >
-            Save
+            {t('buttons.save', 'Save')}
           </button>
         </footer>
       ),
     }),
-    [headlessProps, props.mode]
+    [headlessProps, props.mode, t]
   );
 
   return (

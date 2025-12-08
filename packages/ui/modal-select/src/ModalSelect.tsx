@@ -9,13 +9,13 @@ export type ModalSelectProps<T = unknown> = SelectProps<T> & {
    */
   menuZIndexOffset?: number;
   /**
-  * Container for the menu portal. Must point to the dialog/modal root element.
-  * If omitted, the menu renders inline (no portal/body fallback).
-  */
+   * Container for the menu portal. Must point to the dialog/modal root element.
+   * If omitted, the menu renders inline (no portal/body fallback).
+   */
   menuContainer?: Element | null;
   /**
-   * Render menu in a portal (default: false). Use true only when you need to escape overflow clipping.
-   * Inline rendering keeps the menu within the dialog's stacking context to avoid backdrop blur issues.
+   * Render menu in a portal (default: true). Use false when you need to keep the menu within
+   * the dialog stacking context to avoid backdrop/blur issues.
    */
   usePortal?: boolean;
 };

@@ -1,0 +1,60 @@
+{
+  "steps": {
+    "dataSource": { "label": "データソース" },
+    "license": { "label": "ライセンス同意" },
+    "selection": { "label": "地点選択" },
+    "batchParameters": { "label": "処理設定" },
+    "mapPreview": { "label": "地図プレビュー" },
+    "build": { "label": "ビルド" }
+  },
+  "dataSource": {
+    "description": "地点データを取得するためのソースを選択してください。",
+    "descriptionFallback": "データソースを選択してください",
+    "options": {
+      "openstreetmap": { "name": "OpenStreetMap" },
+      "overpass": { "name": "Overpass API" },
+      "geonames": { "name": "GeoNames" },
+      "wikidata": { "name": "Wikidata" },
+      "custom": { "name": "カスタム" },
+      "manual": { "name": "手動" }
+    }
+  },
+  "license": {
+    "title": "ライセンス同意",
+    "accept": "ライセンス条項を確認し、同意します。",
+    "requiresDataSource": "ライセンス同意の前にデータソースを選択してください。"
+  },
+  "selection": {
+    "title": "地点選択",
+    "description": "取得する地点データを選択します。国と地点種別の組み合わせで指定できます。",
+    "waypoints": "地点",
+    "matrixTitle": "選択マトリクス",
+    "settingsTitle": "地点種別の詳細設定",
+    "searchPlaceholder": "国名で検索...",
+    "showSelectedOnly": "選択のみ表示",
+    "selectAll": "すべて選択",
+    "deselectAll": "すべて解除"
+  },
+  "selectionMatrix": {
+    "columnHeader": "国 / 種別"
+  },
+  "batch": {
+    "settings": "処理設定",
+    "concurrency": "同時ダウンロード数",
+    "zoomMin": "生成する最小ズーム",
+    "zoomMax": "生成する最大ズーム"
+  },
+  "mapPreview": {
+    "title": "地図プレビュー",
+    "loading": "地図プレビューを読み込み中…"
+  },
+  "build": {
+    "action": "ビルド",
+    "requiresApproval": "データソースを選択し、ライセンスに同意して保存してからビルドしてください。",
+    "noPoints": "処理できる地点データがありません。",
+    "success": "ビルドを開始しました（セッション {{sessionId}}）",
+    "errors": {
+      "saveFirst": "ビルドを始める前に保存してください。"
+    }
+  }
+}

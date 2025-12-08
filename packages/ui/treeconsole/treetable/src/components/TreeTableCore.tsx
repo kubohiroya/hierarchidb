@@ -47,6 +47,7 @@ export function TreeTableCore({
   pageNodeId,
   treeId,
   selectAllPersistence = 'page',
+  selectionIdPrefix = 'row-selection',
 }: TreeTableCoreProps): ReactElement {
   const IconComponent = CustomNodeTypeIcon || NodeTypeIcon;
   const ContextMenuComponent = CustomNodeContextMenu || NodeContextMenu;
@@ -250,6 +251,7 @@ export function TreeTableCore({
       trashAction,
       formatTimestamp,
       trashRemovedHeader: useTrashColumns ? removedLabel : undefined,
+      selectionIdPrefix,
       columnLabels: {
         name: nameLabel,
         description: descriptionLabel,
@@ -267,7 +269,7 @@ export function TreeTableCore({
       },
       emptyValue: commonT('treeTable.emptyCell', '-'),
     });
-  }, [structure, commonT, columnWidths, selectAll, allRowsSelected, someSelected, handleSelectAll, pageNodeId, selectAllHydrated, selectAllT, batchSelect, depthOffset, editingNodeId, hideDragHandler, disableDragAndDrop, IconComponent, useTrashColumns, rowClickAction, selectionMode, controller, validateInline, handleStartEdit, editingField, editingValue, editingError, setEditingError, setEditingNodeId, setEditingField, treeId, visualSelectionSet, trashAction, formatTimestamp]);
+  }, [structure, commonT, columnWidths, selectAll, allRowsSelected, someSelected, handleSelectAll, pageNodeId, selectAllHydrated, selectAllT, batchSelect, depthOffset, editingNodeId, hideDragHandler, disableDragAndDrop, IconComponent, useTrashColumns, rowClickAction, selectionMode, controller, validateInline, handleStartEdit, editingField, editingValue, editingError, setEditingError, setEditingNodeId, setEditingField, treeId, visualSelectionSet, trashAction, formatTimestamp, selectionIdPrefix]);
 
   const expandedState = useMemo(() => {
     const record: Record<string, boolean> = {};

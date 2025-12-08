@@ -3,6 +3,7 @@ import type { BaseMapEntity, MapStyle, MapViewport } from '../../common/types/Ba
 import { MapStyleStep } from './steps/MapStyleStep.js';
 import { ViewportStep } from './steps/ViewportStep.js';
 import { DEFAULT_MAP_STYLE, DEFAULT_VIEWPORT } from '../hooks/useBaseMapEntity.js';
+import { i18n } from '@hierarchidb/ui-i18n';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -49,10 +50,13 @@ const hasValidViewport = (value?: MapViewport): boolean => {
   );
 };
 
+const t = (key: string, defaultValue: string) =>
+  i18n.t(key, { defaultValue, ns: 'basemap-plugin' });
+
 export const getBasemapStepConfigs = (): PluginStepConfig<Partial<BaseMapEntity>>[] => [
   {
     id: 'map-style',
-    label: 'Map Style',
+    label: t('steps.mapStyle.label', 'Map Style'),
     componentFactory: (p: StepProps) => {
       const draft = ensureDraft(p.data);
       const handleChange = (next: MapStyle) =>
@@ -80,7 +84,7 @@ export const getBasemapStepConfigs = (): PluginStepConfig<Partial<BaseMapEntity>
   },
   {
     id: 'viewport',
-    label: 'Map Viewport',
+    label: t('steps.viewport.label', 'Map Viewport'),
     componentFactory: (p: StepProps) => {
       const draft = ensureDraft(p.data);
       const handleViewportChange = (next: MapViewport) =>

@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { LocationEntity } from '../../../types/index';
 import { LocationBatchParametersStep } from '../../LocationBatchParametersStep';
-import { en } from '../../../../common/i18n/en';
+import en from '../../../../ui/locales/en.json' with { type: 'json' };
 
 const baseDraft: Partial<LocationEntity> = {
   concurrentDownloads: 2,

@@ -1,0 +1,19 @@
+{
+  "steps": {
+    "resources": { "label": "リソース選択" },
+    "aggregated": { "label": "集約パス" },
+    "preview": { "label": "マッププレビュー" }
+  },
+  "resourcePicker": {
+    "title": "リソース",
+    "notice": "コンソールからリソースを選択してください。複数選択できます。データは読み取り専用です。",
+    "columns": { "name": "名前" }
+  },
+  "aggregated": {
+    "description": "祖先/自身/子孫から集約したリソース（{{count}} 件）"
+  },
+  "preview": {
+    "description": "集約リソースのマッププレビュー（簡易表示）。",
+    "loading": "マッププレビューを読み込み中…"
+  }
+}

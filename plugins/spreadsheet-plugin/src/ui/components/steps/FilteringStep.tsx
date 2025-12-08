@@ -8,6 +8,7 @@ import type { TabularFilterRule, TabularDataResult } from '@hierarchidb/ui-tabul
 import type { SpreadsheetEntity } from '../../../common/types/SpreadsheetEntity.js';
 import { createSpreadsheetTabularApi } from '../../../services/spreadsheetTabularApiFactory.js';
 import { SPREADSHEET_NODE_TYPE } from '../../../common/constants.js';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 
 const coerceDialogData = (value: unknown): SpreadsheetEntity =>
   (typeof value === 'object' && value !== null ? (value as SpreadsheetEntity) : {});
@@ -39,6 +40,7 @@ const FilteringStepContent: FC<{
   setError: (error: string | null) => void;
   initialFilters: TabularFilterRule[];
 }> = ({ dialogData, onChange, setValid, setError, initialFilters }) => {
+  const { t } = useTranslation('spreadsheet-plugin');
   const { tabularTableMetadata, loading, error } = useTabularData({
     tableMetadataId: dialogData.spreadsheetMetadataId,
     pluginId: SPREADSHEET_NODE_TYPE,
@@ -139,7 +141,7 @@ const FilteringStepContent: FC<{
   if (!dialogData.spreadsheetMetadataId) {
     return (
       <Typography color="text.secondary">
-        Upload a dataset in Step 1 to configure filters.
+        {t('filtering.instructions.uploadFirst', 'Upload a dataset in Step 1 to configure filters.')}
       </Typography>
     );
   }
@@ -148,7 +150,7 @@ const FilteringStepContent: FC<{
       <Box display="flex" alignItems="center" gap={1}>
         <CircularProgress size={18} />
         <Typography variant="body2" color="text.secondary">
-          Loading table metadata...
+          {t('filtering.loading', 'Loading table metadata...')}
         </Typography>
       </Box>
     );
@@ -163,7 +165,7 @@ const FilteringStepContent: FC<{
   if (!tableMetadata) {
     return (
       <Typography color="text.secondary">
-        No table metadata found for the selected dataset.
+        {t('filtering.noMetadata', 'No table metadata found for the selected dataset.')}
       </Typography>
     );
   }

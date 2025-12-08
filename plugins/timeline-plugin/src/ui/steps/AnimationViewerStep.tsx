@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Box, Chip, IconButton, Paper, Slider, Stack, Switch, TextField, Tooltip, Typography } from '@mui/material';
 import { Map as MapIcon, PlayArrow, Pause, SkipNext, SkipPrevious } from '@mui/icons-material';
 import { useFramePlayer } from '../utils/useFramePlayer.js';
+import { useTranslation } from '../../common/i18n/index.js';
 import type { TimelineFrame } from '../../common/types/index.js';
 
 export interface AnimationViewerStepProps {
@@ -13,6 +14,7 @@ export interface AnimationViewerStepProps {
 
 export function AnimationViewerStep({ frames, initialIndex = 0, initialFps = 12, loop = true }: AnimationViewerStepProps) {
   const player = useFramePlayer({ length: frames.length, initialIndex, initialFps, loop });
+  const { t } = useTranslation();
   const current = frames[player.index] || null;
   const viewState = useMemo(() => {
     if (current?.viewState) {
@@ -24,7 +26,7 @@ export function AnimationViewerStep({ frames, initialIndex = 0, initialFps = 12,
 
   return (
     <Stack spacing={2}>
-      <Typography variant="subtitle1">Final Animation Preview</Typography>
+      <Typography variant="subtitle1">{t('animation.title', 'Final Animation Preview')}</Typography>
 
       <Paper
         variant="outlined"
@@ -61,7 +63,11 @@ export function AnimationViewerStep({ frames, initialIndex = 0, initialFps = 12,
         >
           <MapIcon fontSize="small" color="action" />
           <Typography variant="body2" fontWeight={600}>
-            {current?.name ?? 'Frame'} ({player.index + 1}/{Math.max(1, frames.length)})
+            {t('animation.frameLabel', '{{name}} ({{index}}/{{total}})', {
+              name: current?.name ?? t('map.frame', 'Frame'),
+              index: player.index + 1,
+              total: Math.max(1, frames.length),
+            })}
           </Typography>
           <Chip
             size="small"
@@ -80,10 +86,16 @@ export function AnimationViewerStep({ frames, initialIndex = 0, initialFps = 12,
           }}
         >
           <Typography variant="body2">
-            Playback {player.playing ? 'running' : 'paused'} at {player.fps} fps
+            {t('animation.playback', 'Playback {{state}} at {{fps}} fps', {
+              state: player.playing ? t('animation.running', 'running') : t('animation.paused', 'paused'),
+              fps: player.fps,
+            })}
           </Typography>
           <Typography variant="caption" display="block">
-            Bearing {viewState.bearing?.toFixed?.(1) ?? '0'}°, Pitch {viewState.pitch?.toFixed?.(1) ?? '0'}°
+            {t('map.bearingPitch', 'Bearing {{bearing}}°, Pitch {{pitch}}°', {
+              bearing: viewState.bearing?.toFixed?.(1) ?? '0',
+              pitch: viewState.pitch?.toFixed?.(1) ?? '0',
+            })}
           </Typography>
         </Box>
       </Paper>
@@ -110,7 +122,7 @@ export function AnimationViewerStep({ frames, initialIndex = 0, initialFps = 12,
 
         <Tooltip title="Frames per second">
           <TextField
-            label="FPS"
+            label={t('animation.fpsLabel', 'FPS')}
             size="small"
             type="number"
             InputProps={{ inputProps: { min: 1, max: 60 } }}
@@ -120,9 +132,9 @@ export function AnimationViewerStep({ frames, initialIndex = 0, initialFps = 12,
           />
         </Tooltip>
 
-        <Tooltip title="Loop animation">
+        <Tooltip title={t('animation.loop', 'Loop animation')}>
           <Stack direction="row" alignItems="center" spacing={1}>
-            <Typography variant="body2">Loop</Typography>
+            <Typography variant="body2">{t('map.loop', 'Loop')}</Typography>
             <Switch checked={player.loop} onChange={(e) => player.setLoop(e.target.checked)} />
           </Stack>
         </Tooltip>

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { LocationEntity } from '../../../types/index';
 import type { Timestamp } from '@hierarchidb/common-types';
 import { LocationSelectionStep } from '../../LocationSelectionStep';
-import { en } from '../../../../common/i18n/en';
+import en from '../../../../ui/locales/en.json' with { type: 'json' };
 
 describe('LocationSelectionStep (component)', () => {
   const timestamp = Date.now() as Timestamp;

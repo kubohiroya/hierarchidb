@@ -3,6 +3,7 @@ import { HeadlessMultiStepDialog } from '@hierarchidb/ui-dialog';
 import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 import { useTreeNodeDialog } from '@hierarchidb/plugin-ui-sdk';
 import { resolveDefaultNodeName } from '@hierarchidb/runtime-worker';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 
 type FolderDraftData = {
   nodeId?: NodeId;
@@ -28,6 +29,7 @@ export const FolderDialogHost: React.FC<FolderDialogHostProps> = ({
   onClose,
   onSave,
 }) => {
+  const { t } = useTranslation('folder-plugin');
   const { frameStyle, dialogRef, headlessProps } = useTreeNodeDialog<FolderDraftData>({
     open,
     mode,
@@ -44,7 +46,7 @@ export const FolderDialogHost: React.FC<FolderDialogHostProps> = ({
     buildSteps: ({ metadata, persistBasicInfo, mode }) => [
       {
         id: 'basic',
-        label: 'Basic Information',
+        label: t('steps.basic.label', 'Basic Information'),
         component: (
           <BasicInfoStep
             name={metadata?.name ?? ''}
@@ -58,7 +60,8 @@ export const FolderDialogHost: React.FC<FolderDialogHostProps> = ({
                 tags: value.tags ?? [],
               })
             }
-            validate={(value: BasicInfoData) => (value.name.trim().length ? null : 'Name is required')}
+            validate={(value: BasicInfoData) =>
+              value.name.trim().length ? null : t('errors.nameRequired', 'Name is required')}
           />
         ),
         validate: () => Boolean(metadata?.name?.trim()),

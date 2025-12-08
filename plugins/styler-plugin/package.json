@@ -66,6 +66,7 @@
     "react-window": "^1.8.10",
     "xlsx": "^0.18.5",
     "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/ui-modal-select": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/ui-worker-provider": "workspace:*"
   },

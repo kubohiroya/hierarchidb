@@ -3,6 +3,7 @@ import type { ChangeEvent, FC } from 'react';
 import { Box, FormControl, TextField, Typography } from '@mui/material';
 import { LocalOffer } from '@mui/icons-material';
 import { TagChipsInput } from './TagChipsInput.js';
+import { useTranslation } from 'react-i18next';
 
 export interface BasicInfoData {
   name: string;
@@ -43,6 +44,7 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
   tagSuggestions = [],
   disabled = false,
 }) => {
+  const { t } = useTranslation('plugin-basic-info');
   const nameInputRef = useRef<HTMLInputElement | null>(null);
   const fieldId = useId();
   const nameInputId = `${fieldId}-name`;
@@ -84,7 +86,7 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
   const normalizedName = typeof name === 'string' ? name : '';
   const normalizedDescription = typeof description === 'string' ? description : '';
   const validationError = validate?.({ name: normalizedName, description: normalizedDescription, tags });
-  const nameError = !normalizedName.trim() ? 'Name is required' : null;
+  const nameError = !normalizedName.trim() ? t('name.required', 'Name is required') : null;
   const mergedNameError = validationError ?? nameError;
 
   useEffect(() => {
@@ -108,13 +110,13 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       <Typography variant="body2" color="text.secondary">
         {mode === 'create'
-          ? 'Enter basic information for the new node.'
-          : 'Update the basic information for this node.'}
+          ? t('description.create', 'Enter basic information for the new node.')
+          : t('description.edit', 'Update the basic information for this node.')}
       </Typography>
 
       <FormControl fullWidth error={!!mergedNameError}>
         <TextField
-          label="Name"
+          label={String(t('fields.name.label', 'Name'))}
           id={nameInputId}
           name="name"
           value={normalizedName}
@@ -122,7 +124,7 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
           required
           error={!!mergedNameError}
           helperText={mergedNameError}
-          placeholder="Enter a descriptive name"
+          placeholder={String(t('fields.name.placeholder', 'Enter a descriptive name'))}
           variant="outlined"
           inputRef={nameInputRef}
           autoComplete="organization"
@@ -140,16 +142,20 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
 
       <FormControl fullWidth>
         <TextField
-          label="Description"
+          label={t('fields.description.label', 'Description')}
           id={descriptionInputId}
           name="description"
           value={normalizedDescription}
           onChange={handleDescriptionChange}
           multiline
           rows={4}
-          placeholder="Enter an optional description"
+          placeholder={String(t('fields.description.placeholder', 'Enter an optional description'))}
           variant="outlined"
-          helperText={`${normalizedDescription.length}/1000 characters`}
+          helperText={String(
+            t('fields.description.counter', '{{count}}/1000 characters', {
+              count: normalizedDescription.length,
+            })
+          )}
           autoComplete="off"
           inputProps={{ maxLength: 1000, id: descriptionInputId, name: 'description', autoComplete: 'off' }}
           slotProps={{
@@ -168,13 +174,13 @@ export const BasicInfoStep: FC<BasicInfoStepProps> = ({
           label={(
             <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, alignItems: 'center' }}>
               <LocalOffer fontSize="small" />
-              <Box component="span">Tags</Box>
+              <Box component="span">{t('fields.tags.label', 'Tags')}</Box>
             </Box>
           )}
           value={tags}
           onChange={handleTagsChange}
           suggestions={tagSuggestions}
-          placeholder="Enter tag and press Enter"
+          placeholder={String(t('fields.tags.placeholder', 'Enter tag and press Enter'))}
           disabled={disabled}
         />
       </FormControl>

@@ -1,0 +1,22 @@
+{
+  "steps": {
+    "tabularUpload": { "label": "Dataset Upload" },
+    "tabularFilter": { "label": "Dataset Filter" },
+    "dataSource": { "label": "Data Source" },
+    "licenseAgreement": { "label": "License Agreement" },
+    "processing": { "label": "Processing Configuration" },
+    "countrySelection": { "label": "Country Selection" }
+  },
+  "messages": {
+    "completeRequired": "Complete required fields and selections before building.",
+    "notImplemented": "Shape batch build is not yet implemented in this dialog."
+  },
+  "dialog": {
+    "createTitle": "Create Shape",
+    "editTitle": "Edit Shape",
+    "name": "Name",
+    "cancel": "Cancel",
+    "save": "Save",
+    "defaultName": "New shape"
+  }
+}

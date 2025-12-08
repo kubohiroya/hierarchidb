@@ -95,6 +95,8 @@ export interface TreeConsolePanelProps {
   readonly rowClickAction?: 'Edit' | 'Select/Navigate';
   /** Optional select-all persistence strategy passed to TreeTableCore */
   readonly selectAllPersistence?: 'page' | 'session';
+  /** Optional prefix for selection checkbox ids (e.g., to avoid collisions across dialogs) */
+  readonly selectAllIdPrefix?: string;
   /** Enable trash-specific columns and behaviours */
   readonly useTrashColumns?: boolean;
   readonly trashAction?: 'restore' | 'empty';
@@ -308,6 +310,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         treeId={props.treeId}
         pageNodeId={props.pageNodeId}
         selectAllPersistence={props.selectAllPersistence}
+        selectionIdPrefix={props.selectAllIdPrefix}
         useTrashColumns={props.useTrashColumns ?? false}
         trashAction={props.trashAction}
         depthOffset={controller.depthOffset ?? 0}

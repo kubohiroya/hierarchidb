@@ -20,7 +20,7 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { ExpandMore as ExpandMoreIcon, Abc, Pin, CheckBox } from '@mui/icons-material';
+import { ExpandMore as ExpandMoreIcon, Abc, Pin, CheckBox, Preview as PreviewIcon } from '@mui/icons-material';
 import { useTabularFilter } from '../hooks/useTabularFilter.js';
 import { TabularColumnInfo, TabularColumnType, TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { TabularDataResult, TabularFilterRule } from '../types/index.js';
@@ -235,8 +235,9 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
         <Accordion defaultExpanded>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Box>
-              <Typography variant="subtitle1">
-                Preview Results ({previewData.rows.length} rows)
+              <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <PreviewIcon fontSize="small" />
+                Preview Results
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Total Rows: {previewData.totalRows.toLocaleString()} • Filters Applied: {enabledFilters.length}

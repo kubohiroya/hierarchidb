@@ -9,7 +9,9 @@ import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import type { Remote } from 'comlink';
-import { useEffect, useMemo, useState } from 'react';
+import { proxy as comlinkProxy } from 'comlink';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { SubscriptionId } from '@hierarchidb/common-types';
 
 interface Params {
   client: Remote<WorkerAPI> | undefined;
@@ -50,6 +52,7 @@ export function useTreeConsoleBreadcrumbs({
   maxBreadcrumbItems,
 }: Params): BreadcrumbNode[] {
   const [breadcrumbItems, setBreadcrumbItems] = useState<BreadcrumbNode[]>([]);
+  const subscriptionsRef = useRef<SubscriptionId[]>([]);
   const resolvedMaxBreadcrumbItems = useMemo(
     () => normalizeMaxBreadcrumbOverride(maxBreadcrumbItems) ?? resolveMaxBreadcrumbs(),
     [maxBreadcrumbItems]
@@ -57,6 +60,8 @@ export function useTreeConsoleBreadcrumbs({
 
   useEffect(() => {
     let disposed = false;
+    const activeSubs: SubscriptionId[] = [];
+    subscriptionsRef.current = activeSubs;
 
     (async () => {
       try {
@@ -66,6 +71,7 @@ export function useTreeConsoleBreadcrumbs({
         }
 
         const queryAPI = await client.getQueryAPI();
+        const subscriptionAPI = await client.getSubscriptionAPI();
         const ancestors = await queryAPI.listAncestors(pageTreeNode.id as NodeId);
         let nodes: BreadcrumbNode[] = ancestors.map((n) => ({
           id: n.id,
@@ -95,6 +101,30 @@ export function useTreeConsoleBreadcrumbs({
         if (!disposed) {
           setBreadcrumbItems([...nodes, currentBreadcrumb]);
         }
+
+        const targetIds = [...ancestors.map((a) => a.id as NodeId), pageTreeNode.id as NodeId];
+        const cb = comlinkProxy((event: unknown) => {
+          const ev = event as { nodeId?: string; node?: TreeNode };
+          const changedId = ev?.nodeId || ev?.node?.id;
+          if (!changedId) return;
+          setBreadcrumbItems((prev) =>
+            prev.map((item) => {
+              if (String(item.id) !== String(changedId)) return item;
+              const nextName = ev.node?.metadata?.name ?? item.name;
+              const nextNodeType = ev.node?.nodeType ?? item.nodeType;
+              return { ...item, name: nextName, nodeType: nextNodeType };
+            }),
+          );
+        });
+
+        for (const id of targetIds) {
+          try {
+            const subId = await subscriptionAPI.subscribeNode(id as NodeId, cb);
+            activeSubs.push(subId);
+          } catch {
+            // best-effort; skip failures
+          }
+        }
       } catch {
         if (!disposed && pageTreeNode) {
           setBreadcrumbItems([
@@ -110,6 +140,26 @@ export function useTreeConsoleBreadcrumbs({
 
     return () => {
       disposed = true;
+      const cleanup = async () => {
+        if (!client) return;
+        try {
+          const subscriptionAPI = await client.getSubscriptionAPI();
+          await Promise.all(
+            subscriptionsRef.current.map(async (subId) => {
+              try {
+                await subscriptionAPI.unsubscribe(subId);
+              } catch {
+                // ignore
+              }
+            }),
+          );
+        } catch {
+          // ignore
+        } finally {
+          subscriptionsRef.current = [];
+        }
+      };
+      void cleanup();
     };
   }, [client, pageTreeNode, resolvedMaxBreadcrumbItems]);
 

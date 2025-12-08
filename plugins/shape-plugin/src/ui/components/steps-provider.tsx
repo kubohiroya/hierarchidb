@@ -14,6 +14,7 @@ import { Step5CountrySelection } from './steps/Step5CountrySelection.js';
 import { StepTabularImport } from './steps/StepTabularImport.tsx';
 import { StepTabularFilter } from './steps/StepTabularFilter.js';
 import { notify } from '@hierarchidb/components';
+import { useTranslation as getTranslation } from '../../common/i18n/index.js';
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -54,45 +55,47 @@ const canStartShapeBatch = (data?: Partial<ShapeEntity>): boolean => {
 };
 
 const startShapeBatch = async (data: Partial<ShapeEntity>, _context: StartBatchContext) => {
+  const { t } = getTranslation();
   if (!canStartShapeBatch(data)) {
-    notify.info('Complete required fields and selections before building.');
+    notify.info(t('messages.completeRequired', 'Complete required fields and selections before building.'));
     return;
   }
 
-  notify.info('Shape batch build is not yet implemented in this dialog.');
+  notify.info(t('messages.notImplemented', 'Shape batch build is not yet implemented in this dialog.'));
 };
 
 registry.registerConfigProvider<Partial<ShapeEntity>>({
   nodeType: 'shape',
   getCreateStepConfigs() {
+    const { t } = getTranslation();
     return [
       {
         id: 'tabular-upload',
-        label: 'Dataset Upload',
+        label: t('steps.tabularUpload.label', 'Dataset Upload'),
         componentFactory: (props: ShapeDialogStepProps) => <StepTabularImport {...props} />,
         validate: (data?: Partial<ShapeEntity>) => Boolean(data?.tabularMetadataId),
       },
       {
         id: 'tabular-filter',
-        label: 'Dataset Filter',
+        label: t('steps.tabularFilter.label', 'Dataset Filter'),
         componentFactory: (props: ShapeDialogStepProps) => <StepTabularFilter {...props} />,
         validate: (data?: Partial<ShapeEntity>) => Boolean(data?.tabularMetadataId),
       },
       {
         id: 'data-source',
-        label: 'Data Source',
+        label: t('steps.dataSource.label', 'Data Source'),
         componentFactory: (props: ShapeDialogStepProps) => <Step2 {...props} />,
         validate: (data?: Partial<ShapeEntity>) => Boolean(data?.dataSourceName),
       },
       {
         id: 'license-agreement',
-        label: 'License Agreement',
+        label: t('steps.licenseAgreement.label', 'License Agreement'),
         componentFactory: (props: ShapeDialogStepProps) => <Step3 {...props} />,
         validate: (data?: Partial<ShapeEntity>) => Boolean(data?.licenseAgreement),
       },
       {
         id: 'processing-configuration',
-        label: 'Processing Configuration',
+        label: t('steps.processing.label', 'Processing Configuration'),
         componentFactory: (props: ShapeDialogStepProps) => <Step4 {...props} />,
         validate: (data?: Partial<ShapeEntity>) =>
           validateProcessingConfig(
@@ -101,7 +104,7 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
       },
       {
         id: 'country-selection',
-        label: 'Country Selection',
+        label: t('steps.countrySelection.label', 'Country Selection'),
         componentFactory: (props: ShapeDialogStepProps) => <Step5 {...props} />,
         validate: (data?: Partial<ShapeEntity>) =>
           summarizeCheckboxState(data?.checkboxState).hasSelection,

@@ -3,6 +3,7 @@ import type { TimelineDraft, TimelineFrame } from '../../common/types/index.js';
 import { FramesPreviewStep } from '../steps/FramesPreviewStep.js';
 import { MapPreviewStep } from '../steps/MapPreviewStep.js';
 import { AnimationViewerStep } from '../steps/AnimationViewerStep.js';
+import { useTranslation as getTranslation } from '../../common/i18n/index.js';
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -15,36 +16,25 @@ type TimelineData = StepData &
 registry.registerConfigProvider<TimelineData>({
   nodeType: 'timeline',
   getCreateStepConfigs() {
+    const { t } = getTranslation();
     return [
       {
         id: 'frames',
-        label: 'Frames Preview',
-        localization: {
-          defaultTitle: 'Frames Preview',
-          titles: { en: 'Frames Preview', ja: 'フレームプレビュー' },
-        },
+        label: t('steps.frames.label', 'Frames Preview'),
         componentFactory: (p: StepComponentProps<TimelineData>) => (
           <FramesPreviewStep frames={p.data?.frames || p.data?.draftData?.frames || []} />
         ),
       },
       {
         id: 'map',
-        label: 'Map Preview',
-        localization: {
-          defaultTitle: 'Map Preview',
-          titles: { en: 'Map Preview', ja: '地図プレビュー' },
-        },
+        label: t('steps.map.label', 'Map Preview'),
         componentFactory: (p: StepComponentProps<TimelineData>) => (
           <MapPreviewStep frames={p.data?.frames || p.data?.draftData?.frames || []} />
         ),
       },
       {
         id: 'final',
-        label: 'Final Animation',
-        localization: {
-          defaultTitle: 'Final Animation',
-          titles: { en: 'Final Animation', ja: 'アニメーション確認' },
-        },
+        label: t('steps.final.label', 'Final Animation'),
         componentFactory: (p: StepComponentProps<TimelineData>) => (
           <AnimationViewerStep frames={p.data?.frames || p.data?.draftData?.frames || []} />
         ),

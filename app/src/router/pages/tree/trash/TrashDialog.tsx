@@ -647,6 +647,7 @@ function TrashDialogContent({
         canEdit={false}
         canTrash={mode === 'empty'}
         useTrashColumns
+        selectAllIdPrefix="trash-row-selection"
         selectAllPersistence="session"
         trashAction={mode}
         hideDragHandler

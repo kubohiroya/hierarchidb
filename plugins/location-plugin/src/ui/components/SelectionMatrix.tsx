@@ -35,7 +35,7 @@ export const SelectionMatrix: React.FC<SelectionMatrixProps> = ({
   disabled = false,
 }) => {
   const controlId = useId();
-  const { translations } = useTranslation();
+  const { t } = useTranslation();
 
   const handleToggle = useCallback((countryIndex: number, typeIndex: number) => {
     const currentMatrix = countries.map((_, rowIdx) => (
@@ -54,7 +54,7 @@ export const SelectionMatrix: React.FC<SelectionMatrixProps> = ({
       <Table size="small">
         <TableHead>
           <TableRow>
-            <TableCell>{translations.selectionMatrix.columnHeader}</TableCell>
+            <TableCell>{t('selectionMatrix.columnHeader', 'Country / Type')}</TableCell>
             {locationTypes.map((type) => (
               <TableCell key={type.id} align="center">
                 <Box display="flex" alignItems="center" justifyContent="center" gap={0.5}>

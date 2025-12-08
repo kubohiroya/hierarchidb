@@ -6,7 +6,11 @@ import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { createSpreadsheetTabularApi } from '../../../services/spreadsheetTabularApiFactory.js';
 import { SPREADSHEET_NODE_TYPE } from '../../../common/constants.js';
 import type { SpreadSheetDataSourceConfig, SpreadsheetEntity } from '../../../common/types/SpreadsheetEntity.js';
-import { Box, Typography } from '@mui/material';
+import { Accordion, AccordionDetails, AccordionSummary, Box, Typography } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
+import TaskAltIcon from '@mui/icons-material/TaskAlt';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 
 const coerceDialogData = (value: unknown): SpreadsheetEntity =>
   (typeof value === 'object' && value !== null ? (value as SpreadsheetEntity) : {});
@@ -32,6 +36,7 @@ export const DataSourceStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
   setError,
   dialogRef,
 }) => {
+  const { t } = useTranslation('spreadsheet-plugin');
   const dialogData = useMemo<SpreadsheetEntity>(() => coerceDialogData(data), [data]);
   const [localError, setLocalError] = useState<string | null>(null);
   const tabularApi = useMemo(() => createSpreadsheetTabularApi(SPREADSHEET_NODE_TYPE), []);
@@ -51,6 +56,9 @@ export const DataSourceStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
   });
   const [processingConfig, setProcessingConfig] = useState<TabularProcessingConfig | undefined>(derivedProcessing);
   const importSucceeded = Boolean(lastSuccessfulUrl && lastSuccessfulUrl === downloadUrl);
+  const hasMetadata = Boolean(dialogData.spreadsheetMetadataId);
+  const [importExpanded, setImportExpanded] = useState<boolean>(() => !hasMetadata);
+  const [detailsExpanded, setDetailsExpanded] = useState<boolean>(() => hasMetadata);
 
   const applyMetadata = useCallback(
     (tabularTableMetadata: TabularTableMetadata) => {
@@ -76,6 +84,8 @@ export const DataSourceStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
       if (importMethod === 'url') {
         setLastSuccessfulUrl(downloadUrl);
       }
+      setImportExpanded(false);
+      setDetailsExpanded(true);
       setLocalError(null);
       setValid(true);
       setError(null);
@@ -93,14 +103,15 @@ export const DataSourceStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
   );
 
   useEffect(() => {
-    const hasMetadata = Boolean(dialogData.spreadsheetMetadataId);
     setValid(hasMetadata);
     if (!hasMetadata && !localError) {
-      setError('Upload or select a dataset before continuing.');
+      setError(t('dataSource.errors.missingDataset', 'Upload or select a dataset before continuing.'));
     } else if (hasMetadata) {
       setError(null);
     }
-  }, [dialogData.spreadsheetMetadataId, localError, setError, setValid]);
+    setImportExpanded(!hasMetadata);
+    setDetailsExpanded(hasMetadata);
+  }, [dialogData.spreadsheetMetadataId, hasMetadata, localError, setError, setValid, t]);
 
   const menuContainer =
     dialogRef?.current instanceof HTMLElement
@@ -126,69 +137,108 @@ export const DataSourceStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
 
   return (
     <TabularProvider tabularApi={tabularApi}>
-      <ImportStep
-        pluginId={SPREADSHEET_NODE_TYPE}
-        onFileImported={applyMetadata}
-        onError={handleUploadError}
-        menuContainer={menuContainer}
-        initialImportMethod={derivedImportMethod}
-        initialUrl={downloadUrl}
-        initialProcessingConfig={processingConfig}
-        onImportMethodChange={(method: 'file' | 'url') => {
-          setImportMethod(method);
-          onChange({
-            ...dialogData,
-            dataSource: {
-              ...(dialogData.dataSource ?? { type: method }),
-              type: method,
-            },
-          });
-        }}
-        onUrlChange={(url: string) => {
-          setDownloadUrl(url);
-          if (lastSuccessfulUrl && url !== lastSuccessfulUrl) {
-            setLastSuccessfulUrl(null);
-          }
-          onChange({
-            ...dialogData,
-            dataSource: {
-              ...(dialogData.dataSource ?? { type: 'url' }),
-              type: 'url',
-              source: url,
-            },
-          });
-        }}
-        onProcessingConfigChange={(cfg: TabularProcessingConfig) => {
-          setProcessingConfig(cfg);
-          onChange({ ...dialogData, tabularProcessingConfig: cfg });
-        }}
-        importSucceeded={importSucceeded}
-      />
+      <Accordion expanded={importExpanded} onChange={(_, expanded) => setImportExpanded(expanded)}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <InsertDriveFileIcon fontSize="small" color="action" />
+            <Typography variant="subtitle1">
+              {t('dataSource.import.title', 'Import Tabular Data')}
+            </Typography>
+          </Box>
+        </AccordionSummary>
+        <AccordionDetails>
+          <ImportStep
+            pluginId={SPREADSHEET_NODE_TYPE}
+            onFileImported={applyMetadata}
+            onError={handleUploadError}
+            menuContainer={menuContainer}
+            initialImportMethod={derivedImportMethod}
+            initialUrl={downloadUrl}
+            initialProcessingConfig={processingConfig}
+            onImportMethodChange={(method: 'file' | 'url') => {
+              setImportMethod(method);
+              onChange({
+                ...dialogData,
+                dataSource: {
+                  ...(dialogData.dataSource ?? { type: method }),
+                  type: method,
+                },
+              });
+            }}
+            onUrlChange={(url: string) => {
+              setDownloadUrl(url);
+              if (lastSuccessfulUrl && url !== lastSuccessfulUrl) {
+                setLastSuccessfulUrl(null);
+              }
+              onChange({
+                ...dialogData,
+                dataSource: {
+                  ...(dialogData.dataSource ?? { type: 'url' }),
+                  type: 'url',
+                  source: url,
+                },
+              });
+            }}
+            onProcessingConfigChange={(cfg: TabularProcessingConfig) => {
+              setProcessingConfig(cfg);
+              onChange({ ...dialogData, tabularProcessingConfig: cfg });
+            }}
+            importSucceeded={importSucceeded}
+          />
+        </AccordionDetails>
+      </Accordion>
 
-      {dialogData.spreadsheetMetadataId && dialogData.dataSource ? (
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-            gap: 1.5,
-            alignItems: 'center',
-            mt: 2,
-          }}
-        >
-          <Typography variant="body2" color="text.secondary">
-            filename: {dialogData.dataSource.filename ?? dialogData.tabularTableMetadata?.filename ?? '—'}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            size: {formatBytes(dialogData.dataSource.sizeBytes ?? dialogData.tabularTableMetadata?.fileSizeBytes)}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            lastModified: {dialogData.tabularTableMetadata?.createdAt ? new Date(dialogData.tabularTableMetadata.createdAt).toLocaleString() : '—'}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ wordBreak: 'break-all' }}>
-            contentHash: {dialogData.dataSource.contentHash ?? dialogData.tabularTableMetadata?.contentHash ?? '—'}
-          </Typography>
-        </Box>
-      ) : null}
+      <Accordion expanded={detailsExpanded} onChange={(_, expanded) => setDetailsExpanded(expanded)} sx={{ mt: 1 }}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <TaskAltIcon fontSize="small" color={hasMetadata ? 'success' : 'disabled'} />
+            <Typography variant="subtitle1">
+              {t('dataSource.details.title', 'Imported File Details')}
+            </Typography>
+          </Box>
+        </AccordionSummary>
+        <AccordionDetails>
+          {dialogData.spreadsheetMetadataId && dialogData.dataSource ? (
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                gap: 1.5,
+                alignItems: 'center',
+              }}
+            >
+              <Typography variant="body2" color="text.secondary">
+                {t('dataSource.details.filename', 'filename: {{value}}', {
+                  value: dialogData.dataSource.filename ?? dialogData.tabularTableMetadata?.filename ?? '—',
+                })}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {t('dataSource.details.size', 'size: {{value}}', {
+                  value: formatBytes(
+                    dialogData.dataSource.sizeBytes ?? dialogData.tabularTableMetadata?.fileSizeBytes
+                  ),
+                })}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {t('dataSource.details.lastModified', 'lastModified: {{value}}', {
+                  value: dialogData.tabularTableMetadata?.createdAt
+                    ? new Date(dialogData.tabularTableMetadata.createdAt).toLocaleString()
+                    : '—',
+                })}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ wordBreak: 'break-all' }}>
+                {t('dataSource.details.contentHash', 'contentHash: {{value}}', {
+                  value: dialogData.dataSource.contentHash ?? dialogData.tabularTableMetadata?.contentHash ?? '—',
+                })}
+              </Typography>
+            </Box>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              {t('dataSource.details.empty', 'No tabular data')}
+            </Typography>
+          )}
+        </AccordionDetails>
+      </Accordion>
     </TabularProvider>
   );
 };

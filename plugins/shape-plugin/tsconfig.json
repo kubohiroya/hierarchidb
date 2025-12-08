@@ -8,7 +8,12 @@
       "WebWorker"
     ],
     "allowImportingTsExtensions": true,
-    "experimentalDecorators": true
+    "allowArbitraryExtensions": true,
+    "experimentalDecorators": true,
+    "types": [
+      "vite/client",
+      "node"
+    ]
   },
   "include": [
     "../../global.d.ts",

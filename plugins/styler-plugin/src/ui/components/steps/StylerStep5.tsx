@@ -11,7 +11,6 @@ export const StylerStep5: React.FC<StylerStepProps> = ({
   onChange,
   onValidate,
   tabularData = [],
-  columns = [],
 }) => {
   const currentConfig: StylerConfig = data?.stylerConfig || StylerConfigDefault;
 
@@ -45,34 +44,12 @@ export const StylerStep5: React.FC<StylerStepProps> = ({
       };
       onChange(updatedData);
 
-      //  : targetProperty
       if (onValidate) {
-        const isValid = !!newConfig.targetProperty;
+        const isValid = newConfig.mapping.min < newConfig.mapping.max;
         onValidate(isValid);
       }
     },
     [data, onChange, onValidate]
-  );
-
-  const handleColumnSelect = useCallback(
-    (column: string, type: 'key' | 'value') => {
-      const updatedData: StylerStepData = {
-        ...data,
-        [type === 'key' ? 'selectedKeyColumn' : 'selectedValueColumn']: column,
-        stylerConfig: {
-          ...currentConfig,
-          [type === 'key' ? 'keyColumn' : 'valueColumn']: column,
-        },
-      };
-      onChange(updatedData);
-
-      if (onValidate) {
-        const hasRequiredFields =
-          !!updatedData.stylerConfig?.targetProperty && !!updatedData.selectedValueColumn;
-        onValidate(hasRequiredFields);
-      }
-    },
-    [data, currentConfig, onChange, onValidate]
   );
 
   return (
@@ -81,10 +58,7 @@ export const StylerStep5: React.FC<StylerStepProps> = ({
         config={currentConfig}
         onChange={handleConfigChange}
         values={sampleValues}
-        columns={columns}
-        selectedKeyColumn={data?.selectedKeyColumn}
         selectedValueColumn={data?.selectedValueColumn}
-        onColumnSelect={handleColumnSelect}
         tabularData={tabularData}
       />
     </Box>
@@ -99,25 +73,11 @@ const StylerStep5Component = wrapDialogStepComponent(StylerStep5);
 
 export const StylerStep5Definition = {
   stepNumber: 5,
-  title: 'Style Mapping Configuration',
+  title: 'Style Algorithm',
   component: StylerStep5Component,
   validation: {
     validate: async (data: StylerStepData) => {
-      const config = data?.stylerConfig;
-
-      if (!config?.targetProperty) {
-        return {
-          isValid: false,
-          errors: ['Please select a MapLibre style property to map'],
-        };
-      }
-
-      if (!data?.selectedValueColumn) {
-        return {
-          isValid: false,
-          errors: ['Please select a value column for mapping'],
-        };
-      }
+      const config = data?.stylerConfig ?? StylerConfigDefault;
 
       if (config.mapping.min >= config.mapping.max) {
         return {

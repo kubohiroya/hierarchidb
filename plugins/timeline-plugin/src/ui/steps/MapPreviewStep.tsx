@@ -1,6 +1,7 @@
 import { useMemo, useState, useId } from 'react';
 import { Box, Slider, Stack, Switch, TextField, Typography, FormControlLabel, Paper, Chip } from '@mui/material';
 import { Map as MapIcon } from '@mui/icons-material';
+import { useTranslation } from '../../common/i18n/index.js';
 import type { TimelineFrame } from '../../common/types/index.js';
 
 export interface MapPreviewStepProps {
@@ -10,6 +11,7 @@ export interface MapPreviewStepProps {
 }
 
 export function MapPreviewStep({ frames, initialIndex = 0, onIndexChange }: MapPreviewStepProps) {
+  const { t } = useTranslation();
   const controlId = useId();
   const [index, setIndex] = useState(Math.min(initialIndex, Math.max(0, frames.length - 1)));
   const [fps, setFps] = useState(12);
@@ -26,7 +28,7 @@ export function MapPreviewStep({ frames, initialIndex = 0, onIndexChange }: MapP
 
   return (
     <Stack spacing={2}>
-      <Typography variant="subtitle1">Map Preview</Typography>
+      <Typography variant="subtitle1">{t('map.title', 'Map Preview')}</Typography>
       <Paper
         variant="outlined"
         sx={{
@@ -63,7 +65,7 @@ export function MapPreviewStep({ frames, initialIndex = 0, onIndexChange }: MapP
         >
           <MapIcon fontSize="small" color="action" />
           <Typography variant="body2" fontWeight={600}>
-            {frame?.name ?? 'Frame'}
+            {frame?.name ?? t('map.frame', 'Frame')}
           </Typography>
           <Chip
             size="small"
@@ -82,15 +84,20 @@ export function MapPreviewStep({ frames, initialIndex = 0, onIndexChange }: MapP
             textShadow: '0 0 8px rgba(0,0,0,0.35)',
           }}
         >
-          <Typography variant="body2">Active selections: {frame ? index + 1 : 0}</Typography>
+          <Typography variant="body2">
+            {t('map.activeSelections', 'Active selections: {{count}}', { count: frame ? index + 1 : 0 })}
+          </Typography>
           <Typography variant="caption" display="block">
-            Bearing {viewState.bearing?.toFixed?.(1) ?? '0'}°, Pitch {viewState.pitch?.toFixed?.(1) ?? '0'}°
+            {t('map.bearingPitch', 'Bearing {{bearing}}°, Pitch {{pitch}}°', {
+              bearing: viewState.bearing?.toFixed?.(1) ?? '0',
+              pitch: viewState.pitch?.toFixed?.(1) ?? '0',
+            })}
           </Typography>
         </Box>
       </Paper>
 
       <Box>
-        <Typography variant="body2">Timeline</Typography>
+        <Typography variant="body2">{t('map.timeline', 'Timeline')}</Typography>
         <Slider
           size="small"
           min={0}
@@ -106,10 +113,10 @@ export function MapPreviewStep({ frames, initialIndex = 0, onIndexChange }: MapP
       </Box>
 
       <Box>
-        <Typography variant="body2">Auto Mode</Typography>
+        <Typography variant="body2">{t('map.title', 'Map Preview')}</Typography>
         <Stack direction="row" spacing={2} alignItems="center">
           <TextField
-            label="FPS"
+            label={t('map.fps', 'FPS')}
             size="small"
             type="number"
             id={`${controlId}-fps`}
@@ -127,7 +134,7 @@ export function MapPreviewStep({ frames, initialIndex = 0, onIndexChange }: MapP
                 inputProps={{ id: `${controlId}-loop`, name: 'loop' }}
               />
             )}
-            label="Loop"
+            label={t('map.loop', 'Loop')}
           />
         </Stack>
       </Box>

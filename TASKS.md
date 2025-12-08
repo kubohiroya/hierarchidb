@@ -53,6 +53,79 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1604) Plugin steps-provider hooks lint修正（P0）
+- ブランチ: `fix/plugin/steps-provider-hooks`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: linker/route/shape/timeline plugins の steps-provider.tsx、plugin-base StepRegistry、i18n ユーティリティ
+- 受け入れ基準（DoD）:
+  - [ ] ESLint `react-hooks/rules-of-hooks` の useTranslation 呼び出しエラーが対象 steps-provider.tsx から消える（linker/route/shape/timeline）
+  - [ ] 修正に伴う型エラーが発生していないこと（可能なら関連パッケージの typecheck/lint 実行で確認、未実施なら理由を運用ログに記録）
+  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] 影響範囲とロールバック手順（差分 revert で元に戻せること）を記述する
+- チェックリスト:
+  - [ ] steps-provider.tsx 内の useTranslation 呼び出しをカスタムフック/コンポーネント内に移し、hooks ルールに準拠させる
+  - [ ] startBatch/capabilities など非コンポーネント関数の翻訳参照もフック以外の形に整理する
+  - [ ] 関連パッケージの lint/typecheck を実行するか、未実施理由を記録する
+- ロールバック手順：本タスクで変更した steps-provider 関連の差分を revert し、実行した検証コマンドを再実行する（元の ESLint 警告状態へ戻す）
+- 運用ログ：
+  - start: 2025-12-08 21:15 JST steps-provider useTranslation lint 修正を開始（main 上で作業）。
+  - progress: 2025-12-08 21:18 JST linker/route/shape/timeline の steps-provider.tsx で useTranslation 呼び出しを getTranslation エイリアスへ置き換え、componentFactory/startBatch 内の hooks ルール違反を除去（翻訳参照は非 hook 関数に集約）。
+  - progress: 2025-12-08 21:18 JST 検証: `pnpm --filter @hierarchidb/linker-plugin lint` exit 0（react-hooks エラー解消確認）、`pnpm --filter @hierarchidb/linker-plugin typecheck` exit 0。`pnpm --filter @hierarchidb/route-plugin lint` はスクリプトなしのため未実施、代替で `pnpm --filter @hierarchidb/route-plugin typecheck` exit 0。`pnpm --filter @hierarchidb/shape-plugin lint` はスクリプトなしのため未実施、`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。`pnpm --filter @hierarchidb/timeline-plugin lint` はスクリプトなしのため未実施、`pnpm --filter @hierarchidb/timeline-plugin typecheck` exit 0。
+
+1603) Styler Dialog stepper 非表示調査（P0）
+- ブランチ: `fix/styler/dialog-stepper-hidden`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: Styler Plugin Dialog（plugins/styler-plugin）、plugin-ui-host の MultiStepDialogFrame/Stepper 表示、plugin-ui-sdk の dialog state
+- 受け入れ基準（DoD）:
+  - [ ] Styler plugin のマルチステップダイアログでステッパーが表示される（手動確認で視認できる）
+  - [ ] 原因と修正内容を Kanban/運用ログに記録する
+  - [ ] 影響範囲とロールバック手順を明記する（フラグ/設定でオフにできるかを含む）
+  - [ ] 関連パッケージの lint/typecheck を実行するか、未実施なら理由を記録する（優先: styler-plugin または plugin-ui-host など該当範囲）
+- チェックリスト:
+  - [ ] ステッパーが非表示になる再現条件と対象ダイアログを特定する
+  - [ ] MultiStepDialog/Stepper の表示ロジックに影響する recent change を確認し、最小差分で修正する
+  - [ ] 手動確認と実行したコマンドを運用ログへ記録する
+- ロールバック手順：今回変更する styler-plugin/plugin-ui-host 周辺の差分を revert し、実行した検証コマンドを再実行して現状（ステッパー非表示）の挙動へ戻す
+- 運用ログ：
+  - start: 2025-12-08 14:06 JST styler-plugin のマルチステップダイアログでステッパーが表示されない問題の調査を開始（branch: fix/styler/dialog-stepper-hidden）。
+  - progress: 2025-12-08 14:16 JST HeadlessMultiStepDialog に PluginDialogHeader/PluginDialogFooter を render するよう styler-dialog を更新し、ステッパー/ナビゲーションを再表示する実装を追加。依存に plugin-ui-host を追加。検証: `pnpm --filter @hierarchidb/styler-plugin typecheck` exit 2（既存エラー: StylerMapping.tsx unused import, StylerStep5.tsx config possibly undefined, StyleSettingsStep.tsx 型未定義/any 等）。
+  - progress: 2025-12-08 14:28 JST Styler の独自 Headless ダイアログを撤去し、UI エントリは steps-provider の登録みに縮小（他プラグインと同様に PluginDialogHost がダイアログを描画）。`plugins/styler-plugin/package.json` から plugin-ui-host 依存を除去。再検証: `pnpm --filter @hierarchidb/styler-plugin typecheck` exit 2（上記と同じ既存エラーのみ）。
+  - progress: 2025-12-08 15:00 JST `@hierarchidb/ui-modal-select` 依存欠落で Vite が `StyleSettingsStep.tsx` を解決できていなかったため、styler-plugin の dependencies に追加し、UI types から MapLibre 定数/型を再エクスポートして import エラーを解消。`pnpm install --no-frozen-lockfile`（成功: node_modules 再生成）、`pnpm --filter @hierarchidb/styler-plugin typecheck` exit 2（従前の未修正エラー: StylerMapping unused import, StylerStep5 config undefined 等）、`pnpm --filter @hierarchidb/app build` exit 0 で元のビルド失敗は解消済み。
+  - progress: 2025-12-08 14:44 JST Styler plugin typecheck 残課題を修正（StylerMapping unused import削除、StylerStep5 validation で stylerConfig 未設定時もデフォルト適用、StyleSettingsStep の columns/targetProperty 型エラーを data ベースの columns 抽出＆型注釈で解消）。`pnpm --filter @hierarchidb/styler-plugin typecheck` exit 0。
+
+1600) TreeConsole/Trash select-all チェックボックス id 重複解消（P0）
+- ブランチ: `fix/ui-treeconsole/trash-selectall-id`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: TreeConsole treetable select-all（`packages/ui/treeconsole/treetable/src/components/hooks/useTreeTableSelectAll.ts` ほか）と TrashDialog select-all（`app/src/router/pages/tree/trash/TrashDialog.tsx` など）
+- 受け入れ基準（DoD）:
+  - [x] TreeConsole の「すべてを選択」チェックボックス id と Trash ダイアログ内の「すべてを選択」チェックボックス id が衝突しない（Trash 側に `trash-` プレフィックスを付与）
+  - [x] 既存の選択/全選択/解除挙動が変わらない
+  - [x] 関連テスト・スナップショットがあれば更新、無ければ不要と記載
+  - [x] TASKS 運用ルールに従いログとロールバック手順を記載する
+- チェックリスト:
+  - [x] TrashDialog の select-all id をユニークに変更し、呼び出し元や aria 参照が整合するか確認する
+  - [x] TreeTable 側で共有される id/aria への影響有無を確認する
+  - [x] 必要な検証コマンドを実行または不要理由を記録する
+- ロールバック手順：今回変更する TrashDialog/TreeTable select-all 関連ファイルを revert し、実行した検証コマンドがあれば再実行して現行挙動へ戻す
+- 運用ログ：
+  - start: 2025-12-08 09:47 JST チェックボックス id 重複解消タスクを開始（main 上で作業）
+  - progress: 2025-12-08 10:10 JST TrashDialog の select-all を `trash-row-selection-*` id に切り替え、TreeTableCore に selectionIdPrefix を追加して既存ビューの id を維持。`pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` exit 0、`pnpm --filter @hierarchidb/ui-treeconsole-treetable build` exit 0（tsdown define 警告既知）、`pnpm --filter @hierarchidb/app typecheck` exit 0（plugin-base build 時の define 警告既知）。
+  - done: 2025-12-08 10:10 JST DoD 充足。動作回帰なし想定（手動確認なし）。ロールバックは該当ファイル差分を revert し、上記 typecheck/build を再実行。
+
+1602) プラグインダイアログのフッターリサイズハンドラ不一致修正（P0）
+- ブランチ: `fix/ui-dialog/footer-resize-handles`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: MultiStepDialogFrame（@hierarchidb/ui-dialog）と PluginDialogFooter（plugin-ui-host）のレイアウト、TrashDialog との差分
+- 受け入れ基準（DoD）:
+  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] プラグイン系ダイアログのフッター下端および左右下隅でリサイズハンドラが反応し、Trash ダイアログと同等の動作になる
+  - [ ] Trash + 代表的なプラグインダイアログ（少なくとも2種）で手動確認した結果を記録する
+  - [ ] 関連パッケージの typecheck を実行し、結果を運用ログに記録する
+- チェックリスト:
+  - [ ] TrashDialog とプラグインダイアログのフッター/ハンドラの差分を特定する
+  - [ ] リサイズハンドラが反応しない原因を特定し、最小差分で修正する
+  - [ ] 手動確認と typecheck を実施し、ログを残す
+- ロールバック手順：本タスクで変更したファイル差分を revert し、実行した検証コマンドを再実行する
+- 運用ログ：
+  - start: 2025-12-08 12:00 JST フッターリサイズハンドラの不一致調査を開始（main 上で作業）
+  - progress: 2025-12-08 12:20 JST MultiStepDialogFrame のリサイズハンドル z-index を (theme.zIndex.modal+5) に引き上げ、PluginDialogFooter の z-index でハンドラが埋もれる問題を解消。検証: `pnpm --filter @hierarchidb/ui-dialog typecheck` exit 0、`pnpm --filter @hierarchidb/plugin-ui-host typecheck` exit 0。手動確認は未実施（要: Trash + プラグイン2〜3種のダイアログでフッター下端/角のリサイズ）
+
 1599) packages README 最新化（P1）
 - ブランチ: `chore/docs/package-readmes-refresh`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `packages/**/README.md`、各パッケージの現行実装・公開 API、依存関係構造
@@ -7909,6 +7982,11 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-5"></a>
 
+- 2025-12-08 18:25 progress: research/plugin-dialog-i18n — route-plugin を location-plugin と同様にプラグイン内 locales 方式へ移行（`src/ui/locales/{en,ja}.json` 追加、`src/ui/i18n.ts` で glob 登録、common i18n ラッパーを i18next ベースに置換）。RouteSelection/Processing/Details/Build ステップと step labels を新キーへ差し替え。`plugins/route-plugin/tsconfig.json` で Vite 型/デコレータ許可を追加し、`pnpm --filter @hierarchidb/route-plugin typecheck` exit 0 を確認。
+- 2025-12-08 19:05 progress: research/plugin-dialog-i18n — linker-plugin へプラグイン内 locales（`src/ui/locales/{en,ja}.json`）と `src/ui/i18n.ts` を追加し、steps-provider/ResourcePicker/AggregatedList/MapPreview の文言を t() 化。`tsconfig.json` を base paths 依存に合わせ簡素化し、`pnpm --filter @hierarchidb/linker-plugin typecheck` exit 0 を確認。
+- 2025-12-08 19:25 progress: research/plugin-dialog-i18n — resolver-plugin をプラグイン内 locales（`src/ui/locales/{en,ja}.json`）＋ `src/ui/i18n.ts` で HMR 登録に移行し、Common i18n ラッパーを追加。ResolverDialog のステップラベル/ヘッダー/ボタン/Basic Info 説明を t() 化。`tsconfig.json` を Vite 型・拡張子 import 許可に整備し、`pnpm --filter @hierarchidb/resolver-plugin typecheck` exit 0 を確認。
+- 2025-12-08 19:45 progress: research/plugin-dialog-i18n — timeline-plugin にローカル locales（`src/ui/locales/{en,ja}.json`）と `src/ui/i18n.ts` を追加し、TimelineDialog のステップラベル/ヘッダー/ボタンと Basic/Frames/Map/Animation ステップ文言を t() 化。`pnpm --filter @hierarchidb/timeline-plugin typecheck` exit 0。
+- 2025-12-08 20:00 progress: research/plugin-dialog-i18n — shape-plugin にローカル locales（`src/ui/locales/{en,ja}.json`）と `src/ui/i18n.ts` を追加し、steps-provider のステップラベルと通知メッセージ、および ShapeDialog のタイトル/ボタン/Name を t() 化。`tsconfig.json` へ Vite types/allowArbitraryExtensions を追加し、`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。
 - 2025-12-06 18:45 progress: 1594 fix/spreadsheet/edit-step2-download — TabularFileImportStep の URL 行を1行レイアウトに統合し、Download ボタンのアイコンを Download/Downloading/DownloadDone で切り替え。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` を実行し exit 0。
 - 2025-12-06 18:52 progress: 1594 fix/spreadsheet/edit-step2-download — Tabular Processing Options を1レーンで左寄せ並びにし、5コンポーネントが横並び（wrap付き）になるよう調整。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` を再実行し exit 0。
 - 2025-12-06 19:00 progress: 1594 fix/spreadsheet/edit-step2-download — Filter Step 外側のスクロール枠を撤去し、DialogContent のスクロールのみとするよう TabularFilterStep コンテナの overflow/maxHeight を削除。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` を実行し exit 0。
@@ -8306,6 +8384,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-25 17:24 progress: fix/ui-icon/timeline-mui — `packages/ui/icon/src/getMuiIconComponent.tsx` の static map に `AccessTime` を追加し、Timeline プラグインで絵文字ではなく MUI アイコンが確実に表示されるように調整。`pnpm --filter @hierarchidb/ui-icon build` を実行し exit 0 を確認。
 ## 今日の着手（運用ログ） <a id="worklog-9"></a>
 
+- 2025-12-08 15:05 start: research/plugin-dialog-i18n — folder/basemap/spreadsheet/styler ダイアログの i18n 対応状況を調査開始（main 上で作業）。DoD: 現状の翻訳利用と未対応箇所を列挙し、差分不要で報告。
+- 2025-12-08 15:25 done: research/plugin-dialog-i18n — 調査のみ完了。folder/basemap/spreadsheet はステップラベル・説明・バリデーション含め全て英語ハードコードで useTranslation なし。Styler は `StyleSettingsStep`/`StylerMapping` 等で useTranslation('styler-plugin') を呼ぶが、実質デフォルト文字列のみで `app/public/locales/{en,ja}/common.json` に鍵未定義。翻訳リソースは plugins 共通の description 程度のみ。対処案: 各プラグインで namespace を決めて i18n key を追加し、STEP_LABELS/バリデーション文言を t() へ移行、locale JSON に en/ja の鍵を追加する。
+- 2025-12-08 15:04 progress: research/plugin-dialog-i18n — folder/basemap/spreadsheet/styler ダイアログを i18n 化。BasicInfoStep を翻訳対応（新 namespace: plugin-basic-info）、folder/basemap/spreadsheet/styler 各ステップのラベル・説明・バリデーションを t() 化し、`app/public/locales/{en,ja}/<plugin>.json` を追加。typecheck: `pnpm --filter @hierarchidb/ui-plugin-basic-info typecheck` exit 0、`pnpm --filter @hierarchidb/styler-plugin typecheck` exit 0、`pnpm --filter @hierarchidb/folder-plugin typecheck` exit 2（既存の xlsx 型欠如と runtime-worker decorator 周辺の警告）、`pnpm --filter @hierarchidb/basemap-plugin typecheck` exit 2（runtime-worker decorator/hasOwn 既存エラー）、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 2（同上既存エラー）。DoD 残件なし。
+- 2025-12-08 17:22 progress: research/plugin-dialog-i18n — location-plugin をプラグイン内 locales + i18next 連携に再構成。`plugins/location-plugin/src/ui/locales/{en,ja}.json` を追加し、`src/ui/i18n.ts` で glob 登録、旧 `common/i18n` を i18next ラッパーとして再実装（型エラー解消）。`pnpm --filter @hierarchidb/location-plugin typecheck` exit 0。残タスク: route/resolver/linker/timeline/shape など他プラグインの i18n 化。
 - 2025-10-27 09:42 start: chore/plugin-registry/derive-shared-maps — 正典 `packages/plugin-registry/generated/registry.ts` から UI/Worker の派生データを共通化するタスクを開始。DoD（一本化・検証）を TASKS へ記載済み。
 - 2025-10-27 10:05 progress: chore/plugin-registry/derive-shared-maps — `packages/plugin-registry/src/derivations.ts` を追加し、`derivePluginDefinitions`/`derivePluginModuleSpecifiers`/`derivePluginModuleSources` を実装。`app/src/plugin-registry/preconnect.ts` と `packages/runtime/worker/src/plugin-registry/preconnect.ts` を新ユーティリティ経由の派生に差し替え、旧 generated ファイルへの参照を撤去。関連ドキュメント（`docs/data-plugin-flow-1.md` / `docs/UNIFIED_BATCH_CONTROL_API.md` / `plugins/README.md`）を正典レジストリ前提へ更新。
 - 2025-10-27 10:28 progress: chore/plugin-registry/derive-shared-maps — `pnpm run tools:gen-plugin-loaders` 実行（exit 0、manifest loader → build → registry 再生成）で生成物が期待通り維持されることを確認。続けて `pnpm lint` を実行し exit 0。
@@ -9522,6 +9604,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-27 15:46 progress: fix/workingcopy/dialog-cancel-behavior — create 仮ノードを version:0 に統一し、commit/save/import で 1 以上へ昇格する方針に合わせて判定を整理。`initTreeNode` を version 0 で作成、`commitTreeNodeDraft` は version を 0 起点で +1、`discardTreeNodeDraft` は committed 判定を version>0/データ有無のみに簡素化。UI cancel で forceDelete を渡すよう修正済み。`pnpm --filter @hierarchidb/runtime-worker test -- --run cancel-create` exit 0。
 
 ## 今日の着手（運用ログ） <a id="worklog-16"></a>
+- 2025-12-08 14:06 start: fix/styler/dialog-stepper-hidden — styler-plugin のマルチステップダイアログでステッパーが表示されない問題の調査を開始。DoD: ステッパー表示確認、原因と修正内容の記録、影響範囲とロールバック明記、関連 lint/typecheck の実行または未実施理由を記録。branch は `fix/styler/dialog-stepper-hidden`（作成不可なら main）。
+- 2025-12-08 14:16 progress: fix/styler/dialog-stepper-hidden — StylerDialog に PluginDialogHeader/PluginDialogFooter を render するよう headlessProps を拡張し、ステッパーとナビゲーションを再表示する実装を追加。依存に plugin-ui-host を追加。検証: `pnpm --filter @hierarchidb/styler-plugin typecheck` exit 2（既存エラー: StylerMapping.tsx unused import, StylerStep5.tsx config undefined 判定, StyleSettingsStep.tsx 型未定義/any など）。
+- 2025-12-08 14:28 progress: fix/styler/dialog-stepper-hidden — 独自 Headless ダイアログを撤去し、UI エントリは steps-provider の登録みに縮小（PluginDialogHost 経由で共通ヘッダー/ステッパーを使用）。`plugins/styler-plugin/package.json` から plugin-ui-host 依存を除去。再検証: `pnpm --filter @hierarchidb/styler-plugin typecheck` exit 2（同じ既存エラーのみ）。
 - 2025-12-07 19:43 start: chore/docs/readme-framework-refresh — README にツールチェーン/プラグイン枠組み/開発フローを反映するドキュメント更新を開始。DoD: Kanban/ログ更新、現行仕様と今後の方針（pnpm/turbo/tsdown/feature flags/rollback/検証コマンド/プラグインホスト仕様）を README に整理し整合性を保つ。ロールバック: README.md と TASKS.md の今回差分を revert。branch 作成不可なら main で作業。
 - 2025-12-07 19:46 done: chore/docs/readme-framework-refresh — README にモノレポ構成、プラグインレジストリ/ローダー、pnpm+turbo+tsdown の開発フロー、検証コマンド、フラグ/ロールバック方針、What’s next を追記。ドキュメント更新のみでコマンド未実行。ロールバック: README.md と TASKS.md の今回差分を revert。
 - 2025-12-06 17:10 start: feat/plugin-ui-sdk/single-source-dialog-atom — TreeNodeUpdater 単一ソースの jotai hook `useSingleSourceDialogAtom` を追加し、ステップ内ローカルとの多重管理を解消する作業を開始（main 上で作業）。DoD: 新hook追加、同値ガード/ジェネリクス対応、typecheck実行。

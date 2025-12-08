@@ -46,15 +46,15 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
     });
   }, [onUpdate]);
   const [waypoints, setWaypoints] = useState<Waypoint[]>([
-    { id: '1', name: t('base-dialog.routeSelection.startPoint', 'Start Point') },
-    { id: '2', name: t('base-dialog.routeSelection.endPoint', 'End Point') },
+    { id: '1', name: t('selection.startPoint', 'Start Point') },
+    { id: '2', name: t('selection.endPoint', 'End Point') },
   ]);
   const [isCalculating, setIsCalculating] = useState(false);
 
   const handleAddWaypoint = () => {
     const newWaypoint: Waypoint = {
       id: `waypoint-${Date.now()}`,
-      name: t('base-dialog.routeSelection.waypoint', 'Waypoint') + ` ${waypoints.length - 1}`,
+      name: t('selection.waypoint', 'Waypoint') + ` ${waypoints.length - 1}`,
     };
 
     // Insert before the last waypoint (end point)
@@ -138,17 +138,17 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
   return (
     <Box sx={{ width: '100%' }}>
       <Typography variant="h6" gutterBottom>
-        {t('base-dialog.routeSelection.title', 'Route Selection')}
+        {t('selection.title', 'Route Selection')}
       </Typography>
 
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        {t('base-dialog.routeSelection.description', 'Configure waypoints and route options')}
+        {t('selection.description', 'Configure waypoints and route options')}
       </Typography>
 
       {/* Waypoints */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="subtitle1" gutterBottom>
-          {t('base-dialog.routeSelection.waypoints', 'Waypoints')}
+          {t('selection.waypoints', 'Waypoints')}
         </Typography>
 
         <Stack spacing={2}>
@@ -170,11 +170,11 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
                 onChange={(e) => handleWaypointChange(waypoint.id, 'name', e.target.value)}
                 placeholder={
                   index === 0
-                    ? t('base-dialog.routeSelection.startPlaceholder', 'Enter start location')
+                    ? t('selection.startPlaceholder', 'Enter start location')
                     : index === waypoints.length - 1
-                      ? t('base-dialog.routeSelection.endPlaceholder', 'Enter destination')
+                      ? t('selection.endPlaceholder', 'Enter destination')
                       : t(
-                        'base-dialog.routeSelection.waypointPlaceholder',
+                        'selection.waypointPlaceholder',
                         'Enter waypoint location',
                       )
                 }
@@ -187,7 +187,7 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
                 startIcon={<MyLocation />}
                 sx={{ minWidth: 120 }}
               >
-                {t('base-dialog.routeSelection.currentLocation', 'Current')}
+                {t('selection.currentLocation', 'Current')}
               </Button>
 
               {waypoints.length > 2 && index !== 0 && index !== waypoints.length - 1 && (
@@ -206,7 +206,7 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
 
         <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
           <Button startIcon={<Add />} onClick={handleAddWaypoint} disabled={waypoints.length >= 10}>
-            {t('base-dialog.routeSelection.addWaypoint', 'Add Waypoint')}
+            {t('selection.addWaypoint', 'Add Waypoint')}
           </Button>
         </Box>
       </Box>
@@ -222,14 +222,14 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
           startIcon={isCalculating ? <CircularProgress size={20} /> : null}
         >
           {isCalculating
-            ? t('base-dialog.routeSelection.calculating', 'Calculating...')
-            : t('base-dialog.routeSelection.calculateRoute', 'Calculate Route')}
+            ? t('selection.calculating', 'Calculating...')
+            : t('selection.calculateRoute', 'Calculate Route')}
         </Button>
       </Box>
 
       {Array.isArray(draft.waypoints) && draft.waypoints.length > 0 && (
         <Alert severity="success" sx={{ mt: 2 }}>
-          {t('base-dialog.routeSelection.routeCalculated', 'Route calculated successfully!')}
+          {t('selection.routeCalculated', 'Route calculated successfully!')}
         </Alert>
       )}
     </Box>

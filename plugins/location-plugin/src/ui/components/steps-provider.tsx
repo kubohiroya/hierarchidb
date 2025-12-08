@@ -1,7 +1,6 @@
 import { PluginStepRegistry, type StartBatchContext, type StepComponentProps } from '@hierarchidb/plugin-base';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { LocationEntity } from '../../common/types/index.js';
-import { translations as locationTranslations } from '../../common/i18n/index.js';
 import { LocationDataSourceStep } from './steps/LocationDataSourceStep.js';
 import { LocationLicenseStep } from './steps/LocationLicenseStep.js';
 import { LocationSelectionStep } from './steps/LocationSelectionStep.js';
@@ -11,6 +10,7 @@ import { LocationBuildStep } from './steps/LocationBuildStep.js';
 import { notify } from '@hierarchidb/components';
 import { listLocationPoints } from '../../services/pointRepository.js';
 import { LocationVectorTileService } from '../../services/tiles/LocationVectorTileService.js';
+import { i18n } from '@hierarchidb/ui-i18n';
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -47,27 +47,31 @@ const MAX_CONCURRENCY = 16;
 const DEFAULT_MIN_ZOOM = 5;
 const DEFAULT_MAX_ZOOM = 12;
 
+const tNs = (key: string, fallback: string) =>
+  String(i18n.t(key, { ns: 'location-plugin', defaultValue: fallback }));
+
 const startLocationBatch = async (data: LocationStepData, context: StartBatchContext) => {
-  const t = locationTranslations.en;
   const draft = data ?? {};
   const nodeId = context.nodeId as NodeId | undefined;
 
   if (!nodeId) {
-    notify.error('Save changes before starting a build.');
+    notify.error(tNs('build.errors.saveFirst', 'Save changes before starting a build.'));
     return;
   }
 
   if (!(draft.dataSource && draft.licenseAgreement)) {
     notify.info(
-      t.build?.requiresApproval ??
+      tNs(
+        'build.requiresApproval',
         'Provide a data source, accept license terms, and save the node before building.'
+      )
     );
     return;
   }
 
   const pointsRaw = await listLocationPoints(nodeId);
   if (!pointsRaw.length) {
-    notify.info(t.build?.noPoints ?? 'No location points available to process.');
+    notify.info(tNs('build.noPoints', 'No location points available to process.'));
     return;
   }
 
@@ -98,19 +102,20 @@ const startLocationBatch = async (data: LocationStepData, context: StartBatchCon
   const summary = await service.startSession(nodeId, points, settings, { concurrency });
 
   notify.success(
-    t.build?.success?.replace?.('{sessionId}', summary.sessionId) ??
-      `Build started (session ${summary.sessionId})`
+    tNs('build.success', 'Build started (session {{sessionId}})').replace(
+      '{{sessionId}}',
+      summary.sessionId
+    )
   );
 };
 
 registry.registerConfigProvider<LocationStepData>({
   nodeType: 'location',
   getCreateStepConfigs() {
-    const t = locationTranslations;
     return [
       {
         id: 'data-source',
-        label: t.en.dialog.dataSourceLabel,
+        label: String(i18n.t('steps.dataSource.label', { ns: 'location-plugin', defaultValue: 'Data Source' })),
         componentFactory: (p: StepProps) => {
           const draft = ensureData(p.data);
           return (
@@ -124,7 +129,7 @@ registry.registerConfigProvider<LocationStepData>({
       },
       {
         id: 'license',
-        label: t.en.dialog.licenseAgreementLabel,
+        label: String(i18n.t('steps.license.label', { ns: 'location-plugin', defaultValue: 'License Agreement' })),
         componentFactory: (p: StepProps) => {
           const draft = ensureData(p.data);
           return (
@@ -138,7 +143,7 @@ registry.registerConfigProvider<LocationStepData>({
       },
       {
         id: 'selection',
-        label: t.en.selection.title,
+        label: String(i18n.t('steps.selection.label', { ns: 'location-plugin', defaultValue: 'Location Selection' })),
         componentFactory: (p: StepProps) => {
           const draft = ensureData(p.data);
           return (
@@ -152,7 +157,7 @@ registry.registerConfigProvider<LocationStepData>({
       },
       {
         id: 'batch-parameters',
-        label: t.en.panel.processingSettings,
+        label: String(i18n.t('steps.batchParameters.label', { ns: 'location-plugin', defaultValue: 'Processing Settings' })),
         componentFactory: (p: StepProps) => {
           const draft = ensureData(p.data);
           return (
@@ -166,7 +171,7 @@ registry.registerConfigProvider<LocationStepData>({
       },
       {
         id: 'map-preview',
-        label: t.en.mapPreview?.title ?? 'Map Preview',
+        label: String(i18n.t('steps.mapPreview.label', { ns: 'location-plugin', defaultValue: 'Map Preview' })),
         optional: true,
         componentFactory: (p: StepProps) => {
           const draft = ensureData(p.data);
@@ -181,7 +186,7 @@ registry.registerConfigProvider<LocationStepData>({
       },
       {
         id: 'build',
-        label: t.en.build?.actionLabel ?? 'Build',
+        label: String(i18n.t('steps.build.label', { ns: 'location-plugin', defaultValue: 'Build' })),
         optional: true,
         componentFactory: (p: StepProps) => {
           const draft = ensureData(p.data);

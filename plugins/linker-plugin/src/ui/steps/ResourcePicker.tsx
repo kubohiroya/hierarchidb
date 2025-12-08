@@ -5,6 +5,7 @@ import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import { DualKeyMap } from '@hierarchidb/util';
 import { ArrowBack as BackIcon, ArrowForward as ForwardIcon, ExpandMore as ExpandIcon, ExpandLess as CollapseIcon, Search as SearchIcon } from '@mui/icons-material';
+import { useTranslation } from '../../common/i18n/index.js';
 // Use TreeConsolePanel in readonly + multi-select mode (same基盤 as TrashBin)
 // Avoid static import to keep this plugin decoupled from host bundling; read from app global if provided
 type Row = { id: string; name: string; nodeType?: string; hasChildren?: boolean; depth: number };
@@ -56,6 +57,7 @@ export interface ResourcePickerProps {
 }
 
 export const ResourcePicker: React.FC<ResourcePickerProps> = ({ value, onChange, notice }) => {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<Set<string>>(value || new Set<string>());
   const [expanded, setExpanded] = useState<Set<string>>(new Set<string>());
   const [searchTerm, setSearchTerm] = useState('');
@@ -151,7 +153,7 @@ export const ResourcePicker: React.FC<ResourcePickerProps> = ({ value, onChange,
   }, [searchTerm]);
 
   const panelProps: TreeConsolePanelProps = useMemo(() => ({
-    title: 'Resources',
+    title: t('resourcePicker.title', 'Resources'),
     treeId: 'r',
     data: treeData,
     pageNodeId: breadcrumb.length ? String(breadcrumb[breadcrumb.length - 1]?.id) : undefined,
@@ -182,7 +184,7 @@ export const ResourcePicker: React.FC<ResourcePickerProps> = ({ value, onChange,
       });
       return index;
     })(),
-    columns: [{ id: 'name', label: 'Name' }],
+    columns: [{ id: 'name', label: t('resourcePicker.columns.name', 'Name') }],
     breadcrumbItems: breadcrumb,
     loading: false,
     error: undefined,
@@ -244,7 +246,7 @@ export const ResourcePicker: React.FC<ResourcePickerProps> = ({ value, onChange,
     onSort: () => {}, onFilterChange: () => {}, onViewModeChange: () => {},
     renderBuiltInSpeedDial: false,
     rowClickAction: 'Select/Navigate',
-  }), [treeData, breadcrumb, selected, expanded, searchTerm, handleSearchClear, handleExpandAll, handleCollapseAll, onChange, ensureChildren, applySearchAndBadges]);
+  }), [t, treeData, breadcrumb, selected, expanded, searchTerm, handleSearchClear, handleExpandAll, handleCollapseAll, onChange, ensureChildren, applySearchAndBadges]);
 
   // Load resources root and compute ancestor/self/descendant sets for badges
   useEffect(() => {

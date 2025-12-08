@@ -1,137 +1,37 @@
-/**
-  * i18n utilities for Location Plugin
- * i18n
-  */
+import { i18n as globalI18n } from '@hierarchidb/ui-i18n';
+import en from '../../ui/locales/en.json' with { type: 'json' };
+import ja from '../../ui/locales/ja.json' with { type: 'json' };
 
-import { useMemo } from 'react';
-import type { LocationPluginTranslations, SupportedLocale } from './types.js';
-import { ja } from './ja.js';
-import { en } from './en.js';
+type SupportedLocale = 'en' | 'ja';
+const bundles: Record<SupportedLocale, any> = { en, ja };
 
-const translations: Record<SupportedLocale, LocationPluginTranslations> = {
-  ja,
-  en,
+const detectLocale = (): SupportedLocale => {
+  const lng = globalI18n.language || 'en';
+  if (lng.toLowerCase().startsWith('ja')) return 'ja';
+  return 'en';
 };
 
-const DEFAULT_LOCALE: SupportedLocale = 'en';
+export const useTranslation = (ns: string = 'location-plugin') => {
+  const locale = detectLocale();
+  const translations = bundles[locale] ?? bundles.en;
+  const t = (key: string, fallback?: string) =>
+    String(globalI18n.t(key, { ns, defaultValue: fallback ?? key }));
+  return { t, translations, locale };
+};
 
-/**
-    */
-export function detectLocale(): SupportedLocale {
-  if (typeof window === 'undefined') {
-    return DEFAULT_LOCALE;
+export const formatBytes = (bytes: number, locale: SupportedLocale = detectLocale()): string => {
+  if (!Number.isFinite(bytes)) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let value = bytes;
+  let unitIndex = 0;
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
   }
+  const formatter = new Intl.NumberFormat(locale, { maximumFractionDigits: 2 });
+  return `${formatter.format(value)} ${units[unitIndex]}`;
+};
 
-  const browserLocale = navigator.language.toLowerCase();
-
-  if (browserLocale.startsWith('ja')) {
-    return 'ja';
-  } else if (browserLocale.startsWith('en')) {
-    return 'en';
-  }
-
-  return DEFAULT_LOCALE;
-}
-
-/**
-    */
-export function getTranslation(
-  locale: SupportedLocale,
-  key: string,
-  fallback?: string,
-): string {
-  const translation = translations[locale] || translations[DEFAULT_LOCALE];
-
-  const keys = key.split('.');
-  let value: any = translation;
-
-  for (const k of keys) {
-    value = value?.[k];
-    if (value === undefined) break;
-  }
-
-  if (typeof value === 'string') {
-    return value;
-  }
-
-  if (fallback) {
-    return fallback;
-  }
-
-  if (locale !== DEFAULT_LOCALE) {
-    return getTranslation(DEFAULT_LOCALE, key, key);
-  }
-
-  return key;
-}
-
-/**
-    */
-export function useTranslation(locale?: SupportedLocale) {
-  const currentLocale = locale || detectLocale();
-
-  const t = useMemo(() => {
-    return (key: string, fallback?: string) =>
-      getTranslation(currentLocale, key, fallback);
-  }, [currentLocale]);
-
-  const translation = useMemo(() =>
-      translations[currentLocale] || translations[DEFAULT_LOCALE],
-    [currentLocale],
-  );
-
-  return {
-    t,
-    locale: currentLocale,
-    translations: translation,
-  };
-}
-
-/**
-    */
-export function getLocationTypeName(
-  type: string,
-  locale: SupportedLocale = detectLocale(),
-): string {
-  return getTranslation(locale, `locationTypes.${type}`, type);
-}
-
-/**
-    */
-export function getCategoryName(
-  category: string,
-  locale: SupportedLocale = detectLocale(),
-): string {
-  return getTranslation(locale, `categories.${category}`, category);
-}
-
-/**
-    */
-export function formatBytes(
-  bytes: number,
-  locale: SupportedLocale = detectLocale(),
-): string {
-  const units = locale === 'ja'
-    ? ['バイト', 'KB', 'MB', 'GB', 'TB']
-    : ['bytes', 'KB', 'MB', 'GB', 'TB'];
-
-  if (bytes === 0) return `0 ${units[0]}`;
-
-  const k = 1024;
-  const dm = 2;
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-  return `${parseFloat((bytes / k ** i).toFixed(dm))} ${units[i]}`;
-}
-
-/**
-    */
-export function formatNumber(
-  num: number,
-  locale: SupportedLocale = detectLocale(),
-): string {
-  return new Intl.NumberFormat(locale === 'ja' ? 'ja-JP' : 'en-US').format(num);
-}
-
-export type { SupportedLocale, LocationPluginTranslations } from './types.js';
-export { translations };
+export const formatNumber = (value: number, locale: SupportedLocale = detectLocale()): string => {
+  return new Intl.NumberFormat(locale).format(value);
+};

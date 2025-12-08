@@ -1,0 +1,10 @@
+{
+  "steps": {
+    "basic": {
+      "label": "Basic Information"
+    }
+  },
+  "errors": {
+    "nameRequired": "Name is required"
+  }
+}

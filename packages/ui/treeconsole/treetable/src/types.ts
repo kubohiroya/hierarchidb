@@ -119,6 +119,10 @@ export interface TreeTableCoreProps {
    * select-all state persistence strategy. Defaults to 'page'.
    */
   selectAllPersistence?: 'page' | 'session';
+  /**
+   * Optional prefix for selection checkbox ids (header/rows) to avoid DOM id collisions.
+   */
+  selectionIdPrefix?: string;
 
   /**
    * Custom containers
