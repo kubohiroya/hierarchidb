@@ -106,7 +106,6 @@ function FilterRulesTableComponent({
   columns,
   operatorOptions,
   defaultExpanded = true,
-  menuContainer,
 }: FilterRulesTableProps): ReactElement {
   const controlId = React.useId();
   const notifyDirty = useCallback(() => {
