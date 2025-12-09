@@ -65,6 +65,27 @@ const generateRuleId = (): string => {
   return `rule_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 };
 
+const rulesEqual = (a: TabularFilterRule[], b: TabularFilterRule[]): boolean => {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    const left = a[i];
+    const right = b[i];
+    if (
+      !left ||
+      !right ||
+      left.id !== right.id ||
+      left.column !== right.column ||
+      left.operator !== right.operator ||
+      left.value !== right.value ||
+      left.enabled !== right.enabled
+    ) {
+      return false;
+    }
+  }
+  return true;
+};
+
 /**
  * Hook for managing Tabular filtering and preview
  */
@@ -179,28 +200,37 @@ export const useTabularFilter = (options: UseTabularFilterOptions): UseTabularFi
       id: generateRuleId(),
     };
 
-    setFilterRules((prev) => [...prev, newRule]);
+    setFilterRules((prev) => {
+      const next = [...prev, newRule];
+      return rulesEqual(prev, next) ? prev : next;
+    });
   }, []);
 
   /**
    * Update existing filter rule
    */
   const updateRule = useCallback((id: string, updates: Partial<TabularFilterRule>) => {
-    setFilterRules((prev) => prev.map((rule) => (rule.id === id ? { ...rule, ...updates } : rule)));
+    setFilterRules((prev) => {
+      const next = prev.map((rule) => (rule.id === id ? { ...rule, ...updates } : rule));
+      return rulesEqual(prev, next) ? prev : next;
+    });
   }, []);
 
   /**
    * Remove filter rule
    */
   const removeRule = useCallback((id: string) => {
-    setFilterRules((prev) => prev.filter((rule) => rule.id !== id));
+    setFilterRules((prev) => {
+      const next = prev.filter((rule) => rule.id !== id);
+      return rulesEqual(prev, next) ? prev : next;
+    });
   }, []);
 
   /**
    * Clear all filter rules
    */
   const clearRules = useCallback(() => {
-    setFilterRules([]);
+    setFilterRules((prev) => (prev.length === 0 ? prev : []));
   }, []);
 
   /**
@@ -209,9 +239,10 @@ export const useTabularFilter = (options: UseTabularFilterOptions): UseTabularFi
   const toggleRule = useCallback(
     (id: string) => {
       updateRule(id, { enabled: undefined }); // Will be inverted by the update logic
-      setFilterRules((prev) =>
-        prev.map((rule) => (rule.id === id ? { ...rule, enabled: !rule.enabled } : rule)),
-      );
+      setFilterRules((prev) => {
+        const next = prev.map((rule) => (rule.id === id ? { ...rule, enabled: !rule.enabled } : rule));
+        return rulesEqual(prev, next) ? prev : next;
+      });
     },
     [updateRule],
   );
@@ -227,7 +258,7 @@ export const useTabularFilter = (options: UseTabularFilterOptions): UseTabularFi
    * Set all rules at once
    */
   const setRules = useCallback((rules: TabularFilterRule[]) => {
-    setFilterRules(rules);
+    setFilterRules((prev) => (rulesEqual(prev, rules) ? prev : rules));
   }, []);
 
   // Initial preview load

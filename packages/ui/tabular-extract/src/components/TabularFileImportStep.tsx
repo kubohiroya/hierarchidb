@@ -102,6 +102,8 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
   const delimiterSelectId = `${delimiterLabelId}-select`;
   const encodingSelectId = `${encodingLabelId}-select`;
   const quoteSelectId = `${quoteLabelId}-select`;
+  const hasHeaderSwitchId = `${idPrefix}-has-header`;
+  const skipEmptyLinesSwitchId = `${idPrefix}-skip-empty-lines`;
 
   useEffect(() => {
     setImportMethod(initialImportMethod);
@@ -226,6 +228,7 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
           labelId={importMethodLabelId}
           value={importMethod}
           label="Import Method"
+          name="import-method"
           onChange={(e: SelectChangeEvent) => {
             const method = e.target.value as 'file' | 'url';
             setImportMethod(method);
@@ -360,10 +363,11 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
         }}
       >
         <FormControl size="small" sx={{ minWidth: 140 }}>
-          <InputLabel id={delimiterLabelId} htmlFor={delimiterSelectId}>Delimiter</InputLabel>
+        <InputLabel id={delimiterLabelId} htmlFor={delimiterSelectId}>Delimiter</InputLabel>
           <ModalSelect
             id={delimiterSelectId}
             labelId={delimiterLabelId}
+            name="delimiter"
             value={processingConfig.delimiter}
             label="Delimiter"
             onChange={(e: SelectChangeEvent<string>) => {
@@ -391,6 +395,7 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
           <ModalSelect
             id={encodingSelectId}
             labelId={encodingLabelId}
+            name="encoding"
             value={processingConfig.encoding}
             label="Encoding"
             onChange={(e: SelectChangeEvent<string>) => {
@@ -417,6 +422,7 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
           <ModalSelect
             id={quoteSelectId}
             labelId={quoteLabelId}
+            name="quote-char"
             value={processingConfig.quoteChar}
             label="Quote Character"
             onChange={(e: SelectChangeEvent<string>) => {
@@ -440,6 +446,7 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
         <FormControlLabel
           control={(
             <Switch
+              id={hasHeaderSwitchId}
               checked={processingConfig.hasHeader}
               onChange={(e) => {
                 const checked = e.target.checked;
@@ -450,6 +457,10 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
                 });
               }}
               disabled={disabled || isImporting}
+              inputProps={{
+                id: hasHeaderSwitchId,
+                name: 'has-header',
+              }}
             />
           )}
           label="Has Header Row"
@@ -458,6 +469,7 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
         <FormControlLabel
           control={(
             <Switch
+              id={skipEmptyLinesSwitchId}
               checked={processingConfig.skipEmptyLines}
               onChange={(e) => {
                 const checked = e.target.checked;
@@ -468,6 +480,10 @@ export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
                 });
               }}
               disabled={disabled || isImporting}
+              inputProps={{
+                id: skipEmptyLinesSwitchId,
+                name: 'skip-empty-lines',
+              }}
             />
           )}
           label="Skip Empty Lines"

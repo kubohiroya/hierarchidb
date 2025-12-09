@@ -12,8 +12,8 @@ import {
   TableBody,
   TableCell,
   TableRow,
-  TextField,
   Typography,
+  TextField,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -39,6 +39,7 @@ type FilterRulesTableProps = {
   columns: TabularColumnInfo[];
   operatorOptions: FilterOperatorOption[];
   defaultExpanded?: boolean;
+  menuContainer?: Element | null;
 };
 
 const requiresValue = (operator: TabularFilterOperator): boolean => {
@@ -52,18 +53,6 @@ const getRuleId = () => {
     return crypto.randomUUID();
   }
   return `rule-${Math.random().toString(36).slice(2, 10)}`;
-};
-
-const reorder = (list: TabularFilterRule[], fromId: string, toId: string): TabularFilterRule[] => {
-  const fromIndex = list.findIndex((item) => item.id === fromId);
-  const toIndex = list.findIndex((item) => item.id === toId);
-  if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) return list;
-
-  const next = [...list];
-  const [moved] = next.splice(fromIndex, 1);
-  if (!moved) return list;
-  next.splice(toIndex, 0, moved);
-  return next;
 };
 
 const rulesEqual = (a: TabularFilterRule[], b: TabularFilterRule[]): boolean => {
@@ -84,6 +73,32 @@ const rulesEqual = (a: TabularFilterRule[], b: TabularFilterRule[]): boolean => 
   return true;
 };
 
+const reorderWithPlacement = (
+  list: TabularFilterRule[],
+  fromId: string,
+  toId: string,
+  placement: 'before' | 'after'
+): TabularFilterRule[] => {
+  if (fromId === toId) {
+    // no move if dropping onto itself
+    return list;
+  }
+  const fromIndex = list.findIndex((item) => item.id === fromId);
+  const toIndex = list.findIndex((item) => item.id === toId);
+  if (fromIndex === -1 || toIndex === -1) return list;
+
+  const next = [...list];
+  const [moved] = next.splice(fromIndex, 1);
+  if (!moved) return list;
+
+  let insertIndex = toIndex;
+  if (placement === 'after') {
+    insertIndex = Math.min(next.length, toIndex + 1);
+  }
+  next.splice(insertIndex, 0, moved);
+  return next;
+};
+
 function FilterRulesTableComponent({
   filters,
   onChange,
@@ -91,18 +106,24 @@ function FilterRulesTableComponent({
   columns,
   operatorOptions,
   defaultExpanded = true,
+  menuContainer,
 }: FilterRulesTableProps): ReactElement {
   const controlId = React.useId();
   const notifyDirty = useCallback(() => {
     onDirty?.();
   }, [onDirty]);
 
-  const [draggingId, setDraggingId] = useState<string | null>(null);
   const [draftValues, setDraftValues] = useState<Record<string, string>>({});
   const draftValuesRef = useRef<Record<string, string>>({});
   const normalizedRulesRef = useRef<TabularFilterRule[]>(filters);
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const activeInputIdRef = useRef<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const dragImageRef = useRef<HTMLElement | null>(null);
+  const [dragOverState, setDragOverState] = useState<{ id: string | null; placement: 'before' | 'after' }>({
+    id: null,
+    placement: 'before',
+  });
 
   useEffect(() => {
     draftValuesRef.current = draftValues;
@@ -261,7 +282,9 @@ function FilterRulesTableComponent({
             size="small"
             aria-label="Drag to reorder"
             onMouseDown={() => setDraggingId(row.original.id)}
-            onMouseUp={() => setDraggingId(null)}
+            onMouseUp={() => {
+              setDraggingId(null);
+            }}
             draggable
             onDragStart={(event) => {
               event.dataTransfer.effectAllowed = 'move';
@@ -271,12 +294,56 @@ function FilterRulesTableComponent({
                 const rect = tr.getBoundingClientRect();
                 const anchorX = event.clientX - rect.left;
                 const anchorY = event.clientY - rect.top;
-                event.dataTransfer.setDragImage(tr, anchorX, anchorY);
+                // Use a detached clone for the drag image so the on-table row keeps its own opacity.
+                const clone = tr.cloneNode(true) as HTMLElement;
+                clone.style.position = 'absolute';
+                clone.style.top = '-9999px';
+                clone.style.left = '-9999px';
+                const tableEl = tr.closest('table') as HTMLElement | null;
+                const tableWidth = tableEl?.getBoundingClientRect().width ?? rect.width;
+                clone.style.width = `${tableWidth}px`;
+                clone.style.boxSizing = 'border-box';
+                clone.style.display = 'table';
+                clone.style.tableLayout = 'fixed';
+                const originalCells = tr.querySelectorAll('td, th');
+                const cloneCells = clone.querySelectorAll('td, th');
+                originalCells.forEach((cell, idx) => {
+                  const target = cloneCells[idx] as HTMLElement | undefined;
+                  if (!target) return;
+                  const cellRect = cell.getBoundingClientRect();
+                  target.style.width = `${cellRect.width}px`;
+                  target.style.minWidth = `${cellRect.width}px`;
+                  target.style.boxSizing = 'border-box';
+                });
+                const computedBg = window.getComputedStyle(tr).backgroundColor || '';
+                const bg = computedBg && computedBg !== 'rgba(0, 0, 0, 0)' ? computedBg : '#fff';
+                clone.style.backgroundColor = bg;
+                clone.style.opacity = '1';
+                clone.style.filter = 'opacity(1)';
+                clone.style.pointerEvents = 'none';
+                clone.setAttribute('aria-hidden', 'true');
+                clone.removeAttribute('id');
+                clone.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
+                clone.querySelectorAll('[for]').forEach((el) => el.removeAttribute('for'));
+                clone.querySelectorAll('label').forEach((el) => el.remove());
+                clone.querySelectorAll('select,input,textarea').forEach((el) => {
+                  el.setAttribute('aria-hidden', 'true');
+                  el.setAttribute('tabindex', '-1');
+                });
+                document.body.appendChild(clone);
+                dragImageRef.current = clone;
+                event.dataTransfer.setDragImage(clone, anchorX, anchorY);
               }
               setDraggingId(row.original.id);
             }}
-            onDragEnd={() => setDraggingId(null)}
-            onDragLeave={() => setDraggingId(null)}
+            onDragEnd={() => {
+              if (dragImageRef.current) {
+                document.body.removeChild(dragImageRef.current);
+                dragImageRef.current = null;
+              }
+              setDraggingId(null);
+              setDragOverState({ id: null, placement: 'before' });
+            }}
           >
             <DragIndicatorIcon fontSize="small" />
           </IconButton>
@@ -302,7 +369,7 @@ function FilterRulesTableComponent({
                 id: `${controlId}-filter-enabled-${rule.id}`,
                 name: `${controlId}-filter-enabled-${rule.id}`,
               }}
-              onChange={(event) => {
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                 const nextEnabled = event.target.checked;
                 handleUpdateRule(rule.id, (current) => ({ ...current, enabled: nextEnabled }));
               }}
@@ -316,14 +383,17 @@ function FilterRulesTableComponent({
         header: 'Column',
         cell: ({ row }: { row: Row<TabularFilterRule> }) => {
           const rule = row.original;
+          const selectId = `${controlId}-filter-column-${rule.id}`;
           return (
             <TextField
               select
-              fullWidth
               size="small"
-              value={rule.column ?? ''}
+              fullWidth
+              variant="outlined"
+              id={selectId}
               label="Column"
-              onChange={(event) => {
+              value={rule.column ?? ''}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                 const nextColumn = event.target.value;
                 const columnType = normalizeType(columns.find((c) => c.name === nextColumn)?.type);
                 const availableOps = operatorOptions.filter((op) => op.types.includes(columnType));
@@ -336,19 +406,9 @@ function FilterRulesTableComponent({
                   operator: nextOperator,
                 }));
               }}
-              SelectProps={{
-                native: true,
-                MenuProps: {
-                  MenuListProps: {
-                    dense: true,
-                  },
-                },
-              }}
-              inputProps={{
-                'aria-label': 'Column',
-                id: `${controlId}-filter-column-${rule.id}`,
-                name: `${controlId}-filter-column-${rule.id}`,
-              }}
+              SelectProps={{ native: true }}
+              inputProps={{ name: selectId }}
+              FormHelperTextProps={{ component: 'div' }}
             >
               {columns.map((column) => (
                 <option key={column.name} value={column.name}>
@@ -367,14 +427,17 @@ function FilterRulesTableComponent({
           const rule = row.original;
           const columnType = normalizeType(columns.find((c) => c.name === rule.column)?.type);
           const availableOps = operatorOptions.filter((op) => op.types.includes(columnType));
+          const selectId = `${controlId}-filter-operator-${rule.id}`;
           return (
             <TextField
               select
-              fullWidth
               size="small"
-              value={rule.operator}
+              fullWidth
+              variant="outlined"
+              id={selectId}
               label="Operator"
-              onChange={(event) => {
+              value={rule.operator}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                 const nextOp = event.target.value as TabularFilterOperator;
                 const shouldRequireValue = nextOp ? requiresValue(nextOp) : false;
                 const hasValue = String(rule.value ?? '').trim().length > 0;
@@ -385,19 +448,9 @@ function FilterRulesTableComponent({
                   enabled: nextEnabled,
                 }));
               }}
-              SelectProps={{
-                native: true,
-                MenuProps: {
-                  MenuListProps: {
-                    dense: true,
-                  },
-                },
-              }}
-              inputProps={{
-                'aria-label': 'Operator',
-                id: `${controlId}-filter-operator-${rule.id}`,
-                name: `${controlId}-filter-operator-${rule.id}`,
-              }}
+              SelectProps={{ native: true }}
+              inputProps={{ name: selectId }}
+              FormHelperTextProps={{ component: 'div' }}
             >
               {availableOps.map((op) => (
                 <option key={op.value} value={op.value}>
@@ -417,13 +470,15 @@ function FilterRulesTableComponent({
           const operator = rule.operator;
           const needsValue = requiresValue(operator);
           const value = draftValuesRef.current[rule.id] ?? String(rule.value ?? '');
+          const inputId = `${controlId}-filter-value-${rule.id}`;
           return (
             <TextField
-              fullWidth
+              id={inputId}
+              name={inputId}
               size="small"
+              fullWidth
+              variant="outlined"
               label="Value"
-              id={`${controlId}-filter-value-${rule.id}`}
-              name={`${controlId}-filter-value-${rule.id}`}
               value={value}
               disabled={!needsValue}
               onChange={(event) => {
@@ -435,7 +490,6 @@ function FilterRulesTableComponent({
                 });
                 activeInputIdRef.current = rule.id;
                 if (needsValue && nextValue.trim().length > 0 && !rule.enabled) {
-                  // Only flip enabled; commit of value happens on blur/Enter to avoid focus loss.
                   handleUpdateRule(rule.id, (current) => ({ ...current, enabled: true }));
                 }
               }}
@@ -456,14 +510,10 @@ function FilterRulesTableComponent({
                   notifyDirty();
                 }
               }}
-              inputRef={(el) => {
+              inputRef={(el: HTMLInputElement | null) => {
                 inputRefs.current[rule.id] = el;
               }}
-              inputProps={{
-                'aria-label': 'Value',
-                id: `filter-value-${rule.id}`,
-                name: `filter-value-${rule.id}`,
-              }}
+              InputLabelProps={{ htmlFor: inputId }}
             />
           );
         },
@@ -519,8 +569,13 @@ function FilterRulesTableComponent({
     event.preventDefault();
     const sourceId = draggingId || event.dataTransfer.getData('text/plain');
     if (!sourceId) return;
-    onChange(reorder(normalizedRules, sourceId, targetId));
+    onChange(reorderWithPlacement(normalizedRules, sourceId, targetId, dragOverState.placement ?? 'before'));
+    if (dragImageRef.current) {
+      document.body.removeChild(dragImageRef.current);
+      dragImageRef.current = null;
+    }
     setDraggingId(null);
+    setDragOverState({ id: null, placement: 'before' });
   };
 
   return (
@@ -542,11 +597,42 @@ function FilterRulesTableComponent({
               {table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  onDragOver={(event) => event.preventDefault()}
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    const rect = event.currentTarget.getBoundingClientRect();
+                    const placement = event.clientY < rect.top + rect.height / 2 ? 'before' : 'after';
+                    setDragOverState({ id: row.original.id, placement });
+                  }}
+                  onDragEnter={(event) => {
+                    event.preventDefault();
+                    const rect = event.currentTarget.getBoundingClientRect();
+                    const placement = event.clientY < rect.top + rect.height / 2 ? 'before' : 'after';
+                    setDragOverState({ id: row.original.id, placement });
+                  }}
+                  onDragLeave={(event) => {
+                    event.preventDefault();
+                    setDragOverState((current) =>
+                      current.id === row.original.id ? { id: null, placement: 'before' } : current
+                    );
+                  }}
                   onDrop={(event) => handleDrop(row.original.id, event)}
                   sx={{
-                    opacity: draggingId === row.original.id ? 0.25 : 1,
+                    opacity:
+                      draggingId === row.original.id
+                        ? 0.1
+                        : draggingId
+                          ? 0.5
+                          : 1,
                     backgroundColor: draggingId === row.original.id ? 'rgba(0,0,0,0.06)' : undefined,
+                    transition: 'opacity 120ms ease',
+                    borderTop:
+                      dragOverState.id === row.original.id && dragOverState.placement === 'before'
+                        ? (theme) => `1px solid ${theme.palette.primary.main}`
+                        : undefined,
+                    borderBottom:
+                      dragOverState.id === row.original.id && dragOverState.placement === 'after'
+                        ? (theme) => `1px solid ${theme.palette.primary.main}`
+                        : undefined,
                   }}
                 >
                   {row.getVisibleCells().map((cell) => (
@@ -583,5 +669,6 @@ export const FilterRulesTable = React.memo(
     prev.operatorOptions === next.operatorOptions &&
     prev.onChange === next.onChange &&
     prev.onDirty === next.onDirty &&
-    prev.defaultExpanded === next.defaultExpanded
+    prev.defaultExpanded === next.defaultExpanded &&
+    prev.menuContainer === next.menuContainer
 );

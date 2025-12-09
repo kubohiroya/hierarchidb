@@ -40,6 +40,8 @@ export interface TabularFilterStepProps {
   initialFilters?: TabularFilterRule[];
   /** 明示的に親へ同期したいときに使うコールバックを受け取る */
   onSyncFilters?: (filters: TabularFilterRule[]) => void;
+  /** When provided, keep menus/portals inside the dialog container */
+  menuContainer?: Element | null;
 }
 
 const FILTER_OPERATORS: FilterOperatorOption[] = [
@@ -66,6 +68,7 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
   maxPreviewRows = Number.MAX_SAFE_INTEGER,
   initialFilters = [],
   onSyncFilters,
+  menuContainer,
 }) => {
   const [filters, setFilters] = useState<TabularFilterRule[]>(initialFilters);
   const [previewDirty, setPreviewDirty] = useState(false);
@@ -87,10 +90,29 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
 
   const hasMetadataColumns = Boolean(tableMetadata.columns && tableMetadata.columns.length > 0);
   const hasPreviewColumns = Boolean(previewData?.columns && previewData.columns.length > 0);
-  const columnOptions: TabularColumnInfo[] = useMemo(
-    () => (hasMetadataColumns ? (tableMetadata.columns ?? []) : (previewData?.columns ?? [])),
-    [hasMetadataColumns, previewData?.columns, tableMetadata.columns],
-  );
+
+  // Stabilize column options to avoid rerender loops when upstream passes new array references.
+  const columnOptionsRef = useRef<TabularColumnInfo[]>([]);
+  const columnOptions: TabularColumnInfo[] = useMemo(() => {
+    const nextColumns = hasMetadataColumns ? (tableMetadata.columns ?? []) : (previewData?.columns ?? []);
+    const prevColumns = columnOptionsRef.current;
+    const sameLength = prevColumns.length === nextColumns.length;
+    const shallowEqual =
+      sameLength &&
+      prevColumns.every((col, idx) => {
+        const other = nextColumns[idx];
+        return (
+          col?.name === other?.name &&
+          col?.type === other?.type &&
+          col?.index === other?.index
+        );
+      });
+    if (shallowEqual) {
+      return prevColumns;
+    }
+    columnOptionsRef.current = nextColumns;
+    return nextColumns;
+  }, [hasMetadataColumns, previewData?.columns, tableMetadata.columns]);
   const previewColumns: TabularColumnInfo[] = hasPreviewColumns ? previewData!.columns : columnOptions;
   const rowHeight = 44;
   const totalRows = previewData?.rows.length ?? 0;
@@ -134,8 +156,8 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
   const normalizeType = (type?: TabularColumnType): TabularColumnType => type ?? 'string';
   useEffect(() => {
     if (columnOptions.length === 0) return;
-    setFilters((prev) =>
-      prev.map((rule) => {
+    setFilters((prev) => {
+      const nextRules = prev.map((rule) => {
         const columnExists = columnOptions.some((col) => col.name === rule.column);
         const columnName = columnExists ? rule.column : columnOptions[0]?.name ?? rule.column;
         const columnType = normalizeType(columnOptions.find((col) => col.name === columnName)?.type);
@@ -148,18 +170,55 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
           column: columnName,
           operator,
         } as TabularFilterRule;
-      }),
-    );
+      });
+      const changed =
+        nextRules.length !== prev.length ||
+        nextRules.some((rule, idx) => {
+          const current = prev[idx];
+          return (
+            !current ||
+            current.column !== rule.column ||
+            current.operator !== rule.operator
+          );
+        });
+      return changed ? nextRules : prev;
+    });
   }, [columnOptions]);
 
   const enabledFilters = useMemo(() => filters.filter((f) => f.enabled), [filters]);
   const effectiveFilters = enabledFilters.length > 0 ? enabledFilters : filters;
   const hasAnyFilters = filters.length > 0;
 
-  const handleFiltersChange = useCallback((next: TabularFilterRule[]) => {
-    setFilters(next);
-    setPreviewDirty(true);
+  const filtersEqual = useCallback((a: TabularFilterRule[], b: TabularFilterRule[]): boolean => {
+    if (a === b) return true;
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i += 1) {
+      const left = a[i];
+      const right = b[i];
+      if (
+        !left ||
+        !right ||
+        left.id !== right.id ||
+        left.column !== right.column ||
+        left.operator !== right.operator ||
+        left.value !== right.value ||
+        left.enabled !== right.enabled
+      ) {
+        return false;
+      }
+    }
+    return true;
   }, []);
+
+  const handleFiltersChange = useCallback((next: TabularFilterRule[]) => {
+    setFilters((prev) => {
+      if (filtersEqual(prev, next)) {
+        return prev;
+      }
+      return next;
+    });
+    setPreviewDirty((prev) => (prev ? prev : true));
+  }, [filtersEqual]);
 
   // 親に明示的に同期するためのヘルパー
   const syncFilters = useCallback(() => {
@@ -223,6 +282,7 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
         onDirty={() => setPreviewDirty(true)}
         columns={columnOptions}
         operatorOptions={FILTER_OPERATORS}
+        menuContainer={menuContainer ?? undefined}
       />
 
       {error && (

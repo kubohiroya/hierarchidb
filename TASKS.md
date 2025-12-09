@@ -9757,3 +9757,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-09 09:45 progress: fix/styler/filter-rerender — FilterRulesTable を TextField(select/input) に戻し、id/name を明示して操作不能状態を解消する試み。typecheck: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/FilterRulesTable.tsx` の TextField 化を取り消す。
 
 - 2025-12-09 09:55 progress: fix/styler/filter-rerender — FilterRulesTable のドラッグ＆ドロップを一旦無効化し、行の pointer blocking を排除。操作不能の原因切り分け目的。typecheck: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/FilterRulesTable.tsx` のドラッグ無効化差分を戻す。
+
+- 2025-12-09 10:05 progress: fix/styler/filter-rerender — FilterRulesTable でドラッグ＆ドロップ（行入れ替え）を再有効化。typecheck: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/FilterRulesTable.tsx` の reorder/drag ハンドラ差分を戻す。
+
+- 2025-12-09 10:45 progress: fix/styler/filter-rerender — Column/Operator TextField に id を設定し、inputProps の id を削除して label htmlFor 不一致/重複 id 警告を抑止。typecheck: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/FilterRulesTable.tsx` の id/inputProps 変更を戻す。
