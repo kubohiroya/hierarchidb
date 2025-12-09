@@ -3,6 +3,7 @@ import type {
   LocationEntity,
   LocationSearchConfig,
 } from '../../../common/entities/LocationEntity.js';
+import type { NodeId } from '@hierarchidb/common-types';
 import {
   buildLocationEntity,
   mapCategory,
@@ -83,7 +84,7 @@ export class OverpassStrategy implements ILocationDownloadStrategy {
       },
       importance: normalizeImportance(tags.importance),
     });
-    void appendLocationPoints(entity.nodeId, [point]).catch((err) => {
+    void appendLocationPoints(entity.id as NodeId, [point]).catch((err) => {
       console.warn('[Location][Overpass strategy] failed to persist point', err);
     });
     return entity;

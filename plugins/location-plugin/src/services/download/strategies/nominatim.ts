@@ -5,6 +5,7 @@ import type {
   LocationCategory,
   LocationType,
 } from '../../../common/entities/LocationEntity.js';
+import type { NodeId } from '@hierarchidb/common-types';
 import {
   buildLocationEntity,
   mapCategory,
@@ -105,7 +106,7 @@ export class NominatimStrategy implements ILocationDownloadStrategy {
       address,
       importance: normalizeImportance(osmData.importance, 0.5),
     });
-    void appendLocationPoints(entity.nodeId, [point]).catch((err) => {
+    void appendLocationPoints(entity.id as NodeId, [point]).catch((err) => {
       console.warn('[Location][Nominatim] failed to persist point', err);
     });
     return entity;

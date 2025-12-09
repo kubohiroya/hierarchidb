@@ -586,7 +586,7 @@ export class LocationBatchManager {
       address,
       importance: normalizeImportance(osmData.importance, 0.5),
     });
-    void this.persistLocationPoints(entity.nodeId, [point]).catch((err) => {
+    void this.persistLocationPoints(entity.id as NodeId, [point]).catch((err) => {
       console.warn('[LocationBatchManager] failed to persist OSM point', err);
     });
     return entity;
@@ -633,7 +633,7 @@ export class LocationBatchManager {
       },
       importance: normalizeImportance(tags.importance),
     });
-    void this.persistLocationPoints(entity.nodeId, [point]).catch((err) => {
+    void this.persistLocationPoints(entity.id as NodeId, [point]).catch((err) => {
       console.warn('[LocationBatchManager] failed to persist Overpass point', err);
     });
     return entity;

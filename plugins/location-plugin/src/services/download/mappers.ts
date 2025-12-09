@@ -102,9 +102,9 @@ export const buildLocationEntity = ({
 }: BaseEntityParams): LocationEntity => {
   const now = Date.now() as Timestamp;
   const idSegment = String(rawId);
+  const treeNodeId = toNodeId(`${prefix}-node-${idSegment}`);
   return {
-    id: toNodeId(`${prefix}-${idSegment}`),
-    nodeId: toNodeId(`${prefix}-node-${idSegment}`),
+    id: treeNodeId,
     name,
     category,
     type,

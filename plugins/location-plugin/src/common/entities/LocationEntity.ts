@@ -119,7 +119,6 @@ export type LocationProcessingStatus =
  */
 export interface LocationEntity {
   id: NodeId;
-  nodeId: NodeId;
 
   /** Optional descriptive metadata mirrored to the TreeNode. */
   name?: string;
