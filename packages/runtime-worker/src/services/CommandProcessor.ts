@@ -7,7 +7,6 @@ import { PERFORMANCE_CONFIG } from '../utils/performance-config.js';
 import type { CoreDB } from './CoreDB.js';
 import { executeCoreCommand } from './command/core-handlers/index.js';
 import {
-  type CommandExecutionContext,
   CommandExecutionRunner,
 } from './command/execution/CommandExecutionRunner.js';
 import { CommandHistoryManager } from './command/history/CommandHistoryManager.js';
@@ -17,7 +16,6 @@ import { WorkerErrorCode } from './command-types.js';
 import { TreeSubscriptionService } from './TreeSubscriptionService.js';
 import { classifyWorkerError, sanitizeMessageText } from './utils/error-adapter.js';
 import { isValidationFailure, validateAndNormalizeEnvelope } from './validation/envelope.js';
-import { deletePeerEntitiesForNodes } from './command/peerEntityCleanup.js';
 
 type ErrorResultExtras = {
   status?: 'COMMIT_CONFLICT' | 'NAME_CONFLICT';
@@ -141,7 +139,7 @@ export class CommandProcessor {
   private async executeCommand<TType extends string, TPayload>(
     envelope: CommandEnvelope<TType, TPayload>
   ): Promise<CommandResult> {
-    return this.runner.run(envelope, (context) => this.executeCommandNoTx(envelope, context));
+    return this.runner.run(envelope, () => this.executeCommandNoTx(envelope));
   }
 
   /**
@@ -150,7 +148,6 @@ export class CommandProcessor {
    */
   private async executeCommandNoTx<TType extends string, TPayload>(
     envelope: CommandEnvelope<TType, TPayload>,
-    context: CommandExecutionContext
   ): Promise<CommandResult> {
     // Delegate to handler if present
     const handler = commandRegistry.get(envelope.kind);
@@ -175,12 +172,10 @@ export class CommandProcessor {
 
     const coreResult = await executeCoreCommand(
       envelope as CommandEnvelope<string, unknown>,
-      context,
       {
         coreDB: this.coreDB,
         history: this.history,
         batchOperationSize: PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE,
-        deletePeerEntitiesForNodes: (nodes) => deletePeerEntitiesForNodes(nodes, this.coreDB),
         createErrorResult: (message, code, extra) => this.createErrorResult(message, code, extra),
         getNextSeq: () => this.getNextSeq(),
       }

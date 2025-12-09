@@ -21,16 +21,7 @@ async function resolveStoreRegistry(
   if (options.storeRegistry) {
     return options.storeRegistry;
   }
-
-  try {
-    const runtime = await import('@hierarchidb/runtime-worker');
-    return (runtime as { storeRegistry?: StoreRegistry }).storeRegistry ?? null;
-  } catch (error) {
-    if (import.meta.env?.DEV) {
-      console.warn('[spreadsheet-worker] failed to import runtime-worker worker module', error);
-    }
-    return null;
-  }
+  return null;
 }
 
 const ensurePeerStore = (registry: StoreRegistry): void => {

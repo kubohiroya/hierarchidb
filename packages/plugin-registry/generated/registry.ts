@@ -104,7 +104,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
       },
     worker: {
         specifier: "@hierarchidb/basemap-plugin/worker",
-        source: "plugins/basemap-plugin/src/worker/index.ts",
       },
     icon: {
         specifier: "@hierarchidb/basemap-plugin/icon",
@@ -565,7 +564,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
       },
     worker: {
         specifier: "@hierarchidb/resolver-plugin/worker",
-        source: "plugins/resolver-plugin/src/worker/index.ts",
       },
     database: {
         specifier: "@hierarchidb/resolver-plugin/database",

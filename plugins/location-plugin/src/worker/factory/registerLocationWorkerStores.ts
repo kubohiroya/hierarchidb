@@ -24,15 +24,7 @@ async function resolveStoreRegistry(options: RegisterLocationWorkerStoresOptions
   if (options.storeRegistry) {
     return options.storeRegistry;
   }
-  try {
-    const runtime = await import('@hierarchidb/runtime-worker');
-    return runtime.storeRegistry as StoreRegistry;
-  } catch (error) {
-    if (import.meta.env?.DEV) {
-      console.warn('[location-worker] failed to import runtime-worker worker module', error);
-    }
-    return null;
-  }
+  return null;
 }
 
 async function ensureLocationStores(registry: StoreRegistry): Promise<void> {

@@ -314,7 +314,7 @@ export const DuplicateResolutionStep: React.FC<DuplicateResolutionStepProps> = (
             Records are considered duplicates when these key properties match:
           </Typography>
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            {data.mappingRules?.slice(0, 5).map((rule: PropertyMappingRule) => (
+            {data.draftData?.mappingRules?.slice(0, 5).map((rule: PropertyMappingRule) => (
               <Chip
                 key={rule.id}
                 label={rule.targetProperty}
@@ -323,15 +323,15 @@ export const DuplicateResolutionStep: React.FC<DuplicateResolutionStepProps> = (
                 variant="outlined"
               />
             ))}
-            {(data.mappingRules?.length || 0) > 5 && (
+            {(data.draftData?.mappingRules?.length || 0) > 5 && (
               <Chip
-                label={`+${(data.mappingRules?.length || 0) - 5} more`}
+                label={`+${(data.draftData?.mappingRules?.length || 0) - 5} more`}
                 size="small"
                 variant="outlined"
               />
             )}
           </Box>
-          {(!data.mappingRules || data.mappingRules.length === 0) && (
+          {(!data.draftData?.mappingRules || data.draftData?.mappingRules.length === 0) && (
             <Alert severity="warning" sx={{ mt: 2 }}>
               No mapping rules defined yet. Complete the Property Mapping step to configure duplicate detection keys.
             </Alert>

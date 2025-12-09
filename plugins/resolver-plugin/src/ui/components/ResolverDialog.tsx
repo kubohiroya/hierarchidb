@@ -56,19 +56,19 @@ const PlaceholderStepComponent: React.FC<StepComponentProps<ResolverUpdaterPaylo
 export interface ResolverDialogProps {
   open: boolean;
   nodeId: NodeId;
-  entity?: ResolverEntity;
   onClose: () => void;
   onSave: (entity: ResolverUpdaterPayload) => Promise<void>;
   onCancel: () => void;
+  mode: 'create' | 'edit';
 }
 
 export const ResolverDialog: React.FC<ResolverDialogProps> = ({
   open,
   nodeId,
-  entity,
   onClose,
   onSave,
   onCancel,
+  mode
 }) => {
   const createDefaultDraft = useCallback(
     (): ResolverUpdaterPayload => ({
@@ -102,7 +102,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     saveDraft,
     discardDraft,
   } = useTreeNodeUpdater<ResolverEntity>({
-    mode: entity ? 'edit' : 'create',
+    mode,
     nodeType: 'resolver',
     nodeId,
     parentId: nodeId,
@@ -209,31 +209,15 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
   }, [open]);
 
   useEffect(() => {
-    if (entity) {
-      const copy: ResolverUpdaterPayload = {
-        treeNodeId: nodeId,
-        draftMetadata: {
-          name: entity.name,
-          description: entity.description ?? '',
-          tags: [],
-        },
-        draftData: {
-          sourceSchema: entity.sourceSchema,
-          targetSchema: entity.targetSchema,
-          mappingRules: entity.mappingRules.map((rule) => ({ ...rule })),
-          validationRules: entity.validationRules.map((rule) => ({ ...rule })),
-          duplicateResolution: entity.duplicateResolution ? { ...entity.duplicateResolution } : { strategy: 'ignore' },
-          dataTransformations: entity.dataTransformations.map((transformation) => ({ ...transformation })),
-          previewConfig: entity.previewConfig ? { ...entity.previewConfig } : { ...DEFAULT_PREVIEW_CONFIG },
-        },
-      };
-      setDraft(copy);
-      setSourceSchema(copy.draftData?.sourceSchema ?? null);
-      setTargetSchema(copy.draftData?.targetSchema ?? null);
-      initialDraft.current = copy;
+    if(! nodeId){
       return;
     }
-
+      setDraft({ treeNodeId: nodeId, draftMetadata: draft?.draftMetadata ?? null, draftData: draft?.draftData ?? null });
+      setSourceSchema(draft?.draftData?.sourceSchema ?? null);
+      setTargetSchema(draft?.draftData?.targetSchema ?? null);
+      initialDraft.current = draft;
+      return;
+    /*
     if (wcDraft) {
       const normalized = toResolverUpdaterPayload(wcDraft);
       setDraft(normalized);
@@ -242,13 +226,13 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
       initialDraft.current = normalized;
       return;
     }
-
     const copy = createDefaultDraft();
     setDraft(copy);
     setSourceSchema(copy.draftData?.sourceSchema ?? null);
     setTargetSchema(copy.draftData?.targetSchema ?? null);
     initialDraft.current = copy;
-  }, [createDefaultDraft, entity, nodeId, toResolverUpdaterPayload, wcDraft]);
+  */
+  }, [createDefaultDraft, draft, nodeId, toResolverUpdaterPayload, wcDraft]);
 
   const execUpdateDraft = useCallback(
     (updates: Partial<ResolverUpdaterPayload>) => {
@@ -394,7 +378,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
             {t('basicInfo.description', 'Provide basic information for your property resolver configuration.')}
           </Typography>
           <SharedBasicInfoStep
-            mode={entity ? 'edit' : 'create'}
+            mode={mode}
           name={currentDraft?.draftMetadata?.name ?? ''}
           description={currentDraft?.draftMetadata?.description ?? ''}
           tags={currentDraft?.draftMetadata?.tags ?? []}
@@ -486,7 +470,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
       validate: async () => true,
     },
   ];
-  }, [fallbackDraft, t, entity, handleBasicInfoChange, execUpdateDraft, sourceSchema, targetSchema, basicInfoValidationError]);
+  }, [fallbackDraft, t, mode, handleBasicInfoChange, execUpdateDraft, sourceSchema, targetSchema, basicInfoValidationError]);
 
   const filledSteps = useMemo(() => [
     !basicInfoValidationError,

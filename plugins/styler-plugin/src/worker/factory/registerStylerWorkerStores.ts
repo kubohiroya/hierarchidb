@@ -19,16 +19,7 @@ async function resolveStoreRegistry(
   if (options.storeRegistry) {
     return options.storeRegistry;
   }
-  try {
-    const runtime = await import('@hierarchidb/runtime-worker');
-    return runtime.storeRegistry as StoreRegistry;
-  } catch (error) {
-    const isDev = Boolean((import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV);
-    if (isDev) {
-      console.warn('[styler-worker] failed to import runtime-worker worker module', error);
-    }
-    return null;
-  }
+  return null;
 }
 
 const normalizeStylerEntity = (data?: StylerEntity): StylerEntity | undefined => {

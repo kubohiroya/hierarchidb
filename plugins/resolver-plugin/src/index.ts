@@ -17,9 +17,6 @@ export {
   ResolverPanel,
 } from './ui/components/index.js';
 
-export async function loadResolverEntityHandlerModule() {
-  return import(/* @vite-ignore */ './worker/ResolverEntityService.js');
-}
 
 export async function loadResolverPanelModule() {
   return import(/* @vite-ignore */ './ui/components/ResolverPanel.js');
@@ -36,17 +33,3 @@ export async function getDialogComponent() {
 import './ui/components/steps-provider.js';
 
 export { PLUGIN_MANIFEST as ResolverPluginManifest } from './plugin-manifest.js';
-
-// Export services (to be implemented)
-// export { MappingCompiler } from './services/MappingCompiler.js';
-// export { ChainManager } from './services/ChainManager.js';
-// export { SchemaDetector } from './services/SchemaDetector.js';
-
-// Plugin definition exports removed: metadata is sourced from package.json
-
-// Optional runtime-worker wiring (register stub for runtime-worker worker integration)
-export class RuntimeWiring {
-  static async registerRuntimeWorkerAdapters(): Promise<void> {
-    // No resolver-specific runtime-worker worker adapters are required at this point.
-  }
-}

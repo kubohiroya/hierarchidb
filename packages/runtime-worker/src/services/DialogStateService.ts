@@ -5,8 +5,6 @@ import type {
   DialogStateUpdateInput,
   MultiStepDialogState,
 } from '@hierarchidb/common-types';
-import type { PeerEntity } from '../entity/store.js';
-import { storeRegistry } from '../entity/store-registry.js';
 
 interface SubscriptionEntry {
   key: string;
@@ -22,32 +20,6 @@ export class DialogStateService implements DialogStateAPI {
   private snapshotCache = new Map<string, MultiStepDialogState | null>();
 
   async publishState({ nodeId, nodeType, state }: DialogStateUpdateInput): Promise<void> {
-    const store = storeRegistry.getPeer(nodeType);
-    if (!store) {
-      // No peer store registered: silently ignore to avoid noisy warnings.
-      return;
-    }
-
-    const existing = await store.get(nodeId);
-    const next: PeerEntity = {
-      nodeId,
-      ...(existing ?? {}),
-      updatedAt: Date.now(),
-    };
-    if (state) {
-      next.dialogProgress = { activeStepIndex: state.activeStepIndex };
-    } else if ('dialogProgress' in next) {
-      next.dialogProgress = undefined;
-    }
-
-    try {
-      await store.put(next);
-    } catch (error) {
-      if (typeof console !== 'undefined' && console.warn) {
-        console.warn('[DialogStateService] failed to persist dialog state', error);
-      }
-    }
-
     const cacheKey = buildKey(nodeType, nodeId);
     if (state) {
       this.snapshotCache.set(cacheKey, state);

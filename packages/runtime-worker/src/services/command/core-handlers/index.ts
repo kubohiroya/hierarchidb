@@ -12,14 +12,12 @@ import type { CoreDB } from '../../CoreDB.js';
 import type { CommandEnvelope, CommandResult } from '../../command-types.js';
 import { WorkerErrorCode } from '../../command-types.js';
 import { commitDraft, createNewName } from '../../DraftTreeNodeOperations.js';
-import type { CommandExecutionContext } from '../execution/CommandExecutionRunner.js';
 import type { CommandHistoryManager } from '../history/CommandHistoryManager.js';
 
 export interface CoreCommandDeps {
   coreDB: CoreDB;
   history: CommandHistoryManager;
   batchOperationSize: number;
-  deletePeerEntitiesForNodes: (nodes: TreeNode[]) => Promise<void>;
   createErrorResult: (
     message: string,
     code: WorkerErrorCode,
@@ -35,7 +33,6 @@ export interface CoreCommandDeps {
 
 export async function executeCoreCommand(
   envelope: CommandEnvelope<string, unknown>,
-  context: CommandExecutionContext,
   deps: CoreCommandDeps
 ): Promise<CommandResult | null> {
   switch (envelope.kind) {
@@ -48,9 +45,9 @@ export async function executeCoreCommand(
     case 'moveToTrash':
       return handleMoveToTrash(envelope, deps);
     case 'remove':
-      return handleRemove(envelope, context, deps);
+      return handleRemove(envelope, deps);
     case 'removeSubtree':
-      return handleRemoveSubtree(envelope, context, deps);
+      return handleRemoveSubtree(envelope, deps);
     case 'restoreFromTrash':
       return handleRestoreFromTrash(envelope, deps);
     case 'commitDraft':
@@ -357,7 +354,6 @@ async function handleMoveToTrash(
 
 async function handleRemove(
   envelope: CommandEnvelope<string, unknown>,
-  context: CommandExecutionContext,
   deps: CoreCommandDeps
 ): Promise<CommandResult> {
   try {
@@ -403,17 +399,6 @@ async function handleRemove(
 
     if (beforeNodes.length > 0) {
       deps.history.storePreRemoveState(envelope.commandId, beforeNodes);
-      const nodesForCleanup = beforeNodes.map((node) => ({ ...node }));
-      context.postCommitTasks.push(async () => {
-        try {
-          await deps.deletePeerEntitiesForNodes(nodesForCleanup);
-        } catch (error) {
-          console.warn(
-            '[CommandProcessor/remove] peer-entity cleanup skipped:',
-            (error as Error)?.message || error
-          );
-        }
-      });
     }
 
     return { success: true, seq: deps.getNextSeq() };
@@ -427,7 +412,6 @@ async function handleRemove(
 
 async function handleRemoveSubtree(
   envelope: CommandEnvelope<string, unknown>,
-  context: CommandExecutionContext,
   deps: CoreCommandDeps
 ): Promise<CommandResult> {
   try {
@@ -463,17 +447,6 @@ async function handleRemoveSubtree(
           }
         }
       }
-      const cleanupNodes = collected.map((node) => ({ ...node }));
-      context.postCommitTasks.push(async () => {
-        try {
-          await deps.deletePeerEntitiesForNodes(cleanupNodes);
-        } catch (error) {
-          console.warn(
-            '[CommandProcessor/removeSubtree] peer-entity cleanup skipped:',
-            (error as Error)?.message || error
-          );
-        }
-      });
     }
 
     return { success: true, seq: deps.getNextSeq() };

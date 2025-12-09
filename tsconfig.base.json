@@ -159,10 +159,10 @@
         "packages/plugin-service-api/src/*"
       ],
       "@hierarchidb/plugin-service-sdk": [
-        "packages/plugin-service-sdk/dist/index.d.ts"
+        "packages/plugin-service-sdk/src/index.ts"
       ],
       "@hierarchidb/plugin-service-sdk/*": [
-        "packages/plugin-service-sdk/dist/*"
+        "packages/plugin-service-sdk/src/*"
       ],
       "@hierarchidb/plugin-ui-sdk": [
         "packages/plugin-ui-sdk/dist/index.d.ts"

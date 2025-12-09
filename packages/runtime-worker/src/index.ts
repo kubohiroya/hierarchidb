@@ -6,10 +6,8 @@ export {
 export type { PluginWorkerModuleLoader } from './di/interfaces.js';
 export { WorkerDiTokens } from './di/tokens.js';
 export { resolveDefaultNodeName } from './utils/default-node-name.js';
-export { registerPeerDataComposer } from './services/peerDataRegistry.js';
 export { createNodePayloadPeerStore } from './entity/createNodePayloadPeerStore.js';
 
-export { entityRegistry } from './entity/EntityRegistry.js';
 // Public re-exports for plugin-side stores and registry
 export type {
   GroupItemBase,

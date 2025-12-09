@@ -1,7 +1,6 @@
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PeerEntity, PeerStore } from '../../../entity/store.js';
-import { storeRegistry } from '../../../entity/store-registry.js';
 import { CommandProcessor } from '../../CommandProcessor.js';
 import type { CoreDB } from '../../CoreDB.js';
 import type { CommandTestHarness } from '../../test-helpers/commandProcessorHarness.js';
@@ -127,34 +126,13 @@ describe('transaction wrapper', () => {
     });
 
     const originalRunInTx = core.runInTx.bind(core);
-    let inTx = false;
     (core as { runInTx: typeof originalRunInTx }).runInTx = async (mode, tables, fn) => {
-      inTx = true;
-      try {
-        return await originalRunInTx(mode, tables, fn);
-      } finally {
-        inTx = false;
-      }
+      return await originalRunInTx(mode, tables, fn);
     };
     const cp = new CommandProcessor(core);
 
     let invokedDuringTx = false;
     let deleteCalls = 0;
-    const peerStore: PeerStore<{ removed: boolean }> = {
-      async get() {
-        return undefined;
-      },
-      async put(entity: PeerEntity<{ removed: boolean }>) {
-        void entity;
-      },
-      async delete() {
-        if (inTx) {
-          invokedDuringTx = true;
-        }
-        deleteCalls += 1;
-      },
-    };
-    storeRegistry.registerPeer(TX_NODE_TYPE, peerStore);
 
     const env = cp.createEnvelope('remove', { nodeIds: [child.id as NodeId] });
     const result = await cp.processCommand(env);

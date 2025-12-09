@@ -1,25 +1,7 @@
 import type { MultiStepDialogState } from '@hierarchidb/common-types';
 import { toNodeId } from '@hierarchidb/common-types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { PeerEntity, PeerStore } from '../../../entity/store.js';
-import { storeRegistry } from '../../../entity/store-registry.js';
 import { DialogStateService } from '../../DialogStateService.js';
-
-class InMemoryPeerStore implements PeerStore {
-  private entities = new Map<string, PeerEntity>();
-
-  async get(nodeId: string): Promise<PeerEntity | undefined> {
-    return this.entities.get(nodeId);
-  }
-
-  async put(entity: PeerEntity): Promise<void> {
-    this.entities.set(entity.nodeId, entity);
-  }
-
-  async delete(nodeId: string): Promise<void> {
-    this.entities.delete(nodeId);
-  }
-}
 
 const TEST_NODE_TYPE = 'dialog-state-test-node';
 
@@ -27,7 +9,6 @@ describe('DialogStateService', () => {
   const service = new DialogStateService();
 
   beforeEach(() => {
-    storeRegistry.registerPeer(TEST_NODE_TYPE, new InMemoryPeerStore());
   });
 
   afterEach(() => {

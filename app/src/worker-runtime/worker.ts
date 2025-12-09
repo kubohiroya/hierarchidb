@@ -200,26 +200,6 @@ reporter.reportStepProgress('Load Comlink', 0);
       const runtimeModule = (await import(
         '@hierarchidb/runtime-worker'
       )) as unknown as RuntimeWorkerModule;
-      const entityRegistry = runtimeModule.entityRegistry;
-      if (entityRegistry) {
-        for (const [nodeType, entry] of Object.entries(exportsByType)) {
-          const factory = entry?.createEntityHandler;
-          if (typeof factory === 'function') {
-            try {
-              const handler = await factory();
-              if (handler) {
-                entityRegistry.register(nodeType, handler);
-              }
-            } catch (error) {
-              console.warn(
-                '[worker bootstrap] entity handler registration failed:',
-                nodeType,
-                error
-              );
-            }
-          }
-        }
-      }
 
       const { WorkerService } = runtimeModule;
       reporter.reportStepProgress('Bootstrap services', 10);

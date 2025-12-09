@@ -19,9 +19,6 @@
       ],
       "*": [
         "dist/index.d.ts"
-      ],
-      "worker": [
-        "dist/worker/index.d.ts"
       ]
     }
   },
@@ -29,10 +26,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    },
-    "./worker": {
-      "types": "./dist/worker/index.d.ts",
-      "import": "./dist/worker/index.js"
     },
     "./database": {
       "types": "./dist/services/database/index.d.ts",

@@ -1,6 +1,3 @@
-import type { NodeId } from '@hierarchidb/common-types';
-import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
-
 export type PeerDisplayMode = 'normal' | 'maximize' | 'full-screen';
 export type PeerDialogPosition = { x: number; y: number };
 export type PeerDialogSize = { width: number; height: number };
@@ -64,31 +61,6 @@ declare global {
 
 const VALID_DISPLAY_MODES: PeerDisplayMode[] = ['normal', 'maximize', 'full-screen'];
 
-type StoreRegistryShim = {
-  getPeer<T = unknown>(nodeType: string): PeerStore<T> | undefined;
-};
-let storeRegistryPromise: Promise<StoreRegistryShim | null> | null = null;
-
-async function resolveStoreRegistry(): Promise<StoreRegistryShim | null> {
-  if (!storeRegistryPromise) {
-    storeRegistryPromise = (async () => {
-      try {
-        const mod = await import('@hierarchidb/runtime-worker');
-        if (mod && typeof mod === 'object' && 'storeRegistry' in mod) {
-          const registry = (mod as { storeRegistry?: StoreRegistryShim }).storeRegistry;
-          if (registry) return registry;
-        }
-      } catch (error) {
-        if (typeof console !== 'undefined') {
-          console.debug('[UIPersistenceRegistry] runtime-worker-worker storeRegistry unavailable', error);
-        }
-      }
-      return null;
-    })();
-  }
-  return storeRegistryPromise;
-}
-
 function normalizeDisplayMode(
   value: string | undefined,
   fallback: PeerDisplayMode | undefined
@@ -97,15 +69,6 @@ function normalizeDisplayMode(
     return value as PeerDisplayMode;
   }
   return fallback;
-}
-
-function cloneDialogWindow(state?: PeerDialogWindowState | null): PeerDialogWindowState | undefined {
-  if (!state) return undefined;
-  return {
-    mode: state.mode,
-    position: state.position ? { ...state.position } : state.position ?? null,
-    size: state.size ? { ...state.size } : state.size ?? null,
-  };
 }
 
 function normalizeDialogWindow(
@@ -144,39 +107,6 @@ function clearLegacyDialogFields(row: PeerDialogRow): void {
   delete row.dialogSize;
 }
 
-function createAdapterFromPeerStore(store: PeerStore<unknown>): PeerEntitiesDBAdapter {
-  const mapEntityToRow = (entity: PeerEntity | undefined): PeerDialogRow | undefined => {
-    if (!entity) return undefined;
-    return {
-      nodeId: String(entity.nodeId),
-      dialogWindow: cloneDialogWindow(entity.dialogWindow),
-      dialogProgress: entity.dialogProgress ? { ...entity.dialogProgress } : undefined,
-      updatedAt: entity.updatedAt,
-    } satisfies PeerDialogRow;
-  };
-
-  return {
-    table: () => ({
-      get: async (id: string) => mapEntityToRow(await store.get(id as NodeId)),
-      put: async (row: PeerDialogRow) => {
-        const existing = await store.get(row.nodeId as NodeId);
-        const nextDialogWindow = normalizeDialogWindow(row.dialogWindow, existing?.dialogWindow);
-        const baseEntity: PeerEntity = existing ?? ({ nodeId: row.nodeId as NodeId } as PeerEntity);
-        const next: PeerEntity = {
-          ...baseEntity,
-          dialogWindow: nextDialogWindow,
-          dialogProgress: row.dialogProgress ?? existing?.dialogProgress ?? null,
-          updatedAt: row.updatedAt ?? existing?.updatedAt ?? Date.now(),
-        };
-        clearLegacyDialogFields(row);
-        await store.put(next);
-      },
-      delete: async (id: string) => {
-        await store.delete(id as NodeId);
-      },
-    }),
-  };
-}
 
 class UIPersistenceRegistry {
   private providers = new Map<string, PeerDialogPersistence>();
@@ -244,14 +174,6 @@ class UIPersistenceRegistry {
         }
         this.dbCache.set(nodeType, null);
         return null;
-      }
-
-      const registry = await resolveStoreRegistry();
-      const peerStore = registry?.getPeer(nodeType);
-      if (peerStore) {
-        const adapter = createAdapterFromPeerStore(peerStore);
-        this.dbCache.set(nodeType, adapter);
-        return adapter;
       }
 
       if (typeof console !== 'undefined' && this.shouldWarn(nodeType)) {

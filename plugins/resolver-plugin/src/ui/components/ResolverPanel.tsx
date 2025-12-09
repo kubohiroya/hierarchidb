@@ -1,16 +1,13 @@
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import {
-  Badge,
   Box,
   Button,
   Card,
   CardActions,
   CardContent,
   Chip,
-  CircularProgress,
   Divider,
-  IconButton,
   LinearProgress,
   List,
   ListItem,
@@ -18,24 +15,19 @@ import {
   Menu,
   MenuItem,
   Paper,
-  Tooltip,
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import {
   Cached as CachedIcon,
-  CheckCircle as CheckIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
-  Error as ErrorIcon,
   Link as LinkIcon,
   Memory as MemoryIcon,
   Merge as MergeIcon,
-  MoreVert as MoreIcon,
   PlayArrow as PlayIcon,
   Speed as SpeedIcon,
   Timeline as TimelineIcon,
-  Warning as WarningIcon,
 } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { ResolverEntity, PropertyMappingRule } from '../../common/types/index.js';
@@ -96,10 +88,6 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
     }
   }, [entity]);
 
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
   const handleMenuClose = () => {
     setAnchorEl(null);
   };
@@ -114,50 +102,6 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
       setIsProcessing(false);
       if (onCompile) onCompile();
     }, 2000);
-  };
-
-  const getStatusIcon = () => {
-    if (!entity) return null;
-
-    const hasErrors = entity.mappingRules.length === 0;
-    const hasWarnings = entity.validationRules.length === 0;
-
-    if (hasErrors) {
-      return <ErrorIcon color="error" />;
-    } else if (hasWarnings) {
-      return <WarningIcon color="warning" />;
-    } else {
-      return <CheckIcon color="success" />;
-    }
-  };
-
-  const getCompilationBadge = () => {
-    switch (compilationStatus) {
-      case 'compiled':
-        return (
-          <Tooltip title="Compiled and optimized">
-            <Badge badgeContent="✓" color="success">
-              <SpeedIcon color="primary" />
-            </Badge>
-          </Tooltip>
-        );
-      case 'compiling':
-        return <CircularProgress size={20} />;
-      case 'error':
-        return (
-          <Tooltip title="Compilation failed">
-            <Badge badgeContent="!" color="error">
-              <SpeedIcon color="disabled" />
-            </Badge>
-          </Tooltip>
-        );
-      default:
-        return (
-          <Tooltip title="Not compiled">
-            <SpeedIcon color="disabled" />
-          </Tooltip>
-        );
-    }
   };
 
   if (!entity) {
@@ -182,25 +126,6 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
       {/* Header Card */}
       <Card sx={{ mb: 2 }}>
         <CardContent>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                {getStatusIcon()}
-                <Typography variant="h6">
-                  {entity.name}
-                </Typography>
-                {getCompilationBadge()}
-              </Box>
-              {entity.description && (
-                <Typography variant="body2" color="text.secondary">
-                  {entity.description}
-                </Typography>
-              )}
-            </Box>
-            <IconButton onClick={handleMenuOpen}>
-              <MoreIcon />
-            </IconButton>
-          </Box>
 
           <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
             <Chip

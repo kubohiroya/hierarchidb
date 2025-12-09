@@ -1,4 +1,4 @@
-import type { GroupItemBase, GroupStore, PeerStore, RelationBase, RelationStore } from './store.js';
+import type { GroupItemBase, GroupStore, RelationBase, RelationStore } from './store.js';
 
 /**
  * Store registry for plugin-provided entity stores.
@@ -10,13 +10,8 @@ import type { GroupItemBase, GroupStore, PeerStore, RelationBase, RelationStore 
  */
 
 class StoreRegistry {
-  private peer = new Map<string, PeerStore<unknown>>();
   private group = new Map<string, GroupStore<GroupItemBase<unknown>>>();
   private rel = new Map<string, RelationStore<RelationBase<unknown>>>();
-
-  registerPeer<TData = unknown>(nodeType: string, store: PeerStore<TData>) {
-    this.peer.set(nodeType, store as PeerStore<unknown>);
-  }
 
   registerGroup<TItem extends GroupItemBase<unknown>>(nodeType: string, store: GroupStore<TItem>) {
     this.group.set(nodeType, store as GroupStore<GroupItemBase<unknown>>);
@@ -27,10 +22,6 @@ class StoreRegistry {
     store: RelationStore<TRel>
   ) {
     this.rel.set(nodeType, store as RelationStore<RelationBase<unknown>>);
-  }
-
-  getPeer<TData = unknown>(nodeType: string): PeerStore<TData> | undefined {
-    return this.peer.get(nodeType) as PeerStore<TData> | undefined;
   }
 
   getGroup<TItem extends GroupItemBase<unknown> = GroupItemBase<unknown>>(
