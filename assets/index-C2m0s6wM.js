@@ -1,0 +1,1 @@
+import"./vendor-react-2It2lbss.js";import{G as r}from"./index.js";import{j as c,e as i}from"./ja-CR7rhSsD.js";const o={en:i,ja:c},u=()=>(r.language||"en").toLowerCase().startsWith("ja")?"ja":"en",j=(t="resolver-plugin")=>{const n=u(),s=o[n]??o.en;return{t:(e,a,l)=>String(r.t(e,{ns:t,defaultValue:a??e,...l})),translations:s,locale:n}};export{j as useTranslation};

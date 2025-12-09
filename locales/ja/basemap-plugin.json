@@ -1,0 +1,61 @@
+{
+  "steps": {
+    "mapStyle": {
+      "label": "地図スタイル"
+    },
+    "viewport": {
+      "label": "表示範囲"
+    }
+  },
+  "mapStyle": {
+    "description": "同梱の MapLibre スタイルを選択するか、「Custom」を選んで独自のスタイル JSON を指定してください。",
+    "presets": {
+      "streets": {
+        "label": "Streets",
+        "description": "道路中心のバランスの良いベースマップ。"
+      },
+      "satellite": {
+        "label": "Satellite",
+        "description": "最小限のオーバーレイ付き航空写真。"
+      },
+      "terrain": {
+        "label": "Terrain",
+        "description": "地形表現に重きを置いたスタイル。"
+      },
+      "dark": {
+        "label": "Dark",
+        "description": "オーバーレイ向けのダークテーマ。"
+      },
+      "light": {
+        "label": "Light",
+        "description": "オーバーレイ向けのライトテーマ。"
+      }
+    },
+    "custom": {
+      "title": "カスタムスタイル",
+      "description": "独自の MapLibre スタイル JSON（URL またはインライン）を指定します。ブランドカラーやライセンスされたタイルを使う場合に便利です。",
+      "urlLabel": "カスタムスタイル URL",
+      "urlPlaceholder": "https://example.com/style.json"
+    }
+  },
+  "viewport": {
+    "description": "初期の表示範囲を調整します。直接数値を入力するか、下の地図プレビューを操作してください。",
+    "fields": {
+      "longitude": {
+        "label": "経度"
+      },
+      "latitude": {
+        "label": "緯度"
+      },
+      "zoom": {
+        "label": "ズーム"
+      },
+      "bearing": {
+        "label": "方位"
+      }
+    },
+    "loading": "地図を読み込み中…",
+    "preparing": "地図を準備中…",
+    "summary": "中心: {{lng}}, {{lat}} / ズーム: {{zoom}} / 方位: {{bearing}}"
+  }
+}
