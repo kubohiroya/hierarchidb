@@ -23,7 +23,7 @@ type TreeNodeInfoPanelProps = React.ComponentProps<
 >;
 
 export type UseTreeConsoleIntegrationInnerArgs = {
-  client: Remote<WorkerAPI>;
+  client?: Remote<WorkerAPI> | null;
   treeId?: string;
   pageNodeId?: NodeId;
   pageTreeNode?: TreeNode;
@@ -54,7 +54,7 @@ export type UseTreeConsoleIntegrationInnerResult = {
 };
 
 export function useTreeConsoleIntegrationInner({
-  client: workerClient,
+  client,
   treeId,
   pageNodeId,
   pageTreeNode,
@@ -81,7 +81,7 @@ export function useTreeConsoleIntegrationInner({
     actions,
     state,
   } = useTreeConsoleIntegration({
-    client: workerClient,
+    client: client ?? undefined,
     treeId,
     pageNodeId,
     pageTreeNode,
@@ -114,7 +114,7 @@ export function useTreeConsoleIntegrationInner({
   );
 
   const { hasTrashItems, trashRootIdRef } = useTreeConsoleTrashWatcher({
-    workerClient,
+    client: client ?? null,
     treeId,
   });
 
@@ -126,7 +126,7 @@ export function useTreeConsoleIntegrationInner({
   });
 
   const { resumeDialogProps, requestEdit } = useTreeConsoleResumeDialog({
-    workerClient,
+    client: client ?? null,
     actions: {
       handleEdit: actions.handleEdit,
       handleContextMenuAction: actions.handleContextMenuAction,
@@ -203,7 +203,7 @@ export function useTreeConsoleIntegrationInner({
   );
 
   const { toolbarProps, rowClickAction } = useTreeConsoleToolbarActions({
-    workerClient,
+    client,
     treeId,
     pageNodeId,
     pageTreeNode,
@@ -251,7 +251,7 @@ export function useTreeConsoleIntegrationInner({
 
   const treeConsolePanelProps: TreeConsolePanelProps = {
     treeId: treeId as TreeId,
-    workerClient,
+    client,
     title: `Tree: ${pageTreeNode?.metadata?.name || 'Root'}`,
     pageNodeId,
     pageTreeNode,

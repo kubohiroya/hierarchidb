@@ -12,10 +12,10 @@ export type TrashWatcherState = {
 };
 
 export function useTreeConsoleTrashWatcher({
-  workerClient,
+  client,
   treeId,
 }: {
-  workerClient: Remote<WorkerAPI>;
+  client: Remote<WorkerAPI>|null;
   treeId?: string;
 }): TrashWatcherState {
   const [hasTrashItems, setHasTrashItems] = useState(false);
@@ -26,8 +26,8 @@ export function useTreeConsoleTrashWatcher({
 
   useEffect(() => {
     const checkTrashItems = async () => {
-      if (workerClient && treeId) {
-        const queryAPI = await workerClient.getQueryAPI();
+      if (client && treeId) {
+        const queryAPI = await client.getQueryAPI();
         const tree = await queryAPI.getTree(treeId as TreeId);
         if (tree?.trashRootId) {
           const trashNodeId = tree.trashRootId as NodeId;
@@ -41,15 +41,15 @@ export function useTreeConsoleTrashWatcher({
       }
     };
     void checkTrashItems();
-  }, [workerClient, treeId]);
+  }, [client, treeId]);
 
   useEffect(() => {
     let disposed = false;
     const setup = async () => {
-      if (!workerClient || !treeId) return;
+      if (!client || !treeId) return;
       try {
-        const queryAPI = await workerClient.getQueryAPI();
-        await workerClient.getSubscriptionAPI();
+        const queryAPI = await client.getQueryAPI();
+        await client.getSubscriptionAPI();
         const tree = await queryAPI.getTree(treeId as TreeId);
         const nextTrashRootId = tree?.trashRootId;
         if (!nextTrashRootId) {
@@ -95,7 +95,7 @@ export function useTreeConsoleTrashWatcher({
         if (existing) return;
         const { subId: sid, created } = await Subscriptions.subscribe(
           'trash',
-          workerClient,
+          client,
           nextTrashRootId,
           cb
         );
@@ -103,7 +103,7 @@ export function useTreeConsoleTrashWatcher({
           console.log('[Subscription][trash] subscribed', { trashRootId: nextTrashRootId, subId: sid });
         }
         if (disposed) {
-          await Subscriptions.release('trash', workerClient, nextTrashRootId);
+          await Subscriptions.release('trash', client, nextTrashRootId);
           return;
         }
         trashSubRef.current = sid ?? null;
@@ -121,11 +121,11 @@ export function useTreeConsoleTrashWatcher({
       }
       const cleanup = async () => {
         try {
-          const queryAPI = await workerClient?.getQueryAPI();
+          const queryAPI = await client?.getQueryAPI();
           const tree = await queryAPI?.getTree(treeId as TreeId);
           const nextTrashRootId = tree?.trashRootId;
-          if (nextTrashRootId) {
-            await Subscriptions.release('trash', workerClient, nextTrashRootId);
+          if (nextTrashRootId && client) {
+            await Subscriptions.release('trash', client, nextTrashRootId);
           }
         } catch (error) {
           logIntegrationWarning('Failed to release trash subscription', error);
@@ -135,7 +135,7 @@ export function useTreeConsoleTrashWatcher({
       };
       void cleanup();
     };
-  }, [workerClient, treeId]);
+  }, [client, treeId]);
 
   return { hasTrashItems, trashRootIdRef };
 }

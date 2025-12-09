@@ -30,10 +30,10 @@ export type ResumeDialogController = {
 };
 
 export function useTreeConsoleResumeDialog({
-  workerClient,
+  client,
   actions,
 }: {
-  workerClient: Remote<WorkerAPI>;
+  client: Remote<WorkerAPI>|null;
   actions: IntegrationActions;
 }): ResumeDialogController {
   const [resumeDialog, setResumeDialog] = useState<ResumeDialogState>({
@@ -56,10 +56,10 @@ export function useTreeConsoleResumeDialog({
   }, [pendingEditNav]);
 
   const handleStartFreshDraft = useCallback(async () => {
-    if (resumeDialog.nodeId && workerClient) {
+    if (resumeDialog.nodeId && client) {
       try {
-        const queryAPI = await workerClient.getQueryAPI();
-        const updaterAPI = await workerClient.getTreeNodeUpdaterAPI();
+        const queryAPI = await client.getQueryAPI();
+        const updaterAPI = await client.getTreeNodeUpdaterAPI();
         const node = resumeDialog.node ?? (await queryAPI.getNode(resumeDialog.nodeId));
         if (node) {
           const nextDraftMetadata = node.metadata ?? { name: '', description: '', tags: [] };
@@ -73,7 +73,7 @@ export function useTreeConsoleResumeDialog({
       }
     }
     triggerPendingEditNavigation();
-  }, [resumeDialog.node, resumeDialog.nodeId, triggerPendingEditNavigation, workerClient]);
+  }, [resumeDialog.node, resumeDialog.nodeId, triggerPendingEditNavigation, client]);
 
   const handleResumePreviousDraft = useCallback(() => {
     triggerPendingEditNavigation();
@@ -81,12 +81,12 @@ export function useTreeConsoleResumeDialog({
 
   const requestEdit = useCallback(
     async (targetNodeId?: NodeId, nodeHint?: TreeNodeData | TreeNode) => {
-      if (!workerClient || !targetNodeId) {
+      if (!client || !targetNodeId) {
         actions.handleEdit?.();
         return;
       }
       try {
-        const queryAPI = await workerClient.getQueryAPI();
+        const queryAPI = await client.getQueryAPI();
         const target = await queryAPI.getNode(targetNodeId);
         const sourceNode = (target as TreeNode | undefined) ?? (nodeHint as TreeNode | undefined);
         if (!sourceNode) {
@@ -113,7 +113,7 @@ export function useTreeConsoleResumeDialog({
         actions.handleEdit?.();
       }
     },
-    [actions, workerClient]
+    [actions, client]
   );
 
   return {

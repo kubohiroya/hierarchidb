@@ -52,7 +52,7 @@ export type ToolbarControllerResult = {
 };
 
 export function useTreeConsoleToolbarActions({
-  workerClient,
+  client,
   treeId,
   pageNodeId,
   pageTreeNode,
@@ -68,7 +68,7 @@ export function useTreeConsoleToolbarActions({
   searchTerm,
   selectedCount,
 }: {
-  workerClient: Remote<WorkerAPI>;
+  client?: Remote<WorkerAPI> | null;
   treeId?: string;
   pageNodeId?: NodeId;
   pageTreeNode?: TreeNode;
@@ -177,7 +177,11 @@ export function useTreeConsoleToolbarActions({
 
           const importNodes: ImportData['nodes'] = templateData.nodes.map((n) => toImportNode(n));
 
-          const importExportAPI = await workerClient.getImportExportAPI();
+          if(!client){
+            throw new Error('WorkerClient not available');
+          }
+
+          const importExportAPI = await client.getImportExportAPI();
           await importExportAPI.importNodes({
             treeId: (treeId as TreeId) || ('' as TreeId),
             targetParentId: currentPageNodeId as NodeId,
@@ -288,7 +292,7 @@ export function useTreeConsoleToolbarActions({
     },
     [
       pageNodeId,
-      workerClient,
+      client,
       treeId,
       actions,
       developerModeEnabled,

@@ -40,7 +40,7 @@ export type ContextAction =
   | `create:${string}`;
 
 export interface UseTreeConsoleIntegrationParams {
-  client: Remote<WorkerAPI>;
+  client?: Remote<WorkerAPI>;
   treeId?: string;
   pageNodeId?: NodeId;
   pageTreeNode?: TreeNode;
@@ -114,7 +114,7 @@ export type MaybeCP = {
 };
 
 export interface TreeConsoleActionDeps {
-  client: Remote<WorkerAPI>;
+  client?: Remote<WorkerAPI>;
   treeId?: TreeId;
   pageNodeId?: NodeId;
   pageTreeNode?: TreeNode;

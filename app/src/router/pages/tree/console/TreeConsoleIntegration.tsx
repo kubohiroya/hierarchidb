@@ -5,12 +5,10 @@
  * Avoids Orchestrated APIs as requested and focuses on direct Worker API calls.
  */
 
-import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
 import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import { Alert, Box, CircularProgress } from '@mui/material';
-import type { Remote } from 'comlink';
 import { useWorker } from '~/contexts/WorkerProvider.tsx';
 import { ResumeDraftDialog } from './ResumeDraftDialog.js';
 import { TreeConsolePanelWithDynamicSpeedDial } from './TreeConsolePanelWithDynamicSpeedDial.js';
@@ -24,20 +22,13 @@ export interface TreeConsoleIntegrationProps {
   readonly pageTreeNode?: TreeNode;
 }
 
-type TreeConsoleIntegrationInnerProps = TreeConsoleIntegrationProps & {
-  client: Remote<WorkerAPI>;
-  resetWorker: () => void;
-  initializeWorker: () => Promise<void>;
-};
-
-const TreeConsoleIntegrationInner: React.FC<TreeConsoleIntegrationInnerProps> = ({
-  client: workerClient,
+export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
   treeId,
   pageNodeId,
   pageTreeNode,
-  resetWorker,
-  initializeWorker,
 }) => {
+  const { client, isConnected, reset, initialize } = useWorker();
+
   const {
     workerLoading,
     workerError,
@@ -51,12 +42,12 @@ const TreeConsoleIntegrationInner: React.FC<TreeConsoleIntegrationInnerProps> = 
     infoPanelProps,
     resumeDialogProps,
   } = useTreeConsoleIntegrationInner({
-    client: workerClient,
+    client,
     treeId,
     pageNodeId,
     pageTreeNode,
-    resetWorker,
-    initializeWorker,
+    resetWorker:reset,
+    initializeWorker: initialize,
   });
 
   if (workerLoading) {
@@ -83,10 +74,10 @@ const TreeConsoleIntegrationInner: React.FC<TreeConsoleIntegrationInnerProps> = 
     );
   }
 
-  if (!workerClient) {
+  if (!isConnected || !client) {
     return (
-      <Box sx={{ p: 2 }}>
-        <Alert severity="warning">Worker client not available</Alert>
+      <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+        <CircularProgress />
       </Box>
     );
   }
@@ -115,34 +106,8 @@ const TreeConsoleIntegrationInner: React.FC<TreeConsoleIntegrationInnerProps> = 
       <ResumeDraftDialog {...resumeDialogProps} />
     </Box>
   );
-};
 
-// Outer component that handles client loading
-export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
-  treeId,
-  pageNodeId,
-  pageTreeNode,
-}) => {
-  const { client: workerClient, isConnected, reset, initialize } = useWorker();
 
-  if (!isConnected || !workerClient) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="100%">
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  return (
-    <TreeConsoleIntegrationInner
-      client={workerClient}
-      treeId={treeId}
-      pageNodeId={pageNodeId}
-      pageTreeNode={pageTreeNode}
-      resetWorker={reset}
-      initializeWorker={initialize}
-    />
-  );
 };
 
 export { canImportFromNode };

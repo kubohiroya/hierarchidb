@@ -740,14 +740,21 @@ export function usePluginDialogController(
       [foregroundDialogSx, t, conflictDialog.open, conflictDialog.updatedAt, mode, canSaveCurrent, disableDraftButton, handleSaveDraft, hasUnsavedChanges, activeStartBatch, canStartBatch, isStartingBatch, footerPrimaryButtons, footerSaveDraftLabel, closeConflictDialog, handleStartBatch]
     );
 
+  const confirmDiscardIfNeeded = useCallback(() => {
+    if (!hasUnsavedChanges) return true;
+    if (typeof window === 'undefined' || typeof window.confirm !== 'function') return false;
+    return window.confirm('Discard unsaved changes?');
+  }, [hasUnsavedChanges]);
+
   const handleCloseRequest = useCallback(() => {
+    if (!confirmDiscardIfNeeded()) return;
     if (saveDraftInProgress.current) {
       saveDraftInProgress.current = false;
       onClose();
       return;
     }
     handleCancel().catch(() => void 0);
-  }, [handleCancel, onClose]);
+  }, [confirmDiscardIfNeeded, handleCancel, onClose]);
 
   const handleStepDataChange = useCallback(
     (patch: Partial<Partial<PluginDefinedEntity>>) => {

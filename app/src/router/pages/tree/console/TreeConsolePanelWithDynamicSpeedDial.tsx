@@ -25,7 +25,7 @@ import { ResourcesGuidedTour } from '../tour/ResourcesGuidedTour.tsx';
 
 type TreeConsolePanelWithDynamicSpeedDialProps = Omit<TreeConsolePanelProps, 'onDelete'> & {
   treeId: TreeId | undefined;
-  workerClient: Remote<WorkerAPI> | null;
+  client: Remote<WorkerAPI> | null;
   onStartTour?: () => void;
   pageTreeNode?: TreeNode;
   onBreadcrumbContextAction?: TreeConsolePanelProps['onBreadcrumbContextAction'];
@@ -38,7 +38,7 @@ type TreeConsolePanelWithDynamicSpeedDialProps = Omit<TreeConsolePanelProps, 'on
 
 export function TreeConsolePanelWithDynamicSpeedDial({
   treeId,
-  workerClient,
+  client,
   onStartTour,
   pageTreeNode,
   pageNodeId,

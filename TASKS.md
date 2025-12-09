@@ -74,6 +74,8 @@
   - progress: 2025-12-09 13:20 JST MultiStepDialogFrame の Esc ハンドラーに isDirty ガードを追加し、未保存ありのときは Esc で閉じないように変更（プラグイン/Trash ダイアログに適用）。
   - progress: 2025-12-09 13:32 JST 検証: `pnpm --filter @hierarchidb/app typecheck` exit 1（既存エラー: TreeConsoleIntegration.tsx(82,67) TS2322 ReactNode 型不整合）。本タスクの変更と無関係のため未対応。
   - progress: 2025-12-09 13:35 JST 検証: `pnpm --filter @hierarchidb/ui-dialog typecheck` exit 0。
+  - progress: 2025-12-09 13:45 JST Esc ハンドラーの defaultPrevented チェックを削除し、子要素が Escape を preventDefault しても未保存なしの場合はダイアログを閉じるように変更。検証: `pnpm --filter @hierarchidb/ui-dialog typecheck` exit 0。
+  - progress: 2025-12-09 14:05 JST isDirty=true 時も onRequestClose を発火させ、plugin-ui-host 側で window.confirm による破棄確認を挟んでから cancel を実行するよう変更（Esc は「未保存なし: 即閉」「未保存あり: 確認」へ統一）。検証: `pnpm --filter @hierarchidb/plugin-ui-host typecheck` exit 0。
 
 1607) TreeConsoleIntegration ResumeDialog 抽出（P0）
 - ブランチ: main（sandbox 制約で branch 作成不可のため）
