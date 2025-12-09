@@ -25,26 +25,36 @@ export const ModalSelect = forwardRef<HTMLDivElement, ModalSelectProps<any>>(fun
   ref,
 ) {
   const mergedMenuProps = useMemo<Partial<SelectProps['MenuProps']>>(() => {
-    const shouldUsePortal = Boolean(menuContainer) && usePortal;
-    const baseSx: SxProps<Theme> = (theme) => ({
-      zIndex: (theme?.zIndex?.modal ?? 1300) + menuZIndexOffset,
-    });
+    // Always portal to escape overflow/stacking; use provided container if set, otherwise body.
+    const disablePortal = MenuProps?.disablePortal ?? !usePortal;
+    const resolvedContainer = MenuProps?.container ?? menuContainer;
 
+    const baseZIndex = (theme?: Theme) => (theme?.zIndex?.modal ?? 1300) + menuZIndexOffset;
     const incomingPaperSx = MenuProps?.PaperProps?.sx;
-    const mergedPaperSx = incomingPaperSx
+    const mergedPaperSx: SxProps<Theme> = incomingPaperSx
       ? Array.isArray(incomingPaperSx)
-        ? [baseSx, ...incomingPaperSx]
-        : [baseSx, incomingPaperSx]
-      : baseSx;
+        ? [...incomingPaperSx, (theme) => ({ zIndex: baseZIndex(theme) })]
+        : [
+            incomingPaperSx,
+            (theme) => ({
+              zIndex: baseZIndex(theme),
+            }),
+          ]
+      : (theme) => ({ zIndex: baseZIndex(theme) });
 
     return {
-      disablePortal: !shouldUsePortal,
-      container: shouldUsePortal ? menuContainer ?? undefined : undefined,
-      ...MenuProps,
+       disablePortal,
+      container: disablePortal ? undefined : resolvedContainer,
       PaperProps: {
         ...MenuProps?.PaperProps,
         sx: mergedPaperSx,
       },
+      // Also set style on the popover root to avoid being overridden.
+      style: {
+        ...MenuProps?.style,
+        zIndex: baseZIndex(),
+      },
+      ...MenuProps,
     };
   }, [MenuProps, menuContainer, menuZIndexOffset, usePortal]);
 

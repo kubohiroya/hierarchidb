@@ -30,6 +30,7 @@ import {
   Typography,
 } from '@mui/material';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import type { ColorAlgorithm, ColorSpace, StylerConfig, StylerTableRow } from '../../../common/types/stylerTypes.js';
@@ -80,6 +81,7 @@ export const StylerMapping: React.FC<StylerMappingProps> = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showRecommendation, setShowRecommendation] = useState(true);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const controlId = useId();
 
   const { t } = useTranslation('styler-plugin');
   const tStr = useCallback(
@@ -249,7 +251,11 @@ export const StylerMapping: React.FC<StylerMappingProps> = ({
                   const min = Number(e.target.value);
                   handleMappingChange('min')({} as Event, min);
                 }}
-                inputProps={{ step: 1 }}
+                inputProps={{
+                  step: 1,
+                  id: `${controlId}-mapping-min`,
+                  name: 'styler-mapping-min',
+                }}
               />
               <TextField
                 label={t('step5.mappingRange.max', 'Maximum')}
@@ -259,7 +265,11 @@ export const StylerMapping: React.FC<StylerMappingProps> = ({
                   const max = Number(e.target.value);
                   handleMappingChange('max')({} as Event, max);
                 }}
-                inputProps={{ step: 1 }}
+                inputProps={{
+                  step: 1,
+                  id: `${controlId}-mapping-max`,
+                  name: 'styler-mapping-max',
+                }}
               />
               <Typography variant="caption" color="text.secondary">
                 {t('step5.mappingRange.help', 'Define the numeric domain to map onto colors.')}
@@ -364,6 +374,10 @@ export const StylerMapping: React.FC<StylerMappingProps> = ({
                         setLocalConfig(newConfig);
                         onChange(newConfig);
                       }}
+                      inputProps={{
+                        id: `${controlId}-color-start`,
+                        name: 'styler-color-start',
+                      }}
                     />
                     <TextField
                       label={t('step5.colorRange.end', 'End Color (hex)')}
@@ -375,6 +389,10 @@ export const StylerMapping: React.FC<StylerMappingProps> = ({
                         };
                         setLocalConfig(newConfig);
                         onChange(newConfig);
+                      }}
+                      inputProps={{
+                        id: `${controlId}-color-end`,
+                        name: 'styler-color-end',
                       }}
                     />
 

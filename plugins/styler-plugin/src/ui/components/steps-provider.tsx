@@ -1,8 +1,8 @@
 import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/plugin-base';
 // Reuse Spreadsheet steps as Step 2,3
 import {
-  TabularDataSourceStep as SpreadsheetDataSourceStep,
-  TabularDataFilterStep as SpreadsheetFilteringStep,
+  TabularDataSourceStep,
+  TabularDataFilterStep,
 } from '@hierarchidb/spreadsheet-plugin';
 import { StylerStep5 } from './steps/StylerStep5.js';
 import { StylerStep6 } from './steps/StylerStep6.js';
@@ -10,7 +10,7 @@ import { StyleSettingsStep, isStyleMappingComplete } from './steps/StyleSettings
 import { StylerStepData } from '../../common/types/stylerTypes.js';
 
 const registry = PluginStepRegistry.getInstance();
-
+/*
 const mergeDialogData = (
   current: StylerStepData | undefined,
   next: Partial<StylerStepData>
@@ -18,31 +18,33 @@ const mergeDialogData = (
   ...(current ?? {}),
   ...next,
 });
+ */
 
 const renderDataSourceStep = (p: StepComponentProps<StylerStepData>) => (
-  <SpreadsheetDataSourceStep
+  <TabularDataSourceStep
     {...(p as StepComponentProps<StylerStepData>)}
     data={p.data}
-    onChange={(next) =>
+    onChange={/*(next) =>
       p.onChange(
         mergeDialogData(p.data, {
           ...(next as Partial<StylerStepData>),
         })
-      )
+      )*/
+      p.onChange
     }
   />
 );
 
 const renderFilteringStep = (p: StepComponentProps<StylerStepData>) => (
-  <SpreadsheetFilteringStep
+  <TabularDataFilterStep
     {...(p as StepComponentProps<StylerStepData>)}
     data={p.data}
-    onChange={(next) =>
+    onChange={p.onChange/*(next) =>
       p.onChange(
         mergeDialogData(p.data, {
           ...(next as Partial<StylerStepData>),
         })
-      )
+      )*/
     }
   />
 );

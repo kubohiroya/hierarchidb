@@ -119,7 +119,8 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
     padding: theme.spacing(1.5, 2),
     backgroundColor: getDialogSurfaceColor(theme),
     position: 'relative',
-    zIndex: (theme.zIndex?.modal ?? 1300) + 2,
+    // Keep footer at the dialog surface z-index (modal) so popper menus can overlay it.
+    zIndex: theme.zIndex?.modal ?? 1300,
     pointerEvents: 'auto',
   }), []);
 

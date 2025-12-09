@@ -1,31 +1,100 @@
-import type { FC } from 'react';
+import { useEffect, useMemo, type FC } from 'react';
 import { StepComponentProps } from '@hierarchidb/plugin-base';
-import { TabularProvider, TabularDataFilter } from '@hierarchidb/ui-tabular-extract';
+import { TabularProvider, TabularDataFilter, useTabularData } from '@hierarchidb/ui-tabular-extract';
 import type { SpreadsheetEntity } from '../../../common/types/SpreadsheetEntity.js';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useTabularDataFilter } from '../../hooks/useTabularDataFilter.js';
+import type { TabularColumnInfo, TabularColumnType, TabularTableMetadata } from '@hierarchidb/tabular-store';
 
-export const TabularDataFilterStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
-  data,
-  onChange,
+type FilterInnerProps = ReturnType<typeof useTabularDataFilter> & {
+  setValid: StepComponentProps<SpreadsheetEntity>['setValid'];
+  setError: StepComponentProps<SpreadsheetEntity>['setError'];
+};
+
+const TabularDataFilterInner: FC<FilterInnerProps> = ({
+  pluginId,
+  menuContainer,
+  initialFilters,
+  shouldUploadFirst,
+  syncFilters,
+  handlePreviewData,
+  dialogData,
   setValid,
   setError,
-  dialogRef,
 }) => {
   const { t } = useTranslation('spreadsheet-plugin');
-  const {
+  const { tabularTableMetadata, loading, error } = useTabularData({
+    tableMetadataId: dialogData.spreadsheetMetadataId,
     pluginId,
-    tabularApi,
-    menuContainer,
-    initialFilters,
-    tableMetadata,
-    loading,
-    error,
-    shouldUploadFirst,
-    syncFilters,
-    handlePreviewData,
-  } = useTabularDataFilter({ data, onChange, setValid, setError, dialogRef });
+    autoload: Boolean(dialogData.spreadsheetMetadataId),
+  });
+
+  const tableMetadata = useMemo(() => {
+    if (!tabularTableMetadata) return null;
+
+    if ((tabularTableMetadata.columns?.length ?? 0) > 0) {
+      return tabularTableMetadata;
+    }
+
+    const previewColumns = dialogData.lastPreview?.columns;
+    if (previewColumns && previewColumns.length > 0) {
+      const columnsFromPreview: TabularColumnInfo[] = previewColumns.map((col, index) => {
+        if (typeof col === 'string') {
+          return { name: col, index, type: 'string' };
+        }
+        if (typeof col === 'object' && col) {
+          const asInfo = col as Partial<TabularColumnInfo>;
+          return {
+            name: asInfo.name ?? `col_${index}`,
+            index: typeof asInfo.index === 'number' ? asInfo.index : index,
+            type: (asInfo.type as TabularColumnType) ?? 'string',
+            hasNullValues: asInfo.hasNullValues,
+            sampleValues: asInfo.sampleValues,
+          };
+        }
+        return { name: String(col), index, type: 'string' };
+      });
+
+      return {
+        ...tabularTableMetadata,
+        columns: columnsFromPreview,
+      } satisfies TabularTableMetadata;
+    }
+
+    const previewRows = dialogData.lastPreview?.rows;
+    if (Array.isArray(previewRows) && previewRows.length > 0) {
+      const firstRow = previewRows[0] as Record<string, unknown>;
+      const keys = Object.keys(firstRow);
+      if (keys.length > 0) {
+        const columnsFromRows: TabularColumnInfo[] = keys.map((key, index) => ({
+          name: key,
+          index,
+          type: 'string',
+        }));
+        return {
+          ...tabularTableMetadata,
+          columns: columnsFromRows,
+        } satisfies TabularTableMetadata;
+      }
+    }
+
+    return tabularTableMetadata;
+  }, [dialogData.lastPreview?.columns, dialogData.lastPreview?.rows, tabularTableMetadata]);
+
+  useEffect(() => {
+    if (error) {
+      setValid(false);
+      setError(error);
+      return;
+    }
+    if (loading) {
+      setValid(false);
+      return;
+    }
+    setValid(Boolean(tabularTableMetadata));
+    setError(null);
+  }, [error, loading, setError, setValid, tabularTableMetadata]);
 
   if (shouldUploadFirst) {
     return (
@@ -60,14 +129,48 @@ export const TabularDataFilterStep: FC<StepComponentProps<SpreadsheetEntity>> = 
   }
 
   return (
+    <TabularDataFilter
+      tableMetadata={tableMetadata}
+      pluginId={pluginId}
+      onPreviewData={handlePreviewData}
+      initialFilters={initialFilters}
+      onSyncFilters={syncFilters}
+      menuContainer={menuContainer}
+    />
+  );
+};
+
+export const TabularDataFilterStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
+  data,
+  onChange,
+  setValid,
+  setError,
+  dialogRef,
+}) => {
+  const {
+    pluginId,
+    tabularApi,
+    menuContainer,
+    initialFilters,
+    shouldUploadFirst,
+    syncFilters,
+    handlePreviewData,
+    dialogData,
+  } = useTabularDataFilter({ data, onChange, setValid, setError, dialogRef });
+
+  return (
     <TabularProvider tabularApi={tabularApi}>
-      <TabularDataFilter
-        tableMetadata={tableMetadata}
+      <TabularDataFilterInner
         pluginId={pluginId}
-        onPreviewData={handlePreviewData}
-        initialFilters={initialFilters}
-        onSyncFilters={syncFilters}
         menuContainer={menuContainer}
+        initialFilters={initialFilters}
+        shouldUploadFirst={shouldUploadFirst}
+        syncFilters={syncFilters}
+        handlePreviewData={handlePreviewData}
+        dialogData={dialogData}
+        tabularApi={tabularApi}
+        setValid={setValid}
+        setError={setError}
       />
     </TabularProvider>
   );

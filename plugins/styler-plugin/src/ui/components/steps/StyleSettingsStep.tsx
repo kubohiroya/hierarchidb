@@ -16,6 +16,7 @@ import type {
 } from '../types.js';
 import { MAPLIBRE_PROPERTY_GROUPS, MAPLIBRE_PROPERTY_METADATA } from '../types.js';
 import { ModalSelect } from '@hierarchidb/ui-modal-select';
+import type { TabularColumnInfo, TabularTableMetadata } from '@hierarchidb/tabular-store';
 
 const STYLE_TYPE_OPTIONS: ReadonlyArray<{ value: StyleType; label: string }> = [
   { value: 'choropleth', label: 'Choropleth Map' },
@@ -60,19 +61,33 @@ export const StyleSettingsStep: React.FC<StepComponentProps<StylerStepData>> = (
     [data]
   );
   const columns = useMemo(() => {
-    const candidate = pluginData as {
-      columns?: unknown;
-      tableMetadata?: { columns?: unknown };
-    };
-    const fromData = Array.isArray(candidate.columns)
-      ? candidate.columns.filter((c): c is string => typeof c === 'string')
+    const tableMetadata = pluginData.tabularTableMetadata as TabularTableMetadata | undefined;
+    const fromMetadata = (tableMetadata?.columns ?? [])
+      .map((col: TabularColumnInfo | string) => (typeof col === 'string' ? col : col.name))
+      .filter((name): name is string => Boolean(name));
+
+    const previewColumns = pluginData.lastPreview?.columns;
+    const fromPreview = Array.isArray(previewColumns)
+      ? previewColumns
+          .map((col, index) => {
+            if (typeof col === 'string') return col;
+            if (col && typeof col === 'object' && 'name' in col) {
+              const name = (col as Partial<TabularColumnInfo>).name;
+              if (typeof name === 'string' && name.trim()) return name;
+            }
+            return `col_${index}`;
+          })
+          .filter(Boolean)
       : [];
-    const fromMetadataRaw = candidate.tableMetadata?.columns;
-    const fromMetadata = Array.isArray(fromMetadataRaw)
-      ? fromMetadataRaw.filter((c): c is string => typeof c === 'string')
+
+    const previewRows = pluginData.lastPreview?.rows;
+    const fromRows = Array.isArray(previewRows) && previewRows.length > 0
+      ? Object.keys(previewRows[0] as Record<string, unknown>)
       : [];
-    return fromData.length > 0 ? fromData : fromMetadata;
-  }, [pluginData]);
+
+    const all = [...fromMetadata, ...fromPreview, ...fromRows];
+    return Array.from(new Set(all));
+  }, [pluginData.lastPreview?.columns, pluginData.lastPreview?.rows, pluginData.tabularTableMetadata]);
   const sanitizedStyleType = useMemo(() => {
     const candidate = pluginData.styleType as StyleType | undefined;
     return STYLE_TYPE_OPTIONS.some((option) => option.value === candidate) ? candidate : undefined;
@@ -172,6 +187,8 @@ export const StyleSettingsStep: React.FC<StepComponentProps<StylerStepData>> = (
           label={t('styleSettings.styleType.label', 'Style Type')}
           onChange={(event) => updateSettings({ styleType: event.target.value as StyleType })}
           menuContainer={menuContainer}
+          usePortal={false}
+          menuZIndexOffset={200}
         >
           {STYLE_TYPE_OPTIONS.map((option) => (
             <MenuItem key={option.value} value={option.value}>
@@ -191,6 +208,8 @@ export const StyleSettingsStep: React.FC<StepComponentProps<StylerStepData>> = (
           label={t('styleSettings.valueColumn.label', 'Property value source')}
           onChange={(event) => handleValueColumnChange(event.target.value)}
           menuContainer={menuContainer}
+          usePortal={false}
+          menuZIndexOffset={200}
         >
           <MenuItem value="">
             <em>{t('styleSettings.valueColumn.none', 'Select a column')}</em>
@@ -218,21 +237,21 @@ export const StyleSettingsStep: React.FC<StepComponentProps<StylerStepData>> = (
               : ''
           }
           menuContainer={menuContainer}
+          usePortal={false}
+          menuZIndexOffset={200}
         >
-          {MAPLIBRE_PROPERTY_GROUPS.map((group) => (
-            <React.Fragment key={group.name}>
-              <MenuItem value="" disabled>
-                <Typography variant="overline" color="text.secondary">
-                  {group.displayName}
-                </Typography>
+          {MAPLIBRE_PROPERTY_GROUPS.flatMap((group) => [
+            <MenuItem key={`${group.name}-label`} value="" disabled>
+              <Typography variant="overline" color="text.secondary">
+                {group.displayName}
+              </Typography>
+            </MenuItem>,
+            ...group.properties.map((property) => (
+              <MenuItem key={property} value={property}>
+                {MAPLIBRE_PROPERTY_METADATA[property].displayName}
               </MenuItem>
-              {group.properties.map((property) => (
-                <MenuItem key={property} value={property}>
-                  {MAPLIBRE_PROPERTY_METADATA[property].displayName}
-                </MenuItem>
-              ))}
-            </React.Fragment>
-          ))}
+            )),
+          ])}
         </ModalSelect>
         <FormHelperText>
           {t('styleSettings.targetProperty.help', 'Select the MapLibre paint property to map this value to.')}
