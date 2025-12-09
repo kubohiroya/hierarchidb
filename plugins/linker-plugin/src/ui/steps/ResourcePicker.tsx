@@ -53,7 +53,7 @@ export type ResourceSummary = { nodeId: string; nodeType?: string; name?: string
 export interface ResourcePickerProps {
   value?: Set<string>;
   onChange: (_setLike: Set<string>) => void;
-  notice?: string;
+  notice: string|null;
 }
 
 export const ResourcePicker: React.FC<ResourcePickerProps> = ({ value, onChange, notice }) => {

@@ -1,5 +1,17 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { DialogProgressState, DialogWindowState } from '@hierarchidb/plugin-service-api';
+
+interface DialogWindowState {
+  mode?: 'normal' | 'maximize' | 'full-screen';
+  position?: { x: number; y: number } | null;
+  size?: { width: number; height: number } | null;
+}
+
+interface DialogProgressState {
+  /**
+   * Zero-based index of the last active step when the dialog was persisted.
+   */
+  activeStepIndex: number;
+}
 
 /**
  * Abstractions for plugin entity stores (Peer/Group/Relational).

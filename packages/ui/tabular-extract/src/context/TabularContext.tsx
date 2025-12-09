@@ -48,11 +48,3 @@ export const useTabularApi = (): TabularDataApi => {
   }
   return api;
 };
-
-/**
- * Hook to check if Tabular API is available
- */
-export const useTabularApiAvailable = (): boolean => {
-  const api = useContext(TabularApiContext);
-  return api !== null;
-};

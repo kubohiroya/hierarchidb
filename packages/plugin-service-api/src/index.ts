@@ -13,9 +13,3 @@ export * from './types/NodeTypeAPI.js';
 export * from './types/extensions.js';
 export * from './types/registry.js';
 export * from './types/PluginTreeAPI.js';
-export type {
-  DialogProgressState,
-  DialogWindowState,
-  PeerEntityBase,
-  PeerStore,
-} from './peer-store/types.js';

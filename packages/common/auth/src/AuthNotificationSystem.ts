@@ -148,26 +148,6 @@ export class AuthNotificationRegistry {
     await Promise.allSettled(promises);
   }
 
-  /**
-   * Get pending authentication requests
-   */
-  getPendingRequests(): AuthRequiredNotification[] {
-    return Array.from(this.pendingRequests.values());
-  }
-
-  /**
-   * Check if a request is pending
-   */
-  isPending(requestId: string): boolean {
-    return this.pendingRequests.has(requestId);
-  }
-
-  /**
-   * Clear all pending requests
-   */
-  clearPendingRequests(): void {
-    this.pendingRequests.clear();
-  }
 }
 
 /**

@@ -12,11 +12,7 @@ export interface ValidationRule<TEntity extends PeerEntity = PeerEntity> {
   getMessage?: (entity: TEntity) => string;
 }
 
-/**
- */
-/**
- * @deprecated Unused across the repository; scheduled for removal.
- */
+
 export type ValidationFunction<T = unknown> = (
   data: T
 ) => Promise<ValidationResult> | ValidationResult;
