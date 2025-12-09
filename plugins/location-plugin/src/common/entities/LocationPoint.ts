@@ -3,7 +3,7 @@
  * @description Persistent GroupEntity representing a single location point that belongs to a TreeNode.
  */
 
-import type { GroupEntity, Timestamp } from '@hierarchidb/common-types';
+import type { GroupEntity, Timestamp, NodeId } from '@hierarchidb/common-types';
 
 export interface LocationPointSource {
   provider: string;
@@ -39,6 +39,8 @@ export interface LocationPointProperties<
 export interface LocationPoint<
   TPayload extends Record<string, unknown> = Record<string, unknown>,
 > extends GroupEntity<string>, LocationPointProperties<TPayload> {
+  /** TreeNode to which this point belongs. */
+  nodeId: NodeId;
   /** GroupEntity discriminator. */
   type: 'locationPoint';
 }
