@@ -111,7 +111,6 @@ export interface VectorTileTask extends BatchTaskBase {
 export interface BatchSession {
   sessionId: string;
   draftId: NodeId;
-  nodeId: NodeId;
   status: 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
   config: ProcessingConfig;
   startedAt: number;
