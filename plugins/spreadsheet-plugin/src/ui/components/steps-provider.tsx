@@ -1,7 +1,7 @@
 import { PluginStepRegistry, type PluginStepConfig, type StepComponentProps } from '@hierarchidb/plugin-base';
 import type { SpreadsheetEntity } from '../../common/types/SpreadsheetEntity.js';
-import { TabularDataSourceStep } from './steps/TabularDataSourceStep.tsx';
-import { TabularDataFilterStep } from './steps/TabularDataFilterStep.tsx';
+import { TabularDataSourceStep } from './steps/TabularDataSourceStep.js';
+import { TabularDataFilterStep } from './steps/TabularDataFilterStep.js';
 import { SPREADSHEET_NODE_TYPE } from '../../common/constants.js';
 import { i18n } from '@hierarchidb/ui-i18n';
 
