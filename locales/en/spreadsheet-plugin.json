@@ -1,0 +1,33 @@
+{
+  "steps": {
+    "dataSource": {
+      "label": "Data Source"
+    },
+    "filtering": {
+      "label": "Filtering"
+    }
+  },
+  "dataSource": {
+    "errors": {
+      "missingDataset": "Upload or select a dataset before continuing."
+    },
+    "import": {
+      "title": "Import Tabular Data"
+    },
+    "details": {
+      "title": "Imported File Details",
+      "filename": "filename: {{value}}",
+      "size": "size: {{value}}",
+      "lastModified": "lastModified: {{value}}",
+      "contentHash": "contentHash: {{value}}",
+      "empty": "No tabular data"
+    }
+  },
+  "filtering": {
+    "instructions": {
+      "uploadFirst": "Import a data file in Step 2 to configure filters."
+    },
+    "loading": "Loading table metadata...",
+    "noMetadata": "No table metadata found for the selected dataset."
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "styleSettings": {
+    "title": "Style Mapping",
+    "description": "Select the style type, data source column, and target property before configuring algorithms.",
+    "styleType": {
+      "label": "Style Type",
+      "help": "Select the geometry that this style targets.",
+      "options": {
+        "choropleth": "Choropleth Map",
+        "heatmap": "Heat Map",
+        "points": "Point Map",
+        "lines": "Line Map"
+      }
+    },
+    "valueColumn": {
+      "label": "Property value source",
+      "help": "Choose the filtered table column whose values will drive styling.",
+      "none": "Select a column"
+    },
+    "targetProperty": {
+      "label": "Target style property",
+      "help": "Select the MapLibre paint property to map this value to."
+    },
+    "validation": {
+      "required": "Select a style type, value source, and target property to continue."
+    }
+  },
+  "extension": {
+    "description": "Configure Styler visualization settings for this folder",
+    "styleType": {
+      "label": "Style Type",
+      "choropleth": "Choropleth Map",
+      "heatmap": "Heat Map",
+      "points": "Point Map",
+      "lines": "Line Map"
+    },
+    "dataSource": {
+      "label": "Data Source",
+      "placeholder": "e.g., CSV file path or URL"
+    },
+    "colorScheme": {
+      "label": "Color Scheme",
+      "blues": "Blues",
+      "reds": "Reds",
+      "greens": "Greens",
+      "viridis": "Viridis",
+      "plasma": "Plasma"
+    },
+    "opacity": {
+      "label": "Opacity"
+    }
+  },
+  "step5": {
+    "title": "Step 5: Style Mapping Configuration",
+    "algorithms": {
+      "linear": "Linear",
+      "quantile": "Quantile",
+      "jenks": "Jenks Natural Breaks",
+      "equal": "Equal Interval",
+      "linearDescription": "Interpolates colors smoothly between minimum and maximum values. Ideal for evenly distributed data or when visualizing continuous transitions.",
+      "quantileDescription": "Creates classes with an equal number of features. Produces balanced visuals even for skewed data and is resilient to outliers.",
+      "jenksDescription": "Finds natural breaks by minimizing variance within classes and maximizing it between classes. Offers meaningful groupings at a higher computational cost.",
+      "equalDescription": "Divides the value range into equal intervals. Suited for continuous, roughly linear distributions such as temperature or elevation, and is fast and easy to understand."
+    },
+    "recommendation": {
+      "summary": "Recommended algorithm: {algorithm}",
+      "confidence": "Confidence: {confidence}%",
+      "fallback": "Try this algorithm to match your data distribution.",
+      "apply": "Apply",
+      "suitability": "Suitability score: {{score}} / 100"
+    },
+    "mappingRange": {
+      "title": "Mapping Range",
+      "min": "Minimum",
+      "max": "Maximum",
+      "help": "Define the numeric domain to map onto colors."
+    },
+    "algorithm": {
+      "title": "Color Algorithm"
+    },
+    "advanced": {
+      "title": "Advanced color controls",
+      "hide": "Hide",
+      "show": "Show",
+      "description": "Optional tweaks for color interpolation and palettes. Leave hidden for quick setups."
+    },
+    "colorSpace": {
+      "title": "Color Space",
+      "hsv": "HSV",
+      "rgb": "RGB",
+      "lab": "LAB",
+      "help": "Choose how colors are interpolated across the range."
+    },
+    "colorRange": {
+      "title": "Color Range & Inversion",
+      "start": "Start Color (hex)",
+      "end": "End Color (hex)",
+      "normal": "Normal",
+      "invert": "Invert"
+    },
+    "hsv": {
+      "title": "HSV Controls",
+      "hueStart": "Hue Start",
+      "hueEnd": "Hue End",
+      "saturation": "Saturation",
+      "brightness": "Brightness"
+    },
+    "gradient": {
+      "title": "Color Gradient Preview",
+      "description": "Preview of the gradient based on current mapping and algorithm."
+    },
+    "distribution": {
+      "title": "Value Distribution (sampled)",
+      "analyzing": "Analyzing value distribution…",
+      "mean": "Mean: {{value}}",
+      "median": "Median: {{value}}",
+      "stdDev": "Std Dev: {{value}}",
+      "min": "Min: {{value}}",
+      "max": "Max: {{value}}"
+    }
+  }
+}
