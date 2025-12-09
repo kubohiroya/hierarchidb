@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useCallback, useEffect, useState, useId } from 'react';
+import { useId } from 'react';
 import {
   Alert,
   Box,
@@ -18,6 +18,7 @@ import {
 import Grid from '@mui/material/Grid';
 import { CheckCircle as CheckIcon, Schema as SchemaIcon } from '@mui/icons-material';
 import type { PropertyInfo, ResolverUpdaterPayload, SchemaInfo } from '../../../common/types/index.js';
+import { useSchemaSelectionStep } from './hooks/useSchemaSelectionStep.js';
 
 interface SchemaSelectionStepProps {
   data: Partial<ResolverUpdaterPayload>;
@@ -41,145 +42,26 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
   onTargetSchemaChange,
 }) => {
   const controlId = useId();
-  const draftData = data.draftData ?? {};
-  const [sourceInputMethod, setSourceInputMethod] = useState<string>('sample');
-  const [targetInputMethod, setTargetInputMethod] = useState<string>('sample');
-  const [sourceInput, setSourceInput] = useState<string>('');
-  const [targetInput, setTargetInput] = useState<string>('');
-  const [sourceSchema, setSourceSchema] = useState<SchemaInfo | null>(draftData.sourceSchema ?? null);
-  const [targetSchema, setTargetSchema] = useState<SchemaInfo | null>(draftData.targetSchema ?? null);
-  const [sourceError, setSourceError] = useState<string>('');
-  const [targetError, setTargetError] = useState<string>('');
-
-  const parseSchemaFromSample = useCallback((jsonText: string, schemaName: string): SchemaInfo | null => {
-    try {
-      const data = JSON.parse(jsonText);
-      const sampleArray = Array.isArray(data) ? data : [data];
-
-      if (sampleArray.length === 0) {
-        throw new Error('No data found in sample');
-      }
-
-      // Extract properties from the first few samples
-      const allProperties = new Set<string>();
-      const propertyTypes = new Map<string, string>();
-      const propertyExamples = new Map<string, unknown[]>();
-
-      sampleArray.slice(0, 10).forEach(item => {
-        if (typeof item === 'object' && item !== null) {
-          Object.keys(item).forEach(key => {
-            allProperties.add(key);
-            const value = item[key];
-            const type = Array.isArray(value) ? 'array'
-              : value === null ? 'string'
-                : typeof value === 'object' ? 'object'
-                  : typeof value === 'number' ? 'number'
-                    : typeof value === 'boolean' ? 'boolean'
-                      : typeof value;
-
-            propertyTypes.set(key, type);
-
-            if (!propertyExamples.has(key)) {
-              propertyExamples.set(key, []);
-            }
-            const examples = propertyExamples.get(key)!;
-            if (examples.length < 3 && value !== null && value !== undefined) {
-              examples.push(value);
-            }
-          });
-        }
-      });
-
-      const properties: PropertyInfo[] = Array.from(allProperties).map((name: string) => ({
-        name,
-        type: propertyTypes.get(name) as PropertyInfo['type'] || 'string',
-        required: false, // Can't determine from sample alone
-        exampleValues: propertyExamples.get(name) || [],
-      }));
-
-      return {
-        name: schemaName,
-        properties,
-        sampleData: sampleArray.slice(0, 5), // Keep first 5 samples
-      };
-    } catch (error) {
-      console.error('Failed to parse schema from sample:', error);
-      return null;
-    }
-  }, []);
-
-  const handleSourceInputChange = useCallback((value: string) => {
-    setSourceInput(value);
-    setSourceError('');
-
-    if (value.trim()) {
-      const schema = parseSchemaFromSample(value, 'Source Schema');
-      if (schema) {
-        setSourceSchema(schema);
-        onSourceSchemaChange(schema);
-        onUpdate({ draftData: { sourceSchema: schema } });
-        return;
-      }
-      setSourceError('Invalid JSON format or structure');
-    }
-    setSourceSchema(null);
-    onSourceSchemaChange(null);
-    onUpdate({ draftData: { sourceSchema: null } });
-  }, [parseSchemaFromSample, onSourceSchemaChange, onUpdate]);
-
-  const handleTargetInputChange = useCallback((value: string) => {
-    setTargetInput(value);
-    setTargetError('');
-
-    if (value.trim()) {
-      const schema = parseSchemaFromSample(value, 'Target Schema');
-      if (schema) {
-        setTargetSchema(schema);
-        onTargetSchemaChange(schema);
-        onUpdate({ draftData: { targetSchema: schema } });
-        return;
-      }
-      setTargetError('Invalid JSON format or structure');
-    }
-    setTargetSchema(null);
-    onTargetSchemaChange(null);
-    onUpdate({ draftData: { targetSchema: null } });
-  }, [parseSchemaFromSample, onTargetSchemaChange, onUpdate]);
-
-  // Initialize from existing data
-  useEffect(() => {
-    if (draftData.sourceSchema && !sourceSchema) {
-      setSourceSchema(draftData.sourceSchema);
-      onSourceSchemaChange(draftData.sourceSchema);
-      if (!sourceInput && Array.isArray(draftData.sourceSchema.sampleData)) {
-        setSourceInput(JSON.stringify(draftData.sourceSchema.sampleData, null, 2));
-      }
-    }
-    if (draftData.targetSchema && !targetSchema) {
-      setTargetSchema(draftData.targetSchema);
-      onTargetSchemaChange(draftData.targetSchema);
-      if (!targetInput && Array.isArray(draftData.targetSchema.sampleData)) {
-        setTargetInput(JSON.stringify(draftData.targetSchema.sampleData, null, 2));
-      }
-    }
-  }, [
-    draftData.sourceSchema,
-    draftData.targetSchema,
+  const {
+    sourceInputMethod,
+    targetInputMethod,
+    setSourceInputMethod,
+    setTargetInputMethod,
+    sourceInput,
+    targetInput,
     handleSourceInputChange,
     handleTargetInputChange,
+    sourceSchema,
+    targetSchema,
+    sourceError,
+    targetError,
+  } = useSchemaSelectionStep({
+    data,
+    onUpdate,
+    onValidationChange,
     onSourceSchemaChange,
     onTargetSchemaChange,
-    sourceInput,
-    sourceSchema,
-    targetInput,
-    targetSchema,
-  ]);
-
-  // Validation
-  useEffect(() => {
-    const isValid = sourceSchema !== null && targetSchema !== null && !sourceError && !targetError;
-    onValidationChange(isValid);
-  }, [sourceSchema, targetSchema, sourceError, targetError, onValidationChange]);
+  });
 
   const SchemaPreview: React.FC<{ schema: SchemaInfo; title: string }> = ({ schema, title }) => (
     <Paper sx={{ p: 2, mt: 2 }}>
