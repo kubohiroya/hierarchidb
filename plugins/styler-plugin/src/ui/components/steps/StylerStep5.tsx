@@ -14,18 +14,6 @@ export const StylerStep5: React.FC<StylerStepProps> = ({
 }) => {
   const currentConfig: StylerConfig = data?.stylerConfig || StylerConfigDefault;
 
-  //  :
-  // const numericColumns = React.useMemo(() => {
-  //   if (tabularData.length === 0) return [];
-  //
-  //   return columns.filter(col => {
-  //  //
-  //     const sampleValues = tabularData.slice(0, 10).map(row => row[col]);
-  //     return sampleValues.some(val => typeof val === 'number' && !isNaN(val));
-  //   });
-  // }, [tabularData, columns]);
-
-  //  :
   const sampleValues = React.useMemo(() => {
     const valueColumn = data?.selectedValueColumn;
     if (!valueColumn || tabularData.length === 0) return [];
@@ -65,10 +53,6 @@ export const StylerStep5: React.FC<StylerStepProps> = ({
   );
 };
 
-/**
- * : Step
- * Spreadsheet
- */
 const StylerStep5Component = wrapDialogStepComponent(StylerStep5);
 
 export const StylerStep5Definition = {

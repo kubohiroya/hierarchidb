@@ -154,11 +154,6 @@ const ResizableTableHeader: React.FC<{
   );
 };
 
-/**
- * :
- * :
- * :
- */
 const TableRowComponent: React.FC<{
   rowData: StylerTableRow;
   columns: string[];
@@ -345,30 +340,6 @@ export const StylerTablePreview: React.FC<StylerTablePreviewProps> = ({
       [column]: width,
     }));
   }, []);
-
-  // const handleColumnClick = useCallback((column: string) => {
-  //   if (!onColumnSelect) return;
-
-  //  //
-  //   const isNumericColumn = data.some(row => typeof row[column] === 'number');
-
-  //   if (column === selectedKeyColumn) {
-  //  //
-  //     if (isNumericColumn) {
-  //       onColumnSelect(column, 'value');
-  //     }
-  //   } else if (column === selectedValueColumn) {
-  //  //
-  //     onColumnSelect('', 'value');
-  //   } else {
-  //  //
-  //     if (!selectedKeyColumn) {
-  //       onColumnSelect(column, 'key');
-  //     } else if (isNumericColumn && !selectedValueColumn) {
-  //       onColumnSelect(column, 'value');
-  //     }
-  //   }
-  // }, [data, selectedKeyColumn, selectedValueColumn, onColumnSelect]);
 
   if (data.length === 0 || columns.length === 0) {
     return (
