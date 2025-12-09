@@ -62,7 +62,8 @@ export function MultiStepDialogFrame<TData>(props: MultiStepDialogFrameComponent
     transitionDuration,
   } = props;
 
-  const { open } = headlessProps;
+  const { open, isDirty, onRequestClose } = headlessProps;
+  const canCloseWithEscape = !isDirty;
 
   const isBrowser = typeof document !== 'undefined';
   const theme = useTheme();
@@ -82,10 +83,11 @@ export function MultiStepDialogFrame<TData>(props: MultiStepDialogFrameComponent
     if (!open) return;
     if (event.defaultPrevented) return;
     if (event.key !== 'Escape') return;
+    if (!canCloseWithEscape) return;
 
     event.stopPropagation();
-    headlessProps.onRequestClose?.('close');
-  }, [headlessProps, open]);
+    onRequestClose?.('close');
+  }, [canCloseWithEscape, onRequestClose, open]);
 
   useEffect(() => {
     if (!isBrowser) return;

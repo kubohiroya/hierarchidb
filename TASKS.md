@@ -53,6 +53,61 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1608) Dialog Esc 未保存なし時の共通クローズ対応（P0）
+- ブランチ: `fix/ui-dialog/esc-clean-close`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: packages/ui/dialog/src/headless/MultiStepDialogFrame.tsx, packages/plugin-ui-host（PluginDialogHost/ResumeDraftDialog/UnsavedChangeDialog）, app/src/router/pages/tree/trash/TrashDialog.tsx
+- 受け入れ基準（DoD）:
+  - [ ] プラグイン create/edit ダイアログ、Trash ダイアログ、ResumeDraftDialog、UnsavedChange（破棄確認）ダイアログで未保存変更がない場合に Esc キー押下で即時閉じる
+  - [ ] 未保存変更がある場合は現行の確認ダイアログ挙動を維持し、Esc で即閉しない
+  - [ ] 共通レイヤーに実装を集約し、既存のボタン操作やショートカットとの衝突がない
+  - [ ] 手動確認：プラグイン create ダイアログ 1 件、Trash ダイアログ、ResumeDraftDialog で Esc 挙動を確認（未保存あり/なし双方）
+  - [ ] 検証コマンドとして `pnpm --filter @hierarchidb/app typecheck` など関与パッケージの typecheck を実行し、結果を運用ログに記載する（不可なら理由記載）
+  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+- チェックリスト:
+  - [ ] Esc ハンドリングを Dialog フレーム/host 共通で実装し、未保存検知と onRequestClose が一貫して動くようにする
+  - [ ] ResumeDraftDialog や UnsavedChange ダイアログでも同一の Esc 振る舞いが得られるようにフック/props を配線する
+  - [ ] TrashDialog でも未保存なし時に Esc で閉じるよう確認し、必要なら共通化する
+  - [ ] 手動確認と typecheck 結果を運用ログに追記する
+- ロールバック手順：本タスクで変更する Dialog 関連の差分（MultiStepDialogFrame/PluginDialogHost/ResumeDraftDialog/UnsavedChangeDialog/TrashDialog など）を revert し、実行した検証コマンドを再実行する
+- 運用ログ：
+  - start: 2025-12-09 13:05 JST ダイアログ未保存なし時の Esc クローズ共通対応を開始（main 上で作業、branch 作成不可のため）。
+  - progress: 2025-12-09 13:20 JST MultiStepDialogFrame の Esc ハンドラーに isDirty ガードを追加し、未保存ありのときは Esc で閉じないように変更（プラグイン/Trash ダイアログに適用）。
+  - progress: 2025-12-09 13:32 JST 検証: `pnpm --filter @hierarchidb/app typecheck` exit 1（既存エラー: TreeConsoleIntegration.tsx(82,67) TS2322 ReactNode 型不整合）。本タスクの変更と無関係のため未対応。
+  - progress: 2025-12-09 13:35 JST 検証: `pnpm --filter @hierarchidb/ui-dialog typecheck` exit 0。
+
+1607) TreeConsoleIntegration ResumeDialog 抽出（P0）
+- ブランチ: main（sandbox 制約で branch 作成不可のため）
+- 依存: app/src/router/pages/tree/console/TreeConsoleIntegration.tsx
+- 受け入れ基準（DoD）:
+  - [ ] TreeConsoleIntegration から ResumeDialog（pluginDraft resume ダイアログ）を別ファイルへ抽出し、挙動と文言を維持する
+  - [ ] 新コンポーネントを TreeConsoleIntegration から import する構成へ切り替え、不要コードを削除する
+  - [ ] 代表検証として `pnpm --filter @hierarchidb/app typecheck` を実行し、結果を運用ログに記録する（実行不可なら理由を記載）
+  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+- チェックリスト:
+  - [ ] 抽出したコンポーネントに必要な props/state を整理し、副作用を持つロジックを親から分離する
+  - [ ] TreeConsoleIntegration 側を新コンポーネント利用に置き換え、不要な import/JSX を削除する
+  - [ ] typecheck を実行するか、未実行なら理由を運用ログに記載する
+- ロールバック手順：新設コンポーネントと TreeConsoleIntegration 内の呼び出し差分を revert し、typecheck を再実行して元の状態に戻す
+- 運用ログ：
+  - start: 2025-12-09 12:50 JST TreeConsoleIntegration の resume ダイアログを別ファイル化する作業を開始（main 上で作業）。
+  - progress: 2025-12-09 12:55 JST `pnpm --filter @hierarchidb/app typecheck` exit 0（plugin-base build の define 警告は既知）。
+
+1609) TreeConsoleIntegrationInner フック抽出（P0）
+- ブランチ: main（sandbox 制約で branch 作成不可のため）
+- 依存: app/src/router/pages/tree/console/TreeConsoleIntegration.tsx, useTreeConsoleIntegrationInner フック
+- 受け入れ基準（DoD）:
+  - [ ] TreeConsoleIntegrationInner の状態管理・副作用・ハンドラを useTreeConsoleIntegrationInner フックへ抽出し、コンポーネントは表示主体とする
+  - [ ] 挙動・型・既存の canImportFromNode エクスポートを維持する（テスト参照を壊さない）
+  - [ ] `pnpm --filter @hierarchidb/app typecheck` を実行し、結果を運用ログに記録する（不可なら理由記載）
+  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+- チェックリスト:
+  - [ ] useTreeConsoleIntegrationInner フックを新設し、TreeConsoleIntegrationInner のロジックを移動する
+  - [ ] TreeConsoleIntegrationInner はフック結果を受け取って JSX を組み立てるのみとし、props 配線を整理する
+  - [ ] typecheck を実行するか、未実行なら理由を運用ログに記載する
+- ロールバック手順：新設フックと TreeConsoleIntegration の差分を revert し、typecheck を再実行して元の構成へ戻す
+- 運用ログ：
+  - start: 2025-12-09 13:10 JST TreeConsoleIntegrationInner のロジックを useTreeConsoleIntegrationInner フックへ抽出する作業を開始（main 上で作業）。
+
 1605) Tabular filter menu をダイアログ内に固定（P0）
 - ブランチ: `fix/ui-tabular/filter-menu-container`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: packages/ui/tabular-extract TabularFilterStep/TabularDataFilterRulesTable、plugins spreadsheet/styler/shape/location 等の filtering step
@@ -9649,6 +9704,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-27 15:46 progress: fix/workingcopy/dialog-cancel-behavior — create 仮ノードを version:0 に統一し、commit/save/import で 1 以上へ昇格する方針に合わせて判定を整理。`initTreeNode` を version 0 で作成、`commitTreeNodeDraft` は version を 0 起点で +1、`discardTreeNodeDraft` は committed 判定を version>0/データ有無のみに簡素化。UI cancel で forceDelete を渡すよう修正済み。`pnpm --filter @hierarchidb/runtime-worker test -- --run cancel-create` exit 0。
 
 ## 今日の着手（運用ログ） <a id="worklog-16"></a>
+- 2025-12-09 12:50 start: fix/ui-treeconsole/resume-dialog-extract — TreeConsoleIntegration の resume ダイアログを別コンポーネントへ抽出する作業を開始。DoD: 挙動維持での抽出、import 差し替え、`pnpm --filter @hierarchidb/app typecheck` 実行ログの記録、ロールバック手順明記。branch は main。
+- 2025-12-09 12:55 progress: fix/ui-treeconsole/resume-dialog-extract — `pnpm --filter @hierarchidb/app typecheck` exit 0（plugin-base build で define 警告は既知）。
+- 2025-12-09 13:10 start: fix/ui-treeconsole/integration-hook-extract — TreeConsoleIntegrationInner のロジックを useTreeConsoleIntegrationInner フックへ分離する作業を開始。DoD: 責務分離、挙動維持、typecheck 実行ログ、ロールバック明記。branch は main。
+- 2025-12-09 13:40 progress: fix/ui-treeconsole/integration-hook-extract — useTreeConsoleIntegrationInner を追加し、TreeConsoleIntegrationInner を表示主体にリファクタ。`pnpm --filter @hierarchidb/app typecheck` exit 0（plugin-base build define 警告は既知）。
 - 2025-12-08 14:06 start: fix/styler/dialog-stepper-hidden — styler-plugin のマルチステップダイアログでステッパーが表示されない問題の調査を開始。DoD: ステッパー表示確認、原因と修正内容の記録、影響範囲とロールバック明記、関連 lint/typecheck の実行または未実施理由を記録。branch は `fix/styler/dialog-stepper-hidden`（作成不可なら main）。
 - 2025-12-08 14:16 progress: fix/styler/dialog-stepper-hidden — StylerDialog に PluginDialogHeader/PluginDialogFooter を render するよう headlessProps を拡張し、ステッパーとナビゲーションを再表示する実装を追加。依存に plugin-ui-host を追加。検証: `pnpm --filter @hierarchidb/styler-plugin typecheck` exit 2（既存エラー: StylerMapping.tsx unused import, StylerStep5.tsx config undefined 判定, StyleSettingsStep.tsx 型未定義/any など）。
 - 2025-12-08 14:28 progress: fix/styler/dialog-stepper-hidden — 独自 Headless ダイアログを撤去し、UI エントリは steps-provider の登録みに縮小（PluginDialogHost 経由で共通ヘッダー/ステッパーを使用）。`plugins/styler-plugin/package.json` から plugin-ui-host 依存を除去。再検証: `pnpm --filter @hierarchidb/styler-plugin typecheck` exit 2（同じ既存エラーのみ）。
