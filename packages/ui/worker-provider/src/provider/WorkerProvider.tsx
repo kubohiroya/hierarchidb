@@ -58,7 +58,7 @@ export function createWorkerProvider<T>() {
   }) => {
     // Temporary workaround: directly render WorkerClientProvider
     // TODO: Fix WorkerSingletonProvider to support render props properly
-    const [worker, setWorker] = React.useState<Worker | null>(null);
+    const [worker, setWorker] = React.useState<Worker | undefined>();
 
     React.useEffect(() => {
       const w = createWorker();
@@ -88,58 +88,3 @@ export function createWorkerProvider<T>() {
     useWorker,
   };
 }
-
-/**
- * Example usage with async lazy singleton initialization:
- *
- * ```typescript
- * // Define your Worker API type
- * interface MyWorkerAPI {
- *   initialize(): Promise<void>;
- *   ping(): Promise<{ response: string }>;
- *   getData(): Promise<any>;
- * }
- *
- * // Create provider and hook
- * const { DualLayerWorkerProvider, useWorker } = createDualLayerWorkerProvider<MyWorkerAPI>();
- *
- * // Use in your app
- * function App() {
- *   return (
- *     <DualLayerWorkerProvider
- *       createWorker={() => new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' })}
- *       wrapWorker={async (worker) => {
- *         const Comlink = await import('comlink');
- *         const wrapped = Comlink.wrap<MyWorkerAPI>(worker);
- *
- *         // Wait for Worker's async lazy singleton initialization
- *         await wrapped.initialize();
- *
- *         return wrapped;
- *       }}
- *       debug={true}
- *     >
- *       <MyApp />
- *     </DualLayerWorkerProvider>
- *   );
- * }
- *
- * // Use in components
- * function MyComponent() {
- *   const { client, isConnected } = useWorker();
- *
- *   // Use the fully initialized client
- *   const handleClick = async () => {
- *     const data = await client.getData();
- *     console.log(data);
- *   };
- *
- *   return (
- *     <div>
- *       <p>Connection: {isConnected ? 'Connected' : 'Disconnected'}</p>
- *       <button onClick={handleClick}>Get Data</button>
- *     </div>
- *   );
- * }
- * ```
- */

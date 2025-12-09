@@ -15,7 +15,7 @@ export function useTreeConsoleTrashWatcher({
   client,
   treeId,
 }: {
-  client: Remote<WorkerAPI>|null;
+  client?: Remote<WorkerAPI>;
   treeId?: string;
 }): TrashWatcherState {
   const [hasTrashItems, setHasTrashItems] = useState(false);

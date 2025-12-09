@@ -124,10 +124,14 @@
         "description": "Another tab saved this node at {{timestamp}}. You can cancel and keep their changes, or continue while keeping your own edits.",
         "buttons": {
           "discardSelf": "Discard my changes",
-          "keepSelf": "Keep my changes"
-        }
-      }
+      "keepSelf": "Keep my changes"
+    },
+    "discard": {
+      "title": "Discard unsaved changes?",
+      "description": "You have unsaved changes. Discard them and close the dialog?"
     }
+  }
+}
   },
   "treeConsole": {
     "toolbar": {

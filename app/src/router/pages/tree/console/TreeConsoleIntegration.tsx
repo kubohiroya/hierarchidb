@@ -42,11 +42,11 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
     infoPanelProps,
     resumeDialogProps,
   } = useTreeConsoleIntegrationInner({
-    client,
+    client: client ?? undefined,
     treeId,
     pageNodeId,
     pageTreeNode,
-    resetWorker:reset,
+    resetWorker: reset,
     initializeWorker: initialize,
   });
 

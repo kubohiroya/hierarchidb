@@ -23,7 +23,7 @@ type TreeNodeInfoPanelProps = React.ComponentProps<
 >;
 
 export type UseTreeConsoleIntegrationInnerArgs = {
-  client?: Remote<WorkerAPI> | null;
+  client?: Remote<WorkerAPI>;
   treeId?: string;
   pageNodeId?: NodeId;
   pageTreeNode?: TreeNode;
@@ -114,7 +114,7 @@ export function useTreeConsoleIntegrationInner({
   );
 
   const { hasTrashItems, trashRootIdRef } = useTreeConsoleTrashWatcher({
-    client: client ?? null,
+    client,
     treeId,
   });
 
@@ -126,7 +126,7 @@ export function useTreeConsoleIntegrationInner({
   });
 
   const { resumeDialogProps, requestEdit } = useTreeConsoleResumeDialog({
-    client: client ?? null,
+    client,
     actions: {
       handleEdit: actions.handleEdit,
       handleContextMenuAction: actions.handleContextMenuAction,

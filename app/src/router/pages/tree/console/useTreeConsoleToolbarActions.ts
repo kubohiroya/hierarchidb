@@ -68,7 +68,7 @@ export function useTreeConsoleToolbarActions({
   searchTerm,
   selectedCount,
 }: {
-  client?: Remote<WorkerAPI> | null;
+  client?: Remote<WorkerAPI>;
   treeId?: string;
   pageNodeId?: NodeId;
   pageTreeNode?: TreeNode;

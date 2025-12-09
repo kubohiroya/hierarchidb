@@ -76,6 +76,7 @@
   - progress: 2025-12-09 13:35 JST 検証: `pnpm --filter @hierarchidb/ui-dialog typecheck` exit 0。
   - progress: 2025-12-09 13:45 JST Esc ハンドラーの defaultPrevented チェックを削除し、子要素が Escape を preventDefault しても未保存なしの場合はダイアログを閉じるように変更。検証: `pnpm --filter @hierarchidb/ui-dialog typecheck` exit 0。
   - progress: 2025-12-09 14:05 JST isDirty=true 時も onRequestClose を発火させ、plugin-ui-host 側で window.confirm による破棄確認を挟んでから cancel を実行するよう変更（Esc は「未保存なし: 即閉」「未保存あり: 確認」へ統一）。検証: `pnpm --filter @hierarchidb/plugin-ui-host typecheck` exit 0。
+  - progress: 2025-12-09 14:25 JST window.confirm を撤去し、UnsavedChangesDialog（@hierarchidb/ui-dialog）を Esc 経由でも表示するように変更。discard 文言を i18n 追加（dialogs.pluginDraft.discard）。検証: `pnpm --filter @hierarchidb/plugin-ui-host typecheck` exit 0。`pnpm --filter @hierarchidb/ui-dialog typecheck` 再実行不要（前回成功）。
 
 1607) TreeConsoleIntegration ResumeDialog 抽出（P0）
 - ブランチ: main（sandbox 制約で branch 作成不可のため）

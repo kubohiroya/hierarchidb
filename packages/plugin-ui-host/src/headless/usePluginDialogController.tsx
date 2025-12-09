@@ -94,6 +94,13 @@ export interface PluginDialogControllerState {
   };
   hasUnsavedChanges: boolean;
   dialogState?: MultiStepDialogState | null;
+  unsavedChangeDialog?: {
+    open: boolean;
+    onDiscard: () => void;
+    onCancel: () => void;
+    title: string;
+    message: string;
+  };
 }
 
 const PlaceholderStep: React.FC = () => null;
@@ -443,6 +450,7 @@ export function usePluginDialogController(
   const footerSaveDraftLabel = footerOptions?.saveDraftLabel;
   const disableDraftButton = nodeType === 'folder';
   const [isStartingBatch, setIsStartingBatch] = useState(false);
+  const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
 
   const ensureNoConflictRef = useRef(ensureNoConflict);
   useEffect(() => {
@@ -740,21 +748,32 @@ export function usePluginDialogController(
       [foregroundDialogSx, t, conflictDialog.open, conflictDialog.updatedAt, mode, canSaveCurrent, disableDraftButton, handleSaveDraft, hasUnsavedChanges, activeStartBatch, canStartBatch, isStartingBatch, footerPrimaryButtons, footerSaveDraftLabel, closeConflictDialog, handleStartBatch]
     );
 
-  const confirmDiscardIfNeeded = useCallback(() => {
-    if (!hasUnsavedChanges) return true;
-    if (typeof window === 'undefined' || typeof window.confirm !== 'function') return false;
-    return window.confirm('Discard unsaved changes?');
-  }, [hasUnsavedChanges]);
-
   const handleCloseRequest = useCallback(() => {
-    if (!confirmDiscardIfNeeded()) return;
+    if (hasUnsavedChanges) {
+      setDiscardDialogOpen(true);
+      return;
+    }
     if (saveDraftInProgress.current) {
       saveDraftInProgress.current = false;
       onClose();
       return;
     }
     handleCancel().catch(() => void 0);
-  }, [confirmDiscardIfNeeded, handleCancel, onClose]);
+  }, [handleCancel, hasUnsavedChanges, onClose]);
+
+  const handleConfirmDiscard = useCallback(() => {
+    setDiscardDialogOpen(false);
+    if (saveDraftInProgress.current) {
+      saveDraftInProgress.current = false;
+      onClose();
+      return;
+    }
+    handleCancel().catch(() => void 0);
+  }, [handleCancel, onClose]);
+
+  const handleDismissDiscardDialog = useCallback(() => {
+    setDiscardDialogOpen(false);
+  }, []);
 
   const handleStepDataChange = useCallback(
     (patch: Partial<Partial<PluginDefinedEntity>>) => {
@@ -823,5 +842,12 @@ export function usePluginDialogController(
     presentation,
     hasUnsavedChanges,
     dialogState: workerDialogState,
+    unsavedChangeDialog: {
+      open: discardDialogOpen,
+      onDiscard: handleConfirmDiscard,
+      onCancel: handleDismissDiscardDialog,
+      title: t('dialogs.pluginDraft.discard.title'),
+      message: t('dialogs.pluginDraft.discard.description'),
+    },
   };
 }

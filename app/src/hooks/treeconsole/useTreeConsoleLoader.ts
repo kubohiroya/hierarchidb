@@ -16,7 +16,7 @@ import { buildVisibleRows, syncNodeIndex } from '~/state/treeconsole.derive.js';
 import type { TreeConsoleState } from './types.js';
 
 interface Params {
-  client: Remote<WorkerAPI> | undefined;
+  client?: Remote<WorkerAPI>;
   pageNodeId?: NodeId;
   pageTreeNode?: TreeNode;
   state: TreeConsoleState;

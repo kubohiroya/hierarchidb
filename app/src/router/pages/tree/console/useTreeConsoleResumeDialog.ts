@@ -33,7 +33,7 @@ export function useTreeConsoleResumeDialog({
   client,
   actions,
 }: {
-  client: Remote<WorkerAPI>|null;
+  client?: Remote<WorkerAPI>;
   actions: IntegrationActions;
 }): ResumeDialogController {
   const [resumeDialog, setResumeDialog] = useState<ResumeDialogState>({
