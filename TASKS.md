@@ -107,6 +107,7 @@
 - ロールバック手順：新設フックと TreeConsoleIntegration の差分を revert し、typecheck を再実行して元の構成へ戻す
 - 運用ログ：
   - start: 2025-12-09 13:10 JST TreeConsoleIntegrationInner のロジックを useTreeConsoleIntegrationInner フックへ抽出する作業を開始（main 上で作業）。
+  - progress: 2025-12-09 13:45 JST useTreeConsoleIntegrationInner を履歴管理・サブスクリプション・ツールバー・IndexedDB リセットの各フックに分割し、TreeConsoleIntegration を表示主体に整理。`pnpm --filter @hierarchidb/app typecheck` exit 0（plugin-base build define 警告は既知）。
 
 1605) Tabular filter menu をダイアログ内に固定（P0）
 - ブランチ: `fix/ui-tabular/filter-menu-container`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -9707,7 +9708,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-09 12:50 start: fix/ui-treeconsole/resume-dialog-extract — TreeConsoleIntegration の resume ダイアログを別コンポーネントへ抽出する作業を開始。DoD: 挙動維持での抽出、import 差し替え、`pnpm --filter @hierarchidb/app typecheck` 実行ログの記録、ロールバック手順明記。branch は main。
 - 2025-12-09 12:55 progress: fix/ui-treeconsole/resume-dialog-extract — `pnpm --filter @hierarchidb/app typecheck` exit 0（plugin-base build で define 警告は既知）。
 - 2025-12-09 13:10 start: fix/ui-treeconsole/integration-hook-extract — TreeConsoleIntegrationInner のロジックを useTreeConsoleIntegrationInner フックへ分離する作業を開始。DoD: 責務分離、挙動維持、typecheck 実行ログ、ロールバック明記。branch は main。
-- 2025-12-09 13:40 progress: fix/ui-treeconsole/integration-hook-extract — useTreeConsoleIntegrationInner を追加し、TreeConsoleIntegrationInner を表示主体にリファクタ。`pnpm --filter @hierarchidb/app typecheck` exit 0（plugin-base build define 警告は既知）。
+- 2025-12-09 13:45 progress: fix/ui-treeconsole/integration-hook-extract — useTreeConsoleIntegrationInner を履歴管理・サブスクリプション・ツールバー・IndexedDB リセットのサブフックへ分割し、TreeConsoleIntegration を表示主体にリファクタ。`pnpm --filter @hierarchidb/app typecheck` exit 0（plugin-base build define 警告は既知）。
 - 2025-12-08 14:06 start: fix/styler/dialog-stepper-hidden — styler-plugin のマルチステップダイアログでステッパーが表示されない問題の調査を開始。DoD: ステッパー表示確認、原因と修正内容の記録、影響範囲とロールバック明記、関連 lint/typecheck の実行または未実施理由を記録。branch は `fix/styler/dialog-stepper-hidden`（作成不可なら main）。
 - 2025-12-08 14:16 progress: fix/styler/dialog-stepper-hidden — StylerDialog に PluginDialogHeader/PluginDialogFooter を render するよう headlessProps を拡張し、ステッパーとナビゲーションを再表示する実装を追加。依存に plugin-ui-host を追加。検証: `pnpm --filter @hierarchidb/styler-plugin typecheck` exit 2（既存エラー: StylerMapping.tsx unused import, StylerStep5.tsx config undefined 判定, StyleSettingsStep.tsx 型未定義/any など）。
 - 2025-12-08 14:28 progress: fix/styler/dialog-stepper-hidden — 独自 Headless ダイアログを撤去し、UI エントリは steps-provider の登録みに縮小（PluginDialogHost 経由で共通ヘッダー/ステッパーを使用）。`plugins/styler-plugin/package.json` から plugin-ui-host 依存を除去。再検証: `pnpm --filter @hierarchidb/styler-plugin typecheck` exit 2（同じ既存エラーのみ）。
