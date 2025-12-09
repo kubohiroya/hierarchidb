@@ -22,7 +22,10 @@ type MutableCrypto = Partial<Crypto> & Record<string, unknown>;
 
   const cryptoRef = (globalThis.crypto ?? {}) as MutableCrypto;
   if (typeof cryptoRef.getRandomValues !== 'function') {
-    cryptoRef.getRandomValues = <T extends ArrayBufferView>(array: T) => {
+    cryptoRef.getRandomValues = <T extends ArrayBufferView | null>(array: T): T => {
+      if (array === null) {
+        throw new TypeError('array must not be null');
+      }
       const view = new Uint8Array(array.buffer, array.byteOffset, array.byteLength);
       for (let i = 0; i < view.length; i += 1) {
         view[i] = Math.floor(Math.random() * 256);

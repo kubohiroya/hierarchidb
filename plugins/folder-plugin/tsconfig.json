@@ -2,10 +2,11 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "lib": [
-      "ES2020",
+      "ES2022",
       "DOM",
       "DOM.Iterable"
     ],
+    "experimentalDecorators": true,
     "noEmit": true,
     "allowImportingTsExtensions": true,
     "types": [
@@ -18,7 +19,8 @@
     "reason": "UI transitive types (MUI/Emotion) \u2014 tracked to remove."
   },
   "include": [
-    "src"
+    "src",
+    "../../global.d.ts"
   ],
   "exclude": [
     "dist",

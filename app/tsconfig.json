@@ -115,6 +115,12 @@
       "@hierarchidb/ui-icon/*": [
         "../packages/ui/icon/src/*"
       ],
+      "@hierarchidb/ui-i18n": [
+        "../packages/ui/i18n/src/index.ts"
+      ],
+      "@hierarchidb/ui-i18n/*": [
+        "../packages/ui/i18n/src/*"
+      ],
       "@hierarchidb/util": [
         "../packages/util/src/index.ts"
       ],

@@ -53,6 +53,42 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1605) Tabular filter menu をダイアログ内に固定（P0）
+- ブランチ: `fix/ui-tabular/filter-menu-container`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: packages/ui/tabular-extract TabularFilterStep/FilterRulesTable、plugins spreadsheet/styler/shape/location 等の filtering step
+- 受け入れ基準（DoD）:
+  - [ ] TabularFilterStep を利用する全プラグインでフィルタの Column/Operator 等のセレクトがクリック後も表示され、選択できる（Styler/Spreadsheet/Shape/Location で手動確認する）
+  - [ ] メニューのポータル先をダイアログ内に固定する改修を共有コンポーネントに反映し、影響範囲を記録する
+  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] 関連パッケージの lint/typecheck を実行し、結果を記録する（不可なら理由記載）
+- チェックリスト:
+  - [ ] TabularFilterStep/FilterRulesTable に menuContainer/disablePortal の対応を追加し、クリックアウェイで閉じないようにする
+  - [ ] Spreadsheet/Styler/Shape/Location など TabularFilterStep を使う箇所へ dialogRef/メニューコンテナを配線する
+  - [ ] 手動確認と lint/typecheck を実施、結果を運用ログに記録する
+- ロールバック手順：TabularFilterStep/FilterRulesTable および各プラグインの呼び出し差分を revert し、実行した検証コマンドを再実行して現状（メニューが即閉じる）に戻す
+- 運用ログ：
+  - start: 2025-12-08 21:31 JST Tabular filter メニューのポータル先をダイアログ内に固定する対応を開始（main 上で作業）。
+  - progress: 2025-12-08 21:33 JST TabularFilterStep/FilterRulesTable に menuContainer 対応を追加し、Select を MenuItem + container 指定で dialog 内に固定。Spreadsheet/Shape FilteringStep で dialogRef から role="dialog" 祖先を menuContainer に渡すよう配線（Styler は Spreadsheet FilteringStep 流用のため同経路で適用）。Location はデフォルトでも利用可能（必要なら同一 container 伝播を検討）。
+  - progress: 2025-12-08 21:33 JST 検証: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0、`pnpm --filter @hierarchidb/styler-plugin typecheck` exit 0、`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0、`pnpm --filter @hierarchidb/location-plugin typecheck` exit 0。`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 2（既知: runtime-worker Decorator/ES target 設定不足による PluginWorkerModuleLoader.ts エラー; 今回変更と無関係）。
+  - progress: 2025-12-08 22:37 JST FilteringStep の menuContainer を dialogRef だけでなく DOM の dialog/modal からもフォールバック解決するよう補強（styler の Column セレクトもダイアログ内に固定）。検証: `pnpm --filter @hierarchidb/styler-plugin typecheck` exit 2（既知: runtime-worker StageProcessingService.ts の @maplibre/vt-pbf ESM import）、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 2（既知: PluginWorkerModuleLoader.ts Decorator/hasOwn と StageProcessingService.ts 同件）。手動確認未実施。
+
+1606) TypeScript バージョン調整と plugin-ui-sdk typecheck 解消（P0）
+- ブランチ: `fix/ts/downgrade-tsc`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: ルート package.json, pnpm overrides, packages/plugin-ui-sdk/tsconfig.json
+- 受け入れ基準（DoD）:
+  - [ ] TypeScript バージョン調整により plugin-ui-sdk の Map maximum size exceeded などコンパイラ内部エラーが解消する
+  - [ ] plugin-ui-sdk typecheck が通る（必要なら skipLibCheck 等の局所設定で回避、適用理由を記録）
+  - [ ] 変更内容とロールバック手順を TASKS.md に記載し、運用ログを更新する
+- チェックリスト:
+  - [ ] package.json / pnpm.overrides の typescript バージョンを安定版に更新し、lock を反映する
+  - [ ] plugin-ui-sdk tsconfig を必要最小限に調整し、typecheck を通す
+  - [ ] 他パッケージへの影響があれば記録する
+- ロールバック手順：typescript を元のバージョン（5.9.3）に戻し、plugin-ui-sdk tsconfig の skipLibCheck を元に戻す
+- 運用ログ：
+  - start: 2025-12-08 22:10 JST TS を 5.4.x へ一時ダウングレードして plugin-ui-sdk typecheck の Map maximum size exceeded を切り分ける（main 上で作業）。
+  - progress: 2025-12-08 22:12 JST package.json/devDependencies と pnpm.overrides の typescript を 5.4.5 へ変更。`pnpm install --no-frozen-lockfile` (with escalation) で lock/node_modules を更新。`pnpm --filter @hierarchidb/plugin-ui-sdk typecheck` → Map maximum size exceeded は解消したが TS1479/TS2589/TS2859 が発生。
+  - progress: 2025-12-08 22:20 JST typescript を 5.8.2 へ更新し再インストール。plugin-ui-sdk で skipLibCheck は維持しつつ NodeNext→Bundler へ変更と react-i18next を簡易 shim に差し替え（`src/types/react-i18next-shim.d.ts` + paths）。`pnpm --filter @hierarchidb/plugin-ui-sdk typecheck` exit 0（TS1479/TS2589/TS2859 解消、skipLibCheck は false のまま）。
+
 1604) Plugin steps-provider hooks lint修正（P0）
 - ブランチ: `fix/plugin/steps-provider-hooks`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: linker/route/shape/timeline plugins の steps-provider.tsx、plugin-base StepRegistry、i18n ユーティリティ
@@ -3461,6 +3497,15 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
 
 ## 今日の着手（運用ログ） <a id="worklog-1"></a>
 
+- 2025-12-08 22:50 progress: ui-auth typecheck — vitest.setup.ts の `crypto.getRandomValues` を null 許容シグネチャに合わせて型エラー (TS2322) を解消。検証: `pnpm --filter @hierarchidb/ui-auth typecheck` exit 0。ロールバック: `packages/ui/auth/vitest.setup.ts` の getRandomValues 実装を revert し同コマンドを再実行。
+- 2025-12-09 06:45 progress: spreadsheet-plugin typecheck — tsconfig の lib を ES2022 へ引き上げ、`experimentalDecorators` を有効化して runtime-worker の Decorator/hasOwn エラーを解消。検証: `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0。ロールバック: `plugins/spreadsheet-plugin/tsconfig.json` の lib/experimentalDecorators 変更を revert し同コマンドを再実行。
+- 2025-12-09 07:05 progress: folder-plugin typecheck — `tabular-source-xlsx` 依存の `xlsx/xlsx.mjs` 型欠如を global.d.ts 参照と package tsconfig include 追加で解消。検証: `pnpm --filter @hierarchidb/folder-plugin typecheck` exit 0。ロールバック: `plugins/folder-plugin/tsconfig.json` への global.d.ts 追加と lib/experimentalDecorators 変更を revert し同コマンドを再実行。
+- 2025-12-09 07:15 progress: runtime-worker typecheck — tsconfig に baseUrl/path を追加し plugin-registry generated/src を include、allowImportingTsExtensions を有効化して plugin-registry 解決エラー (TS2307/TS6307/TS5097) を解消。検証: `pnpm --filter @hierarchidb/runtime-worker typecheck` exit 0。ロールバック: `packages/runtime-worker/tsconfig.json` の baseUrl/paths/include/allowImportingTsExtensions 変更を revert し同コマンドを再実行。
+- 2025-12-09 07:25 progress: basemap-plugin typecheck — basemap tsconfig を ES2022 + Decorators + allowImportingTsExtensions に揃え、data-grid を ES2022 target に更新して `Object.hasOwn` / Decorator エラーを解消。検証: `pnpm --filter @hierarchidb/ui-data-grid typecheck` exit 0、`pnpm --filter @hierarchidb/basemap-plugin typecheck` exit 0。ロールバック: `plugins/basemap-plugin/tsconfig.json` と `packages/ui/data-grid/tsconfig.json` の lib/Decorators/target 変更を revert し同コマンドを再実行。
+- 2025-12-09 07:40 progress: spreadsheet Step2 form fields — TabularFileImportStep の ModalSelect/Switch に id/name を付与し、MUI 警告「a form field element should have an id or name attribute」を解消。検証: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularFileImportStep.tsx` の id/name 追加差分を revert し同コマンドを再実行。
+- 2025-12-09 08:00 progress: styler FilterRules form — FilterRulesTable の Column/Operator Select に id/name を追加し、Styler Step3 でも MUI ラベル警告が出ず入力できるように補正。検証: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0、`pnpm --filter @hierarchidb/styler-plugin typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/FilterRulesTable.tsx` の id/name 追加差分を revert し同コマンドを再実行。
+- 2025-12-09 08:20 progress: shim-check cleanup — `react-i18next` の shim を削除し、plugin-ui-sdk tsconfig の paths から除去。検証: `pnpm --filter @hierarchidb/plugin-ui-sdk typecheck` exit 0。ロールバック: `packages/plugin-ui-sdk/src/types/react-i18next-shim.d.ts` と tsconfig paths 変更を戻し同コマンドを再実行。
+- 2025-12-09 08:35 progress: FilterRules label wiring — Column/Operator Select に labelId を渡し、InputLabelProps から htmlFor を外してラベル紐付け警告を解消（Styler Step3 のブリンク/無反応対策）。検証: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0、`pnpm --filter @hierarchidb/styler-plugin typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/FilterRulesTable.tsx` の labelId/InputLabelProps 変更を revert し同コマンドを再実行。
 - 2025-12-07 20:00 start: chore/docs/package-readmes-refresh — packages 配下の README を最新実装に合わせて更新する作業を開始。概要/ディレクトリ構成/主要エクスポート/利用元を明文化する計画（main 上で作業）。
 - 2025-12-07 20:03 progress: chore/docs/package-readmes-refresh — `rg --files -g 'README.md' packages` で対象 README を棚卸し（40件超）。common/api/auth/types や ui/*、features/*、components/* の README が含まれることを確認。調査と内容更新の優先度付けに着手。
 - 2025-12-07 20:10 progress: chore/docs/package-readmes-refresh — 基盤系 README を更新: `packages/common/README.md`（api/auth/types の役割・主要エクスポート・利用元を整理）、`packages/plugin-base/README.md`（ディレクトリ構成とステップ/URL同期の主要エクスポートを記載）、`packages/plugin-ui-sdk/README.md`（draft/TreeNodeUpdater フック群と境界整理）、`packages/plugin-ui-host/README.md`（シェル/コントローラの責務を明示）、`packages/ui/worker-client/README.md`（初期化ハンドシェイク・Comlink ブリッジ・runtime wiring の概要を更新）。文書のみの変更で検証コマンドは未実施。
@@ -9702,3 +9747,13 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-29 16:40 progress: fix/basemap/create-defaults — Worker 側の createNode で basemap の draftData を `{ mapStyle:{style:'streets'}, viewport: undefined }` で初期化するよう変更。UI 側ステップの場当たり水和を撤去し、初期値は Worker で一度だけ付与する形に整理。テスト未実行（要: `pnpm --filter @hierarchidb/basemap-plugin typecheck` など）。
 - 2025-11-30 11:20 progress: fix/basemap/create-defaults — useDialogDraft を treeNodeUpdater API へ再実装し、create 時に initialDraftData を渡して basemap draftData を `{mapStyle:{style:'streets'}, viewport:undefined}` で保存するように変更。usePluginDialogController から basemap create 時に初期 draft を注入。`pnpm --filter @hierarchidb/plugin-ui-sdk build`（tsdown define 警告のみ）/`typecheck` exit 0, `pnpm --filter @hierarchidb/plugin-ui-host typecheck` exit 0, `pnpm --filter @hierarchidb/basemap-plugin typecheck` exit 0 を実行。
 - 2025-11-30 11:35 progress: fix/basemap/step3-maplibre-container — ui-map を viewState/Move イベント対応の制御モードに拡張し、ViewportStep を controlled viewState + OSM raster で双方向同期するように修正。`pnpm --filter @hierarchidb/ui-map typecheck` exit 0。ロールバック: `packages/ui/map/src/components/MapLibreMap.tsx`, `plugins/basemap-plugin/src/ui/components/steps/ViewportStep.tsx` を revert し typecheck 再実行。
+
+- 2025-12-09 09:07 progress: fix/styler/filter-rerender — TabularFilterStep の列オプション参照を shallow equal で安定化し、列配列が毎回新規参照になってもフィルタ更新が無限に発火しないようガードを追加。検証: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularFilterStep.tsx` の columnOptions useMemo と setFilters ガードを元に戻す。
+
+- 2025-12-09 09:20 progress: fix/styler/filter-rerender — useTabularFilter の各 setState で shallow equal を導入し、同値のルール配列や同一フィールド更新では再レンダーを発火させないようにガード。検証: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/hooks/useTabularFilter.ts` の rulesEqual/ガード追加を削除する。
+
+- 2025-12-09 09:30 progress: fix/styler/filter-rerender — TabularFilterStep で filtersEqual を追加し、フィルタ配列が同一内容のときは setFilters/setPreviewDirty をスキップするように変更。不要な再レンダーを抑制。検証: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularFilterStep.tsx` の filtersEqual/ガードを削除する。
+
+- 2025-12-09 09:45 progress: fix/styler/filter-rerender — FilterRulesTable を TextField(select/input) に戻し、id/name を明示して操作不能状態を解消する試み。typecheck: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/FilterRulesTable.tsx` の TextField 化を取り消す。
+
+- 2025-12-09 09:55 progress: fix/styler/filter-rerender — FilterRulesTable のドラッグ＆ドロップを一旦無効化し、行の pointer blocking を排除。操作不能の原因切り分け目的。typecheck: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/FilterRulesTable.tsx` のドラッグ無効化差分を戻す。

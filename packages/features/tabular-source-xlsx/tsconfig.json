@@ -9,5 +9,9 @@
     },
     "baseUrl": ".",
     "jsx": "react-jsx"
-  }
+  },
+  "include": [
+    "src",
+    "src/types/**/*.d.ts"
+  ]
 }

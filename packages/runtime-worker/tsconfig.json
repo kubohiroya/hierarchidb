@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "baseUrl": ".",
     "lib": [
       "ES2022",
       "WebWorker"
@@ -10,6 +11,7 @@
     "noUnusedParameters": false,
     "strictNullChecks": false,
     "noImplicitAny": false,
+    "allowImportingTsExtensions": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "composite": true,
@@ -17,13 +19,24 @@
     "paths": {
       "~/*": [
         "./src/*"
+      ],
+      "@hierarchidb/plugin-registry": [
+        "../../packages/plugin-registry/generated/registry.ts"
+      ],
+      "@hierarchidb/plugin-registry/derivations": [
+        "../../packages/plugin-registry/generated/derivations.ts"
+      ],
+      "@hierarchidb/plugin-registry/types": [
+        "../../packages/plugin-registry/generated/types.ts"
       ]
     }
   },
   "include": [
     "src/**/*.ts",
     "src/**/*.d.ts",
-    "src*.d.ts"
+    "src*.d.ts",
+    "../../packages/plugin-registry/generated/**/*.ts",
+    "../../packages/plugin-registry/src/**/*.ts"
   ],
   "exclude": [
     "node_modules",
