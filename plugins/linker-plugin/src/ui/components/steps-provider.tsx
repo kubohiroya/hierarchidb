@@ -1,11 +1,12 @@
 import { PluginStepRegistry, type PluginStepConfig, type StepComponentProps, type StepData } from '@hierarchidb/plugin-base';
-import type { NodeId, TreeNodeMetadata } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { LinkerDraft } from '../../common/types/index.js';
-import { ResourcePicker, type ResourceSummary } from '../steps/ResourcePicker.js';
+import { ResourcePicker } from '../steps/ResourcePicker.js';
 import { AggregatedList } from '../steps/AggregatedList.js';
 import { MapPreview } from '../steps/MapPreview.js';
 import { useTranslation as getTranslation } from '../../common/i18n/index.js';
 import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
+import { useLinkerSteps } from './hooks/useLinkerSteps.js';
 
 type LinkerStepData = StepData & LinkerDraft;
 
@@ -13,22 +14,9 @@ type LinkerStepProps = StepComponentProps<LinkerStepData>;
 
 const registry = PluginStepRegistry.getInstance();
 
-const ensureDraft = (data?: LinkerStepData): LinkerStepData => ({
-  treeNodeId: (data?.treeNodeId ?? '') as NodeId,
-  draftMetadata: (data?.draftMetadata ?? { name: '', description: '', tags: [] }) as TreeNodeMetadata,
-  draftData: data?.draftData ?? {},
-});
-
-const toSelectionSet = (value?: LinkerStepData['draftData'] extends { linkedNodeIds?: NodeId[] } ? LinkerStepData['draftData']['linkedNodeIds'] : string[]): Set<string> => {
-  if (!value) return new Set<string>();
-  return new Set<string>(value);
-};
-
-const toResourceSummaries = (value: Set<string>): ResourceSummary[] =>
-  Array.from(value).map((id) => ({ nodeId: String(id) }));
-
 const createLinkerStepConfigs = (): PluginStepConfig<LinkerStepData>[] => {
   const { t } = getTranslation();
+  const { ensureDraft, toSelectionSet, toResourceSummaries } = useLinkerSteps();
   return [
     {
       id: 'basic-info',
