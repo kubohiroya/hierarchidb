@@ -84,7 +84,6 @@ export class ShapeEntityService {
     return {
       ...(payloadRecord as Partial<ShapeEntity>),
       id: node.id as NodeId,
-      nodeId: node.id as NodeId,
       metadata: {
         name: metadata.name ?? '',
         description: metadata.description ?? '',
@@ -138,7 +137,6 @@ export class ShapeEntityService {
     return {
       ...base,
       id: nodeId,
-      nodeId,
       metadata,
       dataSourceName: dataSource,
       licenseAgreement: base?.licenseAgreement ?? false,
@@ -221,7 +219,7 @@ export class ShapeEntityService {
     const entity =
       this.toEntity(baseNode) ??
       buildShapeEntityFromCreate({
-        nodeId,
+        treeNodeId: nodeId,
         data: {
           dataSourceName: 'naturalearth',
           processingConfig: DEFAULT_PROCESSING_CONFIG,
@@ -239,7 +237,7 @@ export class ShapeEntityService {
     const baseName = 'New Shape';
     const wcId = await initTreeNode(coreDB, treeId, parentId, nodeType, baseName);
     const entity = buildShapeEntityFromCreate({
-      nodeId: wcId,
+      treeNodeId: wcId,
       data: {
         dataSourceName: 'naturalearth',
         processingConfig: DEFAULT_PROCESSING_CONFIG,
@@ -312,7 +310,6 @@ export class ShapeEntityService {
     const payload: ShapeEntity = {
       ...(draft.draftData ?? {}),
       id: nodeId,
-      nodeId,
       checkboxState: parsedCheckbox,
       metadata: draft.draftMetadata ?? { name: '', description: '', tags: [] },
     } as ShapeEntity;

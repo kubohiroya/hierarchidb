@@ -356,7 +356,7 @@ export function serializeCheckboxState(state: boolean[][]): string {
  */
 export function buildShapeEntityFromCreate(
   params: {
-    nodeId: NodeId;
+    treeNodeId: NodeId;
     data: {
       dataSourceName: DataSourceName;
       processingConfig?: Partial<ProcessingConfig> | ProcessingConfig;
@@ -368,8 +368,7 @@ export function buildShapeEntityFromCreate(
     (params.data.processingConfig as Partial<ProcessingConfig>) || {},
   );
   return {
-    id: params.nodeId,
-    nodeId: params.nodeId,
+    id: params.treeNodeId,
     metadata: params.data.metadata,
     dataSourceName: params.data.dataSourceName,
     licenseAgreement: false,
@@ -405,7 +404,7 @@ export function createDraftFromEntity(entity: ShapeEntity): ShapeDraft {
     tabularFilters: entity.tabularFilters,
   };
 
-  const treeNodeId = (entity.nodeId ?? entity.id ?? (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`)) as NodeId;
+  const treeNodeId = (entity.id ?? (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`)) as NodeId;
 
   const draft: ShapeDraft = {
     treeNodeId,

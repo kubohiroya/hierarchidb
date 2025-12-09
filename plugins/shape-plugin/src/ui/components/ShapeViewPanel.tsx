@@ -90,7 +90,7 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
       // In a real implementation, this would call the worker API
       // For now, we'll simulate the response
       const sessionStatus = mapProcessingStatus(entity.processingStatus);
-      const effectiveNodeId = entity.nodeId ?? nodeId;
+      const effectiveNodeId = nodeId ?? entity.id;
       const batchConfig = buildBatchConfig(entity);
       const mockStatus: BatchStatus = {
         session: {

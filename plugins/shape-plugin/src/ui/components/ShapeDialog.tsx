@@ -33,7 +33,6 @@ export function ShapeDialog({
       const id = nodeId ?? (`shape-${now}` as NodeId);
       const entity: ShapeEntity = {
         id,
-        nodeId: id,
         metadata: {
           name: name.trim() || (mode === 'create' ? t('dialog.defaultName', 'New shape') : 'Shape'),
           description: '',

@@ -488,7 +488,6 @@ export const shapePluginAPI = {
       return {
         sessionId: status.sessionId,
         draftId: nodeId,
-        nodeId,
         status: normalizedStatus,
         config,
         startedAt: status.startedAt ?? Date.now(),
