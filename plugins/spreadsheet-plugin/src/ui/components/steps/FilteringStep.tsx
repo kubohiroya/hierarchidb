@@ -39,7 +39,8 @@ const FilteringStepContent: FC<{
   setValid: (valid: boolean) => void;
   setError: (error: string | null) => void;
   initialFilters: TabularFilterRule[];
-}> = ({ dialogData, onChange, setValid, setError, initialFilters }) => {
+  menuContainer?: Element | null;
+}> = ({ dialogData, onChange, setValid, setError, initialFilters, menuContainer }) => {
   const { t } = useTranslation('spreadsheet-plugin');
   const { tabularTableMetadata, loading, error } = useTabularData({
     tableMetadataId: dialogData.spreadsheetMetadataId,
@@ -176,6 +177,7 @@ const FilteringStepContent: FC<{
       onPreviewData={handlePreviewData}
       initialFilters={initialFilters}
       onSyncFilters={syncFilters}
+      menuContainer={menuContainer}
     />
   );
 };
@@ -185,6 +187,7 @@ export const FilteringStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
   onChange,
   setValid,
   setError,
+  dialogRef,
 }) => {
   const dialogData = useMemo<SpreadsheetEntity>(() => coerceDialogData(data), [data]);
   const filtersRef = useRef<TabularFilterRule[]>(dialogData.filters ?? []);
@@ -197,6 +200,21 @@ export const FilteringStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
     return next;
   }, [dialogData.filters]);
   const tabularApi = useMemo(() => createSpreadsheetTabularApi(SPREADSHEET_NODE_TYPE), []);
+  const menuContainer = useMemo(() => {
+    const dialogEl = dialogRef?.current;
+    const modalRoot = dialogEl?.closest?.('.MuiModal-root') as Element | null;
+    if (modalRoot) return modalRoot;
+    const roleDialog = dialogEl?.closest?.('[role="dialog"]') as Element | null;
+    if (roleDialog) return roleDialog;
+    if (dialogEl) return dialogEl;
+    if (typeof document !== 'undefined') {
+      const fallbackDialog =
+        (document.querySelector('.MuiModal-root') as Element | null) ??
+        (document.querySelector('[role="dialog"]') as Element | null);
+      if (fallbackDialog) return fallbackDialog;
+    }
+    return null;
+  }, [dialogRef]);
 
   return (
     <TabularProvider tabularApi={tabularApi}>
@@ -206,6 +224,7 @@ export const FilteringStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
         setValid={setValid}
         setError={setError}
         initialFilters={memoizedFilters}
+        menuContainer={menuContainer}
       />
     </TabularProvider>
   );
