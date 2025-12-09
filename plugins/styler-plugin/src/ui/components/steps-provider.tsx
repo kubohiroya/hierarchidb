@@ -1,8 +1,8 @@
 import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/plugin-base';
 // Reuse Spreadsheet steps as Step 2,3
 import {
-  DataSourceStep as SpreadsheetDataSourceStep,
-  FilteringStep as SpreadsheetFilteringStep,
+  TabularDataSourceStep as SpreadsheetDataSourceStep,
+  TabularDataFilterStep as SpreadsheetFilteringStep,
 } from '@hierarchidb/spreadsheet-plugin';
 import { StylerStep5 } from './steps/StylerStep5.js';
 import { StylerStep6 } from './steps/StylerStep6.js';

@@ -68,7 +68,6 @@ export interface MappingValidationResult {
 
 export interface ResolverEntity extends BaseEntity<NodeId> {
   id: NodeId;
-  nodeId: NodeId;
   name: string;
   description?: string;
   tags?: string[];

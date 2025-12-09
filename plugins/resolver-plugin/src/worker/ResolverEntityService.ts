@@ -57,7 +57,6 @@ export class ResolverEntityService {
     const now = Date.now();
     return {
       id: nodeId,
-      nodeId,
       name: payload.name ?? base?.name ?? '',
       description: payload.description ?? base?.description ?? '',
       sourceSchema: payload.sourceSchema ?? base?.sourceSchema ?? null,

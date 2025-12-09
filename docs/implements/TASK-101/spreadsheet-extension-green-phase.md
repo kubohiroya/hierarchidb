@@ -21,7 +21,7 @@
 - extendedValidationオブジェクト（fileFormatルール）
 
 ### 2. DataSourceStepコンポーネント
-**ファイル**: `packages/plugins/spreadsheet-plugin/src/steps/DataSourceStep.tsx`
+**ファイル**: `packages/plugins/spreadsheet-plugin/src/steps/TabularDataSourceStep.tsx`
 
 スタブ実装内容：
 - React.FCコンポーネントとして最小実装
@@ -29,7 +29,7 @@
 - プレースホルダーUI
 
 ### 3. FilteringStepコンポーネント  
-**ファイル**: `packages/plugins/spreadsheet-plugin/src/steps/FilteringStep.tsx`
+**ファイル**: `packages/plugins/spreadsheet-plugin/src/steps/TabularDataFilterStep.tsx`
 
 スタブ実装内容：
 - React.FCコンポーネントとして最小実装
@@ -103,8 +103,8 @@ Tests  10 passed (10)
 ## ファイルサイズチェック
 
 - definition.ts: 約260行 ✅（800行未満）
-- DataSourceStep.tsx: 約45行 ✅
-- FilteringStep.tsx: 約45行 ✅
+- TabularDataSourceStep.tsx: 約45行 ✅
+- TabularDataFilterStep.tsx: 約45行 ✅
 
 全てのファイルが800行制限内に収まっている。
 
@@ -112,16 +112,16 @@ Tests  10 passed (10)
 
 実装コードにモック・スタブが含まれていないことを確認：
 - definition.ts: 実際のロジック実装 ✅
-- DataSourceStep.tsx: 実際のReactコンポーネント（最小実装） ✅
-- FilteringStep.tsx: 実際のReactコンポーネント（最小実装） ✅
+- TabularDataSourceStep.tsx: 実際のReactコンポーネント（最小実装） ✅
+- TabularDataFilterStep.tsx: 実際のReactコンポーネント（最小実装） ✅
 
 ## 次のフェーズへの課題
 
 Refactorフェーズで改善すべき点：
 
 1. **UIコンポーネントの充実**
-   - DataSourceStep: ファイルアップロード、URL入力、手動入力のUI
-   - FilteringStep: 行・列フィルタの設定UI
+   - TabularDataSourceStep: ファイルアップロード、URL入力、手動入力のUI
+   - TabularDataFilterStep: 行・列フィルタの設定UI
 
 2. **型定義の強化**
    - any型の排除

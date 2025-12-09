@@ -9,7 +9,7 @@
 ### spreadsheet-plugin
 - ✅ **実装状況**: 完成済み（FolderEntity拡張パターン）
 - ✅ **主要機能**: CSV/Excel処理、データフィルタリング、バリデーション
-- ✅ **UI コンポーネント**: DataSourceStep, FilteringStep
+- ✅ **UI コンポーネント**: TabularDataSourceStep, TabularDataFilterStep
 - ❌ **問題**: 型参照のみ（`@hierarchidb/folder-plugin`等）
 
 ### basemap-plugin  

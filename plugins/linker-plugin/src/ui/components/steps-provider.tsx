@@ -1,16 +1,23 @@
 import { PluginStepRegistry, type PluginStepConfig, type StepComponentProps, type StepData } from '@hierarchidb/plugin-base';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId, TreeNodeMetadata } from '@hierarchidb/common-types';
 import type { LinkerDraft } from '../../common/types/index.js';
 import { ResourcePicker, type ResourceSummary } from '../steps/ResourcePicker.js';
 import { AggregatedList } from '../steps/AggregatedList.js';
 import { MapPreview } from '../steps/MapPreview.js';
 import { useTranslation as getTranslation } from '../../common/i18n/index.js';
+import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 
 type LinkerStepData = StepData & LinkerDraft;
 
 type LinkerStepProps = StepComponentProps<LinkerStepData>;
 
 const registry = PluginStepRegistry.getInstance();
+
+const ensureDraft = (data?: LinkerStepData): LinkerStepData => ({
+  treeNodeId: (data?.treeNodeId ?? '') as NodeId,
+  draftMetadata: (data?.draftMetadata ?? { name: '', description: '', tags: [] }) as TreeNodeMetadata,
+  draftData: data?.draftData ?? {},
+});
 
 const toSelectionSet = (value?: LinkerStepData['draftData'] extends { linkedNodeIds?: NodeId[] } ? LinkerStepData['draftData']['linkedNodeIds'] : string[]): Set<string> => {
   if (!value) return new Set<string>();
@@ -23,6 +30,30 @@ const toResourceSummaries = (value: Set<string>): ResourceSummary[] =>
 const createLinkerStepConfigs = (): PluginStepConfig<LinkerStepData>[] => {
   const { t } = getTranslation();
   return [
+    {
+      id: 'basic-info',
+      label: t('steps.basicInfo.label', 'Basic Info'),
+      componentFactory: (props: LinkerStepProps) => {
+        const draft = ensureDraft(props.data);
+        const meta = draft.draftMetadata ?? { name: '', description: '', tags: [] };
+        return (
+          <BasicInfoStep
+            name={meta.name ?? ''}
+            description={meta.description ?? ''}
+            tags={meta.tags ?? []}
+            mode={props.mode}
+            onChange={({ name, description, tags }: BasicInfoData) =>
+              props.onChange({
+                ...draft,
+                draftMetadata: { ...meta, name, description, tags: tags ?? [] },
+              })
+            }
+            validate={({ name }) => (name.trim().length ? null : 'Name is required')}
+          />
+        );
+      },
+      validate: (data?: LinkerStepData) => Boolean(data?.draftMetadata?.name?.trim()),
+    },
     {
       id: 'resources',
       label: t('steps.resources.label', 'Select Resources'),

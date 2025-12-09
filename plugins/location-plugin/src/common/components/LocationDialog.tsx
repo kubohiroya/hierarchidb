@@ -22,9 +22,9 @@ import { listLocationPoints } from '../../services/pointRepository.js';
 import { runLocationTabularBuild } from '../../worker/tabular/task.js';
 import {
   TabularProvider,
-  TabularFilterStep,
-  TabularColumnSelectionStep,
-  TabularFileImportStep,
+  TabularDataFilter,
+  TabularColumnSelect,
+  TabularDataImport,
   type TabularFilterRule,
   type TabularSelectionConfig,
   type TabularColumnMapping,
@@ -314,7 +314,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
                 {translations.dialog.dataSourceDescription ?? 'Choose openstreetmap for OSRM/Overpass or custom for tabular import'}
               </Typography>
             </Box>
-            <TabularFileImportStep
+            <TabularDataImport
               pluginId="location"
               onFileImported={(meta: TabularTableMetadata) =>
                 onChange({ tabularSourceId: meta.id, dataSource: 'custom' as any })
@@ -352,7 +352,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
       component: ({ data, onChange }: { data: LocationDraft; onChange: (patch: Partial<LocationDraft>) => void }) => (
         <TabularProvider tabularApi={createLocationTabularApi()}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <TabularFilterStep
+            <TabularDataFilter
               tableMetadata={emptyTableMetadata}
               pluginId="location"
               onFiltersChanged={(filters: TabularFilterRule[]) =>
@@ -366,7 +366,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
               }
               onPreviewData={() => {}}
             />
-            <TabularColumnSelectionStep
+            <TabularColumnSelect
               tableMetadata={emptyTableMetadata}
               onSelectionChanged={(selection: TabularColumnMapping[]) => {
                 const mapped: TabularSelectionConfig = {

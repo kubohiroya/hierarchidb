@@ -46,15 +46,15 @@
 
 以下のモジュールが未実装のため、インポートエラーで失敗：
 - `./definition` - SpreadsheetExtension定義
-- `../steps/DataSourceStep` - Step 2コンポーネント
-- `../steps/FilteringStep` - Step 3コンポーネント
+- `../steps/TabularDataSourceStep` - Step 2コンポーネント
+- `../steps/TabularDataFilterStep` - Step 3コンポーネント
 
 ### 次のフェーズへの要求事項
 
 Greenフェーズで実装すべき内容：
 1. `definition.ts`ファイルの作成
 2. SpreadsheetExtension定義オブジェクトの実装
-3. DataSourceStep、FilteringStepのスタブ実装
+3. TabularDataSourceStep、FilteringStepのスタブ実装
 4. バリデーションロジックの実装
 
 ## Greenフェーズ（最小実装）
@@ -67,15 +67,15 @@ Greenフェーズで実装すべき内容：
 
 テストを通すための最小限の実装：
 1. SpreadsheetExtension定義オブジェクトの作成
-2. DataSourceStep、FilteringStepのスタブコンポーネント作成
+2. TabularDataSourceStep、FilteringStepのスタブコンポーネント作成
 3. バリデーションロジックの実装
 
 ### 実装コード
 
 以下のファイルを作成：
 - `src/extension/definition.ts` - SpreadsheetExtension定義
-- `src/steps/DataSourceStep.tsx` - Step 2のスタブコンポーネント
-- `src/steps/FilteringStep.tsx` - Step 3のスタブコンポーネント
+- `src/steps/TabularDataSourceStep.tsx` - Step 2のスタブコンポーネント
+- `src/steps/TabularDataFilterStep.tsx` - Step 3のスタブコンポーネント
 
 主な実装内容：
 - folderプラグインの継承設定

@@ -6,7 +6,7 @@
 import 'fake-indexeddb/auto';
 import { SpreadsheetTabularApiDriver } from '@hierarchidb/spreadsheet-plugin';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SimpleTableMetadataManager } from '../../../services/SimpleTableMetadataManager.js';
+import { StylerMetadataManager } from '../../../services/StylerMetadataManager.js';
 
 const originalFetch = global.fetch;
 
@@ -29,10 +29,10 @@ vi.mock('../../utils/hashUtils', () => ({
 
 describe('SpreadsheetTabularApiDriver', () => {
   let csvApi: SpreadsheetTabularApiDriver;
-  let tableManager: SimpleTableMetadataManager;
+  let tableManager: StylerMetadataManager;
 
   beforeEach(async () => {
-    tableManager = new SimpleTableMetadataManager();
+    tableManager = new StylerMetadataManager();
     csvApi = new SpreadsheetTabularApiDriver(tableManager);
   });
 

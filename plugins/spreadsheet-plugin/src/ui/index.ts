@@ -1,4 +1,4 @@
 import './components/steps-provider.js';
 
-export { DataSourceStep } from './components/steps/DataSourceStep.js';
-export { FilteringStep } from './components/steps/FilteringStep.js';
+export { TabularDataSourceStep } from './components/steps/TabularDataSourceStep.tsx';
+export { TabularDataFilterStep } from './components/steps/TabularDataFilterStep.tsx';

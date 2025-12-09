@@ -294,8 +294,8 @@
 - モック/未配線
   - UI コンポーネント未実装（tests は定義存在を前提）。
 - 最小復旧プラン（0.5〜1日）
-  - Step2: 簡易 `DataSourceStep`（ファイル/URL/手動）を実装、`dataSource` を working copy に反映。
-  - Step3: 簡易 `FilteringStep`（列選択/簡易条件）を実装（任意）。
+  - Step2: 簡易 `TabularDataSourceStep`（ファイル/URL/手動）を実装、`dataSource` を working copy に反映。
+  - Step3: 簡易 `TabularDataFilterStep`（列選択/簡易条件）を実装（任意）。
   - `component` を設定して拡張定義に反映。
 - テスト・検証
   - 既存の定義テストを更新（`component !== null` 前提に変更）。

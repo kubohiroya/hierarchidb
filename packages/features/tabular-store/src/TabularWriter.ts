@@ -25,7 +25,7 @@ export class TabularWriter {
 
   async begin(schema: { filename?: string; columns: string[]; contentHash?: string }): Promise<string> {
     const id = crypto.randomUUID();
-    // Local shape compatible with SimpleTableMetadataManager.create()
+    // Local shape compatible with StylerMetadataManager.create()
     const columns: TabularColumnInfo[] = schema.columns.map((name, index) => ({ name, index }));
     const base: TabularTableMetadataLike = {
       id,

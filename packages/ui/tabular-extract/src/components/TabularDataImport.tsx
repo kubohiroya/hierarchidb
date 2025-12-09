@@ -1,5 +1,5 @@
 /**
- * @file TabularFileImportStep.tsx
+ * @file TabularDataImport.tsx
  * @description File import interface for Tabular processing
  */
 
@@ -33,7 +33,7 @@ import { useTabularData } from '../hooks/useTabularData.js';
 import { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { ModalSelect } from '@hierarchidb/ui-modal-select';
 
-export interface TabularFileImportStepProps {
+export interface TabularDataImportProps {
   onFileImported: (metadata: TabularTableMetadata) => void;
   onError: (error: string) => void;
   disabled?: boolean;
@@ -50,7 +50,7 @@ export interface TabularFileImportStepProps {
   importSucceeded?: boolean;
 }
 
-export const TabularFileImportStep: React.FC<TabularFileImportStepProps> = ({
+export const TabularDataImport: React.FC<TabularDataImportProps> = ({
                                                                       onFileImported,
                                                                       onError,
                                                                       disabled = false,

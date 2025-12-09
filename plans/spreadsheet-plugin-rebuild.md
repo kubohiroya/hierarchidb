@@ -35,7 +35,7 @@ We are replacing the legacy spreadsheet plugin with a new implementation that si
 - `plugins/spreadsheet-plugin/` currently contains only `package.json` and empty `src/` folders. We must add TS configs, manifests, services, UI, and worker wiring here.
 - Shared ingestion lives under `packages/features/tabular-source` (parsers/tabular service) and `packages/features/tabular-store` (metadata manager, `TabularWriter`, `TabularQueryService`). These are the new persistence primitives.
 - UI helpers for the dialog exist under `packages/ui/tabular-extract` (file upload step, filtering step, hooks/context) and rely on a `TabularDataApi` implementation that we must provide.
-- Styler plugin (`plugins/styler-plugin`) consumes `SpreadsheetTabularApiDriver`, `DataSourceStep`, `FilteringStep`, and plugin manifests directly, so the new package must keep these exports ABI-compatible.
+- Styler plugin (`plugins/styler-plugin`) consumes `SpreadsheetTabularApiDriver`, `TabularDataSourceStep`, `TabularDataFilterStep`, and plugin manifests directly, so the new package must keep these exports ABI-compatible.
 
 ## Plan of Work
 
@@ -48,7 +48,7 @@ We are replacing the legacy spreadsheet plugin with a new implementation that si
    - Add `src/common/constants.ts` with plugin id/version strings and node-type metadata reused by manifest/steps.
 
 3. **Implement shared tabular services**
-   - Add `src/services/SpreadsheetMetadataManager.ts` (thin wrapper around `SimpleTableMetadataManager` with DB name `spreadsheet-metadata-db`).
+   - Add `src/services/SpreadsheetMetadataManager.ts` (thin wrapper around `StylerMetadataManager` with DB name `spreadsheet-metadata-db`).
    - Implement `src/services/SpreadsheetStorePort.ts`:
      - Accept constructor options `{ pluginId, metadataManager, filename, fileSizeBytes, contentHash }`.
      - On `beginIngest`, instantiate `TabularWriter(pluginId)` and `await writer.begin({ filename, columns })`, tracking session state (writer, derived column stats, sample values).
@@ -68,10 +68,10 @@ We are replacing the legacy spreadsheet plugin with a new implementation that si
 
 4. **UI components built on shared steps**
    - Within `src/ui/components/steps`, implement:
-     - `DataSourceStep.tsx`: wraps `CSVFileUploadStep` from `@hierarchidb/ui/tabular-extract` inside a `CSVProvider` created with `createSpreadsheetCSVApi`, updates `SpreadsheetDialogData` (`spreadsheetMetadataId`, `dataSource`, `file`) via `onChange`, and calls `setValid` when metadata + dataSource is present.
-     - `FilteringStep.tsx`: uses `useCSVData` to load metadata by id and renders `CSVFilterStep` plus wiring to persist `filters` and preview payload inside the dialog data.
+     - `TabularDataSourceStep.tsx`: wraps `CSVFileUploadStep` from `@hierarchidb/ui/tabular-extract` inside a `CSVProvider` created with `createSpreadsheetCSVApi`, updates `SpreadsheetDialogData` (`spreadsheetMetadataId`, `dataSource`, `file`) via `onChange`, and calls `setValid` when metadata + dataSource is present.
+     - `TabularDataFilterStep.tsx`: uses `useCSVData` to load metadata by id and renders `CSVFilterStep` plus wiring to persist `filters` and preview payload inside the dialog data.
    - Add `src/ui/components/steps-provider.tsx` registering the spreadsheet step configs (Data Source + Filtering) with `PluginStepRegistry`. Ensure BasicInfo isn’t redefined (honors the shared stepper).
-   - Provide `src/ui/preconnect.ts` to re-export `DataSourceStep`, `FilteringStep`, and `createSpreadsheetCSVApi` for downstream consumers (Styler).
+   - Provide `src/ui/preconnect.ts` to re-export `TabularDataSourceStep`, `TabularDataFilterStep`, and `createSpreadsheetCSVApi` for downstream consumers (Styler).
 
 5. **Manifest, worker, icon, and package entry**
    - Copy the AssessmentIcon export into `src/icon/preconnect.ts`.
@@ -119,12 +119,12 @@ We are replacing the legacy spreadsheet plugin with a new implementation that si
 
 - Public API surface retained:
   - `SpreadsheetTabularApiDriver` class and `createSpreadsheetCSVApi(pluginId)` factory (under `@hierarchidb/spreadsheet-plugin/services`).
-  - `DataSourceStep` and `FilteringStep` React components (under `@hierarchidb/spreadsheet-plugin/ui`).
+  - `TabularDataSourceStep` and `TabularDataFilterStep` React components (under `@hierarchidb/spreadsheet-plugin/ui`).
   - Worker exports `registerSpreadsheetWorkerStores`, `loadSpreadsheetEntitiesDbModule`.
   - Manifest export `SpreadsheetPluginManifest`.
 - Internal dependencies:
   - `@hierarchidb/tabular-source` (`TabularService`, `TabularStorePort` types).
-  - `@hierarchidb/tabular-store` (`TabularWriter`, `SimpleTableMetadataManager`, `TabularQueryService`, `getRowStoreDB`).
+  - `@hierarchidb/tabular-store` (`TabularWriter`, `StylerMetadataManager`, `TabularQueryService`, `getRowStoreDB`).
   - `@hierarchidb/ui/tabular-extract` (`CSVProvider`, `CSVFileUploadStep`, `CSVFilterStep`, hooks).
   - Dexie (already available via `TabularWriter`/RowStore) and `fake-indexeddb` for tests.
 

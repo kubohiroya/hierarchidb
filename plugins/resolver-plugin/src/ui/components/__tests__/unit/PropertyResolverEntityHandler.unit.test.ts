@@ -136,7 +136,7 @@ describe('ResolverEntityService', () => {
       const entity = await handler.createEntity(nodeId, data);
 
       expect(entity).toBeDefined();
-      expect(entity.nodeId).toBe(nodeId);
+      expect(entity.id).toBe(nodeId);
       expect(entity.name).toBe(data.name);
       expect(entity.description).toBe(data.description);
       expect(entity.sourceSchema).toBe(data.sourceSchema);
@@ -298,7 +298,7 @@ describe('ResolverEntityService', () => {
 
       const duplicate = await handler.duplicate(originalNodeId, newNodeId);
 
-      expect(duplicate.nodeId).toBe(newNodeId);
+      expect(duplicate.id).toBe(newNodeId);
       expect(duplicate.name).toBe('Original Resolver (Copy)');
       expect(duplicate.sourceSchema).toBe('SourceSchema');
       expect(duplicate.targetSchema).toBe('TargetSchema');

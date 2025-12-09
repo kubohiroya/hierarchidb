@@ -1,5 +1,5 @@
 /**
- * @file TabularColumnSelectionStep.tsx
+ * @file TabularColumnSelect.tsx
  * @description Column selection and mapping interface for Tabular data
  */
 
@@ -39,7 +39,7 @@ import type {
 } from '../types/index.js';
 import { TabularColumnInfo, TabularColumnType, TabularTableMetadata } from '@hierarchidb/tabular-store';
 
-export interface TabularColumnSelectionStepProps {
+export interface TabularColumnSelectProps {
   tableMetadata: TabularTableMetadata;
   previewData?: TabularDataResult;
   targetColumns?: { name: string; type: string; required: boolean; description?: string }[];
@@ -50,7 +50,7 @@ export interface TabularColumnSelectionStepProps {
   maxPreviewRows?: number;
 }
 
-export const TabularColumnSelectionStep: React.FC<TabularColumnSelectionStepProps> = ({
+export const TabularColumnSelect: React.FC<TabularColumnSelectProps> = ({
                                                                                 tableMetadata,
                                                                                 previewData,
                                                                                 targetColumns = [],

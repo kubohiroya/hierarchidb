@@ -48,7 +48,7 @@ This document summarizes the successful implementation of the `ui-csv-extract` p
 
 **Simplified Data Layer**:
 - `SimpleTableMetadata` - Streamlined table metadata type
-- `SimpleTableMetadataManager` - In-memory table management
+- `StylerMetadataManager` - In-memory table management
 - Compatible with existing Styler infrastructure
 
 **Refactored Dialog** (`packages/plugins/styler/src/components/StylerDialogRefactored.tsx`):

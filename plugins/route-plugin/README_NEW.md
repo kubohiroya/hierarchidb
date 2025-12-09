@@ -63,7 +63,7 @@ interface BasicInfoStep {
 
 ### Step 2: データソース選択 ⭐️
 ```typescript
-interface DataSourceStep {
+interface TabularDataSourceStep {
   dataSource: {
     id: string;
     name: string;

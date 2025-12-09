@@ -3,13 +3,13 @@
  * @description Export all CSV UI components
  */
 
-export { TabularFileImportStep } from './TabularFileImportStep.js';
-export type { TabularFileImportStepProps } from './TabularFileImportStep.js';
+export { TabularDataImport } from './TabularDataImport.js';
+export type { TabularDataImportProps } from './TabularDataImport.js';
 
-export { TabularFilterStep } from './TabularFilterStep.js';
-export type { TabularFilterStepProps } from './TabularFilterStep.js';
-export { FilterRulesTable } from './FilterRulesTable.js';
-export type { FilterOperatorOption } from './FilterRulesTable.js';
+export { TabularDataFilter } from './TabularDataFilter.js';
+export type { TabularDataFilterProps } from './TabularDataFilter.js';
+export { TabularDataFilterRulesTable } from './TabularDataFilterRulesTable.js';
+export type { FilterOperatorOption } from './TabularDataFilterRulesTable.js';
 
-export { TabularColumnSelectionStep } from './TabularColumnSelectionStep.js';
-export type { TabularColumnSelectionStepProps } from './TabularColumnSelectionStep.js';
+export { TabularColumnSelect } from './TabularColumnSelect.js';
+export type { TabularColumnSelectProps } from './TabularColumnSelect.js';

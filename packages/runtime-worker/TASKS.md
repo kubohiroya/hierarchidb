@@ -38,7 +38,7 @@
 - styler-plugin
   - DB: `StylerCSVMetadata` → `StylerMetadataDB`（提案）
     - Table: `csvMetadata`（OK）
-    - 実装: `packages/plugins/styler-plugin/src/services/SimpleTableMetadataManager.ts`
+    - 実装: `packages/plugins/styler-plugin/src/services/StylerMetadataManager.ts`
 - shape-plugin
   - DB(固有): `ShapeDB`（OK）
   - Ephemeral: `EphemeralShapeDB`（OK）

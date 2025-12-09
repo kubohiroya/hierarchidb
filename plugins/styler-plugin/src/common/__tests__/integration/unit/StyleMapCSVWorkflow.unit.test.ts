@@ -6,7 +6,7 @@
 import 'fake-indexeddb/auto';
 import { SpreadsheetTabularApiDriver as StylerTabularApiDriver } from '@hierarchidb/spreadsheet-plugin';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SimpleTableMetadataManager } from '../../../../services/SimpleTableMetadataManager.js';
+import { StylerMetadataManager } from '../../../../services/StylerMetadataManager.js';
 
 // Mock hashUtils
 vi.mock('../../utils/hashUtils', () => ({
@@ -68,10 +68,10 @@ Japan,125800000,Asia`;
 
 describe('Styler CSV Workflow Integration', () => {
   let csvApi: StylerTabularApiDriver;
-  let tableManager: SimpleTableMetadataManager;
+  let tableManager: StylerMetadataManager;
 
   beforeEach(async () => {
-    tableManager = new SimpleTableMetadataManager();
+    tableManager = new StylerMetadataManager();
     csvApi = new StylerTabularApiDriver(tableManager);
   });
 

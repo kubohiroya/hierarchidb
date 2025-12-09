@@ -131,7 +131,7 @@ describe('Resolver Integration Tests', () => {
       });
 
       expect(entity).toBeDefined();
-      expect(entity.nodeId).toBe(testNodeId);
+      expect(entity.id).toBe(testNodeId);
       expect(entity.name).toBe('New Resolver');
       expect(entity.mappingRules).toEqual([]);
       expect(entity.validationRules).toEqual([]);

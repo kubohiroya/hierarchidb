@@ -13,8 +13,8 @@ packages/plugins/spreadsheet-plugin/
 │   │   ├── definition.ts         # 実装対象（未作成）
 │   │   └── definition.test.ts    # テストファイル（作成済み）
 │   └── steps/
-│       ├── DataSourceStep.tsx    # Step 2（未作成）
-│       └── FilteringStep.tsx     # Step 3（未作成）
+│       ├── TabularDataSourceStep.tsx    # Step 2（未作成）
+│       └── TabularDataFilterStep.tsx     # Step 3（未作成）
 ```
 
 ### テストケース実装状況
@@ -47,12 +47,12 @@ packages/plugins/spreadsheet-plugin/
 - **Step 2検証**:
   - stepNumber: 2
   - title: 'データソース選択'
-  - component: DataSourceStep
+  - component: TabularDataSourceStep
   - validation関数の存在
 - **Step 3検証**:
   - stepNumber: 3
   - title: 'フィルタリング'
-  - component: FilteringStep
+  - component: TabularDataFilterStep
   - dependsOn: [2]
   - isOptional: true
 
@@ -120,8 +120,8 @@ pnpm test src/extension/definition.test.ts
 ### 期待される失敗パターン
 1. **モジュール未発見エラー**:
    - `Cannot find module './definition'`
-   - `Cannot find module '../steps/DataSourceStep'`
-   - `Cannot find module '../steps/FilteringStep'`
+   - `Cannot find module '../steps/TabularDataSourceStep'`
+   - `Cannot find module '../steps/TabularDataFilterStep'`
 
 2. **型定義エラー**:
    - ExtendableNodeTypeDefinition型が見つからない可能性
@@ -137,11 +137,11 @@ pnpm test src/extension/definition.test.ts
    - extendedFieldsの配列定義
    - extendedValidationの実装
 
-2. **DataSourceStep.tsx**:
+2. **TabularDataSourceStep.tsx**:
    - 最小限のReactコンポーネント
    - エクスポートのみで動作確認可能
 
-3. **FilteringStep.tsx**:
+3. **TabularDataFilterStep.tsx**:
    - 最小限のReactコンポーネント
    - エクスポートのみで動作確認可能
 

@@ -6,7 +6,7 @@
 import 'fake-indexeddb/auto';
 import { SpreadsheetTabularApiDriver as StylerTabularApiDriver } from '@hierarchidb/spreadsheet-plugin';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SimpleTableMetadataManager } from '../../../services/SimpleTableMetadataManager.js';
+import { StylerMetadataManager } from '../../../services/StylerMetadataManager.js';
 import { detectFileType } from '../../utils/fileProcessingUtils.js';
 
 // Mock hashUtils
@@ -74,10 +74,10 @@ vi.mock('jszip', () => {
 
 describe('Multi-format File Processing Integration', () => {
   let csvApi: StylerTabularApiDriver;
-  let tableManager: SimpleTableMetadataManager;
+  let tableManager: StylerMetadataManager;
 
   beforeEach(async () => {
-    tableManager = new SimpleTableMetadataManager();
+    tableManager = new StylerMetadataManager();
     csvApi = new StylerTabularApiDriver(tableManager);
   });
 

@@ -660,7 +660,7 @@ function FilterRulesTableComponent({
   );
 }
 
-export const FilterRulesTable = React.memo(
+export const TabularDataFilterRulesTable = React.memo(
   FilterRulesTableComponent,
   (prev, next) =>
     rulesEqual(prev.filters, next.filters) &&

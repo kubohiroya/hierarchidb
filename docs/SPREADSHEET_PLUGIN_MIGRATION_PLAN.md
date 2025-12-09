@@ -15,7 +15,7 @@
 
 **✅ spreadsheet-pluginは完成されたプラグイン**:
 - **完全な拡張定義**: FolderEntityを継承したSpreadsheetEntity
-- **UI Components実装済み**: DataSourceStep, FilteringStep
+- **UI Components実装済み**: TabularDataSourceStep, TabularDataFilterStep
 - **CSV/Excel処理機能**: ファイル読み込み、フィルタリング、バリデーション
 - **多段階Dialog**: Step2-3の追加実装
 - **テストケース完備**: TC-101-001〜TC-101-010
@@ -44,8 +44,8 @@ export interface SpreadsheetEntity extends FolderEntity, SpreadsheetExtendedFiel
 ```
 
 ### UI Components（実装済み）
-- **DataSourceStep**: ファイルアップロード、URL入力、手動入力
-- **FilteringStep**: 行・列フィルタリング設定
+- **TabularDataSourceStep**: ファイルアップロード、URL入力、手動入力
+- **TabularDataFilterStep**: 行・列フィルタリング設定
 - **バリデーション**: ファイル形式チェック（CSV、TSV、Excel）
 
 ### Extension定義（完成済み）
@@ -77,7 +77,7 @@ export interface SpreadsheetEntity extends FolderEntity, SpreadsheetExtendedFiel
 
 #### 2.1 provider-i18next → react-i18next修正
 ```typescript
-// src/steps/DataSourceStep.tsx
+// src/steps/TabularDataSourceStep.tsx
 // 修正前
 import { useTranslation } from 'provider-i18next';
 
@@ -88,9 +88,9 @@ import { useTranslation } from 'react-i18next';
 const { t } = useTranslation('spreadsheet-plugin');
 ```
 
-#### 2.2 FilteringStep.tsx の同様修正
+#### 2.2 TabularDataFilterStep.tsx の同様修正
 ```typescript
-// src/steps/FilteringStep.tsx
+// src/steps/TabularDataFilterStep.tsx
 // 同様にprovider-i18next → react-i18nextに修正
 ```
 
@@ -129,7 +129,7 @@ type FilterOperator = 'equals' | 'contains' | 'startsWith' | 'endsWith' | 'great
 
 #### 3.2 undefined対策
 ```typescript
-// src/steps/DataSourceStep.tsx
+// src/steps/TabularDataSourceStep.tsx
 // 修正前（undefined可能性）
 const handleNext = () => {
   onNext(data.dataSource);  // data.dataSourceがundefinedの可能性
@@ -247,7 +247,7 @@ spreadsheet-pluginは以下の高度な機能を持つ**完成されたプラグ
 - **多形式対応**: CSV、TSV、Excel読み込み
 - **高度なフィルタリング**: 行・列の詳細フィルタ
 - **リアルタイムバリデーション**: 入力時チェック
-- **段階的UI**: DataSourceStep → FilteringStep
+- **段階的UI**: TabularDataSourceStep → TabularDataFilterStep
 - **国際化完備**: i18next統合
 
 この計画により、spreadsheet-pluginの242件のエラーを**2-3時間で**解決し、完成されたスプレッドシート機能を活用できるようになります。

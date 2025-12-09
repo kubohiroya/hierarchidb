@@ -28,7 +28,7 @@ HierarchiDBの全8プラグインについて詳細な調査を実施した結�
 #### **spreadsheet-plugin** （242件のエラー → 2-3時間で修正可能）
 - **完成されたスプレッドシート処理プラグイン**
 - CSV/TSV/Excel読み込み、高度なフィルタリング
-- 多段階Dialog（DataSourceStep、FilteringStep）
+- 多段階Dialog（TabularDataSourceStep、TabularDataFilterStep）
 - エラーの大部分はfolder-plugin依存の参照問題
 - **実装状態**: 完全実装済み、テストケース完備
 

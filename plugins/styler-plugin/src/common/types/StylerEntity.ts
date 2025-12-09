@@ -1,7 +1,5 @@
-import type { NodeId } from '@hierarchidb/common-types';
 import type { SpreadsheetEntity } from '@hierarchidb/spreadsheet-plugin';
 import type { MapLibreStyle } from '@hierarchidb/ui-map';
-//import type { DialogProgressState, DialogWindowState } from '@hierarchidb/plugin-service-api';
 import type { StylerConfig, StyleType } from './stylerTypes.js';
 
 /**
@@ -15,7 +13,7 @@ export interface StylerEntity extends SpreadsheetEntity {
   //  - dataSource: object (SpreadsheetEntity)
   //  - filters?: object (SpreadsheetEntity)
 
-  nodeId?: NodeId;
+  // nodeId?: NodeId;
 
   //  Styler
   stylerConfig: StylerConfig;

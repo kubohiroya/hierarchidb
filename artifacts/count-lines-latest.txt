@@ -279,7 +279,7 @@
   📄 preconnect.ts                              5 lines
   📄 Indexer.ts                           90 lines
   📄 RowStoreDB.ts                        70 lines
-  📄 SimpleTableMetadataManager.ts       178 lines
+  📄 StylerMetadataManager.ts       178 lines
   📄 TabularQuery.ts                      91 lines
   📄 TabularWriter.ts                    111 lines
   📄 types.ts                             39 lines

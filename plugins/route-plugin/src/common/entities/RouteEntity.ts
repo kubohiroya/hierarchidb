@@ -56,7 +56,6 @@ export interface RouteCategory {
 export interface RouteEntity {
   // Entity ID
   id: NodeId;
-  nodeId: NodeId;
   parentId?: NodeId;
 
   // Basic information

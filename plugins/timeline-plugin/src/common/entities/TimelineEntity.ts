@@ -21,7 +21,6 @@ export interface TimelineFrame {
 
 export interface TimelineEntity extends BaseEntity<NodeId> {
   id: NodeId;
-  nodeId: NodeId;
   name: string;
   description?: string;
   tags?: string[];

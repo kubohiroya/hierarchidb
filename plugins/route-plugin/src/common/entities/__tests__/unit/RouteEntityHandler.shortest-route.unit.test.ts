@@ -17,7 +17,6 @@ function createRoute({ id, start, end, distance, overrides }: RouteFactoryOption
 
   return {
     id: id as NodeId,
-    nodeId: `${id}-node` as NodeId,
     name: id,
     category: { primary: 'road' },
     metadata: {},

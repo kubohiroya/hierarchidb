@@ -24,10 +24,10 @@ import { ExpandMore as ExpandMoreIcon, Abc, Pin, CheckBox, Preview as PreviewIco
 import { useTabularFilter } from '../hooks/useTabularFilter.js';
 import { TabularColumnInfo, TabularColumnType, TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { TabularDataResult, TabularFilterRule } from '../types/index.js';
-import { FilterRulesTable, type FilterOperatorOption } from './FilterRulesTable.js';
+import { TabularDataFilterRulesTable, type FilterOperatorOption } from './TabularDataFilterRulesTable.js';
 import {LinearProgress} from "@mui/material";
 
-export interface TabularFilterStepProps {
+export interface TabularDataFilterProps {
   tableMetadata: TabularTableMetadata;
   /**
    * (Optional) Notify parent immediately when filters change.
@@ -60,7 +60,7 @@ const FILTER_OPERATORS: FilterOperatorOption[] = [
   { value: 'regex', label: 'Regular Expression', types: ['string'] },
 ];
 
-export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
+export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
   tableMetadata,
   onFiltersChanged,
   onPreviewData,
@@ -276,7 +276,7 @@ export const TabularFilterStep: React.FC<TabularFilterStepProps> = ({
           },
         }}
       />
-      <FilterRulesTable
+      <TabularDataFilterRulesTable
         filters={filters}
         onChange={handleFiltersChange}
         onDirty={() => setPreviewDirty(true)}

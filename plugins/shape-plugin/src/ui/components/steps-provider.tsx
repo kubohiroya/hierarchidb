@@ -15,11 +15,20 @@ import { StepTabularImport } from './steps/StepTabularImport.tsx';
 import { StepTabularFilter } from './steps/StepTabularFilter.js';
 import { notify } from '@hierarchidb/components';
 import { useTranslation as getTranslation } from '../../common/i18n/index.js';
+import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
+import type { TreeNodeMetadata } from '@hierarchidb/common-types';
 
 const registry = PluginStepRegistry.getInstance();
 
-type ShapeStepData = StepData & Partial<ShapeEntity>;
+type ShapeStepData = StepData & Partial<ShapeEntity> & {
+  draftMetadata?: TreeNodeMetadata;
+};
 type ShapeDialogStepProps = StepComponentProps<ShapeStepData>;
+
+const ensureDraft = (data?: ShapeStepData): ShapeStepData => ({
+  ...(data ?? {}),
+  draftMetadata: data?.draftMetadata ?? ({ name: '', description: '', tags: [] } as TreeNodeMetadata),
+});
 
 function createStepAdapter(Component: React.ComponentType<any>): (props: ShapeDialogStepProps) => JSX.Element {
   return function ShapeStepAdapter(props: ShapeDialogStepProps) {
@@ -69,6 +78,31 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
   getCreateStepConfigs() {
     const { t } = getTranslation();
     return [
+      {
+        id: 'basic-info',
+        label: t('steps.basicInfo.label', 'Basic Info'),
+        componentFactory: (props: ShapeDialogStepProps) => {
+          const draft = ensureDraft(props.data);
+          const meta = (draft as any).draftMetadata ?? { name: '', description: '', tags: [] };
+          return (
+            <BasicInfoStep
+              name={meta.name ?? ''}
+              description={meta.description ?? ''}
+              tags={meta.tags ?? []}
+              mode={props.mode}
+              onChange={({ name, description, tags }: BasicInfoData) =>
+                props.onChange({
+                  ...(draft as any),
+                  draftMetadata: { ...meta, name, description, tags: tags ?? [] },
+                })
+              }
+              validate={({ name }) => (name.trim().length ? null : 'Name is required')}
+            />
+          );
+        },
+        validate: (data?: ShapeStepData) =>
+          Boolean((data as any)?.draftMetadata?.name?.trim?.()),
+      },
       {
         id: 'tabular-upload',
         label: t('steps.tabularUpload.label', 'Dataset Upload'),

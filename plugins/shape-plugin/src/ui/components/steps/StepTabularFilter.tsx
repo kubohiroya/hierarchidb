@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import type { StepComponentProps } from '@hierarchidb/plugin-base';
-import { TabularProvider, TabularFilterStep, useTabularData } from '@hierarchidb/ui-tabular-extract';
+import { TabularProvider, TabularDataFilter, useTabularData } from '@hierarchidb/ui-tabular-extract';
 import type { TabularFilterRule, TabularDataResult } from '@hierarchidb/ui-tabular-extract';
 import { createShapeTabularApi } from '../../../services/tabular/createShapeTabularApi.js';
 import { SHAPE_PLUGIN_ID } from '../../../common/shared/constants.js';
@@ -14,6 +14,7 @@ export function StepTabularFilter({
   onChange,
   setValid,
   setError,
+  dialogRef,
 }: ShapeDialogStepProps): JSX.Element {
   const tabularApi = useMemo(() => createShapeTabularApi(), []);
 
@@ -22,6 +23,11 @@ export function StepTabularFilter({
     pluginId: SHAPE_PLUGIN_ID,
     autoload: Boolean(draft?.tabularMetadataId),
   });
+  const menuContainer =
+    (dialogRef?.current?.closest('.MuiModal-root') as Element | null) ??
+    (dialogRef?.current?.closest('[role=\"dialog\"]') as Element | null) ??
+    (dialogRef?.current as Element | null) ??
+    null;
 
   useEffect(() => {
     if (draft?.tabularMetadataId) {
@@ -86,11 +92,12 @@ export function StepTabularFilter({
       );
     }
     return (
-      <TabularFilterStep
+      <TabularDataFilter
         tableMetadata={tabularTableMetadata}
         pluginId={SHAPE_PLUGIN_ID}
         onFiltersChanged={handleFiltersChanged}
         onPreviewData={handlePreviewData}
+        menuContainer={menuContainer}
       />
     );
   })();

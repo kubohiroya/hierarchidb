@@ -3,7 +3,7 @@ import { Box } from '@mui/material';
 import { useState } from 'react';
 import type { TabularColumnInfo } from '@hierarchidb/tabular-store';
 import type { TabularFilterRule } from '../types/index.js';
-import { FilterRulesTable, type FilterOperatorOption } from './FilterRulesTable.js';
+import { TabularDataFilterRulesTable, type FilterOperatorOption } from './TabularDataFilterRulesTable.js';
 
 const operatorOptions: FilterOperatorOption[] = [
   { value: 'equals', label: 'Equals', types: ['string', 'number', 'date', 'boolean'] },
@@ -28,14 +28,14 @@ const columns: TabularColumnInfo[] = [
   { name: 'is_capital', index: 3, type: 'boolean' },
 ];
 
-const meta: Meta<typeof FilterRulesTable> = {
+const meta: Meta<typeof TabularDataFilterRulesTable> = {
   title: 'Tabular/Filter Rules Table',
-  component: FilterRulesTable,
+  component: TabularDataFilterRulesTable,
 };
 
 export default meta;
 
-type Story = StoryObj<typeof FilterRulesTable>;
+type Story = StoryObj<typeof TabularDataFilterRulesTable>;
 
 export const Playground: Story = {
   render: () => {
@@ -65,7 +65,7 @@ export const Playground: Story = {
 
     return (
       <Box sx={{ maxWidth: 960, p: 3 }}>
-        <FilterRulesTable filters={rules} onChange={setRules} columns={columns} operatorOptions={operatorOptions} />
+        <TabularDataFilterRulesTable filters={rules} onChange={setRules} columns={columns} operatorOptions={operatorOptions} />
       </Box>
     );
   },

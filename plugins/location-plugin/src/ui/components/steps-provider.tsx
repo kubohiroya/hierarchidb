@@ -1,5 +1,5 @@
 import { PluginStepRegistry, type StartBatchContext, type StepComponentProps } from '@hierarchidb/plugin-base';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId, TreeNodeMetadata } from '@hierarchidb/common-types';
 import type { LocationEntity } from '../../common/types/index.js';
 import { LocationDataSourceStep } from './steps/LocationDataSourceStep.js';
 import { LocationLicenseStep } from './steps/LocationLicenseStep.js';
@@ -11,14 +11,18 @@ import { notify } from '@hierarchidb/components';
 import { listLocationPoints } from '../../services/pointRepository.js';
 import { LocationVectorTileService } from '../../services/tiles/LocationVectorTileService.js';
 import { i18n } from '@hierarchidb/ui-i18n';
+import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 
 const registry = PluginStepRegistry.getInstance();
 
 // Step payload = Partial<LocationEntity>; treeNode metadataはホスト Basic Info で管理する。
-type LocationStepData = Partial<LocationEntity>;
+type LocationStepData = Partial<LocationEntity> & {
+  draftMetadata?: TreeNodeMetadata | null;
+};
 
 const ensureData = (data?: LocationStepData): LocationStepData => ({
   ...(data ?? {}),
+  draftMetadata: (data?.draftMetadata ?? { name: '', description: '', tags: [] }) as TreeNodeMetadata,
 });
 
 const mergeData = (
@@ -113,6 +117,34 @@ registry.registerConfigProvider<LocationStepData>({
   nodeType: 'location',
   getCreateStepConfigs() {
     return [
+      {
+        id: 'basic-info',
+        label: String(i18n.t('steps.basicInfo.label', { ns: 'location-plugin', defaultValue: 'Basic Info' })),
+        componentFactory: (p: StepProps) => {
+          const draft = ensureData(p.data);
+          const meta = (draft.draftMetadata ?? { name: '', description: '', tags: [] }) as {
+            name?: string;
+            description?: string;
+            tags?: string[];
+          };
+          return (
+            <BasicInfoStep
+              name={meta.name ?? ''}
+              description={meta.description ?? ''}
+              tags={meta.tags ?? []}
+              mode={p.mode}
+              onChange={({ name, description, tags }: BasicInfoData) =>
+                p.onChange({
+                  ...draft,
+                  draftMetadata: { ...meta, name, description, tags: tags ?? [] },
+                })
+              }
+              validate={({ name }) => (name.trim().length ? null : 'Name is required')}
+            />
+          );
+        },
+        validate: (data?: LocationStepData) => Boolean(data?.draftMetadata?.name?.trim()),
+      },
       {
         id: 'data-source',
         label: String(i18n.t('steps.dataSource.label', { ns: 'location-plugin', defaultValue: 'Data Source' })),

@@ -7,7 +7,6 @@ import type {
 
 export interface LinkerEntity extends BaseEntity<NodeId> {
   id: NodeId;
-  nodeId: NodeId;
   name: string;
   description?: string;
   tags?: string[];

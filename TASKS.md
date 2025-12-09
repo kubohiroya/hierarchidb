@@ -55,22 +55,22 @@
 
 1605) Tabular filter menu をダイアログ内に固定（P0）
 - ブランチ: `fix/ui-tabular/filter-menu-container`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: packages/ui/tabular-extract TabularFilterStep/FilterRulesTable、plugins spreadsheet/styler/shape/location 等の filtering step
+- 依存: packages/ui/tabular-extract TabularFilterStep/TabularDataFilterRulesTable、plugins spreadsheet/styler/shape/location 等の filtering step
 - 受け入れ基準（DoD）:
   - [ ] TabularFilterStep を利用する全プラグインでフィルタの Column/Operator 等のセレクトがクリック後も表示され、選択できる（Styler/Spreadsheet/Shape/Location で手動確認する）
   - [ ] メニューのポータル先をダイアログ内に固定する改修を共有コンポーネントに反映し、影響範囲を記録する
   - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
   - [ ] 関連パッケージの lint/typecheck を実行し、結果を記録する（不可なら理由記載）
 - チェックリスト:
-  - [ ] TabularFilterStep/FilterRulesTable に menuContainer/disablePortal の対応を追加し、クリックアウェイで閉じないようにする
+  - [ ] TabularFilterStep/TabularDataFilterRulesTable に menuContainer/disablePortal の対応を追加し、クリックアウェイで閉じないようにする
   - [ ] Spreadsheet/Styler/Shape/Location など TabularFilterStep を使う箇所へ dialogRef/メニューコンテナを配線する
   - [ ] 手動確認と lint/typecheck を実施、結果を運用ログに記録する
-- ロールバック手順：TabularFilterStep/FilterRulesTable および各プラグインの呼び出し差分を revert し、実行した検証コマンドを再実行して現状（メニューが即閉じる）に戻す
+- ロールバック手順：TabularFilterStep/TabularDataFilterRulesTable および各プラグインの呼び出し差分を revert し、実行した検証コマンドを再実行して現状（メニューが即閉じる）に戻す
 - 運用ログ：
   - start: 2025-12-08 21:31 JST Tabular filter メニューのポータル先をダイアログ内に固定する対応を開始（main 上で作業）。
-  - progress: 2025-12-08 21:33 JST TabularFilterStep/FilterRulesTable に menuContainer 対応を追加し、Select を MenuItem + container 指定で dialog 内に固定。Spreadsheet/Shape FilteringStep で dialogRef から role="dialog" 祖先を menuContainer に渡すよう配線（Styler は Spreadsheet FilteringStep 流用のため同経路で適用）。Location はデフォルトでも利用可能（必要なら同一 container 伝播を検討）。
+  - progress: 2025-12-08 21:33 JST TabularFilterStep/TabularDataFilterRulesTable に menuContainer 対応を追加し、Select を MenuItem + container 指定で dialog 内に固定。Spreadsheet/Shape TabularDataFilterStep で dialogRef から role="dialog" 祖先を menuContainer に渡すよう配線（Styler は Spreadsheet TabularDataFilterStep 流用のため同経路で適用）。Location はデフォルトでも利用可能（必要なら同一 container 伝播を検討）。
   - progress: 2025-12-08 21:33 JST 検証: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0、`pnpm --filter @hierarchidb/styler-plugin typecheck` exit 0、`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0、`pnpm --filter @hierarchidb/location-plugin typecheck` exit 0。`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 2（既知: runtime-worker Decorator/ES target 設定不足による PluginWorkerModuleLoader.ts エラー; 今回変更と無関係）。
-  - progress: 2025-12-08 22:37 JST FilteringStep の menuContainer を dialogRef だけでなく DOM の dialog/modal からもフォールバック解決するよう補強（styler の Column セレクトもダイアログ内に固定）。検証: `pnpm --filter @hierarchidb/styler-plugin typecheck` exit 2（既知: runtime-worker StageProcessingService.ts の @maplibre/vt-pbf ESM import）、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 2（既知: PluginWorkerModuleLoader.ts Decorator/hasOwn と StageProcessingService.ts 同件）。手動確認未実施。
+  - progress: 2025-12-08 22:37 JST TabularDataFilterStep の menuContainer を dialogRef だけでなく DOM の dialog/modal からもフォールバック解決するよう補強（styler の Column セレクトもダイアログ内に固定）。検証: `pnpm --filter @hierarchidb/styler-plugin typecheck` exit 2（既知: runtime-worker StageProcessingService.ts の @maplibre/vt-pbf ESM import）、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 2（既知: PluginWorkerModuleLoader.ts Decorator/hasOwn と StageProcessingService.ts 同件）。手動確認未実施。
 
 1606) TypeScript バージョン調整と plugin-ui-sdk typecheck 解消（P0）
 - ブランチ: `fix/ts/downgrade-tsc`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -178,9 +178,9 @@
 
 - 運用ログ：
   - start: 2025-12-05 23:45 JST Column 選択肢空問題の調査と補正を開始（main 上で作業）
-  - progress: 2025-12-05 23:47 JST FilteringStep で metadata→lastPreview→rows から columns をフォールバック生成し、TabularFilterStep で columnOptions を優先・デフォルト選択を自動補正。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` / `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` を実行し exit 0 を確認（手動確認未実施）。
+  - progress: 2025-12-05 23:47 JST TabularDataFilterStep で metadata→lastPreview→rows から columns をフォールバック生成し、TabularFilterStep で columnOptions を優先・デフォルト選択を自動補正。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` / `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` を実行し exit 0 を確認（手動確認未実施）。
   - progress: 2025-12-05 23:49 JST TabularFilterStep で previewData.columns を最優先に columnOptions を組み立て（プレビュー取得済みなら必ず候補表示）、typecheck を再実行し exit 0 を確認。
-  - progress: 2025-12-06 00:02 JST TabularFilterStep に initialFilters を追加してフィルタの保存・復元を有効化し、Spreadsheet FilteringStep から既存 filters を受け渡すよう更新。`pnpm --filter @hierarchidb/ui-tabular-extract build`（tsdown 警告: define キー無視）後、`pnpm --filter @hierarchidb/{ui-tabular-extract,spreadsheet-plugin} typecheck` を再実行し exit 0。手動確認は未実施。
+  - progress: 2025-12-06 00:02 JST TabularFilterStep に initialFilters を追加してフィルタの保存・復元を有効化し、Spreadsheet TabularDataFilterStep から既存 filters を受け渡すよう更新。`pnpm --filter @hierarchidb/ui-tabular-extract build`（tsdown 警告: define キー無視）後、`pnpm --filter @hierarchidb/{ui-tabular-extract,spreadsheet-plugin} typecheck` を再実行し exit 0。手動確認は未実施。
   - progress: 2025-12-06 00:18 JST columnOptions を tableMetadata.columns 優先 + previewColumns フォールバックに変更し、保存列のずれを防止。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` → build（tsdown define 警告）→ `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` を再実行し exit 0。手動確認未実施。
   - progress: 2025-12-06 00:32 JST Spreadsheet step registry で Filtering step に validate/capabilities を付与し、最終ステップが常に committable になるよう修正。`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0。手動確認未実施。
   - progress: 2025-12-06 00:40 JST commitDraft 後に draftData が残り data が null のままになる問題に備え、`useTreeNodeUpdater` の commit 処理で最新ノードが取れない場合でも draftData を data へ反映し draftData を空にするフォールバックを追加。最新ノード取得時に draftData が消えていればローカルでも hasRemoteDraft=false/draftData={} に調整。`pnpm --filter @hierarchidb/plugin-ui-sdk typecheck` → build（tsdown define 警告）→ `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` 再実行し exit 0。手動確認未実施。
@@ -1900,7 +1900,7 @@
 - ブランチ: `feat/spreadsheet/dialog-steps-wiring`
 - 依存: Spreadsheet CSV API ドライバ（現行実装）、PluginStepRegistry
 - 受け入れ基準（DoD）:
-  - [ ] `plugins/spreadsheet-plugin/src/ui/components/steps-provider.tsx` など StepRegistry 経路で DataSourceStep / FilteringStep が実装・結線され、フォルダダイアログから利用可能
+  - [ ] `plugins/spreadsheet-plugin/src/ui/components/steps-provider.tsx` など StepRegistry 経路で TabularDataSourceStep / TabularDataFilterStep が実装・結線され、フォルダダイアログから利用可能
   - [ ] Wizard フローで CSV アップロード・フィルタ設定が実際に機能し、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` および `pnpm --filter @hierarchidb/spreadsheet-plugin test` がグリーン
   - [ ] 既存 TODO/TODO.md を更新し、モック状態であった旨を解消
 - チェックリスト:
@@ -2574,21 +2574,21 @@
   - ブランチ: `feat/spreadsheet/steps-impl-minimum`
   - 依存: PR #144（UI-DESIGN.md）
   - 受け入れ基準（DoD）:
-    - [ ] Step2: `DataSourceStep`（file/url/manual）で working copy に `dataSource` を反映
-    - [ ] Step3: `FilteringStep`（列選択/簡易条件）を最小実装（任意）
+    - [ ] Step2: `TabularDataSourceStep`（file/url/manual）で working copy に `dataSource` を反映
+    - [ ] Step3: `TabularDataFilterStep`（列選択/簡易条件）を最小実装（任意）
     - [ ] 拡張定義 `component` を `null` から実装へ差替、既存テストを更新
   - ロールバック: `component` を `null` に戻し、テストを元の前提に復帰
   - 運用ログ：
-    - progress: 2025-09-26 04:20 DataSourceStep を `@hierarchidb/ui-file` の `FileInputWithUrl` に一本化し、ローカルファイル/URL/手動入力の切替とバリデーション更新を実装
+    - progress: 2025-09-26 04:20 TabularDataSourceStep を `@hierarchidb/ui-file` の `FileInputWithUrl` に一本化し、ローカルファイル/URL/手動入力の切替とバリデーション更新を実装
     - progress: 2025-09-26 04:25 `tsconfig.ui.json` から paths 上書きを撤廃し、UI専用のスタブ型 (`src/types/external.d.ts`) を追加して Step2 コンポーネントの型検証準備を整備
     - blocked: 2025-09-26 04:40 `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` が ENOTFOUND(registry.npmjs.org) で依存取得に失敗。ネットワーク制約のため標準検証は未完了。
-    - progress: 2025-09-26 05:05 SpreadsheetDialogExtension で Step2/3 の enabled/validated 判定を実装し、DataSourceStep のダイアログデータ型を Working Copy 依存から切り離し
+    - progress: 2025-09-26 05:05 SpreadsheetDialogExtension で Step2/3 の enabled/validated 判定を実装し、TabularDataSourceStep のダイアログデータ型を Working Copy 依存から切り離し
     - progress: 2025-09-26 05:08 extension/constants.ts の日本語ラベルとエラーメッセージを英語化し、UI テキストを統一
     - blocked: 2025-09-26 05:12 `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` が引き続き依存モジュール解決不可（Dexie/@types 系入手不能）で失敗。ネットワーク復旧待ち
-    - progress: 2025-09-26 05:24 DataSourceStep/CSVUploadPanel が `PLUGIN_METADATA` を参照するよう調整し、Step registry ラベルを STEP_CONFIG へ統一
+    - progress: 2025-09-26 05:24 TabularDataSourceStep/CSVUploadPanel が `PLUGIN_METADATA` を参照するよう調整し、Step registry ラベルを STEP_CONFIG へ統一
     - done: 2025-09-26 05:40 `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` がスタブ拡張によりグリーンを確認（離線依存なし）
-    - progress: 2025-09-26 05:52 FilteringStep UI を最小実装し、列表示切替と簡易行フィルタ追加を working copy へ反映
-    - progress: 2025-09-26 06:18 DataSourceStep/CSVUploadPanel の型を整理し、`@hierarchidb/ui-file` との受け渡しで readonly 配列を直接渡せるよう調整
+    - progress: 2025-09-26 05:52 TabularDataFilterStep UI を最小実装し、列表示切替と簡易行フィルタ追加を working copy へ反映
+    - progress: 2025-09-26 06:18 TabularDataSourceStep/CSVUploadPanel の型を整理し、`@hierarchidb/ui-file` との受け渡しで readonly 配列を直接渡せるよう調整
     - progress: 2025-09-26 06:19 手動入力タブのバリデーションを確認し、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` を再実行してグリーンを確認
     - start: 2025-11-20 00:30 ExecPlan（plans/spreadsheet-plugin-rebuild.md）を作成し、TabularService + TabularStore 基盤での再実装タスクに着手
     - progress: 2025-11-20 10:10 `plugins/spreadsheet-plugin/src` を NodeNext 対応で再構成（manifest/index/worker/ui/services/common/types）し、`SpreadsheetTabularApiDriver` と `SpreadsheetStorePort` を TabularService/TabularWriter ベースで実装
@@ -2852,7 +2852,7 @@
   - DoD: 失敗時に Snackbar/Alert を表示。既存テストを維持し、必要なら UI テスト追加。
   - ロールバック: 表示呼び出しをコメントアウトで戻せる（影響局所）。
 
-- feat/spreadsheet/filtering-ui（Spreadsheet: FilteringStep UI 実装＋テスト）
+- feat/spreadsheet/filtering-ui（Spreadsheet: TabularDataFilterStep UI 実装＋テスト）
   - ブランチ: `feat/spreadsheet/filtering-ui`
   - DoD: Filtering UI の最小機能（列選択/条件/プレビュー）が動作。Unit 追加。
   - ロールバック: ステップをフラグ OFF で非表示。
@@ -3502,10 +3502,10 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
 - 2025-12-09 07:05 progress: folder-plugin typecheck — `tabular-source-xlsx` 依存の `xlsx/xlsx.mjs` 型欠如を global.d.ts 参照と package tsconfig include 追加で解消。検証: `pnpm --filter @hierarchidb/folder-plugin typecheck` exit 0。ロールバック: `plugins/folder-plugin/tsconfig.json` への global.d.ts 追加と lib/experimentalDecorators 変更を revert し同コマンドを再実行。
 - 2025-12-09 07:15 progress: runtime-worker typecheck — tsconfig に baseUrl/path を追加し plugin-registry generated/src を include、allowImportingTsExtensions を有効化して plugin-registry 解決エラー (TS2307/TS6307/TS5097) を解消。検証: `pnpm --filter @hierarchidb/runtime-worker typecheck` exit 0。ロールバック: `packages/runtime-worker/tsconfig.json` の baseUrl/paths/include/allowImportingTsExtensions 変更を revert し同コマンドを再実行。
 - 2025-12-09 07:25 progress: basemap-plugin typecheck — basemap tsconfig を ES2022 + Decorators + allowImportingTsExtensions に揃え、data-grid を ES2022 target に更新して `Object.hasOwn` / Decorator エラーを解消。検証: `pnpm --filter @hierarchidb/ui-data-grid typecheck` exit 0、`pnpm --filter @hierarchidb/basemap-plugin typecheck` exit 0。ロールバック: `plugins/basemap-plugin/tsconfig.json` と `packages/ui/data-grid/tsconfig.json` の lib/Decorators/target 変更を revert し同コマンドを再実行。
-- 2025-12-09 07:40 progress: spreadsheet Step2 form fields — TabularFileImportStep の ModalSelect/Switch に id/name を付与し、MUI 警告「a form field element should have an id or name attribute」を解消。検証: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularFileImportStep.tsx` の id/name 追加差分を revert し同コマンドを再実行。
-- 2025-12-09 08:00 progress: styler FilterRules form — FilterRulesTable の Column/Operator Select に id/name を追加し、Styler Step3 でも MUI ラベル警告が出ず入力できるように補正。検証: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0、`pnpm --filter @hierarchidb/styler-plugin typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/FilterRulesTable.tsx` の id/name 追加差分を revert し同コマンドを再実行。
+- 2025-12-09 07:40 progress: spreadsheet Step2 form fields — TabularDataImport の ModalSelect/Switch に id/name を付与し、MUI 警告「a form field element should have an id or name attribute」を解消。検証: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularDataImport.tsx` の id/name 追加差分を revert し同コマンドを再実行。
+- 2025-12-09 08:00 progress: styler FilterRules form — TabularDataFilterRulesTable の Column/Operator Select に id/name を追加し、Styler Step3 でも MUI ラベル警告が出ず入力できるように補正。検証: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0、`pnpm --filter @hierarchidb/styler-plugin typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularDataFilterRulesTable.tsx` の id/name 追加差分を revert し同コマンドを再実行。
 - 2025-12-09 08:20 progress: shim-check cleanup — `react-i18next` の shim を削除し、plugin-ui-sdk tsconfig の paths から除去。検証: `pnpm --filter @hierarchidb/plugin-ui-sdk typecheck` exit 0。ロールバック: `packages/plugin-ui-sdk/src/types/react-i18next-shim.d.ts` と tsconfig paths 変更を戻し同コマンドを再実行。
-- 2025-12-09 08:35 progress: FilterRules label wiring — Column/Operator Select に labelId を渡し、InputLabelProps から htmlFor を外してラベル紐付け警告を解消（Styler Step3 のブリンク/無反応対策）。検証: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0、`pnpm --filter @hierarchidb/styler-plugin typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/FilterRulesTable.tsx` の labelId/InputLabelProps 変更を revert し同コマンドを再実行。
+- 2025-12-09 08:35 progress: FilterRules label wiring — Column/Operator Select に labelId を渡し、InputLabelProps から htmlFor を外してラベル紐付け警告を解消（Styler Step3 のブリンク/無反応対策）。検証: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0、`pnpm --filter @hierarchidb/styler-plugin typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularDataFilterRulesTable.tsx` の labelId/InputLabelProps 変更を revert し同コマンドを再実行。
 - 2025-12-07 20:00 start: chore/docs/package-readmes-refresh — packages 配下の README を最新実装に合わせて更新する作業を開始。概要/ディレクトリ構成/主要エクスポート/利用元を明文化する計画（main 上で作業）。
 - 2025-12-07 20:03 progress: chore/docs/package-readmes-refresh — `rg --files -g 'README.md' packages` で対象 README を棚卸し（40件超）。common/api/auth/types や ui/*、features/*、components/* の README が含まれることを確認。調査と内容更新の優先度付けに着手。
 - 2025-12-07 20:10 progress: chore/docs/package-readmes-refresh — 基盤系 README を更新: `packages/common/README.md`（api/auth/types の役割・主要エクスポート・利用元を整理）、`packages/plugin-base/README.md`（ディレクトリ構成とステップ/URL同期の主要エクスポートを記載）、`packages/plugin-ui-sdk/README.md`（draft/TreeNodeUpdater フック群と境界整理）、`packages/plugin-ui-host/README.md`（シェル/コントローラの責務を明示）、`packages/ui/worker-client/README.md`（初期化ハンドシェイク・Comlink ブリッジ・runtime wiring の概要を更新）。文書のみの変更で検証コマンドは未実施。
@@ -3521,16 +3521,16 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
 - 2025-12-06 14:25 progress: fix/ui-dialog/stepper-active-style — StepStatusIcon を現在ステップ primary 背景＋番号表示にし、完了は右上チェックオーバーレイで表示するよう変更。`pnpm -C app typecheck` 再実行（plugin-base build の define 警告あり、exit 0）。
 - 2025-12-06 14:35 progress: fix/ui-dialog/stepper-active-style — 完了チェック位置を水平方向に +8px シフト（右上オーバーレイ調整）。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
 - 2025-12-06 14:45 progress: fix/ui-dialog/stepper-active-style — 完了チェック位置を上方向に 4px シフト（右上オーバーレイ調整）。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
-- 2025-12-06 15:00 progress: fix/ui-dialog/stepper-active-style — FilterRulesTable の無限更新警告調査で、ensureRule を useCallback 化して依存安定化。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
-- 2025-12-06 15:15 progress: fix/ui-dialog/stepper-active-style — FilterRulesTable で columns 定義を useMemo 化し、react-table の autoReset* を無効化して再帰セットを防止。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
-- 2025-12-06 15:25 progress: fix/ui-dialog/stepper-active-style — FilterRulesTable の draftValues 同期で変更なしの場合は state 更新をスキップするよう最適化。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
-- 2025-12-06 15:35 progress: fix/ui-dialog/stepper-active-style — FilterRulesTable の normalizedRules を安定化（同値なら前回配列を再利用）して react-table のリセットトリガーを抑制。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
-- 2025-12-06 15:45 progress: fix/ui-dialog/stepper-active-style — FilterRulesTable に pagination state を明示（manualPagination + autoReset すべて off）して RowPagination の自動リセットを抑制。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
-- 2025-12-06 15:55 progress: fix/ui-dialog/stepper-active-style — FilterRulesTable の外部 filters 変更に対し、内容が同じ場合は setLocalFilters をスキップするガードを追加。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
-- 2025-12-06 16:05 progress: fix/ui-dialog/stepper-active-style — FilterRulesTable から pagination state を撤去（小規模テーブル前提）し、react-table の内部リセット連鎖を遮断。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
-- 2025-12-06 16:20 progress: fix/ui-dialog/stepper-active-style — FilterRulesTable を filters 単一ソースに簡素化（ローカルコピー/draftValues 廃止）し、等価チェックで onChange 重複発火を抑制。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
+- 2025-12-06 15:00 progress: fix/ui-dialog/stepper-active-style — TabularDataFilterRulesTable の無限更新警告調査で、ensureRule を useCallback 化して依存安定化。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
+- 2025-12-06 15:15 progress: fix/ui-dialog/stepper-active-style — TabularDataFilterRulesTable で columns 定義を useMemo 化し、react-table の autoReset* を無効化して再帰セットを防止。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
+- 2025-12-06 15:25 progress: fix/ui-dialog/stepper-active-style — TabularDataFilterRulesTable の draftValues 同期で変更なしの場合は state 更新をスキップするよう最適化。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
+- 2025-12-06 15:35 progress: fix/ui-dialog/stepper-active-style — TabularDataFilterRulesTable の normalizedRules を安定化（同値なら前回配列を再利用）して react-table のリセットトリガーを抑制。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
+- 2025-12-06 15:45 progress: fix/ui-dialog/stepper-active-style — TabularDataFilterRulesTable に pagination state を明示（manualPagination + autoReset すべて off）して RowPagination の自動リセットを抑制。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
+- 2025-12-06 15:55 progress: fix/ui-dialog/stepper-active-style — TabularDataFilterRulesTable の外部 filters 変更に対し、内容が同じ場合は setLocalFilters をスキップするガードを追加。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
+- 2025-12-06 16:05 progress: fix/ui-dialog/stepper-active-style — TabularDataFilterRulesTable から pagination state を撤去（小規模テーブル前提）し、react-table の内部リセット連鎖を遮断。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
+- 2025-12-06 16:20 progress: fix/ui-dialog/stepper-active-style — TabularDataFilterRulesTable を filters 単一ソースに簡素化（ローカルコピー/draftValues 廃止）し、等価チェックで onChange 重複発火を抑制。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
 - 2025-12-06 16:40 progress: fix/ui-dialog/stepper-active-style — 共通方針（TreeNodeUpdater を単一ソース、同値ガード、ステップ入出時のハンドオフ、副作用同値チェック）を他プラグインにも展開する設計改善を開始（コード側はタブular共有コンポーネントから簡素化を先行）。
-- 2025-12-06 16:55 progress: fix/ui-dialog/stepper-active-style — FilterRulesTable を完全に純粋化（親 filters をそのまま表示し、manualPagination + autoReset 無効＋同値チェック onChange）。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
+- 2025-12-06 16:55 progress: fix/ui-dialog/stepper-active-style — TabularDataFilterRulesTable を完全に純粋化（親 filters をそのまま表示し、manualPagination + autoReset 無効＋同値チェック onChange）。`pnpm -C app typecheck` 再実行（plugin-base build define 警告あり、exit 0）。
 - 2025-10-22 14:05 start: fix/app/plugin-type-resolution — `app/src/types/plugin-shims.d.ts` 依存を廃し、プラグインの UI/worker/database をビルド成果物から直接参照できるよう解決経路を整理。`pnpm -C app typecheck` エラー再発を防ぐ構成を検証予定。
 - 2025-10-22 14:32 progress: fix/app/plugin-type-resolution — `scripts/generate-plugin-loader.mjs` にプラグイン exports 情報から `.d.ts` を再エクスポートする自動生成処理を追加し、`app/src/types/generated/plugin-modules.d.ts` を生成。モジュール解決では dist の型をそのまま再利用する方針に切り替え、`any` を排除。
 - 2025-10-22 14:48 done: fix/app/plugin-type-resolution — 生成処理を `pnpm run tools:generate-plugin-loader` へ集約し、差分が無ければファイル書き換えをスキップする構成に更新。`packages/plugin-registry` の `prebuild` で同スクリプトを自動実行するようにし、CI/ローカルのビルドで手動実行が不要に。`pnpm --filter @hierarchidb/plugin-registry build` で TS5055 が再発しないことを確認。ロールバック: スクリプトと `package.json` 変更を戻し、旧 shim 方式に復帰。
@@ -8032,20 +8032,20 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-08 19:25 progress: research/plugin-dialog-i18n — resolver-plugin をプラグイン内 locales（`src/ui/locales/{en,ja}.json`）＋ `src/ui/i18n.ts` で HMR 登録に移行し、Common i18n ラッパーを追加。ResolverDialog のステップラベル/ヘッダー/ボタン/Basic Info 説明を t() 化。`tsconfig.json` を Vite 型・拡張子 import 許可に整備し、`pnpm --filter @hierarchidb/resolver-plugin typecheck` exit 0 を確認。
 - 2025-12-08 19:45 progress: research/plugin-dialog-i18n — timeline-plugin にローカル locales（`src/ui/locales/{en,ja}.json`）と `src/ui/i18n.ts` を追加し、TimelineDialog のステップラベル/ヘッダー/ボタンと Basic/Frames/Map/Animation ステップ文言を t() 化。`pnpm --filter @hierarchidb/timeline-plugin typecheck` exit 0。
 - 2025-12-08 20:00 progress: research/plugin-dialog-i18n — shape-plugin にローカル locales（`src/ui/locales/{en,ja}.json`）と `src/ui/i18n.ts` を追加し、steps-provider のステップラベルと通知メッセージ、および ShapeDialog のタイトル/ボタン/Name を t() 化。`tsconfig.json` へ Vite types/allowArbitraryExtensions を追加し、`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。
-- 2025-12-06 18:45 progress: 1594 fix/spreadsheet/edit-step2-download — TabularFileImportStep の URL 行を1行レイアウトに統合し、Download ボタンのアイコンを Download/Downloading/DownloadDone で切り替え。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` を実行し exit 0。
+- 2025-12-06 18:45 progress: 1594 fix/spreadsheet/edit-step2-download — TabularDataImport の URL 行を1行レイアウトに統合し、Download ボタンのアイコンを Download/Downloading/DownloadDone で切り替え。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` を実行し exit 0。
 - 2025-12-06 18:52 progress: 1594 fix/spreadsheet/edit-step2-download — Tabular Processing Options を1レーンで左寄せ並びにし、5コンポーネントが横並び（wrap付き）になるよう調整。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` を再実行し exit 0。
 - 2025-12-06 19:00 progress: 1594 fix/spreadsheet/edit-step2-download — Filter Step 外側のスクロール枠を撤去し、DialogContent のスクロールのみとするよう TabularFilterStep コンテナの overflow/maxHeight を削除。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` を実行し exit 0。
-- 2025-12-06 19:20 progress: 1594 fix/spreadsheet/edit-step2-download — FilterRulesTable のヘッダ行を削除し、PreviewボタンをAddボタン右側に配置・プレビュー後は自動でdisabled/フィルタ変更で再度enabledとなるよう制御。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` を再実行し exit 0。
+- 2025-12-06 19:20 progress: 1594 fix/spreadsheet/edit-step2-download — TabularDataFilterRulesTable のヘッダ行を削除し、PreviewボタンをAddボタン右側に配置・プレビュー後は自動でdisabled/フィルタ変更で再度enabledとなるよう制御。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` を再実行し exit 0。
 - 2025-12-06 19:32 progress: 1594 fix/spreadsheet/edit-step2-download — Data Summary セクションを削除し、Preview Results 見出し下に Total Rows / Filters Applied をサブタイトル表示するよう調整。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` を再実行し exit 0。
 - 2025-12-06 19:50 progress: 1594 fix/spreadsheet/edit-step2-download — Preview Results を全行表示+簡易バーチャルスクロール化（固定行高44px、overscan 8）、maxPreviewRows デフォルトを無制限に変更。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` を再実行し exit 0。
 - 2025-12-06 20:05 progress: 1594 fix/spreadsheet/edit-step2-download — プレビューのヘッダ/ボディ幅を固定レイアウトで揃え、テーブル高さをダイアログ領域の最大値（calc(100vh-320px)）に制限。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` を再実行し exit 0。
-- 2025-12-06 20:15 progress: 1594 fix/spreadsheet/edit-step2-download — FilterRulesTable のセル余白を小さく（py=3px, px=4px）し、テーブルの行高さを圧縮。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` 再実行し exit 0。
-- 2025-12-06 20:25 progress: 1594 fix/spreadsheet/edit-step2-download — Value入力時のフォーカス喪失を防ぐため、FilterRulesTable のカラム定義を draftValues 依存で再生成しないようリファクタし、draftValuesRef を参照する形に変更。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` 再実行し exit 0。
+- 2025-12-06 20:15 progress: 1594 fix/spreadsheet/edit-step2-download — TabularDataFilterRulesTable のセル余白を小さく（py=3px, px=4px）し、テーブルの行高さを圧縮。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` 再実行し exit 0。
+- 2025-12-06 20:25 progress: 1594 fix/spreadsheet/edit-step2-download — Value入力時のフォーカス喪失を防ぐため、TabularDataFilterRulesTable のカラム定義を draftValues 依存で再生成しないようリファクタし、draftValuesRef を参照する形に変更。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` 再実行し exit 0。
 - 2025-12-06 20:40 progress: 1594 fix/spreadsheet/edit-step2-download — Previewヘッダの型文字列を廃止し、型アイコン（string:Abc/number:PushPin/boolean:CheckBox）を先頭に表示。DialogContentの実高さに追従するようプレビューの最大高さをResizeObserverで計算。Value入力のフォーカス喪失対策リファクタを維持。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` 再実行し exit 0。
 - 2025-12-06 20:52 progress: 1598 plugin-ui-sdk/useSingleSourceDialogAtom — shallowEqual を配列対応の共通ガードに強化し、全プラグイン/ステップで既定ONの同値ガードを共通レイヤに集約。`pnpm --filter @hierarchidb/plugin-ui-sdk typecheck` 実行し exit 0。
 - 2025-12-06 21:05 progress: 1596 dialog step URL 同期統合 — useDialogSteps で dialogData を shallowEqualStepData で参照安定化し、同一内容なら新規オブジェクトを作らないように修正。HMR 後の最大更新深さループ抑止狙い。`pnpm --filter @hierarchidb/plugin-ui-host typecheck` 実行し exit 0。
-- 2025-12-06 21:20 progress: 1594 fix/spreadsheet/edit-step2-download — FilteringStep で filters 配列を shallowEqual し参照再利用するよう安定化。`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` 実行し exit 0。
-- 2025-12-06 21:28 progress: 1594 fix/spreadsheet/edit-step2-download — FilteringStep で table metadata 取得後に setValid(true) を明示し、エラー時/ロード中は setValid(false) と setError を同期。Back/Save/SaveDraft が無効化される問題への対処。`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` 実行し exit 0。
+- 2025-12-06 21:20 progress: 1594 fix/spreadsheet/edit-step2-download — TabularDataFilterStep で filters 配列を shallowEqual し参照再利用するよう安定化。`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` 実行し exit 0。
+- 2025-12-06 21:28 progress: 1594 fix/spreadsheet/edit-step2-download — TabularDataFilterStep で table metadata 取得後に setValid(true) を明示し、エラー時/ロード中は setValid(false) と setError を同期。Back/Save/SaveDraft が無効化される問題への対処。`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` 実行し exit 0。
 - 2025-12-06 21:38 progress: 1596 dialog step URL 同期統合 — フッターが非クリックになる疑いに対応し、PluginDialogFooter を z-index/pointerEvents 明示で前面に固定。`pnpm --filter @hierarchidb/plugin-ui-host typecheck` 再実行し exit 0。
 - 2025-12-06 21:50 progress: 1596 dialog step URL 同期統合 — useStepCapabilities で filled/guards の同値ガードを追加し、同じ結果なら setState をスキップして再レンダリングを抑制。`pnpm --filter @hierarchidb/plugin-ui-host typecheck` 再実行し exit 0。
 - 2025-11-01 10:06 start: fix/folder-plugin/uuid-shim-policy — `scripts/check-shims.mjs` で uuid シムが検出される経緯と folder-plugin 側の対応方針を調査開始。
@@ -9661,8 +9661,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-05 12:16 start: fix/auth/bff-google-404（TASK 1592） — 本番BFF利用の `pnpm dev` で `/auth/authorize/google` が 404 になる問題の調査を開始。DoD: Kanban/ログ更新、404 原因特定と解消、callback 到達を手動確認、検証ログとロールバック手順を記載。
 - 2025-12-05 12:22 progress: fix/auth/bff-google-404 — BFF デフォルト URL を `/auth` ベースに戻し（scripts/env/{base,development,production}.sh, packages/ui/auth BFFAuthService, app/vite.config.ts proxy デフォルト）、SimpleBFFAuthContext で `/api/auth` 指定時は `/auth` に正規化するよう対応。authorize/logout/refresh は buildAuthUrl で `/auth/*` を強制し、過剰なプレフィックスで 404 にならないようにした。検証: `pnpm --filter @hierarchidb/ui-auth typecheck` exit 0。
 - 2025-12-05 13:00 progress: fix/auth/bff-google-404 — BFFAuthService の dev 環境強制プロキシ分岐を撤去し、絶対 URL（デフォルトの Cloudflare BFF を含む）をそのまま利用するよう変更。これにより dev でも `/auth/authorize` が BFF へ直行し、ローカル 404 を回避。検証: `pnpm --filter @hierarchidb/ui-auth typecheck` exit 0。
-- 2025-12-05 16:10 progress: fix/spreadsheet/filter-column-options — FilteringStep で metadata.columns が空の場合、Step2 プレビューの columns から TabularColumnInfo を再構築して TabularFilterStep へ渡すフォールバックを追加。検証: `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0。
-- 2025-12-05 17:05 progress: chore/tabular-import-switches — TabularFileImportStep の「Has Header Row」「Skip Empty Lines」を Switch コンポーネントに置き換え、より直感的なトグルUIに変更。検証: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0。
+- 2025-12-05 16:10 progress: fix/spreadsheet/filter-column-options — TabularDataFilterStep で metadata.columns が空の場合、Step2 プレビューの columns から TabularColumnInfo を再構築して TabularFilterStep へ渡すフォールバックを追加。検証: `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0。
+- 2025-12-05 17:05 progress: chore/tabular-import-switches — TabularDataImport の「Has Header Row」「Skip Empty Lines」を Switch コンポーネントに置き換え、より直感的なトグルUIに変更。検証: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0。
 - 2025-12-05 17:50 start: fix/spreadsheet/edit-step2-download — Edit Spreadsheet Dialog Step2 の Download 直後にリロード様の遷移が発生し、復帰後に data:{} / draft:null となる問題を調査開始。DoD: 再現条件記録、原因/発生範囲特定、修正方針＋リスク/ロールバック提示、必要なら暫定回避策を示す。ロールバック: 本調査で行う差分を revert し、運用ログ追記を削除する（調査のみ想定）。
 - 2025-12-05 18:15 progress: fix/spreadsheet/edit-step2-download — edit ダイアログの beforeunload/pagehide で自動 discard していたのがドラフト喪失の直接原因と判断し、`useTreeNodeUpdater` の auto discard をデフォルト無効化（オプション `autoDiscardOnUnload` を追加し既定 false）。リロードで draft/data が消えないようにする。ロールバック: `packages/plugin-ui-sdk/src/hooks/useTreeNodeUpdater.ts` の今回差分を revert。
 - 2025-12-05 18:35 progress: fix/basemap/dialog-step-blink — TreeConsole が location.search の変化（Dialog step 更新など）だけで再ロードされ loading スピナーを出していたため、検索クエリ `q` のみに依存するよう useTreeConsoleIntegration の初期ロードを絞り込み。非検索系の query 変更では TreeConsole が再ロードされずブリンクしないようにした。ロールバック: `app/src/hooks/useTreeConsoleIntegration.ts` の今回差分を revert。
@@ -9702,7 +9702,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-03 17:52 start: chore/templates/population-source-url — Import template「Total Population by Country」の CSV ダウンロード URL を datasets/population の raw CSV へ更新する作業を開始（sandbox 制約で main 作業）。
 - 2025-12-03 17:53 done: chore/templates/population-source-url — `app/public/templates/population-2023/tree-nodes.json` の dataSource.source/filename を `https://raw.githubusercontent.com/datasets/population/refs/heads/main/data/population.csv` / `population.csv` へ更新。検証: manifest/tags の変更なし、手動確認のみ。ロールバック: 同ファイルの差分を revert し、既定の example.com URL に戻す。
 - 2025-12-03 18:10 start: fix/spreadsheet/download-tabular-check — SpreadsheetDialog で Download Tabular 成功時にボタン横へ CheckCircle を表示する対応を開始。DoD: Kanban/ログ更新、成功判定の誤表示なし、UI 回帰なしを手動確認、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` ログ記録、ロールバック手順記載。ブランチ作成不可なら main 作業。
-- 2025-12-03 18:32 progress: fix/spreadsheet/download-tabular-check — Download Tabular 成功時の CheckCircle 表示を TabularFileImportStep に追加し、draftData の dataSource.type/source から Import Method 初期値を復元するように修正。既存 URL 変更時は成功フラグをリセット。検証: `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0。
+- 2025-12-03 18:32 progress: fix/spreadsheet/download-tabular-check — Download Tabular 成功時の CheckCircle 表示を TabularDataImport に追加し、draftData の dataSource.type/source から Import Method 初期値を復元するように修正。既存 URL 変更時は成功フラグをリセット。検証: `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0。
 - 2025-12-03 18:50 progress: fix/spreadsheet/download-tabular-check — Worker 側 Comlink メッセージに dev 専用の debug ログを追加（apply 失敗のパス/ターゲット型を追跡）。検証: `pnpm --filter @hierarchidb/app typecheck` exit 0（build 時に tsdown define warning 既存）。
 - 2025-12-03 19:05 progress: fix/spreadsheet/download-tabular-check — Comlink デバッグリスナーを削除（エラー再現しなくなったため常時ログを停止）。検証: `pnpm --filter @hierarchidb/app typecheck` exit 0（tsdown define warning 既存）。
 - 2025-12-02 06:10 start: chore/codemod/workingcopy-rename — 現行ソースの WorkingCopy 用語を TreeNodeUpdater/draftMetadata/draftData へ置換するコーデモッド準備を開始。DoD: Kanban/ログ更新、コーデモッド作成・適用、plugin-service-sdk/src/draft/** 等の命名/コメント更新、typecheck 実行と記録、ロールバック手順明記。deprecated/dist は除外。branch 作成不可なら main 作業。
@@ -9754,10 +9754,14 @@ ToDo（Phase 2/3: any の完全撤去）
 
 - 2025-12-09 09:30 progress: fix/styler/filter-rerender — TabularFilterStep で filtersEqual を追加し、フィルタ配列が同一内容のときは setFilters/setPreviewDirty をスキップするように変更。不要な再レンダーを抑制。検証: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularFilterStep.tsx` の filtersEqual/ガードを削除する。
 
-- 2025-12-09 09:45 progress: fix/styler/filter-rerender — FilterRulesTable を TextField(select/input) に戻し、id/name を明示して操作不能状態を解消する試み。typecheck: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/FilterRulesTable.tsx` の TextField 化を取り消す。
+- 2025-12-09 09:45 progress: fix/styler/filter-rerender — TabularDataFilterRulesTable を TextField(select/input) に戻し、id/name を明示して操作不能状態を解消する試み。typecheck: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularDataFilterRulesTable.tsx` の TextField 化を取り消す。
 
-- 2025-12-09 09:55 progress: fix/styler/filter-rerender — FilterRulesTable のドラッグ＆ドロップを一旦無効化し、行の pointer blocking を排除。操作不能の原因切り分け目的。typecheck: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/FilterRulesTable.tsx` のドラッグ無効化差分を戻す。
+- 2025-12-09 09:55 progress: fix/styler/filter-rerender — TabularDataFilterRulesTable のドラッグ＆ドロップを一旦無効化し、行の pointer blocking を排除。操作不能の原因切り分け目的。typecheck: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularDataFilterRulesTable.tsx` のドラッグ無効化差分を戻す。
 
-- 2025-12-09 10:05 progress: fix/styler/filter-rerender — FilterRulesTable でドラッグ＆ドロップ（行入れ替え）を再有効化。typecheck: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/FilterRulesTable.tsx` の reorder/drag ハンドラ差分を戻す。
+- 2025-12-09 10:05 progress: fix/styler/filter-rerender — TabularDataFilterRulesTable でドラッグ＆ドロップ（行入れ替え）を再有効化。typecheck: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularDataFilterRulesTable.tsx` の reorder/drag ハンドラ差分を戻す。
 
-- 2025-12-09 10:45 progress: fix/styler/filter-rerender — Column/Operator TextField に id を設定し、inputProps の id を削除して label htmlFor 不一致/重複 id 警告を抑止。typecheck: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/FilterRulesTable.tsx` の id/inputProps 変更を戻す。
+- 2025-12-09 10:45 progress: fix/styler/filter-rerender — Column/Operator TextField に id を設定し、inputProps の id を削除して label htmlFor 不一致/重複 id 警告を抑止。typecheck: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularDataFilterRulesTable.tsx` の id/inputProps 変更を戻す。
+
+- 2025-12-09 11:20 progress: chore/entities/remove-nodeid — Linker/Timeline/Route/Resolver entitiesから冗長な nodeId プロパティを削除し、Resolver/Route のテスト・サービスを id 基準に更新。typecheck: `pnpm --filter @hierarchidb/linker-plugin typecheck` / `@hierarchidb/timeline-plugin typecheck` / `@hierarchidb/resolver-plugin typecheck` / `@hierarchidb/route-plugin typecheck` いずれも exit 0。ロールバック: 各 Entity に nodeId を戻し、ResolverEntityService / RouteEntity テストの修正を元に戻して typecheck を再実行。
+
+- 2025-12-09 12:25 progress: chore/basic-info-step — Linker/Timeline/Route/Resolver/Location/Shape の steps-provider に共通 BasicInfo ステップを追加し、draftMetadata に name/description/tags を集約。各プラグイン typecheck 実行: linker/timeline/resolver/route/location/shape すべて exit 0。ロールバック: 各 steps-provider の basic-info 追加箇所を削除し、typecheck を再実行。

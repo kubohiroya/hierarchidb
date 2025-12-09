@@ -2,7 +2,7 @@
 import { SimpleTableMetadataManager as SharedManager } from '@hierarchidb/tabular-store';
 import { getDBName } from '@hierarchidb/util';
 
-export class SimpleTableMetadataManager extends SharedManager {
+export class StylerMetadataManager extends SharedManager {
   constructor() {
     super(getDBName('styler-metadata-db'));
   }

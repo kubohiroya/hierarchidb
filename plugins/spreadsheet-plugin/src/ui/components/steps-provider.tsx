@@ -1,7 +1,7 @@
 import { PluginStepRegistry, type PluginStepConfig, type StepComponentProps } from '@hierarchidb/plugin-base';
 import type { SpreadsheetEntity } from '../../common/types/SpreadsheetEntity.js';
-import { DataSourceStep } from './steps/DataSourceStep.js';
-import { FilteringStep } from './steps/FilteringStep.js';
+import { TabularDataSourceStep } from './steps/TabularDataSourceStep.tsx';
+import { TabularDataFilterStep } from './steps/TabularDataFilterStep.tsx';
 import { SPREADSHEET_NODE_TYPE } from '../../common/constants.js';
 import { i18n } from '@hierarchidb/ui-i18n';
 
@@ -18,7 +18,7 @@ registry.registerConfigProvider({
       {
         id: 'data-source',
         label: t('steps.dataSource.label', 'Data Source'),
-        componentFactory: (props: StepComponentProps<SpreadsheetEntity>) => <DataSourceStep {...props} />,
+        componentFactory: (props: StepComponentProps<SpreadsheetEntity>) => <TabularDataSourceStep {...props} />,
         validate: (data?: SpreadsheetEntity) => isComplete(data),
         capabilities: {
           canProceedToNext: (value?: SpreadsheetEntity) => isComplete(value),
@@ -27,7 +27,7 @@ registry.registerConfigProvider({
       {
         id: 'filtering',
         label: t('steps.filtering.label', 'Filtering'),
-        componentFactory: (props: StepComponentProps<SpreadsheetEntity>) => <FilteringStep {...props} />,
+        componentFactory: (props: StepComponentProps<SpreadsheetEntity>) => <TabularDataFilterStep {...props} />,
         optional: true,
         capabilities: {
           canProceedToNext: () => true,

@@ -524,7 +524,7 @@ function ShapeCreateDialog({ parentNodeId, onClose }: Props) {
     <StepperDialog
       steps={[
         <BasicInfoStep onComplete={handleStepComplete} />,
-        <DataSourceStep onComplete={handleStepComplete} />,
+        <TabularDataSourceStep onComplete={handleStepComplete} />,
         <LicenseStep onComplete={handleStepComplete} />,
         <CountrySelectionStep onComplete={handleStepComplete} />,
         <ProcessingConfigStep onComplete={handleStepComplete} />,

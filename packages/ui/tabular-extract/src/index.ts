@@ -30,14 +30,14 @@ export type { UseTabularFilterOptions, UseTabularFilterResult } from './hooks/us
 
 // Components
 export {
-  TabularFileImportStep,
-  TabularFilterStep,
-  TabularColumnSelectionStep,
-  FilterRulesTable,
+  TabularDataImport,
+  TabularDataFilter,
+  TabularColumnSelect,
+  TabularDataFilterRulesTable,
 } from './components/index.js';
 export type {
-  TabularFileImportStepProps,
-  TabularFilterStepProps,
-  TabularColumnSelectionStepProps,
+  TabularDataImportProps,
+  TabularDataFilterProps,
+  TabularColumnSelectProps,
   FilterOperatorOption,
 } from './components/index.js';
