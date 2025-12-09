@@ -145,6 +145,24 @@
   - progress: 2025-12-08 22:12 JST package.json/devDependencies と pnpm.overrides の typescript を 5.4.5 へ変更。`pnpm install --no-frozen-lockfile` (with escalation) で lock/node_modules を更新。`pnpm --filter @hierarchidb/plugin-ui-sdk typecheck` → Map maximum size exceeded は解消したが TS1479/TS2589/TS2859 が発生。
   - progress: 2025-12-08 22:20 JST typescript を 5.8.2 へ更新し再インストール。plugin-ui-sdk で skipLibCheck は維持しつつ NodeNext→Bundler へ変更と react-i18next を簡易 shim に差し替え（`src/types/react-i18next-shim.d.ts` + paths）。`pnpm --filter @hierarchidb/plugin-ui-sdk typecheck` exit 0（TS1479/TS2589/TS2859 解消、skipLibCheck は false のまま）。
 
+1607) プラグインステップのロジックをカスタムフック化（Basemap/Resolver/Timeline/Linker）（P1）
+- ブランチ: `refactor/plugin-steps/use-hooks`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: basemap/resolver/timeline/linker プラグイン各ステップコンポーネント、既存の i18n/type utilities
+- 受け入れ基準（DoD）:
+  - [ ] Basemap/Resolver/Timeline/Linker のステップコンポーネントから表示以外のロジック（状態管理・ハンドラ・計算）をカスタムフックに切り出し、UI コンポーネントはフックから返る値/ハンドラを使う構造にする（spreadsheet/styler は対象外）
+  - [ ] 挙動が変わらないこと（型・バリデーション・イベント挙動が同等）を前提に最小差分でリファクタ
+  - [ ] 各プラグインで typecheck を実行し、結果を記録（既知エラーは理由を添える）
+  - [ ] TASKS Kanban/運用ログに start→progress→done とロールバック手順を記載する
+- チェックリスト:
+  - [ ] Basemap ステップ（MapStyleStep/ViewportStep 等）で useXxx フックを新設し、ロジックを移動
+  - [ ] Resolver ステップ（SchemaSelection/PropertyMapping/Validation/Build 等）でフック化
+  - [ ] Timeline ステップでフック化
+  - [ ] Linker ステップでフック化
+  - [ ] 各プラグインの typecheck を実行し、結果を運用ログに記録
+- ロールバック手順：該当プラグインのステップ/フック差分を revert し、実行した typecheck を再実行する
+- 運用ログ：
+  - start: 2025-12-08 22:30 JST Basemap/Resolver/Timeline/Linker のステップロジックをカスタムフックへ切り出すリファクタを開始（main 上で作業）。段階的に各プラグインを処理。
+
 1604) Plugin steps-provider hooks lint修正（P0）
 - ブランチ: `fix/plugin/steps-provider-hooks`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: linker/route/shape/timeline plugins の steps-provider.tsx、plugin-base StepRegistry、i18n ユーティリティ

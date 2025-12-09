@@ -10,10 +10,9 @@ import {
   Typography,
 } from '@mui/material';
 import type React from 'react';
-import { useMemo, useId } from 'react';
-import { BUILT_IN_STYLES } from '../../../common/constants/builtInStyles.js';
+import { useId } from 'react';
+import { useMapStyleStep } from './hooks/useMapStyleStep.js';
 import type { MapStyle } from '../../../common/types/BaseMapEntity.js';
-import { useTranslation } from '@hierarchidb/ui-i18n';
 
 export interface MapStyleStepProps {
   value: MapStyle | undefined;
@@ -21,20 +20,11 @@ export interface MapStyleStepProps {
 }
 
 export const MapStyleStep: React.FC<MapStyleStepProps> = ({ value, onChange }) => {
-  const { t } = useTranslation('basemap-plugin');
+  const { t, presets, style, url, selectPreset, activateCustom, updateCustomUrl } = useMapStyleStep({
+    value,
+    onChange,
+  });
   const controlId = useId();
-  const style = value?.style || '';
-  const url = value?.customStyleUrl || '';
-
-  const presets = useMemo(
-    () =>
-      (['streets', 'satellite', 'terrain', 'dark', 'light'] as const).map((key) => ({
-        key,
-        label: BUILT_IN_STYLES[key].name,
-        description: BUILT_IN_STYLES[key].description,
-      })),
-    []
-  );
 
   return (
     <Box sx={{ p: 2 }}>
@@ -50,15 +40,7 @@ export const MapStyleStep: React.FC<MapStyleStepProps> = ({ value, onChange }) =
           exclusive
           fullWidth
           value={style && style !== 'custom' ? style : null}
-          onChange={(_e, next) => {
-            if (!next) return;
-            onChange({
-              ...(value || { style: next }),
-              style: next,
-              customStyleUrl: undefined,
-              customStyleConfig: undefined,
-            });
-          }}
+          onChange={selectPreset}
           sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}
         >
           {presets.map((preset) => (
@@ -97,13 +79,8 @@ export const MapStyleStep: React.FC<MapStyleStepProps> = ({ value, onChange }) =
           }}
         >
           <CardActionArea
-            onClick={() =>
-              onChange({
-                ...(value || { style: 'custom' }),
-                style: 'custom',
-              })
-            }
-              disableRipple
+            onClick={activateCustom}
+            disableRipple
             >
               <CardContent>
                 <Typography variant="subtitle2" gutterBottom>
@@ -125,21 +102,15 @@ export const MapStyleStep: React.FC<MapStyleStepProps> = ({ value, onChange }) =
                       t('mapStyle.custom.urlPlaceholder', 'https://example.com/style.json')
                     )}
                     value={url}
-                  onChange={(e) =>
-                    onChange({
-                      ...(value || { style: 'custom' }),
-                      style: 'custom',
-                      customStyleUrl: e.target.value,
-                    })
-                  }
-                  fullWidth
-                  inputProps={{ id: `${controlId}-custom-style-url`, name: 'custom-style-url' }}
-                />
-              )}
-            </CardContent>
-          </CardActionArea>
-        </Card>
-      </Stack>
-    </Box>
-  );
+                    onChange={updateCustomUrl}
+                    fullWidth
+                    inputProps={{ id: `${controlId}-custom-style-url`, name: 'custom-style-url' }}
+                  />
+                )}
+              </CardContent>
+            </CardActionArea>
+          </Card>
+        </Stack>
+      </Box>
+    );
 };

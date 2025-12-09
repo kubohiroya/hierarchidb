@@ -119,7 +119,10 @@ export type DraftPeerEntity<
  * @example FeatureSubEntityGeoJSON
  */
 export interface GroupEntity<ID = NodeId> extends BaseEntity<ID> {
-  nodeId: NodeId;
+  /**
+   * Associated tree node. Kept optional for legacy structs; prefer passing treeNodeId separately.
+   */
+  nodeId?: NodeId;
   type: string;
 }
 
