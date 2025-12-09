@@ -10,7 +10,6 @@ export type NodeType = string;
 
 export interface PeerEntity {
   id: NodeId;
-  nodeId: NodeId;
   dialogMode?: 'normal' | 'full';
   resumeStep?: number;
   mapParams?: { zoom: number; lng: number; lat: number };
@@ -71,7 +70,6 @@ export interface Feature {
   type: 'Feature';
   id: number;
   originalId?: string | number;
-  nodeId: NodeId;
   properties: Record<string, any>;
   geometry: Geometry;
   bbox?: BBox;
@@ -86,7 +84,6 @@ export interface Feature {
 
 export interface VectorTileEntity {
   tileId: string;
-  nodeId: NodeId;
   z: number;
   x: number;
   y: number;
