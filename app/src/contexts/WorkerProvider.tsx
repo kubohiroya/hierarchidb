@@ -37,7 +37,6 @@ function normalizeError(error: unknown): Error {
   return new Error(String(error));
 }
 
-import { ensureDialogStateAPI } from '../loader.js';
 import { bootLog } from '../utils/bootLog.ts';
 import { useWorkerRuntimeProxy } from '../hooks/useWorkerRuntimeProxy.js';
 import {
@@ -491,7 +490,6 @@ export const WorkerProvider = ({
 
     try {
       const client = await proxy.ensureInitialized();
-      await ensureDialogStateAPI(client);
       setStatus((prev) => ({
         ...prev,
         client,

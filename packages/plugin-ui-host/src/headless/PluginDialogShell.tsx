@@ -8,9 +8,26 @@ export type PluginDialogShellProps = PluginDialogControllerOptions;
 
 export const PluginDialogShell: React.FC<PluginDialogShellProps> = (props) => {
   const { headlessProps, unsavedChangeDialog } = usePluginDialogController(props);
+
+  const backdropSx = unsavedChangeDialog?.open
+    ? { pointerEvents: 'none' as const }
+    : undefined;
+
+  const unsavedDialogSlotProps = {
+    backdrop: {
+      sx: {
+        zIndex: (theme: any) => (theme?.zIndex?.modal ?? 1300) + 8000,
+      },
+    },
+    paper: {
+      sx: {
+        zIndex: (theme: any) => (theme?.zIndex?.modal ?? 1300) + 8001,
+      },
+    },
+  } as const;
   return (
     <>
-      <MultiStepDialogFrame headlessProps={headlessProps} />
+      <MultiStepDialogFrame headlessProps={headlessProps} backdropSx={backdropSx} />
       {unsavedChangeDialog ? (
         <UnsavedChangesDialog
           open={unsavedChangeDialog.open}
@@ -18,6 +35,7 @@ export const PluginDialogShell: React.FC<PluginDialogShellProps> = (props) => {
           message={unsavedChangeDialog.message}
           onDiscard={unsavedChangeDialog.onDiscard}
           onCancel={unsavedChangeDialog.onCancel}
+          slotProps={unsavedDialogSlotProps}
         />
       ) : null}
     </>

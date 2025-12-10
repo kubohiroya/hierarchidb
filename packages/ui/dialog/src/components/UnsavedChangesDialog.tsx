@@ -14,6 +14,9 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import type { DialogProps } from '@mui/material';
+import { useTranslation } from 'react-i18next';
+import { useMemo } from 'react';
 import { Delete as DeleteIcon, Save as SaveIcon, Warning as WarningIcon } from '@mui/icons-material';
 
 export interface UnsavedChangesDialogProps {
@@ -29,20 +32,70 @@ export interface UnsavedChangesDialogProps {
   onDiscard: () => void;
   onSaveDraft?: () => void;
   onCancel: () => void;
+  /**
+   * Optional slotProps forwarded to MUI Dialog for z-index/transition overrides.
+   */
+  slotProps?: DialogProps['slotProps'];
+  /**
+   * Override paper props (e.g., z-index). slotProps takes precedence if both set.
+   */
+  PaperProps?: DialogProps['PaperProps'];
+  /**
+   * Override backdrop props (e.g., z-index). slotProps takes precedence if both set.
+   */
+  BackdropProps?: DialogProps['BackdropProps'];
+  /**
+   * Optional portal container. Defaults to document.body for consistent stacking context.
+   */
+  container?: DialogProps['container'];
 }
 
 export const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
-                                                                            open,
-                                                                            title,
-                                                                            message,
-                                                                            children,
-                                                                            showSaveDraft = false,
-                                                                            onDiscard,
-                                                                            onSaveDraft,
-                                                                            onCancel,
-                                                                          }) => {
+  open,
+  title,
+  message,
+  children,
+  showSaveDraft = false,
+  onDiscard,
+  onSaveDraft,
+  onCancel,
+  slotProps,
+  PaperProps,
+  BackdropProps,
+  container,
+}) => {
+  const { t } = useTranslation('common');
+
+  const defaultContainer = useMemo<DialogProps['container']>(() => {
+    if (typeof document === 'undefined') return undefined;
+    return document.body;
+  }, []);
+
+  const dialogSlotProps: DialogProps['slotProps'] = slotProps ?? {
+    backdrop: {
+      sx: {
+        zIndex: (theme) => (theme?.zIndex?.modal ?? 1300) + 5000,
+      },
+    },
+    paper: {
+      sx: {
+        zIndex: (theme) => (theme?.zIndex?.modal ?? 1300) + 5001,
+      },
+    },
+  };
+
   return (
-    <Dialog open={open} onClose={onCancel} maxWidth="sm" fullWidth>
+    <Dialog
+      open={open}
+      onClose={onCancel}
+      maxWidth="sm"
+      fullWidth
+      slotProps={dialogSlotProps}
+      PaperProps={PaperProps}
+      BackdropProps={BackdropProps}
+      container={container ?? defaultContainer}
+      disablePortal={false}
+    >
       <DialogTitle>
         <Stack direction="row" spacing={2} alignItems="center">
           <WarningIcon color="warning" />
@@ -52,35 +105,17 @@ export const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
 
       <DialogContent>
         <Alert severity="warning" sx={{ mb: 2 }}>
-          <AlertTitle>Unsaved Changes</AlertTitle>
+          <AlertTitle>{title || t('dialogs.unsaved.heading', 'Unsaved Changes')}</AlertTitle>
           <Typography variant="body2">{message}</Typography>
         </Alert>
 
         {/* Display specific unsaved changes if provided */}
         {children && <Stack sx={{ mb: 2, mt: 2 }}>{children}</Stack>}
-
-        <Typography variant="body2" color="text.secondary">
-          Choose one of the following options:
-        </Typography>
-
-        <Stack spacing={1} sx={{ mt: 2 }}>
-          <Typography variant="body2">
-            • <strong>Cancel</strong>: Continue editing and keep your changes
-          </Typography>
-          {showSaveDraft && onSaveDraft && (
-            <Typography variant="body2">
-              • <strong>Save as Draft</strong>: Save your progress and close
-            </Typography>
-          )}
-          <Typography variant="body2">
-            • <strong>Discard</strong>: Close without saving (changes will be lost)
-          </Typography>
-        </Stack>
       </DialogContent>
 
       <DialogActions sx={{ p: 2, gap: 1 }}>
         <Button onClick={onCancel} variant="outlined" size="large">
-          Cancel
+          {t('dialogs.unsaved.buttons.cancel', 'Cancel')}
         </Button>
 
         {showSaveDraft && onSaveDraft && (
@@ -91,7 +126,7 @@ export const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
             startIcon={<SaveIcon />}
             color="primary"
           >
-            Save as Draft
+            {t('dialogs.unsaved.buttons.saveDraft', 'Save as Draft')}
           </Button>
         )}
 
@@ -102,7 +137,7 @@ export const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
           startIcon={<DeleteIcon />}
           color="error"
         >
-          Discard
+          {t('dialogs.unsaved.buttons.discard', 'Discard')}
         </Button>
       </DialogActions>
     </Dialog>

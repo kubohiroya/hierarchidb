@@ -1,6 +1,5 @@
 import { renderHook } from '@testing-library/react';
-import type React from 'react';
-import type { TreeNodeMetadata } from '@hierarchidb/common-types';
+import type { NodeId, TreeNodeMetadata } from '@hierarchidb/common-types';
 import type { composeStepConfigs } from '@hierarchidb/plugin-base';
 import { describe, expect, it } from 'vitest';
 import { useDialogSteps } from '../usePluginDialogController/steps.js';
@@ -29,8 +28,8 @@ describe('useDialogSteps BasicInfo focus', () => {
           isBasicInfoValid: true,
           tagSuggestions: [],
           mode: 'create',
-          nodeId: 'node-1',
-          pageNodeId: 'parent-1',
+          nodeId: 'node-1' as NodeId,
+          pageNodeId: 'parent-1' as NodeId,
           draftData: {},
           setDraftData: noopSetDraftData,
           handleBasicInfoBridge: noopSetBasicInfo,
@@ -74,8 +73,8 @@ describe('useDialogSteps BasicInfo focus', () => {
           isBasicInfoValid: true,
           tagSuggestions: [],
           mode: 'create',
-          nodeId: 'node-1',
-          pageNodeId: 'parent-1',
+          nodeId: 'node-1' as NodeId,
+          pageNodeId: 'parent-1' as NodeId,
           draftData: data,
           setDraftData: () => {},
           handleBasicInfoBridge: () => {},

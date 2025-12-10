@@ -300,7 +300,7 @@ export function MultiStepDialogFrame<TData>(props: MultiStepDialogFrameComponent
     (theme: Theme) => ({
       position: 'fixed',
       inset: 0,
-      zIndex: zIndex ?? theme.zIndex.modal + 10,
+      zIndex: zIndex ?? theme.zIndex.modal,
       backgroundColor: 'rgba(9, 12, 28, 0.45)',
       backdropFilter: 'blur(2px)',
       pointerEvents: open ? 'auto' : 'none',

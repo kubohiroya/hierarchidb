@@ -231,7 +231,6 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
 
     // Obtain the instance
     const client: Remote<WorkerAPI> = WorkerAPIClient.getSingleton();
-    await ensureDialogStateAPI(client);
 
     return {
       ...appConfig,
@@ -247,11 +246,6 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
   }
 }
 
-// DialogStateAPI deprecated; keep noop stub for compatibility.
-export async function ensureDialogStateAPI(_client: Remote<WorkerAPI>): Promise<void> {
-  return;
-}
-
 export async function loadTree({ treeId }: LoadTreeArgs): Promise<LoadTreeReturn> {
   if (!treeId) {
     throw new Error('treeId is required');
@@ -261,7 +255,6 @@ export async function loadTree({ treeId }: LoadTreeArgs): Promise<LoadTreeReturn
 
   const tree = await retryComlinkCall(async () => {
     const client = await workerHandle.ensureLatest();
-    await ensureDialogStateAPI(client);
     // Use facade API instead of deprecated direct method
     const queryAPI = await client.getQueryAPI();
     return queryAPI.getTree(treeId as TreeId);

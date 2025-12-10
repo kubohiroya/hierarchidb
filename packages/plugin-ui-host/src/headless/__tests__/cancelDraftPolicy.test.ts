@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { TreeNodeUpdaterState } from '@hierarchidb/plugin-ui-sdk';
 import { evaluateCancelPolicy } from '../cancelDraftPolicy.js';
+import '@testing-library/jest-dom/vitest';
+import { NodeId } from '@hierarchidb/common-types';
 
 const makeDraft = (overrides: Partial<TreeNodeUpdaterState> = {}): TreeNodeUpdaterState => ({
-  treeNodeId: 'n1',
+  treeNodeId: 'n1' as NodeId,
   draftMetadata: { name: 'Draft', description: '', tags: [] },
   draftData: {},
   ...overrides,

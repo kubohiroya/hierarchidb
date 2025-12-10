@@ -843,8 +843,11 @@ export function usePluginDialogController(
       open: discardDialogOpen,
       onDiscard: handleConfirmDiscard,
       onCancel: handleDismissDiscardDialog,
-      title: t('dialogs.pluginDraft.discard.title'),
-      message: t('dialogs.pluginDraft.discard.description'),
+      title: t('dialogs.pluginDraft.discard.title', 'Discard changes?'),
+      message: t(
+        'dialogs.pluginDraft.discard.description',
+        'Your changes will be lost. Do you want to discard them?'
+      ),
     },
   };
 }
