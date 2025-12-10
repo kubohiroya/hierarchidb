@@ -5,6 +5,7 @@ import {
   TreeNode,
   NodeType,
   TreeNodeMetadata,
+  DialogUIState,
   TreeNodeUpdaterPayload,
   Timestamp,
 } from '@hierarchidb/common-types';
@@ -20,6 +21,7 @@ export interface TreeNodeUpdaterState<TPayload extends object = Record<string, u
   data?: Record<string, unknown>;
   draftMetadata: TreeNodeMetadata | null;
   draftData: TPayload | null;
+  dialogUIState?: DialogUIState | null;
   version?: number;
   updatedAt?: Timestamp;
   hasRemoteDraft?: boolean;
@@ -107,12 +109,14 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
     const draftMetadata = (node as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata ?? null;
     const draftData =
       node.draftData && isRecord(node.draftData) ? (node.draftData as TPayload) : null;
+    const dialogUIState = (node as { dialogUIState?: DialogUIState | null }).dialogUIState ?? null;
     return {
       treeNodeId: node.id as NodeId,
       draftMetadata,
       metadata: node.metadata,
       data: node.data as Record<string, unknown> | undefined,
       draftData,
+      dialogUIState,
       version: node.version,
       updatedAt: node.updatedAt,
       hasRemoteDraft,
@@ -232,6 +236,7 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
           targetId,
           (next.draftData === null ? null : (next.draftData ?? {})) as any
         );
+        await wcAPI.updateTreeNodeDialogUIState(targetId, next.dialogUIState ?? null);
       } catch (err) {
         console.warn('[useTreeNodeUpdater] persist update failed', err);
       }
@@ -264,6 +269,10 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
           draftData: nextDraftData ?? null,
           metadata: data.metadata ?? prev.metadata,
           data: prev.data,
+          dialogUIState:
+            data.dialogUIState !== undefined
+              ? data.dialogUIState
+              : prev.dialogUIState ?? null,
           version: data.version ?? prev.version,
           updatedAt: data.updatedAt ?? prev.updatedAt,
           hasRemoteDraft: data.hasRemoteDraft ?? prev.hasRemoteDraft,
@@ -305,6 +314,10 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
       await wcAPI.updateTreeNodeDraftData(
         targetId,
         (finalData.draftData === null ? null : (finalData.draftData ?? {})) as any
+      );
+      await wcAPI.updateTreeNodeDialogUIState(
+        targetId,
+        finalData.dialogUIState ?? null
       );
 
       const res = await wcAPI.commitDraft(targetId, {
@@ -350,6 +363,7 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
         try {
           await wcAPI.updateTreeNodeDraftMetadata(committedNodeId, null as any);
           await wcAPI.updateTreeNodeDraftData(committedNodeId, null as any);
+          await wcAPI.updateTreeNodeDialogUIState(committedNodeId, null);
         } catch (clearErr) {
           console.warn('[useTreeNodeUpdater] failed to clear server draft after commit', clearErr);
         }
@@ -395,6 +409,7 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
       targetId,
       (next.draftData === null ? null : (next.draftData ?? {})) as any
     );
+    await wcAPI.updateTreeNodeDialogUIState(targetId, next.dialogUIState ?? null);
     persistDisableUntilRef.current = 0;
     setDraft((prev) => (prev?.treeNodeId === targetId ? { ...prev, ...next } : prev));
   }, [draft, getClient, workingNodeId]);

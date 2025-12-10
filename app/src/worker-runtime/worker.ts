@@ -6,7 +6,6 @@
 import './worker-react-refresh-shim.js';
 import type { PluginDefinition } from '@hierarchidb/plugin-registry/types';
 import type {
-  DialogStateAPI,
   ImportExportAPI,
   TagAPI,
   TreeMutationAPI,
@@ -58,7 +57,6 @@ type RuntimeWorkerServices = {
   getPluginLifecycleAPI: () => PluginLifecycleAPI;
   getImportExportAPI: () => ImportExportAPI;
   getTagAPI: () => TagAPI;
-  getDialogStateAPI: () => DialogStateAPI;
   getCommandProcessor: () => object;
 };
 
@@ -226,7 +224,6 @@ reporter.reportStepProgress('Load Comlink', 0);
         getPluginLifecycleAPI: () => Comlink.proxy(services.getPluginLifecycleAPI()),
         getImportExportAPI: () => Comlink.proxy(services.getImportExportAPI()),
         getTagAPI: () => Comlink.proxy(services.getTagAPI()),
-        getDialogStateAPI: () => Comlink.proxy(services.getDialogStateAPI()),
         getCommandProcessor: () => Comlink.proxy(services.getCommandProcessor()),
       } as const;
 

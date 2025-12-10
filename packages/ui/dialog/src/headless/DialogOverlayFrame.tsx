@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Box } from '@mui/material';
 import { ThemeProvider, createTheme, useTheme } from '@mui/material/styles';
+import { type DialogPosition, type DialogSize } from '@hierarchidb/common-types';
 import { HeadlessMultiStepDialog } from './MultiStepDialog.js';
 import {
   FRAME_CONSTANTS,
@@ -11,9 +12,7 @@ import {
   initialPosition,
 } from './frameHelpers.js';
 import type {
-  HeadlessMultiStepDialogProps,
-  MultiStepDialogPosition,
-  MultiStepDialogSize,
+  HeadlessDialogProps,
 } from './types.js';
 import { getDialogSurfaceColor } from '../utils/dialogSurfaceColor.js';
 import { useDialogInteractionGuards } from '~/hooks/useDialogInteractionGuards.js';
@@ -35,8 +34,8 @@ interface ResizeHandleConfig {
 }
 
 export interface DialogOverlayFrameProps {
-  headlessProps: HeadlessMultiStepDialogProps<any>;
-  defaultSize?: MultiStepDialogSize;
+  headlessProps: HeadlessDialogProps<any>;
+  defaultSize?: DialogSize;
   enableDrag?: boolean;
   enableResize?: boolean;
   backdropZIndex?: number;
@@ -44,7 +43,7 @@ export interface DialogOverlayFrameProps {
   backdropColor?: string;
 }
 
-const DEFAULT_SIZE: MultiStepDialogSize = { width: 960, height: 640 };
+const DEFAULT_SIZE: DialogSize = { width: 960, height: 640 };
 
 export const DialogOverlayFrame: React.FC<DialogOverlayFrameProps> = ({
   headlessProps,
@@ -74,8 +73,8 @@ export const DialogOverlayFrame: React.FC<DialogOverlayFrameProps> = ({
     pointerId: number;
     originX: number;
     originY: number;
-    start: MultiStepDialogPosition;
-    size: MultiStepDialogSize;
+    start: DialogPosition;
+    size: DialogSize;
     displayMode: 'normal' | 'maximize' | 'full-screen';
   } | null>(null);
 
@@ -83,8 +82,8 @@ export const DialogOverlayFrame: React.FC<DialogOverlayFrameProps> = ({
     pointerId: number;
     originX: number;
     originY: number;
-    startSize: MultiStepDialogSize;
-    startPosition: MultiStepDialogPosition;
+    startSize: DialogSize;
+    startPosition: DialogPosition;
     displayMode: 'normal' | 'maximize' | 'full-screen';
     direction: ResizeDirection;
   } | null>(null);
@@ -96,7 +95,7 @@ export const DialogOverlayFrame: React.FC<DialogOverlayFrameProps> = ({
       return headlessProps.position;
     }
     if (!isBrowser) {
-      return { x: 0, y: 0 } satisfies MultiStepDialogPosition;
+      return { x: 0, y: 0 } satisfies DialogPosition;
     }
     const viewport = getViewportSize();
     const preset = initialPosition(defaultSize, viewport);
@@ -131,7 +130,7 @@ export const DialogOverlayFrame: React.FC<DialogOverlayFrameProps> = ({
       const state = dragStateRef.current;
       if (!state || moveEvent.pointerId !== pointerId) return;
       const viewport = getViewportSize();
-      const proposed: MultiStepDialogPosition = {
+      const proposed: DialogPosition = {
         x: state.start.x + (moveEvent.clientX - state.originX),
         y: state.start.y + (moveEvent.clientY - state.originY),
       };
@@ -214,12 +213,12 @@ export const DialogOverlayFrame: React.FC<DialogOverlayFrameProps> = ({
         nextY = state.startPosition.y + deltaY;
       }
 
-      const proposedSize: MultiStepDialogSize = {
+      const proposedSize: DialogSize = {
         width: Math.max(nextWidth, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
         height: Math.max(nextHeight, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
       };
 
-      const proposedPosition: MultiStepDialogPosition = {
+      const proposedPosition: DialogPosition = {
         x: nextX,
         y: nextY,
       };
@@ -277,7 +276,7 @@ export const DialogOverlayFrame: React.FC<DialogOverlayFrameProps> = ({
     enableResize ? makeResizePointerDown('bottom-right') : undefined
   ), [enableResize, makeResizePointerDown]);
 
-  const augmentedHeadlessProps = useMemo<HeadlessMultiStepDialogProps<any>>(() => ({
+  const augmentedHeadlessProps = useMemo<HeadlessDialogProps<any>>(() => ({
     ...headlessProps,
     size: headlessProps.size ?? defaultSize,
     position: headlessProps.position ?? fallbackPosition,

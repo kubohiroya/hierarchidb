@@ -7,27 +7,18 @@ import {
   useRef,
   useState,
 } from 'react';
-import type {
-  DialogViewState,
-  DialogViewStatePatchInput,
-  NodeId,
-  TreeId,
-  TreeNodeMetadata,
-} from '@hierarchidb/common-types';
+import type { DialogDisplayMode, DialogPosition, DialogSize, NodeId, TreeId, TreeNodeMetadata } from '@hierarchidb/common-types';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import {
-  type DialogDisplayMode,
   FRAME_CONSTANTS,
   getPresetSize,
   getViewportSize,
-  type HeadlessMultiStepDialogProps,
   initialPosition,
-  type MultiStepDialogPosition,
-  type MultiStepDialogSize,
   normalizeDialogState,
   positionsEqual,
   sizesEqual,
   type StepNavigationEvent,
+  type HeadlessDialogProps as HeadlessMultiStepDialogProps,
 } from '@hierarchidb/ui-dialog';
 import {
   createTreeNodeUpdaterActions,
@@ -73,9 +64,23 @@ export interface UseTreeNodeDialogOptions<TPayload extends object> {
   useSingleSource?: boolean;
 }
 
+interface DialogViewState {
+  size: DialogSize;
+  position: DialogPosition;
+  displayMode: DialogDisplayMode;
+  activeStepIndex: number;
+  isSaving: boolean;
+  multiStepState: unknown;
+}
+
+interface DialogViewStatePatchInput {
+  reset?: boolean;
+  patch: Partial<DialogViewState>;
+}
+
 interface UseDialogViewStateOptions {
-  initialSize?: MultiStepDialogSize;
-  initialPosition?: MultiStepDialogPosition;
+  initialSize?: DialogSize;
+  initialPosition?: DialogPosition;
   initialDisplayMode?: DialogDisplayMode;
   initialActiveStepIndex?: number;
 }
@@ -86,8 +91,8 @@ interface UseDialogViewStateResult {
   resetDialogViewState: () => void;
 }
 
-const DEFAULT_SIZE: MultiStepDialogSize = { width: 960, height: 640 };
-const DEFAULT_POSITION: MultiStepDialogPosition = { x: 64, y: 64 };
+const DEFAULT_SIZE: DialogSize = { width: 960, height: 640 };
+const DEFAULT_POSITION: DialogPosition = { x: 64, y: 64 };
 const DEFAULT_DISPLAY_MODE: DialogDisplayMode = 'normal';
 
 const useDialogViewState = (options: UseDialogViewStateOptions = {}): UseDialogViewStateResult => {
@@ -359,7 +364,7 @@ export function useTreeNodeDialog<TPayload extends object>(
   );
 
   const handleSizeChange = useCallback(
-    (next?: MultiStepDialogSize) => {
+    (next?: DialogSize) => {
       if (!next) return;
       const normalized = normalizeDialogState(next, dialogPositionRef.current, getViewportSize(), {
         enforceTopLeftMargin: displayMode === 'normal',
@@ -379,7 +384,7 @@ export function useTreeNodeDialog<TPayload extends object>(
   );
 
   const handlePositionChange = useCallback(
-    (next?: MultiStepDialogPosition) => {
+    (next?: DialogPosition) => {
       if (!next) return;
       const normalized = normalizeDialogState(dialogSizeRef.current, next, getViewportSize(), {
         enforceTopLeftMargin: displayMode === 'normal',
@@ -458,3 +463,6 @@ export function useTreeNodeDialog<TPayload extends object>(
     resetDialogViewState,
   };
 }
+
+// Exported for consumers that only need view state management (frame/layout persistence).
+export { useDialogViewState };

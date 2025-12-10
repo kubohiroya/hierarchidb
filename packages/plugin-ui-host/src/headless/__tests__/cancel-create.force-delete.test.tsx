@@ -47,15 +47,6 @@ vi.mock('@hierarchidb/plugin-base', () => {
   };
 });
 
-vi.mock('../usePluginDialogController/dialog-state-bridge.js', () => ({
-  useDialogStateBridge: () => ({
-    dialogStateApi: null,
-    workerDialogState: null,
-    dialogStateError: null,
-    setDialogStateError: vi.fn(),
-  }),
-}));
-
 vi.mock('../usePluginDialogController/steps.js', () => ({
   useDialogSteps: () => ({
     steps: [],
@@ -75,10 +66,6 @@ vi.mock('../usePluginDialogController/capabilities.js', () => ({
   }),
 }));
 
-vi.mock('../usePluginDialogController/publish-dialog-state.js', () => ({
-  useDialogStatePublisher: () => void 0,
-}));
-
 vi.mock('../usePluginDialogController/basic-info.js', () => ({
   useBasicInfoState: () => ({
     basicInfo: { name: 'New Folder', description: '', tags: [] },
@@ -92,17 +79,19 @@ vi.mock('../usePluginDialogController/basic-info.js', () => ({
 
 vi.mock('../usePluginDialogController/frame-state.js', () => ({
   useDialogFrameState: () => ({
-    dialogPosition: 'center',
+    dialogPosition: { x: 0, y: 0 },
     setDialogPosition: vi.fn(),
-    dialogSize: 'md',
+    dialogSize: { width: 960, height: 640 },
     setDialogSize: vi.fn(),
     displayMode: 'normal',
     transitionDisplayMode: vi.fn(),
+    activeStepIndex: 0,
+    setActiveStepIndex: vi.fn(),
+    setUrlStep: vi.fn(),
+    handleSizeChange: vi.fn(),
+    handlePositionChange: vi.fn(),
+    dialogRef: { current: null },
   }),
-}));
-
-vi.mock('../controller/dialog-layout.js', () => ({
-  clampIndex: (index: number) => index,
 }));
 
 vi.mock('../controller/step-guards.js', async () => {

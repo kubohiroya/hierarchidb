@@ -25,7 +25,6 @@ const projectRoots = [
   'packages/plugin-ui-host',
   'packages/plugin-ui-sdk',
   'packages/plugin-presentation',
-  'packages/plugin-service-sdk',
   'packages/ui/icon',
   'packages/util',
   'packages/testing/plugin-dialog-mocks',

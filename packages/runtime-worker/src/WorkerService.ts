@@ -11,9 +11,8 @@ import { TreeSubscriptionService } from './services/TreeSubscriptionService.js';
 import { NodeLifecycleManager } from './services/NodeLifecycleManager.js';
 import { ImportExportDBPortCoreDBAdapter } from './services/adapters/ImportExportDBPortCoreDBAdapter.js';
 import { TreeNodeUpdaterService } from './services/TreeNodeUpdaterService.js';
-import { DialogStateService } from './services/DialogStateService.js';
 import { PluginDefinition, PluginLifecycleAPI } from '@hierarchidb/plugin-service-api';
-import { DialogStateAPI, ImportExportAPI, TagAPI, TreeMutationAPI, TreeNodeUpdaterAPI, TreeQueryAPI, TreeSubscriptionAPI } from '@hierarchidb/common-api';
+import { ImportExportAPI, TagAPI, TreeMutationAPI, TreeNodeUpdaterAPI, TreeQueryAPI, TreeSubscriptionAPI } from '@hierarchidb/common-api';
 import type { NodeType } from '@hierarchidb/common-types';
 
 interface PerformanceMemoryStats {
@@ -106,8 +105,6 @@ export class WorkerService {
         commandProcessor,
       );
 
-      const dialogStateService: DialogStateAPI = new DialogStateService();
-
       return new WorkerService(
         coreDB,
         treeQueryService,
@@ -118,7 +115,6 @@ export class WorkerService {
         tagService,
         nodeLifecycleManager,
         commandProcessor,
-        dialogStateService,
       );
     });
   }
@@ -133,7 +129,6 @@ export class WorkerService {
     private tagService: TagAPI,
     private nodeLifecycleManager: NodeLifecycleManager,
     private commandProcessor: CommandProcessor,
-    private dialogStateService: DialogStateAPI,
   ) {
   }
 
@@ -179,10 +174,6 @@ export class WorkerService {
 
   getTagAPI() {
     return this.tagService;
-  }
-
-  getDialogStateAPI(): DialogStateAPI {
-    return this.dialogStateService;
   }
 
   // Minimal stub to satisfy interface; not yet wired.

@@ -42,13 +42,11 @@ import {
   positionsEqual,
   type HeadlessFooterRenderProps,
   type HeadlessHeaderRenderProps,
-  type HeadlessMultiStepDialogProps,
-  type DialogDisplayMode,
-  type MultiStepDialogPosition,
-  type MultiStepDialogSize,
+  type HeadlessDialogProps,
   type StepNavigationEvent,
   type StepComponentDescriptor,
 } from '@hierarchidb/ui-dialog';
+import type { DialogDisplayMode, DialogPosition as MultiStepDialogPosition, DialogSize as MultiStepDialogSize } from '@hierarchidb/common-types';
 import { notify } from '@hierarchidb/components';
 
 import {
@@ -58,7 +56,7 @@ import {
 } from '@hierarchidb/plugin-ui-sdk';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
-import { useDialogViewState } from '@hierarchidb/plugin-base';
+import { useDialogViewState } from '@hierarchidb/plugin-ui-sdk';
 
 const buildDefaultFrame = (): { size: MultiStepDialogSize; position: MultiStepDialogPosition } => {
   const viewport = getViewportSize();
@@ -537,7 +535,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     }
   }, [activeStepIndex, stepComponents.length, updateDialogViewState]);
 
-  const renderHeader: HeadlessMultiStepDialogProps<LocationDraft>['renderHeader'] = useCallback((propsHeader: HeadlessHeaderRenderProps<LocationDraft>) => (
+  const renderHeader: HeadlessDialogProps<LocationDraft>['renderHeader'] = useCallback((propsHeader: HeadlessHeaderRenderProps<LocationDraft>) => (
     <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ px: 2, py: 1.5, borderBottom: '1px solid #dde1eb' }}>
       <Box display="flex" alignItems="center" gap={1.5}>
         <LocationOn color="primary" />
@@ -556,7 +554,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     </Box>
   ), [mode, translations.dialog.createTitle, translations.dialog.datasetDescription, translations.dialog.editTitle]);
 
-  const renderFooter: HeadlessMultiStepDialogProps<LocationDraft>['renderFooter'] = useCallback((propsFooter: HeadlessFooterRenderProps<LocationDraft>) => {
+  const renderFooter: HeadlessDialogProps<LocationDraft>['renderFooter'] = useCallback((propsFooter: HeadlessFooterRenderProps<LocationDraft>) => {
     const canCommit = propsFooter.committableStepIndices.includes(propsFooter.activeStepIndex);
     const startBatchLabel = 'Start Batch';
 
@@ -610,7 +608,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     translations.dialog.save,
   ]);
 
-  const dialogProps: HeadlessMultiStepDialogProps<LocationDraft> = {
+  const dialogProps: HeadlessDialogProps<LocationDraft> = {
     open,
     stepComponents,
     stepData: dialogData,

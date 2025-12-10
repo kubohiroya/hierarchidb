@@ -1,5 +1,4 @@
 import type { TreeNodeUpdaterAPI } from './TreeNodeUpdaterAPI.js';
-import type { DialogStateAPI } from './DialogStateAPI.js';
 import type { ImportExportAPI } from './ImportExportAPI.js';
 import type { PluginLifecycleAPI } from '@hierarchidb/plugin-service-api';
 import type { TagAPI } from './TagAPI.js';
@@ -43,7 +42,6 @@ export interface WorkerAPI {
   getTreeNodeUpdaterAPI(): Promise<TreeNodeUpdaterAPI>;
   getImportExportAPI(): Promise<ImportExportAPI>;
   getTagAPI(): Promise<TagAPI>;
-  getDialogStateAPI(): Promise<DialogStateAPI>;
   getPluginLifecycleAPI(): Promise<PluginLifecycleAPI>;
   getCommandProcessor(): Promise<CommandProcessorAPI>;
   startBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus>;

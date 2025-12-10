@@ -1,4 +1,4 @@
-import { useDialogUrlSync, getPeerDialogPosition, getPeerDialogSize, getPeerDisplayMode, setPeerDialogPosition, setPeerDialogSize, setPeerDisplayMode, type PeerDisplayMode } from '@hierarchidb/plugin-base';
+import { useDialogUrlSync } from '@hierarchidb/plugin-base';
 import {
   normalizeDialogState,
   getPresetSize,
@@ -8,11 +8,10 @@ import {
   sizesEqual,
   positionsEqual,
 } from '@hierarchidb/ui-dialog';
-import type { DialogDisplayMode, MultiStepDialogPosition, MultiStepDialogSize } from '@hierarchidb/ui-dialog';
-import type { NodeId } from '@hierarchidb/common-types';
+import { DEFAULT_POSITION, DEFAULT_SIZE,
+  type DialogDisplayMode, type DialogPosition, type DialogSize, type NodeId } from '@hierarchidb/common-types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type React from 'react';
-import { clampIndex, DEFAULT_POSITION, DEFAULT_SIZE } from '../controller/dialog-layout.js';
 
 interface Params {
   nodeType: string;
@@ -21,20 +20,24 @@ interface Params {
   initialStep: number;
 }
 
+export function clampIndex(index:number, length: number): number {
+  return Math.max(0, Math.min(index, length - 1));
+}
+
 export function useDialogFrameState({
-  nodeType,
-  nodeId,
+  nodeType: _nodeType,
+  nodeId: _nodeId,
   initialStep,
 }: Params): {
   activeStepIndex: number;
   setActiveStepIndex: (value: number) => void;
   setUrlStep: (next: number) => void;
   displayMode: DialogDisplayMode;
-  dialogSize: MultiStepDialogSize;
-  dialogPosition: MultiStepDialogPosition;
+  dialogSize: DialogSize;
+  dialogPosition: DialogPosition;
   transitionDisplayMode: (mode: DialogDisplayMode) => Promise<void>;
-  handleSizeChange: (next?: MultiStepDialogSize) => void;
-  handlePositionChange: (next?: MultiStepDialogPosition) => void;
+  handleSizeChange: (next?: DialogSize) => void;
+  handlePositionChange: (next?: DialogPosition) => void;
   dialogRef: React.RefObject<HTMLDivElement | null>;
 } {
   const {
@@ -57,14 +60,12 @@ export function useDialogFrameState({
   }, [urlStep]);
 
   const [displayMode, setDisplayModeState] = useState<DialogDisplayMode>('normal');
-  const [dialogSize, setDialogSize] = useState<MultiStepDialogSize>(DEFAULT_SIZE);
-  const [dialogPosition, setDialogPosition] = useState<MultiStepDialogPosition>(DEFAULT_POSITION);
+  const [dialogSize, setDialogSize] = useState<DialogSize>(DEFAULT_SIZE);
+  const [dialogPosition, setDialogPosition] = useState<DialogPosition>(DEFAULT_POSITION);
 
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const dialogSizeRef = useRef(dialogSize);
   const dialogPositionRef = useRef(dialogPosition);
-  const positionPersistTimeoutRef = useRef<number | null>(null);
-
   useEffect(() => {
     dialogSizeRef.current = dialogSize;
   }, [dialogSize]);
@@ -74,89 +75,39 @@ export function useDialogFrameState({
   }, [dialogPosition]);
 
   useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const [dm, pos, sz] = await Promise.all([
-          getPeerDisplayMode(nodeType, String(nodeId)),
-          getPeerDialogPosition(nodeType, String(nodeId)),
-          getPeerDialogSize(nodeType, String(nodeId)),
-        ]);
-        if (!mounted) return;
-        if (dm) {
-          setDisplayModeState(dm as DialogDisplayMode);
-          setUrlMode(dm === 'full-screen' ? 'full' : 'normal');
-        }
-        if (pos) {
-          setDialogPosition(pos);
-          dialogPositionRef.current = pos;
-        }
-        if (sz) {
-          setDialogSize(sz);
-          dialogSizeRef.current = sz;
-        }
-      } catch (err) {
-        console.warn('[PluginDialogShell] restore frame state failed', err);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, [nodeType, nodeId, setUrlMode]);
+    // default to initialStep/url sync values; no external persistence
+    setUrlMode(displayMode === 'full-screen' ? 'full' : 'normal');
+  }, [displayMode, setUrlMode]);
 
   const persistDisplayMode = useCallback(
     (value: DialogDisplayMode) => {
       setDisplayModeState(value);
-      setPeerDisplayMode(nodeType, String(nodeId), value as PeerDisplayMode).catch(() => void 0);
       setUrlMode(value === 'full-screen' ? 'full' : 'normal');
     },
-    [nodeType, nodeId, setUrlMode]
+    [setUrlMode]
   );
 
-  useEffect(
-    () => () => {
-      if (positionPersistTimeoutRef.current !== null && typeof window !== 'undefined') {
-        window.clearTimeout(positionPersistTimeoutRef.current);
-        positionPersistTimeoutRef.current = null;
-      }
+  const persistPosition = useCallback(
+    (next: DialogPosition) => {
+      setDialogPosition(next);
+      dialogPositionRef.current = next;
     },
     []
   );
 
-  const persistPosition = useCallback(
-    (next: MultiStepDialogPosition) => {
-      setDialogPosition(next);
-      dialogPositionRef.current = next;
-
-      if (typeof window !== 'undefined') {
-        if (positionPersistTimeoutRef.current !== null) {
-          window.clearTimeout(positionPersistTimeoutRef.current);
-        }
-        positionPersistTimeoutRef.current = window.setTimeout(() => {
-          positionPersistTimeoutRef.current = null;
-          setPeerDialogPosition(nodeType, String(nodeId), next).catch(() => void 0);
-        }, 16); // ~1 frame debounce
-      } else {
-        setPeerDialogPosition(nodeType, String(nodeId), next).catch(() => void 0);
-      }
-    },
-    [nodeType, nodeId]
-  );
-
   const persistSize = useCallback(
-    (next: MultiStepDialogSize) => {
+    (next: DialogSize) => {
       setDialogSize(next);
       dialogSizeRef.current = next;
-      setPeerDialogSize(nodeType, String(nodeId), next).catch(() => void 0);
     },
-    [nodeType, nodeId]
+    []
   );
 
   const transitionDisplayMode = useCallback(
     async (mode: DialogDisplayMode) => {
       const viewport = getViewportSize();
 
-      const applyNormalizedState = (size: MultiStepDialogSize, position: MultiStepDialogPosition) => {
+      const applyNormalizedState = (size: DialogSize, position: DialogPosition) => {
         dialogSizeRef.current = size;
         dialogPositionRef.current = position;
         persistSize(size);
@@ -164,14 +115,14 @@ export function useDialogFrameState({
       };
 
       if (mode === 'full-screen') {
-        const fullSize: MultiStepDialogSize = {
+        const fullSize: DialogSize = {
           width: Math.max(viewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
           height: Math.max(viewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
         };
         applyNormalizedState(fullSize, { x: 0, y: 0 });
       } else if (mode === 'maximize') {
         const size = getPresetSize('maximize', viewport);
-        const position: MultiStepDialogPosition = {
+        const position: DialogPosition = {
           x: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
           y: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
         };
@@ -274,7 +225,7 @@ export function useDialogFrameState({
   }, [displayMode, persistPosition, persistSize]);
 
   const handleSizeChange = useCallback(
-    (next?: MultiStepDialogSize) => {
+    (next?: DialogSize) => {
       if (!next) return;
       const viewport = getViewportSize();
       const normalized = normalizeDialogState(next, dialogPositionRef.current, viewport, {
@@ -293,7 +244,7 @@ export function useDialogFrameState({
   );
 
   const handlePositionChange = useCallback(
-    (next?: MultiStepDialogPosition) => {
+    (next?: DialogPosition) => {
       if (!next) return;
       const viewport = getViewportSize();
       const normalized = normalizeDialogState(dialogSizeRef.current, next, viewport, {

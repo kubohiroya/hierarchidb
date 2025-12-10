@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react';
-import { HeadlessMultiStepDialog, type HeadlessMultiStepDialogProps } from '@hierarchidb/ui-dialog';
+import { HeadlessMultiStepDialog, type HeadlessDialogProps } from '@hierarchidb/ui-dialog';
 import { useTreeNodeDialog } from '@hierarchidb/plugin-ui-sdk';
 import type { NodeId, TreeNodeMetadata } from '@hierarchidb/common-types';
 import type { TimelineEntity, TimelineFrame } from '../../common/types/index.js';
@@ -80,7 +80,7 @@ export function TimelineDialog(props: TimelineDialogProps) {
 
   latestNodeIdRef.current = treeNodeUpdater?.treeNodeId ?? latestNodeIdRef.current;
 
-  const dialogProps = useMemo<HeadlessMultiStepDialogProps<TimelineDialogData>>(
+  const dialogProps = useMemo<HeadlessDialogProps<TimelineDialogData>>(
     () => ({
       ...headlessProps,
       renderHeader: (propsHeader) => (

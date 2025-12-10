@@ -6,14 +6,14 @@
       "ES2022",
       "WebWorker"
     ],
-    "emitDeclarationOnly": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "strictNullChecks": false,
     "noImplicitAny": false,
-    "allowImportingTsExtensions": true,
+    "noEmit": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+    "allowImportingTsExtensions": true,
     "composite": true,
     "incremental": true,
     "paths": {

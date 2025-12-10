@@ -49,7 +49,6 @@ export type {
   RouteType,
   SelectionMatrix,
 } from './datasource.js';
-export * from './dialog-state.js';
 export * from './entity-backup-types.js';
 export * from './entity-handler-types.js';
 export type { PeerEntity } from './entity-types.js';

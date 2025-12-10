@@ -21,3 +21,4 @@ export {
   type DialogStepFactoryArgs,
   type UseTreeNodeDialogOptions,
 } from './hooks/useTreeNodeDialog.js';
+export { useDialogViewState } from './hooks/useTreeNodeDialog.js';

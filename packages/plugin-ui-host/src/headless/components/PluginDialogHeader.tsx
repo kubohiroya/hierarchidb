@@ -1,5 +1,5 @@
-import type { MultiStepDialogState, NodeId } from '@hierarchidb/common-types';
-import { getDialogSurfaceColor, useMultiStepDialogContext } from '@hierarchidb/ui-dialog';
+import type { NodeId } from '@hierarchidb/common-types';
+import { getDialogSurfaceColor, useDialogContext } from '@hierarchidb/ui-dialog';
 import {
   Check as CheckIcon,
   Close as CloseIcon,
@@ -24,11 +24,14 @@ import { Link, useLocation } from '@tanstack/react-router';
 import type React from 'react';
 import { useCallback, useMemo } from 'react';
 
+type WorkerStepState = { id: string; enabled?: boolean; completed?: boolean; error?: string | null };
+type WorkerDialogState = { steps?: WorkerStepState[] };
+
 export interface PluginDialogHeaderProps {
   title: string;
   subtitle?: string;
   icon?: React.ReactNode;
-  dialogState?: MultiStepDialogState | null;
+  dialogState?: WorkerDialogState | null;
   nodeType?: string;
   nodeId?: NodeId;
 }
@@ -43,18 +46,15 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
   icon,
   dialogState,
 }) => {
-  const ctx = useMultiStepDialogContext<Record<string, unknown>>();
+  const ctx = useDialogContext<Record<string, unknown>>();
   const location = useLocation();
   const theme = useTheme();
 
   const workerStepMap = useMemo(() => {
-    if (!dialogState?.steps?.length) {
-      return null;
-    }
-    const map = new Map<string, MultiStepDialogState['steps'][number]>();
-    dialogState.steps.forEach((step) => {
-      map.set(step.id, step);
-    });
+    const steps = dialogState?.steps;
+    if (!steps?.length) return null;
+    const map = new Map<string, WorkerStepState>();
+    steps.forEach((step) => map.set(step.id, step));
     return map;
   }, [dialogState?.steps]);
 
@@ -254,7 +254,7 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
                   ctx.enabledStepIndices.includes(index) || index === ctx.activeStepIndex;
                 const canNavigate = workerStep?.enabled ?? fallbackCanNavigate;
                 const completed = workerStep?.completed ?? ctx.validatedStepIndices.includes(index);
-                const label = workerStep?.title ?? step.label ?? step.id;
+                const label = workerStep?.id ?? step.label ?? step.id;
                 const stepLink = buildStepLink(index);
                 const isActive = index === ctx.activeStepIndex;
                 const previousWorkerStep =

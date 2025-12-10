@@ -1,12 +1,12 @@
 import { memo } from 'react';
-import { useMultiStepDialogContext } from '../hooks/useMultiStepDialogContext.js';
+import { useDialogContext } from '../hooks/useDialogContext.js';
 import type {
   HeadlessContentRenderProps,
-  HeadlessMultiStepDialogContentProps,
+  HeadlessDialogContentProps,
   StepComponentProps,
 } from './types.js';
 
-function buildContentRenderProps<TData>(ctx: ReturnType<typeof useMultiStepDialogContext<TData>>): HeadlessContentRenderProps<TData> {
+function buildContentRenderProps<TData>(ctx: ReturnType<typeof useDialogContext<TData>>): HeadlessContentRenderProps<TData> {
   const activeStep = ctx.stepComponents[ctx.activeStepIndex];
   return {
     steps: ctx.stepComponents,
@@ -18,7 +18,7 @@ function buildContentRenderProps<TData>(ctx: ReturnType<typeof useMultiStepDialo
   };
 }
 
-function renderActiveStep<TData>(ctx: ReturnType<typeof useMultiStepDialogContext<TData>>) {
+function renderActiveStep<TData>(ctx: ReturnType<typeof useDialogContext<TData>>) {
   const descriptor = ctx.stepComponents[ctx.activeStepIndex];
   if (!descriptor) {
     return null;
@@ -35,8 +35,8 @@ function renderActiveStep<TData>(ctx: ReturnType<typeof useMultiStepDialogContex
   return <StepComponent {...stepProps} />;
 }
 
-function MultiStepDialogContentComponent<TData>({ children }: HeadlessMultiStepDialogContentProps<TData>) {
-  const ctx = useMultiStepDialogContext<TData>();
+function MultiStepDialogContentComponent<TData>({ children }: HeadlessDialogContentProps<TData>) {
+  const ctx = useDialogContext<TData>();
   if (children) {
     const renderProps = buildContentRenderProps(ctx);
     return <>{children(renderProps)}</>;
@@ -47,5 +47,5 @@ function MultiStepDialogContentComponent<TData>({ children }: HeadlessMultiStepD
 MultiStepDialogContentComponent.displayName = 'HeadlessMultiStepDialogContent';
 
 export const MultiStepDialogContent = memo(MultiStepDialogContentComponent) as <TData,>(
-  props: HeadlessMultiStepDialogContentProps<TData>,
+  props: HeadlessDialogContentProps<TData>,
 ) => JSX.Element | null;

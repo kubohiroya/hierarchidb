@@ -53,6 +53,26 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1612) Vite を rolldown-vite へ置換（P0）
+- ブランチ: `chore/build/rolldown-vite`（.git/refs 作成不可のため main 上で作業）
+- 依存: app/vite.config.ts, package.json, pnpm-lock.yaml, app/vite-plugins/*, scripts/env/*, turbo.json
+- 受け入れ基準（DoD）:
+  - [ ] app の bundler を rolldown-vite へ切り替え、`pnpm dev`/`pnpm preview` で起動できる（plugin registry 生成後も UI/Worker ロードが成功）
+  - [ ] 主要検証コマンド `pnpm lint && pnpm typecheck && pnpm test` が成功する（既知失敗があれば運用ログに理由とともに記録）
+  - [ ] 変更内容とロールバック手順を TASKS.md に記載し、運用ログを更新する
+  - [ ] plugin registry 生成 (`pnpm tools:gen-plugin-registry`) のフローが影響を受けないことを確認するか、必要に応じて対応を記録する
+- チェックリスト:
+  - [ ] `rolldown-vite` を devDependencies に追加し、必要なら Vite バージョン整合を図る
+  - [ ] `app/vite.config.ts` で rolldown-vite プラグインを組み込み、既存 Vite プラグインの互換性を確認する
+  - [ ] dev/proxy/env 読み込みや plugin-registry 生成が rolldown でも動作するように設定を調整する
+  - [ ] 検証コマンドの結果と既知の失敗/未対応箇所を運用ログに記録する
+- ロールバック手順：`package.json`/`pnpm-lock.yaml`/`app/vite.config.ts`（および関連スクリプト）の差分を revert し、`pnpm install` → `pnpm dev`/`pnpm preview` を再実行して従来の Vite 構成へ戻す
+- 運用ログ：
+  - start: 2025-12-10 00:51 JST Vite を rolldown-vite へ置換する作業を開始。.git/refs 作成不可のため main 上で作業。
+  - blocked: 2025-12-10 00:51 JST `git checkout -b chore/build/rolldown-vite` 失敗（unable to create .git/refs/heads/chore/build/rolldown-vite）。main で継続。
+  - progress: 2025-12-10 01:05 JST ルート/app の package.json と pnpm overrides で `vite` を `npm:rolldown-vite@7.2.10` へ置換し、root の `@vitejs/plugin-react` を 5.0.1 へ更新（Vite 7/rolldown 対応）。ロールダウン取得には再インストールが必要。
+  - blocked: 2025-12-10 01:05 JST `pnpm install --no-frozen-lockfile` が workspace 依存 `@hierarchidb/plugin-service-sdk` 不在（`packages/plugin-ui-sdk` 依存）で失敗し、`pnpm-lock.yaml` 更新および rolldown-vite 取得に至らず。既存 node_modules は Vite 5.4.19 のまま。
+
 1608) Dialog Esc 未保存なし時の共通クローズ対応（P0）
 - ブランチ: `fix/ui-dialog/esc-clean-close`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: packages/ui/dialog/src/headless/MultiStepDialogFrame.tsx, packages/plugin-ui-host（PluginDialogHost/ResumeDraftDialog/UnsavedChangeDialog）, app/src/router/pages/tree/trash/TrashDialog.tsx
@@ -9726,6 +9746,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-27 15:46 progress: fix/workingcopy/dialog-cancel-behavior — create 仮ノードを version:0 に統一し、commit/save/import で 1 以上へ昇格する方針に合わせて判定を整理。`initTreeNode` を version 0 で作成、`commitTreeNodeDraft` は version を 0 起点で +1、`discardTreeNodeDraft` は committed 判定を version>0/データ有無のみに簡素化。UI cancel で forceDelete を渡すよう修正済み。`pnpm --filter @hierarchidb/runtime-worker test -- --run cancel-create` exit 0。
 
 ## 今日の着手（運用ログ） <a id="worklog-16"></a>
+- 2025-12-10 00:51 start: chore/build/rolldown-vite — Vite を rolldown-vite へ置換する作業を開始。DoD: bundler 切替で `pnpm dev`/`pnpm preview` 起動、`pnpm lint && pnpm typecheck && pnpm test` 成功（既知失敗は理由記録）、plugin registry フロー影響確認、ロールバック手順記載。branch は main（.git/refs 作成不可）。
+- 2025-12-10 00:51 blocked: chore/build/rolldown-vite — `git checkout -b chore/build/rolldown-vite` が .git/refs 作成不可で失敗。main で続行予定。
+- 2025-12-10 01:05 progress: chore/build/rolldown-vite — ルート/app の package.json と pnpm overrides で `vite` を `npm:rolldown-vite@7.2.10` に置換し、root の `@vitejs/plugin-react` を 5.0.1 へ更新（Vite7/rolldown対応）。ロールダウン取得には再インストールが必要。
+- 2025-12-10 01:05 blocked: chore/build/rolldown-vite — `pnpm install --no-frozen-lockfile` が workspace 依存 `@hierarchidb/plugin-service-sdk` 不在（plugin-ui-sdk 依存）で失敗し lock 更新できず。rolldown-vite は未取得（node_modules は既存 Vite 5.4.19 のまま）。
 - 2025-12-09 12:50 start: fix/ui-treeconsole/resume-dialog-extract — TreeConsoleIntegration の resume ダイアログを別コンポーネントへ抽出する作業を開始。DoD: 挙動維持での抽出、import 差し替え、`pnpm --filter @hierarchidb/app typecheck` 実行ログの記録、ロールバック手順明記。branch は main。
 - 2025-12-09 12:55 progress: fix/ui-treeconsole/resume-dialog-extract — `pnpm --filter @hierarchidb/app typecheck` exit 0（plugin-base build で define 警告は既知）。
 - 2025-12-09 13:10 start: fix/ui-treeconsole/integration-hook-extract — TreeConsoleIntegrationInner のロジックを useTreeConsoleIntegrationInner フックへ分離する作業を開始。DoD: 責務分離、挙動維持、typecheck 実行ログ、ロールバック明記。branch は main。

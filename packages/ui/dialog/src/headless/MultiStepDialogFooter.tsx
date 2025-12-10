@@ -1,8 +1,8 @@
 import { memo } from 'react';
-import { useMultiStepDialogContext } from '../hooks/useMultiStepDialogContext.js';
-import type { HeadlessFooterRenderProps, HeadlessMultiStepDialogFooterProps } from './types.js';
+import { useDialogContext } from '../hooks/useDialogContext.js';
+import type { HeadlessFooterRenderProps, HeadlessDialogFooterProps } from './types.js';
 
-function buildFooterRenderProps<TData>(ctx: ReturnType<typeof useMultiStepDialogContext<TData>>): HeadlessFooterRenderProps<TData> {
+function buildFooterRenderProps<TData>(ctx: ReturnType<typeof useDialogContext<TData>>): HeadlessFooterRenderProps<TData> {
   return {
     steps: ctx.stepComponents,
     activeStepIndex: ctx.activeStepIndex,
@@ -17,8 +17,8 @@ function buildFooterRenderProps<TData>(ctx: ReturnType<typeof useMultiStepDialog
   };
 }
 
-function MultiStepDialogFooterComponent<TData>({ children }: HeadlessMultiStepDialogFooterProps<TData>) {
-  const ctx = useMultiStepDialogContext<TData>();
+function MultiStepDialogFooterComponent<TData>({ children }: HeadlessDialogFooterProps<TData>) {
+  const ctx = useDialogContext<TData>();
   if (!children) {
     return null;
   }
@@ -29,5 +29,5 @@ function MultiStepDialogFooterComponent<TData>({ children }: HeadlessMultiStepDi
 MultiStepDialogFooterComponent.displayName = 'HeadlessMultiStepDialogFooter';
 
 export const MultiStepDialogFooter = memo(MultiStepDialogFooterComponent) as <TData,>(
-  props: HeadlessMultiStepDialogFooterProps<TData>,
+  props: HeadlessDialogFooterProps<TData>,
 ) => JSX.Element | null;

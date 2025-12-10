@@ -17,16 +17,14 @@ import {
   initialPosition,
   sizesEqual,
   positionsEqual,
-  type HeadlessMultiStepDialogProps,
+  type HeadlessDialogProps,
   type HeadlessHeaderRenderProps,
   type HeadlessFooterRenderProps,
   type StepNavigationEvent,
   type StepComponentDescriptor,
   type StepComponentProps,
-  type DialogDisplayMode,
-  type MultiStepDialogSize,
-  type MultiStepDialogPosition,
 } from '@hierarchidb/ui-dialog';
+import type { DialogDisplayMode, DialogSize as MultiStepDialogSize, DialogPosition as MultiStepDialogPosition } from '@hierarchidb/common-types';
 import { readRuntimeMode } from '@hierarchidb/util';
 import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 import {
@@ -518,7 +516,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     await handleSave();
   }, [handleSave]);
 
-  const renderHeader: HeadlessMultiStepDialogProps<ResolverUpdaterPayload>['renderHeader'] = useCallback((props: HeadlessHeaderRenderProps<ResolverUpdaterPayload>) => (
+  const renderHeader: HeadlessDialogProps<ResolverUpdaterPayload>['renderHeader'] = useCallback((props: HeadlessHeaderRenderProps<ResolverUpdaterPayload>) => (
     <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #dde1eb' }}>
       <div>
         <strong>{t('header.title', 'Resolver Configuration')}</strong>
@@ -535,7 +533,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
 
   const isTestEnv = useMemo(() => readRuntimeMode() === 'test', []);
 
-  const renderFooter: HeadlessMultiStepDialogProps<ResolverUpdaterPayload>['renderFooter'] = useCallback((props: HeadlessFooterRenderProps<ResolverUpdaterPayload>) => {
+  const renderFooter: HeadlessDialogProps<ResolverUpdaterPayload>['renderFooter'] = useCallback((props: HeadlessFooterRenderProps<ResolverUpdaterPayload>) => {
     const canSave = filledSteps.every(Boolean) && !isSaving;
 
     return (
@@ -700,7 +698,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     steps.map(step => ({ id: step.id, label: step.label ?? step.id, component: PlaceholderStepComponent }))
   ), [steps]);
 
-  const headlessProps: HeadlessMultiStepDialogProps<ResolverUpdaterPayload> = {
+  const headlessProps: HeadlessDialogProps<ResolverUpdaterPayload> = {
     open,
     stepComponents: stepDescriptors,
     stepData: fallbackDraft,

@@ -1,3 +1,4 @@
+import { DialogDisplayMode, DialogPosition, DialogSize } from '@hierarchidb/common-types';
 import type { ReactNode, ComponentType, PointerEvent as ReactPointerEvent } from 'react';
 
 /** Step navigation commands emitted by the dialog shell. */
@@ -6,8 +7,6 @@ export type StepNavigationEvent =
   | { type: 'next' }
   | { type: 'back' };
 
-/** Display mode handled by the dialog frame. */
-export type DialogDisplayMode = 'normal' | 'maximize' | 'full-screen';
 
 /** Visibility policy for header / footer elements. */
 export type SectionVisibilityMode = 'visible' | 'hidden' | 'auto';
@@ -30,16 +29,6 @@ export interface StepComponentDescriptor<TData> {
   label: string;
   component: ComponentType<StepComponentProps<TData>>;
   metadata?: Record<string, unknown>;
-}
-
-export interface MultiStepDialogPosition {
-  x: number;
-  y: number;
-}
-
-export interface MultiStepDialogSize {
-  width: number;
-  height: number;
 }
 
 export interface HeadlessHeaderRenderProps<TData> {
@@ -77,11 +66,11 @@ export interface HeadlessFooterRenderProps<TData> {
   invalidMessageMap: Readonly<Record<string, string>>;
 }
 
-export interface MultiStepDialogFrameProps {
-  position?: MultiStepDialogPosition;
-  onPositionChange?: (next: MultiStepDialogPosition) => void;
-  size?: MultiStepDialogSize;
-  onSizeChange?: (next: MultiStepDialogSize) => void;
+export interface DialogFrameProps {
+  position?: DialogPosition;
+  onPositionChange?: (next: DialogPosition) => void;
+  size?: DialogSize;
+  onSizeChange?: (next: DialogSize) => void;
   displayMode?: DialogDisplayMode;
   onDisplayModeChange?: (mode: DialogDisplayMode) => void;
   headerDisplayMode?: SectionVisibilityMode;
@@ -94,7 +83,7 @@ export interface MultiStepDialogFrameProps {
   onResizeHandlePointerDown?: (event: ReactPointerEvent<HTMLElement>) => void;
 }
 
-export interface HeadlessMultiStepDialogProps<TData> extends MultiStepDialogFrameProps {
+export interface HeadlessDialogProps<TData> extends DialogFrameProps {
   open: boolean;
   stepComponents: ReadonlyArray<StepComponentDescriptor<TData>>;
   stepData: TData;
@@ -109,26 +98,26 @@ export interface HeadlessMultiStepDialogProps<TData> extends MultiStepDialogFram
   onRequestClose: (reason?: 'close' | 'discard') => void;
   onRequestCommit?: () => void;
 
-  HeaderComponent?: ComponentType<HeadlessMultiStepDialogHeaderProps<TData>>;
-  ContentComponent?: ComponentType<HeadlessMultiStepDialogContentProps<TData>>;
-  FooterComponent?: ComponentType<HeadlessMultiStepDialogFooterProps<TData>>;
+  HeaderComponent?: ComponentType<HeadlessDialogHeaderProps<TData>>;
+  ContentComponent?: ComponentType<HeadlessDialogContentProps<TData>>;
+  FooterComponent?: ComponentType<HeadlessDialogFooterProps<TData>>;
   renderHeader?: (props: HeadlessHeaderRenderProps<TData>) => ReactNode;
   renderFooter?: (props: HeadlessFooterRenderProps<TData>) => ReactNode;
 }
 
-export interface HeadlessMultiStepDialogHeaderProps<TData> {
+export interface HeadlessDialogHeaderProps<TData> {
   children?: (props: HeadlessHeaderRenderProps<TData>) => ReactNode;
 }
 
-export interface HeadlessMultiStepDialogContentProps<TData> {
+export interface HeadlessDialogContentProps<TData> {
   children?: (props: HeadlessContentRenderProps<TData>) => ReactNode;
 }
 
-export interface HeadlessMultiStepDialogFooterProps<TData> {
+export interface HeadlessDialogFooterProps<TData> {
   children?: (props: HeadlessFooterRenderProps<TData>) => ReactNode;
 }
 
-export interface HeadlessMultiStepDialogContextValue<TData> extends MultiStepDialogFrameProps {
+export interface HeadlessDialogContextValue<TData> extends DialogFrameProps {
   open: boolean;
   stepComponents: ReadonlyArray<StepComponentDescriptor<TData>>;
   stepData: TData;

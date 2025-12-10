@@ -6,7 +6,7 @@
  * controller layer.
  */
 
-import { getDialogSurfaceColor, useMultiStepDialogContext } from '@hierarchidb/ui-dialog';
+import { getDialogSurfaceColor, useDialogContext } from '@hierarchidb/ui-dialog';
 import CheckIcon from '@mui/icons-material/Check';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -50,7 +50,7 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   isStartingBatch = false,
   primaryButtonOptions,
 }) => {
-  const ctx = useMultiStepDialogContext<Record<string, unknown>>();
+  const ctx = useDialogContext<Record<string, unknown>>();
   const location = useLocation();
   const isResourcesTree = React.useMemo(() => {
     const segments = location.pathname.split('/').filter(Boolean);

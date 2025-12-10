@@ -3,6 +3,7 @@ import type {
   NodeId,
   NodeType,
   OnNameConflict,
+  DialogUIState,
   TreeNode,
   TreeNodeMetadata,
   ValidationResult,
@@ -32,6 +33,14 @@ export interface TreeNodeUpdaterAPI {
     nodeId: NodeId,
     updater: Record<string, unknown>
   ): Promise<void>;
+
+  /**
+   * Persist dialog UI state for a node (e.g., window position/size, active step).
+   *
+   * @param nodeId - Target node identifier
+   * @param updater - Dialog UI state to store; pass null to clear
+   */
+  updateTreeNodeDialogUIState(nodeId: NodeId, updater: DialogUIState | null): Promise<void>;
 
   listDrafts(): Promise<TreeNode[]>;
 

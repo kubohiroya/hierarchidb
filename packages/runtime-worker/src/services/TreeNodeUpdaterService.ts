@@ -17,6 +17,7 @@ import {
   discardDraft as discardWc,
   updateTreeNodeDraftMetadata,
   updateTreeNodeDraftData,
+  updateTreeNodeDialogUIState,
   commitDraft as commitDraftOp,
   getTreeNode,
 } from './DraftTreeNodeOperations.js';
@@ -74,6 +75,10 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
     updater: Record<string, unknown> | null
   ): Promise<void> {
     await updateTreeNodeDraftData(this.coreDB, nodeId, updater);
+  }
+
+  async updateTreeNodeDialogUIState(nodeId: NodeId, updater: TreeNode['dialogUIState'] | null): Promise<void> {
+    await updateTreeNodeDialogUIState(this.coreDB, nodeId, updater);
   }
 
   async listDrafts(): Promise<TreeNode[]> {

@@ -6,7 +6,7 @@ Shared dialog components for HierarchiDB plugin/runtime UIs: headless multi-step
 ```
 components/   CommonDialog, Actions/Title, AutoHideFullScreenDialog, UnsavedChangesDialog
 headless/     MultiStepDialog shell (Header/Footer/Content/Frame), types and helpers
-hooks/        useMultiStepDialogContext, useDialogInteractionGuards
+hooks/        useDialogContext, useDialogInteractionGuards
 types/        MultiStepDialog types, stepper dialog types
 utils/        dialogSurfaceColor, frame helpers
 index.ts      Public exports
@@ -15,7 +15,7 @@ index.ts      Public exports
 ## Key exports
 - Headless shell: `MultiStepDialog`, `MultiStepDialogHeader/Footer/Content`, `MultiStepDialogFrame`, `frameHelpers`.
 - Common components: `CommonDialog`, `CommonDialogActions`, `CommonDialogTitle`, `AutoHideFullScreenDialog`, `UnsavedChangesDialog`.
-- Hooks: `useMultiStepDialogContext`, `useDialogInteractionGuards`.
+- Hooks: `useDialogContext`, `useDialogInteractionGuards`.
 - Types: `MultiStepDialogProps`, `StepperDialogStep`, stepper dialog types.
 
 ## Consumers / usage

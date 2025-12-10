@@ -1,11 +1,11 @@
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, TreeNode, DialogDisplayMode, DialogPosition, DialogSize } from '@hierarchidb/common-types';
 import {
   type HeadlessFooterRenderProps,
   type HeadlessHeaderRenderProps,
-  type HeadlessMultiStepDialogProps,
+  type HeadlessDialogProps as HeadlessMultiStepDialogProps,
   MultiStepDialogFrame,
-  useMultiStepDialogContext,
-} from '@hierarchidb/ui-plugin-shell/ui-dialog';
+  useDialogContext,
+} from '@hierarchidb/ui-dialog';
 import {
   TreeConsolePanel,
   type TreeConsolePanelBreadcrumbRendererProps,
@@ -37,7 +37,7 @@ import {
   Typography,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { useCallback, useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { LoadTreeReturn } from '~/loader.js';
 import { loadTree } from '~/loader.js';
@@ -133,7 +133,7 @@ function TrashDialogHeader({
   onRequestClose,
   isDirty,
 }: TrashDialogHeaderProps) {
-  const ctx = useMultiStepDialogContext<TrashStepData>();
+  const ctx = useDialogContext<TrashStepData>();
 
   const handleDragPointerDown = useCallback(
     (event: React.PointerEvent<HTMLElement>) => {
@@ -613,25 +613,7 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
           ),
         },
       ] as const,
-    [
-      breadcrumbItems,
-      columns,
-      expandedIds,
-      handleRestore,
-      hasDraftsInView,
-      loading,
-      mode,
-      nodeIndex,
-      onToggleExpand,
-      pageNodeId,
-      searchTerm,
-      selectedIds,
-      setSearchTerm,
-      t,
-      trashViewRootId,
-      treeData,
-      treeId,
-    ]
+    [breadcrumbItems, columns, expandedIds, handleRestore, hasDraftsInView, loading, mode, nodeIndex, onToggleExpand, pageNodeId, searchTerm, selectedIds, setSearchTerm, setSelectedIds, t, trashViewRootId, treeData, treeId]
   );
 
   const headlessProps: HeadlessMultiStepDialogProps<TrashStepData> = useMemo(
@@ -647,9 +629,9 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
       position: frameState.dialogPosition,
       size: frameState.dialogSize,
       displayMode: frameState.displayMode,
-      onPositionChange: (next) => frameState.setPosition(next),
-      onSizeChange: (next) => frameState.setSize(next),
-      onDisplayModeChange: (mode) => frameState.setDisplayMode(mode),
+      onPositionChange: (next: DialogPosition) => frameState.setPosition(next),
+      onSizeChange: (next: DialogSize) => frameState.setSize(next),
+      onDisplayModeChange: (mode: DialogDisplayMode) => frameState.setDisplayMode(mode),
       renderHeader: (props) => (
         <TrashDialogHeader
           {...props}

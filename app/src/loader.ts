@@ -1,4 +1,4 @@
-import type { DialogStateAPI, WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 import {
   NodeAction,
   type NodeId,
@@ -26,10 +26,6 @@ function getBootWindow(): BootWindow | null {
   if (typeof window === 'undefined') return null;
   return window as BootWindow;
 }
-
-let dialogStateVerificationPromise: Promise<void> | null = null;
-let dialogStateApiVerified: boolean = false;
-let lastVerifiedClient: Remote<WorkerAPI> | null = null;
 
 export type LoadWorkerAPIClientReturn = {
   client: Remote<WorkerAPI>; // Worker API instance via Comlink
@@ -251,54 +247,9 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
   }
 }
 
-export async function ensureDialogStateAPI(client: Remote<WorkerAPI>): Promise<void> {
-  if (lastVerifiedClient !== client) {
-    dialogStateApiVerified = false;
-  }
-
-  if (dialogStateApiVerified) {
-    return;
-  }
-
-  if (dialogStateVerificationPromise) {
-    await dialogStateVerificationPromise;
-    return;
-  }
-
-  const verification = (async () => {
-    const api = await client.getDialogStateAPI();
-    const required: Array<keyof DialogStateAPI> = [
-      'publishState',
-      'getState',
-      'subscribeState',
-      'unsubscribeState',
-    ];
-    const missing = required.filter((method) => typeof api?.[method] !== 'function');
-    if (missing.length > 0) {
-      const snapshot = {
-        typeofPublish: typeof api?.publishState,
-        typeofGet: typeof api?.getState,
-        typeofSubscribe: typeof api?.subscribeState,
-        typeofUnsubscribe: typeof api?.unsubscribeState,
-        keys: api ? Object.keys(api as unknown as Record<string, unknown>) : null,
-      };
-      console.error('DialogStateAPI verification failed', snapshot);
-      throw new Error(
-        `DialogStateAPI is missing required methods: ${missing.join(', ')}`
-      );
-    }
-    console.log('DialogStateAPI verified');
-    dialogStateApiVerified = true;
-    lastVerifiedClient = client;
-  })();
-
-  dialogStateVerificationPromise = verification;
-  try {
-    await verification;
-  } finally {
-    dialogStateVerificationPromise = null;
-    lastVerifiedClient = dialogStateApiVerified ? client : null;
-  }
+// DialogStateAPI deprecated; keep noop stub for compatibility.
+export async function ensureDialogStateAPI(_client: Remote<WorkerAPI>): Promise<void> {
+  return;
 }
 
 export async function loadTree({ treeId }: LoadTreeArgs): Promise<LoadTreeReturn> {
@@ -311,7 +262,6 @@ export async function loadTree({ treeId }: LoadTreeArgs): Promise<LoadTreeReturn
   const tree = await retryComlinkCall(async () => {
     const client = await workerHandle.ensureLatest();
     await ensureDialogStateAPI(client);
-
     // Use facade API instead of deprecated direct method
     const queryAPI = await client.getQueryAPI();
     return queryAPI.getTree(treeId as TreeId);

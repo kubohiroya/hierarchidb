@@ -1,13 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, TreeNode, DialogDisplayMode, DialogPosition, DialogSize } from '@hierarchidb/common-types';
 import {
   FRAME_CONSTANTS,
   getViewportSize,
   initialPosition,
   normalizeDialogState,
-  type DialogDisplayMode,
-  type MultiStepDialogPosition,
-  type MultiStepDialogSize,
 } from '@hierarchidb/ui-plugin-shell/ui-dialog';
 import { DualKeyMap } from '@hierarchidb/util';
 import { useNavigate } from '@tanstack/react-router';
@@ -20,19 +17,17 @@ import { getTrashDisplayName } from './getTrashDisplayName.js';
 import { emptyTrashBranch } from './emptyTrashBranch.js';
 import { WorkerAPIClient } from '~/worker-runtime/WorkerAPIClient.ts';
 
-const DEFAULT_SIZE: MultiStepDialogSize = { width: 960, height: 640 };
+const DEFAULT_SIZE: DialogSize = { width: 960, height: 640 };
 
 export function useTrashFrameState(initialMode: DialogDisplayMode = 'normal') {
   const [displayMode, setDisplayMode] = useState<DialogDisplayMode>(initialMode);
-  const [dialogSize, setDialogSize] = useState<MultiStepDialogSize>(DEFAULT_SIZE);
-  const [dialogPosition, setDialogPosition] = useState<MultiStepDialogPosition>(
+  const [dialogSize, setDialogSize] = useState<DialogSize>(DEFAULT_SIZE);
+  const [dialogPosition, setDialogPosition] = useState<DialogPosition>(
     initialPosition(DEFAULT_SIZE, getViewportSize())
   );
-  const sizeRef = useState(dialogSize)[0];
-  const positionRef = useState(dialogPosition)[0];
 
   const applyNormalizedState = useCallback(
-    (size: MultiStepDialogSize, position: MultiStepDialogPosition) => {
+    (size: DialogSize, position: DialogPosition) => {
       setDialogSize(size);
       setDialogPosition(position);
     },
@@ -40,7 +35,7 @@ export function useTrashFrameState(initialMode: DialogDisplayMode = 'normal') {
   );
 
   const normalizeFromState = useCallback(
-    (mode: DialogDisplayMode, nextSize?: MultiStepDialogSize, nextPosition?: MultiStepDialogPosition) => {
+    (mode: DialogDisplayMode, nextSize?: DialogSize, nextPosition?: DialogPosition) => {
       const viewport = getViewportSize();
       const baseSize = nextSize ?? dialogSize;
       const basePosition = nextPosition ?? dialogPosition;
@@ -78,7 +73,7 @@ export function useTrashFrameState(initialMode: DialogDisplayMode = 'normal') {
     (mode: DialogDisplayMode) => {
       const viewport = getViewportSize();
       if (mode === 'full-screen') {
-        const size: MultiStepDialogSize = {
+        const size: DialogSize = {
           width: Math.max(viewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
           height: Math.max(viewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
         };
@@ -119,7 +114,7 @@ export function useTrashFrameState(initialMode: DialogDisplayMode = 'normal') {
   );
 
   const handleSizeChange = useCallback(
-    (size?: MultiStepDialogSize) => {
+    (size?: DialogSize) => {
       if (!size) return;
       const normalized = normalizeDialogState(size, dialogPosition, getViewportSize(), {
         enforceTopLeftMargin: displayMode === 'normal',
@@ -132,7 +127,7 @@ export function useTrashFrameState(initialMode: DialogDisplayMode = 'normal') {
   );
 
   const handlePositionChange = useCallback(
-    (position?: MultiStepDialogPosition) => {
+    (position?: DialogPosition) => {
       if (!position) return;
       const normalized = normalizeDialogState(dialogSize, position, getViewportSize(), {
         enforceTopLeftMargin: displayMode === 'normal',

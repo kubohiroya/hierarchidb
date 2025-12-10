@@ -61,8 +61,7 @@
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
-    "@hierarchidb/plugin-base": "workspace:*",
-    "@hierarchidb/plugin-ui-host": "workspace:*"
+    "@hierarchidb/plugin-base": "workspace:*"
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
@@ -75,7 +74,6 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/components": "workspace:*",
-    "@hierarchidb/plugin-ui-host": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-worker-provider": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
@@ -100,7 +98,6 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/components": "workspace:*",
-    "@hierarchidb/plugin-ui-host": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-worker-provider": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",

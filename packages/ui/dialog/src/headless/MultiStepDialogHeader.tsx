@@ -1,8 +1,8 @@
 import { memo } from 'react';
-import { useMultiStepDialogContext } from '../hooks/useMultiStepDialogContext.js';
-import type { HeadlessHeaderRenderProps, HeadlessMultiStepDialogHeaderProps } from './types.js';
+import { useDialogContext } from '../hooks/useDialogContext.js';
+import type { HeadlessHeaderRenderProps, HeadlessDialogHeaderProps } from './types.js';
 
-function buildHeaderRenderProps<TData>(ctx: ReturnType<typeof useMultiStepDialogContext<TData>>): HeadlessHeaderRenderProps<TData> {
+function buildHeaderRenderProps<TData>(ctx: ReturnType<typeof useDialogContext<TData>>): HeadlessHeaderRenderProps<TData> {
   return {
     steps: ctx.stepComponents,
     activeStepIndex: ctx.activeStepIndex,
@@ -17,8 +17,8 @@ function buildHeaderRenderProps<TData>(ctx: ReturnType<typeof useMultiStepDialog
   };
 }
 
-function MultiStepDialogHeaderComponent<TData>({ children }: HeadlessMultiStepDialogHeaderProps<TData>) {
-  const ctx = useMultiStepDialogContext<TData>();
+function MultiStepDialogHeaderComponent<TData>({ children }: HeadlessDialogHeaderProps<TData>) {
+  const ctx = useDialogContext<TData>();
   if (!children) {
     return null;
   }
@@ -30,5 +30,5 @@ function MultiStepDialogHeaderComponent<TData>({ children }: HeadlessMultiStepDi
 MultiStepDialogHeaderComponent.displayName = 'HeadlessMultiStepDialogHeader';
 
 export const MultiStepDialogHeader = memo(MultiStepDialogHeaderComponent) as <TData,>(
-  props: HeadlessMultiStepDialogHeaderProps<TData>,
+  props: HeadlessDialogHeaderProps<TData>,
 ) => JSX.Element | null;

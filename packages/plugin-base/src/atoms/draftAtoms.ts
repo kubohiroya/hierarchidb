@@ -5,7 +5,7 @@
 import type { NodeId, TreeId } from '@hierarchidb/common-types';
 import type { DialogStep } from '@hierarchidb/ui-dialog';
 import { atom } from 'jotai';
-import type { DialogViewState } from '@hierarchidb/common-types';
+import type { DialogStepperState } from '@hierarchidb/common-types';
 
 /**
  * Working copy data state
@@ -67,7 +67,7 @@ export interface StepState {
  * Complements draftAtom (node data) and stepStateAtom (navigation),
  * and can be derived from or synced to MultiStepDialogState when needed.
  */
-export type DialogViewStateAtom = DialogViewState;
+export type DialogViewStateAtom = DialogStepperState;
 
 // ============================================================================
 // Base Atoms

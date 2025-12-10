@@ -42,7 +42,6 @@
     "zod": "^3.22.3"
   },
   "peerDependencies": {
-    "@hierarchidb/plugin-registry": "workspace:*",
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",

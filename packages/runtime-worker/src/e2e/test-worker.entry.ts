@@ -2,7 +2,6 @@
 // Runs in the same process for simplicity; fake-indexeddb provides IndexedDB in Node.
 import 'fake-indexeddb/auto';
 import type {
-  DialogStateAPI,
   ImportExportAPI,
   TreeMutationAPI,
   TreeQueryAPI,
@@ -27,7 +26,6 @@ async function main(endpoint?: Endpoint): Promise<void> {
     getSubscriptionAPI: (): TreeSubscriptionAPI => proxy(svc.getSubscriptionAPI()),
     getImportExportAPI: (): ImportExportAPI => proxy(svc.getImportExportAPI()),
     getTreeNodeUpdaterAPI: (): TreeNodeUpdaterAPI => proxy(svc.getTreeNodeUpdaterAPI()),
-    getDialogStateAPI: (): DialogStateAPI => proxy(svc.getDialogStateAPI()),
     getCommandProcessor: (): CommandProcessor => proxy(svc.getCommandProcessor()),
   };
   // When used in-process via MessageChannel, a test passes an explicit endpoint.

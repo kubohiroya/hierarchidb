@@ -1,7 +1,6 @@
 // API Interfaces
 
 export * from './BatchControlAPI.js';
-export type { DialogStateAPI, DialogStateSubscriptionId } from './DialogStateAPI.js';
 export type {
   ExportNodesParams,
   ExportProgress,

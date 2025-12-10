@@ -11,12 +11,12 @@ import type { SxProps, Theme } from '@mui/material/styles';
 import { createPortal } from 'react-dom';
 import { FRAME_CONSTANTS } from './frameHelpers.js';
 import { HeadlessMultiStepDialog } from './MultiStepDialog.js';
-import type { HeadlessMultiStepDialogProps } from './types.js';
+import type { HeadlessDialogProps } from './types.js';
 import { getDialogSurfaceColor } from '../utils/dialogSurfaceColor.js';
 import { useDialogInteractionGuards } from '../hooks/useDialogInteractionGuards.js';
 
 export interface MultiStepDialogFrameComponentProps<TData> {
-  headlessProps: HeadlessMultiStepDialogProps<TData>;
+  headlessProps: HeadlessDialogProps<TData>;
   /** Additional styles applied to the dialog frame container. */
   frameSx?: SxProps<Theme>;
   /** Additional styles applied to the backdrop element. */

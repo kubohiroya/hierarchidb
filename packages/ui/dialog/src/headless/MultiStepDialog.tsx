@@ -1,10 +1,10 @@
 import { Fragment, useRef } from 'react';
-import { MultiStepDialogProvider } from '../hooks/useMultiStepDialogContext.js';
+import { MultiStepDialogProvider } from '../hooks/useDialogContext.js';
 import type {
   HeadlessFooterRenderProps,
   HeadlessHeaderRenderProps,
-  HeadlessMultiStepDialogProps,
-  HeadlessMultiStepDialogContextValue,
+  HeadlessDialogProps,
+  HeadlessDialogContextValue,
 } from './types.js';
 import { MultiStepDialogHeader } from './MultiStepDialogHeader.js';
 import { MultiStepDialogContent } from './MultiStepDialogContent.js';
@@ -67,7 +67,7 @@ function shallowEqualData(a: unknown, b: unknown): boolean {
   return true;
 }
 
-export function HeadlessMultiStepDialog<TData>(props: HeadlessMultiStepDialogProps<TData>) {
+export function HeadlessMultiStepDialog<TData>(props: HeadlessDialogProps<TData>) {
   const {
     open,
     stepComponents,
@@ -90,9 +90,9 @@ export function HeadlessMultiStepDialog<TData>(props: HeadlessMultiStepDialogPro
     ...frameProps
   } = props;
 
-  const contextRef = useRef<HeadlessMultiStepDialogContextValue<TData> | null>(null);
+  const contextRef = useRef<HeadlessDialogContextValue<TData> | null>(null);
 
-  const nextValue: HeadlessMultiStepDialogContextValue<TData> = {
+  const nextValue: HeadlessDialogContextValue<TData> = {
     open,
     stepComponents,
     stepData,

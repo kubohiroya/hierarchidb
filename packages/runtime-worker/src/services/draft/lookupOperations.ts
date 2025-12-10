@@ -51,6 +51,20 @@ export async function updateTreeNodeDraftData(
   });
 }
 
+export async function updateTreeNodeDialogUIState(
+  coreDB: CoreDB,
+  nodeId: NodeId,
+  updater: TreeNode['dialogUIState'] | null
+): Promise<void> {
+  if (updater === null) {
+    await coreDB.nodes.update(nodeId, { dialogUIState: undefined });
+    return;
+  }
+  await coreDB.nodes.update(nodeId, {
+    dialogUIState: updater,
+  });
+}
+
 export async function getTreeNode(coreDB: CoreDB, nodeId: NodeId): Promise<TreeNode | null> {
   const node = await coreDB.nodes.get(nodeId);
   return (node ?? null) as TreeNode | null;

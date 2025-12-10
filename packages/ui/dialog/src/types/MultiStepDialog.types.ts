@@ -2,6 +2,7 @@
  * Multi-step dialog type definitions
  */
 
+import { DialogDisplayMode } from '@hierarchidb/common-types';
 import { ReactNode } from 'react';
 
 /**
@@ -143,7 +144,7 @@ export interface MultiStepDialogProps {
   maxWidth?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | false;
 
   /** Initial display mode for uncontrolled usage */
-  initialDisplayMode?: import('../headless/types.js').DialogDisplayMode;
+  initialDisplayMode?: DialogDisplayMode;
 
   /** Has unsaved changes */
   hasUnsavedChanges?: boolean;
@@ -193,9 +194,9 @@ export interface MultiStepDialogProps {
    * - 'maximize': ウィンドウ内で可能な限り拡大
    * - 'full-screen': ブラウザ Fullscreen API によるモニタ全面表示
    */
-  displayMode?: import('../headless/types.js').DialogDisplayMode;
+  displayMode?: DialogDisplayMode;
   /** 表示モード変更時のコールバック（制御モードで利用） */
-  onDisplayModeChange?: (mode: import('../headless/types.js').DialogDisplayMode) => void;
+  onDisplayModeChange?: (mode: DialogDisplayMode) => void;
   /** 表示モードのクイック切替 UI を表示するか（既定: true）。 */
   showDisplayModeControls?: boolean;
 

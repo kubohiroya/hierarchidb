@@ -7,7 +7,6 @@ import * as path from 'path';
 import { readFileSync } from 'node:fs';
 import { faviconPlugin } from './vite-plugins/vite-plugin-favicon.js';
 import { comlink } from 'vite-plugin-comlink';
-import { visualizer } from 'rollup-plugin-visualizer';
 import { createNodeTypeAliasPlugin } from './vite-plugins/vite-plugin-hierarchidb-plugin-alias/src/index.js';
 import { pluginWorkerVirtualModule } from './vite-plugins/vite-plugin-plugin-worker-virtual.js';
 import {
@@ -635,24 +634,6 @@ export default defineConfig(({ mode, isSsrBuild }) => {
     // It is re-injected below after dev alias filtering.
   ];
 
-  const enableVisualizer = (env.VITE_APP_ANALYZE || process.env.HDB_ANALYZE || process.env.BUNDLE_ANALYZE || '')
-    .toString()
-    .toLowerCase() === 'true';
-  if (enableVisualizer) {
-    const suffix = isSsrBuild ? 'server' : 'client';
-    const analysisDir = path.resolve(__dirname, 'build-analysis');
-    plugins.push(
-      visualizer({
-        filename: path.join(analysisDir, `bundle-visualizer-${suffix}.html`),
-        template: 'treemap',
-        gzipSize: true,
-        brotliSize: true,
-        emitFile: false,
-        // ssr: isSsrBuild,
-      }),
-    );
-  }
-
   // Enable tsconfig path rewrites only when developing or explicitly requested.
   // In production builds the plugin would re-alias workspace packages back to src/,
   // which breaks dist-only plugins (e.g. database/icon subpaths).
@@ -823,7 +804,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
           const body = resp.body;
           if (body) {
             const { Readable } = await import('node:stream');
-            Readable.fromWeb(body as ReadableStream<Uint8Array>).pipe(res);
+            Readable.fromWeb(body as any).pipe(res);
           } else {
             const buf = Buffer.from(await resp.arrayBuffer());
             res.end(buf);
@@ -1003,8 +984,11 @@ export default defineConfig(({ mode, isSsrBuild }) => {
           ...(isSsrBuild
             ? {}
             : {
-              manualChunks: {
-                'vendor-react': ['react', 'react-dom'],
+              manualChunks(id: string) {
+                if (id.includes('node_modules/react-dom') || id.includes('node_modules/react/')) {
+                  return 'vendor-react';
+                }
+                return undefined;
               },
             }),
         },

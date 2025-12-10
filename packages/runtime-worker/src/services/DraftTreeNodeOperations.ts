@@ -14,6 +14,7 @@ export {
   checkDraftConflict,
   updateTreeNodeDraftMetadata,
   updateTreeNodeDraftData,
+  updateTreeNodeDialogUIState,
   getTreeNode,
 } from './draft/lookupOperations.js';
 

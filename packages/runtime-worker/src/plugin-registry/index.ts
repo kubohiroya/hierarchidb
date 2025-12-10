@@ -1,9 +1,9 @@
-import { pluginRegistry as canonicalRegistry } from '@hierarchidb/plugin-registry';
+import { pluginRegistry as canonicalRegistry } from '../../../plugin-registry/generated/registry.js';
 import {
   derivePluginModuleSources,
   derivePluginModuleSpecifiers,
-} from '@hierarchidb/plugin-registry/derivations';
-import type { PluginRegistryEntry } from '@hierarchidb/plugin-registry/types';
+} from '../../../plugin-registry/src/derivations.js';
+import type { PluginRegistryEntry } from '../../../plugin-registry/src/types.js';
 
 export const pluginRegistry: PluginRegistryEntry[] = canonicalRegistry;
 

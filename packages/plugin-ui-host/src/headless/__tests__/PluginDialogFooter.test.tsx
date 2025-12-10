@@ -1,4 +1,5 @@
 import { MultiStepDialogProvider } from '@hierarchidb/ui-dialog';
+import '@testing-library/jest-dom';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
