@@ -1,10 +1,12 @@
+/// <reference types="vitest/globals" />
+/// <reference types="@testing-library/jest-dom/vitest" />
 import { MultiStepDialogProvider } from '@hierarchidb/ui-dialog';
-import '@testing-library/jest-dom';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { vi } from 'vitest';
 import { PluginDialogFooter } from '../components/PluginDialogFooter.js';
+import '@testing-library/jest-dom/vitest';
 
 type ContextOverrides = Partial<Parameters<typeof MultiStepDialogProvider>[0]['value']>;
 
@@ -57,10 +59,10 @@ describe('PluginDialogFooter icons', () => {
     });
 
     const cancelButton = screen.getByRole('button', { name: 'Cancel' });
-    expect(within(cancelButton).getByTestId('CloseIcon')).toBeInTheDocument();
+    expect(within(cancelButton).queryByTestId('CloseIcon')).not.toBeNull();
 
     const nextButton = screen.getByRole('button', { name: 'Next' });
-    expect(within(nextButton).getByTestId('ChevronRightIcon')).toBeInTheDocument();
+    expect(within(nextButton).queryByTestId('ChevronRightIcon')).not.toBeNull();
   });
 
   it('shows Back and Create icons on the final step (create mode)', () => {
@@ -69,17 +71,17 @@ describe('PluginDialogFooter icons', () => {
     });
 
     const backButton = screen.getByRole('button', { name: 'Back' });
-    expect(within(backButton).getByTestId('ChevronLeftIcon')).toBeInTheDocument();
+    expect(within(backButton).queryByTestId('ChevronLeftIcon')).not.toBeNull();
 
     const createButton = screen.getByRole('button', { name: 'Create' });
-    expect(within(createButton).getByTestId('CheckIcon')).toBeInTheDocument();
+    expect(within(createButton).queryByTestId('CheckIcon')).not.toBeNull();
   });
 
   it('shows the check icon for Save (edit mode) on the final step', () => {
     renderWithContext(<PluginDialogFooter mode="edit" canCommit={true} />, { activeStepIndex: 1 });
 
     const saveButton = screen.getByRole('button', { name: 'Save' });
-    expect(within(saveButton).getByTestId('CheckIcon')).toBeInTheDocument();
+    expect(within(saveButton).queryByTestId('CheckIcon')).not.toBeNull();
     expect(screen.getAllByRole('button', { name: 'Save' }).length).toBe(1);
   });
 });
@@ -92,7 +94,7 @@ describe('PluginDialogFooter inline save button', () => {
     });
 
     const saveButton = screen.getByRole('button', { name: 'Save' });
-    expect(saveButton).toBeDisabled();
+    expect(saveButton.getAttribute('disabled')).not.toBeNull();
   });
 
   it('enables the Save button once all steps are validated', () => {
@@ -102,7 +104,7 @@ describe('PluginDialogFooter inline save button', () => {
     });
 
     const saveButton = screen.getByRole('button', { name: 'Save' });
-    expect(saveButton).toBeEnabled();
+    expect(saveButton.getAttribute('disabled')).toBeNull();
   });
 });
 
@@ -117,6 +119,6 @@ describe('PluginDialogFooter layout', () => {
     );
 
     const centerSlot = screen.getByTestId('plugin-dialog-footer-center');
-    expect(within(centerSlot).getByRole('button', { name: 'Build' })).toBeInTheDocument();
+    expect(within(centerSlot).queryByRole('button', { name: 'Build' })).not.toBeNull();
   });
 });

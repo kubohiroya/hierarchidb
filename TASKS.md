@@ -53,6 +53,24 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1613) プラグインダイアログ最大化時の配置補正（P0）
+- ブランチ: `fix/ui-dialog/maximize-center`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugin-ui-host（PluginDialogHost/HeadlessMultiStepDialog）、ui-dialog（MultiStepDialogFrame/Resizer）、app のプラグインダイアログ呼び出し
+- 受け入れ基準（DoD）:
+  - [ ] ダイアログを最大化しても left/top が 0,0 にならず、(viewport.width - dialog.width)/2, (viewport.height - dialog.height)/2 付近で中央配置されることを確認
+  - [ ] 通常サイズ・リサイズ前後の挙動が変わらない（ドラッグ・リサイズ・ステッパー表示が退行しない）
+  - [ ] プラグイン種別に依存しない共通ロジックとして適用され、特定プラグインのみズレるといった偏りがない
+  - [ ] 代表コマンド（少なくとも `pnpm --filter @hierarchidb/plugin-ui-host typecheck`）の結果を運用ログに記録する（実行不可なら理由を記載）
+  - [ ] ロールバック手順を記載し、運用ログに start/progress/done を残す
+- チェックリスト:
+  - [ ] 最大化時に 0,0 へ張り付く原因を特定し、中央寄せ計算または CSS スタイルを修正する
+  - [ ] プラグインダイアログ共通のレイアウト/ポータル箇所に修正を集約する
+  - [ ] 手動確認で最大化・通常サイズ間の遷移を確認し、必要なら複数プラグインで試験する
+  - [ ] 代表的な typecheck を実行し、結果を運用ログへ追記する
+- ロールバック手順：本タスクで変更したダイアログ関連ファイルの差分を revert し、実行した typecheck を再実行する
+- 運用ログ：
+  - start: 2025-12-10 20:36 JST プラグインダイアログ最大化時の配置補正対応を開始（branch: fix/ui-dialog/maximize-center、sandbox で branch 作成不可なら main 上で継続）。
+
 1612) Vite を rolldown-vite へ置換（P0）
 - ブランチ: `chore/build/rolldown-vite`（.git/refs 作成不可のため main 上で作業）
 - 依存: app/vite.config.ts, package.json, pnpm-lock.yaml, app/vite-plugins/*, scripts/env/*, turbo.json

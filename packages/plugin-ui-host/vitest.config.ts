@@ -1,6 +1,7 @@
 import { defineConfig } from 'vitest/config';
 import type { Alias } from 'vite';
 import * as path from 'path';
+import '@testing-library/jest-dom/vitest';
 
 const pluginNames = [
   'basemap',
@@ -74,6 +75,9 @@ export default defineConfig({
     ],
     globals: true,
     passWithNoTests: true,
+    typecheck: {
+      tsconfig: path.resolve(__dirname, './tsconfig.vitest.json'),
+    },
   },
   resolve: {
     alias: [...testingAliasEntries, ...baseAliasEntries, ...pluginAliasEntries, ...basicInfoAliasEntries],

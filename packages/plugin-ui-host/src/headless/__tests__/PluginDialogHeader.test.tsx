@@ -1,9 +1,12 @@
+/// <reference types="vitest/globals" />
+/// <reference types="@testing-library/jest-dom/vitest" />
 import { MultiStepDialogProvider } from '@hierarchidb/ui-dialog';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 import { vi } from 'vitest';
 import { PluginDialogHeader } from '../components/PluginDialogHeader.js';
+import '@testing-library/jest-dom/vitest';
 
 const headerLocationRef = {
   pathname: '/dialog',
@@ -146,22 +149,22 @@ describe('PluginDialogHeader', () => {
     );
 
     const validatedIcon = screen.getByTestId('plugin-dialog-step-icon-1');
-    expect(validatedIcon).toHaveAttribute('data-validated', 'true');
-    expect(validatedIcon).toHaveAttribute('data-active', 'false');
+    expect(validatedIcon.getAttribute('data-validated')).toBe('true');
+    expect(validatedIcon.getAttribute('data-active')).toBe('false');
 
     const activeIcon = screen.getByTestId('plugin-dialog-step-icon-2');
-    expect(activeIcon).toHaveAttribute('data-active', 'true');
-    expect(activeIcon).toHaveAttribute('data-validated', 'false');
+    expect(activeIcon.getAttribute('data-active')).toBe('true');
+    expect(activeIcon.getAttribute('data-validated')).toBe('false');
 
     expect(screen.queryByText('Current step')).toBeNull();
 
     const activeLabel = screen.getByText('Step Two');
-    expect(activeLabel).toHaveAttribute('data-active-label', 'true');
+    expect(activeLabel.getAttribute('data-active-label')).toBe('true');
     const inactiveLabel = screen.getByText('Step One');
-    expect(inactiveLabel).toHaveAttribute('data-active-label', 'false');
+    expect(inactiveLabel.getAttribute('data-active-label')).toBe('false');
 
     const activeStepButton = screen.getByRole('link', { name: /Step Two/i });
-    expect(activeStepButton).toHaveAttribute('aria-current', 'step');
+    expect(activeStepButton.getAttribute('aria-current')).toBe('step');
   });
 
   it('shows a grey validated icon when the step is valid but disabled due to a previous invalid step', () => {
@@ -197,11 +200,11 @@ describe('PluginDialogHeader', () => {
     );
 
     const validatedDisabledIcon = screen.getByTestId('plugin-dialog-step-icon-2');
-    expect(validatedDisabledIcon).toHaveAttribute('data-validated', 'true');
-    expect(validatedDisabledIcon).toHaveAttribute('data-valid-disabled', 'true');
-    expect(validatedDisabledIcon).toHaveAttribute('data-active', 'false');
+    expect(validatedDisabledIcon.getAttribute('data-validated')).toBe('true');
+    expect(validatedDisabledIcon.getAttribute('data-valid-disabled')).toBe('true');
+    expect(validatedDisabledIcon.getAttribute('data-active')).toBe('false');
 
     const disabledStep = screen.getByRole('link', { name: /Step Two/i });
-    expect(disabledStep).toHaveAttribute('aria-disabled', 'true');
+    expect(disabledStep.getAttribute('aria-disabled')).toBe('true');
   });
 });
