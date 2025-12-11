@@ -8,14 +8,14 @@ import {
 import type { PluginStepConfig, composeStepConfigs } from '@hierarchidb/plugin-base';
 import type { DialogStep } from '@hierarchidb/ui-dialog';
 
-interface Params<T extends object = object> {
+interface Params<T extends Record<string, unknown> = Record<string, unknown>> {
   steps: DialogStep[];
   composedConfigs: ReturnType<typeof composeStepConfigs>;
   activeStepIndex: number;
   dialogData: Partial<T>;
 }
 
-export function useStepCapabilities<T extends object = object>({
+export function useStepCapabilities<T extends Record<string, unknown> = Record<string, unknown>>({
   steps,
   composedConfigs,
   activeStepIndex,

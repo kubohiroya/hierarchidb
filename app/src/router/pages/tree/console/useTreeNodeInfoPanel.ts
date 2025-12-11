@@ -13,7 +13,7 @@ import { Subscriptions } from '~/hooks/SubscriptionServices.ts';
 import { proxy as comlinkProxy } from 'comlink';
 import type {
   TreeConsolePanelProps,
-  TreeNodeData,
+  HierarchicalTreeNode,
 } from '@hierarchidb/ui-treeconsole-base';
 
 type ContextMenuHandler = NonNullable<TreeConsolePanelProps['onContextMenuAction']>;
@@ -39,7 +39,7 @@ export function useTreeNodeInfoPanel({
     [currentNode]
   );
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
-  const [menuNode, setMenuNode] = useState<TreeNodeData | null>(nodeData ?? null);
+  const [menuNode, setMenuNode] = useState<HierarchicalTreeNode | null>(nodeData ?? null);
 
   useEffect(() => {
     setCurrentNode(node);

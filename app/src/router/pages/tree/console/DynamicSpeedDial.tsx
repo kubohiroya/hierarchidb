@@ -6,14 +6,14 @@
  */
 
 import type { TreeId } from '@hierarchidb/common-types';
-import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
+import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import { Box, Portal, SpeedDial, SpeedDialAction, SpeedDialIcon } from '@mui/material';
 import type { PluginMenuItem, TreeContext } from '~/plugin-loader/menu-builders.js';
 import { useDynamicSpeedDial } from './useDynamicSpeedDial.js';
 
 interface DynamicSpeedDialProps {
   treeId: TreeId | undefined;
-  onCreateAction: (action: string, node: TreeNodeData) => void;
+  onCreateAction: (action: string, node: HierarchicalTreeNode) => void;
   position?: { bottom?: number; right?: number; left?: number; top?: number };
   hidden?: boolean;
   menuContext?: TreeContext; // Optional explicit context to build items from VM

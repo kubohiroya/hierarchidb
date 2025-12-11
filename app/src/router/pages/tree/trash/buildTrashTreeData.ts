@@ -1,5 +1,5 @@
 import type { NodeId, NodePayload, TreeNode } from '@hierarchidb/common-types';
-import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
+import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import { getTrashDisplayName } from './getTrashDisplayName.js';
 
 export interface BuildTrashTreeDataParams {
@@ -9,7 +9,7 @@ export interface BuildTrashTreeDataParams {
 }
 
 export interface BuildTrashTreeDataResult {
-  nodes: TreeNodeData[];
+  nodes: HierarchicalTreeNode[];
   rootId: string;
 }
 
@@ -56,7 +56,7 @@ export function buildTrashTreeData({
     sourceMap.set(rootId, rootNode);
   }
 
-  const selectedNodes: TreeNodeData[] = [];
+  const selectedNodes: HierarchicalTreeNode[] = [];
   const seen = new Set<string>();
 
   sourceMap.forEach((node) => {

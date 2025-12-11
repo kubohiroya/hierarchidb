@@ -55,6 +55,8 @@ export interface DialogUIState {
 
 // Base shape for payloads; keep structural typing while avoiding primitive-only payloads.
 export type NodePayload = Record<string, unknown>;
+// Alias for readability
+export type TreeNodeData = NodePayload;
 
 /**
  * Dexie nodes table record (single source of truth).

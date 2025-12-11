@@ -65,7 +65,7 @@ describe('PluginDialogFooter icons', () => {
     expect(within(nextButton).queryByTestId('ChevronRightIcon')).not.toBeNull();
   });
 
-  it('shows Back and Create icons on the final step (create mode)', () => {
+  it('shows Back and Save icons on the final step (create mode)', () => {
     renderWithContext(<PluginDialogFooter mode="create" canCommit={true} />, {
       activeStepIndex: 1,
     });
@@ -73,8 +73,8 @@ describe('PluginDialogFooter icons', () => {
     const backButton = screen.getByRole('button', { name: 'Back' });
     expect(within(backButton).queryByTestId('ChevronLeftIcon')).not.toBeNull();
 
-    const createButton = screen.getByRole('button', { name: 'Create' });
-    expect(within(createButton).queryByTestId('CheckIcon')).not.toBeNull();
+    const saveButton = screen.getByRole('button', { name: 'Save' });
+    expect(within(saveButton).queryByTestId('CheckIcon')).not.toBeNull();
   });
 
   it('shows the check icon for Save (edit mode) on the final step', () => {

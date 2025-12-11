@@ -10,7 +10,6 @@ import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
 import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import { Alert, Box, CircularProgress } from '@mui/material';
 import { useWorker } from '~/contexts/WorkerProvider.tsx';
-import { ResumeDraftDialog } from './ResumeDraftDialog.js';
 import { TreeConsolePanelWithDynamicSpeedDial } from './TreeConsolePanelWithDynamicSpeedDial.js';
 import { TreeNodeInfoPanel } from './TreeNodeInfoPanel.js';
 import { useTreeConsoleIntegrationInner } from './useTreeConsoleIntegrationInner.js';
@@ -40,7 +39,6 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
     treeConsolePanelProps,
     breadcrumbProps,
     infoPanelProps,
-    resumeDialogProps,
   } = useTreeConsoleIntegrationInner({
     client: client ?? undefined,
     treeId,
@@ -103,11 +101,8 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
           </Box>
         )}
       </Box>
-      <ResumeDraftDialog {...resumeDialogProps} />
     </Box>
   );
-
-
 };
 
 export { canImportFromNode };

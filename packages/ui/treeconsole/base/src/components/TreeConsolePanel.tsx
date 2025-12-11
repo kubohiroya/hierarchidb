@@ -7,7 +7,7 @@ import { toNodeType, type NodeId, type NodeType, type TreeNode } from '@hierarch
 import { TreeNodeInUI, TreeTableController, TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
 import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { TreeConsoleFooter } from './TreeConsoleFooter.js';
-import type { TreeNodeData } from '../types/index.js';
+import type { HierarchicalTreeNode } from '../types/index.js';
 import { DualKeyMap } from '@hierarchidb/util';
 
 type PanelBreadcrumbNode = {
@@ -42,7 +42,7 @@ export interface TreeConsolePanelProps {
    * Defaults to `pageNodeId` when omitted.
    */
   readonly subtreeRootId?: string;
-  readonly data: readonly TreeNodeData[];
+  readonly data: readonly HierarchicalTreeNode[];
   readonly nodeIndex: DualKeyMap<NodeId, NodeId, TreeNode>;
   /**
    * @deprecated TreeTableCore builds its own column set; external overrides are ignored.
@@ -66,7 +66,7 @@ export interface TreeConsolePanelProps {
   readonly showNavigationButtons?: boolean;
   readonly maxHeight?: number | string;
   readonly dense?: boolean;
-  readonly onNodeClick?: (node: TreeNodeData) => void;
+  readonly onNodeClick?: (node: HierarchicalTreeNode) => void;
   readonly onNodeSelect?: (nodeIds: string[], selected: boolean) => void;
   readonly onNodeExpand?: (nodeId: string, expanded: boolean) => void;
   readonly onSearchChange: (term: string) => void;
@@ -85,7 +85,7 @@ export interface TreeConsolePanelProps {
   readonly onNavigateForward?: () => void;
   readonly canGoBack?: boolean;
   readonly canGoForward?: boolean;
-  readonly onContextMenuAction: (action: string, node: TreeNodeData, options?: { navigateToParent?: boolean }) => void;
+  readonly onContextMenuAction: (action: string, node: HierarchicalTreeNode, options?: { navigateToParent?: boolean }) => void;
   readonly onBreadcrumbContextAction?: (action: string, node: PanelBreadcrumbNode, options?: { navigateToParent?: boolean }) => void;
   readonly onStartTour?: () => void;
   readonly onMoveNodes?: (nodeIds: string[], targetParentId: string) => void;
@@ -140,7 +140,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
 
     const depthOffset = 1 - (Number.isFinite(baseDepth) ? baseDepth : 1);
 
-    const toTreeNodeInUI = (node: TreeNodeData, fallbackDepth: number): TreeNodeInUI => {
+    const toTreeNodeInUI = (node: HierarchicalTreeNode, fallbackDepth: number): TreeNodeInUI => {
       const resolvedDepth = Number.isFinite(node.depth) ? Number(node.depth) : fallbackDepth;
       const normalizedDepth = Math.max(1, Math.round(resolvedDepth + depthOffset));
       const originalNameValue =
@@ -153,8 +153,8 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
           : node.metadata?.name || '';
       const base: TreeNodeInUI = {
         ...node,
-        nodeType: toNodeType(node.nodeType || node.type || 'folder'),
-        type: (node.type || node.nodeType || 'folder') as string,
+        nodeType: toNodeType(node.nodeType || 'folder'),
+        type: (node.nodeType || 'folder') as string,
         metadata: { ...node.metadata, name: displayName},
         hasChildren: Boolean(node.hasChildren ?? (Array.isArray(node.children) && node.children.length > 0)),
         depth: normalizedDepth,
@@ -189,9 +189,9 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       startEdit: async (_nodeId: string) => {},
       finishEdit: (nodeId: string, newValue: string, field: 'name' | 'description' = 'name') => {
         // delegate to parent handler via context-menu action channel
-        const nodeData: TreeNodeData = (field === 'name'
+        const nodeData: HierarchicalTreeNode = (field === 'name'
           ? ({ id: nodeId, name: newValue })
-          : ({ id: nodeId, description: newValue })) as unknown as TreeNodeData;
+          : ({ id: nodeId, description: newValue })) as unknown as HierarchicalTreeNode;
         props.onContextMenuAction(field === 'name' ? 'rename-inline' : 'update-desc-inline', nodeData);
       },
       cancelEdit: () => {},
@@ -200,9 +200,8 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
           // Cast TreeNodeInUI to TreeNodeData for callback
           // TreeNodeInUI is compatible with TreeNodeData
 
-          const nodeData: TreeNodeData = {
+          const nodeData: HierarchicalTreeNode = {
             ...node,
-            type: node.type,
           };
 
           props.onNodeClick(nodeData);
@@ -219,8 +218,8 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       },
       onContextAction: (action: string, node: TreeNodeInUI, options?: { navigateToParent?: boolean }) => {
         if (props.onContextMenuAction) {
-          const nodeData: TreeNodeData = {
-            ...(node as unknown as TreeNodeData),
+          const nodeData: HierarchicalTreeNode = {
+            ...(node as unknown as HierarchicalTreeNode),
             id: node.id,
             nodeType: (node.nodeType || node.type || 'folder') as NodeType,
           };

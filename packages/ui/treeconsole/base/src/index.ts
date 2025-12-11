@@ -16,7 +16,7 @@ export type {
 
 // Types
 export type {
-  TreeNodeData,
+  HierarchicalTreeNode,
   SelectionState,
   ExpansionState,
   SortState,

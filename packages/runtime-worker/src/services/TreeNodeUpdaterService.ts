@@ -1,4 +1,9 @@
-import type { CommitDraftOptions, DiscardDraftOptions, TreeNodeUpdaterAPI } from '@hierarchidb/common-api';
+import type {
+  CommitDraftRequest,
+  CommitDraftMode,
+  DiscardDraftOptions,
+  TreeNodeUpdaterAPI,
+} from '@hierarchidb/common-api';
 import type {
   CommitResult,
   NodeId,
@@ -17,7 +22,6 @@ import {
   discardDraft as discardWc,
   updateTreeNodeDraftMetadata,
   updateTreeNodeDraftData,
-  updateTreeNodeDialogUIState,
   commitDraft as commitDraftOp,
   getTreeNode,
 } from './DraftTreeNodeOperations.js';
@@ -77,10 +81,6 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
     await updateTreeNodeDraftData(this.coreDB, nodeId, updater);
   }
 
-  async updateTreeNodeDialogUIState(nodeId: NodeId, updater: TreeNode['dialogUIState'] | null): Promise<void> {
-    await updateTreeNodeDialogUIState(this.coreDB, nodeId, updater);
-  }
-
   async listDrafts(): Promise<TreeNode[]> {
     // Drafts are nodes with draftData present
     const allNodes = await this.coreDB.nodes.toArray();
@@ -92,17 +92,61 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
     return !!wc;
   }
 
-  async commitDraft(
+  async updateTreeNode(
     draftId: NodeId,
-    options?: CommitDraftOptions
+    request?: CommitDraftRequest
   ): Promise<CommitResult> {
-    const conflictPolicy: OnNameConflict = options?.onNameConflict ?? 'auto-rename';
+    const conflictPolicy: OnNameConflict = request?.onNameConflict ?? 'auto-rename';
+    const mode: CommitDraftMode = request?.mode ?? 'save';
+
+    const updates: Partial<TreeNode> = {};
+    if ('draftMetadata' in (request ?? {})) {
+      updates.draftMetadata = (request?.draftMetadata ?? null) as TreeNodeMetadata | null;
+    }
+    if ('draftData' in (request ?? {})) {
+      updates.draftData = request?.draftData ?? null;
+    }
+    if ('dialogUIState' in (request ?? {})) {
+      updates.dialogUIState = request?.dialogUIState ?? undefined;
+    }
+    if ('data' in (request ?? {})) {
+      updates.data = request?.data ?? null;
+    }
+    if ('metadata' in (request ?? {})) {
+      updates.metadata = (request?.metadata ?? undefined) as TreeNodeMetadata | undefined;
+    }
+    if (Object.keys(updates).length > 0) {
+      await this.coreDB.nodes.update(draftId, updates);
+    }
+
     if (typeof console !== 'undefined' && typeof console.debug === 'function') {
       console.debug('[DraftService] commitDraft request', {
         draftId,
         conflictPolicy,
+        mode,
       });
     }
+
+    if (mode === 'save-draft') {
+      const node = await getTreeNode(this.coreDB, draftId);
+      if (typeof console !== 'undefined' && typeof console.debug === 'function') {
+        console.debug('[DraftService] commitDraft save-draft result', {
+          nodeId: draftId,
+          persistedNode: node
+            ? {
+                id: node.id,
+                metadata: node.metadata,
+                data: node.data,
+                draftMetadata: (node as any).draftMetadata,
+                draftData: (node as any).draftData,
+                dialogUIState: (node as any).dialogUIState,
+              }
+            : null,
+        });
+      }
+      return { status: 'ok', nodeId: draftId, node: node as TreeNode | undefined };
+    }
+
     const result = await commitDraftOp(this.coreDB, draftId, conflictPolicy);
     if (typeof console !== 'undefined' && typeof console.debug === 'function') {
       const node = result.status === 'ok' ? await getTreeNode(this.coreDB, result.nodeId as NodeId) : null;
@@ -138,6 +182,11 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
       originalVersion: result.originalVersion,
       wcVersion: result.wcVersion,
     };
+  }
+
+  /** @deprecated use updateTreeNode */
+  async commitDraft(draftId: NodeId, request?: CommitDraftRequest): Promise<CommitResult> {
+    return this.updateTreeNode(draftId, request);
   }
 
   async discardDraft(nodeId: NodeId, options?: DiscardDraftOptions): Promise<void> {

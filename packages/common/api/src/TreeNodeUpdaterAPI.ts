@@ -34,19 +34,20 @@ export interface TreeNodeUpdaterAPI {
     updater: Record<string, unknown>
   ): Promise<void>;
 
-  /**
-   * Persist dialog UI state for a node (e.g., window position/size, active step).
-   *
-   * @param nodeId - Target node identifier
-   * @param updater - Dialog UI state to store; pass null to clear
-   */
-  updateTreeNodeDialogUIState(nodeId: NodeId, updater: DialogUIState | null): Promise<void>;
-
   listDrafts(): Promise<TreeNode[]>;
 
   hasDraft(nodeId: NodeId): Promise<boolean>;
 
-  commitDraft(nodeId: NodeId, options?: CommitDraftOptions): Promise<CommitResult>;
+  /**
+ * Persist draft changes and optionally commit them in a single call.
+ * - `mode: 'save-draft'` stores draft payloads/UI state without committing.
+ * - `mode: 'save'` (default) optionally applies provided draft payloads/UI state
+ *   and commits the draft.
+ */
+  updateTreeNode(nodeId: NodeId, request?: CommitDraftRequest): Promise<CommitResult>;
+
+  /** @deprecated use updateTreeNode */
+  commitDraft(nodeId: NodeId, request?: CommitDraftRequest): Promise<CommitResult>;
 
   discardDraft(nodeId: NodeId, options?: DiscardDraftOptions): Promise<void>;
 
@@ -57,13 +58,23 @@ export interface TreeNodeUpdaterAPI {
   hasUnsavedChanges(nodeId: NodeId): Promise<boolean>;
 }
 
-export interface CommitDraftOptions {
+export type CommitDraftMode = 'save-draft' | 'save';
+
+export interface CommitDraftRequest<TData = Record<string, unknown>> {
+  draftMetadata?: Partial<TreeNodeMetadata> | null;
+  draftData?: TData | null;
+  dialogUIState?: DialogUIState | null;
+  data?: TData | null;
+  metadata?: Partial<TreeNodeMetadata> | null;
+  mode?: CommitDraftMode;
   /**
    * Policy for resolving name conflicts during commit operations.
    * Defaults to `'auto-rename'` for backward compatibility.
    */
   onNameConflict?: OnNameConflict;
 }
+
+export type CommitDraftOptions = Pick<CommitDraftRequest, 'onNameConflict'>;
 
 export interface DiscardDraftOptions {
   /**

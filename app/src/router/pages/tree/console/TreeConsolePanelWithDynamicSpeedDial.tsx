@@ -10,7 +10,7 @@ import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-typ
 import {
   TreeConsolePanel,
   type TreeConsolePanelProps,
-  type TreeNodeData,
+  type HierarchicalTreeNode,
 } from '@hierarchidb/ui-treeconsole-base';
 import { Box } from '@mui/material';
 import type { Remote } from 'comlink';
@@ -75,7 +75,7 @@ export function TreeConsolePanelWithDynamicSpeedDial({
 
   const rawContextAction = useMemo(()=>panelProps.onContextMenuAction ?? (() => {}), [panelProps.onContextMenuAction]);
   const onContextMenuAction = useCallback(
-    (action: string, node: TreeNodeData) => {
+    (action: string, node: HierarchicalTreeNode) => {
       if (action?.startsWith('create:')) {
         setSpeedDialSuppressed(true);
       }
@@ -87,7 +87,7 @@ export function TreeConsolePanelWithDynamicSpeedDial({
   const parentForSpeedDial = (pageTreeNode?.parentId ??
     pageNodeId ??
     (treeId ? `${treeId}:root` : 'root')) as string;
-  const speedDialContextNode: TreeNodeData = {
+  const speedDialContextNode: HierarchicalTreeNode = {
     id: (pageNodeId ?? (treeId ? `${treeId}:root` : 'root')) as NodeId,
     nodeType: (pageTreeNode?.nodeType ?? 'folder') as NodeType,
     metadata: { name: pageTreeNode?.metadata?.name ?? '', description: pageTreeNode?.metadata?.description, tags: pageTreeNode?.metadata?.tags },
@@ -99,7 +99,7 @@ export function TreeConsolePanelWithDynamicSpeedDial({
     createdAt: pageTreeNode?.createdAt ?? Date.now(),
     updatedAt: pageTreeNode?.updatedAt ?? Date.now(),
     version: pageTreeNode?.version ?? 1,
-  } as TreeNodeData;
+  } as HierarchicalTreeNode;
   return (
     <Box sx={{ position: 'relative', height: '100%', minHeight: 0 }}>
       {guidedTour}

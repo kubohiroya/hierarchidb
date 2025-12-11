@@ -6,8 +6,8 @@ interface    | AutoLifecycleConfig                  | packages/common/types/src/
 interface    | BaseDataSourceConfig                 | packages/common/types/src/datasource.ts                      |      0
 interface    | BaseDialogProps                      | packages/common/types/src/stepper-dialog-plugin-definition.ts            |      4
 interface    | BaseEntity                           | packages/common/types/src/entity-plugin-definition.ts                    |     12
-interface    | BaseEntityExtension                  | packages/common/types/src/types.ts                |      5
-interface    | BaseNodeDefinition                   | packages/common/types/src/types.ts                |      0
+interface    | BaseEntityExtension                  | packages/common/types/src/batch-types.ts                |      5
+interface    | BaseNodeDefinition                   | packages/common/types/src/batch-types.ts                |      0
 interface    | BaseUrlMetadata                      | packages/common/types/src/datasource.ts                      |      0
 interface    | BinaryPropertyConfig                 | packages/common/types/src/plugin-serialization.ts            |      0
 interface    | CategoryDefinition                   | packages/common/types/src/plugin-definition.ts               |      3
@@ -27,7 +27,7 @@ interface    | DependencyError                      | packages/common/types/src/
 interface    | DependencyGraph                      | packages/common/types/src/plugin-resolution.ts               |     12
 interface    | DescendantProperties                 | packages/common/types/src/tree-node-plugin-definition.ts                 |      0
 interface    | DeserializationInput                 | packages/common/types/src/plugin-serialization.ts            |      2
-interface    | DialogStepDefinition                 | packages/common/types/src/types.ts                |     40
+interface    | DialogStepDefinition                 | packages/common/types/src/batch-types.ts                |     40
 interface    | DiscardWorkingCopyPayload            | packages/common/types/src/command-plugin-definition.ts                   |      4
 interface    | DraftProperties                      | packages/common/types/src/tree-node-plugin-definition.ts                 |      0
 interface    | DuplicateNodesPayload                | packages/common/types/src/command-plugin-definition.ts                   |      7
@@ -49,10 +49,10 @@ interface    | ExportNodesPayload                   | packages/common/types/src/
 interface    | ExportOptions                        | packages/common/types/src/import-export-plugin-definition.ts             |      0
 interface    | ExportProgress                       | packages/common/types/src/import-export-plugin-definition.ts             |      7
 interface    | ExportResult                         | packages/common/types/src/import-export-plugin-definition.ts             |      7
-interface    | ExtendedFieldDefinition              | packages/common/types/src/types.ts                |      0
+interface    | ExtendedFieldDefinition              | packages/common/types/src/batch-types.ts                |      0
 interface    | ExtendedPluginDefinition             | packages/common/types/src/plugin-definition.ts               |      2
-interface    | ExtendingNodeTypeDefinition          | packages/common/types/src/types.ts                |      4
-interface    | ExtensionMetadata                    | packages/common/types/src/types.ts                |      0
+interface    | ExtendingNodeTypeDefinition          | packages/common/types/src/batch-types.ts                |      4
+interface    | ExtensionMetadata                    | packages/common/types/src/batch-types.ts                |      0
 interface    | FileImportOptions                    | packages/common/types/src/import-export-plugin-definition.ts             |      0
 interface    | GetAncestorsPayload                  | packages/common/types/src/command-plugin-definition.ts                   |      2
 interface    | GetChildrenPayload                   | packages/common/types/src/command-plugin-definition.ts                   |      2
@@ -92,7 +92,7 @@ interface    | PeerEntity                           | packages/common/types/src/
 interface    | PluginAPIConfig                      | packages/common/types/src/plugin-definition.ts               |      2
 interface    | PluginDatabaseConfig                 | packages/common/types/src/plugin-definition.ts               |      3
 interface    | PluginDefinition                     | packages/common/types/src/plugin-definition.ts               |    113
-interface    | PluginExtensionConfig                | packages/common/types/src/types.ts                |      1
+interface    | PluginExtensionConfig                | packages/common/types/src/batch-types.ts                |      1
 interface    | PluginI18nConfig                     | packages/common/types/src/plugin-definition.ts               |      0
 interface    | PluginIntegrated                     | packages/common/types/src/plugin-definition.ts               |      2
 interface    | PluginRegistrationConfig             | packages/common/types/src/plugin-resolution.ts               |      0
@@ -122,7 +122,7 @@ interface    | ShapeCountryMetadata                 | packages/common/types/src/
 interface    | ShapeDataSourceConfig                | packages/common/types/src/datasource.ts                      |      0
 interface    | ShapeSelectionRowData                | packages/common/types/src/datasource.ts                      |      0
 interface    | ShapeUrlMetadata                     | packages/common/types/src/datasource.ts                      |      0
-interface    | StepComponent                        | packages/common/types/src/types.ts                |      5
+interface    | StepComponent                        | packages/common/types/src/batch-types.ts                |      5
 interface    | StepComponentProps                   | packages/common/types/src/stepper-dialog-plugin-definition.ts            |      6
 interface    | StepValidation                       | packages/common/types/src/validation-plugin-definition.ts                |      8
 interface    | SubscribeChildrenPayload             | packages/common/types/src/command-plugin-definition.ts                   |      2
@@ -145,7 +145,7 @@ interface    | TreeViewState                        | packages/common/types/src/
 interface    | TypedClientAPIExtensions             | packages/common/types/src/api-plugin-definition.ts                       |      0
 interface    | TypedWorkerAPIExtensions             | packages/common/types/src/api-plugin-definition.ts                       |      0
 interface    | UndoPayload                          | packages/common/types/src/command-plugin-definition.ts                   |      4
-interface    | ValidationExtension                  | packages/common/types/src/types.ts                |      6
+interface    | ValidationExtension                  | packages/common/types/src/batch-types.ts                |      6
 interface    | ValidationRule                       | packages/common/types/src/validation-plugin-definition.ts                |     27
 interface    | WorkerAPIExtensions                  | packages/common/types/src/api-plugin-definition.ts                       |      1
 interface    | WorkerPluginRouterAction             | packages/common/types/src/plugin-definition.ts               |      0

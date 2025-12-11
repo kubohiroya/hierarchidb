@@ -9,7 +9,7 @@ import {
 import { DualKeyMap } from '@hierarchidb/util';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import type { TreeTableColumn, TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
+import type { TreeTableColumn, HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import type { TrashDialogData, TrashDialogRouteParams } from './TrashDialog.js';
 import { buildTrashBreadcrumbs } from './buildTrashBreadcrumbs.js';
 import { buildTrashTreeData } from './buildTrashTreeData.js';
@@ -197,7 +197,7 @@ export function useTrashDialog(data: TrashDialogData, params: TrashDialogRoutePa
 
   const treeData = useMemo(() => {
     const viewRoot = data.activeTrashNode ?? data.trashRootNode;
-    if (!viewRoot) return [] as TreeNodeData[];
+    if (!viewRoot) return [] as HierarchicalTreeNode[];
 
     const { nodes } = buildTrashTreeData({ treeId: treeId ?? '', rootNode: viewRoot, nodeMap });
     return nodes;
@@ -228,7 +228,7 @@ export function useTrashDialog(data: TrashDialogData, params: TrashDialogRoutePa
     const fallbackParent = (trashViewRootId ??
       (data.trashRootNode?.id as NodeId | undefined) ??
       'trash-root') as NodeId;
-    const decorateForIndex = (node: TreeNodeData): TreeNode => {
+    const decorateForIndex = (node: HierarchicalTreeNode): TreeNode => {
       const source = nodeMap.get(String(node.id)) ?? (node as unknown as TreeNode);
       const fromTreeData = node as { originalName?: string; originalParentId?: NodeId };
       const decorated: TreeNode = {
@@ -342,22 +342,22 @@ export function useTrashDialog(data: TrashDialogData, params: TrashDialogRoutePa
         label: t('trash.columns.name'),
         sortable: true,
         width: 300,
-        render: (_value: unknown, node: TreeNodeData) => getTrashDisplayName(node),
+        render: (_value: unknown, node: HierarchicalTreeNode) => getTrashDisplayName(node),
       },
       {
         id: 'nodeType',
         label: t('trash.columns.type'),
         sortable: true,
         width: 160,
-        render: (_value: unknown, node: TreeNodeData) => node.nodeType,
+        render: (_value: unknown, node: HierarchicalTreeNode) => node.nodeType,
       },
       {
         id: 'removedAt',
         label: t('trash.columns.removedAt'),
         sortable: true,
         width: 200,
-        render: (_value: unknown, node: TreeNodeData) => {
-          const typed = node as TreeNodeData & {
+        render: (_value: unknown, node: HierarchicalTreeNode) => {
+          const typed = node as HierarchicalTreeNode & {
             removedAt?: number | string;
             deletedAt?: number | string;
           };

@@ -1,6 +1,6 @@
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
-import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
+import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import type { Remote } from 'comlink';
 import { useCallback, useMemo, useState } from 'react';
@@ -44,13 +44,6 @@ export type UseTreeConsoleIntegrationInnerResult = {
   treeConsolePanelProps: TreeConsolePanelProps;
   breadcrumbProps: TreeConsoleBreadcrumbProps;
   infoPanelProps: TreeNodeInfoPanelProps;
-  resumeDialogProps: {
-    open: boolean;
-    nodeName: string;
-    onCancel: () => void;
-    onStartFresh: () => void;
-    onResumePrevious: () => void;
-  };
 };
 
 export function useTreeConsoleIntegrationInner({
@@ -125,7 +118,7 @@ export function useTreeConsoleIntegrationInner({
     navigate,
   });
 
-  const { resumeDialogProps, requestEdit } = useTreeConsoleResumeDialog({
+  const { requestEdit } = useTreeConsoleResumeDialog({
     client,
     actions: {
       handleEdit: actions.handleEdit,
@@ -134,7 +127,7 @@ export function useTreeConsoleIntegrationInner({
   });
 
   const handleContextMenuAction = useCallback(
-    (action: string, node: TreeNodeData, options?: { navigateToParent?: boolean }) => {
+    (action: string, node: HierarchicalTreeNode, options?: { navigateToParent?: boolean }) => {
       if (action === 'edit') {
         void (async () => {
           await requestEdit(node.id as NodeId, node);
@@ -166,9 +159,9 @@ export function useTreeConsoleIntegrationInner({
       const parentFallback =
         breadcrumbNode.parentId ??
         (pageNodeId ? String(pageNodeId) : treeId ? `${treeId}:root` : null);
-      const nodeData: TreeNodeData = {
+      const nodeData: HierarchicalTreeNode = {
         id: rawId as NodeId,
-        nodeType: (breadcrumbNode.nodeType ?? breadcrumbNode.type ?? 'folder') as TreeNodeData['nodeType'],
+        nodeType: (breadcrumbNode.nodeType ?? breadcrumbNode.type ?? 'folder') as HierarchicalTreeNode['nodeType'],
         metadata: {
           name: breadcrumbNode.metadata?.name ?? breadcrumbNode.name ?? '',
           description: breadcrumbNode.metadata?.description,
@@ -182,7 +175,7 @@ export function useTreeConsoleIntegrationInner({
         createdAt: Date.now(),
         updatedAt: Date.now(),
         version: 1,
-      } as TreeNodeData;
+      } as HierarchicalTreeNode;
 
       actions.handleContextMenuAction(action, nodeData, options);
     },
@@ -330,7 +323,6 @@ export function useTreeConsoleIntegrationInner({
     treeConsolePanelProps,
     breadcrumbProps,
     infoPanelProps,
-    resumeDialogProps,
   };
 }
 

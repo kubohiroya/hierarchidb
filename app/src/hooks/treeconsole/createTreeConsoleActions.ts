@@ -7,7 +7,7 @@
 
 import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-toolbar';
-import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
+import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import { DualKeyMap } from '@hierarchidb/util';
 import { preconnectPluginServices } from './preconnect.ts';
 import { buildVisibleRows } from '../../state/treeconsole.derive.js';
@@ -181,7 +181,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
 
   const openEditDialog = async (
     targetNodeId: NodeId,
-    nodeHint?: TreeNodeData | TreeNode,
+    nodeHint?: HierarchicalTreeNode | TreeNode,
     dialogOptions?: { initialStep?: number; displayMode?: 'full' | 'normal' }
   ) => {
     if (!client || !pushPath || !treeId) {
@@ -283,7 +283,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
   };
 
   return {
-    handleNodeClick: (node: TreeNodeData) => {
+    handleNodeClick: (node: HierarchicalTreeNode) => {
       const targetId = node.id as NodeId;
       void preconnectPluginServices(String(node.nodeType || ''));
       if (pushPath && treeId) {

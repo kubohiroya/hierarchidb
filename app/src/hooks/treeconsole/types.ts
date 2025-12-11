@@ -13,7 +13,7 @@ import type {
   TreeId,
   TreeNode,
 } from '@hierarchidb/common-types';
-import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
+import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import type { BreadcrumbNode } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import type { Remote } from 'comlink';
 import type { Dispatch, SetStateAction } from 'react';
@@ -63,7 +63,7 @@ export interface TreeConsoleState {
 }
 
 export interface TreeConsoleActions {
-  handleNodeClick: (node: TreeNodeData) => void;
+  handleNodeClick: (node: HierarchicalTreeNode) => void;
   handleNodeSelect: (nodeIds: string[], selected: boolean) => void;
   handleNodeExpand: (nodeId: string, expanded: boolean) => void;
   handleSearchChange: (term: string) => void;
@@ -86,7 +86,7 @@ export interface TreeConsoleActions {
   handleNavigateForward: () => void;
   handleContextMenuAction: (
     action: string,
-    node: TreeNodeData,
+    node: HierarchicalTreeNode,
     options?: {
       navigateToParent?: boolean;
       expandTarget?: boolean;

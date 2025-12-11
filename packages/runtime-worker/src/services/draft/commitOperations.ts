@@ -1,4 +1,4 @@
-import type { NodeId, Timestamp, TreeNode, OnNameConflict } from '@hierarchidb/common-types';
+import type { NodeId, Timestamp, TreeNode, OnNameConflict, DialogUIState } from '@hierarchidb/common-types';
 import type { CoreDB } from '../CoreDB.js';
 import type { CommandResult } from '../command-types.js';
 import { WorkerErrorCode } from '../command-types.js';
@@ -79,7 +79,7 @@ export async function commitTreeNodeDraft(
     data: finalizedData as TreeNode['data'],
     draftData: null,
     draftMetadata: null,
-    dialogUIState: undefined,
+    dialogUIState: (draft as { dialogUIState?: DialogUIState | null }).dialogUIState ?? ({} as DialogUIState),
     updatedAt: now,
     version: originalVersion + 1,
   };

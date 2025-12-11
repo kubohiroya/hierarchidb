@@ -6,7 +6,7 @@ import { TreeConsolePanel } from '../TreeConsolePanel.js';
 
 import { render, cleanup } from '@testing-library/react';
 import React = require('react');
-import type { TreeNodeData } from '../../types/index.js';
+import type { HierarchicalTreeNode } from '../../types/index.js';
 import type { TreeTableColumn } from '../TreeTable/index.js';
 import { DualKeyMap } from '@hierarchidb/util';
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';
@@ -36,14 +36,14 @@ vi.mock('@hierarchidb/ui-treeconsole-treetable', () => {
 const noop = () => {};
 const stringNoop = (_value: string) => {};
 const viewModeNoop = (_mode: 'list' | 'grid') => {};
-const contextMenuNoop = (_action: string, _node: TreeNodeData) => {};
+const contextMenuNoop = (_action: string, _node: HierarchicalTreeNode) => {};
 const moveNodesNoop = async (_nodeIds: string[], _targetParentId: string) => {};
 
 const baseColumns: TreeTableColumn[] = [
   { id: 'name', label: 'Name', width: 120 },
 ];
 
-function renderPanel(data: TreeNodeData[]): TreeTableController {
+function renderPanel(data: HierarchicalTreeNode[]): TreeTableController {
   capturedControllers.length = 0;
   const index = new DualKeyMap<NodeId, NodeId, TreeNode>();
   data.forEach((node) => {
@@ -119,7 +119,7 @@ describe('TreeConsolePanel controller hasChildren propagation', () => {
         createdAt: Date.now(),
         updatedAt: Date.now(),
         version: 1,
-      } as TreeNodeData,
+      } as HierarchicalTreeNode,
     ]);
 
     expect(controller.data?.[0]?.hasChildren).toBe(false);
@@ -137,7 +137,7 @@ describe('TreeConsolePanel controller hasChildren propagation', () => {
         updatedAt: Date.now(),
         version: 1,
         hasChildren: true,
-      } as TreeNodeData,
+      } as HierarchicalTreeNode,
     ]);
 
     expect(controller.data?.[0]?.hasChildren).toBe(true);

@@ -13,7 +13,7 @@
   📂 utils/                              945 lines
   📄 env-mapper.ts                        56 lines
   📄 preconnect.ts                            466 lines
-  📄 types.ts                             50 lines
+  📄 batch-types.ts                             50 lines
 ──────────────────────────────────────────────────
   Total: 2,575 lines
 
@@ -38,7 +38,7 @@
   📄 ports.ts                              9 lines
   📄 Progress.ts                          61 lines
   📄 progressAdapters.ts                  39 lines
-  📄 types.ts                             23 lines
+  📄 batch-types.ts                             23 lines
   📄 UnifiedBatchManagerBase.ts          131 lines
 ──────────────────────────────────────────────────
   Total: 1,208 lines
@@ -72,35 +72,35 @@
 
 📁 packages/common/types/src:
 ──────────────────────────────────────────────────
-  📄 action-types.ts                      12 lines
+  📄 action-batch-types.ts                      12 lines
   📄 ambient-ui-global.ts                  2 lines
-  📄 api-types.ts                         58 lines
-  📄 command-types.ts                    253 lines
-  📄 commit-types.ts                      26 lines
+  📄 api-batch-types.ts                         58 lines
+  📄 command-batch-types.ts                    253 lines
+  📄 commit-batch-types.ts                      26 lines
   📄 datasource.ts                       262 lines
   📄 dialog-state.ts                      60 lines
-  📄 entity-backup-types.ts               14 lines
-  📄 entity-handler-types.ts              37 lines
-  📄 entity-manager-types.ts              50 lines
-  📄 entity-types.ts                     135 lines
-  📄 id-types.ts                          27 lines
+  📄 entity-backup-batch-types.ts               14 lines
+  📄 entity-handler-batch-types.ts              37 lines
+  📄 entity-manager-batch-types.ts              50 lines
+  📄 entity-batch-types.ts                     135 lines
+  📄 id-batch-types.ts                          27 lines
   📄 id-util.ts                           35 lines
-  📄 import-export-types.ts              185 lines
+  📄 import-export-batch-types.ts              185 lines
   📄 preconnect.ts                            103 lines
-  📄 menu-types.ts                        67 lines
-  📄 primitive-types.ts                    2 lines
-  📄 progress-types.ts                    26 lines
-  📄 subscription-types.ts                16 lines
-  📄 tag-entity-types.ts                  88 lines
-  📄 tree-node-event-types.ts             12 lines
+  📄 menu-batch-types.ts                        67 lines
+  📄 primitive-batch-types.ts                    2 lines
+  📄 progress-batch-types.ts                    26 lines
+  📄 subscription-batch-types.ts                16 lines
+  📄 tag-entity-batch-types.ts                  88 lines
+  📄 tree-node-event-batch-types.ts             12 lines
   📄 tree-node-lifecycle-hooks.ts         25 lines
-  📄 tree-node-types.ts                   73 lines
-  📄 tree-root-node-types.ts              15 lines
-  📄 tree-root-state-types.ts             24 lines
-  📄 tree-types.ts                        10 lines
-  📄 tree-view-types.ts                   27 lines
+  📄 tree-node-batch-types.ts                   73 lines
+  📄 tree-root-node-batch-types.ts              15 lines
+  📄 tree-root-state-batch-types.ts             24 lines
+  📄 tree-batch-types.ts                        10 lines
+  📄 tree-view-batch-types.ts                   27 lines
   📄 undo-state-events.ts                 12 lines
-  📄 validation-types.ts                  34 lines
+  📄 validation-batch-types.ts                  34 lines
 ──────────────────────────────────────────────────
   Total: 1,690 lines
 
@@ -152,7 +152,7 @@
   📂 session/                            244 lines
   📄 BatchService.ts                      97 lines
   📄 preconnect.ts                              8 lines
-  📄 types.ts                             22 lines
+  📄 batch-types.ts                             22 lines
 ──────────────────────────────────────────────────
   Total: 785 lines
 
@@ -163,7 +163,7 @@
   📄 ComputeService.ts                    20 lines
   📄 preconnect.ts                             13 lines
   📄 ports.ts                             27 lines
-  📄 types.ts                             24 lines
+  📄 batch-types.ts                             24 lines
   📄 WorkerPool.ts                       144 lines
 ──────────────────────────────────────────────────
   Total: 256 lines
@@ -188,7 +188,7 @@
 ──────────────────────────────────────────────────
   📄 FeatureRegistry.ts                   74 lines
   📄 preconnect.ts                              4 lines
-  📄 types.ts                             21 lines
+  📄 batch-types.ts                             21 lines
 ──────────────────────────────────────────────────
   Total: 99 lines
 
@@ -220,7 +220,7 @@
   📄 preconnect.ts                             13 lines
   📄 MapViewService.ts                    35 lines
   📄 ports.ts                             30 lines
-  📄 types.ts                             28 lines
+  📄 batch-types.ts                             28 lines
 ──────────────────────────────────────────────────
   Total: 286 lines
 
@@ -269,7 +269,7 @@
   📄 registry.ts                          34 lines
   📄 store.ts                             34 lines
   📄 TabularService.ts                    81 lines
-  📄 types.ts                             55 lines
+  📄 batch-types.ts                             55 lines
 ──────────────────────────────────────────────────
   Total: 568 lines
 
@@ -282,7 +282,7 @@
   📄 StylerMetadataManager.ts       178 lines
   📄 TabularQuery.ts                      91 lines
   📄 TabularWriter.ts                    111 lines
-  📄 types.ts                             39 lines
+  📄 batch-types.ts                             39 lines
 ──────────────────────────────────────────────────
   Total: 584 lines
 
@@ -313,7 +313,7 @@
 ──────────────────────────────────────────────────
   📂 __tests__/                           54 lines
   📄 preconnect.ts                            224 lines
-  📄 types.ts                             40 lines
+  📄 batch-types.ts                             40 lines
 ──────────────────────────────────────────────────
   Total: 318 lines
 
@@ -321,7 +321,7 @@
 📁 packages/plugin-registry/src:
 ──────────────────────────────────────────────────
   📄 derivations.ts                       67 lines
-  📄 types.ts                            117 lines
+  📄 batch-types.ts                            117 lines
 ──────────────────────────────────────────────────
   Total: 184 lines
 
@@ -366,7 +366,7 @@
   📂 dialog/                             589 lines
   📂 hooks/                              863 lines
   📄 preconnect.ts                             37 lines
-  📄 types.ts                             68 lines
+  📄 batch-types.ts                             68 lines
 ──────────────────────────────────────────────────
   Total: 1,557 lines
 
@@ -379,7 +379,7 @@
   📂 ui/                                  48 lines
   📂 wiring/                             148 lines
   📄 preconnect.ts                             55 lines
-  📄 types.ts                             74 lines
+  📄 batch-types.ts                             74 lines
   📄 utils.ts                             92 lines
   📄 WorkerInitializationChannel.ts      191 lines
   📄 WorkerInitializationReporter.ts      172 lines
@@ -402,7 +402,7 @@
   📄 preconnect.ts                            354 lines
   📄 module-paths.ts                      88 lines
   📄 stageWorker.entry.ts                 12 lines
-  📄 types.ts                            103 lines
+  📄 batch-types.ts                            103 lines
   📄 vite-env.d.ts                         2 lines
   📄 WorkerAPI.ts                          2 lines
 ──────────────────────────────────────────────────
@@ -714,7 +714,7 @@
   📂 utils/                               49 lines
   📄 constants.ts                         12 lines
   📄 preconnect.ts                             23 lines
-  📄 types.ts                              8 lines
+  📄 batch-types.ts                              8 lines
 ──────────────────────────────────────────────────
   Total: 810 lines
 
@@ -744,7 +744,7 @@
   📂 components/                       1,117 lines
   📂 utils/                              121 lines
   📄 preconnect.ts                             28 lines
-  📄 types.ts                            109 lines
+  📄 batch-types.ts                            109 lines
 ──────────────────────────────────────────────────
   Total: 1,375 lines
 
@@ -753,7 +753,7 @@
 ──────────────────────────────────────────────────
   📂 components/                         196 lines
   📄 preconnect.ts                             15 lines
-  📄 types.ts                             63 lines
+  📄 batch-types.ts                             63 lines
 ──────────────────────────────────────────────────
   Total: 274 lines
 
@@ -769,7 +769,7 @@
 ──────────────────────────────────────────────────
   📂 components/                       1,061 lines
   📄 preconnect.ts                             18 lines
-  📄 types.ts                            151 lines
+  📄 batch-types.ts                            151 lines
 ──────────────────────────────────────────────────
   Total: 1,230 lines
 
@@ -784,7 +784,7 @@
   📂 state/                              227 lines
   📂 utils/                              511 lines
   📄 preconnect.ts                             42 lines
-  📄 types.ts                            239 lines
+  📄 batch-types.ts                            239 lines
 ──────────────────────────────────────────────────
   Total: 6,530 lines
 

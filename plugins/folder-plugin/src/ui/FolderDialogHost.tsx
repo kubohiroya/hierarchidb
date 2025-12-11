@@ -74,9 +74,17 @@ export const FolderDialogHost: React.FC<FolderDialogHostProps> = ({
     },
   });
 
+  const isDirty = mode === 'edit' ? Boolean(headlessProps.isDirty) : true;
+  const adjustedHeadlessProps = {
+    ...headlessProps,
+    isDirty,
+    committableStepIndices: isDirty ? headlessProps.committableStepIndices ?? [0] : [],
+    onRequestCommit: isDirty ? headlessProps.onRequestCommit : undefined,
+  };
+
   return (
     <div style={frameStyle} role="dialog" aria-modal={open} ref={dialogRef}>
-      <HeadlessMultiStepDialog<FolderDraftData> {...headlessProps} />
+      <HeadlessMultiStepDialog<FolderDraftData> {...adjustedHeadlessProps} />
     </div>
   );
 };

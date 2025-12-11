@@ -237,7 +237,7 @@ export function useBaseMapEntity(
             tags: updater.payload.draftMetadata?.tags ?? [],
           },
         );
-        await commitTreeNodeUpdater();
+        await commitTreeNodeUpdater('save', treeNodeUpdater);
         await fetchEntity();
       } catch (err) {
         console.error('Failed to update BaseMap entity:', err);
@@ -247,7 +247,7 @@ export function useBaseMapEntity(
         setLoading(false);
       }
     },
-    [fetchEntity, nodeId, workerClient]
+    [fetchEntity, nodeId, treeNodeUpdater, updatePayloadAndMetadata, updateTreeNodeUpdater, commitTreeNodeUpdater]
   );
 
   // Initial fetch and viewport hydration (defer to Geolocation when allowed)

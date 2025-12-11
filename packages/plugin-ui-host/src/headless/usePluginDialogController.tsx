@@ -70,7 +70,8 @@ export interface PluginDialogFooterOptions {
   saveDraftLabel?: string;
 }
 
-type PluginDefinedEntity = object;
+import type { TreeNodeData } from '@hierarchidb/common-types';
+type PluginDefinedEntity = TreeNodeData;
 type LocalTreeNodeUpdaterState = TreeNodeUpdaterState<PluginDefinedEntity> & {
   dialogUIState?: DialogUIState | null;
 };
@@ -136,7 +137,7 @@ export function usePluginDialogController(
       return {
         mapStyle: { style: 'streets' },
         viewport: undefined,
-      } as Record<string, unknown>;
+      } as TreeNodeData;
     }
     return undefined;
   }, [mode, nodeType]);
@@ -620,10 +621,10 @@ export function usePluginDialogController(
         nodeType === 'folder'
           ? null
           : dialogData && Object.keys(dialogData).length > 0
-            ? (dialogData as Record<string, unknown>)
+            ? (dialogData as TreeNodeData)
             : null;
 
-      const savedNodeId = await commitTreeNodeUpdater({
+      const savedNodeId = await commitTreeNodeUpdater('save', {
         draftMetadata: {
           name: basicInfo.name,
           description: basicInfo.description,
@@ -649,8 +650,8 @@ export function usePluginDialogController(
       const ok = await ensureNoConflict();
       if (!ok) return;
       await updateLocalDraft();
-      updateTreeNodeUpdater({
-        draftData: nodeType === 'folder' ? null : (dialogData as Record<string, unknown>),
+      await commitTreeNodeUpdater('save-draft', {
+        draftData: nodeType === 'folder' ? null : (dialogData as TreeNodeData),
         draftMetadata: {
           ...(treeUpdater?.draftMetadata ?? {}),
           name: basicInfo.name,
@@ -658,12 +659,13 @@ export function usePluginDialogController(
           tags: basicInfo.tags,
         },
         dialogUIState: getPersistableDialogUIState(),
+        mode: 'save-draft',
       } as any);
       const targetId = (pageNodeId ?? nodeId) as NodeId;
       navigateToNode(targetId);
       onClose();
     });
-  }, [basicInfo.description, basicInfo.name, basicInfo.tags, dialogData, ensureNoConflict, getPersistableDialogUIState, navigateToNode, nodeId, pageNodeId, nodeType, onClose, runWithPending, treeUpdater?.draftMetadata, updateLocalDraft, updateTreeNodeUpdater]);
+  }, [basicInfo.description, basicInfo.name, basicInfo.tags, commitTreeNodeUpdater, dialogData, ensureNoConflict, getPersistableDialogUIState, navigateToNode, nodeId, pageNodeId, nodeType, onClose, runWithPending, treeUpdater?.draftMetadata, updateLocalDraft]);
 
   const handleStartBatch = useCallback(async () => {
     if (!activeStartBatch) return;
@@ -806,21 +808,17 @@ export function usePluginDialogController(
     );
 
   const handleCloseRequest = useCallback(() => {
-    if (mode === 'create') {
-      void runWithPending({ type: 'cancel' }, async () => {
-        await discardDraft({ forceDelete: true });
-        onClose();
-      });
-      return;
-    }
-    if (hasUnsavedChanges) {
+    if (dialogDirty) {
       setDiscardDialogOpen(true);
       return;
     }
     void runWithPending({ type: 'cancel' }, async () => {
+      if (mode === 'create') {
+        await discardDraft({ forceDelete: true });
+      }
       onClose();
     });
-  }, [discardDraft, hasUnsavedChanges, mode, onClose, runWithPending]);
+  }, [dialogDirty, discardDraft, mode, onClose, runWithPending]);
 
   const handleConfirmDiscard = useCallback(() => {
     setDiscardDialogOpen(false);

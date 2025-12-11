@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
-import type { TreeNodeData } from '../../../types/index.js';
+import type { HierarchicalTreeNode } from '../../../types/index.js';
 import type { TreeTableColumn } from '../core/TreeTableView.js';
 import { TreeTableView } from '../core/TreeTableView.js';
 
@@ -24,7 +24,7 @@ describe('TreeTableView hasChildren handling', () => {
   });
 
   it('shows expand toggle when hasChildren is true without explicit children array', () => {
-    const rows: TreeNodeData[] = [
+    const rows: HierarchicalTreeNode[] = [
       {
         id: 'node-1',
         parentId: 'root',

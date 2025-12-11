@@ -5,7 +5,7 @@
  */
 
 import type { NodeType } from '@hierarchidb/common-types';
-import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
+import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import type { TreeConsoleState } from './types.js';
 
 export interface SortFilterConfig {
@@ -16,16 +16,16 @@ export interface SortFilterConfig {
 }
 
 export function applySortFilterSearch(
-  nodes: TreeNodeData[],
+  nodes: HierarchicalTreeNode[],
   config: SortFilterConfig,
   overrideTerm?: string
-): TreeNodeData[] {
+): HierarchicalTreeNode[] {
   const sortBy = config.sortBy || 'name';
   const sortDir = config.sortDirection || 'asc';
   const filterBy = config.filterBy || '';
   const term = (overrideTerm ?? config.searchTerm).trim();
 
-  let arr: TreeNodeData[] = [...nodes];
+  let arr: HierarchicalTreeNode[] = [...nodes];
 
   if (filterBy) {
     arr = arr.filter((n) => (n.nodeType as NodeType | undefined) === (filterBy as NodeType));
@@ -42,7 +42,7 @@ export function applySortFilterSearch(
 
   arr.sort((a, b) => {
     const key = sortBy || 'name';
-    const resolve = (node: TreeNodeData): unknown => {
+    const resolve = (node: HierarchicalTreeNode): unknown => {
       if (key === 'name') return node.metadata?.name ?? '';
       if (key === 'description') return node.metadata?.description ?? '';
       return (node as unknown as Record<string, unknown>)[key];

@@ -1,6 +1,6 @@
 import type { ImportData, WorkerAPI } from '@hierarchidb/common-api';
 import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-types';
-import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
+import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import type { TreeConsoleToolbarActionParams } from '@hierarchidb/ui-treeconsole-toolbar';
 import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
 import { useCallback, useState } from 'react';
@@ -80,7 +80,7 @@ export function useTreeConsoleToolbarActions({
   availableTemplateOptions: { id: string; label: string }[];
   developerModeEnabled: boolean;
   handleIndexedDbReset: () => void;
-  requestEdit: (targetNodeId?: NodeId, nodeHint?: TreeNodeData | TreeNode) => Promise<void>;
+  requestEdit: (targetNodeId?: NodeId, nodeHint?: HierarchicalTreeNode | TreeNode) => Promise<void>;
   searchTerm: string;
   selectedCount: number;
 }): ToolbarControllerResult {

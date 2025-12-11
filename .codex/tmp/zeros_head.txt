@@ -1,6 +1,6 @@
 interface    | AutoLifecycleConfig                  | packages/common/types/src/entity-plugin-definition.ts                    |      0
 interface    | BaseDataSourceConfig                 | packages/common/types/src/datasource.ts                      |      0
-interface    | BaseNodeDefinition                   | packages/common/types/src/types.ts                |      0
+interface    | BaseNodeDefinition                   | packages/common/types/src/batch-types.ts                |      0
 interface    | BaseUrlMetadata                      | packages/common/types/src/datasource.ts                      |      0
 interface    | BinaryPropertyConfig                 | packages/common/types/src/plugin-serialization.ts            |      0
 interface    | DependencyError                      | packages/common/types/src/plugin-resolution.ts               |      0
@@ -18,8 +18,8 @@ interface    | EntityWorkingCopyValidation          | packages/common/types/src/
 interface    | ExpandedStateChanges                 | packages/common/types/src/tree-root-state-plugin-definition.ts           |      0
 interface    | ExportManifest                       | packages/common/types/src/import-export-plugin-definition.ts             |      0
 interface    | ExportOptions                        | packages/common/types/src/import-export-plugin-definition.ts             |      0
-interface    | ExtendedFieldDefinition              | packages/common/types/src/types.ts                |      0
-interface    | ExtensionMetadata                    | packages/common/types/src/types.ts                |      0
+interface    | ExtendedFieldDefinition              | packages/common/types/src/batch-types.ts                |      0
+interface    | ExtensionMetadata                    | packages/common/types/src/batch-types.ts                |      0
 interface    | FileImportOptions                    | packages/common/types/src/import-export-plugin-definition.ts             |      0
 interface    | GetNodePayload                       | packages/common/types/src/command-plugin-definition.ts                   |      0
 interface    | GetTreePayload                       | packages/common/types/src/command-plugin-definition.ts                   |      0

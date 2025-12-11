@@ -3,7 +3,7 @@
  * @description Location dataset entity definition and shared configuration types.
  */
 
-import type { NodeId, Timestamp } from '@hierarchidb/common-types';
+import type { NodeId, Timestamp, TreeNodeData } from '@hierarchidb/common-types';
 
 /**
  * Category taxonomy used when importing / classifying locations.
@@ -117,7 +117,7 @@ export type LocationProcessingStatus =
  * Dataset-level entity persisted in Dexie.
  * Contains both acquisition settings and the latest processing status.
  */
-export interface LocationEntity {
+export interface LocationEntity extends TreeNodeData {
   id: NodeId;
 
   /** Optional descriptive metadata mirrored to the TreeNode. */

@@ -25,10 +25,12 @@ export interface MapViewport {
   pitch: number;
 }
 
+import type { TreeNodeData } from '@hierarchidb/common-types';
+
 /**
  * BaseMap entity persisted for each tree node
  */
-export interface BaseMapEntity {
+export interface BaseMapEntity extends TreeNodeData {
   mapStyle: MapStyle;
   viewport?: MapViewport;
 }

@@ -7,7 +7,7 @@
 
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-toolbar';
-import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
+import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import { DualKeyMap } from '@hierarchidb/util';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -94,7 +94,7 @@ export function useTreeConsoleIntegration({
     [nodeIndex]
   );
   const sortConfig = useMemo(() => deriveConfigFromState(state, searchTerm), [state, searchTerm]);
-  const treeData = useMemo<TreeNodeData[]>(() => {
+  const treeData = useMemo<HierarchicalTreeNode[]>(() => {
     if (!nodeIndex) return [];
     const root = (pageNodeId || '') as NodeId;
     const rows = buildVisibleRows(root, nodeIndex, expandedIds);

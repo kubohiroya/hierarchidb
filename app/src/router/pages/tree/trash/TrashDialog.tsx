@@ -10,7 +10,7 @@ import {
   TreeConsolePanel,
   type TreeConsolePanelBreadcrumbRendererProps,
   type TreeConsolePanelProps,
-  type TreeNodeData,
+  type HierarchicalTreeNode,
   type TreeTableColumn,
   TreeTableSearchInput,
 } from '@hierarchidb/ui-treeconsole-base';
@@ -379,7 +379,7 @@ function TrashDialogFooter({
 
 interface TrashDialogContentProps {
   loading: boolean;
-  treeData: TreeNodeData[];
+  treeData: HierarchicalTreeNode[];
   columns: TreeTableColumn[];
   breadcrumbItems: BreadcrumbNode[];
   selectedIds: NodeId[];
@@ -497,7 +497,7 @@ function TrashDialogContent({
           }: TreeConsolePanelBreadcrumbRendererProps) => (
             <TrashBreadcrumb {...defaultRendererProps} />
           )}
-          onNodeClick={(_node: TreeNodeData) => undefined}
+          onNodeClick={(_node: HierarchicalTreeNode) => undefined}
           onNodeSelect={(nodeIds: string[], selected: boolean) => {
             const branded = nodeIds.map((id) => id as NodeId);
             setSelectedIds((prev) => {
@@ -534,7 +534,7 @@ function TrashDialogContent({
           ) => undefined}
           onContextMenuAction={(
             _action: string,
-            _node: TreeNodeData,
+            _node: HierarchicalTreeNode,
             _options?: { navigateToParent?: boolean }
           ) => undefined}
           onStartTour={undefined}

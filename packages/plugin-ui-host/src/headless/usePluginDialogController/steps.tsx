@@ -21,7 +21,7 @@ import type {
   DialogUiState,
 } from './data-types.js';
 
-type PluginDefinedEntity = object;
+type PluginDefinedEntity = Record<string, unknown>;
 
 type StepContextSnapshot = {
   mode: 'create' | 'edit';
@@ -81,9 +81,15 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
 }) => {
   const draftAtom = useRef(atom<StepData>(stepData ?? {}));
   const [, setSlice] = useAtom(draftAtom.current);
+  const prevStepDataRef = useRef<StepData>(toRecord(stepData) ?? {});
 
   useEffect(() => {
-    setSlice(toRecord(stepData) ?? {});
+    const next = toRecord(stepData) ?? {};
+    if (isShallowEqualStepData(prevStepDataRef.current, next)) {
+      return;
+    }
+    prevStepDataRef.current = next;
+    setSlice(next);
   }, [setSlice, stepData]);
 
   const handleChange = useCallback(
@@ -110,7 +116,7 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
         mode,
         nodeId,
         parentId,
-        data: stepData ?? {},
+        data: (stepData ?? {}) as Partial<PluginDefinedEntity>,
         uiState,
         disabled: false,
         onChange: handleChange,
@@ -248,8 +254,10 @@ export function useDialogSteps({
       const resolveValidate: StepValidationFn | undefined = (() => {
         if (isBasicInfoStep) {
           if (validateFn) {
-            return () =>
-              Boolean(validateFn(basicInfoValidationPayloadRef.current)) && isBasicInfoValid;
+              return () =>
+                Boolean(
+                  validateFn(basicInfoValidationPayloadRef.current as unknown as Partial<PluginDefinedEntity>)
+                ) && isBasicInfoValid;
           }
           return () => isBasicInfoValid;
         }

@@ -1,6 +1,5 @@
 import type {
-  BaseEntity,
-  NodeId,
+  TreeNodeData,
   TreeNodeUpdaterPayload,
 } from '@hierarchidb/common-types';
 
@@ -65,7 +64,7 @@ export interface MappingValidationResult {
   coverage?: number;
 }
 
-export interface ResolverEntity extends BaseEntity<NodeId> {
+export type ResolverEntity = {
   sourceSchema: SchemaInfo | null;
   targetSchema: SchemaInfo | null;
   mappingRules: PropertyMappingRule[];
@@ -78,7 +77,7 @@ export interface ResolverEntity extends BaseEntity<NodeId> {
   compiledFunction?: string;
   compiledMetadata?: Record<string, unknown>;
   lastValidation?: MappingValidationResult | null;
-}
+} & TreeNodeData;
 
 export interface MappingPreviewResult {
   success?: boolean;
@@ -114,5 +113,6 @@ export interface StylerIntegration {
 }
 
 export type ResolverUpdaterPayload = TreeNodeUpdaterPayload<Partial<ResolverEntity>> & {
-    lastValidation?: MappingValidationResult | null;
-  };
+  dialogUIState: import('@hierarchidb/common-types').DialogUIState;
+  lastValidation?: MappingValidationResult | null;
+};

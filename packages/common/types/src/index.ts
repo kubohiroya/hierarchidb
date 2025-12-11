@@ -90,6 +90,7 @@ export type {
   DialogWindowState,
   NodeBase,
   NodePayload,
+  TreeNodeData,
   TreeNode,
   TreeNodeMetadata,
   TreeNodeWithChildren,

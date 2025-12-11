@@ -1,6 +1,6 @@
 packages/common/types/src/entity-plugin-definition.ts|AutoLifecycleConfig
 packages/common/types/src/datasource.ts|BaseDataSourceConfig
-packages/common/types/src/types.ts|BaseNodeDefinition
+packages/common/types/src/batch-types.ts|BaseNodeDefinition
 packages/common/types/src/datasource.ts|BaseUrlMetadata
 packages/common/types/src/plugin-serialization.ts|BinaryPropertyConfig
 packages/common/types/src/plugin-resolution.ts|DependencyError
@@ -10,8 +10,8 @@ packages/common/types/src/entity-plugin-definition.ts|EntityRelationship
 packages/common/types/src/tree-root-state-plugin-definition.ts|ExpandedStateChanges
 packages/common/types/src/import-export-plugin-definition.ts|ExportManifest
 packages/common/types/src/import-export-plugin-definition.ts|ExportOptions
-packages/common/types/src/types.ts|ExtendedFieldDefinition
-packages/common/types/src/types.ts|ExtensionMetadata
+packages/common/types/src/batch-types.ts|ExtendedFieldDefinition
+packages/common/types/src/batch-types.ts|ExtensionMetadata
 packages/common/types/src/import-export-plugin-definition.ts|FileImportOptions
 packages/common/types/src/command-plugin-definition.ts|GetNodePayload
 packages/common/types/src/command-plugin-definition.ts|GetTreePayload

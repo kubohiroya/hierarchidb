@@ -6,12 +6,12 @@
  */
 
 import type { TreeNode } from '@hierarchidb/common-types';
-import type { TreeNodeData, TreeTableColumn } from '@hierarchidb/ui-treeconsole-base';
+import type { HierarchicalTreeNode, TreeTableColumn } from '@hierarchidb/ui-treeconsole-base';
 
 /**
  * Convert TreeNode to TreeNodeData for UI display
  */
-export function convertTreeNodeToTreeNodeData(node: TreeNode): TreeNodeData {
+export function convertTreeNodeToTreeNodeData(node: TreeNode): HierarchicalTreeNode {
   return {
     // Map TreeNode properties to TreeNodeData
     ...node,
@@ -33,7 +33,7 @@ export function convertTreeNodeToTreeNodeData(node: TreeNode): TreeNodeData {
 /**
  * Convert array of TreeNodes to TreeNodeData array
  */
-export function convertTreeNodesToTreeNodeData(nodes: TreeNode[]): TreeNodeData[] {
+export function convertTreeNodesToTreeNodeData(nodes: TreeNode[]): HierarchicalTreeNode[] {
   return nodes.map(convertTreeNodeToTreeNodeData);
 }
 
@@ -91,21 +91,21 @@ export function createDefaultColumns(options?: ColumnOptions): TreeTableColumn[]
       label: t('trash.columns.name', 'Name'),
       sortable: true,
       width: 300,
-      render: (_value: unknown, node: TreeNodeData) => node.metadata?.name ?? '',
+      render: (_value: unknown, node: HierarchicalTreeNode) => node.metadata?.name ?? '',
     },
     {
       id: 'description',
       label: t('trash.columns.description', 'Description'),
       sortable: true,
       width: 300,
-      render: (_value: unknown, node: TreeNodeData) => node.metadata?.description || '-',
+      render: (_value: unknown, node: HierarchicalTreeNode) => node.metadata?.description || '-',
     },
     {
       id: 'createdAt',
       label: t('trash.columns.createdAt', 'Created'),
       sortable: true,
       width: 180,
-      render: (_value: unknown, node: TreeNodeData) =>
+      render: (_value: unknown, node: HierarchicalTreeNode) =>
         formatTimestamp(node.createdAt as number | string | null),
     },
     {
@@ -113,7 +113,7 @@ export function createDefaultColumns(options?: ColumnOptions): TreeTableColumn[]
       label: t('trash.columns.updatedAt', 'Modified'),
       sortable: true,
       width: 180,
-      render: (_value: unknown, node: TreeNodeData) =>
+      render: (_value: unknown, node: HierarchicalTreeNode) =>
         formatTimestamp(node.updatedAt as number | string | null),
     },
   ];
@@ -126,7 +126,7 @@ export function createDefaultColumns(options?: ColumnOptions): TreeTableColumn[]
       width: 200,
       render: (
         _value: unknown,
-        node: TreeNodeData & { removedAt?: number | string; deletedAt?: number | string }
+        node: HierarchicalTreeNode & { removedAt?: number | string; deletedAt?: number | string }
       ) => {
         return formatTimestamp(node.removedAt ?? node.deletedAt ?? null);
       },
@@ -157,10 +157,10 @@ export function createBreadcrumbFromTreeNode(node: TreeNode): {
  * Filter TreeNodeData based on search term
  */
 export function filterTreeNodeData(
-  nodes: TreeNodeData[],
+  nodes: HierarchicalTreeNode[],
   searchTerm: string,
   caseSensitive = false
-): TreeNodeData[] {
+): HierarchicalTreeNode[] {
   if (!searchTerm.trim()) {
     return nodes;
   }
@@ -178,10 +178,10 @@ export function filterTreeNodeData(
  * Sort TreeNodeData based on column and direction
  */
 export function sortTreeNodeData(
-  nodes: TreeNodeData[],
+  nodes: HierarchicalTreeNode[],
   sortBy: string,
   sortDirection: 'asc' | 'desc'
-): TreeNodeData[] {
+): HierarchicalTreeNode[] {
   return [...nodes].sort((a, b) => {
     let aValue: string | number;
     let bValue: string | number;

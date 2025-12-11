@@ -267,21 +267,11 @@ export interface TreeViewController {
   clearHistory: () => Promise<{ success: boolean; error?: string }>;
 }
 
-//  TreeNodeData - UI
-//  TreeNodeInUI
-export interface TreeNodeData extends TreeNode {
-  // TreeNode already has these properties:
-  // id: NodeId;
-  // nodeType: NodeType;
-  // name: string;
-  // depth: number;
-
+export interface HierarchicalTreeNode extends TreeNode {
   children?: NodeId[];
-  // UI specific properties
   hasChildren?: boolean;
   deletedAt?: string | number;
   trashedAt?: string | number;
-  type?: string; // backward compatibility - UI uses string
 }
 
 export interface SelectionState {

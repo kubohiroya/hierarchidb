@@ -91,7 +91,7 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
     return treeId === 'r';
   }, [location.pathname]);
 
-  const commitLabel = mode === 'create' ? 'Create' : 'Save';
+  const commitLabel = 'Save';
   const isFirstStep = ctx.activeStepIndex === 0;
   const isLastStep = ctx.activeStepIndex >= ctx.stepComponents.length - 1;
   const isDirty = ctx.isDirty;

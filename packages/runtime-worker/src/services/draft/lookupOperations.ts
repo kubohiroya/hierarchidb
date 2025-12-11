@@ -19,17 +19,7 @@ export async function updateTreeNodeDraftMetadata(
   nodeId: NodeId,
   updater: Partial<TreeNodeMetadata> | null
 ): Promise<void> {
-  if (updater === null) {
-    await coreDB.nodes.update(nodeId, { draftMetadata: null });
-    return;
-  }
-  const current = (await coreDB.nodes.get(nodeId)) as TreeNode | undefined;
-  const prev = (current as { draftMetadata?: TreeNodeMetadata | null })?.draftMetadata ?? null;
-  const next: TreeNodeMetadata = {
-    ...(prev ?? { name: '', description: '', tags: [] }),
-    ...updater,
-  };
-  await coreDB.nodes.update(nodeId, { draftMetadata: next });
+  await coreDB.nodes.update(nodeId, { draftMetadata: (updater ?? null) as TreeNodeMetadata | null });
 }
 
 export async function updateTreeNodeDraftData(
@@ -37,32 +27,7 @@ export async function updateTreeNodeDraftData(
   nodeId: NodeId,
   updater: Record<string, unknown> | null
 ): Promise<void> {
-  if (updater === null) {
-    await coreDB.nodes.update(nodeId, { draftData: null });
-    return;
-  }
-  const current = (await coreDB.nodes.get(nodeId)) as TreeNode | undefined;
-  const prev = (current as { draftData?: Record<string, unknown> | null })?.draftData ?? {};
-  await coreDB.nodes.update(nodeId, {
-    draftData: {
-      ...prev,
-      ...updater,
-    },
-  });
-}
-
-export async function updateTreeNodeDialogUIState(
-  coreDB: CoreDB,
-  nodeId: NodeId,
-  updater: TreeNode['dialogUIState'] | null
-): Promise<void> {
-  if (updater === null) {
-    await coreDB.nodes.update(nodeId, { dialogUIState: undefined });
-    return;
-  }
-  await coreDB.nodes.update(nodeId, {
-    dialogUIState: updater,
-  });
+  await coreDB.nodes.update(nodeId, { draftData: updater ?? null });
 }
 
 export async function getTreeNode(coreDB: CoreDB, nodeId: NodeId): Promise<TreeNode | null> {

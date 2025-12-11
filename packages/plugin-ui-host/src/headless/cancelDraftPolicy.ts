@@ -2,12 +2,13 @@ import type { TreeNodeUpdaterState } from '@hierarchidb/plugin-ui-sdk';
 
 export type CancelDecision = 'discard-force-delete' | 'discard-draft-only' | 'keep-draft';
 
-export function evaluateCancelPolicy<TPayload extends object = Record<string, unknown>>(
+export function evaluateCancelPolicy<TPayload extends import('@hierarchidb/common-types').TreeNodeData = import('@hierarchidb/common-types').TreeNodeData>(
   mode: 'create' | 'edit',
   draft: TreeNodeUpdaterState<TPayload> | null
 ): CancelDecision {
   const hasCommittedData =
-    draft?.data !== null && typeof draft?.data !== 'undefined' && Object.keys(draft?.data ?? {}).length >= 0;
+    draft?.draftMetadata !== null && typeof draft?.draftMetadata !== 'undefined' && Object.keys(draft?.draftMetadata ?? {}).length >= 0
+    draft?.draftData !== null && typeof draft?.draftData !== 'undefined' && Object.keys(draft?.draftData ?? {}).length >= 0;
   const hasCommittedVersion = typeof draft?.version === 'number' && draft.version > 1;
 
   if (mode === 'create') {

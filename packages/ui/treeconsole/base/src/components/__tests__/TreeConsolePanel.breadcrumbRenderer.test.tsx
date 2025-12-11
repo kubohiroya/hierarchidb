@@ -3,7 +3,7 @@ import type { TreeConsolePanelBreadcrumbRendererProps, TreeConsolePanelProps } f
 import { TreeConsolePanel } from '../TreeConsolePanel.js';
 import { cleanup, render, screen } from '@testing-library/react';
 import React = require('react');
-import type { TreeNodeData } from '../../types/index.js';
+import type { HierarchicalTreeNode } from '../../types/index.js';
 import type { TreeTableColumn } from '../TreeTable/index.js';
 import { DualKeyMap } from '@hierarchidb/util';
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';
@@ -27,7 +27,7 @@ vi.mock('@hierarchidb/ui-treeconsole-treetable', () => ({
 const noop = () => {};
 const stringNoop = (_value: string) => {};
 const viewModeNoop = (_mode: 'list' | 'grid') => {};
-const contextMenuNoop = (_action: string, _node: TreeNodeData) => {};
+const contextMenuNoop = (_action: string, _node: HierarchicalTreeNode) => {};
 
 const baseColumns: TreeTableColumn[] = [
   { id: 'name', label: 'Name', width: 120 },

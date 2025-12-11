@@ -116,9 +116,15 @@ const mergeLocationDraft = (current: LocationDraft, patch: Partial<LocationDraft
 
 const toDraftDataPayload = (
   value: LocationDraft
-): Partial<TreeNodeUpdaterState<LocationEntity>> => ({
-  draftData: value.draft as LocationEntity | undefined,
-  treeNodeId: value.treeNodeId,
+): TreeNodeUpdaterState<LocationEntity> => ({
+  treeNodeId: value.treeNodeId ?? ('' as NodeId),
+  draftMetadata: {
+    name: value.name ?? '',
+    description: value.description ?? '',
+    tags: value.tags ?? [],
+  },
+  draftData: (value.draft ?? {}) as LocationEntity,
+  dialogUIState: value.dialogUIState ?? {},
 });
 
 export const LocationDialog: React.FC<LocationDialogProps> = ({

@@ -1,7 +1,7 @@
 import type { TreeId } from '@hierarchidb/common-types';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-plugin-shell/ui-i18n';
 import { useIconRegistry } from '@hierarchidb/ui-icon';
-import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
+import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePluginMenuItems } from '~/hooks/usePluginMenuItems.js';
 import type { PluginMenuItem, TreeContext } from '~/plugin-loader/menu-builders.js';
@@ -40,7 +40,7 @@ export interface UseDynamicSpeedDialResult extends DynamicSpeedDialState {
 export function useDynamicSpeedDial(params: {
   treeId?: TreeId;
   hidden?: boolean;
-  onCreateAction: (action: string, node: TreeNodeData) => void;
+  onCreateAction: (action: string, node: HierarchicalTreeNode) => void;
   onSuppress?: () => void;
   menuContext?: TreeContext;
 }): UseDynamicSpeedDialResult {
@@ -109,7 +109,7 @@ export function useDynamicSpeedDial(params: {
       const action = `create:${nodeType}`;
       onSuppress?.();
       handleClose();
-      onCreateAction(action, {} as TreeNodeData);
+      onCreateAction(action, {} as HierarchicalTreeNode);
     },
     [handleClose, onCreateAction, onSuppress]
   );

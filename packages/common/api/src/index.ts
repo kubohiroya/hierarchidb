@@ -31,4 +31,11 @@ export type {
 } from './TreeQueryAPI.js';
 export type { TreeSubscriptionAPI } from './TreeSubscriptionAPI.js';
 export type { WorkerAPI } from './WorkerAPI.js';
-export type { CommitDraftOptions, DiscardDraftOptions, TreeNodeUpdaterAPI } from './TreeNodeUpdaterAPI.js';
+export type {
+  CommitDraftMode,
+  CommitDraftOptions,
+  CommitDraftRequest,
+  DiscardDraftOptions,
+  // TODO: remove deprecated export after downstream migration
+  TreeNodeUpdaterAPI,
+} from './TreeNodeUpdaterAPI.js';

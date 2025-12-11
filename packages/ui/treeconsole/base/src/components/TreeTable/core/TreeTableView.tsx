@@ -24,7 +24,7 @@ import {
   InsertDriveFile as FileIcon,
 } from '@mui/icons-material';
 import { getPluginIconColor, isFolderNodeType } from '@hierarchidb/ui-treeconsole-breadcrumb';
-import type { TreeNodeData } from '../../../types/index.js';
+import type { HierarchicalTreeNode } from '../../../types/index.js';
 
 export interface TreeTableColumn {
   readonly id: string;
@@ -32,11 +32,11 @@ export interface TreeTableColumn {
   readonly width?: number | string;
   readonly sortable?: boolean;
   readonly align?: 'left' | 'center' | 'right';
-  readonly render?: (value: unknown, node: TreeNodeData) => React.ReactNode;
+  readonly render?: (value: unknown, node: HierarchicalTreeNode) => React.ReactNode;
 }
 
 export interface TreeTableViewProps {
-  readonly data: readonly TreeNodeData[];
+  readonly data: readonly HierarchicalTreeNode[];
   readonly columns: readonly TreeTableColumn[];
   readonly loading?: boolean;
   readonly error?: string;
@@ -44,7 +44,7 @@ export interface TreeTableViewProps {
   readonly expandedIds: readonly string[];
   readonly sortBy?: string;
   readonly sortDirection?: 'asc' | 'desc';
-  readonly onNodeClick?: (node: TreeNodeData) => void;
+  readonly onNodeClick?: (node: HierarchicalTreeNode) => void;
   readonly onNodeSelect?: (nodeIds: string[], selected: boolean) => void;
   readonly onNodeExpand?: (nodeId: string, expanded: boolean) => void;
   readonly onSort?: (columnId: string) => void;
@@ -143,11 +143,11 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
     visibleNodes.length > 0 && visibleNodes.every((node) => isSelected(node.id));
   const someSelected = visibleNodes.some((node) => isSelected(node.id));
 
-  const renderRow = (node: TreeNodeData): React.ReactNode => {
+  const renderRow = (node: HierarchicalTreeNode): React.ReactNode => {
     const hasChildren = Boolean(node.hasChildren) || Boolean(node.children?.length);
     const expanded = isExpanded(node.id);
     const selected = isSelected(node.id);
-    const nodeWithAbsolute = node as TreeNodeData & { absoluteDepth?: number };
+    const nodeWithAbsolute = node as HierarchicalTreeNode & { absoluteDepth?: number };
     const absoluteDepth = typeof nodeWithAbsolute.absoluteDepth === 'number'
       ? nodeWithAbsolute.absoluteDepth
       : typeof node.depth === 'number'
@@ -370,7 +370,7 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
                 </TableCell>
               </TableRow>
             ) : (
-              visibleNodes.map((node) => renderRow(node as TreeNodeData))
+              visibleNodes.map((node) => renderRow(node as HierarchicalTreeNode))
             )}
           </TableBody>
         </Table>
