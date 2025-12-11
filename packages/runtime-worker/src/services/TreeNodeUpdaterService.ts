@@ -125,7 +125,7 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
       });
     }
     if (result.status === 'ok') {
-      return { status: 'ok', nodeId: result.nodeId, autoRenameTo: result.autoRenameTo };
+      return { status: 'ok', nodeId: result.nodeId, autoRenameTo: result.autoRenameTo, node: result.node as TreeNode };
     }
     if (result.status === 'NAME_CONFLICT') {
       return {

@@ -118,7 +118,6 @@ interface TransitionOptions {
   onSizeChange?: (size: DialogSize) => void;
   onPositionChange?: (position: DialogPosition) => void;
   viewportResolver?: () => { width: number; height: number };
-  nonStandardMargin?: number;
 }
 
 export function useDialogDisplayTransition(options: TransitionOptions) {
@@ -130,7 +129,6 @@ export function useDialogDisplayTransition(options: TransitionOptions) {
     onSizeChange,
     onPositionChange,
     viewportResolver = getViewportSize,
-    nonStandardMargin = FRAME_CONSTANTS.NON_STANDARD_MARGIN,
   } = options;
 
   const handleDisplayModeChange = useCallback(async (mode: DialogDisplayMode) => {
@@ -151,9 +149,10 @@ export function useDialogDisplayTransition(options: TransitionOptions) {
       apply(size, { x: 0, y: 0 });
     } else if (mode === 'maximize') {
       const preset = getPresetSize('maximize', viewport);
-      const normalized = normalizeDialogState(preset, { x: nonStandardMargin, y: nonStandardMargin }, viewport, {
+      const centered = initialPosition(preset, viewport);
+      const normalized = normalizeDialogState(preset, centered, viewport, {
         enforceTopLeftMargin: false,
-        minPosition: nonStandardMargin,
+        minPosition: 0,
         clampSizeToViewport: true,
       });
       apply(normalized.size, normalized.position);
@@ -166,7 +165,7 @@ export function useDialogDisplayTransition(options: TransitionOptions) {
     }
 
     setDisplayMode(mode);
-  }, [nonStandardMargin, onPositionChange, onSizeChange, positionRef, setDisplayMode, sizeRef, viewportResolver]);
+  }, [onPositionChange, onSizeChange, positionRef, setDisplayMode, sizeRef, viewportResolver]);
 
   return { handleDisplayModeChange };
 }

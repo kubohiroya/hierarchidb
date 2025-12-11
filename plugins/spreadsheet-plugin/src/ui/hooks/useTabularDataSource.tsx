@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import type { StepComponentProps } from '@hierarchidb/plugin-base';
 import type {
@@ -144,9 +144,15 @@ export const useTabularDataSource = ({
     } else if (hasMetadata) {
       setError(null);
     }
+  }, [hasMetadata, localError, missingDatasetMessage, setError, setValid]);
+
+  const prevHasMetadataRef = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (prevHasMetadataRef.current === hasMetadata) return;
     setImportExpanded(!hasMetadata);
     setDetailsExpanded(hasMetadata);
-  }, [hasMetadata, localError, missingDatasetMessage, setError, setValid]);
+    prevHasMetadataRef.current = hasMetadata;
+  }, [hasMetadata]);
 
   useEffect(() => {
     const needsBackfill = dialogData.tabularProcessingConfig === undefined;

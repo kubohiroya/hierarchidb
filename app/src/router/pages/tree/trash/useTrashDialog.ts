@@ -41,7 +41,7 @@ export function useTrashFrameState(initialMode: DialogDisplayMode = 'normal') {
       const basePosition = nextPosition ?? dialogPosition;
       const options = {
         enforceTopLeftMargin: mode === 'normal',
-        minPosition: mode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        minPosition: 0,
         clampSizeToViewport: true,
       } as const;
       return normalizeDialogState(baseSize, basePosition, viewport, options);
@@ -79,22 +79,24 @@ export function useTrashFrameState(initialMode: DialogDisplayMode = 'normal') {
         };
         applyNormalizedState(size, { x: 0, y: 0 });
       } else if (mode === 'maximize') {
+        const preset = {
+          width: Math.max(
+            viewport.width - FRAME_CONSTANTS.NON_STANDARD_MARGIN * 2,
+            FRAME_CONSTANTS.MIN_DIALOG_WIDTH
+          ),
+          height: Math.max(
+            viewport.height - FRAME_CONSTANTS.NON_STANDARD_MARGIN * 2,
+            FRAME_CONSTANTS.MIN_DIALOG_HEIGHT
+          ),
+        };
+        const centered = initialPosition(preset, viewport);
         const normalized = normalizeDialogState(
-          {
-            width: Math.max(
-              viewport.width - FRAME_CONSTANTS.NON_STANDARD_MARGIN * 2,
-              FRAME_CONSTANTS.MIN_DIALOG_WIDTH
-            ),
-            height: Math.max(
-              viewport.height - FRAME_CONSTANTS.NON_STANDARD_MARGIN * 2,
-              FRAME_CONSTANTS.MIN_DIALOG_HEIGHT
-            ),
-          },
-          { x: FRAME_CONSTANTS.NON_STANDARD_MARGIN, y: FRAME_CONSTANTS.NON_STANDARD_MARGIN },
+          preset,
+          centered,
           viewport,
           {
             enforceTopLeftMargin: false,
-            minPosition: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+            minPosition: 0,
             clampSizeToViewport: true,
           }
         );
@@ -118,7 +120,7 @@ export function useTrashFrameState(initialMode: DialogDisplayMode = 'normal') {
       if (!size) return;
       const normalized = normalizeDialogState(size, dialogPosition, getViewportSize(), {
         enforceTopLeftMargin: displayMode === 'normal',
-        minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        minPosition: 0,
         clampSizeToViewport: true,
       });
       applyNormalizedState(normalized.size, normalized.position);
@@ -131,7 +133,7 @@ export function useTrashFrameState(initialMode: DialogDisplayMode = 'normal') {
       if (!position) return;
       const normalized = normalizeDialogState(dialogSize, position, getViewportSize(), {
         enforceTopLeftMargin: displayMode === 'normal',
-        minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        minPosition: 0,
         clampSizeToViewport: true,
       });
       applyNormalizedState(normalized.size, normalized.position);

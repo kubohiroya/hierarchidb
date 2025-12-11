@@ -1,7 +1,7 @@
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { PluginWorkerId } from '@hierarchidb/runtime-worker';
 import type { Remote } from 'comlink';
-import { pluginWorkerPreloads } from '~/plugin-registry/index.ts';
+import { pluginRegistry, pluginWorkerPreloads } from '~/plugin-registry/index.ts';
 import { loadWorkerAPIClientModule } from './workerApiClientLoader.js';
 
 // NOTE: Worker runtime-worker and plugin worker modules are no longer imported through
@@ -15,6 +15,17 @@ type ModulePathsModule = typeof import('@hierarchidb/runtime-worker');
 
 const pluginWorkerPreloadMap = pluginWorkerPreloads as Record<string, string[]>;
 const PLUGINS_TO_PRELOAD = Object.keys(pluginWorkerPreloadMap) as PluginWorkerId[];
+
+const hasWorkerExport = (nodeType: string): boolean => {
+  const entry = pluginRegistry.find((item) => item.nodeType === nodeType);
+  const exportsList = Array.isArray(entry?.exports)
+    ? entry.exports.map((value) => value.replace(/^\.?\//, ''))
+    : [];
+  if (exportsList.length > 0) {
+    return exportsList.some((value) => value === 'worker' || value.startsWith('worker/'));
+  }
+  return Boolean(entry?.modules?.worker);
+};
 
 let runtimePromise: Promise<Remote<WorkerAPI>> | null = null;
 let pluginLoadPromise: Promise<void> | null = null;
@@ -46,6 +57,9 @@ async function loadPluginWorkers(): Promise<void> {
 
   // Run preload hooks sequentially to avoid concurrent storeRegistry mutations across plugins.
   for (const pluginId of PLUGINS_TO_PRELOAD) {
+    if (!hasWorkerExport(pluginId)) {
+      continue;
+    }
     const preloadExports = pluginWorkerPreloadMap[pluginId] ?? [];
     try {
       const mod = await modulePaths.importPluginWorker(pluginId);

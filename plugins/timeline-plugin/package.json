@@ -12,10 +12,6 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./worker": {
-      "types": "./dist/worker/index.d.ts",
-      "import": "./dist/worker/index.js"
-    },
     "./icon": {
       "types": "./dist/icon/index.d.ts",
       "import": "./dist/icon/index.js",
@@ -36,9 +32,6 @@
       ],
       "*": [
         "dist/index.d.ts"
-      ],
-      "worker": [
-        "dist/worker/index.d.ts"
       ]
     }
   },

@@ -212,10 +212,23 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
     initializeDraft();
   }, [workerClient, mode, nodeId, parentId, nodeType, treeId, toUpdater, getClient]);
 
+  const buildComparableDraft = useCallback(
+    (state: TreeNodeUpdaterState<TPayload> | null) => {
+      if (!state) return { draftMetadata: null, draftData: null };
+      return {
+        draftMetadata: state.draftMetadata ?? null,
+        draftData: state.draftData ?? null,
+      };
+    },
+    []
+  );
+
   const computeUnsaved = useCallback(() => {
     if (!draft || !originalCopy) return false;
-    return JSON.stringify(draft) !== JSON.stringify(originalCopy);
-  }, [draft, originalCopy]);
+    const current = buildComparableDraft(draft);
+    const initial = buildComparableDraft(originalCopy);
+    return JSON.stringify(current) !== JSON.stringify(initial);
+  }, [buildComparableDraft, draft, originalCopy]);
 
   useEffect(() => {
     setHasUnsaved(computeUnsaved());
@@ -304,7 +317,7 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
     try {
       setLoading(true);
       persistDisableUntilRef.current = Date.now() + 300;
-      const { wc: wcAPI, query } = await getClient();
+      const { wc: wcAPI } = await getClient();
 
       // Push the latest values synchronously (no debounce) before commit.
       await wcAPI.updateTreeNodeDraftMetadata(
@@ -327,11 +340,15 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
       if (res.status === 'ok') {
         const committedNodeId = (res.node?.id as NodeId | undefined) ?? res.nodeId ?? targetId;
 
-        const latestNode = (await query.getNode(committedNodeId)) ?? res.node;
+        const latestNode = res.node;
 
-        let refreshedCopy: TreeNodeUpdaterState<TPayload>;
+        let refreshedCopy: TreeNodeUpdaterState<TPayload>
         if (latestNode) {
           refreshedCopy = toUpdater(latestNode as TreeNode);
+          refreshedCopy = {
+            ...refreshedCopy,
+            dialogUIState: finalData.dialogUIState ?? refreshedCopy.dialogUIState ?? null,
+          };
         } else {
           refreshedCopy = {
             ...finalData,
@@ -359,11 +376,11 @@ export function useTreeNodeUpdater<TPayload extends object = Record<string, unkn
           hasRemoteDraft: false,
         };
 
-        // Explicitly clear draft on the server so subsequent fetches do not return draftData/draftMetadata.
+        // Explicitly clear draft payload/metadata on the server so subsequent fetches do not return drafts.
         try {
           await wcAPI.updateTreeNodeDraftMetadata(committedNodeId, null as any);
           await wcAPI.updateTreeNodeDraftData(committedNodeId, null as any);
-          await wcAPI.updateTreeNodeDialogUIState(committedNodeId, null);
+          // Keep dialogUIState persisted to preserve window/step state after commit.
         } catch (clearErr) {
           console.warn('[useTreeNodeUpdater] failed to clear server draft after commit', clearErr);
         }

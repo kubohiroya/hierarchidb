@@ -50,6 +50,7 @@ import type {
   TreeNodeUpdaterPayload,
   TreeNodeUpdaterPatch,
 } from './usePluginDialogController/data-types.js';
+import type { DialogActionInFlight } from './types.js';
 
 export interface PluginDialogControllerOptions {
   mode: 'create' | 'edit';
@@ -198,9 +199,8 @@ export function usePluginDialogController(
             }
           : null;
       dialogUIStateRef.current = next;
-      updateTreeNodeUpdater({ dialogUIState: next } as any);
     },
-    [updateTreeNodeUpdater]
+    []
   );
 
   const {
@@ -256,6 +256,24 @@ export function usePluginDialogController(
     setLocalDraftData(draftDataWithoutMeta);
   }, [draftDataWithoutMeta]);
 
+  const getPersistableDialogUIState = useCallback((): DialogUIState => {
+    const currentWindow = (dialogUIStateRef.current as any)?.dialogWindow ?? {};
+    const currentProgress = (dialogUIStateRef.current as any)?.dialogProgress ?? {};
+    return {
+      dialogWindow: {
+        mode: currentWindow.mode ?? displayMode,
+        position: currentWindow.position ?? dialogPosition,
+        size: currentWindow.size ?? dialogSize,
+      },
+      dialogProgress: {
+        activeStepIndex:
+          typeof currentProgress.activeStepIndex === 'number'
+            ? currentProgress.activeStepIndex
+            : activeStepIndexRef.current ?? activeStepIndex,
+      },
+    };
+  }, [activeStepIndex, dialogPosition, dialogSize, displayMode]);
+
   const applyUpdateDraft = useCallback(
     (patch: TreeNodeUpdaterPatch<PluginDefinedEntity>) => {
       const payload: Partial<LocalTreeNodeUpdaterState> = {
@@ -288,6 +306,28 @@ export function usePluginDialogController(
       applyUpdateDraft(patch);
     },
   });
+
+  const basicInfoDirty = useMemo(() => {
+    const meta = treeUpdater?.draftMetadata ?? null;
+    if (!meta) return false;
+    if (meta.name !== basicInfo.name) return true;
+    if ((meta.description ?? '') !== (basicInfo.description ?? '')) return true;
+    const prevTags = Array.isArray(meta.tags) ? meta.tags : [];
+    const nextTags = Array.isArray(basicInfo.tags) ? basicInfo.tags : [];
+    if (prevTags.length !== nextTags.length) return true;
+    for (let i = 0; i < prevTags.length; i += 1) {
+      if (prevTags[i] !== nextTags[i]) return true;
+    }
+    return false;
+  }, [basicInfo.description, basicInfo.name, basicInfo.tags, treeUpdater?.draftMetadata]);
+
+  const stepDataDirty = useMemo(() => {
+    const current = toRecord(localDraftData ?? {}) ?? {};
+    const persisted = toRecord(treeUpdater?.draftData ?? {}) ?? {};
+    return JSON.stringify(current) !== JSON.stringify(persisted);
+  }, [localDraftData, treeUpdater?.draftData]);
+
+  const dialogDirty = hasUnsavedChanges || basicInfoDirty || stepDataDirty;
 
   const [regTick, setRegTick] = useState(0);
   const [hostTick, setHostTick] = useState(0);
@@ -443,6 +483,29 @@ export function usePluginDialogController(
   const footerPrimaryButtons = footerOptions?.primaryButtons;
   const footerSaveDraftLabel = footerOptions?.saveDraftLabel;
   const disableDraftButton = nodeType === 'folder';
+  const [pendingAction, setPendingAction] = useState<DialogActionInFlight | null>(null);
+  const pendingActionRef = useRef<DialogActionInFlight | null>(null);
+  const updatePendingAction = useCallback((next: DialogActionInFlight | null) => {
+    pendingActionRef.current = next;
+    setPendingAction(next);
+  }, []);
+  useEffect(() => {
+    if (!open) {
+      updatePendingAction(null);
+    }
+  }, [open, updatePendingAction]);
+  const runWithPending = useCallback(
+    async (action: DialogActionInFlight, task: () => Promise<void> | void) => {
+      if (pendingActionRef.current) return;
+      updatePendingAction(action);
+      try {
+        await Promise.resolve(task());
+      } finally {
+        updatePendingAction(null);
+      }
+    },
+    [updatePendingAction]
+  );
   const [isStartingBatch, setIsStartingBatch] = useState(false);
   const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
 
@@ -477,13 +540,20 @@ export function usePluginDialogController(
 
   const handleNavigation = useCallback(
     (event: StepNavigationEvent) => {
-      void (async () => {
+      const action: DialogActionInFlight =
+        event.type === 'direct'
+          ? { type: 'step', index: event.targetIndex ?? activeStepIndexRef.current }
+          : { type: event.type };
+      void runWithPending(action, async () => {
         const ok = await ensureNoConflictRef.current();
         if (!ok) return;
         let nextIndex = activeStepIndexRef.current;
         switch (event.type) {
           case 'direct':
-            nextIndex = Math.max(0, Math.min(event.targetIndex ?? activeStepIndexRef.current, stepsLengthRef.current - 1));
+            nextIndex = Math.max(
+              0,
+              Math.min(event.targetIndex ?? activeStepIndexRef.current, stepsLengthRef.current - 1)
+            );
             break;
           case 'next':
             nextIndex = Math.min(activeStepIndexRef.current + 1, stepsLengthRef.current - 1);
@@ -493,16 +563,16 @@ export function usePluginDialogController(
             break;
         }
         if (nextIndex === activeStepIndexRef.current) return;
-        void updateLocalDraftRef.current?.().finally(() => {
+        await Promise.resolve(updateLocalDraftRef.current?.()).finally(() => {
           setActiveStepIndexRef.current(nextIndex);
           setUrlStepRef.current(nextIndex);
           updateDialogUIState({
             dialogProgress: { activeStepIndex: nextIndex } as DialogProgressState,
           });
         });
-      })();
+      });
     },
-    [updateDialogUIState]
+    [runWithPending, updateDialogUIState]
   );
 
   const navigateToNode = useCallback(
@@ -542,54 +612,62 @@ export function usePluginDialogController(
   );
 
   const handleSubmit = useCallback(async () => {
-    const ok = await ensureNoConflict();
-    if (!ok) return;
-    await updateLocalDraft();
-    const normalizedData =
-      nodeType === 'folder'
-        ? null
-        : dialogData && Object.keys(dialogData).length > 0
-          ? (dialogData as Record<string, unknown>)
-          : null;
+    await runWithPending({ type: 'commit' }, async () => {
+      const ok = await ensureNoConflict();
+      if (!ok) return;
+      await updateLocalDraft();
+      const normalizedData =
+        nodeType === 'folder'
+          ? null
+          : dialogData && Object.keys(dialogData).length > 0
+            ? (dialogData as Record<string, unknown>)
+            : null;
 
-    const savedNodeId = await commitTreeNodeUpdater({
-      draftMetadata: {
-        name: basicInfo.name,
-        description: basicInfo.description,
-        tags: basicInfo.tags,
-      },
-      draftData: nodeType === 'folder' ? null : (normalizedData ?? null),
-      data: normalizedData === null ? undefined : normalizedData,
-      metadata: undefined,
-      dialogUIState: dialogUIStateRef.current ?? null,
-    } as any);
-    onSuccess?.(savedNodeId);
-    navigateToNode(savedNodeId);
-    onClose();
-  }, [ensureNoConflict, updateLocalDraft, nodeType, dialogData, commitTreeNodeUpdater, basicInfo.name, basicInfo.description, basicInfo.tags, onSuccess, navigateToNode, onClose]);
+      const savedNodeId = await commitTreeNodeUpdater({
+        draftMetadata: {
+          name: basicInfo.name,
+          description: basicInfo.description,
+          tags: basicInfo.tags,
+        },
+        draftData: nodeType === 'folder' ? null : (normalizedData ?? null),
+        data: normalizedData === null ? undefined : normalizedData,
+        metadata: undefined,
+        dialogUIState: getPersistableDialogUIState(),
+      } as any);
+      onSuccess?.(savedNodeId);
+      navigateToNode(savedNodeId);
+      onClose();
+    });
+  }, [basicInfo.description, basicInfo.name, basicInfo.tags, commitTreeNodeUpdater, dialogData, ensureNoConflict, navigateToNode, nodeType, onClose, onSuccess, runWithPending, updateLocalDraft]);
 
   useEffect(() => {
     handleSubmitRef.current = handleSubmit;
   }, [handleSubmit]);
 
   const handleSaveDraft = useCallback(async () => {
-    const ok = await ensureNoConflict();
-    if (!ok) return;
-    await updateLocalDraft();
-    updateTreeNodeUpdater({
-      draftData: nodeType === 'folder' ? null : (dialogData as Record<string, unknown>),
-      draftMetadata: {
-        ...(treeUpdater?.draftMetadata ?? {}),
-        name: basicInfo.name,
-        description: basicInfo.description,
-        tags: basicInfo.tags,
-      },
-      dialogUIState: dialogUIStateRef.current ?? null,
-    } as any);
-  }, [ensureNoConflict, updateLocalDraft, updateTreeNodeUpdater, nodeType, dialogData, treeUpdater?.draftMetadata, basicInfo.name, basicInfo.description, basicInfo.tags]);
+    await runWithPending({ type: 'save-draft' }, async () => {
+      const ok = await ensureNoConflict();
+      if (!ok) return;
+      await updateLocalDraft();
+      updateTreeNodeUpdater({
+        draftData: nodeType === 'folder' ? null : (dialogData as Record<string, unknown>),
+        draftMetadata: {
+          ...(treeUpdater?.draftMetadata ?? {}),
+          name: basicInfo.name,
+          description: basicInfo.description,
+          tags: basicInfo.tags,
+        },
+        dialogUIState: getPersistableDialogUIState(),
+      } as any);
+      const targetId = (pageNodeId ?? nodeId) as NodeId;
+      navigateToNode(targetId);
+      onClose();
+    });
+  }, [basicInfo.description, basicInfo.name, basicInfo.tags, dialogData, ensureNoConflict, getPersistableDialogUIState, navigateToNode, nodeId, pageNodeId, nodeType, onClose, runWithPending, treeUpdater?.draftMetadata, updateLocalDraft, updateTreeNodeUpdater]);
 
   const handleStartBatch = useCallback(async () => {
     if (!activeStartBatch) return;
+    if (pendingActionRef.current) return;
     setIsStartingBatch(true);
     try {
       await Promise.resolve(
@@ -614,9 +692,10 @@ export function usePluginDialogController(
         title={dialogTitle}
         subtitle={headerSubtitle}
         icon={icon || undefined}
+        pendingAction={pendingAction}
       />
     ),
-    [dialogTitle, headerSubtitle, icon]
+    [dialogTitle, headerSubtitle, icon, pendingAction]
   );
 
   const ContentComponent: HeadlessDialogProps<Partial<PluginDefinedEntity>>['ContentComponent'] = useCallback(
@@ -713,38 +792,45 @@ export function usePluginDialogController(
                     }
                   : undefined
             }
-            disableDraft={disableDraftButton || !hasUnsavedChanges}
+            disableDraft={disableDraftButton || !dialogDirty}
             onStartBatch={activeStartBatch ? () => { handleStartBatch().catch(() => void 0); } : undefined}
             canStartBatch={canStartBatch && !isStartingBatch}
             isStartingBatch={isStartingBatch}
             primaryButtonOptions={footerPrimaryButtons}
             saveDraftLabel={footerSaveDraftLabel}
+            pendingAction={pendingAction}
           />
         </>
       ),
-      [foregroundDialogSx, t, conflictDialog.open, conflictDialog.updatedAt, mode, canSaveCurrent, disableDraftButton, handleSaveDraft, hasUnsavedChanges, activeStartBatch, canStartBatch, isStartingBatch, footerPrimaryButtons, footerSaveDraftLabel, closeConflictDialog, handleStartBatch]
+      [foregroundDialogSx, t, conflictDialog.open, conflictDialog.updatedAt, mode, canSaveCurrent, disableDraftButton, handleSaveDraft, hasUnsavedChanges, activeStartBatch, canStartBatch, isStartingBatch, footerPrimaryButtons, footerSaveDraftLabel, closeConflictDialog, handleStartBatch, pendingAction]
     );
 
   const handleCloseRequest = useCallback(() => {
     if (mode === 'create') {
-      discardDraft({ forceDelete: true }).catch(() => void 0);
-      onClose();
+      void runWithPending({ type: 'cancel' }, async () => {
+        await discardDraft({ forceDelete: true });
+        onClose();
+      });
       return;
     }
     if (hasUnsavedChanges) {
       setDiscardDialogOpen(true);
       return;
     }
-    onClose();
-  }, [discardDraft, hasUnsavedChanges, mode, onClose]);
+    void runWithPending({ type: 'cancel' }, async () => {
+      onClose();
+    });
+  }, [discardDraft, hasUnsavedChanges, mode, onClose, runWithPending]);
 
   const handleConfirmDiscard = useCallback(() => {
     setDiscardDialogOpen(false);
-    if (mode === 'create') {
-      discardDraft({ forceDelete: true }).catch(() => void 0);
-    }
-    onClose();
-  }, [discardDraft, mode, onClose]);
+    void runWithPending({ type: 'cancel' }, async () => {
+      if (mode === 'create') {
+        await discardDraft({ forceDelete: true });
+      }
+      onClose();
+    });
+  }, [discardDraft, mode, onClose, runWithPending]);
 
   const handleDismissDiscardDialog = useCallback(() => {
     setDiscardDialogOpen(false);
@@ -813,7 +899,7 @@ export function usePluginDialogController(
     invalidMessageMap,
     onRequestClose: handleCloseRequest,
     onRequestCommit: handleRequestCommit,
-    isDirty: hasUnsavedChanges,
+    isDirty: dialogDirty,
     position: dialogPosition,
     onPositionChange: handlePositionChangeWithPersist as (next?: DialogPosition) => void,
     size: dialogSize,
@@ -836,7 +922,7 @@ export function usePluginDialogController(
     error,
     icon: icon ?? undefined,
     presentation,
-    hasUnsavedChanges,
+    hasUnsavedChanges: dialogDirty,
     dialogState: dialogStateSnapshot,
     updateDialogState,
     unsavedChangeDialog: {

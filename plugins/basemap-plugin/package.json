@@ -27,11 +27,6 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./database": {
-      "types": "./dist/services/database/index.d.ts",
-      "import": "./dist/services/database/index.js",
-      "default": "./dist/services/database/index.js"
-    },
     "./icon": {
       "types": "./dist/icon/index.d.ts",
       "import": "./dist/icon/index.js",

@@ -27,6 +27,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/util",
         "@hierarchidb/plugin-base"
       ],
+    exports: ["","icon","ui"],
     manifest: {
         "id": "@hierarchidb/basemap-plugin",
         "name": "BaseMap Plugin",
@@ -136,6 +137,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/plugin-service-api",
         "@hierarchidb/plugin-base"
       ],
+    exports: ["","icon","ui"],
     manifest: {
         "id": "@hierarchidb/folder-plugin",
         "name": "Folder Plugin",
@@ -211,7 +213,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
       },
     worker: {
         specifier: "@hierarchidb/folder-plugin/worker",
-        source: "plugins/folder-plugin/src/worker/index.ts",
       },
     icon: {
         specifier: "@hierarchidb/folder-plugin/icon",
@@ -249,6 +250,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/util",
         "@hierarchidb/plugin-base"
       ],
+    exports: ["","worker","icon","ui"],
     manifest: {
         "id": "@hierarchidb/linker-plugin",
         "name": "Linker Plugin",
@@ -365,6 +367,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/plugin-base",
         "@hierarchidb/ui-worker-client"
       ],
+    exports: ["","worker","icon","ui","database"],
     manifest: {
         "id": "@hierarchidb/location-plugin",
         "name": "Location Plugin",
@@ -486,6 +489,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/runtime-worker",
         "@hierarchidb/plugin-base"
       ],
+    exports: ["","database","icon","ui"],
     manifest: {
         "id": "@hierarchidb/resolver-plugin",
         "name": "Resolver Plugin",
@@ -602,6 +606,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/plugin-base",
         "@hierarchidb/ui-tabular-extract"
       ],
+    exports: ["","worker","icon","database","ui"],
     manifest: {
         "id": "@hierarchidb/route-plugin",
         "name": "Route Plugin",
@@ -745,6 +750,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "react",
         "react-dom"
       ],
+    exports: ["","worker","icon","ui"],
     manifest: {
         "id": "@hierarchidb/shape-plugin",
         "name": "Shape Plugin",
@@ -902,6 +908,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/util",
         "@hierarchidb/ui-worker-provider"
       ],
+    exports: ["","icon","ui"],
     manifest: {
         "id": "@hierarchidb/spreadsheet-plugin",
         "name": "Spreadsheet Plugin",
@@ -1026,6 +1033,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/ui-dialog",
         "@hierarchidb/ui-worker-provider"
       ],
+    exports: ["","icon","ui"],
     manifest: {
         "id": "@hierarchidb/styler-plugin",
         "name": "Styler Plugin",
@@ -1111,7 +1119,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
       },
     worker: {
         specifier: "@hierarchidb/styler-plugin/worker",
-        source: "plugins/styler-plugin/src/worker/index.ts",
       },
     icon: {
         specifier: "@hierarchidb/styler-plugin/icon",
@@ -1149,6 +1156,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/plugin-ui-sdk",
         "@hierarchidb/ui-worker-provider"
       ],
+    exports: ["","icon","ui"],
     manifest: {
         "id": "@hierarchidb/timeline-plugin",
         "name": "Timeline Plugin",
@@ -1212,7 +1220,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
       },
     worker: {
         specifier: "@hierarchidb/timeline-plugin/worker",
-        source: "plugins/timeline-plugin/src/worker/index.ts",
       },
     common: {
         specifier: "@hierarchidb/timeline-plugin/common",

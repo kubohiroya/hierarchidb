@@ -6,6 +6,44 @@ type PluginWorkerModuleMap = Record<string, string>;
 type PluginWorkerLoaderMap = Record<string, () => Promise<unknown>>;
 const createPluginWorkerSpecifier = (nodeType: string) => `@hierarchidb/${nodeType}-plugin/worker`;
 
+type PluginModuleExports = { worker: boolean; database: boolean };
+
+type RegistryEntry = { nodeType: string; exports?: string[]; modules?: { worker?: unknown; database?: unknown } };
+
+const defaultPluginModuleExports: Record<string, PluginModuleExports> = {
+  basemap: { worker: false, database: true },
+  folder: { worker: false, database: false },
+  linker: { worker: true, database: false },
+  location: { worker: true, database: true },
+  resolver: { worker: false, database: true },
+  route: { worker: true, database: true },
+  shape: { worker: true, database: false },
+  spreadsheet: { worker: true, database: false },
+  styler: { worker: true, database: false },
+  timeline: { worker: true, database: false },
+};
+
+const deriveExports = (nodeType: string, entry?: RegistryEntry): PluginModuleExports => {
+  if (entry && Array.isArray(entry.exports)) {
+    const normalized = entry.exports.map((value) => value.replace(/^\.?\//, ''));
+    const hasWorkerExport =
+      normalized.some((value) => value === 'worker' || value.startsWith('worker/'));
+    const hasDatabaseExport =
+      normalized.some(
+        (value) =>
+          value === 'database' ||
+          value.startsWith('database/') ||
+          value === 'worker/database' ||
+          value.startsWith('worker/database/')
+      );
+    return { worker: hasWorkerExport, database: hasDatabaseExport };
+  }
+  return defaultPluginModuleExports[nodeType] ?? { worker: true, database: true };
+};
+
+const hasWorkerExport = (nodeType: string, entry?: RegistryEntry): boolean =>
+  deriveExports(nodeType, entry).worker;
+
 @injectable()
 export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContract {
   private readonly cache = new Map<string, Promise<unknown>>();
@@ -18,16 +56,13 @@ export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContrac
     private readonly loaderMap?: PluginWorkerLoaderMap,
     @inject(WorkerDiTokens.PluginRegistry)
     @optional()
-    private readonly registry?: Array<{ nodeType: string }>
+    private readonly registry?: RegistryEntry[]
   ) {}
 
   has(nodeType: string): boolean {
-    if (this.loaderMap && Object.hasOwn(this.loaderMap, nodeType)) {
-      return true;
-    }
-    if (this.registry) {
-      return this.registry.some((entry) => entry.nodeType === nodeType);
-    }
+    const registryEntry = this.registry?.find((entry) => entry.nodeType === nodeType);
+    if (!hasWorkerExport(nodeType, registryEntry)) return false;
+    if (this.loaderMap && Object.hasOwn(this.loaderMap, nodeType)) return true;
     return Object.hasOwn(this.specMap, nodeType);
   }
 
@@ -47,7 +82,9 @@ export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContrac
         nodes.add(key);
       }
     }
-    return Array.from(nodes);
+    return Array.from(nodes).filter((nodeType) =>
+      hasWorkerExport(nodeType, this.registry?.find((entry) => entry.nodeType === nodeType))
+    );
   }
 
   importModule<T = unknown>(nodeType: string): Promise<T> {
@@ -66,6 +103,11 @@ export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContrac
   }
 
   private async loadWorkerModule<T>(nodeType: string): Promise<T> {
+    const registryEntry = this.registry?.find((entry) => entry.nodeType === nodeType);
+    if (!hasWorkerExport(nodeType, registryEntry)) {
+      throw new Error(`[PluginWorkerModuleLoader] Worker entry not exported for ${nodeType}`);
+    }
+
     const specifier = this.specMap[nodeType] ?? createPluginWorkerSpecifier(nodeType);
     if (!specifier) {
       throw new Error(`[PluginWorkerModuleLoader] Unknown worker plugin: ${nodeType}`);

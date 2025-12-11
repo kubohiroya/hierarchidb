@@ -16,29 +16,29 @@ class TestableLoader extends PluginWorkerModuleLoader {
 describe('PluginWorkerModuleLoader', () => {
   it('loads using specifier map when provided', async () => {
     const loader = new TestableLoader(
-      { basemap: '@hierarchidb/basemap-plugin/worker' },
+      { timeline: '@hierarchidb/timeline-plugin/worker' },
       undefined,
       undefined
     );
-    await loader.importModule('basemap');
-    expect(loader.lastSpecifier).toBe('@hierarchidb/basemap-plugin/worker');
+    await loader.importModule('timeline');
+    expect(loader.lastSpecifier).toBe('@hierarchidb/timeline-plugin/worker');
   });
 
   it('falls back to default specifier when map is missing', async () => {
     const loader = new TestableLoader({}, undefined, undefined);
-    await loader.importModule('timeline');
-    expect(loader.lastSpecifier).toBe('@hierarchidb/timeline-plugin/worker');
+    await loader.importModule('styler');
+    expect(loader.lastSpecifier).toBe('@hierarchidb/styler-plugin/worker');
   });
 
   it('retries with specifier when direct loader throws', async () => {
     const failingLoader = vi.fn().mockRejectedValue(new Error('fail'));
     const loader = new TestableLoader(
-      { basemap: '@hierarchidb/basemap-plugin/worker' },
-      { basemap: failingLoader },
+      { timeline: '@hierarchidb/timeline-plugin/worker' },
+      { timeline: failingLoader },
       undefined
     );
-    await loader.importModule('basemap');
+    await loader.importModule('timeline');
     expect(failingLoader).toHaveBeenCalledTimes(1);
-    expect(loader.lastSpecifier).toBe('@hierarchidb/basemap-plugin/worker');
+    expect(loader.lastSpecifier).toBe('@hierarchidb/timeline-plugin/worker');
   });
 });

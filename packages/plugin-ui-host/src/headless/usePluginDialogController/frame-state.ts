@@ -122,13 +122,10 @@ export function useDialogFrameState({
         applyNormalizedState(fullSize, { x: 0, y: 0 });
       } else if (mode === 'maximize') {
         const size = getPresetSize('maximize', viewport);
-        const position: DialogPosition = {
-          x: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
-          y: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
-        };
+        const position = initialPosition(size, viewport);
         const normalized = normalizeDialogState(size, position, viewport, {
           enforceTopLeftMargin: false,
-          minPosition: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+          minPosition: 0,
           clampSizeToViewport: true,
         });
         applyNormalizedState(normalized.size, normalized.position);
@@ -168,7 +165,7 @@ export function useDialogFrameState({
       let targetPosition = dialogPositionRef.current;
       let options = {
         enforceTopLeftMargin: displayMode === 'normal',
-        minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        minPosition: 0,
         clampSizeToViewport: true,
       };
 
@@ -185,13 +182,10 @@ export function useDialogFrameState({
         };
       } else if (displayMode === 'maximize') {
         targetSize = getPresetSize('maximize', viewport);
-        targetPosition = {
-          x: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
-          y: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
-        };
+        targetPosition = initialPosition(targetSize, viewport);
         options = {
           enforceTopLeftMargin: false,
-          minPosition: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+          minPosition: 0,
           clampSizeToViewport: true,
         };
       }
@@ -230,7 +224,7 @@ export function useDialogFrameState({
       const viewport = getViewportSize();
       const normalized = normalizeDialogState(next, dialogPositionRef.current, viewport, {
         enforceTopLeftMargin: displayMode === 'normal',
-        minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        minPosition: 0,
         clampSizeToViewport: true,
       });
       if (!sizesEqual(dialogSizeRef.current, normalized.size)) {
@@ -249,7 +243,7 @@ export function useDialogFrameState({
       const viewport = getViewportSize();
       const normalized = normalizeDialogState(dialogSizeRef.current, next, viewport, {
         enforceTopLeftMargin: displayMode === 'normal',
-        minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        minPosition: 0,
         clampSizeToViewport: true,
       });
       if (!sizesEqual(dialogSizeRef.current, normalized.size)) {

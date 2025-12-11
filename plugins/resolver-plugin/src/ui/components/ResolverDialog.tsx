@@ -565,12 +565,10 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
       applyNormalizedState(size, { x: 0, y: 0 });
     } else if (mode === 'maximize') {
       const preset = getPresetSize('maximize', viewport);
-      const normalized = normalizeDialogState(preset, {
-        x: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
-        y: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
-      }, viewport, {
+      const centered = initialPosition(preset, viewport);
+      const normalized = normalizeDialogState(preset, centered, viewport, {
         enforceTopLeftMargin: false,
-        minPosition: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        minPosition: 0,
         clampSizeToViewport: true,
       });
       applyNormalizedState(normalized.size, normalized.position);
@@ -597,7 +595,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
       let targetPosition = dialogPositionRef.current;
       let options = {
         enforceTopLeftMargin: displayMode === 'normal',
-        minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        minPosition: 0,
         clampSizeToViewport: true,
       };
 
@@ -614,10 +612,10 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
         };
       } else if (displayMode === 'maximize') {
         targetSize = getPresetSize('maximize', viewport);
-        targetPosition = { x: FRAME_CONSTANTS.NON_STANDARD_MARGIN, y: FRAME_CONSTANTS.NON_STANDARD_MARGIN };
+        targetPosition = initialPosition(targetSize, viewport);
         options = {
           enforceTopLeftMargin: false,
-          minPosition: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+          minPosition: 0,
           clampSizeToViewport: true,
         };
       }
@@ -653,7 +651,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
       getViewportSize(),
       {
         enforceTopLeftMargin: displayMode === 'normal',
-        minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        minPosition: 0,
         clampSizeToViewport: true,
       },
     );
@@ -670,7 +668,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
       getViewportSize(),
       {
         enforceTopLeftMargin: displayMode === 'normal',
-        minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        minPosition: 0,
         clampSizeToViewport: true,
       },
     );

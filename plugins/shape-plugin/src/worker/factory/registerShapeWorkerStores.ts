@@ -48,15 +48,6 @@ async function ensureShapeStores(registry: StoreRegistry): Promise<void> {
     await maybeOpen.call(db);
   }
 
-  if (!registry.getPeer('shape')) {
-    registry.registerPeer(
-      'shape',
-      createNodePayloadPeerStore({
-        normalize: (data) => normalizeShapePeerData(data ?? undefined),
-      })
-    );
-  }
-
   if (!registry.getGroup('shape')) {
     const { createShapeGroupStoreDexie } = (await import('../shapeGroupStore.dexie.js')) as {
       createShapeGroupStoreDexie: (db: unknown) => GroupStore<GroupItemBase<any>>;

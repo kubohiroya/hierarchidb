@@ -152,6 +152,12 @@ const ICON_ENTRY_BASENAMES = [
   'src/icon.js',
   'src/icon.cjs',
 ];
+
+function hasExportPath(paths: string[], target: string): boolean {
+  return paths.some((entry) =>
+    entry === target || entry === `${target}/index` || entry.startsWith(`${target}/`)
+  );
+}
 const ROOT_DIST_ENTRY_BASENAMES = [
   'dist/index.js',
   'dist/index.mjs',
@@ -731,6 +737,7 @@ function generateRegistrySource(summaries: ManifestSummary[]): string {
     packageName: ${JSON.stringify(summary.packageName)},
     version: ${JSON.stringify(version)},
     dependencies: ${dependenciesJSON},
+    exports: ${JSON.stringify(summary.exportPaths)},
     manifest: ${manifestJSON},
     modules: ${modulesLiteral}
   },`;
@@ -1087,6 +1094,12 @@ async function collectManifests(): Promise<ManifestSummary[]> {
       delete sanitizedManifest.icon.muiIconName;
     }
 
+    const hasExportedWorker = hasWorker && hasExportPath(Array.from(exportPathSet), 'worker');
+    const hasExportedDatabase =
+      hasDatabaseModule &&
+      (hasExportPath(Array.from(exportPathSet), 'database') ||
+        hasExportPath(Array.from(exportPathSet), 'worker/database'));
+
     manifests.push({
       manifest: sanitizedManifest,
       nodeType: sanitizedManifest.nodeType,
@@ -1094,8 +1107,8 @@ async function collectManifests(): Promise<ManifestSummary[]> {
       packageVersion,
       dependencies,
       hasUI,
-      hasWorker,
-      hasDatabaseModule,
+      hasWorker: hasExportedWorker,
+      hasDatabaseModule: hasExportedDatabase,
       hasCommon,
       exportPaths: Array.from(exportPathSet),
       uiSourceEntry,

@@ -17,12 +17,14 @@ import {
   Stepper,
   Tooltip,
   Typography,
+  CircularProgress,
 } from '@mui/material';
 import type { StepIconProps } from '@mui/material/StepIcon';
 import { alpha, useTheme } from '@mui/material/styles';
 import { Link, useLocation } from '@tanstack/react-router';
 import type React from 'react';
 import { useCallback, useMemo } from 'react';
+import type { DialogActionInFlight } from '../types.js';
 
 type WorkerStepState = { id: string; enabled?: boolean; completed?: boolean; error?: string | null };
 type WorkerDialogState = { steps?: WorkerStepState[] };
@@ -34,6 +36,7 @@ export interface PluginDialogHeaderProps {
   dialogState?: WorkerDialogState | null;
   nodeType?: string;
   nodeId?: NodeId;
+  pendingAction?: DialogActionInFlight | null;
 }
 
 const stopPointerPropagation = (event: React.PointerEvent | React.MouseEvent) => {
@@ -45,10 +48,12 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
   subtitle,
   icon,
   dialogState,
+  pendingAction,
 }) => {
   const ctx = useDialogContext<Record<string, unknown>>();
   const location = useLocation();
   const theme = useTheme();
+  const navigationLocked = Boolean(pendingAction);
 
   const workerStepMap = useMemo(() => {
     const steps = dialogState?.steps;
@@ -88,13 +93,13 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
 
   const handleStepClick = useCallback(
     (event: React.MouseEvent | React.KeyboardEvent, index: number, canNavigate: boolean) => {
-      if (!canNavigate || index === ctx.activeStepIndex) {
+      if (!canNavigate || index === ctx.activeStepIndex || navigationLocked) {
         event.preventDefault();
         return;
       }
       ctx.onStepNavigate({ type: 'direct', targetIndex: index });
     },
-    [ctx]
+    [ctx, navigationLocked]
   );
 
   const StepStatusIcon = useCallback(
@@ -286,24 +291,29 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
                     <StepButton
                       component={Link}
                       to={stepLink}
-                      disabled={!canNavigate}
+                      disabled={!canNavigate || navigationLocked}
                       preload="intent"
                       onClick={(event) => handleStepClick(event, index, canNavigate)}
                       aria-current={isActive ? 'step' : undefined}
                       sx={{ padding: 0, margin: 0 }}
                     >
                       <StepLabel StepIconComponent={StepIconComponent as never}>
-                        <Typography
-                          variant="caption"
-                          noWrap
-                          sx={{
-                            color: isActive ? 'primary.main' : 'text.secondary',
-                            fontWeight: isActive ? 600 : 400,
-                          }}
-                          data-active-label={isActive ? 'true' : 'false'}
-                        >
-                          {label}
-                        </Typography>
+                        <Stack direction="row" alignItems="center" spacing={0.75}>
+                          <Typography
+                            variant="caption"
+                            noWrap
+                            sx={{
+                              color: isActive ? 'primary.main' : 'text.secondary',
+                              fontWeight: isActive ? 600 : 400,
+                            }}
+                            data-active-label={isActive ? 'true' : 'false'}
+                          >
+                            {label}
+                          </Typography>
+                          {pendingAction?.type === 'step' && pendingAction.index === index ? (
+                            <CircularProgress size={12} thickness={5} color="inherit" />
+                          ) : null}
+                        </Stack>
                       </StepLabel>
                     </StepButton>
                   </Step>

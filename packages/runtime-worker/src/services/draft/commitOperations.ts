@@ -5,7 +5,7 @@ import { WorkerErrorCode } from '../command-types.js';
 import { createNewName, getChildNames } from './nameUtilities.js';
 import { checkDraftConflict } from './lookupOperations.js';
 
-export type CommitOk = { status: 'ok'; nodeId: NodeId; autoRenameTo?: string };
+export type CommitOk = { status: 'ok'; nodeId: NodeId; node: TreeNode; autoRenameTo?: string };
 export type CommitConflict = {
   status: 'COMMIT_CONFLICT';
   originalVersion: number;
@@ -86,7 +86,7 @@ export async function commitTreeNodeDraft(
   delete (updatedNode as { isDraft?: unknown }).isDraft;
   await coreDB.updateNode(updatedNode);
 
-  const ok: CommitOk = { status: 'ok', nodeId: updatedNode.id as NodeId };
+  const ok: CommitOk = { status: 'ok', nodeId: updatedNode.id as NodeId, node: updatedNode };
   if (nameConflicts && onNameConflict === 'auto-rename') ok.autoRenameTo = finalName;
   return ok;
 }

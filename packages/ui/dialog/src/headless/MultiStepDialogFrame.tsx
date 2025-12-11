@@ -38,7 +38,7 @@ export interface MultiStepDialogFrameComponentProps<TData> {
 const DEFAULT_DIALOG_SIZE = { width: 960, height: 640 } as const;
 const EDGE_HANDLE_THICKNESS = 8;
 const EDGE_HANDLE_OFFSET = EDGE_HANDLE_THICKNESS / 2;
-const CORNER_HANDLE_SIZE = 18;
+const CORNER_HANDLE_SIZE = 28;
 const CORNER_HANDLE_OFFSET = CORNER_HANDLE_SIZE / 2;
 
 type ResizeHorizontal = 'left' | 'right' | null;
@@ -378,7 +378,7 @@ export function MultiStepDialogFrame<TData>(props: MultiStepDialogFrameComponent
                 width: CORNER_HANDLE_SIZE,
                 height: CORNER_HANDLE_SIZE,
                 cursor: 'nwse-resize',
-                zIndex: 2,
+                zIndex: (theme: any) => (theme?.zIndex?.modal ?? 1300) + 6,
               },
             },
             {
@@ -390,7 +390,7 @@ export function MultiStepDialogFrame<TData>(props: MultiStepDialogFrameComponent
                 width: CORNER_HANDLE_SIZE,
                 height: CORNER_HANDLE_SIZE,
                 cursor: 'nesw-resize',
-                zIndex: 2,
+                zIndex: (theme: any) => (theme?.zIndex?.modal ?? 1300) + 6,
               },
             },
             {
@@ -402,7 +402,7 @@ export function MultiStepDialogFrame<TData>(props: MultiStepDialogFrameComponent
                 width: CORNER_HANDLE_SIZE,
                 height: CORNER_HANDLE_SIZE,
                 cursor: 'nesw-resize',
-                zIndex: 2,
+                zIndex: (theme: any) => (theme?.zIndex?.modal ?? 1300) + 6,
               },
             },
             {
@@ -414,7 +414,7 @@ export function MultiStepDialogFrame<TData>(props: MultiStepDialogFrameComponent
                 width: CORNER_HANDLE_SIZE,
                 height: CORNER_HANDLE_SIZE,
                 cursor: 'nwse-resize',
-                zIndex: 2,
+                zIndex: (theme: any) => (theme?.zIndex?.modal ?? 1300) + 6,
               },
             },
           ].map((handle) => (

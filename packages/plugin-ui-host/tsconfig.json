@@ -21,9 +21,6 @@
     "src/tests/**",
     "src/__tests__/**"
   ],
-  "references": [
-    { "path": "./tsconfig.vitest.json" }
-  ],
   "checkDeps": {
     "allowSkipLibCheck": true,
     "reason": "Temporary: upstream/transitive types; scheduled to remove."

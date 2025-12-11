@@ -2,8 +2,6 @@
 
 
 import type { GroupItemBase, GroupStore, PeerStore, RelationBase, RelationStore } from '@hierarchidb/runtime-worker';
-import { createNodePayloadPeerStore } from '@hierarchidb/runtime-worker';
-import { normalizePeerData } from '../normalizers.js';
 import { isDevEnvironment } from '../../common/utils/env.js';
 
 type StoreRegistry = {
@@ -32,14 +30,6 @@ async function ensureLocationStores(registry: StoreRegistry): Promise<void> {
   const db = new LocationEntitiesDB();
   await db.open?.();
 
-  if (!registry.getPeer('location')) {
-    registry.registerPeer(
-      'location',
-      createNodePayloadPeerStore({
-        normalize: (data) => normalizePeerData(data ?? undefined),
-      })
-    );
-  }
   if (!registry.getGroup('location')) {
     const { createLocationGroupStoreDexie } = await import('../locationGroupStore.dexie.js');
     registry.registerGroup('location', createLocationGroupStoreDexie(db));

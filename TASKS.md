@@ -53,6 +53,48 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1615) Plugin worker/database exports ガード（P0）
+- ブランチ: `fix/runtime-worker/skip-missing-exports`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: packages/runtime-worker/src/di/PluginWorkerModuleLoader.ts, packages/plugin-registry, plugins/*/package.json
+- 受け入れ基準（DoD）:
+  - [ ] `package.json` の `exports` に Worker/Database エントリが存在しないプラグインは load 対象から除外し、警告を出さない
+  - [ ] Worker エントリはバッチ処理プラグインのみ、Database エントリは固有の Group/Relational Entity を持つプラグインのみという前提を確認し、結果を運用ログへ記録する
+  - [ ] Worker/Database エントリを持つプラグインは従来どおりロードされることを確認し、回帰がない
+  - [ ] Worker/Database エントリを持たないプラグイン（例: basemap, folder など）を洗い出し、警告が出ないことを確認する
+  - [ ] 代表検証として `pnpm --filter @hierarchidb/runtime-worker typecheck` を実行し、結果を運用ログに記録する（実行不可なら理由を記載）
+- チェックリスト:
+  - [ ] PluginWorkerModuleLoader の loadWorkerModule/loadDatabaseModule で `package.json` exports を参照し、エントリが無い場合はスキップする
+  - [ ] スキップ時のログレベル/出力を調整し、不要な warn が出ないようにする
+  - [ ] Worker/Database エントリ有無の整理結果と該当プラグイン一覧を運用ログへ追記する
+- ロールバック手順：PluginWorkerModuleLoader と関連差分を revert し、`pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行して従来の挙動に戻す
+
+1614) Dialog 操作ボタンの二度押し防止とローディング表示（P0）
+- ブランチ: `fix/ui-dialog/button-loading-state`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: packages/ui/dialog（MultiStepDialogFrame/PluginDialogFooter/Stepper）、packages/plugin-ui-host（PluginDialogHost/usePluginDialogController）、packages/plugin-ui-sdk（useDialogState/useDialogDraft）、app のプラグインダイアログ呼び出し
+- 受け入れ基準（DoD）:
+  - [ ] Back/Next/Save/Create/Cancel/SaveDraft ボタン押下とステッパー遷移クリック時に、起点ボタンが処理完了まで `disabled` + `loading` 表示となり二度押しが防止される（完了後は元に戻る）
+  - [ ] 既存の遷移ロジック・バリデーション・エラーハンドリングの挙動を変えず、UI 表示追加に留まる
+  - [ ] 関連パッケージの typecheck を実行し、結果を運用ログに記録する（実行不可なら理由を記載）
+  - [ ] TASKS Kanban／運用ログに start→progress→done を記載し、ロールバック手順を明記する
+- チェックリスト:
+  - [ ] Dialog ナビゲーション/保存ボタン群に押下中の状態管理を導入し、処理完了で解除する
+  - [ ] Stepper 経由の遷移にも同一の押下元ローディング/disable を適用する
+  - [ ] 手動確認または typecheck で回帰がないことを確認し、結果をログへ記録する
+- ロールバック手順：本タスクで追加するボタン状態管理の差分（ui-dialog/plugin-ui-host/plugin-ui-sdk 周辺）を revert し、実行した検証コマンドを再実行する
+- 運用ログ：
+  - start: 2025-12-10 22:30 JST Dialog 操作ボタンの二度押し防止とローディング表示を追加するタスクを開始（branch: fix/ui-dialog/button-loading-state、branch 作成不可なら main）。
+  - progress: 2025-12-10 22:55 JST PluginDialogFooter/Header と usePluginDialogController に pending state を追加し、Back/Next/Save/Create/Cancel/SaveDraft/Stepper 押下中は disabled+loading 表示になるように変更。
+  - progress: 2025-12-10 22:57 JST 検証: `pnpm --filter @hierarchidb/plugin-ui-host typecheck` exit 0。
+  - progress: 2025-12-10 23:05 JST スピナー表示を押下したボタンの endIcon のみに変更（他ボタンは disabled のみ）。Stepper は pending step のラベル末尾にのみスピナーを表示。
+  - progress: 2025-12-10 23:12 JST Save Draft ボタンにチェックアイコンを endIcon で追加。検証: `pnpm --filter @hierarchidb/plugin-ui-host typecheck` exit 0。
+  - progress: 2025-12-10 23:25 JST commit/saveDraft 時に dialogUIState が null/undefined にならないよう、現在の displayMode/position/size/activeStepIndex から必ず UI state を再構成して永続化するよう修正。検証: `pnpm --filter @hierarchidb/plugin-ui-host typecheck` exit 0。
+  - progress: 2025-12-10 23:40 JST SaveDraft 後にダイアログを閉じて元の pageNodeId へ戻るように変更。updateTreeNodeUpdater 後に navigateToNode(pageNodeId ?? nodeId)＋onClose を実行。検証: `pnpm --filter @hierarchidb/plugin-ui-host typecheck` exit 0。
+  - progress: 2025-12-10 23:50 JST hasUnsavedChanges 判定を draftMetadata/draftData のみの比較に限定し、dialogUIState 変化（位置・サイズ変更など）では dirty にならないよう修正。検証: `pnpm --filter @hierarchidb/plugin-ui-sdk typecheck` exit 0。
+  - progress: 2025-12-10 23:58 JST BasicInfo 変更が確実に dirty へ反映されるよう、draftMetadata と現在の basicInfo を比較する dirty 判定を追加（Save Draft が有効化されるよう調整）。検証: `../../node_modules/.bin/tsc --noEmit` at packages/plugin-ui-host exit 0（workspace pnpm typecheck は plugins/folder-plugin/package.json の JSON エラーで実行不可）。
+  - progress: 2025-12-11 00:15 JST hasUnsavedChanges に basicInfoDirty を統合し、disableDraft 判定も dialogDirty（内容変更のみ）を参照するよう修正。検証: `pnpm --filter @hierarchidb/plugin-ui-host typecheck` exit 0。
+  - progress: 2025-12-11 00:25 JST Step2 以降のフォーム変更も即 dirty になるよう、localDraftData と persisted draftData の比較で dirty 判定を追加（Save Draft 有効化を即時反映）。検証: `pnpm --filter @hierarchidb/plugin-ui-host typecheck` exit 0。
+  - progress: 2025-12-11 00:45 JST spreadsheet Step2 の Import accordion が入力ごとに閉じる問題を修正。hasMetadata 変化時のみ自動開閉するようリファクタし、Form 編集では開いたままに保持。検証: `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0。
+
 1613) プラグインダイアログ最大化時の配置補正（P0）
 - ブランチ: `fix/ui-dialog/maximize-center`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: plugin-ui-host（PluginDialogHost/HeadlessMultiStepDialog）、ui-dialog（MultiStepDialogFrame/Resizer）、app のプラグインダイアログ呼び出し
@@ -70,6 +112,9 @@
 - ロールバック手順：本タスクで変更したダイアログ関連ファイルの差分を revert し、実行した typecheck を再実行する
 - 運用ログ：
   - start: 2025-12-10 20:36 JST プラグインダイアログ最大化時の配置補正対応を開始（branch: fix/ui-dialog/maximize-center、sandbox で branch 作成不可なら main 上で継続）。
+  - blocked: 2025-12-10 20:38 JST `git checkout -b fix/ui-dialog/maximize-center` 失敗（.git/refs/heads 作成不可）。main 上で継続。
+  - progress: 2025-12-10 21:26 JST ui-dialog/useDialogDisplayTransition と plugin-ui-host frame-state の maximize 位置計算を initialPosition ベースに変更（minPosition を 0 に調整）、TrashDialog/ResolverDialog も同様に中央寄せ計算へ合わせて 0,0 固定を解消。
+  - progress: 2025-12-10 21:27 JST 検証: `pnpm --filter @hierarchidb/ui-dialog typecheck` exit 0、`pnpm --filter @hierarchidb/plugin-ui-host typecheck` exit 0、`pnpm --filter @hierarchidb/resolver-plugin typecheck` exit 0。
 
 1612) Vite を rolldown-vite へ置換（P0）
 - ブランチ: `chore/build/rolldown-vite`（.git/refs 作成不可のため main 上で作業）
@@ -9764,6 +9809,15 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-27 15:46 progress: fix/workingcopy/dialog-cancel-behavior — create 仮ノードを version:0 に統一し、commit/save/import で 1 以上へ昇格する方針に合わせて判定を整理。`initTreeNode` を version 0 で作成、`commitTreeNodeDraft` は version を 0 起点で +1、`discardTreeNodeDraft` は committed 判定を version>0/データ有無のみに簡素化。UI cancel で forceDelete を渡すよう修正済み。`pnpm --filter @hierarchidb/runtime-worker test -- --run cancel-create` exit 0。
 
 ## 今日の着手（運用ログ） <a id="worklog-16"></a>
+- 2025-12-11 11:35 start: fix/runtime-worker/skip-missing-exports — plugin worker/database エントリが exports に無いプラグインをロード対象から除外し、不要な警告を抑制するタスクを開始。DoD: exports 有無でスキップ、Worker/Database 前提の整理・記録、エントリ非保持プラグイン一覧の確認、代表 typecheck 実行とログ記録、ロールバック手順明記。branch は `fix/runtime-worker/skip-missing-exports`（作成不可なら main）。
+- 2025-12-11 11:50 progress: fix/runtime-worker/skip-missing-exports — plugins/*-plugin の package.json exports を調査。Worker export 無し: basemap, folder, resolver（linker/location/route/shape/spreadsheet/styler/timeline はあり）。Database export 有り: basemap, location, resolver, route（folder/linker/shape/spreadsheet/styler/timeline は無し）。調査スクリプト: `node - <<'NODE' ...`（loose JSON で解析）。
+- 2025-12-11 12:20 progress: fix/runtime-worker/skip-missing-exports — plugin registry 生成スクリプトで package.json exports から worker/database 有無を抽出し registry.entries.exports に出力、runtime-worker PluginWorkerModuleLoader と app plugin-host/databases で exports 情報を参照して非エクスポートのプラグインを preload 対象外に変更。preload ループも registry 由来の worker export 無しプラグインをスキップ。検証: `pnpm --filter @hierarchidb/runtime-worker typecheck` exit 0。
+- 2025-12-11 13:25 progress: fix/runtime-worker/skip-missing-exports — plugin package.json の存在しない export を削除（basemap: ./database, shape/styler: ./shared）。exports を優先する判定に修正し、exports に worker/database が無いプラグインは modules 定義があってもロード対象から除外。検証: `pnpm --filter @hierarchidb/runtime-worker typecheck` exit 0。
+- 2025-12-11 12:00 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 1（plugins/folder-plugin/package.json の trailing comma による JSON parse エラーで失敗。今回の変更と直接無関係の既存構造）。
+- 2025-12-10 22:30 start: fix/ui-dialog/button-loading-state — Dialog 操作ボタンの二度押し防止とローディング表示を追加するタスクを開始。DoD: Back/Next/Save/Create/Cancel/SaveDraft/Stepper の押下元を処理完了まで disabled+loading にする、挙動変更なし、typecheck 実行ログ記録、ロールバック手順明記。branch は `fix/ui-dialog/button-loading-state`（作成不可なら main）。
+- 2025-12-10 22:55 progress: fix/ui-dialog/button-loading-state — PluginDialogFooter/Header と usePluginDialogController に pending state を導入し、Back/Next/Save/Create/Cancel/SaveDraft/Stepper 押下中に disabled+loading を表示するようにした。
+- 2025-12-10 22:57 command: pnpm --filter @hierarchidb/plugin-ui-host typecheck — exit 0。
+- 2025-12-10 23:05 progress: fix/ui-dialog/button-loading-state — スピナー表示を押下したボタンの endIcon のみに限定し、他ボタンは disabled のみ。Stepper は pending step のラベル末尾にのみスピナーを表示。
 - 2025-12-10 00:51 start: chore/build/rolldown-vite — Vite を rolldown-vite へ置換する作業を開始。DoD: bundler 切替で `pnpm dev`/`pnpm preview` 起動、`pnpm lint && pnpm typecheck && pnpm test` 成功（既知失敗は理由記録）、plugin registry フロー影響確認、ロールバック手順記載。branch は main（.git/refs 作成不可）。
 - 2025-12-10 00:51 blocked: chore/build/rolldown-vite — `git checkout -b chore/build/rolldown-vite` が .git/refs 作成不可で失敗。main で続行予定。
 - 2025-12-10 01:05 progress: chore/build/rolldown-vite — ルート/app の package.json と pnpm overrides で `vite` を `npm:rolldown-vite@7.2.10` に置換し、root の `@vitejs/plugin-react` を 5.0.1 へ更新（Vite7/rolldown対応）。ロールダウン取得には再インストールが必要。

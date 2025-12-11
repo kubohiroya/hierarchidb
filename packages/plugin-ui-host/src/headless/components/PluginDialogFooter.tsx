@@ -11,10 +11,12 @@ import CheckIcon from '@mui/icons-material/Check';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloseIcon from '@mui/icons-material/Close';
-import { Box, Button, Stack, Tooltip } from '@mui/material';
+import { Box, Button, CircularProgress, Stack, Tooltip } from '@mui/material';
 import { useLocation } from '@tanstack/react-router';
-import React, { useCallback } from 'react';
+import React, { forwardRef, useCallback } from 'react';
 import { Theme } from '@mui/material/styles';
+import type { ButtonProps } from '@mui/material';
+import type { DialogActionInFlight } from '../types.js';
 
 export interface PluginDialogFooterPrimaryButtonOptions {
   leftVisibility?: 'auto' | 'hidden';
@@ -33,11 +35,40 @@ export interface PluginDialogFooterProps {
   canStartBatch?: boolean;
   isStartingBatch?: boolean;
   primaryButtonOptions?: PluginDialogFooterPrimaryButtonOptions;
+  pendingAction?: DialogActionInFlight | null;
 }
 
 const stopPointerPropagation = (event: React.PointerEvent | React.MouseEvent) => {
   event.stopPropagation();
 };
+
+type LoadingButtonProps = ButtonProps & { loading?: boolean };
+
+const LoadingButton = forwardRef<HTMLButtonElement, LoadingButtonProps>(function LoadingButton(
+  { loading = false, disabled, startIcon, endIcon, children, ...rest },
+  ref
+) {
+  const spinner = (
+    <CircularProgress
+      size={16}
+      thickness={5}
+      color="inherit"
+    />
+  );
+  const computedEndIcon = loading ? spinner : endIcon;
+  return (
+    <Button
+      {...rest}
+      ref={ref}
+      disabled={disabled || loading}
+      startIcon={startIcon}
+      endIcon={computedEndIcon}
+      data-loading={loading ? 'true' : undefined}
+    >
+      {children}
+    </Button>
+  );
+});
 
 export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   mode,
@@ -49,6 +80,7 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   canStartBatch = true,
   isStartingBatch = false,
   primaryButtonOptions,
+  pendingAction,
 }) => {
   const ctx = useDialogContext<Record<string, unknown>>();
   const location = useLocation();
@@ -96,17 +128,19 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   ) : (
     <ChevronLeftIcon fontSize="small" />
   );
-  // Temporarily keep navigation/commit buttons always enabled to avoid
-  // non-responsive footer actions while upstream guards are being stabilized.
-  const disableLeftPrimary = false;
-  const disableRightPrimary = false;
+  const hasPendingAction = Boolean(pendingAction);
+  const leftActionType = isFirstStep ? 'cancel' : 'back';
+  const rightActionType = isLastStep ? 'commit' : 'next';
+  const disableLeftPrimary = hasPendingAction;
+  const disableRightPrimary = hasPendingAction;
   const showSaveDraft = typeof onSaveDraft === 'function';
   const showStartBatch = typeof onStartBatch === 'function';
-  const disableDraftButton = disableDraft ?? !isDirty;
+  const disableDraftButton = (disableDraft ?? !isDirty) || hasPendingAction;
   const showLeftPrimary = primaryButtonOptions?.leftVisibility !== 'hidden';
   const showRightPrimary = primaryButtonOptions?.rightVisibility !== 'hidden';
   const showInlineSaveButton = mode === 'edit' && !isLastStep && showRightPrimary;
-  const inlineSaveDisabled = !ctx.onRequestCommit || !allStepsValidated || !canCommit;
+  const inlineSaveDisabled =
+    !ctx.onRequestCommit || !allStepsValidated || !canCommit || hasPendingAction;
   const shouldRenderNextButton = showRightPrimary && !isLastStep;
   const shouldRenderFinalCommitButton = showRightPrimary && isLastStep;
 
@@ -142,17 +176,18 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
           flexWrap="wrap"
         >
           {showLeftPrimary && (
-            <Button
+            <LoadingButton
               variant="contained"
               size="large"
               color={isFirstStep ? 'inherit' : isResourcesTree ? 'primary' : 'secondary'}
               onClick={handleBackOrCancel}
               onPointerDown={stopPointerPropagation}
               disabled={disableLeftPrimary}
+              loading={pendingAction?.type === leftActionType}
               startIcon={leftPrimaryIcon}
             >
               {leftPrimaryLabel}
-            </Button>
+            </LoadingButton>
           )}
           {showSaveDraft && (
             <Tooltip
@@ -160,15 +195,17 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
               disableHoverListener={!disableDraftButton}
             >
               <span>
-                <Button
+                <LoadingButton
                   variant="outlined"
                   size="large"
                   onClick={onSaveDraft}
                   onPointerDown={stopPointerPropagation}
                   disabled={disableDraftButton}
+                  loading={pendingAction?.type === 'save-draft'}
+                  endIcon={<CheckIcon fontSize="small" />}
                 >
                   {saveDraftLabel}
-                </Button>
+                </LoadingButton>
               </span>
             </Tooltip>
           )}
@@ -185,16 +222,17 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
           }}
         >
           {showStartBatch && (
-            <Button
+            <LoadingButton
               variant="outlined"
               size="large"
               color="secondary"
               onClick={onStartBatch}
               onPointerDown={stopPointerPropagation}
-              disabled={!canStartBatch || isStartingBatch}
+              disabled={!canStartBatch || isStartingBatch || hasPendingAction}
+              loading={isStartingBatch}
             >
               {isStartingBatch ? 'Building…' : 'Build'}
-            </Button>
+            </LoadingButton>
           )}
         </Box>
 
@@ -207,43 +245,46 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
           flexWrap="wrap"
         >
           {showInlineSaveButton && (
-            <Button
+            <LoadingButton
               variant="outlined"
               size="large"
               color="primary"
               onClick={handleInlineSave}
               onPointerDown={stopPointerPropagation}
               disabled={inlineSaveDisabled}
+              loading={pendingAction?.type === 'commit'}
               endIcon={<CheckIcon fontSize="small" />}
             >
               {commitLabel}
-            </Button>
+            </LoadingButton>
           )}
           {shouldRenderNextButton && (
-            <Button
+            <LoadingButton
               variant="contained"
               size="large"
               color="primary"
               onClick={handleNextOrSave}
               onPointerDown={stopPointerPropagation}
               disabled={disableRightPrimary}
+              loading={pendingAction?.type === rightActionType}
               endIcon={<ChevronRightIcon fontSize="small" />}
             >
               {rightPrimaryLabel}
-            </Button>
+            </LoadingButton>
           )}
           {shouldRenderFinalCommitButton && (
-            <Button
+            <LoadingButton
               variant="contained"
               size="large"
               color="primary"
               onClick={handleNextOrSave}
               onPointerDown={stopPointerPropagation}
               disabled={disableRightPrimary}
+              loading={pendingAction?.type === rightActionType}
               endIcon={<CheckIcon fontSize="small" />}
             >
               {rightPrimaryLabel}
-            </Button>
+            </LoadingButton>
           )}
         </Stack>
       </Stack>

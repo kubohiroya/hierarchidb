@@ -101,6 +101,7 @@ export interface PluginRegistryEntry {
   packageName: string;
   version: string;
   dependencies: string[];
+  exports?: string[];
   manifest: PluginManifest | null;
   modules: PluginModuleSet;
 }
