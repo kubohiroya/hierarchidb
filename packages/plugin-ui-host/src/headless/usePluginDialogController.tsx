@@ -639,7 +639,7 @@ export function usePluginDialogController(
       navigateToNode(savedNodeId);
       onClose();
     });
-  }, [basicInfo.description, basicInfo.name, basicInfo.tags, commitTreeNodeUpdater, dialogData, ensureNoConflict, navigateToNode, nodeType, onClose, onSuccess, runWithPending, updateLocalDraft]);
+  }, [basicInfo.description, basicInfo.name, basicInfo.tags, commitTreeNodeUpdater, dialogData, ensureNoConflict, getPersistableDialogUIState, navigateToNode, nodeType, onClose, onSuccess, runWithPending, updateLocalDraft]);
 
   useEffect(() => {
     handleSubmitRef.current = handleSubmit;
@@ -804,7 +804,7 @@ export function usePluginDialogController(
           />
         </>
       ),
-      [foregroundDialogSx, t, conflictDialog.open, conflictDialog.updatedAt, mode, canSaveCurrent, disableDraftButton, handleSaveDraft, hasUnsavedChanges, activeStartBatch, canStartBatch, isStartingBatch, footerPrimaryButtons, footerSaveDraftLabel, closeConflictDialog, handleStartBatch, pendingAction]
+      [conflictDialog.open, conflictDialog.updatedAt, foregroundDialogSx, t, mode, canSaveCurrent, disableDraftButton, handleSaveDraft, dialogDirty, activeStartBatch, canStartBatch, isStartingBatch, footerPrimaryButtons, footerSaveDraftLabel, pendingAction, closeConflictDialog, handleStartBatch]
     );
 
   const handleCloseRequest = useCallback(() => {

@@ -319,7 +319,7 @@ export function useTreeNodeDialog<TPayload extends TreeNodeData>(
     } finally {
       updateDialogViewState({ patch: { isSaving: false } });
     }
-  }, [isSaving, updateDialogViewState, treeNodeUpdater?.draftMetadata, treeNodeUpdater?.treeNodeId, nodeType, activeSingle, commitTreeNodeUpdater, onSave, nodeId, onClose]);
+  }, [isSaving, updateDialogViewState, treeNodeUpdater, nodeId, nodeType, activeSingle, commitTreeNodeUpdater, onSave, onClose]);
 
   const handleDiscard = useCallback(() => {
     const action = activeSingle ? activeSingle.discard : discardDraft;
