@@ -8,7 +8,7 @@ CountryMatrixSelector.tsx  Core matrix component (react-virtuoso)
 CountryMatrixStep.tsx      Stepper-friendly wrapper with validation UI
 configs.ts                 Predefined column sets (admin levels, transport hubs, routes, airports/ports)
 samples.ts                 Sample country data for demos/tests
-types.ts                   Matrix types
+batch-types.ts                   Matrix types
 index.ts                   Public exports
 ```
 

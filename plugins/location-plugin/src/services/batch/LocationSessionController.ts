@@ -2,14 +2,14 @@
  * Location SessionController - minimal point -> MVT pipeline
  */
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-types';
-import { getEphemeralLocationDB } from '../database/EphemeralLocationDB.js';
+import { getEphemeralLocationDB } from '../../database/EphemeralLocationDB.js';
 import { TabularWriter } from '@hierarchidb/tabular-store';
 import { digestSha256Hex } from '@hierarchidb/util';
 // External libs (ambient types declared under types/external.d.ts)
 import { DexieChunkStoragePort } from '@hierarchidb/download';
 import { BatchService, createLaneSemaphoreRegistry } from '@hierarchidb/batch';
 import { getLocationRuntimeWorkerClient } from './adapters/RuntimeWorkerClient.js';
-import type { LocationPointInput, LocationTileSettings } from './types.js';
+import type { LocationPointInput, LocationTileSettings } from '../../common/types/batch-types.js';
 
 // Use common progress event type to decouple worker from UI
 export type ProgressInfo = ProgressEvent;

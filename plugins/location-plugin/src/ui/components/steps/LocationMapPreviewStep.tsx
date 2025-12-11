@@ -11,7 +11,7 @@ import { LocationMapPreview } from '../batch/LocationMapPreview.js';
 import type { PreviewLocationPoint } from '../batch/LocationMapPreview.js';
 import type { LocationEntity, LocationType } from '../../../common/types/index.js';
 import { formatBytes, useTranslation } from '../../../common/i18n/index.js';
-import { getEphemeralLocationDB } from '../../../services/database/EphemeralLocationDB.js';
+import { getEphemeralLocationDB } from '../../../database/EphemeralLocationDB.js';
 import { LocationVectorTileService } from '../../../services/tiles/LocationVectorTileService.js';
 import { listLocationPoints } from '../../../services/pointRepository.js';
 

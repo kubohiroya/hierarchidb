@@ -102,7 +102,7 @@ function createRuntimeAliasConfig({
     { spec: '@hierarchidb/plugin-presentation', src: '../packages/plugin-presentation/src/index.ts', dist: '../packages/plugin-presentation/dist/index.js' },
     { spec: '@hierarchidb/plugin-registry', src: '../packages/plugin-registry/generated/registry.ts', dist: '../packages/plugin-registry/dist/registry.js' },
     { spec: '@hierarchidb/plugin-registry/derivations', src: '../packages/plugin-registry/src/derivations.ts', dist: '../packages/plugin-registry/dist/derivations.js' },
-    { spec: '@hierarchidb/plugin-registry/types', src: '../packages/plugin-registry/src/types.ts', dist: '../packages/plugin-registry/dist/types.d.ts' },
+    { spec: '@hierarchidb/plugin-registry/types', src: '../packages/plugin-registry/src/batch-types.ts', dist: '../packages/plugin-registry/dist/types.d.ts' },
     { spec: '@hierarchidb/plugin-ui-sdk', src: '../packages/plugin-ui-sdk/src/index.ts', dist: '../packages/plugin-ui-sdk/dist/index.js' },
     { spec: '@hierarchidb/folder-plugin', src: '../plugins/folder-plugin/src/index.ts', dist: '../plugins/folder-plugin/dist/index.js' },
     { spec: '@hierarchidb/location-plugin', src: '../plugins/location-plugin/src/index.ts', dist: '../plugins/location-plugin/dist/index.js' },

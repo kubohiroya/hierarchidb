@@ -4,7 +4,7 @@
 
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-types';
 import { LocationSessionController } from './LocationSessionController.js';
-import type { LocationPointInput, LocationTileSettings, SessionSummary } from './types.js';
+import type { LocationPointInput, LocationTileSettings, SessionSummary } from '../../common/types/batch-types.js';
 import { LocationBatchSession } from './LocationBatchSession.js';
 import { isDevEnvironment } from '../../common/utils/env.js';
 
@@ -39,7 +39,7 @@ export class LocationBatchSessionManager {
     this.summaries.set(sessionId, summary);
     // Persist session meta (best-effort)
     try {
-      const { getEphemeralLocationDB } = await import('../database/EphemeralLocationDB.js');
+      const { getEphemeralLocationDB } = await import('../../database/EphemeralLocationDB.js');
       const db = getEphemeralLocationDB();
       try {
         await db.clearExpiredSessions(LocationBatchSessionManager.SESSION_TTL);
@@ -75,7 +75,7 @@ export class LocationBatchSessionManager {
 
     shared.start().then(async () => {
       try {
-        const { getEphemeralLocationDB } = await import('../database/EphemeralLocationDB.js');
+        const { getEphemeralLocationDB } = await import('../../database/EphemeralLocationDB.js');
         const db = getEphemeralLocationDB();
         await db.sessions?.update(sessionId, { status: 'completed' });
       } catch (error) {
@@ -86,7 +86,7 @@ export class LocationBatchSessionManager {
     }).catch(async (e: any) => {
       console.error('Location session failed', e);
       try {
-        const { getEphemeralLocationDB } = await import('../database/EphemeralLocationDB.js');
+        const { getEphemeralLocationDB } = await import('../../database/EphemeralLocationDB.js');
         const db = getEphemeralLocationDB();
         await db.sessions?.update(sessionId, { status: 'failed' });
       } catch (error) {

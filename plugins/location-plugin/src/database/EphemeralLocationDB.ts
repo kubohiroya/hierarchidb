@@ -5,7 +5,7 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId, Timestamp } from '@hierarchidb/common-types';
-import type { LocationBatchData, UnifiedLocationBatchConfig } from '../batch/types.js';
+import type { LocationBatchData, UnifiedLocationBatchConfig } from '../common/types/batch-types.js';
 
 export interface VectorTileRecord {
   id: string; // tileKey, e.g. loc-mvt-<sessionId>-<z>-<x>-<y>

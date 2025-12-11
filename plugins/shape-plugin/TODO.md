@@ -21,7 +21,7 @@
 ## Phase 3: Type & Config Alignment
 - [ ] Finalize `tsconfig.build.json` / `tsconfig.json` settings so both UI and service layer type-check cleanly.
 - [ ] Ensure path aliases (base tsconfig) contain only the required entries and workspaces resolve.
-- [ ] Update shared types (`types.ts`, etc.) so UI ↔ worker data contracts match the current API.
+- [ ] Update shared types (`batch-types.ts`, etc.) so UI ↔ worker data contracts match the current API.
 
 ## Phase 4: Verification
 - [ ] `pnpm --filter @hierarchidb/shape-plugin typecheck`

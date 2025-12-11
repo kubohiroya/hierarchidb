@@ -5,7 +5,7 @@ Toggle button group for switching between multiple TreeConsole contexts with sav
 ## Directory layout
 ```
 TreeToggleButtonGroup.tsx  Component
-types.ts                  TreeConfig helpers
+batch-types.ts                  TreeConfig helpers
 index.ts                  Public exports
 ```
 

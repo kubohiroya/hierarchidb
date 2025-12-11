@@ -97,4 +97,4 @@ Step には `Partial<PluginNameEntity>` のみを渡し、必要に応じて `me
 ## 関連ドキュメント
 - `docs/plugins/working-copy-baseline.md` — Working Copy の基本方針。
 - `docs/workingcopy-dialog-hosting.md` — ダイアログホスト責務とレジストリ連携。
-- `packages/common/types/src/tree-node-types.ts` — `TreeNodeUpdaterPayload` などの共通型。
+- `packages/common/types/src/tree-node-batch-types.ts` — `TreeNodeUpdaterPayload` などの共通型。

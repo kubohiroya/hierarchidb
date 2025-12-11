@@ -14,9 +14,9 @@ import {
 } from '@hierarchidb/common-api';
 import { UnifiedBatchManagerBase, type BatchPersistence, type UnifiedBatchSession } from '@hierarchidb/batch';
 import { LocationBatchSessionManager } from './BatchSessionManager.js';
-import { getEphemeralLocationDB, type EphemeralLocationDB } from '../database/EphemeralLocationDB.js';
+import { getEphemeralLocationDB, type EphemeralLocationDB } from '../../database/EphemeralLocationDB.js';
 import { toBatchProgressEvent } from './ProgressAdapter.js';
-import type { LocationBatchData, UnifiedLocationBatchConfig } from './types.js';
+import type { LocationBatchData, UnifiedLocationBatchConfig } from '../../common/types/batch-types.js';
 import { mapManagerStatusToLocationStatus, mapStageToBatchStage, toProgressSnapshot } from './runtimeBridge.js';
 
 const PENDING_TTL = 24 * 60 * 60 * 1000; // 24 hours

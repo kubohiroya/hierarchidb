@@ -1,5 +1,5 @@
 /**
- * @file services/common/types.ts
+ * @file services/common/batch-types.ts
  * @description Type re-exports for service-layer modules. This file acts as a
  * stable bridge so legacy imports like `../common/types.js` continue to work
  * after consolidating shared definitions under `common/shared`.

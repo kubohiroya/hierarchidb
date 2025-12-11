@@ -159,7 +159,7 @@ export function isDialogStepDefinition(value: unknown): value is DialogStepDefin
 ### 現在の構成
 ```
 packages/common/core/src/types/
-├── types.ts              # 元の実装（後方互換性のため維持）
+├── batch-types.ts              # 元の実装（後方互換性のため維持）
 ├── plugin-extension-refactored.ts   # リファクタリング版（完全版）
 └── plugin-extension/                # モジュール分割版（検討中）
     ├── RuntimeWorkerService.ts

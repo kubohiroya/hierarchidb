@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { waitFor } from '@testing-library/react';
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-types';
-import type { LocationPointInput, LocationTileSettings, SessionSummary } from '../../types';
+import type { LocationPointInput, LocationTileSettings, SessionSummary } from '../../../common/types/batch-types.js';
 
 vi.mock('@hierarchidb/tabular-source-store', () => ({
   TabularWriter: class {

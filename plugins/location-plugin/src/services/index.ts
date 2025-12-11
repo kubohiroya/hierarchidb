@@ -3,7 +3,6 @@
  * Aggregates service-layer utilities for consumption by the app.
  */
 
-export { getEphemeralLocationDB, closeEphemeralLocationDB } from './database/EphemeralLocationDB.js';
 export { LocationVectorTileService } from './tiles/LocationVectorTileService.js';
 export { LocationBatchManager, type LocationBatchProgressEvent } from './LocationBatchManager.js';
 export {
@@ -16,3 +15,5 @@ export {
 
 // Batch Session manager and unified adapters
 export { LocationBatchSessionManager } from './batch/BatchSessionManager.js';
+
+export { getEphemeralLocationDB } from '../database/EphemeralLocationDB.js';

@@ -1,3 +1,3 @@
 export * from '../locationEntitiesDB.js';
-export * from '../services/database/EphemeralLocationDB.js';
-export { clearDatabases } from '../services/database/clear.js';
+export * from './EphemeralLocationDB.js';
+export { clearDatabases } from './clear.js';

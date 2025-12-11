@@ -1,14 +1,6 @@
 /// <reference types="vite/client" />
 
 import type { GroupItemBase, GroupStore, PeerStore, RelationBase, RelationStore } from '@hierarchidb/runtime-worker';
-import { createNodePayloadPeerStore } from '@hierarchidb/runtime-worker';
-import type { ShapePeerData } from '../../common/types/entities.js';
-
-const normalizeShapePeerData = (data?: ShapePeerData | null): ShapePeerData => ({
-  schemaVersion: 1,
-  lastProcessedTile: data?.lastProcessedTile,
-  metadata: data?.metadata ?? {},
-});
 
 type StoreRegistry = {
   getPeer<T = unknown>(nodeType: string): PeerStore<T> | undefined;

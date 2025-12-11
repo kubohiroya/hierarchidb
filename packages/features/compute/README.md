@@ -6,7 +6,7 @@ Task execution feature with a minimal pool and progress/cancellation. Currently 
 ## Directory layout
 ```
 ComputeService.ts  Facade with internal WorkerPool
-types.ts           TaskSpec/TaskHandle/TaskStatus
+batch-types.ts           TaskSpec/TaskHandle/TaskStatus
 ports.ts           WorkerEnvPort, ClockPort (for future Worker-backed pools)
 index.ts           Public exports + FeatureDefinition
 ```
