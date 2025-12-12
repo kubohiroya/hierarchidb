@@ -57,11 +57,7 @@ const normalizeTreeNodeForPersist = (node: TreeNode): TreeNode => {
   const dialogProgress =
     (node as { dialogUIState?: DialogUIState | null }).dialogUIState?.dialogProgress ?? null;
   const dialogUIState: DialogUIState = {
-    dialogWindow: dialogWindow ?? {
-      mode: 'normal',
-      position: { x: 0, y: 0 },
-      size: { width: 960, height: 640 },
-    },
+    dialogWindow: dialogWindow ?? null,
     dialogProgress: dialogProgress ?? { activeStepIndex: 0 },
   };
 

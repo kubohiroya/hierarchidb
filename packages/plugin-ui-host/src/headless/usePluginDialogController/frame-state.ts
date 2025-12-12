@@ -1,15 +1,20 @@
 import { useDialogUrlSync } from '@hierarchidb/plugin-base';
 import {
   normalizeDialogState,
+  getViewportSize,
   getPresetSize,
   initialPosition,
-  getViewportSize,
   FRAME_CONSTANTS,
   sizesEqual,
   positionsEqual,
 } from '@hierarchidb/ui-dialog';
-import { DEFAULT_POSITION, DEFAULT_SIZE,
-  type DialogDisplayMode, type DialogPosition, type DialogSize, type NodeId, type DialogUIState } from '@hierarchidb/common-types';
+import {
+  type DialogDisplayMode,
+  type DialogPosition,
+  type DialogSize,
+  type NodeId,
+  type DialogUIState,
+} from '@hierarchidb/common-types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type React from 'react';
 
@@ -61,9 +66,22 @@ export function useDialogFrameState({
     }
   }, [urlStep]);
 
+  const initialFrame = (() => {
+    const viewport = getViewportSize();
+    const size = getPresetSize('normal', viewport);
+    return normalizeDialogState(
+      size,
+      initialPosition(size, viewport),
+      viewport,
+      { enforceTopLeftMargin: true },
+    );
+  })();
+
+  const defaultFrameRef = useRef<typeof initialFrame | null>(initialFrame);
+
   const [displayMode, setDisplayModeState] = useState<DialogDisplayMode>('normal');
-  const [dialogSize, setDialogSize] = useState<DialogSize>(DEFAULT_SIZE);
-  const [dialogPosition, setDialogPosition] = useState<DialogPosition>(DEFAULT_POSITION);
+  const [dialogSize, setDialogSize] = useState<DialogSize>(initialFrame.size);
+  const [dialogPosition, setDialogPosition] = useState<DialogPosition>(initialFrame.position);
 
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const dialogSizeRef = useRef(dialogSize);
@@ -134,6 +152,7 @@ export function useDialogFrameState({
       persistPosition(normalized.position);
     }
 
+    defaultFrameRef.current = null;
     persistDisplayMode(mode);
     if (typeof progressState?.activeStepIndex === 'number') {
       const nextStep = clampIndex(progressState.activeStepIndex, Number.POSITIVE_INFINITY);
@@ -231,6 +250,22 @@ export function useDialogFrameState({
         };
       }
 
+      const shouldRecenter = defaultFrameRef.current
+        && sizesEqual(dialogSizeRef.current, defaultFrameRef.current.size)
+        && positionsEqual(dialogPositionRef.current, defaultFrameRef.current.position);
+
+      if (shouldRecenter) {
+        const recentered = normalizeDialogState(
+          targetSize,
+          initialPosition(targetSize, viewport),
+          viewport,
+          options,
+        );
+        defaultFrameRef.current = recentered;
+        targetSize = recentered.size;
+        targetPosition = recentered.position;
+      }
+
       const normalized = normalizeDialogState(targetSize, targetPosition, viewport, options);
       if (!sizesEqual(dialogSizeRef.current, normalized.size)) {
         dialogSizeRef.current = normalized.size;
@@ -262,6 +297,7 @@ export function useDialogFrameState({
   const handleSizeChange = useCallback(
     (next?: DialogSize) => {
       if (!next) return;
+      defaultFrameRef.current = null;
       const viewport = getViewportSize();
       const normalized = normalizeDialogState(next, dialogPositionRef.current, viewport, {
         enforceTopLeftMargin: displayMode === 'normal',
@@ -281,6 +317,7 @@ export function useDialogFrameState({
   const handlePositionChange = useCallback(
     (next?: DialogPosition) => {
       if (!next) return;
+      defaultFrameRef.current = null;
       const viewport = getViewportSize();
       const normalized = normalizeDialogState(dialogSizeRef.current, next, viewport, {
         enforceTopLeftMargin: displayMode === 'normal',
