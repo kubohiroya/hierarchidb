@@ -30,8 +30,8 @@ import {
   Timeline as TimelineIcon,
 } from '@mui/icons-material';
 import type { NodeId, TreeNodeMetadata } from '@hierarchidb/common-types';
-import { summarizeCheckboxState, type ShapeEntity, type UrlMetadata } from '../../common/shared/index.js';
-import type { BatchStatus, BatchProcessConfig, StageStatus } from '../../services/types.js';
+import { summarizeCheckboxState, type ShapeEntity, type UrlMetadata } from '../../../../common/shared/index.js';
+import type { BatchStatus, BatchProcessConfig, StageStatus } from '../../../../services/types.js';
 
 export interface ShapeViewPanelProps {
   nodeId: NodeId;

@@ -48,7 +48,7 @@
 - [ ] `pnpm -r typecheck` と主要テストスイートを実行
 - [ ] `.github/workflows` / `.github/actions` のスクリプトで参照するパッケージ名・パスを新構成へ更新し、CI dry-run を確認
 - [ ] `TASKS.md` に各プラグインの移行完了を記録
-- [x] Location plugin: `LocationSelectionStep` の `handleMatrixChange` で TODO のままになっている checkboxState 変換ロジックを実装（shape-plugin Step5CountrySelection.tsx の実装を踏襲）
+- [x] Location plugin: `LocationSelectionStep` の `handleMatrixChange` で TODO のままになっている checkboxState 変換ロジックを実装（shape-plugin Step4CountrySelection.tsx の実装を踏襲）
   - 対応: `handleMatrixChange` を matrix 引数付きで実装、選択済みのみを永続化するよう更新（SAMPLE_COUNTRIES / LOCATION_TYPES 準拠）
   - フォローアップ: テスト追加（mock 行列→state）
 - [ ] Timeline plugin: `MapPreviewStep` / `AnimationViewerStep` にある placeholder UI（ベースマップ描画なし）を basemap-plugin の preview 実装と同等の機能に置き換える

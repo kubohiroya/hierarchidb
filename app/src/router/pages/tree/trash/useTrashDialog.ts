@@ -430,6 +430,13 @@ export function useTrashDialog(data: TrashDialogData, params: TrashDialogRoutePa
         },
       });
       if (result.success) {
+        try {
+          const client = WorkerAPIClient.getSingleton();
+          const expandedApi = await client.getTreeTableExpandedAPI?.();
+          await expandedApi?.clearExpandedForSubtree(removalNodeIds);
+        } catch (error) {
+          console.warn('Failed to clear expanded state after empty trash', error);
+        }
         closeDialog();
       }
     } finally {

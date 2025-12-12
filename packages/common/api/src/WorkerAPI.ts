@@ -5,6 +5,7 @@ import type { TagAPI } from './TagAPI.js';
 import type { TreeMutationAPI } from './TreeMutationAPI.js';
 import type { TreeQueryAPI } from './TreeQueryAPI.js';
 import type { TreeSubscriptionAPI } from './TreeSubscriptionAPI.js';
+import type { TreeTableExpandedAPI } from './TreeTableExpandedAPI.js';
 import type {
   BatchProgressEvent,
   BatchSessionId,
@@ -40,6 +41,7 @@ export interface WorkerAPI {
   getQueryAPI(): Promise<TreeQueryAPI>;
   getSubscriptionAPI(): Promise<TreeSubscriptionAPI>;
   getTreeNodeUpdaterAPI(): Promise<TreeNodeUpdaterAPI>;
+  getTreeTableExpandedAPI(): Promise<TreeTableExpandedAPI>;
   getImportExportAPI(): Promise<ImportExportAPI>;
   getTagAPI(): Promise<TagAPI>;
   getPluginLifecycleAPI(): Promise<PluginLifecycleAPI>;

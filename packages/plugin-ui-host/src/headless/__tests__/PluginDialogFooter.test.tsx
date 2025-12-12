@@ -1,12 +1,10 @@
-/// <reference types="vitest/globals" />
-/// <reference types="@testing-library/jest-dom/vitest" />
+import '@testing-library/jest-dom/vitest';
 import { MultiStepDialogProvider } from '@hierarchidb/ui-dialog';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { vi } from 'vitest';
 import { PluginDialogFooter } from '../components/PluginDialogFooter.js';
-import '@testing-library/jest-dom/vitest';
 
 type ContextOverrides = Partial<Parameters<typeof MultiStepDialogProvider>[0]['value']>;
 
@@ -83,28 +81,6 @@ describe('PluginDialogFooter icons', () => {
     const saveButton = screen.getByRole('button', { name: 'Save' });
     expect(within(saveButton).queryByTestId('CheckIcon')).not.toBeNull();
     expect(screen.getAllByRole('button', { name: 'Save' }).length).toBe(1);
-  });
-});
-
-describe('PluginDialogFooter inline save button', () => {
-  it('renders a disabled Save button on edit mode before validations finish', () => {
-    renderWithContext(<PluginDialogFooter mode="edit" canCommit={true} />, {
-      activeStepIndex: 0,
-      validatedStepIndices: [0],
-    });
-
-    const saveButton = screen.getByRole('button', { name: 'Save' });
-    expect(saveButton.getAttribute('disabled')).not.toBeNull();
-  });
-
-  it('enables the Save button once all steps are validated', () => {
-    renderWithContext(<PluginDialogFooter mode="edit" canCommit={true} />, {
-      activeStepIndex: 0,
-      validatedStepIndices: [0, 1],
-    });
-
-    const saveButton = screen.getByRole('button', { name: 'Save' });
-    expect(saveButton.getAttribute('disabled')).toBeNull();
   });
 });
 

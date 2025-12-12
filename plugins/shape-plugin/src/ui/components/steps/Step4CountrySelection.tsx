@@ -30,14 +30,16 @@ import {
   formatBytes,
   formatNumber,
 } from '../../../common/mock/data.js';
+import { useRef } from 'react';
 
 /**
  * Step 5: Country & Admin Level Selection
  * Uses real country metadata from @hierarchidb/fetch-save-metadata
  */
-export const Step5CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, disabled }) => {
+export const Step4CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, disabled }) => {
   const draftData = draft ?? {};
   const { enqueueSnackbar } = useSnackbar();
+  const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
 
   // Load country metadata from 02-fetch-save-metadata
   const dataSourceKey = normalizeDataSourceName(draftData.dataSourceName) ?? 'gadm';
@@ -51,6 +53,29 @@ export const Step5CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, di
 
   const dataSourceConfig = DATA_SOURCE_CONFIGS[dataSourceKey];
   const maxAdminLevel = dataSourceConfig?.maxAdminLevel ?? 0;
+
+  const alphaIndex = useMemo(() => {
+    const letters = new Set<string>();
+    countries.forEach((country) => {
+      const letter = country.countryName?.[0]?.toUpperCase() ?? '#';
+      letters.add(letter);
+    });
+    return Array.from(letters).sort();
+  }, [countries]);
+
+  const scrollToLetter = useCallback((letter: string) => {
+    const target = rowRefs.current[letter];
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
+
+  const toFlagEmoji = useCallback((code?: string) => {
+    if (!code || code.length < 2) return '🏳️';
+    const iso2 = code.slice(0, 2).toUpperCase();
+    const codePoints = Array.from(iso2).map((c) => 0x1f1e6 - 65 + c.charCodeAt(0));
+    return String.fromCodePoint(...codePoints);
+  }, []);
 
   // Initialize checkbox matrix
   const checkboxMatrix = useMemo<boolean[][]>(() => {
@@ -149,10 +174,30 @@ export const Step5CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, di
       <Typography variant="h6" gutterBottom>
         Select Countries & Administrative Levels
       </Typography>
-      <Typography variant="body2" color="text.secondary" paragraph>
-        Select countries and their administrative levels to download. Use the
-        matrix to make precise selections.
-      </Typography>
+        <Typography variant="body2" color="text.secondary" paragraph>
+          Select countries and their administrative levels to download. Use the
+          matrix to make precise selections.
+        </Typography>
+
+      {/* Alphabetical index */}
+      <Stack
+        direction="row"
+        spacing={0.5}
+        flexWrap="nowrap"
+        sx={{ mb: 1, overflowX: 'auto' }}
+      >
+        {alphaIndex.map((letter) => (
+          <Button
+            key={letter}
+            size="small"
+            variant="outlined"
+            sx={{ minWidth: 32, px: 1, py: 0.25, flexShrink: 0 }}
+            onClick={() => scrollToLetter(letter)}
+          >
+            {letter}
+          </Button>
+        ))}
+      </Stack>
 
       {/* Statistics Panel */}
       <Paper sx={{ p: 2, mb: 2, backgroundColor: 'grey.50' }}>
@@ -221,44 +266,58 @@ export const Step5CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, di
             </TableRow>
           </TableHead>
           <TableBody>
-            {countries.map((country: CountryMetadata, countryIndex: number) => (
-              <TableRow key={country.countryCode}>
-                <TableCell>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Typography variant="body2">
-                      {country.countryCode}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {country.countryName}
-                    </Typography>
-                  </Stack>
-                </TableCell>
-                {Array.from({ length: maxAdminLevel + 1 }, (_, levelIndex) => (
-                  <TableCell key={levelIndex} align="center">
-                    {country.availableAdminLevels.includes(levelIndex) ? (
-                      <Checkbox
-                        checked={
-                          checkboxMatrix[countryIndex]?.[levelIndex] || false
-                        }
-                        onChange={(e) =>
-                          handleCellChange(
-                            countryIndex,
-                            levelIndex,
-                            e.target.checked,
-                          )
-                        }
-                        disabled={disabled}
-                        size="small"
-                      />
-                    ) : (
-                      <Typography variant="caption" color="text.disabled">
-                        -
+            {countries.map((country: CountryMetadata, countryIndex: number) => {
+              const letter = country.countryName?.[0]?.toUpperCase() ?? '#';
+              const rowKey = country.countryCode || `${letter}-${countryIndex}`;
+              return (
+                <TableRow
+                  key={rowKey}
+                  ref={(el) => {
+                    if (!rowRefs.current[letter] && el) {
+                      rowRefs.current[letter] = el;
+                    }
+                  }}
+                >
+                  <TableCell>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Typography variant="body2" component="span">
+                        {toFlagEmoji(country.countryCode)}
                       </Typography>
-                    )}
+                      <Typography variant="body2">
+                        {country.countryCode}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {country.countryName}
+                      </Typography>
+                    </Stack>
                   </TableCell>
-                ))}
-              </TableRow>
-            ))}
+                  {Array.from({ length: maxAdminLevel + 1 }, (_, levelIndex) => (
+                    <TableCell key={levelIndex} align="center">
+                      {country.availableAdminLevels.includes(levelIndex) ? (
+                        <Checkbox
+                          checked={
+                            checkboxMatrix[countryIndex]?.[levelIndex] || false
+                          }
+                          onChange={(e) =>
+                            handleCellChange(
+                              countryIndex,
+                              levelIndex,
+                              e.target.checked,
+                            )
+                          }
+                          disabled={disabled}
+                          size="small"
+                        />
+                      ) : (
+                        <Typography variant="caption" color="text.disabled">
+                          -
+                        </Typography>
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>

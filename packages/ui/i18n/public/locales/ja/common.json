@@ -109,14 +109,40 @@
         "description": "別のタブで同じノードの編集が {{timestamp}} に保存されました。自分の編集をやめて相手の内容を採用するか、このまま自分の編集内容を優先して続行するかを選んでください。",
         "buttons": {
           "discardSelf": "自身の内容を破棄",
-      "keepSelf": "自身の内容を優先"
+          "keepSelf": "自身の内容を優先"
+        },
+        "discard": {
+          "title": "未保存の変更を破棄しますか？",
+          "description": "未保存の変更があります。破棄してダイアログを閉じてもよろしいですか？"
+        }
+      }
     },
-    "discard": {
-      "title": "未保存の変更を破棄しますか？",
-      "description": "未保存の変更があります。破棄してダイアログを閉じてもよろしいですか？"
+    "pluginDialog": {
+      "buttons": {
+        "save": "保存",
+        "saveDraft": "下書きを保存",
+        "next": "次へ",
+        "back": "戻る",
+        "cancel": "キャンセル",
+        "close": "閉じる",
+        "maximize": "最大化",
+        "restoreSize": "元のサイズに戻す",
+        "fullscreen": "全画面",
+        "exitFullscreen": "全画面を終了"
+      },
+      "tooltips": {
+        "saveDraftDisabled": "変更がないため保存できません",
+        "close": "ダイアログを閉じる",
+        "maximize": "最大化",
+        "restoreSize": "元のサイズに戻す",
+        "fullscreen": "全画面",
+        "exitFullscreen": "全画面を終了"
+      },
+      "titles": {
+        "create": "{{plugin}}の作成",
+        "edit": "{{plugin}}の編集"
+      }
     }
-  }
-}
   },
   "treeConsole": {
     "toolbar": {

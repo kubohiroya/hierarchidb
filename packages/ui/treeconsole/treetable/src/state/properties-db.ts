@@ -3,7 +3,7 @@ import { getDBName } from '@hierarchidb/util';
 
 type DialogDisplayMode = 'normal' | 'maximize' | 'full-screen';
 
-export type TreeTableProperties = {
+export type TreeTableProps = {
   pageNodeId: string; // primary key
   // property bag (extend freely without schema churn)
   columnWidths?: Record<string, number>;
@@ -19,35 +19,44 @@ export type TreeTableProperties = {
   updatedAt: number;
 };
 
+export type TreeTableExpandedRow = {
+  pageNodeId: string;
+  nodeId: string;
+  updatedAt: number;
+};
+
 class UIStateDB extends Dexie {
-  treetable_properties!: Table<TreeTableProperties, string>;
+  treetableProps!: Table<TreeTableProps, string>;
+  treetableExpanded!: Table<TreeTableExpandedRow, [string, string]>;
 
   constructor() {
     super(getDBName('ui-state'));
-    // v2: current store (also handles migrating and removing legacy table)
-    this.version(3)
-      .stores({ treetable_properties: '&pageNodeId' });
+    // v4: add treetableExpanded alongside treetableProps
+    this.version(4).stores({
+      treetableProps: '&pageNodeId',
+      treetableExpanded: '&[pageNodeId+nodeId], pageNodeId, nodeId',
+    });
   }
 }
 
 let _db: UIStateDB | null = null;
 function db(): UIStateDB { if (!_db) _db = new UIStateDB(); return _db; }
 
-export async function getProperties(pageNodeId: string | undefined): Promise<TreeTableProperties | null> {
+export async function getProperties(pageNodeId: string | undefined): Promise<TreeTableProps | null> {
   if (!pageNodeId) return null;
   const d = db();
   // Try new store first
-  const row = await d.treetable_properties.get(pageNodeId);
+  const row = await d.treetableProps.get(pageNodeId);
   if (row) {
     const rawMode = row.dialogDisplayMode as string | undefined;
     if (rawMode === 'standard' || rawMode === 'maximized' || rawMode === 'fullscreen') {
-      const migrated: TreeTableProperties = {
+      const migrated: TreeTableProps = {
         ...row,
         dialogDisplayMode:
           rawMode === 'standard' ? 'normal' : rawMode === 'maximized' ? 'maximize' : 'full-screen',
         updatedAt: Date.now(),
       };
-      await d.treetable_properties.put(migrated);
+      await d.treetableProps.put(migrated);
       return migrated;
     }
     return row;
@@ -55,22 +64,22 @@ export async function getProperties(pageNodeId: string | undefined): Promise<Tre
   return null;
 }
 
-export async function saveProperties(pageNodeId: string | undefined, patch: Partial<TreeTableProperties>): Promise<void> {
+export async function saveProperties(pageNodeId: string | undefined, patch: Partial<TreeTableProps>): Promise<void> {
   if (!pageNodeId) return;
   const d = db();
-  const prev = (await d.treetable_properties.get(pageNodeId)) || { pageNodeId, updatedAt: 0 } as TreeTableProperties;
-  const next: TreeTableProperties = { ...prev, ...patch, pageNodeId, updatedAt: Date.now() };
-  await d.treetable_properties.put(next);
+  const prev = (await d.treetableProps.get(pageNodeId)) || { pageNodeId, updatedAt: 0 } as TreeTableProps;
+  const next: TreeTableProps = { ...prev, ...patch, pageNodeId, updatedAt: Date.now() };
+  await d.treetableProps.put(next);
 }
 
 export async function removeProperties(pageNodeId: string | undefined): Promise<void> {
   if (!pageNodeId) return;
-  await db().treetable_properties.delete(pageNodeId);
+  await db().treetableProps.delete(pageNodeId);
 }
 
 export async function removePropertiesMany(pageNodeIds: readonly string[]): Promise<void> {
   if (!pageNodeIds?.length) return;
-  await db().treetable_properties.bulkDelete(pageNodeIds.filter(Boolean) as string[]);
+  await db().treetableProps.bulkDelete(pageNodeIds.filter(Boolean) as string[]);
 }
 
 // Convenience adapters for column widths

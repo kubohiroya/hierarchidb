@@ -14,13 +14,14 @@ import { useCallback, useEffect, useRef } from 'react';
 import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms.js';
 import { buildVisibleRows, removeNodeAndDescendants } from '~/state/treeconsole.derive.js';
 import { Subscriptions } from '~/hooks/SubscriptionServices.ts';
+import type { LoadChildrenOf } from './types.js';
 
 interface Params {
   client: Remote<WorkerAPI> | undefined;
   setSSOT: (patch: Partial<TreeConsoleSSOTEntry>) => void;
   ssot: TreeConsoleSSOTEntry;
   expandedIds: NodeId[];
-  loadChildrenOf: (parentId: NodeId) => Promise<void>;
+  loadChildrenOf: LoadChildrenOf;
 }
 
 export function useTreeConsoleSubscription({

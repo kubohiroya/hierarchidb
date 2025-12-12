@@ -3,9 +3,9 @@ import { Box, CircularProgress, Typography } from '@mui/material';
 import type { StepComponentProps } from '@hierarchidb/plugin-base';
 import { TabularProvider, TabularDataFilter, useTabularData } from '@hierarchidb/ui-tabular-extract';
 import type { TabularFilterRule, TabularDataResult } from '@hierarchidb/ui-tabular-extract';
-import { createShapeTabularApi } from '../../../services/tabular/createShapeTabularApi.js';
-import { SHAPE_PLUGIN_ID } from '../../../common/shared/constants.js';
-import type { ShapeEntity } from '../../../common/shared/types.js';
+import { createShapeTabularApi } from '../../../../services/tabular/createShapeTabularApi.js';
+import { SHAPE_PLUGIN_ID } from '../../../../common/shared/constants.js';
+import type { ShapeEntity } from '../../../../common/shared/types.js';
 
 type ShapeDialogStepProps = StepComponentProps<Partial<ShapeEntity>>;
 

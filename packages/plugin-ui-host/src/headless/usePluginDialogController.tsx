@@ -393,18 +393,22 @@ export function usePluginDialogController(
     setDraftData: setLocalDraftData,
     handleBasicInfoBridge,
     dialogRef,
+    basicInfoLabel: t('common.basicInfo.title', 'Basic Information'),
   });
 
   const presentation = useMemo(() => getPresentation(nodeType), [nodeType]);
   const icon = useMemo(() => getIconComponent(nodeType), [nodeType]);
+  const isFolder = nodeType === 'folder';
 
   const dialogTitle = useMemo(() => {
     const label = presentation?.label || nodeType;
-    const modeLabel = mode === 'create' ? 'Create' : 'Edit';
-    return `${modeLabel} ${label}`;
-  }, [presentation?.label, nodeType, mode]);
+    return mode === 'create'
+      ? t('dialogs.pluginDialog.titles.create', { plugin: label, defaultValue: 'Create {{plugin}}' })
+      : t('dialogs.pluginDialog.titles.edit', { plugin: label, defaultValue: 'Edit {{plugin}}' });
+  }, [mode, nodeType, presentation?.label, t]);
 
   const headerSubtitle = useMemo(() => {
+    if (isFolder) return undefined;
     if (mode === 'edit') {
       const desc = presentation?.description?.trim();
       if (desc) {
@@ -412,7 +416,7 @@ export function usePluginDialogController(
       }
     }
     return undefined;
-  }, [mode, presentation?.description]);
+  }, [isFolder, mode, presentation?.description]);
 
   const {
     evaluatedState,

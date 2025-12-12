@@ -17,6 +17,7 @@ import React, { forwardRef, useCallback } from 'react';
 import { Theme } from '@mui/material/styles';
 import type { ButtonProps } from '@mui/material';
 import type { DialogActionInFlight } from '../types.js';
+import { useTranslation } from 'react-i18next';
 
 export interface PluginDialogFooterPrimaryButtonOptions {
   leftVisibility?: 'auto' | 'hidden';
@@ -74,7 +75,7 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   mode,
   canCommit,
   onSaveDraft,
-  saveDraftLabel = 'Save Draft',
+  saveDraftLabel,
   disableDraft,
   onStartBatch,
   canStartBatch = true,
@@ -84,6 +85,7 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
 }) => {
   const ctx = useDialogContext<Record<string, unknown>>();
   const location = useLocation();
+  const { t } = useTranslation('common');
   const isResourcesTree = React.useMemo(() => {
     const segments = location.pathname.split('/').filter(Boolean);
     if (segments.length < 2) return false;
@@ -91,7 +93,7 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
     return treeId === 'r';
   }, [location.pathname]);
 
-  const commitLabel = 'Save';
+  const commitLabel = t('dialogs.pluginDialog.buttons.save', 'Save');
   const isFirstStep = ctx.activeStepIndex === 0;
   const isLastStep = ctx.activeStepIndex >= ctx.stepComponents.length - 1;
   const isDirty = ctx.isDirty;
@@ -121,9 +123,13 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   }, [ctx, isLastStep]);
 
   const leftPrimaryLabel =
-    primaryButtonOptions?.leftLabelOverride ?? (isFirstStep ? 'Cancel' : 'Back');
+    primaryButtonOptions?.leftLabelOverride ??
+    (isFirstStep
+      ? t('dialogs.pluginDialog.buttons.cancel', 'Cancel')
+      : t('dialogs.pluginDialog.buttons.back', 'Back'));
   const rightPrimaryLabel =
-    primaryButtonOptions?.rightLabelOverride ?? (isLastStep ? commitLabel : 'Next');
+    primaryButtonOptions?.rightLabelOverride ??
+    (isLastStep ? commitLabel : t('dialogs.pluginDialog.buttons.next', 'Next'));
   const leftPrimaryIcon = isFirstStep ? (
     <CloseIcon fontSize="small" />
   ) : (
@@ -192,7 +198,11 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
           )}
           {showSaveDraft && (
             <Tooltip
-              title={disableDraftButton ? 'No changes to save' : ''}
+              title={
+                disableDraftButton
+                  ? t('dialogs.pluginDialog.tooltips.saveDraftDisabled', 'No changes to save')
+                  : ''
+              }
               disableHoverListener={!disableDraftButton}
             >
               <span>
@@ -205,7 +215,7 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
                   loading={pendingAction?.type === 'save-draft'}
                   endIcon={<CheckIcon fontSize="small" />}
                 >
-                  {saveDraftLabel}
+                  {saveDraftLabel ?? t('dialogs.pluginDialog.buttons.saveDraft', 'Save Draft')}
                 </LoadingButton>
               </span>
             </Tooltip>

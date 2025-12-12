@@ -6,7 +6,6 @@ import { describe, it, expect } from 'vitest';
 import { PluginDialogFooter } from '../../headless/components/PluginDialogFooter.js';
 import { MultiStepDialogProvider } from '@hierarchidb/ui-dialog';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import React from 'react';
 import { vi } from 'vitest';
 
 vi.mock('@tanstack/react-router', () => ({

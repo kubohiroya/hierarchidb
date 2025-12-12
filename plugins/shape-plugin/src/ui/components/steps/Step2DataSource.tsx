@@ -1,6 +1,7 @@
 import type React from 'react';
 import { Box, Typography } from '@mui/material';
 import { DataSourceSelector, type DataSourceOption } from '@hierarchidb/ui-datasource';
+import { LicenseAgreementStep } from '@hierarchidb/ui-license';
 import {
   normalizeDataSourceName,
   type DataSourceConfig,
@@ -39,6 +40,10 @@ export const Step2DataSource: React.FC<StepProps> = ({ draft, onUpdate, disabled
   const normalizedValue = normalizeDataSourceName(draftData.dataSourceName);
   const defaultGeoBoundaries = options.find((option) => option.id === 'geoboundaries')?.id;
   const fallbackValue = defaultGeoBoundaries ?? options[0]?.id ?? '';
+  const selectedSource =
+    (normalizedValue && DATA_SOURCE_CONFIGS[normalizedValue]) ||
+    (fallbackValue && DATA_SOURCE_CONFIGS[fallbackValue]) ||
+    undefined;
 
   return (
     <Box sx={{ p: 3 }}>
@@ -58,6 +63,36 @@ export const Step2DataSource: React.FC<StepProps> = ({ draft, onUpdate, disabled
           disabled={disabled}
         />
       </Box>
+
+      {selectedSource ? (
+        <Box sx={{ mt: 4 }}>
+          <Typography variant="subtitle1" gutterBottom>
+            License Agreement
+          </Typography>
+          <LicenseAgreementStep
+            sourceName={selectedSource.displayName}
+            details={{
+              licenseName: selectedSource.license,
+              attribution: selectedSource.attribution,
+              url: selectedSource.licenseUrl,
+            }}
+            state={{
+              agreed: Boolean(draftData.licenseAgreement),
+              agreedAt: draftData.licenseAgreedAt,
+            }}
+            onAgree={() => {
+              if (selectedSource.licenseUrl) {
+                window.open(selectedSource.licenseUrl, '_blank', 'noopener,noreferrer');
+              }
+              onUpdate({
+                licenseAgreement: true,
+                licenseAgreedAt: new Date().toISOString(),
+              });
+            }}
+            disabled={disabled}
+          />
+        </Box>
+      ) : null}
     </Box>
   );
 };

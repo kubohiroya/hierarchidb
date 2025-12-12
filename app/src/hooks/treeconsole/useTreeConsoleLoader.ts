@@ -27,6 +27,10 @@ interface Params {
   setSSOT: (patch: Partial<TreeConsoleSSOTEntry>) => void;
 }
 
+type LoadChildrenOptions = {
+  suppressLoading?: boolean;
+};
+
 export function useTreeConsoleLoader({
   client,
   pageNodeId,
@@ -67,11 +71,15 @@ export function useTreeConsoleLoader({
   }, [expandedIds]);
 
   const loadChildrenOf = useCallback(
-    async (parentId: NodeId, _optTerm?: string) => {
+    async (parentId: NodeId, _optTerm?: string, options?: LoadChildrenOptions) => {
       if (!client) return;
-      setState((prev) => ({ ...prev, loading: true, error: null }));
-      setSSOTRef.current({ loading: true, error: null });
+      const shouldSetLoading = !options?.suppressLoading;
+      if (shouldSetLoading) {
+        setState((prev) => ({ ...prev, loading: true, error: null }));
+        setSSOTRef.current({ loading: true, error: null });
+      }
 
+      let builtIndex: DualKeyMap<NodeId, NodeId, TreeNode> | null = null;
       try {
         const queryAPI = await client.getQueryAPI();
         const children = await queryAPI.listChildren(parentId);
@@ -125,6 +133,7 @@ export function useTreeConsoleLoader({
 
         nodeIndexRef.current = index;
         setSSOTRef.current({ nodeIndex: index });
+        builtIndex = index;
 
         const types = displayNodes.map((n) =>
           String((n as unknown as { nodeType?: string }).nodeType || '')
@@ -134,9 +143,13 @@ export function useTreeConsoleLoader({
         console.error('Failed to load children:', err);
         setState((prev) => ({ ...prev, error: err instanceof Error ? err.message : String(err) }));
       } finally {
-        setState((prev) => ({ ...prev, loading: false }));
-        setSSOTRef.current({ loading: false });
+        if (shouldSetLoading) {
+          setState((prev) => ({ ...prev, loading: false }));
+          setSSOTRef.current({ loading: false });
+        }
       }
+
+      return builtIndex ?? undefined;
     },
     [client, debugEnabled, pageNodeId, pageTreeNode?.nodeType, setState]
   );

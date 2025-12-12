@@ -91,6 +91,34 @@
           "discardSelf": "自身の内容を破棄",
           "keepSelf": "自身の内容を優先"
         }
+      },
+      "pluginDialog": {
+        "buttons": {
+          "save": "保存",
+          "saveDraft": "下書きを保存",
+          "next": "次へ",
+          "back": "戻る",
+          "cancel": "キャンセル",
+          "close": "閉じる",
+          "maximize": "最大化",
+          "restoreSize": "元のサイズに戻す",
+          "fullscreen": "全画面",
+          "exitFullscreen": "全画面を終了"
+        },
+        "tooltips": {
+          "saveDraftDisabled": "変更がないため保存できません",
+          "close": "ダイアログを閉じる",
+          "maximize": "最大化",
+          "restoreSize": "元のサイズに戻す",
+          "fullscreen": "全画面",
+          "exitFullscreen": "全画面を終了"
+        }
+      }
+    },
+    "pluginDialog": {
+      "titles": {
+        "create": "{{plugin}}の作成",
+        "edit": "{{plugin}}の編集"
       }
     }
   },

@@ -30,7 +30,7 @@ registry.registerConfigProvider<FolderStepData>({
       i18n.t(key, { defaultValue, ns: 'folder-plugin' });
     return [
       {
-        id: 'basic',
+        id: 'basic-info',
         label: t('steps.basic.label', 'Basic Information'),
         componentFactory: (p: StepComponentProps<FolderStepData>) => {
           const draft = ensureDraft(p.data);

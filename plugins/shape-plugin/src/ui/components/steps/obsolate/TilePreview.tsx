@@ -1,4 +1,4 @@
-import type { NodeId } from '../../common/shared/index.js';
+import type { NodeId } from '../../../../common/shared/index.js';
 
 export interface TilePreviewProps {
   sessionId: string;

@@ -7,6 +7,7 @@ import type {
   TreeQueryAPI,
   TreeSubscriptionAPI,
   TreeNodeUpdaterAPI,
+  TreeTableExpandedAPI,
 } from '@hierarchidb/common-api';
 import type { Endpoint as ComlinkEndpoint } from 'comlink';
 import { expose, proxy } from 'comlink';
@@ -26,6 +27,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
     getSubscriptionAPI: (): TreeSubscriptionAPI => proxy(svc.getSubscriptionAPI()),
     getImportExportAPI: (): ImportExportAPI => proxy(svc.getImportExportAPI()),
     getTreeNodeUpdaterAPI: (): TreeNodeUpdaterAPI => proxy(svc.getTreeNodeUpdaterAPI()),
+    getTreeTableExpandedAPI: (): TreeTableExpandedAPI => proxy(svc.getTreeTableExpandedAPI()),
     getCommandProcessor: (): CommandProcessor => proxy(svc.getCommandProcessor()),
   };
   // When used in-process via MessageChannel, a test passes an explicit endpoint.

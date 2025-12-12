@@ -50,8 +50,8 @@
   - Step1BasicInfo: `components/steps/Step1BasicInfo.tsx`
   - Step2DataSource: `components/steps/Step2DataSource.tsx`
   - Step3License: `components/steps/Step3License.tsx`
-  - Step4Processing: `components/steps/Step4Processing.tsx`
-  - Step5CountrySelection: `components/steps/Step5CountrySelection.tsx`
+  - Step3Processing: `components/steps/Step3Processing.tsx`
+  - Step4CountrySelection: `components/steps/Step4CountrySelection.tsx`
 
 ### Step 1: Basic Information（1）
 - 画面構成

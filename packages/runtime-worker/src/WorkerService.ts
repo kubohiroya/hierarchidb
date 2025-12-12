@@ -9,11 +9,21 @@ import { TreeQueryService } from './services/TreeQueryService.js';
 import { TreeMutationService } from './services/TreeMutationService.js';
 import { TreeSubscriptionService } from './services/TreeSubscriptionService.js';
 import { NodeLifecycleManager } from './services/NodeLifecycleManager.js';
+import { TreeTableExpandedService } from './services/TreeTableExpandedService.js';
 import { ImportExportDBPortCoreDBAdapter } from './services/adapters/ImportExportDBPortCoreDBAdapter.js';
 import { TreeNodeUpdaterService } from './services/TreeNodeUpdaterService.js';
 import { PluginDefinition, PluginLifecycleAPI } from '@hierarchidb/plugin-service-api';
-import { ImportExportAPI, TagAPI, TreeMutationAPI, TreeNodeUpdaterAPI, TreeQueryAPI, TreeSubscriptionAPI } from '@hierarchidb/common-api';
+import {
+  ImportExportAPI,
+  TagAPI,
+  TreeMutationAPI,
+  TreeNodeUpdaterAPI,
+  TreeQueryAPI,
+  TreeSubscriptionAPI,
+  TreeTableExpandedAPI,
+} from '@hierarchidb/common-api';
 import type { NodeType } from '@hierarchidb/common-types';
+import { UIStateDB } from './services/UIStateDB.js';
 
 interface PerformanceMemoryStats {
   usedJSHeapSize?: number;
@@ -105,6 +115,12 @@ export class WorkerService {
         commandProcessor,
       );
 
+      const uiStateDB = await UIStateDB.getSingleton();
+      const treeTableExpandedService: TreeTableExpandedAPI = new TreeTableExpandedService(
+        uiStateDB,
+        treeQueryService,
+      );
+
       return new WorkerService(
         coreDB,
         treeQueryService,
@@ -115,6 +131,7 @@ export class WorkerService {
         tagService,
         nodeLifecycleManager,
         commandProcessor,
+        treeTableExpandedService,
       );
     });
   }
@@ -129,6 +146,7 @@ export class WorkerService {
     private tagService: TagAPI,
     private nodeLifecycleManager: NodeLifecycleManager,
     private commandProcessor: CommandProcessor,
+    private treeTableExpandedService: TreeTableExpandedAPI,
   ) {
   }
 
@@ -166,6 +184,10 @@ export class WorkerService {
 
   getTreeNodeUpdaterAPI() {
     return this.treeNodeUpdaterService;
+  }
+
+  getTreeTableExpandedAPI() {
+    return this.treeTableExpandedService;
   }
 
   getImportExportAPI() {

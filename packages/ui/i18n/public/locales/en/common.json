@@ -124,14 +124,40 @@
         "description": "Another tab saved this node at {{timestamp}}. You can cancel and keep their changes, or continue while keeping your own edits.",
         "buttons": {
           "discardSelf": "Discard my changes",
-      "keepSelf": "Keep my changes"
+          "keepSelf": "Keep my changes"
+        },
+        "discard": {
+          "title": "Discard unsaved changes?",
+          "description": "You have unsaved changes. Discard them and close the dialog?"
+        }
+      }
     },
-    "discard": {
-      "title": "Discard unsaved changes?",
-      "description": "You have unsaved changes. Discard them and close the dialog?"
+    "pluginDialog": {
+      "buttons": {
+        "save": "Save",
+        "saveDraft": "Save draft",
+        "next": "Next",
+        "back": "Back",
+        "cancel": "Cancel",
+        "close": "Close",
+        "maximize": "Maximize",
+        "restoreSize": "Restore size",
+        "fullscreen": "Full screen",
+        "exitFullscreen": "Exit full screen"
+      },
+      "tooltips": {
+        "saveDraftDisabled": "No changes to save",
+        "close": "Close dialog",
+        "maximize": "Maximize",
+        "restoreSize": "Restore size",
+        "fullscreen": "Full screen",
+        "exitFullscreen": "Exit full screen"
+      },
+      "titles": {
+        "create": "Create {{plugin}}",
+        "edit": "Edit {{plugin}}"
+      }
     }
-  }
-}
   },
   "treeConsole": {
     "toolbar": {

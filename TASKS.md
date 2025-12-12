@@ -53,6 +53,20 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1623) Tooltip の disabled button child 警告解消（P1）
+- ブランチ: `fix/ui-dialog/tooltip-disabled-button`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugin-ui-host（PluginDialogHeader/PluginDialogFooter など Tooltip を使うダイアログ共通部品）、ui-dialog（MultiStepDialogFrame）、app プラグインダイアログのヘッダー/フッター
+- 受け入れ基準（DoD）:
+  - [x] MUI Tooltip の「disabled button child」警告が解消し、ツールチップ表示/ボタンの disabled 挙動が既存と同じである
+  - [ ] 対象コンポーネント以外への回帰がない（UI 表示とハンドラ挙動が変わらない）
+  - [x] 代表検証として関連パッケージの typecheck（例: `pnpm --filter @hierarchidb/plugin-ui-host typecheck` もしくは `pnpm --filter @hierarchidb/ui-dialog typecheck`）を実行し、結果を運用ログに記録する（不可なら理由を記載）
+  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+- チェックリスト:
+  - [x] 警告を出している Tooltip と子要素（disabled button）を特定し、span ラップなど推奨形に修正する
+  - [ ] 修正後の Tooltip 表示とボタン disabled 挙動を目視確認する
+  - [x] typecheck を実行し、結果を運用ログへ記録する
+- ロールバック手順：本タスクで変更する Tooltip/ボタン周辺の差分を revert し、同じ typecheck を再実行する
+
 1619) Shape Edit で name/description 空欄（Shape 専用対応）（P0）
 - ブランチ: `fix/shape/dialog-metadata-host`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: plugins/shape-plugin/src/ui/components/ShapeDialogHost.tsx, shape-plugin の save/commit フロー, packages/runtime-worker TreeNodeUpdaterService（共通変更は極小に）
@@ -76,7 +90,7 @@
 - チェックリスト:
   - [ ] Esc ハンドリングが無効化されている箇所を特定し、回帰要因を除去する
   - [ ] 既存の未保存保護ロジックと競合しないように修正する
-  - [ ] 検証コマンドと手動確認（可能なら）を運用ログへ記録
+ - [ ] 検証コマンドと手動確認（可能なら）を運用ログへ記録
 - ロールバック手順：本タスクで変更する Esc ハンドリング関連ファイルを revert し、同じ typecheck（と手動確認）を再実行する
 
 1621) useTreeNodeDialog 廃止（Folder/Timeline/Shape を steps-provider へ統一）（P0）
@@ -92,6 +106,21 @@
   - [ ] plugin-ui-sdk/index から useTreeNodeDialog を削除し、README/テストの参照も更新する
   - [ ] typecheck を実行し、結果を運用ログへ記録する
 - ロールバック手順：本タスクで削除/置換した useTreeNodeDialog 関連差分を revert し、元の DialogHost 構成に戻した上で typecheck を再実行する
+
+1622) TreeTable expandedIds 永続化 (hidb-ui-state)（P0）
+- ブランチ: `feat/treeconsole/expanded-ids-persistence`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: packages/ui/treeconsole/treetable/src/state/properties-db.ts, packages/common/api, packages/runtime-worker (UI-state DB アクセサ), app/src/hooks/treeconsole/*
+- 受け入れ基準（DoD）:
+  - [x] hidb-ui-state DB に `treetableExpanded` テーブル（PK: pageNodeId+nodeId、idx: pageNodeId / nodeId）を追加し、expandedIds を永続化する
+  - [x] Worker API で expandedIds の取得・open/close 更新・page 全削除・サブツリー削除（再帰列挙を Worker 内で実施）を提供し、UI 側から呼び出す
+  - [x] TreeTable 表示時の初期ロード／ノード開閉時の同期／ゴミ箱空にする・ノード削除時のサブツリー掃除が新 API を経由する
+  - [x] 代表検証として関連パッケージの typecheck を実行し、運用ログへ記録（不可なら理由を記載）
+- チェックリスト:
+  - [x] Dexie スキーマに treetableExpanded を追加（PK: pageNodeId+nodeId、idx: pageNodeId / nodeId）
+  - [x] Worker API に getExpandedNodes/openNodes/closeNodes/clearExpandedForPage/clearExpandedForSubtree を追加し、サブツリー列挙を Worker 側で実装（UI をブロックしない非同期実行）
+  - [x] UI で TreeTable 初期化時に getExpandedNodes を使い、開閉イベントを openNodes/closeNodes（デバウンス）で同期、ゴミ箱空にする・ノード削除で clearExpandedForSubtree を呼ぶ
+  - [x] typecheck 実行と運用ログ記録
+- ロールバック手順：追加した treetableExpanded スキーマ、Worker API、UI の呼び出し差分を revert し、typecheck を再実行する
 
 1615) Plugin worker/database exports ガード（P0）
 - ブランチ: `fix/runtime-worker/skip-missing-exports`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -1203,7 +1232,7 @@
 
 1291) Shape Step5 geoBoundaries metadata 読み込みエラー修正（P0）
 - ブランチ: `fix/shape-plugin/step5-geoboundaries-metadata`（sandbox 制約で `main` 上で作業）
-- 依存: `plugins/shape-plugin/src/common/components/steps/Step5CountrySelection.tsx`, `plugins/shape-plugin/src/services/metadata/MetadataLoader.ts`, `packages/features/fetch-save-metadata/output/geoboundaries.json`, `plugins/shape-plugin/src/services/datasources/*`
+- 依存: `plugins/shape-plugin/src/common/components/steps/Step4CountrySelection.tsx`, `plugins/shape-plugin/src/services/metadata/MetadataLoader.ts`, `packages/features/fetch-save-metadata/output/geoboundaries.json`, `plugins/shape-plugin/src/services/datasources/*`
 - 受け入れ基準（DoD）:
   - [ ] geoBoundaries を既定選択した Shape ノードで Edit ダイアログ Step5 を開いても「No metadata file mapping for data source: geoboundaries」が発生せず、メタデータに基づき国/Level の選択リストが表示される
   - [ ] Natural Earth/GADM/OpenStreetMap 等の他データソースでも Step5 の挙動に回帰が無いことを確認し、必要に応じてコメント/ドキュメントで補足する
@@ -8463,7 +8492,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-22 22:32 follow-up: fix/runtime-plugin-dialog/typecheck-deps — `pnpm --filter @hierarchidb/runtime-worker build` を再実行して最新の dist d.ts を生成し、`pnpm --filter @hierarchidb/{basemap-plugin,spreadsheet-plugin} typecheck` が成功することを確認。
 - 2025-10-22 22:34 start: fix/shape-plugin/runtime-worker-types — `pnpm --filter @hierarchidb/shape-plugin typecheck` が `@hierarchidb/runtime-worker` 未解決と Step5 の暗黙 any で失敗しているため、依存追加と型補強に着手。
 - 2025-10-22 22:36 progress: fix/shape-plugin/runtime-worker-types — `plugins/shape-plugin/package.json` に `@hierarchidb/plugin-ui-sdk` を peer/dev 依存として追加し、tsup external および node_modules シンボリックリンクを更新。
-- 2025-10-22 22:38 done: fix/shape-plugin/runtime-worker-types — `Step5CountrySelection.tsx` の checkbox 行に型注釈を追加し、`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0 で完了したことを確認。
+- 2025-10-22 22:38 done: fix/shape-plugin/runtime-worker-types — `Step4CountrySelection.tsx` の checkbox 行に型注釈を追加し、`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0 で完了したことを確認。
 - 2025-10-22 22:40 progress: fix/resolver-plugin/runtime-worker-types — `plugins/resolver-plugin/package.json` に `@hierarchidb/plugin-ui-sdk` を peer/dev 依存として追加し、tsup external へ登録。
 - 2025-10-22 22:42 done: fix/resolver-plugin/runtime-worker-types — `pnpm --filter @hierarchidb/runtime-worker build` を実行して dist/index.d.ts を再出力し、続けて `pnpm --filter @hierarchidb/resolver-plugin typecheck` が成功することを確認。
 - 2025-10-22 22:45 audit: runtime-worker type consumers — `@hierarchidb/{basemap-plugin,spreadsheet-plugin}` 既に `plugin-ui-sdk` 依存と external が登録済みであることを確認（追加作業なし）。
@@ -9474,7 +9503,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-17 16:41 start: fix/shape-plugin/step5-geoboundaries-metadata — Edit Shape ダイアログ Step5 で geoBoundaries 選択時に「No metadata file mapping...」エラーが発生する件の調査を開始。DoD: TASKS/ログ更新、metadata loader/設定の修正、他 dataSource の回帰確認、`pnpm --filter @hierarchidb/shape-plugin test -- --run <対象>` などの検証ログ取得、ロールバック記載。
 - 2025-11-17 16:44 progress: fix/shape-plugin/step5-geoboundaries-metadata — `normalizeDataSourceName` を Step5／useCountryMetadata／MetadataLoader へ適用し、metadata cache のキーと JSON import を DataSourceName (lowercase) に統一。GeoBoundaries/GADM/NaturalEarth/OSM の JSON を直接 import し、useCountryMetadata からも正規化されたキーを渡すよう調整。geoBoundaries ケースで Step5 が metadata を読み込むことを手動確認。
 - 2025-11-17 16:47 command: pnpm --filter @hierarchidb/shape-plugin exec vitest run src/common/__tests__/unit/metadata-loader.unit.test.ts — exit 0。geoBoundaries 小文字指定でも metadata loader が JSON を読み込めることを検証し、警告なしで 2 テストがグリーン。
-- 2025-11-17 16:48 done: fix/shape-plugin/step5-geoboundaries-metadata — MetadataLoader の dataSource マッピングと Step5 CountrySelection の正規化を揃え、geoBoundaries でも metadata 読み込みが成功することを確認。ロールバックは `MetadataLoader.ts`/`useCountryMetadata.ts`/`Step5CountrySelection.tsx`/`metadata-loader.unit.test.ts`/`vitest.config.ts` の差分を revert し、上記 vitest コマンドを再実行する。
+- 2025-11-17 16:48 done: fix/shape-plugin/step5-geoboundaries-metadata — MetadataLoader の dataSource マッピングと Step5 CountrySelection の正規化を揃え、geoBoundaries でも metadata 読み込みが成功することを確認。ロールバックは `MetadataLoader.ts`/`useCountryMetadata.ts`/`Step4CountrySelection.tsx`/`metadata-loader.unit.test.ts`/`vitest.config.ts` の差分を revert し、上記 vitest コマンドを再実行する。
 - 2025-11-17 17:20 progress: refactor/worker/test-type-fixes — basemap WFL で `@hierarchidb/basemap-plugin/worker` を参照する際の型崩壊を防ぐため ambient d.ts を追加し、Fulltext attach ヘルパーと Undo/Policy/Trash 系テストの CoreStub をフルテキストテーブル付きの戻り値にリファクタ。TreeQuery の NodeType ブランド化や CommandExecutionRunner の private set 参照エラーも合わせて解消。
 - 2025-11-17 17:34 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0。basemap import・Fulltext attach・PeerStore mock の修正後に runtime-worker の型検証がグリーンになることを確認。
 - 2025-11-17 17:36 done: refactor/worker/test-type-fixes — runtime-worker の WFL/Undo 系テストが再び型エラーなしで通過するようになり、basemap peer store 登録の確認手順も復旧。ロールバックは `packages/runtime/worker/src/__tests__/wfl/basemap-working-copy-edit.wfl.test.ts` と `services/__tests__/unit/*`、`services/test-helpers/fulltextTestDB.ts`、`services/command/execution/CommandExecutionRunner.ts`、`tsconfig.base.json`、`packages/runtime/worker/tsconfig.json`、`TASKS.md` の差分を戻して `pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行する。
@@ -9861,6 +9890,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-27 15:46 progress: fix/workingcopy/dialog-cancel-behavior — create 仮ノードを version:0 に統一し、commit/save/import で 1 以上へ昇格する方針に合わせて判定を整理。`initTreeNode` を version 0 で作成、`commitTreeNodeDraft` は version を 0 起点で +1、`discardTreeNodeDraft` は committed 判定を version>0/データ有無のみに簡素化。UI cancel で forceDelete を渡すよう修正済み。`pnpm --filter @hierarchidb/runtime-worker test -- --run cancel-create` exit 0。
 
 ## 今日の着手（運用ログ） <a id="worklog-16"></a>
+- 2025-12-13 09:00 start: fix/ui-dialog/tooltip-disabled-button — MUI Tooltip が disabled button を直接子に持つ警告を解消するタスクに着手。DoD: 警告解消・挙動維持・関連 typecheck 実行と記録・TASKS 更新とロールバック明記。branch は `fix/ui-dialog/tooltip-disabled-button`（作成不可なら main）。
+- 2025-12-13 09:20 progress: fix/ui-dialog/tooltip-disabled-button — PluginDialogHeader の close/info Tooltip 配下で disabled IconButton を span ラップに変更し、aria-label を string 正規化して警告要因を除去。
+- 2025-12-13 09:21 command: pnpm --filter @hierarchidb/plugin-ui-host typecheck — exit 0。
  - 2025-12-11 21:15 start: fix/plugin-ui-sdk/treenode-updater-loop — Edit Folder ダイアログを開くだけで Maximum update depth exceeded 警告が出る問題の調査/修正に着手。DoD: 警告解消と原因記録、最小修正で回帰なし、関連 typecheck 実行ログ（不可なら理由記載）を残す。
  - 2025-12-11 21:25 progress: fix/plugin-ui-sdk/treenode-updater-loop — 原因特定: useTreeNodeUpdater 内の isRecord が render ごとに再生成され、toUpdater/useEffect の依存で初期化副作用が無限に再実行されて警告が発生。isRecord を `useCallback([])` でメモ化し、toUpdater の依存を安定化。
  - 2025-12-11 21:27 command: pnpm --filter @hierarchidb/plugin-ui-sdk typecheck — exit 0。
@@ -9884,6 +9916,13 @@ ToDo（Phase 2/3: any の完全撤去）
  - 2025-12-11 23:50 progress: fix/ui-dialog/esc-close-regression — folder-plugin に steps-provider を追加し、PluginStepRegistry で Basic Info を登録（useTreeNodeDialog 直ホストと併存）。検証: `pnpm --filter @hierarchidb/folder-plugin typecheck` exit 0。
  - 2025-12-12 00:05 start: refactor/dialog/remove-useTreeNodeDialog — useTreeNodeDialog を廃止し、Folder/Timeline/Shape を steps-provider 登録に統一する作業を開始。DoD: 3 プラグインのダイアログが steps-provider のみで動作し、SDK から useTreeNodeDialog が削除されること。typecheck 結果を運用ログへ記録。
  - 2025-12-12 00:25 progress: refactor/dialog/remove-useTreeNodeDialog — useTreeNodeDialog.tsx を削除し、SDK から export を撤去。Folder/Timeline/Shape の Host は廃止（Folder は stub 化）、Shape/Timeline Host ファイル削除、index からエクスポートを外し steps-provider に統一。検証: `pnpm --filter @hierarchidb/plugin-ui-sdk typecheck` exit 0、`pnpm --filter @hierarchidb/folder-plugin typecheck` exit 0、`pnpm --filter @hierarchidb/timeline-plugin typecheck` exit 0、`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。
+ - 2025-12-12 04:35 start: feat/treeconsole/expanded-ids-persistence — hidb-ui-state へ treetableExpanded テーブルを追加し、ExpandedIds 永続化 API/UX 改修に着手（TASK 1622）。
+ - 2025-12-12 04:45 progress: feat/treeconsole/expanded-ids-persistence — hidb-ui-state Dexie を v4 化して treetableExpanded（PK: [pageNodeId+nodeId], idx: pageNodeId/nodeId）を追加。Worker に TreeTableExpandedAPI（getExpandedNodes/openNodes/closeNodes/clearExpandedForPage/clearExpandedForSubtree）を実装し、subtree 削除は listDescendants で再帰列挙→nodeId index で一括削除。TreeConsole UI は page 表示時に expanded をロードし、初期展開ノードを静的プリロード、expandedIds 差分を open/close として永続化、Trash 空にする際に clearExpandedForSubtree を呼ぶよう変更。
+ - 2025-12-12 04:45 command: pnpm --filter @hierarchidb/common-api typecheck — exit 0。
+ - 2025-12-12 04:46 command: pnpm --filter @hierarchidb/common-api build — exit 0。
+ - 2025-12-12 04:47 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0。
+ - 2025-12-12 04:47 command: pnpm --filter @hierarchidb/runtime-worker test -- --run "tree-table-expanded" — exit 0。
+ - 2025-12-12 04:56 command: pnpm --filter @hierarchidb/app typecheck — exit 0（plugin-base build 時の define 警告は既知）。
  - 2025-12-11 23:30 progress: fix/shape/dialog-metadata-host — ShapeDialogHost で BasicInfoStep に渡す metadata を draftMetadata のみ（data.metadata フォールバック程度）に限定し、共通コードのデフォルト埋め込みを撤去。検証: `pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。
  - 2025-12-11 23:35 progress: fix/ui-dialog/esc-close-regression — MultiStepDialogFrame に Escape のグローバル keydown リスナー（capture）を追加し、フォーカスが外れていても Esc で onRequestClose が走るようにした。検証: `pnpm --filter @hierarchidb/ui-dialog typecheck` exit 0。
  - 2025-12-11 22:40 progress: fix/shape/dialog-metadata-initial — TreeNodeUpdaterState に metadata（コミット済み）を保持し、useTreeNodeUpdater の state 更新でも保持するように拡張。UI 側が draftMetadata を取り損ねた場合でも metadata を参照できるようにするための防御的対応。

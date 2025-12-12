@@ -8,9 +8,8 @@ import {
   type ShapeEntity,
 } from '../../common/shared/index.js';
 import { Step2DataSource } from './steps/Step2DataSource.js';
-import { Step3License } from './steps/Step3License.js';
-import { Step4Processing } from './steps/Step4Processing.js';
-import { Step5CountrySelection } from './steps/Step5CountrySelection.js';
+import { Step3Processing } from './steps/Step3Processing.tsx';
+import { Step4CountrySelection } from './steps/Step4CountrySelection.tsx';
 import { notify } from '@hierarchidb/components';
 import { useTranslation as getTranslation } from '../../common/i18n/index.js';
 import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
@@ -58,9 +57,8 @@ function createStepAdapter(Component: React.ComponentType<any>): (props: ShapeDi
 }
 
 const Step2 = createStepAdapter(Step2DataSource);
-const Step3 = createStepAdapter(Step3License);
-const Step4 = createStepAdapter(Step4Processing);
-const Step5 = createStepAdapter(Step5CountrySelection);
+const Step3 = createStepAdapter(Step3Processing);
+const Step4 = createStepAdapter(Step4CountrySelection);
 
 const canStartShapeBatch = (data?: Partial<ShapeEntity>): boolean => {
   // data reflects draftData (payload) only
@@ -120,18 +118,13 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
         id: 'data-source',
         label: t('steps.dataSource.label', 'Data Source'),
         componentFactory: (props: ShapeDialogStepProps) => <Step2 {...props} />,
-        validate: (data?: Partial<ShapeEntity>) => Boolean(data?.dataSourceName),
-      },
-      {
-        id: 'license-agreement',
-        label: t('steps.licenseAgreement.label', 'License Agreement'),
-        componentFactory: (props: ShapeDialogStepProps) => <Step3 {...props} />,
-        validate: (data?: Partial<ShapeEntity>) => Boolean(data?.licenseAgreement),
+        validate: (data?: Partial<ShapeEntity>) =>
+          Boolean(data?.dataSourceName) && Boolean(data?.licenseAgreement),
       },
       {
         id: 'processing-configuration',
         label: t('steps.processing.label', 'Processing Configuration'),
-        componentFactory: (props: ShapeDialogStepProps) => <Step4 {...props} />,
+        componentFactory: (props: ShapeDialogStepProps) => <Step3 {...props} />,
         validate: (data?: Partial<ShapeEntity>) =>
           validateProcessingConfig(
             mergeProcessingConfig(data?.processingConfig ?? DEFAULT_PROCESSING_CONFIG),
@@ -140,7 +133,7 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
       {
         id: 'country-selection',
         label: t('steps.countrySelection.label', 'Country Selection'),
-        componentFactory: (props: ShapeDialogStepProps) => <Step5 {...props} />,
+        componentFactory: (props: ShapeDialogStepProps) => <Step4 {...props} />,
         validate: (data?: Partial<ShapeEntity>) =>
           summarizeCheckboxState(data?.checkboxState).hasSelection,
         capabilities: {

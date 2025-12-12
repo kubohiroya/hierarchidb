@@ -144,6 +144,7 @@ interface Params {
   setDraftData: React.Dispatch<React.SetStateAction<Partial<PluginDefinedEntity>>>;
   handleBasicInfoBridge: (data: TreeNodeMetadata) => void;
   dialogRef: React.RefObject<HTMLDivElement | null>;
+  basicInfoLabel: string;
 }
 
 export function useDialogSteps({
@@ -161,6 +162,7 @@ export function useDialogSteps({
   setDraftData,
   handleBasicInfoBridge,
   dialogRef,
+  basicInfoLabel,
 }: Params): StepCompositionResult<PluginDefinedEntity> {
   const [uiState, setUiState] = useState<DialogUiState>({});
   const [draftAtom] = useState(() => atom(buildStepWorkingData(draftData, basicInfo, basicInfoMeta)));
@@ -242,7 +244,7 @@ export function useDialogSteps({
     if (!composedConfigs.hasHostBase) {
       result.push({
         id: 'basic-info',
-        label: 'Basic Information',
+        label: basicInfoLabel,
         component: null,
         validate: () => isBasicInfoValid,
       });
@@ -363,12 +365,12 @@ export function useDialogSteps({
     if (composedConfigs.hasHostBase) return null;
     return {
       id: 'basic-info',
-      label: 'Basic Information',
+      label: basicInfoLabel,
       component: basicInfoComponentRef.current as React.FC<
         HeadlessStepComponentProps<Partial<PluginDefinedEntity>>
       >,
     };
-  }, [composedConfigs.hasHostBase]);
+  }, [basicInfoLabel, composedConfigs.hasHostBase]);
 
   const stepConfigRegistryRef = useRef(new Map<string, PluginStepConfig<Partial<PluginDefinedEntity>, DialogUiState>>());
   useEffect(() => {

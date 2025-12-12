@@ -6,6 +6,7 @@ import {
   FullscreenExit as FullscreenExitIcon,
   Fullscreen as FullscreenIcon,
   OpenInFull as OpenInFullIcon,
+  InfoOutlined as InfoOutlinedIcon,
 } from '@mui/icons-material';
 import {
   Box,
@@ -25,6 +26,7 @@ import { Link, useLocation } from '@tanstack/react-router';
 import type React from 'react';
 import { useCallback, useMemo } from 'react';
 import type { DialogActionInFlight } from '../types.js';
+import { useTranslation } from 'react-i18next';
 
 type WorkerStepState = { id: string; enabled?: boolean; completed?: boolean; error?: string | null };
 type WorkerDialogState = { steps?: WorkerStepState[] };
@@ -37,6 +39,7 @@ export interface PluginDialogHeaderProps {
   nodeType?: string;
   nodeId?: NodeId;
   pendingAction?: DialogActionInFlight | null;
+  pluginDescription?: string;
 }
 
 const stopPointerPropagation = (event: React.PointerEvent | React.MouseEvent) => {
@@ -49,10 +52,12 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
   icon,
   dialogState,
   pendingAction,
+  pluginDescription,
 }) => {
   const ctx = useDialogContext<Record<string, unknown>>();
   const location = useLocation();
   const theme = useTheme();
+  const { t } = useTranslation('common');
   const navigationLocked = Boolean(pendingAction);
 
   const workerStepMap = useMemo(() => {
@@ -326,7 +331,24 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
 
       <Stack direction="row" spacing={1.5} alignItems="center">
         <Stack direction="row" spacing={0.5} alignItems="center">
-          <Tooltip title={ctx.displayMode === 'maximize' ? 'Restore size' : 'Maximize'}>
+          {pluginDescription ? (
+            <Tooltip title={pluginDescription}>
+              <IconButton
+                size="small"
+                aria-label={pluginDescription}
+                onPointerDown={stopPointerPropagation}
+              >
+                <InfoOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          ) : null}
+          <Tooltip
+            title={
+              ctx.displayMode === 'maximize'
+                ? t('dialogs.pluginDialog.tooltips.restoreSize', 'Restore size')
+                : t('dialogs.pluginDialog.tooltips.maximize', 'Maximize')
+            }
+          >
             <span>
               <IconButton
                 size="small"
@@ -343,7 +365,13 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
               </IconButton>
             </span>
           </Tooltip>
-          <Tooltip title={ctx.displayMode === 'full-screen' ? 'Exit full screen' : 'Full screen'}>
+          <Tooltip
+            title={
+              ctx.displayMode === 'full-screen'
+                ? t('dialogs.pluginDialog.tooltips.exitFullscreen', 'Exit full screen')
+                : t('dialogs.pluginDialog.tooltips.fullscreen', 'Full screen')
+            }
+          >
             <span>
               <IconButton
                 size="small"
@@ -360,12 +388,23 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
               </IconButton>
             </span>
           </Tooltip>
-          <Tooltip title="Close dialog">
+          <Tooltip title={pluginDescription ?? t('dialogs.pluginDialog.tooltips.close', 'Close dialog')}>
+            <span>
+              <IconButton
+                size="small"
+                disabled={!pluginDescription}
+                aria-label={(pluginDescription ?? t('dialogs.pluginDialog.tooltips.close', 'Close dialog')) ?? ''}
+              >
+                <InfoOutlinedIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+          <Tooltip title={t('dialogs.pluginDialog.tooltips.close', 'Close dialog')}>
             <IconButton
               size="small"
               onClick={() => ctx.onRequestClose('close')}
               onPointerDown={stopPointerPropagation}
-              aria-label="Close dialog"
+              aria-label={t('dialogs.pluginDialog.tooltips.close', 'Close dialog') ?? ''}
             >
               <CloseIcon fontSize="small" />
             </IconButton>

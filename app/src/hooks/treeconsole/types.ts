@@ -113,6 +113,12 @@ export type MaybeCP = {
   }>;
 };
 
+export type LoadChildrenOf = (
+  parentId: NodeId,
+  optTerm?: string,
+  options?: { suppressLoading?: boolean }
+) => Promise<unknown>;
+
 export interface TreeConsoleActionDeps {
   client?: Remote<WorkerAPI>;
   treeId?: TreeId;
@@ -127,7 +133,7 @@ export interface TreeConsoleActionDeps {
   setState: Dispatch<SetStateAction<TreeConsoleState>>;
   setSSOT: (patch: Partial<TreeConsoleSSOTEntry>) => void;
   ssot: TreeConsoleSSOTEntry;
-  loadChildrenOf: (parentId: NodeId, optTerm?: string) => Promise<void>;
+  loadChildrenOf: LoadChildrenOf;
   refreshUndoRedo: () => Promise<void> | void;
   importExport: ImportExportAdapter;
   teardownSubscription: (rootId?: NodeId) => Promise<void>;

@@ -8,6 +8,7 @@
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-toolbar';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
+import type { TreeTableExpandedAPI } from '@hierarchidb/common-api';
 import { DualKeyMap } from '@hierarchidb/util';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -138,6 +139,8 @@ export function useTreeConsoleIntegration({
 
   const refreshUndoRedo = useCommandProcessorTracker({ client, setState, setSSOT });
 
+  const expandedApiRef = useRef<TreeTableExpandedAPI | null>(null);
+  const prevExpandedIdsRef = useRef<NodeId[]>([]);
   const incRefRef = useRef<() => void>(() => {});
   const decRefRef = useRef<() => void>(() => {});
   const setupSubscriptionRef = useRef<(id: NodeId) => Promise<void> | void>(() => {});
@@ -167,8 +170,35 @@ export function useTreeConsoleIntegration({
   }, [client]);
 
   useEffect(() => {
-    if (!client || !pageNodeId) return;
+    let cancelled = false;
+    expandedApiRef.current = null;
+    if (!client) return () => {
+      cancelled = true;
+    };
+    (async () => {
+      try {
+        const api = await client.getTreeTableExpandedAPI();
+        if (!cancelled) {
+          expandedApiRef.current = api;
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.warn('[TreeConsoleIntegration] failed to initialize expanded state API', error);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [client]);
 
+  useEffect(() => {
+    if (!client || !pageNodeId) {
+      prevExpandedIdsRef.current = [];
+      return;
+    }
+
+    prevExpandedIdsRef.current = [];
     setSSOT({
       nodeIndex: undefined,
       selectedIds: [],
@@ -178,9 +208,32 @@ export function useTreeConsoleIntegration({
       error: null,
     });
 
+    let cancelled = false;
+
     const load = async () => {
       setState((prev) => ({ ...prev, loading: true, error: null }));
       setSSOT({ loading: true, error: null });
+
+      let initialExpanded: NodeId[] = [];
+      try {
+        const api =
+          expandedApiRef.current ??
+          (await client.getTreeTableExpandedAPI().catch(() => null));
+        if (!cancelled) {
+          expandedApiRef.current = api;
+        }
+        if (api && pageNodeId) {
+          initialExpanded = (await api.getExpandedNodes(pageNodeId as NodeId)) as NodeId[];
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.warn('[TreeConsoleIntegration] failed to load persisted expanded state', error);
+        }
+      }
+
+      if (cancelled) return;
+      setSSOT({ expandedIds: initialExpanded, error: null });
+      prevExpandedIdsRef.current = initialExpanded;
 
       try {
         if (searchQuery) {
@@ -193,26 +246,43 @@ export function useTreeConsoleIntegration({
           })) as TreeNode[];
           const index = new DualKeyMap<NodeId, NodeId, TreeNode>();
           syncNodeIndex(index, pageNodeId as NodeId, results);
-          setSSOT({ nodeIndex: index });
+          if (cancelled) return;
+          setSSOT({ nodeIndex: index, searchTerm: searchQuery });
           setState((prev) => ({ ...prev, loading: false }));
-          setSSOT({ loading: false, searchTerm: searchQuery });
+          setSSOT({ loading: false });
           return;
         }
 
         await loadChildrenOf(pageNodeId as NodeId);
-        setState((prev) => ({ ...prev, loading: false }));
+        if (cancelled) return;
+
+        if (initialExpanded.length) {
+          for (const id of initialExpanded) {
+            await loadChildrenOf(id as NodeId, undefined, { suppressLoading: true });
+          }
+        }
       } catch (err) {
-        setState((prev) => ({
-          ...prev,
-          loading: false,
-          error: err instanceof Error ? err.message : String(err),
-        }));
-      } finally {
-        setSSOT({ loading: false });
+        if (!cancelled) {
+          setState((prev) => ({
+            ...prev,
+            loading: false,
+            error: err instanceof Error ? err.message : String(err),
+          }));
+          setSSOT({ loading: false, error: err instanceof Error ? err.message : String(err) });
+        }
+        return;
       }
+
+      if (cancelled) return;
+      setState((prev) => ({ ...prev, loading: false }));
+      setSSOT({ loading: false });
     };
 
     void load();
+
+    return () => {
+      cancelled = true;
+    };
   }, [client, loadChildrenOf, pageNodeId, searchQuery, setSSOT]);
 
   useEffect(() => {
@@ -224,6 +294,32 @@ export function useTreeConsoleIntegration({
       void teardownSubscriptionRef.current(pageNodeId as NodeId);
     };
   }, [clientReady, pageNodeId]);
+
+  useEffect(() => {
+    if (!pageNodeId) {
+      prevExpandedIdsRef.current = [];
+      return;
+    }
+    const api = expandedApiRef.current;
+    const prev = new Set(prevExpandedIdsRef.current.map((id) => String(id)));
+    const next = new Set(expandedIds.map((id) => String(id)));
+    const opened = Array.from(next).filter((id) => !prev.has(id));
+    const closed = Array.from(prev).filter((id) => !next.has(id));
+    prevExpandedIdsRef.current = expandedIds;
+    if (!api || (!opened.length && !closed.length)) return;
+    void (async () => {
+      try {
+        if (opened.length) {
+          await api.openNodes(pageNodeId as NodeId, opened as NodeId[]);
+        }
+        if (closed.length) {
+          await api.closeNodes(pageNodeId as NodeId, closed as NodeId[]);
+        }
+      } catch (error) {
+        console.warn('[TreeConsoleIntegration] failed to persist expanded ids', error);
+      }
+    })();
+  }, [expandedIds, pageNodeId]);
 
   const actions = useMemo<TreeConsoleActions>(
     () =>
