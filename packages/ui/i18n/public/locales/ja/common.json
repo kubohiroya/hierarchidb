@@ -242,6 +242,8 @@
     },
     "contextMenu": {
       "create": "作成",
+      "createUnavailable": "作成メニューを利用できません",
+      "createTooltip": "{{label}}: {{description}}",
       "openFolder": "フォルダーを開く",
       "open": "開く",
       "edit": "編集",

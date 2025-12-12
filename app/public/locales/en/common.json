@@ -313,26 +313,39 @@
             "ja": "Japanese"
           }
         }
-      },
-      "developerMenu": {
-        "clearIndexedDb": "Delete all IndexedDB created by this app",
-        "clearIndexedDbConfirm": "Delete all IndexedDB databases created by this app? This action cannot be undone.",
-        "clearIndexedDbSuccess": "Deleted IndexedDB data created by this app.",
-        "clearIndexedDbEmpty": "No IndexedDB databases were found for this app.",
-        "clearIndexedDbFailure": "Failed to delete IndexedDB data. See console for details."
       }
     },
     "contextMenu": {
       "create": "Create",
+      "createUnavailable": "Create menu unavailable",
+      "createTooltip": "{{label}}: {{description}}",
       "openFolder": "Open folder",
       "open": "Open",
       "edit": "Edit",
-      "copy": "Copy",
-      "cut": "Cut",
       "duplicate": "Duplicate",
       "moveToTrash": "Move to Trash",
       "checkReference": "Check reference",
       "preview": "Preview"
+    },
+    "developerMenu": {
+      "clearIndexedDb": "Delete all IndexedDB created by this app",
+      "clearIndexedDbConfirm": "Delete all IndexedDB databases created by this app? This action cannot be undone.",
+      "clearIndexedDbSuccess": "Deleted IndexedDB data created by this app.",
+      "clearIndexedDbEmpty": "No IndexedDB databases were found for this app.",
+      "clearIndexedDbFailure": "Failed to delete IndexedDB data. See console for details."
     }
+  },
+  "contextMenu": {
+    "create": "Create",
+    "openFolder": "Open folder",
+    "open": "Open",
+    "edit": "Edit",
+    "copy": "Copy",
+    "cut": "Cut",
+    "duplicate": "Duplicate",
+    "moveToTrash": "Move to Trash",
+    "checkReference": "Check reference",
+    "preview": "Preview"
   }
 }
+

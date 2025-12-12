@@ -1,7 +1,7 @@
-import { memo, type MouseEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, type MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CreateMenuBuilder, GlobalMenuBuilders, CreateMenuEntry } from '@hierarchidb/common-types';
 import { Divider, ListItemIcon, ListItemText, Menu, MenuItem, Tooltip } from '@mui/material';
-import { Add as AddIcon, AssignmentTurnedIn, ChevronRight, Clear as ClearIcon, ContentCopy as ContentCopyIcon, Edit as EditIcon, Folder as FolderIcon, PlayArrow as PlayArrowIcon } from '@mui/icons-material';
+import { Add as AddIcon, AssignmentTurnedIn, ChevronRight, Clear as ClearIcon, Edit as EditIcon, FileCopy as DuplicateIcon, Folder as FolderIcon, PlayArrow as PlayArrowIcon } from '@mui/icons-material';
 import { useIconRegistry } from '@hierarchidb/ui-icon';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
 
@@ -53,6 +53,18 @@ export const RowContextMenu = memo(
         return translated;
       };
     }, [t]);
+
+    const formatCreateTooltip = useCallback(
+      (label: string, description?: string) => {
+        if (!description || description.trim().length === 0) return label;
+        const template = translateWithFallback(
+          'treeConsole.contextMenu.createTooltip',
+          '{{label}}: {{description}}'
+        );
+        return template.replace('{{label}}', label).replace('{{description}}', description);
+      },
+      [translateWithFallback]
+    );
 
     // Use refs to store the latest props to avoid stale closures
     const propsRef = useRef(props);
@@ -218,73 +230,87 @@ export const RowContextMenu = memo(
             },
           }}
         >
-          <MenuItem onClick={handleAddMenuClick} aria-label="Create">
+          <MenuItem onClick={handleAddMenuClick} aria-label={t('treeConsole.contextMenu.create', 'Create')}>
             <ListItemIcon>
               <AddIcon />
             </ListItemIcon>
-            <ListItemText>Create</ListItemText>
+            <ListItemText>{t('treeConsole.contextMenu.create', 'Create')}</ListItemText>
             <ChevronRight sx={{ marginLeft: 'auto' }} />
           </MenuItem>
 
           <Divider />
 
           {isFolder ? (
-            <MenuItem onClick={handleOpenFolderClick} aria-label="Open Folder">
+            <MenuItem
+              onClick={handleOpenFolderClick}
+              aria-label={t('treeConsole.contextMenu.openFolder', 'Open folder')}
+            >
               <ListItemIcon>
                 <FolderIcon />
               </ListItemIcon>
-              <ListItemText>Open Folder</ListItemText>
+              <ListItemText>{t('treeConsole.contextMenu.openFolder', 'Open folder')}</ListItemText>
             </MenuItem>
           ) : (
-            <MenuItem onClick={handleOpenClick} aria-label="Open">
+            <MenuItem onClick={handleOpenClick} aria-label={t('treeConsole.contextMenu.open', 'Open')}>
               <ListItemIcon>
                 <FolderIcon />
               </ListItemIcon>
-              <ListItemText>Open</ListItemText>
+              <ListItemText>{t('treeConsole.contextMenu.open', 'Open')}</ListItemText>
             </MenuItem>
           )}
 
-          <MenuItem onClick={handleEditClick} disabled={!props.canEdit} aria-label="Edit">
+          <MenuItem
+            onClick={handleEditClick}
+            disabled={!props.canEdit}
+            aria-label={t('treeConsole.contextMenu.edit', 'Edit')}
+          >
             <ListItemIcon>
               <EditIcon />
             </ListItemIcon>
-            <ListItemText>Edit</ListItemText>
+            <ListItemText>{t('treeConsole.contextMenu.edit', 'Edit')}</ListItemText>
           </MenuItem>
 
           <MenuItem
             onClick={handleDuplicateClick}
             disabled={!props.canDuplicate}
-            aria-label="Duplicate"
+            aria-label={t('treeConsole.contextMenu.duplicate', 'Duplicate')}
           >
             <ListItemIcon>
-              <ContentCopyIcon />
+              <DuplicateIcon />
             </ListItemIcon>
-            <ListItemText>Duplicate</ListItemText>
+            <ListItemText>{t('treeConsole.contextMenu.duplicate', 'Duplicate')}</ListItemText>
           </MenuItem>
 
-          <MenuItem onClick={handleTrashClick} disabled={!allowTrash} aria-label="Move to Trash">
+          <MenuItem
+            onClick={handleTrashClick}
+            disabled={!allowTrash}
+            aria-label={t('treeConsole.contextMenu.moveToTrash', 'Move to Trash')}
+          >
             <ListItemIcon>
               <ClearIcon color="error" />
             </ListItemIcon>
-            <ListItemText>Move to Trash</ListItemText>
+            <ListItemText>{t('treeConsole.contextMenu.moveToTrash', 'Move to Trash')}</ListItemText>
           </MenuItem>
 
           <Divider />
 
-          <MenuItem onClick={handleCheckReferenceClick} aria-label="Check Reference">
+          <MenuItem
+            onClick={handleCheckReferenceClick}
+            aria-label={t('treeConsole.contextMenu.checkReference', 'Check reference')}
+          >
             <ListItemIcon>
               <AssignmentTurnedIn />
             </ListItemIcon>
-            <ListItemText>Check Reference</ListItemText>
+            <ListItemText>{t('treeConsole.contextMenu.checkReference', 'Check reference')}</ListItemText>
           </MenuItem>
 
           {!isFolder && <Divider />}
           {!isFolder && (
-            <MenuItem onClick={handlePreviewClick} aria-label="Preview">
+            <MenuItem onClick={handlePreviewClick} aria-label={t('treeConsole.contextMenu.preview', 'Preview')}>
               <ListItemIcon>
                 <PlayArrowIcon />
               </ListItemIcon>
-              <ListItemText>Preview</ListItemText>
+              <ListItemText>{t('treeConsole.contextMenu.preview', 'Preview')}</ListItemText>
             </MenuItem>
           )}
         </Menu>
@@ -332,7 +358,9 @@ export const RowContextMenu = memo(
               if (typeof builder !== 'function') {
                 return (
                   <MenuItem disabled>
-                    <ListItemText>Create menu unavailable</ListItemText>
+                    <ListItemText>
+                      {t('treeConsole.contextMenu.createUnavailable', 'Create menu unavailable')}
+                    </ListItemText>
                   </MenuItem>
                 );
               }
@@ -358,7 +386,13 @@ export const RowContextMenu = memo(
                 }
 
                 return (
-                  <Tooltip key={`${i.key}-${language}`} title={localizedDescription} placement="right" enterDelay={300} arrow>
+                  <Tooltip
+                    key={`${i.key}-${language}`}
+                    title={formatCreateTooltip(localizedLabel, localizedDescription)}
+                    placement="right"
+                    enterDelay={300}
+                    arrow
+                  >
                     <span style={{ display: 'block' }}>
                       <MenuItem onClick={() => handleCreateClick(i.nodeType)} aria-label={localizedLabel}>
                         <ListItemIcon>{IconEl}</ListItemIcon>
@@ -371,7 +405,9 @@ export const RowContextMenu = memo(
             } catch {
               return (
                 <MenuItem disabled>
-                  <ListItemText>Create menu unavailable</ListItemText>
+                  <ListItemText>
+                    {t('treeConsole.contextMenu.createUnavailable', 'Create menu unavailable')}
+                  </ListItemText>
                 </MenuItem>
              );
             }

@@ -68,6 +68,21 @@
   - [ ] typecheck を実行し、結果を運用ログへ記録する
 - ロールバック手順：本タスクで追加/分割するコンポーネント・フック・locale 変更を revert し、同じ typecheck を再実行する
 
+1628) Create/SpeedDial のノード説明ツールチップ i18n 化（P1）
+- ブランチ: `fix/ui-create-tooltip/i18n`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: treeconsole context menu（RowContextMenu）と DynamicSpeedDial、i18n locale (common.json)
+- 受け入れ基準（DoD）:
+  - [ ] コンテキストメニューの Create サブメニューと SpeedDial のノード作成ツールチップ文言が i18n 化され、言語切替に追従する
+  - [ ] ハードコードしていた英語文言を撤去し、既存キー体系に統合する（不要な重複キーを増やさない）
+  - [ ] 関連パッケージの typecheck（例: `pnpm --filter @hierarchidb/ui-treeconsole-base typecheck` または `pnpm --filter @hierarchidb/app typecheck`）を実行し、結果を運用ログに記録する（不可なら理由記載）
+  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+- チェックリスト:
+  - [ ] RowContextMenu の Create メニューとツールチップ文言を i18n キーへ置換し、fallback 英語を除去
+  - [ ] DynamicSpeedDial の tooltip 文言組み立てを i18n 化（ラベル＋説明の組み合わせをキー化）
+  - [ ] locale ファイル（en/ja）へ必要なキーを追加または更新する
+  - [ ] typecheck を実行し、結果を運用ログへ記録する
+- ロールバック手順：本タスクで変更するコンテキストメニュー/SpeedDial/locale の差分を revert し、同じ typecheck を再実行する
+
 1625) Basic Info ステップの固定英語文言を i18n 化（P1）
 - ブランチ: `fix/ui-basic-info/i18n-labels`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: plugin-ui-host（BasicInfo ステップ UI）、app/プラグインダイアログの Basic Info 表示、i18n locale (common.json)
@@ -9956,6 +9971,11 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-13 10:20 start: refactor/ui-usermenu/split-and-i18n — UserLoginButton をメニュー/ダイアログ/フックへ分割し、表示文言の i18n 化と言語リストの設定化を行うタスクを開始。DoD: 分割・i18n・設定駆動の言語メニュー・typecheck 実行とログ記録・TASKS 更新とロールバック明記。branch は `refactor/ui-usermenu/split-and-i18n`（作成不可なら main）。
 - 2025-12-13 10:55 progress: refactor/ui-usermenu/split-and-i18n — UserLoginButton を UserMenu/ThemeMenu/LanguageMenu/ClearDatabaseDialog + useUserMenu フックに分割し、文言の i18n 化と言語リストを supportedLanguages ベースに生成するよう変更。clear database ダイアログ/警告文も i18n 追加。
 - 2025-12-13 10:56 command: pnpm --filter @hierarchidb/ui-usermenu typecheck — exit 0。
+- 2025-12-13 11:15 start: fix/ui-create-tooltip/i18n — コンテキストメニューの Create と SpeedDial のノード説明ツールチップを i18n 化する作業を開始。DoD: i18n 対応・ハードコード撤去・typecheck 実行とログ記録・TASKS 更新とロールバック明記。branch は `fix/ui-create-tooltip/i18n`（作成不可なら main）。
+- 2025-12-13 11:45 progress: fix/ui-create-tooltip/i18n — RowContextMenu/DynamicSpeedDial の Create/説明ツールチップを i18n 化し、treeConsole contextMenu のキーを en/ja locale に追加。typecheck: `pnpm --filter @hierarchidb/ui-treeconsole-base typecheck` exit 0。`pnpm --filter @hierarchidb/app typecheck` は plugins/shape-plugin/src/services/types.ts の既存エラー（DataSourceValidationResult export 欠如）で失敗。
+- 2025-12-13 12:05 progress: fix/ui-create-tooltip/i18n — コンテキストメニューで Copy/Cut の順序を Cut→Copy に入れ替え、Duplicate アイコンをツールバーと同じ FileCopy アイコンへ統一（NodeContextMenu/RowContextMenu 両方）。typecheck: `pnpm --filter @hierarchidb/ui-treeconsole-breadcrumb typecheck` exit 0、`pnpm --filter @hierarchidb/ui-treeconsole-base typecheck` exit 0。
+- 2025-12-13 12:20 progress: fix/ui-create-tooltip/i18n — SpeedDial の FAB に i18n ツールチップ（Create/作成）を追加し、aria-label/title も同値に統一。検証: `pnpm --filter @hierarchidb/app typecheck` を再実行したが既存の shape-plugin DataSourceValidationResult export 欠如で失敗（本変更と無関係）。
+- 2025-12-13 12:35 progress: fix/ui-create-tooltip/i18n — SpeedDial のツールチップ表示位置を FAB 脇に保持したまま、左方向に 4px シフト。検証: `pnpm --filter @hierarchidb/app typecheck` は shape-plugin DataSourceValidationResult export 欠如の既知エラーで失敗（今回変更と無関係）。
  - 2025-12-11 21:15 start: fix/plugin-ui-sdk/treenode-updater-loop — Edit Folder ダイアログを開くだけで Maximum update depth exceeded 警告が出る問題の調査/修正に着手。DoD: 警告解消と原因記録、最小修正で回帰なし、関連 typecheck 実行ログ（不可なら理由記載）を残す。
  - 2025-12-11 21:25 progress: fix/plugin-ui-sdk/treenode-updater-loop — 原因特定: useTreeNodeUpdater 内の isRecord が render ごとに再生成され、toUpdater/useEffect の依存で初期化副作用が無限に再実行されて警告が発生。isRecord を `useCallback([])` でメモ化し、toUpdater の依存を安定化。
  - 2025-12-11 21:27 command: pnpm --filter @hierarchidb/plugin-ui-sdk typecheck — exit 0。

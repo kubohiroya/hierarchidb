@@ -257,6 +257,8 @@
     },
     "contextMenu": {
       "create": "Create",
+      "createUnavailable": "Create menu unavailable",
+      "createTooltip": "{{label}}: {{description}}",
       "openFolder": "Open folder",
       "open": "Open",
       "edit": "Edit",

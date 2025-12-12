@@ -6,7 +6,18 @@
 
 import { type MouseEvent, type ReactElement, useEffect, useMemo, useRef, useState } from 'react';
 import { Divider, ListItemIcon, ListItemText, Menu, MenuItem, Tooltip } from '@mui/material';
-import { Add as AddIcon, AssignmentTurnedIn as AssignmentTurnedInIcon, ChevronRight as ChevronRightIcon, Clear as ClearIcon, ContentCopy as ContentCopyIcon, ContentCut as ContentCutIcon, Edit as EditIcon, Folder as FolderIcon, PlayArrow as PlayArrowIcon } from '@mui/icons-material';
+import {
+  Add as AddIcon,
+  AssignmentTurnedIn as AssignmentTurnedInIcon,
+  ChevronRight as ChevronRightIcon,
+  Clear as ClearIcon,
+  ContentCopy as ContentCopyIcon,
+  ContentCut as ContentCutIcon,
+  Edit as EditIcon,
+  FileCopy as DuplicateIcon,
+  Folder as FolderIcon,
+  PlayArrow as PlayArrowIcon,
+} from '@mui/icons-material';
 import { useIconRegistry } from '@hierarchidb/ui-icon';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
 type CreateMenuEntry = { key: string; nodeType: string; label: string; description?: string; icon?: { muiIconName?: string; emoji?: string; color?: string } };
@@ -357,13 +368,6 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
           <ListItemText primary={editLabel} />
         </MenuItem>
 
-        <MenuItem onClick={handleCopyClick} disabled={!canCopy} aria-label={copyLabel}>
-          <ListItemIcon>
-            <ContentCopyIcon />
-          </ListItemIcon>
-          <ListItemText primary={copyLabel} />
-        </MenuItem>
-
         <MenuItem onClick={handleCutClick} disabled={!canCut} aria-label={cutLabel}>
           <ListItemIcon>
             <ContentCutIcon />
@@ -371,9 +375,16 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
           <ListItemText primary={cutLabel} />
         </MenuItem>
 
-        <MenuItem onClick={handleDuplicateClick} disabled={!canDuplicate} aria-label={duplicateLabel}>
+        <MenuItem onClick={handleCopyClick} disabled={!canCopy} aria-label={copyLabel}>
           <ListItemIcon>
             <ContentCopyIcon />
+          </ListItemIcon>
+          <ListItemText primary={copyLabel} />
+        </MenuItem>
+
+        <MenuItem onClick={handleDuplicateClick} disabled={!canDuplicate} aria-label={duplicateLabel}>
+          <ListItemIcon>
+            <DuplicateIcon />
           </ListItemIcon>
           <ListItemText primary={duplicateLabel} />
         </MenuItem>
