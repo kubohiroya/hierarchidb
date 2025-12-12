@@ -17,7 +17,7 @@ import type {
   ShapeEntity,
   UpdateShapeData,
   UrlMetadata,
-  ValidationResult,
+  ShapeStepValidationResult,
 } from './types.js';
 
 /**
@@ -62,7 +62,7 @@ export interface ShapeAPI {
     countries: string[],
     adminLevels: number[],
     dataSource: string,
-  ): Promise<ValidationResult>;
+  ): Promise<ShapeStepValidationResult>;
 
   calculateSelectionStats(urlMetadata: UrlMetadata[]): Promise<SelectionStats>;
 

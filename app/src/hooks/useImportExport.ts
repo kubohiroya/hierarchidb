@@ -1,6 +1,7 @@
 import type {
   ImportData,
   ImportProgress as APIImportProgress,
+  ImportValidationResult,
   WorkerAPI,
 } from '@hierarchidb/common-api';
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
@@ -57,11 +58,6 @@ export interface ImportResult {
   errors?: string[];
 }
 
-export interface ValidationResult {
-  valid: boolean;
-  errors: string[];
-}
-
 type ImportNode = ImportData['nodes'][number];
 type ImportNodesPayload = ImportData;
 
@@ -115,7 +111,12 @@ export function useImportExport(client?: Remote<WorkerAPI>, ready?: boolean) {
         // Validate import data
         const validation = await validateImportData(normalizedData);
         if (!validation.valid) {
-          throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+          const message =
+            validation.message ??
+            (validation.errors && validation.errors.length > 0
+              ? validation.errors.join(', ')
+              : 'Validation failed');
+          throw new Error(`Validation failed: ${message}`);
         }
 
         // Report parsing complete
@@ -261,12 +262,12 @@ export function useImportExport(client?: Remote<WorkerAPI>, ready?: boolean) {
    * Validate CSV columns
    */
   const validateTabularColumns = useCallback(
-    (data: string[][], options: { requiredColumns: string[] }): ValidationResult => {
+    (data: string[][], options: { requiredColumns: string[] }): ImportValidationResult => {
       const errors: string[] = [];
 
       if (data.length === 0) {
         errors.push('CSV file is empty');
-        return { valid: false, errors };
+        return { valid: false, errors, message: 'CSV file is empty' };
       }
 
       const headers = data[0];
@@ -282,10 +283,11 @@ export function useImportExport(client?: Remote<WorkerAPI>, ready?: boolean) {
         errors.push('CSV headers not found');
       }
 
-      return {
-        valid: errors.length === 0,
-        errors,
-      };
+      if (errors.length > 0) {
+        return { valid: false, errors, message: errors.join(', ') };
+      }
+
+      return { valid: true };
     },
     []
   );
@@ -501,7 +503,7 @@ function parseCSV(content: string, options?: CSVImportOptions): ImportNodesPaylo
   return { nodes };
 }
 
-function validateImportDataPayload(data: ImportNodesPayload): ValidationResult {
+function validateImportDataPayload(data: ImportNodesPayload): ImportValidationResult {
   const errors: string[] = [];
   const pluginNodeTypes = new Set(getInstalledPlugins().map((plugin) => plugin.nodeType));
   const validNodeTypes = new Set<string>(['folder', 'file', 'project', ...pluginNodeTypes]);
@@ -513,8 +515,9 @@ function validateImportDataPayload(data: ImportNodesPayload): ValidationResult {
     }
   });
 
-  return {
-    valid: errors.length === 0,
-    errors,
-  };
+  if (errors.length > 0) {
+    return { valid: false, errors, message: errors.join(', ') };
+  }
+
+  return { valid: true };
 }

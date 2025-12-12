@@ -1,4 +1,4 @@
-export interface ValidationResult {
+export interface ShapeStepValidationResult {
   isValid: boolean;
   errors?: string[];
   warnings?: string[];

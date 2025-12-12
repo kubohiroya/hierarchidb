@@ -18,7 +18,7 @@ import type {
   TileInfo,
   UpdateShapeData,
   UrlMetadata,
-  ValidationResult,
+  ShapeStepValidationResult,
 } from '../common/shared/index.ts';
 
 export interface ShapeWorkerAPI {
@@ -42,7 +42,11 @@ export interface ShapeWorkerAPI {
   generateUrlMetadata(dataSource: string, countries: string[], adminLevels: number[]): Promise<UrlMetadata[]>;
 
   // Validation / estimation
-  validateSelection(countries: string[], adminLevels: number[], dataSource: string): Promise<ValidationResult>;
+  validateSelection(
+    countries: string[],
+    adminLevels: number[],
+    dataSource: string,
+  ): Promise<ShapeStepValidationResult>;
   calculateSelectionStats(urlMetadata: UrlMetadata[]): Promise<SelectionStats>;
 
   // Batch processing (Draft-based)

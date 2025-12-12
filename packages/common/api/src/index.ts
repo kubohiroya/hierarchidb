@@ -10,6 +10,8 @@ export type {
   ImportNodesParams,
   ImportProgress,
   ImportResult,
+  ImportValidationIssue,
+  ImportValidationResult,
   OperationStatus,
   ValidateImportParams,
   ValidationWarning,

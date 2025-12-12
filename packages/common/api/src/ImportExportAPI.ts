@@ -1,4 +1,4 @@
-import type { NodeId, NodeType, TreeId, ValidationResult } from '@hierarchidb/common-types';
+import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-types';
 
 /**
  * Import/Export API for data transfer operations
@@ -36,7 +36,7 @@ export interface ImportExportAPI {
    * @param params - Validation parameters
    * @returns Validation result with any errors found
    */
-  validateImportData(params: ValidateImportParams): Promise<ValidationResult>;
+  validateImportData(params: ValidateImportParams): Promise<ImportValidationResult>;
 
   /**
    * Get import/export operation status
@@ -196,36 +196,21 @@ export interface ValidateImportParams {
   targetParentId?: NodeId;
 }
 
-/**
- * Validation result
- export interface ValidationResult {
- valid: boolean;
+export interface ImportValidationIssue {
+  code: string;
+  message: string;
+  path?: string;
+}
 
- errors: ValidationError[];
-
- warnings?: ValidationWarning[];
-
- statistics?: {
- nodeCount: number;
- maxDepth: number;
- nodeTypes: Record<string, number>;
- };
- }
-
- export interface ValidationError {
-
- code: string;
-
-
- message: string;
-
-
- path?: string;
-
-
- line?: number;
- }
- */
+export type ImportValidationResult =
+  | { valid: true; warnings?: string[] }
+  | {
+      valid: false;
+      message: string;
+      errors?: string[];
+      issues?: ImportValidationIssue[];
+      warnings?: string[];
+    };
 
 /**
  * Validation warning details

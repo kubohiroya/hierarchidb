@@ -29,6 +29,6 @@ export type {
   DataSourceStrategy,
   CountryMetadata,
   AdminLevelInfo,
-  ValidationResult,
+  DataSourceValidationResult,
   BoundingBox,
 } from './types/RuntimeTypes.js';

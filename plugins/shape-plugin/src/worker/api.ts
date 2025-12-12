@@ -29,7 +29,7 @@ import {
   type UpdateShapeData,
   type UrlMetadata,
   validateProcessingConfig,
-  type ValidationResult,
+  type ShapeStepValidationResult,
 } from '../common/shared/index.js';
 import { ShapeEntityHandler } from './handlers/index.js';
 
@@ -293,7 +293,7 @@ export const shapePluginAPI = {
     countries: string[],
     adminLevels: number[],
     dataSource: string,
-  ): Promise<ValidationResult> => {
+  ): Promise<ShapeStepValidationResult> => {
     const errors: string[] = [];
     const warnings: string[] = [];
     const dataSourceName = toDataSourceName(dataSource);

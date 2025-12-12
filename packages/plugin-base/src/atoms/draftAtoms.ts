@@ -32,7 +32,7 @@ export interface DraftData<TMetadata = unknown, TData = unknown> {
 /**
  * Validation result from Worker
  */
-export interface ValidationResult {
+export interface DialogStepValidationResult {
   stepId: string;
   isValid: boolean;
   errors?: string[];
@@ -94,7 +94,7 @@ export const stepStateAtom = atom<StepState>({
  * Validation results from Worker
  * Map from stepId to validation result
  */
-export const validationResultsAtom = atom<Map<string, ValidationResult>>(new Map());
+export const validationResultsAtom = atom<Map<string, DialogStepValidationResult>>(new Map());
 
 /**
  * Step capabilities for all steps
@@ -250,7 +250,12 @@ export const updateStepStateAtom = atom(null, (_get, set, update: Partial<StepSt
  */
 export const setValidationResultAtom = atom(
   null,
-  (get, set, stepId: string, result: Omit<ValidationResult, 'stepId' | 'timestamp'>) => {
+  (
+    get,
+    set,
+    stepId: string,
+    result: Omit<DialogStepValidationResult, 'stepId' | 'timestamp'>,
+  ) => {
     const results = new Map(get(validationResultsAtom));
     results.set(stepId, {
       stepId,

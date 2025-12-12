@@ -27,7 +27,7 @@ export interface AdminLevelInfo {
   dataSize?: number;
 }
 
-export interface ValidationResult {
+export interface DataSourceValidationResult {
   isValid: boolean;
   errors: Array<{ type: string; message: string; severity: 'error' | 'warning' }>;
   warnings: string[];
@@ -71,7 +71,7 @@ export interface DataSourceStrategy {
 
   generateDownloadUrl(countryCode: string, adminLevel: number, options?: any): Promise<string>;
 
-  validateRequest(countryCode: string, adminLevel: number): Promise<ValidationResult>;
+  validateRequest(countryCode: string, adminLevel: number): Promise<DataSourceValidationResult>;
 
   // Optional capabilities
   supportsAdminLevel?(level: number): boolean;

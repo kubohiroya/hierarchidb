@@ -1,4 +1,4 @@
-import type { NodeId, NodeType, TreeNode, TreeNodeMetadata, ValidationResult } from '@hierarchidb/common-types';
+import type { NodeId, NodeType, TreeNode, TreeNodeMetadata } from '@hierarchidb/common-types';
 import type {
   ExportNodesParams,
   ExportResult,
@@ -8,12 +8,14 @@ import type {
   ImportResult,
   OperationStatus,
   ValidateImportParams,
+  ImportValidationIssue,
+  ImportValidationResult,
 } from '@hierarchidb/common-api';
 import { SingletonMixin, generateUUID } from '@hierarchidb/util';
 import type { ImportExportDBPort } from './ports.js';
 
 type ImportNodeInput = ImportData['nodes'][number];
-type ValidationIssue = { code: string; message: string; path?: string };
+type ValidationIssue = ImportValidationIssue;
 
 export class ImportExportService implements ImportExportAPI {
   private operations = new Map<string, OperationStatus>();
@@ -305,7 +307,7 @@ export class ImportExportService implements ImportExportAPI {
     return ['json' as NodeType, 'csv' as NodeType];
   }
 
-  async validateImportData(params: ValidateImportParams): Promise<ValidationResult> {
+  async validateImportData(params: ValidateImportParams): Promise<ImportValidationResult> {
     const issues: ValidationIssue[] = [];
     const nodeTypes = new Map<string, number>();
     let maxDepth = 0;
@@ -338,7 +340,7 @@ export class ImportExportService implements ImportExportAPI {
       .map((issue) => `${issue.code}: ${issue.message}${issue.path ? ` @ ${issue.path}` : ''}`)
       .join('; ');
 
-    return { valid: false, message: summary };
+    return { valid: false, message: summary, issues };
   }
 
   async getOperationStatus(operationId: string): Promise<OperationStatus | null> {

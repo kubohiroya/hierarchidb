@@ -46,7 +46,7 @@
   - `feat/worker/policy-c`
   - `feat/worker/trash-holder`
   - `fix/worker/deterministic-sort`
-  - `feat/ui/wc-resume-menu`
+ - `feat/ui/wc-resume-menu`
   - `chore/docs/cleanup-metrics`
 
 ## Kanban（このファイルで運用） <a id="kanban"></a>
@@ -4245,6 +4245,10 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1628) ValidationResult 型命名整理（プラグイン別ステップ名付与）（P0） — 完了 (2025-12-13)
+  - 要点：ValidationResult が各パッケージで重複していたため、DialogStepValidationResult / ImportValidationResult / DataSourceValidationResult / ShapeStepValidationResult / NodeTypeOperationValidationResult などコンテキストを含む名称へ統一し、プラグイン・ステップごとに判別できるように整理。NodeTypeAPI の validateOperation も専用型を返すように調整し、共通テストの型エラーを解消。
+  - 検証：`pnpm --filter @hierarchidb/common-api typecheck`（2025-12-13 06:24 JST）exit 0、`pnpm --filter @hierarchidb/shape-plugin typecheck`（06:25 JST）exit 0、`pnpm --filter @hierarchidb/plugin-service-api typecheck`（06:27 JST）exit 0、`pnpm --filter @hierarchidb/plugin-base typecheck`（06:29 JST）exit 0。
+  - ロールバック手順：ValidationResult リネーム関連の差分（app/src/hooks/useImportExport.ts、packages/common/api/src/ImportExportAPI.ts、packages/ui/datasource/src/types/RuntimeTypes.ts、plugins/shape-plugin/src/common/shared 配下・worker/api など）を revert し、上記 typecheck を再実行する。
 - 1617) dialogUIState を初期位置・サイズに反映（P0） — 完了 (2025-12-11)
   - 要点：useTreeNodeDialog で Worker に保存された dialogUIState（position/size/mode/activeStepIndex）を初回 open 時に正規化して適用し、未保存時は従来デフォルトを維持するようにした。close→reopen でも保存値が初期化に使われる。
   - 検証：`pnpm --filter @hierarchidb/plugin-ui-sdk typecheck`（2025-12-11 21:55 JST）exit 0。
@@ -9940,6 +9944,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-13 05:51 command: pnpm --filter @hierarchidb/plugin-ui-sdk typecheck — exit 0。
 - 2025-12-13 06:05 progress: fix/ui-dialog/dialog-center-position — CoreDB/TreeNodeUpdaterService の dialogUIState デフォルトを null（位置未設定）に変更し、Worker が 0,0 を書き込まないよう修正。初期描画は UI 側が viewport 中央を計算する前提に統一。
 - 2025-12-13 06:06 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0。
+- 2025-12-13 06:12 start: chore/types/validationresult-names — ValidationResult 型をプラグイン・ステップ固有名へリネームし、NodeTypeAPI.test.ts の型エラーを解消する対応を開始。DoD: Kanban/ログ更新、曖昧な ValidationResult 排除、common-api typecheck ログ、ロールバック手順記載。branch は `chore/types/validationresult-names`（作成不可なら main）。
+- 2025-12-13 06:24 progress: chore/types/validationresult-names — ValidationResult の重複定義を整理し、DialogStepValidationResult / ImportValidationResult / DataSourceValidationResult / ShapeStepValidationResult / NodeTypeOperationValidationResult などコンテキスト付きの名称へ置換。NodeTypeAPI validateOperation も専用型へ変更。
+- 2025-12-13 06:29 done: chore/types/validationresult-names — 型名リネームと参照更新を完了。検証: `pnpm --filter @hierarchidb/common-api typecheck` exit 0、`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0、`pnpm --filter @hierarchidb/plugin-service-api typecheck` exit 0、`pnpm --filter @hierarchidb/plugin-base typecheck` exit 0。
 - 2025-12-13 09:00 start: fix/ui-dialog/tooltip-disabled-button — MUI Tooltip が disabled button を直接子に持つ警告を解消するタスクに着手。DoD: 警告解消・挙動維持・関連 typecheck 実行と記録・TASKS 更新とロールバック明記。branch は `fix/ui-dialog/tooltip-disabled-button`（作成不可なら main）。
 - 2025-12-13 09:20 progress: fix/ui-dialog/tooltip-disabled-button — PluginDialogHeader の close/info Tooltip 配下で disabled IconButton を span ラップに変更し、aria-label を string 正規化して警告要因を除去。
 - 2025-12-13 09:21 command: pnpm --filter @hierarchidb/plugin-ui-host typecheck — exit 0。

@@ -13,7 +13,7 @@ import type {
   TileProcessingConfig,
   SelectionStats,
   UrlMetadata,
-  ValidationResult,
+  ShapeStepValidationResult,
 } from './types.js';
 import type { TreeNodeMetadata } from '@hierarchidb/common-types';
 import type { ShapeEntity, ShapeDraft } from './types/core.js';
@@ -34,7 +34,7 @@ export function normalizeDataSourceName(value?: string | null): DataSourceName |
 /**
  * Validate shape-plugin entity name
  */
-export function validateShapeName(name: string): ValidationResult {
+export function validateShapeName(name: string): ShapeStepValidationResult {
   const errors: string[] = [];
 
   if (!name.trim()) {
@@ -58,7 +58,7 @@ export function validateShapeName(name: string): ValidationResult {
 /**
  * Validate processing configuration
  */
-export function validateProcessingConfig(config: Partial<ProcessingConfig>): ValidationResult {
+export function validateProcessingConfig(config: Partial<ProcessingConfig>): ShapeStepValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
 

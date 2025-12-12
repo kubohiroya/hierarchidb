@@ -9,7 +9,7 @@ import type {
   CountryMetadata,
   DataSourceInfo,
   DataSourceName,
-  ValidationResult,
+  DataSourceValidationResult,
 } from '@hierarchidb/ui-datasource';
 import type {
   ErrorInfo as SharedErrorInfo,
@@ -41,7 +41,7 @@ export interface ShapesAPIMethods extends Record<string, any> {
 
   getCountryMetadata(dataSource: string, countryCode?: string): Promise<CountryMetadata[]>;
 
-  validateDataSource(dataSource: string, config: DataSourceConfig): Promise<ValidationResult>;
+  validateDataSource(dataSource: string, config: DataSourceConfig): Promise<DataSourceValidationResult>;
 
   // Vector tiles
   getTile(nodeId: NodeId, z: number, x: number, y: number): Promise<Uint8Array>;
@@ -73,7 +73,13 @@ export interface ShapesAPIMethods extends Record<string, any> {
 // === Data Types ===
 
 // Re-export types from runtime-worker/datasource for compatibility
-export type { DataSourceName, DataSourceInfo, CountryMetadata, ValidationResult, BoundingBox };
+export type {
+  DataSourceName,
+  DataSourceInfo,
+  CountryMetadata,
+  DataSourceValidationResult,
+  BoundingBox,
+};
 // Re-export without importing into local scope to avoid unused import warnings
 export type { AdminLevelInfo } from '@hierarchidb/ui-datasource';
 

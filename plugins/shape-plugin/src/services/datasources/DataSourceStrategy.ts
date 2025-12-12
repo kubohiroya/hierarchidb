@@ -2,7 +2,7 @@
    * DATA_SOURCE_STRATEGY_DESIGN.md
   */
 
-import type { ShapeEntity, ValidationResult } from '../../common/shared/types.js';
+import type { ShapeEntity, ShapeStepValidationResult } from '../../common/shared/types.js';
 
 export interface DataSourceConfig {
   id: string;
@@ -171,7 +171,7 @@ export interface DataSourceStrategy<TRawData = any, TProcessedData = ShapeEntity
 
   processData(rawData: TRawData, options?: ProcessOptions): Promise<TProcessedData>;
 
-  validateData(data: TProcessedData): Promise<ValidationResult>;
+  validateData(data: TProcessedData): Promise<ShapeStepValidationResult>;
 
   saveData(data: TProcessedData, target: SaveTarget): Promise<SaveResult>;
 
@@ -193,7 +193,7 @@ export abstract class BaseDataSourceStrategy<TRawData = any, TProcessedData = Sh
 
   abstract processData(rawData: TRawData, options?: ProcessOptions): Promise<TProcessedData>;
 
-  async validateData(data: TProcessedData): Promise<ValidationResult> {
+  async validateData(data: TProcessedData): Promise<ShapeStepValidationResult> {
     if (!data || (Array.isArray(data) && data.length === 0)) {
       return {
         isValid: false,

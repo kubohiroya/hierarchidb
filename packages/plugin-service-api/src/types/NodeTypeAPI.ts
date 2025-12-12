@@ -11,9 +11,14 @@ import type {
   NodeLifecycleHooks,
   NodeType,
   TreeNode,
-  ValidationResult,
 } from '@hierarchidb/common-types';
 import { PluginDefinition } from './plugin-definition.js';
+
+export interface NodeTypeOperationValidationResult {
+  valid: boolean;
+  errors: string[];
+  warnings?: string[];
+}
 
 /**
  * Node type management API
@@ -78,7 +83,7 @@ export interface NodeTypeAPI {
     nodeType: NodeType,
     operation: 'create' | 'update' | 'delete' | 'move',
     context?: { parentId?: NodeId; targetNodeId?: NodeId },
-  ): Promise<ValidationResult>;
+  ): Promise<NodeTypeOperationValidationResult>;
 
   // ==================
   // Node Type Capabilities
