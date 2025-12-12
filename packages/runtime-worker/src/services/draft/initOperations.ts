@@ -36,10 +36,18 @@ export async function initTreeNode(
     if (fixedId) {
       const existing = await coreDB.nodes.get(fixedId);
       if (existing) {
-        const needsDraft =
-          (existing as { draftData?: unknown }).draftData === null ||
-          typeof (existing as { draftData?: unknown }).draftData === 'undefined';
-        if (needsDraft) {
+        const hasDraftMeta =
+          (existing as { draftMetadata?: unknown }).draftMetadata !== null &&
+          typeof (existing as { draftMetadata?: unknown }).draftMetadata !== 'undefined';
+        const hasDraftData =
+          (existing as { draftData?: unknown }).draftData !== null &&
+          typeof (existing as { draftData?: unknown }).draftData !== 'undefined';
+
+        if (!hasDraftMeta || !hasDraftData) {
+          const nextDraftMetadata = hasDraftMeta
+            ? (existing as { draftMetadata?: TreeNode['metadata'] }).draftMetadata ?? null
+            : ((existing as { metadata?: TreeNode['metadata'] }).metadata ?? null);
+
           await coreDB.nodes.update(fixedId, {
             metadata: {
               ...(existing as { metadata?: TreeNode['metadata'] }).metadata ?? {
@@ -49,14 +57,17 @@ export async function initTreeNode(
               },
               name: resolvedBaseName,
             },
-            draftMetadata: {
-              name: resolvedBaseName,
-              description: '',
-              tags: [],
-              ...(initial?.draftMetadata ?? initial?.metadata ?? {}),
-            },
+            draftMetadata:
+              nextDraftMetadata ?? {
+                name: resolvedBaseName,
+                description: '',
+                tags: [],
+                ...(initial?.draftMetadata ?? initial?.metadata ?? {}),
+              },
             draftData: {
-              ...(initial?.draftData ?? initial?.data ?? {}),
+              ...(hasDraftData
+                ? ((existing as { draftData?: Record<string, unknown> | null }).draftData ?? {})
+                : (initial?.draftData ?? initial?.data ?? {})),
             },
             updatedAt: now,
             lastTouchedAt: now,

@@ -100,6 +100,9 @@ export function useTreeNodeUpdater<TPayload extends Record<string, unknown> = Re
   const toUpdater = useCallback((node: TreeNode): TreeNodeUpdaterState<TPayload> => {
     const hasRemoteDraft = node.draftData != null || node.draftMetadata != null;
     const draftMetadata = (node as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata ?? null;
+    if (draftMetadata === null) {
+      throw new Error('Draft metadata must not be null');
+    }
     const draftData =
       node.draftData && isRecord(node.draftData) ? (node.draftData as TPayload) : null;
     const dialogUIState = (node as { dialogUIState?: DialogUIState | null }).dialogUIState ?? ({} as DialogUIState);

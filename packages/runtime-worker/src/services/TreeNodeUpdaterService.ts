@@ -56,6 +56,24 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
     );
     const wc = await this.coreDB.nodes.get(wcNodeId);
     if (!wc) throw new Error('Working copy creation failed');
+    // Ensure draftMetadata is always present; for edit mode seed from metadata when absent.
+    const hasDraftMeta =
+      (wc as { draftMetadata?: unknown }).draftMetadata !== null &&
+      typeof (wc as { draftMetadata?: unknown }).draftMetadata !== 'undefined';
+    if (!hasDraftMeta) {
+      await this.coreDB.nodes.update(wcNodeId, {
+        draftMetadata: {
+          ...((wc as { metadata?: TreeNode['metadata'] }).metadata ?? {
+            name: desiredName,
+            description: '',
+            tags: [],
+          }),
+          ...(initialData?.draftMetadata ?? initialData?.metadata ?? {}),
+        },
+      });
+      const refreshed = await this.coreDB.nodes.get(wcNodeId);
+      return refreshed as TreeNode;
+    }
     return wc as TreeNode;
   }
 

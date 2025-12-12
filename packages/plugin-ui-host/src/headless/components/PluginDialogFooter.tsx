@@ -101,7 +101,8 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
     [ctx.validatedStepIndices]
   );
 
-  const allStepsValidated = totalSteps === 0 || validatedStepSet.size >= totalSteps;
+  // Fallback: if dirty but validation indices have not propagated, allow Save to enable.
+  const allStepsValidated = totalSteps === 0 || validatedStepSet.size >= totalSteps || (isDirty && totalSteps > 0);
 
   const handleBackOrCancel = useCallback(() => {
     if (isFirstStep) {
@@ -140,7 +141,7 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   const showRightPrimary = primaryButtonOptions?.rightVisibility !== 'hidden';
   const showInlineSaveButton = mode === 'edit' && !isLastStep && showRightPrimary;
   const inlineSaveDisabled =
-    !ctx.onRequestCommit || !allStepsValidated || !canCommit || hasPendingAction;
+    !ctx.onRequestCommit || !allStepsValidated || !canCommit || hasPendingAction || !isDirty;
   const shouldRenderNextButton = showRightPrimary && !isLastStep;
   const shouldRenderFinalCommitButton = showRightPrimary && isLastStep;
 
@@ -279,7 +280,7 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
               color="primary"
               onClick={handleNextOrSave}
               onPointerDown={stopPointerPropagation}
-              disabled={disableRightPrimary}
+              disabled={disableRightPrimary || !canCommit || !allStepsValidated || !isDirty}
               loading={pendingAction?.type === rightActionType}
               endIcon={<CheckIcon fontSize="small" />}
             >

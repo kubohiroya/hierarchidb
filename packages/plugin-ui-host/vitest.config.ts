@@ -1,8 +1,6 @@
 import { defineConfig } from 'vitest/config';
 import type { Alias } from 'vite';
 import * as path from 'path';
-import '@testing-library/jest-dom/vitest';
-
 const pluginNames = [
   'basemap',
   'folder',
@@ -72,6 +70,7 @@ export default defineConfig({
     setupFiles: [
       path.resolve(__dirname, '../../vitest.setup.ts'),
       path.join(testingMocksRoot, 'setupPluginWorkerMock.ts'),
+      '@testing-library/jest-dom/vitest',
     ],
     globals: true,
     passWithNoTests: true,

@@ -8,7 +8,6 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, vi } from 'vitest';
 // Testing Library matchers (toBeInTheDocument, toHaveClass, etc.)
-import '@testing-library/jest-dom/vitest';
 
 const logVitestSetupWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;

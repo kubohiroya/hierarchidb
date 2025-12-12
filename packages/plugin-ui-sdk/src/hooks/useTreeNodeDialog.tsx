@@ -328,20 +328,73 @@ export function useTreeNodeDialog<TPayload extends TreeNodeData>(
   }, [discardDraft, onClose, activeSingle]);
 
   const metadata = treeNodeUpdater?.draftMetadata ?? undefined;
+  const isDraftReady = Boolean(treeNodeUpdater && treeNodeUpdater.draftMetadata);
+  const initialDraftRef = useRef<TreeNodeUpdaterState<TPayload> | null>(null);
+
+  useEffect(() => {
+    if (!open) {
+      initialDraftRef.current = null;
+      return;
+    }
+    if (isDraftReady && !initialDraftRef.current && treeNodeUpdater) {
+      initialDraftRef.current = {
+        ...treeNodeUpdater,
+        draftMetadata: treeNodeUpdater.draftMetadata
+          ? {
+              name: treeNodeUpdater.draftMetadata.name ?? '',
+              description: treeNodeUpdater.draftMetadata.description ?? '',
+              tags: Array.isArray(treeNodeUpdater.draftMetadata.tags)
+                ? [...treeNodeUpdater.draftMetadata.tags]
+                : [],
+            }
+          : null,
+        draftData: treeNodeUpdater.draftData ? { ...(treeNodeUpdater.draftData as Record<string, unknown>) } as TPayload : null,
+      };
+    }
+  }, [isDraftReady, open, treeNodeUpdater]);
+
+  const isMetadataDirty = useMemo(() => {
+    if (!isDraftReady || !treeNodeUpdater?.draftMetadata) return false;
+    const base =
+      initialDraftRef.current?.draftMetadata ?? {
+        name: '',
+        description: '',
+        tags: [],
+      };
+    const next = treeNodeUpdater.draftMetadata;
+    if ((base.name ?? '') !== (next.name ?? '')) return true;
+    if ((base.description ?? '') !== (next.description ?? '')) return true;
+    const prevTags = Array.isArray(base.tags) ? base.tags : [];
+    const nextTags = Array.isArray(next.tags) ? next.tags : [];
+    if (prevTags.length !== nextTags.length) return true;
+    for (let i = 0; i < prevTags.length; i += 1) {
+      if (prevTags[i] !== nextTags[i]) return true;
+    }
+    return false;
+  }, [isDraftReady, treeNodeUpdater?.draftMetadata]);
+
+  const isDataDirty = useMemo(() => {
+    if (!isDraftReady) return false;
+    const base = initialDraftRef.current?.draftData ?? null;
+    const next = treeNodeUpdater?.draftData ?? null;
+    return JSON.stringify(base) !== JSON.stringify(next);
+  }, [isDraftReady, treeNodeUpdater?.draftData]);
 
   const steps = useMemo(
     () =>
-      buildSteps({
-        data,
-        metadata,
-        persistBasicInfo,
-        updatePayload: handleUpdate,
-        dialogRef,
-        mode,
-        nodeId,
-        parentId,
-      }),
-    [buildSteps, data, handleUpdate, metadata, mode, nodeId, parentId, persistBasicInfo]
+      isDraftReady
+        ? buildSteps({
+            data,
+            metadata,
+            persistBasicInfo,
+            updatePayload: handleUpdate,
+            dialogRef,
+            mode,
+            nodeId,
+            parentId,
+          })
+        : [],
+    [buildSteps, data, handleUpdate, isDraftReady, metadata, mode, nodeId, parentId, persistBasicInfo]
   );
 
   const enabledStepIndices = useMemo(
@@ -470,10 +523,12 @@ export function useTreeNodeDialog<TPayload extends TreeNodeData>(
   const isDirty =
     mode === 'create'
       ? true
-      : singleSource?.hasUnsavedChanges ?? fallbackUpdater?.hasUnsavedChanges ?? false;
+      : (singleSource?.hasUnsavedChanges ?? fallbackUpdater?.hasUnsavedChanges ?? false) ||
+        isMetadataDirty ||
+        isDataDirty;
 
   const headlessProps: HeadlessMultiStepDialogProps<TPayload> = {
-    open,
+    open: open && isDraftReady,
     stepComponents: steps.map((step) => ({
       id: step.id,
       label: step.label,
@@ -489,7 +544,7 @@ export function useTreeNodeDialog<TPayload extends TreeNodeData>(
     invalidMessageMap: {},
     onRequestClose: handleDiscard,
     onRequestCommit: handleSave,
-    isDirty,
+    isDirty: isDraftReady ? isDirty : false,
     position: dialogPosition,
     onPositionChange: handlePositionChange,
     size: dialogSize,
