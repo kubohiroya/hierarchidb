@@ -25,7 +25,7 @@ export function StepTabularFilter({
   });
   const menuContainer =
     (dialogRef?.current?.closest('.MuiModal-root') as Element | null) ??
-    (dialogRef?.current?.closest('[role=\"dialog\"]') as Element | null) ??
+    (dialogRef?.current?.closest('[role="dialog"]') as Element | null) ??
     (dialogRef?.current as Element | null) ??
     null;
 

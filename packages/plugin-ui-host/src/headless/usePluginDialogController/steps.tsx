@@ -276,7 +276,7 @@ export function useDialogSteps({
     });
 
     return result;
-  }, [composedConfigs.hasHostBase, normalizedConfigs, isBasicInfoValid]);
+  }, [composedConfigs.hasHostBase, normalizedConfigs, basicInfoLabel, isBasicInfoValid]);
 
   const handleBasicInfoChange = useCallback(
     (data: { name: string; description: string; tags?: string[] }) => {
