@@ -13,5 +13,9 @@ export {
   type UseSingleSourceDialogAtomOptions,
   type SingleSourceDialogAtomResult,
 } from './hooks/useSingleSourceDialogAtom.js';
+export {
+  useDialogViewState,
+  type UseDialogViewStateOptions,
+} from './hooks/useDialogViewState.js';
 export { createTreeNodeUpdaterActions } from './hooks/useTreeNodeUpdater.js';
 export type { BasicInfoStepProps } from './dialog/steps/BasicInfoStep.js';

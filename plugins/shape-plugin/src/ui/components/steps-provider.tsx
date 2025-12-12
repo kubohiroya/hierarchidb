@@ -11,23 +11,30 @@ import { Step2DataSource } from './steps/Step2DataSource.js';
 import { Step3License } from './steps/Step3License.js';
 import { Step4Processing } from './steps/Step4Processing.js';
 import { Step5CountrySelection } from './steps/Step5CountrySelection.js';
-import { StepTabularImport } from './steps/StepTabularImport.tsx';
-import { StepTabularFilter } from './steps/StepTabularFilter.js';
 import { notify } from '@hierarchidb/components';
 import { useTranslation as getTranslation } from '../../common/i18n/index.js';
 import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
-import type { TreeNodeMetadata } from '@hierarchidb/common-types';
+import type { TreeNodeMetadata, NodeId } from '@hierarchidb/common-types';
+import { resolveDefaultNodeName } from '@hierarchidb/runtime-worker';
 
 const registry = PluginStepRegistry.getInstance();
 
-type ShapeStepData = StepData & Partial<ShapeEntity> & {
-  draftMetadata?: TreeNodeMetadata;
-};
+type ShapeStepData = StepData &
+  Partial<ShapeEntity> & {
+    treeNodeId?: NodeId;
+    draftMetadata?: TreeNodeMetadata | null;
+  };
 type ShapeDialogStepProps = StepComponentProps<ShapeStepData>;
 
 const ensureDraft = (data?: ShapeStepData): ShapeStepData => ({
   ...(data ?? {}),
-  draftMetadata: data?.draftMetadata ?? ({ name: '', description: '', tags: [] } as TreeNodeMetadata),
+  draftMetadata:
+    data?.draftMetadata ??
+    ({
+      name: resolveDefaultNodeName('shape'),
+      description: '',
+      tags: [],
+    } as TreeNodeMetadata),
 });
 
 function createStepAdapter(Component: React.ComponentType<any>): (props: ShapeDialogStepProps) => JSX.Element {
@@ -83,7 +90,13 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
         label: t('steps.basicInfo.label', 'Basic Info'),
         componentFactory: (props: ShapeDialogStepProps) => {
           const draft = ensureDraft(props.data);
-          const meta = (draft as any).draftMetadata ?? { name: '', description: '', tags: [] };
+          const meta =
+            draft.draftMetadata ??
+            ({
+              name: resolveDefaultNodeName('shape'),
+              description: '',
+              tags: [],
+            } as TreeNodeMetadata);
           return (
             <BasicInfoStep
               name={meta.name ?? ''}
@@ -92,7 +105,7 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
               mode={props.mode}
               onChange={({ name, description, tags }: BasicInfoData) =>
                 props.onChange({
-                  ...(draft as any),
+                  ...draft,
                   draftMetadata: { ...meta, name, description, tags: tags ?? [] },
                 })
               }
@@ -101,19 +114,7 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
           );
         },
         validate: (data?: ShapeStepData) =>
-          Boolean((data as any)?.draftMetadata?.name?.trim?.()),
-      },
-      {
-        id: 'tabular-upload',
-        label: t('steps.tabularUpload.label', 'Dataset Upload'),
-        componentFactory: (props: ShapeDialogStepProps) => <StepTabularImport {...props} />,
-        validate: (data?: Partial<ShapeEntity>) => Boolean(data?.tabularMetadataId),
-      },
-      {
-        id: 'tabular-filter',
-        label: t('steps.tabularFilter.label', 'Dataset Filter'),
-        componentFactory: (props: ShapeDialogStepProps) => <StepTabularFilter {...props} />,
-        validate: (data?: Partial<ShapeEntity>) => Boolean(data?.tabularMetadataId),
+          Boolean(data?.draftMetadata?.name?.trim?.()),
       },
       {
         id: 'data-source',

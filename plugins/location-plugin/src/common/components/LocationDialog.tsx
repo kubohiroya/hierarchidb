@@ -198,7 +198,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
   const applyNormalizedState = useCallback((size: MultiStepDialogSize, position: MultiStepDialogPosition) => {
     dialogSizeRef.current = size;
     dialogPositionRef.current = position;
-    updateDialogViewState({ patch: { size, position } });
+    updateDialogViewState({ size, position });
   }, [updateDialogViewState]);
 
   const { updatePayload, updateMetadata } = useMemo(
@@ -475,7 +475,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
       applyNormalizedState(normalized.size, normalized.position);
     }
 
-    updateDialogViewState({ patch: { displayMode: mode } });
+    updateDialogViewState({ displayMode: mode });
   }, [applyNormalizedState, updateDialogViewState]);
 
   const handleSave = useCallback(async () => {
@@ -524,16 +524,16 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
   const handleStepNavigate = useCallback((event: StepNavigationEvent) => {
     switch (event.type) {
       case 'direct':
-        updateDialogViewState({ patch: { activeStepIndex: event.targetIndex } });
+        updateDialogViewState({ activeStepIndex: event.targetIndex });
         break;
       case 'next':
         updateDialogViewState({
-          patch: { activeStepIndex: Math.min(activeStepIndex + 1, stepComponents.length - 1) },
+          activeStepIndex: Math.min(activeStepIndex + 1, stepComponents.length - 1),
         });
         break;
       case 'back':
         updateDialogViewState({
-          patch: { activeStepIndex: Math.max(activeStepIndex - 1, 0) },
+          activeStepIndex: Math.max(activeStepIndex - 1, 0),
         });
         break;
       default:
