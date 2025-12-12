@@ -7,8 +7,6 @@ import {
   TreeNodeMetadata,
   DialogUIState,
   Timestamp,
-  DialogSize,
-  DialogPosition,
   TreeNodeData,
 } from '@hierarchidb/common-types';
 import type {
@@ -61,18 +59,7 @@ export interface UseTreeNodeUpdaterResult<TPayload extends TreeNodeData = TreeNo
 // Shared alias for dialog payloads; intentionally does not include metadata/version/timestamps.
 export type PluginDialogData<TPayload extends TreeNodeData = TreeNodeData> = TPayload;
 
-const DEFAULT_DIALOG_SIZE: DialogSize = { width: 960, height: 640 };
-const DEFAULT_DIALOG_POSITION: DialogPosition = { x: 0, y: 0 };
-const DEFAULT_DIALOG_UI_STATE: DialogUIState = {
-  dialogWindow: {
-    mode: 'normal',
-    position: DEFAULT_DIALOG_POSITION,
-    size: DEFAULT_DIALOG_SIZE,
-  },
-  dialogProgress: {
-    activeStepIndex: 0,
-  },
-};
+const DEFAULT_DIALOG_UI_STATE: DialogUIState = {};
 
 export const createTreeNodeUpdaterActions = <TPayload extends TreeNodeData = TreeNodeData>(
   updateDraft: (data: Partial<TreeNodeUpdaterState<TPayload>>) => void

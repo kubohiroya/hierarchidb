@@ -29,6 +29,38 @@
       "ready": "Worker ready"
     }
   },
+  "userMenu": {
+    "loading": "Loading authentication...",
+    "login": "Login",
+    "logout": "Logout",
+    "aria": {
+      "userMenu": "User menu"
+    },
+    "theme": {
+      "label": "Theme",
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "language": {
+      "label": "Language",
+      "system": "System default"
+    },
+    "clear": {
+      "label": "Clear All Data",
+      "title": "Clear all data?",
+      "description": "This will clear all data including:",
+      "items": {
+        "cache": "Cache API data",
+        "indexedDb": "All IndexedDB databases (projects, maps, shapes, etc.)",
+        "localStorage": "localStorage data"
+      },
+      "warning": "This action cannot be undone and will delete all your local data. The page will reload after clearing the cache.",
+      "confirm": "Clear All Data",
+      "cancel": "Cancel",
+      "error": "Failed to clear some cache data. Please try again."
+    }
+  },
   "dialogs": {
     "trash": {
       "modeMenu": {

@@ -53,6 +53,49 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1627) UserLoginButton リファクタ（メニュー分割・i18n・言語設定化）（P1）
+- ブランチ: `refactor/ui-usermenu/split-and-i18n`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: packages/ui/usermenu/src/components/UserLoginButton.tsx, ui-i18n 設定, テーマ/言語/DBクリアの各メニュー表示
+- 受け入れ基準（DoD）:
+  - [ ] UserLoginButton を UserMenu / ThemeMenu / LanguageMenu / ClearDatabaseDialog コンポーネントと useUserMenu フックへ分割し、既存機能を維持する
+  - [ ] 表示文言を i18n 化し、Language メニュー項目も翻訳対応する
+  - [ ] 言語リストを en/ja のハードコードではなく設定（i18n の supportedLngs 等）から生成する
+  - [ ] 関連パッケージの typecheck（例: `pnpm --filter @hierarchidb/ui-usermenu typecheck` もしくは該当範囲の typecheck）を実行し、結果を運用ログに記録する（不可なら理由記載）
+  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+- チェックリスト:
+  - [ ] UserLoginButton.tsx を分割し、メニュー/ダイアログ/フックをそれぞれ独立させる
+  - [ ] 文言を i18n キーへ置換し、言語メニューの選択肢を設定値から組み立てる
+  - [ ] typecheck を実行し、結果を運用ログへ記録する
+- ロールバック手順：本タスクで追加/分割するコンポーネント・フック・locale 変更を revert し、同じ typecheck を再実行する
+
+1625) Basic Info ステップの固定英語文言を i18n 化（P1）
+- ブランチ: `fix/ui-basic-info/i18n-labels`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugin-ui-host（BasicInfo ステップ UI）、app/プラグインダイアログの Basic Info 表示、i18n locale (common.json)
+- 受け入れ基準（DoD）:
+  - [ ] Basic Info ステップの文言（"Update the basic information for this node." / "Name" / "Description" / "Tags" / "Enter tag and press Enter"）が i18n 化され、言語切替に追従する
+  - [ ] 既存キー体系に統合し、不要な重複キーを増やさない（流用可否を確認）
+  - [ ] 関連パッケージの typecheck（例: `pnpm --filter @hierarchidb/plugin-ui-host typecheck`）を実行し、結果を運用ログに記録する（不可なら理由記載）
+  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+- チェックリスト:
+  - [ ] 文言の出典コンポーネントを特定し、i18n キーを割り当て（既存キー流用を優先）
+  - [ ] locale ファイル（en/ja）へ必要なキーを追加または更新する
+  - [ ] typecheck を実行し、結果を運用ログへ記録する
+- ロールバック手順：本タスクで変更する Basic Info 関連コンポーネントと locale ファイルの差分を revert し、同じ typecheck を再実行する
+
+1625) ダイアログ初期位置の画面中央化（P1）
+- ブランチ: `fix/ui-dialog/dialog-center-position`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: ui-dialog（MultiStepDialogFrame/display-state/init position）、plugin-ui-host（PluginDialogHost/HeadlessMultiStepDialog）、app プラグインダイアログ共通フロー
+- 受け入れ基準（DoD）:
+  - [ ] 既定のダイアログ表示位置がビューポート中央（横・縦とも）になる
+  - [ ] ウィンドウリサイズ後も中央配置が崩れない（スクロール有無含む）
+  - [ ] 既存のモーダル/ダイアログ全般で副作用がない（手動またはロジックで確認）
+  - [ ] TASKS Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+- チェックリスト:
+  - [ ] 初期位置を left/top=0 固定から viewport 中央計算へ置換し、デフォルト位置を更新する
+  - [ ] リサイズ/スクロール時の再計算または CSS が崩れないことを確認する
+  - [x] 代表的な typecheck（例: `pnpm --filter @hierarchidb/ui-dialog typecheck` または plugin-ui-host）を実行するか、未実施なら理由を記録する
+- ロールバック手順：本タスクで変更するダイアログ位置計算/スタイルの差分を revert し、実行した検証コマンドを再実行する
+
 1623) Tooltip の disabled button child 警告解消（P1）
 - ブランチ: `fix/ui-dialog/tooltip-disabled-button`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: plugin-ui-host（PluginDialogHeader/PluginDialogFooter など Tooltip を使うダイアログ共通部品）、ui-dialog（MultiStepDialogFrame）、app プラグインダイアログのヘッダー/フッター
@@ -9890,9 +9933,22 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-27 15:46 progress: fix/workingcopy/dialog-cancel-behavior — create 仮ノードを version:0 に統一し、commit/save/import で 1 以上へ昇格する方針に合わせて判定を整理。`initTreeNode` を version 0 で作成、`commitTreeNodeDraft` は version を 0 起点で +1、`discardTreeNodeDraft` は committed 判定を version>0/データ有無のみに簡素化。UI cancel で forceDelete を渡すよう修正済み。`pnpm --filter @hierarchidb/runtime-worker test -- --run cancel-create` exit 0。
 
 ## 今日の着手（運用ログ） <a id="worklog-16"></a>
+- 2025-12-13 05:15 start: fix/ui-dialog/dialog-center-position — デフォルトのダイアログ表示位置をビューポート中央に揃える対応を開始。DoD: 既定位置を中央へ変更、リサイズ後も崩れないこと、回帰なし確認、TASKS 更新とロールバック明記。branch は `fix/ui-dialog/dialog-center-position`（作成不可なら main）。
+- 2025-12-13 05:25 progress: fix/ui-dialog/dialog-center-position — 初期フレームを viewport ベースの中心座標/サイズで正規化し、未移動状態のままリサイズした場合も中央へ再計算するガードを追加。ユーザー操作で位置/サイズ変更した場合はリサイズ時の再センタリングを無効化。
+- 2025-12-13 05:27 command: pnpm --filter @hierarchidb/plugin-ui-host typecheck — exit 0。
+- 2025-12-13 05:50 progress: fix/ui-dialog/dialog-center-position — dialogUIState のデフォルトを空オブジェクトに変更し、保存された位置情報が無い場合は UI 側の初期計算（中央寄せ）を必ず適用するように調整。既定の 0,0 位置を廃止。
+- 2025-12-13 05:51 command: pnpm --filter @hierarchidb/plugin-ui-sdk typecheck — exit 0。
+- 2025-12-13 06:05 progress: fix/ui-dialog/dialog-center-position — CoreDB/TreeNodeUpdaterService の dialogUIState デフォルトを null（位置未設定）に変更し、Worker が 0,0 を書き込まないよう修正。初期描画は UI 側が viewport 中央を計算する前提に統一。
+- 2025-12-13 06:06 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0。
 - 2025-12-13 09:00 start: fix/ui-dialog/tooltip-disabled-button — MUI Tooltip が disabled button を直接子に持つ警告を解消するタスクに着手。DoD: 警告解消・挙動維持・関連 typecheck 実行と記録・TASKS 更新とロールバック明記。branch は `fix/ui-dialog/tooltip-disabled-button`（作成不可なら main）。
 - 2025-12-13 09:20 progress: fix/ui-dialog/tooltip-disabled-button — PluginDialogHeader の close/info Tooltip 配下で disabled IconButton を span ラップに変更し、aria-label を string 正規化して警告要因を除去。
 - 2025-12-13 09:21 command: pnpm --filter @hierarchidb/plugin-ui-host typecheck — exit 0。
+- 2025-12-13 10:00 start: fix/ui-basic-info/i18n-labels — Basic Info ステップの英語固定文言を i18n 化する作業を開始。DoD: 文言を i18n キーへ統合・言語切替対応・typecheck 実行とログ記録・TASKS 更新とロールバック明記。branch は `fix/ui-basic-info/i18n-labels`（作成不可なら main）。
+- 2025-12-13 10:12 progress: fix/ui-basic-info/i18n-labels — ui-i18n の初期リソースに plugin-basic-info ns/en/ja を追加し、BasicInfoStep の翻訳キーがロードされるように修正。
+- 2025-12-13 10:13 command: pnpm --filter @hierarchidb/ui-i18n typecheck — exit 0。
+- 2025-12-13 10:20 start: refactor/ui-usermenu/split-and-i18n — UserLoginButton をメニュー/ダイアログ/フックへ分割し、表示文言の i18n 化と言語リストの設定化を行うタスクを開始。DoD: 分割・i18n・設定駆動の言語メニュー・typecheck 実行とログ記録・TASKS 更新とロールバック明記。branch は `refactor/ui-usermenu/split-and-i18n`（作成不可なら main）。
+- 2025-12-13 10:55 progress: refactor/ui-usermenu/split-and-i18n — UserLoginButton を UserMenu/ThemeMenu/LanguageMenu/ClearDatabaseDialog + useUserMenu フックに分割し、文言の i18n 化と言語リストを supportedLanguages ベースに生成するよう変更。clear database ダイアログ/警告文も i18n 追加。
+- 2025-12-13 10:56 command: pnpm --filter @hierarchidb/ui-usermenu typecheck — exit 0。
  - 2025-12-11 21:15 start: fix/plugin-ui-sdk/treenode-updater-loop — Edit Folder ダイアログを開くだけで Maximum update depth exceeded 警告が出る問題の調査/修正に着手。DoD: 警告解消と原因記録、最小修正で回帰なし、関連 typecheck 実行ログ（不可なら理由記載）を残す。
  - 2025-12-11 21:25 progress: fix/plugin-ui-sdk/treenode-updater-loop — 原因特定: useTreeNodeUpdater 内の isRecord が render ごとに再生成され、toUpdater/useEffect の依存で初期化副作用が無限に再実行されて警告が発生。isRecord を `useCallback([])` でメモ化し、toUpdater の依存を安定化。
  - 2025-12-11 21:27 command: pnpm --filter @hierarchidb/plugin-ui-sdk typecheck — exit 0。

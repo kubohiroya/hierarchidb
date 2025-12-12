@@ -19,6 +19,38 @@
     "selectTheme": "{{theme}}テーマを選択",
     "selectLanguage": "{{language}}言語を選択"
   },
+  "userMenu": {
+    "loading": "認証を読み込み中...",
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "aria": {
+      "userMenu": "ユーザーメニュー"
+    },
+    "theme": {
+      "label": "テーマ",
+      "system": "システム設定",
+      "light": "ライト",
+      "dark": "ダーク"
+    },
+    "language": {
+      "label": "言語",
+      "system": "システム設定"
+    },
+    "clear": {
+      "label": "全データを削除",
+      "title": "全データを削除しますか？",
+      "description": "次のデータをすべて削除します:",
+      "items": {
+        "cache": "Cache API のデータ",
+        "indexedDb": "IndexedDB の全データ（プロジェクト・マップ・シェイプ等）",
+        "localStorage": "localStorage のデータ"
+      },
+      "warning": "この操作は元に戻せません。全ローカルデータが削除され、完了後にページを再読み込みします。",
+      "confirm": "全データを削除",
+      "cancel": "キャンセル",
+      "error": "キャッシュの削除に失敗しました。もう一度お試しください。"
+    }
+  },
   "common": {
     "enabled": "有効",
     "disabled": "無効",

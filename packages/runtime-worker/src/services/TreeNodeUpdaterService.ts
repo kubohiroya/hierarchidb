@@ -39,11 +39,7 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
   ) {}
 
   private readonly defaultDialogUIState: DialogUIState = {
-    dialogWindow: {
-      mode: 'normal',
-      position: { x: 0, y: 0 },
-      size: { width: 960, height: 640 },
-    },
+    dialogWindow: null,
     dialogProgress: {
       activeStepIndex: 0,
     },
@@ -132,13 +128,9 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
       return node;
     }
     const fallback: DialogUIState = {
-      dialogWindow: {
-        mode: 'normal',
-        position: { x: 0, y: 0 },
-        size: { width: 960, height: 640 },
-      },
+      dialogWindow: current?.dialogWindow ?? null,
       dialogProgress: {
-        activeStepIndex: 0,
+        activeStepIndex: current?.dialogProgress?.activeStepIndex ?? 0,
       },
     };
     if (persist) {
