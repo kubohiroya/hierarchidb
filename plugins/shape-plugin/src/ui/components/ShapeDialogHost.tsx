@@ -131,6 +131,8 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
       nodeId: _nodeId,
       parentId: _parentId,
     }) => {
+      const metaFromData = (data as ShapeEntity | undefined)?.metadata;
+      const effectiveMetadata = metadata ?? metaFromData;
       const draftData = data ?? {};
       const validations = validateProcessingConfig(draftData.processingConfig ?? {}) as ValidationResult;
 
@@ -140,9 +142,9 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
           label: 'Basic Information',
           component: (
             <BasicInfoStep
-              name={metadata?.name ?? ''}
-              description={metadata?.description ?? ''}
-              tags={metadata?.tags ?? []}
+              name={effectiveMetadata?.name ?? ''}
+              description={effectiveMetadata?.description ?? ''}
+              tags={effectiveMetadata?.tags ?? []}
               mode={mode}
               onChange={({ name, description, tags }: BasicInfoData) =>
                 persistBasicInfo({
@@ -154,7 +156,7 @@ export const ShapeDialogHost: React.FC<ShapeDialogProps> = ({
               validate={(value: BasicInfoData) => (value.name.trim().length ? null : 'Name is required')}
             />
           ),
-          validate: () => Boolean(metadata?.name?.trim()),
+          validate: () => Boolean(effectiveMetadata?.name?.trim()),
         },
         {
           id: 'upload',

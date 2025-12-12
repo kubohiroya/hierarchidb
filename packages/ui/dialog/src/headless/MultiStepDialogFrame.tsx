@@ -86,6 +86,19 @@ export function MultiStepDialogFrame<TData>(props: MultiStepDialogFrameComponent
     onRequestClose?.('close');
   }, [onRequestClose, open]);
 
+  // Ensure Escape works even when focus is not on the dialog root (e.g., inside portals/overlays).
+  useEffect(() => {
+    if (!isBrowser || !open) return;
+    const handler = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      onRequestClose?.('close');
+    };
+    window.addEventListener('keydown', handler, { capture: true });
+    return () => {
+      window.removeEventListener('keydown', handler, { capture: true });
+    };
+  }, [isBrowser, onRequestClose, open]);
+
   useEffect(() => {
     if (!isBrowser) return;
     if (!open) return;

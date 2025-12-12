@@ -201,6 +201,7 @@ export function usePluginDialogController(
   useEffect(() => {
     dialogUIStateRef.current = dialogUIState ?? null;
   }, [dialogUIState]);
+  const isDialogReady = Boolean(dialogUIState);
 
   const updateDialogUIState = useCallback(
     (patch: Partial<DialogUIState>) => {
@@ -237,6 +238,7 @@ export function usePluginDialogController(
     nodeId,
     pageNodeId,
     initialStep,
+    initialDialogUIState: dialogUIState,
   });
 
   const dialogStateRestoredRef = useRef(false);
@@ -660,11 +662,12 @@ export function usePluginDialogController(
         metadata: undefined,
         dialogUIState: getPersistableDialogUIState(),
       } as any);
-      onSuccess?.(savedNodeId);
-      navigateToNode(savedNodeId);
+      const targetId = (savedNodeId ?? treeUpdater?.treeNodeId ?? nodeId) as NodeId;
+      onSuccess?.(targetId);
+      navigateToNode(targetId);
       onClose();
     });
-  }, [basicInfo.description, basicInfo.name, basicInfo.tags, commitTreeNodeUpdater, dialogData, ensureNoConflict, getPersistableDialogUIState, navigateToNode, nodeType, onClose, onSuccess, runWithPending, updateLocalDraft]);
+  }, [basicInfo.description, basicInfo.name, basicInfo.tags, commitTreeNodeUpdater, dialogData, ensureNoConflict, getPersistableDialogUIState, navigateToNode, nodeType, onClose, onSuccess, runWithPending, treeUpdater?.treeNodeId, updateLocalDraft, nodeId]);
 
   useEffect(() => {
     handleSubmitRef.current = handleSubmit;
@@ -871,7 +874,11 @@ export function usePluginDialogController(
   );
 
   const handleRequestCommit = useCallback(() => {
-    handleSubmitRef.current?.().catch(() => void 0);
+    handleSubmitRef.current?.().catch((err) => {
+      if (typeof console !== 'undefined' && typeof console.error === 'function') {
+        console.error('[PluginDialogShell] commit failed', err);
+      }
+    });
   }, []);
 
   const invalidMessageMap = useMemo(() => ({}), []);
@@ -910,7 +917,7 @@ export function usePluginDialogController(
   );
 
   const headlessProps: HeadlessDialogProps<Partial<PluginDefinedEntity>> = {
-    open,
+    open: open && isDialogReady,
     stepComponents: safeStepDescriptors,
     stepData: currentStepData,
     onStepDataChange: handleStepDataChange,

@@ -9,7 +9,7 @@ import {
   positionsEqual,
 } from '@hierarchidb/ui-dialog';
 import { DEFAULT_POSITION, DEFAULT_SIZE,
-  type DialogDisplayMode, type DialogPosition, type DialogSize, type NodeId } from '@hierarchidb/common-types';
+  type DialogDisplayMode, type DialogPosition, type DialogSize, type NodeId, type DialogUIState } from '@hierarchidb/common-types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type React from 'react';
 
@@ -18,6 +18,7 @@ interface Params {
   nodeId: NodeId;
   pageNodeId: NodeId;
   initialStep: number;
+  initialDialogUIState?: DialogUIState | null;
 }
 
 export function clampIndex(index:number, length: number): number {
@@ -28,6 +29,7 @@ export function useDialogFrameState({
   nodeType: _nodeType,
   nodeId: _nodeId,
   initialStep,
+  initialDialogUIState,
 }: Params): {
   activeStepIndex: number;
   setActiveStepIndex: (value: number) => void;
@@ -66,6 +68,7 @@ export function useDialogFrameState({
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const dialogSizeRef = useRef(dialogSize);
   const dialogPositionRef = useRef(dialogPosition);
+  const hydratedKeyRef = useRef<string | null>(null);
   useEffect(() => {
     dialogSizeRef.current = dialogSize;
   }, [dialogSize]);
@@ -102,6 +105,44 @@ export function useDialogFrameState({
     },
     []
   );
+
+  useEffect(() => {
+    const key = String(_nodeId ?? 'unknown');
+    if (!initialDialogUIState) return;
+    if (hydratedKeyRef.current === key) return;
+
+    const viewport = getViewportSize();
+    const windowState = initialDialogUIState.dialogWindow;
+    const progressState = initialDialogUIState.dialogProgress;
+    const mode = windowState?.mode ?? 'normal';
+    const size = windowState?.size ?? dialogSizeRef.current;
+    const position = windowState?.position ?? dialogPositionRef.current;
+
+    if (mode === 'full-screen') {
+      persistSize({
+        width: Math.max(viewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
+        height: Math.max(viewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
+      });
+      persistPosition({ x: 0, y: 0 });
+    } else {
+      const normalized = normalizeDialogState(size, position, viewport, {
+        enforceTopLeftMargin: mode === 'normal',
+        minPosition: 0,
+        clampSizeToViewport: true,
+      });
+      persistSize(normalized.size);
+      persistPosition(normalized.position);
+    }
+
+    persistDisplayMode(mode);
+    if (typeof progressState?.activeStepIndex === 'number') {
+      const nextStep = clampIndex(progressState.activeStepIndex, Number.POSITIVE_INFINITY);
+      setActiveStepIndex(nextStep);
+      setUrlStep(nextStep);
+    }
+
+    hydratedKeyRef.current = key;
+  }, [initialDialogUIState, persistDisplayMode, persistPosition, persistSize, setUrlStep, _nodeId]);
 
   const transitionDisplayMode = useCallback(
     async (mode: DialogDisplayMode) => {

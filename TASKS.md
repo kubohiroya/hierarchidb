@@ -53,6 +53,46 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1619) Shape Edit で name/description 空欄（Shape 専用対応）（P0）
+- ブランチ: `fix/shape/dialog-metadata-host`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin/src/ui/components/ShapeDialogHost.tsx, shape-plugin の save/commit フロー, packages/runtime-worker TreeNodeUpdaterService（共通変更は極小に）
+- 受け入れ基準（DoD）:
+  - [ ] Edit Shape ダイアログ初期表示で保存済み metadata.name / metadata.description が正しく表示される（空欄にならない）
+  - [ ] Shape 専用の修正にとどめ、他プラグイン（folder/spreadsheet/styler 等）への回帰を発生させない
+  - [ ] 代表検証として `pnpm --filter @hierarchidb/shape-plugin typecheck` を実行し、結果を運用ログに記録（不可なら理由を記載）
+- チェックリスト:
+  - [ ] ShapeDialogHost が BasicInfoStep へ渡す metadata が draftMetadata 由来であることを確認し、不要な初期化や別経路を除去
+  - [ ] Shape save/commit フローで draftMetadata を空にする経路があれば Shape 側で修正する
+  - [ ] typecheck 実行と運用ログ記録
+- ロールバック手順：本タスクで変更する Shape プラグインの差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行して従来挙動へ戻す
+
+1620) Esc 押下でダイアログが閉じない回帰の修正（P0）
+- ブランチ: `fix/ui-dialog/esc-close-regression`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: packages/ui/dialog (MultiStepDialogFrame), packages/plugin-ui-host (PluginDialogHost など), app プラグインダイアログ共通フロー
+- 受け入れ基準（DoD）:
+  - [ ] Esc キーで閉じられるべきダイアログ（未保存なしの場合）が正常に閉じる
+  - [ ] 未保存ありの場合の確認/保護挙動は既存どおり維持する
+  - [ ] 代表検証として影響パッケージの typecheck を実行し、結果を運用ログに記録（不可なら理由を記載）
+- チェックリスト:
+  - [ ] Esc ハンドリングが無効化されている箇所を特定し、回帰要因を除去する
+  - [ ] 既存の未保存保護ロジックと競合しないように修正する
+  - [ ] 検証コマンドと手動確認（可能なら）を運用ログへ記録
+- ロールバック手順：本タスクで変更する Esc ハンドリング関連ファイルを revert し、同じ typecheck（と手動確認）を再実行する
+
+1621) useTreeNodeDialog 廃止（Folder/Timeline/Shape を steps-provider へ統一）（P0）
+- ブランチ: `refactor/dialog/remove-useTreeNodeDialog`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: packages/plugin-ui-sdk/src/hooks/useTreeNodeDialog.tsx, plugins/{folder-plugin,timeline-plugin,shape-plugin}/src/ui, PluginStepRegistry 登録
+- 受け入れ基準（DoD）:
+  - [ ] Folder/Timeline/Shape のダイアログが PluginStepRegistry の steps-provider 登録のみで動作し、useTreeNodeDialog への依存をなくす
+  - [ ] useTreeNodeDialog フックとエクスポートを削除し、利用箇所をすべて置き換える（テスト/文書も更新）
+  - [ ] 代表検証として該当プラグイン/SDK の typecheck を実行し、結果を運用ログへ記録する（不可なら理由を記載）
+- チェックリスト:
+  - [ ] Folder/Timeline/Shape それぞれで steps-provider を実装し PluginStepRegistry に登録する
+  - [ ] 既存の DialogHost 参照を steps-provider ベースの呼び出しに差し替える（不要な Host は削除）
+  - [ ] plugin-ui-sdk/index から useTreeNodeDialog を削除し、README/テストの参照も更新する
+  - [ ] typecheck を実行し、結果を運用ログへ記録する
+- ロールバック手順：本タスクで削除/置換した useTreeNodeDialog 関連差分を revert し、元の DialogHost 構成に戻した上で typecheck を再実行する
+
 1615) Plugin worker/database exports ガード（P0）
 - ブランチ: `fix/runtime-worker/skip-missing-exports`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: packages/runtime-worker/src/di/PluginWorkerModuleLoader.ts, packages/plugin-registry, plugins/*/package.json
@@ -4137,6 +4177,10 @@ P2:
   - 要点：useTreeNodeDialog で Worker に保存された dialogUIState（position/size/mode/activeStepIndex）を初回 open 時に正規化して適用し、未保存時は従来デフォルトを維持するようにした。close→reopen でも保存値が初期化に使われる。
   - 検証：`pnpm --filter @hierarchidb/plugin-ui-sdk typecheck`（2025-12-11 21:55 JST）exit 0。
   - ロールバック手順：`packages/plugin-ui-sdk/src/hooks/useTreeNodeDialog.tsx` の今回差分を revert し、上記 typecheck を再実行する。
+- 1618) Edit Shape ダイアログで metadata name/description が空欄（P0） — 完了 (2025-12-11)
+  - 要点：TreeNodeUpdaterService.ensureDraftMetadata が draftData 不在時に draftMetadata を残したまま返していたため、Worker から draftMetadata=null が返り初期表示が空欄になっていた。draftMetadata が null の場合は常に metadata でシードするよう修正し、初期値欠落を解消。
+  - 検証：`pnpm --filter @hierarchidb/runtime-worker typecheck`（2025-12-11 22:21 JST）exit 0。
+  - ロールバック手順：`packages/runtime-worker/src/services/TreeNodeUpdaterService.ts`（必要なら `packages/plugin-ui-sdk/src/hooks/useTreeNodeUpdater.ts` の補助修正も）を revert し、同 typecheck を再実行する。
 - 1616) Edit Folder ダイアログで最大更新深度警告（P0） — 完了 (2025-12-11)
   - 要点：useTreeNodeUpdater の isRecord が render ごとに再生成され、toUpdater を依存に含む初期化 useEffect が毎回発火して setDraft ループが発生していた。isRecord を `useCallback([])` でメモ化し依存を安定化、初期化副作用が一度で収束するように修正。
   - 検証：`pnpm --filter @hierarchidb/plugin-ui-sdk typecheck`（2025-12-11 21:27 JST）exit 0。手動 UI 確認は未実施。
@@ -9825,6 +9869,24 @@ ToDo（Phase 2/3: any の完全撤去）
  - 2025-12-11 21:52 progress: fix/plugin-ui-sdk/dialog-ui-state-initial — useTreeNodeDialog で persisted dialogUIState を監視し、初回 open 時に位置/サイズ/モード/stepIndex を正規化して適用する useEffect を追加。open=false でリセットし、再オープンでも保存値が初期化に使われるようにした。
  - 2025-12-11 21:55 command: pnpm --filter @hierarchidb/plugin-ui-sdk typecheck — exit 0。
  - 2025-12-11 21:56 done: fix/plugin-ui-sdk/dialog-ui-state-initial — dialogUIState が Worker に保存されている場合は初期表示へ反映し、未保存時は従来デフォルトを維持するよう修正。共通 hook のため全プラグインダイアログに適用。ロールバック: packages/plugin-ui-sdk/src/hooks/useTreeNodeDialog.tsx の今回差分を revert し、同 typecheck を再実行。
+ - 2025-12-11 22:05 start: fix/shape/dialog-metadata-initial — Edit Shape ダイアログで metadata.name/description が初期表示で空欄になる問題を調査開始。DoD: 保存済み metadata を入力欄へ反映、未保存時デフォルト維持、他プラグインに回帰なし、typecheck 実行ログを残す。
+ - 2025-12-11 22:10 progress: fix/shape/dialog-metadata-initial — useTreeNodeUpdater で draftMetadata が null の場合に metadata が存在すれば常にシードするよう条件を緩和（metadata が空オブジェクトでもコピー）。metadata 初期値が draft に入らないケースを防止。
+ - 2025-12-11 22:12 command: pnpm --filter @hierarchidb/plugin-ui-sdk typecheck — exit 0。
+ - 2025-12-11 22:20 progress: fix/shape/dialog-metadata-initial — TreeNodeUpdaterService.ensureDraftMetadata で draftMetadata が null の場合に metadata へ必ずフォールバックするよう修正（draftData 有無に関わらずシード）。Worker から返る draftMetadata=null を根本解消。
+ - 2025-12-11 22:21 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0。
+ - 2025-12-11 22:22 done: fix/shape/dialog-metadata-initial — Worker 側で draftMetadata を必ず metadata で初期化するようにし、Shape Edit の name/description 空欄を解消。ロールバック: packages/runtime-worker/src/services/TreeNodeUpdaterService.ts と（補助的に）packages/plugin-ui-sdk/src/hooks/useTreeNodeUpdater.ts の今回差分を revert し、関連 typecheck を再実行。
+ - 2025-12-11 22:55 progress: fix/shape/dialog-metadata-initial — useTreeNodeDialog で metadata を treeNodeUpdater.metadata にフォールバックするよう変更（draftMetadata が欠落した場合でも表示用に利用）。UI 側も metadata を保持する TreeNodeUpdaterState への拡張に合わせて参照。
+ - 2025-12-11 22:56 command: pnpm --filter @hierarchidb/plugin-ui-sdk typecheck — exit 0。
+ - 2025-12-11 23:05 start: fix/shape/dialog-metadata-host — Shape でのみ name/description が空欄になる問題を Shape 側の DialogHost/フローに限定して調査開始。共通コードには触れず、draftMetadata がそのまま BasicInfo に届く経路を確認する。
+ - 2025-12-11 23:30 progress: fix/shape/dialog-metadata-host — ShapeDialogHost で BasicInfoStep の初期値を draftMetadata（必要なら data.metadata）に限定し、UI 側でデフォルトを埋めない形に統一。検証: `pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。
+ - 2025-12-11 23:38 progress: fix/ui-dialog/esc-close-regression — MultiStepDialogFrame に Escape のグローバル keydown リスナー（capture）を追加し、フォーカスが外れていても Esc で onRequestClose が走るように修正。検証: `pnpm --filter @hierarchidb/ui-dialog typecheck` exit 0。
+ - 2025-12-11 23:45 progress: fix/shape/dialog-metadata-host — runtime-worker TreeNodeUpdaterService で null/undefined を明示的に扱うようにし、型エラーなく draftMetadata シードを維持。検証: `pnpm --filter @hierarchidb/runtime-worker typecheck` exit 0。
+ - 2025-12-11 23:50 progress: fix/ui-dialog/esc-close-regression — folder-plugin に steps-provider を追加し、PluginStepRegistry で Basic Info を登録（useTreeNodeDialog 直ホストと併存）。検証: `pnpm --filter @hierarchidb/folder-plugin typecheck` exit 0。
+ - 2025-12-12 00:05 start: refactor/dialog/remove-useTreeNodeDialog — useTreeNodeDialog を廃止し、Folder/Timeline/Shape を steps-provider 登録に統一する作業を開始。DoD: 3 プラグインのダイアログが steps-provider のみで動作し、SDK から useTreeNodeDialog が削除されること。typecheck 結果を運用ログへ記録。
+ - 2025-12-11 23:30 progress: fix/shape/dialog-metadata-host — ShapeDialogHost で BasicInfoStep に渡す metadata を draftMetadata のみ（data.metadata フォールバック程度）に限定し、共通コードのデフォルト埋め込みを撤去。検証: `pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。
+ - 2025-12-11 23:35 progress: fix/ui-dialog/esc-close-regression — MultiStepDialogFrame に Escape のグローバル keydown リスナー（capture）を追加し、フォーカスが外れていても Esc で onRequestClose が走るようにした。検証: `pnpm --filter @hierarchidb/ui-dialog typecheck` exit 0。
+ - 2025-12-11 22:40 progress: fix/shape/dialog-metadata-initial — TreeNodeUpdaterState に metadata（コミット済み）を保持し、useTreeNodeUpdater の state 更新でも保持するように拡張。UI 側が draftMetadata を取り損ねた場合でも metadata を参照できるようにするための防御的対応。
+ - 2025-12-11 22:42 command: pnpm --filter @hierarchidb/plugin-ui-sdk typecheck — exit 0。
  - 2025-12-11 16:55 start: investigate/dialog-ui-state-persist — SaveDraft/Save/Create 永続化時に dialogUIState が Worker へ渡るかコード確認。DoD: UI→Worker 呼び出し経路と引数を特定し記録、変更なし。
 - 2025-12-11 17:20 progress: investigate/dialog-ui-state-persist — updateTreeNodeDialogUIState を廃止し、commitDraft リクエストに draftMetadata/draftData/dialogUIState/data/metadata をまとめて渡す形に統合。commitTreeNodeDraft で dialogUIState を保持し、save-draft モードを追加（TreeNodeUpdaterService）。SDK の persist/commit/saveDraft も単一 commitDraft 呼び出しに変更。
 - 2025-12-11 17:40 progress: investigate/dialog-ui-state-persist — 自動デバウンス保存を撤去し、SaveDraft/Save/Create 時のみ commitDraft を呼ぶよう整理。handleSaveDraft は commitTreeNodeUpdater(mode: 'save-draft') を直接呼び出す形に変更。

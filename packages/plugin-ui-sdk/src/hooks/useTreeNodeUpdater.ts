@@ -1,5 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { NodeId, TreeId, TreeNode, NodeType, TreeNodeMetadata, DialogUIState, Timestamp } from '@hierarchidb/common-types';
+import {
+  NodeId,
+  TreeId,
+  TreeNode,
+  NodeType,
+  TreeNodeMetadata,
+  DialogUIState,
+  Timestamp,
+  DialogSize,
+  DialogPosition,
+  TreeNodeData,
+} from '@hierarchidb/common-types';
 import type {
   CommitDraftMode,
   DiscardDraftOptions,
@@ -10,7 +21,7 @@ import type { WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import { Remote } from 'comlink';
 
-export interface TreeNodeUpdaterState<TPayload extends Record<string, unknown> = Record<string, unknown>> {
+export interface TreeNodeUpdaterState<TPayload extends TreeNodeData = TreeNodeData> {
   treeNodeId: NodeId;
   draftMetadata: TreeNodeMetadata | null;
   draftData: TPayload | null;
@@ -20,7 +31,7 @@ export interface TreeNodeUpdaterState<TPayload extends Record<string, unknown> =
   hasRemoteDraft?: boolean;
 }
 
-export interface UseTreeNodeUpdaterOptions<TPayload extends Record<string, unknown> = Record<string, unknown>> {
+export interface UseTreeNodeUpdaterOptions<TPayload extends TreeNodeData = TreeNodeData> {
   mode: 'create' | 'edit';
   nodeType: string;
   nodeId?: NodeId;
@@ -33,7 +44,7 @@ export interface UseTreeNodeUpdaterOptions<TPayload extends Record<string, unkno
   autoDiscardOnUnload?: boolean;
 }
 
-export interface UseTreeNodeUpdaterResult<TPayload extends Record<string, unknown> = Record<string, unknown>> {
+export interface UseTreeNodeUpdaterResult<TPayload extends TreeNodeData = TreeNodeData> {
   treeNodeUpdater: TreeNodeUpdaterState<TPayload> | null;
   hasUnsavedChanges: boolean;
   updateTreeNodeUpdater: (data: Partial<TreeNodeUpdaterState<TPayload>>) => void;
@@ -48,9 +59,22 @@ export interface UseTreeNodeUpdaterResult<TPayload extends Record<string, unknow
 }
 
 // Shared alias for dialog payloads; intentionally does not include metadata/version/timestamps.
-export type PluginDialogData<TPayload extends Record<string, unknown> = Record<string, unknown>> = TPayload;
+export type PluginDialogData<TPayload extends TreeNodeData = TreeNodeData> = TPayload;
 
-export const createTreeNodeUpdaterActions = <TPayload extends Record<string, unknown> = Record<string, unknown>>(
+const DEFAULT_DIALOG_SIZE: DialogSize = { width: 960, height: 640 };
+const DEFAULT_DIALOG_POSITION: DialogPosition = { x: 0, y: 0 };
+const DEFAULT_DIALOG_UI_STATE: DialogUIState = {
+  dialogWindow: {
+    mode: 'normal',
+    position: DEFAULT_DIALOG_POSITION,
+    size: DEFAULT_DIALOG_SIZE,
+  },
+  dialogProgress: {
+    activeStepIndex: 0,
+  },
+};
+
+export const createTreeNodeUpdaterActions = <TPayload extends TreeNodeData = TreeNodeData>(
   updateDraft: (data: Partial<TreeNodeUpdaterState<TPayload>>) => void
 ) => {
   const updatePayload = (patch: Partial<TPayload>, base?: TPayload) => {
@@ -105,7 +129,8 @@ export function useTreeNodeUpdater<TPayload extends Record<string, unknown> = Re
     }
     const draftData =
       node.draftData && isRecord(node.draftData) ? (node.draftData as TPayload) : null;
-    const dialogUIState = (node as { dialogUIState?: DialogUIState | null }).dialogUIState ?? ({} as DialogUIState);
+    const dialogUIState =
+      (node as { dialogUIState?: DialogUIState | null }).dialogUIState ?? DEFAULT_DIALOG_UI_STATE;
     return {
       treeNodeId: node.id as NodeId,
       draftMetadata,
@@ -141,7 +166,7 @@ export function useTreeNodeUpdater<TPayload extends Record<string, unknown> = Re
           // If drafts are empty, seed them from committed values so the dialog edits a draft copy.
           const needsDraftMeta =
             ((existing as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata ?? null) === null &&
-            (existing.metadata ? Object.keys(existing.metadata).length > 0 : false);
+            existing.metadata !== undefined;
           const needsDraftData =
             ((existing as { draftData?: Record<string, unknown> | null }).draftData ?? null) === null &&
             // Skip seeding when committed data is null (template-driven nodes often have draftData prefilled)
@@ -236,15 +261,16 @@ export function useTreeNodeUpdater<TPayload extends Record<string, unknown> = Re
         const nextDraftMetadata = data.draftMetadata !== undefined ? data.draftMetadata : prev.draftMetadata ?? null;
         const nextDraftData =
           data.draftData !== undefined ? data.draftData : data.draftData === null ? null : prev.draftData ?? null;
+        const nextDialogUIState =
+          data.dialogUIState !== undefined
+            ? data.dialogUIState ?? DEFAULT_DIALOG_UI_STATE
+            : prev.dialogUIState ?? DEFAULT_DIALOG_UI_STATE;
 
         const merged: TreeNodeUpdaterState<TPayload> = {
           treeNodeId: prev.treeNodeId,
           draftMetadata: nextDraftMetadata ?? null,
           draftData: nextDraftData ?? null,
-          dialogUIState:
-            data.dialogUIState !== undefined
-              ? data.dialogUIState
-              : prev.dialogUIState ?? null,
+          dialogUIState: nextDialogUIState,
           version: data.version ?? prev.version,
           updatedAt: data.updatedAt ?? prev.updatedAt,
           hasRemoteDraft: data.hasRemoteDraft ?? prev.hasRemoteDraft,
@@ -291,6 +317,15 @@ export function useTreeNodeUpdater<TPayload extends Record<string, unknown> = Re
 
         let refreshedCopy: TreeNodeUpdaterState<TPayload>;
         if (latestNode) {
+          // Ensure draftMetadata exists for toUpdater even if commit cleared drafts
+          if ((latestNode as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata === null) {
+            (latestNode as { draftMetadata?: TreeNodeMetadata | null }).draftMetadata =
+              (latestNode as { metadata?: TreeNodeMetadata | null }).metadata ?? {
+                name: '',
+                description: '',
+                tags: [],
+              };
+          }
           refreshedCopy = toUpdater(latestNode as TreeNode);
           refreshedCopy = {
             ...refreshedCopy,
