@@ -6,7 +6,10 @@
 import type { NodeId } from '@hierarchidb/common-types';
 
 export interface StylerExtensionData {
-  styleType?: 'choropleth' | 'heatmap' | 'points' | 'lines';
+  stylerConfig?: {
+    styleType?: 'choropleth' | 'points' | 'lines';
+  };
+  styleType?: 'choropleth' | 'points' | 'lines'; // legacy
   dataSource?: string;
   colorScheme?: string;
   opacity?: number;
@@ -38,9 +41,13 @@ export class StylerExtensionHandler {
 
     // 2. Store configuration in StylerDB
     try {
+      const resolvedStyleType = data.stylerConfig?.styleType ?? data.styleType ?? 'choropleth';
       const config: StylerStoredConfig = {
         nodeId,
-        styleType: data.styleType || 'choropleth',
+        stylerConfig: {
+          ...(data.stylerConfig ?? {}),
+          styleType: resolvedStyleType,
+        },
         dataSource: data.dataSource || '',
         colorScheme: data.colorScheme || 'viridis',
         opacity: data.opacity || 0.8,
@@ -75,6 +82,7 @@ export class StylerExtensionHandler {
       }
 
       // 2. Merge with new data
+      const resolvedStyleType = data.stylerConfig?.styleType ?? data.styleType ?? existingConfig.stylerConfig?.styleType ?? 'choropleth';
       const updatedConfig: StylerStoredConfig = {
         ...(existingConfig ?? ({ nodeId } as StylerStoredConfig)),
         ...data,
@@ -82,6 +90,11 @@ export class StylerExtensionHandler {
         colorScheme: data.colorScheme ?? existingConfig?.colorScheme ?? 'viridis',
         opacity: data.opacity ?? existingConfig?.opacity ?? 0.8,
         strokeWidth: data.strokeWidth ?? existingConfig?.strokeWidth ?? 1,
+        stylerConfig: {
+          ...(existingConfig.stylerConfig ?? {}),
+          ...(data.stylerConfig ?? {}),
+          styleType: resolvedStyleType,
+        },
         updatedAt: Date.now(),
         createdAt: (existingConfig as StylerStoredConfig | null)?.createdAt ?? Date.now(),
       };
@@ -132,7 +145,8 @@ export class StylerExtensionHandler {
     const errors: string[] = [];
 
     // Validate style type
-    if (data.styleType && !['choropleth', 'heatmap', 'points', 'lines'].includes(data.styleType)) {
+    const styleType = data.stylerConfig?.styleType ?? data.styleType;
+    if (styleType && !['choropleth', 'points', 'lines'].includes(styleType)) {
       errors.push('Invalid style type');
     }
 

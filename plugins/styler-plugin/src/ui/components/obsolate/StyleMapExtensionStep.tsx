@@ -13,11 +13,11 @@ import {
   Typography,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
-import { StylerStepData } from '../../../common/types/stylerTypes.js';
+import { StylerMappingDefault, StylerStepData, type StyleType } from '../../../common/types/StylerEntity.js';
 import type React from 'react';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StylerStepProps } from './StylerStepProps.js';
+import { StylerStepProps } from '../StylerStepProps.tsx';
 
 export const StylerExtensionStep: React.FC<StylerStepProps> = ({
   data,
@@ -27,8 +27,13 @@ export const StylerExtensionStep: React.FC<StylerStepProps> = ({
 }) => {
   const { t } = useTranslation('styler-plugin');
   const handleStyleTypeChange = useCallback(
-    (event: SelectChangeEvent<StylerStepData['styleType']>) => {
-      onChange({ ...data, styleType: event.target.value as StylerStepData['styleType'] });
+    (event: SelectChangeEvent<StyleType>) => {
+      const styleType = event.target.value as StyleType;
+      const mapping = { ...StylerMappingDefault, ...(data.mapping ?? {}), styleType };
+      onChange({
+        ...data,
+        mapping,
+      });
     },
     [data, onChange]
   );
@@ -82,14 +87,13 @@ export const StylerExtensionStep: React.FC<StylerStepProps> = ({
       <FormControl fullWidth disabled={isSubmitting}>
         <InputLabel>{String(t('extension.styleType.label', 'Style Type'))}</InputLabel>
         <Select
-          value={data.styleType || 'choropleth'}
+          value={data.mapping?.styleType || 'choropleth'}
           onChange={handleStyleTypeChange}
           label={String(t('extension.styleType.label', 'Style Type'))}
         >
           <MenuItem value="choropleth">
             {t('extension.styleType.choropleth', 'Choropleth Map')}
           </MenuItem>
-          <MenuItem value="heatmap">{t('extension.styleType.heatmap', 'Heat Map')}</MenuItem>
           <MenuItem value="points">{t('extension.styleType.points', 'Point Map')}</MenuItem>
           <MenuItem value="lines">{t('extension.styleType.lines', 'Line Map')}</MenuItem>
         </Select>

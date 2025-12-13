@@ -6,7 +6,7 @@
  * :
  */
 
-import type { ColorAlgorithm, StylerTableRow } from '../types/stylerTypes.js';
+import type { ColorAlgorithm, StylerTableRow } from '../types/StylerEntity.js';
 
 /**
  */

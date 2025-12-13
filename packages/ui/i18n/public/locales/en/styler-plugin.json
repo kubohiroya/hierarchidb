@@ -82,7 +82,7 @@
       "label": "Opacity"
     }
   },
-  "step5": {
+  "step5_legacy": {
     "title": "Step 5: Style Mapping Configuration",
     "algorithms": {
       "linear": "Linear",

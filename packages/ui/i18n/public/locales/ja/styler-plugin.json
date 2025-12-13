@@ -6,7 +6,7 @@
       "label": "スタイル種別",
       "help": "このスタイルが対象とするジオメトリを選択します。",
       "options": {
-        "choropleth": "面の塗り分け",
+        "choropleth": "面の描画",
         "points": "点の描画",
         "lines": "線の描画"
       },
@@ -62,7 +62,7 @@
     "description": "このフォルダ用の Styler 可視化設定を行います。",
     "styleType": {
       "label": "スタイル種別",
-      "choropleth": "面の塗り分け",
+      "choropleth": "面の描画",
       "points": "点の描画",
       "lines": "線の描画"
     },
@@ -82,7 +82,7 @@
       "label": "不透明度"
     }
   },
-  "step5": {
+  "step5_legacy": {
     "title": "ステップ5: スタイルマッピング設定",
     "algorithms": {
       "linear": "線形補間",

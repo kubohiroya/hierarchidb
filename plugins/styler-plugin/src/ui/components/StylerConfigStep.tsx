@@ -1,18 +1,25 @@
 import { wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
 import { Box } from '@mui/material';
 import React, { useCallback } from 'react';
-import type { StylerConfig, StylerStepData } from '../../../common/types/stylerTypes.js';
-import { StylerConfigDefault } from '../../../common/types/stylerTypes.js';
-import { StylerMapping } from './StylerMapping.js';
-import { StylerStepProps } from './StylerStepProps.js';
+import { i18n } from '@hierarchidb/ui-i18n';
+import { StylerConfig, StylerMapping, StylerMappingDefault, StylerStepData } from '../../common/types/StylerEntity.js';
+import { StylerConfigDefault } from '../../common/types/StylerEntity.js';
+import { StylerConfigPanel } from './StylerConfigPanel.tsx';
+import { StylerStepProps } from './StylerStepProps.tsx';
 
-export const StylerStep5: React.FC<StylerStepProps> = ({
+const getStylerT = () =>
+  typeof i18n.getFixedT === 'function'
+    ? i18n.getFixedT(i18n.language ?? 'en', 'styler-plugin')
+    : (i18n.t.bind(i18n) as typeof i18n.t);
+
+export const StylerConfigStep: React.FC<StylerStepProps> = ({
   data,
   onChange,
   onValidate,
   tabularData = [],
 }) => {
   const currentConfig: StylerConfig = data?.stylerConfig || StylerConfigDefault;
+  const currentMapping: StylerMapping = data?.mapping || StylerMappingDefault;
 
   const sampleValues = React.useMemo(() => {
     const valueColumn = data?.selectedValueColumn;
@@ -33,7 +40,7 @@ export const StylerStep5: React.FC<StylerStepProps> = ({
       onChange(updatedData);
 
       if (onValidate) {
-        const isValid = newConfig.mapping.min < newConfig.mapping.max;
+        const isValid = newConfig.min < newConfig.max;
         onValidate(isValid);
       }
     },
@@ -42,8 +49,9 @@ export const StylerStep5: React.FC<StylerStepProps> = ({
 
   return (
     <Box sx={{ width: '100%', p: 2 }}>
-      <StylerMapping
+      <StylerConfigPanel
         config={currentConfig}
+        mapping={currentMapping}
         onChange={handleConfigChange}
         values={sampleValues}
         selectedValueColumn={data?.selectedValueColumn}
@@ -53,20 +61,27 @@ export const StylerStep5: React.FC<StylerStepProps> = ({
   );
 };
 
-const StylerStep5Component = wrapDialogStepComponent(StylerStep5);
+const StylerConfigStepComponent = wrapDialogStepComponent(StylerConfigStep);
 
-export const StylerStep5Definition = {
+export const StylerConfigStepDefinition = {
   stepNumber: 5,
-  title: 'Style Algorithm',
-  component: StylerStep5Component,
+  get title() {
+    const t = getStylerT();
+    return t('step5.title', 'Style Algorithm');
+  },
+  component: StylerConfigStepComponent,
   validation: {
     validate: async (data: StylerStepData) => {
       const config = data?.stylerConfig ?? StylerConfigDefault;
-
-      if (config.mapping.min >= config.mapping.max) {
+      if (config.min >= config.max) {
         return {
           isValid: false,
-          errors: ['Maximum value must be greater than minimum value'],
+          errors: [
+            getStylerT()(
+              'step5.errors.range',
+              'Maximum value must be greater than minimum value'
+            ),
+          ],
         };
       }
 

@@ -1,5 +1,5 @@
 /**
- * @file StylerTablePreview.tsx
+ * @file StylerPreviewPanel.tsx
  * @description Styler table preview with color visualization (Step 6)
  * :
  * : eria-cartograph
@@ -31,8 +31,8 @@ import {
 } from '@mui/material';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 // import { VariableSizeList as List } from 'provider-window';
-import type { StylerConfig, StylerTableRow } from '../../../common/types/stylerTypes.js';
-import { valueToColor } from '../../../common/utils/colorUtils.js';
+import type { StylerConfig, StylerMapping, StylerTableRow } from '../../common/types/StylerEntity.js';
+import { valueToColor } from '../../common/utils/colorUtils.js';
 
 /**
  * :
@@ -47,6 +47,7 @@ export interface StylerTablePreviewProps {
   selectedKeyColumn?: string;
   selectedValueColumn?: string;
   config: StylerConfig;
+  mapping: StylerMapping;
   onColumnSelect?: (columnName: string, type: 'key' | 'value') => void;
   maxRows?: number;
   enableVirtualization?: boolean;
@@ -161,6 +162,7 @@ const TableRowComponent: React.FC<{
   selectedKeyColumn?: string;
   selectedValueColumn?: string;
   config: StylerConfig;
+  mapping: StylerMapping;
   showColorPreview: boolean;
 }> = React.memo(
   ({
@@ -170,6 +172,7 @@ const TableRowComponent: React.FC<{
     selectedKeyColumn,
     selectedValueColumn,
     config,
+    mapping,
     showColorPreview,
   }) => {
     const theme = useTheme();
@@ -182,10 +185,10 @@ const TableRowComponent: React.FC<{
 
       const value = rowData[selectedValueColumn];
       if (typeof value === 'number') {
-        return valueToColor(value, config);
+        return valueToColor(value, mapping, config);
       }
       return null;
-    }, [rowData, selectedValueColumn, config, showColorPreview]);
+    }, [rowData, selectedValueColumn, mapping, config, showColorPreview]);
 
     return (
       <TableRow hover>
@@ -266,11 +269,12 @@ TableRowComponent.displayName = 'TableRowComponent';
  * :
  * :
  */
-export const StylerTablePreview: React.FC<StylerTablePreviewProps> = ({
+export const StylerPreviewPanel: React.FC<StylerTablePreviewProps> = ({
   data,
   selectedKeyColumn,
   selectedValueColumn,
   config,
+  mapping,
   onColumnSelect: _onColumnSelect,
   maxRows = 1000,
   // enableVirtualization = true,
@@ -423,6 +427,7 @@ export const StylerTablePreview: React.FC<StylerTablePreviewProps> = ({
                   columnWidths={columnWidths}
                   selectedKeyColumn={selectedKeyColumn}
                   selectedValueColumn={selectedValueColumn}
+                  mapping={mapping}
                   config={config}
                   showColorPreview={showColorPreview}
                 />

@@ -21,7 +21,7 @@
 ### styler-plugin
 - ✅ **実装状況**: 完成済み（SpreadsheetEntity拡張パターン）
 - ✅ **主要機能**: データ駆動型スタイルマッピング、色彩管理
-- ✅ **UI コンポーネント**: StylerStep5, StylerStep6
+- ✅ **UI コンポーネント**: StylerConfigStep, StylerStep6
 - ❌ **問題**: 依存関係参照の修正
 
 ## 正しい修正方針

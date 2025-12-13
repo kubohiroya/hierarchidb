@@ -7,8 +7,7 @@ import type { NodeId } from '@hierarchidb/common-types';
 import type { StylerDataService } from '../../services/StylerDataService.js';
 // Note: Do not implement the shared EntityHandler interface here because this handler returns
 // operation-result shapes used by tests. Build-time typing is kept local to avoid signature clashes.
-import type { StylerEntity } from '../types/StylerEntity.js';
-import { StylerConfigDefault } from '../types/stylerTypes.js';
+import { type StylerEntity, StylerConfigDefault, StylerMappingDefault } from '../types/StylerEntity.js';
 
 // Type for base handler (since SpreadsheetEntityHandler is not exported)
 type HandlerPayload<T> =
@@ -81,9 +80,11 @@ export class StylerEntityHandler {
     const entity: StylerEntity = {
       ...baseEntity,
       // Prefer requested name if provided
-      stylerConfig: data?.stylerConfig || StylerConfigDefault,
-      selectedKeyColumn: data?.selectedKeyColumn || '',
-      selectedValueColumn: data?.selectedValueColumn || '',
+      config: data?.config || StylerConfigDefault,
+      mapping: {
+        ...StylerMappingDefault,
+        ...data?.mapping
+      },
       generatedStyle: data?.generatedStyle,
     };
 
@@ -97,9 +98,11 @@ export class StylerEntityHandler {
 
     const entity: StylerEntity = {
       ...baseEntity,
-      stylerConfig: baseEntity.stylerConfig || StylerConfigDefault,
-      selectedKeyColumn: baseEntity.selectedKeyColumn || '',
-      selectedValueColumn: baseEntity.selectedValueColumn || '',
+      config: baseEntity.config || StylerConfigDefault,
+      mapping: {
+        ...StylerMappingDefault,
+        ...baseEntity.mapping
+      },
       generatedStyle: baseEntity.generatedStyle,
     };
 
@@ -119,18 +122,19 @@ export class StylerEntityHandler {
     if (baseEntity) {
       entity = {
         ...baseEntity,
-        stylerConfig: baseEntity.stylerConfig || data.stylerConfig || StylerConfigDefault,
-        selectedKeyColumn: baseEntity.selectedKeyColumn || data.selectedKeyColumn || '',
-        selectedValueColumn: baseEntity.selectedValueColumn || data.selectedValueColumn || '',
+        config: baseEntity.config || StylerConfigDefault,
+        mapping: {
+          ...StylerMappingDefault,
+          ...baseEntity.mapping
+        },
         generatedStyle: baseEntity.generatedStyle,
       };
     }
 
     if (
-      (data.stylerConfig || data.selectedKeyColumn || data.selectedValueColumn) &&
+      (data.config || data.mapping?.keyColumn || data.mapping?.valueColumn) &&
       entity &&
-      data.spreadsheetMetadataId &&
-      entity.stylerConfig.targetProperty
+      data.spreadsheetMetadataId
     ) {
       try {
         const { styleSpec, colorMapping } = await this.dataService.generateMapLibreStyle(

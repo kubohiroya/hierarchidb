@@ -18,12 +18,12 @@ import type {
   TabularProcessingConfig,
   TabularDataApi,
 } from '@hierarchidb/ui-tabular-extract';
-import type { StylerEntity } from '../common/types/StylerEntity.js';
+import type { StylerEntity, StylerMapping } from '../common/types/StylerEntity.js';
 import type {
   ColorCalculationResult,
   StylerConfig,
   StylerTableRow,
-} from '../common/types/stylerTypes.js';
+} from '../common/types/StylerEntity.js';
 import { valueToColor } from '../common/utils/colorUtils.js';
 
 type StyledCellStyle = {
@@ -37,12 +37,6 @@ type StyledRow = {
   styles: Record<string, StyledCellStyle>;
 };
 
-/**
- * : Styler
- * : SpreadsheetCSV
- * :
- * : Spreadsheet
- */
 export class StylerDataService {
   private tabularApiDriver: TabularDataApi;
   private pluginId: string = 'styler';
@@ -51,55 +45,48 @@ export class StylerDataService {
     this.tabularApiDriver = tabularApiDriver;
   }
 
-  /**
-   * Upload a tabular file and infer Styler defaults.
-   */
-  async uploadTabularFile(
+  async importTabularDataFromFile(
     file: File,
-    config: TabularProcessingConfig = {}
+    defaultConfig: TabularProcessingConfig = {}
   ): Promise<{
     tableMetadata: TabularTableMetadata;
-    suggestedConfig: Partial<StylerConfig>;
+    config: StylerConfig;
+    mapping: StylerMapping;
   }> {
-    const tableMetadata = await this.tabularApiDriver.uploadTabularFile(file, config);
+    const tableMetadata = await this.tabularApiDriver.uploadTabularFile(file, defaultConfig);
 
     //  Styler
-    const suggestedConfig = this.generateInitialStylerConfig(tableMetadata);
+    const {config, mapping} = this.generateInitialStylerConfig(tableMetadata);
 
     return {
       tableMetadata,
-      suggestedConfig,
+      config,
+      mapping,
     };
   }
 
-  /**
-   * Download a tabular file from URL and ingest it.
-   */
-  async downloadTabularFromUrl(
+  async importTabularDataFromUrl(
     url: string,
-    config: TabularProcessingConfig = {}
+    defaultConfig: TabularProcessingConfig = {}
   ): Promise<{
     tableMetadata: TabularTableMetadata;
-    suggestedConfig: Partial<StylerConfig>;
+    config: StylerConfig;
+    mapping: StylerMapping;
   }> {
-    const tableMetadata = await this.tabularApiDriver.downloadTabularFromUrl(url, config);
-    const suggestedConfig = this.generateInitialStylerConfig(tableMetadata);
+    const tableMetadata = await this.tabularApiDriver.downloadTabularFromUrl(url, defaultConfig);
+    const {config, mapping} = this.generateInitialStylerConfig(tableMetadata);
 
     return {
       tableMetadata,
-      suggestedConfig,
+      config,
+      mapping
     };
   }
 
-  /**
-   * :
-   * : SpreadsheetStyler
-   * :
-   * :
-   */
   async getStyledPreview(
     tableId: string,
-    stylerConfig: StylerConfig,
+    mapping: StylerMapping,
+    config: StylerConfig,
     filters: TabularFilterRule[] = [],
     rowCount: number = 100
   ): Promise<{ data: TabularDataResult; styledRows: StyledRow[] }> {
@@ -109,11 +96,11 @@ export class StylerDataService {
     const styledRows: StyledRow[] = data.rows.map((row) => {
       const styles: Record<string, StyledCellStyle> = {};
 
-      if (stylerConfig.valueColumn) {
-        const value = row[stylerConfig.valueColumn];
+      if (mapping.valueColumn) {
+        const value = row[mapping.valueColumn];
         if (typeof value === 'number') {
-          const colorResult = valueToColor(value, stylerConfig);
-          styles[stylerConfig.valueColumn] = {
+          const colorResult = valueToColor(value, mapping, config);
+          styles[mapping.valueColumn] = {
             backgroundColor: colorResult.color,
             opacity: colorResult.opacity,
             metadata: colorResult.metadata,
@@ -127,25 +114,20 @@ export class StylerDataService {
     return { data, styledRows };
   }
 
-  /**
-   * : MapLibre
-   * : StylerConfigMapLibre GL JS
-   * : MapLibre
-   * : MapLibre
-   */
   async generateMapLibreStyle(
     tableId: string,
     entity: StylerEntity
   ): Promise<{ styleSpec: MapLibreStyle; colorMapping: Record<string, string> }> {
-    const { stylerConfig, selectedKeyColumn, selectedValueColumn } = entity;
+    const { config, mapping } = entity;
+    const { keyColumn, valueColumn} = mapping;
 
-    if (!selectedKeyColumn || !selectedValueColumn || !stylerConfig.targetProperty) {
+    if (!keyColumn || !valueColumn || !mapping.targetProperty) {
       throw new Error('Key column, value column, and target property are required');
     }
 
     const data = await this.tabularApiDriver.getFilteredPreview(tableId, [], 1000);
     const values = data.rows
-      .map((row) => row[selectedValueColumn])
+      .map((row) => row[valueColumn])
       .filter((val): val is number => typeof val === 'number');
 
     if (values.length === 0) {
@@ -171,22 +153,22 @@ export class StylerDataService {
 
 
     values.forEach((value) => {
-      const colorResult = valueToColor(value, stylerConfig, values);
+      const colorResult = valueToColor(value, mapping, config, values);
       colorMapping[value.toString()] = colorResult.color;
     });
 
     //  MapLibre paint
-    if (stylerConfig.targetProperty) {
+    if (mapping.targetProperty) {
       const colorStops = Object.entries(colorMapping).map(([value, color]) => [
         parseFloat(value),
         color,
       ]);
 
       const paint = (targetLayer.paint ??= {});
-      paint[stylerConfig.targetProperty] = [
+      paint[mapping.targetProperty] = [
         'interpolate',
         ['linear'],
-        ['get', selectedValueColumn],
+        ['get', valueColumn],
         ...colorStops.flat(),
       ];
     }
@@ -194,29 +176,14 @@ export class StylerDataService {
     return { styleSpec, colorMapping };
   }
 
-  /**
-   * :
-   * : SpreadsheetaddTableReference
-   * :
-   */
   async addTableReference(tableId: string): Promise<void> {
     await this.tabularApiDriver.addTableReference(tableId, this.pluginId);
   }
 
-  /**
-   * :
-   * : SpreadsheetremoveTableReference
-   * :
-   */
   async removeTableReference(tableId: string): Promise<void> {
     await this.tabularApiDriver.removeTableReference(tableId, this.pluginId);
   }
 
-  /**
-   * :
-   * : Styler
-   * :
-   */
   async listStylerTables(): Promise<TabularTableMetadata[]> {
     const allTables = await this.tabularApiDriver.listTables();
     const filtered = allTables.tables.filter((table) =>
@@ -225,12 +192,7 @@ export class StylerDataService {
     return filtered.map((table) => this.ensureFullMetadata(table));
   }
 
-  /**
-   * : Styler
-   * :
-   * :
-   */
-  private generateInitialStylerConfig(tableMetadata: TabularTableMetadata): Partial<StylerConfig> {
+  private generateInitialStylerConfig(tableMetadata: TabularTableMetadata): {config: StylerConfig, mapping: StylerMapping} {
     const numericColumns = tableMetadata.columns.filter(
       (col: TabularColumnInfo) => col.type === 'number'
     );
@@ -238,58 +200,29 @@ export class StylerDataService {
     if (selectedValueColumn === undefined) {
       throw new Error('No numeric columns found in the table');
     }
-    // Return only known fields from StylerConfig
-    const cfg: Partial<StylerConfig> = {
-      algorithm: 'linear',
-      colorSpace: 'hsv',
-      targetProperty: 'fill-color',
-      mapping: {
-        min: 0,
-        max: 100,
-        hueStart: 0,
-        hueEnd: 120,
-        saturation: 0.8,
-        brightness: 0.9,
-      },
-      enabled: true,
+    const mapping = {
+      styleType: 'choropleth' as const,
       valueColumn: selectedValueColumn,
       keyColumn:
         tableMetadata.columns.find((col: TabularColumnInfo) => col.name === 'id')?.name ??
-        tableMetadata.columns[0]?.name,
+        tableMetadata.columns[0]?.name ?? "",
+      targetProperty: 'fill-color' as const,
+    } satisfies StylerMapping;
+
+    const config: StylerConfig = {
+      algorithm: 'linear',
+      colorSpace: 'hsv',
+      // targetProperty: 'fill-color',
+      //enabled: true,
+      min: 0,
+      max: 100,
+      hueStart: 0,
+      hueEnd: 120,
+      saturation: 0.8,
+      brightness: 0.9,
     };
-    if (cfg.valueColumn) {
-      cfg.selectedValueColumn = cfg.valueColumn;
-    }
-    if (cfg.keyColumn) {
-      cfg.selectedKeyColumn = cfg.keyColumn;
-    }
-    return cfg;
-  }
 
-  /**
-   * @deprecated use uploadTabularFile
-   */
-  async uploadCSVFile(
-    file: File,
-    config: TabularProcessingConfig = {}
-  ): Promise<{
-    tableMetadata: TabularTableMetadata;
-    suggestedConfig: Partial<StylerConfig>;
-  }> {
-    return this.uploadTabularFile(file, config);
-  }
-
-  /**
-   * @deprecated use downloadTabularFromUrl
-   */
-  async downloadCSVFromUrl(
-    url: string,
-    config: TabularProcessingConfig = {}
-  ): Promise<{
-    tableMetadata: TabularTableMetadata;
-    suggestedConfig: Partial<StylerConfig>;
-  }> {
-    return this.downloadTabularFromUrl(url, config);
+    return {mapping, config};
   }
 
   private ensureFullMetadata(table: TabularTableMetadataLike): TabularTableMetadata {

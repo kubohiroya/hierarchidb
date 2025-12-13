@@ -29,13 +29,13 @@ export type {
   StylerConfig,
   StylerMapping,
   TablePreviewProps,
-} from './common/types/stylerTypes.js';
+} from './common/types/StylerEntity.js';
 // Constants and defaults
 export {
   MAPLIBRE_PROPERTY_GROUPS,
   MAPLIBRE_PROPERTY_METADATA,
   StylerConfigDefault,
-} from './common/types/stylerTypes.js';
+} from './common/types/StylerEntity.js';
 export { PLUGIN_MANIFEST as StylerPluginManifest } from './plugin-manifest.js';
 // Extension definition (main plugin definition)
 

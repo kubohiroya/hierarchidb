@@ -112,19 +112,28 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
       props: StepIconProps & {
         variant?: 'validated-disabled';
         stepIndex?: number;
+        canNavigate?: boolean;
       }
     ) => {
-      const { active, completed, icon: iconProp, variant, stepIndex } = props;
+      const { active, completed, icon: iconProp, variant, stepIndex, canNavigate = true } = props;
       const isValidatedDisabled = variant === 'validated-disabled';
+      const isDisabled = !canNavigate;
+      const disabledBg = theme.palette.mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[300];
       const baseColor = active
         ? theme.palette.primary.main
-        : isValidatedDisabled
-          ? theme.palette.mode === 'dark'
-            ? theme.palette.grey[700]
-            : theme.palette.grey[300]
+        : isDisabled
+          ? disabledBg
           : theme.palette.background.paper;
-      const textColor = active ? theme.palette.common.white : theme.palette.text.primary;
-      const borderColor = active ? theme.palette.primary.main : theme.palette.divider;
+      const textColor = active
+        ? theme.palette.common.white
+        : isDisabled
+          ? theme.palette.text.disabled
+          : theme.palette.text.primary;
+      const borderColor = active
+        ? theme.palette.primary.main
+        : isDisabled
+          ? disabledBg
+          : theme.palette.divider;
       const boxShadow = active
         ? `0 0 0 2px ${alpha(
             theme.palette.primary.main,
@@ -169,9 +178,13 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
                 width: 16,
                 height: 16,
                 bgcolor: theme.palette.background.paper,
-                color: theme.palette.success.main,
+                color: isValidatedDisabled
+                  ? theme.palette.text.disabled
+                  : theme.palette.success.main,
                 borderRadius: '50%',
-                border: `1px solid ${theme.palette.success.main}`,
+                border: `1px solid ${
+                  isValidatedDisabled ? theme.palette.text.disabled : theme.palette.success.main
+                }`,
                 p: 0.25,
               }}
             />
@@ -213,7 +226,7 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
       <Stack direction="column" spacing={1} sx={{ minWidth: 0, flex: 1, pr: 2 }}>
         <Stack
           direction="row"
-          spacing={1.5}
+          spacing={1}
           alignItems="center"
           sx={(_theme) => ({
             borderRadius: 8,
@@ -232,10 +245,22 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
               {icon}
             </Box>
           )}
-          <Box sx={{ minWidth: 0 }}>
+          <Box sx={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <Typography variant="h6" noWrap>
               {title}
             </Typography>
+            {pluginDescription ? (
+              <Tooltip title={pluginDescription}>
+                <IconButton
+                  size="small"
+                  sx={{ p: 0.25 }}
+                  aria-label={pluginDescription}
+                  onPointerDown={stopPointerPropagation}
+                >
+                  <InfoOutlinedIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            ) : null}
             {headerSubtitle && (
               <Typography variant="body2" color="text.secondary" noWrap>
                 {headerSubtitle}
@@ -287,6 +312,7 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
                     <StepStatusIcon
                       {...iconProps}
                       stepIndex={indexNumber}
+                      canNavigate={canNavigate}
                       variant={isValidatedButDisabled ? 'validated-disabled' : undefined}
                     />
                   );
@@ -331,17 +357,6 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
 
       <Stack direction="row" spacing={1.5} alignItems="center">
         <Stack direction="row" spacing={0.5} alignItems="center">
-          {pluginDescription ? (
-            <Tooltip title={pluginDescription}>
-              <IconButton
-                size="small"
-                aria-label={pluginDescription}
-                onPointerDown={stopPointerPropagation}
-              >
-                <InfoOutlinedIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          ) : null}
           <Tooltip
             title={
               ctx.displayMode === 'maximize'
@@ -385,17 +400,6 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
                 ) : (
                   <FullscreenIcon fontSize="small" />
                 )}
-              </IconButton>
-            </span>
-          </Tooltip>
-          <Tooltip title={pluginDescription ?? t('dialogs.pluginDialog.tooltips.close', 'Close dialog')}>
-            <span>
-              <IconButton
-                size="small"
-                disabled={!pluginDescription}
-                aria-label={(pluginDescription ?? t('dialogs.pluginDialog.tooltips.close', 'Close dialog')) ?? ''}
-              >
-                <InfoOutlinedIcon fontSize="small" />
               </IconButton>
             </span>
           </Tooltip>

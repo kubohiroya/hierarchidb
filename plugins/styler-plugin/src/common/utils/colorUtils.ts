@@ -1,17 +1,12 @@
 /**
  * @file colorUtils.ts
  * @description Color conversion and manipulation utilities
- * :
- * : HSV/RGB/Hex
- * :
  */
 
-import type { ColorCalculationResult, StylerConfig } from '../types/stylerTypes.js';
+import type { ColorCalculationResult, StylerConfig, StylerMapping } from '../types/StylerEntity.js';
+import { StylerConfigDefault } from '../types/StylerEntity.js';
 
 /**
- * : HSVRGB
- * : HSVRGB
- * :
  * @param h - Hue (0-360)
  * @param s - Saturation (0-1)
  * @param v - Value/Brightness (0-1)
@@ -147,14 +142,15 @@ export function hexToRgb(hex: string): [number, number, number] {
  * @returns Calculated color result
  */
 export function calculateLinearColor(value: number, config: StylerConfig): ColorCalculationResult {
-  const { mapping, colorSpace } = config;
-  const { min, max } = mapping;
+ // const effectiveConfig = config ?? StylerConfigDefault;
+  const colorSpace = config.colorSpace ?? StylerConfigDefault.colorSpace;
+  const { min, max } = config;
 
   // Normalize value to 0-1 range
   const normalizedValue = max === min ? 0 : Math.max(0, Math.min(1, (value - min) / (max - min)));
 
   if (colorSpace === 'hsv') {
-    const { hueStart, hueEnd, saturation, brightness } = mapping;
+    const { hueStart, hueEnd, saturation, brightness } = config;
 
     // Interpolate hue
     let hue = hueStart + (hueEnd - hueStart) * normalizedValue;
@@ -182,8 +178,8 @@ export function calculateLinearColor(value: number, config: StylerConfig): Color
     };
   } else if (colorSpace === 'rgb') {
     // RGB interpolation
-    const startColor = mapping.startColor || '#ff0000';
-    const endColor = mapping.endColor || '#00ff00';
+    const startColor = config.startColor || StylerConfigDefault.startColor || '#ff0000';
+    const endColor = config.endColor || StylerConfigDefault.endColor || '#00ff00';
 
     const [r1, g1, b1] = hexToRgb(startColor);
     const [r2, g2, b2] = hexToRgb(endColor);
@@ -225,6 +221,7 @@ export function calculateLinearColor(value: number, config: StylerConfig): Color
 export function calculateQuantileColor(
   value: number,
   allValues: number[],
+  mapping: StylerMapping,
   config: StylerConfig
 ): ColorCalculationResult {
   // Sort values
@@ -237,13 +234,14 @@ export function calculateQuantileColor(
   // Use linear interpolation with quantile
   const mockConfig = {
     ...config,
-    mapping: {
-      ...config.mapping,
+    mapping,
+  };
+  /*
+  ...config.mapping,
       min: 0,
       max: 1,
-    },
-  };
-
+  }
+   */
   return calculateLinearColor(quantile, mockConfig);
 }
 
@@ -257,7 +255,7 @@ export function calculateQuantileColor(
  */
 export function generateColorGradient(config: StylerConfig, steps: number = 20): string {
   const colors: string[] = [];
-  const { min, max } = config.mapping;
+  const { min, max } = config;
 
   for (let i = 0; i < steps; i++) {
     const value = min + (max - min) * (i / (steps - 1));
@@ -279,6 +277,7 @@ export function generateColorGradient(config: StylerConfig, steps: number = 20):
  */
 export function valueToColor(
   value: number | null | undefined,
+  mapping: StylerMapping,
   config: StylerConfig,
   allValues?: number[]
 ): ColorCalculationResult {
@@ -297,7 +296,7 @@ export function valueToColor(
 
     case 'quantile':
       if (allValues) {
-        return calculateQuantileColor(value, allValues, config);
+        return calculateQuantileColor(value, allValues, mapping, config);
       }
       return calculateLinearColor(value, config);
 

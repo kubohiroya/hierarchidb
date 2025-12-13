@@ -25,20 +25,6 @@
             "description": "Color mapping for population density visualization"
           },
           "draftData": {
-            "styleType": "gradient",
-            "colorStops": [
-              { "value": 0, "color": "#1976d2" },
-              { "value": 1, "color": "#e53935" }
-            ]
-          }
-        },
-        {
-          "nodeType": "spreadsheet",
-          "metadata":{
-            "name": "Population Data Table",
-            "description": "Detailed population statistics by country"
-          },
-          "draftData": {
             "dataSource": {
               "type": "url",
               "source": "https://raw.githubusercontent.com/datasets/population/refs/heads/main/data/population.csv",
@@ -53,7 +39,25 @@
               "escapeChar": "\\\\",
               "skipEmptyLines": true
             },
-            "filters": []
+            "filters": [
+              {
+                "id": "dd8a2b5a-967d-494f-9c8e-bcf43155122d",
+                "column": "Year",
+                "operation": "equals",
+                "value": "2023",
+                "enabled": true
+              }
+            ],
+            "stylerConfig": {
+              "styleType": "gradient",
+              targetProperty: "fill-color",
+              "keyColumn": "Country",
+              "valueColumn": "Value"
+            },
+            "colorStops": [
+              { "value": 0, "color": "#1976d2" },
+              { "value": 1, "color": "#e53935" }
+            ]
           }
         }
       ]

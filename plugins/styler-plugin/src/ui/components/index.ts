@@ -15,12 +15,12 @@ export type {
   MapLibreStyleProperty,
   PropertyGroup,
   StylerConfig,
-} from '../../../common/types/stylerTypes.js';
+} from '../../common/types/StylerEntity.js';
 export {
   MAPLIBRE_PROPERTY_GROUPS,
   MAPLIBRE_PROPERTY_METADATA,
   StylerConfigDefault,
-} from '../../../common/types/stylerTypes.js';
+} from '../../common/types/StylerEntity.js';
 // Re-export utilities
 export {
   adjustBrightness,
@@ -33,15 +33,15 @@ export {
   rgbToHex,
   rgbToHsv,
   valueToColor,
-} from '../../../common/utils/colorUtils.js';
-export type { StylerMappingProps } from './StylerMapping.js';
+} from '../../common/utils/colorUtils.js';
+export type { StylerMappingProps } from './StylerConfigPanel.tsx';
 
 // Re-export components for direct use
-export { StylerMapping } from './StylerMapping.js';
-export type { StylerStepProps } from './StylerStepProps.js';
+export { StylerConfigPanel } from './StylerConfigPanel.tsx';
+export type { StylerStepProps } from './StylerStepProps.tsx';
 // Step 5: Style Mapping Configuration
-export { StylerStep5, StylerStep5Definition } from './StylerStep5.js';
+export { StylerConfigStep, StylerConfigStepDefinition } from './StylerConfigStep.tsx';
 // Step 6: Preview with Style Mapping
-export { StylerStep6, StylerStep6Definition } from './StylerStep6.js';
-export type { StylerTablePreviewProps } from './StylerTablePreview.js';
-export { StylerTablePreview } from './StylerTablePreview.js';
+export { StylerPreviewStep, StylerPreviewDefinition } from './StylerPreviewStep.tsx';
+export type { StylerTablePreviewProps } from './StylerPreviewPanel.tsx';
+export { StylerPreviewPanel } from './StylerPreviewPanel.tsx';
