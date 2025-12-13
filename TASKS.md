@@ -53,6 +53,22 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1630) Styler Key-Value Pair アコーディオン追加（P1）
+- ブランチ: `feat/styler/key-value-accordion`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/styler-plugin（StylerMappingStep/StyleMapping panels/StylerConfigStep, locale）
+- 受け入れ基準（DoD）:
+  - [ ] Step3 に「Key-Value Pair」アコーディオンを追加し、Step4 にあった keyColumn/valueColumn 選択 UI を移設する（Step4 側の重複は撤去）
+  - [ ] Key/Value 選択結果が既存の保存・検証ロジックに正しく引き継がれる（回帰なし）
+  - [ ] Value 列の数値のみを用いて max/min/avg/median/stddev を算出し、Step3 のアコーディオン内に表示する（非数値は無視）
+  - [ ] i18n と UI スタイルを既存ガイドラインに合わせる
+  - [ ] 代表検証として `pnpm --filter @hierarchidb/styler-plugin typecheck` を実行し、結果を運用ログに記録する（不可なら理由記載）
+- チェックリスト:
+  - [ ] Step3 UI に Key-Value Pair アコーディオンを追加し、key/value 選択 UI を移設
+  - [ ] Value 列の数値のみを集計し max/min/avg/median/stddev を表示
+  - [ ] 既存の mapping/config/preview への key/value 連携が維持されることを確認
+  - [ ] typecheck 結果を運用ログへ追記
+- ロールバック手順：Styler Step3/Step4 関連差分（StylerMappingStep/StyleMapping panels/locale など）を revert し、`pnpm --filter @hierarchidb/styler-plugin typecheck` を再実行して元の挙動を確認する
+
 1627) UserLoginButton リファクタ（メニュー分割・i18n・言語設定化）（P1）
 - ブランチ: `refactor/ui-usermenu/split-and-i18n`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: packages/ui/usermenu/src/components/UserLoginButton.tsx, ui-i18n 設定, テーマ/言語/DBクリアの各メニュー表示
@@ -10176,3 +10192,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-11 20:10 done: fix/dialog/commit-draft-mode — useTreeNodeUpdater を draft 専用に簡素化し、Save ボタン文言を create モードでも Save に統一。commitDraft を updateTreeNode に改名し、mode を save/save-draft に整理。dialogUIState を全プラグインで必須にし、Record<string, unknown> を共通型 TreeNodeData へ置換。resolver-plugin の payload/draft 初期化で dialogUIState/lastValidation を統一し typecheck を修正。検証: `pnpm --filter @hierarchidb/resolver-plugin typecheck` exit 0。ロールバック: `packages/plugin-ui-sdk`/`plugin-ui-host`/`common-types`/各プラグインの dialog/ui 更新差分を revert し、tsdown/typecheck を再実行。
 - 2025-12-11 20:11 done: fix/dialog/commit-draft-mode — 「編集を再開しますか？」ダイアログを撤去し、ドラフトが存在する場合も即座に以前の編集を再開する挙動に統一。ResumeDraftDialog コンポーネントと関連状態を削除し、edit 要求は直接 navigation を実行するよう変更。検証: `pnpm --filter @hierarchidb/app typecheck` exit 0。ロールバック: `app/src/router/pages/tree/console/{ResumeDraftDialog.tsx,useTreeConsoleResumeDialog.ts,useTreeConsoleIntegration.tsx,useTreeConsoleIntegrationInner.ts}` の今回差分を戻し、再度 typecheck。
 - 2025-12-11 20:20 progress: fix/dialog/basicinfo-reset — BasicInfo 入力が1文字ごとにリセットされる問題を確認し、StepAdapter で basic-info ステップだけ外部 stepData で強制同期しないように変更（Jotai ストアがユーザー入力を保持する）。検証: `pnpm --filter @hierarchidb/app typecheck` exit 0（plugin-base build 時の define 警告は既存）。ロールバック: `packages/plugin-ui-host/src/headless/usePluginDialogController/steps.tsx` の stepData 同期ガードを元に戻し再度 typecheck。
+
+## 今日の着手（運用ログ） <a id="worklog-17"></a>
+- 2025-12-14 08:06 start: feat/styler/key-value-accordion — Styler Step3 に「Key-Value Pair」アコーディオンを追加し、Step4 の key/value 選択 UI を移設する対応を開始（Value は数値のみ集計、branch: feat/styler/key-value-accordion、branch 作成不可なら main）。
+- 2025-12-14 08:11 progress: feat/styler/key-value-accordion — Step3 を 3 アコーディオン化（Style Type/Target Property/Key-Value Pair）。Key/Value 選択 UI を Key-Value Pair アコーディオンへ移設し、Value 列の数値のみから max/min/avg/median/stddev を表示（非数値は除外）。
+- 2025-12-14 08:12 command: pnpm --filter @hierarchidb/styler-plugin typecheck — exit 0。

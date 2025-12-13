@@ -2,6 +2,24 @@
   "styleSettings": {
     "title": "スタイル設定",
     "description": "スタイル種別・値の列・対象プロパティを選択してからアルゴリズムを設定してください。",
+    "accordion": {
+      "styleType": "スタイルタイプ",
+      "targetProperty": "ターゲットプロパティ",
+      "keyValuePair": "Key-Value Pair"
+    },
+    "keyValuePair": {
+      "description": "スタイルに使うキーと値の列を選び、値の基本統計を確認します。",
+      "stats": {
+        "title": "値の統計",
+        "empty": "数値を含む Value 列を選択すると統計が表示されます。",
+        "count": "件数",
+        "min": "最小値",
+        "max": "最大値",
+        "mean": "平均値",
+        "median": "中央値",
+        "stdDev": "標準偏差"
+      }
+    },
     "styleType": {
       "label": "スタイル種別",
       "help": "このスタイルが対象とするジオメトリを選択します。",

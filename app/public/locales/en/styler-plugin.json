@@ -2,6 +2,24 @@
   "styleSettings": {
     "title": "Style Mapping",
     "description": "Select the style type, data source column, and target property before configuring algorithms.",
+    "accordion": {
+      "styleType": "Style Type",
+      "targetProperty": "Target Property",
+      "keyValuePair": "Key-Value Pair"
+    },
+    "keyValuePair": {
+      "description": "Select the key and value columns to drive styling and review basic statistics.",
+      "stats": {
+        "title": "Value statistics",
+        "empty": "Select a value column with numeric values to view statistics.",
+        "count": "Count",
+        "min": "Min",
+        "max": "Max",
+        "mean": "Average",
+        "median": "Median",
+        "stdDev": "Std Dev"
+      }
+    },
     "styleType": {
       "label": "Style Type",
       "help": "Select the geometry that this style targets.",
