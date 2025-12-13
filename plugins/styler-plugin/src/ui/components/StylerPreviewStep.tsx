@@ -1,22 +1,13 @@
-/**
- * @file StylerStep6.tsx
- * @description Step 6 wrapper component for Styler table preview
- * :
- * :
- * :
- */
-
-import { wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
-import { Alert, AlertTitle, Box } from '@mui/material';
+import { Alert, AlertTitle, Box, Chip } from '@mui/material';
 import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { i18n } from '@hierarchidb/ui-i18n';
-import { StylerConfig, StylerMapping, StylerMappingDefault, StylerStepData, StylerTableRow } from '../../common/types/StylerEntity.js';
-import { StylerConfigDefault } from '../../common/types/StylerEntity.js';
-import { StylerPreviewPanel } from './StylerPreviewPanel.tsx';
+import { type StylerMapping, StylerMappingDefault, type StylerStepData, type StylerTableRow } from '../../common/types/StylerEntity.js';
+import { TabularPreviewLite } from '@hierarchidb/ui-tabular-extract';
 
-import { StylerStepProps } from './StylerStepProps.tsx';
+import type { StylerStepProps } from './StylerStepProps.tsx';
 import type { TabularFilterRule } from '@hierarchidb/ui-tabular-extract';
+import { wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
 
 const getStylerT = () =>
   typeof i18n.getFixedT === 'function'
@@ -25,13 +16,11 @@ const getStylerT = () =>
 
 export const StylerPreviewStep: React.FC<StylerStepProps> = ({
   data,
-  onChange,
   onValidate,
   tabularData = [],
   // columns = [],
 }) => {
   const { t } = useTranslation('styler-plugin');
-  const config: StylerConfig = data?.stylerConfig || StylerConfigDefault;
   const mapping: StylerMapping = {
     ...StylerMappingDefault,
     ...(data?.mapping ?? {}),
@@ -159,26 +148,6 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
     return filtered.slice(0, 1000);
   }, [data?.filters, data?.lastPreview?.rows, matchesFilters, prepareFilters, tabularData]);
 
-  //  :
-  const handleColumnSelect = useCallback(
-    (columnName: string, type: 'key' | 'value') => {
-      const updatedData: StylerStepData = {
-        ...data,
-        [type === 'key' ? 'selectedKeyColumn' : 'selectedValueColumn']: columnName,
-      };
-
-      if (data?.stylerConfig) {
-        updatedData.stylerConfig = {
-          ...data.stylerConfig,
-          [type === 'key' ? 'keyColumn' : 'valueColumn']: columnName,
-        };
-      }
-
-      onChange(updatedData);
-    },
-    [data, onChange]
-  );
-
   React.useEffect(() => {
     if (onValidate) {
       const ok = Boolean(keyColumn && valueColumn && targetProperty && styleType);
@@ -230,22 +199,35 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
   }
 
   return (
-    <Box sx={{ width: '100%', height: '100%', p: 2 }}>
-      <StylerPreviewPanel
-        data={previewData}
-        selectedKeyColumn={keyColumn}
-        selectedValueColumn={valueColumn}
-        mapping={mapping}
-        config={config}
-        onColumnSelect={handleColumnSelect}
-        maxRows={1000}
-        enableVirtualization={previewData.length > 100}
-      />
+    <Box sx={{ width: '100%', height: '100%', p: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+      <TabularPreviewLite rows={previewData} columns={Object.keys(previewData[0] ?? {})} height={440} />
+      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+        {keyColumn && (
+          <Chip
+            label={`${t('step6.keyColumn', { defaultValue: 'Key' })}: ${keyColumn}`}
+            color="primary"
+            size="small"
+            sx={{ backgroundColor: 'primary.light', color: 'primary.contrastText' }}
+          />
+        )}
+        {valueColumn && (
+          <Chip
+            label={`${t('step6.valueColumn', { defaultValue: 'Value' })}: ${valueColumn}`}
+            color="secondary"
+            size="small"
+            sx={{ backgroundColor: 'secondary.light', color: 'secondary.contrastText' }}
+          />
+        )}
+        {targetProperty && (
+          <Chip label={`${t('step6.targetProperty', { defaultValue: 'Target' })}: ${targetProperty}`} size="small" />
+        )}
+        {styleType && (
+          <Chip label={`${t('step6.styleType', { defaultValue: 'Style Type' })}: ${styleType}`} size="small" />
+        )}
+      </Box>
 
-      {/*
-       */}
       {tabularData.length > 1000 && (
-        <Alert severity="info" sx={{ mt: 2 }}>
+        <Alert severity="info" sx={{ mt: 1 }}>
           {t('step6.truncate', 'Showing preview of first 1,000 rows. Full dataset contains')}{' '}
           {tabularData.length.toLocaleString()} {t('step6.rows', 'rows.') }
         </Alert>

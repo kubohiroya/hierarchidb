@@ -34,13 +34,15 @@ export {
   TabularDataFilter,
   TabularColumnSelect,
   TabularDataFilterRulesTable,
+  TabularPreviewLite,
 } from './components/index.js';
 export type {
   TabularDataImportProps,
   TabularDataFilterProps,
   TabularColumnSelectProps,
   FilterOperatorOption,
+  TabularPreviewLiteProps,
 } from './components/index.js';
 
 // Preview (re-export from ui-data-grid)
-export { TabularPreview } from '../../data-grid/src/TabularPreview.js';
+export { TabularPreview } from '@hierarchidb/ui-data-grid';

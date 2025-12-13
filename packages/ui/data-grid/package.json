@@ -13,6 +13,11 @@
       "require": "./dist/index.js"
     }
   },
+  "tsdown": {
+    "platform": "browser",
+    "target": "es2020",
+    "splitting": false
+  },
   "scripts": {
     "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
     "clean": "rm -rf dist",

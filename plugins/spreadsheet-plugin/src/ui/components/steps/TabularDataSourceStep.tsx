@@ -9,8 +9,8 @@ import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { type UseTabularDataSourceResult, useTabularDataSource } from '../../hooks/useTabularDataSource.js';
-import { TabularPreview } from '@hierarchidb/ui-tabular-extract';
-import { SPREADSHEET_NODE_TYPE } from '../../../common/constants.js';
+import { TabularPreviewLite } from '@hierarchidb/ui-tabular-extract';
+// import { SPREADSHEET_NODE_TYPE } from '../../../common/constants.js';
 
 const ImportStep = TabularDataImport as unknown as React.FC<UseTabularDataSourceResult['importStepProps']>;
 
@@ -99,7 +99,7 @@ export const TabularDataSourceStep: FC<StepComponentProps<SpreadsheetEntity>> = 
         </AccordionDetails>
       </Accordion>
 
-      {dialogData.spreadsheetMetadataId ? (
+      {dialogData.lastPreview?.rows?.length ? (
         <Accordion defaultExpanded sx={{ mt: 1 }}>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -111,9 +111,20 @@ export const TabularDataSourceStep: FC<StepComponentProps<SpreadsheetEntity>> = 
           </AccordionSummary>
           <AccordionDetails>
             <Paper variant="outlined" sx={{ height: 320 }}>
-              <TabularPreview
-                pluginId={SPREADSHEET_NODE_TYPE}
-                tableId={dialogData.spreadsheetMetadataId}
+              <TabularPreviewLite
+                rows={dialogData.lastPreview?.rows ?? []}
+                columns={
+                  ((dialogData.lastPreview?.columns as unknown[] | undefined)?.map((c) =>
+                    typeof c === 'string' ? c :
+                    (c && typeof c === 'object' && 'name' in c && typeof (c as any).name === 'string'
+                      ? (c as any).name
+                      : '')
+                  ) ??
+                    (dialogData.tabularTableMetadata?.columns ?? []).map((c: any) =>
+                      typeof c === 'string' ? c : typeof c?.name === 'string' ? c.name : ''
+                    ) ?? [])
+                    .filter((v) => typeof v === 'string' && v.length > 0)
+                }
                 height={320}
               />
             </Paper>

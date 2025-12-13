@@ -1011,6 +1011,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/ui-modal-select",
         "@hierarchidb/ui-dialog",
         "@hierarchidb/ui-worker-provider",
+        "@hierarchidb/ui-data-grid",
         "@mui/icons-material",
         "@mui/material",
         "react",
@@ -1031,7 +1032,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/plugin-base",
         "@hierarchidb/ui-map",
         "@hierarchidb/ui-dialog",
-        "@hierarchidb/ui-worker-provider"
+        "@hierarchidb/ui-worker-provider",
+        "@hierarchidb/ui-data-grid"
       ],
     exports: ["","icon","ui"],
     manifest: {
@@ -1051,6 +1053,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/ui-modal-select",
           "@hierarchidb/ui-dialog",
           "@hierarchidb/ui-worker-provider",
+          "@hierarchidb/ui-data-grid",
           "@mui/icons-material",
           "@mui/material",
           "react",
@@ -1071,7 +1074,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/plugin-base",
           "@hierarchidb/ui-map",
           "@hierarchidb/ui-dialog",
-          "@hierarchidb/ui-worker-provider"
+          "@hierarchidb/ui-worker-provider",
+          "@hierarchidb/ui-data-grid"
         ],
         "icon": {
           "mui": "Palette",

@@ -4,7 +4,8 @@
  * Shows a live preview of the configured basemap settings
  */
 
-import { CrossViewSnackbar } from '@hierarchidb/ui-data-grid';
+// CrossViewSnackbar pulls tabular-store (node:module) into the browser bundle; omit to keep client-safe
+// import { CrossViewSnackbar } from '@hierarchidb/ui-data-grid';
 import { loadMapLibreMap, type MapViewState } from '@hierarchidb/ui-map';
 import { DarkMode, LightMode, Map as MapIcon, Satellite, Terrain, Tune } from '@mui/icons-material';
 import { Box, Chip, Paper, Stack, Typography } from '@mui/material';
@@ -30,8 +31,6 @@ export interface BaseMapPreviewProps {
   interactive?: boolean;
   /** Title for the preview */
   title?: string;
-  /** Optional datasetId for cross-view highlight channel */
-  datasetId?: string;
 }
 
 /**
@@ -64,7 +63,6 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
   showMetadata = true,
   interactive = false,
   title = 'BaseMap Preview',
-  datasetId,
 }) => {
   // Convert to MapLibre view state
   const initialViewState = useMemo<MapViewState>(
@@ -217,12 +215,7 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
                 {attribution}
               </Typography>
             </Box>
-            {/* Cross-view snackbar when a dataset is specified */}
-            {datasetId && (
-              <Box sx={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-                <CrossViewSnackbar datasetId={datasetId} />
-              </Box>
-            )}
+            {/* Cross-view snackbar intentionally disabled in client bundle to avoid node:module dependency */}
           </>
         )}
       </Box>

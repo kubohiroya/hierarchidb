@@ -13,3 +13,6 @@ export type { FilterOperatorOption } from './TabularDataFilterRulesTable.js';
 
 export { TabularColumnSelect } from './TabularColumnSelect.js';
 export type { TabularColumnSelectProps } from './TabularColumnSelect.js';
+
+export { TabularPreviewLite } from './TabularPreviewLite.js';
+export type { TabularPreviewLiteProps } from './TabularPreviewLite.js';

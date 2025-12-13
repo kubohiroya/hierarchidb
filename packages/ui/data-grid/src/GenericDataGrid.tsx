@@ -179,6 +179,15 @@ export interface GenericDataGridProps<T extends RowRecord = RowRecord> {
   onRowHover?: (row: T, rowId: string | number) => void;
   onRowLeave?: (row: T, rowId: string | number) => void;
 
+  /** Cell context menu handler */
+  onCellContextMenu?: (params: {
+    event: React.MouseEvent;
+    row: T;
+    rowId: string | number;
+    columnId: string;
+    value: unknown;
+  }) => void;
+
   // Virtualization
   /** Enable virtual scrolling */
   enableVirtualization?: boolean;
@@ -250,10 +259,11 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
                                            onSelectionChange,
                                            onExport,
                                            onRefresh,
-                                           onRowClick,
+                                          onRowClick,
                                           onRowDoubleClick,
                                           onRowHover,
                                           onRowLeave,
+                                          onCellContextMenu,
                                           enableVirtualization = false,
                                            maxHeight = 600,
                                            dense = false,
@@ -626,7 +636,21 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
                     const value = getCellValue(row, column.id);
                     const cellContent = column.format ? column.format(value, row) : renderDefaultCell(value);
                     return (
-                      <TableCell key={String(column.id)} align={column.align}>
+                      <TableCell
+                        key={String(column.id)}
+                        align={column.align}
+                        onContextMenu={(e) => {
+                          if (!onCellContextMenu) return;
+                          e.preventDefault();
+                          onCellContextMenu({
+                            event: e,
+                            row,
+                            rowId,
+                            columnId: String(column.id),
+                            value,
+                          });
+                        }}
+                      >
                         {cellContent}
                       </TableCell>
                     );

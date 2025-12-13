@@ -12,20 +12,15 @@ import {
   Box,
   GlobalStyles,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Typography,
 } from '@mui/material';
-import { ExpandMore as ExpandMoreIcon, Abc, Pin, CheckBox, Preview as PreviewIcon } from '@mui/icons-material';
+import { ExpandMore as ExpandMoreIcon, Preview as PreviewIcon } from '@mui/icons-material';
 import { useTabularFilter } from '../hooks/useTabularFilter.js';
 import { TabularColumnInfo, TabularColumnType, TabularTableMetadata } from '@hierarchidb/tabular-store';
-import { TabularDataResult, TabularFilterRule } from '../types/index.js';
+import { TabularDataResult, TabularFilterRule, TabularFilterOperator } from '../types/index.js';
 import { TabularDataFilterRulesTable, type FilterOperatorOption } from './TabularDataFilterRulesTable.js';
 import {LinearProgress} from "@mui/material";
+import { TabularPreviewLite } from './TabularPreviewLite.js';
 
 export interface TabularDataFilterProps {
   tableMetadata: TabularTableMetadata;
@@ -72,9 +67,7 @@ export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
 }) => {
   const [filters, setFilters] = useState<TabularFilterRule[]>(initialFilters);
   const [previewDirty, setPreviewDirty] = useState(false);
-  const [scrollTop, setScrollTop] = useState(0);
   const filtersRef = useRef(filters);
-  const tableContainerRef = useRef<HTMLDivElement | null>(null);
 
   const {
     previewData,
@@ -114,25 +107,6 @@ export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
     return nextColumns;
   }, [hasMetadataColumns, previewData?.columns, tableMetadata.columns]);
   const previewColumns: TabularColumnInfo[] = hasPreviewColumns ? previewData!.columns : columnOptions;
-  const rowHeight = 44;
-  const totalRows = previewData?.rows.length ?? 0;
-  const containerHeight = tableContainerRef.current?.clientHeight ?? 420;
-  const overscan = 8;
-  const startIndex = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan);
-  const endIndex = Math.min(totalRows, Math.ceil((scrollTop + containerHeight) / rowHeight) + overscan);
-  const visibleRows = previewData ? previewData.rows.slice(startIndex, endIndex) : [];
-  const columnWidth = previewColumns.length > 0 ? `${100 / previewColumns.length}%` : 'auto';
-  const [tableMaxHeight, setTableMaxHeight] = useState<number | null>(null);
-
-  useEffect(() => {
-    const contentEl = tableContainerRef.current?.closest('.MuiDialogContent-root') as HTMLElement | null;
-    if (!contentEl) return;
-    const updateHeight = () => setTableMaxHeight(contentEl.clientHeight);
-    updateHeight();
-    const observer = new ResizeObserver(updateHeight);
-    observer.observe(contentEl);
-    return () => observer.disconnect();
-  }, []);
 
   // filters のスナップショットを常に保持（アンマウント時の同期に利用）
   useEffect(() => {
@@ -225,6 +199,34 @@ export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
     onSyncFilters?.(filters);
   }, [filters, onSyncFilters]);
 
+  // コンテキストメニューからフィルタを追加する
+  const handleCreateFilterFromCell = useCallback(
+    ({
+      column,
+      operator,
+      value,
+    }: {
+      column: string;
+      operator: TabularFilterOperator;
+      value: string | number | null;
+    }) => {
+      if (!column) return;
+      const id = `cell-${crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`}`;
+      setFilters((prev) => [
+        ...prev,
+        {
+          id,
+          column,
+          operator,
+          value: value ?? '',
+          enabled: true,
+        },
+      ]);
+      setPreviewDirty(true);
+    },
+    []
+  );
+
   // ステップ離脱・ダイアログ閉鎖時にも最新のフィルタを同期する
   useEffect(() => {
     return () => {
@@ -299,70 +301,18 @@ export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
                 <PreviewIcon fontSize="small" />
                 Preview Results
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Total Rows: {previewData.totalRows.toLocaleString()} • Filters Applied: {enabledFilters.length}
-              </Typography>
               {previewDirty && <LinearProgress variant={"indeterminate"}/>}
             </Box>
           </AccordionSummary>
           <AccordionDetails>
-            <TableContainer
-              component={Paper}
-              variant="outlined"
-              ref={tableContainerRef}
-              sx={{
-                maxHeight: tableMaxHeight ? `${tableMaxHeight}px` : 'calc(100vh - 320px)',
-                height: tableMaxHeight ? `${tableMaxHeight}px` : 'calc(100vh - 320px)',
-                overflowY: 'auto',
-                overscrollBehavior: 'contain',
-              }}
-              onWheelCapture={(event) => event.stopPropagation()}
-              onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
-            >
-              <Table size="small" sx={{ tableLayout: 'fixed', width: '100%' }}>
-                <TableHead>
-                  <TableRow sx={{ display: 'table', tableLayout: 'fixed', width: '100%' }}>
-                    {previewColumns.map((col: TabularColumnInfo) => (
-                      <TableCell key={col.name} sx={{ width: columnWidth, whiteSpace: 'nowrap' }}>
-                        <Typography variant="subtitle2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          {normalizeType(col.type) === 'number' && <Pin fontSize="small" />}
-                          {normalizeType(col.type) === 'boolean' && <CheckBox fontSize="small" />}
-                          {(normalizeType(col.type) === 'string' || normalizeType(col.type) === 'date') && <Abc fontSize="small" />}
-                          {col.name}
-                        </Typography>
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                </TableHead>
-                <TableBody
-                  sx={{ display: 'block', position: 'relative', height: totalRows * rowHeight }}
-                >
-                  {visibleRows.map((row, virtualIdx) => {
-                    const absoluteIndex = startIndex + virtualIdx;
-                    const top = absoluteIndex * rowHeight;
-                    return (
-                      <TableRow
-                        key={absoluteIndex}
-                        sx={{
-                          position: 'absolute',
-                          top,
-                          left: 0,
-                          width: '100%',
-                          display: 'table',
-                          tableLayout: 'fixed',
-                        }}
-                      >
-                        {previewColumns.map((col: TabularColumnInfo) => (
-                          <TableCell key={`${absoluteIndex}-${col.name}`} sx={{ whiteSpace: 'nowrap', width: columnWidth }}>
-                            {row?.[col.name]?.toString() ?? ''}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            <Paper variant="outlined" sx={{ height: 420 }}>
+              <TabularPreviewLite
+                rows={previewData?.rows ?? []}
+                columns={previewColumns.map((c) => c.name ?? '').filter(Boolean)}
+                height={420}
+                onCreateFilter={handleCreateFilterFromCell}
+              />
+            </Paper>
           </AccordionDetails>
         </Accordion>
       )}

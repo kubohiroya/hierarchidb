@@ -3,19 +3,24 @@
   "version": "0.1.0",
   "description": "Reusable CSV data extraction UI components and API interface for HierarchiDB plugins",
   "type": "module",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "module": "src/index.ts",
+  "types": "src/index.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
     }
   },
   "files": [
     "dist/**/*",
     "src/**/*"
   ],
+  "tsdown": {
+    "platform": "browser",
+    "target": "es2020",
+    "splitting": false
+  },
   "scripts": {
     "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
     "clean": "rm -rf dist",

@@ -5,7 +5,8 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-types';
-import { CrossViewSnackbar, useCrossHighlightSync } from '@hierarchidb/ui-data-grid';
+// CrossViewSnackbar/useCrossHighlightSync pull tabular-store (node:module) into client bundle; disable for browser safety
+// import { CrossViewSnackbar, useCrossHighlightSync } from '@hierarchidb/ui-data-grid';
 import {
   loadMapLibreMap,
   type MapLibreMapInstance,
@@ -49,13 +50,10 @@ export interface BaseMapDisplayProps {
   showLoadingIndicator?: boolean;
   /** Interactive mode */
   interactive?: boolean;
-  /** Optional datasetId for cross-view highlight channel (defaults to `basemap:${nodeId}`) */
+  // Cross-view sync disabled in client bundle to avoid node:module
   datasetId?: string;
-  /** Optional: bind MapLibre events to these layers for cross-highlight */
   bindLayerIds?: string[];
-  /** Optional: MapLibre source id to apply features-state updates */
   bindSourceId?: string;
-  /** Optional: show a minimal demo overlay (local GeoJSON) for hover/select showcasing */
   enableDemoOverlay?: boolean;
 }
 
@@ -79,8 +77,6 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
   showLoadingIndicator = true,
   interactive = true,
   datasetId,
-  bindLayerIds,
-  bindSourceId,
   enableDemoOverlay = false,
 }) => {
   const shouldFetch = !providedEntity && Boolean(nodeId);
@@ -98,9 +94,7 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
   const [_mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
   const unbindRef = useRef<null | (() => void)>(null);
 
-  const dsId = useMemo(() => datasetId ?? `basemap:${nodeId}`, [datasetId, nodeId]);
-  const { bindMapLibre } = useCrossHighlightSync({ datasetId: dsId, withDeckAccessors: false });
-  // useMapLibreFeatureState({ datasetId: dsId, map: _mapInstance, sourceId: bindSourceId || '', throttleMs: 16 });
+  void datasetId;
 
   useEffect(() => {
     if (providedEntity) {
@@ -217,38 +211,25 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
             },
           });
         }
-        if (!bindSourceId || !bindLayerIds || bindLayerIds.length === 0) {
-          unbindRef.current?.();
-          unbindRef.current = bindMapLibre(map, 'demo-source', ['demo-fill', 'demo-outline'], {
-            selectOnClick: true,
-          });
-        }
       });
 
       // Call parent callback
       onLoad?.(map);
     },
     [
-      bindLayerIds,
-      bindMapLibre,
-      bindSourceId,
       enableDemoOverlay,
       entity?.viewport?.center,
       onLoad,
     ]
   );
 
-  // Bind/unbind MapLibre hover/click events for cross-highlighting when requested
   useEffect(() => {
-    if (!_mapInstance || !bindSourceId || !bindLayerIds || bindLayerIds.length === 0) return;
-    unbindRef.current?.();
-    unbindRef.current = bindMapLibre(_mapInstance, bindSourceId, bindLayerIds, {
-      selectOnClick: true,
-    });
+    if (!_mapInstance) return;
+    const unbind = unbindRef.current;
     return () => {
-      unbindRef.current?.();
+      unbind?.();
     };
-  }, [_mapInstance, bindSourceId, bindMapLibre, bindLayerIds]);
+  }, [_mapInstance]);
 
   // Handle view state changes
   const handleViewStateChange = useCallback(
@@ -338,8 +319,7 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
         </LazyMapLibreMap>
       </Suspense>
 
-      {/* Focus detail via Snackbar (shared channel for basemap) */}
-      <CrossViewSnackbar datasetId={dsId} />
+      {/* Cross-view snackbar disabled to avoid node:module in browser bundle */}
     </Box>
   );
 };

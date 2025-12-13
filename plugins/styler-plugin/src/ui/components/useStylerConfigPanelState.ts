@@ -207,6 +207,19 @@ export const useStylerConfigPanelState = ({
 
   const gradientPreview = useMemo(() => generateColorGradient(localConfig), [localConfig]);
 
+  const stats = useMemo(() => {
+    const numeric = values.filter((v) => typeof v === 'number' && Number.isFinite(v)) as number[];
+    if (!numeric.length) {
+      return null;
+    }
+    const min = Math.min(...numeric);
+    const max = Math.max(...numeric);
+    const mean = numeric.reduce((sum, v) => sum + v, 0) / numeric.length;
+    const variance = numeric.reduce((sum, v) => sum + (v - mean) ** 2, 0) / numeric.length;
+    const stdDev = Math.sqrt(variance);
+    return { min, max, mean, stdDev, count: numeric.length };
+  }, [values]);
+
   return {
     localConfig,
     setLocalConfig,
@@ -230,5 +243,6 @@ export const useStylerConfigPanelState = ({
     handleStartColorChange,
     handleEndColorChange,
     gradientPreview,
+    stats,
   };
 };

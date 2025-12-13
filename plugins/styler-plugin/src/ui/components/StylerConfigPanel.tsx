@@ -83,6 +83,7 @@ export const StylerConfigPanel = ({
     handleStartColorChange,
     handleEndColorChange,
     gradientPreview,
+    stats,
   } = useStylerConfigPanelState({
     config,
     onChange,
@@ -138,6 +139,21 @@ export const StylerConfigPanel = ({
               </Typography>
             </Box>
           </Paper>
+
+          {stats && (
+            <Paper sx={{ p: 2 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                {t('step5.stats.title', 'Value Statistics')}
+              </Typography>
+              <Stack direction="row" spacing={2} flexWrap="wrap">
+                <Chip size="small" label={`${t('step5.stats.count', 'Count')}: ${stats.count}`} />
+                <Chip size="small" label={`${t('step5.stats.min', 'Min')}: ${stats.min}`} />
+                <Chip size="small" label={`${t('step5.stats.max', 'Max')}: ${stats.max}`} />
+                <Chip size="small" label={`${t('step5.stats.mean', 'Mean')}: ${stats.mean.toFixed(2)}`} />
+                <Chip size="small" label={`${t('step5.stats.std', 'Std Dev')}: ${stats.stdDev.toFixed(2)}`} />
+              </Stack>
+            </Paper>
+          )}
         </Stack>
 
         <Stack flex={1} spacing={2}>
