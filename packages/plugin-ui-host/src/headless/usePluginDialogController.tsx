@@ -149,6 +149,7 @@ export function usePluginDialogController(
     updateTreeNodeUpdater,
     commitTreeNodeUpdater,
     discardDraft,
+    saveDraft,
     loading,
     error,
   } = useTreeNodeUpdater<Partial<PluginDefinedEntity>>({
@@ -183,6 +184,30 @@ export function usePluginDialogController(
       acknowledgedVersionRef.current = draft.version;
     }
   }, [draft?.version]);
+
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!open || !draft || !hasUnsavedChanges) {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+        autoSaveTimerRef.current = null;
+      }
+      return;
+    }
+    autoSaveTimerRef.current = setTimeout(() => {
+      saveDraft(draft).catch((err) => {
+        if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+          console.warn('[PluginDialogShell] autosave failed', err);
+        }
+      });
+    }, 800);
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+        autoSaveTimerRef.current = null;
+      }
+    };
+  }, [draft, hasUnsavedChanges, open, saveDraft]);
 
   const treeUpdater: TreeNodeUpdaterPayload<PluginDefinedEntity> | null = useMemo(
     () =>

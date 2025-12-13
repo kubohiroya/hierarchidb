@@ -21,7 +21,7 @@ import {
 import { treeNodeTypeRoute } from './nodeTypeRoute.js';
 import { type PluginDialogLoaderData, PluginDialogRoute } from './PluginDialogRoute.js';
 
-type TreeDialogLoaderResult =
+export type TreeDialogLoaderResult =
   | {
       kind: 'trash';
       data: TrashDialogData;

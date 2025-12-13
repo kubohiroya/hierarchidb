@@ -24,7 +24,8 @@ import { useCrossHighlightSync } from './hooks/useCrossHighlightSync.js';
 import { ensureDefaultStyles } from './utils/ensureDefaultStyles.js';
 import { CrossViewSnackbar } from './CrossViewSnackbar.js';
 import { getDBName } from '@hierarchidb/util';
-import { ColumnFilter, SimpleTableMetadataManager, TabularQueryService } from '@hierarchidb/tabular-store';
+import {type  ColumnFilter, SimpleTableMetadataManager, TabularQueryService } from '@hierarchidb/tabular-store';
+import { useTranslation } from '../../i18n/src/index.js';
 
 const logTabularPreviewWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -35,12 +36,22 @@ const isValidId = (value: unknown): value is Id => typeof value === 'string' || 
 
 type Op = ColumnFilter['op'];
 
-export function TabularPreview({ pluginId, tableId }: {
-  pluginId: 'location' | 'shape' | 'route';
-  tableId?: string | null
+export function TabularPreview({
+  pluginId = 'generic',
+  tableId,
+  rows: providedRows,
+  columns: providedColumns,
+  height = 420,
+}: {
+  pluginId?: string;
+  tableId?: string | null;
+  rows?: Array<Record<string, unknown>>;
+  columns?: string[];
+  height?: number;
 }): ReactElement {
+  const { t } = useTranslation('common');
   const [columns, setColumns] = useState<string[]>([]);
-  const [rows, setRows] = useState<any[]>([]);
+  const [rows, setRows] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | undefined>();
   // Filters: multi-condition AND
@@ -83,6 +94,14 @@ export function TabularPreview({ pluginId, tableId }: {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      if (Array.isArray(providedRows) && providedRows.length > 0) {
+        setColumns(providedColumns?.length ? providedColumns : Object.keys(providedRows[0] ?? {}));
+        if (!visibleCols && providedColumns) setVisibleCols(providedColumns);
+        setRows(providedRows);
+        setLoading(false);
+        setError(undefined);
+        return;
+      }
       if (!tableId) {
         setColumns([]);
         setRows([]);
@@ -125,11 +144,11 @@ export function TabularPreview({ pluginId, tableId }: {
           const pairs: Array<{ rowId: Id; featureIds: Id[] }> = [];
           for (let i = 0; i < Math.min(500, data.length); i++) {
             const row = data[i] as Record<string, unknown> | undefined;
-            const rowId = isValidId(row?.id) ? row!.id : (i as Id);
+            const rowId = isValidId(row?.id) ? row.id : (i as Id);
             const featureIds = Array.isArray(row?.featureIds)
-              ? row!.featureIds.filter(isValidId)
+              ? row?.featureIds.filter(isValidId)
               : isValidId(row?.featureId)
-                ? [row!.featureId]
+                ? [row?.featureId]
                 : [];
             if (featureIds.length > 0) pairs.push({ rowId, featureIds });
           }
@@ -137,8 +156,8 @@ export function TabularPreview({ pluginId, tableId }: {
         } catch (error) {
           logTabularPreviewWarning('Failed to set row to features mapping', error);
         }
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message || String(e));
+      } catch (err) {
+        if (!cancelled) setError((err as {message:string})?.message || String(err));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -146,7 +165,7 @@ export function TabularPreview({ pluginId, tableId }: {
     return () => {
       cancelled = true;
     };
-  }, [datasetId, filters, pluginId, tableId, visibleCols]);
+  }, [datasetId, filters, pluginId, tableId, visibleCols, providedRows, providedColumns]);
 
   const matchedRowSet = useMemo(() => {
     if (rowSets.matched.size > 0) {
@@ -155,7 +174,7 @@ export function TabularPreview({ pluginId, tableId }: {
     const derived = new Set<Id>();
     rows.forEach((row, index) => {
       const rowObj = row as Record<string, unknown> | undefined;
-      const identifier = isValidId(rowObj?.id) ? rowObj!.id : (index as Id);
+      const identifier = isValidId(rowObj?.id) ? rowObj?.id : (index as Id);
       derived.add(identifier);
     });
     return derived;
@@ -167,13 +186,13 @@ export function TabularPreview({ pluginId, tableId }: {
     setFilters((fs) => fs.map((f, idx) => (idx === i ? { ...f, ...patch } : f)));
 
   return (
-    <Box sx={{ p: 2, height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ p: 2, height, boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-        <Typography variant="subtitle1" sx={{ flex: 1 }}>データテーブル</Typography>
+        <Typography variant="subtitle1" sx={{ flex: 1 }}>{t('dataGrid.preview.title', 'Data table')}</Typography>
         {/* Visible columns selector */}
         <FormControl size="small" sx={{ minWidth: 180 }}>
-          <InputLabel id="tp-cols-label"><ViewColumn fontSize="small" sx={{ mr: 0.5 }} />表示列</InputLabel>
-          <Select<string[]> multiple labelId="tp-cols-label" input={<OutlinedInput label="表示列" />} value={visibleCols || []}
+          <InputLabel htmlFor="tp-cols-label"><ViewColumn fontSize="small" sx={{ mr: 0.5 }} />{t('dataGrid.preview.visibleColumns', 'Visible columns')}</InputLabel>
+          <Select<string[]> multiple labelId="tp-cols-label" input={<OutlinedInput label={t('dataGrid.preview.visibleColumns', 'Visible columns')} />} value={visibleCols || []}
                   onChange={(e: SelectChangeEvent<string[]>) => {
                     const value = e.target.value;
                     setVisibleCols(Array.isArray(value) ? value : [value]);
@@ -195,29 +214,29 @@ export function TabularPreview({ pluginId, tableId }: {
 
       {/* Filters */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, flexWrap: 'wrap' }}>
-        <Tooltip title="条件追加"><IconButton size="small" onClick={addFilter}><Add /></IconButton></Tooltip>
-        {filters.length === 0 && <Chip icon={<FilterAlt />} label="条件なし (全件)" size="small" />}
+        <Tooltip title={t('dataGrid.preview.addFilter', 'Add filter')}><IconButton size="small" onClick={addFilter}><Add /></IconButton></Tooltip>
+        {filters.length === 0 && <Chip icon={<FilterAlt />} label={t('dataGrid.preview.noFilters', 'No filters (all rows)')} size="small" />}
         {filters.map((f, i) => (
-          <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box key={`filters-${f}`} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <FormControl size="small" sx={{ minWidth: 140 }}>
-              <InputLabel id={`${controlId}-col-${i}`} htmlFor={`${controlId}-col-select-${i}`}>列</InputLabel>
-              <Select labelId={`${controlId}-col-${i}`} id={`${controlId}-col-select-${i}`} label="列" value={f.column}
+              <InputLabel id={`${controlId}-col-${i}`} htmlFor={`${controlId}-col-select-${i}`}>{t('dataGrid.preview.column', 'Column')}</InputLabel>
+              <Select labelId={`${controlId}-col-${i}`} id={`${controlId}-col-select-${i}`} label={t('dataGrid.preview.column', 'Column')} value={f.column}
                       onChange={(e) => updateFilter(i, { column: String(e.target.value) })}>
-                <MenuItem value=""><em>選択</em></MenuItem>
+                <MenuItem value=""><em>{t('dataGrid.preview.select', 'Select')}</em></MenuItem>
                 {columns.map((c) => (<MenuItem key={c} value={c}>{c}</MenuItem>))}
               </Select>
             </FormControl>
             <FormControl size="small" sx={{ minWidth: 120 }}>
-              <InputLabel id={`${controlId}-op-${i}`} htmlFor={`${controlId}-op-select-${i}`}>条件</InputLabel>
-              <Select labelId={`${controlId}-op-${i}`} id={`${controlId}-op-select-${i}`} label="条件" value={f.op}
+              <InputLabel id={`${controlId}-op-${i}`} htmlFor={`${controlId}-op-select-${i}`}>{t('dataGrid.preview.operator', 'Operator')}</InputLabel>
+              <Select labelId={`${controlId}-op-${i}`} id={`${controlId}-op-select-${i}`} label={t('dataGrid.preview.operator', 'Operator')} value={f.op}
                       onChange={(e) => updateFilter(i, { op: e.target.value as Op })}>
                 {(['eq', 'contains', 'gt', 'gte', 'lt', 'lte', 'neq'] as Op[]).map((op) => (
                   <MenuItem key={op} value={op}>{op}</MenuItem>))}
               </Select>
             </FormControl>
-            <TextField size="small" label="値" id={`${controlId}-value-${i}`} name={`value-${i}`} value={f.value}
+            <TextField size="small" label={t('dataGrid.preview.value', 'Value')} id={`${controlId}-value-${i}`} name={`value-${i}`} value={f.value}
                        onChange={(e) => updateFilter(i, { value: e.target.value })} />
-            <Tooltip title="削除"><IconButton size="small" onClick={() => removeFilter(i)}><Delete
+            <Tooltip title={t('dataGrid.preview.remove', 'Remove')}><IconButton size="small" onClick={() => removeFilter(i)}><Delete
               fontSize="small" /></IconButton></Tooltip>
           </Box>
         ))}
@@ -225,7 +244,7 @@ export function TabularPreview({ pluginId, tableId }: {
 
       {!tableId ? (
         <Paper sx={{ p: 2, textAlign: 'center' }}>
-          <Typography variant="body2" color="text.secondary">テーブルがまだ作成されていません</Typography>
+          <Typography variant="body2" color="text.secondary">{t('dataGrid.preview.noTable', 'Table not created yet')}</Typography>
         </Paper>
       ) : (
         <GenericDataGrid

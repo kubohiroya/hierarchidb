@@ -29,7 +29,8 @@
     "@tanstack/react-virtual": "^3.10.8",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/tabular-store": "workspace:*"
+    "@hierarchidb/tabular-store": "workspace:*",
+    "@hierarchidb/ui-i18n": "workspace:*"
   },
   "peerDependencies": {
     "react": "^18.3.1",
@@ -38,6 +39,7 @@
     "@tanstack/react-virtual": "^3.10.8",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/tabular-store": "workspace:*"
+    "@hierarchidb/tabular-store": "workspace:*",
+    "@hierarchidb/ui-i18n": "workspace:*"
   }
 }

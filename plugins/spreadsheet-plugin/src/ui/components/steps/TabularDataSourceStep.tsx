@@ -2,12 +2,15 @@ import type { FC } from 'react';
 import { StepComponentProps } from '@hierarchidb/plugin-base';
 import { TabularProvider, TabularDataImport } from '@hierarchidb/ui-tabular-extract';
 import type { SpreadsheetEntity } from '../../../common/types/SpreadsheetEntity.js';
-import { Accordion, AccordionDetails, AccordionSummary, Box, Typography } from '@mui/material';
+import { Accordion, AccordionDetails, AccordionSummary, Box, Paper, Typography } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
+import TableChartIcon from '@mui/icons-material/TableChart';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { type UseTabularDataSourceResult, useTabularDataSource } from '../../hooks/useTabularDataSource.js';
+import { TabularPreview } from '@hierarchidb/ui-tabular-extract';
+import { SPREADSHEET_NODE_TYPE } from '../../../common/constants.js';
 
 const ImportStep = TabularDataImport as unknown as React.FC<UseTabularDataSourceResult['importStepProps']>;
 
@@ -95,6 +98,28 @@ export const TabularDataSourceStep: FC<StepComponentProps<SpreadsheetEntity>> = 
           )}
         </AccordionDetails>
       </Accordion>
+
+      {dialogData.spreadsheetMetadataId ? (
+        <Accordion defaultExpanded sx={{ mt: 1 }}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <TableChartIcon fontSize="small" color="action" />
+              <Typography variant="subtitle1">
+                {t('dataSource.preview.title', 'Preview')}
+              </Typography>
+            </Box>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Paper variant="outlined" sx={{ height: 320 }}>
+              <TabularPreview
+                pluginId={SPREADSHEET_NODE_TYPE}
+                tableId={dialogData.spreadsheetMetadataId}
+                height={320}
+              />
+            </Paper>
+          </AccordionDetails>
+        </Accordion>
+      ) : null}
     </TabularProvider>
   );
 };

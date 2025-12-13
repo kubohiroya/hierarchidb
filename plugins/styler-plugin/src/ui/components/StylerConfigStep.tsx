@@ -2,7 +2,7 @@ import { wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
 import { Box } from '@mui/material';
 import React, { useCallback } from 'react';
 import { i18n } from '@hierarchidb/ui-i18n';
-import { StylerConfig, StylerMapping, StylerMappingDefault, StylerStepData } from '../../common/types/StylerEntity.js';
+import { StylerConfig, StylerStepData } from '../../common/types/StylerEntity.js';
 import { StylerConfigDefault } from '../../common/types/StylerEntity.js';
 import { StylerConfigPanel } from './StylerConfigPanel.tsx';
 import { StylerStepProps } from './StylerStepProps.tsx';
@@ -19,7 +19,6 @@ export const StylerConfigStep: React.FC<StylerStepProps> = ({
   tabularData = [],
 }) => {
   const currentConfig: StylerConfig = data?.stylerConfig || StylerConfigDefault;
-  const currentMapping: StylerMapping = data?.mapping || StylerMappingDefault;
 
   const sampleValues = React.useMemo(() => {
     const valueColumn = data?.selectedValueColumn;
@@ -51,7 +50,6 @@ export const StylerConfigStep: React.FC<StylerStepProps> = ({
     <Box sx={{ width: '100%', p: 2 }}>
       <StylerConfigPanel
         config={currentConfig}
-        mapping={currentMapping}
         onChange={handleConfigChange}
         values={sampleValues}
         selectedValueColumn={data?.selectedValueColumn}

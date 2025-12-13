@@ -3,10 +3,9 @@ import type {
   ColorAlgorithm,
   ColorSpace,
   StylerConfig,
-  StylerMapping,
   StylerTableRow,
 } from '../../common/types/StylerEntity.js';
-import { StylerConfigDefault, StylerMappingDefault } from '../../common/types/StylerEntity.js';
+import { StylerConfigDefault } from '../../common/types/StylerEntity.js';
 import { generateColorGradient } from '../../common/utils/colorUtils.js';
 import {
   analyzeData,
@@ -18,7 +17,6 @@ type FormatFn = (key: string, defaultValue: string) => string;
 
 export interface UseStylerConfigPanelStateParams {
   config?: StylerConfig;
-  mapping?: StylerMapping;
   onChange: (config: StylerConfig) => void;
   values?: number[];
   selectedValueColumn?: string;
@@ -28,7 +26,6 @@ export interface UseStylerConfigPanelStateParams {
 
 export const useStylerConfigPanelState = ({
   config = StylerConfigDefault,
-  mapping = StylerMappingDefault,
   onChange,
   values = [],
   selectedValueColumn,
@@ -44,11 +41,8 @@ export const useStylerConfigPanelState = ({
         const max = Math.max(...numericValues);
         return {
           ...config,
-          mapping: {
-            ...mapping,
-            min,
-            max,
-          },
+          min,
+          max,
         };
       }
     }
@@ -169,10 +163,7 @@ export const useStylerConfigPanelState = ({
     (field: keyof StylerConfig) => (_event: Event, value: number | number[]) => {
       const newConfig = {
         ...localConfig,
-        mapping: {
-          ...localConfig,
-          [field]: value as number,
-        },
+        [field]: value as number,
       };
       setLocalConfig(newConfig);
       onChange(newConfig);
@@ -194,7 +185,7 @@ export const useStylerConfigPanelState = ({
     (hex: string) => {
       const newConfig = {
         ...localConfig,
-        mapping: { ...localConfig, startColor: hex },
+        startColor: hex,
       };
       setLocalConfig(newConfig);
       onChange(newConfig);
@@ -206,7 +197,7 @@ export const useStylerConfigPanelState = ({
     (hex: string) => {
       const newConfig = {
         ...localConfig,
-        mapping: { ...localConfig, endColor: hex },
+        endColor: hex,
       };
       setLocalConfig(newConfig);
       onChange(newConfig);

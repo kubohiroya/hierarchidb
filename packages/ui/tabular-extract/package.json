@@ -24,6 +24,7 @@
   },
   "peerDependencies": {
     "@hierarchidb/ui-file": "workspace:*",
+    "@hierarchidb/ui-data-grid": "workspace:*",
     "@hierarchidb/tabular-source": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/ui-modal-select": "workspace:*",
@@ -37,6 +38,7 @@
   },
   "devDependencies": {
     "@hierarchidb/ui-file": "workspace:*",
+    "@hierarchidb/ui-data-grid": "workspace:*",
     "@hierarchidb/tabular-source": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/ui-modal-select": "workspace:*",

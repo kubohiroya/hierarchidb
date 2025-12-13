@@ -10023,9 +10023,13 @@ ToDo（Phase 2/3: any の完全撤去）
  - 2025-12-12 04:47 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0。
  - 2025-12-12 04:47 command: pnpm --filter @hierarchidb/runtime-worker test -- --run "tree-table-expanded" — exit 0。
  - 2025-12-12 04:56 command: pnpm --filter @hierarchidb/app typecheck — exit 0（plugin-base build 時の define 警告は既知）。
- - 2025-12-11 23:30 progress: fix/shape/dialog-metadata-host — ShapeDialogHost で BasicInfoStep に渡す metadata を draftMetadata のみ（data.metadata フォールバック程度）に限定し、共通コードのデフォルト埋め込みを撤去。検証: `pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。
- - 2025-12-11 23:35 progress: fix/ui-dialog/esc-close-regression — MultiStepDialogFrame に Escape のグローバル keydown リスナー（capture）を追加し、フォーカスが外れていても Esc で onRequestClose が走るようにした。検証: `pnpm --filter @hierarchidb/ui-dialog typecheck` exit 0。
- - 2025-12-11 22:40 progress: fix/shape/dialog-metadata-initial — TreeNodeUpdaterState に metadata（コミット済み）を保持し、useTreeNodeUpdater の state 更新でも保持するように拡張。UI 側が draftMetadata を取り損ねた場合でも metadata を参照できるようにするための防御的対応。
+ - 2025-12-13 11:40 start: fix/app/document-title-routing — ルートごとに document.title を page/target/dialog のノード名と action/nodeType から組み立てて更新する実装に着手。DoD: パスに応じたタイトル設定（page/target/dialog）、既存タイトルのフォールバック、代表 typecheck 実行と記録、ロールバック手順記載。
+ - 2025-12-13 12:05 progress: fix/app/document-title-routing — tree layout に useTreeDocumentTitle フックを追加し、page/target/dialog の loader データからタイトルを優先順位付きで決定（dialog > target > page > 既定）。dialog は `{targetNode.name} {action} {nodeType}` を組み立て、フォールバックを HierarchiDB App に統一。
+ - 2025-12-13 12:15 command: pnpm --filter @hierarchidb/app typecheck — exit 0（plugin-base build で define 警告は既知のまま）。
+ - 2025-12-13 12:25 done: fix/app/document-title-routing — タイトル更新フックを tree layout に統合し、page/target/dialog の各パスで期待どおりのタイトルへ更新されるようにした。ロールバック: `app/src/router/routes/t.($treeId).($pageNodeId).tsx` と `app/src/router/routes/tree/dialogRoute.tsx` の差分を revert し、`pnpm --filter @hierarchidb/app typecheck` を再実行。
+- 2025-12-11 23:30 progress: fix/shape/dialog-metadata-host — ShapeDialogHost で BasicInfoStep に渡す metadata を draftMetadata のみ（data.metadata フォールバック程度）に限定し、共通コードのデフォルト埋め込みを撤去。検証: `pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。
+- 2025-12-11 23:35 progress: fix/ui-dialog/esc-close-regression — MultiStepDialogFrame に Escape のグローバル keydown リスナー（capture）を追加し、フォーカスが外れていても Esc で onRequestClose が走るようにした。検証: `pnpm --filter @hierarchidb/ui-dialog typecheck` exit 0。
+- 2025-12-11 22:40 progress: fix/shape/dialog-metadata-initial — TreeNodeUpdaterState に metadata（コミット済み）を保持し、useTreeNodeUpdater の state 更新でも保持するように拡張。UI 側が draftMetadata を取り損ねた場合でも metadata を参照できるようにするための防御的対応。
  - 2025-12-11 22:42 command: pnpm --filter @hierarchidb/plugin-ui-sdk typecheck — exit 0。
  - 2025-12-11 16:55 start: investigate/dialog-ui-state-persist — SaveDraft/Save/Create 永続化時に dialogUIState が Worker へ渡るかコード確認。DoD: UI→Worker 呼び出し経路と引数を特定し記録、変更なし。
 - 2025-12-11 17:20 progress: investigate/dialog-ui-state-persist — updateTreeNodeDialogUIState を廃止し、commitDraft リクエストに draftMetadata/draftData/dialogUIState/data/metadata をまとめて渡す形に統合。commitTreeNodeDraft で dialogUIState を保持し、save-draft モードを追加（TreeNodeUpdaterService）。SDK の persist/commit/saveDraft も単一 commitDraft 呼び出しに変更。

@@ -18,15 +18,19 @@ import {
   Typography,
 } from '@mui/material';
 import { createTheme, ThemeProvider, useTheme } from '@mui/material/styles';
-import { Outlet, useLoaderData, useNavigate } from '@tanstack/react-router';
+import { Outlet, useLoaderData, useNavigate, useRouterState } from '@tanstack/react-router';
 import type { MouseEvent, ReactNode } from 'react';
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import AppLogoIcon from '~/components/AppLogoIcon.js';
 import { useOptionalBootProgress } from '~/contexts/BootProgressProvider.js';
 import { useWorker } from '~/contexts/WorkerProvider.js';
 import { memo } from 'react';
-import type { LoadPageNodeReturn } from '../loaders/treeLoaders.js';
+import type { LoadNodeActionReturn, LoadPageNodeReturn, LoadTargetNodeReturn } from '../loaders/treeLoaders.js';
 import type { TreeConsoleIntegrationProps } from '~/router/pages/tree/console/TreeConsoleIntegration.js';
+import { treeDialogRoute } from './tree/dialogRoute.js';
+import { treePageRoute } from './tree/pageRoute.js';
+import { treeTargetRoute } from './tree/targetRoute.js';
+import type { TreeDialogLoaderResult } from './tree/dialogRoute.js';
 
 const LazyTreeConsoleIntegration = lazy(async () => {
   const mod = await import('~/router/pages/tree/console/TreeConsoleIntegration.js');
@@ -47,6 +51,57 @@ type TreeLayoutBodyProps = {
   data: LoaderData;
 };
 
+function useTreeDocumentTitle() {
+  const matches = useRouterState({ select: (state) => state.matches });
+
+  const pageMatch = useMemo(
+    () => matches.find((match) => match.routeId === treePageRoute.id),
+    [matches]
+  );
+  const targetMatch = useMemo(
+    () => matches.find((match) => match.routeId === treeTargetRoute.id),
+    [matches]
+  );
+  const dialogMatch = useMemo(
+    () => matches.find((match) => match.routeId === treeDialogRoute.id),
+    [matches]
+  );
+
+  const nextTitle = useMemo(() => {
+    const defaultTitle = 'HierarchiDB App';
+
+    const dialogData = dialogMatch?.loaderData as TreeDialogLoaderResult | undefined;
+    if (dialogData?.kind === 'plugin') {
+      const { targetNode, params } = dialogData.data as LoadNodeActionReturn & {
+        params?: { action?: string; nodeType?: string };
+      };
+      const dialogTargetName = targetNode?.metadata?.name;
+      if (dialogTargetName && params?.action && params?.nodeType) {
+        return `${dialogTargetName} (${params.action} ${params.nodeType})`;
+      }
+    }
+
+    const targetData = targetMatch?.loaderData as LoadTargetNodeReturn | undefined;
+    const targetTitle = targetData?.targetNode?.metadata?.name;
+    if (targetTitle) {
+      return targetTitle;
+    }
+
+    const pageData = pageMatch?.loaderData as LoadPageNodeReturn | undefined;
+    const pageTitle = pageData?.pageNode?.metadata?.name ?? pageData?.tree?.name;
+    if (pageTitle) {
+      return pageTitle;
+    }
+
+    return defaultTitle;
+  }, [dialogMatch?.loaderData, targetMatch?.loaderData, pageMatch?.loaderData]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    document.title = nextTitle;
+  }, [nextTitle]);
+}
+
 export default function TLayout() {
   const data = useLoaderData({ from: '/t/$treeId/$pageNodeId' }) as LoaderData;
   return <TreeLayoutBody data={data} />;
@@ -61,6 +116,7 @@ export function TreeLayoutBody({ data }: TreeLayoutBodyProps) {
   const isUserMenuReady = Boolean(
     bootProgress?.steps.Auth.done && bootProgress?.steps.Theme.done && bootProgress?.steps.I18n.done
   );
+  useTreeDocumentTitle();
 
   const nodeNotFound = data.pageNode === undefined && data.tree !== undefined;
   const [notFoundOpen, setNotFoundOpen] = useState<boolean>(nodeNotFound);

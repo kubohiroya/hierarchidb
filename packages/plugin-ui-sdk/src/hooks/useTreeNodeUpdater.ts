@@ -327,11 +327,12 @@ export function useTreeNodeUpdater<TPayload extends Record<string, unknown> = Re
           };
         }
 
+        const shouldClearDraft = mode !== 'save-draft';
         refreshedCopy = {
           ...refreshedCopy,
-          draftMetadata: null,
-          draftData: null,
-          hasRemoteDraft: false,
+          draftMetadata: shouldClearDraft ? null : refreshedCopy.draftMetadata ?? finalData.draftMetadata ?? null,
+          draftData: shouldClearDraft ? null : (refreshedCopy.draftData as TPayload | null) ?? (finalData.draftData as TPayload | null) ?? null,
+          hasRemoteDraft: !shouldClearDraft,
         };
 
         setDraft(refreshedCopy);

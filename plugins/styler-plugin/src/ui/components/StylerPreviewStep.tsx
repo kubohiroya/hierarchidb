@@ -11,11 +11,12 @@ import { Alert, AlertTitle, Box } from '@mui/material';
 import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { i18n } from '@hierarchidb/ui-i18n';
-import { StylerConfig, StylerMapping, StylerMappingDefault, StylerStepData } from '../../common/types/StylerEntity.js';
+import { StylerConfig, StylerMapping, StylerMappingDefault, StylerStepData, StylerTableRow } from '../../common/types/StylerEntity.js';
 import { StylerConfigDefault } from '../../common/types/StylerEntity.js';
 import { StylerPreviewPanel } from './StylerPreviewPanel.tsx';
 
 import { StylerStepProps } from './StylerStepProps.tsx';
+import type { TabularFilterRule } from '@hierarchidb/ui-tabular-extract';
 
 const getStylerT = () =>
   typeof i18n.getFixedT === 'function'
@@ -31,14 +32,132 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
 }) => {
   const { t } = useTranslation('styler-plugin');
   const config: StylerConfig = data?.stylerConfig || StylerConfigDefault;
-  const mapping: StylerMapping = data?.mapping || StylerMappingDefault;
-  const keyColumn = data?.selectedKeyColumn;
-  const valueColumn = data?.selectedValueColumn;
+  const mapping: StylerMapping = {
+    ...StylerMappingDefault,
+    ...(data?.mapping ?? {}),
+  };
+  const keyColumn =
+    data?.selectedKeyColumn ??
+    mapping.keyColumn ??
+    (data?.stylerConfig as { keyColumn?: string } | undefined)?.keyColumn;
+  const valueColumn =
+    data?.selectedValueColumn ??
+    mapping.valueColumn ??
+    (data?.stylerConfig as { valueColumn?: string } | undefined)?.valueColumn;
+  const targetProperty = mapping.targetProperty;
+  const styleType =
+    mapping.styleType ??
+    (data?.stylerConfig as { styleType?: StylerMapping['styleType'] } | undefined)?.styleType;
+
+  const prepareFilters = useCallback((rules: TabularFilterRule[]): Array<{
+    column: string;
+    operator: TabularFilterRule['operator'];
+    value?: string | number;
+    regex?: RegExp;
+  }> => {
+    return rules
+      .filter((rule) => rule.enabled !== false && rule.column)
+      .map((rule) => {
+        const prepared: {
+          column: string;
+          operator: TabularFilterRule['operator'];
+          value?: string | number;
+          regex?: RegExp;
+        } = {
+          column: rule.column,
+          operator: rule.operator,
+        };
+        if (rule.operator === 'regex' && typeof rule.value === 'string') {
+          try {
+            prepared.regex = new RegExp(rule.value);
+          } catch {
+            prepared.regex = undefined;
+          }
+        } else if (typeof rule.value === 'number' || typeof rule.value === 'string') {
+          prepared.value = rule.value;
+        }
+        return prepared;
+      });
+  }, []);
+
+  const matchesFilters = useCallback(
+    (row: StylerTableRow, filters: ReturnType<typeof prepareFilters>): boolean => {
+      if (!filters.length) return true;
+      const toStr = (v: unknown) => (v === null || v === undefined ? '' : String(v));
+      const toNum = (v: unknown): number | null => {
+        if (typeof v === 'number' && Number.isFinite(v)) return v;
+        if (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v.trim())) {
+          const parsed = Number(v);
+          return Number.isFinite(parsed) ? parsed : null;
+        }
+        return null;
+      };
+      return filters.every((filter) => {
+        const rowValue = row[filter.column];
+        switch (filter.operator) {
+          case 'equals':
+            return toStr(rowValue) === toStr(filter.value);
+          case 'not_equals':
+            return toStr(rowValue) !== toStr(filter.value);
+          case 'contains':
+            return typeof filter.value === 'string'
+              ? toStr(rowValue).toLowerCase().includes(filter.value.toLowerCase())
+              : false;
+          case 'not_contains':
+            return typeof filter.value === 'string'
+              ? !toStr(rowValue).toLowerCase().includes(filter.value.toLowerCase())
+              : true;
+          case 'starts_with':
+            return typeof filter.value === 'string'
+              ? toStr(rowValue).toLowerCase().startsWith(filter.value.toLowerCase())
+              : false;
+          case 'ends_with':
+            return typeof filter.value === 'string'
+              ? toStr(rowValue).toLowerCase().endsWith(filter.value.toLowerCase())
+              : false;
+          case 'greater_than': {
+            const rv = toNum(rowValue);
+            const fv = toNum(filter.value);
+            return rv !== null && fv !== null ? rv > fv : false;
+          }
+          case 'greater_equal': {
+            const rv = toNum(rowValue);
+            const fv = toNum(filter.value);
+            return rv !== null && fv !== null ? rv >= fv : false;
+          }
+          case 'less_than': {
+            const rv = toNum(rowValue);
+            const fv = toNum(filter.value);
+            return rv !== null && fv !== null ? rv < fv : false;
+          }
+          case 'less_equal': {
+            const rv = toNum(rowValue);
+            const fv = toNum(filter.value);
+            return rv !== null && fv !== null ? rv <= fv : false;
+          }
+          case 'is_null':
+            return rowValue === null || rowValue === undefined || rowValue === '';
+          case 'is_not_null':
+            return !(rowValue === null || rowValue === undefined || rowValue === '');
+          case 'regex':
+            return filter.regex ? filter.regex.test(toStr(rowValue)) : true;
+          default:
+            return true;
+        }
+      });
+    },
+    []
+  );
 
   const previewData = useMemo(() => {
-    //  1000
-    return tabularData.slice(0, 1000);
-  }, [tabularData]);
+    const preparedFilters = prepareFilters((data?.filters as TabularFilterRule[] | undefined) ?? []);
+    const rows: StylerTableRow[] =
+      (Array.isArray(tabularData) && tabularData.length > 0
+        ? (tabularData as StylerTableRow[])
+        : ((data?.lastPreview?.rows as unknown as StylerTableRow[]) ?? [])) ?? [];
+    const filtered = preparedFilters.length ? rows.filter((row) => matchesFilters(row, preparedFilters)) : rows;
+    return filtered.slice(0, 1000);
+  }, [data?.filters, data?.lastPreview?.rows, matchesFilters, prepareFilters, tabularData]);
 
   //  :
   const handleColumnSelect = useCallback(
@@ -62,13 +181,13 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
 
   React.useEffect(() => {
     if (onValidate) {
-      //  Step6
-      onValidate(true);
+      const ok = Boolean(keyColumn && valueColumn && targetProperty && styleType);
+      onValidate(ok);
     }
-  }, [onValidate]);
+  }, [onValidate, keyColumn, valueColumn, targetProperty, styleType]);
 
   //  :
-  if (!mapping || !keyColumn || !valueColumn) {
+  if (!keyColumn || !valueColumn || !targetProperty || !styleType) {
     return (
       <Box sx={{ p: 3 }}>
         <Alert severity="info">
@@ -84,13 +203,19 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
             {!valueColumn && (
               <li>{t('step6.required.valueColumn', 'Select a value column for mapping')}</li>
             )}
+            {!targetProperty && (
+              <li>{t('step6.required.targetProperty', 'Select a target property')}</li>
+            )}
+            {!styleType && (
+              <li>{t('step6.required.styleType', 'Select a style type')}</li>
+            )}
           </ul>
         </Alert>
       </Box>
     );
   }
 
-  if (tabularData.length === 0) {
+  if (previewData.length === 0) {
     return (
       <Box sx={{ p: 3 }}>
         <Alert severity="warning">

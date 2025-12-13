@@ -6,7 +6,7 @@ import type {
   TabularProcessingConfig,
 } from '@hierarchidb/ui-tabular-extract';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
-import type { SpreadsheetEntity, SpreadSheetDataSourceConfig } from '../../common/types/SpreadsheetEntity.js';
+import type { SpreadsheetEntity, SpreadSheetDataSourceType } from '../../common/types/SpreadsheetEntity.js';
 import { SPREADSHEET_NODE_TYPE } from '../../common/constants.js';
 import { createSpreadsheetTabularApi } from '../../services/spreadsheetTabularApiFactory.js';
 
@@ -97,7 +97,7 @@ export const useTabularDataSource = ({
 
   const onFileImported = useCallback(
     (tabularTableMetadata: TabularTableMetadata) => {
-      const nextDataSource: SpreadSheetDataSourceConfig = {
+      const nextDataSource: SpreadSheetDataSourceType = {
         type: importMethod,
         source: importMethod === 'url' ? downloadUrl : tabularTableMetadata.fileUrl ?? tabularTableMetadata.filename,
         filename: tabularTableMetadata.filename,

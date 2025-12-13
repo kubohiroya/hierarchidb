@@ -48,10 +48,10 @@
                 "enabled": true
               }
             ],
-            "stylerConfig": {
-              "styleType": "gradient",
-              targetProperty: "fill-color",
-              "keyColumn": "Country",
+            "mapping": {
+              "styleType": "choropleth",
+              "targetProperty": "fill-color",
+              "keyColumn": "Country Code",
               "valueColumn": "Value"
             },
             "colorStops": [

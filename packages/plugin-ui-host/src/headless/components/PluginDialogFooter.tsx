@@ -139,7 +139,9 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   const leftActionType = isFirstStep ? 'cancel' : 'back';
   const rightActionType = isLastStep ? 'commit' : 'next';
   const disableLeftPrimary = hasPendingAction;
-  const disableRightPrimary = hasPendingAction;
+  const nextStepIndex = ctx.activeStepIndex + 1;
+  const canNavigateNext = ctx.enabledStepIndices?.includes(nextStepIndex);
+  const disableRightPrimary = hasPendingAction || (!isLastStep && !canNavigateNext);
   const showSaveDraft = typeof onSaveDraft === 'function';
   const showStartBatch = typeof onStartBatch === 'function';
   const disableDraftButton = (disableDraft ?? !isDirty) || hasPendingAction;

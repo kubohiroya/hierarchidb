@@ -12,7 +12,7 @@ export interface UploadedFileSummary {
   lastModifiedAt?: Timestamp;
 }
 
-export interface SpreadSheetDataSourceConfig {
+export interface SpreadSheetDataSourceType {
   type: DataSourceType;
   source?: string;
   filename?: string;
@@ -22,7 +22,7 @@ export interface SpreadSheetDataSourceConfig {
 
 export interface SpreadsheetEntity {
   spreadsheetMetadataId?: string;
-  dataSource?: SpreadSheetDataSourceConfig;
+  dataSource?: SpreadSheetDataSourceType;
   filters?: TabularFilterRule[];
   lastPreview?: TabularDataResult;
   file?: UploadedFileSummary;

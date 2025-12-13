@@ -1,10 +1,13 @@
 {
   "styleSettings": {
     "title": "Style Mapping",
-    "description": "Select the style type, data source column, and target property before configuring algorithms.",
+    "description": "Map the source columns to the styles",
+    "source": {
+      "label": "Key/Value Column Pair"
+    },
     "styleType": {
-      "label": "Style Type",
-      "help": "Select the geometry that this style targets.",
+      "label": "Style Target",
+      "help": "Select a property as its style targets.",
       "options": {
         "choropleth": "Chorograph",
         "points": "Point rendering",
@@ -16,9 +19,14 @@
         "lines": "Set line width and colors for transportation routes."
       }
     },
+    "keyColumn": {
+      "label": "Property key source",
+      "help": "Choose the filtered table column whose value will drive styling keys.",
+      "none": "Select a column"
+    },
     "valueColumn": {
       "label": "Property value source",
-      "help": "Choose the filtered table column whose values will drive styling.",
+      "help": "Choose the filtered table column whose values will drive styling values.",
       "none": "Select a column"
     },
     "targetProperty": {

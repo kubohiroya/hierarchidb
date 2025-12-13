@@ -41,3 +41,6 @@ export type {
   TabularColumnSelectProps,
   FilterOperatorOption,
 } from './components/index.js';
+
+// Preview (re-export from ui-data-grid)
+export { TabularPreview } from '../../data-grid/src/TabularPreview.js';

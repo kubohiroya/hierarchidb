@@ -1,8 +1,8 @@
 import type { SpreadsheetEntity } from '@hierarchidb/spreadsheet-plugin';
 import type { MapLibreStyle } from '@hierarchidb/ui-map';
 
-import { type StepData } from '@hierarchidb/plugin-base';
-import { SpreadSheetDataSourceConfig } from '@hierarchidb/spreadsheet-plugin';
+import type { StepData } from '@hierarchidb/plugin-base';
+import type { SpreadSheetDataSourceType } from '@hierarchidb/spreadsheet-plugin';
 export type StyleType = 'choropleth' | 'points' | 'lines';
 
 export type MapLibreStyleProperty =
@@ -221,9 +221,35 @@ export const MAPLIBRE_PROPERTY_GROUPS: PropertyGroup[] = [
   },
 ];
 
+export const STYLE_TYPE_OPTIONS: ReadonlyArray<{
+  value: StyleType;
+  labelKey: string;
+  descriptionKey: string;
+  icon: string;
+}> = [
+  {
+    value: 'choropleth',
+    labelKey: 'styleSettings.styleType.options.choropleth',
+    descriptionKey: 'styleSettings.styleType.descriptions.choropleth',
+    icon: 'shape',
+  },
+  {
+    value: 'points',
+    labelKey: 'styleSettings.styleType.options.points',
+    descriptionKey: 'styleSettings.styleType.descriptions.points',
+    icon: 'location',
+  },
+  {
+    value: 'lines',
+    labelKey: 'styleSettings.styleType.options.lines',
+    descriptionKey: 'styleSettings.styleType.descriptions.lines',
+    icon: 'route',
+  },
+];
+
 export type StylerStepData = StylerDialogData &
   StepData & {
-  dataSource?: SpreadSheetDataSourceConfig;
+  dataSource?: SpreadSheetDataSourceType;
   colorScheme?: string;
   opacity?: number;
   strokeWidth?: number;

@@ -186,7 +186,7 @@ export async function evaluateStepGuards({
   })();
 
   const nextIndex = activeStepIndex + 1;
-  const defaultCanProceed = nextIndex < steps.length ? await checkNavigate(nextIndex) : false;
+  const defaultCanProceed = Boolean(filled?.[activeStepIndex] ?? false);
   const canProceedNext = await callBoolean(
     activeConfig?.capabilities?.canProceedToNext,
     defaultCanProceed

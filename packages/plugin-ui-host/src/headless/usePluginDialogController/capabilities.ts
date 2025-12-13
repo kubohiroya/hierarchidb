@@ -3,7 +3,6 @@ import {
   evaluateStepGuards,
   evaluateValidationState,
   emptyGuards,
-  isShallowEqualStepData,
 } from '../controller/step-guards.js';
 import type { PluginStepConfig, composeStepConfigs } from '@hierarchidb/plugin-base';
 import type { DialogStep } from '@hierarchidb/ui-dialog';
@@ -23,9 +22,6 @@ export function useStepCapabilities<T extends Record<string, unknown> = Record<s
 }: Params<T>) {
   const prevFilledRef = useState<boolean[]>([])[0];
   const prevGuardsRef = useState<Awaited<ReturnType<typeof evaluateStepGuards>>>(emptyGuards)[0];
-  const prevDialogDataRef = useRef<Partial<T> | null>(null);
-  const prevStepSigRef = useRef<string>('');
-  const prevActiveStepRef = useRef<number>(-1);
   const [evaluatedState, setEvaluatedState] = useState<{
     filled: boolean[];
     guards: Awaited<ReturnType<typeof evaluateStepGuards>>;
@@ -45,19 +41,6 @@ export function useStepCapabilities<T extends Record<string, unknown> = Record<s
   };
 
   useEffect(() => {
-    const stepSig = steps.map((s) => `${s.id}:${s.optional ? '1' : '0'}`).join('|');
-    const dialogSame = isShallowEqualStepData(prevDialogDataRef.current as any, dialogData as any);
-    if (
-      dialogSame &&
-      prevStepSigRef.current === stepSig &&
-      prevActiveStepRef.current === activeStepIndex
-    ) {
-      return;
-    }
-    prevDialogDataRef.current = dialogData;
-    prevStepSigRef.current = stepSig;
-    prevActiveStepRef.current = activeStepIndex;
-
     let cancelled = false;
     const evaluate = async () => {
       try {

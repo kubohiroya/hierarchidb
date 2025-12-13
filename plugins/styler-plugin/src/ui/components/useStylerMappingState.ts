@@ -70,6 +70,7 @@ export const useStylerMappingState = ({
 
   const sanitizedStyleType = useMemo(() => {
     const candidate = (pluginData.mapping?.styleType ??
+      (pluginData.stylerConfig as { styleType?: StyleType } | undefined)?.styleType ??
       // Legacy persisted root-level styleType
       (pluginData as { styleType?: StyleType })?.styleType) as StyleType | undefined;
     return styleTypeOptions.some((option) => option.value === candidate) ? candidate : undefined;
@@ -84,22 +85,24 @@ export const useStylerMappingState = ({
     [pluginData.colorScheme, sanitizedStyleType]
   );
 
-  const updateSettings = useCallback(
-    (patch: Partial<{ styleType?: StyleType; colorScheme?: StylerStepData['colorScheme'] }>) => {
-      const nextStyleType = patch.styleType ?? settings.styleType;
-      const nextColorScheme = patch.colorScheme ?? pluginData.colorScheme;
+  const handleKeyColumnChange = useCallback(
+    (keyColumn: string) => {
       const nextData: StylerStepData = {
         ...(pluginData as StylerStepData),
-        colorScheme: nextColorScheme,
+        selectedKeyColumn: keyColumn,
+        mapping: {
+          ...(pluginData.mapping ?? {}),
+          keyColumn,
+        } as StylerStepData['mapping'],
         stylerConfig: {
           ...(pluginData.stylerConfig ?? {}),
-          styleType: nextStyleType,
+          keyColumn,
         } as StylerStepData['stylerConfig'],
       };
-      delete (nextData as { styleType?: StyleType }).styleType;
+      //delete (nextData as { styleType?: StyleType }).styleType;
       onChange(nextData);
     },
-    [pluginData, settings.styleType, onChange]
+    [pluginData, onChange]
   );
 
   const handleValueColumnChange = useCallback(
@@ -107,15 +110,34 @@ export const useStylerMappingState = ({
       const nextData: StylerStepData = {
         ...(pluginData as StylerStepData),
         selectedValueColumn: valueColumn,
+        mapping: {
+          ...(pluginData.mapping ?? {}),
+          valueColumn,
+        } as StylerStepData['mapping'],
         stylerConfig: {
           ...(pluginData.stylerConfig ?? {}),
           valueColumn,
         } as StylerStepData['stylerConfig'],
       };
-      delete (nextData as { styleType?: StyleType }).styleType;
+      //delete (nextData as { styleType?: StyleType }).styleType;
       onChange(nextData);
     },
     [pluginData, onChange]
+  );
+
+  const handleStyleTypeChange = useCallback((styleType: StyleType) => {
+    const nextStyleType = styleType ?? settings.styleType;
+      const nextData: StylerStepData = {
+        ...(pluginData as StylerStepData),
+        stylerConfig: {
+          ...(pluginData.stylerConfig ?? {}),
+          styleType: nextStyleType,
+        } as StylerStepData['stylerConfig'],
+      };
+      // delete (nextData as { styleType?: StyleType }).styleType;
+      onChange(nextData);
+    },
+    [pluginData, settings.styleType, onChange]
   );
 
   const handleTargetPropertyChange = useCallback(
@@ -127,7 +149,7 @@ export const useStylerMappingState = ({
           targetProperty,
         } as StylerStepData['stylerConfig'],
       };
-      delete (nextData as { styleType?: StyleType }).styleType;
+      // delete (nextData as { styleType?: StyleType }).styleType;
       onChange(nextData);
     },
     [pluginData, onChange]
@@ -139,9 +161,9 @@ export const useStylerMappingState = ({
       (pluginData.mapping?.styleType || (pluginData as { styleType?: StyleType }).styleType) &&
       !sanitizedStyleType
     ) {
-      updateSettings({ styleType: 'choropleth' });
+      handleStyleTypeChange('choropleth' as StyleType);
     }
-  }, [pluginData, sanitizedStyleType, updateSettings]);
+  }, [pluginData, sanitizedStyleType, handleStyleTypeChange]);
 
   useEffect(() => {
     const valid = isStyleMappingComplete({
@@ -167,7 +189,8 @@ export const useStylerMappingState = ({
     columns,
     sanitizedStyleType,
     settings,
-    updateSettings,
+    handleStyleTypeChange,
+    handleKeyColumnChange,
     handleValueColumnChange,
     handleTargetPropertyChange,
   };

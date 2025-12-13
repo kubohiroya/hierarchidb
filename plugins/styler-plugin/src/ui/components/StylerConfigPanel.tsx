@@ -33,13 +33,12 @@ import { useCallback } from 'react';
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import type { StylerConfig, StylerMapping, StylerTableRow } from '../../common/types/StylerEntity.js';
-import { StylerConfigDefault, StylerMappingDefault } from '../../common/types/StylerEntity.js';
+import type { StylerConfig, StylerTableRow } from '../../common/types/StylerEntity.js';
+import { StylerConfigDefault } from '../../common/types/StylerEntity.js';
 import { useStylerConfigPanelState } from './useStylerConfigPanelState.js';
 
 export interface StylerMappingProps {
   config?: StylerConfig;
-  mapping: StylerMapping;
   onChange: (config: StylerConfig) => void;
   values?: number[];
   selectedValueColumn?: string;
@@ -48,7 +47,6 @@ export interface StylerMappingProps {
 
 export const StylerConfigPanel = ({
   config = StylerConfigDefault,
-  mapping = StylerMappingDefault,
   onChange,
   values = [],
   selectedValueColumn,
@@ -87,7 +85,6 @@ export const StylerConfigPanel = ({
     gradientPreview,
   } = useStylerConfigPanelState({
     config,
-    mapping,
     onChange,
     values,
     selectedValueColumn,

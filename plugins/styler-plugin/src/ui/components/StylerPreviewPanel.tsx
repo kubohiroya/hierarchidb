@@ -415,10 +415,11 @@ export const StylerPreviewPanel: React.FC<StylerTablePreviewProps> = ({
           </TableHead>
           <TableBody>
             {sortedData.map((row, index) => {
-              const rowKey =
+              const keyValue =
                 selectedKeyColumn && row[selectedKeyColumn] !== undefined
                   ? `${selectedKeyColumn}-${String(row[selectedKeyColumn])}`
-                  : `row-${index}-${Object.values(row).join('|')}`;
+                  : 'row';
+              const rowKey = `${keyValue}-${index}`;
               return (
                 <TableRowComponent
                   key={rowKey}
