@@ -7,7 +7,6 @@ import { PreviewTestStep } from './steps/PreviewTestStep.js';
 import type { ResolverUpdaterPayload, SchemaInfo, MappingValidationResult } from '../../common/types/index.js';
 import type { NodeId } from '@hierarchidb/common-types';
 import { ResolverBuildStep } from './steps/ResolverBuildStep.js';
-import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -60,31 +59,6 @@ registry.registerConfigProvider<ResolverUpdaterPayload>({
   nodeType: 'resolver',
   getCreateStepConfigs(): PluginStepConfig<ResolverUpdaterPayload>[] {
     return [
-      {
-        id: 'basic-info',
-        label: 'Basic Info',
-        componentFactory: (p: ResolverStepProps) => {
-          const currentData = ensureDraft(p.data as ResolverData);
-          const meta = currentData.draftMetadata ?? { name: '', description: '', tags: [] };
-          return (
-            <BasicInfoStep
-              name={meta.name ?? ''}
-              description={meta.description ?? ''}
-              tags={meta.tags ?? []}
-              mode={p.mode}
-              onChange={({ name, description, tags }: BasicInfoData) =>
-                p.onChange(
-                  mergeDraft(currentData, {
-                    draftMetadata: { ...meta, name, description, tags: tags ?? [] },
-                  })
-                )
-              }
-              validate={({ name }) => (name.trim().length ? null : 'Name is required')}
-            />
-          );
-        },
-        validate: (data?: ResolverUpdaterPayload) => Boolean(data?.draftMetadata?.name?.trim()),
-      },
       {
         id: 'schema', label: 'Schema Selection', validate: () => true,
         componentFactory: (p: ResolverStepProps) => {

@@ -10242,3 +10242,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-14 15:48 progress: feat/spreadsheet/styler-step3-share — spreadsheet-plugin に i18n リソース（en/ja）を追加し、TabularKeyValueStep の文言を登録。ui/index で locales を読み込むように変更。
 - 2025-12-14 15:48 command: pnpm --filter @hierarchidb/spreadsheet-plugin typecheck — exit 0。
 - 2025-12-14 15:43 start: fix/shape/step1-basicinfo-input — shape-plugin Step1 で name/description が入力できない問題の調査を開始。DoD: Step1 で name/description が通常入力できること（フォーカス/入力/削除）、入力値が後続ステップ/保存へ渡ること、他プラグイン/フィールドへの副作用なし、必要なテスト修正または追加が通ること。branch 作成不可のため main 上で作業。
+- 2025-12-14 16:01 progress: fix/shape/step1-basicinfo-input — shape/folder/route/location/linker/resolver/timeline の独自 BasicInfo ステップ登録を削除し、ホスト提供 BasicInfo へ委譲。Step1 入力がリセットされないことを実装レベルで確認。
+- 2025-12-14 16:01 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0 / pnpm --filter @hierarchidb/folder-plugin typecheck — exit 0 / pnpm --filter @hierarchidb/route-plugin typecheck — exit 0 / pnpm --filter @hierarchidb/location-plugin typecheck — exit 0 / pnpm --filter @hierarchidb/linker-plugin typecheck — exit 0 / pnpm --filter @hierarchidb/resolver-plugin typecheck — exit 0 / pnpm --filter @hierarchidb/timeline-plugin typecheck — exit 0。
+- 2025-12-14 16:02 done: fix/shape/step1-basicinfo-input — プラグイン側 BasicInfo コンポーネントを撤去し、ホスト側 BasicInfo のみで name/description/tags を管理する構成に統一。ロールバック: plugins/*-plugin/src/ui/components/steps-provider.tsx の今回差分を revert し、上記 typecheck コマンドを再実行。
+- 2025-12-14 16:07 progress: fix/shape/step1-basicinfo-input — timeline-plugin に残存していた未使用 BasicInfoStep コンポーネントと export を削除し、混乱要因を除去。
+- 2025-12-14 16:07 command: pnpm --filter @hierarchidb/timeline-plugin typecheck — exit 0。

@@ -1,4 +1,12 @@
-import { Box, FormControl, FormHelperText, InputLabel, MenuItem, Typography } from '@mui/material';
+import {
+  Box,
+  FormControl,
+  FormHelperText,
+  InputLabel,
+  MenuItem,
+  Typography,
+  type SelectChangeEvent,
+} from '@mui/material';
 import { ModalSelect } from '@hierarchidb/ui-modal-select';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 
@@ -16,7 +24,7 @@ export const KeyValueSourcePanel = ({
   keyColumn,
   valueColumn,
   columns,
-  menuContainer,
+  menuContainer: _menuContainer,
   onKeyColumnChange,
   onValueColumnChange,
   translationNamespace = 'spreadsheet-plugin',
@@ -37,11 +45,8 @@ export const KeyValueSourcePanel = ({
           name="keyColumn"
           value={keyColumn ?? ''}
           label={t('styleSettings.keyColumn.label', 'Column as property key source')}
-          onChange={(event) => onKeyColumnChange(event.target.value)}
-          menuContainer={menuContainer}
-          usePortal={false}
-          menuZIndexOffset={200}
-        >
+          onChange={(event: SelectChangeEvent<string>) => onKeyColumnChange(event.target.value)}
+          >
           <MenuItem value="">
             <em>{t('styleSettings.keyColumn.none', 'Select a column')}</em>
           </MenuItem>
@@ -62,10 +67,7 @@ export const KeyValueSourcePanel = ({
           name="valueColumn"
           value={valueColumn ?? ''}
           label={t('styleSettings.valueColumn.label', 'Column as property value source')}
-          onChange={(event) => onValueColumnChange(event.target.value)}
-          menuContainer={menuContainer}
-          usePortal={false}
-          menuZIndexOffset={200}
+          onChange={(event: SelectChangeEvent<string>) => onValueColumnChange(event.target.value)}
         >
           <MenuItem value="">
             <em>{t('styleSettings.valueColumn.none', 'Select a column')}</em>

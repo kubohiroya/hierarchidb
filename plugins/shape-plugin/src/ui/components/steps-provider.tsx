@@ -12,29 +12,15 @@ import { Step3Processing } from './steps/Step3Processing.tsx';
 import { Step4CountrySelection } from './steps/Step4CountrySelection.tsx';
 import { notify } from '@hierarchidb/components';
 import { useTranslation as getTranslation } from '../../common/i18n/index.js';
-import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
-import type { TreeNodeMetadata, NodeId } from '@hierarchidb/common-types';
-import { resolveDefaultNodeName } from '@hierarchidb/runtime-worker';
+import type { NodeId } from '@hierarchidb/common-types';
 
 const registry = PluginStepRegistry.getInstance();
 
 type ShapeStepData = StepData &
   Partial<ShapeEntity> & {
     treeNodeId?: NodeId;
-    draftMetadata?: TreeNodeMetadata | null;
   };
 type ShapeDialogStepProps = StepComponentProps<ShapeStepData>;
-
-const ensureDraft = (data?: ShapeStepData): ShapeStepData => ({
-  ...(data ?? {}),
-  draftMetadata:
-    data?.draftMetadata ??
-    ({
-      name: resolveDefaultNodeName('shape'),
-      description: '',
-      tags: [],
-    } as TreeNodeMetadata),
-});
 
 function createStepAdapter(Component: React.ComponentType<any>): (props: ShapeDialogStepProps) => JSX.Element {
   return function ShapeStepAdapter(props: ShapeDialogStepProps) {
@@ -83,37 +69,6 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
   getCreateStepConfigs() {
     const { t } = getTranslation();
     return [
-      {
-        id: 'basic-info',
-        label: t('steps.basicInfo.label', 'Basic Info'),
-        componentFactory: (props: ShapeDialogStepProps) => {
-          const draft = ensureDraft(props.data);
-          const meta =
-            draft.draftMetadata ??
-            ({
-              name: resolveDefaultNodeName('shape'),
-              description: '',
-              tags: [],
-            } as TreeNodeMetadata);
-          return (
-            <BasicInfoStep
-              name={meta.name ?? ''}
-              description={meta.description ?? ''}
-              tags={meta.tags ?? []}
-              mode={props.mode}
-              onChange={({ name, description, tags }: BasicInfoData) =>
-                props.onChange({
-                  ...draft,
-                  draftMetadata: { ...meta, name, description, tags: tags ?? [] },
-                })
-              }
-              validate={({ name }) => (name.trim().length ? null : 'Name is required')}
-            />
-          );
-        },
-        validate: (data?: ShapeStepData) =>
-          Boolean(data?.draftMetadata?.name?.trim?.()),
-      },
       {
         id: 'data-source',
         label: t('steps.dataSource.label', 'Data Source'),

@@ -5,7 +5,7 @@
     "accordion": {
       "styleType": "スタイルタイプ",
       "targetProperty": "ターゲットプロパティ",
-      "keyValuePair": "Key-Value Pair"
+      "algorithm": "アルゴリズム"
     },
     "keyValuePair": {
       "description": "スタイルに使うキーと値の列を選び、値の基本統計を確認します。",
@@ -112,10 +112,12 @@
     "title": "ステップ5: スタイルマッピング設定",
     "algorithms": {
       "linear": "線形補間",
+      "log": "対数",
       "quantile": "分位点",
       "jenks": "ジェンクス自然分類",
       "equal": "等間隔",
       "linearDescription": "最小値と最大値の間を滑らかに補間します。連続値に適しています。",
+      "logDescription": "対数スケールで小さい値の差異を強調し、大きな値を圧縮します。大きくスキューした分布に適します。",
       "quantileDescription": "要素数が均等になるようクラスを分割します。外れ値に強く、偏った分布でもバランス良く表示します。",
       "jenksDescription": "クラス内分散を最小化しクラス間分散を最大化して自然な区切りを見つけます。意味のあるグルーピングを提供します。",
       "equalDescription": "値域を等しい幅で分割します。連続的でほぼ線形な分布（温度や標高など）に適しています。"
@@ -175,6 +177,28 @@
       "stdDev": "標準偏差: {{value}}",
       "min": "最小: {{value}}",
       "max": "最大: {{value}}"
+    },
+    "algorithm": {
+      "valueColumn": "値の列",
+      "valueColumnUnset": "未選択",
+      "nullHandling": "Null / NaN の扱い",
+      "null": {
+        "exclude": "行を除外する",
+        "zero": "0 として扱う"
+      },
+      "rule": "マッピングルール",
+      "colorScale": "カラースケール",
+      "customTitle": "カスタム HSB",
+      "numericRange": "数値範囲",
+      "min": "最小値",
+      "max": "最大値",
+      "scale": {
+        "grayscale": "グレースケール",
+        "redBlue": "赤 → 青",
+        "viridis": "Viridis",
+        "magma": "Magma",
+        "custom": "カスタム (HSB)"
+      }
     }
   }
 }

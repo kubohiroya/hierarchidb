@@ -3049,6 +3049,9 @@ importers:
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../packages/ui/dialog
+      '@hierarchidb/ui-modal-select':
+        specifier: workspace:*
+        version: link:../../packages/ui/modal-select
       '@hierarchidb/ui-plugin-basic-info':
         specifier: workspace:*
         version: link:../../packages/ui/plugin-basic-info

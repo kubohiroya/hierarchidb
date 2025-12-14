@@ -1,4 +1,3 @@
-export { BasicInfoStep, type BasicInfoValues } from './steps/BasicInfoStep.js';
 export { FramesPreviewStep } from './steps/FramesPreviewStep.js';
 export { MapPreviewStep } from './steps/MapPreviewStep.js';
 export { AnimationViewerStep } from './steps/AnimationViewerStep.js';

@@ -5,7 +5,7 @@
     "accordion": {
       "styleType": "Style Type",
       "targetProperty": "Target Property",
-      "keyValuePair": "Key-Value Pair"
+      "algorithm": "Algorithm"
     },
     "keyValuePair": {
       "description": "Select the key and value columns to drive styling and review basic statistics.",
@@ -112,10 +112,12 @@
     "title": "Step 5: Style Mapping Configuration",
     "algorithms": {
       "linear": "Linear",
+      "log": "Logarithmic",
       "quantile": "Quantile",
       "jenks": "Jenks Natural Breaks",
       "equal": "Equal Interval",
       "linearDescription": "Interpolates colors smoothly between minimum and maximum values. Ideal for evenly distributed data or when visualizing continuous transitions.",
+      "logDescription": "Uses a logarithmic scale to emphasize smaller values while compressing large outliers. Suited for highly skewed distributions.",
       "quantileDescription": "Creates classes with an equal number of features. Produces balanced visuals even for skewed data and is resilient to outliers.",
       "jenksDescription": "Finds natural breaks by minimizing variance within classes and maximizing it between classes. Offers meaningful groupings at a higher computational cost.",
       "equalDescription": "Divides the value range into equal intervals. Suited for continuous, roughly linear distributions such as temperature or elevation, and is fast and easy to understand."
@@ -175,6 +177,28 @@
       "stdDev": "Std Dev: {{value}}",
       "min": "Min: {{value}}",
       "max": "Max: {{value}}"
+    }
+  },
+  "algorithm": {
+    "valueColumn": "Value column",
+    "valueColumnUnset": "Not selected",
+    "nullHandling": "Null / NaN handling",
+    "null": {
+      "exclude": "Exclude rows",
+      "zero": "Treat as 0"
+    },
+    "rule": "Mapping rule",
+    "colorScale": "Color scale",
+    "customTitle": "Custom HSB",
+    "numericRange": "Numeric range",
+    "min": "Min",
+    "max": "Max",
+    "scale": {
+      "grayscale": "Grayscale",
+      "redBlue": "Red → Blue",
+      "viridis": "Viridis",
+      "magma": "Magma",
+      "custom": "Custom (HSB)"
     }
   }
 }

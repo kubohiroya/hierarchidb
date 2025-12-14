@@ -14,7 +14,6 @@ import { RouteProcessingStep } from './steps/RouteProcessingStep.js';
 import { RouteDetailsStep } from './steps/RouteDetailsStep.js';
 import { RouteBuildStep } from './steps/RouteBuildStep.js';
 import { notify } from '@hierarchidb/components';
-import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -89,34 +88,6 @@ registry.registerConfigProvider<RouteStepData>({
   getCreateStepConfigs(): PluginStepConfig<RouteStepData>[] {
     const { t } = getTranslation();
     return [
-      {
-        id: 'basic-info',
-        label: t('steps.basicInfo.label', 'Basic Info'),
-        componentFactory: (p: StepProps) => {
-          const draft = ensureDraft(p.data);
-          const meta = (draft.draftMetadata ?? { name: '', description: '', tags: [] }) as {
-            name?: string;
-            description?: string;
-            tags?: string[];
-          };
-          return (
-            <BasicInfoStep
-              name={meta.name ?? ''}
-              description={meta.description ?? ''}
-              tags={meta.tags ?? []}
-              mode={p.mode}
-              onChange={({ name, description, tags }: BasicInfoData) =>
-                p.onChange({
-                  ...draft,
-                  draftMetadata: { ...meta, name, description, tags: tags ?? [] },
-                })
-              }
-              validate={({ name }) => (name.trim().length ? null : 'Name is required')}
-            />
-          );
-        },
-        validate: (data?: RouteStepData) => Boolean(data?.draftMetadata?.name?.trim()),
-      },
       {
         id: 'route-details',
         label: t('steps.details.label', 'Route Settings'),

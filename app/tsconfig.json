@@ -103,6 +103,12 @@
       "@hierarchidb/ui-plugin-basic-info/*": [
         "../packages/ui/plugin-basic-info/src/*"
       ],
+      "@hierarchidb/ui-modal-select": [
+        "../packages/ui/modal-select/src/index.ts"
+      ],
+      "@hierarchidb/ui-modal-select/*": [
+        "../packages/ui/modal-select/src/*"
+      ],
       "@hierarchidb/runtime-worker": [
         "../packages/runtime-worker/src/index.ts"
       ],

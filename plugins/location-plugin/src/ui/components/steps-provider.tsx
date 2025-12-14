@@ -11,7 +11,6 @@ import { notify } from '@hierarchidb/components';
 import { listLocationPoints } from '../../services/pointRepository.js';
 import { LocationVectorTileService } from '../../services/tiles/LocationVectorTileService.js';
 import { i18n } from '@hierarchidb/ui-i18n';
-import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -117,34 +116,6 @@ registry.registerConfigProvider<LocationStepData>({
   nodeType: 'location',
   getCreateStepConfigs() {
     return [
-      {
-        id: 'basic-info',
-        label: String(i18n.t('steps.basicInfo.label', { ns: 'location-plugin', defaultValue: 'Basic Info' })),
-        componentFactory: (p: StepProps) => {
-          const draft = ensureData(p.data);
-          const meta = (draft.draftMetadata ?? { name: '', description: '', tags: [] }) as {
-            name?: string;
-            description?: string;
-            tags?: string[];
-          };
-          return (
-            <BasicInfoStep
-              name={meta.name ?? ''}
-              description={meta.description ?? ''}
-              tags={meta.tags ?? []}
-              mode={p.mode}
-              onChange={({ name, description, tags }: BasicInfoData) =>
-                p.onChange({
-                  ...draft,
-                  draftMetadata: { ...meta, name, description, tags: tags ?? [] },
-                })
-              }
-              validate={({ name }) => (name.trim().length ? null : 'Name is required')}
-            />
-          );
-        },
-        validate: (data?: LocationStepData) => Boolean(data?.draftMetadata?.name?.trim()),
-      },
       {
         id: 'data-source',
         label: String(i18n.t('steps.dataSource.label', { ns: 'location-plugin', defaultValue: 'Data Source' })),

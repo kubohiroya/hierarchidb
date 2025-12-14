@@ -5,7 +5,6 @@ import { ResourcePicker } from '../steps/ResourcePicker.js';
 import { AggregatedList } from '../steps/AggregatedList.js';
 import { MapPreview } from '../steps/MapPreview.js';
 import { useTranslation as getTranslation } from '../../common/i18n/index.js';
-import { BasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 import { useLinkerSteps } from './hooks/useLinkerSteps.js';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 
@@ -15,29 +14,9 @@ type LinkerStepProps = StepComponentProps<LinkerStepData>;
 
 const registry = PluginStepRegistry.getInstance();
 
-const BasicInfoStepWrapper = (props: LinkerStepProps) => {
-  const { ensureDraft } = useLinkerSteps();
-  const draft = ensureDraft(props.data);
-  const meta = draft.draftMetadata ?? { name: '', description: '', tags: [] };
-  return (
-    <BasicInfoStep
-      name={meta.name ?? ''}
-      description={meta.description ?? ''}
-      tags={meta.tags ?? []}
-      mode={props.mode}
-      onChange={({ name, description, tags }: BasicInfoData) =>
-        props.onChange({
-          ...draft,
-          draftMetadata: { ...meta, name, description, tags: tags ?? [] },
-        })
-      }
-      validate={({ name }) => (name.trim().length ? null : 'Name is required')}
-    />
-  );
-};
-
 const ResourcesStepWrapper = (props: LinkerStepProps) => {
-  const { toSelectionSet } = useLinkerSteps();
+  const { ensureDraft, toSelectionSet } = useLinkerSteps();
+  const draft = ensureDraft(props.data);
   const {t} = useTranslation();
   const selection = toSelectionSet(props.data?.draftData?.linkedNodeIds);
   return (
@@ -45,9 +24,9 @@ const ResourcesStepWrapper = (props: LinkerStepProps) => {
       value={selection}
       onChange={(nextSet: Set<string>) =>
         props.onChange({
-          ...(props.data ?? {}),
+          ...(draft ?? {}),
           draftData: {
-            ...(props.data?.draftData ?? {}),
+            ...(draft?.draftData ?? {}),
             linkedNodeIds: Array.from(nextSet) as NodeId[],
           },
         })}
@@ -74,12 +53,6 @@ const createLinkerStepConfigs = (): PluginStepConfig<LinkerStepData>[] => {
   const { t } = getTranslation();
 
   return [
-    {
-      id: 'basic-info',
-      label: t('steps.basicInfo.label', 'Basic Info'),
-      componentFactory: (props: LinkerStepProps) => <BasicInfoStepWrapper {...props} />,
-      validate: (data?: LinkerStepData) => Boolean(data?.draftMetadata?.name?.trim()),
-    },
     {
       id: 'resources',
       label: t('steps.resources.label', 'Select Resources'),
