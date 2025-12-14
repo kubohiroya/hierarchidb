@@ -1,4 +1,4 @@
-import { useEffect, useMemo, type FC } from 'react';
+import { useEffect, useMemo, useRef, type FC } from 'react';
 import { StepComponentProps } from '@hierarchidb/plugin-base';
 import {
   TabularProvider,
@@ -94,18 +94,49 @@ const TabularDataFilterInner: FC<FilterInnerProps> = ({
     return tabularTableMetadata;
   }, [dialogData.lastPreview?.columns, dialogData.lastPreview?.rows, tabularTableMetadata]);
 
+  const lastValidRef = useRef<boolean | null>(null);
+  const lastErrorRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (error) {
-      setValid(false);
-      setError(error);
-      return;
-    }
-    if (loading) {
-      setValid(false);
-      return;
-    }
-    setValid(Boolean(tabularTableMetadata));
-    setError(null);
+    const timer = window.setTimeout(() => {
+      if (error) {
+        if (lastValidRef.current !== false) {
+          // debug log for validation churn
+          // eslint-disable-next-line no-console
+          console.log('[TabularDataFilterStep] setValid(false) due to error', error);
+          setValid(false);
+          lastValidRef.current = false;
+        }
+        if (lastErrorRef.current !== error) {
+          setError(error);
+          lastErrorRef.current = error;
+        }
+        return;
+      }
+      if (loading) {
+        if (lastValidRef.current !== false) {
+          // eslint-disable-next-line no-console
+          console.log('[TabularDataFilterStep] setValid(false) due to loading');
+          setValid(false);
+          lastValidRef.current = false;
+        }
+        return;
+      }
+      const nextValid = Boolean(tabularTableMetadata);
+      if (lastValidRef.current !== nextValid) {
+        // eslint-disable-next-line no-console
+        console.log('[TabularDataFilterStep] setValid', nextValid, {
+          hasMetadata: Boolean(tabularTableMetadata),
+        });
+        setValid(nextValid);
+        lastValidRef.current = nextValid;
+      }
+      if (lastErrorRef.current !== null) {
+        setError(null);
+        lastErrorRef.current = null;
+      }
+    }, 20); // slight delay to observe rapid loops
+    return () => window.clearTimeout(timer);
   }, [error, loading, setError, setValid, tabularTableMetadata]);
 
   if (shouldUploadFirst) {

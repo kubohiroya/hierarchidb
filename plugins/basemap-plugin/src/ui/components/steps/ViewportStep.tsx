@@ -136,7 +136,6 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
 
   const propagate = useCallback(
     (next: MapViewState, source: 'form' | 'map-move' | 'map-end') => {
-      console.log('[Viewport] propagate', { source, next });
       setViewState((prev) => {
         if (areViewStatesEqual(prev, next)) return prev;
         return next;
@@ -167,7 +166,6 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
 
   const handleViewStateChange = useCallback(
     (next: MapViewState) => {
-      console.log('[Viewport] onMove', next);
       propagate(next, 'map-move');
     },
     [propagate]
@@ -175,7 +173,6 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
 
   const handleViewStateChangeEnd = useCallback(
     (next: MapViewState) => {
-      console.log('[Viewport] onMoveEnd', next);
       propagate(next, 'map-end');
     },
     [propagate]
@@ -190,7 +187,6 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
         bearing: next.bearing ?? viewState.bearing ?? 0,
         pitch: 0,
       };
-      console.log('[Viewport] form input', updated);
       propagate(updated, 'form');
     },
     [propagate, viewState]

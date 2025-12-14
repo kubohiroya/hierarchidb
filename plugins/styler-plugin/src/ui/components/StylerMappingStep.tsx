@@ -1,11 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { StepComponentProps } from '@hierarchidb/plugin-base';
 import {
   STYLE_TYPE_OPTIONS,
   type StylerStepData,
-  type StylerTableRow,
+  type StylerConfig,
+  StylerConfigDefault,
+  MAPLIBRE_PROPERTY_METADATA,
 } from '../../common/types/StylerEntity.ts';
-import { calculateStatistics, extractNumericValues } from '../../common/utils/dataAnalysis.ts';
 import { useTranslation } from 'react-i18next';
 import { useStylerMappingState } from './useStylerMappingState.ts';
 import {
@@ -13,36 +14,38 @@ import {
   AccordionDetails,
   AccordionSummary,
   Box,
-  Chip,
-  Divider,
+  FormControl,
+  FormControlLabel,
+  InputLabel,
+  MenuItem,
+  Radio,
+  RadioGroup,
+  Select,
   Slider,
   Stack,
+  TextField,
   Typography,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { StyleMappingSourcePanel } from './StyleMappingSourcePanel.tsx';
+import PaletteIcon from '@mui/icons-material/Palette';
+import ContrastIcon from '@mui/icons-material/Contrast';
 import { StyleMappingTargetPanel } from './StyleMappingTargetPanel.tsx';
-import { ValueHistogram } from './ValueHistogram.tsx';
+import { generateColorGradient } from '../../common/utils/colorUtils.ts';
 
 export const StylerMappingStep: React.FC<
-  StepComponentProps<StylerStepData> & { tabularData?: StylerTableRow[] }
+  StepComponentProps<StylerStepData>
 > = ({
   data,
   onChange,
   setValid,
   setError,
   dialogRef,
-  tabularData,
 }) => {
   const { t } = useTranslation('styler-plugin');
-  const [binCount, setBinCount] = useState<number>(16);
   const {
     menuContainer,
     pluginData,
-    columns,
     settings,
-    handleKeyColumnChange,
-    handleValueColumnChange,
     handleStyleTypeChange,
     handleTargetPropertyChange,
   } = useStylerMappingState({
@@ -53,46 +56,140 @@ export const StylerMappingStep: React.FC<
     dialogRef,
     styleTypeOptions: STYLE_TYPE_OPTIONS,
   });
-  const selectedValueColumn =
+
+  const valueColumn =
     pluginData.mapping?.valueColumn ??
     pluginData.selectedValueColumn ??
     (pluginData.stylerConfig as { valueColumn?: string } | undefined)?.valueColumn ??
     '';
 
-  const valueRows = useMemo(() => {
-    if (Array.isArray(tabularData) && tabularData.length > 0) {
-      return tabularData;
-    }
-    const previewRows = pluginData.lastPreview?.rows;
-    if (Array.isArray(previewRows) && previewRows.length > 0) {
-      return previewRows as StylerTableRow[];
-    }
-    return [] as StylerTableRow[];
-  }, [pluginData.lastPreview?.rows, tabularData]);
+  const targetProperty = pluginData.mapping?.targetProperty ?? null;
+  const targetMeta = targetProperty ? MAPLIBRE_PROPERTY_METADATA[targetProperty] : null;
+  const isColorTarget = targetMeta?.type === 'color';
 
-  const numericValues = useMemo(() => {
-    if (!selectedValueColumn) return [];
-    return extractNumericValues(valueRows, selectedValueColumn);
-  }, [selectedValueColumn, valueRows]);
+  const initialConfig = useMemo<StylerConfig>(() => {
+    const cfg = pluginData.stylerConfig ?? StylerConfigDefault;
+    return { ...StylerConfigDefault, ...cfg };
+  }, [pluginData.stylerConfig]);
 
-  const stats = useMemo(() => {
-    if (!selectedValueColumn || numericValues.length === 0) return null;
-    const base = calculateStatistics(numericValues);
-    return {
-      min: base.min,
-      max: base.max,
-      mean: base.mean,
-      median: base.median,
-      stdDev: base.stdDev,
-      count: base.totalCount,
-    };
-  }, [numericValues, selectedValueColumn]);
+  const [localConfig, setLocalConfig] = useState<StylerConfig>(initialConfig);
 
-  const histogramWidth = useMemo(() => {
-    const w = dialogRef?.current?.getBoundingClientRect()?.width;
-    return Math.max(240, Math.min(1200, w ?? 480));
-  }, [dialogRef]);
-  const histogramHeight = 100;
+  useEffect(() => {
+    setLocalConfig((prev) => ({ ...prev, ...initialConfig }));
+  }, [initialConfig]);
+
+  const applyConfigPatch = (patch: Partial<StylerConfig>) => {
+    setLocalConfig((prev) => {
+      const next = { ...prev, ...patch };
+      onChange({
+        ...(pluginData as StylerStepData),
+        stylerConfig: next,
+      });
+      return next;
+    });
+  };
+
+  const presetScales: Array<{ id: string; label: string; stops: string[] }> = useMemo(
+    () => [
+      { id: 'grayscale', label: t('styleSettings.algorithm.scale.grayscale', 'Grayscale'), stops: ['#ffffff', '#000000'] },
+      { id: 'red-blue', label: t('styleSettings.algorithm.scale.redBlue', 'Red → Blue'), stops: ['#d73027', '#1a1c7c'] },
+      { id: 'viridis', label: t('styleSettings.algorithm.scale.viridis', 'Viridis'), stops: ['#440154', '#21908d', '#fde725'] },
+      { id: 'magma', label: t('styleSettings.algorithm.scale.magma', 'Magma'), stops: ['#000004', '#b5367a', '#fbfcbf'] },
+      { id: 'custom', label: t('styleSettings.algorithm.scale.custom', 'Custom (HSB)'), stops: [] },
+    ],
+    [t]
+  );
+
+  const renderGradientSwatch = (stops: string[]) => {
+    const id = `grad-${Math.random().toString(16).slice(2)}`;
+    return (
+      <svg width="120" height="16" aria-hidden focusable="false">
+        <defs>
+          <linearGradient id={id} x1="0%" y1="0%" x2="100%" y2="0%">
+            {stops.map((c, idx) => (
+              <stop key={`${c}-${idx}`} offset={`${(idx / Math.max(stops.length - 1, 1)) * 100}%`} stopColor={c} />
+            ))}
+          </linearGradient>
+        </defs>
+        <rect x="0" y="0" width="120" height="16" rx="3" fill={`url(#${id})`} stroke="#ccc" />
+      </svg>
+    );
+  };
+
+  const handlePresetSelect = (id: string) => {
+    const preset = presetScales.find((p) => p.id === id);
+    if (!preset) return;
+    applyConfigPatch({
+      colorSpace: 'hsv',
+      colorScheme: id,
+      startColor: preset.stops[0],
+      endColor: preset.stops[preset.stops.length - 1],
+    });
+  };
+
+  const numericRangeControls = !isColorTarget ? (
+    <Stack spacing={1.5}>
+      <Typography variant="subtitle2">{t('styleSettings.algorithm.numericRange', 'Numeric range')}</Typography>
+      <Stack direction="row" spacing={1}>
+        <TextField
+          type="number"
+          label={t('styleSettings.algorithm.min', 'Min')}
+          value={localConfig.min}
+          onChange={(e) => applyConfigPatch({ min: Number(e.target.value) })}
+          size="small"
+          inputProps={{ step: 0.1 }}
+        />
+        <TextField
+          type="number"
+          label={t('styleSettings.algorithm.max', 'Max')}
+          value={localConfig.max}
+          onChange={(e) => applyConfigPatch({ max: Number(e.target.value) })}
+          size="small"
+          inputProps={{ step: 0.1 }}
+        />
+      </Stack>
+    </Stack>
+  ) : null;
+
+  const customHSBControls =
+    isColorTarget && (localConfig.colorScheme ?? 'grayscale') === 'custom' ? (
+      <Stack spacing={1.5} sx={{ mt: 1 }}>
+        <Typography variant="subtitle2">{t('styleSettings.algorithm.customTitle', 'Custom HSB')}</Typography>
+        <Stack direction="row" spacing={1}>
+          <TextField
+            label={t('step5.colorRange.start', 'Start Color (hex)')}
+            value={localConfig.startColor ?? ''}
+            size="small"
+            onChange={(e) => applyConfigPatch({ startColor: e.target.value })}
+          />
+          <TextField
+            label={t('step5.colorRange.end', 'End Color (hex)')}
+            value={localConfig.endColor ?? ''}
+            size="small"
+            onChange={(e) => applyConfigPatch({ endColor: e.target.value })}
+          />
+        </Stack>
+        <Stack spacing={1}>
+          <Typography variant="caption">{t('step5.hsv.hueStart', 'Hue Start')}</Typography>
+          <Slider value={localConfig.hueStart} onChange={(_e, v) => applyConfigPatch({ hueStart: v as number })} min={0} max={360} />
+          <Typography variant="caption">{t('step5.hsv.hueEnd', 'Hue End')}</Typography>
+          <Slider value={localConfig.hueEnd} onChange={(_e, v) => applyConfigPatch({ hueEnd: v as number })} min={0} max={360} />
+          <Typography variant="caption">{t('step5.hsv.saturation', 'Saturation')}</Typography>
+          <Slider value={localConfig.saturation} step={0.05} min={0} max={1} onChange={(_e, v) => applyConfigPatch({ saturation: v as number })} />
+          <Typography variant="caption">{t('step5.hsv.brightness', 'Brightness')}</Typography>
+          <Slider value={localConfig.brightness} step={0.05} min={0} max={1} onChange={(_e, v) => applyConfigPatch({ brightness: v as number })} />
+        </Stack>
+        <Box sx={{ height: 32, borderRadius: 1, border: (theme) => `1px solid ${theme.palette.divider}` }}>
+          <Box
+            sx={{
+              height: '100%',
+              background: generateColorGradient(localConfig),
+              borderRadius: 1,
+            }}
+          />
+        </Box>
+      </Stack>
+    ) : null;
 
   return (
     <Stack spacing={2}>
@@ -144,95 +241,86 @@ export const StylerMappingStep: React.FC<
       <Accordion defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography variant="subtitle1">
-            {t('styleSettings.accordion.keyValuePair', 'Key-Value Pair')}
+            {t('styleSettings.accordion.algorithm', 'Algorithm')}
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
           <Stack spacing={2}>
-            <Typography variant="body2" color="text.secondary">
-              {t(
-                'styleSettings.keyValuePair.description',
-                'Select the key and value columns to drive styling and review basic statistics.',
-              )}
-            </Typography>
-            <StyleMappingSourcePanel {...{
-              pluginData,
-              handleKeyColumnChange,
-              menuContainer,
-              columns,
-              handleValueColumnChange,
-            }} />
-            <Divider />
-            <Box>
-              <Typography variant="subtitle2" gutterBottom>
-                {t('styleSettings.keyValuePair.stats.title', 'Value statistics')}
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Typography variant="body2" color="text.secondary">
+                {t('styleSettings.algorithm.valueColumn', 'Value column')}
               </Typography>
-              {stats ? (
-                <Stack direction="row" spacing={1} flexWrap="wrap" rowGap={1} sx={{ mb: 1 }}>
-                  <Chip size="small" label={`${t('styleSettings.keyValuePair.stats.count', 'Count')}: ${stats.count}`} />
-                  <Chip size="small" label={`${t('styleSettings.keyValuePair.stats.min', 'Min')}: ${stats.min}`} />
-                  <Chip size="small" label={`${t('styleSettings.keyValuePair.stats.max', 'Max')}: ${stats.max}`} />
-                  <Chip size="small" label={`${t('styleSettings.keyValuePair.stats.mean', 'Average')}: ${stats.mean.toFixed(2)}`} />
-                  <Chip size="small" label={`${t('styleSettings.keyValuePair.stats.median', 'Median')}: ${stats.median.toFixed(2)}`} />
-                  <Chip size="small" label={`${t('styleSettings.keyValuePair.stats.stdDev', 'Std Dev')}: ${stats.stdDev.toFixed(2)}`} />
-                  <Chip size="small" label={`${t('styleSettings.keyValuePair.histogram.binCount', 'Bins')}: ${binCount}`} />
-                </Stack>
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  {t(
-                    'styleSettings.keyValuePair.stats.empty',
-                    'Select a value column with numeric values to view statistics.',
-                  )}
-                </Typography>
-              )}
-            </Box>
-            {numericValues.length > 0 ? (
+              <Box sx={{ px: 1.25, py: 0.5, borderRadius: 1, bgcolor: 'action.selected', fontSize: 13 }}>
+                {valueColumn || t('styleSettings.algorithm.valueColumnUnset', 'Not selected')}
+              </Box>
+            </Stack>
+
+            <FormControl component="fieldset">
+              <Typography variant="subtitle2" gutterBottom>
+                {t('styleSettings.algorithm.nullHandling', 'Null / NaN handling')}
+              </Typography>
+              <RadioGroup
+                row
+                value={localConfig.nullHandling ?? 'exclude'}
+                onChange={(e) => applyConfigPatch({ nullHandling: e.target.value as 'exclude' | 'zero' })}
+              >
+                <FormControlLabel value="exclude" control={<Radio />} label={t('styleSettings.algorithm.null.exclude', 'Exclude rows')} />
+                <FormControlLabel value="zero" control={<Radio />} label={t('styleSettings.algorithm.null.zero', 'Treat as 0')} />
+              </RadioGroup>
+            </FormControl>
+
+            <FormControl fullWidth size="small">
+              <InputLabel id="algo-select">{t('styleSettings.algorithm.rule', 'Mapping rule')}</InputLabel>
+              <Select
+                labelId="algo-select"
+                label={t('styleSettings.algorithm.rule', 'Mapping rule')}
+                value={localConfig.algorithm}
+                onChange={(e) => applyConfigPatch({ algorithm: e.target.value as StylerConfig['algorithm'] })}
+              >
+                <MenuItem value="linear">{t('step5.algorithms.linear', 'Linear')}</MenuItem>
+                <MenuItem value="log">{t('step5.algorithms.log', 'Logarithmic')}</MenuItem>
+                <MenuItem value="quantile">{t('step5.algorithms.quantile', 'Quantile')}</MenuItem>
+                <MenuItem value="jenks">{t('step5.algorithms.jenks', 'Jenks Natural Breaks')}</MenuItem>
+                <MenuItem value="equal">{t('step5.algorithms.equal', 'Equal Interval')}</MenuItem>
+              </Select>
+            </FormControl>
+
+            {isColorTarget ? (
               <Stack spacing={1.5}>
                 <Typography variant="subtitle2">
-                  {t('styleSettings.keyValuePair.histogram.title', 'Histogram')}
+                  {t('styleSettings.algorithm.colorScale', 'Color scale')}
                 </Typography>
-                <Stack spacing={2}>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">
-                      {t(
-                        'styleSettings.keyValuePair.histogram.binCount',
-                        'Number of bins'
-                      )}
-                    </Typography>
-                  <Slider
-                    value={binCount}
-                    min={1}
-                    max={256}
-                    step={1}
-                    marks={[
-                      { value: 1, label: '1' },
-                      { value: 64, label: '64' },
-                      { value: 128, label: '128' },
-                      { value: 256, label: '256' },
-                    ]}
-                    onChange={(_e, value) => setBinCount(value as number)}
-                  />
-                </Box>
-                  {stats && (
-                    <ValueHistogram
-                      values={numericValues}
-                      binCount={binCount}
-                      width={histogramWidth}
-                      height={histogramHeight}
-                      min={stats.min}
-                      max={stats.max}
-                      mean={stats.mean}
-                    />
-                  )}
-                  <Typography variant="caption" color="text.secondary">
-                    {t(
-                      'styleSettings.keyValuePair.histogram.note',
-                      'Histogram uses numeric values only. Dashed lines show min/mean/max; y-axis label shows modal frequency.'
-                    )}
-                  </Typography>
+                <Stack spacing={1}>
+                  {presetScales.map((preset) => (
+                    <Box
+                      key={preset.id}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        p: 1,
+                        borderRadius: 1,
+                        border: (theme) =>
+                          preset.id === (localConfig.colorScheme ?? 'grayscale')
+                            ? `2px solid ${theme.palette.primary.main}`
+                            : `1px solid ${theme.palette.divider}`,
+                        cursor: 'pointer',
+                      }}
+                      onClick={() => handlePresetSelect(preset.id)}
+                    >
+                      {preset.id === 'custom' ? <ContrastIcon fontSize="small" /> : <PaletteIcon fontSize="small" />}
+                      <Typography variant="body2" sx={{ flex: 1 }}>
+                        {preset.label}
+                      </Typography>
+                      {preset.stops.length > 0 ? renderGradientSwatch(preset.stops) : null}
+                    </Box>
+                  ))}
                 </Stack>
+                {customHSBControls}
               </Stack>
-            ) : null}
+            ) : (
+              numericRangeControls
+            )}
           </Stack>
         </AccordionDetails>
       </Accordion>

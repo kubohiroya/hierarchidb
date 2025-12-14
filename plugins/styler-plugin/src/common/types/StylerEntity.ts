@@ -17,7 +17,7 @@ export type MapLibreStyleProperty =
   | 'text-halo-color'
   | 'text-halo-width';
 
-export type ColorAlgorithm = 'linear' | 'quantile' | 'jenks' | 'equal';
+export type ColorAlgorithm = 'linear' | 'log' | 'quantile' | 'jenks' | 'equal';
 
 export type ColorSpace = 'hsv' | 'rgb' | 'lab';
 
@@ -44,6 +44,8 @@ export interface StylerConfig {
   colorSpace: ColorSpace;
   invertColors?: boolean;
   opacity?: number;
+  colorScheme?: string;
+  nullHandling?: 'exclude' | 'zero';
   // enabled?: boolean;
 
   min: number;
@@ -73,8 +75,6 @@ export type StylerDialogData = Partial<StylerEntity>;
 
 export interface TablePreviewProps {
   data: StylerTableRow[];
-  selectedKeyColumn?: string;
-  selectedValueColumn?: string;
   config: StylerConfig;
   onColumnSelect?: (columnName: string, type: 'key' | 'value') => void;
 }
@@ -102,6 +102,8 @@ export const StylerConfigDefault: StylerConfig = {
   colorSpace: 'hsv',
   invertColors: false,
   opacity: 1.0,
+  colorScheme: 'grayscale',
+  nullHandling: 'exclude',
   min: 0,
   max: 100,
   hueStart: 0, // Red

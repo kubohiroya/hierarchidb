@@ -178,15 +178,28 @@ export const useStylerFilterState = ({
     setValueColumnAtom(selectedValueColumn ?? '');
   }, [selectedKeyColumn, selectedValueColumn, setKeyColumnAtom, setValueColumnAtom]);
 
+  const lastValidRef = useRef<boolean | null>(null);
+  const lastErrorRef = useRef<string | null>(null);
+
   useEffect(() => {
-    const hasKeyValue = Boolean(selectedKeyColumn && selectedValueColumn);
-    const valid = filterReady && hasKeyValue;
-    onSetFilterValid(valid);
-    setError(
-      valid
+    const timer = window.setTimeout(() => {
+      const hasKeyValue = Boolean(selectedKeyColumn && selectedValueColumn);
+      const valid = filterReady && hasKeyValue;
+      if (lastValidRef.current !== valid) {
+        // eslint-disable-next-line no-console
+        console.log('[StylerFilterStep] setValid', valid, { filterReady, hasKeyValue });
+        onSetFilterValid(valid);
+        lastValidRef.current = valid;
+      }
+      const nextError = valid
         ? null
-        : t('styleSettings.keyValuePair.validation.required', 'Select both key and value columns to continue.'),
-    );
+        : t('styleSettings.keyValuePair.validation.required', 'Select both key and value columns to continue.');
+      if (lastErrorRef.current !== nextError) {
+        setError(nextError);
+        lastErrorRef.current = nextError;
+      }
+    }, 20); // small wait to observe loops
+    return () => window.clearTimeout(timer);
   }, [filterReady, selectedKeyColumn, selectedValueColumn, onSetFilterValid, setError, t]);
 
   useEffect(() => {

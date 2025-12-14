@@ -58,6 +58,7 @@ export const useStylerConfigPanelState = ({
     () =>
       ({
         linear: tStr('step5.algorithms.linear', 'Linear'),
+        log: tStr('step5.algorithms.log', 'Logarithmic'),
         quantile: tStr('step5.algorithms.quantile', 'Quantile'),
         jenks: tStr('step5.algorithms.jenks', 'Jenks Natural Breaks'),
         equal: tStr('step5.algorithms.equal', 'Equal Interval'),
@@ -71,6 +72,10 @@ export const useStylerConfigPanelState = ({
         linear: tStr(
           'step5.algorithms.linearDescription',
           'Interpolates colors smoothly between minimum and maximum values. Ideal for evenly distributed data or when visualizing continuous transitions.'
+        ),
+        log: tStr(
+          'step5.algorithms.logDescription',
+          'Uses a logarithmic scale to emphasize smaller values while compressing large outliers. Suited for highly skewed distributions.'
         ),
         quantile: tStr(
           'step5.algorithms.quantileDescription',
@@ -101,9 +106,10 @@ export const useStylerConfigPanelState = ({
         String(Math.round(recommendation.confidence * 100))
       )
     : '';
-  const currentSuitability = recommendation
-    ? recommendation.suitability[localConfig.algorithm]
-    : null;
+  const currentSuitability =
+    recommendation && recommendation.suitability
+      ? recommendation.suitability[localConfig.algorithm] ?? null
+      : null;
 
   useEffect(() => {
     if (selectedValueColumn && tabularData.length > 0) {

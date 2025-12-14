@@ -38,6 +38,7 @@ export interface AlgorithmRecommendation {
   reasoning: string;
   suitability: {
     linear: number;
+    log: number;
     quantile: number;
     jenks: number;
     equal: number;
@@ -207,12 +208,14 @@ export function calculateAlgorithmSuitability(
   hasNaturalBreaks: boolean
 ): {
   linear: number;
+  log: number;
   quantile: number;
   jenks: number;
   equal: number;
 } {
   const scores = {
     linear: 50,
+    log: 50,
     quantile: 50,
     jenks: 50,
     equal: 50,
@@ -221,6 +224,7 @@ export function calculateAlgorithmSuitability(
   if (stats.distribution === 'normal') {
     scores.equal += 35;
     scores.linear += 25;
+    scores.log += 15;
     scores.quantile += 10;
     scores.jenks += 15; //  Jenks
   }
@@ -230,6 +234,7 @@ export function calculateAlgorithmSuitability(
     scores.jenks += 25; //  Jenks
     scores.equal -= 20;
     scores.linear -= 10;
+    scores.log += 30;
   }
 
   if (stats.hasOutliers) {
@@ -237,6 +242,7 @@ export function calculateAlgorithmSuitability(
     scores.jenks += 15; //  Jenks
     scores.equal -= 15;
     scores.linear -= 10;
+    scores.log += 25;
   }
 
   if (hasNaturalBreaks) {
@@ -244,6 +250,7 @@ export function calculateAlgorithmSuitability(
     scores.quantile += 10;
     scores.equal -= 5;
     scores.linear -= 5;
+    scores.log -= 5;
   }
 
   if (stats.uniqueCount < 10) {
@@ -251,11 +258,13 @@ export function calculateAlgorithmSuitability(
     scores.quantile += 15;
     scores.linear -= 10;
     scores.equal -= 10;
+    scores.log -= 5;
   }
 
   if (stats.distribution === 'uniform') {
     scores.equal += 30;
     scores.linear += 20;
+    scores.log -= 10;
     scores.quantile -= 10;
     scores.jenks -= 5; //  Jenks
   }
@@ -267,6 +276,7 @@ export function calculateAlgorithmSuitability(
 
   return {
     linear: Math.round(((scores.linear - minScore) / range) * 100),
+    log: Math.round(((scores.log - minScore) / range) * 100),
     quantile: Math.round(((scores.quantile - minScore) / range) * 100),
     jenks: Math.round(((scores.jenks - minScore) / range) * 100),
     equal: Math.round(((scores.equal - minScore) / range) * 100),
@@ -294,6 +304,10 @@ export function recommendAlgorithm(
     bestAlgorithm = 'quantile';
     bestScore = suitability.quantile;
   }
+  if (suitability.log > bestScore) {
+    bestAlgorithm = 'log';
+    bestScore = suitability.log;
+  }
   if (suitability.jenks > bestScore) {
     bestAlgorithm = 'jenks';
     bestScore = suitability.jenks;
@@ -317,6 +331,11 @@ export function recommendAlgorithm(
         : stats.distribution === 'skewed'
           ? 'データに偏りがあるため、分位数分類で各クラスの要素数を均等にすることで、バランスの取れた可視化が実現できます'
           : 'データの分布を均等に分割することで、地域間の相対的な差異を明確に表現できます';
+      break;
+
+    case 'log':
+      reasoning =
+        '値の分布が大きくスキューしているため、対数スケールで小さい値の差異を強調しつつ大きな値を圧縮します';
       break;
 
     case 'jenks':

@@ -5,7 +5,6 @@ import type {
   StyleType,
   StylerStepData,
 } from '../../common/types/StylerEntity.js';
-import type { TabularColumnInfo, TabularTableMetadata } from '@hierarchidb/tabular-store';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -38,36 +37,6 @@ export const useStylerMappingState = ({
     [data]
   );
 
-  const columns = useMemo(() => {
-    const tableMetadata = pluginData.tabularTableMetadata as TabularTableMetadata | undefined;
-    const fromMetadata = (tableMetadata?.columns ?? [])
-      .map((col: TabularColumnInfo | string) => (typeof col === 'string' ? col : col.name))
-      .filter((name): name is string => Boolean(name));
-
-    const previewColumns = pluginData.lastPreview?.columns;
-    const fromPreview = Array.isArray(previewColumns)
-      ? previewColumns
-          .map((col, index) => {
-            if (typeof col === 'string') return col;
-            if (col && typeof col === 'object' && 'name' in col) {
-              const name = (col as Partial<TabularColumnInfo>).name;
-              if (typeof name === 'string' && name.trim()) return name;
-            }
-            return `col_${index}`;
-          })
-          .filter(Boolean)
-      : [];
-
-    const previewRows = pluginData.lastPreview?.rows;
-    const fromRows =
-      Array.isArray(previewRows) && previewRows.length > 0
-        ? Object.keys(previewRows[0] as Record<string, unknown>)
-        : [];
-
-    const all = [...fromMetadata, ...fromPreview, ...fromRows];
-    return Array.from(new Set(all));
-  }, [pluginData.lastPreview?.columns, pluginData.lastPreview?.rows, pluginData.tabularTableMetadata]);
-
   const sanitizedStyleType = useMemo(() => {
     const candidate = (pluginData.mapping?.styleType ??
       (pluginData.stylerConfig as { styleType?: StyleType } | undefined)?.styleType ??
@@ -83,46 +52,6 @@ export const useStylerMappingState = ({
         colorScheme: pluginData.colorScheme,
       }) as { styleType?: StyleType; colorScheme?: StylerStepData['colorScheme'] },
     [pluginData.colorScheme, sanitizedStyleType]
-  );
-
-  const handleKeyColumnChange = useCallback(
-    (keyColumn: string) => {
-      const nextData: StylerStepData = {
-        ...(pluginData as StylerStepData),
-        selectedKeyColumn: keyColumn,
-        mapping: {
-          ...(pluginData.mapping ?? {}),
-          keyColumn,
-        } as StylerStepData['mapping'],
-        stylerConfig: {
-          ...(pluginData.stylerConfig ?? {}),
-          keyColumn,
-        } as StylerStepData['stylerConfig'],
-      };
-      //delete (nextData as { styleType?: StyleType }).styleType;
-      onChange(nextData);
-    },
-    [pluginData, onChange]
-  );
-
-  const handleValueColumnChange = useCallback(
-    (valueColumn: string) => {
-      const nextData: StylerStepData = {
-        ...(pluginData as StylerStepData),
-        selectedValueColumn: valueColumn,
-        mapping: {
-          ...(pluginData.mapping ?? {}),
-          valueColumn,
-        } as StylerStepData['mapping'],
-        stylerConfig: {
-          ...(pluginData.stylerConfig ?? {}),
-          valueColumn,
-        } as StylerStepData['stylerConfig'],
-      };
-      //delete (nextData as { styleType?: StyleType }).styleType;
-      onChange(nextData);
-    },
-    [pluginData, onChange]
   );
 
   const handleStyleTypeChange = useCallback((styleType: StyleType) => {
@@ -186,12 +115,9 @@ export const useStylerMappingState = ({
   return {
     menuContainer,
     pluginData,
-    columns,
     sanitizedStyleType,
     settings,
     handleStyleTypeChange,
-    handleKeyColumnChange,
-    handleValueColumnChange,
     handleTargetPropertyChange,
   };
 };

@@ -82,6 +82,10 @@ export const useTabularDataFilter = ({
 
   const syncFilters = useCallback(
     (filters: TabularFilterRule[]) => {
+      if (shallowEqualFilters(filtersRef.current, filters)) {
+        return;
+      }
+      filtersRef.current = filters;
       onChange({
         ...dialogData,
         filters,
@@ -92,6 +96,9 @@ export const useTabularDataFilter = ({
 
   const handlePreviewData = useCallback(
     (preview: TabularDataResult) => {
+      if (dialogData.lastPreview === preview) {
+        return;
+      }
       onChange({
         ...dialogData,
         lastPreview: preview,

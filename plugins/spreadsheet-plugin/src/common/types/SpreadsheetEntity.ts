@@ -1,7 +1,7 @@
 import type { Timestamp } from '@hierarchidb/common-types';
 import type { TabularFilterRule, TabularDataResult, TabularProcessingConfig } from '@hierarchidb/ui-tabular-extract';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
-import { DATA_SOURCE_TYPES } from '../constants.js';
+import type { DATA_SOURCE_TYPES } from '../constants.js';
 
 export type DataSourceType = typeof DATA_SOURCE_TYPES[keyof typeof DATA_SOURCE_TYPES];
 
