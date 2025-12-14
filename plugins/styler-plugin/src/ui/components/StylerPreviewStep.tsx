@@ -170,10 +170,10 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
     const rows: StylerTableRow[] =
       (Array.isArray(tabularData) && tabularData.length > 0
         ? (tabularData as StylerTableRow[])
-        : ((data?.lastPreview?.rows as unknown as StylerTableRow[]) ?? [])) ?? [];
+        : []) ?? [];
     const filtered = preparedFilters.length ? rows.filter((row) => matchesFilters(row, preparedFilters)) : rows;
     return filtered.slice(0, 1000);
-  }, [data?.filters, data?.lastPreview?.rows, matchesFilters, prepareFilters, tabularData]);
+  }, [data?.filters, matchesFilters, prepareFilters, tabularData]);
 
   const columns = useMemo(() => Object.keys(previewData[0] ?? {}), [previewData]);
 

@@ -1,17 +1,20 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { StepComponentProps } from '@hierarchidb/plugin-base';
 import {
-  TabularProvider,
   TabularDataFilter,
+  TabularProvider,
   useTabularData,
   type TabularDataFilterProps,
+  type TabularDataResult,
+  type TabularFilterRule,
 } from '@hierarchidb/ui-tabular-extract';
 import type { SpreadsheetEntity } from '../../../common/types/SpreadsheetEntity.js';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useTabularDataFilter } from '../../hooks/useTabularDataFilter.js';
 import type { TabularColumnInfo, TabularColumnType, TabularTableMetadata } from '@hierarchidb/tabular-store';
-import type { TabularDataResult, TabularFilterRule } from '@hierarchidb/ui-tabular-extract';
+import { useTabularKeyValueState } from '../../hooks/useTabularKeyValueState.js';
+import { TabularKeyValuePanels } from '../TabularKeyValuePanels.js';
 
 type FilterInnerProps<T extends SpreadsheetEntity> = ReturnType<typeof useTabularDataFilter<T>> & {
   setValid: StepComponentProps<T>['setValid'];
@@ -19,6 +22,10 @@ type FilterInnerProps<T extends SpreadsheetEntity> = ReturnType<typeof useTabula
   renderSections?: TabularDataFilterProps['renderSections'];
   onFiltersChanged?: (filters: TabularFilterRule[]) => void;
   onPreviewReady?: (preview: TabularDataResult) => void;
+  keyValueState: ReturnType<typeof useTabularKeyValueState<T>>;
+  keyValueValid: boolean;
+  dialogRef?: StepComponentProps<T>['dialogRef'];
+  translationNamespace?: string;
 };
 
 const TabularDataFilterInner = <T extends SpreadsheetEntity>({
@@ -34,8 +41,22 @@ const TabularDataFilterInner = <T extends SpreadsheetEntity>({
   renderSections,
   onFiltersChanged,
   onPreviewReady,
+  keyValueState,
+  keyValueValid,
+  dialogRef,
+  translationNamespace,
 }: FilterInnerProps<T>) => {
   const { t } = useTranslation('spreadsheet-plugin');
+  const {
+    columns,
+    selectedKeyColumn,
+    selectedValueColumn,
+    handleKeyColumnChange,
+    handleValueColumnChange,
+    handleFiltersChanged,
+    handlePreviewReady,
+    setFilterReady,
+  } = keyValueState;
   const { tabularTableMetadata, loading, error } = useTabularData({
     tableMetadataId: dialogData.spreadsheetMetadataId,
     pluginId,
@@ -74,70 +95,40 @@ const TabularDataFilterInner = <T extends SpreadsheetEntity>({
       } satisfies TabularTableMetadata;
     }
 
-    const previewRows = dialogData.lastPreview?.rows;
-    if (Array.isArray(previewRows) && previewRows.length > 0) {
-      const firstRow = previewRows[0] as Record<string, unknown>;
-      const keys = Object.keys(firstRow);
-      if (keys.length > 0) {
-        const columnsFromRows: TabularColumnInfo[] = keys.map((key, index) => ({
-          name: key,
-          index,
-          type: 'string',
-        }));
-        return {
-          ...tabularTableMetadata,
-          columns: columnsFromRows,
-        } satisfies TabularTableMetadata;
-      }
-    }
-
+    // rows are no longer stored on dialogData; fallback to metadata only.
     return tabularTableMetadata;
-  }, [dialogData.lastPreview?.columns, dialogData.lastPreview?.rows, tabularTableMetadata]);
+  }, [dialogData.lastPreview?.columns, tabularTableMetadata]);
 
   const lastValidRef = useRef<boolean | null>(null);
-  const lastErrorRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (loading || error || !tabularTableMetadata) {
+      setFilterReady(false);
+      return;
+    }
+    setFilterReady(true);
+  }, [error, loading, setFilterReady, tabularTableMetadata]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       if (error) {
-        if (lastValidRef.current !== false) {
-          // debug log for validation churn
-          // eslint-disable-next-line no-console
-          console.log('[TabularDataFilterStep] setValid(false) due to error', error);
-          setValid(false);
-          lastValidRef.current = false;
-        }
-        if (lastErrorRef.current !== error) {
-          setError(error);
-          lastErrorRef.current = error;
-        }
+        setValid(false);
+        setError(error);
         return;
       }
       if (loading) {
-        if (lastValidRef.current !== false) {
-          // eslint-disable-next-line no-console
-          console.log('[TabularDataFilterStep] setValid(false) due to loading');
-          setValid(false);
-          lastValidRef.current = false;
-        }
+        setValid(false);
         return;
       }
-      const nextValid = Boolean(tabularTableMetadata);
+      const baseValid = Boolean(tabularTableMetadata) && !shouldUploadFirst;
+      const nextValid = baseValid && keyValueValid;
       if (lastValidRef.current !== nextValid) {
-        // eslint-disable-next-line no-console
-        console.log('[TabularDataFilterStep] setValid', nextValid, {
-          hasMetadata: Boolean(tabularTableMetadata),
-        });
         setValid(nextValid);
         lastValidRef.current = nextValid;
       }
-      if (lastErrorRef.current !== null) {
-        setError(null);
-        lastErrorRef.current = null;
-      }
     }, 20); // slight delay to observe rapid loops
     return () => window.clearTimeout(timer);
-  }, [error, loading, setError, setValid, tabularTableMetadata]);
+  }, [error, keyValueValid, loading, setError, setValid, shouldUploadFirst, tabularTableMetadata]);
 
   if (shouldUploadFirst) {
     return (
@@ -171,22 +162,45 @@ const TabularDataFilterInner = <T extends SpreadsheetEntity>({
     );
   }
 
+  const renderSectionsNode: NonNullable<TabularDataFilterProps['renderSections']> =
+    renderSections ??
+    ((sections) => (
+      <TabularKeyValuePanels
+        dialogRef={dialogRef}
+        translationNamespace={translationNamespace}
+        columns={columns}
+        selectedKeyColumn={selectedKeyColumn}
+        selectedValueColumn={selectedValueColumn}
+        onKeyColumnChange={handleKeyColumnChange}
+        onValueColumnChange={handleValueColumnChange}
+        filterRulesSlot={sections.filterRules}
+        previewSlot={sections.preview}
+        errorSlot={sections.error}
+        previewDirty={sections.previewDirty}
+      />
+    ));
+
   return (
     <TabularDataFilter
       tableMetadata={tableMetadata}
       pluginId={pluginId}
-      onFiltersChanged={(next) => {
+      onFiltersChanged={(next: TabularFilterRule[]) => {
+        handleFiltersChanged(next);
         onFiltersChanged?.(next);
         syncFilters(next);
       }}
-      onPreviewData={(preview) => {
+      onPreviewData={(preview: TabularDataResult) => {
         handlePreviewData(preview);
+        handlePreviewReady(preview);
         onPreviewReady?.(preview);
       }}
       initialFilters={initialFilters}
-      onSyncFilters={syncFilters}
+      onSyncFilters={(filters: TabularFilterRule[]) => {
+        syncFilters(filters);
+        handleFiltersChanged(filters);
+      }}
       menuContainer={menuContainer}
-      renderSections={renderSections}
+      renderSections={renderSectionsNode}
     />
   );
 };
@@ -195,6 +209,7 @@ export interface TabularDataFilterStepProps<T extends SpreadsheetEntity> extends
   renderSections?: TabularDataFilterProps['renderSections'];
   onFiltersChanged?: (filters: TabularFilterRule[]) => void;
   onPreviewReady?: (preview: TabularDataResult) => void;
+  translationNamespace?: string;
 }
 
 export const TabularDataFilterStep = <T extends SpreadsheetEntity>({
@@ -206,7 +221,15 @@ export const TabularDataFilterStep = <T extends SpreadsheetEntity>({
   renderSections,
   onFiltersChanged,
   onPreviewReady,
+  translationNamespace,
 }: TabularDataFilterStepProps<T>) => {
+  const [keyValueValid, setKeyValueValid] = useState(false);
+  const keyValueState = useTabularKeyValueState<T>({
+    data,
+    onChange,
+    setError,
+    onSetFilterValid: setKeyValueValid,
+  });
   const {
     pluginId,
     tabularApi,
@@ -234,6 +257,10 @@ export const TabularDataFilterStep = <T extends SpreadsheetEntity>({
         renderSections={renderSections}
         onFiltersChanged={onFiltersChanged}
         onPreviewReady={onPreviewReady}
+        keyValueState={keyValueState}
+        keyValueValid={keyValueValid}
+        dialogRef={dialogRef}
+        translationNamespace={translationNamespace}
       />
     </TabularProvider>
   );

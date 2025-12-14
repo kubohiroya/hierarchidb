@@ -12,8 +12,16 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 export const isStyleMappingComplete = (dialogData: Partial<StylerStepData>): boolean => {
   if (!isRecord(dialogData)) return false;
   const styleType = dialogData.mapping?.styleType;
+  const targetProperty = dialogData.mapping?.targetProperty;
   const valueColumn = dialogData.valueColumn ?? dialogData.mapping?.valueColumn;
-  return Boolean(styleType && dialogData.mapping?.targetProperty && valueColumn);
+  return Boolean(styleType && targetProperty && valueColumn);
+};
+
+export const hasKeyValueSelected = (dialogData?: Partial<StylerStepData>): boolean => {
+  if (!isRecord(dialogData)) return false;
+  const valueColumn = dialogData.valueColumn ?? dialogData.mapping?.valueColumn;
+  const keyColumn = dialogData.keyColumn ?? dialogData.mapping?.keyColumn;
+  return Boolean(keyColumn && valueColumn);
 };
 
 type Params = Pick<
@@ -98,17 +106,8 @@ export const useStylerMappingState = ({
   const lastError = useRef<string | null>(null);
 
   const validity = useMemo(
-    () =>
-      isStyleMappingComplete({
-        ...(pluginData as StylerStepData),
-        mapping: {
-          ...(pluginData.mapping ?? {}),
-          targetProperty: pluginData.mapping?.targetProperty ?? null,
-          styleType: sanitizedStyleType,
-        },
-        valueColumn: pluginData.valueColumn,
-      }),
-    [pluginData, sanitizedStyleType]
+    () => hasKeyValueSelected(pluginData),
+    [pluginData]
   );
 
   useEffect(() => {
@@ -116,9 +115,7 @@ export const useStylerMappingState = ({
       lastValidity.current = validity;
       setValid(validity);
     }
-    const errorMessage = validity
-      ? null
-      : 'Select a style type, value source, and target property to continue.';
+    const errorMessage = validity ? null : 'Select key/value columns to continue.';
     if (lastError.current !== errorMessage) {
       lastError.current = errorMessage;
       setError(errorMessage);

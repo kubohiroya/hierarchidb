@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import { StepComponentProps } from '@hierarchidb/plugin-base';
+import type { StepComponentProps } from '@hierarchidb/plugin-base';
 import { TabularProvider, TabularDataImport } from '@hierarchidb/ui-tabular-extract';
 import type { SpreadsheetEntity } from '../../../common/types/SpreadsheetEntity.js';
 import { Accordion, AccordionDetails, AccordionSummary, Box, Paper, Typography } from '@mui/material';
@@ -10,7 +10,8 @@ import TableChartIcon from '@mui/icons-material/TableChart';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { type UseTabularDataSourceResult, useTabularDataSource } from '../../hooks/useTabularDataSource.js';
 import { TabularPreviewLite } from '@hierarchidb/ui-tabular-extract';
-// import { SPREADSHEET_NODE_TYPE } from '../../../common/constants.js';
+import { useAtomValue } from 'jotai';
+import { tabularRowsAtom } from '../../state/tabularKeyValueAtoms.js';
 
 const ImportStep = TabularDataImport as unknown as React.FC<UseTabularDataSourceResult['importStepProps']>;
 
@@ -22,6 +23,7 @@ export const TabularDataSourceStep: FC<StepComponentProps<SpreadsheetEntity>> = 
   dialogRef,
 }) => {
   const { t } = useTranslation('spreadsheet-plugin');
+  const previewRows = useAtomValue(tabularRowsAtom);
   const { dialogData, tabularApi, importAccordion, detailsAccordion, hasMetadata, importStepProps, formatBytes, details } =
     useTabularDataSource({
       data,
@@ -99,7 +101,7 @@ export const TabularDataSourceStep: FC<StepComponentProps<SpreadsheetEntity>> = 
         </AccordionDetails>
       </Accordion>
 
-      {dialogData.lastPreview?.rows?.length ? (
+      {previewRows.length ? (
         <Accordion defaultExpanded sx={{ mt: 1 }}>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -112,7 +114,7 @@ export const TabularDataSourceStep: FC<StepComponentProps<SpreadsheetEntity>> = 
           <AccordionDetails>
             <Paper variant="outlined" sx={{ height: 320 }}>
               <TabularPreviewLite
-                rows={dialogData.lastPreview?.rows ?? []}
+                rows={previewRows}
                 columns={
                   ((dialogData.lastPreview?.columns as unknown[] | undefined)?.map((c) =>
                     typeof c === 'string' ? c :

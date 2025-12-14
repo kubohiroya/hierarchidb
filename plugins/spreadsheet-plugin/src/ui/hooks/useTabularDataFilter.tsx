@@ -98,9 +98,14 @@ export const useTabularDataFilter = <T extends SpreadsheetEntity>({
       if (dialogData.lastPreview === preview) {
         return;
       }
+      const { rows, ...rest } = preview;
       onChange({
         ...dialogData,
-        lastPreview: preview,
+        lastPreview: {
+          ...(rest as Omit<TabularDataResult, 'rows'>),
+          rows: undefined,
+          rowCount: Array.isArray(rows) ? rows.length : (rest as { rowCount?: number }).rowCount ?? 0,
+        } as unknown as TabularDataResult,
       });
     },
     [dialogData, onChange],

@@ -5,7 +5,7 @@ import { StylerPreviewStep } from './StylerPreviewStep.tsx';
 import type { StylerMapping, StylerStepData } from '../../common/types/StylerEntity.js';
 import { i18n } from '@hierarchidb/ui-i18n';
 import { StylerMappingStep } from './StylerMappingStep.tsx';
-import { isStyleMappingComplete } from './useStylerMappingState.ts';
+import { hasKeyValueSelected as mappingHasKeyValueSelected } from './useStylerMappingState.ts';
 import { StylerFilterStep } from './StylerFilterStep.tsx';
 
 const registry = PluginStepRegistry.getInstance();
@@ -48,7 +48,9 @@ const hasKeyValueSelected = (dialogData?: StylerStepData): boolean => {
     data.valueColumn ??
     mapping.valueColumn ??
     (data.stylerConfig as { valueColumn?: string } | undefined)?.valueColumn;
-  return Boolean(keyColumn && valueColumn);
+  const hasLocal = Boolean(keyColumn && valueColumn);
+  const hasHook = mappingHasKeyValueSelected(dialogData);
+  return hasLocal || hasHook;
 };
 
 const hasLoadedDataSource = (dialogData?: StylerStepData): boolean => {
@@ -110,11 +112,9 @@ registry.registerConfigProvider<StylerStepData>({
         id: 'style-mapping',
         label: t('steps.styleSettings', 'Style Mapping'),
         componentFactory: renderMappingStep,
-        validate: (dialogData?: StylerStepData) =>
-          isStyleMappingComplete((dialogData ?? {}) as Partial<StylerStepData>),
+        validate: (dialogData?: StylerStepData) => hasKeyValueSelected(dialogData),
         capabilities: {
-          canProceedToNext: (dialogData?: StylerStepData) =>
-            isStyleMappingComplete((dialogData ?? {}) as Partial<StylerStepData>),
+          canProceedToNext: (dialogData?: StylerStepData) => hasKeyValueSelected(dialogData),
         },
       },
       {

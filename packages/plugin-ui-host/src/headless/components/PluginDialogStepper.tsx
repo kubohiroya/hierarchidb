@@ -1,39 +1,12 @@
 import type React from 'react';
 import { Step, StepButton, StepLabel, Stepper, CircularProgress, Stack, Typography } from '@mui/material';
-import type { StepIconProps } from '@mui/material/StepIcon';
 import { Link } from '@tanstack/react-router';
 import type { DialogActionInFlight } from '../types.js';
-import { StepIconComponent } from './StepIconComponent.js';
+import { StepStatusIcon } from './StepStatusIcon.js';
 import type { Theme } from '@mui/material/styles';
 
 type WorkerStepState = { id: string; enabled?: boolean; completed?: boolean; error?: string | null };
 type WorkerDialogState = { steps?: WorkerStepState[] };
-
-type StepIconWrapperProps = StepIconProps & {
-  index: number;
-  icon?: React.ReactNode;
-  theme: Theme;
-  canNavigate: boolean;
-  isValidatedButDisabled: boolean;
-};
-
-const StepIconWrapper: React.FC<StepIconWrapperProps> = ({
-  index,
-  icon,
-  theme,
-  canNavigate,
-  isValidatedButDisabled,
-  ...iconProps
-}) => (
-  <StepIconComponent
-    {...iconProps}
-    index={index}
-    icon={icon}
-    theme={theme}
-    canNavigate={canNavigate}
-    isValidatedButDisabled={isValidatedButDisabled}
-  />
-);
 
 export interface PluginDialogStepperProps {
   steps: { id: string; label?: string }[];
@@ -46,7 +19,6 @@ export interface PluginDialogStepperProps {
   workerStepMap?: Map<string, WorkerStepState> | null;
   dialogState?: WorkerDialogState | null;
   pendingAction?: DialogActionInFlight | null;
-  icon?: React.ReactNode;
   theme: Theme;
 }
 
@@ -61,7 +33,6 @@ export const PluginDialogStepper: React.FC<PluginDialogStepperProps> = ({
   workerStepMap,
   dialogState,
   pendingAction,
-  icon,
   theme,
 }) => {
   return (
@@ -95,16 +66,19 @@ export const PluginDialogStepper: React.FC<PluginDialogStepperProps> = ({
             >
               <StepLabel
                 slots={{
-                  stepIcon: (props) => (
-                    <StepIconWrapper
-                      {...props}
-                      index={index}
-                      icon={icon}
-                      theme={theme}
-                      canNavigate={canNavigate}
-                      isValidatedButDisabled={isValidatedButDisabled}
-                    />
-                  ),
+                  stepIcon: (props) => {
+                    const iconIndex =
+                      typeof props.icon === 'number' ? Number(props.icon) - 1 : index;
+                    return (
+                      <StepStatusIcon
+                        {...props}
+                        theme={theme}
+                        stepIndex={iconIndex}
+                        canNavigate={canNavigate}
+                        variant={isValidatedButDisabled ? 'validated-disabled' : undefined}
+                      />
+                    );
+                  },
                 }}
               >
                 <Stack direction="row" alignItems="center" spacing={0.75}>

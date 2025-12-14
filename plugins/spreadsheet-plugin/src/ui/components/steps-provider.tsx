@@ -1,7 +1,7 @@
 import { PluginStepRegistry, type PluginStepConfig, type StepComponentProps } from '@hierarchidb/plugin-base';
 import type { SpreadsheetEntity } from '../../common/types/SpreadsheetEntity.js';
 import { TabularDataSourceStep } from './steps/TabularDataSourceStep.js';
-import { TabularKeyValueStep } from './TabularKeyValueStep.js';
+import { TabularDataFilterStep } from './steps/TabularDataFilterStep.js';
 import { SPREADSHEET_NODE_TYPE } from '../../common/constants.js';
 import { i18n } from '@hierarchidb/ui-i18n';
 
@@ -28,7 +28,7 @@ registry.registerConfigProvider({
         id: 'filtering',
         label: t('steps.filtering.label', 'Filtering'),
         componentFactory: (props: StepComponentProps<SpreadsheetEntity>) => (
-          <TabularKeyValueStep {...props} translationNamespace="spreadsheet-plugin" />
+          <TabularDataFilterStep {...props} translationNamespace="spreadsheet-plugin" />
         ),
         optional: true,
         capabilities: {
