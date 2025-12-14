@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useAtomValue } from 'jotai';
 import { StepComponentProps } from '@hierarchidb/plugin-base';
 import {
   TabularDataFilter,
@@ -15,6 +16,7 @@ import { useTabularDataFilter } from '../../hooks/useTabularDataFilter.js';
 import type { TabularColumnInfo, TabularColumnType, TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { useTabularKeyValueState } from '../../hooks/useTabularKeyValueState.js';
 import { TabularKeyValuePanels } from '../TabularKeyValuePanels.js';
+import { filterRulesAtom, rulesEqual } from '../../state/tabularKeyValueAtoms.js';
 
 type FilterInnerProps<T extends SpreadsheetEntity> = ReturnType<typeof useTabularDataFilter<T>> & {
   setValid: StepComponentProps<T>['setValid'];
@@ -34,7 +36,6 @@ const TabularDataFilterInner = <T extends SpreadsheetEntity>({
   initialFilters,
   shouldUploadFirst,
   syncFilters,
-  handlePreviewData,
   dialogData,
   setValid,
   setError,
@@ -54,9 +55,15 @@ const TabularDataFilterInner = <T extends SpreadsheetEntity>({
     handleKeyColumnChange,
     handleValueColumnChange,
     handleFiltersChanged,
-    handlePreviewReady,
+    handlePreviewRows,
     setFilterReady,
   } = keyValueState;
+  const stablePreviewHandler = useCallback(
+    (preview: TabularDataResult) => {
+      onPreviewReady?.(preview);
+    },
+    [onPreviewReady],
+  );
   const { tabularTableMetadata, loading, error } = useTabularData({
     tableMetadataId: dialogData.spreadsheetMetadataId,
     pluginId,
@@ -184,20 +191,14 @@ const TabularDataFilterInner = <T extends SpreadsheetEntity>({
     <TabularDataFilter
       tableMetadata={tableMetadata}
       pluginId={pluginId}
-      onFiltersChanged={(next: TabularFilterRule[]) => {
-        handleFiltersChanged(next);
-        onFiltersChanged?.(next);
-        syncFilters(next);
-      }}
-      onPreviewData={(preview: TabularDataResult) => {
-        handlePreviewData(preview);
-        handlePreviewReady(preview);
-        onPreviewReady?.(preview);
-      }}
+      onPreviewData={stablePreviewHandler}
+      onPreviewRows={handlePreviewRows}
       initialFilters={initialFilters}
       onSyncFilters={(filters: TabularFilterRule[]) => {
         syncFilters(filters);
         handleFiltersChanged(filters);
+        // 外部通知は同期タイミングに限定してループを防ぐ
+        onFiltersChanged?.(filters);
       }}
       menuContainer={menuContainer}
       renderSections={renderSectionsNode}
@@ -240,13 +241,21 @@ export const TabularDataFilterStep = <T extends SpreadsheetEntity>({
     handlePreviewData,
     dialogData,
   } = useTabularDataFilter<T>({ data, onChange, setValid, setError, dialogRef });
+  const filtersFromAtom = useAtomValue(filterRulesAtom);
+
+  const stableInitialFilters = useMemo<TabularFilterRule[]>(() => {
+    if (filtersFromAtom.length && !rulesEqual(filtersFromAtom, initialFilters)) {
+      return filtersFromAtom;
+    }
+    return initialFilters;
+  }, [filtersFromAtom, initialFilters]);
 
   return (
     <TabularProvider tabularApi={tabularApi}>
       <TabularDataFilterInner
         pluginId={pluginId}
         menuContainer={menuContainer}
-        initialFilters={initialFilters}
+        initialFilters={stableInitialFilters}
         shouldUploadFirst={shouldUploadFirst}
         syncFilters={syncFilters}
         handlePreviewData={handlePreviewData}

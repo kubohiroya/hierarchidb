@@ -6,6 +6,27 @@ export const tabularRowsAtom = atom<TabularRow[]>([]);
 
 export const filterRulesAtom = atom<TabularFilterRule[]>([]);
 
+export const rulesEqual = (a: TabularFilterRule[], b: TabularFilterRule[]): boolean => {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    const left = a[i];
+    const right = b[i];
+    if (
+      !left ||
+      !right ||
+      left.id !== right.id ||
+      left.column !== right.column ||
+      left.operator !== right.operator ||
+      left.value !== right.value ||
+      left.enabled !== right.enabled
+    ) {
+      return false;
+    }
+  }
+  return true;
+};
+
 const toStr = (v: unknown) => (v === null || v === undefined ? '' : String(v));
 const toNum = (v: unknown): number | null => {
   if (typeof v === 'number' && Number.isFinite(v)) return v;
@@ -97,7 +118,7 @@ export const numericValuesAtom = atom((get: Getter) => {
     .filter((v: number) => Number.isFinite(v));
 });
 
-export const binCountAtom = atom<number>(16);
+export const binCountAtom = atom<number>(256);
 
 export const histogramStatsAtom = atom((get: Getter) => {
   const values = get(numericValuesAtom);

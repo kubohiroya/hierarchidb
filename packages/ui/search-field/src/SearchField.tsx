@@ -39,6 +39,13 @@ export function SearchField({
   placeholder,
   ariaLabel,
 }: SearchFieldProps): React.JSX.Element {
+  const handleChange = React.useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      handleSearchTextChange(event.target.value);
+    },
+    [handleSearchTextChange],
+  );
+
   return (
     <SearchTextFieldContainer>
       <label
@@ -63,7 +70,7 @@ export function SearchField({
         size="small"
         placeholder={placeholder}
         value={searchText}
-        onChange={(event: React.ChangeEvent<HTMLInputElement>) => handleSearchTextChange(event.target.value)}
+        onChange={handleChange}
         onBlur={() => handleSearchCommit?.()}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {

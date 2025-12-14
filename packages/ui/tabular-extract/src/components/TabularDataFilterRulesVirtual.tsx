@@ -228,11 +228,24 @@ export function TabularDataFilterRulesVirtual({
 
   // keep draft values in sync with rules (for added/removed rules)
   useEffect(() => {
+    if (rulesEqual(normalizedRulesRef.current, normalizedRules) && Object.keys(draftValuesRef.current).length === normalizedRules.length) {
+      return;
+    }
     setDraftValues((prev) => {
       const next: Record<string, string> = {};
       for (const rule of normalizedRules) {
         const current = prev[rule.id];
         next[rule.id] = current ?? String(rule.value ?? '');
+      }
+      const prevKeys = Object.keys(prev);
+      const nextKeys = Object.keys(next);
+      const sameLength = prevKeys.length === nextKeys.length;
+      const sameEntries =
+        sameLength &&
+        prevKeys.every((key) => Object.prototype.hasOwnProperty.call(next, key) && prev[key] === next[key]);
+      if (sameEntries) {
+        draftValuesRef.current = prev;
+        return prev;
       }
       draftValuesRef.current = next;
       return next;

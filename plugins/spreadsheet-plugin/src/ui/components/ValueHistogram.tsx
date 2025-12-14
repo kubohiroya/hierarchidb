@@ -11,6 +11,14 @@ interface ValueHistogramProps {
   mean: number;
   valueLabel?: string;
   keyLabel?: string;
+  barColor?: (input: {
+    index: number;
+    start: number;
+    end: number;
+    midpoint: number;
+    count: number;
+    maxCount: number;
+  }) => string;
 }
 
 export const ValueHistogram: React.FC<ValueHistogramProps> = ({
@@ -23,6 +31,7 @@ export const ValueHistogram: React.FC<ValueHistogramProps> = ({
   mean,
   valueLabel,
   keyLabel,
+  barColor,
 }) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [renderWidth, setRenderWidth] = useState<number>(width);
@@ -102,6 +111,12 @@ export const ValueHistogram: React.FC<ValueHistogramProps> = ({
           const barHeight = scaleY(count);
           const x = chartPadding.left + idx * barWidth;
           const y = chartPadding.top + (chartHeight - barHeight);
+          const start = min + (idx / clampedBinCount) * (max - min);
+          const end = min + ((idx + 1) / clampedBinCount) * (max - min);
+          const midpoint = (start + end) / 2;
+          const fill = barColor
+            ? barColor({ index: idx, start, end, midpoint, count, maxCount: modeCount })
+            : '#90caf9';
           return (
             <g key={idx}>
               <rect
@@ -109,7 +124,7 @@ export const ValueHistogram: React.FC<ValueHistogramProps> = ({
                 y={y}
                 width={Math.max(barWidth - 1, 0)}
                 height={barHeight}
-                fill="#90caf9"
+                fill={fill}
               />
               {barHeight > 12 && (
                 <text

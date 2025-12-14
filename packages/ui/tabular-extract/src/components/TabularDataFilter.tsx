@@ -18,7 +18,7 @@ import { ExpandMore as ExpandMoreIcon, Preview as PreviewIcon } from '@mui/icons
 import { useTabularFilter } from '../hooks/useTabularFilter.js';
 import type { TabularColumnInfo, TabularColumnType, TabularTableMetadata } from '@hierarchidb/tabular-store';
 import type { TabularDataResult, TabularFilterRule, TabularFilterOperator } from '../types/index.js';
-import { type FilterOperatorOption } from './TabularDataFilterRulesTable.js';
+import type { FilterOperatorOption } from './TabularDataFilterRulesTable.js';
 import { TabularDataFilterRulesVirtual } from './TabularDataFilterRulesVirtual.js';
 import { LinearProgress } from '@mui/material';
 import { TabularPreviewLite } from './TabularPreviewLite.js';
@@ -31,6 +31,8 @@ export interface TabularDataFilterProps {
    */
   onFiltersChanged?: (filters: TabularFilterRule[]) => void;
   onPreviewData?: (data: TabularDataResult) => void;
+  /** Optional: provide raw rows separately to avoid bloating dialogData */
+  onPreviewRows?: (rows: TabularDataResult['rows']) => void;
   pluginId: string;
   maxPreviewRows?: number;
   initialFilters?: TabularFilterRule[];
@@ -67,6 +69,7 @@ export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
   tableMetadata,
   onFiltersChanged,
   onPreviewData,
+  onPreviewRows,
   pluginId,
   initialFilters = [],
   onSyncFilters,
@@ -129,12 +132,34 @@ export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
     return () => window.clearTimeout(timer);
   }, [filters, onFiltersChanged]);
 
-  // Update preview data when available
+  // Update preview data when available (rows除外 & 変化がある時だけ通知)
+  const lastPreviewSignatureRef = useRef<string>('');
   useEffect(() => {
-    if (previewData && onPreviewData) {
-      onPreviewData(previewData);
+    if (!previewData) return;
+    if (onPreviewRows) {
+      onPreviewRows(previewData.rows);
     }
-  }, [previewData, onPreviewData]);
+    if (!onPreviewData) return;
+    const { rows, ...rest } = previewData;
+    const rowCount =
+      Array.isArray(rows) && typeof rows.length === 'number'
+        ? rows.length
+        : (rest as { totalRows?: number }).totalRows ?? 0;
+    const payload: TabularDataResult = {
+      ...(rest as Omit<TabularDataResult, 'rows'>),
+      rows: [],
+      totalRows: (rest as { totalRows?: number }).totalRows ?? rowCount,
+    };
+    const signature = JSON.stringify({
+      columns: payload.columns,
+      totalRows: payload.totalRows,
+      rowCount,
+      hash: (rest as { hash?: string }).hash ?? null,
+    });
+    if (signature === lastPreviewSignatureRef.current) return;
+    lastPreviewSignatureRef.current = signature;
+    onPreviewData(payload);
+  }, [previewData, onPreviewData, onPreviewRows]);
 
   useEffect(() => {
     if (columnOptions.length === 0) return;
@@ -293,6 +318,11 @@ export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
       title={renderSections ? '' : 'Filter Rules'}
     />
   );
+
+  // 外部（初期値/atom）から filters が更新された場合に内部状態へ同期する
+  useEffect(() => {
+    setFilters((prev) => (filtersEqual(prev, initialFilters) ? prev : initialFilters));
+  }, [filtersEqual, initialFilters]);
 
   const previewNode = previewData ? (
     <Paper variant="outlined" sx={{ height: previewHeight, overflowY: 'auto' }}>

@@ -8,6 +8,7 @@ import {
   binCountAtom,
   filterRulesAtom,
   histogramStatsAtom,
+  rulesEqual,
   keyColumnAtom,
   numericValuesAtom,
   tabularRowsAtom,
@@ -54,6 +55,7 @@ export const useTabularKeyValueState = <T extends SpreadsheetEntity>({
   onSetFilterValid,
 }: UseTabularKeyValueStateParams<T>) => {
   const [filterReady, setFilterReady] = useState<boolean>(false);
+  const previewRowsCacheRef = useRef<Record<string, unknown>[]>([]);
   const setTabularRows = useSetAtom(tabularRowsAtom);
   const setFilterRules = useSetAtom(filterRulesAtom);
   const setKeyColumnAtom = useSetAtom(keyColumnAtom);
@@ -76,7 +78,8 @@ export const useTabularKeyValueState = <T extends SpreadsheetEntity>({
   );
 
   useEffect(() => {
-    setFilterRules(Array.isArray(dialogData.filters) ? (dialogData.filters as TabularFilterRule[]) : []);
+    const next = Array.isArray(dialogData.filters) ? (dialogData.filters as TabularFilterRule[]) : [];
+    setFilterRules((prev) => (rulesEqual(prev, next) ? prev : next));
   }, [dialogData.filters, setFilterRules]);
 
   const mapping = (dialogData as { mapping?: { keyColumn?: string; valueColumn?: string } }).mapping;
@@ -171,11 +174,25 @@ export const useTabularKeyValueState = <T extends SpreadsheetEntity>({
     setHistogramWidth,
     handleKeyColumnChange,
     handleValueColumnChange,
-    handleFiltersChanged: setFilterRules,
-    handlePreviewReady: (preview: TabularDataResult) => {
-      const rows = Array.isArray(preview?.rows) ? (preview.rows as Record<string, unknown>[]) : [];
-      setTabularRows(rows);
+    handleFiltersChanged: (rules: TabularFilterRule[]) =>
+      setFilterRules((prev) => (rulesEqual(prev, rules) ? prev : rules)),
+    handlePreviewRows: (rows: TabularDataResult['rows']) => {
+      const nextRows = Array.isArray(rows) ? (rows as Record<string, unknown>[]) : [];
+      setTabularRows(nextRows);
       setFilterReady(true);
+      // cache lightweight preview rows into dialogData to survive step navigation
+      const limited = nextRows.slice(0, 1000);
+      const sameRef = previewRowsCacheRef.current === limited;
+      const sameLength =
+        previewRowsCacheRef.current.length === limited.length &&
+        previewRowsCacheRef.current.every((r, i) => r === limited[i]);
+      if (!sameRef && !sameLength) {
+        previewRowsCacheRef.current = limited;
+        onChange({
+          ...(dialogData as T),
+          previewRows: limited as T['previewRows'],
+        });
+      }
     },
     selectedKeyColumn,
     selectedValueColumn,

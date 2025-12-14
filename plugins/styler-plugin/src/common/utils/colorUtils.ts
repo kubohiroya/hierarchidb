@@ -142,7 +142,6 @@ export function hexToRgb(hex: string): [number, number, number] {
  * @returns Calculated color result
  */
 export function calculateLinearColor(value: number, config: StylerConfig): ColorCalculationResult {
- // const effectiveConfig = config ?? StylerConfigDefault;
   const colorSpace = config.colorSpace ?? StylerConfigDefault.colorSpace;
   const { min, max } = config;
 
@@ -289,25 +288,71 @@ export function valueToColor(
     };
   }
 
+  // normalize colorScheme/invertColors into effective config
+  const normalizeConfig = (base: StylerConfig): StylerConfig => {
+    const scheme = base.colorScheme ?? StylerConfigDefault.colorScheme;
+    const invert = base.invertColors ?? StylerConfigDefault.invertColors;
+    // start with hsv defaults
+    let effective: StylerConfig = { ...StylerConfigDefault, ...base };
+    if (scheme === 'grayscale') {
+      effective = {
+        ...effective,
+        colorSpace: 'rgb',
+        startColor: invert ? '#ffffff' : '#000000',
+        endColor: invert ? '#000000' : '#ffffff',
+        saturation: 0,
+        brightness: 1,
+        hueStart: 0,
+        hueEnd: 0,
+      };
+    } else if (scheme === 'redgreen') {
+      effective = {
+        ...effective,
+        colorSpace: 'rgb',
+        startColor: invert ? '#00ff00' : '#ff0000',
+        endColor: invert ? '#ff0000' : '#00ff00',
+      };
+    } else if (scheme === 'blueorange') {
+      effective = {
+        ...effective,
+        colorSpace: 'rgb',
+        startColor: invert ? '#ffa500' : '#0000ff',
+        endColor: invert ? '#0000ff' : '#ffa500',
+      };
+    } else if (invert) {
+      // generic invert for hsv
+      effective = {
+        ...effective,
+        hueStart: base.hueEnd,
+        hueEnd: base.hueStart,
+        startColor: base.endColor,
+        endColor: base.startColor,
+      };
+    }
+    return effective;
+  };
+
+  const effectiveConfig = normalizeConfig(config);
+
   // Apply algorithm
-  switch (config.algorithm) {
+  switch (effectiveConfig.algorithm) {
     case 'linear':
-      return calculateLinearColor(value, config);
+      return calculateLinearColor(value, effectiveConfig);
 
     case 'quantile':
       if (allValues) {
-        return calculateQuantileColor(value, allValues, mapping, config);
+        return calculateQuantileColor(value, allValues, mapping, effectiveConfig);
       }
-      return calculateLinearColor(value, config);
+      return calculateLinearColor(value, effectiveConfig);
 
     case 'jenks':
     case 'equal':
       // TODO: Implement Jenks natural breaks and equal interval
       // For now, fallback to linear
-      return calculateLinearColor(value, config);
+      return calculateLinearColor(value, effectiveConfig);
 
     default:
-      return calculateLinearColor(value, config);
+      return calculateLinearColor(value, effectiveConfig);
   }
 }
 

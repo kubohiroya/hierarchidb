@@ -24,23 +24,13 @@ import type {
   StepNavigationEvent,
 } from '@hierarchidb/ui-dialog';
 import { MultiStepDialogContent } from '@hierarchidb/ui-dialog';
-import {
-  Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Typography,
-} from '@mui/material';
 import type { Theme } from '@mui/material/styles';
 import { useNavigate } from '@tanstack/react-router';
 import type { Remote } from 'comlink';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { PluginDialogFooter, PluginDialogHeader } from './components/index.js';
-import type { PluginDialogFooterPrimaryButtonOptions } from './components/PluginDialogFooter.js';
+import type { PluginDialogFooterPrimaryButtonOptions, PluginDialogFooterProps } from './components/PluginDialogFooter.js';
 import { toRecord } from './controller/step-guards.js';
 import { useDialogFrameState } from './usePluginDialogController/frame-state.js';
 import { useBasicInfoState } from './usePluginDialogController/basic-info.js';
@@ -56,6 +46,12 @@ import type {
   TreeNodeUpdaterPatch,
 } from './usePluginDialogController/data-types.js';
 import type { DialogActionInFlight } from './types.js';
+import {
+  ConflictDialog,
+  createContentComponent,
+  createFooterComponent,
+  createHeaderComponent,
+} from './components/DialogScaffold.js';
 
 export interface PluginDialogControllerOptions {
   mode: 'create' | 'edit';
@@ -111,6 +107,54 @@ const formatTimestamp = (timestamp?: number): string => {
   const date = new Date(timestamp);
   const pad = (v: number) => `${v}`.padStart(2, '0');
   return `${date.getFullYear()}/${pad(date.getMonth() + 1)}/${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+};
+
+// Lightweight deep-ish equality to reuse stepData references when unchanged.
+const shallowEqualValue = (a: unknown, b: unknown): boolean => {
+  if (a === b) return true;
+  const stack: Array<{ left: unknown; right: unknown }> = [{ left: a, right: b }];
+  while (stack.length) {
+    const { left, right } = stack.pop()!;
+    if (left === right) continue;
+    const leftArr = Array.isArray(left);
+    const rightArr = Array.isArray(right);
+    if (leftArr || rightArr) {
+      if (!leftArr || !rightArr) return false;
+      if (left.length !== right.length) return false;
+      for (let i = 0; i < left.length; i += 1) {
+        stack.push({ left: left[i], right: right[i] });
+      }
+      continue;
+    }
+    const leftObj = typeof left === 'object' && left !== null;
+    const rightObj = typeof right === 'object' && right !== null;
+    if (leftObj || rightObj) {
+      if (!leftObj || !rightObj) return false;
+      const leftKeys = Object.keys(left as Record<string, unknown>);
+      const rightKeys = Object.keys(right as Record<string, unknown>);
+      if (leftKeys.length !== rightKeys.length) return false;
+      for (const key of leftKeys) {
+        if (!Object.prototype.hasOwnProperty.call(right, key)) return false;
+        stack.push({
+          left: (left as Record<string, unknown>)[key],
+          right: (right as Record<string, unknown>)[key],
+        });
+      }
+      continue;
+    }
+    if (left !== right) return false;
+  }
+  return true;
+};
+
+const reuseNumberArray = (prevRef: React.MutableRefObject<ReadonlyArray<number>>, next: ReadonlyArray<number>) => {
+  const prev = prevRef.current;
+  if (prev === next) return prev;
+  if (prev.length === next.length && prev.every((v, i) => v === next[i])) {
+    return prev;
+  }
+  prevRef.current = next;
+  return next;
 };
 
 export function usePluginDialogController(
@@ -316,6 +360,17 @@ export function usePluginDialogController(
     basicInfoLabel: t('common.basicInfo.title', 'Basic Information'),
   });
 
+  // Stabilize stepData reference to avoid noisy context diffs in HeadlessMultiStepDialog
+  const stepDataRef = useRef<Partial<PluginDefinedEntity>>(currentStepData);
+  const stableStepData = useMemo(() => {
+    const prev = stepDataRef.current;
+    if (shallowEqualValue(prev, currentStepData)) {
+      return prev;
+    }
+    stepDataRef.current = currentStepData;
+    return currentStepData;
+  }, [currentStepData]);
+
   const presentation = useMemo(() => getPresentation(nodeType), [nodeType]);
   const icon = useMemo(() => getIconComponent(nodeType), [nodeType]);
   const isFolder = nodeType === 'folder';
@@ -344,6 +399,21 @@ export function usePluginDialogController(
     activeStepIndex,
     dialogData,
   });
+  const stableEnabledStepsRef = useRef<ReadonlyArray<number>>([]);
+  const stableValidatedStepsRef = useRef<ReadonlyArray<number>>([]);
+  const stableCommittableStepsRef = useRef<ReadonlyArray<number>>([]);
+  const stableEnabledStepIndices = useMemo(
+    () => reuseNumberArray(stableEnabledStepsRef, enabledStepIndices),
+    [enabledStepIndices],
+  );
+  const stableValidatedStepIndices = useMemo(
+    () => reuseNumberArray(stableValidatedStepsRef, validatedStepIndices),
+    [validatedStepIndices],
+  );
+  const stableCommittableStepIndices = useMemo(
+    () => reuseNumberArray(stableCommittableStepsRef, committableStepIndices),
+    [committableStepIndices],
+  );
 
   const safeStepDescriptors: ReadonlyArray<StepComponentDescriptor<Partial<PluginDefinedEntity>>> = useMemo(
     () =>
@@ -391,6 +461,24 @@ export function usePluginDialogController(
   const { pendingAction, pendingActionRef, runWithPending } = usePendingAction(open);
   const [isStartingBatch, setIsStartingBatch] = useState(false);
   const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
+  const dialogDirtyRef = useRef(dialogDirty);
+  useEffect(() => {
+    dialogDirtyRef.current = dialogDirty;
+  }, [dialogDirty]);
+  const discardDraftRef = useRef(discardDraft);
+  useEffect(() => {
+    discardDraftRef.current = discardDraft;
+  }, [discardDraft]);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+  const runWithPendingRef = useRef(runWithPending);
+  useEffect(() => {
+    runWithPendingRef.current = runWithPending;
+  }, [runWithPending]);
+  const saveDraftHandlerRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  const startBatchHandlerRef = useRef<(() => Promise<void>) | undefined>(undefined);
 
   const ensureNoConflictRef = useRef(ensureNoConflict);
   useEffect(() => {
@@ -411,10 +499,10 @@ export function usePluginDialogController(
 
   const activeStepIndexRef = useRef(activeStepIndex);
   activeStepIndexRef.current = activeStepIndex;
-  const enabledStepsRef = useRef(enabledStepIndices);
-  enabledStepsRef.current = enabledStepIndices;
-  const validatedStepsRef = useRef(validatedStepIndices);
-  validatedStepsRef.current = validatedStepIndices;
+  const enabledStepsNavRef = useRef(enabledStepIndices);
+  enabledStepsNavRef.current = enabledStepIndices;
+  const validatedStepsNavRef = useRef(validatedStepIndices);
+  validatedStepsNavRef.current = validatedStepIndices;
   const stepsLengthRef = useRef(steps.length);
   stepsLengthRef.current = steps.length;
   const canSaveRef = useRef(canSaveCurrent);
@@ -550,6 +638,9 @@ export function usePluginDialogController(
       onClose();
     });
   }, [runWithPending, ensureNoConflict, updateLocalDraft, treeUpdater?.treeNodeId, treeUpdater?.draftMetadata, nodeId, nodeType, dialogData, basicInfo.name, basicInfo.description, basicInfo.tags, getPersistableDialogUIState, commitTreeNodeUpdater, pageNodeId, navigateToNode, onClose]);
+  useEffect(() => {
+    saveDraftHandlerRef.current = handleSaveDraft;
+  }, [handleSaveDraft]);
 
   const handleStartBatch = useCallback(async () => {
     if (!activeStartBatch) return;
@@ -571,32 +662,26 @@ export function usePluginDialogController(
       setIsStartingBatch(false);
     }
   }, [activeStartBatch, dialogData, mode, nodeId, pageNodeId, pendingActionRef, treeId]);
+  useEffect(() => {
+    startBatchHandlerRef.current = handleStartBatch;
+  }, [handleStartBatch]);
 
-  const HeaderComponent = useMemo<HeadlessDialogProps<Partial<PluginDefinedEntity>>['HeaderComponent']>(() => {
-    return () => (
-      <PluginDialogHeader
-        title={dialogTitle}
-        subtitle={headerSubtitle}
-        icon={icon || undefined}
-        pendingAction={pendingAction}
-      />
-    );
-  }, [dialogTitle, headerSubtitle, icon, pendingAction]);
+  const HeaderComponent = useMemo<HeadlessDialogProps<Partial<PluginDefinedEntity>>['HeaderComponent']>(
+    () => createHeaderComponent(dialogTitle, headerSubtitle, icon, pendingAction),
+    [dialogTitle, headerSubtitle, icon, pendingAction],
+  );
 
-  const ContentComponent = useMemo<HeadlessDialogProps<Partial<PluginDefinedEntity>>['ContentComponent']>(() => {
-    return () => (
-      <Box
-        sx={(theme) => ({
-          flex: 1,
-          overflow: 'auto',
-          padding: theme.spacing(2),
-        })}
-        ref={dialogRef}
-      >
-        <MultiStepDialogContent />
-      </Box>
-    );
-  }, [dialogRef]);
+  const ContentComponent = useMemo<HeadlessDialogProps<Partial<PluginDefinedEntity>>['ContentComponent']>(
+    () => {
+      const Content = createContentComponent(dialogRef);
+      return () => (
+        <Content>
+          <MultiStepDialogContent />
+        </Content>
+      );
+    },
+    [dialogRef],
+  );
 
   const foregroundDialogSx = useMemo(
     () => ({
@@ -610,108 +695,74 @@ export function usePluginDialogController(
 
   const conflictDialogNode = useMemo(
     () => (
-      <Dialog
+      <ConflictDialog
         open={conflictDialog.open}
-        onClose={() => {
-          resolveConflict('continue');
-        }}
-        sx={{
-          ...foregroundDialogSx,
-          zIndex: (theme) => (theme.zIndex?.modal ?? 1300) + 1001,
-        }}
-        slotProps={{
-          backdrop: {
-            sx: {
-              backgroundColor: 'rgba(9, 12, 28, 0.45)',
-              zIndex: (theme) => (theme.zIndex?.modal ?? 1300) + 1000,
-            },
-          },
-          paper: {
-            sx: { zIndex: (theme) => (theme.zIndex?.modal ?? 1300) + 1002 },
-          },
-        }}
-      >
-        <DialogTitle>{t('dialogs.pluginDraft.conflict.title')}</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2">
-            {t('dialogs.pluginDraft.conflict.description', {
-              timestamp: formatTimestamp(conflictDialog.updatedAt),
-            })}
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            color="secondary"
-            onClick={() => {
-              resolveConflict('discard');
-            }}
-          >
-            {t('dialogs.pluginDraft.conflict.buttons.discardSelf')}
-          </Button>
-          <Button
-            variant="contained"
-            onClick={() => {
-              resolveConflict('continue');
-            }}
-          >
-            {t('dialogs.pluginDraft.conflict.buttons.keepSelf')}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        updatedAt={conflictDialog.updatedAt ?? null}
+        foregroundSx={foregroundDialogSx}
+        resolveConflict={resolveConflict}
+        formatTimestamp={formatTimestamp}
+        translate={t}
+      />
     ),
-    [conflictDialog.open, conflictDialog.updatedAt, foregroundDialogSx, resolveConflict, t]
+    [conflictDialog.open, conflictDialog.updatedAt, foregroundDialogSx, resolveConflict, t],
   );
 
-  const FooterComponent = useMemo<HeadlessDialogProps<Partial<PluginDefinedEntity>>['FooterComponent']>(() => {
-    return () => (
-      <PluginDialogFooter
-        mode={mode}
-        canCommit={canSaveCurrent}
-        onSaveDraft={
-          disableDraftButton
-            ? undefined
-            : handleSaveDraft
-              ? () => {
-                  handleSaveDraft().catch(() => void 0);
-                }
-              : undefined
-        }
-        disableDraft={disableDraftButton || !dialogDirty}
-        onStartBatch={activeStartBatch ? () => { handleStartBatch().catch(() => void 0); } : undefined}
-        canStartBatch={canStartBatch && !isStartingBatch}
-        isStartingBatch={isStartingBatch}
-        primaryButtonOptions={footerPrimaryButtons}
-        saveDraftLabel={footerSaveDraftLabel}
-        pendingAction={pendingAction}
-      />
-    );
-  }, [
+  const footerPropsRef = useRef<PluginDialogFooterProps>({
     mode,
-    canSaveCurrent,
-    disableDraftButton,
-    handleSaveDraft,
-    dialogDirty,
-    activeStartBatch,
-    canStartBatch,
+    canCommit: canSaveCurrent,
+    onSaveDraft: undefined,
+    disableDraft: disableDraftButton || !dialogDirty,
+    onStartBatch: undefined,
+    canStartBatch: canStartBatch && !isStartingBatch,
     isStartingBatch,
-    footerPrimaryButtons,
-    footerSaveDraftLabel,
+    primaryButtonOptions: footerPrimaryButtons,
+    saveDraftLabel: footerSaveDraftLabel,
     pendingAction,
-    handleStartBatch,
-  ]);
+  });
+  const stableOnSaveDraft = useCallback(() => {
+    const fn = saveDraftHandlerRef.current;
+    if (fn) {
+      fn().catch(() => void 0);
+    }
+  }, []);
+  const stableOnStartBatch = useCallback(() => {
+    const fn = startBatchHandlerRef.current;
+    if (fn) {
+      fn().catch(() => void 0);
+    }
+  }, []);
+  Object.assign(footerPropsRef.current, {
+    mode,
+    canCommit: canSaveCurrent,
+    onSaveDraft: disableDraftButton ? undefined : stableOnSaveDraft,
+    disableDraft: disableDraftButton || !dialogDirty,
+    onStartBatch: activeStartBatch ? stableOnStartBatch : undefined,
+    canStartBatch: canStartBatch && !isStartingBatch,
+    isStartingBatch,
+    primaryButtonOptions: footerPrimaryButtons,
+    saveDraftLabel: footerSaveDraftLabel,
+    pendingAction,
+  });
+  const FooterComponent = useMemo<HeadlessDialogProps<Partial<PluginDefinedEntity>>['FooterComponent']>(
+    () => createFooterComponent(footerPropsRef),
+    [],
+  );
 
   const handleCloseRequest = useCallback(() => {
-    if (dialogDirty) {
+    if (dialogDirtyRef.current) {
       setDiscardDialogOpen(true);
       return;
     }
-    void runWithPending({ type: 'cancel' }, async () => {
+    const runPending = runWithPendingRef.current;
+    const discard = discardDraftRef.current;
+    const close = onCloseRef.current;
+    void runPending({ type: 'cancel' }, async () => {
       if (mode === 'create') {
-        await discardDraft({ forceDelete: true });
+        await discard?.({ forceDelete: true });
       }
-      onClose();
+      close?.();
     });
-  }, [dialogDirty, discardDraft, mode, onClose, runWithPending]);
+  }, [mode]);
 
   const handleConfirmDiscard = useCallback(() => {
     setDiscardDialogOpen(false);
@@ -748,34 +799,37 @@ export function usePluginDialogController(
 
   const invalidMessageMap = useMemo(() => ({}), []);
 
-  const headlessProps: HeadlessDialogProps<Partial<PluginDefinedEntity>> = {
-    open: open && isDialogReady,
-    stepComponents: safeStepDescriptors,
-    stepData: currentStepData,
-    onStepDataChange: handleStepDataChange,
-    activeStepIndex,
-    onStepNavigate: handleNavigation,
-    enabledStepIndices,
-    validatedStepIndices,
-    committableStepIndices,
-    invalidMessageMap,
-    onRequestClose: handleCloseRequest,
-    onRequestCommit: handleRequestCommit,
-    isDirty: dialogDirty,
-    position: dialogPosition,
-    onPositionChange: handlePositionChangeWithPersist as (next?: DialogPosition) => void,
-    size: dialogSize,
-    onSizeChange: handleSizeChangeWithPersist as (next?: DialogSize) => void,
-    displayMode,
-    onDisplayModeChange: (mode: DialogDisplayMode) => {
-      void transitionDisplayMode(mode).then(() => {
-        persistDialogWindow({ mode });
-      });
-    },
-    HeaderComponent,
-    ContentComponent,
-    FooterComponent,
-  };
+  const headlessProps: HeadlessDialogProps<Partial<PluginDefinedEntity>> = useMemo(
+    () => ({
+      open: open && isDialogReady,
+      stepComponents: safeStepDescriptors,
+      stepData: stableStepData,
+      onStepDataChange: handleStepDataChange,
+      activeStepIndex,
+      onStepNavigate: handleNavigation,
+      enabledStepIndices: stableEnabledStepIndices,
+      validatedStepIndices: stableValidatedStepIndices,
+      committableStepIndices: stableCommittableStepIndices,
+      invalidMessageMap,
+      onRequestClose: handleCloseRequest,
+      onRequestCommit: handleRequestCommit,
+      isDirty: dialogDirty,
+      position: dialogPosition,
+      onPositionChange: handlePositionChangeWithPersist as (next?: DialogPosition) => void,
+      size: dialogSize,
+      onSizeChange: handleSizeChangeWithPersist as (next?: DialogSize) => void,
+      displayMode,
+      onDisplayModeChange: (mode: DialogDisplayMode) => {
+        void transitionDisplayMode(mode).then(() => {
+          persistDialogWindow({ mode });
+        });
+      },
+      HeaderComponent,
+      ContentComponent,
+      FooterComponent,
+    }),
+    [open, isDialogReady, safeStepDescriptors, stableStepData, handleStepDataChange, activeStepIndex, handleNavigation, stableEnabledStepIndices, stableValidatedStepIndices, stableCommittableStepIndices, invalidMessageMap, handleCloseRequest, handleRequestCommit, dialogDirty, dialogPosition, handlePositionChangeWithPersist, dialogSize, handleSizeChangeWithPersist, displayMode, HeaderComponent, ContentComponent, FooterComponent, transitionDisplayMode, persistDialogWindow],
+  );
 
   return {
     headlessProps,

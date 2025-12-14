@@ -10226,6 +10226,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-14 15:31 start: fix/styler/style-type-accordion-move — Styler Step4 の Style Type アコーディオンを削除し、Style Type 選択 UI を Target Property アコーディオン内先頭へ移設する対応を開始（branch: fix/styler/style-type-accordion-move、branch 作成不可なら main）。
 - 2025-12-14 15:33 progress: fix/styler/style-type-accordion-move — Style Type アコーディオンを削除し、Target Property アコーディオン内の先頭に Style Type カード選択 UI を移設。
 - 2025-12-14 15:33 command: pnpm --filter @hierarchidb/styler-plugin typecheck — exit 2（既存の key/value 再編タスク由来の型エラー: spreadsheet-plugin TabularDataFilterStep の props 不整合や StylerMapping key/value プロパティ欠如など。今回のレイアウト変更とは別要因で停止）。
+- 2025-12-15 08:35 progress: fix/styler/style-type-accordion-move — Vite import error 解消のため、ValueHistogram の import パスを実体ファイル (.tsx) 参照に修正。
+- 2025-12-15 08:40 progress: fix/styler/style-type-accordion-move — ValueHistogram import を拡張子なしに変更し、tsconfig paths 経由で src/ui/components/ValueHistogram を解決する形に再修正。
+- 2025-12-15 08:39 progress: fix/styler/style-type-accordion-move — spreadsheet-plugin/ui から ValueHistogram を再エクスポートし、Styler 側は `@hierarchidb/spreadsheet-plugin/ui` から参照する形に変更。Vite import 解決を安定化。
+- 2025-12-15 08:45 progress: fix/styler/style-type-accordion-move — ValueHistogram の barColor ハンドラに型注釈を追加し、implicit any 警告を解消。
 - 2025-12-14 08:06 start: feat/styler/key-value-accordion — Styler Step3 に「Key-Value Pair」アコーディオンを追加し、Step4 の key/value 選択 UI を移設する対応を開始（Value は数値のみ集計、branch: feat/styler/key-value-accordion、branch 作成不可なら main）。
 - 2025-12-14 08:11 progress: feat/styler/key-value-accordion — Step3 を 3 アコーディオン化（Style Type/Target Property/Key-Value Pair）。Key/Value 選択 UI を Key-Value Pair アコーディオンへ移設し、Value 列の数値のみから max/min/avg/median/stddev を表示（非数値は除外）。
 - 2025-12-14 08:12 command: pnpm --filter @hierarchidb/styler-plugin typecheck — exit 0。

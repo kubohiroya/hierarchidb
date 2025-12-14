@@ -29,8 +29,7 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
-import { useCallback } from 'react';
-import { useId } from 'react';
+import { useCallback, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import type { StylerConfig, StylerTableRow } from '../../common/types/StylerEntity.js';
@@ -53,7 +52,6 @@ export const StylerConfigPanel = ({
   tabularData = [],
 }: StylerMappingProps ) => {
   const controlId = useId();
-
   const { t } = useTranslation('styler-plugin');
   const tStr = useCallback(
     (key: string, defaultValue: string) => {
@@ -96,15 +94,18 @@ export const StylerConfigPanel = ({
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       <Typography variant="h6" gutterBottom>
-        {t('step5.title', 'Step 5: Style Mapping Configuration')}
+        {t('step5.title', 'Style Mapping Configuration')}
       </Typography>
 
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
         <Stack flex={1} spacing={2}>
           <Paper sx={{ p: 2 }}>
-            <Typography variant="subtitle2" gutterBottom>
-              {t('step5.mappingRange.title', 'Mapping Range')}
-            </Typography>
+              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                <GradientIcon fontSize="small" />
+                <Typography variant="subtitle2">
+                  {t('step5.mappingRange.title', 'Mapping Range')}
+                </Typography>
+              </Stack>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <TextField
                 label={t('step5.mappingRange.min', 'Minimum')}
@@ -140,20 +141,31 @@ export const StylerConfigPanel = ({
             </Box>
           </Paper>
 
-          {stats && (
-            <Paper sx={{ p: 2 }}>
-              <Typography variant="subtitle2" gutterBottom>
+        {stats && (
+          <Paper sx={{ p: 2 }}>
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+              <ShowChartIcon fontSize="small" />
+              <Typography variant="subtitle2">
                 {t('step5.stats.title', 'Value Statistics')}
               </Typography>
-              <Stack direction="row" spacing={2} flexWrap="wrap">
-                <Chip size="small" label={`${t('step5.stats.count', 'Count')}: ${stats.count}`} />
-                <Chip size="small" label={`${t('step5.stats.min', 'Min')}: ${stats.min}`} />
-                <Chip size="small" label={`${t('step5.stats.max', 'Max')}: ${stats.max}`} />
-                <Chip size="small" label={`${t('step5.stats.mean', 'Mean')}: ${stats.mean.toFixed(2)}`} />
-                <Chip size="small" label={`${t('step5.stats.std', 'Std Dev')}: ${stats.stdDev.toFixed(2)}`} />
-              </Stack>
-            </Paper>
-          )}
+            </Stack>
+            <Stack direction="row" spacing={2} flexWrap="wrap">
+              <Chip size="small" label={`${t('step5.stats.count', 'Count')}: ${stats?.count ?? 0}`} />
+              <Chip size="small" label={`${t('step5.stats.min', 'Min')}: ${stats?.min ?? '-'}`} />
+              <Chip size="small" label={`${t('step5.stats.max', 'Max')}: ${stats?.max ?? '-'}`} />
+              <Chip
+                size="small"
+                label={`${t('step5.stats.mean', 'Mean')}: ${stats?.mean !== undefined ? stats.mean.toFixed(2) : '-'}`}
+              />
+              <Chip
+                size="small"
+                label={`${t('step5.stats.std', 'Std Dev')}: ${
+                  stats?.stdDev !== undefined ? stats.stdDev.toFixed(2) : '-'
+                }`}
+              />
+            </Stack>
+          </Paper>
+        )}
         </Stack>
 
         <Stack flex={1} spacing={2}>

@@ -17,6 +17,7 @@ import {
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { i18n } from '@hierarchidb/ui-i18n';
+import { useAtomValue } from 'jotai';
 import {
   type StylerMapping,
   StylerMappingDefault,
@@ -29,6 +30,7 @@ import { wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
 import type { TabularFilterRule } from '@hierarchidb/ui-tabular-extract';
 import type { StylerStepProps } from './StylerStepProps.tsx';
 import { valueToColor } from '../../common/utils/colorUtils.js';
+import { tabularRowsAtom } from '@hierarchidb/spreadsheet-plugin';
 
 const getStylerT = () =>
   typeof i18n.getFixedT === 'function'
@@ -41,6 +43,11 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
   tabularData = [],
 }) => {
   const { t } = useTranslation('styler-plugin');
+  const atomRows = useAtomValue(tabularRowsAtom);
+  const previewRowsSource =
+    tabularData.length > 0
+      ? tabularData
+      : (data?.previewRows as StylerTableRow[] | undefined) ?? atomRows;
   const mapping: StylerMapping = {
     ...StylerMappingDefault,
     ...(data?.mapping ?? {}),
@@ -166,14 +173,13 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
   );
 
   const previewData = useMemo(() => {
+    const sourceRows = previewRowsSource;
     const preparedFilters = prepareFilters((data?.filters as TabularFilterRule[] | undefined) ?? []);
     const rows: StylerTableRow[] =
-      (Array.isArray(tabularData) && tabularData.length > 0
-        ? (tabularData as StylerTableRow[])
-        : []) ?? [];
+      (Array.isArray(sourceRows) && sourceRows.length > 0 ? (sourceRows as StylerTableRow[]) : []) ?? [];
     const filtered = preparedFilters.length ? rows.filter((row) => matchesFilters(row, preparedFilters)) : rows;
     return filtered.slice(0, 1000);
-  }, [data?.filters, matchesFilters, prepareFilters, tabularData]);
+  }, [data?.filters, matchesFilters, prepareFilters, previewRowsSource]);
 
   const columns = useMemo(() => Object.keys(previewData[0] ?? {}), [previewData]);
 
@@ -338,8 +344,8 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
                         typeof cellValue === 'number' ? cellValue : Number(cellValue),
                         mapping,
                         data?.stylerConfig ?? StylerConfigDefault,
-                        Array.isArray(tabularData)
-                          ? (tabularData.map((r) => r[valueColumn ?? '']) as number[])
+                        Array.isArray(previewRowsSource)
+                          ? (previewRowsSource.map((r) => r[valueColumn ?? '']) as number[])
                           : undefined
                       );
                       if (colorResult?.color) {
@@ -376,7 +382,7 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
                         ? numberFormatter.format(Number(cellValue))
                         : String(cellValue);
                   return (
-                    <TableCell key={`${col}-${idx}`} align={isNumeric ? 'right' : 'left'}>
+                    <TableCell key={`${row}-${col}`} align={isNumeric ? 'right' : 'left'}>
                       <Stack direction="row" spacing={1} alignItems="center" sx={{ width: '100%' }}>
                         {chip ? <Box sx={{ flexShrink: 0 }}>{chip}</Box> : null}
                         <Box sx={{ flex: 1, textAlign: isNumeric ? 'right' : 'left' }}>
@@ -394,10 +400,10 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
         </Table>
       </TableContainer>
 
-      {tabularData.length > 1000 && (
+      {previewRowsSource.length > 1000 && (
         <Alert severity="info" sx={{ mt: 1 }}>
           {t('stylePreview.truncate', 'Showing preview of first 1,000 rows. Full dataset contains')}{' '}
-          {tabularData.length.toLocaleString()} {t('stylePreview.rows', 'rows.')}
+          {previewRowsSource.length.toLocaleString()} {t('stylePreview.rows', 'rows.')}
         </Alert>
       )}
     </Box>

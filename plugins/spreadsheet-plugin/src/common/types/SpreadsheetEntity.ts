@@ -30,4 +30,6 @@ export interface SpreadsheetEntity {
   tabularProcessingConfig?: TabularProcessingConfig;
   keyColumn?: string;
   valueColumn?: string;
+  /** Optional preview rows cache to reuse across steps (small subset) */
+  previewRows?: Record<string, unknown>[];
 }

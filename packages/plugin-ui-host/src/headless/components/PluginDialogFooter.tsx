@@ -12,8 +12,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloseIcon from '@mui/icons-material/Close';
 import { Box, Button, CircularProgress, Stack, Tooltip } from '@mui/material';
-import type React from 'react';
-import { forwardRef, useCallback } from 'react';
+import React, { forwardRef, useCallback, useEffect, useRef } from 'react';
 import type { Theme } from '@mui/material/styles';
 import type { ButtonProps } from '@mui/material';
 import type { DialogActionInFlight } from '../types.js';
@@ -72,7 +71,7 @@ const LoadingButton = forwardRef<HTMLButtonElement, LoadingButtonProps>(function
   );
 });
 
-export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
+const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
   mode,
   canCommit,
   onSaveDraft,
@@ -84,6 +83,7 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   primaryButtonOptions,
   pendingAction,
 }) => {
+  // console.count('PluginDialogFooter render');
   const { t } = useTranslation('common');
   const commitLabel = t('dialogs.pluginDialog.buttons.save', 'Save');
   const {
@@ -127,9 +127,6 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   const shouldRenderNextButton = showRightPrimary && !isLastStep;
   const shouldRenderFinalCommitButton = showRightPrimary && isLastStep;
 
-  // Debug: trace rerenders to investigate footer blinking
-  console.log('PluginDialogFooter render');
-
   const handleInlineSave = useCallback(() => {
     ctx.onRequestCommit?.();
   }, [ctx]);
@@ -143,6 +140,36 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
     zIndex: theme.zIndex?.modal ?? 1300,
     pointerEvents: 'auto',
   }), []);
+
+  const debugRef = useRef<Record<string, unknown>>({});
+  useEffect(() => {
+    const prev = debugRef.current;
+    const changes: string[] = [];
+    const nextSnapshot = {
+      activeStepIndex: ctx.activeStepIndex,
+      enabledStepIndices: ctx.enabledStepIndices?.join(','),
+      validatedStepIndices: ctx.validatedStepIndices?.join(','),
+      isDirty: ctx.isDirty,
+      pendingActionType: pendingAction?.type ?? null,
+      canNavigateNext,
+    };
+    Object.entries(nextSnapshot).forEach(([key, value]) => {
+      if (prev[key] !== value) {
+        changes.push(`${key}:${String(prev[key])}→${String(value)}`);
+      }
+    });
+    if (changes.length) {
+      // console.debug('[PluginDialogFooter diff]', changes.join(' | '));
+      debugRef.current = nextSnapshot;
+    }
+  }, [
+    canNavigateNext,
+    ctx.activeStepIndex,
+    ctx.enabledStepIndices,
+    ctx.isDirty,
+    ctx.validatedStepIndices,
+    pendingAction?.type,
+  ]);
 
   return (
     <Box
@@ -282,4 +309,18 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   );
 };
 
-PluginDialogFooter.displayName = 'PluginDialogFooter';
+PluginDialogFooterInner.displayName = 'PluginDialogFooter';
+export const PluginDialogFooter = React.memo(
+  PluginDialogFooterInner,
+  (prev, next) =>
+    prev.mode === next.mode &&
+    prev.canCommit === next.canCommit &&
+    prev.onSaveDraft === next.onSaveDraft &&
+    prev.saveDraftLabel === next.saveDraftLabel &&
+    prev.disableDraft === next.disableDraft &&
+    prev.onStartBatch === next.onStartBatch &&
+    prev.canStartBatch === next.canStartBatch &&
+    prev.isStartingBatch === next.isStartingBatch &&
+    prev.primaryButtonOptions === next.primaryButtonOptions &&
+    prev.pendingAction === next.pendingAction,
+);
