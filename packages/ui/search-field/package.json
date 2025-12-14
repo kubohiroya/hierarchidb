@@ -1,7 +1,8 @@
 {
-  "name": "@hierarchidb/ui-treeconsole-toolbar",
+  "name": "@hierarchidb/ui-search-field",
   "version": "0.1.0",
-  "description": "Toolbar UI component for HierarchiDB TreeConsole",
+  "description": "Reusable search input component with adornment styling for HierarchiDB UIs",
+  "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -12,42 +13,34 @@
       "default": "./dist/index.js"
     }
   },
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
-    "build": "tsdown src/index.ts --config ../../../../tsdown.config.ts --outDir dist",
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit --project tsconfig.json"
-  },
-  "dependencies": {
-    "comlink": "^4.4.2",
-    "@hierarchidb/ui-search-field": "workspace:*"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
     "@mui/material": "^7.3.6",
     "@mui/icons-material": "^7.3.6",
-    "@hierarchidb/ui-i18n": "workspace:*",
     "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.0",
-    "@hierarchidb/ui-search-field": "workspace:*"
+    "@emotion/styled": "^11.14.0"
   },
   "devDependencies": {
-    "@testing-library/jest-dom": "^6.8.0",
-    "@testing-library/react": "^16.3.0",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
     "@mui/material": "^7.3.6",
     "@mui/icons-material": "^7.3.6",
-    "@hierarchidb/ui-i18n": "workspace:*",
-    "@hierarchidb/ui-search-field": "workspace:*"
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "typescript": "workspace:^5.9.3"
   },
-  "files": [
-    "dist",
-    "src"
-  ],
   "sideEffects": false,
   "publishConfig": {
     "access": "public"
-  },
-  "type": "module"
+  }
 }

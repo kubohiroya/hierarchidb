@@ -78,7 +78,8 @@
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/ui-worker-provider": "workspace:*",
-    "@hierarchidb/ui-data-grid": "workspace:*"
+    "@hierarchidb/ui-data-grid": "workspace:*",
+    "jotai": "^2.11.2"
   },
   "devDependencies": {
     "@hierarchidb/plugin-service-api": "workspace:*",
@@ -104,7 +105,8 @@
     "@hierarchidb/plugin-base": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
-    "@hierarchidb/ui-worker-provider": "workspace:*"
+    "@hierarchidb/ui-worker-provider": "workspace:*",
+    "jotai": "^2.11.2"
   },
   "keywords": [
     "hierarchidb",

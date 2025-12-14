@@ -1,9 +1,6 @@
 import React from 'react';
 import { PluginStepRegistry, type PluginStepConfig, type StepComponentProps } from '@hierarchidb/plugin-base';
-import {
-  TabularDataSourceStep,
-  TabularDataFilterStep,
-} from '@hierarchidb/spreadsheet-plugin';
+import { TabularDataSourceStep } from '@hierarchidb/spreadsheet-plugin';
 import { StylerConfigStep } from './StylerConfigStep.tsx';
 import { StylerPreviewStep } from './StylerPreviewStep.tsx';
 import type { StylerMapping, StylerStepData } from '../../common/types/StylerEntity.js';
@@ -11,6 +8,7 @@ import { StylerConfigDefault } from '../../common/types/StylerEntity.js';
 import { i18n } from '@hierarchidb/ui-i18n';
 import { StylerMappingStep } from './StylerMappingStep.tsx';
 import { isStyleMappingComplete } from './useStylerMappingState.ts';
+import { StylerFilterStep } from './StylerFilterStep.tsx';
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -38,6 +36,20 @@ const hasMappingBasics = (dialogData?: StylerStepData): boolean => {
   return Boolean(keyColumn && valueColumn && styleType && targetProperty);
 };
 
+const hasKeyValueSelected = (dialogData?: StylerStepData): boolean => {
+  const data = dialogData ?? ({} as StylerStepData);
+  const mapping = (data.mapping ?? {}) as Partial<StylerMapping>;
+  const keyColumn =
+    mapping.keyColumn ??
+    data.selectedKeyColumn ??
+    (data.stylerConfig as { keyColumn?: string } | undefined)?.keyColumn;
+  const valueColumn =
+    mapping.valueColumn ??
+    data.selectedValueColumn ??
+    (data.stylerConfig as { valueColumn?: string } | undefined)?.valueColumn;
+  return Boolean(keyColumn && valueColumn);
+};
+
 const hasLoadedDataSource = (dialogData?: StylerStepData): boolean => {
   const data = dialogData as StylerStepData;
   const dataSource = data.dataSource;
@@ -62,12 +74,12 @@ registry.registerConfigProvider<StylerStepData>({
       return <TabularDataSourceStep {...p} />;
     };
     const FilterWithValidation = (p: StepComponentProps<StylerStepData>) => {
-      const valid = ensureLoaded(p.data);
+      const valid = ensureLoaded(p.data) && hasKeyValueSelected(p.data);
       React.useEffect(() => {
         p.setValid(valid);
       }, [valid, p]);
       p.setValid(valid);
-      return <TabularDataFilterStep {...p} />;
+      return <StylerFilterStep {...p} />;
     };
     return [
       {

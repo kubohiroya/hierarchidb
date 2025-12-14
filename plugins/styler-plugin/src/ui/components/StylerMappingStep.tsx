@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import type { StepComponentProps } from '@hierarchidb/plugin-base';
 import {
   STYLE_TYPE_OPTIONS,
@@ -15,12 +15,14 @@ import {
   Box,
   Chip,
   Divider,
+  Slider,
   Stack,
   Typography,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { StyleMappingSourcePanel } from './StyleMappingSourcePanel.tsx';
 import { StyleMappingTargetPanel } from './StyleMappingTargetPanel.tsx';
+import { ValueHistogram } from './ValueHistogram.tsx';
 
 export const StylerMappingStep: React.FC<
   StepComponentProps<StylerStepData> & { tabularData?: StylerTableRow[] }
@@ -33,6 +35,7 @@ export const StylerMappingStep: React.FC<
   tabularData,
 }) => {
   const { t } = useTranslation('styler-plugin');
+  const [binCount, setBinCount] = useState<number>(16);
   const {
     menuContainer,
     pluginData,
@@ -84,6 +87,12 @@ export const StylerMappingStep: React.FC<
       count: base.totalCount,
     };
   }, [numericValues, selectedValueColumn]);
+
+  const histogramWidth = useMemo(() => {
+    const w = dialogRef?.current?.getBoundingClientRect()?.width;
+    return Math.max(240, Math.min(1200, w ?? 480));
+  }, [dialogRef]);
+  const histogramHeight = 100;
 
   return (
     <Stack spacing={2}>
@@ -159,13 +168,14 @@ export const StylerMappingStep: React.FC<
                 {t('styleSettings.keyValuePair.stats.title', 'Value statistics')}
               </Typography>
               {stats ? (
-                <Stack direction="row" spacing={1} flexWrap="wrap" rowGap={1}>
+                <Stack direction="row" spacing={1} flexWrap="wrap" rowGap={1} sx={{ mb: 1 }}>
                   <Chip size="small" label={`${t('styleSettings.keyValuePair.stats.count', 'Count')}: ${stats.count}`} />
                   <Chip size="small" label={`${t('styleSettings.keyValuePair.stats.min', 'Min')}: ${stats.min}`} />
                   <Chip size="small" label={`${t('styleSettings.keyValuePair.stats.max', 'Max')}: ${stats.max}`} />
                   <Chip size="small" label={`${t('styleSettings.keyValuePair.stats.mean', 'Average')}: ${stats.mean.toFixed(2)}`} />
                   <Chip size="small" label={`${t('styleSettings.keyValuePair.stats.median', 'Median')}: ${stats.median.toFixed(2)}`} />
                   <Chip size="small" label={`${t('styleSettings.keyValuePair.stats.stdDev', 'Std Dev')}: ${stats.stdDev.toFixed(2)}`} />
+                  <Chip size="small" label={`${t('styleSettings.keyValuePair.histogram.binCount', 'Bins')}: ${binCount}`} />
                 </Stack>
               ) : (
                 <Typography variant="body2" color="text.secondary">
@@ -176,6 +186,53 @@ export const StylerMappingStep: React.FC<
                 </Typography>
               )}
             </Box>
+            {numericValues.length > 0 ? (
+              <Stack spacing={1.5}>
+                <Typography variant="subtitle2">
+                  {t('styleSettings.keyValuePair.histogram.title', 'Histogram')}
+                </Typography>
+                <Stack spacing={2}>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      {t(
+                        'styleSettings.keyValuePair.histogram.binCount',
+                        'Number of bins'
+                      )}
+                    </Typography>
+                  <Slider
+                    value={binCount}
+                    min={1}
+                    max={256}
+                    step={1}
+                    marks={[
+                      { value: 1, label: '1' },
+                      { value: 64, label: '64' },
+                      { value: 128, label: '128' },
+                      { value: 256, label: '256' },
+                    ]}
+                    onChange={(_e, value) => setBinCount(value as number)}
+                  />
+                </Box>
+                  {stats && (
+                    <ValueHistogram
+                      values={numericValues}
+                      binCount={binCount}
+                      width={histogramWidth}
+                      height={histogramHeight}
+                      min={stats.min}
+                      max={stats.max}
+                      mean={stats.mean}
+                    />
+                  )}
+                  <Typography variant="caption" color="text.secondary">
+                    {t(
+                      'styleSettings.keyValuePair.histogram.note',
+                      'Histogram uses numeric values only. Dashed lines show min/mean/max; y-axis label shows modal frequency.'
+                    )}
+                  </Typography>
+                </Stack>
+              </Stack>
+            ) : null}
           </Stack>
         </AccordionDetails>
       </Accordion>

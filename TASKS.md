@@ -10197,3 +10197,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-14 08:06 start: feat/styler/key-value-accordion — Styler Step3 に「Key-Value Pair」アコーディオンを追加し、Step4 の key/value 選択 UI を移設する対応を開始（Value は数値のみ集計、branch: feat/styler/key-value-accordion、branch 作成不可なら main）。
 - 2025-12-14 08:11 progress: feat/styler/key-value-accordion — Step3 を 3 アコーディオン化（Style Type/Target Property/Key-Value Pair）。Key/Value 選択 UI を Key-Value Pair アコーディオンへ移設し、Value 列の数値のみから max/min/avg/median/stddev を表示（非数値は除外）。
 - 2025-12-14 08:12 command: pnpm --filter @hierarchidb/styler-plugin typecheck — exit 0。
+- 2025-12-14 08:18 progress: feat/styler/key-value-accordion — Key-Value Pair に bins スライダー（1-256）、幅/高さ指定とヒストグラム（min/mean/max 点線・最頻度ラベル）を追加。Value の階級度数を SVG で描画。
+- 2025-12-14 08:19 command: pnpm --filter @hierarchidb/styler-plugin typecheck — exit 2（既存エラー: packages/ui/tabular-extract/src/components/TabularDataFilter.tsx(19,10) TS1005 '=' expected, TS1434 Unexpected keyword or identifier）。本変更と無関係の既存エラーのため継続不可。
+- 2025-12-14 08:24 progress: feat/styler/key-value-accordion — ヒストグラム幅をダイアログ幅から自動計算、高さ100px固定にし、幅/高さ入力を撤去。Step3 アコーディオン内のみで描画。
+- 2025-12-14 08:25 command: pnpm --filter @hierarchidb/styler-plugin typecheck — exit 0。
+- 2025-12-14 10:40 progress: feat/styler/key-value-accordion — Step3 を Filter Rules/Preview Tabular/Key-Value Pair の3セクション（AccordionSummary+Details）に再構成。Filter/Preview を仮想化＆リサイズ可にし、SearchField を新UIへ一本化（ルーペ表示）、セルクリックでフィルター追加に変更。Key/Value 選択を必須化し、Jotai atoms でデータ→フィルタ→列選択→統計/ヒストグラムへ連結。オフラインのため jotai を .pnpm から node_modules へ手動 symlink。
+- 2025-12-14 10:41 command: pnpm --filter @hierarchidb/styler-plugin typecheck — exit 0（symlink 後に再実行）。

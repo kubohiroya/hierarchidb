@@ -491,6 +491,12 @@
       "@hierarchidb/ui-treeconsole-toolbar/*": [
         "packages/ui/treeconsole/toolbar/src/*"
       ],
+      "@hierarchidb/ui-search-field": [
+        "packages/ui/search-field/src/index.ts"
+      ],
+      "@hierarchidb/ui-search-field/*": [
+        "packages/ui/search-field/src/*"
+      ],
       "@hierarchidb/ui-treeconsole-treetable": [
         "packages/ui/treeconsole/treetable/src/index.ts"
       ],

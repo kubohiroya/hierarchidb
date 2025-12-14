@@ -1,15 +1,24 @@
 import { useEffect, useMemo, type FC } from 'react';
 import { StepComponentProps } from '@hierarchidb/plugin-base';
-import { TabularProvider, TabularDataFilter, useTabularData } from '@hierarchidb/ui-tabular-extract';
+import {
+  TabularProvider,
+  TabularDataFilter,
+  useTabularData,
+  type TabularDataFilterProps,
+} from '@hierarchidb/ui-tabular-extract';
 import type { SpreadsheetEntity } from '../../../common/types/SpreadsheetEntity.js';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { useTabularDataFilter } from '../../hooks/useTabularDataFilter.js';
 import type { TabularColumnInfo, TabularColumnType, TabularTableMetadata } from '@hierarchidb/tabular-store';
+import type { TabularDataResult, TabularFilterRule } from '@hierarchidb/ui-tabular-extract';
 
 type FilterInnerProps = ReturnType<typeof useTabularDataFilter> & {
   setValid: StepComponentProps<SpreadsheetEntity>['setValid'];
   setError: StepComponentProps<SpreadsheetEntity>['setError'];
+  renderSections?: TabularDataFilterProps['renderSections'];
+  onFiltersChanged?: (filters: TabularFilterRule[]) => void;
+  onPreviewReady?: (preview: TabularDataResult) => void;
 };
 
 const TabularDataFilterInner: FC<FilterInnerProps> = ({
@@ -22,6 +31,9 @@ const TabularDataFilterInner: FC<FilterInnerProps> = ({
   dialogData,
   setValid,
   setError,
+  renderSections,
+  onFiltersChanged,
+  onPreviewReady,
 }) => {
   const { t } = useTranslation('spreadsheet-plugin');
   const { tabularTableMetadata, loading, error } = useTabularData({
@@ -132,20 +144,37 @@ const TabularDataFilterInner: FC<FilterInnerProps> = ({
     <TabularDataFilter
       tableMetadata={tableMetadata}
       pluginId={pluginId}
-      onPreviewData={handlePreviewData}
+      onFiltersChanged={(next) => {
+        onFiltersChanged?.(next);
+        syncFilters(next);
+      }}
+      onPreviewData={(preview) => {
+        handlePreviewData(preview);
+        onPreviewReady?.(preview);
+      }}
       initialFilters={initialFilters}
       onSyncFilters={syncFilters}
       menuContainer={menuContainer}
+      renderSections={renderSections}
     />
   );
 };
 
-export const TabularDataFilterStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
+export interface TabularDataFilterStepProps extends StepComponentProps<SpreadsheetEntity> {
+  renderSections?: TabularDataFilterProps['renderSections'];
+  onFiltersChanged?: (filters: TabularFilterRule[]) => void;
+  onPreviewReady?: (preview: TabularDataResult) => void;
+}
+
+export const TabularDataFilterStep: FC<TabularDataFilterStepProps> = ({
   data,
   onChange,
   setValid,
   setError,
   dialogRef,
+  renderSections,
+  onFiltersChanged,
+  onPreviewReady,
 }) => {
   const {
     pluginId,
@@ -171,6 +200,9 @@ export const TabularDataFilterStep: FC<StepComponentProps<SpreadsheetEntity>> = 
         tabularApi={tabularApi}
         setValid={setValid}
         setError={setError}
+        renderSections={renderSections}
+        onFiltersChanged={onFiltersChanged}
+        onPreviewReady={onPreviewReady}
       />
     </TabularProvider>
   );

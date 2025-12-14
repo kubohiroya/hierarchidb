@@ -164,6 +164,8 @@ export interface GenericDataGridProps<T extends RowRecord = RowRecord> {
   rowClassName?: (state: RowState<T>) => string | undefined;
   /** Compute per-row MUI sx from row state */
   rowSx?: (state: RowState<T>) => SxProps<Theme> | undefined;
+  /** Optional sx override for header cells */
+  headerCellSx?: SxProps<Theme>;
 
   // Actions
   /** Export handler */
@@ -181,6 +183,14 @@ export interface GenericDataGridProps<T extends RowRecord = RowRecord> {
 
   /** Cell context menu handler */
   onCellContextMenu?: (params: {
+    event: React.MouseEvent;
+    row: T;
+    rowId: string | number;
+    columnId: string;
+    value: unknown;
+  }) => void;
+  /** Cell click handler */
+  onCellClick?: (params: {
     event: React.MouseEvent;
     row: T;
     rowId: string | number;
@@ -259,12 +269,13 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
                                            onSelectionChange,
                                            onExport,
                                            onRefresh,
-                                          onRowClick,
-                                          onRowDoubleClick,
-                                          onRowHover,
-                                          onRowLeave,
-                                          onCellContextMenu,
-                                          enableVirtualization = false,
+                                           onRowClick,
+                                           onRowDoubleClick,
+                                           onRowHover,
+                                           onRowLeave,
+                                           onCellContextMenu,
+                                           onCellClick,
+                                           enableVirtualization = false,
                                            maxHeight = 600,
                                            dense = false,
                                            stickyHeader = true,
@@ -281,9 +292,10 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
                                            rowSx,
                                            emptyComponent,
                                            loadingComponent,
-                                           errorComponent,
-                                           toolbarComponent,
-                                         }: GenericDataGridProps<T>): ReactElement {
+                                          errorComponent,
+                                          toolbarComponent,
+                                          headerCellSx,
+                                        }: GenericDataGridProps<T>): ReactElement {
   const [showFilters, setShowFilters] = useState(false);
   const controlId = React.useId();
   void onRowHover; // keep optional callbacks referenced to satisfy noUnusedParameters
@@ -516,6 +528,9 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
                   sx={{
                     fontWeight: 'bold',
                     backgroundColor: stickyHeader ? 'background.paper' : undefined,
+                    py: 0.5,
+                    px: 1,
+                    ...headerCellSx,
                   }}
                 >
                   <Box display="flex" alignItems="center" gap={1}>
@@ -613,7 +628,7 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
                 : undefined;
 
               return (
-                <TableRow
+                  <TableRow
                   key={rowId}
                   hover={hover}
                   selected={state.selected}
@@ -639,6 +654,17 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
                       <TableCell
                         key={String(column.id)}
                         align={column.align}
+                        sx={onCellClick || onCellContextMenu ? { cursor: 'pointer' } : undefined}
+                        onClick={(e) => {
+                          if (!onCellClick) return;
+                          onCellClick({
+                            event: e,
+                            row,
+                            rowId,
+                            columnId: String(column.id),
+                            value,
+                          });
+                        }}
                         onContextMenu={(e) => {
                           if (!onCellContextMenu) return;
                           e.preventDefault();

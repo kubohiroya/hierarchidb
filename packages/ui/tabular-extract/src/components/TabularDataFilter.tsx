@@ -3,7 +3,7 @@
  * @description Filter rule creation and preview for Tabular data
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   Accordion,
   AccordionDetails,
@@ -16,10 +16,11 @@ import {
 } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon, Preview as PreviewIcon } from '@mui/icons-material';
 import { useTabularFilter } from '../hooks/useTabularFilter.js';
-import { TabularColumnInfo, TabularColumnType, TabularTableMetadata } from '@hierarchidb/tabular-store';
-import { TabularDataResult, TabularFilterRule, TabularFilterOperator } from '../types/index.js';
-import { TabularDataFilterRulesTable, type FilterOperatorOption } from './TabularDataFilterRulesTable.js';
-import {LinearProgress} from "@mui/material";
+import type { TabularColumnInfo, TabularColumnType, TabularTableMetadata } from '@hierarchidb/tabular-store';
+import type { TabularDataResult, TabularFilterRule, TabularFilterOperator } from '../types/index.js';
+import { type FilterOperatorOption } from './TabularDataFilterRulesTable.js';
+import { TabularDataFilterRulesVirtual } from './TabularDataFilterRulesVirtual.js';
+import { LinearProgress } from '@mui/material';
 import { TabularPreviewLite } from './TabularPreviewLite.js';
 
 export interface TabularDataFilterProps {
@@ -37,6 +38,13 @@ export interface TabularDataFilterProps {
   onSyncFilters?: (filters: TabularFilterRule[]) => void;
   /** When provided, keep menus/portals inside the dialog container */
   menuContainer?: Element | null;
+  /** Custom renderer for filter/preview sections */
+  renderSections?: (sections: {
+    filterRules: ReactNode;
+    preview: ReactNode | null;
+    error: ReactNode | null;
+    previewDirty: boolean;
+  }) => ReactNode;
 }
 
 const FILTER_OPERATORS: FilterOperatorOption[] = [
@@ -60,11 +68,12 @@ export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
   onFiltersChanged,
   onPreviewData,
   pluginId,
-  maxPreviewRows = Number.MAX_SAFE_INTEGER,
   initialFilters = [],
   onSyncFilters,
   menuContainer,
+  renderSections,
 }) => {
+  void menuContainer;
   const [filters, setFilters] = useState<TabularFilterRule[]>(initialFilters);
   const [previewDirty, setPreviewDirty] = useState(false);
   const filtersRef = useRef(filters);
@@ -77,7 +86,7 @@ export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
   } = useTabularFilter({
     tableId: tableMetadata.id,
     pluginId,
-    maxPreviewRows,
+    maxPreviewRows: Number.MAX_SAFE_INTEGER,
     initialRules: initialFilters,
   });
 
@@ -106,7 +115,7 @@ export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
     columnOptionsRef.current = nextColumns;
     return nextColumns;
   }, [hasMetadataColumns, previewData?.columns, tableMetadata.columns]);
-  const previewColumns: TabularColumnInfo[] = hasPreviewColumns ? previewData!.columns : columnOptions;
+  const previewColumns: TabularColumnInfo[] = hasPreviewColumns && previewData?.columns ? previewData?.columns : columnOptions;
 
   // filters のスナップショットを常に保持（アンマウント時の同期に利用）
   useEffect(() => {
@@ -127,13 +136,13 @@ export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
     }
   }, [previewData, onPreviewData]);
 
-  const normalizeType = (type?: TabularColumnType): TabularColumnType => type ?? 'string';
   useEffect(() => {
     if (columnOptions.length === 0) return;
     setFilters((prev) => {
       const nextRules = prev.map((rule) => {
         const columnExists = columnOptions.some((col) => col.name === rule.column);
         const columnName = columnExists ? rule.column : columnOptions[0]?.name ?? rule.column;
+        const normalizeType = (type?: TabularColumnType): TabularColumnType => type ?? 'string';
         const columnType = normalizeType(columnOptions.find((col) => col.name === columnName)?.type);
         const availableOps = FILTER_OPERATORS.filter((op) => op.types.includes(columnType));
         const operator = availableOps.some((op) => op.value === rule.operator)
@@ -266,8 +275,63 @@ export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
     return () => window.clearTimeout(timer);
   }, [previewDirty]);
 
+  const rowHeight = 36;
+  const previewVisible = Math.max(10, Math.min(previewData?.rows?.length ?? 0, 20));
+  const previewHeightRows = Math.max(1, previewVisible - 4);
+  const previewHeight = Math.min(480, 48 + rowHeight * previewHeightRows);
+
+  const filterRulesNode = (
+    <TabularDataFilterRulesVirtual
+      filters={filters}
+      onChange={handleFiltersChange}
+      onDirty={() => setPreviewDirty(true)}
+      columns={columnOptions}
+      operatorOptions={FILTER_OPERATORS}
+      maxVisibleRows={10}
+      rowHeight={rowHeight}
+      renderAsAccordion={!renderSections}
+      title={renderSections ? '' : 'Filter Rules'}
+    />
+  );
+
+  const previewNode = previewData ? (
+    <Paper variant="outlined" sx={{ height: previewHeight, overflowY: 'auto' }}>
+      <TabularPreviewLite
+        rows={previewData?.rows ?? []}
+        columns={previewColumns.map((c) => c.name ?? '').filter(Boolean)}
+        height={previewHeight}
+        onCreateFilter={handleCreateFilterFromCell}
+        initialVisibleRows={10}
+        resizable
+        headerCellSx={{ py: 0.5 }}
+        totalRowCount={tableMetadata.totalRows}
+        filteredRowCount={previewData.totalRows ?? previewData.rows.length}
+        hasFilters={filters.length > 0}
+      />
+    </Paper>
+  ) : null;
+
+  const errorNode = error ? (
+    <Alert severity="error" sx={{ mb: 3, mt: 2 }}>
+      {error}
+    </Alert>
+  ) : null;
+
+  if (renderSections) {
+    return (
+      <Box sx={{ p: 2 }}>
+        {renderSections({
+          filterRules: filterRulesNode,
+          preview: previewNode,
+          error: errorNode,
+          previewDirty,
+        })}
+      </Box>
+    );
+  }
+
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 2 }}>
       <GlobalStyles
         styles={{
           '.MuiPopover-root[aria-hidden="true"], .MuiModal-root[aria-hidden="true"]': {
@@ -278,20 +342,8 @@ export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
           },
         }}
       />
-      <TabularDataFilterRulesTable
-        filters={filters}
-        onChange={handleFiltersChange}
-        onDirty={() => setPreviewDirty(true)}
-        columns={columnOptions}
-        operatorOptions={FILTER_OPERATORS}
-        menuContainer={menuContainer ?? undefined}
-      />
-
-      {error && (
-        <Alert severity="error" sx={{ mb: 3, mt: 2 }}>
-          {error}
-        </Alert>
-      )}
+      {filterRulesNode}
+      {errorNode}
 
       {previewData && (
         <Accordion defaultExpanded>
@@ -299,20 +351,13 @@ export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
             <Box>
               <Typography variant="subtitle1" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                 <PreviewIcon fontSize="small" />
-                Preview Results
+                Preview Tabular
               </Typography>
-              {previewDirty && <LinearProgress variant={"indeterminate"}/>}
+              {previewDirty && <LinearProgress variant="indeterminate" sx={{ mt: 0.5 }} />}
             </Box>
           </AccordionSummary>
-          <AccordionDetails>
-            <Paper variant="outlined" sx={{ height: 420 }}>
-              <TabularPreviewLite
-                rows={previewData?.rows ?? []}
-                columns={previewColumns.map((c) => c.name ?? '').filter(Boolean)}
-                height={420}
-                onCreateFilter={handleCreateFilterFromCell}
-              />
-            </Paper>
+          <AccordionDetails sx={{ pb: 4, mb: 4 }}>
+            {previewNode}
           </AccordionDetails>
         </Accordion>
       )}

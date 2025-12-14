@@ -1,7 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": ".",
     "lib": [
       "ES2022",
       "WebWorker"
@@ -19,15 +18,6 @@
     "paths": {
       "~/*": [
         "./src/*"
-      ],
-      "@hierarchidb/plugin-registry": [
-        "../../packages/plugin-registry/generated/registry.ts"
-      ],
-      "@hierarchidb/plugin-registry/derivations": [
-        "../../packages/plugin-registry/generated/derivations.ts"
-      ],
-      "@hierarchidb/plugin-registry/types": [
-        "../../packages/plugin-registry/generated/types.ts"
       ]
     }
   },

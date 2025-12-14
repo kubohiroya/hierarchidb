@@ -1033,7 +1033,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/ui-map",
         "@hierarchidb/ui-dialog",
         "@hierarchidb/ui-worker-provider",
-        "@hierarchidb/ui-data-grid"
+        "@hierarchidb/ui-data-grid",
+        "jotai"
       ],
     exports: ["","icon","ui"],
     manifest: {
@@ -1075,7 +1076,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/ui-map",
           "@hierarchidb/ui-dialog",
           "@hierarchidb/ui-worker-provider",
-          "@hierarchidb/ui-data-grid"
+          "@hierarchidb/ui-data-grid",
+          "jotai"
         ],
         "icon": {
           "mui": "Palette",

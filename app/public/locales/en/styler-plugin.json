@@ -18,6 +18,14 @@
         "mean": "Average",
         "median": "Median",
         "stdDev": "Std Dev"
+      },
+      "histogram": {
+        "title": "Histogram",
+        "binCount": "Number of bins",
+        "note": "Histogram uses numeric values only. Dashed lines show min/mean/max; y-axis label shows modal frequency."
+      },
+      "validation": {
+        "required": "Select both key and value columns to continue."
       }
     },
     "styleType": {
