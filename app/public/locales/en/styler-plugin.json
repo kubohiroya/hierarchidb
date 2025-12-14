@@ -62,13 +62,6 @@
     "styleAlgorithm": "Style Algorithm",
     "preview": "Preview"
   },
-  "step5": {
-    "title": "Style Algorithm",
-    "errors": {
-      "range": "Maximum value must be greater than minimum value",
-      "configure": "Configure styling targets before continuing."
-    }
-  },
   "step6": {
     "title": "Preview with Style Mapping",
     "required": {
@@ -110,6 +103,10 @@
   },
   "step5": {
     "title": "Step 5: Style Mapping Configuration",
+    "errors": {
+      "range": "Maximum value must be greater than minimum value",
+      "configure": "Configure styling targets before continuing."
+    },
     "algorithms": {
       "linear": "Linear",
       "log": "Logarithmic",
