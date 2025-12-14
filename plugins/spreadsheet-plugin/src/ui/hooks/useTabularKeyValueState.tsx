@@ -133,6 +133,7 @@ export const useTabularKeyValueState = <T extends SpreadsheetEntity>({
 
   const handleKeyColumnChange = useCallback(
     (keyColumn: string) => {
+      if (selectedKeyColumn === keyColumn) return;
       const nextData: T = {
         ...(dialogData as T),
         keyColumn,
@@ -151,6 +152,7 @@ export const useTabularKeyValueState = <T extends SpreadsheetEntity>({
 
   const handleValueColumnChange = useCallback(
     (valueColumn: string) => {
+      if (selectedValueColumn === valueColumn) return;
       const nextData: T = {
         ...(dialogData as T),
         valueColumn,

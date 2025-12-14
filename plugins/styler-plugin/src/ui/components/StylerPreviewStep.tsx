@@ -160,23 +160,23 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
     return (
       <Box sx={{ p: 3 }}>
         <Alert severity="info">
-          <AlertTitle>{t('step6.required.title', 'Configuration Required')}</AlertTitle>
+          <AlertTitle>{t('stylePreview.required.title', 'Configuration Required')}</AlertTitle>
           {t(
-            'step6.required.body',
+            'stylePreview.required.body',
             'Please complete Step 5 configuration before viewing the preview.'
           )}
           <ul>
             {!keyColumn && (
-              <li>{t('step6.required.keyColumn', 'Select a key column for mapping')}</li>
+              <li>{t('stylePreview.required.keyColumn', 'Select a key column for mapping')}</li>
             )}
             {!valueColumn && (
-              <li>{t('step6.required.valueColumn', 'Select a value column for mapping')}</li>
+              <li>{t('stylePreview.required.valueColumn', 'Select a value column for mapping')}</li>
             )}
             {!targetProperty && (
-              <li>{t('step6.required.targetProperty', 'Select a target property')}</li>
+              <li>{t('stylePreview.required.targetProperty', 'Select a target property')}</li>
             )}
             {!styleType && (
-              <li>{t('step6.required.styleType', 'Select a style type')}</li>
+              <li>{t('stylePreview.required.styleType', 'Select a style type')}</li>
             )}
           </ul>
         </Alert>
@@ -188,9 +188,9 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
     return (
       <Box sx={{ p: 3 }}>
         <Alert severity="warning">
-          <AlertTitle>{t('step6.noData.title', 'No Data Available')}</AlertTitle>
+          <AlertTitle>{t('stylePreview.noData.title', 'No Data Available')}</AlertTitle>
           {t(
-            'step6.noData.body',
+            'stylePreview.noData.body',
             'No tabular data is available for preview. Please ensure data has been loaded in previous steps.'
           )}
         </Alert>
@@ -204,7 +204,7 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
       <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
         {keyColumn && (
           <Chip
-            label={`${t('step6.keyColumn', { defaultValue: 'Key' })}: ${keyColumn}`}
+            label={`${t('stylePreview.keyColumn', { defaultValue: 'Key' })}: ${keyColumn}`}
             color="primary"
             size="small"
             sx={{ backgroundColor: 'primary.light', color: 'primary.contrastText' }}
@@ -212,24 +212,24 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
         )}
         {valueColumn && (
           <Chip
-            label={`${t('step6.valueColumn', { defaultValue: 'Value' })}: ${valueColumn}`}
+            label={`${t('stylePreview.valueColumn', { defaultValue: 'Value' })}: ${valueColumn}`}
             color="secondary"
             size="small"
             sx={{ backgroundColor: 'secondary.light', color: 'secondary.contrastText' }}
           />
         )}
         {targetProperty && (
-          <Chip label={`${t('step6.targetProperty', { defaultValue: 'Target' })}: ${targetProperty}`} size="small" />
+          <Chip label={`${t('stylePreview.targetProperty', { defaultValue: 'Target' })}: ${targetProperty}`} size="small" />
         )}
         {styleType && (
-          <Chip label={`${t('step6.styleType', { defaultValue: 'Style Type' })}: ${styleType}`} size="small" />
+          <Chip label={`${t('stylePreview.styleType', { defaultValue: 'Style Type' })}: ${styleType}`} size="small" />
         )}
       </Box>
 
       {tabularData.length > 1000 && (
         <Alert severity="info" sx={{ mt: 1 }}>
-          {t('step6.truncate', 'Showing preview of first 1,000 rows. Full dataset contains')}{' '}
-          {tabularData.length.toLocaleString()} {t('step6.rows', 'rows.') }
+          {t('stylePreview.truncate', 'Showing preview of first 1,000 rows. Full dataset contains')}{' '}
+          {tabularData.length.toLocaleString()} {t('stylePreview.rows', 'rows.') }
         </Alert>
       )}
     </Box>

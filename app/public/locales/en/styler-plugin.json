@@ -62,47 +62,8 @@
     "styleAlgorithm": "Style Algorithm",
     "preview": "Preview"
   },
-  "step6": {
-    "title": "Preview with Style Mapping",
-    "required": {
-      "title": "Configuration Required",
-      "body": "Please complete Step 5 configuration before viewing the preview.",
-      "property": "Select a MapLibre style property",
-      "valueColumn": "Select a value column for mapping"
-    },
-    "noData": {
-      "title": "No Data Available",
-      "body": "No tabular data is available for preview. Please ensure data has been loaded in previous steps."
-    },
-    "truncate": "Showing preview of first 1,000 rows. Full dataset contains",
-    "rows": "rows."
-  },
-  "extension": {
-    "description": "Configure Styler visualization settings for this folder",
-    "styleType": {
-      "label": "Style Type",
-      "choropleth": "Area fill",
-      "points": "Point rendering",
-      "lines": "Line rendering"
-    },
-    "dataSource": {
-      "label": "Data Source",
-      "placeholder": "e.g., CSV file path or URL"
-    },
-    "colorScheme": {
-      "label": "Color Scheme",
-      "blues": "Blues",
-      "reds": "Reds",
-      "greens": "Greens",
-      "viridis": "Viridis",
-      "plasma": "Plasma"
-    },
-    "opacity": {
-      "label": "Opacity"
-    }
-  },
-  "step5": {
-    "title": "Step 5: Style Mapping Configuration",
+  "styleAlgorithm": {
+    "title": "Style Mapping Configuration",
     "errors": {
       "range": "Maximum value must be greater than minimum value",
       "configure": "Configure styling targets before continuing."
@@ -176,6 +137,21 @@
       "max": "Max: {{value}}"
     }
   },
+  "stylePreview": {
+    "title": "Preview with Style Mapping",
+    "required": {
+      "title": "Configuration Required",
+      "body": "Please complete style configuration before viewing the preview.",
+      "property": "Select a MapLibre style property",
+      "valueColumn": "Select a value column for mapping"
+    },
+    "noData": {
+      "title": "No Data Available",
+      "body": "No tabular data is available for preview. Please ensure data has been loaded in previous steps."
+    },
+    "truncate": "Showing preview of first 1,000 rows. Full dataset contains",
+    "rows": "rows."
+  },
   "algorithm": {
     "valueColumn": "Value column",
     "valueColumnUnset": "Not selected",
@@ -196,6 +172,30 @@
       "viridis": "Viridis",
       "magma": "Magma",
       "custom": "Custom (HSB)"
+    }
+  },
+  "extension": {
+    "description": "Configure Styler visualization settings for this folder",
+    "styleType": {
+      "label": "Style Type",
+      "choropleth": "Area fill",
+      "points": "Point rendering",
+      "lines": "Line rendering"
+    },
+    "dataSource": {
+      "label": "Data Source",
+      "placeholder": "e.g., CSV file path or URL"
+    },
+    "colorScheme": {
+      "label": "Color Scheme",
+      "blues": "Blues",
+      "reds": "Reds",
+      "greens": "Greens",
+      "viridis": "Viridis",
+      "plasma": "Plasma"
+    },
+    "opacity": {
+      "label": "Opacity"
     }
   }
 }

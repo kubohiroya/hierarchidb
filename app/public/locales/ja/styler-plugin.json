@@ -62,47 +62,8 @@
     "styleAlgorithm": "スタイルアルゴリズム",
     "preview": "プレビュー"
   },
-  "step6": {
-    "title": "スタイル適用プレビュー",
-    "required": {
-      "title": "設定が必要です",
-      "body": "プレビューの前にステップ5の設定を完了してください。",
-      "property": "MapLibreのスタイルプロパティを選択してください",
-      "valueColumn": "マッピングに使用する値の列を選択してください"
-    },
-    "noData": {
-      "title": "データがありません",
-      "body": "プレビュー用の表データがありません。前のステップでデータが読み込まれているか確認してください。"
-    },
-    "truncate": "先頭1,000行のみプレビュー表示しています。全データ件数:",
-    "rows": "行"
-  },
-  "extension": {
-    "description": "このフォルダ用の Styler 可視化設定を行います。",
-    "styleType": {
-      "label": "スタイル種別",
-      "choropleth": "面の塗り分け",
-      "points": "点の描画",
-      "lines": "線の描画"
-    },
-    "dataSource": {
-      "label": "データソース",
-      "placeholder": "例: CSV のパスまたは URL"
-    },
-    "colorScheme": {
-      "label": "カラースキーム",
-      "blues": "ブルー",
-      "reds": "レッド",
-      "greens": "グリーン",
-      "viridis": "Viridis",
-      "plasma": "Plasma"
-    },
-    "opacity": {
-      "label": "不透明度"
-    }
-  },
-  "step5": {
-    "title": "ステップ5: スタイルマッピング設定",
+  "styleAlgorithm": {
+    "title": "スタイルマッピング設定",
     "errors": {
       "range": "最大値は最小値より大きくする必要があります",
       "configure": "スタイルターゲットを設定してから次へ進んでください。"
@@ -132,18 +93,21 @@
       "max": "最大値",
       "help": "色にマッピングする数値の範囲を定義します。"
     },
+    "algorithm": {
+      "title": "カラーアルゴリズム"
+    },
     "advanced": {
-      "title": "高度なカラー設定",
-      "hide": "非表示",
+      "title": "詳細なカラー設定",
+      "hide": "隠す",
       "show": "表示",
-      "description": "色補間やパレットの詳細設定です。簡易設定の場合は非表示のままで構いません。"
+      "description": "色補間やパレットの調整オプションです。簡易設定の場合は非表示のままにしてください。"
     },
     "colorSpace": {
-      "title": "カラースペース",
+      "title": "色空間",
       "hsv": "HSV",
       "rgb": "RGB",
       "lab": "LAB",
-      "help": "色をどの空間で補間するかを選択します。"
+      "help": "値域全体でどのように色を補間するかを選択します。"
     },
     "colorRange": {
       "title": "カラー範囲と反転",
@@ -153,47 +117,85 @@
       "invert": "反転"
     },
     "hsv": {
-      "title": "HSV 調整",
-      "hueStart": "色相開始",
-      "hueEnd": "色相終了",
+      "title": "HSV コントロール",
+      "hueStart": "Hue 開始",
+      "hueEnd": "Hue 終了",
       "saturation": "彩度",
       "brightness": "明度"
     },
     "gradient": {
-      "title": "カラ―グラデーションのプレビュー",
-      "description": "現在のマッピングとアルゴリズムに基づくグラデーションを表示します。"
+      "title": "カラーグラデーションプレビュー",
+      "description": "現在のマッピングとアルゴリズムに基づくグラデーションのプレビューです。"
     },
     "distribution": {
       "title": "値の分布（サンプル）",
-      "analyzing": "分布を解析中…",
+      "analyzing": "値の分布を分析しています…",
       "mean": "平均: {{value}}",
       "median": "中央値: {{value}}",
       "stdDev": "標準偏差: {{value}}",
       "min": "最小: {{value}}",
       "max": "最大: {{value}}"
+    }
+  },
+  "stylePreview": {
+    "title": "スタイル適用プレビュー",
+    "required": {
+      "title": "設定が必要です",
+      "body": "プレビューの前にスタイル設定を完了してください。",
+      "property": "MapLibre のスタイルプロパティを選択してください",
+      "valueColumn": "マッピングに使用する値の列を選択してください"
     },
-    "algorithm": {
-      "title": "アルゴリズム",
-      "valueColumn": "値の列",
-      "valueColumnUnset": "未選択",
-      "nullHandling": "Null / NaN の扱い",
-      "null": {
-        "exclude": "行を除外する",
-        "zero": "0 として扱う"
-      },
-      "rule": "マッピングルール",
-      "colorScale": "カラースケール",
-      "customTitle": "カスタム HSB",
-      "numericRange": "数値範囲",
-      "min": "最小値",
-      "max": "最大値",
-      "scale": {
-        "grayscale": "グレースケール",
-        "redBlue": "赤 → 青",
-        "viridis": "Viridis",
-        "magma": "Magma",
-        "custom": "カスタム (HSB)"
-      }
+    "noData": {
+      "title": "データがありません",
+      "body": "プレビュー用の表データがありません。前のステップでデータが読み込まれているか確認してください。"
+    },
+    "truncate": "先頭1,000行のみプレビュー表示しています。全データ件数:",
+    "rows": "行"
+  },
+  "algorithm": {
+    "valueColumn": "値の列",
+    "valueColumnUnset": "未選択",
+    "nullHandling": "Null / NaN の扱い",
+    "null": {
+      "exclude": "行を除外する",
+      "zero": "0 として扱う"
+    },
+    "rule": "マッピングルール",
+    "colorScale": "カラー スケール",
+    "customTitle": "カスタム HSB",
+    "numericRange": "数値範囲",
+    "min": "最小",
+    "max": "最大",
+    "scale": {
+      "grayscale": "グレースケール",
+      "redBlue": "赤 → 青",
+      "viridis": "Viridis",
+      "magma": "Magma",
+      "custom": "カスタム (HSB)"
+    }
+  },
+  "extension": {
+    "description": "このフォルダ用の Styler 可視化設定を行います。",
+    "styleType": {
+      "label": "スタイル種別",
+      "choropleth": "面の塗り分け",
+      "points": "点の描画",
+      "lines": "線の描画"
+    },
+    "dataSource": {
+      "label": "データソース",
+      "placeholder": "例: CSV のパスまたは URL"
+    },
+    "colorScheme": {
+      "label": "カラースキーム",
+      "blues": "ブルー",
+      "reds": "レッド",
+      "greens": "グリーン",
+      "viridis": "Viridis",
+      "plasma": "Plasma"
+    },
+    "opacity": {
+      "label": "不透明度"
     }
   }
 }
