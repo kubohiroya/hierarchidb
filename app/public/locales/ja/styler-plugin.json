@@ -132,9 +132,6 @@
       "max": "最大値",
       "help": "色にマッピングする数値の範囲を定義します。"
     },
-    "algorithm": {
-      "title": "カラーアルゴリズム"
-    },
     "advanced": {
       "title": "高度なカラー設定",
       "hide": "非表示",
@@ -176,6 +173,7 @@
       "max": "最大: {{value}}"
     },
     "algorithm": {
+      "title": "アルゴリズム",
       "valueColumn": "値の列",
       "valueColumnUnset": "未選択",
       "nullHandling": "Null / NaN の扱い",
