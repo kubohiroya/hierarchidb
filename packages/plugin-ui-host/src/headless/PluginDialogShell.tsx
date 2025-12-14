@@ -3,11 +3,12 @@ import type React from 'react';
 import { UnsavedChangesDialog } from '@hierarchidb/ui-dialog';
 import type { PluginDialogControllerOptions } from './usePluginDialogController.js';
 import { usePluginDialogController } from './usePluginDialogController.js';
+import type { Theme } from '@mui/material';
 
 export type PluginDialogShellProps = PluginDialogControllerOptions;
 
 export const PluginDialogShell: React.FC<PluginDialogShellProps> = (props) => {
-  const { headlessProps, unsavedChangeDialog } = usePluginDialogController(props);
+  const { headlessProps, unsavedChangeDialog, conflictDialog } = usePluginDialogController(props);
 
   const backdropSx = unsavedChangeDialog?.open
     ? { pointerEvents: 'none' as const }
@@ -16,18 +17,19 @@ export const PluginDialogShell: React.FC<PluginDialogShellProps> = (props) => {
   const unsavedDialogSlotProps = {
     backdrop: {
       sx: {
-        zIndex: (theme: any) => (theme?.zIndex?.modal ?? 1300) + 8000,
+        zIndex: (theme: Theme) => (theme?.zIndex?.modal ?? 1300) + 8000,
       },
     },
     paper: {
       sx: {
-        zIndex: (theme: any) => (theme?.zIndex?.modal ?? 1300) + 8001,
+        zIndex: (theme: Theme) => (theme?.zIndex?.modal ?? 1300) + 8001,
       },
     },
   } as const;
   return (
     <>
       <MultiStepDialogFrame headlessProps={headlessProps} backdropSx={backdropSx} />
+      {conflictDialog}
       {unsavedChangeDialog ? (
         <UnsavedChangesDialog
           open={unsavedChangeDialog.open}

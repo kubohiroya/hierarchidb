@@ -101,6 +101,7 @@ export interface PluginDialogControllerState {
     title: string;
     message: string;
   };
+  conflictDialog?: React.ReactNode;
 }
 
 const PlaceholderStep: React.FC = () => null;
@@ -326,16 +327,10 @@ export function usePluginDialogController(
       : t('dialogs.pluginDialog.titles.edit', { plugin: label, defaultValue: 'Edit {{plugin}}' });
   }, [mode, nodeType, presentation?.label, t]);
 
-  const headerSubtitle = useMemo(() => {
-    if (isFolder) return undefined;
-    if (mode === 'edit') {
-      const desc = presentation?.description?.trim();
-      if (desc) {
-        return desc;
-      }
-    }
-    return undefined;
-  }, [isFolder, mode, presentation?.description]);
+  const headerSubtitle =
+    !isFolder && mode === 'edit'
+      ? presentation?.description?.trim() || undefined
+      : undefined;
 
   const {
     evaluatedState,
@@ -554,7 +549,7 @@ export function usePluginDialogController(
       navigateToNode(targetId);
       onClose();
     });
-  }, [basicInfo.description, basicInfo.name, basicInfo.tags, commitTreeNodeUpdater, dialogData, ensureNoConflict, getPersistableDialogUIState, navigateToNode, nodeId, pageNodeId, nodeType, onClose, runWithPending, treeUpdater?.draftMetadata, updateLocalDraft]);
+  }, [runWithPending, ensureNoConflict, updateLocalDraft, treeUpdater?.treeNodeId, treeUpdater?.draftMetadata, nodeId, nodeType, dialogData, basicInfo.name, basicInfo.description, basicInfo.tags, getPersistableDialogUIState, commitTreeNodeUpdater, pageNodeId, navigateToNode, onClose]);
 
   const handleStartBatch = useCallback(async () => {
     if (!activeStartBatch) return;
@@ -575,22 +570,21 @@ export function usePluginDialogController(
     } finally {
       setIsStartingBatch(false);
     }
-  }, [activeStartBatch, dialogData, mode, nodeId, pageNodeId, treeId]);
+  }, [activeStartBatch, dialogData, mode, nodeId, pageNodeId, pendingActionRef, treeId]);
 
-  const HeaderComponent: HeadlessDialogProps<Partial<PluginDefinedEntity>>['HeaderComponent'] = useCallback(
-    () => (
+  const HeaderComponent = useMemo<HeadlessDialogProps<Partial<PluginDefinedEntity>>['HeaderComponent']>(() => {
+    return () => (
       <PluginDialogHeader
         title={dialogTitle}
         subtitle={headerSubtitle}
         icon={icon || undefined}
         pendingAction={pendingAction}
       />
-    ),
-    [dialogTitle, headerSubtitle, icon, pendingAction]
-  );
+    );
+  }, [dialogTitle, headerSubtitle, icon, pendingAction]);
 
-  const ContentComponent: HeadlessDialogProps<Partial<PluginDefinedEntity>>['ContentComponent'] = useCallback(
-    () => (
+  const ContentComponent = useMemo<HeadlessDialogProps<Partial<PluginDefinedEntity>>['ContentComponent']>(() => {
+    return () => (
       <Box
         sx={(theme) => ({
           flex: 1,
@@ -601,9 +595,8 @@ export function usePluginDialogController(
       >
         <MultiStepDialogContent />
       </Box>
-    ),
-    [dialogRef]
-  );
+    );
+  }, [dialogRef]);
 
   const foregroundDialogSx = useMemo(
     () => ({
@@ -615,83 +608,97 @@ export function usePluginDialogController(
     []
   );
 
-  const FooterComponent: HeadlessDialogProps<Partial<PluginDefinedEntity>>['FooterComponent'] =
-    useCallback(
-      () => (
-        <>
-          <Dialog
-            open={conflictDialog.open}
-            onClose={() => {
-              resolveConflict('continue');
-            }}
-            sx={{
-              ...foregroundDialogSx,
-              zIndex: (theme) => (theme.zIndex?.modal ?? 1300) + 1001,
-            }}
-            slotProps={{
-              backdrop: {
-                sx: {
-                  backgroundColor: 'rgba(9, 12, 28, 0.45)',
-                  zIndex: (theme) => (theme.zIndex?.modal ?? 1300) + 1000,
-                },
-              },
-              paper: {
-                sx: { zIndex: (theme) => (theme.zIndex?.modal ?? 1300) + 1002 },
-              },
+  const conflictDialogNode = useMemo(
+    () => (
+      <Dialog
+        open={conflictDialog.open}
+        onClose={() => {
+          resolveConflict('continue');
+        }}
+        sx={{
+          ...foregroundDialogSx,
+          zIndex: (theme) => (theme.zIndex?.modal ?? 1300) + 1001,
+        }}
+        slotProps={{
+          backdrop: {
+            sx: {
+              backgroundColor: 'rgba(9, 12, 28, 0.45)',
+              zIndex: (theme) => (theme.zIndex?.modal ?? 1300) + 1000,
+            },
+          },
+          paper: {
+            sx: { zIndex: (theme) => (theme.zIndex?.modal ?? 1300) + 1002 },
+          },
+        }}
+      >
+        <DialogTitle>{t('dialogs.pluginDraft.conflict.title')}</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">
+            {t('dialogs.pluginDraft.conflict.description', {
+              timestamp: formatTimestamp(conflictDialog.updatedAt),
+            })}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            color="secondary"
+            onClick={() => {
+              resolveConflict('discard');
             }}
           >
-            <DialogTitle>{t('dialogs.pluginDraft.conflict.title')}</DialogTitle>
-            <DialogContent>
-              <Typography variant="body2">
-                {t('dialogs.pluginDraft.conflict.description', {
-                  timestamp: formatTimestamp(conflictDialog.updatedAt),
-                })}
-              </Typography>
-            </DialogContent>
-            <DialogActions>
-              <Button
-                color="secondary"
-                onClick={() => {
-                  resolveConflict('discard');
-                }}
-              >
-                {t('dialogs.pluginDraft.conflict.buttons.discardSelf')}
-              </Button>
-              <Button
-                variant="contained"
-                onClick={() => {
-                  resolveConflict('continue');
-                }}
-              >
-                {t('dialogs.pluginDraft.conflict.buttons.keepSelf')}
-              </Button>
-            </DialogActions>
-          </Dialog>
+            {t('dialogs.pluginDraft.conflict.buttons.discardSelf')}
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              resolveConflict('continue');
+            }}
+          >
+            {t('dialogs.pluginDraft.conflict.buttons.keepSelf')}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    ),
+    [conflictDialog.open, conflictDialog.updatedAt, foregroundDialogSx, resolveConflict, t]
+  );
 
-          <PluginDialogFooter
-            mode={mode}
-            canCommit={canSaveCurrent}
-            onSaveDraft={
-              disableDraftButton
-                ? undefined
-                : handleSaveDraft
-                  ? () => {
-                      handleSaveDraft().catch(() => void 0);
-                    }
-                  : undefined
-            }
-            disableDraft={disableDraftButton || !dialogDirty}
-            onStartBatch={activeStartBatch ? () => { handleStartBatch().catch(() => void 0); } : undefined}
-            canStartBatch={canStartBatch && !isStartingBatch}
-            isStartingBatch={isStartingBatch}
-            primaryButtonOptions={footerPrimaryButtons}
-            saveDraftLabel={footerSaveDraftLabel}
-            pendingAction={pendingAction}
-          />
-        </>
-      ),
-      [conflictDialog.open, conflictDialog.updatedAt, foregroundDialogSx, t, mode, canSaveCurrent, disableDraftButton, handleSaveDraft, dialogDirty, activeStartBatch, canStartBatch, isStartingBatch, footerPrimaryButtons, footerSaveDraftLabel, pendingAction, resolveConflict, handleStartBatch]
+  const FooterComponent = useMemo<HeadlessDialogProps<Partial<PluginDefinedEntity>>['FooterComponent']>(() => {
+    return () => (
+      <PluginDialogFooter
+        mode={mode}
+        canCommit={canSaveCurrent}
+        onSaveDraft={
+          disableDraftButton
+            ? undefined
+            : handleSaveDraft
+              ? () => {
+                  handleSaveDraft().catch(() => void 0);
+                }
+              : undefined
+        }
+        disableDraft={disableDraftButton || !dialogDirty}
+        onStartBatch={activeStartBatch ? () => { handleStartBatch().catch(() => void 0); } : undefined}
+        canStartBatch={canStartBatch && !isStartingBatch}
+        isStartingBatch={isStartingBatch}
+        primaryButtonOptions={footerPrimaryButtons}
+        saveDraftLabel={footerSaveDraftLabel}
+        pendingAction={pendingAction}
+      />
     );
+  }, [
+    mode,
+    canSaveCurrent,
+    disableDraftButton,
+    handleSaveDraft,
+    dialogDirty,
+    activeStartBatch,
+    canStartBatch,
+    isStartingBatch,
+    footerPrimaryButtons,
+    footerSaveDraftLabel,
+    pendingAction,
+    handleStartBatch,
+  ]);
 
   const handleCloseRequest = useCallback(() => {
     if (dialogDirty) {
@@ -780,6 +787,7 @@ export function usePluginDialogController(
     hasUnsavedChanges: dialogDirty,
     dialogState: dialogStateSnapshot,
     updateDialogState,
+    conflictDialog: conflictDialogNode,
     unsavedChangeDialog: {
       open: discardDialogOpen,
       onDiscard: handleConfirmDiscard,

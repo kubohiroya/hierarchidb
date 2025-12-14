@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type React from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { atom, useAtom } from 'jotai';
 import { BasicInfoStep } from '@hierarchidb/ui-plugin-basic-info';
 import type {
@@ -126,6 +127,44 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
         dialogRef,
       } satisfies PluginStepComponentProps<Partial<PluginDefinedEntity>, DialogUiState>)}
     </>
+  );
+};
+
+type BasicInfoAdapterProps = {
+  value: TreeNodeMetadata;
+  tagSuggestions: string[];
+  mode: 'create' | 'edit';
+  onChange: (data: TreeNodeMetadata) => void;
+  validate: () => string | null;
+};
+
+const BasicInfoAdapter: React.FC<BasicInfoAdapterProps> = ({
+  value,
+  tagSuggestions,
+  mode,
+  onChange,
+  validate,
+}) => {
+  const handleChange = useCallback(
+    (data: { name: string; description: string; tags?: string[] }) => {
+      onChange({
+        name: data.name,
+        description: data.description ?? '',
+        tags: data.tags ?? [],
+      });
+    },
+    [onChange]
+  );
+  return (
+    <BasicInfoStep
+      name={value.name}
+      description={value.description ?? ''}
+      tags={value.tags ?? []}
+      tagSuggestions={tagSuggestions}
+      onChange={handleChange}
+      mode={mode}
+      validate={validate}
+    />
   );
 };
 
@@ -292,85 +331,22 @@ export function useDialogSteps({
     [setBasicInfo]
   );
 
-  const nameAtom = useMemo(
-    () =>
-      atom(
-        (get) => (get(draftAtom) as { name?: string })?.name ?? '',
-        (get, set, val: string) => {
-          const prev = (get(draftAtom) as Record<string, unknown>) ?? {};
-          set(draftAtom, { ...prev, name: val });
-        }
-      ),
-    [draftAtom]
-  );
-  const descriptionAtom = useMemo(
-    () =>
-      atom(
-        (get) => (get(draftAtom) as { description?: string })?.description ?? '',
-        (get, set, val: string) => {
-          const prev = (get(draftAtom) as Record<string, unknown>) ?? {};
-          set(draftAtom, { ...prev, description: val });
-        }
-      ),
-    [draftAtom]
-  );
-  const tagsAtom = useMemo(
-    () =>
-      atom(
-        (get) => (get(draftAtom) as { tags?: string[] })?.tags ?? [],
-        (get, set, val: string[]) => {
-          const prev = (get(draftAtom) as Record<string, unknown>) ?? {};
-          set(draftAtom, { ...prev, tags: val });
-        }
-      ),
-    [draftAtom]
-  );
-
-  const basicInfoComponentRef =
-    useRef<React.FC<HeadlessStepComponentProps<Partial<PluginDefinedEntity>>> | null>(null);
-
-  if (!basicInfoComponentRef.current) {
-    basicInfoComponentRef.current = React.memo((props) => {
-      const [name, setName] = useAtom(nameAtom);
-      const [description, setDescription] = useAtom(descriptionAtom);
-      const [tags, setTags] = useAtom(tagsAtom);
-
-      const handleChange = useCallback(
-        (data: { name: string; description: string; tags?: string[] }) => {
-          const nextTags = data.tags ?? [];
-          setName(data.name);
-          setDescription(data.description ?? '');
-          setTags(nextTags);
-          handleBasicInfoChange(data);
-          props.onChange({ name: data.name, description: data.description ?? '', tags: nextTags });
-        },
-        [props, setDescription, setName, setTags]
-      );
-
-      return (
-        <BasicInfoStep
-          name={name}
-          description={description}
-          tags={tags}
-          tagSuggestions={tagSuggestionsRef.current}
-          onChange={handleChange}
-          mode={modeRef.current}
-          validate={() => basicInfoValidationErrorRef.current}
-        />
-      );
-    });
-  }
-
   const basicInfoDescriptor = useMemo<StepComponentDescriptor<Partial<PluginDefinedEntity>> | null>(() => {
     if (composedConfigs.hasHostBase) return null;
     return {
       id: 'basic-info',
       label: basicInfoLabel,
-      component: basicInfoComponentRef.current as React.FC<
-        HeadlessStepComponentProps<Partial<PluginDefinedEntity>>
-      >,
+      component: () => (
+        <BasicInfoAdapter
+          value={basicInfoValidationPayloadRef.current}
+          tagSuggestions={tagSuggestionsRef.current}
+          mode={modeRef.current}
+          validate={() => basicInfoValidationErrorRef.current}
+          onChange={handleBasicInfoChange}
+        />
+      ),
     };
-  }, [basicInfoLabel, composedConfigs.hasHostBase]);
+  }, [basicInfoLabel, composedConfigs.hasHostBase, handleBasicInfoChange]);
 
   const stepConfigRegistryRef = useRef(new Map<string, PluginStepConfig<Partial<PluginDefinedEntity>, DialogUiState>>());
   useEffect(() => {

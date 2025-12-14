@@ -6,18 +6,19 @@
  * controller layer.
  */
 
-import { getDialogSurfaceColor, useDialogContext } from '@hierarchidb/ui-dialog';
+import { getDialogSurfaceColor } from '@hierarchidb/ui-dialog';
 import CheckIcon from '@mui/icons-material/Check';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloseIcon from '@mui/icons-material/Close';
 import { Box, Button, CircularProgress, Stack, Tooltip } from '@mui/material';
-import { useLocation } from '@tanstack/react-router';
-import React, { forwardRef, useCallback } from 'react';
-import { Theme } from '@mui/material/styles';
+import type React from 'react';
+import { forwardRef, useCallback } from 'react';
+import type { Theme } from '@mui/material/styles';
 import type { ButtonProps } from '@mui/material';
 import type { DialogActionInFlight } from '../types.js';
 import { useTranslation } from 'react-i18next';
+import { usePluginDialogFooterLogic } from './hooks/usePluginDialogFooterLogic.js';
 
 export interface PluginDialogFooterPrimaryButtonOptions {
   leftVisibility?: 'auto' | 'hidden';
@@ -83,44 +84,19 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   primaryButtonOptions,
   pendingAction,
 }) => {
-  const ctx = useDialogContext<Record<string, unknown>>();
-  const location = useLocation();
   const { t } = useTranslation('common');
-  const isResourcesTree = React.useMemo(() => {
-    const segments = location.pathname.split('/').filter(Boolean);
-    if (segments.length < 2) return false;
-    const treeId = segments[1]?.toLowerCase();
-    return treeId === 'r';
-  }, [location.pathname]);
-
   const commitLabel = t('dialogs.pluginDialog.buttons.save', 'Save');
-  const isFirstStep = ctx.activeStepIndex === 0;
-  const isLastStep = ctx.activeStepIndex >= ctx.stepComponents.length - 1;
-  const isDirty = ctx.isDirty;
-  const totalSteps = ctx.stepComponents.length;
-  const validatedStepSet = React.useMemo(
-    () => new Set(ctx.validatedStepIndices),
-    [ctx.validatedStepIndices]
-  );
-
-  // Fallback: if dirty but validation indices have not propagated, allow Save to enable.
-  const allStepsValidated = totalSteps === 0 || validatedStepSet.size >= totalSteps || (isDirty && totalSteps > 0);
-
-  const handleBackOrCancel = useCallback(() => {
-    if (isFirstStep) {
-      ctx.onRequestClose('close');
-      return;
-    }
-    ctx.onStepNavigate({ type: 'back' });
-  },[ctx, isFirstStep]);
-
-  const handleNextOrSave = useCallback(() => {
-    if (isLastStep) {
-      ctx.onRequestCommit?.();
-      return;
-    }
-    ctx.onStepNavigate({ type: 'next' });
-  }, [ctx, isLastStep]);
+  const {
+    ctx,
+    isResourcesTree,
+    isFirstStep,
+    isLastStep,
+    isDirty,
+    allStepsValidated,
+    handleBackOrCancel,
+    handleNextOrSave,
+    canNavigateNext,
+  } = usePluginDialogFooterLogic();
 
   const leftPrimaryLabel =
     primaryButtonOptions?.leftLabelOverride ??
@@ -139,8 +115,6 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   const leftActionType = isFirstStep ? 'cancel' : 'back';
   const rightActionType = isLastStep ? 'commit' : 'next';
   const disableLeftPrimary = hasPendingAction;
-  const nextStepIndex = ctx.activeStepIndex + 1;
-  const canNavigateNext = ctx.enabledStepIndices?.includes(nextStepIndex);
   const disableRightPrimary = hasPendingAction || (!isLastStep && !canNavigateNext);
   const showSaveDraft = typeof onSaveDraft === 'function';
   const showStartBatch = typeof onStartBatch === 'function';
