@@ -27,10 +27,13 @@ const hasMappingBasics = (dialogData?: StylerStepData): boolean => {
     mapping.styleType ??
     (data.stylerConfig as { styleType?: StylerMapping['styleType'] } | undefined)?.styleType ??
     (data as { styleType?: string }).styleType;
-  const keyColumn = mapping.keyColumn ?? data.selectedKeyColumn ?? (data.stylerConfig as { keyColumn?: string } | undefined)?.keyColumn;
+  const keyColumn =
+    data.keyColumn ??
+    mapping.keyColumn ??
+    (data.stylerConfig as { keyColumn?: string } | undefined)?.keyColumn;
   const valueColumn =
+    data.valueColumn ??
     mapping.valueColumn ??
-    data.selectedValueColumn ??
     (data.stylerConfig as { valueColumn?: string } | undefined)?.valueColumn;
   const targetProperty = mapping.targetProperty ?? null;
   return Boolean(keyColumn && valueColumn && styleType && targetProperty);
@@ -40,12 +43,12 @@ const hasKeyValueSelected = (dialogData?: StylerStepData): boolean => {
   const data = dialogData ?? ({} as StylerStepData);
   const mapping = (data.mapping ?? {}) as Partial<StylerMapping>;
   const keyColumn =
+    data.keyColumn ??
     mapping.keyColumn ??
-    data.selectedKeyColumn ??
     (data.stylerConfig as { keyColumn?: string } | undefined)?.keyColumn;
   const valueColumn =
+    data.valueColumn ??
     mapping.valueColumn ??
-    data.selectedValueColumn ??
     (data.stylerConfig as { valueColumn?: string } | undefined)?.valueColumn;
   return Boolean(keyColumn && valueColumn);
 };

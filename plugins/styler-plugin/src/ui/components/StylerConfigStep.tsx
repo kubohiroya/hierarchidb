@@ -21,14 +21,14 @@ export const StylerConfigStep: React.FC<StylerStepProps> = ({
   const currentConfig: StylerConfig = data?.stylerConfig || StylerConfigDefault;
 
   const sampleValues = React.useMemo(() => {
-    const valueColumn = data?.selectedValueColumn;
+    const valueColumn = data?.valueColumn ?? (data?.stylerConfig as { valueColumn?: string } | undefined)?.valueColumn;
     if (!valueColumn || tabularData.length === 0) return [];
 
     return tabularData
       .map((row) => row[valueColumn])
       .filter((val): val is number => typeof val === 'number' && !Number.isNaN(val))
       .slice(0, 100);
-  }, [tabularData, data?.selectedValueColumn]);
+  }, [tabularData, data?.valueColumn]);
 
   const handleConfigChange = useCallback(
     (newConfig: StylerConfig) => {
@@ -52,7 +52,7 @@ export const StylerConfigStep: React.FC<StylerStepProps> = ({
         config={currentConfig}
         onChange={handleConfigChange}
         values={sampleValues}
-        selectedValueColumn={data?.selectedValueColumn}
+        valueColumn={data?.valueColumn}
         tabularData={tabularData}
       />
     </Box>

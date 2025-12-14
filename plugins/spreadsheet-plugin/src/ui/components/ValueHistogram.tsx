@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Box } from '@mui/material';
 
 interface ValueHistogramProps {
@@ -126,24 +126,16 @@ export const ValueHistogram: React.FC<ValueHistogramProps> = ({
           );
         })}
 
-        {/* Mean dotted line only */}
-        {(() => {
-          const x = lineXForValue(mean);
-          return (
-            <line
-              x1={x}
-              y1={chartPadding.top}
-              x2={x}
-              y2={chartPadding.top + chartHeight}
-              stroke="#f57c00"
-              strokeDasharray="4 4"
-              strokeWidth={1}
-            />
-          );
-        })()}
+        <line
+          x1={lineXForValue(mean)}
+          y1={chartPadding.top}
+          x2={lineXForValue(mean)}
+          y2={chartPadding.top + chartHeight}
+          stroke="#f57c00"
+          strokeDasharray="4 4"
+          strokeWidth={1}
+        />
 
-        {/* Axis labels */}
-        {/* Axis labels */}
         <text
           x={chartPadding.left + chartWidth / 2}
           y={chartPadding.top + chartHeight + 36}
@@ -163,7 +155,6 @@ export const ValueHistogram: React.FC<ValueHistogramProps> = ({
         >
           {keyLabel ?? 'frequency'}
         </text>
-        {/* Min / Avg / Max labels along x-axis */}
         <text
           x={chartPadding.left}
           y={chartPadding.top + chartHeight + 20}

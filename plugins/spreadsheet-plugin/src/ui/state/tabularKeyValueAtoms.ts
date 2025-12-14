@@ -1,13 +1,9 @@
-import { atom } from 'jotai';
-import type { Getter } from 'jotai';
-import { calculateStatistics } from '../../common/utils/dataAnalysis.js';
-import type { StylerTableRow } from '../../common/types/StylerEntity.js';
-import type { TabularFilterRule, TabularFilterOperator } from '@hierarchidb/ui-tabular-extract';
+import { atom, type Getter } from 'jotai';
+import type { TabularFilterOperator, TabularFilterRule } from '@hierarchidb/ui-tabular-extract';
+import { calculateStatistics, type TabularRow } from '../../common/utils/tabularStatistics.js';
 
-// Base data: raw table rows to work on (from preview or data source)
-export const tabularRowsAtom = atom<StylerTableRow[]>([]);
+export const tabularRowsAtom = atom<TabularRow[]>([]);
 
-// Filter definitions (keeps the rules authored in Step3)
 export const filterRulesAtom = atom<TabularFilterRule[]>([]);
 
 const toStr = (v: unknown) => (v === null || v === undefined ? '' : String(v));
@@ -20,7 +16,7 @@ const toNum = (v: unknown): number | null => {
   return null;
 };
 
-const matchesRule = (row: StylerTableRow, rule: TabularFilterRule): boolean => {
+const matchesRule = (row: TabularRow, rule: TabularFilterRule): boolean => {
   const { column, operator, value } = rule;
   const rowValue = (row as Record<string, unknown>)[column];
   switch (operator as TabularFilterOperator) {
@@ -81,33 +77,28 @@ const matchesRule = (row: StylerTableRow, rule: TabularFilterRule): boolean => {
   }
 };
 
-// Derived: filtered rows after applying enabled filters
 export const filteredRowsAtom = atom((get: Getter) => {
   const rows = get(tabularRowsAtom);
   const rules = get(filterRulesAtom).filter((r: TabularFilterRule) => r.enabled !== false && r.column);
   if (!rules.length) return rows;
-  return rows.filter((row: StylerTableRow) => rules.every((rule) => matchesRule(row, rule)));
+  return rows.filter((row: TabularRow) => rules.every((rule) => matchesRule(row, rule)));
 });
 
-// Selected columns (from UI)
 export const keyColumnAtom = atom<string>('');
 export const valueColumnAtom = atom<string>('');
 
-// Extract numeric values based on selected value column and filtered rows
 export const numericValuesAtom = atom((get: Getter) => {
   const valueColumn = get(valueColumnAtom);
   if (!valueColumn) return [] as number[];
   const rows = get(filteredRowsAtom);
   return rows
-    .map((row: StylerTableRow) => row[valueColumn])
+    .map((row: TabularRow) => row[valueColumn])
     .map((val: unknown) => (typeof val === 'number' ? val : typeof val === 'string' ? Number(val) : NaN))
     .filter((v: number) => Number.isFinite(v));
 });
 
-// Histogram settings
 export const binCountAtom = atom<number>(16);
 
-// Derived histogram/stats
 export const histogramStatsAtom = atom((get: Getter) => {
   const values = get(numericValuesAtom);
   if (!values.length) return null;

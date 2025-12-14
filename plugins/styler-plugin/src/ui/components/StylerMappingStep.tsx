@@ -58,8 +58,8 @@ export const StylerMappingStep: React.FC<
   });
 
   const valueColumn =
+    pluginData.valueColumn ??
     pluginData.mapping?.valueColumn ??
-    pluginData.selectedValueColumn ??
     (pluginData.stylerConfig as { valueColumn?: string } | undefined)?.valueColumn ??
     '';
 
@@ -202,23 +202,6 @@ export const StylerMappingStep: React.FC<
           'Select the style type, data source column, and target property before configuring algorithms.',
         )}
       </Typography>
-      <Accordion defaultExpanded>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="subtitle1">
-            {t('styleSettings.accordion.styleType', 'Style Type')}
-          </Typography>
-        </AccordionSummary>
-        <AccordionDetails>
-          <StyleMappingTargetPanel
-            settings={settings}
-            handleStyleTypeChange={handleStyleTypeChange}
-            pluginData={pluginData}
-            menuContainer={menuContainer}
-            handleTargetPropertyChange={handleTargetPropertyChange}
-            showTargetProperty={false}
-          />
-        </AccordionDetails>
-      </Accordion>
 
       <Accordion defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -233,7 +216,6 @@ export const StylerMappingStep: React.FC<
             pluginData={pluginData}
             menuContainer={menuContainer}
             handleTargetPropertyChange={handleTargetPropertyChange}
-            showStyleType={false}
           />
         </AccordionDetails>
       </Accordion>

@@ -41,7 +41,7 @@ export interface StylerMappingProps {
   config?: StylerConfig;
   onChange: (config: StylerConfig) => void;
   values?: number[];
-  selectedValueColumn?: string;
+  valueColumn?: string;
   tabularData?: StylerTableRow[];
 }
 
@@ -49,7 +49,7 @@ export const StylerConfigPanel = ({
   config = StylerConfigDefault,
   onChange,
   values = [],
-  selectedValueColumn,
+  valueColumn,
   tabularData = [],
 }: StylerMappingProps ) => {
   const controlId = useId();
@@ -88,7 +88,7 @@ export const StylerConfigPanel = ({
     config,
     onChange,
     values,
-    selectedValueColumn,
+    valueColumn,
     tabularData,
     tStr,
   });

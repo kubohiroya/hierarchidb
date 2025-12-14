@@ -1,0 +1,47 @@
+{
+  "styleSettings": {
+    "source": {
+      "label": "参照する列"
+    },
+    "keyColumn": {
+      "label": "キー列",
+      "none": "列を選択",
+      "help": "キーとなる値が入っている列を選んでください"
+    },
+    "valueColumn": {
+      "label": "値の列",
+      "none": "列を選択",
+      "help": "計算に使う数値が入っている列を選んでください"
+    },
+    "keyValuePair": {
+      "description": "キー列と値列を選択して計算に使い、基本的な統計を確認します。",
+      "validation": {
+        "required": "キー列と値列の両方を選択してください。"
+      },
+      "stats": {
+        "count": "件数",
+        "min": "最小",
+        "max": "最大",
+        "mean": "平均",
+        "median": "中央値",
+        "stdDev": "標準偏差",
+        "empty": "数値を含む値列を選択すると統計が表示されます。"
+      },
+      "histogram": {
+        "binCount": "ビンの数"
+      },
+      "value": "値",
+      "key": "頻度"
+    },
+    "filterRules": {
+      "title": "フィルタ条件"
+    },
+    "previewTabular": {
+      "title": "プレビュー",
+      "empty": "フィルタを適用するとプレビューが表示されます。"
+    },
+    "accordion": {
+      "previewStats": "統計情報"
+    }
+  }
+}

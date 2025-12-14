@@ -28,4 +28,6 @@ export interface SpreadsheetEntity {
   file?: UploadedFileSummary;
   tabularTableMetadata?: TabularTableMetadata;
   tabularProcessingConfig?: TabularProcessingConfig;
+  keyColumn?: string;
+  valueColumn?: string;
 }

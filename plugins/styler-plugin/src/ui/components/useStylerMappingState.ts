@@ -12,7 +12,8 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 export const isStyleMappingComplete = (dialogData: Partial<StylerStepData>): boolean => {
   if (!isRecord(dialogData)) return false;
   const styleType = dialogData.mapping?.styleType;
-  return Boolean(styleType && dialogData.mapping?.targetProperty && dialogData.mapping?.valueColumn);
+  const valueColumn = dialogData.valueColumn ?? dialogData.mapping?.valueColumn;
+  return Boolean(styleType && dialogData.mapping?.targetProperty && valueColumn);
 };
 
 type Params = Pick<
@@ -102,7 +103,7 @@ export const useStylerMappingState = ({
         targetProperty: pluginData.mapping?.targetProperty ?? null,
         styleType: sanitizedStyleType,
       },
-      selectedValueColumn: pluginData.selectedValueColumn,
+      valueColumn: pluginData.valueColumn,
     });
     setValid(valid);
     setError(

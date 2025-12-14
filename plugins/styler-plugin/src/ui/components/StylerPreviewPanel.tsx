@@ -44,8 +44,8 @@ type SortDirection = 'asc' | 'desc' | null;
  */
 export interface StylerTablePreviewProps {
   data: StylerTableRow[];
-  selectedKeyColumn?: string;
-  selectedValueColumn?: string;
+  keyColumn?: string;
+  valueColumn?: string;
   config: StylerConfig;
   mapping: StylerMapping;
   onColumnSelect?: (columnName: string, type: 'key' | 'value') => void;
@@ -159,8 +159,8 @@ const TableRowComponent: React.FC<{
   rowData: StylerTableRow;
   columns: string[];
   columnWidths: ColumnWidths;
-  selectedKeyColumn?: string;
-  selectedValueColumn?: string;
+  keyColumn?: string;
+  valueColumn?: string;
   config: StylerConfig;
   mapping: StylerMapping;
   showColorPreview: boolean;
@@ -169,8 +169,8 @@ const TableRowComponent: React.FC<{
     rowData,
     columns,
     columnWidths,
-    selectedKeyColumn,
-    selectedValueColumn,
+    keyColumn,
+    valueColumn,
     config,
     mapping,
     showColorPreview,
@@ -179,22 +179,22 @@ const TableRowComponent: React.FC<{
 
     //  :
     const colorResult = useMemo(() => {
-      if (!selectedValueColumn || !showColorPreview) {
+      if (!valueColumn || !showColorPreview) {
         return null;
       }
 
-      const value = rowData[selectedValueColumn];
+      const value = rowData[valueColumn];
       if (typeof value === 'number') {
         return valueToColor(value, mapping, config);
       }
       return null;
-    }, [rowData, selectedValueColumn, mapping, config, showColorPreview]);
+    }, [rowData, valueColumn, mapping, config, showColorPreview]);
 
     return (
       <TableRow hover>
         {columns.map((col) => {
-          const isKeyColumn = col === selectedKeyColumn;
-          const isValueColumn = col === selectedValueColumn;
+          const isKeyColumn = col === keyColumn;
+          const isValueColumn = col === valueColumn;
           const cellValue = rowData[col];
 
           const formatValue = (value: unknown): string => {
@@ -271,8 +271,8 @@ TableRowComponent.displayName = 'TableRowComponent';
  */
 export const StylerPreviewPanel: React.FC<StylerTablePreviewProps> = ({
   data,
-  selectedKeyColumn,
-  selectedValueColumn,
+  keyColumn,
+  valueColumn,
   config,
   mapping,
   onColumnSelect: _onColumnSelect,
@@ -380,11 +380,11 @@ export const StylerPreviewPanel: React.FC<StylerTablePreviewProps> = ({
       </Stack>
 
       {/* info Messages */}
-      {selectedValueColumn && (
+      {valueColumn && (
         <Stack direction="row" spacing={1}>
           <Chip
             icon={<PaletteIcon />}
-            label={`Color mapping: ${selectedValueColumn}`}
+            label={`Color mapping: ${valueColumn}`}
             color="secondary"
             size="small"
           />
@@ -407,8 +407,8 @@ export const StylerPreviewPanel: React.FC<StylerTablePreviewProps> = ({
                   onResize={handleColumnResize}
                   sortDirection={sortColumn === col ? sortDirection : null}
                   onSort={() => handleSort(col)}
-                  isKeyColumn={col === selectedKeyColumn}
-                  isValueColumn={col === selectedValueColumn}
+                  isKeyColumn={col === keyColumn}
+                  isValueColumn={col === valueColumn}
                 />
               ))}
             </TableRow>
@@ -416,8 +416,8 @@ export const StylerPreviewPanel: React.FC<StylerTablePreviewProps> = ({
           <TableBody>
             {sortedData.map((row, index) => {
               const keyValue =
-                selectedKeyColumn && row[selectedKeyColumn] !== undefined
-                  ? `${selectedKeyColumn}-${String(row[selectedKeyColumn])}`
+                keyColumn && row[keyColumn] !== undefined
+                  ? `${keyColumn}-${String(row[keyColumn])}`
                   : 'row';
               const rowKey = `${keyValue}-${index}`;
               return (
@@ -426,8 +426,8 @@ export const StylerPreviewPanel: React.FC<StylerTablePreviewProps> = ({
                   rowData={row}
                   columns={columns}
                   columnWidths={columnWidths}
-                  selectedKeyColumn={selectedKeyColumn}
-                  selectedValueColumn={selectedValueColumn}
+                  keyColumn={keyColumn}
+                  valueColumn={valueColumn}
                   mapping={mapping}
                   config={config}
                   showColorPreview={showColorPreview}

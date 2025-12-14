@@ -33,7 +33,13 @@ export interface MapLibrePropertyMetadata {
 }
 
 export interface StylerMapping {
+  /**
+   * Legacy location; use StylerEntity.keyColumn instead.
+   */
   keyColumn?: string;
+  /**
+   * Legacy location; use StylerEntity.valueColumn instead.
+   */
   valueColumn?: string;
   styleType?: StyleType;
   targetProperty: MapLibreStyleProperty | null;
@@ -256,8 +262,6 @@ export type StylerStepData = StylerDialogData &
   opacity?: number;
   strokeWidth?: number;
   stylerConfig?: StylerConfig;
-  selectedKeyColumn?: string;
-  selectedValueColumn?: string;
 };
 
 export interface StylerEntity extends SpreadsheetEntity {

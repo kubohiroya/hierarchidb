@@ -234,8 +234,8 @@ Australia,25690000,51812,Oceania,2021`;
       name: 'World Economic Data Visualization',
       description: 'GDP per capita by country with population weighting',
       tableMetadataId: tableMetadata.id,
-      selectedKeyColumn: 'country',
-      selectedValueColumns: ['population', 'gdp_per_capita'],
+      keyColumn: 'country',
+      valueColumn: 'gdp_per_capita',
       filterRules: filters.map((f) => ({
         id: f.id,
         column: f.column,
@@ -259,15 +259,15 @@ Australia,25690000,51812,Oceania,2021`;
 
     // Verify Styler configuration is valid
     expect(stylerConfig.name).toBeTruthy();
-    expect(stylerConfig.selectedKeyColumn).toBeTruthy();
-    expect(stylerConfig.selectedValueColumns.length).toBeGreaterThan(0);
+    expect(stylerConfig.keyColumn).toBeTruthy();
+    expect(stylerConfig.valueColumn).toBeTruthy();
     expect(stylerConfig.tableMetadataId).toBe(tableMetadata.id);
 
     console.log('✓ Complete CSV to Styler workflow test passed');
     console.log(`  - Processed ${tableMetadata.totalRows} rows of data`);
     console.log(`  - Applied ${filters.length} filters`);
     console.log(`  - Selected ${selectedColumns.length} columns`);
-    console.log(`  - Generated Styler config with key: ${stylerConfig.selectedKeyColumn}`);
+    console.log(`  - Generated Styler config with key: ${stylerConfig.keyColumn}`);
   });
 
   it('should handle multiple plugin-loader sharing the same CSV data', async () => {

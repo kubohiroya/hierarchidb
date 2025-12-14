@@ -53,6 +53,35 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1632) Styler Step4 StyleType を Target Property 内に集約（P1）
+- ブランチ: `fix/styler/style-type-accordion-move`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/styler-plugin（StylerMappingStep/StyleMappingTargetPanel）
+- 受け入れ基準（DoD）:
+  - [x] Step4 の Style Type アコーディオンを削除し、Style Type 選択 UI を Target Property アコーディオン内の先頭に移す（レイアウト破綻なし）
+  - [ ] 選択状態・検証・保存ロジックは既存の挙動を維持する（回帰なし）
+  - [ ] i18n キーや文言を壊さない／不要なキーを増やさない
+  - [x] 代表検証として `pnpm --filter @hierarchidb/styler-plugin typecheck` を実行し、結果を運用ログに記録する（不可なら理由を記載）
+- チェックリスト:
+  - [x] Style Type 選択 UI を Target Property アコーディオン内へ移設し、Style Type アコーディオンを削除
+  - [ ] 選択状態・保存/検証が変わらないことを確認
+  - [x] typecheck 実行結果を運用ログに追記
+- ロールバック手順：StylerMappingStep/StyleMappingTargetPanel の今回差分を revert し、`pnpm --filter @hierarchidb/styler-plugin typecheck` を再実行して従来レイアウトへ戻す
+
+1631) Spreadsheet/Styler Step3 key/value 統一（P1）
+- ブランチ: `feat/spreadsheet/styler-step3-share`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/spreadsheet-plugin（SpreadsheetEntity/Step3）、plugins/styler-plugin（StylerEntity/Step3）、共通 Step3 コンポーネント
+- 受け入れ基準（DoD）:
+  - [ ] SpreadsheetEntity に `keyColumn` / `valueColumn` を追加し、Step3 などの key/value 参照を新プロパティへ統一する
+  - [ ] StylerEntity の mapping/config 配下に散在する `selectedKeyColumn` / `selectedValueColumn` / `keyColumn` / `valueColumn` の未使用・重複プロパティを整理し、StylerEntity 直下の `keyColumn` / `valueColumn` を用いた形へ移行する（保存・検証ロジックが動作する）
+  - [ ] Styler Step3 の UI/ロジックを共通化し、Spreadsheet Step3 へ流用して動作させる（Styler 側の挙動は維持）
+  - [ ] 代表検証として `pnpm --filter @hierarchidb/styler-plugin typecheck` と `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` を実行し、結果を運用ログに記録する（不可なら理由を記載）
+- チェックリスト:
+  - [ ] SpreadsheetEntity に `keyColumn` / `valueColumn` を追加し、Step3/保存経路を新プロパティへ差し替え
+  - [ ] StylerEntity の不要な key/value 系プロパティを削除し、直下の `keyColumn` / `valueColumn` に統一（UI・保存・検証が通る）
+  - [ ] Styler Step3 の UI/ロジックを共通化し、Spreadsheet Step3 でも同一実装を利用する
+  - [ ] styler/spreadsheet 両プラグインの typecheck 実行結果を運用ログへ記録
+- ロールバック手順：Spreadsheet/Styler の key/value 追加・共通化差分（Entity 定義、Step3 UI/ロジック、保存・検証経路）を revert し、`pnpm --filter @hierarchidb/styler-plugin typecheck` と `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` を再実行して元の挙動へ戻す
+
 1630) Styler Key-Value Pair アコーディオン追加（P1）
 - ブランチ: `feat/styler/key-value-accordion`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: plugins/styler-plugin（StylerMappingStep/StyleMapping panels/StylerConfigStep, locale）
@@ -10194,6 +10223,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-11 20:20 progress: fix/dialog/basicinfo-reset — BasicInfo 入力が1文字ごとにリセットされる問題を確認し、StepAdapter で basic-info ステップだけ外部 stepData で強制同期しないように変更（Jotai ストアがユーザー入力を保持する）。検証: `pnpm --filter @hierarchidb/app typecheck` exit 0（plugin-base build 時の define 警告は既存）。ロールバック: `packages/plugin-ui-host/src/headless/usePluginDialogController/steps.tsx` の stepData 同期ガードを元に戻し再度 typecheck。
 
 ## 今日の着手（運用ログ） <a id="worklog-17"></a>
+- 2025-12-14 15:31 start: fix/styler/style-type-accordion-move — Styler Step4 の Style Type アコーディオンを削除し、Style Type 選択 UI を Target Property アコーディオン内先頭へ移設する対応を開始（branch: fix/styler/style-type-accordion-move、branch 作成不可なら main）。
+- 2025-12-14 15:33 progress: fix/styler/style-type-accordion-move — Style Type アコーディオンを削除し、Target Property アコーディオン内の先頭に Style Type カード選択 UI を移設。
+- 2025-12-14 15:33 command: pnpm --filter @hierarchidb/styler-plugin typecheck — exit 2（既存の key/value 再編タスク由来の型エラー: spreadsheet-plugin TabularDataFilterStep の props 不整合や StylerMapping key/value プロパティ欠如など。今回のレイアウト変更とは別要因で停止）。
 - 2025-12-14 08:06 start: feat/styler/key-value-accordion — Styler Step3 に「Key-Value Pair」アコーディオンを追加し、Step4 の key/value 選択 UI を移設する対応を開始（Value は数値のみ集計、branch: feat/styler/key-value-accordion、branch 作成不可なら main）。
 - 2025-12-14 08:11 progress: feat/styler/key-value-accordion — Step3 を 3 アコーディオン化（Style Type/Target Property/Key-Value Pair）。Key/Value 選択 UI を Key-Value Pair アコーディオンへ移設し、Value 列の数値のみから max/min/avg/median/stddev を表示（非数値は除外）。
 - 2025-12-14 08:12 command: pnpm --filter @hierarchidb/styler-plugin typecheck — exit 0。
@@ -10203,3 +10235,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-14 08:25 command: pnpm --filter @hierarchidb/styler-plugin typecheck — exit 0。
 - 2025-12-14 10:40 progress: feat/styler/key-value-accordion — Step3 を Filter Rules/Preview Tabular/Key-Value Pair の3セクション（AccordionSummary+Details）に再構成。Filter/Preview を仮想化＆リサイズ可にし、SearchField を新UIへ一本化（ルーペ表示）、セルクリックでフィルター追加に変更。Key/Value 選択を必須化し、Jotai atoms でデータ→フィルタ→列選択→統計/ヒストグラムへ連結。オフラインのため jotai を .pnpm から node_modules へ手動 symlink。
 - 2025-12-14 10:41 command: pnpm --filter @hierarchidb/styler-plugin typecheck — exit 0（symlink 後に再実行）。
+- 2025-12-14 15:19 start: feat/spreadsheet/styler-step3-share — SpreadsheetEntity に keyColumn/valueColumn を追加し、Styler/Spreadsheet の Step3 を共通化する対応に着手。DoD: Spreadsheet/Styler の key/value 一本化、Step3 共用化、両プラグイン typecheck ログ取得。branch: feat/spreadsheet/styler-step3-share（branch 作成不可なら main）。
+- 2025-12-14 15:44 progress: feat/spreadsheet/styler-step3-share — SpreadsheetEntity に keyColumn/valueColumn を追加し、TabularKeyValueStep（Key/Value 選択＋統計/ヒストグラム）を spreadsheet/styler 双方で共通利用するように刷新。StylerMapping/config の重複 key/value は StylerEntity 直下の keyColumn/valueColumn を優先し、mapping 側は後方互換用オプションに縮小。
+- 2025-12-14 15:44 command: pnpm --filter @hierarchidb/styler-plugin typecheck — exit 0。
+- 2025-12-14 15:44 command: pnpm --filter @hierarchidb/spreadsheet-plugin typecheck — exit 0。
+- 2025-12-14 15:48 progress: feat/spreadsheet/styler-step3-share — spreadsheet-plugin に i18n リソース（en/ja）を追加し、TabularKeyValueStep の文言を登録。ui/index で locales を読み込むように変更。
+- 2025-12-14 15:48 command: pnpm --filter @hierarchidb/spreadsheet-plugin typecheck — exit 0。
+- 2025-12-14 15:43 start: fix/shape/step1-basicinfo-input — shape-plugin Step1 で name/description が入力できない問題の調査を開始。DoD: Step1 で name/description が通常入力できること（フォーカス/入力/削除）、入力値が後続ステップ/保存へ渡ること、他プラグイン/フィールドへの副作用なし、必要なテスト修正または追加が通ること。branch 作成不可のため main 上で作業。

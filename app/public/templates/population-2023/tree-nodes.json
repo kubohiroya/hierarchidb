@@ -93,11 +93,11 @@
               {"id": "cell-02f7da03-7c9b-42df-b9a2-c76b10fe1039", "column": "Country Name", "operator": "not_equals", "value": "Europe & Central Asia (excluding high income)", "enabled": true},
               {"id": "cell-856af51c-c0f9-4d13-8417-7cadeffb07d2", "column": "Country Name", "operator": "not_equals", "value": "Central Europe and the Baltics", "enabled": true}
             ],
+            "keyColumn": "Country Code",
+            "valueColumn": "Value",
             "mapping": {
               "styleType": "choropleth",
-              "targetProperty": "fill-color",
-              "keyColumn": "Country Code",
-              "valueColumn": "Value"
+              "targetProperty": "fill-color"
             },
             "colorStops": [
               { "value": 0, "color": "#1976d2" },

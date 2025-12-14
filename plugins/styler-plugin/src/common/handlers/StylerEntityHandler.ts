@@ -79,6 +79,8 @@ export class StylerEntityHandler {
 
     const entity: StylerEntity = {
       ...baseEntity,
+      keyColumn: data?.keyColumn ?? baseEntity.keyColumn,
+      valueColumn: data?.valueColumn ?? baseEntity.valueColumn,
       // Prefer requested name if provided
       config: data?.config || StylerConfigDefault,
       mapping: {
@@ -98,6 +100,8 @@ export class StylerEntityHandler {
 
     const entity: StylerEntity = {
       ...baseEntity,
+      keyColumn: baseEntity.keyColumn,
+      valueColumn: baseEntity.valueColumn,
       config: baseEntity.config || StylerConfigDefault,
       mapping: {
         ...StylerMappingDefault,
@@ -122,6 +126,8 @@ export class StylerEntityHandler {
     if (baseEntity) {
       entity = {
         ...baseEntity,
+        keyColumn: data.keyColumn ?? baseEntity.keyColumn,
+        valueColumn: data.valueColumn ?? baseEntity.valueColumn,
         config: baseEntity.config || StylerConfigDefault,
         mapping: {
           ...StylerMappingDefault,
@@ -131,15 +137,18 @@ export class StylerEntityHandler {
       };
     }
 
-    if (
-      (data.config || data.mapping?.keyColumn || data.mapping?.valueColumn) &&
-      entity &&
-      data.spreadsheetMetadataId
-    ) {
+    const nextKey = entity?.keyColumn;
+    const nextValue = entity?.valueColumn;
+
+    if ((data.config || nextKey || nextValue) && entity && data.spreadsheetMetadataId) {
       try {
         const { styleSpec, colorMapping } = await this.dataService.generateMapLibreStyle(
           data.spreadsheetMetadataId,
-          entity
+          {
+            ...entity,
+            keyColumn: nextKey,
+            valueColumn: nextValue,
+          }
         );
         entity.generatedStyle = {
           maplibreStyleSpec: styleSpec,

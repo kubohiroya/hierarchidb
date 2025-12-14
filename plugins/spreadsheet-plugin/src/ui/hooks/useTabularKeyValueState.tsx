@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useAtomValue, useSetAtom } from 'jotai';
 import type { StepComponentProps } from '@hierarchidb/plugin-base';
 import type { TabularColumnInfo, TabularTableMetadata } from '@hierarchidb/tabular-store';
 import type { TabularDataResult, TabularFilterRule } from '@hierarchidb/ui-tabular-extract';
-import { useTranslation } from 'react-i18next';
-import { useAtomValue, useSetAtom } from 'jotai';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   Accordion,
   AccordionDetails,
@@ -20,9 +20,7 @@ import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import PreviewIcon from '@mui/icons-material/Preview';
 import KeyIcon from '@mui/icons-material/Key';
 
-import type { StylerStepData, StylerTableRow } from '../../common/types/StylerEntity.js';
-import { StyleMappingSourcePanel } from './StyleMappingSourcePanel.js';
-import { ValueHistogram } from './ValueHistogram.js';
+import type { SpreadsheetEntity } from '../../common/types/SpreadsheetEntity.js';
 import {
   binCountAtom,
   filterRulesAtom,
@@ -31,12 +29,14 @@ import {
   numericValuesAtom,
   tabularRowsAtom,
   valueColumnAtom,
-} from '../state/filterAtoms.js';
+} from '../state/tabularKeyValueAtoms.js';
+import { KeyValueSourcePanel } from '../components/KeyValueSourcePanel.js';
+import { ValueHistogram } from '../components/ValueHistogram.js';
 
 const coerceColumns = (
   metadata?: TabularTableMetadata | null,
   previewColumns?: unknown[] | null,
-  previewRows?: StylerTableRow[],
+  previewRows?: Record<string, unknown>[],
 ): string[] => {
   const fromMetadata = (metadata?.columns ?? [])
     .map((col: TabularColumnInfo | string) => (typeof col === 'string' ? col : col.name))
@@ -63,22 +63,24 @@ const coerceColumns = (
   return Array.from(new Set([...fromMetadata, ...fromPreview, ...fromRows]));
 };
 
-type UseStylerFilterStateParams = {
-  data: StylerStepData;
-  onChange: StepComponentProps<StylerStepData>['onChange'];
-  setError: StepComponentProps<StylerStepData>['setError'];
-  dialogRef?: StepComponentProps<StylerStepData>['dialogRef'];
+export interface UseTabularKeyValueStateParams<T extends SpreadsheetEntity> {
+  data: T;
+  onChange: StepComponentProps<T>['onChange'];
+  setError: StepComponentProps<T>['setError'];
+  dialogRef?: StepComponentProps<T>['dialogRef'];
   onSetFilterValid: (valid: boolean) => void;
-};
+  translationNamespace?: string;
+}
 
-export const useStylerFilterState = ({
+export const useTabularKeyValueState = <T extends SpreadsheetEntity>({
   data,
   onChange,
   setError,
   dialogRef,
   onSetFilterValid,
-}: UseStylerFilterStateParams) => {
-  const { t } = useTranslation('styler-plugin');
+  translationNamespace = 'spreadsheet-plugin',
+}: UseTabularKeyValueStateParams<T>) => {
+  const { t } = useTranslation(translationNamespace);
   const [filterReady, setFilterReady] = useState<boolean>(false);
   const setTabularRows = useSetAtom(tabularRowsAtom);
   const setFilterRules = useSetAtom(filterRulesAtom);
@@ -91,78 +93,78 @@ export const useStylerFilterState = ({
   const histogramContainerRef = useRef<HTMLDivElement | null>(null);
   const [histogramWidth, setHistogramWidth] = useState<number>(480);
 
-  const dialogData = useMemo<StylerStepData>(
-    () => (typeof data === 'object' && data ? (data as StylerStepData) : ({} as StylerStepData)),
-    [data],
-  );
+  const dialogData = useMemo<T>(() => (typeof data === 'object' && data ? (data as T) : ({} as T)), [data]);
 
   const columns = useMemo(
     () =>
       coerceColumns(
         dialogData.tabularTableMetadata as TabularTableMetadata | undefined,
         dialogData.lastPreview?.columns ?? null,
-        (dialogData.lastPreview?.rows as StylerTableRow[] | undefined) ?? [],
+        (dialogData.lastPreview?.rows as Record<string, unknown>[] | undefined) ?? [],
       ),
     [dialogData.lastPreview?.columns, dialogData.lastPreview?.rows, dialogData.tabularTableMetadata],
   );
 
-  const valueRows: StylerTableRow[] = useMemo(() => {
+  const valueRows: Record<string, unknown>[] = useMemo(() => {
     const previewRows = dialogData.lastPreview?.rows;
     if (Array.isArray(previewRows) && previewRows.length > 0) {
-      return previewRows as StylerTableRow[];
+      return previewRows as Record<string, unknown>[];
     }
     return [];
   }, [dialogData.lastPreview?.rows]);
 
+  const mapping = (dialogData as { mapping?: { keyColumn?: string; valueColumn?: string } }).mapping;
+  const stylerConfig = (dialogData as { stylerConfig?: { keyColumn?: string; valueColumn?: string } }).stylerConfig;
+  const legacySelection = dialogData as { selectedKeyColumn?: string; selectedValueColumn?: string };
+
   const selectedValueColumn =
-    dialogData.mapping?.valueColumn ??
-    dialogData.selectedValueColumn ??
-    (dialogData.stylerConfig as { valueColumn?: string } | undefined)?.valueColumn ??
+    dialogData.valueColumn ??
+    mapping?.valueColumn ??
+    legacySelection.selectedValueColumn ??
+    stylerConfig?.valueColumn ??
     '';
+
   const selectedKeyColumn =
-    dialogData.mapping?.keyColumn ??
-    dialogData.selectedKeyColumn ??
-    (dialogData.stylerConfig as { keyColumn?: string } | undefined)?.keyColumn ??
+    dialogData.keyColumn ??
+    mapping?.keyColumn ??
+    legacySelection.selectedKeyColumn ??
+    stylerConfig?.keyColumn ??
     '';
 
   const handleKeyColumnChange = useCallback(
     (keyColumn: string) => {
-      const nextData: StylerStepData = {
-        ...(dialogData as StylerStepData),
-        selectedKeyColumn: keyColumn,
-        mapping: {
-          ...(dialogData.mapping ?? {}),
-          keyColumn,
-        } as StylerStepData['mapping'],
-        stylerConfig: {
-          ...(dialogData.stylerConfig ?? {}),
-          keyColumn,
-        } as StylerStepData['stylerConfig'],
+      const nextData: T = {
+        ...(dialogData as T),
+        keyColumn,
       };
+      if (mapping || 'mapping' in dialogData) {
+        (nextData as T & { mapping?: Record<string, unknown> }).mapping = {
+          ...(mapping ?? {}),
+          keyColumn,
+        };
+      }
       onChange(nextData);
       setKeyColumnAtom(keyColumn);
     },
-    [dialogData, onChange, setKeyColumnAtom],
+    [dialogData, mapping, onChange, setKeyColumnAtom],
   );
 
   const handleValueColumnChange = useCallback(
     (valueColumn: string) => {
-      const nextData: StylerStepData = {
-        ...(dialogData as StylerStepData),
-        selectedValueColumn: valueColumn,
-        mapping: {
-          ...(dialogData.mapping ?? {}),
-          valueColumn,
-        } as StylerStepData['mapping'],
-        stylerConfig: {
-          ...(dialogData.stylerConfig ?? {}),
-          valueColumn,
-        } as StylerStepData['stylerConfig'],
+      const nextData: T = {
+        ...(dialogData as T),
+        valueColumn,
       };
+      if (mapping || 'mapping' in dialogData) {
+        (nextData as T & { mapping?: Record<string, unknown> }).mapping = {
+          ...(mapping ?? {}),
+          valueColumn,
+        };
+      }
       onChange(nextData);
       setValueColumnAtom(valueColumn);
     },
-    [dialogData, onChange, setValueColumnAtom],
+    [dialogData, mapping, onChange, setValueColumnAtom],
   );
 
   useEffect(() => {
@@ -187,7 +189,7 @@ export const useStylerFilterState = ({
       const valid = filterReady && hasKeyValue;
       if (lastValidRef.current !== valid) {
         // eslint-disable-next-line no-console
-        console.log('[StylerFilterStep] setValid', valid, { filterReady, hasKeyValue });
+        console.log('[TabularKeyValueStep] setValid', valid, { filterReady, hasKeyValue });
         onSetFilterValid(valid);
         lastValidRef.current = valid;
       }
@@ -198,7 +200,7 @@ export const useStylerFilterState = ({
         setError(nextError);
         lastErrorRef.current = nextError;
       }
-    }, 20); // small wait to observe loops
+    }, 20);
     return () => window.clearTimeout(timer);
   }, [filterReady, selectedKeyColumn, selectedValueColumn, onSetFilterValid, setError, t]);
 
@@ -229,15 +231,17 @@ export const useStylerFilterState = ({
         <Typography variant="body2" color="text.secondary">
           {t(
             'styleSettings.keyValuePair.description',
-            'Select the key and value columns to drive styling and review basic statistics.',
+            'Select the key and value columns to drive calculations and review basic statistics.',
           )}
         </Typography>
-        <StyleMappingSourcePanel
-          pluginData={dialogData}
-          handleKeyColumnChange={handleKeyColumnChange}
+        <KeyValueSourcePanel
+          keyColumn={selectedKeyColumn}
+          valueColumn={selectedValueColumn}
+          onKeyColumnChange={handleKeyColumnChange}
+          onValueColumnChange={handleValueColumnChange}
           menuContainer={(dialogRef?.current as Element | null) ?? null}
           columns={columns}
-          handleValueColumnChange={handleValueColumnChange}
+          translationNamespace={translationNamespace}
         />
         <Divider />
         {stats ? (
@@ -332,16 +336,17 @@ export const useStylerFilterState = ({
     [
       binCount,
       columns,
-      dialogData,
       dialogRef,
       handleKeyColumnChange,
       handleValueColumnChange,
       histogramWidth,
       numericValues,
+      selectedKeyColumn,
       selectedValueColumn,
       setBinCount,
       stats,
       t,
+      translationNamespace,
     ],
   );
 
@@ -355,7 +360,7 @@ export const useStylerFilterState = ({
   const handlePreviewReady = useCallback(
     (preview: TabularDataResult) => {
       if (Array.isArray(preview?.rows)) {
-        setTabularRows(preview.rows as StylerTableRow[]);
+        setTabularRows(preview.rows as Record<string, unknown>[]);
       }
     },
     [setTabularRows],
@@ -368,9 +373,9 @@ export const useStylerFilterState = ({
       error,
       previewDirty,
     }: {
-      filterRules: React.ReactNode;
-      preview: React.ReactNode | null;
-      error: React.ReactNode | null;
+      filterRules: ReactNode;
+      preview: ReactNode | null;
+      error: ReactNode | null;
       previewDirty: boolean;
     }) => (
       <Stack spacing={1}>

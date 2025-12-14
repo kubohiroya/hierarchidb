@@ -26,11 +26,11 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
     ...(data?.mapping ?? {}),
   };
   const keyColumn =
-    data?.selectedKeyColumn ??
+    data?.keyColumn ??
     mapping.keyColumn ??
     (data?.stylerConfig as { keyColumn?: string } | undefined)?.keyColumn;
   const valueColumn =
-    data?.selectedValueColumn ??
+    data?.valueColumn ??
     mapping.valueColumn ??
     (data?.stylerConfig as { valueColumn?: string } | undefined)?.valueColumn;
   const targetProperty = mapping.targetProperty;

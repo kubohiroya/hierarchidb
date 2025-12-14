@@ -1,13 +1,12 @@
-import { useCallback, useMemo, useRef } from 'react';
-import type { RefObject } from 'react';
+import { useCallback, useMemo, useRef, type RefObject } from 'react';
 import type { StepComponentProps } from '@hierarchidb/plugin-base';
 import type { TabularDataResult, TabularFilterRule } from '@hierarchidb/ui-tabular-extract';
 import type { SpreadsheetEntity } from '../../common/types/SpreadsheetEntity.js';
 import { SPREADSHEET_NODE_TYPE } from '../../common/constants.js';
 import { createSpreadsheetTabularApi } from '../../services/spreadsheetTabularApiFactory.js';
 
-const coerceDialogData = (value: unknown): SpreadsheetEntity =>
-  (typeof value === 'object' && value !== null ? (value as SpreadsheetEntity) : {});
+const coerceDialogData = <T extends SpreadsheetEntity>(value: unknown): T =>
+  (typeof value === 'object' && value !== null ? (value as T) : ({} as T));
 
 const shallowEqualFilters = (a?: TabularFilterRule[], b?: TabularFilterRule[]): boolean => {
   if (a === b) return true;
@@ -29,16 +28,16 @@ const shallowEqualFilters = (a?: TabularFilterRule[], b?: TabularFilterRule[]): 
   return true;
 };
 
-export type UseTabularDataFilterParams = Pick<
-  StepComponentProps<SpreadsheetEntity>,
+export type UseTabularDataFilterParams<T extends SpreadsheetEntity> = Pick<
+  StepComponentProps<T>,
   'data' | 'onChange' | 'setValid' | 'setError'
 > & {
   dialogRef?: RefObject<HTMLElement | null>;
 };
 
-export interface UseTabularDataFilterResult {
+export interface UseTabularDataFilterResult<T extends SpreadsheetEntity> {
   pluginId: string;
-  dialogData: SpreadsheetEntity;
+  dialogData: T;
   tabularApi: ReturnType<typeof createSpreadsheetTabularApi>;
   menuContainer: Element | null;
   initialFilters: TabularFilterRule[];
@@ -47,12 +46,12 @@ export interface UseTabularDataFilterResult {
   handlePreviewData: (preview: TabularDataResult) => void;
 }
 
-export const useTabularDataFilter = ({
+export const useTabularDataFilter = <T extends SpreadsheetEntity>({
   data,
   onChange,
   dialogRef,
-}: UseTabularDataFilterParams): UseTabularDataFilterResult => {
-  const dialogData = useMemo<SpreadsheetEntity>(() => coerceDialogData(data), [data]);
+}: UseTabularDataFilterParams<T>): UseTabularDataFilterResult<T> => {
+  const dialogData = useMemo<T>(() => coerceDialogData<T>(data), [data]);
   const filtersRef = useRef<TabularFilterRule[]>(dialogData.filters ?? []);
   const initialFilters = useMemo<TabularFilterRule[]>(() => {
     const next = dialogData.filters ?? [];

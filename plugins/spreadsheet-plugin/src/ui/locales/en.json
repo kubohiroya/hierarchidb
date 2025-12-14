@@ -1,0 +1,47 @@
+{
+  "styleSettings": {
+    "source": {
+      "label": "Source Columns"
+    },
+    "keyColumn": {
+      "label": "Property key source",
+      "none": "Select a column",
+      "help": "Select the column that contains the key"
+    },
+    "valueColumn": {
+      "label": "Property value source",
+      "none": "Select a column",
+      "help": "Select the column that contains the value"
+    },
+    "keyValuePair": {
+      "description": "Select the key and value columns to drive calculations and review basic statistics.",
+      "validation": {
+        "required": "Select both key and value columns to continue."
+      },
+      "stats": {
+        "count": "Count",
+        "min": "Min",
+        "max": "Max",
+        "mean": "Average",
+        "median": "Median",
+        "stdDev": "Std Dev",
+        "empty": "Select a value column with numeric values to view statistics."
+      },
+      "histogram": {
+        "binCount": "Number of bins"
+      },
+      "value": "Value",
+      "key": "frequency"
+    },
+    "filterRules": {
+      "title": "Filter Rules"
+    },
+    "previewTabular": {
+      "title": "Preview Tabular",
+      "empty": "Preview data will appear after filters are applied."
+    },
+    "accordion": {
+      "previewStats": "Preview Stats"
+    }
+  }
+}

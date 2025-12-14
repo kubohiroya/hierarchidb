@@ -19,7 +19,7 @@ export interface UseStylerConfigPanelStateParams {
   config?: StylerConfig;
   onChange: (config: StylerConfig) => void;
   values?: number[];
-  selectedValueColumn?: string;
+  valueColumn?: string;
   tabularData?: StylerTableRow[];
   tStr: FormatFn;
 }
@@ -28,7 +28,7 @@ export const useStylerConfigPanelState = ({
   config = StylerConfigDefault,
   onChange,
   values = [],
-  selectedValueColumn,
+  valueColumn,
   tabularData = [],
   tStr,
 }: UseStylerConfigPanelStateParams) => {
@@ -112,16 +112,16 @@ export const useStylerConfigPanelState = ({
       : null;
 
   useEffect(() => {
-    if (selectedValueColumn && tabularData.length > 0) {
+    if (valueColumn && tabularData.length > 0) {
       setIsAnalyzing(true);
 
       const analyzeAsync = async () => {
         try {
           await new Promise((resolve) => setTimeout(resolve, 300));
 
-          const numericValues = extractNumericValues(tabularData, selectedValueColumn);
+          const numericValues = extractNumericValues(tabularData, valueColumn);
           if (numericValues.length > 0) {
-            const analysis = analyzeData(numericValues, selectedValueColumn);
+            const analysis = analyzeData(numericValues, valueColumn);
             setDataAnalysis(analysis);
           }
         } finally {
@@ -131,7 +131,7 @@ export const useStylerConfigPanelState = ({
 
       analyzeAsync();
     }
-  }, [selectedValueColumn, tabularData]);
+  }, [tabularData, valueColumn]);
 
   const applyRecommendation = useCallback(() => {
     if (dataAnalysis?.recommendation) {

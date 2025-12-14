@@ -88,19 +88,24 @@ export class StylerDataService {
     mapping: StylerMapping,
     config: StylerConfig,
     filters: TabularFilterRule[] = [],
-    rowCount: number = 100
+    rowCount: number = 100,
+    valueColumn?: string,
   ): Promise<{ data: TabularDataResult; styledRows: StyledRow[] }> {
     //  Spreadsheet
     const data = await this.tabularApiDriver.getFilteredPreview(tableId, filters, rowCount);
+    const effectiveValueColumn =
+      valueColumn ??
+      (mapping as { valueColumn?: string } | undefined)?.valueColumn ??
+      (config as { valueColumn?: string } | undefined)?.valueColumn;
 
     const styledRows: StyledRow[] = data.rows.map((row) => {
       const styles: Record<string, StyledCellStyle> = {};
 
-      if (mapping.valueColumn) {
-        const value = row[mapping.valueColumn];
+      if (effectiveValueColumn) {
+        const value = row[effectiveValueColumn];
         if (typeof value === 'number') {
           const colorResult = valueToColor(value, mapping, config);
-          styles[mapping.valueColumn] = {
+          styles[effectiveValueColumn] = {
             backgroundColor: colorResult.color,
             opacity: colorResult.opacity,
             metadata: colorResult.metadata,
@@ -119,7 +124,10 @@ export class StylerDataService {
     entity: StylerEntity
   ): Promise<{ styleSpec: MapLibreStyle; colorMapping: Record<string, string> }> {
     const { config, mapping } = entity;
-    const { keyColumn, valueColumn} = mapping;
+    const keyColumn =
+      entity.keyColumn ?? (mapping as { keyColumn?: string } | undefined)?.keyColumn;
+    const valueColumn =
+      entity.valueColumn ?? (mapping as { valueColumn?: string } | undefined)?.valueColumn;
 
     if (!keyColumn || !valueColumn || !mapping.targetProperty) {
       throw new Error('Key column, value column, and target property are required');
@@ -196,13 +204,13 @@ export class StylerDataService {
     const numericColumns = tableMetadata.columns.filter(
       (col: TabularColumnInfo) => col.type === 'number'
     );
-    const selectedValueColumn = numericColumns[0]?.name;
-    if (selectedValueColumn === undefined) {
+    const initialValueColumn = numericColumns[0]?.name;
+    if (initialValueColumn === undefined) {
       throw new Error('No numeric columns found in the table');
     }
     const mapping = {
       styleType: 'choropleth' as const,
-      valueColumn: selectedValueColumn,
+      valueColumn: initialValueColumn,
       keyColumn:
         tableMetadata.columns.find((col: TabularColumnInfo) => col.name === 'id')?.name ??
         tableMetadata.columns[0]?.name ?? "",
