@@ -74,7 +74,7 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
         label: t('steps.dataSource.label', 'Data Source'),
         componentFactory: (props: ShapeDialogStepProps) => <Step2 {...props} />,
         validate: (data?: Partial<ShapeEntity>) =>
-          Boolean(data?.dataSourceName) && Boolean(data?.licenseAgreement),
+          Boolean(data?.dataSourceName),
       },
       {
         id: 'processing-configuration',

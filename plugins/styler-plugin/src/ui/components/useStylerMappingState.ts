@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { StepComponentProps } from '@hierarchidb/plugin-base';
 import type {
   MapLibreStyleProperty,
@@ -55,8 +55,9 @@ export const useStylerMappingState = ({
     [pluginData.colorScheme, sanitizedStyleType]
   );
 
-  const handleStyleTypeChange = useCallback((styleType: StyleType) => {
-    const nextStyleType = styleType ?? settings.styleType;
+  const handleStyleTypeChange = useCallback(
+    (styleType: StyleType) => {
+      const nextStyleType = styleType ?? settings.styleType;
       const nextData: StylerStepData = {
         ...(pluginData as StylerStepData),
         stylerConfig: {
@@ -64,7 +65,6 @@ export const useStylerMappingState = ({
           styleType: nextStyleType,
         } as StylerStepData['stylerConfig'],
       };
-      // delete (nextData as { styleType?: StyleType }).styleType;
       onChange(nextData);
     },
     [pluginData, settings.styleType, onChange]
@@ -79,7 +79,6 @@ export const useStylerMappingState = ({
           targetProperty,
         } as StylerStepData['stylerConfig'],
       };
-      // delete (nextData as { styleType?: StyleType }).styleType;
       onChange(nextData);
     },
     [pluginData, onChange]
@@ -95,23 +94,36 @@ export const useStylerMappingState = ({
     }
   }, [pluginData, sanitizedStyleType, handleStyleTypeChange]);
 
+  const lastValidity = useRef<boolean | null>(null);
+  const lastError = useRef<string | null>(null);
+
+  const validity = useMemo(
+    () =>
+      isStyleMappingComplete({
+        ...(pluginData as StylerStepData),
+        mapping: {
+          ...(pluginData.mapping ?? {}),
+          targetProperty: pluginData.mapping?.targetProperty ?? null,
+          styleType: sanitizedStyleType,
+        },
+        valueColumn: pluginData.valueColumn,
+      }),
+    [pluginData, sanitizedStyleType]
+  );
+
   useEffect(() => {
-    const valid = isStyleMappingComplete({
-      ...(pluginData as StylerStepData),
-      mapping: {
-        ...(pluginData.mapping ?? {}),
-        targetProperty: pluginData.mapping?.targetProperty ?? null,
-        styleType: sanitizedStyleType,
-      },
-      valueColumn: pluginData.valueColumn,
-    });
-    setValid(valid);
-    setError(
-      valid
-        ? null
-        : 'Select a style type, value source, and target property to continue.'
-    );
-  }, [pluginData, sanitizedStyleType, setValid, setError]);
+    if (lastValidity.current !== validity) {
+      lastValidity.current = validity;
+      setValid(validity);
+    }
+    const errorMessage = validity
+      ? null
+      : 'Select a style type, value source, and target property to continue.';
+    if (lastError.current !== errorMessage) {
+      lastError.current = errorMessage;
+      setError(errorMessage);
+    }
+  }, [validity, setValid, setError]);
 
   return {
     menuContainer,

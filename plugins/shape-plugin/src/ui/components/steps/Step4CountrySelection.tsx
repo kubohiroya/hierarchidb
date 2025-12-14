@@ -1,11 +1,9 @@
 import type React from 'react';
 import { useCallback, useMemo } from 'react';
 import {
-  Alert,
   Box,
   Button,
   Checkbox,
-  Chip,
   CircularProgress,
   Paper,
   Stack,
@@ -137,8 +135,36 @@ export const Step4CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, di
       onUpdate({
         checkboxState: clonedMatrix,
       });
+
+      const nextStats = (() => {
+        let totalSelected = 0;
+        let countriesWithSelection = 0;
+
+        clonedMatrix.forEach((r: boolean[]) => {
+          let hasAny = false;
+          r.forEach((val: boolean, idx: number) => {
+            if (val && idx <= maxAdminLevel) {
+              totalSelected += 1;
+              hasAny = true;
+            }
+          });
+          if (hasAny) countriesWithSelection += 1;
+        });
+
+        return {
+          totalSelected,
+          countriesWithSelection,
+          estimatedSize: calculateEstimatedSize(totalSelected),
+          estimatedFeatures: calculateEstimatedFeatures(totalSelected, countries),
+        };
+      })();
+
+      enqueueSnackbar(
+        `${nextStats.countriesWithSelection} countries / ${nextStats.totalSelected} selections — Est. Size: ${formatBytes(nextStats.estimatedSize)}, Est. Features: ${formatNumber(nextStats.estimatedFeatures)}`,
+        { variant: 'info' },
+      );
     },
-    [checkboxMatrix, onUpdate],
+    [checkboxMatrix, onUpdate, maxAdminLevel, countries, enqueueSnackbar],
   );
 
   const handleValidateSelection = useCallback(() => {
@@ -161,10 +187,10 @@ export const Step4CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, di
   // Show error state
   if (error) {
     return (
-      <Box sx={{ height: '70vh', display: 'flex', flexDirection: 'column' }}>
-        <Alert severity="error">
+      <Box sx={{ height: '70vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', p: 3 }}>
+        <Typography color="error" variant="body2">
           Failed to load country metadata: {error.message}
-        </Alert>
+        </Typography>
       </Box>
     );
   }
@@ -199,58 +225,21 @@ export const Step4CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, di
         ))}
       </Stack>
 
-      {/* Statistics Panel */}
-      <Paper sx={{ p: 2, mb: 2, backgroundColor: 'grey.50' }}>
-        <Stack direction="row" spacing={4} alignItems="center">
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Chip
-              label={`${stats.countriesWithSelection} countries`}
-              size="small"
-              color="primary"
-              variant="outlined"
-            />
-            <Chip
-              label={`${stats.totalSelected} selections`}
-              size="small"
-              color="secondary"
-              variant="outlined"
-            />
-          </Stack>
-
-          <Stack direction="row" spacing={1}>
-            {stats.levelCounts.map(
-              (count, level) =>
-                count > 0 && (
-                  <Chip
-                    key={level}
-                    label={`L${level}: ${count}`}
-                    size="small"
-                    variant="outlined"
-                  />
-                ),
-            )}
-          </Stack>
-
-          <Stack direction="row" spacing={2} sx={{ ml: 'auto' }}>
-            <Typography variant="caption" color="text.secondary">
-              Est. Size: {formatBytes(stats.estimatedSize)}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Est. Features: {formatNumber(stats.estimatedFeatures)}
-            </Typography>
-
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<CheckIcon />}
-              onClick={handleValidateSelection}
-              disabled={stats.totalSelected === 0 || disabled}
-            >
-              Validate
-            </Button>
-          </Stack>
-        </Stack>
-      </Paper>
+      {/* Quick validate trigger */}
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={<CheckIcon />}
+          onClick={handleValidateSelection}
+          disabled={stats.totalSelected === 0 || disabled}
+        >
+          Validate Selection
+        </Button>
+        <Typography variant="caption" color="text.secondary">
+          Toggle checkboxes to see current totals via notifications.
+        </Typography>
+      </Stack>
 
       {/* Simplified Matrix Table (without virtualization for now) */}
       <TableContainer component={Paper} sx={{ flex: 1, overflow: 'auto' }}>
@@ -322,12 +311,6 @@ export const Step4CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, di
         </Table>
       </TableContainer>
 
-      {stats.totalSelected === 0 && (
-        <Alert severity="info" sx={{ mt: 2 }}>
-          Please select at least one country and administrative level to
-          proceed.
-        </Alert>
-      )}
     </Box>
   );
 };

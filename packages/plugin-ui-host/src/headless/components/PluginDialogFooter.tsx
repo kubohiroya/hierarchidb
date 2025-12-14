@@ -153,6 +153,9 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   const shouldRenderNextButton = showRightPrimary && !isLastStep;
   const shouldRenderFinalCommitButton = showRightPrimary && isLastStep;
 
+  // Debug: trace rerenders to investigate footer blinking
+  console.log('PluginDialogFooter render');
+
   const handleInlineSave = useCallback(() => {
     ctx.onRequestCommit?.();
   }, [ctx]);

@@ -13,7 +13,6 @@ import type {
   DialogProgressState,
   NodeId,
   TreeId,
-  TreeNodeMetadata,
 } from '@hierarchidb/common-types';
 import { HostProfileRegistry, PluginStepRegistry, composeStepConfigs } from '@hierarchidb/plugin-base';
 import { getIconComponent, getPresentation, hydratePresentationDefinitionsFromGlobal } from '@hierarchidb/plugin-presentation';
@@ -47,6 +46,11 @@ import { useDialogFrameState } from './usePluginDialogController/frame-state.js'
 import { useBasicInfoState } from './usePluginDialogController/basic-info.js';
 import { useDialogSteps } from './usePluginDialogController/steps.js';
 import { useStepCapabilities } from './usePluginDialogController/capabilities.js';
+import { useDialogUIStateSync } from './usePluginDialogController/dialog-ui-state.js';
+import { useConflictGuard } from './usePluginDialogController/conflict-guard.js';
+import { useAutosave } from './usePluginDialogController/autosave.js';
+import { usePendingAction } from './usePluginDialogController/pending-action.js';
+import { useDialogDirtyState } from './usePluginDialogController/dirty-state.js';
 import type {
   TreeNodeUpdaterPayload,
   TreeNodeUpdaterPatch,
@@ -162,52 +166,7 @@ export function usePluginDialogController(
     initialDraftData,
   });
 
-  const initialBasicInfoRef = useRef<TreeNodeMetadata | null>(null);
-  useEffect(() => {
-    // Capture the first resolved basic info snapshot per dialog open to detect dirtiness
-    if (!open) {
-      initialBasicInfoRef.current = null;
-      return;
-    }
-    if (!initialBasicInfoRef.current && draft?.draftMetadata) {
-      initialBasicInfoRef.current = {
-        name: draft.draftMetadata.name ?? '',
-        description: draft.draftMetadata.description ?? '',
-        tags: Array.isArray(draft.draftMetadata.tags) ? [...draft.draftMetadata.tags] : [],
-      };
-    }
-  }, [draft?.draftMetadata, open]);
-
-  const acknowledgedVersionRef = useRef<number>(draft?.version ?? 0);
-  useEffect(() => {
-    if (draft?.version !== undefined) {
-      acknowledgedVersionRef.current = draft.version;
-    }
-  }, [draft?.version]);
-
-  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    if (!open || !draft || !hasUnsavedChanges) {
-      if (autoSaveTimerRef.current) {
-        clearTimeout(autoSaveTimerRef.current);
-        autoSaveTimerRef.current = null;
-      }
-      return;
-    }
-    autoSaveTimerRef.current = setTimeout(() => {
-      saveDraft(draft).catch((err) => {
-        if (typeof console !== 'undefined' && typeof console.warn === 'function') {
-          console.warn('[PluginDialogShell] autosave failed', err);
-        }
-      });
-    }, 800);
-    return () => {
-      if (autoSaveTimerRef.current) {
-        clearTimeout(autoSaveTimerRef.current);
-        autoSaveTimerRef.current = null;
-      }
-    };
-  }, [draft, hasUnsavedChanges, open, saveDraft]);
+  useAutosave({ open, draft, hasUnsavedChanges, saveDraft });
 
   const treeUpdater: TreeNodeUpdaterPayload<PluginDefinedEntity> | null = useMemo(
     () =>
@@ -222,30 +181,7 @@ export function usePluginDialogController(
   );
 
   const dialogUIState = (draft as LocalTreeNodeUpdaterState | null)?.dialogUIState ?? null;
-  const dialogUIStateRef = useRef<DialogUIState | null>(dialogUIState ?? null);
-  useEffect(() => {
-    dialogUIStateRef.current = dialogUIState ?? null;
-  }, [dialogUIState]);
   const isDialogReady = Boolean(dialogUIState);
-
-  const updateDialogUIState = useCallback(
-    (patch: Partial<DialogUIState>) => {
-      const prev = dialogUIStateRef.current ?? null;
-      const nextWindow =
-        patch.dialogWindow !== undefined ? patch.dialogWindow : (prev as any)?.dialogWindow;
-      const nextProgress =
-        patch.dialogProgress !== undefined ? patch.dialogProgress : (prev as any)?.dialogProgress;
-      const next: DialogUIState | null =
-        nextWindow || nextProgress
-          ? {
-              dialogWindow: nextWindow ?? null,
-              dialogProgress: nextProgress ?? null,
-            }
-          : null;
-      dialogUIStateRef.current = next;
-    },
-    []
-  );
 
   const {
     activeStepIndex,
@@ -266,28 +202,26 @@ export function usePluginDialogController(
     initialDialogUIState: dialogUIState,
   });
 
-  const dialogStateRestoredRef = useRef(false);
-  useEffect(() => {
-    if (dialogStateRestoredRef.current) return;
-    const state = dialogUIStateRef.current;
-    if (!state) return;
-    dialogStateRestoredRef.current = true;
-    const progress = (state as any)?.dialogProgress?.activeStepIndex;
-    if (typeof progress === 'number') {
-      setActiveStepIndex(progress);
-      setUrlStep(progress);
-    }
-    const windowState = (state as any)?.dialogWindow as DialogWindowState | undefined;
-    if (windowState?.size) {
-      handleSizeChange(windowState.size as DialogSize);
-    }
-    if (windowState?.position) {
-      handlePositionChange(windowState.position as DialogPosition);
-    }
-    if (windowState?.mode) {
-      void transitionDisplayMode(windowState.mode as DialogDisplayMode).catch(() => void 0);
-    }
-  }, [handlePositionChange, handleSizeChange, setActiveStepIndex, setUrlStep, transitionDisplayMode]);
+  const {
+    dialogUIStateRef,
+    updateDialogUIState,
+    getPersistableDialogUIState,
+    dialogStateSnapshot,
+    updateDialogState,
+  } = useDialogUIStateSync({
+    dialogUIState,
+    activeStepIndex,
+    dialogPosition,
+    dialogSize,
+    displayMode,
+    restoreDeps: {
+      setActiveStepIndex,
+      setUrlStep,
+      handleSizeChange,
+      handlePositionChange,
+      transitionDisplayMode,
+    },
+  });
 
   const draftDataWithoutMeta = useMemo<Partial<PluginDefinedEntity>>(
     () => (toRecord(draft?.draftData ?? null) as Partial<PluginDefinedEntity>) ?? {},
@@ -300,24 +234,6 @@ export function usePluginDialogController(
   useEffect(() => {
     setLocalDraftData(draftDataWithoutMeta);
   }, [draftDataWithoutMeta]);
-
-  const getPersistableDialogUIState = useCallback((): DialogUIState => {
-    const currentWindow = (dialogUIStateRef.current as any)?.dialogWindow ?? {};
-    const currentProgress = (dialogUIStateRef.current as any)?.dialogProgress ?? {};
-    return {
-      dialogWindow: {
-        mode: currentWindow.mode ?? displayMode,
-        position: currentWindow.position ?? dialogPosition,
-        size: currentWindow.size ?? dialogSize,
-      },
-      dialogProgress: {
-        activeStepIndex:
-          typeof currentProgress.activeStepIndex === 'number'
-            ? currentProgress.activeStepIndex
-            : activeStepIndexRef.current ?? activeStepIndex,
-      },
-    };
-  }, [activeStepIndex, dialogPosition, dialogSize, displayMode]);
 
   const applyUpdateDraft = useCallback(
     (patch: TreeNodeUpdaterPatch<PluginDefinedEntity>) => {
@@ -352,35 +268,13 @@ export function usePluginDialogController(
     },
   });
 
-  const basicInfoDirty = useMemo(() => {
-    const meta = treeUpdater?.draftMetadata ?? { name: '', description: '', tags: [] };
-    const initialMeta = initialBasicInfoRef.current ?? { name: '', description: '', tags: [] };
-    if (meta.name !== basicInfo.name) return true;
-    if ((meta.description ?? '') !== (basicInfo.description ?? '')) return true;
-    const prevTags = Array.isArray(meta.tags) ? meta.tags : [];
-    const nextTags = Array.isArray(basicInfo.tags) ? basicInfo.tags : [];
-    if (prevTags.length !== nextTags.length) return true;
-    for (let i = 0; i < prevTags.length; i += 1) {
-      if (prevTags[i] !== nextTags[i]) return true;
-    }
-    // Guard against cases where draft metadata failed to sync: compare against initial snapshot
-    const initTags = Array.isArray(initialMeta.tags) ? initialMeta.tags : [];
-    if (initialMeta.name !== basicInfo.name) return true;
-    if ((initialMeta.description ?? '') !== (basicInfo.description ?? '')) return true;
-    if (initTags.length !== nextTags.length) return true;
-    for (let i = 0; i < initTags.length; i += 1) {
-      if (initTags[i] !== nextTags[i]) return true;
-    }
-    return false;
-  }, [basicInfo.description, basicInfo.name, basicInfo.tags, treeUpdater?.draftMetadata]);
-
-  const stepDataDirty = useMemo(() => {
-    const current = toRecord(localDraftData ?? {}) ?? {};
-    const persisted = toRecord(treeUpdater?.draftData ?? {}) ?? {};
-    return JSON.stringify(current) !== JSON.stringify(persisted);
-  }, [localDraftData, treeUpdater?.draftData]);
-
-  const dialogDirty = hasUnsavedChanges || basicInfoDirty || stepDataDirty;
+  const { dialogDirty } = useDialogDirtyState({
+    open,
+    draft: treeUpdater,
+    basicInfo,
+    treeUpdater,
+    localDraftData: toRecord(localDraftData ?? {}) ?? {},
+  });
 
   const [regTick, setRegTick] = useState(0);
   const [hostTick, setHostTick] = useState(0);
@@ -464,60 +358,19 @@ export function usePluginDialogController(
     [stepDescriptors]
   );
 
-  const [conflictDialog, setConflictDialog] = useState<{
-    open: boolean;
-    latestVersion: number;
-    updatedAt?: number;
-  }>({ open: false, latestVersion: 0, updatedAt: undefined });
-  const conflictResolverRef = useRef<((decision: 'discard' | 'continue') => void) | null>(null);
-
-  const requestConflictResolution = useCallback(
-    (latestVersion: number, updatedAt?: number) =>
-      new Promise<'discard' | 'continue'>((resolve) => {
-        conflictResolverRef.current = resolve;
-        setConflictDialog({ open: true, latestVersion, updatedAt });
-      }),
-    []
-  );
-
-  const closeConflictDialog = useCallback(() => {
-    setConflictDialog((prev) => ({ ...prev, open: false }));
-  }, []);
-
-  const fetchLatestVersion = useCallback(async () => {
-    if (mode !== 'edit') return null;
-    if (!client) return null;
-    try {
-      const query = await client.getQueryAPI();
-      const latest = await query.getNode(nodeId);
-      if (!latest) return null;
-      return { version: latest.version ?? 0, updatedAt: latest.updatedAt };
-    } catch (err) {
-      console.warn('[PluginDialogShell] failed to fetch latest node for version check', err);
-      return null;
-    }
-  }, [client, mode, nodeId]);
-
-  const ensureNoConflict = useCallback(async (): Promise<boolean> => {
-    const latest = await fetchLatestVersion();
-    if (!latest) return true;
-    const localVersion = acknowledgedVersionRef.current ?? draft?.version ?? 0;
-    if (latest.version > localVersion) {
-      const decision = await requestConflictResolution(latest.version, latest.updatedAt);
-      closeConflictDialog();
-      if (decision === 'discard') {
-        await discardDraft();
-        onClose();
-        return false;
-      }
-      acknowledgedVersionRef.current = latest.version;
-      updateTreeNodeUpdater({
-        version: latest.version,
-        updatedAt: latest.updatedAt,
-      });
-    }
-    return true;
-  }, [closeConflictDialog, discardDraft, draft?.version, fetchLatestVersion, onClose, requestConflictResolution, updateTreeNodeUpdater]);
+  const {
+    conflictDialog,
+    resolveConflict,
+    ensureNoConflict,
+  } = useConflictGuard({
+    mode,
+    client,
+    nodeId,
+    draftVersion: draft?.version,
+    discardDraft,
+    onClose,
+    updateTreeNodeUpdater,
+  });
 
   const updateLocalDraft = useCallback(async () => {
     if (!treeUpdater) return;
@@ -540,29 +393,7 @@ export function usePluginDialogController(
   const footerPrimaryButtons = footerOptions?.primaryButtons;
   const footerSaveDraftLabel = footerOptions?.saveDraftLabel;
   const disableDraftButton = nodeType === 'folder';
-  const [pendingAction, setPendingAction] = useState<DialogActionInFlight | null>(null);
-  const pendingActionRef = useRef<DialogActionInFlight | null>(null);
-  const updatePendingAction = useCallback((next: DialogActionInFlight | null) => {
-    pendingActionRef.current = next;
-    setPendingAction(next);
-  }, []);
-  useEffect(() => {
-    if (!open) {
-      updatePendingAction(null);
-    }
-  }, [open, updatePendingAction]);
-  const runWithPending = useCallback(
-    async (action: DialogActionInFlight, task: () => Promise<void> | void) => {
-      if (pendingActionRef.current) return;
-      updatePendingAction(action);
-      try {
-        await Promise.resolve(task());
-      } finally {
-        updatePendingAction(null);
-      }
-    },
-    [updatePendingAction]
-  );
+  const { pendingAction, pendingActionRef, runWithPending } = usePendingAction(open);
   const [isStartingBatch, setIsStartingBatch] = useState(false);
   const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
 
@@ -641,7 +472,7 @@ export function usePluginDialogController(
 
   const persistDialogWindow = useCallback(
     (patch: Partial<DialogWindowState>) => {
-      const prevWindow = (dialogUIStateRef.current as any)?.dialogWindow ?? null;
+      const prevWindow = (dialogUIStateRef.current)?.dialogWindow ?? null;
       const next: DialogWindowState = {
         mode: patch.mode ?? prevWindow?.mode ?? displayMode,
         position: patch.position ?? prevWindow?.position ?? dialogPosition,
@@ -649,7 +480,7 @@ export function usePluginDialogController(
       };
       updateDialogUIState({ dialogWindow: next });
     },
-    [dialogPosition, dialogSize, displayMode, updateDialogUIState]
+    [dialogPosition, dialogSize, dialogUIStateRef, displayMode, updateDialogUIState]
   );
 
   const handleSizeChangeWithPersist = useCallback(
@@ -680,17 +511,17 @@ export function usePluginDialogController(
             ? (dialogData as TreeNodeData)
             : null;
 
-      const savedNodeId = await commitTreeNodeUpdater('save', {
+      const savePayload: TreeNodeUpdaterState<Partial<PluginDefinedEntity>> = {
+        treeNodeId: (treeUpdater?.treeNodeId ?? nodeId) as NodeId,
         draftMetadata: {
           name: basicInfo.name,
           description: basicInfo.description,
           tags: basicInfo.tags,
         },
         draftData: nodeType === 'folder' ? null : (normalizedData ?? null),
-        data: normalizedData === null ? undefined : normalizedData,
-        metadata: undefined,
         dialogUIState: getPersistableDialogUIState(),
-      } as any);
+      };
+      const savedNodeId = await commitTreeNodeUpdater('save', savePayload);
       const targetId = (savedNodeId ?? treeUpdater?.treeNodeId ?? nodeId) as NodeId;
       onSuccess?.(targetId);
       navigateToNode(targetId);
@@ -707,7 +538,8 @@ export function usePluginDialogController(
       const ok = await ensureNoConflict();
       if (!ok) return;
       await updateLocalDraft();
-      await commitTreeNodeUpdater('save-draft', {
+      const draftPayload: TreeNodeUpdaterState<Partial<PluginDefinedEntity>> = {
+        treeNodeId: (treeUpdater?.treeNodeId ?? nodeId) as NodeId,
         draftData: nodeType === 'folder' ? null : (dialogData as TreeNodeData),
         draftMetadata: {
           ...(treeUpdater?.draftMetadata ?? {}),
@@ -716,8 +548,8 @@ export function usePluginDialogController(
           tags: basicInfo.tags,
         },
         dialogUIState: getPersistableDialogUIState(),
-        mode: 'save-draft',
-      } as any);
+      };
+      await commitTreeNodeUpdater('save-draft', draftPayload);
       const targetId = (pageNodeId ?? nodeId) as NodeId;
       navigateToNode(targetId);
       onClose();
@@ -790,8 +622,7 @@ export function usePluginDialogController(
           <Dialog
             open={conflictDialog.open}
             onClose={() => {
-              conflictResolverRef.current?.('continue');
-              closeConflictDialog();
+              resolveConflict('continue');
             }}
             sx={{
               ...foregroundDialogSx,
@@ -821,8 +652,7 @@ export function usePluginDialogController(
               <Button
                 color="secondary"
                 onClick={() => {
-                  conflictResolverRef.current?.('discard');
-                  closeConflictDialog();
+                  resolveConflict('discard');
                 }}
               >
                 {t('dialogs.pluginDraft.conflict.buttons.discardSelf')}
@@ -830,8 +660,7 @@ export function usePluginDialogController(
               <Button
                 variant="contained"
                 onClick={() => {
-                  conflictResolverRef.current?.('continue');
-                  closeConflictDialog();
+                  resolveConflict('continue');
                 }}
               >
                 {t('dialogs.pluginDraft.conflict.buttons.keepSelf')}
@@ -861,7 +690,7 @@ export function usePluginDialogController(
           />
         </>
       ),
-      [conflictDialog.open, conflictDialog.updatedAt, foregroundDialogSx, t, mode, canSaveCurrent, disableDraftButton, handleSaveDraft, dialogDirty, activeStartBatch, canStartBatch, isStartingBatch, footerPrimaryButtons, footerSaveDraftLabel, pendingAction, closeConflictDialog, handleStartBatch]
+      [conflictDialog.open, conflictDialog.updatedAt, foregroundDialogSx, t, mode, canSaveCurrent, disableDraftButton, handleSaveDraft, dialogDirty, activeStartBatch, canStartBatch, isStartingBatch, footerPrimaryButtons, footerSaveDraftLabel, pendingAction, resolveConflict, handleStartBatch]
     );
 
   const handleCloseRequest = useCallback(() => {
@@ -899,7 +728,7 @@ export function usePluginDialogController(
       }
       setLocalDraftData((prev) => ({ ...(toRecord(prev) ?? {}), ...patch }));
     },
-    [setLocalDraftData, nodeType]
+    [nodeType]
   );
 
   const handleRequestCommit = useCallback(() => {
@@ -911,39 +740,6 @@ export function usePluginDialogController(
   }, []);
 
   const invalidMessageMap = useMemo(() => ({}), []);
-
-  const dialogStateSnapshot: DialogState | null = useMemo(() => {
-    const windowState = (dialogUIStateRef.current as any)?.dialogWindow;
-    if (!windowState) return null;
-    return {
-      activeStepIndex:
-        (dialogUIStateRef.current as any)?.dialogProgress?.activeStepIndex ?? activeStepIndex,
-      size: windowState.size ?? dialogSize,
-      position: windowState.position ?? dialogPosition,
-      displayMode: (windowState.mode as DialogDisplayMode | undefined) ?? displayMode,
-      updatedAt: Date.now(),
-    };
-  }, [activeStepIndex, dialogPosition, dialogSize, displayMode]);
-
-  const updateDialogState = useCallback(
-    (patch: Partial<DialogState>) => {
-      const nextWindow: DialogWindowState = {
-        mode: patch.displayMode ?? (dialogUIStateRef.current as any)?.dialogWindow?.mode ?? displayMode,
-        position:
-          patch.position ?? (dialogUIStateRef.current as any)?.dialogWindow?.position ?? dialogPosition,
-        size: patch.size ?? (dialogUIStateRef.current as any)?.dialogWindow?.size ?? dialogSize,
-      };
-      const nextProgress: DialogProgressState | null =
-        patch.activeStepIndex !== undefined
-          ? { activeStepIndex: patch.activeStepIndex }
-          : (dialogUIStateRef.current as any)?.dialogProgress ?? null;
-      updateDialogUIState({
-        dialogWindow: nextWindow,
-        dialogProgress: nextProgress,
-      });
-    },
-    [dialogPosition, dialogSize, displayMode, updateDialogUIState]
-  );
 
   const headlessProps: HeadlessDialogProps<Partial<PluginDefinedEntity>> = {
     open: open && isDialogReady,

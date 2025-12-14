@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { CountryMetadata } from '../shared/index.js';
 import { normalizeDataSourceName } from '../shared/index.js';
 import { metadataLoader } from '../../services/metadata/MetadataLoader.js';
+import { SAMPLE_COUNTRIES } from '../mock/data.js';
 
 export interface UseCountryMetadataOptions {
   dataSource: string;
@@ -48,10 +49,14 @@ export function useCountryMetadata({
         data = await metadataLoader.loadMetadata(normalizedDataSource);
       }
 
-      setMetadata(data);
+      if (!data?.length) {
+        setMetadata(SAMPLE_COUNTRIES);
+      } else {
+        setMetadata(data);
+      }
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to load metadata'));
-      setMetadata([]);
+      setMetadata(SAMPLE_COUNTRIES);
     } finally {
       setLoading(false);
     }

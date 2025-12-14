@@ -1,10 +1,8 @@
 import React from 'react';
 import { PluginStepRegistry, type PluginStepConfig, type StepComponentProps } from '@hierarchidb/plugin-base';
 import { TabularDataSourceStep } from '@hierarchidb/spreadsheet-plugin';
-import { StylerConfigStep } from './StylerConfigStep.tsx';
 import { StylerPreviewStep } from './StylerPreviewStep.tsx';
 import type { StylerMapping, StylerStepData } from '../../common/types/StylerEntity.js';
-import { StylerConfigDefault } from '../../common/types/StylerEntity.js';
 import { i18n } from '@hierarchidb/ui-i18n';
 import { StylerMappingStep } from './StylerMappingStep.tsx';
 import { isStyleMappingComplete } from './useStylerMappingState.ts';
@@ -69,19 +67,24 @@ registry.registerConfigProvider<StylerStepData>({
       hasLoadedDataSource(dialogData);
     const DataSourceWithValidation = (p: StepComponentProps<StylerStepData>) => {
       const valid = ensureLoaded(p.data);
-      // Ensure initial render updates Next disabled state
+      const lastValidRef = React.useRef<boolean | null>(null);
       React.useEffect(() => {
-        p.setValid(valid);
+        if (lastValidRef.current !== valid) {
+          lastValidRef.current = valid;
+          p.setValid(valid);
+        }
       }, [valid, p]);
-      p.setValid(valid);
       return <TabularDataSourceStep {...p} />;
     };
     const FilterWithValidation = (p: StepComponentProps<StylerStepData>) => {
       const valid = ensureLoaded(p.data) && hasKeyValueSelected(p.data);
+      const lastValidRef = React.useRef<boolean | null>(null);
       React.useEffect(() => {
-        p.setValid(valid);
+        if (lastValidRef.current !== valid) {
+          lastValidRef.current = valid;
+          p.setValid(valid);
+        }
       }, [valid, p]);
-      p.setValid(valid);
       return <StylerFilterStep {...p} />;
     };
     return [
@@ -115,40 +118,6 @@ registry.registerConfigProvider<StylerStepData>({
         },
       },
       {
-        id: 'style-config',
-        label: t('steps.styleAlgorithm', 'Style Algorithm'),
-        componentFactory: (p: StepComponentProps<StylerStepData>) => (
-          <StylerConfigStep
-            data={p.data}
-            onChange={p.onChange}
-            onValidate={(rangeValid) => {
-              const mappingValid = hasMappingBasics(p.data);
-              const valid = Boolean(rangeValid && mappingValid);
-              p.setValid(valid);
-              p.setError(
-                valid
-                  ? null
-                  : t('step5.errors.configure', 'Configure styling targets before continuing.')
-              );
-            }}
-          />
-        ),
-        validate: (dialogData?: StylerStepData) => {
-          const data = dialogData ?? ({} as StylerStepData);
-          const cfg = data.stylerConfig ?? StylerConfigDefault;
-          const rangeValid = cfg.min < cfg.max;
-          return rangeValid && hasMappingBasics(data);
-        },
-        capabilities: {
-          canProceedToNext: (dialogData?: StylerStepData) => {
-            const data = dialogData ?? ({} as StylerStepData);
-            const cfg = data.stylerConfig ?? StylerConfigDefault;
-            const rangeValid = cfg.min < cfg.max;
-            return rangeValid && hasMappingBasics(data);
-          },
-        },
-      },
-      {
         id: 'style-preview',
         label: t('steps.preview', 'Preview'),
         componentFactory: (p: StepComponentProps<StylerStepData>) => (
@@ -163,6 +132,10 @@ registry.registerConfigProvider<StylerStepData>({
             }}
           />
         ),
+        validate: (dialogData?: StylerStepData) => hasMappingBasics(dialogData),
+        capabilities: {
+          canProceedToNext: (dialogData?: StylerStepData) => hasMappingBasics(dialogData),
+        },
       },
     ];
   },

@@ -140,11 +140,14 @@
   "stylePreview": {
     "title": "Preview with Style Mapping",
     "required": {
-      "title": "Configuration Required",
-      "body": "Please complete style configuration before viewing the preview.",
-      "property": "Select a MapLibre style property",
-      "valueColumn": "Select a value column for mapping"
-    },
+    "title": "Configuration Required",
+    "body": "Please complete style configuration before viewing the preview.",
+    "keyColumn": "Select a key column for mapping",
+    "property": "Select a MapLibre style property",
+    "targetProperty": "Select a target property",
+    "valueColumn": "Select a value column for mapping",
+    "styleType": "Select a style type"
+  },
     "noData": {
       "title": "No Data Available",
       "body": "No tabular data is available for preview. Please ensure data has been loaded in previous steps."

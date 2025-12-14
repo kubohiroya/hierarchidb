@@ -1,13 +1,34 @@
-import { Alert, AlertTitle, Box, Chip } from '@mui/material';
-import React, { useCallback, useMemo } from 'react';
+import {
+  Alert,
+  AlertTitle,
+  Box,
+  Chip,
+  Paper,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TableSortLabel,
+  Typography,
+} from '@mui/material';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { i18n } from '@hierarchidb/ui-i18n';
-import { type StylerMapping, StylerMappingDefault, type StylerStepData, type StylerTableRow } from '../../common/types/StylerEntity.js';
-import { TabularPreviewLite } from '@hierarchidb/ui-tabular-extract';
-
-import type { StylerStepProps } from './StylerStepProps.tsx';
-import type { TabularFilterRule } from '@hierarchidb/ui-tabular-extract';
+import {
+  type StylerMapping,
+  StylerMappingDefault,
+  StylerConfigDefault,
+  type StylerStepData,
+  type StylerTableRow,
+  MAPLIBRE_PROPERTY_METADATA,
+} from '../../common/types/StylerEntity.js';
 import { wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
+import type { TabularFilterRule } from '@hierarchidb/ui-tabular-extract';
+import type { StylerStepProps } from './StylerStepProps.tsx';
+import { valueToColor } from '../../common/utils/colorUtils.js';
 
 const getStylerT = () =>
   typeof i18n.getFixedT === 'function'
@@ -18,7 +39,6 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
   data,
   onValidate,
   tabularData = [],
-  // columns = [],
 }) => {
   const { t } = useTranslation('styler-plugin');
   const mapping: StylerMapping = {
@@ -37,6 +57,13 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
   const styleType =
     mapping.styleType ??
     (data?.stylerConfig as { styleType?: StylerMapping['styleType'] } | undefined)?.styleType;
+  const [sortState, setSortState] = useState<{
+    column: string | null;
+    direction: 'asc' | 'desc' | null;
+  }>({
+    column: null,
+    direction: null,
+  });
 
   const prepareFilters = useCallback((rules: TabularFilterRule[]): Array<{
     column: string;
@@ -148,6 +175,57 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
     return filtered.slice(0, 1000);
   }, [data?.filters, data?.lastPreview?.rows, matchesFilters, prepareFilters, tabularData]);
 
+  const columns = useMemo(() => Object.keys(previewData[0] ?? {}), [previewData]);
+
+  const sortedPreviewData = useMemo(() => {
+    const { column, direction } = sortState;
+    if (!column || !direction) return previewData;
+    const sorted = [...previewData];
+    sorted.sort((a, b) => {
+      const av = a[column];
+      const bv = b[column];
+      const aNum = typeof av === 'number' ? av : Number(av);
+      const bNum = typeof bv === 'number' ? bv : Number(bv);
+      const bothNumeric = Number.isFinite(aNum) && Number.isFinite(bNum);
+      const cmp = bothNumeric
+        ? aNum - bNum
+        : String(av ?? '').localeCompare(String(bv ?? ''), undefined, { numeric: true, sensitivity: 'base' });
+      return direction === 'asc' ? cmp : -cmp;
+    });
+    return sorted;
+  }, [previewData, sortState]);
+
+  const numericColumns = useMemo(() => {
+    const result: Record<string, boolean> = {};
+    columns.forEach((col) => {
+      const sample = previewData.find(
+        (row) => row[col] !== null && row[col] !== undefined && row[col] !== ''
+      );
+      if (!sample) {
+        result[col] = false;
+        return;
+      }
+      const val = sample[col];
+      const num = typeof val === 'number' ? val : Number(val);
+      result[col] = Number.isFinite(num);
+    });
+    return result;
+  }, [columns, previewData]);
+
+  const numberFormatter = useMemo(
+    () => new Intl.NumberFormat(i18n.language || undefined),
+    []
+  );
+
+  const handleToggleSort = useCallback((column: string) => {
+    setSortState((prev) => {
+      if (prev.column !== column) return { column, direction: 'asc' };
+      if (prev.direction === 'asc') return { column, direction: 'desc' };
+      if (prev.direction === 'desc') return { column: null, direction: null };
+      return { column, direction: 'asc' };
+    });
+  }, []);
+
   React.useEffect(() => {
     if (onValidate) {
       const ok = Boolean(keyColumn && valueColumn && targetProperty && styleType);
@@ -155,7 +233,6 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
     }
   }, [onValidate, keyColumn, valueColumn, targetProperty, styleType]);
 
-  //  :
   if (!keyColumn || !valueColumn || !targetProperty || !styleType) {
     return (
       <Box sx={{ p: 3 }}>
@@ -163,7 +240,7 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
           <AlertTitle>{t('stylePreview.required.title', 'Configuration Required')}</AlertTitle>
           {t(
             'stylePreview.required.body',
-            'Please complete Step 5 configuration before viewing the preview.'
+            'Please complete style configuration before viewing the preview.'
           )}
           <ul>
             {!keyColumn && (
@@ -200,57 +277,144 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
 
   return (
     <Box sx={{ width: '100%', height: '100%', p: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-      <TabularPreviewLite rows={previewData} columns={Object.keys(previewData[0] ?? {})} height={440} />
-      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-        {keyColumn && (
-          <Chip
-            label={`${t('stylePreview.keyColumn', { defaultValue: 'Key' })}: ${keyColumn}`}
-            color="primary"
-            size="small"
-            sx={{ backgroundColor: 'primary.light', color: 'primary.contrastText' }}
-          />
-        )}
-        {valueColumn && (
-          <Chip
-            label={`${t('stylePreview.valueColumn', { defaultValue: 'Value' })}: ${valueColumn}`}
-            color="secondary"
-            size="small"
-            sx={{ backgroundColor: 'secondary.light', color: 'secondary.contrastText' }}
-          />
-        )}
-        {targetProperty && (
-          <Chip label={`${t('stylePreview.targetProperty', { defaultValue: 'Target' })}: ${targetProperty}`} size="small" />
-        )}
-        {styleType && (
-          <Chip label={`${t('stylePreview.styleType', { defaultValue: 'Style Type' })}: ${styleType}`} size="small" />
-        )}
-      </Box>
+      <TableContainer component={Paper} sx={{ maxHeight: 520 }}>
+        <Table stickyHeader size="small">
+          <TableHead>
+            <TableRow>
+              {columns.map((col) => {
+                const isKey = col === keyColumn;
+                const isValue = col === valueColumn;
+                const isActive = sortState.column === col;
+                return (
+                  <TableCell
+                    key={col}
+                    sortDirection={isActive && sortState.direction ? sortState.direction : false}
+                  >
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <TableSortLabel
+                        active={isActive}
+                        direction={sortState.direction ?? 'asc'}
+                        hideSortIcon={!isActive}
+                        onClick={() => handleToggleSort(col)}
+                      >
+                        <Typography variant="subtitle2" component="span">
+                          {col}
+                        </Typography>
+                      </TableSortLabel>
+                      {isKey && (
+                        <Chip
+                          label={t('stylePreview.keyColumn', 'Key')}
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                        />
+                      )}
+                      {isValue && (
+                        <Chip
+                          label={t('stylePreview.valueColumn', 'Value')}
+                          size="small"
+                          color="secondary"
+                          variant="outlined"
+                        />
+                      )}
+                    </Stack>
+                  </TableCell>
+                );
+              })}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {sortedPreviewData.map((row, idx) => (
+              <TableRow key={`${row[keyColumn ?? 'id'] ?? idx}-${idx}`}>
+                {columns.map((col) => {
+                  const cellValue = row[col];
+                  const isValue = col === valueColumn;
+                  const isNumeric = numericColumns[col];
+                  let chip: React.ReactNode = null;
+                  if (isValue && typeof cellValue !== 'undefined' && cellValue !== null) {
+                    const meta = targetProperty ? MAPLIBRE_PROPERTY_METADATA[targetProperty] : null;
+                    if (!meta || meta.type === 'color') {
+                      const colorResult = valueToColor(
+                        typeof cellValue === 'number' ? cellValue : Number(cellValue),
+                        mapping,
+                        data?.stylerConfig ?? StylerConfigDefault,
+                        Array.isArray(tabularData)
+                          ? (tabularData.map((r) => r[valueColumn ?? '']) as number[])
+                          : undefined
+                      );
+                      if (colorResult?.color) {
+                        chip = (
+                          <Chip
+                            size="small"
+                            label={colorResult.color}
+                            sx={{
+                              backgroundColor: colorResult.color,
+                              color: '#000',
+                              border: '1px solid rgba(0,0,0,0.12)',
+                            }}
+                          />
+                        );
+                      }
+                    } else if (meta.type === 'number') {
+                      const num = typeof cellValue === 'number' ? cellValue : Number(cellValue);
+                      if (!Number.isNaN(num)) {
+                        chip = (
+                          <Chip
+                            size="small"
+                            label={num.toFixed(2)}
+                            variant="outlined"
+                            color="default"
+                          />
+                        );
+                      }
+                    }
+                  }
+                  const displayText =
+                    cellValue === null || cellValue === undefined
+                      ? '-'
+                      : isNumeric && Number.isFinite(Number(cellValue))
+                        ? numberFormatter.format(Number(cellValue))
+                        : String(cellValue);
+                  return (
+                    <TableCell key={`${col}-${idx}`} align={isNumeric ? 'right' : 'left'}>
+                      <Stack direction="row" spacing={1} alignItems="center" sx={{ width: '100%' }}>
+                        {chip ? <Box sx={{ flexShrink: 0 }}>{chip}</Box> : null}
+                        <Box sx={{ flex: 1, textAlign: isNumeric ? 'right' : 'left' }}>
+                          <Typography variant="body2" noWrap>
+                            {displayText}
+                          </Typography>
+                        </Box>
+                      </Stack>
+                    </TableCell>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
       {tabularData.length > 1000 && (
         <Alert severity="info" sx={{ mt: 1 }}>
           {t('stylePreview.truncate', 'Showing preview of first 1,000 rows. Full dataset contains')}{' '}
-          {tabularData.length.toLocaleString()} {t('stylePreview.rows', 'rows.') }
+          {tabularData.length.toLocaleString()} {t('stylePreview.rows', 'rows.')}
         </Alert>
       )}
     </Box>
   );
 };
 
-/**
- * : Step
- */
 const StylerPreviewComponent = wrapDialogStepComponent(StylerPreviewStep);
 
 export const StylerPreviewDefinition = {
-  stepNumber: 6,
+  stepNumber: 5,
   get title() {
     const t = getStylerT();
-    return t('step6.title', 'Preview with Style Mapping');
+    return t('stylePreview.title', 'Preview with Style Mapping');
   },
   component: StylerPreviewComponent,
   validation: {
     validate: async (_data: StylerStepData) => {
-      //  OK
       return { isValid: true, errors: [] };
     },
   },
