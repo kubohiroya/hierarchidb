@@ -6,10 +6,8 @@
 import type { NodeId } from '@hierarchidb/common-types';
 
 export interface StylerExtensionData {
-  stylerConfig?: {
-    styleType?: 'choropleth' | 'points' | 'lines';
-  };
-  styleType?: 'choropleth' | 'points' | 'lines'; // legacy
+  stylerConfig?: Record<string, unknown>;
+  styleType?: 'choropleth' | 'points' | 'lines';
   dataSource?: string;
   colorScheme?: string;
   opacity?: number;
@@ -41,12 +39,12 @@ export class StylerExtensionHandler {
 
     // 2. Store configuration in StylerDB
     try {
-      const resolvedStyleType = data.stylerConfig?.styleType ?? data.styleType ?? 'choropleth';
+      const resolvedStyleType = data.styleType ?? 'choropleth';
       const config: StylerStoredConfig = {
         nodeId,
+        styleType: resolvedStyleType,
         stylerConfig: {
           ...(data.stylerConfig ?? {}),
-          styleType: resolvedStyleType,
         },
         dataSource: data.dataSource || '',
         colorScheme: data.colorScheme || 'viridis',
@@ -82,7 +80,7 @@ export class StylerExtensionHandler {
       }
 
       // 2. Merge with new data
-      const resolvedStyleType = data.stylerConfig?.styleType ?? data.styleType ?? existingConfig.stylerConfig?.styleType ?? 'choropleth';
+      const resolvedStyleType = data.styleType ?? existingConfig.styleType ?? 'choropleth';
       const updatedConfig: StylerStoredConfig = {
         ...(existingConfig ?? ({ nodeId } as StylerStoredConfig)),
         ...data,
@@ -93,8 +91,8 @@ export class StylerExtensionHandler {
         stylerConfig: {
           ...(existingConfig.stylerConfig ?? {}),
           ...(data.stylerConfig ?? {}),
-          styleType: resolvedStyleType,
         },
+        styleType: resolvedStyleType,
         updatedAt: Date.now(),
         createdAt: (existingConfig as StylerStoredConfig | null)?.createdAt ?? Date.now(),
       };
@@ -145,7 +143,7 @@ export class StylerExtensionHandler {
     const errors: string[] = [];
 
     // Validate style type
-    const styleType = data.stylerConfig?.styleType ?? data.styleType;
+    const styleType = data.styleType;
     if (styleType && !['choropleth', 'points', 'lines'].includes(styleType)) {
       errors.push('Invalid style type');
     }

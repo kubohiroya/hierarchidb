@@ -14,13 +14,12 @@ export type TreeConsoleToolbarAction =
   | { action: 'paste' }
   | { action: 'duplicate' }
   | { action: 'trash' }
-  /** @deprecated Use `action: 'trash'` instead. */
-  | { action: 'remove' }
   | { action: 'restore' }
   | { action: 'empty' }
   | { action: 'import' }
   | { action: 'export' }
-  | { action: 'setRowClickAction'; params: 'Select/Navigate' | 'Edit' };
+  | { action: 'setRowClickAction'; params: 'Select/Navigate' | 'Edit' }
+  | { action: 'setAutosaveEnabled'; params: boolean };
 
 /**
  * Parameters type for TreeConsoleToolbar_Deprecated actions
@@ -30,7 +29,8 @@ export type TreeConsoleToolbarActionParams =
   | ('Select/Navigate' | 'Edit')
   | { treeId: string }
   | { templateId: string }
-  | { trashNodeId: string };
+  | { trashNodeId: string }
+  | boolean;
 
 export interface TreeConsoleToolbarController {
   searchText?: string;
@@ -105,6 +105,16 @@ export interface TreeConsoleToolbarProps {
   onRowClickActionChange?: (action: 'Select/Navigate' | 'Edit') => void;
 
   /**
+   * Toggle dialog autosave for plugin dialogs.
+   */
+  autosaveEnabled?: boolean;
+
+  /**
+   * Callback when autosave toggle changes.
+   */
+  onAutosaveEnabledChange?: (enabled: boolean) => void;
+
+  /**
    * Undo/Redo availability
    */
   canUndo?: boolean;
@@ -124,10 +134,6 @@ export interface TreeConsoleToolbarProps {
    * Enables the "Move to Trash" toolbar action.
    */
   canTrash?: boolean;
-  /**
-   * @deprecated Use {@link TreeConsoleToolbarProps.canTrash} instead.
-   */
-  canRemove?: boolean;
 
   /**
    * Importable templates for the current console. If empty or undefined,

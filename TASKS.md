@@ -53,6 +53,20 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1633) TreeConsole 自動保存トグル追加（P1）
+- ブランチ: `feat/treeconsole/autosave-toggle`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: ui-treeconsole-toolbar（SettingsMenu/TreeConsoleToolbar）、app TreeConsoleIntegration/PluginDialogRoute、plugin-ui-host（autosave/save-draft）
+- 受け入れ基準（DoD）:
+  - [x] TreeConsole 設定メニューに「自動保存」Switch を追加し、オン/オフを選択できる
+  - [x] 設定値が永続化され、再表示時に反映される（行クリック動作と同様の扱い）
+  - [x] 自動保存オン時はダイアログの「Save Draft」ボタンが非表示になる（オフ時は現状通り表示）
+  - [x] 関連パッケージの typecheck を実行し、結果を運用ログに記録する（不可なら理由を記載）
+- チェックリスト:
+  - [x] SettingsMenu に自動保存 Switch を追加し、値を永続化する
+  - [x] TreeConsole/プラグインダイアログで自動保存設定が反映され、Save Draft 表示が切り替わる
+  - [x] typecheck 実行結果を運用ログに追記
+- ロールバック手順：今回追加する自動保存設定/永続化/Save Draft 表示制御の差分を revert し、同じ typecheck を再実行する
+
 1632) Styler Step4 StyleType を Target Property 内に集約（P1）
 - ブランチ: `fix/styler/style-type-accordion-move`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: plugins/styler-plugin（StylerMappingStep/StyleMappingTargetPanel）
@@ -66,6 +80,20 @@
   - [ ] 選択状態・保存/検証が変わらないことを確認
   - [x] typecheck 実行結果を運用ログに追記
 - ロールバック手順：StylerMappingStep/StyleMappingTargetPanel の今回差分を revert し、`pnpm --filter @hierarchidb/styler-plugin typecheck` を再実行して従来レイアウトへ戻す
+
+1633) Styler canSave が Step4 まで valid でも true にならない問題の修正（P1）
+- ブランチ: `fix/styler/cansave-validation`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/styler-plugin（steps-provider/useStylerMappingState、Step4 Preview）、plugin-ui-host の canSave 判定
+- 受け入れ基準（DoD）:
+  - [ ] Step4 までの必須入力が揃ったときに `canSave` が true になる（現象再現→修正→再確認）
+  - [ ] 既存のステップバリデーション/ナビゲーションに回帰がない（Step1〜Step4 の validate/canProceed 挙動が維持される）
+  - [ ] i18n/データ保存ロジックに副作用を生まない
+  - [x] 代表検証として `pnpm --filter @hierarchidb/styler-plugin typecheck` を実行し、結果を運用ログに記録する（不可なら理由を記載）
+- チェックリスト:
+  - [ ] canSave が false の原因箇所を特定し、Step4 完了時に true となるよう修正
+  - [ ] Step1〜4 の validate/canProceed/canSave が期待どおりであることを確認
+  - [x] typecheck 結果を運用ログへ追記
+- ロールバック手順：Styler steps-provider / useStylerMappingState / 関連ファイルの今回差分を revert し、`pnpm --filter @hierarchidb/styler-plugin typecheck` を再実行して従来挙動へ戻す
 
 1631) Spreadsheet/Styler Step3 key/value 統一（P1）
 - ブランチ: `feat/spreadsheet/styler-step3-share`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -1196,6 +1224,21 @@
   - [ ] draft/data へのフォールバックや unwrap ロジックが不要に data を上書きしていないことを確認する
   - [ ] Create 完了後の data/draftData 状態を確認し、必要に応じてテストを追加/更新する
 - ロールバック手順：`plugins/basemap-plugin/src/worker/utils/presentation.ts` ほか本タスクで変更したファイルを revert し、`pnpm --filter @hierarchidb/basemap-plugin test`（または同等の確認コマンド）を再実行して旧挙動に戻ることを確認する
+
+1634) plugin-ui-host shim削除（P1）
+- ステータス: Done（2025-12-15）
+- ブランチ: `fix/plugin-ui-host/shim-removal`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/plugin-ui-host`（`src/types/shims.d.ts`、tsconfig）、`global.d.ts`（Vite/env 型）
+- 受け入れ基準（DoD）:
+  - [x] `packages/plugin-ui-host/src/types/shims.d.ts` を撤去し、本来の型定義でビルド/型チェックが通る
+  - [x] shim 依存が残っていないことを確認する（tsconfig/type roots も含む）
+  - [x] `pnpm --filter @hierarchidb/plugin-ui-host typecheck` の結果を運用ログに記録する（実行不可なら理由を記載）
+  - [x] ロールバック手順を明記し、TASKS Kanban/運用ログを更新する
+- チェックリスト:
+  - [x] shim ファイルと参照箇所を削除し、公式型または既存グローバル型で解決する
+  - [x] typecheck を実行し、結果を運用ログへ記録する
+  - [x] Kanban/運用ログへ start→progress→done とロールバックを追記する
+- ロールバック手順：`packages/plugin-ui-host/src/types/shims.d.ts` の削除差分と関連 tsconfig 変更を revert し、`pnpm --filter @hierarchidb/plugin-ui-host typecheck` を再実行して旧構成へ戻る
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
@@ -10230,6 +10273,11 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-15 08:40 progress: fix/styler/style-type-accordion-move — ValueHistogram import を拡張子なしに変更し、tsconfig paths 経由で src/ui/components/ValueHistogram を解決する形に再修正。
 - 2025-12-15 08:39 progress: fix/styler/style-type-accordion-move — spreadsheet-plugin/ui から ValueHistogram を再エクスポートし、Styler 側は `@hierarchidb/spreadsheet-plugin/ui` から参照する形に変更。Vite import 解決を安定化。
 - 2025-12-15 08:45 progress: fix/styler/style-type-accordion-move — ValueHistogram の barColor ハンドラに型注釈を追加し、implicit any 警告を解消。
+- 2025-12-15 12:58 start: fix/styler/cansave-validation — Styler Step4 が valid でも canSave が true にならない問題の調査・修正を開始（branch: fix/styler/cansave-validation、branch 作成不可なら main）。
+- 2025-12-15 12:59 progress: fix/styler/cansave-validation — Step4 validate/canSave 判定で stylerConfig の styleType/targetProperty/valueColumn を拾えていなかったため、hasKeyValueSelected/isStyleMappingComplete/hasMappingBasics の参照元に stylerConfig を追加。
+- 2025-12-15 13:01 command: pnpm --filter @hierarchidb/styler-plugin typecheck — exit 0。
+- 2025-12-15 13:05 progress: fix/styler/cansave-validation — stylerConfig へ key/value/styleType/targetProperty を読み書きするフォールバックを撤去。UI/バリデーション/Preview/データサービスを StylerEntity.key/valueColumn と mapping.styleType/targetProperty のみに統一し、GradientSwatch import も整理。
+- 2025-12-15 13:06 command: pnpm --filter @hierarchidb/styler-plugin typecheck — exit 0。
 - 2025-12-14 08:06 start: feat/styler/key-value-accordion — Styler Step3 に「Key-Value Pair」アコーディオンを追加し、Step4 の key/value 選択 UI を移設する対応を開始（Value は数値のみ集計、branch: feat/styler/key-value-accordion、branch 作成不可なら main）。
 - 2025-12-14 08:11 progress: feat/styler/key-value-accordion — Step3 を 3 アコーディオン化（Style Type/Target Property/Key-Value Pair）。Key/Value 選択 UI を Key-Value Pair アコーディオンへ移設し、Value 列の数値のみから max/min/avg/median/stddev を表示（非数値は除外）。
 - 2025-12-14 08:12 command: pnpm --filter @hierarchidb/styler-plugin typecheck — exit 0。
@@ -10251,3 +10299,16 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-14 16:02 done: fix/shape/step1-basicinfo-input — プラグイン側 BasicInfo コンポーネントを撤去し、ホスト側 BasicInfo のみで name/description/tags を管理する構成に統一。ロールバック: plugins/*-plugin/src/ui/components/steps-provider.tsx の今回差分を revert し、上記 typecheck コマンドを再実行。
 - 2025-12-14 16:07 progress: fix/shape/step1-basicinfo-input — timeline-plugin に残存していた未使用 BasicInfoStep コンポーネントと export を削除し、混乱要因を除去。
 - 2025-12-14 16:07 command: pnpm --filter @hierarchidb/timeline-plugin typecheck — exit 0。
+- 2025-12-15 14:07 progress: fix/shape/step1-basicinfo-input — Step4 Country Selection の索引ボタンを中央寄せに調整。
+- 2025-12-15 14:07 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。
+- 2025-12-15 14:20 progress: fix/shape/step1-basicinfo-input — Country Selection テーブルにレベル別ヘッダー一括選択を追加し、テーブル高さをビューポート内に収まるよう maxHeight 調整。
+- 2025-12-15 14:20 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。
+- 2025-12-15 14:28 progress: fix/shape/step1-basicinfo-input — Country Selection のアルファベット索引をコンポーネント化（AlphabeticalIndex）して再利用可能に整理。
+- 2025-12-15 14:28 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。
+- 2025-12-15 12:42 start: feat/treeconsole/autosave-toggle — TreeConsole 設定メニューに自動保存 Switch を追加し、設定を永続化しつつ Save Draft ボタン表示を制御する対応に着手。DoD は Kanban 記載。branch 作成不可なら main 作業。
+- 2025-12-15 12:53 progress: feat/treeconsole/autosave-toggle — TreeConsole 設定メニューに自動保存 Switch を追加し、設定の永続化・ダイアログ autosave/SaveDraft 表示制御を実装。検証: `pnpm --filter @hierarchidb/ui-treeconsole-toolbar typecheck` exit 0、`pnpm --filter @hierarchidb/plugin-ui-host typecheck` は既存の型問題（xlsx 型定義欠如、ImportMeta.glob/MapLibre CSS/DI decorator/rootDir 外参照など）で失敗。
+- 2025-12-15 12:58 progress: feat/treeconsole/autosave-toggle — runtime-worker/plugin-registry を build し、plugin-ui-host に shim/paths を追加して typecheck を解消。検証: `pnpm --filter @hierarchidb/plugin-ui-host typecheck` exit 0。
+- 2025-12-15 17:55 start: fix/plugin-ui-host/shim-removal — plugin-ui-host の `src/types/shims.d.ts` を撤去し、公式の型定義で typecheck を通す作業を開始（branch: fix/plugin-ui-host/shim-removal、branch 作成不可のため main）。DoD: shim 依存撤廃、typecheck ログ取得、ロールバック手順記載。
+- 2025-12-15 19:15 progress: fix/plugin-ui-host/shim-removal — `packages/plugin-ui-host/src/types/shims.d.ts` を削除し、tsconfig で vite/client 追加＋@mui の参照を公式型へ固定（paths で @types/react 18.3.27 側を指定）。パッケージローカルの `node_modules/@mui/*` は一度削除し、ルートに解決させて型衝突を解消。
+- 2025-12-15 19:27 command: pnpm --filter @hierarchidb/plugin-ui-host typecheck — exit 0。
+- 2025-12-15 19:28 done: fix/plugin-ui-host/shim-removal — shim 依存を除去し、MUI の型を統一した上で typecheck 通過を確認。再インストールでローカル @mui が再生成された場合は、ルートの @types/react 18.3.27 側へ解決されるよう paths/依存を維持したまま `@mui/*` を再リンク or 再削除してから typecheck を再実行する。

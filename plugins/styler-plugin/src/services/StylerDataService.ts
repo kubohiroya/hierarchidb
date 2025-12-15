@@ -124,10 +124,8 @@ export class StylerDataService {
     entity: StylerEntity
   ): Promise<{ styleSpec: MapLibreStyle; colorMapping: Record<string, string> }> {
     const { config, mapping } = entity;
-    const keyColumn =
-      entity.keyColumn ?? (mapping as { keyColumn?: string } | undefined)?.keyColumn;
-    const valueColumn =
-      entity.valueColumn ?? (mapping as { valueColumn?: string } | undefined)?.valueColumn;
+    const keyColumn = entity.keyColumn;
+    const valueColumn = entity.valueColumn;
 
     if (!keyColumn || !valueColumn || !mapping.targetProperty) {
       throw new Error('Key column, value column, and target property are required');

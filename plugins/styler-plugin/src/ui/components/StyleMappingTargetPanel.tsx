@@ -122,10 +122,7 @@ export const StyleMappingTargetPanel = ({
             name='styler-target-property'
             labelId={targetPropertyLabelId}
             value={
-              (pluginData as { stylerConfig?: { targetProperty?: MapLibreStyleProperty | null } })
-                ?.stylerConfig?.targetProperty ??
-              pluginData.mapping?.targetProperty ??
-              ''
+              pluginData.mapping?.targetProperty ?? ''
             }
             label={t('styleSettings.targetProperty.label', 'Target style property')}
             onChange={(event) => handleTargetPropertyChange(event.target.value as MapLibreStyleProperty)}

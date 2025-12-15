@@ -312,6 +312,9 @@
             "en": "English",
             "ja": "Japanese"
           }
+        },
+        "autosave": {
+          "title": "Autosave"
         }
       }
     },
@@ -348,4 +351,3 @@
     "preview": "Preview"
   }
 }
-

@@ -2,10 +2,10 @@ import { wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
 import { Box } from '@mui/material';
 import React, { useCallback } from 'react';
 import { i18n } from '@hierarchidb/ui-i18n';
-import { StylerConfig, StylerStepData } from '../../common/types/StylerEntity.js';
+import type { StylerConfig, StylerStepData } from '../../common/types/StylerEntity.js';
 import { StylerConfigDefault } from '../../common/types/StylerEntity.js';
 import { StylerConfigPanel } from './StylerConfigPanel.tsx';
-import { StylerStepProps } from './StylerStepProps.tsx';
+import type { StylerStepProps } from './StylerStepProps.tsx';
 
 const getStylerT = () =>
   typeof i18n.getFixedT === 'function'
@@ -21,7 +21,7 @@ export const StylerConfigStep: React.FC<StylerStepProps> = ({
   const currentConfig: StylerConfig = data?.stylerConfig || StylerConfigDefault;
 
   const sampleValues = React.useMemo(() => {
-    const valueColumn = data?.valueColumn ?? (data?.stylerConfig as { valueColumn?: string } | undefined)?.valueColumn;
+    const valueColumn = data?.valueColumn;
     if (!valueColumn || tabularData.length === 0) return [];
 
     return tabularData

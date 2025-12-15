@@ -3,6 +3,7 @@
  * Dialog UI state is persisted on TreeNode.dialogUIState via TreeNodeUpdaterAPI.
  */
 import type { WorkerAPI } from '@hierarchidb/common-api';
+import equal from 'fast-deep-equal';
 import type {
   DialogDisplayMode,
   DialogPosition,
@@ -30,6 +31,7 @@ import type { Remote } from 'comlink';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { TREE_CONSOLE_SETTINGS_STORAGE_KEY, loadTreeConsoleSettings } from '@hierarchidb/util';
 import type { PluginDialogFooterPrimaryButtonOptions, PluginDialogFooterProps } from './components/PluginDialogFooter.js';
 import { toRecord } from './controller/step-guards.js';
 import { useDialogFrameState } from './usePluginDialogController/frame-state.js';
@@ -64,6 +66,7 @@ export interface PluginDialogControllerOptions {
   onClose: () => void;
   onSuccess?: (nodeId: NodeId) => void;
   footerOptions?: PluginDialogFooterOptions;
+  autosaveEnabled?: boolean;
 }
 
 export interface PluginDialogFooterOptions {
@@ -109,6 +112,7 @@ const formatTimestamp = (timestamp?: number): string => {
   return `${date.getFullYear()}/${pad(date.getMonth() + 1)}/${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 };
 
+/*
 // Lightweight deep-ish equality to reuse stepData references when unchanged.
 const shallowEqualValue = (a: unknown, b: unknown): boolean => {
   if (a === b) return true;
@@ -146,6 +150,7 @@ const shallowEqualValue = (a: unknown, b: unknown): boolean => {
   }
   return true;
 };
+*/
 
 const reuseNumberArray = (prevRef: React.MutableRefObject<ReadonlyArray<number>>, next: ReadonlyArray<number>) => {
   const prev = prevRef.current;
@@ -155,6 +160,38 @@ const reuseNumberArray = (prevRef: React.MutableRefObject<ReadonlyArray<number>>
   }
   prevRef.current = next;
   return next;
+};
+
+const readStoredAutosave = (): boolean => {
+  const stored = loadTreeConsoleSettings().autosaveEnabled;
+  return typeof stored === 'boolean' ? stored : true;
+};
+
+const useAutosavePreference = (explicit?: boolean): boolean => {
+  const [enabled, setEnabled] = useState<boolean>(() => {
+    if (typeof explicit === 'boolean') return explicit;
+    return readStoredAutosave();
+  });
+
+  useEffect(() => {
+    if (typeof explicit === 'boolean') {
+      setEnabled(explicit);
+      return undefined;
+    }
+    setEnabled(readStoredAutosave());
+    const global = typeof window !== 'undefined' ? window : null;
+    if (!global) return undefined;
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key && event.key !== TREE_CONSOLE_SETTINGS_STORAGE_KEY) return;
+      setEnabled(readStoredAutosave());
+    };
+    global.addEventListener('storage', handleStorage);
+    return () => {
+      global.removeEventListener('storage', handleStorage);
+    };
+  }, [explicit]);
+
+  return enabled;
 };
 
 export function usePluginDialogController(
@@ -171,6 +208,7 @@ export function usePluginDialogController(
     onClose,
     onSuccess,
     footerOptions,
+    autosaveEnabled: autosaveEnabledProp,
   } = options;
 
   const { t } = useTranslation('common');
@@ -181,6 +219,7 @@ export function usePluginDialogController(
   const useClientHook = getWorkerClientHook<WorkerClientRef | null>() ?? (() => null);
   const ref = useClientHook();
   const client: Remote<WorkerAPI> | null = useMemo(() => ref?.client ?? null, [ref]);
+  const autosaveEnabled = useAutosavePreference(autosaveEnabledProp);
 
   const initialDraftData = useMemo(() => {
     if (mode === 'create' && nodeType === 'basemap') {
@@ -211,7 +250,7 @@ export function usePluginDialogController(
     initialDraftData,
   });
 
-  useAutosave({ open, draft, hasUnsavedChanges, saveDraft });
+  useAutosave({ open, draft, hasUnsavedChanges, saveDraft, enabled: autosaveEnabled });
 
   const treeUpdater: TreeNodeUpdaterPayload<PluginDefinedEntity> | null = useMemo(
     () =>
@@ -364,7 +403,7 @@ export function usePluginDialogController(
   const stepDataRef = useRef<Partial<PluginDefinedEntity>>(currentStepData);
   const stableStepData = useMemo(() => {
     const prev = stepDataRef.current;
-    if (shallowEqualValue(prev, currentStepData)) {
+    if (equal(prev, currentStepData)) {
       return prev;
     }
     stepDataRef.current = currentStepData;
@@ -711,7 +750,7 @@ export function usePluginDialogController(
     mode,
     canCommit: canSaveCurrent,
     onSaveDraft: undefined,
-    disableDraft: disableDraftButton || !dialogDirty,
+    disableDraft: disableDraftButton || !dialogDirty || autosaveEnabled,
     onStartBatch: undefined,
     canStartBatch: canStartBatch && !isStartingBatch,
     isStartingBatch,
@@ -734,8 +773,8 @@ export function usePluginDialogController(
   Object.assign(footerPropsRef.current, {
     mode,
     canCommit: canSaveCurrent,
-    onSaveDraft: disableDraftButton ? undefined : stableOnSaveDraft,
-    disableDraft: disableDraftButton || !dialogDirty,
+    onSaveDraft: disableDraftButton || autosaveEnabled ? undefined : stableOnSaveDraft,
+    disableDraft: disableDraftButton || !dialogDirty || autosaveEnabled,
     onStartBatch: activeStartBatch ? stableOnStartBatch : undefined,
     canStartBatch: canStartBatch && !isStartingBatch,
     isStartingBatch,

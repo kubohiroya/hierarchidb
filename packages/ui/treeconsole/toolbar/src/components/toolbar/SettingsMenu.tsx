@@ -2,6 +2,7 @@ import {
   CheckBox,
   Edit,
   Settings as SettingsIcon,
+  Save,
 } from '@mui/icons-material';
 import {
   Divider,
@@ -12,6 +13,7 @@ import {
   Paper,
   Radio,
   RadioGroup,
+  Switch,
   Typography,
 } from '@mui/material';
 import { useCallback, useState, type ReactNode } from 'react';
@@ -20,6 +22,8 @@ import type { TreeConsoleToolbarActionParams } from '../../types.js';
 interface SettingsMenuProps {
   rowClickAction: 'Select/Navigate' | 'Edit';
   onRowClickActionChange?: (action: 'Select/Navigate' | 'Edit') => void;
+  autosaveEnabled: boolean;
+  onAutosaveEnabledChange?: (enabled: boolean) => void;
   onAction: (action: string, params?: TreeConsoleToolbarActionParams) => void;
   portalContainer?: HTMLElement;
   labels: {
@@ -27,12 +31,15 @@ interface SettingsMenuProps {
     rowClickTitle: string;
     rowClickSelectNavigate: string;
     rowClickEdit: string;
+    autosaveTitle: string;
   };
 }
 
 export function SettingsMenu({
   rowClickAction,
   onRowClickActionChange,
+  autosaveEnabled,
+  onAutosaveEnabledChange,
   onAction,
   portalContainer,
   labels,
@@ -60,6 +67,15 @@ export function SettingsMenu({
       onRowClickActionChange(value);
     } else {
       onAction('setRowClickAction', value);
+    }
+    scheduleCloseSettingsMenu();
+  };
+
+  const handleAutosaveChange = (value: boolean) => {
+    if (onAutosaveEnabledChange) {
+      onAutosaveEnabledChange(value);
+    } else {
+      onAction('setAutosaveEnabled', value);
     }
     scheduleCloseSettingsMenu();
   };
@@ -105,6 +121,19 @@ export function SettingsMenu({
                 label={<LabelWithIcon icon={<Edit fontSize="small" />} text={labels.rowClickEdit} />}
               />
             </RadioGroup>
+
+            <Divider sx={{ my: 1.5 }} />
+
+            <FormControlLabel
+              control={
+                <Switch
+                  size="small"
+                  checked={autosaveEnabled}
+                  onChange={(e) => handleAutosaveChange(e.target.checked)}
+                />
+              }
+              label={<LabelWithIcon icon={<Save fontSize="small" />} text={labels.autosaveTitle} />}
+            />
           </Paper>
         </MenuItem>
 

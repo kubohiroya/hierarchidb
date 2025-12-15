@@ -27,8 +27,7 @@
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/ui-worker-provider": "workspace:*",
-    "@hierarchidb/ui-dialog": "workspace:*",
-    "jotai": "^2.13.1"
+    "@hierarchidb/ui-dialog": "workspace:*"
   },
   "peerDependencies": {
     "dexie": "^4.2.0",
@@ -47,7 +46,7 @@
     "@types/geojson-vt": "^3.2.5",
     "@types/jscodeshift": "^17.3.0",
     "@types/minimist": "^1.2.5",
-    "@types/react": "^18.3.24",
+    "@types/react": "^18.3.27",
     "@types/react-dom": "^18.3.7",
     "@types/react-resizable": "^3.0.8",
     "typescript": "workspace:^5.9.3",

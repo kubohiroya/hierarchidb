@@ -230,6 +230,9 @@
             "en": "英語",
             "ja": "日本語"
           }
+        },
+        "autosave": {
+          "title": "自動保存"
         }
       },
       "developerMenu": {

@@ -3,7 +3,8 @@ import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-typ
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import type { TreeConsoleToolbarActionParams } from '@hierarchidb/ui-treeconsole-toolbar';
 import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
-import { useCallback, useState } from 'react';
+import { TREE_CONSOLE_SETTINGS_STORAGE_KEY, loadTreeConsoleSettings, saveTreeConsoleSettings } from '@hierarchidb/util';
+import { useCallback, useEffect, useState } from 'react';
 import type { Remote } from 'comlink';
 import { canImportFromNode, logIntegrationWarning } from './treeConsoleIntegrationUtils.js';
 
@@ -49,6 +50,8 @@ export type ToolbarControllerResult = {
   toolbarProps: React.ComponentProps<typeof TreeConsoleToolbar>;
   rowClickAction: 'Select/Navigate' | 'Edit';
   setRowClickAction: React.Dispatch<React.SetStateAction<'Select/Navigate' | 'Edit'>>;
+  autosaveEnabled: boolean;
+  setAutosaveEnabled: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 export function useTreeConsoleToolbarActions({
@@ -84,8 +87,38 @@ export function useTreeConsoleToolbarActions({
   searchTerm: string;
   selectedCount: number;
 }): ToolbarControllerResult {
-  const [rowClickAction, setRowClickAction] = useState<'Select/Navigate' | 'Edit'>(
-    'Select/Navigate'
+  const [rowClickAction, setRowClickAction] = useState<'Select/Navigate' | 'Edit'>(() => {
+    const stored = loadTreeConsoleSettings().rowClickAction;
+    return stored === 'Edit' ? 'Edit' : 'Select/Navigate';
+  });
+  const [autosaveEnabled, setAutosaveEnabled] = useState<boolean>(() => {
+    const stored = loadTreeConsoleSettings().autosaveEnabled;
+    return typeof stored === 'boolean' ? stored : true;
+  });
+
+  useEffect(() => {
+    const global = typeof window !== 'undefined' ? window : null;
+    if (!global) return undefined;
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key && event.key !== TREE_CONSOLE_SETTINGS_STORAGE_KEY) return;
+      const next = loadTreeConsoleSettings();
+      setRowClickAction(next.rowClickAction === 'Edit' ? 'Edit' : 'Select/Navigate');
+      setAutosaveEnabled(typeof next.autosaveEnabled === 'boolean' ? next.autosaveEnabled : true);
+    };
+    global.addEventListener('storage', handleStorage);
+    return () => {
+      global.removeEventListener('storage', handleStorage);
+    };
+  }, []);
+
+  const persistSettings = useCallback(
+    (patch: Partial<{ rowClickAction: 'Select/Navigate' | 'Edit'; autosaveEnabled: boolean }>) => {
+      saveTreeConsoleSettings({
+        rowClickAction: patch.rowClickAction ?? rowClickAction,
+        autosaveEnabled: patch.autosaveEnabled ?? autosaveEnabled,
+      });
+    },
+    [autosaveEnabled, rowClickAction]
   );
 
   const handleToolbarAction = useCallback(
@@ -209,6 +242,13 @@ export function useTreeConsoleToolbarActions({
         case 'setRowClickAction':
           if (typeof params === 'string') {
             setRowClickAction(params === 'Edit' ? 'Edit' : 'Select/Navigate');
+            persistSettings({ rowClickAction: params === 'Edit' ? 'Edit' : 'Select/Navigate' });
+          }
+          break;
+        case 'setAutosaveEnabled':
+          if (typeof params === 'boolean') {
+            setAutosaveEnabled(params);
+            persistSettings({ autosaveEnabled: params });
           }
           break;
         case 'import-template':
@@ -300,6 +340,7 @@ export function useTreeConsoleToolbarActions({
       requestEdit,
       handleIndexedDbReset,
       trashRootIdRef,
+      persistSettings,
     ]
   );
 
@@ -324,7 +365,16 @@ export function useTreeConsoleToolbarActions({
     availableTemplates: availableTemplateOptions,
     allowImport: canImportFromNode(pageTreeNode),
     developerModeEnabled,
+    autosaveEnabled,
+    onAutosaveEnabledChange: (enabled: boolean) => {
+      setAutosaveEnabled(enabled);
+      persistSettings({ autosaveEnabled: enabled });
+    },
+    onRowClickActionChange: (nextAction: 'Select/Navigate' | 'Edit') => {
+      setRowClickAction(nextAction);
+      persistSettings({ rowClickAction: nextAction });
+    },
   } as React.ComponentProps<typeof TreeConsoleToolbar>;
 
-  return { toolbarProps, rowClickAction, setRowClickAction };
+  return { toolbarProps, rowClickAction, setRowClickAction, autosaveEnabled, setAutosaveEnabled };
 }

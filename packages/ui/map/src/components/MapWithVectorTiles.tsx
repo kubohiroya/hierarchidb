@@ -22,6 +22,15 @@ let mapLibreComponentPromise: Promise<MapLibreComponent> | null = null;
 
 const getCachedMapComponent = (): MapLibreComponent | null => cachedMapLibreComponent;
 
+type SafeStyle = Omit<React.CSSProperties, 'background'> & { background?: string };
+
+const normalizeStyle = (style?: React.CSSProperties): SafeStyle | undefined => {
+  if (!style) return undefined;
+  const { background, ...rest } = style;
+  const safeBackground = typeof background === 'string' ? background : undefined;
+  return (safeBackground !== undefined ? { ...rest, background: safeBackground } : { ...rest }) as SafeStyle;
+};
+
 const loadMapLibreComponent = async (): Promise<MapLibreComponent> => {
   if (cachedMapLibreComponent) return cachedMapLibreComponent;
   if (!mapLibreComponentPromise) {
@@ -116,9 +125,9 @@ export const MapWithVectorTiles: React.FC<MapWithVectorTilesProps> = ({
       width,
       height,
       position: 'relative',
-      ...(style ?? {}),
+      ...(normalizeStyle(style) ?? {}),
     };
-    return <div style={fallbackStyle} />;
+    return <div style={fallbackStyle as any} />;
   }
 
   // Merge layer config with backward compatibility support
@@ -130,7 +139,7 @@ export const MapWithVectorTiles: React.FC<MapWithVectorTilesProps> = ({
       mapStyle={mapStyle}
       width={width}
       height={height}
-      style={style}
+      style={normalizeStyle(style) as any}
       onLoad={handleMapLoad}
       onViewStateChange={onViewStateChange}
       onClick={onClick || onMapClick}

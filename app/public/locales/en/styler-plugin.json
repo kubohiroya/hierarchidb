@@ -171,7 +171,7 @@
     "max": "Max",
     "scale": {
       "grayscale": "Grayscale",
-      "redBlue": "Red → Blue",
+      "blueRed": "Blue → Red",
       "viridis": "Viridis",
       "magma": "Magma",
       "custom": "Custom (HSB)"

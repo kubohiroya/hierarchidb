@@ -15,19 +15,19 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
     onAction,
     rowClickAction = 'Select/Navigate',
     onRowClickActionChange,
+    autosaveEnabled = true,
+    onAutosaveEnabledChange,
     canUndo = false,
     canRedo = false,
     canCopy = false,
     canPaste = false,
     canDuplicate = false,
     canTrash,
-    canRemove = false,
     availableTemplates = [],
     allowImport = true,
     developerModeEnabled = false,
   } = props;
 
-  const resolvedCanTrash = typeof canTrash === 'boolean' ? canTrash : canRemove;
   const theme = useTheme();
   const { t } = useTranslation('common', { keyPrefix: 'treeConsole.toolbar' });
 
@@ -59,13 +59,14 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
         onAction={onAction}
         rowClickAction={rowClickAction}
         onRowClickActionChange={onRowClickActionChange}
+        autosaveEnabled={autosaveEnabled}
+        onAutosaveEnabledChange={onAutosaveEnabledChange}
         canUndo={canUndo}
         canRedo={canRedo}
         canCopy={canCopy}
         canPaste={canPaste}
         canDuplicate={canDuplicate}
-        canTrash={resolvedCanTrash}
-        canRemove={canRemove}
+        canTrash={canTrash}
         availableTemplates={availableTemplates}
         allowImport={allowImport}
         developerModeEnabled={developerModeEnabled}

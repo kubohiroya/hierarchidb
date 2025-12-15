@@ -69,10 +69,7 @@ export const StylerMappingStep: React.FC<
   });
 
   const valueColumn =
-    pluginData.valueColumn ??
-    pluginData.mapping?.valueColumn ??
-    (pluginData.stylerConfig as { valueColumn?: string } | undefined)?.valueColumn ??
-    '';
+    pluginData.valueColumn ?? '';
 
   const targetProperty = pluginData.mapping?.targetProperty ?? null;
   const targetMeta = targetProperty ? MAPLIBRE_PROPERTY_METADATA[targetProperty] : null;
@@ -121,20 +118,24 @@ export const StylerMappingStep: React.FC<
 
   const histogramBarColor = useMemo(() => {
     const mapping = {
-      keyColumn: pluginData.keyColumn ?? pluginData.mapping?.keyColumn ?? '',
+      keyColumn: pluginData.keyColumn ?? '',
       valueColumn,
       styleType:
-        pluginData.mapping?.styleType ??
-        (pluginData as { styleType?: StylerMapping['styleType'] }).styleType ??
-        'color',
+        pluginData.mapping?.styleType ?? 'choropleth',
       targetProperty: pluginData.mapping?.targetProperty ?? null,
     } as StylerMapping;
+    // preview用は実データ範囲に合わせてmin/maxを補正する
+    const previewConfig: StylerConfig = {
+      ...localConfig,
+      min: histogramStats?.min ?? localConfig.min,
+      max: histogramStats?.max ?? localConfig.max,
+    };
     return ({
       midpoint,
     }: {
       midpoint: number;
-    }) => valueToColor(midpoint, mapping, localConfig, numericValues).color;
-  }, [localConfig, numericValues, pluginData, valueColumn]);
+    }) => valueToColor(midpoint, mapping, previewConfig, numericValues).color;
+  }, [histogramStats?.max, histogramStats?.min, localConfig, numericValues, pluginData, valueColumn]);
 
   const algorithmDescriptions = useMemo(
     () =>
@@ -175,8 +176,9 @@ export const StylerMappingStep: React.FC<
 
   const presetScales: Array<{ id: string; label: string; stops: string[] }> = useMemo(
     () => [
-      { id: 'grayscale', label: t('styleSettings.algorithm.scale.grayscale', 'Grayscale'), stops: ['#ffffff', '#000000'] },
-      { id: 'red-blue', label: t('styleSettings.algorithm.scale.redBlue', 'Red → Blue'), stops: ['#d73027', '#1a1c7c'] },
+      { id: 'grayscale', label: t('styleSettings.algorithm.scale.grayscale', 'Grayscale'), stops: ['#000000', '#ffffff'] },
+      { id: 'redgreen', label: t('styleSettings.algorithm.scale.redGreen', 'Red → Green'), stops: ['#ff0000', '#00ff00'] },
+      { id: 'blueorange', label: t('styleSettings.algorithm.scale.blueOrange', 'Blue → Orange'), stops: ['#1a1c7c', '#ffa500'] },
       { id: 'viridis', label: t('styleSettings.algorithm.scale.viridis', 'Viridis'), stops: ['#440154', '#21908d', '#fde725'] },
       { id: 'magma', label: t('styleSettings.algorithm.scale.magma', 'Magma'), stops: ['#000004', '#b5367a', '#fbfcbf'] },
       { id: 'custom', label: t('styleSettings.algorithm.scale.custom', 'Custom (HSB)'), stops: [] },
@@ -189,7 +191,7 @@ export const StylerMappingStep: React.FC<
     if (!preset) return;
     applyConfigPatch({
       colorSpace: 'hsv',
-      colorScheme: id,
+      colorScheme: id as StylerConfig['colorScheme'],
       startColor: preset.stops[0],
       endColor: preset.stops[preset.stops.length - 1],
     });
@@ -247,15 +249,6 @@ export const StylerMappingStep: React.FC<
           <Typography variant="caption">{t('styleSettings.hsv.brightness', 'Brightness')}</Typography>
           <Slider value={localConfig.brightness} step={0.05} min={0} max={1} onChange={(_e, v) => applyConfigPatch({ brightness: v as number })} />
         </Stack>
-        <Box sx={{ height: 32, borderRadius: 1, border: (theme) => `1px solid ${theme.palette.divider}` }}>
-          <Box
-            sx={{
-              height: '100%',
-              background: generateColorGradient(localConfig),
-              borderRadius: 1,
-            }}
-          />
-        </Box>
       </Stack>
     ) : null;
 
@@ -383,26 +376,24 @@ export const StylerMappingStep: React.FC<
                   ))}
                 </ToggleButtonGroup>
                 {customHSBControls}
+
+                <Box sx={{ paddingLeft: 6, paddingRight: 2, height: 32, borderRadius: 25, border: (theme) => `1px solid ${theme.palette.divider}` }}>
+                  <Box
+                    sx={{
+                      height: '100%',
+                      background: generateColorGradient(localConfig),
+                      borderRadius: 1,
+                    }}
+                  />
+                </Box>
+
               </Stack>
             ) : (
               numericRangeControls
             )}
           </Stack>
-        </AccordionDetails>
-      </Accordion>
-
-      <Accordion disabled={!histogramStats} defaultExpanded>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <BarChartIcon fontSize="small" />
-            <Typography variant="subtitle1">
-              {t('styleSettings.accordion.previewHistogram', 'Preview Histogram')}
-            </Typography>
-          </Stack>
-        </AccordionSummary>
-        <AccordionDetails>
           <Stack spacing={2}>
-            <Box px={1}>
+            <Box sx={{paddingLeft: 6, paddingRight: 2}} >
               <Typography variant="caption" color="text.secondary">
                 {t('styleSettings.histogram.binCount', 'Number of bins')}
               </Typography>

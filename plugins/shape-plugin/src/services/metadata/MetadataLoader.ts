@@ -73,22 +73,49 @@ export class MetadataLoader {
     rawData: CountryMetadata[],
     _dataSource: string,
   ): CountryMetadata[] {
-    return rawData.map((item) => ({
-      countryCode: item.countryCode ?? 'UNKNOWN',
-      countryName: item.countryName || '',
-      continent: item.continent || '',
-      availableAdminLevels: item.availableAdminLevels || [],
-      population: item.population,
-      area: item.area,
-      dataQuality: this.determineDataQuality(item),
-    }));
+    return rawData.map((item) => {
+      const resolvedLevels = this.normalizeAvailableLevels(item);
+      return {
+        countryCode: item.countryCode ?? 'UNKNOWN',
+        countryName: item.countryName || '',
+        continent: item.continent || '',
+        availableAdminLevels: resolvedLevels,
+        population: item.population,
+        area: item.area,
+        dataQuality: this.determineDataQuality(resolvedLevels),
+      };
+    });
+  }
+
+  private normalizeAvailableLevels(item: any): number[] {
+    if (Array.isArray(item.availableAdminLevels)) {
+      return item.availableAdminLevels
+        .map((v: unknown) => (typeof v === 'number' ? v : Number.NaN))
+        .filter((v: number) => Number.isFinite(v))
+        .sort((a: number, b: number) => a - b);
+    }
+    if (Array.isArray(item.adminLevels)) {
+      const levels = item.adminLevels
+        .map((v: unknown) => {
+          if (typeof v === 'number') return v;
+          if (v && typeof (v as { level?: unknown }).level === 'number') return (v as { level: number }).level;
+          return Number.NaN;
+        })
+        .filter((v: number) => Number.isFinite(v))
+        .sort((a: number, b: number) => a - b);
+      return levels.length ? levels : [];
+    }
+    if (typeof item.maxAdminLevel === 'number' && item.maxAdminLevel >= 0) {
+      return Array.from({ length: item.maxAdminLevel + 1 }, (_, idx) => idx);
+    }
+    return [];
   }
 
   /**
-   * Determine data quality based on metadata
+   * Determine data quality based on available levels
    */
-  private determineDataQuality(item: any): 'high' | 'medium' | 'low' {
-    const numLevels = item.adminLevels?.length || 0;
+  private determineDataQuality(levels: number[]): 'high' | 'medium' | 'low' {
+    const numLevels = levels.length || 0;
     if (numLevels >= 4) return 'high';
     if (numLevels >= 2) return 'medium';
     return 'low';

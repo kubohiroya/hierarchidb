@@ -20,6 +20,13 @@ export type MapLibreStyleProperty =
 export type ColorAlgorithm = 'linear' | 'log' | 'quantile' | 'jenks' | 'equal';
 
 export type ColorSpace = 'hsv' | 'rgb' | 'lab';
+export type ColorScheme =
+  | 'grayscale'
+  | 'redgreen'
+  | 'blueorange'
+  | 'viridis'
+  | 'magma'
+  | 'custom';
 
 export interface MapLibrePropertyMetadata {
   name: string;
@@ -50,7 +57,7 @@ export interface StylerConfig {
   colorSpace: ColorSpace;
   invertColors?: boolean;
   opacity?: number;
-  colorScheme?: string;
+  colorScheme?: ColorScheme;
   nullHandling?: 'exclude' | 'zero';
   // enabled?: boolean;
 

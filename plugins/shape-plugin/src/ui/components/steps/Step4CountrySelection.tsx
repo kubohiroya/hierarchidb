@@ -15,14 +15,14 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { Check as CheckIcon } from '@mui/icons-material';
+// import { Check as CheckIcon } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import type { CountryMetadata, StepProps } from '../../../common/shared/index.js';
 import { normalizeDataSourceName } from '../../../common/shared/index.js';
 import { useCountryMetadata } from '../../../common/hooks/useCountryMetadata.js';
 import {
   calculateEstimatedFeatures,
-  calculateEstimatedProcessingTime,
+  // calculateEstimatedProcessingTime,
   calculateEstimatedSize,
   DATA_SOURCE_CONFIGS,
   formatBytes,
@@ -34,6 +34,35 @@ import { useRef } from 'react';
  * Step 5: Country & Admin Level Selection
  * Uses real country metadata from @hierarchidb/fetch-save-metadata
  */
+type AlphabeticalIndexProps = {
+  letters: string[];
+  onSelect: (letter: string) => void;
+};
+
+const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ letters, onSelect }) => {
+  if (!letters.length) return null;
+  return (
+    <Stack
+      direction="row"
+      spacing={0.5}
+      flexWrap="nowrap"
+      sx={{ mb: 1, overflowX: 'auto', justifyContent: 'center' }}
+    >
+      {letters.map((letter) => (
+        <Button
+          key={letter}
+          size="small"
+          variant="outlined"
+          sx={{ minWidth: 32, px: 1, py: 0.25, flexShrink: 0 }}
+          onClick={() => onSelect(letter)}
+        >
+          {letter}
+        </Button>
+      ))}
+    </Stack>
+  );
+};
+
 export const Step4CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, disabled }) => {
   const draftData = draft ?? {};
   const { enqueueSnackbar } = useSnackbar();
@@ -89,6 +118,7 @@ export const Step4CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, di
     return countries.map(() => Array.from({ length: maxAdminLevel + 1 }, () => false));
   }, [draftData.checkboxState, countries, maxAdminLevel]);
 
+  /*
   // Calculate statistics
   const stats = useMemo(() => {
     let totalSelected = 0;
@@ -121,6 +151,8 @@ export const Step4CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, di
       estimatedTime: calculateEstimatedProcessingTime(totalSelected),
     };
   }, [checkboxMatrix, countries, maxAdminLevel]);
+
+   */
 
   const handleCellChange = useCallback(
     (countryIndex: number, levelIndex: number, checked: boolean) => {
@@ -167,12 +199,46 @@ export const Step4CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, di
     [checkboxMatrix, onUpdate, maxAdminLevel, countries, enqueueSnackbar],
   );
 
+  const levelHeaderState = useMemo(
+    () =>
+      Array.from({ length: maxAdminLevel + 1 }, (_, levelIndex) => {
+        let availableCount = 0;
+        let selectedCount = 0;
+
+        countries.forEach((country, countryIndex) => {
+          if (!country.availableAdminLevels.includes(levelIndex)) return;
+          availableCount += 1;
+          if (checkboxMatrix[countryIndex]?.[levelIndex]) selectedCount += 1;
+        });
+
+        return { availableCount, selectedCount };
+      }),
+    [checkboxMatrix, countries, maxAdminLevel],
+  );
+
+  const handleLevelToggle = useCallback(
+    (levelIndex: number, checked: boolean) => {
+      const clonedMatrix = checkboxMatrix.map((row) => [...row]);
+      countries.forEach((country, countryIndex) => {
+        if (!country.availableAdminLevels.includes(levelIndex)) return;
+        const row = clonedMatrix[countryIndex] ?? Array.from({ length: maxAdminLevel + 1 }, () => false);
+        const nextRow = [...row];
+        nextRow[levelIndex] = checked;
+        clonedMatrix[countryIndex] = nextRow;
+      });
+      onUpdate({ checkboxState: clonedMatrix });
+    },
+    [checkboxMatrix, countries, maxAdminLevel, onUpdate],
+  );
+
+  /*
   const handleValidateSelection = useCallback(() => {
     enqueueSnackbar(
       `${stats.totalSelected} selections validated. Est. size: ${formatBytes(stats.estimatedSize)}, processing time: ${stats.estimatedTime}`,
       { variant: 'success' },
     );
   }, [stats, enqueueSnackbar]);
+   */
 
   // Show loading state
   if (loading) {
@@ -196,7 +262,7 @@ export const Step4CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, di
   }
 
   return (
-    <Box sx={{ height: '70vh', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ maxHeight: '70vh', display: 'flex', flexDirection: 'column' }}>
       <Typography variant="h6" gutterBottom>
         Select Countries & Administrative Levels
       </Typography>
@@ -205,53 +271,39 @@ export const Step4CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, di
           matrix to make precise selections.
         </Typography>
 
-      {/* Alphabetical index */}
-      <Stack
-        direction="row"
-        spacing={0.5}
-        flexWrap="nowrap"
-        sx={{ mb: 1, overflowX: 'auto' }}
-      >
-        {alphaIndex.map((letter) => (
-          <Button
-            key={letter}
-            size="small"
-            variant="outlined"
-            sx={{ minWidth: 32, px: 1, py: 0.25, flexShrink: 0 }}
-            onClick={() => scrollToLetter(letter)}
-          >
-            {letter}
-          </Button>
-        ))}
-      </Stack>
-
-      {/* Quick validate trigger */}
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<CheckIcon />}
-          onClick={handleValidateSelection}
-          disabled={stats.totalSelected === 0 || disabled}
-        >
-          Validate Selection
-        </Button>
-        <Typography variant="caption" color="text.secondary">
-          Toggle checkboxes to see current totals via notifications.
-        </Typography>
-      </Stack>
+      <AlphabeticalIndex letters={alphaIndex} onSelect={scrollToLetter} />
 
       {/* Simplified Matrix Table (without virtualization for now) */}
-      <TableContainer component={Paper} sx={{ flex: 1, overflow: 'auto' }}>
+      <TableContainer component={Paper} sx={{ flex: 1, overflow: 'auto', maxHeight: '100%' }}>
         <Table stickyHeader size="small">
           <TableHead>
             <TableRow>
               <TableCell>Country</TableCell>
-              {Array.from({ length: maxAdminLevel + 1 }, (_, i) => (
-                <TableCell key={i} align="center">
-                  Level {i}
-                </TableCell>
-              ))}
+              {Array.from({ length: maxAdminLevel + 1 }, (_, i) => {
+                const header = levelHeaderState[i];
+                const available = header?.availableCount ? header.availableCount > 0 : false;
+                const allSelected =
+                  available && header ? header.selectedCount === header.availableCount : false;
+                const partiallySelected =
+                  available &&
+                  header !== undefined &&
+                  header.selectedCount > 0 &&
+                  header.selectedCount < header.availableCount;
+                return (
+                  <TableCell key={i.toString()} align="center">
+                    <Stack direction="row" spacing={0.5} alignItems="center" justifyContent="center">
+                      <Checkbox
+                        size="small"
+                        checked={allSelected}
+                        indeterminate={partiallySelected}
+                        disabled={!available || disabled}
+                        onChange={(e) => handleLevelToggle(i, e.target.checked)}
+                      />
+                      <Typography variant="caption">Level {i}</Typography>
+                    </Stack>
+                  </TableCell>
+                );
+              })}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -281,7 +333,7 @@ export const Step4CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, di
                     </Stack>
                   </TableCell>
                   {Array.from({ length: maxAdminLevel + 1 }, (_, levelIndex) => (
-                    <TableCell key={levelIndex} align="center">
+                    <TableCell key={levelIndex.toString()} align="center">
                       {country.availableAdminLevels.includes(levelIndex) ? (
                         <Checkbox
                           checked={

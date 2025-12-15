@@ -19,7 +19,8 @@
   },
   "dependencies": {
     "comlink": "^4.4.2",
-    "@hierarchidb/ui-search-field": "workspace:*"
+    "@hierarchidb/ui-search-field": "workspace:*",
+    "@hierarchidb/util": "workspace:*"
   },
   "peerDependencies": {
     "react": ">=18.0.0",

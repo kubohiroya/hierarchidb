@@ -45,6 +45,15 @@ export interface MapLibreMapProps extends BaseMapProps {
 // Default values from unified config
 const { mapStyle: defaultMapStyle, interactionOptions: defaultMapOptions } = DEFAULT_MAP_CONFIG;
 
+type SafeStyle = Omit<React.CSSProperties, 'background'> & { background?: string };
+
+const normalizeStyle = (style?: React.CSSProperties): SafeStyle | undefined => {
+  if (!style) return undefined;
+  const { background, ...rest } = style;
+  const safeBackground = typeof background === 'string' ? background : undefined;
+  return (safeBackground !== undefined ? { ...rest, background: safeBackground } : { ...rest }) as SafeStyle;
+};
+
 export const MapLibreMap: React.FC<MapLibreMapProps> = ({
                                                           initialViewState,
                                                           viewState,
@@ -163,11 +172,11 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
 
 
 
-  const containerStyle: React.CSSProperties = {
+  const containerStyle: SafeStyle = {
     width,
     height,
     position: 'relative',
-    ...style,
+    ...normalizeStyle(style),
   };
 
   const mapStyleForMapLibre = {
@@ -178,7 +187,7 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
   const resolvedMapStyle = mapStyle as React.ComponentProps<typeof ReactMapLibreMap>['mapStyle'];
 
   return (
-    <div style={containerStyle}>
+    <div style={containerStyle as any}>
       <MapProvider>
         <ReactMapLibreMap
           style={mapStyleForMapLibre}

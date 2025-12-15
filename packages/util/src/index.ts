@@ -18,4 +18,5 @@ export * from './db-name.js';
 export * from './env.js';
 export * from './webCrypto.js';
 export * from './dualKeyMap.js';
+export * from './treeConsoleSettings.js';
 // Note: Dexie-specific helpers are internal; avoid leaking Dexie types to consumers

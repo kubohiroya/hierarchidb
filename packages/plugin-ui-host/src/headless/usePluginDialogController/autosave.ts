@@ -7,6 +7,7 @@ type Params<TPayload extends TreeNodeData> = {
   draft: TreeNodeUpdaterState<TPayload> | null;
   hasUnsavedChanges: boolean;
   saveDraft: (draft: TreeNodeUpdaterState<TPayload>) => Promise<unknown>;
+  enabled?: boolean;
 };
 
 export function useAutosave<TPayload extends TreeNodeData>({
@@ -14,10 +15,11 @@ export function useAutosave<TPayload extends TreeNodeData>({
   draft,
   hasUnsavedChanges,
   saveDraft,
+  enabled = true,
 }: Params<TPayload>) {
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    if (!open || !draft || !hasUnsavedChanges) {
+    if (!enabled || !open || !draft || !hasUnsavedChanges) {
       if (autoSaveTimerRef.current) {
         clearTimeout(autoSaveTimerRef.current);
         autoSaveTimerRef.current = null;
@@ -37,5 +39,5 @@ export function useAutosave<TPayload extends TreeNodeData>({
         autoSaveTimerRef.current = null;
       }
     };
-  }, [draft, hasUnsavedChanges, open, saveDraft]);
+  }, [draft, enabled, hasUnsavedChanges, open, saveDraft]);
 }

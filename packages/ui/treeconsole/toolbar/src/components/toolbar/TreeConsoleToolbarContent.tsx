@@ -25,6 +25,8 @@ interface TreeConsoleToolbarContentProps {
   onAction?: TreeConsoleToolbarProps['onAction'];
   rowClickAction?: TreeConsoleToolbarProps['rowClickAction'];
   onRowClickActionChange?: TreeConsoleToolbarProps['onRowClickActionChange'];
+  autosaveEnabled?: boolean;
+  onAutosaveEnabledChange?: TreeConsoleToolbarProps['onAutosaveEnabledChange'];
   canUndo: boolean;
   canRedo: boolean;
   canCopy: boolean;
@@ -45,6 +47,8 @@ export function TreeConsoleToolbarContent({
   onAction,
   rowClickAction = 'Select/Navigate',
   onRowClickActionChange,
+  autosaveEnabled = true,
+  onAutosaveEnabledChange,
   canUndo,
   canRedo,
   canCopy,
@@ -140,6 +144,7 @@ export function TreeConsoleToolbarContent({
       ja: t('settings.language.modes.ja'),
     },
     developerMenuLabel: t('developerMenu.clearIndexedDb'),
+    autosaveTitle: t('settings.autosave.title', 'Autosave'),
   } as const;
 
   return (
@@ -195,6 +200,8 @@ export function TreeConsoleToolbarContent({
         <SettingsMenu
           rowClickAction={rowClickAction}
           onRowClickActionChange={onRowClickActionChange}
+          autosaveEnabled={autosaveEnabled}
+          onAutosaveEnabledChange={onAutosaveEnabledChange}
           onAction={handleAction}
           portalContainer={portalContainer}
           labels={{
@@ -202,6 +209,7 @@ export function TreeConsoleToolbarContent({
             rowClickTitle: labels.rowClickTitle,
             rowClickSelectNavigate: labels.rowClickSelectNavigate,
             rowClickEdit: labels.rowClickEdit,
+            autosaveTitle: labels.autosaveTitle,
           }}
         />
       </Box>

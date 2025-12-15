@@ -21,33 +21,17 @@ const renderMappingStep = (p: StepComponentProps<StylerStepData>) => <StylerMapp
 const hasMappingBasics = (dialogData?: StylerStepData): boolean => {
   const data = dialogData ?? ({} as StylerStepData);
   const mapping = (data.mapping ?? {}) as Partial<StylerMapping>;
-  const styleType =
-    mapping.styleType ??
-    (data.stylerConfig as { styleType?: StylerMapping['styleType'] } | undefined)?.styleType ??
-    (data as { styleType?: string }).styleType;
-  const keyColumn =
-    data.keyColumn ??
-    mapping.keyColumn ??
-    (data.stylerConfig as { keyColumn?: string } | undefined)?.keyColumn;
-  const valueColumn =
-    data.valueColumn ??
-    mapping.valueColumn ??
-    (data.stylerConfig as { valueColumn?: string } | undefined)?.valueColumn;
+  const styleType = mapping.styleType;
+  const keyColumn = data.keyColumn;
+  const valueColumn = data.valueColumn;
   const targetProperty = mapping.targetProperty ?? null;
   return Boolean(keyColumn && valueColumn && styleType && targetProperty);
 };
 
 const hasKeyValueSelected = (dialogData?: StylerStepData): boolean => {
   const data = dialogData ?? ({} as StylerStepData);
-  const mapping = (data.mapping ?? {}) as Partial<StylerMapping>;
-  const keyColumn =
-    data.keyColumn ??
-    mapping.keyColumn ??
-    (data.stylerConfig as { keyColumn?: string } | undefined)?.keyColumn;
-  const valueColumn =
-    data.valueColumn ??
-    mapping.valueColumn ??
-    (data.stylerConfig as { valueColumn?: string } | undefined)?.valueColumn;
+  const keyColumn = data.keyColumn;
+  const valueColumn = data.valueColumn;
   const hasLocal = Boolean(keyColumn && valueColumn);
   const hasHook = mappingHasKeyValueSelected(dialogData);
   return hasLocal || hasHook;

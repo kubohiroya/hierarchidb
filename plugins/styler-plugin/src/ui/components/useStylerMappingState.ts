@@ -13,14 +13,14 @@ export const isStyleMappingComplete = (dialogData: Partial<StylerStepData>): boo
   if (!isRecord(dialogData)) return false;
   const styleType = dialogData.mapping?.styleType;
   const targetProperty = dialogData.mapping?.targetProperty;
-  const valueColumn = dialogData.valueColumn ?? dialogData.mapping?.valueColumn;
+  const valueColumn = dialogData.valueColumn;
   return Boolean(styleType && targetProperty && valueColumn);
 };
 
 export const hasKeyValueSelected = (dialogData?: Partial<StylerStepData>): boolean => {
   if (!isRecord(dialogData)) return false;
-  const valueColumn = dialogData.valueColumn ?? dialogData.mapping?.valueColumn;
-  const keyColumn = dialogData.keyColumn ?? dialogData.mapping?.keyColumn;
+  const valueColumn = dialogData.valueColumn;
+  const keyColumn = dialogData.keyColumn;
   return Boolean(keyColumn && valueColumn);
 };
 
@@ -47,10 +47,7 @@ export const useStylerMappingState = ({
   );
 
   const sanitizedStyleType = useMemo(() => {
-    const candidate = (pluginData.mapping?.styleType ??
-      (pluginData.stylerConfig as { styleType?: StyleType } | undefined)?.styleType ??
-      // Legacy persisted root-level styleType
-      (pluginData as { styleType?: StyleType })?.styleType) as StyleType | undefined;
+    const candidate = pluginData.mapping?.styleType as StyleType | undefined;
     return styleTypeOptions.some((option) => option.value === candidate) ? candidate : undefined;
   }, [pluginData, styleTypeOptions]);
 
@@ -68,10 +65,11 @@ export const useStylerMappingState = ({
       const nextStyleType = styleType ?? settings.styleType;
       const nextData: StylerStepData = {
         ...(pluginData as StylerStepData),
-        stylerConfig: {
-          ...(pluginData.stylerConfig ?? {}),
+        mapping: {
+          ...(pluginData.mapping ?? {}),
           styleType: nextStyleType,
-        } as StylerStepData['stylerConfig'],
+          targetProperty: pluginData.mapping?.targetProperty ?? null,
+        },
       };
       onChange(nextData);
     },
@@ -82,10 +80,10 @@ export const useStylerMappingState = ({
     (targetProperty: MapLibreStyleProperty) => {
       const nextData: StylerStepData = {
         ...(pluginData as StylerStepData),
-        stylerConfig: {
-          ...(pluginData.stylerConfig ?? {}),
+        mapping: {
+          ...(pluginData.mapping ?? {}),
           targetProperty,
-        } as StylerStepData['stylerConfig'],
+        },
       };
       onChange(nextData);
     },

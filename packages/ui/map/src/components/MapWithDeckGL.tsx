@@ -36,6 +36,15 @@ type MapLibreComponent = React.ComponentType<MapLibreMapProps>;
 let cachedMapLibreComponent: MapLibreComponent | null = null;
 let mapLibreComponentPromise: Promise<MapLibreComponent> | null = null;
 
+type SafeStyle = Omit<React.CSSProperties, 'background'> & { background?: string };
+
+const normalizeStyle = (style?: React.CSSProperties): SafeStyle | undefined => {
+  if (!style) return undefined;
+  const { background, ...rest } = style;
+  const safeBackground = typeof background === 'string' ? background : undefined;
+  return (safeBackground !== undefined ? { ...rest, background: safeBackground } : { ...rest }) as SafeStyle;
+};
+
 const getCachedMapLibreComponent = (): MapLibreComponent | null => cachedMapLibreComponent;
 
 const loadMapLibreComponent = async (): Promise<MapLibreComponent> => {
@@ -157,9 +166,9 @@ export const MapWithDeckGL: React.FC<MapWithDeckGLProps> = ({ deck, onLoad, ...m
       width: (mapProps.width as string | number | undefined) ?? '100%',
       height: (mapProps.height as string | number | undefined) ?? '100%',
       position: 'relative',
-      ...(mapProps.style ?? {}),
+      ...(normalizeStyle(mapProps.style) ?? {}),
     };
-    return <div style={fallbackStyle} />;
+    return <div style={fallbackStyle as any} />;
   }
 
   return <MapComponent {...mapProps} onLoad={handleLoad} />;

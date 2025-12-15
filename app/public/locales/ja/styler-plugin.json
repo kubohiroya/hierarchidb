@@ -171,7 +171,7 @@
     "max": "最大",
     "scale": {
       "grayscale": "グレースケール",
-      "redBlue": "赤 → 青",
+      "blueRed": "青 → 赤",
       "viridis": "Viridis",
       "magma": "Magma",
       "custom": "カスタム (HSB)"

@@ -29,13 +29,46 @@ import {
 import { wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
 import type { TabularFilterRule } from '@hierarchidb/ui-tabular-extract';
 import type { StylerStepProps } from './StylerStepProps.tsx';
-import { valueToColor } from '../../common/utils/colorUtils.js';
+import { normalizeStylerConfig, valueToColor } from '../../common/utils/colorUtils.js';
 import { tabularRowsAtom } from '@hierarchidb/spreadsheet-plugin';
+import type { ColorCalculationResult, StylerConfig } from '../../common/types/StylerEntity.js';
 
 const getStylerT = () =>
   typeof i18n.getFixedT === 'function'
     ? i18n.getFixedT(i18n.language ?? 'en', 'styler-plugin')
     : (i18n.t.bind(i18n) as typeof i18n.t);
+
+const useValueColorScale = ({
+  baseConfig,
+  rows,
+  valueColumn,
+}: {
+  baseConfig: StylerConfig;
+  rows: StylerTableRow[];
+  valueColumn: string;
+}): { derivedConfig: StylerConfig; numericAllValues: number[] } => {
+  return useMemo(() => {
+    if (!valueColumn) {
+      const normalized = normalizeStylerConfig(baseConfig);
+      return { derivedConfig: normalized, numericAllValues: [] };
+    }
+    const numericValues = rows
+      .map((r) => r[valueColumn])
+      .map((v) => (typeof v === 'number' ? v : typeof v === 'string' ? Number(v) : NaN))
+      .map((v) => (Number.isFinite(v) ? v : 0))
+      .filter((v) => Number.isFinite(v));
+
+    const hasValues = numericValues.length > 0;
+    const min = hasValues ? Math.min(...numericValues) : baseConfig.min;
+    const max = hasValues ? Math.max(...numericValues) : baseConfig.max;
+    const derivedConfig = normalizeStylerConfig({
+      ...baseConfig,
+      min,
+      max,
+    });
+    return { derivedConfig, numericAllValues: numericValues };
+  }, [baseConfig, rows, valueColumn]);
+};
 
 export const StylerPreviewStep: React.FC<StylerStepProps> = ({
   data,
@@ -52,18 +85,11 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
     ...StylerMappingDefault,
     ...(data?.mapping ?? {}),
   };
-  const keyColumn =
-    data?.keyColumn ??
-    mapping.keyColumn ??
-    (data?.stylerConfig as { keyColumn?: string } | undefined)?.keyColumn;
-  const valueColumn =
-    data?.valueColumn ??
-    mapping.valueColumn ??
-    (data?.stylerConfig as { valueColumn?: string } | undefined)?.valueColumn;
+  const stylerConfig = normalizeStylerConfig(data?.stylerConfig ?? StylerConfigDefault);
+  const keyColumn = data?.keyColumn;
+  const valueColumn = data?.valueColumn;
   const targetProperty = mapping.targetProperty;
-  const styleType =
-    mapping.styleType ??
-    (data?.stylerConfig as { styleType?: StylerMapping['styleType'] } | undefined)?.styleType;
+  const styleType = mapping.styleType;
   const [sortState, setSortState] = useState<{
     column: string | null;
     direction: 'asc' | 'desc' | null;
@@ -218,6 +244,12 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
     return result;
   }, [columns, previewData]);
 
+  const { derivedConfig, numericAllValues } = useValueColorScale({
+    baseConfig: stylerConfig,
+    rows: previewData,
+    valueColumn: valueColumn ?? '',
+  });
+
   const numberFormatter = useMemo(
     () => new Intl.NumberFormat(i18n.language || undefined),
     []
@@ -297,16 +329,6 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
                     sortDirection={isActive && sortState.direction ? sortState.direction : false}
                   >
                     <Stack direction="row" spacing={1} alignItems="center">
-                      <TableSortLabel
-                        active={isActive}
-                        direction={sortState.direction ?? 'asc'}
-                        hideSortIcon={!isActive}
-                        onClick={() => handleToggleSort(col)}
-                      >
-                        <Typography variant="subtitle2" component="span">
-                          {col}
-                        </Typography>
-                      </TableSortLabel>
                       {isKey && (
                         <Chip
                           label={t('stylePreview.keyColumn', 'Key')}
@@ -323,6 +345,16 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
                           variant="outlined"
                         />
                       )}
+                      <TableSortLabel
+                        active={isActive}
+                        direction={sortState.direction ?? 'asc'}
+                        hideSortIcon={!isActive}
+                        onClick={() => handleToggleSort(col)}
+                      >
+                        <Typography variant="subtitle2" component="span">
+                          {col}
+                        </Typography>
+                      </TableSortLabel>
                     </Stack>
                   </TableCell>
                 );
@@ -340,13 +372,13 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
                   if (isValue && typeof cellValue !== 'undefined' && cellValue !== null) {
                     const meta = targetProperty ? MAPLIBRE_PROPERTY_METADATA[targetProperty] : null;
                     if (!meta || meta.type === 'color') {
-                      const colorResult = valueToColor(
-                        typeof cellValue === 'number' ? cellValue : Number(cellValue),
+                      const num = typeof cellValue === 'number' ? cellValue : Number(cellValue);
+                      const safeValue = Number.isFinite(num) ? num : 0;
+                      const colorResult: ColorCalculationResult = valueToColor(
+                        safeValue,
                         mapping,
-                        data?.stylerConfig ?? StylerConfigDefault,
-                        Array.isArray(previewRowsSource)
-                          ? (previewRowsSource.map((r) => r[valueColumn ?? '']) as number[])
-                          : undefined
+                        derivedConfig,
+                        numericAllValues
                       );
                       if (colorResult?.color) {
                         chip = (
@@ -354,6 +386,9 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
                             size="small"
                             label={colorResult.color}
                             sx={{
+                              width: '72px',
+                              justifyContent: 'center',
+                              fontFamily: 'Roboto Mono, monospace',
                               backgroundColor: colorResult.color,
                               color: '#000',
                               border: '1px solid rgba(0,0,0,0.12)',

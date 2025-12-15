@@ -3,7 +3,12 @@
  * @description Color conversion and manipulation utilities
  */
 
-import type { ColorCalculationResult, StylerConfig, StylerMapping } from '../types/StylerEntity.js';
+import type {
+  ColorCalculationResult,
+  ColorScheme,
+  StylerConfig,
+  StylerMapping,
+} from '../types/StylerEntity.js';
 import { StylerConfigDefault } from '../types/StylerEntity.js';
 
 /**
@@ -54,9 +59,6 @@ export function hsvToRgb(h: number, s: number, v: number): [number, number, numb
 }
 
 /**
- * : RGBHSV
- * : RGBHSV
- * :
  * @param r - Red (0-255)
  * @param g - Green (0-255)
  * @param b - Blue (0-255)
@@ -89,9 +91,6 @@ export function rgbToHsv(r: number, g: number, b: number): [number, number, numb
 }
 
 /**
- * : RGBHex
- * : RGB16
- * :
  * @param r - Red (0-255)
  * @param g - Green (0-255)
  * @param b - Blue (0-255)
@@ -107,9 +106,6 @@ export function rgbToHex(r: number, g: number, b: number): string {
 }
 
 /**
- * : HexRGB
- * : 16RGB
- * :
  * @param hex - Hex color string
  * @returns [r, g, b] - RGB values (0-255)
  */
@@ -134,9 +130,6 @@ export function hexToRgb(hex: string): [number, number, number] {
 }
 
 /**
- * :
- * :
- * :
  * @param value - Input value
  * @param config - Styler configuration
  * @returns Calculated color result
@@ -208,6 +201,83 @@ export function calculateLinearColor(value: number, config: StylerConfig): Color
   };
 }
 
+export const normalizeColorSchemeId = (scheme?: string): ColorScheme => {
+  const raw: string = scheme ?? (StylerConfigDefault.colorScheme as ColorScheme);
+  switch (raw) {
+    case 'grayscale':
+      return 'grayscale';
+    case 'redgreen':
+    case 'red-green':
+    case 'green-red':
+    case 'greenred':
+      return 'redgreen';
+    case 'blueorange':
+    case 'blue-orange':
+    case 'orange-blue':
+    case 'blue-red':
+    case 'red-blue':
+      return 'blueorange';
+    case 'viridis':
+      return 'viridis';
+    case 'magma':
+      return 'magma';
+    case 'custom':
+      return 'custom';
+    default:
+      return (StylerConfigDefault.colorScheme ?? 'grayscale') as ColorScheme;
+  }
+};
+
+export const normalizeStylerConfig = (base: StylerConfig): StylerConfig => {
+  const scheme = normalizeColorSchemeId(base.colorScheme);
+  const invert = base.invertColors ?? StylerConfigDefault.invertColors;
+
+  // start with merged defaults
+  let effective: StylerConfig = { ...StylerConfigDefault, ...base, colorScheme: scheme };
+
+  const applyStops = (start: string, end: string) => {
+    effective = {
+      ...effective,
+      colorSpace: 'rgb',
+      startColor: invert ? end : start,
+      endColor: invert ? start : end,
+    };
+  };
+
+  switch (scheme) {
+    case 'grayscale':
+      applyStops('#000000', '#ffffff');
+      effective = { ...effective, saturation: 0, brightness: 1, hueStart: 0, hueEnd: 0 };
+      break;
+    case 'redgreen':
+      applyStops('#ff0000', '#00ff00');
+      break;
+    case 'blueorange':
+      applyStops('#1a1c7c', '#ffa500');
+      break;
+    case 'viridis':
+      applyStops('#440154', '#fde725');
+      break;
+    case 'magma':
+      applyStops('#000004', '#fbfcbf');
+      break;
+    case 'custom':
+    default:
+      if (invert) {
+        effective = {
+          ...effective,
+          hueStart: base.hueEnd,
+          hueEnd: base.hueStart,
+          startColor: base.endColor,
+          endColor: base.startColor,
+        };
+      }
+      break;
+  }
+
+  return effective;
+};
+
 /**
  * :
  * :
@@ -245,20 +315,18 @@ export function calculateQuantileColor(
 }
 
 /**
- * :
- * :
- * : UI
  * @param config - Styler configuration
  * @param steps - Number of gradient steps
  * @returns CSS gradient string
  */
 export function generateColorGradient(config: StylerConfig, steps: number = 20): string {
+  const effective = normalizeStylerConfig(config);
   const colors: string[] = [];
-  const { min, max } = config;
+  const { min, max } = effective;
 
   for (let i = 0; i < steps; i++) {
     const value = min + (max - min) * (i / (steps - 1));
-    const result = calculateLinearColor(value, config);
+    const result = calculateLinearColor(value, effective);
     colors.push(result.color);
   }
 
@@ -266,9 +334,6 @@ export function generateColorGradient(config: StylerConfig, steps: number = 20):
 }
 
 /**
- * :
- * :
- * :
  * @param value - Input value
  * @param config - Styler configuration
  * @param allValues - All values (for quantile/jenks)
@@ -288,51 +353,7 @@ export function valueToColor(
     };
   }
 
-  // normalize colorScheme/invertColors into effective config
-  const normalizeConfig = (base: StylerConfig): StylerConfig => {
-    const scheme = base.colorScheme ?? StylerConfigDefault.colorScheme;
-    const invert = base.invertColors ?? StylerConfigDefault.invertColors;
-    // start with hsv defaults
-    let effective: StylerConfig = { ...StylerConfigDefault, ...base };
-    if (scheme === 'grayscale') {
-      effective = {
-        ...effective,
-        colorSpace: 'rgb',
-        startColor: invert ? '#ffffff' : '#000000',
-        endColor: invert ? '#000000' : '#ffffff',
-        saturation: 0,
-        brightness: 1,
-        hueStart: 0,
-        hueEnd: 0,
-      };
-    } else if (scheme === 'redgreen') {
-      effective = {
-        ...effective,
-        colorSpace: 'rgb',
-        startColor: invert ? '#00ff00' : '#ff0000',
-        endColor: invert ? '#ff0000' : '#00ff00',
-      };
-    } else if (scheme === 'blueorange') {
-      effective = {
-        ...effective,
-        colorSpace: 'rgb',
-        startColor: invert ? '#ffa500' : '#0000ff',
-        endColor: invert ? '#0000ff' : '#ffa500',
-      };
-    } else if (invert) {
-      // generic invert for hsv
-      effective = {
-        ...effective,
-        hueStart: base.hueEnd,
-        hueEnd: base.hueStart,
-        startColor: base.endColor,
-        endColor: base.startColor,
-      };
-    }
-    return effective;
-  };
-
-  const effectiveConfig = normalizeConfig(config);
+  const effectiveConfig = normalizeStylerConfig(config);
 
   // Apply algorithm
   switch (effectiveConfig.algorithm) {
@@ -357,9 +378,6 @@ export function valueToColor(
 }
 
 /**
- * :
- * : HSV
- * :
  * @param color - Input color (hex)
  * @param factor - Brightness factor (0-2, 1 = no change)
  * @returns Adjusted color (hex)
@@ -425,9 +443,6 @@ export function createColorVariations(
 }
 
 /**
- * :
- * : WCAG
- * :
  * @param color1 - First color (hex)
  * @param color2 - Second color (hex)
  * @returns Contrast ratio
