@@ -1,4 +1,5 @@
 import type React from 'react';
+import { useCallback } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import type { StepComponentProps } from '@hierarchidb/plugin-base';
 import {
@@ -7,7 +8,7 @@ import {
   type StylerMapping,
   type StylerConfig,
   StylerConfigDefault,
-  MAPLIBRE_PROPERTY_METADATA,
+  MAPLIBRE_PROPERTY_METADATA, type ColorAlgorithm,
 } from '../../common/types/StylerEntity.ts';
 import { useTranslation } from 'react-i18next';
 import { useStylerMappingState } from './useStylerMappingState.ts';
@@ -18,13 +19,14 @@ import {
   Box,
   FormControl,
   FormControlLabel,
-  MenuItem,
+  InputLabel,
   Radio,
   RadioGroup,
-  Select,
   Slider,
   Stack,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -38,8 +40,8 @@ import { generateColorGradient } from '../../common/utils/colorUtils.ts';
 import { ValueHistogram } from '@hierarchidb/spreadsheet-plugin/ui';
 import { valueToColor } from '../../common/utils/colorUtils.ts';
 import { calculateStatistics } from '../../common/utils/dataAnalysis.ts';
-import { GradientSwatch } from './GradientSwatch.js';
-import { Label } from '@mui/icons-material';
+import { GradientSwatch } from './GradientSwatch.tsx';
+import { Gradient as GradientIcon, Insights as InsightsIcon, ShowChart as ShowChartIcon } from '@mui/icons-material';
 
 export const StylerMappingStep: React.FC<
   StepComponentProps<StylerStepData>
@@ -134,6 +136,43 @@ export const StylerMappingStep: React.FC<
     }) => valueToColor(midpoint, mapping, localConfig, numericValues).color;
   }, [localConfig, numericValues, pluginData, valueColumn]);
 
+  const algorithmDescriptions = useMemo(
+    () =>
+      ({
+        linear: t(
+          'step5.algorithms.linearDescription',
+          'Interpolates colors smoothly between minimum and maximum values. Ideal for evenly distributed data or when visualizing continuous transitions.'
+        ),
+        log: t(
+          'step5.algorithms.logDescription',
+          'Uses a logarithmic scale to emphasize smaller values while compressing large outliers. Suited for highly skewed distributions.'
+        ),
+        quantile: t(
+          'step5.algorithms.quantileDescription',
+          'Creates classes with an equal number of features. Produces balanced visuals even for skewed data and is resilient to outliers.'
+        ),
+        jenks: t(
+          'step5.algorithms.jenksDescription',
+          'Finds natural breaks by minimizing variance within classes and maximizing it between classes. Offers meaningful groupings at a higher computational cost.'
+        ),
+        equal: t(
+          'step5.algorithms.equalDescription',
+          'Divides the value range into equal intervals. Suited for continuous, roughly linear distributions such as temperature or elevation, and is fast and easy to understand.'
+        ),
+      }) as Record<ColorAlgorithm, string>,
+    [t]
+  );
+
+  const handleInvertColorsChange = useCallback(
+    (_event: React.ChangeEvent<HTMLInputElement>, newValue: string) => {
+      const inverted = newValue === 'inverted';
+      const newConfig = { ...localConfig, invertColors: inverted };
+      setLocalConfig(newConfig);
+      onChange(newConfig);
+    },
+    [localConfig, onChange]
+  );
+
   const presetScales: Array<{ id: string; label: string; stops: string[] }> = useMemo(
     () => [
       { id: 'grayscale', label: t('styleSettings.algorithm.scale.grayscale', 'Grayscale'), stops: ['#ffffff', '#000000'] },
@@ -222,16 +261,6 @@ export const StylerMappingStep: React.FC<
 
   return (
     <Stack spacing={2}>
-      <Typography variant="h6">
-        {t('styleSettings.title', 'Style Mapping')}
-      </Typography>
-      <Typography variant="body2" color="text.secondary">
-        {t(
-          'styleSettings.description',
-          'Select the style type, data source column, and target property before configuring algorithms.',
-        )}
-      </Typography>
-
       <Accordion defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Stack direction="row" spacing={1} alignItems="center">
@@ -263,15 +292,6 @@ export const StylerMappingStep: React.FC<
         </AccordionSummary>
         <AccordionDetails>
           <Stack spacing={2}>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Typography variant="body2" color="text.secondary">
-                {t('styleSettings.algorithm.valueColumn', 'Value column')}
-              </Typography>
-              <Box sx={{ px: 1.25, py: 0.5, borderRadius: 1, bgcolor: 'action.selected', fontSize: 13 }}>
-                {valueColumn || t('styleSettings.algorithm.valueColumnUnset', 'Not selected')}
-              </Box>
-            </Stack>
-
             <FormControl component="fieldset">
               <Typography variant="subtitle2" gutterBottom>
                 {t('styleSettings.algorithm.nullHandling', 'Null / NaN handling')}
@@ -286,55 +306,82 @@ export const StylerMappingStep: React.FC<
               </RadioGroup>
             </FormControl>
 
-            <FormControl fullWidth size="small">
-              <Label name="algo-select-label">
-                {t('styleSettings.algorithm.rule', 'Mapping rule')}
-              </Label>
-              <Select
-                labelId="algo-select-label"
-                label={t('styleSettings.algorithm.rule', 'Mapping rule')}
-                value={localConfig.algorithm}
-                onChange={(e) => applyConfigPatch({ algorithm: e.target.value as StylerConfig['algorithm'] })}
-              >
-                <MenuItem value="linear">{t('styleSettings.algorithms.linear', 'Linear')}</MenuItem>
-                <MenuItem value="log">{t('styleSettings.algorithms.log', 'Logarithmic')}</MenuItem>
-                <MenuItem value="quantile">{t('styleSettings.algorithms.quantile', 'Quantile')}</MenuItem>
-                <MenuItem value="jenks">{t('styleSettings.algorithms.jenks', 'Jenks Natural Breaks')}</MenuItem>
-                <MenuItem value="equal">{t('styleSettings.algorithms.equal', 'Equal Interval')}</MenuItem>
-              </Select>
-            </FormControl>
+            <InputLabel>
+              {t('styleSettings.algorithm.rule', 'Mapping rule')}
+            </InputLabel>
+            <ToggleButtonGroup
+              exclusive
+              value={localConfig.algorithm}
+              onChange={(_e, value) =>
+                value ? applyConfigPatch({ algorithm: value as StylerConfig['algorithm'] }) : null
+              }
+              size="small"
+            >
+                <ToggleButton value="linear">
+                  <ShowChartIcon fontSize="small" sx={{ mr: 1 }} />
+                  {t('styleSettings.algorithms.linear', 'Linear')}</ToggleButton>
+                <ToggleButton value="log">
+                  <BarChartIcon fontSize="small" sx={{ mr: 1 }} />
+                  {t('styleSettings.algorithms.log', 'Logarithmic')}</ToggleButton>
+                <ToggleButton value="quantile">
+                  <InsightsIcon fontSize="small" sx={{ mr: 1 }} />
+                  {t('styleSettings.algorithms.quantile', 'Quantile')}</ToggleButton>
+                <ToggleButton value="jenks">
+                  <GradientIcon fontSize="small" sx={{ mr: 1 }} />
+                  {t('styleSettings.algorithms.jenks', 'Jenks Natural Breaks')}</ToggleButton>
+                <ToggleButton value="equal">{t('styleSettings.algorithms.equal', 'Equal Interval')}</ToggleButton>
+            </ToggleButtonGroup>
+
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              {algorithmDescriptions[localConfig.algorithm]}
+            </Typography>
 
             {isColorTarget ? (
+
+
               <Stack spacing={1.5}>
                 <Typography variant="subtitle2">
                   {t('styleSettings.algorithm.colorScale', 'Color scale')}
                 </Typography>
-                <Stack spacing={1}>
+
+                <RadioGroup
+                  row
+                  value={localConfig.invertColors ? 'inverted' : 'normal'}
+                  onChange={handleInvertColorsChange}
+                >
+                  <FormControlLabel control={<Radio />} value="normal" label={t('step5.colorRange.normal', 'normal')} />
+                  <FormControlLabel control={<Radio />} value="inverted" label={t('step5.colorRange.invert', 'inverted')} />
+                </RadioGroup>
+
+                <ToggleButtonGroup
+                  exclusive
+                  color="primary"
+                  value={localConfig.colorScheme ?? 'grayscale'}
+                  onChange={(_e, value) => value && handlePresetSelect(value as string)}
+                  sx={{ flexWrap: 'wrap', gap: 1 }}
+                >
                   {presetScales.map((preset) => (
-                    <Box
+                    <ToggleButton
                       key={preset.id}
+                      value={preset.id}
                       sx={{
-                        display: 'flex',
-                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        textAlign: 'left',
                         gap: 1,
-                        p: 1,
-                        borderRadius: 1,
-                        border: (theme) =>
-                          preset.id === (localConfig.colorScheme ?? 'grayscale')
-                            ? `2px solid ${theme.palette.primary.main}`
-                            : `1px solid ${theme.palette.divider}`,
-                        cursor: 'pointer',
+                        py: 1,
+                        minWidth: 220,
                       }}
-                      onClick={() => handlePresetSelect(preset.id)}
                     >
-                      {preset.id === 'custom' ? <ContrastIcon fontSize="small" /> : <PaletteIcon fontSize="small" />}
-                      <Typography variant="body2" sx={{ flex: 1 }}>
-                        {preset.label}
-                      </Typography>
+                      <Stack direction="row" spacing={1} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
+                        {preset.id === 'custom' ? <ContrastIcon fontSize="small" /> : <PaletteIcon fontSize="small" />}
+                        <Typography variant="body2" noWrap>
+                          {preset.label}
+                        </Typography>
+                      </Stack>
                       {preset.stops.length > 0 ? <GradientSwatch stops={preset.stops} /> : null}
-                    </Box>
+                    </ToggleButton>
                   ))}
-                </Stack>
+                </ToggleButtonGroup>
                 {customHSBControls}
               </Stack>
             ) : (
@@ -344,7 +391,7 @@ export const StylerMappingStep: React.FC<
         </AccordionDetails>
       </Accordion>
 
-      <Accordion disabled={!histogramStats}>
+      <Accordion disabled={!histogramStats} defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Stack direction="row" spacing={1} alignItems="center">
             <BarChartIcon fontSize="small" />

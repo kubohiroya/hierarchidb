@@ -1,4 +1,5 @@
-import React, { useId } from 'react';
+import type React from 'react';
+import { useId } from 'react';
 
 interface GradientSwatchProps {
   stops: string[];
@@ -17,10 +18,11 @@ export const GradientSwatch: React.FC<GradientSwatchProps> = ({
 
   return (
     <svg width={width} height={height} aria-hidden focusable="false">
+      <title>Gradient Swatch</title>
       <defs>
         <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
           {safeStops.map((c, idx) => (
-            <stop key={`${c}-${idx}`} offset={`${(idx / denom) * 100}%`} stopColor={c} />
+            <stop key={`${c}`} offset={`${(idx / denom) * 100}%`} stopColor={c} />
           ))}
         </linearGradient>
       </defs>

@@ -114,7 +114,7 @@ export const StyleMappingTargetPanel = ({
       )}
 
       {showTargetProperty && (
-        <FormControl fullWidth required sx={{ mt: showStyleType ? 3 : 0 }}>
+        <FormControl required sx={{ mt: showStyleType ? 3 : 0 }}>
           <InputLabel id={targetPropertyLabelId} htmlFor="styler-target-property">
             {t('styleSettings.targetProperty.label', 'Target style property')}
           </InputLabel>
