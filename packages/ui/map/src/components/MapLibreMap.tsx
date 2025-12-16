@@ -27,7 +27,7 @@ if (typeof document !== 'undefined') {
 // Re-export types for backward compatibility
 export type { MapViewState, MapInteractionOptions } from '../types/unified-map-props.js';
 
-export interface MapLibreMapProps extends BaseMapProps {
+export type MapLibreMapProps = BaseMapProps & {
   /** Children components (layers, markers, etc.) */
   children?: React.ReactNode;
   /** Optional built-in control toggles */
@@ -40,10 +40,10 @@ export interface MapLibreMapProps extends BaseMapProps {
       options?: Record<string, unknown>;
     };
   };
-}
+};
 
 // Default values from unified config
-const { mapStyle: defaultMapStyle, interactionOptions: defaultMapOptions } = DEFAULT_MAP_CONFIG;
+const { mapStyleUrl: defaultMapStyleUrl, interactionOptions: defaultMapOptions } = DEFAULT_MAP_CONFIG;
 
 type SafeStyle = Omit<React.CSSProperties, 'background'> & { background?: string };
 
@@ -57,7 +57,8 @@ const normalizeStyle = (style?: React.CSSProperties): SafeStyle | undefined => {
 export const MapLibreMap: React.FC<MapLibreMapProps> = ({
                                                           initialViewState,
                                                           viewState,
-                                                          mapStyle = defaultMapStyle,
+                                                          mapStyleUrl = defaultMapStyleUrl,
+                                                          mapStyleObject,
                                                           width = DEFAULT_MAP_CONFIG.dimensions.width,
                                                           height = DEFAULT_MAP_CONFIG.dimensions.height,
                                                           style,
@@ -184,7 +185,7 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
     height: '100%',
   };
 
-  const resolvedMapStyle = mapStyle as React.ComponentProps<typeof ReactMapLibreMap>['mapStyle'];
+  const resolvedMapStyle = (mapStyleObject ?? mapStyleUrl ?? defaultMapStyleUrl) as React.ComponentProps<typeof ReactMapLibreMap>['mapStyle'];
 
   return (
     <div style={containerStyle as any}>

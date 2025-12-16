@@ -1,11 +1,12 @@
+/* eslint-disable storybook/no-renderer-packages */
 import type React from 'react';
-import { useCallback, useMemo, useRef, useState } from 'react';
-import type { Meta, StoryObj } from '@storybook/react';
+import { useCallback, useId, useMemo, useRef, useState } from 'react';
 import { Source, Layer } from '@vis.gl/react-maplibre';
 import { MapLibreMap } from '../components/MapLibreMap.js';
 import type { MapLibreMapInstance } from '../types/maplibre-public.js';
 import { DEFAULT_MAP_CONFIG } from '../types/unified-map-props.js';
 import type { MapViewState } from '../types/unified-map-props.js';
+import type { Meta, StoryObj } from '@storybook/react';
 
 type Position = [number, number];
 
@@ -527,28 +528,28 @@ const ViewportFeatureDemo: React.FC = () => {
       >
         <MapLibreMap
           initialViewState={INITIAL_VIEW_STATE}
-          mapStyle={DEFAULT_MAP_CONFIG.mapStyle}
+          mapStyleUrl={DEFAULT_MAP_CONFIG.mapStyleUrl}
           width="100%"
           height="100%"
           controls={{ navigation: true, scale: true }}
           onLoad={handleMapLoad}
           onViewStateChange={handleViewStateChange}
         >
-          <Source id="demo-viewport-features" type="geojson" data={DEMO_COLLECTION}>
+          <Source id={useId()} type="geojson" data={DEMO_COLLECTION}>
             <Layer
-              id="demo-shape-fill"
+              id={useId()}
               type="fill"
               paint={{ 'fill-color': 'rgba(38, 166, 154, 0.35)', 'fill-outline-color': '#1f8f85' }}
               filter={['==', ['get', 'category'], 'shape']}
             />
             <Layer
-              id="demo-route-line"
+              id={useId()}
               type="line"
               paint={{ 'line-color': CATEGORY_COLORS.route, 'line-width': 3 }}
               filter={['==', ['get', 'category'], 'route']}
             />
             <Layer
-              id="demo-location-points"
+              id={useId()}
               type="circle"
               paint={{
                 'circle-color': CATEGORY_COLORS.location,

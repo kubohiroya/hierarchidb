@@ -11,7 +11,7 @@ import { BatchService, createLaneSemaphoreRegistry } from '@hierarchidb/batch';
 import { getLocationRuntimeWorkerClient } from './adapters/RuntimeWorkerClient.js';
 import type { LocationPointInput, LocationTileSettings } from '../../common/types/batch-types.js';
 
-// Use common progress event type to decouple worker from UI
+// Use _obsolate_common progress event type to decouple worker from UI
 export type ProgressInfo = ProgressEvent;
 
 export class LocationSessionController {

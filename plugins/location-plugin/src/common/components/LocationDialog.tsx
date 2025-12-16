@@ -1,6 +1,6 @@
 /**
  * Location Dialog Component composed with the headless multi-step dialog shell.
- * (Temporarily reverted to original implementation; common hook migration pending)
+ * (Temporarily reverted to original implementation; _obsolate_common hook migration pending)
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';

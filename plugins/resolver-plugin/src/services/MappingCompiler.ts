@@ -304,7 +304,7 @@ export class MappingCompiler {
    * Generate transformation code
    */
   private generateTransformCode(transform: string, value: string): string {
-    // Handle common transformations
+    // Handle _obsolate_common transformations
     switch (transform) {
       case 'lowercase':
         return `String(${value}).toLowerCase()`;

@@ -36,7 +36,7 @@ export const BasicInfoFields: React.FC<BasicInfoFieldsProps> = ({
                                                                   disabled = false,
                                                                   nameMaxLength = 100,
                                                                   descriptionMaxLength = 500,
-                                                                  // text overrides (fallback to common i18n > English literals)
+                                                                  // text overrides (fallback to _obsolate_common i18n > English literals)
                                                                   nameLabel,
                                                                   nameHelperText,
                                                                   nameRequiredText,

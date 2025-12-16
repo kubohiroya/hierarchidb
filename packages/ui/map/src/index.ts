@@ -25,13 +25,15 @@ export type {
   MapFeatureIdentifyConfig,
   MapIdentifyProps,
   BaseMapProps,
+  UrlBasedBaseMapProps,
+  MapLibreStyleBasedBaseMapProps,
   VectorTileLayerConfig,
   VectorTileDataSource,
   VectorTileProps,
 } from './types/unified-map-props.js';
 
 // Default configuration
-export { DEFAULT_MAP_CONFIG } from './types/unified-map-props.js';
+export { DEFAULT_MAP_CONFIG, DEFAULT_MAP_STYLE_URL } from './types/unified-map-props.js';
 
 // Component-specific props
 export type { MapLibreMapProps } from './components/MapLibreMap.js';

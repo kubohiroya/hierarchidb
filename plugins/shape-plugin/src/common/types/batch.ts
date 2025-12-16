@@ -1,14 +1,18 @@
 import type { NodeId } from './core.js';
 import type { ProcessingConfig } from './processing.js';
 
-export type BatchStatus =
-  | 'preparing'
-  | 'downloading'
-  | 'processing'
-  | 'generating'
-  | 'completed'
-  | 'error'
-  | 'cancelled';
+export interface BatchStatus {
+  session: BatchSession;
+  currentTasks: BatchTask[];
+  queuedTasks: number;
+  errors: ErrorInfo[];
+  warnings: string[];
+  estimatedTimeRemaining?: number;
+  throughput?: {
+    tasksPerSecond: number;
+    bytesPerSecond: number;
+  };
+}
 
 export const BatchTaskStage = {
   WAIT: 'wait',
@@ -29,7 +33,7 @@ export type ProcessingStage = BatchTaskType;
 export interface BatchTaskBase {
   taskId: string;
   taskType: BatchTaskType;
-  sessionId?: NodeId;
+  sessionId?: string;
   stage?: BatchTaskStageType;
   status?: TaskStatus;
   type?: string;
@@ -110,8 +114,9 @@ export interface VectorTileTask extends BatchTaskBase {
 
 export interface BatchSession {
   sessionId: string;
-  draftId: NodeId;
-  status: 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
+  nodeId: NodeId;
+  draftId?: NodeId;
+  status: 'idle' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
   config: ProcessingConfig;
   startedAt: number;
   updatedAt: number;
@@ -125,11 +130,11 @@ export interface BatchSession {
     currentStage?: ProcessingStage | 'processing';
     currentTask?: string;
   };
-  canResume: boolean;
-  lastActivity: number;
-  expiresAt: number;
-  stages: Record<string, any>;
-  resourceUsage?: any;
+  canResume?: boolean;
+  lastActivity?: number;
+  expiresAt?: number;
+  stages?: Record<string, any>;
+  resourceUsage?: ResourceUsage;
 }
 
 export interface ProgressInfo {
@@ -170,6 +175,65 @@ export interface ErrorInfo {
   timestamp: number;
   stage: ProcessingStage;
   retryable: boolean;
+}
+
+export interface ResourceUsage {
+  memoryUsed: number;
+  memoryPeak: number;
+  cpuPercent: number;
+  storageUsed: number;
+  networkBytesReceived: number;
+  networkBytesSent: number;
+}
+
+export type BoundingBox = [number, number, number, number];
+
+export interface LayerConfig {
+  name: string;
+  fields?: string[];
+  minZoom?: number;
+  maxZoom?: number;
+  properties?: string[];
+  simplificationLevel?: number;
+}
+
+export interface LayerInfo {
+  name: string;
+  featureCount: number;
+  minZoom: number;
+  maxZoom: number;
+  fields: string[];
+}
+
+export interface TileMetadata {
+  exists: boolean;
+  nodeId: NodeId;
+  tileKey: string;
+  z: number;
+  x: number;
+  y: number;
+  size: number;
+  features: number;
+  layers: LayerInfo[];
+  generatedAt: number;
+  lastAccessed?: number;
+  contentHash: string;
+  contentEncoding?: 'gzip' | 'br';
+  version: number;
+}
+
+export interface CacheStatistics {
+  hits: number;
+  misses: number;
+  sizeBytes?: number;
+  totalSize?: number;
+  totalItems?: number;
+  byType?: Record<string, { totalSize: number; count: number; averageSize: number }>;
+  hitRate?: number;
+  missRate?: number;
+  evictionCount?: number;
+  oldestItem?: number;
+  newestItem?: number;
 }
 
 // Backward compatibility aliases

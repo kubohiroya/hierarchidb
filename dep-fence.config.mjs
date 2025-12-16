@@ -36,20 +36,20 @@ const custom = [
     ],
   },
 
-  // Shared/common/runtime-worker packages must not import node-type plugin-loader (avoid dependency loops)
+  // Shared/_obsolate_common/runtime-worker packages must not import node-type plugin-loader (avoid dependency loops)
   {
     id: 'no-plugin-imports-from-shared',
     when: (ctx) => {
       const name = ctx.pkg?.name || '';
-      return name.startsWith('@hierarchidb/runtime-worker-') || name.startsWith('@hierarchidb/common-');
+      return name.startsWith('@hierarchidb/runtime-worker-') || name.startsWith('@hierarchidb/_obsolate_common-');
     },
-    because: 'Shared/common/runtime-worker packages must not depend on node-type plugin-loader to avoid cycles.',
+    because: 'Shared/_obsolate_common/runtime-worker packages must not depend on node-type plugin-loader to avoid cycles.',
     rules: [
       { rule: 'import-path-ban', options: { forbid: ['^@hierarchidb/.+-plugin(?:/|$)'] }, severity: 'ERROR' },
     ],
   },
 
-  // Ban per-package ambient shims (shims-*.d.ts) — centralize in common-type only
+  // Ban per-package ambient shims (shims-*.d.ts) — centralize in _obsolate_common-type only
   {
     id: 'ban-local-ambient-shims',
     when: () => true,
@@ -124,7 +124,7 @@ const custom = [
         rule: 'import-path-ban',
         options: {
           forbid: [
-            '^@hierarchidb/(common-(?:api|auth|types)|util|runtime-worker-(?:client|worker)|plugin-(?:presentation|registry|ui-sdk)|map-adapter|(?:basemap|folder|linker|location|resolver|route|shape|spreadsheet|styler|timeline)-plugin|tabular-source-xlsx)(?:/|$)',
+            '^@hierarchidb/(_obsolate_common-(?:api|auth|types)|util|runtime-worker-(?:client|worker)|plugin-(?:presentation|registry|ui-sdk)|map-adapter|(?:basemap|folder|linker|location|resolver|route|shape|spreadsheet|styler|timeline)-plugin|tabular-source-xlsx)(?:/|$)',
           ],
           message: 'Use @hierarchidb/features-core/{module} instead of {importPath}.',
         },
@@ -177,7 +177,7 @@ const custom = [
           forbid: [
             '^@hierarchidb/ui-worker-client(?:/|$)',
             '^@hierarchidb/plugin-service-(?:api|sdk)(?:/|$)',
-            '^@hierarchidb/common-api(?:/|$)',
+            '^@hierarchidb/_obsolate_common-api(?:/|$)',
             '^comlink(?:/|$)',
           ],
         },

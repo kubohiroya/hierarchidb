@@ -7,7 +7,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-types';
 import { ShapesService } from '../ShapesService.js';
-import type { BatchProcessConfig, BatchSession } from '../common/types.js';
+import type { BatchProcessConfig, BatchSession } from '../../_obsolate_common/types/index.js';
 
 describe('ShapesService', () => {
   let service: ShapesService;

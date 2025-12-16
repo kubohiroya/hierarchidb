@@ -39,5 +39,3 @@ export interface BatchTaskLike {
     [key: string]: unknown;
   };
 }
-
-export type BatchTask = BatchTaskLike;

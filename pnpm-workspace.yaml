@@ -1,7 +1,7 @@
 packages:
   - app
   - packages/components
-  - packages/common/*
+  - packages/_obsolate_common/*
   - packages/util
   - packages/tools
   - packages/tools/*

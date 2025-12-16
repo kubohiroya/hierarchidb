@@ -10,7 +10,7 @@ import {
   type FetchOptions,
   type ProcessOptions,
 } from './DataSourceStrategy.js';
-import type { NodeId, ShapeEntity } from '../../common/shared/types.js';
+import type { NodeId, ShapeEntity } from '../../common/types/index.js';
 
 //  OSM
 export interface OSMRawData {

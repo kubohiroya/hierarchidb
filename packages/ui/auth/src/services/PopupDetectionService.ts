@@ -171,7 +171,7 @@ export class PopupDetectionService {
    * Check if environment might block popups
    */
   isPotentiallyBlocked(): boolean {
-    // Check for common popup-blocking scenarios
+    // Check for _obsolate_common popup-blocking scenarios
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     const isIframe = window !== window.top;
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);

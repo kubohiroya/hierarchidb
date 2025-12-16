@@ -15,6 +15,8 @@ export interface TabularStatistics {
   };
 }
 
+export type TabularRow = Record<string, unknown>;
+
 export const calculateStatistics = (values: number[]): TabularStatistics => {
   if (!values.length) {
     return {
@@ -63,8 +65,6 @@ export const calculateStatistics = (values: number[]): TabularStatistics => {
     quartiles: { q1, q2, q3 },
   };
 };
-
-export type TabularRow = Record<string, unknown>;
 
 export const coerceSpreadsheetEntity = (value: unknown): SpreadsheetEntity =>
   (typeof value === 'object' && value !== null ? (value as SpreadsheetEntity) : {});

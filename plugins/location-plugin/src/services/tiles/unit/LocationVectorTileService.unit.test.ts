@@ -5,7 +5,7 @@ import { LocationVectorTileService } from '../LocationVectorTileService';
 import { closeEphemeralLocationDB, getEphemeralLocationDB } from '../../database/EphemeralLocationDB';
 import { UnifiedLocationBatchManager } from '../../batch/UnifiedLocationBatchManager';
 import { LocationBatchSessionManager } from '../../batch/BatchSessionManager';
-import type { SessionSummary } from '../../common/types/batch-types.js';
+import type { SessionSummary } from '../../_obsolate_common/types/batch-types.js';
 import type { BatchProgressEvent } from '@hierarchidb/common-api';
 
 type BridgeLike = NonNullable<ConstructorParameters<typeof LocationVectorTileService>[0]>;

@@ -69,7 +69,7 @@
 ## Worker API 仕様（案）
 
 ```ts
-// location-plugin worker API (型は common-type 参照)
+// location-plugin worker API (型は _obsolate_common-type 参照)
 startLocationBatch(nodeId: NodeId, cfg: LocationBatchConfig): Promise<SessionId>;
 getLocationBatchStatus(sessionId: SessionId): Promise<LocationBatchStatus>;
 resumeLocationBatch(sessionId: SessionId): Promise<boolean>;

@@ -118,7 +118,7 @@ export function calculateOptimalSizes(
 }
 
 /**
- * Create auto-expand configuration for common scenarios
+ * Create auto-expand configuration for _obsolate_common scenarios
  */
 export const AutoExpandPresets = {
   /** No auto-expand */

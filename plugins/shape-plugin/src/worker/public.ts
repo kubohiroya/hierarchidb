@@ -19,7 +19,7 @@ import type {
   UpdateShapeData,
   UrlMetadata,
   ShapeStepValidationResult,
-} from '../common/shared/index.ts';
+} from '../common/types/index.js';
 
 export interface ShapeWorkerAPI {
   // Entities

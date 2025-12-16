@@ -6,6 +6,12 @@ export { DataSourceSelector } from './DataSourceSelector.js';
 export type { DataSourceSelectorProps, DataSourceOption } from './DataSourceSelector.js';
 export { DataSourceSelectionStep } from './DataSourceSelectionStep.js';
 export type { DataSourceSelectionStepProps } from './DataSourceSelectionStep.js';
+export { DataSourceWithLicense } from './DataSourceWithLicense.js';
+export type {
+  DataSourceWithLicenseProps,
+  DataSourceWithLicenseOption,
+  DataSourceWithLicenseState,
+} from './DataSourceWithLicense.js';
 
 // Types and utilities
 export {

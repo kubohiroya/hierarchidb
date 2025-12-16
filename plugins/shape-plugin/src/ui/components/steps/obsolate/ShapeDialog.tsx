@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material';
-import type { NodeId } from '../../../../common/shared/index.js';
-import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig, type ShapeEntity } from '../../../../common/shared/index.js';
-import { useTranslation } from '../../../../common/i18n/index.js';
+import type { NodeId } from '../../../../common/types/index.js';
+import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig, type ShapeEntity } from '../../../../common/types/index.js';
+import { useTranslation } from '../../../../ui/i18n.js';
 
 export interface ShapeDialogProps {
   mode: 'create' | 'edit';

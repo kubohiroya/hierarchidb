@@ -1,4 +1,4 @@
-import React, { forwardRef, memo } from 'react';
+import React, { memo } from 'react';
 import {
   Box,
   Dialog,
@@ -25,9 +25,7 @@ export const createHeaderComponent = (
 
 export const createContentComponent = (dialogRef: React.RefObject<HTMLElement | null>) =>
   memo(
-    forwardRef(function DialogContentWrapper(
-      props: React.PropsWithChildren,
-    ) {
+    function DialogContentWrapper(props: React.PropsWithChildren) {
       return (
         <Box
           sx={(theme: Theme) => ({
@@ -40,7 +38,7 @@ export const createContentComponent = (dialogRef: React.RefObject<HTMLElement | 
           {props.children}
         </Box>
       );
-    }),
+    },
   );
 
 export const createFooterComponent = (footerPropsRef: React.MutableRefObject<PluginDialogFooterProps>) =>

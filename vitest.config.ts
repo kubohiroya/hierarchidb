@@ -19,8 +19,8 @@ const nodeTypeSrcAliases = Object.fromEntries(
 // own aliases (e.g. "~") are honored. We also exclude Playwright e2e.
 const projectRoots = [
   'packages/backend/bff',
-  'packages/common/api',
-  'packages/common/types',
+  'packages/_obsolate_common/api',
+  'packages/_obsolate_common/types',
   'packages/runtime-worker',
   'packages/plugin-ui-host',
   'packages/plugin-ui-sdk',
@@ -89,7 +89,7 @@ export default defineConfig({
       '@hierarchidb/ui-dialog': path.resolve(__dirname, './packages/ui/dialog/src/index.ts'),
       '@hierarchidb/runtime-ui-plugin-dialog': path.resolve(__dirname, './packages/runtime-worker-ui/plugin-dialog/src/index.ts'),
       '@hierarchidb/ui-worker-client': path.resolve(__dirname, './packages/runtime-worker/client/src/index.ts'),
-      '@hierarchidb/common-api': path.resolve(__dirname, './packages/common/api/src/index.ts'),
+      '@hierarchidb/common-api': path.resolve(__dirname, './packages/_obsolate_common/api/src/index.ts'),
       '@hierarchidb/ui-core': path.resolve(__dirname, './packages/ui/core/src/index.ts'),
       '@hierarchidb/util': path.resolve(__dirname, './packages/util/src/index.ts'),
       '@hierarchidb/ui-treeconsole-toolbar': path.resolve(

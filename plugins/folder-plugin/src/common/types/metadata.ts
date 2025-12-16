@@ -22,7 +22,7 @@ export const FolderMetadata = {
     supportedOperations: ['create', 'read', 'update', 'delete', 'move', 'copy'],
   },
 
-  dependencies: ['@hierarchidb/common-types', '@hierarchidb/common-api'],
+  dependencies: ['@hierarchidb/_obsolate_common-types', '@hierarchidb/_obsolate_common-api'],
 
   tags: ['organization', 'hierarchy', 'core'],
 };

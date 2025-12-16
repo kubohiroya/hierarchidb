@@ -13,9 +13,9 @@ import type { NodeId } from '@hierarchidb/common-types';
 import { type BatchSessionRecord, type BatchTaskRecord, shapeDB } from '../database/ShapeDB.js';
 import { SessionController } from './SessionController.js';
 import { ShapeBatchSession } from './ShapeBatchSession.js';
-import type { BatchSession, BatchStatus, ProcessingStage, ProgressInfo, StageStatus } from '../common/types.js';
+import type { BatchSession, BatchStatus, ProcessingStage, ProgressInfo, StageStatus } from '../../common/types/index.js';
 import type { BatchProcessConfig } from './types.js';
-import type { UrlMetadata, ShapeBatchCommandMap } from '../../common/shared/types.js';
+import type { UrlMetadata, ShapeBatchCommandMap } from '../../common/types/index.js';
 
 const logBatchSessionWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -182,7 +182,7 @@ export class BatchSessionManager {
         sessionId: t.sessionId,
         error: t.errorMessage || 'Unknown error',
         timestamp: t.completedAt || Date.now(),
-        stage: t.type,
+        stage: t.taskType ?? t.type,
         retryable: (t.retryCount || 0) < 3,
       }));
 

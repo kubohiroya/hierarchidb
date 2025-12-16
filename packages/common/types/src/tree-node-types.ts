@@ -2,7 +2,7 @@ import type { NodeId, NodeType } from './id-types.js';
 import type { Timestamp } from './primitive-types.js';
 
 /**
- * Regular node type constants for common node types
+ * Regular node type constants for _obsolate_common node types
  */
 export const NODE_TYPES = {
   FOLDER: 'folder',

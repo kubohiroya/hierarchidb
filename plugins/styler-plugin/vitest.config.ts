@@ -9,7 +9,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['./src/common/__tests__/setup.ts'],
+    setupFiles: ['./src/_obsolate_common/__tests__/setup.ts'],
     pool: 'threads',
   },
   resolve: {
@@ -18,7 +18,7 @@ export default defineConfig({
       '../../spreadsheet/src/services/SpreadsheetTabularApiDriver': path.resolve(__dirname, '../spreadsheet-plugin/src/services/SpreadsheetTabularApiDriver'),
       '@hierarchidb/spreadsheet-plugin': path.resolve(
         __dirname,
-        './src/common/__tests__/mocks/spreadsheet-plugin.ts'
+        './src/_obsolate_common/__tests__/mocks/spreadsheet-plugin.ts'
       ),
       '@hierarchidb/plugin-sdk': basePluginEntry,
       '~': path.resolve(__dirname, 'src'),

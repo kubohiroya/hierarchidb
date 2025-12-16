@@ -1,6 +1,6 @@
 /**
  * Base Batch Manager Implementation
- * Provides common implementation for batch session managers
+ * Provides _obsolate_common implementation for batch session managers
  */
 
 import type { NodeId} from '@hierarchidb/common-types';
@@ -9,7 +9,7 @@ import { BatchProgressCallback, BatchProgressEvent, BatchSessionId, BatchSession
 
 /**
  * Base implementation for batch session managers
- * Provides common functionality that can be extended by plugin-specific managers
+ * Provides _obsolate_common functionality that can be extended by plugin-specific managers
  */
 export abstract class BaseBatchSessionManager implements IBatchSessionManager {
   protected sessions = new Map<BatchSessionId, AbstractBatchSession>();

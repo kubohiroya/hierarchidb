@@ -24,7 +24,7 @@ export default defineConfig({
       '~': path.resolve(__dirname, './src'),
       // Use source during tests to avoid requiring a prebuild
       '@hierarchidb/ui-dialog': path.resolve(workspaceRoot, 'packages/ui/dialog/src/index.ts'),
-      '@hierarchidb/runtime-worker': path.resolve(__dirname, './src/common/__tests__/store-registry-mocks.ts'),
+      '@hierarchidb/runtime-worker': path.resolve(__dirname, './src/_obsolate_common/__tests__/store-registry-mocks.ts'),
       '@hierarchidb/util': path.resolve(workspaceRoot, 'packages/util/src/index.ts'),
       '@hierarchidb/plugin-ui-sdk': basePluginEntry,
     },

@@ -1,6 +1,6 @@
 import { useMemo, useCallback } from 'react';
-import { BUILT_IN_STYLES } from '../../../../common/constants/builtInStyles.js';
-import type { MapStyle } from '../../../../common/types/BaseMapEntity.js';
+import { BUILT_IN_STYLES } from '../../common/constants/builtInStyles.js';
+import type { MapStyle } from '../../common/types/BaseMapEntity.js';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 
 interface UseMapStyleStepArgs {

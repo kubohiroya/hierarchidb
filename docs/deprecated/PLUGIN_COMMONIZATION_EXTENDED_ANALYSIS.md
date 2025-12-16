@@ -133,7 +133,7 @@ class Pattern3Handler {
 ### 5.1 階層型EntityHandler
 
 ```typescript
-// packages/common/plugin-base/src/handlers/HierarchicalEntityHandler.ts
+// packages/_obsolate_common/plugin-base/src/handlers/HierarchicalEntityHandler.ts
 export abstract class HierarchicalEntityHandler<
   TEntity extends BaseEntity & { parentId?: NodeId },
   TWorkingCopy extends BaseWorkingCopy
@@ -173,7 +173,7 @@ export abstract class HierarchicalEntityHandler<
 ### 5.2 拡張可能EntityHandler
 
 ```typescript
-// packages/common/plugin-base/src/handlers/ExtensibleEntityHandler.ts
+// packages/_obsolate_common/plugin-base/src/handlers/ExtensibleEntityHandler.ts
 export abstract class ExtensibleEntityHandler<
   TEntity extends BaseEntity,
   TWorkingCopy extends BaseWorkingCopy,
@@ -216,7 +216,7 @@ export abstract class ExtensibleEntityHandler<
 ### 5.3 メタデータ管理Handler
 
 ```typescript
-// packages/common/plugin-base/src/handlers/MetadataEntityHandler.ts
+// packages/_obsolate_common/plugin-base/src/handlers/MetadataEntityHandler.ts
 export abstract class MetadataEntityHandler<
   TEntity extends BaseEntity & { metadata?: Record<string, any> },
   TWorkingCopy extends BaseWorkingCopy

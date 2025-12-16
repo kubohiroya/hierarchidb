@@ -38,7 +38,7 @@ export default defineConfig({
 ```ts
 createNodeTypeAliasPlugin({
   rootDir?: string;           // 省略時はリポジトリ ルート
-  kinds?: ('ui'|'worker'|'database'|'common'|'root')[]; // デフォルトは全種
+  kinds?: ('ui'|'worker'|'database'|'_obsolate_common'|'root')[]; // デフォルトは全種
   tsconfigPath?: string;      // 指定した場合のみ paths を同期
   tsconfigKinds?: ...         // tsconfig へ同期するカテゴリ（tsconfigPath 指定時に使用）
 });

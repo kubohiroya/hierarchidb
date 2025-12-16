@@ -48,7 +48,7 @@ const loadMapLibreComponent = async (): Promise<MapLibreComponent> => {
  */
 export type LayerOptions = VectorTileLayerConfig;
 
-export interface MapWithVectorTilesProps extends BaseMapProps, VectorTileDataSource {
+export type MapWithVectorTilesProps = BaseMapProps & VectorTileDataSource & {
   /** Vector tile layer configuration */
   layerConfig?: VectorTileLayerConfig;
 
@@ -67,7 +67,7 @@ export interface MapWithVectorTilesProps extends BaseMapProps, VectorTileDataSou
    * @deprecated Use onClick instead
    */
   onMapClick?: (event: any) => void;
-}
+};
 
 // Default values from unified config
 const { viewState: defaultViewState, vectorTileLayer: defaultLayerConfig } = DEFAULT_MAP_CONFIG;
@@ -81,7 +81,8 @@ export const MapWithVectorTiles: React.FC<MapWithVectorTilesProps> = ({
 
                                                                         // Base map props
                                                                         initialViewState = defaultViewState,
-                                                                        mapStyle = DEFAULT_MAP_CONFIG.mapStyle,
+                                                                        mapStyleUrl = DEFAULT_MAP_CONFIG.mapStyleUrl,
+                                                                        mapStyleObject,
                                                                         width = DEFAULT_MAP_CONFIG.dimensions.width,
                                                                         height = DEFAULT_MAP_CONFIG.dimensions.height,
                                                                         style,
@@ -133,10 +134,12 @@ export const MapWithVectorTiles: React.FC<MapWithVectorTilesProps> = ({
   // Merge layer config with backward compatibility support
   const mergedLayerConfig = { ...defaultLayerConfig, ...layerConfig, ...layerOptions };
 
+  const mapStyleProps = mapStyleObject ? { mapStyleObject } : { mapStyleUrl };
+
   return (
     <MapComponent
       initialViewState={initialViewState}
-      mapStyle={mapStyle}
+      {...mapStyleProps}
       width={width}
       height={height}
       style={normalizeStyle(style) as any}

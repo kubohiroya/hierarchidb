@@ -3,7 +3,7 @@
  * Provides singleton instance management for authentication handlers
  */
 
-// Re-export authentication types from common-auth
+// Re-export authentication types from _obsolate_common-auth
 export type {
   AuthRequiredNotification,
   AuthSource,

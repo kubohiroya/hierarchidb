@@ -1,6 +1,8 @@
 import type { FC } from 'react';
 import type { StepComponentProps } from '@hierarchidb/plugin-base';
 import { TabularProvider, TabularDataImport } from '@hierarchidb/ui-tabular-extract';
+import type { TabularDataResult } from '@hierarchidb/ui-tabular-extract';
+import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import type { SpreadsheetEntity } from '../../../common/types/SpreadsheetEntity.js';
 import { Accordion, AccordionDetails, AccordionSummary, Box, Paper, Typography } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -8,7 +10,7 @@ import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import { useTranslation } from '@hierarchidb/ui-i18n';
-import { type UseTabularDataSourceResult, useTabularDataSource } from '../../hooks/useTabularDataSource.js';
+import { type UseTabularDataSourceResult, useTabularDataSource } from '../../hooks/useTabularDataSource.ts';
 import { TabularPreviewLite } from '@hierarchidb/ui-tabular-extract';
 import { useAtomValue } from 'jotai';
 import { tabularRowsAtom } from '../../state/tabularKeyValueAtoms.js';
@@ -115,18 +117,7 @@ export const TabularDataSourceStep: FC<StepComponentProps<SpreadsheetEntity>> = 
             <Paper variant="outlined" sx={{ height: 320 }}>
               <TabularPreviewLite
                 rows={previewRows}
-                columns={
-                  ((dialogData.lastPreview?.columns as unknown[] | undefined)?.map((c) =>
-                    typeof c === 'string' ? c :
-                    (c && typeof c === 'object' && 'name' in c && typeof (c as any).name === 'string'
-                      ? (c as any).name
-                      : '')
-                  ) ??
-                    (dialogData.tabularTableMetadata?.columns ?? []).map((c: any) =>
-                      typeof c === 'string' ? c : typeof c?.name === 'string' ? c.name : ''
-                    ) ?? [])
-                    .filter((v) => typeof v === 'string' && v.length > 0)
-                }
+                columns={extractColumnNames(dialogData.lastPreview, dialogData.tabularTableMetadata)}
                 height={320}
               />
             </Paper>
@@ -135,4 +126,36 @@ export const TabularDataSourceStep: FC<StepComponentProps<SpreadsheetEntity>> = 
       ) : null}
     </TabularProvider>
   );
+};
+
+const isNamedColumn = (value: unknown): value is { name: string } =>
+  typeof value === 'object' && value !== null && 'name' in value && typeof (value as { name: unknown }).name === 'string';
+
+const extractColumnNames = (
+  lastPreview?: TabularDataResult,
+  metadata?: TabularTableMetadata,
+): string[] => {
+  const names: string[] = [];
+  const previewColumns = lastPreview?.columns;
+  if (Array.isArray(previewColumns)) {
+    for (const col of previewColumns) {
+      if (typeof col === 'string') {
+        names.push(col);
+      } else if (isNamedColumn(col)) {
+        names.push(col.name);
+      }
+    }
+  }
+
+  if (!names.length && Array.isArray(metadata?.columns)) {
+    for (const col of metadata!.columns) {
+      if (typeof col === 'string') {
+        names.push(col);
+      } else if (isNamedColumn(col)) {
+        names.push(col.name);
+      }
+    }
+  }
+
+  return names.filter((name) => name.length > 0);
 };

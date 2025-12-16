@@ -132,7 +132,7 @@ test.describe('Router Engine Toggle - Smoke Tests', () => {
     // Check for typical home page elements
     // These might include navigation, title, or main content areas
     const hasContent = await page.evaluate(() => {
-      // Check for common elements that indicate successful page load
+      // Check for _obsolate_common elements that indicate successful page load
       const hasMainContent = document.querySelector('main, [role="main"]') !== null;
       const hasNavigation = document.querySelector('nav, [role="navigation"]') !== null;
       const hasContainer = document.querySelector('.MuiContainer-root') !== null;
@@ -157,7 +157,7 @@ test.describe('Router Engine Toggle - Smoke Tests', () => {
       timeout: 15000
     });
 
-    // Check for common error patterns
+    // Check for _obsolate_common error patterns
     const errorPatterns = [
       'Router not found',
       'Failed to create router',

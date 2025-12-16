@@ -14,13 +14,13 @@ import type {
   SelectionStats,
   UrlMetadata,
   ShapeStepValidationResult,
-} from './types.js';
+} from '../../common/types/index.js';
 import type { TreeNodeMetadata } from '@hierarchidb/common-types';
-import type { ShapeEntity, ShapeDraft } from './types/core.js';
-import { DEFAULT_DATA_SOURCES, DEFAULT_PROCESSING_CONFIG } from './constants.js';
+import type { ShapeEntity, ShapeDraft } from '../../common/types/core.js';
+import { SHAPE_DATA_SOURCES, DEFAULT_PROCESSING_CONFIG } from '../../common/types/constants.js';
 
 const KNOWN_DATA_SOURCE_NAMES = new Set<DataSourceName>(
-  DEFAULT_DATA_SOURCES.map((source) => source.name),
+  SHAPE_DATA_SOURCES.map((source) => source.name),
 );
 
 export function normalizeDataSourceName(value?: string | null): DataSourceName | undefined {

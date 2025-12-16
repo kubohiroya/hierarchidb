@@ -1,5 +1,5 @@
 import { Card, CardContent, Typography } from '@mui/material';
-import type { NodeId, ShapeEntity } from '../../../../common/shared/index.js';
+import type { NodeId, ShapeEntity } from '../../../../common/types/index.js';
 import type { TreeNodeMetadata } from '@hierarchidb/common-types';
 
 export interface ShapePanelProps {

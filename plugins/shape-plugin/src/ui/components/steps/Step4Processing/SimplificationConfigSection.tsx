@@ -15,8 +15,8 @@ import {
   Typography,
 } from '@mui/material';
 import { FilterAlt as FilterAltIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
-import type { FeatureFilterMethod, ProcessingConfig, SimplificationProcessingConfig } from '../../../../common/shared/index.js';
-import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../../common/shared/index.js';
+import type { FeatureFilterMethod, ProcessingConfig, SimplificationProcessingConfig } from '../../../../common/types/index.js';
+import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../../common/types/index.js';
 import { useId } from 'react';
 
 type Props = {

@@ -114,17 +114,17 @@ const DATABASE_ENTRY_BASENAMES = [
   'src/database.cjs',
 ];
 const COMMON_ENTRY_BASENAMES = [
-  'src/common/index.ts',
-  'src/common/index.tsx',
-  'src/common/index.mts',
-  'src/common/index.mjs',
-  'src/common/index.js',
-  'src/common/index.cjs',
-  'src/common.ts',
-  'src/common.mts',
-  'src/common.mjs',
-  'src/common.js',
-  'src/common.cjs',
+  'src/_obsolate_common/index.ts',
+  'src/_obsolate_common/index.tsx',
+  'src/_obsolate_common/index.mts',
+  'src/_obsolate_common/index.mjs',
+  'src/_obsolate_common/index.js',
+  'src/_obsolate_common/index.cjs',
+  'src/_obsolate_common.ts',
+  'src/_obsolate_common.mts',
+  'src/_obsolate_common.mjs',
+  'src/_obsolate_common.js',
+  'src/_obsolate_common.cjs',
   'src/shared/index.ts',
   'src/shared/index.tsx',
   'src/shared/index.mts',
@@ -194,9 +194,9 @@ const DATABASE_DIST_ENTRY_BASENAMES = [
   'dist/database.cjs',
 ];
 const COMMON_DIST_ENTRY_BASENAMES = [
-  'dist/common/index.js',
-  'dist/common/index.mjs',
-  'dist/common/index.cjs',
+  'dist/_obsolate_common/index.js',
+  'dist/_obsolate_common/index.mjs',
+  'dist/_obsolate_common/index.cjs',
   'dist/shared/index.js',
   'dist/shared/index.mjs',
   'dist/shared/index.cjs',
@@ -650,7 +650,7 @@ function inferDistEntryForSpecifier(summary: ManifestSummary, specifier: string)
       return summary.uiDistEntry;
     case '/database':
       return summary.databaseDistEntry;
-    case '/common':
+    case '/_obsolate_common':
       return summary.commonDistEntry;
     case '/icon':
       return summary.iconComponent?.distEntry ?? null;

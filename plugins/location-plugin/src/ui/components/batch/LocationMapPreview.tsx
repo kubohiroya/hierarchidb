@@ -2,7 +2,7 @@
   * Location Map Preview Component
    */
 
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Button,
@@ -46,12 +46,7 @@ export interface PreviewLocationPoint {
   type: LocationType;
   countryCode: string;
   coordinates: [number, number]; // [longitude, latitude]
-  properties: {
-    population?: number;
-    elevation?: number;
-    capacity?: number;
-    [key: string]: any;
-  };
+  properties: Record<string, unknown>;
 }
 
 export type DisplayMode = 'points' | 'clusters' | 'heatmap';
@@ -153,13 +148,14 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
   locations = SAMPLE_LOCATIONS,
 }) => {
   const { translations } = useTranslation();
+  const mapPreviewTranslations = translations.mapPreview ?? {};
   const formatTemplate = useCallback((template: string, values: Record<string, string | number>) =>
-    Object.entries(values).reduce((acc, [key, value]) => acc.replace(new RegExp(`{${key}}`, 'g'), String(value)), template),
+    Object.entries(values).reduce((acc, [key, value]) => acc?.replace(new RegExp(`{${key}}`, 'g'), String(value)), template),
   []);
   const typeSettings = useMemo(() => Object.fromEntries(
     (Object.entries(TYPE_SETTINGS_BASE) as Array<[LocationType, typeof TYPE_SETTINGS_BASE[LocationType]]>)
-      .map(([key, value]) => [key, { ...value, name: translations.locationTypes[key] ?? key }]),
-  ) as Record<LocationType, typeof TYPE_SETTINGS_BASE[LocationType] & { name: string }> , [translations]);
+      .map(([key, value]) => [key, { ...value, name: translations.locationTypes?.[key] ?? key }]),
+  ) as Record<LocationType, typeof TYPE_SETTINGS_BASE[LocationType] & { name: string }> , [translations.locationTypes]);
   const mapRef = useRef<HTMLDivElement>(null);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('points');
   const [visibleTypes, setVisibleTypes] = useState<LocationType[]>(
@@ -180,7 +176,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
   const [clusterRadius, setClusterRadius] = useState(50);
   const [maxZoom, setMaxZoom] = useState(15);
 
-  const filteredLocations = React.useMemo(() => {
+  const filteredLocations = useMemo(() => {
     return locations.filter(location => {
       if (!visibleTypes.includes(location.type)) {
         return false;
@@ -202,7 +198,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
     });
   }, [locations, visibleTypes, searchQuery, typeSettings]);
 
-  const statistics: MapStatistics = React.useMemo(() => {
+  const statistics: MapStatistics = useMemo(() => {
     const byType: Record<string, number> = {};
     const byCountry: Record<string, number> = {};
 
@@ -314,7 +310,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
           <TextField
             size="small"
             fullWidth
-            placeholder={translations.mapPreview.searchPlaceholder}
+            placeholder={mapPreviewTranslations.searchPlaceholder ?? 'Search locations...'}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             InputProps={{
@@ -328,18 +324,24 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
           <Box sx={{ gridColumn: { xs: '1 / -1', md: 'auto' } }}>
             <Box display="flex" gap={1} flexWrap="wrap">
               <Chip
-                label={formatTemplate(translations.mapPreview.visiblePointsLabel, {
-                  visible: statistics.visiblePoints.toLocaleString(),
-                  total: statistics.totalPoints.toLocaleString(),
-                })}
+                label={formatTemplate(
+                  mapPreviewTranslations.visiblePointsLabel ?? 'Visible: {visible} / {total}',
+                  {
+                    visible: statistics.visiblePoints.toLocaleString(),
+                    total: statistics.totalPoints.toLocaleString(),
+                  },
+                )}
                 size="small"
                 color="primary"
               />
               {displayMode === 'clusters' && statistics.clusters > 0 && (
                 <Chip
-                  label={formatTemplate(translations.mapPreview.clustersLabel, {
-                    count: statistics.clusters,
-                  })}
+                  label={formatTemplate(
+                    mapPreviewTranslations.clustersLabel ?? 'Clusters: {count}',
+                    {
+                      count: statistics.clusters,
+                    },
+                  )}
                   size="small"
                   variant="outlined"
                 />
@@ -416,7 +418,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
 */}
         <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
           <Box display="flex" flexDirection="column" gap={1}>
-            <Tooltip title={translations.mapPreview.tooltips.zoomIn}>
+            <Tooltip title={translations.mapPreview.tooltips?.zoomIn}>
               <Fab
                 size="small"
                 onClick={() => handleZoomChange(zoom + 1)}
@@ -426,7 +428,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
               </Fab>
             </Tooltip>
 
-            <Tooltip title={translations.mapPreview.tooltips.zoomOut}>
+            <Tooltip title={translations.mapPreview.tooltips?.zoomOut}>
               <Fab
                 size="small"
                 onClick={() => handleZoomChange(zoom - 1)}
@@ -436,19 +438,19 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
               </Fab>
             </Tooltip>
 
-            <Tooltip title={translations.mapPreview.tooltips.fitToData}>
+            <Tooltip title={translations.mapPreview.tooltips?.fitToData}>
               <Fab size="small" onClick={handleFitToData}>
                 <CenterFocusStrong />
               </Fab>
             </Tooltip>
 
-            <Tooltip title={translations.mapPreview.tooltips.currentLocation}>
+            <Tooltip title={translations.mapPreview.tooltips?.currentLocation}>
               <Fab size="small" onClick={handleMoveToCurrentLocation}>
                 <MyLocation />
               </Fab>
             </Tooltip>
 
-            <Tooltip title={translations.mapPreview.tooltips.settings}>
+            <Tooltip title={translations.mapPreview.tooltips?.settings}>
               <Fab
                 size="small"
                 onClick={(e) => setSettingsAnchor(e.currentTarget)}

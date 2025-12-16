@@ -16,7 +16,7 @@
 
 ```sh
 # 定義一覧（kind|name|file）
-rg -n "^export\\s+(type|interface|enum|class)\\s+([A-Za-z0-9_]+)" packages/common/types/src \
+rg -n "^export\\s+(type|interface|enum|class)\\s+([A-Za-z0-9_]+)" packages/_obsolate_common/types/src \
   | sed -E 's/^([^:]+):[0-9]+:export (type|interface|enum|class) ([A-Za-z0-9_]+).*/\\2|\\3|\\1/' \
   | sort > .codex/tmp/defs.txt
 

@@ -88,7 +88,8 @@ type TileSummary = Awaited<ReturnType<LocationVectorTileService['getSessionSumma
 
 export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ draft: _draft, nodeId }) => {
   const { translations, locale } = useTranslation();
-  const previewNodeId = nodeId ?? 'preview';
+  const panelTranslations = translations.panel ?? {};
+  const previewNodeId = nodeId ?? 'preview' as NodeId;
   const [summary, setSummary] = useState<TileSummary | null>(null);
   const [locations, setLocations] = useState<PreviewLocationPoint[]>([]);
   const [loading, setLoading] = useState(false);
@@ -254,7 +255,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
           startIcon={<RefreshIcon fontSize="small" />}
           onClick={loadData}
         >
-          {translations.panel.refresh}
+          {panelTranslations.refresh ?? 'Refresh'}
         </Button>
       </Stack>
 
@@ -265,7 +266,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       <Divider />
 
       <Box flex={1} minHeight={320}>
-        <LocationMapPreview nodeId={previewNodeId as any} locations={locations} />
+        <LocationMapPreview nodeId={previewNodeId} locations={locations} />
       </Box>
     </Box>
   );

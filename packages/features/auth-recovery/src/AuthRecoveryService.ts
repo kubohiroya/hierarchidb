@@ -86,7 +86,7 @@ export class AuthRecoveryService implements AuthHeadersProvider {
   }
 
   private async awaitAuth(requestId: string, url: string, init: RequestInit, ctx: AuthContext): Promise<Response> {
-    // Narrow plugin type to common-auth.PluginType
+    // Narrow plugin type to _obsolate_common-auth.PluginType
     const pluginTypeNarrow: PluginType = ((): PluginType => {
       const p = ctx.pluginType ?? 'shape';
       return (p === 'shape' || p === 'spreadsheet' || p === 'styler') ? p : 'shape';

@@ -81,7 +81,7 @@ export function AnimationViewerStep({ frames, initialIndex = 0, initialFps = 12,
             position: 'absolute',
             bottom: 16,
             left: 16,
-            color: 'common.white',
+            color: '_obsolate_common.white',
             textShadow: '0 0 10px rgba(0,0,0,0.45)',
           }}
         >

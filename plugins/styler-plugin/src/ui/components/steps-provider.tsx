@@ -108,6 +108,7 @@ registry.registerConfigProvider<StylerStepData>({
           <StylerPreviewStep
             data={p.data}
             onChange={p.onChange}
+            nodeId={p.nodeId}
             onValidate={(valid) => {
               p.setValid(valid);
               if (valid) {

@@ -6,14 +6,12 @@
 import {
   type BatchSession,
   type BatchTask,
-  calculateSelectionStats,
   type CountryMetadata,
   type CreateShapeData,
   type DataSourceConfig,
   type DataSourceName,
-  DEFAULT_DATA_SOURCES,
+  SHAPE_DATA_SOURCES,
   DEFAULT_PROCESSING_CONFIG,
-  generateUrlMetadata,
   mergeProcessingConfig,
   type NodeId,
   type ProcessingConfig,
@@ -30,7 +28,7 @@ import {
   type UrlMetadata,
   validateProcessingConfig,
   type ShapeStepValidationResult,
-} from '../common/shared/index.js';
+} from '../common/types/index.js';
 import { ShapeEntityHandler } from './handlers/index.js';
 
 import { metadataLoader } from '../services/metadata/MetadataLoader.js';
@@ -40,6 +38,7 @@ import { getEphemeralShapeDB } from '../services/database/EphemeralShapeDB.js';
 import type { TreeNodeId } from '@hierarchidb/common-types';
 import type { BatchStage, BatchTaskStatus } from '../common/types/BatchTaskLike.js';
 import type { BatchProgressEvent as RuntimeBatchProgressEvent } from '@hierarchidb/common-api';
+import { calculateSelectionStats, generateUrlMetadata } from '../services/utils/utils.js';
 
 // Create singleton unified batch manager
 const batchSessionManager = createShapeBatchManager();
@@ -255,7 +254,7 @@ export const shapePluginAPI = {
   // ===================================
 
   getDataSourceConfigs: async (): Promise<DataSourceConfig[]> => {
-    return DEFAULT_DATA_SOURCES;
+    return SHAPE_DATA_SOURCES;
   },
 
   getCountryMetadata: async (dataSource: string | DataSourceName): Promise<CountryMetadata[]> => {
@@ -306,7 +305,7 @@ export const shapePluginAPI = {
       errors.push('At least one administrative level must be selected');
     }
 
-    if (!DEFAULT_DATA_SOURCES.find((ds: DataSourceConfig) => ds.name === dataSourceName)) {
+    if (!SHAPE_DATA_SOURCES.find((ds: DataSourceConfig) => ds.name === dataSourceName)) {
       errors.push('Invalid data source selected');
     }
 
@@ -488,6 +487,7 @@ export const shapePluginAPI = {
       return {
         sessionId: status.sessionId,
         draftId: nodeId,
+        nodeId,
         status: normalizedStatus,
         config,
         startedAt: status.startedAt ?? Date.now(),

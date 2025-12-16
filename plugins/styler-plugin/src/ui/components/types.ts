@@ -6,12 +6,3 @@ export interface ColumnMapping {
   sourceColumn?: string;
   targetColumn?: string;
 }
-
-/** Extended column mapping for detailed configuration */
-export interface ExtendedColumnMapping extends ColumnMapping {
-  included: boolean;
-  sourceColumn: string;
-  targetColumn: string;
-  transformFunction?: string;
-  defaultValue?: string | number | boolean | null;
-}

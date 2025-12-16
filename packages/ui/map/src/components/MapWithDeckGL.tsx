@@ -18,9 +18,9 @@ export interface DeckOverlayProps {
   onClick?: (info: any) => void;
 }
 
-export interface MapWithDeckGLProps extends MapLibreMapProps {
+export type MapWithDeckGLProps = MapLibreMapProps & {
   deck: DeckOverlayProps;
-}
+};
 
 type DeckOverlayCtor = typeof DeckMapboxOverlay;
 

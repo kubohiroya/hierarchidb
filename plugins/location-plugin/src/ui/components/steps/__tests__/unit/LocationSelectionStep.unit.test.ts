@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildCheckboxState, normalizeMatrix } from '../../LocationSelectionStep';
-import type { LocationType } from '../../../../common/types/index';
+import type { LocationType } from '../../../../_obsolate_common/types/index';
 import type { Country, LocationTypeConfig } from '../../LocationSelectionStep';
 
 const mockCountries: Country[] = [

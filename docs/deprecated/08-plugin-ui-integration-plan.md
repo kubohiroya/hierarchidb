@@ -129,7 +129,7 @@ export const PluginIconProvider: React.FC<{
 #### 2.2 動的メニュー生成
 
 ```typescript
-// packages/ui-treeconsole/src/containers/common/DynamicNodeContextMenu.tsx
+// packages/ui-treeconsole/src/containers/_obsolate_common/DynamicNodeContextMenu.tsx
 export function DynamicNodeContextMenu({ 
   nodeType,
   parentType,

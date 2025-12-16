@@ -131,7 +131,7 @@ export interface ExtendableNodeTypeDefinition<TBase, TExtended, TWorkingCopy> {
 
 ### 実行コマンド
 ```bash
-cd packages/common/core && npm test plugin-extension.test.ts
+cd packages/_obsolate_common/core && npm test plugin-extension.test.ts
 ```
 
 ### 結果

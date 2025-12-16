@@ -14,7 +14,7 @@
 ### 1) payload 型と normalizer を定義
 
 ```ts
-// plugins/foo-plugin/src/common/types/FooPeerData.ts
+// plugins/foo-plugin/src/_obsolate_common/types/FooPeerData.ts
 export interface FooPeerData {
   schemaVersion: 1;
   settings?: { theme?: 'light' | 'dark' };
@@ -33,7 +33,7 @@ export const normalizeFooPeerData = (data?: FooPeerData | null): FooPeerData => 
 ```ts
 // plugins/foo-plugin/src/worker/factory/registerFooWorkerStores.ts
 import { createNodePayloadPeerStore } from '@hierarchidb/runtime-worker';
-import { normalizeFooPeerData } from '../../common/types/FooPeerData';
+import { normalizeFooPeerData } from '../../_obsolate_common/types/FooPeerData';
 
 export async function registerFooWorkerStores() {
   const { storeRegistry } = await import('@hierarchidb/runtime-worker');

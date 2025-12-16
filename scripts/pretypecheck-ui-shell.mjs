@@ -27,8 +27,8 @@ const DEPENDENCY_PACKAGES = [
   { name: '@hierarchidb/plugin-ui-sdk', dir: 'packages/plugin-ui-sdk' },
   { name: '@hierarchidb/plugin-base', dir: 'packages/plugin-base' },
   { name: '@hierarchidb/plugin-presentation', dir: 'packages/plugin-presentation' },
-  { name: '@hierarchidb/common-api', dir: 'packages/common/api' },
-  { name: '@hierarchidb/common-types', dir: 'packages/common/types' },
+  { name: '@hierarchidb/common-api', dir: 'packages/_obsolate_common/api' },
+  { name: '@hierarchidb/common-types', dir: 'packages/_obsolate_common/types' },
   { name: '@hierarchidb/util', dir: 'packages/util' }
 ];
 

@@ -48,7 +48,7 @@ function evaluateManifestModule(manifestPath: string, { silent = false }: LoadOp
 
         return JSON.parse(fs.readFileSync(abs, 'utf-8'));
       }
-      if (specifier === '@hierarchidb/common-types') {
+      if (specifier === '@hierarchidb/_obsolate_common-types') {
         return {
           toNodeType: (value: string) => value,
         };

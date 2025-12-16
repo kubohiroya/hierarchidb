@@ -1,7 +1,7 @@
 import { Accordion, AccordionDetails, AccordionSummary, Grid, Slider, Stack, TextField, Typography, Chip } from '@mui/material';
 import { CloudDownload as CloudDownloadIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
-import type { DownloadProcessingConfig, ProcessingConfig } from '../../../../common/shared/index.js';
-import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../../common/shared/index.js';
+import type { DownloadProcessingConfig, ProcessingConfig } from '../../../../common/types/index.js';
+import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../../common/types/index.js';
 import { useId } from 'react';
 
 type Props = {

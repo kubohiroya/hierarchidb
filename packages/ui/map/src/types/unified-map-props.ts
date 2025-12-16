@@ -65,7 +65,7 @@ export interface MapInteractionOptions {
  * Base map dimensions and styling - shared across all map components
  *
  * UNIFIED REASON: All components had identical dimension props
- * Extracted to common interface for consistency and reusability
+ * Extracted to _obsolate_common interface for consistency and reusability
  */
 export interface MapDimensionsProps {
   /** Map container width */
@@ -156,19 +156,30 @@ export interface MapIdentifyProps {
  * - Serves as foundation for all map component props
  * - Enables consistent API across MapLibreMap and MapWithVectorTiles
  */
-export interface BaseMapProps extends MapDimensionsProps, MapEventHandlers, MapIdentifyProps {
+interface BaseMapCommonProps extends MapDimensionsProps, MapEventHandlers, MapIdentifyProps {
   /** Initial view state for the map */
   initialViewState: MapViewState;
 
   /** Controlled view state for the map (when provided, map becomes controlled) */
   viewState?: MapViewState;
 
-  /** Map style URL or style object */
-  mapStyle?: string | MapLibreStyle;
-
   /** Map interaction options */
   mapOptions?: MapInteractionOptions;
 }
+
+export interface UrlBasedBaseMapProps extends BaseMapCommonProps {
+  /** Map style URL */
+  mapStyleUrl?: string;
+  mapStyleObject?: never;
+}
+
+export interface MapLibreStyleBasedBaseMapProps extends BaseMapCommonProps {
+  /** MapLibre style object */
+  mapStyleObject: MapLibreStyle;
+  mapStyleUrl?: never;
+}
+
+export type BaseMapProps = UrlBasedBaseMapProps | MapLibreStyleBasedBaseMapProps;
 
 /**
  * Vector tile specific layer configuration
@@ -248,8 +259,8 @@ export interface VectorTileProps extends VectorTileDataSource, VectorTileLayerCo
  * CENTRALIZED DEFAULTS SOLUTION:
  *
  * BEFORE (inconsistent):
- * - MapLibreMap:        height='400px', mapStyle='https://...'
- * - MapWithVectorTiles: height='500px', mapStyle='https://...'
+ * - MapLibreMap:        height='400px', mapStyleUrl='https://...'
+ * - MapWithVectorTiles: height='500px', mapStyleUrl='https://...'
  * - Different layer configs with different IDs and paint styles
  *
  * AFTER (consistent):
@@ -258,6 +269,8 @@ export interface VectorTileProps extends VectorTileDataSource, VectorTileLayerCo
  * - Easy to modify defaults globally
  * - Type-safe with 'as const' assertion
  */
+export const DEFAULT_MAP_STYLE_URL = 'https://demotiles.maplibre.org/style.json';
+
 export const DEFAULT_MAP_CONFIG = {
   viewState: {
     longitude: 0,
@@ -270,7 +283,7 @@ export const DEFAULT_MAP_CONFIG = {
     height: '400px',  // Standardized to 400px (was 400px/500px)
   },
 
-  mapStyle: 'https://demotiles.maplibre.org/style.json',
+  mapStyleUrl: DEFAULT_MAP_STYLE_URL,
 
   interactionOptions: {
     interactive: true,

@@ -177,7 +177,7 @@ const VectorTileHighlightDemo = ({ highlightId, matchProperty, matchValue }: Hig
     >
       <LazyMapWithDeckGL
         initialViewState={INITIAL_VIEW_STATE}
-        mapStyle={DEFAULT_MAP_CONFIG.mapStyle}
+        mapStyleUrl={DEFAULT_MAP_CONFIG.mapStyleUrl}
         height="520px"
         deck={{
           layers,

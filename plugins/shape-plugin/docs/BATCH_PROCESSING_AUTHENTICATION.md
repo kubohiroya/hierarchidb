@@ -116,7 +116,7 @@ packages/backend/cors-proxy/
 ### 1. 共通認証通知システム
 
 ```typescript
-// packages/common/auth/AuthNotificationSystem.ts
+// packages/_obsolate_common/auth/AuthNotificationSystem.ts
 export interface AuthRequiredNotification {
   type: 'AUTH_REQUIRED';
   source: 'worker' | 'cors-proxy' | 'bff' | 'external-api';

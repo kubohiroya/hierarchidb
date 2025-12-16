@@ -87,6 +87,7 @@ export class StylerEntityHandler {
         ...StylerMappingDefault,
         ...data?.mapping
       },
+      styleKeyValues: data?.styleKeyValues ?? baseEntity.styleKeyValues,
       generatedStyle: data?.generatedStyle,
     };
 
@@ -107,6 +108,7 @@ export class StylerEntityHandler {
         ...StylerMappingDefault,
         ...baseEntity.mapping
       },
+      styleKeyValues: baseEntity.styleKeyValues,
       generatedStyle: baseEntity.generatedStyle,
     };
 
@@ -133,6 +135,7 @@ export class StylerEntityHandler {
           ...StylerMappingDefault,
           ...baseEntity.mapping
         },
+        styleKeyValues: data.styleKeyValues ?? baseEntity.styleKeyValues,
         generatedStyle: baseEntity.generatedStyle,
       };
     }

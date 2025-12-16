@@ -12,3 +12,8 @@ Object.entries(localeModules).forEach(([path, mod]) => {
 });
 
 export { i18n };
+export const useTranslation = (ns: string = 'shape-plugin') => ({
+  t: (key: string, fallback?: string, options?: Record<string, unknown>) =>
+    String(i18n.t(key, { ns, defaultValue: fallback ?? key, ...options })),
+  i18n,
+});

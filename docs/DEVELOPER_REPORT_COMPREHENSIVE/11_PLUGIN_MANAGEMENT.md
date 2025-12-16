@@ -7,7 +7,7 @@
 HierarchiDBは、アプリケーションの`package.json`の`dependencies`から、特定のパターンに合致するパッケージを自動的にプラグインとして検出します。
 
 ```typescript
-// packages/common/core/src/plugin-loader/SimplePluginDiscovery.ts
+// packages/_obsolate_common/core/src/plugin-loader/SimplePluginDiscovery.ts
 
 export class SimplePluginDiscovery {
   private static readonly NODE_TYPE_PLUGIN_PATTERN = /^@hierarchidb\/(.+)-plugin$/;

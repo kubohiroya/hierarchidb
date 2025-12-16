@@ -1,8 +1,8 @@
 import { AbstractBatchSession } from '@hierarchidb/batch';
 import type { BaseBatchConfig, BatchProgressEvent } from '@hierarchidb/common-api';
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-types';
-import type { ProgressInfo } from '../common/types.js';
-import type { ProcessingStage } from '../../common/shared/types.js';
+import type { ProgressInfo } from '../../common/types/index.js';
+import type { ProcessingStage } from '../../common/types/index.js';
 import type { SessionController } from './SessionController.js';
 
 export interface ShapeBatchConfig extends BaseBatchConfig {

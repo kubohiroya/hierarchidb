@@ -29,8 +29,7 @@
     "react": "^18.3.1",
     "jotai": "^2.11.2",
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/ui-dialog": "workspace:*",
-    "@hierarchidb/runtime-worker": "workspace:*"
+    "@hierarchidb/ui-dialog": "workspace:*"
   },
   "devDependencies": {
     "vitest": "^3.2.4",

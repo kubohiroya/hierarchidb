@@ -11,7 +11,7 @@
 1. **パッケージ依存関係の更新**
    ```json
    // package.json の dependencies を更新
-   "@hierarchidb/common-plugin-base": "workspace:*"  // 削除
+   "@hierarchidb/_obsolate_common-plugin-base": "workspace:*"  // 削除
    "@hierarchidb/plugin-loader-base-plugin": "workspace:*"  // 追加
    ```
 

@@ -1,6 +1,6 @@
 /**
  * Abstract Base Class for Batch Processing Sessions
- * Provides common functionality for all batch processing plugin-loader
+ * Provides _obsolate_common functionality for all batch processing plugin-loader
  */
 
 import type { NodeId } from '@hierarchidb/common-types';

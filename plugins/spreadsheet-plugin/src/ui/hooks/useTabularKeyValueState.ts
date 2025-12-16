@@ -79,7 +79,7 @@ export const useTabularKeyValueState = <T extends SpreadsheetEntity>({
 
   useEffect(() => {
     const next = Array.isArray(dialogData.filters) ? (dialogData.filters as TabularFilterRule[]) : [];
-    setFilterRules((prev) => (rulesEqual(prev, next) ? prev : next));
+    setFilterRules((prev: TabularFilterRule[]) => (rulesEqual(prev, next) ? prev : next));
   }, [dialogData.filters, setFilterRules]);
 
   const mapping = (dialogData as { mapping?: { keyColumn?: string; valueColumn?: string } }).mapping;
@@ -175,7 +175,7 @@ export const useTabularKeyValueState = <T extends SpreadsheetEntity>({
     handleKeyColumnChange,
     handleValueColumnChange,
     handleFiltersChanged: (rules: TabularFilterRule[]) =>
-      setFilterRules((prev) => (rulesEqual(prev, rules) ? prev : rules)),
+      setFilterRules((prev: TabularFilterRule[]) => (rulesEqual(prev, rules) ? prev : rules)),
     handlePreviewRows: (rows: TabularDataResult['rows']) => {
       const nextRows = Array.isArray(rows) ? (rows as Record<string, unknown>[]) : [];
       setTabularRows(nextRows);

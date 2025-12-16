@@ -78,7 +78,7 @@ export function buildBaseMapEntityFromNode(node?: TreeNode | null): (BaseMapEnti
   return {
     mapStyle,
     viewport,
-    draftMetadata: (draftMetadata || committedMetadata || { name: '', description: '', tags: [] }) as any,
+    draftMetadata: (draftMetadata || committedMetadata || { name: '', description: '', tags: [] }) as TreeNodeMetadata,
   };
 }
 

@@ -47,7 +47,7 @@ export const MapPreview: React.FC<MapPreviewProps> = ({ items: _items }) => {
             width="100%"
             height={420}
             initialViewState={initialView}
-            mapStyle="https://demotiles.maplibre.org/style.json"
+            mapStyleUrl="https://demotiles.maplibre.org/style.json"
             mapOptions={{
               interactive: false,
               scrollZoom: false,

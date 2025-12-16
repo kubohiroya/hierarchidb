@@ -2,7 +2,7 @@
  * Shape plugin constants
  */
 
-import type { DataSourceConfig, ProcessingConfig } from './types.js';
+import type { DataSourceConfig, ProcessingConfig } from '../types/index.js';
 
 export const SHAPE_PLUGIN_ID = 'shape';
 
@@ -41,7 +41,7 @@ export const SHAPE_LEVELS = [
   { level: 5, label: 'Neighborhood', icon: '📍' },
 ] as const;
 
-export const DEFAULT_DATA_SOURCES = [
+export const SHAPE_DATA_SOURCES = [
   {
     name: 'naturalearth',
     displayName: 'Natural Earth',

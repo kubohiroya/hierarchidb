@@ -17,9 +17,9 @@ import {
 } from '@mui/material';
 // import { Check as CheckIcon } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
-import type { CountryMetadata, StepProps } from '../../../common/shared/index.js';
-import { normalizeDataSourceName } from '../../../common/shared/index.js';
-import { useCountryMetadata } from '../../../common/hooks/useCountryMetadata.js';
+import type { CountryMetadata, StepProps } from '../../../common/types/index.js';
+import { normalizeDataSourceName } from '../../../services/utils/utils.js';
+import { useCountryMetadata } from '../../hooks/useCountryMetadata.js';
 import {
   calculateEstimatedFeatures,
   // calculateEstimatedProcessingTime,
@@ -46,7 +46,7 @@ const AlphabeticalIndex: React.FC<AlphabeticalIndexProps> = ({ letters, onSelect
       direction="row"
       spacing={0.5}
       flexWrap="nowrap"
-      sx={{ mb: 1, overflowX: 'auto', justifyContent: 'center' }}
+      sx={{ mb: 1, overflowX: 'auto', justifyContent: 'center', flexShrink: 0, py: 0.5 }}
     >
       {letters.map((letter) => (
         <Button
@@ -83,7 +83,7 @@ export const Step4CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, di
 
   const alphaIndex = useMemo(() => {
     const letters = new Set<string>();
-    countries.forEach((country) => {
+    countries.forEach((country: CountryMetadata) => {
       const letter = country.countryName?.[0]?.toUpperCase() ?? '#';
       letters.add(letter);
     });
@@ -205,7 +205,7 @@ export const Step4CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, di
         let availableCount = 0;
         let selectedCount = 0;
 
-        countries.forEach((country, countryIndex) => {
+        countries.forEach((country: CountryMetadata, countryIndex: number) => {
           if (!country.availableAdminLevels.includes(levelIndex)) return;
           availableCount += 1;
           if (checkboxMatrix[countryIndex]?.[levelIndex]) selectedCount += 1;
@@ -219,7 +219,7 @@ export const Step4CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, di
   const handleLevelToggle = useCallback(
     (levelIndex: number, checked: boolean) => {
       const clonedMatrix = checkboxMatrix.map((row) => [...row]);
-      countries.forEach((country, countryIndex) => {
+      countries.forEach((country: CountryMetadata, countryIndex: number) => {
         if (!country.availableAdminLevels.includes(levelIndex)) return;
         const row = clonedMatrix[countryIndex] ?? Array.from({ length: maxAdminLevel + 1 }, () => false);
         const nextRow = [...row];
@@ -274,7 +274,10 @@ export const Step4CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, di
       <AlphabeticalIndex letters={alphaIndex} onSelect={scrollToLetter} />
 
       {/* Simplified Matrix Table (without virtualization for now) */}
-      <TableContainer component={Paper} sx={{ flex: 1, overflow: 'auto', maxHeight: '100%' }}>
+      <TableContainer
+        component={Paper}
+        sx={{ flex: 1, overflow: 'auto', maxHeight: '100%', minHeight: 0 }}
+      >
         <Table stickyHeader size="small">
           <TableHead>
             <TableRow>

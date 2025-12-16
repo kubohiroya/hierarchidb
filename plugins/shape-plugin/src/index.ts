@@ -4,7 +4,7 @@
   */
 
 //  Shared layer -
-export * from './common/shared/index.js';
+export * from './common/types/index.js';
 // Services (database helpers previously exposed via ./services)
 export { ShapeDB, EphemeralShapeDB } from './services/index.js';
 
@@ -16,10 +16,10 @@ export { ShapeDB, EphemeralShapeDB } from './services/index.js';
 // Extension (UI) exports omitted from public API for now
 
 //  Backward compatibility -
-export { ShapeMetadata } from './common/shared/metadata.js';
+export { ShapeMetadata } from './common/types/metadata.js';
 export { PLUGIN_MANIFEST as ShapePluginManifest } from './plugin-manifest.js';
-export type { ShapeEntity, CreateShapeData, UpdateShapeData, BatchTaskStageType, BatchTaskStage } from './common/shared/types.js';
-export type { ShapeAPI } from './common/shared/api.js';
+export type { ShapeEntity, CreateShapeData, UpdateShapeData, BatchTaskStageType, BatchTaskStage } from './common/types/index.js';
+export type { ShapeAPI } from './common/types/api.js';
 
 // Unified Batch Control API (API v2)
 export * from './services/batch/UnifiedShapeBatchManager.js';

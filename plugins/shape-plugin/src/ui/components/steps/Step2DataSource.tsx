@@ -1,13 +1,15 @@
 import type React from 'react';
 import { Box, Typography } from '@mui/material';
-import { DataSourceSelector, type DataSourceOption } from '@hierarchidb/ui-datasource';
-import { LicenseAgreementStep } from '@hierarchidb/ui-license';
 import {
-  normalizeDataSourceName,
+  DataSourceWithLicense,
+  type DataSourceWithLicenseOption,
+} from '@hierarchidb/ui-datasource';
+import {
   type DataSourceConfig,
   type DataSourceName,
   type StepProps,
-} from '../../../common/shared/index.js';
+} from '../../../common/types/index.js';
+import { normalizeDataSourceName } from '../../../services/utils/utils.js';
 import { DATA_SOURCE_CONFIGS } from '../../../common/mock/data.js';
 
 /**
@@ -17,33 +19,20 @@ import { DATA_SOURCE_CONFIGS } from '../../../common/mock/data.js';
 export const Step2DataSource: React.FC<StepProps> = ({ draft, onUpdate, disabled }) => {
   const draftData = draft ?? {};
   const sources = Object.values(DATA_SOURCE_CONFIGS) as DataSourceConfig[];
-  const options: DataSourceOption[] = sources.map((source) => ({
+  const options: DataSourceWithLicenseOption[] = sources.map((source) => ({
     id: source.name,
     name: source.displayName,
     description: source.description,
     icon: source.icon,
-    metadata: {
-      license: source.license,
-      licenseUrl: source.licenseUrl,
-      attribution: source.attribution,
-    },
+    licenseName: source.license,
+    licenseUrl: source.licenseUrl,
+    attribution: source.attribution,
   }));
-
-  const handleDataSourceSelect = (dataSourceName: DataSourceName) => {
-    onUpdate({
-      dataSourceName,
-      licenseAgreement: false, // Reset license agreement when changing source
-      licenseAgreedAt: undefined,
-    });
-  };
 
   const normalizedValue = normalizeDataSourceName(draftData.dataSourceName);
   const defaultGeoBoundaries = options.find((option) => option.id === 'geoboundaries')?.id;
-  const fallbackValue = defaultGeoBoundaries ?? options[0]?.id ?? '';
-  const selectedSource =
-    (normalizedValue && DATA_SOURCE_CONFIGS[normalizedValue]) ||
-    (fallbackValue && DATA_SOURCE_CONFIGS[fallbackValue]) ||
-    undefined;
+  const fallbackValue = (defaultGeoBoundaries ?? options[0]?.id) as DataSourceName | undefined;
+  const dataSourceId = normalizedValue ?? fallbackValue ?? options[0]?.id ?? 'openstreetmap';
 
   return (
     <Box sx={{ p: 3 }}>
@@ -56,43 +45,40 @@ export const Step2DataSource: React.FC<StepProps> = ({ draft, onUpdate, disabled
       </Typography>
 
       <Box sx={{ mt: 3 }}>
-        <DataSourceSelector
+        <DataSourceWithLicense<string>
           options={options}
-          value={normalizedValue ?? fallbackValue}
-          onChange={(next) => handleDataSourceSelect(next as DataSourceName)}
+          state={{
+            dataSourceId,
+            licenseAgreement: Boolean(draftData.licenseAgreement),
+            licenseAgreedAt: draftData.licenseAgreedAt,
+          }}
+          onChange={(next) => {
+            const updates: Partial<typeof draftData> = {};
+            if (typeof next.dataSourceId !== 'undefined') {
+              const nextSource = (next.dataSourceId as DataSourceName | undefined) ?? fallbackValue;
+              updates.dataSourceName = nextSource;
+            }
+            if (typeof next.licenseAgreement !== 'undefined') {
+              updates.licenseAgreement = next.licenseAgreement;
+            }
+            if (typeof next.licenseAgreedAt !== 'undefined') {
+              updates.licenseAgreedAt = next.licenseAgreedAt;
+            }
+            if (Object.keys(updates).length) {
+              onUpdate(updates);
+            }
+          }}
+          licenseRequired={false}
           disabled={disabled}
+          description={
+            <Typography variant="body2" color="text.secondary" paragraph>
+              Choose a geographic data provider. Each source has different coverage, accuracy, and
+              licensing requirements.
+            </Typography>
+          }
+          createAgreedAt={() => new Date().toISOString()}
         />
       </Box>
-
-      {selectedSource ? (
-        <Box sx={{ mt: 4 }}>
-          <Typography variant="subtitle1" gutterBottom>
-            License Agreement
-          </Typography>
-          <LicenseAgreementStep
-            sourceName={selectedSource.displayName}
-            details={{
-              licenseName: selectedSource.license,
-              attribution: selectedSource.attribution,
-              url: selectedSource.licenseUrl,
-            }}
-            state={{
-              agreed: Boolean(draftData.licenseAgreement),
-              agreedAt: draftData.licenseAgreedAt,
-            }}
-            onAgree={() => {
-              if (selectedSource.licenseUrl) {
-                window.open(selectedSource.licenseUrl, '_blank', 'noopener,noreferrer');
-              }
-              onUpdate({
-                licenseAgreement: true,
-                licenseAgreedAt: new Date().toISOString(),
-              });
-            }}
-            disabled={disabled}
-          />
-        </Box>
-      ) : null}
     </Box>
   );
 };

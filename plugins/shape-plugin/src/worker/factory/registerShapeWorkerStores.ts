@@ -1,14 +1,15 @@
 /// <reference types="vite/client" />
 
 import type { GroupItemBase, GroupStore, PeerStore, RelationBase, RelationStore } from '@hierarchidb/runtime-worker';
+import type { ShapeEntitiesDB } from '../shapeEntitiesDB.js';
 
 type StoreRegistry = {
   getPeer<T = unknown>(nodeType: string): PeerStore<T> | undefined;
   registerPeer<T = unknown>(nodeType: string, store: PeerStore<T>): void;
-  getGroup<T extends GroupItemBase<any> = GroupItemBase<any>>(nodeType: string): GroupStore<T> | undefined;
-  registerGroup<T extends GroupItemBase<any>>(nodeType: string, store: GroupStore<T>): void;
-  getRelations<T extends RelationBase<any> = RelationBase<any>>(nodeType: string): RelationStore<T> | undefined;
-  registerRelations<T extends RelationBase<any>>(nodeType: string, store: RelationStore<T>): void;
+  getGroup<T extends GroupItemBase<unknown> = GroupItemBase<unknown>>(nodeType: string): GroupStore<T> | undefined;
+  registerGroup<T extends GroupItemBase<unknown>>(nodeType: string, store: GroupStore<T>): void;
+  getRelations<T extends RelationBase<unknown> = RelationBase<unknown>>(nodeType: string): RelationStore<T> | undefined;
+  registerRelations<T extends RelationBase<unknown>>(nodeType: string, store: RelationStore<T>): void;
 };
 
 export interface RegisterShapeWorkerStoresOptions {
@@ -30,27 +31,29 @@ async function resolveStoreRegistry(options: RegisterShapeWorkerStoresOptions = 
 
 async function ensureShapeStores(registry: StoreRegistry): Promise<void> {
   type ShapeEntitiesDbModule = {
-    ShapeEntitiesDB: new () => { open?: () => Promise<unknown> };
+    ShapeEntitiesDB: new () => ShapeEntitiesDB & { open?: () => Promise<unknown> };
+  };
+  type ShapeGroupStoreModule = {
+    createShapeGroupStoreDexie: (db: ShapeEntitiesDB) => GroupStore<GroupItemBase<{ value?: unknown }>>;
+  };
+  type ShapeRelationStoreModule = {
+    createShapeRelationStoreDexie: (db: ShapeEntitiesDB) => RelationStore<RelationBase<{ weight?: number }>>;
   };
 
   const { ShapeEntitiesDB } = (await import('../shapeEntitiesDB.js')) as ShapeEntitiesDbModule;
   const db = new ShapeEntitiesDB();
-  const maybeOpen = (db as { open?: () => Promise<unknown> }).open;
+  const maybeOpen = db.open;
   if (typeof maybeOpen === 'function') {
     await maybeOpen.call(db);
   }
 
   if (!registry.getGroup('shape')) {
-    const { createShapeGroupStoreDexie } = (await import('../shapeGroupStore.dexie.js')) as {
-      createShapeGroupStoreDexie: (db: unknown) => GroupStore<GroupItemBase<any>>;
-    };
+    const { createShapeGroupStoreDexie } = (await import('../shapeGroupStore.dexie.js')) as ShapeGroupStoreModule;
     registry.registerGroup('shape', createShapeGroupStoreDexie(db));
   }
 
   if (!registry.getRelations('shape')) {
-    const { createShapeRelationStoreDexie } = (await import('../shapeRelationStore.dexie.js')) as {
-      createShapeRelationStoreDexie: (db: unknown) => RelationStore<RelationBase<any>>;
-    };
+    const { createShapeRelationStoreDexie } = (await import('../shapeRelationStore.dexie.js')) as ShapeRelationStoreModule;
     registry.registerRelations('shape', createShapeRelationStoreDexie(db));
   }
 }

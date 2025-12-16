@@ -45,7 +45,7 @@ import { useAuth } from '../hooks/useAuth.js';
 import type { AuthProviderType } from '../types/AuthProviderType.js';
 
 // Local minimal type to avoid workspace linking issues during typecheck.
-// Aligns with @hierarchidb/common-auth AuthRequiredNotification shape used here.
+// Aligns with @hierarchidb/_obsolate_common-auth AuthRequiredNotification shape used here.
 type AuthRequiredNotification = {
   type: 'AUTH_REQUIRED';
   context: {

@@ -1,11 +1,10 @@
 /**
   * @file BatchConfig.ts
  * @description ERIA-Cartograph:
-  */
+ */
 
 import type { DataSourceName } from '@hierarchidb/ui-datasource';
-
-export type FeatureFilterMethod = 'bbox_only' | 'polygon_only' | 'hybrid';
+import type { FeatureFilterMethod } from './processing.js';
 
 /**
  * Configuration for hybrid features filtering algorithm

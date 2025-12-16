@@ -1,5 +1,5 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material';
-import type { BatchSession } from '../../common/shared/index.js';
+import type { BatchSession } from '../../common/types/index.js';
 
 export interface BatchRecoveryDialogProps {
   open: boolean;

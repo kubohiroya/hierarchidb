@@ -2,8 +2,8 @@ import gadmMetadata from '@hierarchidb/fetch-save-metadata/output/gadm.json' wit
 import geoboundariesMetadata from '@hierarchidb/fetch-save-metadata/output/geoboundaries.json' with { type: 'json' };
 import naturalearthMetadata from '@hierarchidb/fetch-save-metadata/output/naturalearth.json' with { type: 'json' };
 import osmMetadata from '@hierarchidb/fetch-save-metadata/output/osm.json' with { type: 'json' };
-import type { CountryMetadata, DataSourceName } from '../../common/shared/index.js';
-import { normalizeDataSourceName } from '../../common/shared/index.js';
+import type { CountryMetadata, DataSourceName } from '../../common/types/index.js';
+import { normalizeDataSourceName } from '../utils/utils.js';
 
 /**
  * MetadataLoader service

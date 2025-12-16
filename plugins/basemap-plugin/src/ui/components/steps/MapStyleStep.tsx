@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import type React from 'react';
 import { useId } from 'react';
-import { useMapStyleStep } from './hooks/useMapStyleStep.js';
+import { useMapStyleStep } from '../../hooks/useMapStyleStep.js';
 import type { MapStyle } from '../../../common/types/BaseMapEntity.js';
 
 export interface MapStyleStepProps {

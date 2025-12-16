@@ -1,7 +1,7 @@
 import type { TabularDataApi } from '@hierarchidb/ui-tabular-extract';
 import { SpreadsheetTabularApiDriver } from '@hierarchidb/spreadsheet-plugin';
 import { ShapeTabularMetadataManager } from './ShapeTabularMetadataManager.js';
-import { SHAPE_PLUGIN_ID } from '../../common/shared/constants.js';
+import { SHAPE_PLUGIN_ID } from '../../common/types/constants.js';
 
 /**
  * Reuse the shared Spreadsheet CSV driver with a Shape-specific metadata store.

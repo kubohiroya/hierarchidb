@@ -98,7 +98,7 @@ showInPluginList: (node: TreeNode, context: PluginContext) => {
 import type { NodeId } from '@hierarchidb/common-type';  // 未使用
 
 // 修正後（未使用import削除）
-// import type { NodeId } from '@hierarchidb/common-type';
+// import type { NodeId } from '@hierarchidb/_obsolate_common-type';
 ```
 
 #### 2.2 未使用変数削除

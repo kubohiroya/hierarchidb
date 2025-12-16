@@ -396,7 +396,7 @@ export function usePluginDialogController(
     setDraftData: setLocalDraftData,
     handleBasicInfoBridge,
     dialogRef,
-    basicInfoLabel: t('common.basicInfo.title', 'Basic Information'),
+    basicInfoLabel: t('_obsolate_common.basicInfo.title', 'Basic Information'),
   });
 
   // Stabilize stepData reference to avoid noisy context diffs in HeadlessMultiStepDialog

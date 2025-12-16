@@ -69,7 +69,7 @@ try {
       fs.writeFileSync(distIndexDts, content);
     }
   }
-  console.log('[common-type] ambient types emitted to dist and referenced by index.d.ts');
+  console.log('[_obsolate_common-type] ambient types emitted to dist and referenced by index.d.ts');
 } catch (e) {
-  console.warn('[common-type] emit ambient failed:', e?.message || e);
+  console.warn('[_obsolate_common-type] emit ambient failed:', e?.message || e);
 }

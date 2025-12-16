@@ -2,7 +2,7 @@
    * DATA_SOURCE_STRATEGY_DESIGN.md
   */
 
-import type { ShapeEntity, ShapeStepValidationResult } from '../../common/shared/types.js';
+import type { ShapeEntity, ShapeStepValidationResult } from '../../common/types/index.js';
 
 export interface DataSourceConfig {
   id: string;

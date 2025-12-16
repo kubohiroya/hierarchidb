@@ -12,6 +12,9 @@
       "default": "./src/index.ts"
     }
   },
+  "dependencies": {
+    "@hierarchidb/ui-license": "workspace:*"
+  },
   "scripts": {
     "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
     "clean": "rm -rf dist",

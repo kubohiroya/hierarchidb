@@ -6,7 +6,7 @@ const TsupDatabaseConfig = createTsupConfig({
   },
   external: [
     'dexie',
-    '@hierarchidb/common-types',
+    '@hierarchidb/_obsolate_common-types',
   ],
 });
 export { TsupDatabaseConfig };

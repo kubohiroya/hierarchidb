@@ -290,7 +290,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     ];
   })();
 
-  // Minimal local resolver for common MUI icon names (avoid extra deps)
+  // Minimal local resolver for _obsolate_common MUI icon names (avoid extra deps)
 
   return (
     <>

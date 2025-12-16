@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { CountryMetadata } from '../shared/index.js';
-import { normalizeDataSourceName } from '../shared/index.js';
+import type { CountryMetadata } from '../../common/types/index.js';
+import { normalizeDataSourceName } from '../../services/utils/utils.js';
 import { metadataLoader } from '../../services/metadata/MetadataLoader.js';
-import { SAMPLE_COUNTRIES } from '../mock/data.js';
+import { SAMPLE_COUNTRIES } from '../../common/mock/data.js';
 
 export interface UseCountryMetadataOptions {
   dataSource: string;

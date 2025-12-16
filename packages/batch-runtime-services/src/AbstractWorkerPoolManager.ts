@@ -1,6 +1,6 @@
 /**
  * Abstract Base Class for Worker Pool Management
- * Provides common worker pool functionality for batch processing
+ * Provides _obsolate_common worker pool functionality for batch processing
  */
 
 /**

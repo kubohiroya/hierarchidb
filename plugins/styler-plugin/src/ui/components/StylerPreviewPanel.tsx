@@ -1,9 +1,6 @@
 /**
  * @file StylerPreviewPanel.tsx
  * @description Styler table preview with color visualization (Step 6)
- * :
- * : eria-cartograph
- * :
  */
 
 import {
@@ -30,18 +27,11 @@ import {
   useTheme,
 } from '@mui/material';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-// import { VariableSizeList as List } from 'provider-window';
 import type { StylerConfig, StylerMapping, StylerTableRow } from '../../common/types/StylerEntity.js';
 import { valueToColor } from '../../common/utils/colorUtils.js';
 
-/**
- * :
- */
 type SortDirection = 'asc' | 'desc' | null;
 
-/**
- * :
- */
 export interface StylerTablePreviewProps {
   data: StylerTableRow[];
   keyColumn?: string;
@@ -53,16 +43,8 @@ export interface StylerTablePreviewProps {
   enableVirtualization?: boolean;
 }
 
-/**
- * :
- */
 type ColumnWidths = Record<string, number>;
 
-/**
- * :
- * :
- * :
- */
 const ResizableTableHeader: React.FC<{
   column: string;
   width: number;

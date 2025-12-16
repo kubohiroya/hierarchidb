@@ -96,7 +96,7 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
   };
 
   // Get map style URL
-  const mapStyleUrl = useMemo(() => resolvePreviewMapStyle(mapStyle), [mapStyle]);
+  const mapStyleSource = useMemo(() => resolvePreviewMapStyle(mapStyle), [mapStyle]);
 
   // Get attribution
   const attribution = useMemo(() => {
@@ -105,6 +105,10 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
     }
     return '© Map contributors';
   }, [mapStyle]);
+
+  const mapStyleProps = typeof mapStyleSource === 'string'
+    ? { mapStyleUrl: mapStyleSource }
+    : { mapStyleObject: mapStyleSource };
 
   return (
     <Paper
@@ -160,7 +164,7 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
         >
           <LazyMapLibreMap
             initialViewState={initialViewState}
-            mapStyle={mapStyleUrl}
+            {...mapStyleProps}
             width="100%"
             height="100%"
             mapOptions={{

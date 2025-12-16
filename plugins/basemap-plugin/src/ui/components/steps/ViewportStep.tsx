@@ -5,6 +5,7 @@ import {
   loadMapLibreMap,
   type MapLibreMapInstance,
   type MapViewState,
+  type MapLibreStyle,
 } from '@hierarchidb/ui-map';
 import type { MapStyle, MapViewport } from '../../../common/types/BaseMapEntity.js';
 import { resolveMapStyleSource } from '../../utils/mapStyle.js';
@@ -41,7 +42,7 @@ const OSM_RASTER_STYLE = {
       source: 'osm',
     },
   ],
-} as const;
+};
 
 const areViewStatesEqual = (a: MapViewState, b: MapViewState) => {
   const eps = 1e-6;
@@ -114,8 +115,15 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
 
   const mapStyleSource = useMemo(() => {
     if (mapStyle) return resolveMapStyleSource(mapStyle);
-    return OSM_RASTER_STYLE as unknown as any;
+    return OSM_RASTER_STYLE as unknown as MapLibreStyle;
   }, [mapStyle]);
+
+  const mapStyleProps = useMemo(
+    () => (typeof mapStyleSource === 'string'
+      ? { mapStyleUrl: mapStyleSource }
+      : { mapStyleObject: mapStyleSource }),
+    [mapStyleSource],
+  );
 
   const mapInteractionOptions = useMemo(
     () => ({
@@ -300,7 +308,7 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
           >
             <LazyMapLibreMap
               initialViewState={initial}
-              mapStyle={mapStyleSource}
+              {...mapStyleProps}
               width="100%"
               height="100%"
               mapOptions={mapInteractionOptions}

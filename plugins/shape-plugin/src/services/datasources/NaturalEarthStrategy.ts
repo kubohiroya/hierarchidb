@@ -4,7 +4,7 @@
   */
 
 import { BaseDataSourceStrategy, type DataSourceConfig, type FetchOptions, type ProcessOptions } from './DataSourceStrategy.js';
-import type { NodeId, ShapeEntity } from '../../common/shared/types.js';
+import type { NodeId, ShapeEntity } from '../../common/types/index.js';
 import type JSZip from 'jszip';
 import type { Feature as GeoJSONFeature } from 'geojson';
 

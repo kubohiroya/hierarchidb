@@ -54,7 +54,7 @@ export async function postJson(
       ...(headers || {}),
     },
   };
-  // Use a valid PluginType understood by the common-auth system ('shape'|'spreadsheet'|'styler').
+  // Use a valid PluginType understood by the _obsolate_common-auth system ('shape'|'spreadsheet'|'styler').
   const res = await auth.fetchWithAuth(url, init, { pluginType: 'shape' });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();

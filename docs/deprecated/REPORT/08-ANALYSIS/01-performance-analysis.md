@@ -210,7 +210,7 @@ class OptimizedCoreDB extends Dexie {
     super('HierarchiDB_Optimized');
     
     this.version(1).stores({
-      // Compound indexes for common queries
+      // Compound indexes for _obsolate_common queries
       nodes: '&treeNodeId, parentNodeId, treeId, ' +
              '[treeId+parentNodeId], [treeId+nodeType], ' +
              '[treeId+path], [treeId+depth+name]',

@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { DownloadTask } from '../../common/types.js';
-import type { ProgressInfo } from '../../../common/shared/index.js';
+import type { DownloadTask } from '../../../common/types/index.js';
+import type { ProgressInfo } from '../../../common/types/index.js';
 import type { StageControls } from './StageControls.js';
 
 export interface DownloadStageAdapterResult {

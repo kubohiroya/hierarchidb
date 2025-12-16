@@ -53,6 +53,81 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1746) ShapeDB キャッシュ統計の重複プロパティ修正（P1）
+- ブランチ: `fix/shape/cache-stats-duplicates`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin/src/services/database/ShapeDB.ts
+- 受け入れ基準（DoD）:
+  - [x] ShapeDB の `getCacheStatistics` 返却オブジェクトから重複プロパティ（hits/misses）を解消し、型エラーをなくす
+  - [x] `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` が通ることを確認し、結果を運用ログへ記録する
+  - [x] 原因と修正内容、およびロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [x] 重複プロパティを解消する修正を行う
+  - [x] typecheck コマンドを実行し結果を運用ログに記録する
+- ロールバック手順：今回変更する `plugins/shape-plugin/src/services/database/ShapeDB.ts` を revert し、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` を再実行する
+
+1747) basemap ViewportStep の MapLibre プロップ型修正（P1）
+- ブランチ: `fix/basemap/viewport-mapstyle-props`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/basemap-plugin/src/ui/components/steps/ViewportStep.tsx、@hierarchidb/ui-map の MapLibreStyleBasedBaseMapProps
+- 受け入れ基準（DoD）:
+  - [x] ViewportStep で LazyMapLibreMap に渡す props が `MapLibreStyleBasedBaseMapProps` に適合し、型エラーが出ない
+  - [x] `pnpm --filter @hierarchidb/basemap-plugin typecheck` を実行し、結果を運用ログへ記録する
+  - [x] 原因と修正内容、ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [x] fallback MapLibre style の型を `MapLibreStyle` に適合させる
+  - [x] typecheck コマンドを実行し結果を運用ログに記録する
+- ロールバック手順：`plugins/basemap-plugin/src/ui/components/steps/ViewportStep.tsx` の今回差分を revert し、`pnpm --filter @hierarchidb/basemap-plugin typecheck` を再実行する
+
+1748) shape-plugin mock/types export 整理（P1）
+- ブランチ: `fix/shape/mock-types-exports`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin/src/common/mock/data.ts、src/common/types/index.ts、src/worker/api.ts
+- 受け入れ基準（DoD）:
+  - [x] mock/data.ts の `../shared/index.js` 未解決を修正する（適切な型エントリへ置換）
+  - [x] worker/api.ts で参照している calculateSelectionStats/generateUrlMetadata を正しい export パスへ修正し、typecheck が通る
+  - [x] `pnpm --filter @hierarchidb/shape-plugin typecheck` を実行し、結果を運用ログへ記録する
+  - [x] 原因と修正内容、ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [x] mock/data の型 import を正規の types エントリへ変更する
+  - [x] calculateSelectionStats/generateUrlMetadata の export を補うか import 先を utils へ切り替える
+  - [x] typecheck コマンドを実行し結果を運用ログに記録する
+- ロールバック手順：今回変更する `plugins/shape-plugin/src/common/mock/data.ts` と `plugins/shape-plugin/src/worker/api.ts`（および必要なら types/index.ts の追加 export）を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する
+1745) ui-datasource の ui-license 参照解決（P1）
+- ブランチ: `fix/ui-datasource/license-import`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: packages/ui/datasource、packages/ui/license、config/dev-alias-config.js（dev alias 自動検出）
+- 受け入れ基準（DoD）:
+  - [x] `@hierarchidb/ui-datasource` から `@hierarchidb/ui-license` が解決でき、typecheck が通る（`pnpm --filter @hierarchidb/ui-datasource typecheck` で確認）
+  - [x] 原因（paths 上書きなど）と修正内容を TASKS 運用ログに記述する
+  - [x] ロールバック手順を記載する
+- チェックリスト:
+  - [x] dev alias 設定を修正し、`@hierarchidb/ui-license` が解決するようにする
+  - [x] typecheck コマンドを実行し結果を運用ログに記録する
+- ロールバック手順：今回変更する `config/dev-alias-config.js`（必要なら packages/ui/datasource / packages/ui/license の関連差分）を revert し、`pnpm --filter @hierarchidb/ui-datasource typecheck` を再実行する
+
+1745) ui-datasource の ui-license 参照解決（P1）
+- ブランチ: `fix/ui-datasource/license-import`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: packages/ui/datasource（tsconfig paths）、packages/ui/license
+- 受け入れ基準（DoD）:
+  - [x] `@hierarchidb/ui-datasource` から `@hierarchidb/ui-license` が解決でき、typecheck が通る（`pnpm --filter @hierarchidb/ui-datasource typecheck` で確認）
+  - [x] 原因（paths 上書きなど）と修正内容を TASKS 運用ログに記述する
+  - [x] ロールバック手順を記載する
+- チェックリスト:
+  - [x] tsconfig の設定を修正し、`@hierarchidb/ui-license` が解決するようにする
+  - [x] typecheck コマンドを実行し結果を運用ログに記録する
+- ロールバック手順：今回変更する packages/ui/datasource（必要なら packages/ui/license）の tsconfig を revert し、同 typecheck を再実行する
+
+1700) BaseMapProps を URL/MapLibreStyle で分割して型安全化（P1）
+- ブランチ: `refactor/ui-map/mapstyle-props`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: packages/ui/map（`src/types/unified-map-props.ts` ほか BaseMapProps 利用箇所）
+- 受け入れ基準（DoD）:
+  - [x] `BaseMapProps` を URL 指定と MapLibreStyle 指定の 2 型（例: UrlBasedBaseMapProps / MapLibreStyleBasedBaseMapProps）に分割し、呼び出し側では union で型安全に扱える
+  - [x] 既存の mapStyle 利用箇所を新型へ置き換え、型エラーが出ないように整える（意図を維持する）
+  - [x] 代表的な型チェック（例: `pnpm --filter @hierarchidb/ui-map typecheck` または影響範囲の typecheck）を実行し、結果を運用ログに記録する（不可なら理由を記載）
+  - [x] ロールバック手順（対象ファイルとコマンド）を記載する
+- チェックリスト:
+  - [x] BaseMapProps を URL/MapLibreStyle で分割し、新 union 型へ移行する
+  - [x] 呼び出し側の props 型と利用箇所を新型に合わせて更新する
+  - [x] typecheck を実行し、結果を運用ログへ追記する
+- ロールバック手順：本タスクで変更する `packages/ui/map/src/types/unified-map-props.ts` と関連ファイルを revert し、同じ typecheck コマンドを再実行して旧挙動へ戻す
+
 1633) TreeConsole 自動保存トグル追加（P1）
 - ブランチ: `feat/treeconsole/autosave-toggle`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: ui-treeconsole-toolbar（SettingsMenu/TreeConsoleToolbar）、app TreeConsoleIntegration/PluginDialogRoute、plugin-ui-host（autosave/save-draft）
@@ -94,6 +169,33 @@
   - [ ] Step1〜4 の validate/canProceed/canSave が期待どおりであることを確認
   - [x] typecheck 結果を運用ログへ追記
 - ロールバック手順：Styler steps-provider / useStylerMappingState / 関連ファイルの今回差分を revert し、`pnpm --filter @hierarchidb/styler-plugin typecheck` を再実行して従来挙動へ戻す
+
+1634) TabularDataFilterStep ロジックのカスタムフック化（P1）
+- ブランチ: `refactor/spreadsheet/tabular-data-filter-hook`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/spreadsheet-plugin（TabularDataFilterStep、tabular key/value state/hooks）、styler-plugin typecheck 連鎖
+- 受け入れ基準（DoD）:
+  - [ ] `TabularDataFilterStep` のロジック部分をカスタムフックへ切り出し、コンポーネント本体を薄くする
+  - [ ] 既存の挙動（バリデーション、プレビュー、Key/Value選択、filters同期）が変わらない
+  - [ ] typecheck を通し、TASKS 運用ログに結果を記録する
+- チェックリスト:
+  - [ ] 新フックを追加し、TabularDataFilterStep 内のデータ取得・バリデーション・同期処理を移管
+  - [ ] UI 挙動に回帰がないことを確認（save/preview/filter）
+  - [ ] typecheck 実行結果を運用ログへ追記
+- ロールバック手順：TabularDataFilterStep と新規フック差分を revert し、`pnpm --filter @hierarchidb/styler-plugin typecheck` を再実行して元の構造へ戻す
+
+1635) Styler Preview の key→color/scalar マップ永続化（P1）
+- ブランチ: `feat/styler/style-keyvalue-map`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/styler-plugin（StylerPreviewStep/StylerEntity/Handler）、MapLibre 側連携前段
+- 受け入れ基準（DoD）:
+  - [ ] Preview Step で表示している key/value→color(or scalar) の計算結果を保存し、Save 実行時に永続化できる
+  - [ ] `StyleKeyValue`/`ColorStyleKeyValue`/`ScalarStyleKeyValue` を StylerEntity の正規プロパティとして追加し、曖昧なフォールバックを行わない
+  - [ ] 既存のプレビュー表示・検証・保存フローに回帰がない
+  - [ ] typecheck を通し、結果を運用ログに記録する
+- チェックリスト:
+  - [ ] StylerPreviewStep で key/value→color or scalar のマップを生成し、onChange 経由で保存する
+  - [ ] StylerEntity/Handler が新プロパティを保持し、stylerConfig など別領域を使わないことを確認
+  - [ ] typecheck 実行結果を運用ログへ追記
+- ロールバック手順：StylerPreviewStep/StylerEntity/Handler の今回差分を revert し、`pnpm --filter @hierarchidb/styler-plugin typecheck` を再実行して元の挙動に戻す
 
 1631) Spreadsheet/Styler Step3 key/value 統一（P1）
 - ブランチ: `feat/spreadsheet/styler-step3-share`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -1239,6 +1341,19 @@
   - [x] typecheck を実行し、結果を運用ログへ記録する
   - [x] Kanban/運用ログへ start→progress→done とロールバックを追記する
 - ロールバック手順：`packages/plugin-ui-host/src/types/shims.d.ts` の削除差分と関連 tsconfig 変更を revert し、`pnpm --filter @hierarchidb/plugin-ui-host typecheck` を再実行して旧構成へ戻る
+
+1699) spreadsheet-plugin jotai 型解決・implicit any 修正（P1）
+- ブランチ: `fix/spreadsheet/jotai-types`（sandbox 制約で main 上で作業）
+- 依存: `plugins/spreadsheet-plugin`（TabularDataFilterStep/TabularDataSourceStep/TabularKeyValuePanels/useTabularKeyValueState/tabularKeyValueAtoms）、`jotai` 型解決
+- 受け入れ基準（DoD）:
+  - [ ] spreadsheet-plugin で `jotai` の型解決エラーがなくなり、TabularKeyValue 系の implicit any が解消される
+  - [ ] `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` 成功ログを運用ログに記録する（実行不可なら理由を記載）
+  - [ ] ロールバック手順を記載し、TASKS Kanban/運用ログを更新する
+- チェックリスト:
+  - [ ] `jotai` が型解決されるよう依存と tsconfig/paths を確認・必要に応じて調整する
+  - [ ] TabularKeyValueState 周りの implicit any を修正する
+  - [ ] typecheck を実行し結果を運用ログへ記録する
+- ロールバック手順：本タスクで更新するファイル（package.json/tsconfig/Tabular* 関連）を revert し、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` を再実行して旧状態へ戻す
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
@@ -4364,6 +4479,26 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1701) PluginDialogShell forwardRef warning fix（P1） — 完了 (2025-12-15)
+  - 要点：PluginDialogShell 経由で描画される DialogContentWrapper が forwardRef を props のみで宣言していたため警告が出ていた。forwardRef を外し、memo 化したコンテンツラッパーを dialogRef のみで保持する形に変更し警告を除去。
+  - 検証：`pnpm --filter @hierarchidb/plugin-ui-host typecheck`（2025-12-15 21:25 JST）exit 0。
+  - ロールバック手順：`packages/plugin-ui-host/src/headless/components/DialogScaffold.tsx` の createContentComponent を forwardRef ありの元実装へ戻し、同 typecheck を再実行する。
+- 1702) StylerPreviewStep hook 抽出（P1） — 完了 (2025-12-15)
+  - 要点：StylerPreviewStep のデータ準備・ソート・フィルタ・色スケール計算を `useStylerPreview` カスタムフックへ分離し、コンポーネントは描画に専念させた。既存挙動・型を維持したままロジックを集約。
+  - 検証：`pnpm --filter @hierarchidb/styler-plugin typecheck`（2025-12-15 21:44 JST）exit 0。
+  - ロールバック手順：`plugins/styler-plugin/src/ui/components/hooks/useStylerPreview.ts` を削除し、`StylerPreviewStep.tsx` をフック抽出前の実装へ戻して同 typecheck を再実行する。
+- 1703) TabularDataFilterStep renderSections リファクタ（P1） — 完了 (2025-12-15)
+  - 要点：`useTabularDataFilterStep` 内で JSX を返す `renderSectionsNode` をやめ、`TabularFilterSections` コンポーネントを新設して描画責務を分離。フックはデータ・ハンドラ・props を返し、Step コンポーネント側でレンダー関数を組み立てる構造に整理。
+  - 検証：`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck`（2025-12-15 22:15 JST）shape-plugin 既知エラーで失敗（Missing utils.js/api.js/metadata.js, duplicate props in ShapeDB）。今回の変更とは無関係の既知課題として記録。
+  - ロールバック手順：`plugins/spreadsheet-plugin/src/ui/components/TabularFilterSections.tsx` を削除し、`useTabularDataFilterStep`/`TabularDataFilterStep` をリファクタ前の実装へ戻したうえで同 typecheck を再実行する。
+- 1704) runtime-worker MapLibre direct dependency removal（P1） — 完了 (2025-12-15)
+  - 要点：runtime-worker が MapLibre 直接依存（maplibre-gl）を peer/devDependencies に持っていたため、ui-map で吸収するポリシーに反する状態を是正。maplibre-gl を peer/dev から削除し、間接依存のみとした。
+  - 検証：`pnpm --filter @hierarchidb/runtime-worker typecheck`（2025-12-15 22:32 JST）exit 0。
+  - ロールバック手順：`packages/runtime-worker/package.json` に maplibre-gl を peerDependencies/devDependencies へ戻し、同 typecheck を再実行する。
+- 1700) runtime-worker plugin DB loader import specifier fix（P1） — 完了 (2025-12-15)
+  - 要点：runtime-worker の pluginDatabaseLoaders が `new URL("/@fs/...")` へ書き換わり Vite 警告になっていたため、各プラグイン（basemap/folder/linker/location/resolver/route/shape/spreadsheet/styler/timeline）を peerDependencies に追加し、tsdown 外部化でモジュール指定子のまま出力されるように修正。dist/index.js の loader/prewarm はすべて `@hierarchidb/*-plugin`（および `/database` サブパス）の bare import へ戻した。
+  - 検証：`pnpm --filter @hierarchidb/runtime-worker build`（2025-12-15 21:06 JST）exit 0。
+  - ロールバック手順：`packages/runtime-worker/package.json` に追加したプラグイン peerDependencies を revert し、`pnpm --filter @hierarchidb/runtime-worker build` を再実行して元の dist（new URL 形式）へ戻す。
 - 1628) ValidationResult 型命名整理（プラグイン別ステップ名付与）（P0） — 完了 (2025-12-13)
   - 要点：ValidationResult が各パッケージで重複していたため、DialogStepValidationResult / ImportValidationResult / DataSourceValidationResult / ShapeStepValidationResult / NodeTypeOperationValidationResult などコンテキストを含む名称へ統一し、プラグイン・ステップごとに判別できるように整理。NodeTypeAPI の validateOperation も専用型を返すように調整し、共通テストの型エラーを解消。
   - 検証：`pnpm --filter @hierarchidb/common-api typecheck`（2025-12-13 06:24 JST）exit 0、`pnpm --filter @hierarchidb/shape-plugin typecheck`（06:25 JST）exit 0、`pnpm --filter @hierarchidb/plugin-service-api typecheck`（06:27 JST）exit 0、`pnpm --filter @hierarchidb/plugin-base typecheck`（06:29 JST）exit 0。
@@ -6562,7 +6697,7 @@ P2:
     - フラグ `ROUTE_BATCH_ENABLED` を OFF に戻す。
   - 現状: レーン別セマフォと最小テストまで完了（RouteBatchSessionに実装、Session/Managerのテスト整備）。ドキュメント（PLAN.md 抜粋追記）のみ未了。
 
-<!-- moved to Doing: feat/common/progress-stage-vocab-unify -->
+<!-- moved to Doing: feat/_obsolate_common/progress-stage-vocab-unify -->
 
 <!-- moved to Doing: feat/location/batch-session-v2 -->
   - 運用ログ:
@@ -8881,6 +9016,27 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-27 14:41 progress: verify/runtime-worker/tree-subscription-api — `pnpm --filter @hierarchidb/runtime-worker test -- --run undo-folder-operations` exit 0（getTree / listChildren / listDescendants を含むフォルダ操作シナリオで TreeQueryAPI を確認）。
 - 2025-10-27 14:42 progress: verify/runtime-worker/tree-subscription-api — `pnpm --filter @hierarchidb/runtime-worker test -- --run replay-command-history` exit 0（複数の TreeQueryAPI 呼び出しと undo/redo 流れを結合テストで検証）。
 
+- 2025-12-16 23:23 start: fix/ui-datasource/license-import — ui-datasource から ui-license が解決できず typecheck 失敗（TS2307）。DoD: ui-datasource で ui-license を解決し、typecheck 成功ログ取得。ロールバック手順を記載する。
+- 2025-12-16 23:32 progress: fix/ui-datasource/license-import — パッケージ tsconfig が paths/baseUrl を上書きして base の alias を消していたのが原因。ui-datasource の tsconfig から上書きを削除し、root tsconfig の alias を継承する形に修正。
+- 2025-12-16 23:33 command: pnpm --filter @hierarchidb/ui-datasource typecheck — exit 0。
+- 2025-12-16 23:34 done: fix/ui-datasource/license-import — DoD 満たしたため完了。ロールバック: `packages/ui/datasource/tsconfig.json` を revert し、`pnpm --filter @hierarchidb/ui-datasource typecheck` を再実行。
+- 2025-12-16 23:32 start: fix/shape/cache-stats-duplicates — ShapeDB getCacheStatistics の返却オブジェクトで hits/misses が二重定義されており、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` が TS1117 で失敗している状況を修正開始（branch 作成不可のため main）。
+- 2025-12-16 23:40 progress: fix/shape/cache-stats-duplicates — totalHits/totalMisses をまとめ、返却オブジェクトの hits/misses を一意化。hitRate/missRate も totalRequests（hits+misses）基準に整理。
+- 2025-12-16 23:41 command: pnpm --filter @hierarchidb/spreadsheet-plugin typecheck — exit 0。
+- 2025-12-16 23:42 done: fix/shape/cache-stats-duplicates — DoD 満たしたため完了。ロールバック: `plugins/shape-plugin/src/services/database/ShapeDB.ts` を revert し、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` を再実行。
+- 2025-12-16 23:48 start: fix/basemap/viewport-mapstyle-props — BaseMapProps 分割後、ViewportStep の fallback mapStyleObject が `MapLibreStyleBasedBaseMapProps` に合わず typecheck が失敗している問題を修正開始（branch 作成不可のため main）。
+- 2025-12-16 23:55 progress: fix/basemap/viewport-mapstyle-props — fallback OSM スタイルを `MapLibreStyle` へ明示キャストし、読み取り専用配列由来の不一致と余計なプロパティチェックを回避。
+- 2025-12-16 23:56 command: pnpm --filter @hierarchidb/basemap-plugin typecheck — exit 0。
+- 2025-12-16 23:57 done: fix/basemap/viewport-mapstyle-props — DoD 満たしたため完了。ロールバック: `plugins/basemap-plugin/src/ui/components/steps/ViewportStep.tsx` を revert し、`pnpm --filter @hierarchidb/basemap-plugin typecheck` を再実行。
+- 2025-12-17 00:02 start: fix/shape/mock-types-exports — shape-plugin typecheck の missing module/export（shared/index.js, calculateSelectionStats, generateUrlMetadata）を修正開始（branch 作成不可のため main）。
+- 2025-12-17 00:08 progress: fix/shape/mock-types-exports — mock/data.ts の型 import を types/index へ変更。worker/api.ts で calculateSelectionStats/generateUrlMetadata を utils から直接 import に変更。
+- 2025-12-17 00:09 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。
+- 2025-12-17 00:10 done: fix/shape/mock-types-exports — DoD 満たしたため完了。ロールバック: `plugins/shape-plugin/src/common/mock/data.ts` と `plugins/shape-plugin/src/worker/api.ts` の変更を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行。
+- 2025-12-17 00:18 start: fix/ui-license/import-404 — dev サーバーで `@hierarchidb/ui-license` が 404 となるため調査開始（branch 作成不可のため main）。
+- 2025-12-17 00:22 progress: fix/ui-license/import-404 — index.ts の `.js` import 先が存在せず 404 だったため、`src/LicenseAgreementStep.js` を追加し `.tsx` から再エクスポートする shim を作成。
+- 2025-12-17 00:23 command: pnpm --filter @hierarchidb/ui-license typecheck — exit 0。
+- 2025-12-17 00:24 done: fix/ui-license/import-404 — DoD 満たしたため完了。ロールバック: `packages/ui/license/src/index.ts` と `packages/ui/license/src/LicenseAgreementStep.js` を削除または revert し、`pnpm --filter @hierarchidb/ui-license typecheck` を再実行。
+
 26) fix/app/ui-worker-plugin-resolve — UI/Worker プラグインの module specifier と MUI icon 解決を修正する
 - ブランチ: `fix/app/ui-worker-plugin-resolve`（sandbox 制約で `main` 作業継続）
 - 依存: `app/src/plugin-registry`, `app/src/router/init/initializeBrowserGlobals.ts`, `packages/runtime/worker/src/di/PluginWorkerModuleLoader.ts`, `plugins/*-plugin/package.json`
@@ -10278,6 +10434,13 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-15 13:01 command: pnpm --filter @hierarchidb/styler-plugin typecheck — exit 0。
 - 2025-12-15 13:05 progress: fix/styler/cansave-validation — stylerConfig へ key/value/styleType/targetProperty を読み書きするフォールバックを撤去。UI/バリデーション/Preview/データサービスを StylerEntity.key/valueColumn と mapping.styleType/targetProperty のみに統一し、GradientSwatch import も整理。
 - 2025-12-15 13:06 command: pnpm --filter @hierarchidb/styler-plugin typecheck — exit 0。
+- 2025-12-15 13:20 start: refactor/spreadsheet/tabular-data-filter-hook — TabularDataFilterStep のロジックをカスタムフック化する対応を開始（branch: refactor/spreadsheet/tabular-data-filter-hook、branch 作成不可なら main）。
+- 2025-12-15 13:22 progress: refactor/spreadsheet/tabular-data-filter-hook — TabularDataFilterStep のデータ取得/バリデーション/同期処理を新フック useTabularDataFilterStep.tsx へ移設し、コンポーネントを薄く整理。dialogRef/filters/preview の連携をフックに集約。
+- 2025-12-15 13:23 command: pnpm --filter @hierarchidb/styler-plugin typecheck — exit 0。
+- 2025-12-15 13:40 start: feat/styler/style-keyvalue-map — Styler Preview で算出した key→color/scalar マップを Save 時に永続化する対応を開始（branch: feat/styler/style-keyvalue-map、branch 作成不可なら main）。
+- 2025-12-15 13:55 progress: feat/styler/style-keyvalue-map — StyleKeyValue/ColorStyleKeyValue/ScalarStyleKeyValue を StylerEntity に追加し、Preview Step で key/value→color or scalar マップを生成して onChange で保存するよう実装。Handler でも新プロパティを保持するように更新。
+- 2025-12-15 13:56 command: pnpm --filter @hierarchidb/styler-plugin typecheck — exit 0。
+- 2025-12-16 18:54 command: pnpm --filter @hierarchidb/styler-plugin typecheck — exit 0。
 - 2025-12-14 08:06 start: feat/styler/key-value-accordion — Styler Step3 に「Key-Value Pair」アコーディオンを追加し、Step4 の key/value 選択 UI を移設する対応を開始（Value は数値のみ集計、branch: feat/styler/key-value-accordion、branch 作成不可なら main）。
 - 2025-12-14 08:11 progress: feat/styler/key-value-accordion — Step3 を 3 アコーディオン化（Style Type/Target Property/Key-Value Pair）。Key/Value 選択 UI を Key-Value Pair アコーディオンへ移設し、Value 列の数値のみから max/min/avg/median/stddev を表示（非数値は除外）。
 - 2025-12-14 08:12 command: pnpm --filter @hierarchidb/styler-plugin typecheck — exit 0。
@@ -10305,6 +10468,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-15 14:20 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。
 - 2025-12-15 14:28 progress: fix/shape/step1-basicinfo-input — Country Selection のアルファベット索引をコンポーネント化（AlphabeticalIndex）して再利用可能に整理。
 - 2025-12-15 14:28 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。
+- 2025-12-15 15:10 progress: fix/shape/step1-basicinfo-input — shared/types 配下の型定義を common/types へ移設し、関連 import を整理（Batch/Processing/DataSource 等）。不要になった shared/types.ts を削除。
+- 2025-12-15 15:10 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。
+- 2025-12-15 15:35 progress: fix/shape/step1-basicinfo-input — services/common/types.ts の再エクスポート依存を解消し、直接定義元からインポートする形に整理（同ファイルは存在せず、参照もなし）。型整合を再確認。
+- 2025-12-15 15:35 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。
 - 2025-12-15 12:42 start: feat/treeconsole/autosave-toggle — TreeConsole 設定メニューに自動保存 Switch を追加し、設定を永続化しつつ Save Draft ボタン表示を制御する対応に着手。DoD は Kanban 記載。branch 作成不可なら main 作業。
 - 2025-12-15 12:53 progress: feat/treeconsole/autosave-toggle — TreeConsole 設定メニューに自動保存 Switch を追加し、設定の永続化・ダイアログ autosave/SaveDraft 表示制御を実装。検証: `pnpm --filter @hierarchidb/ui-treeconsole-toolbar typecheck` exit 0、`pnpm --filter @hierarchidb/plugin-ui-host typecheck` は既存の型問題（xlsx 型定義欠如、ImportMeta.glob/MapLibre CSS/DI decorator/rootDir 外参照など）で失敗。
 - 2025-12-15 12:58 progress: feat/treeconsole/autosave-toggle — runtime-worker/plugin-registry を build し、plugin-ui-host に shim/paths を追加して typecheck を解消。検証: `pnpm --filter @hierarchidb/plugin-ui-host typecheck` exit 0。
@@ -10312,3 +10479,46 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-15 19:15 progress: fix/plugin-ui-host/shim-removal — `packages/plugin-ui-host/src/types/shims.d.ts` を削除し、tsconfig で vite/client 追加＋@mui の参照を公式型へ固定（paths で @types/react 18.3.27 側を指定）。パッケージローカルの `node_modules/@mui/*` は一度削除し、ルートに解決させて型衝突を解消。
 - 2025-12-15 19:27 command: pnpm --filter @hierarchidb/plugin-ui-host typecheck — exit 0。
 - 2025-12-15 19:28 done: fix/plugin-ui-host/shim-removal — shim 依存を除去し、MUI の型を統一した上で typecheck 通過を確認。再インストールでローカル @mui が再生成された場合は、ルートの @types/react 18.3.27 側へ解決されるよう paths/依存を維持したまま `@mui/*` を再リンク or 再削除してから typecheck を再実行する。
+- 2025-12-15 19:32 start: fix/spreadsheet/jotai-types — spreadsheet-plugin の jotai 型解決エラー（TS2307）と TabularKeyValueState の implicit any を修正開始（branch: fix/spreadsheet/jotai-types、main 作業）。
+- 2025-12-15 19:38 progress: fix/spreadsheet/jotai-types — `jotai` を spreadsheet-plugin の peer/dev/deps に追加し、TabularKeyValueState/Atoms の `prev`/`rule` に型注釈を付与。root/node_modules に jotai を解決するシンボリックリンクを追加し、TypeScript の解決結果を `jotai/index.d.ts` に固定。
+- 2025-12-15 19:39 command: pnpm --filter @hierarchidb/spreadsheet-plugin typecheck — exit 0。
+- 2025-12-15 19:40 done: fix/spreadsheet/jotai-types — jotai 解決と implicit any を解消し、typecheck を完走。ロールバック: `plugins/spreadsheet-plugin/package.json` と TabularKeyValueState/Atoms の型注釈、root/node_modules/jotai シンボリックリンクを revert し、同 typecheck を再実行する。
+- 2025-12-15 21:15 start: fix/plugin-dialog/forward-ref-warning — PluginDialogShell 経由の DialogContentWrapper forwardRef 警告解消に着手（main 作業）。
+- 2025-12-15 21:22 progress: fix/plugin-dialog/forward-ref-warning — DialogContentWrapper の forwardRef を撤去し、dialogRef を直接渡す memo コンポーネントに変更して警告を除去。
+- 2025-12-15 21:25 command: pnpm --filter @hierarchidb/plugin-ui-host typecheck — exit 0。
+- 2025-12-15 21:27 done: fix/plugin-dialog/forward-ref-warning — forwardRef 警告を解消。ロールバック: `packages/plugin-ui-host/src/headless/components/DialogScaffold.tsx` を元の forwardRef 実装へ戻し、同 typecheck を再実行。
+- 2025-12-15 21:35 start: fix/styler/preview-hook — StylerPreviewStep のロジックをカスタムフック化するリファクタに着手（main 作業）。
+- 2025-12-15 21:42 progress: fix/styler/preview-hook — データ準備・フィルタ・ソート・色スケール計算を `useStylerPreview` フックへ抽出し、StylerPreviewStep は描画のみに整理。
+- 2025-12-15 21:44 command: pnpm --filter @hierarchidb/styler-plugin typecheck — exit 0。
+- 2025-12-15 21:45 done: fix/styler/preview-hook — フック抽出完了。ロールバック: `plugins/styler-plugin/src/ui/components/hooks/useStylerPreview.ts` を削除し、StylerPreviewStep を元の実装修正前へ戻して typecheck を再実行。
+- 2025-12-15 22:05 start: fix/spreadsheet/render-sections-component — TabularDataFilterStep の renderSections JSX をコンポーネント化するリファクタを開始（main 作業）。
+- 2025-12-15 22:12 progress: fix/spreadsheet/render-sections-component — `TabularFilterSections` コンポーネントを追加し、`useTabularDataFilterStep` はデータ/ハンドラのみ返す構造に整理。renderSections は Step 側で組み立てる形へ変更。
+- 2025-12-15 22:15 command: pnpm --filter @hierarchidb/spreadsheet-plugin typecheck — exit 2（既知の shape-plugin エラー: missing utils.js/api.js/metadata.js, ShapeDB duplicate props）。本変更と無関係の既知課題として記録。
+- 2025-12-15 22:17 done: fix/spreadsheet/render-sections-component — リファクタ完了。ロールバック: `TabularFilterSections.tsx` を削除し、`useTabularDataFilterStep`/`TabularDataFilterStep` を元の renderSectionsNode 実装へ戻して typecheck を再実行。
+- 2025-12-15 22:25 start: chore/runtime-worker/maplibre-peer-removal — runtime-worker の MapLibre 直接依存 (maplibre-gl) を削除する対応を開始。
+- 2025-12-15 22:30 progress: chore/runtime-worker/maplibre-peer-removal — `packages/runtime-worker/package.json` から maplibre-gl を peer/devDependencies から削除し、ポリシー違反を解消。
+- 2025-12-15 22:32 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0。
+- 2025-12-15 22:33 done: chore/runtime-worker/maplibre-peer-removal — MapLibre 直接依存を除去。ロールバック: `packages/runtime-worker/package.json` に maplibre-gl を元の peer/devDependencies へ戻し、同 typecheck を再実行。
+- 2025-12-15 20:55 start: fix/runtime-worker/plugin-db-loader-imports — runtime-worker の pluginDatabaseLoaders が `new URL("/@fs/...")` を出力して Vite 警告となる問題の修正に着手（branch 作成不可のため main）。
+- 2025-12-15 21:05 progress: fix/runtime-worker/plugin-db-loader-imports — runtime-worker の peerDependencies に各プラグイン（basemap/folder/linker/location/resolver/route/shape/spreadsheet/styler/timeline）を追加し、tsdown で外部化されるよう調整。dist の pluginDatabaseLoaders は bare import 指定子で出力される形に戻った。
+- 2025-12-15 21:06 command: pnpm --filter @hierarchidb/runtime-worker build — exit 0（dist/index.js の loader/prewarm から new URL("@fs") 形式が消え、`@hierarchidb/*-plugin[/database]` 指定子のまま）。
+- 2025-12-15 21:08 done: fix/runtime-worker/plugin-db-loader-imports — Vite の dynamic import 解析警告経路を除去。ロールバック: runtime-worker/package.json のプラグイン peerDependencies 追加を revert し、同ビルドを再実行する。
+- 2025-12-16 22:53 start: refactor/ui-map/mapstyle-props — BaseMapProps の mapStyle を URL 指定と MapLibreStyle 指定に分割し、型安全にする対応を開始（branch: refactor/ui-map/mapstyle-props、branch 作成不可なら main）。
+- 2025-12-16 23:07 progress: refactor/ui-map/mapstyle-props — BaseMapProps を URL/MapLibreStyle の union に分割し、MapLibreMap/MapWithVectorTiles と basemap プレビュー系の呼び出し側を新型へ更新。
+- 2025-12-16 23:08 command: pnpm --filter @hierarchidb/ui-map typecheck — exit 0。
+- 2025-12-16 23:57 progress: fix/ui-datasource/license-import — dev alias 自動検出の `SRC_ENTRY_CANDIDATES` に `src/index.ts` が含まれず、@hierarchidb/ui-license のエイリアスが生成されないことで Vite が未解決となっていた。候補に追加して ui-license を含むパッケージのエイリアスが作られるように修正（config/dev-alias-config.js）。
+- 2025-12-16 23:58 command: pnpm --filter @hierarchidb/ui-datasource typecheck — exit 0。
+- 2025-12-16 23:59 done: fix/ui-datasource/license-import — DoD 達成。ロールバック: `config/dev-alias-config.js` の `SRC_ENTRY_CANDIDATES` 追加を revert し、`pnpm --filter @hierarchidb/ui-datasource typecheck` を再実行。
+- 2025-12-17 00:02 start: fix/location/selectionstep-translations-guard — LocationSelectionStep で `selectionSettings.airport` undefined により runtime TypeError が出る問題を調査開始（sandbox で branch 不可のため main）。
+- 2025-12-17 00:03 progress: fix/location/selectionstep-translations-guard — selectionSettings/airport/railwayStation が未定義でも動くように safety fallback を追加し、ラベルもデフォルト文字列でガード。
+- 2025-12-17 00:04 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 0。
+- 2025-12-17 00:05 progress: fix/location/selectionstep-translations-guard — translations.selection 自体が undefined のケースにも対応し、alert/matrixTitle/selectedCount/typeLabels にデフォルト文言を付与。
+- 2025-12-17 00:06 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 0。
+- 2025-12-17 00:06 done: fix/location/selectionstep-translations-guard — TypeError 解消。ロールバック: `plugins/location-plugin/src/ui/components/steps/LocationSelectionStep.tsx` の fallback 追加を revert し、`pnpm --filter @hierarchidb/location-plugin typecheck` を再実行。
+- 2025-12-17 00:09 progress: fix/location/mappreview-refresh-guard — LocationMapPreviewStep で translations.panel が undefined の場合に refresh 文言参照で落ちるため、panel のフォールバックを追加しデフォルト文言を指定。
+- 2025-12-17 00:10 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 0。
+- 2025-12-17 00:10 done: fix/location/mappreview-refresh-guard — TypeError 解消。ロールバック: `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx` の panel fallback を revert し、`pnpm --filter @hierarchidb/location-plugin typecheck` を再実行。
+- 2025-12-17 00:14 progress: fix/location/mappreview-lt-fallback — LocationMapPreview で translations.locationTypes/mapPreview が undefined の場合に `airport` 参照で落ちるため、typeLabels と mapPreview 文言にフォールバックを追加。
+- 2025-12-17 00:15 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 0。
+- 2025-12-17 00:15 done: fix/location/mappreview-lt-fallback — TypeError 解消。ロールバック: `plugins/location-plugin/src/ui/components/batch/LocationMapPreview.tsx` の fallback を revert し、`pnpm --filter @hierarchidb/location-plugin typecheck` を再実行。
+- 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。

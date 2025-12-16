@@ -34,7 +34,8 @@
     "@mui/material": "^7.3.6",
     "@types/geojson": "^7946.0.8",
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/ui-data-grid": "workspace:*"
+    "@hierarchidb/ui-data-grid": "workspace:*",
+    "@storybook/react-vite": "^7.7.3"
   },
   "license": "MIT",
   "module": "dist/index.js",

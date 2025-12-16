@@ -8,7 +8,7 @@ import { NaturalEarthStrategy } from '../NaturalEarthStrategy.js';
 import { GADMStrategy } from '../GADMStrategy.js';
 import { OpenStreetMapStrategy } from '../OpenStreetMapStrategy.js';
 import { GeoBoundariesStrategy } from '../GeoBoundariesStrategy.js';
-import type { ShapeEntity } from '../../../common/types/ShapeEntity.js';
+import type { ShapeEntity } from '../../../_obsolate_common/types/ShapeEntity.js';
 
 // Mock AuthRecoveryService used by authFetch so strategies avoid real network
 vi.mock('@hierarchidb/auth-recovery', () => {

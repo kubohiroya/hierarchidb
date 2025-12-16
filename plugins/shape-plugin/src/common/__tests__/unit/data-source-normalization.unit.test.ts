@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_PROCESSING_CONFIG } from '../../../common/shared/constants.js';
+import { DEFAULT_PROCESSING_CONFIG } from '../../../common/types/constants.js';
 import {
   createDraftFromEntity,
   mapDraftToUpdates,
-} from '../../../common/shared/utils.js';
-import type { NodeId, ShapeEntity } from '../../../common/shared/types.js';
+} from '../../../services/utils/utils.js';
+import type { NodeId, ShapeEntity } from '../../../common/types/index.js';
 
 const baseEntity = (dataSourceName: string): ShapeEntity => ({
   id: 'shape-node' as NodeId,

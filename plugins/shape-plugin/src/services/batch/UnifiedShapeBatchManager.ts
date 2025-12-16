@@ -14,7 +14,7 @@ import {
 } from '@hierarchidb/common-api';
 import { BatchSessionManager, type BatchSessionOptions } from './BatchSessionManager.js';
 import type { BatchProcessConfig } from './types.js';
-import type { UrlMetadata } from '../../common/shared/types.js';
+import type { UrlMetadata } from '../../common/types/index.js';
 
 /**
  * Unified shape batch manager implementing the standard interface

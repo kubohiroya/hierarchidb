@@ -60,7 +60,7 @@ export interface CustomColumn extends MatrixColumnBase {
 /** Union type for all column types */
 export type MatrixColumn = AdminLevelColumn | TransportHubColumn | RouteTypeColumn | CustomColumn;
 
-/** Predefined column sets for common use cases */
+/** Predefined column sets for _obsolate_common use cases */
 export type ColumnSetType = 'admin-levels' | 'transport-hubs' | 'route-types' | 'airports' | 'ports' | 'custom';
 
 /** Column set definition */

@@ -14,8 +14,8 @@
 import * as turf from '@turf/turf';
 import { shapeDB, type VectorTileRecord, type FeatureRecord } from '../database/ShapeDB.js';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { Feature } from '../../common/shared/types.js';
-import type { BoundingBox, TileMetadata, LayerConfig } from '../common/types.js';
+import type { Feature } from '../../common/types/index.js';
+import type { BoundingBox, TileMetadata, LayerConfig } from '../../common/types/index.js';
 import type { Geometry } from 'geojson';
 
 export interface TileRequest {
@@ -261,7 +261,9 @@ export class VectorTileService {
     const tileLayers: any = {};
 
     for (const layerConfig of layers) {
-      if (z < layerConfig.minZoom || z > layerConfig.maxZoom) {
+      const minZoom = layerConfig.minZoom ?? 0;
+      const maxZoom = layerConfig.maxZoom ?? 24;
+      if (z < minZoom || z > maxZoom) {
         continue;
       }
 
@@ -276,7 +278,7 @@ export class VectorTileService {
       tileLayers[layerConfig.name] = {
         features: layerFeatures.map((feature) => ({
           geometry: this.transformGeometryOfTile(feature.geometry, x, y, z, extent, buffer),
-          properties: this.filterProperties(feature.properties, layerConfig.properties),
+          properties: this.filterProperties(feature.properties, layerConfig.properties ?? []),
         })),
         extent,
       };

@@ -6,4 +6,4 @@
 export type {
   ShapeEntity,
   ShapeDraft,
-} from '../shared/types.js';
+} from './core.js';

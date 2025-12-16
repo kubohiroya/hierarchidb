@@ -1,6 +1,6 @@
 import { atom, type Getter } from 'jotai';
 import type { TabularFilterOperator, TabularFilterRule } from '@hierarchidb/ui-tabular-extract';
-import { calculateStatistics, type TabularRow } from '../../common/utils/tabularStatistics.js';
+import { calculateStatistics, type TabularRow } from './tabularStatisticsUtils.ts';
 
 export const tabularRowsAtom = atom<TabularRow[]>([]);
 
@@ -102,7 +102,9 @@ export const filteredRowsAtom = atom((get: Getter) => {
   const rows = get(tabularRowsAtom);
   const rules = get(filterRulesAtom).filter((r: TabularFilterRule) => r.enabled !== false && r.column);
   if (!rules.length) return rows;
-  return rows.filter((row: TabularRow) => rules.every((rule) => matchesRule(row, rule)));
+  return rows.filter((row: TabularRow) =>
+    rules.every((rule: TabularFilterRule) => matchesRule(row, rule)),
+  );
 });
 
 export const keyColumnAtom = atom<string>('');

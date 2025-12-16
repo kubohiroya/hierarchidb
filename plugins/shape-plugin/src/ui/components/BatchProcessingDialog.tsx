@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material';
-import type { NodeId } from '../../common/shared/index.js';
+import type { NodeId } from '../../common/types/index.js';
 import { ShapeBatchProgressDisplay } from './ShapeBatchProgressDisplay.js';
 import { useShapeProgress } from '../hooks/useShapeProgress.js';
 

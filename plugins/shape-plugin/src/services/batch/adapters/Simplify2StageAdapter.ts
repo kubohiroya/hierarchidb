@@ -1,5 +1,5 @@
-import type { ProgressInfo } from '../../../common/shared/index.js';
-import type { Simplify2Task } from '../../common/types.js';
+import type { ProgressInfo } from '../../../common/types/index.js';
+import type { Simplify2Task } from '../../../common/types/index.js';
 import type { StageControls } from './StageControls.js';
 
 export interface SimplifyStageAdapterResult {

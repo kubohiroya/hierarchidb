@@ -1,4 +1,4 @@
-// Preset accordion components for common use cases
+// Preset accordion components for _obsolate_common use cases
 export { WorkflowAccordion } from './WorkflowAccordion.js';
 export type { WorkflowAccordionProps, WorkflowStep } from './WorkflowAccordion.js';
 

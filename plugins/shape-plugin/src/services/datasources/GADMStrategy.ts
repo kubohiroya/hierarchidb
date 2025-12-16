@@ -4,7 +4,7 @@
   */
 
 import { BaseDataSourceStrategy, type DataSourceConfig, type FetchOptions, type ProcessOptions } from './DataSourceStrategy.js';
-import type { ShapeEntity } from '../../common/shared/types.js';
+import type { ShapeEntity } from '../../common/types/index.js';
 
 //  GADM
 export interface GADMRawData {

@@ -1,4 +1,4 @@
-import type { VectorTileEntity } from '../shared/types.js';
+import type { VectorTileEntity } from './core.js';
 
 /**
  * Peer data stored for shape nodes in peerEntities. Always include

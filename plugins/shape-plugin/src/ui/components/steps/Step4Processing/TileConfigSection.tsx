@@ -1,8 +1,8 @@
 import React from 'react';
 import { Accordion, AccordionDetails, AccordionSummary, Chip, Grid, Slider, Stack, Typography } from '@mui/material';
 import { Layers as LayersIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
-import type { ProcessingConfig, TileProcessingConfig } from '../../../../common/shared/index.js';
-import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../../common/shared/index.js';
+import type { ProcessingConfig, TileProcessingConfig } from '../../../../common/types/index.js';
+import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../../common/types/index.js';
 
 type Props = {
   config: ProcessingConfig;

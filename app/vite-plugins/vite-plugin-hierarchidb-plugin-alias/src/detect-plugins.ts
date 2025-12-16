@@ -33,9 +33,9 @@ const SUBPATH_DEFINITIONS: readonly SubpathDefinition[] = [
   },
   {
     kind: 'common',
-    exportKey: './common',
+    exportKey: './_obsolate_common',
     requireExport: false,
-    candidateBases: ['src/common/index', 'src/common', 'src/shared/index', 'src/shared'],
+    candidateBases: ['src/_obsolate_common/index', 'src/_obsolate_common', 'src/shared/index', 'src/shared'],
   },
   {
     kind: 'ui',

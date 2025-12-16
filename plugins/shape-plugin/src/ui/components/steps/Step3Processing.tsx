@@ -1,7 +1,7 @@
 import type React from 'react';
 import { Box, Stack, Typography } from '@mui/material';
-import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../common/shared/index.js';
-import type { ProcessingConfig, StepProps } from '../../../common/shared/index.js';
+import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../common/types/index.js';
+import type { ProcessingConfig, StepProps } from '../../../common/types/index.js';
 import { DownloadConfigSection } from './Step4Processing/DownloadConfigSection.js';
 import { SimplificationConfigSection } from './Step4Processing/SimplificationConfigSection.js';
 import { TileConfigSection } from './Step4Processing/TileConfigSection.js';

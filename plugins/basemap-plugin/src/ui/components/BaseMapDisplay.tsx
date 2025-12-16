@@ -121,7 +121,7 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
   }, [entity]);
 
   // Get map style URL based on configuration
-  const mapStyleUrl = useMemo<string | MapLibreStyle>(() => {
+  const mapStyleSource = useMemo<string | MapLibreStyle>(() => {
     if (!entity?.mapStyle) {
       return BUILT_IN_STYLES.streets.url;
     }
@@ -280,6 +280,10 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
     );
   }
 
+  const mapStyleProps = typeof mapStyleSource === 'string'
+    ? { mapStyleUrl: mapStyleSource }
+    : { mapStyleObject: mapStyleSource };
+
   // Render map
   return (
     <Box sx={{ width, height, position: 'relative', ...style }}>
@@ -301,7 +305,7 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
       >
         <LazyMapLibreMap
           initialViewState={initialViewState}
-          mapStyle={mapStyleUrl}
+          {...mapStyleProps}
           width="100%"
           height="100%"
           onLoad={handleMapLoad}

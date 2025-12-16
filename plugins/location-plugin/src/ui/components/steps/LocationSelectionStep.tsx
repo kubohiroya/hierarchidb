@@ -82,12 +82,16 @@ export function normalizeMatrix(matrix: boolean[][] | undefined, countries: Coun
 
 export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ draft, onUpdate }) => {
   const { translations } = useTranslation();
+  const selectionTranslations = translations.selection ?? {};
+  const selectionSettings = translations.selectionSettings ?? {};
+  const airportSettings = selectionSettings.airport ?? {};
+  const railwaySettings = selectionSettings.railwayStation ?? {};
   const controlId = useId();
   const [activeTab, setActiveTab] = useState(0);
 
   const locationTypes = useMemo<LocationTypeConfig[]>(() => {
-    const typeLabels = translations.locationTypes;
-    const descriptions = translations.selection.typeDescriptions ?? {};
+    const typeLabels = translations.locationTypes ?? {};
+    const descriptions = selectionTranslations.typeDescriptions ?? {};
     return DEFAULT_LOCATION_TYPES.map((t) => {
       const name = typeLabels[t.id] ?? t.name;
       const descriptionKey = t.id as keyof typeof descriptions;
@@ -118,13 +122,13 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ dr
   return (
     <Box>
       <Alert severity="info" sx={{ mb: 3 }}>
-        {translations.selection.alertMessage}
+        {selectionTranslations.alertMessage ?? 'Select the regions and location types you want to include.'}
       </Alert>
 
       <Box mb={2} display="flex" justifyContent="space-between" alignItems="center">
-        <Typography variant="h6">{translations.selection.matrixTitle}</Typography>
+        <Typography variant="h6">{selectionTranslations.matrixTitle ?? 'Location Coverage Matrix'}</Typography>
         <Typography variant="body2" color="text.secondary">
-          {translations.selection.selectedCount}: {selectionMatrix.flat().filter(Boolean).length}
+          {(selectionTranslations.selectedCount ?? 'Selected')}: {selectionMatrix.flat().filter(Boolean).length}
         </Typography>
       </Box>
 
@@ -173,9 +177,9 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ dr
             <Typography variant="subtitle1" gutterBottom>
               {activeType.icon} {activeType.description}
             </Typography>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            {translations.selectionSettings.generic?.advancedFilters ?? 'Configure advanced filters for this type.'}
-          </Typography>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              {selectionSettings.generic?.advancedFilters ?? 'Configure advanced filters for this type.'}
+            </Typography>
 
             {activeType.id === 'airport' && (
               <Grid container spacing={3} columns={{ xs: 12 }}>
@@ -190,7 +194,7 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ dr
                         }}
                       />
                     )}
-                    label={translations.selectionSettings.airport.includeHeliports}
+                    label={airportSettings.includeHeliports ?? 'Include heliports'}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -204,7 +208,7 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ dr
                         }}
                       />
                     )}
-                    label={translations.selectionSettings.airport.activeOnly}
+                    label={airportSettings.activeOnly ?? 'Active airports only'}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -217,13 +221,13 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ dr
                         }}
                       />
                     )}
-                    label={translations.selectionSettings.airport.commercialOnly}
+                    label={airportSettings.commercialOnly ?? 'Commercial airports only'}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <Box>
                     <Typography gutterBottom>
-                      {translations.selectionSettings.airport.minRunwayLengthLabel.replace('{value}', '1500')}
+                      {(airportSettings.minRunwayLengthLabel ?? 'Minimum runway length: {value} m').replace('{value}', '1500')}
                     </Typography>
                     <Slider min={300} max={5000} step={100} defaultValue={1500} />
                   </Box>
@@ -244,7 +248,7 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ dr
                         }}
                       />
                     )}
-                    label={translations.selectionSettings.railwayStation.includeMetro}
+                    label={railwaySettings.includeMetro ?? 'Include metro/light rail'}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -257,7 +261,7 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ dr
                         }}
                       />
                     )}
-                    label={translations.selectionSettings.railwayStation.includeAbandoned}
+                    label={railwaySettings.includeAbandoned ?? 'Include abandoned lines'}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -270,13 +274,13 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ dr
                         }}
                       />
                     )}
-                    label={translations.selectionSettings.railwayStation.intercityOnly}
+                    label={railwaySettings.intercityOnly ?? 'Intercity only'}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     type="number"
-                    label={translations.selectionSettings.railwayStation.minPlatformsLabel}
+                    label={railwaySettings.minPlatformsLabel ?? 'Minimum platforms'}
                     defaultValue={1}
                     size="small"
                     id={`${controlId}-railway-min-platforms`}

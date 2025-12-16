@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import { BatchService, createLaneSemaphoreRegistry } from '@hierarchidb/batch';
-import type { DownloadTask } from '../../common/types.js';
-import type { ProgressInfo } from '../../../common/shared/index.js';
+import type { DownloadTask } from '../../../common/types/index.js';
+import type { ProgressInfo } from '../../../common/types/index.js';
 import type { DownloadStageAdapter, DownloadStageAdapterResult } from './DownloadStageAdapter.js';
 import type { StageControls } from './StageControls.js';
 import { getShapeRuntimeWorkerClient } from './RuntimeWorkerClient.js';

@@ -2,7 +2,7 @@
 
 # ================================================================
 # 基本環境設定（全環境共通）
-# Single Source of Truth for common configuration
+# Single Source of Truth for _obsolate_common configuration
 # ================================================================
 
 # アプリケーション基本情報

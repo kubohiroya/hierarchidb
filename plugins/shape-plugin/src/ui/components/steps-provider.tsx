@@ -6,12 +6,12 @@ import {
   DEFAULT_PROCESSING_CONFIG,
   mergeProcessingConfig,
   type ShapeEntity,
-} from '../../common/shared/index.js';
+} from '../../common/types/index.js';
 import { Step2DataSource } from './steps/Step2DataSource.js';
 import { Step3Processing } from './steps/Step3Processing.tsx';
 import { Step4CountrySelection } from './steps/Step4CountrySelection.tsx';
 import { notify } from '@hierarchidb/components';
-import { useTranslation as getTranslation } from '../../common/i18n/index.js';
+import { useTranslation as getTranslation } from '../../ui/i18n.js';
 import type { NodeId } from '@hierarchidb/common-types';
 
 const registry = PluginStepRegistry.getInstance();

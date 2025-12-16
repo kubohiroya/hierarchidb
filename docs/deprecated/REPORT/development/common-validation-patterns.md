@@ -81,7 +81,7 @@ import { validateNodeName, validateNodeDescription } from '@hierarchidb/core';
 
 const myPluginLifecycle: NodeLifecycleHooks = {
   beforeCreate: async (_parentId: NodeId, nodeData: Partial<MyEntity>) => {
-    // Validate common properties
+    // Validate _obsolate_common properties
     if (nodeData.name !== undefined) {
       const nameValidation = validateNodeName(nodeData.name);
       if (!nameValidation.isValid) {
@@ -136,7 +136,7 @@ import { validateCommonNodeData } from '@hierarchidb/core';
 
 class MyEntityHandler extends BaseEntityHandler<MyEntity> {
   async createEntity(nodeId: NodeId, data: Partial<MyEntity>): Promise<MyEntity> {
-    // Validate common data
+    // Validate _obsolate_common data
     const validation = validateCommonNodeData({
       name: data.name,
       description: data.description,
@@ -196,7 +196,7 @@ function validateFolderName(name: string): { isValid: boolean; error?: string } 
 
 **After:**
 ```typescript
-// Use common validation
+// Use _obsolate_common validation
 import { validateNodeName } from '@hierarchidb/core';
 
 // Direct usage

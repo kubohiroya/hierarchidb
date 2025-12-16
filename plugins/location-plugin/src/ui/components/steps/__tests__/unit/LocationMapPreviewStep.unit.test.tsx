@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { toNodeId } from '@hierarchidb/common-types';
-import type { LocationEntity } from '../../../../common/types/index';
+import type { LocationEntity } from '../../../../_obsolate_common/types/index';
 import en from '../../../../ui/locales/en.json' with { type: 'json' };
 
 type SessionRecord = {

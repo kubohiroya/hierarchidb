@@ -2,7 +2,7 @@
  * BaseIcon Component
  *
  * A standardized base component for creating plugin icon with consistent props.
- * Reduces duplication across icon containers by providing common functionality.
+ * Reduces duplication across icon containers by providing _obsolate_common functionality.
  */
 
 import type { SvgIconProps } from '@mui/material';

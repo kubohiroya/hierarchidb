@@ -5,7 +5,7 @@
 import { CreateFolderData } from '../types/types.ts';
 
 /**
- * Validation utilities - now using common validation from @hierarchidb/core
+ * Validation utilities - now using _obsolate_common validation from @hierarchidb/core
  */
 
 /**
@@ -22,7 +22,7 @@ export function validateFolderName(name: string): { isValid: boolean; error?: st
 }
 
 /**
- * Validate folder-plugin creation/update data using common validation functions
+ * Validate folder-plugin creation/update data using _obsolate_common validation functions
  */
 export function validateFolderData(data: CreateFolderData): { isValid: boolean; errors: string[] } {
   // Simple validation for folder data

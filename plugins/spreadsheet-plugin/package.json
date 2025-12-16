@@ -64,7 +64,8 @@
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/ui-tabular-extract": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/ui-worker-provider":"workspace:*"
+    "@hierarchidb/ui-worker-provider":"workspace:*",
+    "jotai": "^2.13.1"
   },
   "devDependencies": {
     "@mui/icons-material": "^7.3.6",
@@ -75,6 +76,9 @@
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info":"workspace:*",
     "@hierarchidb/ui-dialog":"workspace:*",
-    "@hierarchidb/ui-worker-provider":"workspace:*"
+    "@hierarchidb/ui-worker-provider":"workspace:*",
+    "jotai": "^2.13.1"
+  },
+  "dependencies": {
   }
 }

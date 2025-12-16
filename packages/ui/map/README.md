@@ -15,7 +15,7 @@ index.ts                 Public exports
 ```
 
 ## Key exports
-- `MapLibreMap` — accepts `initialViewState`, `mapStyle`, `controls`, `identifyFeatureOnClick`, `onViewStateChange/onClick/onLoad`, and children (layers/controls).
+- `MapLibreMap` — accepts `initialViewState`, `mapStyleUrl`/`mapStyleObject`, `controls`, `identifyFeatureOnClick`, `onViewStateChange/onClick/onLoad`, and children (layers/controls).
 - `MapWithDeckGL` — mounts a deck.gl `MapboxOverlay` over MapLibre; pass `deckLayers` and optional constructors.
 - `MapWithVectorTiles` / `VectorTileLayer` — helpers to add vector tile sources/layers.
 - Types: `BaseMapProps`, `MapLibreMapProps`, identify handlers/options.

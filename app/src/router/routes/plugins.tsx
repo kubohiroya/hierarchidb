@@ -1,6 +1,6 @@
 // import { WorkerAPIClient } from '../WorkerAPIClient.ts';
 // import type { Remote } from 'comlink';
-// import type { WorkerAPI } from '@hierarchidb/common-api';
+// import type { WorkerAPI } from '@hierarchidb/_obsolate_common-api';
 import type { NodeType } from '@hierarchidb/common-types';
 // UIPluginRegistry is legacy; this page now reads vite-generated metadata
 // import { getUIPluginRegistry } from '@hierarchidb/ui-plugin-shell/ui-core';

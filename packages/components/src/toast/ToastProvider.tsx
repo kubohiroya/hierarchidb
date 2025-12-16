@@ -355,7 +355,7 @@ export function useToast(): ToastContextType {
 }
 
 /**
- * Convenience hooks for common toast types
+ * Convenience hooks for _obsolate_common toast types
  */
 export function useToastNotifications() {
   const { showToast } = useToast();

@@ -66,7 +66,7 @@ export function createLazySingletonInitializer<T>(
 }
 
 /**
- * Default initialization steps for common Worker setup
+ * Default initialization steps for _obsolate_common Worker setup
  */
 export const DEFAULT_INIT_STEPS: InitializationStep[] = [
   { name: 'Loading core modules', weight: 10 },

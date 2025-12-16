@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { ResolverEntity } from '../../common/types/index.ts';
+import type { ResolverEntity } from '../../_obsolate_common/types/index.ts';
 import { MappingCompiler } from '~/services/SimpleMappingCompiler.ts';
 
 describe('Styler Integration with Resolver', () => {

@@ -26,7 +26,7 @@ Shape、Location、Route、Spreadsheetプラグインのコード分析により
 
 #### 共通化提案
 ```typescript
-// packages/common/plugin-base/src/handlers/BaseEntityHandler.ts
+// packages/_obsolate_common/plugin-base/src/handlers/BaseEntityHandler.ts
 export abstract class BaseEntityHandler<
   TEntity extends BaseEntity,
   TWorkingCopy extends BaseWorkingCopy
@@ -77,7 +77,7 @@ WorkingCopy管理ロジックが各プラグインで重複：
 
 #### 共通化提案
 ```typescript
-// packages/common/plugin-base/src/managers/WorkingCopyManager.ts
+// packages/_obsolate_common/plugin-base/src/managers/WorkingCopyManager.ts
 export class WorkingCopyManager<
   TEntity extends BaseEntity,
   TWorkingCopy extends BaseWorkingCopy
@@ -141,7 +141,7 @@ CSV処理ロジックがSpreadsheetとStylerで重複：
 
 #### 共通化提案
 ```typescript
-// packages/common/csv-utils/src/CSVProcessor.ts
+// packages/_obsolate_common/csv-utils/src/CSVProcessor.ts
 export class CSVProcessor {
   constructor(private config: CSVProcessingConfig) {}
   
@@ -191,7 +191,7 @@ Dexie操作パターンが各プラグインで重複：
 
 #### 共通化提案
 ```typescript
-// packages/common/plugin-base/src/database/BasePluginDatabase.ts
+// packages/_obsolate_common/plugin-base/src/database/BasePluginDatabase.ts
 export abstract class BasePluginDatabase {
   protected db: Dexie;
   

@@ -11,7 +11,7 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { DownloadStageAdapter } from './adapters/DownloadStageAdapter.js';
 import { RuntimeWorkerDownloadAdapter } from './adapters/RuntimeWorkerDownloadAdapter.js';
-import type { Simplify1Task, Simplify2Task, VectorTileTask } from '../common/types.js';
+import type { Simplify1Task, Simplify2Task, VectorTileTask } from '../../common/types/index.js';
 import type { Simplify1StageAdapter } from './adapters/Simplify1StageAdapter.js';
 import type { Simplify2StageAdapter } from './adapters/Simplify2StageAdapter.js';
 import type { VectorTileStageAdapter } from './adapters/VectorTileStageAdapter.js';
@@ -19,9 +19,9 @@ import { RuntimeWorkerSimplify1Adapter, RuntimeWorkerSimplify2Adapter } from './
 import { RuntimeWorkerVectorTileAdapter } from './adapters/RuntimeWorkerVectorTileAdapter.js';
 import { getShapeRuntimeWorkerClient } from './adapters/RuntimeWorkerClient.js';
 import type { BatchProcessConfig } from './types.js';
-import type { UrlMetadata, ProgressInfo, ProcessingStage } from '../../common/shared/index.js';
-import { BatchTaskStage } from '../../common/shared/index.js';
-import type { DownloadTask } from '../../common/shared/types.js';
+import type { UrlMetadata, ProgressInfo, ProcessingStage } from '../../common/types/index.js';
+import { BatchTaskStage } from '../../common/types/index.js';
+import type { DownloadTask } from '../../common/types/index.js';
 
 export interface BatchSessionOptions {
   maxConcurrentTasks?: number;

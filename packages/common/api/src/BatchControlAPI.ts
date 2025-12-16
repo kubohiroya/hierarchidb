@@ -1,6 +1,6 @@
 /**
  * Unified Batch Control API Interface
- * Provides common interface for batch processing operations across all plugin-loader
+ * Provides _obsolate_common interface for batch processing operations across all plugin-loader
  */
 
 import type { NodeId } from '@hierarchidb/common-types';

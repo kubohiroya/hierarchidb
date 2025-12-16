@@ -12,8 +12,8 @@ import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { ShapeEntity } from '../../common/types/ShapeEntity.js';
-import type { DataSourceName, VectorTileEntity } from '../../common/shared/types.js';
-import type { BatchSession, CacheStatistics, ProcessingStage, TaskStatus } from '../common/types.js';
+import type { DataSourceName, VectorTileEntity } from '../../common/types/index.js';
+import type { BatchSession, CacheStatistics, ProcessingStage, TaskStatus } from '../../common/types/index.js';
 
 // Database schema interfaces
 export interface ShapeEntityRecord extends ShapeEntity {
@@ -45,7 +45,7 @@ export interface BatchSessionRecord extends BatchSession {
 export interface BatchTaskRecord {
   taskId: string;
   sessionId: string;
-  type: ProcessingStage;
+  taskType: ProcessingStage;
   status: TaskStatus;
   index: number;
   progress: number;
@@ -403,6 +403,8 @@ export class ShapeDB extends Dexie {
     const totalSize = allEntries.reduce((sum, entry) => sum + entry.size, 0);
     const totalItems = allEntries.length;
     const totalHits = allEntries.reduce((sum, entry) => sum + entry.hits, 0);
+    const totalMisses = Math.max(totalHits * 0.1, 0);
+    const totalRequests = totalHits + totalMisses;
 
     const byType: Record<string, any> = {};
     for (const type of ['features', 'tiles', 'buffers', 'all']) {
@@ -422,11 +424,13 @@ export class ShapeDB extends Dexie {
     }
 
     return {
+      hits: totalHits,
+      misses: totalMisses,
       totalSize,
       totalItems,
       byType,
-      hitRate: totalHits > 0 ? totalHits / (totalHits * 1.1) : 0,
-      missRate: totalHits > 0 ? (totalHits * 0.1) / (totalHits * 1.1) : 0,
+      hitRate: totalRequests > 0 ? totalHits / totalRequests : 0,
+      missRate: totalRequests > 0 ? totalMisses / totalRequests : 0,
       evictionCount: 0,
       oldestItem:
         allEntries.length > 0 ? Math.min(...allEntries.map((e) => e.createdAt)) : Date.now(),

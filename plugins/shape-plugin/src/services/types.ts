@@ -17,7 +17,7 @@ import type {
   ProgressInfo as SharedProgressInfo,
   StageStatus as SharedStageStatus,
   TaskStatus,
-} from '../common/shared/index.js';
+} from '../common/types/index.js';
 
 // === API Method Signatures ===
 
@@ -297,7 +297,7 @@ export type {
   VectorTileTaskConfig,
   ProcessingStage,
   TaskStatus,
-} from '../common/shared/index.js';
+} from '../common/types/index.js';
 
 export interface DownloadResult {
   taskId: string;

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Predefined column sets for common selection scenarios
+ * @fileoverview Predefined column sets for _obsolate_common selection scenarios
  * @module @hierarchidb/ui-country-select/types
  */
 

@@ -11,9 +11,6 @@
       "ui": [
         "dist/ui/index.d.ts"
       ],
-      "database": [
-        "dist/services/database/index.d.ts"
-      ],
       "icon": [
         "dist/icon/index.d.ts"
       ],

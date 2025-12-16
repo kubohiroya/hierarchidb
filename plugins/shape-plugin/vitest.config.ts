@@ -41,9 +41,9 @@ export default defineConfig({
   resolve: {
     alias: {
       // Map legacy core imports to public dist builds for tests
-      '@hierarchidb/core': path.resolve(__dirname, '../../packages/common/types/src/index.ts'),
-      '@hierarchidb/common-types': path.resolve(__dirname, '../../packages/common/types/src/index.ts'),
-      '@hierarchidb/common-api': path.resolve(__dirname, '../../packages/common/api/src/index.ts'),
+      '@hierarchidb/core': path.resolve(__dirname, '../../packages/_obsolate_common/types/src/index.ts'),
+      '@hierarchidb/common-types': path.resolve(__dirname, '../../packages/_obsolate_common/types/src/index.ts'),
+      '@hierarchidb/common-api': path.resolve(__dirname, '../../packages/_obsolate_common/api/src/index.ts'),
       '@hierarchidb/ui-worker-client': path.resolve(__dirname, '../../packages/runtime-worker/client/src/index.ts'),
       '@hierarchidb/runtime-worker': path.resolve(__dirname, '../../packages/runtime-worker/worker/src/index.ts'),
       '@hierarchidb/plugin-ui-host': path.resolve(__dirname, '../../packages/plugin-ui-host/src/index.ts'),

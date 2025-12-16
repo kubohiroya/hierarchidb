@@ -2,7 +2,6 @@ import { PluginStepRegistry, type StartBatchContext, type StepComponentProps } f
 import type { NodeId, TreeNodeMetadata } from '@hierarchidb/common-types';
 import type { LocationEntity } from '../../common/types/index.js';
 import { LocationDataSourceStep } from './steps/LocationDataSourceStep.js';
-import { LocationLicenseStep } from './steps/LocationLicenseStep.js';
 import { LocationSelectionStep } from './steps/LocationSelectionStep.js';
 import { LocationBatchParametersStep } from './steps/LocationBatchParametersStep.js';
 import { LocationMapPreviewStep } from './steps/LocationMapPreviewStep.js';
@@ -49,6 +48,7 @@ const MIN_CONCURRENCY = 1;
 const MAX_CONCURRENCY = 16;
 const DEFAULT_MIN_ZOOM = 5;
 const DEFAULT_MAX_ZOOM = 12;
+const LICENSE_REQUIRED = true;
 
 const tNs = (key: string, fallback: string) =>
   String(i18n.t(key, { ns: 'location-plugin', defaultValue: fallback }));
@@ -125,24 +125,14 @@ registry.registerConfigProvider<LocationStepData>({
             <LocationDataSourceStep
               draft={draft}
               onUpdate={(updates) => p.onChange(mergeData(draft, updates))}
+              licenseRequired={LICENSE_REQUIRED}
+              disabled={Boolean(p.disabled)}
             />
           );
         },
-        validate: (data?: LocationStepData) => Boolean(data?.dataSource),
-      },
-      {
-        id: 'license',
-        label: String(i18n.t('steps.license.label', { ns: 'location-plugin', defaultValue: 'License Agreement' })),
-        componentFactory: (p: StepProps) => {
-          const draft = ensureData(p.data);
-          return (
-            <LocationLicenseStep
-              draft={draft}
-              onUpdate={(updates) => p.onChange(mergeData(draft, updates))}
-            />
-          );
-        },
-        validate: (data?: LocationStepData) => Boolean(data?.licenseAgreement),
+        validate: (data?: LocationStepData) =>
+          Boolean(data?.dataSource) &&
+          (!LICENSE_REQUIRED || Boolean(data?.licenseAgreement)),
       },
       {
         id: 'selection',

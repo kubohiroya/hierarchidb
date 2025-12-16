@@ -80,7 +80,7 @@ export function MapPreviewStep({ frames, initialIndex = 0, onIndexChange }: MapP
             bottom: 16,
             left: 16,
             pr: 4,
-            color: 'common.white',
+            color: '_obsolate_common.white',
             textShadow: '0 0 8px rgba(0,0,0,0.35)',
           }}
         >

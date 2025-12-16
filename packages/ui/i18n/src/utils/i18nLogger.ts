@@ -159,8 +159,8 @@ export const i18nAssert = (
 export const i18nFeature = (featureName: string, enabled: boolean, ...args: unknown[]) => {
   if (!isDev) return;
   const status = enabled ? '✅' : '❌';
-  const statusText = enabled ? t('common.enabled') : t('common.disabled');
-  console.log(`${status} ${t('common.features')} ${featureName}:`, statusText, ...args);
+  const statusText = enabled ? t('_obsolate_common.enabled') : t('_obsolate_common.disabled');
+  console.log(`${status} ${t('_obsolate_common.features')} ${featureName}:`, statusText, ...args);
 };
 
 // API call logging with i18n

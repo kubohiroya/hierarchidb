@@ -1,22 +1,22 @@
 /**
  * Shape Entity Service backed by TreeNode payloads (data/draftData + metadata/draftMetadata).
- * Aligns shape-plugin with the common Draft API flow (basemap-style).
+ * Aligns shape-plugin with the _obsolate_common Draft API flow (basemap-style).
  */
 
 import type { TreeId, TreeNode, TreeNodeMetadata, TreeNodeUpdaterPayload } from '@hierarchidb/common-types';
 import { toNodeType } from '@hierarchidb/common-types';
-import type { DataSourceName, NodeId } from '../../common/shared/index.js';
+import type { DataSourceName, NodeId } from '../../common/types/index.js';
 import {
   buildShapeEntityFromCreate,
   createDraftFromEntity,
   DEFAULT_PROCESSING_CONFIG,
   mergeProcessingConfig,
-  normalizeDataSourceName,
   parseCheckboxState,
   type ProcessingConfig,
   type ShapeEntity,
   type ShapeDraft,
-} from '../../common/shared/index.js';
+} from '../../common/types/index.js';
+import { normalizeDataSourceName } from '../../services/utils/utils.js';
 import { CoreDB } from '../../../../../packages/runtime-worker/src/services/CoreDB.js';
 import {
   commitTreeNodeDraft,
@@ -278,9 +278,12 @@ export class ShapeEntityService {
       ...data,
       dataSourceName: dataSource,
       processingConfig: mergedProcessing,
-      checkboxState: Array.isArray(mergedCheckboxState) || typeof mergedCheckboxState === 'string'
-        ? mergedCheckboxState
-        : parseCheckboxState(mergedCheckboxState as any),
+      checkboxState:
+        typeof mergedCheckboxState === 'string' || Array.isArray(mergedCheckboxState)
+          ? mergedCheckboxState
+          : mergedCheckboxState
+            ? parseCheckboxState(mergedCheckboxState as boolean[][] | string)
+            : [],
     };
 
     await this.writeDraft(draftId, updated, data.metadata ?? current.metadata);
@@ -305,8 +308,10 @@ export class ShapeEntityService {
   async applyDraft(nodeId: NodeId, draft: ShapeDraft): Promise<ShapeEntity> {
     const parsedCheckbox =
       typeof draft.draftData?.checkboxState === 'string' || Array.isArray(draft.draftData?.checkboxState)
-        ? draft.draftData?.checkboxState
-        : parseCheckboxState(draft.draftData?.checkboxState as any);
+        ? draft.draftData.checkboxState
+        : draft.draftData?.checkboxState
+          ? parseCheckboxState(draft.draftData.checkboxState as boolean[][] | string)
+          : [];
     const payload: ShapeEntity = {
       ...(draft.draftData ?? {}),
       id: nodeId,

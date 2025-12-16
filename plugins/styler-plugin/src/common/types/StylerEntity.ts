@@ -1,4 +1,5 @@
 import type { SpreadsheetEntity } from '@hierarchidb/spreadsheet-plugin';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { MapLibreStyle } from '@hierarchidb/ui-map';
 
 import type { StepData } from '@hierarchidb/plugin-base';
@@ -27,6 +28,19 @@ export type ColorScheme =
   | 'viridis'
   | 'magma'
   | 'custom';
+
+export interface StyleKeyValue {
+  nodeId: NodeId;
+  key: string;
+}
+
+export interface ColorStyleKeyValue extends StyleKeyValue {
+  color: string;
+}
+
+export interface ScalarStyleKeyValue extends StyleKeyValue {
+  scalarValue: number;
+}
 
 export interface MapLibrePropertyMetadata {
   name: string;
@@ -278,6 +292,10 @@ export interface StylerEntity extends SpreadsheetEntity {
 
   mapping: StylerMapping;
   config: StylerConfig;
+  styleKeyValues?: {
+    colors?: ColorStyleKeyValue[];
+    scalars?: ScalarStyleKeyValue[];
+  };
 
   colorScheme?: string;
 

@@ -51,7 +51,7 @@ function normalizeMuiName(name?: string): string | undefined {
   return map[key] || name;
 }
 
-// Small static map to avoid dynamic import pitfalls for common icons
+// Small static map to avoid dynamic import pitfalls for _obsolate_common icons
 const staticMap: Record<string, React.ComponentType<SvgIconProps> | undefined> = {
   Folder: FolderIcon,
   Public: PublicIcon,
