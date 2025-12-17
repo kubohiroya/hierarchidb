@@ -189,6 +189,22 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
   const selectionCheckboxPrefix = selectionIdPrefix || 'row-selection';
   const selectionAllCheckboxId = `${selectionCheckboxPrefix}-all`;
 
+  const getNameValue = (node: TreeNode): string => {
+    const metaName = (node as { metadata?: { name?: unknown } }).metadata?.name;
+    const raw = typeof metaName !== 'undefined' ? metaName : (node as { name?: unknown }).name;
+    if (typeof raw === 'string') return raw;
+    if (raw === null || raw === undefined) return '';
+    return String(raw);
+  };
+
+  const getDescriptionValue = (node: TreeNode): string => {
+    const metaDesc = (node as { metadata?: { description?: unknown } }).metadata?.description;
+    const raw = typeof metaDesc !== 'undefined' ? metaDesc : (node as { description?: unknown }).description;
+    if (typeof raw === 'string') return raw;
+    if (raw === null || raw === undefined) return '';
+    return String(raw);
+  };
+
   const selectionColumn: ColumnDef<TreeNode> = {
     id: 'selection',
     header: () => (
@@ -229,10 +245,15 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
 
   const nameColumn: ColumnDef<TreeNode> = {
     id: 'name',
-    accessorKey: 'name',
+    accessorFn: (row) => getNameValue(row as TreeNode),
     header: columnLabels.name,
     size: columnWidths.name,
     enableSorting: true,
+    sortingFn: (rowA, rowB) => {
+      const a = getNameValue(rowA.original as TreeNode);
+      const b = getNameValue(rowB.original as TreeNode);
+      return a.localeCompare(b, undefined, { sensitivity: 'base' });
+    },
     cell: ({ row }) => {
       const node = row.original;
       const reportedDepth = typeof node.depth === 'number' ? node.depth : undefined;
@@ -531,10 +552,15 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
 
   const descriptionColumn: ColumnDef<TreeNode> = {
     id: 'description',
-    accessorKey: 'description',
+    accessorFn: (row) => getDescriptionValue(row as TreeNode),
     header: columnLabels.description,
     size: columnWidths.description,
     enableSorting: true,
+    sortingFn: (rowA, rowB) => {
+      const a = getDescriptionValue(rowA.original as TreeNode);
+      const b = getDescriptionValue(rowB.original as TreeNode);
+      return a.localeCompare(b, undefined, { sensitivity: 'base' });
+    },
     cell: ({ row }) => {
       const node: TreeNode = row.original;
       const isEditingDesc = editingNodeId === node.id && editingField === 'description';

@@ -20,7 +20,7 @@ import {
 import { Settings } from '@mui/icons-material';
 import type { LocationEntity } from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
-import { SelectionMatrix, type Country, type LocationTypeConfig } from '../SelectionMatrix.js';
+import { SelectionMatrix, type SelectionMatrixColumn, type SelectionMatrixRow } from '@hierarchidb/components';
 import type { LocationType } from '../../../common/types/index.js';
 
 interface LocationSelectionStepProps {
@@ -28,7 +28,7 @@ interface LocationSelectionStepProps {
   onUpdate: (updates: Partial<LocationEntity>) => void;
 }
 
-const SAMPLE_COUNTRIES: Country[] = [
+const SAMPLE_COUNTRIES = [
   { code: 'JPN', name: 'Japan', localName: 'Nihon', continent: 'Asia' },
   { code: 'KOR', name: 'South Korea', localName: 'Daehanminguk', continent: 'Asia' },
   { code: 'CHN', name: 'China', localName: 'Zhongguo', continent: 'Asia' },
@@ -40,39 +40,24 @@ const SAMPLE_COUNTRIES: Country[] = [
   { code: 'ITA', name: 'Italy', localName: 'Italia', continent: 'Europe' },
   { code: 'ESP', name: 'Spain', localName: 'España', continent: 'Europe' },
   { code: 'CAN', name: 'Canada', continent: 'North America' },
-];
+] satisfies Array<{ code: string; name: string; localName?: string; continent: string }>;
 
-const DEFAULT_LOCATION_TYPES: LocationTypeConfig[] = [
+const DEFAULT_LOCATION_TYPES = [
+  { id: 'area_centroid' as LocationType, icon: '🎯', color: '#6A5ACD', name: 'area_centroid', description: 'area_centroid', estimatedCount: 20000 },
   { id: 'airport' as LocationType, icon: '✈️', color: '#2196F3', name: 'airport', description: 'airport', estimatedCount: 28000 },
-  { id: 'railway_station' as LocationType, icon: '🚆', color: '#4CAF50', name: 'railway_station', description: 'railway_station', estimatedCount: 45000 },
   { id: 'port' as LocationType, icon: '🚢', color: '#FF9800', name: 'port', description: 'port', estimatedCount: 12000 },
+  { id: 'railway_station' as LocationType, icon: '🚉', color: '#4CAF50', name: 'railway_station', description: 'railway_station', estimatedCount: 45000 },
   { id: 'interchange' as LocationType, icon: '🛣️', color: '#607D8B', name: 'interchange', description: 'interchange', estimatedCount: 15000 },
-  { id: 'tourist_attraction' as LocationType, icon: '📍', color: '#9C27B0', name: 'tourist_attraction', description: 'tourist_attraction', estimatedCount: 8000 },
-  { id: 'park' as LocationType, icon: '🌳', color: '#2E7D32', name: 'park', description: 'park', estimatedCount: 32000 },
-];
+] satisfies Array<{
+  id: LocationType;
+  icon: string;
+  color: string;
+  name: string;
+  description: string;
+  estimatedCount?: number;
+}>;
 
-export function buildCheckboxState(
-  matrix: boolean[][],
-  countries: Country[],
-  locationTypes: LocationTypeConfig[],
-): Record<string, Partial<Record<LocationType, boolean>>> {
-  const state: Record<string, Partial<Record<LocationType, boolean>>> = {};
-
-  countries.forEach((country, rowIndex) => {
-    const row = matrix[rowIndex] ?? [];
-    row.forEach((isSelected, columnIndex) => {
-      if (!isSelected) return;
-      const type = locationTypes[columnIndex]?.id;
-      if (!type) return;
-      const entry = state[country.code] ?? (state[country.code] = {});
-      entry[type] = true;
-    });
-  });
-
-  return state;
-}
-
-export function normalizeMatrix(matrix: boolean[][] | undefined, countries: Country[], types: LocationTypeConfig[]): boolean[][] {
+export function normalizeMatrix(matrix: boolean[][] | undefined, countries: typeof SAMPLE_COUNTRIES, types: typeof DEFAULT_LOCATION_TYPES): boolean[][] {
   const safe = matrix ?? [];
   return countries.map((_, rowIndex) => {
     const row = safe[rowIndex] ?? [];
@@ -81,7 +66,7 @@ export function normalizeMatrix(matrix: boolean[][] | undefined, countries: Coun
 }
 
 export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ draft, onUpdate }) => {
-  const { translations } = useTranslation();
+  const { translations, t } = useTranslation();
   const selectionTranslations = translations.selection ?? {};
   const selectionSettings = translations.selectionSettings ?? {};
   const airportSettings = selectionSettings.airport ?? {};
@@ -89,29 +74,73 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ dr
   const controlId = useId();
   const [activeTab, setActiveTab] = useState(0);
 
-  const locationTypes = useMemo<LocationTypeConfig[]>(() => {
+  const locationTypes = useMemo(() => {
     const typeLabels = translations.locationTypes ?? {};
     const descriptions = selectionTranslations.typeDescriptions ?? {};
     return DEFAULT_LOCATION_TYPES.map((t) => {
       const name = typeLabels[t.id] ?? t.name;
       const descriptionKey = t.id as keyof typeof descriptions;
       return {
-        ...t,
+        id: t.id,
+        icon: t.icon,
+        color: t.color,
         name,
+        description: descriptions[descriptionKey] ?? name,
+        estimatedCount: t.estimatedCount,
+      };
+    });
+  }, [selectionTranslations.typeDescriptions, translations.locationTypes]);
+
+  const columns = useMemo<SelectionMatrixColumn[]>(() => {
+    const typeLabels = translations.locationTypes ?? {};
+    const descriptions = selectionTranslations.typeDescriptions ?? {};
+    return DEFAULT_LOCATION_TYPES.map((t) => {
+      const name = typeLabels[t.id] ?? t.name;
+      const descriptionKey = t.id as keyof typeof descriptions;
+      return {
+        id: t.id,
+        label: `${t.icon} ${name}`,
         description: descriptions[descriptionKey] ?? name,
       };
     });
-  }, [translations]);
+  }, [selectionTranslations.typeDescriptions, translations.locationTypes]);
 
   const selectionMatrixSource = useMemo(() => draft.selectionMatrix ?? [], [draft.selectionMatrix]);
 
   const selectionMatrix = useMemo(() => (
-    normalizeMatrix(selectionMatrixSource, SAMPLE_COUNTRIES, locationTypes)
-  ), [locationTypes, selectionMatrixSource]);
+    normalizeMatrix(selectionMatrixSource, SAMPLE_COUNTRIES, DEFAULT_LOCATION_TYPES)
+  ), [selectionMatrixSource]);
 
-  const handleMatrixChange = useCallback((matrix: boolean[][]) => {
-    onUpdate({ selectionMatrix: matrix });
-  }, [onUpdate]);
+  const rows = useMemo<SelectionMatrixRow[]>(() => (
+    SAMPLE_COUNTRIES.map((country) => ({
+      id: country.code,
+      label: country.name,
+      subLabel: country.localName,
+      data: country,
+    }))
+  ), []);
+
+  const handleChange = useCallback(
+    (rowIndex: number, colIndex: number, checked: boolean) => {
+      const next = selectionMatrix.map((row, rIdx) =>
+        row.map((cell, cIdx) => (rIdx === rowIndex && cIdx === colIndex ? checked : cell))
+      );
+      onUpdate({ selectionMatrix: next });
+    },
+    [onUpdate, selectionMatrix],
+  );
+
+  const handleSelectAllColumn = useCallback(
+    (_colIndex: number, checked: boolean, enabledRowIndices: number[]) => {
+      const next = selectionMatrix.map((row, rIdx) =>
+        row.map((cell, cIdx) =>
+          cIdx === _colIndex && enabledRowIndices.includes(rIdx) ? checked : cell
+        )
+      );
+      onUpdate({ selectionMatrix: next });
+    },
+    [onUpdate, selectionMatrix],
+  );
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
@@ -134,11 +163,13 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ dr
 
       <Box mb={3}>
         <SelectionMatrix
-          countries={SAMPLE_COUNTRIES}
-          locationTypes={locationTypes}
-          value={selectionMatrix}
-          onChange={handleMatrixChange}
-        />
+          rows={rows}
+        columns={columns}
+        state={selectionMatrix}
+        onChange={handleChange}
+        onSelectAll={handleSelectAllColumn}
+        rowHeaderLabel={t('selectionMatrix.columnHeader', 'Country / Type')}
+      />
       </Box>
 
       <Paper elevation={1} sx={{ p: 3 }}>

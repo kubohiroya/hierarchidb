@@ -11,12 +11,30 @@
     "description": "Choose a dataset source to fetch location data.",
     "descriptionFallback": "Select a data source",
     "options": {
-      "openstreetmap": { "name": "OpenStreetMap" },
-      "overpass": { "name": "Overpass API" },
-      "geonames": { "name": "GeoNames" },
-      "wikidata": { "name": "Wikidata" },
-      "custom": { "name": "Custom" },
-      "manual": { "name": "Manual" }
+      "openstreetmap": {
+        "name": "OpenStreetMap",
+        "description": "Community-maintained global map data with roads, places, and points of interest."
+      },
+      "overpass": {
+        "name": "Overpass API",
+        "description": "Query OpenStreetMap data with flexible filters for roads, amenities, and boundaries."
+      },
+      "geonames": {
+        "name": "GeoNames",
+        "description": "Worldwide gazetteer of populated places, postal codes, and administrative names."
+      },
+      "wikidata": {
+        "name": "Wikidata",
+        "description": "Structured, multilingual place entities with rich identifiers and relationships."
+      },
+      "custom": {
+        "name": "Custom",
+        "description": "Use an organization-provided dataset via a custom endpoint or file."
+      },
+      "manual": {
+        "name": "Manual",
+        "description": "Manually enter or import a small set of locations without an external source."
+      }
     }
   },
   "license": {
@@ -29,11 +47,25 @@
     "description": "Select the location data to retrieve. You can specify data by country and location type combinations.",
     "waypoints": "Locations",
     "matrixTitle": "Selection Matrix",
+    "typeDescriptions": {
+      "area_centroid": "Representative points for administrative areas or polygons.",
+      "airport": "Commercial and regional airports with passenger facilities.",
+      "port": "Sea and river ports handling cargo or passenger traffic.",
+      "railway_station": "Major and regional train stations.",
+      "interchange": "Expressway interchanges and junctions."
+    },
     "settingsTitle": "Detailed Settings by Location Type",
     "searchPlaceholder": "Search by country name...",
     "showSelectedOnly": "Show Selected Only",
     "selectAll": "Select All",
     "deselectAll": "Deselect All"
+  },
+  "locationTypes": {
+    "area_centroid": "Area centroid",
+    "airport": "Airport",
+    "port": "Port",
+    "railway_station": "Station",
+    "interchange": "Interchange"
   },
   "selectionMatrix": {
     "columnHeader": "Country / Type"
@@ -50,7 +82,7 @@
   },
   "build": {
     "action": "Build",
-    "requiresApproval": "Provide a data source, accept license terms, and save the node before building.",
+    "requiresApproval": "Provide a data source and save the node before building.",
     "noPoints": "No location points available to process.",
     "success": "Build started (session {{sessionId}})",
     "errors": {

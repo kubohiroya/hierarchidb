@@ -102,46 +102,27 @@ const SAMPLE_LOCATIONS: PreviewLocationPoint[] = [
     coordinates: [139.6425, 35.4437],
     properties: { capacity: 45000000 },
   },
+  {
+    id: '4',
+    name: 'Shinjuku Ward Centroid',
+    nameEn: 'Shinjuku Ward Centroid',
+    type: 'area_centroid' as LocationType,
+    countryCode: 'JPN',
+    coordinates: [139.7036, 35.6938],
+    properties: { adminLevel: 3 },
+  },
 ];
 
-const TYPE_SETTINGS_BASE: Record<LocationType, {
+const TYPE_SETTINGS_BASE: Partial<Record<LocationType, {
   color: string;
   icon: string;
   defaultVisible: boolean;
-}> = {
+}>> = {
+  area_centroid: { color: '#6A5ACD', icon: '🎯', defaultVisible: true },
   airport: { color: '#2196F3', icon: '✈️', defaultVisible: true },
-  railway_station: { color: '#4CAF50', icon: '🚂', defaultVisible: true },
-  bus_stop: { color: '#FF5722', icon: '🚌', defaultVisible: false },
   port: { color: '#FF9800', icon: '🚢', defaultVisible: true },
-  parking: { color: '#9E9E9E', icon: '🅿️', defaultVisible: false },
-  government: { color: '#607D8B', icon: '🏛️', defaultVisible: true },
-  religious: { color: '#795548', icon: '⛪', defaultVisible: false },
-  post_office: { color: '#FF9800', icon: '📮', defaultVisible: false },
-  fire_station: { color: '#F44336', icon: '🚒', defaultVisible: true },
-  police: { color: '#3F51B5', icon: '👮', defaultVisible: true },
-  hospital: { color: '#F44336', icon: '🏥', defaultVisible: true },
-  clinic: { color: '#EF5350', icon: '🩺', defaultVisible: false },
-  pharmacy: { color: '#8BC34A', icon: '💊', defaultVisible: false },
-  school: { color: '#795548', icon: '🏫', defaultVisible: false },
-  university: { color: '#3F51B5', icon: '🎓', defaultVisible: true },
-  library: { color: '#673AB7', icon: '📚', defaultVisible: false },
-  shopping_mall: { color: '#607D8B', icon: '🛍️', defaultVisible: false },
-  supermarket: { color: '#8BC34A', icon: '🛒', defaultVisible: false },
-  restaurant: { color: '#FFC107', icon: '🍽️', defaultVisible: false },
-  hotel: { color: '#9C27B0', icon: '🏨', defaultVisible: false },
-  bank: { color: '#2196F3', icon: '🏦', defaultVisible: false },
-  museum: { color: '#9C27B0', icon: '🏛️', defaultVisible: true },
-  theater: { color: '#FF7043', icon: '🎭', defaultVisible: false },
-  monument: { color: '#AB47BC', icon: '🗿', defaultVisible: false },
-  park: { color: '#4CAF50', icon: '🌳', defaultVisible: true },
-  stadium: { color: '#FFA726', icon: '🏟️', defaultVisible: false },
-  beach: { color: '#03A9F4', icon: '🏖️', defaultVisible: false },
-  mountain: { color: '#8D6E63', icon: '⛰️', defaultVisible: false },
-  lake: { color: '#29B6F6', icon: '🌊', defaultVisible: false },
-  river: { color: '#26C6DA', icon: '🏞️', defaultVisible: false },
-  interchange: { color: '#FFA000', icon: '🛣️', defaultVisible: false },
-  tourist_attraction: { color: '#E91E63', icon: '🎯', defaultVisible: true },
-  custom: { color: '#9E9E9E', icon: '📌', defaultVisible: false },
+  railway_station: { color: '#4CAF50', icon: '🚉', defaultVisible: true },
+  interchange: { color: '#FFA000', icon: '🛣️', defaultVisible: true },
 };
 
 export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
@@ -153,14 +134,15 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
     Object.entries(values).reduce((acc, [key, value]) => acc?.replace(new RegExp(`{${key}}`, 'g'), String(value)), template),
   []);
   const typeSettings = useMemo(() => Object.fromEntries(
-    (Object.entries(TYPE_SETTINGS_BASE) as Array<[LocationType, typeof TYPE_SETTINGS_BASE[LocationType]]>)
+    (Object.entries(TYPE_SETTINGS_BASE) as Array<[LocationType, NonNullable<(typeof TYPE_SETTINGS_BASE)[LocationType]>]>)
+      .filter(([, value]) => Boolean(value))
       .map(([key, value]) => [key, { ...value, name: translations.locationTypes?.[key] ?? key }]),
-  ) as Record<LocationType, typeof TYPE_SETTINGS_BASE[LocationType] & { name: string }> , [translations.locationTypes]);
+  ) as Record<LocationType, NonNullable<(typeof TYPE_SETTINGS_BASE)[LocationType]> & { name: string }> , [translations.locationTypes ?? {}]);
   const mapRef = useRef<HTMLDivElement>(null);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('points');
   const [visibleTypes, setVisibleTypes] = useState<LocationType[]>(
-    Object.keys(TYPE_SETTINGS_BASE).filter(type =>
-      TYPE_SETTINGS_BASE[type as LocationType].defaultVisible,
+    Object.keys(TYPE_SETTINGS_BASE).filter((type) =>
+      TYPE_SETTINGS_BASE[type as LocationType]?.defaultVisible,
     ) as LocationType[],
   );
   const [zoom, setZoom] = useState(10);

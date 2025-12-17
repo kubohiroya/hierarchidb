@@ -9,7 +9,7 @@ describe('LocationSelectionStep (component)', () => {
   const timestamp = Date.now() as Timestamp;
   const baseDraft: Partial<LocationEntity> = {
     dataSource: 'openstreetmap',
-    selectionMatrix: [[false, false], [false, false]],
+    selectionMatrix: Array.from({ length: 2 }, () => Array(5).fill(false)),
     concurrentDownloads: 2,
     licenseAgreement: false,
     createdAt: timestamp,
@@ -25,13 +25,14 @@ describe('LocationSelectionStep (component)', () => {
     const tabLabels = screen.getAllByRole('tab').map((tab) => tab.textContent ?? '');
     expect(tabLabels.some((label) => label.includes(en.locationTypes.airport))).toBe(true);
     expect(tabLabels.some((label) => label.includes(en.locationTypes.railway_station))).toBe(true);
+    expect(tabLabels.some((label) => label.includes(en.locationTypes.area_centroid))).toBe(true);
   });
 
   it('notifies parent via onUpdate when a matrix cell is toggled', () => {
     const onUpdate = vi.fn();
     const { rerender } = render(<LocationSelectionStep draft={baseDraft} onUpdate={onUpdate} />);
 
-    const firstCheckbox = screen.getAllByRole('checkbox')[0];
+    const firstCheckbox = screen.getByRole('checkbox', { name: /Japan.*Area centroid/i });
     fireEvent.click(firstCheckbox);
 
     expect(onUpdate).toHaveBeenCalledTimes(1);
@@ -47,7 +48,7 @@ describe('LocationSelectionStep (component)', () => {
     );
 
     // selected count derivation reflects new matrix summary label
-    const selectedLabel = screen.getByText((content) => content.startsWith(en.selection.selectedCount));
+    const selectedLabel = screen.getByText((content) => content.startsWith('Selected'));
     expect(selectedLabel.textContent).toContain('1');
   });
 });

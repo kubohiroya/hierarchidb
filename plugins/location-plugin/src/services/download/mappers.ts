@@ -8,63 +8,29 @@ import type {
 } from '../../common/entities/LocationEntity.js';
 
 const CATEGORY_MAP: Record<string, LocationCategory> = {
-  amenity: 'infrastructure',
   aeroway: 'transportation',
   railway: 'transportation',
   highway: 'transportation',
   place: 'administrative',
-  shop: 'commercial',
-  tourism: 'leisure',
-  historic: 'cultural',
-  leisure: 'leisure',
-  natural: 'natural',
-  office: 'administrative',
-  government: 'administrative',
-  healthcare: 'healthcare',
-  education: 'education',
 };
 
 const TYPE_MAP: Record<string, LocationType> = {
+  centroid: 'area_centroid',
+  area_centroid: 'area_centroid',
   aerodrome: 'airport',
   airport: 'airport',
   railway_station: 'railway_station',
   railway: 'railway_station',
-  bus_station: 'bus_stop',
-  bus_stop: 'bus_stop',
   harbour: 'port',
   port: 'port',
-  parking: 'parking',
-  hospital: 'hospital',
-  clinic: 'clinic',
-  pharmacy: 'pharmacy',
-  school: 'school',
-  university: 'university',
-  library: 'library',
-  mall: 'shopping_mall',
-  shopping_mall: 'shopping_mall',
-  supermarket: 'supermarket',
-  restaurant: 'restaurant',
-  hotel: 'hotel',
-  bank: 'bank',
-  museum: 'museum',
-  theatre: 'theater',
-  theater: 'theater',
-  monument: 'monument',
-  park: 'park',
-  stadium: 'stadium',
-  beach: 'beach',
-  peak: 'mountain',
-  mountain: 'mountain',
-  water: 'lake',
-  lake: 'lake',
-  river: 'river',
+  interchange: 'interchange',
 };
 
 export const mapCategory = (value?: string): LocationCategory =>
-  CATEGORY_MAP[value ?? ''] ?? 'infrastructure';
+  CATEGORY_MAP[value ?? ''] ?? 'transportation';
 
 export const mapType = (value?: string): LocationType =>
-  TYPE_MAP[value ?? ''] ?? 'park';
+  TYPE_MAP[value ?? ''] ?? 'area_centroid';
 
 export const sanitizeTags = (tags: unknown): Record<string, string> | undefined => {
   if (!tags || typeof tags !== 'object') return undefined;

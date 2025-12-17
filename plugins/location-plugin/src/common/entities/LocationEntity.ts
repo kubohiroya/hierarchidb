@@ -7,61 +7,22 @@ import type { NodeId, Timestamp, TreeNodeData } from '@hierarchidb/common-types'
 
 /**
  * Category taxonomy used when importing / classifying locations.
- * Includes the extended set required by batch mappers.
+ * Trimmed for transportation/economic simulations.
  */
 export type LocationCategory =
   | 'transportation'
-  | 'administrative'
-  | 'infrastructure'
-  | 'commercial'
-  | 'leisure'
-  | 'cultural'
-  | 'natural'
-  | 'healthcare'
-  | 'education'
-  | 'government'
-  | 'financial'
-  | 'accommodation'
-  | 'religious'
-  | 'other';
+  | 'administrative';
 
 /**
  * Location types recognised by batch download/normalizer routines.
+ * Trimmed to the core set needed for economic/transport simulations.
  */
 export type LocationType =
+  | 'area_centroid'
   | 'airport'
-  | 'railway_station'
-  | 'bus_stop'
   | 'port'
-  | 'parking'
-  | 'government'
-  | 'religious'
-  | 'post_office'
-  | 'fire_station'
-  | 'police'
-  | 'hospital'
-  | 'clinic'
-  | 'pharmacy'
-  | 'school'
-  | 'university'
-  | 'library'
-  | 'shopping_mall'
-  | 'supermarket'
-  | 'restaurant'
-  | 'hotel'
-  | 'bank'
-  | 'museum'
-  | 'theater'
-  | 'monument'
-  | 'park'
-  | 'stadium'
-  | 'beach'
-  | 'mountain'
-  | 'lake'
-  | 'river'
-  | 'interchange'
-  | 'tourist_attraction'
-  | 'custom';
+  | 'railway_station'
+  | 'interchange';
 
 /**
  * Supported location data sources.

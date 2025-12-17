@@ -48,7 +48,7 @@ const MIN_CONCURRENCY = 1;
 const MAX_CONCURRENCY = 16;
 const DEFAULT_MIN_ZOOM = 5;
 const DEFAULT_MAX_ZOOM = 12;
-const LICENSE_REQUIRED = true;
+const LICENSE_REQUIRED = false;
 
 const tNs = (key: string, fallback: string) =>
   String(i18n.t(key, { ns: 'location-plugin', defaultValue: fallback }));
@@ -62,13 +62,8 @@ const startLocationBatch = async (data: LocationStepData, context: StartBatchCon
     return;
   }
 
-  if (!(draft.dataSource && draft.licenseAgreement)) {
-    notify.info(
-      tNs(
-        'build.requiresApproval',
-        'Provide a data source, accept license terms, and save the node before building.'
-      )
-    );
+  if (!draft.dataSource) {
+    notify.info(tNs('build.requiresApproval', 'Provide a data source and save the node before building.'));
     return;
   }
 
@@ -130,9 +125,7 @@ registry.registerConfigProvider<LocationStepData>({
             />
           );
         },
-        validate: (data?: LocationStepData) =>
-          Boolean(data?.dataSource) &&
-          (!LICENSE_REQUIRED || Boolean(data?.licenseAgreement)),
+        validate: (data?: LocationStepData) => Boolean(data?.dataSource),
       },
       {
         id: 'selection',
@@ -191,8 +184,7 @@ registry.registerConfigProvider<LocationStepData>({
           );
         },
         capabilities: {
-          canStartBatch: (data: LocationStepData) =>
-            Boolean(data?.dataSource && data?.licenseAgreement),
+          canStartBatch: (data: LocationStepData) => Boolean(data?.dataSource),
           startBatch: (data, context) => startLocationBatch(data, context),
         },
         validate: () => true,

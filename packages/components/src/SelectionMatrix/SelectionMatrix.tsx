@@ -3,6 +3,7 @@
  * Reusable checkbox matrix for multi-dimensional selection
  */
 
+import type React from 'react';
 import { useCallback, useMemo } from 'react';
 import {
   Box,
@@ -40,14 +41,26 @@ export interface SelectionMatrixProps<T = any> {
   columns: SelectionMatrixColumn[];
   state: boolean[][];
   onChange: (rowIndex: number, colIndex: number, checked: boolean) => void;
-  onSelectAll?: (colIndex: number, checked: boolean) => void;
-  onSelectRow?: (rowIndex: number, checked: boolean) => void;
+  onSelectAll?: (colIndex: number, checked: boolean, enabledRowIndices: number[]) => void;
+  onSelectRow?: (rowIndex: number, checked: boolean, enabledColumnIndices: number[]) => void;
   showRowSelection?: boolean;
   showColumnSelection?: boolean;
   showSelectionCount?: boolean;
   maxHeight?: number;
   stickyHeader?: boolean;
   dense?: boolean;
+  rowHeaderLabel?: string;
+  isCellEnabled?: (
+    row: SelectionMatrixRow<T>,
+    column: SelectionMatrixColumn,
+    rowIndex: number,
+    colIndex: number,
+  ) => boolean;
+  renderUnavailableCell?: (row: SelectionMatrixRow<T>, column: SelectionMatrixColumn) => React.ReactNode;
+  getRowProps?: (
+    row: SelectionMatrixRow<T>,
+    rowIndex: number,
+  ) => React.HTMLAttributes<HTMLTableRowElement>;
 }
 
 export function SelectionMatrix<T = any>({
@@ -63,59 +76,118 @@ export function SelectionMatrix<T = any>({
                                            maxHeight = 400,
                                            stickyHeader = true,
                                            dense = false,
+                                           rowHeaderLabel = 'Region',
+                                           isCellEnabled = () => true,
+                                           renderUnavailableCell = () => (
+                                             <Typography variant="caption" color="text.disabled">
+                                               -
+                                             </Typography>
+                                           ),
+                                           getRowProps,
                                          }: SelectionMatrixProps<T>): React.ReactElement {
   // Calculate selection counts
   const columnCounts = useMemo(() => {
-    return columns.map((_, colIndex) =>
-      state.reduce((count, row) => count + (row[colIndex] ? 1 : 0), 0),
+    return columns.map((column, colIndex) =>
+      state.reduce((count, row, rowIndex) => {
+        const rowDef = rows[rowIndex];
+        if (!rowDef || !isCellEnabled(rowDef, column, rowIndex, colIndex)) return count;
+        return count + (row[colIndex] ? 1 : 0);
+      }, 0),
     );
-  }, [columns, state]);
+  }, [columns, isCellEnabled, rows, state]);
 
   const rowCounts = useMemo(() => {
-    return rows.map((_, rowIndex) =>
-      state[rowIndex]?.reduce((count, cell) => count + (cell ? 1 : 0), 0) || 0,
+    return rows.map((row, rowIndex) =>
+      state[rowIndex]?.reduce((count, cell, colIndex) => {
+        const column = columns[colIndex];
+        if (!column || !isCellEnabled(row, column, rowIndex, colIndex)) return count;
+        return count + (cell ? 1 : 0);
+      }, 0) || 0,
     );
-  }, [rows, state]);
+  }, [columns, isCellEnabled, rows, state]);
 
   // Check if entire column is selected
   const isColumnSelected = useCallback((colIndex: number) => {
-    return state.every(row => row[colIndex]);
-  }, [state]);
+    let enabled = 0;
+    const allSelected = rows.every((row, rowIndex) => {
+      const column = columns[colIndex];
+      if (!column) return false;
+      if (!isCellEnabled(row, column, rowIndex, colIndex)) return true;
+      enabled += 1;
+      return Boolean(state[rowIndex]?.[colIndex]);
+    });
+    return enabled > 0 && allSelected;
+  }, [columns, isCellEnabled, rows, state]);
 
   // Check if entire column is indeterminate
   const isColumnIndeterminate = useCallback((colIndex: number) => {
-    const selected = state.filter(row => row[colIndex]).length;
-    return selected > 0 && selected < state.length;
-  }, [state]);
+    let enabled = 0;
+    let selected = 0;
+    rows.forEach((row, rowIndex) => {
+      const column = columns[colIndex];
+      if (!column) return;
+      if (!row || !isCellEnabled(row, column, rowIndex, colIndex)) return;
+      enabled += 1;
+      if (state[rowIndex]?.[colIndex]) selected += 1;
+    });
+    return enabled > 0 && selected > 0 && selected < enabled;
+  }, [columns, isCellEnabled, rows, state]);
 
   // Check if entire row is selected
   const isRowSelected = useCallback((rowIndex: number) => {
-    return state[rowIndex]?.every(cell => cell) || false;
-  }, [state]);
+    let enabled = 0;
+    const allSelected = columns.every((column, colIndex) => {
+      const row = rows[rowIndex];
+      if (!row) return false;
+      if (!isCellEnabled(row, column, rowIndex, colIndex)) return true;
+      enabled += 1;
+      return Boolean(state[rowIndex]?.[colIndex]);
+    });
+    return enabled > 0 && allSelected;
+  }, [columns, isCellEnabled, rows, state]);
 
   // Check if entire row is indeterminate
   const isRowIndeterminate = useCallback((rowIndex: number) => {
-    const row = state[rowIndex];
-    if (!row) return false;
-    const selected = row.filter(cell => cell).length;
-    return selected > 0 && selected < row.length;
-  }, [state]);
+    let enabled = 0;
+    let selected = 0;
+    const row = rows[rowIndex];
+    columns.forEach((column, colIndex) => {
+      if (!row || !isCellEnabled(row, column, rowIndex, colIndex)) return;
+      enabled += 1;
+      if (state[rowIndex]?.[colIndex]) selected += 1;
+    });
+    return enabled > 0 && selected > 0 && selected < enabled;
+  }, [columns, isCellEnabled, rows, state]);
 
   // Handle column header checkbox click
   const handleColumnSelectAll = useCallback((colIndex: number) => {
     if (onSelectAll) {
       const isSelected = isColumnSelected(colIndex);
-      onSelectAll(colIndex, !isSelected);
+      const enabledRows = rows
+        .map((row, rowIndex) => ({ row, rowIndex }))
+        .filter(({ row }, rowIndex) => {
+          const column = columns[colIndex];
+          return column ? isCellEnabled(row, column, rowIndex, colIndex) : false;
+        })
+        .map(({ rowIndex }) => rowIndex);
+      onSelectAll(colIndex, !isSelected, enabledRows);
     }
-  }, [isColumnSelected, onSelectAll]);
+  }, [columns, isCellEnabled, isColumnSelected, onSelectAll, rows]);
 
   // Handle row checkbox click
   const handleRowSelectAll = useCallback((rowIndex: number) => {
     if (onSelectRow) {
       const isSelected = isRowSelected(rowIndex);
-      onSelectRow(rowIndex, !isSelected);
+      const enabledColumns = columns
+        .map((column, colIndex) => ({ column, colIndex }))
+        .filter(({ column }, colIndex) => {
+          const row = rows[rowIndex];
+          return row && isCellEnabled(row, column, rowIndex, colIndex);
+        })
+        .map(({ colIndex }) => colIndex);
+      onSelectRow(rowIndex, !isSelected, enabledColumns);
     }
-  }, [isRowSelected, onSelectRow]);
+  }, [columns, isCellEnabled, isRowSelected, onSelectRow, rows]);
 
   return (
     <TableContainer component={Paper} sx={{ maxHeight }}>
@@ -131,7 +203,7 @@ export function SelectionMatrix<T = any>({
 
             {/* Row label column */}
             <TableCell sx={{ minWidth: 200 }}>
-              <Typography variant="subtitle2">Region</Typography>
+              <Typography variant="subtitle2">{rowHeaderLabel}</Typography>
             </TableCell>
 
             {/* Column headers with selection checkboxes */}
@@ -147,6 +219,11 @@ export function SelectionMatrix<T = any>({
                       checked={isColumnSelected(colIndex)}
                       indeterminate={isColumnIndeterminate(colIndex)}
                       onChange={() => handleColumnSelectAll(colIndex)}
+                      disabled={
+                        !rows.some((row, rowIndex) =>
+                          isCellEnabled(row, column, rowIndex, colIndex),
+                        )
+                      }
                       size="small"
                     />
                   )}
@@ -186,6 +263,7 @@ export function SelectionMatrix<T = any>({
           {rows.map((row, rowIndex) => (
             <TableRow
               key={row.id}
+              {...(getRowProps ? getRowProps(row, rowIndex) : {})}
               hover
               sx={{
                 opacity: row.disabled ? 0.5 : 1,
@@ -199,7 +277,12 @@ export function SelectionMatrix<T = any>({
                     checked={isRowSelected(rowIndex)}
                     indeterminate={isRowIndeterminate(rowIndex)}
                     onChange={() => handleRowSelectAll(rowIndex)}
-                    disabled={row.disabled}
+                    disabled={
+                      row.disabled ||
+                      !columns.some((column, colIndex) =>
+                        isCellEnabled(row, column, rowIndex, colIndex),
+                      )
+                    }
                     size="small"
                   />
                 </TableCell>
@@ -230,12 +313,19 @@ export function SelectionMatrix<T = any>({
               {/* Selection cells */}
               {columns.map((column, colIndex) => (
                 <TableCell key={column.id} align="center" padding="checkbox">
-                  <Checkbox
-                    checked={state[rowIndex]?.[colIndex] || false}
-                    onChange={(e) => onChange(rowIndex, colIndex, e.target.checked)}
-                    disabled={row.disabled}
-                    size="small"
-                  />
+                  {isCellEnabled(row, column, rowIndex, colIndex) ? (
+                    <Checkbox
+                      checked={state[rowIndex]?.[colIndex] || false}
+                      onChange={(e) => onChange(rowIndex, colIndex, e.target.checked)}
+                      disabled={row.disabled}
+                      size="small"
+                      inputProps={{
+                        'aria-label': `${row.label} ${column.label}`,
+                      }}
+                    />
+                  ) : (
+                    renderUnavailableCell(row, column)
+                  )}
                 </TableCell>
               ))}
 

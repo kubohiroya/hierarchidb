@@ -16,45 +16,17 @@ import { LocationVectorTileService } from '../../../services/tiles/LocationVecto
 import { listLocationPoints } from '../../../services/pointRepository.js';
 
 const KNOWN_LOCATION_TYPES: readonly LocationType[] = [
+  'area_centroid',
   'airport',
-  'railway_station',
-  'bus_stop',
   'port',
-  'parking',
-  'government',
-  'religious',
-  'post_office',
-  'fire_station',
-  'police',
-  'hospital',
-  'clinic',
-  'pharmacy',
-  'school',
-  'university',
-  'library',
-  'shopping_mall',
-  'supermarket',
-  'restaurant',
-  'hotel',
-  'bank',
-  'museum',
-  'theater',
-  'monument',
-  'park',
-  'stadium',
-  'beach',
-  'mountain',
-  'lake',
-  'river',
+  'railway_station',
   'interchange',
-  'tourist_attraction',
-  'custom',
 ];
 
 const resolveLocationType = (kind: string): LocationType => (
   (KNOWN_LOCATION_TYPES as readonly string[]).includes(kind)
     ? kind as LocationType
-    : 'custom'
+    : 'area_centroid'
 );
 
 const toPreviewLocationPoint = (point: Awaited<ReturnType<typeof listLocationPoints>>[number]): PreviewLocationPoint => {
@@ -155,11 +127,22 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       }
 
       const [summaryResponse, pointRecords] = await Promise.all([
-        serviceRef.current!.getSessionSummary(latest.sessionId),
+        serviceRef.current?.getSessionSummary(latest.sessionId),
         listLocationPoints(resolvedNodeId),
       ]);
       if (!isMountedRef.current) return;
-      setSummary({ ...summaryResponse, sessionId: latest.sessionId });
+      setSummary((prev) => {
+        if (!summaryResponse) return prev ?? null;
+        return {
+          exists: summaryResponse.exists ?? false,
+          layers: summaryResponse.layers ?? [],
+          zoomRange: summaryResponse.zoomRange,
+          tiles: summaryResponse.tiles ?? 0,
+          sizeBytes: summaryResponse.sizeBytes ?? 0,
+          bbox: summaryResponse.bbox,
+          sessionId: latest.sessionId,
+        } as TileSummary & { sessionId: string };
+      });
       setLocations(pointRecords.map(toPreviewLocationPoint));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));

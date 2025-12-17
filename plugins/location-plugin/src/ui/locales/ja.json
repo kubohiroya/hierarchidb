@@ -11,12 +11,30 @@
     "description": "地点データを取得するためのソースを選択してください。",
     "descriptionFallback": "データソースを選択してください",
     "options": {
-      "openstreetmap": { "name": "OpenStreetMap" },
-      "overpass": { "name": "Overpass API" },
-      "geonames": { "name": "GeoNames" },
-      "wikidata": { "name": "Wikidata" },
-      "custom": { "name": "カスタム" },
-      "manual": { "name": "手動" }
+      "openstreetmap": {
+        "name": "OpenStreetMap",
+        "description": "コミュニティが整備する世界規模の道路・地点・POIデータ。"
+      },
+      "overpass": {
+        "name": "Overpass API",
+        "description": "OpenStreetMapデータを柔軟なクエリで取得できるAPI。道路や施設、境界の抽出に適します。"
+      },
+      "geonames": {
+        "name": "GeoNames",
+        "description": "世界の地名・人口集中地・郵便番号を収録したガゼッティア。"
+      },
+      "wikidata": {
+        "name": "Wikidata",
+        "description": "多言語の構造化ナレッジグラフ。地点エンティティや識別子が豊富です。"
+      },
+      "custom": {
+        "name": "カスタム",
+        "description": "組織内の独自データセットをカスタムエンドポイントやファイルで利用します。"
+      },
+      "manual": {
+        "name": "手動",
+        "description": "外部ソースを使わず、少数の地点を手入力またはインポートします。"
+      }
     }
   },
   "license": {
@@ -29,11 +47,25 @@
     "description": "取得する地点データを選択します。国と地点種別の組み合わせで指定できます。",
     "waypoints": "地点",
     "matrixTitle": "選択マトリクス",
+    "typeDescriptions": {
+      "area_centroid": "行政区域やポリゴンの代表点。",
+      "airport": "旅客対応の空港・飛行場。",
+      "port": "旅客・貨物を扱う港湾。",
+      "railway_station": "主要・地域の鉄道駅。",
+      "interchange": "高速道路のインターチェンジ・ジャンクション。"
+    },
     "settingsTitle": "地点種別の詳細設定",
     "searchPlaceholder": "国名で検索...",
     "showSelectedOnly": "選択のみ表示",
     "selectAll": "すべて選択",
     "deselectAll": "すべて解除"
+  },
+  "locationTypes": {
+    "area_centroid": "エリア中心点",
+    "airport": "空港",
+    "port": "港",
+    "railway_station": "駅",
+    "interchange": "インターチェンジ"
   },
   "selectionMatrix": {
     "columnHeader": "国 / 種別"
@@ -50,7 +82,7 @@
   },
   "build": {
     "action": "ビルド",
-    "requiresApproval": "データソースを選択し、ライセンスに同意して保存してからビルドしてください。",
+    "requiresApproval": "データソースを選択して保存してからビルドしてください。",
     "noPoints": "処理できる地点データがありません。",
     "success": "ビルドを開始しました（セッション {{sessionId}}）",
     "errors": {

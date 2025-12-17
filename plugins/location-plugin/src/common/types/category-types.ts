@@ -31,13 +31,6 @@ export const LOCATION_CATEGORIES: CategoryOption<LocationCategory>[] = [
     icon: '🏛️',
     color: '#ff9800',
   },
-  {
-    value: 'infrastructure',
-    label: 'インフラ',
-    description: '発電所、浄水場、通信施設などの社会基盤',
-    icon: '🚂',
-    color: '#4caf50',
-  },
 ];
 
 /**

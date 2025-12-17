@@ -475,37 +475,8 @@ export class LocationBatchManager {
     const typeToTag: Partial<Record<LocationType, { key: string; value: string }>> = {
       airport: { key: 'aeroway', value: 'aerodrome' },
       railway_station: { key: 'railway', value: 'station' },
-      bus_stop: { key: 'highway', value: 'bus_stop' },
       port: { key: 'harbour', value: 'yes' },
-      parking: { key: 'amenity', value: 'parking' },
-      government: { key: 'office', value: 'government' },
-      religious: { key: 'amenity', value: 'place_of_worship' },
-      post_office: { key: 'amenity', value: 'post_office' },
-      fire_station: { key: 'amenity', value: 'fire_station' },
-      police: { key: 'amenity', value: 'police' },
-      hospital: { key: 'amenity', value: 'hospital' },
-      clinic: { key: 'amenity', value: 'clinic' },
-      pharmacy: { key: 'amenity', value: 'pharmacy' },
-      school: { key: 'amenity', value: 'school' },
-      university: { key: 'amenity', value: 'university' },
-      library: { key: 'amenity', value: 'library' },
-      shopping_mall: { key: 'shop', value: 'mall' },
-      supermarket: { key: 'shop', value: 'supermarket' },
-      restaurant: { key: 'amenity', value: 'restaurant' },
-      hotel: { key: 'tourism', value: 'hotel' },
-      bank: { key: 'amenity', value: 'bank' },
-      museum: { key: 'tourism', value: 'museum' },
-      theater: { key: 'amenity', value: 'theatre' },
-      monument: { key: 'historic', value: 'monument' },
-      park: { key: 'leisure', value: 'park' },
-      stadium: { key: 'leisure', value: 'stadium' },
-      beach: { key: 'natural', value: 'beach' },
-      mountain: { key: 'natural', value: 'peak' },
-      lake: { key: 'natural', value: 'water' },
-      river: { key: 'waterway', value: 'river' },
       interchange: { key: 'highway', value: 'motorway_junction' },
-      tourist_attraction: { key: 'tourism', value: 'attraction' },
-      custom: { key: 'amenity', value: 'yes' },
     };
 
     return typeToTag[type] ?? null;
@@ -647,13 +618,8 @@ export class LocationBatchManager {
    */
   private detectCategoryFromTags(tags: Record<string, string>): LocationCategory {
     if (tags.aeroway || tags.railway || tags.highway) return 'transportation';
-    if (tags.office || tags.government) return 'administrative';
-    if (tags.amenity) return 'infrastructure';
-    if (tags.shop) return 'commercial';
-    if (tags.tourism || tags.leisure) return 'leisure';
-    if (tags.historic) return 'cultural';
-    if (tags.natural) return 'natural';
-    return 'infrastructure';
+    if (tags.office || tags.government || tags.place) return 'administrative';
+    return 'transportation';
   }
 
   /**
@@ -662,29 +628,9 @@ export class LocationBatchManager {
   private detectTypeFromTags(tags: Record<string, string>): LocationType {
     if (tags.aeroway === 'aerodrome') return 'airport';
     if (tags.railway === 'station') return 'railway_station';
-    if (tags.highway === 'bus_stop') return 'bus_stop';
     if (tags.harbour === 'yes') return 'port';
-    if (tags.amenity === 'parking') return 'parking';
-    if (tags.amenity === 'hospital') return 'hospital';
-    if (tags.amenity === 'school') return 'school';
-    if (tags.amenity === 'university') return 'university';
-    if (tags.amenity === 'library') return 'library';
-    if (tags.shop === 'mall') return 'shopping_mall';
-    if (tags.shop === 'supermarket') return 'supermarket';
-    if (tags.amenity === 'restaurant') return 'restaurant';
-    if (tags.tourism === 'hotel') return 'hotel';
-    if (tags.amenity === 'bank') return 'bank';
-    if (tags.tourism === 'museum') return 'museum';
-    if (tags.amenity === 'theatre') return 'theater';
-    if (tags.historic === 'monument') return 'monument';
-    if (tags.leisure === 'park') return 'park';
-    if (tags.leisure === 'stadium') return 'stadium';
-    if (tags.natural === 'beach') return 'beach';
-    if (tags.natural === 'peak') return 'mountain';
-    if (tags.natural === 'water') return 'lake';
-    if (tags.waterway === 'river') return 'river';
-
-    return 'airport'; // Default
+    if (tags.highway === 'motorway_junction') return 'interchange';
+    return 'area_centroid';
   }
 
   /**

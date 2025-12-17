@@ -1,21 +1,6 @@
 import type React from 'react';
 import { useCallback, useMemo } from 'react';
-import {
-  Box,
-  Button,
-  Checkbox,
-  CircularProgress,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Typography,
-} from '@mui/material';
-// import { Check as CheckIcon } from '@mui/icons-material';
+import { Box, Button, CircularProgress, Stack, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import type { CountryMetadata, StepProps } from '../../../common/types/index.js';
 import { normalizeDataSourceName } from '../../../services/utils/utils.js';
@@ -23,12 +8,16 @@ import { useCountryMetadata } from '../../hooks/useCountryMetadata.js';
 import {
   calculateEstimatedFeatures,
   // calculateEstimatedProcessingTime,
-  calculateEstimatedSize,
   DATA_SOURCE_CONFIGS,
   formatBytes,
   formatNumber,
 } from '../../../common/mock/data.js';
 import { useRef } from 'react';
+import {
+  SelectionMatrix,
+  type SelectionMatrixColumn,
+  type SelectionMatrixRow,
+} from '@hierarchidb/components';
 
 /**
  * Step 5: Country & Admin Level Selection
@@ -199,36 +188,51 @@ export const Step4CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, di
     [checkboxMatrix, onUpdate, maxAdminLevel, countries, enqueueSnackbar],
   );
 
-  const levelHeaderState = useMemo(
-    () =>
-      Array.from({ length: maxAdminLevel + 1 }, (_, levelIndex) => {
-        let availableCount = 0;
-        let selectedCount = 0;
+  const matrixState = useMemo<boolean[][]>(() => {
+    return countries.map((_, countryIndex) => {
+      const row = checkboxMatrix[countryIndex] ?? Array.from({ length: maxAdminLevel + 1 }, () => false);
+      return Array.from({ length: maxAdminLevel + 1 }, (_, levelIndex) => Boolean(row[levelIndex]));
+    });
+  }, [checkboxMatrix, countries, maxAdminLevel]);
 
-        countries.forEach((country: CountryMetadata, countryIndex: number) => {
-          if (!country.availableAdminLevels.includes(levelIndex)) return;
-          availableCount += 1;
-          if (checkboxMatrix[countryIndex]?.[levelIndex]) selectedCount += 1;
-        });
+  const columns = useMemo<SelectionMatrixColumn[]>(() =>
+    Array.from({ length: maxAdminLevel + 1 }, (_, levelIndex) => ({
+      id: `level-${levelIndex}`,
+      label: `Level ${levelIndex}`,
+      description: `Admin level ${levelIndex}`,
+    })),
+  [maxAdminLevel]);
 
-        return { availableCount, selectedCount };
-      }),
-    [checkboxMatrix, countries, maxAdminLevel],
+  const rows = useMemo<SelectionMatrixRow<CountryMetadata>[]>(() =>
+    countries.map((country, countryIndex) => ({
+      id: country.countryCode || `country-${countryIndex}`,
+      label: country.countryCode ?? country.countryName ?? `#${countryIndex}`,
+      subLabel: country.countryName,
+      data: country,
+      tooltip: country.countryName,
+      disabled,
+    })),
+  [countries, disabled]);
+
+  const isCellEnabled = useCallback(
+    (row: SelectionMatrixRow<CountryMetadata>, _column: SelectionMatrixColumn, _rowIndex: number, colIndex: number) => {
+      const available = row.data?.availableAdminLevels ?? [];
+      return available.includes(colIndex);
+    },
+    [],
   );
 
-  const handleLevelToggle = useCallback(
-    (levelIndex: number, checked: boolean) => {
+  const handleSelectAllColumn = useCallback(
+    (colIndex: number, checked: boolean, enabledRowIndices: number[]) => {
       const clonedMatrix = checkboxMatrix.map((row) => [...row]);
-      countries.forEach((country: CountryMetadata, countryIndex: number) => {
-        if (!country.availableAdminLevels.includes(levelIndex)) return;
-        const row = clonedMatrix[countryIndex] ?? Array.from({ length: maxAdminLevel + 1 }, () => false);
-        const nextRow = [...row];
-        nextRow[levelIndex] = checked;
-        clonedMatrix[countryIndex] = nextRow;
+      enabledRowIndices.forEach((rowIndex) => {
+        const row = clonedMatrix[rowIndex] ?? Array.from({ length: maxAdminLevel + 1 }, () => false);
+        row[colIndex] = checked;
+        clonedMatrix[rowIndex] = row;
       });
       onUpdate({ checkboxState: clonedMatrix });
     },
-    [checkboxMatrix, countries, maxAdminLevel, onUpdate],
+    [checkboxMatrix, maxAdminLevel, onUpdate],
   );
 
   /*
@@ -273,99 +277,32 @@ export const Step4CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, di
 
       <AlphabeticalIndex letters={alphaIndex} onSelect={scrollToLetter} />
 
-      {/* Simplified Matrix Table (without virtualization for now) */}
-      <TableContainer
-        component={Paper}
-        sx={{ flex: 1, overflow: 'auto', maxHeight: '100%', minHeight: 0 }}
-      >
-        <Table stickyHeader size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>Country</TableCell>
-              {Array.from({ length: maxAdminLevel + 1 }, (_, i) => {
-                const header = levelHeaderState[i];
-                const available = header?.availableCount ? header.availableCount > 0 : false;
-                const allSelected =
-                  available && header ? header.selectedCount === header.availableCount : false;
-                const partiallySelected =
-                  available &&
-                  header !== undefined &&
-                  header.selectedCount > 0 &&
-                  header.selectedCount < header.availableCount;
-                return (
-                  <TableCell key={i.toString()} align="center">
-                    <Stack direction="row" spacing={0.5} alignItems="center" justifyContent="center">
-                      <Checkbox
-                        size="small"
-                        checked={allSelected}
-                        indeterminate={partiallySelected}
-                        disabled={!available || disabled}
-                        onChange={(e) => handleLevelToggle(i, e.target.checked)}
-                      />
-                      <Typography variant="caption">Level {i}</Typography>
-                    </Stack>
-                  </TableCell>
-                );
-              })}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {countries.map((country: CountryMetadata, countryIndex: number) => {
-              const letter = country.countryName?.[0]?.toUpperCase() ?? '#';
-              const rowKey = country.countryCode || `${letter}-${countryIndex}`;
-              return (
-                <TableRow
-                  key={rowKey}
-                  ref={(el) => {
-                    if (!rowRefs.current[letter] && el) {
-                      rowRefs.current[letter] = el;
-                    }
-                  }}
-                >
-                  <TableCell>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <Typography variant="body2" component="span">
-                        {toFlagEmoji(country.countryCode)}
-                      </Typography>
-                      <Typography variant="body2">
-                        {country.countryCode}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {country.countryName}
-                      </Typography>
-                    </Stack>
-                  </TableCell>
-                  {Array.from({ length: maxAdminLevel + 1 }, (_, levelIndex) => (
-                    <TableCell key={levelIndex.toString()} align="center">
-                      {country.availableAdminLevels.includes(levelIndex) ? (
-                        <Checkbox
-                          checked={
-                            checkboxMatrix[countryIndex]?.[levelIndex] || false
-                          }
-                          onChange={(e) =>
-                            handleCellChange(
-                              countryIndex,
-                              levelIndex,
-                              e.target.checked,
-                            )
-                          }
-                          disabled={disabled}
-                          size="small"
-                        />
-                      ) : (
-                        <Typography variant="caption" color="text.disabled">
-                          -
-                        </Typography>
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
+      <SelectionMatrix
+        rows={rows.map((row, idx) => ({
+          ...row,
+          label: `${toFlagEmoji(row.data?.countryCode)} ${row.label}`,
+        }))}
+        columns={columns}
+        state={matrixState}
+        onChange={(rowIndex, colIndex, checked) => handleCellChange(rowIndex, colIndex, checked)}
+        onSelectAll={handleSelectAllColumn}
+        rowHeaderLabel="Country"
+        showSelectionCount
+        stickyHeader
+        dense
+        isCellEnabled={isCellEnabled}
+        getRowProps={(row, rowIndex) => {
+          const letter = row.data?.countryName?.[0]?.toUpperCase() ?? '#';
+          return {
+            ref: (el: HTMLTableRowElement | null) => {
+              if (!rowRefs.current[letter] && el) {
+                rowRefs.current[letter] = el;
+              }
+            },
+            'data-letter': letter,
+          };
+        }}
+      />
     </Box>
   );
 };
