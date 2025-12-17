@@ -137,7 +137,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
     (Object.entries(TYPE_SETTINGS_BASE) as Array<[LocationType, NonNullable<(typeof TYPE_SETTINGS_BASE)[LocationType]>]>)
       .filter(([, value]) => Boolean(value))
       .map(([key, value]) => [key, { ...value, name: translations.locationTypes?.[key] ?? key }]),
-  ) as Record<LocationType, NonNullable<(typeof TYPE_SETTINGS_BASE)[LocationType]> & { name: string }> , [translations.locationTypes ?? {}]);
+  ) as Record<LocationType, NonNullable<(typeof TYPE_SETTINGS_BASE)[LocationType]> & { name: string }> , [translations.locationTypes]);
   const mapRef = useRef<HTMLDivElement>(null);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('points');
   const [visibleTypes, setVisibleTypes] = useState<LocationType[]>(
