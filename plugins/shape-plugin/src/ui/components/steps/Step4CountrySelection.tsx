@@ -7,6 +7,7 @@ import { normalizeDataSourceName } from '../../../services/utils/utils.js';
 import { useCountryMetadata } from '../../hooks/useCountryMetadata.js';
 import {
   calculateEstimatedFeatures,
+  calculateEstimatedSize,
   // calculateEstimatedProcessingTime,
   DATA_SOURCE_CONFIGS,
   formatBytes,
@@ -278,7 +279,7 @@ export const Step4CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, di
       <AlphabeticalIndex letters={alphaIndex} onSelect={scrollToLetter} />
 
       <SelectionMatrix
-        rows={rows.map((row, idx) => ({
+        rows={rows.map((row) => ({
           ...row,
           label: `${toFlagEmoji(row.data?.countryCode)} ${row.label}`,
         }))}
@@ -291,7 +292,7 @@ export const Step4CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, di
         stickyHeader
         dense
         isCellEnabled={isCellEnabled}
-        getRowProps={(row, rowIndex) => {
+        getRowProps={(row) => {
           const letter = row.data?.countryName?.[0]?.toUpperCase() ?? '#';
           return {
             ref: (el: HTMLTableRowElement | null) => {
@@ -300,7 +301,7 @@ export const Step4CountrySelection: React.FC<StepProps> = ({ draft, onUpdate, di
               }
             },
             'data-letter': letter,
-          };
+          } as React.HTMLAttributes<HTMLTableRowElement>;
         }}
       />
     </Box>
