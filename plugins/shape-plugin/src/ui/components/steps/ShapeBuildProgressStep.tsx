@@ -15,7 +15,7 @@ type Props = {
   draft: Partial<ShapeEntity>;
 };
 
-export const Step5Build: React.FC<Props> = (_props) => {
+export const ShapeBuildProgressStep: React.FC<Props> = (_props) => {
   const { t } = getTranslation();
   const [status, setStatus] = useState<BuildStatus>('idle');
   const [overallProgress, setOverallProgress] = useState(0);

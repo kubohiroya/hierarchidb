@@ -131,7 +131,10 @@ export function useStepCapabilities<T extends Record<string, unknown> = Record<s
   );
 
   const activeStepConfig = useMemo<PluginStepConfig | undefined>(
-    () => composedConfigs.configs.find((cfg) => cfg.id === steps[activeStepIndex]?.id),
+    () =>
+      composedConfigs.configs.find(
+        (cfg: PluginStepConfig | DialogStep) => cfg.id === steps[activeStepIndex]?.id
+      ),
     [activeStepIndex, composedConfigs.configs, steps]
   );
 

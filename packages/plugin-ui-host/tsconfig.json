@@ -6,32 +6,9 @@
       "react",
       "react/jsx-runtime"
     ],
-    "paths": {
-      "@mui/material": [
-        "../../node_modules/.pnpm/@mui+material@7.3.6_@emotion+react@11.14.0_@types+react@18.3.27_react@18.3.1__@emotion+styled_gp6pwvmaottzppj57vgmbom7qq/node_modules/@mui/material"
-      ],
-      "@mui/material/*": [
-        "../../node_modules/.pnpm/@mui+material@7.3.6_@emotion+react@11.14.0_@types+react@18.3.27_react@18.3.1__@emotion+styled_gp6pwvmaottzppj57vgmbom7qq/node_modules/@mui/material/*"
-      ],
-      "@mui/material/styles": [
-        "../../node_modules/.pnpm/@mui+material@7.3.6_@emotion+react@11.14.0_@types+react@18.3.27_react@18.3.1__@emotion+styled_gp6pwvmaottzppj57vgmbom7qq/node_modules/@mui/material/styles/index.d.ts"
-      ],
-      "@mui/material/styles/*": [
-        "../../node_modules/.pnpm/@mui+material@7.3.6_@emotion+react@11.14.0_@types+react@18.3.27_react@18.3.1__@emotion+styled_gp6pwvmaottzppj57vgmbom7qq/node_modules/@mui/material/styles/*"
-      ],
-      "@mui/system": [
-        "../../node_modules/.pnpm/@mui+system@7.3.6_@emotion+react@11.14.0_@types+react@18.3.27_react@18.3.1__@emotion+styled@1_mkxyvpzczvabrbvyyiztgwys3a/node_modules/@mui/system"
-      ],
-      "@mui/system/*": [
-        "../../node_modules/.pnpm/@mui+system@7.3.6_@emotion+react@11.14.0_@types+react@18.3.27_react@18.3.1__@emotion+styled@1_mkxyvpzczvabrbvyyiztgwys3a/node_modules/@mui/system/*"
-      ],
-      "@mui/icons-material": [
-        "../../node_modules/.pnpm/@mui+icons-material@7.3.6_@mui+material@7.3.6_@emotion+react@11.14.0_@types+react@18.3.27_rea_ew6aa4rrzp4eatoyecpdx5rysm/node_modules/@mui/icons-material"
-      ],
-      "@mui/icons-material/*": [
-        "../../node_modules/.pnpm/@mui+icons-material@7.3.6_@mui+material@7.3.6_@emotion+react@11.14.0_@types+react@18.3.27_rea_ew6aa4rrzp4eatoyecpdx5rysm/node_modules/@mui/icons-material/*"
-      ]
-    }
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "allowImportingTsExtensions": true
   },
   "exclude": [
     "node_modules",

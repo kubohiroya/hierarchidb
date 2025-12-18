@@ -1,5 +1,5 @@
 import React from 'react';
-import { Accordion, AccordionDetails, AccordionSummary, Chip, Grid, Stack, Typography } from '@mui/material';
+import { Accordion, AccordionDetails, AccordionSummary, Chip, Grid, Stack, Typography, Slider } from '@mui/material';
 import { Layers as LayersIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
 import type { ProcessingConfig, TileProcessingConfig } from '../../../../common/types/index.js';
 import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../../common/types/index.js';
@@ -57,7 +57,7 @@ export const TileConfigSection: React.FC<Props> = ({ config, disabled, onChange 
             <Typography gutterBottom>Max Zoom Level</Typography>
             <Slider
               value={baseTileConfig.maxZoom ?? 12}
-              onChange={(_, value) => {
+              onChange={(_, value: number | number[]) => {
                 const maxZoom = value as number;
                 update({
                   tileConfig: {
@@ -79,7 +79,7 @@ export const TileConfigSection: React.FC<Props> = ({ config, disabled, onChange 
             <Typography gutterBottom>Tile Buffer Size (px)</Typography>
             <Slider
               value={baseTileConfig.bufferSize ?? 256}
-              onChange={(_, value) => {
+              onChange={(_, value: number | number[]) => {
                 const bufferSize = value as number;
                 update({
                   tileConfig: {

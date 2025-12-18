@@ -8,9 +8,9 @@ import { TileConfigSection } from './Step4Processing/TileConfigSection.js';
 import { CleanupConfigSection } from './Step4Processing/CleanupConfigSection.js';
 
 /**
- * Step 4: Processing Configuration (modern config only)
+ * Processing configuration step for Shape plugin.
  */
-export const Step3Processing: React.FC<StepProps> = ({ draft, onUpdate, disabled }) => {
+export const ShapeProcessingSettingsStep: React.FC<StepProps> = ({ draft, onUpdate, disabled }) => {
   const config = mergeProcessingConfig(draft?.processingConfig ?? DEFAULT_PROCESSING_CONFIG);
 
   const handleChange = (nextConfig: ProcessingConfig) => {

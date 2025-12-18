@@ -247,7 +247,7 @@ export function useDialogSteps({
       return;
     }
     workingDataRef.current = nextWorkingData;
-    setDraftAtomValue((prev) => ({
+    setDraftAtomValue((prev: StepData | undefined) => ({
       ...(toRecord(prev) ?? {}),
       ...nextWorkingData,
     }));

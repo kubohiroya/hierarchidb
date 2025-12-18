@@ -30,6 +30,9 @@
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/plugin-presentation": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/ui-icon": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
@@ -51,6 +54,9 @@
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/plugin-presentation": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/ui-icon": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
@@ -61,7 +67,8 @@
     "comlink": "^4.4.2",
     "jotai": "^2.0.5",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "fast-deep-equal": "^3.1.3"
   },
   "turbo": {
     "pipeline": {}

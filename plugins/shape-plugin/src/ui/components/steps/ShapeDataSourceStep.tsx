@@ -13,10 +13,9 @@ import { normalizeDataSourceName } from '../../../services/utils/utils.js';
 import { DATA_SOURCE_CONFIGS } from '../../../common/mock/data.js';
 
 /**
- * Step 2: Data Source Selection
- * Uses @hierarchidb/_app-datasource components for data source selection
+ * Data Source Selection step for Shape plugin
  */
-export const Step2DataSource: React.FC<StepProps> = ({ draft, onUpdate, disabled }) => {
+export const ShapeDataSourceStep: React.FC<StepProps> = ({ draft, onUpdate, disabled }) => {
   const draftData = draft ?? {};
   const sources = Object.values(DATA_SOURCE_CONFIGS) as DataSourceConfig[];
   const options: DataSourceWithLicenseOption[] = sources.map((source) => ({

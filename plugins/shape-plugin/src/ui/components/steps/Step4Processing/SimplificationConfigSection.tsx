@@ -18,6 +18,7 @@ import type { FeatureFilterMethod, ProcessingConfig, SimplificationProcessingCon
 import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../../common/types/index.js';
 import { useId } from 'react';
 import { WorkerSliderCard } from './common/WorkerSliderCard.js';
+import { Slider } from '@mui/material';
 
 type Props = {
   config: ProcessingConfig;

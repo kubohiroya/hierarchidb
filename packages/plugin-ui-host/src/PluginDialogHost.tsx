@@ -21,7 +21,7 @@ export const PluginDialogHost: React.FC<PluginDialogHostProps> = ({
     hydratePresentationDefinitionsFromGlobal();
     if (!prefetchIcons) return;
     // Fire-and-forget – host environments may not define all icons.
-    prefetchAllIcons().catch((err) => {
+    prefetchAllIcons().catch((err: unknown) => {
       if (typeof console !== 'undefined' && typeof console.warn === 'function') {
         console.warn('[PluginDialogHost] prefetchAllIcons failed', err);
       }
