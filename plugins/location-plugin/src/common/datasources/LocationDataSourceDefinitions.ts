@@ -40,7 +40,7 @@ export interface LocationDataSourceBase {
   /** API endpoint configuration */
   endpoints?: Record<string, string>;
   /** Default configuration options */
-  defaultOptions?: Record<string, any>;
+  defaultOptions?: Record<string, unknown>;
 }
 
 /**

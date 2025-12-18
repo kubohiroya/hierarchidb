@@ -2,10 +2,10 @@ import type React from 'react';
 import { Box, Stack, Typography } from '@mui/material';
 import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../common/types/index.js';
 import type { ProcessingConfig, StepProps } from '../../../common/types/index.js';
-import { DownloadConfigSection } from './Step4Processing/DownloadConfigSection.js';
-import { SimplificationConfigSection } from './Step4Processing/SimplificationConfigSection.js';
-import { TileConfigSection } from './Step4Processing/TileConfigSection.js';
-import { CleanupConfigSection } from './Step4Processing/CleanupConfigSection.js';
+import { DownloadConfigSection } from './DownloadConfigSection.js';
+import { SimplificationConfigSection } from './SimplificationConfigSection.js';
+import { TileConfigSection } from './TileConfigSection.js';
+import { CleanupConfigSection } from './CleanupConfigSection.js';
 
 /**
  * Processing configuration step for Shape plugin.

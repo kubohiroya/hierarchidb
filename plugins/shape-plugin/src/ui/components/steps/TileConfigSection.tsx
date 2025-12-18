@@ -1,9 +1,9 @@
 import React from 'react';
 import { Accordion, AccordionDetails, AccordionSummary, Chip, Grid, Stack, Typography, Slider } from '@mui/material';
 import { Layers as LayersIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
-import type { ProcessingConfig, TileProcessingConfig } from '../../../../common/types/index.js';
-import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../../common/types/index.js';
-import { WorkerSliderCard } from './common/WorkerSliderCard.js';
+import type { ProcessingConfig, TileProcessingConfig } from '../../../common/types/index.js';
+import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../common/types/index.js';
+import { WorkerSliderCard } from './WorkerSliderCard.js';
 
 type Props = {
   config: ProcessingConfig;

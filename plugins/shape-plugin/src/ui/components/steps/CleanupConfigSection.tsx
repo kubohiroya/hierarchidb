@@ -1,8 +1,8 @@
 import React from 'react';
 import { Accordion, AccordionDetails, AccordionSummary, FormControlLabel, Switch, Typography, Stack } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon, CleaningServices as CleaningServicesIcon } from '@mui/icons-material';
-import type { ProcessingConfig } from '../../../../common/types/index.js';
-import { mergeProcessingConfig } from '../../../../common/types/index.js';
+import type { ProcessingConfig } from '../../../common/types/index.js';
+import { mergeProcessingConfig } from '../../../common/types/index.js';
 import { useId } from 'react';
 
 type Props = {

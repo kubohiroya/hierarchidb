@@ -14,10 +14,10 @@ import {
   Typography,
 } from '@mui/material';
 import { FilterAlt as FilterAltIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
-import type { FeatureFilterMethod, ProcessingConfig, SimplificationProcessingConfig } from '../../../../common/types/index.js';
-import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../../common/types/index.js';
+import type { FeatureFilterMethod, ProcessingConfig, SimplificationProcessingConfig } from '../../../common/types/index.js';
+import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../common/types/index.js';
 import { useId } from 'react';
-import { WorkerSliderCard } from './common/WorkerSliderCard.js';
+import { WorkerSliderCard } from './WorkerSliderCard.js';
 import { Slider } from '@mui/material';
 
 type Props = {

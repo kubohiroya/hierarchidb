@@ -6,8 +6,6 @@ import type { CountryMetadata, StepProps } from '../../../common/types/index.js'
 import { useCountryMetadata } from '../../hooks/useCountryMetadata.js';
 import { calculateEstimatedFeatures, calculateEstimatedSize, DATA_SOURCE_CONFIGS, formatBytes, formatNumber } from '../../../common/mock/data.js';
 import { normalizeDataSourceName } from '../../../services/utils/utils.js';
-import type { NodeId } from '@hierarchidb/common-types';
-import type { ShapeEntity } from '../../../common/types/index.js';
 import { SelectionMatrix, type SelectionMatrixRow, type SelectionMatrixColumn } from '@hierarchidb/components';
 
 type ShapeDialogStepProps = StepProps;
@@ -166,7 +164,7 @@ export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ draf
       </Typography>
 
       <SelectionMatrix
-        rows={rows.map((row, idx) => ({
+        rows={rows.map((row) => ({
           ...row,
           label: `${row.label}`,
         }))}

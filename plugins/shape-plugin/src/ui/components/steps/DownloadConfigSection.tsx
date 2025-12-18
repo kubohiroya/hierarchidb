@@ -1,8 +1,8 @@
 import { Accordion, AccordionDetails, AccordionSummary, Grid, Stack, Typography, Chip } from '@mui/material';
 import { CloudDownload as CloudDownloadIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
-import type { DownloadProcessingConfig, ProcessingConfig } from '../../../../common/types/index.js';
-import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../../common/types/index.js';
-import { WorkerSliderCard } from './common/WorkerSliderCard.js';
+import type { DownloadProcessingConfig, ProcessingConfig } from '../../../common/types/index.js';
+import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../common/types/index.js';
+import { WorkerSliderCard } from './WorkerSliderCard.js';
 
 type Props = {
   config: ProcessingConfig;
