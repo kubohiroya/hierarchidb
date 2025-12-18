@@ -10,6 +10,7 @@ import {
 import { Step2DataSource } from './steps/Step2DataSource.js';
 import { Step3Processing } from './steps/Step3Processing.tsx';
 import { Step4CountrySelection } from './steps/Step4CountrySelection.tsx';
+import { Step5Build } from './steps/Step5Build.tsx';
 import { notify } from '@hierarchidb/components';
 import { useTranslation as getTranslation } from '../../ui/i18n.js';
 import type { NodeId } from '@hierarchidb/common-types';
@@ -91,6 +92,15 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
         componentFactory: (props: ShapeDialogStepProps) => <Step4 {...props} />,
         validate: (data?: Partial<ShapeEntity>) =>
           summarizeCheckboxState(data?.checkboxState).hasSelection,
+      },
+      {
+        id: 'build',
+        label: t('steps.build.label', 'Build'),
+        componentFactory: (props: ShapeDialogStepProps) => {
+          const draft = (props.data ?? {}) as Partial<ShapeEntity>;
+          return <Step5 draft={draft} />;
+        },
+        validate: (data?: Partial<ShapeEntity>) => canStartShapeBatch(data),
         capabilities: {
           canStartBatch: canStartShapeBatch,
           startBatch: (data, context) => startShapeBatch(data, context),

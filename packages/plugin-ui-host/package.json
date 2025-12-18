@@ -24,13 +24,7 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "dependencies": {
-    "@hierarchidb/plugin-base": "workspace:*",
-    "@hierarchidb/plugin-presentation": "workspace:*",
-    "@hierarchidb/plugin-ui-sdk": "workspace:*",
-    "@hierarchidb/util": "workspace:*",
-    "@types/jest": "^30.0.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
@@ -45,6 +39,7 @@
     "@tanstack/react-router": "^1.141.2",
     "@types/react": "^18.3.27",
     "comlink": "^4.4.2",
+    "fast-deep-equal": "^3.1.3",
     "jotai": "^2.16.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

@@ -136,7 +136,7 @@ registry.registerConfigProvider<RouteStepData>({
       {
         id: 'build',
         label: t('steps.build.label', 'Build'),
-        optional: true,
+        optional: false,
         componentFactory: (p: StepProps) => {
           const draft = ensureDraft(p.data);
           return <RouteBuildStep draft={draft as unknown as RouteUpdaterPayload} />;

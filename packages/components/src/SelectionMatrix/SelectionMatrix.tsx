@@ -193,8 +193,62 @@ export function SelectionMatrix<T = any>({
     }
   }, [columns, isCellEnabled, isRowSelected, onSelectRow, rows]);
 
+  const { allSelected, allIndeterminate } = useMemo(() => {
+    let enabled = 0;
+    let selected = 0;
+    rows.forEach((row, rowIndex) => {
+      columns.forEach((column, colIndex) => {
+        if (!isCellEnabled(row, column, rowIndex, colIndex)) return;
+        enabled += 1;
+        if (state[rowIndex]?.[colIndex]) selected += 1;
+      });
+    });
+    return {
+      allSelected: enabled > 0 && selected === enabled,
+      allIndeterminate: enabled > 0 && selected > 0 && selected < enabled,
+    };
+  }, [columns, isCellEnabled, rows, state]);
+
+  const handleSelectAll = useCallback(() => {
+    const targetChecked = !allSelected;
+    if (onSelectAll) {
+      columns.forEach((column, colIndex) => {
+        const enabledRows = rows
+          .map((row, rowIndex) => ({ row, rowIndex }))
+          .filter(({ row }, rowIndex) => isCellEnabled(row, column, rowIndex, colIndex))
+          .map(({ rowIndex }) => rowIndex);
+        if (enabledRows.length > 0) {
+          onSelectAll(colIndex, targetChecked, enabledRows);
+        }
+      });
+      return;
+    }
+    if (onSelectRow) {
+      rows.forEach((row, rowIndex) => {
+        const enabledColumns = columns
+          .map((column, colIndex) => ({ column, colIndex }))
+          .filter(({ column }, colIndex) => isCellEnabled(row, column, rowIndex, colIndex))
+          .map(({ colIndex }) => colIndex);
+        if (enabledColumns.length > 0) {
+          onSelectRow(rowIndex, targetChecked, enabledColumns);
+        }
+      });
+    }
+  }, [allSelected, columns, isCellEnabled, onSelectAll, onSelectRow, rows]);
+
   const renderHeader = () => (
     <TableRow>
+      {showRowSelection && showColumnSelection && (onSelectAll || onSelectRow) && (
+        <TableCell padding="checkbox" sx={{ width: 50 }}>
+          <Checkbox
+            checked={allSelected}
+            indeterminate={allIndeterminate}
+            onChange={handleSelectAll}
+            size="small"
+            inputProps={{ 'aria-label': 'Select all' }}
+          />
+        </TableCell>
+      )}
       {showRowSelection && (
         <TableCell padding="checkbox" sx={{ width: 50 }} />
       )}
@@ -258,6 +312,9 @@ export function SelectionMatrix<T = any>({
     }
     return (
       <>
+        {showRowSelection && showColumnSelection && (onSelectAll || onSelectRow) && (
+          <TableCell padding="checkbox" />
+        )}
         {showRowSelection && (
           <TableCell padding="checkbox">
             <Checkbox

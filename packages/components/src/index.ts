@@ -20,3 +20,4 @@ export * from './TreeToggleButtonGroup/index.js';
 export * from './landingpage/LandingPage.js';
 export * from './sparkle-animation/index.ts';
 export * from './SelectionMatrix/index.js';
+export * from './BuildStepPanel.js';

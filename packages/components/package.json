@@ -29,7 +29,8 @@
     "react-virtuoso": "^4.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "11.14.0",
-    "@hierarchidb/common-types": "workspace:*"
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/ui-lru-splitview": "workspace:*"
   },
   "keywords": [],
   "author": "HierarchiDB Team",
@@ -43,6 +44,7 @@
     "react-virtuoso": "^4.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "11.14.0",
-    "@hierarchidb/common-types": "workspace:*"
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/ui-lru-splitview": "workspace:*"
   }
 }

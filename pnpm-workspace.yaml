@@ -8,6 +8,7 @@ packages:
   - packages/vite-plugins/*
   - app/vite-plugins/*
   - packages/testing/*
+  - packages/common/*
   - packages/runtime-worker
   - packages/runtime-worker/*
   - packages/ui/*

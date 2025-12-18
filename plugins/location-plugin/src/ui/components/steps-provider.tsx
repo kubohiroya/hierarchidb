@@ -49,6 +49,8 @@ const MAX_CONCURRENCY = 16;
 const DEFAULT_MIN_ZOOM = 5;
 const DEFAULT_MAX_ZOOM = 12;
 const LICENSE_REQUIRED = false;
+const canStartLocationBatch = (data?: Partial<LocationEntity>): boolean =>
+  Boolean(data?.dataSource && hasSelection(data));
 
 const tNs = (key: string, fallback: string) =>
   String(i18n.t(key, { ns: 'location-plugin', defaultValue: fallback }));
@@ -173,21 +175,16 @@ registry.registerConfigProvider<LocationStepData>({
       {
         id: 'build',
         label: String(i18n.t('steps.build.label', { ns: 'location-plugin', defaultValue: 'Build' })),
-        optional: true,
+        optional: false,
         componentFactory: (p: StepProps) => {
           const draft = ensureData(p.data);
-          return (
-            <LocationBuildStep
-              nodeId={p.nodeId}
-              draft={draft}
-            />
-          );
+          return <LocationBuildStep draft={draft} nodeId={p.nodeId} />;
         },
+        validate: (data?: LocationStepData) => canStartLocationBatch(data),
         capabilities: {
-          canStartBatch: (data: LocationStepData) => Boolean(data?.dataSource),
+          canStartBatch: canStartLocationBatch,
           startBatch: (data, context) => startLocationBatch(data, context),
         },
-        validate: () => true,
       },
     ];
   },

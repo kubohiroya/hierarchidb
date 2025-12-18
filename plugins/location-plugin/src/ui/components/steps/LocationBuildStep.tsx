@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
-import { Alert, Box, Typography } from '@mui/material';
+import { useMemo, useState } from 'react';
+import { Box, Typography } from '@mui/material';
+import { BuildStepPanel, type BuildStatus } from '@hierarchidb/components';
 import type { LocationEntity } from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
 
@@ -8,37 +9,61 @@ type Props = {
   draft: Partial<LocationEntity>;
 };
 
-export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft: draftProp }) => {
-  const { translations } = useTranslation();
-  const draft = useMemo(() => draftProp ?? {}, [draftProp]);
+const STAGES: Array<{ id: string; title: string; description: string }> = [
+  { id: 'prepare', title: 'Prepare', description: 'Validate inputs and stage tasks.' },
+  { id: 'fetch', title: 'Fetch', description: 'Download points and metadata.' },
+  { id: 'tile', title: 'Tile', description: 'Generate vector tiles for selections.' },
+  { id: 'finalize', title: 'Finalize', description: 'Persist results and indexes.' },
+];
 
-  const canBuild = useMemo(
-    () => Boolean(nodeId && draft.licenseAgreement && draft.dataSource),
-    [draft.dataSource, draft.licenseAgreement, nodeId]
-  );
+export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft }) => {
+  const { t } = useTranslation();
+  const [status, setStatus] = useState<BuildStatus>('idle');
+  const [overallProgress, setOverallProgress] = useState(0);
+
+  const stageProgress = useMemo(() => {
+    const map: Record<string, number> = {};
+    STAGES.forEach((stage, idx) => {
+      map[stage.id] = Math.min(100, Math.max(0, overallProgress - idx * 10));
+    });
+    return map;
+  }, [overallProgress]);
+
+  const hasPrerequisites = Boolean(nodeId && draft.dataSource);
 
   return (
     <Box display="flex" flexDirection="column" gap={3}>
-      {!canBuild && (
-        <Alert severity="info">
-          {translations.build?.requiresApproval ??
-            'Provide a data source, accept license terms, and save the node before building.'}
-        </Alert>
-      )}
       <Box>
         <Typography variant="h6" gutterBottom>
-          {translations.basicInfo?.title ?? 'Build vector tiles'}
+          {t('build.title', 'Build vector tiles')}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          {translations.basicInfo?.descriptionHelperText ??
-            'Prepare the selected locations and start the batch pipeline to generate the basemap layers.'}
+          {hasPrerequisites
+            ? t(
+              'build.description',
+              'Review progress and control the build. Use the footer Build button to start when prerequisites are met.'
+            )
+            : t('build.prereq', 'Select a data source and complete previous steps before building.')}
         </Typography>
       </Box>
-      <Typography variant="body2" color="text.secondary">
-        {translations.build?.actionLabel
-          ? `${translations.build.actionLabel} will start from the dialog footer when prerequisites are met.`
-          : 'Use the Build button in the dialog footer once all required steps are completed.'}
-      </Typography>
+
+      <BuildStepPanel
+        title={t('build.title', 'Build vector tiles')}
+        description={t(
+          'build.panelDescription',
+          'Review progress and control the build. Use the footer Build button to start when prerequisites are met.'
+        )}
+        status={status}
+        overallProgress={overallProgress}
+        stages={STAGES}
+        stageProgress={stageProgress}
+        onPause={() => setStatus('paused')}
+        onResume={() => setStatus('running')}
+        onComplete={() => {
+          setStatus('completed');
+          setOverallProgress(100);
+        }}
+      />
     </Box>
   );
 };

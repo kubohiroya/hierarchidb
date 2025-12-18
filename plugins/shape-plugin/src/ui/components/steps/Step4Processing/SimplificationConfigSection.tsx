@@ -9,7 +9,6 @@ import {
   FormLabel,
   Radio,
   RadioGroup,
-  Slider,
   Stack,
   Switch,
   Typography,
@@ -18,6 +17,7 @@ import { FilterAlt as FilterAltIcon, ExpandMore as ExpandMoreIcon } from '@mui/i
 import type { FeatureFilterMethod, ProcessingConfig, SimplificationProcessingConfig } from '../../../../common/types/index.js';
 import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../../common/types/index.js';
 import { useId } from 'react';
+import { WorkerSliderCard } from './common/WorkerSliderCard.js';
 
 type Props = {
   config: ProcessingConfig;
@@ -35,7 +35,7 @@ export const SimplificationConfigSection: React.FC<Props> = ({ config, disabled,
   };
 
   return (
-    <Accordion>
+    <Accordion defaultExpanded>
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Stack direction="row" spacing={2} alignItems="center">
           <FilterAltIcon color="secondary" />
@@ -48,7 +48,7 @@ export const SimplificationConfigSection: React.FC<Props> = ({ config, disabled,
           />
         </Stack>
       </AccordionSummary>
-      <AccordionDetails>
+      <AccordionDetails sx={{ p: 3 }}>
         <Stack spacing={3}>
           <FormControlLabel
             control={
@@ -137,68 +137,70 @@ export const SimplificationConfigSection: React.FC<Props> = ({ config, disabled,
                 disabled={disabled}
               />
 
-              <Typography gutterBottom>Simplification Tolerance (meters)</Typography>
-              <Slider
+              <WorkerSliderCard
+                title="Simplification Tolerance (meters)"
                 value={baseSimplificationConfig.tolerance ?? 0.01}
-                onChange={(_, value) => {
-                  const tolerance = value as number;
-                  update({
-                    simplificationConfig: {
-                      ...baseSimplificationConfig,
-                      tolerance,
-                    },
-                  });
-                }}
                 min={0.001}
                 max={10}
                 step={0.001}
-                valueLabelDisplay="auto"
                 marks={[
                   { value: 0.001, label: '0.001' },
                   { value: 0.1, label: '0.1' },
                   { value: 1, label: '1' },
                   { value: 10, label: '10' },
                 ]}
+                onChange={(tolerance) =>
+                  update({
+                    simplificationConfig: {
+                      ...baseSimplificationConfig,
+                      tolerance,
+                    },
+                  })
+                }
                 disabled={disabled}
               />
 
-              <Typography gutterBottom>Simplification Workers (Stage 1)</Typography>
-              <Slider
+              <WorkerSliderCard
+                title="Simplification Workers (Stage 1)"
                 value={baseSimplificationConfig.level1Workers ?? 2}
-                onChange={(_, value) => {
-                  const level1Workers = value as number;
+                onChange={(level1Workers) =>
                   update({
                     simplificationConfig: {
                       ...baseSimplificationConfig,
                       level1Workers,
                     },
-                  });
-                }}
+                  })
+                }
                 min={1}
                 max={8}
                 step={1}
-                marks={[{ value: 1, label: '1' }, { value: 4, label: '4' }, { value: 8, label: '8' }]}
-                valueLabelDisplay="auto"
+                marks={[
+                  { value: 1, label: '1' },
+                  { value: 4, label: '4' },
+                  { value: 8, label: '8' },
+                ]}
                 disabled={disabled}
               />
 
-              <Typography gutterBottom>Tile Generation Workers (Stage 2)</Typography>
-              <Slider
+              <WorkerSliderCard
+                title="Tile Generation Workers (Stage 2)"
                 value={baseSimplificationConfig.level2Workers ?? 2}
-                onChange={(_, value) => {
-                  const level2Workers = value as number;
+                onChange={(level2Workers) =>
                   update({
                     simplificationConfig: {
                       ...baseSimplificationConfig,
                       level2Workers,
                     },
-                  });
-                }}
+                  })
+                }
                 min={1}
                 max={8}
                 step={1}
-                marks={[{ value: 1, label: '1' }, { value: 4, label: '4' }, { value: 8, label: '8' }]}
-                valueLabelDisplay="auto"
+                marks={[
+                  { value: 1, label: '1' },
+                  { value: 4, label: '4' },
+                  { value: 8, label: '8' },
+                ]}
                 disabled={disabled}
               />
             </>

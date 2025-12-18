@@ -11,6 +11,7 @@ import CheckIcon from '@mui/icons-material/Check';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloseIcon from '@mui/icons-material/Close';
+import ConstructionIcon from '@mui/icons-material/Construction';
 import { Box, Button, CircularProgress, Stack, Tooltip } from '@mui/material';
 import React, { forwardRef, useCallback, useEffect, useRef } from 'react';
 import type { Theme } from '@mui/material/styles';
@@ -247,6 +248,7 @@ const PluginDialogFooterInner: React.FC<PluginDialogFooterProps> = ({
               onPointerDown={stopPointerPropagation}
               disabled={!canStartBatch || isStartingBatch || hasPendingAction}
               loading={isStartingBatch}
+              endIcon={<ConstructionIcon fontSize="small" />}
             >
               {isStartingBatch ? 'Building…' : 'Build'}
             </LoadingButton>

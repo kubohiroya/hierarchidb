@@ -1,8 +1,9 @@
 import React from 'react';
-import { Accordion, AccordionDetails, AccordionSummary, Chip, Grid, Slider, Stack, Typography } from '@mui/material';
+import { Accordion, AccordionDetails, AccordionSummary, Chip, Grid, Stack, Typography } from '@mui/material';
 import { Layers as LayersIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
 import type { ProcessingConfig, TileProcessingConfig } from '../../../../common/types/index.js';
 import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../../common/types/index.js';
+import { WorkerSliderCard } from './common/WorkerSliderCard.js';
 
 type Props = {
   config: ProcessingConfig;
@@ -18,7 +19,7 @@ export const TileConfigSection: React.FC<Props> = ({ config, disabled, onChange 
   };
 
   return (
-    <Accordion>
+    <Accordion defaultExpanded>
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Stack direction="row" spacing={2} alignItems="center">
           <LayersIcon color="primary" />
@@ -26,26 +27,28 @@ export const TileConfigSection: React.FC<Props> = ({ config, disabled, onChange 
           <Chip label={`Workers: ${config?.tileConfig?.workers ?? 2}`} size="small" variant="outlined" />
         </Stack>
       </AccordionSummary>
-      <AccordionDetails>
+      <AccordionDetails sx={{ p: 3 }}>
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <Typography gutterBottom>Tile Workers</Typography>
-            <Slider
+            <WorkerSliderCard
+              title="Tile Workers"
               value={baseTileConfig.workers ?? 2}
-              onChange={(_, value) => {
-                const workers = value as number;
+              onChange={(workers) =>
                 update({
                   tileConfig: {
                     ...baseTileConfig,
                     workers,
                   },
-                });
-              }}
+                })
+              }
               min={1}
               max={8}
               step={1}
-              marks={[{ value: 1, label: '1' }, { value: 4, label: '4' }, { value: 8, label: '8' }]}
-              valueLabelDisplay="auto"
+              marks={[
+                { value: 1, label: '1' },
+                { value: 4, label: '4' },
+                { value: 8, label: '8' },
+              ]}
               disabled={disabled}
             />
           </Grid>
