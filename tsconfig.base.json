@@ -377,6 +377,12 @@
       "@hierarchidb/ui-license/*": [
         "packages/ui/license/src/*"
       ],
+      "@hierarchidb/gen-iso3166-2": [
+        "packages/tools/gen-iso3166-2/src/index.ts"
+      ],
+      "@hierarchidb/gen-iso3166-2/*": [
+        "packages/tools/gen-iso3166-2/src/*"
+      ],
       "@hierarchidb/ui-lru-splitview": [
         "packages/ui/lru-splitview/src/index.ts"
       ],

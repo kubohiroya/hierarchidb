@@ -5,7 +5,9 @@
     "dataSource": { "label": "Data Source" },
     "licenseAgreement": { "label": "License Agreement" },
     "processing": { "label": "Processing Configuration" },
-    "countrySelection": { "label": "Country Selection" }
+    "countrySelection": { "label": "Country Selection" },
+    "preview": { "label": "Preview" },
+    "build": { "label": "Build" }
   },
   "messages": {
     "completeRequired": "Complete required fields and selections before building.",
@@ -18,5 +20,10 @@
     "cancel": "Cancel",
     "save": "Save",
     "defaultName": "New shape"
+  },
+  "preview": {
+    "title": "Preview",
+    "description": "Visualize generated vector tiles on the map.",
+    "noTiles": "No vector tiles are available yet. Run the build to generate tiles."
   }
 }

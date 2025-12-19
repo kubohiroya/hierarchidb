@@ -58,6 +58,7 @@
   "dependencies": {
     "@hierarchidb/gen-iso3166-2": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/ui-country-select": "workspace:*",
     "@hierarchidb/ui-tabular-extract": "workspace:*",
     "@hierarchidb/spreadsheet-plugin": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",

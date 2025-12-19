@@ -4,30 +4,11 @@
  */
 
 import type React from 'react';
-import { useCallback, useMemo, useState, useId } from 'react';
-import {
-  Box,
-  Button,
-  Checkbox,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Paper,
-  Select,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material';
-import {
-  ClearAll as ClearAllIcon,
-  FilterList as FilterListIcon,
-  Search as SearchIcon,
-  SelectAll as SelectAllIcon,
-} from '@mui/icons-material';
-
-import { Virtuoso } from 'react-virtuoso';
-
-import type { ContinentCode, Country, CountryFilter } from '../types/Country.js';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { Box, Chip, Stack, Typography, Alert } from '@mui/material';
+import { SelectionMatrix, type SelectionMatrixColumn, type SelectionMatrixRow } from '@hierarchidb/components';
+import { SearchField } from '@hierarchidb/ui-search-field';
+import type { Country } from '../types/Country.js';
 import { CONTINENTS } from '../types/Country.js';
 import type { MatrixConfig, MatrixSelection } from '../types/MatrixColumn.js';
 
@@ -40,400 +21,406 @@ export interface CountryMatrixSelectorProps {
   selections: MatrixSelection[];
   /** Callback when selections change */
   onSelectionsChange: (selections: MatrixSelection[]) => void;
-  /** Initial filter state */
-  initialFilter?: CountryFilter;
-  /** Component height (defaults to 600px) */
-  height?: number;
-  /** Whether to show bulk selection tools */
-  showBulkTools?: boolean;
-  /** Whether to show country information columns */
-  showCountryInfo?: boolean;
-  /** Custom row height for virtualization */
+  /** Whether to show alphabetical index chips */
+  showAlphabetIndex?: boolean;
+  /** Whether to show region index chips */
+  showRegionIndex?: boolean;
+  /** Scroll behavior for index chips */
+  scrollBehavior?: ScrollBehavior;
+  /** Jump instead of scroll */
+  jumpInsteadOfScroll?: boolean;
+  /** Component height */
+  height?: number | string;
+  /** Optional maxHeight override */
+  maxHeight?: number | string;
+  /** Row height for virtualization */
   rowHeight?: number;
+  /** Disable specific cells (e.g., by data source) */
+  isCellEnabled?: (country: Country, columnId: string) => boolean;
+  /** Show loading indicator */
+  loading?: boolean;
+  /** Error message to display instead of the table */
+  errorMessage?: string | null;
 }
 
-// Type-safe Virtuoso component wrapper
-const VirtuosoComponent = Virtuoso as React.FC<{
-  style?: React.CSSProperties;
-  totalCount: number;
-  itemContent: (index: number) => React.ReactElement;
-  overscan?: number;
-}>;
-
-interface TableRowData {
-  country: Country;
-  selections: Record<string, boolean>;
-}
-
-/**
- * CountryMatrixSelector - Virtualized table for country and matrix selection
- *
- * Features:
- * - Virtualized scrolling for performance with large datasets
- * - Flexible matrix columns (admin levels, transport hubs, routes, etc.)
- * - Search and filtering capabilities
- * - Bulk selection operations
- * - Responsive design
- */
 export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
-                                                                              countries,
-                                                                              matrixConfig,
-                                                                              selections,
-                                                                              onSelectionsChange,
-                                                                              initialFilter = {},
-                                                                              height = 600,
-                                                                              showBulkTools = true,
-                                                                              showCountryInfo = true,
-                                                                              rowHeight = 56,
+  countries,
+  matrixConfig,
+  selections,
+  onSelectionsChange,
+  showAlphabetIndex = true,
+  showRegionIndex = true,
+  scrollBehavior = 'smooth',
+  jumpInsteadOfScroll = false,
+  height = 600,
+  maxHeight,
+  rowHeight = 40,
+  isCellEnabled = () => true,
+  loading = false,
+  errorMessage = null,
 }) => {
-  const [filter, setFilter] = useState<CountryFilter>(initialFilter);
-  const [showFilters, setShowFilters] = useState(false);
-  const controlId = useId();
+  const virtuosoRef = useRef<any>(null);
+  const [search, setSearch] = useState('');
+  const [sortState, setSortState] = useState<{ kind: 'country' | 'region' | 'column'; columnId?: string; direction: 'asc' | 'desc' }>({
+    kind: 'country',
+    direction: 'asc',
+  });
 
-  // Convert selections array to lookup map
-  const selectionsMap = useMemo(() => {
+  const selectionMap = useMemo(() => {
     const map = new Map<string, Record<string, boolean>>();
-    selections.forEach(selection => {
-      map.set(selection.countryCode, selection.selections);
-    });
+    selections.forEach((sel) => map.set(sel.countryCode, sel.selections));
     return map;
   }, [selections]);
 
-  // Filter countries based on current filter
-  const filteredCountries = useMemo(() => {
-    return countries.filter(country => {
-      // Search query filter
-      if (filter.searchQuery) {
-        const query = filter.searchQuery.toLowerCase();
-        if (!country.name.toLowerCase().includes(query) &&
-          !(country.nativeName && country.nativeName.toLowerCase().includes(query))) {
-          return false;
-        }
-      }
-
-      // Continent filter
-      if (filter.continent && country.continent !== filter.continent) {
-        return false;
-      }
-
-      // Population filters
-      if (filter.minPopulation && (!country.population || country.population < filter.minPopulation)) {
-        return false;
-      }
-      if (filter.maxPopulation && (!country.population || country.population > filter.maxPopulation)) {
-        return false;
-      }
-
-      // Custom filter
-      if (filter.customFilter && !filter.customFilter(country)) {
-        return false;
-      }
-
-      return true;
-    });
-  }, [countries, filter]);
-
-  // Prepare table data
-  const tableData: TableRowData[] = useMemo(() => {
-    return filteredCountries.map(country => ({
-      country,
-      selections: selectionsMap.get(country.code) || {},
-    }));
-  }, [filteredCountries, selectionsMap]);
-
-  // Handle selection change
-  const handleSelectionChange = useCallback((countryCode: string, columnId: string, selected: boolean) => {
-    const newSelections = [...selections];
-    const existingIndex = newSelections.findIndex(s => s.countryCode === countryCode);
-
-    if (existingIndex >= 0) {
-      const existing = newSelections[existingIndex];
-      if (existing) {
-        newSelections[existingIndex] = {
-          countryCode: existing.countryCode,
-          selections: {
-            ...existing.selections,
-            [columnId]: selected,
-          },
-        };
-      }
-    } else {
-      newSelections.push({
-        countryCode,
-        selections: { [columnId]: selected },
-      });
-    }
-
-    onSelectionsChange(newSelections);
-  }, [selections, onSelectionsChange]);
-
-  // Bulk selection handlers
-  const handleSelectAll = useCallback(() => {
-    const newSelections: MatrixSelection[] = filteredCountries.map(country => ({
-      countryCode: country.code,
-      selections: matrixConfig.columns.reduce((acc, col) => {
-        acc[col.id] = true;
-        return acc;
-      }, {} as Record<string, boolean>),
-    }));
-    onSelectionsChange(newSelections);
-  }, [filteredCountries, matrixConfig.columns, onSelectionsChange]);
-
-  const handleClearAll = useCallback(() => {
-    onSelectionsChange([]);
-  }, [onSelectionsChange]);
-
-  // Table header component
-  const TableHeader = () => (
-    <Box
-      sx={{
-        display: 'flex',
-        backgroundColor: 'grey.100',
-        borderBottom: 1,
-        borderColor: 'divider',
-        p: 1,
-      }}
-    >
-      {/* Country column */}
-      <Box sx={{ minWidth: 200, p: 1, fontWeight: 'bold' }}>
-        Country
-      </Box>
-
-      {showCountryInfo && (
-        <>
-          <Box sx={{ minWidth: 100, p: 1, fontWeight: 'bold' }}>
-            Continent
-          </Box>
-          <Box sx={{ minWidth: 120, p: 1, fontWeight: 'bold' }}>
-            Population
-          </Box>
-        </>
-      )}
-
-      {/* Matrix columns */}
-      {matrixConfig.columns.map(column => (
-        <Box
-          key={column.id}
-          sx={{
-            minWidth: column.width || 120,
-            p: 1,
-            fontWeight: 'bold',
-            textAlign: 'center',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 0.5,
-          }}
-        >
-          {column.label}
-          {column.description && (
-            <Typography variant="caption" sx={{ ml: 1, opacity: 0.7 }}>
-              {column.description}
-            </Typography>
-          )}
-        </Box>
-      ))}
-    </Box>
+  const selectionColumns: SelectionMatrixColumn[] = useMemo(
+    () =>
+      matrixConfig.columns.map((col) => ({
+        id: col.id,
+        label: col.label,
+        description: col.description,
+        width: col.width,
+      })),
+    [matrixConfig.columns],
   );
 
-  // Table row component
-  const TableRow: React.FC<{ index: number; style?: React.CSSProperties }> = ({ index, style }) => {
-    const rowData = tableData[index];
-    if (!rowData) return null;
+  const continentAliases: Record<string, keyof typeof CONTINENTS> = useMemo(() => ({
+    'north america': 'NA',
+    'south america': 'SA',
+    'central america': 'NA',
+    'europe': 'EU',
+    'asia': 'AS',
+    'oceania': 'OC',
+    'australia': 'OC',
+    'africa': 'AF',
+    'antarctica': 'AN',
+    'アフリカ': 'AF',
+    'アメリカ': 'NA',
+    '北アメリカ': 'NA',
+    '南アメリカ': 'SA',
+    '中南アメリカ': 'SA',
+    'ヨーロッパ': 'EU',
+    '欧州': 'EU',
+    'オセアニア': 'OC',
+    '大洋州': 'OC',
+    'アジア': 'AS',
+    '中東': 'AS',
+    '南極': 'AN',
+    '南極大陸': 'AN',
+  }), []);
 
-    const { country, selections: rowSelections } = rowData;
+  const toRegionLabel = useCallback((continent?: string) => {
+    if (!continent) return '-';
+    const key = continent.toLowerCase().trim();
+    const alias = continentAliases[key];
+    if (alias && CONTINENTS[alias]) return CONTINENTS[alias].name;
+    if (CONTINENTS[continent as keyof typeof CONTINENTS]) {
+      return CONTINENTS[continent as keyof typeof CONTINENTS].name;
+    }
+    return continent;
+  }, [continentAliases]);
 
-    return (
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          p: 1,
-          '&:hover': {
-            backgroundColor: 'grey.50',
-          },
-        }}
-        style={style}
-      >
-        {/* Country column */}
-        <Box sx={{ minWidth: 200, p: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography variant="body2" fontWeight="medium">
-            {country.name}
-          </Typography>
-          {country.flag && (
-            <Typography variant="body2">{country.flag}</Typography>
-          )}
-        </Box>
+  const flagFromCode = useCallback((code?: string) => {
+    if (!code || code.length !== 2) return '';
+    const base = 0x1f1e6 - 'A'.charCodeAt(0);
+    const upper = code.toUpperCase();
+    const chars = upper.split('').map((c) => String.fromCodePoint(base + c.charCodeAt(0)));
+    return chars.join('');
+  }, []);
 
-        {showCountryInfo && (
-          <>
-            <Box sx={{ minWidth: 100, p: 1 }}>
-              <Typography variant="body2" color="text.secondary">
-                {country.continent}
-              </Typography>
-            </Box>
-            <Box sx={{ minWidth: 120, p: 1 }}>
-              <Typography variant="body2" color="text.secondary">
-                {country.population ? country.population.toLocaleString() : 'N/A'}
-              </Typography>
-            </Box>
-          </>
-        )}
+  const filteredRows = useMemo(() => {
+    const keyword = search.trim().toLowerCase();
+    const enriched = countries.map((country, index) => {
+      const regionLabel = toRegionLabel(country.continent as string | undefined);
+      const native = country.nativeName && country.nativeName !== country.name ? country.nativeName : undefined;
+      const code = country.code?.length === 2 ? country.code : '';
+      const flag = country.flag || flagFromCode(code);
+      const label = `${flag ? `${flag} ` : ''}${country.name}${code ? ` (${code})` : ''}${native ? ` / ${native}` : ''}`;
+      return {
+        country,
+        index,
+        regionLabel,
+        label,
+      };
+    });
+    const filtered = enriched.filter(({ country }) => {
+      if (!keyword) return true;
+      return (
+        country.name.toLowerCase().includes(keyword)
+        || country.nativeName?.toLowerCase?.().includes(keyword)
+        || country.code.toLowerCase().includes(keyword)
+      );
+    });
+    const compare = (a: string, b: string, dir: 'asc' | 'desc') =>
+      dir === 'asc' ? a.localeCompare(b) : b.localeCompare(a);
+    filtered.sort((a, b) => {
+      if (sortState.kind === 'region') {
+        return compare(a.regionLabel ?? '', b.regionLabel ?? '', sortState.direction);
+      }
+      if (sortState.kind === 'column' && sortState.columnId) {
+        const aSelected = selectionMap.get(a.country.code)?.[sortState.columnId] ?? false;
+        const bSelected = selectionMap.get(b.country.code)?.[sortState.columnId] ?? false;
+        if (aSelected === bSelected) return compare(a.country.name, b.country.name, 'asc');
+        return sortState.direction === 'desc' ? Number(bSelected) - Number(aSelected) : Number(aSelected) - Number(bSelected);
+      }
+      return compare(a.country.name, b.country.name, sortState.direction);
+    });
+    return filtered;
+  }, [countries, search, selectionMap, sortState]);
 
-        {/* Matrix columns */}
-        {matrixConfig.columns.map(column => (
-          <Box
-            key={column.id}
-            sx={{
-              minWidth: column.width || 120,
-              p: 1,
-              display: 'flex',
-              justifyContent: 'center',
-            }}
-          >
-            <Checkbox
-              checked={rowSelections[column.id] || false}
-              onChange={(e) => handleSelectionChange(country.code, column.id, e.target.checked)}
-              size="small"
-              inputProps={{
-                id: `${controlId}-select-${country.code}-${column.id}`,
-                name: `${country.code}-${column.id}`,
-                'aria-label': `Select ${country.name} for ${column.label}`,
-              }}
-            />
-          </Box>
-        ))}
-      </Box>
+  const rows: SelectionMatrixRow<{ country: Country; sourceIndex: number }>[] = useMemo(
+    () =>
+      filteredRows.map(({ country, index, regionLabel, label }) => ({
+        id: country.code,
+        label,
+        subLabel: regionLabel,
+        data: { country, sourceIndex: index },
+      })),
+    [filteredRows],
+  );
+
+  const matrixState = useMemo(() => {
+    return rows.map((row) =>
+      selectionColumns.map((col) => selectionMap.get(row.data.country.code)?.[col.id] ?? false),
     );
-  };
+  }, [rows, selectionColumns, selectionMap]);
+
+  const handleSortToggle = useCallback((kind: 'country' | 'region' | 'column', columnId?: string) => {
+    setSortState((prev) => {
+      if (prev.kind === kind && prev.columnId === columnId) {
+        return { kind, columnId, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+      }
+      return { kind, columnId, direction: 'asc' };
+    });
+  }, []);
+
+  const handleSelectionChange = useCallback(
+    (rowIndex: number, colIndex: number, checked: boolean) => {
+      const row = rows[rowIndex];
+      const col = selectionColumns[colIndex];
+      if (!row || !col) return;
+      const countryCode = row.data.country.code;
+      const next = new Map(selectionMap);
+      const existing = next.get(countryCode) ?? {};
+      next.set(countryCode, { ...existing, [col.id]: checked });
+      const normalized: MatrixSelection[] = countries.map((country) => ({
+        countryCode: country.code,
+        selections: next.get(country.code) ?? {},
+      }));
+      onSelectionsChange(normalized);
+    },
+    [countries, onSelectionsChange, rows, selectionColumns, selectionMap],
+  );
+
+  const handleSelectAllColumn = useCallback(
+    (colIndex: number, checked: boolean, enabledRowIndices: number[]) => {
+      const col = selectionColumns[colIndex];
+      if (!col) return;
+      const next = new Map(selectionMap);
+      enabledRowIndices.forEach((rowIdx) => {
+        const row = rows[rowIdx];
+        if (!row) return;
+        const prev = next.get(row.data.country.code) ?? {};
+        next.set(row.data.country.code, { ...prev, [col.id]: checked });
+      });
+      const normalized: MatrixSelection[] = countries.map((country) => ({
+        countryCode: country.code,
+        selections: next.get(country.code) ?? {},
+      }));
+      onSelectionsChange(normalized);
+    },
+    [countries, onSelectionsChange, rows, selectionColumns, selectionMap],
+  );
+
+  const alphabetIndex = useMemo(() => {
+    const groups: Record<string, { count: number; firstRowId: string }> = {};
+    rows.forEach((row) => {
+      const letter = (row.data.country.name?.[0] ?? '#').toUpperCase();
+      if (!groups[letter]) groups[letter] = { count: 0, firstRowId: row.id };
+      groups[letter].count += 1;
+    });
+    return Object.entries(groups)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([letter, value]) => ({ label: letter, count: value.count, firstRowId: value.firstRowId }));
+  }, [rows]);
+
+  const regionIndex = useMemo(() => {
+    const groups: Record<string, { count: number; firstRowId: string }> = {};
+    rows.forEach((row) => {
+      const region = row.subLabel ?? '-';
+      if (!groups[region]) groups[region] = { count: 0, firstRowId: row.id };
+      groups[region].count += 1;
+    });
+    return Object.entries(groups)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([label, value]) => ({ label, count: value.count, firstRowId: value.firstRowId }));
+  }, [rows]);
+
+  const isCellEnabledWrapper = useCallback(
+    (row: SelectionMatrixRow<{ country: Country }>, column: SelectionMatrixColumn) =>
+      isCellEnabled(row.data.country, column.id),
+    [isCellEnabled],
+  );
+
+  const getColumnSortDirection = useCallback(
+    (colIndex: number) => {
+      const column = selectionColumns[colIndex];
+      if (!column || sortState.kind !== 'column' || sortState.columnId !== column.id) return 'none';
+      return sortState.direction;
+    },
+    [selectionColumns, sortState],
+  );
+
+  const getRowMetaSortDirection = useCallback(
+    (metaIndex: number) => {
+      if (metaIndex === 0 && sortState.kind === 'region') return sortState.direction;
+      if (metaIndex === 1 && sortState.kind === 'country') return sortState.direction;
+      return 'none';
+    },
+    [sortState],
+  );
+
+  if (loading) {
+    return (
+      <Alert severity="info">Loading countries...</Alert>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <Alert severity="error">{errorMessage}</Alert>
+    );
+  }
+
+  if (!countries.length) {
+    return (
+      <Alert severity="warning">No countries available.</Alert>
+    );
+  }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, height }}>
-      {/* Search and filter controls */}
-      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-        <TextField
-          placeholder="Search countries..."
-          id={`${controlId}-search`}
-          name="search"
-          value={filter.searchQuery || ''}
-          onChange={(e) => setFilter(prev => ({ ...prev, searchQuery: e.target.value }))}
-          InputProps={{
-            inputProps: { 'aria-label': 'Search countries', id: `${controlId}-search`, name: 'search' },
-            startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />,
-          }}
-          sx={{ minWidth: 200 }}
-        />
-
-        {showBulkTools && (
-          <>
-            <Button
-              variant="outlined"
-              startIcon={<SelectAllIcon />}
-              onClick={handleSelectAll}
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, flex: 1, minHeight: 0 }}>
+      <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" justifyContent="flex-start">
+        <Box sx={{ flexBasis: '260px', flexGrow: 0, flexShrink: 1 }}>
+          <SearchField
+            searchText={search}
+            handleSearchTextChange={setSearch}
+            placeholder="Search by country or code..."
+            ariaLabel="Search countries"
+            fullWidth
+          />
+        </Box>
+        <Box display="flex" gap={1} alignItems="center" flexWrap="wrap" sx={{ flexGrow: 1 }}>
+          {showAlphabetIndex && sortState.kind === 'country' && alphabetIndex.length > 0 && (
+            <>
+              <Typography variant="caption" color="text.secondary">
+                Index
+              </Typography>
+          {alphabetIndex.map((entry) => (
+            <Chip
+              key={entry.label}
+              label={`${entry.label} (${entry.count})`}
               size="small"
-            >
-              Select All
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<ClearAllIcon />}
-              onClick={handleClearAll}
-              size="small"
-            >
-              Clear All
-            </Button>
-          </>
-        )}
-
-        <Button
-          variant="outlined"
-          startIcon={<FilterListIcon />}
-          onClick={() => setShowFilters(!showFilters)}
-          size="small"
-        >
-          Filters
-        </Button>
-
-        <Typography variant="body2" color="text.secondary">
-          {filteredCountries.length} countries
-        </Typography>
-      </Box>
-
-      {/* Advanced filters */}
-      {showFilters && (
-        <Paper sx={{ p: 2 }}>
-          <Typography variant="subtitle2" gutterBottom>
-            Advanced Filters
-          </Typography>
-          <Stack direction="row" spacing={2} flexWrap="wrap">
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel id={`${controlId}-continent-label`} htmlFor={`${controlId}-continent-select`}>Continent</InputLabel>
-              <Select
-                id={`${controlId}-continent-select`}
-                labelId={`${controlId}-continent-label`}
-                value={filter.continent || ''}
-                onChange={(e) => setFilter(prev => ({
-                  ...prev,
-                  continent: e.target.value as ContinentCode || undefined,
-                }))}
-              >
-                <MenuItem value="">All</MenuItem>
-                {Object.entries(CONTINENTS).map(([code, continent]) => (
-                  <MenuItem key={code} value={code}>
-                    {continent.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            <TextField
-              label="Min Population (millions)"
-              id={`${controlId}-min-pop`}
-              name="min-population"
-              type="number"
-              size="small"
-              value={filter.minPopulation ? filter.minPopulation / 1000000 : ''}
-              onChange={(e) => setFilter(prev => ({
-                ...prev,
-                minPopulation: e.target.value ? Number(e.target.value) * 1000000 : undefined,
-              }))}
-              sx={{ width: 200 }}
+              onClick={() => {
+                const targetIndex = rows.findIndex((row) => row.id === entry.firstRowId);
+                if (targetIndex >= 0) {
+                  virtuosoRef.current?.scrollToIndex({
+                    index: targetIndex,
+                    align: 'start',
+                    behavior: jumpInsteadOfScroll ? 'auto' : scrollBehavior,
+                  });
+                }
+              }}
             />
-
-            <TextField
-              label="Max Population (millions)"
-              id={`${controlId}-max-pop`}
-              name="max-population"
-              type="number"
-              size="small"
-              value={filter.maxPopulation ? filter.maxPopulation / 1000000 : ''}
-              onChange={(e) => setFilter(prev => ({
-                ...prev,
-                maxPopulation: e.target.value ? Number(e.target.value) * 1000000 : undefined,
-              }))}
-              sx={{ width: 200 }}
-            />
-          </Stack>
-        </Paper>
-      )}
-
-      {/* Virtualized table */}
-      <Paper sx={{ height: height - 120, overflow: 'hidden' }}>
-        <TableHeader />
-        <VirtuosoComponent
-          style={{ height: height - 180 }} // Account for header and controls
-          totalCount={tableData.length}
-          itemContent={(index: number) => (
-            <TableRow
-              index={index}
-              style={{ height: rowHeight, display: 'flex', alignItems: 'center' }}
-            />
+          ))}
+            </>
           )}
-          overscan={matrixConfig.virtualization?.overscan || 5}
+          {showRegionIndex && sortState.kind === 'region' && regionIndex.length > 0 && (
+            <>
+              <Typography variant="caption" color="text.secondary">
+                Region
+              </Typography>
+          {regionIndex.map((entry) => (
+            <Chip
+              key={entry.label}
+              label={`${entry.label} (${entry.count})`}
+              size="small"
+              onClick={() => {
+                const targetIndex = rows.findIndex((row) => row.id === entry.firstRowId);
+                if (targetIndex >= 0) {
+                  virtuosoRef.current?.scrollToIndex({
+                    index: targetIndex,
+                    align: 'start',
+                    behavior: jumpInsteadOfScroll ? 'auto' : scrollBehavior,
+                  });
+                }
+              }}
+            />
+          ))}
+            </>
+          )}
+        </Box>
+      </Stack>
+
+      <Box sx={{ flex: 1, minHeight: 0 }}>
+        <SelectionMatrix
+        rows={rows.map((row) => ({
+          ...row,
+          tooltip: row.data.country.name,
+        }))}
+        columns={selectionColumns}
+        state={matrixState}
+        onChange={handleSelectionChange}
+        onSelectAll={handleSelectAllColumn}
+        rowMetaColumns={[
+          {
+            header: 'Region',
+            render: (row: SelectionMatrixRow<{ country: Country }>) => (
+              <Typography variant="body2" color="text.secondary">
+                {row.subLabel ?? '-'}
+              </Typography>
+            ),
+            width: 140,
+          },
+          {
+            header: 'Country',
+            render: (row: SelectionMatrixRow<{ country: Country }>) => (
+              <Box display="flex" alignItems="center" gap={1.25}>
+                <Typography variant="body2" component="span">
+                  {row.data.country.flag || flagFromCode(row.data.country.code) || '⬜️'}{' '}
+                  {row.data.country.name} ({row.data.country.code})
+                  {row.data.country.nativeName && row.data.country.nativeName !== row.data.country.name && (
+                    <Typography
+                      component="span"
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ ml: 0.75 }}
+                    >
+                      {row.data.country.nativeName}
+                    </Typography>
+                  )}
+                </Typography>
+              </Box>
+            ),
+            width: 220,
+          },
+        ]}
+        rowHeaderLabel="Country / Type"
+        dense
+        rowHeight={rowHeight}
+        isCellEnabled={isCellEnabledWrapper}
+        onColumnHeaderClick={(colIndex: number) => {
+          const column = selectionColumns[colIndex];
+          if (!column) return;
+          handleSortToggle('column', column.id);
+        }}
+        onRowMetaHeaderClick={(metaIndex: number) => handleSortToggle(metaIndex === 0 ? 'region' : 'country')}
+        getColumnSortDirection={getColumnSortDirection}
+        getRowMetaSortDirection={getRowMetaSortDirection}
+        virtuosoRef={virtuosoRef}
+        height={height}
+        maxHeight={maxHeight}
         />
-      </Paper>
+      </Box>
     </Box>
   );
 };

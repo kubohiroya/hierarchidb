@@ -53,6 +53,34 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1751) location-plugin Step3 国選択の continent 表示修正（P1）
+- ブランチ: `fix/location/step3-region-label`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/location-plugin（Step3 国選択 UI）、packages/ui/country-select（continent 正規化）
+- 受け入れ基準（DoD）:
+  - [ ] location-plugin Step3 の国選択で、continent が国ごとに正しい大陸名などで表示される
+  - [x] `@hierarchidb/ui-country-select` の continent 正規化が ISO CSV 由来の地域名（日本語/英語）を正しく扱う
+  - [x] `pnpm --filter @hierarchidb/location-plugin typecheck` を実行し、結果を運用ログに記録する（不可なら理由を記載）
+  - [x] 原因・修正内容・ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [x] Step3 の continent 取得経路（iso3166 CSV → useIsoCountries → UI）を確認する
+  - [x] continent 正規化ロジックを修正し、North America 固定の誤表示が再現しないことを確認する
+  - [x] typecheck 実行結果を運用ログへ記録する
+- ロールバック手順：`packages/ui/country-select/src/hooks/useIsoCountries.ts` の差分を revert し、`pnpm --filter @hierarchidb/location-plugin typecheck` を再実行する
+
+1750) shape-plugin Step3 国選択の region 表示修正（P1）
+- ブランチ: `fix/shape/step3-region-label`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin（Step3 国選択 UI）、packages/ui/country-select（比較対象）、plugins/location-plugin（挙動参照）
+- 受け入れ基準（DoD）:
+  - [ ] shape-plugin Step3 の国選択で、region が国ごとに正しい大陸名などで表示される
+  - [x] location-plugin Step3 と同一のデータ経路/変換ルールであることを確認し、差異があれば解消する
+  - [x] `pnpm --filter @hierarchidb/shape-plugin typecheck` を実行し、結果を運用ログに記録する（不可なら理由を記載）
+  - [x] 原因・修正内容・ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [x] shape-plugin の Step3 で region 取得経路（データ/マッピング）を特定し、location-plugin と比較する
+  - [x] region ラベルの表示ロジックを修正し、誤表示（North America 固定）が再現しないことを確認する
+  - [x] typecheck 実行結果を運用ログへ記録する
+- ロールバック手順：該当修正ファイルを revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する
+
 1746) ShapeDB キャッシュ統計の重複プロパティ修正（P1）
 - ブランチ: `fix/shape/cache-stats-duplicates`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: plugins/shape-plugin/src/services/database/ShapeDB.ts
@@ -4479,6 +4507,26 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1764) iso-3166-2 country_en のクオート正規化（P1） — 完了 (2025-12-19)
+  - 要点：country_en の前後クオートを常に除去し、csvEscape による通常の quoted-field のみが出力されるよう正規化。既存 CSV も国名列のみ正規化して `"""` を除去。
+  - 検証：`pnpm --filter @hierarchidb/gen-iso3166-2 typecheck`（2025-12-19 23:54 JST）exit 0。
+  - ロールバック手順：`packages/tools/gen-iso3166-2/src/scraper.ts` と `app/public/iso3166-2-level1.csv` の差分を revert し、同 typecheck を再実行する。
+- 1763) iso-3166-2 CSV 生成時の余計なクオート除去（P1） — 完了 (2025-12-19)
+  - 要点：country_en が `"` で囲まれて取得されるケースで csvEscape により `"""` が発生していたため、scraper 側で前後クオートを除去してから出力するように正規化。既存 CSV の該当行も修正。
+  - 検証：`pnpm --filter @hierarchidb/gen-iso3166-2 typecheck`（2025-12-19 23:28 JST）exit 0。
+  - ロールバック手順：`packages/tools/gen-iso3166-2/src/scraper.ts` と `app/public/iso3166-2-level1.csv` の差分を revert し、同 typecheck を再実行する。
+- 1762) iso-3166-2 CSV 複数語の国名クオート除去修正（P1） — 完了 (2025-12-19)
+  - 要点：CSV の quoted-field が前後に空白を含む場合に `^"(.*)"$` が一致せず先頭 `"` が残っていたため、trim 後に両端クオートを除去する処理へ置換。
+  - 検証：`pnpm --filter @hierarchidb/gen-iso3166-2 typecheck`（2025-12-19 23:13 JST）exit 0。
+  - ロールバック手順：`packages/tools/gen-iso3166-2/src/csv.ts` の差分を revert し、同 typecheck を再実行する。
+- 1761) shape-plugin Step3 マトリクス表示と国コード表示の修正（P1） — 完了 (2025-12-19)
+  - 要点：CountryMetadata から iso2/iso3 を保持して 2 文字コードへ正規化し、CountryMatrixSelector/SelectionMatrix を height string 対応にして Step3 マトリクスを DialogContent 全体へ flex 展開。Country 列の `(country-xx)` 表示を解消。
+  - 検証：`pnpm --filter @hierarchidb/shape-plugin typecheck`（2025-12-19 22:02 JST）exit 0。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/ShapeCountrySelectionStep.tsx`、`plugins/shape-plugin/src/common/types/data-source.ts`、`plugins/shape-plugin/src/services/metadata/MetadataLoader.ts`、`packages/ui/country-select/src/components/CountryMatrixSelector.tsx`、`packages/components/src/SelectionMatrix/SelectionMatrix.tsx` の差分を revert し、同 typecheck を再実行する。
+- 1760) shape-plugin Step3 Region 表示誤りの修正（P1） — 完了 (2025-12-19)
+  - 要点：CountryMatrixSelector に渡す continent が常に 'NA' だったため Region が全件 North America になっていた。メタデータの continent から大陸コードを正規化するヘルパーを追加し、CountryMatrixSelector へ正しい大陸コードを渡すよう修正して Region 表示を実データに合わせた。
+  - 検証：`pnpm --filter @hierarchidb/shape-plugin typecheck`（2025-12-19 21:52 JST）exit 0。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/ShapeCountrySelectionStep.tsx` の大陸正規化追加差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する。
 - 1701) PluginDialogShell forwardRef warning fix（P1） — 完了 (2025-12-15)
   - 要点：PluginDialogShell 経由で描画される DialogContentWrapper が forwardRef を props のみで宣言していたため警告が出ていた。forwardRef を外し、memo 化したコンテンツラッパーを dialogRef のみで保持する形に変更し警告を除去。
   - 検証：`pnpm --filter @hierarchidb/plugin-ui-host typecheck`（2025-12-15 21:25 JST）exit 0。
@@ -10478,6 +10526,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-15 17:55 start: fix/plugin-ui-host/shim-removal — plugin-ui-host の `src/types/shims.d.ts` を撤去し、公式の型定義で typecheck を通す作業を開始（branch: fix/plugin-ui-host/shim-removal、branch 作成不可のため main）。DoD: shim 依存撤廃、typecheck ログ取得、ロールバック手順記載。
 - 2025-12-15 19:15 progress: fix/plugin-ui-host/shim-removal — `packages/plugin-ui-host/src/types/shims.d.ts` を削除し、tsconfig で vite/client 追加＋@mui の参照を公式型へ固定（paths で @types/react 18.3.27 側を指定）。パッケージローカルの `node_modules/@mui/*` は一度削除し、ルートに解決させて型衝突を解消。
 - 2025-12-15 19:27 command: pnpm --filter @hierarchidb/plugin-ui-host typecheck — exit 0。
+- 2025-12-19 10:44 progress: refactor/location-shape-country-select — `useIsoCountries` を `@hierarchidb/ui-country-select` へ移設し、CountryMatrixSelector を location/shape 双方で共通化（Search/Index/仮想化 UI を CountryMatrixSelector に移植、SelectionMatrix ベースで dense 表示化）。location-plugin Step3/shape-plugin Step4 から共通コンポーネントを利用するよう切り替え。
+- 2025-12-19 10:45 command: pnpm --filter @hierarchidb/ui-country-select typecheck — exit 0。
+- 2025-12-19 10:46 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 0。
+- 2025-12-19 10:47 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。
 - 2025-12-15 19:28 done: fix/plugin-ui-host/shim-removal — shim 依存を除去し、MUI の型を統一した上で typecheck 通過を確認。再インストールでローカル @mui が再生成された場合は、ルートの @types/react 18.3.27 側へ解決されるよう paths/依存を維持したまま `@mui/*` を再リンク or 再削除してから typecheck を再実行する。
 - 2025-12-15 19:32 start: fix/spreadsheet/jotai-types — spreadsheet-plugin の jotai 型解決エラー（TS2307）と TabularKeyValueState の implicit any を修正開始（branch: fix/spreadsheet/jotai-types、main 作業）。
 - 2025-12-15 19:38 progress: fix/spreadsheet/jotai-types — `jotai` を spreadsheet-plugin の peer/dev/deps に追加し、TabularKeyValueState/Atoms の `prev`/`rule` に型注釈を付与。root/node_modules に jotai を解決するシンボリックリンクを追加し、TypeScript の解決結果を `jotai/index.d.ts` に固定。
@@ -10511,6 +10563,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:45 progress: fix/location/selection-filter — LocationSelectionStep でデータソースに応じて選択可能な地点タイプを制限し、空港系データソースでは空港のみ有効・既定選択となるように変更。typecheck: `pnpm --filter @hierarchidb/location-plugin typecheck` exit 0。
 - 2025-12-17 10:00 start: fix/location/datasource-options — Location Step2 のデータソース選択肢に空港/港湾系が出ず、Step3 の制約も港湾系に未対応なため、データソース一覧を定義と同期し、港湾系では港のみ選択可・既定選択にする対応を開始（branch 作成不可のため main）。
 - 2025-12-17 10:22 progress: fix/location/datasource-options — Step2 カードに対応タイプアイコンと実説明を表示し、Step3 テーブルを dense 表示(rowHeight 40)に変更。typecheck: `pnpm --filter @hierarchidb/location-plugin typecheck` exit 0。
+- 2025-12-17 11:00 progress: refactor/location-country-select — ui-country-select に ISO 国データ読み込みフックを移設し、location-plugin Step3 はそのフックを利用する形へ置換（Country 型に一本化）。tsconfig.base に gen-iso3166-2 パスを追加。typecheck: `pnpm --filter @hierarchidb/location-plugin typecheck` exit 0。
 - 2025-12-16 23:57 progress: fix/ui-datasource/license-import — dev alias 自動検出の `SRC_ENTRY_CANDIDATES` に `src/index.ts` が含まれず、@hierarchidb/ui-license のエイリアスが生成されないことで Vite が未解決となっていた。候補に追加して ui-license を含むパッケージのエイリアスが作られるように修正（config/dev-alias-config.js）。
 - 2025-12-16 23:58 command: pnpm --filter @hierarchidb/ui-datasource typecheck — exit 0。
 - 2025-12-16 23:59 done: fix/ui-datasource/license-import — DoD 達成。ロールバック: `config/dev-alias-config.js` の `SRC_ENTRY_CANDIDATES` 追加を revert し、`pnpm --filter @hierarchidb/ui-datasource typecheck` を再実行。
@@ -10527,3 +10580,30 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-17 00:15 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 0。
 - 2025-12-17 00:15 done: fix/location/mappreview-lt-fallback — TypeError 解消。ロールバック: `plugins/location-plugin/src/ui/components/batch/LocationMapPreview.tsx` の fallback を revert し、`pnpm --filter @hierarchidb/location-plugin typecheck` を再実行。
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
+
+## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-19 23:40 start: fix/gen-iso3166-2/country-quote-normalize — country_en の余計なクオートを常に除去する対応に着手。DoD: quoted-field 維持・typecheck ログ・原因/修正/ロールバック記載。branch 作成不可なら main 作業。
+- 2025-12-19 23:52 progress: fix/gen-iso3166-2/country-quote-normalize — country_en の前後クオートを除去し、CSV の国名列を正規化（`"""` を除去）。
+- 2025-12-19 23:54 command: pnpm --filter @hierarchidb/gen-iso3166-2 typecheck — exit 0。
+- 2025-12-19 23:55 done: fix/gen-iso3166-2/country-quote-normalize — country_en のクオート混在を解消。ロールバック: `packages/tools/gen-iso3166-2/src/scraper.ts` と `app/public/iso3166-2-level1.csv` の差分を revert し、同 typecheck を再実行。
+- 2025-12-19 23:25 start: fix/gen-iso3166-2/csv-quote-normalize — iso-3166-2 CSV の country_en が `"""` になる問題を修正する対応に着手。DoD: 余計なクオート除去・typecheck ログ・原因/修正/ロールバック記載。branch 作成不可なら main 作業。
+- 2025-12-19 23:27 progress: fix/gen-iso3166-2/csv-quote-normalize — scraper 側で country_en の前後クオートを除去してから CSV を生成するように修正し、既存 CSV の該当行も通常の quoted-field に補正。
+- 2025-12-19 23:28 command: pnpm --filter @hierarchidb/gen-iso3166-2 typecheck — exit 0。
+- 2025-12-19 23:29 done: fix/gen-iso3166-2/csv-quote-normalize — `"""` 連続クオートの原因を除去。ロールバック: `packages/tools/gen-iso3166-2/src/scraper.ts` と `app/public/iso3166-2-level1.csv` の差分を revert し、同 typecheck を再実行。
+- 2025-12-19 23:05 start: fix/gen-iso3166-2/csv-quote-strip — iso-3166-2 CSV の複数語国名が `"` で始まる問題を修正する対応に着手。DoD: クオート除去・既存パース結果維持・typecheck/build ログ・原因/修正/ロールバック記載。branch 作成不可なら main 作業。
+- 2025-12-19 23:12 progress: fix/gen-iso3166-2/csv-quote-strip — quoted-field の前後に空白があると `^"(.*)"$` に一致せず、先頭 `"` が残っていたため、trim 後に両端クオートを除去する処理へ置換。
+- 2025-12-19 23:13 command: pnpm --filter @hierarchidb/gen-iso3166-2 typecheck — exit 0。
+- 2025-12-19 23:14 done: fix/gen-iso3166-2/csv-quote-strip — クオート除去ロジックを修正し、複数語の国名が `"` で始まらないことを確認。ロールバック: `packages/tools/gen-iso3166-2/src/csv.ts` の差分を revert し、同 typecheck を再実行。
+- 2025-12-19 22:40 progress: fix/shape/step3-matrix-layout — SelectionMatrix の高さ計算に誤って残っていた Python 風記述を修正し、height ?? (maxHeight ?? '100%') で containerStyle を組み立てるよう再修正。
+- 2025-12-19 22:40 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。
+- 2025-12-19 22:40 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 0。
+- 2025-12-19 22:01 start: fix/shape/step3-matrix-layout — shape-plugin Step3 のマトリクスが DialogContent 全体に広がらない/国コードが `(country-xx)` 表示になる問題の修正に着手。DoD: 国コード正規化、マトリクス full flex、typecheck ログ、原因/修正/ロールバック記載。branch 作成不可のため main 作業。
+- 2025-12-19 21:46 start: fix/shape/step3-region-label — shape-plugin Step3 で Region が North America 固定になる問題の調査/修正に着手。DoD: Region 表示を正しくする、typecheck 実行ログを残す、原因/修正/ロールバックを運用ログへ記載。branch 作成不可のため main で作業。
+- 2025-12-19 21:52 progress: fix/shape/step3-region-label — ShapeCountrySelectionStep で continent を常に 'NA' として渡していたため全て North America 表示になっていた。メタデータの continent から大陸コードを正規化するヘルパーを追加し、CountryMatrixSelector へ正しい値を渡すよう修正。ロールバック: ShapeCountrySelectionStep の大陸正規化追加差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行。
+- 2025-12-19 21:52 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。
+- 2025-12-19 23:30 progress: fix/shape/step3-region-label — fetch-save-metadata の continent が空欄のため、normalize が常に 'NA' へ落ちていた。location-plugin と同じ ISO 国データ（useIsoCountries）から continent を補完し、メタデータの値がある場合はそれを優先するよう修正。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ShapeCountrySelectionStep.tsx` の ISO 補完ロジックを revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行。
+- 2025-12-19 23:31 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。
+- 2025-12-20 09:30 start: fix/location/step3-region-label — location-plugin Step3 で continent が全て North America 表示になる問題の調査/修正に着手。DoD: continent 表示修正、typecheck ログ、原因/修正/ロールバック記載。branch 作成不可のため main 作業。
+- 2025-12-20 09:40 progress: fix/location/step3-region-label — ISO 3166 CSV の location が日本語/地域名（例: 北アメリカ/ヨーロッパ/中央アメリカ/インド洋）でも `useIsoCountries` の正規化が英語単語判定のみで、未一致はすべて 'NA' へ落ちていた。日本語/英語の地域名を広く拾うマッチ条件を追加し、未知のみ NA へフォールバックするよう修正。ロールバック: `packages/ui/country-select/src/hooks/useIsoCountries.ts` の正規化追加差分を revert し、`pnpm --filter @hierarchidb/location-plugin typecheck` を再実行。
+- 2025-12-20 09:41 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 0。
+- 2025-12-20 09:45 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 0。

@@ -158,6 +158,20 @@ registry.registerConfigProvider<LocationStepData>({
         validate: () => true,
       },
       {
+        id: 'build',
+        label: String(i18n.t('steps.build.label', { ns: 'location-plugin', defaultValue: 'Build' })),
+        optional: false,
+        componentFactory: (p: StepProps) => {
+          const draft = ensureData(p.data);
+          return <LocationBuildStep draft={draft} nodeId={p.nodeId} />;
+        },
+        validate: (data?: LocationStepData) => canStartLocationBatch(data),
+        capabilities: {
+          canStartBatch: canStartLocationBatch,
+          startBatch: (data, context) => startLocationBatch(data, context),
+        },
+      },
+      {
         id: 'map-preview',
         label: String(i18n.t('steps.mapPreview.label', { ns: 'location-plugin', defaultValue: 'Map Preview' })),
         optional: true,
@@ -171,20 +185,6 @@ registry.registerConfigProvider<LocationStepData>({
           );
         },
         validate: () => true,
-      },
-      {
-        id: 'build',
-        label: String(i18n.t('steps.build.label', { ns: 'location-plugin', defaultValue: 'Build' })),
-        optional: false,
-        componentFactory: (p: StepProps) => {
-          const draft = ensureData(p.data);
-          return <LocationBuildStep draft={draft} nodeId={p.nodeId} />;
-        },
-        validate: (data?: LocationStepData) => canStartLocationBatch(data),
-        capabilities: {
-          canStartBatch: canStartLocationBatch,
-          startBatch: (data, context) => startLocationBatch(data, context),
-        },
       },
     ];
   },

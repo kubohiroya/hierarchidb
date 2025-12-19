@@ -48,7 +48,8 @@ export interface SelectionMatrixProps<T = any> {
   onSelectRow?: (rowIndex: number, checked: boolean, enabledColumnIndices: number[]) => void;
   showRowSelection?: boolean;
   showColumnSelection?: boolean;
-  maxHeight?: number;
+  maxHeight?: number | string;
+  height?: number | string;
   stickyHeader?: boolean;
   dense?: boolean;
   rowHeaderLabel?: string;
@@ -95,7 +96,8 @@ export function SelectionMatrix<T = any>({
                                            showRowSelection = false,
                                            showColumnSelection = true,
                                            showSelectionCount = false,
-                                           maxHeight = 400,
+                                           maxHeight,
+                                           height,
                                            stickyHeader = true,
                                            dense = false,
                                            rowHeaderLabel = 'Region',
@@ -114,6 +116,21 @@ export function SelectionMatrix<T = any>({
                                            getRowMetaSortDirection,
                                            virtuosoRef,
                                          }: SelectionMatrixProps<T>): React.ReactElement {
+  const containerStyle: React.CSSProperties = {};
+  const resolvedHeight = height ?? (maxHeight ?? '100%');
+  const resolvedRowHeight = dense
+    ? Math.min(rowHeight ?? 40, 40)
+    : rowHeight ?? 48;
+  if (resolvedHeight !== undefined) {
+    containerStyle.height = resolvedHeight;
+    if (typeof resolvedHeight === 'string') {
+      containerStyle.minHeight = 400;
+    }
+  }
+  if (maxHeight !== undefined) {
+    containerStyle.maxHeight = maxHeight;
+  }
+
   // Calculate selection counts
   const columnCounts = useMemo(() => {
     return columns.map((column, colIndex) =>
@@ -492,7 +509,7 @@ export function SelectionMatrix<T = any>({
           component={Paper}
           {...scrollerProps}
           ref={scrollerRef}
-          sx={{ maxHeight, height: maxHeight, ...style }}
+          sx={{ ...containerStyle, ...style }}
         />
       ),
     ),
@@ -521,8 +538,8 @@ export function SelectionMatrix<T = any>({
       fixedHeaderContent={renderHeader}
       itemContent={(index) => renderRowContent(index)}
       components={VirtuosoTableComponents}
-      style={{ height: maxHeight }}
-      defaultItemHeight={rowHeight}
+      style={containerStyle}
+      defaultItemHeight={resolvedRowHeight}
       ref={virtuosoRef}
     />
   );

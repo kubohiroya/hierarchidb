@@ -1,7 +1,32 @@
 import type { SubdivisionRow } from "./types.js";
-
 export const DEFAULT_OUTPUT = "iso3166-2-level1.csv";
 export const DEFAULT_FAILURES = "iso3166-2-level1.failures.csv";
+
+const LOCATION_MAP: Record<string, string> = {
+  "中央アジア": "Central Asia",
+  "中央アフリカ": "Central Africa",
+  "中央アメリカ": "Central America",
+  "中央ヨーロッパ": "Central Europe",
+  "北アフリカ": "Northern Africa",
+  "北ヨーロッパ": "Northern Europe",
+  "南アジア": "South Asia",
+  "南アフリカ": "Southern Africa",
+  "南ヨーロッパ": "Southern Europe",
+  "東アジア": "Eastern Asia",
+  "東アフリカ": "Eastern Africa",
+  "東ヨーロッパ": "Eastern Europe",
+  "東南アジア": "South-Eastern Asia",
+  "西アフリカ": "Western Africa",
+  "西ヨーロッパ": "Western Europe",
+  "インド洋地域": "Indian Ocean",
+  "地中海地域": "Mediterranean",
+  "ロシア": "Russia",
+};
+
+const normalizeLocation = (value: string): string => {
+  const key = (value ?? "").trim();
+  return LOCATION_MAP[key] ?? key;
+};
 
 export function csvEscape(v: string): string {
   const s = v ?? "";
@@ -26,7 +51,7 @@ export function toCsv(rows: SubdivisionRow[]): string {
         r.countryEn,
         r.alpha3,
         r.alpha2,
-        r.location,
+        normalizeLocation(r.location),
         r.subdivisionEn,
         r.subdivisionLocal,
         r.subdivisionCode,
@@ -41,9 +66,14 @@ export function parseCsv(text: string): SubdivisionRow[] {
   if (lines.length <= 1) return [];
   const rows: SubdivisionRow[] = [];
   for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i]?.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map((c) =>
-      c.replace(/^"(.*)"$/, "$1").replace(/""/g, '"')
-    );
+    const cols = lines[i]?.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map((c) => {
+      const raw = c ?? "";
+      const trimmed = raw.trim();
+      if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+        return trimmed.slice(1, -1).replace(/""/g, '"');
+      }
+      return raw.replace(/""/g, '"');
+    });
     if (!cols) continue;
     if (cols.length < 7) continue;
     const [countryEn, alpha3, alpha2, location, subdivisionEn, subdivisionLocal, subdivisionCode] = cols;

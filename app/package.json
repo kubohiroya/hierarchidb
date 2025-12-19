@@ -39,6 +39,7 @@
     "@hierarchidb/plugin-base": "workspace:*",
     "@hierarchidb/ui-plugin-shell": "workspace:*",
     "@hierarchidb/ui-lru-splitview": "workspace:*",
+    "@hierarchidb/ui-country-select": "workspace:*",
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
     "@tanstack/react-router": "^1.132.33",

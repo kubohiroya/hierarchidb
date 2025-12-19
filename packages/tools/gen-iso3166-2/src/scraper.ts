@@ -20,6 +20,51 @@ const USER_AGENT = "iso3166-2-level1-csv-generator/1.0 (contact: example@example
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+const CONTINENT_I18N: Record<string, Record<string, string>> = {
+  en: {
+    "africa": "Africa",
+    "americas": "Americas",
+    "north america": "North America",
+    "south america": "South America",
+    "central america": "North America",
+    "europe": "Europe",
+    "asia": "Asia",
+    "oceania": "Oceania",
+    "australia": "Oceania",
+    "antarctica": "Antarctica",
+  },
+  ja: {
+    "アフリカ": "Africa",
+    "アメリカ": "Americas",
+    "北アメリカ": "North America",
+    "南アメリカ": "South America",
+    "中南アメリカ": "South America",
+    "ヨーロッパ": "Europe",
+    "欧州": "Europe",
+    "ヨーロッパ・中東": "Europe",
+    "オセアニア": "Oceania",
+    "大洋州": "Oceania",
+    "アジア": "Asia",
+    "中東": "Asia",
+    "南極": "Antarctica",
+    "南極大陸": "Antarctica",
+  },
+};
+
+const normalizeContinent = (value: string | undefined, lang: 'en' | 'ja' = 'en'): string => {
+  if (!value) return "";
+  const trimmed = value.trim();
+  const map = CONTINENT_I18N[lang] ?? {};
+  const direct = map?.[trimmed];
+  if (direct) return direct;
+  const lower = trimmed.toLowerCase();
+  const lowerMapped = map?.[lower];
+  if (lowerMapped) return lowerMapped;
+  // fallback to en aliases if not found in current lang
+  const fallback = (CONTINENT_I18N.en ?? {})[lower];
+  return fallback ?? trimmed;
+};
+
 async function fetchHtml(url: string, retries = 3): Promise<string> {
   const net = new FetchNetworkPort();
   for (let i = 0; i < retries; i++) {
@@ -44,6 +89,13 @@ async function fetchHtml(url: string, retries = 3): Promise<string> {
 
 const normText = (s: string): string =>
   s.replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
+
+const stripWrappedQuotes = (value: string): string => {
+  let trimmed = value.trim();
+  if (trimmed.startsWith('"')) trimmed = trimmed.slice(1);
+  if (trimmed.endsWith('"')) trimmed = trimmed.slice(0, -1);
+  return trimmed.replace(/""/g, '"');
+};
 
 const absoluteUrl = (base: string, href?: string | null): string | undefined => {
   if (!href) return undefined;
@@ -95,10 +147,11 @@ export async function parseIso3166_1Countries(): Promise<CountryRow[]> {
     const tds = $(tr as any).find("td").toArray();
     if (tds.length < Math.max(idxAlpha2, idxAlpha3, idxCountryEn) + 1) return;
 
-    const countryEn = normText($(tds[idxCountryEn]).text());
+    const countryEn = stripWrappedQuotes(normText($(tds[idxCountryEn]).text()));
     const alpha3 = normText($(tds[idxAlpha3]).text()).replace(/`/g, "");
     const alpha2 = normText($(tds[idxAlpha2]).text()).replace(/`/g, "");
-    const location = idxLocation >= 0 ? normText($(tds[idxLocation]).text()) : "";
+    const locationRaw = idxLocation >= 0 ? normText($(tds[idxLocation]).text()) : "";
+    const location = normalizeContinent(locationRaw, 'ja');
 
     if (!alpha2 || alpha2.length !== 2) return;
 
@@ -225,7 +278,7 @@ export async function generateIso3166Data(): Promise<GenerateResult> {
               countryEn: c.countryEn,
               alpha3: c.alpha3,
               alpha2: c.alpha2,
-              location: c.location,
+              location: normalizeContinent(c.location, 'en'),
               subdivisionEn: s.nameEn,
               subdivisionLocal: s.nameLocal,
               subdivisionCode: s.code,

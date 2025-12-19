@@ -75,11 +75,14 @@ export class MetadataLoader {
   ): CountryMetadata[] {
     return rawData.map((item) => {
       const resolvedLevels = this.normalizeAvailableLevels(item);
+      const countryCode = item.iso2 || item.countryCode || item.iso3 || 'UNKNOWN';
       return {
-        countryCode: item.countryCode ?? 'UNKNOWN',
+        countryCode,
         countryName: item.countryName || '',
         continent: item.continent || '',
         availableAdminLevels: resolvedLevels,
+        iso2: item.iso2,
+        iso3: item.iso3,
         population: item.population,
         area: item.area,
         dataQuality: this.determineDataQuality(resolvedLevels),

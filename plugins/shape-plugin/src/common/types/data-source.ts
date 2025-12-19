@@ -18,6 +18,8 @@ export interface CountryMetadata {
   countryName: string;
   continent: string;
   availableAdminLevels: number[];
+  iso2?: string;
+  iso3?: string;
   population?: number;
   area?: number;
   dataQuality?: 'high' | 'medium' | 'low';

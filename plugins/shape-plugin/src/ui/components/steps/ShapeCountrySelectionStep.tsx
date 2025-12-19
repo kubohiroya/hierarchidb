@@ -1,20 +1,65 @@
 import type React from 'react';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useSnackbar } from 'notistack';
-import { Box, CircularProgress, Typography } from '@mui/material';
-import type { CountryMetadata, StepProps } from '../../../common/types/index.js';
+import { Alert, Box, CircularProgress, Typography } from '@mui/material';
+import type { StepProps, CountryMetadata } from '../../../common/types/index.js';
 import { useCountryMetadata } from '../../hooks/useCountryMetadata.js';
 import { calculateEstimatedFeatures, calculateEstimatedSize, DATA_SOURCE_CONFIGS, formatBytes, formatNumber } from '../../../common/mock/data.js';
 import { normalizeDataSourceName } from '../../../services/utils/utils.js';
-import { SelectionMatrix, type SelectionMatrixRow, type SelectionMatrixColumn } from '@hierarchidb/components';
+import { CountryMatrixSelector, useIsoCountries, type MatrixConfig, type MatrixSelection, type ContinentCode } from '@hierarchidb/ui-country-select';
 
 type ShapeDialogStepProps = StepProps;
 
-export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ draft, onUpdate, disabled }) => {
+const CONTINENT_CODES: ContinentCode[] = ['AF', 'AS', 'EU', 'NA', 'SA', 'OC', 'AN'];
+
+const CONTINENT_ALIASES: Record<string, ContinentCode> = {
+  'africa': 'AF',
+  'af': 'AF',
+  'asia': 'AS',
+  'as': 'AS',
+  'europe': 'EU',
+  'eu': 'EU',
+  'north america': 'NA',
+  'na': 'NA',
+  'south america': 'SA',
+  'sa': 'SA',
+  'central america': 'NA',
+  'oceania': 'OC',
+  'australia': 'OC',
+  'oc': 'OC',
+  'antarctica': 'AN',
+  'an': 'AN',
+};
+
+const isContinentCode = (value: string): value is ContinentCode => CONTINENT_CODES.includes(value as ContinentCode);
+
+const normalizeContinentCode = (continent?: string): ContinentCode | undefined => {
+  if (!continent) return undefined;
+  const trimmed = continent.trim();
+  if (!trimmed) return undefined;
+  const alias = CONTINENT_ALIASES[trimmed.toLowerCase()];
+  if (alias) return alias;
+  const upper = trimmed.toUpperCase();
+  if (isContinentCode(upper)) return upper;
+  return undefined;
+};
+
+const normalizeCountryCodeFromMetadata = (country: Partial<CountryMetadata>, index: number): string => {
+  const candidates = [country.countryCode, country.iso2, country.iso3].filter(
+    (value): value is string => Boolean(value && value.trim()),
+  );
+  const primary = (candidates[0] ?? `country-${index}`).trim().toUpperCase();
+  if (primary.length === 2) return primary;
+  if (primary.length === 3 && country.iso2) return country.iso2.trim().toUpperCase();
+  if (primary.length === 3) return primary.slice(0, 2);
+  return primary.slice(0, 2) || `COUNTRY-${index}`;
+};
+
+export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ draft, onUpdate, disabled: _disabled }) => {
   const { enqueueSnackbar } = useSnackbar();
-  const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
   const draftData = draft ?? {};
   const dataSourceKey = normalizeDataSourceName(draftData.dataSourceName) ?? 'gadm';
+  const iso = useIsoCountries();
 
   const {
     metadata: countries,
@@ -27,6 +72,28 @@ export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ draf
   const dataSourceConfig = DATA_SOURCE_CONFIGS[dataSourceKey];
   const maxAdminLevel = dataSourceConfig?.maxAdminLevel ?? 0;
 
+  const isoContinentByCode = useMemo(() => {
+    if (iso.status !== 'ready') return new Map<string, ContinentCode>();
+    return new Map(iso.countries.map((country) => [country.code, country.continent]));
+  }, [iso]);
+
+  const baseCountries = useMemo(() => {
+    return countries.map((country, countryIndex) => {
+      const normalizedCode = normalizeCountryCodeFromMetadata(country, countryIndex);
+      const isoContinent = isoContinentByCode.get(normalizedCode);
+      const normalizedContinent = normalizeContinentCode(country.continent) ?? isoContinent ?? 'NA';
+      return {
+        country: {
+          code: normalizedCode,
+          name: country.countryName || normalizedCode || `#${countryIndex}`,
+          nativeName: country.countryName,
+          continent: normalizedContinent,
+        },
+        availableAdminLevels: country.availableAdminLevels ?? [],
+      };
+    });
+  }, [countries, isoContinentByCode]);
+
   const checkboxMatrix = useMemo<boolean[][]>(() => {
     if (Array.isArray(draftData.checkboxState)) {
       return (draftData.checkboxState as unknown[]).map((row: unknown): boolean[] => {
@@ -36,103 +103,67 @@ export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ draf
         return Array.from({ length: maxAdminLevel + 1 }, (_, idx) => Boolean((row as unknown[])[idx]));
       });
     }
-    return countries.map(() => Array.from({ length: maxAdminLevel + 1 }, () => false));
-  }, [draftData.checkboxState, countries, maxAdminLevel]);
+    return baseCountries.map(() => Array.from({ length: maxAdminLevel + 1 }, () => false));
+  }, [draftData.checkboxState, baseCountries, maxAdminLevel]);
 
-  const matrixState = useMemo<boolean[][]>(() => {
-    return countries.map((_, countryIndex) => {
-      const row = checkboxMatrix[countryIndex] ?? Array.from({ length: maxAdminLevel + 1 }, () => false);
-      return Array.from({ length: maxAdminLevel + 1 }, (_, levelIndex) => Boolean(row[levelIndex]));
-    });
-  }, [checkboxMatrix, countries, maxAdminLevel]);
-
-  const columns: SelectionMatrixColumn[] = useMemo(
+  const columns: MatrixConfig['columns'] = useMemo(
     () =>
       Array.from({ length: maxAdminLevel + 1 }, (_, levelIndex) => ({
         id: `level-${levelIndex}`,
         label: `Level ${levelIndex}`,
         description: `Admin level ${levelIndex}`,
+        type: 'custom',
       })),
-    [maxAdminLevel]
+    [maxAdminLevel],
   );
 
-  const rows: SelectionMatrixRow<CountryMetadata>[] = useMemo(
-    () =>
-      countries.map((country, countryIndex) => ({
-        id: country.countryCode || `country-${countryIndex}`,
-        label: country.countryCode ?? country.countryName ?? `#${countryIndex}`,
-        subLabel: country.countryName ?? '',
-        data: country,
-        tooltip: country.countryName,
-        disabled,
-      })),
-    [countries, disabled]
+  const currentSelections: MatrixSelection[] = useMemo(() => {
+    return baseCountries.map((entry, countryIndex) => {
+      const row = checkboxMatrix[countryIndex] ?? [];
+      const selections: Record<string, boolean> = {};
+      columns.forEach((col, levelIndex) => {
+        selections[col.id] = Boolean(row[levelIndex]);
+      });
+      return {
+        countryCode: entry.country.code,
+        selections,
+      };
+    });
+  }, [baseCountries, checkboxMatrix, columns]);
+
+  const applySelections = useCallback(
+    (nextSelections: MatrixSelection[]) => {
+      const nextMatrix = baseCountries.map((entry) => {
+        const found = nextSelections.find((sel) => sel.countryCode === entry.country.code);
+        const row = columns.map((col, idx) => {
+          const enabled = entry.availableAdminLevels.includes(idx);
+          return enabled ? Boolean(found?.selections?.[col.id]) : false;
+        });
+        return row;
+      });
+      onUpdate({ checkboxState: nextMatrix });
+
+      const totalSelected = nextMatrix.flat().filter(Boolean).length;
+      const countriesWithSelection = nextMatrix.filter((row) => row.some(Boolean)).length;
+      enqueueSnackbar(
+        `${countriesWithSelection} countries / ${totalSelected} selections — Est. Size: ${formatBytes(
+          calculateEstimatedSize(totalSelected),
+        )}, Est. Features: ${formatNumber(calculateEstimatedFeatures(totalSelected, countries))}`,
+        { variant: 'info' },
+      );
+    },
+    [baseCountries, columns, countries, enqueueSnackbar, onUpdate],
   );
 
   const isCellEnabled = useCallback(
-    (row: SelectionMatrixRow<CountryMetadata>, _column: SelectionMatrixColumn, _rowIndex: number, colIndex: number) => {
-      const available = row.data?.availableAdminLevels ?? [];
-      return available.includes(colIndex);
+    (countryCode: string, columnId: string) => {
+      const entry = baseCountries.find((c) => c.country.code === countryCode);
+      if (!entry) return false;
+      const colIndex = columns.findIndex((col) => col.id === columnId);
+      if (colIndex < 0) return false;
+      return entry.availableAdminLevels.includes(colIndex);
     },
-    []
-  );
-
-  const handleSelectAllColumn = useCallback(
-    (colIndex: number, checked: boolean, enabledRowIndices: number[]) => {
-      const clonedMatrix = checkboxMatrix.map((row) => [...row]);
-      enabledRowIndices.forEach((rowIndex) => {
-        const row = clonedMatrix[rowIndex] ?? Array.from({ length: maxAdminLevel + 1 }, () => false);
-        row[colIndex] = checked;
-        clonedMatrix[rowIndex] = row;
-      });
-      onUpdate({ checkboxState: clonedMatrix });
-    },
-    [checkboxMatrix, maxAdminLevel, onUpdate]
-  );
-
-  const handleCellChange = useCallback(
-    (countryIndex: number, levelIndex: number, checked: boolean) => {
-      const clonedMatrix = checkboxMatrix.map((row) => [...row]);
-      const row = clonedMatrix[countryIndex];
-      if (!row || levelIndex < 0 || levelIndex >= row.length) {
-        return;
-      }
-      const nextRow = [...row];
-      nextRow[levelIndex] = checked;
-      clonedMatrix[countryIndex] = nextRow;
-      onUpdate({
-        checkboxState: clonedMatrix,
-      });
-
-      const nextStats = (() => {
-        let totalSelected = 0;
-        let countriesWithSelection = 0;
-
-        clonedMatrix.forEach((r: boolean[]) => {
-          let hasAny = false;
-          r.forEach((val: boolean, idx: number) => {
-            if (val && idx <= maxAdminLevel) {
-              totalSelected += 1;
-              hasAny = true;
-            }
-          });
-          if (hasAny) countriesWithSelection += 1;
-        });
-
-        return {
-          totalSelected,
-          countriesWithSelection,
-          estimatedSize: calculateEstimatedSize(totalSelected),
-          estimatedFeatures: calculateEstimatedFeatures(totalSelected, countries),
-        };
-      })();
-
-      enqueueSnackbar(
-        `${nextStats.countriesWithSelection} countries / ${nextStats.totalSelected} selections — Est. Size: ${formatBytes(nextStats.estimatedSize)}, Est. Features: ${formatNumber(nextStats.estimatedFeatures)}`,
-        { variant: 'info' }
-      );
-    },
-    [checkboxMatrix, onUpdate, maxAdminLevel, countries, enqueueSnackbar]
+    [baseCountries, columns],
   );
 
   if (loading) {
@@ -146,16 +177,12 @@ export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ draf
 
   if (error) {
     return (
-      <Box sx={{ height: '70vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', p: 3 }}>
-        <Typography color="error" variant="body2">
-          Failed to load country metadata: {error.message}
-        </Typography>
-      </Box>
+      <Alert severity="error">Failed to load country metadata: {error.message}</Alert>
     );
   }
 
   return (
-    <Box sx={{ maxHeight: '70vh', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1, minHeight: 0 }}>
       <Typography variant="h6" gutterBottom>
         Select Countries & Administrative Levels
       </Typography>
@@ -163,32 +190,22 @@ export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ draf
         Select countries and their administrative levels to download. Use the matrix to make precise selections.
       </Typography>
 
-      <SelectionMatrix
-        rows={rows.map((row) => ({
-          ...row,
-          label: `${row.label}`,
-        }))}
-        columns={columns}
-        state={matrixState}
-        onChange={(rowIndex, colIndex, checked) => handleCellChange(rowIndex, colIndex, checked)}
-        onSelectAll={handleSelectAllColumn}
-        rowHeaderLabel="Country"
-        showSelectionCount
-        stickyHeader
-        dense
-        isCellEnabled={isCellEnabled}
-        getRowProps={(row) => {
-          const letter = row.data?.countryName?.[0]?.toUpperCase() ?? '#';
-          return {
-            ref: (el: HTMLTableRowElement | null) => {
-              if (!rowRefs.current[letter] && el) {
-                rowRefs.current[letter] = el;
-              }
-            },
-            'data-letter': letter,
-          } as React.HTMLAttributes<HTMLTableRowElement>;
-        }}
-      />
+      <Box sx={{ flex: 1, minHeight: 0 }}>
+        <CountryMatrixSelector
+          countries={baseCountries.map((c) => c.country)}
+          matrixConfig={{ columns, virtualization: { rowHeight: 40, overscan: 8 } }}
+          selections={currentSelections}
+          onSelectionsChange={applySelections}
+          isCellEnabled={(country, columnId) => isCellEnabled(country.code, columnId)}
+          rowHeight={40}
+          height="100%"
+          maxHeight={undefined}
+          showRegionIndex
+          showAlphabetIndex
+          loading={loading}
+          errorMessage={null}
+        />
+      </Box>
     </Box>
   );
 };

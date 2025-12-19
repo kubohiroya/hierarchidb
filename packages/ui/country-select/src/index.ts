@@ -66,3 +66,6 @@ export {
   getCountryByCode,
   searchCountries,
 } from './data/index.js';
+
+// ISO country loader (from ISO-3166-2 CSV; returns Country[])
+export { useIsoCountries } from './hooks/useIsoCountries.js';

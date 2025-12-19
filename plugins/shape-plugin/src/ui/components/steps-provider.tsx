@@ -10,6 +10,7 @@ import {
 import { ShapeDataSourceStep } from './steps/ShapeDataSourceStep.js';
 import { ShapeProcessingSettingsStep } from './steps/ShapeProcessingSettingsStep.js';
 import { ShapeCountrySelectionStep } from './steps/ShapeCountrySelectionStep.js';
+import { ShapePreviewStep } from './steps/ShapePreviewStep.js';
 import { ShapeBuildProgressStep } from './steps/ShapeBuildProgressStep.js';
 import { notify } from '@hierarchidb/components';
 import { useTranslation as getTranslation } from '../../ui/i18n.js';
@@ -46,6 +47,7 @@ function createStepAdapter(Component: React.ComponentType<any>): (props: ShapeDi
 const ShapeDataSource = createStepAdapter(ShapeDataSourceStep);
 const ShapeProcessing = createStepAdapter(ShapeProcessingSettingsStep);
 const ShapeCountrySelection = createStepAdapter(ShapeCountrySelectionStep);
+const ShapePreview = createStepAdapter(ShapePreviewStep);
 const ShapeBuildProgress = createStepAdapter(ShapeBuildProgressStep);
 
 const canStartShapeBatch = (data?: Partial<ShapeEntity>): boolean => {
@@ -79,6 +81,13 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
           Boolean(data?.dataSourceName),
       },
       {
+        id: 'country-selection',
+        label: t('steps.countrySelection.label', 'Country Selection'),
+        componentFactory: (props: ShapeDialogStepProps) => <ShapeCountrySelection {...props} />,
+        validate: (data?: Partial<ShapeEntity>) =>
+          summarizeCheckboxState(data?.checkboxState).hasSelection,
+      },
+      {
         id: 'processing-configuration',
         label: t('steps.processing.label', 'Processing Configuration'),
         componentFactory: (props: ShapeDialogStepProps) => <ShapeProcessing {...props} />,
@@ -86,13 +95,6 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
           validateProcessingConfig(
             mergeProcessingConfig(data?.processingConfig ?? DEFAULT_PROCESSING_CONFIG),
           ).isValid,
-      },
-      {
-        id: 'country-selection',
-        label: t('steps.countrySelection.label', 'Country Selection'),
-        componentFactory: (props: ShapeDialogStepProps) => <ShapeCountrySelection {...props} />,
-        validate: (data?: Partial<ShapeEntity>) =>
-          summarizeCheckboxState(data?.checkboxState).hasSelection,
       },
       {
         id: 'build',
@@ -103,6 +105,12 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
           canStartBatch: canStartShapeBatch,
           startBatch: (data, context) => startShapeBatch(data, context),
         },
+      },
+      {
+        id: 'preview',
+        label: t('steps.preview.label', 'Preview'),
+        componentFactory: (props: ShapeDialogStepProps) => <ShapePreview {...props} />,
+        validate: () => true,
       },
     ];
   },

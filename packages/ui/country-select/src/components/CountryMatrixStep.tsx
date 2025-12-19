@@ -9,7 +9,7 @@ import { Accordion, AccordionDetails, AccordionSummary, Alert, Box, Chip, Stack,
 import { ExpandMore as ExpandMoreIcon, Info as InfoIcon } from '@mui/icons-material';
 
 import { CountryMatrixSelector } from './CountryMatrixSelector.js';
-import type { Country, CountryFilter } from '../types/Country.js';
+import type { Country } from '../types/Country.js';
 import type { ColumnSet, MatrixConfig, MatrixSelection } from '../types/MatrixColumn.js';
 
 export interface CountryMatrixStepProps {
@@ -25,8 +25,6 @@ export interface CountryMatrixStepProps {
   selections: MatrixSelection[];
   /** Callback when selections change */
   onSelectionsChange: (selections: MatrixSelection[]) => void;
-  /** Initial filter */
-  initialFilter?: CountryFilter;
   /** Component height */
   height?: number;
   /** Show validation info */
@@ -50,7 +48,6 @@ export const CountryMatrixStep: React.FC<CountryMatrixStepProps> = ({
                                                                       matrixConfig: rawMatrixConfig,
                                                                       selections,
                                                                       onSelectionsChange,
-                                                                      initialFilter,
                                                                       height = 500,
                                                                       showValidationInfo = true,
                                                                       minSelections = 1,
@@ -198,10 +195,10 @@ export const CountryMatrixStep: React.FC<CountryMatrixStepProps> = ({
         matrixConfig={matrixConfig}
         selections={selections}
         onSelectionsChange={onSelectionsChange}
-        initialFilter={initialFilter}
         height={height}
-        showBulkTools={true}
-        showCountryInfo={true}
+        rowHeight={matrixConfig.virtualization?.rowHeight ?? 40}
+        showAlphabetIndex
+        showRegionIndex
       />
 
       {/* Validation message */}

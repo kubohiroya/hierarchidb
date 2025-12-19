@@ -333,6 +333,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     dependencies: [
         "@hierarchidb/gen-iso3166-2",
         "@hierarchidb/plugin-base",
+        "@hierarchidb/ui-country-select",
         "@hierarchidb/ui-tabular-extract",
         "@hierarchidb/spreadsheet-plugin",
         "@hierarchidb/tabular-store",
@@ -380,6 +381,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "dependencies": [
           "@hierarchidb/gen-iso3166-2",
           "@hierarchidb/plugin-base",
+          "@hierarchidb/ui-country-select",
           "@hierarchidb/ui-tabular-extract",
           "@hierarchidb/spreadsheet-plugin",
           "@hierarchidb/tabular-store",

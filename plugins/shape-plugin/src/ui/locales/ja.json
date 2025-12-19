@@ -5,7 +5,9 @@
     "dataSource": { "label": "データソース" },
     "licenseAgreement": { "label": "ライセンス同意" },
     "processing": { "label": "処理設定" },
-    "countrySelection": { "label": "国選択" }
+    "countrySelection": { "label": "国選択" },
+    "preview": { "label": "プレビュー" },
+    "build": { "label": "ビルド" }
   },
   "messages": {
     "completeRequired": "ビルド前に必須項目と選択を完了してください。",
@@ -18,5 +20,10 @@
     "cancel": "キャンセル",
     "save": "保存",
     "defaultName": "新規 shape"
+  },
+  "preview": {
+    "title": "プレビュー",
+    "description": "生成したベクトルタイルを地図上に重ねて表示します。",
+    "noTiles": "ベクトルタイルがまだありません。ビルドを実行してください。"
   }
 }
