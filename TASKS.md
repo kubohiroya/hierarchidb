@@ -10506,6 +10506,11 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 22:53 start: refactor/ui-map/mapstyle-props — BaseMapProps の mapStyle を URL 指定と MapLibreStyle 指定に分割し、型安全にする対応を開始（branch: refactor/ui-map/mapstyle-props、branch 作成不可なら main）。
 - 2025-12-16 23:07 progress: refactor/ui-map/mapstyle-props — BaseMapProps を URL/MapLibreStyle の union に分割し、MapLibreMap/MapWithVectorTiles と basemap プレビュー系の呼び出し側を新型へ更新。
 - 2025-12-16 23:08 command: pnpm --filter @hierarchidb/ui-map typecheck — exit 0。
+- 2025-12-16 23:18 progress: fix/location/stepper — Location dialog で license ステップが残存し、steps-provider 側のステップ構成と不整合になっていたため、LocationDialog のステップ配列から License ステップを削除しステッパー崩れを解消。
+- 2025-12-16 23:27 progress: fix/location/iso-plugin-browser — location-plugin の UI ロード時に @hierarchidb/gen-iso3166-2 が node:path をブラウザで参照してクラッシュする問題を確認し、同パッケージの plugin.ts/store.ts/scraper.ts を Node 組み込みモジュールを動的 import する形に修正。`pnpm --filter @hierarchidb/gen-iso3166-2 build` exit 0。
+- 2025-12-16 23:45 progress: fix/location/selection-filter — LocationSelectionStep でデータソースに応じて選択可能な地点タイプを制限し、空港系データソースでは空港のみ有効・既定選択となるように変更。typecheck: `pnpm --filter @hierarchidb/location-plugin typecheck` exit 0。
+- 2025-12-17 10:00 start: fix/location/datasource-options — Location Step2 のデータソース選択肢に空港/港湾系が出ず、Step3 の制約も港湾系に未対応なため、データソース一覧を定義と同期し、港湾系では港のみ選択可・既定選択にする対応を開始（branch 作成不可のため main）。
+- 2025-12-17 10:22 progress: fix/location/datasource-options — Step2 カードに対応タイプアイコンと実説明を表示し、Step3 テーブルを dense 表示(rowHeight 40)に変更。typecheck: `pnpm --filter @hierarchidb/location-plugin typecheck` exit 0。
 - 2025-12-16 23:57 progress: fix/ui-datasource/license-import — dev alias 自動検出の `SRC_ENTRY_CANDIDATES` に `src/index.ts` が含まれず、@hierarchidb/ui-license のエイリアスが生成されないことで Vite が未解決となっていた。候補に追加して ui-license を含むパッケージのエイリアスが作られるように修正（config/dev-alias-config.js）。
 - 2025-12-16 23:58 command: pnpm --filter @hierarchidb/ui-datasource typecheck — exit 0。
 - 2025-12-16 23:59 done: fix/ui-datasource/license-import — DoD 達成。ロールバック: `config/dev-alias-config.js` の `SRC_ENTRY_CANDIDATES` 追加を revert し、`pnpm --filter @hierarchidb/ui-datasource typecheck` を再実行。

@@ -58,7 +58,11 @@
     "searchPlaceholder": "Search by country name...",
     "showSelectedOnly": "Show Selected Only",
     "selectAll": "Select All",
-    "deselectAll": "Deselect All"
+    "deselectAll": "Deselect All",
+    "indexLabel": "Index",
+    "regionIndexLabel": "Region Index",
+    "selectedCountLabel": "Selected: {{count}}",
+    "notSelectedCountLabel": "Not selected: {{count}}"
   },
   "locationTypes": {
     "area_centroid": "Area centroid",

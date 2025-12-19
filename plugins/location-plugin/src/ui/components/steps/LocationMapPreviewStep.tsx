@@ -3,9 +3,24 @@
  */
 
 import type React from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Box, Button, CircularProgress, Divider, Stack, Typography } from '@mui/material';
+import { useCallback, useEffect, useMemo, useRef, useState, useId } from 'react';
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Divider,
+  FormControlLabel,
+  Paper,
+  Stack,
+  Tab,
+  Tabs,
+  TextField,
+  Typography,
+  Slider,
+  Switch,
+} from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import SettingsIcon from '@mui/icons-material/Settings';
 import type { NodeId } from '@hierarchidb/common-types';
 import { LocationMapPreview } from '../batch/LocationMapPreview.js';
 import type { PreviewLocationPoint } from '../batch/LocationMapPreview.js';
@@ -14,6 +29,7 @@ import { formatBytes, useTranslation } from '../../../common/i18n/index.js';
 import { getEphemeralLocationDB } from '../../../database/EphemeralLocationDB.js';
 import { LocationVectorTileService } from '../../../services/tiles/LocationVectorTileService.js';
 import { listLocationPoints } from '../../../services/pointRepository.js';
+import { BASE_LOCATION_TYPES } from './locationTypes.js';
 
 const KNOWN_LOCATION_TYPES: readonly LocationType[] = [
   'area_centroid',
@@ -61,6 +77,11 @@ type TileSummary = Awaited<ReturnType<LocationVectorTileService['getSessionSumma
 export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ draft: _draft, nodeId }) => {
   const { translations, locale } = useTranslation();
   const panelTranslations = translations.panel ?? {};
+  const selectionTranslations = translations.selection ?? {};
+  const selectionSettings = translations.selectionSettings ?? {};
+  const typeLabels = translations.locationTypes ?? {};
+  const typeDescriptions = selectionTranslations.typeDescriptions ?? {};
+  const controlId = useId();
   const previewNodeId = nodeId ?? 'preview' as NodeId;
   const [summary, setSummary] = useState<TileSummary | null>(null);
   const [locations, setLocations] = useState<PreviewLocationPoint[]>([]);
@@ -68,6 +89,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
   const [error, setError] = useState<string | null>(null);
   const serviceRef = useRef<LocationVectorTileService | null>(null);
   const isMountedRef = useRef(true);
+  const [activeTypeTab, setActiveTypeTab] = useState(0);
 
   if (!serviceRef.current) {
     serviceRef.current = new LocationVectorTileService();
@@ -155,6 +177,21 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     }
   }, [previewNodeId]);
 
+  const locationTypes = useMemo(() => BASE_LOCATION_TYPES.map((t) => {
+    const name = typeLabels[t.id] ?? t.id;
+    const descriptionKey = t.id as keyof typeof typeDescriptions;
+    return {
+      ...t,
+      name,
+      description: typeDescriptions[descriptionKey] ?? name,
+    };
+  }), [typeDescriptions, typeLabels]);
+
+  const activeType = locationTypes[activeTypeTab];
+  const airportSettings = selectionSettings.airport ?? {};
+  const railwaySettings = selectionSettings.railway_station ?? selectionSettings.railway ?? {};
+  const genericSettings = selectionSettings.generic ?? {};
+
   useEffect(() => () => {
     isMountedRef.current = false;
   }, []);
@@ -228,6 +265,156 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
 
   return (
     <Box display="flex" flexDirection="column" gap={2} sx={{ height: '100%' }}>
+      <Paper elevation={1} sx={{ p: 3 }}>
+        <Box display="flex" alignItems="center" gap={1} mb={2}>
+          <SettingsIcon color="primary" fontSize="small" />
+          <Typography variant="h6">
+            {selectionTranslations.settingsTitle ?? 'Location type settings'}
+          </Typography>
+        </Box>
+        {selectionTranslations.settingsDescription && (
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            {selectionTranslations.settingsDescription}
+          </Typography>
+        )}
+
+        <Tabs
+          value={activeTypeTab}
+          onChange={(_, value) => setActiveTypeTab(value)}
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
+        >
+          {locationTypes.map((type) => (
+            <Tab
+              key={type.id}
+              label={(
+                <Box display="flex" alignItems="center" gap={1}>
+                  <span>{type.icon}</span>
+                  <span>{type.name}</span>
+                </Box>
+              )}
+            />
+          ))}
+        </Tabs>
+
+        {activeType && (
+          <Box>
+            <Typography variant="subtitle1" gutterBottom>
+              {activeType.icon} {activeType.description}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              {genericSettings.advancedFilters ?? 'Configure advanced filters for this type.'}
+            </Typography>
+
+            {activeType.id === 'airport' && (
+              <Box
+                display="grid"
+                gridTemplateColumns={{ xs: '1fr', md: '1fr 1fr' }}
+                gap={3}
+              >
+                <FormControlLabel
+                  control={(
+                    <Switch
+                      defaultChecked
+                      inputProps={{
+                        id: `${controlId}-airport-include-heliports`,
+                        name: 'airport-include-heliports',
+                      }}
+                    />
+                  )}
+                  label={airportSettings.includeHeliports ?? 'Include heliports'}
+                />
+                <FormControlLabel
+                  control={(
+                    <Switch
+                      defaultChecked
+                      inputProps={{
+                        id: `${controlId}-airport-active-only`,
+                        name: 'airport-active-only',
+                      }}
+                    />
+                  )}
+                  label={airportSettings.activeOnly ?? 'Active airports only'}
+                />
+                <FormControlLabel
+                  control={(
+                    <Switch
+                      inputProps={{
+                        id: `${controlId}-airport-commercial-only`,
+                        name: 'airport-commercial-only',
+                      }}
+                    />
+                  )}
+                  label={airportSettings.commercialOnly ?? 'Commercial airports only'}
+                />
+                <Box>
+                  <Typography gutterBottom>
+                    {(airportSettings.minRunwayLengthLabel ?? 'Minimum runway length: {value} m').replace('{value}', '1500')}
+                  </Typography>
+                  <Slider min={300} max={5000} step={100} defaultValue={1500} />
+                </Box>
+              </Box>
+            )}
+
+            {activeType.id === 'railway_station' && (
+              <Box
+                display="grid"
+                gridTemplateColumns={{ xs: '1fr', md: '1fr 1fr' }}
+                gap={3}
+              >
+                <FormControlLabel
+                  control={(
+                    <Switch
+                      defaultChecked
+                      inputProps={{
+                        id: `${controlId}-railway-include-metro`,
+                        name: 'railway-include-metro',
+                      }}
+                    />
+                  )}
+                  label={railwaySettings.includeMetro ?? 'Include metro/light rail'}
+                />
+                <FormControlLabel
+                  control={(
+                    <Switch
+                      inputProps={{
+                        id: `${controlId}-railway-include-abandoned`,
+                        name: 'railway-include-abandoned',
+                      }}
+                    />
+                  )}
+                  label={railwaySettings.includeAbandoned ?? 'Include abandoned lines'}
+                />
+                <FormControlLabel
+                  control={(
+                    <Switch
+                      inputProps={{
+                        id: `${controlId}-railway-intercity-only`,
+                        name: 'railway-intercity-only',
+                      }}
+                    />
+                  )}
+                  label={railwaySettings.intercityOnly ?? 'Intercity only'}
+                />
+                <TextField
+                  type="number"
+                  label={railwaySettings.minPlatformsLabel ?? 'Minimum platforms'}
+                  defaultValue={1}
+                  size="small"
+                  id={`${controlId}-railway-min-platforms`}
+                  name="railway-min-platforms"
+                  inputProps={{
+                    id: `${controlId}-railway-min-platforms`,
+                    name: 'railway-min-platforms',
+                  }}
+                />
+              </Box>
+            )}
+          </Box>
+        )}
+      </Paper>
+
       <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
         <Typography variant="body2" color="text.secondary">
           {translations.mapPreview?.description ?? 'Preview the generated points on the map.'}

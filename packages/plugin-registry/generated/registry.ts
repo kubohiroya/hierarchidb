@@ -331,6 +331,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     packageName: "@hierarchidb/location-plugin",
     version: "0.1.0",
     dependencies: [
+        "@hierarchidb/gen-iso3166-2",
         "@hierarchidb/plugin-base",
         "@hierarchidb/ui-tabular-extract",
         "@hierarchidb/spreadsheet-plugin",
@@ -361,7 +362,10 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/ui-dialog",
         "@hierarchidb/plugin-ui-sdk",
         "@hierarchidb/plugin-base",
-        "@hierarchidb/ui-worker-client"
+        "@hierarchidb/ui-worker-client",
+        "@hierarchidb/ui-search-field",
+        "react-virtuoso",
+        "notistack"
       ],
     exports: ["","worker","icon","ui","database"],
     manifest: {
@@ -374,6 +378,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "extends": "folder",
         "priority": 40,
         "dependencies": [
+          "@hierarchidb/gen-iso3166-2",
           "@hierarchidb/plugin-base",
           "@hierarchidb/ui-tabular-extract",
           "@hierarchidb/spreadsheet-plugin",
@@ -404,7 +409,10 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/ui-dialog",
           "@hierarchidb/plugin-ui-sdk",
           "@hierarchidb/plugin-base",
-          "@hierarchidb/ui-worker-client"
+          "@hierarchidb/ui-worker-client",
+          "@hierarchidb/ui-search-field",
+          "react-virtuoso",
+          "notistack"
         ],
         "icon": {
           "mui": "LocationOn",

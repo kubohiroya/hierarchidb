@@ -1,6 +1,3 @@
-// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
-import storybook from "eslint-plugin-storybook";
-
 // Flat ESLint config for the monorepo (ESLint v9)
 // - Resolves prior failure: "ESLint couldn't find an eslint.config.* file"
 // - Enables type-aware deprecation checks for selected packages
@@ -14,6 +11,15 @@ import reactHooks from 'eslint-plugin-react-hooks';
 process.env.TYPESCRIPT_ESLINT_SUPPRESS_WARNINGS = 'true';
 const tsParserModule = await import('@typescript-eslint/parser');
 const tsParser = tsParserModule.default ?? tsParserModule;
+
+// Storybook plugin is optional; load only if its peer dependency is resolvable.
+let storybookConfigs = [];
+try {
+  const storybook = (await import('eslint-plugin-storybook')).default ?? (await import('eslint-plugin-storybook'));
+  storybookConfigs = storybook.configs?.['flat/recommended'] ?? [];
+} catch (err) {
+  console.warn('[eslint-config] eslint-plugin-storybook disabled:', err?.message ?? err);
+}
 
 /** @type {import('eslint').Linter.FlatConfig[]} */
 export default [// Ignore _obsolate_common build artifacts across the monorepo
@@ -154,4 +160,4 @@ export default [// Ignore _obsolate_common build artifacts across the monorepo
       ],
     }],
   },
-}, ...storybook.configs["flat/recommended"], ...storybook.configs["flat/recommended"], ...storybook.configs["flat/recommended"], ...storybook.configs["flat/recommended"]];
+}, ...storybookConfigs];

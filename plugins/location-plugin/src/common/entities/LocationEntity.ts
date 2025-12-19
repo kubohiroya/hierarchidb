@@ -32,6 +32,10 @@ export type LocationDataSource =
   | 'geonames'
   | 'wikidata'
   | 'overpass'
+  | 'ourairports'
+  | 'openflights'
+  | 'world-port-index'
+  | 'natural-earth'
   | 'custom'
   | 'manual';
 

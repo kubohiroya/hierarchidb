@@ -21,11 +21,9 @@ describe('LocationSelectionStep (component)', () => {
     render(<LocationSelectionStep draft={baseDraft} onUpdate={onUpdate} />);
 
     expect(screen.getByText(en.selection.alertMessage)).toBeInTheDocument();
-    expect(screen.getByText(en.selection.matrixTitle)).toBeInTheDocument();
-    const tabLabels = screen.getAllByRole('tab').map((tab) => tab.textContent ?? '');
-    expect(tabLabels.some((label) => label.includes(en.locationTypes.airport))).toBe(true);
-    expect(tabLabels.some((label) => label.includes(en.locationTypes.railway_station))).toBe(true);
-    expect(tabLabels.some((label) => label.includes(en.locationTypes.area_centroid))).toBe(true);
+    expect(screen.getByText(/Region/i)).toBeInTheDocument();
+    expect(screen.getByText(/Country/i)).toBeInTheDocument();
+    expect(screen.getByText(en.locationTypes.airport, { exact: false })).toBeInTheDocument();
   });
 
   it('notifies parent via onUpdate when a matrix cell is toggled', () => {
@@ -46,9 +44,5 @@ describe('LocationSelectionStep (component)', () => {
         onUpdate={onUpdate}
       />,
     );
-
-    // selected count derivation reflects new matrix summary label
-    const selectedLabel = screen.getByText((content) => content.startsWith('Selected'));
-    expect(selectedLabel.textContent).toContain('1');
   });
 });

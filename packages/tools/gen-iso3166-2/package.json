@@ -1,0 +1,35 @@
+{
+  "name": "@hierarchidb/gen-iso3166-2",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "gen-iso3166-2": "dist/gen-iso3166-2.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./cli": {
+      "import": "./dist/gen-iso3166-2.js",
+      "types": "./dist/gen-iso3166-2.d.ts"
+    }
+  },
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown src/gen-iso3166-2.ts src/index.ts --config ../../../tsdown.config.ts --outDir dist --splitting false --target node18 --format esm --banner.js '#!/usr/bin/env node'",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit --project tsconfig.json",
+    "start": "node dist/gen-iso3166-2.js"
+  },
+  "dependencies": {
+    "@hierarchidb/download": "workspace:*",
+    "cheerio": "^1.0.0-rc.12",
+    "dexie": "^3.2.4",
+    "p-limit": "^4.0.0"
+  }
+}

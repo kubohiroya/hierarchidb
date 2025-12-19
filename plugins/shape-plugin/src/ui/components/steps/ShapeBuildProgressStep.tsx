@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Box } from '@mui/material';
 import { BuildStepPanel, type BuildStatus } from '@hierarchidb/components';
 import type { ShapeEntity } from '../../../common/types/index.js';
-import { useTranslation as getTranslation } from '../../../ui/i18n.js';
+import { useTranslation as getTranslation } from '../../i18n.js';
 
 const STAGES = [
   { id: 'prepare', title: 'Prepare', description: 'Validate selections and metadata.' },

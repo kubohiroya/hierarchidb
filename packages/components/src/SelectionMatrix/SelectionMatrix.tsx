@@ -19,6 +19,8 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import { TableVirtuoso, type ItemProps, type TableComponents } from 'react-virtuoso';
 
 export interface SelectionMatrixColumn {
@@ -46,7 +48,6 @@ export interface SelectionMatrixProps<T = any> {
   onSelectRow?: (rowIndex: number, checked: boolean, enabledColumnIndices: number[]) => void;
   showRowSelection?: boolean;
   showColumnSelection?: boolean;
-  showSelectionCount?: boolean;
   maxHeight?: number;
   stickyHeader?: boolean;
   dense?: boolean;
@@ -64,6 +65,24 @@ export interface SelectionMatrixProps<T = any> {
   ) => React.HTMLAttributes<HTMLTableRowElement>;
   /** Optional row height for virtualization */
   rowHeight?: number;
+  /** Optional extra row metadata columns (e.g., region, country). */
+  rowMetaColumns?: Array<{
+    header: React.ReactNode;
+    render: (row: SelectionMatrixRow<T>, rowIndex: number) => React.ReactNode;
+    width?: number | string;
+  }>;
+  /** Hide selection count column/chips; counts remain available via tooltips. */
+  showSelectionCount?: boolean;
+  /** Optional callback for column header clicks (e.g., sorting). */
+  onColumnHeaderClick?: (colIndex: number) => void;
+  /** Optional callback for row meta header clicks (e.g., sorting). */
+  onRowMetaHeaderClick?: (metaIndex: number) => void;
+  /** Optional sort direction indicator per column (asc/desc/none). */
+  getColumnSortDirection?: (colIndex: number) => 'asc' | 'desc' | 'none';
+  /** Optional sort direction indicator per row meta column. */
+  getRowMetaSortDirection?: (metaIndex: number) => 'asc' | 'desc' | 'none';
+  /** Optional ref to Virtuoso for imperative actions like scrollToIndex. */
+  virtuosoRef?: React.Ref<any>;
 }
 
 export function SelectionMatrix<T = any>({
@@ -75,7 +94,7 @@ export function SelectionMatrix<T = any>({
                                            onSelectRow,
                                            showRowSelection = false,
                                            showColumnSelection = true,
-                                           showSelectionCount = true,
+                                           showSelectionCount = false,
                                            maxHeight = 400,
                                            stickyHeader = true,
                                            dense = false,
@@ -88,6 +107,12 @@ export function SelectionMatrix<T = any>({
                                            ),
                                            getRowProps,
                                            rowHeight = 48,
+                                           rowMetaColumns,
+                                           onColumnHeaderClick,
+                                           onRowMetaHeaderClick,
+                                           getColumnSortDirection,
+                                           getRowMetaSortDirection,
+                                           virtuosoRef,
                                          }: SelectionMatrixProps<T>): React.ReactElement {
   // Calculate selection counts
   const columnCounts = useMemo(() => {
@@ -239,7 +264,7 @@ export function SelectionMatrix<T = any>({
   const renderHeader = () => (
     <TableRow>
       {showRowSelection && showColumnSelection && (onSelectAll || onSelectRow) && (
-        <TableCell padding="checkbox" sx={{ width: 50 }}>
+        <TableCell padding="checkbox" sx={{ width: 50, p: '4px' }}>
           <Checkbox
             checked={allSelected}
             indeterminate={allIndeterminate}
@@ -252,48 +277,92 @@ export function SelectionMatrix<T = any>({
       {showRowSelection && (
         <TableCell padding="checkbox" sx={{ width: 50 }} />
       )}
-      <TableCell sx={{ minWidth: 200 }}>
-        <Typography variant="subtitle2">{rowHeaderLabel}</Typography>
+      {rowMetaColumns && rowMetaColumns.length > 0 ? (
+        rowMetaColumns.map((meta, idx) => (
+      <TableCell
+        key={`meta-${idx}`}
+        sx={{
+          minWidth: 120,
+          width: meta.width,
+          cursor: onRowMetaHeaderClick ? 'pointer' : undefined,
+          pl: '8px',
+          pr: '8px',
+          pt: '4px',
+          pb: '4px',
+        }}
+        onClick={onRowMetaHeaderClick ? () => onRowMetaHeaderClick(idx) : undefined}
+      >
+        <Box display="flex" alignItems="center" gap={0.5}>
+          <Typography variant="subtitle2">
+            {meta.header}
+          </Typography>
+          {getRowMetaSortDirection && (() => {
+            const dir = getRowMetaSortDirection(idx);
+            if (dir === 'asc') return <ArrowUpwardIcon fontSize="inherit" sx={{ fontSize: 16 }} />;
+            if (dir === 'desc') return <ArrowDownwardIcon fontSize="inherit" sx={{ fontSize: 16 }} />;
+            return null;
+          })()}
+        </Box>
       </TableCell>
+        ))
+      ) : (
+        <TableCell sx={{ minWidth: 200, p: '4px' }}>
+          <Typography variant="subtitle2">{rowHeaderLabel}</Typography>
+        </TableCell>
+      )}
       {columns.map((column, colIndex) => (
         <TableCell
           key={column.id}
           align="center"
-          sx={{ width: column.width || 120 }}
+          sx={{ width: column.width || 120, pl: '8px', pr: '8px', pt: '4px', pb: '4px' }}
+          onClick={onColumnHeaderClick ? () => onColumnHeaderClick(colIndex) : undefined}
         >
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            {showColumnSelection && onSelectAll && (
-              <Checkbox
-                checked={isColumnSelected(colIndex)}
-                indeterminate={isColumnIndeterminate(colIndex)}
-                onChange={() => handleColumnSelectAll(colIndex)}
-                disabled={
-                  !rows.some((row, rowIndex) =>
-                    isCellEnabled(row, column, rowIndex, colIndex),
-                  )
-                }
-                size="small"
-              />
-            )}
-            {column.description ? (
-              <Tooltip title={column.description}>
-                <Typography variant="caption" sx={{ cursor: 'help' }}>
-                  {column.label}
-                </Typography>
-              </Tooltip>
-            ) : (
-              <Typography variant="caption">
-                {column.label}
-              </Typography>
-            )}
-            {showSelectionCount && (
-              <Chip
-                label={columnCounts[colIndex]}
-                size="small"
-                variant="outlined"
-                sx={{ mt: 0.5, minWidth: 32, height: 20 }}
-              />
-            )}
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: onColumnHeaderClick ? 'pointer' : 'default' }}>
+            <Tooltip
+              title={`${column.label}: ${columnCounts[colIndex]} selected`}
+              disableInteractive
+            >
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                {showColumnSelection && onSelectAll && (
+                  <Checkbox
+                    checked={isColumnSelected(colIndex)}
+                    indeterminate={isColumnIndeterminate(colIndex)}
+                    onChange={() => handleColumnSelectAll(colIndex)}
+                    disabled={
+                      !rows.some((row, rowIndex) =>
+                        isCellEnabled(row, column, rowIndex, colIndex),
+                      )
+                    }
+                    size="small"
+                  />
+                )}
+                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+                  {column.description ? (
+                    <Typography variant="caption" sx={{ cursor: 'help' }}>
+                      {column.label}
+                    </Typography>
+                  ) : (
+                    <Typography variant="caption">
+                      {column.label}
+                    </Typography>
+                  )}
+                  {getColumnSortDirection && (() => {
+                    const dir = getColumnSortDirection(colIndex);
+                    if (dir === 'asc') return <ArrowUpwardIcon fontSize="inherit" sx={{ fontSize: 16 }} />;
+                    if (dir === 'desc') return <ArrowDownwardIcon fontSize="inherit" sx={{ fontSize: 16 }} />;
+                    return null;
+                  })()}
+                </Box>
+                {showSelectionCount && (
+                  <Chip
+                    label={columnCounts[colIndex]}
+                    size="small"
+                    variant="outlined"
+                    sx={{ mt: 0.5, minWidth: 32, height: 20 }}
+                  />
+                )}
+              </Box>
+            </Tooltip>
           </Box>
         </TableCell>
       ))}
@@ -331,26 +400,37 @@ export function SelectionMatrix<T = any>({
             />
           </TableCell>
         )}
-        <TableCell>
-          <Box>
-            {row.tooltip ? (
-              <Tooltip title={row.tooltip}>
-                <Typography variant="body2" sx={{ cursor: 'help' }}>
+        {rowMetaColumns && rowMetaColumns.length > 0 ? (
+          rowMetaColumns.map((meta, metaIndex) => (
+            <TableCell
+              key={`meta-${row.id}-${metaIndex}`}
+              title={`${row.label}: ${rowCounts[rowIndex] ?? 0} selected`}
+            >
+              {meta.render(row, rowIndex)}
+            </TableCell>
+          ))
+        ) : (
+          <TableCell title={`${row.label}: ${rowCounts[rowIndex] ?? 0} selected`}>
+            <Box>
+              {row.tooltip ? (
+                <Tooltip title={row.tooltip}>
+                  <Typography variant="body2" sx={{ cursor: 'help' }}>
+                    {row.label}
+                  </Typography>
+                </Tooltip>
+              ) : (
+                <Typography variant="body2">
                   {row.label}
                 </Typography>
-              </Tooltip>
-            ) : (
-              <Typography variant="body2">
-                {row.label}
-              </Typography>
-            )}
-            {row.subLabel && (
-              <Typography variant="caption" color="text.secondary">
-                {row.subLabel}
-              </Typography>
-            )}
-          </Box>
-        </TableCell>
+              )}
+              {row.subLabel && (
+                <Typography variant="caption" color="text.secondary">
+                  {row.subLabel}
+                </Typography>
+              )}
+            </Box>
+          </TableCell>
+        )}
         {columns.map((column, colIndex) => (
           <TableCell key={column.id} align="center" padding="checkbox">
             {isCellEnabled(row, column, rowIndex, colIndex) ? (
@@ -443,6 +523,7 @@ export function SelectionMatrix<T = any>({
       components={VirtuosoTableComponents}
       style={{ height: maxHeight }}
       defaultItemHeight={rowHeight}
+      ref={virtuosoRef}
     />
   );
 }

@@ -44,6 +44,7 @@
     "@tanstack/react-router": "^1.132.33",
     "comlink": "^4.4.2",
     "dexie": "^4.2.0",
+    "@hierarchidb/gen-iso3166-2": "workspace:*",
     "i18next-browser-languagedetector": "^8.2.0",
     "i18next-http-backend": "^3.0.2",
     "inversify": "^6.0.2",

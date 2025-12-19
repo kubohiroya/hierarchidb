@@ -58,10 +58,14 @@
     "searchPlaceholder": "国名で検索...",
     "showSelectedOnly": "選択のみ表示",
     "selectAll": "すべて選択",
-    "deselectAll": "すべて解除"
+    "deselectAll": "すべて解除",
+    "indexLabel": "索引",
+    "regionIndexLabel": "地域索引",
+    "selectedCountLabel": "選択済み: {{count}}",
+    "notSelectedCountLabel": "未選択: {{count}}"
   },
   "locationTypes": {
-    "area_centroid": "エリア中心点",
+    "area_centroid": "区域の中心",
     "airport": "空港",
     "port": "港",
     "railway_station": "駅",

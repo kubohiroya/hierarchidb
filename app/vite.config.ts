@@ -19,6 +19,7 @@ import {
   shouldUseSource,
   toPosixRelative,
 } from '../config/dev-alias-config.js';
+import { createIso3166Plugin } from '@hierarchidb/gen-iso3166-2';
 import type { DevAliasSelection, WorkspacePackageMeta } from '../config/dev-alias-config.js';
 import {
   generatePluginRegistry,
@@ -594,6 +595,11 @@ export default defineConfig(({ mode, isSsrBuild }) => {
     pluginRegistryGeneratorPlugin({
       rootDir: repoRoot,
       mode: isDev ? 'package' : 'dist-url',
+    }),
+    createIso3166Plugin({
+      outputDir: 'public',
+      outputFile: 'iso3166-2-level1.csv',
+      failureFile: 'iso3166-2-level1.failures.csv',
     }),
     createNodeTypeAliasPlugin({
       rootDir: repoRoot,

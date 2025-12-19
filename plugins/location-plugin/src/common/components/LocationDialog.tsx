@@ -13,7 +13,6 @@ import type {
   LocationEntity,
 } from '../types/index.js';
 import { useTranslation } from '../i18n/index.js';
-import { LocationLicenseStep } from '../../ui/components/steps/LocationLicenseStep.js';
 import { LocationSelectionStep } from '../../ui/components/steps/LocationSelectionStep.js';
 import { LocationBatchParametersStep } from '../../ui/components/steps/LocationBatchParametersStep.js';
 import { LocationMapPreviewStep } from '../../ui/components/steps/LocationMapPreviewStep.js';
@@ -327,13 +326,6 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
             />
           </Box>
         </TabularProvider>
-      ),
-    },
-    {
-      id: 'license',
-      label: translations.dialog.licenseAgreementLabel,
-      component: ({ data, onChange }: { data: LocationDraft; onChange: (patch: Partial<LocationDraft>) => void }) => (
-        <LocationLicenseStep draft={data} onUpdate={onChange} />
       ),
     },
     {
