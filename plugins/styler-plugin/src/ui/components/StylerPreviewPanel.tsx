@@ -159,7 +159,6 @@ const TableRowComponent: React.FC<{
   }) => {
     const theme = useTheme();
 
-    //  :
     const colorResult = useMemo(() => {
       if (!valueColumn || !showColorPreview) {
         return null;
@@ -171,6 +170,10 @@ const TableRowComponent: React.FC<{
       }
       return null;
     }, [rowData, valueColumn, mapping, config, showColorPreview]);
+
+    const colorLabel = colorResult?.color
+      ? (colorResult.color.startsWith('#') ? colorResult.color.toUpperCase() : colorResult.color)
+      : undefined;
 
     return (
       <TableRow hover>
@@ -208,7 +211,7 @@ const TableRowComponent: React.FC<{
               <Stack direction="row" spacing={1} alignItems="center">
                 {/* Color Preview */}
                 {isValueColumn && showColorPreview && colorResult && (
-                  <Tooltip title={`Color: ${colorResult.color}`}>
+                  <Tooltip title={colorLabel ?? 'Color preview'}>
                     <Box
                       sx={{
                         width: 24,

@@ -4507,6 +4507,10 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1752) ダイアログ Step1 の Stepper 見出し "Basic Information" i18n 化（P1） — 完了 (2025-12-20)
+  - 要点：Stepper Step1 のラベルを `common.basicInfo.title` の i18n キー参照へ変更し、日本語リソースに Basic Information 相当の翻訳を追加。
+  - 検証：未実施（UI 表示確認は未実行）。
+  - ロールバック手順：`packages/plugin-ui-host/src/headless/usePluginDialogController.tsx` と `packages/ui/i18n/public/locales/ja/common.json` の差分を revert し、表示確認を再実行する。
 - 1764) iso-3166-2 country_en のクオート正規化（P1） — 完了 (2025-12-19)
   - 要点：country_en の前後クオートを常に除去し、csvEscape による通常の quoted-field のみが出力されるよう正規化。既存 CSV も国名列のみ正規化して `"""` を除去。
   - 検証：`pnpm --filter @hierarchidb/gen-iso3166-2 typecheck`（2025-12-19 23:54 JST）exit 0。
@@ -10607,3 +10611,6 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-20 09:40 progress: fix/location/step3-region-label — ISO 3166 CSV の location が日本語/地域名（例: 北アメリカ/ヨーロッパ/中央アメリカ/インド洋）でも `useIsoCountries` の正規化が英語単語判定のみで、未一致はすべて 'NA' へ落ちていた。日本語/英語の地域名を広く拾うマッチ条件を追加し、未知のみ NA へフォールバックするよう修正。ロールバック: `packages/ui/country-select/src/hooks/useIsoCountries.ts` の正規化追加差分を revert し、`pnpm --filter @hierarchidb/location-plugin typecheck` を再実行。
 - 2025-12-20 09:41 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 0。
 - 2025-12-20 09:45 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 0。
+- 2025-12-20 09:51 start: fix/plugin-stepper/basic-info-i18n — ダイアログ Step1 の Stepper 見出し "Basic Information" を i18n 経由表示に変更する対応に着手。DoD: Kanban/運用ログ更新、i18n キー追加、表示崩れなし、確認ログとロールバック手順記載。branch 作成不可なら main 作業。
+- 2025-12-20 09:54 progress: fix/plugin-stepper/basic-info-i18n — Stepper ラベルの参照キーを `common.basicInfo.title` へ差し替え、`packages/ui/i18n/public/locales/ja/common.json` に Basic Information の翻訳を追加。
+- 2025-12-20 09:55 done: fix/plugin-stepper/basic-info-i18n — Step1 Stepper 見出しの i18n 化を実施。検証: UI 表示確認は未実施。ロールバック: `packages/plugin-ui-host/src/headless/usePluginDialogController.tsx` と `packages/ui/i18n/public/locales/ja/common.json` の差分を revert し、表示確認を再実行。
