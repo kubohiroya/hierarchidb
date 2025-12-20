@@ -1,6 +1,8 @@
 import { Box, Stack, TextField, Typography } from '@mui/material';
 import type React from 'react';
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, useId } from 'react';
+import { atom, type PrimitiveAtom } from 'jotai';
+import { createStore } from 'jotai/vanilla';
 import {
   loadMapLibreMap,
   type MapLibreMapInstance,
@@ -62,6 +64,7 @@ const LazyMapLibreMap = lazy(async () => {
 export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onChange }) => {
   const { t } = useTranslation('basemap-plugin');
   const controlId = useId();
+  type AtomStore = ReturnType<typeof createStore>;
   const initial = useMemo<MapViewState>(
     () => ({
       longitude: value?.center[0] ?? FALLBACK_VIEWPORT.center[0],
@@ -77,6 +80,12 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
   const [canRenderMap, setCanRenderMap] = useState(false);
   const lastEmittedRef = useRef<MapViewState>(initial);
   const mapRef = useRef<MapLibreMapInstance | null>(null);
+  const dragStoreRef = useRef<AtomStore>(createStore());
+  const dragAtomRef = useRef<PrimitiveAtom<MapViewState>>(atom(initial));
+
+  const setDragViewState = useCallback((next: MapViewState) => {
+    dragStoreRef.current.set(dragAtomRef.current, next);
+  }, []);
 
   useEffect(() => {
     // Ensure we only render the map after the component is mounted in the browser.
@@ -93,6 +102,7 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
       pitch: 0,
     };
     setViewState((prev) => (areViewStatesEqual(prev, next) ? prev : next));
+    setDragViewState(next);
     lastEmittedRef.current = next;
     if (mapRef.current) {
       const mapState: MapViewState = {
@@ -142,8 +152,8 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
     []
   );
 
-  const propagate = useCallback(
-    (next: MapViewState, source: 'form' | 'map-move' | 'map-end') => {
+  const commitViewState = useCallback(
+    (next: MapViewState, source: 'form' | 'map-end') => {
       setViewState((prev) => {
         if (areViewStatesEqual(prev, next)) return prev;
         return next;
@@ -174,16 +184,19 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
 
   const handleViewStateChange = useCallback(
     (next: MapViewState) => {
-      propagate(next, 'map-move');
+      setDragViewState(next);
+      setViewState((prev) => (areViewStatesEqual(prev, next) ? prev : next));
     },
-    [propagate]
+    [setDragViewState]
   );
 
   const handleViewStateChangeEnd = useCallback(
     (next: MapViewState) => {
-      propagate(next, 'map-end');
+      setDragViewState(next);
+      const latest = dragStoreRef.current.get(dragAtomRef.current);
+      commitViewState(latest ?? next, 'map-end');
     },
-    [propagate]
+    [commitViewState, setDragViewState]
   );
 
   const setViewportFromInput = useCallback(
@@ -195,9 +208,9 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
         bearing: next.bearing ?? viewState.bearing ?? 0,
         pitch: 0,
       };
-      propagate(updated, 'form');
+      commitViewState(updated, 'form');
     },
-    [propagate, viewState]
+    [commitViewState, viewState]
   );
 
   const formatCoord = (val: number, digits: number = 4) => {

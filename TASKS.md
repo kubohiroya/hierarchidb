@@ -53,18 +53,6 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
-1765) basemap Step3 ドラッグ不具合の原因分析（P1）
-- ブランチ: `analysis/basemap/step3-drag-once`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: plugins/basemap-plugin/src/ui/components/steps/ViewportStep.tsx、packages/ui/map/src/components/MapLibreMap.tsx
-- 受け入れ基準（DoD）:
-  - [ ] ドラッグが初回のみ反応する原因をコード上で特定し、再現条件と影響範囲を整理する
-  - [ ] 原因に応じた修正案を2案以上提示する（一時状態の ref/Jotai 管理＋drag end 反映案を含む）
-  - [ ] TASKS 運用ログに原因整理と修正案、ロールバック方針（調査のみなら差分なし）を記載する
-- チェックリスト:
-  - [ ] ViewportStep と MapLibreMap のイベント連携を確認する
-  - [ ] 上位 onChange 連携による再レンダリング/状態更新の影響を整理する
-- ロールバック手順：調査のみのため差分なし（記録内容を戻す場合は本タスクのエントリと運用ログ追記を削除する）
-
 1751) location-plugin Step3 国選択の continent 表示修正（P1）
 - ブランチ: `fix/location/step3-region-label`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: plugins/location-plugin（Step3 国選択 UI）、packages/ui/country-select（continent 正規化）
@@ -4519,6 +4507,18 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1766) basemap Step3 ドラッグ操作の状態管理改善（P1） — 完了 (2025-12-20)
+  - 要点：ドラッグ中は Jotai store + ref に一時保持し、onMoveEnd でのみ上位へ commit するよう変更。連続ドラッグ時の再レンダリング干渉を抑制。basemap-plugin に jotai を peer/dev 追加。
+  - 検証：`pnpm --filter @hierarchidb/basemap-plugin typecheck`（2025-12-20 00:56 JST）exit 0。
+  - ロールバック手順：`plugins/basemap-plugin/src/ui/components/steps/ViewportStep.tsx` と `plugins/basemap-plugin/package.json` の差分を revert し、同 typecheck を再実行する。
+- 1765) basemap Step3 ドラッグ不具合の原因分析（P1） — 完了 (2025-12-20)
+  - 要点：onMove で上位 onChange が発火し、value 更新→useEffect 同期/jumpTo がドラッグ中に割り込む構造が原因。対策として drag end commit / 一時状態保持を採用。
+  - 検証：調査のみ（コード読み）。
+  - ロールバック手順：調査記録のみのため差分なし。記載内容を戻す場合は本タスクの運用ログ追記を削除する。
+- 1754) @hierarchidb/tools build 出力の Turbo 設定修正（P1） — 完了 (2025-12-20)
+  - 要点：`@hierarchidb/tools#build` がルートに dist を生成しないため、`packages/tools/package.json` の turbo outputs を `*/dist/**` へ設定して warning を抑制。
+  - 検証：未実施（`pnpm --filter @hierarchidb/tools build` 未実行）。
+  - ロールバック手順：`packages/tools/package.json` の turbo 設定差分を revert し、build を再実行する。
 - 1753) ダイアログ右上ボタンのツールチップ i18n 化（P1） — 完了 (2025-12-20)
   - 要点：PluginDialogControls の Maximize/FullScreen/Close ツールチップと aria-label を `dialogs.pluginDialog.tooltips.*` の i18n 参照へ変更。
   - 検証：未実施（UI 表示確認は未実行）。
@@ -10602,8 +10602,17 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-19 23:05 progress: styler Step5 color tooltip — valueColumn のカラーチップに Tooltip を付与し、色コードを表示できるように修正。Box を span/aria-label にして hover トリガーを確実化。
+- 2025-12-19 23:05 command: pnpm --filter @hierarchidb/styler-plugin typecheck — exit 0。
 - 2025-12-20 00:20 start: analysis/basemap/step3-drag-once — basemap Step3 のドラッグが初回のみ反応する問題の原因分析に着手。DoD: 原因/影響範囲の整理、修正案提示、運用ログ記録。branch 作成不可なら main 作業。
 - 2025-12-20 00:32 progress: analysis/basemap/step3-drag-once — ViewportStep が onMove のたびに onChange を発火し、上位 draft 更新→value 変更→useEffect 同期/jumpTo が走るため、ドラッグ中に状態同期が割り込む構造を確認。修正案: (1) onMove では local state/ref のみ更新し、onMoveEnd でのみ onChange 反映、(2) Jotai/ref に一時保持し drag end で commit、(3) onChange を debounce/throttle し、同期 effect では map.isMoving 中の jumpTo を抑制。
+- 2025-12-20 00:34 done: analysis/basemap/step3-drag-once — 原因と修正案を整理済み。ロールバック: 調査記録のみのため差分なし。
+- 2025-12-20 00:45 start: fix/basemap/viewport-drag-state — Jotai + ref でドラッグ中の viewState を保持し、drag end で commit する修正に着手。branch 作成不可なら main 作業。
+- 2025-12-20 00:48 progress: fix/basemap/viewport-drag-state — ViewportStep の onMove はローカル state/Jotai store 更新のみ、onMoveEnd で commit する構成に変更。jotai を basemap-plugin の peer/dev に追加。
+- 2025-12-20 00:50 command: pnpm --filter @hierarchidb/basemap-plugin typecheck — exit 2（ViewportStep.tsx: jotai/vanilla の Store 型 export 不在）。
+- 2025-12-20 00:52 command: pnpm --filter @hierarchidb/basemap-plugin typecheck — exit 0。
+- 2025-12-20 00:56 command: pnpm --filter @hierarchidb/basemap-plugin typecheck — exit 0。
+- 2025-12-20 00:53 done: fix/basemap/viewport-drag-state — drag end commit 方式へ切替し連続ドラッグを阻害する再レンダリングを抑制。ロールバック: `plugins/basemap-plugin/src/ui/components/steps/ViewportStep.tsx` と `plugins/basemap-plugin/package.json` の差分を revert し、同 typecheck を再実行。
 - 2025-12-19 23:40 start: fix/gen-iso3166-2/country-quote-normalize — country_en の余計なクオートを常に除去する対応に着手。DoD: quoted-field 維持・typecheck ログ・原因/修正/ロールバック記載。branch 作成不可なら main 作業。
 - 2025-12-19 23:52 progress: fix/gen-iso3166-2/country-quote-normalize — country_en の前後クオートを除去し、CSV の国名列を正規化（`"""` を除去）。
 - 2025-12-19 23:54 command: pnpm --filter @hierarchidb/gen-iso3166-2 typecheck — exit 0。
@@ -10635,3 +10644,6 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-20 10:01 start: fix/dialog-header/tooltip-i18n — ダイアログ右上の Maximize/FullScreen/Close ツールチップを i18n 化する対応に着手。DoD: Kanban/運用ログ更新、i18n 参照へ置換、表示崩れなし、確認ログとロールバック手順記載。branch 作成不可なら main 作業。
 - 2025-12-20 10:02 progress: fix/dialog-header/tooltip-i18n — PluginDialogControls のツールチップ/aria-label を `dialogs.pluginDialog.tooltips.*` 参照へ置換。
 - 2025-12-20 10:03 done: fix/dialog-header/tooltip-i18n — Maximize/FullScreen/Close のツールチップ i18n 化を完了。検証: UI 表示確認は未実施。ロールバック: `packages/plugin-ui-host/src/headless/components/PluginDialogControls.tsx` の差分を revert し、表示確認を再実行。
+- 2025-12-20 10:19 start: fix/tools/turbo-outputs — @hierarchidb/tools#build の outputs 未検出 warning を解消する対応に着手。DoD: Kanban/運用ログ更新、Turbo outputs 修正、確認ログとロールバック手順記載。branch 作成不可なら main 作業。
+- 2025-12-20 10:20 progress: fix/tools/turbo-outputs — `packages/tools/package.json` の turbo outputs を `*/dist/**` に設定して tools 配下の dist を検出可能に変更。
+- 2025-12-20 10:21 done: fix/tools/turbo-outputs — tools build outputs 設定を修正し warning 対策を完了。検証: `pnpm --filter @hierarchidb/tools build` 未実行。ロールバック: `packages/tools/package.json` の turbo 設定差分を revert し、build を再実行する。
