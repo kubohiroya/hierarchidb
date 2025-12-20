@@ -214,7 +214,7 @@ export class BatchSessionManager {
 
     switch (command) {
       case 'session/pause':
-        STAGES.forEach((stage) => shared.pauseStage(stage));
+        STAGES.forEach((stage) => { shared.pauseStage(stage); });
         await this.pauseSession(sessionId);
         break;
       case 'session/resume':

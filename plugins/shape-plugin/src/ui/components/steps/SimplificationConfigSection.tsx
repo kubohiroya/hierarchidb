@@ -26,12 +26,16 @@ type Props = {
 
 export const SimplificationConfigSection: React.FC<Props> = ({ config, disabled, onChange }) => {
   const controlId = useId();
-  const baseSimplificationConfig: SimplificationProcessingConfig =
-    config.simplificationConfig ?? DEFAULT_PROCESSING_CONFIG.simplificationConfig!;
+  const baseSimplificationConfig: SimplificationProcessingConfig|undefined =
+    config.simplificationConfig ?? DEFAULT_PROCESSING_CONFIG.simplificationConfig;
 
   const update = (partial: Partial<ProcessingConfig>) => {
     onChange(mergeProcessingConfig({ ...config, ...partial }));
   };
+
+  if(!baseSimplificationConfig){
+    throw new Error("SimplificationConfigSection: baseSimplificationConfig is not defined");
+  }
 
   return (
     <Accordion defaultExpanded>

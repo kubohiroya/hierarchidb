@@ -69,8 +69,8 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
         borderBottom: 1,
         borderColor: 'divider',
         //backgroundColor: state.color,
-        color: 'red', //FIXME
-        backgroundColor: 'blue', //FIXME
+        color: 'primary',
+        backgroundColor: theme.palette.background.paper,
         cursor: clickable ? 'pointer' : 'default',
         display: 'flex',
         alignItems: 'center',

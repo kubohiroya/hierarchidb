@@ -1,32 +1,20 @@
-import type { TreeNodeMetadata, TreeNodeUpdaterPayload, NodeId as CommonNodeId } from '@hierarchidb/common-types';
-import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
-import type { TabularDataResult } from '@hierarchidb/ui-tabular-extract';
+// import type {TreeNodeUpdaterPayload } from '@hierarchidb/common-types';
+// import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
+// import type { TabularDataResult } from '@hierarchidb/ui-tabular-extract';
 import type { BBox, Geometry } from 'geojson';
+import type { LayerInfo } from './batch.js';
 import type { DataSourceName, UrlMetadata } from './data-source.js';
 import type { ProcessingConfig } from './processing.js';
 
-export type NodeId = CommonNodeId;
-export type NodeType = string;
-
-export interface PeerEntity {
-  id: NodeId;
-  dialogMode?: 'normal' | 'full';
-  resumeStep?: number;
-  mapParams?: { zoom: number; lng: number; lat: number };
-  disabled?: boolean;
-}
-
-export interface ShapeEntity extends PeerEntity {
-  // Tree metadata (name/description/tags) is authoritative and lives in TreeNode metadata
-  metadata?: TreeNodeMetadata;
-  tabularMetadataId?: string;
-  tabularFilters?: unknown; // kept broad; concrete type in data-source module
-  tabularMetadata?: TabularTableMetadata | null;
-  tabularFile?: TabularFileSummary;
-  tabularLastPreview?: TabularDataResult;
+export interface ShapeEntity {
+  //tabularMetadataId?: string;
+  //tabularFilters?: unknown; // kept broad; concrete type in data-source module
+  //tabularMetadata?: TabularTableMetadata | null;
+  //tabularFile?: TabularFileSummary;
+  //tabularLastPreview?: TabularDataResult;
 
   // Map Position
-  zxy?: [number, number, number];
+  // zxy?: [number, number, number];
 
   // Data Source
   dataSourceName?: DataSourceName;
@@ -49,6 +37,7 @@ export interface ShapeEntity extends PeerEntity {
   processingStatus?: 'idle' | 'processing' | 'paused' | 'completed' | 'failed' | 'cancelled';
 }
 
+/*
 // Draft payload via TreeNodeUpdaterPayload; name/description/tags live only in draftMetadata/metadata.
 export type ShapeDraft = TreeNodeUpdaterPayload<ShapeEntity>;
 
@@ -66,11 +55,13 @@ export interface TabularFileSummary {
   lastModifiedAt?: number;
 }
 
+ */
+
 export interface Feature {
   type: 'Feature';
   id: number;
   originalId?: string | number;
-  properties: Record<string, any>;
+  properties: Record<string, unknown>;
   geometry: Geometry;
   bbox?: BBox;
   mortonCode?: bigint;
@@ -90,7 +81,7 @@ export interface VectorTileEntity {
   data_Uint8Array: Uint8Array;
   size: number;
   features: number;
-  layers: any[];
+  layers: LayerInfo[];
   generatedAt: number;
   lastAccessed?: number;
   contentHash: string;

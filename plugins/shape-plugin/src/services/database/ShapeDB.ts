@@ -11,21 +11,14 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { ShapeEntity } from '../../common/types/ShapeEntity.js';
-import type { DataSourceName, VectorTileEntity } from '../../common/types/index.js';
+import type { DataSourceName, ShapeEntity, VectorTileEntity } from '../../common/types/index.js';
 import type { BatchSession, CacheStatistics, ProcessingStage, TaskStatus } from '../../common/types/index.js';
 
 // Database schema interfaces
 export interface ShapeEntityRecord extends ShapeEntity {
-  id: NodeId;
-  nodeId: NodeId;
-  name: string;
-  description?: string;
   dataSourceName: DataSourceName;
   processingConfig: any;
   status: 'draft' | 'processing' | 'completed' | 'failed';
-  createdAt: number;
-  updatedAt: number;
   version: number;
 }
 

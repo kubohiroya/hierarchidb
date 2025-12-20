@@ -8,7 +8,6 @@ import {
 } from '@mui/material';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { LRUSplitView, type PaneConfig, type PaneProgress } from '@hierarchidb/ui-lru-splitview';
 
 export type BuildStatus = 'idle' | 'running' | 'paused' | 'completed';
@@ -31,6 +30,59 @@ export interface BuildStepPanelProps {
   onComplete?: () => void;
 }
 
+type BuildControlCardProps = {
+  status: BuildStatus;
+  onPause?: () => void;
+  onResume?: () => void;
+};
+
+const BuildControlCard: React.FC<BuildControlCardProps> = ({ status, onPause, onResume }) => {
+  const startLabel = status === 'paused' ? 'Resume Build' : 'Start Build';
+  const disablePause = status !== 'running' || !onPause;
+  const disableStart = !onResume || status === 'running';
+
+  return (
+    <Box
+      sx={{
+        minWidth: 220,
+        maxWidth: 280,
+        p: 2,
+        borderRadius: 2,
+        border: '1px solid',
+        borderColor: 'divider',
+        backgroundColor: 'background.paper',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1.5,
+      }}
+    >
+      <Typography variant="subtitle2" color="text.secondary">
+        Build Controls
+      </Typography>
+      <Stack direction="row" spacing={1}>
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={<PauseIcon fontSize="small" />}
+          disabled={disablePause}
+          onClick={onPause}
+        >
+          Pause
+        </Button>
+        <Button
+          variant="contained"
+          size="small"
+          startIcon={<PlayArrowIcon fontSize="small" />}
+          disabled={disableStart}
+          onClick={onResume}
+        >
+          {startLabel}
+        </Button>
+      </Stack>
+    </Box>
+  );
+};
+
 export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   title,
   description,
@@ -42,6 +94,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   onResume,
   onComplete,
 }) => {
+  void onComplete;
   const panes = useMemo<PaneConfig[]>(() =>
     stages.map((stage, index) => ({
       id: stage.id,
@@ -74,10 +127,6 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
     [overallProgress, stageProgress, stages, status],
   );
 
-  const disablePause = status !== 'running' || !onPause;
-  const disableResume = status !== 'paused' || !onResume;
-  const disableComplete = (status !== 'running' && status !== 'paused') || !onComplete;
-
   const statusLabel = (() => {
     switch (status) {
       case 'running':
@@ -104,46 +153,18 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
         ) : null}
       </Box>
 
-      <Stack spacing={1}>
-        <Typography variant="body2" color="text.secondary">
-          {statusLabel}
-        </Typography>
-        <LinearProgress
-          variant="determinate"
-          value={overallProgress}
-          sx={{ height: 10, borderRadius: 6 }}
-        />
-      </Stack>
-
-      <Stack direction="row" spacing={1} alignItems="center">
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<PauseIcon fontSize="small" />}
-          disabled={disablePause}
-          onClick={onPause}
-        >
-          Pause
-        </Button>
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<PlayArrowIcon fontSize="small" />}
-          disabled={disableResume}
-          onClick={onResume}
-        >
-          Resume
-        </Button>
-        <Button
-          variant="contained"
-          size="small"
-          color="primary"
-          startIcon={<CheckCircleIcon fontSize="small" />}
-          disabled={disableComplete}
-          onClick={onComplete}
-        >
-          Complete
-        </Button>
+      <Stack direction="row" spacing={2} alignItems="stretch">
+        <BuildControlCard status={status} onPause={onPause} onResume={onResume} />
+        <Stack spacing={1} flex={1} justifyContent="center">
+          <Typography variant="body2" color="text.secondary">
+            {statusLabel}
+          </Typography>
+          <LinearProgress
+            variant="determinate"
+            value={overallProgress}
+            sx={{ height: 10, borderRadius: 6 }}
+          />
+        </Stack>
       </Stack>
 
       <Box height={280}>

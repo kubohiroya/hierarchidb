@@ -4507,6 +4507,14 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1765) shape-plugin core.ts の any 型排除（P1） — 完了 (2025-12-20)
+  - 要点：`Feature.properties` を `Record<string, unknown>`、`VectorTileEntity.layers` を `LayerInfo[]` に置換して any を排除。
+  - 検証：未実施（型チェック未実行）。
+  - ロールバック手順：`plugins/shape-plugin/src/common/types/core.ts` の差分を revert し、表示確認を再実行する。
+- 1764) LRUSplitView の無限更新警告対策（P1） — 完了 (2025-12-20)
+  - 要点：prevProgress を ref 化し、paneStates 参照も ref に移して effect 依存を縮小。Maximum update depth exceeded のループを抑止。
+  - 検証：未実施（手動確認は未実行）。
+  - ロールバック手順：`packages/ui/lru-splitview/src/hooks/useLRUPanes.ts` の差分を revert し、表示確認を再実行する。
 - 1763) shape Download セクションの3分割と削除ボタン追加（P1） — 完了 (2025-12-20)
   - 要点：Download アコーディオンの Grid を 3分割に変更し、Retain スイッチの右に Delete Downloaded Files ボタンを追加。件数は `draft.urlMetadata` の長さで表示し、0件時は無効化。
   - 検証：未実施（UI 表示確認は未実行）。
@@ -10722,6 +10730,13 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-20 14:16 done: fix/shape/step4-layout-and-download-retain — Simplification の Filtering/Area/Tolerance を Grid 3分割配置、Tile の Workers/Buffer/MaxZoom を Grid 3分割配置。Cleanup アコーディオン削除し、Retain downloaded files スイッチを Download の Worker カード右側へ移設。検証: UI 表示確認は未実施。ロールバック: 該当差分を revert し、表示確認を再実行する。
 - 2025-12-20 14:20 start: fix/shape/download-grid-delete-button — Download セクションを Grid 3分割に変更し、Delete Downloaded Files ボタンを追加する対応に着手。DoD: Kanban/運用ログ更新、件数表示、確認ログとロールバック手順記載。
 - 2025-12-20 14:21 done: fix/shape/download-grid-delete-button — Download の Grid を 3分割へ変更し、Retain スイッチ右側に Delete Downloaded Files ボタンを配置。件数は `draft.urlMetadata` 長さで表示し、0件時は無効化。検証: UI 表示確認は未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/{DownloadConfigSection,ShapeProcessingSettingsStep}.tsx` の差分を revert し、表示確認を再実行する。
+- 2025-12-20 14:35 start: fix/ui-lru-splitview/max-update-depth — LRUSplitView の Maximum update depth exceeded を解消する対応に着手。DoD: Kanban/運用ログ更新、依存整理、確認ログとロールバック手順記載。
+- 2025-12-20 14:36 done: fix/ui-lru-splitview/max-update-depth — prevProgress/paneStates を ref 化して effect の依存を整理し、無限更新を抑止。検証: 手動確認は未実施。ロールバック: `packages/ui/lru-splitview/src/hooks/useLRUPanes.ts` の差分を revert し、表示確認を再実行する。
+- 2025-12-20 15:56 start: fix/shape/core-any-types — core.ts の any 型を具体的な型へ置換する対応に着手。DoD: Kanban/運用ログ更新、型置換、確認ログとロールバック手順記載。
+- 2025-12-20 15:57 done: fix/shape/core-any-types — `Feature.properties` を `Record<string, unknown>`、`VectorTileEntity.layers` を `LayerInfo[]` へ変更し any を排除。検証: 型チェック未実施。ロールバック: `plugins/shape-plugin/src/common/types/core.ts` の差分を revert し、表示確認を再実行する。
 
 - 2025-12-20 11:45 progress: fix/styler/step5-virtual-table — StylerPreviewStep のプレビュー表を react-window で再仮想化し、ResizeObserver で DialogContent 高さに合わせてリスト高さを算出。ヘッダと同じ幅のグリッドでカラム幅ずれ/行欠けを抑制。
 - 2025-12-20 11:46 command: pnpm --filter @hierarchidb/styler-plugin typecheck — exit 0。
+
+- 2025-12-20 12:15 progress: fix/shape/build-control-layout — BuildStepPanel を BuildControlCard + Start/Resume/Pause の2ボタン構成に刷新し、ダイアログ上部で左にカード、右に全体 LinearProgress を横並びで表示。shape step5 の footer Build ボタン用 capabilities を撤去。
+- 2025-12-20 12:17 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 2（既存の ShapeEntity metadata 型不一致エラーが未解消）。

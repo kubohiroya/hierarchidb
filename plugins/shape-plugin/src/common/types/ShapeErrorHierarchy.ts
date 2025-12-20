@@ -1,36 +1,14 @@
-/**
-  * @file ShapeErrorHierarchy.ts
- * @description Shape
-   * 1. Worker/Network/Data/Validation
- * 2.
- * 3.
- * 4.
-  */
-
 import type { TreeNodeId } from '@hierarchidb/common-types';
 
-// ========================================
-// ========================================
-
-/**
-    */
 export enum ErrorCategory {
   WORKER = 'worker',           //  Worker
   NETWORK = 'network', DATA = 'data', VALIDATION = 'validation', SYSTEM = 'system'
 }
 
-/**
-    */
 export enum ErrorSeverity {
   CRITICAL = 'CRITICAL', ERROR = 'ERROR', WARNING = 'WARNING', INFO = 'INFO'
 }
 
-// ========================================
-// ========================================
-
-/**
-  * Shape
-  */
 export interface BaseShapeError extends Error {
   category: ErrorCategory;
   type: string;
@@ -55,8 +33,6 @@ export interface BaseShapeError extends Error {
   stack?: string;
 }
 
-/**
-    */
 export interface SuggestedAction {
   type: ActionType;
   label: string;
@@ -81,10 +57,6 @@ export type BatchProcessingStage =
   | 'simplify1'
   | 'simplify2'
   | 'vectorTiles';
-
-// ========================================
-//  Worker
-// ========================================
 
 export interface WorkerError extends BaseShapeError {
   category: ErrorCategory.WORKER;
@@ -113,9 +85,6 @@ export interface WorkerMemoryError extends WorkerError {
     limit: number;
   };
 }
-
-// ========================================
-// ========================================
 
 export interface NetworkError extends BaseShapeError {
   category: ErrorCategory.NETWORK;
@@ -219,15 +188,7 @@ export interface ConfigurationError extends ValidationError {
   }>;
 }
 
-// ========================================
-// ========================================
-
-/**
-    */
 export class ShapeErrorFactory {
-  /**
-      * Worker
-      */
   static createWorkerDisconnectedError(
     message: string,
     sessionId?: string,
@@ -257,8 +218,6 @@ export class ShapeErrorFactory {
     };
   }
 
-  /**
-            */
   static createRateLimitError(
     url: string,
     retryAfter: number,
@@ -295,8 +254,6 @@ export class ShapeErrorFactory {
     };
   }
 
-  /**
-            */
   static createInvalidCountryCodeError(
     invalidCodes: string[],
     validCodes?: string[],
@@ -482,11 +439,6 @@ export class ShapeErrorFactory {
   }
 }
 
-// ========================================
-// ========================================
-
-/**
-    */
 export const ErrorTypeGuards = {
   isWorkerError: (error: any): error is WorkerError => {
     return error?.category === ErrorCategory.WORKER;

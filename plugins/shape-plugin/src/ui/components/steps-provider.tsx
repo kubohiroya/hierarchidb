@@ -1,5 +1,5 @@
 import type React from 'react';
-import { PluginStepRegistry, type StartBatchContext, type StepComponentProps, type StepData } from '@hierarchidb/plugin-base';
+import { PluginStepRegistry, type StepComponentProps, type StepData } from '@hierarchidb/plugin-base';
 import {
   summarizeCheckboxState,
   validateProcessingConfig,
@@ -12,7 +12,6 @@ import { ShapeProcessingSettingsStep } from './steps/ShapeProcessingSettingsStep
 import { ShapeCountrySelectionStep } from './steps/ShapeCountrySelectionStep.js';
 import { ShapePreviewStep } from './steps/ShapePreviewStep.js';
 import { ShapeBuildProgressStep } from './steps/ShapeBuildProgressStep.js';
-import { notify } from '@hierarchidb/components';
 import { useTranslation as getTranslation } from '../../ui/i18n.js';
 import type { NodeId } from '@hierarchidb/common-types';
 
@@ -58,16 +57,6 @@ const canStartShapeBatch = (data?: Partial<ShapeEntity>): boolean => {
   return hasSelection && hasLicense && hasDataSource;
 };
 
-const startShapeBatch = async (data: Partial<ShapeEntity>, _context: StartBatchContext) => {
-  const { t } = getTranslation();
-  if (!canStartShapeBatch(data)) {
-    notify.info(t('messages.completeRequired', 'Complete required fields and selections before building.'));
-    return;
-  }
-
-  notify.info(t('messages.notImplemented', 'Shape batch build is not yet implemented in this dialog.'));
-};
-
 registry.registerConfigProvider<Partial<ShapeEntity>>({
   nodeType: 'shape',
   getCreateStepConfigs() {
@@ -101,10 +90,6 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
         label: t('steps.build.label', 'Build'),
         componentFactory: (props: ShapeDialogStepProps) => <ShapeBuildProgress {...props} />,
         validate: (data?: Partial<ShapeEntity>) => canStartShapeBatch(data),
-        capabilities: {
-          canStartBatch: canStartShapeBatch,
-          startBatch: (data, context) => startShapeBatch(data, context),
-        },
       },
       {
         id: 'preview',

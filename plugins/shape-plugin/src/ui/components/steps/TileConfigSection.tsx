@@ -1,4 +1,3 @@
-import React from 'react';
 import { Accordion, AccordionDetails, AccordionSummary, Grid, Stack, Typography, Slider } from '@mui/material';
 import { Layers as LayersIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
 import type { ProcessingConfig, TileProcessingConfig } from '../../../common/types/index.js';
@@ -12,11 +11,15 @@ type Props = {
 };
 
 export const TileConfigSection: React.FC<Props> = ({ config, disabled, onChange }) => {
-  const baseTileConfig: TileProcessingConfig = config.tileConfig ?? DEFAULT_PROCESSING_CONFIG.tileConfig!;
+  const baseTileConfig: TileProcessingConfig|undefined = config.tileConfig ?? DEFAULT_PROCESSING_CONFIG.tileConfig;
 
   const update = (partial: Partial<ProcessingConfig>) => {
     onChange(mergeProcessingConfig({ ...config, ...partial }));
   };
+
+  if(!baseTileConfig){
+    throw new Error("TileConfigSection: baseTileConfig is not defined");
+  }
 
   return (
     <Accordion defaultExpanded>

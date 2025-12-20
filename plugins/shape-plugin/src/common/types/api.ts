@@ -2,7 +2,8 @@
   * Shape API interface - UI-Worker
   */
 
-import type { NodeId } from '../types/index.js';
+import type {NodeId} from '@hierarchidb/common-types';
+
 import type {
   BatchSession,
   BatchTask,

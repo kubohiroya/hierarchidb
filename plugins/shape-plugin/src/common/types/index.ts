@@ -1,4 +1,3 @@
-export * from './ShapeEntity.js';
 export * from './BatchConfig.js';
 export * from './BatchProgressEvent.js';
 export * from './BatchTaskLike.js';

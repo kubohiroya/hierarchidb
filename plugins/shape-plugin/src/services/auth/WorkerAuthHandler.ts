@@ -8,7 +8,7 @@
 
 import {
   AUTH_CONSTANTS,
-  AuthCancelledNotification,
+  type AuthCancelledNotification,
   type AuthNotification,
   AuthNotificationFactory,
   AuthNotificationRegistry,

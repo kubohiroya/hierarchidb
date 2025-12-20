@@ -1,4 +1,4 @@
-import type { NodeId } from './core.js';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { ProcessingConfig } from './processing.js';
 
 export interface BatchStatus {

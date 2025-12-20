@@ -3,7 +3,7 @@
  * @module @hierarchidb/ui-lru-splitview/hooks
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTheme } from '@mui/material/styles';
 import type { LRUSplitViewConfig, PaneState, UseLRUPanesResult } from '../types/LRUSplitView.js';
 
@@ -59,9 +59,10 @@ export function useLRUPanes({
   }, [panes, generateDefaultColor, defaultCollapsedSize]);
 
   const [paneStates, setPaneStates] = useState<PaneState[]>(initialPaneStates);
+  const paneStatesRef = useRef<PaneState[]>(initialPaneStates);
 
   // Track previous progress for auto-expand detection
-  const [prevProgress, setPrevProgress] = useState<Record<string, number>>({});
+  const prevProgressRef = useRef<Record<string, number>>({});
 
   // LRU management function
   const expandPaneLRU = useCallback((
@@ -212,6 +213,10 @@ export function useLRUPanes({
     }
   }, [paneStates]);
 
+  useEffect(() => {
+    paneStatesRef.current = paneStates;
+  }, [paneStates]);
+
   // Auto-expand based on progress changes
   useEffect(() => {
     if (!autoExpand || progress.length === 0) return;
@@ -229,7 +234,7 @@ export function useLRUPanes({
     // Check for completion-based auto-expand
     if (autoExpand.onComplete) {
       progress.forEach(progressInfo => {
-        const prevProgressValue = prevProgress[progressInfo.paneId] || 0;
+        const prevProgressValue = prevProgressRef.current[progressInfo.paneId] || 0;
         if (prevProgressValue < 100 && progressInfo.progress === 100) {
           // Find next pane to expand (simple sequential logic)
           const currentIndex = panes.findIndex(p => p.id === progressInfo.paneId);
@@ -254,7 +259,7 @@ export function useLRUPanes({
 
     // Custom auto-expand logic
     if (autoExpand.custom) {
-      const targetPaneId = autoExpand.custom(progress, paneStates);
+      const targetPaneId = autoExpand.custom(progress, paneStatesRef.current);
       if (targetPaneId) {
         autoExpandPane(targetPaneId);
       }
@@ -265,8 +270,8 @@ export function useLRUPanes({
       acc[p.paneId] = p.progress;
       return acc;
     }, {} as Record<string, number>);
-    setPrevProgress(newPrevProgress);
-  }, [progress, prevProgress, autoExpand, panes, paneStates, expandPaneLRU]);
+    prevProgressRef.current = newPrevProgress;
+  }, [progress, autoExpand, panes, expandPaneLRU]);
 
   return {
     paneStates,
