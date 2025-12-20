@@ -45,7 +45,7 @@ const StylerNodeDefinition: PluginDefinition = {
   lifecycle: { afterCreate, beforeDelete },
   ui: { 
     dialogComponent: StylerDialog,
-    panelComponent: StylerPreviewPanel 
+    panelComponent: StylerPreviewStep 
   }
 };
 ```

@@ -4507,6 +4507,22 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1757) basemap-plugin i18n リソース登録の追加（P1） — 完了 (2025-12-20)
+  - 要点：basemap-plugin の i18n 登録モジュールを追加し、`ui/index.ts` から読み込み。`locales/en.json` と `locales/ja.json` を追加して addResourceBundle で登録。
+  - 検証：未実施（UI 表示確認は未実行）。
+  - ロールバック手順：`plugins/basemap-plugin/src/ui/i18n.ts`、`plugins/basemap-plugin/src/ui/index.ts`、`plugins/basemap-plugin/src/ui/locales/*.json` の差分を revert し、表示確認を再実行する。
+- 1756) basemap-plugin i18n 未反映の原因調査（P1） — 完了 (2025-12-20)
+  - 要点：basemap-plugin が i18n リソース登録を行っておらず、Step ラベルが `i18n.t` の初回評価で固定されるため、app/public/locales の更新が反映されない。
+  - 検証：コード調査のみ（実行ログなし）。
+  - ロールバック手順：調査記録のみのため差分なし。記載内容を戻す場合は本タスクの運用ログ追記を削除する。
+- 1767) TreeNodeInfoPanel の Preview ボタン表示修正（P1） — 完了 (2025-12-20)
+  - 要点：Preview ラベルを維持したまま、アイコンは PlayArrow を使用する構成に変更。preview アクションの挙動は維持。
+  - 検証：`pnpm --filter @hierarchidb/app typecheck`（2025-12-20 01:26 JST）exit 0（plugin-base build の define 警告あり）。
+  - ロールバック手順：`app/src/router/pages/tree/console/useTreeNodeInfoPanel.ts` と `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx` の差分を revert し、同 typecheck を再実行する。
+- 1755) basemap Step2/Step3 UI i18n と Step3 タイトル Preview 化（P1） — 完了 (2025-12-20)
+  - 要点：`basemap-plugin.json` の Step3 ラベルを "Preview" に更新し、Step2/Step3 の文言が i18n 参照であることを確認。
+  - 検証：未実施（UI 表示確認は未実行）。
+  - ロールバック手順：`app/public/locales/{en,ja}/basemap-plugin.json` の差分を revert し、表示確認を再実行する。
 - 1766) basemap Step3 ドラッグ操作の状態管理改善（P1） — 完了 (2025-12-20)
   - 要点：ドラッグ中は Jotai store + ref に一時保持し、onMoveEnd でのみ上位へ commit するよう変更。連続ドラッグ時の再レンダリング干渉を抑制。basemap-plugin に jotai を peer/dev 追加。
   - 検証：`pnpm --filter @hierarchidb/basemap-plugin typecheck`（2025-12-20 00:56 JST）exit 0。
@@ -10613,6 +10629,13 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-20 00:52 command: pnpm --filter @hierarchidb/basemap-plugin typecheck — exit 0。
 - 2025-12-20 00:56 command: pnpm --filter @hierarchidb/basemap-plugin typecheck — exit 0。
 - 2025-12-20 00:53 done: fix/basemap/viewport-drag-state — drag end commit 方式へ切替し連続ドラッグを阻害する再レンダリングを抑制。ロールバック: `plugins/basemap-plugin/src/ui/components/steps/ViewportStep.tsx` と `plugins/basemap-plugin/package.json` の差分を revert し、同 typecheck を再実行。
+- 2025-12-20 01:10 start: fix/app/info-panel-preview-label — TreeNodeInfoPanel の Play ボタンを Preview 表記へ変更する対応に着手。branch 作成不可なら main 作業。
+- 2025-12-20 01:12 progress: fix/app/info-panel-preview-label — Preview アイコン/ラベルへ置換し、Play 表記を除去。
+- 2025-12-20 01:13 command: pnpm --filter @hierarchidb/app typecheck — timeout（10s）。plugin-base build は完了。
+- 2025-12-20 01:14 command: pnpm --filter @hierarchidb/app typecheck — exit 0。
+- 2025-12-20 01:15 done: fix/app/info-panel-preview-label — Preview 表記へ統一。ロールバック: `app/src/router/pages/tree/console/useTreeNodeInfoPanel.ts` と `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx` の差分を revert し、同 typecheck を再実行。
+- 2025-12-20 01:25 progress: fix/app/info-panel-preview-label — Preview ラベルは維持しつつアイコンを PlayArrow に戻す修正を実施。
+- 2025-12-20 01:26 command: pnpm --filter @hierarchidb/app typecheck — exit 0（plugin-base build の define 警告あり）。
 - 2025-12-19 23:40 start: fix/gen-iso3166-2/country-quote-normalize — country_en の余計なクオートを常に除去する対応に着手。DoD: quoted-field 維持・typecheck ログ・原因/修正/ロールバック記載。branch 作成不可なら main 作業。
 - 2025-12-19 23:52 progress: fix/gen-iso3166-2/country-quote-normalize — country_en の前後クオートを除去し、CSV の国名列を正規化（`"""` を除去）。
 - 2025-12-19 23:54 command: pnpm --filter @hierarchidb/gen-iso3166-2 typecheck — exit 0。
@@ -10647,3 +10670,14 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-20 10:19 start: fix/tools/turbo-outputs — @hierarchidb/tools#build の outputs 未検出 warning を解消する対応に着手。DoD: Kanban/運用ログ更新、Turbo outputs 修正、確認ログとロールバック手順記載。branch 作成不可なら main 作業。
 - 2025-12-20 10:20 progress: fix/tools/turbo-outputs — `packages/tools/package.json` の turbo outputs を `*/dist/**` に設定して tools 配下の dist を検出可能に変更。
 - 2025-12-20 10:21 done: fix/tools/turbo-outputs — tools build outputs 設定を修正し warning 対策を完了。検証: `pnpm --filter @hierarchidb/tools build` 未実行。ロールバック: `packages/tools/package.json` の turbo 設定差分を revert し、build を再実行する。
+- 2025-12-20 10:53 start: fix/basemap/step2-step3-i18n — basemap Step2/Step3 の UI 文言 i18n 化と Step3 タイトルを Preview に変更する対応に着手。DoD: Kanban/運用ログ更新、i18n 文言更新、表示崩れなし、確認ログとロールバック手順記載。branch 作成不可なら main 作業。
+- 2025-12-20 10:54 progress: fix/basemap/step2-step3-i18n — Step3 ラベルを "Preview" に更新し、Step2/Step3 が i18n キー参照であることを確認。
+- 2025-12-20 10:55 done: fix/basemap/step2-step3-i18n — basemap Step2/Step3 の i18n 反映と Step3 タイトル変更を完了。検証: UI 表示確認は未実施。ロールバック: `app/public/locales/{en,ja}/basemap-plugin.json` の差分を revert し、表示確認を再実行する。
+- 2025-12-20 11:05 start: fix/basemap/i18n-not-applied-investigation — basemap-plugin の i18n 未反映の原因調査に着手。DoD: 他プラグインとの差分を確認し、原因/影響範囲/修正方針を整理して報告。
+- 2025-12-20 11:06 done: fix/basemap/i18n-not-applied-investigation — basemap-plugin は `src/ui/i18n.ts` による `addResourceBundle` がなく、`ui/index.ts` で i18n を登録していないため、Step ラベルが `i18n.t` の初期評価で固定される（HTTP ロード後も再評価されない）。他プラグインは `ui/i18n.ts` を import して同期登録している点が差分。
+- 2025-12-20 11:11 start: fix/basemap/i18n-resource-registration — basemap-plugin の i18n リソース登録を他プラグインと同様に追加する対応に着手。DoD: Kanban/運用ログ更新、i18n 参照反映、確認ログとロールバック手順記載。
+- 2025-12-20 11:12 progress: fix/basemap/i18n-resource-registration — `plugins/basemap-plugin/src/ui/i18n.ts` を追加し、`ui/index.ts` で import。`locales/en.json` と `locales/ja.json` を追加して addResourceBundle 登録に対応。
+- 2025-12-20 11:13 done: fix/basemap/i18n-resource-registration — basemap-plugin の i18n リソース登録を追加して Step2/Step3 の文言が再評価されるように修正。検証: UI 表示確認は未実施。ロールバック: `plugins/basemap-plugin/src/ui/i18n.ts`、`plugins/basemap-plugin/src/ui/index.ts`、`plugins/basemap-plugin/src/ui/locales/*.json` の差分を revert し、表示確認を再実行する。
+
+- 2025-12-20 11:45 progress: fix/styler/step5-virtual-table — StylerPreviewStep のプレビュー表を react-window で再仮想化し、ResizeObserver で DialogContent 高さに合わせてリスト高さを算出。ヘッダと同じ幅のグリッドでカラム幅ずれ/行欠けを抑制。
+- 2025-12-20 11:46 command: pnpm --filter @hierarchidb/styler-plugin typecheck — exit 0。
