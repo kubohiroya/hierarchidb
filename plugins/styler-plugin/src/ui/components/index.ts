@@ -43,5 +43,3 @@ export type { StylerStepProps } from './StylerStepProps.tsx';
 export { StylerConfigStep, StylerConfigStepDefinition } from './StylerConfigStep.tsx';
 // Step 6: Preview with Style Mapping
 export { StylerPreviewStep, StylerPreviewDefinition } from './StylerPreviewStep.tsx';
-export type { StylerTablePreviewProps } from './StylerPreviewPanel.tsx';
-export { StylerPreviewPanel } from './StylerPreviewPanel.tsx';

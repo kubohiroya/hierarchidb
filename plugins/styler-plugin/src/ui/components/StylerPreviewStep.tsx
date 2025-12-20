@@ -12,8 +12,10 @@ import {
   TableHead,
   TableRow,
   TableSortLabel,
+  Tooltip,
   Typography,
 } from '@mui/material';
+import { FixedSizeList, type ListChildComponentProps } from 'react-window';
 import React, { useEffect } from 'react';
 import { i18n } from '@hierarchidb/ui-i18n';
 import {
@@ -60,6 +62,7 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
     mapping,
   } = useStylerPreview({ data, onValidate, tabularData });
   const targetMeta = targetProperty ? MAPLIBRE_PROPERTY_METADATA[targetProperty] : null;
+  const columnWidth = columns.length ? `${100 / columns.length}%` : "100%";
 
   useEffect(() => {
     if (!keyColumn || !valueColumn || !targetProperty || !styleType || !sortedPreviewData.length) return;
@@ -205,6 +208,7 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
                   <TableCell
                     key={col}
                     sortDirection={isActive && sortState.direction ? sortState.direction : false}
+                    sx={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}
                   >
                     <Stack direction="row" spacing={1} alignItems="center">
                       {isKey && (
@@ -239,77 +243,101 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
               })}
             </TableRow>
           </TableHead>
-          <TableBody>
-            {sortedPreviewData.map((row, idx) => (
-              <TableRow key={`${row[keyColumn ?? 'id'] ?? idx}-${idx}`}>
-                {columns.map((col) => {
-                  const cellValue = row[col];
-                  const isValue = col === valueColumn;
-                  const isNumeric = numericColumns[col];
-                  let chip: React.ReactNode = null;
-                  if (isValue && typeof cellValue !== 'undefined' && cellValue !== null) {
-                    const meta = targetProperty ? MAPLIBRE_PROPERTY_METADATA[targetProperty] : null;
-                    if (!meta || meta.type === 'color') {
-                      const num = typeof cellValue === 'number' ? cellValue : Number(cellValue);
-                      const safeValue = Number.isFinite(num) ? num : 0;
-                      const colorResult: ColorCalculationResult = valueToColor(
-                        safeValue,
-                        mapping,
-                        derivedConfig,
-                        numericAllValues
-                      );
-                      if (colorResult?.color) {
-                        chip = (
-                          <Chip
-                            size="small"
-                            label={colorResult.color}
-                            sx={{
-                              width: '72px',
-                              justifyContent: 'center',
-                              fontFamily: 'Roboto Mono, monospace',
-                              backgroundColor: colorResult.color,
-                              color: '#000',
-                              border: '1px solid rgba(0,0,0,0.12)',
-                            }}
-                          />
+          
+          <FixedSizeList
+            height={Math.min(48 * Math.max(1, Math.min(sortedPreviewData.length, 12)), 600)}
+            itemCount={sortedPreviewData.length}
+            itemSize={48}
+            width="100%"
+            outerElementType={React.forwardRef<HTMLTableSectionElement>((props, ref) => (
+              <TableBody ref={ref} {...props} />
+            ))}
+          >
+            {({ index, style }: ListChildComponentProps) => {
+              const row = sortedPreviewData[index];
+              if (!row) return null;
+              const rowKey = `${row[keyColumn ?? "id"] ?? index}-${index}`;
+              const rowStyle: React.CSSProperties = { ...style, display: "table", tableLayout: "fixed", width: "100%" };
+              return (
+                <TableRow key={rowKey} style={rowStyle}>
+                  {columns.map((col) => {
+                    const cellValue = row[col];
+                    const isValue = col === valueColumn;
+                    const isNumeric = numericColumns[col];
+                    let chip: React.ReactNode = null;
+                    if (isValue && typeof cellValue !== 'undefined' && cellValue !== null) {
+                      const meta = targetProperty ? MAPLIBRE_PROPERTY_METADATA[targetProperty] : null;
+                      if (!meta || meta.type === 'color') {
+                        const num = typeof cellValue === 'number' ? cellValue : Number(cellValue);
+                        const safeValue = Number.isFinite(num) ? num : 0;
+                        const colorResult: ColorCalculationResult = valueToColor(
+                          safeValue,
+                          mapping,
+                          derivedConfig,
+                          numericAllValues
                         );
-                      }
-                    } else if (meta.type === 'number') {
-                      const num = typeof cellValue === 'number' ? cellValue : Number(cellValue);
-                      if (!Number.isNaN(num)) {
-                        chip = (
-                          <Chip
-                            size="small"
-                            label={num.toFixed(2)}
-                            variant="outlined"
-                            color="default"
-                          />
-                        );
+                        if (colorResult?.color) {
+                          const colorLabel = colorResult.color.startsWith('#')
+                            ? colorResult.color.toUpperCase()
+                            : colorResult.color;
+                          chip = (
+                            <Tooltip title={colorLabel} arrow describeChild enterDelay={100} placement="right">
+                              <Box sx={{ display: 'inline-flex', pointerEvents: 'auto' }}>
+                                <Chip
+                                  size="small"
+                                  label={colorLabel}
+                                  sx={{
+                                    width: '72px',
+                                    justifyContent: 'center',
+                                    fontFamily: 'Roboto Mono, monospace',
+                                    backgroundColor: colorResult.color,
+                                    color: '#000',
+                                    border: '1px solid rgba(255,255,255,0.12)',
+                                    cursor: 'pointer',
+                                  }}
+                                />
+                              </Box>
+                            </Tooltip>
+                          );
+                        }
+                      } else if (meta.type === 'number') {
+                        const num = typeof cellValue === 'number' ? cellValue : Number(cellValue);
+                        if (!Number.isNaN(num)) {
+                          chip = (
+                            <Chip
+                              size="small"
+                              label={num.toFixed(2)}
+                              variant="outlined"
+                              color="default"
+                            />
+                          );
+                        }
                       }
                     }
-                  }
-                  const displayText =
-                    cellValue === null || cellValue === undefined
-                      ? '-'
-                      : isNumeric && Number.isFinite(Number(cellValue))
-                        ? numberFormatter.format(Number(cellValue))
-                        : String(cellValue);
-                  return (
-                    <TableCell key={`${row}-${col}`} align={isNumeric ? 'right' : 'left'}>
-                      <Stack direction="row" spacing={1} alignItems="center" sx={{ width: '100%' }}>
-                        {chip ? <Box sx={{ flexShrink: 0 }}>{chip}</Box> : null}
-                        <Box sx={{ flex: 1, textAlign: isNumeric ? 'right' : 'left' }}>
-                          <Typography variant="body2" noWrap>
-                            {displayText}
-                          </Typography>
-                        </Box>
-                      </Stack>
-                    </TableCell>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableBody>
+                    const displayText =
+                      cellValue === null || cellValue === undefined
+                        ? '-'
+                        : isNumeric && Number.isFinite(Number(cellValue))
+                          ? numberFormatter.format(Number(cellValue))
+                          : String(cellValue);
+                    return (
+                      <TableCell key={`${rowKey}-${col}`} align={isNumeric ? 'right' : 'left'} sx={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}>
+                        <Stack direction="row" spacing={1} alignItems="center" sx={{ width: '100%' }}>
+                          {chip ? <Box sx={{ flexShrink: 0 }}>{chip}</Box> : null}
+                          <Box sx={{ flex: 1, textAlign: isNumeric ? 'right' : 'left' }}>
+                            <Typography variant="body2" noWrap>
+                              {displayText}
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              );
+            }}
+          </FixedSizeList>
+
         </Table>
       </TableContainer>
 
