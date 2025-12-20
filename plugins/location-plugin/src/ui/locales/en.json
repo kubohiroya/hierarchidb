@@ -4,8 +4,8 @@
     "license": { "label": "License Agreement" },
     "selection": { "label": "Location Selection" },
     "batchParameters": { "label": "Processing Settings" },
-    "mapPreview": { "label": "Map Preview" },
-    "build": { "label": "Build" }
+    "build": { "label": "Build" },
+    "mapPreview": { "label": "Preview" }
   },
   "dataSource": {
     "description": "Choose a dataset source to fetch location data.",

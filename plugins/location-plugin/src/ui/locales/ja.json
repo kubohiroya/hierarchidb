@@ -4,8 +4,8 @@
     "license": { "label": "ライセンス同意" },
     "selection": { "label": "地点選択" },
     "batchParameters": { "label": "処理設定" },
-    "mapPreview": { "label": "地図プレビュー" },
-    "build": { "label": "ビルド" }
+    "build": { "label": "ビルド" },
+    "mapPreview": { "label": "プレビュー" }
   },
   "dataSource": {
     "description": "地点データを取得するためのソースを選択してください。",
