@@ -15,7 +15,7 @@ export class ShapeEntitiesDB extends Dexie {
   groupEntities!: Table<ShapeGroupRow, [NodeId, string]>;
   relations!: Table<ShapeRelationRow, [NodeId, string, NodeId]>;
 
-  constructor(name = getDBName('shape-entities-db')) {
+  constructor(name = getDBName('shape')) {
     super(name);
     this.version(1).stores({
       groupEntities: '&[nodeId+id], nodeId, id, updatedAt',

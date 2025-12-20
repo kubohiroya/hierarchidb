@@ -3,7 +3,7 @@
  * Example implementation of a plugin step provider
  */
 
-import type { PluginStepProvider, StepComponentProps } from '@hierarchidb/plugin-base';
+import type { PluginStepProvider, PluginStepProps } from '@hierarchidb/plugin-base';
 import type { DialogStep } from '@hierarchidb/ui-dialog';
 import { Folder as FolderIcon } from '@mui/icons-material';
 import { Box, TextField, Typography } from '@mui/material';
@@ -20,7 +20,7 @@ type SampleStepData = {
   targetNodes?: unknown[];
 };
 
-const ConfigurationStep: React.FC<StepComponentProps<SampleStepData>> = ({
+const ConfigurationStep: React.FC<PluginStepProps<SampleStepData>> = ({
   data,
   onChange,
   setValid,
@@ -69,7 +69,7 @@ const ConfigurationStep: React.FC<StepComponentProps<SampleStepData>> = ({
 /**
  * Sample review step component
  */
-const ReviewStep: React.FC<StepComponentProps<SampleStepData>> = ({ data }) => {
+const ReviewStep: React.FC<PluginStepProps<SampleStepData>> = ({ data }) => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Typography variant="h6">Review Configuration</Typography>

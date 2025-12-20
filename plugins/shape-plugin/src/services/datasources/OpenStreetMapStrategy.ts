@@ -9,9 +9,11 @@ import {
   type DataSourceConfig,
   type FetchOptions,
   type ProcessOptions,
+  type TagFilter,
 } from './DataSourceStrategy.js';
-import type { NodeId, ShapeEntity } from '../../common/types/index.js';
-
+import type { Feature, Geometry } from 'geojson';
+import type { ShapeEntity } from '../../common/types/index.js';
+import type {NodeId} from '@hierarchidb/common-types';
 //  OSM
 export interface OSMRawData {
   elements: OSMElement[];
@@ -59,6 +61,17 @@ export interface OSMProcessedData extends Array<ShapeEntity> {
   };
 }
 
+type OSMProperties = Record<string, unknown>;
+type OSMFeature = Feature<Geometry | null, OSMProperties> & { osmElement?: OSMElement };
+
+type OverpassTagPreset = { query: string; description: string };
+type OverpassTag = TagFilter | string | (TagFilter & { includeNodes?: boolean });
+
+interface OverpassResponse {
+  elements: OSMElement[];
+  generator?: string;
+}
+
 /**
   * OpenStreetMap Overpass API
   */
@@ -104,7 +117,7 @@ export class OpenStreetMapStrategy extends BaseDataSourceStrategy<OSMRawData, OS
   };
 
   //  OSM
-  private readonly tagPresets: Record<string, any> = {
+  private readonly tagPresets: Record<string, OverpassTagPreset> = {
     administrative: {
       query: '[admin_level][boundary=administrative]',
       description: 'Administrative boundaries',
@@ -156,11 +169,11 @@ export class OpenStreetMapStrategy extends BaseDataSourceStrategy<OSMRawData, OS
   async fetchData(options?: FetchOptions): Promise<OSMRawData> {
     const {
       bbox,
-      tags = [],
       query,
       timeout = 25, //  Overpass API
       endpoint: _endpoint = 'interpreter',
     } = options || {};
+    const tags = ((options?.tags ?? []) as OverpassTag[]);
 
     try {
       //  Overpass QL
@@ -208,37 +221,42 @@ export class OpenStreetMapStrategy extends BaseDataSourceStrategy<OSMRawData, OS
       }
 
       //  ShapeEntity
-      const entities: ShapeEntity[] = filteredFeatures.map((feature) => {
-        const properties = feature.properties || {};
-        const osmElement = feature.osmElement as OSMElement;
+      const entities: ShapeEntity[] = filteredFeatures
+        .map((feature) => {
+          const properties = feature.properties ?? {};
+          const osmElement = feature.osmElement;
+          if (!osmElement || !feature.geometry) {
+            return null;
+          }
 
-        const entityId = this.generateEntityId(osmElement) as NodeId;
-        const nodeId = this.generateNodeId(osmElement) as NodeId;
+          const entityId = this.generateEntityId(osmElement) as NodeId;
+          const nodeId = this.generateNodeId(osmElement) as NodeId;
 
-        return {
-          id: entityId,
-          nodeId,
-          geometry: feature.geometry,
-          properties: {
-            ...properties,
-            source: 'osm-overpass',
-            osmId: osmElement.id,
-            osmType: osmElement.type,
-            osmTags: osmElement.tags || {},
-            osmVersion: osmElement.version,
-            osmChangeset: osmElement.changeset,
-            osmTimestamp: osmElement.timestamp,
-          },
-          metadata: {
-            name: this.extractName(osmElement) ?? 'OSM feature',
-            description: this.extractDescription(osmElement) ?? '',
-            tags: [],
-          },
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-          version: 1,
-        } as ShapeEntity;
-      });
+          return {
+            id: entityId,
+            nodeId,
+            geometry: feature.geometry,
+            properties: {
+              ...properties,
+              source: 'osm-overpass',
+              osmId: osmElement.id,
+              osmType: osmElement.type,
+              osmTags: osmElement.tags || {},
+              osmVersion: osmElement.version,
+              osmChangeset: osmElement.changeset,
+              osmTimestamp: osmElement.timestamp,
+            },
+            metadata: {
+              name: this.extractName(osmElement) ?? 'OSM feature',
+              description: this.extractDescription(osmElement) ?? '',
+              tags: [],
+            },
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            version: 1,
+          } as ShapeEntity;
+        })
+        .filter((entity): entity is ShapeEntity => entity !== null);
 
       const result = entities as OSMProcessedData;
       result.metadata = {
@@ -257,7 +275,7 @@ export class OpenStreetMapStrategy extends BaseDataSourceStrategy<OSMRawData, OS
     }
   }
 
-  private buildOverpassQuery(bbox?: BoundingBox, tags: any[] = [], timeout: number = 25): string {
+  private buildOverpassQuery(bbox?: BoundingBox, tags: OverpassTag[] = [], timeout: number = 25): string {
     const timeoutDirective = `[timeout:${timeout}]`;
     const outputDirective = '[out:json]';
 
@@ -280,12 +298,19 @@ export class OpenStreetMapStrategy extends BaseDataSourceStrategy<OSMRawData, OS
           const preset = this.tagPresets[tag];
           tagQueries.push(`way${preset.query}${bboxString};`);
           tagQueries.push(`relation${preset.query}${bboxString};`);
-        } else if (tag.key) {
-          const tagFilter = tag.value ? `[${tag.key}=${tag.value}]` : `[${tag.key}]`;
+          continue;
+        }
+
+        if (typeof tag === 'object' && tag !== null && 'key' in tag) {
+          const tagKey = tag.key;
+          const tagValue = tag.value;
+          const tagFilter = tagValue !== undefined && tagValue !== null
+            ? `[${tagKey}=${tagValue}]`
+            : `[${tagKey}]`;
           tagQueries.push(`way${tagFilter}${bboxString};`);
           tagQueries.push(`relation${tagFilter}${bboxString};`);
 
-          if (tag.includeNodes) {
+          if ('includeNodes' in tag && tag.includeNodes) {
             tagQueries.push(`node${tagFilter}${bboxString};`);
           }
         }
@@ -304,7 +329,7 @@ out geom;
     return query;
   }
 
-  private async executeOverpassQuery(query: string): Promise<any> {
+  private async executeOverpassQuery(query: string): Promise<OverpassResponse> {
     const url = `${this.config.access.baseUrl}${this.config.access.endpoints?.interpreter}`;
 
     const { authFetch } = await import('../utils/authFetch.js');
@@ -321,11 +346,11 @@ out geom;
       throw new Error(`Overpass API error ${response.status}: ${errorText}`);
     }
 
-    return await response.json();
+    return (await response.json()) as OverpassResponse;
   }
 
-  private async convertOSMElementsToFeatures(elements: OSMElement[]): Promise<any[]> {
-    const features: any[] = [];
+  private async convertOSMElementsToFeatures(elements: OSMElement[]): Promise<OSMFeature[]> {
+    const features: OSMFeature[] = [];
 
     //  way/relation
     const nodeMap = new Map<number, OSMElement>();
@@ -350,7 +375,10 @@ out geom;
     return features;
   }
 
-  private async convertElementToFeature(element: OSMElement, nodeMap: Map<number, OSMElement>): Promise<any | null> {
+  private async convertElementToFeature(
+    element: OSMElement,
+    nodeMap: Map<number, OSMElement>,
+  ): Promise<OSMFeature | null> {
     switch (element.type) {
       case 'node':
         if (element.lat !== undefined && element.lon !== undefined) {
@@ -379,12 +407,14 @@ out geom;
           if (coordinates.length > 0) {
             const isClosedWay = element.nodes[0] === element.nodes[element.nodes.length - 1];
             const geometryType = isClosedWay && coordinates.length > 3 ? 'Polygon' : 'LineString';
-
+            if(geometryType === 'Polygon') {
+              throw new Error('Polygon geometries are not yet supported in this implementation.');
+            }
             return {
               type: 'Feature',
               geometry: {
                 type: geometryType,
-                coordinates: geometryType === 'Polygon' ? [coordinates] : coordinates,
+                coordinates: coordinates,
               },
               properties: element.tags || {},
             };
@@ -397,7 +427,8 @@ out geom;
           //  MultiPolygon
           return {
             type: 'Feature',
-            geometry: null, properties: {
+            geometry: null,
+            properties: {
               ...(element.tags || {}),
               osmType: 'relation',
               memberCount: element.members.length,
@@ -454,7 +485,7 @@ out geom;
     return parts.length > 1 ? parts.join(', ') : undefined;
   }
 
-  getAvailablePresets(): Record<string, any> {
+  getAvailablePresets(): Record<string, OverpassTagPreset> {
     return { ...this.tagPresets };
   }
 

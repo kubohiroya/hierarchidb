@@ -84,7 +84,7 @@ export interface PluginStepConfig<TData extends StepData = StepData, TUiState = 
   localization?: StepLocalizationConfig;
 
   /** Step component factory */
-  componentFactory: (props: StepComponentProps<TData, TUiState>) => ReactNode;
+  componentFactory: (props: PluginStepProps<TData, TUiState>) => ReactNode;
 
   /** Validation function */
   validate?: (data?: TData) => boolean | Promise<boolean>;
@@ -110,7 +110,7 @@ export interface PluginStepConfig<TData extends StepData = StepData, TUiState = 
 /**
  * Props passed to step components
  */
-export interface StepComponentProps<TData extends StepData = StepData, TUiState = unknown> {
+export interface PluginStepProps<TData extends StepData = StepData, TUiState = unknown> {
   /** Dialog mode */
   mode: 'create' | 'edit';
 
@@ -141,8 +141,9 @@ export interface StepComponentProps<TData extends StepData = StepData, TUiState 
   disabled: boolean;
 
   dialogRef?: RefObject<HTMLElement | null>;
-
 }
+
+/** @deprecated Use PluginStepProps instead. */
 
 const registerAndResolveLabel = <TData extends StepData>(
   nodeType: string,

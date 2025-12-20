@@ -1,4 +1,4 @@
-import { PluginStepRegistry, type PluginStepConfig, type StepComponentProps, type StepData } from '@hierarchidb/plugin-base';
+import { PluginStepRegistry, type PluginStepConfig, type PluginStepProps, type StepData } from '@hierarchidb/plugin-base';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { LinkerDraft } from '../../common/types/index.js';
 import { ResourcePicker } from '../steps/ResourcePicker.js';
@@ -10,7 +10,7 @@ import { useTranslation } from '@hierarchidb/ui-i18n';
 
 type LinkerStepData = StepData & LinkerDraft;
 
-type LinkerStepProps = StepComponentProps<LinkerStepData>;
+type LinkerStepProps = PluginStepProps<LinkerStepData>;
 
 const registry = PluginStepRegistry.getInstance();
 

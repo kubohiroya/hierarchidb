@@ -111,25 +111,25 @@ function mapPhaseToStatus(phase: string): ShapeProgressStatus['status'] {
 }
 
 function statusToUnified(status: BatchSessionStatus): UnifiedProgressInfo {
-  const progress = status.progress ?? {};
-  const total = numeric((progress as any).total);
-  const completed = numeric((progress as any).completed);
-  const failed = numeric((progress as any).failed);
-  const percentage = numeric((progress as any).percentage, total > 0 ? Math.round((completed / total) * 100) : 0);
+  const progress = status.progress;
+  const total = numeric(progress.total);
+  const completed = numeric(progress.completed);
+  const failed = numeric(progress.failed);
+  const percentage = numeric(progress.percentage, total > 0 ? Math.round((completed / total) * 100) : 0);
   return {
-    stage: (progress as any).currentStage ?? 'processing',
+    stage: progress.currentStage ?? 'processing',
     total,
     completed,
     failed,
     percentage,
-    currentTask: (progress as any).currentTask ?? (progress as any).currentStage ?? 'processing',
+    currentTask: progress.currentTask ?? progress.currentStage ?? 'processing',
     phase: mapPhaseToStatus(status.status),
     timestamp: status.lastActivity ?? Date.now(),
     payload: {
       total,
       completed,
       failed,
-      currentTask: (progress as any).currentTask ?? (progress as any).currentStage ?? 'processing',
+      currentTask: progress.currentTask ?? progress.currentStage ?? 'processing',
       meta: status.error ? { errors: [status.error] } : undefined,
     },
     message: status.error,

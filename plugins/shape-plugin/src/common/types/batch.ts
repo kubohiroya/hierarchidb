@@ -1,4 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-types';
+import type { BatchConfig } from './BatchConfig.js';
 import type { ProcessingConfig } from './processing.js';
 
 export interface BatchStatus {
@@ -117,7 +118,7 @@ export interface BatchSession {
   nodeId: NodeId;
   draftId?: NodeId;
   status: 'idle' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
-  config: ProcessingConfig;
+  config: BatchConfig | ProcessingConfig;
   startedAt: number;
   updatedAt: number;
   completedAt?: number;
@@ -133,7 +134,7 @@ export interface BatchSession {
   canResume?: boolean;
   lastActivity?: number;
   expiresAt?: number;
-  stages?: Record<string, any>;
+  stages?: Partial<Record<ProcessingStage, StageStatus>>;
   resourceUsage?: ResourceUsage;
 }
 

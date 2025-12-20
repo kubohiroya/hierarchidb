@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useAtomValue } from 'jotai';
-import { StepComponentProps } from '@hierarchidb/plugin-base';
 import {
   TabularDataFilter,
   TabularProvider,
@@ -15,16 +14,17 @@ import { useTabularKeyValueState } from '../../hooks/useTabularKeyValueState.js'
 import { filterRulesAtom } from '../../state/tabularKeyValueAtoms.js';
 import { useTabularDataFilterStep } from '../../hooks/useTabularDataFilterStep.js';
 import { TabularFilterSections } from '../TabularFilterSections.js';
+import type { PluginStepProps } from '@hierarchidb/plugin-base';
 
 type FilterInnerProps<T extends SpreadsheetEntity> = ReturnType<typeof useTabularDataFilter<T>> & {
-  setValid: StepComponentProps<T>['setValid'];
-  setError: StepComponentProps<T>['setError'];
+  setValid: PluginStepProps<T>['setValid'];
+  setError: PluginStepProps<T>['setError'];
   renderSections?: TabularDataFilterProps['renderSections'];
   onFiltersChanged?: (filters: TabularFilterRule[]) => void;
   onPreviewReady?: (preview: TabularDataResult) => void;
   keyValueState: ReturnType<typeof useTabularKeyValueState<T>>;
   keyValueValid: boolean;
-  dialogRef?: StepComponentProps<T>['dialogRef'];
+  dialogRef?: PluginStepProps<T>['dialogRef'];
   translationNamespace?: string;
   filtersFromAtom: TabularFilterRule[];
 };
@@ -129,7 +129,7 @@ const TabularDataFilterInner = <T extends SpreadsheetEntity>({
   );
 };
 
-export interface TabularDataFilterStepProps<T extends SpreadsheetEntity> extends StepComponentProps<T> {
+export interface TabularDataFilterStepProps<T extends SpreadsheetEntity> extends PluginStepProps<T> {
   renderSections?: TabularDataFilterProps['renderSections'];
   onFiltersChanged?: (filters: TabularFilterRule[]) => void;
   onPreviewReady?: (preview: TabularDataResult) => void;

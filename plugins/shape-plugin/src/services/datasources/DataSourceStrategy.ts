@@ -69,10 +69,18 @@ export interface CacheConfig {
 
 export type DataFormat = 'shapefile' | 'geojson' | 'json' | 'csv' | 'xml' | 'kml' | 'gpx';
 
+export type ValidationRuleValue =
+  | string
+  | number
+  | boolean
+  | RegExp
+  | Array<string | number | boolean>
+  | null;
+
 export interface ValidationRule {
   field: string;
   rule: 'required' | 'type' | 'range' | 'pattern';
-  value?: any;
+  value?: ValidationRuleValue;
 }
 
 export interface TransformationRule {
@@ -81,13 +89,15 @@ export interface TransformationRule {
   to?: string;
   tolerance?: number;
 
-  [key: string]: any;
+  [key: string]: unknown;
 }
+
+export type FilterValue = string | number | boolean | Array<string | number | boolean> | null;
 
 export interface FilterRule {
   field: string;
   operator: 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte' | 'contains' | 'in';
-  value: any;
+  value: FilterValue;
 }
 
 export interface AggregationRule {
@@ -109,7 +119,7 @@ export interface FetchOptions {
   filters?: FilterRule[];
   geoFilters?: GeographicFilter[];
 
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface ProcessOptions {
@@ -120,7 +130,7 @@ export interface ProcessOptions {
   simplify?: boolean;
   tolerance?: number;
 
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface BoundingBox {
@@ -149,7 +159,7 @@ export interface SaveTarget {
   path?: string;
   format?: DataFormat;
 
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface SaveResult {
@@ -162,7 +172,7 @@ export interface SaveResult {
 
 /**
     */
-export interface DataSourceStrategy<TRawData = any, TProcessedData = ShapeEntity[]> {
+export interface DataSourceStrategy<TRawData = unknown, TProcessedData = ShapeEntity[]> {
   readonly id: string;
   readonly name: string;
   readonly config: DataSourceConfig;
@@ -182,7 +192,7 @@ export interface DataSourceStrategy<TRawData = any, TProcessedData = ShapeEntity
 
 /**
     */
-export abstract class BaseDataSourceStrategy<TRawData = any, TProcessedData = ShapeEntity[]>
+export abstract class BaseDataSourceStrategy<TRawData = unknown, TProcessedData = ShapeEntity[]>
   implements DataSourceStrategy<TRawData, TProcessedData> {
 
   abstract readonly id: string;
@@ -249,11 +259,11 @@ export abstract class BaseDataSourceStrategy<TRawData = any, TProcessedData = Sh
     console.log(`Cache cleared for ${this.id}`);
   }
 
-  protected validateItem(item: any): boolean {
-    return item && typeof item === 'object';
+  protected validateItem(item: unknown): item is object {
+    return typeof item === 'object' && item !== null;
   }
 
-  protected async applyFilters(data: any[], filters?: FilterRule[]): Promise<any[]> {
+  protected async applyFilters<T extends object>(data: T[], filters?: FilterRule[]): Promise<T[]> {
     if (!filters || filters.length === 0) {
       return data;
     }
@@ -266,7 +276,10 @@ export abstract class BaseDataSourceStrategy<TRawData = any, TProcessedData = Sh
     });
   }
 
-  protected async applyTransformations(data: any[], transformations?: TransformationRule[]): Promise<any[]> {
+  protected async applyTransformations<T extends object>(
+    data: T[],
+    transformations?: TransformationRule[],
+  ): Promise<T[]> {
     if (!transformations || transformations.length === 0) {
       return data;
     }
@@ -278,34 +291,43 @@ export abstract class BaseDataSourceStrategy<TRawData = any, TProcessedData = Sh
     return result;
   }
 
-  private getNestedValue(obj: any, path: string): any {
-    return path.split('.').reduce((current, key) => current?.[key], obj);
+  private getNestedValue(obj: unknown, path: string): unknown {
+    if (typeof obj !== 'object' || obj === null) return undefined;
+    return path
+      .split('.')
+      .reduce<unknown>((current, key) => {
+        if (typeof current !== 'object' || current === null) return undefined;
+        return (current as Record<string, unknown>)[key];
+      }, obj);
   }
 
-  private applyFilterRule(value: any, filter: FilterRule): boolean {
+  private applyFilterRule(value: unknown, filter: FilterRule): boolean {
     switch (filter.operator) {
       case 'eq':
         return value === filter.value;
       case 'ne':
         return value !== filter.value;
       case 'gt':
-        return value > filter.value;
+        return typeof value === 'number' && typeof filter.value === 'number' && value > filter.value;
       case 'gte':
-        return value >= filter.value;
+        return typeof value === 'number' && typeof filter.value === 'number' && value >= filter.value;
       case 'lt':
-        return value < filter.value;
+        return typeof value === 'number' && typeof filter.value === 'number' && value < filter.value;
       case 'lte':
-        return value <= filter.value;
+        return typeof value === 'number' && typeof filter.value === 'number' && value <= filter.value;
       case 'contains':
         return String(value).includes(String(filter.value));
       case 'in':
-        return Array.isArray(filter.value) && filter.value.includes(value);
+        return Array.isArray(filter.value) && filter.value.includes(value as string | number | boolean);
       default:
         return true;
     }
   }
 
-  private async applyTransformation(data: any[], transformation: TransformationRule): Promise<any[]> {
+  private async applyTransformation<T extends object>(
+    data: T[],
+    transformation: TransformationRule,
+  ): Promise<T[]> {
     switch (transformation.type) {
       case 'simplify':
         return data;

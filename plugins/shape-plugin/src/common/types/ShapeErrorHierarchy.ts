@@ -9,6 +9,8 @@ export enum ErrorSeverity {
   CRITICAL = 'CRITICAL', ERROR = 'ERROR', WARNING = 'WARNING', INFO = 'INFO'
 }
 
+export type ErrorMetadata = Record<string, unknown>;
+
 export interface BaseShapeError extends Error {
   category: ErrorCategory;
   type: string;
@@ -17,7 +19,7 @@ export interface BaseShapeError extends Error {
 
   message: string;
   userMessage?: string;
-  technicalDetails?: Record<string, any>;
+  technicalDetails?: ErrorMetadata;
 
   recoverable: boolean;
   retryable: boolean;
@@ -27,7 +29,7 @@ export interface BaseShapeError extends Error {
   sessionId?: string;
   treeNodeId?: TreeNodeId;
   stage?: BatchProcessingStage;
-  metadata?: Record<string, any>;
+  metadata?: ErrorMetadata;
 
   cause?: Error | BaseShapeError;
   stack?: string;
@@ -37,7 +39,7 @@ export interface SuggestedAction {
   type: ActionType;
   label: string;
   description?: string;
-  params?: Record<string, any>;
+  params?: ErrorMetadata;
 }
 
 export enum ActionType {
@@ -183,7 +185,7 @@ export interface ConfigurationError extends ValidationError {
   code: 'VAL003';
   invalidFields: Array<{
     field: string;
-    value: any;
+    value: unknown;
     reason: string;
   }>;
 }
@@ -289,7 +291,7 @@ export class ShapeErrorFactory {
   static createWorkerError(
     type: string,
     message: string,
-    metadata?: Record<string, any>,
+    metadata?: ErrorMetadata,
   ): WorkerError {
     return {
       name: 'WorkerError',
@@ -319,7 +321,7 @@ export class ShapeErrorFactory {
   static createNetworkError(
     type: string,
     message: string,
-    metadata?: Record<string, any>,
+    metadata?: ErrorMetadata,
   ): NetworkError {
     return {
       name: 'NetworkError',
@@ -354,7 +356,7 @@ export class ShapeErrorFactory {
   static createDataError(
     type: string,
     message: string,
-    metadata?: Record<string, any>,
+    metadata?: ErrorMetadata,
   ): DataError {
     return {
       name: 'DataError',
@@ -384,7 +386,7 @@ export class ShapeErrorFactory {
   static createValidationError(
     type: string,
     message: string,
-    metadata?: Record<string, any>,
+    metadata?: ErrorMetadata,
   ): ValidationError {
     return {
       name: 'ValidationError',
@@ -414,7 +416,7 @@ export class ShapeErrorFactory {
   static createSystemError(
     type: string,
     message: string,
-    metadata?: Record<string, any>,
+    metadata?: ErrorMetadata,
   ): BaseShapeError {
     return {
       name: 'SystemError',
@@ -439,32 +441,34 @@ export class ShapeErrorFactory {
   }
 }
 
+/*
 export const ErrorTypeGuards = {
-  isWorkerError: (error: any): error is WorkerError => {
+  isWorkerError: (error: unknown): error is WorkerError => {
     return error?.category === ErrorCategory.WORKER;
   },
 
-  isNetworkError: (error: any): error is NetworkError => {
+  isNetworkError: (error: unknown): error is NetworkError => {
     return error?.category === ErrorCategory.NETWORK;
   },
 
-  isDataError: (error: any): error is DataError => {
+  isDataError: (error: unknown): error is DataError => {
     return error?.category === ErrorCategory.DATA;
   },
 
-  isValidationError: (error: any): error is ValidationError => {
+  isValidationError: (error: unknown): error is ValidationError => {
     return error?.category === ErrorCategory.VALIDATION;
   },
 
-  isRetryable: (error: any): boolean => {
+  isRetryable: (error: unknown): boolean => {
     return error?.retryable === true;
   },
 
-  isRecoverable: (error: any): boolean => {
+  isRecoverable: (error: unknown): boolean => {
     return error?.recoverable === true;
   },
 
-  isCritical: (error: any): boolean => {
+  isCritical: (error: unknown): boolean => {
     return error?.severity === ErrorSeverity.CRITICAL;
   },
 };
+*/

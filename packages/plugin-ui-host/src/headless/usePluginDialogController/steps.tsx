@@ -6,7 +6,7 @@ import type {
   PluginStepConfig,
   composeStepConfigs,
   StepData,
-  StepComponentProps as PluginStepComponentProps,
+  PluginStepProps as PluginStepComponentProps,
 } from '@hierarchidb/plugin-base';
 import type { NodeId, TreeNodeMetadata } from '@hierarchidb/common-types';
 import type {

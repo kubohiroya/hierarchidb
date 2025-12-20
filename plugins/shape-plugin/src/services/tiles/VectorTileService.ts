@@ -14,9 +14,20 @@
 import * as turf from '@turf/turf';
 import { shapeDB, type VectorTileRecord, type FeatureRecord } from '../database/ShapeDB.js';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { Feature } from '../../common/types/index.js';
 import type { BoundingBox, TileMetadata, LayerConfig } from '../../common/types/index.js';
-import type { Geometry } from 'geojson';
+import type { Feature as GeoJSONFeature, Geometry } from 'geojson';
+
+type TileLayerFeature = {
+  geometry: Geometry;
+  properties: Record<string, unknown>;
+};
+
+type TileLayer = {
+  features: TileLayerFeature[];
+  extent: number;
+};
+
+type TileLayerMap = Record<string, TileLayer>;
 
 export interface TileRequest {
   nodeId: NodeId;
@@ -176,7 +187,7 @@ export class VectorTileService {
       const tiles = await shapeDB.vectorTiles
         .where('nodeId')
         .equals(nodeId)
-        .filter((tile: any) => tile.z === zoomLevel)
+        .filter((tile: VectorTileRecord) => tile.z === zoomLevel)
         .toArray();
 
       for (const tile of tiles) {
@@ -204,7 +215,7 @@ export class VectorTileService {
 
     const stats = {
       totalTiles: tiles.length,
-      totalSize: tiles.reduce((sum: number, tile: any) => sum + tile.size, 0),
+      totalSize: tiles.reduce((sum: number, tile: VectorTileRecord) => sum + tile.size, 0),
       byZoomLevel: {} as Record<number, { count: number; size: number }>,
     };
 
@@ -229,25 +240,25 @@ export class VectorTileService {
     nodeId: NodeId,
     bbox: BoundingBox,
     zoom: number,
-  ): Promise<Feature[]> {
+  ): Promise<FeatureRecord[]> {
     // Get features that intersect with tile bounds
     const features = await shapeDB.getFeaturesInBbox(nodeId, bbox);
 
     // Filter by zoom-appropriate admin level
     const adminLevel = this.getAdminLevelForZoom(zoom);
     const filteredFeatures = features.filter(
-      (feature: any) => !feature.adminLevel || feature.adminLevel <= adminLevel,
+      (feature: FeatureRecord) => !feature.adminLevel || feature.adminLevel <= adminLevel,
     );
 
     // Simplify geometries based on zoom level
-    return filteredFeatures.map((feature: any) => ({
+    return filteredFeatures.map((feature: FeatureRecord) => ({
       ...feature,
       geometry: this.simplifyGeometryForZoom(feature.geometry, zoom),
     }));
   }
 
   private async generateMVT(config: {
-    features: Feature[];
+    features: FeatureRecord[];
     z: number;
     x: number;
     y: number;
@@ -258,7 +269,7 @@ export class VectorTileService {
     const { features, z, x, y, extent, buffer, layers } = config;
 
     // Create tile layers
-    const tileLayers: any = {};
+    const tileLayers: TileLayerMap = {};
 
     for (const layerConfig of layers) {
       const minZoom = layerConfig.minZoom ?? 0;
@@ -298,7 +309,7 @@ export class VectorTileService {
     return [lonMin, latMin, lonMax, latMax];
   }
 
-  private calculateFeatureBounds(features: Array<Feature | FeatureRecord>): BoundingBox {
+  private calculateFeatureBounds(features: FeatureRecord[]): BoundingBox {
     let minX = Infinity,
       minY = Infinity,
       maxX = -Infinity,
@@ -361,11 +372,15 @@ export class VectorTileService {
     return 3;
   }
 
-  private simplifyGeometryForZoom(geometry: any, zoom: number): any {
+  private simplifyGeometryForZoom(geometry: Geometry, zoom: number): Geometry {
     const tolerance = this.getToleranceForZoom(zoom);
 
     try {
-      return turf.simplify(geometry, { tolerance, highQuality: false });
+      const simplified = turf.simplify(geometry, { tolerance, highQuality: false }) as GeoJSONFeature<Geometry> | Geometry;
+      if ((simplified as GeoJSONFeature<Geometry>).type === 'Feature') {
+        return (simplified as GeoJSONFeature<Geometry>).geometry;
+      }
+      return simplified as Geometry;
     } catch {
       return geometry; // Return original if simplification fails
     }
@@ -376,7 +391,7 @@ export class VectorTileService {
     return Math.max(0.0001, 0.01 / 2 ** (zoom - 8));
   }
 
-  private featureMatchesLayer(_feature: Feature, _layerConfig: LayerConfig): boolean {
+  private featureMatchesLayer(_feature: FeatureRecord, _layerConfig: LayerConfig): boolean {
     // Simple matching - could be more sophisticated
     return true;
   }
@@ -396,10 +411,10 @@ export class VectorTileService {
   }
 
   private filterProperties(
-    properties: Record<string, any>,
+    properties: Record<string, unknown>,
     allowedProperties: string[],
-  ): Record<string, any> {
-    const filtered: Record<string, any> = {};
+  ): Record<string, unknown> {
+    const filtered: Record<string, unknown> = {};
 
     for (const prop of allowedProperties) {
       if (properties[prop] !== undefined) {
@@ -410,7 +425,7 @@ export class VectorTileService {
     return filtered;
   }
 
-  private encodeMVT(_layers: any): Uint8Array {
+  private encodeMVT(_layers: TileLayerMap): Uint8Array {
     // This would use a proper MVT encoder like @mapbox/vector-tile
     // For now, return a placeholder
     const mockMVT = new Uint8Array(1024);

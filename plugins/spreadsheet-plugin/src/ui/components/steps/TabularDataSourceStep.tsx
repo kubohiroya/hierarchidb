@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import type { StepComponentProps } from '@hierarchidb/plugin-base';
+import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import { TabularProvider, TabularDataImport } from '@hierarchidb/ui-tabular-extract';
 import type { TabularDataResult } from '@hierarchidb/ui-tabular-extract';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
@@ -15,9 +15,9 @@ import { TabularPreviewLite } from '@hierarchidb/ui-tabular-extract';
 import { useAtomValue } from 'jotai';
 import { tabularRowsAtom } from '../../state/tabularKeyValueAtoms.js';
 
-const ImportStep = TabularDataImport as unknown as React.FC<UseTabularDataSourceResult['importStepProps']>;
+const TabularDataImportStep = TabularDataImport as unknown as React.FC<UseTabularDataSourceResult['importStepProps']>;
 
-export const TabularDataSourceStep: FC<StepComponentProps<SpreadsheetEntity>> = ({
+export const TabularDataSourceStep: FC<PluginStepProps<SpreadsheetEntity>> = ({
   data,
   onChange,
   setValid,
@@ -51,7 +51,7 @@ export const TabularDataSourceStep: FC<StepComponentProps<SpreadsheetEntity>> = 
           </Box>
         </AccordionSummary>
         <AccordionDetails>
-          <ImportStep {...importStepProps} />
+          <TabularDataImportStep {...importStepProps} />
         </AccordionDetails>
       </Accordion>
 

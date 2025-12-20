@@ -30,7 +30,7 @@ import {
 } from '@mui/icons-material';
 import type { TabularProcessingConfig } from '../types/index.js';
 import { useTabularData } from '../hooks/useTabularData.js';
-import { TabularTableMetadata } from '@hierarchidb/tabular-store';
+import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { ModalSelect } from '@hierarchidb/ui-modal-select';
 
 export interface TabularDataImportProps {
@@ -335,6 +335,7 @@ export const TabularDataImport: React.FC<TabularDataImportProps> = ({
             />
 
             <Button
+              color="secondary"
               variant="contained"
               endIcon={isImporting ? <Downloading /> : showDownloadSuccess ? <DownloadDone /> : <Download />}
               onClick={handleUrlDownload}

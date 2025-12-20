@@ -233,8 +233,8 @@ graph TB
 | spreadsheet-plugin | spreadsheet | folder | spreadsheet-entities-db | - | - | あり | - | - | なし | CSV/TSV/Excel |
 | styler-plugin | styler | spreadsheet | styler-metadata-db | - | - | あり | - | - | なし | スタイルメタ管理 |
 | basemap-plugin | basemap | folder | basemap-db | - | - | - | - | 対応 | タイル利用時は要ネット | MapLibre 連携 |
-| shape-plugin | shape | folder | shape-entities-db | あり | Yes | あり | create | 対応 | 作成/編集は要ネット | 高負荷/バッチ |
-| location-plugin | location | folder | location-entities-db | あり | Yes | あり | create | 対応 | 作成/編集は要ネット | Shape 連携可 |
+| shape-plugin | shape | folder | shape | あり | Yes | あり | create | 対応 | 作成/編集は要ネット | 高負荷/バッチ |
+| location-plugin | location | folder | location | あり | Yes | あり | create | 対応 | 作成/編集は要ネット | Shape 連携可 |
 | route-plugin | route | folder | route-entities-db | あり | Yes | あり | create | 対応 | OSRM時ネット | BatchSession 対応 |
 | resolver-plugin | resolver | folder | resolver-db | - | - | - | - | - | なし | スキーマ検出/変換 |
 | linker-plugin | linker | folder | linker-entities-db | - | - | - | - | 対応 | ケース依存 | 領域/設定管理 |

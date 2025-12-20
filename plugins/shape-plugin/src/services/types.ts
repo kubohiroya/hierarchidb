@@ -21,7 +21,7 @@ import type {
 
 // === API Method Signatures ===
 
-export interface ShapesAPIMethods extends Record<string, any> {
+export interface ShapesAPIMethods {
   // Auth
   setAuthToken(token: string, type?: 'Bearer' | 'Basic', expiresAt?: number): Promise<void> | void;
 
@@ -117,10 +117,12 @@ export interface DataSourceConfig {
   bbox?: BoundingBox;
 }
 
+export type FilterValue = string | number | boolean | Array<string | number | boolean> | null;
+
 export interface FilterRule {
   field: string;
   operator: 'eq' | 'ne' | 'gt' | 'lt' | 'gte' | 'lte' | 'in' | 'contains' | 'regex';
-  value: any;
+  value: FilterValue;
   caseSensitive?: boolean;
 }
 
@@ -413,12 +415,12 @@ export interface TopologyValidationResult {
 
 // === Worker Message Types ===
 
-export interface WorkerMessage<T = any> {
+export interface WorkerMessage<TParams = unknown, TResult = unknown> {
   type: 'request' | 'response' | 'progress' | 'error' | 'cancel';
   id: string;
   method?: string;
-  params?: T;
-  result?: any;
+  params?: TParams;
+  result?: TResult;
   error?: WorkerError;
   progress?: WorkerProgress;
 }
@@ -427,7 +429,7 @@ export interface WorkerError {
   code: string;
   message: string;
   stack?: string;
-  data?: any;
+  data?: Record<string, unknown>;
 }
 
 export interface WorkerProgress {

@@ -19,8 +19,6 @@ export interface BuildStage {
 }
 
 export interface BuildStepPanelProps {
-  title: string;
-  description?: string;
   status: BuildStatus;
   overallProgress: number;
   stages: BuildStage[];
@@ -70,6 +68,7 @@ const BuildControlCard: React.FC<BuildControlCardProps> = ({ status, onPause, on
           Pause
         </Button>
         <Button
+          color="secondary"
           variant="contained"
           size="small"
           startIcon={<PlayArrowIcon fontSize="small" />}
@@ -84,8 +83,6 @@ const BuildControlCard: React.FC<BuildControlCardProps> = ({ status, onPause, on
 };
 
 export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
-  title,
-  description,
   status,
   overallProgress,
   stages,
@@ -142,16 +139,6 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
 
   return (
     <Box display="flex" flexDirection="column" gap={3}>
-      <Box>
-        <Typography variant="h6" gutterBottom>
-          {title}
-        </Typography>
-        {description ? (
-          <Typography variant="body2" color="text.secondary">
-            {description}
-          </Typography>
-        ) : null}
-      </Box>
 
       <Stack direction="row" spacing={2} alignItems="stretch">
         <BuildControlCard status={status} onPause={onPause} onResume={onResume} />

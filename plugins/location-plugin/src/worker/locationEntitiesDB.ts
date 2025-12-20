@@ -16,7 +16,7 @@ export class LocationEntitiesDB extends Dexie {
   groupEntities!: Table<LocationGroupRow, [NodeId, string]>;
   relations!: Table<LocationRelationRow, [NodeId, string, NodeId]>;
 
-  constructor(name = getDBName('location-entities-db')) {
+  constructor(name = getDBName('location')) {
     super(name);
     this.version(1).stores({
       groupEntities: '&[nodeId+id], nodeId, id, updatedAt',

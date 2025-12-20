@@ -6,6 +6,7 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
+import type { BatchProcessConfig } from '../batch/types.js';
 
 /**
  * Raw features buffer from download stage
@@ -69,7 +70,7 @@ export interface BatchSessionMetadata {
   failedTasks: number;
   startTime: number;
   endTime?: number;
-  config: Record<string, any>;
+  config: BatchProcessConfig;
   tableId?: string; // optional: tabular-source store linkage
 }
 
@@ -97,7 +98,7 @@ export class EphemeralShapeDB extends Dexie {
   cache!: Table<ProcessingCache>;
 
   constructor() {
-    super(getDBName('shape-ephemeral-db'));
+    super(getDBName('shape-ephemeral'));
 
     // Define schema
     this.version(1).stores({

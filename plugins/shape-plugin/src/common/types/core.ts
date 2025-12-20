@@ -1,20 +1,20 @@
-// import type {TreeNodeUpdaterPayload } from '@hierarchidb/common-types';
-// import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
-// import type { TabularDataResult } from '@hierarchidb/ui-tabular-extract';
+import type { TreeNodeUpdaterPayload } from '@hierarchidb/common-types';
+ import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
+ import type { TabularDataResult } from '@hierarchidb/ui-tabular-extract';
 import type { BBox, Geometry } from 'geojson';
 import type { LayerInfo } from './batch.js';
 import type { DataSourceName, UrlMetadata } from './data-source.js';
 import type { ProcessingConfig } from './processing.js';
 
 export interface ShapeEntity {
-  //tabularMetadataId?: string;
-  //tabularFilters?: unknown; // kept broad; concrete type in data-source module
-  //tabularMetadata?: TabularTableMetadata | null;
+  tabularMetadataId?: string;
+  tabularFilters?: unknown; // kept broad; concrete type in data-source module
+  tabularMetadata?: TabularTableMetadata | null;
   //tabularFile?: TabularFileSummary;
-  //tabularLastPreview?: TabularDataResult;
+  tabularLastPreview?: TabularDataResult;
 
   // Map Position
-  // zxy?: [number, number, number];
+   zxy?: [number, number, number];
 
   // Data Source
   dataSourceName?: DataSourceName;
@@ -37,9 +37,10 @@ export interface ShapeEntity {
   processingStatus?: 'idle' | 'processing' | 'paused' | 'completed' | 'failed' | 'cancelled';
 }
 
+ export type ShapeDraft = TreeNodeUpdaterPayload<ShapeEntity>;
+
 /*
 // Draft payload via TreeNodeUpdaterPayload; name/description/tags live only in draftMetadata/metadata.
-export type ShapeDraft = TreeNodeUpdaterPayload<ShapeEntity>;
 
 export interface StepProps {
   draft: Partial<ShapeDraft['draftData']> | null;
@@ -47,15 +48,13 @@ export interface StepProps {
   disabled?: boolean;
   mode?: 'create' | 'edit';
 }
-
+ */
 export interface TabularFileSummary {
   name: string;
   sizeBytes: number;
   type?: string;
   lastModifiedAt?: number;
 }
-
- */
 
 export interface Feature {
   type: 'Feature';

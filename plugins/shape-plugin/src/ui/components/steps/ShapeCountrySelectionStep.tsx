@@ -2,13 +2,14 @@ import type React from 'react';
 import { useCallback, useMemo } from 'react';
 import { useSnackbar } from 'notistack';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
-import type { StepProps, CountryMetadata } from '../../../common/types/index.js';
+import type { CountryMetadata } from '../../../common/types/index.js';
 import { useCountryMetadata } from '../../hooks/useCountryMetadata.js';
 import { calculateEstimatedFeatures, calculateEstimatedSize, DATA_SOURCE_CONFIGS, formatBytes, formatNumber } from '../../../common/mock/data.js';
 import { normalizeDataSourceName } from '../../../services/utils/utils.js';
 import { CountryMatrixSelector, useIsoCountries, type MatrixConfig, type MatrixSelection, type ContinentCode } from '@hierarchidb/ui-country-select';
+import { ShapeDialogStepProps } from './ShapeDialogStepProps.ts';
 
-type ShapeDialogStepProps = StepProps;
+//type ShapeDialogStepProps = StepProps;
 
 const CONTINENT_CODES: ContinentCode[] = ['AF', 'AS', 'EU', 'NA', 'SA', 'OC', 'AN'];
 
@@ -55,9 +56,9 @@ const normalizeCountryCodeFromMetadata = (country: Partial<CountryMetadata>, ind
   return primary.slice(0, 2) || `COUNTRY-${index}`;
 };
 
-export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ draft, onUpdate, disabled: _disabled }) => {
+export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ data, onChange, }) => {
   const { enqueueSnackbar } = useSnackbar();
-  const draftData = draft ?? {};
+  const draftData = data ?? {};
   const dataSourceKey = normalizeDataSourceName(draftData.dataSourceName) ?? 'gadm';
   const iso = useIsoCountries();
 
@@ -141,7 +142,7 @@ export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ draf
         });
         return row;
       });
-      onUpdate({ checkboxState: nextMatrix });
+      onChange({ checkboxState: nextMatrix });
 
       const totalSelected = nextMatrix.flat().filter(Boolean).length;
       const countriesWithSelection = nextMatrix.filter((row) => row.some(Boolean)).length;
@@ -152,7 +153,7 @@ export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ draf
         { variant: 'info' },
       );
     },
-    [baseCountries, columns, countries, enqueueSnackbar, onUpdate],
+    [baseCountries, columns, countries, enqueueSnackbar, onChange],
   );
 
   const isCellEnabled = useCallback(

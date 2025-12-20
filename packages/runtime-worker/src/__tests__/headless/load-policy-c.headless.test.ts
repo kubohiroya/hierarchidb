@@ -9,7 +9,7 @@ const encodeDraftHolderName = (parentId: NodeId, nodeId: NodeId) =>
 describe('Headless: Policy C load (moderate subtree)', () => {
   beforeEach(async () => {
     CoreDB.resetInstance();
-    const request = indexedDB.deleteDatabase('core-db');
+    const request = indexedDB.deleteDatabase('core');
     if (request?.onsuccess !== undefined) {
       await new Promise<void>((resolve) => {
         request.onsuccess = request.onerror = request.onblocked = () => resolve();

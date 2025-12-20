@@ -2,13 +2,12 @@
   * Shape API interface - UI-Worker
   */
 
-import type {NodeId} from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/common-types';
 
 import type {
   BatchSession,
   BatchTask,
   CountryMetadata,
-  CreateShapeData,
   DataSourceConfig,
   ProcessingConfig,
   ProgressInfo,
@@ -16,7 +15,6 @@ import type {
   ShapeBatchCommandPayload,
   SelectionStats,
   ShapeEntity,
-  UpdateShapeData,
   UrlMetadata,
   ShapeStepValidationResult,
 } from '../types/index.js';
@@ -25,15 +23,6 @@ import type {
  * Main Shape API interface for UI-Worker communication via PluginRegistryImpl
  */
 export interface ShapeAPI {
-  // Core shape-plugin entity operations
-  createEntity(nodeId: NodeId, data: CreateShapeData): Promise<ShapeEntity>;
-
-  getEntity(nodeId: NodeId): Promise<ShapeEntity | undefined>;
-
-  updateEntity(nodeId: NodeId, data: UpdateShapeData): Promise<void>;
-
-  deleteEntity(nodeId: NodeId): Promise<void>;
-
   //  DraftTypes management (CopyOnWrite pattern)
   createDraft(nodeId: NodeId): Promise<NodeId>;
 

@@ -53,6 +53,18 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1753) runtime-worker export 追加（commitTreeNodeDraft）（P1）
+- ブランチ: `fix/runtime-worker/commit-draft-export`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: packages/runtime-worker/src/index.ts, plugins/shape-plugin/src/worker/handlers/ShapeEntityService.ts
+- 受け入れ基準（DoD）:
+  - [ ] `@hierarchidb/runtime-worker` から `commitTreeNodeDraft` が export される
+  - [ ] shape-plugin の build で MISSING_EXPORT が発生しない
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] index.ts の export を追加する
+  - [ ] 影響範囲とロールバック手順を記載する
+- ロールバック手順：`packages/runtime-worker/src/index.ts` の差分を revert し、必要に応じて `pnpm --filter @hierarchidb/app build` を再実行する
+
 1751) location-plugin Step3 国選択の continent 表示修正（P1）
 - ブランチ: `fix/location/step3-region-label`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: plugins/location-plugin（Step3 国選択 UI）、packages/ui/country-select（continent 正規化）
@@ -4507,6 +4519,26 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1754) shape-plugin Step2 validate 修正（P1） — 完了 (2025-12-20)
+  - 要点：Step adapter を data/onChange へ統一し、Step2 の選択が dialog data に反映されるよう修正。
+  - 検証：未実施（手動/ビルド未実行）。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/components/{steps-provider.tsx,steps/ShapeDialogStepProps.ts}` と Step2 周辺差分を revert し、必要に応じて `pnpm --filter @hierarchidb/app build` を再実行する。
+- 1753) runtime-worker export 追加（commitTreeNodeDraft）（P1） — 完了 (2025-12-20)
+  - 要点：`@hierarchidb/runtime-worker` の public export に `commitTreeNodeDraft` を追加し、shape-plugin からの import を解決。
+  - 検証：未実施（build 未実行）。
+  - ロールバック手順：`packages/runtime-worker/src/index.ts` の差分を revert し、必要に応じて `pnpm --filter @hierarchidb/app build` を再実行する。
+- 1770) plugin-base StepComponentProps の命名整理（P1） — 完了 (2025-12-20)
+  - 要点：plugin-base の StepComponentProps を PluginStepProps に改名し、旧 alias を削除。plugin-ui-host の参照と README を更新。
+  - 検証：`pnpm --filter @hierarchidb/plugin-base typecheck`（2025-12-20 02:31 JST）exit 0。`pnpm --filter @hierarchidb/plugin-ui-host typecheck` は shape-plugin 起因の既存エラーで exit 2。
+  - ロールバック手順：`packages/plugin-base/src/registry/PluginStepRegistry.ts`、`packages/plugin-base/src/index.ts`、`packages/plugin-base/README.md`、`packages/plugin-ui-host/src/headless/usePluginDialogController/steps.tsx`、`packages/plugin-ui-host/src/examples/SamplePluginProvider.tsx` の差分を revert し、同 typecheck を再実行する。
+- 1752) shape-plugin 本番コードの any 排除（P1） — 完了 (2025-12-20)
+  - 要点：shape-plugin 本番コードの any を撤去し、GeoJSON 型や Batch/Worker/DB の具体型へ置換。DataSource/タイル/Worker/UI も型整合を実施。
+  - 検証：未実施（型チェック未実行）。
+  - ロールバック手順：`plugins/shape-plugin/src/{common,services,ui,worker}` の本タスク差分を revert し、必要に応じて `pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する。
+- 1769) shape-plugin API から entity CRUD を整理削除（P1） — 完了 (2025-12-20)
+  - 要点：ShapeAPI/ShapeWorkerAPI から entity CRUD メソッドを削除し、shapePluginAPI 実装とユニットテストから該当経路を整理。
+  - 検証：`pnpm --filter @hierarchidb/shape-plugin typecheck`（2025-12-20 02:12 JST）exit 2（既存の多数の型エラーが残存。CRUD削除由来のエラーは解消済み）。
+  - ロールバック手順：`plugins/shape-plugin/src/common/types/api.ts`、`plugins/shape-plugin/src/worker/api.ts`、`plugins/shape-plugin/src/worker/public.ts`、`plugins/shape-plugin/src/worker/__tests__/unit/api.unit.test.ts` の差分を revert し、同 typecheck を再実行する。
 - 1765) shape-plugin core.ts の any 型排除（P1） — 完了 (2025-12-20)
   - 要点：`Feature.properties` を `Record<string, unknown>`、`VectorTileEntity.layers` を `LayerInfo[]` に置換して any を排除。
   - 検証：未実施（型チェック未実行）。
@@ -10676,6 +10708,15 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-20 01:42 progress: fix/app/preview-final-step — resolvePreviewStepIndex を最終ステップ返却へ変更し、folder 系は除外。
 - 2025-12-20 01:43 command: pnpm --filter @hierarchidb/app typecheck — exit 0（plugin-base build の define 警告あり）。
 - 2025-12-20 01:44 done: fix/app/preview-final-step — Preview 操作で最終ステップを full screen 表示するよう変更。ロールバック: `app/src/hooks/treeconsole/actions/helpers.ts` の差分を revert し、同 typecheck を再実行。
+- 2025-12-20 02:05 start: refactor/shape/api-crud-trim — shapePluginAPI から entity CRUD を削除する対応に着手。branch 作成不可なら main 作業。
+- 2025-12-20 02:08 progress: refactor/shape/api-crud-trim — ShapeAPI/ShapeWorkerAPI から CRUD を削除し、shapePluginAPI 実装とユニットテストから該当経路を整理。
+- 2025-12-20 02:12 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 2（BatchSessionManager/ShapeDB/DataSourceStrategy ほか既存の型エラーが多数残存）。
+- 2025-12-20 02:20 start: refactor/plugin-base/rename-step-props — StepComponentProps を PluginStepProps に改名する対応に着手。branch 作成不可なら main 作業。
+- 2025-12-20 02:24 progress: refactor/plugin-base/rename-step-props — plugin-base の StepComponentProps を PluginStepProps へ改名し、互換 alias を追加。plugin-ui-host/example の参照を更新。
+- 2025-12-20 02:25 command: pnpm --filter @hierarchidb/plugin-base typecheck — exit 0。
+- 2025-12-20 02:26 command: pnpm --filter @hierarchidb/plugin-ui-host typecheck — exit 2（shape-plugin 起因の既存エラーが波及）。
+- 2025-12-20 02:30 progress: refactor/plugin-base/rename-step-props — StepComponentProps alias を削除し、PluginStepProps のみを公開。
+- 2025-12-20 02:31 command: pnpm --filter @hierarchidb/plugin-base typecheck — exit 0。
 - 2025-12-19 23:40 start: fix/gen-iso3166-2/country-quote-normalize — country_en の余計なクオートを常に除去する対応に着手。DoD: quoted-field 維持・typecheck ログ・原因/修正/ロールバック記載。branch 作成不可なら main 作業。
 - 2025-12-19 23:52 progress: fix/gen-iso3166-2/country-quote-normalize — country_en の前後クオートを除去し、CSV の国名列を正規化（`"""` を除去）。
 - 2025-12-19 23:54 command: pnpm --filter @hierarchidb/gen-iso3166-2 typecheck — exit 0。
@@ -10734,9 +10775,21 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-20 14:36 done: fix/ui-lru-splitview/max-update-depth — prevProgress/paneStates を ref 化して effect の依存を整理し、無限更新を抑止。検証: 手動確認は未実施。ロールバック: `packages/ui/lru-splitview/src/hooks/useLRUPanes.ts` の差分を revert し、表示確認を再実行する。
 - 2025-12-20 15:56 start: fix/shape/core-any-types — core.ts の any 型を具体的な型へ置換する対応に着手。DoD: Kanban/運用ログ更新、型置換、確認ログとロールバック手順記載。
 - 2025-12-20 15:57 done: fix/shape/core-any-types — `Feature.properties` を `Record<string, unknown>`、`VectorTileEntity.layers` を `LayerInfo[]` へ変更し any を排除。検証: 型チェック未実施。ロールバック: `plugins/shape-plugin/src/common/types/core.ts` の差分を revert し、表示確認を再実行する。
+- 2025-12-20 16:10 start: refactor/shape/remove-any-types — shape-plugin 本番コードの any 排除（テスト除外）に着手。DoD: Kanban/運用ログ更新、any 排除、型整合、ロールバック手順記載。
+- 2025-12-20 16:40 done: refactor/shape/remove-any-types — shape-plugin 本番コードの any を撤去し、DB/Batch/Worker/UI/DataSource を具体型へ置換。検証: 型チェック未実施。ロールバック: `plugins/shape-plugin/src/{common,services,ui,worker}` の差分を revert し、必要に応じて `pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する。
+- 2025-12-20 16:50 start: fix/runtime-worker/commit-draft-export — commitTreeNodeDraft の export 追加対応に着手。DoD: export 追加、MISSING_EXPORT 回避、ロールバック手順記載。
+- 2025-12-20 16:52 done: fix/runtime-worker/commit-draft-export — runtime-worker public export に commitTreeNodeDraft を追加。検証: build 未実施。ロールバック: `packages/runtime-worker/src/index.ts` の差分を revert し、必要に応じて `pnpm --filter @hierarchidb/app build` を再実行する。
+- 2025-12-20 17:05 start: fix/shape/step2-validation — Step2 の validate が進めない問題の修正に着手。DoD: adapter/props 整理、選択反映、ロールバック手順記載。
+- 2025-12-20 17:20 done: fix/shape/step2-validation — Step2 の onChange 経路を adapter 経由で統一し、data/onChange へ揃えて選択反映を復旧。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/{steps-provider.tsx,steps/ShapeDialogStepProps.ts}` と Step2 周辺の差分を revert。
 
 - 2025-12-20 11:45 progress: fix/styler/step5-virtual-table — StylerPreviewStep のプレビュー表を react-window で再仮想化し、ResizeObserver で DialogContent 高さに合わせてリスト高さを算出。ヘッダと同じ幅のグリッドでカラム幅ずれ/行欠けを抑制。
 - 2025-12-20 11:46 command: pnpm --filter @hierarchidb/styler-plugin typecheck — exit 0。
 
 - 2025-12-20 12:15 progress: fix/shape/build-control-layout — BuildStepPanel を BuildControlCard + Start/Resume/Pause の2ボタン構成に刷新し、ダイアログ上部で左にカード、右に全体 LinearProgress を横並びで表示。shape step5 の footer Build ボタン用 capabilities を撤去。
 - 2025-12-20 12:17 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 2（既存の ShapeEntity metadata 型不一致エラーが未解消）。
+
+- 2025-12-20 12:40 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 2（既存の ShapeEntity/NodeId 型不一致エラー多数。今回のUI変更とは無関係の既知エラー）
+
+- 2025-12-20 12:55 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 2（既存の ShapeEntity/NodeId 型不整合、および DownloadConfigSection の Grid xs/sm 型定義が MUI Grid2 と合わずエラー）
+
+- 2025-12-20 13:05 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 2（既存の ShapeEntity/NodeId 型不整合エラー継続。DownloadConfigSection 内 Grid xs 指定は size に修正済み）

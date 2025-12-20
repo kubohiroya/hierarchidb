@@ -13,7 +13,7 @@ index.ts     Public exports
 ```
 
 ## Key exports
-- `PluginStepRegistry`, `PluginStepConfig`, `PluginStepProvider`, `StepComponentProps`, `StartBatchContext`, `StepData` — step registration and composition for plugin dialogs.
+- `PluginStepRegistry`, `PluginStepConfig`, `PluginStepProvider`, `PluginStepProps`, `StartBatchContext`, `StepData` — step registration and composition for plugin dialogs.
 - `HostProfileRegistry` — host capabilities/profile registry.
 - Hooks: `useDialogUrlSync`（sync `step`/`mode`/`map` with URL, namespaced states）、`useDialogViewState`.
 - Persistence utils: `get/setPeerDialogPosition|Size|DisplayMode` for peer dialog windows.

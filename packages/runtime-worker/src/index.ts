@@ -36,10 +36,10 @@ export {
 export { WorkerService } from './WorkerService.js';
 // CoreDB and draft utilities (for plugin-side usage)
 export { CoreDB } from './services/CoreDB.js';
+export { commitTreeNodeDraft } from './services/draft/commitOperations.js';
 export { discardTreeNodeDraft } from './services/draft/cleanupOperations.js';
 export {
   getTreeNode,
   updateTreeNodeDraftData,
   updateTreeNodeDraftMetadata,
 } from './services/draft/lookupOperations.js';
-

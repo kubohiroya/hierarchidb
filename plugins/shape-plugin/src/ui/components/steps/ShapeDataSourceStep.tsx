@@ -7,16 +7,17 @@ import {
 import {
   type DataSourceConfig,
   type DataSourceName,
-  type StepProps,
 } from '../../../common/types/index.js';
 import { normalizeDataSourceName } from '../../../services/utils/utils.js';
 import { DATA_SOURCE_CONFIGS } from '../../../common/mock/data.js';
+import { ShapeDialogStepProps } from './ShapeDialogStepProps.ts';
+
 
 /**
  * Data Source Selection step for Shape plugin
  */
-export const ShapeDataSourceStep: React.FC<StepProps> = ({ draft, onUpdate, disabled }) => {
-  const draftData = draft ?? {};
+export const ShapeDataSourceStep: React.FC<ShapeDialogStepProps> = ({ data, onChange }) => {
+  const draftData = data ?? {};
   const sources = Object.values(DATA_SOURCE_CONFIGS) as DataSourceConfig[];
   const options: DataSourceWithLicenseOption[] = sources.map((source) => ({
     id: source.name,
@@ -64,11 +65,10 @@ export const ShapeDataSourceStep: React.FC<StepProps> = ({ draft, onUpdate, disa
               updates.licenseAgreedAt = next.licenseAgreedAt;
             }
             if (Object.keys(updates).length) {
-              onUpdate(updates);
+              onChange(updates);
             }
           }}
           licenseRequired={false}
-          disabled={disabled}
           description={
             <Typography variant="body2" color="text.secondary" paragraph>
               Choose a geographic data provider. Each source has different coverage, accuracy, and

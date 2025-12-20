@@ -4,6 +4,8 @@
  */
 
 import { ShapeMetadata } from '../common/types/metadata.js';
+import type { NodeId } from '@hierarchidb/common-types';
+import type { ShapeEntity } from '../common/types/index.js';
 import { shapePluginAPI } from './api.js';
 import { ShapeEntityHandler } from './handlers/index.js';
 
@@ -40,12 +42,8 @@ export const ShapeWorkerPlugin = {
 
   // Worker-specific validation
   validation: {
-    validateEntity: async (entity: any) => {
+    validateEntity: async (entity: Partial<ShapeEntity>) => {
       const errors: string[] = [];
-
-      if (!entity.name?.trim()) {
-        errors.push('Name is required');
-      }
 
       if (!entity.dataSourceName) {
         errors.push('Data source is required');
@@ -64,23 +62,20 @@ export const ShapeWorkerPlugin = {
 
   // Worker-specific lifecycle hooks
   lifecycle: {
-    afterCreate: async (nodeId: any, entity: any) => {
-      console.log(`Shape entity created: ${entity.id} for node: ${nodeId}`);
+    afterCreate: async (_nodeId: NodeId, _entity: ShapeEntity) => {
       // Could initialize default resources, caches, etc.
     },
 
-    beforeDelete: async (nodeId: any, entity: any) => {
-      console.log(`Cleaning up Shape entity: ${entity.id} for node: ${nodeId}`);
+    beforeDelete: async (nodeId: NodeId, entity: ShapeEntity) => {
       // Cancel any active batch sessions
       if (entity.batchSessionId) {
-        await shapePluginAPI.cancelBatchProcessing(entity.batchSessionId);
+        await shapePluginAPI.cancelBatchProcessing(nodeId);
       }
       // Cleanup processing data
       await shapePluginAPI.cleanupProcessingData(nodeId);
     },
 
-    afterUpdate: async (nodeId: any, entity: any, changes: any) => {
-      console.log(`Shape entity updated: ${entity.id} for node: ${nodeId}`, changes);
+    afterUpdate: async (_nodeId: NodeId, _entity: ShapeEntity, _changes: Partial<ShapeEntity>) => {
       // Could trigger reprocessing if configuration changed
     },
   },

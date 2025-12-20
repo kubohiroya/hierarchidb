@@ -5,16 +5,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { shapePluginAPI } from '../api.js';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { CreateShapeData, UpdateShapeData } from '../../shared/index.ts';
+import type { UpdateShapeData } from '../../shared/index.ts';
 
 // Mock ShapeEntityHandler (module path must match api.ts import './handlers')
 vi.mock('../handlers', () => ({
   ShapeEntityHandler: vi.fn().mockImplementation(() => ({
     // Provide no-op stubs for all methods the API may call; override per-test via vi.doMock if needed
-    createEntity: vi.fn(),
     getEntityByNodeId: vi.fn(),
-    updateEntity: vi.fn(),
-    deleteEntity: vi.fn(),
     createDraft: vi.fn(),
     createNewDraftBase: vi.fn(),
     getDraft: vi.fn(),
@@ -48,9 +45,7 @@ describe('Shape Plugin API', () => {
         },
       };
 
-      // Mock the entity handler to return an entity
       const mockHandler = {
-        getEntityByNodeId: vi.fn().mockResolvedValue(mockEntity),
         createDraft: vi.fn().mockResolvedValue({
           ...mockEntity,
           id: 'draft-123',
@@ -64,8 +59,7 @@ describe('Shape Plugin API', () => {
 
       const draftId = await shapePluginAPI.createDraft(nodeId);
       expect(typeof draftId).toBe('string');
-      expect(mockHandler.getEntityByNodeId).toHaveBeenCalledWith(nodeId);
-      expect(mockHandler.createDraft).toHaveBeenCalledWith(mockEntity);
+      expect(mockHandler.createDraft).toHaveBeenCalledWith(nodeId);
     });
 
     it('should create new draft DraftTypes', async () => {
@@ -270,34 +264,6 @@ describe('Shape Plugin API', () => {
     });
   });
 
-  describe('Legacy API Compatibility', () => {
-    it('should get entity by node ID (for backward compatibility)', async () => {
-      const nodeId = 'node-123' as NodeId;
-      const result = await shapePluginAPI.getEntity(nodeId);
-      // Mock implementation returns undefined
-      expect(result).toBeUndefined();
-    });
-
-    it('should throw error for legacy updateEntity when entity not found', async () => {
-      const nodeId = 'node-123' as NodeId;
-      const updateData: UpdateShapeData = {
-        name: 'Updated Name',
-      };
-
-      await expect(shapePluginAPI.updateEntity(nodeId, updateData)).rejects.toThrow(
-        'Shape entity not found for node',
-      );
-    });
-
-    it('should throw error for legacy deleteEntity when entity not found', async () => {
-      const nodeId = 'node-123' as NodeId;
-
-      await expect(shapePluginAPI.deleteEntity(nodeId)).rejects.toThrow(
-        'Shape entity not found for node',
-      );
-    });
-  });
-
   describe('Data Source and Validation APIs', () => {
     it('should return default data source configurations', async () => {
       const configs = await shapePluginAPI.getDataSourceConfigs();
@@ -377,65 +343,6 @@ describe('Shape Plugin API', () => {
 
 describe('createEntity', () => {
   it('should create entity with valid data', async () => {
-    const mockEntity = {
-      id: 'entity-123' as any,
-      nodeId: 'node-456' as NodeId,
-      name: 'Test Shape',
-      dataSourceName: 'naturalearth',
-      processingConfig: {
-        concurrentDownloads: 2,
-        corsProxyBaseURL: '',
-        enableFeatureFiltering: false,
-        featureFilterMethod: 'hybrid' as const,
-        featureAreaThreshold: 0.1,
-        concurrentProcesses: 2,
-        maxZoomLevel: 12,
-      },
-    };
-
-    const createData: CreateShapeData = {
-      name: 'Test Shape',
-      dataSourceName: 'naturalearth',
-      processingConfig: mockEntity.processingConfig,
-    };
-
-    const result = await shapePluginAPI.createEntity('node-456' as NodeId, createData);
-    expect(result).toBeDefined();
-  });
-});
-
-describe('getEntity', () => {
-  it('should return entity if found', async () => {
-    const nodeId = 'node-123' as NodeId;
-    const result = await shapePluginAPI.getEntity(nodeId);
-    // Mock implementation returns undefined
-    expect(result).toBeUndefined();
-  });
-});
-
-describe('updateEntity', () => {
-  it('should throw error if entity not found', async () => {
-    const nodeId = 'node-123' as NodeId;
-    const updateData: UpdateShapeData = {
-      name: 'Updated Name',
-    };
-
-    await expect(shapePluginAPI.updateEntity(nodeId, updateData)).rejects.toThrow(
-      'Shape entity not found for node',
-    );
-  });
-});
-
-describe('deleteEntity', () => {
-  it('should throw error if entity not found', async () => {
-    const nodeId = 'node-123' as NodeId;
-
-    await expect(shapePluginAPI.deleteEntity(nodeId)).rejects.toThrow(
-      'Shape entity not found for node',
-    );
-  });
-});
-
 describe('getDataSourceConfigs', () => {
   it('should return default data source configurations', async () => {
     const configs = await shapePluginAPI.getDataSourceConfigs();

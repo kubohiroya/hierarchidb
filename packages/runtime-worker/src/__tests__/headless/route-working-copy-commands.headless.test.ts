@@ -7,7 +7,7 @@ import { CoreDB } from '../../services/CoreDB.js';
 describe('Headless E2E (Node + fake-indexeddb): CP routing + WC flows', () => {
   beforeEach(async () => {
     CoreDB.resetInstance();
-    const request = indexedDB.deleteDatabase('core-db');
+    const request = indexedDB.deleteDatabase('core');
     if (request?.onsuccess !== undefined) {
       await new Promise<void>((resolve) => {
         request.onsuccess = request.onerror = request.onblocked = () => resolve();

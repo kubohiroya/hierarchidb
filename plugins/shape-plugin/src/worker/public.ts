@@ -6,7 +6,6 @@ import type {
   BatchSession,
   BatchTask,
   CountryMetadata,
-  CreateShapeData,
   DataSourceConfig,
   NodeId,
   ProcessingConfig,
@@ -16,18 +15,11 @@ import type {
   ShapeBatchCommandPayload,
   ShapeEntity,
   TileInfo,
-  UpdateShapeData,
   UrlMetadata,
   ShapeStepValidationResult,
 } from '../common/types/index.js';
 
 export interface ShapeWorkerAPI {
-  // Entities
-  createEntity(nodeId: NodeId, data: CreateShapeData): Promise<ShapeEntity>;
-  getEntity(nodeId: NodeId): Promise<ShapeEntity | undefined>;
-  updateEntity(nodeId: NodeId, data: UpdateShapeData): Promise<void>;
-  deleteEntity(nodeId: NodeId): Promise<void>;
-
   // Working copies
   createDraft(nodeId: NodeId): Promise<NodeId>;
   createNewDraftBase(parentId: NodeId): Promise<NodeId>;

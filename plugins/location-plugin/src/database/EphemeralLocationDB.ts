@@ -58,7 +58,7 @@ export class EphemeralLocationDB extends Dexie {
   pendingSessions!: Table<PendingLocationSession>;
 
   constructor() {
-    super(getDBName('location-ephemeral-db'));
+    super(getDBName('location-ephemeral'));
     this.version(1).stores({
       vectorTiles: '&id, sessionId, nodeId, [z+x+y], timestamp',
     });

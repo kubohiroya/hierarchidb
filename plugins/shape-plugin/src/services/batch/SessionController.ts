@@ -23,6 +23,13 @@ import type { UrlMetadata, ProgressInfo, ProcessingStage } from '../../common/ty
 import { BatchTaskStage } from '../../common/types/index.js';
 import type { DownloadTask } from '../../common/types/index.js';
 
+type WorkerPoolStatistics = Record<string, number>;
+
+interface WorkerPoolHandle {
+  shutdown(): Promise<void>;
+  getPoolStatistics(): WorkerPoolStatistics;
+}
+
 export interface BatchSessionOptions {
   maxConcurrentTasks?: number;
   retryAttempts?: number;
@@ -33,7 +40,7 @@ export interface BatchSessionOptions {
 export class SessionController {
   public readonly sessionId: string;
   private nodeId: NodeId;
-  private workerPool: any | null = null;
+  private workerPool: WorkerPoolHandle | null = null;
   private downloadAdapter: DownloadStageAdapter = new RuntimeWorkerDownloadAdapter();
   private urlMetadata: UrlMetadata[];
   private options: BatchSessionOptions;
@@ -386,7 +393,7 @@ export class SessionController {
   /**
    * Get WorkerPool statistics
    */
-  getPoolStatistics() {
+  getPoolStatistics(): WorkerPoolStatistics | null {
     if (!this.workerPool) {
       return null;
     }

@@ -1,5 +1,5 @@
 import { LinearProgress, Paper, Stack, Typography } from '@mui/material';
-import type { NodeId } from '../../common/types/index.js';
+import type {NodeId} from '@hierarchidb/common-types';
 import { useShapeProgress } from '../hooks/useShapeProgress.js';
 
 export interface ShapeBatchProgressDisplayProps {

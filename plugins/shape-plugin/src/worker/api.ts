@@ -3,17 +3,16 @@
  * Implements ShapeAPI interface from shared layer
  */
 
+import type { NodeId, TreeNodeId} from '@hierarchidb/common-types';
 import {
   type BatchSession,
   type BatchTask,
   type CountryMetadata,
-  type CreateShapeData,
   type DataSourceConfig,
   type DataSourceName,
   SHAPE_DATA_SOURCES,
   DEFAULT_PROCESSING_CONFIG,
   mergeProcessingConfig,
-  type NodeId,
   type ProcessingConfig,
   type ProcessingStatus,
   type ProcessingStage,
@@ -24,7 +23,6 @@ import {
   type SelectionStats,
   type ShapeEntity,
   type TileInfo,
-  type UpdateShapeData,
   type UrlMetadata,
   validateProcessingConfig,
   type ShapeStepValidationResult,
@@ -35,7 +33,6 @@ import { metadataLoader } from '../services/metadata/MetadataLoader.js';
 import { createShapeBatchManager } from '../services/batch/UnifiedShapeBatchManager.js';
 import type { BatchProcessConfig } from '../services/batch/types.js';
 import { getEphemeralShapeDB } from '../services/database/EphemeralShapeDB.js';
-import type { TreeNodeId } from '@hierarchidb/common-types';
 import type { BatchStage, BatchTaskStatus } from '../common/types/BatchTaskLike.js';
 import type { BatchProgressEvent as RuntimeBatchProgressEvent } from '@hierarchidb/common-api';
 import { calculateSelectionStats, generateUrlMetadata } from '../services/utils/utils.js';
@@ -45,6 +42,16 @@ const batchSessionManager = createShapeBatchManager();
 const batchManagerWithDispatch = batchSessionManager as unknown as {
   dispatchCommand?: (command: string, payload: Record<string, unknown>) => Promise<void>;
 };
+
+type DraftLike = {
+  nodeId?: NodeId;
+  treeNodeId?: NodeId;
+  batchSessionId?: string;
+  draftData?: Partial<ShapeEntity>;
+};
+
+const getBatchSessionIdFromDraft = (draft: DraftLike | null | undefined): string | undefined =>
+  draft?.batchSessionId ?? draft?.draftData?.batchSessionId;
 
 interface ProgressSubscription {
   unsubscribe?: () => void;
@@ -171,83 +178,6 @@ const hydrateSessionMeta = async (sessionId: string): Promise<void> => {
 };
 
 export const shapePluginAPI = {
-  // ===================================
-  // Core Entity Operations
-  // ===================================
-
-  createEntity: async (nodeId: NodeId, data: CreateShapeData): Promise<ShapeEntity> => {
-    const handler = getShapeEntityHandler();
-    const payload = {
-      treeNodeId: nodeId,
-      draftData: {
-        dataSourceName: data.dataSourceName,
-        processingConfig: data.processingConfig,
-      },
-      draftMetadata: { name: '', description: '', tags: [] },
-    } as any;
-    return await handler.createEntity(nodeId, payload);
-  },
-
-  getEntity: async (nodeId: NodeId): Promise<ShapeEntity | undefined> => {
-    const handler = getShapeEntityHandler();
-    return (await handler.getEntityByNodeId(nodeId)) ?? undefined;
-  },
-
-  updateEntity: async (nodeId: NodeId, data: UpdateShapeData): Promise<void> => {
-    const handler = getShapeEntityHandler();
-    const entity = await handler.getEntityByNodeId(nodeId);
-    if (!entity || !entity.id) {
-      throw new Error(`Shape entity not found for node: ${nodeId}`);
-    }
-    const payload = {
-      treeNodeId: nodeId,
-      draftData: data as Partial<ShapeEntity>,
-      draftMetadata: undefined,
-    } as any;
-    await handler.updateEntity(entity.id, payload);
-  },
-
-  deleteEntity: async (nodeId: NodeId): Promise<void> => {
-    const handler = getShapeEntityHandler();
-    const entity = await handler.getEntityByNodeId(nodeId);
-    if (!entity || !entity.id) {
-      throw new Error(`Shape entity not found for node: ${nodeId}`);
-    }
-    await handler.deleteEntity(entity.id);
-  },
-
-  // ===================================
-  // DraftTypes Management (CopyOnWrite)
-  // ===================================
-
-  createDraft: async (nodeId: NodeId): Promise<NodeId> => {
-    const handler = getShapeEntityHandler();
-    const draft = await handler.createDraft(nodeId);
-    if (!draft.treeNodeId) {
-      throw new Error('Failed to create draft: missing treeNodeId');
-    }
-    return draft.treeNodeId;
-  },
-
-  getDraft: async (draftId: NodeId): Promise<ShapeEntity | undefined> => {
-    const handler = getShapeEntityHandler();
-    return (await handler.getEntityByNodeId(draftId)) ?? undefined;
-  },
-
-  updateDraft: async (draftId: NodeId, data: Partial<ShapeEntity>): Promise<void> => {
-    const handler = getShapeEntityHandler();
-    await handler.updateDraft(draftId, data);
-  },
-
-  commitDraft: async (draftId: NodeId): Promise<void> => {
-    const handler = getShapeEntityHandler();
-    return await handler.commitDraft(draftId);
-  },
-
-  discardDraft: async (draftId: NodeId): Promise<void> => {
-    const handler = getShapeEntityHandler();
-    await handler.discardDraft(draftId);
-  },
 
   // ===================================
   // Data Source Operations
@@ -341,15 +271,17 @@ export const shapePluginAPI = {
 
     // Get draft to find the associated nodeId
     const handler = getShapeEntityHandler();
-    const draft = await handler.getDraft(draftId);
-    if (!draft) {
+    const draftLike = await handler.getEntity(draftId) as DraftLike;
+    if (!draftLike) {
       throw new Error(`Working copy not found: ${draftId}`);
     }
 
     // Convert ProcessingConfig to BatchConfig (legacy fields removed)
     const batchConfig: BatchProcessConfig = {
       corsProxyBaseURL: config.downloadConfig?.corsProxyUrl ?? '',
-      dataSource: config.dataSource ?? toDataSourceName((draft as any).draftData?.dataSourceName ?? 'naturalearth'),
+      dataSource:
+        config.dataSource ??
+        toDataSourceName(draftLike.draftData?.dataSourceName ?? 'naturalearth'),
       download: {
         concurrentDownloads: config.downloadConfig?.maxConcurrent ?? 4,
         deleteOnComplete: config.cleanupConfig?.deleteDownloadedFiles ?? false,
@@ -391,7 +323,7 @@ export const shapePluginAPI = {
     const managerWithPrepare = batchSessionManager as unknown as {
       prepareSession?: (nodeId: NodeId, config: BatchProcessConfig, data: typeof batchSessionData) => void;
     };
-    const nodeForSession = (draft as any)?.nodeId ?? (draft as any)?.treeNodeId ?? draftId;
+    const nodeForSession = draftLike.nodeId ?? draftLike.treeNodeId ?? draftId;
     managerWithPrepare.prepareSession?.(nodeForSession, batchConfig, batchSessionData);
     const sessionId = await batchSessionManager.startBatchSession(nodeForSession);
 
@@ -411,16 +343,16 @@ export const shapePluginAPI = {
     }
 
     // Save session ID to draft
-    await handler.updateDraft(draftId, { batchSessionId: sessionId } as Partial<ShapeEntity>);
+    await handler.updateEntity(draftId, { batchSessionId: sessionId } as Partial<ShapeEntity>);
 
     return sessionId;
   },
 
   pauseBatchProcessing: async (draftId: NodeId): Promise<void> => {
     const handler = getShapeEntityHandler();
-    const draft = await handler.getDraft(draftId);
-    const batchSessionId = (draft as any)?.batchSessionId ?? (draft as any)?.draftData?.batchSessionId;
-    if (!draft || !batchSessionId) {
+    const entity = await handler.getEntity(draftId);
+    const batchSessionId = getBatchSessionIdFromDraft(entity as DraftLike | undefined);
+    if (!entity || !batchSessionId) {
       throw new Error(`No active batch session for draft: ${draftId}`);
     }
 
@@ -431,9 +363,9 @@ export const shapePluginAPI = {
 
   resumeBatchProcessing: async (draftId: NodeId): Promise<string> => {
     const handler = getShapeEntityHandler();
-    const draft = await handler.getDraft(draftId);
-    const batchSessionId = (draft as any)?.batchSessionId ?? (draft as any)?.draftData?.batchSessionId;
-    if (!draft || !batchSessionId) {
+    const entity = await handler.getEntity(draftId);
+    const batchSessionId = getBatchSessionIdFromDraft(entity as DraftLike | undefined);
+    if (!entity || !batchSessionId) {
       throw new Error(`No batch session to resume for draft: ${draftId}`);
     }
 
@@ -445,9 +377,9 @@ export const shapePluginAPI = {
 
   cancelBatchProcessing: async (draftId: NodeId): Promise<void> => {
     const handler = getShapeEntityHandler();
-    const draft = await handler.getDraft(draftId);
-    const batchSessionId = (draft as any)?.batchSessionId ?? (draft as any)?.draftData?.batchSessionId;
-    if (!draft || !batchSessionId) {
+    const entity = await handler.getEntity(draftId);
+    const batchSessionId = getBatchSessionIdFromDraft(entity as DraftLike | undefined);
+    if (!entity || !batchSessionId) {
       throw new Error(`No active batch session for draft: ${draftId}`);
     }
 
@@ -460,7 +392,7 @@ export const shapePluginAPI = {
     progressSessionMeta.delete(batchSessionId);
 
     // Clear session ID from draft
-    await handler.updateDraft(draftId, { batchSessionId: undefined } as Partial<ShapeEntity>);
+    await handler.updateEntity(draftId, { batchSessionId: undefined } as Partial<ShapeEntity>);
   },
 
   invokeBatchCommand: async <K extends ShapeBatchCommand>(
@@ -475,7 +407,7 @@ export const shapePluginAPI = {
       const status = await batchSessionManager.getBatchSessionStatus(sessionId);
       const nodeId = status.nodeId as NodeId;
       const handler = getShapeEntityHandler();
-      const entity = await handler.getEntityByNodeId(nodeId);
+      const entity = await handler.getEntity(nodeId);
       const config = mergeProcessingConfig(entity?.processingConfig ?? DEFAULT_PROCESSING_CONFIG);
       const progress = status.progress ?? {
         total: 0,
@@ -521,10 +453,9 @@ export const shapePluginAPI = {
 
   getBatchProgress: async (draftId: NodeId): Promise<ProgressInfo> => {
     const handler = getShapeEntityHandler();
-    const draft = await handler.getDraft(draftId);
-    const batchSessionId =
-      (draft as any)?.batchSessionId ?? (draft as any)?.draftData?.batchSessionId;
-    if (!draft || !batchSessionId) {
+    const entity = await handler.getEntity(draftId);
+    const batchSessionId = getBatchSessionIdFromDraft(entity as DraftLike | undefined);
+    if (!entity || !batchSessionId) {
       return {
         total: 0,
         completed: 0,
@@ -733,7 +664,7 @@ export const shapePluginAPI = {
 
   getProcessingStatus: async (nodeId: NodeId): Promise<ProcessingStatus> => {
     const handler = getShapeEntityHandler();
-    const entity = await handler.getEntityByNodeId(nodeId);
+    const entity = await handler.getEntity(nodeId);
     if (!entity) return { status: 'idle', hasErrors: false, errorMessages: [] };
 
     // Try to reflect batch session status if available

@@ -101,7 +101,7 @@ react-i18next, i18next
 各プラグインの `tsup.config.ts` は特殊要件がない限り追加設定不要です。追加する場合も上記方針を必ず守ってください。
 
 ## Dexie/DB 命名規約
-- DB 名は `getDBName('<kebab-suffix>')` を使用（例: `core-db`, `ephemeral-db`, `spreadsheet-metadata-db`）。
+- DB 名は `getDBName('<kebab-suffix>')` を使用（例: `core`, `ephemeral-db`, `spreadsheet-metadata-db`）。
 - 共有実装がある場合は `@hierarchidb/table-metadata` などの feature パッケージを優先。
 
 ### PeerStore データの扱い

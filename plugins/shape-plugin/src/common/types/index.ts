@@ -14,8 +14,6 @@ export * from './core.js';
 export * from './constants.js';
 export type { ProcessingStatus, TileInfo, ShapeAPI } from './api.js';
 export {
-  buildShapeEntityFromCreate,
-  createDraftFromEntity,
   mergeProcessingConfig,
   summarizeCheckboxState,
   normalizeDataSourceName,

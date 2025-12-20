@@ -20,7 +20,7 @@ type RawBuffer = {
 class ShapeEphemeralDB extends Dexie {
   rawBuffers!: Table<RawBuffer, string>;
 
-  constructor(name: string = getDBName('shape-ephemeral-db')) {
+  constructor(name: string = getDBName('shape-ephemeral')) {
     super(name);
     this.version(1).stores({ rawBuffers: '&id, sessionId, nodeId, timestamp' });
   }

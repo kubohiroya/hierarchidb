@@ -10,7 +10,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
   beforeEach(async () => {
     CoreDB.resetInstance();
     // Ensure fake-indexeddb storage is cleared between tests
-    const request = indexedDB.deleteDatabase('core-db');
+    const request = indexedDB.deleteDatabase('core');
     if (request?.onsuccess !== undefined) {
       await new Promise<void>((resolve) => {
         request.onsuccess = request.onerror = request.onblocked = () => resolve();

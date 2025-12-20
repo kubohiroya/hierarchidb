@@ -3,9 +3,12 @@ import { Box, Typography, Alert } from '@mui/material';
 import type { ShapeEntity } from '../../../common/types/index.js';
 import { useTranslation } from '../../i18n.js';
 import { loadMapWithVectorTiles, type MapWithVectorTilesProps } from '@hierarchidb/ui-map';
+import type { ShapeDialogStepProps } from './ShapeDialogStepProps.ts';
 
-type Props = {
-  draft: Partial<ShapeEntity>;
+type ShapePreviewDraft = Partial<ShapeEntity> & {
+  tilesUrl?: string;
+  tilesEndpoint?: string;
+  tilesLayer?: string;
 };
 
 const DEFAULT_VIEW: MapWithVectorTilesProps['initialViewState'] = {
@@ -14,11 +17,12 @@ const DEFAULT_VIEW: MapWithVectorTilesProps['initialViewState'] = {
   zoom: 1.5,
 };
 
-export const ShapePreviewStep: React.FC<Props> = ({ draft }) => {
+export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
   const { t } = useTranslation();
 
-  const tilesUrl = (draft as any)?.tilesUrl || (draft as any)?.tilesEndpoint || '';
-  const tilesLayer = (draft as any)?.tilesLayer || 'default';
+  const previewDraft = data as ShapePreviewDraft;
+  const tilesUrl = previewDraft.tilesUrl ?? previewDraft.tilesEndpoint ?? '';
+  const tilesLayer = previewDraft.tilesLayer ?? 'default';
 
   if (!tilesUrl) {
     return (
@@ -37,18 +41,17 @@ export const ShapePreviewStep: React.FC<Props> = ({ draft }) => {
       <Box flex={1} minHeight={360} borderRadius={1} overflow="hidden" border="1px solid #e0e0e0">
         <Suspense fallback={null}>
           <LazyMapWithVectorTiles
-            tiles={{
-              url: tilesUrl,
-            } as any}
+            tiles={[tilesUrl]}
             layerConfig={{
-              id: 'shape-preview',
+              layerId: 'shape-preview',
               sourceLayer: tilesLayer,
-              fillColor: '#3b82f6',
-              fillOpacity: 0.3,
-              outlineColor: '#1d4ed8',
-              lineColor: '#1d4ed8',
-              lineWidth: 1.5,
-            } as any}
+              layerType: 'fill',
+              paint: {
+                'fill-color': '#3b82f6',
+                'fill-opacity': 0.3,
+                'fill-outline-color': '#1d4ed8',
+              },
+            }}
             initialViewState={DEFAULT_VIEW}
             style={{ width: '100%', height: '100%' }}
           />

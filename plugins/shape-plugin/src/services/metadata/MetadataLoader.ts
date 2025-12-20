@@ -5,6 +5,19 @@ import osmMetadata from '@hierarchidb/fetch-save-metadata/output/osm.json' with 
 import type { CountryMetadata, DataSourceName } from '../../common/types/index.js';
 import { normalizeDataSourceName } from '../utils/utils.js';
 
+type RawCountryMetadata = Partial<CountryMetadata> & {
+  availableAdminLevels?: Array<number | { level?: number } | string>;
+  adminLevels?: Array<number | { level?: number }>;
+  maxAdminLevel?: number;
+  countryCode?: string;
+  iso2?: string;
+  iso3?: string;
+  countryName?: string;
+  continent?: string;
+  population?: number;
+  area?: number;
+};
+
 /**
  * MetadataLoader service
  * Loads country metadata from @hierarchidb/fetch-save-metadata output files
@@ -14,11 +27,11 @@ export class MetadataLoader {
   private metadataCache: Map<DataSourceName, CountryMetadata[]> = new Map();
 
   // Mapping of data source names to metadata file names
-  private readonly metadataModules: Record<DataSourceName, CountryMetadata[]> = {
-    gadm: gadmMetadata as unknown as CountryMetadata[],
-    geoboundaries: geoboundariesMetadata as unknown as CountryMetadata[],
-    naturalearth: naturalearthMetadata as unknown as CountryMetadata[],
-    openstreetmap: osmMetadata as unknown as CountryMetadata[],
+  private readonly metadataModules: Record<DataSourceName, RawCountryMetadata[]> = {
+    gadm: gadmMetadata as unknown as RawCountryMetadata[],
+    geoboundaries: geoboundariesMetadata as unknown as RawCountryMetadata[],
+    naturalearth: naturalearthMetadata as unknown as RawCountryMetadata[],
+    openstreetmap: osmMetadata as unknown as RawCountryMetadata[],
   };
 
   private constructor() {
@@ -70,7 +83,7 @@ export class MetadataLoader {
    * Transform raw metadata to CountryMetadata format
    */
   private transformMetadata(
-    rawData: CountryMetadata[],
+    rawData: RawCountryMetadata[],
     _dataSource: string,
   ): CountryMetadata[] {
     return rawData.map((item) => {
@@ -90,7 +103,7 @@ export class MetadataLoader {
     });
   }
 
-  private normalizeAvailableLevels(item: any): number[] {
+  private normalizeAvailableLevels(item: RawCountryMetadata): number[] {
     if (Array.isArray(item.availableAdminLevels)) {
       return item.availableAdminLevels
         .map((v: unknown) => (typeof v === 'number' ? v : Number.NaN))

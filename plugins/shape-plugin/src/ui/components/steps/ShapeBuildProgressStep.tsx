@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Box } from '@mui/material';
 import { BuildStepPanel, type BuildStatus } from '@hierarchidb/components';
-import type { ShapeEntity } from '../../../common/types/index.js';
-import { useTranslation as getTranslation } from '../../i18n.js';
+import type { ShapeDialogStepProps } from './ShapeDialogStepProps.ts';
 
 const STAGES = [
   { id: 'prepare', title: 'Prepare', description: 'Validate selections and metadata.' },
@@ -11,12 +10,7 @@ const STAGES = [
   { id: 'finalize', title: 'Finalize', description: 'Persist outputs and indexes.' },
 ];
 
-type Props = {
-  draft: Partial<ShapeEntity>;
-};
-
-export const ShapeBuildProgressStep: React.FC<Props> = (_props) => {
-  const { t } = getTranslation();
+export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = (_props) => {
   const [status, setStatus] = useState<BuildStatus>('idle');
   const [overallProgress, setOverallProgress] = useState(0);
 
@@ -31,8 +25,6 @@ export const ShapeBuildProgressStep: React.FC<Props> = (_props) => {
   return (
     <Box display="flex" flexDirection="column" gap={3}>
       <BuildStepPanel
-        title={t('build.title', 'Build shapes')}
-        description={t('build.panelDescription', 'Monitor and control shape build progress.')}
         status={status}
         overallProgress={overallProgress}
         stages={STAGES}

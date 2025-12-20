@@ -11,13 +11,27 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
+import type { Geometry } from 'geojson';
+import type {
+  BatchSession,
+  CacheStatistics,
+  LayerInfo,
+  ProcessingConfig,
+  ProcessingStage,
+  ProgressInfo,
+  ResourceUsage,
+  StageStatus,
+  TaskStatus,
+} from '../../common/types/index.js';
 import type { DataSourceName, ShapeEntity, VectorTileEntity } from '../../common/types/index.js';
-import type { BatchSession, CacheStatistics, ProcessingStage, TaskStatus } from '../../common/types/index.js';
+import type { BatchProcessConfig } from '../batch/types.js';
+
+type CacheEntryData = Record<string, unknown> | string | number | boolean | null;
 
 // Database schema interfaces
 export interface ShapeEntityRecord extends ShapeEntity {
   dataSourceName: DataSourceName;
-  processingConfig: any;
+  processingConfig: ProcessingConfig;
   status: 'draft' | 'processing' | 'completed' | 'failed';
   version: number;
 }
@@ -26,13 +40,13 @@ export interface BatchSessionRecord extends BatchSession {
   sessionId: string;
   nodeId: NodeId;
   status: 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
-  config: any;
+  config: BatchProcessConfig;
   startedAt: number;
   updatedAt: number;
   completedAt?: number;
-  progress: any;
-  stages: Record<ProcessingStage, any>;
-  resourceUsage?: any;
+  progress: ProgressInfo;
+  stages: Record<ProcessingStage, StageStatus>;
+  resourceUsage?: ResourceUsage;
 }
 
 export interface BatchTaskRecord {
@@ -46,16 +60,16 @@ export interface BatchTaskRecord {
   startedAt?: number;
   completedAt?: number;
   retryCount?: number;
-  inputData?: any;
-  outputData?: any;
+  inputData?: Record<string, unknown>;
+  outputData?: Record<string, unknown>;
   errorMessage?: string;
 }
 
 export interface FeatureRecord {
   id: number;
   nodeId: NodeId;
-  properties: Record<string, any>;
-  geometry: any; // GeoJSON.Geometry
+  properties: Record<string, unknown>;
+  geometry: Geometry; // GeoJSON.Geometry
   bbox?: [number, number, number, number];
   mortonCode?: bigint;
   adminLevel?: number;
@@ -91,7 +105,7 @@ export interface FeatureBufferRecord {
   byteSize: number;
   compression?: string;
   createdAt: number;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 export interface VectorTileRecord extends VectorTileEntity {
@@ -103,7 +117,7 @@ export interface VectorTileRecord extends VectorTileEntity {
   data_Uint8Array: Uint8Array;
   size: number;
   features: number;
-  layers: any[];
+  layers: LayerInfo[];
   generatedAt: number;
   lastAccessed?: number;
   contentHash: string;
@@ -128,7 +142,7 @@ export interface CacheEntryRecord {
   cacheKey: string;
   nodeId?: NodeId;
   cacheType: 'features' | 'tiles' | 'buffers' | 'metadata';
-  data: any;
+  data: CacheEntryData;
   size: number;
   hits: number;
   lastHit: number;
@@ -399,19 +413,16 @@ export class ShapeDB extends Dexie {
     const totalMisses = Math.max(totalHits * 0.1, 0);
     const totalRequests = totalHits + totalMisses;
 
-    const byType: Record<string, any> = {};
+    const byType: Record<string, { totalSize: number; count: number; averageSize: number }> = {};
     for (const type of ['features', 'tiles', 'buffers', 'all']) {
       const entries = type === 'all' ? allEntries : allEntries.filter((e) => e.cacheType === type);
       const size = entries.reduce((sum, entry) => sum + entry.size, 0);
       const count = entries.length;
-      const hits = entries.reduce((sum, entry) => sum + entry.hits, 0);
+      // const hits = entries.reduce((sum, entry) => sum + entry.hits, 0);
 
       byType[type] = {
-        size,
+        totalSize: size,
         count,
-        hits,
-        misses: Math.max(hits * 0.1, 0), // Estimate
-        evictions: 0, // Would need separate tracking
         averageSize: count > 0 ? size / count : 0,
       };
     }
@@ -447,23 +458,29 @@ export class ShapeDB extends Dexie {
   async getStorageUsage(): Promise<{ totalSize: number; breakdown: Record<string, number> }> {
     const [shapesSize, sessionsSize, tasksSize, featuresSize, buffersSize, tilesSize, cacheSize] =
       await Promise.all([
-        this.shapeEntities.toArray().then((items: any[]) => items.length * 1000), // Estimate
-        this.batchSessions.toArray().then((items: any[]) => items.length * 2000),
-        this.batchTasks.toArray().then((items: any[]) => items.length * 1000),
+        this.shapeEntities.toArray().then((items: ShapeEntityRecord[]) => items.length * 1000), // Estimate
+        this.batchSessions.toArray().then((items: BatchSessionRecord[]) => items.length * 2000),
+        this.batchTasks.toArray().then((items: BatchTaskRecord[]) => items.length * 1000),
         this.features
           .toArray()
-          .then((items: any[]) =>
-            items.reduce((sum: number, f: any) => sum + JSON.stringify(f).length, 0),
+          .then((items: FeatureRecord[]) =>
+            items.reduce((sum: number, f: FeatureRecord) => sum + JSON.stringify(f).length, 0),
           ),
         this.featureBuffers
           .toArray()
-          .then((items: any[]) => items.reduce((sum: number, b: any) => sum + b.byteSize, 0)),
+          .then((items: FeatureBufferRecord[]) =>
+            items.reduce((sum: number, b: FeatureBufferRecord) => sum + b.byteSize, 0),
+          ),
         this.vectorTiles
           .toArray()
-          .then((items: any[]) => items.reduce((sum: number, t: any) => sum + t.size, 0)),
+          .then((items: VectorTileRecord[]) =>
+            items.reduce((sum: number, t: VectorTileRecord) => sum + t.size, 0),
+          ),
         this.cache
           .toArray()
-          .then((items: any[]) => items.reduce((sum: number, c: any) => sum + c.size, 0)),
+          .then((items: CacheEntryRecord[]) =>
+            items.reduce((sum: number, c: CacheEntryRecord) => sum + c.size, 0),
+          ),
       ]);
 
     return {

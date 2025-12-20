@@ -173,16 +173,16 @@ export class BatchSessionManager {
     }
 
     const tasks = await shapeDB.getBatchTasks(sessionId);
-    const currentTasks = tasks.filter((t: any) => t.status === 'running');
-    const queuedTasks = tasks.filter((t: any) => t.status === 'waiting').length;
+    const currentTasks = tasks.filter((t: BatchTaskRecord) => t.status === 'running');
+    const queuedTasks = tasks.filter((t: BatchTaskRecord) => t.status === 'waiting').length;
     const errors = tasks
-      .filter((t: any) => t.status === 'failed')
-      .map((t: any) => ({
+      .filter((t: BatchTaskRecord) => t.status === 'failed')
+      .map((t: BatchTaskRecord) => ({
         taskId: t.taskId,
         sessionId: t.sessionId,
         error: t.errorMessage || 'Unknown error',
         timestamp: t.completedAt || Date.now(),
-        stage: t.taskType ?? t.type,
+        stage: t.taskType,
         retryable: (t.retryCount || 0) < 3,
       }));
 
@@ -299,11 +299,11 @@ export class BatchSessionManager {
     session: BatchSessionRecord,
     tasks: BatchTaskRecord[],
   ): number | undefined {
-    const completedTasks = tasks.filter((t: any) => t.status === 'completed');
+    const completedTasks = tasks.filter((t: BatchTaskRecord) => t.status === 'completed');
     if (completedTasks.length === 0) return undefined;
 
     const avgTaskTime =
-      completedTasks.reduce((sum: number, task: any) => {
+      completedTasks.reduce((sum: number, task: BatchTaskRecord) => {
         if (task.startedAt && task.completedAt) {
           return sum + (task.completedAt - task.startedAt);
         }
@@ -318,7 +318,7 @@ export class BatchSessionManager {
     tasks: BatchTaskRecord[],
   ): { tasksPerSecond: number; bytesPerSecond: number } | undefined {
     const recentTasks = tasks.filter(
-      (t: any) => t.status === 'completed' && t.completedAt && t.completedAt > Date.now() - 60000, // Last minute
+      (t: BatchTaskRecord) => t.status === 'completed' && t.completedAt && t.completedAt > Date.now() - 60000, // Last minute
     );
 
     if (recentTasks.length === 0) {

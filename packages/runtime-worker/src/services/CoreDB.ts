@@ -130,7 +130,7 @@ export class CoreDB extends Dexie {
 
   static async getSingleton(_name?: string): Promise<CoreDB> {
     return SingletonMixin.getSingleton(CoreDB.name, async () => {
-      const instance = new CoreDB(getDBName('core-db'));
+      const instance = new CoreDB(getDBName('core'));
       await instance.open();
       await instance.initialize();
       return instance;

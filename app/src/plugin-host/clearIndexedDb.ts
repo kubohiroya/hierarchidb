@@ -29,7 +29,7 @@ const asClearFn = (mod: ClearModule): ClearFn | undefined => {
   return undefined;
 };
 
-const CORE_DB_SUFFIXES = ['core-db'];
+const CORE_DB_SUFFIXES = ['core'];
 
 async function clearCoreDatabases(): Promise<void> {
   for (const suffix of CORE_DB_SUFFIXES) {

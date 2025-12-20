@@ -4,7 +4,6 @@
  */
 
 import type {
-  NodeId,
   CountryMetadata,
   DataSourceName,
   ProcessingConfig,
@@ -15,8 +14,6 @@ import type {
   UrlMetadata,
   ShapeStepValidationResult,
 } from '../../common/types/index.js';
-import type { TreeNodeMetadata } from '@hierarchidb/common-types';
-import type { ShapeEntity, ShapeDraft } from '../../common/types/core.js';
 import { SHAPE_DATA_SOURCES, DEFAULT_PROCESSING_CONFIG } from '../../common/types/constants.js';
 
 const KNOWN_DATA_SOURCE_NAMES = new Set<DataSourceName>(
@@ -287,49 +284,6 @@ export function mergeProcessingConfig(config: Partial<ProcessingConfig>): Proces
 }
 
 /**
- * Generate a unique session ID
- */
-export function generateSessionId(): string {
-  const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).slice(2, 2 + 9);
-  return `session-${timestamp}-${random}`;
-}
-
-/**
- * Generate a unique task ID
- */
-export function generateTaskId(type: string): string {
-  const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).slice(2, 2 + 5);
-  return `${type}-${timestamp}-${random}`;
-}
-
-/**
- * Format bytes to human readable size
- */
-export function formatBytes(bytes: number, decimals = 2): string {
-  if (bytes === 0) return '0 Bytes';
-
-  const k = 1024;
-  const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-  return parseFloat((bytes / k ** i).toFixed(dm)) + ' ' + sizes[i];
-}
-
-/**
- * Format duration in milliseconds to human readable time
- */
-export function formatDuration(ms: number): string {
-  if (ms < 1000) return `${ms}ms`;
-  if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
-  if (ms < 3600000) return `${(ms / 60000).toFixed(1)}m`;
-  return `${(ms / 3600000).toFixed(1)}h`;
-}
-
-/**
  * Parse serialized checkbox state
  */
 export function parseCheckboxState(state: boolean[][] | string): boolean[][] {
@@ -341,113 +295,6 @@ export function parseCheckboxState(state: boolean[][] | string): boolean[][] {
     }
   }
   return state;
-}
-
-/**
- * Serialize checkbox state
- */
-export function serializeCheckboxState(state: boolean[][]): string {
-  return JSON.stringify(state);
-}
-
-/**
- * Build a new ShapeEntity from create data (shared mapping)
- */
-export function buildShapeEntityFromCreate(
-  params: {
-    treeNodeId: NodeId;
-    data: {
-      dataSourceName: DataSourceName;
-      processingConfig?: Partial<ProcessingConfig> | ProcessingConfig;
-      metadata: TreeNodeMetadata;
-    };
-  },
-): ShapeEntity {
-  const merged = mergeProcessingConfig(
-    (params.data.processingConfig as Partial<ProcessingConfig>) || {},
-  );
-  return {
-    id: params.treeNodeId,
-    metadata: params.data.metadata,
-    dataSourceName: params.data.dataSourceName,
-    licenseAgreement: false,
-    processingConfig: merged,
-    checkboxState: '[]',
-    selectedCountries: [],
-    adminLevels: [],
-    urlMetadata: [],
-    processingStatus: 'idle',
-  };
-}
-
-/**
- * Create a ShapeDraft from an entity (shared mapping)
- */
-export function createDraftFromEntity(entity: ShapeEntity): ShapeDraft {
-  const checkboxState = Array.isArray(entity.checkboxState)
-    ? entity.checkboxState
-    : typeof entity.checkboxState === 'string'
-      ? parseCheckboxState(entity.checkboxState)
-      : [];
-
-  const normalizedDataSource = normalizeDataSourceName(entity.dataSourceName);
-  const draftPayload: Partial<ShapeEntity> = {
-    dataSourceName: normalizedDataSource ?? 'naturalearth',
-    licenseAgreement: entity.licenseAgreement ?? false,
-    processingConfig: mergeProcessingConfig(entity.processingConfig ?? {}),
-    checkboxState,
-    batchSessionId: entity.batchSessionId,
-    processingStatus: entity.processingStatus ?? 'idle',
-    licenseAgreedAt: entity.licenseAgreedAt,
-    tabularMetadataId: entity.tabularMetadataId,
-    tabularFilters: entity.tabularFilters,
-  };
-
-  const treeNodeId = (entity.id ?? (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`)) as NodeId;
-
-  const draft: ShapeDraft = {
-    treeNodeId,
-    draftData: draftPayload,
-    draftMetadata: entity.metadata ?? { name: '', description: '', tags: [] },
-  };
-
-  return draft;
-}
-
-/**
- * Map a draft back to entity updates (shared mapping)
- */
-export function mapDraftToUpdates(
-  draft: ShapeDraft,
-  metadata?: TreeNodeMetadata | null,
-): Partial<ShapeEntity> {
-  const source: Partial<ShapeEntity> = draft.draftData ?? {};
-
-  const updates: Partial<ShapeEntity> = {};
-
-  const normalizedDataSource = normalizeDataSourceName(source.dataSourceName);
-  if (normalizedDataSource) updates.dataSourceName = normalizedDataSource;
-  if (typeof source.licenseAgreement === 'boolean') updates.licenseAgreement = source.licenseAgreement;
-  if (source.processingConfig) updates.processingConfig = mergeProcessingConfig(source.processingConfig);
-  if (source.checkboxState !== undefined) updates.checkboxState = source.checkboxState;
-  if (typeof source.batchSessionId === 'string') updates.batchSessionId = source.batchSessionId;
-  if (typeof source.processingStatus === 'string') updates.processingStatus = source.processingStatus;
-  if (source.licenseAgreedAt) updates.licenseAgreedAt = source.licenseAgreedAt;
-  if (typeof source.tabularMetadataId === 'string') updates.tabularMetadataId = source.tabularMetadataId;
-  if (Array.isArray(source.tabularFilters)) updates.tabularFilters = source.tabularFilters;
-  if (source.tabularFile) updates.tabularFile = source.tabularFile;
-  if (source.tabularMetadata) updates.tabularMetadata = source.tabularMetadata;
-  if (source.tabularLastPreview) updates.tabularLastPreview = source.tabularLastPreview;
-
-  if (metadata) {
-    updates.metadata = {
-      name: metadata.name,
-      description: metadata.description,
-      tags: metadata.tags,
-    };
-  }
-
-  return updates;
 }
 
 /**

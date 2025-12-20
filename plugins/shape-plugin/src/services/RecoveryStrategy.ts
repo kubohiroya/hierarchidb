@@ -34,7 +34,7 @@ export interface RecoveryAttempt {
   strategy: string;
   success: boolean;
   error?: BaseShapeError;
-  adjustedParams?: Record<string, any>;
+  adjustedParams?: Partial<BatchConfig>;
 }
 
 /**

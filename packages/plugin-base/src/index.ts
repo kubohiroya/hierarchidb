@@ -9,11 +9,10 @@ export { HostProfileRegistry } from './registry/HostProfileRegistry.js';
 export type {
   PluginStepConfig,
   PluginStepProvider,
-  StepComponentProps,
+  PluginStepProps,
   StartBatchContext,
   StepData,
 } from './registry/PluginStepRegistry.js';
 export { PluginStepRegistry } from './registry/PluginStepRegistry.js';
 // Services
 export { composeStepConfigs } from './services/StepComposer.js';
-
