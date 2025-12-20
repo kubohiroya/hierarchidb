@@ -356,11 +356,11 @@ export const shapePluginAPI = {
       },
       simplify1: {
         concurrentProcesses: config.simplificationConfig?.level1Workers ?? 2,
-        enableFeatureFiltering: config.simplificationConfig?.enableFiltering ?? true,
+        enableFeatureFiltering: true,
         featureAreaThreshold: config.simplificationConfig?.areaThreshold ?? 0.5,
         minVertexCountForAreaFilter: 25,
         aspectRatioThreshold: 5,
-        featureFilterMethod: 'hybrid',
+        featureFilterMethod: config.simplificationConfig?.featureFilterMethod ?? 'hybrid',
         hybridFilterConfig: {
           quickRejectThreshold: 0.1,
           regularShapeMinRatio: 0.5,

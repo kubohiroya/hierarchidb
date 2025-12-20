@@ -476,7 +476,7 @@ function buildBatchConfig(entity: ShapeEntity): BatchProcessConfig {
   return {
     ...base,
     workerPoolSize: simplify?.level1Workers,
-    enableFeatureExtraction: simplify?.enableFiltering,
+    enableFeatureExtraction: true,
     simplificationLevels: simplify ? [simplify.level1Workers, simplify.level2Workers] : undefined,
     tileZoomRange: tile?.maxZoom ? [tile.maxZoom, tile.maxZoom] : undefined,
     corsProxy: download?.corsProxyUrl,

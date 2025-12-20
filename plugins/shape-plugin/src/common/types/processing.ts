@@ -17,7 +17,6 @@ export interface DownloadProcessingConfig {
 }
 
 export interface SimplificationProcessingConfig {
-  enableFiltering: boolean;
   featureFilterMethod: FeatureFilterMethod;
   areaThreshold: number;
   level1Workers: number;

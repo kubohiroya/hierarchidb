@@ -263,7 +263,6 @@ export function mergeProcessingConfig(config: Partial<ProcessingConfig>): Proces
     } as DownloadProcessingConfig,
     simplificationConfig: {
       ...(DEFAULT_PROCESSING_CONFIG.simplificationConfig ?? {
-        enableFiltering: false,
         featureFilterMethod: 'hybrid',
         areaThreshold: 0.1,
         level1Workers: 2,

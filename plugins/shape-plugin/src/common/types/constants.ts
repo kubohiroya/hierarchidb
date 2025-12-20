@@ -15,7 +15,6 @@ export const DEFAULT_PROCESSING_CONFIG: ProcessingConfig = {
     retryBackoff: 'exponential',
   },
   simplificationConfig: {
-    enableFiltering: false,
     featureFilterMethod: 'hybrid',
     areaThreshold: 0.1,
     level1Workers: 2,

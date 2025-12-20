@@ -1,9 +1,9 @@
 import React from 'react';
-import { Accordion, AccordionDetails, AccordionSummary, Chip, Grid, Stack, Typography, Slider } from '@mui/material';
+import { Accordion, AccordionDetails, AccordionSummary, Grid, Stack, Typography, Slider } from '@mui/material';
 import { Layers as LayersIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
 import type { ProcessingConfig, TileProcessingConfig } from '../../../common/types/index.js';
 import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../common/types/index.js';
-import { WorkerSliderCard } from './WorkerSliderCard.js';
+import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 
 type Props = {
   config: ProcessingConfig;
@@ -23,14 +23,14 @@ export const TileConfigSection: React.FC<Props> = ({ config, disabled, onChange 
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Stack direction="row" spacing={2} alignItems="center">
           <LayersIcon color="primary" />
-          <Typography variant="subtitle1">Tile Generation</Typography>
-          <Chip label={`Workers: ${config?.tileConfig?.workers ?? 2}`} size="small" variant="outlined" />
+          <Typography variant="subtitle1">Tile Generation Setting</Typography>
         </Stack>
       </AccordionSummary>
       <AccordionDetails sx={{ p: 3 }}>
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <WorkerSliderCard
+          <Grid size={{ xs: 12, sm: 4 }}>
+            <WorkerNumberConfigCard
+              icon={<LayersIcon fontSize="small" color="primary" />}
               title="Tile Workers"
               value={baseTileConfig.workers ?? 2}
               onChange={(workers) =>
@@ -44,38 +44,11 @@ export const TileConfigSection: React.FC<Props> = ({ config, disabled, onChange 
               min={1}
               max={8}
               step={1}
-              marks={[
-                { value: 1, label: '1' },
-                { value: 4, label: '4' },
-                { value: 8, label: '8' },
-              ]}
               disabled={disabled}
             />
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <Typography gutterBottom>Max Zoom Level</Typography>
-            <Slider
-              value={baseTileConfig.maxZoom ?? 12}
-              onChange={(_, value: number | number[]) => {
-                const maxZoom = value as number;
-                update({
-                  tileConfig: {
-                    ...baseTileConfig,
-                    maxZoom,
-                  },
-                });
-              }}
-              min={8}
-              max={18}
-              step={1}
-              marks={[{ value: 8, label: '8' }, { value: 12, label: '12' }, { value: 18, label: '18' }]}
-              valueLabelDisplay="auto"
-              disabled={disabled}
-            />
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6 }}>
+          <Grid size={{ xs: 12, sm: 4 }} style={{ paddingRight: '20px' }}>
             <Typography gutterBottom>Tile Buffer Size (px)</Typography>
             <Slider
               value={baseTileConfig.bufferSize ?? 256}
@@ -92,6 +65,28 @@ export const TileConfigSection: React.FC<Props> = ({ config, disabled, onChange 
               max={512}
               step={32}
               marks={[{ value: 0, label: '0' }, { value: 256, label: '256' }, { value: 512, label: '512' }]}
+              valueLabelDisplay="auto"
+              disabled={disabled}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 4 }} style={{ paddingRight: '20px' }}>
+            <Typography gutterBottom>Max Zoom Level</Typography>
+            <Slider
+              value={baseTileConfig.maxZoom ?? 12}
+              onChange={(_, value: number | number[]) => {
+                const maxZoom = value as number;
+                update({
+                  tileConfig: {
+                    ...baseTileConfig,
+                    maxZoom,
+                  },
+                });
+              }}
+              min={8}
+              max={18}
+              step={1}
+              marks={[{ value: 8, label: '8' }, { value: 12, label: '12' }, { value: 18, label: '18' }]}
               valueLabelDisplay="auto"
               disabled={disabled}
             />

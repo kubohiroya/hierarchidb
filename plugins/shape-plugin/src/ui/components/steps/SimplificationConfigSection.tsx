@@ -1,24 +1,22 @@
-import React from 'react';
 import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
-  Chip,
   FormControl,
   FormControlLabel,
   FormLabel,
+  Grid,
   Radio,
   RadioGroup,
   Stack,
-  Switch,
   Typography,
+  Slider,
 } from '@mui/material';
-import { FilterAlt as FilterAltIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
+import { FilterAlt as FilterAltIcon, ExpandMore as ExpandMoreIcon, FilterAlt, Filter } from '@mui/icons-material';
 import type { FeatureFilterMethod, ProcessingConfig, SimplificationProcessingConfig } from '../../../common/types/index.js';
 import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../common/types/index.js';
 import { useId } from 'react';
-import { WorkerSliderCard } from './WorkerSliderCard.js';
-import { Slider } from '@mui/material';
+import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 
 type Props = {
   config: ProcessingConfig;
@@ -39,43 +37,55 @@ export const SimplificationConfigSection: React.FC<Props> = ({ config, disabled,
     <Accordion defaultExpanded>
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Stack direction="row" spacing={2} alignItems="center">
-          <FilterAltIcon color="secondary" />
-          <Typography variant="subtitle1">Feature Processing (Stage 1)</Typography>
-          <Chip
-            label={baseSimplificationConfig.enableFiltering ? 'Filtering ON' : 'Filtering OFF'}
-            size="small"
-            color={baseSimplificationConfig.enableFiltering ? 'success' : 'default'}
-            variant="outlined"
-          />
+          <FilterAltIcon color="primary" />
+          <Typography variant="subtitle1">Extraction Setting</Typography>
         </Stack>
       </AccordionSummary>
       <AccordionDetails sx={{ p: 3 }}>
         <Stack spacing={3}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={baseSimplificationConfig.enableFiltering ?? false}
-                onChange={(e) => {
-                  const enableFiltering = e.target.checked;
+          <Grid container spacing={3}>
+            <Grid size={{ xs: 12, sm: 4 }}>
+              <WorkerNumberConfigCard
+                icon={<FilterAlt fontSize="small" color="primary" />}
+                title="Number of Workers for Polygon-Simplification (Stage 1)"
+                value={baseSimplificationConfig.level1Workers ?? 2}
+                onChange={(level1Workers) =>
                   update({
                     simplificationConfig: {
                       ...baseSimplificationConfig,
-                      enableFiltering,
+                      level1Workers,
                     },
-                  });
-                }}
+                  })
+                }
+                min={1}
+                max={8}
+                step={1}
                 disabled={disabled}
-                inputProps={{
-                  id: `${controlId}-enable-filtering`,
-                  name: 'enable-filtering',
-                }}
               />
-            }
-            label="Enable Feature Filtering"
-          />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 4 }}>
+              <WorkerNumberConfigCard
+                icon={<Filter fontSize="small" color="primary" />}
+                title="Number of Workers for Tile Generation (Stage 2)"
+                value={baseSimplificationConfig.level2Workers ?? 2}
+                onChange={(level2Workers) =>
+                  update({
+                    simplificationConfig: {
+                      ...baseSimplificationConfig,
+                      level2Workers,
+                    },
+                  })
+                }
+                min={1}
+                max={8}
+                step={1}
+                disabled={disabled}
+              />
+            </Grid>
+          </Grid>
 
-          {baseSimplificationConfig.enableFiltering && (
-            <>
+          <Grid container spacing={3}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <FormControl component="fieldset">
                 <FormLabel component="legend" id={`${controlId}-filtering-method`}>
                   Filtering Method
@@ -117,7 +127,8 @@ export const SimplificationConfigSection: React.FC<Props> = ({ config, disabled,
                   />
                 </RadioGroup>
               </FormControl>
-
+            </Grid>
+            <Grid size={{ xs: 12, sm: 4 }} style={{ paddingRight: '20px' }}>
               <Typography gutterBottom>Minimum Feature Area (sq km)</Typography>
               <Slider
                 value={baseSimplificationConfig.areaThreshold ?? 0.1}
@@ -137,10 +148,20 @@ export const SimplificationConfigSection: React.FC<Props> = ({ config, disabled,
                 marks={[{ value: 0, label: '0' }, { value: 0.5, label: '0.5' }, { value: 1, label: '1' }]}
                 disabled={disabled}
               />
-
-              <WorkerSliderCard
-                title="Simplification Tolerance (meters)"
+            </Grid>
+            <Grid size={{ xs: 12, sm: 4 }} style={{ paddingRight: '20px' }}>
+              <Typography gutterBottom>Simplification Tolerance (meters)</Typography>
+              <Slider
                 value={baseSimplificationConfig.tolerance ?? 0.01}
+                onChange={(_, value) => {
+                  const tolerance = value as number;
+                  update({
+                    simplificationConfig: {
+                      ...baseSimplificationConfig,
+                      tolerance,
+                    },
+                  });
+                }}
                 min={0.001}
                 max={10}
                 step={0.001}
@@ -150,62 +171,11 @@ export const SimplificationConfigSection: React.FC<Props> = ({ config, disabled,
                   { value: 1, label: '1' },
                   { value: 10, label: '10' },
                 ]}
-                onChange={(tolerance) =>
-                  update({
-                    simplificationConfig: {
-                      ...baseSimplificationConfig,
-                      tolerance,
-                    },
-                  })
-                }
+                valueLabelDisplay="auto"
                 disabled={disabled}
               />
-
-              <WorkerSliderCard
-                title="Simplification Workers (Stage 1)"
-                value={baseSimplificationConfig.level1Workers ?? 2}
-                onChange={(level1Workers) =>
-                  update({
-                    simplificationConfig: {
-                      ...baseSimplificationConfig,
-                      level1Workers,
-                    },
-                  })
-                }
-                min={1}
-                max={8}
-                step={1}
-                marks={[
-                  { value: 1, label: '1' },
-                  { value: 4, label: '4' },
-                  { value: 8, label: '8' },
-                ]}
-                disabled={disabled}
-              />
-
-              <WorkerSliderCard
-                title="Tile Generation Workers (Stage 2)"
-                value={baseSimplificationConfig.level2Workers ?? 2}
-                onChange={(level2Workers) =>
-                  update({
-                    simplificationConfig: {
-                      ...baseSimplificationConfig,
-                      level2Workers,
-                    },
-                  })
-                }
-                min={1}
-                max={8}
-                step={1}
-                marks={[
-                  { value: 1, label: '1' },
-                  { value: 4, label: '4' },
-                  { value: 8, label: '8' },
-                ]}
-                disabled={disabled}
-              />
-            </>
-          )}
+            </Grid>
+          </Grid>
         </Stack>
       </AccordionDetails>
     </Accordion>

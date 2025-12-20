@@ -4507,6 +4507,34 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1763) shape Download セクションの3分割と削除ボタン追加（P1） — 完了 (2025-12-20)
+  - 要点：Download アコーディオンの Grid を 3分割に変更し、Retain スイッチの右に Delete Downloaded Files ボタンを追加。件数は `draft.urlMetadata` の長さで表示し、0件時は無効化。
+  - 検証：未実施（UI 表示確認は未実行）。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/{DownloadConfigSection,ShapeProcessingSettingsStep}.tsx` の差分を revert し、表示確認を再実行する。
+- 1762) shape Step4 レイアウト整理と Cleanup 移設（P1） — 完了 (2025-12-20)
+  - 要点：Simplification の Filtering/Area/Tolerance を Grid 3分割で配置し、Tile の Workers/Buffer/MaxZoom も Grid 3分割で配置。Cleanup アコーディオンを削除し、Retain downloaded files スイッチを Download の Worker カード右側へ移設。
+  - 検証：未実施（UI 表示確認は未実行）。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/{SimplificationConfigSection,TileConfigSection,DownloadConfigSection,ShapeProcessingSettingsStep}.tsx` と `plugins/shape-plugin/src/ui/components/steps/CleanupConfigSection.tsx` の差分を revert し、表示確認を再実行する。
+- 1761) WorkerNumberConfigCard の先頭アイコンを任意指定可能にする（P1） — 完了 (2025-12-20)
+  - 要点：WorkerNumberConfigCard に任意アイコン指定を追加し、Concurrent Downloads は CloudDownload を表示。
+  - 検証：未実施（UI 表示確認は未実行）。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/WorkerNumberConfigCard.tsx` と `plugins/shape-plugin/src/ui/components/steps/DownloadConfigSection.tsx` の差分を revert し、表示確認を再実行する。
+- 1760) WorkerSliderCard を WorkerNumberConfigCard へ改名し Rating UI に変更（P1） — 完了 (2025-12-20)
+  - 要点：WorkerSliderCard を WorkerNumberConfigCard に改名し、Slider を MUI Rating に置換。人数表示を「N Workers」形式に変更。
+  - 検証：未実施（UI 表示確認は未実行）。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/WorkerNumberConfigCard.tsx` と参照箇所の差分を revert し、表示確認を再実行する。
+- 1759) shape Step4 の Feature Filtering スイッチ撤去（P1） — 完了 (2025-12-20)
+  - 要点：Enable Feature Filtering の UI を削除し、enableFiltering を型/デフォルト/利用箇所から撤去。フィルタ処理は常時有効化。
+  - 検証：未実施（UI 表示確認は未実行）。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/SimplificationConfigSection.tsx`、`plugins/shape-plugin/src/common/types/processing.ts`、`plugins/shape-plugin/src/common/types/constants.ts`、`plugins/shape-plugin/src/services/utils/utils.ts`、`plugins/shape-plugin/src/worker/api.ts`、`plugins/shape-plugin/src/ui/components/steps/obsolate/ShapeViewPanel.tsx` の差分を revert し、表示確認を再実行する。
+- 1758) shape Step4 の Simplification Tolerance を通常 Slider へ変更（P1） — 完了 (2025-12-20)
+  - 要点：Simplification Tolerance (meters) を WorkerSliderCard から通常の Slider 表示へ変更し、既存の更新ロジックを維持。
+  - 検証：未実施（UI 表示確認は未実行）。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/SimplificationConfigSection.tsx` の差分を revert し、表示確認を再実行する。
+- 1768) Preview 操作の最終ステップ遷移対応（P1） — 完了 (2025-12-20)
+  - 要点：resolvePreviewStepIndex を最終ステップ返却に変更し、Preview 操作で full screen の最終ステップを開く挙動に統一。folder 系は対象外。
+  - 検証：`pnpm --filter @hierarchidb/app typecheck`（2025-12-20 01:43 JST）exit 0（plugin-base build の define 警告あり）。
+  - ロールバック手順：`app/src/hooks/treeconsole/actions/helpers.ts` の差分を revert し、同 typecheck を再実行する。
 - 1757) basemap-plugin i18n リソース登録の追加（P1） — 完了 (2025-12-20)
   - 要点：basemap-plugin の i18n 登録モジュールを追加し、`ui/index.ts` から読み込み。`locales/en.json` と `locales/ja.json` を追加して addResourceBundle で登録。
   - 検証：未実施（UI 表示確認は未実行）。
@@ -10636,6 +10664,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-20 01:15 done: fix/app/info-panel-preview-label — Preview 表記へ統一。ロールバック: `app/src/router/pages/tree/console/useTreeNodeInfoPanel.ts` と `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx` の差分を revert し、同 typecheck を再実行。
 - 2025-12-20 01:25 progress: fix/app/info-panel-preview-label — Preview ラベルは維持しつつアイコンを PlayArrow に戻す修正を実施。
 - 2025-12-20 01:26 command: pnpm --filter @hierarchidb/app typecheck — exit 0（plugin-base build の define 警告あり）。
+- 2025-12-20 01:40 start: fix/app/preview-final-step — Preview 操作で最終ステップを full screen で開く対応に着手。branch 作成不可なら main 作業。
+- 2025-12-20 01:42 progress: fix/app/preview-final-step — resolvePreviewStepIndex を最終ステップ返却へ変更し、folder 系は除外。
+- 2025-12-20 01:43 command: pnpm --filter @hierarchidb/app typecheck — exit 0（plugin-base build の define 警告あり）。
+- 2025-12-20 01:44 done: fix/app/preview-final-step — Preview 操作で最終ステップを full screen 表示するよう変更。ロールバック: `app/src/hooks/treeconsole/actions/helpers.ts` の差分を revert し、同 typecheck を再実行。
 - 2025-12-19 23:40 start: fix/gen-iso3166-2/country-quote-normalize — country_en の余計なクオートを常に除去する対応に着手。DoD: quoted-field 維持・typecheck ログ・原因/修正/ロールバック記載。branch 作成不可なら main 作業。
 - 2025-12-19 23:52 progress: fix/gen-iso3166-2/country-quote-normalize — country_en の前後クオートを除去し、CSV の国名列を正規化（`"""` を除去）。
 - 2025-12-19 23:54 command: pnpm --filter @hierarchidb/gen-iso3166-2 typecheck — exit 0。
@@ -10678,6 +10710,18 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-20 11:11 start: fix/basemap/i18n-resource-registration — basemap-plugin の i18n リソース登録を他プラグインと同様に追加する対応に着手。DoD: Kanban/運用ログ更新、i18n 参照反映、確認ログとロールバック手順記載。
 - 2025-12-20 11:12 progress: fix/basemap/i18n-resource-registration — `plugins/basemap-plugin/src/ui/i18n.ts` を追加し、`ui/index.ts` で import。`locales/en.json` と `locales/ja.json` を追加して addResourceBundle 登録に対応。
 - 2025-12-20 11:13 done: fix/basemap/i18n-resource-registration — basemap-plugin の i18n リソース登録を追加して Step2/Step3 の文言が再評価されるように修正。検証: UI 表示確認は未実施。ロールバック: `plugins/basemap-plugin/src/ui/i18n.ts`、`plugins/basemap-plugin/src/ui/index.ts`、`plugins/basemap-plugin/src/ui/locales/*.json` の差分を revert し、表示確認を再実行する。
+- 2025-12-20 11:38 start: fix/shape/simplification-tolerance-slider — Simplification Tolerance (meters) を WorkerSliderCard から通常 Slider へ変更する対応に着手。DoD: Kanban/運用ログ更新、挙動維持、確認ログとロールバック手順記載。
+- 2025-12-20 11:39 done: fix/shape/simplification-tolerance-slider — Simplification Tolerance を通常 Slider へ置換し、更新ロジックと disabled 制御を維持。検証: UI 表示確認は未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/SimplificationConfigSection.tsx` の差分を revert し、表示確認を再実行する。
+- 2025-12-20 11:44 start: fix/shape/remove-filter-toggle — Step4 の Enable Feature Filtering を撤去し、enableFiltering を削除する対応に着手。DoD: Kanban/運用ログ更新、分岐常時実行、確認ログとロールバック手順記載。
+- 2025-12-20 11:45 done: fix/shape/remove-filter-toggle — SimplificationConfigSection からスイッチ/分岐を削除し、enableFiltering を型/デフォルト/worker/config から撤去。フィルタ処理は常時有効化。検証: UI 表示確認は未実施。ロールバック: 該当差分を revert し、表示確認を再実行する。
+- 2025-12-20 11:48 start: refactor/shape/worker-rating-card — WorkerSliderCard を WorkerNumberConfigCard へ改名し、Rating UI に置換する対応に着手。DoD: Kanban/運用ログ更新、表示変更、確認ログとロールバック手順記載。
+- 2025-12-20 11:49 done: refactor/shape/worker-rating-card — WorkerNumberConfigCard を追加し、Slider を Rating へ置換。人数表示を「N Workers」形式に変更し、各 Step 参照を更新。検証: UI 表示確認は未実施。ロールバック: 該当差分を revert し、表示確認を再実行する。
+- 2025-12-20 11:58 start: fix/shape/worker-card-icon — WorkerNumberConfigCard の先頭アイコンを任意指定可能にする対応に着手。DoD: Kanban/運用ログ更新、CloudDownload 指定、確認ログとロールバック手順記載。
+- 2025-12-20 11:59 done: fix/shape/worker-card-icon — WorkerNumberConfigCard に icon props を追加し、Concurrent Downloads に CloudDownload アイコンを表示。検証: UI 表示確認は未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/WorkerNumberConfigCard.tsx` と `plugins/shape-plugin/src/ui/components/steps/DownloadConfigSection.tsx` の差分を revert し、表示確認を再実行する。
+- 2025-12-20 14:15 start: fix/shape/step4-layout-and-download-retain — Step4 の Simplification/Tile の 3分割レイアウト化と Cleanup 移設に着手。DoD: Kanban/運用ログ更新、レイアウト変更、Retain スイッチ移設、確認ログとロールバック手順記載。
+- 2025-12-20 14:16 done: fix/shape/step4-layout-and-download-retain — Simplification の Filtering/Area/Tolerance を Grid 3分割配置、Tile の Workers/Buffer/MaxZoom を Grid 3分割配置。Cleanup アコーディオン削除し、Retain downloaded files スイッチを Download の Worker カード右側へ移設。検証: UI 表示確認は未実施。ロールバック: 該当差分を revert し、表示確認を再実行する。
+- 2025-12-20 14:20 start: fix/shape/download-grid-delete-button — Download セクションを Grid 3分割に変更し、Delete Downloaded Files ボタンを追加する対応に着手。DoD: Kanban/運用ログ更新、件数表示、確認ログとロールバック手順記載。
+- 2025-12-20 14:21 done: fix/shape/download-grid-delete-button — Download の Grid を 3分割へ変更し、Retain スイッチ右側に Delete Downloaded Files ボタンを配置。件数は `draft.urlMetadata` 長さで表示し、0件時は無効化。検証: UI 表示確認は未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/{DownloadConfigSection,ShapeProcessingSettingsStep}.tsx` の差分を revert し、表示確認を再実行する。
 
 - 2025-12-20 11:45 progress: fix/styler/step5-virtual-table — StylerPreviewStep のプレビュー表を react-window で再仮想化し、ResizeObserver で DialogContent 高さに合わせてリスト高さを算出。ヘッダと同じ幅のグリッドでカラム幅ずれ/行欠けを抑制。
 - 2025-12-20 11:46 command: pnpm --filter @hierarchidb/styler-plugin typecheck — exit 0。
