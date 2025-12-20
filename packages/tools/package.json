@@ -16,5 +16,14 @@
     "lint": "pnpm -r --filter ./\\* --if-present run lint",
     "clean": "pnpm -r --filter ./\\* --if-present run clean",
     "typecheck": "tsc --noEmit --project tsconfig.json"
+  },
+  "turbo": {
+    "pipeline": {
+      "build": {
+        "outputs": [
+          "*/dist/**"
+        ]
+      }
+    }
   }
 }
