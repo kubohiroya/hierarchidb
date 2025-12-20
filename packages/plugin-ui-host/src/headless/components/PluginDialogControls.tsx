@@ -6,23 +6,32 @@ import {
   OpenInFull as OpenInFullIcon,
   Close as CloseIcon,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 
 type CommonProps = {
   disabled?: boolean;
   onPointerDown?: React.PointerEventHandler;
 };
 
+const useDialogTooltips = () => {
+  const { t } = useTranslation('common');
+  return {
+    maximize: t('dialogs.pluginDialog.tooltips.maximize', 'Maximize'),
+    restoreSize: t('dialogs.pluginDialog.tooltips.restoreSize', 'Restore size'),
+    fullscreen: t('dialogs.pluginDialog.tooltips.fullscreen', 'Full screen'),
+    exitFullscreen: t('dialogs.pluginDialog.tooltips.exitFullscreen', 'Exit full screen'),
+    close: t('dialogs.pluginDialog.tooltips.close', 'Close dialog'),
+  };
+};
+
 export const PluginDialogMaximizeButton: React.FC<
   CommonProps & { displayMode: 'default' | 'maximize' | 'full-screen'; onClick: () => void }
 > = ({ displayMode, onClick, onPointerDown, disabled }) => {
   const isMaximized = displayMode === 'maximize';
+  const tooltips = useDialogTooltips();
   return (
     <Tooltip
-      title={
-        isMaximized
-          ? 'Restore size'
-          : 'Maximize'
-      }
+      title={isMaximized ? tooltips.restoreSize : tooltips.maximize}
     >
       <span>
         <IconButton
@@ -31,6 +40,7 @@ export const PluginDialogMaximizeButton: React.FC<
           onClick={onClick}
           onPointerDown={onPointerDown}
           disabled={disabled}
+          aria-label={isMaximized ? tooltips.restoreSize : tooltips.maximize}
         >
           {isMaximized ? (
             <FullscreenExitIcon fontSize="small" />
@@ -47,13 +57,10 @@ export const PluginDialogFullScreenButton: React.FC<
   CommonProps & { displayMode: 'default' | 'maximize' | 'full-screen'; onClick: () => void }
 > = ({ displayMode, onClick, onPointerDown, disabled }) => {
   const isFullScreen = displayMode === 'full-screen';
+  const tooltips = useDialogTooltips();
   return (
     <Tooltip
-      title={
-        isFullScreen
-          ? 'Exit full screen'
-          : 'Full screen'
-      }
+      title={isFullScreen ? tooltips.exitFullscreen : tooltips.fullscreen}
     >
       <span>
         <IconButton
@@ -62,6 +69,7 @@ export const PluginDialogFullScreenButton: React.FC<
           onClick={onClick}
           onPointerDown={onPointerDown}
           disabled={disabled}
+          aria-label={isFullScreen ? tooltips.exitFullscreen : tooltips.fullscreen}
         >
           {isFullScreen ? (
             <FullscreenExitIcon fontSize="small" />
@@ -77,18 +85,18 @@ export const PluginDialogFullScreenButton: React.FC<
 export const PluginDialogCloseButton: React.FC<
   CommonProps & { onClick: () => void }
 > = ({ onClick, onPointerDown, disabled }) => {
+  const tooltips = useDialogTooltips();
   return (
-    <Tooltip title="Close">
+    <Tooltip title={tooltips.close}>
       <IconButton
         size="small"
         onClick={onClick}
         onPointerDown={onPointerDown}
         disabled={disabled}
-        aria-label="Close"
+        aria-label={tooltips.close}
       >
         <CloseIcon fontSize="small" />
       </IconButton>
     </Tooltip>
   );
 };
-

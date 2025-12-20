@@ -53,6 +53,18 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1765) basemap Step3 ドラッグ不具合の原因分析（P1）
+- ブランチ: `analysis/basemap/step3-drag-once`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/basemap-plugin/src/ui/components/steps/ViewportStep.tsx、packages/ui/map/src/components/MapLibreMap.tsx
+- 受け入れ基準（DoD）:
+  - [ ] ドラッグが初回のみ反応する原因をコード上で特定し、再現条件と影響範囲を整理する
+  - [ ] 原因に応じた修正案を2案以上提示する（一時状態の ref/Jotai 管理＋drag end 反映案を含む）
+  - [ ] TASKS 運用ログに原因整理と修正案、ロールバック方針（調査のみなら差分なし）を記載する
+- チェックリスト:
+  - [ ] ViewportStep と MapLibreMap のイベント連携を確認する
+  - [ ] 上位 onChange 連携による再レンダリング/状態更新の影響を整理する
+- ロールバック手順：調査のみのため差分なし（記録内容を戻す場合は本タスクのエントリと運用ログ追記を削除する）
+
 1751) location-plugin Step3 国選択の continent 表示修正（P1）
 - ブランチ: `fix/location/step3-region-label`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: plugins/location-plugin（Step3 国選択 UI）、packages/ui/country-select（continent 正規化）
@@ -4507,6 +4519,10 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1753) ダイアログ右上ボタンのツールチップ i18n 化（P1） — 完了 (2025-12-20)
+  - 要点：PluginDialogControls の Maximize/FullScreen/Close ツールチップと aria-label を `dialogs.pluginDialog.tooltips.*` の i18n 参照へ変更。
+  - 検証：未実施（UI 表示確認は未実行）。
+  - ロールバック手順：`packages/plugin-ui-host/src/headless/components/PluginDialogControls.tsx` の差分を revert し、表示確認を再実行する。
 - 1752) ダイアログ Step1 の Stepper 見出し "Basic Information" i18n 化（P1） — 完了 (2025-12-20)
   - 要点：Stepper Step1 のラベルを `common.basicInfo.title` の i18n キー参照へ変更し、日本語リソースに Basic Information 相当の翻訳を追加。
   - 検証：未実施（UI 表示確認は未実行）。
@@ -10586,6 +10602,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-20 00:20 start: analysis/basemap/step3-drag-once — basemap Step3 のドラッグが初回のみ反応する問題の原因分析に着手。DoD: 原因/影響範囲の整理、修正案提示、運用ログ記録。branch 作成不可なら main 作業。
+- 2025-12-20 00:32 progress: analysis/basemap/step3-drag-once — ViewportStep が onMove のたびに onChange を発火し、上位 draft 更新→value 変更→useEffect 同期/jumpTo が走るため、ドラッグ中に状態同期が割り込む構造を確認。修正案: (1) onMove では local state/ref のみ更新し、onMoveEnd でのみ onChange 反映、(2) Jotai/ref に一時保持し drag end で commit、(3) onChange を debounce/throttle し、同期 effect では map.isMoving 中の jumpTo を抑制。
 - 2025-12-19 23:40 start: fix/gen-iso3166-2/country-quote-normalize — country_en の余計なクオートを常に除去する対応に着手。DoD: quoted-field 維持・typecheck ログ・原因/修正/ロールバック記載。branch 作成不可なら main 作業。
 - 2025-12-19 23:52 progress: fix/gen-iso3166-2/country-quote-normalize — country_en の前後クオートを除去し、CSV の国名列を正規化（`"""` を除去）。
 - 2025-12-19 23:54 command: pnpm --filter @hierarchidb/gen-iso3166-2 typecheck — exit 0。
@@ -10614,3 +10632,6 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-20 09:51 start: fix/plugin-stepper/basic-info-i18n — ダイアログ Step1 の Stepper 見出し "Basic Information" を i18n 経由表示に変更する対応に着手。DoD: Kanban/運用ログ更新、i18n キー追加、表示崩れなし、確認ログとロールバック手順記載。branch 作成不可なら main 作業。
 - 2025-12-20 09:54 progress: fix/plugin-stepper/basic-info-i18n — Stepper ラベルの参照キーを `common.basicInfo.title` へ差し替え、`packages/ui/i18n/public/locales/ja/common.json` に Basic Information の翻訳を追加。
 - 2025-12-20 09:55 done: fix/plugin-stepper/basic-info-i18n — Step1 Stepper 見出しの i18n 化を実施。検証: UI 表示確認は未実施。ロールバック: `packages/plugin-ui-host/src/headless/usePluginDialogController.tsx` と `packages/ui/i18n/public/locales/ja/common.json` の差分を revert し、表示確認を再実行。
+- 2025-12-20 10:01 start: fix/dialog-header/tooltip-i18n — ダイアログ右上の Maximize/FullScreen/Close ツールチップを i18n 化する対応に着手。DoD: Kanban/運用ログ更新、i18n 参照へ置換、表示崩れなし、確認ログとロールバック手順記載。branch 作成不可なら main 作業。
+- 2025-12-20 10:02 progress: fix/dialog-header/tooltip-i18n — PluginDialogControls のツールチップ/aria-label を `dialogs.pluginDialog.tooltips.*` 参照へ置換。
+- 2025-12-20 10:03 done: fix/dialog-header/tooltip-i18n — Maximize/FullScreen/Close のツールチップ i18n 化を完了。検証: UI 表示確認は未実施。ロールバック: `packages/plugin-ui-host/src/headless/components/PluginDialogControls.tsx` の差分を revert し、表示確認を再実行。
