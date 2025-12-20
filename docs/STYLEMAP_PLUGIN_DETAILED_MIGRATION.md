@@ -17,7 +17,7 @@
 - **Step5-6追加実装**: StylerConfigStep（スタイル設定）、StylerStep6（プレビュー）
 - **MapLibre統合**: カラーマッピング機能、スタイル仕様生成
 - **高度な機能**: 統計分析、カラーグラデーション、データ可視化
-- **完全なUI**: StylerConfiguration、StylerPreviewPanel
+- **完全なUI**: StylerConfiguration、StylerPreviewStep
 
 ### 重要な発見
 styler-pluginは**spreadsheet-pluginを拡張**した高度なデータ可視化プラグインです。CSV/Excelデータから自動的にMapLibreスタイル仕様を生成する機能を持ちます。
@@ -43,7 +43,7 @@ export interface StylerEntity extends SpreadsheetEntity, StylerExtendedFields {
 - **StylerConfigStep**: カラーマッピング設定、データ統計分析
 - **StylerStep6**: プレビュー機能、MapLibreスタイル確認
 - **StylerConfiguration**: 詳細スタイル設定
-- **StylerPreviewPanel**: データテーブルプレビュー
+- **StylerPreviewStep**: データテーブルプレビュー
 
 ### データ処理機能（完成済み）
 - **統計分析**: 最大値・最小値・四分位数の自動計算

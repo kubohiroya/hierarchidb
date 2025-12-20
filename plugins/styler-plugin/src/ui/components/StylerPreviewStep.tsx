@@ -6,7 +6,6 @@ import {
   Paper,
   Stack,
   Table,
-  TableBody,
   TableCell,
   TableContainer,
   TableHead,
@@ -15,8 +14,8 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { FixedSizeList, type ListChildComponentProps } from 'react-window';
-import React, { useEffect } from 'react';
+import { FixedSizeList } from 'react-window';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { i18n } from '@hierarchidb/ui-i18n';
 import {
   type StylerStepData,
@@ -62,7 +61,33 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
     mapping,
   } = useStylerPreview({ data, onValidate, tabularData });
   const targetMeta = targetProperty ? MAPLIBRE_PROPERTY_METADATA[targetProperty] : null;
-  const columnWidth = columns.length ? `${100 / columns.length}%` : "100%";
+  const columnWidth = columns.length ? `${100 / columns.length}%` : '100%';
+  const gridTemplateColumns = useMemo(
+    () => columns.map(() => 'minmax(0, 1fr)').join(' '),
+    [columns]
+  );
+  const ROW_HEIGHT = 40;
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const headRef = useRef<HTMLTableSectionElement | null>(null);
+  const [listHeight, setListHeight] = useState<number>(Math.max(ROW_HEIGHT * 8, ROW_HEIGHT));
+
+  useLayoutEffect(() => {
+    const updateHeight = () => {
+      const containerHeight = containerRef.current?.getBoundingClientRect().height ?? 0;
+      const headerHeight = headRef.current?.getBoundingClientRect().height ?? 0;
+      const available = containerHeight - headerHeight;
+      const fallback = ROW_HEIGHT * Math.min(sortedPreviewData.length, 10);
+      const desired = available > 0 ? available : fallback;
+      const maxNeeded = Math.max(ROW_HEIGHT, Math.min(sortedPreviewData.length, 2000) * ROW_HEIGHT);
+      setListHeight(Math.max(ROW_HEIGHT, Math.min(desired, maxNeeded)));
+    };
+
+    updateHeight();
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [sortedPreviewData.length]);
 
   useEffect(() => {
     if (!keyColumn || !valueColumn || !targetProperty || !styleType || !sortedPreviewData.length) return;
@@ -196,9 +221,18 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
         minHeight: 0,
       }}
     >
-      <TableContainer component={Paper} sx={{ flex: 1, minHeight: 0, height: '100%' }}>
-        <Table stickyHeader size="small">
-          <TableHead>
+      <TableContainer
+        component={Paper}
+        sx={{ flex: 1, minHeight: 0, height: '100%', display: 'flex', flexDirection: 'column' }}
+        ref={containerRef}
+      >
+        <Table stickyHeader size="small" sx={{ tableLayout: 'fixed', flexShrink: 0 }}>
+          <colgroup>
+            {columns.map((col) => (
+              <col key={col} style={{ width: columnWidth }} />
+            ))}
+          </colgroup>
+          <TableHead ref={headRef}>
             <TableRow>
               {columns.map((col) => {
                 const isKey = col === keyColumn;
@@ -243,23 +277,41 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
               })}
             </TableRow>
           </TableHead>
-          
+        </Table>
+        <Box
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            overflow: 'auto',
+            position: 'relative',
+          }}
+        >
           <FixedSizeList
-            height={Math.min(48 * Math.max(1, Math.min(sortedPreviewData.length, 12)), 600)}
+            height={listHeight}
             itemCount={sortedPreviewData.length}
-            itemSize={48}
+            itemSize={ROW_HEIGHT}
             width="100%"
-            outerElementType={React.forwardRef<HTMLTableSectionElement>((props, ref) => (
-              <TableBody ref={ref} {...props} />
-            ))}
+            overscanCount={8}
           >
-            {({ index, style }: ListChildComponentProps) => {
+            {({ index, style }) => {
               const row = sortedPreviewData[index];
               if (!row) return null;
-              const rowKey = `${row[keyColumn ?? "id"] ?? index}-${index}`;
-              const rowStyle: React.CSSProperties = { ...style, display: "table", tableLayout: "fixed", width: "100%" };
+              const fallbackRowKey = `${index}`;
+              const rowKey = `${row[keyColumn ?? 'id'] ?? fallbackRowKey}-${index}`;
               return (
-                <TableRow key={rowKey} style={rowStyle}>
+                <Box
+                  key={rowKey}
+                  style={style}
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns,
+                    alignItems: 'center',
+                    px: 1,
+                    gap: 1,
+                    borderBottom: '1px solid',
+                    borderColor: 'divider',
+                  }}
+                >
                   {columns.map((col) => {
                     const cellValue = row[col];
                     const isValue = col === valueColumn;
@@ -321,24 +373,32 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
                           ? numberFormatter.format(Number(cellValue))
                           : String(cellValue);
                     return (
-                      <TableCell key={`${rowKey}-${col}`} align={isNumeric ? 'right' : 'left'} sx={{ width: columnWidth, minWidth: columnWidth, maxWidth: columnWidth }}>
-                        <Stack direction="row" spacing={1} alignItems="center" sx={{ width: '100%' }}>
-                          {chip ? <Box sx={{ flexShrink: 0 }}>{chip}</Box> : null}
-                          <Box sx={{ flex: 1, textAlign: isNumeric ? 'right' : 'left' }}>
-                            <Typography variant="body2" noWrap>
-                              {displayText}
-                            </Typography>
-                          </Box>
-                        </Stack>
-                      </TableCell>
+                      <Box
+                        key={`${rowKey}-${col}`}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          minWidth: 0,
+                          px: 1,
+                          justifyContent: isNumeric ? 'flex-end' : 'flex-start',
+                        }}
+                      >
+                        {chip ? <Box sx={{ flexShrink: 0, mr: 1 }}>{chip}</Box> : null}
+                        <Typography
+                          variant="body2"
+                          noWrap
+                          sx={{ flex: 1, textAlign: isNumeric ? 'right' : 'left' }}
+                        >
+                          {displayText}
+                        </Typography>
+                      </Box>
                     );
                   })}
-                </TableRow>
+                </Box>
               );
             }}
           </FixedSizeList>
-
-        </Table>
+        </Box>
       </TableContainer>
 
       {previewRowsSource.length > 1000 && (
