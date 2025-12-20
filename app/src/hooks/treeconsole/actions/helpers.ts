@@ -65,6 +65,7 @@ export const resolvePreviewStepIndex = (options: {
 }): number | null => {
   const normalized = options.nodeType?.toLowerCase();
   if (!normalized) return null;
+  if (normalized === 'folder' || normalized.endsWith('folder')) return null;
   const config = PREVIEW_STEP_CONFIG[normalized];
   const provider = stepRegistry.getConfigProvider(normalized);
   if (provider) {
@@ -73,16 +74,7 @@ export const resolvePreviewStepIndex = (options: {
         ? provider.getEditStepConfigs(String(options.nodeId ?? ''))
         : provider.getCreateStepConfigs();
     if (stepList && stepList.length) {
-      if (config?.stepId) {
-        const matchIndex = stepList.findIndex((cfg) => cfg.id === config.stepId);
-        if (matchIndex >= 0) {
-          return matchIndex;
-        }
-      }
-      const implicitPreview = stepList.findIndex((cfg) => cfg.id?.toLowerCase().includes('preview'));
-      if (implicitPreview >= 0) {
-        return implicitPreview;
-      }
+      return Math.max(0, stepList.length - 1);
     }
   }
   if (config?.stepIndex != null) {

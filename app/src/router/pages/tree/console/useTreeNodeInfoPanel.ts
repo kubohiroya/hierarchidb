@@ -192,7 +192,7 @@ export function useTreeNodeInfoPanel({
     }),
     editLabel: getString('treeConsole.infoPanel.editLabel', 'Edit'),
     editAria: getString('treeConsole.infoPanel.editButton', 'Edit node'),
-    previewLabel: getString('treeConsole.infoPanel.previewLabel', 'Play'),
+    previewLabel: getString('treeConsole.infoPanel.previewLabel', 'Preview'),
     previewAria: getString('treeConsole.infoPanel.previewButton', 'Preview node'),
     unnamedNodeLabel: getString('treeConsole.infoPanel.unnamedNode', 'Untitled node'),
     closeAria: getString('treeConsole.infoPanel.closeButton', 'Close and navigate to parent'),
