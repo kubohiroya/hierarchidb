@@ -45,6 +45,12 @@ type ResolvedRouteProcessingConfig = {
   };
 };
 
+type RouteProcessingConfigUpdate = {
+  apiThrottle?: Partial<ResolvedRouteProcessingConfig['apiThrottle']>;
+  simplification?: Partial<ResolvedRouteProcessingConfig['simplification']>;
+  vectorTiles?: Partial<ResolvedRouteProcessingConfig['vectorTiles']>;
+};
+
 const DEFAULT_CONFIG: RouteProcessingConfig = {
   apiThrottle: {
     requestsPerSecond: 5,
@@ -108,7 +114,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
     },
   };
 
-  const updateProcessing = (updates: Partial<RouteProcessingConfig>) => {
+  const updateProcessing = (updates: RouteProcessingConfigUpdate) => {
     const nextProcessing: ResolvedRouteProcessingConfig = {
       apiThrottle: {
         ...mergedConfig.apiThrottle,
