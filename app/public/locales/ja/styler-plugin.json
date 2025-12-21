@@ -2,6 +2,7 @@
   "styleSettings": {
     "title": "スタイル設定",
     "description": "スタイル種別・値の列・対象プロパティを選択してからアルゴリズムを設定してください。",
+    "processing": "表データを処理しています…",
     "accordion": {
       "styleType": "スタイルタイプ",
       "targetProperty": "ターゲットプロパティ",
@@ -61,6 +62,9 @@
     "styleSettings": "スタイル設定",
     "styleAlgorithm": "スタイルアルゴリズム",
     "preview": "プレビュー"
+  },
+  "filtering": {
+    "processing": "表データを処理しています…"
   },
   "styleAlgorithm": {
     "title": "スタイルマッピング設定",
@@ -139,6 +143,7 @@
   },
   "stylePreview": {
     "title": "スタイル適用プレビュー",
+    "processing": "プレビュー用データを準備しています…",
     "required": {
     "title": "設定が必要です",
     "body": "プレビューの前にスタイル設定を完了してください。",

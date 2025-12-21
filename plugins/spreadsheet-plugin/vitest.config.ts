@@ -28,7 +28,7 @@ export default defineConfig({
         workspaceRoot,
         'packages/features/tabular-source/src/index.ts'
       ),
-      '@hierarchidb/ui-tabular-extract': path.resolve(
+      '@hierarchidb/ui-tabular': path.resolve(
         workspaceRoot,
         'packages/ui/tabular-extract/src/index.ts'
       ),

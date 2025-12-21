@@ -22,7 +22,7 @@ export default defineConfig({
       ),
       '@hierarchidb/plugin-sdk': basePluginEntry,
       '~': path.resolve(__dirname, 'src'),
-      '@hierarchidb/ui-tabular-extract': path.resolve(
+      '@hierarchidb/ui-tabular': path.resolve(
         workspaceRoot,
         'packages/ui/tabular-extract/src/index.ts'
       ),

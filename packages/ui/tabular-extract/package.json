@@ -1,5 +1,5 @@
 {
-  "name": "@hierarchidb/ui-tabular-extract",
+  "name": "@hierarchidb/ui-tabular",
   "version": "0.1.0",
   "description": "Reusable CSV data extraction UI components and API interface for HierarchiDB plugins",
   "type": "module",
@@ -29,7 +29,7 @@
   },
   "peerDependencies": {
     "@hierarchidb/ui-file": "workspace:*",
-    "@hierarchidb/ui-data-grid": "workspace:*",
+    "@hierarchidb/ui-grid": "workspace:*",
     "@hierarchidb/tabular-source": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/ui-modal-select": "workspace:*",
@@ -44,7 +44,7 @@
   },
   "devDependencies": {
     "@hierarchidb/ui-file": "workspace:*",
-    "@hierarchidb/ui-data-grid": "workspace:*",
+    "@hierarchidb/ui-grid": "workspace:*",
     "@hierarchidb/tabular-source": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/ui-modal-select": "workspace:*",

@@ -27,14 +27,14 @@
     "@deck.gl/layers": "^9.1.14",
     "@deck.gl/mapbox": "^9.1.14",
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/ui-data-grid": "workspace:*"
+    "@hierarchidb/ui-grid": "workspace:*"
   },
   "devDependencies": {
     "react": ">=18.0.0",
     "@mui/material": "^7.3.6",
     "@types/geojson": "^7946.0.8",
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/ui-data-grid": "workspace:*",
+    "@hierarchidb/ui-grid": "workspace:*",
     "@storybook/react-vite": "7.6.20"
   },
   "license": "MIT",

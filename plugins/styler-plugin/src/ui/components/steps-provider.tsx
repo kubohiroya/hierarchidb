@@ -1,5 +1,5 @@
 import React from 'react';
-import { PluginStepRegistry, type PluginStepConfig, type StepComponentProps } from '@hierarchidb/plugin-base';
+import { PluginStepRegistry, type PluginStepConfig, type PluginStepProps } from '@hierarchidb/plugin-base';
 import { TabularDataSourceStep } from '@hierarchidb/spreadsheet-plugin';
 import { StylerPreviewStep } from './StylerPreviewStep.tsx';
 import type { StylerMapping, StylerStepData } from '../../common/types/StylerEntity.js';
@@ -16,7 +16,7 @@ const getStylerT = () =>
     : (i18n.t.bind(i18n) as typeof i18n.t);
 
 
-const renderMappingStep = (p: StepComponentProps<StylerStepData>) => <StylerMappingStep {...p} />
+const renderMappingStep = (p: PluginStepProps<StylerStepData>) => <StylerMappingStep {...p} />
 
 const hasMappingBasics = (dialogData?: StylerStepData): boolean => {
   const data = dialogData ?? ({} as StylerStepData);
@@ -51,7 +51,7 @@ registry.registerConfigProvider<StylerStepData>({
     const t = getStylerT();
     const ensureLoaded: (data?: StylerStepData) => boolean = (dialogData) =>
       hasLoadedDataSource(dialogData);
-    const DataSourceWithValidation = (p: StepComponentProps<StylerStepData>) => {
+    const DataSourceWithValidation = (p: PluginStepProps<StylerStepData>) => {
       const valid = ensureLoaded(p.data);
       const lastValidRef = React.useRef<boolean | null>(null);
       React.useEffect(() => {
@@ -62,7 +62,7 @@ registry.registerConfigProvider<StylerStepData>({
       }, [valid, p]);
       return <TabularDataSourceStep {...p} />;
     };
-    const FilterWithValidation = (p: StepComponentProps<StylerStepData>) => {
+    const FilterWithValidation = (p: PluginStepProps<StylerStepData>) => {
       const valid = ensureLoaded(p.data) && hasKeyValueSelected(p.data);
       const lastValidRef = React.useRef<boolean | null>(null);
       React.useEffect(() => {
@@ -104,7 +104,7 @@ registry.registerConfigProvider<StylerStepData>({
       {
         id: 'style-preview',
         label: t('steps.preview', 'Preview'),
-        componentFactory: (p: StepComponentProps<StylerStepData>) => (
+        componentFactory: (p: PluginStepProps<StylerStepData>) => (
           <StylerPreviewStep
             data={p.data}
             onChange={p.onChange}

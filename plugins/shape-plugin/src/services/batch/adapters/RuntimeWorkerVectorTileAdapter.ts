@@ -4,8 +4,42 @@ import type { VectorTileStageAdapter } from './VectorTileStageAdapter.js';
 import type { StageControls } from './StageControls.js';
 import { getShapeRuntimeWorkerClient } from './RuntimeWorkerClient.js';
 import { shapeDB } from '../../database/ShapeDB.js';
+import { getEphemeralShapeDB } from '../../database/EphemeralShapeDB.js';
+import { DexieChunkStoragePort } from '@hierarchidb/download';
+import { geojson } from 'flatgeobuf';
+import type { Feature } from 'geojson';
 
 export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
+  private async decodeGeoJson(buffer: ArrayBuffer): Promise<unknown> {
+    const decoded = geojson.deserialize(new Uint8Array(buffer));
+    if (decoded && typeof (decoded as AsyncIterable<unknown>)[Symbol.asyncIterator] === 'function') {
+      const features: Feature[] = [];
+      for await (const feature of decoded as AsyncIterable<Feature>) {
+        features.push(feature);
+      }
+      return {
+        type: 'FeatureCollection',
+        features,
+      };
+    }
+    return decoded;
+  }
+
+  private async persistGeoJsonInput(inputBufferId: string): Promise<void> {
+    const db = getEphemeralShapeDB();
+    const input = await db.simplifiedBuffers.get(inputBufferId)
+      ?? await db.rawBuffers.get(inputBufferId);
+    if (!input) {
+      throw new Error(`Vector tile input buffer not found: ${inputBufferId}`);
+    }
+    const geojsonPayload = await this.decodeGeoJson(input.data);
+    const text = JSON.stringify(geojsonPayload);
+    const bytes = new TextEncoder().encode(text).buffer;
+    const storage = new DexieChunkStoragePort('hidb-chunks');
+    await storage.putChunk(inputBufferId, 0, bytes);
+    await storage.commit(inputBufferId, { sizeBytes: bytes.byteLength, contentType: 'application/json' });
+  }
+
   async process(tasks: VectorTileTask[], onProgress: (p: ProgressInfo) => void, controls?: StageControls) {
     const client = await getShapeRuntimeWorkerClient();
     const vectorTileClient = client?.vectortile;
@@ -36,6 +70,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
         if (metadataEnabled) {
           metadataReplace = false;
         }
+        await this.persistGeoJsonInput(inputBufferId);
         await vectorTileClient.generateTiles(inputBufferId, {
           format,
           compression: compression ? 'gzip' : 'none',

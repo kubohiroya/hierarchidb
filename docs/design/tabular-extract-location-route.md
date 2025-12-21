@@ -4,7 +4,7 @@
 - Location (GeoNames as spike) and Route (CSV/GeoJSON as spike) dialogs should support:
   - Download/ingest large tabular sources via tabular-source → tabular-store
   - Define include/exclude rules (value match, regex) on columns
-  - Preview extracted rows (ui-tabular-extract) and iteratively refine rules
+  - Preview extracted rows (ui-tabular) and iteratively refine rules
   - Materialize extracted rows into normalized tables (location-point / route-point/segment)
 - TreeNode `data/draftData` holds only config (source settings + extractConfig). Actual rows live in tabular-store and plugin-specific tables.
 
@@ -29,7 +29,7 @@ interface TabularExtractConfig {
 - `ensureTabularSource(config) -> { tabularSourceId, schema, stats }`
   - Streams source via tabular-source, persists to tabular-store
 - `extractTabularRows(tabularSourceId, extractConfig) -> AsyncIterable<Row[]> | { rows, schema }`
-  - Uses ui-tabular-extract for projection/filter/limit/sample
+  - Uses ui-tabular for projection/filter/limit/sample
 - `materializeLocationPoints(nodeId, tabularSourceId, extractConfig)`
   - extract → normalize → write to location-point table; update LocationEntity
 - `materializeRouteSegments(nodeId, tabularSourceId, extractConfig)`

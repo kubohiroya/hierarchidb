@@ -1,5 +1,5 @@
 import React from 'react';
-import type { TabularDataFilterProps } from '@hierarchidb/ui-tabular-extract';
+import type { TabularDataFilterProps } from '@hierarchidb/ui-tabular';
 import { TabularKeyValuePanels } from './TabularKeyValuePanels.js';
 
 export interface TabularFilterSectionsProps {

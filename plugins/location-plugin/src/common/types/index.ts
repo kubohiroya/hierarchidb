@@ -5,7 +5,7 @@
 //  @hierarchidb/_obsolate_common-type
 import type { NodeId, TreeId } from '@hierarchidb/common-types';
 export type { NodeId } from '@hierarchidb/common-types';
-import type { TabularFilterRule, TabularSelectionConfig } from '@hierarchidb/ui-tabular-extract';
+import type { TabularFilterRule, TabularSelectionConfig } from '@hierarchidb/ui-tabular';
 
 // ================================
 // Entity Types

@@ -3,6 +3,7 @@ import {
   AlertTitle,
   Box,
   Chip,
+  LinearProgress,
   Paper,
   Stack,
   Table,
@@ -59,6 +60,7 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
     handleToggleSort,
     sortState,
     mapping,
+    isPreviewDeferred,
   } = useStylerPreview({ data, onValidate, tabularData });
   const targetMeta = targetProperty ? MAPLIBRE_PROPERTY_METADATA[targetProperty] : null;
   const columnWidth = columns.length ? `${100 / columns.length}%` : '100%';
@@ -221,6 +223,14 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
         minHeight: 0,
       }}
     >
+      {isPreviewDeferred && (
+        <Stack spacing={0.5}>
+          <Typography variant="caption" color="text.secondary">
+            {t('stylePreview.processing', 'Preparing preview data...')}
+          </Typography>
+          <LinearProgress />
+        </Stack>
+      )}
       <TableContainer
         component={Paper}
         sx={{ flex: 1, minHeight: 0, height: '100%', display: 'flex', flexDirection: 'column' }}

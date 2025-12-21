@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { CrossViewStyles } from '@hierarchidb/ui-data-grid';
+import { CrossViewStyles } from '@hierarchidb/ui-grid';
 
 const logMapLibreFeatureWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;

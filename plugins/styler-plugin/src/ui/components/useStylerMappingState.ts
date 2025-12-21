@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import type { StepComponentProps } from '@hierarchidb/plugin-base';
+import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import type {
   MapLibreStyleProperty,
   StyleType,
@@ -25,7 +25,7 @@ export const hasKeyValueSelected = (dialogData?: Partial<StylerStepData>): boole
 };
 
 type Params = Pick<
-  StepComponentProps<StylerStepData>,
+  PluginStepProps<StylerStepData>,
   'data' | 'onChange' | 'setValid' | 'setError' | 'dialogRef'
 > & {
   styleTypeOptions: ReadonlyArray<{ value: StyleType; labelKey: string; descriptionKey: string }>;

@@ -1,91 +1,107 @@
 {
   "steps": {
-    "details": { "label": "Route Settings" },
-    "selection": { "label": "Route Selection" },
-    "processing": { "label": "Processing" },
-    "build": { "label": "Build" }
+    "dataSource": { "label": "Data Source" },
+    "routeConfig": { "label": "Transport & Endpoints" },
+    "processing": { "label": "Processing Settings" },
+    "build": { "label": "Build" },
+    "preview": { "label": "Preview" }
   },
   "messages": {
-    "completeBeforeBuild": "Complete the required route settings before starting a build.",
+    "completeBeforeBuild": "Complete the transport, route type, and endpoint selections before starting a build.",
     "batchNotImplemented": "Route batch launch is not yet implemented in this dialog."
   },
-  "selection": {
-    "title": "Route Selection",
-    "description": "Configure waypoints and route options",
-    "waypoints": "Waypoints",
-    "startPoint": "Start Point",
-    "endPoint": "End Point",
-    "waypoint": "Waypoint",
-    "startPlaceholder": "Enter start location",
-    "endPlaceholder": "Enter destination",
-    "waypointPlaceholder": "Enter waypoint location",
-    "currentLocation": "Current",
-    "addWaypoint": "Add Waypoint",
-    "calculating": "Calculating...",
-    "calculateRoute": "Calculate Route",
-    "routeCalculated": "Route calculated successfully!"
+  "dataSource": {
+    "title": "Data Source",
+    "description": "Choose the primary dataset or service that provides route geometry.",
+    "label": "Route data source",
+    "helperText": "Select the data source used to generate routes.",
+    "options": {
+      "openstreetmap": "OpenStreetMap",
+      "searoute": "Searoute",
+      "custom": "Custom"
+    }
+  },
+  "routeConfig": {
+    "title": "Transport & Endpoints",
+    "description": "Define how the route is generated and select the start/end locations.",
+    "transportModeLabel": "Transport mode",
+    "transportModeHelperText": "Choose the primary transport mode for this route.",
+    "routeTypeLabel": "Route type",
+    "routeTypeHelperText": "Choose the method used to generate the route geometry.",
+    "searouteSettings": "Searoute settings",
+    "osmSettings": "OpenStreetMap settings",
+    "searoutePreferredChannels": "Preferred channels",
+    "searoutePreferredChannelsHelp": "Comma-separated channel names (optional).",
+    "searouteAvoidCanals": "Avoid canals",
+    "osmProfile": "Routing profile",
+    "osmProfileCar": "Car",
+    "osmProfileBike": "Bike",
+    "osmProfileFoot": "Foot",
+    "osmProfileTruck": "Truck",
+    "osrmBaseUrl": "OSRM base URL",
+    "osrmBaseUrlHelp": "Optional override for the OSRM endpoint.",
+    "osmAvoidTolls": "Avoid tolls",
+    "osmAvoidHighways": "Avoid highways",
+    "yes": "Yes",
+    "no": "No",
+    "locationSelectionTitle": "Start and end locations",
+    "locationSelectionDescription": "Choose from sibling locations or descendant locations under sibling folders.",
+    "loadingLocations": "Loading locations...",
+    "locationApiUnavailable": "Worker API is not ready yet. Locations may be unavailable.",
+    "locationLoadError": "Failed to load locations.",
+    "locationEmpty": "No sibling locations are available yet.",
+    "startLocationLabel": "Start location",
+    "endLocationLabel": "End location",
+    "locationPlaceholder": "Select a location"
+  },
+  "routeGeneration": {
+    "direct": "Straight line",
+    "greatCircle": "Great circle",
+    "searoute": "Searoute",
+    "osm": "OpenStreetMap (OSM API)"
+  },
+  "transportModes": {
+    "air": "Air",
+    "sea": "Sea",
+    "rail": "Conventional rail",
+    "highSpeedRail": "High-speed rail",
+    "highway": "Highway",
+    "road": "General road"
   },
   "processing": {
-    "title": "Route Processing",
-    "description": "Configure processing options for route generation",
-    "routeCategory": "Route Category",
-    "category": "Category",
-    "options": "Processing Options",
-    "simplificationLevel": "Simplification Level",
-    "min": "Min",
-    "med": "Med",
-    "max": "Max",
-    "generateElevation": "Generate Elevation Profile",
-    "generateTurns": "Generate Turn Instructions",
-    "maxFileSize": "Max File Size (MB)",
-    "status": "Processing Status",
-    "complete": "complete",
-    "startProcessing": "Start Processing",
-    "stopProcessing": "Stop Processing",
-    "advancedSettings": "Advanced Settings",
-    "successMessage": "Route has been processed successfully and is ready to use!",
-    "initializing": "Initializing route processing...",
-    "fetchingData": "Fetching route data...",
-    "calculating": "Calculating route segments...",
-    "elevation": "Processing elevation data...",
-    "simplifying": "Simplifying route geometry...",
-    "optimizing": "Optimizing route data...",
-    "finalizing": "Finalizing route...",
-    "completed": "Route processing completed!",
-    "error": "Processing failed. Please try again.",
-    "stopped": "Processing stopped by user."
-  },
-  "details": {
-    "routeTypeLabel": "Route Type",
-    "routeTypeHelperText": "Select the type of route",
-    "dataSourceLabel": "Data source",
-    "dataSourceHelperText": "Choose openstreetmap for OSRM/Overpass or custom for tabular import"
+    "title": "Processing Settings",
+    "description": "Tune the API usage and geometry settings for route generation.",
+    "apiThrottleTitle": "API throttling",
+    "apiThrottleDescription": "Limit API calls to avoid rate limits.",
+    "requestsPerSecond": "Requests per second",
+    "maxConcurrent": "Max concurrent requests",
+    "simplificationTitle": "Geometry simplification",
+    "simplificationDescription": "Reduce geometry complexity for faster rendering.",
+    "tolerance": "Tolerance",
+    "vectorTilesTitle": "Vector tile settings",
+    "vectorTilesDescription": "Configure zoom range and buffer for tile generation.",
+    "minZoom": "Min zoom",
+    "maxZoom": "Max zoom",
+    "buffer": "Buffer (px)"
   },
   "build": {
     "review": "Review the configuration and press Build to start the batch route generation.",
+    "dataSource": "Data Source:",
+    "transportMode": "Transport Mode:",
     "routeType": "Route Type:",
-    "transportModes": "Transport Modes:",
+    "startLocation": "Start:",
+    "endLocation": "End:",
     "notConfigured": "Not configured",
-    "missing": "Provide a name, route type, and at least one transport mode before building.",
-    "start": "When ready, click the Build button below to start the batch session."
+    "missing": "Provide transport, route type, and start/end locations before building.",
+    "start": "When ready, click the Build button below to start the batch session.",
+    "title": "Build routes",
+    "panelDescription": "Monitor and control route build progress."
   },
-  "categories": {
-    "transportation": "Transportation",
-    "recreation": "Recreation",
-    "logistics": "Logistics",
-    "emergency": "Emergency"
-  },
-  "routeTypes": {
-    "road": "Road",
-    "railway": "Railway",
-    "waterway": "Waterway",
-    "airway": "Airway",
-    "walking": "Walking",
-    "cycling": "Cycling",
-    "hiking": "Hiking",
-    "shipping": "Shipping",
-    "pipeline": "Pipeline",
-    "powerline": "Power Line"
+  "preview": {
+    "title": "Preview",
+    "description": "Preview the generated route geometry once the build is complete.",
+    "missing": "No route geometry is available yet. Run Build to generate a preview.",
+    "ready": "Route geometry is available. Map preview will appear here."
   },
   "batch": {
     "pause": "Pause",
@@ -121,6 +137,24 @@
       "lastErrorLabel": "Last error",
       "noneLabel": "None"
     }
+  },
+  "routeTypes": {
+    "road": "Road",
+    "railway": "Railway",
+    "waterway": "Waterway",
+    "airway": "Airway",
+    "walking": "Walking",
+    "cycling": "Cycling",
+    "hiking": "Hiking",
+    "shipping": "Shipping",
+    "pipeline": "Pipeline",
+    "powerline": "Power Line"
+  },
+  "categories": {
+    "transportation": "Transportation",
+    "recreation": "Recreation",
+    "logistics": "Logistics",
+    "emergency": "Emergency"
   },
   "errors": {
     "geolocationNotSupported": "Geolocation is not supported",

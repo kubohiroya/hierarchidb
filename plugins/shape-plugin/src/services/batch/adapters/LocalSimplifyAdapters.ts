@@ -5,13 +5,13 @@ import type { Simplify2StageAdapter } from './Simplify2StageAdapter.js';
 import type { StageControls } from './StageControls.js';
 import { getEphemeralShapeDB } from '../../database/EphemeralShapeDB.js';
 import { shapeDB } from '../../database/ShapeDB.js';
-import { applyFeatureFiltering, type FeatureFilterSettings } from '../utils/featureFiltering.js';
-import { simplifyGeoJson } from '../utils/geometrySimplify.js';
-import { deserialize, serialize } from 'flatgeobuf/lib/mjs/geojson';
+import { applyFeatureFiltering, type FeatureFilterSettings, simplifyGeoJson } from '@hierarchidb/gis-sdk';
+import { geojson as geojsonApi } from 'flatgeobuf';
 import type { Feature } from 'geojson';
+import type { FeatureCollection } from 'geojson';
 
 const decodeGeoJson = async (buffer: ArrayBuffer): Promise<unknown> => {
-  const decoded = deserialize(new Uint8Array(buffer));
+  const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
   if (decoded && typeof (decoded as AsyncIterable<unknown>)[Symbol.asyncIterator] === 'function') {
     const features: Feature[] = [];
     for await (const feature of decoded as AsyncIterable<Feature>) {
@@ -25,8 +25,15 @@ const decodeGeoJson = async (buffer: ArrayBuffer): Promise<unknown> => {
   return decoded;
 };
 
-const encodeGeoJson = async (geojson: unknown): Promise<ArrayBuffer> => {
-  const bytes = await serialize(geojson);
+const isFeatureCollection = (value: unknown): value is FeatureCollection => (
+  !!value
+  && typeof value === 'object'
+  && (value as FeatureCollection).type === 'FeatureCollection'
+  && Array.isArray((value as FeatureCollection).features)
+);
+
+const encodeGeoJson = async (geojsonData: FeatureCollection): Promise<ArrayBuffer> => {
+  const bytes = await geojsonApi.serialize(geojsonData);
   return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
 };
 
@@ -61,14 +68,10 @@ export class LocalSimplify1Adapter implements Simplify1StageAdapter {
         };
         const filtered = applyFeatureFiltering(geojson, filterSettings);
         const outputBufferId = `${task.sessionId ?? ''}-simplify1-${task.index ?? completed}`;
-        const hasFilteredFeatures = Boolean(
-          filtered
-          && typeof filtered === 'object'
-          && Array.isArray((filtered as { features?: unknown[] }).features),
-        );
+        const hasFilteredFeatures = isFeatureCollection(filtered);
         const data = hasFilteredFeatures ? await encodeGeoJson(filtered) : raw.data;
         const featureCount = hasFilteredFeatures
-          ? (filtered as { features: unknown[] }).features.length
+          ? filtered.features.length
           : raw.featureCount;
         await db.simplifiedBuffers.put({
           id: outputBufferId,
@@ -146,15 +149,11 @@ export class LocalSimplify2Adapter implements Simplify2StageAdapter {
           perFeature: enablePerFeatureSimplification,
           quantize,
         });
-        const hasSimplifiedFeatures = Boolean(
-          simplified
-          && typeof simplified === 'object'
-          && Array.isArray((simplified as { features?: unknown[] }).features),
-        );
+        const hasSimplifiedFeatures = isFeatureCollection(simplified);
         const outputBufferId = `${task.sessionId ?? ''}-simplify2-${task.index ?? completed}`;
         const data = hasSimplifiedFeatures ? await encodeGeoJson(simplified) : input.data;
         const featureCount = hasSimplifiedFeatures
-          ? (simplified as { features: unknown[] }).features.length
+          ? simplified.features.length
           : input.featureCount;
         await db.simplifiedBuffers.put({
           id: outputBufferId,

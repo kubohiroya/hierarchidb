@@ -15,17 +15,41 @@ const STAGES = [
   { id: 'finalize', title: 'Finalize', description: 'Persist results and indexes.' },
 ];
 
-const toList = (value: unknown): string[] => {
-  if (Array.isArray(value)) return value.filter((item): item is string => typeof item === 'string');
-  return [];
+const resolveTransportLabel = (draft: Record<string, unknown>, t: (key: string, fallback?: string) => string): string => {
+  const metadata = (draft.metadata ?? {}) as Record<string, unknown>;
+  const selection = typeof metadata.transportSelection === 'string' ? metadata.transportSelection : null;
+  if (selection === 'high-speed-rail') return t('transportModes.highSpeedRail', 'High-speed rail');
+  if (selection === 'rail') return t('transportModes.rail', 'Rail');
+  if (selection === 'highway') return t('transportModes.highway', 'Highway');
+  if (selection === 'road') return t('transportModes.road', 'General road');
+  if (selection === 'sea') return t('transportModes.sea', 'Sea');
+  if (selection === 'air') return t('transportModes.air', 'Air');
+
+  const baseMode = typeof draft.transportMode === 'string' ? draft.transportMode : null;
+  if (baseMode === 'air') return t('transportModes.air', 'Air');
+  if (baseMode === 'sea') return t('transportModes.sea', 'Sea');
+  if (baseMode === 'rail') return t('transportModes.rail', 'Rail');
+  if (baseMode === 'road') return t('transportModes.road', 'General road');
+  return t('build.notConfigured', 'Not configured');
 };
 
 export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({ draft: draftProp }) => {
   const { t } = useTranslation();
   const draft = draftProp.draftData ?? {};
-  const routeType = (draft as { routeType?: string }).routeType ?? 'unknown';
-  const transportModes = toList((draft as { transportModes?: unknown }).transportModes);
-  const hasRequiredFields = Boolean(routeType && transportModes.length);
+  const dataSource = (draft as { dataSourceName?: string }).dataSourceName ?? t('build.notConfigured', 'Not configured');
+  const generationMethod = (draft as { generationMethod?: string }).generationMethod ?? t('build.notConfigured', 'Not configured');
+  const transportLabel = resolveTransportLabel(draft as Record<string, unknown>, t);
+  const startLocation = (draft as { startLocationId?: string }).startLocationId ?? t('build.notConfigured', 'Not configured');
+  const endLocation = (draft as { endLocationId?: string }).endLocationId ?? t('build.notConfigured', 'Not configured');
+
+  const hasRequiredFields = Boolean(
+    (draft as { dataSourceName?: string }).dataSourceName &&
+      (draft as { transportMode?: string }).transportMode &&
+      (draft as { generationMethod?: string }).generationMethod &&
+      (draft as { startLocationId?: string }).startLocationId &&
+      (draft as { endLocationId?: string }).endLocationId,
+  );
+
   const [status, setStatus] = useState<BuildStatus>('idle');
   const [overallProgress, setOverallProgress] = useState(0);
 
@@ -44,28 +68,40 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({ draft: draftProp
       </Typography>
 
       <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
-        <Typography variant="subtitle2">{t('build.routeType', 'Route Type:')}</Typography>
-        <Chip size="small" label={String(routeType)} />
+        <Typography variant="subtitle2">{t('build.dataSource', 'Data Source:')}</Typography>
+        <Chip size="small" label={String(dataSource)} />
       </Stack>
 
       <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
-        <Typography variant="subtitle2">{t('build.transportModes', 'Transport Modes:')}</Typography>
-        {transportModes.length ? (
-          transportModes.map((mode) => <Chip key={mode} size="small" label={mode} />)
-        ) : (
-          <Chip size="small" label={t('build.notConfigured', 'Not configured')} />
-        )}
+        <Typography variant="subtitle2">{t('build.transportMode', 'Transport Mode:')}</Typography>
+        <Chip size="small" label={transportLabel} />
+      </Stack>
+
+      <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
+        <Typography variant="subtitle2">{t('build.routeType', 'Route Type:')}</Typography>
+        <Chip size="small" label={String(generationMethod)} />
+      </Stack>
+
+      <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
+        <Typography variant="subtitle2">{t('build.startLocation', 'Start:')}</Typography>
+        <Chip size="small" label={String(startLocation)} />
+      </Stack>
+
+      <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
+        <Typography variant="subtitle2">{t('build.endLocation', 'End:')}</Typography>
+        <Chip size="small" label={String(endLocation)} />
       </Stack>
 
       {!hasRequiredFields && (
         <Alert severity="info">
-          {t('build.missing', 'Provide a name, route type, and at least one transport mode before building.')}
+          {t('build.missing', 'Provide transport, route type, and start/end locations before building.')}
         </Alert>
       )}
 
+      <Typography variant="subtitle1">
+        {t('build.title', 'Build routes')}
+      </Typography>
       <BuildStepPanel
-        title={t('build.title', 'Build routes')}
-        description={t('build.panelDescription', 'Monitor and control route build progress.')}
         status={status}
         overallProgress={overallProgress}
         stages={STAGES}

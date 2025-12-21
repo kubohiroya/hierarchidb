@@ -1,8 +1,9 @@
 import { atom, type Getter } from 'jotai';
-import type { TabularFilterOperator, TabularFilterRule } from '@hierarchidb/ui-tabular-extract';
+import type { TabularFilterOperator, TabularFilterRule } from '@hierarchidb/ui-tabular';
 import { calculateStatistics, type TabularRow } from './tabularStatisticsUtils.ts';
 
 export const tabularRowsAtom = atom<TabularRow[]>([]);
+export const tabularProcessingAtom = atom<boolean>(false);
 
 export const filterRulesAtom = atom<TabularFilterRule[]>([]);
 

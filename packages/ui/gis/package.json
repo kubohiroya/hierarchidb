@@ -1,0 +1,40 @@
+{
+  "name": "@hierarchidb/ui-gis",
+  "version": "0.1.0",
+  "description": "Shared GIS UI hooks for vector tile previews",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "@mui/material": "^7.3.6",
+    "@hierarchidb/ui-map": "workspace:*"
+  },
+  "devDependencies": {
+    "react": ">=18.0.0",
+    "@mui/material": "^7.3.6",
+    "@hierarchidb/ui-map": "workspace:*",
+    "typescript": "workspace:^5.9.3"
+  },
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  }
+}

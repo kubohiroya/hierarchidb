@@ -6,7 +6,7 @@ import type {
   CSVSelectionConfig,
   CSVTableListResult,
   CSVTableMetadata,
-} from '@hierarchidb/ui-tabular-extract';
+} from '@hierarchidb/ui-tabular';
 import * as JSZipNS from 'jszip';
 import * as XLSX from 'xlsx';
 import type { SimpleTableMetadataManager } from '../../services/StylerMetadataManager.js';

@@ -1,6 +1,6 @@
 import type { TreeNodeUpdaterPayload, NodeId } from '@hierarchidb/common-types';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
-import type { TabularDataResult } from '@hierarchidb/ui-tabular-extract';
+import type { TabularDataResult } from '@hierarchidb/ui-tabular';
 import type { BBox, Geometry } from 'geojson';
 import type { LayerInfo } from './batch.js';
 import type { DataSourceName, UrlMetadata } from './data-source.js';

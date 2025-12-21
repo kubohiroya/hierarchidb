@@ -1,4 +1,4 @@
-import type { TabularDataApi } from '@hierarchidb/ui-tabular-extract';
+import type { TabularDataApi } from '@hierarchidb/ui-tabular';
 import { SpreadsheetTabularApiDriver } from '@hierarchidb/spreadsheet-plugin';
 import { ShapeTabularMetadataManager } from './ShapeTabularMetadataManager.js';
 import { SHAPE_PLUGIN_ID } from '../../common/types/constants.js';

@@ -52,6 +52,18 @@
       "@hierarchidb/components/*": [
         "packages/components/src/*"
       ],
+      "@hierarchidb/common-types": [
+        "packages/common/types/src/index.ts"
+      ],
+      "@hierarchidb/common-types/*": [
+        "packages/common/types/src/*"
+      ],
+      "@hierarchidb/common-api": [
+        "packages/common/api/src/index.ts"
+      ],
+      "@hierarchidb/common-api/*": [
+        "packages/common/api/src/*"
+      ],
       "@hierarchidb/compute": [
         "packages/features/compute/dist/index.d.ts"
       ],
@@ -75,6 +87,12 @@
       ],
       "@hierarchidb/feature-registry/*": [
         "packages/features/feature-registry/dist/*"
+      ],
+      "@hierarchidb/gis-sdk": [
+        "packages/features/gis-sdk/src/index.ts"
+      ],
+      "@hierarchidb/gis-sdk/*": [
+        "packages/features/gis-sdk/src/*"
       ],
       "@hierarchidb/fetch-save-metadata": [
         "packages/features/fetch-save-metadata/dist/index.d.ts"
@@ -323,10 +341,10 @@
       "@hierarchidb/ui-csv-extract/*": [
         "packages/ui/tabular-extract/src/*"
       ],
-      "@hierarchidb/ui-data-grid": [
+      "@hierarchidb/ui-grid": [
         "packages/ui/data-grid/src/index.ts"
       ],
-      "@hierarchidb/ui-data-grid/*": [
+      "@hierarchidb/ui-grid/*": [
         "packages/ui/data-grid/src/*"
       ],
       "@hierarchidb/ui-datasource": [
@@ -334,6 +352,18 @@
       ],
       "@hierarchidb/ui-datasource/*": [
         "packages/ui/datasource/src/*"
+      ],
+      "@hierarchidb/ui-gis": [
+        "packages/ui/gis/src/index.ts"
+      ],
+      "@hierarchidb/ui-gis/*": [
+        "packages/ui/gis/src/*"
+      ],
+      "@hierarchidb/ui-batch": [
+        "packages/ui/batch/src/index.ts"
+      ],
+      "@hierarchidb/ui-batch/*": [
+        "packages/ui/batch/src/*"
       ],
       "@hierarchidb/ui-dialog": [
         "packages/ui/dialog/src/index.ts"
@@ -443,10 +473,10 @@
       "@hierarchidb/ui-search-result-window/*": [
         "packages/ui/search-result-window/src/*"
       ],
-      "@hierarchidb/ui-tabular-extract": [
+      "@hierarchidb/ui-tabular": [
         "packages/ui/tabular-extract/src/index.ts"
       ],
-      "@hierarchidb/ui-tabular-extract/*": [
+      "@hierarchidb/ui-tabular/*": [
         "packages/ui/tabular-extract/src/*"
       ],
       "@hierarchidb/ui-modal-select": [

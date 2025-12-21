@@ -3,7 +3,7 @@ import { useDialogContext } from '../hooks/useDialogContext.js';
 import type {
   HeadlessContentRenderProps,
   HeadlessDialogContentProps,
-  StepComponentProps,
+  PluginStepProps,
 } from './types.js';
 
 function buildContentRenderProps<TData>(ctx: ReturnType<typeof useDialogContext<TData>>): HeadlessContentRenderProps<TData> {
@@ -24,7 +24,7 @@ function renderActiveStep<TData>(ctx: ReturnType<typeof useDialogContext<TData>>
     return null;
   }
   const StepComponent = descriptor.component;
-  const stepProps: StepComponentProps<TData> = {
+  const stepProps: PluginStepProps<TData> = {
     stepIndex: ctx.activeStepIndex,
     stepId: descriptor.id,
     label: descriptor.label,

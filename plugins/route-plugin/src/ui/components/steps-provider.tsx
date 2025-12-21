@@ -1,6 +1,6 @@
 import {
   PluginStepRegistry,
-  type StepComponentProps,
+  type PluginStepProps,
   type PluginStepConfig,
   type StartBatchContext,
   type StepData,
@@ -11,17 +11,18 @@ import { toRouteUpdaterPayload } from '../../common/utils/draft.js';
 import { useTranslation as getTranslation } from '../../common/i18n/index.js';
 import { RouteSelectionStep } from './steps/RouteSelectionStep.js';
 import { RouteProcessingStep } from './steps/RouteProcessingStep.js';
-import { RouteDetailsStep } from './steps/RouteDetailsStep.js';
+import { RouteDataSourceStep } from './steps/RouteDataSourceStep.js';
 import { RouteBuildStep } from './steps/RouteBuildStep.js';
+import { RoutePreviewStep } from './steps/RoutePreviewStep.js';
 import { notify } from '@hierarchidb/components';
 
 const registry = PluginStepRegistry.getInstance();
 
 type RouteStepData = StepData & RouteUpdaterPayload;
 
-type StepProps = StepComponentProps<RouteStepData>;
+type StepProps = PluginStepProps<RouteStepData>;
 
-const ensureDraft = (data?: StepComponentProps['data']): RouteStepData => {
+const ensureDraft = (data?: PluginStepProps['data']): RouteStepData => {
   const fallbackId = 'route-draft' as NodeId;
   if (data && typeof data === 'object') {
     const cast = data as Partial<RouteUpdaterPayload> & { id?: string; parentId?: NodeId };
@@ -53,26 +54,26 @@ const mergeDraft = (current: RouteStepData, updates: Partial<RouteStepData>): Ro
   };
 };
 
-const hasRouteDetails = (data?: RouteStepData): boolean => {
+const hasRouteConfig = (data?: RouteStepData): boolean => {
   const draftData = data?.draftData ?? {};
-  const routeType = typeof (draftData as Record<string, unknown>).routeType === 'string'
-    ? (draftData as Record<'routeType', string>).routeType
-    : undefined;
-  const transportModes = Array.isArray((draftData as Record<string, unknown>).transportModes)
-    ? ((draftData as { transportModes: string[] }).transportModes)
-    : [];
-  return Boolean(routeType && transportModes.length > 0);
+  return Boolean(
+    draftData.dataSourceName &&
+      draftData.transportMode &&
+      draftData.generationMethod &&
+      draftData.startLocationId &&
+      draftData.endLocationId
+  );
 };
 
 const startRouteBatch = async (data: RouteStepData, _context: StartBatchContext) => {
   const { t } = getTranslation();
   const draft = data?.draftData ?? {};
   const hasEssentials = Boolean(
-    typeof draft.name === 'string' &&
-      draft.name.trim() &&
-      draft.routeType &&
-      Array.isArray(draft.transportModes) &&
-      draft.transportModes.length > 0
+    draft.dataSourceName &&
+      draft.transportMode &&
+      draft.generationMethod &&
+      draft.startLocationId &&
+      draft.endLocationId
   );
 
   if (!hasEssentials) {
@@ -89,23 +90,23 @@ registry.registerConfigProvider<RouteStepData>({
     const { t } = getTranslation();
     return [
       {
-        id: 'route-details',
-        label: t('steps.details.label', 'Route Settings'),
+        id: 'data-source',
+        label: t('steps.dataSource.label', 'Data Source'),
         componentFactory: (p: StepProps) => {
           const draft = ensureDraft(p.data);
           return (
-            <RouteDetailsStep
+            <RouteDataSourceStep
               draft={draft as unknown as RouteUpdaterPayload}
               onUpdate={(updates) => p.onChange(mergeDraft(draft, { draftData: updates }))}
               onValidationChange={p.setValid}
             />
           );
         },
-        validate: hasRouteDetails,
+        validate: (data?: RouteStepData) => Boolean(data?.draftData?.dataSourceName),
       },
       {
-        id: 'route-selection',
-        label: t('steps.selection.label', 'Route Selection'),
+        id: 'route-config',
+        label: t('steps.routeConfig.label', 'Transport & Endpoints'),
         componentFactory: (p: StepProps) => {
           const draft = ensureDraft(p.data);
           return (
@@ -113,21 +114,23 @@ registry.registerConfigProvider<RouteStepData>({
               draft={draft as unknown as RouteUpdaterPayload}
               onUpdate={(updates) => p.onChange(mergeDraft(draft, { draftData: updates }))}
               onValidationChange={p.setValid}
+              mode={p.mode}
+              nodeId={p.nodeId}
+              parentId={p.parentId}
             />
           );
         },
-        validate: () => true,
+        validate: hasRouteConfig,
       },
       {
         id: 'processing',
-        label: t('steps.processing.label', 'Processing'),
+        label: t('steps.processing.label', 'Processing Settings'),
         componentFactory: (p: StepProps) => {
           const draft = ensureDraft(p.data);
           return (
             <RouteProcessingStep
               draft={draft as unknown as RouteUpdaterPayload}
               onUpdate={(updates) => p.onChange(mergeDraft(draft, { draftData: updates }))}
-              onValidationChange={p.setValid}
             />
           );
         },
@@ -144,16 +147,25 @@ registry.registerConfigProvider<RouteStepData>({
         capabilities: {
           canStartBatch: (data: RouteStepData) => {
             const draft = data?.draftData ?? {};
-            const hasEssentials = Boolean(
-              typeof draft.name === 'string' &&
-                draft.name.trim() &&
-                draft.routeType &&
-                Array.isArray(draft.transportModes) &&
-                draft.transportModes.length > 0
+            return Boolean(
+              draft.dataSourceName &&
+                draft.transportMode &&
+                draft.generationMethod &&
+                draft.startLocationId &&
+                draft.endLocationId
             );
-            return hasEssentials;
           },
           startBatch: (data, context) => startRouteBatch(data as RouteStepData, context),
+        },
+        validate: () => true,
+      },
+      {
+        id: 'preview',
+        label: t('steps.preview.label', 'Preview'),
+        optional: true,
+        componentFactory: (p: StepProps) => {
+          const draft = ensureDraft(p.data);
+          return <RoutePreviewStep draft={draft as unknown as RouteUpdaterPayload} />;
         },
         validate: () => true,
       },

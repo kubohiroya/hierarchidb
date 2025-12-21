@@ -4,7 +4,7 @@ import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import type {
   TabularDataImportProps,
   TabularProcessingConfig,
-} from '@hierarchidb/ui-tabular-extract';
+} from '@hierarchidb/ui-tabular';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import type { SpreadsheetEntity, SpreadSheetDataSourceType } from '../../common/types/SpreadsheetEntity.js';
 import { SPREADSHEET_NODE_TYPE } from '../../common/constants.js';

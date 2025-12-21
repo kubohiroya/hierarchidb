@@ -1,4 +1,4 @@
-import type { TabularFilterRule } from '@hierarchidb/ui-tabular-extract';
+import type { TabularFilterRule } from '@hierarchidb/ui-tabular';
 
 export type TabularRow = {
   [column: string]: string | number | boolean | null;

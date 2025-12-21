@@ -17,7 +17,7 @@ import type {
   TabularFilterRule,
   TabularProcessingConfig,
   TabularDataApi,
-} from '@hierarchidb/ui-tabular-extract';
+} from '@hierarchidb/ui-tabular';
 import type { StylerEntity, StylerMapping } from '../common/types/StylerEntity.js';
 import type {
   ColorCalculationResult,

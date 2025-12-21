@@ -1,5 +1,5 @@
-import type { TabularDataResult, TabularFilterRule, TabularSelectionConfig } from '@hierarchidb/ui-tabular-extract';
-import type { TabularDataApi } from '@hierarchidb/ui-tabular-extract';
+import type { TabularDataResult, TabularFilterRule, TabularSelectionConfig } from '@hierarchidb/ui-tabular';
+import type { TabularDataApi } from '@hierarchidb/ui-tabular';
 
 export async function extractTabularRows(
   api: TabularDataApi,

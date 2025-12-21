@@ -1,4 +1,4 @@
-import type { PluginStepConfig, StepComponentProps } from '@hierarchidb/plugin-base';
+import type { PluginStepConfig, PluginStepProps } from '@hierarchidb/plugin-base';
 import type { BaseMapEntity, MapStyle, MapViewport } from '../../common/types/BaseMapEntity.js';
 import { MapStyleStep } from './steps/MapStyleStep.js';
 import { ViewportStep } from './steps/ViewportStep.js';
@@ -29,7 +29,7 @@ const mergeDraft = (
   };
 };
 
-type StepProps = StepComponentProps<Partial<BaseMapEntity>>;
+type StepProps = PluginStepProps<Partial<BaseMapEntity>>;
 
 const hasValidViewport = (value?: MapViewport): boolean => {
   if (!value) return false;

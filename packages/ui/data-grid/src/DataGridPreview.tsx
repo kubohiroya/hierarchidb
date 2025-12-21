@@ -19,10 +19,10 @@ import { Add, Delete, FilterAlt, ViewColumn } from '@mui/icons-material';
 import { GenericDataGrid } from './GenericDataGrid.js';
 import { CrossViewSnackbar } from './CrossViewSnackbar.js';
 import { useTranslation } from '../../i18n/src/index.js';
-import { useTabularPreview, type TabularPreviewOp } from './hooks/useTabularPreview.js';
+import { useDataGridPreview, type DataGridPreviewOp } from './hooks/useDataGridPreview.js';
 import type { ReactNode } from 'react';
 
-export function TabularPreview({
+export function DataGridPreview({
   pluginId = 'generic',
   tableId,
   rows: providedRows,
@@ -55,7 +55,7 @@ export function TabularPreview({
     addFilter,
     removeFilter,
     updateFilter,
-  } = useTabularPreview({ pluginId, tableId, rows: providedRows, columns: providedColumns });
+  } = useDataGridPreview({ pluginId, tableId, rows: providedRows, columns: providedColumns });
 
   // Minimal column type compatible with GenericDataGrid
 
@@ -103,8 +103,8 @@ export function TabularPreview({
             <FormControl size="small" sx={{ minWidth: 120 }}>
               <InputLabel id={`${controlId}-op-${i}`} htmlFor={`${controlId}-op-select-${i}`}>{t('dataGrid.preview.operator', 'Operator')}</InputLabel>
               <Select labelId={`${controlId}-op-${i}`} id={`${controlId}-op-select-${i}`} label={t('dataGrid.preview.operator', 'Operator')} value={f.op}
-                      onChange={(e) => updateFilter(i, { op: e.target.value as TabularPreviewOp })}>
-                {(['eq', 'contains', 'gt', 'gte', 'lt', 'lte', 'neq'] as TabularPreviewOp[]).map((op) => (
+                      onChange={(e) => updateFilter(i, { op: e.target.value as DataGridPreviewOp })}>
+                {(['eq', 'contains', 'gt', 'gte', 'lt', 'lte', 'neq'] as DataGridPreviewOp[]).map((op) => (
                   <MenuItem key={op} value={op}>{op}</MenuItem>))}
               </Select>
             </FormControl>

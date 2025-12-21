@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, type RefObject } from 'react';
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
-import type { TabularDataResult, TabularFilterRule } from '@hierarchidb/ui-tabular-extract';
+import type { TabularDataResult, TabularFilterRule } from '@hierarchidb/ui-tabular';
 import type { SpreadsheetEntity } from '../../common/types/SpreadsheetEntity.js';
 import { SPREADSHEET_NODE_TYPE } from '../../common/constants.js';
 import { createSpreadsheetTabularApi } from '../../services/spreadsheetTabularApiFactory.js';

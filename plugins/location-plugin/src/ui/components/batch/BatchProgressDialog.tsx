@@ -53,7 +53,7 @@ import { useLocationProgress } from '../../../common/hooks/useLocationProgress.j
 import { isDevEnvironment } from '../../../common/utils/env.js';
 import { useTranslation, formatBytes as formatBytesIntl, formatNumber } from '../../../common/i18n/index.js';
 import { getEphemeralLocationDB } from '../../../services/index.js';
-import { CrossViewSnackbar, TabularPreview } from '@hierarchidb/ui-data-grid';
+import { CrossViewSnackbar, DataGridPreview } from '@hierarchidb/ui-grid';
 
 interface ProgressInfo {
   percentage: number;
@@ -585,7 +585,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
 */}
         <TabPanel value={tabValue} index={3}>
           <Box sx={{ flex: 1, minHeight: 360 }}>
-            <TabularPreview pluginId="location" tableId={tableId || undefined} />
+            <DataGridPreview pluginId="location" tableId={tableId || undefined} />
           </Box>
         </TabPanel>
       </DialogContent>

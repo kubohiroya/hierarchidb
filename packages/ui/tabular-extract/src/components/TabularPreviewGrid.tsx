@@ -1,10 +1,10 @@
 import React, { useCallback, useMemo, useRef, useState, type ReactElement } from 'react';
 import { Box, Menu, MenuItem, Typography } from '@mui/material';
-import { GenericDataGrid } from '@hierarchidb/ui-data-grid';
+import { GenericDataGrid } from '@hierarchidb/ui-grid';
 import type { TabularFilterOperator } from '../types/index.js';
 import { SearchField } from '@hierarchidb/ui-search-field';
 
-export interface TabularPreviewLiteProps {
+export interface TabularPreviewGridProps {
   rows: Array<Record<string, unknown>>;
   columns?: string[];
   height?: number;
@@ -26,7 +26,7 @@ export interface TabularPreviewLiteProps {
   }) => void;
 }
 
-export const TabularPreviewLite: React.FC<TabularPreviewLiteProps> = ({
+export const TabularPreviewGrid: React.FC<TabularPreviewGridProps> = ({
   rows,
   columns,
   height,

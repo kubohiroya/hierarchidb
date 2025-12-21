@@ -30,11 +30,10 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\""
   },
   "dependencies": {
+    "@hierarchidb/gis-sdk": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
     "comlink": "^4.4.2",
     "dexie": "^4.2.1",
-    "geojson-vt": "^3.2.1",
-    "@turf/area": "^7.0.0",
     "inversify": "^6.0.2",
     "lunr": "2.3.9",
     "reflect-metadata": "^0.1.13",
@@ -68,7 +67,6 @@
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/tag": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@maplibre/vt-pbf": "^4.0.3",
     "jotai": "^2.13.1"
   },
   "optionalDependencies": {
@@ -91,11 +89,9 @@
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/tag": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@maplibre/vt-pbf": "^4.0.3",
     "@types/lunr": "^2.3.7",
     "@types/node": "^24.3.0",
     "@types/uuid": "^10.0.0",
-    "@types/vt-pbf": "^3.1.0",
     "fake-indexeddb": "^6.2.2",
     "vitest": "^3.2.4"
   },

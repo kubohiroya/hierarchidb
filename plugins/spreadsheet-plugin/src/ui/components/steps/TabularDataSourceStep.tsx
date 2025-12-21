@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
-import { TabularProvider, TabularDataImport } from '@hierarchidb/ui-tabular-extract';
-import type { TabularDataResult } from '@hierarchidb/ui-tabular-extract';
+import { TabularProvider, TabularDataImport } from '@hierarchidb/ui-tabular';
+import type { TabularDataResult } from '@hierarchidb/ui-tabular';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import type { SpreadsheetEntity } from '../../../common/types/SpreadsheetEntity.js';
 import { Accordion, AccordionDetails, AccordionSummary, Box, Paper, Typography } from '@mui/material';
@@ -11,7 +11,7 @@ import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import { useTranslation } from '@hierarchidb/ui-i18n';
 import { type UseTabularDataSourceResult, useTabularDataSource } from '../../hooks/useTabularDataSource.ts';
-import { TabularPreviewLite } from '@hierarchidb/ui-tabular-extract';
+import { TabularPreviewGrid } from '@hierarchidb/ui-tabular';
 import { useAtomValue } from 'jotai';
 import { tabularRowsAtom } from '../../state/tabularKeyValueAtoms.js';
 
@@ -115,7 +115,7 @@ export const TabularDataSourceStep: FC<PluginStepProps<SpreadsheetEntity>> = ({
           </AccordionSummary>
           <AccordionDetails>
             <Paper variant="outlined" sx={{ height: 320 }}>
-              <TabularPreviewLite
+              <TabularPreviewGrid
                 rows={previewRows}
                 columns={extractColumnNames(dialogData.lastPreview, dialogData.tabularTableMetadata)}
                 height={320}

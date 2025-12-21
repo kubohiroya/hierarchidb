@@ -1,0 +1,46 @@
+{
+  "name": "@hierarchidb/ui-batch",
+  "version": "0.1.0",
+  "description": "Shared batch progress hooks for HierarchiDB UI",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "@hierarchidb/batch": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/ui-worker-client": "workspace:*",
+    "@hierarchidb/components": "workspace:*"
+  },
+  "devDependencies": {
+    "react": ">=18.0.0",
+    "@hierarchidb/batch": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/ui-worker-client": "workspace:*",
+    "@hierarchidb/components": "workspace:*",
+    "typescript": "workspace:^5.9.3"
+  },
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  }
+}

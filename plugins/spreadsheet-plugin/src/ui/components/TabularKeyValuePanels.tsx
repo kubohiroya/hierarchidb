@@ -20,6 +20,7 @@ import {
   binCountAtom,
   histogramStatsAtom,
   numericValuesAtom,
+  tabularProcessingAtom,
 } from '../state/tabularKeyValueAtoms.js';
 import { KeyValueSourcePanel } from './KeyValueSourcePanel.js';
 import { ValueHistogram } from './ValueHistogram.js';
@@ -56,6 +57,7 @@ export const TabularKeyValuePanels: React.FC<Props> = ({
   const setBinCount = useSetAtom(binCountAtom);
   const numericValues = useAtomValue(numericValuesAtom);
   const stats = useAtomValue(histogramStatsAtom);
+  const isProcessing = useAtomValue(tabularProcessingAtom);
   const histogramContainerRef = useRef<HTMLDivElement | null>(null);
   const [histogramWidth, setHistogramWidth] = React.useState<number>(480);
 
@@ -207,6 +209,14 @@ export const TabularKeyValuePanels: React.FC<Props> = ({
 
   return (
     <Stack spacing={1}>
+      {isProcessing && (
+        <Box sx={{ px: 1 }}>
+          <Typography variant="caption" color="text.secondary">
+            {t('filtering.processing', 'Processing tabular data...')}
+          </Typography>
+          <LinearProgress sx={{ mt: 0.5 }} />
+        </Box>
+      )}
       <Accordion defaultExpanded disableGutters square>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Stack direction="row" spacing={1} alignItems="center">

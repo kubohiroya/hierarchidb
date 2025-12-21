@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { i18n } from '@hierarchidb/ui-i18n';
 import { useAtomValue } from 'jotai';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { TabularFilterRule } from '@hierarchidb/ui-tabular-extract';
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
+import type { TabularFilterRule } from '@hierarchidb/ui-tabular';
 import { tabularRowsAtom } from '@hierarchidb/spreadsheet-plugin';
 import {
   StylerConfigDefault,
@@ -59,6 +59,8 @@ export const useStylerPreview = ({
     tabularData.length > 0
       ? tabularData
       : (data?.previewRows as StylerTableRow[] | undefined) ?? atomRows;
+  const deferredPreviewRowsSource = useDeferredValue(previewRowsSource);
+  const isPreviewDeferred = deferredPreviewRowsSource !== previewRowsSource;
   const mapping: StylerMapping = {
     ...StylerMappingDefault,
     ...(data?.mapping ?? {}),
@@ -172,13 +174,13 @@ export const useStylerPreview = ({
   );
 
   const previewData = useMemo(() => {
-    const sourceRows = previewRowsSource;
+    const sourceRows = deferredPreviewRowsSource;
     const preparedFilters = prepareFilters((data?.filters as TabularFilterRule[] | undefined) ?? []);
     const rows: StylerTableRow[] =
       (Array.isArray(sourceRows) && sourceRows.length > 0 ? (sourceRows as StylerTableRow[]) : []) ?? [];
     const filtered = preparedFilters.length ? rows.filter((row) => matchesFilters(row, preparedFilters)) : rows;
     return filtered.slice(0, 1000);
-  }, [data?.filters, matchesFilters, prepareFilters, previewRowsSource]);
+  }, [data?.filters, deferredPreviewRowsSource, matchesFilters, prepareFilters]);
 
   const columns = useMemo(() => Object.keys(previewData[0] ?? {}), [previewData]);
 
@@ -261,5 +263,6 @@ export const useStylerPreview = ({
     handleToggleSort,
     sortState,
     mapping,
+    isPreviewDeferred,
   };
 };

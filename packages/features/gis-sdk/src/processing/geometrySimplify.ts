@@ -7,7 +7,10 @@ export interface SimplifyOptions {
   quantize?: number;
 }
 
-const simplifyFeature = (feature: Feature<Geometry, GeoJsonProperties>, tolerance: number): Feature<Geometry, GeoJsonProperties> => {
+const simplifyFeature = (
+  feature: Feature<Geometry, GeoJsonProperties>,
+  tolerance: number,
+): Feature<Geometry, GeoJsonProperties> => {
   if (!feature.geometry) return feature;
   const simplified = turf.simplify(feature, { tolerance, highQuality: false, mutate: false });
   return simplified as Feature<Geometry, GeoJsonProperties>;
@@ -36,7 +39,10 @@ const quantizeGeometryObject = (geometry: Geometry, quantize: number): Geometry 
   } as Geometry;
 };
 
-const quantizeGeometry = (feature: Feature<Geometry, GeoJsonProperties>, quantize?: number): Feature<Geometry, GeoJsonProperties> => {
+const quantizeGeometry = (
+  feature: Feature<Geometry, GeoJsonProperties>,
+  quantize?: number,
+): Feature<Geometry, GeoJsonProperties> => {
   if (!feature.geometry || !quantize || quantize <= 0) return feature;
   return {
     ...feature,

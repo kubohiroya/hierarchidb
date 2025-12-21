@@ -8,7 +8,7 @@ import { getEphemeralShapeDB } from '../../database/EphemeralShapeDB.js';
 import { shapeDB } from '../../database/ShapeDB.js';
 import { defaultDataSourceFactory, type DataSourceStrategyId } from '../../datasources/DataSourceStrategyFactory.js';
 import type { FeatureCollection } from 'geojson';
-import { serialize } from 'flatgeobuf/lib/mjs/geojson';
+import { geojson as geojsonApi } from 'flatgeobuf';
 import { bbox as turfBbox } from '@turf/turf';
 
 /**
@@ -92,7 +92,7 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
                   timeout: timeoutMs,
                 });
                 const processed = await ds.processData(raw, { adminLevel: task.config?.adminLevel });
-                const geojson = {
+                const featureCollection = {
                   type: 'FeatureCollection',
                   features: processed.map((entity) => ({
                     type: 'Feature',
@@ -100,15 +100,15 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
                     properties: entity.properties ?? {},
                   })),
                 } as FeatureCollection;
-                const fgbBytes = await serialize(geojson);
+                const fgbBytes = await geojsonApi.serialize(featureCollection);
                 const fgb = fgbBytes.buffer.slice(fgbBytes.byteOffset, fgbBytes.byteOffset + fgbBytes.byteLength);
-                const bounds = turfBbox(geojson);
+                const bounds = turfBbox(featureCollection);
                 await db.rawBuffers.put({
                   id: fileId,
                   sessionId,
                   nodeId: task.nodeId ?? nodeId,
                   data: fgb,
-                  featureCount: geojson.features.length,
+                  featureCount: featureCollection.features.length,
                   bbox: [bounds[0], bounds[1], bounds[2], bounds[3]],
                   downloadTime: Date.now(),
                   size: fgb.byteLength,

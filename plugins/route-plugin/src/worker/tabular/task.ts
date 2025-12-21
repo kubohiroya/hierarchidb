@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { TabularDataApi, TabularFilterRule, TabularSelectionConfig } from '@hierarchidb/ui-tabular-extract';
+import type { TabularDataApi, TabularFilterRule, TabularSelectionConfig } from '@hierarchidb/ui-tabular';
 import type { ProgressReporter } from '@hierarchidb/plugin-service-api';
 import { extractTabularRows } from './extract.js';
 import { materializeRouteSegmentsFromTabular } from './materialize.js';

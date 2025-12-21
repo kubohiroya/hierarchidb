@@ -53,6 +53,72 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1786) 仮想テーブル共通化の整理（ui-tabular-extract + shape/location/route）（P1）
+- ブランチ: `analysis/ui/virtual-table-scope`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: packages/ui/tabular-extract, plugins/shape-plugin, plugins/spreadsheet-plugin, plugins/styler-plugin, plugins/location-plugin, plugins/route-plugin
+- 受け入れ基準（DoD）:
+  - [ ] ui-tabular-extract の機能と拡張ポイントを整理し、利用箇所を把握する
+  - [ ] shape の仮想テーブル（列/行/検索/ソート/マップ連携）を整理する
+  - [ ] 共通化コアと固有機能を分類し、整理案を日本語で提示する
+  - [ ] TASKS 運用ログに start/progress/done を記載する
+- チェックリスト:
+  - [ ] ui-tabular-extract の実装と利用箇所を確認する
+  - [ ] shape/location/route/spreadsheet/styler のテーブル機能差分を整理する
+  - [ ] 共通化方針（拡張 or 分離）を提案する
+- ロールバック手順：調査のみのため差分なし。記載内容を戻す場合は本タスクの運用ログ追記を削除する。
+
+1782) shape-plugin components 共通化候補の棚卸し（P1）
+- ブランチ: `analysis/ui/shape-components-shared`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin/src/components および ui/common components
+- 受け入れ基準（DoD）:
+  - [ ] shape-plugin の components 配下を走査し、共通化できるもの/できないものを分類して根拠を付ける
+  - [ ] 既存の location/route との再利用可能性を簡潔に評価する
+  - [ ] TASKS 運用ログに start/progress/done を記載する
+- チェックリスト:
+  - [ ] `plugins/shape-plugin/src/components`（実在しない場合は ui/common 配下）を確認する
+  - [ ] 共通化候補の分類表を作成する
+- ロールバック手順：調査のみのため差分なし。記載内容を戻す場合は本タスクの運用ログ追記を削除する。
+
+1781) location-plugin components 共通化候補の棚卸し（P1）
+- ブランチ: `analysis/ui/location-components-shared`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/location-plugin/src/components
+- 受け入れ基準（DoD）:
+  - [ ] location-plugin の `src/components` を走査し、共通化できるもの/できないものを分類して根拠を付ける
+  - [ ] 共有先パッケージの責務と想定利用側（shape/location/route など）を整理する
+  - [ ] `@hierarchidb/ui-XXXX` の命名案を複数提示する
+  - [ ] TASKS 運用ログに start/progress/done を記載する
+- チェックリスト:
+  - [ ] `plugins/location-plugin/src/components` の一覧と依存関係を確認する
+  - [ ] 共通化候補の分類表を作成する
+  - [ ] 命名案を整理して提示する
+- ロールバック手順：調査のみのため差分なし。記載内容を戻す場合は本タスクの運用ログ追記を削除する。
+
+1780) spreadsheet typecheck で shape-plugin 型エラーが派生する原因調査と修正（P1）
+- ブランチ: `fix/types/spreadsheet-shape-leak`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin, plugins/spreadsheet-plugin, tsconfig/pnpm workspace
+- 受け入れ基準（DoD）:
+  - [ ] spreadsheet の typecheck が shape のコードへ波及する経路を特定し、原因を説明できる
+  - [ ] `LocalSimplifyAdapters.ts` / `RuntimeWorkerDownloadAdapter.ts` の geojson 型エラーが解消する
+  - [ ] spreadsheet typecheck で当該 shape 由来の型エラーが出ない
+  - [ ] 変更内容とロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] tsconfig / project references / pnpm workspace の参照経路を確認する
+  - [ ] shape 側の geojson 取り回しの型不整合を是正する
+- ロールバック手順：本タスクの差分を revert し、TASKS 運用ログ追記を削除する
+
+1779) GIS SDK 抽出（shape/location/route 共通化 + runtime-worker から分離）（P1）
+- ブランチ: `feat/gis/sdk-common`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: packages/runtime-worker, plugins/shape-plugin, plugins/location-plugin, plugins/route-plugin
+- 受け入れ基準（DoD）:
+  - [ ] ExecPlan を作成し、設計/実装/検証の流れを整理する
+  - [ ] runtime-worker から GIS 実装詳細が分離され、GIS SDK 側に集約される
+  - [ ] shape/location/route のタイル生成フローが GIS SDK を経由する
+  - [ ] 変更内容とロールバック手順を運用ログに記録する
+- チェックリスト:
+  - [ ] 共通化対象の責務（入力整形/タイル生成/メタデータ）を明文化する
+  - [ ] 新パッケージの API を定義し、プラグインから呼び出す
+- ロールバック手順：本タスクの差分を revert し、GIS SDK 導線を撤回する
+
 1771) shape-plugin src 未使用ファイル/関数の棚卸し（P1）
 - ブランチ: `analysis/shape/src-unused-inventory`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `plugins/shape-plugin/src/**/*`
@@ -505,7 +571,7 @@
 - 運用ログ：
   - start: 2025-12-08 21:31 JST Tabular filter メニューのポータル先をダイアログ内に固定する対応を開始（main 上で作業）。
   - progress: 2025-12-08 21:33 JST TabularFilterStep/TabularDataFilterRulesTable に menuContainer 対応を追加し、Select を MenuItem + container 指定で dialog 内に固定。Spreadsheet/Shape TabularDataFilterStep で dialogRef から role="dialog" 祖先を menuContainer に渡すよう配線（Styler は Spreadsheet TabularDataFilterStep 流用のため同経路で適用）。Location はデフォルトでも利用可能（必要なら同一 container 伝播を検討）。
-  - progress: 2025-12-08 21:33 JST 検証: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0、`pnpm --filter @hierarchidb/styler-plugin typecheck` exit 0、`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0、`pnpm --filter @hierarchidb/location-plugin typecheck` exit 0。`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 2（既知: runtime-worker Decorator/ES target 設定不足による PluginWorkerModuleLoader.ts エラー; 今回変更と無関係）。
+  - progress: 2025-12-08 21:33 JST 検証: `pnpm --filter @hierarchidb/ui-tabular typecheck` exit 0、`pnpm --filter @hierarchidb/styler-plugin typecheck` exit 0、`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0、`pnpm --filter @hierarchidb/location-plugin typecheck` exit 0。`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 2（既知: runtime-worker Decorator/ES target 設定不足による PluginWorkerModuleLoader.ts エラー; 今回変更と無関係）。
   - progress: 2025-12-08 22:37 JST TabularDataFilterStep の menuContainer を dialogRef だけでなく DOM の dialog/modal からもフォールバック解決するよう補強（styler の Column セレクトもダイアログ内に固定）。検証: `pnpm --filter @hierarchidb/styler-plugin typecheck` exit 2（既知: runtime-worker StageProcessingService.ts の @maplibre/vt-pbf ESM import）、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 2（既知: PluginWorkerModuleLoader.ts Decorator/hasOwn と StageProcessingService.ts 同件）。手動確認未実施。
 
 1606) TypeScript バージョン調整と plugin-ui-sdk typecheck 解消（P0）
@@ -632,13 +698,13 @@
 
 - 運用ログ：
   - start: 2025-12-05 23:45 JST Column 選択肢空問題の調査と補正を開始（main 上で作業）
-  - progress: 2025-12-05 23:47 JST TabularDataFilterStep で metadata→lastPreview→rows から columns をフォールバック生成し、TabularFilterStep で columnOptions を優先・デフォルト選択を自動補正。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` / `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` を実行し exit 0 を確認（手動確認未実施）。
+  - progress: 2025-12-05 23:47 JST TabularDataFilterStep で metadata→lastPreview→rows から columns をフォールバック生成し、TabularFilterStep で columnOptions を優先・デフォルト選択を自動補正。`pnpm --filter @hierarchidb/ui-tabular typecheck` / `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` を実行し exit 0 を確認（手動確認未実施）。
   - progress: 2025-12-05 23:49 JST TabularFilterStep で previewData.columns を最優先に columnOptions を組み立て（プレビュー取得済みなら必ず候補表示）、typecheck を再実行し exit 0 を確認。
-  - progress: 2025-12-06 00:02 JST TabularFilterStep に initialFilters を追加してフィルタの保存・復元を有効化し、Spreadsheet TabularDataFilterStep から既存 filters を受け渡すよう更新。`pnpm --filter @hierarchidb/ui-tabular-extract build`（tsdown 警告: define キー無視）後、`pnpm --filter @hierarchidb/{ui-tabular-extract,spreadsheet-plugin} typecheck` を再実行し exit 0。手動確認は未実施。
-  - progress: 2025-12-06 00:18 JST columnOptions を tableMetadata.columns 優先 + previewColumns フォールバックに変更し、保存列のずれを防止。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` → build（tsdown define 警告）→ `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` を再実行し exit 0。手動確認未実施。
+  - progress: 2025-12-06 00:02 JST TabularFilterStep に initialFilters を追加してフィルタの保存・復元を有効化し、Spreadsheet TabularDataFilterStep から既存 filters を受け渡すよう更新。`pnpm --filter @hierarchidb/ui-tabular build`（tsdown 警告: define キー無視）後、`pnpm --filter @hierarchidb/{ui-tabular-extract,spreadsheet-plugin} typecheck` を再実行し exit 0。手動確認は未実施。
+  - progress: 2025-12-06 00:18 JST columnOptions を tableMetadata.columns 優先 + previewColumns フォールバックに変更し、保存列のずれを防止。`pnpm --filter @hierarchidb/ui-tabular typecheck` → build（tsdown define 警告）→ `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` を再実行し exit 0。手動確認未実施。
   - progress: 2025-12-06 00:32 JST Spreadsheet step registry で Filtering step に validate/capabilities を付与し、最終ステップが常に committable になるよう修正。`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0。手動確認未実施。
   - progress: 2025-12-06 00:40 JST commitDraft 後に draftData が残り data が null のままになる問題に備え、`useTreeNodeUpdater` の commit 処理で最新ノードが取れない場合でも draftData を data へ反映し draftData を空にするフォールバックを追加。最新ノード取得時に draftData が消えていればローカルでも hasRemoteDraft=false/draftData={} に調整。`pnpm --filter @hierarchidb/plugin-ui-sdk typecheck` → build（tsdown define 警告）→ `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` 再実行し exit 0。手動確認未実施。
-  - progress: 2025-12-06 00:55 JST ModalSelect がダイアログ外へポータルしている疑いに対処するため、TabularFilterStep の Column/Operator で menuContainer を dialogRef に渡し、ポータル描画を dialog 内へ固定。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` → build（tsdown define 警告）→ `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` を再実行し exit 0。手動確認未実施。
+  - progress: 2025-12-06 00:55 JST ModalSelect がダイアログ外へポータルしている疑いに対処するため、TabularFilterStep の Column/Operator で menuContainer を dialogRef に渡し、ポータル描画を dialog 内へ固定。`pnpm --filter @hierarchidb/ui-tabular typecheck` → build（tsdown define 警告）→ `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` を再実行し exit 0。手動確認未実施。
 
 1594) Edit Spreadsheet Step2 Download 後にリロードが発生して data:{} / draft:null になる問題調査（P0）
 ステータス: Done（2025-12-07 ユーザー確認: 開発サーバのリロード誤解で収束、手動確認済み）
@@ -3187,7 +3253,7 @@
   - ブランチ: `feat/ui/ui-batch-wizard`
   - 依存: analysis-20250907（セクション10）、location の既存 UI
   - 受け入れ基準（DoD）:
-    - [ ] `@hierarchidb/ui-batch-wizard` を新設（Step/Progress/Resume/TabularPreview）
+    - [ ] `@hierarchidb/ui-batch-wizard` を新設（Step/Progress/Resume/DataGridPreview）
     - [ ] shape/route のダイアログを置換（既定OFF）
   - ロールバック: フラグ `UI_BATCH_WIZARD=0` で旧ダイアログ
   - チェックリスト:
@@ -3983,11 +4049,11 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
 - 2025-12-09 06:45 progress: spreadsheet-plugin typecheck — tsconfig の lib を ES2022 へ引き上げ、`experimentalDecorators` を有効化して runtime-worker の Decorator/hasOwn エラーを解消。検証: `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0。ロールバック: `plugins/spreadsheet-plugin/tsconfig.json` の lib/experimentalDecorators 変更を revert し同コマンドを再実行。
 - 2025-12-09 07:05 progress: folder-plugin typecheck — `tabular-source-xlsx` 依存の `xlsx/xlsx.mjs` 型欠如を global.d.ts 参照と package tsconfig include 追加で解消。検証: `pnpm --filter @hierarchidb/folder-plugin typecheck` exit 0。ロールバック: `plugins/folder-plugin/tsconfig.json` への global.d.ts 追加と lib/experimentalDecorators 変更を revert し同コマンドを再実行。
 - 2025-12-09 07:15 progress: runtime-worker typecheck — tsconfig に baseUrl/path を追加し plugin-registry generated/src を include、allowImportingTsExtensions を有効化して plugin-registry 解決エラー (TS2307/TS6307/TS5097) を解消。検証: `pnpm --filter @hierarchidb/runtime-worker typecheck` exit 0。ロールバック: `packages/runtime-worker/tsconfig.json` の baseUrl/paths/include/allowImportingTsExtensions 変更を revert し同コマンドを再実行。
-- 2025-12-09 07:25 progress: basemap-plugin typecheck — basemap tsconfig を ES2022 + Decorators + allowImportingTsExtensions に揃え、data-grid を ES2022 target に更新して `Object.hasOwn` / Decorator エラーを解消。検証: `pnpm --filter @hierarchidb/ui-data-grid typecheck` exit 0、`pnpm --filter @hierarchidb/basemap-plugin typecheck` exit 0。ロールバック: `plugins/basemap-plugin/tsconfig.json` と `packages/ui/data-grid/tsconfig.json` の lib/Decorators/target 変更を revert し同コマンドを再実行。
-- 2025-12-09 07:40 progress: spreadsheet Step2 form fields — TabularDataImport の ModalSelect/Switch に id/name を付与し、MUI 警告「a form field element should have an id or name attribute」を解消。検証: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularDataImport.tsx` の id/name 追加差分を revert し同コマンドを再実行。
-- 2025-12-09 08:00 progress: styler FilterRules form — TabularDataFilterRulesTable の Column/Operator Select に id/name を追加し、Styler Step3 でも MUI ラベル警告が出ず入力できるように補正。検証: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0、`pnpm --filter @hierarchidb/styler-plugin typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularDataFilterRulesTable.tsx` の id/name 追加差分を revert し同コマンドを再実行。
+- 2025-12-09 07:25 progress: basemap-plugin typecheck — basemap tsconfig を ES2022 + Decorators + allowImportingTsExtensions に揃え、data-grid を ES2022 target に更新して `Object.hasOwn` / Decorator エラーを解消。検証: `pnpm --filter @hierarchidb/ui-grid typecheck` exit 0、`pnpm --filter @hierarchidb/basemap-plugin typecheck` exit 0。ロールバック: `plugins/basemap-plugin/tsconfig.json` と `packages/ui/data-grid/tsconfig.json` の lib/Decorators/target 変更を revert し同コマンドを再実行。
+- 2025-12-09 07:40 progress: spreadsheet Step2 form fields — TabularDataImport の ModalSelect/Switch に id/name を付与し、MUI 警告「a form field element should have an id or name attribute」を解消。検証: `pnpm --filter @hierarchidb/ui-tabular typecheck` exit 0、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularDataImport.tsx` の id/name 追加差分を revert し同コマンドを再実行。
+- 2025-12-09 08:00 progress: styler FilterRules form — TabularDataFilterRulesTable の Column/Operator Select に id/name を追加し、Styler Step3 でも MUI ラベル警告が出ず入力できるように補正。検証: `pnpm --filter @hierarchidb/ui-tabular typecheck` exit 0、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0、`pnpm --filter @hierarchidb/styler-plugin typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularDataFilterRulesTable.tsx` の id/name 追加差分を revert し同コマンドを再実行。
 - 2025-12-09 08:20 progress: shim-check cleanup — `react-i18next` の shim を削除し、plugin-ui-sdk tsconfig の paths から除去。検証: `pnpm --filter @hierarchidb/plugin-ui-sdk typecheck` exit 0。ロールバック: `packages/plugin-ui-sdk/src/types/react-i18next-shim.d.ts` と tsconfig paths 変更を戻し同コマンドを再実行。
-- 2025-12-09 08:35 progress: FilterRules label wiring — Column/Operator Select に labelId を渡し、InputLabelProps から htmlFor を外してラベル紐付け警告を解消（Styler Step3 のブリンク/無反応対策）。検証: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0、`pnpm --filter @hierarchidb/styler-plugin typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularDataFilterRulesTable.tsx` の labelId/InputLabelProps 変更を revert し同コマンドを再実行。
+- 2025-12-09 08:35 progress: FilterRules label wiring — Column/Operator Select に labelId を渡し、InputLabelProps から htmlFor を外してラベル紐付け警告を解消（Styler Step3 のブリンク/無反応対策）。検証: `pnpm --filter @hierarchidb/ui-tabular typecheck` exit 0、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0、`pnpm --filter @hierarchidb/styler-plugin typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularDataFilterRulesTable.tsx` の labelId/InputLabelProps 変更を revert し同コマンドを再実行。
 - 2025-12-07 20:00 start: chore/docs/package-readmes-refresh — packages 配下の README を最新実装に合わせて更新する作業を開始。概要/ディレクトリ構成/主要エクスポート/利用元を明文化する計画（main 上で作業）。
 - 2025-12-07 20:03 progress: chore/docs/package-readmes-refresh — `rg --files -g 'README.md' packages` で対象 README を棚卸し（40件超）。common/api/auth/types や ui/*、features/*、components/* の README が含まれることを確認。調査と内容更新の優先度付けに着手。
 - 2025-12-07 20:10 progress: chore/docs/package-readmes-refresh — 基盤系 README を更新: `packages/common/README.md`（api/auth/types の役割・主要エクスポート・利用元を整理）、`packages/plugin-base/README.md`（ディレクトリ構成とステップ/URL同期の主要エクスポートを記載）、`packages/plugin-ui-sdk/README.md`（draft/TreeNodeUpdater フック群と境界整理）、`packages/plugin-ui-host/README.md`（シェル/コントローラの責務を明示）、`packages/ui/worker-client/README.md`（初期化ハンドシェイク・Comlink ブリッジ・runtime wiring の概要を更新）。文書のみの変更で検証コマンドは未実施。
@@ -4455,6 +4521,34 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1789) route-plugin ステップ再編（location-plugin 準拠, Step2-6）（P1） — 完了 (2025-12-22)
+  - 要点：Step2 をデータソース選択、Step3 を交通モード/経路タイプ + 兄弟ロケーション選択、Step4 を処理設定、Step5 をビルド、Step6 をプレビューへ再編。location-plugin 構成に準拠し i18n を更新。
+  - 検証：未実施。
+  - ロールバック手順：`plugins/route-plugin/src/ui/components/steps/*.tsx`、`plugins/route-plugin/src/ui/components/steps-provider.tsx`、`plugins/route-plugin/src/ui/locales/{en,ja}.json` の差分を revert する。
+- 1787) ui-tabular/ui-grid 命名整理と参照更新（P1） — 完了 (2025-12-22)
+  - 要点：`@hierarchidb/ui-data-grid` → `@hierarchidb/ui-grid`、`@hierarchidb/ui-tabular-extract` → `@hierarchidb/ui-tabular` へ統一。`TabularPreviewLite` を `TabularPreviewGrid`、`TabularPreview` を `DataGridPreview` へ改名し、export/import と docs/tsconfig alias を更新。
+  - 検証：`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。
+  - ロールバック手順：`packages/ui/{data-grid,tabular-extract}`、`tsconfig.base.json`、`plugins/**`、`docs/**` の差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する。
+- 1788) styler-plugin Step2-5 初回遷移の進捗表示（P1） — 完了 (2025-12-21)
+  - 要点：tabular preview/filter の処理中表示と、styler mapping/preview の deferred 処理表示を追加。`filtering.processing`/`styleSettings.processing`/`stylePreview.processing` を追加。
+  - 検証：未実施。
+  - ロールバック手順：`packages/ui/tabular-extract/src/components/TabularDataFilter.tsx`、`plugins/spreadsheet-plugin/src/ui/{state,components,hooks}`、`plugins/styler-plugin/src/ui/components/{StylerMappingStep.tsx,StylerPreviewStep.tsx,hooks/useStylerPreview.ts}`、`app/public/locales/{en,ja}/{styler-plugin,spreadsheet-plugin}.json`、`packages/ui/i18n/public/locales/{en,ja}/styler-plugin.json` の差分を revert する。
+- 1789) route-plugin typecheck エラー修正（BuildStepPanel/RouteProcessingConfig）（P1） — 完了 (2025-12-21)
+  - 要点：RouteBuildStep の BuildStepPanel props を現行に合わせ、RouteProcessingStep の processing 設定を必須値で確定。
+  - 検証：未実施。
+  - ロールバック手順：`plugins/route-plugin/src/ui/components/steps/{RouteBuildStep.tsx,RouteProcessingStep.tsx}` の差分を revert する。
+- 1785) shape-plugin 共通 UI/Hook の shared パッケージ移設（ui-gis/ui-batch）（P1） — 完了 (2025-12-21)
+  - 要点：ui-gis/ui-batch を新設し、Preview/Batch の共通 hook を移設。shape-plugin は新パッケージ参照へ置換。
+  - 検証：`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。
+  - ロールバック手順：`packages/ui/{gis,batch}` と `plugins/shape-plugin/src/ui`、`tsconfig.base.json`、`plans/shape-ui-shared-packages.md` の差分を revert し、同 typecheck を再実行する。
+- 1784) shape-plugin UI/Hook の複雑ロジック分割（共通利用前提）（P1） — 完了 (2025-12-21)
+  - 要点：Preview/Build/Progress のフックを分割し、Download/Simplification UI をサブコンポーネント化。共通利用に向けた責務境界へ整理。
+  - 検証：`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/{components,hooks}` と `plans/shape-shared-ui-split.md` の差分を revert し、同 typecheck を再実行する。
+- 1783) shape-plugin Step2 以降の UI ロジック抽出（表示専用化）（P1） — 完了 (2025-12-21)
+  - 要点：Step2〜Step5 と補助 UI のロジックを hooks へ抽出し、表示専用コンポーネント化。hooks 追加と export 更新を実施。
+  - 検証：`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/{components,hooks}` と `tsconfig.base.json` の差分を revert し、同 typecheck を再実行する。
 - 1780) timeline-plugin Step props 型修正（StepComponentProps → PluginStepProps）（P0） — 完了 (2025-12-21)
   - 要点：steps-provider の型参照を PluginStepProps に更新し、TS2305 を解消。
   - 検証：`pnpm --filter @hierarchidb/timeline-plugin typecheck` exit 0。
@@ -4475,6 +4569,10 @@ P2:
   - 要点：`flatgeobuf/lib/mjs/geojson` の型宣言を runtime-worker に追加し typecheck を解消。
   - 検証：`pnpm --filter @hierarchidb/runtime-worker typecheck` exit 0。
   - ロールバック手順：`packages/runtime-worker/src/types/flatgeobuf.d.ts` の差分を revert し、同 typecheck を再実行する。
+- 1774) flatgeobuf/shpjs 型宣言の共通化で typecheck エラー解消（P1） — 完了 (2025-12-21)
+  - 要点：flatgeobuf は公式型に合わせて `flatgeobuf` の `geojson` export を使用し、runtime-worker は JSON 入力で処理するよう変更。shpjs は `@types/shpjs` を利用し、独自宣言は撤去。
+  - 検証：未実施。
+  - ロールバック手順：`packages/runtime-worker/src/services/StageProcessingService.ts`、`plugins/shape-plugin/src/services/batch/adapters/{LocalSimplifyAdapters.ts,RuntimeWorkerDownloadAdapter.ts,RuntimeWorkerVectorTileAdapter.ts}`、`plugins/shape-plugin/src/headless/shape-batch-progress.headless.test.ts`、`plugins/shape-plugin/vitest.config.ts`、`global.d.ts` の差分を revert する。
 - 1773) Preview 起動がログ止まりの導線修正（ContextMenu/Breadcrumb/InfoPanel）（P1） — 完了 (2025-12-21)
   - 要点：TreeTable/Breadcrumb の Preview を console.log から onContextAction に接続し、Preview 起動前に step provider をロードして最終ステップ index を確定。
   - 検証：未実施。
@@ -5059,7 +5157,7 @@ P2:
   - ロールバック手順: rename スクリプト適用前の構成へ差し戻す
 - fix/ui-tabular-extract/csv-filter-build（P0） — NodeNext alias を修正し、CSV フィルタの型エラーを解消。
   - ブランチ: `main`
-  - 検証: `pnpm --filter @hierarchidb/ui-tabular-extract build`
+  - 検証: `pnpm --filter @hierarchidb/ui-tabular build`
   - ロールバック手順: import/型注釈差分を戻す
 - fix/plugin-types/dist-paths（P0） — plugin-types の typecheck を dist 指向パスに揃え、API Extractor 警告を解消。
   - ブランチ: `main`
@@ -6948,7 +7046,7 @@ P2:
     - progress: 2025-09-20 15:05 Spreadsheet RED テストの File モックを正式型化し、spreadsheet-plugin 配下の `as any` を実装・テストともに 0 件へ統一。`pnpm as-any:report` で総数 182 件を確認（他パッケージがボトルネックのため合計値は据え置き）。
     - progress: 2025-09-20 15:12 CrossViewSnackbar/CrossViewStyles の購読解除とスタイル合成から `as any` を撤廃。`pnpm as-any:report` でワークスペース 180 件・ui/core 23 件を確認。`pnpm --filter @hierarchidb/ui-core typecheck` は `@types/node` 未展開のため引き続き失敗。
     - progress: 2025-09-20 15:20 useCrossHighlightSync/useMapLibreFeatureState から `as any` を除去し、ui/core の残件を 18 件へ圧縮。`pnpm as-any:report`=175（workspace）。`pnpm --filter @hierarchidb/ui-core typecheck` は依然 `@types/node` 欠如で実行不可。
-    - progress: 2025-09-20 15:35 ui/core の MemoryUsageChart / env util / TabularPreview / BatchProgress などを型整備し、ui/core `as any` を 11 件・workspace 160 件まで削減。`pnpm --filter @hierarchidb/ui-core typecheck` 成功。
+    - progress: 2025-09-20 15:35 ui/core の MemoryUsageChart / env util / DataGridPreview / BatchProgress などを型整備し、ui/core `as any` を 11 件・workspace 160 件まで削減。`pnpm --filter @hierarchidb/ui-core typecheck` 成功。
     - progress: 2025-09-20 15:45 ui/core の WorkingCopy/TreeToggleButtonGroup 等の残件を整理し、実装コードから `as any` を排除（ui/core はテスト以外 0 件）。`pnpm --filter @hierarchidb/ui-core typecheck` 再確認済み。`pnpm as-any:report`=157。
     - progress: 2025-09-20 15:55 styler-plugin のサービス/拡張/UI ステップから `as any` を除去し、実装コードの残件を 0 件に整理。`pnpm --filter @hierarchidb/styler-plugin typecheck` 成功。`pnpm as-any:report`=148。
 
@@ -8500,7 +8598,7 @@ P2:
 - 2025-09-18 progress: refactor/app/shim-removal — app/tsconfig.typecheck.json の paths を dist フォルダ参照へ統一し、worker/plugin/ui パッケージの正式 d.ts を解決できるよう整理。
 - 2025-09-18 done: refactor/app/shim-removal — app/src/types/shims.d.ts・common-type/ambient-ui.d.ts から `ui-theme`/`ui-auth`/`ui-treeconsole-toolbar`/`folder-plugin` 向けシムを削除し、`docs/shim-any-audit-2025-09.md` を更新。`pnpm --filter @hierarchidb/common-type typecheck` / `build` と `pnpm --filter @hierarchidb/app typecheck` がグリーン。
 - 2025-09-18 done: refactor/plugins/shim-removal — route/spreadsheet plugin の runtime-ui-plugin-dialog shim を削除し、本家 export のみで typecheck が通ることを確認。
-- 2025-09-18 done: refactor/common/ambient-ui-shrink — `@hierarchidb/ui-core` / `@hierarchidb/ui-data-grid` 向け ambient 宣言を撤去し、ワークスペース `pnpm -w typecheck` がグリーン。
+- 2025-09-18 done: refactor/common/ambient-ui-shrink — `@hierarchidb/ui-core` / `@hierarchidb/ui-grid` 向け ambient 宣言を撤去し、ワークスペース `pnpm -w typecheck` がグリーン。
 - 2025-09-18 done: tooling/as-any-guard — `scripts/report-as-any.mjs` と `scripts/check-shims.mjs` を追加し、`pnpm as-any:check` / `pnpm shims:check` を `prebuild` に組み込み。総件数 1076 を基準に監視開始。
 - 2025-09-18 done: refactor/app/ui-treeconsole-types — app 側の `shims-ui-treeconsole-treetable.d.ts` を削除し、`@hierarchidb/ui-treeconsole-treetable` の公式 d.ts（dist 出力）を参照するよう tsconfig を更新。
 - 2025-09-18 done: refactor/feature-auth-recovery-typed — 箇所の shim を削除し、`@hierarchidb/util` / `@hierarchidb/common-auth` の正式 export へ整理。`pnpm --filter @hierarchidb/auth-recovery typecheck` グリーン。
@@ -8755,7 +8853,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - done: 上記7パッケージの `build` スクリプトを `tsup` / `pnpm run build:tsc && tsup` へ統一し、Turbo の `dependsOn: ['^build']` だけで依存ビルドが完了する構成へ整理。確認のため `pnpm exec turbo run build --filter @hierarchidb/runtime-ui-plugin-dialog` を実行したが、既存の `@hierarchidb/base-plugin` / `@hierarchidb/util` 型定義が未生成の状態で `@hierarchidb/runtime-ui-plugin-dialog` / `@hierarchidb/map-adapter` の DTS ビルドが失敗する既知問題に突き当たり要フォロー。
 - progress: `scripts/build/apply-build-template.mjs` を更新し、`tsconfig.build.json` の `include/exclude` を元 TSConfig ベースで統合、`build:pack` の共通テンプレートから `@hierarchidb/common-type` だけ `emit-ambient` を差し込むロジックを追加。`scripts/build/copy-dist-types.mjs` も `.tsbuildinfo` を削除するよう改善。
 - progress: `pnpm --filter @hierarchidb/common-type build` を実行し、新テンプレートで宣言生成と ambient 連携が問題なく完了することを確認。
-- progress: `pnpm exec turbo run build --filter @hierarchidb/ui-core` を実行し、依存パッケージ（`@hierarchidb/util`, `@hierarchidb/ui-data-grid`, `@hierarchidb/ui-icon`, `@hierarchidb/common-type` など）が Turbo の `^build` 伝播で自動ビルドされる挙動を確認。全コマンド成功。
+- progress: `pnpm exec turbo run build --filter @hierarchidb/ui-core` を実行し、依存パッケージ（`@hierarchidb/util`, `@hierarchidb/ui-grid`, `@hierarchidb/ui-icon`, `@hierarchidb/common-type` など）が Turbo の `^build` 伝播で自動ビルドされる挙動を確認。全コマンド成功。
 - blocked: `pnpm exec turbo run build --filter @hierarchidb/runtime-ui-plugin-dialog` は引き続き `tsc -p tsconfig.build.json` で `@hierarchidb/base-plugin` の型解決に失敗（`TS2307`）。`pnpm list --filter @hierarchidb/runtime-ui-plugin-dialog --depth=0` を確認すると依存パッケージに `@hierarchidb/base-plugin` がリンクされておらず、workspace 解決の整備が必要。
 - blocked: 依存再インストール後も `pnpm --filter @hierarchidb/common-type build` が `@types/node` 不在で失敗（TS2688）。`pnpm --filter @hierarchidb/common-type install` をオフライン指定で試行したがストアに tarball がなく取得不可。ネットワーク許可後に再インストールが必要。
 - progress: `/Users/hiroya/WebstormProjects/worker-factory-rollout` で再度 `pnpm install` を実施していただいた後、`pnpm --filter @hierarchidb/common-type build` が新テンプレートで成功することを確認。
@@ -8769,16 +8867,16 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-08 19:25 progress: research/plugin-dialog-i18n — resolver-plugin をプラグイン内 locales（`src/ui/locales/{en,ja}.json`）＋ `src/ui/i18n.ts` で HMR 登録に移行し、Common i18n ラッパーを追加。ResolverDialog のステップラベル/ヘッダー/ボタン/Basic Info 説明を t() 化。`tsconfig.json` を Vite 型・拡張子 import 許可に整備し、`pnpm --filter @hierarchidb/resolver-plugin typecheck` exit 0 を確認。
 - 2025-12-08 19:45 progress: research/plugin-dialog-i18n — timeline-plugin にローカル locales（`src/ui/locales/{en,ja}.json`）と `src/ui/i18n.ts` を追加し、TimelineDialog のステップラベル/ヘッダー/ボタンと Basic/Frames/Map/Animation ステップ文言を t() 化。`pnpm --filter @hierarchidb/timeline-plugin typecheck` exit 0。
 - 2025-12-08 20:00 progress: research/plugin-dialog-i18n — shape-plugin にローカル locales（`src/ui/locales/{en,ja}.json`）と `src/ui/i18n.ts` を追加し、steps-provider のステップラベルと通知メッセージ、および ShapeDialog のタイトル/ボタン/Name を t() 化。`tsconfig.json` へ Vite types/allowArbitraryExtensions を追加し、`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。
-- 2025-12-06 18:45 progress: 1594 fix/spreadsheet/edit-step2-download — TabularDataImport の URL 行を1行レイアウトに統合し、Download ボタンのアイコンを Download/Downloading/DownloadDone で切り替え。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` を実行し exit 0。
-- 2025-12-06 18:52 progress: 1594 fix/spreadsheet/edit-step2-download — Tabular Processing Options を1レーンで左寄せ並びにし、5コンポーネントが横並び（wrap付き）になるよう調整。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` を再実行し exit 0。
-- 2025-12-06 19:00 progress: 1594 fix/spreadsheet/edit-step2-download — Filter Step 外側のスクロール枠を撤去し、DialogContent のスクロールのみとするよう TabularFilterStep コンテナの overflow/maxHeight を削除。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` を実行し exit 0。
-- 2025-12-06 19:20 progress: 1594 fix/spreadsheet/edit-step2-download — TabularDataFilterRulesTable のヘッダ行を削除し、PreviewボタンをAddボタン右側に配置・プレビュー後は自動でdisabled/フィルタ変更で再度enabledとなるよう制御。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` を再実行し exit 0。
-- 2025-12-06 19:32 progress: 1594 fix/spreadsheet/edit-step2-download — Data Summary セクションを削除し、Preview Results 見出し下に Total Rows / Filters Applied をサブタイトル表示するよう調整。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` を再実行し exit 0。
-- 2025-12-06 19:50 progress: 1594 fix/spreadsheet/edit-step2-download — Preview Results を全行表示+簡易バーチャルスクロール化（固定行高44px、overscan 8）、maxPreviewRows デフォルトを無制限に変更。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` を再実行し exit 0。
-- 2025-12-06 20:05 progress: 1594 fix/spreadsheet/edit-step2-download — プレビューのヘッダ/ボディ幅を固定レイアウトで揃え、テーブル高さをダイアログ領域の最大値（calc(100vh-320px)）に制限。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` を再実行し exit 0。
-- 2025-12-06 20:15 progress: 1594 fix/spreadsheet/edit-step2-download — TabularDataFilterRulesTable のセル余白を小さく（py=3px, px=4px）し、テーブルの行高さを圧縮。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` 再実行し exit 0。
-- 2025-12-06 20:25 progress: 1594 fix/spreadsheet/edit-step2-download — Value入力時のフォーカス喪失を防ぐため、TabularDataFilterRulesTable のカラム定義を draftValues 依存で再生成しないようリファクタし、draftValuesRef を参照する形に変更。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` 再実行し exit 0。
-- 2025-12-06 20:40 progress: 1594 fix/spreadsheet/edit-step2-download — Previewヘッダの型文字列を廃止し、型アイコン（string:Abc/number:PushPin/boolean:CheckBox）を先頭に表示。DialogContentの実高さに追従するようプレビューの最大高さをResizeObserverで計算。Value入力のフォーカス喪失対策リファクタを維持。`pnpm --filter @hierarchidb/ui-tabular-extract typecheck` 再実行し exit 0。
+- 2025-12-06 18:45 progress: 1594 fix/spreadsheet/edit-step2-download — TabularDataImport の URL 行を1行レイアウトに統合し、Download ボタンのアイコンを Download/Downloading/DownloadDone で切り替え。`pnpm --filter @hierarchidb/ui-tabular typecheck` を実行し exit 0。
+- 2025-12-06 18:52 progress: 1594 fix/spreadsheet/edit-step2-download — Tabular Processing Options を1レーンで左寄せ並びにし、5コンポーネントが横並び（wrap付き）になるよう調整。`pnpm --filter @hierarchidb/ui-tabular typecheck` を再実行し exit 0。
+- 2025-12-06 19:00 progress: 1594 fix/spreadsheet/edit-step2-download — Filter Step 外側のスクロール枠を撤去し、DialogContent のスクロールのみとするよう TabularFilterStep コンテナの overflow/maxHeight を削除。`pnpm --filter @hierarchidb/ui-tabular typecheck` を実行し exit 0。
+- 2025-12-06 19:20 progress: 1594 fix/spreadsheet/edit-step2-download — TabularDataFilterRulesTable のヘッダ行を削除し、PreviewボタンをAddボタン右側に配置・プレビュー後は自動でdisabled/フィルタ変更で再度enabledとなるよう制御。`pnpm --filter @hierarchidb/ui-tabular typecheck` を再実行し exit 0。
+- 2025-12-06 19:32 progress: 1594 fix/spreadsheet/edit-step2-download — Data Summary セクションを削除し、Preview Results 見出し下に Total Rows / Filters Applied をサブタイトル表示するよう調整。`pnpm --filter @hierarchidb/ui-tabular typecheck` を再実行し exit 0。
+- 2025-12-06 19:50 progress: 1594 fix/spreadsheet/edit-step2-download — Preview Results を全行表示+簡易バーチャルスクロール化（固定行高44px、overscan 8）、maxPreviewRows デフォルトを無制限に変更。`pnpm --filter @hierarchidb/ui-tabular typecheck` を再実行し exit 0。
+- 2025-12-06 20:05 progress: 1594 fix/spreadsheet/edit-step2-download — プレビューのヘッダ/ボディ幅を固定レイアウトで揃え、テーブル高さをダイアログ領域の最大値（calc(100vh-320px)）に制限。`pnpm --filter @hierarchidb/ui-tabular typecheck` を再実行し exit 0。
+- 2025-12-06 20:15 progress: 1594 fix/spreadsheet/edit-step2-download — TabularDataFilterRulesTable のセル余白を小さく（py=3px, px=4px）し、テーブルの行高さを圧縮。`pnpm --filter @hierarchidb/ui-tabular typecheck` 再実行し exit 0。
+- 2025-12-06 20:25 progress: 1594 fix/spreadsheet/edit-step2-download — Value入力時のフォーカス喪失を防ぐため、TabularDataFilterRulesTable のカラム定義を draftValues 依存で再生成しないようリファクタし、draftValuesRef を参照する形に変更。`pnpm --filter @hierarchidb/ui-tabular typecheck` 再実行し exit 0。
+- 2025-12-06 20:40 progress: 1594 fix/spreadsheet/edit-step2-download — Previewヘッダの型文字列を廃止し、型アイコン（string:Abc/number:PushPin/boolean:CheckBox）を先頭に表示。DialogContentの実高さに追従するようプレビューの最大高さをResizeObserverで計算。Value入力のフォーカス喪失対策リファクタを維持。`pnpm --filter @hierarchidb/ui-tabular typecheck` 再実行し exit 0。
 - 2025-12-06 20:52 progress: 1598 plugin-ui-sdk/useSingleSourceDialogAtom — shallowEqual を配列対応の共通ガードに強化し、全プラグイン/ステップで既定ONの同値ガードを共通レイヤに集約。`pnpm --filter @hierarchidb/plugin-ui-sdk typecheck` 実行し exit 0。
 - 2025-12-06 21:05 progress: 1596 dialog step URL 同期統合 — useDialogSteps で dialogData を shallowEqualStepData で参照安定化し、同一内容なら新規オブジェクトを作らないように修正。HMR 後の最大更新深さループ抑止狙い。`pnpm --filter @hierarchidb/plugin-ui-host typecheck` 実行し exit 0。
 - 2025-12-06 21:20 progress: 1594 fix/spreadsheet/edit-step2-download — TabularDataFilterStep で filters 配列を shallowEqual し参照再利用するよう安定化。`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` 実行し exit 0。
@@ -8941,9 +9039,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-16 01:47 done: fix/batch-types/api-extractor-input — API Extractor の警告が解消されたためタスク完了。
 - 2025-10-18 09:40 progress: refactor/runtime/remove-dynamic-wiring — 全プラグインの `worker-factory` export を廃止し、`worker` へ統一する codemod を作成・適用。関連 tsup 設定／tsconfig パス／ドキュメント／ESLint ルールを更新し、ワーカー参照の命名揺れを解消。
 - 2025-10-11 10:05 start: chore/ui-core/export-surface — `@hierarchidb/ui-core` のエントリーポイントを本実装へ差し替える作業を開始。Doing へ移動し、ブランチを作成済み。
-- 2025-10-11 10:40 progress: chore/ui-core/export-surface — `packages/ui/core/src/preconnect.ts` で BasicInfoFields/TabularPreview/NotificationSystem/useWorkingCopy/useBatchProgress 系の再エクスポートを整理し、通知 API と型を公開。
+- 2025-10-11 10:40 progress: chore/ui-core/export-surface — `packages/ui/core/src/preconnect.ts` で BasicInfoFields/DataGridPreview/NotificationSystem/useWorkingCopy/useBatchProgress 系の再エクスポートを整理し、通知 API と型を公開。
 - 2025-10-11 10:55 progress: chore/ui-core/export-surface — `useWorkingCopy` をジェネリック対応の薄いブリッジに更新し、RouteDialog/useRouteBatchProgress などの暗黙 any を解消。RouteBasicInfoStep で `Partial<BasicInfoValue>` を明示。
-- 2025-10-11 11:20 command: pnpm --filter @hierarchidb/ui-core typecheck — 依存パッケージ（@hierarchidb/util 等）の型宣言未解決と既存 TabularPreview 周辺の implicit any により失敗（TS2307/TS7006）。今回差分では新規エラー追加なし。
+- 2025-10-11 11:20 command: pnpm --filter @hierarchidb/ui-core typecheck — 依存パッケージ（@hierarchidb/util 等）の型宣言未解決と既存 DataGridPreview 周辺の implicit any により失敗（TS2307/TS7006）。今回差分では新規エラー追加なし。
 - 2025-10-11 11:25 command: pnpm --filter @hierarchidb/route-plugin build:types — ワークスペース内パッケージ未解決（TS2307）と RouteBatchConfig 既存プロパティ不整合により失敗。今回の UI コード差分による追加エラーは発生せず。
 - 2025-10-19 18:48 start: fix/resolver/property-resolver-integration-test — `@hierarchidb/resolver-plugin` の `plugins/resolver-plugin/src/ui/components/__tests__/PropertyResolver.integration.test.ts` で発生している型/実行エラーの調査と修正に着手。sandbox 制約のため main ブランチ上で継続作業。
 - 2025-10-19 19:05 progress: fix/resolver/property-resolver-integration-test — plugin-ui-sdk 依存を除去するための共通ランタイム（後に廃止）を新設し、resolver/shape/spreadsheet 向けに汎用化する方針へ拡張。pnpm-workspace.yaml を更新し、新パッケージの雛形を作成。
@@ -8976,9 +9074,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-22 21:20 done: batch-runtime-services TS6059 解消 — `pnpm --filter @hierarchidb/batch-runtime-services build` を再実行し、tsup の DTS フェーズが TS6059 なく完了（`dist/index.d.ts` 出力を確認）。タスクの DoD を満たしたためチェックリスト更新予定。
 - 2025-10-22 21:44 progress: batch-runtime-services TS6059 解消 — `ban-tsconfig-paths-dist-dts` ポリシーの趣旨に合わせ、`packages/batch-runtime-services/tsconfig{,.build}.json` の `paths` を空マップ化し base alias を打ち消し。続けて `pnpm --filter @hierarchidb/batch-runtime-services {typecheck,build}` を再実行し、ともに成功（TS6059 再発なし）を確認。
 - 2025-10-22 21:48 done: batch-runtime-services TS6059 解消 — `packages/batch-types/tsconfig.json` の dist 参照 paths を撤去（空マップで上書き）し、`pnpm --filter @hierarchidb/batch-types {typecheck,build}` を実行して API Extractor 含め成功。最後に `pnpm run policy:ban-tsconfig-paths-dist-dts` を実行し、ポリシー違反が解消されたことを確認。
-- 2025-10-22 21:55 start: fix/ui-tabular-extract/csv-filter-build — `pnpm --filter @hierarchidb/ui-tabular-extract build` が `~/types/index.js` 未解決（TS2307）と setState コールバックの暗黙 any（TS7006）で失敗しているため、DoD を定義して修正に着手。
+- 2025-10-22 21:55 start: fix/ui-tabular-extract/csv-filter-build — `pnpm --filter @hierarchidb/ui-tabular build` が `~/types/index.js` 未解決（TS2307）と setState コールバックの暗黙 any（TS7006）で失敗しているため、DoD を定義して修正に着手。
 - 2025-10-22 22:02 progress: fix/ui-tabular-extract/csv-filter-build — `TabularFilterStep.tsx` の import を `../types/index.js` へ変更し、`setNewFilter`/`setFilters` のコールバックに型注釈を追加。tsserver でエラーが消えたことを確認。
-- 2025-10-22 22:05 done: fix/ui-tabular-extract/csv-filter-build — `pnpm --filter @hierarchidb/ui-tabular-extract build`（exit 0, tsup + DTS 成功）を実行し、TS2307/TS7006 が再発しないことを確認。DoD/チェックリスト完了。
+- 2025-10-22 22:05 done: fix/ui-tabular-extract/csv-filter-build — `pnpm --filter @hierarchidb/ui-tabular build`（exit 0, tsup + DTS 成功）を実行し、TS2307/TS7006 が再発しないことを確認。DoD/チェックリスト完了。
 - 2025-10-22 22:08 start: fix/plugin-types/dist-paths — `pnpm --filter @hierarchidb/plugin-types typecheck` 実行時に `ae-wrong-input-file-type` および TS6059/TS6307 が発生するため、tsconfig paths を整理して API Extractor が dist `.d.ts` のみを参照できるようにする対応を開始。
 - 2025-10-22 22:10 progress: fix/plugin-types/dist-paths — `packages/plugin-types/tsconfig.json` に `compilerOptions.paths: {}` を追加し、`@hierarchidb/*` エイリアスを解除。`pnpm --filter @hierarchidb/plugin-types typecheck` を再実行して API Extractor のエラーが解消されたことを確認（exit 0）。
 - 2025-10-22 22:10 done: fix/plugin-types/dist-paths — DoD 達成のため TASKS チェックリストを更新し、ロールバック手順を記録予定。
@@ -9914,7 +10012,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-19 17:25 command: pnpm -C app test -- --run DynamicSpeedDial — exit 1。既知の `preload-worker-modules.unit.test.ts`（plugin registry dist 未生成で import 解決不可）および `TreeConsoleToolbarImportMenu.unit.test.tsx`（既知の aria-label 回帰でボタンが見つからない）の失敗により全体が red。対象テスト本体（DynamicSpeedDial ヘッドレス）はモック経由でアイコン解決ロジックを exercise 済み。
 - 2025-11-20 14:18 start: fix/resolver/working-copy-draft — Resolver plugin の `workingCopies` Dexie テーブルを撤去し、WorkingCopyDraft（TreeNode draft）を唯一の保存先にするタスクを開始。DoD: TASKS 更新、Dexie スキーマ更新、Worker/UI ロジックを TreeNode draft 連携へ統一、typecheck/テスト実行、ロールバック手順記録。
 - 2025-11-20 14:40 progress: ResolverEntityService および resolverEntitiesDB から `workingCopies` テーブルと関連メソッドを削除し、WorkingCopy 管理責務を TreeNode draft へ委譲。`plugins/resolver-plugin/src/ui/components/__tests__` の WorkingCopy 専用テストも整理し、`pnpm --filter @hierarchidb/resolver-plugin build` で dist ビルドが成功することを確認。
-- 2025-11-20 14:45 blocked: pnpm -C app typecheck — exit 1。既存の `app/src/hooks/treeconsole/createTreeConsoleActions.ts` で `@hierarchidb/plugin-base` alias 未解決、`plugins/shape-plugin`/`plugins/styler-plugin` 由来の型エラー（`@hierarchidb/ui-tabular-extract` 未解決、Styler handler の型不整合等）が発生し、本タスク変更とは無関係の失敗で停止。必要な場合は既知課題の解消後に再実行する。
+- 2025-11-20 14:45 blocked: pnpm -C app typecheck — exit 1。既存の `app/src/hooks/treeconsole/createTreeConsoleActions.ts` で `@hierarchidb/plugin-base` alias 未解決、`plugins/shape-plugin`/`plugins/styler-plugin` 由来の型エラー（`@hierarchidb/ui-tabular` 未解決、Styler handler の型不整合等）が発生し、本タスク変更とは無関係の失敗で停止。必要な場合は既知課題の解消後に再実行する。
 - 2025-11-20 14:48 blocked: pnpm --filter @hierarchidb/resolver-plugin test — exit 1。既存テストが `ResolverEntityService.js`／`SimpleMappingCompiler.js` 等の未実装モジュールに依存しており、Vite import 解析で解決不可となる既知問題のためテストスイートが開始できず。`tsdown build` では成功を確認済み。
 - 2025-11-18 22:07 start: fix/basemap/create-dialog-save — basemap Create ダイアログの Step1 初期値欠如と Step2/3 誤判定の調査を開始。DoD: Step1 name/description の初期値と WorkingCopy 反映経路の調査、Step2/3 validation 異常の原因究明、再発防止策の提案、Kanban/ログ更新、および関連検証方針の整理。
 - 2025-11-18 22:17 progress: fix/basemap/create-dialog-save — StepAdapter が workingCopy.data のみを Step1 に渡しており、worker 側で付与される `resolveDefaultNodeName` の値が basic-info へ伝搬していないため name 初期値が常に空になることを確認。また Step1 で `p.onChange` が初めて呼ばれた瞬間に ensureWorkingCopy が DEFAULT_STYLE/DEFAULT_VIEWPORT を含む payload を保存し、Step2(Style)/Step3(Viewport) の validate 条件が満たされたと誤判定されるためステップが即座に緑化している。対策としては (a) `currentStepData` へ basicInfo state をマージして Step1 初期レンダリングに name/description を供給する、もしくは (b) Basemap 用 StepProvider 側で WorkingCopyService の name/description を参照する/初回 onChange を不要にする、さらに Step2/3 validate では「ユーザー操作済み」フラグや MapStyle/Viewport の dirty 状態を確認する必要があると整理。
@@ -10507,7 +10605,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-05 12:22 progress: fix/auth/bff-google-404 — BFF デフォルト URL を `/auth` ベースに戻し（scripts/env/{base,development,production}.sh, packages/ui/auth BFFAuthService, app/vite.config.ts proxy デフォルト）、SimpleBFFAuthContext で `/api/auth` 指定時は `/auth` に正規化するよう対応。authorize/logout/refresh は buildAuthUrl で `/auth/*` を強制し、過剰なプレフィックスで 404 にならないようにした。検証: `pnpm --filter @hierarchidb/ui-auth typecheck` exit 0。
 - 2025-12-05 13:00 progress: fix/auth/bff-google-404 — BFFAuthService の dev 環境強制プロキシ分岐を撤去し、絶対 URL（デフォルトの Cloudflare BFF を含む）をそのまま利用するよう変更。これにより dev でも `/auth/authorize` が BFF へ直行し、ローカル 404 を回避。検証: `pnpm --filter @hierarchidb/ui-auth typecheck` exit 0。
 - 2025-12-05 16:10 progress: fix/spreadsheet/filter-column-options — TabularDataFilterStep で metadata.columns が空の場合、Step2 プレビューの columns から TabularColumnInfo を再構築して TabularFilterStep へ渡すフォールバックを追加。検証: `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0。
-- 2025-12-05 17:05 progress: chore/tabular-import-switches — TabularDataImport の「Has Header Row」「Skip Empty Lines」を Switch コンポーネントに置き換え、より直感的なトグルUIに変更。検証: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0。
+- 2025-12-05 17:05 progress: chore/tabular-import-switches — TabularDataImport の「Has Header Row」「Skip Empty Lines」を Switch コンポーネントに置き換え、より直感的なトグルUIに変更。検証: `pnpm --filter @hierarchidb/ui-tabular typecheck` exit 0。
 - 2025-12-05 17:50 start: fix/spreadsheet/edit-step2-download — Edit Spreadsheet Dialog Step2 の Download 直後にリロード様の遷移が発生し、復帰後に data:{} / draft:null となる問題を調査開始。DoD: 再現条件記録、原因/発生範囲特定、修正方針＋リスク/ロールバック提示、必要なら暫定回避策を示す。ロールバック: 本調査で行う差分を revert し、運用ログ追記を削除する（調査のみ想定）。
 - 2025-12-05 18:15 progress: fix/spreadsheet/edit-step2-download — edit ダイアログの beforeunload/pagehide で自動 discard していたのがドラフト喪失の直接原因と判断し、`useTreeNodeUpdater` の auto discard をデフォルト無効化（オプション `autoDiscardOnUnload` を追加し既定 false）。リロードで draft/data が消えないようにする。ロールバック: `packages/plugin-ui-sdk/src/hooks/useTreeNodeUpdater.ts` の今回差分を revert。
 - 2025-12-05 18:35 progress: fix/basemap/dialog-step-blink — TreeConsole が location.search の変化（Dialog step 更新など）だけで再ロードされ loading スピナーを出していたため、検索クエリ `q` のみに依存するよう useTreeConsoleIntegration の初期ロードを絞り込み。非検索系の query 変更では TreeConsole が再ロードされずブリンクしないようにした。ロールバック: `app/src/hooks/useTreeConsoleIntegration.ts` の今回差分を revert。
@@ -10593,19 +10691,19 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-30 11:20 progress: fix/basemap/create-defaults — useDialogDraft を treeNodeUpdater API へ再実装し、create 時に initialDraftData を渡して basemap draftData を `{mapStyle:{style:'streets'}, viewport:undefined}` で保存するように変更。usePluginDialogController から basemap create 時に初期 draft を注入。`pnpm --filter @hierarchidb/plugin-ui-sdk build`（tsdown define 警告のみ）/`typecheck` exit 0, `pnpm --filter @hierarchidb/plugin-ui-host typecheck` exit 0, `pnpm --filter @hierarchidb/basemap-plugin typecheck` exit 0 を実行。
 - 2025-11-30 11:35 progress: fix/basemap/step3-maplibre-container — ui-map を viewState/Move イベント対応の制御モードに拡張し、ViewportStep を controlled viewState + OSM raster で双方向同期するように修正。`pnpm --filter @hierarchidb/ui-map typecheck` exit 0。ロールバック: `packages/ui/map/src/components/MapLibreMap.tsx`, `plugins/basemap-plugin/src/ui/components/steps/ViewportStep.tsx` を revert し typecheck 再実行。
 
-- 2025-12-09 09:07 progress: fix/styler/filter-rerender — TabularFilterStep の列オプション参照を shallow equal で安定化し、列配列が毎回新規参照になってもフィルタ更新が無限に発火しないようガードを追加。検証: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularFilterStep.tsx` の columnOptions useMemo と setFilters ガードを元に戻す。
+- 2025-12-09 09:07 progress: fix/styler/filter-rerender — TabularFilterStep の列オプション参照を shallow equal で安定化し、列配列が毎回新規参照になってもフィルタ更新が無限に発火しないようガードを追加。検証: `pnpm --filter @hierarchidb/ui-tabular typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularFilterStep.tsx` の columnOptions useMemo と setFilters ガードを元に戻す。
 
-- 2025-12-09 09:20 progress: fix/styler/filter-rerender — useTabularFilter の各 setState で shallow equal を導入し、同値のルール配列や同一フィールド更新では再レンダーを発火させないようにガード。検証: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/hooks/useTabularFilter.ts` の rulesEqual/ガード追加を削除する。
+- 2025-12-09 09:20 progress: fix/styler/filter-rerender — useTabularFilter の各 setState で shallow equal を導入し、同値のルール配列や同一フィールド更新では再レンダーを発火させないようにガード。検証: `pnpm --filter @hierarchidb/ui-tabular typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/hooks/useTabularFilter.ts` の rulesEqual/ガード追加を削除する。
 
-- 2025-12-09 09:30 progress: fix/styler/filter-rerender — TabularFilterStep で filtersEqual を追加し、フィルタ配列が同一内容のときは setFilters/setPreviewDirty をスキップするように変更。不要な再レンダーを抑制。検証: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularFilterStep.tsx` の filtersEqual/ガードを削除する。
+- 2025-12-09 09:30 progress: fix/styler/filter-rerender — TabularFilterStep で filtersEqual を追加し、フィルタ配列が同一内容のときは setFilters/setPreviewDirty をスキップするように変更。不要な再レンダーを抑制。検証: `pnpm --filter @hierarchidb/ui-tabular typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularFilterStep.tsx` の filtersEqual/ガードを削除する。
 
-- 2025-12-09 09:45 progress: fix/styler/filter-rerender — TabularDataFilterRulesTable を TextField(select/input) に戻し、id/name を明示して操作不能状態を解消する試み。typecheck: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularDataFilterRulesTable.tsx` の TextField 化を取り消す。
+- 2025-12-09 09:45 progress: fix/styler/filter-rerender — TabularDataFilterRulesTable を TextField(select/input) に戻し、id/name を明示して操作不能状態を解消する試み。typecheck: `pnpm --filter @hierarchidb/ui-tabular typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularDataFilterRulesTable.tsx` の TextField 化を取り消す。
 
-- 2025-12-09 09:55 progress: fix/styler/filter-rerender — TabularDataFilterRulesTable のドラッグ＆ドロップを一旦無効化し、行の pointer blocking を排除。操作不能の原因切り分け目的。typecheck: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularDataFilterRulesTable.tsx` のドラッグ無効化差分を戻す。
+- 2025-12-09 09:55 progress: fix/styler/filter-rerender — TabularDataFilterRulesTable のドラッグ＆ドロップを一旦無効化し、行の pointer blocking を排除。操作不能の原因切り分け目的。typecheck: `pnpm --filter @hierarchidb/ui-tabular typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularDataFilterRulesTable.tsx` のドラッグ無効化差分を戻す。
 
-- 2025-12-09 10:05 progress: fix/styler/filter-rerender — TabularDataFilterRulesTable でドラッグ＆ドロップ（行入れ替え）を再有効化。typecheck: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularDataFilterRulesTable.tsx` の reorder/drag ハンドラ差分を戻す。
+- 2025-12-09 10:05 progress: fix/styler/filter-rerender — TabularDataFilterRulesTable でドラッグ＆ドロップ（行入れ替え）を再有効化。typecheck: `pnpm --filter @hierarchidb/ui-tabular typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularDataFilterRulesTable.tsx` の reorder/drag ハンドラ差分を戻す。
 
-- 2025-12-09 10:45 progress: fix/styler/filter-rerender — Column/Operator TextField に id を設定し、inputProps の id を削除して label htmlFor 不一致/重複 id 警告を抑止。typecheck: `pnpm --filter @hierarchidb/ui-tabular-extract typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularDataFilterRulesTable.tsx` の id/inputProps 変更を戻す。
+- 2025-12-09 10:45 progress: fix/styler/filter-rerender — Column/Operator TextField に id を設定し、inputProps の id を削除して label htmlFor 不一致/重複 id 警告を抑止。typecheck: `pnpm --filter @hierarchidb/ui-tabular typecheck` exit 0。ロールバック: `packages/ui/tabular-extract/src/components/TabularDataFilterRulesTable.tsx` の id/inputProps 変更を戻す。
 
 - 2025-12-09 11:20 progress: chore/entities/remove-nodeid — Linker/Timeline/Route/Resolver entitiesから冗長な nodeId プロパティを削除し、Resolver/Route のテスト・サービスを id 基準に更新。typecheck: `pnpm --filter @hierarchidb/linker-plugin typecheck` / `@hierarchidb/timeline-plugin typecheck` / `@hierarchidb/resolver-plugin typecheck` / `@hierarchidb/route-plugin typecheck` いずれも exit 0。ロールバック: 各 Entity に nodeId を戻し、ResolverEntityService / RouteEntity テストの修正を元に戻して typecheck を再実行。
 
@@ -10729,6 +10827,39 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-21 21:12 start: fix/types/spreadsheet-shape-leak — spreadsheet の typecheck で shape-plugin 由来の型エラーが派生する経路を調査し、geojson 型不整合を修正する対応に着手。DoD: Kanban 記載どおり原因特定/型エラー解消/運用ログ更新/ロールバック手順記載。
+- 2025-12-21 21:20 progress: fix/types/spreadsheet-shape-leak — spreadsheet が参照する `@hierarchidb/runtime-worker` が plugin-registry（generated）を import し、そこから全プラグインの動的 import を含むため、TypeScript が shape-plugin の src を取り込む流れを確認。`LocalSimplifyAdapters` / `RuntimeWorkerDownloadAdapter` で `geojson` 変数名の衝突により `serialize` が unknown 参照になっていたため、`geojsonApi`/`featureCollection` へリネームして解消。
+- 2025-12-21 21:23 command: pnpm --filter @hierarchidb/spreadsheet-plugin typecheck — exit 2。`LocalSimplifyAdapters.ts` の `geojsonApi.serialize` に unknown が渡るため TS2345 が発生。
+- 2025-12-21 21:26 progress: fix/types/spreadsheet-shape-leak — `LocalSimplifyAdapters.ts` に `isFeatureCollection` 型ガードを追加し、`serialize` には `FeatureCollection` のみ渡すよう修正。該当箇所の featureCount も型に合わせて更新。
+- 2025-12-21 21:27 command: pnpm --filter @hierarchidb/spreadsheet-plugin typecheck — exit 0。
+- 2025-12-21 21:28 done: fix/types/spreadsheet-shape-leak — runtime-worker が plugin-registry を介して全プラグインを参照するため、spreadsheet typecheck が shape-plugin を巻き込む構造であることを確認。shape 側の `geojson` 変数衝突を解消し、`FeatureCollection` 型ガードで `serialize` の型エラーを修正。検証: `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0。ロールバック: `plugins/shape-plugin/src/services/batch/adapters/{LocalSimplifyAdapters.ts,RuntimeWorkerDownloadAdapter.ts}` と `TASKS.md` の差分を revert し、同 typecheck を再実行する。
+- 2025-12-21 21:30 progress: feat/gis/sdk-common — `@hierarchidb/gis-sdk` を追加し、`TilesDB` とベクトルタイル生成ロジックを SDK に移設。shape-plugin の簡略化/フィルタ処理を SDK の共通ユーティリティへ移動し、runtime-worker は SDK を呼ぶだけの構成へ移行中。
+- 2025-12-21 21:45 progress: feat/gis/sdk-common — Ephemeral DB の共通化を GIS SDK 側に実装（`EphemeralGisDB`）。shape-plugin の EphemeralShapeDB は SDK を継承する薄いラッパに置換し、共通 DB 定義・操作を SDK 側へ集約。
+- 2025-12-21 21:50 start: analysis/ui/location-components-shared — location-plugin の `src/components` を走査し、共通化できるもの/できないものを分類して命名案を整理する調査に着手。DoD: Kanban 記載どおり分類/根拠/命名案を提示し運用ログを更新。
+- 2025-12-21 22:05 done: analysis/ui/location-components-shared — location-plugin には `src/components` がなく、`src/ui/components` と `src/common/components` を対象に棚卸し。共通化候補は BatchProgressDialog/BatchParametersStep/SelectionStep/MapPreview など（要抽象化）、非共通は LocationDialog/LocationPanel/LocationDataSourceStep/LocationMapPreviewStep など（ドメイン依存が強い）と分類。`@hierarchidb/ui-XXXX` 命名案を整理。ロールバック: 調査記録のみのため差分なし（運用ログ追記を削除）。
+- 2025-12-21 21:54 start: analysis/ui/shape-components-shared — shape-plugin の components 相当（ui/common 配下）を走査し、共通化できるもの/できないものを分類する調査に着手。DoD: Kanban 記載どおり分類/根拠/再利用性評価を提示し運用ログを更新。
+- 2025-12-21 22:01 start: refactor/ui/shape-step-hooks — shape-plugin Step2 以降のコンポーネントを表示専用化し、ロジックをカスタムフックへ抽出する作業に着手。DoD: Kanban 記載どおりロジック抽出/フック化/運用ログ更新/ロールバック手順記載。
+- 2025-12-21 22:15 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 2。`@hierarchidb/gis-sdk` の依存解決（@turf/*, geojson, @maplibre/vt-pbf, @hierarchidb/common-types）と、`SimplificationConfigSection.tsx` の未使用変数、`useShapeDataSourceStep` の `licenseAgreedAt` 型不整合が残存。
+- 2025-12-21 22:16 command: pnpm install --offline — exit 0。`@hierarchidb/gis-sdk` の依存リンクを更新（peer 警告あり）。
+- 2025-12-21 22:19 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。
+- 2025-12-21 22:20 progress: refactor/ui/shape-step-hooks — ShapeDataSource/ShapeCountrySelection/ShapeProcessingSettings/Download/Simplification/Tile/BuildProgress/Preview の各 Step でロジックをフックへ抽出し、BatchRecoveryDialog/ErrorDisplay もフック化。`plans/shape-step-hooks.md` を更新。
+- 2025-12-21 22:30 start: refactor/ui/shape-shared-split — shape-plugin の複雑な Step/Hook を共通利用前提で分割する対応に着手。DoD: Kanban 記載どおり分割方針整理/適用/typecheck/運用ログ更新。
+- 2025-12-21 22:45 progress: refactor/ui/shape-shared-split — Preview/Build/Progress フックを分割し、Download/Simplification UI をサブコンポーネント化。共通利用を想定した hook/component 境界で整理。
+- 2025-12-21 22:49 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。
+- 2025-12-21 22:50 done: refactor/ui/shape-shared-split — 分割作業完了。ロールバック: `plugins/shape-plugin/src/ui/{components,hooks}` と `plans/shape-shared-ui-split.md` の差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行。
+- 2025-12-21 23:16 start: refactor/ui/shape-shared-packages — shape-plugin の共通 UI/Hook を ui-gis/ui-batch へ移設する対応に着手。DoD: Kanban 記載どおり移設/参照更新/typecheck/運用ログ更新。
+- 2025-12-21 23:18 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。
+- 2025-12-21 23:19 command: pnpm install --offline — exit 0。ui-gis/ui-batch 追加に伴う lockfile 更新（peer 警告あり）。
+- 2025-12-21 23:19 done: refactor/ui/shape-shared-packages — ui-gis/ui-batch を追加し、shape-plugin の preview/batch 系 hook を移設。ロールバック: `packages/ui/{gis,batch}` と `plugins/shape-plugin/src/ui`、`tsconfig.base.json`、`plans/shape-ui-shared-packages.md` の差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行。
+- 2025-12-21 23:34 start: analysis/ui/virtual-table-scope — ui-tabular-extract と shape/location/route/spreadsheet/styler の仮想テーブル共通化を整理する調査に着手。DoD: Kanban 記載どおり整理/分類/提案/運用ログ更新。
+- 2025-12-21 23:44 start: refactor/ui/tabular-grid-naming — ui-tabular/ui-grid 命名整理と参照更新に着手。DoD: Kanban 記載どおり命名整理/参照更新/typecheck/運用ログ更新。
+- 2025-12-22 00:05 progress: refactor/ui/tabular-grid-naming — `@hierarchidb/ui-data-grid` → `@hierarchidb/ui-grid`、`@hierarchidb/ui-tabular-extract` → `@hierarchidb/ui-tabular` へパッケージ名/tsconfig alias を更新し、参照元の import/依存を一括置換。`TabularPreviewLite` → `TabularPreviewGrid`、`TabularPreview` → `DataGridPreview` へリネームして export/import を差し替え中。
+- 2025-12-22 00:20 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。
+- 2025-12-22 00:22 done: refactor/ui/tabular-grid-naming — ui-tabular/ui-grid のパッケージ名と export を整理し、`TabularPreviewGrid`/`DataGridPreview` へ命名統一。参照元の import とドキュメント表記を更新。ロールバック: `packages/ui/{data-grid,tabular-extract}` と `tsconfig.base.json`、`plugins/**`、`docs/**` の差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する。
+- 2025-12-21 21:05 start: feat/gis/sdk-common — GIS 系プラグインの共通 SDK を設計し、runtime-worker から GIS 実装を分離する対応に着手。DoD: ExecPlan 作成、責務分離、共通 SDK 化、運用ログ更新、ロールバック手順記載。
+- 2025-12-21 20:40 start: fix/types/flatgeobuf-shpjs — flatgeobuf/shpjs の型解決エラーを共通宣言で解消する対応に着手。DoD: Kanban 記載どおり型解決、運用ログ更新、ロールバック手順記載。
+- 2025-12-21 20:54 done: fix/types/flatgeobuf-shpjs — flatgeobuf は公式型に合わせて `flatgeobuf` の `geojson` export を利用し、runtime-worker は JSON 入力で処理するよう変更。shpjs は `@types/shpjs` を利用し、独自宣言は撤去。検証: 未実施。ロールバック: `packages/runtime-worker/src/services/StageProcessingService.ts`、`plugins/shape-plugin/src/services/batch/adapters/{LocalSimplifyAdapters.ts,RuntimeWorkerDownloadAdapter.ts,RuntimeWorkerVectorTileAdapter.ts}`、`plugins/shape-plugin/src/headless/shape-batch-progress.headless.test.ts`、`plugins/shape-plugin/vitest.config.ts`、`global.d.ts` の差分を revert する。
+- 2025-12-21 20:44 done: fix/types/flatgeobuf-shpjs — `global.d.ts` に flatgeobuf/shpjs の module 宣言を追加して型解決を共通化。検証: 未実施。ロールバック: `global.d.ts` の差分を revert する。
 - 2025-12-21 20:26 start: fix/timeline/step-props-type — timeline-plugin steps-provider の StepComponentProps を PluginStepProps へ置換し、typecheck エラーを解消する対応に着手。DoD: Kanban/運用ログ更新、型置換、`pnpm --filter @hierarchidb/timeline-plugin typecheck` 結果記録、ロールバック手順記載。
 - 2025-12-21 20:27 command: pnpm --filter @hierarchidb/timeline-plugin typecheck — exit 0。
 - 2025-12-21 20:27 done: fix/timeline/step-props-type — StepComponentProps を PluginStepProps へ置換し typecheck を解消。ロールバック: `plugins/timeline-plugin/src/ui/components/steps-provider.tsx` の差分を revert し、同 typecheck を再実行する。
@@ -10940,6 +11071,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-20 17:50 start: fix/shape/step5-build-button-size — Start Build ボタンを size="large" にする対応に着手。DoD: サイズ変更、挙動維持、ロールバック手順記載。
 - 2025-12-20 17:52 done: fix/shape/step5-build-button-size — BuildStepPanel の Start Build ボタンを size="large" に変更。検証: 未実施。ロールバック: `packages/components/src/BuildStepPanel.tsx` の差分を revert。
 
+- 2025-12-22 00:21 start: feat/route/step-flow-reorg — route-plugin のステップ構成を location-plugin 準拠で再編（Step2 データソース選択、Step3 交通モード/経路タイプ + 始点終点選択、Step4 設定、Step5 ビルド、Step6 プレビュー）。
+- 2025-12-22 00:37 done: feat/route/step-flow-reorg — route-plugin のステップ構成を再編し、データソース/交通モード+経路タイプ+始点終点/処理設定/ビルド/プレビューの流れに統一。検証: 未実施。ロールバック: `plugins/route-plugin/src/ui/components/steps/*.tsx`、`plugins/route-plugin/src/ui/components/steps-provider.tsx`、`plugins/route-plugin/src/ui/locales/{en,ja}.json` を revert。
+
 - 2025-12-20 11:45 progress: fix/styler/step5-virtual-table — StylerPreviewStep のプレビュー表を react-window で再仮想化し、ResizeObserver で DialogContent 高さに合わせてリスト高さを算出。ヘッダと同じ幅のグリッドでカラム幅ずれ/行欠けを抑制。
 - 2025-12-20 11:46 command: pnpm --filter @hierarchidb/styler-plugin typecheck — exit 0。
 
@@ -10990,6 +11124,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-21 17:20 done: review/shape/headless-test-side-effects — alias/モック/runtime-worker 修正の副作用を確認。runtime-worker の flatgeobuf async generator 対応と polygon bbox 計算は実処理の不具合修正であり維持が妥当。`@hierarchidb/*/database` alias は runtime-worker index→plugin-registry 経由で subpath 解決が必要なため削除不可。auth-recovery は dist 未生成のため mock 維持が最小。テストは fetch 直アクセス（cors-proxy/Authorization 不使用）と raw/simplify buffer + vectortile summary を検証済み。
 - 2025-12-21 17:35 start: fix/shape/preview-flag-default-on — preview フラグ既定OFFをONへ変更。DoD: 既定値更新、理由/ロールバック記載。
 - 2025-12-21 17:36 done: fix/shape/preview-flag-default-on — `HDB_SHAPE_PREVIEW_METADATA` の既定値を true に変更。ロールバック: `plugins/shape-plugin/src/common/config/previewFlags.ts` の既定値を false に戻す。
+- 2025-12-21 18:05 start: fix/styler/step-progress-indicator — styler Step2〜5 初回遷移のブロッキング処理に対し progress indicator を追加する対応に着手。DoD: 進捗表示・i18n 追加・ロールバック記載。
+- 2025-12-21 18:40 done: fix/styler/step-progress-indicator — tabular preview/filter の処理中表示（previewBusy/processing）と、styler mapping/preview の deferred 処理表示を追加。`filtering.processing`/`styleSettings.processing`/`stylePreview.processing` の i18n を追加。ロールバック: 追加した UI と i18n キーの差分を revert する。
+- 2025-12-21 19:10 start: fix/route/typecheck-build-processing — BuildStepPanel の props と RouteProcessingConfig の必須値を補正する対応に着手。DoD: typecheck エラー解消、運用ログ/ロールバック記載。
+- 2025-12-21 19:20 done: fix/route/typecheck-build-processing — RouteBuildStep の BuildStepPanel に非対応 props を撤去し、RouteProcessingStep の processing 設定を必須値で確定。ロールバック: `plugins/route-plugin/src/ui/components/steps/{RouteBuildStep.tsx,RouteProcessingStep.tsx}` の差分を revert する。
 - 2025-12-21 16:12 start: fix/ui-dialog/preview-mode — preview mode 追加と dialog step/復元挙動の安定化に着手。DoD: preview mode 追加、Preview 最終ステップ+FullScreen、Edit の activeStepIndex 復元、dialogUIState mode 更新、運用ログ/ロールバック記載。
 - 2025-12-21 16:31 progress: fix/ui-dialog/preview-mode — preview ルート (/preview) と dialog mode 追加、Preview で dialogUIState を保存しないよう調整。FullScreen は URL `mode=full` で反映。
 - 2025-12-21 16:34 done: fix/ui-dialog/preview-mode — preview を専用 mode として扱い、Preview 強制最終ステップ/FullScreen と Edit 復元の両立を整理。検証: 未実施。ロールバック: `app/src/loader.ts`、`app/src/router/routes/tree/PluginDialogRoute.tsx`、`app/src/hooks/treeconsole/createTreeConsoleActions.ts`、`packages/plugin-ui-host/src/headless/usePluginDialogController.tsx`、`packages/plugin-ui-host/src/headless/components/PluginDialogFooter.tsx`、`packages/plugin-ui-host/src/headless/cancelDraftPolicy.ts`、`packages/ui/dialog/src/{components/{CommonDialog.tsx,CommonDialogActions.tsx,CommonDialogTitle.tsx},types/MultiStepDialog.types.ts}` の差分を revert する。

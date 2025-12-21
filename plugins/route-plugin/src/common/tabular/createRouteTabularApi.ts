@@ -1,4 +1,4 @@
-import type { TabularDataApi, TabularProcessingConfig } from '@hierarchidb/ui-tabular-extract';
+import type { TabularDataApi, TabularProcessingConfig } from '@hierarchidb/ui-tabular';
 import { SpreadsheetTabularApiDriver } from '@hierarchidb/spreadsheet-plugin';
 import { RouteTabularMetadataManager } from './RouteTabularMetadataManager.js';
 

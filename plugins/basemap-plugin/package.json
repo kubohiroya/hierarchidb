@@ -65,7 +65,7 @@
     "@hierarchidb/folder-plugin": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
-    "@hierarchidb/ui-data-grid": "workspace:*",
+    "@hierarchidb/ui-grid": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*"
   },
@@ -86,7 +86,7 @@
     "@hierarchidb/folder-plugin": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
-    "@hierarchidb/ui-data-grid": "workspace:*",
+    "@hierarchidb/ui-grid": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*"

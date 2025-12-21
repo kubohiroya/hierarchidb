@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { TabularDataResult } from '@hierarchidb/ui-tabular-extract';
+import type { TabularDataResult } from '@hierarchidb/ui-tabular';
 import type { LocationPointProperties } from '../../common/entities/LocationPoint.js';
 import { replaceLocationPoints } from '../../services/pointRepository.js';
 type ProgressReporter = (progress: {

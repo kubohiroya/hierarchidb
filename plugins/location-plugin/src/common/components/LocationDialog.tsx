@@ -27,7 +27,7 @@ import {
   type TabularFilterRule,
   type TabularSelectionConfig,
   type TabularColumnMapping,
-} from '@hierarchidb/ui-tabular-extract';
+} from '@hierarchidb/ui-tabular';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { createLocationTabularApi } from '../tabular/createLocationTabularApi.js';
 import {

@@ -2,6 +2,7 @@
   "styleSettings": {
     "title": "スタイル設定",
     "description": "表データの列の組み合わせを、地図上のスタイルへと対応づけします。",
+    "processing": "表データを処理しています…",
     "source": {
       "label": "列の組み合わせ"
     },
@@ -43,6 +44,12 @@
     "styleSettings": "スタイル設定",
     "styleAlgorithm": "スタイルアルゴリズム",
     "preview": "プレビュー"
+  },
+  "filtering": {
+    "processing": "表データを処理しています…"
+  },
+  "stylePreview": {
+    "processing": "プレビュー用データを準備しています…"
   },
   "step5": {
     "title": "スタイルアルゴリズム",

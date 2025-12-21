@@ -1,5 +1,5 @@
 /**
- * @hierarchidb/ui-data-grid
+ * @hierarchidb/ui-grid
  *
  * Abstract data grid components using the Data Provider pattern.
  * Works with any data source through abstract interfaces.
@@ -33,4 +33,4 @@ export { InMemoryDataProvider } from './providers/InMemoryDataProvider.js';
 export {CrossViewStyles} from './CrossViewStyles.js';
 export * from './CrossViewSnackbar.js';
 export * from './hooks/useCrossHighlightSync.js';
-export { TabularPreview } from './TabularPreview.js';
+export { DataGridPreview } from './DataGridPreview.js';

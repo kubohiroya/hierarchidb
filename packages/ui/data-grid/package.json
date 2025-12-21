@@ -1,5 +1,5 @@
 {
-  "name": "@hierarchidb/ui-data-grid",
+  "name": "@hierarchidb/ui-grid",
   "version": "0.0.1",
   "private": true,
   "type": "module",

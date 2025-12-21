@@ -1,6 +1,6 @@
 /**
  * @file openstreetmap-type.ts
- * @description Main export file for ui-tabular-extract package
+ * @description Main export file for ui-tabular package
  */
 
 // Types
@@ -34,15 +34,15 @@ export {
   TabularDataFilter,
   TabularColumnSelect,
   TabularDataFilterRulesTable,
-  TabularPreviewLite,
+  TabularPreviewGrid,
 } from './components/index.js';
 export type {
   TabularDataImportProps,
   TabularDataFilterProps,
   TabularColumnSelectProps,
   FilterOperatorOption,
-  TabularPreviewLiteProps,
+  TabularPreviewGridProps,
 } from './components/index.js';
 
-// Preview (re-export from ui-data-grid)
-export { TabularPreview } from '@hierarchidb/ui-data-grid';
+// Preview (re-export from ui-grid)
+export { DataGridPreview } from '@hierarchidb/ui-grid';

@@ -1,4 +1,4 @@
-import { PluginStepRegistry, type StartBatchContext, type StepComponentProps } from '@hierarchidb/plugin-base';
+import { PluginStepRegistry, type StartBatchContext, type PluginStepProps } from '@hierarchidb/plugin-base';
 import type { NodeId, TreeNodeMetadata } from '@hierarchidb/common-types';
 import type { LocationEntity } from '../../common/types/index.js';
 import { LocationDataSourceStep } from './steps/LocationDataSourceStep.js';
@@ -31,7 +31,7 @@ const mergeData = (
   ...updates,
 });
 
-type StepProps = StepComponentProps<LocationStepData>;
+type StepProps = PluginStepProps<LocationStepData>;
 
 const hasSelection = (data?: LocationStepData): boolean => {
   const matrix = data?.selectionMatrix;

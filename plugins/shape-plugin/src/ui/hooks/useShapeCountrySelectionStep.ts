@@ -1,0 +1,206 @@
+import { useCallback, useMemo } from 'react';
+import { useSnackbar } from 'notistack';
+import { useIsoCountries, type MatrixConfig, type MatrixSelection, type ContinentCode } from '@hierarchidb/ui-country-select';
+import type { CountryMetadata, ShapeEntity } from '../../common/types/index.js';
+import { useCountryMetadata } from './useCountryMetadata.js';
+import {
+  calculateEstimatedFeatures,
+  calculateEstimatedSize,
+  DATA_SOURCE_CONFIGS,
+  formatBytes,
+  formatNumber,
+} from '../../common/mock/data.js';
+import { normalizeDataSourceName } from '../../services/utils/utils.js';
+import { clearStagesIfPresent, FULL_INVALIDATION_STAGES, resolveShapeSessionId } from '../utils/sessionInvalidation.js';
+
+const CONTINENT_CODES: ContinentCode[] = ['AF', 'AS', 'EU', 'NA', 'SA', 'OC', 'AN'];
+
+const CONTINENT_ALIASES: Record<string, ContinentCode> = {
+  africa: 'AF',
+  af: 'AF',
+  asia: 'AS',
+  as: 'AS',
+  europe: 'EU',
+  eu: 'EU',
+  'north america': 'NA',
+  na: 'NA',
+  'south america': 'SA',
+  sa: 'SA',
+  'central america': 'NA',
+  oceania: 'OC',
+  australia: 'OC',
+  oc: 'OC',
+  antarctica: 'AN',
+  an: 'AN',
+};
+
+const isContinentCode = (value: string): value is ContinentCode => CONTINENT_CODES.includes(value as ContinentCode);
+
+const normalizeContinentCode = (continent?: string): ContinentCode | undefined => {
+  if (!continent) return undefined;
+  const trimmed = continent.trim();
+  if (!trimmed) return undefined;
+  const alias = CONTINENT_ALIASES[trimmed.toLowerCase()];
+  if (alias) return alias;
+  const upper = trimmed.toUpperCase();
+  if (isContinentCode(upper)) return upper;
+  return undefined;
+};
+
+const normalizeCountryCodeFromMetadata = (country: Partial<CountryMetadata>, index: number): string => {
+  const candidates = [country.countryCode, country.iso2, country.iso3].filter(
+    (value): value is string => Boolean(value?.trim()),
+  );
+  const primary = (candidates[0] ?? `country-${index}`).trim().toUpperCase();
+  if (primary.length === 2) return primary;
+  if (primary.length === 3 && country.iso2) return country.iso2.trim().toUpperCase();
+  if (primary.length === 3) return primary.slice(0, 2);
+  return primary.slice(0, 2) || `COUNTRY-${index}`;
+};
+
+const isMatrixEqual = (left?: boolean[][], right?: boolean[][]): boolean => {
+  if (!left || !right) return false;
+  if (left.length !== right.length) return false;
+  for (let rowIndex = 0; rowIndex < left.length; rowIndex += 1) {
+    const leftRow = left[rowIndex] ?? [];
+    const rightRow = right[rowIndex] ?? [];
+    if (leftRow.length !== rightRow.length) return false;
+    for (let colIndex = 0; colIndex < leftRow.length; colIndex += 1) {
+      if (Boolean(leftRow[colIndex]) !== Boolean(rightRow[colIndex])) return false;
+    }
+  }
+  return true;
+};
+
+type Args = {
+  data: Partial<ShapeEntity>;
+  onChange: (patch: Partial<ShapeEntity>) => void;
+};
+
+export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
+  const { enqueueSnackbar } = useSnackbar();
+  const dataSourceKey = normalizeDataSourceName(data.dataSourceName) ?? 'gadm';
+  const iso = useIsoCountries();
+  const { metadata: countries, loading, error } = useCountryMetadata({ dataSource: dataSourceKey });
+
+  const dataSourceConfig = DATA_SOURCE_CONFIGS[dataSourceKey];
+  const maxAdminLevel = dataSourceConfig?.maxAdminLevel ?? 0;
+
+  const isoContinentByCode = useMemo(() => {
+    if (iso.status !== 'ready') return new Map<string, ContinentCode>();
+    return new Map(iso.countries.map((country) => [country.code, country.continent]));
+  }, [iso]);
+
+  const baseCountries = useMemo(() => {
+    return countries.map((country, countryIndex) => {
+      const normalizedCode = normalizeCountryCodeFromMetadata(country, countryIndex);
+      const isoContinent = isoContinentByCode.get(normalizedCode);
+      const normalizedContinent = normalizeContinentCode(country.continent) ?? isoContinent ?? 'NA';
+      return {
+        country: {
+          code: normalizedCode,
+          name: country.countryName || normalizedCode || `#${countryIndex}`,
+          nativeName: country.countryName,
+          continent: normalizedContinent,
+        },
+        availableAdminLevels: country.availableAdminLevels ?? [],
+      };
+    });
+  }, [countries, isoContinentByCode]);
+
+  const checkboxMatrix = useMemo<boolean[][]>(() => {
+    if (Array.isArray(data.checkboxState)) {
+      return (data.checkboxState as unknown[]).map((row: unknown): boolean[] => {
+        if (!Array.isArray(row)) {
+          return Array.from({ length: maxAdminLevel + 1 }, () => false);
+        }
+        return Array.from({ length: maxAdminLevel + 1 }, (_, idx) => Boolean((row as unknown[])[idx]));
+      });
+    }
+    return baseCountries.map(() => Array.from({ length: maxAdminLevel + 1 }, () => false));
+  }, [data.checkboxState, baseCountries, maxAdminLevel]);
+
+  const columns: MatrixConfig['columns'] = useMemo(
+    () =>
+      Array.from({ length: maxAdminLevel + 1 }, (_, levelIndex) => ({
+        id: `level-${levelIndex}`,
+        label: `Level ${levelIndex}`,
+        description: `Admin level ${levelIndex}`,
+        type: 'custom',
+      })),
+    [maxAdminLevel],
+  );
+
+  const matrixConfig: MatrixConfig = useMemo(() => ({
+    columns,
+    virtualization: { rowHeight: 40, overscan: 8 },
+  }), [columns]);
+
+  const currentSelections: MatrixSelection[] = useMemo(() => {
+    return baseCountries.map((entry, countryIndex) => {
+      const row = checkboxMatrix[countryIndex] ?? [];
+      const selections: Record<string, boolean> = {};
+      columns.forEach((col, levelIndex) => {
+        selections[col.id] = Boolean(row[levelIndex]);
+      });
+      return {
+        countryCode: entry.country.code,
+        selections,
+      };
+    });
+  }, [baseCountries, checkboxMatrix, columns]);
+
+  const applySelections = useCallback(
+    (nextSelections: MatrixSelection[]) => {
+      const nextMatrix = baseCountries.map((entry) => {
+        const found = nextSelections.find((sel) => sel.countryCode === entry.country.code);
+        const row = columns.map((col, idx) => {
+          const enabled = entry.availableAdminLevels.includes(idx);
+          return enabled ? Boolean(found?.selections?.[col.id]) : false;
+        });
+        return row;
+      });
+      const previousMatrix = Array.isArray(data.checkboxState)
+        ? (data.checkboxState as boolean[][])
+        : undefined;
+      if (!isMatrixEqual(previousMatrix, nextMatrix)) {
+        const sessionId = resolveShapeSessionId(data);
+        if (sessionId) {
+          void clearStagesIfPresent(sessionId, FULL_INVALIDATION_STAGES);
+        }
+      }
+      onChange({ checkboxState: nextMatrix });
+
+      const totalSelected = nextMatrix.flat().filter(Boolean).length;
+      const countriesWithSelection = nextMatrix.filter((row) => row.some(Boolean)).length;
+      enqueueSnackbar(
+        `${countriesWithSelection} countries / ${totalSelected} selections — Est. Size: ${formatBytes(
+          calculateEstimatedSize(totalSelected),
+        )}, Est. Features: ${formatNumber(calculateEstimatedFeatures(totalSelected, countries))}`,
+        { variant: 'info' },
+      );
+    },
+    [baseCountries, columns, countries, data, enqueueSnackbar, onChange],
+  );
+
+  const isCellEnabled = useCallback(
+    (countryCode: string, columnId: string) => {
+      const entry = baseCountries.find((country) => country.country.code === countryCode);
+      if (!entry) return false;
+      const colIndex = columns.findIndex((col) => col.id === columnId);
+      if (colIndex < 0) return false;
+      return entry.availableAdminLevels.includes(colIndex);
+    },
+    [baseCountries, columns],
+  );
+
+  return {
+    loading,
+    error,
+    matrixConfig,
+    countries: baseCountries.map((entry) => entry.country),
+    selections: currentSelections,
+    applySelections,
+    isCellEnabled,
+  };
+};

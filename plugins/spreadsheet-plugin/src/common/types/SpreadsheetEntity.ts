@@ -1,5 +1,5 @@
 import type { Timestamp } from '@hierarchidb/common-types';
-import type { TabularFilterRule, TabularDataResult, TabularProcessingConfig } from '@hierarchidb/ui-tabular-extract';
+import type { TabularFilterRule, TabularDataResult, TabularProcessingConfig } from '@hierarchidb/ui-tabular';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import type { DATA_SOURCE_TYPES } from '../constants.js';
 

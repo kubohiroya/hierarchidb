@@ -38,7 +38,7 @@ import { useTranslation } from '../i18n/index.js';
 import { RouteBatchLaunchForm } from '../../ui/components/RouteBatchLaunchForm.js';
 import { RouteBatchSummary } from '../../ui/components/RouteBatchSummary.js';
 import { RouteBatchLiveProgress } from '../../ui/components/RouteBatchLiveProgress.js';
-import { TabularPreview } from '@hierarchidb/ui-data-grid';
+import { DataGridPreview } from '@hierarchidb/ui-grid';
 import { createRouteBatchManager } from '../../services/createRouteBatchManager.js';
 import { isFlagEnabled } from '../../services/config/flags.js';
 
@@ -371,7 +371,7 @@ function RouteTablePreview({ sessionId }: { sessionId: string }) {
   }, [sessionId]);
   return (
     <div style={{ minHeight: 360 }}>
-      <TabularPreview pluginId="route" tableId={tableId || undefined} />
+      <DataGridPreview pluginId="route" tableId={tableId || undefined} />
     </div>
   );
 }

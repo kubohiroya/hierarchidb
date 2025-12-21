@@ -137,7 +137,7 @@ export class StylerCSVProcessor {
 ```typescript
 // src/services/StylerDataService.ts
 // 修正前
-import { CSVProcessor } from '@hierarchidb/ui-tabular-extract';
+import { CSVProcessor } from '@hierarchidb/ui-tabular';
 
 // 修正後
 import { StylerCSVProcessor } from './StylerCSVProcessor';

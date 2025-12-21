@@ -118,7 +118,7 @@ This document summarizes the successful implementation of the `ui-csv-extract` p
 ### Basic Usage
 
 ```typescript
-import { CSVProvider, CSVFileUploadStep } from '@hierarchidb/ui-tabular-extract';
+import { CSVProvider, CSVFileUploadStep } from '@hierarchidb/ui-tabular';
 import { StylerCSVApiDriver } from '@hierarchidb/plugin-styler-plugin';
 
 const MyComponent = () => {

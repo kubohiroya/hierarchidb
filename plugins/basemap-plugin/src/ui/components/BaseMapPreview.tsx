@@ -5,7 +5,7 @@
  */
 
 // CrossViewSnackbar pulls tabular-store (node:module) into the browser bundle; omit to keep client-safe
-// import { CrossViewSnackbar } from '@hierarchidb/ui-data-grid';
+// import { CrossViewSnackbar } from '@hierarchidb/ui-grid';
 import { loadMapLibreMap, type MapViewState } from '@hierarchidb/ui-map';
 import { DarkMode, LightMode, Map as MapIcon, Satellite, Terrain, Tune } from '@mui/icons-material';
 import { Box, Chip, Paper, Stack, Typography } from '@mui/material';

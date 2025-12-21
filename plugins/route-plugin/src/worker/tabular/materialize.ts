@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { TabularDataResult } from '@hierarchidb/ui-tabular-extract';
+import type { TabularDataResult } from '@hierarchidb/ui-tabular';
 import { RouteDatabase } from '../../services/database/RouteDatabase.js';
 import type { RouteEntity } from '../../common/entities/RouteEntity.js';
 import type { ProgressReporter } from '@hierarchidb/plugin-service-api';

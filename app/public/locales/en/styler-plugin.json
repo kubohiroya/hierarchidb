@@ -2,6 +2,7 @@
   "styleSettings": {
     "title": "Style Mapping",
     "description": "Select the style type, data source column, and target property before configuring algorithms.",
+    "processing": "Processing tabular data...",
     "accordion": {
       "styleType": "Style Type",
       "targetProperty": "Target Property",
@@ -61,6 +62,9 @@
     "styleSettings": "Style Mapping",
     "styleAlgorithm": "Style Algorithm",
     "preview": "Preview"
+  },
+  "filtering": {
+    "processing": "Processing tabular data..."
   },
   "styleAlgorithm": {
     "title": "Style Mapping Configuration",
@@ -139,6 +143,7 @@
   },
   "stylePreview": {
     "title": "Preview with Style Mapping",
+    "processing": "Preparing preview data...",
     "required": {
     "title": "Configuration Required",
     "body": "Please complete style configuration before viewing the preview.",

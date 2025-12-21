@@ -6,7 +6,7 @@ import type {
   TabularTableListResult,
   PaginationOptions,
   TabularDataApi,
-} from '@hierarchidb/ui-tabular-extract';
+} from '@hierarchidb/ui-tabular';
 import {
   getRowStoreDB,
   type SimpleTableMetadataManager,

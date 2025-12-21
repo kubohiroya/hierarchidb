@@ -15,7 +15,7 @@ export type SectionVisibilityMode = 'visible' | 'hidden' | 'auto';
  * Props exposed to step components. The consumer-defined component receives
  * the slice of form data, helper callbacks, and contextual metadata.
  */
-export interface StepComponentProps<TData> {
+export interface PluginStepProps<TData> {
   stepIndex: number;
   stepId: string;
   label: string;
@@ -27,7 +27,7 @@ export interface StepComponentProps<TData> {
 export interface StepComponentDescriptor<TData> {
   id: string;
   label: string;
-  component: ComponentType<StepComponentProps<TData>>;
+  component: ComponentType<PluginStepProps<TData>>;
   metadata?: Record<string, unknown>;
 }
 

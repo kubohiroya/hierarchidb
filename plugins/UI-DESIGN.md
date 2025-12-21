@@ -17,7 +17,7 @@
   - 起動: `RouteBatchLaunchForm`（起動時に `lastJobId` をセット）。
   - 進捗: `ui/components/RouteBatchLiveProgress.tsx`（フェーズ＋%の軽量バー）。
   - 概要: `ui/components/RouteBatchSummary.tsx`（Completed/Total と結果件数、%バー）。
-  - テーブル: `TabularPreview`（sessionId から tableId 取得、進捗パネル下に配置）。
+  - テーブル: `DataGridPreview`（sessionId から tableId 取得、進捗パネル下に配置）。
 - 構成/表示内容
   - Progress: %バー＋フェーズ（`useRouteBatchProgress` の snapshot）。
   - Summary: 完了数/総数、結果件数。
@@ -29,7 +29,7 @@
 ### 現状分析と最小復旧プラン（Route）
 - 現状
   - ダイアログは 3 ステップ構成で保存までの UI は実装済み。
-  - バッチはパネル内で起動・進捗表示（LiveProgress/Summary/TabularPreview）。
+  - バッチはパネル内で起動・進捗表示（LiveProgress/Summary/DataGridPreview）。
   - `RouteBatchManager` に pause/resume API（Dexie の `routeCursors` フラグ）あり。
 - モック/未配線
   - LiveProgress は Emitter/Store 経由の簡易スナップショットのみ。個別タスクの一覧/操作は未提供。
@@ -346,7 +346,7 @@
     - 下段: アクティブタスク一覧（進行度バー、速度、ETA、状態 Chip）。
   - ログタブ: レベル（info/warning/error）別の時系列ログ。
   - マッププレビュー: プレースホルダ（将来実装）。
-  - データテーブル: `TabularPreview`（pluginId=location, tableId 解決）。
+  - データテーブル: `DataGridPreview`（pluginId=location, tableId 解決）。
 - 配置ボタン
   - DialogActions: `閉じる`。
   - 右下 SpeedDial: `一時停止/再開`, `キャンセル`, `ログエクスポート`。

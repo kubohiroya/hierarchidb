@@ -970,7 +970,7 @@ total occurrences: 175
 total occurrences: 160
 
 追加メモ:
-  - ui/core の MemoryUsageChart / env util / TabularPreview / BatchProgress などを型補強し、ui/core の `as any` は 11 件へ減少。
+  - ui/core の MemoryUsageChart / env util / DataGridPreview / BatchProgress などを型補強し、ui/core の `as any` は 11 件へ減少。
   - 初めて workspace が 160 件台まで到達（styler-plugin 他が次のボトルネック）。
 ```
 
@@ -1001,7 +1001,7 @@ total occurrences: 130
 
 追加メモ:
   - ui/i18n 実装から `as any` を撤廃し、ローカライズ基盤を型安全化。
-  - ワークスペースは 130 件まで減少（主な残件: runtime-worker / ui-data-grid / basemap）。
+  - ワークスペースは 130 件まで減少（主な残件: runtime-worker / ui-grid / basemap）。
 ```
 
 ### 2025-09-20 16:25 再集計（`pnpm as-any:report`）

@@ -1,4 +1,4 @@
-import type { TabularDataApi } from '@hierarchidb/ui-tabular-extract';
+import type { TabularDataApi } from '@hierarchidb/ui-tabular';
 import { SpreadsheetTabularApiDriver } from './SpreadsheetTabularApiDriver.js';
 import { SPREADSHEET_PLUGIN_ID } from '../common/constants.js';
 

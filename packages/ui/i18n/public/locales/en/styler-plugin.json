@@ -2,6 +2,7 @@
   "styleSettings": {
     "title": "Style Mapping",
     "description": "Map the source columns to the styles",
+    "processing": "Processing tabular data...",
     "source": {
       "label": "Key/Value Column Pair"
     },
@@ -43,6 +44,12 @@
     "styleSettings": "Style Mapping",
     "styleAlgorithm": "Style Algorithm",
     "preview": "Preview"
+  },
+  "filtering": {
+    "processing": "Processing tabular data..."
+  },
+  "stylePreview": {
+    "processing": "Preparing preview data..."
   },
   "step5": {
     "title": "Style Algorithm",

@@ -5,7 +5,7 @@ import {
   type TabularDataFilterProps,
   type TabularDataResult,
   type TabularFilterRule,
-} from '@hierarchidb/ui-tabular-extract';
+} from '@hierarchidb/ui-tabular';
 import type { SpreadsheetEntity } from '../../common/types/SpreadsheetEntity.js';
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import type { TabularColumnInfo, TabularColumnType, TabularTableMetadata } from '@hierarchidb/tabular-store';

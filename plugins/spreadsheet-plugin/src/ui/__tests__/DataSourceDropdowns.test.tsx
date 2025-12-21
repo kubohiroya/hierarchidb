@@ -7,7 +7,7 @@ import {
   TabularFileImportStep,
   TabularProvider,
   type TabularDataApi,
-} from '@hierarchidb/ui-tabular-extract';
+} from '@hierarchidb/ui-tabular';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 
 const baseMetadata: TabularTableMetadata = {

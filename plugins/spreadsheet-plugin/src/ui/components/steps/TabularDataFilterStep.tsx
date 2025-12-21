@@ -6,7 +6,7 @@ import {
   type TabularDataFilterProps,
   type TabularDataResult,
   type TabularFilterRule,
-} from '@hierarchidb/ui-tabular-extract';
+} from '@hierarchidb/ui-tabular';
 import type { SpreadsheetEntity } from '../../../common/types/SpreadsheetEntity.js';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { useTabularDataFilter } from '../../hooks/useTabularDataFilter.js';

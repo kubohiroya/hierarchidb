@@ -54,7 +54,7 @@
     "@hierarchidb/ui-modal-select": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/ui-worker-provider": "workspace:*",
-    "@hierarchidb/ui-data-grid": "workspace:*"
+    "@hierarchidb/ui-grid": "workspace:*"
   },
   "peerDependencies": {
     "@mui/icons-material": "^7.3.6",
@@ -68,7 +68,7 @@
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/folder-plugin": "workspace:*",
-    "@hierarchidb/ui-tabular-extract": "workspace:*",
+    "@hierarchidb/ui-tabular": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/spreadsheet-plugin": "workspace:*",
@@ -78,7 +78,7 @@
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/ui-worker-provider": "workspace:*",
-    "@hierarchidb/ui-data-grid": "workspace:*",
+    "@hierarchidb/ui-grid": "workspace:*",
     "jotai": "^2.11.2"
   },
   "devDependencies": {
@@ -96,7 +96,7 @@
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/folder-plugin": "workspace:*",
-    "@hierarchidb/ui-tabular-extract": "workspace:*",
+    "@hierarchidb/ui-tabular": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/spreadsheet-plugin": "workspace:*",

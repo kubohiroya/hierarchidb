@@ -1,5 +1,6 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material';
 import type { BatchSession } from '../../common/types/index.js';
+import { useBatchRecoveryDialog } from '../hooks/useBatchRecoveryDialog.js';
 
 export interface BatchRecoveryDialogProps {
   open: boolean;
@@ -18,12 +19,13 @@ export function BatchRecoveryDialog({
   onClose,
   loading = false,
 }: BatchRecoveryDialogProps): JSX.Element | null {
+  const { shouldRender } = useBatchRecoveryDialog({ open, sessions, loading });
   void sessions;
   void onResume;
   void onDiscard;
   void loading;
 
-  if (!open) return null;
+  if (!shouldRender) return null;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>

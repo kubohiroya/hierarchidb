@@ -61,7 +61,7 @@
     "dexie": "^4.2.0",
     "searoute-js": "^0.1.0",
     "@hierarchidb/plugin-base": "workspace:*",
-    "@hierarchidb/ui-tabular-extract": "workspace:*"
+    "@hierarchidb/ui-tabular": "workspace:*"
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
@@ -76,7 +76,7 @@
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
-    "@hierarchidb/ui-data-grid": "workspace:*",
+    "@hierarchidb/ui-grid": "workspace:*",
     "@hierarchidb/components": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
@@ -87,7 +87,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "@hierarchidb/plugin-base": "workspace:*",
-    "@hierarchidb/ui-tabular-extract": "workspace:*"
+    "@hierarchidb/ui-tabular": "workspace:*"
   },
   "devDependencies": {
     "@hierarchidb/auth-recovery": "workspace:*",
@@ -100,7 +100,7 @@
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
-    "@hierarchidb/ui-data-grid": "workspace:*",
+    "@hierarchidb/ui-grid": "workspace:*",
     "@hierarchidb/components": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
@@ -115,7 +115,7 @@
     "react-dom": "^18.2.0",
     "typescript": "workspace:^5.9.3",
     "@hierarchidb/plugin-base": "workspace:*",
-    "@hierarchidb/ui-tabular-extract": "workspace:*"
+    "@hierarchidb/ui-tabular": "workspace:*"
   },
   "hierarchidb": {
     "plugin": {

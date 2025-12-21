@@ -1,8 +1,15 @@
-import type { FeatureFilterMethod } from '../../../common/types/processing.js';
-import type { HybridFilterConfig } from '../../../common/types/BatchConfig.js';
-import { DEFAULT_PROCESSING_CONFIG } from '../../../common/types/constants.js';
 import * as turf from '@turf/turf';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
+
+export type FeatureFilterMethod = 'bbox_only' | 'polygon_only' | 'hybrid';
+
+export type HybridFilterConfig = {
+  quickRejectThreshold?: number;
+  regularShapeMinRatio?: number;
+  regularShapeMaxRatio?: number;
+  simpleShapeVertexThreshold?: number;
+  elongatedShapeCorrectionFactor?: number;
+};
 
 export interface FeatureFilterSettings {
   minArea: number;
@@ -11,7 +18,13 @@ export interface FeatureFilterSettings {
   hybridFilterConfig?: HybridFilterConfig;
 }
 
-const defaultHybridConfig = DEFAULT_PROCESSING_CONFIG.simplificationConfig?.hybridFilterConfig;
+const DEFAULT_HYBRID_CONFIG: Required<HybridFilterConfig> = {
+  quickRejectThreshold: 0.1,
+  regularShapeMinRatio: 0.5,
+  regularShapeMaxRatio: 2.0,
+  simpleShapeVertexThreshold: 50,
+  elongatedShapeCorrectionFactor: 0.8,
+};
 
 const countVertices = (geometry: Geometry | null | undefined): number => {
   if (!geometry) return 0;
@@ -30,7 +43,7 @@ const countVertices = (geometry: Geometry | null | undefined): number => {
         0,
       );
     case 'GeometryCollection':
-      return geometry.geometries.reduce((sum, g) => sum + countVertices(g), 0);
+      return geometry.geometries.reduce((sum, geom) => sum + countVertices(geom), 0);
     default:
       return 0;
   }
@@ -58,7 +71,7 @@ const passesAreaThreshold = (geometry: Geometry, settings: FeatureFilterSettings
 
   const method = settings.featureFilterMethod ?? 'hybrid';
   const minVertexCount = settings.minVertexCountForAreaFilter ?? 0;
-  const hybridConfig = settings.hybridFilterConfig ?? defaultHybridConfig;
+  const hybridConfig = { ...DEFAULT_HYBRID_CONFIG, ...(settings.hybridFilterConfig ?? {}) };
 
   if (method === 'bbox_only') {
     return computeBboxAreaSqKm(geometry) >= threshold;
@@ -69,7 +82,7 @@ const passesAreaThreshold = (geometry: Geometry, settings: FeatureFilterSettings
   }
 
   const bboxArea = computeBboxAreaSqKm(geometry);
-  if (hybridConfig?.quickRejectThreshold && bboxArea < threshold * hybridConfig.quickRejectThreshold) {
+  if (hybridConfig.quickRejectThreshold && bboxArea < threshold * hybridConfig.quickRejectThreshold) {
     return false;
   }
 
@@ -77,10 +90,10 @@ const passesAreaThreshold = (geometry: Geometry, settings: FeatureFilterSettings
   const polygonArea = computePolygonAreaSqKm(geometry);
   const aspectRatio = computeAspectRatio(geometry);
   const ratio = bboxArea > 0 ? polygonArea / bboxArea : 0;
-  const correction = hybridConfig?.elongatedShapeCorrectionFactor ?? 1;
-  const regularMinRatio = hybridConfig?.regularShapeMinRatio ?? 0.5;
-  const regularMaxRatio = hybridConfig?.regularShapeMaxRatio ?? 2.0;
-  const simpleVertexThreshold = hybridConfig?.simpleShapeVertexThreshold ?? 50;
+  const correction = hybridConfig.elongatedShapeCorrectionFactor ?? 1;
+  const regularMinRatio = hybridConfig.regularShapeMinRatio ?? 0.5;
+  const regularMaxRatio = hybridConfig.regularShapeMaxRatio ?? 2.0;
+  const simpleVertexThreshold = hybridConfig.simpleShapeVertexThreshold ?? 50;
 
   if (minVertexCount > 0 && vertexCount < minVertexCount) {
     return bboxArea >= threshold;

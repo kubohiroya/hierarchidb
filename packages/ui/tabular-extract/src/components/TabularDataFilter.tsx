@@ -21,7 +21,7 @@ import type { TabularDataResult, TabularFilterRule, TabularFilterOperator } from
 import type { FilterOperatorOption } from './TabularDataFilterRulesTable.js';
 import { TabularDataFilterRulesVirtual } from './TabularDataFilterRulesVirtual.js';
 import { LinearProgress } from '@mui/material';
-import { TabularPreviewLite } from './TabularPreviewLite.js';
+import { TabularPreviewGrid } from './TabularPreviewGrid.js';
 
 export interface TabularDataFilterProps {
   tableMetadata: TabularTableMetadata;
@@ -86,12 +86,14 @@ export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
     error,
     getFilteredPreview,
     validateFilters,
+    isLoading,
   } = useTabularFilter({
     tableId: tableMetadata.id,
     pluginId,
     maxPreviewRows: Number.MAX_SAFE_INTEGER,
     initialRules: initialFilters,
   });
+  const previewBusy = previewDirty || isLoading;
 
   const hasMetadataColumns = Boolean(tableMetadata.columns && tableMetadata.columns.length > 0);
   const hasPreviewColumns = Boolean(previewData?.columns && previewData.columns.length > 0);
@@ -326,7 +328,7 @@ export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
 
   const previewNode = previewData ? (
     <Paper variant="outlined" sx={{ height: previewHeight, overflowY: 'auto' }}>
-      <TabularPreviewLite
+      <TabularPreviewGrid
         rows={previewData?.rows ?? []}
         columns={previewColumns.map((c) => c.name ?? '').filter(Boolean)}
         height={previewHeight}
@@ -354,7 +356,7 @@ export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
           filterRules: filterRulesNode,
           preview: previewNode,
           error: errorNode,
-          previewDirty,
+          previewDirty: previewBusy,
         })}
       </Box>
     );
@@ -383,7 +385,7 @@ export const TabularDataFilter: React.FC<TabularDataFilterProps> = ({
                 <PreviewIcon fontSize="small" />
                 Preview Tabular
               </Typography>
-              {previewDirty && <LinearProgress variant="indeterminate" sx={{ mt: 0.5 }} />}
+              {previewBusy && <LinearProgress variant="indeterminate" sx={{ mt: 0.5 }} />}
             </Box>
           </AccordionSummary>
           <AccordionDetails sx={{ pb: 4, mb: 4 }}>

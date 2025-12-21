@@ -1,4 +1,4 @@
-import { PluginStepRegistry, type StepComponentProps, type PluginStepConfig, type StepData } from '@hierarchidb/plugin-base';
+import { PluginStepRegistry, type PluginStepProps, type PluginStepConfig, type StepData } from '@hierarchidb/plugin-base';
 import { SchemaSelectionStep } from './steps/SchemaSelectionStep.js';
 import { PropertyMappingStep } from './steps/PropertyMappingStep.js';
 import { ValidationConfigStep } from './steps/ValidationConfigStep.js';
@@ -14,7 +14,7 @@ type ResolverData = StepData & ResolverUpdaterPayload & {
   lastValidation?: MappingValidationResult | null;
 };
 
-type ResolverStepProps = StepComponentProps<ResolverUpdaterPayload>;
+type ResolverStepProps = PluginStepProps<ResolverUpdaterPayload>;
 
 const ensureDraft = (data?: ResolverData): ResolverData => {
   const draft = data ?? ({} as ResolverData);

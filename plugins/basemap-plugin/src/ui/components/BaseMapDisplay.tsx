@@ -6,7 +6,7 @@
 
 import type { NodeId } from '@hierarchidb/common-types';
 // CrossViewSnackbar/useCrossHighlightSync pull tabular-store (node:module) into client bundle; disable for browser safety
-// import { CrossViewSnackbar, useCrossHighlightSync } from '@hierarchidb/ui-data-grid';
+// import { CrossViewSnackbar, useCrossHighlightSync } from '@hierarchidb/ui-grid';
 import {
   loadMapLibreMap,
   type MapLibreMapInstance,

@@ -1,9 +1,9 @@
 import { Accordion, AccordionDetails, AccordionSummary, Box, Grid, Stack, Typography, Slider } from '@mui/material';
 import { Layers as LayersIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
-import type { ProcessingConfig, TileProcessingConfig } from '../../../common/types/index.js';
-import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../common/types/index.js';
+import type { ProcessingConfig } from '../../../common/types/index.js';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { useTranslation } from '../../i18n.js';
+import { useTileConfigSection } from '../../hooks/useTileConfigSection.js';
 
 type Props = {
   config: ProcessingConfig;
@@ -13,19 +13,7 @@ type Props = {
 
 export const TileConfigSection: React.FC<Props> = ({ config, disabled, onChange }) => {
   const { t } = useTranslation();
-  const baseTileConfig: TileProcessingConfig|undefined = config.tileConfig ?? DEFAULT_PROCESSING_CONFIG.tileConfig;
-
-  const update = (partial: Partial<ProcessingConfig>) => {
-    onChange(mergeProcessingConfig({ ...config, ...partial }));
-  };
-
-  if(!baseTileConfig){
-    throw new Error("TileConfigSection: baseTileConfig is not defined");
-  }
-
-  const minZoom = baseTileConfig.minZoom ?? 0;
-  const maxZoom = baseTileConfig.maxZoom ?? 12;
-  const zoomRange: [number, number] = minZoom <= maxZoom ? [minZoom, maxZoom] : [maxZoom, minZoom];
+  const { baseTileConfig, zoomRange, update } = useTileConfigSection({ config, disabled, onChange });
 
   return (
     <Accordion defaultExpanded>

@@ -10,7 +10,7 @@ import { getEphemeralShapeDB, closeEphemeralShapeDB } from '../services/database
 import { shapeDB } from '../services/database/ShapeDB.js';
 import { registerShapeRuntimeWorkerClient } from '../services/batch/adapters/RuntimeWorkerClient.js';
 import { GeoBoundariesStrategy } from '../services/datasources/GeoBoundariesStrategy.js';
-import { deserialize } from 'flatgeobuf/lib/mjs/geojson';
+import { geojson } from 'flatgeobuf';
 
 const fetchedUrls: string[] = [];
 let originalFetch: typeof fetch | undefined;
@@ -46,7 +46,7 @@ const createProcessingConfig = (
 });
 
 const decodeFeatureCollection = async (buffer: ArrayBuffer): Promise<{ features?: unknown[] } | null> => {
-  const decoded = deserialize(new Uint8Array(buffer));
+  const decoded = geojson.deserialize(new Uint8Array(buffer));
   if (decoded && typeof (decoded as AsyncIterable<unknown>)[Symbol.asyncIterator] === 'function') {
     const features: unknown[] = [];
     for await (const feature of decoded as AsyncIterable<unknown>) {

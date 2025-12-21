@@ -61,10 +61,6 @@ export default defineConfig({
         __dirname,
         '../../plugins/location-plugin/src/database/index.ts',
       ),
-      'flatgeobuf/lib/mjs/geojson': path.resolve(
-        __dirname,
-        'node_modules/flatgeobuf/lib/mjs/geojson.js',
-      ),
       '@hierarchidb/download': path.resolve(
         __dirname,
         '../../packages/features/download/src/index.ts',

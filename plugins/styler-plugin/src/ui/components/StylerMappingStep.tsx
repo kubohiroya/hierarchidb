@@ -1,7 +1,7 @@
 import type React from 'react';
 import { useCallback } from 'react';
-import { useEffect, useMemo, useState } from 'react';
-import type { StepComponentProps } from '@hierarchidb/plugin-base';
+import { useDeferredValue, useEffect, useMemo, useState } from 'react';
+import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import {
   STYLE_TYPE_OPTIONS,
   type StylerStepData,
@@ -20,6 +20,7 @@ import {
   FormControl,
   FormControlLabel,
   InputLabel,
+  LinearProgress,
   Radio,
   RadioGroup,
   Slider,
@@ -44,7 +45,7 @@ import { GradientSwatch } from './GradientSwatch.tsx';
 import { Gradient as GradientIcon, Insights as InsightsIcon, ShowChart as ShowChartIcon } from '@mui/icons-material';
 
 export const StylerMappingStep: React.FC<
-  StepComponentProps<StylerStepData>
+  PluginStepProps<StylerStepData>
 > = ({
   data,
   onChange,
@@ -102,14 +103,16 @@ export const StylerMappingStep: React.FC<
     () => (Array.isArray(pluginData.previewRows) ? pluginData.previewRows : []),
     [pluginData.previewRows]
   );
+  const deferredPreviewRows = useDeferredValue(previewRows);
+  const isPreviewDeferred = deferredPreviewRows !== previewRows;
 
   const numericValues = useMemo(() => {
     if (!valueColumn) return [] as number[];
-    return previewRows
+    return deferredPreviewRows
       .map((row) => (row as Record<string, unknown>)[valueColumn])
       .map((val) => (typeof val === 'number' ? val : typeof val === 'string' ? Number(val) : NaN))
       .filter((v: number) => Number.isFinite(v));
-  }, [previewRows, valueColumn]);
+  }, [deferredPreviewRows, valueColumn]);
 
   const histogramStats = useMemo(
     () => (numericValues.length ? calculateStatistics(numericValues) : null),
@@ -254,6 +257,14 @@ export const StylerMappingStep: React.FC<
 
   return (
     <Stack spacing={2}>
+      {isPreviewDeferred && (
+        <Stack spacing={0.5}>
+          <Typography variant="caption" color="text.secondary">
+            {t('styleSettings.processing', 'Processing tabular data...')}
+          </Typography>
+          <LinearProgress />
+        </Stack>
+      )}
       <Accordion defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Stack direction="row" spacing={1} alignItems="center">

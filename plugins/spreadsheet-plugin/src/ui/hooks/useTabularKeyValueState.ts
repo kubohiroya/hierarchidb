@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
-import type { TabularDataResult, TabularFilterRule } from '@hierarchidb/ui-tabular-extract';
+import type { TabularDataResult, TabularFilterRule } from '@hierarchidb/ui-tabular';
 import type { SpreadsheetEntity } from '../../common/types/SpreadsheetEntity.js';
 import {
   binCountAtom,
@@ -11,6 +11,7 @@ import {
   rulesEqual,
   keyColumnAtom,
   numericValuesAtom,
+  tabularProcessingAtom,
   tabularRowsAtom,
   valueColumnAtom,
 } from '../state/tabularKeyValueAtoms.js';
@@ -57,6 +58,7 @@ export const useTabularKeyValueState = <T extends SpreadsheetEntity>({
   const [filterReady, setFilterReady] = useState<boolean>(false);
   const previewRowsCacheRef = useRef<Record<string, unknown>[]>([]);
   const setTabularRows = useSetAtom(tabularRowsAtom);
+  const setTabularProcessing = useSetAtom(tabularProcessingAtom);
   const setFilterRules = useSetAtom(filterRulesAtom);
   const setKeyColumnAtom = useSetAtom(keyColumnAtom);
   const setValueColumnAtom = useSetAtom(valueColumnAtom);
@@ -163,6 +165,14 @@ export const useTabularKeyValueState = <T extends SpreadsheetEntity>({
     return () => window.clearTimeout(timer);
   }, [filterReady, selectedKeyColumn, selectedValueColumn, onSetFilterValid, setError]);
 
+  const deferProcessingUpdate = useCallback((fn: () => void) => {
+    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(() => fn());
+      return;
+    }
+    setTimeout(fn, 0);
+  }, []);
+
   return {
     dialogData,
     columns,
@@ -178,21 +188,25 @@ export const useTabularKeyValueState = <T extends SpreadsheetEntity>({
       setFilterRules((prev: TabularFilterRule[]) => (rulesEqual(prev, rules) ? prev : rules)),
     handlePreviewRows: (rows: TabularDataResult['rows']) => {
       const nextRows = Array.isArray(rows) ? (rows as Record<string, unknown>[]) : [];
-      setTabularRows(nextRows);
-      setFilterReady(true);
-      // cache lightweight preview rows into dialogData to survive step navigation
-      const limited = nextRows.slice(0, 1000);
-      const sameRef = previewRowsCacheRef.current === limited;
-      const sameLength =
-        previewRowsCacheRef.current.length === limited.length &&
-        previewRowsCacheRef.current.every((r, i) => r === limited[i]);
-      if (!sameRef && !sameLength) {
-        previewRowsCacheRef.current = limited;
-        onChange({
-          ...(dialogData as T),
-          previewRows: limited as T['previewRows'],
-        });
-      }
+      setTabularProcessing(true);
+      deferProcessingUpdate(() => {
+        setTabularRows(nextRows);
+        setFilterReady(true);
+        // cache lightweight preview rows into dialogData to survive step navigation
+        const limited = nextRows.slice(0, 1000);
+        const sameRef = previewRowsCacheRef.current === limited;
+        const sameLength =
+          previewRowsCacheRef.current.length === limited.length &&
+          previewRowsCacheRef.current.every((r, i) => r === limited[i]);
+        if (!sameRef && !sameLength) {
+          previewRowsCacheRef.current = limited;
+          onChange({
+            ...(dialogData as T),
+            previewRows: limited as T['previewRows'],
+          });
+        }
+        setTabularProcessing(false);
+      });
     },
     selectedKeyColumn,
     selectedValueColumn,

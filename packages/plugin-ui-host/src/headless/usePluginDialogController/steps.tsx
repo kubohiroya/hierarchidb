@@ -6,14 +6,14 @@ import type {
   PluginStepConfig,
   composeStepConfigs,
   StepData,
-  PluginStepProps as PluginStepComponentProps,
+  PluginStepProps as PluginPluginStepProps,
 } from '@hierarchidb/plugin-base';
 import type { NodeId, TreeNodeMetadata } from '@hierarchidb/common-types';
 import type {
   DialogStep,
   StepComponentDescriptor,
   StepValidationFn,
-  StepComponentProps as HeadlessStepComponentProps,
+  PluginStepProps as HeadlessPluginStepProps,
 } from '@hierarchidb/ui-dialog';
 import { buildStepWorkingData, mergeDialogData, toRecord, isShallowEqualStepData } from '../controller/step-guards.js';
 import type {
@@ -47,7 +47,7 @@ type StepAdapterProps = {
   updateUiState: (next: DialogUiState) => void;
   onDataChange?: (data: TreeNodeMetadata | Partial<PluginDefinedEntity>) => void;
   dialogRef?: React.RefObject<HTMLElement | null>;
-  stepProps: HeadlessStepComponentProps<Partial<PluginDefinedEntity>>;
+  stepProps: HeadlessPluginStepProps<Partial<PluginDefinedEntity>>;
   stepData: TreeNodeMetadata | Partial<PluginDefinedEntity>
 };
 
@@ -125,7 +125,7 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
         setValid: () => {},
         setError: () => {},
         dialogRef,
-      } satisfies PluginStepComponentProps<Partial<PluginDefinedEntity>, DialogUiState>)}
+      } satisfies PluginPluginStepProps<Partial<PluginDefinedEntity>, DialogUiState>)}
     </>
   );
 };
@@ -357,7 +357,7 @@ export function useDialogSteps({
   }, [normalizedConfigs]);
 
   const stepComponentRegistryRef = useRef<
-    Map<string, React.FC<HeadlessStepComponentProps<Partial<PluginDefinedEntity>>>>
+    Map<string, React.FC<HeadlessPluginStepProps<Partial<PluginDefinedEntity>>>>
   >(new Map());
 
   const getOrCreateStepComponent = useCallback(
@@ -365,7 +365,7 @@ export function useDialogSteps({
       const existing = stepComponentRegistryRef.current.get(cfgId);
       if (existing) return existing;
 
-      const Component: React.FC<HeadlessStepComponentProps<Partial<PluginDefinedEntity>>> = (stepProps) => {
+      const Component: React.FC<HeadlessPluginStepProps<Partial<PluginDefinedEntity>>> = (stepProps) => {
         const cfg = stepConfigRegistryRef.current.get(cfgId);
         if (!cfg) return null;
         const ctx = stepContextRef.current;
