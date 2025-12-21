@@ -48,11 +48,6 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft }) => {
       </Box>
 
       <BuildStepPanel
-        title={t('build.title', 'Build vector tiles')}
-        description={t(
-          'build.panelDescription',
-          'Review progress and control the build. Use the footer Build button to start when prerequisites are met.'
-        )}
         status={status}
         overallProgress={overallProgress}
         stages={STAGES}
