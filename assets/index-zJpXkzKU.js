@@ -1,1 +1,0 @@
-import{F as o}from"./Folder-B4y0eqs0.js";import"./jsx-runtime-Dp4RrBKh.js";import"./index-C1aSX2kT.js";import"../worker.js";import"../../../../packages/runtime-worker/dist/StageProcessingService.js";import"./createSvgIcon-DMGR10qF.js";const l=o;export{l as FolderPluginIcon,l as default};

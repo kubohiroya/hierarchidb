@@ -1,1 +1,0 @@
-import{j as o}from"./jsx-runtime-Dp4RrBKh.js";import{c as t}from"./createSvgIcon-DMGR10qF.js";import"./index-C1aSX2kT.js";import"../worker.js";import"../../../../packages/runtime-worker/dist/StageProcessingService.js";var r=t(o.jsx("path",{d:"M17.2 3H6.8l-5.2 9 5.2 9h10.4l5.2-9z"}));const n=r;export{n as ShapePluginIcon,n as default};

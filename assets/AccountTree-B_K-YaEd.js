@@ -1,0 +1,1 @@
+import{B as e}from"../worker.js";import{t}from"./jsx-runtime-D4Zt6A_v.js";import{t as n}from"./createSvgIcon-C_0XO6Bp.js";var r=n((0,e(t()).jsx)(`path`,{d:`M22 11V3h-7v3H9V3H2v8h7V8h2v10h4v3h7v-8h-7v3h-2V8h2v3z`}),`AccountTree`);export{r as t};

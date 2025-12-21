@@ -29,6 +29,38 @@
       "ready": "Worker の準備が整いました"
     }
   },
+  "userMenu": {
+    "loading": "認証を読み込み中...",
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "aria": {
+      "userMenu": "ユーザーメニュー"
+    },
+    "theme": {
+      "label": "テーマ",
+      "system": "システム設定",
+      "light": "ライト",
+      "dark": "ダーク"
+    },
+    "language": {
+      "label": "言語",
+      "system": "システム設定"
+    },
+    "clear": {
+      "label": "全データを削除",
+      "title": "全データを削除しますか？",
+      "description": "次のデータをすべて削除します:",
+      "items": {
+        "cache": "Cache API のデータ",
+        "indexedDb": "IndexedDB の全データ（プロジェクト・マップ・シェイプ等）",
+        "localStorage": "localStorage のデータ"
+      },
+      "warning": "この操作は元に戻せません。全ローカルデータが削除され、完了後にページを再読み込みします。",
+      "confirm": "全データを削除",
+      "cancel": "キャンセル",
+      "error": "キャッシュの削除に失敗しました。もう一度お試しください。"
+    }
+  },
   "dialogs": {
     "trash": {
       "modeMenu": {
@@ -91,6 +123,34 @@
           "discardSelf": "自身の内容を破棄",
           "keepSelf": "自身の内容を優先"
         }
+      },
+      "pluginDialog": {
+        "buttons": {
+          "save": "保存",
+          "saveDraft": "下書きを保存",
+          "next": "次へ",
+          "back": "戻る",
+          "cancel": "キャンセル",
+          "close": "閉じる",
+          "maximize": "最大化",
+          "restoreSize": "元のサイズに戻す",
+          "fullscreen": "全画面",
+          "exitFullscreen": "全画面を終了"
+        },
+        "tooltips": {
+          "saveDraftDisabled": "変更がないため保存できません",
+          "close": "ダイアログを閉じる",
+          "maximize": "最大化",
+          "restoreSize": "元のサイズに戻す",
+          "fullscreen": "全画面",
+          "exitFullscreen": "全画面を終了"
+        }
+      }
+    },
+    "pluginDialog": {
+      "titles": {
+        "create": "{{plugin}}の作成",
+        "edit": "{{plugin}}の編集"
       }
     }
   },
@@ -221,6 +281,9 @@
             "en": "英語",
             "ja": "日本語"
           }
+        },
+        "autosave": {
+          "title": "自動保存"
         }
       },
       "developerMenu": {
@@ -233,6 +296,8 @@
     },
     "contextMenu": {
       "create": "作成",
+      "createUnavailable": "作成メニューを利用できません",
+      "createTooltip": "{{label}}: {{description}}",
       "openFolder": "フォルダーを開く",
       "open": "開く",
       "edit": "編集",

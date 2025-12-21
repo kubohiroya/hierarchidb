@@ -1,1 +1,0 @@
-import{A as e}from"./index-D9-Mt2aa.js";import"./SingletonMixin-Cltqpmeh.js";async function n(){return await e.getSingleton()}function a(){}export{n as getShapeAuthHandler,a as resetShapeAuthHandler};

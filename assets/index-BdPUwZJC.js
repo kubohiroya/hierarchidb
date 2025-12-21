@@ -1,1 +1,0 @@
-import{A as t}from"./Assessment-CIw5w46r.js";import"./jsx-runtime-Dp4RrBKh.js";import"./index-C1aSX2kT.js";import"../worker.js";import"../../../../packages/runtime-worker/dist/StageProcessingService.js";import"./createSvgIcon-DMGR10qF.js";const i=t;export{i as SpreadsheetPluginIcon,i as default};

@@ -1,1 +1,0 @@
-import{R as p}from"./RouteDatabase-D2pM4KV2.js";import{D as a,g as e}from"./import-wrapper-prod-CwydaVeY.js";import"./SingletonMixin-Cltqpmeh.js";import"./vendor-react-2It2lbss.js";async function s(){await a.delete(e("route-db"))}export{p as RouteDatabase,s as clearDatabases};

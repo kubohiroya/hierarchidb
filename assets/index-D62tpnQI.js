@@ -1,1 +1,0 @@
-import{r as p}from"./registerBasemapWorkerStores-1dkZajJ8.js";import"../worker.js";import"../../../../packages/runtime-worker/dist/StageProcessingService.js";import"./plugin-manifest-yfjLoMYd.js";export{p as registerBasemapWorkerStores};

@@ -1,0 +1,1 @@
+import"./react-Cx9zExDA.js";import"./DefaultPropsProvider-Dn2vcT_0.js";import"./jsx-runtime-D4Zt6A_v.js";import{t as e}from"./Route-beb4YjFS.js";const t=e;var n=t;export{t as RoutePluginIcon,n as default};
