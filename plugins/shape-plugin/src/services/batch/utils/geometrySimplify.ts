@@ -13,23 +13,34 @@ const simplifyFeature = (feature: Feature<Geometry, GeoJsonProperties>, toleranc
   return simplified as Feature<Geometry, GeoJsonProperties>;
 };
 
-const quantizeCoordinates = (coords: unknown, quantize: number): unknown => {
+const quantizeCoordinates = <T>(coords: T, quantize: number): T => {
   if (!Array.isArray(coords)) return coords;
   if (coords.length === 0) return coords;
   if (typeof coords[0] === 'number') {
-    return (coords as number[]).map((value) => Math.round(value * quantize) / quantize);
+    return (coords as number[]).map((value) => Math.round(value * quantize) / quantize) as unknown as T;
   }
-  return coords.map((child) => quantizeCoordinates(child, quantize));
+  return (coords as unknown[]).map((child) => quantizeCoordinates(child, quantize)) as unknown as T;
+};
+
+const quantizeGeometryObject = (geometry: Geometry, quantize: number): Geometry => {
+  if (geometry.type === 'GeometryCollection') {
+    return {
+      ...geometry,
+      geometries: geometry.geometries.map((child) => quantizeGeometryObject(child, quantize)),
+    };
+  }
+  const coordinates = quantizeCoordinates(geometry.coordinates, quantize) as typeof geometry.coordinates;
+  return {
+    ...geometry,
+    coordinates,
+  } as Geometry;
 };
 
 const quantizeGeometry = (feature: Feature<Geometry, GeoJsonProperties>, quantize?: number): Feature<Geometry, GeoJsonProperties> => {
   if (!feature.geometry || !quantize || quantize <= 0) return feature;
   return {
     ...feature,
-    geometry: {
-      ...feature.geometry,
-      coordinates: quantizeCoordinates(feature.geometry.coordinates, quantize),
-    },
+    geometry: quantizeGeometryObject(feature.geometry, quantize),
   };
 };
 
@@ -43,10 +54,14 @@ export const simplifyGeoJson = (geojson: unknown, options: SimplifyOptions): unk
       ...collection,
       features: collection.features.map((feature) => {
         const needsSimplify = Number.isFinite(options.tolerance) && options.tolerance > 0;
-        const simplified = needsSimplify
-          ? simplifyFeature(feature as Feature<Geometry>, options.tolerance)
-          : (feature as Feature<Geometry>);
-        return quantizeGeometry(simplified, options.quantize);
+        try {
+          const simplified = needsSimplify
+            ? simplifyFeature(feature as Feature<Geometry>, options.tolerance)
+            : (feature as Feature<Geometry>);
+          return quantizeGeometry(simplified, options.quantize);
+        } catch {
+          return feature as Feature<Geometry>;
+        }
       }),
     } satisfies FeatureCollection;
   }

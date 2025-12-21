@@ -49,12 +49,12 @@ type PreviewStepConfig = {
 };
 
 const PREVIEW_STEP_CONFIG: Record<string, PreviewStepConfig> = {
-  basemap: { stepId: 'viewport', stepIndex: 2 },
-  location: { stepId: 'map-preview', stepIndex: 5 },
-  linker: { stepId: 'preview', stepIndex: 2 },
-  resolver: { stepId: 'preview', stepIndex: 4 },
-  styler: { stepId: 'preview', stepIndex: 4 },
-  timeline: { stepId: 'map', stepIndex: 1 },
+  basemap: { stepId: 'viewport', stepIndex: 3 },
+  location: { stepId: 'map-preview', stepIndex: 6 },
+  linker: { stepId: 'preview', stepIndex: 3 },
+  resolver: { stepId: 'preview', stepIndex: 5 },
+  styler: { stepId: 'preview', stepIndex: 5 },
+  timeline: { stepId: 'map', stepIndex: 2 },
 };
 
 const stepRegistry = PluginStepRegistry.getInstance();
@@ -74,7 +74,7 @@ export const resolvePreviewStepIndex = (options: {
         ? provider.getEditStepConfigs(String(options.nodeId ?? ''))
         : provider.getCreateStepConfigs();
     if (stepList && stepList.length) {
-      return Math.max(0, stepList.length - 1);
+      return Math.max(1, stepList.length);
     }
   }
   if (config?.stepIndex != null) {

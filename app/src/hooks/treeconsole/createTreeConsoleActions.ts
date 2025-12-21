@@ -9,7 +9,7 @@ import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-typ
 import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-toolbar';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import { DualKeyMap } from '@hierarchidb/util';
-import { PluginStepRegistry } from '@hierarchidb/plugin-base';
+import { composeStepConfigs } from '@hierarchidb/plugin-base';
 import { notify } from '@hierarchidb/components';
 import { preconnectPluginServices } from './preconnect.ts';
 import { buildVisibleRows } from '../../state/treeconsole.derive.js';
@@ -198,7 +198,11 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
   const openEditDialog = async (
     targetNodeId: NodeId,
     nodeHint?: HierarchicalTreeNode | TreeNode,
-    dialogOptions?: { initialStep?: number; displayMode?: 'full' | 'normal' }
+    dialogOptions?: {
+      initialStep?: number;
+      displayMode?: 'full' | 'normal';
+      action?: 'edit' | 'preview';
+    }
   ) => {
     if (!client || !pushPath || !treeId) {
       return;
@@ -241,14 +245,15 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         targetNodeId;
 
       const searchParams = new URLSearchParams();
-      if (typeof dialogOptions?.initialStep === 'number' && dialogOptions.initialStep >= 0) {
+      if (typeof dialogOptions?.initialStep === 'number' && dialogOptions.initialStep >= 1) {
         searchParams.set('step', String(dialogOptions.initialStep));
       }
       if (dialogOptions?.displayMode === 'full') {
-        searchParams.set('d_mode', 'full');
+        searchParams.set('mode', 'full');
       }
       const query = searchParams.toString();
-      const basePath = `/t/${treeId}/${parentForRoute}/${canonicalId}/${nodeType}/edit`;
+      const action = dialogOptions?.action ?? 'edit';
+      const basePath = `/t/${treeId}/${parentForRoute}/${canonicalId}/${nodeType}/${action}`;
       pushPath(query ? `${basePath}?${query}` : basePath);
     } catch (error) {
       console.error('Failed to launch edit dialog:', error);
@@ -266,16 +271,11 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
     }
 
     await loadUIPlugin(normalizedNodeType).catch(() => false);
-    const stepRegistry = PluginStepRegistry.getInstance();
-    const provider = stepRegistry.getConfigProvider(normalizedNodeType);
-    if (!provider) {
-      return { canOpen: true };
-    }
-
     let mergedData: Record<string, unknown> = {};
+    let nodeSnapshot: TreeNode | undefined;
     try {
       const updaterAPI = await client.getTreeNodeUpdaterAPI();
-      const nodeSnapshot = await updaterAPI.getTreeNode(nodeId);
+      nodeSnapshot = await updaterAPI.getTreeNode(nodeId);
       const baseData = isRecord(nodeSnapshot?.data) ? nodeSnapshot?.data : {};
       const draftData = isRecord(nodeSnapshot?.draftData) ? nodeSnapshot?.draftData : {};
       mergedData = { ...baseData, ...draftData };
@@ -283,8 +283,9 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
       console.warn('[TreeConsoleActions] failed to read draft data for preview guard', error);
     }
 
-    const configs = provider.getEditStepConfigs(String(nodeId), mergedData);
-    if (!configs || configs.length === 0) {
+    const composed = composeStepConfigs(normalizedNodeType, 'edit', mergedData);
+    const configs = composed.configs ?? [];
+    if (!configs.length) {
       return { canOpen: true };
     }
 
@@ -299,11 +300,19 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
       })
     );
 
-    const finalStepIndex = configs.length - 1;
-    const requiredBeforeFinalValid = configs
-      .slice(0, finalStepIndex)
-      .every((cfg, idx) => cfg.optional || results[idx]);
-    const finalStepValid = results[finalStepIndex] ?? true;
+    const finalConfigIndex = configs.length - 1;
+    const basicInfoValid = composed.hasHostBase
+      ? true
+      : Boolean(
+          String(nodeSnapshot?.draftMetadata?.name ?? nodeSnapshot?.metadata?.name ?? '').trim()
+        );
+    const requiredBeforeFinalValid =
+      basicInfoValid &&
+      configs
+        .slice(0, finalConfigIndex)
+        .every((cfg, idx) => cfg.optional || results[idx]);
+    const finalStepValid = results[finalConfigIndex] ?? true;
+    const finalStepIndex = composed.hasHostBase ? finalConfigIndex + 1 : finalConfigIndex + 2;
     return {
       canOpen: requiredBeforeFinalValid && finalStepValid,
       finalStepIndex,
@@ -635,11 +644,15 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
 
       if (normalizedAction === 'preview') {
         const resolvedNodeType = String(node?.nodeType ?? (node as { type?: string })?.type ?? '');
+        const normalizedNodeType = resolvedNodeType.toLowerCase();
+        if (normalizedNodeType) {
+          await loadUIPlugin(normalizedNodeType).catch(() => false);
+        }
         let previewStepIndex = resolvePreviewStepIndex({
           nodeType: resolvedNodeType,
           nodeId: targetNodeId,
         });
-        const shouldGuardPreview = PREVIEW_GUARD_NODE_TYPES.has(resolvedNodeType.toLowerCase());
+        const shouldGuardPreview = PREVIEW_GUARD_NODE_TYPES.has(normalizedNodeType);
 
         if (shouldGuardPreview) {
           const guard = await resolvePreviewGuardState(resolvedNodeType, targetNodeId);
@@ -656,6 +669,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
           initialStep: previewStepIndex ?? undefined,
           displayMode:
             shouldGuardPreview || previewStepIndex != null ? 'full' : undefined,
+          action: 'preview',
         });
         return;
       }

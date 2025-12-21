@@ -28,7 +28,7 @@ export interface PluginDialogFooterPrimaryButtonOptions {
 }
 
 export interface PluginDialogFooterProps {
-  mode: 'create' | 'edit';
+  mode: 'create' | 'edit' | 'preview';
   canCommit: boolean;
   onSaveDraft?: () => void;
   saveDraftLabel?: string;

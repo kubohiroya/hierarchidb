@@ -23,6 +23,7 @@ import type { UrlMetadata, ProgressInfo, ProcessingStage } from '../../common/ty
 import { BatchTaskStage } from '../../common/types/index.js';
 import type { DownloadTask } from '../../common/types/index.js';
 import { isShapePreviewMetadataEnabled } from '../../common/config/previewFlags.js';
+import { shapeDB } from '../database/ShapeDB.js';
 
 type WorkerPoolStatistics = Record<string, number>;
 
@@ -217,6 +218,7 @@ export class SessionController {
         validateSSL: true,
         },
     }));
+    await this.registerTasks('download', tasks);
     const res = await this.downloadAdapter.process(
       this.sessionId,
       this.nodeId,
@@ -274,6 +276,7 @@ export class SessionController {
       },
     }));
 
+    await this.registerTasks('simplify1', tasks);
     const r = await this.simplify1Adapter!.process(tasks, (p) => this.progressCallback?.(p), {
       waitIfPaused: () => this.waitForStageResume('simplify1'),
     });
@@ -318,6 +321,7 @@ export class SessionController {
       },
     }));
 
+    await this.registerTasks('simplify2', tasks);
     const r = await this.simplify2Adapter!.process(tasks, (p) => this.progressCallback?.(p), {
       waitIfPaused: () => this.waitForStageResume('simplify2'),
     });
@@ -377,6 +381,7 @@ export class SessionController {
       };
     });
 
+    await this.registerTasks('vectortile', tasks);
     const r = await this.vectorTileAdapter!.process(tasks, (p) => this.progressCallback?.(p), {
       waitIfPaused: () => this.waitForStageResume('vectortile'),
     });
@@ -422,6 +427,18 @@ export class SessionController {
     if (!waiters) return;
     for (const release of waiters) release();
     this.stageWaiters.delete(stage);
+  }
+
+  private async registerTasks(stage: ProcessingStage, tasks: Array<{ taskId: string; config?: unknown }>): Promise<void> {
+    await Promise.all(tasks.map((task, index) => shapeDB.createBatchTask({
+      taskId: task.taskId,
+      sessionId: this.sessionId,
+      taskType: stage,
+      status: 'waiting',
+      index,
+      progress: 0,
+      inputData: typeof task.config === 'object' && task.config ? (task.config as Record<string, unknown>) : undefined,
+    })));
   }
 
   /**

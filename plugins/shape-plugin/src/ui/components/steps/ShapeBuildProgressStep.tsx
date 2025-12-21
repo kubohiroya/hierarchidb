@@ -92,7 +92,7 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
   useEffect(() => {
     if (!sessionId) return;
     void refreshTasks();
-  }, [progress?.timestamp, refreshTasks, sessionId, status?.status]);
+  }, [refreshTasks, sessionId]);
 
   const buildStatus: BuildStatus = (() => {
     switch (effectiveStatus?.status) {
@@ -264,8 +264,7 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
   ), [data?.processingConfig]);
   const hasSelection = summarizeCheckboxState(data?.checkboxState).hasSelection;
   const hasDataSource = Boolean(data?.dataSourceName);
-  const canStartOrResume = Boolean(nodeId)
-    && buildStatus !== 'completed'
+  const canStartOrResume = buildStatus !== 'completed'
     && hasDataSource
     && hasSelection
     && isProcessingValid;
@@ -334,27 +333,29 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
   }, [saveDraftBeforeBatch, sessionId]);
 
   return (
-    <Box display="flex" flexDirection="column" gap={3}>
-      <BuildStepPanel
-        status={buildStatus}
-        overallProgress={overallProgress}
-        stages={stages}
-        stageProgress={stageProgress}
-        paneProgress={paneProgress}
-        renderStageContent={renderStageContent}
-        startIcon={<ConstructionIcon fontSize="small" />}
-        onPause={handlePause}
-        onResume={canStartOrResume ? handleStartOrResume : undefined}
-        controlLabel={t('build.controls.title', 'Build controls')}
-        pauseLabel={t('build.controls.pause', 'Pause')}
-        startLabel={t('build.controls.start', 'Start build')}
-        resumeLabel={t('build.controls.resume', 'Resume build')}
-        statusLabel={statusLabel}
-      />
+    <Box display="flex" flexDirection="column" gap={3} height="100%" minHeight={0}>
+      <Box flex={1} minHeight={0}>
+        <BuildStepPanel
+          status={buildStatus}
+          overallProgress={overallProgress}
+          stages={stages}
+          stageProgress={stageProgress}
+          paneProgress={paneProgress}
+          renderStageContent={renderStageContent}
+          startIcon={<ConstructionIcon fontSize="small" />}
+          onPause={handlePause}
+          onResume={canStartOrResume ? handleStartOrResume : undefined}
+          controlLabel={t('build.controls.title', 'Build controls')}
+          pauseLabel={t('build.controls.pause', 'Pause')}
+          startLabel={t('build.controls.start', 'Start build')}
+          resumeLabel={t('build.controls.resume', 'Resume build')}
+          statusLabel={statusLabel}
+        />
+      </Box>
       {hasProgressData ? (
         <Paper
           variant="outlined"
-          sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}
+          sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1, flexShrink: 0 }}
           data-testid="shape-plugin-batch-progress-summary"
         >
           <Typography variant="subtitle2">

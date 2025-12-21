@@ -3,7 +3,7 @@ import type { TreeNodeUpdaterState } from '@hierarchidb/plugin-ui-sdk';
 export type CancelDecision = 'discard-force-delete' | 'discard-draft-only' | 'keep-draft';
 
 export function evaluateCancelPolicy<TPayload extends import('@hierarchidb/common-types').TreeNodeData = import('@hierarchidb/common-types').TreeNodeData>(
-  mode: 'create' | 'edit',
+  mode: 'create' | 'edit' | 'preview',
   draft: TreeNodeUpdaterState<TPayload> | null
 ): CancelDecision {
   const hasCommittedData =

@@ -128,7 +128,7 @@ export function TreeTableContextMenu({
       }}
       onPreview={() => {
         if (node) {
-          console.log('PreviewStep:', node.id);
+          triggerContextAction('preview', { source: 'treetable' });
         }
         handleClose();
       }}

@@ -23,6 +23,7 @@ interface Params {
   nodeId: NodeId;
   pageNodeId: NodeId;
   initialStep: number;
+  forceInitialStep?: boolean;
   initialDialogUIState?: DialogUIState | null;
 }
 
@@ -30,10 +31,14 @@ export function clampIndex(index:number, length: number): number {
   return Math.max(0, Math.min(index, length - 1));
 }
 
+const toInternalStepIndex = (stepNumber: number): number => Math.max(stepNumber - 1, 0);
+const toStepNumber = (index: number): number => Math.max(index + 1, 1);
+
 export function useDialogFrameState({
   nodeType: _nodeType,
   nodeId: _nodeId,
   initialStep,
+  forceInitialStep = false,
   initialDialogUIState,
 }: Params): {
   activeStepIndex: number;
@@ -54,17 +59,24 @@ export function useDialogFrameState({
     setMode: setUrlMode,
   } = useDialogUrlSync({
     namespace: '',
-    defaults: { step: initialStep, mode: 'normal' },
+    defaults: { step: Math.max(initialStep, 1), mode: 'normal' },
     debounce: { map: 0 },
     history: { step: 'replace' },
   });
 
-  const [activeStepIndex, setActiveStepIndex] = useState(initialStep);
+  const [activeStepIndex, setActiveStepIndex] = useState(toInternalStepIndex(initialStep));
   useEffect(() => {
     if (typeof urlStep === 'number') {
-      setActiveStepIndex(clampIndex(urlStep, Number.POSITIVE_INFINITY));
+      setActiveStepIndex(clampIndex(toInternalStepIndex(urlStep), Number.POSITIVE_INFINITY));
     }
   }, [urlStep]);
+
+  const setUrlStepInternal = useCallback(
+    (nextIndex: number) => {
+      setUrlStep(toStepNumber(nextIndex));
+    },
+    [setUrlStep]
+  );
 
   const initialFrame = (() => {
     const viewport = getViewportSize();
@@ -154,14 +166,25 @@ export function useDialogFrameState({
 
     defaultFrameRef.current = null;
     persistDisplayMode(mode);
-    if (typeof progressState?.activeStepIndex === 'number') {
-      const nextStep = clampIndex(progressState.activeStepIndex, Number.POSITIVE_INFINITY);
+    if (!forceInitialStep && typeof progressState?.activeStepIndex === 'number') {
+      const nextStep = clampIndex(
+        toInternalStepIndex(progressState.activeStepIndex),
+        Number.POSITIVE_INFINITY
+      );
       setActiveStepIndex(nextStep);
-      setUrlStep(nextStep);
+      setUrlStepInternal(nextStep);
     }
 
     hydratedKeyRef.current = key;
-  }, [initialDialogUIState, persistDisplayMode, persistPosition, persistSize, setUrlStep, _nodeId]);
+  }, [
+    forceInitialStep,
+    initialDialogUIState,
+    persistDisplayMode,
+    persistPosition,
+    persistSize,
+    setUrlStepInternal,
+    _nodeId,
+  ]);
 
   const transitionDisplayMode = useCallback(
     async (mode: DialogDisplayMode) => {
@@ -337,7 +360,7 @@ export function useDialogFrameState({
   return {
     activeStepIndex,
     setActiveStepIndex,
-    setUrlStep,
+    setUrlStep: setUrlStepInternal,
     displayMode,
     dialogSize,
     dialogPosition,

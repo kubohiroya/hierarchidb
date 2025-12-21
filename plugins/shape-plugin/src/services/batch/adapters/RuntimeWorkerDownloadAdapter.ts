@@ -5,6 +5,7 @@ import type { ProgressInfo } from '../../../common/types/index.js';
 import type { DownloadStageAdapter, DownloadStageAdapterResult } from './DownloadStageAdapter.js';
 import type { StageControls } from './StageControls.js';
 import { getEphemeralShapeDB } from '../../database/EphemeralShapeDB.js';
+import { shapeDB } from '../../database/ShapeDB.js';
 import { defaultDataSourceFactory, type DataSourceStrategyId } from '../../datasources/DataSourceStrategyFactory.js';
 import type { FeatureCollection } from 'geojson';
 import { serialize } from 'flatgeobuf/lib/mjs/geojson';
@@ -68,6 +69,13 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
           }
           const fileId = `${sessionId}-download-${index}`;
           try {
+            if (task.taskId) {
+              await shapeDB.updateBatchTask(task.taskId, {
+                status: 'running',
+                startedAt: Date.now(),
+                progress: 0,
+              });
+            }
             const strategyId = this.resolveStrategyId(task.config?.dataSource);
             if (!strategyId) throw new Error('No data source strategy available');
             const ds = defaultDataSourceFactory.create(strategyId);
@@ -120,8 +128,23 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
             if (lastError) {
               throw lastError;
             }
-          } catch {
+            if (task.taskId) {
+              await shapeDB.updateBatchTask(task.taskId, {
+                status: 'completed',
+                completedAt: Date.now(),
+                progress: 100,
+              });
+            }
+          } catch (error) {
             failed += 1;
+            if (task.taskId) {
+              await shapeDB.updateBatchTask(task.taskId, {
+                status: 'failed',
+                completedAt: Date.now(),
+                progress: 100,
+                errorMessage: error instanceof Error ? error.message : 'Download failed',
+              });
+            }
           }
           onProgress({
             total: tasks.length,

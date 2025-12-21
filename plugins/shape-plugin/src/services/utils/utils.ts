@@ -6,6 +6,7 @@
 import type {
   CountryMetadata,
   DataSourceName,
+  ShapeEntity,
   ProcessingConfig,
   DownloadProcessingConfig,
   SimplificationProcessingConfig,
@@ -26,6 +27,29 @@ export function normalizeDataSourceName(value?: string | null): DataSourceName |
   return KNOWN_DATA_SOURCE_NAMES.has(normalized as DataSourceName)
     ? (normalized as DataSourceName)
     : undefined;
+}
+
+type ShapeDraft = {
+  draftData: ShapeEntity;
+};
+
+export function createDraftFromEntity(entity: ShapeEntity): ShapeDraft {
+  const normalizedDataSourceName = normalizeDataSourceName(entity.dataSourceName) ?? entity.dataSourceName;
+  return {
+    draftData: {
+      ...entity,
+      dataSourceName: normalizedDataSourceName,
+    },
+  };
+}
+
+export function mapDraftToUpdates(draft: ShapeDraft): Partial<ShapeEntity> {
+  const draftData = draft.draftData;
+  const normalizedDataSourceName = normalizeDataSourceName(draftData.dataSourceName) ?? draftData.dataSourceName;
+  return {
+    ...draftData,
+    dataSourceName: normalizedDataSourceName,
+  };
 }
 
 /**

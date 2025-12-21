@@ -484,7 +484,12 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
           )
         }
         onCheckReference={() => console.log('Check reference:', contextMenuNode?.id)}
-        onPreview={() => console.log('PreviewStep:', contextMenuNode?.id)}
+        onPreview={() => {
+          if (contextMenuNode && onContextAction) {
+            onContextAction('preview', contextMenuNode, { source: 'breadcrumb' });
+          }
+          handleContextMenuClose();
+        }}
       />
 
       {/*

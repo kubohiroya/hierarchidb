@@ -55,20 +55,48 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
   // Parse query params for additional context
   const searchParams = new URLSearchParams(location.searchStr ? location.searchStr.slice(1) : '');
   const stepParam = searchParams.get('step');
-  // Only change initialStep when param actually changes; memoize to avoid re-render ripple to background.
-  const currentStep = React.useMemo(() => {
+  const dialogKey = React.useMemo(
+    () =>
+      [
+        treeId ?? '',
+        effectiveTargetNodeId ?? '',
+        effectiveNodeType ?? '',
+        params.action ?? '',
+      ].join('|'),
+    [effectiveNodeType, effectiveTargetNodeId, params.action, treeId]
+  );
+  const initialStepRef = React.useRef<number | null>(null);
+  const forceInitialStepRef = React.useRef<boolean | null>(null);
+  React.useEffect(() => {
+    initialStepRef.current = null;
+    forceInitialStepRef.current = null;
+  }, [dialogKey]);
+  const parsedStep = React.useMemo(() => {
     if (stepParam !== null) {
       const n = parseInt(stepParam, 10);
-      return Number.isFinite(n) && n >= 0 ? n : 0;
+      return Number.isFinite(n) && n >= 1 ? n : 1;
     }
-    return 0;
+    return 1;
   }, [stepParam]);
+  if (initialStepRef.current === null) {
+    initialStepRef.current = parsedStep;
+  }
+  if (forceInitialStepRef.current === null) {
+    forceInitialStepRef.current = stepParam !== null && parsedStep > 1;
+  }
+  const currentStep = initialStepRef.current ?? parsedStep;
+  const requestedAction = params.action?.toLowerCase() ?? '';
+  const forceInitialStep =
+    (forceInitialStepRef.current ?? false) || requestedAction === 'preview';
 
   // Determine mode based on action with guard:
   // If action=create but target node already exists (canonical), treat as edit.
-  const requestedAction = params.action?.toLowerCase() ?? '';
-  const mode: 'create' | 'edit' =
-    requestedAction === 'edit' || effectiveAction === NodeAction.UPDATE ? 'edit' : 'create';
+  const mode: 'create' | 'edit' | 'preview' =
+    requestedAction === 'preview'
+      ? 'preview'
+      : requestedAction === 'edit' || effectiveAction === NodeAction.UPDATE
+        ? 'edit'
+        : 'create';
 
   if (!isReady) {
     console.warn('[PluginDialogRoute] Missing required data to render plugin dialog', {
@@ -113,6 +141,7 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
       onClose={handleClose}
       onSuccess={handleSuccess}
       initialStep={currentStep}
+      forceInitialStep={forceInitialStep}
     />
   );
 };
@@ -167,6 +196,7 @@ function toNodeAction(value: string | undefined): NodeAction | undefined {
     case NodeAction.DISCARD:
       return value;
     case 'edit':
+    case 'preview':
       return NodeAction.UPDATE;
     default:
       return undefined;

@@ -4,13 +4,13 @@ import {
   DataSourceWithLicense,
   type DataSourceWithLicenseOption,
 } from '@hierarchidb/ui-datasource';
-import {
-  type DataSourceConfig,
-  type DataSourceName,
+import type {
+  DataSourceConfig,
+  DataSourceName,
 } from '../../../common/types/index.js';
 import { normalizeDataSourceName } from '../../../services/utils/utils.js';
 import { DATA_SOURCE_CONFIGS } from '../../../common/mock/data.js';
-import { ShapeDialogStepProps } from './ShapeDialogStepProps.ts';
+import type { ShapeDialogStepProps } from './ShapeDialogStepProps.ts';
 import { clearStagesIfPresent, FULL_INVALIDATION_STAGES, resolveShapeSessionId } from '../../utils/sessionInvalidation.js';
 
 
@@ -39,10 +39,6 @@ export const ShapeDataSourceStep: React.FC<ShapeDialogStepProps> = ({ data, onCh
     <Box sx={{ p: 3 }}>
       <Typography variant="h6" gutterBottom>
         Select Data Source
-      </Typography>
-      <Typography variant="body2" color="text.secondary" paragraph>
-        Choose a geographic data provider. Each source has different coverage, accuracy, and
-        licensing requirements.
       </Typography>
 
       <Box sx={{ mt: 3 }}>

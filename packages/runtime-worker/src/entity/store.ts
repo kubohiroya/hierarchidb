@@ -8,7 +8,7 @@ interface DialogWindowState {
 
 interface DialogProgressState {
   /**
-   * Zero-based index of the last active step when the dialog was persisted.
+   * 1-based index of the last active step when the dialog was persisted.
    */
   activeStepIndex: number;
 }

@@ -41,7 +41,7 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
   private readonly defaultDialogUIState: DialogUIState = {
     dialogWindow: null,
     dialogProgress: {
-      activeStepIndex: 0,
+      activeStepIndex: 1,
     },
   };
 
@@ -130,7 +130,7 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
     const fallback: DialogUIState = {
       dialogWindow: current?.dialogWindow ?? null,
       dialogProgress: {
-        activeStepIndex: current?.dialogProgress?.activeStepIndex ?? 0,
+        activeStepIndex: current?.dialogProgress?.activeStepIndex ?? 1,
       },
     };
     if (persist) {

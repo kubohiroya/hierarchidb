@@ -1,5 +1,5 @@
 import type React from 'react';
-import { PluginStepProps, PluginStepRegistry } from '@hierarchidb/plugin-base';
+import { type PluginStepProps, PluginStepRegistry } from '@hierarchidb/plugin-base';
 import {
   summarizeCheckboxState,
   validateProcessingConfig,
@@ -51,9 +51,11 @@ const ShapeBuildProgress = createStepAdapter(ShapeBuildProgressStep);
 const canStartShapeBatch = (data?: Partial<ShapeEntity>): boolean => {
   // data reflects draftData (payload) only
   const hasSelection = summarizeCheckboxState(data?.checkboxState).hasSelection;
-  const hasLicense = Boolean(data?.licenseAgreement);
   const hasDataSource = Boolean(data?.dataSourceName);
-  return hasSelection && hasLicense && hasDataSource;
+  const processingValid = validateProcessingConfig(
+    mergeProcessingConfig(data?.processingConfig ?? DEFAULT_PROCESSING_CONFIG),
+  ).isValid;
+  return hasSelection && hasDataSource && processingValid;
 };
 
 registry.registerConfigProvider<Partial<ShapeEntity>>({
@@ -89,6 +91,9 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
         label: t('steps.build.label', 'Build'),
         componentFactory: (props: ShapeStepProps) => <ShapeBuildProgress {...props} />,
         validate: (data?: Partial<ShapeEntity>) => canStartShapeBatch(data),
+        capabilities: {
+          canStartBatch: (data?: Partial<ShapeEntity>) => canStartShapeBatch(data),
+        },
       },
       {
         id: 'preview',

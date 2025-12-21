@@ -233,14 +233,16 @@ export class ShapeDB extends Dexie {
   }
 
   // Batch Task Management
-  async createBatchTask(task: Omit<BatchTaskRecord, 'taskId'>): Promise<BatchTaskRecord> {
-    const taskId = crypto.randomUUID();
+  async createBatchTask(
+    task: Omit<BatchTaskRecord, 'taskId'> & { taskId?: string },
+  ): Promise<BatchTaskRecord> {
+    const taskId = task.taskId ?? crypto.randomUUID();
     const fullTask: BatchTaskRecord = {
       ...task,
       taskId,
     };
 
-    await this.batchTasks.add(fullTask);
+    await this.batchTasks.put(fullTask);
     return fullTask;
   }
 

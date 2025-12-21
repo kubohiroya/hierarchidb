@@ -19,7 +19,7 @@ import {
   Rating,
 } from '@mui/material';
 import { FilterAlt as FilterAltIcon, ExpandMore as ExpandMoreIcon, FilterAlt, Filter } from '@mui/icons-material';
-import type { FeatureFilterMethod, ProcessingConfig, SimplificationProcessingConfig } from '../../../common/types/index.js';
+import type { FeatureFilterMethod, HybridFilterConfig, ProcessingConfig, SimplificationProcessingConfig } from '../../../common/types/index.js';
 import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../../common/types/index.js';
 import { useId } from 'react';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
@@ -34,16 +34,20 @@ type Props = {
 export const SimplificationConfigSection: React.FC<Props> = ({ config, disabled, onChange }) => {
   const { t } = useTranslation();
   const controlId = useId();
-  const baseSimplificationConfig: SimplificationProcessingConfig|undefined =
+  const baseSimplificationConfig: SimplificationProcessingConfig | undefined =
     config.simplificationConfig ?? DEFAULT_PROCESSING_CONFIG.simplificationConfig;
-  const baseHybridConfig =
-    baseSimplificationConfig?.hybridFilterConfig
-    ?? DEFAULT_PROCESSING_CONFIG.simplificationConfig?.hybridFilterConfig
-    ?? {
-      quickRejectThreshold: 0,
-      simpleShapeVertexThreshold: 0,
-      elongatedShapeCorrectionFactor: 0,
+  const defaultHybridConfig: HybridFilterConfig =
+    DEFAULT_PROCESSING_CONFIG.simplificationConfig?.hybridFilterConfig ?? {
+      quickRejectThreshold: 0.1,
+      regularShapeMinRatio: 0.5,
+      regularShapeMaxRatio: 2.0,
+      simpleShapeVertexThreshold: 50,
+      elongatedShapeCorrectionFactor: 0.8,
     };
+  if (!baseSimplificationConfig) {
+    throw new Error('SimplificationConfigSection: baseSimplificationConfig is not defined');
+  }
+  const baseHybridConfig: HybridFilterConfig = baseSimplificationConfig.hybridFilterConfig ?? defaultHybridConfig;
   const quickRejectMin = 0.01;
   const quickRejectMax = 1;
   const quickRejectValue = Math.min(
@@ -69,10 +73,6 @@ export const SimplificationConfigSection: React.FC<Props> = ({ config, disabled,
   const update = (partial: Partial<ProcessingConfig>) => {
     onChange(mergeProcessingConfig({ ...config, ...partial }));
   };
-
-  if(!baseSimplificationConfig){
-    throw new Error("SimplificationConfigSection: baseSimplificationConfig is not defined");
-  }
 
   return (
     <Accordion defaultExpanded>
@@ -452,7 +452,7 @@ export const SimplificationConfigSection: React.FC<Props> = ({ config, disabled,
                         disabled={disabled}
                       />
                       <Typography variant="caption" color="text.secondary">
-                        {t('processing.filter.quantizeSelected', 'Selected: {value}', { value: quantizeOptions[quantizeIndex].toLocaleString() })}
+                        {t('processing.filter.quantizeSelected', 'Selected: {value}', { value: quantizeOptions[quantizeIndex]?.toLocaleString() })}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
                         {t('processing.filter.quantizeHelp', 'Quantization factor used in simplify stage 2.')}

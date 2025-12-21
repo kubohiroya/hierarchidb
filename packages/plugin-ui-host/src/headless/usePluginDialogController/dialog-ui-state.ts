@@ -23,6 +23,8 @@ export function useDialogUIStateSync(params: {
   dialogPosition: DialogPosition;
   dialogSize: DialogSize;
   displayMode: DialogDisplayMode;
+  forceInitialStep?: boolean;
+  restoreKey?: string | number | null;
   restoreDeps: RestoreDeps;
 }) {
   const {
@@ -31,36 +33,65 @@ export function useDialogUIStateSync(params: {
     dialogPosition,
     dialogSize,
     displayMode,
+    forceInitialStep = false,
+    restoreKey,
     restoreDeps,
   } = params;
+
+  const toInternalStepIndex = useCallback((stepNumber?: number): number => {
+    if (typeof stepNumber !== 'number' || Number.isNaN(stepNumber)) return 0;
+    return Math.max(stepNumber - 1, 0);
+  }, []);
+
+  const toPersistedStepIndex = useCallback((index?: number): number => {
+    if (typeof index !== 'number' || Number.isNaN(index)) return 1;
+    return Math.max(index + 1, 1);
+  }, []);
 
   const dialogUIStateRef = useRef<DialogUIState | null>(dialogUIState ?? null);
   useEffect(() => {
     dialogUIStateRef.current = dialogUIState ?? null;
   }, [dialogUIState]);
 
-  const dialogStateRestoredRef = useRef(false);
+  const restoreKeyRef = useRef<string | number | null>(restoreKey ?? null);
+  const progressRestoredRef = useRef(false);
+  const windowRestoredRef = useRef(false);
   useEffect(() => {
-    if (dialogStateRestoredRef.current) return;
+    if (restoreKey === undefined) return;
+    if (restoreKeyRef.current === restoreKey) return;
+    restoreKeyRef.current = restoreKey ?? null;
+    progressRestoredRef.current = false;
+    windowRestoredRef.current = false;
+  }, [restoreKey]);
+
+  useEffect(() => {
     const state = dialogUIStateRef.current;
     if (!state) return;
-    dialogStateRestoredRef.current = true;
-    const progress = state.dialogProgress?.activeStepIndex;
-    if (typeof progress === 'number') {
-      restoreDeps.setActiveStepIndex(progress);
-      restoreDeps.setUrlStep(progress);
-    }
     const windowState = state.dialogWindow;
-    if (windowState?.size) {
-      restoreDeps.handleSizeChange(windowState.size as DialogSize);
+    if (!windowRestoredRef.current && windowState) {
+      const mode = windowState.mode as DialogDisplayMode | undefined;
+      if (mode) {
+        void restoreDeps.transitionDisplayMode(mode).catch(() => void 0);
+      }
+      const canApplyFrame = mode !== 'full-screen' && mode !== 'maximize';
+      if (canApplyFrame && windowState.size) {
+        restoreDeps.handleSizeChange(windowState.size as DialogSize);
+      }
+      if (canApplyFrame && windowState.position) {
+        restoreDeps.handlePositionChange(windowState.position as DialogPosition);
+      }
+      windowRestoredRef.current = true;
     }
-    if (windowState?.position) {
-      restoreDeps.handlePositionChange(windowState.position as DialogPosition);
+    if (!progressRestoredRef.current) {
+      const progress = state.dialogProgress?.activeStepIndex;
+      if (!forceInitialStep && typeof progress === 'number') {
+        const nextIndex = toInternalStepIndex(progress);
+        restoreDeps.setActiveStepIndex(nextIndex);
+        restoreDeps.setUrlStep(nextIndex);
+      }
+      progressRestoredRef.current = true;
     }
-    if (windowState?.mode) {
-      void restoreDeps.transitionDisplayMode(windowState.mode as DialogDisplayMode).catch(() => void 0);
-    }
-  }, [restoreDeps]);
+  }, [dialogUIState, forceInitialStep, restoreDeps, restoreKey, toInternalStepIndex]);
 
   const updateDialogUIState = useCallback((patch: Partial<DialogUIState>) => {
     const prev = dialogUIStateRef.current ?? null;
@@ -87,9 +118,9 @@ export function useDialogUIStateSync(params: {
     const currentWindow: Partial<DialogWindowState> = dialogUIStateRef.current?.dialogWindow ?? {};
     const currentProgress: Partial<DialogProgressState> = dialogUIStateRef.current?.dialogProgress ?? {};
     const persistedIndex =
-      typeof currentProgress.activeStepIndex === 'number'
+      typeof currentProgress.activeStepIndex === 'number' && currentProgress.activeStepIndex >= 1
         ? currentProgress.activeStepIndex
-        : activeStepIndexRef.current ?? activeStepIndex;
+        : toPersistedStepIndex(activeStepIndexRef.current ?? activeStepIndex);
     return {
       dialogWindow: {
         mode: currentWindow.mode ?? displayMode,
@@ -107,13 +138,14 @@ export function useDialogUIStateSync(params: {
     if (!windowState) return null;
     return {
       activeStepIndex:
-        dialogUIStateRef.current?.dialogProgress?.activeStepIndex ?? activeStepIndex,
+        dialogUIStateRef.current?.dialogProgress?.activeStepIndex ??
+        toPersistedStepIndex(activeStepIndex),
       size: windowState.size ?? dialogSize,
       position: windowState.position ?? dialogPosition,
       displayMode: (windowState.mode as DialogDisplayMode | undefined) ?? displayMode,
       updatedAt: Date.now(),
     };
-  }, [activeStepIndex, dialogPosition, dialogSize, displayMode]);
+  }, [activeStepIndex, dialogPosition, dialogSize, displayMode, toPersistedStepIndex]);
 
   const updateDialogState = useCallback(
     (patch: Partial<DialogState>) => {
@@ -125,14 +157,14 @@ export function useDialogUIStateSync(params: {
       };
       const nextProgress: DialogProgressState | null =
         patch.activeStepIndex !== undefined
-          ? { activeStepIndex: patch.activeStepIndex }
+          ? { activeStepIndex: toPersistedStepIndex(patch.activeStepIndex) }
           : dialogUIStateRef.current?.dialogProgress ?? null;
       updateDialogUIState({
         dialogWindow: nextWindow,
         dialogProgress: nextProgress,
       });
     },
-    [dialogPosition, dialogSize, displayMode, updateDialogUIState]
+    [dialogPosition, dialogSize, displayMode, updateDialogUIState, toPersistedStepIndex]
   );
 
   return {

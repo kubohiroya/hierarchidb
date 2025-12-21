@@ -21,7 +21,7 @@ export interface CommonDialogTitleProps {
   title: string;
   subtitle?: string;
   icon?: React.ReactNode;
-  mode?: 'create' | 'edit';
+  mode?: 'create' | 'edit' | 'preview';
   nodeId?: string;
   isDraft?: boolean;
   onClose: () => void;
@@ -61,7 +61,7 @@ export const CommonDialogTitle: React.FC<CommonDialogTitleProps> = ({
         <Stack direction="row" spacing={2} alignItems="center">
           {icon}
           <Typography variant="h6">{title}</Typography>
-          {mode === 'edit' && nodeId && (
+          {mode && mode !== 'create' && nodeId && (
             <Typography variant="caption" color="text.secondary">
               ({nodeId})
             </Typography>

@@ -11,9 +11,9 @@ import { ReactNode } from 'react';
 export type DialogData = Record<string, unknown>;
 
 /**
- * Dialog mode - create or edit
+ * Dialog mode - create, edit, or preview
  */
-export type DialogMode = 'create' | 'edit';
+export type DialogMode = 'create' | 'edit' | 'preview';
 
 /**
  * Step validation function signature

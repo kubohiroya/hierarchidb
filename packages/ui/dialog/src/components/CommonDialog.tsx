@@ -11,7 +11,7 @@ import { CommonDialogTitle } from './CommonDialogTitle.js';
 import type { DialogDisplayMode } from '@hierarchidb/common-types';
 
 export interface CommonPluginDialogProps {
-  mode: 'create' | 'edit';
+  mode: 'create' | 'edit' | 'preview';
   open: boolean;
   nodeId?: string;
   parentId?: string;

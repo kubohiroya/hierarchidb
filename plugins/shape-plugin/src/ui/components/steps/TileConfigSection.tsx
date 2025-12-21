@@ -96,15 +96,17 @@ export const TileConfigSection: React.FC<Props> = ({ config, disabled, onChange 
             <Box sx={{ px: 2 }}>
               <Slider
                 value={zoomRange}
-                onChange={(_, value: number | number[]) => {
+                onChange={(_, value: number[]) => {
                   const [nextMin, nextMax] = value as number[];
-                  update({
-                    tileConfig: {
-                      ...baseTileConfig,
-                      minZoom: nextMin,
-                      maxZoom: nextMax,
-                    },
-                  });
+                  if(nextMin && nextMax) {
+                    update({
+                      tileConfig: {
+                        ...baseTileConfig,
+                        minZoom: nextMin,
+                        maxZoom: nextMax,
+                      },
+                    });
+                  }
                 }}
                 min={0}
                 max={18}

@@ -6,7 +6,7 @@ import type React from 'react';
 import { Button, DialogActions, Stack } from '@mui/material';
 
 export interface CommonDialogActionsProps {
-  mode: 'create' | 'edit';
+  mode: 'create' | 'edit' | 'preview';
   isValid?: boolean;
   isSubmitting?: boolean;
   onSubmit: () => void;

@@ -4,13 +4,20 @@
  */
 
 import type React from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Chip, IconButton, Stack, Typography, useTheme } from '@mui/material';
 import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
+  CheckCircle as CheckCircleIcon,
+  ErrorOutline as ErrorOutlineIcon,
+  PauseCircle as PauseCircleIcon,
+  PauseCircleOutline as PauseCircleOutlineIcon,
+  PlayCircle as PlayCircleIcon,
   ExpandLess as ExpandLessIcon,
   ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
+import AutorenewIcon from '@mui/icons-material/Autorenew';
 
 import type { PaneHeaderProps } from '../types/LRUSplitView.js';
 
@@ -44,6 +51,12 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
                                                                  onClick,
                                                                }) => {
   const theme = useTheme();
+  const headerRef = useRef<HTMLDivElement | null>(null);
+  const [headerWidth, setHeaderWidth] = useState(0);
+  const compactBreakpoint = 220;
+  const countBreakpoint = 260;
+  const isCompact = headerWidth > 0 && headerWidth < compactBreakpoint;
+  const showCounts = headerWidth >= countBreakpoint;
 
   const handleClick = () => {
     if (onClick) {
@@ -53,6 +66,20 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
     }
   };
 
+  useEffect(() => {
+    if (!headerRef.current || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        setHeaderWidth(entry.contentRect.width);
+      }
+    });
+    observer.observe(headerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   // Choose appropriate expand/collapse icon
   const getToggleIcon = () => {
     if (vertical) {
@@ -61,6 +88,34 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
       return state.isExpanded ? <ChevronLeftIcon /> : <ChevronRightIcon />;
     }
   };
+
+  const statusIcon = useMemo(() => {
+    if (!progress) return null;
+    const status = progress.status;
+    if (status === 'running') return <PlayCircleIcon fontSize="small" />;
+    if (status === 'paused') return <PauseCircleIcon fontSize="small" />;
+    if (status === 'completed' || progress.progress >= 100) return <CheckCircleIcon fontSize="small" />;
+    if (status === 'failed') return <ErrorOutlineIcon fontSize="small" />;
+    if (status === 'idle') return <PauseCircleOutlineIcon fontSize="small" />;
+    if (progress.progress > 0) return <AutorenewIcon fontSize="small" />;
+    return <PauseCircleOutlineIcon fontSize="small" />;
+  }, [progress]);
+
+  const statusColor = useMemo(() => {
+    if (!progress) return theme.palette.text.secondary;
+    switch (progress.status) {
+      case 'running':
+        return theme.palette.primary.main;
+      case 'paused':
+        return theme.palette.warning.main;
+      case 'completed':
+        return theme.palette.success.main;
+      case 'failed':
+        return theme.palette.error.main;
+      default:
+        return theme.palette.text.secondary;
+    }
+  }, [progress, theme.palette]);
 
   return (
     <Box
@@ -83,6 +138,7 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
           }
           : {},
       }}
+      ref={headerRef}
       onClick={handleClick}
     >
       {/* Left side: Toggle button, icon, and title */}
@@ -91,11 +147,13 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
           {getToggleIcon()}
         </IconButton>
 
-        {pane.icon && <Box sx={{ display: 'flex', alignItems: 'center' }}>{pane.icon}</Box>}
+        {!isCompact && pane.icon && <Box sx={{ display: 'flex', alignItems: 'center' }}>{pane.icon}</Box>}
 
-        <Typography variant="subtitle2" noWrap sx={{ flex: 1 }}>
-          {pane.title}
-        </Typography>
+        {!isCompact && (
+          <Typography variant="subtitle2" noWrap sx={{ flex: 1 }}>
+            {pane.title}
+          </Typography>
+        )}
       </Stack>
 
       {/* Right side: Progress info and header actions */}
@@ -104,7 +162,7 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
         {showProgress && progress && (
           <>
             {/* Task count chip */}
-            {(progress.taskCount !== undefined || progress.completedCount !== undefined) && (
+            {showCounts && (progress.taskCount !== undefined || progress.completedCount !== undefined) && (
               <Chip
                 label={
                   progress.taskCount !== undefined && progress.completedCount !== undefined
@@ -126,18 +184,22 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
             )}
 
             {/* Progress percentage */}
-            {progress.progress > 0 && (
+            {!isCompact && progress.progress > 0 && (
               <Typography variant="caption" color="text.secondary" sx={{ minWidth: 'auto' }}>
                 {progress.progress.toFixed(0)}%
               </Typography>
             )}
 
-            {/* Custom status */}
-            {progress.status && <Chip label={progress.status} size="small" variant="outlined" />}
+            {/* Status icon */}
+            {statusIcon && (
+              <Box sx={{ display: 'flex', alignItems: 'center', color: statusColor }}>
+                {statusIcon}
+              </Box>
+            )}
           </>
         )}
         {/* Header actions */}
-        {pane.headerActions && (
+        {!isCompact && pane.headerActions && (
           <Box sx={{ display: 'flex', alignItems: 'center' }}>{pane.headerActions}</Box>
         )}
       </Stack>

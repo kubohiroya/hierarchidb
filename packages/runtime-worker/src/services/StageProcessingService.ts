@@ -106,6 +106,22 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
     return row?.data ?? null;
   }
 
+  private async normalizeFeatureCollection(decoded: unknown): Promise<FeatureCollectionLike | null> {
+    if (!decoded || typeof decoded !== 'object') return null;
+    const collection = decoded as FeatureCollectionLike;
+    if (collection.type === 'FeatureCollection') {
+      return collection;
+    }
+    if (typeof (decoded as AsyncIterable<unknown>)[Symbol.asyncIterator] === 'function') {
+      const features: FeatureLike[] = [];
+      for await (const feature of decoded as AsyncIterable<FeatureLike>) {
+        features.push(feature);
+      }
+      return { type: 'FeatureCollection', features };
+    }
+    return null;
+  }
+
   private long2tile(lon: number, z: number) {
     return Math.floor(((lon + 180) / 360) * 2 ** z);
   }
@@ -135,10 +151,10 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
     const buf = await this.readBuffer(inputBufferId);
     if (!buf) return { tilesGenerated: 0, totalBytes: 0 };
     const parsed = deserialize(new Uint8Array(buf));
-    if (!parsed || parsed.type !== 'FeatureCollection') {
+    const geojson = await this.normalizeFeatureCollection(parsed);
+    if (!geojson) {
       return { tilesGenerated: 0, totalBytes: 0 };
     }
-    const geojson = parsed as FeatureCollectionLike;
     const features = geojson.features ?? [];
     if (features.length === 0) return { tilesGenerated: 0, totalBytes: 0 };
 
@@ -216,29 +232,17 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
     });
 
     // Compute bbox
-    let minLon = Infinity,
-      minLat = Infinity,
-      maxLon = -Infinity,
-      maxLat = -Infinity;
+    const bbox: [number, number, number, number] = [Infinity, Infinity, -Infinity, -Infinity];
     for (const f of features) {
-      const c = f?.geometry?.coordinates;
-      if (Array.isArray(c) && typeof c[0] === 'number' && typeof c[1] === 'number') {
-        const lon = c[0],
-          lat = c[1];
-        if (lon < minLon) minLon = lon;
-        if (lat < minLat) minLat = lat;
-        if (lon > maxLon) maxLon = lon;
-        if (lat > maxLat) maxLat = lat;
-      }
+      const stats = extractGeometryStats(f?.geometry);
+      if (!stats.bbox) continue;
+      updateBbox(bbox, [stats.bbox[0], stats.bbox[1]]);
+      updateBbox(bbox, [stats.bbox[2], stats.bbox[3]]);
     }
-    if (
-      !Number.isFinite(minLon) ||
-      !Number.isFinite(minLat) ||
-      !Number.isFinite(maxLon) ||
-      !Number.isFinite(maxLat)
-    ) {
+    if (!bbox.every((value) => Number.isFinite(value))) {
       return { tilesGenerated: 0, totalBytes: 0 };
     }
+    const [minLon, minLat, maxLon, maxLat] = bbox;
 
     const db = await TilesDB.getSingleton();
     let tiles = 0;

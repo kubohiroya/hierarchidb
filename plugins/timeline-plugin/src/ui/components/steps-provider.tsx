@@ -1,4 +1,4 @@
-import { PluginStepRegistry, type StepComponentProps, type StepData } from '@hierarchidb/plugin-base';
+import { PluginStepRegistry, type PluginStepProps, type StepData } from '@hierarchidb/plugin-base';
 import type { TimelineDraft, TimelineFrame } from '../../common/types/index.js';
 import { FramesPreviewStep } from '../steps/FramesPreviewStep.js';
 import { MapPreviewStep } from '../steps/MapPreviewStep.js';
@@ -20,21 +20,21 @@ registry.registerConfigProvider<TimelineData>({
       {
         id: 'frames',
         label: t('steps.frames.label', 'Frames Preview'),
-        componentFactory: (p: StepComponentProps<TimelineData>) => (
+        componentFactory: (p: PluginStepProps<TimelineData>) => (
           <FramesPreviewStep frames={p.data?.frames || p.data?.draftData?.frames || []} />
         ),
       },
       {
         id: 'map',
         label: t('steps.map.label', 'Map Preview'),
-        componentFactory: (p: StepComponentProps<TimelineData>) => (
+        componentFactory: (p: PluginStepProps<TimelineData>) => (
           <MapPreviewStep frames={p.data?.frames || p.data?.draftData?.frames || []} />
         ),
       },
       {
         id: 'final',
         label: t('steps.final.label', 'Final Animation'),
-        componentFactory: (p: StepComponentProps<TimelineData>) => (
+        componentFactory: (p: PluginStepProps<TimelineData>) => (
           <AnimationViewerStep frames={p.data?.frames || p.data?.draftData?.frames || []} />
         ),
       },

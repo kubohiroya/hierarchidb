@@ -56,13 +56,14 @@ import {
 } from './components/DialogScaffold.js';
 
 export interface PluginDialogControllerOptions {
-  mode: 'create' | 'edit';
+  mode: 'create' | 'edit' | 'preview';
   nodeType: string;
   nodeId: NodeId;
   pageNodeId: NodeId;
   treeId: TreeId;
   open: boolean;
   initialStep?: number;
+  forceInitialStep?: boolean;
   onClose: () => void;
   onSuccess?: (nodeId: NodeId) => void;
   footerOptions?: PluginDialogFooterOptions;
@@ -204,17 +205,21 @@ export function usePluginDialogController(
     treeId,
     pageNodeId,
     open,
-    initialStep = 0,
+    initialStep = 1,
+    forceInitialStep = false,
     onClose,
     onSuccess,
     footerOptions,
     autosaveEnabled: autosaveEnabledProp,
   } = options;
+  const dialogMode = mode;
+  const stepMode: 'create' | 'edit' = dialogMode === 'preview' ? 'edit' : dialogMode;
 
   const { t } = useTranslation('common');
   const navigate = useNavigate();
   const stepRegistry = PluginStepRegistry.getInstance();
   const hostRegistry = HostProfileRegistry.getInstance();
+  const toPersistedStepIndex = useCallback((index: number): number => Math.max(index + 1, 1), []);
 
   const useClientHook = getWorkerClientHook<WorkerClientRef | null>() ?? (() => null);
   const ref = useClientHook();
@@ -222,14 +227,14 @@ export function usePluginDialogController(
   const autosaveEnabled = useAutosavePreference(autosaveEnabledProp);
 
   const initialDraftData = useMemo(() => {
-    if (mode === 'create' && nodeType === 'basemap') {
+    if (stepMode === 'create' && nodeType === 'basemap') {
       return {
         mapStyle: { style: 'streets' },
         viewport: undefined,
       } as TreeNodeData;
     }
     return undefined;
-  }, [mode, nodeType]);
+  }, [stepMode, nodeType]);
 
   const {
     treeNodeUpdater: draft,
@@ -241,7 +246,7 @@ export function usePluginDialogController(
     loading,
     error,
   } = useTreeNodeUpdater<Partial<PluginDefinedEntity>>({
-    mode,
+    mode: stepMode,
     nodeType,
     nodeId,
     parentId: pageNodeId,
@@ -283,6 +288,7 @@ export function usePluginDialogController(
     nodeId,
     pageNodeId,
     initialStep,
+    forceInitialStep,
     initialDialogUIState: dialogUIState,
   });
 
@@ -298,6 +304,8 @@ export function usePluginDialogController(
     dialogPosition,
     dialogSize,
     displayMode,
+    forceInitialStep,
+    restoreKey: (treeUpdater?.treeNodeId ?? nodeId) as string | number | null,
     restoreDeps: {
       setActiveStepIndex,
       setUrlStep,
@@ -340,7 +348,7 @@ export function usePluginDialogController(
     tagSuggestions,
     handleBasicInfoBridge,
   } = useBasicInfoState({
-    mode,
+    mode: stepMode,
     nodeType,
     nodeId,
     pageNodeId,
@@ -374,8 +382,8 @@ export function usePluginDialogController(
   const composedConfigs = useMemo(() => {
     void regTick;
     void hostTick;
-    return composeStepConfigs(nodeType, mode);
-  }, [nodeType, mode, regTick, hostTick]);
+    return composeStepConfigs(nodeType, stepMode);
+  }, [nodeType, regTick, hostTick, stepMode]);
 
   useEffect(() => {
     hydratePresentationDefinitionsFromGlobal();
@@ -389,7 +397,7 @@ export function usePluginDialogController(
     basicInfoValidationError,
     isBasicInfoValid,
     tagSuggestions,
-    mode,
+    mode: stepMode,
     nodeId,
     pageNodeId,
     draftData: localDraftData,
@@ -416,13 +424,13 @@ export function usePluginDialogController(
 
   const dialogTitle = useMemo(() => {
     const label = presentation?.label || nodeType;
-    return mode === 'create'
+    return dialogMode === 'create'
       ? t('dialogs.pluginDialog.titles.create', { plugin: label, defaultValue: 'Create {{plugin}}' })
       : t('dialogs.pluginDialog.titles.edit', { plugin: label, defaultValue: 'Edit {{plugin}}' });
-  }, [mode, nodeType, presentation?.label, t]);
+  }, [dialogMode, nodeType, presentation?.label, t]);
 
   const headerSubtitle =
-    !isFolder && mode === 'edit'
+    !isFolder && dialogMode !== 'create'
       ? presentation?.description?.trim() || undefined
       : undefined;
 
@@ -467,7 +475,7 @@ export function usePluginDialogController(
     resolveConflict,
     ensureNoConflict,
   } = useConflictGuard({
-    mode,
+    mode: stepMode,
     client,
     nodeId,
     draftVersion: draft?.version,
@@ -577,12 +585,12 @@ export function usePluginDialogController(
           setActiveStepIndexRef.current(nextIndex);
           setUrlStepRef.current(nextIndex);
           updateDialogUIState({
-            dialogProgress: { activeStepIndex: nextIndex } as DialogProgressState,
+            dialogProgress: { activeStepIndex: toPersistedStepIndex(nextIndex) } as DialogProgressState,
           });
         });
       });
     },
-    [runWithPending, updateDialogUIState]
+    [runWithPending, updateDialogUIState, toPersistedStepIndex]
   );
 
   const navigateToNode = useCallback(
@@ -691,7 +699,7 @@ export function usePluginDialogController(
           nodeId: nodeId as string | undefined,
           parentId: pageNodeId as string | undefined,
           treeId,
-          mode,
+          mode: stepMode,
           dialogData,
         })
       );
@@ -700,7 +708,7 @@ export function usePluginDialogController(
     } finally {
       setIsStartingBatch(false);
     }
-  }, [activeStartBatch, dialogData, mode, nodeId, pageNodeId, pendingActionRef, treeId]);
+  }, [activeStartBatch, dialogData, nodeId, pageNodeId, pendingActionRef, stepMode, treeId]);
   useEffect(() => {
     startBatchHandlerRef.current = handleStartBatch;
   }, [handleStartBatch]);
@@ -747,7 +755,7 @@ export function usePluginDialogController(
   );
 
   const footerPropsRef = useRef<PluginDialogFooterProps>({
-    mode,
+    mode: dialogMode,
     canCommit: canSaveCurrent,
     onSaveDraft: undefined,
     disableDraft: disableDraftButton || !dialogDirty || autosaveEnabled,
@@ -771,7 +779,7 @@ export function usePluginDialogController(
     }
   }, []);
   Object.assign(footerPropsRef.current, {
-    mode,
+    mode: dialogMode,
     canCommit: canSaveCurrent,
     onSaveDraft: disableDraftButton || autosaveEnabled ? undefined : stableOnSaveDraft,
     disableDraft: disableDraftButton || !dialogDirty || autosaveEnabled,
@@ -787,6 +795,23 @@ export function usePluginDialogController(
     [],
   );
 
+  const persistDialogUIStateOnClose = useCallback(async () => {
+    if (dialogMode === 'create' || dialogMode === 'preview') return;
+    const treeNodeId = (treeUpdater?.treeNodeId ?? nodeId) as NodeId | undefined;
+    if (!treeNodeId) return;
+    try {
+      const payload: TreeNodeUpdaterState<Partial<PluginDefinedEntity>> = {
+        treeNodeId,
+        draftMetadata: treeUpdater?.draftMetadata ?? null,
+        draftData: nodeType === 'folder' ? null : (treeUpdater?.draftData ?? null),
+        dialogUIState: getPersistableDialogUIState(),
+      };
+      await commitTreeNodeUpdater('save-draft', payload);
+    } catch (error) {
+      console.warn('[PluginDialogShell] failed to persist dialog UI state on close', error);
+    }
+  }, [commitTreeNodeUpdater, dialogMode, getPersistableDialogUIState, nodeId, nodeType, treeUpdater?.draftData, treeUpdater?.draftMetadata, treeUpdater?.treeNodeId]);
+
   const handleCloseRequest = useCallback(() => {
     if (dialogDirtyRef.current) {
       setDiscardDialogOpen(true);
@@ -796,22 +821,26 @@ export function usePluginDialogController(
     const discard = discardDraftRef.current;
     const close = onCloseRef.current;
     void runPending({ type: 'cancel' }, async () => {
-      if (mode === 'create') {
+      if (dialogMode === 'create') {
         await discard?.({ forceDelete: true });
+      } else if (dialogMode !== 'preview') {
+        await persistDialogUIStateOnClose();
       }
       close?.();
     });
-  }, [mode]);
+  }, [dialogMode, persistDialogUIStateOnClose]);
 
   const handleConfirmDiscard = useCallback(() => {
     setDiscardDialogOpen(false);
     void runWithPending({ type: 'cancel' }, async () => {
-      if (mode === 'create') {
+      if (dialogMode === 'create') {
         await discardDraft({ forceDelete: true });
+      } else if (dialogMode !== 'preview') {
+        await persistDialogUIStateOnClose();
       }
       onClose();
     });
-  }, [discardDraft, mode, onClose, runWithPending]);
+  }, [dialogMode, discardDraft, onClose, persistDialogUIStateOnClose, runWithPending]);
 
   const handleDismissDiscardDialog = useCallback(() => {
     setDiscardDialogOpen(false);

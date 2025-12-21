@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react';
+import { useCallback, useMemo, type ReactNode } from 'react';
 import {
   Box,
   Button,
@@ -72,8 +72,8 @@ const BuildControlCard: React.FC<BuildControlCardProps> = ({
   return (
     <Box
       sx={{
-        minWidth: 220,
-        maxWidth: 280,
+        minWidth: 252,
+        maxWidth: 312,
         p: 2,
         borderRadius: 2,
         border: '1px solid',
@@ -131,8 +131,11 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   statusLabel,
 }) => {
   void onComplete;
-  const resolveStageProgress = (stageId: string): number =>
-    Math.min(100, Math.max(0, stageProgress[stageId] ?? overallProgress));
+
+  const resolveStageProgress = useCallback((stageId: string): number =>
+    Math.min(100, Math.max(0, stageProgress[stageId] ?? overallProgress)), [
+    stageProgress, overallProgress
+  ]);
 
   const panes = useMemo<PaneConfig[]>(() =>
     stages.map((stage, index) => ({
@@ -156,7 +159,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
           </Stack>
         ),
     })),
-  [overallProgress, renderStageContent, stageProgress, stages]);
+  [renderStageContent, resolveStageProgress, stages]);
 
   const computedPaneProgress = useMemo<PaneProgress[]>(
     () =>
@@ -165,7 +168,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
         progress: resolveStageProgress(stage.id),
         status,
       })),
-    [overallProgress, stageProgress, stages, status],
+    [resolveStageProgress, stages, status],
   );
 
   const computedStatusLabel = (() => {
@@ -182,9 +185,9 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   })();
 
   return (
-    <Box display="flex" flexDirection="column" gap={3}>
+    <Box display="flex" flexDirection="column" gap={3} height="100%" minHeight={0}>
 
-      <Stack direction="row" spacing={2} alignItems="stretch">
+      <Stack direction="row" spacing={2} alignItems="stretch" flexShrink={0}>
         <BuildControlCard
           status={status}
           onPause={onPause}
@@ -208,12 +211,12 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
         </Stack>
       </Stack>
 
-      <Box height={280}>
+      <Box flex={1} minHeight={0}>
         <LRUSplitView
           panes={panes}
           progress={paneProgress ?? computedPaneProgress}
           maxExpandedPanes={2}
-          defaultCollapsedSize={60}
+          defaultCollapsedSize={96}
           autoExpand={{ onStart: true, onComplete: true }}
           height="100%"
         />

@@ -7,7 +7,7 @@ import { useCountryMetadata } from '../../hooks/useCountryMetadata.js';
 import { calculateEstimatedFeatures, calculateEstimatedSize, DATA_SOURCE_CONFIGS, formatBytes, formatNumber } from '../../../common/mock/data.js';
 import { normalizeDataSourceName } from '../../../services/utils/utils.js';
 import { CountryMatrixSelector, useIsoCountries, type MatrixConfig, type MatrixSelection, type ContinentCode } from '@hierarchidb/ui-country-select';
-import { ShapeDialogStepProps } from './ShapeDialogStepProps.ts';
+import type { ShapeDialogStepProps } from './ShapeDialogStepProps.ts';
 import { clearStagesIfPresent, FULL_INVALIDATION_STAGES, resolveShapeSessionId } from '../../utils/sessionInvalidation.js';
 
 //type ShapeDialogStepProps = StepProps;
@@ -48,7 +48,7 @@ const normalizeContinentCode = (continent?: string): ContinentCode | undefined =
 
 const normalizeCountryCodeFromMetadata = (country: Partial<CountryMetadata>, index: number): string => {
   const candidates = [country.countryCode, country.iso2, country.iso3].filter(
-    (value): value is string => Boolean(value && value.trim()),
+    (value): value is string => Boolean(value?.trim()),
   );
   const primary = (candidates[0] ?? `country-${index}`).trim().toUpperCase();
   if (primary.length === 2) return primary;
@@ -73,8 +73,7 @@ const isMatrixEqual = (left?: boolean[][], right?: boolean[][]): boolean => {
 
 export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ data, onChange, }) => {
   const { enqueueSnackbar } = useSnackbar();
-  const draftData = data ?? {};
-  const dataSourceKey = normalizeDataSourceName(draftData.dataSourceName) ?? 'gadm';
+  const dataSourceKey = normalizeDataSourceName(data.dataSourceName) ?? 'gadm';
   const iso = useIsoCountries();
 
   const {
@@ -111,8 +110,8 @@ export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ data
   }, [countries, isoContinentByCode]);
 
   const checkboxMatrix = useMemo<boolean[][]>(() => {
-    if (Array.isArray(draftData.checkboxState)) {
-      return (draftData.checkboxState as unknown[]).map((row: unknown): boolean[] => {
+    if (Array.isArray(data.checkboxState)) {
+      return (data.checkboxState as unknown[]).map((row: unknown): boolean[] => {
         if (!Array.isArray(row)) {
           return Array.from({ length: maxAdminLevel + 1 }, () => false);
         }
@@ -120,7 +119,7 @@ export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ data
       });
     }
     return baseCountries.map(() => Array.from({ length: maxAdminLevel + 1 }, () => false));
-  }, [draftData.checkboxState, baseCountries, maxAdminLevel]);
+  }, [data.checkboxState, baseCountries, maxAdminLevel]);
 
   const columns: MatrixConfig['columns'] = useMemo(
     () =>
@@ -157,11 +156,11 @@ export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ data
         });
         return row;
       });
-      const previousMatrix = Array.isArray(draftData.checkboxState)
-        ? (draftData.checkboxState as boolean[][])
+      const previousMatrix = Array.isArray(data.checkboxState)
+        ? (data.checkboxState as boolean[][])
         : undefined;
       if (!isMatrixEqual(previousMatrix, nextMatrix)) {
-        const sessionId = resolveShapeSessionId(draftData);
+        const sessionId = resolveShapeSessionId(data);
         if (sessionId) {
           void clearStagesIfPresent(sessionId, FULL_INVALIDATION_STAGES);
         }
@@ -177,7 +176,7 @@ export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ data
         { variant: 'info' },
       );
     },
-    [baseCountries, columns, countries, enqueueSnackbar, onChange],
+    [baseCountries, columns, countries, data, enqueueSnackbar, onChange],
   );
 
   const isCellEnabled = useCallback(

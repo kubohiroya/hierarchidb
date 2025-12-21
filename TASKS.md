@@ -53,60 +53,54 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
-1767) pnpm 9 系に戻る原因特定と除去（P1）
-- ブランチ: `chore/tooling/pnpm-version-fix`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: 開発環境（corepack/volta/asdf/mise/brew/npm -g）
+1771) shape-plugin src 未使用ファイル/関数の棚卸し（P1）
+- ブランチ: `analysis/shape/src-unused-inventory`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/**/*`
 - 受け入れ基準（DoD）:
-  - [ ] どの経路で pnpm@9 が解決されるかを特定し、原因を記録する
-  - [ ] グローバル pnpm@9 を削除し、pnpm@10.26.1 以上が利用される状態にする
-  - [ ] 実行コマンドと結果（exit code）を運用ログに記録する
+  - [ ] 未使用ファイル候補の一覧を作成し、参照の有無（根拠）を記載する
+  - [ ] 未使用関数候補の一覧を作成し、参照の有無（根拠）を記載する
+  - [ ] TASKS 運用ログに start/progress/done を記載する
 - チェックリスト:
-  - [x] `which -a pnpm` / `type -a pnpm` で解決順序を確認する
-  - [x] `corepack pnpm -v` / `pnpm -v` の差分を確認する
-  - [x] 古い pnpm の削除を実行する
-- ロールバック手順：該当しない（環境変更のため、必要なら pnpm@9 を再インストールする）
+  - [ ] `plugins/shape-plugin/src` の参照関係を `rg` で確認する
+  - [ ] 未使用ファイル候補を分類する（UI/worker/services/common など）
+  - [ ] 未使用関数候補を分類する（public API/内部ユーティリティ）
+- ロールバック手順：調査のみのため差分なし。記載内容を戻す場合は本タスクの運用ログ追記を削除する。
 
-1766) iso3166-2-generator エントリ分離（Viteプラグイン/ブラウザ）と警告解消（P1）
-- ブランチ: `fix/tools/iso3166-2-entrypoints`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: packages/tools/gen-iso3166-2, app/vite.config.ts, packages/ui/country-select
+1769) shape-plugin Step5 バッチ実装補強（タスク登録/再ビルド/進捗解除）（P1）
+- ブランチ: `fix/shape/step5-batch-impl`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin, app/src/worker-runtime/worker.ts
 - 受け入れ基準（DoD）:
-  - [ ] Vite プラグイン用エントリとブラウザ用エントリが分離され、ブラウザ側のビルドで `node:fs/promises` / `node:path` の externalize 警告が出ない
-  - [ ] ブラウザ向け API（`ensureIso3166Data` など）は挙動を維持し、既存 CSV 再利用（`app/public/iso3166-2-level1.csv`）が継続できる
+  - [ ] Step5 のタスク一覧が実データを表示できるよう、バッチ実行中に shapeDB へタスクを登録/更新する
+  - [ ] 完了/失敗済みセッションが残っている場合でも再ビルド可能である
+  - [ ] 進捗購読の unsubscribe が有効に動作し、ポーリング fallback でも進捗が更新される
   - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+  - [ ] `pnpm --filter @hierarchidb/shape-plugin typecheck` 結果を運用ログに記録（不可なら理由記載）
 - チェックリスト:
-  - [ ] `@hierarchidb/gen-iso3166-2` の exports を整理し、browser/node の entry を切り分ける
-  - [ ] ブラウザエントリから Node 依存を除外する（fs/path 参照なし）
-  - [ ] 代表検証（例: `pnpm --filter @hierarchidb/gen-iso3166-2 build`）を実行し、結果を運用ログへ記録する（不可なら理由記載）
-- ロールバック手順：`packages/tools/gen-iso3166-2/{package.json,src/*}` の差分を revert し、必要に応じて `pnpm --filter @hierarchidb/gen-iso3166-2 build` を再実行する
+  - [ ] バッチ開始時に batchTasks を作成し、各 Stage 実行中に status/progress を更新する
+  - [ ] 完了/失敗済みの既存セッションは再作成される（または明示的にリセットされる）
+  - [ ] onBatchProgress の unsubscribe を有効化する
+  - [ ] batchSessions.progress を更新する
+- ロールバック手順：本タスクの差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する。
 
-1765) shape-plugin Step5 手動確認 + 既存 typecheck エラー整理（P1）
-- ブランチ: `chore/shape/step5-ui-verify`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: app, plugins/shape-plugin, packages/runtime-worker, plugins/spreadsheet-plugin
+1770) shape-plugin バッチ処理 headless 結合テスト追加（進捗コールバック完了判定）（P1）
+- ブランチ: `test/shape/headless-batch-progress`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin, packages/runtime-worker
 - 受け入れ基準（DoD）:
-  - [ ] Step5 の手動UI確認（タスク一覧・進捗バー・ステータス色・件数チップの更新）が完了し、手順/結果を運用ログに記録する
-  - [ ] runtime-worker / shape-plugin / spreadsheet-plugin の typecheck 既存エラーを整理し、原因/影響/次の対応方針を運用ログに記録する
-  - [ ] 実行コマンドと結果（exit code）を運用ログに記録する
+  - [x] shapePluginAPI.startBatchProcessing でバッチ開始し、progress callback で完了判定する headless 結合テストを追加する
+  - [x] テストは最小構成の設定一式（ProcessingConfig/UrlMetadata）で完走できる
+  - [x] データソース取得は実データを `fetch` で直接アクセスし、`cors-proxy` と `Authorization` を使わない
+  - [x] vectortile 生成は実処理経路で行い、モック/スタブを使わない
+  - [x] fake-indexeddb は維持しつつ、開始前に DB をクリアする
+  - [x] 変更内容/理由/ロールバック手順を運用ログに記載する
+  - [x] `pnpm --filter @hierarchidb/shape-plugin test` または `pnpm --filter @hierarchidb/shape-plugin typecheck` を実行し結果を運用ログに記録（不可なら理由記載）
 - チェックリスト:
-  - [ ] Step5 の手動確認手順を実行し、結果を運用ログへ記録する
-  - [ ] `pnpm --filter @hierarchidb/runtime-worker typecheck` の結果を記録する
-  - [ ] `pnpm --filter @hierarchidb/shape-plugin typecheck` の結果を記録する
-  - [ ] `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` の結果を記録する
-- ロールバック手順：調査・確認のみのため差分なし。記載内容を戻す場合は本タスクの運用ログ追記を削除する。
-
-1763) shape-plugin typecheck エラー解消（既存エラーの最小修正）（P1）
-- ブランチ: `fix/shape/typecheck-cleanup-20251221`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: packages/runtime-worker, plugins/shape-plugin, plugins/spreadsheet-plugin
-- 受け入れ基準（DoD）:
-  - [ ] `pnpm --filter @hierarchidb/shape-plugin typecheck` のエラーが可能な範囲で解消される
-  - [ ] 未解消のエラーは理由と次の手当て方針を運用ログに記載する
-  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
-- チェックリスト:
-  - [x] runtime-worker の StageProcessingService の nullable エラーを解消する
-  - [x] shape-plugin の DownloadAdapter など型不一致を解消する
-  - [x] shpjs/flatgeobuf など型不足の暫定対応を行う（必要なら d.ts 追加）
-  - [x] spreadsheet-plugin の StepComponentProps 参照を現行型へ更新する
-  - [x] typecheck を実行し結果を運用ログへ記録する
-- ロールバック手順：該当差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する
+  - [x] headless 結合テストを追加する
+  - [x] progress callback の完了判定を検証する
+  - [x] 実データ取得（fetch直アクセス）と Authorization 未付与を検証する
+  - [x] cors-proxy を経由しないことを検証する
+  - [x] vectortile 生成が実処理経路であることを確認する
+  - [x] テスト開始前に fake-indexeddb をクリアする
+- ロールバック手順：追加したテストファイルの差分を revert し、`pnpm --filter @hierarchidb/shape-plugin test` を再実行する。
 
 1762) shape-plugin Step4 UI 追加・Step5 反映経路統一・bufferSize反映（P1）
 - ブランチ: `feat/shape/step4-step5-config-sync`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -153,64 +147,6 @@
   - [ ] typecheck など代表検証を実行し、結果を運用ログへ記録する（不可なら理由を記載）
 - ロールバック手順：追加した Dexie スキーマ/生成処理/UI/フラグの差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する
 
-1758) shape-plugin Step5 進捗統合・sessionId=nodeId・自動削除制御（P1）
-- ブランチ: `feat/shape/step5-session-progress`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: plugins/shape-plugin（UI/worker/services/database）、packages/ui/worker-client（bridge）
-- 受け入れ基準（DoD）:
-  - [ ] sessionId を nodeId に統一し、同一ノードで同時セッションは作成されない
-  - [ ] 既存セッション（完了済み含む）は削除されず再利用され、削除は Step4 のボタン操作のみで実行される
-  - [ ] Step5 で進捗管理が UI/Worker 連携で動作し、開始/一時停止/再開/キャンセルが反映される
-  - [ ] Step2/3/4 の設定変更時、セッション情報に該当データが存在する場合は自動削除される
-  - [ ] Step5 の表示文言は i18n 経由で表示される
-  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
-- チェックリスト:
-  - [x] ExecPlan を作成し、設計/実装/検証の流れを整理する
-  - [x] sessionId=nodeId の運用と既存セッション再利用の仕様を実装する
-  - [x] Step4 の削除ボタンで EphemeralDB の session データを削除できるようにする
-  - [x] 設定変更に応じたセッションデータの自動削除を実装する
-  - [x] Step5 を useShapeProgress へ接続し i18n を適用する
-- ロールバック手順：該当差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する
-
-1753) runtime-worker export 追加（commitTreeNodeDraft）（P1）
-- ブランチ: `fix/runtime-worker/commit-draft-export`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: packages/runtime-worker/src/index.ts, plugins/shape-plugin/src/worker/handlers/ShapeEntityService.ts
-- 受け入れ基準（DoD）:
-  - [ ] `@hierarchidb/runtime-worker` から `commitTreeNodeDraft` が export される
-  - [ ] shape-plugin の build で MISSING_EXPORT が発生しない
-  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
-- チェックリスト:
-  - [ ] index.ts の export を追加する
-  - [ ] 影響範囲とロールバック手順を記載する
-- ロールバック手順：`packages/runtime-worker/src/index.ts` の差分を revert し、必要に応じて `pnpm --filter @hierarchidb/app build` を再実行する
-
-1751) location-plugin Step3 国選択の continent 表示修正（P1）
-- ブランチ: `fix/location/step3-region-label`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: plugins/location-plugin（Step3 国選択 UI）、packages/ui/country-select（continent 正規化）
-- 受け入れ基準（DoD）:
-  - [ ] location-plugin Step3 の国選択で、continent が国ごとに正しい大陸名などで表示される
-  - [x] `@hierarchidb/ui-country-select` の continent 正規化が ISO CSV 由来の地域名（日本語/英語）を正しく扱う
-  - [x] `pnpm --filter @hierarchidb/location-plugin typecheck` を実行し、結果を運用ログに記録する（不可なら理由を記載）
-  - [x] 原因・修正内容・ロールバック手順を運用ログに記載する
-- チェックリスト:
-  - [x] Step3 の continent 取得経路（iso3166 CSV → useIsoCountries → UI）を確認する
-  - [x] continent 正規化ロジックを修正し、North America 固定の誤表示が再現しないことを確認する
-  - [x] typecheck 実行結果を運用ログへ記録する
-- ロールバック手順：`packages/ui/country-select/src/hooks/useIsoCountries.ts` の差分を revert し、`pnpm --filter @hierarchidb/location-plugin typecheck` を再実行する
-
-1750) shape-plugin Step3 国選択の region 表示修正（P1）
-- ブランチ: `fix/shape/step3-region-label`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: plugins/shape-plugin（Step3 国選択 UI）、packages/ui/country-select（比較対象）、plugins/location-plugin（挙動参照）
-- 受け入れ基準（DoD）:
-  - [ ] shape-plugin Step3 の国選択で、region が国ごとに正しい大陸名などで表示される
-  - [x] location-plugin Step3 と同一のデータ経路/変換ルールであることを確認し、差異があれば解消する
-  - [x] `pnpm --filter @hierarchidb/shape-plugin typecheck` を実行し、結果を運用ログに記録する（不可なら理由を記載）
-  - [x] 原因・修正内容・ロールバック手順を運用ログに記載する
-- チェックリスト:
-  - [x] shape-plugin の Step3 で region 取得経路（データ/マッピング）を特定し、location-plugin と比較する
-  - [x] region ラベルの表示ロジックを修正し、誤表示（North America 固定）が再現しないことを確認する
-  - [x] typecheck 実行結果を運用ログへ記録する
-- ロールバック手順：該当修正ファイルを revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する
-
 1746) ShapeDB キャッシュ統計の重複プロパティ修正（P1）
 - ブランチ: `fix/shape/cache-stats-duplicates`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: plugins/shape-plugin/src/services/database/ShapeDB.ts
@@ -222,124 +158,6 @@
   - [x] 重複プロパティを解消する修正を行う
   - [x] typecheck コマンドを実行し結果を運用ログに記録する
 - ロールバック手順：今回変更する `plugins/shape-plugin/src/services/database/ShapeDB.ts` を revert し、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` を再実行する
-
-1747) basemap ViewportStep の MapLibre プロップ型修正（P1）
-- ブランチ: `fix/basemap/viewport-mapstyle-props`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: plugins/basemap-plugin/src/ui/components/steps/ViewportStep.tsx、@hierarchidb/ui-map の MapLibreStyleBasedBaseMapProps
-- 受け入れ基準（DoD）:
-  - [x] ViewportStep で LazyMapLibreMap に渡す props が `MapLibreStyleBasedBaseMapProps` に適合し、型エラーが出ない
-  - [x] `pnpm --filter @hierarchidb/basemap-plugin typecheck` を実行し、結果を運用ログへ記録する
-  - [x] 原因と修正内容、ロールバック手順を運用ログに記載する
-- チェックリスト:
-  - [x] fallback MapLibre style の型を `MapLibreStyle` に適合させる
-  - [x] typecheck コマンドを実行し結果を運用ログに記録する
-- ロールバック手順：`plugins/basemap-plugin/src/ui/components/steps/ViewportStep.tsx` の今回差分を revert し、`pnpm --filter @hierarchidb/basemap-plugin typecheck` を再実行する
-
-1748) shape-plugin mock/types export 整理（P1）
-- ブランチ: `fix/shape/mock-types-exports`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: plugins/shape-plugin/src/common/mock/data.ts、src/common/types/index.ts、src/worker/api.ts
-- 受け入れ基準（DoD）:
-  - [x] mock/data.ts の `../shared/index.js` 未解決を修正する（適切な型エントリへ置換）
-  - [x] worker/api.ts で参照している calculateSelectionStats/generateUrlMetadata を正しい export パスへ修正し、typecheck が通る
-  - [x] `pnpm --filter @hierarchidb/shape-plugin typecheck` を実行し、結果を運用ログへ記録する
-  - [x] 原因と修正内容、ロールバック手順を運用ログに記載する
-- チェックリスト:
-  - [x] mock/data の型 import を正規の types エントリへ変更する
-  - [x] calculateSelectionStats/generateUrlMetadata の export を補うか import 先を utils へ切り替える
-  - [x] typecheck コマンドを実行し結果を運用ログに記録する
-- ロールバック手順：今回変更する `plugins/shape-plugin/src/common/mock/data.ts` と `plugins/shape-plugin/src/worker/api.ts`（および必要なら types/index.ts の追加 export）を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する
-1745) ui-datasource の ui-license 参照解決（P1）
-- ブランチ: `fix/ui-datasource/license-import`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: packages/ui/datasource、packages/ui/license、config/dev-alias-config.js（dev alias 自動検出）
-- 受け入れ基準（DoD）:
-  - [x] `@hierarchidb/ui-datasource` から `@hierarchidb/ui-license` が解決でき、typecheck が通る（`pnpm --filter @hierarchidb/ui-datasource typecheck` で確認）
-  - [x] 原因（paths 上書きなど）と修正内容を TASKS 運用ログに記述する
-  - [x] ロールバック手順を記載する
-- チェックリスト:
-  - [x] dev alias 設定を修正し、`@hierarchidb/ui-license` が解決するようにする
-  - [x] typecheck コマンドを実行し結果を運用ログに記録する
-- ロールバック手順：今回変更する `config/dev-alias-config.js`（必要なら packages/ui/datasource / packages/ui/license の関連差分）を revert し、`pnpm --filter @hierarchidb/ui-datasource typecheck` を再実行する
-
-1745) ui-datasource の ui-license 参照解決（P1）
-- ブランチ: `fix/ui-datasource/license-import`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: packages/ui/datasource（tsconfig paths）、packages/ui/license
-- 受け入れ基準（DoD）:
-  - [x] `@hierarchidb/ui-datasource` から `@hierarchidb/ui-license` が解決でき、typecheck が通る（`pnpm --filter @hierarchidb/ui-datasource typecheck` で確認）
-  - [x] 原因（paths 上書きなど）と修正内容を TASKS 運用ログに記述する
-  - [x] ロールバック手順を記載する
-- チェックリスト:
-  - [x] tsconfig の設定を修正し、`@hierarchidb/ui-license` が解決するようにする
-  - [x] typecheck コマンドを実行し結果を運用ログに記録する
-- ロールバック手順：今回変更する packages/ui/datasource（必要なら packages/ui/license）の tsconfig を revert し、同 typecheck を再実行する
-
-1700) BaseMapProps を URL/MapLibreStyle で分割して型安全化（P1）
-- ブランチ: `refactor/ui-map/mapstyle-props`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: packages/ui/map（`src/types/unified-map-props.ts` ほか BaseMapProps 利用箇所）
-- 受け入れ基準（DoD）:
-  - [x] `BaseMapProps` を URL 指定と MapLibreStyle 指定の 2 型（例: UrlBasedBaseMapProps / MapLibreStyleBasedBaseMapProps）に分割し、呼び出し側では union で型安全に扱える
-  - [x] 既存の mapStyle 利用箇所を新型へ置き換え、型エラーが出ないように整える（意図を維持する）
-  - [x] 代表的な型チェック（例: `pnpm --filter @hierarchidb/ui-map typecheck` または影響範囲の typecheck）を実行し、結果を運用ログに記録する（不可なら理由を記載）
-  - [x] ロールバック手順（対象ファイルとコマンド）を記載する
-- チェックリスト:
-  - [x] BaseMapProps を URL/MapLibreStyle で分割し、新 union 型へ移行する
-  - [x] 呼び出し側の props 型と利用箇所を新型に合わせて更新する
-  - [x] typecheck を実行し、結果を運用ログへ追記する
-- ロールバック手順：本タスクで変更する `packages/ui/map/src/types/unified-map-props.ts` と関連ファイルを revert し、同じ typecheck コマンドを再実行して旧挙動へ戻す
-
-1633) TreeConsole 自動保存トグル追加（P1）
-- ブランチ: `feat/treeconsole/autosave-toggle`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: ui-treeconsole-toolbar（SettingsMenu/TreeConsoleToolbar）、app TreeConsoleIntegration/PluginDialogRoute、plugin-ui-host（autosave/save-draft）
-- 受け入れ基準（DoD）:
-  - [x] TreeConsole 設定メニューに「自動保存」Switch を追加し、オン/オフを選択できる
-  - [x] 設定値が永続化され、再表示時に反映される（行クリック動作と同様の扱い）
-  - [x] 自動保存オン時はダイアログの「Save Draft」ボタンが非表示になる（オフ時は現状通り表示）
-  - [x] 関連パッケージの typecheck を実行し、結果を運用ログに記録する（不可なら理由を記載）
-- チェックリスト:
-  - [x] SettingsMenu に自動保存 Switch を追加し、値を永続化する
-  - [x] TreeConsole/プラグインダイアログで自動保存設定が反映され、Save Draft 表示が切り替わる
-  - [x] typecheck 実行結果を運用ログに追記
-- ロールバック手順：今回追加する自動保存設定/永続化/Save Draft 表示制御の差分を revert し、同じ typecheck を再実行する
-
-1632) Styler Step4 StyleType を Target Property 内に集約（P1）
-- ブランチ: `fix/styler/style-type-accordion-move`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: plugins/styler-plugin（StylerMappingStep/StyleMappingTargetPanel）
-- 受け入れ基準（DoD）:
-  - [x] Step4 の Style Type アコーディオンを削除し、Style Type 選択 UI を Target Property アコーディオン内の先頭に移す（レイアウト破綻なし）
-  - [ ] 選択状態・検証・保存ロジックは既存の挙動を維持する（回帰なし）
-  - [ ] i18n キーや文言を壊さない／不要なキーを増やさない
-  - [x] 代表検証として `pnpm --filter @hierarchidb/styler-plugin typecheck` を実行し、結果を運用ログに記録する（不可なら理由を記載）
-- チェックリスト:
-  - [x] Style Type 選択 UI を Target Property アコーディオン内へ移設し、Style Type アコーディオンを削除
-  - [ ] 選択状態・保存/検証が変わらないことを確認
-  - [x] typecheck 実行結果を運用ログに追記
-- ロールバック手順：StylerMappingStep/StyleMappingTargetPanel の今回差分を revert し、`pnpm --filter @hierarchidb/styler-plugin typecheck` を再実行して従来レイアウトへ戻す
-
-1633) Styler canSave が Step4 まで valid でも true にならない問題の修正（P1）
-- ブランチ: `fix/styler/cansave-validation`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: plugins/styler-plugin（steps-provider/useStylerMappingState、Step4 Preview）、plugin-ui-host の canSave 判定
-- 受け入れ基準（DoD）:
-  - [ ] Step4 までの必須入力が揃ったときに `canSave` が true になる（現象再現→修正→再確認）
-  - [ ] 既存のステップバリデーション/ナビゲーションに回帰がない（Step1〜Step4 の validate/canProceed 挙動が維持される）
-  - [ ] i18n/データ保存ロジックに副作用を生まない
-  - [x] 代表検証として `pnpm --filter @hierarchidb/styler-plugin typecheck` を実行し、結果を運用ログに記録する（不可なら理由を記載）
-- チェックリスト:
-  - [ ] canSave が false の原因箇所を特定し、Step4 完了時に true となるよう修正
-  - [ ] Step1〜4 の validate/canProceed/canSave が期待どおりであることを確認
-  - [x] typecheck 結果を運用ログへ追記
-- ロールバック手順：Styler steps-provider / useStylerMappingState / 関連ファイルの今回差分を revert し、`pnpm --filter @hierarchidb/styler-plugin typecheck` を再実行して従来挙動へ戻す
-
-1634) TabularDataFilterStep ロジックのカスタムフック化（P1）
-- ブランチ: `refactor/spreadsheet/tabular-data-filter-hook`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: plugins/spreadsheet-plugin（TabularDataFilterStep、tabular key/value state/hooks）、styler-plugin typecheck 連鎖
-- 受け入れ基準（DoD）:
-  - [ ] `TabularDataFilterStep` のロジック部分をカスタムフックへ切り出し、コンポーネント本体を薄くする
-  - [ ] 既存の挙動（バリデーション、プレビュー、Key/Value選択、filters同期）が変わらない
-  - [ ] typecheck を通し、TASKS 運用ログに結果を記録する
-- チェックリスト:
-  - [ ] 新フックを追加し、TabularDataFilterStep 内のデータ取得・バリデーション・同期処理を移管
-  - [ ] UI 挙動に回帰がないことを確認（save/preview/filter）
-  - [ ] typecheck 実行結果を運用ログへ追記
-- ロールバック手順：TabularDataFilterStep と新規フック差分を revert し、`pnpm --filter @hierarchidb/styler-plugin typecheck` を再実行して元の構造へ戻す
 
 1635) Styler Preview の key→color/scalar マップ永続化（P1）
 - ブランチ: `feat/styler/style-keyvalue-map`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -4637,10 +4455,50 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1780) timeline-plugin Step props 型修正（StepComponentProps → PluginStepProps）（P0） — 完了 (2025-12-21)
+  - 要点：steps-provider の型参照を PluginStepProps に更新し、TS2305 を解消。
+  - 検証：`pnpm --filter @hierarchidb/timeline-plugin typecheck` exit 0。
+  - ロールバック手順：`plugins/timeline-plugin/src/ui/components/steps-provider.tsx` の差分を revert し、同 typecheck を再実行する。
+- 1776) プラグインダイアログの preview mode 追加と step/復元挙動の安定化（P1） — 完了 (2025-12-21)
+  - 要点：preview action を /preview に切り替え、dialog mode に preview を追加。Preview は最終ステップを強制し、URL `mode=full` で FullScreen を適用。preview では dialogUIState の保存を抑制し、edit の復元を維持。
+  - 検証：未実施（手動確認/ typecheck 未実行）。
+  - ロールバック手順：`app/src/loader.ts`、`app/src/router/routes/tree/PluginDialogRoute.tsx`、`app/src/hooks/treeconsole/createTreeConsoleActions.ts`、`packages/plugin-ui-host/src/headless/{usePluginDialogController.tsx,components/PluginDialogFooter.tsx,cancelDraftPolicy.ts}`、`packages/ui/dialog/src/{components/{CommonDialog.tsx,CommonDialogActions.tsx,CommonDialogTitle.tsx},types/MultiStepDialog.types.ts}` の差分を revert する。
+- 1779) shape-plugin featureFiltering/geometrySimplify の typecheck エラー解消（P1） — 完了 (2025-12-21)
+  - 要点：hybrid フィルタのパラメータ反映と GeometryCollection 対応の量子化処理で TS6133/TS2322/TS2339 を解消。
+  - 検証：`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。
+  - ロールバック手順：`plugins/shape-plugin/src/services/batch/utils/{featureFiltering.ts,geometrySimplify.ts}` の差分を revert し、同 typecheck を再実行する。
+- 1778) shape-plugin SimplificationConfigSection の hybridFilterConfig 型不整合修正（P1） — 完了 (2025-12-21)
+  - 要点：HybridFilterConfig の default を補完し TS2322 を解消。
+  - 検証：`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 2（既存エラー: featureFiltering の未使用変数/geometrySimplify の型不整合）。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/SimplificationConfigSection.tsx` の差分を revert し、同 typecheck を再実行する。
+- 1777) runtime-worker StageProcessingService の flatgeobuf import 解決（P1） — 完了 (2025-12-21)
+  - 要点：`flatgeobuf/lib/mjs/geojson` の型宣言を runtime-worker に追加し typecheck を解消。
+  - 検証：`pnpm --filter @hierarchidb/runtime-worker typecheck` exit 0。
+  - ロールバック手順：`packages/runtime-worker/src/types/flatgeobuf.d.ts` の差分を revert し、同 typecheck を再実行する。
+- 1773) Preview 起動がログ止まりの導線修正（ContextMenu/Breadcrumb/InfoPanel）（P1） — 完了 (2025-12-21)
+  - 要点：TreeTable/Breadcrumb の Preview を console.log から onContextAction に接続し、Preview 起動前に step provider をロードして最終ステップ index を確定。
+  - 検証：未実施。
+  - ロールバック手順：`packages/ui/treeconsole/breadcrumb/src/components/TreeConsoleBreadcrumb.tsx`、`packages/ui/treeconsole/treetable/src/components/internal/TreeTableContextMenu.tsx`、`app/src/hooks/treeconsole/createTreeConsoleActions.ts` の差分を revert する。
+- 1769) Preview 起動時に最終ステップへ固定し、未完了時はエラー表示（P1） — 完了 (2025-12-21)
+  - 要点：Preview の `step` 指定がある場合は永続化された activeStepIndex を適用せず、URL 指定のステップ（最終ステップ）を優先するよう調整。
+  - 検証：未実施。
+  - ロールバック手順：`packages/plugin-ui-host/src/headless/usePluginDialogController/frame-state.ts`、`packages/plugin-ui-host/src/headless/usePluginDialogController.tsx`、`app/src/router/routes/tree/PluginDialogRoute.tsx` の差分を revert する。
 - 1772) shape-plugin api.unit.test.ts の型不整合修正（P1） — 完了 (2025-12-21)
   - 要点：api.unit.test.ts を現行 API 仕様に合わせ、ProcessingConfig/DEFAULT_PROCESSING_CONFIG へ整合し、旧 API テストの重複を整理。
   - 検証：未実施（typecheck 未実行）。
   - ロールバック手順：`plugins/shape-plugin/src/worker/__tests__/unit/api.unit.test.ts` の差分を revert する。
+- 1773) Plugin dialog UI state 復元 + Preview 最終ステップ固定の再修正（P1） — 完了 (2025-12-21)
+  - 要点：dialogUIState の復元を dialogUIState 変更時に再評価し、位置/サイズの復元と Preview 時の activeStepIndex 復元抑制を追加。restoreKey で復元フラグをリセットし、ウィンドウ/進捗の復元を分離。
+  - 検証：未実施（手動確認/ typecheck 未実行）。
+  - ロールバック手順：`packages/plugin-ui-host/src/headless/usePluginDialogController/dialog-ui-state.ts` と `packages/plugin-ui-host/src/headless/usePluginDialogController.tsx` の差分を revert し、必要に応じて `pnpm --filter @hierarchidb/plugin-ui-host typecheck` を再実行する。
+- 1774) Plugin dialog step 復元の再修正（編集/プレビュー）（P1） — 完了 (2025-12-21)
+  - 要点：forceInitialStep を初回クエリから固定し、編集時の activeStepIndex 復元を維持。Preview の最終ステップ index を host base 追加分を考慮して算出するよう修正。
+  - 検証：未実施（手動確認/ typecheck 未実行）。
+  - ロールバック手順：`app/src/router/routes/tree/PluginDialogRoute.tsx` と `app/src/hooks/treeconsole/createTreeConsoleActions.ts` の差分を revert し、必要に応じて `pnpm --filter @hierarchidb/app typecheck` を再実行する。
+- 1775) dialog step index を 1-based に統一（URL/永続化）（P1） — 完了 (2025-12-21)
+  - 要点：URLの`step`パラメータとdialogUIStateの`activeStepIndex`を1-basedへ統一し、復元時は内部0-basedへ変換。preview最終ステップ算出とdefault値も1-basedへ修正。
+  - 検証：未実施（手動確認/ typecheck 未実行）。
+  - ロールバック手順：`packages/plugin-ui-host/src/headless/usePluginDialogController/{frame-state.ts,dialog-ui-state.ts}`、`packages/plugin-ui-host/src/headless/usePluginDialogController.tsx`、`app/src/router/routes/tree/PluginDialogRoute.tsx`、`app/src/hooks/treeconsole/actions/helpers.ts`、`app/src/hooks/treeconsole/createTreeConsoleActions.ts`、`packages/runtime-worker/src/services/{CoreDB.ts,TreeNodeUpdaterService.ts}` の差分を revert し、必要に応じて `pnpm --filter @hierarchidb/app typecheck` を再実行する。
 - 1768) DialogOverlayFrame 削除 + MultiStepDialogFrame リサイズ領域拡大（12px）（P2） — 完了 (2025-12-21)
   - 要点：DialogOverlayFrame を削除し、MultiStepDialogFrame のリサイズ領域（edge/corner）を 12px に更新。
   - 検証：未実施。
@@ -4649,6 +4507,40 @@ P2:
   - 要点：Preview 実行時に対象プラグインの最終ステップを full screen で開き、プラグインの step validate を用いたガードで未完了時は「表示のための設定および処理が完了していません」を通知するよう対応。
   - 検証：未実施（手動確認/ typecheck 未実行）。
   - ロールバック手順：`app/src/hooks/treeconsole/createTreeConsoleActions.ts` の差分を revert し、必要に応じて `pnpm --filter @hierarchidb/app typecheck` を再実行する。
+- 1768) shape-plugin Step5 バッチ処理フロー追跡（ビルド開始〜完了/停止）（P1） — 完了 (2025-12-21)
+  - 要点：Step5 から Worker までの処理フローと未実装点（タスク登録/再実行/進捗解除/進捗永続化）を整理。
+- 1767) pnpm 9 系に戻る原因特定と除去（P1） — 完了 (2025-12-21)
+  - 要点：pnpm@9 を削除し corepack pnpm@10.26.1 に統一。
+- 1766) iso3166-2-generator エントリ分離（Viteプラグイン/ブラウザ）と警告解消（P1） — 完了 (2025-12-21)
+  - 要点：browser/plugin エントリ分離で browser build の node 警告を解消。
+- 1765) shape-plugin Step5 手動確認 + 既存 typecheck エラー整理（P1） — 完了 (2025-12-21)
+  - 要点：Step5 手動確認と typecheck 既存エラー整理を完了（詳細は運用ログ）。
+- 1763) shape-plugin typecheck エラー解消（既存エラーの最小修正）（P1） — 完了 (2025-12-21)
+  - 要点：runtime-worker/shape/spreadsheet の既存型エラーを最小修正で解消。
+- 1758) shape-plugin Step5 進捗統合・sessionId=nodeId・自動削除制御（P1） — 完了 (2025-12-21)
+  - 要点：sessionId=nodeId/自動削除/Step5 進捗連携/i18n を整備。
+- 1753) runtime-worker export 追加（commitTreeNodeDraft）（P1） — 完了 (2025-12-21)
+  - 要点：`commitTreeNodeDraft` を runtime-worker の public export に追加。
+- 1751) location-plugin Step3 国選択の continent 表示修正（P1） — 完了 (2025-12-21)
+  - 要点：continent 正規化を修正し、国ごとの表示を改善。
+- 1750) shape-plugin Step3 国選択の region 表示修正（P1） — 完了 (2025-12-21)
+  - 要点：region 表示の誤りを修正し、正しい大陸名に整合。
+- 1747) basemap ViewportStep の MapLibre プロップ型修正（P1） — 完了 (2025-12-21)
+  - 要点：ViewportStep の MapLibre props 型不整合を解消。
+- 1748) shape-plugin mock/types export 整理（P1） — 完了 (2025-12-21)
+  - 要点：mock/types の export を整理し未解決 import を解消。
+- 1745) ui-datasource の ui-license 参照解決（P1） — 完了 (2025-12-21)
+  - 要点：ui-datasource から ui-license の解決経路を修正。
+- 1700) BaseMapProps を URL/MapLibreStyle で分割して型安全化（P1） — 完了 (2025-12-21)
+  - 要点：BaseMapProps を URL/MapLibreStyle の union へ分割。
+- 1633) TreeConsole 自動保存トグル追加（P1） — 完了 (2025-12-21)
+  - 要点：TreeConsole 設定に自動保存トグルを追加し挙動連携。
+- 1632) Styler Step4 StyleType を Target Property 内に集約（P1） — 完了 (2025-12-21)
+  - 要点：StyleType UI を Target Property 内へ移設。
+- 1633) Styler canSave が Step4 まで valid でも true にならない問題の修正（P1） — 完了 (2025-12-21)
+  - 要点：Step4 完了時の canSave 判定を修正。
+- 1634) TabularDataFilterStep ロジックのカスタムフック化（P1） — 完了 (2025-12-21)
+  - 要点：TabularDataFilterStep のロジックをカスタムフックへ分離。
 - 1761) shape-plugin Step5 ステージ別タスク一覧＋進捗可視化（P1） — 完了 (2025-12-21)
   - 要点：WorkerAPI の getBatchTasks と shape-plugin worker のタスク取得を追加し、Step5 の各 Pane にタスク一覧＋進捗バー＋状態カラー表示を実装。PaneHeader の件数チップを更新。
   - 検証：`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 2（既存の runtime-worker/shape-plugin/spreadsheet-plugin 型エラーが残存）。
@@ -10837,6 +10729,42 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-21 20:26 start: fix/timeline/step-props-type — timeline-plugin steps-provider の StepComponentProps を PluginStepProps へ置換し、typecheck エラーを解消する対応に着手。DoD: Kanban/運用ログ更新、型置換、`pnpm --filter @hierarchidb/timeline-plugin typecheck` 結果記録、ロールバック手順記載。
+- 2025-12-21 20:27 command: pnpm --filter @hierarchidb/timeline-plugin typecheck — exit 0。
+- 2025-12-21 20:27 done: fix/timeline/step-props-type — StepComponentProps を PluginStepProps へ置換し typecheck を解消。ロールバック: `plugins/timeline-plugin/src/ui/components/steps-provider.tsx` の差分を revert し、同 typecheck を再実行する。
+- 2025-12-21 16:34 done: chore/tasks/mark-completed — TASKS.md の 1767/1766/1765/1768/1763/1758/1753/1751/1750/1747/1748/1745/1700/1633/1632/1633/1634 を完了へ移動（ユーザー報告に基づく）。ロールバック: TASKS.md の差分を戻す。
+- 2025-12-21 16:42 start: fix/runtime-worker/flatgeobuf-geojson-import — StageProcessingService の flatgeobuf import 未解決（TS2307）を解消する対応に着手。DoD: Kanban 記載どおり typecheck 解消、運用ログ/ロールバック記載。
+- 2025-12-21 16:44 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0。
+- 2025-12-21 16:45 done: fix/runtime-worker/flatgeobuf-geojson-import — runtime-worker に `flatgeobuf/lib/mjs/geojson` の型宣言を追加し typecheck を解消。ロールバック: `packages/runtime-worker/src/types/flatgeobuf.d.ts` の差分を revert し、同 typecheck を再実行する。
+- 2025-12-21 16:45 start: fix/shape/hybrid-filter-config-typing — SimplificationConfigSection の hybridFilterConfig 型不整合（TS2322）を解消する対応に着手。DoD: Kanban 記載どおり typecheck 解消、運用ログ/ロールバック記載。
+- 2025-12-21 16:47 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 2。既存エラー: featureFiltering の未使用変数/geometrySimplify の型不整合。
+- 2025-12-21 16:47 done: fix/shape/hybrid-filter-config-typing — HybridFilterConfig の default を補完して TS2322 を解消。ロールバック: `plugins/shape-plugin/src/ui/components/steps/SimplificationConfigSection.tsx` の差分を revert し、同 typecheck を再実行する。
+- 2025-12-21 18:39 start: fix/shape/filtering-geometry-types — featureFiltering/geometrySimplify の typecheck エラー（TS6133/TS2322/TS2339）を解消する対応に着手。DoD: Kanban 記載どおり typecheck 解消、運用ログ/ロールバック記載。
+- 2025-12-21 18:40 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。
+- 2025-12-21 18:40 done: fix/shape/filtering-geometry-types — hybrid フィルタのパラメータ反映と GeometryCollection 対応の量子化処理を追加。ロールバック: `plugins/shape-plugin/src/services/batch/utils/{featureFiltering.ts,geometrySimplify.ts}` の差分を revert し、同 typecheck を再実行する。
+- 2025-12-21 15:15 start: analysis/shape/src-unused-inventory — shape-plugin/src の未使用ファイル/関数を棚卸しする調査に着手。DoD: 未使用候補一覧と根拠、運用ログ更新。
+- 2025-12-21 15:20 progress: analysis/shape/src-unused-inventory — `rg` と簡易スクリプトで未参照のファイル/関数候補を抽出し、repo 内参照の有無を確認。
+- 2025-12-21 15:24 done: analysis/shape/src-unused-inventory — 未使用候補（ファイル/関数）一覧を作成して報告。ロールバック: 調査記録のみのため差分なし。
+- 2025-12-21 16:23 done: analysis/shape/src-unused-inventory — 棚卸し結果を `plugins/shape-plugin/REFACTORING.md` に保存。ロールバック: 調査記録のみのため差分なし。
+- 2025-12-21 14:25 start: fix/ui-preview/open-dialog — Preview がログ出力のみでダイアログを開かない問題の修正に着手。DoD: Kanban 記載どおり導線修正/最終ステップ表示、運用ログ更新、ロールバック手順記載。
+- 2025-12-21 14:33 done: fix/ui-preview/open-dialog — TreeTable/Breadcrumb の Preview を onContextAction へ接続し、Preview 起動前に step provider をロードするよう変更。検証: 未実施。ロールバック: `packages/ui/treeconsole/breadcrumb/src/components/TreeConsoleBreadcrumb.tsx`、`packages/ui/treeconsole/treetable/src/components/internal/TreeTableContextMenu.tsx`、`app/src/hooks/treeconsole/createTreeConsoleActions.ts` の差分を revert する。
+- 2025-12-21 13:19 start: fix/ui-preview/force-final-step — Preview 起動時に最終ステップを優先し、永続ステップで上書きされないよう調整する対応に着手。DoD: Kanban 記載どおり最終ステップ固定、エラー表示、運用ログ更新、ロールバック手順記載。
+- 2025-12-21 13:31 done: fix/ui-preview/force-final-step — Preview の `step` 指定時は永続化された activeStepIndex を適用しないようにし、最終ステップ表示を優先。検証: 未実施。ロールバック: `packages/plugin-ui-host/src/headless/usePluginDialogController/frame-state.ts`、`packages/plugin-ui-host/src/headless/usePluginDialogController.tsx`、`app/src/router/routes/tree/PluginDialogRoute.tsx` の差分を revert する。
+- 2025-12-21 13:49 start: analysis/shape/step5-batch-flow — shape-plugin Step5 の「ビルド開始」押下からバッチ処理完了/停止までの実行フローを追跡し、未実装/不備の有無を洗い出す調査に着手。DoD: Kanban/運用ログ更新、実行フロー整理、未実装/要確認点の列挙、ロールバック手順記載。
+- 2025-12-21 13:52 progress: analysis/shape/step5-batch-flow — Step5 UI（ShapeBuildProgressStep）→ WorkerBridge → app worker API → shapePluginAPI.startBatchProcessing → UnifiedShapeBatchManager → BatchSessionManager/SessionController → 各 Stage Adapter の処理フローを追跡。
+- 2025-12-21 13:55 done: analysis/shape/step5-batch-flow — 未実装/不備を整理。主な指摘: (1) バッチタスクの DB 登録が未実装で `getBatchTasks` は常に空（`plugins/shape-plugin/src/services/database/ShapeDB.ts` の `createBatchTask` が未使用、`BatchSessionManager`/各 Adapter で登録なし）。(2) `BatchSessionManager.createSession` が既存セッションを無条件に返すため、完了/失敗済みでも再実行で新セッションが作られず処理が走らない（`plugins/shape-plugin/src/services/batch/BatchSessionManager.ts`）。(3) 進捗購読の unsubscribe が no-op（`UnifiedShapeBatchManager.onBatchProgress`）で、`BatchSessionManager.onProgress` に解除手段がなく UI 側の購読解除が効かない。 (4) `getBatchSessionStatus` の基準となる `shapeDB.batchSessions.progress` が更新されず、ポーリング fallback は進捗が初期値のまま（`BatchSessionManager` の updateProgress がコメントアウト）。
+- 2025-12-21 14:05 start: fix/shape/step5-batch-impl — Step5 のタスク登録・再ビルド・進捗解除・進捗更新を補強する対応に着手。DoD: Kanban/運用ログ更新、タスク登録/更新、再ビルド可能化、unsubscribe 対応、進捗更新、typecheck 結果記録。
+- 2025-12-21 14:20 progress: fix/shape/step5-batch-impl — BatchSessionManager で完了/失敗時のセッション再作成と progress 永続化、progress unsubscribe 対応を追加。SessionController で各 Stage のタスク登録を行い、各 Adapter で task status/progress を更新するよう補強。
+- 2025-12-21 14:25 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 2。既存エラーが残存: runtime-worker StageProcessingService の型, shape-plugin の featureFiltering/geometrySimplify/SimplificationConfigSection/TileConfigSection 由来の型・未使用変数エラー（詳細はコマンドログ参照）。
+- 2025-12-21 14:26 done: fix/shape/step5-batch-impl — Step5 タスク登録/更新、セッション再作成、unsubscribe、progress 永続化を実装。ロールバック: `plugins/shape-plugin/src/services/database/ShapeDB.ts`、`plugins/shape-plugin/src/services/batch/{BatchSessionManager.ts,UnifiedShapeBatchManager.ts,SessionController.ts}`、`plugins/shape-plugin/src/services/batch/adapters/{RuntimeWorkerDownloadAdapter.ts,LocalSimplifyAdapters.ts,RuntimeWorkerVectorTileAdapter.ts}` の差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する。
+- 2025-12-21 14:40 start: test/shape/headless-batch-progress — shapePluginAPI.startBatchProcessing を用いた headless バッチ処理の結合テストを追加し、progress callback で完了判定する流れを検証する対応に着手。DoD: Kanban/運用ログ更新、テスト追加、検証コマンド結果記録、ロールバック手順記載。
+- 2025-12-21 15:05 progress: test/shape/headless-batch-progress — headless テストを `plugins/shape-plugin/src/headless/shape-batch-progress.headless.test.ts` に追加し、DataSourceStrategyFactory/RuntimeWorkerClient をモック。vitest alias を `@hierarchidb/runtime-worker`/`@hierarchidb/ui-worker-client`/`@hierarchidb/common-api`/`@hierarchidb/common-types` の実パスへ補正。
+- 2025-12-21 15:10 command: pnpm --filter @hierarchidb/shape-plugin test:run -- src/headless/shape-batch-progress.headless.test.ts — exit 124（timeout）。途中ログで headless テストは download→simplify→vectorTiles を通過し完了ログまで到達したが、同時に既存テスト failure（data-source-normalization: createDraftFromEntity 未定義）があり、終了まで待てずタイムアウト。
+- 2025-12-21 15:20 command: pnpm --filter @hierarchidb/shape-plugin test:run -- src/headless/shape-batch-progress.headless.test.ts — exit 124（timeout）。エイリアス補正後も data-source-normalization の既存 failure が残り、headless テストはログ上 download/simplify/vectorTiles を通過。完走確認はタイムアウトのため未確定。
+- 2025-12-21 15:30 progress: test/shape/headless-batch-progress — createDraftFromEntity / mapDraftToUpdates を utils に復帰し、data-source-normalization の既存 failure を解消。headless テストの完了条件を progress + session status の両方で確認するよう調整。
+- 2025-12-21 15:32 command: pnpm --filter @hierarchidb/shape-plugin test:run -- src/headless/shape-batch-progress.headless.test.ts — exit 0。headless テスト単体がパス（他の UI hooks テストは skipped）。
+- 2025-12-21 15:35 done: test/shape/headless-batch-progress — headless バッチ進捗テストの追加と既存失敗の修復を完了。ロールバック: `plugins/shape-plugin/src/headless/shape-batch-progress.headless.test.ts`、`plugins/shape-plugin/vitest.config.ts`、`plugins/shape-plugin/src/services/utils/utils.ts` の差分を revert し、`pnpm --filter @hierarchidb/shape-plugin test:run -- src/headless/shape-batch-progress.headless.test.ts` を再実行する。
+- 2025-12-21 15:12 done: test/shape/headless-batch-progress — headless バッチ進捗テストを追加。検証は既存テスト failure とタイムアウトのため未完了（上記 command 参照）。ロールバック: `plugins/shape-plugin/src/headless/shape-batch-progress.headless.test.ts` と `plugins/shape-plugin/vitest.config.ts` の差分を revert し、`pnpm --filter @hierarchidb/shape-plugin test:run -- src/headless/shape-batch-progress.headless.test.ts` を再実行する。
 - 2025-12-21 13:19 start: fix/shape/api-unit-test-types — api.unit.test.ts の型不整合を修正する対応に着手。DoD: Kanban/運用ログ更新、テストの型整合、typecheck 実行（不可なら理由記載）。
 - 2025-12-21 13:19 progress: fix/shape/api-unit-test-types — api.unit.test.ts を現行 API 型へ合わせて再構成（ProcessingConfig/DEFAULT_PROCESSING_CONFIG の構造に整合、旧 API テストの重複を整理、getBatchSessionStatus へ置換）。
 - 2025-12-21 13:19 done: fix/shape/api-unit-test-types — テストの型不整合を解消。検証: typecheck 未実行（本タスクでは未実施）。ロールバック: `plugins/shape-plugin/src/worker/__tests__/unit/api.unit.test.ts` の差分を revert。
@@ -10926,6 +10854,12 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-20 01:42 progress: fix/app/preview-final-step — resolvePreviewStepIndex を最終ステップ返却へ変更し、folder 系は除外。
 - 2025-12-20 01:43 command: pnpm --filter @hierarchidb/app typecheck — exit 0（plugin-base build の define 警告あり）。
 - 2025-12-20 01:44 done: fix/app/preview-final-step — Preview 操作で最終ステップを full screen 表示するよう変更。ロールバック: `app/src/hooks/treeconsole/actions/helpers.ts` の差分を revert し、同 typecheck を再実行。
+- 2025-12-21 12:10 start: fix/ui-dialog/restore-window-preview-step — dialogUIState の位置/サイズ復元と Preview 最終ステップ固定が維持されない問題の修正に着手。DoD: Kanban 記載どおり復元/Preview 挙動修正、運用ログ更新、ロールバック手順記載。
+- 2025-12-21 12:40 done: fix/ui-dialog/restore-window-preview-step — dialogUIState 復元ロジックを dialogUIState 変更時に再評価し、Preview の activeStepIndex 復元を抑制。検証: 未実施（手動確認/ typecheck 未実行）。ロールバック: `packages/plugin-ui-host/src/headless/usePluginDialogController/dialog-ui-state.ts` と `packages/plugin-ui-host/src/headless/usePluginDialogController.tsx` の差分を revert し、必要に応じて `pnpm --filter @hierarchidb/plugin-ui-host typecheck` を再実行。
+- 2025-12-21 13:05 start: fix/ui-dialog/restore-step-preview — 編集で activeStepIndex が復元されず Step1 固定になる件と、プレビューで最終ステップが1つ前になる件の修正に着手。DoD: Kanban 記載どおり復元/Preview 修正、運用ログ更新、ロールバック手順記載。
+- 2025-12-21 13:25 done: fix/ui-dialog/restore-step-preview — 編集/プレビューの step 復元を初回クエリに固定し、Preview の最終ステップ index を host base を考慮して算出。検証: 未実施（手動確認/ typecheck 未実行）。ロールバック: `app/src/router/routes/tree/PluginDialogRoute.tsx` と `app/src/hooks/treeconsole/createTreeConsoleActions.ts` の差分を revert し、必要に応じて `pnpm --filter @hierarchidb/app typecheck` を再実行。
+- 2025-12-21 14:05 done: fix/ui-dialog/step-index-1based — URL/永続化の step index を 1-based へ統一し、復元時は内部0-basedへ変換。検証: 未実施（手動確認/ typecheck 未実行）。ロールバック: `packages/plugin-ui-host/src/headless/usePluginDialogController/{frame-state.ts,dialog-ui-state.ts}`、`packages/plugin-ui-host/src/headless/usePluginDialogController.tsx`、`app/src/router/routes/tree/PluginDialogRoute.tsx`、`app/src/hooks/treeconsole/actions/helpers.ts`、`app/src/hooks/treeconsole/createTreeConsoleActions.ts`、`packages/runtime-worker/src/services/{CoreDB.ts,TreeNodeUpdaterService.ts}` の差分を revert し、必要に応じて `pnpm --filter @hierarchidb/app typecheck` を再実行。
+- 2025-12-21 14:30 done: fix/ui-dialog/step-restore-edit — URL の step=1 を forceInitialStep として扱わず、編集時の復元を優先するよう調整。検証: 未実施（手動確認/ typecheck 未実行）。ロールバック: `app/src/router/routes/tree/PluginDialogRoute.tsx` の差分を revert し、必要に応じて `pnpm --filter @hierarchidb/app typecheck` を再実行。
 - 2025-12-20 02:05 start: refactor/shape/api-crud-trim — shapePluginAPI から entity CRUD を削除する対応に着手。branch 作成不可なら main 作業。
 - 2025-12-20 02:08 progress: refactor/shape/api-crud-trim — ShapeAPI/ShapeWorkerAPI から CRUD を削除し、shapePluginAPI 実装とユニットテストから該当経路を整理。
 - 2025-12-20 02:12 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 2（BatchSessionManager/ShapeDB/DataSourceStrategy ほか既存の型エラーが多数残存）。
@@ -11040,3 +10974,22 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-21 13:23 start: fix/shape/step3-country-table-height — Step3 国選択の仮想テーブルがダイアログ高さを使い切るようレイアウト調整。DoD: 余白解消、コンテント高さ一致、ロールバック手順記載。
 - 2025-12-21 13:25 done: fix/shape/step3-country-table-height — Step3 のルートを height:100% にし、テーブル領域を flex で伸長して余白を解消。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ShapeCountrySelectionStep.tsx` の差分を revert する。
 - 2025-12-21 13:26 start: fix/shape/step5-start-disabled — Step5 の開始ボタンが無効のままの原因を調査し修正。DoD: 原因/修正/ロールバック記載。
+- 2025-12-21 13:29 done: fix/shape/step5-start-disabled — canStartBatch が build step の capabilities 未設定で常に false になる点と、Step5 の nodeId 依存で Start が無効になる点を修正。Step2〜4 の valid 条件（DataSource/Selection/ProcessingConfig）のみで有効化。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/{steps-provider.tsx,steps/ShapeBuildProgressStep.tsx}` の差分を revert する。
+- 2025-12-21 13:31 start: fix/ui/build-control-card-width — BuildControlCard の横幅を約+32px拡張。DoD: 幅拡張、レイアウト崩れなし、ロールバック手順記載。
+- 2025-12-21 13:31 done: fix/ui/build-control-card-width — BuildControlCard の min/max 幅をそれぞれ +32px で拡張。検証: 未実施。ロールバック: `packages/components/src/BuildStepPanel.tsx` の差分を revert する。
+- 2025-12-21 13:33 start: fix/shape/step5-content-height — Step5 のダイアログ内容（LRUSplitView 等）が表示領域の高さを使い切るよう調整。DoD: 余白解消、コンテンツ高さ一致、ロールバック手順記載。
+- 2025-12-21 13:34 done: fix/shape/step5-content-height — BuildStepPanel を高さ100%のflex構成に変更し、LRUSplitView の固定高を撤廃。Step5 のコンテンツも高さ100%で伸長させて余白を解消。検証: 未実施。ロールバック: `packages/components/src/BuildStepPanel.tsx` と `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx` の差分を revert する。
+- 2025-12-21 13:39 start: fix/ui/lru-splitview-status-icons — LRUSplitView の状態表示をアイコン化し、最小幅では開閉+状態のみ表示。DoD: アイコン置換/幅条件/ロールバック記載。
+- 2025-12-21 13:41 done: fix/ui/lru-splitview-status-icons — PaneHeader の状態チップをアイコン化し、幅が狭いときは開閉+状態のみ表示。タスク数/進捗は十分な横幅でのみ表示。LRUSplitView の最小幅を拡張。検証: 未実施。ロールバック: `packages/ui/lru-splitview/src/components/PaneHeader.tsx` と `packages/components/src/BuildStepPanel.tsx` の差分を revert する。
+- 2025-12-21 13:59 start: fix/dialog/persist-ui-state-on-close — ダイアログを閉じる操作でも dialogUIState を永続化。DoD: close時保存/既存Save挙動維持/ロールバック記載。
+- 2025-12-21 14:01 done: fix/dialog/persist-ui-state-on-close — キャンセル/バックドロップ/閉じる時に dialogUIState を save-draft で永続化（createモードは除外）。検証: 未実施。ロールバック: `packages/plugin-ui-host/src/headless/usePluginDialogController.tsx` の差分を revert する。
+- 2025-12-21 15:14 start: test/shape/headless-batch-progress — headless 結合テストを実データ取得/実 vectortile 生成で動かすよう更新し、cors-proxy/Authorization を使わずに fetch 直アクセスする検証に着手。DoD: 実データ取得、実処理経路、DBクリア、運用ログ/ロールバック記載。
+- 2025-12-21 16:23 progress: test/shape/headless-batch-progress — headless 結合テストを node 環境に切り替え、GeoBoundaries 直 fetch 用のテスト内パッチを追加。flatgeobuf の async generator 変換に合わせ、簡略化/ベクトルタイル経路を実データで完走できるよう補強（feature filtering / simplify fallback / StageProcessingService bbox 修正）。resolver/location plugin database の alias と flatgeobuf パス alias を追加。
+- 2025-12-21 16:23 command: pnpm --filter @hierarchidb/shape-plugin test:run -- src/headless/shape-batch-progress.headless.test.ts — exit 0（headless 結合テスト成功）。
+- 2025-12-21 17:05 start: review/shape/headless-test-side-effects — headless 結合テストの alias/モック/runtime-worker 修正の副作用を評価し、実データ取得・vectortile 実処理の担保と最小化可否を確認する対応に着手。DoD: 実処理確認、過剰な副作用の削減可否判断、運用ログ記載。
+- 2025-12-21 17:20 done: review/shape/headless-test-side-effects — alias/モック/runtime-worker 修正の副作用を確認。runtime-worker の flatgeobuf async generator 対応と polygon bbox 計算は実処理の不具合修正であり維持が妥当。`@hierarchidb/*/database` alias は runtime-worker index→plugin-registry 経由で subpath 解決が必要なため削除不可。auth-recovery は dist 未生成のため mock 維持が最小。テストは fetch 直アクセス（cors-proxy/Authorization 不使用）と raw/simplify buffer + vectortile summary を検証済み。
+- 2025-12-21 17:35 start: fix/shape/preview-flag-default-on — preview フラグ既定OFFをONへ変更。DoD: 既定値更新、理由/ロールバック記載。
+- 2025-12-21 17:36 done: fix/shape/preview-flag-default-on — `HDB_SHAPE_PREVIEW_METADATA` の既定値を true に変更。ロールバック: `plugins/shape-plugin/src/common/config/previewFlags.ts` の既定値を false に戻す。
+- 2025-12-21 16:12 start: fix/ui-dialog/preview-mode — preview mode 追加と dialog step/復元挙動の安定化に着手。DoD: preview mode 追加、Preview 最終ステップ+FullScreen、Edit の activeStepIndex 復元、dialogUIState mode 更新、運用ログ/ロールバック記載。
+- 2025-12-21 16:31 progress: fix/ui-dialog/preview-mode — preview ルート (/preview) と dialog mode 追加、Preview で dialogUIState を保存しないよう調整。FullScreen は URL `mode=full` で反映。
+- 2025-12-21 16:34 done: fix/ui-dialog/preview-mode — preview を専用 mode として扱い、Preview 強制最終ステップ/FullScreen と Edit 復元の両立を整理。検証: 未実施。ロールバック: `app/src/loader.ts`、`app/src/router/routes/tree/PluginDialogRoute.tsx`、`app/src/hooks/treeconsole/createTreeConsoleActions.ts`、`packages/plugin-ui-host/src/headless/usePluginDialogController.tsx`、`packages/plugin-ui-host/src/headless/components/PluginDialogFooter.tsx`、`packages/plugin-ui-host/src/headless/cancelDraftPolicy.ts`、`packages/ui/dialog/src/{components/{CommonDialog.tsx,CommonDialogActions.tsx,CommonDialogTitle.tsx},types/MultiStepDialog.types.ts}` の差分を revert する。

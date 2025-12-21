@@ -78,9 +78,19 @@ const passesAreaThreshold = (geometry: Geometry, settings: FeatureFilterSettings
   const aspectRatio = computeAspectRatio(geometry);
   const ratio = bboxArea > 0 ? polygonArea / bboxArea : 0;
   const correction = hybridConfig?.elongatedShapeCorrectionFactor ?? 1;
+  const regularMinRatio = hybridConfig?.regularShapeMinRatio ?? 0.5;
+  const regularMaxRatio = hybridConfig?.regularShapeMaxRatio ?? 2.0;
+  const simpleVertexThreshold = hybridConfig?.simpleShapeVertexThreshold ?? 50;
 
   if (minVertexCount > 0 && vertexCount < minVertexCount) {
     return bboxArea >= threshold;
+  }
+
+  if (vertexCount <= simpleVertexThreshold) {
+    const isRegularShape = aspectRatio >= regularMinRatio && aspectRatio <= regularMaxRatio;
+    const adjustedRatio = isRegularShape ? ratio : ratio * correction;
+    const adjustedArea = bboxArea * adjustedRatio;
+    return adjustedArea >= threshold;
   }
 
   return polygonArea >= threshold;
@@ -94,7 +104,11 @@ export const applyFeatureFiltering = (geojson: unknown, settings: FeatureFilterS
   }
   const filtered = collection.features.filter((feature: Feature) => {
     if (!feature?.geometry) return false;
-    return passesAreaThreshold(feature.geometry, settings);
+    try {
+      return passesAreaThreshold(feature.geometry, settings);
+    } catch {
+      return false;
+    }
   });
   return {
     ...collection,

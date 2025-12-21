@@ -4,12 +4,25 @@ import type { Simplify1StageAdapter } from './Simplify1StageAdapter.js';
 import type { Simplify2StageAdapter } from './Simplify2StageAdapter.js';
 import type { StageControls } from './StageControls.js';
 import { getEphemeralShapeDB } from '../../database/EphemeralShapeDB.js';
+import { shapeDB } from '../../database/ShapeDB.js';
 import { applyFeatureFiltering, type FeatureFilterSettings } from '../utils/featureFiltering.js';
 import { simplifyGeoJson } from '../utils/geometrySimplify.js';
 import { deserialize, serialize } from 'flatgeobuf/lib/mjs/geojson';
+import type { Feature } from 'geojson';
 
 const decodeGeoJson = async (buffer: ArrayBuffer): Promise<unknown> => {
-  return deserialize(new Uint8Array(buffer));
+  const decoded = deserialize(new Uint8Array(buffer));
+  if (decoded && typeof (decoded as AsyncIterable<unknown>)[Symbol.asyncIterator] === 'function') {
+    const features: Feature[] = [];
+    for await (const feature of decoded as AsyncIterable<Feature>) {
+      features.push(feature);
+    }
+    return {
+      type: 'FeatureCollection',
+      features,
+    };
+  }
+  return decoded;
 };
 
 const encodeGeoJson = async (geojson: unknown): Promise<ArrayBuffer> => {
@@ -27,6 +40,13 @@ export class LocalSimplify1Adapter implements Simplify1StageAdapter {
         await controls.waitIfPaused();
       }
       try {
+        if (task.taskId) {
+          await shapeDB.updateBatchTask(task.taskId, {
+            status: 'running',
+            startedAt: Date.now(),
+            progress: 0,
+          });
+        }
         const inputBufferId = task.inputBufferId ?? task.config?.inputBufferId ?? '';
         const raw = await db.rawBuffers.get(inputBufferId);
         if (!raw) {
@@ -41,10 +61,15 @@ export class LocalSimplify1Adapter implements Simplify1StageAdapter {
         };
         const filtered = applyFeatureFiltering(geojson, filterSettings);
         const outputBufferId = `${task.sessionId ?? ''}-simplify1-${task.index ?? completed}`;
-        const data = await encodeGeoJson(filtered);
-        const featureCount = Array.isArray((filtered as { features?: unknown[] }).features)
+        const hasFilteredFeatures = Boolean(
+          filtered
+          && typeof filtered === 'object'
+          && Array.isArray((filtered as { features?: unknown[] }).features),
+        );
+        const data = hasFilteredFeatures ? await encodeGeoJson(filtered) : raw.data;
+        const featureCount = hasFilteredFeatures
           ? (filtered as { features: unknown[] }).features.length
-          : 0;
+          : raw.featureCount;
         await db.simplifiedBuffers.put({
           id: outputBufferId,
           sessionId: String(task.sessionId ?? ''),
@@ -57,8 +82,23 @@ export class LocalSimplify1Adapter implements Simplify1StageAdapter {
           timestamp: Date.now(),
         });
         completed++;
-      } catch {
+        if (task.taskId) {
+          await shapeDB.updateBatchTask(task.taskId, {
+            status: 'completed',
+            completedAt: Date.now(),
+            progress: 100,
+          });
+        }
+      } catch (error) {
         failed++;
+        if (task.taskId) {
+          await shapeDB.updateBatchTask(task.taskId, {
+            status: 'failed',
+            completedAt: Date.now(),
+            progress: 100,
+            errorMessage: error instanceof Error ? error.message : 'Simplify stage 1 failed',
+          });
+        }
       }
       onProgress({
         total: tasks.length,
@@ -84,6 +124,13 @@ export class LocalSimplify2Adapter implements Simplify2StageAdapter {
         await controls.waitIfPaused();
       }
       try {
+        if (task.taskId) {
+          await shapeDB.updateBatchTask(task.taskId, {
+            status: 'running',
+            startedAt: Date.now(),
+            progress: 0,
+          });
+        }
         const inputBufferId = task.inputBufferId ?? task.config?.inputBufferId ?? '';
         const input = await db.simplifiedBuffers.get(inputBufferId)
           ?? await db.rawBuffers.get(inputBufferId);
@@ -99,11 +146,16 @@ export class LocalSimplify2Adapter implements Simplify2StageAdapter {
           perFeature: enablePerFeatureSimplification,
           quantize,
         });
+        const hasSimplifiedFeatures = Boolean(
+          simplified
+          && typeof simplified === 'object'
+          && Array.isArray((simplified as { features?: unknown[] }).features),
+        );
         const outputBufferId = `${task.sessionId ?? ''}-simplify2-${task.index ?? completed}`;
-        const data = await encodeGeoJson(simplified);
-        const featureCount = Array.isArray((simplified as { features?: unknown[] }).features)
+        const data = hasSimplifiedFeatures ? await encodeGeoJson(simplified) : input.data;
+        const featureCount = hasSimplifiedFeatures
           ? (simplified as { features: unknown[] }).features.length
-          : 0;
+          : input.featureCount;
         await db.simplifiedBuffers.put({
           id: outputBufferId,
           sessionId: String(task.sessionId ?? ''),
@@ -116,8 +168,23 @@ export class LocalSimplify2Adapter implements Simplify2StageAdapter {
           timestamp: Date.now(),
         });
         completed++;
-      } catch {
+        if (task.taskId) {
+          await shapeDB.updateBatchTask(task.taskId, {
+            status: 'completed',
+            completedAt: Date.now(),
+            progress: 100,
+          });
+        }
+      } catch (error) {
         failed++;
+        if (task.taskId) {
+          await shapeDB.updateBatchTask(task.taskId, {
+            status: 'failed',
+            completedAt: Date.now(),
+            progress: 100,
+            errorMessage: error instanceof Error ? error.message : 'Simplify stage 2 failed',
+          });
+        }
       }
       onProgress({
         total: tasks.length,

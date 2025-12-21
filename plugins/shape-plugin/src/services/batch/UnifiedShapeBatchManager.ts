@@ -99,7 +99,7 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
   }
 
   onBatchProgress(sessionId: string, callback: BatchProgressCallback): () => void {
-    this.manager.onProgress(sessionId, (progress) => {
+    const unsubscribe = this.manager.onProgress(sessionId, (progress) => {
       const nodeId = this.sessionNodes.get(sessionId);
       if (!nodeId) {
         return;
@@ -141,8 +141,7 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
     });
 
     // Return unsubscribe function (shape manager doesn't provide one, so we return a no-op)
-    return () => {
-    };
+    return unsubscribe;
   }
 
   private resolveProgressPhase(progress: {

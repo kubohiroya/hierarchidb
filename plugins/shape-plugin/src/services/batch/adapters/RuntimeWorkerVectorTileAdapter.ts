@@ -3,6 +3,7 @@ import type { VectorTileTask } from '../../../common/types/index.js';
 import type { VectorTileStageAdapter } from './VectorTileStageAdapter.js';
 import type { StageControls } from './StageControls.js';
 import { getShapeRuntimeWorkerClient } from './RuntimeWorkerClient.js';
+import { shapeDB } from '../../database/ShapeDB.js';
 
 export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
   async process(tasks: VectorTileTask[], onProgress: (p: ProgressInfo) => void, controls?: StageControls) {
@@ -16,6 +17,13 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
         await controls.waitIfPaused();
       }
       try {
+        if (task.taskId) {
+          await shapeDB.updateBatchTask(task.taskId, {
+            status: 'running',
+            startedAt: Date.now(),
+            progress: 0,
+          });
+        }
         const inputBufferId = task.config?.inputBufferId ?? '';
         const compression = task.config?.compression ?? false;
         const format = (task.config?.format ?? 'mvt') as 'mvt';
@@ -40,8 +48,23 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
           metadataContext: task.config?.metadataContext,
         });
         completed++;
-      } catch {
+        if (task.taskId) {
+          await shapeDB.updateBatchTask(task.taskId, {
+            status: 'completed',
+            completedAt: Date.now(),
+            progress: 100,
+          });
+        }
+      } catch (error) {
         failed++;
+        if (task.taskId) {
+          await shapeDB.updateBatchTask(task.taskId, {
+            status: 'failed',
+            completedAt: Date.now(),
+            progress: 100,
+            errorMessage: error instanceof Error ? error.message : 'Vector tile generation failed',
+          });
+        }
       }
       onProgress({ total: tasks.length, completed, failed, skipped: 0, percentage: (completed / tasks.length) * 100, currentStage: 'vectortile', currentTask: task.taskId });
     }

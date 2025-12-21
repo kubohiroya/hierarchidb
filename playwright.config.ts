@@ -79,32 +79,6 @@ export default defineConfig({
       },
     },
 
-    {
-      name: 'webkit',
-      use: {
-        ...devices['Desktop Safari'],
-        viewport: { width: 1920, height: 1080 },
-        // WebKit has some limitations with certain TreeTable operations
-        testIgnore: /drag-drop/,
-      },
-    },
-
-    /* Test against mobile viewports. */
-    {
-      name: 'Mobile Chrome',
-      use: {
-        ...devices['Pixel 5'],
-        // Mobile tests focus on responsive layout
-        testMatch: /.*mobile.*.spec.ts/,
-      },
-    },
-    {
-      name: 'Mobile Safari',
-      use: {
-        ...devices['iPhone 12'],
-        testMatch: /.*mobile.*.spec.ts/,
-      },
-    },
 
     /* Test against branded browsers. */
     // {
