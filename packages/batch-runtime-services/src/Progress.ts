@@ -3,7 +3,7 @@ export type ProgressSnapshot = { jobId: string; progress: number; phase: string;
 export class ProgressEmitter {
   private lastEmit = 0;
   private queued?: ProgressSnapshot;
-  private timer?: any;
+  private timer?: ReturnType<typeof setTimeout>;
   private listeners: Array<(s: ProgressSnapshot) => void> = [];
 
   constructor(private hz = 10) {}

@@ -4,7 +4,7 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-types';
-import { BaseBatchConfig, BatchProgress, BatchProgressEvent,
+import type { BaseBatchConfig, BatchProgress, BatchProgressEvent,
   BatchProgressPayload, BatchSessionState, ProgressPhase, ResourceUsage } from '@hierarchidb/common-api';
 
 /**
@@ -12,8 +12,8 @@ import { BaseBatchConfig, BatchProgress, BatchProgressEvent,
  */
 export abstract class AbstractBatchSession<
   TConfig extends BaseBatchConfig = BaseBatchConfig,
-  _TTask = any,
-  _TResult = any
+  _TTask = unknown,
+  _TResult = unknown
 > {
   protected sessionId: string;
   protected nodeId: NodeId;

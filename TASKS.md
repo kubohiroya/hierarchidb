@@ -4534,6 +4534,10 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1799) batch-runtime-services の any 排除（P1） — 完了 (2025-12-22)
+  - 要点：`packages/batch-runtime-services/src/*.ts` の `any` を `unknown` / 具体型へ置換し、Progress/BatchService/WorkerPool/ports/AbstractBatchSession の型を整理。
+  - 検証：`pnpm --filter @hierarchidb/batch-runtime-services typecheck` exit 2（`packages/batch-runtime-services/src/index.ts` の `./types.js` 再 export 不足で TS2305 が既存発生）。
+  - ロールバック手順：`packages/batch-runtime-services/src/{Progress.ts,BatchService.ts,AbstractBatchSession.ts,AbstractWorkerPoolManager.ts,ports.ts}` の差分を revert し、`pnpm --filter @hierarchidb/batch-runtime-services typecheck` を再実行する。
 - 1795) dequal 依存の追加（app / plugin-ui-host）（P1） — 完了 (2025-12-22)
   - 要点：app の dependencies に dequal を追加。
   - 検証：未実施。
@@ -10876,6 +10880,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-22 05:42 start: refactor/batch-runtime-services/remove-any — batch-runtime-services の `src/*.ts` で any を排除する対応に着手。DoD: Kanban 記載どおり any 排除、型契約維持、typecheck 結果/運用ログ/ロールバック記載。
+- 2025-12-22 05:44 command: pnpm --filter @hierarchidb/batch-runtime-services typecheck — exit 2。`packages/batch-runtime-services/src/index.ts` の `./types.js` 再 export が不足しており、TS2305 が複数件発生。
+- 2025-12-22 05:45 done: refactor/batch-runtime-services/remove-any — `src/*.ts` の any を排除し、Progress/BatchService/WorkerPool/ports/AbstractBatchSession の型を `unknown` / 具体型へ整理。検証は上記 typecheck で既存エラーにより未完了。ロールバック: `packages/batch-runtime-services/src/{Progress.ts,BatchService.ts,AbstractBatchSession.ts,AbstractWorkerPoolManager.ts,ports.ts}` の差分を revert。
 - 2025-12-22 05:31 start: fix/app/typecheck-router-errors — app typecheck の router 型/notify duration/null のエラーを修正する対応に着手。DoD: Kanban 記載どおり型エラー解消/検証/運用ログ/ロールバック記載。（Kanban: 1798）
 - 2025-12-22 05:35 command: pnpm --filter @hierarchidb/app typecheck — exit 0（plugin-base build warning: Invalid input options define / PLUGIN_TIMINGS）。
 - 2025-12-22 05:35 done: fix/app/typecheck-router-errors — entry.client の router 型・navigate state を修正し、preview guard の notify duration 型エラーを解消。検証: `pnpm --filter @hierarchidb/app typecheck` exit 0。ロールバック: `app/src/entry.client.tsx` と `app/src/hooks/treeconsole/createTreeConsoleActions.ts` の差分を revert し、同 typecheck を再実行する。

@@ -25,7 +25,7 @@ export interface WorkerOptions {
 /**
  * Worker task interface
  */
-export interface WorkerTask<T = any> {
+export interface WorkerTask<T = unknown> {
   id: string;
   type: string;
   data: T;
@@ -37,7 +37,7 @@ export interface WorkerTask<T = any> {
 /**
  * Worker task result
  */
-export interface WorkerTaskResult<T = any> {
+export interface WorkerTaskResult<T = unknown> {
   taskId: string;
   success: boolean;
   data?: T;
@@ -194,15 +194,22 @@ export abstract class AbstractWorkerPoolManager<
     try {
       const result = await this.onExecuteTask(workerId, task);
       const duration = performance.now() - start;
-      this.onTaskSuccess(workerId, task, { taskId: task.id, success: true, data: result as any, duration } as TResult);
-    } catch (error: any) {
+      const successResult: WorkerTaskResult<TResult['data']> = {
+        taskId: task.id,
+        success: true,
+        data: result,
+        duration,
+      };
+      this.onTaskSuccess(workerId, task, successResult as TResult);
+    } catch (error: unknown) {
       const duration = performance.now() - start;
-      this.onTaskFailure(workerId, task, {
+      const failureResult: WorkerTaskResult = {
         taskId: task.id,
         success: false,
         error: error instanceof Error ? error.message : String(error),
         duration,
-      } as TResult);
+      };
+      this.onTaskFailure(workerId, task, failureResult as TResult);
     } finally {
       state.status = 'idle';
       state.currentTask = undefined;
@@ -228,8 +235,7 @@ export abstract class AbstractWorkerPoolManager<
 
     const pending = this.pendingTasks.get(task.id);
     if (pending) {
-      const message =
-        (result as Partial<WorkerTaskResult>).error ?? 'Task failed';
+      const message = result.error ?? 'Task failed';
       pending.reject(new Error(message));
       this.pendingTasks.delete(task.id);
     }
@@ -238,7 +244,7 @@ export abstract class AbstractWorkerPoolManager<
   /** Hooks to be implemented by concrete subclasses */
   protected abstract createWorker(id: string): Promise<void>;
   protected abstract terminateWorker(id: string): Promise<void>;
-  protected abstract onExecuteTask(workerId: string, task: TTask): Promise<TResult>;
+  protected abstract onExecuteTask(workerId: string, task: TTask): Promise<TResult['data']>;
   protected async onInitialize(): Promise<void> {}
   protected async onShutdown(): Promise<void> {}
 }

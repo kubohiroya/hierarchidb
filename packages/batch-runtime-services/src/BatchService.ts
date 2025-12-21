@@ -32,8 +32,9 @@ export class BatchService {
   }
 }
 
-function isAsync<T>(it: any): it is AsyncIterable<T> {
-  return !!it && typeof it[Symbol.asyncIterator] === 'function';
+function isAsync<T>(it: unknown): it is AsyncIterable<T> {
+  if (!it) return false;
+  return typeof (it as { [Symbol.asyncIterator]?: unknown })[Symbol.asyncIterator] === 'function';
 }
 
 function toAsync<T>(it: Iterable<T>): AsyncIterable<T> {
