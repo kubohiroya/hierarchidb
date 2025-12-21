@@ -3,7 +3,7 @@
  * Dialog UI state is persisted on TreeNode.dialogUIState via TreeNodeUpdaterAPI.
  */
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import equal from 'fast-deep-equal';
+import { dequal } from 'dequal';
 import type {
   DialogDisplayMode,
   DialogPosition,
@@ -413,7 +413,7 @@ export function usePluginDialogController(
   const stepDataRef = useRef<Partial<PluginDefinedEntity>>(currentStepData);
   const stableStepData = useMemo(() => {
     const prev = stepDataRef.current;
-    if (equal(prev, currentStepData)) {
+    if (dequal(prev, currentStepData)) {
       return prev;
     }
     stepDataRef.current = currentStepData;
