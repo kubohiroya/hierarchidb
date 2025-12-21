@@ -56,7 +56,7 @@ HierarchiDBの拡張可能なノードタイププラグインシステムです
 
 ## 🧭 共通ドラフト保存フロー（全プラグイン共通）
 
-MultiStepDialog の各ステップで入力を更新すると、下記の経路で Dexie まで反映される。
+PluginDialog の各ステップで入力を更新すると、下記の経路で Dexie まで反映される。
 
 1) UI (plugin-ui-host / plugin-ui-sdk)  
    - ステップ `onUpdate` → `useTreeNodeUpdater.updateDraft`。`draftData` にパッチをマージし、必要に応じて `draftMetadata`（name/description/tags）も更新。  
@@ -98,7 +98,7 @@ DraftService(Worker)-->>Dexie(CoreDB.nodes): commitDraft (wc -> main node)
 ```
 src/
   common/      # UI/Worker 共有の型・定数・小さなユーティリティ（React/MUI 依存を避ける）
-  ui/          # Dialogホスト・ステップ・hooks。default export で HeadlessMultiStepDialog を公開
+  ui/          # Dialogホスト・ステップ・hooks。default export で HeadlessPluginDialog を公開
   worker/      # handler/factory/DB登録など Worker 実装一式
   icon/        # アイコンエントリ（TreeConsole メニュー等）
   services/    # ドメイン固有サービス（必要な場合のみ）。UI/Worker から共有利用
@@ -321,7 +321,7 @@ location / shape / route の各プラグインは、バッチ処理で正規化�
 
 ### ノード・ダイアログ（現行方針）
 
-- すべてのプラグインは `useTreeNodeUpdater`＋`draftMetadata/draftData` を前提に、`HeadlessMultiStepDialog` をラップしたホストを `./ui` default export で公開する。
+- すべてのプラグインは `useTreeNodeUpdater`＋`draftMetadata/draftData` を前提に、`HeadlessPluginDialog` をラップしたホストを `./ui` default export で公開する。
 - `pnpm tools:gen-plugin-registry` が `plugins/*-plugin/src/ui/preconnect.ts` を収集し、app からは registry 経由で動的にロードする（個別の配線は不要）。
 - 旧 `ExtensibleFolderDialog` / `NodeDialogExtensionRegistry` / `initializeDefaultNodeDialogExtensions` は後方互換の名残であり、新規実装では使用しない。
 

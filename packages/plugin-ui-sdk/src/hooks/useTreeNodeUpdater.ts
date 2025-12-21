@@ -24,6 +24,7 @@ export interface TreeNodeUpdaterState<TPayload extends TreeNodeData = TreeNodeDa
   draftMetadata: TreeNodeMetadata | null;
   draftData: TPayload | null;
   dialogUIState: DialogUIState;
+  isTemporary?: boolean;
   version?: number;
   updatedAt?: Timestamp;
   hasRemoteDraft?: boolean;
@@ -118,11 +119,13 @@ export function useTreeNodeUpdater<TPayload extends Record<string, unknown> = Re
       node.draftData && isRecord(node.draftData) ? (node.draftData as TPayload) : null;
     const dialogUIState =
       (node as { dialogUIState?: DialogUIState | null }).dialogUIState ?? DEFAULT_DIALOG_UI_STATE;
+    const isTemporary = (node as { isTemporary?: boolean }).isTemporary;
     return {
       treeNodeId: node.id as NodeId,
       draftMetadata,
       draftData,
       dialogUIState,
+      isTemporary,
       version: node.version,
       updatedAt: node.updatedAt,
       hasRemoteDraft,
@@ -188,12 +191,14 @@ export function useTreeNodeUpdater<TPayload extends Record<string, unknown> = Re
             console.warn('[useTreeNodeUpdater] Missing parentId for create mode; draft not initialized');
             return;
           }
+          const shouldMarkTemporary = !nodeId;
           const initialPayload: Partial<TreeNode> = {
             ...(nodeId ? { id: nodeId } : {}),
             ...(initialDraftMetadata ? { draftMetadata: initialDraftMetadata } : {}),
             ...(initialDraftData
               ? { draftData: initialDraftData as unknown as Record<string, unknown> }
               : {}),
+            ...(shouldMarkTemporary ? { isTemporary: true } : {}),
           };
           const wcNode = await wcAPI.initTreeNode(
             nodeType as NodeType,
@@ -258,6 +263,7 @@ export function useTreeNodeUpdater<TPayload extends Record<string, unknown> = Re
           draftMetadata: nextDraftMetadata ?? null,
           draftData: nextDraftData ?? null,
           dialogUIState: nextDialogUIState,
+          isTemporary: data.isTemporary ?? prev.isTemporary,
           version: data.version ?? prev.version,
           updatedAt: data.updatedAt ?? prev.updatedAt,
           hasRemoteDraft: data.hasRemoteDraft ?? prev.hasRemoteDraft,

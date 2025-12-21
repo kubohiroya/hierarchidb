@@ -8,7 +8,7 @@ import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/common-types';
 import { WorkerAPIMock } from '../__tests__/plugin-dialog-mocks';
 
-type DialogAPI = ReturnType<WorkerAPIMock['getMultiStepDialogAPI']>;
+type DialogAPI = ReturnType<WorkerAPIMock['getPluginDialogAPI']>;
 
 let workerAPI: WorkerAPIMock | undefined;
 let dialogAPI: DialogAPI;
@@ -16,7 +16,7 @@ let dialogAPI: DialogAPI;
 beforeEach(async () => {
   workerAPI = new WorkerAPIMock('test-services');
   await workerAPI.initialize();
-  dialogAPI = workerAPI.getMultiStepDialogAPI();
+  dialogAPI = workerAPI.getPluginDialogAPI();
 });
 
 afterEach(async () => {

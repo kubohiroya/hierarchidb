@@ -2,8 +2,8 @@ import type { NodeId, TreeNode, DialogDisplayMode, DialogPosition, DialogSize } 
 import {
   type HeadlessFooterRenderProps,
   type HeadlessHeaderRenderProps,
-  type HeadlessDialogProps as HeadlessMultiStepDialogProps,
-  MultiStepDialogFrame,
+  type HeadlessDialogProps as HeadlessPluginDialogProps,
+  PluginDialogFrame,
   useDialogContext,
 } from '@hierarchidb/ui-dialog';
 import {
@@ -616,7 +616,7 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
     [breadcrumbItems, columns, expandedIds, handleRestore, hasDraftsInView, loading, mode, nodeIndex, onToggleExpand, pageNodeId, searchTerm, selectedIds, setSearchTerm, setSelectedIds, t, trashViewRootId, treeData, treeId]
   );
 
-  const headlessProps: HeadlessMultiStepDialogProps<TrashStepData> = useMemo(
+  const headlessProps: HeadlessPluginDialogProps<TrashStepData> = useMemo(
     () => ({
       open: true,
       stepComponents,
@@ -658,7 +658,7 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
     [frameState, handleClose, handleEmptyAll, handleRestore, loading, mode, removalTargetCount, selectedIds, stepComponents, t, hasDraftsInView]
   );
 
-  return <MultiStepDialogFrame headlessProps={headlessProps} frameSx={frameSx} />;
+  return <PluginDialogFrame headlessProps={headlessProps} frameSx={frameSx} />;
 }
 
 export default TrashDialog;

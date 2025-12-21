@@ -1,12 +1,12 @@
 import '@testing-library/jest-dom/vitest';
-import { MultiStepDialogProvider } from '@hierarchidb/ui-dialog';
+import { PluginDialogProvider } from '@hierarchidb/ui-dialog';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { vi } from 'vitest';
 import { PluginDialogFooter } from '../components/PluginDialogFooter.js';
 
-type ContextOverrides = Partial<Parameters<typeof MultiStepDialogProvider>[0]['value']>;
+type ContextOverrides = Partial<Parameters<typeof PluginDialogProvider>[0]['value']>;
 
 const footerLocationRef = {
   pathname: '/t/r/some-node',
@@ -41,11 +41,11 @@ function renderWithContext(ui: ReactNode, overrides: ContextOverrides) {
     onDisplayModeChange: vi.fn(),
     onDragHandlePointerDown: vi.fn(),
     ...overrides,
-  } satisfies Parameters<typeof MultiStepDialogProvider>[0]['value'];
+  } satisfies Parameters<typeof PluginDialogProvider>[0]['value'];
 
   return render(
     <ThemeProvider theme={createTheme()}>
-      <MultiStepDialogProvider value={contextValue}>{ui}</MultiStepDialogProvider>
+      <PluginDialogProvider value={contextValue}>{ui}</PluginDialogProvider>
     </ThemeProvider>
   );
 }

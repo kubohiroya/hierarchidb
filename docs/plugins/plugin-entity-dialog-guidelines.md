@@ -19,7 +19,7 @@
 - **命名テーブル（推奨）**
   - 永続: `PluginNameEntity`
   - Peer: `PluginNamePeerData`
-  - ダイアログコンポーネント: `PluginNameDialog`（HeadlessMultiStepDialog を内包）
+  - ダイアログコンポーネント: `PluginNameDialog`（HeadlessPluginDialog を内包）
   - ステップ設定: `pluginNameStepConfigs` / `PluginNameSteps`
   - 初期値: `create<PluginName>Draft()`（`TreeNodeUpdaterPayload<PluginNameEntity>` を返すヘルパー）
 

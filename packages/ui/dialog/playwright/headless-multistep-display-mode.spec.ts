@@ -8,11 +8,11 @@ const storyUrl = (id: string, args?: Record<string, string>) => {
   return `/?${params.toString()}`;
 };
 
-test.describe('HeadlessMultiStepDialog display modes', () => {
+test.describe('HeadlessPluginDialog display modes', () => {
   test.use({ viewport: { width: 1280, height: 720 } });
 
 test('switches between normal, maximize, and full-screen', async ({ page }) => {
-    await page.goto(storyUrl('ui-headless-headlessmultistepdialog--default'));
+    await page.goto(storyUrl('ui-headless-headlessPluginDialog--default'));
     const iframe = page.frameLocator('iframe[title="storybook-preview"]');
 
     await iframe.getByRole('button', { name: 'Open dialog' }).click();
@@ -45,7 +45,7 @@ test('switches between normal, maximize, and full-screen', async ({ page }) => {
   });
 
   test('defaults to maximize when story args set', async ({ page }) => {
-    await page.goto(storyUrl('ui-headless-headlessmultistepdialog--maximized-by-default'));
+    await page.goto(storyUrl('ui-headless-headlessPluginDialog--maximized-by-default'));
     const iframe = page.frameLocator('iframe[title="storybook-preview"]');
 
     await iframe.getByRole('button', { name: 'Open dialog' }).click();

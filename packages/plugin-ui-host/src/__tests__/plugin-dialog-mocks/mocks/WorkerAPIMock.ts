@@ -1,5 +1,5 @@
 import type {
-  MultiStepDialogAPI,
+  PluginDialogAPI,
   StepCapabilities,
 } from '@hierarchidb/common-api';
 import type { TreeNodeUpdater, TreeNodeUpdaterPayload } from '@hierarchidb/common-types';
@@ -24,7 +24,7 @@ export class WorkerAPIMock {
     this.store.clear();
   }
 
-  getMultiStepDialogAPI(): MultiStepDialogAPI {
+  getPluginDialogAPI(): PluginDialogAPI {
     const self = this;
 
     async function requireDraft(id: NodeId): Promise<TreeNodeUpdater> {
@@ -261,6 +261,6 @@ export class WorkerAPIMock {
         await requireDraft(draftId);
         return draftId;
       },
-    } satisfies MultiStepDialogAPI;
+    } satisfies PluginDialogAPI;
   }
 }

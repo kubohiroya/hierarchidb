@@ -22,7 +22,7 @@ export interface StepCapabilities {
  * Provides methods for managing draft states and evaluating
  * capabilities for multi-step dialog workflows.
  */
-export interface MultiStepDialogAPI {
+export interface PluginDialogAPI {
   /**
    * Create a new draft node
    *
@@ -98,4 +98,4 @@ export interface MultiStepDialogAPI {
 /**
  * Multi-Step Dialog API with Comlink proxy marking
  */
-export type MultiStepDialogAPIProxy = MultiStepDialogAPI & ProxyMarked;
+export type PluginDialogAPIProxy = PluginDialogAPI & ProxyMarked;

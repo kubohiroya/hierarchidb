@@ -128,11 +128,16 @@ export class TreeMutationService implements TreeMutationAPI {
     parentId: NodeId;
     name: string;
     description?: string;
+    isTemporary?: boolean;
   }): Promise<{ success: true; nodeId: NodeId } | { success: false; error: string }> {
     try {
       const { initTreeNode } = await import('./DraftTreeNodeOperations.js');
       const desiredName = params.name?.trim() || resolveDefaultNodeName(params.nodeType);
       const initialDraftData = this.resolveInitialDraftData(params.nodeType);
+      const initial: Partial<TreeNode> | undefined =
+        initialDraftData !== undefined || typeof params.isTemporary === 'boolean'
+          ? { draftData: initialDraftData, isTemporary: params.isTemporary }
+          : undefined;
       const wcNodeId = await initTreeNode(
         this.coreDB,
         params.treeId,
@@ -140,7 +145,7 @@ export class TreeMutationService implements TreeMutationAPI {
         params.nodeType,
         desiredName,
         undefined,
-        initialDraftData ? { draftData: initialDraftData } : undefined
+        initial
       );
       return { success: true, nodeId: wcNodeId as NodeId };
     } catch (error) {

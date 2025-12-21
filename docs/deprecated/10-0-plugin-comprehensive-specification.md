@@ -576,7 +576,7 @@ export interface UIPluginDefinition {
     detailPanel?: React.ComponentType<DetailPanelProps>;
     
     // 高度なコンポーネント
-    multiStepDialog?: React.ComponentType<MultiStepDialogProps>;
+    PluginDialog?: React.ComponentType<PluginDialogProps>;
     batchProcessor?: React.ComponentType<BatchProcessorProps>;
     groupManager?: React.ComponentType<GroupManagerProps>;
     
@@ -750,7 +750,7 @@ export const StylerUIPlugin: UIPluginDefinition = {
   
   components: {
     icon: StyleIcon,
-    multiStepDialog: StylerImporter, // 6ステップウィザード
+    PluginDialog: StylerImporter, // 6ステップウィザード
     editDialog: StylerEditDialog,
     preview: StylerPreviewComponent
   },
@@ -818,7 +818,7 @@ export const ShapesUIPlugin: UIPluginDefinition = {
   
   components: {
     icon: ShapesIcon,
-    multiStepDialog: ShapesMultiStepDialog, // 4段階処理UI
+    PluginDialog: ShapesPluginDialog, // 4段階処理UI
     batchProcessor: ShapesBatchProcessor,
     groupManager: ShapesGroupManager,
     preview: ShapesPreviewComponent,
@@ -835,7 +835,7 @@ export const ShapesUIPlugin: UIPluginDefinition = {
 ### 6.1 Stylerの6ステップウィザード
 
 ```typescript
-export const StylerMultiStepDialog: React.FC<MultiStepDialogProps> = ({
+export const StylerPluginDialog: React.FC<PluginDialogProps> = ({
   onComplete,
   onCancel
 }) => {

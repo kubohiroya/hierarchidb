@@ -9,7 +9,7 @@ Shared type and API definitions for HierarchiDB. These packages define the UI↔
 
 ## Directory layout
 ```
-api/     RPC interfaces and exports (WorkerAPI, TreeNodeUpdaterAPI, TreeQueryAPI, ImportExportAPI, TagAPI, MultiStepDialogAPI, DialogStateAPI, TreeSubscriptionAPI)
+api/     RPC interfaces and exports (WorkerAPI, TreeNodeUpdaterAPI, TreeQueryAPI, ImportExportAPI, TagAPI, PluginDialogAPI, DialogStateAPI, TreeSubscriptionAPI)
 auth/    AuthNotificationSystem (types, guards, registry, helpers)
 types/   Brand IDs (TreeId, TreeNodeId, SessionId...), tree/node entities, handlers, validation/progress primitives
 README.md
@@ -18,7 +18,7 @@ README.md
 ## Key exports (per package)
 - `api`:
   - `WorkerAPI`, `TreeNodeUpdaterAPI`, `TreeQueryAPI`, `TreeMutationAPI`, `ImportExportAPI`, `TagAPI`, `TreeSubscriptionAPI`
-  - Dialog contracts: `MultiStepDialogAPI`, `DialogStateAPI`, `StepCapabilities`
+  - Dialog contracts: `PluginDialogAPI`, `DialogStateAPI`, `StepCapabilities`
   - Wiring: `PluginRuntimeWiring`
 - `auth`:
   - `AuthNotificationRegistry`, `AuthNotificationFactory`, `AuthNotificationGuards`

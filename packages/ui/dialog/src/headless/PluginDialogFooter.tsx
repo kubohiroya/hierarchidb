@@ -17,7 +17,7 @@ function buildFooterRenderProps<TData>(ctx: ReturnType<typeof useDialogContext<T
   };
 }
 
-function MultiStepDialogFooterComponent<TData>({ children }: HeadlessDialogFooterProps<TData>) {
+function PluginDialogFooterComponent<TData>({ children }: HeadlessDialogFooterProps<TData>) {
   const ctx = useDialogContext<TData>();
   if (!children) {
     return null;
@@ -26,8 +26,8 @@ function MultiStepDialogFooterComponent<TData>({ children }: HeadlessDialogFoote
   return <>{children(renderProps)}</>;
 }
 
-MultiStepDialogFooterComponent.displayName = 'HeadlessMultiStepDialogFooter';
+PluginDialogFooterComponent.displayName = 'HeadlessPluginDialogFooter';
 
-export const MultiStepDialogFooter = memo(MultiStepDialogFooterComponent) as <TData,>(
+export const PluginDialogFooter = memo(PluginDialogFooterComponent) as <TData,>(
   props: HeadlessDialogFooterProps<TData>,
 ) => JSX.Element | null;

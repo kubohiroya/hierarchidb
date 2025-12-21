@@ -36,6 +36,9 @@ export async function initTreeNode(
     if (fixedId) {
       const existing = await coreDB.nodes.get(fixedId);
       if (existing) {
+        if (typeof initial?.isTemporary === 'boolean') {
+          await coreDB.nodes.update(fixedId, { isTemporary: initial.isTemporary });
+        }
         const hasDraftMeta =
           (existing as { draftMetadata?: unknown }).draftMetadata !== null &&
           typeof (existing as { draftMetadata?: unknown }).draftMetadata !== 'undefined';
@@ -102,6 +105,7 @@ export async function initTreeNode(
       draftData: {
         ...(initial?.draftData ?? initial?.data ?? {}),
       },
+      isTemporary: initial?.isTemporary,
       depth,
       createdAt: now,
       updatedAt: now,

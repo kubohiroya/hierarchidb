@@ -7,10 +7,10 @@
 
 **対象（旧実装/旧API）**
 - 旧 API（@deprecated 済）
-  - `MultiStepDialogProps.fullScreen`
-  - `MultiStepDialogProps.onFullscreenChange`
-  - `MultiStepDialogProps.maximized`
-  - `MultiStepDialogProps.onMaximizeChange`
+  - `PluginDialogProps.fullScreen`
+  - `PluginDialogProps.onFullscreenChange`
+  - `PluginDialogProps.maximized`
+  - `PluginDialogProps.onMaximizeChange`
   - `CommonDialogTitleProps.isFullscreen`
   - `CommonDialogTitleProps.toggleFullscreen`
 - 旧 永続化
@@ -47,8 +47,8 @@
 
 **移行ガイド（サンプル）**
 - コンポーネント置換
-  - NG: `<MultiStepDialog fullScreen onFullscreenChange={...} />`
-  - OK: `<MultiStepDialog displayMode={mode} onDisplayModeChange={setMode} />`
+  - NG: `<PluginDialog fullScreen onFullscreenChange={...} />`
+  - OK: `<PluginDialog displayMode={mode} onDisplayModeChange={setMode} />`
 - タイトル部
   - NG: `<CommonDialogTitle isFullscreen toggleFullscreen={...} />`
   - OK: `<CommonDialogTitle displayMode={mode} onChangeDisplayMode={setMode} />`

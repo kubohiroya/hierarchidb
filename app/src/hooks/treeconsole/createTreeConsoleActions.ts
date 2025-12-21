@@ -471,6 +471,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
           treeId: treeId as TreeId,
           parentId: pageNodeId as NodeId,
           name: resolvedName,
+          isTemporary: true,
         });
         if (!res?.success) {
           const err = (res as unknown as { error?: string })?.error;
@@ -591,6 +592,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
             treeId: treeId as TreeId,
             parentId: targetNodeId,
             name: resolvedName,
+            isTemporary: true,
           });
           if (!res?.success) {
             const err = (res as unknown as { error?: string })?.error;

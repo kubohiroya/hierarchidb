@@ -86,7 +86,7 @@ Work in small, reviewable increments. Document sandbox blockers and attempted al
 
 ### Dialog hosting (TreeConsole / WorkingCopy)
 - Creation flow: `create:<nodeType>` → working copy node作成 → `/t/<treeId>/<parentId>/<wcNodeId>/<nodeType>/create` へ遷移し、plugin registry の UI エントリ経由でダイアログをロードする。
-- Host責務は app 側（HeadlessMultiStepDialog + `useTreeNodeUpdater` で `draftMetadata`/`draftData` を扱う）。Plugin側は UI エントリ公開とステップ/評価ロジックの提供に集中する（詳細: `docs/workingcopy-dialog-hosting.md`）。
+- Host責務は app 側（HeadlessPluginDialog + `useTreeNodeUpdater` で `draftMetadata`/`draftData` を扱う）。Plugin側は UI エントリ公開とステップ/評価ロジックの提供に集中する（詳細: `docs/workingcopy-dialog-hosting.md`）。
 
 ### 作業プロセスの自己ルール
 - **DoD 提案義務**: ユーザーからタスク指示を受けるたびに、着手前に自分から DoD（受け入れ基準）を箇条書きで提案し、ユーザーの了承を得てから作業を開始する。承認前にタスクを進めない。

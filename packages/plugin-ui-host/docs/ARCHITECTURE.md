@@ -47,12 +47,12 @@ HierarchiDBのプラグインダイアログシステムは、プラグインが
 
 ## 主要コンポーネント
 
-### 1. MultiStepDialog Components
+### 1. PluginDialog Components
 
-#### MultiStepDialog
+#### PluginDialog
 基本的なマルチステップダイアログ機能を提供。
 
-#### MultiStepDialogEnhanced
+#### PluginDialogEnhanced
 フルスクリーンモードでの自動開閉機能を追加。
 - ヘッダー（Stepper）: 3秒間操作がないと自動的に隠れる
 - フッター（Actions）: 同様に自動開閉
@@ -245,7 +245,7 @@ registry.register(new SamplePluginProvider());
 
 ### フルスクリーンモード
 
-`MultiStepDialogEnhanced`使用時：
+`PluginDialogEnhanced`使用時：
 - ヘッダー/フッターが自動的に隠れる（3秒後）
 - マウス移動で再表示
 - 手動での表示/非表示切り替え可能

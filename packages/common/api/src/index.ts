@@ -18,9 +18,9 @@ export type {
 } from './ImportExportAPI.js';
 // Multi-Step Dialog API
 export type {
-  MultiStepDialogAPI,
+  PluginDialogAPI,
   StepCapabilities,
-} from './MultiStepDialogAPI.js';
+} from './PluginDialogAPI.js';
 // New exports
 // Runtime wiring interfaces for plugin bootstrap (optional capabilities)
 export type { PluginRuntimeWiring } from './RuntimeWiring.js';

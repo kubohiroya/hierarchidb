@@ -65,7 +65,7 @@ export interface StepState {
 /**
  * Dialog-level state (layout/step/save) to keep UI concerns together.
  * Complements draftAtom (node data) and stepStateAtom (navigation),
- * and can be derived from or synced to MultiStepDialogState when needed.
+ * and can be derived from or synced to PluginDialogState when needed.
  */
 export type DialogViewStateAtom = DialogStepperState;
 

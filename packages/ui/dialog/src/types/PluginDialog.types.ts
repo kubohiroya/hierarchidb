@@ -103,7 +103,7 @@ export interface DialogStep {
 /**
  * Multi-step dialog props
  */
-export interface MultiStepDialogProps {
+export interface PluginDialogProps {
   /** Dialog open state */
   open: boolean;
 

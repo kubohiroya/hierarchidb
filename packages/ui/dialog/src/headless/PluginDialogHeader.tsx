@@ -17,7 +17,7 @@ function buildHeaderRenderProps<TData>(ctx: ReturnType<typeof useDialogContext<T
   };
 }
 
-function MultiStepDialogHeaderComponent<TData>({ children }: HeadlessDialogHeaderProps<TData>) {
+function PluginDialogHeaderComponent<TData>({ children }: HeadlessDialogHeaderProps<TData>) {
   const ctx = useDialogContext<TData>();
   if (!children) {
     return null;
@@ -27,8 +27,8 @@ function MultiStepDialogHeaderComponent<TData>({ children }: HeadlessDialogHeade
   return <>{children(renderProps)}</>;
 }
 
-MultiStepDialogHeaderComponent.displayName = 'HeadlessMultiStepDialogHeader';
+PluginDialogHeaderComponent.displayName = 'HeadlessPluginDialogHeader';
 
-export const MultiStepDialogHeader = memo(MultiStepDialogHeaderComponent) as <TData,>(
+export const PluginDialogHeader = memo(PluginDialogHeaderComponent) as <TData,>(
   props: HeadlessDialogHeaderProps<TData>,
 ) => JSX.Element | null;

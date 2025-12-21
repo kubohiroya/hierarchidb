@@ -25,7 +25,7 @@ import type {
   StepComponentDescriptor,
   StepNavigationEvent,
 } from '@hierarchidb/ui-dialog';
-import { MultiStepDialogContent } from '@hierarchidb/ui-dialog';
+import { PluginDialogContent } from '@hierarchidb/ui-dialog';
 import type { Theme } from '@mui/material/styles';
 import { useNavigate } from '@tanstack/react-router';
 import type { Remote } from 'comlink';
@@ -269,6 +269,7 @@ export function usePluginDialogController(
         : null,
     [draft]
   );
+  const isTemporary = Boolean(draft?.isTemporary);
 
   const dialogUIState = (draft as LocalTreeNodeUpdaterState | null)?.dialogUIState ?? null;
   const isDialogReady = Boolean(dialogUIState);
@@ -408,7 +409,7 @@ export function usePluginDialogController(
     basicInfoLabel: t('common.basicInfo.title', 'Basic Information'),
   });
 
-  // Stabilize stepData reference to avoid noisy context diffs in HeadlessMultiStepDialog
+  // Stabilize stepData reference to avoid noisy context diffs in HeadlessPluginDialog
   const stepDataRef = useRef<Partial<PluginDefinedEntity>>(currentStepData);
   const stableStepData = useMemo(() => {
     const prev = stepDataRef.current;
@@ -736,7 +737,7 @@ export function usePluginDialogController(
       const Content = createContentComponent(dialogRef);
       return () => (
         <Content>
-          <MultiStepDialogContent />
+          <PluginDialogContent />
         </Content>
       );
     },
@@ -835,25 +836,29 @@ export function usePluginDialogController(
     const close = onCloseRef.current;
     void runPending({ type: 'cancel' }, async () => {
       if (dialogMode === 'create') {
-        await discard?.({ forceDelete: true });
+        if (isTemporary) {
+          await discard?.({ forceDelete: true });
+        }
       } else if (dialogMode !== 'preview') {
         await persistDialogUIStateOnClose();
       }
       close?.();
     });
-  }, [dialogMode, persistDialogUIStateOnClose]);
+  }, [dialogMode, isTemporary, persistDialogUIStateOnClose]);
 
   const handleConfirmDiscard = useCallback(() => {
     setDiscardDialogOpen(false);
     void runWithPending({ type: 'cancel' }, async () => {
       if (dialogMode === 'create') {
-        await discardDraft({ forceDelete: true });
+        if (isTemporary) {
+          await discardDraft({ forceDelete: true });
+        }
       } else if (dialogMode !== 'preview') {
         await persistDialogUIStateOnClose();
       }
       onClose();
     });
-  }, [dialogMode, discardDraft, onClose, persistDialogUIStateOnClose, runWithPending]);
+  }, [dialogMode, discardDraft, isTemporary, onClose, persistDialogUIStateOnClose, runWithPending]);
 
   const handleDismissDiscardDialog = useCallback(() => {
     setDiscardDialogOpen(false);

@@ -470,10 +470,10 @@ export class EntityDataAdapter {
 ### 3. マルチステップUI対応
 
 ```typescript
-// packages/ui-core/src/plugin-loader/multi-step/MultiStepDialogManager.ts
-export class MultiStepDialogManager {
+// packages/ui-core/src/plugin-loader/multi-step/PluginDialogManager.ts
+export class PluginDialogManager {
   // Shapesプラグイン等の複雑なワークフロー対応
-  async showMultiStepDialog(
+  async showPluginDialog(
     nodeType: TreeNodeType,
     steps: string[],
     onComplete: (result: any) => void
@@ -542,7 +542,7 @@ export class MultiStepDialogManager {
     const { step, isLastStep, ephemeralData, plugin } = params;
     
     // プラグイン固有のステップ処理
-    const stepComponent = plugin.components.multiStepDialogs?.[step];
+    const stepComponent = plugin.components.PluginDialogs?.[step];
     if (!stepComponent) {
       throw new Error(`Step component not found: ${step}`);
     }
@@ -687,10 +687,10 @@ export const ShapesUIPlugin: UIPluginDefinition = {
   
   components: {
     icon: ShapesIcon,
-    createDialog: ShapesMultiStepDialog,
+    createDialog: ShapesPluginDialog,
     editDialog: ShapesEditDialog,
     preview: ShapesPreviewComponent,
-    multiStepDialogs: {
+    PluginDialogs: {
       'upload': ShapeUploadStep,
       'validate': ShapeValidateStep,
       'process': ShapeProcessStep,
@@ -701,7 +701,7 @@ export const ShapesUIPlugin: UIPluginDefinition = {
   hooks: {
     onCreateDialog: async ({ parentId, onSubmit }) => {
       // マルチステップダイアログを表示
-      await multiStepManager.showMultiStepDialog(
+      await multiStepManager.showPluginDialog(
         '_shapes_buggy',
         ['upload', 'validate', 'process', 'generate'],
         onSubmit

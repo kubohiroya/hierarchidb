@@ -50,7 +50,7 @@
   📄 DialogStateAPI.ts                    36 lines
   📄 ImportExportAPI.ts                  311 lines
   📄 preconnect.ts                             37 lines
-  📄 MultiStepDialogAPI.ts               118 lines
+  📄 PluginDialogAPI.ts               118 lines
   📄 RuntimeWiring.ts                      8 lines
   📄 TagAPI.ts                           105 lines
   📄 TreeMutationAPI.ts                  104 lines

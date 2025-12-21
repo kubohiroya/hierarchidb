@@ -59,7 +59,7 @@ Shape バッチ機能の新アーキテクチャ概要と利用メモ。
 
 ドラフト保存フロー（UI→Worker→Dexie）
 --------------------------------------
-- 対象: Shape の MultiStepDialog（Step2 以降のフォーム更新）。
+- 対象: Shape の PluginDialog（Step2 以降のフォーム更新）。
 - UI フロー:
   - 各ステップの `onUpdate` は `ShapeDialogHost` の `handleUpdate` を呼ぶ。
   - `handleUpdate` は `useTreeNodeUpdater.updateDraft` にパッチを渡し、`draftData` をマージしつつ `draftMetadata`（name/description/tags）も更新する。

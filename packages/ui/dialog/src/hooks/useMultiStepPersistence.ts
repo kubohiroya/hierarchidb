@@ -12,7 +12,7 @@ export interface UseMultiStepPersistenceOptions {
  * Minimal implementation using localStorage; guarded for SSR/unsupported envs.
  */
 export function useMultiStepPersistence({ key, enabled = true, step, setStep }: UseMultiStepPersistenceOptions) {
-  const storageKey = key || 'MultiStepDialog:activeStep';
+  const storageKey = key || 'PluginDialog:activeStep';
 
   // Restore once on mount (uncontrolled only) — caller passes setStep for internal state
   useEffect(() => {

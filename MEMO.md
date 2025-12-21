@@ -4,11 +4,11 @@
 
 ## ダイアログ表示モード（標準/最大化/フルスクリーン）
 - 現状
-  - MultiStepDialog の `fullScreen`/`maximized` は「初期値」としてのみ扱っており、props 変更の追従（制御コンポーネントとしての動作）は未対応。
+  - PluginDialog の `fullScreen`/`maximized` は「初期値」としてのみ扱っており、props 変更の追従（制御コンポーネントとしての動作）は未対応。
   - ExtensibleFolderDialog は NodeId 単位で表示モード（`standard`/`maximized`/`fullscreen`）を保存・復元するが、`d_mode=full`（URL）→「即フルスクリーン突入」はブラウザ制約により自動では不可。ユーザー操作でのトグルが必要。
-  - TrashDialog は独自に表示モード保存・復元を実装。他のプラグインダイアログ（MultiStepDialog 非使用のもの）は未対応。
+  - TrashDialog は独自に表示モード保存・復元を実装。他のプラグインダイアログ（PluginDialog 非使用のもの）は未対応。
 - 仕上げ提案
-  - MultiStepDialog を「制御可能」に：props 変更（`fullScreen`/`maximized` あるいは displayMode）を監視し、内部 state を追従。
+  - PluginDialog を「制御可能」に：props 変更（`fullScreen`/`maximized` あるいは displayMode）を監視し、内部 state を追従。
   - 表示モード API の一本化：`displayMode: 'normal' | 'maximize' | 'full-screen'` を追加し、`fullScreen`/`maximized` を内部概念に。`onDisplayModeChange` で外部と同期。
   - ほかのプラグインダイアログ（Route/Resolver 等）にも NodeId/ContextId 単位の保存・復元を横展開。
 
@@ -44,11 +44,11 @@
   - 大量ノード時のスクロール追従やオートスクロール閾値の調整。
 
 ## その他の細部
-- MultiStepDialog の状態永続化：現状はホスト（ExtensibleFolderDialog/TrashDialog）で保存。`persistKey` を MultiStepDialog に導入して、モード・最終ステップ・スクロール位置などを任意保存できる抽象化も検討可。
+- PluginDialog の状態永続化：現状はホスト（ExtensibleFolderDialog/TrashDialog）で保存。`persistKey` を PluginDialog に導入して、モード・最終ステップ・スクロール位置などを任意保存できる抽象化も検討可。
 - URL 同期：`d_mode=full` は「希望状態」。自動フルスクリーンはブラウザ制約上不可のため、初回にガイダンス（ツールチップ）表示など UX で補助。
 
 ## 優先提案（短期で効果の高い順）
-1. MultiStepDialog の制御可能化（props 変更追従）＋表示モード API（`displayMode`）を一本化。
+1. PluginDialog の制御可能化（props 変更追従）＋表示モード API（`displayMode`）を一本化。
 2. Undo/Redo をイベント駆動化（暫定としてコマンド完了時フックで即時再評価）。
 3. インライン編集の Orchestrator 集約とバリデーション/未変更スキップの実装。
 4. 列幅永続化のキー設計最終化と、Worker イベント経由のクリーンアップ一元化。

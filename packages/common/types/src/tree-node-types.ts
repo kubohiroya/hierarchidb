@@ -83,6 +83,10 @@ export type TreeNode<
    * Working copy data; null when no draft exists
    */
   draftData: TData | null;
+  /**
+   * Temporary flag for pre-commit nodes created from UI flows.
+   */
+  isTemporary?: boolean;
   dialogUIState?: DialogUIState;
   hasChildren?: boolean;
   descendantCount?: number;

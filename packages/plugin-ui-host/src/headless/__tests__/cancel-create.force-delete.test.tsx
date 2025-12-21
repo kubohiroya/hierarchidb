@@ -9,7 +9,7 @@ vi.mock('@hierarchidb/plugin-ui-sdk', async () => {
   return {
     ...actual,
     useTreeNodeUpdater: vi.fn(() => ({
-      treeNodeUpdater: { treeNodeId: 'draft-1', draftMetadata: null, draftData: {} },
+      treeNodeUpdater: { treeNodeId: 'draft-1', draftMetadata: null, draftData: {}, isTemporary: true },
       hasUnsavedChanges: true,
       updateTreeNodeUpdater: vi.fn(),
       commitTreeNodeUpdater: vi.fn(),

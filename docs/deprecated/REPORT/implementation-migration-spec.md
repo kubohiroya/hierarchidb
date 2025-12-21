@@ -501,7 +501,7 @@ export const StylerUIPlugin: UIPluginDefinition = {
   // UIコンポーネント（既存をそのまま利用）
   components: {
     icon: StylerIcon,
-    multiStepDialog: StylerImport, // 既存の6ステップウィザード
+    PluginDialog: StylerImport, // 既存の6ステップウィザード
     editDialog: StylerEditDialog,
     preview: StylerPreview
   },
@@ -510,7 +510,7 @@ export const StylerUIPlugin: UIPluginDefinition = {
   hooks: {
     onShowCreateDialog: async ({ parentId, onSubmit }) => {
       // 既存の6ステップウィザードを統一API経由で表示
-      await showMultiStepDialog({
+      await showPluginDialog({
         component: StylerImport,
         steps: 6,
         onComplete: onSubmit

@@ -822,7 +822,7 @@ Stylerプラグインは、CSVデータインポートのための6ステップ�
 6. **Step6: Preview & Confirm** - 最終プレビューと確認
 
 ```typescript
-export const StylerMultiStepDialog: React.FC<MultiStepDialogProps> = ({
+export const StylerPluginDialog: React.FC<PluginDialogProps> = ({
   onComplete,
   onCancel
 }) => {
@@ -1020,7 +1020,7 @@ export const StylerUIPlugin: UIPluginDefinition = {
   },
   components: {
     icon: StyleIcon,
-    multiStepDialog: StylerImporter
+    PluginDialog: StylerImporter
   }
 };
 ```
@@ -1072,7 +1072,7 @@ export const ShapesUIPlugin: UIPluginDefinition = {
   },
   components: {
     icon: ShapesIcon,
-    multiStepDialog: ShapesMultiStepDialog,
+    PluginDialog: ShapesPluginDialog,
     batchProcessor: ShapesBatchProcessor
   }
 };

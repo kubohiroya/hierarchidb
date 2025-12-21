@@ -1,14 +1,14 @@
 import { Fragment, useRef } from 'react';
-import { MultiStepDialogProvider } from '../hooks/useDialogContext.js';
+import { PluginDialogProvider } from '../hooks/useDialogContext.js';
 import type {
   HeadlessFooterRenderProps,
   HeadlessHeaderRenderProps,
   HeadlessDialogProps,
   HeadlessDialogContextValue,
 } from './types.js';
-import { MultiStepDialogHeader } from './MultiStepDialogHeader.js';
-import { MultiStepDialogContent } from './MultiStepDialogContent.js';
-import { MultiStepDialogFooter } from './MultiStepDialogFooter.js';
+import { PluginDialogHeader } from './PluginDialogHeader.js';
+import { PluginDialogContent } from './PluginDialogContent.js';
+import { PluginDialogFooter } from './PluginDialogFooter.js';
 
 function asReadonlyArray(source?: ReadonlyArray<number>): ReadonlyArray<number> {
   return source ?? [];
@@ -19,7 +19,7 @@ function asReadonlyMap(source?: Readonly<Record<string, string>>): Readonly<Reco
 }
 
 /**
- * Headless MultiStepDialog container. Renders provided header/content/footer
+ * Headless PluginDialog container. Renders provided header/content/footer
  * components inside a context provider so that each layer can access dialog
  * state and callbacks.
  */
@@ -67,7 +67,7 @@ function shallowEqualData(a: unknown, b: unknown): boolean {
   return true;
 }
 
-export function HeadlessMultiStepDialog<TData>(props: HeadlessDialogProps<TData>) {
+export function HeadlessPluginDialog<TData>(props: HeadlessDialogProps<TData>) {
   const {
     open,
     stepComponents,
@@ -82,9 +82,9 @@ export function HeadlessMultiStepDialog<TData>(props: HeadlessDialogProps<TData>
     onStepNavigate,
     onRequestClose,
     onRequestCommit,
-    HeaderComponent = MultiStepDialogHeader,
-    ContentComponent = MultiStepDialogContent,
-    FooterComponent = MultiStepDialogFooter,
+    HeaderComponent = PluginDialogHeader,
+    ContentComponent = PluginDialogContent,
+    FooterComponent = PluginDialogFooter,
     renderHeader,
     renderFooter,
     ...frameProps
@@ -147,7 +147,7 @@ export function HeadlessMultiStepDialog<TData>(props: HeadlessDialogProps<TData>
 
   if (!shouldReuse && prev && debugCounterRef.current < 50 && typeof console !== 'undefined') {
     debugCounterRef.current += 1;
-    console.debug('[HeadlessMultiStepDialog] context diff', diffReason);
+    console.debug('[HeadlessPluginDialog] context diff', diffReason);
   }
 
   const contextValue = shouldReuse ? prev! : (contextRef.current = nextValue);
@@ -167,10 +167,10 @@ export function HeadlessMultiStepDialog<TData>(props: HeadlessDialogProps<TData>
   );
 
   return (
-    <MultiStepDialogProvider value={contextValue}>
+    <PluginDialogProvider value={contextValue}>
       <Fragment>{headerElement}</Fragment>
       <Fragment>{contentElement}</Fragment>
       <Fragment>{footerElement}</Fragment>
-    </MultiStepDialogProvider>
+    </PluginDialogProvider>
   );
 }

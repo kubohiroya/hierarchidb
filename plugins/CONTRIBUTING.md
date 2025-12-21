@@ -61,7 +61,7 @@
 ## ID ポリシー（更新）
 - Entity の ID は `NodeId` に統一します。従来の `EntityId` は廃止済みです。
 - タグ関連は独立した `TagId` を使用します（`NodeId` と混同しない）。
-- Working Copy/ダイアログ系 API も `NodeId` を受け渡し ID とします（例: `MultiStepDialogAPI.createWorkingCopy(): Promise<NodeId>`）。
+- Working Copy/ダイアログ系 API も `NodeId` を受け渡し ID とします（例: `PluginDialogAPI.createWorkingCopy(): Promise<NodeId>`）。
 
 
 ## ライブラリ別の分類

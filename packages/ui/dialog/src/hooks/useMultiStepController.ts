@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { DialogData } from '../types/MultiStepDialog.types.js';
+import type { DialogData } from '../types/PluginDialog.types.js';
 
 export type StepLike = {
   id: string;

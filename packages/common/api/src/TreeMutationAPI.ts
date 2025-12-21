@@ -21,6 +21,7 @@ export interface TreeMutationAPI {
     parentId: NodeId;
     name: string;
     description?: string;
+    isTemporary?: boolean;
   }): Promise<{ success: true; nodeId: NodeId } | { success: false; error: string }>;
 
   /**

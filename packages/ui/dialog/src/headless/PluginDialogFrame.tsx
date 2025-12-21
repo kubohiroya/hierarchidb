@@ -10,12 +10,12 @@ import { useTheme } from '@mui/material/styles';
 import type { SxProps, Theme } from '@mui/material/styles';
 import { createPortal } from 'react-dom';
 import { FRAME_CONSTANTS } from './frameHelpers.js';
-import { HeadlessMultiStepDialog } from './MultiStepDialog.js';
+import { HeadlessPluginDialog } from './PluginDialog.js';
 import type { HeadlessDialogProps } from './types.js';
 import { getDialogSurfaceColor } from '../utils/dialogSurfaceColor.js';
 import { useDialogInteractionGuards } from '../hooks/useDialogInteractionGuards.js';
 
-export interface MultiStepDialogFrameComponentProps<TData> {
+export interface PluginDialogFrameComponentProps<TData> {
   headlessProps: HeadlessDialogProps<TData>;
   /** Additional styles applied to the dialog frame container. */
   frameSx?: SxProps<Theme>;
@@ -49,7 +49,7 @@ interface ResizeDirection {
   vertical: ResizeVertical;
 }
 
-export function MultiStepDialogFrame<TData>(props: MultiStepDialogFrameComponentProps<TData>) {
+export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<TData>) {
   const {
     headlessProps,
     frameSx,
@@ -334,7 +334,7 @@ export function MultiStepDialogFrame<TData>(props: MultiStepDialogFrameComponent
       aria-modal="true"
       onKeyDown={handleKeyDown}
     >
-      <HeadlessMultiStepDialog {...augmentedHeadlessProps} />
+      <HeadlessPluginDialog {...augmentedHeadlessProps} />
       {!fullScreen && (
         <>
           {[

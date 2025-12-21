@@ -232,6 +232,9 @@ export class TreeNodeUpdaterService implements TreeNodeUpdaterAPI {
     const mode: CommitDraftMode = request?.mode ?? 'save';
 
     const updates: Partial<TreeNode> = {};
+    if (mode === 'save' || mode === 'save-draft') {
+      updates.isTemporary = false;
+    }
     if ('draftMetadata' in (request ?? {})) {
       updates.draftMetadata = (request?.draftMetadata ?? null) as TreeNodeMetadata | null;
     }

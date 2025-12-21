@@ -35,7 +35,7 @@ function renderActiveStep<TData>(ctx: ReturnType<typeof useDialogContext<TData>>
   return <StepComponent {...stepProps} />;
 }
 
-function MultiStepDialogContentComponent<TData>({ children }: HeadlessDialogContentProps<TData>) {
+function PluginDialogContentComponent<TData>({ children }: HeadlessDialogContentProps<TData>) {
   const ctx = useDialogContext<TData>();
   if (children) {
     const renderProps = buildContentRenderProps(ctx);
@@ -44,8 +44,8 @@ function MultiStepDialogContentComponent<TData>({ children }: HeadlessDialogCont
   return renderActiveStep(ctx);
 }
 
-MultiStepDialogContentComponent.displayName = 'HeadlessMultiStepDialogContent';
+PluginDialogContentComponent.displayName = 'HeadlessPluginDialogContent';
 
-export const MultiStepDialogContent = memo(MultiStepDialogContentComponent) as <TData,>(
+export const PluginDialogContent = memo(PluginDialogContentComponent) as <TData,>(
   props: HeadlessDialogContentProps<TData>,
 ) => JSX.Element | null;

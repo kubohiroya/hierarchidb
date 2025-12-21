@@ -1,5 +1,5 @@
 /**
- * @file MultiStepDialog.integration.test.ts
+ * @file PluginDialog.integration.test.ts
  * @description Integration tests for the Multi-Step Dialog system
  */
 
@@ -10,13 +10,13 @@ import { WorkerAPIMock } from '../__tests__/plugin-dialog-mocks';
 
 describe('Multi-Step Dialog Integration', () => {
   let workerAPI: WorkerAPIMock | undefined;
-  let dialogAPI: ReturnType<WorkerAPIMock['getMultiStepDialogAPI']>;
+  let dialogAPI: ReturnType<WorkerAPIMock['getPluginDialogAPI']>;
 
   beforeEach(async () => {
     //  WorkerAPI
     workerAPI = new WorkerAPIMock('test-services');
     await workerAPI.initialize();
-    dialogAPI = workerAPI.getMultiStepDialogAPI();
+    dialogAPI = workerAPI.getPluginDialogAPI();
   });
 
   afterEach(async () => {

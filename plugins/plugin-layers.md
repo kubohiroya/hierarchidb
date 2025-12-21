@@ -3,7 +3,7 @@
 TreeNodeUpdaterAPI / useTreeNodeUpdater / useSingleSourceDialogAtom への一本化を踏まえ、プラグイン間で共通化すべき層と接続点を整理します。
 
 ## 凡例（共通の 6 層）
-- 🟥 UI ホスト: app shell + plugin-ui-host（HeadlessMultiStepDialog）
+- 🟥 UI ホスト: app shell + plugin-ui-host（HeadlessPluginDialog）
 - 🟧 UI プラグイン: ダイアログ/ステップ/アイコン（useTreeNodeUpdater + TreeNodeUpdaterAPI）
 - 🟨 Worker 共通: runtime-worker bootstrap（wirePluginsFromModules, DraftService, Query/Mutation/Subscription）
 - 🟩 Worker ドメイン: EntityHandler / BatchManager / Lifecycle
@@ -12,7 +12,7 @@ TreeNodeUpdaterAPI / useTreeNodeUpdater / useSingleSourceDialogAtom への一本
 
 ## 共通リファレンスフロー
 ```
-🟥 UI host (HeadlessMultiStepDialog)
+🟥 UI host (HeadlessPluginDialog)
    └─ useTreeNodeUpdater (TreeNodeUpdaterAPI)
       ├ updateTreeNodeDraftMetadata
       ├ updateTreeNodeDraftData

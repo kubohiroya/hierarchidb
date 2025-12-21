@@ -60,7 +60,7 @@ import {
 // 例: frames 整形
 const frames = toFramesFromNodes(descendants); // [{id,name}] に整形
 
-// 例: 任意の MultiStepDialog に組み込み
+// 例: 任意の PluginDialog に組み込み
 ```
 
 - 本パッケージは `TimelineDialog` も提供します（MUI Dialog + Stepper の簡易版）。

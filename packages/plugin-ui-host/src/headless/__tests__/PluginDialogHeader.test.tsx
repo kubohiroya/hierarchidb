@@ -1,6 +1,6 @@
 /// <reference types="vitest/globals" />
 /// <reference types="@testing-library/jest-dom/vitest" />
-import { MultiStepDialogProvider } from '@hierarchidb/ui-dialog';
+import { PluginDialogProvider } from '@hierarchidb/ui-dialog';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { ComponentProps } from 'react';
@@ -62,9 +62,9 @@ describe('PluginDialogHeader', () => {
 
     render(
       <ThemeProvider theme={createTheme()}>
-        <MultiStepDialogProvider value={contextValue}>
+        <PluginDialogProvider value={contextValue}>
           <PluginDialogHeader title="Create Folder" mode="create" />
-        </MultiStepDialogProvider>
+        </PluginDialogProvider>
       </ThemeProvider>
     );
 
@@ -102,9 +102,9 @@ describe('PluginDialogHeader', () => {
 
     const { container } = render(
       <ThemeProvider theme={createTheme()}>
-        <MultiStepDialogProvider value={contextValue}>
+        <PluginDialogProvider value={contextValue}>
           <PluginDialogHeader title="Create Folder" />
-        </MultiStepDialogProvider>
+        </PluginDialogProvider>
       </ThemeProvider>
     );
 
@@ -138,13 +138,13 @@ describe('PluginDialogHeader', () => {
       displayMode: 'normal' as const,
       onDisplayModeChange: vi.fn(),
       onDragHandlePointerDown: vi.fn(),
-    } satisfies Parameters<typeof MultiStepDialogProvider>[0]['value'];
+    } satisfies Parameters<typeof PluginDialogProvider>[0]['value'];
 
     render(
       <ThemeProvider theme={createTheme()}>
-        <MultiStepDialogProvider value={contextValue}>
+        <PluginDialogProvider value={contextValue}>
           <PluginDialogHeader title="Create Folder" />
-        </MultiStepDialogProvider>
+        </PluginDialogProvider>
       </ThemeProvider>
     );
 
@@ -189,13 +189,13 @@ describe('PluginDialogHeader', () => {
       displayMode: 'normal' as const,
       onDisplayModeChange: vi.fn(),
       onDragHandlePointerDown: vi.fn(),
-    } satisfies Parameters<typeof MultiStepDialogProvider>[0]['value'];
+    } satisfies Parameters<typeof PluginDialogProvider>[0]['value'];
 
     render(
       <ThemeProvider theme={createTheme()}>
-        <MultiStepDialogProvider value={contextValue}>
+        <PluginDialogProvider value={contextValue}>
           <PluginDialogHeader title="Edit Item" />
-        </MultiStepDialogProvider>
+        </PluginDialogProvider>
       </ThemeProvider>
     );
 

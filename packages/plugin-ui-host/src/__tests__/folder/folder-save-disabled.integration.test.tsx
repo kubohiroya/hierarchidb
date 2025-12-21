@@ -4,7 +4,7 @@ import '@testing-library/jest-dom/vitest';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { PluginDialogFooter } from '../../headless/components/PluginDialogFooter.js';
-import { MultiStepDialogProvider } from '@hierarchidb/ui-dialog';
+import { PluginDialogProvider } from '@hierarchidb/ui-dialog';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { vi } from 'vitest';
 
@@ -39,13 +39,13 @@ function renderFooter({
     displayMode: 'normal' as const,
     onDisplayModeChange: () => {},
     onDragHandlePointerDown: () => {},
-  } satisfies Parameters<typeof MultiStepDialogProvider>[0]['value'];
+  } satisfies Parameters<typeof PluginDialogProvider>[0]['value'];
 
   return render(
     <ThemeProvider theme={createTheme()}>
-      <MultiStepDialogProvider value={contextValue}>
+      <PluginDialogProvider value={contextValue}>
         <PluginDialogFooter mode="edit" canCommit={true} />
-      </MultiStepDialogProvider>
+      </PluginDialogProvider>
     </ThemeProvider>
   );
 }

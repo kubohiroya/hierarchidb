@@ -31,7 +31,7 @@ import {
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { createLocationTabularApi } from '../tabular/createLocationTabularApi.js';
 import {
-  HeadlessMultiStepDialog,
+  HeadlessPluginDialog,
   FRAME_CONSTANTS,
   getViewportSize,
   getPresetSize,
@@ -45,7 +45,7 @@ import {
   type StepNavigationEvent,
   type StepComponentDescriptor,
 } from '@hierarchidb/ui-dialog';
-import type { DialogDisplayMode, DialogPosition as MultiStepDialogPosition, DialogSize as MultiStepDialogSize } from '@hierarchidb/common-types';
+import type { DialogDisplayMode, DialogPosition as PluginDialogPosition, DialogSize as PluginDialogSize } from '@hierarchidb/common-types';
 import { notify } from '@hierarchidb/components';
 
 import {
@@ -57,7 +57,7 @@ import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worke
 import { BasicInfoStep as SharedBasicInfoStep, type BasicInfoData } from '@hierarchidb/ui-plugin-basic-info';
 import { useDialogViewState } from '@hierarchidb/plugin-ui-sdk';
 
-const buildDefaultFrame = (): { size: MultiStepDialogSize; position: MultiStepDialogPosition } => {
+const buildDefaultFrame = (): { size: PluginDialogSize; position: PluginDialogPosition } => {
   const viewport = getViewportSize();
   const size = getPresetSize('normal', viewport);
   const position = initialPosition(size, viewport);
@@ -174,8 +174,8 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
 
   useEffect(() => () => { void discardDraft().catch(() => {}); }, [discardDraft]);
 
-  const dialogSizeRef = useRef<MultiStepDialogSize>(dialogViewState.size);
-  const dialogPositionRef = useRef<MultiStepDialogPosition>(dialogViewState.position);
+  const dialogSizeRef = useRef<PluginDialogSize>(dialogViewState.size);
+  const dialogPositionRef = useRef<PluginDialogPosition>(dialogViewState.position);
   const vectorServiceRef = useRef<LocationVectorTileService | null>(null);
   const { size: dialogSize, position: dialogPosition, displayMode, activeStepIndex } = dialogViewState;
   const [isBatchStarting, setIsBatchStarting] = useState(false);
@@ -194,7 +194,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     referencingPlugins: [],
   }), [dialogData.tabularSourceId]);
 
-  const applyNormalizedState = useCallback((size: MultiStepDialogSize, position: MultiStepDialogPosition) => {
+  const applyNormalizedState = useCallback((size: PluginDialogSize, position: PluginDialogPosition) => {
     dialogSizeRef.current = size;
     dialogPositionRef.current = position;
     updateDialogViewState({ size, position });
@@ -443,7 +443,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     const viewport = getViewportSize();
 
     if (mode === 'full-screen') {
-      const size: MultiStepDialogSize = {
+      const size: PluginDialogSize = {
         width: Math.max(viewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
         height: Math.max(viewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
       };
@@ -489,7 +489,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     onClose();
   }, [discardDraft, onClose]);
 
-  const handleSizeChange = useCallback((next?: MultiStepDialogSize) => {
+  const handleSizeChange = useCallback((next?: PluginDialogSize) => {
     if (!next) return;
     const normalized = normalizeDialogState(next, dialogPositionRef.current, getViewportSize(), {
       enforceTopLeftMargin: displayMode === 'normal',
@@ -501,7 +501,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     }
   }, [applyNormalizedState, displayMode]);
 
-  const handlePositionChange = useCallback((next?: MultiStepDialogPosition) => {
+  const handlePositionChange = useCallback((next?: PluginDialogPosition) => {
     if (!next) return;
     const normalized = normalizeDialogState(dialogSizeRef.current, next, getViewportSize(), {
       enforceTopLeftMargin: displayMode === 'normal',
@@ -631,6 +631,6 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
   };
 
   return (
-    <HeadlessMultiStepDialog<LocationDraft> {...dialogProps} />
+    <HeadlessPluginDialog<LocationDraft> {...dialogProps} />
   );
 };

@@ -201,7 +201,7 @@
 - **依存タスク**: TASK-0105
 - **実装詳細**:
   - StylerDialog React コンポーネント
-  - MultiStepDialog基盤クラス
+  - PluginDialog基盤クラス
   - ステップナビゲーション (戻る・進む・完了)
   - 非線形ナビゲーション対応
   - ダイアログ状態管理 (useReducer)
