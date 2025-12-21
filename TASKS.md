@@ -53,6 +53,34 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1792) ダイアログ即閉じでドラフトノードが残る不具合修正（Temporary 状態追加）（P1）
+- ブランチ: `fix/ui/temporary-draft-node`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: app/src（TreeConsole/PluginDialog）、packages/plugin-ui-host、packages/runtime（TreeNode 型）、plugins/*（import/create flow）
+- 受け入れ基準（DoD）:
+  - [ ] UI の create 直後のみ `isTemporary: true` が付与される
+  - [ ] Save Draft / Save / Import では `isTemporary` が未定義または false になる
+  - [ ] ダイアログの「閉じる / キャンセル / バックドロップ」で閉じたとき、`isTemporary: true` のノードだけが自動削除される
+  - [ ] 変更内容/理由/ロールバック手順を TASKS 運用ログに記載する
+- チェックリスト:
+  - [ ] TreeNode 型に `isTemporary?: boolean` を追加し、永続化/更新の経路を特定する
+  - [ ] create 直後の draft 作成フローで `isTemporary: true` を付与する
+  - [ ] Save Draft / Save / Import の保存フローで `isTemporary` を解除する
+  - [ ] ダイアログ close/cancel/backdrop 時に `isTemporary` 判定で自動削除する
+- ロールバック手順：追加した `isTemporary` 関連の差分を revert し、必要に応じて `pnpm --filter @hierarchidb/app typecheck` を再実行する
+
+1788) SpeedDial/コンテキストメニュー Create のヘルプ i18n 修正（P1）
+- ブランチ: `fix/ui/create-menu-help-i18n`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: app/tree console UI, packages/ui/treeconsole, packages/plugin-ui-host（予定）
+- 受け入れ基準（DoD）:
+  - [ ] SpeedDial/コンテキストメニューの Create メニューで、ノード種類一覧のヘルプ（ツールチップ）が現在の言語設定に追従する
+  - [ ] 日本語/英語の切替でツールチップが正しく切り替わることを確認できる
+  - [ ] 変更内容とロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] ツールチップ文字列の取得経路（i18n/translation hook）を特定する
+  - [ ] 言語切替時の更新が効いていない原因を特定する
+  - [ ] 修正と回帰確認を行う
+- ロールバック手順：本タスクの差分を revert し、必要に応じて `pnpm --filter @hierarchidb/app typecheck` を再実行する。
+
 1786) 仮想テーブル共通化の整理（ui-tabular-extract + shape/location/route）（P1）
 - ブランチ: `analysis/ui/virtual-table-scope`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: packages/ui/tabular-extract, plugins/shape-plugin, plugins/spreadsheet-plugin, plugins/styler-plugin, plugins/location-plugin, plugins/route-plugin
@@ -4521,6 +4549,10 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1790) TreeConsole/PluginDialog の linker/timeline アイコン表示修正（P1） — 完了 (2025-12-22)
+  - 要点：TreeConsole の NodeTypeIcon に linker/timeline を追加し、PluginDialog は IconRegistry 経由で plugin icon を解決するよう調整。
+  - 検証：未実施。
+  - ロールバック手順：`packages/ui/treeconsole/breadcrumb/src/components/NodeTypeIcon.tsx` と `packages/plugin-ui-host/src/headless/usePluginDialogController.tsx` の差分を revert する。
 - 1789) route-plugin ステップ再編（location-plugin 準拠, Step2-6）（P1） — 完了 (2025-12-22)
   - 要点：Step2 をデータソース選択、Step3 を交通モード/経路タイプ + 兄弟ロケーション選択、Step4 を処理設定、Step5 をビルド、Step6 をプレビューへ再編。location-plugin 構成に準拠し i18n を更新。
   - 検証：未実施。
@@ -10827,6 +10859,12 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-22 06:30 start: fix/ui/temporary-draft-node — Create 直後の仮作成ノードに isTemporary を付与し、ダイアログ close/cancel/backdrop 時に isTemporary:true のノードだけ自動削除する修正に着手。DoD: Kanban 記載どおり temporary フラグ付与/解除/自動削除/運用ログ/ロールバック記載。
+- 2025-12-22 04:45 start: fix/ui/create-menu-help-i18n — SpeedDial/コンテキストメニューの Create メニューでノード種類ヘルプ（ツールチップ）の i18n が切り替わらない問題を修正する対応に着手。DoD: Kanban 記載どおり言語切替の追従、検証、運用ログ/ロールバック記載。
+- 2025-12-22 05:05 progress: fix/ui/create-menu-help-i18n — ui-i18n の common リソースに plugins.* の name/description を追加し、ツールチップの翻訳キーが解決されるように補強。
+- 2025-12-22 05:06 done: fix/ui/create-menu-help-i18n — Create メニューのヘルプ文言が i18n リソースから解決されるよう修正。検証: 未実施。ロールバック: `packages/ui/i18n/public/locales/{en,ja}/common.json` の差分を revert する。
+- 2025-12-22 04:32 start: fix/ui/plugin-icons-treeconsole — TreeConsole（パンくず/テーブル行）と PluginDialog 見出しで linker-plugin/timeline-plugin のアイコンがフォルダ表示になる問題を修正する対応に着手。DoD: Kanban 記載どおり正しいアイコン表示、回帰なし、運用ログ/ロールバック手順記載。（Kanban: 1790）
+- 2025-12-22 04:42 done: fix/ui/plugin-icons-treeconsole — TreeConsole の NodeTypeIcon に linker/timeline のアイコン定義を追加し、PluginDialog は IconRegistry を使って plugin icon を解決するよう修正。検証: 未実施。ロールバック: `packages/ui/treeconsole/breadcrumb/src/components/NodeTypeIcon.tsx` と `packages/plugin-ui-host/src/headless/usePluginDialogController.tsx` の差分を revert する。
 - 2025-12-21 21:12 start: fix/types/spreadsheet-shape-leak — spreadsheet の typecheck で shape-plugin 由来の型エラーが派生する経路を調査し、geojson 型不整合を修正する対応に着手。DoD: Kanban 記載どおり原因特定/型エラー解消/運用ログ更新/ロールバック手順記載。
 - 2025-12-21 21:20 progress: fix/types/spreadsheet-shape-leak — spreadsheet が参照する `@hierarchidb/runtime-worker` が plugin-registry（generated）を import し、そこから全プラグインの動的 import を含むため、TypeScript が shape-plugin の src を取り込む流れを確認。`LocalSimplifyAdapters` / `RuntimeWorkerDownloadAdapter` で `geojson` 変数名の衝突により `serialize` が unknown 参照になっていたため、`geojsonApi`/`featureCollection` へリネームして解消。
 - 2025-12-21 21:23 command: pnpm --filter @hierarchidb/spreadsheet-plugin typecheck — exit 2。`LocalSimplifyAdapters.ts` の `geojsonApi.serialize` に unknown が渡るため TS2345 が発生。

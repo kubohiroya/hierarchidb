@@ -191,6 +191,63 @@
       }
     }
   },
+  "plugins": {
+    "noDependencies": "No dependencies",
+    "details": "Plugin Details",
+    "fields": {
+      "package": "Package",
+      "description": "Description",
+      "dependencies": "Dependencies",
+      "menuGroup": "Menu Group"
+    },
+    "actions": {
+      "reset": "Reset Plugin",
+      "delete": "Delete Plugin",
+      "deleteDisabled": "Delete (Disabled for Core Plugin)"
+    },
+    "corePlugin": "Core Plugin",
+    "corePluginMessage": "This plugin cannot be deleted as it provides the foundation for all other plugins.",
+    "folder": {
+      "name": "Folder",
+      "description": "Define hierarchical container nodes that semantically organize various types of nodes and consolidate their functions."
+    },
+    "basemap": {
+      "name": "Basemap",
+      "description": "Specify the shared map style and viewport that ancestor nodes in the tree will use as their basemap."
+    },
+    "shape": {
+      "name": "Shape",
+      "description": "Import country and administrative-area shape files from online data sources, analyze them, and present the results in coordinated map views."
+    },
+    "location": {
+      "name": "Location",
+      "description": "Import locations of geo-resources from online data sources, analyze them, and present the results in coordinated map views."
+    },
+    "route": {
+      "name": "Route",
+      "description": "Import transportation routes from online data sources, analyze them, and present the results in coordinated map views."
+    },
+    "spreadsheet": {
+      "name": "Spreadsheet",
+      "description": "Import spreadsheet data, apply filtering, and expose the curated tabular items to other workflows."
+    },
+    "styler": {
+      "name": "Styler",
+      "description": "Import spreadsheet data, filter them, and produce styling rules that drive themed visualizations on maps."
+    },
+    "resolver": {
+      "name": "Resolver",
+      "description": "Map heterogeneous schemas and properties into a unified structure so downstream plugins read consistent attributes."
+    },
+    "linker": {
+      "name": "Linker",
+      "description": "Link related nodes into reusable sequences so workers and timelines can traverse shared workflows."
+    },
+    "timeline": {
+      "name": "Timeline",
+      "description": "Arrange descendant nodes as timeline frames and play them back as map animations inside a special folder node."
+    }
+  },
   "treeConsole": {
     "toolbar": {
       "search": {
