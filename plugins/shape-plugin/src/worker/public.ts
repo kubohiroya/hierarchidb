@@ -1,13 +1,13 @@
 // Public worker API types for @hierarchidb/shape-plugin/worker
 // Keep this file type-only and decoupled from internal Dexie types
 
+import type { NodeId } from '@hierarchidb/common-types';
 import type {
   BatchProgressEvent,
   BatchSession,
   BatchTask,
   CountryMetadata,
   DataSourceConfig,
-  NodeId,
   ProcessingConfig,
   ProcessingStatus,
   SelectionStats,

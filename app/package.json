@@ -47,6 +47,7 @@
     "@vis.gl/react-maplibre": "^8.0.4",
     "comlink": "^4.4.2",
     "dexie": "^4.2.0",
+    "dequal": "^2.0.3",
     "flatgeobuf": "^4.4.0",
     "i18next-browser-languagedetector": "^8.2.0",
     "i18next-http-backend": "^3.0.2",

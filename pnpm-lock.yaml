@@ -989,9 +989,9 @@ importers:
       comlink:
         specifier: ^4.4.2
         version: 4.4.2
-      fast-deep-equal:
-        specifier: ^3.1.3
-        version: 3.1.3
+      dequal:
+        specifier: ^2.0.3
+        version: 2.0.3
       jotai:
         specifier: ^2.16.0
         version: 2.16.0(@babel/core@7.28.5)(@babel/template@7.27.2)(@types/react@18.3.27)(react@18.3.1)
@@ -1977,12 +1977,12 @@ importers:
       '@hierarchidb/tabular-store':
         specifier: workspace:*
         version: link:../../features/tabular-store
-      '@hierarchidb/ui-grid':
-        specifier: workspace:*
-        version: link:../data-grid
       '@hierarchidb/ui-file':
         specifier: workspace:*
         version: link:../file
+      '@hierarchidb/ui-grid':
+        specifier: workspace:*
+        version: link:../data-grid
       '@hierarchidb/ui-modal-select':
         specifier: workspace:*
         version: link:../modal-select
@@ -2801,15 +2801,15 @@ importers:
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../../packages/runtime-worker
-      '@hierarchidb/ui-grid':
-        specifier: workspace:*
-        version: link:../../packages/ui/data-grid
       '@hierarchidb/ui-datasource':
         specifier: workspace:*
         version: link:../../packages/ui/datasource
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../packages/ui/dialog
+      '@hierarchidb/ui-grid':
+        specifier: workspace:*
+        version: link:../../packages/ui/data-grid
       '@hierarchidb/ui-license':
         specifier: workspace:*
         version: link:../../packages/ui/license
@@ -2965,12 +2965,12 @@ importers:
       '@hierarchidb/tabular-store':
         specifier: workspace:*
         version: link:../../packages/features/tabular-store
-      '@hierarchidb/ui-grid':
-        specifier: workspace:*
-        version: link:../../packages/ui/data-grid
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../packages/ui/dialog
+      '@hierarchidb/ui-grid':
+        specifier: workspace:*
+        version: link:../../packages/ui/data-grid
       '@hierarchidb/ui-plugin-basic-info':
         specifier: workspace:*
         version: link:../../packages/ui/plugin-basic-info
@@ -3110,9 +3110,6 @@ importers:
       '@hierarchidb/ui-country-select':
         specifier: workspace:*
         version: link:../../packages/ui/country-select
-      '@hierarchidb/ui-grid':
-        specifier: workspace:*
-        version: link:../../packages/ui/data-grid
       '@hierarchidb/ui-datasource':
         specifier: workspace:*
         version: link:../../packages/ui/datasource
@@ -3122,6 +3119,9 @@ importers:
       '@hierarchidb/ui-gis':
         specifier: workspace:*
         version: link:../../packages/ui/gis
+      '@hierarchidb/ui-grid':
+        specifier: workspace:*
+        version: link:../../packages/ui/data-grid
       '@hierarchidb/ui-license':
         specifier: workspace:*
         version: link:../../packages/ui/license
@@ -3291,12 +3291,12 @@ importers:
       '@hierarchidb/plugin-base':
         specifier: workspace:*
         version: link:../../packages/plugin-base
-      '@hierarchidb/ui-grid':
-        specifier: workspace:*
-        version: link:../../packages/ui/data-grid
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../packages/ui/dialog
+      '@hierarchidb/ui-grid':
+        specifier: workspace:*
+        version: link:../../packages/ui/data-grid
       '@hierarchidb/ui-modal-select':
         specifier: workspace:*
         version: link:../../packages/ui/modal-select
