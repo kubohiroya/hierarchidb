@@ -3,7 +3,6 @@ import { startTransition } from 'react';
 import { createRoot } from 'react-dom/client';
 import { registerAuthUIHandlers } from '@hierarchidb/ui-plugin-shell/ui-auth';
 import { createHierarchiRouter, getBasePath, getRouterMode } from './router/index.js';
-import type { AppRouterInstance } from './router/index.js';
 import AppRoot from './root.js';
 import { initializeBrowserGlobals } from './router/init/initializeBrowserGlobals.ts';
 import { preloadPluginWorkerStores } from './worker-runtime/WorkerModuleLoader.js';
@@ -60,7 +59,7 @@ async function waitForAccessToken(timeoutMs = 2 * 60 * 1000): Promise<string> {
   });
 }
 
-function registerAuthRecoveryHandlers(router: AppRouterInstance) {
+function registerAuthRecoveryHandlers(router: Awaited<ReturnType<typeof createHierarchiRouter>>) {
   registerAuthUIHandlers(async (_notification) => {
     const token = getAccessTokenFromStorage();
     if (token) {
@@ -83,7 +82,6 @@ function registerAuthRecoveryHandlers(router: AppRouterInstance) {
     if (!pathname.startsWith('/auth/login')) {
       void router.navigate({
         to: '/auth/login',
-        state: { from: { pathname: returnPath } },
       });
     }
 

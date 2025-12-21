@@ -53,6 +53,19 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1798) app typecheck エラー修正（router 型/通知/preview）（P1）
+- ブランチ: `fix/app/typecheck-router-errors`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `app/src/entry.client.tsx`、`app/src/hooks/treeconsole/createTreeConsoleActions.ts`
+- 受け入れ基準（DoD）:
+  - [ ] `@hierarchidb/app:typecheck` の router 型/notify duration/null のエラーが解消される
+  - [ ] 既存の認証復帰と preview guard の挙動に回帰がない
+  - [ ] 変更内容とロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] registerAuthRecoveryHandlers の型不整合を解消する
+  - [ ] navigate state の型エラーを解消する
+  - [ ] preview guard の notify duration 型エラーを解消する
+- ロールバック手順：本タスクの差分を revert し、`pnpm --filter @hierarchidb/app typecheck` を再実行する。
+
 1788) SpeedDial/コンテキストメニュー Create のヘルプ i18n 修正（P1）
 - ブランチ: `fix/ui/create-menu-help-i18n`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: app/tree console UI, packages/ui/treeconsole, packages/plugin-ui-host（予定）
@@ -4550,6 +4563,18 @@ P2:
   - 要点：TreeNode に isTemporary を追加し、create 直後のみ付与。Save Draft/Save で解除し、close/cancel/backdrop は isTemporary:true のときだけ force delete。
   - 検証：未実施。
   - ロールバック手順：`packages/common/types/src/tree-node-types.ts`、`packages/common/api/src/TreeMutationAPI.ts`、`packages/runtime-worker/src/services/{TreeMutationService.ts,TreeNodeUpdaterService.ts}`、`packages/runtime-worker/src/services/draft/initOperations.ts`、`packages/plugin-ui-sdk/src/hooks/useTreeNodeUpdater.ts`、`packages/plugin-ui-host/src/headless/{usePluginDialogController.tsx,__tests__/cancel-create.force-delete.test.tsx}`、`app/src/hooks/treeconsole/createTreeConsoleActions.ts` の差分を revert する。
+- 1797) tabular-source-xlsx の xlsx.mjs 型参照追加（P1） — 完了 (2025-12-22)
+  - 要点：xlsxParser に module 宣言参照を追加し、plugin-ui-host typecheck の `xlsx/xlsx.mjs` 型エラーを解消。
+  - 検証：`pnpm --filter @hierarchidb/plugin-ui-host typecheck` exit 0。
+  - ロールバック手順：`packages/features/tabular-source-xlsx/src/xlsxParser.ts` の差分を revert し、同 typecheck を再実行する。
+- 1796) plugin-ui-host の xlsx 型シム整理（P1） — 完了 (2025-12-22)
+  - 要点：plugin-ui-host の xlsx 型シムを削除。
+  - 検証：`pnpm exec dep-fence --strict`（local-shims の WARN 解消）。
+  - ロールバック手順：`packages/plugin-ui-host/src/types/xlsx.d.ts` の差分を revert し、`pnpm exec dep-fence --strict` を再実行する。
+- 1791) plugin-ui-host の fast-deep-equal 型シム整理（P1） — 完了 (2025-12-22)
+  - 要点：fast-deep-equal を dequal へ置換し、ローカル型シムを削除。
+  - 検証：`pnpm exec dep-fence --strict`（fast-deep-equal の WARN 解消）。
+  - ロールバック手順：`packages/plugin-ui-host/src/headless/usePluginDialogController.tsx`、`packages/plugin-ui-host/package.json`、`pnpm-lock.yaml` の差分を revert し、`pnpm exec dep-fence --strict` を再実行する。
 - 1790) TreeConsole/PluginDialog の linker/timeline アイコン表示修正（P1） — 完了 (2025-12-22)
   - 要点：TreeConsole の NodeTypeIcon に linker/timeline を追加し、PluginDialog は IconRegistry 経由で plugin icon を解決するよう調整。
   - 検証：未実施。
@@ -10860,13 +10885,21 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-22 05:31 start: fix/app/typecheck-router-errors — app typecheck の router 型/notify duration/null のエラーを修正する対応に着手。DoD: Kanban 記載どおり型エラー解消/検証/運用ログ/ロールバック記載。（Kanban: 1798）
+- 2025-12-22 05:23 start: fix/tabular-xlsx/xlsx-mjs-types — tabular-source-xlsx の xlsx.mjs 型宣言を参照し、plugin-ui-host の typecheck エラーを解消する対応に着手。DoD: 型解決/検証/運用ログ/ロールバック記載。（Kanban: 1797）
+- 2025-12-22 05:24 done: fix/tabular-xlsx/xlsx-mjs-types — xlsxParser に module 宣言の参照を追加し、plugin-ui-host typecheck を再度通過。検証: `pnpm --filter @hierarchidb/plugin-ui-host typecheck` exit 0。ロールバック: `packages/features/tabular-source-xlsx/src/xlsxParser.ts` の差分を revert し、同 typecheck を再実行する。
 - 2025-12-22 09:46 start: fix/deps/dequal-app-host — dequal を app dependencies と plugin-ui-host の devDependencies/peerDependencies に反映する対応に着手。DoD: Kanban 記載どおり依存追加/運用ログ/ロールバック記載。
+- 2025-12-22 09:48 done: fix/deps/dequal-app-host — app の dependencies に dequal を追加。検証: 未実施。ロールバック: `app/package.json` の差分を revert する。
 - 2025-12-22 09:30 start: fix/route/processing-config-partial — route-plugin RouteProcessingStep の Partial<RouteProcessingConfig> 型エラー解消に着手。DoD: Kanban 記載どおり typecheck 解消/運用ログ/ロールバック記載。
 - 2025-12-22 09:35 command: pnpm --filter @hierarchidb/route-plugin typecheck — exit 0。
 - 2025-12-22 09:36 done: fix/route/processing-config-partial — RouteProcessingStep の updateProcessing が nested partial を受け取れる型に変更し、必須値不足の typecheck を解消。ロールバック: `plugins/route-plugin/src/ui/components/steps/RouteProcessingStep.tsx` の差分を revert し、`pnpm --filter @hierarchidb/route-plugin typecheck` を再実行。
 - 2025-12-22 04:59 start: fix/plugin-ui-host/fast-deep-equal-shim — fast-deep-equal のローカル型シムが不要か調査し、不要であれば削除して dep-fence の WARN を解消する対応に着手。DoD: Kanban 記載どおり型解決保証/警告解消/運用ログ/ロールバック記載。（Kanban: 1791）
 - 2025-12-22 05:12 progress: fix/plugin-ui-host/fast-deep-equal-shim — `@types/fast-deep-equal` を追加してシム削除を試みたが、npm に該当パッケージが存在せず `pnpm install` が 404 で失敗。
 - 2025-12-22 05:12 blocked: fix/plugin-ui-host/fast-deep-equal-shim — 公式型が提供されていないためシム削除だけでは型解決不可。代替ライブラリへの置換 or シム維持の判断が必要。
+- 2025-12-22 05:18 start: fix/plugin-ui-host/xlsx-shim — plugin-ui-host の xlsx 型シムが不要か調査し、不要であれば削除して dep-fence の WARN を解消する対応に着手。DoD: Kanban 記載どおり型解決保証/警告解消/運用ログ/ロールバック記載。（Kanban: 1796）
+- 2025-12-22 05:19 done: fix/plugin-ui-host/xlsx-shim — plugin-ui-host の xlsx 型シムを削除。検証: `pnpm exec dep-fence --strict` で local-shims の WARN が解消。ロールバック: `packages/plugin-ui-host/src/types/xlsx.d.ts` の差分を revert し、`pnpm exec dep-fence --strict` を再実行する。
+- 2025-12-22 05:23 start: fix/tabular-xlsx/xlsx-mjs-types — tabular-source-xlsx の xlsx.mjs 型宣言を参照し、plugin-ui-host の typecheck エラーを解消する対応に着手。DoD: 型解決/検証/運用ログ/ロールバック記載。（Kanban: 1797）
+- 2025-12-22 05:24 done: fix/tabular-xlsx/xlsx-mjs-types — xlsxParser に module 宣言の参照を追加し、plugin-ui-host typecheck を再度通過。検証: `pnpm --filter @hierarchidb/plugin-ui-host typecheck` exit 0。ロールバック: `packages/features/tabular-source-xlsx/src/xlsxParser.ts` の差分を revert し、同 typecheck を再実行する。
 - 2025-12-22 05:22 done: fix/plugin-ui-host/fast-deep-equal-shim — fast-deep-equal を dequal に置換し、fast-deep-equal.d.ts を削除。検証: `pnpm exec dep-fence --strict` で fast-deep-equal の WARN は解消（xlsx.d.ts は残存）。ロールバック: `packages/plugin-ui-host/src/headless/usePluginDialogController.tsx` と `packages/plugin-ui-host/package.json` と `pnpm-lock.yaml` の差分を revert し、`pnpm exec dep-fence --strict` を再実行する。
 - 2025-12-22 05:10 progress: fix/plugin-ui-host/fast-deep-equal-shim — `fast-deep-equal` 依存はあるが `@types/fast-deep-equal` が未導入で、lockfile にも存在しないため、型シム削除には代替の型依存追加が必要。
 - 2025-12-22 06:30 start: fix/ui/temporary-draft-node — Create 直後の仮作成ノードに isTemporary を付与し、ダイアログ close/cancel/backdrop 時に isTemporary:true のノードだけ自動削除する修正に着手。DoD: Kanban 記載どおり temporary フラグ付与/解除/自動削除/運用ログ/ロールバック記載。

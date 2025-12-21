@@ -1,3 +1,5 @@
+/// <reference path="./types/xlsx.module.d.ts" />
+
 import type { TabularParserPort, DetectionResult,
   FileLike,
   ParseOptions,

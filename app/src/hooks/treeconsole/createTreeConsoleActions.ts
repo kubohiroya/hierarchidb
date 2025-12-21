@@ -659,7 +659,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         if (shouldGuardPreview) {
           const guard = await resolvePreviewGuardState(resolvedNodeType, targetNodeId);
           if (!guard.canOpen) {
-            notify.error(PREVIEW_GUARD_MESSAGE, { duration: null });
+            notify.error(PREVIEW_GUARD_MESSAGE);
             return;
           }
           if (typeof guard.finalStepIndex === 'number') {
