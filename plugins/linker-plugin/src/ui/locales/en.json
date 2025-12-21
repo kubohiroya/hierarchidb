@@ -2,7 +2,7 @@
   "steps": {
     "resources": { "label": "Select Resources" },
     "aggregated": { "label": "Aggregated Paths" },
-    "preview": { "label": "Map Preview" }
+    "preview": { "label": "Preview" }
   },
   "resourcePicker": {
     "title": "Resources",

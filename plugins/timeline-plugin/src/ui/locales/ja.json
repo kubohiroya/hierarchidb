@@ -1,9 +1,9 @@
 {
   "steps": {
     "basic": { "label": "基本情報" },
-    "frames": { "label": "フレームプレビュー" },
-    "map": { "label": "マッププレビュー" },
-    "final": { "label": "最終アニメーション" }
+    "frames": { "label": "フレーム" },
+    "map": { "label": "マップ" },
+    "final": { "label": "プレビュー" }
   },
   "header": {
     "create": "タイムライン作成",
@@ -27,7 +27,7 @@
     "empty": "フレームがありません"
   },
   "map": {
-    "title": "マッププレビュー",
+    "title": "プレビュー",
     "timeline": "タイムライン",
     "fps": "FPS",
     "loop": "ループ",

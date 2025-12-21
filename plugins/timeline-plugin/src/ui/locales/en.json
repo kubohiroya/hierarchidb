@@ -1,9 +1,9 @@
 {
   "steps": {
     "basic": { "label": "Basic Information" },
-    "frames": { "label": "Frames Preview" },
-    "map": { "label": "Map Preview" },
-    "final": { "label": "Final Animation" }
+    "frames": { "label": "Frames" },
+    "map": { "label": "Map" },
+    "final": { "label": "Preview" }
   },
   "header": {
     "create": "Create Timeline",

@@ -2,7 +2,7 @@
   "steps": {
     "resources": { "label": "リソース選択" },
     "aggregated": { "label": "集約パス" },
-    "preview": { "label": "マッププレビュー" }
+    "preview": { "label": "プレビュー" }
   },
   "resourcePicker": {
     "title": "リソース",
