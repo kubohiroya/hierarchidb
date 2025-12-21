@@ -1,0 +1,1 @@
+import{a as e}from"./src-CajZZ6uY.js";const t=()=>e(`HDB_SHAPE_PREVIEW_METADATA`,!1);export{t};

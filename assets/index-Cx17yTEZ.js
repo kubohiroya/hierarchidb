@@ -1,1 +1,0 @@
-import{R as o}from"./Route-C04VbBsT.js";import"./jsx-runtime-Dp4RrBKh.js";import"./index-C1aSX2kT.js";import"../worker.js";import"../../../../packages/runtime-worker/dist/StageProcessingService.js";import"./createSvgIcon-DMGR10qF.js";const n=o;export{n as RoutePluginIcon,n as default};

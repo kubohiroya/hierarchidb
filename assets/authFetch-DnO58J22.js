@@ -1,0 +1,1 @@
+import{_ as e}from"../worker.js";async function t(t,n){return(await e.getSingleton()).fetchWithAuth(t,n,{pluginType:`shape`})}export{t as authFetch};

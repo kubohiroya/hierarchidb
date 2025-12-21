@@ -1,0 +1,1 @@
+import{B as e}from"../worker.js";import{t}from"./jsx-runtime-D4Zt6A_v.js";import{t as n}from"./createSvgIcon-C_0XO6Bp.js";var r=n((0,e(t()).jsx)(`path`,{d:`M8 5v14l11-7z`}),`PlayArrow`);export{r as t};

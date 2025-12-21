@@ -1,0 +1,1 @@
+import"./vendor-react-DueQUKGo.js";import{a as e,i as t,n,o as r,r as i,t as a}from"./i18n-Q1eCL8Da.js";export{a as formatDistance,n as formatDuration,i as getCategoryName,t as getRouteTypeName,e as getTransportModeName,r as useTranslation};

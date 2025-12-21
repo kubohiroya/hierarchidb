@@ -1,0 +1,1 @@
+import{j as e,y as t}from"../worker.js";import{t as n}from"./RouteDatabase-CTu66L5Y.js";async function r(){await t.delete(e(`route-db`))}export{n as RouteDatabase,r as clearDatabases};

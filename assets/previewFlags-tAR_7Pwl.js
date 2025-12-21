@@ -1,0 +1,1 @@
+import{k as e}from"../worker.js";const t=()=>e(`HDB_SHAPE_PREVIEW_METADATA`,!1);export{t};

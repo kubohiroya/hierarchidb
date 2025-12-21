@@ -1,0 +1,1 @@
+import"./react-Cx9zExDA.js";import{t as e}from"./dist-QzKTSgvO.js";e.getInstance().registerConfigProvider({nodeType:`folder`,getCreateStepConfigs(){return[]},getEditStepConfigs(){return this.getCreateStepConfigs()}});const t=()=>null;export{t as FolderDialogHost,t as default};

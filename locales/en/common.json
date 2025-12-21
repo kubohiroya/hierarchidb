@@ -29,6 +29,38 @@
       "ready": "Worker ready"
     }
   },
+  "userMenu": {
+    "loading": "Loading authentication...",
+    "login": "Login",
+    "logout": "Logout",
+    "aria": {
+      "userMenu": "User menu"
+    },
+    "theme": {
+      "label": "Theme",
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "language": {
+      "label": "Language",
+      "system": "System default"
+    },
+    "clear": {
+      "label": "Clear All Data",
+      "title": "Clear all data?",
+      "description": "This will clear all data including:",
+      "items": {
+        "cache": "Cache API data",
+        "indexedDb": "All IndexedDB databases (projects, maps, shapes, etc.)",
+        "localStorage": "localStorage data"
+      },
+      "warning": "This action cannot be undone and will delete all your local data. The page will reload after clearing the cache.",
+      "confirm": "Clear All Data",
+      "cancel": "Cancel",
+      "error": "Failed to clear some cache data. Please try again."
+    }
+  },
   "dialogs": {
     "trash": {
       "modeMenu": {
@@ -91,6 +123,34 @@
           "discardSelf": "Discard my changes",
           "keepSelf": "Keep my changes"
         }
+      },
+      "pluginDialog": {
+        "buttons": {
+          "save": "Save",
+          "saveDraft": "Save draft",
+          "next": "Next",
+          "back": "Back",
+          "cancel": "Cancel",
+          "close": "Close",
+          "maximize": "Maximize",
+          "restoreSize": "Restore size",
+          "fullscreen": "Full screen",
+          "exitFullscreen": "Exit full screen"
+        },
+        "tooltips": {
+          "saveDraftDisabled": "No changes to save",
+          "close": "Close dialog",
+          "maximize": "Maximize",
+          "restoreSize": "Restore size",
+          "fullscreen": "Full screen",
+          "exitFullscreen": "Exit full screen"
+        }
+      }
+    },
+    "pluginDialog": {
+      "titles": {
+        "create": "Create {{plugin}}",
+        "edit": "Edit {{plugin}}"
       }
     }
   },
@@ -252,27 +312,42 @@
             "en": "English",
             "ja": "Japanese"
           }
+        },
+        "autosave": {
+          "title": "Autosave"
         }
-      },
-      "developerMenu": {
-        "clearIndexedDb": "Delete all IndexedDB created by this app",
-        "clearIndexedDbConfirm": "Delete all IndexedDB databases created by this app? This action cannot be undone.",
-        "clearIndexedDbSuccess": "Deleted IndexedDB data created by this app.",
-        "clearIndexedDbEmpty": "No IndexedDB databases were found for this app.",
-        "clearIndexedDbFailure": "Failed to delete IndexedDB data. See console for details."
       }
     },
     "contextMenu": {
       "create": "Create",
+      "createUnavailable": "Create menu unavailable",
+      "createTooltip": "{{label}}: {{description}}",
       "openFolder": "Open folder",
       "open": "Open",
       "edit": "Edit",
-      "copy": "Copy",
-      "cut": "Cut",
       "duplicate": "Duplicate",
       "moveToTrash": "Move to Trash",
       "checkReference": "Check reference",
       "preview": "Preview"
+    },
+    "developerMenu": {
+      "clearIndexedDb": "Delete all IndexedDB created by this app",
+      "clearIndexedDbConfirm": "Delete all IndexedDB databases created by this app? This action cannot be undone.",
+      "clearIndexedDbSuccess": "Deleted IndexedDB data created by this app.",
+      "clearIndexedDbEmpty": "No IndexedDB databases were found for this app.",
+      "clearIndexedDbFailure": "Failed to delete IndexedDB data. See console for details."
     }
+  },
+  "contextMenu": {
+    "create": "Create",
+    "openFolder": "Open folder",
+    "open": "Open",
+    "edit": "Edit",
+    "copy": "Copy",
+    "cut": "Cut",
+    "duplicate": "Duplicate",
+    "moveToTrash": "Move to Trash",
+    "checkReference": "Check reference",
+    "preview": "Preview"
   }
 }

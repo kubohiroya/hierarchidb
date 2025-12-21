@@ -2,14 +2,44 @@
   "styleSettings": {
     "title": "Style Mapping",
     "description": "Select the style type, data source column, and target property before configuring algorithms.",
+    "accordion": {
+      "styleType": "Style Type",
+      "targetProperty": "Target Property",
+      "algorithm": "Algorithm"
+    },
+    "keyValuePair": {
+      "description": "Select the key and value columns to drive styling and review basic statistics.",
+      "stats": {
+        "title": "Value statistics",
+        "empty": "Select a value column with numeric values to view statistics.",
+        "count": "Count",
+        "min": "Min",
+        "max": "Max",
+        "mean": "Average",
+        "median": "Median",
+        "stdDev": "Std Dev"
+      },
+      "histogram": {
+        "title": "Histogram",
+        "binCount": "Number of bins",
+        "note": "Histogram uses numeric values only. Dashed lines show min/mean/max; y-axis label shows modal frequency."
+      },
+      "validation": {
+        "required": "Select both key and value columns to continue."
+      }
+    },
     "styleType": {
       "label": "Style Type",
       "help": "Select the geometry that this style targets.",
       "options": {
-        "choropleth": "Choropleth Map",
-        "heatmap": "Heat Map",
-        "points": "Point Map",
-        "lines": "Line Map"
+        "choropleth": "Chorograph",
+        "points": "Point rendering",
+        "lines": "Line rendering"
+      },
+      "descriptions": {
+        "choropleth": "Set fill colors for areas such as countries or regions.",
+        "points": "Set display colors for city or transit nodes.",
+        "lines": "Set line width and colors for transportation routes."
       }
     },
     "valueColumn": {
@@ -25,39 +55,27 @@
       "required": "Select a style type, value source, and target property to continue."
     }
   },
-  "extension": {
-    "description": "Configure Styler visualization settings for this folder",
-    "styleType": {
-      "label": "Style Type",
-      "choropleth": "Choropleth Map",
-      "heatmap": "Heat Map",
-      "points": "Point Map",
-      "lines": "Line Map"
-    },
-    "dataSource": {
-      "label": "Data Source",
-      "placeholder": "e.g., CSV file path or URL"
-    },
-    "colorScheme": {
-      "label": "Color Scheme",
-      "blues": "Blues",
-      "reds": "Reds",
-      "greens": "Greens",
-      "viridis": "Viridis",
-      "plasma": "Plasma"
-    },
-    "opacity": {
-      "label": "Opacity"
-    }
+  "steps": {
+    "dataSource": "Data Source",
+    "filtering": "Filtering",
+    "styleSettings": "Style Mapping",
+    "styleAlgorithm": "Style Algorithm",
+    "preview": "Preview"
   },
-  "step5": {
-    "title": "Step 5: Style Mapping Configuration",
+  "styleAlgorithm": {
+    "title": "Style Mapping Configuration",
+    "errors": {
+      "range": "Maximum value must be greater than minimum value",
+      "configure": "Configure styling targets before continuing."
+    },
     "algorithms": {
       "linear": "Linear",
+      "log": "Logarithmic",
       "quantile": "Quantile",
       "jenks": "Jenks Natural Breaks",
       "equal": "Equal Interval",
       "linearDescription": "Interpolates colors smoothly between minimum and maximum values. Ideal for evenly distributed data or when visualizing continuous transitions.",
+      "logDescription": "Uses a logarithmic scale to emphasize smaller values while compressing large outliers. Suited for highly skewed distributions.",
       "quantileDescription": "Creates classes with an equal number of features. Produces balanced visuals even for skewed data and is resilient to outliers.",
       "jenksDescription": "Finds natural breaks by minimizing variance within classes and maximizing it between classes. Offers meaningful groupings at a higher computational cost.",
       "equalDescription": "Divides the value range into equal intervals. Suited for continuous, roughly linear distributions such as temperature or elevation, and is fast and easy to understand."
@@ -117,6 +135,70 @@
       "stdDev": "Std Dev: {{value}}",
       "min": "Min: {{value}}",
       "max": "Max: {{value}}"
+    }
+  },
+  "stylePreview": {
+    "title": "Preview with Style Mapping",
+    "required": {
+    "title": "Configuration Required",
+    "body": "Please complete style configuration before viewing the preview.",
+    "keyColumn": "Select a key column for mapping",
+    "property": "Select a MapLibre style property",
+    "targetProperty": "Select a target property",
+    "valueColumn": "Select a value column for mapping",
+    "styleType": "Select a style type"
+  },
+    "noData": {
+      "title": "No Data Available",
+      "body": "No tabular data is available for preview. Please ensure data has been loaded in previous steps."
+    },
+    "truncate": "Showing preview of first 1,000 rows. Full dataset contains",
+    "rows": "rows."
+  },
+  "algorithm": {
+    "valueColumn": "Value column",
+    "valueColumnUnset": "Not selected",
+    "nullHandling": "Null / NaN handling",
+    "null": {
+      "exclude": "Exclude rows",
+      "zero": "Treat as 0"
+    },
+    "rule": "Mapping rule",
+    "colorScale": "Color scale",
+    "customTitle": "Custom HSB",
+    "numericRange": "Numeric range",
+    "min": "Min",
+    "max": "Max",
+    "scale": {
+      "grayscale": "Grayscale",
+      "blueRed": "Blue → Red",
+      "viridis": "Viridis",
+      "magma": "Magma",
+      "custom": "Custom (HSB)"
+    }
+  },
+  "extension": {
+    "description": "Configure Styler visualization settings for this folder",
+    "styleType": {
+      "label": "Style Type",
+      "choropleth": "Area fill",
+      "points": "Point rendering",
+      "lines": "Line rendering"
+    },
+    "dataSource": {
+      "label": "Data Source",
+      "placeholder": "e.g., CSV file path or URL"
+    },
+    "colorScheme": {
+      "label": "Color Scheme",
+      "blues": "Blues",
+      "reds": "Reds",
+      "greens": "Greens",
+      "viridis": "Viridis",
+      "plasma": "Plasma"
+    },
+    "opacity": {
+      "label": "Opacity"
     }
   }
 }
