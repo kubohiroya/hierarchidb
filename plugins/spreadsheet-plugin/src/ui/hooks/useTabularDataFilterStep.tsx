@@ -7,7 +7,7 @@ import {
   type TabularFilterRule,
 } from '@hierarchidb/ui-tabular-extract';
 import type { SpreadsheetEntity } from '../../common/types/SpreadsheetEntity.js';
-import type { StepComponentProps } from '@hierarchidb/plugin-base';
+import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import type { TabularColumnInfo, TabularColumnType, TabularTableMetadata } from '@hierarchidb/tabular-store';
 import { rulesEqual } from '../state/tabularKeyValueAtoms.js';
 import type { useTabularKeyValueState } from './useTabularKeyValueState.js';
@@ -17,8 +17,8 @@ type KeyValueState = ReturnType<typeof useTabularKeyValueState<SpreadsheetEntity
 export interface UseTabularDataFilterStepParams<T extends SpreadsheetEntity> {
   pluginId: string;
   dialogData: T;
-  setValid: StepComponentProps<T>['setValid'];
-  setError: StepComponentProps<T>['setError'];
+  setValid: PluginStepProps<T>['setValid'];
+  setError: PluginStepProps<T>['setError'];
   shouldUploadFirst: boolean;
   keyValueValid: boolean;
   keyValueState: KeyValueState;
@@ -30,7 +30,7 @@ export interface UseTabularDataFilterStepParams<T extends SpreadsheetEntity> {
   filtersFromAtom: TabularFilterRule[];
   syncFilters: (filters: TabularFilterRule[]) => void;
   menuContainer: Element | null;
-  dialogRef?: StepComponentProps<T>['dialogRef'];
+  dialogRef?: PluginStepProps<T>['dialogRef'];
 }
 
 export const useTabularDataFilterStep = <T extends SpreadsheetEntity>({

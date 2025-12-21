@@ -1,6 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { BatchConfig } from './BatchConfig.js';
+import type { BatchConfig, HybridFilterConfig } from './BatchConfig.js';
 import type { ProcessingConfig } from './processing.js';
+import type { FeatureFilterMethod } from './processing.js';
 
 export interface BatchStatus {
   session: BatchSession;
@@ -34,6 +35,7 @@ export type ProcessingStage = BatchTaskType;
 export interface BatchTaskBase {
   taskId: string;
   taskType: BatchTaskType;
+  nodeId?: NodeId;
   sessionId?: string;
   stage?: BatchTaskStageType;
   status?: TaskStatus;
@@ -54,6 +56,12 @@ export interface DownloadTaskConfig {
   url?: string;
   dataSource?: string;
   inputBufferId?: string;
+  country?: string;
+  adminLevel?: number;
+  endpoint?: string;
+  timeoutMs?: number;
+  retryAttempts?: number;
+  retryDelay?: number;
 }
 
 export interface DownloadTask extends BatchTaskBase {
@@ -72,6 +80,12 @@ export interface SimplifyTaskConfig {
   minimumArea?: number;
   zoomLevels?: number[];
   tileSize?: number;
+  quantize?: number;
+  featureFilterMethod?: FeatureFilterMethod;
+  minVertexCountForAreaFilter?: number;
+  aspectRatioThreshold?: number;
+  hybridFilterConfig?: HybridFilterConfig;
+  enablePerFeatureSimplification?: boolean;
 }
 
 export interface SimplifyTask extends BatchTaskBase {
@@ -96,11 +110,21 @@ export interface Simplify2Task extends SimplifyTask {
 
 export interface VectorTileTaskConfig {
   inputBufferId?: string;
-  zoomLevels?: number[];
+  minZoom?: number;
+  maxZoom?: number;
   tileSize?: number;
+  buffer?: number;
   compression?: boolean;
   format?: 'mvt' | 'pbf';
   outputBufferId?: string;
+  metadataEnabled?: boolean;
+  metadataReplace?: boolean;
+  metadataContext?: {
+    dataSource?: string;
+    countryCode?: string;
+    countryName?: string;
+    adminLevel?: number;
+  };
 }
 
 export interface VectorTileTask extends BatchTaskBase {

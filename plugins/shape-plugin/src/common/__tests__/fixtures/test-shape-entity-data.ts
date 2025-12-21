@@ -52,8 +52,8 @@ interface BatchConfig {
   };
   vectorTiles: {
     concurrentProcesses: number;
+    minZoom: number;
     maxZoom: number;
-    tileCountThresholdForZoomStop: number;
   };
 }
 
@@ -102,8 +102,8 @@ export function createTestBatchConfig(): BatchConfig {
     },
     vectorTiles: {
       concurrentProcesses: 2,
+      minZoom: 0,
       maxZoom: 10,
-      tileCountThresholdForZoomStop: 15000,
     },
   };
 }

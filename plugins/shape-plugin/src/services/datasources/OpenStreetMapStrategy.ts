@@ -13,7 +13,7 @@ import {
 } from './DataSourceStrategy.js';
 import type { Feature, Geometry } from 'geojson';
 import type { ShapeEntity } from '../../common/types/index.js';
-import type {NodeId} from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/common-types';
 //  OSM
 export interface OSMRawData {
   elements: OSMElement[];

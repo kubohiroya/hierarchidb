@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { RefObject } from 'react';
-import type { StepComponentProps } from '@hierarchidb/plugin-base';
+import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import type {
   TabularDataImportProps,
   TabularProcessingConfig,
@@ -16,7 +16,7 @@ const coerceDialogData = (value: unknown): SpreadsheetEntity =>
 type ImportMethod = 'file' | 'url';
 
 export type UseTabularDataSourceParams = Pick<
-  StepComponentProps<SpreadsheetEntity>,
+  PluginStepProps<SpreadsheetEntity>,
   'data' | 'onChange' | 'setValid' | 'setError'
 > & { dialogRef?: RefObject<HTMLElement | null>; missingDatasetMessage?: string };
 

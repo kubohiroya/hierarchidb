@@ -27,6 +27,7 @@ const STAGES: ProcessingStage[] = ['download', 'simplify1', 'simplify2', 'vector
 export interface BatchSessionOptions {
   maxConcurrentTasks?: number;
   retryAttempts?: number;
+  retryDelay?: number;
   timeoutMs?: number;
   enableResourceTracking?: boolean;
 }
@@ -59,14 +60,15 @@ export class BatchSessionManager {
     urlMetadata: UrlMetadata[],
     options: BatchSessionOptions = {},
   ): Promise<BatchSession> {
-    // Check for existing active sessions
-    const existingSessions = await shapeDB.getActiveBatchSessions(nodeId);
-    if (existingSessions.length > 0) {
-      throw new Error(`Node ${nodeId} already has an active batch session`);
+    const sessionId = String(nodeId);
+    const existing = await shapeDB.getBatchSession(sessionId);
+    if (existing) {
+      return existing;
     }
 
     // Create session record
     const session = await shapeDB.createBatchSession({
+      sessionId,
       nodeId,
       status: 'running',
       config,

@@ -543,34 +543,30 @@ function ShapeCreateDialog({ parentNodeId, onClose }: Props) {
 ### シナリオ 3: バッチ処理との統合
 
 ```typescript
-// BatchProcessingDialog.tsx
+// ShapeBuildProgressStep.tsx
 
-function BatchProcessingDialog({ workingCopyId }: Props) {
-  const [batchSession, setBatchSession] = useState<BatchSession | null>(null);
+function ShapeBuildProgressStep({ data, onChange }: Props) {
   const api = useShapeAPI();
 
   const startBatchProcessing = async () => {
     try {
-      // Working Copyをコミット
-      const nodeId = await api.commitWorkingCopy(workingCopyId);
-      
-      // バッチセッションを開始
+      const nodeId = data?.nodeId;
+      if (!nodeId) return;
+
       const session = await api.startBatchSession(nodeId, {
         downloadWorkers: 4,
         simplifyWorkers: 2,
         tileWorkers: 2,
       });
-      
-      setBatchSession(session);
+
+      onChange({ batchSessionId: session.sessionId });
     } catch (error) {
       console.error('Failed to start batch processing:', error);
     }
   };
 
   return (
-    <Dialog>
-      {/* バッチ処理UI */}
-    </Dialog>
+    <BuildStepPanel onResume={startBatchProcessing} />
   );
 }
 ```

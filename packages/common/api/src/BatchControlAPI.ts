@@ -127,6 +127,16 @@ export interface BatchProgressEvent<P = BatchProgressPayload> {
   error?: { code?: string; detail?: unknown };
 }
 
+export interface BatchTaskSummary {
+  taskId: string;
+  stage: StageKey;
+  status: ProgressPhase | 'waiting';
+  progress: number;
+  message?: string;
+  startedAt?: number;
+  completedAt?: number;
+}
+
 /** @deprecated Use BatchProgressEvent instead. */
 export type StandardProgressEvent<P = BatchProgressPayload> = BatchProgressEvent<P>;
 /** @deprecated Use BatchProgressPayload instead. */

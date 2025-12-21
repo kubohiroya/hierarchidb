@@ -14,9 +14,9 @@
 
 ## Phase 2: Batch UI Restoration
 - [ ] Reimplement `useShapeProgress` to subscribe to batch progress via worker events.
-- [ ] Rebuild `BatchProcessingDialog` with progress views, control buttons, and data tabs.
+- [ ] Rebuild Step5 progress view with control buttons and data tabs.
 - [ ] Rebuild `BatchRecoveryDialog` to list sessions and allow resume/discard through worker API.
-- [ ] Reinstate auxiliary components (`ShapeBatchProgressDisplay`, `TilePreview`, `ErrorDisplay`) to match original behavior.
+- [ ] Reinstate auxiliary components (`TilePreview`, `ErrorDisplay`) to match original behavior.
 
 ## Phase 3: Type & Config Alignment
 - [ ] Finalize `tsconfig.build.json` / `tsconfig.json` settings so both UI and service layer type-check cleanly.

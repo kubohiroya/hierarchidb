@@ -21,9 +21,156 @@
     "save": "保存",
     "defaultName": "新規 shape"
   },
+  "processing": {
+    "download": {
+      "title": "ダウンロード設定 / キャッシュ管理",
+      "workers": "同時ダウンロードのワーカー数",
+      "workersHelp": "同時に実行するダウンロード数を指定します。",
+      "retainFiles": "ダウンロード済みファイルを保持",
+      "deleteDownloadedFiles": "ダウンロード済みファイルを削除",
+      "deleteDownloadedFilesWithCount": "ダウンロード済みファイルを削除 ({{count}}件)",
+      "deleteStage1Cache": "ステージ1キャッシュを削除",
+      "deleteStage2Cache": "ステージ2キャッシュを削除",
+      "deleteTiles": "タイルを削除",
+      "timeoutMs": "タイムアウト (ms)",
+      "timeoutHelp": "各ダウンロードの待機時間上限です。",
+      "retryAttempts": "リトライ回数",
+      "retryAttemptsHelp": "失敗時に再試行する回数です。",
+      "retryDelay": "リトライ間隔 (ms)",
+      "retryDelayHelp": "失敗時の再試行までの待機時間です。"
+    },
+    "filter": {
+      "title": "抽出設定",
+      "workersStage1": "ポリゴン簡略化 (ステージ1) のワーカー数",
+      "workersStage1Help": "ステージ1の簡略化を並列実行する数です。",
+      "workersStage2": "タイル生成 (ステージ2) のワーカー数",
+      "workersStage2Help": "ステージ2のタイル準備を並列実行する数です。",
+      "method": "フィルタリング方法",
+      "methodBBox": "バウンディングボックスのみ (高速)",
+      "methodPolygon": "ポリゴンのみ",
+      "methodHybrid": "ハイブリッド (推奨)",
+      "areaFilterTitle": "面積フィルター",
+      "simplificationTitle": "簡略化",
+      "precisionTitle": "精度・圧縮",
+      "methodHelp": "簡略化前の特徴フィルタ方式を指定します。",
+      "minimumArea": "最小面積(平方km)",
+      "minimumAreaHelp": "簡略化ステージで、この面積より小さい特徴を除外します。",
+      "tolerance": "簡略化許容値 (度)",
+      "toleranceHelp": "ステージ2のジオメトリ簡略化許容値として使用されます。東京付近であれば0.1単位が南北11km東西9km程度に相当します。",
+      "minVertexCount": "最小頂点数",
+      "minVertexCountHelp": "頂点数がこの値以上の特徴に面積フィルタを適用します。",
+      "quickRejectThreshold": "クイック除外しきい値",
+      "quickRejectHelp": "値が低いほど小さな特徴を素早く除外します。",
+      "simpleShapeVertexThreshold": "シンプル形状の頂点しきい値",
+      "simpleShapeVertexHelp": "単純形状として扱う頂点数の上限です。",
+      "elongatedShapeCorrectionFactor": "細長形状の補正係数",
+      "elongatedShapeHelp": "細長い形状の補正係数です。",
+      "quantize": "座標値の量子化",
+      "quantizeSelected": "選択中: {value}",
+      "quantizeHelp": "ステージ2で座標を指定精度に丸めます。",
+      "quantizeStarHelp": "★1は最も粗い丸め（低精度）で、★が増えるほど精度が上がります。",
+      "enablePerFeatureSimplification": "フィーチャー単位の簡略化を有効化",
+      "enablePerFeatureSimplificationHelp": "ステージ2でフィーチャー単位の簡略化を実行します。"
+    },
+    "tile": {
+      "title": "タイル生成設定",
+      "workers": "タイルワーカー数",
+      "workersHelp": "タイル生成を並列実行する数です。",
+      "bufferSize": "タイルマージン (px)",
+      "bufferSizeHelp": "タイル境界の縫い目を減らすための余白を追加します。",
+      "maxZoom": "最大ズームレベル",
+      "maxZoomHelp": "生成するタイルの最大ズームです。",
+      "zoomRange": "ズーム範囲",
+      "zoomRangeHelp": "この範囲内のズームレベルを生成します。",
+      "tileCountThreshold": "タイル数しきい値",
+      "tileCountThresholdHelp": "タイル数がこの値を超えたら生成を停止します。",
+      "zoomLevels": "ズームレベル (カンマ区切り)",
+      "zoomLevelsHelp": "生成対象のズームレベルを指定します。"
+    }
+  },
   "preview": {
     "title": "プレビュー",
     "description": "生成したベクトルタイルを地図上に重ねて表示します。",
-    "noTiles": "ベクトルタイルがまだありません。ビルドを実行してください。"
+    "noTiles": "ベクトルタイルがまだありません。ビルドを実行してください。",
+    "tabs": {
+      "map": "地図プレビュー",
+      "metadata": "メタデータ一覧"
+    },
+    "metadata": {
+      "missingSession": "ビルドを実行してメタデータを生成してください。",
+      "empty": "メタデータがまだ生成されていません。",
+      "searchPlaceholder": "メタデータを検索",
+      "matches": "一致",
+      "rows": "件",
+      "columns": {
+        "countryName": "国名",
+        "countryCode": "国コード",
+        "adminName": "自治体名",
+        "adminLevel": "自治体レベル",
+        "adminCode": "自治体コード",
+        "dataSource": "データソース",
+        "createdAt": "作成日",
+        "vertexCount": "頂点数",
+        "polygonCount": "ポリゴン数",
+        "bbox": "バウンディングボックス",
+        "area": "面積",
+        "featureId": "フィーチャーID"
+      }
+    }
+  },
+  "build": {
+    "controls": {
+      "title": "ビルド操作",
+      "pause": "一時停止",
+      "start": "ビルド開始",
+      "resume": "ビルド再開"
+    },
+    "progress": {
+      "title": "バッチ進捗",
+      "session": "セッション",
+      "stage": "ステージ",
+      "task": "タスク",
+      "working": "進行中...",
+      "unknownStage": "処理中",
+      "counts": "{{percentage}}% ・ {{completed}}/{{total}} 完了 ・ 失敗 {{failed}} ・ スキップ {{skipped}}"
+    },
+    "tasks": {
+      "empty": "タスクがまだありません。"
+    },
+    "taskStatus": {
+      "waiting": "待機中",
+      "queued": "待機中",
+      "running": "実行中",
+      "paused": "一時停止",
+      "completed": "完了",
+      "failed": "失敗",
+      "cancelled": "キャンセル"
+    },
+    "status": {
+      "ready": "ビルドを開始する準備ができています",
+      "running": "ビルド処理中",
+      "paused": "ビルド一時停止中",
+      "completed": "ビルド完了",
+      "failed": "ビルド失敗",
+      "cancelled": "ビルドがキャンセルされました"
+    },
+    "stages": {
+      "download": {
+        "title": "ダウンロード",
+        "description": "ソースデータをダウンロードして正規化します。"
+      },
+      "simplify1": {
+        "title": "簡略化（ステージ1）",
+        "description": "選択内容に対して一次簡略化を適用します。"
+      },
+      "simplify2": {
+        "title": "簡略化（ステージ2）",
+        "description": "タイル生成用に簡略化バッファを準備します。"
+      },
+      "vectorTiles": {
+        "title": "ベクトルタイル",
+        "description": "選択したズーム範囲のベクトルタイルを生成します。"
+      }
+    }
   }
 }

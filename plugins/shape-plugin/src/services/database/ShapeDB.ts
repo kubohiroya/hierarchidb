@@ -100,7 +100,7 @@ export interface FeatureBufferRecord {
   nodeId: NodeId;
   stage: ProcessingStage;
   data_Uint8Array: Uint8Array;
-  format: 'geojson' | 'topojson' | 'geobuf';
+  format: 'geojson' | 'topojson' | 'geobuf' | 'flatgeobuf';
   featureCount: number;
   byteSize: number;
   compression?: string;
@@ -201,15 +201,15 @@ export class ShapeDB extends Dexie {
 
   // Batch Session Management
   async createBatchSession(
-    session: Omit<BatchSessionRecord, 'sessionId'>,
+    session: Omit<BatchSessionRecord, 'sessionId'> & { sessionId?: string },
   ): Promise<BatchSessionRecord> {
-    const sessionId = crypto.randomUUID();
+    const sessionId = session.sessionId ?? crypto.randomUUID();
     const fullSession: BatchSessionRecord = {
       ...session,
       sessionId,
     };
 
-    await this.batchSessions.add(fullSession);
+    await this.batchSessions.put(fullSession);
     return fullSession;
   }
 

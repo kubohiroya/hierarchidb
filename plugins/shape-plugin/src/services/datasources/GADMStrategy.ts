@@ -4,6 +4,7 @@
   */
 
 import { BaseDataSourceStrategy, type DataSourceConfig, type FetchOptions, type ProcessOptions } from './DataSourceStrategy.js';
+import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { ShapeEntity } from '../../common/types/index.js';
 
 //  GADM
@@ -31,6 +32,10 @@ export interface GADMProcessedData extends Array<ShapeEntity> {
     version: string;
   };
 }
+
+type GADMProperties = Record<string, unknown>;
+type GADMGeoJSON = FeatureCollection<Geometry, GADMProperties>;
+type GADMFeature = Feature<Geometry, GADMProperties>;
 
 /**
   * GADM
@@ -167,7 +172,7 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
     const { filters, adminLevel } = options || {};
 
     try {
-      let geojson: any;
+      let geojson: GADMGeoJSON;
 
       if (rawData.geopackage) {
         //  GeoPackage
@@ -179,10 +184,10 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
         throw new Error('No valid data found in raw data');
       }
 
-      let features = geojson.features;
+      let features: GADMFeature[] = geojson.features;
       if (adminLevel !== undefined) {
-        features = features.filter((feature: any) => {
-          const level = this.extractAdminLevel(feature.properties);
+        features = features.filter((feature: GADMFeature) => {
+          const level = this.extractAdminLevel(feature.properties ?? {});
           return level === adminLevel;
         });
       }
@@ -192,27 +197,25 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
       }
 
       //  ShapeEntity
-      const entities: ShapeEntity[] = features.map((feature: any, index: number) => {
-        const properties = feature.properties || {};
+      return features.map((feature: GADMFeature, index: number) => {
+        const properties = feature.properties ?? {};
+        const processedAt = new Date().toISOString();
 
         return {
-          id: this.generateEntityId(properties, index),
-          nodeId: this.generateNodeId(properties, index),
-          name: this.extractName(properties),
-          description: this.extractDescription(properties),
+          //id: this.generateEntityId(properties, index),
+          // nodeId: this.generateNodeId(properties, index),
+          // name: this.extractName(properties),
+          // description: this.extractDescription(properties),
           geometry: feature.geometry,
           properties: {
             ...properties,
             source: 'gadm',
             country: rawData.metadata.country,
             adminLevel: this.extractAdminLevel(properties),
-          },
-          metadata: {
-            source: 'gadm',
-            originalIndex: index,
-            downloadedAt: rawData.metadata.downloadedAt,
-            processedAt: new Date().toISOString(),
             gadmVersion: rawData.metadata.version,
+            downloadedAt: rawData.metadata.downloadedAt,
+            processedAt,
+            originalIndex: index,
           },
           createdAt: Date.now(),
           updatedAt: Date.now(),
@@ -220,21 +223,43 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
         };
       });
 
-      const result = entities as GADMProcessedData;
-      result.metadata = {
-        source: 'gadm',
-        processedAt: new Date().toISOString(),
-        count: entities.length,
-        country: rawData.metadata.country,
-        adminLevel: rawData.metadata.level,
-        version: rawData.metadata.version,
-      };
-
-      return result;
-
     } catch (error) {
       throw new Error(`Failed to process GADM data: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  }
+
+  private async processGeoPackage(_geopackage: ArrayBuffer, _level: number): Promise<GADMGeoJSON> {
+    return { type: 'FeatureCollection', features: [] };
+  }
+
+  private async processShapefile(shapefile: Map<string, ArrayBuffer>): Promise<GADMGeoJSON> {
+    if (!shapefile || shapefile.size === 0) {
+      throw new Error('No shapefile content to process');
+    }
+    const JSZipCtor = (await import('jszip')).default;
+    const zip = new JSZipCtor();
+    for (const [name, buf] of shapefile.entries()) {
+      zip.file(name, buf);
+    }
+    const zipBuffer = await zip.generateAsync({ type: 'arraybuffer' });
+    const shp = (await import('shpjs')).default;
+    const geojson = (await shp.parseZip(zipBuffer)) as GADMGeoJSON;
+    return geojson;
+  }
+
+  private extractAdminLevel(properties: Record<string, unknown>): number {
+    const value =
+      properties.adminLevel ??
+      properties.admin_level ??
+      properties.ADM_LEVEL ??
+      properties.level ??
+      properties.LEVEL;
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value === 'string') {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+    return 0;
   }
 
   private normalizeCountryCode(country: string): string {
@@ -310,93 +335,4 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
     return files;
   }
 
-  private async processGeoPackage(_geopackage: ArrayBuffer, _level: number): Promise<any> {
-    //  GeoPackage
-    //  @ngageoint/geopackage-js
-
-    return {
-      type: 'FeatureCollection',
-      features: [
-        {
-          type: 'Feature',
-          geometry: {
-            type: 'Polygon',
-            coordinates: [[
-              [139.0, 35.0],
-              [140.0, 35.0],
-              [140.0, 36.0],
-              [139.0, 36.0],
-              [139.0, 35.0],
-            ]],
-          },
-          properties: {
-            GID_0: 'JPN',
-            NAME_0: 'Japan',
-            GID_1: 'JPN.13_1',
-            NAME_1: 'Tokyo',
-            TYPE_1: 'Prefecture',
-            ENGTYPE_1: 'Prefecture',
-          },
-        },
-      ],
-    };
-  }
-
-  private async processShapefile(_shapefile: Map<string, ArrayBuffer>): Promise<any> {
-    //  Shapefile
-    return {
-      type: 'FeatureCollection',
-      features: [],
-    };
-  }
-
-  private extractAdminLevel(properties: any): number {
-    //  GADM
-    if (properties.GID_5 || properties.NAME_5) return 5;
-    if (properties.GID_4 || properties.NAME_4) return 4;
-    if (properties.GID_3 || properties.NAME_3) return 3;
-    if (properties.GID_2 || properties.NAME_2) return 2;
-    if (properties.GID_1 || properties.NAME_1) return 1;
-    return 0;
-  }
-
-  private generateEntityId(properties: any, index: number): string {
-    //  GADMGID
-    const gid = properties.GID_5 || properties.GID_4 || properties.GID_3 ||
-      properties.GID_2 || properties.GID_1 || properties.GID_0;
-
-    if (gid) return `gadm-${gid.toLowerCase()}`;
-
-    return `gadm-feature-${index}`;
-  }
-
-  private generateNodeId(properties: any, index: number): string {
-    return `node-${this.generateEntityId(properties, index)}`;
-  }
-
-  private extractName(properties: any): string {
-    return properties.NAME_5 || properties.NAME_4 || properties.NAME_3 ||
-      properties.NAME_2 || properties.NAME_1 || properties.NAME_0 ||
-      'Unnamed Administrative Area';
-  }
-
-  private extractDescription(properties: any): string | undefined {
-    const parts: string[] = [];
-
-    if (properties.TYPE_1 || properties.ENGTYPE_1) {
-      parts.push(`Type: ${properties.ENGTYPE_1 || properties.TYPE_1}`);
-    }
-
-    if (properties.NAME_0 && properties.NAME_1 !== properties.NAME_0) {
-      parts.push(`Country: ${properties.NAME_0}`);
-    }
-    if (properties.NAME_1 && properties.NAME_2 !== properties.NAME_1) {
-      parts.push(`Level 1: ${properties.NAME_1}`);
-    }
-    if (properties.NAME_2 && properties.NAME_3 !== properties.NAME_2) {
-      parts.push(`Level 2: ${properties.NAME_2}`);
-    }
-
-    return parts.length > 0 ? parts.join(', ') : undefined;
-  }
 }

@@ -15,20 +15,20 @@ Shape Pluginでは、バッチ処理の開始、進捗監視、完了/中断処�
   - Cancelボタン押下
   - Saveボタン押下後、保存成功時
 
-### 2. BatchProcessingDialog（進捗ダイアログ）
+### 2. Step5 Build（進捗ビュー）
 - **役割**: バッチ処理の進捗表示と制御
-- **開く条件**:
-  - ShapeEditDialogから「Start Processing」ボタン押下
-  - ShapePanelから「Resume」ボタン押下（中断されたセッションの再開）
-- **閉じる条件**:
-  - 処理完了時（自動）
-  - エラー発生時（ユーザー確認後）
-  - ユーザーによるCancelボタン押下
+- **表示条件**:
+  - ShapeEditDialog の Step5 に到達
+  - ShapePanel からの再開導線で Step5 を開く
+- **終了条件**:
+  - 処理完了後にユーザーがダイアログを閉じる
+  - エラー発生時にユーザーが確認/再試行する
+  - ユーザーによるキャンセル操作
 
 ### 3. ConfirmationDialog（確認ダイアログ）
 - **役割**: 処理の中断・キャンセルの確認
 - **開く条件**:
-  - BatchProcessingDialogでCancelボタン押下時
+  - Step5 Build で Cancel 操作を実行した時
   - エラー発生時の再試行確認
 - **閉じる条件**:
   - Yes/Noボタン押下
@@ -67,13 +67,13 @@ stateDiagram-v2
 
 ## ダイアログ制御の詳細仕様
 
-### 1. ShapeEditDialog → BatchProcessingDialog の遷移
+### 1. ShapeEditDialog 内の Step5 への遷移
 
 ```typescript
 interface DialogTransition {
   trigger: 'START_PROCESSING';
   source: 'ShapeEditDialog';
-  target: 'BatchProcessingDialog';
+  target: 'ShapeBuildStep';
   conditions: {
     validationPassed: boolean;
     workingCopySaved: boolean;
@@ -86,8 +86,7 @@ interface DialogTransition {
       'registerProgressCallback'
     ];
     onTransition: [
-      'closeShapeEditDialog',
-      'openBatchProcessingDialog',
+      'advanceToStep5',
       'startProgressMonitoring'
     ];
   };
@@ -260,7 +259,7 @@ interface ErrorRecovery {
 ## テスト要件
 
 ### 1. ダイアログ遷移テスト
-- [ ] ShapeEditDialog → BatchProcessingDialog の遷移
+- [ ] ShapeEditDialog 内で Step5 Build を開く導線
 - [ ] 処理完了時の自動クローズ
 - [ ] エラー時のダイアログ残留
 - [ ] キャンセル確認ダイアログの表示
@@ -279,7 +278,7 @@ interface ErrorRecovery {
 
 ### 実装済み ✅
 - ShapeEditDialogの基本機能
-- BatchProcessingDialogの骨組み
+- Step5 Build 進捗ビューの骨組み
 - 進捗情報の表示コンポーネント
 
 ### 未実装 ❌

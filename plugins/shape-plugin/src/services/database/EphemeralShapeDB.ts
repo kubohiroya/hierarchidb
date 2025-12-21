@@ -15,7 +15,7 @@ export interface RawFeatureBuffer {
   id: string;
   sessionId: string;
   nodeId: NodeId;
-  data: string; // GeoJSON string
+  data: ArrayBuffer; // FlatGeoBuf binary
   featureCount: number;
   bbox: [number, number, number, number];
   downloadTime: number;
@@ -31,7 +31,7 @@ export interface SimplifiedFeatureBuffer {
   sessionId: string;
   nodeId: NodeId;
   stage: 'simplify1' | 'simplify2';
-  data: string; // GeoJSON string
+  data: ArrayBuffer; // FlatGeoBuf binary
   featureCount: number;
   simplificationRatio: number;
   tolerance: number;
@@ -73,6 +73,8 @@ export interface BatchSessionMetadata {
   config: BatchProcessConfig;
   tableId?: string; // optional: tabular-source store linkage
 }
+
+export type EphemeralStage = 'download' | 'simplify1' | 'simplify2' | 'vectorTiles';
 
 /**
  * Processing cache entry
@@ -135,6 +137,61 @@ export class EphemeralShapeDB extends Dexie {
     );
 
     console.log(`Cleared all data for session ${sessionId}`);
+  }
+
+  /**
+   * Check if stage-scoped data exists for a session.
+   */
+  async hasStageData(sessionId: string, stage: EphemeralStage): Promise<boolean> {
+    switch (stage) {
+      case 'download':
+        return (await this.rawBuffers.where('sessionId').equals(sessionId).count()) > 0;
+      case 'simplify1':
+      case 'simplify2':
+        return (
+          (await this.simplifiedBuffers.where({ sessionId, stage }).count()) > 0
+        );
+      case 'vectorTiles':
+        return (await this.vectorTiles.where('sessionId').equals(sessionId).count()) > 0;
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * Clear data for a specific stage and reset the session metadata entry.
+   */
+  async clearStage(sessionId: string, stage: EphemeralStage): Promise<void> {
+    await this.transaction('rw', [
+      this.rawBuffers,
+      this.simplifiedBuffers,
+      this.vectorTiles,
+      this.sessions,
+      this.cache,
+    ], async () => {
+        switch (stage) {
+          case 'download':
+            await this.rawBuffers.where('sessionId').equals(sessionId).delete();
+            break;
+          case 'simplify1':
+          case 'simplify2':
+            await this.simplifiedBuffers.where({ sessionId, stage }).delete();
+            break;
+          case 'vectorTiles':
+            await this.vectorTiles.where('sessionId').equals(sessionId).delete();
+            break;
+          default:
+            break;
+        }
+
+        await this.sessions.where('id').equals(sessionId).delete();
+
+        const cacheKeys = await this.cache
+          .filter(entry => entry.key.includes(sessionId))
+          .primaryKeys();
+        await this.cache.bulkDelete(cacheKeys);
+      },
+    );
   }
 
   /**

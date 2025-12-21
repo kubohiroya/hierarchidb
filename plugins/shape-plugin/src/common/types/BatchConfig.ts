@@ -40,6 +40,9 @@ export interface CommonSessionConfig {
 export interface DownloadSessionConfig {
   concurrentDownloads: number;
   deleteOnComplete?: boolean; // Delete BatchBuffers after session completes
+  timeoutMs?: number;
+  retryAttempts?: number;
+  retryDelay?: number;
 }
 
 /**
@@ -79,8 +82,10 @@ export interface SimplifySession2Config {
  */
 export interface GenerateVectorTilesConfig {
   concurrentProcesses: number;
+  minZoom: number;
   maxZoom: number;
-  tileCountThresholdForZoomStop: number; // Stop generating tiles when tile count exceeds this
+  bufferSize?: number;
+  tileSize?: number;
 }
 
 /**
@@ -102,9 +107,9 @@ export interface BatchConfig extends CommonSessionConfig {
   simplify?: number;
   tolerance?: number;
   maxZoom?: number;
+  minZoom?: number;
   featureAreaThreshold?: number;
   minVertexCountForAreaFilter?: number;
-  tileCountThresholdForZoomStop?: number;
   enableFeatureFiltering?: boolean;
   enablePerFeatureSimplification?: boolean;
   aspectRatioThreshold?: number;

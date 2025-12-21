@@ -4,6 +4,7 @@ import type {
   BatchProgressEvent,
   BatchSessionId,
   BatchSessionStatus,
+  BatchTaskSummary,
   WorkerAPI,
 } from '@hierarchidb/common-api';
 
@@ -14,6 +15,7 @@ export interface WorkerBridge {
   pauseBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
   resumeBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
   cancelBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
+  getBatchTasks(nodeType: NodeType, sessionId: BatchSessionId): Promise<BatchTaskSummary[]>;
   subscribeBatchProgress(
     nodeType: NodeType,
     sessionId: BatchSessionId,
@@ -87,6 +89,11 @@ class WorkerBridgeImpl implements WorkerBridge {
   async cancelBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void> {
     const api = await ensureWorkerAPI();
     await api.cancelBatchSession(nodeType, sessionId);
+  }
+
+  async getBatchTasks(nodeType: NodeType, sessionId: BatchSessionId): Promise<BatchTaskSummary[]> {
+    const api = await ensureWorkerAPI();
+    return api.getBatchTasks(nodeType, sessionId);
   }
 
   async subscribeBatchProgress(

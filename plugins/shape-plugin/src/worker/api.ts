@@ -31,6 +31,7 @@ import { ShapeEntityHandler } from './handlers/index.js';
 
 import { metadataLoader } from '../services/metadata/MetadataLoader.js';
 import { createShapeBatchManager } from '../services/batch/UnifiedShapeBatchManager.js';
+import { shapeDB, type BatchTaskRecord } from '../services/database/ShapeDB.js';
 import type { BatchProcessConfig } from '../services/batch/types.js';
 import { getEphemeralShapeDB } from '../services/database/EphemeralShapeDB.js';
 import type { BatchStage, BatchTaskStatus } from '../common/types/BatchTaskLike.js';
@@ -118,6 +119,21 @@ const mapProgressToStatus = (progress: ProgressInfo): BatchTaskStatus => {
   if (progress.total > 0 && progress.completed >= progress.total) return 'completed';
   return 'running';
 };
+
+const mapTaskRecordToBatchTask = (task: BatchTaskRecord): BatchTask => ({
+  taskId: task.taskId,
+  taskType: task.taskType,
+  sessionId: task.sessionId,
+  status: task.status,
+  index: task.index,
+  progress: task.progress,
+  startedAt: task.startedAt,
+  completedAt: task.completedAt,
+  retryCount: task.retryCount,
+  metadata: task.inputData,
+  config: task.outputData,
+  error: task.errorMessage,
+});
 
 const buildBatchProgressEvent = (
   sessionId: string,
@@ -276,55 +292,74 @@ export const shapePluginAPI = {
       throw new Error(`Working copy not found: ${draftId}`);
     }
 
+    const downloadConfig = config.downloadConfig ?? DEFAULT_PROCESSING_CONFIG.downloadConfig;
+    const simplificationConfig = config.simplificationConfig ?? DEFAULT_PROCESSING_CONFIG.simplificationConfig;
+    const tileConfig = config.tileConfig ?? DEFAULT_PROCESSING_CONFIG.tileConfig;
+
     // Convert ProcessingConfig to BatchConfig (legacy fields removed)
     const batchConfig: BatchProcessConfig = {
-      corsProxyBaseURL: config.downloadConfig?.corsProxyUrl ?? '',
+      corsProxyBaseURL: downloadConfig?.corsProxyUrl ?? '',
       dataSource:
         config.dataSource ??
         toDataSourceName(draftLike.draftData?.dataSourceName ?? 'naturalearth'),
       download: {
-        concurrentDownloads: config.downloadConfig?.maxConcurrent ?? 4,
+        concurrentDownloads: downloadConfig?.maxConcurrent ?? 4,
         deleteOnComplete: config.cleanupConfig?.deleteDownloadedFiles ?? false,
+        timeoutMs: downloadConfig?.timeoutMs,
+        retryAttempts: downloadConfig?.retryAttempts ?? downloadConfig?.retryLimit,
+        retryDelay: downloadConfig?.retryDelay,
       },
       simplify1: {
-        concurrentProcesses: config.simplificationConfig?.level1Workers ?? 2,
+        concurrentProcesses: simplificationConfig?.level1Workers ?? 2,
         enableFeatureFiltering: true,
-        featureAreaThreshold: config.simplificationConfig?.areaThreshold ?? 0.5,
-        minVertexCountForAreaFilter: 25,
-        aspectRatioThreshold: 5,
-        featureFilterMethod: config.simplificationConfig?.featureFilterMethod ?? 'hybrid',
-        hybridFilterConfig: {
-          quickRejectThreshold: 0.1,
-          regularShapeMinRatio: 0.5,
-          regularShapeMaxRatio: 2.0,
-          simpleShapeVertexThreshold: 50,
-          elongatedShapeCorrectionFactor: 0.8,
-        },
+        featureAreaThreshold: simplificationConfig?.areaThreshold ?? 0.5,
+        minVertexCountForAreaFilter: simplificationConfig?.minVertexCountForAreaFilter ?? 25,
+        aspectRatioThreshold: simplificationConfig?.aspectRatioThreshold ?? 5,
+        featureFilterMethod: simplificationConfig?.featureFilterMethod ?? 'hybrid',
+        hybridFilterConfig: simplificationConfig?.hybridFilterConfig ?? DEFAULT_PROCESSING_CONFIG.simplificationConfig?.hybridFilterConfig,
         deleteOnComplete: false,
       },
       simplify2: {
-        concurrentProcesses: config.simplificationConfig?.level2Workers ?? 2,
-        quantize: 1e4,
-        simplify: config.simplificationConfig?.tolerance ?? 0.01,
-        tolerance: config.simplificationConfig?.tolerance ?? 0.1,
-        enablePerFeatureSimplification: true,
+        concurrentProcesses: simplificationConfig?.level2Workers ?? 2,
+        quantize: simplificationConfig?.quantize ?? 1e4,
+        simplify: simplificationConfig?.tolerance ?? 0.01,
+        tolerance: simplificationConfig?.tolerance ?? 0.1,
+        enablePerFeatureSimplification: simplificationConfig?.enablePerFeatureSimplification ?? true,
         deleteOnComplete: false,
       },
       vectorTiles: {
-        concurrentProcesses: config.tileConfig?.workers ?? 2,
-        maxZoom: config.tileConfig?.maxZoom ?? 14,
-        tileCountThresholdForZoomStop: 5000,
+        concurrentProcesses: tileConfig?.workers ?? 2,
+        minZoom: tileConfig?.minZoom ?? 0,
+        maxZoom: tileConfig?.maxZoom ?? 14,
+        bufferSize: tileConfig?.bufferSize,
       },
+      workerTimeout: downloadConfig?.timeoutMs,
+      workerRetries: downloadConfig?.retryAttempts ?? downloadConfig?.retryLimit,
+      retryDelay: downloadConfig?.retryDelay,
+      minZoom: tileConfig?.minZoom,
     };
 
     const batchSessionData = { urlMetadata };
 
     // Start batch session using unified manager
+    const sessionOptions = {
+      maxConcurrentTasks: undefined,
+      retryAttempts: downloadConfig?.retryAttempts ?? downloadConfig?.retryLimit,
+      retryDelay: downloadConfig?.retryDelay,
+      timeoutMs: downloadConfig?.timeoutMs,
+      enableResourceTracking: false,
+    };
+
     const managerWithPrepare = batchSessionManager as unknown as {
-      prepareSession?: (nodeId: NodeId, config: BatchProcessConfig, data: typeof batchSessionData) => void;
+      prepareSession?: (
+        nodeId: NodeId,
+        config: BatchProcessConfig,
+        data: typeof batchSessionData,
+        options?: typeof sessionOptions,
+      ) => void;
     };
     const nodeForSession = draftLike.nodeId ?? draftLike.treeNodeId ?? draftId;
-    managerWithPrepare.prepareSession?.(nodeForSession, batchConfig, batchSessionData);
+    managerWithPrepare.prepareSession?.(nodeForSession, batchConfig, batchSessionData, sessionOptions);
     const sessionId = await batchSessionManager.startBatchSession(nodeForSession);
 
     const sessionMeta = getOrCreateSessionMeta(sessionId);
@@ -446,9 +481,9 @@ export const shapePluginAPI = {
     }
   },
 
-  getBatchTasks: async (_sessionId: string): Promise<BatchTask[]> => {
-    console.warn('[shapePluginAPI] getBatchTasks not implemented in worker; returning empty list');
-    return [];
+  getBatchTasks: async (sessionId: string): Promise<BatchTask[]> => {
+    const tasks = await shapeDB.getBatchTasks(sessionId);
+    return tasks.map(mapTaskRecordToBatchTask);
   },
 
   getBatchProgress: async (draftId: NodeId): Promise<ProgressInfo> => {

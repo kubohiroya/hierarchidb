@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ensureIso3166Data, getAllCountries, type CountryRecord } from '@hierarchidb/gen-iso3166-2';
+import { ensureIso3166Data, getAllCountries, type CountryRecord } from '@hierarchidb/gen-iso3166-2/browser';
 import type { Country, ContinentCode } from '../types/Country.js';
 
 type State =

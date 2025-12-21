@@ -21,9 +21,156 @@
     "save": "Save",
     "defaultName": "New shape"
   },
+  "processing": {
+    "download": {
+      "title": "Download Setting / Cache Management",
+      "workers": "Number of Workers for Concurrent Download",
+      "workersHelp": "Controls how many downloads run in parallel.",
+      "retainFiles": "Retain downloaded files",
+      "deleteDownloadedFiles": "Delete Downloaded Files",
+      "deleteDownloadedFilesWithCount": "Delete Downloaded Files ({{count}} files)",
+      "deleteStage1Cache": "Delete Stage1 Cache",
+      "deleteStage2Cache": "Delete Stage2 Cache",
+      "deleteTiles": "Delete Tiles",
+      "timeoutMs": "Timeout (ms)",
+      "timeoutHelp": "Maximum time to wait for each download before failing.",
+      "retryAttempts": "Retry Attempts",
+      "retryAttemptsHelp": "Number of retries per failed download request.",
+      "retryDelay": "Retry Delay (ms)",
+      "retryDelayHelp": "Wait time between retry attempts when a download fails."
+    },
+    "filter": {
+      "title": "Extraction Setting",
+      "workersStage1": "Number of Workers for Polygon-Simplification (Stage 1)",
+      "workersStage1Help": "Parallel workers for feature simplification in stage 1.",
+      "workersStage2": "Number of Workers for Tile Generation (Stage 2)",
+      "workersStage2Help": "Parallel workers for tile preparation in stage 2.",
+      "method": "Filtering Method",
+      "methodBBox": "Bounding Box Only (Fastest)",
+      "methodPolygon": "Polygon Only",
+      "methodHybrid": "Hybrid (Recommended)",
+      "areaFilterTitle": "Area Filter",
+      "simplificationTitle": "Simplification",
+      "precisionTitle": "Precision & Compression",
+      "methodHelp": "Controls how features are filtered before simplification.",
+      "minimumArea": "Minimum Area (sq km)",
+      "minimumAreaHelp": "Filters out features smaller than this area during the simplify stage.",
+      "tolerance": "Simplification Tolerance (degrees)",
+      "toleranceHelp": "Controls geometry simplification tolerance during stage 2. Near Tokyo, 0.1 corresponds to roughly 11 km north-south and 9 km east-west.",
+      "minVertexCount": "Min Vertex Count",
+      "minVertexCountHelp": "Only apply area filtering when feature vertices exceed this count.",
+      "quickRejectThreshold": "Quick Reject Threshold",
+      "quickRejectHelp": "Lower values reject more tiny features quickly.",
+      "simpleShapeVertexThreshold": "Simple Shape Vertex Threshold",
+      "simpleShapeVertexHelp": "Vertex count threshold for simple-shape handling.",
+      "elongatedShapeCorrectionFactor": "Elongated Shape Correction Factor",
+      "elongatedShapeHelp": "Correction factor for elongated simple shapes.",
+      "quantize": "Coordinate Quantization",
+      "quantizeSelected": "Selected: {value}",
+      "quantizeHelp": "Rounds coordinates to the specified precision during stage 2.",
+      "quantizeStarHelp": "★1 is the coarsest rounding (lowest precision); higher stars increase precision.",
+      "enablePerFeatureSimplification": "Enable per-feature simplification",
+      "enablePerFeatureSimplificationHelp": "Applies simplification per feature during stage 2."
+    },
+    "tile": {
+      "title": "Tile Generation Setting",
+      "workers": "Tile Worker Count",
+      "workersHelp": "Parallel workers for tile generation.",
+      "bufferSize": "Tile Margin (px)",
+      "bufferSizeHelp": "Extra margin around tile edges to reduce visual seams.",
+      "maxZoom": "Max Zoom Level",
+      "maxZoomHelp": "Highest zoom level to generate tiles for.",
+      "zoomRange": "Zoom Range",
+      "zoomRangeHelp": "Generate tiles within this zoom range.",
+      "tileCountThreshold": "Tile Count Threshold",
+      "tileCountThresholdHelp": "Stops tile generation once the tile count exceeds this value.",
+      "zoomLevels": "Zoom Levels (comma separated)",
+      "zoomLevelsHelp": "Zoom levels to generate tiles for."
+    }
+  },
   "preview": {
     "title": "Preview",
     "description": "Visualize generated vector tiles on the map.",
-    "noTiles": "No vector tiles are available yet. Run the build to generate tiles."
+    "noTiles": "No vector tiles are available yet. Run the build to generate tiles.",
+    "tabs": {
+      "map": "Map Preview",
+      "metadata": "Metadata Table"
+    },
+    "metadata": {
+      "missingSession": "Build the dataset to generate metadata.",
+      "empty": "No metadata entries have been generated yet.",
+      "searchPlaceholder": "Search metadata",
+      "matches": "Matched",
+      "rows": "Rows",
+      "columns": {
+        "countryName": "Country",
+        "countryCode": "Country Code",
+        "adminName": "Admin Name",
+        "adminLevel": "Admin Level",
+        "adminCode": "Admin Code",
+        "dataSource": "Data Source",
+        "createdAt": "Created At",
+        "vertexCount": "Vertices",
+        "polygonCount": "Polygons",
+        "bbox": "Bounding Box",
+        "area": "Area",
+        "featureId": "Feature ID"
+      }
+    }
+  },
+  "build": {
+    "controls": {
+      "title": "Build controls",
+      "pause": "Pause",
+      "start": "Start build",
+      "resume": "Resume build"
+    },
+    "progress": {
+      "title": "Batch progress",
+      "session": "Session",
+      "stage": "Stage",
+      "task": "Task",
+      "working": "Working...",
+      "unknownStage": "processing",
+      "counts": "{{percentage}}% ・ {{completed}}/{{total}} completed ・ failed {{failed}} ・ skipped {{skipped}}"
+    },
+    "tasks": {
+      "empty": "No tasks yet."
+    },
+    "taskStatus": {
+      "waiting": "Waiting",
+      "queued": "Queued",
+      "running": "Running",
+      "paused": "Paused",
+      "completed": "Completed",
+      "failed": "Failed",
+      "cancelled": "Cancelled"
+    },
+    "status": {
+      "ready": "Ready to start build",
+      "running": "Build in progress",
+      "paused": "Build paused",
+      "completed": "Build completed",
+      "failed": "Build failed",
+      "cancelled": "Build cancelled"
+    },
+    "stages": {
+      "download": {
+        "title": "Download",
+        "description": "Download and normalize source data."
+      },
+      "simplify1": {
+        "title": "Simplify (Stage 1)",
+        "description": "Apply primary simplification for selections."
+      },
+      "simplify2": {
+        "title": "Simplify (Stage 2)",
+        "description": "Prepare simplified buffers for tile generation."
+      },
+      "vectorTiles": {
+        "title": "Vector Tiles",
+        "description": "Generate vector tiles for the selected zoom range."
+      }
+    }
   }
 }

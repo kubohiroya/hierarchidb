@@ -11,6 +11,7 @@ import {
 import { normalizeDataSourceName } from '../../../services/utils/utils.js';
 import { DATA_SOURCE_CONFIGS } from '../../../common/mock/data.js';
 import { ShapeDialogStepProps } from './ShapeDialogStepProps.ts';
+import { clearStagesIfPresent, FULL_INVALIDATION_STAGES, resolveShapeSessionId } from '../../utils/sessionInvalidation.js';
 
 
 /**
@@ -56,6 +57,12 @@ export const ShapeDataSourceStep: React.FC<ShapeDialogStepProps> = ({ data, onCh
             const updates: Partial<typeof draftData> = {};
             if (typeof next.dataSourceId !== 'undefined') {
               const nextSource = (next.dataSourceId as DataSourceName | undefined) ?? fallbackValue;
+              if (nextSource && nextSource !== draftData.dataSourceName) {
+                const sessionId = resolveShapeSessionId(draftData);
+                if (sessionId) {
+                  void clearStagesIfPresent(sessionId, FULL_INVALIDATION_STAGES);
+                }
+              }
               updates.dataSourceName = nextSource;
             }
             if (typeof next.licenseAgreement !== 'undefined') {

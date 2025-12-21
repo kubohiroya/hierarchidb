@@ -8,6 +8,7 @@ import { calculateEstimatedFeatures, calculateEstimatedSize, DATA_SOURCE_CONFIGS
 import { normalizeDataSourceName } from '../../../services/utils/utils.js';
 import { CountryMatrixSelector, useIsoCountries, type MatrixConfig, type MatrixSelection, type ContinentCode } from '@hierarchidb/ui-country-select';
 import { ShapeDialogStepProps } from './ShapeDialogStepProps.ts';
+import { clearStagesIfPresent, FULL_INVALIDATION_STAGES, resolveShapeSessionId } from '../../utils/sessionInvalidation.js';
 
 //type ShapeDialogStepProps = StepProps;
 
@@ -54,6 +55,20 @@ const normalizeCountryCodeFromMetadata = (country: Partial<CountryMetadata>, ind
   if (primary.length === 3 && country.iso2) return country.iso2.trim().toUpperCase();
   if (primary.length === 3) return primary.slice(0, 2);
   return primary.slice(0, 2) || `COUNTRY-${index}`;
+};
+
+const isMatrixEqual = (left?: boolean[][], right?: boolean[][]): boolean => {
+  if (!left || !right) return false;
+  if (left.length !== right.length) return false;
+  for (let rowIndex = 0; rowIndex < left.length; rowIndex += 1) {
+    const leftRow = left[rowIndex] ?? [];
+    const rightRow = right[rowIndex] ?? [];
+    if (leftRow.length !== rightRow.length) return false;
+    for (let colIndex = 0; colIndex < leftRow.length; colIndex += 1) {
+      if (Boolean(leftRow[colIndex]) !== Boolean(rightRow[colIndex])) return false;
+    }
+  }
+  return true;
 };
 
 export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ data, onChange, }) => {
@@ -142,6 +157,15 @@ export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ data
         });
         return row;
       });
+      const previousMatrix = Array.isArray(draftData.checkboxState)
+        ? (draftData.checkboxState as boolean[][])
+        : undefined;
+      if (!isMatrixEqual(previousMatrix, nextMatrix)) {
+        const sessionId = resolveShapeSessionId(draftData);
+        if (sessionId) {
+          void clearStagesIfPresent(sessionId, FULL_INVALIDATION_STAGES);
+        }
+      }
       onChange({ checkboxState: nextMatrix });
 
       const totalSelected = nextMatrix.flat().filter(Boolean).length;
@@ -183,7 +207,7 @@ export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ data
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1, minHeight: 0 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, height: '100%', minHeight: 0 }}>
       <Typography variant="h6" gutterBottom>
         Select Countries & Administrative Levels
       </Typography>
@@ -191,7 +215,7 @@ export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ data
         Select countries and their administrative levels to download. Use the matrix to make precise selections.
       </Typography>
 
-      <Box sx={{ flex: 1, minHeight: 0 }}>
+      <Box sx={{ flex: 1, minHeight: 0, display: 'flex' }}>
         <CountryMatrixSelector
           countries={baseCountries.map((c) => c.country)}
           matrixConfig={{ columns, virtualization: { rowHeight: 40, overscan: 8 } }}

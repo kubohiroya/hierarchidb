@@ -19,7 +19,7 @@ import {
   shouldUseSource,
   toPosixRelative,
 } from '../config/dev-alias-config.js';
-import { createIso3166Plugin } from '@hierarchidb/gen-iso3166-2';
+import { createIso3166Plugin } from '@hierarchidb/gen-iso3166-2/plugin';
 import type { DevAliasSelection, WorkspacePackageMeta } from '../config/dev-alias-config.js';
 import {
   generatePluginRegistry,

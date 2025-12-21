@@ -6,7 +6,7 @@
 - 定義/ハンドラ: `ShapePluginDefinition` / `ShapeEntityHandler`
 - バッチ: download → simplify1 → simplify2 → vectorTiles（統一バッチ API）
 - DB: `shape`（entities）+ エフェメラル `rawBuffers`/`simplifiedBuffers`/`vectorTiles`/`sessions`/`cache`
-- UI: バッチダイアログ、タブラー（`SHAPE_TABULAR=1`）、マップ統合
+- UI: Step5 進捗ビュー、タブラー（`SHAPE_TABULAR=1`）、マップ統合
 
 Shape バッチ機能の新アーキテクチャ概要と利用メモ。
 
@@ -85,6 +85,20 @@ Shape バッチ機能の新アーキテクチャ概要と利用メモ。
 - tsup external は共通設定で外部化済み。
 
 ## Tabular Preview（データテーブル）
-- フラグ `SHAPE_TABULAR=1` を有効にすると、BatchProcessingDialog に「Data Table」タブが追加され、簡略化後のプロパティ表を閲覧できます。
+- フラグ `SHAPE_TABULAR=1` を有効にすると、Step5 の進捗ビューに「Data Table」タブが追加され、簡略化後のプロパティ表を閲覧できます。
 - 機能: 複数条件フィルタ（AND）、列の可視切替、`eq` 条件の索引（初回遅延作成）。
 - 目的: プロパティ水準での確認・検索。正式なシリアライズ/デシリアライズは Import/Export を利用してください。
+
+
+## Batch execution design (2025-12 WIP)
+- Entry (UI Step5): call worker API `startBatchSession(nodeId, config)`; UI keeps `sessionId` and subscribes to progress.
+- Worker API: expose `startBatchSession`, `pauseSession`, `resumeSession`, `cancelSession`, `subscribe(sessionId, cb)`; bridge ProgressInfo to UI.
+- Batch manager: `UnifiedShapeBatchManager` coordinates stages (download → simplify1 → simplify2 → vectorTiles) and emits stage-scoped progress.
+- Ephemeral DB (Dexie, `getDBName('shape-ephemeral')`):
+  - `sessions` (state/config), `rawBuffers` (downloaded), `simplifiedBuffers` (stage1/2), `vectorTiles` (tiles), `cache` (optional).
+- Child workers:
+  - Downloader worker: parallel download -> write `rawBuffers`.
+  - Simplify workers: read `rawBuffers`, write `simplifiedBuffers` (stage1/2) via runtime worker client `simplifyStage1/2`.
+  - Tile worker: read `simplifiedBuffers`, generate MVT -> write `vectorTiles`.
+- Progress: aggregated in UnifiedShapeBatchManager; mapped to `ProgressInfo` and dispatched via worker API subscription.
+- UI controls: Start -> `startBatchSession`, Pause/Resume -> `pauseSession`/`resumeSession`, Cancel -> `cancelSession`; BuildStepPanel reflects progress stream.

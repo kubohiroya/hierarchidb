@@ -17,11 +17,13 @@ export interface BatchProcessConfig extends BatchConfig {
   // Worker options
   workerTimeout?: number;
   workerRetries?: number;
+  retryDelay?: number;
   maxMemoryPerWorker?: number;
 
   // Simplification settings (if not already in BatchConfig)
   simplifyTolerance?: number;
   minArea?: number;
-  zoomLevels?: number[];
+  minZoom?: number;
+  maxZoom?: number;
   tileSize?: number;
 }

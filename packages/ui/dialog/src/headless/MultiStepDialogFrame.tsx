@@ -36,9 +36,9 @@ export interface MultiStepDialogFrameComponentProps<TData> {
 }
 
 const DEFAULT_DIALOG_SIZE = { width: 960, height: 640 } as const;
-const EDGE_HANDLE_THICKNESS = 8;
+const EDGE_HANDLE_THICKNESS = 12;
 const EDGE_HANDLE_OFFSET = EDGE_HANDLE_THICKNESS / 2;
-const CORNER_HANDLE_SIZE = 28;
+const CORNER_HANDLE_SIZE = 12;
 const CORNER_HANDLE_OFFSET = CORNER_HANDLE_SIZE / 2;
 
 type ResizeHorizontal = 'left' | 'right' | null;

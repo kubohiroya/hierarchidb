@@ -61,8 +61,8 @@ describe('BatchSession Migration Tests', () => {
       },
       vectorTiles: {
         concurrentProcesses: 2,
+        minZoom: 0,
         maxZoom: 6,
-        tileCountThresholdForZoomStop: 5000,
       },
     };
 

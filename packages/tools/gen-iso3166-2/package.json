@@ -8,8 +8,17 @@
   },
   "exports": {
     ".": {
+      "browser": "./dist/browser.js",
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./browser": {
+      "import": "./dist/browser.js",
+      "types": "./dist/browser.d.ts"
+    },
+    "./plugin": {
+      "import": "./dist/plugin.js",
+      "types": "./dist/plugin.d.ts"
     },
     "./cli": {
       "import": "./dist/gen-iso3166-2.js",
@@ -21,7 +30,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsdown src/gen-iso3166-2.ts src/index.ts --config ../../../tsdown.config.ts --outDir dist --splitting false --target node18 --format esm --banner.js '#!/usr/bin/env node'",
+    "build": "tsdown src/gen-iso3166-2.ts src/index.ts src/browser.ts src/plugin.ts --config ../../../tsdown.config.ts --outDir dist --splitting false --target node18 --format esm --banner.js '#!/usr/bin/env node'",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit --project tsconfig.json",
     "start": "node dist/gen-iso3166-2.js"

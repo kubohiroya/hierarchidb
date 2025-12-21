@@ -4,7 +4,11 @@ import type { DownloadTask } from '../../../common/types/index.js';
 import type { ProgressInfo } from '../../../common/types/index.js';
 import type { DownloadStageAdapter, DownloadStageAdapterResult } from './DownloadStageAdapter.js';
 import type { StageControls } from './StageControls.js';
-import { getShapeRuntimeWorkerClient } from './RuntimeWorkerClient.js';
+import { getEphemeralShapeDB } from '../../database/EphemeralShapeDB.js';
+import { defaultDataSourceFactory, type DataSourceStrategyId } from '../../datasources/DataSourceStrategyFactory.js';
+import type { FeatureCollection } from 'geojson';
+import { serialize } from 'flatgeobuf/lib/mjs/geojson';
+import { bbox as turfBbox } from '@turf/turf';
 
 /**
  * RuntimeWorkerDownloadAdapter
@@ -26,20 +30,25 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
     fallback: 4,
   });
 
+
+  private resolveStrategyId(source?: string): DataSourceStrategyId | null {
+    const key = (source ?? '').toLowerCase();
+    if (key.includes('gadm')) return 'gadm-administrative-areas';
+    if (key.includes('natural')) return 'natural-earth-shapes';
+    if (key.includes('geo')) return 'geoboundaries-admin-areas';
+    if (key.includes('osm') || key.includes('openstreet')) return 'openstreetmap-overpass';
+    return null;
+  }
+
   async process(
     sessionId: string,
-    _nodeId: NodeId,
+    nodeId: NodeId,
     tasks: DownloadTask[],
     onProgress: (p: ProgressInfo) => void,
     controls?: StageControls,
   ): Promise<DownloadStageAdapterResult> {
-    // Require a runtime-worker worker client (no fallback here)
-    const client = await getShapeRuntimeWorkerClient();
-    const downloadClient = client?.download;
-    if (!downloadClient) {
-      throw new Error('Runtime worker client not available for download stage');
-    }
     const batch = new BatchService();
+    const db = getEphemeralShapeDB();
     let completed = 0;
     let failed = 0;
     let totalBytes = 0;
@@ -59,13 +68,58 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
           }
           const fileId = `${sessionId}-download-${index}`;
           try {
-            const downloadUrl = task.url ?? task.config?.url;
-            if (!downloadUrl) {
-              throw new Error(`Download task ${task.taskId} missing url`);
+            const strategyId = this.resolveStrategyId(task.config?.dataSource);
+            if (!strategyId) throw new Error('No data source strategy available');
+            const ds = defaultDataSourceFactory.create(strategyId);
+            const retryAttempts = task.config?.retryAttempts ?? 0;
+            const retryDelay = task.config?.retryDelay ?? 0;
+            const timeoutMs = task.config?.timeoutMs;
+            let lastError: unknown;
+            for (let attempt = 0; attempt <= retryAttempts; attempt++) {
+              try {
+                const raw = await ds.fetchData({
+                  country: task.config?.country,
+                  adminLevel: task.config?.adminLevel,
+                  endpoint: task.config?.endpoint,
+                  timeout: timeoutMs,
+                });
+                const processed = await ds.processData(raw, { adminLevel: task.config?.adminLevel });
+                const geojson = {
+                  type: 'FeatureCollection',
+                  features: processed.map((entity) => ({
+                    type: 'Feature',
+                    geometry: entity.geometry ?? null,
+                    properties: entity.properties ?? {},
+                  })),
+                } as FeatureCollection;
+                const fgbBytes = await serialize(geojson);
+                const fgb = fgbBytes.buffer.slice(fgbBytes.byteOffset, fgbBytes.byteOffset + fgbBytes.byteLength);
+                const bounds = turfBbox(geojson);
+                await db.rawBuffers.put({
+                  id: fileId,
+                  sessionId,
+                  nodeId: task.nodeId ?? nodeId,
+                  data: fgb,
+                  featureCount: geojson.features.length,
+                  bbox: [bounds[0], bounds[1], bounds[2], bounds[3]],
+                  downloadTime: Date.now(),
+                  size: fgb.byteLength,
+                  timestamp: Date.now(),
+                });
+                totalBytes += fgb.byteLength;
+                completed += 1;
+                lastError = null;
+                break;
+              } catch (error) {
+                lastError = error;
+                if (attempt < retryAttempts && retryDelay > 0) {
+                  await new Promise((resolve) => setTimeout(resolve, retryDelay));
+                }
+              }
             }
-            const res = await downloadClient.download(downloadUrl, fileId);
-            totalBytes += res.sizeBytes || 0;
-            completed += 1;
+            if (lastError) {
+              throw lastError;
+            }
           } catch {
             failed += 1;
           }

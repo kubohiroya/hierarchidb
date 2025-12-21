@@ -13,8 +13,26 @@ export interface TileRow {
   timestamp: number;
 }
 
+export interface FeatureMetadataRow {
+  id: string; // `${sessionId}-${featureId}`
+  sessionId: string;
+  featureId: string;
+  countryName?: string;
+  countryCode?: string;
+  adminName?: string;
+  adminLevel?: number;
+  adminCode?: string;
+  dataSource?: string;
+  createdAt: number;
+  vertexCount: number;
+  polygonCount: number;
+  bbox?: [number, number, number, number];
+  area: number;
+}
+
 export class TilesDB extends Dexie {
   tiles!: Table<TileRow, string>;
+  featureMetadata!: Table<FeatureMetadataRow, string>;
 
   static async getSingleton(): Promise<TilesDB> {
     return SingletonMixin.getSingleton(TilesDB.name, async () => {
@@ -29,6 +47,12 @@ export class TilesDB extends Dexie {
     this.version(1).stores({
       tiles: '&key, sessionId, [sessionId+z+x+y], z, x, y, timestamp',
     });
+    this.version(2).stores({
+      tiles: '&key, sessionId, [sessionId+z+x+y], z, x, y, timestamp',
+      featureMetadata:
+        '&id, sessionId, featureId, countryCode, adminLevel, adminCode, dataSource, createdAt',
+    });
     this.tiles = this.table('tiles');
+    this.featureMetadata = this.table('featureMetadata');
   }
 }

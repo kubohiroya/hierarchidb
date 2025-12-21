@@ -91,8 +91,19 @@ export interface VectorTileWorkerAPI {
       format: 'mvt' | 'pbf';
       compression?: 'gzip' | 'none';
       tileSize?: number;
+      buffer?: number;
+      minZoom?: number;
+      maxZoom?: number;
+      metadataEnabled?: boolean;
+      metadataReplace?: boolean;
+      metadataContext?: {
+        dataSource?: string;
+        countryCode?: string;
+        countryName?: string;
+        adminLevel?: number;
+      };
     }
-  ): Promise<{ tilesGenerated: number; totalBytes?: number }>;
+  ): Promise<{ tilesGenerated: number; totalBytes?: number; metadataCount?: number }>;
   getTile(sessionId: string, z: number, x: number, y: number): Promise<Uint8Array | null>;
   listTiles(
     sessionId: string

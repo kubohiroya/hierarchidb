@@ -9,6 +9,8 @@ import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-typ
 import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-toolbar';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import { DualKeyMap } from '@hierarchidb/util';
+import { PluginStepRegistry } from '@hierarchidb/plugin-base';
+import { notify } from '@hierarchidb/components';
 import { preconnectPluginServices } from './preconnect.ts';
 import { buildVisibleRows } from '../../state/treeconsole.derive.js';
 import type { ContextAction, MaybeCP, TreeConsoleActionDeps, TreeConsoleActions } from './types.js';
@@ -25,7 +27,21 @@ import {
   showCommandError,
   type GlobalWithClipboard,
 } from './actions/helpers.ts';
+import { loadUIPlugin } from '../../plugin-host/ui-plugin-loader.ts';
 
+const PREVIEW_GUARD_NODE_TYPES = new Set([
+  'basemap',
+  'shape',
+  'location',
+  'route',
+  'spreadsheet',
+  'styler',
+]);
+
+const PREVIEW_GUARD_MESSAGE = '表示のための設定および処理が完了していません';
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConsoleActions {
   const {
@@ -238,6 +254,60 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
       console.error('Failed to launch edit dialog:', error);
       showCommandError('UNKNOWN_ERROR', error instanceof Error ? error.message : String(error));
     }
+  };
+
+  const resolvePreviewGuardState = async (
+    nodeType: string,
+    nodeId: NodeId
+  ): Promise<{ canOpen: boolean; finalStepIndex?: number }> => {
+    const normalizedNodeType = nodeType.toLowerCase();
+    if (!PREVIEW_GUARD_NODE_TYPES.has(normalizedNodeType)) {
+      return { canOpen: true };
+    }
+
+    await loadUIPlugin(normalizedNodeType).catch(() => false);
+    const stepRegistry = PluginStepRegistry.getInstance();
+    const provider = stepRegistry.getConfigProvider(normalizedNodeType);
+    if (!provider) {
+      return { canOpen: true };
+    }
+
+    let mergedData: Record<string, unknown> = {};
+    try {
+      const updaterAPI = await client.getTreeNodeUpdaterAPI();
+      const nodeSnapshot = await updaterAPI.getTreeNode(nodeId);
+      const baseData = isRecord(nodeSnapshot?.data) ? nodeSnapshot?.data : {};
+      const draftData = isRecord(nodeSnapshot?.draftData) ? nodeSnapshot?.draftData : {};
+      mergedData = { ...baseData, ...draftData };
+    } catch (error) {
+      console.warn('[TreeConsoleActions] failed to read draft data for preview guard', error);
+    }
+
+    const configs = provider.getEditStepConfigs(String(nodeId), mergedData);
+    if (!configs || configs.length === 0) {
+      return { canOpen: true };
+    }
+
+    const results = await Promise.all(
+      configs.map(async (cfg) => {
+        if (!cfg.validate) return true;
+        try {
+          return Boolean(await Promise.resolve(cfg.validate(mergedData)));
+        } catch {
+          return false;
+        }
+      })
+    );
+
+    const finalStepIndex = configs.length - 1;
+    const requiredBeforeFinalValid = configs
+      .slice(0, finalStepIndex)
+      .every((cfg, idx) => cfg.optional || results[idx]);
+    const finalStepValid = results[finalStepIndex] ?? true;
+    return {
+      canOpen: requiredBeforeFinalValid && finalStepValid,
+      finalStepIndex,
+    };
   };
 
   const moveSelectionToTrash = async () => {
@@ -564,13 +634,28 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
       }
 
       if (normalizedAction === 'preview') {
-        const previewStepIndex = resolvePreviewStepIndex({
-          nodeType: node?.nodeType ?? (node as { type?: string })?.type,
+        const resolvedNodeType = String(node?.nodeType ?? (node as { type?: string })?.type ?? '');
+        let previewStepIndex = resolvePreviewStepIndex({
+          nodeType: resolvedNodeType,
           nodeId: targetNodeId,
         });
+        const shouldGuardPreview = PREVIEW_GUARD_NODE_TYPES.has(resolvedNodeType.toLowerCase());
+
+        if (shouldGuardPreview) {
+          const guard = await resolvePreviewGuardState(resolvedNodeType, targetNodeId);
+          if (!guard.canOpen) {
+            notify.error(PREVIEW_GUARD_MESSAGE, { duration: null });
+            return;
+          }
+          if (typeof guard.finalStepIndex === 'number') {
+            previewStepIndex = guard.finalStepIndex;
+          }
+        }
+
         await openEditDialog(targetNodeId, node, {
           initialStep: previewStepIndex ?? undefined,
-          displayMode: previewStepIndex != null ? 'full' : undefined,
+          displayMode:
+            shouldGuardPreview || previewStepIndex != null ? 'full' : undefined,
         });
         return;
       }

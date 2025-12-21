@@ -4,9 +4,10 @@
   */
 
 import { BaseDataSourceStrategy, type DataSourceConfig, type FetchOptions, type ProcessOptions } from './DataSourceStrategy.js';
-import type { NodeId, ShapeEntity } from '../../common/types/index.js';
+import type { ShapeEntity } from '../../common/types/index.js';
+import type { NodeId } from '@hierarchidb/common-types';
 import type JSZip from 'jszip';
-import type { Feature as GeoJSONFeature } from 'geojson';
+import type { Feature, FeatureCollection, Geometry } from 'geojson';
 
 //  Natural Earth
 export interface NaturalEarthRawData {
@@ -29,6 +30,10 @@ export interface NaturalEarthProcessedData extends Array<ShapeEntity> {
     resolution?: string;
   };
 }
+
+type NaturalEarthProperties = Record<string, unknown>;
+type NaturalEarthGeoJSON = FeatureCollection<Geometry, NaturalEarthProperties>;
+type NaturalEarthFeature = Feature<Geometry, NaturalEarthProperties>;
 
 /**
   * Natural Earth
@@ -149,7 +154,7 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
       //  ShapefileGeoJSON
       const geojson = await this.convertShapefilesToGeoJSON(rawData.files);
 
-      let features: GeoJSONFeature[] = geojson.features as GeoJSONFeature[];
+      let features: NaturalEarthFeature[] = geojson.features as NaturalEarthFeature[];
       if (filters && filters.length > 0) {
         features = await this.applyFilters(features, filters);
       }
@@ -160,7 +165,7 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
 
       //  ShapeEntity
       const entities: ShapeEntity[] = features.map((feature, index) => {
-        const properties = feature.properties || {};
+        const properties = feature.properties ?? {};
         const entityId = this.generateEntityId(properties, index) as NodeId;
         const nodeId = this.generateNodeId(properties, index) as NodeId;
 
@@ -253,43 +258,29 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
     throw new Error('Max retry attempts reached');
   }
 
-  private async convertShapefilesToGeoJSON(_files: Map<string, ArrayBuffer>): Promise<any> {
-    //  Shapefileshapefile-js
 
-    //  shapefile:
-    // const shapefile = await import('shapefile');
-    // const geojson = await shapefile.read(shpBuffer, dbfBuffer);
-
-    return {
-      type: 'FeatureCollection',
-      features: [
-        {
-          type: 'Feature',
-          geometry: {
-            type: 'Polygon',
-            coordinates: [[
-              [139.692, 35.689], // Tokyo
-              [139.792, 35.689],
-              [139.792, 35.789],
-              [139.692, 35.789],
-              [139.692, 35.689],
-            ]],
-          },
-          properties: {
-            NAME: 'Sample Country',
-            NAME_EN: 'Sample Country',
-            ISO_A3: 'SAM',
-            POP_EST: 125000000,
-          },
-        },
-      ],
-    };
+  private async convertShapefilesToGeoJSON(files: Map<string, ArrayBuffer>): Promise<NaturalEarthGeoJSON> {
+    if (!files || files.size === 0) {
+      throw new Error('No shapefile entries to convert');
+    }
+    const JSZipCtor = (await import('jszip')).default;
+    const zip = new JSZipCtor();
+    for (const [name, buf] of files.entries()) {
+      zip.file(name, buf);
+    }
+    const zipBuffer = await zip.generateAsync({ type: 'arraybuffer' });
+    const shp = (await import('shpjs')).default;
+    const geojson = (await shp.parseZip(zipBuffer)) as FeatureCollection<Geometry, NaturalEarthProperties>;
+    return geojson;
   }
 
-  private generateEntityId(properties: any, index: number): string {
+  private generateEntityId(properties: NaturalEarthProperties, index: number): string {
     //  ID
-    const iso = properties.ISO_A3 || properties.ISO_3166_1 || properties.adm0_a3;
-    const name = properties.NAME || properties.NAME_EN || properties.name;
+    const iso =
+      this.getString(properties, 'ISO_A3') ||
+      this.getString(properties, 'ISO_3166_1') ||
+      this.getString(properties, 'adm0_a3');
+    const name = this.getString(properties, 'NAME') || this.getString(properties, 'NAME_EN') || this.getString(properties, 'name');
 
     if (iso) return `ne-${iso.toLowerCase()}`;
     if (name) return `ne-${name.toLowerCase().replace(/\s+/g, '-')}`;
@@ -297,27 +288,36 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
     return `ne-feature-${index}`;
   }
 
-  private generateNodeId(properties: any, index: number): string {
+  private generateNodeId(properties: NaturalEarthProperties, index: number): string {
     return `node-${this.generateEntityId(properties, index)}`;
   }
 
-  private extractName(properties: any): string {
-    return properties.NAME ||
-      properties.NAME_EN ||
-      properties.name ||
-      properties.NAME_LOCAL ||
-      `Unnamed Feature`;
+  private extractName(properties: NaturalEarthProperties): string {
+    return this.getString(properties, 'NAME') ||
+      this.getString(properties, 'NAME_EN') ||
+      this.getString(properties, 'name') ||
+      this.getString(properties, 'NAME_LOCAL') ||
+      'Unnamed Feature';
   }
 
-  private extractDescription(properties: any): string | undefined {
+  private extractDescription(properties: NaturalEarthProperties): string | undefined {
     const parts: string[] = [];
 
-    if (properties.TYPE) parts.push(`Type: ${properties.TYPE}`);
-    if (properties.CONTINENT) parts.push(`Continent: ${properties.CONTINENT}`);
-    if (properties.REGION_UN) parts.push(`Region: ${properties.REGION_UN}`);
-    if (properties.POP_EST) parts.push(`Population: ${properties.POP_EST.toLocaleString()}`);
+    const type = this.getString(properties, 'TYPE');
+    const continent = this.getString(properties, 'CONTINENT');
+    const region = this.getString(properties, 'REGION_UN');
+    const population = properties['POP_EST'];
+    if (type) parts.push(`Type: ${type}`);
+    if (continent) parts.push(`Continent: ${continent}`);
+    if (region) parts.push(`Region: ${region}`);
+    if (typeof population === 'number') parts.push(`Population: ${population.toLocaleString()}`);
 
     return parts.length > 0 ? parts.join(', ') : undefined;
+  }
+
+  private getString(properties: NaturalEarthProperties, key: string): string | undefined {
+    const value = properties[key];
+    return typeof value === 'string' ? value : undefined;
   }
 
   private extractAdminLevel(endpoint: string): number | undefined {

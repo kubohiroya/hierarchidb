@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import {
   Box,
   Button,
@@ -23,19 +23,49 @@ export interface BuildStepPanelProps {
   overallProgress: number;
   stages: BuildStage[];
   stageProgress?: Record<string, number>;
+  paneProgress?: PaneProgress[];
+  renderStageContent?: (stage: BuildStage, progress: number) => ReactNode;
   onPause?: () => void;
   onResume?: () => void;
   onComplete?: () => void;
+  controlLabel?: string;
+  pauseLabel?: string;
+  startLabel?: string;
+  resumeLabel?: string;
+  startIcon?: ReactNode;
+  resumeIcon?: ReactNode;
+  statusLabel?: string;
 }
 
 type BuildControlCardProps = {
   status: BuildStatus;
   onPause?: () => void;
   onResume?: () => void;
+  controlLabel?: string;
+  pauseLabel?: string;
+  startLabel?: string;
+  resumeLabel?: string;
+  startIcon?: ReactNode;
+  resumeIcon?: ReactNode;
 };
 
-const BuildControlCard: React.FC<BuildControlCardProps> = ({ status, onPause, onResume }) => {
-  const startLabel = status === 'paused' ? 'Resume Build' : 'Start Build';
+const BuildControlCard: React.FC<BuildControlCardProps> = ({
+  status,
+  onPause,
+  onResume,
+  controlLabel,
+  pauseLabel,
+  startLabel,
+  resumeLabel,
+  startIcon,
+  resumeIcon,
+}) => {
+  const computedLabel = status === 'paused'
+    ? (resumeLabel ?? 'Resume Build')
+    : (startLabel ?? 'Start Build');
+  const computedIcon = status === 'paused'
+    ? (resumeIcon ?? <PlayArrowIcon fontSize="small" />)
+    : (startIcon ?? <PlayArrowIcon fontSize="small" />);
   const disablePause = status !== 'running' || !onPause;
   const disableStart = !onResume || status === 'running';
 
@@ -55,7 +85,7 @@ const BuildControlCard: React.FC<BuildControlCardProps> = ({ status, onPause, on
       }}
     >
       <Typography variant="subtitle2" color="text.secondary">
-        Build Controls
+        {controlLabel ?? 'Build Controls'}
       </Typography>
       <Stack direction="row" spacing={1}>
         <Button
@@ -65,17 +95,17 @@ const BuildControlCard: React.FC<BuildControlCardProps> = ({ status, onPause, on
           disabled={disablePause}
           onClick={onPause}
         >
-          Pause
+          {pauseLabel ?? 'Pause'}
         </Button>
         <Button
           color="secondary"
           variant="contained"
-          size="small"
-          startIcon={<PlayArrowIcon fontSize="small" />}
+          size="large"
+          startIcon={computedIcon}
           disabled={disableStart}
           onClick={onResume}
         >
-          {startLabel}
+          {computedLabel}
         </Button>
       </Stack>
     </Box>
@@ -87,44 +117,58 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   overallProgress,
   stages,
   stageProgress = {},
+  paneProgress,
+  renderStageContent,
   onPause,
   onResume,
   onComplete,
+  controlLabel,
+  pauseLabel,
+  startLabel,
+  resumeLabel,
+  startIcon,
+  resumeIcon,
+  statusLabel,
 }) => {
   void onComplete;
+  const resolveStageProgress = (stageId: string): number =>
+    Math.min(100, Math.max(0, stageProgress[stageId] ?? overallProgress));
+
   const panes = useMemo<PaneConfig[]>(() =>
     stages.map((stage, index) => ({
       id: stage.id,
       title: stage.title,
       defaultExpanded: index === 0,
-      content: (
-        <Stack spacing={1} sx={{ p: 2 }}>
-          <Typography variant="subtitle2">{stage.title}</Typography>
-          {stage.description ? (
-            <Typography variant="body2" color="text.secondary">
-              {stage.description}
-            </Typography>
-          ) : null}
-          <LinearProgress
-            variant="determinate"
-            value={Math.min(100, Math.max(0, stageProgress[stage.id] ?? overallProgress))}
-          />
-        </Stack>
-      ),
+      content: renderStageContent
+        ? renderStageContent(stage, resolveStageProgress(stage.id))
+        : (
+          <Stack spacing={1} sx={{ p: 2 }}>
+            <Typography variant="subtitle2">{stage.title}</Typography>
+            {stage.description ? (
+              <Typography variant="body2" color="text.secondary">
+                {stage.description}
+              </Typography>
+            ) : null}
+            <LinearProgress
+              variant="determinate"
+              value={resolveStageProgress(stage.id)}
+            />
+          </Stack>
+        ),
     })),
-  [overallProgress, stageProgress, stages]);
+  [overallProgress, renderStageContent, stageProgress, stages]);
 
-  const paneProgress = useMemo<PaneProgress[]>(
+  const computedPaneProgress = useMemo<PaneProgress[]>(
     () =>
       stages.map((stage) => ({
         paneId: stage.id,
-        progress: Math.min(100, Math.max(0, stageProgress[stage.id] ?? overallProgress)),
+        progress: resolveStageProgress(stage.id),
         status,
       })),
     [overallProgress, stageProgress, stages, status],
   );
 
-  const statusLabel = (() => {
+  const computedStatusLabel = (() => {
     switch (status) {
       case 'running':
         return 'Build in progress';
@@ -141,10 +185,20 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
     <Box display="flex" flexDirection="column" gap={3}>
 
       <Stack direction="row" spacing={2} alignItems="stretch">
-        <BuildControlCard status={status} onPause={onPause} onResume={onResume} />
+        <BuildControlCard
+          status={status}
+          onPause={onPause}
+          onResume={onResume}
+          controlLabel={controlLabel}
+          pauseLabel={pauseLabel}
+          startLabel={startLabel}
+          resumeLabel={resumeLabel}
+          startIcon={startIcon}
+          resumeIcon={resumeIcon}
+        />
         <Stack spacing={1} flex={1} justifyContent="center">
           <Typography variant="body2" color="text.secondary">
-            {statusLabel}
+            {statusLabel ?? computedStatusLabel}
           </Typography>
           <LinearProgress
             variant="determinate"
@@ -157,7 +211,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
       <Box height={280}>
         <LRUSplitView
           panes={panes}
-          progress={paneProgress}
+          progress={paneProgress ?? computedPaneProgress}
           maxExpandedPanes={2}
           defaultCollapsedSize={60}
           autoExpand={{ onStart: true, onComplete: true }}

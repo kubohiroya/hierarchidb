@@ -73,20 +73,29 @@ export function validateProcessingConfig(config: Partial<ProcessingConfig>): Sha
     }
   }
 
+  const minZoom = config.tileConfig?.minZoom;
   const maxZoom = config.tileConfig?.maxZoom;
+  if (minZoom !== undefined) {
+    if (minZoom < 0 || minZoom > 18) {
+      errors.push('Min zoom level must be between 0 and 18');
+    }
+  }
   if (maxZoom !== undefined) {
-    if (maxZoom < 8 || maxZoom > 18) {
-      errors.push('Max zoom level must be between 8 and 18');
-      }
+    if (maxZoom < 0 || maxZoom > 18) {
+      errors.push('Max zoom level must be between 0 and 18');
+    }
     if (maxZoom > 14) {
       warnings.push('High zoom levels may require significant storage and processing time');
     }
   }
+  if (minZoom !== undefined && maxZoom !== undefined && minZoom > maxZoom) {
+    errors.push('Min zoom level must be less than or equal to max zoom level');
+  }
 
   const areaThreshold = config.simplificationConfig?.areaThreshold;
   if (areaThreshold !== undefined) {
-    if (areaThreshold < 0 || areaThreshold > 1) {
-      errors.push('Feature area threshold must be between 0 and 1');
+    if (areaThreshold < 1 || areaThreshold > 100) {
+      errors.push('Feature area threshold must be between 1 and 100');
     }
   }
 
@@ -167,8 +176,10 @@ export function generateUrlMetadata(
         urlMetadata.push({
           url,
           countryCode,
+          countryName: country.countryName,
           adminLevel: level,
           continent: country.continent,
+          dataSource,
           estimatedSize: estimateDataSize(dataSource, countryCode, level, country),
           lastUpdated: new Date().toISOString(),
         });
@@ -271,6 +282,7 @@ export function mergeProcessingConfig(config: Partial<ProcessingConfig>): Proces
     tileConfig: {
       ...(DEFAULT_PROCESSING_CONFIG.tileConfig ?? {
         workers: 2,
+        minZoom: 0,
         maxZoom: 12,
       }),
       ...(config.tileConfig ?? {}),

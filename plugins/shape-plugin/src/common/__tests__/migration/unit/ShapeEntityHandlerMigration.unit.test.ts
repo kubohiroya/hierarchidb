@@ -239,8 +239,8 @@ describe('ShapeEntityHandler Migration Tests', () => {
         },
         vectorTiles: {
           concurrentProcesses: 4,
+          minZoom: 0,
           maxZoom: 8,
-          tileCountThresholdForZoomStop: 10000,
         },
       };
 
@@ -286,8 +286,8 @@ describe('ShapeEntityHandler Migration Tests', () => {
         },
         vectorTiles: {
           concurrentProcesses: 4,
+          minZoom: 0,
           maxZoom: 8,
-          tileCountThresholdForZoomStop: 10000,
         },
       };
 

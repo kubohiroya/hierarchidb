@@ -15,13 +15,14 @@ import type { Simplify1Task, Simplify2Task, VectorTileTask } from '../../common/
 import type { Simplify1StageAdapter } from './adapters/Simplify1StageAdapter.js';
 import type { Simplify2StageAdapter } from './adapters/Simplify2StageAdapter.js';
 import type { VectorTileStageAdapter } from './adapters/VectorTileStageAdapter.js';
-import { RuntimeWorkerSimplify1Adapter, RuntimeWorkerSimplify2Adapter } from './adapters/RuntimeWorkerSimplifyAdapters.js';
+import { LocalSimplify1Adapter, LocalSimplify2Adapter } from './adapters/LocalSimplifyAdapters.js';
 import { RuntimeWorkerVectorTileAdapter } from './adapters/RuntimeWorkerVectorTileAdapter.js';
 import { getShapeRuntimeWorkerClient } from './adapters/RuntimeWorkerClient.js';
 import type { BatchProcessConfig } from './types.js';
 import type { UrlMetadata, ProgressInfo, ProcessingStage } from '../../common/types/index.js';
 import { BatchTaskStage } from '../../common/types/index.js';
 import type { DownloadTask } from '../../common/types/index.js';
+import { isShapePreviewMetadataEnabled } from '../../common/config/previewFlags.js';
 
 type WorkerPoolStatistics = Record<string, number>;
 
@@ -33,6 +34,7 @@ interface WorkerPoolHandle {
 export interface BatchSessionOptions {
   maxConcurrentTasks?: number;
   retryAttempts?: number;
+  retryDelay?: number;
   timeoutMs?: number;
   enableResourceTracking?: boolean;
 }
@@ -44,6 +46,7 @@ export class SessionController {
   private downloadAdapter: DownloadStageAdapter = new RuntimeWorkerDownloadAdapter();
   private urlMetadata: UrlMetadata[];
   private options: BatchSessionOptions;
+  private config: BatchProcessConfig;
   private currentStage: ProcessingStage = 'download';
   private isPaused = false;
   private isAborted = false;
@@ -58,13 +61,25 @@ export class SessionController {
     sessionId: string,
     nodeId: NodeId,
     urlMetadata: UrlMetadata[],
-    _config: BatchProcessConfig,
+    config: BatchProcessConfig,
     options: BatchSessionOptions = {},
   ) {
     this.sessionId = sessionId;
     this.nodeId = nodeId;
     this.urlMetadata = urlMetadata;
     this.options = options;
+    this.config = config;
+  }
+
+  private resolveZoomLevels(): number[] {
+    const minZoom = this.config.vectorTiles?.minZoom ?? 0;
+    const maxZoom = this.config.vectorTiles?.maxZoom ?? minZoom;
+    const lower = Math.min(minZoom, maxZoom);
+    const upper = Math.max(minZoom, maxZoom);
+    if (!Number.isFinite(lower) || !Number.isFinite(upper)) {
+      return [];
+    }
+    return Array.from({ length: upper - lower + 1 }, (_, index) => lower + index);
   }
 
   /**
@@ -76,15 +91,13 @@ export class SessionController {
     }
 
     // Prefer runtime-worker-worker adapters when a client is available; otherwise optionally fall back to WorkerPool-backed ones
+    this.simplify1Adapter = new LocalSimplify1Adapter();
+    this.simplify2Adapter = new LocalSimplify2Adapter();
     const client = await getShapeRuntimeWorkerClient();
-    if (client) {
-      this.simplify1Adapter = new RuntimeWorkerSimplify1Adapter();
-      this.simplify2Adapter = new RuntimeWorkerSimplify2Adapter();
-      this.vectorTileAdapter = new RuntimeWorkerVectorTileAdapter();
-    } else {
-      // No runtime-worker-worker: raise explicit guidance (fallback path removed)
+    if (!client) {
       throw new Error('Shape runtime-worker worker unavailable. Legacy WorkerPool fallback has been removed.');
     }
+    this.vectorTileAdapter = new RuntimeWorkerVectorTileAdapter();
   }
 
   /**
@@ -192,16 +205,17 @@ export class SessionController {
       index,
       progress: 0,
       url: metadata.url,
-      config: {
-        dataSource: (metadata as { dataSource?: string }).dataSource ?? metadata.continent ?? 'gadm',
-        country: (metadata as { country?: string }).country ?? metadata.countryCode ?? 'UNKNOWN',
-        adminLevel: metadata.adminLevel,
-        url: metadata.url,
-        timeout: this.options.timeoutMs ?? 0,
-        retryDelay: this.options.retryAttempts ?? 0,
+        config: {
+          dataSource: (metadata as { dataSource?: string }).dataSource ?? metadata.continent ?? 'gadm',
+          country: (metadata as { country?: string }).country ?? metadata.countryCode ?? 'UNKNOWN',
+          adminLevel: metadata.adminLevel,
+          url: metadata.url,
+        timeoutMs: this.options.timeoutMs ?? 0,
+        retryDelay: this.options.retryDelay ?? 0,
+        retryAttempts: this.options.retryAttempts ?? 0,
         expectedFormat: 'geojson',
         validateSSL: true,
-      },
+        },
     }));
     const res = await this.downloadAdapter.process(
       this.sessionId,
@@ -230,6 +244,12 @@ export class SessionController {
     this.currentStage = 'simplify1';
     console.log(`[Session ${this.sessionId}] Processing simplify1 stage`);
 
+    const simplifyConfig = this.config.simplify1;
+    const simplifyTolerance = this.config.simplify2?.simplify
+      ?? this.config.simplify2?.tolerance
+      ?? 0.001;
+    const minArea = simplifyConfig?.featureAreaThreshold ?? 0;
+
     const tasks: Simplify1Task[] = this.urlMetadata.map((_metadata, index) => ({
       taskId: `${this.sessionId}-simplify1-${index}`,
       sessionId: this.sessionId as NodeId,
@@ -240,13 +260,17 @@ export class SessionController {
       index,
       progress: 0,
       inputBufferId: `${this.sessionId}-download-${index}`,
-      tolerance: 0.001,
-      minArea: 0,
+      tolerance: simplifyTolerance,
+      minArea,
       config: {
         algorithm: 'douglas-peucker',
-        tolerance: 0.001,
+        tolerance: simplifyTolerance,
         preserveTopology: true,
-        minimumArea: 0,
+        minimumArea: minArea,
+        featureFilterMethod: simplifyConfig?.featureFilterMethod,
+        minVertexCountForAreaFilter: simplifyConfig?.minVertexCountForAreaFilter,
+        aspectRatioThreshold: simplifyConfig?.aspectRatioThreshold,
+        hybridFilterConfig: simplifyConfig?.hybridFilterConfig,
       },
     }));
 
@@ -263,6 +287,10 @@ export class SessionController {
     this.currentStage = 'simplify2';
     console.log(`[Session ${this.sessionId}] Processing simplify2 stage`);
 
+    const zoomLevels = this.resolveZoomLevels();
+    const tileSize = this.config.vectorTiles?.tileSize ?? this.config.tileSize ?? 512;
+    const simplify2Config = this.config.simplify2;
+
     const tasks: Simplify2Task[] = this.urlMetadata.map((_metadata, index) => ({
       taskId: `${this.sessionId}-simplify2-${index}`,
       sessionId: this.sessionId as NodeId,
@@ -273,19 +301,20 @@ export class SessionController {
       index,
       progress: 0,
       inputBufferId: `${this.sessionId}-simplify1-${index}`,
-      zoomLevels: [10],
-      tileSize: 512,
+      zoomLevels,
+      tileSize,
       config: {
-        zoomLevel: 10,
-        tileSize: 512,
+        zoomLevel: zoomLevels[0] ?? 10,
+        tileSize,
         preserveSharedBoundaries: true,
-        quantization: 1,
+        quantize: simplify2Config?.quantize,
         algorithm: 'douglas-peucker',
-        tolerance: 0.001,
-        minimumArea: 0,
+        tolerance: simplify2Config?.tolerance,
+        minimumArea: simplify2Config?.simplify,
         preserveTopology: true,
         maxVertices: undefined,
         coordinatePrecision: 6,
+        enablePerFeatureSimplification: simplify2Config?.enablePerFeatureSimplification,
       },
     }));
 
@@ -302,27 +331,51 @@ export class SessionController {
     this.currentStage = 'vectortile';
     console.log(`[Session ${this.sessionId}] Processing vector tile stage`);
 
-    const tasks: VectorTileTask[] = this.urlMetadata.map((_metadata, index) => ({
-      taskId: `${this.sessionId}-vectortile-${index}`,
-      sessionId: this.sessionId as NodeId,
-      taskType: 'vectortile',
-      stage: BatchTaskStage.WAIT,
-      type: 'vectortile',
-      status: 'waiting',
-      index,
-      progress: 0,
-      config: {
-        inputBufferId: `${this.sessionId}-simplify2-${index}`,
-        zoomLevel: 10,
-        tileX: 0,
-        tileY: 0,
-        extent: 4096,
-        buffer: 256,
-        layers: [],
-        format: 'mvt',
-        compression: true,
-      },
-    }));
+    const tileSize = this.config.vectorTiles?.tileSize ?? this.config.tileSize ?? 256;
+    const buffer = this.config.vectorTiles?.bufferSize ?? 256;
+    const minZoom = this.config.vectorTiles?.minZoom ?? 0;
+    const maxZoom = this.config.vectorTiles?.maxZoom ?? 10;
+    const metadataEnabled = isShapePreviewMetadataEnabled();
+    let metadataReplace = true;
+    const tasks: VectorTileTask[] = this.urlMetadata.map((metadata, index) => {
+      const replace = metadataEnabled && metadataReplace;
+      if (metadataEnabled) {
+        metadataReplace = false;
+      }
+      return {
+        taskId: `${this.sessionId}-vectortile-${index}`,
+        sessionId: this.sessionId as NodeId,
+        taskType: 'vectortile',
+        stage: BatchTaskStage.WAIT,
+        type: 'vectortile',
+        status: 'waiting',
+        index,
+        progress: 0,
+        countryCode: metadata.countryCode,
+        adminLevel: metadata.adminLevel,
+        config: {
+          inputBufferId: `${this.sessionId}-simplify2-${index}`,
+          minZoom,
+          maxZoom,
+          tileX: 0,
+          tileY: 0,
+          extent: 4096,
+          buffer,
+          tileSize,
+          layers: [],
+          format: 'mvt',
+          compression: true,
+          metadataEnabled,
+          metadataReplace: replace,
+          metadataContext: {
+            dataSource: metadata.dataSource,
+            countryCode: metadata.countryCode,
+            countryName: metadata.countryName,
+            adminLevel: metadata.adminLevel,
+          },
+        },
+      };
+    });
 
     const r = await this.vectorTileAdapter!.process(tasks, (p) => this.progressCallback?.(p), {
       waitIfPaused: () => this.waitForStageResume('vectortile'),

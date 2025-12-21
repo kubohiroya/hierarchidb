@@ -28,9 +28,10 @@ export interface CountryMetadata {
 export interface UrlMetadata {
   url: string;
   countryCode: string;
+  countryName?: string;
   adminLevel: number;
   continent: string;
-  dataSource?: string;
+  dataSource?: DataSourceName;
   country?: string;
   estimatedSize?: number;
   lastUpdated?: string;

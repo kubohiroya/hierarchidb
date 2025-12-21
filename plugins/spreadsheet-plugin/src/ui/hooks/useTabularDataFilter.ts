@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, type RefObject } from 'react';
-import type { StepComponentProps } from '@hierarchidb/plugin-base';
+import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import type { TabularDataResult, TabularFilterRule } from '@hierarchidb/ui-tabular-extract';
 import type { SpreadsheetEntity } from '../../common/types/SpreadsheetEntity.js';
 import { SPREADSHEET_NODE_TYPE } from '../../common/constants.js';
@@ -29,7 +29,7 @@ const shallowEqualFilters = (a?: TabularFilterRule[], b?: TabularFilterRule[]): 
 };
 
 export type UseTabularDataFilterParams<T extends SpreadsheetEntity> = Pick<
-  StepComponentProps<T>,
+  PluginStepProps<T>,
   'data' | 'onChange' | 'setValid' | 'setError'
 > & {
   dialogRef?: RefObject<HTMLElement | null>;

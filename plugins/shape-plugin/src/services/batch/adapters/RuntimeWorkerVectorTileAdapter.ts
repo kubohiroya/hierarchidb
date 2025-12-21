@@ -10,6 +10,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     const vectorTileClient = client?.vectortile;
     if (!vectorTileClient) throw new Error('Runtime worker vectortile not available');
     let completed = 0, failed = 0;
+    let metadataReplace = true;
     for (const task of tasks) {
       if (controls?.waitIfPaused) {
         await controls.waitIfPaused();
@@ -19,10 +20,24 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
         const compression = task.config?.compression ?? false;
         const format = (task.config?.format ?? 'mvt') as 'mvt';
         const tileSize = task.config?.tileSize ?? 256;
+        const buffer = task.config?.buffer;
+        const minZoom = task.config?.minZoom;
+        const maxZoom = task.config?.maxZoom;
+        const metadataEnabled = Boolean(task.config?.metadataEnabled);
+        const replace = metadataEnabled && metadataReplace;
+        if (metadataEnabled) {
+          metadataReplace = false;
+        }
         await vectorTileClient.generateTiles(inputBufferId, {
           format,
           compression: compression ? 'gzip' : 'none',
           tileSize,
+          buffer,
+          minZoom,
+          maxZoom,
+          metadataEnabled,
+          metadataReplace: replace,
+          metadataContext: task.config?.metadataContext,
         });
         completed++;
       } catch {

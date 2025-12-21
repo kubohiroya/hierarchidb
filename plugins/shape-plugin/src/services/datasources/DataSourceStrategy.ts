@@ -170,8 +170,6 @@ export interface SaveResult {
   error?: string;
 }
 
-/**
-    */
 export interface DataSourceStrategy<TRawData = unknown, TProcessedData = ShapeEntity[]> {
   readonly id: string;
   readonly name: string;
@@ -190,8 +188,6 @@ export interface DataSourceStrategy<TRawData = unknown, TProcessedData = ShapeEn
   clearCache?(): Promise<void>;
 }
 
-/**
-    */
 export abstract class BaseDataSourceStrategy<TRawData = unknown, TProcessedData = ShapeEntity[]>
   implements DataSourceStrategy<TRawData, TProcessedData> {
 

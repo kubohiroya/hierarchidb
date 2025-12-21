@@ -21,7 +21,11 @@ import type { UrlMetadata } from '../../common/types/index.js';
  */
 export class UnifiedShapeBatchManager implements IBatchSessionManager {
   private manager: BatchSessionManager;
-  private pending = new Map<NodeId, { config: ShapeBatchConfig; data: ShapeBatchData }>();
+  private pending = new Map<NodeId, {
+    config: BatchProcessConfig;
+    data: ShapeBatchData;
+    options?: BatchSessionOptions;
+  }>();
   private sessionNodes = new Map<string, NodeId>();
 
   constructor() {
@@ -31,8 +35,13 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
     this.manager.initialize().catch(console.error);
   }
 
-  prepareSession(nodeId: NodeId, config: ShapeBatchConfig, data: ShapeBatchData): void {
-    this.pending.set(nodeId, { config, data });
+  prepareSession(
+    nodeId: NodeId,
+    config: BatchProcessConfig,
+    data: ShapeBatchData,
+    options?: BatchSessionOptions,
+  ): void {
+    this.pending.set(nodeId, { config, data, options });
   }
 
   async startBatchSession(nodeId: NodeId): Promise<string> {
@@ -41,48 +50,17 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
       throw new Error(`No pending shape batch session data for node ${nodeId}`);
     }
     this.pending.delete(nodeId);
-    const { config, data } = pending;
+    const { config, data, options } = pending;
     if (!data.urlMetadata?.length) {
       throw new Error('Shape batch session requires urlMetadata');
     }
 
-    // Convert unified config to shape-specific config
-    const batchProcessConfig: BatchProcessConfig = {
-      corsProxyBaseURL: config.corsProxyBaseURL ?? '',
-      download: {
-        concurrentDownloads: 1,
-        deleteOnComplete: false,
-      },
-      simplify1: {
-        concurrentProcesses: 1,
-        enableFeatureFiltering: false,
-        featureAreaThreshold: 0,
-        minVertexCountForAreaFilter: 0,
-        aspectRatioThreshold: 1,
-        featureFilterMethod: 'bbox_only',
-      },
-      simplify2: {
-        concurrentProcesses: 1,
-        quantize: 1,
-        simplify: 1,
-        tolerance: 1,
-        enablePerFeatureSimplification: false,
-      },
-      vectorTiles: {
-        concurrentProcesses: 1,
-        maxZoom: 1,
-        tileCountThresholdForZoomStop: 1000,
-      },
-    };
-
-    const options: BatchSessionOptions = {
-      maxConcurrentTasks: config.maxConcurrentTasks,
-      retryAttempts: config.maxRetries,
-      timeoutMs: config.workerTimeout,
-      enableResourceTracking: config.enableResourceMonitoring,
-    };
-
-    const session = await this.manager.createSession(nodeId, batchProcessConfig, data.urlMetadata, options);
+    const session = await this.manager.createSession(
+      nodeId,
+      config,
+      data.urlMetadata,
+      options ?? {}
+    );
     const sessionId = session.sessionId;
     if (!sessionId) {
       throw new Error('Failed to create shape batch session: missing sessionId');
@@ -187,20 +165,6 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
 
     return 'running';
   }
-}
-
-/**
- * Shape-specific configuration interface
- */
-export interface ShapeBatchConfig {
-  corsProxyBaseURL?: string;
-  maxRetries?: number;
-  retryDelay?: number;
-  workerTimeout?: number;
-  maxMemoryPerWorker?: number;
-  maxConcurrentTasks?: number;
-  enableProgressTracking?: boolean;
-  enableResourceMonitoring?: boolean;
 }
 
 /**

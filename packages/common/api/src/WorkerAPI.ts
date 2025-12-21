@@ -10,6 +10,7 @@ import type {
   BatchProgressEvent,
   BatchSessionId,
   BatchSessionStatus,
+  BatchTaskSummary,
 } from './BatchControlAPI.js';
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
 
@@ -51,6 +52,7 @@ export interface WorkerAPI {
   pauseBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
   resumeBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
   cancelBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
+  getBatchTasks(nodeType: NodeType, sessionId: BatchSessionId): Promise<BatchTaskSummary[]>;
   subscribeBatchProgress(
     nodeType: NodeType,
     sessionId: BatchSessionId,

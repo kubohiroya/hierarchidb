@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
-import type { StepComponentProps } from '@hierarchidb/plugin-base';
+import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import type { TabularDataResult, TabularFilterRule } from '@hierarchidb/ui-tabular-extract';
 import type { SpreadsheetEntity } from '../../common/types/SpreadsheetEntity.js';
@@ -42,8 +42,8 @@ const coerceColumns = (
 
 export interface UseTabularKeyValueStateParams<T extends SpreadsheetEntity> {
   data: T;
-  onChange: StepComponentProps<T>['onChange'];
-  setError: StepComponentProps<T>['setError'];
+  onChange: PluginStepProps<T>['onChange'];
+  setError: PluginStepProps<T>['setError'];
   onSetFilterValid: (valid: boolean) => void;
   translationNamespace?: string;
 }

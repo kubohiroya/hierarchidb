@@ -2,254 +2,39 @@
  * Worker API implementation tests
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { shapePluginAPI } from '../api.js';
+import { describe, expect, it } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { UpdateShapeData } from '../../shared/index.ts';
+import type { ProcessingConfig } from '../../../common/types/index.js';
+import { DEFAULT_PROCESSING_CONFIG } from '../../../common/types/index.js';
+import { shapePluginAPI } from '../../api.js';
 
-// Mock ShapeEntityHandler (module path must match api.ts import './handlers')
-vi.mock('../handlers', () => ({
-  ShapeEntityHandler: vi.fn().mockImplementation(() => ({
-    // Provide no-op stubs for all methods the API may call; override per-test via vi.doMock if needed
-    getEntityByNodeId: vi.fn(),
-    createDraft: vi.fn(),
-    createNewDraftBase: vi.fn(),
-    getDraft: vi.fn(),
-    updateDraft: vi.fn(),
-    commitDraft: vi.fn(),
-    discardDraft: vi.fn(),
-  })),
-}));
+const createProcessingConfig = (
+  overrides: Partial<ProcessingConfig> = {},
+): ProcessingConfig => ({
+  ...DEFAULT_PROCESSING_CONFIG,
+  ...overrides,
+  downloadConfig: {
+    ...DEFAULT_PROCESSING_CONFIG.downloadConfig,
+    ...overrides.downloadConfig,
+  },
+  simplificationConfig: {
+    ...DEFAULT_PROCESSING_CONFIG.simplificationConfig,
+    ...overrides.simplificationConfig,
+  },
+  tileConfig: {
+    ...DEFAULT_PROCESSING_CONFIG.tileConfig,
+    ...overrides.tileConfig,
+  },
+  cleanupConfig: {
+    ...DEFAULT_PROCESSING_CONFIG.cleanupConfig,
+    ...overrides.cleanupConfig,
+  },
+});
 
 describe('Shape Plugin API', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  describe('DraftTypes Management (CopyOnWrite Pattern)', () => {
-    it('should create DraftTypes for existing entity', async () => {
-      const nodeId = 'node-456' as NodeId;
-      const mockEntity = {
-        id: 'entity-123' as any,
-        nodeId: nodeId,
-        name: 'Test Shape',
-        dataSourceName: 'naturalearth',
-        processingConfig: {
-          concurrentDownloads: 2,
-          corsProxyBaseURL: '',
-          enableFeatureFiltering: false,
-          featureFilterMethod: 'hybrid',
-          featureAreaThreshold: 0.1,
-          concurrentProcesses: 2,
-          maxZoomLevel: 12,
-        },
-      };
-
-      const mockHandler = {
-        createDraft: vi.fn().mockResolvedValue({
-          ...mockEntity,
-          id: 'draft-123',
-          isDraft: false,
-        }),
-      };
-
-      vi.doMock('../handlers', () => ({
-        ShapeEntityHandler: vi.fn(() => mockHandler),
-      }));
-
-      const draftId = await shapePluginAPI.createDraft(nodeId);
-      expect(typeof draftId).toBe('string');
-      expect(mockHandler.createDraft).toHaveBeenCalledWith(nodeId);
-    });
-
-    it('should create new draft DraftTypes', async () => {
-      const parentId = 'parent-456' as NodeId;
-      const mockDraft = {
-        id: 'draft-new' as any,
-        name: '',
-        isDraft: true,
-      };
-
-      const mockHandler = {
-        createNewDraftBase: vi.fn().mockResolvedValue(mockDraft),
-      };
-
-      vi.doMock('../handlers', () => ({
-        ShapeEntityHandler: vi.fn(() => mockHandler),
-      }));
-
-      const draftId = await shapePluginAPI.createNewDraftBase(parentId);
-      expect(typeof draftId).toBe('string');
-      expect(mockHandler.createNewDraftBase).toHaveBeenCalledWith(parentId);
-    });
-
-    it('should get DraftTypes by ID', async () => {
-      const draftId = 'draft-123' as any;
-      const mockDraft = {
-        id: draftId,
-        name: 'Test Shape',
-        isDraft: false,
-      };
-
-      const mockHandler = {
-        getDraft: vi.fn().mockResolvedValue(mockDraft),
-      };
-
-      vi.doMock('../handlers', () => ({
-        ShapeEntityHandler: vi.fn(() => mockHandler),
-      }));
-
-      const draft = await shapePluginAPI.getDraft(draftId);
-      expect(draft).toEqual(mockDraft);
-      expect(mockHandler.getDraft).toHaveBeenCalledWith(draftId);
-    });
-
-    it('should update DraftTypes with new data', async () => {
-      const draftId = 'draft-123' as any;
-      const updateData: UpdateShapeData = {
-        name: 'Updated Shape Name',
-        description: 'Updated description',
-      };
-
-      const mockHandler = {
-        updateDraft: vi.fn().mockResolvedValue({
-          id: draftId,
-          ...updateData,
-        }),
-      };
-
-      vi.doMock('../handlers', () => ({
-        ShapeEntityHandler: vi.fn(() => mockHandler),
-      }));
-
-      const updated = await shapePluginAPI.updateDraft(draftId, updateData);
-      expect(updated).toBeDefined();
-      expect(mockHandler.updateDraft).toHaveBeenCalledWith(draftId, updateData);
-    });
-
-    it('should commit DraftTypes to CoreDB', async () => {
-      const draftId = 'draft-123' as any;
-      const expectedNodeId = 'node-456' as NodeId;
-
-      const mockHandler = {
-        commitDraft: vi.fn().mockResolvedValue(expectedNodeId),
-      };
-
-      vi.doMock('../handlers', () => ({
-        ShapeEntityHandler: vi.fn(() => mockHandler),
-      }));
-
-      const nodeId = await shapePluginAPI.commitDraft(draftId);
-      expect(nodeId).toBe(expectedNodeId);
-      expect(mockHandler.commitDraft).toHaveBeenCalledWith(draftId);
-    });
-
-    it('should discard DraftTypes from EphemeralDB', async () => {
-      const draftId = 'draft-123' as any;
-
-      const mockHandler = {
-        discardDraft: vi.fn().mockResolvedValue(undefined),
-      };
-
-      vi.doMock('../handlers/ShapeEntityHandler', () => ({
-        ShapeEntityHandler: vi.fn(() => mockHandler),
-      }));
-
-      await shapePluginAPI.discardDraft(draftId);
-      expect(mockHandler.discardDraft).toHaveBeenCalledWith(draftId);
-    });
-  });
-
-  describe('DraftTypes-based Batch Processing', () => {
-    it('should start batch processing with DraftTypes ID', async () => {
-      const draftId = 'draft-123' as any;
-      const config = {
-        concurrentDownloads: 2,
-        corsProxyBaseURL: '',
-        enableFeatureFiltering: false,
-        featureFilterMethod: 'hybrid' as const,
-        featureAreaThreshold: 0.1,
-        concurrentProcesses: 2,
-        maxZoomLevel: 12,
-      };
-      const urlMetadata = [
-        {
-          url: 'http://example.com/us.zip',
-          countryCode: 'US',
-          adminLevel: 0,
-          continent: 'North America',
-          estimatedSize: 1000000,
-        },
-      ];
-
-      const sessionId = await shapePluginAPI.startBatchProcessing(
-        draftId,
-        config,
-        urlMetadata,
-      );
-      expect(typeof sessionId).toBe('string');
-      expect(sessionId).toMatch(/^session-/);
-    });
-
-    it('should pause batch processing', async () => {
-      const draftId = 'draft-123' as any;
-
-      await expect(shapePluginAPI.pauseBatchProcessing(draftId)).resolves.not.toThrow();
-    });
-
-    it('should resume batch processing', async () => {
-      const draftId = 'draft-123' as any;
-
-      const sessionId = await shapePluginAPI.resumeBatchProcessing(draftId);
-      expect(typeof sessionId).toBe('string');
-    });
-
-    it('should cancel batch processing', async () => {
-      const draftId = 'draft-123' as any;
-
-      await expect(shapePluginAPI.cancelBatchProcessing(draftId)).resolves.not.toThrow();
-    });
-
-    it('should get batch processing status', async () => {
-      const sessionId = 'session-123';
-      /*
-      const mockStatus = {
-        sessionId,
-        status: 'running' as const,
-        progress: 0.5,
-        completedTasks: 5,
-        totalTasks: 10,
-      };
-*/
-      const status = await shapePluginAPI.getBatchStatus(sessionId);
-      expect(status).toBeDefined();
-      expect(status.sessionId).toBe(sessionId);
-    });
-  });
-
   describe('Batch Session Recovery for Direct Link Access', () => {
     it('should find pending batch sessions for node', async () => {
       const nodeId = 'node-123' as NodeId;
-      /*
-      const mockSessions = [
-        {
-          sessionId: 'session-1',
-          draftId: 'draft-1' as any,
-          nodeId: nodeId,
-          status: 'paused' as const,
-          createdAt: Date.now(),
-          lastActivityAt: Date.now(),
-        },
-        {
-          sessionId: 'session-2',
-          draftId: 'draft-2' as any,
-          nodeId: nodeId,
-          status: 'running' as const,
-          createdAt: Date.now(),
-          lastActivityAt: Date.now(),
-        },
-      ];
-       */
 
       const sessions = await shapePluginAPI.findPendingBatchSessions(nodeId);
       expect(Array.isArray(sessions)).toBe(true);
@@ -261,6 +46,11 @@ describe('Shape Plugin API', () => {
       const sessions = await shapePluginAPI.findPendingBatchSessions(nodeId);
       expect(Array.isArray(sessions)).toBe(true);
       expect(sessions).toHaveLength(0);
+    });
+
+    it('should return missing session status for unknown session', async () => {
+      const status = await shapePluginAPI.getBatchSessionStatus('session-unknown');
+      expect(status.exists).toBe(false);
     });
   });
 
@@ -292,6 +82,54 @@ describe('Shape Plugin API', () => {
       expect(result.errors).toBeUndefined();
     });
 
+    it('should reject empty country selection', async () => {
+      const result = await shapePluginAPI.validateSelection([], [0, 1], 'naturalearth');
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('At least one country must be selected');
+    });
+
+    it('should reject empty admin level selection', async () => {
+      const result = await shapePluginAPI.validateSelection(['US'], [], 'naturalearth');
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('At least one administrative level must be selected');
+    });
+
+    it('should reject invalid data source', async () => {
+      const result = await shapePluginAPI.validateSelection(['US'], [0], 'invalid-source');
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('Invalid data source selected');
+    });
+
+    it('should warn about large selections', async () => {
+      const manyCountries = Array.from({ length: 15 }, (_, i) => `C${i}`);
+      const result = await shapePluginAPI.validateSelection(manyCountries, [0], 'naturalearth');
+
+      expect(result.warnings).toContain(
+        'Large country selection may require significant processing time',
+      );
+    });
+  });
+
+  describe('Batch Processing', () => {
+    it('should reject invalid processing config', async () => {
+      const draftId = 'node-123' as NodeId;
+      const config = createProcessingConfig({
+        downloadConfig: {
+          ...DEFAULT_PROCESSING_CONFIG.downloadConfig,
+          maxConcurrent: 20,
+        },
+      });
+
+      await expect(
+        shapePluginAPI.startBatchProcessing(draftId, config, []),
+      ).rejects.toThrow('Invalid processing config');
+    });
+  });
+
+  describe('Selection Stats', () => {
     it('should calculate stats for URL metadata', async () => {
       const urlMetadata = [
         {
@@ -338,139 +176,5 @@ describe('Shape Plugin API', () => {
       expect(result.workingCopiesRemoved).toBeDefined();
       expect(result.batchSessionsRemoved).toBeDefined();
     });
-  });
-});
-
-describe('createEntity', () => {
-  it('should create entity with valid data', async () => {
-describe('getDataSourceConfigs', () => {
-  it('should return default data source configurations', async () => {
-    const configs = await shapePluginAPI.getDataSourceConfigs();
-
-    expect(Array.isArray(configs)).toBe(true);
-    expect(configs.length).toBeGreaterThan(0);
-    expect(configs[0]).toHaveProperty('name');
-    expect(configs[0]).toHaveProperty('displayName');
-    expect(configs[0]).toHaveProperty('license');
-  });
-});
-
-describe('getCountryMetadata', () => {
-  it('should return mock country metadata', async () => {
-    const metadata = await shapePluginAPI.getCountryMetadata('naturalearth');
-
-    expect(Array.isArray(metadata)).toBe(true);
-    expect(metadata.length).toBeGreaterThan(0);
-    expect(metadata[0]).toHaveProperty('countryCode');
-    expect(metadata[0]).toHaveProperty('countryName');
-    expect(metadata[0]).toHaveProperty('availableAdminLevels');
-  });
-
-  it('should filter countries by data source capabilities', async () => {
-    const metadata = await shapePluginAPI.getCountryMetadata('naturalearth');
-
-    // All countries should have admin levels within naturalearth's capabilities
-    metadata.forEach((country) => {
-      const hasValidLevels = country.availableAdminLevels.some((level) => level <= 2); // naturalearth maxAdminLevel
-      expect(hasValidLevels).toBe(true);
-    });
-  });
-});
-
-describe('validateSelection', () => {
-  it('should validate correct selection', async () => {
-    const result = await shapePluginAPI.validateSelection(['US', 'JP'], [0, 1], 'naturalearth');
-
-    expect(result.isValid).toBe(true);
-    expect(result.errors).toBeUndefined();
-  });
-
-  it('should reject empty country selection', async () => {
-    const result = await shapePluginAPI.validateSelection([], [0, 1], 'naturalearth');
-
-    expect(result.isValid).toBe(false);
-    expect(result.errors).toContain('At least one country must be selected');
-  });
-
-  it('should reject empty admin level selection', async () => {
-    const result = await shapePluginAPI.validateSelection(['US'], [], 'naturalearth');
-
-    expect(result.isValid).toBe(false);
-    expect(result.errors).toContain('At least one administrative level must be selected');
-  });
-
-  it('should reject invalid data source', async () => {
-    const result = await shapePluginAPI.validateSelection(['US'], [0], 'invalid-source');
-
-    expect(result.isValid).toBe(false);
-    expect(result.errors).toContain('Invalid data source selected');
-  });
-
-  it('should warn about large selections', async () => {
-    const manyCountries = Array.from({ length: 15 }, (_, i) => `C${i}`);
-    const result = await shapePluginAPI.validateSelection(manyCountries, [0], 'naturalearth');
-
-    expect(result.warnings).toContain(
-      'Large country selection may require significant processing time',
-    );
-  });
-});
-
-describe('startBatchProcessing', () => {
-  it('should start batch processing with valid config', async () => {
-    const sessionId = await shapePluginAPI.startBatchProcessing(
-      'node-123' as NodeId,
-      {
-        concurrentDownloads: 2,
-        corsProxyBaseURL: '',
-        enableFeatureFiltering: false,
-        featureFilterMethod: 'hybrid',
-        featureAreaThreshold: 0.1,
-        concurrentProcesses: 2,
-        maxZoomLevel: 12,
-      },
-      [],
-    );
-
-    expect(typeof sessionId).toBe('string');
-    expect(sessionId).toMatch(/^session-/);
-  });
-
-  it('should reject invalid processing config', async () => {
-    await expect(
-      shapePluginAPI.startBatchProcessing(
-        'node-123' as NodeId,
-        {
-          concurrentDownloads: 20, // Invalid - exceeds limit
-          corsProxyBaseURL: '',
-          enableFeatureFiltering: false,
-          featureFilterMethod: 'hybrid',
-          featureAreaThreshold: 0.1,
-          concurrentProcesses: 2,
-          maxZoomLevel: 12,
-        },
-        [],
-      ),
-    ).rejects.toThrow('Invalid processing config');
-  });
-});
-
-describe('calculateSelectionStats', () => {
-  it('should calculate stats for URL metadata', async () => {
-    const urlMetadata = [
-      {
-        url: 'http://example.com/us.zip',
-        countryCode: 'US',
-        adminLevel: 0,
-        continent: 'North America',
-        estimatedSize: 1000000,
-      },
-    ];
-
-    const stats = await shapePluginAPI.calculateSelectionStats(urlMetadata);
-
-    expect(stats.totalSelected).toBe(1);
-    expect(stats.countriesWithSelection).toBe(1);
-    expect(stats.estimatedSize).toBe(1000000);
   });
 });

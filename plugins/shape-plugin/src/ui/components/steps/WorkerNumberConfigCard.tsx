@@ -40,7 +40,7 @@ export const WorkerNumberConfigCard: React.FC<WorkerNumberConfigCardProps> = ({
 }) => {
   const clampedValue = Math.max(min, Math.min(max, value));
   const labelValue = Math.round(clampedValue);
-  const headerIcon = icon ?? <EngineeringIcon fontSize="small" color="primary" />;
+  const headerIcon = icon ?? <EngineeringIcon fontSize="large" color="primary" />;
   const ratingFilledIcon = ratingIcon ?? <EngineeringIcon fontSize="small" />;
   const ratingEmptyDisplayIcon = ratingEmptyIcon ?? <EngineeringIcon fontSize="small" color="disabled" />;
   const handleChange = (_: React.SyntheticEvent, next: number | null) => {
@@ -54,6 +54,8 @@ export const WorkerNumberConfigCard: React.FC<WorkerNumberConfigCardProps> = ({
       variant="outlined"
       sx={{
         p: 2,
+        pl: 1,
+        pr: 2,
         borderRadius: 2,
         backgroundColor: (theme) => theme.palette.action.hover,
       }}
