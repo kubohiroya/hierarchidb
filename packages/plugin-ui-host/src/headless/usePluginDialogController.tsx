@@ -16,7 +16,8 @@ import type {
   TreeId,
 } from '@hierarchidb/common-types';
 import { HostProfileRegistry, PluginStepRegistry, composeStepConfigs } from '@hierarchidb/plugin-base';
-import { getIconComponent, getPresentation, hydratePresentationDefinitionsFromGlobal } from '@hierarchidb/plugin-presentation';
+import { getPresentation, hydratePresentationDefinitionsFromGlobal } from '@hierarchidb/plugin-presentation';
+import { useIconRegistry } from '@hierarchidb/ui-icon';
 import { useTreeNodeUpdater, type TreeNodeUpdaterState } from '@hierarchidb/plugin-ui-sdk';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type {
@@ -418,8 +419,20 @@ export function usePluginDialogController(
     return currentStepData;
   }, [currentStepData]);
 
+  const { resolveIcon } = useIconRegistry();
+  const iconNodeType =
+    nodeType.endsWith('-plugin') && nodeType !== 'folder-plugin'
+      ? nodeType.replace(/-plugin$/, '')
+      : nodeType;
   const presentation = useMemo(() => getPresentation(nodeType), [nodeType]);
-  const icon = useMemo(() => getIconComponent(nodeType), [nodeType]);
+  const icon = useMemo(
+    () =>
+      resolveIcon({
+        nodeType: iconNodeType,
+        icon: presentation?.icon,
+      }),
+    [iconNodeType, presentation?.icon, resolveIcon]
+  );
   const isFolder = nodeType === 'folder';
 
   const dialogTitle = useMemo(() => {

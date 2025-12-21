@@ -18,6 +18,7 @@ import {
   Palette as PaletteIcon,
   Extension as ExtensionIcon,
   AccountTree as AccountTreeIcon,
+  AccessTime as AccessTimeIcon,
 } from '@mui/icons-material';
 
 interface NodeTypeIconProps {
@@ -56,6 +57,12 @@ function getIconByType(nodeType: string) {
       return PaletteIcon;
     case 'resolver':
       return ExtensionIcon;
+    case 'linker':
+    case 'linker-plugin':
+      return AccountTreeIcon;
+    case 'timeline':
+    case 'timeline-plugin':
+      return AccessTimeIcon;
     case 'ProjectFolder':
     case 'ResourceFolder':
     case 'folder-plugin':
