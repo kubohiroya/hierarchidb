@@ -44,6 +44,8 @@ const batchManagerWithDispatch = batchSessionManager as unknown as {
   dispatchCommand?: (command: string, payload: Record<string, unknown>) => Promise<void>;
 };
 
+type BatchSessionStatusResult = Awaited<ReturnType<typeof batchSessionManager.getBatchSessionStatus>>;
+
 type DraftLike = {
   nodeId?: NodeId;
   treeNodeId?: NodeId;
@@ -111,6 +113,24 @@ const mapManagerStatusToShapeStatus = (
     case 'idle':
     default:
       return 'running';
+  }
+};
+
+const isSessionNotFoundError = (error: unknown): boolean => (
+  error instanceof Error && /session .*not found/i.test(error.message)
+);
+
+const getBatchSessionStatusSafe = async (
+  sessionId: string,
+): Promise<{ status?: BatchSessionStatusResult; missing: boolean; error?: unknown }> => {
+  try {
+    const status = await batchSessionManager.getBatchSessionStatus(sessionId);
+    return { status, missing: false };
+  } catch (error) {
+    if (isSessionNotFoundError(error)) {
+      return { missing: true };
+    }
+    return { missing: false, error };
   }
 };
 
@@ -439,7 +459,13 @@ export const shapePluginAPI = {
 
   getBatchSession: async (sessionId: string): Promise<BatchSession | undefined> => {
     try {
-      const status = await batchSessionManager.getBatchSessionStatus(sessionId);
+      const { status, missing, error } = await getBatchSessionStatusSafe(sessionId);
+      if (!status) {
+        if (!missing && error) {
+          console.warn('[shapePluginAPI] failed to fetch batch session', error);
+        }
+        return undefined;
+      }
       const nodeId = status.nodeId as NodeId;
       const handler = getShapeEntityHandler();
       const entity = await handler.getEntity(nodeId);
@@ -476,7 +502,9 @@ export const shapePluginAPI = {
         resourceUsage: undefined,
       };
     } catch (error) {
-      console.warn('[shapePluginAPI] failed to fetch batch session', error);
+      if (!isSessionNotFoundError(error)) {
+        console.warn('[shapePluginAPI] failed to fetch batch session', error);
+      }
       return undefined;
     }
   },
@@ -704,19 +732,24 @@ export const shapePluginAPI = {
 
     // Try to reflect batch session status if available
     if (entity.batchSessionId) {
-      const session = await shapePluginAPI.getBatchSession(entity.batchSessionId);
-      if (session) {
+      const { status, missing, error } = await getBatchSessionStatusSafe(entity.batchSessionId);
+      if (missing) {
+        await handler.updateEntity(nodeId, { batchSessionId: undefined } as Partial<ShapeEntity>);
+      } else if (error) {
+        console.warn('[shapePluginAPI] failed to fetch batch session status', error);
+      } else if (status) {
+        const normalizedStatus = mapManagerStatusToShapeStatus(status.status);
         return {
-          status: session.status === 'running'
+          status: normalizedStatus === 'running'
             ? 'processing'
-            : session.status === 'completed'
+            : normalizedStatus === 'completed'
               ? 'completed'
-              : session.status === 'failed'
+              : normalizedStatus === 'failed'
                 ? 'failed'
                 : 'idle',
-          lastProcessed: session.updatedAt,
-          hasErrors: session.status === 'failed',
-          errorMessages: session.status === 'failed' ? ['Batch processing failed'] : [],
+          lastProcessed: status.lastActivity ?? status.startedAt,
+          hasErrors: normalizedStatus === 'failed',
+          errorMessages: normalizedStatus === 'failed' ? ['Batch processing failed'] : [],
           // Optionally map aggregates if available
           totalFeatures: undefined,
           totalVectorTiles: undefined,

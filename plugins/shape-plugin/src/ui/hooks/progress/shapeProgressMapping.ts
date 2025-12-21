@@ -17,7 +17,7 @@ export interface ShapeProgress {
 }
 
 export interface ShapeProgressStatus {
-  status: 'processing' | 'completed' | 'failed' | 'cancelled' | 'paused' | 'queued';
+  status: 'idle' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'paused' | 'queued';
   stage?: string;
   progress?: number;
   hasErrors?: boolean;
@@ -51,8 +51,8 @@ export function toShapeProgress(info: ExtendedProgress | null, sessionId?: strin
     failed,
     skipped,
     percentage,
-    currentStage: info.stage ?? info.phase ?? info.payload?.stage ?? 'processing',
-    currentTask: info.currentTask ?? info.message ?? info.payload?.currentTask ?? sessionId ?? 'shape',
+    currentStage: info.stage ?? info.payload?.stage,
+    currentTask: info.currentTask ?? info.message ?? info.payload?.currentTask ?? sessionId,
     timestamp: typeof info.timestamp === 'number' ? info.timestamp : Date.now(),
     message: info.message ?? undefined,
   };
@@ -80,6 +80,8 @@ export function toShapeStatus(
 
 export function mapPhaseToStatus(phase: string): ShapeProgressStatus['status'] {
   switch (phase) {
+    case 'idle':
+      return 'idle';
     case 'completed':
       return 'completed';
     case 'failed':
@@ -101,13 +103,14 @@ export function statusToUnified(status: BatchSessionStatus): UnifiedProgressInfo
   const completed = numeric(progress.completed);
   const failed = numeric(progress.failed);
   const percentage = numeric(progress.percentage, total > 0 ? Math.round((completed / total) * 100) : 0);
+  const fallbackStage = status.status === 'idle' ? undefined : 'processing';
   return {
-    stage: progress.currentStage ?? 'processing',
+    stage: progress.currentStage ?? fallbackStage,
     total,
     completed,
     failed,
     percentage,
-    currentTask: progress.currentTask ?? progress.currentStage ?? 'processing',
+    currentTask: progress.currentTask ?? progress.currentStage ?? fallbackStage,
     phase: mapPhaseToStatus(status.status),
     timestamp: status.lastActivity ?? Date.now(),
     payload: {

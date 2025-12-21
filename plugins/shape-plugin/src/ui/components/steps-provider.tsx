@@ -34,6 +34,7 @@ function createStepAdapter(
 
     return (
       <Component
+        nodeId={props.nodeId}
         data={data}
         onChange={handleChange}
         disabled={Boolean(props.disabled)}

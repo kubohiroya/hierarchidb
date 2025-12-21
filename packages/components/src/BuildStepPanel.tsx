@@ -35,6 +35,7 @@ export interface BuildStepPanelProps {
   startIcon?: ReactNode;
   resumeIcon?: ReactNode;
   statusLabel?: string;
+  statusContent?: ReactNode;
 }
 
 type BuildControlCardProps = {
@@ -129,6 +130,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   startIcon,
   resumeIcon,
   statusLabel,
+  statusContent,
 }) => {
   void onComplete;
 
@@ -199,16 +201,22 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
           startIcon={startIcon}
           resumeIcon={resumeIcon}
         />
-        <Stack spacing={1} flex={1} justifyContent="center">
-          <Typography variant="body2" color="text.secondary">
-            {statusLabel ?? computedStatusLabel}
-          </Typography>
-          <LinearProgress
-            variant="determinate"
-            value={overallProgress}
-            sx={{ height: 10, borderRadius: 6 }}
-          />
-        </Stack>
+        {statusContent ? (
+          <Box flex={1} minWidth={0}>
+            {statusContent}
+          </Box>
+        ) : (
+          <Stack spacing={1} flex={1} justifyContent="center">
+            <Typography variant="body2" color="text.secondary">
+              {statusLabel ?? computedStatusLabel}
+            </Typography>
+            <LinearProgress
+              variant="determinate"
+              value={overallProgress}
+              sx={{ height: 10, borderRadius: 6 }}
+            />
+          </Stack>
+        )}
       </Stack>
 
       <Box flex={1} minHeight={0}>

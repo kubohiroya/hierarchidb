@@ -14,9 +14,10 @@ export function useBatchProgress(
   const [progress, setProgress] = useState<UnifiedProgressInfo | null>(null);
   const [subscribed, setSubscribed] = useState(false);
   const unsubRef = useRef<Unsubscribe | null>(null);
+  const subscribedRef = useRef(false);
 
   const subscribe = useCallback(() => {
-    if (!adapter || subscribed) return;
+    if (!adapter || subscribedRef.current) return;
     const result: SubscribeResult = adapter.subscribe((info: UnifiedProgressInfo) => {
       setProgress(info);
     });
@@ -29,12 +30,15 @@ export function useBatchProgress(
         }
       });
     }
+    subscribedRef.current = true;
     setSubscribed(true);
-  }, [adapter, subscribed]);
+  }, [adapter]);
 
   const unsubscribe = useCallback(() => {
+    if (!subscribedRef.current) return;
     unsubRef.current?.();
     unsubRef.current = null;
+    subscribedRef.current = false;
     setSubscribed(false);
   }, []);
 

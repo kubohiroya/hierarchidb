@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { useSnackbar } from 'notistack';
 import { useIsoCountries, type MatrixConfig, type MatrixSelection, type ContinentCode } from '@hierarchidb/ui-country-select';
-import type { CountryMetadata, ShapeEntity } from '../../common/types/index.js';
+import type { CountryMetadata, DataSourceName, ShapeEntity } from '../../common/types/index.js';
 import { useCountryMetadata } from './useCountryMetadata.js';
 import {
   calculateEstimatedFeatures,
@@ -10,7 +10,7 @@ import {
   formatBytes,
   formatNumber,
 } from '../../common/mock/data.js';
-import { normalizeDataSourceName } from '../../services/utils/utils.js';
+import { generateUrlMetadata, normalizeDataSourceName } from '../../services/utils/utils.js';
 import { clearStagesIfPresent, FULL_INVALIDATION_STAGES, resolveShapeSessionId } from '../utils/sessionInvalidation.js';
 
 const CONTINENT_CODES: ContinentCode[] = ['AF', 'AS', 'EU', 'NA', 'SA', 'OC', 'AN'];
@@ -108,6 +108,19 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
     });
   }, [countries, isoContinentByCode]);
 
+  const normalizedMetadata = useMemo<CountryMetadata[]>(() => {
+    return baseCountries.map((entry, index) => {
+      const source = countries[index];
+      return {
+        ...(source ?? {}),
+        countryCode: entry.country.code,
+        countryName: source?.countryName ?? entry.country.name,
+        continent: entry.country.continent,
+        availableAdminLevels: source?.availableAdminLevels ?? entry.availableAdminLevels,
+      } satisfies CountryMetadata;
+    });
+  }, [baseCountries, countries]);
+
   const checkboxMatrix = useMemo<boolean[][]>(() => {
     if (Array.isArray(data.checkboxState)) {
       return (data.checkboxState as unknown[]).map((row: unknown): boolean[] => {
@@ -169,7 +182,20 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
           void clearStagesIfPresent(sessionId, FULL_INVALIDATION_STAGES);
         }
       }
-      onChange({ checkboxState: nextMatrix });
+      const selectedMetadata = baseCountries.flatMap((entry, rowIndex) => {
+        const row = nextMatrix[rowIndex] ?? [];
+        const selectedLevels = row
+          .map((checked, levelIndex) => (checked ? levelIndex : null))
+          .filter((level): level is number => typeof level === 'number');
+        if (selectedLevels.length === 0) return [];
+        return generateUrlMetadata(
+          dataSourceKey as DataSourceName,
+          [entry.country.code],
+          selectedLevels,
+          normalizedMetadata,
+        );
+      });
+      onChange({ checkboxState: nextMatrix, urlMetadata: selectedMetadata });
 
       const totalSelected = nextMatrix.flat().filter(Boolean).length;
       const countriesWithSelection = nextMatrix.filter((row) => row.some(Boolean)).length;
@@ -180,7 +206,7 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
         { variant: 'info' },
       );
     },
-    [baseCountries, columns, countries, data, enqueueSnackbar, onChange],
+    [baseCountries, columns, countries, data, dataSourceKey, enqueueSnackbar, normalizedMetadata, onChange],
   );
 
   const isCellEnabled = useCallback(

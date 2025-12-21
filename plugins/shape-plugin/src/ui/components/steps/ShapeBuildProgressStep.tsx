@@ -1,11 +1,13 @@
 import { useCallback } from 'react';
-import { Box, Chip, LinearProgress, Paper, Stack, Typography } from '@mui/material';
+import { Box, Card, CardContent, Chip, LinearProgress, Stack, Typography } from '@mui/material';
 import ConstructionIcon from '@mui/icons-material/Construction';
 import { BuildStepPanel, type BuildStage } from '@hierarchidb/components';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { ShapeDialogStepProps } from './ShapeDialogStepProps.ts';
 import { useShapeBuildProgressStep } from '../../hooks/useShapeBuildProgressStep.js';
 
-export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, onChange }) => {
+export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, onChange, nodeId }) => {
+  const resolvedNodeId = nodeId as NodeId | undefined;
   const {
     t,
     stages,
@@ -27,7 +29,7 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
     handlePause,
     resolveStatusLabel,
     resolveStatusColor,
-  } = useShapeBuildProgressStep({ data, onChange });
+  } = useShapeBuildProgressStep({ data, onChange, nodeId: resolvedNodeId });
 
   const renderStageContent = useCallback((stage: BuildStage, stageValue: number) => {
     const stageTasks = tasksByStage[stage.id] ?? [];
@@ -76,6 +78,51 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
     );
   }, [resolveStatusColor, resolveStatusLabel, t, tasksByStage]);
 
+  const BatchProgressSummaryCard = useCallback(() => (
+    <Card
+      variant="outlined"
+      sx={{
+        width: '100%',
+        transition: 'none',
+        '&:hover': { transform: 'none', boxShadow: 'none' },
+      }}
+      data-testid="shape-plugin-batch-progress-summary"
+    >
+      <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
+          <Stack spacing={0.25} flex={1}>
+            <Typography variant="caption" color="text.secondary">
+              {t('build.progress.stage', 'Stage')}
+            </Typography>
+            <Typography variant="body2">{stageLabel}</Typography>
+          </Stack>
+          <Stack spacing={0.25} flex={1}>
+            <Typography variant="caption" color="text.secondary">
+              {t('build.progress.task', 'Task')}
+            </Typography>
+            <Typography variant="body2">{taskLabel}</Typography>
+          </Stack>
+        </Stack>
+        <Stack spacing={0.5}>
+          <LinearProgress
+            variant="determinate"
+            value={Math.min(100, Math.max(0, overallProgress))}
+            sx={{ height: 8, borderRadius: 1 }}
+          />
+          <Typography variant="caption" color="text.secondary">
+            {t('build.progress.counts', '{{percentage}}% ・ {{completed}}/{{total}} completed ・ failed {{failed}} ・ skipped {{skipped}}', {
+              percentage: Math.round(overallProgress),
+              completed,
+              total,
+              failed,
+              skipped,
+            })}
+          </Typography>
+        </Stack>
+      </CardContent>
+    </Card>
+  ), [completed, failed, overallProgress, skipped, stageLabel, t, taskLabel, total]);
+
   return (
     <Box display="flex" flexDirection="column" gap={3} height="100%" minHeight={0}>
       <Box flex={1} minHeight={0}>
@@ -86,6 +133,7 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
           stageProgress={stageProgress}
           paneProgress={paneProgress}
           renderStageContent={renderStageContent}
+          statusContent={hasProgressData ? <BatchProgressSummaryCard /> : undefined}
           startIcon={<ConstructionIcon fontSize="small" />}
           onPause={handlePause}
           onResume={canStartOrResume ? handleStartOrResume : undefined}
@@ -96,44 +144,6 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
           statusLabel={statusLabel}
         />
       </Box>
-      {hasProgressData ? (
-        <Paper
-          variant="outlined"
-          sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1, flexShrink: 0 }}
-          data-testid="shape-plugin-batch-progress-summary"
-        >
-          <Typography variant="subtitle2">
-            {t('build.progress.title', 'Batch progress')}
-          </Typography>
-          {data?.batchSessionId ?? data?.nodeId ? (
-            <Typography variant="body2" color="text.secondary">
-              {t('build.progress.session', 'Session')}: {data?.batchSessionId ?? data?.nodeId}
-            </Typography>
-          ) : null}
-          <Typography variant="body2" color="text.secondary">
-            {t('build.progress.stage', 'Stage')}: {stageLabel}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {t('build.progress.task', 'Task')}: {taskLabel}
-          </Typography>
-          <Stack spacing={0.5}>
-            <LinearProgress
-              variant="determinate"
-              value={Math.min(100, Math.max(0, overallProgress))}
-              sx={{ height: 8, borderRadius: 1 }}
-            />
-            <Typography variant="caption" color="text.secondary">
-              {t('build.progress.counts', '{{percentage}}% ・ {{completed}}/{{total}} completed ・ failed {{failed}} ・ skipped {{skipped}}', {
-                percentage: Math.round(overallProgress),
-                completed,
-                total,
-                failed,
-                skipped,
-              })}
-            </Typography>
-          </Stack>
-        </Paper>
-      ) : null}
     </Box>
   );
 };

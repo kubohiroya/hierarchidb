@@ -53,6 +53,49 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1802) shape-plugin Step5 Start Build でタスク生成/進捗表示不整合を修正（P1）
+- ブランチ: `fix/shape/step5-build-start-stuck`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin（UI/worker/services/batch）, packages/ui/batch
+- 受け入れ基準（DoD）:
+  - [ ] Step5 の「ビルド開始」で download タスクが生成され、処理が開始される
+  - [ ] 「バッチ進捗」表示が仮UIかどうかと意図を説明できる
+  - [ ] 未開始/停止中に `ステージ: processing` 表示にならない
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+  - [ ] 可能なら `pnpm --filter @hierarchidb/shape-plugin typecheck` を実行して結果を記録（不可なら理由記載）
+- チェックリスト:
+  - [ ] Start Build で batchSession/tokens が生成される経路を確認する
+  - [ ] タスク生成の有無を shapeDB で確認し、未生成の原因を特定する
+  - [ ] 進捗ラベルの表示条件を整理し、適切な表示へ修正する
+- ロールバック手順：本タスクの差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する。
+
+1801) shape-plugin Step5 update depth error の解消（P1）
+- ブランチ: `fix/shape/step5-update-depth`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin（UI/hooks）
+- 受け入れ基準（DoD）:
+  - [ ] Step5 で `Maximum update depth exceeded` が発生しない
+  - [ ] 無限ループの原因と影響範囲（UI state 更新経路）を説明できる
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+  - [ ] 可能なら `pnpm --filter @hierarchidb/shape-plugin typecheck` を実行して結果を記録（不可なら理由記載）
+- チェックリスト:
+  - [ ] 直近の変更箇所（Step5/Progress/Batch hooks）で循環する state 更新を特定する
+  - [ ] 依存配列や setState 条件を見直し、ループを防止する
+  - [ ] UI 操作で再発しないことを確認する
+- ロールバック手順：本タスクの差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する。
+
+1800) shape-plugin Step5 バッチセッション未検出エラーのリカバリ（P1）
+- ブランチ: `fix/shape/step5-session-not-found`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin（UI/worker/services/batch）, packages/runtime-worker
+- 受け入れ基準（DoD）:
+  - [ ] 存在しない batchSessionId で `getBatchSession` が失敗しても UI で致命的なエラーにならず、再実行/再取得が可能
+  - [ ] セッション未検出の原因と発生範囲（UI/Worker/DB）を説明できる
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+  - [ ] 可能なら `pnpm --filter @hierarchidb/shape-plugin typecheck` を実行して結果を記録（不可なら理由記載）
+- チェックリスト:
+  - [ ] batchSessionId の保存/復元/参照経路を確認する
+  - [ ] session not found 時の UI/Worker ハンドリング方針を決め、修正する
+  - [ ] 既存セッションが無い場合に再ビルド/再取得できることを確認する
+- ロールバック手順：本タスクの差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する。
+
 1788) SpeedDial/コンテキストメニュー Create のヘルプ i18n 修正（P1）
 - ブランチ: `fix/ui/create-menu-help-i18n`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: app/tree console UI, packages/ui/treeconsole, packages/plugin-ui-host（予定）
@@ -4534,6 +4577,14 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1801) shape-plugin Step5 update depth error 解消（P1） — 完了 (2025-12-22)
+  - 要点：useBatchProgress の購読状態を state 依存ではなく ref で保持し、autoSubscribe の effect ループを解消。
+  - 検証：UI で Step5 のエラーが再発しないことを確認。
+  - ロールバック手順：`packages/features/batch/src/progress/useBatchProgress.ts` と `packages/batch-runtime-services/src/hooks/useBatchProgress.ts` の差分を revert する。
+- 1799) shape-plugin Step5 Start Build の NodeId missing 修正（P1） — 完了 (2025-12-22)
+  - 要点：Step5 の data が draftData のみで nodeId を含まないため Start Build が失敗していた。Step アダプタから nodeId を渡し、Build hook/summary で props の nodeId を利用するよう修正。
+  - 検証：未実施。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/ShapeDialogStepProps.ts`、`plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`、`plugins/shape-plugin/src/ui/components/steps-provider.tsx`、`plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts` の差分を revert する。
 - 1799) batch-runtime-services の any 排除（P1） — 完了 (2025-12-22)
   - 要点：`packages/batch-runtime-services/src/*.ts` の `any` を `unknown` / 具体型へ置換し、Progress/BatchService/WorkerPool/ports/AbstractBatchSession の型を整理。
   - 検証：`pnpm --filter @hierarchidb/batch-runtime-services typecheck` exit 2（`packages/batch-runtime-services/src/index.ts` の `./types.js` 再 export 不足で TS2305 が既存発生）。
@@ -10880,6 +10931,21 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-22 05:50 start: fix/shape/step5-nodeid-missing — shape-plugin Step5 の Start Build で Snackbar に "NodeId is missing" が出てビルド開始できない問題の調査/修正に着手。DoD: Kanban 記載どおり再現解消、原因/影響範囲説明、運用ログ/ロールバック記載。
+- 2025-12-22 05:53 progress: fix/shape/step5-nodeid-missing — Step5 の data は draftData のみで nodeId が含まれず、Start Build の saveDraft/startBatch が data.nodeId を参照して欠落していた。Step アダプタから nodeId を渡し、Build hook/summary で nodeId を利用するよう修正。
+- 2025-12-22 05:53 done: fix/shape/step5-nodeid-missing — Step5 の Start Build で nodeId を props 経由で取得するように変更し、Snackbar の "NodeId is missing" を解消。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ShapeDialogStepProps.ts`、`plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`、`plugins/shape-plugin/src/ui/components/steps-provider.tsx`、`plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts` の差分を revert する。
+- 2025-12-22 05:55 progress: fix/shape/step5-nodeid-missing — typecheck の NodeId ブランド型エラーに対応し、Step5 側で nodeId を NodeId へキャストして hook に渡すよう修正。
+- 2025-12-22 05:58 start: fix/shape/step5-session-not-found — Step5 の batch session 取得が "Session not found" で失敗する問題の調査/修正に着手。DoD: Kanban 記載どおりリカバリ可能化、原因/影響範囲説明、運用ログ/ロールバック記載。
+- 2025-12-22 06:02 progress: fix/shape/step5-session-not-found — getBatchSessionStatus の "not found" を検知して警告ログを抑制し、getProcessingStatus で stale な batchSessionId をクリアするよう対応。
+- 2025-12-22 06:02 start: fix/shape/step5-update-depth — Step5 で Maximum update depth exceeded が発生する問題の調査/修正に着手。DoD: Kanban 記載どおり再発防止、原因/影響範囲説明、運用ログ/ロールバック記載。
+- 2025-12-22 06:07 progress: fix/shape/step5-update-depth — useBatchProgress が subscribed state に依存して subscribe/unsubscribe を繰り返す可能性があるため、ref で購読状態を保持し依存ループを解消（packages/features/batch と batch-runtime-services の両方を修正）。
+- 2025-12-22 06:08 done: fix/shape/step5-update-depth — Step5 で Maximum update depth exceeded が発生しないことを確認。ロールバック: `packages/features/batch/src/progress/useBatchProgress.ts` と `packages/batch-runtime-services/src/hooks/useBatchProgress.ts` の差分を revert する。
+- 2025-12-22 06:14 start: fix/shape/step5-build-start-stuck — Step5 の Start Build で処理が開始されずタスク生成/進捗表示が不整合な問題の調査/修正に着手。DoD: Kanban 記載どおりタスク生成/進捗表示の是正、原因/影響範囲説明、運用ログ/ロールバック記載。
+- 2025-12-22 06:19 progress: fix/shape/step5-build-start-stuck — CountrySelection で urlMetadata を生成して draft に保存し、進捗ラベルが idle/paused を示すよう表示条件を補正。
+- 2025-12-22 06:27 progress: fix/shape/step5-build-start-stuck — バッチ進捗サマリを Card 化し、Stage/Task を横並びレイアウトに変更（Batch progress/Session 表示を削除）。
+- 2025-12-22 06:28 progress: fix/shape/step5-build-start-stuck — BuildStepPanel の Status/Progress Card を差し替え可能にし、shape Step5 ではバッチ進捗サマリカードを上段に配置。
+- 2025-12-22 06:32 progress: fix/shape/step5-build-start-stuck — バッチ進捗サマリカードを横幅いっぱいに拡張し、idle 時に stage が processing にならないよう progress mapping を補正。
+- 2025-12-22 06:34 progress: fix/shape/step5-build-start-stuck — サマリカードの hover 演出を無効化し、余計な浮き上がりアニメーションを抑制。
 - 2025-12-22 05:42 start: refactor/batch-runtime-services/remove-any — batch-runtime-services の `src/*.ts` で any を排除する対応に着手。DoD: Kanban 記載どおり any 排除、型契約維持、typecheck 結果/運用ログ/ロールバック記載。
 - 2025-12-22 05:44 command: pnpm --filter @hierarchidb/batch-runtime-services typecheck — exit 2。`packages/batch-runtime-services/src/index.ts` の `./types.js` 再 export が不足しており、TS2305 が複数件発生。
 - 2025-12-22 05:45 done: refactor/batch-runtime-services/remove-any — `src/*.ts` の any を排除し、Progress/BatchService/WorkerPool/ports/AbstractBatchSession の型を `unknown` / 具体型へ整理。検証は上記 typecheck で既存エラーにより未完了。ロールバック: `packages/batch-runtime-services/src/{Progress.ts,BatchService.ts,AbstractBatchSession.ts,AbstractWorkerPoolManager.ts,ports.ts}` の差分を revert。
