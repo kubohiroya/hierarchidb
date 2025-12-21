@@ -53,19 +53,6 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
-1798) app typecheck エラー修正（router 型/通知/preview）（P1）
-- ブランチ: `fix/app/typecheck-router-errors`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: `app/src/entry.client.tsx`、`app/src/hooks/treeconsole/createTreeConsoleActions.ts`
-- 受け入れ基準（DoD）:
-  - [ ] `@hierarchidb/app:typecheck` の router 型/notify duration/null のエラーが解消される
-  - [ ] 既存の認証復帰と preview guard の挙動に回帰がない
-  - [ ] 変更内容とロールバック手順を運用ログに記載する
-- チェックリスト:
-  - [ ] registerAuthRecoveryHandlers の型不整合を解消する
-  - [ ] navigate state の型エラーを解消する
-  - [ ] preview guard の notify duration 型エラーを解消する
-- ロールバック手順：本タスクの差分を revert し、`pnpm --filter @hierarchidb/app typecheck` を再実行する。
-
 1788) SpeedDial/コンテキストメニュー Create のヘルプ i18n 修正（P1）
 - ブランチ: `fix/ui/create-menu-help-i18n`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: app/tree console UI, packages/ui/treeconsole, packages/plugin-ui-host（予定）
@@ -4567,6 +4554,10 @@ P2:
   - 要点：xlsxParser に module 宣言参照を追加し、plugin-ui-host typecheck の `xlsx/xlsx.mjs` 型エラーを解消。
   - 検証：`pnpm --filter @hierarchidb/plugin-ui-host typecheck` exit 0。
   - ロールバック手順：`packages/features/tabular-source-xlsx/src/xlsxParser.ts` の差分を revert し、同 typecheck を再実行する。
+- 1798) app typecheck エラー修正（router 型/通知/preview）（P1） — 完了 (2025-12-22)
+  - 要点：entry.client の router 型・navigate state を修正し、preview guard の notify duration 型エラーを解消。
+  - 検証：`pnpm --filter @hierarchidb/app typecheck` exit 0（plugin-base build warning: Invalid input options define / PLUGIN_TIMINGS）。
+  - ロールバック手順：`app/src/entry.client.tsx` と `app/src/hooks/treeconsole/createTreeConsoleActions.ts` の差分を revert し、同 typecheck を再実行する。
 - 1796) plugin-ui-host の xlsx 型シム整理（P1） — 完了 (2025-12-22)
   - 要点：plugin-ui-host の xlsx 型シムを削除。
   - 検証：`pnpm exec dep-fence --strict`（local-shims の WARN 解消）。
@@ -10886,6 +10877,8 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
 - 2025-12-22 05:31 start: fix/app/typecheck-router-errors — app typecheck の router 型/notify duration/null のエラーを修正する対応に着手。DoD: Kanban 記載どおり型エラー解消/検証/運用ログ/ロールバック記載。（Kanban: 1798）
+- 2025-12-22 05:35 command: pnpm --filter @hierarchidb/app typecheck — exit 0（plugin-base build warning: Invalid input options define / PLUGIN_TIMINGS）。
+- 2025-12-22 05:35 done: fix/app/typecheck-router-errors — entry.client の router 型・navigate state を修正し、preview guard の notify duration 型エラーを解消。検証: `pnpm --filter @hierarchidb/app typecheck` exit 0。ロールバック: `app/src/entry.client.tsx` と `app/src/hooks/treeconsole/createTreeConsoleActions.ts` の差分を revert し、同 typecheck を再実行する。
 - 2025-12-22 05:23 start: fix/tabular-xlsx/xlsx-mjs-types — tabular-source-xlsx の xlsx.mjs 型宣言を参照し、plugin-ui-host の typecheck エラーを解消する対応に着手。DoD: 型解決/検証/運用ログ/ロールバック記載。（Kanban: 1797）
 - 2025-12-22 05:24 done: fix/tabular-xlsx/xlsx-mjs-types — xlsxParser に module 宣言の参照を追加し、plugin-ui-host typecheck を再度通過。検証: `pnpm --filter @hierarchidb/plugin-ui-host typecheck` exit 0。ロールバック: `packages/features/tabular-source-xlsx/src/xlsxParser.ts` の差分を revert し、同 typecheck を再実行する。
 - 2025-12-22 09:46 start: fix/deps/dequal-app-host — dequal を app dependencies と plugin-ui-host の devDependencies/peerDependencies に反映する対応に着手。DoD: Kanban 記載どおり依存追加/運用ログ/ロールバック記載。
