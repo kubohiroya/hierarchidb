@@ -1,0 +1,1 @@
+import{f as e,y as t}from"./dist-C4BpVVJP.js";function n(e){t(`shape`,e)}async function r(){return e(`shape`)}export{n,r as t};

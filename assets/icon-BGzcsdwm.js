@@ -1,0 +1,1 @@
+import"./vendor-react-DueQUKGo.js";import{xn as e}from"./index.js";const t=e;var n=t;export{t as ShapePluginIcon,n as default};

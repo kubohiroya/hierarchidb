@@ -1,0 +1,1 @@
+import{s as e}from"./src-BSVVUNGZ.js";import{t}from"./import-wrapper-prod-DNQS-9d1.js";var n=class extends t{groupEntities;relations;constructor(t=e(`location`)){super(t),this.version(1).stores({groupEntities:`&[nodeId+id], nodeId, id, updatedAt`,relations:`&[srcNodeId+type+dstNodeId], srcNodeId, dstNodeId, type, updatedAt`}),this.version(2).upgrade(()=>{})}};export{n as t};

@@ -1,0 +1,1 @@
+import{s as e}from"./src-BSVVUNGZ.js";import{a as t}from"./constants-BqkQCvxc.js";import{t as n}from"./dist-B4kf_16M.js";import{n as r}from"./spreadsheetTabularApiFactory-DC6GN_8m.js";var i=class extends n{constructor(t=e(`shape-tabular-metadata-db`)){super(t)}};function a(){return new r(new i,t)}export{i as n,a as t};

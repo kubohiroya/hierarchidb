@@ -28,6 +28,7 @@
       "uploadFirst": "Import a data file in Step 2 to configure filters."
     },
     "loading": "Loading table metadata...",
+    "processing": "Processing tabular data...",
     "noMetadata": "No table metadata found for the selected dataset."
   }
 }

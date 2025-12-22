@@ -1,1 +1,0 @@
-import{o as e}from"../worker.js";import{n as t}from"./RuntimeWorkerClient-C9CG5L3z.js";function n(){t(async()=>{try{return await e()}catch{return null}})}export{n as registerShapeRuntimeWorkerAdapters};

@@ -1,0 +1,1 @@
+import"./vendor-react-DueQUKGo.js";import{t as e}from"./i18n-C9nwezt3.js";export{e as useTranslation};

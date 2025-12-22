@@ -1,0 +1,1 @@
+import{b as e,y as t}from"../worker.js";import{t as n}from"./corsProxyBase-B4b1XPi-.js";async function r(r,i){let a=await e.getSingleton(),o=t(r,{corsProxyBaseURL:n()});return a.fetchWithAuth(o,i,{pluginType:`shape`})}export{r as authFetch};
