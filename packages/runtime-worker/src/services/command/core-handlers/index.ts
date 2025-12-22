@@ -18,6 +18,7 @@ export interface CoreCommandDeps {
   coreDB: CoreDB;
   history: CommandHistoryManager;
   batchOperationSize: number;
+  onNodesRemoved?: (commandId: CommandId, nodes: TreeNode[]) => Promise<void> | void;
   createErrorResult: (
     message: string,
     code: WorkerErrorCode,
@@ -401,6 +402,14 @@ async function handleRemove(
       deps.history.storePreRemoveState(envelope.commandId, beforeNodes);
     }
 
+    if (beforeNodes.length > 0 && deps.onNodesRemoved) {
+      try {
+        await deps.onNodesRemoved(envelope.commandId as CommandId, beforeNodes);
+      } catch (error) {
+        console.warn('[core-handlers] remove cleanup failed', error);
+      }
+    }
+
     return { success: true, seq: deps.getNextSeq() };
   } catch (error) {
     return deps.createErrorResult(
@@ -446,6 +455,14 @@ async function handleRemoveSubtree(
             await deps.coreDB.deleteNode?.(id);
           }
         }
+      }
+    }
+
+    if (collected.length > 0 && deps.onNodesRemoved) {
+      try {
+        await deps.onNodesRemoved(envelope.commandId as CommandId, collected);
+      } catch (error) {
+        console.warn('[core-handlers] removeSubtree cleanup failed', error);
       }
     }
 

@@ -176,6 +176,11 @@ export class CommandProcessor {
         coreDB: this.coreDB,
         history: this.history,
         batchOperationSize: PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE,
+        onNodesRemoved: async (_commandId, nodes) => {
+          if (!nodes || nodes.length === 0) return;
+          const lifecycle = EntityLifecycleManager.getSingleton(this.coreDB);
+          await lifecycle.handleRemovedNodes(nodes);
+        },
         createErrorResult: (message, code, extra) => this.createErrorResult(message, code, extra),
         getNextSeq: () => this.getNextSeq(),
       }

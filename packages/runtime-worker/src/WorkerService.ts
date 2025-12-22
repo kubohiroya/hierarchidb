@@ -29,18 +29,27 @@ import {
   TreeSubscriptionAPI,
   TreeTableExpandedAPI,
 } from '@hierarchidb/common-api';
-import type { NodeType } from '@hierarchidb/common-types';
+import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import { UIStateDB } from './services/UIStateDB.js';
 import { StyleDB } from '@hierarchidb/style-store';
 import { StyleService } from './services/StyleService.js';
 import { LocationQueryService } from './services/LocationQueryService.js';
 import { RouteQueryService } from './services/RouteQueryService.js';
-import { RouteDatabase } from '@hierarchidb/route-plugin/database';
 
 interface PerformanceMemoryStats {
   usedJSHeapSize?: number;
   jsHeapSizeLimit?: number;
 }
+
+type RouteDatabaseHandle = {
+  open?: () => Promise<unknown>;
+  close?: () => void;
+  routeResults: {
+    where: (key: string) => {
+      equals: (value: NodeId) => { toArray: () => Promise<unknown[]> };
+    };
+  };
+};
 
 const readHeapStats = (): { used: number; limit: number } => {
   const perf =
@@ -138,6 +147,9 @@ export class WorkerService {
         styleDB,
       );
       const locationQueryService: LocationQueryAPI = await LocationQueryService.getSingleton();
+      const { RouteDatabase } = await import('@hierarchidb/route-plugin/database') as {
+        RouteDatabase: new () => RouteDatabaseHandle;
+      };
       const routeDB = new RouteDatabase();
       const routeQueryService: RouteQueryAPI = await RouteQueryService.getSingleton(routeDB);
 
@@ -175,7 +187,7 @@ export class WorkerService {
     private styleDB: StyleDB,
     private styleService: StyleQueryAPI & StyleMutationAPI,
     private locationQueryService: LocationQueryAPI,
-    private routeDB: RouteDatabase,
+    private routeDB: RouteDatabaseHandle,
     private routeQueryService: RouteQueryAPI,
   ) {
   }

@@ -104,6 +104,31 @@ export class EphemeralGisDB<Config = unknown> extends Dexie {
     });
   }
 
+  async clearNodeData(nodeId: NodeId): Promise<void> {
+    await this.transaction('rw', [
+      this.rawBuffers,
+      this.simplifiedBuffers,
+      this.vectorTiles,
+      this.sessions,
+      this.cache,
+    ], async () => {
+      const sessions = await this.sessions.where('nodeId').equals(nodeId).toArray();
+      const sessionIds = sessions.map((session) => session.id);
+
+      await this.rawBuffers.where('nodeId').equals(nodeId).delete();
+      await this.simplifiedBuffers.where('nodeId').equals(nodeId).delete();
+      await this.vectorTiles.where('nodeId').equals(nodeId).delete();
+      await this.sessions.where('nodeId').equals(nodeId).delete();
+
+      if (sessionIds.length > 0) {
+        const cacheKeys = await this.cache
+          .filter(entry => sessionIds.some((id) => entry.key.includes(id)))
+          .primaryKeys();
+        await this.cache.bulkDelete(cacheKeys);
+      }
+    });
+  }
+
   async hasStageData(sessionId: string, stage: EphemeralStage): Promise<boolean> {
     switch (stage) {
       case 'download':

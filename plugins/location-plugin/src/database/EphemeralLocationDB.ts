@@ -112,6 +112,14 @@ export class EphemeralLocationDB extends Dexie {
     return collection.delete();
   }
 
+  async clearNodeData(nodeId: NodeId): Promise<void> {
+    await this.transaction('rw', this.sessions, this.vectorTiles, this.pendingSessions, async () => {
+      await this.vectorTiles.where('nodeId').equals(nodeId).delete();
+      if (this.sessions) await this.sessions.where('nodeId').equals(nodeId).delete();
+      if (this.pendingSessions) await this.pendingSessions.where('nodeId').equals(nodeId).delete();
+    });
+  }
+
   async clearVectorTilesForSession(sessionId: string): Promise<void> {
     await this.vectorTiles.where('sessionId').equals(sessionId).delete();
   }

@@ -53,6 +53,33 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1823) TreeNodeInfoPanel の padding を 24px → 8px に変更（P3）
+- ブランチ: `fix/ui/tree-node-info-panel-padding`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: app（TreeNodeInfoPanel）
+- 受け入れ基準（DoD）:
+  - [ ] TreeNodeInfoPanel の表示時 padding が 8px になる
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+  - [ ] 検証コマンド実行有無を運用ログに記載する
+- チェックリスト:
+  - [ ] TreeNodeInfoPanel の padding 指定を更新する
+  - [ ] TASKS 運用ログへ start/progress/done を記録する
+- ロールバック手順：`app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx` の差分を revert し、必要なら `pnpm --filter @hierarchidb/app typecheck` を再実行する
+
+1822) CoreDB node削除時の shape/location/route データ連動削除（P1）
+- ブランチ: `feat/runtime/delete-linked-gis-data`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: packages/runtime-worker, plugins/shape-plugin, plugins/location-plugin, plugins/route-plugin, packages/features/gis-sdk
+- 受け入れ基準（DoD）:
+  - [ ] hidb-core の nodes 削除時に nodeId に紐づく hidb-shape/location/route の永続データが削除される
+  - [ ] hidb-shape/location/route-ephemeral の nodeId 紐づきデータも削除される（存在しない場合は no-op）
+  - [ ] 削除対象テーブル/ストアと削除経路を TASKS.md に明記する
+  - [ ] 代表検証として `pnpm --filter @hierarchidb/runtime-worker typecheck` か対象プラグインの typecheck を実行し、結果を運用ログに記録する（不可なら理由記載）
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] CoreDB node削除のフック位置（CommandProcessor/EntityLifecycleManager）を確定する
+  - [ ] shape/location/route の DB/ephemeral の nodeId 削除経路を実装する
+  - [ ] 削除対象のテーブル一覧と残存リスクを整理する
+- ロールバック手順：本タスクで変更したファイルを revert し、必要なら `pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行する
+
 1821) TreeConsole folder表示の2カラム化（P1）
 - ブランチ: `feat/ui/treeconsole-folder-split`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: app（TreeConsole/TreeTable/TreeNodeInfoPanel）、UI ブレークポイント判定
@@ -4732,6 +4759,18 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1830) preview の base パスを Vite で書き換える（P1） — 完了 (2025-12-23)
+  - 要点：preview 専用の base rewrite ミドルウェアを追加し、`/hierarchidb/` 配下の URL を dist 直下へマッピング。
+  - 検証：未実施。
+  - ロールバック手順：`app/vite.config.ts` と `app/vite-plugins/vite-plugin-preview-base-rewrite.ts` の差分を revert する。
+- 1829) preview デバッグ向けに sourcemap を有効化（P1） — 完了 (2025-12-23)
+  - 要点：Vite build の sourcemap を `HDB_PREVIEW_SOURCEMAP=1` で有効化するよう変更。
+  - 検証：未実施。
+  - ロールバック手順：`app/vite.config.ts` の差分を revert する。
+- 1828) Vite optimizeDeps 警告（esbuildOptions → rolldownOptions）対応（P1） — 完了 (2025-12-22)
+  - 要点：optimizeDeps.esbuildOptions を削除し、rolldownOptions へ移行。
+  - 検証：未実施（`pnpm --filter @hierarchidb/app preview` は未実行）。
+  - ロールバック手順：`app/vite.config.ts` の差分を revert する。
 - 1827) download resolveNetworkUrl の実行環境判定を安全化（P1） — 完了 (2025-12-22)
   - 要点：`process` 参照を撤去し、window/self でブラウザ/worker を判定する方式へ変更。ブラウザ警告回避と既存の CORS proxy 判定を維持。
   - 検証：未実施。
@@ -11158,6 +11197,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-22 23:29 start: fix/app/vite-optimize-deps-rolldown — Vite preview の optimizeDeps.esbuildOptions 警告を rolldownOptions へ移行する対応に着手。DoD: Kanban 記載どおり設定移行/警告解消/運用ログ記載。（Kanban: 1828）
+- 2025-12-22 23:30 done: fix/app/vite-optimize-deps-rolldown — optimizeDeps.esbuildOptions を削除し rolldownOptions へ移行。検証コマンドは未実施（preview/build 未実行）。ロールバック: `app/vite.config.ts` の差分を revert する。
 - 2025-12-22 22:51 start: analysis/ui/create-menu-missing-nodes — SpeedDial/コンテキストメニューの Create に出るノード種類が location/shape のみに減る問題を調査開始。DoD: Kanban 記載どおり経路特定/原因整理/運用ログ記載。（Kanban: 1825）
 - 2025-12-22 22:56 progress: analysis/ui/create-menu-missing-nodes — Create メニューは app/package.json の dependencies に含まれるプラグインのみを plugin-registry から抽出して構築されるため、location/shape 以外が除外されていることを確認（app 依存が 2 件のみ）。
 - 2025-12-22 22:55 start: fix/app/plugin-deps-for-create — Create メニューに表示したいプラグインを app dependencies に追加する対応に着手。DoD: Kanban 記載どおり依存追加/検証/運用ログ記載。（Kanban: 1826）
@@ -11229,6 +11270,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-22 10:32 progress: test/styler/node-merge-ordering — styler の MapLibre styleSpec を絶対パス順で合成する関数とテストを linker-plugin 側に追加（styler ノードの合成挙動を担保）。
 - 2025-12-22 10:32 progress: feat/ui-map/layer-style-composition — `ResourceLayerMap` を ui-map に追加し、ベースマップ選択・レイヤー絶対パス順ソート・スタイル上書きを適用する構成を実装。index export を更新。
 - 2025-12-22 21:48 start: feat/gis/location-route-query-api — styler-plugin の QueryAPI 公開パターンを踏襲し、location-plugin/route-plugin の成果物を LocationQueryAPI/RouteQueryAPI から取得可能にする対応に着手。DoD: Kanban 記載どおり QueryAPI 経由の取得、未連携の明記、typecheck 実行、運用ログ/ロールバック記載。
+- 2025-12-22 22:17 start: feat/runtime/delete-linked-gis-data — CoreDB nodes 削除に合わせて shape/location/route の永続DBと ephemeralDB を nodeId 単位で削除する対応に着手。DoD: Kanban 記載どおり削除連動/テーブル一覧/検証ログ/ロールバック記載。
+- 2025-12-22 22:30 progress: feat/runtime/delete-linked-gis-data — remove/removeSubtree の core handler から EntityLifecycleManager へ削除対象ノードを通知し、nodeType 別に group/relations + plugin DB を削除。対象: shape(ShapeDB: shapeEntities/batchSessions/batchTasks/features/featureIndices/featureBuffers/vectorTiles/tileBuffers/cache + EphemeralShapeDB rawBuffers/simplifiedBuffers/vectorTiles/sessions/cache), location(LocationEntities group/relations + EphemeralLocationDB vectorTiles/sessions/pendingSessions), route(RouteDatabase routes/workingCopies/routeCache/routeResults/routeCursors/pendingSessions)。route-ephemeral は未実装のため no-op。
+- 2025-12-22 22:31 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0。
 - 2025-12-22 22:04 progress: feat/gis/location-route-query-api — LocationQueryAPI/RouteQueryAPI の型と runtime-worker の QueryService/WorkerAPI/worker-bridge を追加。RouteDatabase に routeId index を追加し、routeResults に nodeId を保存するよう更新（RouteBatchSession/tabular materialize）。
 - 2025-12-22 22:04 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 2。LocationDialog/LocationPanel/BatchProgressDialog/LocationMapPreview 系の translations が unknown エラー、LocationPanel の LocationEntity で type/category が不足（既存課題）。
 - 2025-12-22 22:04 command: pnpm --filter @hierarchidb/route-plugin typecheck — exit 0。
@@ -11240,6 +11284,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-22 11:34 command: pnpm --filter @hierarchidb/shape-plugin test -- src/services/batch/strategies/__tests__/DownloadStageStrategy.unit.test.ts — exit 1。`shape-batch-progress.headless.test.ts` が GeoBoundaries API へ fetch して失敗（ネットワーク未許可）。新規テスト単体の実行方法を見直す必要あり。
 - 2025-12-22 11:35 command: pnpm --filter @hierarchidb/shape-plugin exec vitest run --include src/headless/download-stage-strategy.headless.test.ts — exit 1。`--include` は vitest で未知のオプション。
 - 2025-12-22 11:36 command: pnpm --filter @hierarchidb/shape-plugin exec vitest run src/headless/download-stage-strategy.headless.test.ts — exit 1。FlatGeobuf で geometry=null をシリアライズできず失敗。
+- 2025-12-23 07:28 start: fix/ui/tree-node-info-panel-padding — TreeNodeInfoPanel の padding を 24px → 8px に変更する対応に着手。DoD: Kanban 1823 記載どおり padding 修正、運用ログ/ロールバック記載。
+- 2025-12-23 07:30 progress: fix/ui/tree-node-info-panel-padding — TreeNodeInfoPanel の外枠/カード内 padding を 8px に更新。
+- 2025-12-23 07:30 done: fix/ui/tree-node-info-panel-padding — TreeNodeInfoPanel の padding を 8px に統一。検証: 未実施。ロールバック: `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx` の差分を revert する。
 - 2025-12-22 12:17 start: feat/ui-map/layer-style-composition — ui-map の ResourceLayerMap 型エラー（layer type と sortByPath の型不整合）を解消する対応に着手。DoD: Kanban 1812 記載どおり ui-map 集約/スタイル適用の整備、typecheck 結果/運用ログ/ロールバック記載。
 - 2025-12-22 12:23 progress: feat/ui-map/layer-style-composition — LayerStyleOverrides を layerType 全域（raster/background 含む）へ拡張し、sortByPath のキー解決を nodeId/layerId/sourceId に対応して geoJson レイヤーの型崩れを解消。
 - 2025-12-22 12:23 done: feat/ui-map/layer-style-composition — ResourceLayerMap の layerType/geoJson 並び替え型を補正し、ui-map typecheck エラーを解消。検証: 未実施（作業中のログのみ）。ロールバック: `packages/ui/map/src/components/ResourceLayerMap.tsx` の差分を revert する。
@@ -11654,3 +11701,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-22 11:39 done: feat/map/persist-zxy — map.zxy の読み取り/保存を追加し、URL に反映するロジックを実装。検証: 未実施。ロールバック: `app/src/router/routes/map.tsx` と `packages/ui/worker-client/src/workerBridge.ts` の差分を revert。
 - 2025-12-22 23:19 start: fix/features/download-env-detect — resolveNetworkUrl の環境判定をブラウザ警告なしにする対応に着手。DoD: Kanban 記載どおり判定導入、browser警告回避、運用ログ/ロールバック記載。（Kanban: 1827）
 - 2025-12-22 23:20 done: fix/features/download-env-detect — process 参照を撤去し、window/self 判定でブラウザ/worker を識別するロジックへ更新。検証: 未実施。ロールバック: `packages/features/download/src/helpers/resolveNetworkUrl.ts` の差分を revert する。
+- 2025-12-23 06:31 start: chore/app/enable-preview-sourcemap — pnpm preview のデバッグ向けに app build の sourcemap を有効化する対応に着手。DoD: Kanban 記載どおり sourcemap 出力/運用ログ/ロールバック記載。（Kanban: 1829）
+- 2025-12-23 06:34 done: chore/app/enable-preview-sourcemap — Vite build の sourcemap を `HDB_PREVIEW_SOURCEMAP=1` で有効化するよう変更。検証: 未実施。ロールバック: `app/vite.config.ts` の差分を revert する。
+- 2025-12-23 07:23 start: fix/app/preview-base-rewrite — preview で `/hierarchidb/` 配下の asset が HTML を返す問題に対処する対応に着手。DoD: Kanban 記載どおり preview 書き換え/影響限定/運用ログ/ロールバック記載。（Kanban: 1830）
+- 2025-12-23 07:24 done: fix/app/preview-base-rewrite — preview 専用の base rewrite ミドルウェアを追加し、`/hierarchidb/` 配下のリクエストを dist 直下に書き換えるよう対応。検証: 未実施。ロールバック: `app/vite.config.ts` と `app/vite-plugins/vite-plugin-preview-base-rewrite.ts` の差分を revert する。

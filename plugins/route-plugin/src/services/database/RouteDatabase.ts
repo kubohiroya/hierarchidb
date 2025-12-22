@@ -22,6 +22,7 @@ export interface RouteCacheEntry {
 
 export interface RouteCursorRow {
   sessionId: string;
+  nodeId: NodeId;
   completed: number;
   total: number;
   paused?: boolean;
@@ -88,6 +89,14 @@ export class RouteDatabase extends Dexie {
       workingCopies: '&id, nodeId, copiedAt',
       routeCache: '&id, routeId, cacheKey, expiresAt',
       routeCursors: '&sessionId, completed, total, updatedAt',
+      routeResults: '&id, routeId, sessionId, taskId, method, createdAt',
+      pendingSessions: '&nodeId, storedAt',
+    });
+    this.version(5).stores({
+      routes: '&id, nodeId, startLocationId, endLocationId, transportMode, [startLocationId+endLocationId], processingStatus, createdAt, updatedAt',
+      workingCopies: '&id, nodeId, copiedAt',
+      routeCache: '&id, routeId, cacheKey, expiresAt',
+      routeCursors: '&sessionId, nodeId, completed, total, updatedAt',
       routeResults: '&id, routeId, sessionId, taskId, method, createdAt',
       pendingSessions: '&nodeId, storedAt',
     });

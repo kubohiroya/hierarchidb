@@ -9,6 +9,7 @@ import { faviconPlugin } from './vite-plugins/vite-plugin-favicon.js';
 import { comlink } from 'vite-plugin-comlink';
 import { createNodeTypeAliasPlugin } from './vite-plugins/vite-plugin-hierarchidb-plugin-alias/src/index.js';
 import { pluginWorkerVirtualModule } from './vite-plugins/vite-plugin-plugin-worker-virtual.js';
+import { previewBaseRewritePlugin } from './vite-plugins/vite-plugin-preview-base-rewrite.js';
 import {
   collectWorkspacePackages,
   createDevAliasSelection,
@@ -591,6 +592,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
 
   //  main thread
   const plugins = [
+    previewBaseRewritePlugin(base),
     specialPrefixRewritePlugin(base),
     pluginRegistryGeneratorPlugin({
       rootDir: repoRoot,
@@ -970,7 +972,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
     build: {
       outDir: 'dist',
       //  production
-      sourcemap: mode === 'development',
+      sourcemap: mode === 'development' || env.HDB_PREVIEW_SOURCEMAP === '1',
       // MapLibre GL + deck.gl バンドル（~953 kB）に合わせて閾値を調整。
       chunkSizeWarningLimit: 954,
       rollupOptions: {
@@ -1032,9 +1034,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       ],
       // Exclude specific packages from pre-bundle so Vite watches sources directly
       exclude: runtimeAliasConfig.optimizeDepsExclude,
-      esbuildOptions: {
-        target: 'es2020',
-      },
+      rolldownOptions: {},
     },
   };
 });

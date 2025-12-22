@@ -4,6 +4,7 @@ import type {
   DuplicateNodesPayload,
   ImportNodesPayload,
   NodeId,
+  NodeType,
   PasteNodesPayload,
   TreeNode,
 } from '@hierarchidb/common-types';
@@ -136,6 +137,28 @@ export class EntityLifecycleManager {
     await this.copyRelationsByMapping(mapping, sourceNodes);
   }
 
+  async handleRemovedNodes(nodes: TreeNode[]): Promise<void> {
+    if (!nodes || nodes.length === 0) return;
+    const byType = new Map<NodeType, NodeId[]>();
+    for (const node of nodes) {
+      const nodeType = node.nodeType as NodeType | undefined;
+      const nodeId = node.id as NodeId | undefined;
+      if (!nodeType || !nodeId) continue;
+      const list = byType.get(nodeType);
+      if (list) {
+        list.push(nodeId);
+      } else {
+        byType.set(nodeType, [nodeId]);
+      }
+    }
+
+    for (const [nodeType, nodeIds] of byType) {
+      await this.deleteGroupEntities(nodeType, nodeIds);
+      await this.deleteRelations(nodeType, nodeIds);
+      await this.deletePluginArtifacts(nodeType, nodeIds);
+    }
+  }
+
   private async copyGroupsByMapping(
     mapping: NodeMapping,
     sourceNodes?: SourceNodeMap
@@ -173,5 +196,149 @@ export class EntityLifecycleManager {
         }
         if (transformed.length > 0) await relStore.bulkUpsert(transformed);
       }
+  }
+
+  private async deleteGroupEntities(nodeType: NodeType, nodeIds: NodeId[]): Promise<void> {
+    const store = storeRegistry.getGroup(nodeType);
+    if (!store) return;
+    for (const nodeId of nodeIds) {
+      const items = await store.list(nodeId);
+      if (!items || items.length === 0) continue;
+      const ids = items.map((item) => item.id);
+      await store.bulkDelete(nodeId, ids);
+    }
+  }
+
+  private async deleteRelations(nodeType: NodeType, nodeIds: NodeId[]): Promise<void> {
+    const relStore = storeRegistry.getRelations(nodeType);
+    if (!relStore) return;
+    for (const nodeId of nodeIds) {
+      const rels = await relStore.listByNode(nodeId);
+      if (!rels || rels.length === 0) continue;
+      await relStore.bulkDelete(rels);
+    }
+  }
+
+  private async deletePluginArtifacts(nodeType: NodeType, nodeIds: NodeId[]): Promise<void> {
+    switch (nodeType) {
+      case 'shape':
+        await this.deleteShapeArtifacts(nodeIds);
+        return;
+      case 'location':
+        await this.deleteLocationArtifacts(nodeIds);
+        return;
+      case 'route':
+        await this.deleteRouteArtifacts(nodeIds);
+        return;
+      default:
+        return;
+    }
+  }
+
+  private async deleteShapeArtifacts(nodeIds: NodeId[]): Promise<void> {
+    try {
+      const { ShapeDB, EphemeralShapeDB } = await import('@hierarchidb/shape-plugin');
+      const db = new ShapeDB();
+      await db.open?.();
+      const ephemeral = new EphemeralShapeDB();
+      await ephemeral.open?.();
+      for (const nodeId of nodeIds) {
+        const sessionIds = await db.batchSessions.where('nodeId').equals(nodeId).primaryKeys();
+        const featureIds = await db.features.where('nodeId').equals(nodeId).primaryKeys();
+        await db.transaction('rw', [
+          db.shapeEntities,
+          db.batchSessions,
+          db.batchTasks,
+          db.features,
+          db.featureIndices,
+          db.featureBuffers,
+          db.vectorTiles,
+          db.tileBuffers,
+          db.cache,
+        ], async () => {
+          await db.shapeEntities.where('nodeId').equals(nodeId).delete();
+          if (sessionIds.length > 0) {
+            await db.batchTasks.where('sessionId').anyOf(sessionIds as string[]).delete();
+          }
+          await db.batchSessions.where('nodeId').equals(nodeId).delete();
+          await db.features.where('nodeId').equals(nodeId).delete();
+          if (featureIds.length > 0) {
+            const featureKeys = (featureIds as Array<number | string>).map((id) => id.toString());
+            await db.featureIndices.where('featureId').anyOf(featureKeys).delete();
+          }
+          await db.featureBuffers.where('nodeId').equals(nodeId).delete();
+          await db.vectorTiles.where('nodeId').equals(nodeId).delete();
+          await db.tileBuffers.where('nodeId').equals(nodeId).delete();
+          await db.cache.where('nodeId').equals(nodeId).delete();
+        });
+        const clear = (ephemeral as { clearNodeData?: (id: NodeId) => Promise<void> }).clearNodeData;
+        if (clear) {
+          await clear.call(ephemeral, nodeId);
+        }
+      }
+      db.close();
+      ephemeral.close();
+    } catch (error) {
+      console.warn('[EntityLifecycleManager] shape cleanup failed', error);
+    }
+  }
+
+  private async deleteLocationArtifacts(nodeIds: NodeId[]): Promise<void> {
+    try {
+      const { getEphemeralLocationDB } = await import('@hierarchidb/location-plugin');
+      const db = getEphemeralLocationDB();
+      for (const nodeId of nodeIds) {
+        const clear = (db as { clearNodeData?: (id: NodeId) => Promise<void> }).clearNodeData;
+        if (clear) {
+          await clear.call(db, nodeId);
+        }
+      }
+    } catch (error) {
+      console.warn('[EntityLifecycleManager] location cleanup failed', error);
+    }
+  }
+
+  private async deleteRouteArtifacts(nodeIds: NodeId[]): Promise<void> {
+    try {
+      const { RouteDatabase } = await import('@hierarchidb/route-plugin/database') as {
+        RouteDatabase: new () => {
+          open?: () => Promise<unknown>;
+          close?: () => void;
+          routes: { where: (key: string) => { equals: (value: NodeId) => { delete(): Promise<void> } } };
+          workingCopies: { where: (key: string) => { equals: (value: NodeId) => { delete(): Promise<void> } } };
+          routeCache: { where: (key: string) => { equals: (value: NodeId) => { delete(): Promise<void> } } };
+          routeResults: { where: (key: string) => { equals: (value: NodeId) => { delete(): Promise<void> } } };
+          routeCursors: { where: (key: string) => { equals: (value: NodeId) => { delete(): Promise<void> } } };
+          pendingSessions: { where: (key: string) => { equals: (value: NodeId) => { delete(): Promise<void> } } };
+          transaction: (
+            mode: 'rw',
+            tables: unknown[],
+            executor: () => Promise<void>
+          ) => Promise<void>;
+        };
+      };
+      const db = new RouteDatabase();
+      await db.open?.();
+      for (const nodeId of nodeIds) {
+        await db.transaction('rw', [
+          db.routes,
+          db.workingCopies,
+          db.routeCache,
+          db.routeResults,
+          db.routeCursors,
+          db.pendingSessions,
+        ], async () => {
+          await db.routes.where('nodeId').equals(nodeId).delete();
+          await db.workingCopies.where('nodeId').equals(nodeId).delete();
+          await db.routeCache.where('routeId').equals(nodeId).delete();
+          await db.routeResults.where('routeId').equals(nodeId).delete();
+          await db.routeCursors.where('nodeId').equals(nodeId).delete();
+          await db.pendingSessions.where('nodeId').equals(nodeId).delete();
+        });
+      }
+      db.close();
+    } catch (error) {
+      console.warn('[EntityLifecycleManager] route cleanup failed', error);
+    }
   }
 }

@@ -77,6 +77,7 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
   protected async onInitialize(): Promise<void> {
     const initialCursor: RouteCursorRow = {
       sessionId: this.sessionId,
+      nodeId: this.nodeId,
       completed: 0,
       total: this.tasks.length,
       updatedAt: Date.now(),

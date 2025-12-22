@@ -60,7 +60,7 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        p: 3,
+        p: 1,
       }}
     >
       <Paper
@@ -68,7 +68,7 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
         sx={{
           width: '100%',
           maxWidth: 640,
-          p: { xs: 3, md: 4 },
+          p: { xs: 1, md: 1 },
           textAlign: 'center',
           display: 'flex',
           flexDirection: 'column',

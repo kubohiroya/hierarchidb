@@ -1,14 +1,22 @@
 import { SingletonMixin } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { RouteQueryAPI, RouteResultItem } from '@hierarchidb/plugin-service-api';
-import { RouteDatabase } from '@hierarchidb/route-plugin/database';
+
+type RouteDatabaseLike = {
+  open?: () => Promise<unknown>;
+  routeResults: {
+    where: (key: string) => {
+      equals: (value: NodeId) => { toArray: () => Promise<unknown[]> };
+    };
+  };
+};
 
 export class RouteQueryService implements RouteQueryAPI {
-  static async getSingleton(db: RouteDatabase): Promise<RouteQueryService> {
+  static async getSingleton(db: RouteDatabaseLike): Promise<RouteQueryService> {
     return SingletonMixin.getSingleton(RouteQueryService.name, async () => new RouteQueryService(db));
   }
 
-  constructor(private db: RouteDatabase) {}
+  constructor(private db: RouteDatabaseLike) {}
 
   async listRouteResults(nodeId: NodeId): Promise<RouteResultItem[]> {
     await this.db.open?.();

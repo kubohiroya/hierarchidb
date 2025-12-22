@@ -149,7 +149,7 @@ export class RouteBatchManager {
     this.routeSpecificTasks.set(sessionId, routeTasks);
 
     // Initialize cursor
-    await this.db.routeCursors.put(createCursorRow(sessionId, 0, routeTasks.length));
+    await this.db.routeCursors.put(createCursorRow(sessionId, nodeId, 0, routeTasks.length));
     // Start processing using Shape's infrastructure
     const session = new RouteBatchSession(sessionId, nodeId, config, routeTasks);
     const unsubscribe = session.addBatchProgressListener((event: BatchProgressEvent) => this.emitProgressEvent(event));
@@ -260,6 +260,7 @@ export class RouteBatchManager {
       const cursor = await this.db.routeCursors.get(sessionId);
       const update: RouteCursorRow = {
         sessionId,
+        nodeId: cursor?.nodeId ?? ('' as NodeId),
         completed: cursor?.completed ?? 0,
         total: cursor?.total ?? 0,
         paused: true,
@@ -278,6 +279,7 @@ export class RouteBatchManager {
       const cursor = await this.db.routeCursors.get(_sessionId);
       const update: RouteCursorRow = {
         sessionId: _sessionId,
+        nodeId: cursor?.nodeId ?? ('' as NodeId),
         completed: cursor?.completed ?? 0,
         total: cursor?.total ?? 0,
         paused: false,
@@ -324,9 +326,10 @@ export class RouteBatchManager {
   }
 }
 
-function createCursorRow(sessionId: string, completed: number, total: number): RouteCursorRow {
+function createCursorRow(sessionId: string, nodeId: NodeId, completed: number, total: number): RouteCursorRow {
   return {
     sessionId,
+    nodeId,
     completed,
     total,
     updatedAt: Date.now(),
