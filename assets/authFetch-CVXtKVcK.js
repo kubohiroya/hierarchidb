@@ -1,1 +1,0 @@
-import"./src-CajZZ6uY.js";import{t as e}from"./dist-JR3hG-_J.js";async function t(t,n){return(await e.getSingleton()).fetchWithAuth(t,n,{pluginType:`shape`})}export{t as authFetch};

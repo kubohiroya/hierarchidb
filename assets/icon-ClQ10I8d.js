@@ -1,0 +1,1 @@
+import"./react-OOxSluIQ.js";import"./DefaultPropsProvider-CHKQvfe9.js";import"./jsx-runtime-Cp0qBw5r.js";import{t as e}from"./Folder-DaylQT98.js";const t=e;var n=t;export{t as FolderPluginIcon,n as default};

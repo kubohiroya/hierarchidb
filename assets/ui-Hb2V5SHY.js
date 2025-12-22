@@ -1,0 +1,1 @@
+import"./react-OOxSluIQ.js";import{t as e}from"./dist-D8ah50ar.js";e.getInstance().registerConfigProvider({nodeType:`folder`,getCreateStepConfigs(){return[]},getEditStepConfigs(){return this.getCreateStepConfigs()}});const t=()=>null;export{t as FolderDialogHost,t as default};

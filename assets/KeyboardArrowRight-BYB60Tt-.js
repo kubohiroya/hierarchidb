@@ -1,0 +1,1 @@
+import{U as e}from"../worker.js";import{t}from"./jsx-runtime-Cp0qBw5r.js";import{t as n}from"./createSvgIcon-nGU078gM.js";var r=e(t()),i=n((0,r.jsx)(`path`,{d:`M15.41 16.09l-4.58-4.59 4.58-4.59L14 5.5l-6 6 6 6z`}),`KeyboardArrowLeft`),a=n((0,r.jsx)(`path`,{d:`M8.59 16.34l4.58-4.59-4.58-4.59L10 5.75l6 6-6 6z`}),`KeyboardArrowRight`);export{i as n,a as t};

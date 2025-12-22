@@ -1,0 +1,1 @@
+import"./src-BSVVUNGZ.js";import"./import-wrapper-prod-DNQS-9d1.js";import{t as e}from"./dist-CJ-iuddZ.js";import{a as t}from"./dist-DYz4giNj.js";import{t as n}from"./corsProxyBase-DnwPMZ-E.js";async function r(r,i){let a=await e.getSingleton(),o=t(r,{corsProxyBaseURL:n()});return a.fetchWithAuth(o,i,{pluginType:`shape`})}export{r as authFetch};

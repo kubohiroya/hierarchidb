@@ -1,0 +1,1 @@
+import{s as e}from"./src-BSVVUNGZ.js";import{t}from"./import-wrapper-prod-DNQS-9d1.js";async function n(){await t.delete(e(`resolver-db`))}var r=class extends t{resolvers;constructor(){super(e(`resolver-db`)),this.version(1).stores({resolvers:`&id, nodeId, name`})}};const i=new r;export{r as ResolverEntitiesDB,n as clearDatabases,i as resolverEntitiesDB};

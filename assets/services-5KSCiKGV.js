@@ -1,1 +1,0 @@
-import{j as e}from"../worker.js";import"./Indexer-xCi0k6y1.js";import{t}from"./dist-mFi_mRKf.js";import{t as n}from"./StylerDataService-Bd9SXWvb.js";var r=class extends t{constructor(){super(e(`styler-metadata-db`))}};export{n as StylerDataService,r as StylerMetadataManager};

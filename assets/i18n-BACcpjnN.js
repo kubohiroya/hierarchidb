@@ -1,1 +1,0 @@
-import"./react-Cx9zExDA.js";import"./jsx-runtime-D4Zt6A_v.js";import"./src-Bwk-JzL3.js";import{t as e}from"./i18n-BN1Wk9Gd.js";export{e as useTranslation};
