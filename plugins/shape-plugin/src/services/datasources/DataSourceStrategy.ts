@@ -10,7 +10,7 @@ export interface DataSourceConfig {
   description?: string;
   version: string;
   access: AccessConfig;
-  processing: ProcessingConfig;
+  processing: BatchConfig;
   schedule?: ScheduleConfig;
   cache?: CacheConfig;
 }
@@ -31,7 +31,7 @@ export interface AuthConfig {
   refreshStrategy?: RefreshStrategy;
 }
 
-export interface ProcessingConfig {
+export interface BatchConfig {
   inputFormat: DataFormat;
   outputFormat: DataFormat;
   validation?: ValidationRule[];
@@ -114,7 +114,7 @@ export interface FetchOptions {
   country?: string;
   featureClass?: string;
   maxRows?: number;
-  tags?: TagFilter[];
+  tags?: Array<TagFilter | string>;
   timeout?: number;
   filters?: FilterRule[];
   geoFilters?: GeographicFilter[];
@@ -144,6 +144,7 @@ export interface TagFilter {
   key: string;
   value?: string;
   operator?: 'eq' | 'ne' | 'exists' | 'not_exists';
+  includeNodes?: boolean;
 }
 
 export interface GeographicFilter {
@@ -242,7 +243,8 @@ export abstract class BaseDataSourceStrategy<TRawData = unknown, TProcessedData 
   async healthCheck(): Promise<boolean> {
     try {
       if (this.config.access.baseUrl) {
-        const response = await fetch(this.config.access.baseUrl);
+        const { authFetch } = await import('../utils/authFetch.js');
+        const response = await authFetch(this.config.access.baseUrl);
         return response.ok;
       }
       return true;

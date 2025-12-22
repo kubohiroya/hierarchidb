@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { NodeId, TreeId } from '@hierarchidb/common-types';
+import type { NodeId, TreeId, TreeNodeMetadata } from '@hierarchidb/common-types';
 import { Box, Button, Typography } from '@mui/material';
 import { LocationOn } from '@mui/icons-material';
 import type {
@@ -121,7 +121,7 @@ const toDraftDataPayload = (
     name: value.name ?? '',
     description: value.description ?? '',
     tags: value.tags ?? [],
-  },
+  } as TreeNodeMetadata,
   draftData: (value.draft ?? {}) as LocationEntity,
   dialogUIState: value.dialogUIState ?? {},
 });
@@ -214,7 +214,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
         name: dialogData.name ?? '',
         description: dialogData.description ?? '',
         tags: dialogData.tags ?? [],
-      },
+      } as TreeNodeMetadata,
       { name: '', description: '', tags: [] },
     );
   }, [dialogData, updateMetadata, updatePayload]);
@@ -320,7 +320,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
             <TabularDataImport
               pluginId="location"
               onFileImported={(meta: TabularTableMetadata) =>
-                onChange({ tabularSourceId: meta.id, dataSource: 'custom' as any })
+                onChange({ tabularSourceId: meta.id, dataSource: 'custom' })
               }
               onError={(msg: string) => notify.error(msg)}
             />
@@ -397,7 +397,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
                   const selection = data.extractConfig?.selection;
                   const tabularApi = createLocationTabularApi();
                   await runLocationTabularBuild(
-                    tabularApi as any,
+                    tabularApi,
                     data.tabularSourceId as string,
                     filters,
                     selection,
@@ -432,7 +432,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
         <LocationMapPreviewStep draft={data} />
       ),
     },
-  ]), [translations.basicInfo.title, translations.basicInfo.tagSuggestions, translations.dialog.dataSourceLabel, translations.dialog.licenseAgreementLabel, translations.dialog.dataSourceDescription, translations.selection.title, translations.selection?.filterTitle, translations.selection?.buildLabel, translations.panel.processingSettings, translations.mapPreview?.title, translations.errors.nameRequired, mode, emptyTableMetadata, buildStatus, nodeId]);
+  ]), [translations.basicInfo.title, translations.basicInfo.tagSuggestions, translations.dialog.dataSourceLabel, translations.dialog.dataSourceDescription, translations.selection.title, translations.selection?.filterTitle, translations.selection?.buildLabel, translations.panel.processingSettings, translations.mapPreview?.title, translations.errors.nameRequired, mode, emptyTableMetadata, buildStatus, nodeId]);
 
   const enabledStepIndices = useMemo(() => stepComponents.map((_, index) => index), [stepComponents]);
   const committableStepIndices = useMemo(() => [stepComponents.length - 1], [stepComponents.length]);

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import { CoreDB, getStageProcessingClient, unregisterRuntimeWorkerClient } from '@hierarchidb/runtime-worker';
-import type { BatchProgressEvent, ProcessingConfig, ShapeEntity } from '../common/types/index.js';
+import type { BatchProgressEvent, BatchConfig, ShapeEntity } from '../common/types/index.js';
 import { DEFAULT_PROCESSING_CONFIG } from '../common/types/index.js';
 import { shapePluginAPI } from '../worker/api.js';
 import { getEphemeralShapeDB, closeEphemeralShapeDB } from '../services/database/EphemeralShapeDB.js';
@@ -22,9 +22,9 @@ let originalFetchBoundaryMetadata:
   ) => Promise<unknown>)
   | null = null;
 
-const createProcessingConfig = (
-  overrides: Partial<ProcessingConfig> = {},
-): ProcessingConfig => ({
+const createBatchConfig = (
+  overrides: Partial<BatchConfig> = {},
+): BatchConfig => ({
   ...DEFAULT_PROCESSING_CONFIG,
   ...overrides,
   downloadConfig: {
@@ -176,7 +176,7 @@ describe('Shape batch processing (headless)', () => {
   });
 
   it('starts batch processing and completes via progress callbacks', async () => {
-    const config = createProcessingConfig({
+    const config = createBatchConfig({
       dataSource: 'geoboundaries',
       downloadConfig: {
         corsProxyUrl: '',
@@ -194,7 +194,7 @@ describe('Shape batch processing (headless)', () => {
     expect(config.downloadConfig.corsProxyUrl).toBe('');
     const draftId = await createDraftNode(core, {
       dataSourceName: 'geoboundaries',
-      processingConfig: config,
+      batchConfig: config,
     });
     const urlMetadata = await shapePluginAPI.generateUrlMetadata(
       'geoboundaries',

@@ -1,17 +1,18 @@
+import type { DataSourceName } from './data-source.js';
 import type { HybridFilterConfig } from './BatchConfig.js';
 
 export type FeatureFilterMethod = 'bbox_only' | 'polygon_only' | 'hybrid';
 
-export interface ProcessingConfig {
-  dataSource?: string;
-  downloadConfig?: DownloadProcessingConfig;
-  simplificationConfig?: SimplificationProcessingConfig;
-  tileConfig?: TileProcessingConfig;
-  cleanupConfig?: CleanupProcessingConfig;
+export interface BatchConfig {
+  dataSource?: DataSourceName;
+  downloadConfig?: DownloadBatchConfig;
+  simplificationConfig?: SimplificationBatchConfig;
+  tileConfig?: TileBatchConfig;
+  cleanupConfig?: CleanupBatchConfig;
   source?: string;
 }
 
-export interface DownloadProcessingConfig {
+export interface DownloadBatchConfig {
   maxConcurrent: number;
   corsProxyUrl?: string;
   retryLimit?: number;
@@ -21,7 +22,7 @@ export interface DownloadProcessingConfig {
   retryDelay?: number;
 }
 
-export interface SimplificationProcessingConfig {
+export interface SimplificationBatchConfig {
   featureFilterMethod: FeatureFilterMethod;
   areaThreshold: number;
   minVertexCountForAreaFilter?: number;
@@ -34,13 +35,14 @@ export interface SimplificationProcessingConfig {
   enablePerFeatureSimplification?: boolean;
 }
 
-export interface TileProcessingConfig {
+export interface TileBatchConfig {
   workers: number;
   minZoom: number;
   maxZoom: number;
   bufferSize?: number;
+  tileSize?: number;
 }
 
-export interface CleanupProcessingConfig {
+export interface CleanupBatchConfig {
   deleteDownloadedFiles?: boolean;
 }

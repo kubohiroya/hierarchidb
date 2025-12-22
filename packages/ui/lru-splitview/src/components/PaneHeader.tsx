@@ -91,6 +91,8 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
 
   const statusIcon = useMemo(() => {
     if (!progress) return null;
+    const isZeroTasks = (progress.taskCount ?? 0) === 0 && (progress.completedCount ?? 0) === 0;
+    if (isZeroTasks) return <PauseCircleOutlineIcon fontSize="small" />;
     const status = progress.status;
     if (status === 'running') return <PlayCircleIcon fontSize="small" />;
     if (status === 'paused') return <PauseCircleIcon fontSize="small" />;
@@ -103,6 +105,8 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
 
   const statusColor = useMemo(() => {
     if (!progress) return theme.palette.text.secondary;
+    const isZeroTasks = (progress.taskCount ?? 0) === 0 && (progress.completedCount ?? 0) === 0;
+    if (isZeroTasks) return theme.palette.text.secondary;
     switch (progress.status) {
       case 'running':
         return theme.palette.primary.main;
@@ -173,11 +177,15 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
                 }
                 size="small"
                 color={
-                  progress.progress === 100
-                    ? 'success'
-                    : progress.progress > 0
-                      ? 'primary'
-                      : 'default'
+                  (progress.taskCount ?? 0) === 0 && (progress.completedCount ?? 0) === 0
+                    ? 'default'
+                    : progress.status === 'failed'
+                    ? 'error'
+                    : progress.status === 'completed'
+                      ? 'success'
+                      : progress.progress > 0
+                        ? 'primary'
+                        : 'default'
                 }
                 variant={progress.progress > 0 ? 'filled' : 'outlined'}
               />

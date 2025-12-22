@@ -6,6 +6,7 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type {
   LocationBatchConfig,
+  LocationBatchFilterCriteria,
   LocationCategory,
   LocationEntity,
   LocationSearchConfig,
@@ -240,10 +241,10 @@ export class LocationBatchManager {
       // Phase 3: Validation and filtering
       task.status = 'validating';
       const validatedResults = await this.validateAndFilterLocations(
-        task.results!,
+        task.results,
         session.config.filterCriteria,
       );
-      task.metrics.totalFiltered = task.results!.length - validatedResults.length;
+      task.metrics.totalFiltered = task.results.length - validatedResults.length;
       task.results = validatedResults;
 
       this.emitLocationProgress(session.sessionId, {
@@ -504,7 +505,7 @@ export class LocationBatchManager {
   /**
    * Convert custom data to location entities
    */
-  private convertCustomToLocations(_data: any): LocationEntity[] {
+  private convertCustomToLocations(_data: unknown): LocationEntity[] {
     // This would need custom mapping logic based on the data format
     return [];
   }
@@ -647,7 +648,7 @@ export class LocationBatchManager {
    */
   private async validateAndFilterLocations(
     locations: LocationEntity[],
-    criteria?: any,
+    criteria?: LocationBatchFilterCriteria,
   ): Promise<LocationEntity[]> {
     if (!criteria) return locations;
 
@@ -657,11 +658,20 @@ export class LocationBatchManager {
         return false;
       }
 
-      if (criteria.categories && !criteria.categories.includes(location.category)) {
+      if (criteria.allowedCategories && !criteria.allowedCategories.includes(location.category)) {
         return false;
       }
 
-      if (criteria.types && !criteria.types.includes(location.type)) {
+      if (criteria.allowedTypes && !criteria.allowedTypes.includes(location.type)) {
+        return false;
+      }
+
+      const countryCode = location.address?.countryCode;
+      if (criteria.countryCodes && countryCode && !criteria.countryCodes.includes(countryCode)) {
+        return false;
+      }
+
+      if (criteria.excludeIds && location.id && criteria.excludeIds.includes(String(location.id))) {
         return false;
       }
 
@@ -693,7 +703,7 @@ export class LocationBatchManager {
   /**
    * Handle batch error
    */
-  private handleBatchError(sessionId: string, error: any): void {
+  private handleBatchError(sessionId: string, error: {message:unknown}): void {
     const session = this.locationSessions.get(sessionId);
     if (session) {
       session.status = 'failed';

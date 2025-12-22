@@ -19,7 +19,13 @@ import type {
   BatchSessionStatus,
   BatchTaskSummary,
 } from '@hierarchidb/common-api';
-import type { PluginLifecycleAPI } from '@hierarchidb/plugin-service-api';
+import type {
+  PluginLifecycleAPI,
+  StyleMutationAPI,
+  StyleQueryAPI,
+  LocationQueryAPI,
+  RouteQueryAPI,
+} from '@hierarchidb/plugin-service-api';
 import {
   getAllRuntimeExports,
   WorkerInitializationReporter,
@@ -61,6 +67,10 @@ type RuntimeWorkerServices = {
   getTreeNodeUpdaterAPI: () => TreeNodeUpdaterAPI;
   getTreeTableExpandedAPI: () => TreeTableExpandedAPI;
   getPluginLifecycleAPI: () => PluginLifecycleAPI;
+  getStyleQueryAPI: () => StyleQueryAPI;
+  getStyleMutationAPI: () => StyleMutationAPI;
+  getLocationQueryAPI: () => LocationQueryAPI;
+  getRouteQueryAPI: () => RouteQueryAPI;
   getImportExportAPI: () => ImportExportAPI;
   getTagAPI: () => TagAPI;
   getCommandProcessor: () => object;
@@ -328,6 +338,10 @@ reporter.reportStepProgress('Load Comlink', 0);
         getTreeNodeUpdaterAPI: () => Comlink.proxy(services.getTreeNodeUpdaterAPI()),
         getTreeTableExpandedAPI: () => Comlink.proxy(services.getTreeTableExpandedAPI()),
         getPluginLifecycleAPI: () => Comlink.proxy(services.getPluginLifecycleAPI()),
+        getStyleQueryAPI: () => Comlink.proxy(services.getStyleQueryAPI()),
+        getStyleMutationAPI: () => Comlink.proxy(services.getStyleMutationAPI()),
+        getLocationQueryAPI: () => Comlink.proxy(services.getLocationQueryAPI()),
+        getRouteQueryAPI: () => Comlink.proxy(services.getRouteQueryAPI()),
         getImportExportAPI: () => Comlink.proxy(services.getImportExportAPI()),
         getTagAPI: () => Comlink.proxy(services.getTagAPI()),
         getCommandProcessor: () => Comlink.proxy(services.getCommandProcessor()),

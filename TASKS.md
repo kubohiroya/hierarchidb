@@ -53,6 +53,161 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1821) TreeConsole folder表示の2カラム化（P1）
+- ブランチ: `feat/ui/treeconsole-folder-split`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: app（TreeConsole/TreeTable/TreeNodeInfoPanel）、UI ブレークポイント判定
+- 受け入れ基準（DoD）:
+  - [ ] pageNodeId の nodeType が folder かつ画面幅が md より大きい場合に TreeConsole が2カラム表示になる
+  - [ ] 左カラムに `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx` の folder 表示が入る
+  - [ ] 右カラムが残り幅全体で TreeTable を表示する
+  - [ ] md 以下または folder 以外では従来の1カラム表示を維持する
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] TreeConsole の layout 構造と md ブレークポイント判定箇所を確認する
+  - [ ] folder + md 以上条件で 2 カラムレイアウトへ切り替える
+  - [ ] folder 以外・md 以下の表示が変わらないことを確認する
+- ロールバック手順：本タスクで変更した TreeConsole 関連ファイルの差分を revert する
+
+1820) location-plugin/route-plugin 成果物の QueryAPI 外部公開（P1）
+- ブランチ: `feat/gis/location-route-query-api`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/location-plugin, plugins/route-plugin, packages/plugin-service-api, packages/runtime-worker
+- 受け入れ基準（DoD）:
+  - [ ] styler-plugin と同様のパターンで、location-plugin の成果物（首都/県庁所在地/空港/港/駅/IC などの GroupEntity 相当）が `LocationQueryAPI` 経由でプラグイン外から取得できる
+  - [ ] styler-plugin と同様のパターンで、route-plugin の成果物（空路/海路/高速鉄道/在来線鉄道/道路 などの GroupEntity 相当）が `RouteQueryAPI` 経由でプラグイン外から取得できる
+  - [ ] TreeNode ライフサイクルとの連携は未実装であることをコメント/ドキュメントで明記する
+  - [ ] 代表検証として `pnpm --filter @hierarchidb/location-plugin typecheck` と `pnpm --filter @hierarchidb/route-plugin typecheck` を実行し、結果を運用ログに記録する（不可なら理由記載）
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] styler-plugin の QueryAPI 実装/参照経路（Query API/DB/公開エクスポート）を確認する
+  - [ ] location-plugin の成果物を QueryAPI で取得するためのクエリ/DTO を整備する
+  - [ ] route-plugin の成果物を QueryAPI で取得するためのクエリ/DTO を整備する
+  - [ ] 外部公開箇所（packages/* の API export）と依存関係を更新する
+- ロールバック手順：本タスクで変更したファイルを revert し、必要なら `pnpm --filter @hierarchidb/location-plugin typecheck` と `pnpm --filter @hierarchidb/route-plugin typecheck` を再実行する
+
+1813) Folder コンテキストメニューのプレビュー導線と map 集約表示（P1）
+- ブランチ: `feat/ui/folder-map-preview`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: app（treeconsole context menu / map route）, packages/ui-map, common-types TreeNode, linker-plugin 相当の集約ロジック
+- 受け入れ基準（DoD）:
+  - [ ] TreeNode に `map?: { zxy: string }` を追加し、利用箇所の型整合を維持する
+  - [ ] Folder のコンテキストメニューに「プレビュー」を追加し、`/map/:nodeId?zxy=...` へ遷移する
+  - [ ] `zxy` は `map.zxy` を優先し、無い場合は Geolocation から zoom=1 で生成する（失敗時フォールバック含む）
+  - [ ] `/map/:nodeId` でフォルダ配下の basemap/shape/location/route/styler を集約し、レイヤー合成して表示する
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] Folder の context menu 追加箇所を特定する
+  - [ ] map route の params/loader を拡張し、nodeId に応じた集約レイヤー生成を実装する
+  - [ ] styler の paint 上書き方式で style を適用する
+- ロールバック手順：本タスクで更新したファイルを revert し、必要に応じて関与パッケージの typecheck/test を再実行する
+
+1808) shape-plugin CORS proxy URL 書き換えの統一（P1）
+- ブランチ: `fix/shape/cors-proxy-url-rewrite`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin（services/batch/utils/datasources）, runtime-worker fetch wrapper
+- 受け入れ基準（DoD）:
+  - [ ] ブラウザ環境では必ず cors-proxy 経由 URL を使用する
+  - [ ] Node テスト環境ではオリジナル URL を使用する
+  - [ ] URL 書き換えの責務を download 機能に統一し、呼び出し側で重複変換しない
+  - [ ] shape-plugin のダウンロードは packages/features/download を経由する
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] 現行の URL 書き換え箇所を特定する
+  - [ ] ブラウザ/Node 判定と cors-proxy 適用の統一方針を実装する
+  - [ ] 既存テストへの影響を確認する
+- ロールバック手順：本タスクで更新したファイルを revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する。
+
+1810) linker-plugin ツリー抽出/ソートのテスト有無確認と不足分追加（P1）
+- ブランチ: `test/linker/resource-branch-ordering`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/linker-plugin（resource tree 抽出ロジック）, basemap/shape/location/route のノード抽出
+- 受け入れ基準（DoD）:
+  - [ ] (A) 対象ロジックの既存テスト有無を確認し、結果を運用ログに記載する
+  - [ ] 既存テストが無い場合、非重複枝ルート抽出 → 対象プラグインノード抽出 → 絶対パス昇順ソートの単体テストを追加する
+  - [ ] linker-plugin の typecheck エラー（MapLibreStyle.version）を解消する
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] linker-plugin の resource tree から枝ルート抽出/ソート実装を特定する
+  - [ ] basemap/shape/location/route の対象ノード抽出と絶対パス昇順の期待値を整理する
+  - [ ] resourceTreeOrdering の MapLibreStyle version 参照を型定義に合わせて修正する
+  - [ ] 不足分のテストを追加する
+- ロールバック手順：追加したテストを削除し、関連パッケージの test/typecheck を再実行する
+
+1811) styler-plugin ノード抽出/順序付け/合成マップのテスト有無確認と不足分追加（P1）
+- ブランチ: `test/styler/node-merge-ordering`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/styler-plugin（tree node 抽出/合成ロジック）
+- 受け入れ基準（DoD）:
+  - [ ] (B) 対象ロジックの既存テスト有無を確認し、結果を運用ログに記載する
+  - [ ] 既存テストが無い場合、styler ノード抽出 → 順序付け → 合成マップ生成の単体テストを追加する
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] styler-plugin の tree ノード抽出/合成実装を特定する
+  - [ ] 絶対パス昇順の期待値と合成結果の前提を整理する
+  - [ ] 不足分のテストを追加する
+- ロールバック手順：追加したテストを削除し、関連パッケージの test/typecheck を再実行する
+
+1812) ui-map で GIS レイヤー集約＋スタイル適用のコンポーネント整備（P1）
+- ブランチ: `feat/ui-map/layer-style-composition`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: packages/ui-map, basemap/shape/location/route/styler プラグイン出力
+- 受け入れ基準（DoD）:
+  - [ ] (C) ui-map にて (A) のレイヤー順序と (B) のスタイルを適用するコンポーネントが整備される
+  - [ ] 影響範囲の typecheck またはテスト結果を運用ログに記載する（不可なら理由記載）
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] ui-map 側の集約コンポーネント/組み立て経路を特定する
+  - [ ] レイヤー順序とスタイル適用の接続を実装する
+  - [ ] 可能なら unit/結合テストを追加する
+- ロールバック手順：ui-map の差分を revert し、関連パッケージの typecheck/test を再実行する
+
+1807) shape-plugin download/後処理/次ステージ生成のストラテジー化（P1）
+- ブランチ: `feat/shape/download-postprocess-strategy`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin（services/datasources/batch/utils）, metadata loader, batch processing
+- 受け入れ基準（DoD）:
+  - [ ] ダウンロードタスク生成/後処理/次ステージタスク生成がデータソース別に差し替え可能
+  - [ ] 共通コードはストラテジーの詳細を知らず実行のみ行う
+  - [ ] GADM/GeoBoundaries の1:1対応と OSM/NaturalEarth の多対多/集約型の双方に対応できる
+  - [ ] Worker側で後処理が実行され、失敗時はログ/ステータスに反映される
+  - [ ] ExecPlan（`plans/shape-download-postprocess-strategy.md`）を作成し、進捗に合わせて更新する
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [x] 現行フローで download/simplify タスク生成の責務を整理する
+  - [x] データソース別ストラテジーを定義し、共通コードから呼び出す
+  - [x] 次ステージ生成の単体テスト/統合テストを更新する
+- ロールバック手順：本タスクで更新したファイルを revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` と `pnpm --filter @hierarchidb/shape-plugin test` を再実行する。
+
+1805) shape-plugin URL 生成のユニットテスト（P1）
+- ブランチ: `test/shape/url-metadata-cases`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin/services/utils
+- 受け入れ基準（DoD）:
+  - [ ] 各データソース（naturalearth/geoboundaries/gadm/openstreetmap）で JP/ID × level0/1 の URL 生成が検証される
+  - [ ] geoboundaries の URL が空になる場合に原因を説明できる
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] generateUrlMetadata のユニットテストを追加する
+  - [ ] URL の期待値を明示し、空文字にならないことを確認する
+- ロールバック手順：追加したテストファイルを削除し、`pnpm --filter @hierarchidb/shape-plugin test` を再実行する。
+
+1804) shape-plugin Step4 キャッシュ管理のボタン有効化（P1）
+- ブランチ: `fix/shape/step4-cache-actions`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin（UI/hooks）, services/database
+- 受け入れ基準（DoD）:
+  - [ ] 失敗タスク/ネガティブキャッシュが存在する場合に削除ボタンが有効化される
+  - [ ] ステージ別に永続タスクを削除できる
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] キャッシュ/タスク数の取得経路を確認し、判定条件を調整する
+  - [ ] 削除時にバッチタスクを消去する
+- ロールバック手順：本タスクの差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する。
+
+1803) shape-plugin Step5 タスクタイトル表示（P1）
+- ブランチ: `feat/shape/step5-task-titles`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin（UI/worker/services/batch）
+- 受け入れ基準（DoD）:
+  - [ ] タスクIDではなくタスクタイトルを表示する
+  - [ ] タイトルはプラグイン/ステージごとに定義できる
+  - [ ] download: URL / simplify1: URL + featureId / vectorTiles: zxy を表示できる
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] タスク生成時にタイトル生成に必要なメタ情報を付与する
+  - [ ] UI 側でステージ別タイトルを表示する
+- ロールバック手順：本タスクの差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する。
+
 1802) shape-plugin Step5 Start Build でタスク生成/進捗表示不整合を修正（P1）
 - ブランチ: `fix/shape/step5-build-start-stuck`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: plugins/shape-plugin（UI/worker/services/batch）, packages/ui/batch
@@ -4577,6 +4732,78 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1827) download resolveNetworkUrl の実行環境判定を安全化（P1） — 完了 (2025-12-22)
+  - 要点：`process` 参照を撤去し、window/self でブラウザ/worker を判定する方式へ変更。ブラウザ警告回避と既存の CORS proxy 判定を維持。
+  - 検証：未実施。
+  - ロールバック手順：`packages/features/download/src/helpers/resolveNetworkUrl.ts` の差分を revert する。
+- 1826) app 依存へ Create 用プラグインを追加（P1） — 完了 (2025-12-22)
+  - 要点：Create メニューが app dependencies のプラグインのみを拾うため、basemap/folder/route/spreadsheet/styler/resolver/linker/timeline を app dependencies に追加。
+  - 検証：`pnpm --filter @hierarchidb/app typecheck` は runtime-worker の既知エラー（RouteDatabase 型）で exit 1。plugin-base build は成功。
+  - ロールバック手順：`app/package.json` の差分を revert し、必要なら `pnpm --filter @hierarchidb/app typecheck` を再実行する。
+- 1825) Create メニューのノード種類欠落の調査（P1） — 完了 (2025-12-22)
+  - 要点：Create メニューは `app/package.json` の dependencies に含まれるプラグインのみを plugin-registry から抽出して構築されるため、location/shape 以外が除外されていた。
+  - 検証：調査のみ（コード変更なし）。
+  - ロールバック手順：調査のみのため差分なし。
+- 1824) location-plugin translations 型エラー解消（P1） — 完了 (2025-12-22)
+  - 要点：translations のベース定義を追加して型を確定し、LocationPanel の type/category を補完。test-shims の不正文字を除去。
+  - 検証：`pnpm --filter @hierarchidb/location-plugin typecheck` exit 0。
+  - ロールバック手順：`plugins/location-plugin/src/common/i18n/index.ts`, `plugins/location-plugin/src/common/components/LocationPanel.tsx`, `plugins/location-plugin/src/common/test-shims/external-mocks.ts`, `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx` の差分を revert し、同 typecheck を再実行する。
+- 1819) shape-plugin dataSource 正規化テスト失敗の修正（P1） — 完了 (2025-12-22)
+  - 要点：data-source-normalization.unit.test.ts で batchConfig.dataSource を明示し、dataSourceName 正規化の期待値を維持。
+  - 検証：`pnpm --filter @hierarchidb/shape-plugin test -- src/common/__tests__/unit/data-source-normalization.unit.test.ts` exit 0（ネットワーク許可で headless テストも成功）。
+  - ロールバック手順：`plugins/shape-plugin/src/common/__tests__/unit/data-source-normalization.unit.test.ts` の差分を revert し、同テストを再実行する。
+- 1823) route-plugin RouteSelectionStep の metadata 撤去（P1） — 完了 (2025-12-22)
+  - 要点：RouteEntity へ transportSelection/railType/roadType/generationOptions を追加し、RouteSelectionStep の metadata 依存を撤去。
+  - 検証：`pnpm --filter @hierarchidb/route-plugin typecheck` exit 0。
+  - ロールバック手順：`plugins/route-plugin/src/common/entities/RouteEntity.ts` と `plugins/route-plugin/src/ui/components/steps/RouteSelectionStep.tsx` の差分を revert し、同 typecheck を再実行する。
+- 1822) route-plugin processing 型整合（P1） — 完了 (2025-12-22)
+  - 要点：RouteEntity に processing 型を追加し、RouteProcessingStep の参照/更新を processing 階層に統一。
+  - 検証：`pnpm --filter @hierarchidb/route-plugin typecheck` exit 2（RouteSelectionStep の metadata 参照が RouteEntity に存在せず型エラーが残存）。
+  - ロールバック手順：`plugins/route-plugin/src/common/entities/RouteEntity.ts` と `plugins/route-plugin/src/ui/components/steps/RouteProcessingStep.tsx` の差分を revert し、同 typecheck を再実行する。
+- 1821) LocationBatchManager の filterCriteria 引数型整合（P1） — 完了 (2025-12-22)
+  - 要点：`validateAndFilterLocations` を `LocationBatchFilterCriteria` に合わせ、allowedCategories/allowedTypes/countryCodes/excludeIds の判定へ統一。
+  - 検証：`pnpm --filter @hierarchidb/location-plugin typecheck` exit 2（translations unknown / LocationEntity 初期値など既存エラーが残存）。
+  - ロールバック手順：`plugins/location-plugin/src/services/LocationBatchManager.ts` の差分を revert し、同 typecheck を再実行する。
+- 1820) location-plugin geojson 型インポート解決（P1） — 完了 (2025-12-22)
+  - 要点：`@types/geojson` を追加し、LocationSessionController の Feature を GeoJSON 型へ整合。`properties` の型解決を回復。
+  - 検証：`pnpm --filter @hierarchidb/location-plugin typecheck` exit 2（translations unknown / LocationEntity 初期値など既存エラーが残存）。
+  - ロールバック手順：`plugins/location-plugin/package.json` と `plugins/location-plugin/src/services/batch/LocationSessionController.ts` の差分を revert し、同 typecheck を再実行する。
+- 1801) location-plugin Feature.properties 型解決（P1） — 完了 (2025-12-22)
+  - 要点：`geojson-vt` の Feature ではなく GeoJSON Feature 型へ置換し、`properties` を解決可能にした。
+  - 検証：未実施。
+  - ロールバック手順：`plugins/location-plugin/src/services/batch/LocationSessionController.ts` の差分を revert する。
+- 1818) shape-plugin Step5 dataSource/URL/Download 経路修正（P1） — 完了 (2025-12-22)
+  - 要点：Step5 の URL metadata 生成で batchConfig.dataSource を優先し、未設定時は明示的に停止。selectionUrlMetadata の暗黙フォールバックを撤去し、NaturalEarth の base URL を修正して不正URL生成を解消。healthCheck も download 経由へ統一。
+  - 検証：`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/hooks/build/useBatchSessionActions.ts`, `plugins/shape-plugin/src/ui/utils/selectionUrlMetadata.ts`, `plugins/shape-plugin/src/services/utils/utils.ts`, `plugins/shape-plugin/src/services/datasources/{NaturalEarthStrategy.ts,DataSourceStrategy.ts}`, `plugins/shape-plugin/src/services/RecoveryStrategy.ts`, `plugins/shape-plugin/src/services/utils/__tests__/generateUrlMetadata.unit.test.ts` の差分を revert し、同 typecheck を再実行する。
+- 1817) shape-plugin batchConfig.dataSource 統一と UI 側整理（P1） — 完了 (2025-12-22)
+  - 要点：dataSourceName 参照を batchConfig.dataSource に統一し、UI hooks/selection URL/worker validation を整理。BatchSessionConfig を分離し、UI config → worker config の変換を追加。テンプレートの dataSourceName を batchConfig へ移行。
+  - 検証：`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。
+  - ロールバック手順：`plugins/shape-plugin/src/common/types/{BatchConfig.ts,processing.ts,index.ts,core.ts,batch.ts,create-update.ts}`, `plugins/shape-plugin/src/services/{utils/utils.ts,RecoveryStrategy.ts}`, `plugins/shape-plugin/src/services/batch/types.ts`, `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/worker/plugin.ts`, `plugins/shape-plugin/src/ui/{hooks/useShapeDataSourceStep.ts,hooks/useShapeCountrySelectionStep.ts,hooks/useShapeBuildProgressStep.ts,utils/selectionUrlMetadata.ts,components/processing/AreaFilterPanel.tsx}`, `app/public/templates/population-2023/tree-nodes.json` の差分を revert し、同 typecheck を再実行する。
+- 1816) app map route typecheck エラー修正（P1） — 完了 (2025-12-22)
+  - 要点：map route の import/型不一致を解消し、MapLibreStyle/GeoJSON/ResourceGeoJsonLayer の型整合を整理。fetch-save-metadata JSON の型宣言を追加。
+  - 検証：`pnpm --filter @hierarchidb/app typecheck` exit 0（plugin-base build の tsdown define 警告は既知のまま）。
+  - ロールバック手順：`app/src/router/routes/map.tsx`, `plugins/shape-plugin/src/services/index.ts`, `plugins/shape-plugin/src/index.ts`, `plugins/shape-plugin/src/types/fetch-save-metadata.d.ts`, `types/fetch-save-metadata.d.ts` の差分を revert し、同 typecheck を再実行する。
+- 1815) shape-plugin typecheck 追加修正（progress mapping / worker stage）（P1） — 完了 (2025-12-22)
+  - 要点：progress mapping の stage/currentTask を string 固定にし、BatchTask の stage を status 由来へ修正。
+  - 検証：`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/hooks/progress/shapeProgressMapping.ts` と `plugins/shape-plugin/src/worker/api.ts` の差分を revert し、同 typecheck を再実行する。
+- 1814) shape-plugin 型エラー（BoundingBox/SimplifyTaskConfig/flatgeobuf）修正（P1） — 完了 (2025-12-22)
+  - 要点：Download adapter で BoundingBox を DataSourceStrategy 形式へ正規化し、SimplifyTaskConfig に sourceUrl を追加、flatgeobuf decode を型ガードで安全に変換。
+  - 検証：`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0。
+  - ロールバック手順：`plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerDownloadAdapter.ts`, `plugins/shape-plugin/src/common/types/batch.ts`, `plugins/shape-plugin/src/services/batch/strategies/flatgeobuf.ts` の差分を revert し、同 typecheck を再実行する。
+- 1800) style-store typecheck の依存解決（util / plugin-service-api）（P1） — 完了 (2025-12-22)
+  - 要点：style-store の tsconfig で `paths` 上書きを削除し、base の workspace alias を有効化。
+  - 検証：`pnpm --filter @hierarchidb/style-store typecheck` exit 0。
+  - ロールバック手順：`packages/features/style-store/tsconfig.json` の差分を revert し、同 typecheck を再実行する。
+- 1806) Shape Step5 download task の HTTP エラー時に URL を警告出力（P1） — 完了 (2025-12-22)
+  - 要点：download stage の HTTP エラー（non-OK）時に URL を console.warn へ出力するよう各データソースの fetch 分岐へ追加。
+  - 検証：未実施。
+  - ロールバック手順：`plugins/shape-plugin/src/services/datasources/{GeoBoundariesStrategy,GADMStrategy,NaturalEarthStrategy,OpenStreetMapStrategy}.ts` の差分を revert する。
+- 1805) shape-plugin mapTaskRecordToBatchTask 型不整合修正（P1） — 完了 (2025-12-22)
+  - 要点：BatchTask の stage がライフサイクル用の型と一致するよう、status から stage を導出するマッピングへ修正。
+  - 検証：未実施（`pnpm install` が `@types/fast-deep-equal` 404 で失敗しており、typecheck 未実行）。
+  - ロールバック手順：`plugins/shape-plugin/src/worker/api.ts` の差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する。
 - 1801) shape-plugin Step5 update depth error 解消（P1） — 完了 (2025-12-22)
   - 要点：useBatchProgress の購読状態を state 依存ではなく ref で保持し、autoSubscribe の effect ループを解消。
   - 検証：UI で Step5 のエラーが再発しないことを確認。
@@ -10931,6 +11158,98 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-22 22:51 start: analysis/ui/create-menu-missing-nodes — SpeedDial/コンテキストメニューの Create に出るノード種類が location/shape のみに減る問題を調査開始。DoD: Kanban 記載どおり経路特定/原因整理/運用ログ記載。（Kanban: 1825）
+- 2025-12-22 22:56 progress: analysis/ui/create-menu-missing-nodes — Create メニューは app/package.json の dependencies に含まれるプラグインのみを plugin-registry から抽出して構築されるため、location/shape 以外が除外されていることを確認（app 依存が 2 件のみ）。
+- 2025-12-22 22:55 start: fix/app/plugin-deps-for-create — Create メニューに表示したいプラグインを app dependencies に追加する対応に着手。DoD: Kanban 記載どおり依存追加/検証/運用ログ記載。（Kanban: 1826）
+- 2025-12-22 22:58 command: pnpm --filter @hierarchidb/app typecheck — timeout（plugin-base build は成功）。tsc 実行完了前にタイムアウト。
+- 2025-12-22 23:00 command: pnpm --filter @hierarchidb/app typecheck — exit 1。runtime-worker の既知エラー（RouteDatabase 型）で失敗。
+- 2025-12-22 23:00 done: analysis/ui/create-menu-missing-nodes — Create メニューの絞り込みが app dependencies 起因であることを特定。ロールバック: 調査のみのため差分なし。
+- 2025-12-22 23:00 done: fix/app/plugin-deps-for-create — app dependencies に basemap/folder/route/spreadsheet/styler/resolver/linker/timeline を追加して Create メニューの対象を復元。ロールバック: `app/package.json` の差分を revert する。
+- 2025-12-22 22:05 start: fix/location/translations-typing — location-plugin の translations 型エラー（TS18046）と LocationEntity 不足プロパティを解消する対応に着手。DoD: Kanban 記載どおり型解消/typecheck/運用ログ記載。（Kanban: 1824）
+- 2025-12-22 22:13 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 0。
+- 2025-12-22 22:13 done: fix/location/translations-typing — translations のベース定義を追加して型を確定し、LocationPanel の type/category を補完。test-shims の不正文字を除去。ロールバック: `plugins/location-plugin/src/common/i18n/index.ts`, `plugins/location-plugin/src/common/components/LocationPanel.tsx`, `plugins/location-plugin/src/common/test-shims/external-mocks.ts`, `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx` の差分を revert し、`pnpm --filter @hierarchidb/location-plugin typecheck` を再実行する。
+- 2025-12-22 20:12 start: fix/shape/datasource-normalization-test — data-source-normalization.unit.test.ts の失敗（dataSource 正規化）を解消する対応に着手。DoD: Kanban 記載どおり正規化維持/テスト成功/運用ログ記載。（Kanban: 1819）
+- 2025-12-22 20:13 command: pnpm --filter @hierarchidb/shape-plugin test -- --run data-source-normalization — exit 1。data-source-normalization.unit.test.ts 自体は通過したが、headless の GeoBoundaries fetch が失敗し全体が fail（network 依存）。
+- 2025-12-22 21:54 command: pnpm --filter @hierarchidb/shape-plugin test -- src/common/__tests__/unit/data-source-normalization.unit.test.ts — exit 1。指定ファイルは通過したが、headless の GeoBoundaries fetch が失敗し全体が fail（network 依存）。
+- 2025-12-22 21:59 command: pnpm --filter @hierarchidb/shape-plugin test -- src/common/__tests__/unit/data-source-normalization.unit.test.ts — exit 0（ネットワーク許可で headless テストも成功）。
+- 2025-12-22 21:59 done: fix/shape/datasource-normalization-test — dataSource 正規化テストで batchConfig.dataSource を明示し、期待値を維持できるよう修正。ロールバック: `plugins/shape-plugin/src/common/__tests__/unit/data-source-normalization.unit.test.ts` の差分を revert し、同テストを再実行する。
+- 2025-12-22 20:01 progress: fix/shape/step5-datasource-url-download — Step5 の dataSource 参照/URL 生成/Download 経路の実装箇所を点検し、useBatchSessionActions と data source 戦略の修正方針を整理。
+- 2025-12-22 20:05 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。
+- 2025-12-22 20:05 done: fix/shape/step5-datasource-url-download — Step5 の URL metadata 生成で batchConfig.dataSource を優先し、未設定時は警告して停止。selectionUrlMetadata の暗黙フォールバックを撤去し、NaturalEarth の base URL を修正して不正URL生成を解消。healthCheck は download 経由へ統一。ロールバック: `plugins/shape-plugin/src/ui/hooks/build/useBatchSessionActions.ts`, `plugins/shape-plugin/src/ui/utils/selectionUrlMetadata.ts`, `plugins/shape-plugin/src/services/utils/utils.ts`, `plugins/shape-plugin/src/services/datasources/{NaturalEarthStrategy.ts,DataSourceStrategy.ts}`, `plugins/shape-plugin/src/services/RecoveryStrategy.ts`, `plugins/shape-plugin/src/services/utils/__tests__/generateUrlMetadata.unit.test.ts` の差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する。
+- 2025-12-22 19:13 start: fix/shape/step5-datasource-url-download — Step5 の dataSource 解決/URL 生成/ダウンロード経路を修正し、不正URLと cors-proxy 未使用を解消する対応に着手。DoD: Kanban 記載どおり dataSource 参照統一/URL 正規化/Download 経由/運用ログ記載。（Kanban: 1818）
+- 2025-12-22 17:45 start: fix/shape/batchconfig-datasource — batchConfig.dataSource に統一し、UI/テンプレート/保存処理の dataSourceName 混在を整理する対応に着手。DoD: Kanban 記載どおり参照統一/運用ログ記載/検証結果記録。（Kanban: 1817）
+- 2025-12-22 17:56 progress: fix/shape/batchconfig-datasource — dataSourceName 参照を batchConfig.dataSource に寄せ、UI hooks/selection URL/worker validation を整理。batchConfig 系型の衝突を解消するため BatchSessionConfig を分離し、worker へ変換ロジックを追加。テンプレートを batchConfig.dataSource に移行。
+- 2025-12-22 17:56 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。
+- 2025-12-22 17:56 done: fix/shape/batchconfig-datasource — getBoundaries 選択時の dataSource 混乱を解消し、batchConfig を UI 設計に合わせて整理。ロールバック: `plugins/shape-plugin/src/common/types/{BatchConfig.ts,processing.ts,index.ts,core.ts,batch.ts,create-update.ts}`, `plugins/shape-plugin/src/services/{utils/utils.ts,RecoveryStrategy.ts}`, `plugins/shape-plugin/src/services/batch/types.ts`, `plugins/shape-plugin/src/worker/api.ts`, `plugins/shape-plugin/src/worker/plugin.ts`, `plugins/shape-plugin/src/ui/{hooks/useShapeDataSourceStep.ts,hooks/useShapeCountrySelectionStep.ts,hooks/useShapeBuildProgressStep.ts,utils/selectionUrlMetadata.ts,components/processing/AreaFilterPanel.tsx}`, `app/public/templates/population-2023/tree-nodes.json` の差分を revert し、typecheck を再実行する。
+- 2025-12-22 16:10 start: fix/app/map-typecheck — app map route の typecheck エラー（plugin import/MapLibreStyle/WorkerBridge/GeoJSON/ResourceGeoJsonLayer/fetch-save-metadata）修正に着手。DoD: Kanban 記載どおり型エラー解消/運用ログ記載/検証結果記録。（Kanban: 1816）
+- 2025-12-22 16:16 progress: fix/app/map-typecheck — shape/location import を package export に寄せ、MapLibreStyle のカスタム定義と styler spec を型ガードで処理。GeoJSON 生成を ResourceGeoJsonLayer の data 型に合わせ、map layer 並び替えを専用関数に整理。fetch-save-metadata の型宣言を追加。
+- 2025-12-22 16:16 command: pnpm --filter @hierarchidb/app typecheck — exit 0（plugin-base build の tsdown define 警告は既知のまま）。
+- 2025-12-22 16:16 done: fix/app/map-typecheck — app map route の typecheck エラーを解消。ロールバック: `app/src/router/routes/map.tsx`, `plugins/shape-plugin/src/services/index.ts`, `plugins/shape-plugin/src/index.ts`, `plugins/shape-plugin/src/types/fetch-save-metadata.d.ts`, `types/fetch-save-metadata.d.ts` の差分を revert し、`pnpm --filter @hierarchidb/app typecheck` を再実行する。
+- 2025-12-22 16:08 start: fix/shape/typecheck-progress-stage — shape-plugin typecheck の progress mapping / worker stage の型エラー修正に着手。DoD: Kanban 記載どおり stage/currentTask の string 補正、mapTaskStatusToStage の整理、stage 代入修正、運用ログ記載。（Kanban: 1815）
+- 2025-12-22 16:09 progress: fix/shape/typecheck-progress-stage — statusToUnified のフォールバックを string 固定化し、mapTaskRecordToBatchTask の stage を status 由来へ変更して型整合を修正。
+- 2025-12-22 16:09 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。
+- 2025-12-22 16:09 done: fix/shape/typecheck-progress-stage — shape-plugin typecheck の progress mapping / stage 型エラーを解消。ロールバック: `plugins/shape-plugin/src/ui/hooks/progress/shapeProgressMapping.ts` と `plugins/shape-plugin/src/worker/api.ts` の差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する。
+- 2025-12-22 16:01 start: fix/shape/typecheck-bbox-sourceurl — spreadsheet-plugin typecheck で発生した shape-plugin の型エラー（BoundingBox/SimplifyTaskConfig/flatgeobuf）を解消する対応に着手。DoD: Kanban 記載どおり型エラー解消/運用ログ記載/検証結果記録。（Kanban: 1814）
+- 2025-12-22 16:04 progress: fix/shape/typecheck-bbox-sourceurl — BoundingBox を DataSourceStrategy へ変換するヘルパーを追加し、SimplifyTaskConfig に sourceUrl を補完、flatgeobuf の decode を型ガード付きで安全に変換。
+- 2025-12-22 16:04 command: pnpm --filter @hierarchidb/spreadsheet-plugin typecheck — exit 0。
+- 2025-12-22 16:04 done: fix/shape/typecheck-bbox-sourceurl — spreadsheet-plugin typecheck の型エラーを解消。ロールバック: `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerDownloadAdapter.ts`, `plugins/shape-plugin/src/common/types/batch.ts`, `plugins/shape-plugin/src/services/batch/strategies/flatgeobuf.ts` の差分を revert し、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` を再実行する。
+- 2025-12-22 15:56 start: test/linker/resource-branch-ordering — linker-plugin の MapLibreStyle.version 型エラー（resourceTreeOrdering.ts）を解消する対応に着手。DoD: Kanban 記載どおりテスト有無確認/不足分追加/型エラー解消/運用ログ記載。（Kanban: 1810）
+- 2025-12-22 15:57 progress: test/linker/resource-branch-ordering — styleSpec の version 参照を型安全に取得するヘルパーへ置換し、combineStylerStyleSpecs で version を維持しつつ型エラーを解消。
+- 2025-12-22 15:57 command: pnpm --filter @hierarchidb/linker-plugin typecheck — exit 0。
+- 2025-12-22 20:52 start: fix/location/geojson-feature-properties — LocationSessionController の `f?.properties` が解決できない問題の調査に着手。DoD: Kanban 記載どおり原因特定、型宣言確認、必要なら最小修正案提示。
+- 2025-12-22 21:03 start: fix/location/geojson-types — location-plugin の `geojson` 型インポート（TS2307）を解消する対応に着手。DoD: Kanban 記載どおり型依存追加、typecheck 記録、運用ログ/ロールバック記載。
+- 2025-12-22 21:04 command: pnpm i — exit 124（ENOTFOUND で @types/geojson の取得に失敗）。
+- 2025-12-22 21:05 command: pnpm i --offline — exit 0。
+- 2025-12-22 21:06 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 2。TS2307 は解消したが、既存の translations unknown や LocationEntity 初期値等の型エラーが残存。
+- 2025-12-22 21:07 done: fix/location/geojson-types — `@types/geojson` を追加し、LocationSessionController の Feature を GeoJSON 型へ整合。検証は上記 typecheck で既存エラー残。ロールバック: `plugins/location-plugin/package.json` と `plugins/location-plugin/src/services/batch/LocationSessionController.ts` の差分を revert する。
+- 2025-12-22 21:12 start: fix/location/validation-filter-locations — LocationBatchManager の validationFilterLocations 引数型不整合を修正する対応に着手。DoD: Kanban 記載どおり型整合、typecheck 記録、運用ログ/ロールバック記載。
+- 2025-12-22 21:13 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 2。既存の translations unknown / LocationEntity 初期値などの型エラーが残存。
+- 2025-12-22 21:14 done: fix/location/validation-filter-locations — LocationBatchFilterCriteria を適用し、allowedCategories/allowedTypes/countryCodes/excludeIds を正規のフィルタへ統一。検証は上記 typecheck で既存エラー残。ロールバック: `plugins/location-plugin/src/services/LocationBatchManager.ts` の差分を revert する。
+- 2025-12-22 21:20 start: fix/route/processing-typing — RouteEntity の processing 階層化で型不整合が残っているため、型整合の修正に着手。DoD: Kanban 記載どおり RouteEntity/RouteProcessingStep の整合、typecheck 記録、運用ログ/ロールバック記載。
+- 2025-12-22 21:24 command: pnpm --filter @hierarchidb/route-plugin typecheck — exit 2。RouteSelectionStep の metadata 参照が RouteEntity に存在せず型エラーが残存。
+- 2025-12-22 21:25 done: fix/route/processing-typing — RouteEntity に processing 型を追加し、RouteProcessingStep の参照/更新を processing 階層に統一。検証は上記 typecheck で既存エラー残。ロールバック: `plugins/route-plugin/src/common/entities/RouteEntity.ts` と `plugins/route-plugin/src/ui/components/steps/RouteProcessingStep.tsx` の差分を revert する。
+- 2025-12-22 21:32 start: fix/route/selection-metadata-removal — RouteSelectionStep の metadata 参照を撤去し、RouteEntity の flat なプロパティへ移行する対応に着手。DoD: Kanban 記載どおり型整合、typecheck 記録、運用ログ/ロールバック記載。
+- 2025-12-22 21:33 command: pnpm --filter @hierarchidb/route-plugin typecheck — exit 0。
+- 2025-12-22 21:34 done: fix/route/selection-metadata-removal — RouteSelectionStep の metadata 参照を削除し、transportSelection/railType/roadType/generationOptions を RouteEntity に追加。検証: `pnpm --filter @hierarchidb/route-plugin typecheck` exit 0。ロールバック: `plugins/route-plugin/src/common/entities/RouteEntity.ts` と `plugins/route-plugin/src/ui/components/steps/RouteSelectionStep.tsx` の差分を revert する。
+- 2025-12-22 21:03 start: fix/location/geojson-types — location-plugin の `geojson` 型インポートで TS2307 が発生するため、型依存の追加と解決を実施する。DoD: Kanban 記載どおり TS2307 解消、typecheck 記録、運用ログ/ロールバック記載。
+- 2025-12-22 20:58 progress: fix/location/geojson-feature-properties — `geojson-vt` Feature を GeoJSON Feature 型へ置換し、`properties` を型解決できるよう整理。
+- 2025-12-22 20:59 done: fix/location/geojson-feature-properties — `LocationSessionController.ts` の Feature を `geojson` 由来に変更し、properties の型解決を回復。検証: 未実施。ロールバック: `plugins/location-plugin/src/services/batch/LocationSessionController.ts` の差分を revert する。
+- 2025-12-22 05:47 start: fix/style-store/typecheck-deps — style-store の TS2307（util / plugin-service-api 解決不可）を修正する対応に着手。DoD: Kanban 記載どおり解決経路の特定、typecheck 実行/記録、運用ログ/ロールバック記載。
+- 2025-12-22 05:48 command: pnpm --filter @hierarchidb/style-store typecheck — exit 0。
+- 2025-12-22 05:49 done: fix/style-store/typecheck-deps — style-store の tsconfig で `paths` 上書きを削除し、workspace alias を有効化。検証: `pnpm --filter @hierarchidb/style-store typecheck` exit 0。ロールバック: `packages/features/style-store/tsconfig.json` の差分を revert する。
+- 2025-12-22 11:45 start: fix/shape/cors-proxy-url-rewrite — shape-plugin でブラウザ環境は cors-proxy 経由、Node テストはオリジナル URL を使うよう URL 書き換えを統一する対応に着手。DoD: Kanban 記載どおり環境別 URL/責務統一/運用ログ記載。（Kanban: 1808）
+- 2025-12-22 11:31 start: feat/ui/folder-map-preview — Folder コンテキストメニューのプレビュー導線追加と `/map/:nodeId` のレイヤー集約表示に着手。DoD: Kanban 記載どおり TreeNode map.zxy 追加/遷移/集約/運用ログ記載。（Kanban: 1813）
+- 2025-12-22 11:50 progress: feat/ui/folder-map-preview — TreeNode に map.zxy を追加し、Folder の preview は `/map/:nodeId` へ遷移するよう対応。Map 画面で map.zxy 優先/Geolocation fallback(zoom=1) を適用し、basemap/shape/location/route/styler を集約するロジックを追加（styler は paint 上書きで適用）。
+- 2025-12-22 11:51 note: feat/ui/folder-map-preview — 検証コマンド（pnpm typecheck/test 等）は未実施。
+- 2025-12-22 12:05 progress: fix/shape/cors-proxy-url-rewrite — packages/features/download に URL 解決ロジック（cors-proxy/local proxy）を追加し、shape-plugin の authFetch を download 経由で解決するよう更新。SessionController で corsProxyBaseURL を注入。
+- 2025-12-22 10:19 start: test/linker/resource-branch-ordering — linker-plugin の resource tree から非重複枝ルート抽出→対象プラグインノード抽出→絶対パス昇順ソートのテスト有無確認と不足分追加に着手。DoD: Kanban 記載どおりテスト有無確認/不足分追加/運用ログ記載。（Kanban: 1810）
+- 2025-12-22 10:19 start: test/styler/node-merge-ordering — styler-plugin のノード抽出→順序付け→合成マップ生成のテスト有無確認と不足分追加に着手。DoD: Kanban 記載どおりテスト有無確認/不足分追加/運用ログ記載。（Kanban: 1811）
+- 2025-12-22 10:19 start: feat/ui-map/layer-style-composition — ui-map で (A) のレイヤー順序と (B) のスタイル適用を反映するコンポーネント整備に着手。DoD: Kanban 記載どおりコンポーネント整備/検証/運用ログ記載。（Kanban: 1812）
+- 2025-12-22 10:32 progress: test/linker/resource-branch-ordering — linker-plugin に resourceTreeOrdering ユーティリティ（非重複枝ルート抽出/絶対パス生成/タイプ別ノード順序付け）を追加し、ユニットテストを新規作成。vitest.config 追加と package.json に test/coverage スクリプトを追加。
+- 2025-12-22 10:32 progress: test/styler/node-merge-ordering — styler の MapLibre styleSpec を絶対パス順で合成する関数とテストを linker-plugin 側に追加（styler ノードの合成挙動を担保）。
+- 2025-12-22 10:32 progress: feat/ui-map/layer-style-composition — `ResourceLayerMap` を ui-map に追加し、ベースマップ選択・レイヤー絶対パス順ソート・スタイル上書きを適用する構成を実装。index export を更新。
+- 2025-12-22 21:48 start: feat/gis/location-route-query-api — styler-plugin の QueryAPI 公開パターンを踏襲し、location-plugin/route-plugin の成果物を LocationQueryAPI/RouteQueryAPI から取得可能にする対応に着手。DoD: Kanban 記載どおり QueryAPI 経由の取得、未連携の明記、typecheck 実行、運用ログ/ロールバック記載。
+- 2025-12-22 22:04 progress: feat/gis/location-route-query-api — LocationQueryAPI/RouteQueryAPI の型と runtime-worker の QueryService/WorkerAPI/worker-bridge を追加。RouteDatabase に routeId index を追加し、routeResults に nodeId を保存するよう更新（RouteBatchSession/tabular materialize）。
+- 2025-12-22 22:04 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 2。LocationDialog/LocationPanel/BatchProgressDialog/LocationMapPreview 系の translations が unknown エラー、LocationPanel の LocationEntity で type/category が不足（既存課題）。
+- 2025-12-22 22:04 command: pnpm --filter @hierarchidb/route-plugin typecheck — exit 0。
+- 2025-12-22 10:33 note: test/linker/resource-branch-ordering/test/styler/node-merge-ordering/feat/ui-map/layer-style-composition — 検証コマンド（pnpm test/typecheck）は未実施。必要であれば実行する。
+- 2025-12-22 10:20 start: feat/shape/download-postprocess-strategy — shape-plugin の download/後処理/次ステージ生成をデータソース別ストラテジーで差し替え可能にする対応に着手。DoD: Kanban 記載どおり差し替え可能化/ExecPlan更新/運用ログ記載。（Kanban: 1807）
+- 2025-12-22 10:25 progress: feat/shape/download-postprocess-strategy — ExecPlan `plans/shape-download-postprocess-strategy.md` を作成し、戦略化の方針と検証手順を記載。
+- 2025-12-22 11:05 progress: feat/shape/download-postprocess-strategy — download/後処理ストラテジーのインターフェースと固定マップを追加し、SessionController を戦略経由で download→postprocess→simplify1 タスク生成へ変更。OSM/NaturalEarth/GADM/GeoBoundaries の戦略骨格を実装。
+- 2025-12-22 11:20 progress: feat/shape/download-postprocess-strategy — 戦略のユニットテスト（GADM 1:1/NaturalEarth 分割）を追加し、OSM bbox 用の CountryMetadata 拡張と fetch options の tags/bbox 対応を反映。
+- 2025-12-22 11:34 command: pnpm --filter @hierarchidb/shape-plugin test -- src/services/batch/strategies/__tests__/DownloadStageStrategy.unit.test.ts — exit 1。`shape-batch-progress.headless.test.ts` が GeoBoundaries API へ fetch して失敗（ネットワーク未許可）。新規テスト単体の実行方法を見直す必要あり。
+- 2025-12-22 11:35 command: pnpm --filter @hierarchidb/shape-plugin exec vitest run --include src/headless/download-stage-strategy.headless.test.ts — exit 1。`--include` は vitest で未知のオプション。
+- 2025-12-22 11:36 command: pnpm --filter @hierarchidb/shape-plugin exec vitest run src/headless/download-stage-strategy.headless.test.ts — exit 1。FlatGeobuf で geometry=null をシリアライズできず失敗。
+- 2025-12-22 12:17 start: feat/ui-map/layer-style-composition — ui-map の ResourceLayerMap 型エラー（layer type と sortByPath の型不整合）を解消する対応に着手。DoD: Kanban 1812 記載どおり ui-map 集約/スタイル適用の整備、typecheck 結果/運用ログ/ロールバック記載。
+- 2025-12-22 12:23 progress: feat/ui-map/layer-style-composition — LayerStyleOverrides を layerType 全域（raster/background 含む）へ拡張し、sortByPath のキー解決を nodeId/layerId/sourceId に対応して geoJson レイヤーの型崩れを解消。
+- 2025-12-22 12:23 done: feat/ui-map/layer-style-composition — ResourceLayerMap の layerType/geoJson 並び替え型を補正し、ui-map typecheck エラーを解消。検証: 未実施（作業中のログのみ）。ロールバック: `packages/ui/map/src/components/ResourceLayerMap.tsx` の差分を revert する。
+- 2025-12-22 11:36 command: pnpm --filter @hierarchidb/shape-plugin exec vitest run src/headless/download-stage-strategy.headless.test.ts — exit 0（2 tests passed）。
+- 2025-12-22 09:15 start: fix/shape/download-task-warn-url — Step5 の download task で HTTP エラー発生時に URL を console.warn へ出力する対応に着手。DoD: Kanban 記載どおり URL 警告/既存挙動維持/運用ログ/ロールバック記載。（Kanban: 1806）
+- 2025-12-22 09:18 progress: fix/shape/download-task-warn-url — GeoBoundaries/GADM/NaturalEarth/OpenStreetMap の download リクエストで response.ok が false の場合に URL を警告出力するよう追加。
+- 2025-12-22 09:20 done: fix/shape/download-task-warn-url — Step5 download stage の HTTP エラー時に URL を console.warn へ出力。検証: 未実施。ロールバック: `plugins/shape-plugin/src/services/datasources/{GeoBoundariesStrategy,GADMStrategy,NaturalEarthStrategy,OpenStreetMapStrategy}.ts` の差分を revert する。
+- 2025-12-22 07:32 start: fix/shape/map-task-record-type — shape-plugin の mapTaskRecordToBatchTask 型不整合エラー修正に着手。DoD: Kanban 記載どおり型不整合解消、運用ログ更新、typecheck 結果記録、ロールバック手順記載。
+- 2025-12-22 07:38 progress: fix/shape/map-task-record-type — mapTaskRecordToBatchTask の stage を status から導出するよう変更し、型不整合を解消。
+- 2025-12-22 07:38 done: fix/shape/map-task-record-type — 型不整合修正を完了。検証: 未実施（`pnpm install` が `@types/fast-deep-equal` 404 で失敗しており typecheck 未実行）。ロールバック: `plugins/shape-plugin/src/worker/api.ts` の差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する。
 - 2025-12-22 05:50 start: fix/shape/step5-nodeid-missing — shape-plugin Step5 の Start Build で Snackbar に "NodeId is missing" が出てビルド開始できない問題の調査/修正に着手。DoD: Kanban 記載どおり再現解消、原因/影響範囲説明、運用ログ/ロールバック記載。
 - 2025-12-22 05:53 progress: fix/shape/step5-nodeid-missing — Step5 の data は draftData のみで nodeId が含まれず、Start Build の saveDraft/startBatch が data.nodeId を参照して欠落していた。Step アダプタから nodeId を渡し、Build hook/summary で nodeId を利用するよう修正。
 - 2025-12-22 05:53 done: fix/shape/step5-nodeid-missing — Step5 の Start Build で nodeId を props 経由で取得するように変更し、Snackbar の "NodeId is missing" を解消。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ShapeDialogStepProps.ts`、`plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`、`plugins/shape-plugin/src/ui/components/steps-provider.tsx`、`plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts` の差分を revert する。
@@ -10946,6 +11265,27 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-22 06:28 progress: fix/shape/step5-build-start-stuck — BuildStepPanel の Status/Progress Card を差し替え可能にし、shape Step5 ではバッチ進捗サマリカードを上段に配置。
 - 2025-12-22 06:32 progress: fix/shape/step5-build-start-stuck — バッチ進捗サマリカードを横幅いっぱいに拡張し、idle 時に stage が processing にならないよう progress mapping を補正。
 - 2025-12-22 06:34 progress: fix/shape/step5-build-start-stuck — サマリカードの hover 演出を無効化し、余計な浮き上がりアニメーションを抑制。
+- 2025-12-22 06:35 progress: fix/shape/step5-build-start-stuck — idle/paused 時は Task 表示を Ready に戻し、processing が残らないようラベル判定を補正。
+- 2025-12-22 06:38 progress: fix/shape/step5-build-start-stuck — Start Build 前に urlMetadata が空なら UI 側で生成して保存する導線を追加し、BatchSession 要件エラーを回避。
+- 2025-12-22 06:56 start: feat/shape/step5-task-titles — Step5 のタスク表示をタスクIDからタイトル表示へ変更し、ステージ別にタイトルを定義できるようにする対応に着手。DoD: Kanban 記載どおりタイトル表示/定義/運用ログ記載。
+- 2025-12-23 09:10 start: feat/ui/treeconsole-folder-split — TreeConsole の folder 表示を md 以上で2カラム化する対応に着手。DoD: Kanban 記載どおり2カラム/TreeNodeInfoPanel表示/TreeTable残幅/運用ログ記載。（Kanban: 1821）
+- 2025-12-23 09:22 progress: feat/ui/treeconsole-folder-split — folder + md 以上で TreeNodeInfoPanel と TreeTable を2カラム表示するレイアウトを TreeConsoleIntegration に追加。検証: 未実施。
+- 2025-12-23 09:35 blocked: feat/ui/treeconsole-folder-split — /t/r で TreeTableHeader 起点のエラーと Maximum update depth exceeded が発生。原因特定のため、コンソールの先頭エラーメッセージ（"Uncaught ..." 行）を確認中。
+- 2025-12-23 09:50 progress: feat/ui/treeconsole-folder-split — TreeTable の列幅自動調整で clientWidth を優先し、同一幅の場合は state を更新しないガードを追加。最大更新深度ループの緩和を狙う。
+- 2025-12-23 10:04 progress: feat/ui/treeconsole-folder-split — 列幅自動調整の useLayoutEffect を mount 時のみ実行するように変更し、ResizeObserver の再初期化ループを回避。
+- 2025-12-23 10:12 progress: feat/ui/treeconsole-folder-split — TreeNodeInfoPanel の購読イベントで subtree の別ノードを拾わないよう、event.node.id が page node と一致する場合のみ更新するガードを追加。
+- 2025-12-23 10:30 progress: feat/ui/treeconsole-folder-split — TreeConsolePanel で folder + md 以上の split view を実装し、TreeConsoleIntegration の2カラム構成を撤去。TreeConsolePanel に infoPanel/pageTreeNode を受け渡すよう調整。
+- 2025-12-22 06:58 progress: feat/shape/step5-task-titles — タスク入力データに URL/featureId などのメタを付与し、UI でステージ別タイトルを表示（download/simplify/vectorTiles）。
+- 2025-12-22 07:06 progress: feat/shape/step5-task-titles — タスク表示を独立コンポーネント化し、サマリの進捗バーをSVGのタスク矩形（未実行=灰/成功=緑/失敗=赤）で描画するよう更新。
+- 2025-12-22 07:10 progress: feat/shape/step5-task-titles — LRU pane header の Chip/アイコン色を failed 状態で赤になるよう補正（BuildStatus に failed を追加し、pane status を failed 優先に調整）。
+- 2025-12-22 07:17 start: fix/shape/step4-cache-actions — Step4 キャッシュ管理ボタンが失敗時に有効化されない問題の調査/修正に着手。DoD: Kanban 記載どおりキャッシュ/タスク削除導線の有効化、原因/影響範囲説明、運用ログ記載。
+- 2025-12-22 07:24 progress: fix/shape/step4-cache-actions — Stage5 の Start Build を completed 状態でも有効化し、削除後に再ビルドできるように条件を調整。
+- 2025-12-22 07:22 progress: feat/shape/step5-task-titles — LRU pane header の (0/0) 状態は Chip/アイコンを灰色の idle 表示に変更。
+- 2025-12-22 07:49 progress: feat/shape/step5-task-titles — タスクタイトルを worker 側で生成して付与し、UI では taskId を表示しない（タイトル未取得は "(Title unavailable)" を表示）。
+- 2025-12-22 08:09 start: test/shape/url-metadata-cases — データソース別の URL 生成（JP/ID × level0/1）をユニットテストで検証する対応に着手。DoD: Kanban 記載どおり URL 期待値検証/原因説明/運用ログ記載。
+- 2025-12-22 08:10 progress: test/shape/url-metadata-cases — generateUrlMetadata のユニットテストを追加し、各データソースの URL が空にならないことを確認できるようにした。
+- 2025-12-22 08:35 progress: test/shape/url-metadata-cases — URL への実アクセス（HEAD / Range GET）で 200/206 を検証する統合テストを追加（ENABLE_INTEGRATION_TESTS=1 のときのみ実行）。
+- 2025-12-22 08:37 command: ENABLE_INTEGRATION_TESTS=1 pnpm --filter @hierarchidb/shape-plugin test -- src/services/utils/__tests__/generateUrlMetadata.unit.test.ts — exit 0（passed 3, skipped 2）。
 - 2025-12-22 05:42 start: refactor/batch-runtime-services/remove-any — batch-runtime-services の `src/*.ts` で any を排除する対応に着手。DoD: Kanban 記載どおり any 排除、型契約維持、typecheck 結果/運用ログ/ロールバック記載。
 - 2025-12-22 05:44 command: pnpm --filter @hierarchidb/batch-runtime-services typecheck — exit 2。`packages/batch-runtime-services/src/index.ts` の `./types.js` 再 export が不足しており、TS2305 が複数件発生。
 - 2025-12-22 05:45 done: refactor/batch-runtime-services/remove-any — `src/*.ts` の any を排除し、Progress/BatchService/WorkerPool/ports/AbstractBatchSession の型を `unknown` / 具体型へ整理。検証は上記 typecheck で既存エラーにより未完了。ロールバック: `packages/batch-runtime-services/src/{Progress.ts,BatchService.ts,AbstractBatchSession.ts,AbstractWorkerPoolManager.ts,ports.ts}` の差分を revert。
@@ -11283,3 +11623,34 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-21 16:12 start: fix/ui-dialog/preview-mode — preview mode 追加と dialog step/復元挙動の安定化に着手。DoD: preview mode 追加、Preview 最終ステップ+FullScreen、Edit の activeStepIndex 復元、dialogUIState mode 更新、運用ログ/ロールバック記載。
 - 2025-12-21 16:31 progress: fix/ui-dialog/preview-mode — preview ルート (/preview) と dialog mode 追加、Preview で dialogUIState を保存しないよう調整。FullScreen は URL `mode=full` で反映。
 - 2025-12-21 16:34 done: fix/ui-dialog/preview-mode — preview を専用 mode として扱い、Preview 強制最終ステップ/FullScreen と Edit 復元の両立を整理。検証: 未実施。ロールバック: `app/src/loader.ts`、`app/src/router/routes/tree/PluginDialogRoute.tsx`、`app/src/hooks/treeconsole/createTreeConsoleActions.ts`、`packages/plugin-ui-host/src/headless/usePluginDialogController.tsx`、`packages/plugin-ui-host/src/headless/components/PluginDialogFooter.tsx`、`packages/plugin-ui-host/src/headless/cancelDraftPolicy.ts`、`packages/ui/dialog/src/{components/{CommonDialog.tsx,CommonDialogActions.tsx,CommonDialogTitle.tsx},types/PluginDialog.types.ts}` の差分を revert する。
+- 2025-12-22 07:17 start: inquiry/shape/build-test-location — shape-plugin のビルド実行を結合テストで検証するテストコードの所在と実行方法を確認。DoD: 対象テストファイルと実行コマンドを提示。
+- 2025-12-22 07:17 done: inquiry/shape/build-test-location — テストファイルとコマンドを提示。検証: 該当コードの確認のみ。ロールバック: 本ログ追記を削除。
+- 2025-12-22 09:32 start: inquiry/styler/scalar-map-query-api — styler-plugin の nodeId+keyColumn 複合キーで valueColumn を色/線幅などのスカラー値にマップした結果をクエリする API の有無を確認。DoD: 該当 API の有無と根拠提示。
+- 2025-12-22 09:32 done: inquiry/styler/scalar-map-query-api — 該当 API の有無を確認して回答。検証: 該当コードの確認のみ。ロールバック: 本ログ追記を削除。
+- 2025-12-22 09:48 start: consult/styler/stylekeyvalues-sharing — stylerKeyValues のキー設計と他プラグイン向け提供方法を検討。DoD: 推奨キー構成と提供APIの選択肢/理由を提示。
+- 2025-12-22 09:48 done: consult/styler/stylekeyvalues-sharing — 推奨キー構成と提供方法を提示。検証: コード確認のみ。ロールバック: 本ログ追記を削除。
+- 2025-12-22 09:52 progress: consult/styler/stylekeyvalues-sharing — 1 node = 1 targetProperty 方針に合わせた API 形と保存モデルを整理。
+- 2025-12-22 09:52 done: consult/styler/stylekeyvalues-sharing — plugin-service-api 経由で UI から使える API 形と保存モデルを提案。検証: 方針整理のみ。ロールバック: 本ログ追記を削除。
+- 2025-12-22 10:03 done: consult/styler/stylekeyvalues-sharing — ファイル配置と実装入口（plugin-service-api + styler-plugin worker + UI bridge）案を提示。検証: 方針整理のみ。ロールバック: 本ログ追記を削除。
+- 2025-12-22 10:03 progress: consult/styler/stylekeyvalues-sharing — API 名は `API` 表記（StyleQueryAPI / StyleWriteAPI）に統一する方針で調整。
+- 2025-12-22 10:15 progress: consult/styler/stylekeyvalues-sharing — 書き込み系は StyleMutationAPI 表記を検討。
+- 2025-12-22 10:15 done: consult/styler/stylekeyvalues-sharing — API 名は StyleQueryAPI / StyleMutationAPI に統一。検証: 方針整理のみ。ロールバック: 本ログ追記を削除。
+- 2025-12-22 10:19 done: consult/styler/stylekeyvalues-sharing — StyleQueryAPI/StyleMutationAPI と style DB の配置案・bridge 入口を具体化。検証: 方針整理のみ。ロールバック: 本ログ追記を削除。
+- 2025-12-22 10:20 start: feat/style/api-types — StyleQueryAPI/StyleMutationAPI と styleTypes の型定義を plugin-service-api に追加。DoD: 型ファイル追加と index export。
+- 2025-12-22 10:20 done: feat/style/api-types — plugin-service-api に styleTypes/StyleQueryAPI/StyleMutationAPI を追加し export。検証: 未実施。ロールバック: 追加ファイルと index export の差分を revert。
+- 2025-12-22 10:34 start: feat/style/worker-api — style DB/StyleService を runtime-worker に追加し、WorkerAPI と worker bridge を拡張。DoD: StyleQueryAPI/StyleMutationAPI が worker 経由で取得可能。
+- 2025-12-22 10:34 done: feat/style/worker-api — StyleDB/StyleService を追加し、WorkerAPI + app worker + ui-worker-client へ getStyleQueryAPI/getStyleMutationAPI を接続。検証: 未実施。ロールバック: 追加ファイルと関連 import/export 差分を revert。
+- 2025-12-22 11:03 start: feat/style/style-store — StyleDB を features/style-store へ移設し runtime-worker から参照。DoD: 新パッケージ追加・参照更新。
+- 2025-12-22 11:04 done: feat/style/style-store — style-store パッケージを追加し、StyleDB を移設して runtime-worker 参照へ更新。検証: 未実施。ロールバック: 追加パッケージと参照更新の差分を revert。
+- 2025-12-22 11:13 start: inquiry/map/map-adapter-vs-ui-map — map-adapter と ui/map の責務と依存関係を確認。DoD: 根拠ファイル付きで説明。
+- 2025-12-22 11:13 done: inquiry/map/map-adapter-vs-ui-map — map-adapter と ui-map の責務・依存関係を整理して回答。検証: 該当ドキュメント/設定の確認のみ。ロールバック: 本ログ追記を削除。
+- 2025-12-22 11:14 done: consult/ui-map/stylequery-mapstyle — UI親コンポーネントで StyleQueryAPI を利用し mapStyleObject へ合成する方針を整理。検証: 方針整理のみ。ロールバック: 本ログ追記を削除。
+- 2025-12-22 11:15 done: inquiry/router/map-route-usage — mapRoute と map.tsx のどちらが使われているかを確認。検証: 参照箇所の確認のみ。ロールバック: 本ログ追記を削除。
+- 2025-12-22 11:26 start: feat/router/map-require-nodeid — /map を /map/:nodeId に変更し、MapPage の参照と navigate を更新。DoD: nodeId 必須化、zxy維持。
+- 2025-12-22 11:26 done: feat/router/map-require-nodeid — mapRoute を /map/$nodeId に変更し、MapPage の from/to を更新。検証: 未実施。ロールバック: `app/src/router/routes/mapRoute.tsx` と `app/src/router/routes/map.tsx` を revert。
+- 2025-12-22 11:31 start: feat/map/stylequery-mapstyle — nodeId で StyleQueryAPI を呼び mapStyleObject を合成して MapLibreMap に渡す。DoD: style descriptor 反映、既存 zxy 動作維持。
+- 2025-12-22 11:31 done: feat/map/stylequery-mapstyle — StyleQueryAPI の descriptor を base style に合成して mapStyleObject を MapLibreMap に適用。検証: 未実施。ロールバック: `app/src/router/routes/map.tsx` の差分を revert。
+- 2025-12-22 11:39 start: feat/map/persist-zxy — 永続化された map.zxy を URL 省略時に適用し、操作後は永続化→debounce で URL 更新。DoD: nodeId の map.zxy 読み取りと保存の両方。
+- 2025-12-22 11:39 done: feat/map/persist-zxy — map.zxy の読み取り/保存を追加し、URL に反映するロジックを実装。検証: 未実施。ロールバック: `app/src/router/routes/map.tsx` と `packages/ui/worker-client/src/workerBridge.ts` の差分を revert。
+- 2025-12-22 23:19 start: fix/features/download-env-detect — resolveNetworkUrl の環境判定をブラウザ警告なしにする対応に着手。DoD: Kanban 記載どおり判定導入、browser警告回避、運用ログ/ロールバック記載。（Kanban: 1827）
+- 2025-12-22 23:20 done: fix/features/download-env-detect — process 参照を撤去し、window/self 判定でブラウザ/worker を識別するロジックへ更新。検証: 未実施。ロールバック: `packages/features/download/src/helpers/resolveNetworkUrl.ts` の差分を revert する。

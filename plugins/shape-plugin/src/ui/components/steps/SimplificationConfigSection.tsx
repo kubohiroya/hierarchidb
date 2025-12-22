@@ -8,7 +8,7 @@ import {
   Paper,
 } from '@mui/material';
 import { FilterAlt as FilterAltIcon, ExpandMore as ExpandMoreIcon, FilterAlt, Filter } from '@mui/icons-material';
-import type { ProcessingConfig } from '../../../common/types/index.js';
+import type { BatchConfig } from '../../../common/types/index.js';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { useTranslation } from '../../i18n.js';
 import { useSimplificationConfigSection } from '../../hooks/useSimplificationConfigSection.js';
@@ -17,9 +17,9 @@ import { SimplificationPanel } from '../processing/SimplificationPanel.js';
 import { PrecisionPanel } from '../processing/PrecisionPanel.js';
 
 type Props = {
-  config: ProcessingConfig;
+  config: BatchConfig;
   disabled?: boolean;
-  onChange: (next: ProcessingConfig) => void;
+  onChange: (next: BatchConfig) => void;
 };
 
 export const SimplificationConfigSection: React.FC<Props> = ({ config, disabled, onChange }) => {

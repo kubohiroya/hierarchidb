@@ -3,21 +3,11 @@
   */
 
 import type { NodeId } from '@hierarchidb/common-types';
-
-import type {
-  BatchSession,
-  BatchTask,
-  CountryMetadata,
-  DataSourceConfig,
-  ProcessingConfig,
-  ProgressInfo,
-  ShapeBatchCommand,
-  ShapeBatchCommandPayload,
-  SelectionStats,
-  ShapeEntity,
-  UrlMetadata,
-  ShapeStepValidationResult,
-} from '../types/index.js';
+import { ShapeEntity } from './core.ts';
+import { CountryMetadata, DataSourceConfig, UrlMetadata } from './data-source.ts';
+import { SelectionStats, ShapeStepValidationResult } from './validation.ts';
+import { BatchConfig } from './processing.ts';
+import { BatchSession, BatchTask, ProgressInfo, ShapeBatchCommand, ShapeBatchCommandPayload } from './batch.ts';
 
 /**
  * Main Shape API interface for UI-Worker communication via PluginRegistryImpl
@@ -59,7 +49,7 @@ export interface ShapeAPI {
   //  Batch processing operations - DraftTypes-based
   startBatchProcessing(
     draftId: NodeId,
-    config: ProcessingConfig,
+    config: BatchConfig,
     urlMetadata: UrlMetadata[],
   ): Promise<string>;
 

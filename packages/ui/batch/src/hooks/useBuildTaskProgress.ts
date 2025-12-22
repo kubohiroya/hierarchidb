@@ -53,15 +53,17 @@ export const useBuildTaskProgress = (
       const stageTasks = tasksByStage[stage.id] ?? [];
       const taskCount = stageTasks.length;
       const completedCount = stageTasks.filter((task) => task.status === 'completed').length;
+      const failedCount = stageTasks.filter((task) => task.status === 'failed').length;
       const progressValue = taskCount > 0
         ? Math.round(stageTasks.reduce((sum, task) => sum + (task.progress ?? 0), 0) / taskCount)
         : (stageProgress[stage.id] ?? overallProgress);
+      const derivedStatus = failedCount > 0 ? 'failed' : buildStatus;
       return {
         paneId: stage.id,
         progress: Math.min(100, Math.max(0, progressValue)),
         taskCount,
         completedCount,
-        status: buildStatus,
+        status: derivedStatus,
       };
     });
   }, [buildStatus, overallProgress, stageProgress, stages, tasksByStage]);

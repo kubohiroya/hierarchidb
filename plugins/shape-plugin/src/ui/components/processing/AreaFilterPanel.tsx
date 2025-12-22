@@ -14,20 +14,20 @@ import {
 import type {
   FeatureFilterMethod,
   HybridFilterConfig,
-  ProcessingConfig,
-  SimplificationProcessingConfig,
+  BatchConfig,
+  SimplificationBatchConfig,
 } from '../../../common/types/index.js';
 import { useTranslation } from '../../i18n.js';
 
 type Props = {
   controlId: string;
-  baseSimplificationConfig: SimplificationProcessingConfig;
+  baseSimplificationConfig: SimplificationBatchConfig;
   baseHybridConfig: HybridFilterConfig;
   quickRejectLogMin: number;
   quickRejectLogMax: number;
   quickRejectLogValue: number;
   disabled?: boolean;
-  update: (partial: Partial<ProcessingConfig>) => void;
+  update: (partial: Partial<BatchConfig>) => void;
 };
 
 export const AreaFilterPanel: React.FC<Props> = ({

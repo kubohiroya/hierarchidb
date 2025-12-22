@@ -20,6 +20,7 @@ export interface CountryMetadata {
   availableAdminLevels: number[];
   iso2?: string;
   iso3?: string;
+  bbox?: [number, number, number, number];
   population?: number;
   area?: number;
   dataQuality?: 'high' | 'medium' | 'low';

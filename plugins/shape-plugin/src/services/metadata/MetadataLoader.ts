@@ -16,6 +16,7 @@ type RawCountryMetadata = Partial<CountryMetadata> & {
   continent?: string;
   population?: number;
   area?: number;
+  bbox?: number[];
 };
 
 /**
@@ -96,6 +97,9 @@ export class MetadataLoader {
         availableAdminLevels: resolvedLevels,
         iso2: item.iso2,
         iso3: item.iso3,
+        bbox: Array.isArray(item.bbox) && item.bbox.length === 4
+          ? [item.bbox[0] as number, item.bbox[1] as number, item.bbox[2] as number, item.bbox[3] as number]
+          : undefined,
         population: item.population,
         area: item.area,
         dataQuality: this.determineDataQuality(resolvedLevels),

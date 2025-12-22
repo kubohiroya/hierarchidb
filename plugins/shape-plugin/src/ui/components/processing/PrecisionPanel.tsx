@@ -4,18 +4,18 @@ import {
   Typography,
 } from '@mui/material';
 import type {
-  ProcessingConfig,
-  SimplificationProcessingConfig,
+  BatchConfig,
+  SimplificationBatchConfig,
 } from '../../../common/types/index.js';
 import { useTranslation } from '../../i18n.js';
 
 type Props = {
-  baseSimplificationConfig: SimplificationProcessingConfig;
+  baseSimplificationConfig: SimplificationBatchConfig;
   quantizeOptions: number[];
   quantizeRank: number;
   quantizeLabel: string;
   disabled?: boolean;
-  update: (partial: Partial<ProcessingConfig>) => void;
+  update: (partial: Partial<BatchConfig>) => void;
 };
 
 export const PrecisionPanel: React.FC<Props> = ({

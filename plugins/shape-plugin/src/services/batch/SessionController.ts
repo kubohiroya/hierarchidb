@@ -24,6 +24,9 @@ import { BatchTaskStage } from '../../common/types/index.js';
 import type { DownloadTask } from '../../common/types/index.js';
 import { isShapePreviewMetadataEnabled } from '../../common/config/previewFlags.js';
 import { shapeDB } from '../database/ShapeDB.js';
+import type { DownloadStageOutput } from './strategies/DownloadStageStrategy.js';
+import { resolveDownloadStageStrategy } from './strategies/resolveDownloadStageStrategy.js';
+import { setCorsProxyBaseURL } from '../utils/corsProxyBase.js';
 
 type WorkerPoolStatistics = Record<string, number>;
 
@@ -55,6 +58,8 @@ export class SessionController {
   private simplify1Adapter?: Simplify1StageAdapter;
   private simplify2Adapter?: Simplify2StageAdapter;
   private vectorTileAdapter?: VectorTileStageAdapter;
+  private simplify1Tasks: Simplify1Task[] = [];
+  private simplify2Tasks: Simplify2Task[] = [];
   private readonly pausedStages = new Set<ProcessingStage>();
   private readonly stageWaiters = new Map<ProcessingStage, Array<() => void>>();
 
@@ -70,6 +75,7 @@ export class SessionController {
     this.urlMetadata = urlMetadata;
     this.options = options;
     this.config = config;
+    setCorsProxyBaseURL(config.corsProxyBaseURL);
   }
 
   private resolveZoomLevels(): number[] {
@@ -81,6 +87,14 @@ export class SessionController {
       return [];
     }
     return Array.from({ length: upper - lower + 1 }, (_, index) => lower + index);
+  }
+
+  private resolveDataSource(): string {
+    const dataSource = this.config.dataSource ?? this.urlMetadata[0]?.dataSource;
+    if (!dataSource) {
+      throw new Error('Data source is required for batch processing');
+    }
+    return dataSource;
   }
 
   /**
@@ -196,28 +210,19 @@ export class SessionController {
     this.currentStage = 'download';
     console.log(`[Session ${this.sessionId}] Processing download stage`);
 
-    const tasks: DownloadTask[] = this.urlMetadata.map((metadata, index) => ({
-      taskId: `${this.sessionId}-download-${index}`,
-      sessionId: this.sessionId as NodeId,
-      taskType: 'download',
-      stage: BatchTaskStage.WAIT,
-      type: 'download',
-      status: 'waiting',
-      index,
-      progress: 0,
-      url: metadata.url,
-        config: {
-          dataSource: (metadata as { dataSource?: string }).dataSource ?? metadata.continent ?? 'gadm',
-          country: (metadata as { country?: string }).country ?? metadata.countryCode ?? 'UNKNOWN',
-          adminLevel: metadata.adminLevel,
-          url: metadata.url,
-        timeoutMs: this.options.timeoutMs ?? 0,
-        retryDelay: this.options.retryDelay ?? 0,
-        retryAttempts: this.options.retryAttempts ?? 0,
-        expectedFormat: 'geojson',
-        validateSSL: true,
-        },
-    }));
+    const dataSource = this.resolveDataSource();
+    const strategy = resolveDownloadStageStrategy(dataSource);
+    const tasks: DownloadTask[] = await strategy.buildDownloadTasks({
+      sessionId: this.sessionId,
+      nodeId: this.nodeId,
+      urlMetadata: this.urlMetadata,
+      config: this.config,
+      options: {
+        timeoutMs: this.options.timeoutMs,
+        retryAttempts: this.options.retryAttempts,
+        retryDelay: this.options.retryDelay,
+      },
+    });
     await this.registerTasks('download', tasks);
     const res = await this.downloadAdapter.process(
       this.sessionId,
@@ -237,22 +242,29 @@ export class SessionController {
       currentStage: 'download',
       currentTask: 'Download completed',
     });
+    const postprocess = await strategy.postprocessDownloadOutputs({
+      sessionId: this.sessionId,
+      nodeId: this.nodeId,
+      urlMetadata: this.urlMetadata,
+      config: this.config,
+      options: {
+        timeoutMs: this.options.timeoutMs,
+        retryAttempts: this.options.retryAttempts,
+        retryDelay: this.options.retryDelay,
+      },
+      downloadTasks: tasks,
+    });
+    this.simplify1Tasks = this.buildSimplify1Tasks(postprocess.outputs);
   }
 
-  /**
-   * Process simplify1 stage
-   */
-  private async processSimplify1Stage(): Promise<void> {
-    this.currentStage = 'simplify1';
-    console.log(`[Session ${this.sessionId}] Processing simplify1 stage`);
-
+  private buildSimplify1Tasks(outputs: DownloadStageOutput[]): Simplify1Task[] {
     const simplifyConfig = this.config.simplify1;
     const simplifyTolerance = this.config.simplify2?.simplify
       ?? this.config.simplify2?.tolerance
       ?? 0.001;
     const minArea = simplifyConfig?.featureAreaThreshold ?? 0;
 
-    const tasks: Simplify1Task[] = this.urlMetadata.map((_metadata, index) => ({
+    return outputs.map((output, index) => ({
       taskId: `${this.sessionId}-simplify1-${index}`,
       sessionId: this.sessionId as NodeId,
       taskType: 'simplify1',
@@ -261,10 +273,21 @@ export class SessionController {
       status: 'waiting',
       index,
       progress: 0,
-      inputBufferId: `${this.sessionId}-download-${index}`,
+      inputBufferId: output.inputBufferId,
       tolerance: simplifyTolerance,
       minArea,
+      countryCode: output.countryCode,
+      adminLevel: output.adminLevel,
+      metadata: {
+        dataSource: output.dataSource,
+        countryName: output.countryName,
+        sourceUrl: output.sourceUrl,
+      },
       config: {
+        sourceUrl: output.sourceUrl,
+        featureId: `${output.countryCode ?? 'UNK'}:${output.adminLevel ?? index}`,
+        countryCode: output.countryCode,
+        adminLevel: output.adminLevel,
         algorithm: 'douglas-peucker',
         tolerance: simplifyTolerance,
         preserveTopology: true,
@@ -275,6 +298,20 @@ export class SessionController {
         hybridFilterConfig: simplifyConfig?.hybridFilterConfig,
       },
     }));
+  }
+
+  /**
+   * Process simplify1 stage
+   */
+  private async processSimplify1Stage(): Promise<void> {
+    this.currentStage = 'simplify1';
+    console.log(`[Session ${this.sessionId}] Processing simplify1 stage`);
+
+    const tasks = this.simplify1Tasks;
+    if (tasks.length === 0) {
+      console.warn(`[Session ${this.sessionId}] No simplify1 tasks to process`);
+      return;
+    }
 
     await this.registerTasks('simplify1', tasks);
     const r = await this.simplify1Adapter!.process(tasks, (p) => this.progressCallback?.(p), {
@@ -294,7 +331,7 @@ export class SessionController {
     const tileSize = this.config.vectorTiles?.tileSize ?? this.config.tileSize ?? 512;
     const simplify2Config = this.config.simplify2;
 
-    const tasks: Simplify2Task[] = this.urlMetadata.map((_metadata, index) => ({
+    const tasks: Simplify2Task[] = this.simplify1Tasks.map((task, index) => ({
       taskId: `${this.sessionId}-simplify2-${index}`,
       sessionId: this.sessionId as NodeId,
       taskType: 'simplify2',
@@ -306,7 +343,14 @@ export class SessionController {
       inputBufferId: `${this.sessionId}-simplify1-${index}`,
       zoomLevels,
       tileSize,
+      countryCode: task.countryCode,
+      adminLevel: task.adminLevel,
+      metadata: task.metadata,
       config: {
+        sourceUrl: task.config?.sourceUrl,
+        featureId: `${task.countryCode ?? 'UNK'}:${task.adminLevel ?? index}`,
+        countryCode: task.countryCode,
+        adminLevel: task.adminLevel,
         zoomLevel: zoomLevels[0] ?? 10,
         tileSize,
         preserveSharedBoundaries: true,
@@ -320,6 +364,11 @@ export class SessionController {
         enablePerFeatureSimplification: simplify2Config?.enablePerFeatureSimplification,
       },
     }));
+    this.simplify2Tasks = tasks;
+    if (tasks.length === 0) {
+      console.warn(`[Session ${this.sessionId}] No simplify2 tasks to process`);
+      return;
+    }
 
     await this.registerTasks('simplify2', tasks);
     const r = await this.simplify2Adapter!.process(tasks, (p) => this.progressCallback?.(p), {
@@ -341,11 +390,15 @@ export class SessionController {
     const maxZoom = this.config.vectorTiles?.maxZoom ?? 10;
     const metadataEnabled = isShapePreviewMetadataEnabled();
     let metadataReplace = true;
-    const tasks: VectorTileTask[] = this.urlMetadata.map((metadata, index) => {
+    const tasks: VectorTileTask[] = this.simplify2Tasks.map((task, index) => {
       const replace = metadataEnabled && metadataReplace;
       if (metadataEnabled) {
         metadataReplace = false;
       }
+      const metadata = (task.metadata ?? {}) as {
+        dataSource?: string;
+        countryName?: string;
+      };
       return {
         taskId: `${this.sessionId}-vectortile-${index}`,
         sessionId: this.sessionId as NodeId,
@@ -355,8 +408,8 @@ export class SessionController {
         status: 'waiting',
         index,
         progress: 0,
-        countryCode: metadata.countryCode,
-        adminLevel: metadata.adminLevel,
+        countryCode: task.countryCode,
+        adminLevel: task.adminLevel,
         config: {
           inputBufferId: `${this.sessionId}-simplify2-${index}`,
           minZoom,
@@ -373,13 +426,17 @@ export class SessionController {
           metadataReplace: replace,
           metadataContext: {
             dataSource: metadata.dataSource,
-            countryCode: metadata.countryCode,
+            countryCode: task.countryCode,
             countryName: metadata.countryName,
-            adminLevel: metadata.adminLevel,
+            adminLevel: task.adminLevel,
           },
         },
       };
     });
+    if (tasks.length === 0) {
+      console.warn(`[Session ${this.sessionId}] No vector tile tasks to process`);
+      return;
+    }
 
     await this.registerTasks('vectortile', tasks);
     const r = await this.vectorTileAdapter!.process(tasks, (p) => this.progressCallback?.(p), {

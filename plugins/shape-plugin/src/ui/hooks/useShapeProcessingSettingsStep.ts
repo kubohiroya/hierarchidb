@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
-import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../common/types/index.js';
-import type { ProcessingConfig, ShapeEntity } from '../../common/types/index.js';
-import { clearStagesIfPresent, resolveProcessingConfigInvalidation, resolveShapeSessionId } from '../utils/sessionInvalidation.js';
+import { DEFAULT_PROCESSING_CONFIG, mergeBatchConfig } from '../../common/types/index.js';
+import type { BatchConfig, ShapeEntity } from '../../common/types/index.js';
+import { clearStagesIfPresent, resolveBatchConfigInvalidation, resolveShapeSessionId } from '../utils/sessionInvalidation.js';
 
 type Args = {
   data: Partial<ShapeEntity>;
@@ -10,19 +10,19 @@ type Args = {
 
 export const useShapeProcessingSettingsStep = ({ data, onChange }: Args) => {
   const config = useMemo(
-    () => mergeProcessingConfig(data?.processingConfig ?? DEFAULT_PROCESSING_CONFIG),
-    [data?.processingConfig],
+    () => mergeBatchConfig(data?.batchConfig ?? DEFAULT_PROCESSING_CONFIG),
+    [data?.batchConfig],
   );
 
-  const handleChange = useCallback((nextConfig: ProcessingConfig) => {
-    const previousConfig = mergeProcessingConfig(data?.processingConfig ?? DEFAULT_PROCESSING_CONFIG);
-    const nextMerged = mergeProcessingConfig(nextConfig ?? DEFAULT_PROCESSING_CONFIG);
-    const stages = resolveProcessingConfigInvalidation(previousConfig, nextMerged);
+  const handleChange = useCallback((nextConfig: BatchConfig) => {
+    const previousConfig = mergeBatchConfig(data?.batchConfig ?? DEFAULT_PROCESSING_CONFIG);
+    const nextMerged = mergeBatchConfig(nextConfig ?? DEFAULT_PROCESSING_CONFIG);
+    const stages = resolveBatchConfigInvalidation(previousConfig, nextMerged);
     const sessionId = resolveShapeSessionId(data);
     if (sessionId && stages.length > 0) {
       void clearStagesIfPresent(sessionId, stages);
     }
-    onChange({ processingConfig: nextMerged });
+    onChange({ batchConfig: nextMerged });
   }, [data, onChange]);
 
   return { config, handleChange };

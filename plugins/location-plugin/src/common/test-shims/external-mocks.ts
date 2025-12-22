@@ -12,8 +12,6 @@ export class BatchService {
 }
 
 export class TabularWriter {
-  constructor(_namespace: string) {}
-
   async begin(_config: { filename: string; columns: string[] }) {
     // no-op for tests
   }
@@ -65,11 +63,11 @@ export abstract class UnifiedBatchManagerBase<TConfig, TData> {
     await this.performCancel(sessionId);
   }
 
-  async getBatchSessionStatus(sessionId: string): Promise<any> {
+  async getBatchSessionStatus(sessionId: string): Promise<unknown> {
     return this.performStatus(sessionId);
   }
 
-  onBatchProgress(sessionId: string, callback: (event: any) => void): () => void {
+  onBatchProgress(sessionId: string, callback: (even: unknown) => void): () => void {
     return this.performSubscribe(sessionId, callback);
   }
 
@@ -77,8 +75,8 @@ export abstract class UnifiedBatchManagerBase<TConfig, TData> {
   protected abstract performPause(sessionId: string): Promise<void>;
   protected abstract performResume(sessionId: string): Promise<void>;
   protected abstract performCancel(sessionId: string): Promise<void>;
-  protected abstract performStatus(sessionId: string): Promise<any>;
-  protected abstract performSubscribe(sessionId: string, callback: (event: any) => void): () => void;
+  protected abstract performStatus(sessionId: string): Promise<unknown>;
+  protected abstract performSubscribe(sessionId: string, callback: (event: unknown) => void): () => void;
 }
 
 export function createLaneSemaphoreRegistry(options: { defaults: Record<string, number>; fallback?: number }) {
@@ -150,7 +148,7 @@ export function createAdapterFromProgressSubscribe(
 
 type Unsubscribe = () => void;
 
-type SubscribeResult = Unsubscribe | Promise<Unsubscribe | void> | void;
+type SubscribeResult = Unsubscribe | Promise<Unsubscribe>;
 
 export function useBatchProgress(
   adapter: BatchProgressAdapter | null,
@@ -168,7 +166,7 @@ export function useBatchProgress(
     if (typeof result === 'function') {
       unsubRef.current = result;
     } else if (result && typeof (result as Promise<unknown>).then === 'function') {
-      void (result as Promise<Unsubscribe | void>).then((value) => {
+      void (result as Promise<Unsubscribe>).then((value) => {
         if (typeof value === 'function') {
           unsubRef.current = value;
         }

@@ -4,6 +4,7 @@
 
 // Core map components
 export { VectorTileLayer } from './components/VectorTileLayer.js';
+export { ResourceLayerMap } from './components/ResourceLayerMap.js';
 export const loadMapWithDeckGL = () =>
   import('./components/MapWithDeckGL.js') as Promise<typeof import('./components/MapWithDeckGL.js')>;
 export const loadMapLibreMap = () =>
@@ -40,6 +41,11 @@ export type { MapLibreMapProps } from './components/MapLibreMap.js';
 export type { VectorTileLayerProps } from './components/VectorTileLayer.js';
 export type { MapWithVectorTilesProps, LayerOptions } from './components/MapWithVectorTiles.js';
 export type { DeckOverlayProps } from './components/MapWithDeckGL.js';
+export type {
+  ResourceLayerMapProps,
+  ResourceVectorLayer,
+  ResourceGeoJsonLayer,
+} from './components/ResourceLayerMap.js';
 
 // Layer presets
 export * from './presets/vectorLayers.js';

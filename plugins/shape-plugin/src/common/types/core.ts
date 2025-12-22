@@ -4,7 +4,7 @@ import type { TabularDataResult } from '@hierarchidb/ui-tabular';
 import type { BBox, Geometry } from 'geojson';
 import type { LayerInfo } from './batch.js';
 import type { DataSourceName, UrlMetadata } from './data-source.js';
-import type { ProcessingConfig } from './processing.js';
+import type { BatchConfig } from './processing.js';
 
 export interface ShapeEntity {
   // Identifiers
@@ -36,15 +36,15 @@ export interface ShapeEntity {
 // Map Position
   zxy?: [number, number, number];
 
-// Data Source
-  dataSourceName?: DataSourceName;
-
-// License Agreement
+  // License Agreement
   licenseAgreement?: boolean;
   licenseAgreedAt?: string;
 
+  // Data source (legacy, derived from batchConfig.dataSource)
+  dataSourceName?: DataSourceName;
+
 // Processing Configuration
-  processingConfig?: ProcessingConfig;
+  batchConfig?: BatchConfig;
 
 // Country & Admin Selection
   checkboxState?: boolean[][] | string;

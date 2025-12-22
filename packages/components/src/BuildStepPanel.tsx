@@ -10,7 +10,7 @@ import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { LRUSplitView, type PaneConfig, type PaneProgress } from '@hierarchidb/ui-lru-splitview';
 
-export type BuildStatus = 'idle' | 'running' | 'paused' | 'completed';
+export type BuildStatus = 'idle' | 'running' | 'paused' | 'completed' | 'failed';
 
 export interface BuildStage {
   id: string;
@@ -181,6 +181,8 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
         return 'Build paused';
       case 'completed':
         return 'Build completed';
+      case 'failed':
+        return 'Build failed';
       default:
         return 'Ready to start build';
     }

@@ -1,13 +1,13 @@
 import { Grid, Rating, Stack, TextField, Typography } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
-import type { DownloadProcessingConfig, ProcessingConfig } from '../../../common/types/index.js';
+import type { DownloadBatchConfig, BatchConfig } from '../../../common/types/index.js';
 import { useTranslation } from '../../i18n.js';
 
 type Props = {
-  baseDownloadConfig: DownloadProcessingConfig;
+  baseDownloadConfig: DownloadBatchConfig;
   disabled?: boolean;
-  update: (partial: Partial<ProcessingConfig>) => void;
+  update: (partial: Partial<BatchConfig>) => void;
 };
 
 export const DownloadRetryControls: React.FC<Props> = ({

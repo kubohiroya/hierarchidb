@@ -4,13 +4,13 @@
 
 import { describe, expect, it } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { ProcessingConfig } from '../../../common/types/index.js';
+import type { BatchConfig } from '../../../common/types/index.js';
 import { DEFAULT_PROCESSING_CONFIG } from '../../../common/types/index.js';
 import { shapePluginAPI } from '../../api.js';
 
-const createProcessingConfig = (
-  overrides: Partial<ProcessingConfig> = {},
-): ProcessingConfig => ({
+const createBatchConfig = (
+  overrides: Partial<BatchConfig> = {},
+): BatchConfig => ({
   ...DEFAULT_PROCESSING_CONFIG,
   ...overrides,
   downloadConfig: {
@@ -116,7 +116,7 @@ describe('Shape Plugin API', () => {
   describe('Batch Processing', () => {
     it('should reject invalid processing config', async () => {
       const draftId = 'node-123' as NodeId;
-      const config = createProcessingConfig({
+      const config = createBatchConfig({
         downloadConfig: {
           ...DEFAULT_PROCESSING_CONFIG.downloadConfig,
           maxConcurrent: 20,

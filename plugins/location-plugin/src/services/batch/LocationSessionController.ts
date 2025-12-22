@@ -10,9 +10,12 @@ import { DexieChunkStoragePort } from '@hierarchidb/download';
 import { BatchService, createLaneSemaphoreRegistry } from '@hierarchidb/batch';
 import { getLocationRuntimeWorkerClient } from './adapters/RuntimeWorkerClient.js';
 import type { LocationPointInput, LocationTileSettings } from '../../common/types/batch-types.js';
+import type { Feature, Point } from 'geojson';
 
 // Use _obsolate_common progress event type to decouple worker from UI
 export type ProgressInfo = ProgressEvent;
+
+type LocationFeature = Feature<Point, Record<string, unknown>>;
 
 export class LocationSessionController {
   private static readonly laneRegistry = createLaneSemaphoreRegistry({
@@ -73,7 +76,7 @@ export class LocationSessionController {
 
   private normalizePoints(points: LocationPointInput[]) {
     const allow = this.settings.attributeAllowlist;
-    const features = points.map((p, i) => ({
+    const features: LocationFeature[] = points.map((p, i) => ({
       type: 'Feature' as const,
       id: p.id ?? i,
       properties: allow ? filterProps(p.properties ?? {}, allow) : (p.properties ?? {}),
@@ -85,7 +88,7 @@ export class LocationSessionController {
 
   private async generateTiles(fc: {
     type: 'FeatureCollection';
-    features: any[];
+    features: LocationFeature[];
     bbox: [number, number, number, number]
   }) {
     const db = getEphemeralLocationDB();
@@ -193,9 +196,13 @@ export class LocationSessionController {
 }
 
 // Helpers
-function filterProps(obj: Record<string, any>, allow: string[]): Record<string, any> {
-  const out: Record<string, any> = {};
-  for (const k of allow) if (k in obj) out[k] = obj[k];
+function filterProps(obj: Record<string, unknown>, allow: string[]): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const k of allow) if (k in obj) {
+    if(obj[k]){
+      out[k] = obj[k];
+    }
+  }
   return out;
 }
 
@@ -213,7 +220,7 @@ function computeBbox(pts: LocationPointInput[]): [number, number, number, number
 // Note: tile range enumeration and vt encoding moved to runtime-worker-worker side.
 
 // Build columns and rows from normalized features
-function determineColumns(features: any[], allow?: string[]): string[] {
+function determineColumns(features: LocationFeature[], allow?: string[]): string[] {
   const cols = new Set<string>(['id', 'lon', 'lat']);
   if (Array.isArray(allow) && allow.length > 0) {
     for (const k of allow) cols.add(k);
@@ -231,9 +238,9 @@ function determineColumns(features: any[], allow?: string[]): string[] {
   return Array.from(cols);
 }
 
-function featuresToRows(features: any[]): any[] {
+function featuresToRows(features: LocationFeature[]): Array<Record<string, unknown>> {
   return features.map((f) => {
-    const [lon, lat] = (f?.geometry?.coordinates ?? [0, 0]) as [number, number];
+    const [lon, lat] = f.geometry.coordinates ?? [0, 0];
     return {
       id: f?.id,
       lon,

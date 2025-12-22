@@ -28,6 +28,7 @@ type TreeConsolePanelWithDynamicSpeedDialProps = Omit<TreeConsolePanelProps, 'on
   client: Remote<WorkerAPI> | null;
   onStartTour?: () => void;
   pageTreeNode?: TreeNode;
+  infoPanel?: React.ReactElement | null;
   onBreadcrumbContextAction?: TreeConsolePanelProps['onBreadcrumbContextAction'];
   onTrash?: TreeConsolePanelProps['onDelete'];
   onDelete?: TreeConsolePanelProps['onDelete'];
@@ -45,6 +46,7 @@ export function TreeConsolePanelWithDynamicSpeedDial({
   onBreadcrumbContextAction,
   onTrash,
   onDelete,
+  infoPanel,
   speedDialSuppressed,
   setSpeedDialSuppressed,
   isDialogRoute,
@@ -107,6 +109,8 @@ export function TreeConsolePanelWithDynamicSpeedDial({
         {...panelProps}
         treeId={treeId}
         pageNodeId={pageNodeId}
+        pageTreeNode={pageTreeNode}
+        infoPanel={infoPanel ?? undefined}
         onStartTour={onStartTour}
         onContextMenuAction={onContextMenuAction}
         onMoveNodes={panelProps.onMoveNodes}

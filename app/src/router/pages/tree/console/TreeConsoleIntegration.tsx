@@ -27,7 +27,6 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
   pageTreeNode,
 }) => {
   const { client, isConnected, reset, initialize } = useWorker();
-
   const {
     workerLoading,
     workerError,
@@ -88,6 +87,7 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
         {shouldRenderTreeTable ? (
           <TreeConsolePanelWithDynamicSpeedDial
             {...treeConsolePanelProps}
+            infoPanel={<TreeNodeInfoPanel {...infoPanelProps} />}
             speedDialSuppressed={speedDialSuppressed}
             setSpeedDialSuppressed={setSpeedDialSuppressed}
             isDialogRoute={isDialogRoute}

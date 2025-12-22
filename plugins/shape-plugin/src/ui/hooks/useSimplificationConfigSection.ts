@@ -1,17 +1,17 @@
 import { useCallback, useMemo } from 'react';
 import { useId } from 'react';
-import type { ProcessingConfig, SimplificationProcessingConfig, HybridFilterConfig } from '../../common/types/index.js';
-import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../common/types/index.js';
+import type { BatchConfig, SimplificationBatchConfig, HybridFilterConfig } from '../../common/types/index.js';
+import { DEFAULT_PROCESSING_CONFIG, mergeBatchConfig } from '../../common/types/index.js';
 
 type Args = {
-  config: ProcessingConfig;
+  config: BatchConfig;
   disabled?: boolean;
-  onChange: (next: ProcessingConfig) => void;
+  onChange: (next: BatchConfig) => void;
 };
 
 export const useSimplificationConfigSection = ({ config, onChange }: Args) => {
   const controlId = useId();
-  const baseSimplificationConfig: SimplificationProcessingConfig | undefined =
+  const baseSimplificationConfig: SimplificationBatchConfig | undefined =
     config.simplificationConfig ?? DEFAULT_PROCESSING_CONFIG.simplificationConfig;
   const defaultHybridConfig: HybridFilterConfig =
     DEFAULT_PROCESSING_CONFIG.simplificationConfig?.hybridFilterConfig ?? {
@@ -49,8 +49,8 @@ export const useSimplificationConfigSection = ({ config, onChange }: Args) => {
   const quantizeIndex = resolveQuantizeIndex(quantizeValue);
   const quantizeRank = quantizeIndex + 1;
 
-  const update = useCallback((partial: Partial<ProcessingConfig>) => {
-    onChange(mergeProcessingConfig({ ...config, ...partial }));
+  const update = useCallback((partial: Partial<BatchConfig>) => {
+    onChange(mergeBatchConfig({ ...config, ...partial }));
   }, [config, onChange]);
 
   const quantizeLabel = useMemo(

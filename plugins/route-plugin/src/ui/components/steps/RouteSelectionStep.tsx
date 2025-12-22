@@ -84,27 +84,13 @@ const ROUTE_METHOD_OPTIONS: Array<{ id: RouteGenerationMethod; labelKey: string 
   { id: 'osm_route', labelKey: 'routeGeneration.osm' },
 ];
 
-const toMetadata = (metadata?: RouteEntity['metadata']): Record<string, unknown> => {
-  if (metadata && typeof metadata === 'object') return metadata as Record<string, unknown>;
-  return {};
-};
-
 const getTransportOption = (draft: Partial<RouteEntity>): TransportOption | undefined => {
-  const metadata = toMetadata(draft.metadata);
-  const selection = metadata.transportSelection;
+  const selection = draft.transportSelection;
   if (typeof selection === 'string') {
     return TRANSPORT_MODE_OPTIONS.find((option) => option.id === selection);
   }
   const baseMode = draft.transportMode;
   return TRANSPORT_MODE_OPTIONS.find((option) => option.baseMode === baseMode);
-};
-
-const toGenerationOptions = (metadata: Record<string, unknown>): RouteGenerationOptions => {
-  const options = metadata.generationOptions;
-  if (options && typeof options === 'object') {
-    return options as RouteGenerationOptions;
-  }
-  return {} as RouteGenerationOptions;
 };
 
 export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
@@ -122,10 +108,12 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
   const [loadingLocations, setLoadingLocations] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
 
-  const metadata = useMemo(() => toMetadata(draft.metadata), [draft.metadata]);
   const transportOption = useMemo(() => getTransportOption(draft), [draft]);
   const generationMethod = (draft.generationMethod as RouteGenerationMethod | undefined) ?? 'direct';
-  const generationOptions = useMemo(() => toGenerationOptions(metadata), [metadata]);
+  const generationOptions = useMemo<RouteGenerationOptions>(
+    () => draft.generationOptions ?? {},
+    [draft.generationOptions],
+  );
 
   const locationOptions = useMemo(() => {
     return [...locations].sort((a, b) => {
@@ -218,32 +206,19 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
     };
   }, [api, mode, nodeId, parentId, t]);
 
-  const updateMetadata = useCallback(
-    (updates: Record<string, unknown>) => {
-      emitUpdate({
-        metadata: {
-          ...metadata,
-          ...updates,
-        } as RouteEntity['metadata'],
-      });
-    },
-    [emitUpdate, metadata],
-  );
-
   const handleTransportChange = useCallback(
     (value: string) => {
       const option = TRANSPORT_MODE_OPTIONS.find((item) => item.id === value) ?? TRANSPORT_MODE_OPTIONS[0];
-      const nextDetail = option.detail as Record<string, unknown>;
+      const detail = option.detail;
       emitUpdate({
         transportMode: option.baseMode as RouteEntity['transportMode'],
         transportModes: [option.baseMode] as RouteEntity['transportModes'],
-        metadata: {
-          ...metadata,
-          ...nextDetail,
-        } as RouteEntity['metadata'],
+        transportSelection: detail.transportSelection,
+        railType: 'railType' in detail ? detail.railType : undefined,
+        roadType: 'roadType' in detail ? detail.roadType : undefined,
       });
     },
-    [emitUpdate, metadata],
+    [emitUpdate],
   );
 
   const handleMethodChange = useCallback(
@@ -261,9 +236,9 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
         ...generationOptions,
         ...updates,
       };
-      updateMetadata({ generationOptions: nextOptions });
+      emitUpdate({ generationOptions: nextOptions });
     },
-    [generationOptions, updateMetadata],
+    [emitUpdate, generationOptions],
   );
 
   useEffect(() => {

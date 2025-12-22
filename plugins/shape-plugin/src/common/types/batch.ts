@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { BatchConfig, HybridFilterConfig } from './BatchConfig.js';
-import type { ProcessingConfig } from './processing.js';
+import type { HybridFilterConfig } from './BatchConfig.js';
+import type { BatchSessionConfig } from './BatchConfig.js';
 import type { FeatureFilterMethod } from './processing.js';
 
 export interface BatchStatus {
@@ -37,7 +37,7 @@ export interface BatchTaskBase {
   taskType: BatchTaskType;
   nodeId?: NodeId;
   sessionId?: string;
-  stage?: BatchTaskStageType;
+  stage?: BatchTaskStageType|undefined;
   status?: TaskStatus;
   type?: string;
   index?: number;
@@ -59,6 +59,16 @@ export interface DownloadTaskConfig {
   country?: string;
   adminLevel?: number;
   endpoint?: string;
+  bbox?: BoundingBox;
+  tags?: Array<
+    | string
+    | {
+      key: string;
+      value?: string;
+      operator?: 'eq' | 'ne' | 'exists' | 'not_exists';
+      includeNodes?: boolean;
+    }
+  >;
   timeoutMs?: number;
   retryAttempts?: number;
   retryDelay?: number;
@@ -76,6 +86,7 @@ export interface DownloadTask extends BatchTaskBase {
 
 export interface SimplifyTaskConfig {
   inputBufferId?: string;
+  sourceUrl?: string;
   tolerance?: number;
   minimumArea?: number;
   zoomLevels?: number[];
@@ -142,7 +153,7 @@ export interface BatchSession {
   nodeId: NodeId;
   draftId?: NodeId;
   status: 'idle' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
-  config: BatchConfig | ProcessingConfig;
+  config: BatchSessionConfig;
   startedAt: number;
   updatedAt: number;
   completedAt?: number;

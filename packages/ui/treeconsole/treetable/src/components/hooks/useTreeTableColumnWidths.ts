@@ -118,7 +118,7 @@ export function useTreeTableColumnWidths({ pageNodeId }: UseTreeTableColumnWidth
 
     const measure = () => {
       const rect = container.getBoundingClientRect();
-      const width = Math.floor(rect.width);
+      const width = Math.floor(container.clientWidth || rect.width);
       if (Number.isNaN(width) || width <= 0) return;
 
       setColumnWidths((prev) => {
@@ -146,7 +146,7 @@ export function useTreeTableColumnWidths({ pageNodeId }: UseTreeTableColumnWidth
           }
           next[key] = resized;
         });
-        return next;
+        return columnWidthsEqual(prev as ColumnWidthMap, next as ColumnWidthMap) ? prev : next;
       });
     };
 
@@ -174,7 +174,7 @@ export function useTreeTableColumnWidths({ pageNodeId }: UseTreeTableColumnWidth
       if (raf) cancelAnimationFrame(raf);
       ro?.disconnect();
     };
-  }, [columnWidths]);
+  }, []);
 
   const handleResizeStart = useCallback((leftColumnId: string, rightColumnId: string, event: ReactMouseEvent) => {
     event.preventDefault();

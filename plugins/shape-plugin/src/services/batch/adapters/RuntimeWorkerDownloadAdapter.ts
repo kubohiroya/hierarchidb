@@ -1,12 +1,13 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import { BatchService, createLaneSemaphoreRegistry } from '@hierarchidb/batch';
-import type { DownloadTask } from '../../../common/types/index.js';
+import type { BoundingBox as TaskBoundingBox, DownloadTask } from '../../../common/types/index.js';
 import type { ProgressInfo } from '../../../common/types/index.js';
 import type { DownloadStageAdapter, DownloadStageAdapterResult } from './DownloadStageAdapter.js';
 import type { StageControls } from './StageControls.js';
 import { getEphemeralShapeDB } from '../../database/EphemeralShapeDB.js';
 import { shapeDB } from '../../database/ShapeDB.js';
 import { defaultDataSourceFactory, type DataSourceStrategyId } from '../../datasources/DataSourceStrategyFactory.js';
+import type { BoundingBox as DataSourceBoundingBox } from '../../datasources/DataSourceStrategy.js';
 import type { FeatureCollection } from 'geojson';
 import { geojson as geojsonApi } from 'flatgeobuf';
 import { bbox as turfBbox } from '@turf/turf';
@@ -39,6 +40,17 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
     if (key.includes('geo')) return 'geoboundaries-admin-areas';
     if (key.includes('osm') || key.includes('openstreet')) return 'openstreetmap-overpass';
     return null;
+  }
+
+  private normalizeBoundingBox(bbox?: TaskBoundingBox): DataSourceBoundingBox | undefined {
+    if (!bbox || bbox.length !== 4) return undefined;
+    const [minLng, minLat, maxLng, maxLat] = bbox;
+    return {
+      minLat,
+      maxLat,
+      minLng,
+      maxLng,
+    };
   }
 
   async process(
@@ -82,6 +94,8 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
             const retryAttempts = task.config?.retryAttempts ?? 0;
             const retryDelay = task.config?.retryDelay ?? 0;
             const timeoutMs = task.config?.timeoutMs;
+            const bbox = this.normalizeBoundingBox(task.config?.bbox);
+            const tags = task.config?.tags;
             let lastError: unknown;
             for (let attempt = 0; attempt <= retryAttempts; attempt++) {
               try {
@@ -89,6 +103,8 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
                   country: task.config?.country,
                   adminLevel: task.config?.adminLevel,
                   endpoint: task.config?.endpoint,
+                  bbox,
+                  tags,
                   timeout: timeoutMs,
                 });
                 const processed = await ds.processData(raw, { adminLevel: task.config?.adminLevel });

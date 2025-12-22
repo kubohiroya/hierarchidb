@@ -269,6 +269,12 @@
       "@hierarchidb/styler-plugin/*": [
         "plugins/styler-plugin/src/*"
       ],
+      "@hierarchidb/style-store": [
+        "packages/features/style-store/src/index.ts"
+      ],
+      "@hierarchidb/style-store/*": [
+        "packages/features/style-store/src/*"
+      ],
       "@hierarchidb/table-metadata": [
         "packages/features/table-metadata/src/index.ts"
       ],

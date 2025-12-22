@@ -5,9 +5,9 @@ import { useShapeProgress } from './useShapeProgress.js';
 import { useTranslation } from '../i18n.js';
 import {
   DEFAULT_PROCESSING_CONFIG,
-  mergeProcessingConfig,
+  mergeBatchConfig,
   summarizeCheckboxState,
-  validateProcessingConfig,
+  validateBatchConfig,
   type ShapeEntity,
 } from '../../common/types/index.js';
 import { useBuildStages } from './build/useBuildStages.js';
@@ -124,13 +124,13 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
   }, []);
 
   const isProcessingValid = useMemo(() => (
-    validateProcessingConfig(
-      mergeProcessingConfig(data?.processingConfig ?? DEFAULT_PROCESSING_CONFIG),
+    validateBatchConfig(
+      mergeBatchConfig(data?.batchConfig ?? DEFAULT_PROCESSING_CONFIG),
     ).isValid
-  ), [data?.processingConfig]);
+  ), [data?.batchConfig]);
   const hasSelection = summarizeCheckboxState(data?.checkboxState).hasSelection;
-  const hasDataSource = Boolean(data?.dataSourceName);
-  const canStartOrResume = buildStatus !== 'completed'
+  const hasDataSource = Boolean(data?.batchConfig?.dataSource ?? data?.dataSourceName);
+  const canStartOrResume = buildStatus !== 'running'
     && hasDataSource
     && hasSelection
     && isProcessingValid;
@@ -150,6 +150,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     stageProgress,
     paneProgress,
     tasksByStage,
+    tasks,
     buildStatus,
     overallProgress,
     stageLabel,

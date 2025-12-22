@@ -333,6 +333,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
         if (timeoutId) clearTimeout(timeoutId);
 
         if (!response.ok) {
+          console.warn(`[GeoBoundaries] HTTP ${response.status} for ${url}`);
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 

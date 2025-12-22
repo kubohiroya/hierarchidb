@@ -164,6 +164,7 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
           const res = await this.generator.generate(pts, config);
           const resultRow: RouteResultRow = {
             id: `${this.sessionId}:${task.taskId}`,
+            routeId: this.nodeId,
             sessionId: this.sessionId,
             taskId: task.taskId,
             method,

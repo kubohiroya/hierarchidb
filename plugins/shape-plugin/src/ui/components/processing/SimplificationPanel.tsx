@@ -9,15 +9,15 @@ import {
   Typography,
 } from '@mui/material';
 import type {
-  ProcessingConfig,
-  SimplificationProcessingConfig,
+  BatchConfig,
+  SimplificationBatchConfig,
 } from '../../../common/types/index.js';
 import { useTranslation } from '../../i18n.js';
 
 type Props = {
-  baseSimplificationConfig: SimplificationProcessingConfig;
+  baseSimplificationConfig: SimplificationBatchConfig;
   disabled?: boolean;
-  update: (partial: Partial<ProcessingConfig>) => void;
+  update: (partial: Partial<BatchConfig>) => void;
 };
 
 export const SimplificationPanel: React.FC<Props> = ({

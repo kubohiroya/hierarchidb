@@ -6,7 +6,7 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { RouteEntity, RouteGenerationConfig, RouteUpdaterPayload } from '../../common/entities/RouteEntity.js';
+import type { RouteEntity, RouteUpdaterPayload } from '../../common/entities/RouteEntity.js';
 
 /**
  * Route cache entry
@@ -32,13 +32,19 @@ export interface RouteCursorRow {
 
 export interface RouteResultRow {
   id: string;
+  routeId: NodeId;
   sessionId: string;
   taskId: string;
-  method: RouteGenerationConfig['method'];
-  lineGeometry: [number, number][];
+  method: string;
+  lineGeometry?: [number, number][];
   distance?: number;
   duration?: number;
   createdAt: number;
+  result?: {
+    name?: string;
+    coordinates?: [number, number];
+    payload?: Record<string, unknown>;
+  };
 }
 
 /**
@@ -75,6 +81,14 @@ export class RouteDatabase extends Dexie {
       routeResults: '&id, sessionId, taskId, method, createdAt',
     });
     this.version(3).stores({
+      pendingSessions: '&nodeId, storedAt',
+    });
+    this.version(4).stores({
+      routes: '&id, nodeId, startLocationId, endLocationId, transportMode, [startLocationId+endLocationId], processingStatus, createdAt, updatedAt',
+      workingCopies: '&id, nodeId, copiedAt',
+      routeCache: '&id, routeId, cacheKey, expiresAt',
+      routeCursors: '&sessionId, completed, total, updatedAt',
+      routeResults: '&id, routeId, sessionId, taskId, method, createdAt',
       pendingSessions: '&nodeId, storedAt',
     });
 

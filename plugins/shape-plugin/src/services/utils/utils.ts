@@ -7,10 +7,10 @@ import type {
   CountryMetadata,
   DataSourceName,
   ShapeEntity,
-  ProcessingConfig,
-  DownloadProcessingConfig,
-  SimplificationProcessingConfig,
-  TileProcessingConfig,
+  BatchConfig,
+  DownloadBatchConfig,
+  SimplificationBatchConfig,
+  TileBatchConfig,
   SelectionStats,
   UrlMetadata,
   ShapeStepValidationResult,
@@ -34,10 +34,17 @@ type ShapeDraft = {
 };
 
 export function createDraftFromEntity(entity: ShapeEntity): ShapeDraft {
-  const normalizedDataSourceName = normalizeDataSourceName(entity.dataSourceName) ?? entity.dataSourceName;
+  const normalizedDataSourceName =
+    normalizeDataSourceName(entity.batchConfig?.dataSource ?? entity.dataSourceName)
+    ?? entity.batchConfig?.dataSource
+    ?? entity.dataSourceName;
   return {
     draftData: {
       ...entity,
+      batchConfig: {
+        ...entity.batchConfig,
+        dataSource: normalizedDataSourceName,
+      },
       dataSourceName: normalizedDataSourceName,
     },
   };
@@ -45,9 +52,16 @@ export function createDraftFromEntity(entity: ShapeEntity): ShapeDraft {
 
 export function mapDraftToUpdates(draft: ShapeDraft): Partial<ShapeEntity> {
   const draftData = draft.draftData;
-  const normalizedDataSourceName = normalizeDataSourceName(draftData.dataSourceName) ?? draftData.dataSourceName;
+  const normalizedDataSourceName =
+    normalizeDataSourceName(draftData.batchConfig?.dataSource ?? draftData.dataSourceName)
+    ?? draftData.batchConfig?.dataSource
+    ?? draftData.dataSourceName;
   return {
     ...draftData,
+    batchConfig: {
+      ...draftData.batchConfig,
+      dataSource: normalizedDataSourceName,
+    },
     dataSourceName: normalizedDataSourceName,
   };
 }
@@ -79,7 +93,7 @@ export function validateShapeName(name: string): ShapeStepValidationResult {
 /**
  * Validate processing configuration
  */
-export function validateProcessingConfig(config: Partial<ProcessingConfig>): ShapeStepValidationResult {
+export function validateBatchConfig(config: Partial<BatchConfig>): ShapeStepValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
 
@@ -223,7 +237,7 @@ function buildDataSourceUrl(
   adminLevel: number,
 ): string | null {
   const baseUrls = {
-    naturalearth: 'https://www.naturalearthdata.com/http//www.naturalearthdata.com/download',
+    naturalearth: 'https://www.naturalearthdata.com/download',
     geoboundaries: 'https://www.geoboundaries.org/api/gbOpen',
     // Use GADM v4.1 GPKG endpoint to align with runtime-worker workers/tests
     gadm: 'https://geodata.ucdavis.edu/gadm/gadm4.1/gpkg',
@@ -286,13 +300,13 @@ function estimateDataSize(
 /**
  * Merge processing config with defaults
  */
-export function mergeProcessingConfig(config: Partial<ProcessingConfig>): ProcessingConfig {
+export function mergeBatchConfig(config: Partial<BatchConfig>): BatchConfig {
   return {
     dataSource: config.dataSource ?? DEFAULT_PROCESSING_CONFIG.dataSource,
     downloadConfig: {
       ...(DEFAULT_PROCESSING_CONFIG.downloadConfig ?? { maxConcurrent: 2 }),
       ...(config.downloadConfig ?? {}),
-    } as DownloadProcessingConfig,
+    } as DownloadBatchConfig,
     simplificationConfig: {
       ...(DEFAULT_PROCESSING_CONFIG.simplificationConfig ?? {
         featureFilterMethod: 'hybrid',
@@ -302,7 +316,7 @@ export function mergeProcessingConfig(config: Partial<ProcessingConfig>): Proces
         tolerance: 0.01,
       }),
       ...(config.simplificationConfig ?? {}),
-    } as SimplificationProcessingConfig,
+    } as SimplificationBatchConfig,
     tileConfig: {
       ...(DEFAULT_PROCESSING_CONFIG.tileConfig ?? {
         workers: 2,
@@ -310,7 +324,7 @@ export function mergeProcessingConfig(config: Partial<ProcessingConfig>): Proces
         maxZoom: 12,
       }),
       ...(config.tileConfig ?? {}),
-    } as TileProcessingConfig,
+    } as TileBatchConfig,
     cleanupConfig: {
       ...(DEFAULT_PROCESSING_CONFIG.cleanupConfig ?? {}),
       ...(config.cleanupConfig ?? {}),

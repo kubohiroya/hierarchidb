@@ -16,7 +16,7 @@ import type {
   BatchSession,
   CacheStatistics,
   LayerInfo,
-  ProcessingConfig,
+  BatchConfig,
   ProcessingStage,
   ProgressInfo,
   ResourceUsage,
@@ -31,7 +31,7 @@ type CacheEntryData = Record<string, unknown> | string | number | boolean | null
 // Database schema interfaces
 export interface ShapeEntityRecord extends ShapeEntity {
   dataSourceName: DataSourceName;
-  processingConfig: ProcessingConfig;
+  batchConfig: BatchConfig;
   status: 'draft' | 'processing' | 'completed' | 'failed';
   version: number;
 }
@@ -171,7 +171,7 @@ export class ShapeDB extends Dexie {
   cache!: Table<CacheEntryRecord, string>;
 
   constructor() {
-    super(getDBName('shape-db'));
+    super(getDBName('shape'));
 
     this.version(1).stores({
       // Core entities - indexed by nodeId for console integration

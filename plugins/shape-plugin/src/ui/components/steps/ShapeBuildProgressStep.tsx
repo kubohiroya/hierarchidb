@@ -1,19 +1,24 @@
 import { useCallback } from 'react';
-import { Box, Card, CardContent, Chip, LinearProgress, Stack, Typography } from '@mui/material';
+import { Box, Card, CardContent, Stack, Typography } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import ConstructionIcon from '@mui/icons-material/Construction';
 import { BuildStepPanel, type BuildStage } from '@hierarchidb/components';
+import type { BatchTaskSummary } from '@hierarchidb/common-api';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { ShapeDialogStepProps } from './ShapeDialogStepProps.ts';
 import { useShapeBuildProgressStep } from '../../hooks/useShapeBuildProgressStep.js';
+import { ShapeBuildTaskItem } from './ShapeBuildTaskItem.js';
 
 export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, onChange, nodeId }) => {
   const resolvedNodeId = nodeId as NodeId | undefined;
+  const theme = useTheme();
   const {
     t,
     stages,
     stageProgress,
     paneProgress,
     tasksByStage,
+    tasks,
     buildStatus,
     overallProgress,
     stageLabel,
@@ -30,6 +35,46 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
     resolveStatusLabel,
     resolveStatusColor,
   } = useShapeBuildProgressStep({ data, onChange, nodeId: resolvedNodeId });
+
+  type TaskWithMetadata = BatchTaskSummary & { metadata?: Record<string, unknown>; stage?: string; title?: string };
+
+  const resolveTaskTitle = useCallback((task: TaskWithMetadata): string => {
+    if (task.title) return task.title;
+    const metadata = task.metadata ?? {};
+    const stage = task.stage;
+    if (stage === 'download') {
+      const url = metadata.url as string | undefined;
+      return url ?? t('build.tasks.unknown', '(Title unavailable)');
+    }
+    if (stage === 'simplify1') {
+      const sourceUrl = (metadata.sourceUrl ?? metadata.url) as string | undefined;
+      const featureId = metadata.featureId as string | undefined;
+      if (sourceUrl && featureId) return `${sourceUrl} • ${featureId}`;
+      return sourceUrl ?? featureId ?? t('build.tasks.unknown', '(Title unavailable)');
+    }
+    if (stage === 'simplify2') {
+      const sourceUrl = (metadata.sourceUrl ?? metadata.url) as string | undefined;
+      const featureId = metadata.featureId as string | undefined;
+      if (sourceUrl && featureId) return `${sourceUrl} • ${featureId}`;
+      return sourceUrl ?? featureId ?? t('build.tasks.unknown', '(Title unavailable)');
+    }
+    if (stage === 'vectortile' || stage === 'vectorTiles') {
+      const minZoom = metadata.minZoom as number | undefined;
+      const maxZoom = metadata.maxZoom as number | undefined;
+      const tileX = metadata.tileX as number | undefined;
+      const tileY = metadata.tileY as number | undefined;
+      if (typeof tileX === 'number' && typeof tileY === 'number') {
+        if (typeof minZoom === 'number' && typeof maxZoom === 'number') {
+          return `z${minZoom}-${maxZoom} / x${tileX} y${tileY}`;
+        }
+        return `x${tileX} y${tileY}`;
+      }
+      if (typeof minZoom === 'number' && typeof maxZoom === 'number') {
+        return `z${minZoom}-${maxZoom}`;
+      }
+    }
+    return t('build.tasks.unknown', '(Title unavailable)');
+  }, [t]);
 
   const renderStageContent = useCallback((stage: BuildStage, stageValue: number) => {
     const stageTasks = tasksByStage[stage.id] ?? [];
@@ -51,32 +96,61 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
               const statusValue = task.status;
               const statusLabelValue = resolveStatusLabel(statusValue);
               const statusColor = resolveStatusColor(statusValue);
+              const taskTitle = resolveTaskTitle(task as TaskWithMetadata);
+              const taskMessage = task.message && task.message !== taskTitle ? task.message : undefined;
               return (
-                <Box key={task.taskId} sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Typography variant="body2" sx={{ flex: 1 }}>
-                      {task.taskId}
-                    </Typography>
-                    <Chip label={statusLabelValue} color={statusColor} size="small" variant="outlined" />
-                  </Stack>
-                  {task.message ? (
-                    <Typography variant="caption" color="text.secondary">
-                      {task.message}
-                    </Typography>
-                  ) : null}
-                  <LinearProgress
-                    variant="determinate"
-                    value={Math.min(100, Math.max(0, task.progress ?? stageValue))}
-                    color={statusColor === 'default' ? 'primary' : statusColor}
-                  />
-                </Box>
+                <ShapeBuildTaskItem
+                  key={task.taskId}
+                  title={taskTitle}
+                  statusLabel={statusLabelValue}
+                  statusColor={statusColor}
+                  message={taskMessage}
+                  progress={task.progress}
+                  fallbackProgress={stageValue}
+                />
               );
             })}
           </Stack>
         )}
       </Stack>
     );
-  }, [resolveStatusColor, resolveStatusLabel, t, tasksByStage]);
+  }, [resolveStatusColor, resolveStatusLabel, resolveTaskTitle, t, tasksByStage]);
+
+  const renderTaskProgressBar = useCallback(() => {
+    const totalTasks = tasks.length || total;
+    if (totalTasks <= 0) {
+      return (
+        <Box sx={{ height: 10, borderRadius: 1, backgroundColor: theme.palette.action.hover }} />
+      );
+    }
+    const viewWidth = totalTasks;
+    const rectHeight = 10;
+    const colorForTask = (task: BatchTaskSummary): string => {
+      if (task.status === 'completed') return theme.palette.success.main;
+      if (task.status === 'failed') return theme.palette.error.main;
+      return theme.palette.grey[400];
+    };
+    return (
+      <Box sx={{ width: '100%', height: rectHeight }}>
+        <svg width="100%" height={rectHeight} viewBox={`0 0 ${viewWidth} 1`} preserveAspectRatio="none">
+          {Array.from({ length: totalTasks }).map((_, index) => {
+            const task = tasks[index];
+            const fill = task ? colorForTask(task) : theme.palette.grey[400];
+            return (
+              <rect
+                key={`task-${index}`}
+                x={index}
+                y={0}
+                width={1}
+                height={1}
+                fill={fill}
+              />
+            );
+          })}
+        </svg>
+      </Box>
+    );
+  }, [tasks, theme, total]);
 
   const BatchProgressSummaryCard = useCallback(() => (
     <Card
@@ -104,11 +178,7 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
           </Stack>
         </Stack>
         <Stack spacing={0.5}>
-          <LinearProgress
-            variant="determinate"
-            value={Math.min(100, Math.max(0, overallProgress))}
-            sx={{ height: 8, borderRadius: 1 }}
-          />
+          {renderTaskProgressBar()}
           <Typography variant="caption" color="text.secondary">
             {t('build.progress.counts', '{{percentage}}% ・ {{completed}}/{{total}} completed ・ failed {{failed}} ・ skipped {{skipped}}', {
               percentage: Math.round(overallProgress),
@@ -121,7 +191,7 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
         </Stack>
       </CardContent>
     </Card>
-  ), [completed, failed, overallProgress, skipped, stageLabel, t, taskLabel, total]);
+  ), [completed, failed, overallProgress, renderTaskProgressBar, skipped, stageLabel, t, taskLabel, total]);
 
   return (
     <Box display="flex" flexDirection="column" gap={3} height="100%" minHeight={0}>

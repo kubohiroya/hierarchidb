@@ -97,6 +97,7 @@ export interface CountryMetadata {
   countryCode: string;
   countryName: string;
   continent: string;
+  bbox?: [number, number, number, number];
   population?: number;
   area?: number;
   dataQuality?: 'high' | 'medium' | 'low';

@@ -8,6 +8,7 @@
 import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-toolbar';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
+import { isFolderNodeType } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-breadcrumb';
 import { DualKeyMap } from '@hierarchidb/util';
 import { composeStepConfigs } from '@hierarchidb/plugin-base';
 import { notify } from '@hierarchidb/components';
@@ -647,6 +648,18 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
       if (normalizedAction === 'preview') {
         const resolvedNodeType = String(node?.nodeType ?? (node as { type?: string })?.type ?? '');
         const normalizedNodeType = resolvedNodeType.toLowerCase();
+        if (isFolderNodeType(resolvedNodeType) || normalizedNodeType === 'folder') {
+          const mapZxy = (() => {
+            if (!isRecord((node as { map?: unknown }).map)) return undefined;
+            const zxy = (node as { map?: { zxy?: unknown } }).map?.zxy;
+            return typeof zxy === 'string' ? zxy : undefined;
+          })();
+          if (pushPath) {
+            const search = mapZxy ? `?zxy=${encodeURIComponent(mapZxy)}` : '';
+            pushPath(`/map/${targetNodeId}${search}`);
+          }
+          return;
+        }
         if (normalizedNodeType) {
           await loadUIPlugin(normalizedNodeType).catch(() => false);
         }

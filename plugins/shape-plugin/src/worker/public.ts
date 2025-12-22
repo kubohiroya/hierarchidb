@@ -8,7 +8,7 @@ import type {
   BatchTask,
   CountryMetadata,
   DataSourceConfig,
-  ProcessingConfig,
+  BatchConfig,
   ProcessingStatus,
   SelectionStats,
   ShapeBatchCommand,
@@ -44,7 +44,7 @@ export interface ShapeWorkerAPI {
   // Batch processing (Draft-based)
   startBatchProcessing(
     draftId: NodeId,
-    config: ProcessingConfig,
+    config: BatchConfig,
     urlMetadata: UrlMetadata[],
     progressCallback?: (event: BatchProgressEvent) => void,
   ): Promise<string>; // returns sessionId

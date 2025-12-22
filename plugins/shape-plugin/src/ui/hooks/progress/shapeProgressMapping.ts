@@ -103,7 +103,7 @@ export function statusToUnified(status: BatchSessionStatus): UnifiedProgressInfo
   const completed = numeric(progress.completed);
   const failed = numeric(progress.failed);
   const percentage = numeric(progress.percentage, total > 0 ? Math.round((completed / total) * 100) : 0);
-  const fallbackStage = status.status === 'idle' ? undefined : 'processing';
+  const fallbackStage = status.status === 'idle' ? 'idle' : 'processing';
   return {
     stage: progress.currentStage ?? fallbackStage,
     total,
@@ -117,7 +117,7 @@ export function statusToUnified(status: BatchSessionStatus): UnifiedProgressInfo
       total,
       completed,
       failed,
-      currentTask: progress.currentTask ?? progress.currentStage ?? 'processing',
+      currentTask: progress.currentTask ?? progress.currentStage ?? fallbackStage,
       meta: status.error ? { errors: [status.error] } : undefined,
     },
     message: status.error,

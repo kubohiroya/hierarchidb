@@ -111,7 +111,7 @@ export function useLocationProgress(
     if (!registry) return;
     const id = 'location-progress-hook';
     registry.register?.(id, {
-      onAuthRequired: async (n: any) => {
+      onAuthRequired: async (n) => {
         setOverrideProgress({
           sessionId: sessionId || n?.context?.sessionId || 'location',
           stage: 'auth-required',
@@ -124,7 +124,7 @@ export function useLocationProgress(
           message: n?.context?.errorMessage,
         });
       },
-      onAuthSuccess: async (_n: any) => {
+      onAuthSuccess: async (_n) => {
         setOverrideProgress({
           sessionId: sessionId || 'location',
           stage: 'resumed',
@@ -137,7 +137,7 @@ export function useLocationProgress(
           message: 'Authentication successful - resuming',
         });
       },
-      onAuthCancelled: async (n: any) => {
+      onAuthCancelled: async (n) => {
         setOverrideProgress({
           sessionId: sessionId || 'location',
           stage: 'cancelled',

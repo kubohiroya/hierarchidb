@@ -1,5 +1,5 @@
-import type { ProcessingConfig, ShapeEntity } from '../../common/types/index.js';
-import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../common/types/index.js';
+import type { BatchConfig, ShapeEntity } from '../../common/types/index.js';
+import { DEFAULT_PROCESSING_CONFIG, mergeBatchConfig } from '../../common/types/index.js';
 import { getEphemeralShapeDB, type EphemeralStage } from '../../services/database/EphemeralShapeDB.js';
 
 const STAGE_ORDER: EphemeralStage[] = ['download', 'simplify1', 'simplify2', 'vectorTiles'];
@@ -40,12 +40,12 @@ export async function clearStagesIfPresent(sessionId: string, stages: EphemeralS
   return cleared;
 }
 
-export function resolveProcessingConfigInvalidation(
-  prevConfig: ProcessingConfig | undefined,
-  nextConfig: ProcessingConfig | undefined,
+export function resolveBatchConfigInvalidation(
+  prevConfig: BatchConfig | undefined,
+  nextConfig: BatchConfig | undefined,
 ): EphemeralStage[] {
-  const prev = mergeProcessingConfig(prevConfig ?? DEFAULT_PROCESSING_CONFIG);
-  const next = mergeProcessingConfig(nextConfig ?? DEFAULT_PROCESSING_CONFIG);
+  const prev = mergeBatchConfig(prevConfig ?? DEFAULT_PROCESSING_CONFIG);
+  const next = mergeBatchConfig(nextConfig ?? DEFAULT_PROCESSING_CONFIG);
 
   const stages = new Set<EphemeralStage>();
 

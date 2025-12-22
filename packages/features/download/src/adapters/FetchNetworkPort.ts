@@ -1,5 +1,5 @@
 import type { NetworkPort, ResponseLike } from '../ports.js';
-import { shouldUseLocalProxy, toLocalProxyUrl } from '../helpers/localProxy.js';
+import { resolveNetworkUrl } from '../helpers/resolveNetworkUrl.js';
 
 export interface FetchNetworkPortOptions {
   headers?: Record<string, string> | (() => Record<string, string> | Promise<Record<string, string>>);
@@ -9,12 +9,13 @@ export interface FetchNetworkPortOptions {
   perHostConcurrency?: number; // simple semaphore per host
   globalConcurrency?: number;   // optional global semaphore across hosts
   rps?: number;                 // optional requests-per-second token bucket (global)
+  corsProxyBaseURL?: string;
 }
 
 type HostKey = string;
 
 export class FetchNetworkPort implements NetworkPort {
-  private opts: Required<FetchNetworkPortOptions>;
+  private opts: Required<Omit<FetchNetworkPortOptions, 'corsProxyBaseURL'>> & { corsProxyBaseURL: string };
   private semaphores = new Map<HostKey, Semaphore>();
   private globalSemaphore?: Semaphore;
   private tokenBucket?: TokenBucket;
@@ -28,6 +29,7 @@ export class FetchNetworkPort implements NetworkPort {
       perHostConcurrency: opts.perHostConcurrency ?? 4,
       globalConcurrency: opts.globalConcurrency ?? 0,
       rps: opts.rps ?? 0,
+      corsProxyBaseURL: opts.corsProxyBaseURL ?? '',
     };
     if (this.opts.globalConcurrency > 0) this.globalSemaphore = new Semaphore(this.opts.globalConcurrency);
     if (this.opts.rps > 0) this.tokenBucket = new TokenBucket(this.opts.rps);
@@ -61,7 +63,7 @@ export class FetchNetworkPort implements NetworkPort {
       let lastErr: any;
       while (attempt <= this.opts.retries) {
         try {
-          const target = shouldUseLocalProxy(url) ? toLocalProxyUrl(url) : url;
+          const target = resolveNetworkUrl(url, { corsProxyBaseURL: this.opts.corsProxyBaseURL });
           const res = await fetch(target, { ...init, headers });
           if (res.ok) return wrap(res);
           if (!this.shouldRetry(res.status)) return wrap(res);

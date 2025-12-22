@@ -7,7 +7,7 @@ const LOCATION_PLUGIN_ID = 'location';
 const resolveCorsProxyBase = (): string | undefined => {
   const viteEnv = (import.meta as ImportMeta & { env?: Record<string, string> }).env;
   const fromVite = viteEnv?.VITE_CORS_PROXY_BASE_URL;
-  const fromGlobal = (globalThis as any)?.ENV?.VITE_CORS_PROXY_BASE_URL;
+  const fromGlobal = (globalThis as {ENV?:{VITE_CORS_PROXY_BASE_URL:string}})?.ENV?.VITE_CORS_PROXY_BASE_URL;
   return fromVite || fromGlobal || undefined;
 };
 

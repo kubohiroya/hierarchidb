@@ -65,6 +65,7 @@
     "@hierarchidb/tabular-source": "workspace:*"
   },
   "devDependencies": {
+    "@types/geojson": "^7946.0.14",
     "@types/react": "^18.2.45",
     "typescript": "workspace:^5.9.3",
     "@hierarchidb/components": "workspace:*",

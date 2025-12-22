@@ -45,11 +45,11 @@ export const ShapeWorkerPlugin = {
     validateEntity: async (entity: Partial<ShapeEntity>) => {
       const errors: string[] = [];
 
-      if (!entity.dataSourceName) {
+      if (!entity.batchConfig?.dataSource) {
         errors.push('Data source is required');
       }
 
-      if (!entity.processingConfig) {
+      if (!entity.batchConfig) {
         errors.push('Processing configuration is required');
       }
 

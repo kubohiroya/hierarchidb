@@ -2,9 +2,9 @@ import type React from 'react';
 import { type PluginStepProps, PluginStepRegistry } from '@hierarchidb/plugin-base';
 import {
   summarizeCheckboxState,
-  validateProcessingConfig,
+  validateBatchConfig,
   DEFAULT_PROCESSING_CONFIG,
-  mergeProcessingConfig,
+  mergeBatchConfig,
   type ShapeEntity,
 } from '../../common/types/index.js';
 import { ShapeDataSourceStep } from './steps/ShapeDataSourceStep.js';
@@ -52,9 +52,9 @@ const ShapeBuildProgress = createStepAdapter(ShapeBuildProgressStep);
 const canStartShapeBatch = (data?: Partial<ShapeEntity>): boolean => {
   // data reflects draftData (payload) only
   const hasSelection = summarizeCheckboxState(data?.checkboxState).hasSelection;
-  const hasDataSource = Boolean(data?.dataSourceName);
-  const processingValid = validateProcessingConfig(
-    mergeProcessingConfig(data?.processingConfig ?? DEFAULT_PROCESSING_CONFIG),
+  const hasDataSource = Boolean(data?.batchConfig?.dataSource);
+  const processingValid = validateBatchConfig(
+    mergeBatchConfig(data?.batchConfig ?? DEFAULT_PROCESSING_CONFIG),
   ).isValid;
   return hasSelection && hasDataSource && processingValid;
 };
@@ -69,7 +69,7 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
         label: t('steps.dataSource.label', 'Data Source'),
         componentFactory: (props: ShapeStepProps) => <ShapeDataSource {...props} />,
         validate: (data?: Partial<ShapeEntity>) =>
-          Boolean(data?.dataSourceName),
+          Boolean(data?.batchConfig?.dataSource),
       },
       {
         id: 'country-selection',
@@ -83,8 +83,8 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
         label: t('steps.processing.label', 'Processing Configuration'),
         componentFactory: (props: ShapeStepProps) => <ShapeProcessing {...props} />,
         validate: (data?: Partial<ShapeEntity>) =>
-          validateProcessingConfig(
-            mergeProcessingConfig(data?.processingConfig ?? DEFAULT_PROCESSING_CONFIG),
+          validateBatchConfig(
+            mergeBatchConfig(data?.batchConfig ?? DEFAULT_PROCESSING_CONFIG),
           ).isValid,
       },
       {

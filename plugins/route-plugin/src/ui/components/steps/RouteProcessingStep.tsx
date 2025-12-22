@@ -4,30 +4,14 @@
  */
 
 import type React from 'react';
-import { useMemo, useId } from 'react';
+import { useId } from 'react';
 import { Box, Grid, Slider, TextField, Typography } from '@mui/material';
-import type { RouteEntity, RouteUpdaterPayload } from '../../../common/entities/RouteEntity.js';
+import type { RouteEntity, RouteProcessingConfig, RouteUpdaterPayload } from '../../../common/entities/RouteEntity.js';
 import { useTranslation } from '../../../common/i18n/index.js';
-import { getRouteUpdaterPayload } from '../../../common/utils/draft.js';
 
 export interface RouteProcessingStepProps {
   draft: RouteUpdaterPayload;
   onUpdate: (updates: Partial<RouteEntity>) => void;
-}
-
-interface RouteProcessingConfig {
-  apiThrottle?: {
-    requestsPerSecond: number;
-    maxConcurrent: number;
-  };
-  simplification?: {
-    tolerance: number;
-  };
-  vectorTiles?: {
-    minZoom: number;
-    maxZoom: number;
-    buffer: number;
-  };
 }
 
 type ResolvedRouteProcessingConfig = {
@@ -72,14 +56,12 @@ const clamp = (value: number, min: number, max: number): number => {
 };
 
 export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
-  draft: draftProp,
+  draft,
   onUpdate,
 }) => {
   const { t } = useTranslation();
   const fieldId = useId();
-  const draft = useMemo(() => getRouteUpdaterPayload(draftProp), [draftProp]);
-  const metadata = (draft.metadata ?? {}) as Record<string, unknown>;
-  const processing = (metadata.processing ?? {}) as RouteProcessingConfig;
+  const processing = (draft.draftData?.processing ?? {}) as RouteProcessingConfig;
 
   const mergedConfig: ResolvedRouteProcessingConfig = {
     apiThrottle: {
@@ -129,12 +111,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
         ...(updates.vectorTiles ?? {}),
       },
     };
-    onUpdate({
-      metadata: {
-        ...metadata,
-        processing: nextProcessing,
-      } as RouteEntity['metadata'],
-    });
+    onUpdate({ processing: nextProcessing });
   };
 
   return (

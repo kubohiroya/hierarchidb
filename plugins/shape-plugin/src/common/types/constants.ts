@@ -2,11 +2,11 @@
  * Shape plugin constants
  */
 
-import type { DataSourceConfig, ProcessingConfig } from '../types/index.js';
+import type { DataSourceConfig, BatchConfig } from '../types/index.js';
 
 export const SHAPE_PLUGIN_ID = 'shape';
 
-export const DEFAULT_PROCESSING_CONFIG: ProcessingConfig = {
+export const DEFAULT_PROCESSING_CONFIG: BatchConfig = {
   dataSource: 'naturalearth',
   downloadConfig: {
     maxConcurrent: 2,

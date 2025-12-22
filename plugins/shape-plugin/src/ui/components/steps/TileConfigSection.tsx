@@ -1,14 +1,14 @@
 import { Accordion, AccordionDetails, AccordionSummary, Box, Grid, Stack, Typography, Slider } from '@mui/material';
 import { Layers as LayersIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
-import type { ProcessingConfig } from '../../../common/types/index.js';
+import type { BatchConfig } from '../../../common/types/index.js';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { useTranslation } from '../../i18n.js';
 import { useTileConfigSection } from '../../hooks/useTileConfigSection.js';
 
 type Props = {
-  config: ProcessingConfig;
+  config: BatchConfig;
   disabled?: boolean;
-  onChange: (next: ProcessingConfig) => void;
+  onChange: (next: BatchConfig) => void;
 };
 
 export const TileConfigSection: React.FC<Props> = ({ config, disabled, onChange }) => {

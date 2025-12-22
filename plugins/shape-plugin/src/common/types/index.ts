@@ -1,4 +1,4 @@
-export * from './BatchConfig.js';
+export type { BatchSessionConfig, HybridFilterConfig } from './BatchConfig.js';
 export * from './BatchProgressEvent.js';
 export * from './BatchTaskLike.js';
 export * from './category-types.js';
@@ -14,9 +14,9 @@ export * from './core.js';
 export * from './constants.js';
 export type { ProcessingStatus, TileInfo, ShapeAPI } from './api.js';
 export {
-  mergeProcessingConfig,
+  mergeBatchConfig,
   summarizeCheckboxState,
   normalizeDataSourceName,
-  validateProcessingConfig,
+  validateBatchConfig,
   parseCheckboxState,
 } from '../../services/utils/utils.js';

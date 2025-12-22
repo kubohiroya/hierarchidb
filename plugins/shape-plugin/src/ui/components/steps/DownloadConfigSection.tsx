@@ -10,7 +10,7 @@ import {
   CloudDownload as CloudDownloadIcon,
   ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
-import type { ProcessingConfig, ShapeEntity } from '../../../common/types/index.js';
+import type { BatchConfig, ShapeEntity } from '../../../common/types/index.js';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { useDownloadConfigSection } from '../../hooks/useDownloadConfigSection.js';
 import { DownloadRetentionToggle } from '../processing/DownloadRetentionToggle.js';
@@ -18,10 +18,10 @@ import { DownloadCacheActions } from '../processing/DownloadCacheActions.js';
 import { DownloadRetryControls } from '../processing/DownloadRetryControls.js';
 
 type Props = {
-  config: ProcessingConfig;
+  config: BatchConfig;
   draft?: Partial<ShapeEntity> | null;
   disabled?: boolean;
-  onChange: (next: ProcessingConfig) => void;
+  onChange: (next: BatchConfig) => void;
 };
 
 export const DownloadConfigSection: React.FC<Props> = ({ config, draft, disabled, onChange }) => {

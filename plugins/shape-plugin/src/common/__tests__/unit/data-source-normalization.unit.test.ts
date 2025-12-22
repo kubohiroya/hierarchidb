@@ -6,14 +6,17 @@ import {
 } from '../../../services/utils/utils.js';
 import type { NodeId, ShapeEntity } from '../../../common/types/index.js';
 
-const baseEntity = (dataSourceName: string): ShapeEntity => ({
+const baseEntity = (dataSourceName: string, batchDataSource = dataSourceName): ShapeEntity => ({
   id: 'shape-node' as NodeId,
   nodeId: 'shape-node' as NodeId,
   name: 'Country Boundaries',
   description: 'template node',
   dataSourceName: dataSourceName as unknown as ShapeEntity['dataSourceName'],
   licenseAgreement: false,
-  processingConfig: DEFAULT_PROCESSING_CONFIG,
+  batchConfig: {
+    ...DEFAULT_PROCESSING_CONFIG,
+    dataSource: batchDataSource as ShapeEntity['batchConfig']['dataSource'],
+  },
   checkboxState: [],
   selectedCountries: [],
   adminLevels: [],
@@ -26,16 +29,23 @@ const baseEntity = (dataSourceName: string): ShapeEntity => ({
 
 describe('data source normalization', () => {
   it('normalizes entity data sources when building working copies', () => {
-    const entity = baseEntity('geoBoundaries');
+    const entity = baseEntity('geoBoundaries', 'geoBoundaries');
     const draft = createDraftFromEntity(entity);
     expect(draft.draftData.dataSourceName).toBe('geoboundaries');
   });
 
   it('normalizes draft updates before persisting', () => {
-    const draft = createDraftFromEntity(baseEntity('naturalearth'));
+    const draft = createDraftFromEntity(baseEntity('naturalearth', 'naturalearth'));
     const mutated = {
       ...draft,
-      draftData: { ...draft.draftData, dataSourceName: 'GeoBoundaries' },
+      draftData: {
+        ...draft.draftData,
+        dataSourceName: 'GeoBoundaries',
+        batchConfig: {
+          ...draft.draftData.batchConfig,
+          dataSource: 'GeoBoundaries',
+        },
+      },
     } as typeof draft;
     const updates = mapDraftToUpdates(mutated);
     expect(updates.dataSourceName).toBe('geoboundaries');

@@ -50,23 +50,39 @@ export interface RouteCategory {
   custom?: string;
 }
 
+export type RouteTransportSelection =
+  | 'air'
+  | 'sea'
+  | 'rail'
+  | 'high-speed-rail'
+  | 'highway'
+  | 'road';
+
+export interface RouteProcessingConfig {
+  apiThrottle?: {
+    requestsPerSecond: number;
+    maxConcurrent: number;
+  };
+  simplification?: {
+    tolerance: number;
+  };
+  vectorTiles?: {
+    minZoom: number;
+    maxZoom: number;
+    buffer: number;
+  };
+}
+
 /**
  * Route entity extending base and metadata entities
  */
 export interface RouteEntity {
-  // Entity ID
-  id: NodeId;
-  parentId?: NodeId;
-
-  // Basic information
-  name: string;
-  description?: string;
   category: RouteCategory;
   // Note: Tags are managed by Folder plugin, not stored here
 
   // Metadata fields
-  metadata?: Record<string, any>;
-  customFields?: Record<string, any>;
+  //metadata?: Record<string, any>;
+  //customFields?: Record<string, any>;
 
   // Hybrid location management
   startLocationId?: NodeId;     // Location plugin reference
@@ -88,6 +104,9 @@ export interface RouteEntity {
   transportMode: TransportMode;
   routeType?: RouteType;
   transportModes?: TransportMode[];
+  transportSelection?: RouteTransportSelection;
+  railType?: 'conventional' | 'high-speed';
+  roadType?: 'highway' | 'general';
   operator?: string;
   routeNumber?: string;
   frequency?: {
@@ -99,9 +118,10 @@ export interface RouteEntity {
   // Data source information
   dataSourceId?: string;
   dataSourceName?: string;
-  originalData?: Record<string, any>;
   tabularSourceId?: string;
   extractConfig?: Record<string, unknown>;
+  generationOptions?: RouteGenerationOptions;
+  processing?: RouteProcessingConfig;
 
   // Processing metadata
   processedAt?: number;
@@ -162,8 +182,7 @@ export interface RouteGenerationOptions {
 
   // Custom options
   customAlgorithm?: string;
-  customParameters?: Record<string, any>;
-
+  // customParameters?: Record<string, any>;
   // Allow engines to pass through engine-specific parameters without widening to any.
   [key: string]: unknown;
 }

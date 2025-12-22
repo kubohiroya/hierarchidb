@@ -83,19 +83,16 @@ export type LocationProcessingStatus =
  * Contains both acquisition settings and the latest processing status.
  */
 export interface LocationEntity extends TreeNodeData {
-  id: NodeId;
 
-  /** Optional descriptive metadata mirrored to the TreeNode. */
-  name?: string;
-  description?: string;
-  category?: LocationCategory;
-  type?: LocationType;
+  type: LocationType;
+  category: LocationCategory;
 
   /** Data acquisition settings. */
   dataSource: LocationDataSource;
   licenseAgreement: boolean;
   licenseAgreedAt?: Timestamp;
   selectionMatrix: boolean[][];
+
   /** Optional tiling zoom range for batch downloads. */
   tilesMinZoom?: number;
   tilesMaxZoom?: number;

@@ -1,6 +1,12 @@
 import type { TreeNodeUpdaterAPI } from './TreeNodeUpdaterAPI.js';
 import type { ImportExportAPI } from './ImportExportAPI.js';
-import type { PluginLifecycleAPI } from '@hierarchidb/plugin-service-api';
+import type {
+  PluginLifecycleAPI,
+  StyleMutationAPI,
+  StyleQueryAPI,
+  LocationQueryAPI,
+  RouteQueryAPI,
+} from '@hierarchidb/plugin-service-api';
 import type { TagAPI } from './TagAPI.js';
 import type { TreeMutationAPI } from './TreeMutationAPI.js';
 import type { TreeQueryAPI } from './TreeQueryAPI.js';
@@ -45,6 +51,10 @@ export interface WorkerAPI {
   getTreeTableExpandedAPI(): Promise<TreeTableExpandedAPI>;
   getImportExportAPI(): Promise<ImportExportAPI>;
   getTagAPI(): Promise<TagAPI>;
+  getStyleQueryAPI(): Promise<StyleQueryAPI>;
+  getStyleMutationAPI(): Promise<StyleMutationAPI>;
+  getLocationQueryAPI(): Promise<LocationQueryAPI>;
+  getRouteQueryAPI(): Promise<RouteQueryAPI>;
   getPluginLifecycleAPI(): Promise<PluginLifecycleAPI>;
   getCommandProcessor(): Promise<CommandProcessorAPI>;
   startBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus>;

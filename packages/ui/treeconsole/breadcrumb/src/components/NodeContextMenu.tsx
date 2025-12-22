@@ -405,7 +405,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
           <ListItemText primary={checkReferenceLabel} />
         </MenuItem>
 
-        {!isFolder && [
+        {[
           <Divider key="divider-preview" />,
           <MenuItem key="menuitem-preview" onClick={handlePreviewClick} aria-label={previewLabel}>
             <ListItemIcon>

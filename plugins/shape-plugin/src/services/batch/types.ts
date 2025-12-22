@@ -2,12 +2,12 @@
  * Types specific to batch processing sessions
  */
 
-import type { BatchConfig } from '../../common/types/BatchConfig.js';
+import type { BatchSessionConfig } from '../../common/types/BatchConfig.js';
 
 /**
  * Extended batch process configuration that includes worker settings
  */
-export interface BatchProcessConfig extends BatchConfig {
+export interface BatchProcessConfig extends BatchSessionConfig {
   // Worker configuration
   downloadWorkers?: number;
   simplify1Workers?: number;

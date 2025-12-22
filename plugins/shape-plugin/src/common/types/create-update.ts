@@ -1,10 +1,10 @@
 import type { DataSourceName } from './data-source.js';
-import type { ProcessingConfig } from './processing.js';
+import type { BatchConfig } from './processing.js';
 import type { UrlMetadata } from './data-source.js';
 
 export interface CreateShapeData {
-  dataSourceName: DataSourceName;
-  processingConfig: ProcessingConfig;
+  batchConfig: BatchConfig;
+  dataSourceName?: DataSourceName;
   checkboxState?: boolean[][] | string;
   selectedCountries?: string[];
   adminLevels?: number[];
@@ -12,7 +12,7 @@ export interface CreateShapeData {
 }
 
 export interface UpdateShapeData {
-  processingConfig?: ProcessingConfig;
+  batchConfig?: BatchConfig;
   checkboxState?: boolean[][] | string;
   selectedCountries?: string[];
   adminLevels?: number[];

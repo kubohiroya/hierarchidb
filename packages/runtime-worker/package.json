@@ -32,6 +32,7 @@
   "dependencies": {
     "@hierarchidb/gis-sdk": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
+    "@hierarchidb/style-store": "workspace:*",
     "comlink": "^4.4.2",
     "dexie": "^4.2.1",
     "inversify": "^6.0.2",
@@ -66,6 +67,7 @@
     "@hierarchidb/tabular-source-xlsx": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/tag": "workspace:*",
+    "@hierarchidb/style-store": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "jotai": "^2.13.1"
   },
@@ -88,6 +90,7 @@
     "@hierarchidb/tabular-source-xlsx": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/tag": "workspace:*",
+    "@hierarchidb/style-store": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@types/lunr": "^2.3.7",
     "@types/node": "^24.3.0",

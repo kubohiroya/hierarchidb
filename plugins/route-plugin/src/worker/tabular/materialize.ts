@@ -36,13 +36,13 @@ export async function materializeRouteSegmentsFromTabular(
   await db.routes.update(nodeId as any as string, updated as any);
 
   await db.transaction('rw', db.routeResults, async () => {
-    await db.routeResults.where('routeId' as any).equals(nodeId as any).delete();
+    await db.routeResults.where('routeId').equals(nodeId).delete();
     let processed = 0;
     const total = segments.length || 1;
     for (const seg of segments) {
       await db.routeResults.add({
         id: crypto.randomUUID(),
-        routeId: nodeId as any,
+        routeId: nodeId,
         sessionId: 'tabular-extract',
         taskId: seg.seq.toString(),
         method: 'tabular-import',
@@ -52,7 +52,7 @@ export async function materializeRouteSegmentsFromTabular(
           coordinates: [seg.lon, seg.lat],
           payload: seg.payload,
         },
-      } as any);
+      });
       processed += 1;
       if (reportProgress && processed % 50 === 0) {
         reportProgress({ stage: 'materialize-route', completed: processed, total, updatedAt: Date.now() });

@@ -1,6 +1,7 @@
 import { memo, useMemo } from 'react';
 import type { ComponentProps, ReactElement } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, useMediaQuery } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import type { TreeTableColumn } from './TreeTable/index.js';
 // RowContextMenu removed: right-click is disabled app-wide
 import { toNodeType, type NodeId, type NodeType, type TreeNode } from '@hierarchidb/common-types';
@@ -37,6 +38,8 @@ export interface TreeConsolePanelProps {
    * Keep naming aligned with app layer that uses `pageNodeId`.
    */
   readonly pageNodeId?: string;
+  /** Optional page node for split view decisions. */
+  readonly pageTreeNode?: TreeNode;
   /**
    * Optional subtree root used for hierarchical rendering (e.g. trash dialog branch view).
    * Defaults to `pageNodeId` when omitted.
@@ -109,10 +112,16 @@ export interface TreeConsolePanelProps {
   readonly hideDragHandler?: boolean;
   /** Optional custom breadcrumb renderer for host-specific presentation. */
   readonly breadcrumbRenderer?: (props: TreeConsolePanelBreadcrumbRendererProps) => ReactElement;
+  /** Optional info panel to show alongside the table in split view. */
+  readonly infoPanel?: ReactElement;
 }
 
 export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsolePanelProps) {
   // Right-click context menus are disabled by policy
+  const theme = useTheme();
+  const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
+  const pageNodeType = (props.pageTreeNode?.nodeType ?? '').toLowerCase();
+  const shouldSplitView = isMdUp && pageNodeType === 'folder' && Boolean(props.infoPanel);
 
   // Create TreeTableController from props
   const controller: TreeTableController = useMemo((): TreeTableController => {
@@ -255,6 +264,38 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
   //const footerLoaded = countLoadedRecursive(props.data);
   const footerSelected = props.selectedIds.length;
 
+  const renderTable = () => (
+    <Box
+      sx={{
+        flex: 1,
+        overflow: 'hidden',
+        position: 'relative',
+        paddingLeft: '8px',
+        paddingRight: '8px',
+        minWidth: 0,
+      }}
+      data-tour-id="tree-table"
+    >
+      <TreeTableCore
+        controller={controller}
+        viewHeight={600}
+        viewWidth={1200}
+        treeId={props.treeId}
+        pageNodeId={props.pageNodeId}
+        selectAllPersistence={props.selectAllPersistence}
+        selectionIdPrefix={props.selectAllIdPrefix}
+        useTrashColumns={props.useTrashColumns ?? false}
+        trashAction={props.trashAction}
+        depthOffset={controller.depthOffset ?? 0}
+        disableDragAndDrop={false}
+        hideDragHandler={props.hideDragHandler ?? false}
+        rowClickAction={props.rowClickAction ?? 'Select/Navigate'}
+        selectionMode="multiple"
+        // Right-click disabled
+      />
+    </Box>
+  );
+
   return (
     <Box
       sx={{
@@ -291,35 +332,25 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         return renderDefault();
       })()}
       {/* Main Table Content */}
-      <Box
-        sx={{
-          flex: 1,
-          overflow: 'hidden',
-          position: 'relative',
-          paddingLeft: '8px',
-          paddingRight: '8px',
-          minWidth: 0,
-        }}
-        data-tour-id="tree-table"
-      >
-      <TreeTableCore
-        controller={controller}
-        viewHeight={600}
-        viewWidth={1200}
-        treeId={props.treeId}
-        pageNodeId={props.pageNodeId}
-        selectAllPersistence={props.selectAllPersistence}
-        selectionIdPrefix={props.selectAllIdPrefix}
-        useTrashColumns={props.useTrashColumns ?? false}
-        trashAction={props.trashAction}
-        depthOffset={controller.depthOffset ?? 0}
-        disableDragAndDrop={false}
-        hideDragHandler={props.hideDragHandler ?? false}
-        rowClickAction={props.rowClickAction ?? 'Select/Navigate'}
-        selectionMode="multiple"
-          // Right-click disabled
-        />
-      </Box>
+      {shouldSplitView ? (
+        <Box
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            display: 'grid',
+            gridTemplateColumns: { md: 'minmax(280px, 360px) 1fr' },
+            gap: { md: 2 },
+            p: { md: 2 },
+          }}
+        >
+          <Box sx={{ minHeight: 0 }}>
+            {props.infoPanel}
+          </Box>
+          {renderTable()}
+        </Box>
+      ) : (
+        renderTable()
+      )}
 
       {/* Footer */}
       {!props.useTrashColumns &&

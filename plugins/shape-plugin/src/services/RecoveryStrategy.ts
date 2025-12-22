@@ -9,9 +9,9 @@
 
 import type { BaseShapeError } from '../common/types/ShapeErrorHierarchy.js';
 import { ErrorCategory } from '../common/types/ShapeErrorHierarchy.js';
-import type { BatchConfig } from '../common/types/BatchConfig.js';
+import type { BatchSessionConfig } from '../common/types/BatchConfig.js';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { DataSourceName } from '@hierarchidb/ui-datasource';
+import type { DataSourceName } from '../common/types/data-source.js';
 
 // ========================================
 // ========================================
@@ -22,7 +22,7 @@ export interface RecoveryContext {
   error: BaseShapeError;
   sessionId: string;
   treeNodeId: NodeId;
-  config: BatchConfig;
+  config: BatchSessionConfig;
   attemptNumber: number;
   previousAttempts: RecoveryAttempt[];
 }
@@ -34,7 +34,7 @@ export interface RecoveryAttempt {
   strategy: string;
   success: boolean;
   error?: BaseShapeError;
-  adjustedParams?: Partial<BatchConfig>;
+  adjustedParams?: Partial<BatchSessionConfig>;
 }
 
 /**
@@ -42,7 +42,7 @@ export interface RecoveryAttempt {
 export interface RecoveryResult {
   success: boolean;
   strategy: string;
-  newConfig?: Partial<BatchConfig>;
+  newConfig?: Partial<BatchSessionConfig>;
   resumePoint?: ResumePoint;
   message?: string;
   nextAttemptDelay?: number;
@@ -141,7 +141,7 @@ export class ReduceConcurrencyStrategy implements RecoveryStrategy {
     const currentConfig = context.config;
     const reductionFactor = 0.5; //  50%
 
-    const newConfig: Partial<BatchConfig> = {
+    const newConfig: Partial<BatchSessionConfig> = {
       download: {
         ...currentConfig.download,
         concurrentDownloads: Math.max(
@@ -249,7 +249,7 @@ export class ReduceDataSizeStrategy implements RecoveryStrategy {
   async execute(context: RecoveryContext): Promise<RecoveryResult> {
     const currentConfig = context.config;
 
-    const newConfig: Partial<BatchConfig> = {
+    const newConfig: Partial<BatchSessionConfig> = {
       simplify1: {
         ...currentConfig.simplify1,
         featureAreaThreshold: currentConfig.simplify1.featureAreaThreshold * 2, minVertexCountForAreaFilter: Math.floor(
@@ -283,7 +283,7 @@ export class FallbackStrategy implements RecoveryStrategy {
   applicableCategories = [ErrorCategory.DATA, ErrorCategory.NETWORK];
   maxAttempts = 1;
 
-  private fallbackSources = new Map<string, string[]>([
+  private fallbackSources = new Map<DataSourceName, DataSourceName[]>([
     ['naturalearth', ['geoboundaries', 'gadm']],
     ['gadm', ['naturalearth', 'geoboundaries']],
     ['geoboundaries', ['naturalearth', 'gadm']],
@@ -295,7 +295,14 @@ export class FallbackStrategy implements RecoveryStrategy {
   }
 
   async execute(context: RecoveryContext): Promise<RecoveryResult> {
-    const currentSource = context.config.dataSource || 'naturalearth';
+    const currentSource = context.config.dataSource;
+    if (!currentSource) {
+      return {
+        success: false,
+        strategy: this.name,
+        message: 'データソースが未設定のため代替候補を選択できません',
+      };
+    }
     const alternatives = this.fallbackSources.get(currentSource) || [];
 
     if (alternatives.length === 0) {
@@ -321,7 +328,7 @@ export class FallbackStrategy implements RecoveryStrategy {
     return 0;
   }
 
-  private hasFallback(dataSource?: string): boolean {
+  private hasFallback(dataSource?: DataSourceName): boolean {
     return dataSource ? this.fallbackSources.has(dataSource) : false;
   }
 }

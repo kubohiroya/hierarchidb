@@ -9,6 +9,12 @@ import type {
   TreeNodeUpdaterAPI,
   TreeTableExpandedAPI,
 } from '@hierarchidb/common-api';
+import type {
+  LocationQueryAPI,
+  RouteQueryAPI,
+  StyleMutationAPI,
+  StyleQueryAPI,
+} from '@hierarchidb/plugin-service-api';
 import type { Endpoint as ComlinkEndpoint } from 'comlink';
 import { expose, proxy } from 'comlink';
 import type { CommandProcessor } from '../services/CommandProcessor.js';
@@ -28,6 +34,10 @@ async function main(endpoint?: Endpoint): Promise<void> {
     getImportExportAPI: (): ImportExportAPI => proxy(svc.getImportExportAPI()),
     getTreeNodeUpdaterAPI: (): TreeNodeUpdaterAPI => proxy(svc.getTreeNodeUpdaterAPI()),
     getTreeTableExpandedAPI: (): TreeTableExpandedAPI => proxy(svc.getTreeTableExpandedAPI()),
+    getStyleQueryAPI: (): StyleQueryAPI => proxy(svc.getStyleQueryAPI()),
+    getStyleMutationAPI: (): StyleMutationAPI => proxy(svc.getStyleMutationAPI()),
+    getLocationQueryAPI: (): LocationQueryAPI => proxy(svc.getLocationQueryAPI()),
+    getRouteQueryAPI: (): RouteQueryAPI => proxy(svc.getRouteQueryAPI()),
     getCommandProcessor: (): CommandProcessor => proxy(svc.getCommandProcessor()),
   };
   // When used in-process via MessageChannel, a test passes an explicit endpoint.

@@ -3,7 +3,7 @@
  * @description ERIA-Cartograph:
  */
 
-import type { DataSourceName } from '@hierarchidb/ui-datasource';
+import type { DataSourceName } from './data-source.js';
 import type { FeatureFilterMethod } from './processing.js';
 
 /**
@@ -92,7 +92,7 @@ export interface GenerateVectorTilesConfig {
  * Complete batch processing configuration
  * Combines all session-specific configurations
  */
-export interface BatchConfig extends CommonSessionConfig {
+export interface BatchSessionConfig extends CommonSessionConfig {
   // Session-specific configurations
   download: DownloadSessionConfig;
   simplify1: SimplifySession1Config;

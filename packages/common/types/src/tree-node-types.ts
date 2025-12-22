@@ -96,6 +96,9 @@ export type TreeNode<
   originalParentId?: NodeId;
   removedAt?: Timestamp;
   lastTouchedAt?: Timestamp;
+  map?: {
+    zxy: string;
+  };
 };
 
 export interface TreeNodeWithChildren<TData extends NodePayload | null = NodePayload | null>

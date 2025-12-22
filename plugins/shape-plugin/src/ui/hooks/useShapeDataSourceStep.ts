@@ -26,7 +26,9 @@ export const useShapeDataSourceStep = ({ data, onChange }: Args) => {
     [sources],
   );
 
-  const normalizedValue = normalizeDataSourceName(draftData.dataSourceName);
+  const normalizedValue = normalizeDataSourceName(
+    draftData.batchConfig?.dataSource ?? draftData.dataSourceName,
+  );
   const defaultGeoBoundaries = options.find((option) => option.id === 'geoboundaries')?.id;
   const fallbackValue = (defaultGeoBoundaries ?? options[0]?.id) as DataSourceName | undefined;
   const dataSourceId = normalizedValue ?? fallbackValue ?? options[0]?.id ?? 'openstreetmap';
@@ -39,12 +41,16 @@ export const useShapeDataSourceStep = ({ data, onChange }: Args) => {
     const updates: Partial<typeof draftData> = {};
     if (typeof next.dataSourceId !== 'undefined') {
       const nextSource = (next.dataSourceId as DataSourceName | undefined) ?? fallbackValue;
-      if (nextSource && nextSource !== draftData.dataSourceName) {
+      if (nextSource && nextSource !== draftData.batchConfig?.dataSource) {
         const sessionId = resolveShapeSessionId(draftData);
         if (sessionId) {
           void clearStagesIfPresent(sessionId, FULL_INVALIDATION_STAGES);
         }
       }
+      updates.batchConfig = {
+        ...(draftData.batchConfig ?? {}),
+        dataSource: nextSource,
+      };
       updates.dataSourceName = nextSource;
     }
     if (typeof next.licenseAgreement !== 'undefined') {

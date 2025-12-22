@@ -6,6 +6,7 @@ import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
 export interface DownloadServiceOptions {
   dbPrefix?: string;
   perHostConcurrency?: number;
+  corsProxyBaseURL?: string;
 }
 
 export interface DownloadServiceBundle {
@@ -19,6 +20,7 @@ export async function createDownloadService(opts?: DownloadServiceOptions): Prom
   const net = new FetchNetworkPort({
     headers: () => auth.getAuthHeaders(),
     perHostConcurrency: opts?.perHostConcurrency ?? 4,
+    corsProxyBaseURL: opts?.corsProxyBaseURL,
   });
   const storage = new DexieChunkStoragePort(`${opts?.dbPrefix || 'hidb'}-chunks`);
   const integrity = new (class {

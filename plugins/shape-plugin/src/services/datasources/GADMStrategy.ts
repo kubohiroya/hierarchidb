@@ -283,6 +283,7 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
         if (timeoutId) clearTimeout(timeoutId);
 
         if (!response.ok) {
+          console.warn(`[GADM] HTTP ${response.status} for ${url}`);
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 

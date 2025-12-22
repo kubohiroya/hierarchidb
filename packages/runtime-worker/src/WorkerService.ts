@@ -12,7 +12,14 @@ import { NodeLifecycleManager } from './services/NodeLifecycleManager.js';
 import { TreeTableExpandedService } from './services/TreeTableExpandedService.js';
 import { ImportExportDBPortCoreDBAdapter } from './services/adapters/ImportExportDBPortCoreDBAdapter.js';
 import { TreeNodeUpdaterService } from './services/TreeNodeUpdaterService.js';
-import { PluginDefinition, PluginLifecycleAPI } from '@hierarchidb/plugin-service-api';
+import {
+  PluginDefinition,
+  PluginLifecycleAPI,
+  StyleMutationAPI,
+  StyleQueryAPI,
+  LocationQueryAPI,
+  RouteQueryAPI,
+} from '@hierarchidb/plugin-service-api';
 import {
   ImportExportAPI,
   TagAPI,
@@ -24,6 +31,11 @@ import {
 } from '@hierarchidb/common-api';
 import type { NodeType } from '@hierarchidb/common-types';
 import { UIStateDB } from './services/UIStateDB.js';
+import { StyleDB } from '@hierarchidb/style-store';
+import { StyleService } from './services/StyleService.js';
+import { LocationQueryService } from './services/LocationQueryService.js';
+import { RouteQueryService } from './services/RouteQueryService.js';
+import { RouteDatabase } from '@hierarchidb/route-plugin/database';
 
 interface PerformanceMemoryStats {
   usedJSHeapSize?: number;
@@ -121,6 +133,14 @@ export class WorkerService {
         treeQueryService,
       );
 
+      const styleDB = await StyleDB.getSingleton();
+      const styleService: StyleQueryAPI & StyleMutationAPI = await StyleService.getSingleton(
+        styleDB,
+      );
+      const locationQueryService: LocationQueryAPI = await LocationQueryService.getSingleton();
+      const routeDB = new RouteDatabase();
+      const routeQueryService: RouteQueryAPI = await RouteQueryService.getSingleton(routeDB);
+
       return new WorkerService(
         coreDB,
         treeQueryService,
@@ -132,6 +152,11 @@ export class WorkerService {
         nodeLifecycleManager,
         commandProcessor,
         treeTableExpandedService,
+        styleDB,
+        styleService,
+        locationQueryService,
+        routeDB,
+        routeQueryService,
       );
     });
   }
@@ -147,6 +172,11 @@ export class WorkerService {
     private nodeLifecycleManager: NodeLifecycleManager,
     private commandProcessor: CommandProcessor,
     private treeTableExpandedService: TreeTableExpandedAPI,
+    private styleDB: StyleDB,
+    private styleService: StyleQueryAPI & StyleMutationAPI,
+    private locationQueryService: LocationQueryAPI,
+    private routeDB: RouteDatabase,
+    private routeQueryService: RouteQueryAPI,
   ) {
   }
 
@@ -164,7 +194,8 @@ export class WorkerService {
 
     // Close databases
     this.coreDB.close();
-    // No secondary DB to close
+    this.styleDB.close();
+    this.routeDB.close();
   }
 
   async initialize(): Promise<void> {
@@ -196,6 +227,22 @@ export class WorkerService {
 
   getTagAPI() {
     return this.tagService;
+  }
+
+  getStyleQueryAPI(): StyleQueryAPI {
+    return this.styleService;
+  }
+
+  getStyleMutationAPI(): StyleMutationAPI {
+    return this.styleService;
+  }
+
+  getLocationQueryAPI(): LocationQueryAPI {
+    return this.locationQueryService;
+  }
+
+  getRouteQueryAPI(): RouteQueryAPI {
+    return this.routeQueryService;
   }
 
   // Minimal stub to satisfy interface; not yet wired.

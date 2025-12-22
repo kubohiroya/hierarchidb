@@ -343,6 +343,7 @@ out geom;
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.warn(`[OpenStreetMap] HTTP ${response.status} for ${url}`);
       throw new Error(`Overpass API error ${response.status}: ${errorText}`);
     }
 

@@ -59,7 +59,9 @@ export function useTreeNodeInfoPanel({
       if (disposed) return;
       const event = ev as { nodeId?: NodeId; node?: TreeNode } | null;
       if (event?.node) {
-        setCurrentNode(event.node);
+        if (event.node.id === node.id) {
+          setCurrentNode(event.node);
+        }
       } else if (event?.nodeId === node.id) {
         void (async () => {
           try {

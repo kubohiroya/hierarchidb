@@ -3,7 +3,312 @@ import en from '../../ui/locales/en.json' with { type: 'json' };
 import ja from '../../ui/locales/ja.json' with { type: 'json' };
 
 type SupportedLocale = 'en' | 'ja';
-const bundles: Record<SupportedLocale, any> = { en, ja };
+
+type TranslationMap = Record<string, string>;
+type SelectionSettingsTranslations = {
+  generic?: TranslationMap;
+  airport?: TranslationMap;
+  railway_station?: TranslationMap;
+  railway?: TranslationMap;
+};
+
+type LocationTranslations = {
+  basicInfo: {
+    title: string;
+    tagSuggestions?: string[];
+  };
+  errors: {
+    nameRequired: string;
+  };
+  dialog: {
+    dataSourceLabel: string;
+    licenseAgreementLabel: string;
+    dataSourceDescription: string;
+    createTitle: string;
+    editTitle: string;
+    datasetDescription: string;
+    displayNormal: string;
+    displayMaximize: string;
+    displayFullscreen: string;
+    cancel: string;
+    save: string;
+    selectDataSourceFirst: string;
+  };
+  panel: {
+    sampleName: string;
+    refresh: string;
+    edit: string;
+    basicInfo: string;
+    dataSource: string;
+    licenseAgreement: string;
+    licenseAgreed: string;
+    licensePending: string;
+    createdAt: string;
+    updatedAt: string;
+    processingSettings: string;
+    concurrentDownloads: string;
+  };
+  selection: {
+    title: string;
+    filterTitle?: string;
+    buildLabel?: string;
+    typeDescriptions?: TranslationMap;
+    settingsTitle?: string;
+    settingsDescription?: string;
+  };
+  processing?: {
+    description?: string;
+    concurrentDownloadsLabel?: string;
+    tilingZoomLabel?: string;
+    minZoom?: string;
+    maxZoom?: string;
+  };
+  selectionSettings: SelectionSettingsTranslations;
+  locationTypes?: TranslationMap;
+  mapPreview: {
+    title: string;
+    loading?: string;
+    description?: string;
+    error?: string;
+    displayModeLabel: string;
+    visibleCountLabel: string;
+    centerLabel: string;
+    searchPlaceholder?: string;
+    visiblePointsLabel?: string;
+    clustersLabel?: string;
+    tooltips?: TranslationMap;
+    menuSettings: string;
+    menuAnalytics: string;
+    dialogTitle: string;
+    heatmapSettings: string;
+    heatmapIntensityLabel: string;
+    heatmapRadiusLabel: string;
+    clusterSettings: string;
+    clusterRadiusLabel: string;
+    maxZoomLabel: string;
+    close: string;
+    details: TranslationMap;
+    summary?: TranslationMap;
+  };
+  batch: {
+    phases?: TranslationMap;
+    stages?: TranslationMap;
+    logsDefault?: string;
+    dialogTitle?: string;
+    elapsed?: string;
+    remaining?: string;
+    progressTitle?: string;
+    logsTitle?: string;
+    mapPreviewTitle?: string;
+    dataTableTitle?: string;
+    authRequired?: string;
+    authFallback?: string;
+    processedLabel?: string;
+    processedTotal?: string;
+    throughputLabel?: string;
+    throughputUnit?: string;
+    errorsLabel?: string;
+    errorsUnit?: string;
+    stageListTitle?: string;
+    stageProgress?: string;
+    stageErrors?: string;
+    tasksTitle?: string;
+    tasksEmpty?: string;
+    tasksEmptyHint?: string;
+    logsEmpty?: string;
+    mapPlaceholder?: string;
+    close?: string;
+    ariaLabel?: string;
+    resumeTooltip?: string;
+    pauseTooltip?: string;
+    cancelTooltip?: string;
+    exportTooltip?: string;
+  };
+  common?: {
+    close?: string;
+  };
+};
+
+const baseTranslations: LocationTranslations = {
+  basicInfo: {
+    title: 'Basic Information',
+    tagSuggestions: [],
+  },
+  errors: {
+    nameRequired: 'Name is required.',
+  },
+  dialog: {
+    dataSourceLabel: 'Data Source',
+    licenseAgreementLabel: 'License Agreement',
+    dataSourceDescription: 'Choose openstreetmap for OSRM/Overpass or custom for tabular import',
+    createTitle: 'Create Location',
+    editTitle: 'Edit Location',
+    datasetDescription: 'Define the location dataset.',
+    displayNormal: 'Normal',
+    displayMaximize: 'Maximize',
+    displayFullscreen: 'Fullscreen',
+    cancel: 'Cancel',
+    save: 'Save',
+    selectDataSourceFirst: 'Please select a data source first.',
+  },
+  panel: {
+    sampleName: 'Sample Location Dataset',
+    refresh: 'Refresh',
+    edit: 'Edit',
+    basicInfo: 'Basic Information',
+    dataSource: 'Data source',
+    licenseAgreement: 'License agreement',
+    licenseAgreed: 'Agreed',
+    licensePending: 'Pending',
+    createdAt: 'Created at',
+    updatedAt: 'Updated at',
+    processingSettings: 'Processing Settings',
+    concurrentDownloads: 'Concurrent downloads',
+  },
+  selection: {
+    title: 'Location Selection',
+    filterTitle: 'Filter & Preview',
+    buildLabel: 'Build',
+    settingsTitle: 'Location type settings',
+    settingsDescription: 'Refine location filters for each type.',
+  },
+  processing: {
+    description: 'Configure download and tiling parameters for batch processing.',
+    concurrentDownloadsLabel: 'Concurrent Downloads',
+    tilingZoomLabel: 'Tile Zoom Range',
+    minZoom: 'Min zoom',
+    maxZoom: 'Max zoom',
+  },
+  selectionSettings: {
+    generic: {
+      advancedFilters: 'Configure advanced filters for this type.',
+    },
+    airport: {
+      includeHeliports: 'Include heliports',
+      activeOnly: 'Active airports only',
+      commercialOnly: 'Commercial airports only',
+      minRunwayLengthLabel: 'Minimum runway length: {value} m',
+    },
+    railway_station: {
+      includeMetro: 'Include metro/light rail',
+      includeAbandoned: 'Include abandoned lines',
+      intercityOnly: 'Intercity only',
+      minPlatformsLabel: 'Minimum platforms',
+    },
+    railway: {
+      includeMetro: 'Include metro/light rail',
+      includeAbandoned: 'Include abandoned lines',
+      intercityOnly: 'Intercity only',
+      minPlatformsLabel: 'Minimum platforms',
+    },
+  },
+  mapPreview: {
+    title: 'Map Preview',
+    loading: 'Loading map preview...',
+    error: 'Failed to load map preview.',
+    description: 'Preview the generated points on the map.',
+    displayModeLabel: 'Display: {mode}',
+    visibleCountLabel: 'Visible: {visible}/{total}',
+    centerLabel: 'Center: {lat}, {lon}',
+    searchPlaceholder: 'Search locations...',
+    visiblePointsLabel: 'Visible: {visible} / {total}',
+    clustersLabel: 'Clusters: {count}',
+    tooltips: {
+      zoomIn: 'Zoom in',
+      zoomOut: 'Zoom out',
+      fitToData: 'Fit to data',
+      currentLocation: 'Current location',
+      settings: 'Settings',
+    },
+    menuSettings: 'Settings',
+    menuAnalytics: 'Analytics',
+    dialogTitle: 'Map Preview Settings',
+    heatmapSettings: 'Heatmap Settings',
+    heatmapIntensityLabel: 'Intensity: {value}',
+    heatmapRadiusLabel: 'Radius: {value}',
+    clusterSettings: 'Cluster Settings',
+    clusterRadiusLabel: 'Cluster radius: {value}',
+    maxZoomLabel: 'Max zoom: {value}',
+    close: 'Close',
+    details: {
+      englishName: 'English name',
+      countryCode: 'Country code',
+      latitude: 'Latitude',
+      longitude: 'Longitude',
+    },
+    summary: {
+      noData: 'No vector tiles generated yet.',
+      zoomRange: 'Zoom range: {min} - {max}',
+      size: 'Data size: {size}',
+      tiles: 'Tiles: {count}',
+      layers: 'Layers: {count}',
+    },
+  },
+  batch: {
+    logsDefault: 'Running',
+    dialogTitle: 'Batch Processing Progress',
+    elapsed: 'Elapsed',
+    remaining: 'Remaining',
+    progressTitle: 'Progress',
+    logsTitle: 'Logs',
+    mapPreviewTitle: 'Map Preview',
+    dataTableTitle: 'Data Table',
+    authRequired: 'Authentication required — {message}',
+    authFallback: 'Authentication required to continue',
+    processedLabel: 'Processed',
+    processedTotal: '/ {total} items',
+    throughputLabel: 'Throughput',
+    throughputUnit: 'points/s ({rate}/s)',
+    errorsLabel: 'Errors',
+    errorsUnit: 'items',
+    stageListTitle: 'Processing Stages',
+    stageProgress: '{completed} / {total} completed',
+    stageErrors: 'Errors: {count}',
+    tasksTitle: 'Active Tasks',
+    tasksEmpty: 'No active tasks at the moment',
+    tasksEmptyHint: 'Tasks will appear here while the batch is running',
+    logsEmpty: 'No log entries yet',
+    mapPlaceholder: 'Map preview will be added in a future implementation',
+    close: 'Close',
+    ariaLabel: 'Batch processing actions',
+    resumeTooltip: 'Resume',
+    pauseTooltip: 'Pause',
+    cancelTooltip: 'Cancel',
+    exportTooltip: 'Export logs',
+    stages: {
+      download: 'Download',
+      filtering: 'Filtering',
+      clustering: 'Clustering',
+      indexing: 'Indexing',
+    },
+  },
+  common: {
+    close: 'Close',
+  },
+};
+
+const bundles: Record<SupportedLocale, Partial<LocationTranslations>> = {
+  en: en as unknown as Partial<LocationTranslations>,
+  ja: ja as unknown as Partial<LocationTranslations>,
+};
+
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+const mergeTranslations = <T extends Record<string, unknown>>(base: T, override?: Partial<T>): T => {
+  const result: Record<string, unknown> = { ...base };
+  if (!override) return result as T;
+  Object.entries(override).forEach(([key, value]) => {
+    if (value === undefined) return;
+    const baseValue = result[key];
+    if (isPlainObject(baseValue) && isPlainObject(value)) {
+      result[key] = mergeTranslations(baseValue, value);
+      return;
+    }
+    result[key] = value as unknown;
+  });
+  return result as T;
+};
 
 const detectLocale = (): SupportedLocale => {
   const lng = globalI18n.language || 'en';
@@ -13,7 +318,7 @@ const detectLocale = (): SupportedLocale => {
 
 export const useTranslation = (ns: string = 'location-plugin') => {
   const locale = detectLocale();
-  const translations = bundles[locale] ?? bundles.en;
+  const translations = mergeTranslations(baseTranslations, bundles[locale] ?? bundles.en);
   const t = (key: string, fallback?: string) =>
     String(globalI18n.t(key, { ns, defaultValue: fallback ?? key }));
   return { t, translations, locale };

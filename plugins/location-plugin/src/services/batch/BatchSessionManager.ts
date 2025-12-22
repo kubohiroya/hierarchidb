@@ -83,7 +83,7 @@ export class LocationBatchSessionManager {
           console.warn('[LocationBatchSessionManager] failed to mark session completed', error);
         }
       }
-    }).catch(async (e: any) => {
+    }).catch(async (e) => {
       console.error('Location session failed', e);
       try {
         const { getEphemeralLocationDB } = await import('../../database/EphemeralLocationDB.js');
@@ -140,6 +140,6 @@ function computeBbox(points: LocationPointInput[]): [number, number, number, num
     if (p.lon > maxLon) maxLon = p.lon;
     if (p.lat > maxLat) maxLat = p.lat;
   }
-  if (!isFinite(minLon)) return [0, 0, 0, 0];
+  if (!Number.isFinite(minLon)) return [0, 0, 0, 0];
   return [minLon, minLat, maxLon, maxLat];
 }

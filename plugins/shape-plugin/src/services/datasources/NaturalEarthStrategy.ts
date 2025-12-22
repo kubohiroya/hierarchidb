@@ -48,7 +48,7 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
     version: '5.1.1',
     access: {
       method: 'File',
-      baseUrl: 'https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/',
+      baseUrl: 'https://www.naturalearthdata.com/download/',
       endpoints: {
         // 1:10m (Large scale data, 1:10,000,000)
         'countries-10m': '10m/cultural/ne_10m_admin_0_countries.zip',
@@ -238,6 +238,7 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
         if (timeoutId) clearTimeout(timeoutId);
 
         if (!response.ok) {
+          console.warn(`[NaturalEarth] HTTP ${response.status} for ${url}`);
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 

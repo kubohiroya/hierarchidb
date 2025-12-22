@@ -16,7 +16,7 @@ interface MapSearch {
 
 export const mapRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/map',
+  path: '/map/$nodeId',
   validateSearch: (search: Record<string, unknown>): MapSearch => {
     return {
       zxy: typeof search.zxy === 'string' ? search.zxy : undefined,

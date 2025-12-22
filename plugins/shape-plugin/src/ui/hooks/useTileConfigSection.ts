@@ -1,18 +1,18 @@
 import { useCallback } from 'react';
-import type { ProcessingConfig, TileProcessingConfig } from '../../common/types/index.js';
-import { DEFAULT_PROCESSING_CONFIG, mergeProcessingConfig } from '../../common/types/index.js';
+import type { BatchConfig, TileBatchConfig } from '../../common/types/index.js';
+import { DEFAULT_PROCESSING_CONFIG, mergeBatchConfig } from '../../common/types/index.js';
 
 type Args = {
-  config: ProcessingConfig;
+  config: BatchConfig;
   disabled?: boolean;
-  onChange: (next: ProcessingConfig) => void;
+  onChange: (next: BatchConfig) => void;
 };
 
 export const useTileConfigSection = ({ config, onChange }: Args) => {
-  const baseTileConfig: TileProcessingConfig | undefined = config.tileConfig ?? DEFAULT_PROCESSING_CONFIG.tileConfig;
+  const baseTileConfig: TileBatchConfig | undefined = config.tileConfig ?? DEFAULT_PROCESSING_CONFIG.tileConfig;
 
-  const update = useCallback((partial: Partial<ProcessingConfig>) => {
-    onChange(mergeProcessingConfig({ ...config, ...partial }));
+  const update = useCallback((partial: Partial<BatchConfig>) => {
+    onChange(mergeBatchConfig({ ...config, ...partial }));
   }, [config, onChange]);
 
   if (!baseTileConfig) {

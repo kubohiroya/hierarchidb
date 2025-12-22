@@ -12,8 +12,9 @@ import {
   type DataSourceName,
   SHAPE_DATA_SOURCES,
   DEFAULT_PROCESSING_CONFIG,
-  mergeProcessingConfig,
-  type ProcessingConfig,
+  mergeBatchConfig,
+  type BatchConfig,
+  type BatchSessionConfig,
   type ProcessingStatus,
   type ProcessingStage,
   type BatchProgressEvent as ShapeBatchProgressEvent,
@@ -24,7 +25,7 @@ import {
   type ShapeEntity,
   type TileInfo,
   type UrlMetadata,
-  validateProcessingConfig,
+  validateBatchConfig,
   type ShapeStepValidationResult,
 } from '../common/types/index.js';
 import { ShapeEntityHandler } from './handlers/index.js';
@@ -55,6 +56,56 @@ type DraftLike = {
 
 const getBatchSessionIdFromDraft = (draft: DraftLike | null | undefined): string | undefined =>
   draft?.batchSessionId ?? draft?.draftData?.batchSessionId;
+
+const buildBatchSessionConfig = (config: BatchConfig, draft?: DraftLike): BatchSessionConfig => {
+  const downloadConfig = config.downloadConfig ?? DEFAULT_PROCESSING_CONFIG.downloadConfig;
+  const simplificationConfig =
+    config.simplificationConfig ?? DEFAULT_PROCESSING_CONFIG.simplificationConfig;
+  const tileConfig = config.tileConfig ?? DEFAULT_PROCESSING_CONFIG.tileConfig;
+  const cleanupConfig = config.cleanupConfig ?? DEFAULT_PROCESSING_CONFIG.cleanupConfig;
+  const resolvedDataSource =
+    config.dataSource
+    ?? toDataSourceName(draft?.draftData?.batchConfig?.dataSource ?? 'naturalearth');
+
+  return {
+    corsProxyBaseURL: downloadConfig?.corsProxyUrl ?? '',
+    dataSource: resolvedDataSource,
+    download: {
+      concurrentDownloads: downloadConfig?.maxConcurrent ?? 4,
+      deleteOnComplete: cleanupConfig?.deleteDownloadedFiles ?? false,
+      timeoutMs: downloadConfig?.timeoutMs,
+      retryAttempts: downloadConfig?.retryAttempts ?? 3,
+      retryDelay: downloadConfig?.retryDelay,
+    },
+    simplify1: {
+      concurrentProcesses: simplificationConfig?.level1Workers ?? 2,
+      enableFeatureFiltering: true,
+      featureAreaThreshold: simplificationConfig?.areaThreshold ?? 0.5,
+      minVertexCountForAreaFilter: simplificationConfig?.minVertexCountForAreaFilter ?? 25,
+      aspectRatioThreshold: simplificationConfig?.aspectRatioThreshold ?? 5,
+      featureFilterMethod: simplificationConfig?.featureFilterMethod ?? 'hybrid',
+      hybridFilterConfig:
+        simplificationConfig?.hybridFilterConfig
+        ?? DEFAULT_PROCESSING_CONFIG.simplificationConfig?.hybridFilterConfig,
+      deleteOnComplete: false,
+    },
+    simplify2: {
+      concurrentProcesses: simplificationConfig?.level2Workers ?? 2,
+      enablePerFeatureSimplification: simplificationConfig?.enablePerFeatureSimplification ?? true,
+      deleteOnComplete: false,
+      quantize: simplificationConfig?.quantize ?? 0,
+      simplify: simplificationConfig?.tolerance ?? 0,
+      tolerance: simplificationConfig?.tolerance ?? 0,
+    },
+    vectorTiles: {
+      concurrentProcesses: tileConfig?.workers ?? 2,
+      minZoom: tileConfig?.minZoom ?? 0,
+      maxZoom: tileConfig?.maxZoom ?? 14,
+      bufferSize: tileConfig?.bufferSize,
+      tileSize: tileConfig?.tileSize,
+    },
+  };
+};
 
 interface ProgressSubscription {
   unsubscribe?: () => void;
@@ -140,9 +191,58 @@ const mapProgressToStatus = (progress: ProgressInfo): BatchTaskStatus => {
   return 'running';
 };
 
-const mapTaskRecordToBatchTask = (task: BatchTaskRecord): BatchTask => ({
+const mapTaskStatusToStage = (status?: BatchTask['status']): BatchTask['stage'] => {
+  switch (status) {
+    case 'waiting':
+      return 'wait';
+    case 'running':
+      return 'process';
+    case 'completed':
+      return 'success';
+    case 'failed':
+      return 'error';
+    case 'cancelled':
+      return 'cancel';
+    default:
+      return undefined;
+  }
+};
+
+const buildTaskTitle = (task: BatchTaskRecord): string | undefined => {
+  const input = task.inputData ?? {};
+  const getNumber = (value: unknown): number | undefined =>
+    typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+  if (task.taskType === 'download') {
+    return (input.url as string | undefined) ?? (input.endpoint as string | undefined);
+  }
+  if (task.taskType === 'simplify1' || task.taskType === 'simplify2') {
+    const sourceUrl = (input.sourceUrl ?? input.url) as string | undefined;
+    const featureId = input.featureId as string | undefined;
+    if (sourceUrl && featureId) return `${sourceUrl} • ${featureId}`;
+    return sourceUrl ?? featureId;
+  }
+  if (task.taskType === 'vectortile') {
+    const minZoom = getNumber(input.minZoom);
+    const maxZoom = getNumber(input.maxZoom);
+    const tileX = getNumber(input.tileX);
+    const tileY = getNumber(input.tileY);
+    if (typeof tileX === 'number' && typeof tileY === 'number') {
+      if (typeof minZoom === 'number' && typeof maxZoom === 'number') {
+        return `z${minZoom}-${maxZoom} / x${tileX} y${tileY}`;
+      }
+      return `x${tileX} y${tileY}`;
+    }
+    if (typeof minZoom === 'number' && typeof maxZoom === 'number') {
+      return `z${minZoom}-${maxZoom}`;
+    }
+  }
+  return undefined;
+};
+
+const mapTaskRecordToBatchTask = (task: BatchTaskRecord): BatchTask & { title?: string } => ({
   taskId: task.taskId,
   taskType: task.taskType,
+  stage: mapTaskStatusToStage(task.status),
   sessionId: task.sessionId,
   status: task.status,
   index: task.index,
@@ -153,6 +253,7 @@ const mapTaskRecordToBatchTask = (task: BatchTaskRecord): BatchTask => ({
   metadata: task.inputData,
   config: task.outputData,
   error: task.errorMessage,
+  title: buildTaskTitle(task),
 });
 
 const buildBatchProgressEvent = (
@@ -296,11 +397,11 @@ export const shapePluginAPI = {
 
   startBatchProcessing: async (
     draftId: NodeId,
-    config: ProcessingConfig,
+    config: BatchConfig,
     urlMetadata: UrlMetadata[],
     progressCallback?: (event: ShapeBatchProgressEvent) => void,
   ): Promise<string> => {
-    const validation = validateProcessingConfig(config);
+    const validation = validateBatchConfig(config);
     if (!validation.isValid) {
       throw new Error(`Invalid processing config: ${validation.errors?.join(', ')}`);
     }
@@ -313,50 +414,14 @@ export const shapePluginAPI = {
     }
 
     const downloadConfig = config.downloadConfig ?? DEFAULT_PROCESSING_CONFIG.downloadConfig;
-    const simplificationConfig = config.simplificationConfig ?? DEFAULT_PROCESSING_CONFIG.simplificationConfig;
-    const tileConfig = config.tileConfig ?? DEFAULT_PROCESSING_CONFIG.tileConfig;
-
-    // Convert ProcessingConfig to BatchConfig (legacy fields removed)
+    const baseConfig = buildBatchSessionConfig(config, draftLike);
     const batchConfig: BatchProcessConfig = {
-      corsProxyBaseURL: downloadConfig?.corsProxyUrl ?? '',
-      dataSource:
-        config.dataSource ??
-        toDataSourceName(draftLike.draftData?.dataSourceName ?? 'naturalearth'),
-      download: {
-        concurrentDownloads: downloadConfig?.maxConcurrent ?? 4,
-        deleteOnComplete: config.cleanupConfig?.deleteDownloadedFiles ?? false,
-        timeoutMs: downloadConfig?.timeoutMs,
-        retryAttempts: downloadConfig?.retryAttempts ?? downloadConfig?.retryLimit,
-        retryDelay: downloadConfig?.retryDelay,
-      },
-      simplify1: {
-        concurrentProcesses: simplificationConfig?.level1Workers ?? 2,
-        enableFeatureFiltering: true,
-        featureAreaThreshold: simplificationConfig?.areaThreshold ?? 0.5,
-        minVertexCountForAreaFilter: simplificationConfig?.minVertexCountForAreaFilter ?? 25,
-        aspectRatioThreshold: simplificationConfig?.aspectRatioThreshold ?? 5,
-        featureFilterMethod: simplificationConfig?.featureFilterMethod ?? 'hybrid',
-        hybridFilterConfig: simplificationConfig?.hybridFilterConfig ?? DEFAULT_PROCESSING_CONFIG.simplificationConfig?.hybridFilterConfig,
-        deleteOnComplete: false,
-      },
-      simplify2: {
-        concurrentProcesses: simplificationConfig?.level2Workers ?? 2,
-        quantize: simplificationConfig?.quantize ?? 1e4,
-        simplify: simplificationConfig?.tolerance ?? 0.01,
-        tolerance: simplificationConfig?.tolerance ?? 0.1,
-        enablePerFeatureSimplification: simplificationConfig?.enablePerFeatureSimplification ?? true,
-        deleteOnComplete: false,
-      },
-      vectorTiles: {
-        concurrentProcesses: tileConfig?.workers ?? 2,
-        minZoom: tileConfig?.minZoom ?? 0,
-        maxZoom: tileConfig?.maxZoom ?? 14,
-        bufferSize: tileConfig?.bufferSize,
-      },
+      ...baseConfig,
       workerTimeout: downloadConfig?.timeoutMs,
-      workerRetries: downloadConfig?.retryAttempts ?? downloadConfig?.retryLimit,
+      workerRetries: downloadConfig?.retryAttempts ?? 3,
       retryDelay: downloadConfig?.retryDelay,
-      minZoom: tileConfig?.minZoom,
+      minZoom: baseConfig.vectorTiles?.minZoom,
+      maxZoom: baseConfig.vectorTiles?.maxZoom,
     };
 
     const batchSessionData = { urlMetadata };
@@ -364,7 +429,7 @@ export const shapePluginAPI = {
     // Start batch session using unified manager
     const sessionOptions = {
       maxConcurrentTasks: undefined,
-      retryAttempts: downloadConfig?.retryAttempts ?? downloadConfig?.retryLimit,
+      retryAttempts: downloadConfig?.retryAttempts ?? 3,
       retryDelay: downloadConfig?.retryDelay,
       timeoutMs: downloadConfig?.timeoutMs,
       enableResourceTracking: false,
@@ -469,7 +534,8 @@ export const shapePluginAPI = {
       const nodeId = status.nodeId as NodeId;
       const handler = getShapeEntityHandler();
       const entity = await handler.getEntity(nodeId);
-      const config = mergeProcessingConfig(entity?.processingConfig ?? DEFAULT_PROCESSING_CONFIG);
+      const mergedConfig = mergeBatchConfig(entity?.batchConfig ?? DEFAULT_PROCESSING_CONFIG);
+      const config = buildBatchSessionConfig(mergedConfig, { draftData: entity ?? undefined });
       const progress = status.progress ?? {
         total: 0,
         completed: 0,
