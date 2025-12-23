@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv } from 'vite';
 import type { Plugin, ViteDevServer } from 'vite';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import dts from 'vite-plugin-dts';
 import * as fs from 'node:fs';
@@ -9,8 +10,6 @@ import { faviconPlugin } from './vite-plugins/vite-plugin-favicon.js';
 import { comlink } from 'vite-plugin-comlink';
 import { createNodeTypeAliasPlugin } from './vite-plugins/vite-plugin-hierarchidb-plugin-alias/src/index.js';
 import { pluginWorkerVirtualModule } from './vite-plugins/vite-plugin-plugin-worker-virtual.js';
-import { previewBaseRewritePlugin } from './vite-plugins/vite-plugin-preview-base-rewrite.js';
-import { indexEntryFallbackPlugin } from './vite-plugins/vite-plugin-index-entry-fallback.js';
 import {
   collectWorkspacePackages,
   createDevAliasSelection,
@@ -388,7 +387,7 @@ function missingSourceMapFallbackPlugin(): Plugin {
     configureServer(server) {
       const reported = new Set<string>();
       server.middlewares.use((req, res, next) => {
-        const url = req.url ? req.url.split('?')[0] : '';
+        const url = req.url ? req.url.split('?', 2)[0] ?? '' : '';
         if (!url.endsWith('.map')) return next();
 
         const relativePath = url.startsWith('/') ? url.slice(1) : url;
@@ -424,7 +423,7 @@ function specialPrefixRewritePlugin(base: string): Plugin {
     apply: 'serve',
     configureServer(server) {
       server.middlewares.use((req, _res, next) => {
-        const currentUrl = req.url || (req as any).originalUrl || '';
+        const currentUrl = req.url || req.originalUrl || '';
         if (!currentUrl) return next();
         for (const prefix of prefixes) {
           const match = `${baseWithSlash}${prefix}`;
@@ -606,8 +605,6 @@ export default defineConfig(({ mode, isSsrBuild }) => {
 
   //  main thread
   const plugins = [
-    indexEntryFallbackPlugin(base),
-    previewBaseRewritePlugin(base),
     specialPrefixRewritePlugin(base),
     pluginRegistryGeneratorPlugin({
       rootDir: repoRoot,
@@ -700,7 +697,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
     name: 'hdb-build-beacon',
     configureServer(server: ViteDevServer) {
       const startedAt = new Date().toISOString();
-      const beaconHandler = (_req: XMLHttpRequest, res: any) => {
+      const beaconHandler = (_req: IncomingMessage, res: ServerResponse) => {
         const payload = {
           appVersion,
           buildTime,
@@ -719,18 +716,22 @@ export default defineConfig(({ mode, isSsrBuild }) => {
   const hdbDevProxyPlugin: Plugin = {
     name: 'hdb-dev-proxy',
     configureServer(server: ViteDevServer) {
-      const handler = async (req: any, res: any, next: any) => {
+      const handler = async (
+        req: IncomingMessage,
+        res: ServerResponse,
+        next: (err?: Error) => void
+      ) => {
         try {
           // Allow only localhost callers
           const remote = (req.socket?.remoteAddress || '').toString();
           const forwardedHeader = req.headers['x-forwarded-for'];
-          const forwarded = (Array.isArray(forwardedHeader) ? forwardedHeader[0] : forwardedHeader || '').split(',')[0].trim();
+          const forwarded = (Array.isArray(forwardedHeader) ? forwardedHeader[0] : forwardedHeader || '')?.split(',')[0]?.trim();
           const hostHeader = (req.headers['host'] || '').toString();
           const isLocalAddr = (addr: string) => !!addr && (
             addr === '127.0.0.1' || addr === '::1' || addr === '::ffff:127.0.0.1'
           );
           const isLocalHostHeader = /^(localhost|127\.0\.0\.1)(:\d+)?$/i.test(hostHeader);
-          const isLocal = isLocalAddr(remote) || isLocalAddr(forwarded) || isLocalHostHeader;
+          const isLocal = isLocalAddr(remote) || (forwarded && isLocalAddr(forwarded)) || isLocalHostHeader;
           if (!isLocal) {
             res.statusCode = 403;
             res.setHeader('content-type', 'application/json');
@@ -827,7 +828,9 @@ export default defineConfig(({ mode, isSsrBuild }) => {
           const body = resp.body;
           if (body) {
             const { Readable } = await import('node:stream');
-            Readable.fromWeb(body as any).pipe(res);
+            // Cast to Node's ReadableStream type to satisfy Readable.fromWeb typing.
+            const nodeBody = body as unknown as import('node:stream/web').ReadableStream;
+            Readable.fromWeb(nodeBody).pipe(res);
           } else {
             const buf = Buffer.from(await resp.arrayBuffer());
             res.end(buf);
@@ -987,7 +990,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       // MapLibre GL + deck.gl バンドル（~953 kB）に合わせて閾値を調整。
       chunkSizeWarningLimit: 954,
       rollupOptions: {
-        input: isSsrBuild ? undefined : 'index.html',
+        input: isSsrBuild ? undefined : path.resolve(__dirname, 'index.html'),
         external: (id) => buildExternalIds.has(id),
         output: {
           entryFileNames: 'assets/[name].js',

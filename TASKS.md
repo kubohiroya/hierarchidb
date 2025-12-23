@@ -11816,5 +11816,16 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-23 19:05 progress: fix/app/preview-bare-imports — resolver-plugin の typecheck エラー（`ResolverUpdaterPayload` に `isCompiled/compiledFunction` が無い）で build が止まっているため、steps-provider の参照を `draftData` 経由に修正する。
 - 2025-12-23 19:20 progress: fix/app/preview-bare-imports — route-plugin の typecheck エラー（`RouteStepData.processingStatus` 不在）で build が止まっているため、steps-provider の参照を `draftData.processingStatus` へ修正する。
 - 2025-12-23 19:35 progress: fix/app/preview-bare-imports — `vite preview` 起動時に plugin registry が `dist-url` へ再生成される可能性があるため、root `preview` script にも `HDB_PLUGIN_SPEC_MODE=package` を付与して preview でも package mode を維持する。
+- 2025-12-23 20:00 progress: fix/app/preview-bare-imports — plugin UI loader に dist UI glob フォールバックを追加していたが、根幹の経路をフォールバックに依存させない方針のため撤回。
+- 2025-12-23 20:12 start: fix/app/preview-bare-imports — plugin UI loader の source glob と実ファイルの不一致を解消し、dist UI 取り込み経路を削除する対応に着手。DoD: source glob 統一・フォールバック削除・運用ログ/ロールバック記載。
+- 2025-12-23 20:22 progress: fix/app/preview-bare-imports — plugin registry の UI source path 全件が実ファイルに存在することを確認し、UI loader の specifier fallback を削除して source glob のみで解決するよう変更。
+- 2025-12-23 20:33 progress: fix/app/preview-bare-imports — preview 用の index entry フォールバックを撤去し、Vite の HTML 変換が生成した module script を優先するように変更。
+- 2025-12-23 20:45 start: fix/app/vite-config-module-resolution — app/vite.config.ts の TS2307（@hierarchidb/gen-iso3166-2/plugin）解消に着手。DoD: moduleResolution/paths を反映できる設定に修正し、運用ログ/ロールバック記載。
+- 2025-12-23 20:46 progress: fix/app/vite-config-module-resolution — app/tsconfig.json の include に vite.config.ts を追加して NodeNext + paths を適用するよう変更。
+- 2025-12-23 20:53 progress: fix/app/vite-config-module-resolution — fetch の ReadableStream を node:stream/web の型にキャストし、Readable.fromWeb の型エラーを回避。
+- 2025-12-23 21:05 progress: fix/app/vite-config-module-resolution — Vite plugin の型エラーを修正（正規表現マッチの undefined ガード、preview rewrite の apply 削除と path ガード、dev proxy/beacon の req/res 型注釈、sourcemap fallback の URL 取り扱い修正）。
+- 2025-12-23 21:12 progress: fix/app/vite-config-module-resolution — preview base rewrite による /hierarchidb/ のリダイレクトループを避けるため、preview rewrite プラグインの組み込みを停止。
+- 2025-12-23 21:20 progress: fix/app/vite-config-module-resolution — app/public/index.html が dist/index.html を上書きして module script が消えるため削除。
+- 2025-12-23 21:34 progress: fix/app/vite-config-module-resolution — build の rollup input を index.html の絶対パスに変更し、Vite HTML 変換が script を確実に注入するよう調整。
 - 2025-12-23 18:41 progress: fix/ui/plugin-dialog-build-stepper-progress — Stepper のビルド実行中表示を追加し、shape/location/route/resolver の build/preview valid 条件を成果物永続化へ統一。resolver の step 順を Build→Preview へ変更。
 - 2025-12-23 18:41 done: fix/ui/plugin-dialog-build-stepper-progress — Stepper のビルド実行中は CircularProgress に切替、各プラグインの build/preview valid を成果物永続化へ統一し、resolver の Build/Preview の順序を入れ替え。検証: 未実施。ロールバック: `packages/plugin-ui-host/src/headless/components/{PluginDialogStepper.tsx,PluginDialogHeader.tsx,StepStatusIcon.tsx}` と `plugins/{shape-plugin,location-plugin,route-plugin,resolver-plugin}/src/ui/components/steps-provider.tsx` の差分を revert する。

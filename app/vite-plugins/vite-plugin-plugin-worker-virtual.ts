@@ -77,6 +77,9 @@ export function pluginWorkerVirtualModule(): Plugin {
         return null;
       }
       const nodeType = match[1];
+      if (!nodeType) {
+        return null;
+      }
       const entryPath = resolveWorkerEntry(nodeType);
       if (!entryPath) {
         this.warn(

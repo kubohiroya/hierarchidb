@@ -31,17 +31,13 @@ export const pluginUiModuleSources: Record<string, string | undefined> = deriveP
 const uiSourceGlob = import.meta.glob('../../../plugins/*-plugin/src/**/index.{ts,tsx}');
 
 function resolveUiLoader(nodeType: string, sourcePath: string | undefined) {
-  // Prefer sourcePath (dev) to avoid failing when packages are not built/linked.
-  if (sourcePath) {
-    const relativeKey = `../../../${sourcePath}`;
-    const loader = uiSourceGlob[relativeKey];
-    if (loader) return loader;
+  if (!sourcePath) return undefined;
+  const relativeKey = `../../../${sourcePath}`;
+  const loader = uiSourceGlob[relativeKey];
+  if (!loader) {
+    throw new Error(`[plugin-ui-loader] UI source not found for ${nodeType}: ${sourcePath}`);
   }
-  const specifier = pluginUiModuleMap[nodeType];
-  if (specifier) {
-    return () => import(/* @vite-ignore */ specifier);
-  }
-  return undefined;
+  return loader;
 }
 
 export const pluginUiLoaders: Record<string, () => Promise<unknown>> = Object.fromEntries(

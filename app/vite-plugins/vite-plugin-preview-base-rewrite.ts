@@ -9,6 +9,7 @@ const normalizeBasePath = (base: string): string => {
 
 const rewritePreviewUrl = (url: string, basePath: string): string | null => {
   const [path, query = ''] = url.split('?', 2);
+  if (!path) return null;
   if (path === basePath || path === `${basePath}/`) {
     return `/${query ? `?${query}` : ''}`;
   }
@@ -28,7 +29,6 @@ export const previewBaseRewritePlugin = (base: string): Plugin => {
   const basePath = normalizeBasePath(base);
   return {
     name: 'hierarchidb:preview-base-rewrite',
-    apply: 'preview',
     configurePreviewServer(server) {
       if (!basePath) return;
       server.middlewares.use((req, _res, next) => {
