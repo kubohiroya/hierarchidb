@@ -133,7 +133,8 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
     return (
       <Box sx={{ width: '100%', height: rectHeight }}>
         <svg width="100%" height={rectHeight} viewBox={`0 0 ${viewWidth} 1`} preserveAspectRatio="none">
-          {Array.from({ length: totalTasks }).map((_, index) => {
+          <title>a</title>
+          {Array.from<number>({ length: totalTasks }).map((_item: number, index: number)=>index).map((index) => {
             const task = tasks[index];
             const fill = task ? colorForTask(task) : theme.palette.grey[400];
             return (

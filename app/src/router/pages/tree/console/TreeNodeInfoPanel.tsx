@@ -16,7 +16,6 @@ export interface TreeNodeInfoPanelProps {
 export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNodeInfoPanelProps) {
   const {
     currentNode,
-    nodeData,
     menuAnchorEl,
     menuNode,
     handleContextMenuTrigger,
@@ -37,21 +36,6 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
       </Box>
     );
   }
-
-  const {
-    createdAtLabel,
-    updatedAtLabel,
-    description,
-    nodeTypeLabel,
-    iconTooltip,
-    nodeTypeCaption,
-    editLabel,
-    editAria,
-    previewLabel,
-    previewAria,
-    unnamedNodeLabel,
-    closeAria,
-  } = labels;
 
   return (
     <Box

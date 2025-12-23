@@ -5,7 +5,7 @@ import { useTheme } from '@mui/material/styles';
 import type { TreeTableColumn } from './TreeTable/index.js';
 // RowContextMenu removed: right-click is disabled app-wide
 import { toNodeType, type NodeId, type NodeType, type TreeNode } from '@hierarchidb/common-types';
-import { TreeNodeInUI, TreeTableController, TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
+import { type TreeNodeInUI, type TreeTableController, TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
 import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { TreeConsoleFooter } from './TreeConsoleFooter.js';
 import type { HierarchicalTreeNode } from '../types/index.js';
