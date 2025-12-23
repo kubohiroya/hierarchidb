@@ -1,0 +1,1 @@
+import{K as e}from"../worker.js";import{t}from"./jsx-runtime-BWqAK3pA.js";import{t as n}from"./createSvgIcon-DUavpKDX.js";var r=n((0,e(t()).jsx)(`path`,{d:`M6 19h4V5H6zm8-14v14h4V5z`}),`Pause`);export{r as t};

@@ -1,0 +1,1 @@
+import"./vendor-react-DueQUKGo.js";import"./identifier-CN0yTFUG.js";import{Fn as e}from"./index.js";const t=e;var n=t;export{t as LinkerPluginIcon,n as default};

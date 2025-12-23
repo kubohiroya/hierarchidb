@@ -1,0 +1,1 @@
+import{L as e,N as t}from"../worker.js";import{n,r,t as i}from"./EphemeralLocationDB-Cm3lsXs5.js";import{t as a}from"./locationEntitiesDB-D6LqDBGm.js";async function o(){await t.delete(e(`location`)),await t.delete(e(`location-ephemeral`))}export{i as EphemeralLocationDB,a as LocationEntitiesDB,o as clearDatabases,n as closeEphemeralLocationDB,r as getEphemeralLocationDB};

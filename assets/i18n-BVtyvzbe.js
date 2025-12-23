@@ -1,0 +1,1 @@
+import"./vendor-react-DueQUKGo.js";import"./identifier-CN0yTFUG.js";import{n as e,r as t,t as n}from"./i18n-kVJykbsq.js";export{n as formatBytes,e as formatNumber,t as useTranslation};

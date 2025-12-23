@@ -1,1 +1,0 @@
-import{s as e,u as t}from"../worker.js";function n(e){t(`shape`,e)}async function r(){return e(`shape`)}export{n,r as t};

@@ -1,0 +1,1 @@
+import{t as e}from"./handlers-D0LzJ4ZD.js";export{e as ShapeEntityHandler,e as ShapeEntityService};

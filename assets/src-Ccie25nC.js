@@ -1,0 +1,1 @@
+import{K as e}from"../worker.js";import{t}from"./react-C_9Kzp2E.js";import{t as n}from"./jsx-runtime-BWqAK3pA.js";var r=e(t(),1);n(),(0,r.createContext)(null);function i(){throw Error(`Worker client hook is not registered. Please ensure registerWorkerClientHook is called at app startup.`)}export{i as t};

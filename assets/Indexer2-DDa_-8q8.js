@@ -1,1 +1,0 @@
-import{t as e}from"./Indexer-BTH6wW_C.js";export{e as TabularIndexer};
