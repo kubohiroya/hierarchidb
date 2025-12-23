@@ -13,7 +13,7 @@ type RouteDatabaseLike = {
 
 export class RouteQueryService implements RouteQueryAPI {
   static async getSingleton(db: RouteDatabaseLike): Promise<RouteQueryService> {
-    return SingletonMixin.getSingleton(RouteQueryService.name, async () => new RouteQueryService(db));
+    return SingletonMixin.getSingleton('RouteQueryService', async () => new RouteQueryService(db));
   }
 
   constructor(private db: RouteDatabaseLike) {}

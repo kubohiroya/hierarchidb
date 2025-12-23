@@ -9,7 +9,7 @@ import { storeRegistry } from '../entity/store-registry.js';
 
 export class LocationQueryService implements LocationQueryAPI {
   static async getSingleton(): Promise<LocationQueryService> {
-    return SingletonMixin.getSingleton(LocationQueryService.name, async () => new LocationQueryService());
+    return SingletonMixin.getSingleton('LocationQueryService', async () => new LocationQueryService());
   }
 
   async listLocationGroups(nodeId: NodeId): Promise<LocationGroupItem[]> {

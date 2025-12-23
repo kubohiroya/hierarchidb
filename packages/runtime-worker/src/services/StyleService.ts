@@ -11,7 +11,7 @@ import { StyleDB } from '@hierarchidb/style-store';
 
 export class StyleService implements StyleQueryAPI, StyleMutationAPI {
   static async getSingleton(db: StyleDB): Promise<StyleService> {
-    return SingletonMixin.getSingleton(StyleService.name, async () => new StyleService(db));
+    return SingletonMixin.getSingleton('StyleService', async () => new StyleService(db));
   }
 
   constructor(private db: StyleDB) {}

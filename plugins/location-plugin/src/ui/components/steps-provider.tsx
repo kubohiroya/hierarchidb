@@ -51,6 +51,8 @@ const DEFAULT_MAX_ZOOM = 12;
 const LICENSE_REQUIRED = false;
 const canStartLocationBatch = (data?: Partial<LocationEntity>): boolean =>
   Boolean(data?.dataSource && hasSelection(data));
+const isLocationBuildPersisted = (data?: Partial<LocationEntity>): boolean =>
+  data?.processingStatus === 'completed';
 
 const tNs = (key: string, fallback: string) =>
   String(i18n.t(key, { ns: 'location-plugin', defaultValue: fallback }));
@@ -165,7 +167,7 @@ registry.registerConfigProvider<LocationStepData>({
           const draft = ensureData(p.data);
           return <LocationBuildStep draft={draft} nodeId={p.nodeId} />;
         },
-        validate: (data?: LocationStepData) => canStartLocationBatch(data),
+        validate: (data?: LocationStepData) => isLocationBuildPersisted(data),
         capabilities: {
           canStartBatch: canStartLocationBatch,
           startBatch: (data, context) => startLocationBatch(data, context),
@@ -184,7 +186,7 @@ registry.registerConfigProvider<LocationStepData>({
             />
           );
         },
-        validate: () => true,
+        validate: (data?: LocationStepData) => isLocationBuildPersisted(data),
       },
     ];
   },

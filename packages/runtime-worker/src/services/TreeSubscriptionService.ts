@@ -42,7 +42,7 @@ export class TreeSubscriptionService {
     coreDB: CoreDB,
     treeQuery?: TreeQueryAPI
   ): Promise<TreeSubscriptionService> {
-    return SingletonMixin.getSingleton(TreeSubscriptionService.name, async () => {
+    return SingletonMixin.getSingleton('TreeSubscriptionService', async () => {
       const resolvedQuery = treeQuery || (await TreeQueryService.getSingleton(coreDB));
       return new TreeSubscriptionService(coreDB, resolvedQuery);
     });

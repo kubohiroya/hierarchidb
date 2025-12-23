@@ -49,7 +49,7 @@ export interface ShapeAPI {
   //  Batch processing operations - DraftTypes-based
   startBatchProcessing(
     draftId: NodeId,
-    config: BatchConfig,
+    batchConfig: BatchConfig,
     urlMetadata: UrlMetadata[],
   ): Promise<string>;
 

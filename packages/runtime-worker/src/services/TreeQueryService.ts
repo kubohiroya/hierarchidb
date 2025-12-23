@@ -16,7 +16,7 @@ import type { CoreDB } from './CoreDB.js';
 
 export class TreeQueryService implements TreeQueryAPI {
   static async getSingleton(coreDB: CoreDB): Promise<TreeQueryService> {
-    return SingletonMixin.getSingleton(TreeQueryService.name, () => {
+    return SingletonMixin.getSingleton('TreeQueryService', () => {
       return new TreeQueryService(coreDB);
     });
   }

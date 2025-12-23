@@ -65,6 +65,9 @@ const hasRouteConfig = (data?: RouteStepData): boolean => {
   );
 };
 
+const isRouteBuildPersisted = (data?: RouteStepData): boolean =>
+  data?.processingStatus === 'completed';
+
 const startRouteBatch = async (data: RouteStepData, _context: StartBatchContext) => {
   const { t } = getTranslation();
   const draft = data?.draftData ?? {};
@@ -157,7 +160,7 @@ registry.registerConfigProvider<RouteStepData>({
           },
           startBatch: (data, context) => startRouteBatch(data as RouteStepData, context),
         },
-        validate: () => true,
+        validate: (data?: RouteStepData) => isRouteBuildPersisted(data),
       },
       {
         id: 'preview',
@@ -167,7 +170,7 @@ registry.registerConfigProvider<RouteStepData>({
           const draft = ensureDraft(p.data);
           return <RoutePreviewStep draft={draft as unknown as RouteUpdaterPayload} />;
         },
-        validate: () => true,
+        validate: (data?: RouteStepData) => isRouteBuildPersisted(data),
       },
     ];
   },

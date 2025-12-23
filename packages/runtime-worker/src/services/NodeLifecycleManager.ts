@@ -13,7 +13,7 @@ export class NodeLifecycleManager {
     coreDB: CoreDB,
     plugins: Record<string, PluginDefinition>
   ): Promise<NodeLifecycleManager> {
-    return SingletonMixin.getSingleton(NodeLifecycleManager.name, () => {
+    return SingletonMixin.getSingleton('NodeLifecycleManager', () => {
       return new NodeLifecycleManager(coreDB, plugins);
     });
   }

@@ -58,6 +58,8 @@ const canStartShapeBatch = (data?: Partial<ShapeEntity>): boolean => {
   ).isValid;
   return hasSelection && hasDataSource && processingValid;
 };
+const isShapeBuildPersisted = (data?: Partial<ShapeEntity>): boolean =>
+  data?.processingStatus === 'completed';
 
 registry.registerConfigProvider<Partial<ShapeEntity>>({
   nodeType: 'shape',
@@ -91,7 +93,7 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
         id: 'build',
         label: t('steps.build.label', 'Build'),
         componentFactory: (props: ShapeStepProps) => <ShapeBuildProgress {...props} />,
-        validate: (data?: Partial<ShapeEntity>) => canStartShapeBatch(data),
+        validate: (data?: Partial<ShapeEntity>) => isShapeBuildPersisted(data),
         capabilities: {
           canStartBatch: (data?: Partial<ShapeEntity>) => canStartShapeBatch(data),
         },
@@ -100,7 +102,7 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
         id: 'preview',
         label: t('steps.preview.label', 'Preview'),
         componentFactory: (props: ShapeStepProps) => <ShapePreview {...props} />,
-        validate: () => true,
+        validate: (data?: Partial<ShapeEntity>) => isShapeBuildPersisted(data),
       },
     ];
   },

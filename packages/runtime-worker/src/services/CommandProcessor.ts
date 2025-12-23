@@ -26,7 +26,7 @@ type ErrorResultExtras = {
 
 export class CommandProcessor {
   static async getSingleton(coreDB: CoreDB): Promise<CommandProcessor> {
-    return SingletonMixin.getSingleton(CommandProcessor.name, () => new CommandProcessor(coreDB));
+    return SingletonMixin.getSingleton('CommandProcessor', () => new CommandProcessor(coreDB));
   }
 
   // Config values for ring buffers and limits

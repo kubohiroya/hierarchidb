@@ -1,6 +1,6 @@
 /**
- * Worker entry point (dynamic-import, error-safe)
- * Avoid static imports so we can report precise failures to UI.
+ * Worker entry point (error-safe)
+ * Keep imports explicit to stabilize preview bundling.
  */
 
 import './worker-react-refresh-shim.js';
@@ -36,6 +36,7 @@ import {
   configureWorkerContainer,
   type PluginWorkerModuleLoader,
   WorkerDiTokens,
+  WorkerService,
 } from '@hierarchidb/runtime-worker';
 import {
   pluginDefinitions as staticPluginDefinitions,
@@ -80,7 +81,7 @@ type BatchTaskProvider = (sessionId: string) => Promise<BatchTaskSummary[]>;
 type BatchProgressSubscriber = (sessionId: string, callback: (event: BatchProgressEvent) => void) => () => void;
 
 type ShapeBatchAPI = {
-  startBatchProcessing: (draftId: NodeId, config: unknown, urlMetadata: unknown[]) => Promise<string>;
+  startBatchProcessing: (draftId: NodeId, batchConfig: unknown, urlMetadata: unknown[]) => Promise<string>;
   getDraft?: (draftId: NodeId) => Promise<unknown>;
   getBatchSession?: (sessionId: string) => Promise<unknown>;
   pauseBatchProcessing?: (draftId: NodeId) => Promise<void>;
@@ -88,15 +89,6 @@ type ShapeBatchAPI = {
   cancelBatchProcessing?: (draftId: NodeId) => Promise<void>;
   invokeBatchCommand?: (command: string, payload: Record<string, unknown>) => Promise<void>;
   subscribeToProgress?: BatchProgressSubscriber;
-};
-
-type RuntimeWorkerModule = {
-  WorkerService: {
-    getSingleton: (plugins: PluginDefinition[]) => Promise<RuntimeWorkerServices>;
-  };
-  entityRegistry?: {
-    register: (nodeType: string, handler: unknown) => void;
-  };
 };
 
 const resolveBatchTaskProvider = (mod: unknown): BatchTaskProvider | null => {
@@ -302,11 +294,7 @@ reporter.reportStepProgress('Load Comlink', 0);
     }
 
     try {
-      const runtimeModule = (await import(
-        '@hierarchidb/runtime-worker'
-      )) as unknown as RuntimeWorkerModule;
-
-      const { WorkerService } = runtimeModule;
+      // Use a static import to avoid bundler facade re-export mismatches in preview builds.
       reporter.reportStepProgress('Bootstrap services', 10);
       const services = await WorkerService.getSingleton(
         enrichedDefinitions.length > 0 ? enrichedDefinitions : pluginDefinitions
@@ -355,9 +343,9 @@ reporter.reportStepProgress('Load Comlink', 0);
               ?? (fallbackNode as { draftData?: unknown } | undefined)?.draftData
               ?? (fallbackNode as { data?: unknown } | undefined)?.data
           );
-          const config = (draftData as { processingConfig?: unknown }).processingConfig ?? {};
+          const batchConfig = (draftData as { batchConfig?: unknown }).batchConfig ?? {};
           const urlMetadata = (draftData as { urlMetadata?: unknown[] }).urlMetadata ?? [];
-          const sessionId = await api.startBatchProcessing(nodeId, config, urlMetadata);
+          const sessionId = await api.startBatchProcessing(nodeId, batchConfig, urlMetadata);
           const session = api.getBatchSession ? await api.getBatchSession(sessionId) : undefined;
           return toBatchSessionStatus(
             session as Record<string, unknown> | undefined,

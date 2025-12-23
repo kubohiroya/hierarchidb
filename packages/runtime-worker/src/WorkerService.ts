@@ -68,7 +68,7 @@ export class WorkerService {
   private readonly startTime = Date.now();
 
   static async getSingleton(plugins: PluginDefinition[]): Promise<WorkerService> {
-    return SingletonMixin.getSingleton(WorkerService.name, async () => {
+    return SingletonMixin.getSingleton('WorkerService', async () => {
       const coreDB: CoreDB = await CoreDB.getSingleton();
       // Feature bootstrap (registry-driven). Keeps init order and opt-in capabilities.
       await bootstrapFeatures();

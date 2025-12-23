@@ -16,6 +16,9 @@ type ResolverData = StepData & ResolverUpdaterPayload & {
 
 type ResolverStepProps = PluginStepProps<ResolverUpdaterPayload>;
 
+const isResolverBuildPersisted = (data?: ResolverUpdaterPayload): boolean =>
+  Boolean(data?.isCompiled || data?.compiledFunction);
+
 const ensureDraft = (data?: ResolverData): ResolverData => {
   const draft = data ?? ({} as ResolverData);
   return {
@@ -130,7 +133,21 @@ registry.registerConfigProvider<ResolverUpdaterPayload>({
         },
       },
       {
-        id: 'preview', label: 'Preview/Test', validate: () => true,
+        id: 'build',
+        label: 'Build',
+        optional: true,
+        componentFactory: (p: ResolverStepProps) => {
+          const currentData = ensureDraft(p.data);
+          return <ResolverBuildStep draft={currentData} />;
+        },
+        capabilities: {
+          canStartBatch: (data: ResolverUpdaterPayload) =>
+            Boolean(data?.draftMetadata?.name?.trim() && data?.draftData?.sourceSchema && data?.draftData?.targetSchema),
+        },
+        validate: (data?: ResolverUpdaterPayload) => isResolverBuildPersisted(data),
+      },
+      {
+        id: 'preview', label: 'Preview/Test', validate: (data?: ResolverUpdaterPayload) => isResolverBuildPersisted(data),
         componentFactory: (p: ResolverStepProps) => {
           const currentData = ensureDraft(p.data);
           return (
@@ -148,20 +165,6 @@ registry.registerConfigProvider<ResolverUpdaterPayload>({
             />
           );
         },
-      },
-      {
-        id: 'build',
-        label: 'Build',
-        optional: true,
-        componentFactory: (p: ResolverStepProps) => {
-          const currentData = ensureDraft(p.data);
-          return <ResolverBuildStep draft={currentData} />;
-        },
-        capabilities: {
-          canStartBatch: (data: ResolverUpdaterPayload) =>
-            Boolean(data?.draftMetadata?.name?.trim() && data?.draftData?.sourceSchema && data?.draftData?.targetSchema),
-        },
-        validate: () => true,
       },
     ];
   },

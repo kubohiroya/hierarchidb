@@ -53,19 +53,47 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
-1833) shape-plugin Step5 の dataSource 選択が naturalearth に固定される原因調査（P0）
-- ブランチ: `analysis/shape/step5-datasource-selection`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: plugins/shape-plugin（UI/worker/services/batch）, app worker runtime
+1838) Template Import の apply undefined エラー調査（P1）
+- ブランチ: `analysis/app/template-import-apply-undefined`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: app/import template, vite env 設定
 - 受け入れ基準（DoD）:
-  - [ ] Step2 の dataSource 選択が Step5 のバッチ処理に反映されない原因箇所を特定できている
-  - [ ] 該当コード位置（ファイル/関数）を明示できている
-  - [ ] どのフローで再現するか（保存なし→ビルド開始など）と影響範囲を説明できている
+  - [ ] エラー発生箇所（apply undefined）の呼び出し元を特定する
+  - [ ] VITE_APP_NAME/サブパス設定との関係を確認する
+  - [ ] 原因を整理し、必要なら最小差分で修正する
+  - [ ] 調査結果と（必要なら）ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] Import Template の実装箇所を特定する
+  - [ ] VITE_APP_NAME の参照箇所を確認する
+- ロールバック手順：調査のみの場合は差分なし。変更が必要な場合は該当差分を revert する。
+
+1837) preview 白画面のモジュール解決エラー（bare import）解消（P1）
+- ブランチ: `fix/app/preview-bare-imports`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: app/vite.config.ts, app/index.html, preview ビルド出力
+- 受け入れ基準（DoD）:
+  - [ ] `pnpm build:sourcemap` で生成した `app/dist/index.html` に正しい entry script が含まれる
+  - [ ] `pnpm --filter @hierarchidb/app preview` で `/hierarchidb/` にアクセスした際、`@hierarchidb/*` の bare import 解決エラーが発生しない
   - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
 - チェックリスト:
-  - [ ] Step2 の dataSource 保存（draftData.batchConfig.dataSource）経路を確認する
-  - [ ] Step5 の Save Draft → startBatchProcessing の引き渡し経路を確認する
-  - [ ] dataSource のフォールバック/正規化/上書きがある箇所を特定する
-- ロールバック手順：調査のみのため差分なし。記載内容を戻す場合は本タスクの運用ログ追記を削除する。
+  - [ ] build 出力の entry 解決経路と rollup input 設定を確認する
+  - [ ] preview での module 解決経路（base/asset/url）を確認し、必要なら設定を補正する
+  - [ ] 影響範囲の検証結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：本タスクで変更した Vite 設定/HTML/プラグイン差分を revert し、`pnpm build:sourcemap` を再実行する
+
+1834) PluginDialog ビルド実行中のStepper表示と build/preview valid 条件の統一（P1）
+- ブランチ: `fix/ui/plugin-dialog-build-stepper-progress`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: packages/plugin-ui-host, packages/plugin-ui-sdk, packages/components, plugins/*-plugin（build/preview steps）
+- 受け入れ基準（DoD）:
+  - [ ] ビルドステップが「実行中」のときのみ、Stepper のステップ番号表示が CircularProgress（indeterminate）に置換される
+  - [ ] ビルド停止/エラー/未実行など実行中以外は通常の番号表示に戻る
+  - [ ] ビルドステップを持つ各プラグインで、ビルドステップの valid 条件が「ビルド成果物が永続化済み」で統一される
+  - [ ] ビルド+プレビュー両ステップを持つ各プラグインで、プレビューステップの valid 条件も「ビルド成果物が永続化済み」で統一される
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] Stepper のステップ番号描画箇所と「ビルド実行中」状態の取得経路を特定する
+  - [ ] 実行中のみ CircularProgress を表示し、非実行中は従来の番号表示を維持する
+  - [ ] 各プラグインの build/preview step の valid 判定を永続化済み成果物ベースに統一する
+  - [ ] 影響範囲の typecheck など代表検証を実行し、結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：本タスクで変更した UI/プラグイン関連ファイルの差分を revert し、実行した検証コマンドを再実行する
 
 1822) CoreDB node削除時の shape/location/route データ連動削除（P1）
 - ブランチ: `feat/runtime/delete-linked-gis-data`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -4761,6 +4789,22 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1836) build の index.html に entry script を強制注入する（P1） — 完了 (2025-12-23)
+  - 要点：build 時に module script が無い場合、`/hierarchidb/assets/index.js` を注入する Vite plugin を追加。
+  - 検証：未実施。
+  - ロールバック手順：`app/vite.config.ts` と `app/vite-plugins/vite-plugin-index-entry-fallback.ts` の差分を revert する。
+- 1835) shape-plugin dataSource 設定経路の命名統一（P0） — 完了 (2025-12-23)
+  - 要点：app worker/ShapeAPI/shape worker の引数名を batchConfig に統一し、config 命名混乱を解消。
+  - 検証：未実施。
+  - ロールバック手順：`app/src/worker-runtime/worker.ts` と `plugins/shape-plugin/src/common/types/api.ts`、`plugins/shape-plugin/src/worker/api.ts` の差分を revert する。
+- 1834) shape-plugin バッチ結合テストが実経路を通るか確認（P0） — 完了 (2025-12-23)
+  - 要点：Step5 実経路との差分を整理し、app worker の startBatchSession を batchConfig 参照へ修正、dataSource 欠落時の例外テストを追加。
+  - 検証：未実施。
+  - ロールバック手順：`app/src/worker-runtime/worker.ts` と `plugins/shape-plugin/src/{worker/api.ts,headless/shape-batch-progress.headless.test.ts}` の差分を revert する。
+- 1833) shape-plugin Step5 の dataSource 選択が naturalearth に固定される原因調査（P0） — 完了 (2025-12-23)
+  - 要点：draftData ラップ前提の参照不整合を特定し、startBatchProcessing の呼び出し形を補正。
+  - 検証：未実施。
+  - ロールバック手順：`plugins/shape-plugin/src/worker/api.ts` の差分を revert する。
 - 1832) app index.html の module script を build で保持する（P1） — 完了 (2025-12-23)
   - 要点：`app/index.html` の module script を絶対パスに変更し、build で entry script が削除されないよう修正。
   - 検証：未実施。
@@ -11211,8 +11255,22 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-23 18:45 start: analysis/app/template-import-apply-undefined — Template Import の apply undefined エラーを調査開始。DoD: Kanban 記載どおり経路特定/原因整理/運用ログ記載。（Kanban: 1838）
+- 2025-12-23 18:56 progress: analysis/app/template-import-apply-undefined — import template は import.meta.env.BASE_URL 由来の base を使って /templates を fetch。dev をサブパスで動かす場合は base が '/' となりテンプレートや worker 取得が失敗する可能性があるため VITE_APP_NAME/VITE_APP_PREFIX 設定が必要。
 - 2025-12-23 10:53 start: analysis/shape/step5-datasource-selection — shape-plugin Step5 のバッチ処理で Step2 の dataSource 選択が無視され naturalearth に固定される問題の原因調査に着手。DoD: Kanban 記載どおり原因特定/影響範囲整理/運用ログ記載。（Kanban: 1833）
 - 2025-12-23 10:55 progress: analysis/shape/step5-datasource-selection — buildBatchSessionConfig が `draft?.draftData?.batchConfig?.dataSource` を参照する一方、startBatchProcessing は `getEntity(draftId)`（ShapeEntity 本体）を渡しており draftData が無いため dataSource が undefined になって `naturalearth` へフォールバックする経路を確認。app worker の startBatchSession も config を `processingConfig` から組み立てるため dataSource を含まず、draft 側参照が必須。
+- 2025-12-23 11:00 progress: analysis/shape/step5-datasource-selection — startBatchProcessing で `buildBatchSessionConfig` に渡す draftLike を `{ draftData: entity }` 形式に修正し、Step2 の dataSource が参照されるよう補正。`plugins/shape-plugin/src/worker/api.ts` を更新。
+- 2025-12-23 11:00 done: analysis/shape/step5-datasource-selection — DoD 達成。ロールバック: `plugins/shape-plugin/src/worker/api.ts` の差分を revert する。検証: 未実施（調査・修正のみ）。
+- 2025-12-23 11:33 start: analysis/shape/batch-test-alignment — shape-plugin のバッチ結合テストが実経路（draftData 経由の dataSource 参照）を通っているか確認を開始。DoD: Kanban 記載どおり経路確認/差分整理/運用ログ記載。（Kanban: 1834）
+- 2025-12-23 11:33 progress: analysis/shape/batch-test-alignment — headless バッチ結合テストは `shapePluginAPI.startBatchProcessing(draftId, config, urlMetadata)` を直接呼び、config.dataSource と urlMetadata を明示するため Step5 の startBatchSession 経路（processingConfig + draftData 参照）を通らないことを確認。migration/unit の BatchSessionManager 直呼びや VectorTileGeneration.integration の startBatchSession も同様に実経路外。
+- 2025-12-23 11:33 done: analysis/shape/batch-test-alignment — 実経路との差分を整理。ロールバック: 調査のみのため差分なし。
+- 2025-12-23 11:40 progress: analysis/shape/batch-test-alignment — app worker の startBatchSession で `processingConfig` を `batchConfig` へ切替え、shape worker 側で dataSource 未設定時に例外を投げるよう修正。headless 結合テストに dataSource 欠落時の例外ケースを追加。
+- 2025-12-23 11:40 done: analysis/shape/batch-test-alignment — DoD 達成。ロールバック: `app/src/worker-runtime/worker.ts` と `plugins/shape-plugin/src/{worker/api.ts,headless/shape-batch-progress.headless.test.ts}` の差分を revert する。検証: 未実施。
+- 2025-12-23 11:50 start: refactor/shape/batchconfig-naming — processingConfig/batchConfig/config の命名混在を整理し、dataSource 経路を明確化する対応に着手。DoD: Kanban 記載どおり命名統一/運用ログ記載。（Kanban: 1835）
+- 2025-12-23 11:51 progress: refactor/shape/batchconfig-naming — app worker の startBatchSession 参照名を batchConfig に統一し、ShapeAPI/shape worker でも引数名を batchConfig へ揃えた。
+- 2025-12-23 11:51 done: refactor/shape/batchconfig-naming — DoD 達成。ロールバック: `app/src/worker-runtime/worker.ts` と `plugins/shape-plugin/src/common/types/api.ts`、`plugins/shape-plugin/src/worker/api.ts` の差分を revert する。検証: 未実施。
+- 2025-12-23 11:54 command: pnpm --filter @hierarchidb/shape-plugin test -- src/headless/shape-batch-progress.headless.test.ts — exit 1。GeoBoundaries の fetch 失敗（network）で headless バッチが失敗、DatabaseClosedError も発生。dataSource 欠落テストは通過。
+- 2025-12-23 12:02 command: pnpm --filter @hierarchidb/shape-plugin test -- src/headless/shape-batch-progress.headless.test.ts — exit 0（network 許可）。headless バッチ 2 tests passed。
 - 2025-12-22 23:29 start: fix/app/vite-optimize-deps-rolldown — Vite preview の optimizeDeps.esbuildOptions 警告を rolldownOptions へ移行する対応に着手。DoD: Kanban 記載どおり設定移行/警告解消/運用ログ記載。（Kanban: 1828）
 - 2025-12-22 23:30 done: fix/app/vite-optimize-deps-rolldown — optimizeDeps.esbuildOptions を削除し rolldownOptions へ移行。検証コマンドは未実施（preview/build 未実行）。ロールバック: `app/vite.config.ts` の差分を revert する。
 - 2025-12-22 22:51 start: analysis/ui/create-menu-missing-nodes — SpeedDial/コンテキストメニューの Create に出るノード種類が location/shape のみに減る問題を調査開始。DoD: Kanban 記載どおり経路特定/原因整理/運用ログ記載。（Kanban: 1825）
@@ -11726,3 +11784,23 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-23 10:35 done: chore/build/sourcemap-script — ルートに `build:sourcemap` を追加し、`HDB_PREVIEW_SOURCEMAP=1 pnpm --filter @hierarchidb/app build` を実行するよう設定。検証: 未実施。ロールバック: `package.json` の差分を revert する。
 - 2025-12-23 10:43 start: fix/app/index-module-script — build 後の index.html から module script が消える問題の対応に着手。DoD: Kanban 記載どおり module script 保持/preview動作/運用ログ/ロールバック記載。（Kanban: 1832）
 - 2025-12-23 10:43 done: fix/app/index-module-script — app/index.html の module script を絶対パスに変更し、build 後の index.html に entry script が残るよう修正。検証: 未実施。ロールバック: `app/index.html` の差分を revert する。
+- 2025-12-23 11:55 start: fix/app/index-entry-fallback — build 後の index.html に entry script が出力されない問題の対応に着手。DoD: Kanban 記載どおり entry 注入/preview動作/運用ログ/ロールバック記載。（Kanban: 1836）
+- 2025-12-23 11:56 done: fix/app/index-entry-fallback — build 時に module script が無い場合、`/hierarchidb/assets/index.js` を注入する Vite plugin を追加。検証: 未実施。ロールバック: `app/vite.config.ts` と `app/vite-plugins/vite-plugin-index-entry-fallback.ts` の差分を revert する。
+- 2025-12-23 10:59 start: fix/ui/plugin-dialog-build-stepper-progress — PluginDialog のビルド実行中に Stepper を進捗表示へ置換し、ビルド/プレビューの valid 条件を成果物永続化に統一する対応に着手。DoD: Kanban 記載どおり表示/valid 条件/運用ログ/ロールバック記載。
+- 2025-12-23 12:30 start: fix/app/preview-bare-imports — preview の白画面（`@hierarchidb/*` bare import 解決エラー）を解消する対応に着手。DoD: Kanban 記載どおり entry 解決/preview 動作/運用ログ/ロールバック記載。（Kanban: 1837）
+- 2025-12-23 12:50 progress: fix/app/preview-bare-imports — Vite build の entry 解決を `rollupOptions.input: 'index.html'` と build external 判定の関数化で調整し、`pnpm build:sourcemap` を実行（exit 0）。`app/dist/index.html` に modulepreload + entry script を確認。残作業: `pnpm --filter @hierarchidb/app preview` で `/hierarchidb/` の動作確認。
+- 2025-12-23 13:10 progress: fix/app/preview-bare-imports — `pnpm preview` で `Failed to fetch dynamically imported module: /hierarchidb/assets/mapRoute-*.js` が発生。asset のレスポンス内容と content-type を再確認し、preview の配信経路（base/asset/rewriter）を調査する。
+- 2025-12-23 13:20 progress: fix/app/preview-bare-imports — preview base rewrite が asset/js リクエストまで書き換えている可能性があるため、HTML 以外 + 拡張子付きのリクエストは書き換え対象から除外（`app/vite-plugins/vite-plugin-preview-base-rewrite.ts`）。preview で再確認が必要。
+- 2025-12-23 13:45 progress: fix/app/preview-bare-imports — ルートの `pnpm preview` が `HDB_PREVIEW_SOURCEMAP=1 pnpm --filter @hierarchidb/app build` 相当を先に実行してから preview を起動するよう `package.json` の `preview` script を更新。
+- 2025-12-23 14:05 progress: fix/app/preview-bare-imports — `app/index.html` の entry script を `./src/entry.client.tsx` に変更し、Vite build が HTML を正しく解釈して entry を埋め込めるよう調整（`/src/...` が base `/hierarchidb/` と不整合の可能性があるため）。
+- 2025-12-23 14:20 progress: fix/app/preview-bare-imports — preview で `packages/runtime-worker/dist/StageProcessingService.js` へ 404 が出ているため、build の external 化で相対パスが残っていないか確認し、必要なら buildExternal の見直しを実施予定。
+- 2025-12-23 14:25 progress: fix/app/preview-bare-imports — `app/vite.config.ts` の build external から `StageProcessingService.js` を除外し、preview で外部ファイル参照が残らないよう調整。
+- 2025-12-23 14:40 progress: fix/app/preview-bare-imports — worker build の external から `StageProcessingService.js` を除外し、preview での 404 を回避するよう調整。
+- 2025-12-23 15:10 progress: fix/app/preview-bare-imports — `/t/r` 遷移で `r.getQueryAPI is not a function` が発生。`app/dist/assets/dist-*.js` が `../worker.js` を再エクスポートしており、`@hierarchidb/runtime-worker` が自己参照に解決されている疑い。worker ビルドの alias/解決先を `packages/runtime-worker/dist/index.js` へ固定する方針で調査を進める。
+- 2025-12-23 15:25 progress: fix/app/preview-bare-imports — `@hierarchidb/runtime-worker` を preview/worker build で dist 参照に固定するため、`app/vite.config.ts` の production alias に `packages/runtime-worker/dist/index.js` と `stageWorker.entry.js` を追加。再ビルド/preview で `/t/r` 遷移の `getQueryAPI` エラー解消を確認予定。
+- 2025-12-23 15:45 progress: fix/app/preview-bare-imports — worker bootstrap の `@hierarchidb/runtime-worker` を動的 import ではなく静的 import に切り替え、preview での facade re-export 取り違えを回避する方針で `app/src/worker-runtime/worker.ts` を更新。
+- 2025-12-23 16:05 progress: fix/app/preview-bare-imports — runtime-worker の SingletonMixin キーが minify で衝突する疑いがあるため、`CoreDB`/`WorkerService`/`TreeQueryService` などの `getSingleton` キーを文字列リテラルへ固定（`packages/runtime-worker/src/services/*` と `packages/runtime-worker/src/WorkerService.ts` を更新）。
+- 2025-12-23 17:40 progress: fix/app/preview-bare-imports — preview の `@hierarchidb/ui-map` bare import は `plugins/*-plugin/dist/ui/index.js` 由来で、plugin registry が `dist-url` を返すため dist の bare import がそのまま配信されていると判明。preview の plugin 解決経路（dist-url vs src）を見直す方針で対応を検討。
+- 2025-12-23 18:10 progress: fix/app/preview-bare-imports — build 時の plugin registry mode を `HDB_PLUGIN_SPEC_MODE` で上書きできるようにし、preview 用 build で `package` mode に切り替えるため `build:sourcemap` に `HDB_PLUGIN_SPEC_MODE=package` を追加。
+- 2025-12-23 18:41 progress: fix/ui/plugin-dialog-build-stepper-progress — Stepper のビルド実行中表示を追加し、shape/location/route/resolver の build/preview valid 条件を成果物永続化へ統一。resolver の step 順を Build→Preview へ変更。
+- 2025-12-23 18:41 done: fix/ui/plugin-dialog-build-stepper-progress — Stepper のビルド実行中は CircularProgress に切替、各プラグインの build/preview valid を成果物永続化へ統一し、resolver の Build/Preview の順序を入れ替え。検証: 未実施。ロールバック: `packages/plugin-ui-host/src/headless/components/{PluginDialogStepper.tsx,PluginDialogHeader.tsx,StepStatusIcon.tsx}` と `plugins/{shape-plugin,location-plugin,route-plugin,resolver-plugin}/src/ui/components/steps-provider.tsx` の差分を revert する。

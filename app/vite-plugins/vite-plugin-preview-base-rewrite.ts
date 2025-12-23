@@ -19,6 +19,11 @@ const rewritePreviewUrl = (url: string, basePath: string): string | null => {
   return null;
 };
 
+const isHtmlRequest = (acceptHeader: string | undefined): boolean =>
+  typeof acceptHeader === 'string' && acceptHeader.includes('text/html');
+
+const hasFileExtension = (path: string): boolean => /\/[^/?]+\.[^/]+$/.test(path);
+
 export const previewBaseRewritePlugin = (base: string): Plugin => {
   const basePath = normalizeBasePath(base);
   return {
@@ -27,6 +32,10 @@ export const previewBaseRewritePlugin = (base: string): Plugin => {
     configurePreviewServer(server) {
       if (!basePath) return;
       server.middlewares.use((req, _res, next) => {
+        if (!isHtmlRequest(req.headers.accept) || hasFileExtension(req.url ?? '')) {
+          next();
+          return;
+        }
         const nextUrl = rewritePreviewUrl(req.url ?? '', basePath);
         if (nextUrl) {
           req.url = nextUrl;

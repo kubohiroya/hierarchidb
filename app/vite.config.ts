@@ -10,6 +10,7 @@ import { comlink } from 'vite-plugin-comlink';
 import { createNodeTypeAliasPlugin } from './vite-plugins/vite-plugin-hierarchidb-plugin-alias/src/index.js';
 import { pluginWorkerVirtualModule } from './vite-plugins/vite-plugin-plugin-worker-virtual.js';
 import { previewBaseRewritePlugin } from './vite-plugins/vite-plugin-preview-base-rewrite.js';
+import { indexEntryFallbackPlugin } from './vite-plugins/vite-plugin-index-entry-fallback.js';
 import {
   collectWorkspacePackages,
   createDevAliasSelection,
@@ -286,6 +287,12 @@ function createRuntimeAliasConfig({
     }
   } else {
     // Productionも原則srcを参照する（ビルド済みdistへのエイリアスは依存解決順や存在に依存し脆弱）
+    // runtime-worker は preview/worker build で循環的な facade re-export を避けるため dist を優先する。
+    addAlias('@hierarchidb/runtime-worker', '../packages/runtime-worker/dist/index.js', { exclude: true, exact: true });
+    addAlias('@hierarchidb/runtime-worker/stage-worker', '../packages/runtime-worker/dist/stageWorker.entry.js', {
+      exclude: true,
+      exact: true,
+    });
     addAlias('@hierarchidb/runtime-worker-worker', '../packages/runtime-worker/worker/src/index.ts', { exact: true });
     addAlias('@hierarchidb/runtime-worker-worker/stage-worker', '../packages/runtime-worker/worker/src/stageWorker.entry.ts', {
       exclude: true,
@@ -487,8 +494,15 @@ export default defineConfig(({ mode, isSsrBuild }) => {
   const isDev = mode === 'development';
   const base = isDev ? '/' : appPrefix ? `/${appPrefix}/` : '/';
   const enableWorkspaceAliases = mode === 'development' || mode === 'test';
+  const requestedPluginSpecMode = (env.HDB_PLUGIN_SPEC_MODE || process.env.HDB_PLUGIN_SPEC_MODE || '').toLowerCase();
+  const pluginRegistryMode = (requestedPluginSpecMode === 'package' || requestedPluginSpecMode === 'dist-url'
+    ? requestedPluginSpecMode
+    : isDev
+      ? 'package'
+      : 'dist-url') as PluginSpecifierMode;
 
   const ssrExternalDeps = ['@mui/material', '@mui/system', '@mui/utils', 'node-fetch', 'whatwg-url', 'tr46'];
+  const buildExternalIds = new Set<string>(['@maplibre/vt-pbf']);
 
   const repoRoot = path.resolve(__dirname, '..');
   const baseDevAliasConfig = loadDevAliasConfig(repoRoot);
@@ -592,11 +606,12 @@ export default defineConfig(({ mode, isSsrBuild }) => {
 
   //  main thread
   const plugins = [
+    indexEntryFallbackPlugin(base),
     previewBaseRewritePlugin(base),
     specialPrefixRewritePlugin(base),
     pluginRegistryGeneratorPlugin({
       rootDir: repoRoot,
-      mode: isDev ? 'package' : 'dist-url',
+      mode: pluginRegistryMode,
     }),
     createIso3166Plugin({
       outputDir: 'public',
@@ -959,11 +974,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         comlink(),
       ],
       rollupOptions: {
-        external: [
-          path.resolve(__dirname, '../packages/runtime-worker/dist/StageProcessingService.js'),
-          '@hierarchidb/runtime-worker/dist/StageProcessingService.js',
-          '@maplibre/vt-pbf',
-        ],
+        external: ['@maplibre/vt-pbf'],
         output: {
           entryFileNames: '[name].js',
         },
@@ -976,15 +987,8 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       // MapLibre GL + deck.gl バンドル（~953 kB）に合わせて閾値を調整。
       chunkSizeWarningLimit: 954,
       rollupOptions: {
-        external: [
-          // Peer deps referenced by workspace libs (ui-dialog) that should resolve from app
-          'react-resizable',
-          'react-draggable',
-          // Stage processing worker (Node env) should stay external in browser build
-          path.resolve(__dirname, '../packages/runtime-worker/dist/StageProcessingService.js'),
-          '@hierarchidb/runtime-worker/dist/StageProcessingService.js',
-          '@maplibre/vt-pbf',
-        ],
+        input: isSsrBuild ? undefined : 'index.html',
+        external: (id) => buildExternalIds.has(id),
         output: {
           entryFileNames: 'assets/[name].js',
           chunkFileNames: 'assets/[name]-[hash].js',

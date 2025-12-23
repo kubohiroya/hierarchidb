@@ -155,6 +155,7 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
               workerStepMap={workerStepMap}
               dialogState={dialogState}
               pendingAction={pendingAction}
+              stepData={ctx.stepData as Record<string, unknown>}
               theme={theme}
             />
           </Box>

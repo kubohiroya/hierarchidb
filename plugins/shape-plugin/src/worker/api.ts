@@ -57,14 +57,14 @@ type DraftLike = {
 const getBatchSessionIdFromDraft = (draft: DraftLike | null | undefined): string | undefined =>
   draft?.batchSessionId ?? draft?.draftData?.batchSessionId;
 
-const buildBatchSessionConfig = (config: BatchConfig, draft?: DraftLike): BatchSessionConfig => {
-  const downloadConfig = config.downloadConfig ?? DEFAULT_PROCESSING_CONFIG.downloadConfig;
+const buildBatchSessionConfig = (batchConfig: BatchConfig, draft?: DraftLike): BatchSessionConfig => {
+  const downloadConfig = batchConfig.downloadConfig ?? DEFAULT_PROCESSING_CONFIG.downloadConfig;
   const simplificationConfig =
-    config.simplificationConfig ?? DEFAULT_PROCESSING_CONFIG.simplificationConfig;
-  const tileConfig = config.tileConfig ?? DEFAULT_PROCESSING_CONFIG.tileConfig;
-  const cleanupConfig = config.cleanupConfig ?? DEFAULT_PROCESSING_CONFIG.cleanupConfig;
+    batchConfig.simplificationConfig ?? DEFAULT_PROCESSING_CONFIG.simplificationConfig;
+  const tileConfig = batchConfig.tileConfig ?? DEFAULT_PROCESSING_CONFIG.tileConfig;
+  const cleanupConfig = batchConfig.cleanupConfig ?? DEFAULT_PROCESSING_CONFIG.cleanupConfig;
   const resolvedDataSource =
-    config.dataSource
+    batchConfig.dataSource
     ?? toDataSourceName(draft?.draftData?.batchConfig?.dataSource ?? 'naturalearth');
 
   return {
@@ -397,11 +397,14 @@ export const shapePluginAPI = {
 
   startBatchProcessing: async (
     draftId: NodeId,
-    config: BatchConfig,
+    batchConfig: BatchConfig,
     urlMetadata: UrlMetadata[],
     progressCallback?: (event: ShapeBatchProgressEvent) => void,
   ): Promise<string> => {
-    const validation = validateBatchConfig(config);
+    if (!batchConfig?.dataSource) {
+      throw new Error('Data source is required to start batch processing');
+    }
+    const validation = validateBatchConfig(batchConfig);
     if (!validation.isValid) {
       throw new Error(`Invalid processing config: ${validation.errors?.join(', ')}`);
     }
@@ -413,9 +416,9 @@ export const shapePluginAPI = {
       throw new Error(`Working copy not found: ${draftId}`);
     }
 
-    const downloadConfig = config.downloadConfig ?? DEFAULT_PROCESSING_CONFIG.downloadConfig;
-    const baseConfig = buildBatchSessionConfig(config, draftLike);
-    const batchConfig: BatchProcessConfig = {
+    const downloadConfig = batchConfig.downloadConfig ?? DEFAULT_PROCESSING_CONFIG.downloadConfig;
+    const baseConfig = buildBatchSessionConfig(batchConfig, { draftData: draftLike ?? undefined });
+    const processConfig: BatchProcessConfig = {
       ...baseConfig,
       workerTimeout: downloadConfig?.timeoutMs,
       workerRetries: downloadConfig?.retryAttempts ?? 3,
@@ -444,7 +447,7 @@ export const shapePluginAPI = {
       ) => void;
     };
     const nodeForSession = draftLike.nodeId ?? draftLike.treeNodeId ?? draftId;
-    managerWithPrepare.prepareSession?.(nodeForSession, batchConfig, batchSessionData, sessionOptions);
+    managerWithPrepare.prepareSession?.(nodeForSession, processConfig, batchSessionData, sessionOptions);
     const sessionId = await batchSessionManager.startBatchSession(nodeForSession);
 
     const sessionMeta = getOrCreateSessionMeta(sessionId);

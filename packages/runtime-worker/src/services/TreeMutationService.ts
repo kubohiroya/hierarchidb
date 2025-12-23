@@ -35,7 +35,7 @@ export class TreeMutationService implements TreeMutationAPI {
     coreDB: CoreDB,
     commandProcessor: CommandProcessor
   ): Promise<TreeMutationService> {
-    return SingletonMixin.getSingleton(TreeMutationService.name, async () => {
+    return SingletonMixin.getSingleton('TreeMutationService', async () => {
       return new TreeMutationService(coreDB, commandProcessor);
     });
   }

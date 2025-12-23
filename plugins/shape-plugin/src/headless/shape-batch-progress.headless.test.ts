@@ -334,4 +334,20 @@ describe('Shape batch processing (headless)', () => {
     const summary = await stageClient.vectortile.getSummary(sessionId);
     expect(summary.tiles).toBeGreaterThan(0);
   }, 90000);
+
+  it('fails when dataSource is missing from the batch config', async () => {
+    const fullConfig = createBatchConfig({
+      dataSource: 'geoboundaries',
+    });
+    const { dataSource: _omit, ...rest } = fullConfig;
+    const invalidConfig = rest as BatchConfig;
+    const draftId = await createDraftNode(core, {
+      dataSourceName: 'geoboundaries',
+      batchConfig: fullConfig,
+    });
+
+    await expect(
+      shapePluginAPI.startBatchProcessing(draftId, invalidConfig, []),
+    ).rejects.toThrow('Data source is required');
+  });
 });

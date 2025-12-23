@@ -7,6 +7,24 @@ import type { Theme } from '@mui/material/styles';
 
 type WorkerStepState = { id: string; enabled?: boolean; completed?: boolean; error?: string | null };
 type WorkerDialogState = { steps?: WorkerStepState[] };
+type StepDataSnapshot = Record<string, unknown>;
+
+const getProcessingStatus = (data?: StepDataSnapshot | null): string | undefined => {
+  if (!data || typeof data !== 'object') return undefined;
+  const draftData = (data as { draftData?: unknown }).draftData;
+  if (draftData && typeof draftData === 'object') {
+    const nestedStatus = (draftData as { processingStatus?: unknown }).processingStatus;
+    if (typeof nestedStatus === 'string') return nestedStatus;
+  }
+  const directStatus = (data as { processingStatus?: unknown }).processingStatus;
+  return typeof directStatus === 'string' ? directStatus : undefined;
+};
+
+const isBuildRunning = (data?: StepDataSnapshot | null): boolean => {
+  const status = getProcessingStatus(data);
+  if (!status) return false;
+  return ['processing', 'running', 'searching', 'validating'].includes(status);
+};
 
 export interface PluginDialogStepperProps {
   steps: { id: string; label?: string }[];
@@ -19,6 +37,7 @@ export interface PluginDialogStepperProps {
   workerStepMap?: Map<string, WorkerStepState> | null;
   dialogState?: WorkerDialogState | null;
   pendingAction?: DialogActionInFlight | null;
+  stepData?: StepDataSnapshot | null;
   theme: Theme;
 }
 
@@ -33,6 +52,7 @@ export const PluginDialogStepper: React.FC<PluginDialogStepperProps> = ({
   workerStepMap,
   dialogState,
   pendingAction,
+  stepData,
   theme,
 }) => {
   return (
@@ -52,6 +72,7 @@ export const PluginDialogStepper: React.FC<PluginDialogStepperProps> = ({
           ? true
           : previousWorkerStep?.completed ?? validatedStepIndices.includes(index - 1);
         const isValidatedButDisabled = completed && !canNavigate && index > 0 && !previousCompleted;
+        const showBuildProgress = step.id === 'build' && isBuildRunning(stepData);
 
         return (
           <Step key={step.id} completed={completed}>
@@ -76,6 +97,7 @@ export const PluginDialogStepper: React.FC<PluginDialogStepperProps> = ({
                         stepIndex={iconIndex}
                         canNavigate={canNavigate}
                         variant={isValidatedButDisabled ? 'validated-disabled' : undefined}
+                        inProgress={showBuildProgress}
                       />
                     );
                   },

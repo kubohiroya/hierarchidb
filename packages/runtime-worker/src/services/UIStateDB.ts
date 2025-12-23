@@ -17,7 +17,7 @@ export class UIStateDB extends Dexie {
   treetableExpanded!: Table<TreeTableExpandedRow, [string, string]>;
 
   static async getSingleton(name?: string): Promise<UIStateDB> {
-    return SingletonMixin.getSingleton(UIStateDB.name, async () => {
+    return SingletonMixin.getSingleton('UIStateDB', async () => {
       const db = new UIStateDB(name);
       await db.open();
       return db;
