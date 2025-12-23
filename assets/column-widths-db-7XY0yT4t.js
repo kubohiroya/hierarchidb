@@ -1,1 +1,0 @@
-import"./src-BSVVUNGZ.js";import"./import-wrapper-prod-DNQS-9d1.js";import{getColumnWidths as e,saveColumnWidths as t}from"./properties-db-CP8-QLxB.js";export{e as getColumnWidths,t as saveColumnWidths};

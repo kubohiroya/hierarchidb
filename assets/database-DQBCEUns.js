@@ -1,0 +1,1 @@
+import{s as e}from"./src-CPVbMDf5.js";import{t}from"./import-wrapper-prod-D3Hg71A1.js";async function n(){await t.delete(e(`resolver-db`))}var r=class extends t{resolvers;constructor(){super(e(`resolver-db`)),this.version(1).stores({resolvers:`&id, nodeId, name`})}};const i=new r;export{r as ResolverEntitiesDB,n as clearDatabases,i as resolverEntitiesDB};

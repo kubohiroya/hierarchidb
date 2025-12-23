@@ -1,0 +1,1 @@
+import{u as e}from"./src-CPVbMDf5.js";var t=function(e){return e.CREATE=`create`,e.UPDATE=`update`,e.DELETE=`delete`,e.MOVE=`move`,e.DUPLICATE=`duplicate`,e.IMPORT=`import`,e.EXPORT=`export`,e.RESTORE=`restore`,e.DISCARD=`discard`,e}({});function n(e){return e}function r(e){return e}function i(){return n(e())}export{r as i,i as n,n as r,t};

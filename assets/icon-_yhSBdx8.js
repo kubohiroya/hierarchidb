@@ -1,1 +1,0 @@
-import"./react-OOxSluIQ.js";import"./DefaultPropsProvider-CHKQvfe9.js";import"./jsx-runtime-Cp0qBw5r.js";import{t as e}from"./Assessment-CrdhlXzJ.js";const t=e;var n=t;export{t as SpreadsheetPluginIcon,n as default};

@@ -1,1 +1,0 @@
-import{L as e}from"../worker.js";export{e as EntityLifecycleManager};

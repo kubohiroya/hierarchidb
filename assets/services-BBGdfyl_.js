@@ -1,0 +1,1 @@
+import{s as e}from"./src-CPVbMDf5.js";import"./import-wrapper-prod-D3Hg71A1.js";import"./Indexer-D_fxMigP.js";import{t}from"./dist-C2N40qlp.js";import{t as n}from"./StylerDataService-BOt9CjwT.js";var r=class extends t{constructor(){super(e(`styler-metadata-db`))}};export{n as StylerDataService,r as StylerMetadataManager};

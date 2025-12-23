@@ -1,12 +1,57 @@
-import { r as __toDynamicImportESM } from "../chunk.js";
-import { createContext, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { Box, Chip, FormControlLabel, IconButton, List, ListItem, ListItemText, Paper, Slider, Stack, Switch, TextField, Tooltip, Typography } from "@mui/material";
-import * as ReactI18NextModule from "react-i18next";
-import i18next from "i18next";
-import { jsx, jsxs } from "react/jsx-runtime";
-import { Map, Pause, PlayArrow, SkipNext, SkipPrevious } from "@mui/icons-material";
+import { _ as StylerConfigDefault, g as STYLE_TYPE_OPTIONS, h as MAPLIBRE_PROPERTY_METADATA, m as MAPLIBRE_PROPERTY_GROUPS, o as generateColorGradient, p as valueToColor, u as normalizeStylerConfig, v as StylerMappingDefault } from "../StylerDataService.js";
+import { createRequire } from "node:module";
+import PaletteIcon from "@mui/icons-material/Palette";
+import React, { createContext, useCallback, useContext, useDeferredValue, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { PluginStepRegistry } from "@hierarchidb/plugin-base";
+import { TabularDataFilterStep, TabularDataSourceStep, tabularRowsAtom } from "@hierarchidb/spreadsheet-plugin";
+import { Accordion, AccordionDetails, AccordionSummary, Alert, AlertTitle, Box, Chip, FormControl, FormControlLabel, FormHelperText, InputLabel, LinearProgress, MenuItem, Paper, Radio, RadioGroup, Slider, Stack, Table, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from "@mui/material";
+import { FixedSizeList } from "react-window";
+import * as ReactI18NextModule from "react-i18next";
+import { useTranslation } from "react-i18next";
+import i18next from "i18next";
+import { Fragment, jsx, jsxs } from "react/jsx-runtime";
+import { wrapDialogStepComponent } from "@hierarchidb/plugin-ui-sdk";
+import { useAtomValue } from "jotai";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ContrastIcon from "@mui/icons-material/Contrast";
+import BarChartIcon from "@mui/icons-material/BarChart";
+import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
+import ViewColumnIcon from "@mui/icons-material/ViewColumn";
+import { AccessTime, AccountTree, Add, Assessment, Extension, Folder, Gradient, Hexagon, Insights, LocationOn, Palette, Public, Route, ShowChart } from "@mui/icons-material";
+import Grid from "@mui/material/Grid";
+import { ModalSelect } from "@hierarchidb/ui-modal-select";
+import { ValueHistogram } from "@hierarchidb/spreadsheet-plugin/ui";
 
+//#region rolldown:runtime
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __commonJSMin = (cb, mod) => () => (mod || cb((mod = { exports: {} }).exports, mod), mod.exports);
+var __copyProps = (to, from, except, desc) => {
+	if (from && typeof from === "object" || typeof from === "function") {
+		for (var keys = __getOwnPropNames(from), i = 0, n = keys.length, key; i < n; i++) {
+			key = keys[i];
+			if (!__hasOwnProp.call(to, key) && key !== except) {
+				__defProp(to, key, {
+					get: ((k) => from[k]).bind(null, key),
+					enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable
+				});
+			}
+		}
+	}
+	return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", {
+	value: mod,
+	enumerable: true
+}) : target, mod));
+var __toDynamicImportESM = (isNodeMode) => (mod) => __toESM(mod.default, isNodeMode);
+var __require = /* @__PURE__ */ createRequire(import.meta.url);
+
+//#endregion
 //#region ../../node_modules/.pnpm/i18next-browser-languagedetector@8.2.0/node_modules/i18next-browser-languagedetector/dist/esm/i18nextBrowserLanguageDetector.js
 const { slice: slice$1, forEach } = [];
 function defaults(obj) {
@@ -3236,624 +3281,1529 @@ const noopVoid = () => void 0;
 const i18nGroupEnd = isDev ? console.groupEnd.bind(console) : noopVoid;
 
 //#endregion
-//#region src/ui/locales/en.json
-var en_default = {
-	steps: {
-		"basic": { "label": "Basic Information" },
-		"frames": { "label": "Frames" },
-		"map": { "label": "Map" },
-		"final": { "label": "Preview" }
-	},
-	header: {
-		"create": "Create Timeline",
-		"edit": "Edit Timeline",
-		"stepCounter": "Step {{current}} / {{total}}"
-	},
-	buttons: {
-		"back": "Back",
-		"next": "Next",
-		"cancel": "Cancel",
-		"save": "Save"
-	},
-	basic: {
-		"title": "Basic Information",
-		"name": "Name",
-		"description": "Description",
-		"defaultName": "New Timeline"
-	},
-	frames: {
-		"title": "Frames (flattened descendants)",
-		"empty": "No frames found"
-	},
-	map: {
-		"title": "Map Preview",
-		"timeline": "Timeline",
-		"fps": "FPS",
-		"loop": "Loop",
-		"frame": "Frame",
-		"activeSelections": "Active selections: {{count}}",
-		"bearingPitch": "Bearing {{bearing}}°, Pitch {{pitch}}°"
-	},
-	animation: {
-		"title": "Final Animation Preview",
-		"frameLabel": "{{name}} ({{index}}/{{total}})",
-		"playback": "Playback {{state}} at {{fps}} fps",
-		"loop": "Loop animation",
-		"fpsLabel": "FPS",
-		"running": "running",
-		"paused": "paused"
-	}
+//#region src/ui/components/hooks/useStylerPreview.ts
+const useValueColorScale = ({ baseConfig, rows, valueColumn }) => {
+	return useMemo(() => {
+		if (!valueColumn) return {
+			derivedConfig: normalizeStylerConfig(baseConfig),
+			numericAllValues: []
+		};
+		const numericValues = rows.map((r) => r[valueColumn]).map((v) => typeof v === "number" ? v : typeof v === "string" ? Number(v) : NaN).map((v) => Number.isFinite(v) ? v : 0).filter((v) => Number.isFinite(v));
+		const hasValues = numericValues.length > 0;
+		const min = hasValues ? Math.min(...numericValues) : baseConfig.min;
+		const max = hasValues ? Math.max(...numericValues) : baseConfig.max;
+		return {
+			derivedConfig: normalizeStylerConfig({
+				...baseConfig,
+				min,
+				max
+			}),
+			numericAllValues: numericValues
+		};
+	}, [
+		baseConfig,
+		rows,
+		valueColumn
+	]);
 };
-
-//#endregion
-//#region src/ui/locales/ja.json
-var ja_default = {
-	steps: {
-		"basic": { "label": "基本情報" },
-		"frames": { "label": "フレーム" },
-		"map": { "label": "マップ" },
-		"final": { "label": "プレビュー" }
-	},
-	header: {
-		"create": "タイムライン作成",
-		"edit": "タイムライン編集",
-		"stepCounter": "ステップ {{current}} / {{total}}"
-	},
-	buttons: {
-		"back": "戻る",
-		"next": "次へ",
-		"cancel": "キャンセル",
-		"save": "保存"
-	},
-	basic: {
-		"title": "基本情報",
-		"name": "名前",
-		"description": "説明",
-		"defaultName": "新規タイムライン"
-	},
-	frames: {
-		"title": "フレーム一覧（フラット）",
-		"empty": "フレームがありません"
-	},
-	map: {
-		"title": "プレビュー",
-		"timeline": "タイムライン",
-		"fps": "FPS",
-		"loop": "ループ",
-		"frame": "フレーム",
-		"activeSelections": "選択中: {{count}}",
-		"bearingPitch": "方位 {{bearing}}° / ピッチ {{pitch}}°"
-	},
-	animation: {
-		"title": "最終アニメーションプレビュー",
-		"frameLabel": "{{name}} ({{index}}/{{total}})",
-		"playback": "再生は {{state}} / {{fps}} fps",
-		"loop": "アニメーションをループ",
-		"fpsLabel": "FPS",
-		"running": "再生中",
-		"paused": "一時停止"
-	}
-};
-
-//#endregion
-//#region src/common/i18n/index.ts
-const bundles = {
-	en: en_default,
-	ja: ja_default
-};
-const detectLocale = () => {
-	if ((i18n.language || "en").toLowerCase().startsWith("ja")) return "ja";
-	return "en";
-};
-const useTranslation = (ns = "timeline-plugin") => {
-	const locale = detectLocale();
-	const translations = bundles[locale] ?? bundles.en;
-	const t = (key, fallback, options) => String(i18n.t(key, {
-		ns,
-		defaultValue: fallback ?? key,
-		...options
-	}));
+const useStylerPreview = ({ data, tabularData = [], onValidate }) => {
+	const { t } = useTranslation("styler-plugin");
+	const atomRows = useAtomValue(tabularRowsAtom);
+	const previewRowsSource = tabularData.length > 0 ? tabularData : data?.previewRows ?? atomRows;
+	const deferredPreviewRowsSource = useDeferredValue(previewRowsSource);
+	const isPreviewDeferred = deferredPreviewRowsSource !== previewRowsSource;
+	const mapping = {
+		...StylerMappingDefault,
+		...data?.mapping ?? {}
+	};
+	const stylerConfig = normalizeStylerConfig(data?.stylerConfig ?? StylerConfigDefault);
+	const keyColumn = data?.keyColumn;
+	const valueColumn = data?.valueColumn;
+	const targetProperty = mapping.targetProperty;
+	const styleType = mapping.styleType;
+	const [sortState, setSortState] = useState({
+		column: null,
+		direction: null
+	});
+	const prepareFilters = useCallback((rules) => {
+		return rules.filter((rule) => rule.enabled !== false && rule.column).map((rule) => {
+			const prepared = {
+				column: rule.column,
+				operator: rule.operator
+			};
+			if (rule.operator === "regex" && typeof rule.value === "string") try {
+				prepared.regex = new RegExp(rule.value);
+			} catch {
+				prepared.regex = void 0;
+			}
+			else if (typeof rule.value === "number" || typeof rule.value === "string") prepared.value = rule.value;
+			return prepared;
+		});
+	}, []);
+	const matchesFilters = useCallback((row, filters) => {
+		if (!filters.length) return true;
+		const toStr = (v) => v === null || v === void 0 ? "" : String(v);
+		const toNum = (v) => {
+			if (typeof v === "number" && Number.isFinite(v)) return v;
+			if (typeof v === "string" && /^-?\d+(\.\d+)?$/.test(v.trim())) {
+				const parsed = Number(v);
+				return Number.isFinite(parsed) ? parsed : null;
+			}
+			return null;
+		};
+		return filters.every((filter) => {
+			const rowValue = row[filter.column];
+			switch (filter.operator) {
+				case "equals": return toStr(rowValue) === toStr(filter.value);
+				case "not_equals": return toStr(rowValue) !== toStr(filter.value);
+				case "contains": return typeof filter.value === "string" ? toStr(rowValue).toLowerCase().includes(filter.value.toLowerCase()) : false;
+				case "not_contains": return typeof filter.value === "string" ? !toStr(rowValue).toLowerCase().includes(filter.value.toLowerCase()) : true;
+				case "starts_with": return typeof filter.value === "string" ? toStr(rowValue).toLowerCase().startsWith(filter.value.toLowerCase()) : false;
+				case "ends_with": return typeof filter.value === "string" ? toStr(rowValue).toLowerCase().endsWith(filter.value.toLowerCase()) : false;
+				case "greater_than": {
+					const rv = toNum(rowValue);
+					const fv = toNum(filter.value);
+					return rv !== null && fv !== null ? rv > fv : false;
+				}
+				case "greater_equal": {
+					const rv = toNum(rowValue);
+					const fv = toNum(filter.value);
+					return rv !== null && fv !== null ? rv >= fv : false;
+				}
+				case "less_than": {
+					const rv = toNum(rowValue);
+					const fv = toNum(filter.value);
+					return rv !== null && fv !== null ? rv < fv : false;
+				}
+				case "less_equal": {
+					const rv = toNum(rowValue);
+					const fv = toNum(filter.value);
+					return rv !== null && fv !== null ? rv <= fv : false;
+				}
+				case "is_null": return rowValue === null || rowValue === void 0 || rowValue === "";
+				case "is_not_null": return !(rowValue === null || rowValue === void 0 || rowValue === "");
+				case "regex": return filter.regex ? filter.regex.test(toStr(rowValue)) : true;
+				default: return true;
+			}
+		});
+	}, [prepareFilters]);
+	const previewData = useMemo(() => {
+		const sourceRows = deferredPreviewRowsSource;
+		const preparedFilters = prepareFilters(data?.filters ?? []);
+		const rows = (Array.isArray(sourceRows) && sourceRows.length > 0 ? sourceRows : []) ?? [];
+		return (preparedFilters.length ? rows.filter((row) => matchesFilters(row, preparedFilters)) : rows).slice(0, 1e3);
+	}, [
+		data?.filters,
+		deferredPreviewRowsSource,
+		matchesFilters,
+		prepareFilters
+	]);
+	const columns = useMemo(() => Object.keys(previewData[0] ?? {}), [previewData]);
+	const sortedPreviewData = useMemo(() => {
+		const { column, direction } = sortState;
+		if (!column || !direction) return previewData;
+		const sorted = [...previewData];
+		sorted.sort((a, b) => {
+			const av = a[column];
+			const bv = b[column];
+			const aNum = typeof av === "number" ? av : Number(av);
+			const bNum = typeof bv === "number" ? bv : Number(bv);
+			const cmp = Number.isFinite(aNum) && Number.isFinite(bNum) ? aNum - bNum : String(av ?? "").localeCompare(String(bv ?? ""), void 0, {
+				numeric: true,
+				sensitivity: "base"
+			});
+			return direction === "asc" ? cmp : -cmp;
+		});
+		return sorted;
+	}, [previewData, sortState]);
+	const numericColumns = useMemo(() => {
+		const result = {};
+		columns.forEach((col) => {
+			const sample = previewData.find((row) => row[col] !== null && row[col] !== void 0 && row[col] !== "");
+			if (!sample) {
+				result[col] = false;
+				return;
+			}
+			const val = sample[col];
+			const num = typeof val === "number" ? val : Number(val);
+			result[col] = Number.isFinite(num);
+		});
+		return result;
+	}, [columns, previewData]);
+	const { derivedConfig, numericAllValues } = useValueColorScale({
+		baseConfig: stylerConfig,
+		rows: previewData,
+		valueColumn: valueColumn ?? ""
+	});
+	const numberFormatter = useMemo(() => new Intl.NumberFormat(i18n.language || void 0), []);
+	const handleToggleSort = useCallback((column) => {
+		setSortState((prev) => {
+			if (prev.column !== column) return {
+				column,
+				direction: "asc"
+			};
+			if (prev.direction === "asc") return {
+				column,
+				direction: "desc"
+			};
+			if (prev.direction === "desc") return {
+				column: null,
+				direction: null
+			};
+			return {
+				column,
+				direction: "asc"
+			};
+		});
+	}, []);
+	useEffect(() => {
+		if (onValidate) onValidate(Boolean(keyColumn && valueColumn && targetProperty && styleType));
+	}, [
+		onValidate,
+		keyColumn,
+		valueColumn,
+		targetProperty,
+		styleType
+	]);
 	return {
 		t,
-		translations,
-		locale
+		keyColumn,
+		valueColumn,
+		targetProperty,
+		styleType,
+		previewRowsSource,
+		previewData,
+		sortedPreviewData,
+		columns,
+		numericColumns,
+		derivedConfig,
+		numericAllValues,
+		numberFormatter,
+		handleToggleSort,
+		sortState,
+		mapping,
+		isPreviewDeferred
 	};
 };
 
 //#endregion
-//#region src/ui/steps/FramesPreviewStep.tsx
-function FramesPreviewStep({ frames: frames$2, title }) {
-	const { t } = useTranslation();
-	const sorted = useMemo(() => [...frames$2].sort((a, b) => a.name.localeCompare(b.name)), [frames$2]);
-	return /* @__PURE__ */ jsxs(Box, { children: [/* @__PURE__ */ jsx(Typography, {
-		variant: "subtitle1",
-		sx: { mb: 1 },
-		children: title ?? t("frames.title", "Frames (flattened descendants)")
-	}), /* @__PURE__ */ jsxs(List, {
-		dense: true,
+//#region src/ui/components/StylerPreviewStep.tsx
+const StylerPreviewStep = ({ data, onChange, onValidate, tabularData = [], nodeId }) => {
+	const { t, keyColumn, valueColumn, targetProperty, styleType, previewRowsSource, previewData, sortedPreviewData, columns, numericColumns, derivedConfig, numericAllValues, numberFormatter, handleToggleSort, sortState, mapping, isPreviewDeferred } = useStylerPreview({
+		data,
+		onValidate,
+		tabularData
+	});
+	const targetMeta = targetProperty ? MAPLIBRE_PROPERTY_METADATA[targetProperty] : null;
+	const columnWidth = columns.length ? `${100 / columns.length}%` : "100%";
+	const gridTemplateColumns = useMemo(() => columns.map(() => "minmax(0, 1fr)").join(" "), [columns]);
+	const ROW_HEIGHT = 40;
+	const containerRef = useRef(null);
+	const headRef = useRef(null);
+	const [listHeight, setListHeight] = useState(Math.max(ROW_HEIGHT * 8, ROW_HEIGHT));
+	useLayoutEffect(() => {
+		const updateHeight = () => {
+			const available = (containerRef.current?.getBoundingClientRect().height ?? 0) - (headRef.current?.getBoundingClientRect().height ?? 0);
+			const fallback = ROW_HEIGHT * Math.min(sortedPreviewData.length, 10);
+			const desired = available > 0 ? available : fallback;
+			const maxNeeded = Math.max(ROW_HEIGHT, Math.min(sortedPreviewData.length, 2e3) * ROW_HEIGHT);
+			setListHeight(Math.max(ROW_HEIGHT, Math.min(desired, maxNeeded)));
+		};
+		updateHeight();
+		if (!containerRef.current) return;
+		const observer = new ResizeObserver(updateHeight);
+		observer.observe(containerRef.current);
+		return () => observer.disconnect();
+	}, [sortedPreviewData.length]);
+	useEffect(() => {
+		if (!keyColumn || !valueColumn || !targetProperty || !styleType || !sortedPreviewData.length) return;
+		const effectiveNodeId = nodeId ?? data?.treeNodeId ?? data?.id ?? "";
+		const colorPairs = [];
+		const scalarPairs = [];
+		const seenKeys = /* @__PURE__ */ new Set();
+		sortedPreviewData.forEach((row) => {
+			const rawKey = row[keyColumn];
+			if (rawKey === null || rawKey === void 0) return;
+			const keyStr = String(rawKey);
+			if (seenKeys.has(keyStr)) return;
+			seenKeys.add(keyStr);
+			if (targetMeta?.type === "color") {
+				const rawValue = row[valueColumn];
+				const num = typeof rawValue === "number" ? rawValue : Number(rawValue);
+				if (!Number.isFinite(num)) return;
+				const colorResult = valueToColor(num, mapping, derivedConfig, numericAllValues);
+				colorPairs.push({
+					nodeId: effectiveNodeId,
+					key: keyStr,
+					color: colorResult.color
+				});
+			} else if (targetMeta?.type === "number") {
+				const rawValue = row[valueColumn];
+				const num = typeof rawValue === "number" ? rawValue : Number(rawValue);
+				if (!Number.isFinite(num)) return;
+				scalarPairs.push({
+					nodeId: effectiveNodeId,
+					key: keyStr,
+					scalarValue: num
+				});
+			}
+		});
+		const nextStyleKeyValues = targetMeta?.type === "color" ? {
+			colors: colorPairs,
+			scalars: []
+		} : {
+			colors: [],
+			scalars: scalarPairs
+		};
+		const prev = data?.styleKeyValues ?? {};
+		const colorsEqual = (prev.colors?.length ?? 0) === nextStyleKeyValues.colors.length && (prev.colors ?? []).every((item, idx) => {
+			const next = nextStyleKeyValues.colors[idx];
+			return next && item.key === next.key && item.color === next.color && item.nodeId === next.nodeId;
+		});
+		const scalarsEqual = (prev.scalars?.length ?? 0) === nextStyleKeyValues.scalars.length && (prev.scalars ?? []).every((item, idx) => {
+			const next = nextStyleKeyValues.scalars[idx];
+			return next && item.key === next.key && item.scalarValue === next.scalarValue && item.nodeId === next.nodeId;
+		});
+		if (colorsEqual && scalarsEqual) return;
+		onChange({
+			...data,
+			styleKeyValues: nextStyleKeyValues
+		});
+	}, [
+		data,
+		derivedConfig,
+		keyColumn,
+		mapping,
+		nodeId,
+		numericAllValues,
+		onChange,
+		sortedPreviewData,
+		styleType,
+		targetMeta,
+		targetProperty,
+		valueColumn
+	]);
+	if (!keyColumn || !valueColumn || !targetProperty || !styleType) return /* @__PURE__ */ jsx(Box, {
+		sx: { p: 3 },
+		children: /* @__PURE__ */ jsxs(Alert, {
+			severity: "info",
+			children: [
+				/* @__PURE__ */ jsx(AlertTitle, { children: t("stylePreview.required.title", "Configuration Required") }),
+				t("stylePreview.required.body", "Please complete style configuration before viewing the preview."),
+				/* @__PURE__ */ jsxs("ul", { children: [
+					!keyColumn && /* @__PURE__ */ jsx("li", { children: t("stylePreview.required.keyColumn", "Select a key column for mapping") }),
+					!valueColumn && /* @__PURE__ */ jsx("li", { children: t("stylePreview.required.valueColumn", "Select a value column for mapping") }),
+					!targetProperty && /* @__PURE__ */ jsx("li", { children: t("stylePreview.required.targetProperty", "Select a target property") }),
+					!styleType && /* @__PURE__ */ jsx("li", { children: t("stylePreview.required.styleType", "Select a style type") })
+				] })
+			]
+		})
+	});
+	if (previewData.length === 0) return /* @__PURE__ */ jsx(Box, {
+		sx: { p: 3 },
+		children: /* @__PURE__ */ jsxs(Alert, {
+			severity: "warning",
+			children: [/* @__PURE__ */ jsx(AlertTitle, { children: t("stylePreview.noData.title", "No Data Available") }), t("stylePreview.noData.body", "No tabular data is available for preview. Please ensure data has been loaded in previous steps.")]
+		})
+	});
+	return /* @__PURE__ */ jsxs(Box, {
 		sx: {
-			maxHeight: 300,
-			overflow: "auto",
-			border: "1px solid",
-			borderColor: "divider"
+			width: "100%",
+			height: "100%",
+			p: 2,
+			display: "flex",
+			flexDirection: "column",
+			gap: 1.5,
+			minHeight: 0
 		},
-		children: [sorted.map((f) => /* @__PURE__ */ jsx(ListItem, {
-			disableGutters: true,
-			children: /* @__PURE__ */ jsx(ListItemText, {
-				primary: f.name,
-				secondary: f.id
-			})
-		}, f.id)), sorted.length === 0 && /* @__PURE__ */ jsx(ListItem, { children: /* @__PURE__ */ jsx(ListItemText, { primary: t("frames.empty", "No frames found") }) })]
-	})] });
-}
-
-//#endregion
-//#region src/ui/steps/MapPreviewStep.tsx
-function MapPreviewStep({ frames: frames$2, initialIndex = 0, onIndexChange }) {
-	const { t } = useTranslation();
-	const controlId = useId();
-	const [index, setIndex] = useState(Math.min(initialIndex, Math.max(0, frames$2.length - 1)));
-	const [fps, setFps] = useState(12);
-	const [loop, setLoop] = useState(true);
-	const frame = useMemo(() => frames$2[index] || null, [frames$2, index]);
-	const viewState = useMemo(() => {
-		if (frame?.viewState) {
-			const { longitude, latitude, zoom = 4, bearing = 0, pitch = 0 } = frame.viewState;
-			return {
-				longitude,
-				latitude,
-				zoom,
-				bearing,
-				pitch
-			};
-		}
-		return {
-			longitude: 139.7671,
-			latitude: 35.6812,
-			zoom: 4,
-			bearing: 0,
-			pitch: 0
-		};
-	}, [frame]);
-	return /* @__PURE__ */ jsxs(Stack, {
-		spacing: 2,
 		children: [
-			/* @__PURE__ */ jsx(Typography, {
-				variant: "subtitle1",
-				children: t("map.title", "Map Preview")
+			isPreviewDeferred && /* @__PURE__ */ jsxs(Stack, {
+				spacing: .5,
+				children: [/* @__PURE__ */ jsx(Typography, {
+					variant: "caption",
+					color: "text.secondary",
+					children: t("stylePreview.processing", "Preparing preview data...")
+				}), /* @__PURE__ */ jsx(LinearProgress, {})]
 			}),
-			/* @__PURE__ */ jsxs(Paper, {
-				variant: "outlined",
+			/* @__PURE__ */ jsxs(TableContainer, {
+				component: Paper,
 				sx: {
-					height: 260,
-					position: "relative",
-					overflow: "hidden",
-					borderRadius: 2,
-					background: "radial-gradient(circle at 20% 20%, rgba(123,174,255,0.35), transparent 55%),            radial-gradient(circle at 80% 30%, rgba(132, 215, 247, 0.45), transparent 60%),            linear-gradient(135deg, rgba(33,150,243,0.35), rgba(156,39,176,0.25))",
-					"&::after": {
-						content: "\"\"",
-						position: "absolute",
-						inset: 0,
-						background: "radial-gradient(circle at 50% 120%, rgba(255,255,255,0.15), transparent 70%)",
-						mixBlendMode: "screen"
-					}
+					flex: 1,
+					minHeight: 0,
+					height: "100%",
+					display: "flex",
+					flexDirection: "column"
 				},
-				children: [/* @__PURE__ */ jsxs(Box, {
-					sx: {
-						position: "absolute",
-						top: 16,
-						left: 16,
-						display: "flex",
-						alignItems: "center",
-						gap: 1,
-						px: 1.5,
-						py: .75,
-						borderRadius: 1,
-						bgcolor: (theme) => theme.palette.background.paper,
-						boxShadow: 1
-					},
-					children: [
-						/* @__PURE__ */ jsx(Map, {
-							fontSize: "small",
-							color: "action"
-						}),
-						/* @__PURE__ */ jsx(Typography, {
-							variant: "body2",
-							fontWeight: 600,
-							children: frame?.name ?? t("map.frame", "Frame")
-						}),
-						/* @__PURE__ */ jsx(Chip, {
-							size: "small",
-							label: `${viewState.longitude.toFixed(2)}, ${viewState.latitude.toFixed(2)} / z${viewState.zoom.toFixed(1)}`,
-							sx: { fontWeight: 500 }
-						})
-					]
-				}), /* @__PURE__ */ jsxs(Box, {
-					sx: {
-						position: "absolute",
-						bottom: 16,
-						left: 16,
-						pr: 4,
-						color: "_obsolate_common.white",
-						textShadow: "0 0 8px rgba(0,0,0,0.35)"
-					},
-					children: [/* @__PURE__ */ jsx(Typography, {
-						variant: "body2",
-						children: t("map.activeSelections", "Active selections: {{count}}", { count: frame ? index + 1 : 0 })
-					}), /* @__PURE__ */ jsx(Typography, {
-						variant: "caption",
-						display: "block",
-						children: t("map.bearingPitch", "Bearing {{bearing}}°, Pitch {{pitch}}°", {
-							bearing: viewState.bearing?.toFixed?.(1) ?? "0",
-							pitch: viewState.pitch?.toFixed?.(1) ?? "0"
-						})
-					})]
-				})]
-			}),
-			/* @__PURE__ */ jsxs(Box, { children: [/* @__PURE__ */ jsx(Typography, {
-				variant: "body2",
-				children: t("map.timeline", "Timeline")
-			}), /* @__PURE__ */ jsx(Slider, {
-				size: "small",
-				min: 0,
-				max: Math.max(0, frames$2.length - 1),
-				value: index,
-				valueLabelDisplay: "auto",
-				onChange: (_, v) => {
-					const nv = Array.isArray(v) ? v[0] : v;
-					setIndex(nv);
-					onIndexChange?.(nv);
-				}
-			})] }),
-			/* @__PURE__ */ jsxs(Box, { children: [/* @__PURE__ */ jsx(Typography, {
-				variant: "body2",
-				children: t("map.title", "Map Preview")
-			}), /* @__PURE__ */ jsxs(Stack, {
-				direction: "row",
-				spacing: 2,
-				alignItems: "center",
-				children: [/* @__PURE__ */ jsx(TextField, {
-					label: t("map.fps", "FPS"),
+				ref: containerRef,
+				children: [/* @__PURE__ */ jsxs(Table, {
+					stickyHeader: true,
 					size: "small",
-					type: "number",
-					id: `${controlId}-fps`,
-					name: "fps",
-					InputProps: { inputProps: {
-						min: 1,
-						max: 60,
-						id: `${controlId}-fps`,
-						name: "fps"
-					} },
-					value: fps,
-					onChange: (e) => setFps(Math.max(1, Math.min(60, Number(e.target.value) || 1))),
-					sx: { width: 120 }
-				}), /* @__PURE__ */ jsx(FormControlLabel, {
-					control: /* @__PURE__ */ jsx(Switch, {
-						checked: loop,
-						onChange: (e) => setLoop(e.target.checked),
-						inputProps: {
-							id: `${controlId}-loop`,
-							name: "loop"
-						}
-					}),
-					label: t("map.loop", "Loop")
-				})]
-			})] })
-		]
-	});
-}
-
-//#endregion
-//#region src/ui/utils/useFramePlayer.ts
-function useFramePlayer({ length, initialIndex = 0, initialFps = 12, loop = true, onIndex }) {
-	const [index, setIndex] = useState(Math.min(initialIndex, Math.max(0, length - 1)));
-	const [fps, setFps] = useState(initialFps);
-	const [playing, setPlaying] = useState(false);
-	const [isLoop, setLoop] = useState(loop);
-	const timerRef = useRef(null);
-	const clamp = useCallback((i) => length <= 0 ? 0 : Math.max(0, Math.min(length - 1, i)), [length]);
-	const goTo = useCallback((i) => {
-		const nv = clamp(i);
-		setIndex(nv);
-		onIndex?.(nv);
-	}, [clamp, onIndex]);
-	const next = useCallback(() => {
-		if (length <= 0) return;
-		if (index + 1 < length) goTo(index + 1);
-		else if (isLoop) goTo(0);
-	}, [
-		index,
-		length,
-		isLoop,
-		goTo
-	]);
-	const prev = useCallback(() => {
-		if (length <= 0) return;
-		if (index - 1 >= 0) goTo(index - 1);
-		else if (isLoop) goTo(Math.max(0, length - 1));
-	}, [
-		index,
-		length,
-		isLoop,
-		goTo
-	]);
-	useEffect(() => {
-		if (!playing) return;
-		const interval = Math.max(16, Math.floor(1e3 / Math.max(1, fps)));
-		timerRef.current = window.setInterval(() => {
-			setIndex((cur) => {
-				const atEnd = cur + 1 >= length;
-				const nv = atEnd ? isLoop ? 0 : cur : cur + 1;
-				if (!atEnd || isLoop) onIndex?.(nv);
-				return nv;
-			});
-		}, interval);
-		return () => {
-			if (timerRef.current != null) window.clearInterval(timerRef.current);
-			timerRef.current = null;
-		};
-	}, [
-		playing,
-		fps,
-		length,
-		isLoop,
-		onIndex
-	]);
-	const play = useCallback(() => setPlaying(true), []);
-	const pause = useCallback(() => setPlaying(false), []);
-	useEffect(() => {
-		onIndex?.(index);
-	}, []);
-	return {
-		index,
-		setIndex: goTo,
-		fps,
-		setFps,
-		playing,
-		play,
-		pause,
-		loop: isLoop,
-		setLoop,
-		next,
-		prev
-	};
-}
-
-//#endregion
-//#region src/ui/steps/AnimationViewerStep.tsx
-function AnimationViewerStep({ frames: frames$2, initialIndex = 0, initialFps = 12, loop = true }) {
-	const player = useFramePlayer({
-		length: frames$2.length,
-		initialIndex,
-		initialFps,
-		loop
-	});
-	const { t } = useTranslation();
-	const current = frames$2[player.index] || null;
-	const viewState = useMemo(() => {
-		if (current?.viewState) {
-			const { longitude, latitude, zoom = 4, bearing = 0, pitch = 0 } = current.viewState;
-			return {
-				longitude,
-				latitude,
-				zoom,
-				bearing,
-				pitch
-			};
-		}
-		return {
-			longitude: 139.7671,
-			latitude: 35.6812,
-			zoom: 4,
-			bearing: 0,
-			pitch: 0
-		};
-	}, [current]);
-	return /* @__PURE__ */ jsxs(Stack, {
-		spacing: 2,
-		children: [
-			/* @__PURE__ */ jsx(Typography, {
-				variant: "subtitle1",
-				children: t("animation.title", "Final Animation Preview")
-			}),
-			/* @__PURE__ */ jsxs(Paper, {
-				variant: "outlined",
-				sx: {
-					height: 280,
-					position: "relative",
-					overflow: "hidden",
-					borderRadius: 2,
-					background: "radial-gradient(circle at 15% 25%, rgba(33,150,243,0.35), transparent 60%),            radial-gradient(circle at 82% 25%, rgba(156,39,176,0.32), transparent 55%),            linear-gradient(145deg, rgba(33,150,243,0.25), rgba(0,0,0,0.45))",
-					"&::after": {
-						content: "\"\"",
-						position: "absolute",
-						inset: 0,
-						background: "linear-gradient(160deg, rgba(0,0,0,0.15), transparent 65%)"
-					}
-				},
-				children: [/* @__PURE__ */ jsxs(Box, {
 					sx: {
-						position: "absolute",
-						top: 16,
-						left: 16,
-						display: "flex",
-						alignItems: "center",
-						gap: 1,
-						px: 1.5,
-						py: .75,
-						borderRadius: 1,
-						bgcolor: (theme) => theme.palette.background.paper,
-						boxShadow: 1
+						tableLayout: "fixed",
+						flexShrink: 0
 					},
-					children: [
-						/* @__PURE__ */ jsx(Map, {
-							fontSize: "small",
-							color: "action"
-						}),
-						/* @__PURE__ */ jsx(Typography, {
-							variant: "body2",
-							fontWeight: 600,
-							children: t("animation.frameLabel", "{{name}} ({{index}}/{{total}})", {
-								name: current?.name ?? t("map.frame", "Frame"),
-								index: player.index + 1,
-								total: Math.max(1, frames$2.length)
-							})
-						}),
-						/* @__PURE__ */ jsx(Chip, {
-							size: "small",
-							label: `${viewState.longitude.toFixed(2)}, ${viewState.latitude.toFixed(2)} / z${viewState.zoom.toFixed(1)}`,
-							sx: { fontWeight: 500 }
-						})
-					]
-				}), /* @__PURE__ */ jsxs(Box, {
-					sx: {
-						position: "absolute",
-						bottom: 16,
-						left: 16,
-						color: "_obsolate_common.white",
-						textShadow: "0 0 10px rgba(0,0,0,0.45)"
-					},
-					children: [/* @__PURE__ */ jsx(Typography, {
-						variant: "body2",
-						children: t("animation.playback", "Playback {{state}} at {{fps}} fps", {
-							state: player.playing ? t("animation.running", "running") : t("animation.paused", "paused"),
-							fps: player.fps
-						})
-					}), /* @__PURE__ */ jsx(Typography, {
-						variant: "caption",
-						display: "block",
-						children: t("map.bearingPitch", "Bearing {{bearing}}°, Pitch {{pitch}}°", {
-							bearing: viewState.bearing?.toFixed?.(1) ?? "0",
-							pitch: viewState.pitch?.toFixed?.(1) ?? "0"
-						})
+					children: [/* @__PURE__ */ jsx("colgroup", { children: columns.map((col) => /* @__PURE__ */ jsx("col", { style: { width: columnWidth } }, col)) }), /* @__PURE__ */ jsx(TableHead, {
+						ref: headRef,
+						children: /* @__PURE__ */ jsx(TableRow, { children: columns.map((col) => {
+							const isKey = col === keyColumn;
+							const isValue = col === valueColumn;
+							const isActive = sortState.column === col;
+							return /* @__PURE__ */ jsx(TableCell, {
+								sortDirection: isActive && sortState.direction ? sortState.direction : false,
+								sx: {
+									width: columnWidth,
+									minWidth: columnWidth,
+									maxWidth: columnWidth
+								},
+								children: /* @__PURE__ */ jsxs(Stack, {
+									direction: "row",
+									spacing: 1,
+									alignItems: "center",
+									children: [
+										isKey && /* @__PURE__ */ jsx(Chip, {
+											label: t("stylePreview.keyColumn", "Key"),
+											size: "small",
+											color: "primary",
+											variant: "outlined"
+										}),
+										isValue && /* @__PURE__ */ jsx(Chip, {
+											label: t("stylePreview.valueColumn", "Value"),
+											size: "small",
+											color: "secondary",
+											variant: "outlined"
+										}),
+										/* @__PURE__ */ jsx(TableSortLabel, {
+											active: isActive,
+											direction: sortState.direction ?? "asc",
+											hideSortIcon: !isActive,
+											onClick: () => handleToggleSort(col),
+											children: /* @__PURE__ */ jsx(Typography, {
+												variant: "subtitle2",
+												component: "span",
+												children: col
+											})
+										})
+									]
+								})
+							}, col);
+						}) })
 					})]
+				}), /* @__PURE__ */ jsx(Box, {
+					sx: {
+						flex: 1,
+						minHeight: 0,
+						overflow: "auto",
+						position: "relative"
+					},
+					children: /* @__PURE__ */ jsx(FixedSizeList, {
+						height: listHeight,
+						itemCount: sortedPreviewData.length,
+						itemSize: ROW_HEIGHT,
+						width: "100%",
+						overscanCount: 8,
+						children: ({ index, style }) => {
+							const row = sortedPreviewData[index];
+							if (!row) return null;
+							const fallbackRowKey = `${index}`;
+							const rowKey = `${row[keyColumn ?? "id"] ?? fallbackRowKey}-${index}`;
+							return /* @__PURE__ */ jsx(Box, {
+								style,
+								sx: {
+									display: "grid",
+									gridTemplateColumns,
+									alignItems: "center",
+									px: 1,
+									gap: 1,
+									borderBottom: "1px solid",
+									borderColor: "divider"
+								},
+								children: columns.map((col) => {
+									const cellValue = row[col];
+									const isValue = col === valueColumn;
+									const isNumeric = numericColumns[col];
+									let chip = null;
+									if (isValue && typeof cellValue !== "undefined" && cellValue !== null) {
+										const meta = targetProperty ? MAPLIBRE_PROPERTY_METADATA[targetProperty] : null;
+										if (!meta || meta.type === "color") {
+											const num = typeof cellValue === "number" ? cellValue : Number(cellValue);
+											const colorResult = valueToColor(Number.isFinite(num) ? num : 0, mapping, derivedConfig, numericAllValues);
+											if (colorResult?.color) {
+												const colorLabel = colorResult.color.startsWith("#") ? colorResult.color.toUpperCase() : colorResult.color;
+												chip = /* @__PURE__ */ jsx(Tooltip, {
+													title: colorLabel,
+													arrow: true,
+													describeChild: true,
+													enterDelay: 100,
+													placement: "right",
+													children: /* @__PURE__ */ jsx(Box, {
+														sx: {
+															display: "inline-flex",
+															pointerEvents: "auto"
+														},
+														children: /* @__PURE__ */ jsx(Chip, {
+															size: "small",
+															label: colorLabel,
+															sx: {
+																width: "72px",
+																justifyContent: "center",
+																fontFamily: "Roboto Mono, monospace",
+																backgroundColor: colorResult.color,
+																color: "#000",
+																border: "1px solid rgba(255,255,255,0.12)",
+																cursor: "pointer"
+															}
+														})
+													})
+												});
+											}
+										} else if (meta.type === "number") {
+											const num = typeof cellValue === "number" ? cellValue : Number(cellValue);
+											if (!Number.isNaN(num)) chip = /* @__PURE__ */ jsx(Chip, {
+												size: "small",
+												label: num.toFixed(2),
+												variant: "outlined",
+												color: "default"
+											});
+										}
+									}
+									const displayText = cellValue === null || cellValue === void 0 ? "-" : isNumeric && Number.isFinite(Number(cellValue)) ? numberFormatter.format(Number(cellValue)) : String(cellValue);
+									return /* @__PURE__ */ jsxs(Box, {
+										sx: {
+											display: "flex",
+											alignItems: "center",
+											minWidth: 0,
+											px: 1,
+											justifyContent: isNumeric ? "flex-end" : "flex-start"
+										},
+										children: [chip ? /* @__PURE__ */ jsx(Box, {
+											sx: {
+												flexShrink: 0,
+												mr: 1
+											},
+											children: chip
+										}) : null, /* @__PURE__ */ jsx(Typography, {
+											variant: "body2",
+											noWrap: true,
+											sx: {
+												flex: 1,
+												textAlign: isNumeric ? "right" : "left"
+											},
+											children: displayText
+										})]
+									}, `${rowKey}-${col}`);
+								})
+							}, rowKey);
+						}
+					})
 				})]
 			}),
-			/* @__PURE__ */ jsxs(Stack, {
-				direction: "row",
-				spacing: 1,
-				alignItems: "center",
+			previewRowsSource.length > 1e3 && /* @__PURE__ */ jsxs(Alert, {
+				severity: "info",
+				sx: { mt: 1 },
 				children: [
-					/* @__PURE__ */ jsx(IconButton, {
-						onClick: player.prev,
-						size: "small",
-						children: /* @__PURE__ */ jsx(SkipPrevious, { fontSize: "small" })
-					}),
-					player.playing ? /* @__PURE__ */ jsx(IconButton, {
-						onClick: player.pause,
-						size: "small",
-						color: "primary",
-						children: /* @__PURE__ */ jsx(Pause, { fontSize: "small" })
-					}) : /* @__PURE__ */ jsx(IconButton, {
-						onClick: player.play,
-						size: "small",
-						color: "primary",
-						children: /* @__PURE__ */ jsx(PlayArrow, { fontSize: "small" })
-					}),
-					/* @__PURE__ */ jsx(IconButton, {
-						onClick: player.next,
-						size: "small",
-						children: /* @__PURE__ */ jsx(SkipNext, { fontSize: "small" })
-					}),
-					/* @__PURE__ */ jsx(Box, {
-						sx: {
-							flex: 1,
-							px: 2
-						},
-						children: /* @__PURE__ */ jsx(Slider, {
-							size: "small",
-							min: 0,
-							max: Math.max(0, frames$2.length - 1),
-							value: player.index,
-							onChange: (_, v) => player.setIndex(Array.isArray(v) ? v[0] : v),
-							valueLabelDisplay: "auto"
-						})
-					}),
-					/* @__PURE__ */ jsx(Tooltip, {
-						title: "Frames per second",
-						children: /* @__PURE__ */ jsx(TextField, {
-							label: t("animation.fpsLabel", "FPS"),
-							size: "small",
-							type: "number",
-							InputProps: { inputProps: {
-								min: 1,
-								max: 60
-							} },
-							value: player.fps,
-							onChange: (e) => player.setFps(Math.max(1, Math.min(60, Number(e.target.value) || 1))),
-							sx: { width: 110 }
-						})
-					}),
-					/* @__PURE__ */ jsx(Tooltip, {
-						title: t("animation.loop", "Loop animation"),
-						children: /* @__PURE__ */ jsxs(Stack, {
-							direction: "row",
-							alignItems: "center",
-							spacing: 1,
-							children: [/* @__PURE__ */ jsx(Typography, {
-								variant: "body2",
-								children: t("map.loop", "Loop")
-							}), /* @__PURE__ */ jsx(Switch, {
-								checked: player.loop,
-								onChange: (e) => player.setLoop(e.target.checked)
-							})]
-						})
-					})
+					t("stylePreview.truncate", "Showing preview of first 1,000 rows. Full dataset contains"),
+					" ",
+					previewRowsSource.length.toLocaleString(),
+					" ",
+					t("stylePreview.rows", "rows.")
 				]
 			})
 		]
 	});
+};
+const StylerPreviewComponent = wrapDialogStepComponent(StylerPreviewStep);
+
+//#endregion
+//#region src/ui/components/useStylerMappingState.ts
+const isRecord = (value) => typeof value === "object" && value !== null;
+const hasKeyValueSelected$1 = (dialogData) => {
+	if (!isRecord(dialogData)) return false;
+	const valueColumn = dialogData.valueColumn;
+	const keyColumn = dialogData.keyColumn;
+	return Boolean(keyColumn && valueColumn);
+};
+const useStylerMappingState = ({ data, onChange, setValid, setError, dialogRef, styleTypeOptions }) => {
+	const menuContainer = dialogRef?.current ?? null;
+	const pluginData = useMemo(() => isRecord(data) ? data : {}, [data]);
+	const sanitizedStyleType = useMemo(() => {
+		const candidate = pluginData.mapping?.styleType;
+		return styleTypeOptions.some((option) => option.value === candidate) ? candidate : void 0;
+	}, [pluginData, styleTypeOptions]);
+	const settings = useMemo(() => ({
+		styleType: sanitizedStyleType,
+		colorScheme: pluginData.colorScheme
+	}), [pluginData.colorScheme, sanitizedStyleType]);
+	const handleStyleTypeChange = useCallback((styleType) => {
+		const nextStyleType = styleType ?? settings.styleType;
+		onChange({
+			...pluginData,
+			mapping: {
+				...pluginData.mapping ?? {},
+				styleType: nextStyleType,
+				targetProperty: pluginData.mapping?.targetProperty ?? null
+			}
+		});
+	}, [
+		pluginData,
+		settings.styleType,
+		onChange
+	]);
+	const handleTargetPropertyChange = useCallback((targetProperty) => {
+		onChange({
+			...pluginData,
+			mapping: {
+				...pluginData.mapping ?? {},
+				targetProperty
+			}
+		});
+	}, [pluginData, onChange]);
+	useEffect(() => {
+		if ((pluginData.mapping?.styleType || pluginData.styleType) && !sanitizedStyleType) handleStyleTypeChange("choropleth");
+	}, [
+		pluginData,
+		sanitizedStyleType,
+		handleStyleTypeChange
+	]);
+	const lastValidity = useRef(null);
+	const lastError = useRef(null);
+	const validity = useMemo(() => hasKeyValueSelected$1(pluginData), [pluginData]);
+	useEffect(() => {
+		if (lastValidity.current !== validity) {
+			lastValidity.current = validity;
+			setValid(validity);
+		}
+		const errorMessage = validity ? null : "Select key/value columns to continue.";
+		if (lastError.current !== errorMessage) {
+			lastError.current = errorMessage;
+			setError(errorMessage);
+		}
+	}, [
+		validity,
+		setValid,
+		setError
+	]);
+	return {
+		menuContainer,
+		pluginData,
+		sanitizedStyleType,
+		settings,
+		handleStyleTypeChange,
+		handleTargetPropertyChange
+	};
+};
+
+//#endregion
+//#region ../../packages/ui/icon/src/getMuiIconComponent.tsx
+function toPascalCase(name$2) {
+	if (!name$2) return "";
+	const trimmed = String(name$2).trim();
+	if (/^[A-Z][A-Za-z0-9]*$/.test(trimmed)) return trimmed;
+	return trimmed.replace(/([a-z0-9])([A-Z])/g, "$1 $2").split(/[^A-Za-z0-9]+/).filter(Boolean).map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join("");
+}
+function normalizeMuiName(name$2) {
+	if (!name$2) return void 0;
+	return {
+		locationpin: "LocationOn",
+		location: "LocationOn",
+		mapmarker: "Place",
+		basemap: "Public",
+		project: "AccountTree",
+		spreadsheet: "Assessment",
+		resolver: "Extension",
+		styler: "Palette"
+	}[String(name$2).replace(/[^a-z0-9]/gi, "").toLowerCase()] || name$2;
+}
+const staticMap = {
+	Folder,
+	Public,
+	Hexagon,
+	LocationOn,
+	Route,
+	Assessment,
+	Palette,
+	Extension,
+	AccountTree,
+	AccessTime,
+	Timeline: AccessTime
+};
+function collectPascalCandidates(names) {
+	const seen = /* @__PURE__ */ new Set();
+	const result = [];
+	for (const name$2 of names) {
+		if (!name$2) continue;
+		const pascal = toPascalCase(name$2);
+		if (!pascal) continue;
+		if (seen.has(pascal)) continue;
+		seen.add(pascal);
+		result.push(pascal);
+	}
+	return result;
+}
+let __globalMuiIconMap = null;
+function getMuiIconWithColor(muiIconName, emoji, color) {
+	const normalized = normalizeMuiName(muiIconName);
+	const globalCandidates = collectPascalCandidates([muiIconName, normalized]);
+	for (const candidate of globalCandidates) {
+		const GlobalIcon = __globalMuiIconMap?.[candidate];
+		if (GlobalIcon) return /* @__PURE__ */ jsx(GlobalIcon, { sx: color ? { color } : void 0 });
+	}
+	const staticCandidates = collectPascalCandidates([normalized, muiIconName]);
+	for (const candidate of staticCandidates) {
+		const StaticIcon = staticMap[candidate];
+		if (StaticIcon) return /* @__PURE__ */ jsx(StaticIcon, { sx: color ? { color } : void 0 });
+	}
+	if (emoji) return /* @__PURE__ */ jsx("span", {
+		style: {
+			fontSize: "1.5rem",
+			color
+		},
+		children: emoji
+	});
+	const node = /* @__PURE__ */ jsx(Add, {});
+	return color ? /* @__PURE__ */ jsx("span", {
+		style: { color },
+		children: node
+	}) : node;
 }
 
 //#endregion
-//#region src/ui/utils/frames.ts
-function toFramesFromNodes(nodes) {
-	return nodes.map((n) => ({
-		id: String(n.id),
-		name: String(n.name || "")
-	})).filter((f) => !!f.name).sort((a, b) => a.name.localeCompare(b.name));
+//#region ../../packages/ui/icon/src/index.ts
+const IconRegistryContext = createContext({
+	resolveIcon: (request$1) => getMuiIconWithColor(request$1?.icon?.muiIconName ?? request$1?.nodeType, request$1?.icon?.emoji, request$1?.icon?.color),
+	ready: true,
+	error: null
+});
+function useIconRegistry() {
+	return useContext(IconRegistryContext);
 }
+
+//#endregion
+//#region src/ui/components/StyleMappingTargetPanel.tsx
+const StyleMappingTargetPanel = ({ settings, handleStyleTypeChange, pluginData, menuContainer, handleTargetPropertyChange, showStyleType = true, showTargetProperty = true }) => {
+	const { t } = useTranslation("styler-plugin");
+	const { resolveIcon } = useIconRegistry();
+	const targetPropertyLabelId = useId();
+	return /* @__PURE__ */ jsxs(Fragment, { children: [showStyleType && /* @__PURE__ */ jsxs(Box, { children: [
+		/* @__PURE__ */ jsx(Typography, {
+			variant: "subtitle1",
+			sx: { mb: 1 },
+			children: t("styleSettings.styleType.label", "Style Type")
+		}),
+		/* @__PURE__ */ jsx(Grid, {
+			container: true,
+			spacing: 2,
+			children: STYLE_TYPE_OPTIONS.map((option) => {
+				const selected = settings.styleType === option.value;
+				const IconEl = resolveIcon({ nodeType: option.icon });
+				return /* @__PURE__ */ jsx(Grid, {
+					size: {
+						xs: 12,
+						sm: 4
+					},
+					children: /* @__PURE__ */ jsx(Paper, {
+						tabIndex: 0,
+						onClick: () => handleStyleTypeChange(option.value),
+						onKeyPress: (e) => {
+							if (e.key === "Enter" || e.key === " ") {
+								e.preventDefault();
+								handleStyleTypeChange(option.value);
+							}
+						},
+						elevation: selected ? 4 : 1,
+						sx: {
+							p: 2,
+							border: selected ? "2px solid" : "1px solid",
+							borderColor: selected ? "primary.main" : "divider",
+							borderRadius: 2,
+							cursor: "pointer",
+							height: "100%",
+							transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+							"&:hover": {
+								borderColor: "primary.main",
+								boxShadow: (theme) => theme.shadows[2]
+							},
+							outline: "none"
+						},
+						children: /* @__PURE__ */ jsxs(Stack, {
+							direction: "row",
+							spacing: 2,
+							alignItems: "center",
+							children: [/* @__PURE__ */ jsx(Box, {
+								sx: {
+									width: 44,
+									height: 44,
+									borderRadius: "50%",
+									bgcolor: selected ? "primary.light" : "grey.100",
+									color: selected ? "primary.contrastText" : "text.secondary",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									border: selected ? "1px solid" : "1px solid",
+									borderColor: selected ? "primary.main" : "divider",
+									flexShrink: 0
+								},
+								children: IconEl
+							}), /* @__PURE__ */ jsxs(Box, {
+								sx: { minWidth: 0 },
+								children: [/* @__PURE__ */ jsx(Typography, {
+									variant: "subtitle1",
+									noWrap: true,
+									children: t(option.labelKey, option.labelKey)
+								}), /* @__PURE__ */ jsx(Typography, {
+									variant: "body2",
+									color: "text.secondary",
+									sx: { mt: .5 },
+									children: t(option.descriptionKey, option.descriptionKey)
+								})]
+							})]
+						})
+					})
+				}, option.value);
+			})
+		}),
+		/* @__PURE__ */ jsx(FormHelperText, {
+			sx: { mt: 1 },
+			children: t("styleSettings.styleType.help", "Select the geometry that this style targets.")
+		})
+	] }), showTargetProperty && /* @__PURE__ */ jsxs(FormControl, {
+		required: true,
+		sx: { mt: showStyleType ? 3 : 0 },
+		children: [
+			/* @__PURE__ */ jsx(InputLabel, {
+				id: targetPropertyLabelId,
+				htmlFor: "styler-target-property",
+				children: t("styleSettings.targetProperty.label", "Target style property")
+			}),
+			/* @__PURE__ */ jsx(ModalSelect, {
+				name: "styler-target-property",
+				labelId: targetPropertyLabelId,
+				value: pluginData.mapping?.targetProperty ?? "",
+				label: t("styleSettings.targetProperty.label", "Target style property"),
+				onChange: (event) => handleTargetPropertyChange(event.target.value),
+				renderValue: (selected) => selected ? MAPLIBRE_PROPERTY_METADATA[selected].displayName : "",
+				menuContainer,
+				usePortal: false,
+				menuZIndexOffset: 200,
+				children: MAPLIBRE_PROPERTY_GROUPS.flatMap((group) => [/* @__PURE__ */ jsx(MenuItem, {
+					value: "",
+					disabled: true,
+					children: /* @__PURE__ */ jsx(Typography, {
+						variant: "overline",
+						color: "text.secondary",
+						children: group.displayName
+					})
+				}, `${group.name}-label`), ...group.properties.map((property) => /* @__PURE__ */ jsx(MenuItem, {
+					value: property,
+					children: MAPLIBRE_PROPERTY_METADATA[property].displayName
+				}, property))])
+			}),
+			/* @__PURE__ */ jsx(FormHelperText, { children: t("styleSettings.targetProperty.help", "Select the MapLibre paint property to map this value to.") })
+		]
+	})] });
+};
+
+//#endregion
+//#region src/common/utils/dataAnalysis.ts
+/**
+* :
+* :
+* :
+*/
+function calculateStatistics(values) {
+	if (values.length === 0) return {
+		min: 0,
+		max: 0,
+		mean: 0,
+		median: 0,
+		stdDev: 0,
+		skewness: 0,
+		kurtosis: 0,
+		uniqueCount: 0,
+		totalCount: 0,
+		distribution: "unknown",
+		hasOutliers: false,
+		outlierCount: 0,
+		quartiles: {
+			q1: 0,
+			q2: 0,
+			q3: 0
+		}
+	};
+	const sorted = [...values].sort((a, b) => a - b);
+	const n = sorted.length;
+	const min = sorted[0] ?? 0;
+	const max = sorted[n - 1] ?? min;
+	const mean = values.reduce((acc, val) => acc + val, 0) / n;
+	const median = n % 2 === 0 ? ((sorted[n / 2 - 1] ?? min) + (sorted[n / 2] ?? max)) / 2 : sorted[Math.floor(n / 2)] ?? min;
+	const variance = values.reduce((acc, val) => acc + (val - mean) ** 2, 0) / n;
+	const stdDev = Math.sqrt(variance);
+	const q1Index = Math.floor(n * .25);
+	const q2Index = Math.floor(n * .5);
+	const q3Index = Math.floor(n * .75);
+	const q1 = sorted[q1Index] ?? min;
+	const q2 = sorted[q2Index] ?? median;
+	const q3 = sorted[q3Index] ?? max;
+	const skewness = n > 2 && stdDev > 0 ? values.reduce((acc, val) => acc + ((val - mean) / stdDev) ** 3, 0) / n : 0;
+	const kurtosis = n > 3 && stdDev > 0 ? values.reduce((acc, val) => acc + ((val - mean) / stdDev) ** 4, 0) / n - 3 : 0;
+	const iqr = q3 - q1;
+	const lowerBound = q1 - 1.5 * iqr;
+	const upperBound = q3 + 1.5 * iqr;
+	const outliers = values.filter((v) => v < lowerBound || v > upperBound);
+	const uniqueCount = new Set(values).size;
+	let distribution = "unknown";
+	if (Math.abs(skewness) < .5 && Math.abs(kurtosis) < 1) distribution = "normal";
+	else if (Math.abs(skewness) > 1.5) distribution = "skewed";
+	else if (kurtosis > 2) distribution = "bimodal";
+	else if (stdDev < mean * .1) distribution = "uniform";
+	return {
+		min,
+		max,
+		mean,
+		median,
+		stdDev,
+		skewness,
+		kurtosis,
+		uniqueCount,
+		totalCount: n,
+		distribution,
+		hasOutliers: outliers.length > 0,
+		outlierCount: outliers.length,
+		quartiles: {
+			q1,
+			q2,
+			q3
+		}
+	};
+}
+
+//#endregion
+//#region src/ui/components/GradientSwatch.tsx
+const GradientSwatch = ({ stops, width = 120, height = 16 }) => {
+	const gradientId = useId().replace(/:/g, "-");
+	const safeStops = stops.length ? stops : ["#ffffff", "#000000"];
+	const denom = Math.max(safeStops.length - 1, 1);
+	return /* @__PURE__ */ jsxs("svg", {
+		width,
+		height,
+		"aria-hidden": true,
+		focusable: "false",
+		children: [
+			/* @__PURE__ */ jsx("title", { children: "Gradient Swatch" }),
+			/* @__PURE__ */ jsx("defs", { children: /* @__PURE__ */ jsx("linearGradient", {
+				id: gradientId,
+				x1: "0%",
+				y1: "0%",
+				x2: "100%",
+				y2: "0%",
+				children: safeStops.map((c, idx) => /* @__PURE__ */ jsx("stop", {
+					offset: `${idx / denom * 100}%`,
+					stopColor: c
+				}, `${c}`))
+			}) }),
+			/* @__PURE__ */ jsx("rect", {
+				x: 0,
+				y: 0,
+				width,
+				height,
+				rx: 3,
+				fill: `url(#${gradientId})`,
+				stroke: "#ccc"
+			})
+		]
+	});
+};
+
+//#endregion
+//#region src/ui/components/StylerMappingStep.tsx
+const StylerMappingStep = ({ data, onChange, setValid, setError, dialogRef }) => {
+	const { t } = useTranslation("styler-plugin");
+	const { menuContainer, pluginData, settings, handleStyleTypeChange, handleTargetPropertyChange } = useStylerMappingState({
+		data,
+		onChange,
+		setValid,
+		setError,
+		dialogRef,
+		styleTypeOptions: STYLE_TYPE_OPTIONS
+	});
+	const valueColumn = pluginData.valueColumn ?? "";
+	const targetProperty = pluginData.mapping?.targetProperty ?? null;
+	const isColorTarget = (targetProperty ? MAPLIBRE_PROPERTY_METADATA[targetProperty] : null)?.type === "color";
+	const initialConfig = useMemo(() => {
+		const cfg = pluginData.stylerConfig ?? StylerConfigDefault;
+		return {
+			...StylerConfigDefault,
+			...cfg
+		};
+	}, [pluginData.stylerConfig]);
+	const [localConfig, setLocalConfig] = useState(initialConfig);
+	const [binCount, setBinCount] = useState(256);
+	useEffect(() => {
+		setLocalConfig((prev) => ({
+			...prev,
+			...initialConfig
+		}));
+	}, [initialConfig]);
+	const applyConfigPatch = (patch) => {
+		setLocalConfig((prev) => {
+			const next = {
+				...prev,
+				...patch
+			};
+			onChange({
+				...pluginData,
+				stylerConfig: next
+			});
+			return next;
+		});
+	};
+	const previewRows = useMemo(() => Array.isArray(pluginData.previewRows) ? pluginData.previewRows : [], [pluginData.previewRows]);
+	const deferredPreviewRows = useDeferredValue(previewRows);
+	const isPreviewDeferred = deferredPreviewRows !== previewRows;
+	const numericValues = useMemo(() => {
+		if (!valueColumn) return [];
+		return deferredPreviewRows.map((row) => row[valueColumn]).map((val) => typeof val === "number" ? val : typeof val === "string" ? Number(val) : NaN).filter((v) => Number.isFinite(v));
+	}, [deferredPreviewRows, valueColumn]);
+	const histogramStats = useMemo(() => numericValues.length ? calculateStatistics(numericValues) : null, [numericValues]);
+	const histogramBarColor = useMemo(() => {
+		const mapping = {
+			keyColumn: pluginData.keyColumn ?? "",
+			valueColumn,
+			styleType: pluginData.mapping?.styleType ?? "choropleth",
+			targetProperty: pluginData.mapping?.targetProperty ?? null
+		};
+		const previewConfig = {
+			...localConfig,
+			min: histogramStats?.min ?? localConfig.min,
+			max: histogramStats?.max ?? localConfig.max
+		};
+		return ({ midpoint }) => valueToColor(midpoint, mapping, previewConfig, numericValues).color;
+	}, [
+		histogramStats?.max,
+		histogramStats?.min,
+		localConfig,
+		numericValues,
+		pluginData,
+		valueColumn
+	]);
+	const algorithmDescriptions = useMemo(() => ({
+		linear: t("step5.algorithms.linearDescription", "Interpolates colors smoothly between minimum and maximum values. Ideal for evenly distributed data or when visualizing continuous transitions."),
+		log: t("step5.algorithms.logDescription", "Uses a logarithmic scale to emphasize smaller values while compressing large outliers. Suited for highly skewed distributions."),
+		quantile: t("step5.algorithms.quantileDescription", "Creates classes with an equal number of features. Produces balanced visuals even for skewed data and is resilient to outliers."),
+		jenks: t("step5.algorithms.jenksDescription", "Finds natural breaks by minimizing variance within classes and maximizing it between classes. Offers meaningful groupings at a higher computational cost."),
+		equal: t("step5.algorithms.equalDescription", "Divides the value range into equal intervals. Suited for continuous, roughly linear distributions such as temperature or elevation, and is fast and easy to understand.")
+	}), [t]);
+	const handleInvertColorsChange = useCallback((_event, newValue) => {
+		const inverted = newValue === "inverted";
+		const newConfig = {
+			...localConfig,
+			invertColors: inverted
+		};
+		setLocalConfig(newConfig);
+		onChange(newConfig);
+	}, [localConfig, onChange]);
+	const presetScales = useMemo(() => [
+		{
+			id: "grayscale",
+			label: t("styleSettings.algorithm.scale.grayscale", "Grayscale"),
+			stops: ["#000000", "#ffffff"]
+		},
+		{
+			id: "redgreen",
+			label: t("styleSettings.algorithm.scale.redGreen", "Red → Green"),
+			stops: ["#ff0000", "#00ff00"]
+		},
+		{
+			id: "blueorange",
+			label: t("styleSettings.algorithm.scale.blueOrange", "Blue → Orange"),
+			stops: ["#1a1c7c", "#ffa500"]
+		},
+		{
+			id: "viridis",
+			label: t("styleSettings.algorithm.scale.viridis", "Viridis"),
+			stops: [
+				"#440154",
+				"#21908d",
+				"#fde725"
+			]
+		},
+		{
+			id: "magma",
+			label: t("styleSettings.algorithm.scale.magma", "Magma"),
+			stops: [
+				"#000004",
+				"#b5367a",
+				"#fbfcbf"
+			]
+		},
+		{
+			id: "custom",
+			label: t("styleSettings.algorithm.scale.custom", "Custom (HSB)"),
+			stops: []
+		}
+	], [t]);
+	const handlePresetSelect = (id) => {
+		const preset = presetScales.find((p) => p.id === id);
+		if (!preset) return;
+		applyConfigPatch({
+			colorSpace: "hsv",
+			colorScheme: id,
+			startColor: preset.stops[0],
+			endColor: preset.stops[preset.stops.length - 1]
+		});
+	};
+	const numericRangeControls = !isColorTarget ? /* @__PURE__ */ jsxs(Stack, {
+		spacing: 1.5,
+		children: [/* @__PURE__ */ jsx(Typography, {
+			variant: "subtitle2",
+			children: t("styleSettings.algorithm.numericRange", "Numeric range")
+		}), /* @__PURE__ */ jsxs(Stack, {
+			direction: "row",
+			spacing: 1,
+			children: [/* @__PURE__ */ jsx(TextField, {
+				type: "number",
+				label: t("styleSettings.algorithm.min", "Min"),
+				value: localConfig.min,
+				onChange: (e) => applyConfigPatch({ min: Number(e.target.value) }),
+				size: "small",
+				inputProps: { step: .1 }
+			}), /* @__PURE__ */ jsx(TextField, {
+				type: "number",
+				label: t("styleSettings.algorithm.max", "Max"),
+				value: localConfig.max,
+				onChange: (e) => applyConfigPatch({ max: Number(e.target.value) }),
+				size: "small",
+				inputProps: { step: .1 }
+			})]
+		})]
+	}) : null;
+	const customHSBControls = isColorTarget && (localConfig.colorScheme ?? "grayscale") === "custom" ? /* @__PURE__ */ jsxs(Stack, {
+		spacing: 1.5,
+		sx: { mt: 1 },
+		children: [
+			/* @__PURE__ */ jsx(Typography, {
+				variant: "subtitle2",
+				children: t("styleSettings.algorithm.customTitle", "Custom HSB")
+			}),
+			/* @__PURE__ */ jsxs(Stack, {
+				direction: "row",
+				spacing: 1,
+				children: [/* @__PURE__ */ jsx(TextField, {
+					label: t("styleSettings.colorRange.start", "Start Color (hex)"),
+					value: localConfig.startColor ?? "",
+					size: "small",
+					onChange: (e) => applyConfigPatch({ startColor: e.target.value })
+				}), /* @__PURE__ */ jsx(TextField, {
+					label: t("styleSettings.colorRange.end", "End Color (hex)"),
+					value: localConfig.endColor ?? "",
+					size: "small",
+					onChange: (e) => applyConfigPatch({ endColor: e.target.value })
+				})]
+			}),
+			/* @__PURE__ */ jsxs(Stack, {
+				spacing: 1,
+				children: [
+					/* @__PURE__ */ jsx(Typography, {
+						variant: "caption",
+						children: t("styleSettings.hsv.hueStart", "Hue Start")
+					}),
+					/* @__PURE__ */ jsx(Slider, {
+						value: localConfig.hueStart,
+						onChange: (_e, v) => applyConfigPatch({ hueStart: v }),
+						min: 0,
+						max: 360
+					}),
+					/* @__PURE__ */ jsx(Typography, {
+						variant: "caption",
+						children: t("styleSettings.hsv.hueEnd", "Hue End")
+					}),
+					/* @__PURE__ */ jsx(Slider, {
+						value: localConfig.hueEnd,
+						onChange: (_e, v) => applyConfigPatch({ hueEnd: v }),
+						min: 0,
+						max: 360
+					}),
+					/* @__PURE__ */ jsx(Typography, {
+						variant: "caption",
+						children: t("styleSettings.hsv.saturation", "Saturation")
+					}),
+					/* @__PURE__ */ jsx(Slider, {
+						value: localConfig.saturation,
+						step: .05,
+						min: 0,
+						max: 1,
+						onChange: (_e, v) => applyConfigPatch({ saturation: v })
+					}),
+					/* @__PURE__ */ jsx(Typography, {
+						variant: "caption",
+						children: t("styleSettings.hsv.brightness", "Brightness")
+					}),
+					/* @__PURE__ */ jsx(Slider, {
+						value: localConfig.brightness,
+						step: .05,
+						min: 0,
+						max: 1,
+						onChange: (_e, v) => applyConfigPatch({ brightness: v })
+					})
+				]
+			})
+		]
+	}) : null;
+	return /* @__PURE__ */ jsxs(Stack, {
+		spacing: 2,
+		children: [
+			isPreviewDeferred && /* @__PURE__ */ jsxs(Stack, {
+				spacing: .5,
+				children: [/* @__PURE__ */ jsx(Typography, {
+					variant: "caption",
+					color: "text.secondary",
+					children: t("styleSettings.processing", "Processing tabular data...")
+				}), /* @__PURE__ */ jsx(LinearProgress, {})]
+			}),
+			/* @__PURE__ */ jsxs(Accordion, {
+				defaultExpanded: true,
+				children: [/* @__PURE__ */ jsx(AccordionSummary, {
+					expandIcon: /* @__PURE__ */ jsx(ExpandMoreIcon, {}),
+					children: /* @__PURE__ */ jsxs(Stack, {
+						direction: "row",
+						spacing: 1,
+						alignItems: "center",
+						children: [/* @__PURE__ */ jsx(ViewColumnIcon, { fontSize: "small" }), /* @__PURE__ */ jsx(Typography, {
+							variant: "subtitle1",
+							children: t("styleSettings.accordion.targetProperty", "Target Property")
+						})]
+					})
+				}), /* @__PURE__ */ jsx(AccordionDetails, { children: /* @__PURE__ */ jsx(StyleMappingTargetPanel, {
+					settings,
+					handleStyleTypeChange,
+					pluginData,
+					menuContainer,
+					handleTargetPropertyChange
+				}) })]
+			}),
+			/* @__PURE__ */ jsxs(Accordion, {
+				defaultExpanded: true,
+				children: [/* @__PURE__ */ jsx(AccordionSummary, {
+					expandIcon: /* @__PURE__ */ jsx(ExpandMoreIcon, {}),
+					children: /* @__PURE__ */ jsxs(Stack, {
+						direction: "row",
+						spacing: 1,
+						alignItems: "center",
+						children: [/* @__PURE__ */ jsx(AutoFixHighIcon, { fontSize: "small" }), /* @__PURE__ */ jsx(Typography, {
+							variant: "subtitle1",
+							children: t("styleSettings.accordion.algorithm", "Algorithm")
+						})]
+					})
+				}), /* @__PURE__ */ jsxs(AccordionDetails, { children: [/* @__PURE__ */ jsxs(Stack, {
+					spacing: 2,
+					children: [
+						/* @__PURE__ */ jsxs(FormControl, {
+							component: "fieldset",
+							children: [/* @__PURE__ */ jsx(Typography, {
+								variant: "subtitle2",
+								gutterBottom: true,
+								children: t("styleSettings.algorithm.nullHandling", "Null / NaN handling")
+							}), /* @__PURE__ */ jsxs(RadioGroup, {
+								row: true,
+								value: localConfig.nullHandling ?? "exclude",
+								onChange: (e) => applyConfigPatch({ nullHandling: e.target.value }),
+								children: [/* @__PURE__ */ jsx(FormControlLabel, {
+									value: "exclude",
+									control: /* @__PURE__ */ jsx(Radio, {}),
+									label: t("styleSettings.algorithm.null.exclude", "Exclude rows")
+								}), /* @__PURE__ */ jsx(FormControlLabel, {
+									value: "zero",
+									control: /* @__PURE__ */ jsx(Radio, {}),
+									label: t("styleSettings.algorithm.null.zero", "Treat as 0")
+								})]
+							})]
+						}),
+						/* @__PURE__ */ jsx(InputLabel, { children: t("styleSettings.algorithm.rule", "Mapping rule") }),
+						/* @__PURE__ */ jsxs(ToggleButtonGroup, {
+							exclusive: true,
+							value: localConfig.algorithm,
+							onChange: (_e, value) => value ? applyConfigPatch({ algorithm: value }) : null,
+							size: "small",
+							children: [
+								/* @__PURE__ */ jsxs(ToggleButton, {
+									value: "linear",
+									children: [/* @__PURE__ */ jsx(ShowChart, {
+										fontSize: "small",
+										sx: { mr: 1 }
+									}), t("styleSettings.algorithms.linear", "Linear")]
+								}),
+								/* @__PURE__ */ jsxs(ToggleButton, {
+									value: "log",
+									children: [/* @__PURE__ */ jsx(BarChartIcon, {
+										fontSize: "small",
+										sx: { mr: 1 }
+									}), t("styleSettings.algorithms.log", "Logarithmic")]
+								}),
+								/* @__PURE__ */ jsxs(ToggleButton, {
+									value: "quantile",
+									children: [/* @__PURE__ */ jsx(Insights, {
+										fontSize: "small",
+										sx: { mr: 1 }
+									}), t("styleSettings.algorithms.quantile", "Quantile")]
+								}),
+								/* @__PURE__ */ jsxs(ToggleButton, {
+									value: "jenks",
+									children: [/* @__PURE__ */ jsx(Gradient, {
+										fontSize: "small",
+										sx: { mr: 1 }
+									}), t("styleSettings.algorithms.jenks", "Jenks Natural Breaks")]
+								}),
+								/* @__PURE__ */ jsx(ToggleButton, {
+									value: "equal",
+									children: t("styleSettings.algorithms.equal", "Equal Interval")
+								})
+							]
+						}),
+						/* @__PURE__ */ jsx(Typography, {
+							variant: "body2",
+							sx: { mt: 1 },
+							children: algorithmDescriptions[localConfig.algorithm]
+						}),
+						isColorTarget ? /* @__PURE__ */ jsxs(Stack, {
+							spacing: 1.5,
+							children: [
+								/* @__PURE__ */ jsx(Typography, {
+									variant: "subtitle2",
+									children: t("styleSettings.algorithm.colorScale", "Color scale")
+								}),
+								/* @__PURE__ */ jsxs(RadioGroup, {
+									row: true,
+									value: localConfig.invertColors ? "inverted" : "normal",
+									onChange: handleInvertColorsChange,
+									children: [/* @__PURE__ */ jsx(FormControlLabel, {
+										control: /* @__PURE__ */ jsx(Radio, {}),
+										value: "normal",
+										label: t("step5.colorRange.normal", "normal")
+									}), /* @__PURE__ */ jsx(FormControlLabel, {
+										control: /* @__PURE__ */ jsx(Radio, {}),
+										value: "inverted",
+										label: t("step5.colorRange.invert", "inverted")
+									})]
+								}),
+								/* @__PURE__ */ jsx(ToggleButtonGroup, {
+									exclusive: true,
+									color: "primary",
+									value: localConfig.colorScheme ?? "grayscale",
+									onChange: (_e, value) => value && handlePresetSelect(value),
+									sx: {
+										flexWrap: "wrap",
+										gap: 1
+									},
+									children: presetScales.map((preset) => /* @__PURE__ */ jsxs(ToggleButton, {
+										value: preset.id,
+										sx: {
+											justifyContent: "space-between",
+											textAlign: "left",
+											gap: 1,
+											py: 1,
+											minWidth: 220
+										},
+										children: [/* @__PURE__ */ jsxs(Stack, {
+											direction: "row",
+											spacing: 1,
+											alignItems: "center",
+											sx: {
+												flex: 1,
+												minWidth: 0
+											},
+											children: [preset.id === "custom" ? /* @__PURE__ */ jsx(ContrastIcon, { fontSize: "small" }) : /* @__PURE__ */ jsx(PaletteIcon, { fontSize: "small" }), /* @__PURE__ */ jsx(Typography, {
+												variant: "body2",
+												noWrap: true,
+												children: preset.label
+											})]
+										}), preset.stops.length > 0 ? /* @__PURE__ */ jsx(GradientSwatch, { stops: preset.stops }) : null]
+									}, preset.id))
+								}),
+								customHSBControls,
+								/* @__PURE__ */ jsx(Box, {
+									sx: {
+										paddingLeft: 6,
+										paddingRight: 2,
+										height: 32,
+										borderRadius: 25,
+										border: (theme) => `1px solid ${theme.palette.divider}`
+									},
+									children: /* @__PURE__ */ jsx(Box, { sx: {
+										height: "100%",
+										background: generateColorGradient(localConfig),
+										borderRadius: 1
+									} })
+								})
+							]
+						}) : numericRangeControls
+					]
+				}), /* @__PURE__ */ jsxs(Stack, {
+					spacing: 2,
+					children: [/* @__PURE__ */ jsxs(Box, {
+						sx: {
+							paddingLeft: 6,
+							paddingRight: 2
+						},
+						children: [/* @__PURE__ */ jsx(Typography, {
+							variant: "caption",
+							color: "text.secondary",
+							children: t("styleSettings.histogram.binCount", "Number of bins")
+						}), /* @__PURE__ */ jsx(Slider, {
+							value: binCount,
+							min: 1,
+							max: 256,
+							step: 1,
+							marks: [
+								{
+									value: 1,
+									label: "1"
+								},
+								{
+									value: 64,
+									label: "64"
+								},
+								{
+									value: 128,
+									label: "128"
+								},
+								{
+									value: 256,
+									label: "256"
+								}
+							],
+							onChange: (_e, value) => setBinCount(value)
+						})]
+					}), /* @__PURE__ */ jsx(Box, {
+						sx: {
+							width: "100%",
+							height: 260
+						},
+						children: histogramStats ? /* @__PURE__ */ jsx(ValueHistogram, {
+							values: numericValues,
+							binCount,
+							width: 520,
+							height: 260,
+							min: histogramStats.min,
+							max: histogramStats.max,
+							mean: histogramStats.mean,
+							valueLabel: valueColumn ?? t("styleSettings.keyValuePair.value", "Value"),
+							keyLabel: t("styleSettings.keyValuePair.key", "frequency"),
+							barColor: ({ midpoint }) => histogramBarColor({ midpoint })
+						}) : /* @__PURE__ */ jsx(Typography, {
+							variant: "body2",
+							color: "text.secondary",
+							children: t("styleSettings.histogram.empty", "Histogram is unavailable until numeric values are loaded.")
+						})
+					})]
+				})] })]
+			})
+		]
+	});
+};
+
+//#endregion
+//#region src/ui/components/StylerFilterStep.tsx
+const StylerFilterStep = (props) => /* @__PURE__ */ jsx(TabularDataFilterStep, {
+	...props,
+	translationNamespace: "styler-plugin"
+});
 
 //#endregion
 //#region src/ui/components/steps-provider.tsx
-PluginStepRegistry.getInstance().registerConfigProvider({
-	nodeType: "timeline",
+const registry = PluginStepRegistry.getInstance();
+const getStylerT = () => typeof i18n.getFixedT === "function" ? i18n.getFixedT(i18n.language ?? "en", "styler-plugin") : i18n.t.bind(i18n);
+const renderMappingStep = (p) => /* @__PURE__ */ jsx(StylerMappingStep, { ...p });
+const hasMappingBasics = (dialogData) => {
+	const data = dialogData ?? {};
+	const mapping = data.mapping ?? {};
+	const styleType = mapping.styleType;
+	const keyColumn = data.keyColumn;
+	const valueColumn = data.valueColumn;
+	const targetProperty = mapping.targetProperty ?? null;
+	return Boolean(keyColumn && valueColumn && styleType && targetProperty);
+};
+const hasKeyValueSelected = (dialogData) => {
+	const data = dialogData ?? {};
+	const keyColumn = data.keyColumn;
+	const valueColumn = data.valueColumn;
+	const hasLocal = Boolean(keyColumn && valueColumn);
+	const hasHook = hasKeyValueSelected$1(dialogData);
+	return hasLocal || hasHook;
+};
+const hasLoadedDataSource = (dialogData) => {
+	const dataSource = dialogData.dataSource;
+	return ((typeof dataSource?.sizeBytes === "number" ? dataSource.sizeBytes : 0) ?? 0) > 0;
+};
+registry.registerConfigProvider({
+	nodeType: "styler",
 	getCreateStepConfigs() {
-		const { t } = useTranslation();
+		const t = getStylerT();
+		const ensureLoaded = (dialogData) => hasLoadedDataSource(dialogData);
+		const DataSourceWithValidation = (p) => {
+			const valid = ensureLoaded(p.data);
+			const lastValidRef = React.useRef(null);
+			React.useEffect(() => {
+				if (lastValidRef.current !== valid) {
+					lastValidRef.current = valid;
+					p.setValid(valid);
+				}
+			}, [valid, p]);
+			return /* @__PURE__ */ jsx(TabularDataSourceStep, { ...p });
+		};
+		const FilterWithValidation = (p) => {
+			const valid = ensureLoaded(p.data) && hasKeyValueSelected(p.data);
+			const lastValidRef = React.useRef(null);
+			React.useEffect(() => {
+				if (lastValidRef.current !== valid) {
+					lastValidRef.current = valid;
+					p.setValid(valid);
+				}
+			}, [valid, p]);
+			return /* @__PURE__ */ jsx(StylerFilterStep, { ...p });
+		};
 		return [
 			{
-				id: "frames",
-				label: t("steps.frames.label", "Frames Preview"),
-				componentFactory: (p) => /* @__PURE__ */ jsx(FramesPreviewStep, { frames: p.data?.frames || p.data?.draftData?.frames || [] })
+				id: "data-source",
+				label: t("steps.dataSource", "Data Source"),
+				componentFactory: DataSourceWithValidation,
+				validate: ensureLoaded,
+				capabilities: { canProceedToNext: ensureLoaded }
 			},
 			{
-				id: "map",
-				label: t("steps.map.label", "Map Preview"),
-				componentFactory: (p) => /* @__PURE__ */ jsx(MapPreviewStep, { frames: p.data?.frames || p.data?.draftData?.frames || [] })
+				id: "style-filter",
+				label: t("steps.filtering", "Filtering"),
+				componentFactory: FilterWithValidation,
+				validate: ensureLoaded,
+				capabilities: { canProceedToNext: ensureLoaded }
 			},
 			{
-				id: "final",
-				label: t("steps.final.label", "Final Animation"),
-				componentFactory: (p) => /* @__PURE__ */ jsx(AnimationViewerStep, { frames: p.data?.frames || p.data?.draftData?.frames || [] })
+				id: "style-mapping",
+				label: t("steps.styleSettings", "Style Mapping"),
+				componentFactory: renderMappingStep,
+				validate: (dialogData) => hasKeyValueSelected(dialogData),
+				capabilities: { canProceedToNext: (dialogData) => hasKeyValueSelected(dialogData) }
+			},
+			{
+				id: "style-preview",
+				label: t("steps.preview", "Preview"),
+				componentFactory: (p) => /* @__PURE__ */ jsx(StylerPreviewStep, {
+					data: p.data,
+					onChange: p.onChange,
+					nodeId: p.nodeId,
+					onValidate: (valid) => {
+						p.setValid(valid);
+						if (valid) p.setError(null);
+					}
+				}),
+				validate: (dialogData) => hasMappingBasics(dialogData),
+				capabilities: { canProceedToNext: (dialogData) => hasMappingBasics(dialogData) }
 			}
 		];
 	},
-	getEditStepConfigs(_nodeId, _data) {
+	getEditStepConfigs() {
 		return this.getCreateStepConfigs();
 	}
 });
 
 //#endregion
-//#region src/ui/i18n.ts
-const localeModules = import.meta.glob("./locales/*.json", { eager: true });
-Object.entries(localeModules).forEach(([path$1, mod]) => {
-	const lng = path$1.match(/locales\/([a-z-]+)\.json$/i)?.[1];
-	if (!lng) return;
-	const resources = mod.default ?? mod;
-	if (!resources) return;
-	i18n.addResourceBundle(lng, "timeline-plugin", resources, true, true);
-});
-
-//#endregion
-export { AnimationViewerStep, FramesPreviewStep, MapPreviewStep, toFramesFromNodes };
+export { __require as n, __commonJSMin as t };
 //# sourceMappingURL=index.js.map

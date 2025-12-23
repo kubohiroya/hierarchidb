@@ -1,1 +1,0 @@
-import{U as e}from"../worker.js";import{t}from"./jsx-runtime-Cp0qBw5r.js";import{t as n}from"./createSvgIcon-nGU078gM.js";var r=n((0,e(t()).jsx)(`path`,{d:`M17.2 3H6.8l-5.2 9 5.2 9h10.4l5.2-9z`}),`Hexagon`);export{r as t};

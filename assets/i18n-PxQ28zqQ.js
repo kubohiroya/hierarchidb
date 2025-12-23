@@ -1,1 +1,0 @@
-import"./react-OOxSluIQ.js";import"./jsx-runtime-Cp0qBw5r.js";import"./src-s2xIPISM.js";import{t as e}from"./i18n-FjQ71W_2.js";export{e as useTranslation};

@@ -1,0 +1,1 @@
+import"./vendor-react-DueQUKGo.js";import"./identifier-CN0yTFUG.js";import{Cn as e}from"./index.js";const t=e;var n=t;export{t as ResolverPluginIcon,n as default};
