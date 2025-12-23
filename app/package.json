@@ -14,7 +14,6 @@
     "preview": "vite preview",
     "format": "biome check --write src",
     "format:check": "biome check src --reporter summary",
-    "predeploy": "pnpm run build",
     "deploy": "gh-pages -d dist -r git@github.com:kubohiroya/hierarchidb.git",
     "test:github-pages": "node scripts/test-github-pages.js",
     "debug:copy": "cp scripts/debug-*.html dist/ && cp scripts/minimal-*.html dist/",

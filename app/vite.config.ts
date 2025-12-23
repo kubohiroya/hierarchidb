@@ -438,6 +438,20 @@ function specialPrefixRewritePlugin(base: string): Plugin {
   };
 }
 
+function buildIndexTransformGuardPlugin(): Plugin {
+  return {
+    name: 'hierarchidb:build-index-transform-guard',
+    apply: 'build',
+    transformIndexHtml(html) {
+      const hasModuleScript = /<script\s+[^>]*type=["']module["'][^>]*>/i.test(html);
+      if (!hasModuleScript) {
+        throw new Error('[build-index-transform-guard] index.html missing module script after transform.');
+      }
+      return html;
+    },
+  };
+}
+
 const pluginManifestWatchPattern = new RegExp(
   `${path.sep}plugins${path.sep}[^${path.sep}]+-plugin${path.sep}(package.json|src${path.sep}plugin-manifest.ts|src${path.sep}extension${path.sep}plugin-manifest.ts)$`,
 );
@@ -487,7 +501,7 @@ function pluginRegistryGeneratorPlugin({ rootDir, mode }: { rootDir?: string; mo
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode, isSsrBuild }) => {
-  const env = loadEnv(mode, process.cwd(), '');
+  const env = loadEnv(mode, __dirname, '');
   // Prefer VITE_APP_PREFIX if provided; otherwise default to root '/'
   const appPrefix = (env.VITE_APP_PREFIX || env.VITE_APP_NAME || '').replace(/^\/+|\/+$/g, '');
   const isDev = mode === 'development';
@@ -606,6 +620,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
   //  main thread
   const plugins = [
     specialPrefixRewritePlugin(base),
+    buildIndexTransformGuardPlugin(),
     pluginRegistryGeneratorPlugin({
       rootDir: repoRoot,
       mode: pluginRegistryMode,
@@ -853,6 +868,8 @@ export default defineConfig(({ mode, isSsrBuild }) => {
   };
 
   return {
+    root: __dirname,
+    appType: 'spa',
     base,
     clearScreen: false,
     define: (() => {
@@ -987,9 +1004,11 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       outDir: 'dist',
       //  production
       sourcemap: mode === 'development' || env.HDB_PREVIEW_SOURCEMAP === '1',
+      manifest: true,
       // MapLibre GL + deck.gl バンドル（~953 kB）に合わせて閾値を調整。
       chunkSizeWarningLimit: 954,
       rollupOptions: {
+        input: path.resolve(__dirname, 'index.html'),
         external: (id) => buildExternalIds.has(id),
         output: {
           entryFileNames: 'assets/[name].js',
