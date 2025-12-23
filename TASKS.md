@@ -53,17 +53,19 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
-1823) TreeNodeInfoPanel の padding を 24px → 8px に変更（P3）
-- ブランチ: `fix/ui/tree-node-info-panel-padding`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: app（TreeNodeInfoPanel）
+1833) shape-plugin Step5 の dataSource 選択が naturalearth に固定される原因調査（P0）
+- ブランチ: `analysis/shape/step5-datasource-selection`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin（UI/worker/services/batch）, app worker runtime
 - 受け入れ基準（DoD）:
-  - [ ] TreeNodeInfoPanel の表示時 padding が 8px になる
+  - [ ] Step2 の dataSource 選択が Step5 のバッチ処理に反映されない原因箇所を特定できている
+  - [ ] 該当コード位置（ファイル/関数）を明示できている
+  - [ ] どのフローで再現するか（保存なし→ビルド開始など）と影響範囲を説明できている
   - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
-  - [ ] 検証コマンド実行有無を運用ログに記載する
 - チェックリスト:
-  - [ ] TreeNodeInfoPanel の padding 指定を更新する
-  - [ ] TASKS 運用ログへ start/progress/done を記録する
-- ロールバック手順：`app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx` の差分を revert し、必要なら `pnpm --filter @hierarchidb/app typecheck` を再実行する
+  - [ ] Step2 の dataSource 保存（draftData.batchConfig.dataSource）経路を確認する
+  - [ ] Step5 の Save Draft → startBatchProcessing の引き渡し経路を確認する
+  - [ ] dataSource のフォールバック/正規化/上書きがある箇所を特定する
+- ロールバック手順：調査のみのため差分なし。記載内容を戻す場合は本タスクの運用ログ追記を削除する。
 
 1822) CoreDB node削除時の shape/location/route データ連動削除（P1）
 - ブランチ: `feat/runtime/delete-linked-gis-data`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -4759,6 +4761,18 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1832) app index.html の module script を build で保持する（P1） — 完了 (2025-12-23)
+  - 要点：`app/index.html` の module script を絶対パスに変更し、build で entry script が削除されないよう修正。
+  - 検証：未実施。
+  - ロールバック手順：`app/index.html` の差分を revert する。
+- 1831) build:sourcemap で app preview sourcemap ビルドを実行（P1） — 完了 (2025-12-23)
+  - 要点：ルート `build:sourcemap` で `HDB_PREVIEW_SOURCEMAP=1 pnpm --filter @hierarchidb/app build` を実行するスクリプトを追加。
+  - 検証：未実施。
+  - ロールバック手順：`package.json` の差分を revert する。
+- 1823) TreeNodeInfoPanel の padding を 24px → 8px に変更（P3） — 完了 (2025-12-23)
+  - 要点：TreeNodeInfoPanel の外枠/カード内 padding を 8px に統一。
+  - 検証：未実施。
+  - ロールバック手順：`app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx` の差分を revert する。
 - 1830) preview の base パスを Vite で書き換える（P1） — 完了 (2025-12-23)
   - 要点：preview 専用の base rewrite ミドルウェアを追加し、`/hierarchidb/` 配下の URL を dist 直下へマッピング。
   - 検証：未実施。
@@ -11197,6 +11211,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-23 10:53 start: analysis/shape/step5-datasource-selection — shape-plugin Step5 のバッチ処理で Step2 の dataSource 選択が無視され naturalearth に固定される問題の原因調査に着手。DoD: Kanban 記載どおり原因特定/影響範囲整理/運用ログ記載。（Kanban: 1833）
+- 2025-12-23 10:55 progress: analysis/shape/step5-datasource-selection — buildBatchSessionConfig が `draft?.draftData?.batchConfig?.dataSource` を参照する一方、startBatchProcessing は `getEntity(draftId)`（ShapeEntity 本体）を渡しており draftData が無いため dataSource が undefined になって `naturalearth` へフォールバックする経路を確認。app worker の startBatchSession も config を `processingConfig` から組み立てるため dataSource を含まず、draft 側参照が必須。
 - 2025-12-22 23:29 start: fix/app/vite-optimize-deps-rolldown — Vite preview の optimizeDeps.esbuildOptions 警告を rolldownOptions へ移行する対応に着手。DoD: Kanban 記載どおり設定移行/警告解消/運用ログ記載。（Kanban: 1828）
 - 2025-12-22 23:30 done: fix/app/vite-optimize-deps-rolldown — optimizeDeps.esbuildOptions を削除し rolldownOptions へ移行。検証コマンドは未実施（preview/build 未実行）。ロールバック: `app/vite.config.ts` の差分を revert する。
 - 2025-12-22 22:51 start: analysis/ui/create-menu-missing-nodes — SpeedDial/コンテキストメニューの Create に出るノード種類が location/shape のみに減る問題を調査開始。DoD: Kanban 記載どおり経路特定/原因整理/運用ログ記載。（Kanban: 1825）
@@ -11322,6 +11338,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-23 10:04 progress: feat/ui/treeconsole-folder-split — 列幅自動調整の useLayoutEffect を mount 時のみ実行するように変更し、ResizeObserver の再初期化ループを回避。
 - 2025-12-23 10:12 progress: feat/ui/treeconsole-folder-split — TreeNodeInfoPanel の購読イベントで subtree の別ノードを拾わないよう、event.node.id が page node と一致する場合のみ更新するガードを追加。
 - 2025-12-23 10:30 progress: feat/ui/treeconsole-folder-split — TreeConsolePanel で folder + md 以上の split view を実装し、TreeConsoleIntegration の2カラム構成を撤去。TreeConsolePanel に infoPanel/pageTreeNode を受け渡すよう調整。
+- 2025-12-23 10:40 progress: feat/ui/treeconsole-folder-split — split view 左カラムを垂直上寄せ（alignSelf: start）に変更。
 - 2025-12-22 06:58 progress: feat/shape/step5-task-titles — タスク入力データに URL/featureId などのメタを付与し、UI でステージ別タイトルを表示（download/simplify/vectorTiles）。
 - 2025-12-22 07:06 progress: feat/shape/step5-task-titles — タスク表示を独立コンポーネント化し、サマリの進捗バーをSVGのタスク矩形（未実行=灰/成功=緑/失敗=赤）で描画するよう更新。
 - 2025-12-22 07:10 progress: feat/shape/step5-task-titles — LRU pane header の Chip/アイコン色を failed 状態で赤になるよう補正（BuildStatus に failed を追加し、pane status を failed 優先に調整）。
@@ -11705,3 +11722,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-23 06:34 done: chore/app/enable-preview-sourcemap — Vite build の sourcemap を `HDB_PREVIEW_SOURCEMAP=1` で有効化するよう変更。検証: 未実施。ロールバック: `app/vite.config.ts` の差分を revert する。
 - 2025-12-23 07:23 start: fix/app/preview-base-rewrite — preview で `/hierarchidb/` 配下の asset が HTML を返す問題に対処する対応に着手。DoD: Kanban 記載どおり preview 書き換え/影響限定/運用ログ/ロールバック記載。（Kanban: 1830）
 - 2025-12-23 07:24 done: fix/app/preview-base-rewrite — preview 専用の base rewrite ミドルウェアを追加し、`/hierarchidb/` 配下のリクエストを dist 直下に書き換えるよう対応。検証: 未実施。ロールバック: `app/vite.config.ts` と `app/vite-plugins/vite-plugin-preview-base-rewrite.ts` の差分を revert する。
+- 2025-12-23 10:34 start: chore/build/sourcemap-script — build:sourcemap で app preview sourcemap ビルドを実行する対応に着手。DoD: Kanban 記載どおり build:sourcemap 追加/運用ログ/ロールバック記載。（Kanban: 1831）
+- 2025-12-23 10:35 done: chore/build/sourcemap-script — ルートに `build:sourcemap` を追加し、`HDB_PREVIEW_SOURCEMAP=1 pnpm --filter @hierarchidb/app build` を実行するよう設定。検証: 未実施。ロールバック: `package.json` の差分を revert する。
+- 2025-12-23 10:43 start: fix/app/index-module-script — build 後の index.html から module script が消える問題の対応に着手。DoD: Kanban 記載どおり module script 保持/preview動作/運用ログ/ロールバック記載。（Kanban: 1832）
+- 2025-12-23 10:43 done: fix/app/index-module-script — app/index.html の module script を絶対パスに変更し、build 後の index.html に entry script が残るよう修正。検証: 未実施。ロールバック: `app/index.html` の差分を revert する。

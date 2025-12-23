@@ -343,7 +343,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
             p: { md: 2 },
           }}
         >
-          <Box sx={{ minHeight: 0 }}>
+          <Box sx={{ minHeight: 0, alignSelf: 'start' }}>
             {props.infoPanel}
           </Box>
           {renderTable()}

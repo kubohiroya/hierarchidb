@@ -29,6 +29,7 @@
     "metadata:ensure": "pnpm run generate-gadm-metadata && pnpm run generate-geoboundaries-metadata && pnpm run generate-naturalearth-metadata && pnpm run generate-openstreetmap-metadata",
     "check:licenses:json": "npx license-checker --production --json ",
     "build:turbo": "turbo run build",
+    "build:sourcemap": "HDB_PREVIEW_SOURCEMAP=1 pnpm --filter @hierarchidb/app build",
     "build:plugins": "turbo run build --filter @hierarchidb/basemap-plugin --filter @hierarchidb/folder-plugin --filter @hierarchidb/linker-plugin --filter @hierarchidb/location-plugin --filter @hierarchidb/resolver-plugin --filter @hierarchidb/route-plugin --filter @hierarchidb/shape-plugin --filter @hierarchidb/spreadsheet-plugin --filter @hierarchidb/styler-plugin --filter @hierarchidb/timeline-plugin",
     "build:watch": "turbo run build --watch",
     "turbo:watch": "pnpm run turbo:watch:internal",
