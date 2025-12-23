@@ -11827,5 +11827,6 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-23 21:12 progress: fix/app/vite-config-module-resolution — preview base rewrite による /hierarchidb/ のリダイレクトループを避けるため、preview rewrite プラグインの組み込みを停止。
 - 2025-12-23 21:20 progress: fix/app/vite-config-module-resolution — app/public/index.html が dist/index.html を上書きして module script が消えるため削除。
 - 2025-12-23 21:34 progress: fix/app/vite-config-module-resolution — build の rollup input を index.html の絶対パスに変更し、Vite HTML 変換が script を確実に注入するよう調整。
+- 2025-12-23 21:48 progress: fix/app/vite-config-module-resolution — rollupOptions.input の明示指定を撤去し、Vite の標準 HTML 変換に戻して deploy ビルドの script 消失を回避。
 - 2025-12-23 18:41 progress: fix/ui/plugin-dialog-build-stepper-progress — Stepper のビルド実行中表示を追加し、shape/location/route/resolver の build/preview valid 条件を成果物永続化へ統一。resolver の step 順を Build→Preview へ変更。
 - 2025-12-23 18:41 done: fix/ui/plugin-dialog-build-stepper-progress — Stepper のビルド実行中は CircularProgress に切替、各プラグインの build/preview valid を成果物永続化へ統一し、resolver の Build/Preview の順序を入れ替え。検証: 未実施。ロールバック: `packages/plugin-ui-host/src/headless/components/{PluginDialogStepper.tsx,PluginDialogHeader.tsx,StepStatusIcon.tsx}` と `plugins/{shape-plugin,location-plugin,route-plugin,resolver-plugin}/src/ui/components/steps-provider.tsx` の差分を revert する。

@@ -990,7 +990,6 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       // MapLibre GL + deck.gl バンドル（~953 kB）に合わせて閾値を調整。
       chunkSizeWarningLimit: 954,
       rollupOptions: {
-        input: isSsrBuild ? undefined : path.resolve(__dirname, 'index.html'),
         external: (id) => buildExternalIds.has(id),
         output: {
           entryFileNames: 'assets/[name].js',
