@@ -276,7 +276,7 @@ export class EntityLifecycleManager {
           await clear.call(ephemeral, nodeId);
         }
       }
-      db.close();
+      db.close?.();
       ephemeral.close();
     } catch (error) {
       console.warn('[EntityLifecycleManager] shape cleanup failed', error);
@@ -336,7 +336,7 @@ export class EntityLifecycleManager {
           await db.pendingSessions.where('nodeId').equals(nodeId).delete();
         });
       }
-      db.close();
+      db.close?.();
     } catch (error) {
       console.warn('[EntityLifecycleManager] route cleanup failed', error);
     }

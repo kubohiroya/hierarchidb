@@ -142,7 +142,6 @@ export class TreeSubscriptionService {
       };
       return sub;
     };
-    /* eslint-enable deprecation/deprecation */
 
     // Override the subscribe method
     Object.defineProperty(resultObservable, 'subscribe', {
@@ -240,7 +239,6 @@ export class TreeSubscriptionService {
       };
       return sub;
     }) as typeof resultObservable.subscribe;
-    /* eslint-enable deprecation/deprecation */
 
     return resultObservable;
   }
@@ -365,7 +363,6 @@ export class TreeSubscriptionService {
 
     // Set up unsubscribe handler
     const resultObservable = subject.asObservable();
-    /* eslint-disable deprecation/deprecation */
     const originalSubscribe = resultObservable.subscribe.bind(resultObservable);
     resultObservable.subscribe = ((...args: Parameters<typeof originalSubscribe>) => {
       const sub = originalSubscribe(...args);

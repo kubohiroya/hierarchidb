@@ -22,7 +22,7 @@ export class ImportExportService implements ImportExportAPI {
   private abortControllers = new Map<string, AbortController>();
 
   static async getSingleton(db: ImportExportDBPort): Promise<ImportExportService> {
-    return SingletonMixin.getSingleton(ImportExportService.name, () => new ImportExportService(db));
+    return SingletonMixin.getSingleton('ImportExportService', () => new ImportExportService(db));
   }
 
   constructor(private db: ImportExportDBPort) {

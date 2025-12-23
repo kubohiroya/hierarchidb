@@ -4789,6 +4789,10 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1839) worker.ts の PluginDefinition 型不一致解消（P1） — 完了 (2025-12-23)
+  - 要点：runtime-worker に RuntimePluginDefinition を導入して plugin-registry の定義を受け入れ、WorkerService/NodeLifecycleManager の型依存を分離。route DB の close 呼び出しを optional chaining 化。
+  - 検証：`pnpm --filter @hierarchidb/app typecheck` exit 0（@hierarchidb/plugin-base の tsdown define 警告は既知のまま）。
+  - ロールバック手順：`packages/runtime-worker/src/types/RuntimePluginDefinition.ts`、`packages/runtime-worker/src/WorkerService.ts`、`packages/runtime-worker/src/services/NodeLifecycleManager.ts`、`packages/runtime-worker/src/entity/EntityLifecycleManager.ts`、`packages/runtime-worker/src/__tests__/headless/lifecycle-refcount.headless.test.ts` の差分を revert し、同 typecheck を再実行する。
 - 1836) build の index.html に entry script を強制注入する（P1） — 完了 (2025-12-23)
   - 要点：build 時に module script が無い場合、`/hierarchidb/assets/index.js` を注入する Vite plugin を追加。
   - 検証：未実施。
@@ -11255,6 +11259,11 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-23 19:37 start: fix/runtime-worker/plugin-definition-type-mismatch — app/src/worker-runtime/worker.ts の PluginDefinition 型不一致（plugin-registry と plugin-service-api の差分）解消に着手。DoD: Kanban 記載どおり型不一致解消/型差分方針/運用ログ/ロールバック記載。（Kanban: 1839）
+- 2025-12-23 19:46 done: fix/runtime-worker/plugin-definition-type-mismatch — DoD 達成。ロールバック: `packages/runtime-worker/src/types/RuntimePluginDefinition.ts`、`packages/runtime-worker/src/WorkerService.ts`、`packages/runtime-worker/src/services/NodeLifecycleManager.ts`、`packages/runtime-worker/src/entity/EntityLifecycleManager.ts`、`packages/runtime-worker/src/__tests__/headless/lifecycle-refcount.headless.test.ts` の差分を revert し、`pnpm --filter @hierarchidb/app typecheck` を再実行。
+- 2025-12-23 19:45 progress: fix/runtime-worker/plugin-definition-type-mismatch — runtime-worker に RuntimePluginDefinition を追加し、WorkerService/NodeLifecycleManager を plugin-service-api 定義から分離。headless テストの型参照も更新。
+- 2025-12-23 19:44 command: pnpm --filter @hierarchidb/app typecheck — exit 0（@hierarchidb/plugin-base の tsdown define 警告は既知のまま）。
+- 2025-12-23 19:43 progress: fix/runtime-worker/plugin-definition-type-mismatch — RuntimePluginDefinition の nodeType を string/NodeType 互換に調整し、route DB の close 呼び出しを optional chaining へ統一。
 - 2025-12-23 18:45 start: analysis/app/template-import-apply-undefined — Template Import の apply undefined エラーを調査開始。DoD: Kanban 記載どおり経路特定/原因整理/運用ログ記載。（Kanban: 1838）
 - 2025-12-23 18:56 progress: analysis/app/template-import-apply-undefined — import template は import.meta.env.BASE_URL 由来の base を使って /templates を fetch。dev をサブパスで動かす場合は base が '/' となりテンプレートや worker 取得が失敗する可能性があるため VITE_APP_NAME/VITE_APP_PREFIX 設定が必要。
 - 2025-12-23 10:53 start: analysis/shape/step5-datasource-selection — shape-plugin Step5 のバッチ処理で Step2 の dataSource 選択が無視され naturalearth に固定される問題の原因調査に着手。DoD: Kanban 記載どおり原因特定/影響範囲整理/運用ログ記載。（Kanban: 1833）
@@ -11802,5 +11811,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-23 16:05 progress: fix/app/preview-bare-imports — runtime-worker の SingletonMixin キーが minify で衝突する疑いがあるため、`CoreDB`/`WorkerService`/`TreeQueryService` などの `getSingleton` キーを文字列リテラルへ固定（`packages/runtime-worker/src/services/*` と `packages/runtime-worker/src/WorkerService.ts` を更新）。
 - 2025-12-23 17:40 progress: fix/app/preview-bare-imports — preview の `@hierarchidb/ui-map` bare import は `plugins/*-plugin/dist/ui/index.js` 由来で、plugin registry が `dist-url` を返すため dist の bare import がそのまま配信されていると判明。preview の plugin 解決経路（dist-url vs src）を見直す方針で対応を検討。
 - 2025-12-23 18:10 progress: fix/app/preview-bare-imports — build 時の plugin registry mode を `HDB_PLUGIN_SPEC_MODE` で上書きできるようにし、preview 用 build で `package` mode に切り替えるため `build:sourcemap` に `HDB_PLUGIN_SPEC_MODE=package` を追加。
+- 2025-12-23 18:25 progress: fix/app/preview-bare-imports — preview の「Import Template」で Comlink エラー（`Cannot read properties of undefined (reading 'apply')`）が発生。`getImportExportAPI()` から得る proxy のメソッド解決が失敗している可能性があるため、worker API の解決経路と import/export サービスの状態を確認する。
+- 2025-12-23 18:50 progress: fix/app/preview-bare-imports — SingletonMixin のキーに `Class.name` を使っている箇所（import-export/tag/style-store/gis-sdk/shape-plugin DB/auth-recovery）を文字列リテラルへ固定し、minify での衝突を回避。
+- 2025-12-23 19:05 progress: fix/app/preview-bare-imports — resolver-plugin の typecheck エラー（`ResolverUpdaterPayload` に `isCompiled/compiledFunction` が無い）で build が止まっているため、steps-provider の参照を `draftData` 経由に修正する。
+- 2025-12-23 19:20 progress: fix/app/preview-bare-imports — route-plugin の typecheck エラー（`RouteStepData.processingStatus` 不在）で build が止まっているため、steps-provider の参照を `draftData.processingStatus` へ修正する。
+- 2025-12-23 19:35 progress: fix/app/preview-bare-imports — `vite preview` 起動時に plugin registry が `dist-url` へ再生成される可能性があるため、root `preview` script にも `HDB_PLUGIN_SPEC_MODE=package` を付与して preview でも package mode を維持する。
 - 2025-12-23 18:41 progress: fix/ui/plugin-dialog-build-stepper-progress — Stepper のビルド実行中表示を追加し、shape/location/route/resolver の build/preview valid 条件を成果物永続化へ統一。resolver の step 順を Build→Preview へ変更。
 - 2025-12-23 18:41 done: fix/ui/plugin-dialog-build-stepper-progress — Stepper のビルド実行中は CircularProgress に切替、各プラグインの build/preview valid を成果物永続化へ統一し、resolver の Build/Preview の順序を入れ替え。検証: 未実施。ロールバック: `packages/plugin-ui-host/src/headless/components/{PluginDialogStepper.tsx,PluginDialogHeader.tsx,StepStatusIcon.tsx}` と `plugins/{shape-plugin,location-plugin,route-plugin,resolver-plugin}/src/ui/components/steps-provider.tsx` の差分を revert する。

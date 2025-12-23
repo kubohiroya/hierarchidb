@@ -34,7 +34,7 @@
     "build:watch": "turbo run build --watch",
     "turbo:watch": "pnpm run turbo:watch:internal",
     "turbo:watch:internal": "turbo run build --filter @hierarchidb/app^... --watch",
-    "preview": "pnpm run build:sourcemap && turbo run preview --filter @hierarchidb/app",
+    "preview": "HDB_PLUGIN_SPEC_MODE=package pnpm run build:sourcemap && HDB_PLUGIN_SPEC_MODE=package turbo run preview --filter @hierarchidb/app",
     "typecheck": "turbo run typecheck",
     "typecheck:ci": "CI=true NODE_OPTIONS=\"--max-old-space-size=4096\" turbo run typecheck",
     "typecheck:watch": "turbo run typecheck --watch",

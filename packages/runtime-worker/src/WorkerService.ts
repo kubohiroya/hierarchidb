@@ -13,7 +13,6 @@ import { TreeTableExpandedService } from './services/TreeTableExpandedService.js
 import { ImportExportDBPortCoreDBAdapter } from './services/adapters/ImportExportDBPortCoreDBAdapter.js';
 import { TreeNodeUpdaterService } from './services/TreeNodeUpdaterService.js';
 import {
-  PluginDefinition,
   PluginLifecycleAPI,
   StyleMutationAPI,
   StyleQueryAPI,
@@ -35,6 +34,7 @@ import { StyleDB } from '@hierarchidb/style-store';
 import { StyleService } from './services/StyleService.js';
 import { LocationQueryService } from './services/LocationQueryService.js';
 import { RouteQueryService } from './services/RouteQueryService.js';
+import type { RuntimePluginDefinition } from './types/RuntimePluginDefinition.js';
 
 interface PerformanceMemoryStats {
   usedJSHeapSize?: number;
@@ -67,7 +67,7 @@ const readHeapStats = (): { used: number; limit: number } => {
 export class WorkerService {
   private readonly startTime = Date.now();
 
-  static async getSingleton(plugins: PluginDefinition[]): Promise<WorkerService> {
+  static async getSingleton(plugins: RuntimePluginDefinition[]): Promise<WorkerService> {
     return SingletonMixin.getSingleton('WorkerService', async () => {
       const coreDB: CoreDB = await CoreDB.getSingleton();
       // Feature bootstrap (registry-driven). Keeps init order and opt-in capabilities.
@@ -118,7 +118,7 @@ export class WorkerService {
       const treeSubscriptionService: TreeSubscriptionAPI =
         await TreeSubscriptionService.getSingleton(coreDB, treeQueryService);
 
-      const pluginMap: { [key: string]: PluginDefinition } = Object.fromEntries(
+      const pluginMap: { [key: string]: RuntimePluginDefinition } = Object.fromEntries(
         plugins.map((plugin) => [plugin.name, plugin]),
       );
 
@@ -207,7 +207,7 @@ export class WorkerService {
     // Close databases
     this.coreDB.close();
     this.styleDB.close();
-    this.routeDB.close();
+    this.routeDB.close?.();
   }
 
   async initialize(): Promise<void> {

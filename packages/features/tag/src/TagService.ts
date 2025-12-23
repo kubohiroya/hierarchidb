@@ -9,7 +9,7 @@ import type { TagDBPort } from './ports.js';
  */
 export class TagService implements TagAPI {
   static getSingleton(db: TagDBPort): Promise<TagService> {
-    return SingletonMixin.getSingleton(TagService.name, async () => new TagService(db));
+    return SingletonMixin.getSingleton('TagService', async () => new TagService(db));
   }
 
   constructor(private db: TagDBPort) {

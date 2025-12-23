@@ -1,9 +1,9 @@
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
-import type { PluginDefinition } from '@hierarchidb/plugin-service-api';
 import { SingletonMixin } from '@hierarchidb/util';
 import { workerError } from '../utils/workerLogger.js';
 import type { CoreDB } from './CoreDB.js';
 import type { LifecycleContext, LifecycleEvent, NodeLifecycleHooks } from './lifecycle-types.js';
+import type { RuntimePluginDefinition } from '../types/RuntimePluginDefinition.js';
 
 /**
  * Manages lifecycle hooks for node operations
@@ -11,7 +11,7 @@ import type { LifecycleContext, LifecycleEvent, NodeLifecycleHooks } from './lif
 export class NodeLifecycleManager {
   static async getSingleton(
     coreDB: CoreDB,
-    plugins: Record<string, PluginDefinition>
+    plugins: Record<string, RuntimePluginDefinition>
   ): Promise<NodeLifecycleManager> {
     return SingletonMixin.getSingleton('NodeLifecycleManager', () => {
       return new NodeLifecycleManager(coreDB, plugins);
@@ -24,7 +24,7 @@ export class NodeLifecycleManager {
 
   constructor(
     private coreDB: CoreDB,
-    private plugins: Record<string, PluginDefinition>
+    private plugins: Record<string, RuntimePluginDefinition>
   ) {}
 
   private getLifecycleHooks(nodeType: NodeType): NodeLifecycleHooks | undefined {

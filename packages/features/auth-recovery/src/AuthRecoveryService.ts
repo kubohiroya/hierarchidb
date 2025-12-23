@@ -21,7 +21,7 @@ export class AuthRecoveryService implements AuthHeadersProvider {
   private currentToken?: { token: string; type: 'Bearer' | 'Basic'; expiresAt?: number };
 
   static async getSingleton(): Promise<AuthRecoveryService> {
-    return SingletonMixin.getSingleton(AuthRecoveryService.name, () => new AuthRecoveryService());
+    return SingletonMixin.getSingleton('AuthRecoveryService', () => new AuthRecoveryService());
   }
 
   constructor() {

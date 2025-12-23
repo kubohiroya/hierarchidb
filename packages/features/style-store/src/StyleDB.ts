@@ -6,7 +6,7 @@ export class StyleDB extends Dexie {
   styles!: Table<StyleRecord, string>;
 
   static async getSingleton(name?: string): Promise<StyleDB> {
-    return SingletonMixin.getSingleton(StyleDB.name, async () => {
+    return SingletonMixin.getSingleton('StyleDB', async () => {
       const db = new StyleDB(name);
       await db.open();
       return db;

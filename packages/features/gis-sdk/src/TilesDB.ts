@@ -35,7 +35,7 @@ export class TilesDB extends Dexie {
   featureMetadata!: Table<FeatureMetadataRow, string>;
 
   static async getSingleton(): Promise<TilesDB> {
-    return SingletonMixin.getSingleton(TilesDB.name, async () => {
+    return SingletonMixin.getSingleton('TilesDB', async () => {
       const db = new TilesDB(getDBName('stage-tiles-db'));
       await db.open();
       return db;

@@ -57,26 +57,6 @@ type WorkerMessagePort = typeof self & {
   postMessage?: (msg: unknown) => void;
 };
 
-type RuntimeWorkerServices = {
-  ping: WorkerAPI['ping'];
-  initialize: WorkerAPI['initialize'];
-  shutdown: WorkerAPI['shutdown'];
-  getSystemHealth: WorkerAPI['getSystemHealth'];
-  getQueryAPI: () => TreeQueryAPI;
-  getMutationAPI: () => TreeMutationAPI;
-  getSubscriptionAPI: () => TreeSubscriptionAPI;
-  getTreeNodeUpdaterAPI: () => TreeNodeUpdaterAPI;
-  getTreeTableExpandedAPI: () => TreeTableExpandedAPI;
-  getPluginLifecycleAPI: () => PluginLifecycleAPI;
-  getStyleQueryAPI: () => StyleQueryAPI;
-  getStyleMutationAPI: () => StyleMutationAPI;
-  getLocationQueryAPI: () => LocationQueryAPI;
-  getRouteQueryAPI: () => RouteQueryAPI;
-  getImportExportAPI: () => ImportExportAPI;
-  getTagAPI: () => TagAPI;
-  getCommandProcessor: () => object;
-};
-
 type BatchTaskProvider = (sessionId: string) => Promise<BatchTaskSummary[]>;
 type BatchProgressSubscriber = (sessionId: string, callback: (event: BatchProgressEvent) => void) => () => void;
 

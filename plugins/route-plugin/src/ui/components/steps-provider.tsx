@@ -66,7 +66,7 @@ const hasRouteConfig = (data?: RouteStepData): boolean => {
 };
 
 const isRouteBuildPersisted = (data?: RouteStepData): boolean =>
-  data?.processingStatus === 'completed';
+  data?.draftData?.processingStatus === 'completed';
 
 const startRouteBatch = async (data: RouteStepData, _context: StartBatchContext) => {
   const { t } = getTranslation();

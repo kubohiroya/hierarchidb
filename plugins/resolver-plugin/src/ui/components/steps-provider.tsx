@@ -17,7 +17,7 @@ type ResolverData = StepData & ResolverUpdaterPayload & {
 type ResolverStepProps = PluginStepProps<ResolverUpdaterPayload>;
 
 const isResolverBuildPersisted = (data?: ResolverUpdaterPayload): boolean =>
-  Boolean(data?.isCompiled || data?.compiledFunction);
+  Boolean(data?.draftData?.isCompiled || data?.draftData?.compiledFunction);
 
 const ensureDraft = (data?: ResolverData): ResolverData => {
   const draft = data ?? ({} as ResolverData);
