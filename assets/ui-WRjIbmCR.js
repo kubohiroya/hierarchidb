@@ -1,0 +1,1 @@
+import"./vendor-react-DueQUKGo.js";import{n as e}from"./dist-Dr4QQXb2.js";e.getInstance().registerConfigProvider({nodeType:`folder`,getCreateStepConfigs(){return[]},getEditStepConfigs(){return this.getCreateStepConfigs()}});const t=()=>null;export{t as FolderDialogHost,t as default};

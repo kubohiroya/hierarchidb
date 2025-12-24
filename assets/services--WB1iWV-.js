@@ -1,1 +1,0 @@
-var e=class{store=new Map;add(e){let t=e.id||crypto.randomUUID(),n={...e,id:t};return this.store.set(t,n),n}remove(e){return this.store.delete(e)}get(e){return this.store.get(e)}list(){return Array.from(this.store.values())}};const t={LinkerResourceService:e};export{t as n,e as t};

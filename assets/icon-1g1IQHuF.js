@@ -1,0 +1,1 @@
+import"./vendor-react-DueQUKGo.js";import{on as e}from"./index.js";const t=e;var n=t;export{t as LocationPluginIcon,n as default};
