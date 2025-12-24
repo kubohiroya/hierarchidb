@@ -51,6 +51,14 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
 
   const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
 
+  const hasDialogParams = useCallback(
+    (q: URLSearchParams) => {
+      const ns = (k: string) => (namespace ? `${namespace}_${k}` : k);
+      return q.has(ns('step')) || q.has(ns('mode')) || q.has(ns('map'));
+    },
+    [namespace]
+  );
+
   const makeParams = useCallback(() => {
     if (!isBrowser) return new URLSearchParams();
     if (readFrom === 'hash') {
@@ -63,7 +71,13 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
 
   const readUrl = useCallback(() => {
     if (!isBrowser) return;
-    const q = makeParams();
+    let q = makeParams();
+    if (readFrom === 'hash' && !hasDialogParams(q)) {
+      const fallback = new URLSearchParams(window.location.search);
+      if (hasDialogParams(fallback)) {
+        q = fallback;
+      }
+    }
     const ns = (k: string) => (namespace ? `${namespace}_${k}` : k);
     const s = q.get(ns('step'));
     if (s !== null) {
@@ -121,6 +135,11 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
         const base = head && head.length > 0 ? head : '#';
         const queryString = q.toString();
         url.hash = queryString.length > 0 ? `${base}?${queryString}` : base;
+        const search = new URLSearchParams(url.search);
+        search.delete(ns('step'));
+        search.delete(ns('mode'));
+        search.delete(ns('map'));
+        url.search = search.toString();
       } else {
         url.search = q.toString();
       }

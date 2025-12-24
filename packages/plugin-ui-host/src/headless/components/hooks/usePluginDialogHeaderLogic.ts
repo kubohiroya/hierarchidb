@@ -1,6 +1,5 @@
 import { useCallback, useMemo } from 'react';
 import { useDialogContext } from '@hierarchidb/ui-dialog';
-import { useLocation } from '@tanstack/react-router';
 import type { DialogActionInFlight } from '../../types.js';
 
 type WorkerStepState = { id: string; enabled?: boolean; completed?: boolean; error?: string | null };
@@ -12,8 +11,6 @@ export function usePluginDialogHeaderLogic(params: {
 }) {
   const { dialogState, pendingAction } = params;
   const ctx = useDialogContext<Record<string, unknown>>();
-  const location = useLocation();
-
   const navigationLocked = Boolean(pendingAction);
 
   const workerStepMap = useMemo(() => {
@@ -36,29 +33,6 @@ export function usePluginDialogHeaderLogic(params: {
     ctx.onDisplayModeChange?.(next);
   }, [ctx]);
 
-  const buildStepLink = useCallback(
-    (index: number) => {
-      const rawSearch = location.searchStr ? location.searchStr.slice(1) : '';
-      const params = new URLSearchParams(rawSearch);
-      params.set('step', String(index));
-      const query = params.toString();
-      let pathname = location.pathname || '';
-      if (!pathname && typeof window !== 'undefined') {
-        const hashPath = window.location.hash?.replace(/^#/, '') || '';
-        pathname = hashPath || window.location.pathname || '';
-      }
-      if (!pathname) {
-        pathname = '/';
-      } else if (!pathname.startsWith('/')) {
-        pathname = `/${pathname}`;
-      }
-      const hash = location.hash ?? '';
-      const safeHash = hash && !hash.startsWith('#/') ? hash : '';
-      return `${pathname}${query ? `?${query}` : ''}${safeHash}`;
-    },
-    [location.pathname, location.searchStr, location.hash]
-  );
-
   const handleStepClick = useCallback(
     (event: React.MouseEvent | React.KeyboardEvent, index: number, canNavigate: boolean) => {
       if (!canNavigate || index === ctx.activeStepIndex || navigationLocked) {
@@ -76,7 +50,6 @@ export function usePluginDialogHeaderLogic(params: {
     navigationLocked,
     toggleMaximize,
     toggleFullscreen,
-    buildStepLink,
     handleStepClick,
   };
 }

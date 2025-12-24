@@ -1,6 +1,5 @@
 import type React from 'react';
 import { Step, StepButton, StepLabel, Stepper, CircularProgress, Stack, Typography } from '@mui/material';
-import { Link } from '@tanstack/react-router';
 import type { DialogActionInFlight } from '../types.js';
 import { StepStatusIcon } from './StepStatusIcon.js';
 import type { Theme } from '@mui/material/styles';
@@ -31,7 +30,6 @@ export interface PluginDialogStepperProps {
   activeStepIndex: number;
   enabledStepIndices: readonly number[];
   validatedStepIndices: readonly number[];
-  buildStepLink: (idx: number) => string;
   handleStepClick: (event: React.MouseEvent, idx: number, canNavigate: boolean) => void;
   navigationLocked: boolean;
   workerStepMap?: Map<string, WorkerStepState> | null;
@@ -46,7 +44,6 @@ export const PluginDialogStepper: React.FC<PluginDialogStepperProps> = ({
   activeStepIndex,
   enabledStepIndices,
   validatedStepIndices,
-  buildStepLink,
   handleStepClick,
   navigationLocked,
   workerStepMap,
@@ -63,7 +60,6 @@ export const PluginDialogStepper: React.FC<PluginDialogStepperProps> = ({
         const canNavigate = workerStep?.enabled ?? fallbackCanNavigate;
         const completed = workerStep?.completed ?? validatedStepIndices.includes(index);
         const label = workerStep?.id ?? step.label ?? step.id;
-        const stepLink = buildStepLink(index);
         const isActive = index === activeStepIndex;
         const previousWorkerStep = index > 0
           ? workerStepMap?.get(steps[index - 1]?.id ?? '') ?? dialogState?.steps?.[index - 1]
@@ -77,10 +73,7 @@ export const PluginDialogStepper: React.FC<PluginDialogStepperProps> = ({
         return (
           <Step key={step.id} completed={completed}>
             <StepButton
-              component={Link}
-              to={stepLink}
               disabled={!canNavigate || navigationLocked}
-              preload="intent"
               onClick={(event) => handleStepClick(event, index, canNavigate)}
               aria-current={isActive ? 'step' : undefined}
               sx={{ padding: 0, margin: 0 }}

@@ -52,6 +52,8 @@ export function useDialogFrameState({
   handlePositionChange: (next?: DialogPosition) => void;
   dialogRef: React.RefObject<HTMLDivElement | null>;
 } {
+  const readFrom =
+    typeof window !== 'undefined' && window.location.hash.startsWith('#/') ? 'hash' : 'search';
   const {
     step: urlStep,
     setStep: setUrlStep,
@@ -62,6 +64,7 @@ export function useDialogFrameState({
     defaults: { step: Math.max(initialStep, 1), mode: 'normal' },
     debounce: { map: 0 },
     history: { step: 'replace' },
+    readFrom,
   });
 
   const [activeStepIndex, setActiveStepIndex] = useState(toInternalStepIndex(initialStep));

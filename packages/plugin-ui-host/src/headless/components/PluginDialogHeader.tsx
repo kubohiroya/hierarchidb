@@ -45,7 +45,6 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
     navigationLocked,
     toggleMaximize,
     toggleFullscreen,
-    buildStepLink,
     handleStepClick,
   } = usePluginDialogHeaderLogic({ dialogState, pendingAction });
   const theme = useTheme();
@@ -149,7 +148,6 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
               activeStepIndex={ctx.activeStepIndex}
               enabledStepIndices={ctx.enabledStepIndices}
               validatedStepIndices={ctx.validatedStepIndices}
-              buildStepLink={buildStepLink}
               handleStepClick={handleStepClick}
               navigationLocked={navigationLocked}
               workerStepMap={workerStepMap}
