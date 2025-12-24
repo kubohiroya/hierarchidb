@@ -1,12 +1,12 @@
 import * as fs from 'node:fs';
-import path from 'node:path';
+import * as path from 'node:path';
 import { readFileSync } from 'node:fs';
 import { defineConfig, loadEnv } from 'vite';
 import type { Plugin } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { comlink } from 'vite-plugin-comlink';
 import { faviconPlugin } from './vite-plugins/vite-plugin-favicon.js';
-import { createIso3166Plugin } from '@hierarchidb/gen-iso3166-2/plugin';
+import { createIso3166Plugin } from '@hierarchidb/gen-iso3166-2';
 import { createNodeTypeAliasPlugin } from './vite-plugins/vite-plugin-hierarchidb-plugin-alias/src/index.js';
 import { pluginWorkerVirtualModule } from './vite-plugins/vite-plugin-plugin-worker-virtual.js';
 import {
@@ -422,7 +422,7 @@ function pluginRegistryGeneratorPlugin({ rootDir, mode }: { rootDir?: string; mo
   };
 }
 
-export default defineConfig(({ mode, command }) => {
+export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, appRoot, '');
   const appName = (env.VITE_APP_NAME || '').replace(/^\/+|\/+$/g, '');
   const isDev = mode === 'development';

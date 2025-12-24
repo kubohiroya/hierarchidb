@@ -42,7 +42,19 @@ export function usePluginDialogHeaderLogic(params: {
       const params = new URLSearchParams(rawSearch);
       params.set('step', String(index));
       const query = params.toString();
-      return `${location.pathname}${query ? `?${query}` : ''}${location.hash ?? ''}`;
+      let pathname = location.pathname || '';
+      if (!pathname && typeof window !== 'undefined') {
+        const hashPath = window.location.hash?.replace(/^#/, '') || '';
+        pathname = hashPath || window.location.pathname || '';
+      }
+      if (!pathname) {
+        pathname = '/';
+      } else if (!pathname.startsWith('/')) {
+        pathname = `/${pathname}`;
+      }
+      const hash = location.hash ?? '';
+      const safeHash = hash && !hash.startsWith('#/') ? hash : '';
+      return `${pathname}${query ? `?${query}` : ''}${safeHash}`;
     },
     [location.pathname, location.searchStr, location.hash]
   );

@@ -692,7 +692,7 @@ function pluginRegistryGeneratorPlugin({ rootDir, mode }: { rootDir?: string; mo
 }
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode, command, isSsrBuild }) => {
+export default defineConfig(({ mode, command: _, isSsrBuild }) => {
   const env = loadEnv(mode, __dirname, '');
   // Use VITE_APP_NAME as the only base selector; default to root '/'
   const appName = (env.VITE_APP_NAME || '').replace(/^\/+|\/+$/g, '');

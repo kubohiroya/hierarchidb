@@ -53,6 +53,19 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1850) build/preview の dialogRoute startsWith 例外調査と修正（P1）
+- ブランチ: `fix/app/preview-dialogroute-startswith`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: app/src/router/routes/tree/dialogRoute.tsx, packages/plugin-ui-host, app build 出力
+- 受け入れ基準（DoD）:
+  - [ ] `pnpm build && pnpm preview` で `TypeError: Cannot read properties of undefined (reading 'startsWith')` が再発しない
+  - [ ] `dialogRoute-*.js` で undefined が発生する入力/経路を特定する
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] `dialogRoute.tsx` と関連 hooks で `startsWith` 実行対象の入力が undefined になり得る経路を洗い出す
+  - [ ] build/preview のみで発生する差分（minify, env, loader など）を確認する
+  - [ ] 必要なら guard もしくは入力整形を追加する
+- ロールバック手順：本タスクの差分を revert する
+
 1849) app/dist-* 生成経路の削除（P1）
 - ブランチ: `fix/app/remove-dist-variants`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: app/vite.config.ts, app/package.json, scripts
@@ -11386,6 +11399,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-25 04:33 start: fix/app/preview-dialogroute-startswith — `pnpm build && pnpm preview` で dialogRoute の `startsWith` が undefined となる TypeError を調査開始。DoD: Kanban 1850 のとおり再発防止/原因特定/運用ログ更新。
+- 2025-12-25 04:43 progress: fix/app/preview-dialogroute-startswith — PluginDialogHeader の buildStepLink で pathname/hash のフォールバックを追加し、hash router 由来の `#/` を step link に二重付与しないように補正。`to` が空/不正にならないよう guard を導入。
 - 2025-12-25 12:50 progress: feat/plugin/static-loaders-split — preview の basemap worker 解決エラーは app/dist/worker.js に旧 registry（basemap exports=worker）が残っているためと判断。`tools:gen-plugin-registry` の更新と runtime-worker の再ビルドを app build に組み込み、最新 registry を worker bundle へ反映する方針で調整する。
 - 2025-12-24 11:35 start: chore/app/remove-treeconsole-preconnect — app/src/hooks/treeconsole/preconnect.ts noop 削除と参照整理に着手。DoD: Kanban 1846 のとおり削除/参照除去/運用ログ/ロールバック記載。
 - 2025-12-24 11:36 done: chore/app/remove-treeconsole-preconnect — preconnect.ts を削除し、TreeConsole の preconnect 呼び出しを撤去。検証: 未実施。ロールバック: `app/src/hooks/treeconsole/preconnect.ts` を復元し、`app/src/hooks/treeconsole/{createTreeConsoleActions.ts,useTreeConsoleLoader.ts}` の import/呼び出しを戻す。

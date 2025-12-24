@@ -4,7 +4,6 @@ import type {
   NodeId,
   ObserveNodePayload,
   ObserveSubtreePayload,
-  ObserveDraftsPayload,
   SubscribeChildrenPayload,
   SubscriptionFilter,
   SubscriptionId,

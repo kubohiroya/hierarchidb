@@ -62,9 +62,7 @@ async function evaluateManifestModule(
     }
     return undefined;
   } finally {
-    try {
-      await fs.promises.unlink(tmpFile);
-    } catch {}
+    await fs.promises.unlink(tmpFile);
   }
 }
 
