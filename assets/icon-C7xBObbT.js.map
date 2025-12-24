@@ -1,0 +1,1 @@
+{"version":3,"file":"icon-C7xBObbT.js","names":[],"sources":["../../../plugins/styler-plugin/src/icon/index.ts"],"sourcesContent":["import PaletteIcon from '@mui/icons-material/Palette';\n\nexport const StylerPluginIcon = PaletteIcon;\n\nexport default StylerPluginIcon;\n"],"mappings":"mEAEA,MAAa,EAAmB,EAEhC,IAAA,EAAe"}

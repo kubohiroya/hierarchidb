@@ -1,0 +1,1 @@
+{"version":3,"file":"icon-CVnd8ysl.js","names":[],"sources":["../../../plugins/basemap-plugin/src/icon/index.ts"],"sourcesContent":["import PublicIcon from '@mui/icons-material/Public';\n\nexport const BasemapPluginIcon = PublicIcon;\n\nexport default BasemapPluginIcon;\n"],"mappings":"mEAEA,MAAa,EAAoB,EAEjC,IAAA,EAAe"}

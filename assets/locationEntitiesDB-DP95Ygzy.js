@@ -1,1 +1,2 @@
 import{O as e,j as t}from"../worker.js";var n=class extends e{groupEntities;relations;constructor(e=t(`location`)){super(e),this.version(1).stores({groupEntities:`&[nodeId+id], nodeId, id, updatedAt`,relations:`&[srcNodeId+type+dstNodeId], srcNodeId, dstNodeId, type, updatedAt`}),this.version(2).upgrade(()=>{})}};export{n as t};
+//# sourceMappingURL=locationEntitiesDB-DP95Ygzy.js.map

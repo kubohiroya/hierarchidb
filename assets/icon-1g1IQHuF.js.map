@@ -1,0 +1,1 @@
+{"version":3,"file":"icon-1g1IQHuF.js","names":[],"sources":["../../../plugins/location-plugin/src/icon/index.ts"],"sourcesContent":["import LocationOnIcon from '@mui/icons-material/LocationOn';\n\nexport const LocationPluginIcon = LocationOnIcon;\n\nexport default LocationPluginIcon;\n"],"mappings":"mEAEA,MAAa,EAAqB,EAElC,IAAA,EAAe"}
