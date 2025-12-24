@@ -325,60 +325,6 @@ export class TreeSubscriptionService {
     return resultObservable;
   }
 
-  subscribeDrafts(
-    cmd: CommandEnvelope<'subscribeDrafts', ObserveDraftsPayload>
-  ): Observable<TreeChangeEvent> {
-    const { nodeId, includeAllDrafts = false } = cmd.payload;
-
-    const subscriptionId = this.generateSubscriptionId();
-    const subject = new Subject<TreeChangeEvent>();
-
-    const subscriptionInfo: SubscriptionInfo = {
-      id: subscriptionId,
-      type: 'working-copies',
-      nodeId: nodeId || ('all' as NodeId),
-      filter: { properties: includeAllDrafts ? ['isDraft'] : [] },
-      subject,
-      isActive: true,
-      lastActivity: Date.now(),
-      createdAt: Date.now(),
-    };
-    this.registry.register(subscriptionInfo);
-
-    // For now, draft events come through the same change stream
-    // In a real implementation, this might have a separate event source
-    const draftObservable = this.globalChangeSubject.pipe(
-      rxFilter((event) => this.isEventRelevantForDrafts(event, nodeId)),
-      map((event) => this.transformEventForSubscription(event)),
-      share()
-    );
-
-    // Subscribe to global changes and forward relevant ones
-    const subscription = draftObservable.subscribe({
-      next: (event) => {
-        subject.next(event);
-        this.updateSubscriptionActivity(subscriptionId);
-      },
-    });
-
-    // Set up unsubscribe handler
-    const resultObservable = subject.asObservable();
-    const originalSubscribe = resultObservable.subscribe.bind(resultObservable);
-    resultObservable.subscribe = ((...args: Parameters<typeof originalSubscribe>) => {
-      const sub = originalSubscribe(...args);
-      const originalUnsubscribe = sub.unsubscribe.bind(sub);
-      sub.unsubscribe = () => {
-        subscription.unsubscribe();
-        this.deactivateSubscription(subscriptionId as SubscriptionId);
-        originalUnsubscribe();
-      };
-      return sub;
-    }) as typeof resultObservable.subscribe;
-    /* eslint-enable deprecation/deprecation */
-
-    return resultObservable;
-  }
-
   getActiveSubscriptions(): Promise<number> {
     return Promise.resolve(this.registry.active().length);
   }
@@ -545,17 +491,6 @@ export class TreeSubscriptionService {
       }
     }
 
-    return true;
-  }
-
-  private isEventRelevantForDrafts(event: TreeChangeEvent, targetNodeId?: NodeId): boolean {
-    // If targetNodeId is specified, only events about that node
-    if (targetNodeId && event.nodeId !== targetNodeId) {
-      return false;
-    }
-
-    // Working copy events would typically have specific indicators
-    // For this implementation, we'll assume all events could be relevant
     return true;
   }
 
@@ -938,19 +873,21 @@ export class TreeSubscriptionService {
   }
 
   /**
-   * Subscribe to all changes within a specific console (TreeSubscriptionAPI)
+   * Subscribe to changes for an entire tree (TreeSubscriptionAPI)
    */
   async subscribeTree(
     treeId: TreeId,
     callback: (event: TreeNodeEvent) => void,
     options?: SubscriptionOptions
   ): Promise<SubscriptionId> {
+    const rootNodeId = `${treeId}:root` as NodeId;
     const subscriptionId = this.generateSubscriptionId() as SubscriptionId;
 
     const subscriptionInfo: SubscriptionInfo = {
       id: subscriptionId,
       type: 'tree',
       treeId,
+      nodeId: rootNodeId,
       callback: callback as (event: unknown) => void,
       options,
       isActive: true,
@@ -960,39 +897,63 @@ export class TreeSubscriptionService {
 
     this.registry.register(subscriptionInfo);
 
-    // Set up the observable stream for entire console
     const stream = this.globalChangeSubject.pipe(
-      rxFilter((event) => this.isEventRelevantForTreeObservation(event, treeId)),
-      map((event) => this.convertToTreeNodeEvent(event))
+      mergeMap(async (event) =>
+        (await this.isEventRelevantForSubtreeObservation(event, rootNodeId, options))
+          ? this.convertToTreeNodeEvent(event)
+          : null
+      ),
+      rxFilter((event): event is TreeNodeEvent => event !== null)
     ) as Observable<TreeNodeEvent>;
 
     const subscription = stream.subscribe(callback);
-
-    // Store the subscription for cleanup
     subscriptionInfo.subscription = subscription;
+
+    if (options?.prefetch?.depth && options.prefetch.depth > 0) {
+      try {
+        const nodes = await this.coreDB.listChildren(rootNodeId, {
+          prefetch: { depth: options.prefetch.depth },
+        });
+        const timestamp = Date.now() as Timestamp;
+        for (const node of nodes) {
+          callback({
+            type: 'updated',
+            nodeId: node.id,
+            node,
+            parentId: node.parentId,
+            timestamp,
+          });
+        }
+      } catch (error) {
+        console.warn('[TreeSubscriptionService] Failed to deliver prefetch snapshot', error);
+      }
+    }
 
     return subscriptionId;
   }
 
-  async subscribeUndoState(callback: (event: UndoStateEvent) => void): Promise<SubscriptionId> {
+  /**
+   * Subscribe to undo/redo availability updates (TreeSubscriptionAPI)
+   */
+  async subscribeUndoState(
+    callback: (event: UndoStateEvent) => void
+  ): Promise<SubscriptionId> {
     const subscriptionId = this.generateSubscriptionId() as SubscriptionId;
 
-    const subscriptionInfo: SubscriptionInfo = {
+    this.undoStateSubscriptions.set(subscriptionId, callback);
+    this.registry.register({
       id: subscriptionId,
       type: 'undo-state',
       callback: callback as (event: unknown) => void,
       isActive: true,
       lastActivity: Date.now(),
       createdAt: Date.now(),
-    };
-
-    this.registry.register(subscriptionInfo);
-    this.undoStateSubscriptions.set(subscriptionId, callback);
+    });
 
     try {
       callback(this.latestUndoState);
     } catch (error) {
-      console.warn('[TreeSubscriptionService] undo-state subscriber callback failed', error);
+      console.warn('[TreeSubscriptionService] undo-state callback threw', error);
     }
 
     return subscriptionId;
@@ -1028,55 +989,96 @@ export class TreeSubscriptionService {
    * Remove all subscriptions for a specific node (TreeSubscriptionAPI)
    */
   async unsubscribeNode(nodeId: NodeId): Promise<number> {
-    let count = 0;
-    const toRemove: SubscriptionInfo[] = [];
-
-    for (const [, subscription] of this.registry.entries()) {
-      if (subscription.nodeId === nodeId) {
-        subscription.isActive = false;
-
-        // Clean up RxJS subscription if present
-        if (subscription.subscription) {
-          subscription.subscription.unsubscribe();
-        }
-
-        // Clean up subject if present (for backward compatibility)
-        if (subscription.subject) {
-          subscription.subject.complete();
-        }
-
-        toRemove.push(subscription);
-        count++;
+    const removed = this.registry.deleteWhere((info) => info.nodeId === nodeId);
+    for (const subscription of removed) {
+      subscription.subscription?.unsubscribe?.();
+      subscription.subject?.complete?.();
+      if (this.undoStateSubscriptions.has(subscription.id)) {
+        this.undoStateSubscriptions.delete(subscription.id);
       }
     }
-
-    for (const info of toRemove) {
-      this.registry.delete(info.id);
-    }
-
-    return count;
+    return removed.length;
   }
 
   /**
-   * Remove all subscriptions for a specific console (TreeSubscriptionAPI)
+   * Remove all subscriptions for a specific tree (TreeSubscriptionAPI)
    */
   async unsubscribeTree(treeId: TreeId): Promise<number> {
-    let count = 0;
-    const toRemove: SubscriptionInfo[] = [];
-
-    for (const [, subscription] of this.registry.entries()) {
-      if (subscription.treeId === treeId) {
-        subscription.isActive = false;
-        toRemove.push(subscription);
-        count++;
+    const removed = this.registry.deleteWhere((info) => info.treeId === treeId);
+    for (const subscription of removed) {
+      subscription.subscription?.unsubscribe?.();
+      subscription.subject?.complete?.();
+      if (this.undoStateSubscriptions.has(subscription.id)) {
+        this.undoStateSubscriptions.delete(subscription.id);
       }
     }
+    return removed.length;
+  }
 
-    for (const info of toRemove) {
-      this.registry.delete(info.id);
-    }
+  /**
+   * Get list of active subscription identifiers (TreeSubscriptionAPI)
+   */
+  async listActiveSubscriptions(): Promise<SubscriptionId[]> {
+    return this.registry.listActiveIds();
+  }
 
-    return count;
+  /**
+   * Check if a specific subscription is active (TreeSubscriptionAPI)
+   */
+  async isSubscriptionActive(subscriptionId: SubscriptionId): Promise<boolean> {
+    const info = this.registry.get(subscriptionId);
+    return Boolean(info?.isActive);
+  }
+
+  /**
+   * Get subscription statistics (TreeSubscriptionAPI)
+   */
+  async getSubscriptionStats(): Promise<{
+    totalActive: number;
+    nodeSubscriptions: number;
+    subtreeSubscriptions: number;
+    treeSubscriptions: number;
+    eventsProcessedToday: number;
+    averageEventLatency: number;
+  }> {
+    const active = this.registry.active();
+    const nodeSubscriptions = active.filter((info) => info.type === 'node').length;
+    const subtreeSubscriptions = active.filter((info) => info.type === 'subtree').length;
+    const treeSubscriptions = active.filter((info) => info.type === 'tree').length;
+    const averageEventLatency =
+      this.eventCount > 0 ? this.totalLatency / this.eventCount : 0;
+
+    return {
+      totalActive: active.length,
+      nodeSubscriptions,
+      subtreeSubscriptions,
+      treeSubscriptions,
+      eventsProcessedToday: this.eventsProcessedToday,
+      averageEventLatency,
+    };
+  }
+
+  /**
+   * Get recent events for a specific node (TreeSubscriptionAPI)
+   */
+  async getRecentEvents(nodeId: NodeId, limit: number = 50): Promise<TreeNodeEvent[]> {
+    const filtered = this.eventHistory.filter((event) => event.nodeId === nodeId);
+    return filtered.slice(-limit);
+  }
+
+  /**
+   * Get event history for a time range (TreeSubscriptionAPI)
+   */
+  async getEventHistory(
+    startTime: number,
+    endTime: number,
+    nodeId?: NodeId
+  ): Promise<TreeNodeEvent[]> {
+    return this.eventHistory.filter((event) => {
+      if (event.timestamp < startTime || event.timestamp > endTime) return false;
+      if (nodeId && event.nodeId !== nodeId) return false;
+      return true;
+    });
   }
 
   publishUndoState(event: UndoStateEvent): void {
@@ -1092,69 +1094,6 @@ export class TreeSubscriptionService {
         info.lastActivity = Date.now();
       }
     }
-  }
-
-  /**
-   * Get list of active subscription identifiers (TreeSubscriptionAPI)
-   */
-  async listActiveSubscriptions(): Promise<SubscriptionId[]> {
-    return this.registry.listActiveIds();
-  }
-
-  /**
-   * Check if a specific subscription is still active (TreeSubscriptionAPI)
-   */
-  async isSubscriptionActive(subscriptionId: SubscriptionId): Promise<boolean> {
-    const subscription = this.registry.get(subscriptionId);
-    return subscription ? subscription.isActive : false;
-  }
-
-  /**
-   * Get subscription statistics (TreeSubscriptionAPI)
-   */
-  async getSubscriptionStats(): Promise<{
-    totalActive: number;
-    nodeSubscriptions: number;
-    subtreeSubscriptions: number;
-    treeSubscriptions: number;
-    eventsProcessedToday: number;
-    averageEventLatency: number;
-  }> {
-    const activeSubscriptions = this.registry.active();
-
-    return {
-      totalActive: activeSubscriptions.length,
-      nodeSubscriptions: activeSubscriptions.filter((s) => s.type === 'node').length,
-      subtreeSubscriptions: activeSubscriptions.filter((s) => s.type === 'subtree').length,
-      treeSubscriptions: activeSubscriptions.filter((s) => s.type === 'tree').length,
-      eventsProcessedToday: this.eventsProcessedToday,
-      averageEventLatency: this.eventCount > 0 ? this.totalLatency / this.eventCount : 0,
-    };
-  }
-
-  /**
-   * Get recent events for a specific node (TreeSubscriptionAPI)
-   */
-  async getRecentEvents(nodeId: NodeId, limit: number = 50): Promise<TreeNodeEvent[]> {
-    return this.eventHistory
-      .filter((event) => event.nodeId === nodeId)
-      .slice(-limit)
-      .reverse();
-  }
-
-  /**
-   * Get event history for a time range (TreeSubscriptionAPI)
-   */
-  async getEventHistory(
-    startTime: number,
-    endTime: number,
-    nodeId?: NodeId
-  ): Promise<TreeNodeEvent[]> {
-    return this.eventHistory.filter((event) => {
-      const inTimeRange = event.timestamp >= startTime && event.timestamp <= endTime;
-      const nodeMatch = !nodeId || event.nodeId === nodeId;
-      return inTimeRange && nodeMatch;
-    });
   }
 
   // ==================
@@ -1232,12 +1171,4 @@ export class TreeSubscriptionService {
     }
   }
 
-  /**
-   * Check if event is relevant for console observation
-   */
-  private isEventRelevantForTreeObservation(_event: TreeChangeEvent, _treeId: TreeId): boolean {
-    //  TreeChangeEventtreeIdnodeIdTreeId
-    //  TODO: nodeIdTreeIdtreeId
-    return true;
-  }
 }

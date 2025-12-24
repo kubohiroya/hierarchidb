@@ -88,11 +88,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
             }
           ]
         },
-        "worker": {
-          "preload": [
-            "registerBasemapWorkerStores"
-          ]
-        },
         "packageName": "@hierarchidb/basemap-plugin"
       },
     modules: {
@@ -102,9 +97,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     ui: {
         specifier: "@hierarchidb/basemap-plugin/ui",
         source: "plugins/basemap-plugin/src/ui/index.ts",
-      },
-    worker: {
-        specifier: "@hierarchidb/basemap-plugin/worker",
       },
     icon: {
         specifier: "@hierarchidb/basemap-plugin/icon",
@@ -198,11 +190,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
             }
           ]
         },
-        "worker": {
-          "preload": [
-            "registerFolderWorkerStores"
-          ]
-        },
         "packageName": "@hierarchidb/folder-plugin"
       },
     modules: {
@@ -212,9 +199,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     ui: {
         specifier: "@hierarchidb/folder-plugin/ui",
         source: "plugins/folder-plugin/src/ui/index.ts",
-      },
-    worker: {
-        specifier: "@hierarchidb/folder-plugin/worker",
       },
     icon: {
         specifier: "@hierarchidb/folder-plugin/icon",
@@ -543,11 +527,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "createOrder": 60,
           "treeId": "*"
         },
-        "worker": {
-          "preload": [
-            "registerResolverWorkerStores"
-          ]
-        },
         "database": {
           "prewarm": [
             {
@@ -565,9 +544,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     ui: {
         specifier: "@hierarchidb/resolver-plugin/ui",
         source: "plugins/resolver-plugin/src/ui/index.ts",
-      },
-    worker: {
-        specifier: "@hierarchidb/resolver-plugin/worker",
       },
     database: {
         specifier: "@hierarchidb/resolver-plugin/database",
@@ -866,14 +842,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
             "loadShapeEntitiesDbModule"
           ]
         },
-        "database": {
-          "prewarm": [
-            {
-              "export": "ShapeDB",
-              "specifier": "@hierarchidb/shape-plugin"
-            }
-          ]
-        },
         "packageName": "@hierarchidb/shape-plugin"
       },
     modules: {
@@ -924,7 +892,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "flatgeobuf",
         "shpjs"
       ],
-    exports: ["","icon","ui"],
+    exports: ["","icon","worker","ui"],
     manifest: {
         "id": "@hierarchidb/spreadsheet-plugin",
         "name": "Spreadsheet Plugin",
@@ -1128,11 +1096,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
             }
           ]
         },
-        "worker": {
-          "preload": [
-            "registerStylerWorkerStores"
-          ]
-        },
         "packageName": "@hierarchidb/styler-plugin"
       },
     modules: {
@@ -1142,9 +1105,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     ui: {
         specifier: "@hierarchidb/styler-plugin/ui",
         source: "plugins/styler-plugin/src/ui/index.ts",
-      },
-    worker: {
-        specifier: "@hierarchidb/styler-plugin/worker",
       },
     icon: {
         specifier: "@hierarchidb/styler-plugin/icon",
@@ -1204,11 +1164,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "menuGroup": "project",
           "createOrder": 20
         },
-        "worker": {
-          "preload": [
-            "registerTimelineWorkerStores"
-          ]
-        },
         "dependencies": [
           "@hierarchidb/common-types",
           "@hierarchidb/common-api",
@@ -1244,9 +1199,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         specifier: "@hierarchidb/timeline-plugin/ui",
         source: "plugins/timeline-plugin/src/ui/index.ts",
       },
-    worker: {
-        specifier: "@hierarchidb/timeline-plugin/worker",
-      },
     icon: {
         specifier: "@hierarchidb/timeline-plugin/icon",
         source: "plugins/timeline-plugin/src/icon/index.ts",
@@ -1255,193 +1207,3 @@ export const pluginRegistry: PluginRegistryEntry[] = [
   }
   },
 ];
-
-export const pluginIconLoaders: Record<string, () => Promise<unknown>> = {
-  "basemap": async () => {
-    const mod = await import('@hierarchidb/basemap-plugin/icon');
-    const componentExport = (mod as Record<string, unknown>)["BasemapPluginIcon"];
-    if (!componentExport) { throw new Error('Plugin icon component export not found for basemap'); }
-    return componentExport;
-  },
-  "folder": async () => {
-    const mod = await import('@hierarchidb/folder-plugin/icon');
-    const componentExport = (mod as Record<string, unknown>)["FolderPluginIcon"];
-    if (!componentExport) { throw new Error('Plugin icon component export not found for folder'); }
-    return componentExport;
-  },
-  "linker": async () => {
-    const mod = await import('@hierarchidb/linker-plugin/icon');
-    const componentExport = (mod as Record<string, unknown>)["LinkerPluginIcon"];
-    if (!componentExport) { throw new Error('Plugin icon component export not found for linker'); }
-    return componentExport;
-  },
-  "location": async () => {
-    const mod = await import('@hierarchidb/location-plugin/icon');
-    const componentExport = (mod as Record<string, unknown>)["LocationPluginIcon"];
-    if (!componentExport) { throw new Error('Plugin icon component export not found for location'); }
-    return componentExport;
-  },
-  "resolver": async () => {
-    const mod = await import('@hierarchidb/resolver-plugin/icon');
-    const componentExport = (mod as Record<string, unknown>)["ResolverPluginIcon"];
-    if (!componentExport) { throw new Error('Plugin icon component export not found for resolver'); }
-    return componentExport;
-  },
-  "route": async () => {
-    const mod = await import('@hierarchidb/route-plugin/icon');
-    const componentExport = (mod as Record<string, unknown>)["RoutePluginIcon"];
-    if (!componentExport) { throw new Error('Plugin icon component export not found for route'); }
-    return componentExport;
-  },
-  "shape": async () => {
-    const mod = await import('@hierarchidb/shape-plugin/icon');
-    const componentExport = (mod as Record<string, unknown>)["ShapePluginIcon"];
-    if (!componentExport) { throw new Error('Plugin icon component export not found for shape'); }
-    return componentExport;
-  },
-  "spreadsheet": async () => {
-    const mod = await import('@hierarchidb/spreadsheet-plugin/icon');
-    const componentExport = (mod as Record<string, unknown>)["SpreadsheetPluginIcon"];
-    if (!componentExport) { throw new Error('Plugin icon component export not found for spreadsheet'); }
-    return componentExport;
-  },
-  "styler": async () => {
-    const mod = await import('@hierarchidb/styler-plugin/icon');
-    const componentExport = (mod as Record<string, unknown>)["StylerPluginIcon"];
-    if (!componentExport) { throw new Error('Plugin icon component export not found for styler'); }
-    return componentExport;
-  },
-  "timeline": async () => {
-    const mod = await import('@hierarchidb/timeline-plugin/icon');
-    const componentExport = (mod as Record<string, unknown>)["TimelinePluginIcon"];
-    if (!componentExport) { throw new Error('Plugin icon component export not found for timeline'); }
-    return componentExport;
-  },
-};
-
-export const pluginWorkerPreloads: Record<string, string[]> = {
-  "basemap": ["registerBasemapWorkerStores"],
-  "folder": ["registerFolderWorkerStores"],
-  "linker": ["registerLinkerWorkerStores","loadLinkerEntitiesDbModule"],
-  "location": ["registerLocationWorkerStores","loadLocationEntitiesDbModule"],
-  "resolver": ["registerResolverWorkerStores"],
-  "route": ["registerRouteWorkerStores"],
-  "shape": ["registerShapeWorkerStores","loadShapeEntitiesDbModule"],
-  "spreadsheet": ["registerSpreadsheetWorkerStores"],
-  "styler": ["registerStylerWorkerStores"],
-  "timeline": ["registerTimelineWorkerStores"],
-};
-
-export const pluginDatabaseLoaders: Record<string, { moduleSpecifier?: string; loader?: () => Promise<unknown>; prewarm?: { specifier?: string; exportName: string; load: () => Promise<unknown> }[] }> = {
-  "basemap": {
-    moduleSpecifier: "@hierarchidb/basemap-plugin",
-    async loader() {
-      const mod = await import("@hierarchidb/basemap-plugin");
-      return mod;
-    },
-  },
-  "folder": {
-    moduleSpecifier: "@hierarchidb/folder-plugin",
-    async loader() {
-      const mod = await import("@hierarchidb/folder-plugin");
-      return mod;
-    },
-  },
-  "linker": {
-    moduleSpecifier: "@hierarchidb/linker-plugin",
-    async loader() {
-      const mod = await import("@hierarchidb/linker-plugin");
-      return mod;
-    },
-  },
-  "location": {
-    moduleSpecifier: "@hierarchidb/location-plugin/database",
-    async loader() {
-      const mod = await import("@hierarchidb/location-plugin/database");
-      return mod;
-    },
-    prewarm: [
-      {
-        specifier: "@hierarchidb/location-plugin/database",
-        exportName: "getEphemeralLocationDB",
-        async load() {
-          const mod = await import("@hierarchidb/location-plugin/database");
-          return mod;
-        },
-      },
-    ],
-  },
-  "resolver": {
-    moduleSpecifier: "@hierarchidb/resolver-plugin/database",
-    async loader() {
-      const mod = await import("@hierarchidb/resolver-plugin/database");
-      return mod;
-    },
-    prewarm: [
-      {
-        specifier: "@hierarchidb/resolver-plugin/database",
-        exportName: "resolverEntitiesDB",
-        async load() {
-          const mod = await import("@hierarchidb/resolver-plugin/database");
-          return mod;
-        },
-      },
-    ],
-  },
-  "route": {
-    moduleSpecifier: "@hierarchidb/route-plugin/database",
-    async loader() {
-      const mod = await import("@hierarchidb/route-plugin/database");
-      return mod;
-    },
-    prewarm: [
-      {
-        specifier: "@hierarchidb/route-plugin/database",
-        exportName: "RouteDatabase",
-        async load() {
-          const mod = await import("@hierarchidb/route-plugin/database");
-          return mod;
-        },
-      },
-    ],
-  },
-  "shape": {
-    moduleSpecifier: "@hierarchidb/shape-plugin",
-    async loader() {
-      const mod = await import("@hierarchidb/shape-plugin");
-      return mod;
-    },
-    prewarm: [
-      {
-        specifier: "@hierarchidb/shape-plugin",
-        exportName: "ShapeDB",
-        async load() {
-          const mod = await import("@hierarchidb/shape-plugin");
-          return mod;
-        },
-      },
-    ],
-  },
-  "spreadsheet": {
-    moduleSpecifier: "@hierarchidb/spreadsheet-plugin",
-    async loader() {
-      const mod = await import("@hierarchidb/spreadsheet-plugin");
-      return mod;
-    },
-  },
-  "styler": {
-    moduleSpecifier: "@hierarchidb/styler-plugin",
-    async loader() {
-      const mod = await import("@hierarchidb/styler-plugin");
-      return mod;
-    },
-  },
-  "timeline": {
-    moduleSpecifier: "@hierarchidb/timeline-plugin",
-    async loader() {
-      const mod = await import("@hierarchidb/timeline-plugin");
-      return mod;
-    },
-  },
-};
-

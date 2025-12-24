@@ -56,13 +56,13 @@ import { useNavigate } from '@tanstack/react-router';
 import type React from 'react';
 import { useCallback, useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getInstalledPlugins } from '~/plugin-host/plugin-registry.js';
+import { getInstalledPlugins } from '~/plugin-runtime/plugin-registry.js';
 
 // Meta function for React Router v7
 export function meta() {
   return [
     { title: 'Plugin Registry - HierarchiDB' },
-    { name: 'description', content: 'View and manage all registered plugin-loader' },
+    { name: 'description', content: 'View and manage all registered plugin-loaders' },
   ];
 }
 
@@ -545,7 +545,7 @@ export default function PluginsPage() {
   // Check if running in production mode
   const isProduction = import.meta.env.MODE === 'production';
 
-  // Calculate affected plugin-loader (children) when operating on a parent
+  // Calculate affected plugin-loaders (children) when operating on a parent
   const calculateAffectedPlugins = (pluginName: string): string[] => {
     const affected = new Set<string>([pluginName]);
     const queue = [pluginName];
@@ -556,7 +556,7 @@ export default function PluginsPage() {
         continue;
       }
 
-      // Find all plugin-loader that depend on the current one
+      // Find all plugin-loaders that depend on the current one
       for (const [plugin, deps] of Object.entries(pluginDependencies)) {
         if (deps.includes(current) && !affected.has(plugin)) {
           affected.add(plugin);
@@ -591,7 +591,7 @@ export default function PluginsPage() {
         // await client.deletePlugin(plugin, { clearDatabase });
       }
 
-      // Reload plugin-loader
+      // Reload plugin-loaders
       await loadPlugins();
     } catch (err) {
       console.error('Failed to delete plugin:', err);
@@ -650,7 +650,7 @@ export default function PluginsPage() {
         }
       }
 
-      // Reload plugin-loader
+      // Reload plugin-loaders
       await loadPlugins();
     } catch (err) {
       console.error('Failed to reset plugin:', err);
@@ -714,7 +714,7 @@ export default function PluginsPage() {
     loadPlugins();
   }, [loadPlugins]);
 
-  // UI plugin-loader list now comes from vite metadata (uiPluginsList)
+  // UI plugin-loaders list now comes from vite metadata (uiPluginsList)
 
   if (loading) {
     return (

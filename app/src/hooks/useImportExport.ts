@@ -7,7 +7,7 @@ import type {
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { Remote } from 'comlink';
 import { useCallback, useRef, useState } from 'react';
-import { getInstalledPlugins } from '../plugin-host/plugin-registry.ts';
+import { getInstalledPlugins } from '../plugin-runtime/plugin-registry.ts';
 
 // Import/Export Types
 export interface ImportFileOptions {

@@ -133,7 +133,7 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
     return (
       <Box sx={{ width: '100%', height: rectHeight }}>
         <svg width="100%" height={rectHeight} viewBox={`0 0 ${viewWidth} 1`} preserveAspectRatio="none">
-          <title>a</title>
+          <title>---progress---</title>
           {Array.from<number>({ length: totalTasks }).map((_item: number, index: number)=>index).map((index) => {
             const task = tasks[index];
             const fill = task ? colorForTask(task) : theme.palette.grey[400];
@@ -178,7 +178,7 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
             <Typography variant="body2">{taskLabel}</Typography>
           </Stack>
         </Stack>
-        <Stack spacing={0.5}>
+        <Stack gap={1}>
           {renderTaskProgressBar()}
           <Typography variant="caption" color="text.secondary">
             {t('build.progress.counts', '{{percentage}}% ・ {{completed}}/{{total}} completed ・ failed {{failed}} ・ skipped {{skipped}}', {

@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import type {
   PluginMenuItem as LoaderMenuItem,
   TreeContext,
-} from '../plugin-loader/menu-builders.ts';
+} from '../plugin-loaders/menu-builders.ts';
 // Local replicas of menu types to avoid hard dependency on virtual modules
 
 export type PluginMenuItem = LoaderMenuItem;
@@ -51,7 +51,7 @@ export function usePluginMenuItems(treeId?: TreeId): PluginMenuItem[] {
 
       // 2) Fallback: dynamic import (works in dev as well)
       try {
-        const mod = (await import('../plugin-loader/menu-builders.ts')) as MenuBuildersModule;
+        const mod = (await import('../plugin-loaders/menu-builders.ts')) as MenuBuildersModule;
         const cache: MenuBuildersCache = {
           buildMenuItemsForTreeId: mod.buildMenuItemsForTreeId,
           buildMenuItemsForContext: mod.buildMenuItemsForContext,

@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
 import * as Comlink from 'comlink';
 import { MessageChannel } from 'worker_threads';
-import { toNodeType, toTreeId, type NodeId, type TreeId } from '@hierarchidb/common-types';
+import { toNodeType, type NodeId, type TreeId } from '@hierarchidb/common-types';
 import type {
   TreeMutationAPI,
   TreeQueryAPI,
@@ -33,7 +33,7 @@ describe('Comlink + fake-indexeddb: basemap create flow persists data', () => {
         client.getTreeNodeUpdaterAPI(),
       ]);
 
-      const treeId: TreeId = toTreeId('r');
+      const treeId: TreeId = 'r' as TreeId;
       const tree = await queryAPI.getTree(treeId);
       expect(tree?.rootId).toBeDefined();
       const parentId = tree?.rootId as NodeId;

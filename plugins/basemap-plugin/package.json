@@ -8,6 +8,9 @@
   "types": "dist/index.d.ts",
   "typesVersions": {
     "*": {
+      "worker": [
+        "dist/worker/index.d.ts"
+      ],
       "ui": [
         "dist/ui/index.d.ts"
       ],
@@ -28,6 +31,11 @@
       "types": "./dist/icon/index.d.ts",
       "import": "./dist/icon/index.js",
       "default": "./dist/icon/index.js"
+    },
+    "./worker": {
+      "types": "./dist/worker/index.d.ts",
+      "import": "./dist/worker/index.js",
+      "default": "./dist/worker/index.js"
     },
     "./ui": {
       "types": "./dist/ui/index.d.ts",

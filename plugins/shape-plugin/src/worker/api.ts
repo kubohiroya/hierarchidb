@@ -479,9 +479,13 @@ export const shapePluginAPI = {
       throw new Error(`No active batch session for draft: ${draftId}`);
     }
 
-    await batchManagerWithDispatch.dispatchCommand?.('session/pause', {
-      sessionId: batchSessionId,
-    });
+    if (batchManagerWithDispatch.dispatchCommand) {
+      await batchManagerWithDispatch.dispatchCommand('session/pause', {
+        sessionId: batchSessionId,
+      });
+      return;
+    }
+    await batchSessionManager.pauseBatchSession(batchSessionId);
   },
 
   resumeBatchProcessing: async (draftId: NodeId): Promise<string> => {
@@ -492,9 +496,13 @@ export const shapePluginAPI = {
       throw new Error(`No batch session to resume for draft: ${draftId}`);
     }
 
-    await batchManagerWithDispatch.dispatchCommand?.('session/resume', {
-      sessionId: batchSessionId,
-    });
+    if (batchManagerWithDispatch.dispatchCommand) {
+      await batchManagerWithDispatch.dispatchCommand('session/resume', {
+        sessionId: batchSessionId,
+      });
+      return batchSessionId;
+    }
+    await batchSessionManager.resumeBatchSession(batchSessionId);
     return batchSessionId;
   },
 
@@ -506,9 +514,13 @@ export const shapePluginAPI = {
       throw new Error(`No active batch session for draft: ${draftId}`);
     }
 
-    await batchManagerWithDispatch.dispatchCommand?.('session/cancel', {
-      sessionId: batchSessionId,
-    });
+    if (batchManagerWithDispatch.dispatchCommand) {
+      await batchManagerWithDispatch.dispatchCommand('session/cancel', {
+        sessionId: batchSessionId,
+      });
+    } else {
+      await batchSessionManager.cancelBatchSession(batchSessionId);
+    }
     const subscription = progressCallbacks.get(batchSessionId);
     subscription?.unsubscribe?.();
     progressCallbacks.delete(batchSessionId);
@@ -522,7 +534,29 @@ export const shapePluginAPI = {
     command: K,
     payload: ShapeBatchCommandPayload<K>,
   ): Promise<void> => {
-    await batchManagerWithDispatch.dispatchCommand?.(command, payload);
+    if (batchManagerWithDispatch.dispatchCommand) {
+      await batchManagerWithDispatch.dispatchCommand(command, payload);
+      return;
+    }
+    const sessionId = (payload as { sessionId?: string }).sessionId;
+    if (!sessionId) {
+      console.warn('[shapePluginAPI] batch command missing sessionId', command);
+      return;
+    }
+    switch (command) {
+      case 'session/pause':
+        await batchSessionManager.pauseBatchSession(sessionId);
+        break;
+      case 'session/resume':
+        await batchSessionManager.resumeBatchSession(sessionId);
+        break;
+      case 'session/cancel':
+        await batchSessionManager.cancelBatchSession(sessionId);
+        break;
+      default:
+        console.warn('[shapePluginAPI] batch command unavailable in unified manager', command);
+        break;
+    }
   },
 
   getBatchSession: async (sessionId: string): Promise<BatchSession | undefined> => {

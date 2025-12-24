@@ -9,7 +9,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
 import ts from 'typescript';
 
 type LoadOptions = {
@@ -21,51 +21,37 @@ type PackageLike = {
 };
 
 const TRANSPILER_OPTIONS: ts.TranspileOptions['compilerOptions'] = {
-  module: ts.ModuleKind.CommonJS,
+  module: ts.ModuleKind.ES2020,
   target: ts.ScriptTarget.ES2020,
   resolveJsonModule: true,
   esModuleInterop: true,
+  importsNotUsedAsValues: ts.ImportsNotUsedAsValues.Remove,
 };
 
-const fallbackRequire = createRequire(import.meta.url);
-
-function evaluateManifestModule(manifestPath: string, { silent = false }: LoadOptions = {}): Record<string, unknown> | undefined {
+async function evaluateManifestModule(
+  manifestPath: string,
+  { silent = false }: LoadOptions = {},
+): Promise<Record<string, unknown> | undefined> {
   if (!fs.existsSync(manifestPath)) {
     return undefined;
   }
 
+  const manifestDir = path.dirname(manifestPath);
+  const tmpDir = path.join(manifestDir, '.manifest-eval');
+  const tmpFile = path.join(tmpDir, `manifest.${Date.now()}.${Math.random().toString(16).slice(2)}.mjs`);
+
   try {
-    const source = fs.readFileSync(manifestPath, 'utf-8');
+    await fs.promises.mkdir(tmpDir, { recursive: true });
+    const source = await fs.promises.readFile(manifestPath, 'utf-8');
     const { outputText } = ts.transpileModule(source, {
       compilerOptions: TRANSPILER_OPTIONS,
       fileName: manifestPath,
     });
+    await fs.promises.writeFile(tmpFile, outputText, 'utf-8');
 
-    const module = { exports: {} as Record<string, unknown> };
-    const localRequire = (specifier: string): unknown => {
-      if (specifier.endsWith('.json')) {
-        const abs = path.resolve(path.dirname(manifestPath), specifier);
-
-        return JSON.parse(fs.readFileSync(abs, 'utf-8'));
-      }
-      if (specifier === '@hierarchidb/_obsolate_common-types') {
-        return {
-          toNodeType: (value: string) => value,
-        };
-      }
-      return fallbackRequire(specifier);
-    };
-
-    const fn = new Function('require', 'module', 'exports', outputText) as (
-      req: (specifier: string) => unknown,
-      mod: { exports: Record<string, unknown> },
-      exports: Record<string, unknown>,
-    ) => void;
-    fn(localRequire, module, module.exports);
-
-    const manifest = module.exports.PLUGIN_MANIFEST
-      ?? module.exports.pluginManifest
-      ?? module.exports.default;
+    const moduleUrl = pathToFileURL(tmpFile).href;
+    const mod = await import(moduleUrl);
+    const manifest = mod.PLUGIN_MANIFEST ?? mod.pluginManifest ?? mod.default;
 
     return manifest && typeof manifest === 'object'
       ? (manifest as Record<string, unknown>)
@@ -75,14 +61,24 @@ function evaluateManifestModule(manifestPath: string, { silent = false }: LoadOp
       console.warn('[load-plugin-manifest] Failed to load manifest', manifestPath, error);
     }
     return undefined;
+  } finally {
+    try {
+      await fs.promises.unlink(tmpFile);
+    } catch {}
   }
 }
 
-export function loadPluginManifestFromFile(manifestPath: string, options: LoadOptions = {}): Record<string, unknown> | undefined {
+export async function loadPluginManifestFromFile(
+  manifestPath: string,
+  options: LoadOptions = {},
+): Promise<Record<string, unknown> | undefined> {
   return evaluateManifestModule(manifestPath, options);
 }
 
-export function loadPluginManifestFromPackageJson(pkg: PackageLike, options: LoadOptions = {}): Record<string, unknown> | undefined {
+export async function loadPluginManifestFromPackageJson(
+  pkg: PackageLike,
+  options: LoadOptions = {},
+): Promise<Record<string, unknown> | undefined> {
   const pkgPath = pkg?.__path;
   if (!pkgPath) {
     return undefined;

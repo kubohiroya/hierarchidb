@@ -1,18 +1,17 @@
 import type { TreeMutationAPI } from '@hierarchidb/common-api';
-import {
-  type CommandEnvelope,
-  type CommandResult as CoreCommandResult,
-  type DuplicateNodesPayload,
-  generateNodeId,
-  type ImportNodesPayload,
-  type NodeId,
-  type NodeType,
-  type PasteNodesPayload,
-  type RedoPayload,
-  type Timestamp,
-  type TreeId,
-  type TreeNode,
-  type UndoPayload,
+import type {
+  CommandEnvelope,
+  CommandResult as CoreCommandResult,
+  DuplicateNodesPayload,
+  ImportNodesPayload,
+  NodeId,
+  NodeType,
+  PasteNodesPayload,
+  RedoPayload,
+  Timestamp,
+  TreeId,
+  TreeNode,
+  UndoPayload,
 } from '@hierarchidb/common-types';
 import { SingletonMixin } from '@hierarchidb/util';
 import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';
@@ -22,6 +21,7 @@ import type { CommandProcessor } from './CommandProcessor.js';
 import type { CoreDB } from './CoreDB.js';
 import { sanitizeMessageText } from './utils/error-adapter.js';
 import { createNewName } from './DraftTreeNodeOperations.js';
+import { generateNodeId } from './nodeId.js';
 
 const getCommandError = (result: CoreCommandResult, fallback = 'Unknown error'): string => {
   if (result.success) return fallback;

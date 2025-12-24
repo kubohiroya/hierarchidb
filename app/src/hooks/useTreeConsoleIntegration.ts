@@ -13,7 +13,7 @@ import { DualKeyMap } from '@hierarchidb/util';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useImportExport } from '../hooks/useImportExport.ts';
-import { getMenuSpec } from '../plugin-loader/menu-spec.ts';
+import { getMenuSpec } from '../plugin-loaders/menu-spec.ts';
 import { useTreeConsoleSSOT } from '../state/treeconsole.atoms.ts';
 import { buildVisibleRows, syncNodeIndex } from '../state/treeconsole.derive.js';
 import { convertTreeNodeToTreeNodeData, createDefaultColumns } from '../utils/treeNodeConverter.js';

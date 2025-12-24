@@ -1,5 +1,3 @@
-import './ambient-ui-global';
-
 export * from './action-types.js';
 export type {
   APIMethodArgs,
@@ -102,8 +100,8 @@ export * from './dialog-state.js';
 export * from './tree-root-node-types.js';
 export type { TreeRootState } from './tree-root-state-types.js';
 export { SortOrder } from './tree-root-state-types.js';
+
 export * from './tree-types.js';
-export * from './tree-view-types.js';
 export * from './undo-state-events.js';
 export type {
   StepValidation,

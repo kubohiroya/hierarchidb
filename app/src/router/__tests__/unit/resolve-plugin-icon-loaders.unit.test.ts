@@ -1,7 +1,7 @@
 import type { SvgIconProps } from '@mui/material/SvgIcon';
 import type { ComponentType } from 'react';
 import { describe, expect, it } from 'vitest';
-import { pluginIconLoaders } from '~/plugin-registry/index.ts';
+import { pluginIconLoaders } from '~/plugin-loaders/icon-loaders.ts';
 
 function isReactComponent(value: unknown): value is ComponentType<SvgIconProps> {
   if (typeof value === 'function') {

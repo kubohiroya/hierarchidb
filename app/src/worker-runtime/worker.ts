@@ -7,25 +7,10 @@ import './worker-react-refresh-shim.js';
 import type { PluginDefinition } from '@hierarchidb/plugin-registry/types';
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import type {
-  ImportExportAPI,
-  TagAPI,
-  TreeMutationAPI,
-  TreeQueryAPI,
-  TreeSubscriptionAPI,
-  WorkerAPI,
-  TreeNodeUpdaterAPI,
-  TreeTableExpandedAPI,
   BatchProgressEvent,
   BatchSessionStatus,
   BatchTaskSummary,
 } from '@hierarchidb/common-api';
-import type {
-  PluginLifecycleAPI,
-  StyleMutationAPI,
-  StyleQueryAPI,
-  LocationQueryAPI,
-  RouteQueryAPI,
-} from '@hierarchidb/plugin-service-api';
 import {
   getAllRuntimeExports,
   WorkerInitializationReporter,
@@ -40,8 +25,8 @@ import {
 } from '@hierarchidb/runtime-worker';
 import {
   pluginDefinitions as staticPluginDefinitions,
-  pluginWorkerLoaders,
-} from '~/plugin-registry/index.ts';
+} from '~/plugin-loaders/index.ts';
+import { pluginWorkerLoaders } from '~/plugin-loaders/worker-loaders.ts';
 
 /** Runtime export metadata (subset consumed during bootstrap). */
 type RuntimeExportEntry = {
@@ -154,7 +139,7 @@ const reporter = new WorkerInitializationReporter(
   [
     { name: 'Load Comlink', weight: 5 },
     { name: 'Load plugin loaders', weight: 10 },
-    { name: 'Load plugin-loader', weight: 35 },
+    { name: 'Load plugin-loaders', weight: 35 },
     { name: 'Bootstrap services', weight: 30 },
     { name: 'Create API facade', weight: 10 },
     { name: 'Expose API', weight: 10 },
@@ -215,7 +200,7 @@ reporter.reportStepProgress('Load Comlink', 0);
           const mod = await localLoader();
           moduleEntries.push({ nodeType, mod });
           const progress = Math.round((moduleEntries.length / pluginDefinitions.length) * 100);
-          reporter.reportStepProgress('Load plugin-loader', progress);
+          reporter.reportStepProgress('Load plugin-loaders', progress);
           continue;
         } catch (loaderError) {
           const msg = loaderError instanceof Error ? loaderError.message : String(loaderError);
@@ -233,7 +218,7 @@ reporter.reportStepProgress('Load Comlink', 0);
         const mod = await moduleLoader.importModule(nodeType);
         moduleEntries.push({ nodeType, mod });
         const progress = Math.round((moduleEntries.length / pluginDefinitions.length) * 100);
-        reporter.reportStepProgress('Load plugin-loader', progress);
+        reporter.reportStepProgress('Load plugin-loaders', progress);
       } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
         const softFailure = /document is not defined|Grid2|does not provide an export/i.test(msg);
@@ -251,7 +236,7 @@ reporter.reportStepProgress('Load Comlink', 0);
     }
 
     if (pluginDefinitions.length > 0) {
-      reporter.reportStepProgress('Load plugin-loader', 100);
+      reporter.reportStepProgress('Load plugin-loaders', 100);
     }
 
     const exportsByType = getAllRuntimeExports() as Record<string, RuntimeExportEntry>;

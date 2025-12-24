@@ -222,7 +222,7 @@ export default function HomePage() {
 
           <Tooltip title="Plugin Registry">
             <IconButton
-              onClick={() => navigate({ to: '/plugin-loader' })}
+              onClick={() => navigate({ to: '/plugin-loaders' })}
               size="small"
               sx={{ color: 'text.secondary', '&:hover': { backgroundColor: 'action.hover' } }}
             >

@@ -25,33 +25,3 @@ export type WorkerAPIMethod<
 export interface WorkerAPIExtensions {
   [methodName: string]: WorkerAPIMethod;
 }
-
-//  Worker API
-/**
- * @deprecated Unused across the repository; scheduled for removal.
- */
-export interface TypedWorkerAPIExtensions<T extends Record<string, WorkerAPIMethod>> {
-  methods: T;
-}
-
-//  Client API
-/**
- * @deprecated Unused across the repository; scheduled for removal.
- */
-export type ClientAPIMethod<
-  TArgs extends APIMethodArgs = APIMethodArgs,
-  TReturn extends APIMethodReturn = APIMethodReturn,
-> = (...args: TArgs) => TReturn;
-
-/*
-export interface ClientAPIExtensions {
-  [methodName: string]: ClientAPIMethod;
-}
-
-//  Client API
-
-// @deprecated Unused across the repository; scheduled for removal.
-export interface TypedClientAPIExtensions<T extends Record<string, ClientAPIMethod>> {
-  methods: T;
-}
-*/

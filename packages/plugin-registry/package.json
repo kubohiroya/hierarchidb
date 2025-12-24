@@ -16,6 +16,31 @@
       "import": "./dist/registry.js",
       "default": "./dist/registry.js"
     },
+    "./ui-loaders": {
+      "types": "./dist/ui-loaders.d.ts",
+      "import": "./dist/ui-loaders.js",
+      "default": "./dist/ui-loaders.js"
+    },
+    "./worker-loaders": {
+      "types": "./dist/worker-loaders.d.ts",
+      "import": "./dist/worker-loaders.js",
+      "default": "./dist/worker-loaders.js"
+    },
+    "./icon-loaders": {
+      "types": "./dist/icon-loaders.d.ts",
+      "import": "./dist/icon-loaders.js",
+      "default": "./dist/icon-loaders.js"
+    },
+    "./database-loaders": {
+      "types": "./dist/database-loaders.d.ts",
+      "import": "./dist/database-loaders.js",
+      "default": "./dist/database-loaders.js"
+    },
+    "./plugin-definitions": {
+      "types": "./dist/plugin-definitions.d.ts",
+      "import": "./dist/plugin-definitions.js",
+      "default": "./dist/plugin-definitions.js"
+    },
     "./types": {
       "types": "./dist/types.d.ts",
       "import": "./dist/types.js",
@@ -49,7 +74,7 @@
   "peerDependencies": {},
   "peerDependenciesMeta": {},
   "scripts": {
-    "build": "pnpm run clean && tsdown generated/registry.ts generated/types.ts generated/derivations.ts --config ../../tsdown.config.ts --outDir dist && node ./scripts/postbuild.mjs",
+    "build": "pnpm run clean && tsdown generated/registry.ts generated/types.ts generated/derivations.ts generated/ui-loaders.ts generated/worker-loaders.ts generated/icon-loaders.ts generated/database-loaders.ts generated/plugin-definitions.ts --config ../../tsdown.config.ts --outDir dist && node ./scripts/postbuild.mjs",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },

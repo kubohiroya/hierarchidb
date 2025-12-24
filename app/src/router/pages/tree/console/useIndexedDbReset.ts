@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { notify } from '@hierarchidb/components';
 import { useTranslation } from 'react-i18next';
-import { clearAppIndexedDBsViaPlugins } from '~/plugin-host/clearIndexedDb.ts';
+import { clearAppIndexedDBsViaPlugins } from '~/plugin-runtime/clearIndexedDb.ts';
 import { logIntegrationWarning } from './treeConsoleIntegrationUtils.js';
 
 type IndexedDbResetArgs = {

@@ -1,13 +1,13 @@
-import {
-  generateNodeId,
-  type NodeId,
-  type NodeType,
-  type TreeId,
-  type TreeNode,
-  type Timestamp,
+import type {
+  NodeId,
+  NodeType,
+  TreeId,
+  TreeNode,
+  Timestamp,
 } from '@hierarchidb/common-types';
 import type { CoreDB } from '../CoreDB.js';
 import { createNewName, getChildNames } from './nameUtilities.js';
+import { generateNodeId } from '../nodeId.js';
 
 /**
   * Initialize a draft TreeNode (TreeNodeUpdater) for creation.

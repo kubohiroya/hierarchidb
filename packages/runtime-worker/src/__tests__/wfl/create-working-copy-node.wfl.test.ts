@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import type { NodeId, TreeId, TreeNodeEvent } from '@hierarchidb/common-types';
-import { toNodeType, toTreeId } from '@hierarchidb/common-types';
+import { toNodeType } from '@hierarchidb/common-types';
 import * as Comlink from 'comlink';
 import { describe, expect, it } from 'vitest';
 import { MessageChannel } from 'worker_threads';
@@ -26,7 +26,7 @@ describe('Comlink + fake-indexeddb integration: create flow uses draft before co
     const mutationAPI = await client.getMutationAPI();
     const subscriptionAPI = await client.getSubscriptionAPI();
 
-    const treeId: TreeId = toTreeId('r');
+    const treeId: TreeId = 'r' as TreeId;
     const tree = await queryAPI.getTree(treeId);
     expect(tree?.rootId).toBeDefined();
     if (!tree?.rootId) throw new Error('rootId missing');

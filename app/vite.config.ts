@@ -105,7 +105,17 @@ function createRuntimeAliasConfig({
     { spec: '@hierarchidb/plugin-registry', src: '../packages/plugin-registry/generated/registry.ts', dist: '../packages/plugin-registry/dist/registry.js' },
     { spec: '@hierarchidb/plugin-registry/derivations', src: '../packages/plugin-registry/src/derivations.ts', dist: '../packages/plugin-registry/dist/derivations.js' },
     { spec: '@hierarchidb/plugin-registry/types', src: '../packages/plugin-registry/src/batch-types.ts', dist: '../packages/plugin-registry/dist/types.d.ts' },
+    { spec: '@hierarchidb/plugin-registry/ui-loaders', src: '../packages/plugin-registry/generated/ui-loaders.ts', dist: '../packages/plugin-registry/dist/ui-loaders.js' },
+    { spec: '@hierarchidb/plugin-registry/worker-loaders', src: '../packages/plugin-registry/generated/worker-loaders.ts', dist: '../packages/plugin-registry/dist/worker-loaders.js' },
+    { spec: '@hierarchidb/plugin-registry/icon-loaders', src: '../packages/plugin-registry/generated/icon-loaders.ts', dist: '../packages/plugin-registry/dist/icon-loaders.js' },
+    { spec: '@hierarchidb/plugin-registry/database-loaders', src: '../packages/plugin-registry/generated/database-loaders.ts', dist: '../packages/plugin-registry/dist/database-loaders.js' },
+    { spec: '@hierarchidb/plugin-registry/plugin-definitions', src: '../packages/plugin-registry/generated/plugin-definitions.ts', dist: '../packages/plugin-registry/dist/plugin-definitions.js' },
     { spec: '@hierarchidb/plugin-ui-sdk', src: '../packages/plugin-ui-sdk/src/index.ts', dist: '../packages/plugin-ui-sdk/dist/index.js' },
+    { spec: '@hierarchidb/basemap-plugin', src: '../plugins/basemap-plugin/src/index.ts', dist: '../plugins/basemap-plugin/dist/index.js' },
+    { spec: '@hierarchidb/basemap-plugin/worker', src: '../plugins/basemap-plugin/src/worker/index.ts', dist: '../plugins/basemap-plugin/dist/worker/index.js' },
+    { spec: '@hierarchidb/basemap-plugin/ui', src: '../plugins/basemap-plugin/src/ui/index.ts', dist: '../plugins/basemap-plugin/dist/ui/index.js' },
+    { spec: '@hierarchidb/basemap-plugin/icon', src: '../plugins/basemap-plugin/src/icon/index.ts', dist: '../plugins/basemap-plugin/dist/icon/index.js' },
+    { spec: '@hierarchidb/basemap-plugin/database', src: '../plugins/basemap-plugin/src/services/database/index.ts', dist: '../plugins/basemap-plugin/dist/services/database/index.js' },
     { spec: '@hierarchidb/folder-plugin', src: '../plugins/folder-plugin/src/index.ts', dist: '../plugins/folder-plugin/dist/index.js' },
     { spec: '@hierarchidb/location-plugin', src: '../plugins/location-plugin/src/index.ts', dist: '../plugins/location-plugin/dist/index.js' },
     { spec: '@hierarchidb/linker-plugin', src: '../plugins/linker-plugin/src/index.ts', dist: '../plugins/linker-plugin/dist/index.js' },
@@ -438,16 +448,198 @@ function specialPrefixRewritePlugin(base: string): Plugin {
   };
 }
 
-function buildIndexTransformGuardPlugin(): Plugin {
+function buildIndexHtmlTracePlugin(stage: 'pre' | 'post'): Plugin {
+  const label = `hierarchidb:index-html-trace:${stage}`;
+  const moduleScriptPattern = /<script\b[^>]*type=["']module["'][^>]*>/i;
+  const scriptTagPattern = /<script\b[^>]*>/gi;
+  const toSnippet = (value: string): string => value.replace(/\s+/g, ' ').trim().slice(0, 160);
   return {
-    name: 'hierarchidb:build-index-transform-guard',
+    name: label,
     apply: 'build',
-    transformIndexHtml(html) {
-      const hasModuleScript = /<script\s+[^>]*type=["']module["'][^>]*>/i.test(html);
-      if (!hasModuleScript) {
-        throw new Error('[build-index-transform-guard] index.html missing module script after transform.');
+    enforce: stage,
+    transformIndexHtml(html, ctx) {
+      const hasModuleScript = moduleScriptPattern.test(html);
+      const hasEntryClient = html.includes('entry.client.tsx');
+      const ctxPath = ctx?.path ?? 'unknown';
+      const ctxFilename = (ctx as { filename?: string } | undefined)?.filename ?? 'unknown';
+      let diskHasModuleScript: boolean | null = null;
+      let diskHasEntryClient: boolean | null = null;
+      const scriptTags = html.match(scriptTagPattern) ?? [];
+      let diskScriptTags: string[] | null = null;
+      let sameAsDisk: boolean | null = null;
+      if (ctxFilename !== 'unknown') {
+        try {
+          const diskHtml = readFileSync(ctxFilename, 'utf8');
+          diskHasModuleScript = moduleScriptPattern.test(diskHtml);
+          diskHasEntryClient = diskHtml.includes('entry.client.tsx');
+          diskScriptTags = diskHtml.match(scriptTagPattern) ?? [];
+          sameAsDisk = diskHtml === html;
+        } catch (error) {
+          console.warn(`[${label}] failed to read ${ctxFilename}:`, error);
+        }
       }
+      console.log(
+        `[${label}] path=${ctxPath} filename=${ctxFilename} length=${html.length} moduleScript=${hasModuleScript} entryClient=${hasEntryClient} diskModuleScript=${diskHasModuleScript} diskEntryClient=${diskHasEntryClient} scriptTags=${scriptTags.length} diskScriptTags=${diskScriptTags?.length ?? 'unknown'} sameAsDisk=${sameAsDisk} snippet="${toSnippet(html)}"`
+      );
       return html;
+    },
+  };
+}
+
+function buildIndexHtmlHookTracePlugin(): Plugin {
+  return {
+    name: 'hierarchidb:index-html-hook-trace',
+    apply: 'build',
+    configResolved(config) {
+      const rows = config.plugins
+        .map((plugin, index) => {
+          if (!plugin?.transformIndexHtml) return null;
+          const hook = plugin.transformIndexHtml;
+          const hookEnforce =
+            typeof hook === 'object' && hook && 'enforce' in hook && hook.enforce
+              ? hook.enforce
+              : undefined;
+          const pluginEnforce = plugin.enforce;
+          const order = hookEnforce ?? pluginEnforce ?? 'normal';
+          return `${index}:${plugin.name}:${order}`;
+        })
+        .filter(Boolean)
+        .join(', ');
+      console.log(`[hierarchidb:index-html-hook-trace] ${rows || 'none'}`);
+    },
+  };
+}
+
+function buildIndexResolveTracePlugin(): Plugin {
+  return {
+    name: 'hierarchidb:index-resolve-trace',
+    apply: 'build',
+    resolveId(id, importer) {
+      const isEntryClient = id.includes('entry.client');
+      const fromIndexHtml = typeof importer === 'string' && importer.endsWith('index.html');
+      if (isEntryClient || fromIndexHtml) {
+        console.log(`[hierarchidb:index-resolve-trace] id=${id} importer=${importer ?? 'null'}`);
+      }
+      return null;
+    },
+  };
+}
+
+function buildConfigTracePlugin(): Plugin {
+  return {
+    name: 'hierarchidb:build-config-trace',
+    apply: 'build',
+    configResolved(config) {
+      const input = config.build?.rollupOptions?.input ?? null;
+      const lib = config.build?.lib ?? null;
+      console.log(
+        `[hierarchidb:build-config-trace] root=${config.root} outDir=${config.build?.outDir} rollupInput=${JSON.stringify(input)} lib=${JSON.stringify(lib)}`
+      );
+    },
+  };
+}
+
+function buildIndexBundleTracePlugin(): Plugin {
+  const moduleScriptPattern = /<script\b[^>]*type=["']module["'][^>]*>/i;
+  const scriptTagPattern = /<script\b[^>]*>/gi;
+  let resolvedRoot = '';
+  let resolvedOutDir = '';
+  return {
+    name: 'hierarchidb:index-html-bundle-trace',
+    apply: 'build',
+    configResolved(config) {
+      resolvedRoot = config.root;
+      resolvedOutDir = config.build?.outDir ?? 'dist';
+    },
+    generateBundle(_options, bundle) {
+      const envName =
+        (this as { environment?: { name?: string; config?: { consumer?: string } } }).environment?.name ?? 'unknown';
+      const envConsumer =
+        (this as { environment?: { config?: { consumer?: string } } }).environment?.config?.consumer ?? 'unknown';
+      const asset = bundle['index.html'];
+      const indexBundleItem = bundle['assets/index.js'];
+      if (indexBundleItem) {
+        const itemType = indexBundleItem.type;
+        const entryFlag =
+          indexBundleItem.type === 'chunk' ? indexBundleItem.isEntry : 'n/a';
+        const facade =
+          indexBundleItem.type === 'chunk'
+            ? indexBundleItem.facadeModuleId ?? 'null'
+            : 'n/a';
+        console.log(
+          `[hierarchidb:index-html-bundle-trace] env=${envName}/${envConsumer} assets/index.js type=${itemType} entry=${entryFlag} facade=${facade}`,
+        );
+      }
+      const indexLike = Object.values(bundle)
+        .filter((item) => item.fileName.startsWith('assets/index'))
+        .map((item) => {
+          if (item.type === 'chunk') {
+            return `${item.fileName}:chunk:entry=${item.isEntry}:facade=${item.facadeModuleId ?? 'null'}`;
+          }
+          return `${item.fileName}:asset`;
+        })
+        .slice(0, 10)
+        .join(', ');
+      if (indexLike) {
+        console.log(
+          `[hierarchidb:index-html-bundle-trace] env=${envName}/${envConsumer} index-like=${indexLike}`,
+        );
+      }
+      const entryClientChunk = Object.values(bundle).find(
+        (item) =>
+          item.type === 'chunk' &&
+          typeof item.facadeModuleId === 'string' &&
+          item.facadeModuleId.includes('entry.client'),
+      );
+      if (entryClientChunk && entryClientChunk.type === 'chunk') {
+        console.log(
+          `[hierarchidb:index-html-bundle-trace] env=${envName}/${envConsumer} entry-client file=${entryClientChunk.fileName} entry=${entryClientChunk.isEntry}`,
+        );
+      } else {
+        console.log(
+          `[hierarchidb:index-html-bundle-trace] env=${envName}/${envConsumer} entry-client not found`,
+        );
+      }
+      if (!asset || asset.type !== 'asset' || typeof asset.source !== 'string') {
+        const keys = Object.keys(bundle).slice(0, 6).join(', ');
+        const allChunks = Object.values(bundle).filter((chunk) => chunk.type === 'chunk');
+        const entryChunks = allChunks.filter(
+          (chunk) => chunk.type === 'chunk' && chunk.isEntry,
+        );
+        const entryCount = entryChunks.length;
+        const chunkSample = allChunks
+          .slice(0, 6)
+          .map((chunk) => `${chunk.fileName}:entry=${chunk.isEntry}`)
+          .join(', ');
+        const entrySummary = entryChunks
+          .map((chunk) => `${chunk.fileName}:${chunk.facadeModuleId ?? 'null'}`)
+          .slice(0, 6)
+          .join(', ');
+        console.warn(
+          `[hierarchidb:index-html-bundle-trace] env=${envName}/${envConsumer} index.html not found in bundle keys=${keys} entryCount=${entryCount} entryChunks=${entrySummary || 'none'} chunkSample=${chunkSample || 'none'}`,
+        );
+        return;
+      }
+      const html = asset.source;
+      const hasModuleScript = moduleScriptPattern.test(html);
+      const scriptCount = html.match(scriptTagPattern)?.length ?? 0;
+      console.log(
+        `[hierarchidb:index-html-bundle-trace] length=${html.length} moduleScript=${hasModuleScript} scriptTags=${scriptCount}`
+      );
+    },
+    closeBundle() {
+      if (!resolvedRoot) return;
+      const outputIndex = path.resolve(resolvedRoot, resolvedOutDir, 'index.html');
+      try {
+        const html = readFileSync(outputIndex, 'utf8');
+        const hasModuleScript = moduleScriptPattern.test(html);
+        const scriptCount = html.match(scriptTagPattern)?.length ?? 0;
+        console.log(
+          `[hierarchidb:index-html-bundle-trace] wrote=${outputIndex} length=${html.length} moduleScript=${hasModuleScript} scriptTags=${scriptCount}`
+        );
+      } catch (error) {
+        console.warn(`[hierarchidb:index-html-bundle-trace] failed to read ${outputIndex}:`, error);
+      }
     },
   };
 }
@@ -500,21 +692,19 @@ function pluginRegistryGeneratorPlugin({ rootDir, mode }: { rootDir?: string; mo
 }
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode, isSsrBuild }) => {
+export default defineConfig(({ mode, command, isSsrBuild }) => {
   const env = loadEnv(mode, __dirname, '');
-  // Prefer VITE_APP_PREFIX if provided; otherwise default to root '/'
-  const appPrefix = (env.VITE_APP_PREFIX || env.VITE_APP_NAME || '').replace(/^\/+|\/+$/g, '');
+  // Use VITE_APP_NAME as the only base selector; default to root '/'
+  const appName = (env.VITE_APP_NAME || '').replace(/^\/+|\/+$/g, '');
   const isDev = mode === 'development';
-  const base = isDev ? '/' : appPrefix ? `/${appPrefix}/` : '/';
+  const base = isDev ? '/' : appName ? `/${appName}/` : '/';
   const enableWorkspaceAliases = mode === 'development' || mode === 'test';
   const requestedPluginSpecMode = (env.HDB_PLUGIN_SPEC_MODE || process.env.HDB_PLUGIN_SPEC_MODE || '').toLowerCase();
-  const pluginRegistryMode = (requestedPluginSpecMode === 'package' || requestedPluginSpecMode === 'dist-url'
-    ? requestedPluginSpecMode
-    : isDev
-      ? 'package'
-      : 'dist-url') as PluginSpecifierMode;
+  if (requestedPluginSpecMode && requestedPluginSpecMode !== 'package') {
+    throw new Error(`[plugin-registry] HDB_PLUGIN_SPEC_MODE must be "package" for this build (got "${requestedPluginSpecMode}").`);
+  }
+  const pluginRegistryMode: PluginSpecifierMode = 'package';
 
-  const ssrExternalDeps = ['@mui/material', '@mui/system', '@mui/utils', 'node-fetch', 'whatwg-url', 'tr46'];
   const buildExternalIds = new Set<string>(['@maplibre/vt-pbf']);
 
   const repoRoot = path.resolve(__dirname, '..');
@@ -620,7 +810,6 @@ export default defineConfig(({ mode, isSsrBuild }) => {
   //  main thread
   const plugins = [
     specialPrefixRewritePlugin(base),
-    buildIndexTransformGuardPlugin(),
     pluginRegistryGeneratorPlugin({
       rootDir: repoRoot,
       mode: pluginRegistryMode,
@@ -665,6 +854,16 @@ export default defineConfig(({ mode, isSsrBuild }) => {
     faviconPlugin(), // Add favicon plugin to serve favicon at root
     missingSourceMapFallbackPlugin(),
     comlink(), // Add Comlink plugin for Worker support
+    ...(env.HDB_TRACE_INDEX_HTML === '1' || process.env.HDB_TRACE_INDEX_HTML === '1'
+      ? [
+          buildIndexHtmlHookTracePlugin(),
+          buildConfigTracePlugin(),
+          buildIndexBundleTracePlugin(),
+          buildIndexHtmlTracePlugin('pre'),
+          buildIndexHtmlTracePlugin('post'),
+          buildIndexResolveTracePlugin(),
+        ]
+      : []),
     // tsconfigPaths is appended after runtime-worker alias configuration.
     // It is re-injected below after dev alias filtering.
   ];
@@ -933,10 +1132,6 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         // make it resolvable to its built output to avoid dev server crashes.
         { find: '@hierarchidb/base-plugin', replacement: path.resolve(__dirname, '../packages/plugin-loader/base-plugin/dist/index.ts') },
         // Virtual modules are provided by @hierarchidb/vite-plugin-hierarchidb-plugin-alias.
-        { find: 'crypto', replacement: path.resolve(__dirname, './src/virtual/crypto-shim.ts') },
-        // Some transitive libs (e.g., loaders.gl worker-utils) reference Node's child_process.
-        // Stub it for browser builds to avoid __vite-browser-external resolution errors.
-        { find: 'child_process', replacement: path.resolve(__dirname, './src/virtual/child-process-shim.ts') },
         // Legacy provider alias used by some plugin-loader
         { find: 'provider-i18next', replacement: 'react-i18next' },
         // Temporary workspace alias: ensure Vite resolves @hierarchidb/batch used by plugin-loader
@@ -1037,13 +1232,6 @@ export default defineConfig(({ mode, isSsrBuild }) => {
           warn(warning);
         },
       },
-    },
-    // Prevent Vite SSR build from externalizing workspace packages,
-    // which would otherwise cause runtime-worker failures when loaded in the browser.
-    ssr: {
-      external: ssrExternalDeps,
-      // Keep workspace and Emotion packages bundled; maplibre/MUI are externalized above.
-      noExternal: [/^@hierarchidb\//, /^@emotion\//],
     },
     optimizeDeps: {
       include: [

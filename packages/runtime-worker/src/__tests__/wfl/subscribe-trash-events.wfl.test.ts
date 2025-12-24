@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
-import type { NodeId, TreeNodeEvent } from '@hierarchidb/common-types';
-import { toNodeType, toTreeId } from '@hierarchidb/common-types';
+import type { NodeId, TreeId, TreeNodeEvent } from '@hierarchidb/common-types';
+import { toNodeType } from '@hierarchidb/common-types';
 import * as Comlink from 'comlink';
 import { describe, expect, it } from 'vitest';
 import { MessageChannel } from 'worker_threads';
@@ -44,7 +44,7 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     const subscriptionAPI = await client.getSubscriptionAPI();
     const wcAPI = await client.getTreeNodeUpdaterAPI();
 
-    const treeId = toTreeId('r');
+    const treeId = 'r' as TreeId;
     const tree = await queryAPI.getTree(treeId);
     expect(tree?.rootId).toBeDefined();
     expect(tree?.trashRootId).toBeDefined();

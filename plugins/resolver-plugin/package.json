@@ -11,6 +11,9 @@
       "database": [
         "dist/worker/database/index.d.ts"
       ],
+      "worker": [
+        "dist/worker/index.d.ts"
+      ],
       "icon": [
         "dist/icon/index.d.ts"
       ],
@@ -29,6 +32,11 @@
       "types": "./dist/worker/database/index.d.ts",
       "import": "./dist/worker/database/index.js",
       "default": "./dist/worker/database/index.js"
+    },
+    "./worker": {
+      "types": "./dist/worker/index.d.ts",
+      "import": "./dist/worker/index.js",
+      "default": "./dist/worker/index.js"
     },
     "./icon": {
       "types": "./dist/icon/index.d.ts",

@@ -10,7 +10,6 @@ import { DualKeyMap } from '@hierarchidb/util';
 import type { Remote } from 'comlink';
 import type { Dispatch, SetStateAction } from 'react';
 import { useCallback, useEffect, useRef } from 'react';
-import { preconnectForNodeTypes } from './preconnect.ts';
 import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms.js';
 import { buildVisibleRows, syncNodeIndex } from '~/state/treeconsole.derive.js';
 import type { TreeConsoleState } from './types.js';
@@ -135,10 +134,6 @@ export function useTreeConsoleLoader({
         setSSOTRef.current({ nodeIndex: index });
         builtIndex = index;
 
-        const types = displayNodes.map((n) =>
-          String((n as unknown as { nodeType?: string }).nodeType || '')
-        );
-        void preconnectForNodeTypes(types);
       } catch (err) {
         console.error('Failed to load children:', err);
         setState((prev) => ({ ...prev, error: err instanceof Error ? err.message : String(err) }));

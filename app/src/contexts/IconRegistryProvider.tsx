@@ -7,8 +7,8 @@ import {
   type IconRegistryValue,
   getMuiIconWithColor,
 } from '@hierarchidb/ui-icon';
-import { pluginIconLoaders } from '~/plugin-registry/index.ts';
-import { getInstalledPlugins } from '~/plugin-host/plugin-registry.ts';
+import { pluginIconLoaders } from '~/plugin-loaders/icon-loaders.ts';
+import { getInstalledPlugins } from '~/plugin-runtime/plugin-registry.ts';
 import { normalizeIconComponent } from '~/utils/normalizeIconComponent.ts';
 
 type IconDescriptor = {

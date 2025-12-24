@@ -4,7 +4,7 @@
  * Includes:
  * - /tags - Tag list and search
  * - /tags/:uuid - Tag detail page
- * - /plugin-loader - Plugin registry
+ * - /plugin-loaders - Plugin registry
  */
 
 import { createRoute } from '@tanstack/react-router';
@@ -31,6 +31,6 @@ export const tagDetailRoute = createRoute({
 
 export const pluginsRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/plugin-loader',
+  path: '/plugin-loaders',
   component: PluginsRoute,
 });

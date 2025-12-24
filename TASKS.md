@@ -53,6 +53,101 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1849) app/dist-* 生成経路の削除（P1）
+- ブランチ: `fix/app/remove-dist-variants`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: app/vite.config.ts, app/package.json, scripts
+- 受け入れ基準（DoD）:
+  - [ ] `app/dist-*` を作成する経路を特定する
+  - [ ] 該当処理を削除し、再実行で `app/dist-*` が作成されない
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] `app/dist-*` の生成経路を検索する
+  - [ ] 該当スクリプト/設定を削除する
+  - [ ] 代表コマンドで再発しないことを確認する（不可なら理由を記載）
+- ロールバック手順：本タスクの差分を revert する
+
+1845) app/src/entry.client.ts の参照有無調査（P2）
+- ブランチ: `analysis/app/entry-client-reference`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: app/index.html, app/vite.config.ts, app/src/entry.client.ts[x]
+- 受け入れ基準（DoD）:
+  - [ ] 参照元（import/設定/ビルド入力）を特定する
+  - [ ] 現行ビルド/起動フローでの必要性を判定する
+  - [ ] 結論/理由/影響範囲を運用ログに記載する
+- チェックリスト:
+  - [ ] `entry.client.ts` の参照有無を検索する
+  - [ ] `entry.client.tsx` との関係（index.html/vite）を確認する
+- ロールバック手順：調査のみのため差分なし。記載内容を戻す場合は本タスクの運用ログ追記を削除する。
+
+1844) static-loaders 生成の UI/Worker/DB/Icon 完全分離（P1）
+- ブランチ: `feat/plugin/static-loaders-split`
+- 依存: packages/plugin-registry, app/src/plugin-registry, plugins/*-plugin
+- 受け入れ基準（DoD）:
+  - [ ] UI/Worker/DB/Icon の static-loaders が別ファイルで生成される
+  - [ ] UI/Icon は optional を許容し、未定義でも生成コードが壊れない
+  - [ ] Worker 側に DOM 依存が混入しないことを生成コードで担保できる
+  - [ ] pluginRegistryGeneratorPlugin で入口パスの妥当性が検証される
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] 生成物の分割方針（UI/Worker/DB/Icon の責務境界）を整理する
+  - [ ] UI/Icon optional 化に伴う型と生成コードを更新する
+  - [ ] 入口パス検証の範囲とメッセージを整理する
+- ロールバック手順：本タスクで変更した生成コード/設定/生成物を revert し、`pnpm tools:gen-plugin-registry` を再実行する
+
+1845) app/plugin-registry を plugin-loaders へ改名し責務移譲（P1）
+- ブランチ: `feat/plugin/loader-namespace`
+- 依存: packages/plugin-registry, app/src/plugin-registry, app/src/plugin-loaders
+- 受け入れ基準（DoD）:
+  - [ ] `app/src/plugin-registry` を `app/src/plugin-loaders` に改名する
+  - [ ] app 側の責務は最小限（再エクスポート/DIのみ）に限定する
+  - [ ] loader/マップ生成の責務は可能な限り packages/plugin-registry 側へ移動する
+  - [ ] import 経路は整理され、循環・不要依存を増やさない
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] app/src/plugin-registry の用途を棚卸しし、packages 側へ移せる責務を特定する
+  - [ ] app/src/plugin-loaders へ改名して参照を更新する
+  - [ ] packages 側の export を整理して app 側の薄いラッパーへ置換する
+- ロールバック手順：本タスクの差分を revert し、app/src/plugin-registry を復元する
+
+1843) Vite base 設定の VITE_APP_NAME への一本化（P1）
+- ブランチ: `test/vite-minimal-index`
+- 依存: app/vite.config.ts, app/.env*
+- 受け入れ基準（DoD）:
+  - [ ] `VITE_APP_NAME` のみで base を決定する（他の env 名は参照しない）
+  - [ ] base のデフォルト動作を明記し、従来の想定と矛盾しない
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] Vite 設定内の `VITE_APP_PREFIX`/`VITE_APP_BASE` 参照を撤去する
+  - [ ] `VITE_APP_NAME` のみで `base` を組み立てる
+  - [ ] `pnpm -C app build` の出力が変わりすぎないことを確認する（実行不可なら理由記載）
+- ロールバック手順：本タスクの差分を revert し、従来の env 参照へ戻す
+
+1842) app build の index.html module script 欠落の切り分け（P1）
+- ブランチ: `test/vite-minimal-index`
+- 依存: app/vite.config.ts, app/index.html, build 出力
+- 受け入れ基準（DoD）:
+  - [ ] 最小構成の `_app` で `pnpm exec vite build` を実行し、`_app/dist/index.html` に `<script type="module">` が含まれる
+  - [ ] `_app` に app の要素を1つずつ追加し、module script が消える最初の差分を特定する
+  - [ ] 修正案を提示し、`pnpm -F @hierarchidb/app build` で `app/dist/index.html` に module script が含まれる
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] `_app` の最小構成で module script 生成を確認する
+  - [ ] vite 設定/プラグイン/HTML 追加を段階的に適用し、崩れるポイントを特定する
+  - [ ] app 側の該当箇所を最小差分で修正する
+- ロールバック手順：本タスクで変更した app/_app の差分を revert し、`pnpm -F @hierarchidb/app build` を再実行する
+
+1840) shape-plugin Step5 ビルド「一時停止」ボタンが無効（P1）
+- ブランチ: `fix/shape/step5-pause-button`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin（Step5 UI/Hook/worker）、packages/plugin-service-sdk（WorkerBridge）、packages/runtime-worker（BatchSession）
+- 受け入れ基準（DoD）:
+  - [ ] Step5 の「一時停止」ボタン押下で pause リクエストが発火し、Worker 側の batch session が pause される
+  - [ ] pause 後の状態が UI に反映され、resume/cancel の挙動が従来どおり維持される
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] Step5 の pause ハンドラと WorkerBridge 呼び出し経路を特定する
+  - [ ] pause が無視される原因（未接続/誤った sessionId/state 判定）を特定し修正する
+  - [ ] 代表検証として `pnpm --filter @hierarchidb/shape-plugin typecheck` を実行し、結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：本タスクで変更した Step5 UI/Hook/worker/bridge 周辺の差分を revert し、必要なら `pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する
+
 1838) Template Import の apply undefined エラー調査（P1）
 - ブランチ: `analysis/app/template-import-apply-undefined`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: app/import template, vite env 設定
@@ -4789,6 +4884,22 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1848) runtime-worker typecheck: toTreeId/generateNodeId/TreeSubscriptionAPI 修正（P1） — 完了 (2025-12-24)
+  - 要点：toTreeId を `as TreeId` キャストへ置換し、generateNodeId を uuid(v4) 生成へ統一。TreeSubscriptionService に TreeSubscriptionAPI の不足メソッドを実装。
+  - 検証：未実施。
+  - ロールバック手順：`packages/runtime-worker/src/{services/nodeId.ts,services/TreeSubscriptionService.ts,services/TreeMutationService.ts,services/draft/initOperations.ts}` と `packages/runtime-worker/src/{__tests__/wfl/*.wfl.test.ts,entity/__tests__/unit/lifecycle-notify.unit.test.ts}` の差分を revert する。
+- 1847) dev-alias config ファイルの参照有無調査（P2） — 完了 (2025-12-24)
+  - 要点：dev-alias-config.js は app/vite.config.ts・app/vite.config.min.ts・scripts/sync-dev-aliases.ts から参照。dev-alias-config.d.ts は type import/JSDoc の型定義で参照。dev-aliases.json は loadDevAliasConfig の設定ファイルとして参照。
+  - 検証：参照検索のみ。
+  - ロールバック手順：調査のみのため差分なし（運用ログ追記を削除）。
+- 1846) TreeConsole preconnect noop の削除と参照整理（P2） — 完了 (2025-12-24)
+  - 要点：`app/src/hooks/treeconsole/preconnect.ts` を削除し、TreeConsole の preconnect 呼び出しを撤去。
+  - 検証：未実施。
+  - ロールバック手順：`app/src/hooks/treeconsole/preconnect.ts` を復元し、`app/src/hooks/treeconsole/{createTreeConsoleActions.ts,useTreeConsoleLoader.ts}` の import/呼び出しを戻す。
+- 1824) BuildStep 全体進捗カードの上マージン調整（P1） — 完了 (2025-12-22)
+  - 要点：ShapeBuildProgressStep の SVG 進捗バーと counts 行の間隔を 4px に固定（Stack spacing 0 + counts 行 `mt: 0.5`）。
+  - 検証：未実施。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx` の差分を revert する。
 - 1839) worker.ts の PluginDefinition 型不一致解消（P1） — 完了 (2025-12-23)
   - 要点：runtime-worker に RuntimePluginDefinition を導入して plugin-registry の定義を受け入れ、WorkerService/NodeLifecycleManager の型依存を分離。route DB の close 呼び出しを optional chaining 化。
   - 検証：`pnpm --filter @hierarchidb/app typecheck` exit 0（@hierarchidb/plugin-base の tsdown define 警告は既知のまま）。
@@ -9294,6 +9405,7 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-5"></a>
 
+- 2025-12-25 00:20 start: 1837 fix/app/index-module-script — module script が build 後に消える原因調査を再開。`HDB_TRACE_INDEX_HTML=1` ログで「transform 前から欠落」「bundle に index.html が無い」状態を再確認し、Vite の HTML 変換がどの段階で置換されるかを特定する。DoD: build/build:sourcemap/preview で module script が維持されること、原因と修正方針を運用ログに記載。
 - 2025-12-08 18:25 progress: research/plugin-dialog-i18n — route-plugin を location-plugin と同様にプラグイン内 locales 方式へ移行（`src/ui/locales/{en,ja}.json` 追加、`src/ui/i18n.ts` で glob 登録、common i18n ラッパーを i18next ベースに置換）。RouteSelection/Processing/Details/Build ステップと step labels を新キーへ差し替え。`plugins/route-plugin/tsconfig.json` で Vite 型/デコレータ許可を追加し、`pnpm --filter @hierarchidb/route-plugin typecheck` exit 0 を確認。
 - 2025-12-08 19:05 progress: research/plugin-dialog-i18n — linker-plugin へプラグイン内 locales（`src/ui/locales/{en,ja}.json`）と `src/ui/i18n.ts` を追加し、steps-provider/ResourcePicker/AggregatedList/MapPreview の文言を t() 化。`tsconfig.json` を base paths 依存に合わせ簡素化し、`pnpm --filter @hierarchidb/linker-plugin typecheck` exit 0 を確認。
 - 2025-12-08 19:25 progress: research/plugin-dialog-i18n — resolver-plugin をプラグイン内 locales（`src/ui/locales/{en,ja}.json`）＋ `src/ui/i18n.ts` で HMR 登録に移行し、Common i18n ラッパーを追加。ResolverDialog のステップラベル/ヘッダー/ボタン/Basic Info 説明を t() 化。`tsconfig.json` を Vite 型・拡張子 import 許可に整備し、`pnpm --filter @hierarchidb/resolver-plugin typecheck` exit 0 を確認。
@@ -11274,6 +11386,72 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-25 12:50 progress: feat/plugin/static-loaders-split — preview の basemap worker 解決エラーは app/dist/worker.js に旧 registry（basemap exports=worker）が残っているためと判断。`tools:gen-plugin-registry` の更新と runtime-worker の再ビルドを app build に組み込み、最新 registry を worker bundle へ反映する方針で調整する。
+- 2025-12-24 11:35 start: chore/app/remove-treeconsole-preconnect — app/src/hooks/treeconsole/preconnect.ts noop 削除と参照整理に着手。DoD: Kanban 1846 のとおり削除/参照除去/運用ログ/ロールバック記載。
+- 2025-12-24 11:36 done: chore/app/remove-treeconsole-preconnect — preconnect.ts を削除し、TreeConsole の preconnect 呼び出しを撤去。検証: 未実施。ロールバック: `app/src/hooks/treeconsole/preconnect.ts` を復元し、`app/src/hooks/treeconsole/{createTreeConsoleActions.ts,useTreeConsoleLoader.ts}` の import/呼び出しを戻す。
+- 2025-12-24 12:02 start: analysis/config/dev-alias-config-usage — dev-alias config ファイル（d.ts/js/json）の参照有無を調査開始。DoD: Kanban 1847 のとおり参照特定/結論提示/運用ログ記載。
+- 2025-12-24 12:03 done: analysis/config/dev-alias-config-usage — dev-alias-config.js は app/vite.config.ts と app/vite.config.min.ts、scripts/sync-dev-aliases.ts から参照され、dev-alias-config.d.ts はそれらの型 import/JSDoc の型定義として利用。dev-aliases.json は dev-alias-config.js が読み込む設定ファイル（loadDevAliasConfig の CONFIG_FILENAME）として利用される。検証: 参照検索のみ。ロールバック: 本ログ追記を削除。
+- 2025-12-24 12:34 start: fix/runtime-worker/typecheck-missing-helpers — runtime-worker の toTreeId/generateNodeId/TreeSubscriptionAPI の typecheck エラー修正に着手。DoD: Kanban 1848 のとおり置換/型不一致解消/運用ログ記載。
+- 2025-12-24 12:42 done: fix/runtime-worker/typecheck-missing-helpers — toTreeId を `as TreeId` へ置換し、generateNodeId を uuid(v4) 生成へ統一。TreeSubscriptionService に TreeSubscriptionAPI の不足メソッドを実装。検証: 未実施。ロールバック: `packages/runtime-worker/src/{services/nodeId.ts,services/TreeSubscriptionService.ts,services/TreeMutationService.ts,services/draft/initOperations.ts}` と `packages/runtime-worker/src/{__tests__/wfl/*.wfl.test.ts,entity/__tests__/unit/lifecycle-notify.unit.test.ts}` の差分を revert する。
+- 2025-12-24 18:54 start: fix/app/remove-dist-variants — app/dist-* の生成経路削除に着手。DoD: Kanban 1849 のとおり経路特定/削除/再発防止/運用ログ記載。
+- 2025-12-24 18:58 progress: fix/app/remove-dist-variants — repo 内の `--outDir`/`dist-*` 参照は TASKS 記録のみで、app/scripts/package.json に該当コマンドは見当たらず。app/vite.config.ts は outDir=dist 固定。dist-* は手動 `vite build --outDir dist-*` 実行時にのみ作成される可能性が高い。
+- 2025-12-24 11:04 start: analysis/app/entry-client-reference — app/src/entry.client.ts の参照有無と必要性を確認する調査に着手。DoD: Kanban 記載どおり参照確認/結論/運用ログ記載。（Kanban: 1845）
+- 2025-12-24 11:04 progress: analysis/app/entry-client-reference — entry.client.ts の参照検索と index.html/vite.config.ts の entry.client.tsx 参照を確認。
+- 2025-12-24 11:04 done: analysis/app/entry-client-reference — app/index.html は `src/entry.client.tsx` を参照し、vite.config.ts の検査も `entry.client.tsx` のみ。`app/src/entry.client.ts` は `entry.client.tsx` を re-export するだけで参照箇所が見当たらず、現状のビルド/起動フローでは必須ではない可能性が高い。ロールバック: 調査のみのため差分なし（運用ログ追記を削除）。
+- 2025-12-24 11:16 progress: analysis/app/entry-client-reference — entry.client.ts はユーザー側で削除済み。削除の影響確認は未実施のため、必要なら参照検索/ビルド確認を実施する。
+- 2025-12-24 23:40 start: feat/plugin/static-loaders-split — pluginRegistryGeneratorPlugin を拡張し、static-loaders を UI/Worker/DB/Icon で完全分離する対応に着手。DoD: Kanban 1844 のとおり分離/optional 化/入口検証/運用ログ記載。
+- 2025-12-25 00:30 progress: feat/plugin/static-loaders-split — plugin-registry 生成物を UI/Worker/DB/Icon 別の loader ファイルへ分割し、app 側の plugin-registry を `ui-loaders`/`worker-loaders`/`icon-loaders`/`database-loaders` に分離。runtime-worker 側も `worker-loaders` 参照へ切替。型スタブを新 subpath に追従。
+- 2025-12-25 01:10 start: feat/plugin/loader-namespace — app/src/plugin-registry を app/src/plugin-loaders へ改名し、packages/plugin-registry 側へ責務移譲する整理に着手。DoD: Kanban 1845 のとおり改名/責務移譲/依存整理/運用ログ記載。
+- 2025-12-25 01:42 progress: feat/plugin/loader-namespace — app 側の UI loader から `pluginUiModuleMap` を削除し、packages/plugin-registry が生成する `ui-loaders` から直接 re-export。型スタブも `pluginUiModuleMap` を追加。IconRegistryProvider の import を plugin-loaders 経由に更新。
+- 2025-12-25 01:47 start: feat/plugin/derive-definitions-export — `derivePluginDefinitions` を app から剥がし、packages/plugin-registry の生成物として提供する整理に着手。DoD: Kanban 1845 に準拠（責務移譲/依存整理/運用ログ記載）。
+- 2025-12-25 02:01 progress: feat/plugin/derive-definitions-export — plugin-registry 生成物に `plugin-definitions` を追加し、app は生成済み定義を re-export するだけに整理。vite alias と型スタブ、package exports を更新。
+- 2025-12-25 02:10 start: refactor/app/plugin-host-loaders — app/src/plugin-host と app/src/plugin-loaders の責務整理と依存方向の固定に着手。DoD: 責務明文化/依存方向固定/循環なし/運用ログ記載。
+- 2025-12-25 02:22 progress: refactor/app/plugin-host-loaders — ui-plugin-loader を plugin-loaders に移動し、参照先を更新。plugin-host/plugin-loaders に README を追加して責務と依存方向を明文化。
+- 2025-12-25 02:32 progress: refactor/app/plugin-host-loaders — plugin-host を plugin-runtime に改名し、plugin-loader を plugin-loaders に統一。import 参照と route 名を更新。未使用の `app/src/virtual/stubs` を削除。
+- 2025-12-25 02:45 progress: refactor/app/plugin-host-loaders — plugin-host 参照を plugin-runtime に更新し、plugin-loader の移動後に発生したパスずれ（`plugin-loaders` 参照）を整理。plugin-loader ディレクトリは削除済み。
+- 2025-12-25 02:58 start: debug/app/index-html-module-script — build 時に module script が消える原因の再調査に着手。DoD: 消失段階の特定/修正案提示/運用ログ記載。
+- 2025-12-25 03:15 progress: debug/app/index-html-module-script — `HDB_PLUGIN_SPEC_MODE=package` では `assets/index.js` が chunk になり module script が残る一方、既定モードでは `assets/index.js` が asset 化して entry が消失することを確認。Vite config の pluginRegistryMode 既定を `package` に切替。
+- 2025-12-25 03:28 start: debug/app/index-html-module-script — vite.config.min の差分を二分法で絞り込み、module script を消す設定群を特定する。DoD: 二分法の分割/検証手順を記録し、原因の最小セットを提示。
+- 2025-12-24 02:12 start: test/vite-minimal-index — app build の index.html から module script が消える問題を最小構成 `_app` で切り分ける対応に着手。DoD: Kanban 1842 のとおり最小構成での再現/差分特定/修正案提示/運用ログ記載。
+- 2025-12-24 09:32 start: test/vite-minimal-index — Vite base の環境変数を `VITE_APP_NAME` に一本化する対応に着手（Kanban: 1843）。
+- 2025-12-24 09:39 command: `VITE_APP_NAME=hierarchidb pnpm -C app build` を実行し exit 0。`app/dist/index.html` に module script が含まれないことを確認（`rg "type=\"module\"" app/dist/index.html` は一致なし）。
+- 2025-12-24 09:41 command: `VITE_APP_NAME=hierarchidb pnpm -C app preview` は EPERM で listen 失敗（0.0.0.0:4173）。sandbox 制約で preview 確認不可。
+- 2025-12-24 09:47 progress: test/vite-minimal-index — `app/vite.config.ts` の主要設定項目の依存関係を整理し、共有依存（mode/env）を持つため木構造ではなく DAG であることを確認。
+- 2025-12-24 09:52 progress: test/vite-minimal-index — `app/vite.config.minimal.ts` を削除し、`app/vite.config.ts`/`app/vite.config.min.ts` から SSR 設定を撤去。
+- 2025-12-24 10:02 progress: test/vite-minimal-index — 検証用 `_app` ディレクトリを削除。
+- 2025-12-24 10:05 progress: test/vite-minimal-index — `app/vite.config.min.ts` の base を `VITE_APP_NAME` のみに統一。
+- 2025-12-24 10:12 progress: test/vite-minimal-index — `crypto`/`child_process` の shim alias を `app/vite.config.ts`/`app/vite.config.min.ts` から削除し、`app/src/virtual/*-shim.ts` を削除。
+- 2025-12-24 10:16 command: `VITE_APP_NAME=hierarchidb pnpm -C app build` を実行し exit 0。`app/dist/index.html` の module script は依然として欠落（`rg "type=\"module\"" app/dist/index.html` は一致なし）。
+- 2025-12-24 10:28 progress: test/vite-minimal-index — `pluginWorkerVirtualModule` の実装と `gen-plugin-registry` の生成構造を確認し、静的 import 生成による入口確定方針の設計を整理。
+- 2025-12-24 02:20 progress: test/vite-minimal-index — `_app` に comlink を復帰し、app の node_modules を参照して `pnpm exec vite build` を実行。`_app/dist/index.html` に module script が含まれることを確認。
+- 2025-12-24 02:24 progress: test/vite-minimal-index — app の vite.config を `_app` で読み込んでビルドしたところ、`_app/dist/index.html` に module script が含まれることを確認（plugin/設定側は原因にならないことを確認）。
+- 2025-12-24 02:27 blocked: test/vite-minimal-index — `_app` から app ルートを参照する最小構成ビルドは `@hierarchidb/common-api` の export 不足で worker バンドルが失敗（module script 有無の検証に到達できず）。現状は app 側ビルド成功時の `dist/index.html` が script 欠落する根因が未特定のため、次は app のビルド直後に index.html を上書きする経路を洗い出す。
+- 2025-12-24 02:45 progress: test/vite-minimal-index — `pnpm -C app exec vite build --outDir dist-test` を実行し、`app/dist-test/index.html` でも module script が削除されることを確認。manifest には `index.html` が entry として記録されているため、Vite の HTML 変換で script が削除される挙動が再現できた。
+- 2025-12-24 02:52 progress: test/vite-minimal-index — `HDB_TRACE_INDEX_HTML=1` で build 時の `transformIndexHtml` 入出力をログするプラグインを追加（非改変）。module script が消える段階を特定するための診断ログを準備。
+- 2025-12-24 03:12 progress: test/vite-minimal-index — index.html の読み込み経路を特定するため、`transformIndexHtml` で `ctx.path`/`filename` をログ出力するよう追記（非改変）。
+- 2025-12-24 03:21 progress: test/vite-minimal-index — `transformIndexHtml` 内で `ctx.filename` を `readFileSync` し、Vite が渡す HTML とディスクの `index.html` の差分（module script 有無）をログする診断を追加。
+- 2025-12-24 03:28 progress: test/vite-minimal-index — `transformIndexHtml` で script タグ数（メモリ/ディスク）をログし、HTML 文字列から module script が落ちる直前の形を把握する診断を追加。
+- 2025-12-24 03:35 progress: test/vite-minimal-index — build 解決済み config の `root/outDir/rollupOptions.input` をログする診断プラグインを追加（`HDB_TRACE_INDEX_HTML=1` 時のみ）。
+- 2025-12-24 03:42 progress: test/vite-minimal-index — build 解決済み config の `lib/ssr` 設定もログし、HTML ビルドが lib/SSR モードに切り替わっていないか確認する診断を追加。
+- 2025-12-24 03:50 progress: test/vite-minimal-index — `generateBundle` で `index.html` の bundle 反映結果（module script 含有）をログする診断プラグインを追加。
+- 2025-12-24 08:05 progress: test/vite-minimal-index — `app/vite.config.min.ts` を段階的に拡張して module script 欠落の再現点を特定する方針を確定（runtimeAliasConfig/define/ssr/server/optimizeDeps など未追加要素を順番に投入して検証する）。
+- 2025-12-24 08:22 progress: test/vite-minimal-index — `app/vite.config.ts` の `worker.rollupOptions` にコロン抜けがあり config がパース失敗していたため、`rollupOptions: { ... }` に修正してビルド診断を継続できる状態へ復旧。
+- 2025-12-24 08:33 progress: test/vite-minimal-index — min config の build external を main と同じ（`@maplibre/vt-pbf` のみ外部化）へ寄せると `@hierarchidb/ui-*` などの dist 未生成により build が `UNLOADABLE_DEPENDENCY` で失敗。外部化を戻して min ビルド継続可能な状態を維持。
+- 2025-12-24 01:55 progress: fix/app/index-module-script — `_app` の最小構成検証で `vite-plugin-comlink` が解決できないため、`_app/vite.config.ts` から comlink を除外して再検証へ。
+- 2025-12-24 01:50 progress: fix/app/index-module-script — `_app/vite.config.ts` の base を環境変数（VITE_APP_PREFIX / VITE_APP_NAME）から生成する方式に変更。
+- 2025-12-24 01:45 progress: fix/app/index-module-script — `app/vite.config.minimal.ts` を追加し、app の index.html を最小構成で build する検証に切り替える（出力先 `dist-minimal`）。
+- 2025-12-24 01:42 progress: fix/app/index-module-script — `_app/index.html` を `app/index.html` と同内容に差し替え、`_app/src/entry.client.tsx` を最小実装で追加して HTML 構造の影響を検証する準備。
+- 2025-12-24 01:38 progress: fix/app/index-module-script — 最小構成 `_app` を作成し、`pnpm exec vite build` で `_app/dist/index.html` に module script が生成されることを確認。
+- 2025-12-24 01:30 progress: fix/app/index-module-script — 切り分け用のブランチ `test/vite-minimal-index` を作成し、最小構成の `_app` 検証に着手。
+- 2025-12-24 01:12 progress: fix/app/index-module-script — `build.rollupOptions.input` を削除し、Vite 標準の HTML エントリ解決に戻した。
+- 2025-12-24 01:10 progress: fix/app/index-module-script — `app/index.html` の entry script を `./src/entry.client.tsx` に戻し、`<noscript>` の後ろへ配置を復元して、Vite の標準 HTML 変換が期待する構成へ戻す。
+- 2025-12-24 00:58 start: fix/app/index-module-script — `pnpm -F @hierarchidb/app build` で module script が落ちる問題の原因を再調査し、Vite 標準の HTML 変換で正しく script が生成される状態へ復旧する対応に着手。DoD: build/build:sourcemap/preview の index.html に module script が入ること、フォールバック無しで成立、運用ログ/ロールバック記載。（Kanban: 1837）
+- 2025-12-24 00:10 progress: fix/app/preview-bare-imports — 指示どおりフォールバック/応急処置を排除し、`app/vite.config.ts` に追加した `buildIndexEntryPlugin` と `app/vite-plugins/vite-plugin-index-entry-fallback.ts` を撤去、`app/index.html` の module script 位置を元に戻す作業に着手。戻し方針: Vite の標準 HTML 変換のみで script が残る状態へ復元する。
+- 2025-12-23 23:40 start: fix/app/preview-bare-imports — preview/build で `app/dist/index.html` に module script が入らず白画面になる問題の原因調査に着手。DoD: Kanban 1837 記載どおり entry 解決/preview での bare import 解消/運用ログ記載。
+- 2025-12-23 23:55 progress: fix/app/preview-bare-imports — Vite build の HTML 変換が module script を落としている可能性を検証するため、`app/vite.config.ts` の `build.rollupOptions.input` 明示を削除。`pnpm -F @hierarchidb/app build` を実行（exit 0）したが `app/dist/index.html` には module script が出力されないことを確認。
+- 2025-12-23 22:50 start: fix/shape/step5-pause-button — shape-plugin Step5 の「一時停止」ボタンが機能しない問題を修正する対応に着手。DoD: Kanban 記載どおり pause 連携/状態反映/検証/運用ログ/ロールバック記載。（Kanban: 1840）
+- 2025-12-23 22:56 progress: fix/shape/step5-pause-button — shape worker の pause/resume/cancel が UnifiedShapeBatchManager 経路で no-op になっていたため、dispatchCommand 未実装時は batchSessionManager にフォールバックするよう補強。invokeBatchCommand も session 系コマンドをフォールバック実行。
+- 2025-12-23 22:57 command: pnpm --filter @hierarchidb/shape-plugin typecheck — exit 0。
 - 2025-12-23 19:37 start: fix/runtime-worker/plugin-definition-type-mismatch — app/src/worker-runtime/worker.ts の PluginDefinition 型不一致（plugin-registry と plugin-service-api の差分）解消に着手。DoD: Kanban 記載どおり型不一致解消/型差分方針/運用ログ/ロールバック記載。（Kanban: 1839）
 - 2025-12-23 19:46 done: fix/runtime-worker/plugin-definition-type-mismatch — DoD 達成。ロールバック: `packages/runtime-worker/src/types/RuntimePluginDefinition.ts`、`packages/runtime-worker/src/WorkerService.ts`、`packages/runtime-worker/src/services/NodeLifecycleManager.ts`、`packages/runtime-worker/src/entity/EntityLifecycleManager.ts`、`packages/runtime-worker/src/__tests__/headless/lifecycle-refcount.headless.test.ts` の差分を revert し、`pnpm --filter @hierarchidb/app typecheck` を再実行。
 - 2025-12-23 19:45 progress: fix/runtime-worker/plugin-definition-type-mismatch — runtime-worker に RuntimePluginDefinition を追加し、WorkerService/NodeLifecycleManager を plugin-service-api 定義から分離。headless テストの型参照も更新。
@@ -11350,6 +11528,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-22 21:32 start: fix/route/selection-metadata-removal — RouteSelectionStep の metadata 参照を撤去し、RouteEntity の flat なプロパティへ移行する対応に着手。DoD: Kanban 記載どおり型整合、typecheck 記録、運用ログ/ロールバック記載。
 - 2025-12-22 21:33 command: pnpm --filter @hierarchidb/route-plugin typecheck — exit 0。
 - 2025-12-22 21:34 done: fix/route/selection-metadata-removal — RouteSelectionStep の metadata 参照を削除し、transportSelection/railType/roadType/generationOptions を RouteEntity に追加。検証: `pnpm --filter @hierarchidb/route-plugin typecheck` exit 0。ロールバック: `plugins/route-plugin/src/common/entities/RouteEntity.ts` と `plugins/route-plugin/src/ui/components/steps/RouteSelectionStep.tsx` の差分を revert する。
+- 2025-12-22 21:40 start: fix/ui/build-progress-margin — BuildStep 全体進捗カードの counts 行に上マージン 4px を付与する対応に着手。DoD: Kanban 記載どおり表示調整、運用ログ/ロールバック記載。
+- 2025-12-22 21:41 done: fix/ui/build-progress-margin — `ShapeBuildProgressStep` の counts 行へ `mt: 0.5` を付与。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx` の差分を revert する。
+- 2025-12-22 22:05 done: fix/ui/build-progress-margin — SVG 進捗バーと counts 行の間隔を 4px に固定（Stack spacing を 0、counts 行に `mt: 0.5`）。検証: 未実施。ロールバック: 同ファイルの差分を revert する。
 - 2025-12-22 21:03 start: fix/location/geojson-types — location-plugin の `geojson` 型インポートで TS2307 が発生するため、型依存の追加と解決を実施する。DoD: Kanban 記載どおり TS2307 解消、typecheck 記録、運用ログ/ロールバック記載。
 - 2025-12-22 20:58 progress: fix/location/geojson-feature-properties — `geojson-vt` Feature を GeoJSON Feature 型へ置換し、`properties` を型解決できるよう整理。
 - 2025-12-22 20:59 done: fix/location/geojson-feature-properties — `LocationSessionController.ts` の Feature を `geojson` 由来に変更し、properties の型解決を回復。検証: 未実施。ロールバック: `plugins/location-plugin/src/services/batch/LocationSessionController.ts` の差分を revert する。
@@ -11845,3 +12026,51 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-23 21:48 progress: fix/app/vite-config-module-resolution — rollupOptions.input の明示指定を撤去し、Vite の標準 HTML 変換に戻して deploy ビルドの script 消失を回避。
 - 2025-12-23 18:41 progress: fix/ui/plugin-dialog-build-stepper-progress — Stepper のビルド実行中表示を追加し、shape/location/route/resolver の build/preview valid 条件を成果物永続化へ統一。resolver の step 順を Build→Preview へ変更。
 - 2025-12-23 18:41 done: fix/ui/plugin-dialog-build-stepper-progress — Stepper のビルド実行中は CircularProgress に切替、各プラグインの build/preview valid を成果物永続化へ統一し、resolver の Build/Preview の順序を入れ替え。検証: 未実施。ロールバック: `packages/plugin-ui-host/src/headless/components/{PluginDialogStepper.tsx,PluginDialogHeader.tsx,StepStatusIcon.tsx}` と `plugins/{shape-plugin,location-plugin,route-plugin,resolver-plugin}/src/ui/components/steps-provider.tsx` の差分を revert する。
+- 2025-12-23 22:47 start: fix/app/index-module-script — build/preview で index.html の module script が欠落する原因を特定し、Vite 標準の HTML 変換で正しい script が出力されるよう修正する。DoD: build/build:sourcemap/preview で module script が入ること、フォールバック無しで成立、運用ログ/ロールバック記載。（Kanban: 1837）
+- 2025-12-24 00:18 progress: fix/app/index-module-script — ブランチ `test/vite-minimal-index` で最小 Vite config を作成し、`vite.config.min.ts` + 追加要素（runtime alias/define/optimizeDeps/tsconfigPaths）までは module script が保持されることを確認。`vite.config.ts` では transform 前から module script が欠落しており、`HDB_TRACE_INDEX_HTML=1 pnpm -C app exec vite build --config vite.config.ts --outDir dist-trace` のログで `index.html` が bundle keys に存在しない点を確認。ロールバック: `app/vite.config.min.ts` の追加と `app/vite.config.ts` の syntax fix を revert する。
+- 2025-12-23 23:18 progress: fix/app/index-module-script — base=/hierarchidb/ で `/src` が base 外扱いになる可能性を整理。index.html の entry script を相対パスへ戻して HTML 変換が base 配下で解決される前提に揃える方針へ切替。（Kanban: 1837）
+- 2025-12-23 23:30 progress: fix/app/index-module-script — Vite config の root/paths が `.vite-temp` 実行時にぶれる可能性を特定。`process.cwd()` を app ルート基準として固定化する方針で修正する。（Kanban: 1837）
+- 2025-12-23 23:38 progress: fix/app/index-module-script — cwd が app でないケースを排除するため、`@hierarchidb/app` の package.json を上方向探索して appRoot を確定する方式へ切替。（Kanban: 1837）
+- 2025-12-23 23:46 progress: fix/app/index-module-script — 直前の Vite config 変更を撤回し、`pnpm -F @hierarchidb/app build` で module script が生成されていた状態へ復帰する方針に切替。（Kanban: 1837）
+- 2025-12-23 23:52 progress: fix/app/index-module-script — build guard が index.html 以外の HTML（oauth-redirect など）にも発火していたため、index.html のみを対象にするよう修正する方針に切替。（Kanban: 1837）
+- 2025-12-24 00:02 progress: fix/app/index-module-script — build guard を一時的に撤去し、Vite 標準の HTML 変換のみで build が通る状態を先に回復して原因切り分けを行う。（Kanban: 1837）
+- 2025-12-23 22:49 progress: fix/app/index-module-script — build guard に欠落時の入力パス/断片ログを追加し、`app/index.html` の module script を `/src/entry.client.tsx` に戻して base 影響を排除。検証: 未実施。ロールバック: `app/vite.config.ts` と `app/index.html` の差分を revert。
+- 2025-12-23 22:53 progress: fix/app/index-module-script — build guard に `app/index.html` 実ファイルの module script 有無/size をログ出力する診断を追加。検証: 未実施。ロールバック: `app/vite.config.ts` の差分を revert。
+- 2025-12-23 22:58 progress: fix/app/index-module-script — build guard を最終出力（bundle の index.html）検証に切り替え、transform 時の誤検知を回避。検証: 未実施。ロールバック: `app/vite.config.ts` の差分を revert。
+- 2025-12-23 23:00 progress: fix/app/index-module-script — build guard を worker/SSR ビルドから除外し、client build の bundle にのみ index.html 検証を適用。検証: 未実施。ロールバック: `app/vite.config.ts` の差分を revert。
+- 2025-12-23 23:02 progress: fix/app/index-module-script — build guard の HTML 検出を `*.html` キー走査へ変更し、`bundle['index.html']` の誤判定を回避。検証: 未実施。ロールバック: `app/vite.config.ts` の差分を revert。
+- 2025-12-23 23:04 progress: fix/app/index-module-script — build guard に resolved build input/root/lib/ssr の診断出力を追加し、HTML 未生成の原因を確定できるようにした。検証: 未実施。ロールバック: `app/vite.config.ts` の差分を revert。
+- 2025-12-23 23:07 progress: fix/app/index-module-script — build guard が HTML 非生成の bundle（worker 等）で失敗しないよう、HTML が無い場合は検証をスキップするよう調整。検証: 未実施。ロールバック: `app/vite.config.ts` の差分を revert。
+- 2025-12-23 23:12 progress: fix/app/index-module-script — build guard を出力ファイルの `dist/index.html` 検証へ移行し、rollup input 明示指定を撤去して Vite 標準の HTML 変換に戻す。検証: 未実施。ロールバック: `app/vite.config.ts` の差分を revert。
+- 2025-12-24 00:18 progress: fix/app/index-module-script — フォールバック/応急処置の追加を取り下げ、`buildIndexEntryPlugin` と index-entry fallback を削除し、`app/index.html` の module script を相対パスへ復帰。`pnpm -F @hierarchidb/app build` 実行後も `app/dist/index.html` に module script が残らない状態を確認。検証: `pnpm -F @hierarchidb/app build`。ロールバック: `app/vite.config.ts`/`app/index.html` と削除済みファイルを元に戻す。
+- 2025-12-24 00:28 progress: fix/app/index-module-script — build guard を再導入すると非 entry HTML で誤検知するため、`buildIndexTransformGuardPlugin` を再度撤去して Vite 標準の HTML 変換のみで再現確認する方針に戻した。検証: `pnpm -F @hierarchidb/app build`（guard で失敗したため再実行予定）。ロールバック: `app/vite.config.ts` の差分を revert。
+- 2025-12-24 00:38 progress: fix/app/index-module-script — `index.html` の entry を `.tsx` 直接参照から `.ts` ラッパーに変更し、HTML エントリ解決の拡張子依存を排除する。`app/src/entry.client.ts` を追加して `entry.client.tsx` を委譲。検証: `pnpm -F @hierarchidb/app build` 実行予定。ロールバック: `app/index.html` と `app/src/entry.client.ts` を revert/削除。
+- 2025-12-24 00:48 progress: fix/app/index-module-script — module script を `<noscript>` の後ろに置くと `rolldown-vite` 側で検出されない可能性があるため、`index.html` の script 位置を `<noscript>` の前に移動して再検証する。検証: `pnpm -F @hierarchidb/app build` 実行予定。ロールバック: `app/index.html` を元の配置へ戻す。
+- 2025-12-24 00:58 progress: fix/app/index-module-script — `HDB_TRACE_INDEX_HTML=1 pnpm -C app exec vite build --config vite.config.ts --outDir dist-test` を実行し、`transformIndexHtml` の入力時点で module script が欠落していること、bundle に `index.html` が無いこと、`dist-test/index.html` も module script なしで書き出されることを確認。検証: 同コマンド（exit 0）。ロールバック: `app/vite.config.ts` の診断プラグイン差分を revert。
+- 2025-12-24 01:12 progress: fix/app/index-module-script — `transformIndexHtml` hook の登録順をログ出力し、`hierarchidb:index-html-trace` 以外の hook が存在しないことを確認。`transformIndexHtml` 入力は disk と一致せず module script なし、bundle に `index.html` が含まれないことを再確認。検証: `HDB_TRACE_INDEX_HTML=1 pnpm -C app exec vite build --config vite.config.ts --outDir dist-test`（exit 0）。ロールバック: `app/vite.config.ts` の診断プラグイン差分を revert。
+- 2025-12-24 01:28 progress: fix/app/index-module-script — entry client の resolve トレースを追加したが、`resolveId` に `entry.client` 由来の呼び出しが現れず、HTML から module script が見えていない可能性が高いことを確認。検証: `HDB_TRACE_INDEX_HTML=1 pnpm -C app exec vite build --config vite.config.ts --outDir dist-test`（exit 0）。ロールバック: `app/vite.config.ts` の診断プラグイン差分を revert。
+- 2025-12-24 01:35 progress: fix/app/index-module-script — `DEBUG=vite:html` を併用してビルドログを確認したが、追加情報は得られず、`transformIndexHtml` 入力の module script 欠落は継続。検証: `DEBUG=vite:html HDB_TRACE_INDEX_HTML=1 pnpm -C app exec vite build --config vite.config.ts --outDir dist-test`（exit 0）。ロールバック: 診断用環境変数のみのため差分なし。
+- 2025-12-24 01:50 progress: fix/app/index-module-script — 最小構成の挙動確認のため、`vite.config.min.ts` を使った `vite build` を実行し、`dist-min/index.html` の module script 有無を確認する方針で進める。検証: これから実行。ロールバック: 診断のみのため差分なし。
+- 2025-12-24 01:53 progress: fix/app/index-module-script — `pnpm -C app exec vite build --config vite.config.min.ts --outDir dist-min` は失敗。原因: worker ビルドで "~/plugin-registry/index.ts" が解決できず（"[vite:worker] Rolldown failed to resolve import"）。検証: exit 1。ロールバック: なし。
+- 2025-12-24 01:56 progress: fix/app/index-module-script — 最小 config でのビルド失敗は "~/" alias 未定義が原因のため、`vite.config.min.ts` に resolve.alias を追加して再実行する方針。検証: これから実行。ロールバック: 診断のみのため差分なし。
+- 2025-12-24 01:59 progress: fix/app/index-module-script — `vite.config.min.ts` に "~" alias を追加した上で `pnpm -C app exec vite build --config vite.config.min.ts --outDir dist-min` を実行。`app/dist-min/index.html` に module script が生成されることを確認（`/hierarchidb/assets/index-Cvbgojo_.js`）。検証: exit 0。ロールバック: `app/vite.config.min.ts` の差分を revert。
+- 2025-12-24 07:30 progress: fix/app/index-module-script — `vite.config.min.ts` に `faviconPlugin` と `comlink` を追加して再ビルド。`app/dist-min/index.html` に module script が残ることを確認（`/hierarchidb/assets/index-D3FXFi2U.js`）。検証: `pnpm -C app exec vite build --config vite.config.min.ts --outDir dist-min`（exit 0）。ロールバック: `app/vite.config.min.ts` の差分を revert。
+- 2025-12-24 07:34 progress: fix/app/index-module-script — `vite.config.min.ts` に iso3166 プラグイン / NodeType alias / pluginWorkerVirtualModule を追加して再ビルド。`app/dist-min/index.html` に module script が残ることを確認（`/hierarchidb/assets/index-Cmin4bC3.js`）。検証: `pnpm -C app exec vite build --config vite.config.min.ts --outDir dist-min`（exit 0）。ロールバック: `app/vite.config.min.ts` の差分を revert。
+- 2025-12-24 07:38 progress: fix/app/index-module-script — `vite.config.min.ts` に pluginRegistryGeneratorPlugin と facadeAliasPlugin を追加して再ビルド。`app/dist-min/index.html` に module script が残ることを確認（`/hierarchidb/assets/index-DCy-jSOG.js`）。検証: `pnpm -C app exec vite build --config vite.config.min.ts --outDir dist-min`（exit 0）。ロールバック: `app/vite.config.min.ts` の差分を revert。
+- 2025-12-24 07:42 progress: fix/app/index-module-script — `vite.config.min.ts` に build/worker の出力設定（manifest/sourcemap/entryFileNames など）を追加して再ビルド。`app/dist-min/index.html` に module script が残ることを確認（`/hierarchidb/assets/index.js`）。検証: `pnpm -C app exec vite build --config vite.config.min.ts --outDir dist-min`（exit 0）。ロールバック: `app/vite.config.min.ts` の差分を revert。
+- 2025-12-24 07:46 progress: fix/app/index-module-script — resolve.dedupe と静的 alias（crypto/child_process 等）を追加して再ビルド。`app/dist-min/index.html` に module script が残ることを確認（`/hierarchidb/assets/index.js`）。検証: `pnpm -C app exec vite build --config vite.config.min.ts --outDir dist-min`（exit 0）。ロールバック: `app/vite.config.min.ts` の差分を revert。
+- 2025-12-24 09:10 start: fix/app/index-module-script — `vite.config.min.ts` と `vite.config.ts` の差分を特定し、module script が消える最初の設定/プラグインを絞り込むために段階的に最小構成へ寄せる切り分けを開始。DoD: build/preview の index.html に module script が入り、原因と修正を運用ログに記録。
+- 2025-12-25 03:44 progress: fix/app/index-module-script — 2分法用のフラグ（`HDB_MIN_BISECT`）を `vite.config.min.ts` に追加し、`pluginRegistryMode`（A=dist-url）と external 解決（B=@hierarchidb 外部化）を切替できるようにした。検証: 未実施。ロールバック: `app/vite.config.min.ts` の bisect 追加差分を revert。
+- 2025-12-25 03:56 progress: fix/app/index-module-script — 2分法の結果、`HDB_MIN_BISECT=A,B`（dist-url + @hierarchidb を外部化しない）でのみ module script が欠落。`A` 単独・`B` 単独は module script 正常。検証: `pnpm -C app exec vite build --config vite.config.min.ts --outDir dist-bisect{,-a,-b,-ab}` + `rg "module" dist-*/index.html`。ロールバック: 同上。
+- 2025-12-25 04:04 progress: fix/app/index-module-script — dev/serve は `package`、build/preview/deploy は `dist-url` に固定し、`HDB_PLUGIN_SPEC_MODE` が一致しない場合は即エラーで止めるよう `app/vite.config.ts` と `app/vite.config.min.ts` を更新。検証: 未実施。ロールバック: `app/vite.config.ts` と `app/vite.config.min.ts` の差分を revert。
+- 2025-12-25 04:10 progress: fix/app/index-module-script — `pnpm -C app exec vite build --config vite.config.ts --outDir dist-test` を実行。`app/dist-test/index.html` に module script が含まれず、`rg "module"` がヒットしないことを確認。検証: exit 0。ロールバック: 直前の `pluginRegistryMode` 強制差分を revert。
+- 2025-12-25 04:18 progress: fix/app/index-module-script — plugin registry の解決方式を package に統一する方針で、`vite.config.ts`/`vite.config.min.ts` の `pluginRegistryMode` を一律 package に固定する対応を実施する。検証: これから。ロールバック: `app/vite.config.ts` と `app/vite.config.min.ts` の差分を revert。
+- 2025-12-25 04:24 progress: fix/app/index-module-script — `pnpm -C app exec vite build --config vite.config.ts --outDir dist-test-package` を実行し、`app/dist-test-package/index.html` に module script が復帰することを確認。検証: exit 0 + `rg "module" app/dist-test-package/index.html`。ロールバック: `app/vite.config.ts` と `app/vite.config.min.ts` の package 固定差分を revert。
+- 2025-12-25 04:30 progress: fix/app/index-module-script — `pnpm -F @hierarchidb/app build` を実行したがタイムアウト（exit 124）。`app/dist/index.html` に module script が含まれることは確認。検証: `rg "module" app/dist/index.html`。ロールバック: `app/vite.config.ts` と `app/vite.config.min.ts` の package 固定差分を revert。
+- 2025-12-25 04:34 progress: fix/app/index-module-script — `pnpm -F @hierarchidb/app build` を再実行（exit 0）。`app/dist/index.html` に module script が含まれることを確認。検証: exit 0 + `rg "module" app/dist/index.html`。ロールバック: `app/vite.config.ts` と `app/vite.config.min.ts` の package 固定差分を revert。
+- 2025-12-25 04:36 progress: fix/app/index-module-script — `pnpm -C app exec vite preview --config vite.config.ts` は EPERM で起動失敗（0.0.0.0:4173）。検証: exit 1（サンドボックス制限）。ロールバック: なし。
+- 2025-12-25 04:46 progress: fix/app/index-module-script — dev で `@hierarchidb/basemap-plugin/worker` が解決できないため、`vite.config.ts` と `vite.config.min.ts` の runtime alias に basemap plugin の ui/worker/icon/database を追加。検証: 未実施。ロールバック: 両ファイルの basemap plugin 追加分を revert。
+- 2025-12-25 05:02 progress: fix/app/index-module-script — worker を持たないプラグインでも `worker-loaders` が生成されるため、package モードでは `workerSourceEntry` が無い場合に worker loader を出さないよう生成処理を修正する。検証: これから。ロールバック: `packages/tools/build-scripts/src/gen-plugin-registry.ts` の差分を revert。
+- 2025-12-25 05:28 progress: fix/app/index-module-script — ルート `package.json` の `preview` が自分自身を再帰呼び出ししていたため、`pnpm --filter @hierarchidb/app preview` に修正してループを解消する方針に変更。検証: これから。ロールバック: `package.json` の `preview` を旧呼び出しに戻す。
+- 2025-12-25 06:10 progress: fix/app/index-module-script — plugin registry 生成で worker/ui/database/icon の exportPaths を実ファイルの有無に合わせてフィルタし、worker 未実装プラグインの `exports`/manifest.worker を除外。package モードでは source entry が無い module を無効化するように調整。検証: これから。ロールバック: `packages/tools/build-scripts/src/gen-plugin-registry.ts` の差分を revert。
+- 2025-12-25 06:18 progress: fix/app/index-module-script — load-plugin-manifest の manifest 評価を CommonJS 実行から ESM 動的 import に切り替え、plugin manifest が依存する workspace ESM モジュール（`@hierarchidb/common-types` 等）を正しく解決できるよう修正。検証: これから。ロールバック: `packages/tools/load-plugin-manifest/src/index.ts` と `packages/tools/build-scripts/src/gen-plugin-registry.ts` の差分を revert。

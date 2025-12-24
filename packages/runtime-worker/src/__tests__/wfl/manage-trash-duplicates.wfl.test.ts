@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
-import type { NodeId } from '@hierarchidb/common-types';
-import { toNodeType, toTreeId } from '@hierarchidb/common-types';
+import type { NodeId, TreeId } from '@hierarchidb/common-types';
+import { toNodeType } from '@hierarchidb/common-types';
 import * as Comlink from 'comlink';
 import { describe, expect, it } from 'vitest';
 import { MessageChannel } from 'worker_threads';
@@ -22,7 +22,7 @@ async function createCommittedNode(
   const mutationAPI = await worker.getMutationAPI();
   const updaterAPI = await worker.getTreeNodeUpdaterAPI();
   const queryAPI = await worker.getQueryAPI();
-  const treeId = toTreeId('r');
+  const treeId = 'r' as TreeId;
 
   const res = await mutationAPI.createNode({
     nodeType: toNodeType('folder'),
@@ -59,7 +59,7 @@ describe('trash duplicate names handling', () => {
 
     const queryAPI = await client.getQueryAPI();
     const mutationAPI = await client.getMutationAPI();
-    const tree = await queryAPI.getTree(toTreeId('r'));
+    const tree = await queryAPI.getTree('r' as TreeId);
     if (!tree?.rootId || !tree.trashRootId) {
       throw new Error('console roots not available');
     }

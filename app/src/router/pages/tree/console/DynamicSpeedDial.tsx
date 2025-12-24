@@ -1,14 +1,14 @@
 /**
  * DynamicSpeedDial Component
  *
- * A SpeedDial component that dynamically loads plugin-loader from the registry
+ * A SpeedDial component that dynamically loads plugin-loaders from the registry
  * and displays them as creation actions, filtered by treeId.
  */
 
 import type { TreeId } from '@hierarchidb/common-types';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import { Box, Portal, SpeedDial, SpeedDialAction, SpeedDialIcon } from '@mui/material';
-import type { PluginMenuItem, TreeContext } from '~/plugin-loader/menu-builders.js';
+import type { PluginMenuItem, TreeContext } from '~/plugin-loaders/menu-builders.js';
 import { useDynamicSpeedDial } from './useDynamicSpeedDial.js';
 
 interface DynamicSpeedDialProps {

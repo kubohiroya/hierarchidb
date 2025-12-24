@@ -5,9 +5,10 @@ import type {
   NodeId,
   PasteNodesPayload,
   Timestamp,
+  TreeId,
   TreeNode,
 } from '@hierarchidb/common-types';
-import { toNodeId, toNodeType, toTreeId } from '@hierarchidb/common-types';
+import { toNodeId, toNodeType } from '@hierarchidb/common-types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CommandProcessor } from '../../../services/CommandProcessor.js';
 import type { CoreDB } from '../../../services/CoreDB.js';
@@ -172,7 +173,7 @@ describe('Entity lifecycle notifications from services', () => {
     const result = await svc.importNodes({
       data: { nodes: [{ name: 'A' }, { name: 'B' }] },
       format: 'json',
-      treeId: toTreeId('r'),
+      treeId: 'r' as TreeId,
       targetParentId: importPayload.toParentId,
       validateFirst: false,
     });

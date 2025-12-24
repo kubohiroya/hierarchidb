@@ -1,5 +1,5 @@
 import { getWorkerClientHook, registerWorkerClientHook } from '@hierarchidb/ui-worker-provider';
-import { pluginRegistry } from '~/plugin-registry/index.ts';
+import { pluginRegistry } from '~/plugin-loaders/index.ts';
 import { useWorker } from '../../contexts/WorkerProvider.js';
 import { bootLog } from '../../utils/bootLog.ts';
 import { APP_VERSION, BUILD_TIME } from '../../version.ts';
@@ -60,7 +60,7 @@ export function initializeBrowserGlobals(): void {
     console.error('[browser-globals] Failed to load WorkerAPIClient module:', error);
   });
 
-  void import('~/plugin-loader/menu-builders.js')
+  void import('~/plugin-loaders/menu-builders.js')
     .then(async (mod) => {
       (globalWindow as Window & { __HDB_MENU_BUILDERS__?: unknown }).__HDB_MENU_BUILDERS__ = mod;
       try {
@@ -72,7 +72,7 @@ export function initializeBrowserGlobals(): void {
       }
     })
     .catch((error) => {
-      logWarning('menu-builders preload failed (will fallback to worker plugin-loader)', error);
+      logWarning('menu-builders preload failed (will fallback to worker plugin-loaders)', error);
     });
 
   try {
@@ -123,7 +123,7 @@ export function initializeBrowserGlobals(): void {
   const shouldPrewarm = prewarmFlag === '1' || (import.meta.env.PROD && prewarmFlag !== '0');
 
   if (shouldPrewarm) {
-    void import('~/plugin-host/databases.js')
+    void import('~/plugin-runtime/databases.js')
       .then(async (db) => {
         const nodeTypes = await db.prewarmPluginDatabases();
         window.dispatchEvent(

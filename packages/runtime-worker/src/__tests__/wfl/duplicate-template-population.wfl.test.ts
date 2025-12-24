@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { readFile } from 'node:fs/promises';
 import type { ImportData } from '@hierarchidb/common-api';
 import type { NodeId, TreeId } from '@hierarchidb/common-types';
-import { toNodeType, toTreeId } from '@hierarchidb/common-types';
+import { toNodeType } from '@hierarchidb/common-types';
 import * as Comlink from 'comlink';
 import { describe, expect, it } from 'vitest';
 import { MessageChannel } from 'worker_threads';
@@ -82,7 +82,7 @@ describe('WFL duplicate behavior for imported template', () => {
     const mutationAPI = await client.getMutationAPI();
     const importExportAPI = await client.getImportExportAPI();
 
-    const treeId: TreeId = toTreeId('r');
+    const treeId: TreeId = 'r' as TreeId;
     const tree = await queryAPI.getTree(treeId);
     if (!tree?.rootId) throw new Error('rootId missing');
     const rootId = tree.rootId as NodeId;

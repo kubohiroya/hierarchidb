@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
-import { toNodeType, toTreeId } from '@hierarchidb/common-types';
+import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
+import { toNodeType } from '@hierarchidb/common-types';
 import * as Comlink from 'comlink';
 import { describe, expect, it } from 'vitest';
 import { MessageChannel } from 'worker_threads';
@@ -39,7 +39,7 @@ describe('Comlink + fake-indexeddb integration: partial trash restore flow', () 
     const mutationAPI = await client.getMutationAPI();
     const updaterAPI = await client.getTreeNodeUpdaterAPI();
 
-    const treeId = toTreeId('r');
+    const treeId = 'r' as TreeId;
     const tree = await queryAPI.getTree(treeId);
     expect(tree?.rootId).toBeDefined();
     expect(tree?.trashRootId).toBeDefined();

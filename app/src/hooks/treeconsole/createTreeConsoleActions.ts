@@ -12,7 +12,6 @@ import { isFolderNodeType } from '@hierarchidb/ui-plugin-shell/ui-treeconsole-br
 import { DualKeyMap } from '@hierarchidb/util';
 import { composeStepConfigs } from '@hierarchidb/plugin-base';
 import { notify } from '@hierarchidb/components';
-import { preconnectPluginServices } from './preconnect.ts';
 import { buildVisibleRows } from '../../state/treeconsole.derive.js';
 import type { ContextAction, MaybeCP, TreeConsoleActionDeps, TreeConsoleActions } from './types.js';
 import {
@@ -28,7 +27,7 @@ import {
   showCommandError,
   type GlobalWithClipboard,
 } from './actions/helpers.ts';
-import { loadUIPlugin } from '../../plugin-host/ui-plugin-loader.ts';
+import { loadUIPlugin } from '../../plugin-loaders/ui-plugin-loader.ts';
 
 const PREVIEW_GUARD_NODE_TYPES = new Set([
   'basemap',
@@ -219,8 +218,6 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
       (pageTreeNode && pageTreeNode.id === targetNodeId ? pageTreeNode.nodeType : undefined);
     const nodeType = String(hintedType ?? 'folder');
 
-    await preconnectPluginServices(nodeType).catch(() => {});
-
     try {
       const queryAPI = await client.getQueryAPI();
 
@@ -365,7 +362,6 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
   return {
     handleNodeClick: (node: HierarchicalTreeNode) => {
       const targetId = node.id as NodeId;
-      void preconnectPluginServices(String(node.nodeType || ''));
       if (pushPath && treeId) {
         const isRootLike = pageTreeNode && pageTreeNode.id === targetId;
         const qs = searchTerm ? `?q=${encodeURIComponent(searchTerm)}` : '';

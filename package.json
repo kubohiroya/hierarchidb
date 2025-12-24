@@ -77,7 +77,7 @@
     "policy:all": "pnpm policy:ban-tsconfig-paths-dist-dts",
     "policy:ban-tsconfig-paths-dist-dts": "node scripts/policy/ban-tsconfig-paths-dist-dts.mjs",
     "preinstall": "npx only-allow pnpm",
-    "preview": "pnpm run preview --filter @hierarchidb/app",
+    "preview": "pnpm --filter @hierarchidb/app preview",
     "preview:build": "bash -lc 'set -a; source scripts/env/production.sh; if [ -f app/.env.secrets ]; then source app/.env.secrets; fi; set +a; turbo run build --filter @hierarchidb/app'",
     "preview:init": "pnpm run preview:build && pnpm run preview:start",
     "shims:check": "node scripts/check-shims.mjs",
@@ -181,7 +181,7 @@
     "node": ">=20.0.0",
     "pnpm": ">=10.26.1"
   },
-  "packageManager": "pnpm@10.26.1",
+  "packageManager": "pnpm@10.26.2",
   "pnpm": {
     "overrides": {
       "@biomejs/biome": "2.2.0",

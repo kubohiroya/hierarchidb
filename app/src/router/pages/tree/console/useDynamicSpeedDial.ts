@@ -4,7 +4,7 @@ import { useIconRegistry } from '@hierarchidb/ui-icon';
 import type { HierarchicalTreeNode } from '@hierarchidb/ui-treeconsole-base';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePluginMenuItems } from '~/hooks/usePluginMenuItems.js';
-import type { PluginMenuItem, TreeContext } from '~/plugin-loader/menu-builders.js';
+import type { PluginMenuItem, TreeContext } from '~/plugin-loaders/menu-builders.js';
 
 type DynamicSpeedDialWindow = Window & {
   __HDB_SD_HITBOX__?: boolean;
