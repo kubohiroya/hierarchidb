@@ -1,0 +1,1 @@
+var e=function(e){return e.CREATE=`create`,e.UPDATE=`update`,e.DELETE=`delete`,e.MOVE=`move`,e.DUPLICATE=`duplicate`,e.IMPORT=`import`,e.EXPORT=`export`,e.RESTORE=`restore`,e.DISCARD=`discard`,e}({});function t(e){return e}function n(e){return e}export{t as n,n as r,e as t};

@@ -1,1 +1,0 @@
-import"./vendor-react-DueQUKGo.js";import"./identifier-CN0yTFUG.js";import{t as e}from"./Public-CN6A1Pot.js";const t=e;var n=t;export{t as BasemapPluginIcon,n as default};

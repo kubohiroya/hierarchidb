@@ -1,1 +1,0 @@
-import"./src-CPVbMDf5.js";import{t as e}from"./dist-BtqIh2uB.js";async function t(){return await e.getSingleton()}function n(){}export{t as getShapeAuthHandler,n as resetShapeAuthHandler};

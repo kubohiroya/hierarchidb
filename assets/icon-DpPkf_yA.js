@@ -1,1 +1,0 @@
-import"./vendor-react-DueQUKGo.js";import"./identifier-CN0yTFUG.js";import{Nn as e}from"./index.js";const t=e;var n=t;export{t as SpreadsheetPluginIcon,n as default};

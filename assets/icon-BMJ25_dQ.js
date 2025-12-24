@@ -1,1 +1,0 @@
-import"./vendor-react-DueQUKGo.js";import"./identifier-CN0yTFUG.js";import{bn as e}from"./index.js";const t=e;var n=t;export{t as ShapePluginIcon,n as default};
