@@ -1,1 +1,2 @@
 import"./vendor-react-DueQUKGo.js";import{$t as e}from"./index.js";const t=e;var n=t;export{t as BasemapPluginIcon,n as default};
+//# sourceMappingURL=icon-CVnd8ysl.js.map

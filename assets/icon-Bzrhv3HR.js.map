@@ -1,0 +1,1 @@
+{"version":3,"file":"icon-Bzrhv3HR.js","names":[],"sources":["../../../plugins/resolver-plugin/src/icon/index.ts"],"sourcesContent":["import ExtensionIcon from '@mui/icons-material/Extension';\n\nexport const ResolverPluginIcon = ExtensionIcon;\n\nexport default ResolverPluginIcon;\n"],"mappings":"mEAEA,MAAa,EAAqB,EAElC,IAAA,EAAe"}

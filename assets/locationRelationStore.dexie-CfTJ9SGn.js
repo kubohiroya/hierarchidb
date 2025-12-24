@@ -1,1 +1,2 @@
 import{i as e,n as t}from"./normalizers-C-tL6yKn.js";function n(n){return{async listByNode(e){return t(await n.relations.where(`srcNodeId`).equals(e).toArray())},async bulkUpsert(t){let r=Date.now();await n.relations.bulkPut(t.map(t=>e(t,r)))},async bulkDelete(e){await n.transaction(`rw`,n.relations,async()=>{for(let t of e)await n.relations.delete([t.srcNodeId,t.type,t.dstNodeId])})}}}export{n as createLocationRelationStoreDexie};
+//# sourceMappingURL=locationRelationStore.dexie-CfTJ9SGn.js.map

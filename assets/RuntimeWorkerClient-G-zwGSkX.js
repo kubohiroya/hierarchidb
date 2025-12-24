@@ -1,1 +1,2 @@
 import{c as e,o as t}from"../worker.js";function n(t){e(`shape`,t)}async function r(){return t(`shape`)}export{n,r as t};
+//# sourceMappingURL=RuntimeWorkerClient-G-zwGSkX.js.map

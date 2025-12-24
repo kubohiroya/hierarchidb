@@ -1,0 +1,2 @@
+import{a as e}from"./rolldown-runtime-GuRs8mfQ.js";import{r as t}from"./vendor-react-DueQUKGo.js";import{Dr as n,kr as r}from"./index.js";import{a as i}from"./loader-BI8qNwWU.js";import{t as a}from"./baseRoute-qbrNT2cF.js";var o=e(t(),1);const s=r({getParentRoute:()=>a,path:`$treeId`,loader:async({params:e})=>{let{treeId:t}=e;if(!t)throw Error(`Missing treeId parameter`);return await i({treeId:t})},component:c});function c(){return(0,o.jsx)(n,{})}export{s as t};
+//# sourceMappingURL=layoutRoute-SU2nTpQP.js.map

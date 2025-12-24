@@ -1,0 +1,1 @@
+{"version":3,"file":"icon-BjsjAGK9.js","names":[],"sources":["../../../plugins/spreadsheet-plugin/src/icon/index.ts"],"sourcesContent":["import AssessmentIcon from '@mui/icons-material/Assessment';\n\nexport const SpreadsheetPluginIcon = AssessmentIcon;\n\nexport default SpreadsheetPluginIcon;\n"],"mappings":"mEAEA,MAAa,EAAwB,EAErC,IAAA,EAAe"}

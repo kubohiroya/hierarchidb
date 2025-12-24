@@ -1,1 +1,2 @@
 import{t as e}from"./import-wrapper-prod-C18LpNRm.js";import{s as t}from"./src-CDHgwM50.js";import{n,r,t as i}from"./EphemeralLocationDB-B7ZQJXLn.js";import{t as a}from"./locationEntitiesDB-JGtrWMty.js";async function o(){await e.delete(t(`location`)),await e.delete(t(`location-ephemeral`))}export{i as EphemeralLocationDB,a as LocationEntitiesDB,o as clearDatabases,n as closeEphemeralLocationDB,r as getEphemeralLocationDB};
+//# sourceMappingURL=database-C611xGAD.js.map

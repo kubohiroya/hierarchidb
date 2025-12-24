@@ -1,0 +1,1 @@
+{"version":3,"file":"icon-CQhEaF88.js","names":[],"sources":["../../../plugins/route-plugin/src/icon/index.ts"],"sourcesContent":["import RouteIcon from '@mui/icons-material/Route';\n\nexport const RoutePluginIcon = RouteIcon;\n\nexport default RoutePluginIcon;\n"],"mappings":"mEAEA,MAAa,EAAkB,EAE/B,IAAA,EAAe"}

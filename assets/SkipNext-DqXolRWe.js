@@ -1,1 +1,2 @@
 import{a as e}from"./rolldown-runtime-GuRs8mfQ.js";import{r as t}from"./vendor-react-DueQUKGo.js";import{Vn as n}from"./index.js";var r=n((0,e(t()).jsx)(`path`,{d:`m6 18 8.5-6L6 6zM16 6v12h2V6z`}),`SkipNext`);export{r as t};
+//# sourceMappingURL=SkipNext-DqXolRWe.js.map
