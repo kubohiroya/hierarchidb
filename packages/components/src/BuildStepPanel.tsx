@@ -2,6 +2,7 @@ import { useCallback, useMemo, type ReactNode } from 'react';
 import {
   Box,
   Button,
+  CircularProgress,
   LinearProgress,
   Stack,
   Typography,
@@ -50,6 +51,29 @@ type BuildControlCardProps = {
   resumeIcon?: ReactNode;
 };
 
+type LoadingButtonProps = React.ComponentProps<typeof Button> & { loading?: boolean };
+
+const LoadingButton: React.FC<LoadingButtonProps> = ({ loading = false, disabled, startIcon, endIcon, children, ...rest }) => {
+  const spinner = (
+    <CircularProgress
+      size={16}
+      thickness={5}
+      color="inherit"
+    />
+  );
+  return (
+    <Button
+      {...rest}
+      disabled={disabled || loading}
+      startIcon={startIcon}
+      endIcon={loading ? spinner : endIcon}
+      data-loading={loading ? 'true' : undefined}
+    >
+      {children}
+    </Button>
+  );
+};
+
 const BuildControlCard: React.FC<BuildControlCardProps> = ({
   status,
   onPause,
@@ -69,6 +93,7 @@ const BuildControlCard: React.FC<BuildControlCardProps> = ({
     : (startIcon ?? <PlayArrowIcon fontSize="small" />);
   const disablePause = status !== 'running' || !onPause;
   const disableStart = !onResume || status === 'running';
+  const isLoading = status === 'running';
 
   return (
     <Box
@@ -98,16 +123,17 @@ const BuildControlCard: React.FC<BuildControlCardProps> = ({
         >
           {pauseLabel ?? 'Pause'}
         </Button>
-        <Button
+        <LoadingButton
           color="secondary"
           variant="contained"
           size="large"
           startIcon={computedIcon}
           disabled={disableStart}
           onClick={onResume}
+          loading={isLoading}
         >
           {computedLabel}
-        </Button>
+        </LoadingButton>
       </Stack>
     </Box>
   );

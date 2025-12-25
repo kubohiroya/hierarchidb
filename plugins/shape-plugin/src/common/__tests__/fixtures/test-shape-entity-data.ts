@@ -26,7 +26,6 @@ interface ShapeEntity {
 }
 
 interface BatchConfig {
-  corsProxyBaseURL: string;
   dataSource?: string;
   download: {
     concurrentDownloads: number;
@@ -70,7 +69,6 @@ export function createTestBatchConfig(): BatchConfig {
   // Default configuration without external dependencies
 
   return {
-    corsProxyBaseURL: 'https://test-proxy.example.com',
     dataSource: 'geoboundaries',
     download: {
       concurrentDownloads: 2,

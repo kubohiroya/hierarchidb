@@ -6,6 +6,7 @@
 import { BaseDataSourceStrategy, type DataSourceConfig, type FetchOptions, type ProcessOptions } from './DataSourceStrategy.js';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { ShapeEntity } from '../../common/types/index.js';
+import { downloadArrayBuffer } from '../utils/downloadService.js';
 
 //  GADM
 export interface GADMRawData {
@@ -107,7 +108,6 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
       country = 'JPN',
       adminLevel = 1,
       endpoint = 'country-gpkg',
-      timeout = this.config.access.timeout,
     } = options || {};
 
     const normalizedCountry = this.normalizeCountryCode(country);
@@ -129,10 +129,14 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
 
       console.log(`[GADM] Downloading ${format.toUpperCase()} for ${normalizedCountry} level ${level}: ${downloadUrl}`);
 
-      const response = await this.downloadWithRetry(downloadUrl, timeout);
+      const retries = this.config.access.retries ?? { count: 1, delay: 0, backoff: 'exponential' };
+      const zipBuffer = await downloadArrayBuffer(
+        downloadUrl,
+        `gadm:${normalizedCountry}:${format}`,
+        { retries: retries.count, delayMs: retries.delay, backoff: retries.backoff },
+      );
 
       if (format === 'gpkg') {
-        const zipBuffer = await response.arrayBuffer();
         const geopackage = await this.extractGeoPackageFromZip(zipBuffer);
 
         return {
@@ -147,7 +151,6 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
           },
         };
       } else {
-        const zipBuffer = await response.arrayBuffer();
         const shapefile = await this.extractShapefileFromZip(zipBuffer);
 
         return {
@@ -265,43 +268,6 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
   private normalizeCountryCode(country: string): string {
     const lower = country.toLowerCase().replace(/\s+/g, '-');
     return this.countryMappings[lower] || country.toUpperCase();
-  }
-
-  private async downloadWithRetry(url: string, timeout?: number): Promise<Response> {
-    const { count = 3, delay = 5000, backoff = 'linear' } = this.config.access.retries || {};
-
-    for (let attempt = 0; attempt < count; attempt++) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = timeout ? setTimeout(() => controller.abort(), timeout) : null;
-
-        const { authFetch } = await import('../utils/authFetch.js');
-        const response = await authFetch(url, {
-          signal: controller.signal,
-        });
-
-        if (timeoutId) clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          console.warn(`[GADM] HTTP ${response.status} for ${url}`);
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        return response;
-
-      } catch (error) {
-        if (attempt === count - 1) throw error;
-
-        const waitTime = backoff === 'exponential'
-          ? delay * 2 ** attempt
-          : delay * (attempt + 1);
-
-        console.warn(`[GADM] Attempt ${attempt + 1} failed, retrying in ${waitTime}ms...`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
-      }
-    }
-
-    throw new Error('Max retry attempts reached');
   }
 
   private async extractGeoPackageFromZip(zipBuffer: ArrayBuffer): Promise<ArrayBuffer> {

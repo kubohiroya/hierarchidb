@@ -4,6 +4,20 @@ export interface ResolveNetworkUrlOptions {
   corsProxyBaseURL?: string;
 }
 
+let storedCorsProxyBaseURL = '';
+
+export function setCorsProxyBaseURL(value?: string | null): void {
+  if (typeof value === 'string') {
+    storedCorsProxyBaseURL = value.trim();
+  } else {
+    storedCorsProxyBaseURL = '';
+  }
+}
+
+export function getCorsProxyBaseURL(): string {
+  return storedCorsProxyBaseURL;
+}
+
 export function resolveNetworkUrl(url: string, opts: ResolveNetworkUrlOptions = {}): string {
   if (shouldUseLocalProxy(url)) {
     return toLocalProxyUrl(url);
@@ -19,20 +33,7 @@ function resolveCorsProxyBaseURL(explicit?: string): string {
   if (explicit && explicit.trim().length > 0) {
     return explicit.trim();
   }
-  try {
-    const meta = import.meta as ImportMeta & { env?: Record<string, unknown> };
-    const raw = meta.env?.VITE_CORS_PROXY_BASE_URL;
-    if (typeof raw === 'string' && raw.trim().length > 0) {
-      return raw.trim();
-    }
-  } catch {
-    // ignore when import.meta.env is not available
-  }
-  const fromGlobal = (globalThis as { ENV?: Record<string, unknown> }).ENV?.VITE_CORS_PROXY_BASE_URL;
-  if (typeof fromGlobal === 'string' && fromGlobal.trim().length > 0) {
-    return fromGlobal.trim();
-  }
-  return '';
+  return getCorsProxyBaseURL();
 }
 
 function shouldUseCorsProxy(url: string, corsProxyBaseURL: string): boolean {

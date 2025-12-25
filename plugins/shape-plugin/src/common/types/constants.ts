@@ -10,7 +10,6 @@ export const DEFAULT_PROCESSING_CONFIG: BatchConfig = {
   dataSource: 'naturalearth',
   downloadConfig: {
     maxConcurrent: 2,
-    corsProxyUrl: '',
     retryLimit: 3,
     retryBackoff: 'exponential',
     timeoutMs: 300000,

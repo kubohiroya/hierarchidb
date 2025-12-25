@@ -53,6 +53,73 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1862) shape-plugin GeoBoundaries URL ログに成功/失敗を付記（P1）
+- ブランチ: `fix/shape/geoboundaries-log-result`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin（GeoBoundariesStrategy）
+- 受け入れ基準（DoD）:
+  - [ ] URLログに成功/失敗が明示される
+  - [ ] 失敗時はエラー要因が簡潔に出る
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] ダウンロード成功/失敗のログ出力を追加する
+- ロールバック手順：本タスクの差分を revert する。
+1861) shape-plugin metadata API を DownloadService 経由に統一（P1）
+- ブランチ: `fix/shape/download-metadata-via-downloadservice`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin（GeoBoundariesStrategy/availability/worker）
+- 受け入れ基準（DoD）:
+  - [ ] GeoBoundaries の metadata/availability API が `@hierarchidb/download` 経由で取得される
+  - [ ] `authFetch` 直接利用のメタデータ取得を削除する
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] download ヘルパーに JSON 取得を追加する
+  - [ ] GeoBoundariesStrategy/availability/worker の呼び出しを置換する
+- ロールバック手順：本タスクの差分を revert する。
+1860) shape-plugin Step4 Delete ボタン有効化の整合（P1）
+- ブランチ: `fix/shape/step4-delete-state`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin（Step4 UI/Hook/DB）
+- 受け入れ基準（DoD）:
+  - [ ] タイル/Stage1/Stage2 の削除後、対象が無ければ該当ボタンは無効化される
+  - [ ] ダウンロード削除後、他3ボタンが対象残存時に無効化されない
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] 各ボタンの有効化条件と削除対象の対応を再確認する
+  - [ ] 削除後の counts 再読込と state 更新を整合させる
+- ロールバック手順：本タスクの差分を revert する。
+1859) shape-plugin GeoBoundaries のエンドポイント簡素化（P1）
+- ブランチ: `refactor/shape/geoboundaries-endpoint-simple`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin（GeoBoundariesStrategy）
+- 受け入れ基準（DoD）:
+  - [ ] `endpoints` を廃止し、gbOpen 固定の `api/current/gbOpen/{ISO}/{ADM}/` を使用する
+  - [ ] releaseType 分岐とログを整理し、不要なフォールバックを削除する
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] GeoBoundariesStrategy の URL 生成を簡素化する
+  - [ ] テスト/型の不整合があれば更新する
+- ロールバック手順：本タスクの差分を revert する。
+1858) shape-plugin Step4 Delete ボタンの対象分離（P1）
+- ブランチ: `fix/shape/step4-delete-separation`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin（Step4 UI/Hook/DB）
+- 受け入れ基準（DoD）:
+  - [ ] Step4 の各 Delete ボタンが対象別の削除のみを行う
+  - [ ] タイル削除後もダウンロード削除ボタンが不適切に無効化されない
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] ボタンの有効化条件と削除対象の対応を確認する
+  - [ ] 不整合がある場合は対象別の削除と state 更新を修正する
+- ロールバック手順：本タスクの差分を revert する。
+1857) shape-plugin バッチ処理から corsProxyUrl 廃止（P1）
+- ブランチ: `refactor/shape/remove-corsproxy-url`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin（worker/batch/config/util）
+- 受け入れ基準（DoD）:
+  - [ ] `batchConfig.downloadConfig.corsProxyUrl` を廃止し、設定/参照/伝播/保存のコードを削除する
+  - [ ] ワーカー側は CORS プロキシを意識せず `authFetch` 経由で取得する
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] 型定義/既定値/マージ処理から `corsProxyUrl` を削除する
+  - [ ] `setCorsProxyBaseURL` の呼び出しを削除し、関連 util を整理する
+  - [ ] 影響範囲の呼び出し元を検索して整合性を取る
+- ロールバック手順：本タスクの差分を revert する。
+
 1856) geoBoundaries available API による Step3 選択の無効化（P1）
 - ブランチ: `feat/shape/geoboundaries-availability`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: plugins/shape-plugin（Step3 UI）、geoBoundaries API
@@ -11492,7 +11559,30 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-25 15:40 progress: worker auth/cors 注入 — `@hierarchidb/download` に `setCorsProxyBaseURL` を追加し、`globalThis.ENV` 依存を撤去。Worker entry で setter を使用。WorkerAPI に `setAuthToken`/`setCorsProxyBaseURL` を追加し、`WorkerProvider` から `access_token` を同期するようにした。
+- 2025-12-25 15:18 progress: cors-proxy CLI テスト — 成功時も response headers を出力するよう `proxy-smoke.mjs` を更新。
+- 2025-12-25 15:12 progress: batch download 失敗の切り分け — CLI では 200 成功だがブラウザ側は `Failed to fetch` のため、CORS ヘッダー未付与の旧 proxy が動いている可能性を指摘。`--preflight=1` で CORS ヘッダ確認→最新 worker の再デプロイを推奨。
+- 2025-12-25 14:58 progress: cors-proxy CLI テスト — `proxy-smoke.mjs` に preflight/レスポンスヘッダー/本文/エラー cause の詳細ログを追加。
+- 2025-12-25 14:52 progress: cors-proxy CLI テスト — `proxy-smoke.mjs` に `--json` 対応を追加し、`access_token` を抽出して利用できるようにした。
+- 2025-12-25 14:46 progress: cors-proxy CLI テスト — `packages/backend/cors-proxy/tests/proxy-smoke.mjs` を追加し、`test:proxy` から `--proxy/--token/--url/--origin` を指定して疎通確認できるようにした。
+- 2025-12-25 14:38 progress: cors-proxy deploy script — `pnpm -C packages/backend/cors-proxy deploy:development|deploy:production` を追加し、`-- --env` を不要にした。
+- 2025-12-25 14:28 progress: cors-proxy env 反映 — `packages/backend/cors-proxy/wrangler.toml` の development/production に `ALLOWED_TARGET_LIST` と `ALLOWED_ORIGINS="*"` を実値で設定し、`BFF_JWT_ISSUER` を明示した。
+- 2025-12-25 14:18 progress: cors-proxy 実装再構成 — `packages/backend/cors-proxy/src/worker.ts` を追加し、allowlist prefix 判定・CORS 応答・Bearer 検証（BFF JWT/JWKS/Google/GitHub/Microsoft）を実装。`wrangler.toml` 実体を追加し、`wrangler.toml.template` と README の main/allowlist 記述を更新。
+- 2025-12-25 13:40 progress: cors-proxy 調査 — `packages/backend/cors-proxy` には worker 実装が見当たらず、`wrangler.toml.template` は `ALLOWED_TARGET_LIST` が空、`main` が存在しない `src/openstreetmap-type.ts` を指していることを確認。allowlist の実体はデプロイ済み worker の環境変数側にあると推定。
+- 2025-12-25 13:34 progress: Worker env 注入 — `app/src/worker-runtime/worker.ts` で `globalThis.ENV` と `process.env` に `VITE_CORS_PROXY_BASE_URL` を注入し、Worker 側 `@hierarchidb/download` がプロキシURLを解決できるようにした。
+- 2025-12-25 13:07 progress: VITE_CORS_PROXY_BASE_URL の組み込み確認 — `scripts/env/development.sh` に env が定義され、`package.json` の `dev:start` がそれを読み込むこと、`plugins/shape-plugin/src/services/utils/downloadService.ts` と `packages/features/download/src/helpers/resolveNetworkUrl.ts` が `import.meta.env.VITE_CORS_PROXY_BASE_URL` を参照することを確認。
 - 2025-12-25 10:31 progress: analysis/shape/step5-build-failure — Shape-Plugin Step5 で Start Build 実行時に `Session ... not found` が発生するログを確認し、UI→Worker の resume 経路（sessionId フォールバック/BatchSessionManager）を再追跡する。
+- 2025-12-25 10:36 progress: analysis/shape/step5-build-failure — `resumeBatchSession` が Session 未存在で失敗する場合は Start へフォールバックするよう `useBatchSessionActions` を調整。resume 失敗が `session not found` のときは batchSessionId をクリアして新規 Start を実行する方針。
+- 2025-12-25 10:42 start: analysis/shape/step4-cache-session-cleanup — Step4 の削除ボタンが消去する対象を洗い出し、batch session の残骸が残る原因と削除漏れを特定する。DoD: 対象の洗い出し/原因特定/修正方針/運用ログ/ロールバック記載。
+- 2025-12-25 10:43 progress: analysis/shape/step4-cache-session-cleanup — Step4 の削除ボタンが Ephemeral DB と batchTasks しか消していないため batchSessions が残留するのを確認し、削除時に batchSessions と全 batchTasks を削除するよう `useDownloadConfigSection` を更新。
+- 2025-12-25 10:49 progress: analysis/shape/step4-cache-session-cleanup — Step4 削除時に batchSessionId のリセットを draft へ永続化するよう更新し、`BatchSessionManager.createSession` でタスクゼロの paused/running セッションを stale 扱いで再生成するよう調整。
+- 2025-12-25 10:55 progress: analysis/shape/step4-cache-session-cleanup — Start 経路で paused セッションが残ると Resume 表記が復活するため、`createSession` で paused セッションは常に破棄して再生成するよう更新。
+- 2025-12-25 10:59 progress: analysis/shape/step4-cache-session-cleanup — Step4 の削除ボタンが中間/最終生成物の存在で有効化されるよう判定を拡張し、削除時に `shapeDB.vectorTiles` と `ShapeTileMetadataDB.featureMetadata` も消すよう更新。
+- 2025-12-25 11:03 progress: analysis/shape/step4-cache-session-cleanup — Step4 削除時の batchSessionId 永続クリアが WorkerClient 未取得でスキップされていた可能性があるため、WorkerBridge 経由で必ず save-draft を行うよう修正。
+- 2025-12-25 11:05 progress: analysis/shape/step4-cache-session-cleanup — Step4 で `simplifiedBuffers` の where({sessionId, stage}) が複合インデックス不足で警告を出すため、EphemeralGisDB に `[sessionId+stage]` の複合インデックスを追加。
+- 2025-12-25 11:13 progress: analysis/shape/step4-cache-session-cleanup — Step5 の build 完了/失敗時に batchSessionId を自動クリアし、Resume 表記が残らないよう `useShapeBuildProgressStep` に終端ステータスのリセット処理を追加。
+- 2025-12-25 11:19 progress: analysis/shape/step4-cache-session-cleanup — ダウンロード進捗が「タスクがまだありません」に戻る現象に対し、tasks が空になった場合でも直近の tasks を保持して表示するよう `useShapeBuildProgressStep` にタスクの維持ロジックを追加。
+- 2025-12-25 11:27 progress: analysis/shape/step4-cache-session-cleanup — タスク表示が `(Title unavailable)` になる原因（task.stage が status 由来）を修正し、taskType を stage として返すよう `mapTaskRecordToBatchTask` を更新。GeoBoundaries の実在確認（release type metadata の事前チェック）を追加して未提供組み合わせを除外。
 - 2025-12-25 14:05 start: geoBoundaries availability の取得ログ強化と Worker 側の URL フィルタ追加を実施し、Step3 取得失敗時でも Start Build の `urlMetadataCount` が選択分に制限されるように対応する。
 - 2025-12-25 14:20 progress: geoBoundaries availability 取得処理を共通ユーティリティ化（`fetchGeoBoundariesAvailability`）し、Step3 に取得件数/国数ログを追加。Worker の startBatchProcessing で availability に基づく URL フィルタを適用し、空になる場合はエラーにする挙動を追加。
 - 2025-12-25 14:45 start: 国選択テーブルのヘッダチェックボックスクリック時にソートが発火しないよう制御を追加する。DoD: ヘッダ全選択が正常に動作し、ソートは不発、運用ログ/ロールバック記載。
@@ -12235,3 +12325,33 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-25 05:28 progress: fix/app/index-module-script — ルート `package.json` の `preview` が自分自身を再帰呼び出ししていたため、`pnpm --filter @hierarchidb/app preview` に修正してループを解消する方針に変更。検証: これから。ロールバック: `package.json` の `preview` を旧呼び出しに戻す。
 - 2025-12-25 06:10 progress: fix/app/index-module-script — plugin registry 生成で worker/ui/database/icon の exportPaths を実ファイルの有無に合わせてフィルタし、worker 未実装プラグインの `exports`/manifest.worker を除外。package モードでは source entry が無い module を無効化するように調整。検証: これから。ロールバック: `packages/tools/build-scripts/src/gen-plugin-registry.ts` の差分を revert。
 - 2025-12-25 06:18 progress: fix/app/index-module-script — load-plugin-manifest の manifest 評価を CommonJS 実行から ESM 動的 import に切り替え、plugin manifest が依存する workspace ESM モジュール（`@hierarchidb/common-types` 等）を正しく解決できるよう修正。検証: これから。ロールバック: `packages/tools/load-plugin-manifest/src/index.ts` と `packages/tools/build-scripts/src/gen-plugin-registry.ts` の差分を revert。
+- 2025-12-25 11:40 start: refactor/shape/remove-corsproxy-url — batchConfig.downloadConfig.corsProxyUrl の廃止に着手。DoD: 型/既定値/参照の削除、ワーカーが authFetch 経由のみで取得、運用ログ/ロールバック記載。
+- 2025-12-25 11:40 progress: refactor/shape/remove-corsproxy-url — corsProxyUrl の型/既定値/参照を削除し、authFetch から明示的な CORS base 注入を廃止。関連テスト/フィクスチャも更新。
+- 2025-12-25 11:40 done: refactor/shape/remove-corsproxy-url — shape-plugin の corsProxyUrl を廃止し、set/get の注入コードを削除。検証: 未実施。ロールバック: `plugins/shape-plugin/src/**` とテスト変更、`TASKS.md` の該当ログを revert。
+- 2025-12-25 11:49 start: fix/shape/step4-delete-separation — Step4 の Delete ボタンが対象別に削除されるように整理する対応に着手。DoD: 対象別削除/ボタン有効化の保持/運用ログ。
+- 2025-12-25 11:49 progress: fix/shape/step4-delete-separation — タイル/ステージ削除時にセッションリセット・バッチ記録削除が走らないよう調整し、他ボタンの有効状態が維持されるように変更。
+- 2025-12-25 11:49 done: fix/shape/step4-delete-separation — Step4 の Delete ボタンを対象別削除に分離。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/hooks/useDownloadConfigSection.ts` と `TASKS.md` の差分を revert。
+- 2025-12-25 12:00 start: refactor/shape/geoboundaries-endpoint-simple — GeoBoundaries の API URL 組み立てを gbOpen 固定へ簡素化。DoD: endpoints 廃止・フォールバック削除・運用ログ。
+- 2025-12-25 12:00 progress: refactor/shape/geoboundaries-endpoint-simple — GeoBoundariesStrategy の endpoints と releaseTypePriority を撤去し、gbOpen 固定の URL 生成へ統一。
+- 2025-12-25 12:00 done: refactor/shape/geoboundaries-endpoint-simple — gbOpen 固定のメタデータ取得 + gjDownloadURL ダウンロードのみを残した。検証: 未実施。ロールバック: `plugins/shape-plugin/src/services/datasources/GeoBoundariesStrategy.ts` と `TASKS.md` の差分を revert。
+- 2025-12-25 12:03 start: fix/shape/step4-delete-state — Step4 Delete ボタンの有効化が対象と一致するよう調整に着手。DoD: 対象削除後の無効化、ダウンロード削除後の他ボタン維持、運用ログ。
+- 2025-12-25 12:03 progress: fix/shape/step4-delete-state — cache 依存の有効化を外し、download 削除で batchRecords を消さないよう調整。
+- 2025-12-25 12:03 done: fix/shape/step4-delete-state — Step4 Delete の有効化条件を対象別に整理し、download 削除の副作用を低減。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/hooks/useDownloadConfigSection.ts` と `TASKS.md` の差分を revert。
+- 2025-12-25 12:15 start: fix/shape/download-use-downloadservice — shape-plugin の URL ダウンロードを `@hierarchidb/download` に統一。DoD: URL取得箇所の置換、型/ビルド整合、運用ログ。
+- 2025-12-25 12:15 progress: fix/shape/download-use-downloadservice — GeoBoundaries/GADM/NaturalEarth のダウンロード処理を DownloadService 経由に変更し、独自 fetch/retry を撤去。
+- 2025-12-25 12:15 done: fix/shape/download-use-downloadservice — URLダウンロードを `@hierarchidb/download` に統一。検証: 未実施。ロールバック: `plugins/shape-plugin/src/services/{datasources,utils}/**` と `TASKS.md` の差分を revert。
+- 2025-12-25 12:18 start: fix/shape/download-metadata-via-downloadservice — metadata/availability API を DownloadService 経由に切り替える対応に着手。DoD: authFetch 直接利用の廃止、運用ログ。
+- 2025-12-25 12:18 progress: fix/shape/download-metadata-via-downloadservice — GeoBoundaries metadata/availability の取得を downloadJson 経由へ変更。
+- 2025-12-25 12:18 done: fix/shape/download-metadata-via-downloadservice — metadata API を DownloadService 経由に統一。検証: 未実施。ロールバック: `plugins/shape-plugin/src/services/{datasources,utils}/**` と `plugins/shape-plugin/src/worker/api.ts` の差分を revert。
+- 2025-12-25 12:22 progress: fix/shape/download-metadata-via-downloadservice — GeoBoundaries availability の metadata check を gbOpen 固定へ縮小。
+- 2025-12-25 12:25 start: fix/app/dev-cors-proxy-env — pnpm dev で VITE_CORS_PROXY_BASE_URL を設定する対応に着手。DoD: dev 起動時に env が入る、運用ログ。
+- 2025-12-25 12:25 progress: fix/app/dev-cors-proxy-env — development.sh に VITE_CORS_PROXY_BASE_URL を追加。
+- 2025-12-25 12:25 done: fix/app/dev-cors-proxy-env — pnpm dev で CORS proxy を設定。検証: 未実施。ロールバック: `scripts/env/development.sh` と `TASKS.md` の差分を revert。
+- 2025-12-25 12:30 start: fix/shape/geoboundaries-log-result — GeoBoundaries URL ログに成功/失敗を付記する対応に着手。DoD: 成否表示/失敗理由/運用ログ。
+- 2025-12-25 12:30 progress: fix/shape/geoboundaries-log-result — download 成功/失敗のログを追加。
+- 2025-12-25 12:30 done: fix/shape/geoboundaries-log-result — URL ログに成否を付記。検証: 未実施。ロールバック: `plugins/shape-plugin/src/services/datasources/GeoBoundariesStrategy.ts` と `TASKS.md` の差分を revert。
+- 2025-12-25 12:34 progress: fix/shape/step4-delete-state — stage/tiles の削除時に該当 batchTasks を削除し、削除後にボタンが無効化されるよう調整。
+- 2025-12-25 12:36 progress: fix/shape/download-metadata-via-downloadservice — DownloadService の生成時に VITE_CORS_PROXY_BASE_URL を明示注入。
+- 2025-12-25 12:38 progress: fix/shape/download-metadata-via-downloadservice — DownloadService の resolvedUrl と CORS proxy 取得状態を debug 出力するよう追加。
+- 2025-12-25 12:47 progress: fix/shape/download-metadata-via-downloadservice — typecheck 指摘（geoBoundariesAvailability/BuildProgressStep/BatchTask stage/未使用変数）を修正。
+- 2025-12-25 12:53 progress: fix/shape/download-metadata-via-downloadservice — RuntimeWorkerDownloadAdapter に process 開始ログを追加し、旧バンドル実行の切り分けを可能にした。

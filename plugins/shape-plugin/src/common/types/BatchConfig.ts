@@ -30,7 +30,6 @@ export interface HybridFilterConfig {
  * Common configuration shared across all sessions
  */
 export interface CommonSessionConfig {
-  corsProxyBaseURL: string;
   dataSource?: DataSourceName;
 }
 

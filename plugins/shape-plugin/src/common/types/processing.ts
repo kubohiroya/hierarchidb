@@ -14,7 +14,6 @@ export interface BatchConfig {
 
 export interface DownloadBatchConfig {
   maxConcurrent: number;
-  corsProxyUrl?: string;
   retryLimit?: number;
   retryBackoff?: 'linear' | 'exponential';
   timeoutMs?: number;

@@ -37,7 +37,7 @@ graph TB
 1. **CORS-Proxy での認証エラー (401)**
    ```typescript
    // Worker側でのAPI呼び出し
-   fetch('https://cors-proxy.workers.dev/?url=https://api.example.com/data', {
+   fetch('https://cors-proxy.kubohiroya.workers.dev/?url=https://api.example.com/data', {
      headers: {
        'Authorization': `Bearer ${currentToken}`
      }

@@ -1,11 +1,12 @@
-import { authFetch } from './authFetch.js';
+import { downloadJson } from './downloadService.js';
 
 const parseAdminLevel = (value: unknown): number | null => {
   if (typeof value === 'number' && Number.isInteger(value)) return value;
   if (typeof value !== 'string') return null;
   const match = value.toUpperCase().match(/ADM\s*([0-5])/);
-  if (!match) return null;
-  return Number.parseInt(match[1], 10);
+  const level = match?.[1];
+  if (!level) return null;
+  return Number.parseInt(level, 10);
 };
 
 const readFirstString = (record: Record<string, unknown>, keys: string[]): string | null => {
@@ -26,11 +27,7 @@ export type GeoBoundariesAvailability = {
 export async function fetchGeoBoundariesAvailability(
   url: string,
 ): Promise<GeoBoundariesAvailability> {
-  const response = await authFetch(url);
-  if (!response.ok) {
-    throw new Error(`GeoBoundaries availability API failed: ${response.status}`);
-  }
-  const availabilityPayload = await response.json() as unknown;
+  const availabilityPayload = await downloadJson<unknown>(url, 'geoboundaries:availability');
   const items = Array.isArray(availabilityPayload)
     ? availabilityPayload
     : Array.isArray((availabilityPayload as { data?: unknown }).data)

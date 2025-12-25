@@ -23,6 +23,8 @@ import {
   WorkerDiTokens,
   WorkerService,
 } from '@hierarchidb/runtime-worker';
+import { setCorsProxyBaseURL } from '@hierarchidb/download';
+import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
 import {
   pluginDefinitions as staticPluginDefinitions,
 } from '~/plugin-loaders/index.ts';
@@ -133,6 +135,12 @@ if (!globalShim.process) {
 }
 if (!globalShim.process.env) {
   globalShim.process.env = {};
+}
+if (typeof import.meta.env?.VITE_CORS_PROXY_BASE_URL === 'string') {
+  const value = import.meta.env.VITE_CORS_PROXY_BASE_URL;
+  if (value.length > 0) {
+    setCorsProxyBaseURL(value);
+  }
 }
 
 const reporter = new WorkerInitializationReporter(
@@ -394,6 +402,17 @@ reporter.reportStepProgress('Load Comlink', 0);
             console.warn(`[worker bootstrap] getBatchTasks failed for ${nodeType}:`, msg);
             return [];
           }
+        },
+        setAuthToken: async (
+          token: string,
+          type: 'Bearer' | 'Basic' = 'Bearer',
+          expiresAt?: number,
+        ): Promise<void> => {
+          const auth = await AuthRecoveryService.getSingleton();
+          auth.setToken(token, type, expiresAt);
+        },
+        setCorsProxyBaseURL: async (url: string): Promise<void> => {
+          setCorsProxyBaseURL(url);
         },
       } as const;
 

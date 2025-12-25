@@ -8,6 +8,7 @@ import type { ShapeEntity } from '../../common/types/index.js';
 import type { NodeId } from '@hierarchidb/common-types';
 import type JSZip from 'jszip';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
+import { downloadArrayBuffer } from '../utils/downloadService.js';
 
 //  Natural Earth
 export interface NaturalEarthRawData {
@@ -100,7 +101,6 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
       endpoint = 'countries-50m',
       adminLevel,
       bbox: _bbox,
-      timeout = this.config.access.timeout,
     } = options || {};
 
     const selectedEndpoint = this.selectEndpoint(endpoint, adminLevel);
@@ -114,8 +114,12 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
 
     try {
       //  ZIP
-      const response = await this.downloadWithRetry(downloadUrl, timeout);
-      const zipBuffer = await response.arrayBuffer();
+      const retries = this.config.access.retries ?? { count: 1, delay: 0, backoff: 'exponential' };
+      const zipBuffer = await downloadArrayBuffer(
+        downloadUrl,
+        `naturalearth:${selectedEndpoint}`,
+        { retries: retries.count, delayMs: retries.delay, backoff: retries.backoff },
+      );
 
       //  ZIP
       const JSZipCtor = await ensureJsZip();
@@ -220,43 +224,6 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
     //  test-1
     if (endpoint?.startsWith('test-')) return 'countries-50m';
     return endpoint;
-  }
-
-  private async downloadWithRetry(url: string, timeout?: number): Promise<Response> {
-    const { count = 3, delay = 2000, backoff = 'exponential' } = this.config.access.retries || {};
-
-    for (let attempt = 0; attempt < count; attempt++) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = timeout ? setTimeout(() => controller.abort(), timeout) : null;
-
-        const { authFetch } = await import('../utils/authFetch.js');
-        const response = await authFetch(url, {
-          signal: controller.signal,
-        });
-
-        if (timeoutId) clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          console.warn(`[NaturalEarth] HTTP ${response.status} for ${url}`);
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        return response;
-
-      } catch (error) {
-        if (attempt === count - 1) throw error;
-
-        const waitTime = backoff === 'exponential'
-          ? delay * 2 ** attempt
-          : delay * (attempt + 1);
-
-        console.warn(`[NaturalEarth] Attempt ${attempt + 1} failed, retrying in ${waitTime}ms...`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
-      }
-    }
-
-    throw new Error('Max retry attempts reached');
   }
 
 

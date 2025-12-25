@@ -26,7 +26,6 @@ import { isShapePreviewMetadataEnabled } from '../../common/config/previewFlags.
 import { shapeDB } from '../database/ShapeDB.js';
 import type { DownloadStageOutput } from './strategies/DownloadStageStrategy.js';
 import { resolveDownloadStageStrategy } from './strategies/resolveDownloadStageStrategy.js';
-import { setCorsProxyBaseURL } from '../utils/corsProxyBase.js';
 
 type WorkerPoolStatistics = Record<string, number>;
 
@@ -75,7 +74,6 @@ export class SessionController {
     this.urlMetadata = urlMetadata;
     this.options = options;
     this.config = config;
-    setCorsProxyBaseURL(config.corsProxyBaseURL);
   }
 
   private resolveZoomLevels(): number[] {

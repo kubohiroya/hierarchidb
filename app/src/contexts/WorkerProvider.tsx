@@ -364,6 +364,7 @@ export const WorkerProvider = ({
   }));
   const initChannelRef = useRef<WorkerInitializationChannel | null>(null);
   const latestProgressRef = useRef(0);
+  const lastAuthTokenRef = useRef<string | null>(null);
 
   const resetState = useCallback(() => {
     setStatus({
@@ -426,6 +427,29 @@ export const WorkerProvider = ({
       return next;
     });
   }, [proxy, proxyState, proxyError]);
+
+  useEffect(() => {
+    if (!status.client || !status.isInitialized) return;
+    if (typeof window === 'undefined') return;
+    try {
+      const token =
+        sessionStorage.getItem('access_token') ||
+        localStorage.getItem('access_token') ||
+        '';
+      if (!token || token === lastAuthTokenRef.current) return;
+      const rawExpires =
+        sessionStorage.getItem('token_expires_at') ||
+        localStorage.getItem('token_expires_at');
+      const expiresAt = rawExpires ? Number(rawExpires) : undefined;
+      status.client.setAuthToken(token, 'Bearer', Number.isFinite(expiresAt) ? expiresAt : undefined)
+        .catch((error) => {
+          logWorkerProviderWarning('Failed to sync worker auth token', error);
+        });
+      lastAuthTokenRef.current = token;
+    } catch (error) {
+      logWorkerProviderWarning('Failed to read access_token for worker', error);
+    }
+  }, [status.client, status.isInitialized]);
 
   const finalizeInitialized = useCallback(async () => {
     try {

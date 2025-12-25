@@ -23,3 +23,6 @@ export VITE_DEBUG_MODE="true"
 
 export VITE_GOOGLE_CLIENT_ID="http://116194448043-hesk0hio07cec1qdgm510kurefh0gh61.apps.googleusercontent.com"
 export VITE_GITHUB_CLIENT_ID="Ov23liRWoNQEyVrTghMj"
+
+export VITE_CORS_PROXY_BASE_URL="https://hierarchidb-cors-proxy-dev.kubohiroya.workers.dev"
+export VITE_ALLOWD_TARGET_LIST="https://gadm.org,https://geodata.ucdavis.edu,https://raw.githubusercontent.com,https://github.com,https://nominatim.openstreetmap.org,https://overpass-api.de,https://download.geofabrik.de,https://www.geoboundaries.org,https://geoboundaries.org,https://datahub.io"

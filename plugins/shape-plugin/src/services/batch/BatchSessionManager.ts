@@ -63,8 +63,11 @@ export class BatchSessionManager {
     const sessionId = String(nodeId);
     const existing = await shapeDB.getBatchSession(sessionId);
     if (existing) {
-      if (existing.status === 'running' || existing.status === 'paused') {
-        return existing;
+      if (existing.status === 'running') {
+        const taskCount = await shapeDB.batchTasks.where('sessionId').equals(sessionId).count();
+        if (taskCount > 0) {
+          return existing;
+        }
       }
       this.sharedSessions.delete(sessionId);
       await shapeDB.batchTasks.where('sessionId').equals(sessionId).delete();

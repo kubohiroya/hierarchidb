@@ -346,9 +346,6 @@ describe('Shape batch processing (headless)', () => {
   it('starts batch processing and completes via progress callbacks', async () => {
     const config = createBatchConfig({
       dataSource: 'geoboundaries',
-      downloadConfig: {
-        corsProxyUrl: '',
-      },
       simplificationConfig: {
         ...DEFAULT_PROCESSING_CONFIG.simplificationConfig,
         enablePerFeatureSimplification: false,
@@ -359,7 +356,6 @@ describe('Shape batch processing (headless)', () => {
         maxZoom: 0,
       },
     });
-    expect(config.downloadConfig.corsProxyUrl).toBe('');
     const { sessionId, events } = await runBatchProcessing(
       core,
       config,
@@ -429,7 +425,6 @@ describe('Shape batch processing (headless)', () => {
     const config = createBatchConfig({
       dataSource: 'geoboundaries',
       downloadConfig: {
-        corsProxyUrl: '',
         maxConcurrent: 1,
       },
       tileConfig: {
@@ -439,7 +434,6 @@ describe('Shape batch processing (headless)', () => {
         workers: 1,
       },
     });
-    expect(config.downloadConfig.corsProxyUrl).toBe('');
 
     const countries = ['JP', 'CN', 'KR'];
     const adminLevels = [1];

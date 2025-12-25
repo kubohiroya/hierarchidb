@@ -214,7 +214,6 @@ describe('ShapeEntityHandler Migration Tests', () => {
       });
 
       const batchConfig: BatchConfig = {
-        corsProxyBaseURL: 'https://proxy.example.com',
         dataSource: 'naturalearth',
         download: {
           concurrentDownloads: 3,
@@ -264,7 +263,6 @@ describe('ShapeEntityHandler Migration Tests', () => {
       });
 
       const batchConfig: BatchConfig = {
-        corsProxyBaseURL: 'https://proxy.example.com',
         dataSource: 'naturalearth',
         download: { concurrentDownloads: 3, deleteOnComplete: false },
         simplify1: {
@@ -298,7 +296,6 @@ describe('ShapeEntityHandler Migration Tests', () => {
 
       //  Then: BatchConfig
       expect(retrievedBatchConfig).toBeDefined();
-      expect(retrievedBatchConfig?.corsProxyBaseURL).toBeDefined();
       expect(retrievedBatchConfig?.download).toBeDefined();
       expect(retrievedBatchConfig?.simplify1).toBeDefined();
       expect(retrievedBatchConfig?.simplify2).toBeDefined();

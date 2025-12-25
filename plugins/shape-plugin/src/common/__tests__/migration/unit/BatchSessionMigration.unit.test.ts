@@ -29,7 +29,6 @@ describe('BatchSession Migration Tests', () => {
     mockTreeNodeId = 'console-node-123' as TreeNodeId;
 
     mockBatchConfig = {
-      corsProxyBaseURL: 'https://test-proxy.example.com',
       dataSource: 'naturalearth',
       download: {
         concurrentDownloads: 2,
@@ -286,7 +285,10 @@ describe('BatchSession Migration Tests', () => {
       //  Given: Worker
       const invalidConfig = {
         ...mockBatchConfig,
-        corsProxyBaseURL: 'invalid-url',
+        download: {
+          ...mockBatchConfig.download,
+          concurrentDownloads: 0,
+        },
       };
 
       //  When & Then: Worker

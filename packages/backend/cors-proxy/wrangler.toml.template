@@ -1,22 +1,22 @@
-name = "hierarchiidb-cors-proxy"
-main = "src/openstreetmap-type.ts"
+name = "hierarchidb-cors-proxy"
+main = "src/worker.ts"
 compatibility_date = "2024-12-01"
 
 # Development environment
 [env.development]
-name = "hierarchiidb-cors-proxy-dev"
+name = "hierarchidb-cors-proxy-dev"
 
 [env.development.vars]
-BFF_JWT_ISSUER = "hierarchiidb-bff"
+BFF_JWT_ISSUER = "hierarchidb-bff"
 ALLOWED_TARGET_LIST = ""
 ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:3000"
 
 # Production environment
 [env.production]
-name = "hierarchiidb-cors-proxy-prod"
+name = "hierarchidb-cors-proxy-prod"
 
 [env.production.vars]
-BFF_JWT_ISSUER = "hierarchiidb-bff"
+BFF_JWT_ISSUER = "hierarchidb-bff"
 ALLOWED_TARGET_LIST = ""
 ALLOWED_ORIGINS = "https://your-domain.com"
 

@@ -48,7 +48,7 @@ Edit `wrangler.toml`:
 
 ```toml
 name = "hierarchidb-cors-proxy"
-main = "src/openstreetmap-type.ts"
+main = "src/worker.ts"
 compatibility_date = "2024-12-01"
 
 # Development environment
@@ -56,8 +56,9 @@ compatibility_date = "2024-12-01"
 name = "hierarchidb-cors-proxy-dev"
 
 [env.development.vars]
-# Required: Comma-separated list of allowed target URLs
+# Required: Comma-separated list of allowed target URL prefixes
 ALLOWED_TARGET_LIST = "https://api.example.com,https://another-api.com"
+ALLOWED_ORIGINS = "http://localhost:4200"
 
 # BFF JWT verification (recommended)
 BFF_JWT_ISSUER = "hierarchidb-bff"
@@ -82,6 +83,7 @@ name = "hierarchidb-cors-proxy-prod"
 
 [env.production.vars]
 ALLOWED_TARGET_LIST = "https://api.production.com"
+ALLOWED_ORIGINS = "https://your-domain.com"
 BFF_JWT_ISSUER = "hierarchidb-bff-prod"
 # ... other production configs
 ```
@@ -183,6 +185,16 @@ Configuration required:
 - `JWKS_URL`: JWKS endpoint URL
 - `TOKEN_ISSUER`: Expected token issuer
 - `TOKEN_AUD`: Expected audience (client ID)
+
+## Allowlist semantics
+
+- `ALLOWED_TARGET_LIST` is a comma-separated list of **URL prefixes**.
+- A target is allowed when its URL **starts with** an entry.
+- If an entry is origin-only (e.g. `https://github.com`), the target origin must match.
+
+Examples:
+- `https://github.com` allows `https://github.com/wmgeolab/...`
+- `https://github.com/wmgeolab/geoBoundaries/raw/` restricts access to that subtree
 
 ## Development
 

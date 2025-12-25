@@ -7,6 +7,7 @@ import { BaseDataSourceStrategy, type DataSourceConfig, type FetchOptions, type 
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { ShapeEntity } from '../../common/types/index.js';
 import type { NodeId } from '@hierarchidb/common-types';
+import { downloadArrayBuffer, downloadJson } from '../utils/downloadService.js';
 
 type GeoBoundariesProperties = Record<string, unknown>;
 type GeoBoundariesGeoJSON = FeatureCollection<Geometry, GeoBoundariesProperties>;
@@ -16,7 +17,7 @@ export interface GeoBoundariesApiResponse {
   gjDownloadURL?: string;
   boundaryYear?: number;
   licenseDetail?: string;
-  releaseType?: 'gbOpen' | 'gbHumanitarian' | 'gbAuthoritative';
+  releaseType?: 'gbOpen';
   [key: string]: unknown;
 }
 
@@ -28,7 +29,7 @@ export interface GeoBoundariesRawData {
     downloadedAt: string;
     country: string;
     adminLevel: string;
-    releaseType: 'gbOpen' | 'gbHumanitarian' | 'gbAuthoritative';
+    releaseType: 'gbOpen';
     version: number;
     format: 'geojson' | 'shapefile' | 'kml' | 'topojson';
     apiResponse?: GeoBoundariesApiResponse;
@@ -63,17 +64,6 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
     access: {
       method: 'REST',
       baseUrl: 'https://www.geoboundaries.org/api/current/',
-      endpoints: {
-        //  API v1
-        single: 'gbOpen/{ISO}/{ADM}/',
-        humanitarian: 'gbHumanitarian/{ISO}/{ADM}/',
-        authoritative: 'gbAuthoritative/{ISO}/{ADM}/',
-
-        available: 'available/',
-        search: 'search/',
-
-        metadata: 'metadata/{ISO}/{ADM}/',
-      },
       authentication: { type: 'none' },
       timeout: 60000, //  60
       retries: { count: 3, delay: 2000, backoff: 'exponential' },
@@ -111,15 +101,12 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
     '5': 'ADM5',
   };
 
-  private readonly releaseTypePriority: ('gbOpen' | 'gbHumanitarian' | 'gbAuthoritative')[] = [
-    'gbAuthoritative', 'gbHumanitarian', 'gbOpen'];
+  private readonly releaseType: 'gbOpen' = 'gbOpen';
 
   async fetchData(options?: FetchOptions): Promise<GeoBoundariesRawData> {
     const {
       country = 'USA',
       adminLevel = '1',
-      endpoint,
-      timeout = this.config.access.timeout,
     } = options || {};
 
     //  admin
@@ -128,18 +115,24 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
 
     try {
       //  APIURL
-      const apiData = await this.fetchBoundaryMetadata(normalizedCountry, normalizedAdminLevel, endpoint);
+      const apiData = await this.fetchBoundaryMetadata(normalizedCountry, normalizedAdminLevel);
 
       if (!apiData || !apiData.gjDownloadURL) {
         throw new Error(`No boundary data available for ${normalizedCountry} ${normalizedAdminLevel}`);
       }
 
-      console.log(`[GeoBoundaries] Downloading ${apiData.releaseType} data for ${normalizedCountry} ${normalizedAdminLevel}`);
+      console.log(`[GeoBoundaries] Downloading ${this.releaseType} data for ${normalizedCountry} ${normalizedAdminLevel}`);
       console.log(`[GeoBoundaries] URL: ${apiData.gjDownloadURL}`);
 
       //  GeoJSON
-      const response = await this.downloadWithRetry(apiData.gjDownloadURL, timeout);
-      const geojson = (await response.json()) as GeoBoundariesGeoJSON;
+      const retries = this.config.access.retries ?? { count: 1, delay: 0, backoff: 'exponential' };
+      const buffer = await downloadArrayBuffer(
+        apiData.gjDownloadURL,
+        `geoboundaries:${normalizedCountry}:${normalizedAdminLevel}`,
+        { retries: retries.count, delayMs: retries.delay, backoff: retries.backoff },
+      );
+      console.log(`[GeoBoundaries] Download succeeded: ${apiData.gjDownloadURL}`);
+      const geojson = JSON.parse(new TextDecoder('utf-8').decode(buffer)) as GeoBoundariesGeoJSON;
 
       return {
         geojson,
@@ -148,7 +141,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
           downloadedAt: new Date().toISOString(),
           country: normalizedCountry,
           adminLevel: normalizedAdminLevel,
-          releaseType: apiData.releaseType || 'gbOpen',
+          releaseType: this.releaseType,
           version: typeof apiData.boundaryYear === 'number' ? apiData.boundaryYear : 2023,
           format: 'geojson',
           apiResponse: apiData,
@@ -156,7 +149,9 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
       };
 
     } catch (error) {
-      throw new Error(`Failed to fetch GeoBoundaries data for ${normalizedCountry} ${normalizedAdminLevel}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      console.warn(`[GeoBoundaries] Download failed: ${normalizedCountry} ${normalizedAdminLevel}`, message);
+      throw new Error(`Failed to fetch GeoBoundaries data for ${normalizedCountry} ${normalizedAdminLevel}: ${message}`);
     }
   }
 
@@ -233,39 +228,24 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
   private async fetchBoundaryMetadata(
     country: string,
     adminLevel: string,
-    preferredEndpoint?: string,
   ): Promise<GeoBoundariesApiResponse> {
-    const releaseTypes = preferredEndpoint
-      ? [preferredEndpoint as 'gbOpen' | 'gbHumanitarian' | 'gbAuthoritative']
-      : this.releaseTypePriority;
+    const url = `${this.config.access.baseUrl}${this.releaseType}/${country}/${adminLevel}/`;
+    console.log(`[GeoBoundaries] Fetching metadata: ${url}`);
 
-    for (const releaseType of releaseTypes) {
-      try {
-        const endpoint = this.config.access.endpoints?.[releaseType];
-        if (!endpoint) continue;
-
-        const url = `${this.config.access.baseUrl}${endpoint.replace('{ISO}', country).replace('{ADM}', adminLevel)}`;
-
-        console.log(`[GeoBoundaries] Trying ${releaseType}: ${url}`);
-
-        const { authFetch } = await import('../utils/authFetch.js');
-        const response = await authFetch(url);
-
-        if (response.ok) {
-          const data = (await response.json()) as GeoBoundariesApiResponse;
-          data.releaseType = releaseType;
-          return data;
-        } else if (response.status === 404) {
-          console.warn(`[GeoBoundaries] ${releaseType} not available for ${country} ${adminLevel}`);
-        } else {
-          throw new Error(`API error ${response.status}: ${response.statusText}`);
-        }
-      } catch (error) {
-        console.warn(`[GeoBoundaries] Failed to fetch ${releaseType}:`, error);
+    try {
+      const data = await downloadJson<GeoBoundariesApiResponse>(
+        url,
+        `geoboundaries:metadata:${country}:${adminLevel}`,
+      );
+      data.releaseType = this.releaseType;
+      return data;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (/HTTP 404/.test(message)) {
+        throw new Error(`No boundary data found for ${country} ${adminLevel} in ${this.releaseType}`);
       }
+      throw new Error(`API error: ${message}`);
     }
-
-    throw new Error(`No boundary data found for ${country} ${adminLevel} in any release type`);
   }
 
 
@@ -315,43 +295,6 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
   private normalizeAdminLevel(adminLevel: string): string {
     const normalized = this.adminLevels[adminLevel.toLowerCase()];
     return normalized || `ADM${Math.min(Math.max(parseInt(adminLevel) || 0, 0), 5)}`;
-  }
-
-  private async downloadWithRetry(url: string, timeout?: number): Promise<Response> {
-    const { count = 3, delay = 2000, backoff = 'exponential' } = this.config.access.retries || {};
-
-    for (let attempt = 0; attempt < count; attempt++) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = timeout ? setTimeout(() => controller.abort(), timeout) : null;
-
-        const { authFetch } = await import('../utils/authFetch.js');
-        const response = await authFetch(url, {
-          signal: controller.signal,
-        });
-
-        if (timeoutId) clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          console.warn(`[GeoBoundaries] HTTP ${response.status} for ${url}`);
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        return response;
-
-      } catch (error) {
-        if (attempt === count - 1) throw error;
-
-        const waitTime = backoff === 'exponential'
-          ? delay * 2 ** attempt
-          : delay * (attempt + 1);
-
-        console.warn(`[GeoBoundaries] Attempt ${attempt + 1} failed, retrying in ${waitTime}ms...`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
-      }
-    }
-
-    throw new Error('Max retry attempts reached');
   }
 
   private generateEntityId(properties: GeoBoundariesProperties, index: number): string {
@@ -422,12 +365,11 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
 
   async getAvailableCountries(): Promise<string[]> {
     try {
-      const { authFetch } = await import('../utils/authFetch.js');
-      const response = await authFetch(`${this.config.access.baseUrl}available/`);
-      if (response.ok) {
-        const data = await response.json();
-        return Object.keys(data);
-      }
+      const data = await downloadJson<Record<string, unknown>>(
+        `${this.config.access.baseUrl}available/`,
+        'geoboundaries:available',
+      );
+      return Object.keys(data);
     } catch (error) {
       console.warn('Failed to fetch available countries:', error);
     }
@@ -437,12 +379,11 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
   async getAvailableAdminLevels(country: string): Promise<string[]> {
     try {
       const normalizedCountry = this.normalizeCountryCode(country);
-      const { authFetch } = await import('../utils/authFetch.js');
-      const response = await authFetch(`${this.config.access.baseUrl}available/`);
-      if (response.ok) {
-        const data = await response.json();
-        return data[normalizedCountry] || [];
-      }
+      const data = await downloadJson<Record<string, string[]>>(
+        `${this.config.access.baseUrl}available/`,
+        'geoboundaries:available',
+      );
+      return data[normalizedCountry] || [];
     } catch (error) {
       console.warn(`Failed to fetch available admin levels for ${country}:`, error);
     }

@@ -68,4 +68,6 @@ export interface WorkerAPI {
     sessionId: BatchSessionId,
     callback: (event: BatchProgressEvent) => void
   ): Promise<() => void>;
+  setAuthToken(token: string, type?: 'Bearer' | 'Basic', expiresAt?: number): Promise<void>;
+  setCorsProxyBaseURL(url: string): Promise<void>;
 }

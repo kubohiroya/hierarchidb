@@ -10,7 +10,6 @@ import { GadmDownloadStrategy } from '../services/batch/strategies/GadmDownloadS
 import { NaturalEarthDownloadStrategy } from '../services/batch/strategies/NaturalEarthDownloadStrategy.js';
 
 const createConfig = (dataSource: string): BatchProcessConfig => ({
-  corsProxyBaseURL: '',
   dataSource: dataSource as BatchProcessConfig['dataSource'],
   download: { concurrentDownloads: 1 },
   simplify1: {

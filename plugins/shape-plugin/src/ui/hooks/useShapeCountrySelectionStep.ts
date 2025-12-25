@@ -13,7 +13,6 @@ import {
 import { normalizeDataSourceName } from '../../services/utils/utils.js';
 import { clearStagesIfPresent, FULL_INVALIDATION_STAGES, resolveShapeSessionId } from '../utils/sessionInvalidation.js';
 import { deriveUrlMetadataFromSelection } from '../utils/selectionUrlMetadata.js';
-import { setCorsProxyBaseURL } from '../../services/utils/corsProxyBase.js';
 import { fetchGeoBoundariesAvailability } from '../../services/utils/geoBoundariesAvailability.js';
 
 const CONTINENT_CODES: ContinentCode[] = ['AF', 'AS', 'EU', 'NA', 'SA', 'OC', 'AN'];
@@ -140,7 +139,6 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
         return;
       }
       try {
-        setCorsProxyBaseURL(data?.batchConfig?.downloadConfig?.corsProxyUrl ?? '');
         const { entries, totalItems } = await fetchGeoBoundariesAvailability(
           'https://www.geoboundaries.org/api/current/gbOpen/ALL/ALL/',
         );
@@ -176,7 +174,7 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
     return () => {
       cancelled = true;
     };
-  }, [data?.batchConfig?.downloadConfig?.corsProxyUrl, dataSourceKey, enqueueSnackbar]);
+  }, [dataSourceKey, enqueueSnackbar]);
 
   useEffect(() => {
     if (!Array.isArray(data.checkboxState)) return;

@@ -39,8 +39,8 @@ import type { BatchStage, BatchTaskStatus } from '../common/types/BatchTaskLike.
 import type { BatchProgressEvent as RuntimeBatchProgressEvent } from '@hierarchidb/common-api';
 import { calculateSelectionStats, generateUrlMetadata, getPreferredCountryCodeFormat } from '../services/utils/utils.js';
 import { normalizeCountryCodeFormat } from '../services/utils/iso3166.js';
-import { setCorsProxyBaseURL } from '../services/utils/corsProxyBase.js';
 import { fetchGeoBoundariesAvailability } from '../services/utils/geoBoundariesAvailability.js';
+import { downloadJson } from '../services/utils/downloadService.js';
 
 // Create singleton unified batch manager
 const batchSessionManager = createShapeBatchManager();
@@ -71,7 +71,6 @@ const buildBatchSessionConfig = (batchConfig: BatchConfig, draft?: DraftLike): B
     ?? toDataSourceName(draft?.draftData?.batchConfig?.dataSource ?? 'naturalearth');
 
   return {
-    corsProxyBaseURL: downloadConfig?.corsProxyUrl ?? '',
     dataSource: resolvedDataSource,
     download: {
       concurrentDownloads: downloadConfig?.maxConcurrent ?? 4,
@@ -111,13 +110,37 @@ const buildBatchSessionConfig = (batchConfig: BatchConfig, draft?: DraftLike): B
 };
 
 const GEOBOUNDARIES_AVAILABILITY_URL = 'https://www.geoboundaries.org/api/current/gbOpen/ALL/ALL/';
+const GEOBOUNDARIES_BASE_URL = 'https://www.geoboundaries.org/api/current/';
+const GEOBOUNDARIES_RELEASE_TYPES = ['gbOpen'] as const;
+
+const hasGeoBoundariesEntry = async (iso3: string, adminLevel: number): Promise<boolean> => {
+  const adm = `ADM${adminLevel}`;
+  for (const releaseType of GEOBOUNDARIES_RELEASE_TYPES) {
+    const url = `${GEOBOUNDARIES_BASE_URL}${releaseType}/${iso3}/${adm}/`;
+    try {
+      await downloadJson<Record<string, unknown>>(
+        url,
+        `geoboundaries:metadata-check:${releaseType}:${iso3}:${adminLevel}`,
+      );
+      return true;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (/HTTP 404/.test(message)) continue;
+      console.warn('[ShapeBatch] GeoBoundaries metadata fetch failed', {
+        releaseType,
+        iso3,
+        adminLevel,
+        error: message,
+      });
+    }
+  }
+  return false;
+};
 
 const filterGeoBoundariesUrlMetadata = async (
   urlMetadata: UrlMetadata[],
-  corsProxyUrl?: string,
 ): Promise<UrlMetadata[]> => {
   if (!urlMetadata.length) return urlMetadata;
-  setCorsProxyBaseURL(corsProxyUrl ?? '');
   try {
     const { entries, totalItems } = await fetchGeoBoundariesAvailability(GEOBOUNDARIES_AVAILABILITY_URL);
     if (entries.size === 0) {
@@ -128,14 +151,20 @@ const filterGeoBoundariesUrlMetadata = async (
     }
     const filtered: UrlMetadata[] = [];
     let dropped = 0;
+    let unavailable = 0;
     for (const metadata of urlMetadata) {
       const iso3 = await normalizeCountryCodeFormat(metadata.countryCode ?? '', 'iso3');
       const levels = entries.get(iso3);
-      if (levels?.includes(metadata.adminLevel)) {
-        filtered.push(metadata);
-      } else {
+      if (!levels?.includes(metadata.adminLevel)) {
         dropped += 1;
+        continue;
       }
+      const hasEntry = await hasGeoBoundariesEntry(iso3, metadata.adminLevel);
+      if (!hasEntry) {
+        unavailable += 1;
+        continue;
+      }
+      filtered.push(metadata);
     }
     console.debug('[ShapeBatch] GeoBoundaries availability filter', {
       totalItems,
@@ -143,6 +172,7 @@ const filterGeoBoundariesUrlMetadata = async (
       input: urlMetadata.length,
       output: filtered.length,
       dropped,
+      unavailable,
     });
     return filtered;
   } catch (error) {
@@ -467,7 +497,7 @@ export const shapePluginAPI = {
     const downloadConfig = batchConfig.downloadConfig ?? DEFAULT_PROCESSING_CONFIG.downloadConfig;
     const resolvedDataSource = toDataSourceName(batchConfig.dataSource);
     const availabilityFilteredMetadata = resolvedDataSource === 'geoboundaries'
-      ? await filterGeoBoundariesUrlMetadata(urlMetadata, downloadConfig?.corsProxyUrl)
+      ? await filterGeoBoundariesUrlMetadata(urlMetadata)
       : urlMetadata;
     if (!availabilityFilteredMetadata.length) {
       if (resolvedDataSource === 'geoboundaries') {

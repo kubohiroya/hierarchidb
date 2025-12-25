@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import { useShapeBatchTasks } from './useShapeBatchTasks.js';
 import { useShapeProgress } from './useShapeProgress.js';
@@ -35,6 +35,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
 
   const { progress, status, error, isSubscribed } = useShapeProgress(sessionId, { autoSubscribe: Boolean(sessionId) });
   const { tasks, refresh: refreshTasks } = useShapeBatchTasks(sessionId, { autoRefresh: true, pollIntervalMs: 2000 });
+  const [persistedTasks, setPersistedTasks] = useState<typeof tasks>([]);
   const hasSessionId = Boolean(sessionId && !error);
   const effectiveProgress = hasSessionId ? progress : null;
   const effectiveStatus = hasSessionId ? status : null;
@@ -77,6 +78,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
   const skipped = effectiveProgress?.skipped ?? 0;
   const hasProgressData = Boolean(effectiveProgress) || Boolean(effectiveStatus && effectiveStatus.status !== 'idle');
   const debugStateRef = useRef<Record<string, unknown> | null>(null);
+  const clearedSessionsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     const nextState = {
@@ -91,7 +93,8 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
       error: error?.message ?? null,
     };
     const prev = debugStateRef.current;
-    const hasChanged = !prev || Object.keys(nextState).some((key) => prev[key] !== nextState[key]);
+    const entries = Object.entries(nextState) as Array<[keyof typeof nextState, unknown]>;
+    const hasChanged = !prev || entries.some(([key, value]) => (prev as typeof nextState)[key] !== value);
     if (hasChanged) {
       console.debug('[ShapeBuildProgressStep] state', nextState);
       debugStateRef.current = nextState;
@@ -113,12 +116,31 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     void refreshTasks();
   }, [refreshTasks, sessionId]);
 
+  useEffect(() => {
+    if (!sessionId) {
+      setPersistedTasks([]);
+      return;
+    }
+    if (tasks.length > 0) {
+      setPersistedTasks(tasks);
+    }
+  }, [sessionId, tasks]);
+
+  useEffect(() => {
+    if (!sessionId || !effectiveStatus?.status) return;
+    if (!['completed', 'failed', 'cancelled'].includes(effectiveStatus.status)) return;
+    if (clearedSessionsRef.current.has(sessionId)) return;
+    clearedSessionsRef.current.add(sessionId);
+    onChange({ batchSessionId: undefined, processingStatus: 'idle' });
+  }, [effectiveStatus?.status, onChange, sessionId]);
+
+  const displayTasks = tasks.length > 0 ? tasks : persistedTasks;
   const { stageProgress, tasksByStage, paneProgress } = useBuildTaskProgress(
     stages,
     currentStage,
     overallProgress,
     buildStatus,
-    tasks,
+    displayTasks,
   );
 
   const resolveStatusLabel = useCallback((statusValue?: string): string => {
@@ -183,7 +205,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     stageProgress,
     paneProgress,
     tasksByStage,
-    tasks,
+    tasks: displayTasks,
     buildStatus,
     overallProgress,
     stageLabel,

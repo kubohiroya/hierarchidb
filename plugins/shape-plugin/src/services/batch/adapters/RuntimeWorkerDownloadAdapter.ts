@@ -60,6 +60,11 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
     onProgress: (p: ProgressInfo) => void,
     controls?: StageControls,
   ): Promise<DownloadStageAdapterResult> {
+    console.debug('[ShapeDownloadAdapter] process', {
+      sessionId,
+      taskCount: tasks.length,
+      dataSources: Array.from(new Set(tasks.map((task) => task.config?.dataSource ?? 'unknown'))),
+    });
     const batch = new BatchService();
     const db = getEphemeralShapeDB();
     let completed = 0;

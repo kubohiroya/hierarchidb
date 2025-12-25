@@ -77,7 +77,7 @@ export class EphemeralGisDB<Config = unknown> extends Dexie {
     super(name);
     this.version(1).stores({
       rawBuffers: '&id, sessionId, nodeId, timestamp',
-      simplifiedBuffers: '&id, sessionId, nodeId, stage, timestamp',
+      simplifiedBuffers: '&id, sessionId, nodeId, stage, timestamp, [sessionId+stage]',
       vectorTiles: '&id, sessionId, nodeId, [z+x+y], hash, timestamp',
       sessions: '&id, nodeId, status, stage, startTime',
       cache: '&key, type, lastAccessed, ttl',
