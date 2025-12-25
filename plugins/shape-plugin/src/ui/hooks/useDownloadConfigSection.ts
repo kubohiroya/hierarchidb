@@ -13,9 +13,10 @@ type Args = {
   draft?: Partial<ShapeEntity> | null;
   disabled?: boolean;
   onChange: (next: BatchConfig) => void;
+  onResetSession?: () => void;
 };
 
-export const useDownloadConfigSection = ({ config, draft, disabled, onChange }: Args) => {
+export const useDownloadConfigSection = ({ config, draft, disabled, onChange, onResetSession }: Args) => {
   const { t } = useTranslation();
   const switchId = useId();
   const baseDownloadConfig: DownloadBatchConfig | undefined =
@@ -95,24 +96,27 @@ export const useDownloadConfigSection = ({ config, draft, disabled, onChange }: 
     await db.clearStage(sessionId, 'download');
     await deleteTasksForStage('download');
     await loadCounts();
+    onResetSession?.();
     notify.success('Deleted downloaded files');
-  }, [db, deleteTasksForStage, loadCounts, sessionId]);
+  }, [db, deleteTasksForStage, loadCounts, onResetSession, sessionId]);
 
   const handleDeleteStage = useCallback(async (stage: 'simplify1' | 'simplify2') => {
     if (!sessionId) return notify.warning('SessionId is missing.');
     await db.clearStage(sessionId, stage);
     await deleteTasksForStage(stage);
     await loadCounts();
+    onResetSession?.();
     notify.success(stage === 'simplify1' ? 'Deleted Stage1 cache' : 'Deleted Stage2 cache');
-  }, [db, deleteTasksForStage, loadCounts, sessionId]);
+  }, [db, deleteTasksForStage, loadCounts, onResetSession, sessionId]);
 
   const handleDeleteTiles = useCallback(async () => {
     if (!sessionId) return notify.warning('SessionId is missing.');
     await db.clearStage(sessionId, 'vectorTiles');
     await deleteTasksForStage('vectortile');
     await loadCounts();
+    onResetSession?.();
     notify.success('Deleted tiles');
-  }, [db, deleteTasksForStage, loadCounts, sessionId]);
+  }, [db, deleteTasksForStage, loadCounts, onResetSession, sessionId]);
 
   const update = useCallback((partial: Partial<BatchConfig>) => {
     onChange(mergeBatchConfig({ ...config, ...partial }));

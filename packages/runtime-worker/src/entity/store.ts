@@ -1,3 +1,5 @@
+import type { NodeId } from '@hierarchidb/common-types';
+
 /**
  * Abstractions for plugin entity stores (Group/Relational).
  * Implementations should wrap per-plugin Dexie databases that expose

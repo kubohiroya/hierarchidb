@@ -53,6 +53,29 @@ export function useShapeProgress(
 
   const progress = toShapeProgress(unifiedProgress as ExtendedProgress | null, sessionId ?? undefined);
   const derivedStatus = toShapeStatus(unifiedProgress as ExtendedProgress | null, status as BatchSessionStatus | null);
+  const debugKey = sessionId ?? 'none';
+  const debugSnapshot = {
+    sessionId,
+    autoSubscribe,
+    enablePollingFallback,
+    isSubscribed,
+    error: error?.message ?? null,
+    unifiedStatus: status?.status ?? null,
+    derivedStatus: derivedStatus?.status ?? null,
+    progress: progress?.percentage ?? null,
+    currentStage: progress?.currentStage ?? null,
+    currentTask: progress?.currentTask ?? null,
+  };
+
+  if (typeof window !== 'undefined') {
+    const lastKey = `__shapeProgressDebug_${debugKey}`;
+    const prev = (window as unknown as Record<string, unknown>)[lastKey] as typeof debugSnapshot | undefined;
+    const changed = !prev || Object.keys(debugSnapshot).some((key) => prev[key as keyof typeof debugSnapshot] !== debugSnapshot[key as keyof typeof debugSnapshot]);
+    if (changed) {
+      console.debug('[ShapeBuildProgressStep] progressState', debugSnapshot);
+      (window as unknown as Record<string, unknown>)[lastKey] = debugSnapshot;
+    }
+  }
 
   return {
     progress,

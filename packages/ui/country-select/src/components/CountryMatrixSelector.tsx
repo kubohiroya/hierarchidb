@@ -4,10 +4,13 @@
  */
 
 import type React from 'react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Chip, Stack, Typography, Alert } from '@mui/material';
 import { SelectionMatrix, type SelectionMatrixColumn, type SelectionMatrixRow } from '@hierarchidb/components';
 import { SearchField } from '@hierarchidb/ui-search-field';
+import type { PrimitiveAtom } from 'jotai';
+import { Provider, atom, useAtomValue } from 'jotai';
+import { createStore } from 'jotai/vanilla';
 import type { Country } from '../types/Country.js';
 import { CONTINENTS } from '../types/Country.js';
 import type { MatrixConfig, MatrixSelection } from '../types/MatrixColumn.js';
@@ -184,6 +187,55 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
     );
   }, [rows, selectionColumns, selectionMap]);
 
+  const storeRef = useRef<ReturnType<typeof createStore>>();
+  if (!storeRef.current) {
+    storeRef.current = createStore();
+  }
+  const store = storeRef.current;
+
+  const matrixAtomRef = useRef<PrimitiveAtom<boolean[][]>>();
+  if (!matrixAtomRef.current) {
+    matrixAtomRef.current = atom<boolean[][]>([]);
+  }
+  const matrixStateAtom = matrixAtomRef.current;
+  const pendingSyncRef = useRef(false);
+
+  const isMatrixEqual = useCallback((left: boolean[][], right: boolean[][]): boolean => {
+    if (left === right) return true;
+    if (left.length !== right.length) return false;
+    for (let rowIndex = 0; rowIndex < left.length; rowIndex += 1) {
+      const leftRow = left[rowIndex] ?? [];
+      const rightRow = right[rowIndex] ?? [];
+      if (leftRow.length !== rightRow.length) return false;
+      for (let colIndex = 0; colIndex < leftRow.length; colIndex += 1) {
+        if (Boolean(leftRow[colIndex]) !== Boolean(rightRow[colIndex])) return false;
+      }
+    }
+    return true;
+  }, []);
+
+  const setMatrixFromSelections = useCallback(
+    (nextSelections: MatrixSelection[]) => {
+      const selectionByCode = new Map(nextSelections.map((sel) => [sel.countryCode, sel.selections]));
+      const nextMatrix = rows.map((row) =>
+        selectionColumns.map((col) => Boolean(selectionByCode.get(row.data.country.code)?.[col.id])),
+      );
+      pendingSyncRef.current = true;
+      store.set(matrixStateAtom, nextMatrix);
+    },
+    [matrixStateAtom, rows, selectionColumns, store],
+  );
+
+  useEffect(() => {
+    const prev = store.get(matrixStateAtom);
+    if (isMatrixEqual(prev, matrixState)) {
+      pendingSyncRef.current = false;
+      return;
+    }
+    if (pendingSyncRef.current) return;
+    store.set(matrixStateAtom, matrixState);
+  }, [isMatrixEqual, matrixState, matrixStateAtom, store]);
+
   const handleSortToggle = useCallback((kind: 'country' | 'region' | 'column', columnId?: string) => {
     setSortState((prev) => {
       if (prev.kind === kind && prev.columnId === columnId) {
@@ -206,9 +258,10 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
         countryCode: country.code,
         selections: next.get(country.code) ?? {},
       }));
+      setMatrixFromSelections(normalized);
       onSelectionsChange(normalized);
     },
-    [countries, onSelectionsChange, rows, selectionColumns, selectionMap],
+    [countries, onSelectionsChange, rows, selectionColumns, selectionMap, setMatrixFromSelections],
   );
 
   const handleSelectAllColumn = useCallback(
@@ -226,9 +279,10 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
         countryCode: country.code,
         selections: next.get(country.code) ?? {},
       }));
+      setMatrixFromSelections(normalized);
       onSelectionsChange(normalized);
     },
-    [countries, onSelectionsChange, rows, selectionColumns, selectionMap],
+    [countries, onSelectionsChange, rows, selectionColumns, selectionMap, setMatrixFromSelections],
   );
 
   const alphabetIndex = useMemo(() => {
@@ -362,65 +416,144 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
       </Stack>
 
       <Box sx={{ flex: 1, minHeight: 0 }}>
-        <SelectionMatrix
-        rows={rows.map((row) => ({
-          ...row,
-          tooltip: row.data.country.name,
-        }))}
-        columns={selectionColumns}
-        state={matrixState}
-        onChange={handleSelectionChange}
-        onSelectAll={handleSelectAllColumn}
-        rowMetaColumns={[
-          {
-            header: 'Region',
-            render: (row: SelectionMatrixRow<{ country: Country }>) => (
-              <Typography variant="body2" color="text.secondary">
-                {row.subLabel ?? '-'}
-              </Typography>
-            ),
-            width: 140,
-          },
-          {
-            header: 'Country',
-            render: (row: SelectionMatrixRow<{ country: Country }>) => (
-              <Box display="flex" alignItems="center" gap={1.25}>
-                <Typography variant="body2" component="span">
-                  {row.data.country.flag || flagFromCode(row.data.country.code) || '⬜️'}{' '}
-                  {row.data.country.name} ({row.data.country.code})
-                  {row.data.country.nativeName && row.data.country.nativeName !== row.data.country.name && (
-                    <Typography
-                      component="span"
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ ml: 0.75 }}
-                    >
-                      {row.data.country.nativeName}
-                    </Typography>
-                  )}
-                </Typography>
-              </Box>
-            ),
-            width: 220,
-          },
-        ]}
-        rowHeaderLabel="Country / Type"
-        dense
-        rowHeight={rowHeight}
-        isCellEnabled={isCellEnabledWrapper}
-        onColumnHeaderClick={(colIndex: number) => {
-          const column = selectionColumns[colIndex];
-          if (!column) return;
-          handleSortToggle('column', column.id);
-        }}
-        onRowMetaHeaderClick={(metaIndex: number) => handleSortToggle(metaIndex === 0 ? 'region' : 'country')}
-        getColumnSortDirection={getColumnSortDirection}
-        getRowMetaSortDirection={getRowMetaSortDirection}
-        virtuosoRef={virtuosoRef}
-        height={height}
-        maxHeight={maxHeight}
-        />
+        <Provider store={store}>
+          <CountryMatrixTable
+            rows={rows}
+            selectionColumns={selectionColumns}
+            matrixStateAtom={matrixStateAtom}
+            rowHeight={rowHeight}
+            isCellEnabledWrapper={isCellEnabledWrapper}
+            handleSelectionChange={handleSelectionChange}
+            handleSelectAllColumn={handleSelectAllColumn}
+            handleSortToggle={handleSortToggle}
+            getColumnSortDirection={getColumnSortDirection}
+            getRowMetaSortDirection={getRowMetaSortDirection}
+            flagFromCode={flagFromCode}
+            virtuosoRef={virtuosoRef}
+            height={height}
+            maxHeight={maxHeight}
+          />
+        </Provider>
       </Box>
     </Box>
+  );
+};
+
+type CountryMatrixTableProps = {
+  rows: SelectionMatrixRow<{ country: Country; sourceIndex: number }>[];
+  selectionColumns: SelectionMatrixColumn[];
+  matrixStateAtom: PrimitiveAtom<boolean[][]>;
+  rowHeight: number;
+  isCellEnabledWrapper: (
+    row: SelectionMatrixRow<{ country: Country }>,
+    column: SelectionMatrixColumn
+  ) => boolean;
+  handleSelectionChange: (rowIndex: number, colIndex: number, checked: boolean) => void;
+  handleSelectAllColumn: (colIndex: number, checked: boolean, enabledRowIndices: number[]) => void;
+  handleSortToggle: (kind: 'country' | 'region' | 'column', columnId?: string) => void;
+  getColumnSortDirection: (colIndex: number) => 'asc' | 'desc' | 'none';
+  getRowMetaSortDirection: (metaIndex: number) => 'asc' | 'desc' | 'none';
+  flagFromCode: (code?: string) => string;
+  virtuosoRef: React.MutableRefObject<any>;
+  height: number | string;
+  maxHeight?: number | string;
+};
+
+const CountryMatrixTable: React.FC<CountryMatrixTableProps> = ({
+  rows,
+  selectionColumns,
+  matrixStateAtom,
+  rowHeight,
+  isCellEnabledWrapper,
+  handleSelectionChange,
+  handleSelectAllColumn,
+  handleSortToggle,
+  getColumnSortDirection,
+  getRowMetaSortDirection,
+  flagFromCode,
+  virtuosoRef,
+  height,
+  maxHeight,
+}) => {
+  const matrixState = useAtomValue(matrixStateAtom);
+
+  const columnHeaderState = useMemo(() => {
+    return selectionColumns.map((column, colIndex) => {
+      let enabled = 0;
+      let selected = 0;
+      rows.forEach((row, rowIndex) => {
+        if (!isCellEnabledWrapper(row as SelectionMatrixRow<{ country: Country }>, column)) {
+          return;
+        }
+        enabled += 1;
+        if (matrixState[rowIndex]?.[colIndex]) selected += 1;
+      });
+      return {
+        checked: enabled > 0 && selected === enabled,
+        indeterminate: enabled > 0 && selected > 0 && selected < enabled,
+      };
+    });
+  }, [isCellEnabledWrapper, matrixState, rows, selectionColumns]);
+
+  return (
+    <SelectionMatrix
+      rows={rows.map((row) => ({
+        ...row,
+        tooltip: row.data.country.name,
+      }))}
+      columns={selectionColumns}
+      state={matrixState}
+      onChange={handleSelectionChange}
+      onSelectAll={handleSelectAllColumn}
+      rowMetaColumns={[
+        {
+          header: 'Region',
+          render: (row: SelectionMatrixRow<{ country: Country }>) => (
+            <Typography variant="body2" color="text.secondary">
+              {row.subLabel ?? '-'}
+            </Typography>
+          ),
+          width: 140,
+        },
+        {
+          header: 'Country',
+          render: (row: SelectionMatrixRow<{ country: Country }>) => (
+            <Box display="flex" alignItems="center" gap={1.25}>
+              <Typography variant="body2" component="span">
+                {row.data.country.flag || flagFromCode(row.data.country.code) || '⬜️'}{' '}
+                {row.data.country.name} ({row.data.country.code})
+                {row.data.country.nativeName && row.data.country.nativeName !== row.data.country.name && (
+                  <Typography
+                    component="span"
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ ml: 0.75 }}
+                  >
+                    {row.data.country.nativeName}
+                  </Typography>
+                )}
+              </Typography>
+            </Box>
+          ),
+          width: 220,
+        },
+      ]}
+      rowHeaderLabel="Country / Type"
+      dense
+      rowHeight={rowHeight}
+      isCellEnabled={isCellEnabledWrapper}
+      getColumnHeaderState={(colIndex) => columnHeaderState[colIndex] ?? { checked: false, indeterminate: false }}
+      onColumnHeaderClick={(colIndex: number) => {
+        const column = selectionColumns[colIndex];
+        if (!column) return;
+        handleSortToggle('column', column.id);
+      }}
+      onRowMetaHeaderClick={(metaIndex: number) => handleSortToggle(metaIndex === 0 ? 'region' : 'country')}
+      getColumnSortDirection={getColumnSortDirection}
+      getRowMetaSortDirection={getRowMetaSortDirection}
+      virtuosoRef={virtuosoRef}
+      height={height}
+      maxHeight={maxHeight}
+    />
   );
 };

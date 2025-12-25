@@ -80,6 +80,8 @@ export interface SelectionMatrixProps<T = any> {
   onRowMetaHeaderClick?: (metaIndex: number) => void;
   /** Optional sort direction indicator per column (asc/desc/none). */
   getColumnSortDirection?: (colIndex: number) => 'asc' | 'desc' | 'none';
+  /** Optional override for column header checkbox state. */
+  getColumnHeaderState?: (colIndex: number) => { checked: boolean; indeterminate: boolean };
   /** Optional sort direction indicator per row meta column. */
   getRowMetaSortDirection?: (metaIndex: number) => 'asc' | 'desc' | 'none';
   /** Optional ref to Virtuoso for imperative actions like scrollToIndex. */
@@ -113,6 +115,7 @@ export function SelectionMatrix<T = any>({
                                            onColumnHeaderClick,
                                            onRowMetaHeaderClick,
                                            getColumnSortDirection,
+                                           getColumnHeaderState,
                                            getRowMetaSortDirection,
                                            virtuosoRef,
                                          }: SelectionMatrixProps<T>): React.ReactElement {
@@ -132,52 +135,39 @@ export function SelectionMatrix<T = any>({
   }
 
   // Calculate selection counts
-  const columnCounts = useMemo(() => {
-    return columns.map((column, colIndex) =>
-      state.reduce((count, row, rowIndex) => {
-        const rowDef = rows[rowIndex];
-        if (!rowDef || !isCellEnabled(rowDef, column, rowIndex, colIndex)) return count;
-        return count + (row[colIndex] ? 1 : 0);
-      }, 0),
-    );
-  }, [columns, isCellEnabled, rows, state]);
+  const columnCounts = columns.map((column, colIndex) =>
+    state.reduce((count, row, rowIndex) => {
+      const rowDef = rows[rowIndex];
+      if (!rowDef || !isCellEnabled(rowDef, column, rowIndex, colIndex)) return count;
+      return count + (row[colIndex] ? 1 : 0);
+    }, 0),
+  );
 
-  const rowCounts = useMemo(() => {
-    return rows.map((row, rowIndex) =>
-      state[rowIndex]?.reduce((count, cell, colIndex) => {
-        const column = columns[colIndex];
-        if (!column || !isCellEnabled(row, column, rowIndex, colIndex)) return count;
-        return count + (cell ? 1 : 0);
-      }, 0) || 0,
-    );
-  }, [columns, isCellEnabled, rows, state]);
+  const columnEnabledCounts = columns.map((column, colIndex) =>
+    rows.reduce((count, row, rowIndex) => (
+      isCellEnabled(row, column, rowIndex, colIndex) ? count + 1 : count
+    ), 0),
+  );
 
-  // Check if entire column is selected
-  const isColumnSelected = useCallback((colIndex: number) => {
-    let enabled = 0;
-    const allSelected = rows.every((row, rowIndex) => {
+  const rowCounts = rows.map((row, rowIndex) =>
+    state[rowIndex]?.reduce((count, cell, colIndex) => {
       const column = columns[colIndex];
-      if (!column) return false;
-      if (!isCellEnabled(row, column, rowIndex, colIndex)) return true;
-      enabled += 1;
-      return Boolean(state[rowIndex]?.[colIndex]);
-    });
-    return enabled > 0 && allSelected;
-  }, [columns, isCellEnabled, rows, state]);
+      if (!column || !isCellEnabled(row, column, rowIndex, colIndex)) return count;
+      return count + (cell ? 1 : 0);
+    }, 0) || 0,
+  );
 
-  // Check if entire column is indeterminate
+  const isColumnFullySelected = useCallback((colIndex: number) => {
+    const enabled = columnEnabledCounts[colIndex] ?? 0;
+    const selected = columnCounts[colIndex] ?? 0;
+    return enabled > 0 && selected === enabled;
+  }, [columnCounts, columnEnabledCounts]);
+
   const isColumnIndeterminate = useCallback((colIndex: number) => {
-    let enabled = 0;
-    let selected = 0;
-    rows.forEach((row, rowIndex) => {
-      const column = columns[colIndex];
-      if (!column) return;
-      if (!row || !isCellEnabled(row, column, rowIndex, colIndex)) return;
-      enabled += 1;
-      if (state[rowIndex]?.[colIndex]) selected += 1;
-    });
+    const enabled = columnEnabledCounts[colIndex] ?? 0;
+    const selected = columnCounts[colIndex] ?? 0;
     return enabled > 0 && selected > 0 && selected < enabled;
-  }, [columns, isCellEnabled, rows, state]);
+  }, [columnCounts, columnEnabledCounts]);
 
   // Check if entire row is selected
   const isRowSelected = useCallback((rowIndex: number) => {
@@ -208,7 +198,8 @@ export function SelectionMatrix<T = any>({
   // Handle column header checkbox click
   const handleColumnSelectAll = useCallback((colIndex: number) => {
     if (onSelectAll) {
-      const isSelected = isColumnSelected(colIndex);
+      const overrideState = getColumnHeaderState?.(colIndex);
+      const isSelected = overrideState ? overrideState.checked : isColumnFullySelected(colIndex);
       const enabledRows = rows
         .map((row, rowIndex) => ({ row, rowIndex }))
         .filter(({ row }, rowIndex) => {
@@ -218,7 +209,7 @@ export function SelectionMatrix<T = any>({
         .map(({ rowIndex }) => rowIndex);
       onSelectAll(colIndex, !isSelected, enabledRows);
     }
-  }, [columns, isCellEnabled, isColumnSelected, onSelectAll, rows]);
+  }, [columns, getColumnHeaderState, isCellEnabled, isColumnFullySelected, onSelectAll, rows]);
 
   // Handle row checkbox click
   const handleRowSelectAll = useCallback((rowIndex: number) => {
@@ -342,9 +333,14 @@ export function SelectionMatrix<T = any>({
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 {showColumnSelection && onSelectAll && (
                   <Checkbox
-                    checked={isColumnSelected(colIndex)}
-                    indeterminate={isColumnIndeterminate(colIndex)}
-                    onChange={() => handleColumnSelectAll(colIndex)}
+                    checked={getColumnHeaderState?.(colIndex)?.checked ?? isColumnFullySelected(colIndex)}
+                    indeterminate={getColumnHeaderState?.(colIndex)?.indeterminate ?? isColumnIndeterminate(colIndex)}
+                    onClick={(event) => event.stopPropagation()}
+                    onMouseDown={(event) => event.stopPropagation()}
+                    onChange={(event) => {
+                      event.stopPropagation();
+                      handleColumnSelectAll(colIndex);
+                    }}
                     disabled={
                       !rows.some((row, rowIndex) =>
                         isCellEnabled(row, column, rowIndex, colIndex),

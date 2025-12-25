@@ -31,17 +31,24 @@ export function useShapeBatchTasks(
     if (!sessionId) {
       setTasks([]);
       setError(null);
+      console.debug('[ShapeBuildProgressStep] batchTasks:skip', { sessionId });
       return;
     }
     setIsLoading(true);
     try {
       await bridgeRef.current.initialize();
+      console.debug('[ShapeBuildProgressStep] batchTasks:fetch', { sessionId });
       const next = await bridgeRef.current.getBatchTasks(SHAPE_NODE_TYPE, sessionId);
       setTasks(next);
       setError(null);
+      console.debug('[ShapeBuildProgressStep] batchTasks:ok', { sessionId, count: next.length });
     } catch (err) {
       const errObj = err instanceof Error ? err : new Error('Failed to fetch batch tasks');
       setError(errObj);
+      console.debug('[ShapeBuildProgressStep] batchTasks:error', {
+        sessionId,
+        message: errObj.message,
+      });
     } finally {
       setIsLoading(false);
     }

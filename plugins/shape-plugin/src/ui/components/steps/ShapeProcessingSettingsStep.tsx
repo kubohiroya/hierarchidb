@@ -11,11 +11,19 @@ import { useShapeProcessingSettingsStep } from '../../hooks/useShapeProcessingSe
  */
 export const ShapeProcessingSettingsStep: React.FC<ShapeDialogStepProps> = ({ data, onChange }) => {
   const { config, handleChange } = useShapeProcessingSettingsStep({ data, onChange });
+  const resetSession = () => {
+    onChange({ batchSessionId: undefined, processingStatus: 'idle' });
+  };
 
   return (
     <Box sx={{ p: 2 }}>
       <Stack spacing={2}>
-        <DownloadConfigSection config={config} draft={data} onChange={handleChange} />
+        <DownloadConfigSection
+          config={config}
+          draft={data}
+          onChange={handleChange}
+          onResetSession={resetSession}
+        />
         <SimplificationConfigSection config={config} onChange={handleChange} />
         <TileConfigSection config={config} onChange={handleChange} />
       </Stack>

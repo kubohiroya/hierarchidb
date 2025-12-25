@@ -22,9 +22,10 @@ type Props = {
   draft?: Partial<ShapeEntity> | null;
   disabled?: boolean;
   onChange: (next: BatchConfig) => void;
+  onResetSession?: () => void;
 };
 
-export const DownloadConfigSection: React.FC<Props> = ({ config, draft, disabled, onChange }) => {
+export const DownloadConfigSection: React.FC<Props> = ({ config, draft, disabled, onChange, onResetSession }) => {
   const {
     t,
     switchId,
@@ -38,7 +39,7 @@ export const DownloadConfigSection: React.FC<Props> = ({ config, draft, disabled
     handleDeleteStage,
     handleDeleteTiles,
     update,
-  } = useDownloadConfigSection({ config, draft, disabled, onChange });
+  } = useDownloadConfigSection({ config, draft, disabled, onChange, onResetSession });
 
   return (
     <Accordion defaultExpanded>

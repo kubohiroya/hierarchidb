@@ -1,4 +1,4 @@
-import type { Remote } from 'comlink';
+import { proxy, type Remote } from 'comlink';
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import type {
   BatchProgressEvent,
@@ -132,7 +132,7 @@ class WorkerBridgeImpl implements WorkerBridge {
     cb: (event: BatchProgressEvent) => void,
   ): Promise<() => void> {
     const api = await ensureWorkerAPI();
-    const unsubscribe = await api.subscribeBatchProgress(nodeType, sessionId, cb);
+    const unsubscribe = await api.subscribeBatchProgress(nodeType, sessionId, proxy(cb));
     return () => {
       try {
         unsubscribe();

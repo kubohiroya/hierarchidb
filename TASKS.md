@@ -53,6 +53,20 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1856) geoBoundaries available API による Step3 選択の無効化（P1）
+- ブランチ: `feat/shape/geoboundaries-availability`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin（Step3 UI）、geoBoundaries API
+- 受け入れ基準（DoD）:
+  - [ ] Step3 表示時に geoBoundaries available API を取得する
+  - [ ] unavailable な国/レベルのチェックボックスを disabled にする
+  - [ ] 既存の選択が unavailable になった場合は解除し、urlMetadata を更新する
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] available API のレスポンスを ISO3 + ADM レベルで解釈する
+  - [ ] metadata の iso3 を使って availability を反映する
+  - [ ] Step3 の selection 反映で整合性を保つ
+- ロールバック手順：本タスクの差分を revert する。
+
 1855) shape-plugin Step5 Start Build の進捗デバッグログ追加（P1）
 - ブランチ: `fix/shape/step5-build-debug-logs`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: plugins/shape-plugin（Step5 UI/Hook/worker）、packages/ui-batch
@@ -11478,10 +11492,30 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-25 10:31 progress: analysis/shape/step5-build-failure — Shape-Plugin Step5 で Start Build 実行時に `Session ... not found` が発生するログを確認し、UI→Worker の resume 経路（sessionId フォールバック/BatchSessionManager）を再追跡する。
+- 2025-12-25 14:05 start: geoBoundaries availability の取得ログ強化と Worker 側の URL フィルタ追加を実施し、Step3 取得失敗時でも Start Build の `urlMetadataCount` が選択分に制限されるように対応する。
+- 2025-12-25 14:20 progress: geoBoundaries availability 取得処理を共通ユーティリティ化（`fetchGeoBoundariesAvailability`）し、Step3 に取得件数/国数ログを追加。Worker の startBatchProcessing で availability に基づく URL フィルタを適用し、空になる場合はエラーにする挙動を追加。
+- 2025-12-25 14:45 start: 国選択テーブルのヘッダチェックボックスクリック時にソートが発火しないよう制御を追加する。DoD: ヘッダ全選択が正常に動作し、ソートは不発、運用ログ/ロールバック記載。
+- 2025-12-25 14:50 progress: SelectionMatrix の列ヘッダチェックボックスに stopPropagation を追加し、ソートの onColumnHeaderClick へイベントが伝播しないよう調整。
+- 2025-12-25 15:05 start: Admin1+ の列ヘッダで部分選択状態が更新されない問題を修正する。DoD: ヘッダのindeterminate/checkedが実態に同期、運用ログ/ロールバック記載。
+- 2025-12-25 15:12 progress: SelectionMatrix の列ヘッダ状態を columnCounts/columnEnabledCounts で算出するよう変更し、部分選択・全選択のヘッダ表示が有効行数に同期するよう修正。
+- 2025-12-25 15:25 progress: columnCounts/rowCounts/columnEnabledCounts の算出を都度計算に変更し、state の参照が同一でもヘッダ状態が更新されるように調整。
+- 2025-12-25 15:40 start: 国選択マトリクスのチェックボックス状態を Jotai で保持し、ヘッダ状態をボディの Jotai から派生する方式へ移行する。
+- 2025-12-25 15:55 progress: CountryMatrixSelector の選択変更時に Jotai の matrixState を即時更新し、ヘッダ状態は Jotai から算出するよう調整。
+- 2025-12-25 16:10 progress: Jotai のローカル更新直後に props 同期が上書きしないよう、pendingSync フラグと行列比較で同期ガードを追加。
+- 2025-12-25 09:48 progress: geoBoundaries availability の取得先を `/api/current/gbOpen/ALL/ALL/` へ変更し、ISO3 + ADM から availability を構築。取得時に corsProxyUrl を適用し、空/失敗時は全選択を維持するフォールバックへ修正。
+- 2025-12-25 09:39 progress: Step3（国/レベル選択）で geoBoundaries available API を取得し、ISO3ベースのavailabilityで選択可能レベルをフィルタ。unavailable な選択は checkboxState から解除し、urlMetadata を更新。
+- 2025-12-25 09:31 progress: Step4 の Delete ボタン操作で batchSessionId をクリアするように変更。DownloadConfigSection から onResetSession を渡し、削除後に batchSessionId/processingStatus をリセット。
+- 2025-12-25 09:29 progress: worker 側の subscribeBatchProgress が返す unsubscribe 関数を Comlink.proxy で包み、Unserializable return value を回避する修正を追加。
+- 2025-12-25 09:27 progress: subscribeBatchProgress の callback を Comlink.proxy でラップし、Worker への postMessage clone error を回避。
+- 2025-12-25 09:22 progress: useShapeProgress で購読状態/進捗/エラーの変化を console.debug し、useShapeBatchTasks に fetch/成功/失敗ログを追加。
+- 2025-12-25 09:22 progress: Step5 進捗購読のエラー/購読状態を明確化する追加ログを導入する対応に着手。
 - 2025-12-25 08:41 progress: Step5 Start Build 実ログ確認。startBatchResult が status=paused を返す一方、useShapeBuildProgressStep は sessionId ありでも hasSessionId=false（error判定）になり buildStatus が idle に戻る挙動を確認。進捗購読/ステータス取得側のエラー詳細を追加ログで追跡する必要あり。
 - 2025-12-25 09:07 start: fix/runtime/remove-peerstore-api — PeerStore/getPeer/registerPeer 廃止をリポジトリ全体で徹底する対応に着手。DoD: Kanban 1856 のとおり削除/ドキュメント更新/運用ログ記載。
 - 2025-12-25 09:18 progress: fix/runtime/remove-peerstore-api — runtime-worker の PeerStore 定義/実装と createNodePayloadPeerStore を削除。shape/location/spreadsheet の worker store 登録から PeerStore 参照を撤去し、app のテストモックも更新。設計/運用ドキュメントを PeerStore 廃止に合わせて更新。
 - 2025-12-25 09:20 done: fix/runtime/remove-peerstore-api — PeerStore/getPeer/registerPeer の実装・参照・型を撤去し、関連ドキュメントを更新。検証: 未実施。ロールバック: Done セクションの記載に従う。
+- 2025-12-25 09:21 command: `pnpm --filter @hierarchidb/runtime-worker typecheck` — exit 2。`packages/runtime-worker/src/entity/store.ts` で NodeId import 不足（TS2552）。
+- 2025-12-25 09:22 command: `pnpm --filter @hierarchidb/runtime-worker typecheck` — exit 0。
 - 2025-12-25 08:37 progress: Step5 Start Build のログ追加。useBatchSessionActions に saveDraft/start/resume/pause の console.debug を追加し、useShapeBuildProgressStep で session/buildStatus/progress の遷移ログを追加。
 - 2025-12-25 08:36 start: fix/shape/step5-build-debug-logs — Step5 Start Build の進捗が分からない問題に対し、主要フローへ console.debug を追加する対応に着手。DoD: Kanban 1855 のとおり。
 - 2025-12-25 08:34 start: fix/worker/spreadsheet-registry-getpeer — spreadsheet-plugin の worker store 登録で `registry.getPeer is not a function` が発生するため調査開始。DoD: Kanban 1854 のとおり原因特定/再発防止/運用ログ記載。

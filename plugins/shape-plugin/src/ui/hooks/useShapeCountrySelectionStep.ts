@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSnackbar } from 'notistack';
 import { useIsoCountries, type MatrixConfig, type MatrixSelection, type ContinentCode } from '@hierarchidb/ui-country-select';
 import type { CountryMetadata, ShapeEntity } from '../../common/types/index.js';
@@ -13,6 +13,8 @@ import {
 import { normalizeDataSourceName } from '../../services/utils/utils.js';
 import { clearStagesIfPresent, FULL_INVALIDATION_STAGES, resolveShapeSessionId } from '../utils/sessionInvalidation.js';
 import { deriveUrlMetadataFromSelection } from '../utils/selectionUrlMetadata.js';
+import { setCorsProxyBaseURL } from '../../services/utils/corsProxyBase.js';
+import { fetchGeoBoundariesAvailability } from '../../services/utils/geoBoundariesAvailability.js';
 
 const CONTINENT_CODES: ContinentCode[] = ['AF', 'AS', 'EU', 'NA', 'SA', 'OC', 'AN'];
 
@@ -85,6 +87,7 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
   ) ?? 'gadm';
   const iso = useIsoCountries();
   const { metadata: countries, loading, error } = useCountryMetadata({ dataSource: dataSourceKey });
+  const [availableAdminLevels, setAvailableAdminLevels] = useState<Map<string, number[]> | null>(null);
 
   const dataSourceConfig = DATA_SOURCE_CONFIGS[dataSourceKey];
   const maxAdminLevel = dataSourceConfig?.maxAdminLevel ?? 0;
@@ -99,6 +102,12 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
       const normalizedCode = normalizeCountryCodeFromMetadata(country, countryIndex);
       const isoContinent = isoContinentByCode.get(normalizedCode);
       const normalizedContinent = normalizeContinentCode(country.continent) ?? isoContinent ?? 'NA';
+      const geoAdminLevels = dataSourceKey === 'geoboundaries' && availableAdminLevels
+        ? availableAdminLevels.get((country.iso3 ?? normalizedCode).toUpperCase()) ?? []
+        : null;
+      const filteredLevels = geoAdminLevels
+        ? (country.availableAdminLevels ?? []).filter((level) => geoAdminLevels.includes(level))
+        : (country.availableAdminLevels ?? []);
       return {
         country: {
           code: normalizedCode,
@@ -106,10 +115,10 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
           nativeName: country.countryName,
           continent: normalizedContinent,
         },
-        availableAdminLevels: country.availableAdminLevels ?? [],
+        availableAdminLevels: geoAdminLevels ? filteredLevels : (country.availableAdminLevels ?? []),
       };
     });
-  }, [countries, isoContinentByCode]);
+  }, [availableAdminLevels, countries, dataSourceKey, isoContinentByCode]);
 
   const checkboxMatrix = useMemo<boolean[][]>(() => {
     if (Array.isArray(data.checkboxState)) {
@@ -122,6 +131,81 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
     }
     return baseCountries.map(() => Array.from({ length: maxAdminLevel + 1 }, () => false));
   }, [data.checkboxState, baseCountries, maxAdminLevel]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      if (dataSourceKey !== 'geoboundaries') {
+        setAvailableAdminLevels(null);
+        return;
+      }
+      try {
+        setCorsProxyBaseURL(data?.batchConfig?.downloadConfig?.corsProxyUrl ?? '');
+        const { entries, totalItems } = await fetchGeoBoundariesAvailability(
+          'https://www.geoboundaries.org/api/current/gbOpen/ALL/ALL/',
+        );
+        console.debug('[ShapeCountrySelectionStep] GeoBoundaries availability fetched', {
+          totalItems,
+          countries: entries.size,
+          sample: Array.from(entries.entries()).slice(0, 3),
+        });
+        if (!cancelled && entries.size > 0) {
+          setAvailableAdminLevels(entries);
+        } else if (!cancelled) {
+          setAvailableAdminLevels(null);
+          console.debug('[ShapeCountrySelectionStep] GeoBoundaries availability empty', {
+            totalItems,
+          });
+          enqueueSnackbar(
+            'GeoBoundaries availability is empty. Showing full selection.',
+            { variant: 'warning' },
+          );
+        }
+      } catch (fetchError) {
+        console.warn('[ShapeCountrySelectionStep] failed to load GeoBoundaries availability', fetchError);
+        if (!cancelled) {
+          setAvailableAdminLevels(null);
+          enqueueSnackbar(
+            'GeoBoundaries availability lookup failed. Showing full selection.',
+            { variant: 'warning' },
+          );
+        }
+      }
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [data?.batchConfig?.downloadConfig?.corsProxyUrl, dataSourceKey, enqueueSnackbar]);
+
+  useEffect(() => {
+    if (!Array.isArray(data.checkboxState)) return;
+    if (dataSourceKey !== 'geoboundaries' || !availableAdminLevels) return;
+    const nextMatrix = baseCountries.map((entry, rowIndex) => {
+      const row = checkboxMatrix[rowIndex] ?? [];
+      return Array.from({ length: maxAdminLevel + 1 }, (_, colIndex) => (
+        entry.availableAdminLevels.includes(colIndex) ? Boolean(row[colIndex]) : false
+      ));
+    });
+    const previousMatrix = data.checkboxState as boolean[][];
+    if (!isMatrixEqual(previousMatrix, nextMatrix)) {
+      const selectedMetadata = deriveUrlMetadataFromSelection({
+        dataSource: dataSourceKey,
+        checkboxState: nextMatrix,
+        metadata: countries,
+      });
+      onChange({ checkboxState: nextMatrix, urlMetadata: selectedMetadata });
+    }
+  }, [
+    availableAdminLevels,
+    baseCountries,
+    checkboxMatrix,
+    countries,
+    data.checkboxState,
+    dataSourceKey,
+    maxAdminLevel,
+    onChange,
+  ]);
 
   const columns: MatrixConfig['columns'] = useMemo(
     () =>

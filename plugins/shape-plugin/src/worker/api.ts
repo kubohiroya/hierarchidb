@@ -39,6 +39,8 @@ import type { BatchStage, BatchTaskStatus } from '../common/types/BatchTaskLike.
 import type { BatchProgressEvent as RuntimeBatchProgressEvent } from '@hierarchidb/common-api';
 import { calculateSelectionStats, generateUrlMetadata, getPreferredCountryCodeFormat } from '../services/utils/utils.js';
 import { normalizeCountryCodeFormat } from '../services/utils/iso3166.js';
+import { setCorsProxyBaseURL } from '../services/utils/corsProxyBase.js';
+import { fetchGeoBoundariesAvailability } from '../services/utils/geoBoundariesAvailability.js';
 
 // Create singleton unified batch manager
 const batchSessionManager = createShapeBatchManager();
@@ -106,6 +108,47 @@ const buildBatchSessionConfig = (batchConfig: BatchConfig, draft?: DraftLike): B
       tileSize: tileConfig?.tileSize,
     },
   };
+};
+
+const GEOBOUNDARIES_AVAILABILITY_URL = 'https://www.geoboundaries.org/api/current/gbOpen/ALL/ALL/';
+
+const filterGeoBoundariesUrlMetadata = async (
+  urlMetadata: UrlMetadata[],
+  corsProxyUrl?: string,
+): Promise<UrlMetadata[]> => {
+  if (!urlMetadata.length) return urlMetadata;
+  setCorsProxyBaseURL(corsProxyUrl ?? '');
+  try {
+    const { entries, totalItems } = await fetchGeoBoundariesAvailability(GEOBOUNDARIES_AVAILABILITY_URL);
+    if (entries.size === 0) {
+      console.warn('[ShapeBatch] GeoBoundaries availability empty. Skipping filter.', {
+        totalItems,
+      });
+      return urlMetadata;
+    }
+    const filtered: UrlMetadata[] = [];
+    let dropped = 0;
+    for (const metadata of urlMetadata) {
+      const iso3 = await normalizeCountryCodeFormat(metadata.countryCode ?? '', 'iso3');
+      const levels = entries.get(iso3);
+      if (levels?.includes(metadata.adminLevel)) {
+        filtered.push(metadata);
+      } else {
+        dropped += 1;
+      }
+    }
+    console.debug('[ShapeBatch] GeoBoundaries availability filter', {
+      totalItems,
+      availabilityCountries: entries.size,
+      input: urlMetadata.length,
+      output: filtered.length,
+      dropped,
+    });
+    return filtered;
+  } catch (error) {
+    console.warn('[ShapeBatch] failed to load GeoBoundaries availability', error);
+    return urlMetadata;
+  }
 };
 
 interface ProgressSubscription {
@@ -422,6 +465,16 @@ export const shapePluginAPI = {
     }
 
     const downloadConfig = batchConfig.downloadConfig ?? DEFAULT_PROCESSING_CONFIG.downloadConfig;
+    const resolvedDataSource = toDataSourceName(batchConfig.dataSource);
+    const availabilityFilteredMetadata = resolvedDataSource === 'geoboundaries'
+      ? await filterGeoBoundariesUrlMetadata(urlMetadata, downloadConfig?.corsProxyUrl)
+      : urlMetadata;
+    if (!availabilityFilteredMetadata.length) {
+      if (resolvedDataSource === 'geoboundaries') {
+        throw new Error('No GeoBoundaries selections available after availability filter');
+      }
+      throw new Error('Shape batch session requires urlMetadata');
+    }
     const baseConfig = buildBatchSessionConfig(batchConfig, { draftData: draftLike ?? undefined });
     const processConfig: BatchProcessConfig = {
       ...baseConfig,
@@ -432,7 +485,7 @@ export const shapePluginAPI = {
       maxZoom: baseConfig.vectorTiles?.maxZoom,
     };
 
-    const batchSessionData = { urlMetadata };
+    const batchSessionData = { urlMetadata: availabilityFilteredMetadata };
 
     // Start batch session using unified manager
     const sessionOptions = {

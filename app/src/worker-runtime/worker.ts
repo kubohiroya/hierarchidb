@@ -381,7 +381,8 @@ reporter.reportStepProgress('Load Comlink', 0);
           if (!api.subscribeToProgress) {
             return () => {};
           }
-          return api.subscribeToProgress(sessionId, callback);
+          const unsubscribe = api.subscribeToProgress(sessionId, callback);
+          return Comlink.proxy(unsubscribe);
         },
         getBatchTasks: async (nodeType: NodeType, sessionId: string): Promise<BatchTaskSummary[]> => {
           const provider = batchTaskProviders.get(nodeType);
