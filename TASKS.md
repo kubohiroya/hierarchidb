@@ -5065,6 +5065,14 @@ P2:
 
 ### Done（完了） <a id="kanban-done"></a>
 
+- 1871) ui-lru-splitview expandedCount 未定義エラー修正（P1） — 完了 (2025-12-26)
+  - 要点：expandedCount を paneStates から導出し、getSizes で使用する前提を明確化。
+  - 検証：未実施。
+  - ロールバック手順：`packages/ui/lru-splitview/src/hooks/useLRUPanes.ts` の差分を revert する。
+- 1870) PluginDialog contextValue 再利用ロジックの不適切箇所修正（P1） — 完了 (2025-12-26)
+  - 要点：contextValue の決定と contextRef 更新を分離し、非null断定を撤去して挙動を明確化。
+  - 検証：未実施。
+  - ロールバック手順：`packages/ui/dialog/src/headless/PluginDialog.tsx` の差分を revert する。
 - 1869) shape-plugin ShapePreviewStep 型不整合修正（P1） — 完了 (2025-12-25)
   - 要点：tileDataProvider を MapWithVectorTilesProps の型に合わせて明示し、useCallback の型引数で nodeId?: string/戻り値 ArrayBuffer に統一して L62 型不整合を解消。
   - 検証：未実施。
@@ -11599,6 +11607,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-26 00:07 start: fix/ui-lru-splitview/expanded-count-undefined — useLRUPanes の expandedCount 未定義エラーを解消する対応に着手。DoD: Kanban 1871 のとおり。
+- 2025-12-26 00:07 done: fix/ui-lru-splitview/expanded-count-undefined — expandedCount を paneStates から導出し、getSizes の依存に追加。検証: 未実施。ロールバック: `packages/ui/lru-splitview/src/hooks/useLRUPanes.ts` の差分を revert。
+- 2025-12-26 00:04 start: fix/ui-dialog/plugin-dialog-contextvalue — PluginDialog の contextValue 再利用ロジック（L148）の不適切箇所を修正する対応に着手。DoD: Kanban 1870 のとおり。
+- 2025-12-26 00:05 done: fix/ui-dialog/plugin-dialog-contextvalue — contextValue の決定と contextRef 更新を分離し、非null断定を撤去。検証: 未実施。ロールバック: `packages/ui/dialog/src/headless/PluginDialog.tsx` の差分を revert。
 - 2025-12-25 23:31 start: fix/shape/shape-previewstep-type-mismatch — ShapePreviewStep.tsx L62 の型不整合を解消する対応に着手。DoD: Kanban 1869 のとおり。
 - 2025-12-25 23:36 progress: fix/shape/shape-previewstep-type-mismatch — tileDataProvider を MapWithVectorTilesProps の型に合わせて明示し、L62 の型不整合を解消する方向で整理。
 - 2025-12-25 23:37 done: fix/shape/shape-previewstep-type-mismatch — tileDataProvider の型明示で L62 の型不整合を解消。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` の差分を revert。
@@ -11617,6 +11629,11 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-25 17:35 progress: fix/ui/lru-splitview-breakpoints — getSizes が number[] を返すよう initialSizes の undefined をフォールバック処理で吸収し、typecheck エラーを解消。
 - 2025-12-25 18:05 progress: fix/ui/lru-splitview-breakpoints — Step4 の AccordionSummary で使うアイコン/タイトルを Step5 の LRUSplitView 見出しに反映するため、shape build stages に icon を追加し title を processing.* に揃えた。
 - 2025-12-25 18:25 progress: fix/ui/lru-splitview-breakpoints — autoCloseCount=0 に入ったときに全ペインを強制展開する同期処理を追加し、均等割りが確実に効くよう修正。
+- 2025-12-25 18:40 progress: fix/ui/lru-splitview-breakpoints — ブレイクポイント判定を window 幅ではなく LRUSplitView コンテナ幅に切り替え、Step5 での全開＋均等割りが実幅基準で動くよう修正。
+- 2025-12-25 18:55 progress: fix/ui/lru-splitview-breakpoints — Step5 の判定切り分け用に LRUSplitView のコンテナ幅/ブレイクポイント/autoCloseCount を console.debug で出力する診断ログを追加。
+- 2025-12-25 19:05 progress: fix/ui/lru-splitview-breakpoints — autoCloseCount=0 の帯では初回レンダーでも均等割りの sizes を返すよう修正し、幅0初期レンダーの影響を回避。
+- 2025-12-25 19:20 progress: fix/ui/lru-splitview-breakpoints — コンテナ幅が 0 の間は LRUSplitView を描画せず、幅確定後にレイアウトするよう変更（診断ログは撤去）。
+- 2025-12-25 19:40 progress: fix/ui/lru-splitview-breakpoints — 均等割り時の sizes を比率ではなくコンテナ幅(px)基準で算出し、最後のペインが余剰を占有する問題を修正。
 - 2025-12-25 18:10 start: refactor/shape/step4-simplify-split — Step4 の Simplify1/2 設定分離とステージ整合の実装に着手。DoD: Kanban 1867 のとおり。
 - 2025-12-25 18:30 progress: refactor/shape/step4-simplify-split — `simplify1Config`/`simplify2Config` を導入し、旧 `simplificationConfig` をマージで移行。Worker の batch config 参照を新構造へ更新。
 - 2025-12-25 18:50 done: refactor/shape/step4-simplify-split — Step4 UI を Simplify1/Simplify2 に分割し、翻訳文言/説明を更新。検証: 未実施。ロールバック: Done セクションの記載に従う。

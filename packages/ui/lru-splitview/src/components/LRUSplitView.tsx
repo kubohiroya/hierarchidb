@@ -4,7 +4,7 @@
  */
 
 import type React from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Box } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material';
 import { Allotment } from 'allotment';
@@ -62,20 +62,24 @@ export const LRUSplitView: React.FC<LRUSplitViewProps> = ({
                                                             width = '100%',
                                                             sx,
                                                           }) => {
-  const [viewportWidth, setViewportWidth] = useState(
-    typeof window === 'undefined' ? 0 : window.innerWidth,
-  );
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const handleResize = () => setViewportWidth(window.innerWidth);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    if (!containerRef.current || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
   }, []);
 
   const breakpointIndex = useMemo(
-    () => resolveBreakpointIndex(viewportWidth, responsiveBreakpoints),
-    [viewportWidth, responsiveBreakpoints],
+    () => resolveBreakpointIndex(containerWidth, responsiveBreakpoints),
+    [containerWidth, responsiveBreakpoints],
   );
   const autoCloseCount = useMemo(
     () => resolveByBreakpoint(autoCloseCountsByBreakpoint, breakpointIndex),
@@ -120,7 +124,7 @@ export const LRUSplitView: React.FC<LRUSplitViewProps> = ({
     onPaneToggle,
   });
 
-  const sizes = getSizes();
+  const sizes = getSizes(containerWidth > 0 ? containerWidth : undefined);
 
   // Find progress info for each pane
   const getProgressForPane = (paneId: string) => {
@@ -139,62 +143,64 @@ export const LRUSplitView: React.FC<LRUSplitViewProps> = ({
   const layoutKey = `${expandedKey}-${breakpointIndex}`;
 
   return (
-    <Box sx={[{ height, width }, sx] as SxProps<Theme>}>
-      <Allotment
-        key={layoutKey}
-        vertical={vertical}
-        proportionalLayout={false}
-        defaultSizes={sizes}
-        onDragEnd={() => {
-          if (!onPaneReorder) return;
-          const expandedPanes = paneStates.filter((pane) => pane.isExpanded);
-          onPaneReorder(expandedPanes.map((pane) => pane.id));
-        }}
-      >
-        {paneStates.map((state, index) => {
-          const config = getPaneConfig(state.id);
-          if (!config) return null;
-          const progressInfo = getProgressForPane(state.id);
+    <Box ref={containerRef} sx={[{ height, width }, sx] as SxProps<Theme>}>
+      {containerWidth > 0 ? (
+        <Allotment
+          key={layoutKey}
+          vertical={vertical}
+          proportionalLayout={false}
+          defaultSizes={sizes}
+          onDragEnd={() => {
+            if (!onPaneReorder) return;
+            const expandedPanes = paneStates.filter((pane) => pane.isExpanded);
+            onPaneReorder(expandedPanes.map((pane) => pane.id));
+          }}
+        >
+          {paneStates.map((state, index) => {
+            const config = getPaneConfig(state.id);
+            if (!config) return null;
+            const progressInfo = getProgressForPane(state.id);
 
-          return (
-            <Allotment.Pane
-              key={state.id}
-              minSize={state.collapsedSize || defaultCollapsedSize}
-              preferredSize={sizes[index]}
-            >
-              <Box
-                sx={{
-                  height: '100%',
-                  width: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                }}
+            return (
+              <Allotment.Pane
+                key={state.id}
+                minSize={state.collapsedSize || defaultCollapsedSize}
+                preferredSize={sizes[index]}
               >
-                {config.customHeader || (
-                  <PaneHeader
-                    pane={config}
-                    state={state}
-                    progress={progressInfo}
-                    onToggle={togglePane}
-                  />
-                )}
+                <Box
+                  sx={{
+                    height: '100%',
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                  }}
+                >
+                  {config.customHeader || (
+                    <PaneHeader
+                      pane={config}
+                      state={state}
+                      progress={progressInfo}
+                      onToggle={togglePane}
+                    />
+                  )}
 
-                {(state.isExpanded || !config.content) && (
-                  <Box
-                    sx={{
-                      flex: 1,
-                      overflow: 'auto',
-                      display: state.isExpanded ? 'block' : 'none',
-                    }}
-                  >
-                    {config.content}
-                  </Box>
-                )}
-              </Box>
-            </Allotment.Pane>
-          );
-        })}
-      </Allotment>
+                  {(state.isExpanded || !config.content) && (
+                    <Box
+                      sx={{
+                        flex: 1,
+                        overflow: 'auto',
+                        display: state.isExpanded ? 'block' : 'none',
+                      }}
+                    >
+                      {config.content}
+                    </Box>
+                  )}
+                </Box>
+              </Allotment.Pane>
+            );
+          })}
+        </Allotment>
+      ) : null}
     </Box>
   );
 };

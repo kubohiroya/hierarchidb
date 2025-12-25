@@ -202,11 +202,13 @@ export function useLRUPanes({
     return paneStates.filter(p => p.isExpanded).map(p => p.id);
   }, [paneStates]);
 
+  const expandedCount = paneStates.filter((pane) => pane.isExpanded).length;
+
   // Calculate sizes for Allotment
-  const getSizes = useCallback(() => {
-    const expandedCount = paneStates.filter((p) => p.isExpanded).length;
-    if (equalizeOnAllExpanded && expandedCount === paneStates.length) {
-      const sizePerPane = 1000 / paneStates.length;
+  const getSizes = useCallback((availableSpace?: number) => {
+    if (equalizeOnAllExpanded) {
+      const totalSpace = availableSpace ?? 1000;
+      const sizePerPane = totalSpace / paneStates.length;
       return paneStates.map(() => sizePerPane);
     }
 
@@ -241,7 +243,7 @@ export function useLRUPanes({
           : pane.collapsedSize || DEFAULT_COLLAPSED_SIZE,
       );
     }
-  }, [paneStates, initialSizes, equalizeOnAllExpanded]);
+  }, [paneStates, initialSizes, equalizeOnAllExpanded, expandedCount]);
 
   useEffect(() => {
     paneStatesRef.current = paneStates;

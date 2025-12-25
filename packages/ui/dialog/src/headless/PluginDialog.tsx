@@ -110,7 +110,6 @@ export function HeadlessPluginDialog<TData>(props: HeadlessDialogProps<TData>) {
   };
 
   const prev = contextRef.current;
-  const debugCounterRef = useRef(0);
 
   const diffReason = (() => {
     if (!prev) return 'no-prev';
@@ -145,12 +144,10 @@ export function HeadlessPluginDialog<TData>(props: HeadlessDialogProps<TData>) {
 
   const shouldReuse = prev && diffReason === null;
 
-  if (!shouldReuse && prev && debugCounterRef.current < 50 && typeof console !== 'undefined') {
-    debugCounterRef.current += 1;
-    console.debug('[HeadlessPluginDialog] context diff', diffReason);
+  const contextValue = shouldReuse && prev ? prev : nextValue;
+  if (!shouldReuse) {
+    contextRef.current = nextValue;
   }
-
-  const contextValue = shouldReuse ? prev! : (contextRef.current = nextValue);
 
   const headerElement = (
     <HeaderComponent>
