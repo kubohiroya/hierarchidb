@@ -415,6 +415,11 @@ export const getVectorTileSummary = async (sessionId: string) => {
   if (rows.length === 0) return { tiles: 0, totalBytes: 0 };
   const tiles = rows.length;
   const totalBytes = rows.reduce((sum, row) => sum + row.size, 0);
-  const zooms = rows.map((row) => row.z);
-  return { tiles, totalBytes, zoomMin: Math.min(...zooms), zoomMax: Math.max(...zooms) };
+  let zoomMin = rows[0]?.z ?? 0;
+  let zoomMax = rows[0]?.z ?? 0;
+  for (const row of rows) {
+    if (row.z < zoomMin) zoomMin = row.z;
+    if (row.z > zoomMax) zoomMax = row.z;
+  }
+  return { tiles, totalBytes, zoomMin, zoomMax };
 };

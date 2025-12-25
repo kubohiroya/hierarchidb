@@ -53,6 +53,19 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1872) shape-plugin Step5 待機UIとStep6メタデータ絞り込み（P1）
+- ブランチ: `fix/shape/step5-wait-ui-step6-metadata-filter`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin（Step5 UI/Hook、Step6 Preview）
+- 受け入れ基準（DoD）:
+  - [ ] Step5 で「ベクトルタイルがまだありません」表示中に待機UI（CircularProgress 等）が表示される
+  - [ ] タイル準備完了後に自動で地図が表示され、待機UIは消える
+  - [ ] Step6 のメタデータ一覧が Step3 で選択した国（日本/中国）に一致する範囲のみ表示される
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] Step5 のビルド進行中/タイル未生成の判定と待機UI表示を整理する
+  - [ ] Step6 のメタデータ一覧のフィルタ条件を Step3 選択条件に同期する
+- ロールバック手順：本タスクの差分を revert する。
+
 1864) LRUSplitView ブレイクポイント別の初期幅/自動開閉制御（P1）
 - ブランチ: `fix/ui/lru-splitview-breakpoints`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `packages/ui/*`（LRUSplitView の定義/呼び出し元）
@@ -11607,6 +11620,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-26 00:22 start: fix/shape/step5-wait-ui-step6-metadata-filter — Step5 の待機UI表示と Step6 メタデータ一覧の国フィルタ不整合を修正する対応に着手。DoD: Kanban 1872 のとおり。
+- 2025-12-26 00:28 progress: fix/shape/step5-wait-ui-step6-metadata-filter — Preview でタイル準備中のポーリングと待機UIを追加し、メタデータ一覧を Step3 選択に合わせて国/レベルで絞り込むよう調整。
 - 2025-12-26 00:07 start: fix/ui-lru-splitview/expanded-count-undefined — useLRUPanes の expandedCount 未定義エラーを解消する対応に着手。DoD: Kanban 1871 のとおり。
 - 2025-12-26 00:07 done: fix/ui-lru-splitview/expanded-count-undefined — expandedCount を paneStates から導出し、getSizes の依存に追加。検証: 未実施。ロールバック: `packages/ui/lru-splitview/src/hooks/useLRUPanes.ts` の差分を revert。
 - 2025-12-26 00:04 start: fix/ui-dialog/plugin-dialog-contextvalue — PluginDialog の contextValue 再利用ロジック（L148）の不適切箇所を修正する対応に着手。DoD: Kanban 1870 のとおり。
@@ -11640,6 +11655,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-25 18:50 done: refactor/shape/step4-simplify-split — Step4 UI を Simplify1/Simplify2 に分割し、翻訳文言/説明を更新。検証: 未実施。ロールバック: Done セクションの記載に従う。
 - 2025-12-25 19:05 progress: refactor/shape/step4-simplify-split — typecheck で指摘された UI hook/export/preview tileDataProvider/quantize の型エラーを修正。
 - 2025-12-25 19:15 progress: refactor/shape/step4-simplify-split — app typecheck の @hierarchidb/download / @hierarchidb/auth-recovery 解決エラーに対し、`app/tsconfig.json` の paths を追加。
+- 2025-12-25 19:25 progress: refactor/shape/step4-simplify-split — ベクトルタイルサマリーの集計で `Math.min(...zooms)` が大量配列で stack overflow するため、ループで min/max を算出するよう修正。
 - 2025-12-25 15:40 progress: worker auth/cors 注入 — `@hierarchidb/download` に `setCorsProxyBaseURL` を追加し、`globalThis.ENV` 依存を撤去。Worker entry で setter を使用。WorkerAPI に `setAuthToken`/`setCorsProxyBaseURL` を追加し、`WorkerProvider` から `access_token` を同期するようにした。
 - 2025-12-25 15:18 progress: cors-proxy CLI テスト — 成功時も response headers を出力するよう `proxy-smoke.mjs` を更新。
 - 2025-12-25 15:12 progress: batch download 失敗の切り分け — CLI では 200 成功だがブラウザ側は `Failed to fetch` のため、CORS ヘッダー未付与の旧 proxy が動いている可能性を指摘。`--preflight=1` で CORS ヘッダ確認→最新 worker の再デプロイを推奨。

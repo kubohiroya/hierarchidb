@@ -51,33 +51,55 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
   const tilesUrl = previewDraft.tilesUrl ?? previewDraft.tilesEndpoint ?? '';
   const tilesLayer = previewDraft.tilesLayer ?? 'default';
   const sessionId = previewDraft.batchSessionId ?? previewDraft.nodeId ?? null;
+  const processingStatus = previewDraft.processingStatus;
   const tilesAvailableFromDraft = (previewDraft.tileSummary?.tiles ?? 0) > 0;
   const [tilesAvailable, setTilesAvailable] = useState(tilesAvailableFromDraft);
+  const [tilesChecking, setTilesChecking] = useState(false);
   const baseLayerId = 'shape-preview';
   const baseSourceId = 'shape-preview-source';
   const tileDbName = 'shape-preview-tiles';
+  const selectionMetadata = previewDraft.urlMetadata ?? [];
 
   useEffect(() => {
     setTilesAvailable(tilesAvailableFromDraft);
   }, [tilesAvailableFromDraft]);
 
+  const shouldPollTiles = Boolean(sessionId)
+    && !tilesAvailableFromDraft
+    && ['processing', 'paused', 'completed'].includes(processingStatus ?? '');
+
   useEffect(() => {
-    if (!sessionId || tilesAvailableFromDraft) return;
+    if (!shouldPollTiles) {
+      setTilesChecking(false);
+      return;
+    }
     let cancelled = false;
-    const loadSummary = async () => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    const pollSummary = async () => {
+      setTilesChecking(true);
       try {
         const summary = await getTileSummary(String(sessionId));
         if (cancelled) return;
-        setTilesAvailable(summary.tiles > 0);
+        if (summary.tiles > 0) {
+          setTilesAvailable(true);
+          setTilesChecking(false);
+          return;
+        }
       } catch (error) {
         console.debug('[ShapePreviewStep] tile summary load failed', error);
       }
+      if (!cancelled) {
+        timeoutId = setTimeout(pollSummary, 2000);
+      }
     };
-    void loadSummary();
+    void pollSummary();
     return () => {
       cancelled = true;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     };
-  }, [sessionId, tilesAvailableFromDraft]);
+  }, [sessionId, shouldPollTiles, tilesAvailableFromDraft]);
 
   const loadMetadataRows = useCallback(
     (targetSessionId: string) =>
@@ -87,10 +109,55 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
   );
 
   const {
-    metadataRows,
+    metadataRows: rawMetadataRows,
     metadataLoading,
     metadataError,
   } = useVectorTilePreviewMetadata(metadataEnabled, sessionId, loadMetadataRows);
+
+  const selectionFilters = useMemo(() => {
+    if (selectionMetadata.length === 0) return null;
+    const byCode = new Map<string, Set<number>>();
+    const byName = new Map<string, Set<number>>();
+    selectionMetadata.forEach((entry) => {
+      const code = entry.countryCode?.trim().toUpperCase();
+      const name = entry.countryName?.trim().toLowerCase();
+      const level = entry.adminLevel;
+      if (code) {
+        const levels = byCode.get(code) ?? new Set<number>();
+        if (typeof level === 'number') {
+          levels.add(level);
+        }
+        byCode.set(code, levels);
+      }
+      if (name) {
+        const levels = byName.get(name) ?? new Set<number>();
+        if (typeof level === 'number') {
+          levels.add(level);
+        }
+        byName.set(name, levels);
+      }
+    });
+    if (byCode.size === 0 && byName.size === 0) return null;
+    return { byCode, byName };
+  }, [selectionMetadata]);
+
+  const metadataRows = useMemo(() => {
+    if (!selectionFilters) return rawMetadataRows;
+    return rawMetadataRows.filter((row) => {
+      const rowLevel = row.adminLevel;
+      const rowCode = row.countryCode?.trim().toUpperCase();
+      const rowName = row.countryName?.trim().toLowerCase();
+      const matchesFilter = (key: string | undefined, source: Map<string, Set<number>>) => {
+        if (!key) return false;
+        const levels = source.get(key);
+        if (!levels || levels.size === 0) return false;
+        if (rowLevel == null) return true;
+        return levels.has(rowLevel);
+      };
+      if (matchesFilter(rowCode, selectionFilters.byCode)) return true;
+      return matchesFilter(rowName, selectionFilters.byName);
+    });
+  }, [rawMetadataRows, selectionFilters]);
 
   const getRowId = useCallback((row: ShapeFeatureMetadataRow) => row.featureId, []);
   const buildSearchText = useCallback((row: ShapeFeatureMetadataRow) => {
@@ -253,6 +320,8 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
     tilesLayer,
     sessionId,
     tilesAvailable,
+    tilesChecking,
+    processingStatus,
     tileDbName,
     tileDataProvider,
     baseLayerId,

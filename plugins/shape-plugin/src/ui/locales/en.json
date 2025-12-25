@@ -102,6 +102,7 @@
     "title": "Preview",
     "description": "Visualize generated vector tiles on the map.",
     "noTiles": "No vector tiles are available yet. Run the build to generate tiles.",
+    "waiting": "Vector tiles are being prepared. The map will appear once tiles are ready.",
     "tabs": {
       "map": "Map Preview",
       "metadata": "Metadata Table"

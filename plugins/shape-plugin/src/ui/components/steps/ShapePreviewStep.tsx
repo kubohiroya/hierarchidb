@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { Box, Typography, Alert, Tabs, Tab, Snackbar } from '@mui/material';
+import { Box, Typography, Alert, Tabs, Tab, Snackbar, CircularProgress } from '@mui/material';
 import { loadMapWithVectorTiles } from '@hierarchidb/ui-map';
 import { GenericDataGrid } from '@hierarchidb/ui-grid';
 import { SearchField } from '@hierarchidb/ui-search-field';
@@ -33,6 +33,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
     tilesLayer,
     sessionId,
     tilesAvailable,
+    tilesChecking,
     tileDbName,
     tileDataProvider,
     baseLayerId,
@@ -45,6 +46,13 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
   const renderMapPreview = () => {
     const hasRemoteTiles = Boolean(tilesUrl);
     if (!hasRemoteTiles && !tilesAvailable) {
+      if (tilesChecking) {
+        return (
+          <Alert severity="info" icon={<CircularProgress size={16} />} sx={{ alignItems: 'center' }}>
+            {t('preview.waiting', 'Vector tiles are being prepared. The map will appear once tiles are ready.')}
+          </Alert>
+        );
+      }
       return (
         <Alert severity="info">
           {t('preview.noTiles', 'No vector tiles are available yet. Run the build to generate tiles.')}
