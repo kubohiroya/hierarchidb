@@ -93,6 +93,18 @@
   - [ ] Step5 の表示ロジックが新タスク構成に追従するよう調整する
 - ロールバック手順：本タスクの差分を revert し、従来のタスク構成へ戻す。
 
+1884) shape-plugin Step6 ホイール伝播の詳細対応（P1）
+- ブランチ: `fix/shape/step6-wheel-chain`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin（Step6 Preview）、packages/ui/data-grid（GenericDataGrid）
+- 受け入れ基準（DoD）:
+  - [ ] Step6 の地図/メタデータ表でホイール操作が有効になる
+  - [ ] 背景ダイアログへのスクロール伝播が発生しない
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] GenericDataGrid のホイール処理を非パッシブで境界抑止する
+  - [ ] Step6 の地図/表コンテナに overscroll-behavior を追加する
+- ロールバック手順：本タスクの差分を revert する。
+
 1864) LRUSplitView ブレイクポイント別の初期幅/自動開閉制御（P1）
 - ブランチ: `fix/ui/lru-splitview-breakpoints`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `packages/ui/*`（LRUSplitView の定義/呼び出し元）
@@ -11691,6 +11703,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-26 01:17 start: fix/shape/step6-wheel-chain — Step6 のホイール伝播詳細対応に着手。DoD: Kanban 1884 のとおり。
 - 2025-12-26 01:11 start: fix/shape/step6-wheel-capture — Step6 のホイールイベント捕捉修正に着手。DoD: Kanban 1883 のとおり。
 - 2025-12-26 01:12 done: fix/shape/step6-wheel-capture — Step6 の地図/メタデータ領域でホイール捕捉を追加し、GenericDataGrid のホイール捕捉を capture に変更。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` と `packages/ui/data-grid/src/GenericDataGrid.tsx` の差分を revert。
 - 2025-12-26 01:05 start: fix/shape/step6-metadata-wheel — Step6 メタデータ表のホイール伝播抑止に着手。DoD: Kanban 1882 のとおり。

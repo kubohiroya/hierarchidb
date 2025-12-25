@@ -5,7 +5,7 @@
  * This component is purely UI-focused and knows nothing about HierarchiDB's data structures.
  */
 
-import React, { useMemo, useState, type CSSProperties, type ReactElement, type ReactNode } from 'react';
+import React, { useEffect, useMemo, useState, type CSSProperties, type ReactElement, type ReactNode } from 'react';
 import {
   Box,
   Checkbox,
@@ -507,13 +507,10 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
           '& .MuiTableCell-root': showGridLines
             ? { border: '1px solid rgba(224, 224, 224, 1)' }
             : undefined,
+          overscrollBehavior: stopWheelPropagation ? 'contain' : undefined,
           ...tableContainerSx,
         }}
-        ref={enableVirtualization ? parentRef : undefined}
-        onWheelCapture={(event) => {
-          if (!stopWheelPropagation) return;
-          event.stopPropagation();
-        }}
+        ref={parentRef}
       >
         <Table stickyHeader={stickyHeader} size={dense ? 'small' : 'medium'}>
           <TableHead>
@@ -714,3 +711,28 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
     </Box>
   );
 }
+  useEffect(() => {
+    if (!stopWheelPropagation) return;
+    const container = parentRef.current;
+    if (!container) return;
+    const handleWheel = (event: WheelEvent) => {
+      event.stopPropagation();
+      const scrollHeight = container.scrollHeight;
+      const clientHeight = container.clientHeight;
+      const scrollable = scrollHeight > clientHeight + 1;
+      if (!scrollable) {
+        event.preventDefault();
+        return;
+      }
+      const scrollTop = container.scrollTop;
+      const atTop = scrollTop <= 0;
+      const atBottom = scrollTop + clientHeight >= scrollHeight - 1;
+      if ((event.deltaY < 0 && atTop) || (event.deltaY > 0 && atBottom)) {
+        event.preventDefault();
+      }
+    };
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+    };
+  }, [stopWheelPropagation]);
