@@ -17,6 +17,7 @@ export interface BuildStage {
   id: string;
   title: string;
   description?: string;
+  icon?: ReactNode;
 }
 
 export interface BuildStepPanelProps {
@@ -25,6 +26,9 @@ export interface BuildStepPanelProps {
   stages: BuildStage[];
   stageProgress?: Record<string, number>;
   paneProgress?: PaneProgress[];
+  splitViewBreakpoints?: number[];
+  splitViewInitialSizesByBreakpoint?: number[][];
+  splitViewAutoCloseCountsByBreakpoint?: number[];
   renderStageContent?: (stage: BuildStage, progress: number) => ReactNode;
   onPause?: () => void;
   onResume?: () => void;
@@ -145,6 +149,9 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
   stages,
   stageProgress = {},
   paneProgress,
+  splitViewBreakpoints,
+  splitViewInitialSizesByBreakpoint,
+  splitViewAutoCloseCountsByBreakpoint,
   renderStageContent,
   onPause,
   onResume,
@@ -169,6 +176,7 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
     stages.map((stage, index) => ({
       id: stage.id,
       title: stage.title,
+      icon: stage.icon,
       defaultExpanded: index === 0,
       content: renderStageContent
         ? renderStageContent(stage, resolveStageProgress(stage.id))
@@ -252,6 +260,9 @@ export const BuildStepPanel: React.FC<BuildStepPanelProps> = ({
           panes={panes}
           progress={paneProgress ?? computedPaneProgress}
           maxExpandedPanes={2}
+          responsiveBreakpoints={splitViewBreakpoints}
+          initialPaneSizesByBreakpoint={splitViewInitialSizesByBreakpoint}
+          autoCloseCountsByBreakpoint={splitViewAutoCloseCountsByBreakpoint}
           defaultCollapsedSize={96}
           autoExpand={{ onStart: true, onComplete: true }}
           height="100%"

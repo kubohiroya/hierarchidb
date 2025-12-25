@@ -9,7 +9,6 @@ import type {
   ShapeEntity,
   BatchConfig,
   DownloadBatchConfig,
-  SimplificationBatchConfig,
   TileBatchConfig,
   SelectionStats,
   UrlMetadata,
@@ -126,6 +125,9 @@ export function validateShapeName(name: string): ShapeStepValidationResult {
 export function validateBatchConfig(config: Partial<BatchConfig>): ShapeStepValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
+  const legacySimplification = config.simplificationConfig;
+  const simplify1Workers = config.simplify1Config?.workers ?? legacySimplification?.level1Workers;
+  const simplify2Workers = config.simplify2Config?.workers ?? legacySimplification?.level2Workers;
 
   const downloadConcurrency = config.downloadConfig?.maxConcurrent;
   if (downloadConcurrency !== undefined) {
@@ -134,9 +136,13 @@ export function validateBatchConfig(config: Partial<BatchConfig>): ShapeStepVali
     }
   }
 
-  const simplifyWorkers = config.simplificationConfig?.level1Workers;
-  if (simplifyWorkers !== undefined) {
-    if (simplifyWorkers < 1 || simplifyWorkers > 8) {
+  if (simplify1Workers !== undefined) {
+    if (simplify1Workers < 1 || simplify1Workers > 8) {
+      errors.push('Concurrent processes must be between 1 and 8');
+    }
+  }
+  if (simplify2Workers !== undefined) {
+    if (simplify2Workers < 1 || simplify2Workers > 8) {
       errors.push('Concurrent processes must be between 1 and 8');
     }
   }
@@ -160,7 +166,7 @@ export function validateBatchConfig(config: Partial<BatchConfig>): ShapeStepVali
     errors.push('Min zoom level must be less than or equal to max zoom level');
   }
 
-  const areaThreshold = config.simplificationConfig?.areaThreshold;
+  const areaThreshold = config.simplify1Config?.areaThreshold ?? legacySimplification?.areaThreshold;
   if (areaThreshold !== undefined) {
     if (areaThreshold < 1 || areaThreshold > 100) {
       errors.push('Feature area threshold must be between 1 and 100');
@@ -341,22 +347,47 @@ function estimateDataSize(
  * Merge processing config with defaults
  */
 export function mergeBatchConfig(config: Partial<BatchConfig>): BatchConfig {
+  const legacySimplification = config.simplificationConfig;
+  const migratedSimplify1 = legacySimplification ? {
+    workers: legacySimplification.level1Workers,
+    tolerance: legacySimplification.tolerance,
+    featureFilterMethod: legacySimplification.featureFilterMethod,
+    areaThreshold: legacySimplification.areaThreshold,
+    minVertexCountForAreaFilter: legacySimplification.minVertexCountForAreaFilter,
+    aspectRatioThreshold: legacySimplification.aspectRatioThreshold,
+    hybridFilterConfig: legacySimplification.hybridFilterConfig,
+  } : {};
+  const migratedSimplify2 = legacySimplification ? {
+    workers: legacySimplification.level2Workers,
+    tolerance: legacySimplification.tolerance,
+    quantize: legacySimplification.quantize,
+    enablePerFeatureSimplification: legacySimplification.enablePerFeatureSimplification,
+  } : {};
+
   return {
     dataSource: config.dataSource ?? DEFAULT_PROCESSING_CONFIG.dataSource,
     downloadConfig: {
       ...(DEFAULT_PROCESSING_CONFIG.downloadConfig ?? { maxConcurrent: 2 }),
       ...(config.downloadConfig ?? {}),
     } as DownloadBatchConfig,
-    simplificationConfig: {
-      ...(DEFAULT_PROCESSING_CONFIG.simplificationConfig ?? {
+    simplify1Config: {
+      ...(DEFAULT_PROCESSING_CONFIG.simplify1Config ?? {
+        workers: 2,
+        tolerance: 0.01,
         featureFilterMethod: 'hybrid',
-        areaThreshold: 0.1,
-        level1Workers: 2,
-        level2Workers: 2,
+        areaThreshold: 5,
+      }),
+      ...migratedSimplify1,
+      ...(config.simplify1Config ?? {}),
+    },
+    simplify2Config: {
+      ...(DEFAULT_PROCESSING_CONFIG.simplify2Config ?? {
+        workers: 2,
         tolerance: 0.01,
       }),
-      ...(config.simplificationConfig ?? {}),
-    } as SimplificationBatchConfig,
+      ...migratedSimplify2,
+      ...(config.simplify2Config ?? {}),
+    },
     tileConfig: {
       ...(DEFAULT_PROCESSING_CONFIG.tileConfig ?? {
         workers: 2,

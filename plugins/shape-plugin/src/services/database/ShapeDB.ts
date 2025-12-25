@@ -16,25 +16,16 @@ import type {
   BatchSession,
   CacheStatistics,
   LayerInfo,
-  BatchConfig,
   ProcessingStage,
   ProgressInfo,
   ResourceUsage,
   StageStatus,
   TaskStatus,
 } from '../../common/types/index.js';
-import type { DataSourceName, ShapeEntity, VectorTileEntity } from '../../common/types/index.js';
+import type { VectorTileEntity } from '../../common/types/index.js';
 import type { BatchProcessConfig } from '../batch/types.js';
 
 type CacheEntryData = Record<string, unknown> | string | number | boolean | null;
-
-// Database schema interfaces
-export interface ShapeEntityRecord extends ShapeEntity {
-  dataSourceName: DataSourceName;
-  batchConfig: BatchConfig;
-  status: 'draft' | 'processing' | 'completed' | 'failed';
-  version: number;
-}
 
 export interface BatchSessionRecord extends BatchSession {
   sessionId: string;
@@ -151,8 +142,6 @@ export interface CacheEntryRecord {
 }
 
 export class ShapeDB extends Dexie {
-  // Core entity tables
-  shapeEntities!: Table<ShapeEntityRecord, NodeId>;
 
   // Batch processing tables
   batchSessions!: Table<BatchSessionRecord, string>;
@@ -174,8 +163,6 @@ export class ShapeDB extends Dexie {
     super(getDBName('shape'));
 
     this.version(1).stores({
-      // Core entities - indexed by nodeId for console integration
-      shapeEntities: '&id, nodeId, status, dataSourceName, createdAt, updatedAt',
 
       // Batch processing - indexed for session and task management
       batchSessions: '&sessionId, nodeId, status, startedAt, updatedAt',
@@ -458,9 +445,8 @@ export class ShapeDB extends Dexie {
   }
 
   async getStorageUsage(): Promise<{ totalSize: number; breakdown: Record<string, number> }> {
-    const [shapesSize, sessionsSize, tasksSize, featuresSize, buffersSize, tilesSize, cacheSize] =
+    const [ sessionsSize, tasksSize, featuresSize, buffersSize, tilesSize, cacheSize] =
       await Promise.all([
-        this.shapeEntities.toArray().then((items: ShapeEntityRecord[]) => items.length * 1000), // Estimate
         this.batchSessions.toArray().then((items: BatchSessionRecord[]) => items.length * 2000),
         this.batchTasks.toArray().then((items: BatchTaskRecord[]) => items.length * 1000),
         this.features
@@ -487,9 +473,8 @@ export class ShapeDB extends Dexie {
 
     return {
       totalSize:
-        shapesSize + sessionsSize + tasksSize + featuresSize + buffersSize + tilesSize + cacheSize,
+        sessionsSize + tasksSize + featuresSize + buffersSize + tilesSize + cacheSize,
       breakdown: {
-        shapes: shapesSize,
         sessions: sessionsSize,
         tasks: tasksSize,
         features: featuresSize,

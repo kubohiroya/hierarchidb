@@ -9,7 +9,7 @@ export interface UseShapeBatchTasksOptions {
 }
 
 export interface UseShapeBatchTasksState {
-  tasks: BatchTaskSummary[];
+  tasks: ShapeBatchTaskSummary[];
   isLoading: boolean;
   error: Error | null;
   refresh: () => Promise<void>;
@@ -17,13 +17,18 @@ export interface UseShapeBatchTasksState {
 
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
 
+export type ShapeBatchTaskSummary = BatchTaskSummary & {
+  metadata?: Record<string, unknown>;
+  title?: string;
+};
+
 export function useShapeBatchTasks(
   sessionId: string | null,
   options: UseShapeBatchTasksOptions = {},
 ): UseShapeBatchTasksState {
   const { autoRefresh = true, pollIntervalMs = 2000 } = options;
   const bridgeRef = useRef(getWorkerBridge());
-  const [tasks, setTasks] = useState<BatchTaskSummary[]>([]);
+  const [tasks, setTasks] = useState<ShapeBatchTaskSummary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 

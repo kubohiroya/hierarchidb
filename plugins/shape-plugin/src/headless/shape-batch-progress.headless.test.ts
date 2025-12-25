@@ -109,7 +109,7 @@ async function createDraftNode(
     },
     draftMetadata: null,
     data: null,
-    draftData: draftData as ShapeEntity,
+    draftData,
   };
   await core.createNode(node);
   return nodeId;

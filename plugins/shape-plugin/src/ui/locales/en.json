@@ -39,6 +39,14 @@
       "retryDelay": "Retry Delay (ms)",
       "retryDelayHelp": "Wait time between retry attempts when a download fails."
     },
+    "simplify1": {
+      "title": "Primary Simplification (Max Zoom Based)",
+      "description": "Reduces excessive geometry while preserving detail needed for the maximum zoom."
+    },
+    "simplify2": {
+      "title": "Tile Preprocessing (Quantization & Boundary Alignment)",
+      "description": "Applies quantization and boundary alignment before tile generation to stabilize workload."
+    },
     "filter": {
       "title": "Extraction Setting",
       "workersStage1": "Number of Workers for Polygon-Simplification (Stage 1)",
@@ -52,11 +60,12 @@
       "areaFilterTitle": "Area Filter",
       "simplificationTitle": "Simplification",
       "precisionTitle": "Precision & Compression",
-      "methodHelp": "Controls how features are filtered before simplification.",
+      "methodHelp": "Selects how small features are filtered before primary simplification.",
       "minimumArea": "Minimum Area (sq km)",
       "minimumAreaHelp": "Filters out features smaller than this area during the simplify stage.",
       "tolerance": "Simplification Tolerance (degrees)",
-      "toleranceHelp": "Controls geometry simplification tolerance during stage 2. Near Tokyo, 0.1 corresponds to roughly 11 km north-south and 9 km east-west.",
+      "toleranceHelp": "Applies minimal simplification while preserving detail needed at the maximum zoom.",
+      "toleranceHelpStage2": "Applies secondary simplification for tile preprocessing.",
       "minVertexCount": "Min Vertex Count",
       "minVertexCountHelp": "Only apply area filtering when feature vertices exceed this count.",
       "quickRejectThreshold": "Quick Reject Threshold",
@@ -67,21 +76,22 @@
       "elongatedShapeHelp": "Correction factor for elongated simple shapes.",
       "quantize": "Coordinate Quantization",
       "quantizeSelected": "Selected: {value}",
-      "quantizeHelp": "Rounds coordinates to the specified precision during stage 2.",
+      "quantizeHelp": "Coordinate quantization used in tile preprocessing to reduce size and stabilize boundaries.",
       "quantizeStarHelp": "★1 is the coarsest rounding (lowest precision); higher stars increase precision.",
       "enablePerFeatureSimplification": "Enable per-feature simplification",
-      "enablePerFeatureSimplificationHelp": "Applies simplification per feature during stage 2."
+      "enablePerFeatureSimplificationHelp": "Applies preprocessing simplification per feature."
     },
     "tile": {
-      "title": "Tile Generation Setting",
+      "title": "Tile Generation (Zoom-Aware Final Simplification)",
+      "description": "Performs final zoom-aware simplification and generates vector tiles.",
       "workers": "Tile Worker Count",
       "workersHelp": "Parallel workers for tile generation.",
       "bufferSize": "Tile Margin (px)",
-      "bufferSizeHelp": "Extra margin around tile edges to reduce visual seams.",
+      "bufferSizeHelp": "Extra margin to avoid visible seams at tile edges.",
       "maxZoom": "Max Zoom Level",
       "maxZoomHelp": "Highest zoom level to generate tiles for.",
       "zoomRange": "Zoom Range",
-      "zoomRangeHelp": "Generate tiles within this zoom range.",
+      "zoomRangeHelp": "Zoom range for generated tiles.",
       "tileCountThreshold": "Tile Count Threshold",
       "tileCountThresholdHelp": "Stops tile generation once the tile count exceeds this value.",
       "zoomLevels": "Zoom Levels (comma separated)",

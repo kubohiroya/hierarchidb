@@ -26,6 +26,9 @@ export const TileConfigSection: React.FC<Props> = ({ config, disabled, onChange 
         </Stack>
       </AccordionSummary>
       <AccordionDetails sx={{ p: 3 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          {t('processing.tile.description', 'Generate vector tiles with zoom-aware simplification.')}
+        </Typography>
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, sm: 4 }}>
             <WorkerNumberConfigCard

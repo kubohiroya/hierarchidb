@@ -16,6 +16,27 @@ export const DEFAULT_PROCESSING_CONFIG: BatchConfig = {
     retryAttempts: 3,
     retryDelay: 1000,
   },
+  simplify1Config: {
+    workers: 2,
+    tolerance: 0.01,
+    featureFilterMethod: 'hybrid',
+    areaThreshold: 5,
+    minVertexCountForAreaFilter: 25,
+    aspectRatioThreshold: 5,
+    hybridFilterConfig: {
+      quickRejectThreshold: 0.1,
+      regularShapeMinRatio: 0.5,
+      regularShapeMaxRatio: 2.0,
+      simpleShapeVertexThreshold: 50,
+      elongatedShapeCorrectionFactor: 0.8,
+    },
+  },
+  simplify2Config: {
+    workers: 2,
+    tolerance: 0.01,
+    quantize: 10000,
+    enablePerFeatureSimplification: true,
+  },
   simplificationConfig: {
     featureFilterMethod: 'hybrid',
     areaThreshold: 5,

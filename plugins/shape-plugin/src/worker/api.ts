@@ -62,8 +62,22 @@ const getBatchSessionIdFromDraft = (draft: DraftLike | null | undefined): string
 
 const buildBatchSessionConfig = (batchConfig: BatchConfig, draft?: DraftLike): BatchSessionConfig => {
   const downloadConfig = batchConfig.downloadConfig ?? DEFAULT_PROCESSING_CONFIG.downloadConfig;
-  const simplificationConfig =
-    batchConfig.simplificationConfig ?? DEFAULT_PROCESSING_CONFIG.simplificationConfig;
+  const legacySimplification = batchConfig.simplificationConfig;
+  const simplify1Config = batchConfig.simplify1Config ?? (legacySimplification ? {
+    workers: legacySimplification.level1Workers,
+    tolerance: legacySimplification.tolerance,
+    featureFilterMethod: legacySimplification.featureFilterMethod,
+    areaThreshold: legacySimplification.areaThreshold,
+    minVertexCountForAreaFilter: legacySimplification.minVertexCountForAreaFilter,
+    aspectRatioThreshold: legacySimplification.aspectRatioThreshold,
+    hybridFilterConfig: legacySimplification.hybridFilterConfig,
+  } : undefined) ?? DEFAULT_PROCESSING_CONFIG.simplify1Config;
+  const simplify2Config = batchConfig.simplify2Config ?? (legacySimplification ? {
+    workers: legacySimplification.level2Workers,
+    tolerance: legacySimplification.tolerance,
+    quantize: legacySimplification.quantize,
+    enablePerFeatureSimplification: legacySimplification.enablePerFeatureSimplification,
+  } : undefined) ?? DEFAULT_PROCESSING_CONFIG.simplify2Config;
   const tileConfig = batchConfig.tileConfig ?? DEFAULT_PROCESSING_CONFIG.tileConfig;
   const cleanupConfig = batchConfig.cleanupConfig ?? DEFAULT_PROCESSING_CONFIG.cleanupConfig;
   const resolvedDataSource =
@@ -80,24 +94,24 @@ const buildBatchSessionConfig = (batchConfig: BatchConfig, draft?: DraftLike): B
       retryDelay: downloadConfig?.retryDelay,
     },
     simplify1: {
-      concurrentProcesses: simplificationConfig?.level1Workers ?? 2,
+      concurrentProcesses: simplify1Config?.workers ?? 2,
       enableFeatureFiltering: true,
-      featureAreaThreshold: simplificationConfig?.areaThreshold ?? 0.5,
-      minVertexCountForAreaFilter: simplificationConfig?.minVertexCountForAreaFilter ?? 25,
-      aspectRatioThreshold: simplificationConfig?.aspectRatioThreshold ?? 5,
-      featureFilterMethod: simplificationConfig?.featureFilterMethod ?? 'hybrid',
+      featureAreaThreshold: simplify1Config?.areaThreshold ?? 0.5,
+      minVertexCountForAreaFilter: simplify1Config?.minVertexCountForAreaFilter ?? 25,
+      aspectRatioThreshold: simplify1Config?.aspectRatioThreshold ?? 5,
+      featureFilterMethod: simplify1Config?.featureFilterMethod ?? 'hybrid',
       hybridFilterConfig:
-        simplificationConfig?.hybridFilterConfig
-        ?? DEFAULT_PROCESSING_CONFIG.simplificationConfig?.hybridFilterConfig,
+        simplify1Config?.hybridFilterConfig
+        ?? DEFAULT_PROCESSING_CONFIG.simplify1Config?.hybridFilterConfig,
       deleteOnComplete: false,
     },
     simplify2: {
-      concurrentProcesses: simplificationConfig?.level2Workers ?? 2,
-      enablePerFeatureSimplification: simplificationConfig?.enablePerFeatureSimplification ?? true,
+      concurrentProcesses: simplify2Config?.workers ?? 2,
+      enablePerFeatureSimplification: simplify2Config?.enablePerFeatureSimplification ?? true,
       deleteOnComplete: false,
-      quantize: simplificationConfig?.quantize ?? 0,
-      simplify: simplificationConfig?.tolerance ?? 0,
-      tolerance: simplificationConfig?.tolerance ?? 0,
+      quantize: simplify2Config?.quantize ?? 0,
+      simplify: simplify2Config?.tolerance ?? 0,
+      tolerance: simplify2Config?.tolerance ?? 0,
     },
     vectorTiles: {
       concurrentProcesses: tileConfig?.workers ?? 2,
@@ -298,17 +312,21 @@ const buildTaskTitle = (task: BatchTaskRecord): string | undefined => {
   if (task.taskType === 'vectortile') {
     const minZoom = getNumber(input.minZoom);
     const maxZoom = getNumber(input.maxZoom);
-    const tileX = getNumber(input.tileX);
-    const tileY = getNumber(input.tileY);
-    if (typeof tileX === 'number' && typeof tileY === 'number') {
-      if (typeof minZoom === 'number' && typeof maxZoom === 'number') {
-        return `z${minZoom}-${maxZoom} / x${tileX} y${tileY}`;
-      }
-      return `x${tileX} y${tileY}`;
-    }
-    if (typeof minZoom === 'number' && typeof maxZoom === 'number') {
-      return `z${minZoom}-${maxZoom}`;
-    }
+    const metadataContext = input.metadataContext as {
+      dataSource?: string;
+      countryCode?: string;
+      countryName?: string;
+      adminLevel?: number;
+    } | undefined;
+    const countryLabel = metadataContext?.countryName ?? metadataContext?.countryCode;
+    const adminLabel = metadataContext?.adminLevel != null ? `ADM${metadataContext.adminLevel}` : undefined;
+    const dataSourceLabel = metadataContext?.dataSource ? metadataContext.dataSource.toUpperCase() : undefined;
+    const zoomLabel = typeof minZoom === 'number' && typeof maxZoom === 'number'
+      ? `z${minZoom}-${maxZoom}`
+      : undefined;
+    const parts = [dataSourceLabel, countryLabel, adminLabel, zoomLabel].filter(Boolean);
+    if (parts.length > 0) return parts.join(' • ');
+    if (typeof minZoom === 'number' && typeof maxZoom === 'number') return `z${minZoom}-${maxZoom}`;
   }
   return undefined;
 };

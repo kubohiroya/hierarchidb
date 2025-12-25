@@ -346,6 +346,9 @@ function parseJwt(token: string): {
     throw new Error('Invalid token');
   }
   const [encodedHeader, encodedPayload, encodedSignature] = parts;
+  if (!encodedHeader || !encodedPayload || !encodedSignature) {
+    throw new Error('Invalid token');
+  }
   const header = JSON.parse(decodeBase64Url(encodedHeader)) as JwtHeader;
   const payload = JSON.parse(decodeBase64Url(encodedPayload)) as JwtPayload;
   const signature = decodeBase64UrlToArrayBuffer(encodedSignature);

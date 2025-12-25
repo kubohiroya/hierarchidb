@@ -58,8 +58,10 @@ const canStartShapeBatch = (data?: Partial<ShapeEntity>): boolean => {
   ).isValid;
   return hasSelection && hasDataSource && processingValid;
 };
+const hasVectorTiles = (data?: Partial<ShapeEntity>): boolean =>
+  (data?.tileSummary?.tiles ?? 0) > 0;
 const isShapeBuildPersisted = (data?: Partial<ShapeEntity>): boolean =>
-  data?.processingStatus === 'completed';
+  data?.processingStatus === 'completed' || hasVectorTiles(data);
 
 registry.registerConfigProvider<Partial<ShapeEntity>>({
   nodeType: 'shape',

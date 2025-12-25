@@ -126,10 +126,28 @@ export const useDownloadConfigSection = ({ config, draft, disabled, onChange, on
           ...(draft ?? {}),
           batchSessionId: undefined,
           processingStatus: 'idle',
+          tileSummary: undefined,
         } as Record<string, unknown>,
       });
     } catch (error) {
       console.warn('[ShapeDownloadConfigSection] failed to persist session reset', error);
+    }
+  }, [bridgeRef, draft, nodeId]);
+
+  const persistTileSummaryReset = useCallback(async () => {
+    if (!nodeId) return;
+    try {
+      await bridgeRef.initialize();
+      const updater = await bridgeRef.getTreeNodeUpdaterAPI();
+      await updater.updateTreeNode(nodeId, {
+        mode: 'save-draft',
+        draftData: {
+          ...(draft ?? {}),
+          tileSummary: undefined,
+        } as Record<string, unknown>,
+      });
+    } catch (error) {
+      console.warn('[ShapeDownloadConfigSection] failed to persist tile summary reset', error);
     }
   }, [bridgeRef, draft, nodeId]);
 
@@ -157,9 +175,10 @@ export const useDownloadConfigSection = ({ config, draft, disabled, onChange, on
     await db.clearStage(sessionId, 'vectorTiles');
     await clearBatchTasksForType('vectortile');
     await clearFinalOutputs();
+    await persistTileSummaryReset();
     await loadCounts();
     notify.success('Deleted tiles');
-  }, [clearBatchTasksForType, clearFinalOutputs, db, loadCounts, sessionId]);
+  }, [clearBatchTasksForType, clearFinalOutputs, db, loadCounts, persistTileSummaryReset, sessionId]);
 
   const update = useCallback((partial: Partial<BatchConfig>) => {
     onChange(mergeBatchConfig({ ...config, ...partial }));

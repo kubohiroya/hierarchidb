@@ -57,6 +57,12 @@ export interface LRUSplitViewConfig {
   panes: PaneConfig[];
   /** Maximum number of expanded panes */
   maxExpandedPanes?: number;
+  /** Breakpoints for responsive behavior (px, ascending, max-width) */
+  responsiveBreakpoints?: number[];
+  /** Initial pane sizes per breakpoint (px) */
+  initialPaneSizesByBreakpoint?: number[][];
+  /** Auto-close counts per breakpoint */
+  autoCloseCountsByBreakpoint?: number[];
   /** Default collapsed size (px) */
   defaultCollapsedSize?: number;
   /** Whether to use vertical orientation */

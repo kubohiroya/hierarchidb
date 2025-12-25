@@ -53,6 +53,22 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1864) LRUSplitView ブレイクポイント別の初期幅/自動開閉制御（P1）
+- ブランチ: `fix/ui/lru-splitview-breakpoints`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/ui/*`（LRUSplitView の定義/呼び出し元）
+- 受け入れ基準（DoD）:
+  - [ ] ブレイクポイント配列/初期幅配列/自動閉じ数配列を props で受け取れる
+  - [ ] ビューポート幅が大きい帯では自動開閉が無効化される
+  - [ ] 幅が小さくなるにつれて自動的に閉じるペイン数が1つずつ増える
+  - [ ] 想定最小幅以下では開いて表示されるペインが1つのみになる
+  - [ ] 自動開閉の順序は LRU（古いものから閉じる／新しいものから開く）を維持する
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] LRUSplitView の設定 props を追加し、ブレイクポイントごとの制御を実装する
+  - [ ] 初期幅の配列をブレイクポイントに応じて適用する
+  - [ ] 自動閉じ数の配列をブレイクポイントに応じて適用する
+- ロールバック手順：本タスクの差分を revert し、LRUSplitView の既存挙動へ戻す。
+
 1862) shape-plugin GeoBoundaries URL ログに成功/失敗を付記（P1）
 - ブランチ: `fix/shape/geoboundaries-log-result`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: plugins/shape-plugin（GeoBoundariesStrategy）
@@ -5049,6 +5065,30 @@ P2:
 
 ### Done（完了） <a id="kanban-done"></a>
 
+- 1869) shape-plugin ShapePreviewStep 型不整合修正（P1） — 完了 (2025-12-25)
+  - 要点：tileDataProvider を MapWithVectorTilesProps の型に合わせて明示し、useCallback の型引数で nodeId?: string/戻り値 ArrayBuffer に統一して L62 型不整合を解消。
+  - 検証：未実施。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` の差分を revert する。
+- 1868) shape-plugin src 未使用ファイル/関数/定数の棚卸し（P1） — 完了 (2025-12-25)
+  - 要点：`rg` で参照有無を確認し、未使用ファイル/関数/定数の候補を一覧化（削除/保留の分類付き）。
+  - 検証：検索ベース（`rg`）で確認。
+  - ロールバック手順：調査のみのため差分なし（運用ログ追記を削除）。
+- 1867) shape-plugin Step4 Simplify1/2 設定分離とステージ整合（P1） — 完了 (2025-12-25)
+  - 要点：`simplify1Config`/`simplify2Config` を導入し、旧 `simplificationConfig` をマージで移行。Step4 を Simplify1/Simplify2 に分割して UI と Worker の設定参照を新構造へ統一。説明文/翻訳を「最詳細ズーム基準」「タイル前処理」に合わせて更新。
+  - 検証：未実施。
+  - ロールバック手順：`plugins/shape-plugin/src/{common/types/processing.ts,common/types/constants.ts,services/utils/utils.ts,worker/api.ts,ui/utils/sessionInvalidation.ts,ui/components/steps/{ShapeProcessingSettingsStep.tsx,Simplify1ConfigSection.tsx,Simplify2ConfigSection.tsx,TileConfigSection.tsx},ui/components/processing/{AreaFilterPanel.tsx,SimplificationPanel.tsx,PrecisionPanel.tsx},ui/hooks/useSimplificationConfigSection.ts,ui/locales/{ja.json,en.json}}` の差分を revert し、`simplificationConfig` 方式へ戻す。
+- 1866) cors-proxy JWT 解析の型エラー解消（P1） — 完了 (2025-12-25)
+  - 要点：JWT のセグメント不足時に明示的に Invalid token を返し、decode へ undefined が渡らないようにガードを追加。
+  - 検証：`pnpm --filter @hierarchidb/cors-proxy typecheck` exit 0。
+  - ロールバック手順：`packages/backend/cors-proxy/src/worker.ts` の差分を revert する。
+- 1865) shape-plugin ベクトルタイルタスク名の重複解消（P1） — 完了 (2025-12-25)
+  - 要点：vectortile タイトルに metadataContext（dataSource/country/admin/zoom）を含め、UI 側も同じ規則で表示するよう調整。
+  - 検証：未実施。
+  - ロールバック手順：`plugins/shape-plugin/src/{worker/getBatchTaskSummaries.ts,worker/api.ts,ui/components/steps/ShapeBuildProgressStep.tsx}` の差分を revert する。
+- 1863) shape-plugin Step5/Step6 進捗表示とタスクタイトルの整合（P1） — 完了 (2025-12-25)
+  - 要点：batch task summary に metadata/title を付与し、Step5 の進捗バーで未装填(gray)/待機(lightgrey)を描き分け。build 中は indeterminate を併記し、processingStatus を同期。tileSummary を保存して Step5/Step6 の valid 判定へ反映し、Preview は tilesUrl が無い場合も sessionId のタイルを参照可能にした。
+  - 検証：未実施。
+  - ロールバック手順：`plugins/shape-plugin/src/{worker/getBatchTaskSummaries.ts,ui/hooks/useShapeBatchTasks.ts,ui/components/steps/ShapeBuildProgressStep.tsx,ui/hooks/useShapeBuildProgressStep.ts,common/types/core.ts,ui/components/steps-provider.tsx,ui/hooks/useShapePreviewStep.ts,ui/components/steps/ShapePreviewStep.tsx,ui/hooks/useDownloadConfigSection.ts,ui/components/steps/ShapeProcessingSettingsStep.tsx,ui/hooks/build/useBatchSessionActions.ts}` の差分を revert する。
 - 1856) PeerStore/getPeer/registerPeer 完全廃止の徹底（P1） — 完了 (2025-12-25)
   - 要点：PeerStore/createNodePayloadPeerStore を runtime-worker から削除し、spreadsheet/location/shape の worker 登録と app テストモックから PeerStore 参照を撤去。設計/運用ドキュメントも廃止前提に更新。
   - 検証：未実施。
@@ -11559,6 +11599,29 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-25 23:31 start: fix/shape/shape-previewstep-type-mismatch — ShapePreviewStep.tsx L62 の型不整合を解消する対応に着手。DoD: Kanban 1869 のとおり。
+- 2025-12-25 23:36 progress: fix/shape/shape-previewstep-type-mismatch — tileDataProvider を MapWithVectorTilesProps の型に合わせて明示し、L62 の型不整合を解消する方向で整理。
+- 2025-12-25 23:37 done: fix/shape/shape-previewstep-type-mismatch — tileDataProvider の型明示で L62 の型不整合を解消。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` の差分を revert。
+- 2025-12-25 23:44 progress: fix/shape/shape-previewstep-type-mismatch — useCallback の型引数で tileDataProvider を明示し、nodeId?: string/戻り値 ArrayBuffer に統一。
+- 2025-12-25 23:44 done: fix/shape/shape-previewstep-type-mismatch — tileDataProvider の型を MapWithVectorTilesProps に合わせて再調整。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` の差分を revert。
+- 2025-12-25 16:10 start: fix/shape/step5-progress-ui — Step5/Step6 の進捗表示、タスクタイトル、完了後の valid 状態、Stepper 表示の整合対応に着手。DoD: Kanban 1863 のとおり。
+- 2025-12-25 16:22 progress: fix/shape/step5-progress-ui — batch task summary に metadata/title を付与し、Step5 の進捗バーで未装填(gray)/待機(lightgrey)を描き分けるよう調整。build 中は indeterminate の LinearProgress を併記。processingStatus を progress 状態に同期し、tileSummary を保存して Step6 valid 判定へ反映。
+- 2025-12-25 16:40 done: fix/shape/step5-progress-ui — Step5/Step6 のタイトル/進捗/valid/Stepper 表示を整合。Preview は tilesUrl が無い場合も sessionId のタイルを参照可能にし、tileSummary を削除時にクリア。検証: 未実施。ロールバック: 本タスクの差分を revert。
+- 2025-12-25 16:48 start: fix/shape/vectortile-task-titles — ベクトルタイルのタスク名が同一表示になる問題の対応に着手。DoD: Kanban 1865 のとおり。
+- 2025-12-25 16:55 done: fix/shape/vectortile-task-titles — vectortile タイトルに metadataContext（dataSource/country/admin/zoom）を含め、UI 側も同じ規則で表示するよう調整。x0 y0 は dataset 単位タスクのプレースホルダである旨を明確化。検証: 未実施。ロールバック: 本タスクの差分を revert。
+- 2025-12-25 16:20 start: fix/ui/lru-splitview-breakpoints — LRUSplitView のブレイクポイント別初期幅/自動開閉（LRU順）制御に着手。DoD: Kanban 1864 のとおり。
+- 2025-12-25 16:35 progress: fix/ui/lru-splitview-breakpoints — LRUSplitView に responsiveBreakpoints/initialPaneSizesByBreakpoint/autoCloseCountsByBreakpoint を追加し、BuildStepPanel から渡せるよう拡張。breakpoint 変更時に maxExpanded を LRU で抑制し、初期サイズを適用するよう調整。
+- 2025-12-25 16:50 progress: fix/ui/lru-splitview-breakpoints — BuildStepPanel 呼び出し元（shape/route/location）で breakpoints=[600,900,1200], base width=300 の配列を設定。autoClose は 3→2→1→0 の段階増加。
+- 2025-12-25 17:05 progress: fix/ui/lru-splitview-breakpoints — autoCloseCount=0 の帯では全ペインを初期展開するよう LRUSplitView を修正（自動開閉OFF＝全開を保証）。
+- 2025-12-25 17:20 progress: fix/ui/lru-splitview-breakpoints — autoCloseCount=0 の帯で全ペインが開いている場合、初期幅を均等割りするように調整（最後のペインが余剰幅を独占しない）。
+- 2025-12-25 17:35 progress: fix/ui/lru-splitview-breakpoints — getSizes が number[] を返すよう initialSizes の undefined をフォールバック処理で吸収し、typecheck エラーを解消。
+- 2025-12-25 18:05 progress: fix/ui/lru-splitview-breakpoints — Step4 の AccordionSummary で使うアイコン/タイトルを Step5 の LRUSplitView 見出しに反映するため、shape build stages に icon を追加し title を processing.* に揃えた。
+- 2025-12-25 18:25 progress: fix/ui/lru-splitview-breakpoints — autoCloseCount=0 に入ったときに全ペインを強制展開する同期処理を追加し、均等割りが確実に効くよう修正。
+- 2025-12-25 18:10 start: refactor/shape/step4-simplify-split — Step4 の Simplify1/2 設定分離とステージ整合の実装に着手。DoD: Kanban 1867 のとおり。
+- 2025-12-25 18:30 progress: refactor/shape/step4-simplify-split — `simplify1Config`/`simplify2Config` を導入し、旧 `simplificationConfig` をマージで移行。Worker の batch config 参照を新構造へ更新。
+- 2025-12-25 18:50 done: refactor/shape/step4-simplify-split — Step4 UI を Simplify1/Simplify2 に分割し、翻訳文言/説明を更新。検証: 未実施。ロールバック: Done セクションの記載に従う。
+- 2025-12-25 19:05 progress: refactor/shape/step4-simplify-split — typecheck で指摘された UI hook/export/preview tileDataProvider/quantize の型エラーを修正。
+- 2025-12-25 19:15 progress: refactor/shape/step4-simplify-split — app typecheck の @hierarchidb/download / @hierarchidb/auth-recovery 解決エラーに対し、`app/tsconfig.json` の paths を追加。
 - 2025-12-25 15:40 progress: worker auth/cors 注入 — `@hierarchidb/download` に `setCorsProxyBaseURL` を追加し、`globalThis.ENV` 依存を撤去。Worker entry で setter を使用。WorkerAPI に `setAuthToken`/`setCorsProxyBaseURL` を追加し、`WorkerProvider` から `access_token` を同期するようにした。
 - 2025-12-25 15:18 progress: cors-proxy CLI テスト — 成功時も response headers を出力するよう `proxy-smoke.mjs` を更新。
 - 2025-12-25 15:12 progress: batch download 失敗の切り分け — CLI では 200 成功だがブラウザ側は `Failed to fetch` のため、CORS ヘッダー未付与の旧 proxy が動いている可能性を指摘。`--preflight=1` で CORS ヘッダ確認→最新 worker の再デプロイを推奨。
@@ -12355,3 +12418,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-25 12:38 progress: fix/shape/download-metadata-via-downloadservice — DownloadService の resolvedUrl と CORS proxy 取得状態を debug 出力するよう追加。
 - 2025-12-25 12:47 progress: fix/shape/download-metadata-via-downloadservice — typecheck 指摘（geoBoundariesAvailability/BuildProgressStep/BatchTask stage/未使用変数）を修正。
 - 2025-12-25 12:53 progress: fix/shape/download-metadata-via-downloadservice — RuntimeWorkerDownloadAdapter に process 開始ログを追加し、旧バンドル実行の切り分けを可能にした。
+- 2025-12-25 22:53 start: fix/cors-proxy/jwt-decode-guard — cors-proxy の JWT 解析で undefined セグメントが渡される型エラー（TS2345）を解消する対応に着手。DoD: Kanban 記載どおり型エラー解消、挙動明示、`pnpm --filter @hierarchidb/cors-proxy typecheck` 結果記録、運用ログ/ロールバック記載。
+- 2025-12-25 22:55 done: fix/cors-proxy/jwt-decode-guard — JWT セグメント不足時に Invalid token を返し、decode 前の型ガードで TS2345 を解消。検証: `pnpm --filter @hierarchidb/cors-proxy typecheck` exit 0。ロールバック: `packages/backend/cors-proxy/src/worker.ts` の差分を revert。
+- 2025-12-25 23:31 start: analysis/shape/src-unused-inventory — shape-plugin/src の未使用ファイル/関数/定数を棚卸しする調査に着手（Kanban: 1868）。DoD: 未使用候補一覧と根拠、削除/保留分類、運用ログ更新。
+- 2025-12-25 23:35 done: analysis/shape/src-unused-inventory — 未使用ファイル/関数/定数の候補を `rg` で再確認し一覧化（削除/保留を分類）。検証: `rg` 検索。ロールバック: 調査のみのため差分なし（運用ログ追記を削除）。

@@ -52,9 +52,10 @@ export interface ShapeEntity {
   adminLevels?: number[];
   urlMetadata?: UrlMetadata[];
 
-// Processing Status
+  // Processing Status
   batchSessionId?: string;
   processingStatus?: 'idle' | 'processing' | 'paused' | 'completed' | 'failed' | 'cancelled';
+  tileSummary?: { tiles: number; totalBytes: number; zoomMin?: number; zoomMax?: number };
 }
 
 export type ShapeDraft = TreeNodeUpdaterPayload<ShapeEntity>;

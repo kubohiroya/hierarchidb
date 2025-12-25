@@ -3,28 +3,24 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import type {
-  BatchConfig,
-  SimplificationBatchConfig,
-} from '../../../common/types/index.js';
 import { useTranslation } from '../../i18n.js';
 
 type Props = {
-  baseSimplificationConfig: SimplificationBatchConfig;
+  quantize: number;
   quantizeOptions: number[];
   quantizeRank: number;
   quantizeLabel: string;
   disabled?: boolean;
-  update: (partial: Partial<BatchConfig>) => void;
+  onQuantizeChange: (value: number) => void;
 };
 
 export const PrecisionPanel: React.FC<Props> = ({
-  baseSimplificationConfig,
+  quantize,
   quantizeOptions,
   quantizeRank,
   quantizeLabel,
   disabled,
-  update,
+  onQuantizeChange,
 }) => {
   const { t } = useTranslation();
 
@@ -42,18 +38,13 @@ export const PrecisionPanel: React.FC<Props> = ({
           max={quantizeOptions.length}
           onChange={(_, value) => {
             const index = Math.max(0, (value ?? 1) - 1);
-            const quantize = quantizeOptions[index];
-            update({
-              simplificationConfig: {
-                ...baseSimplificationConfig,
-                quantize,
-              },
-            });
+            const nextQuantize = quantizeOptions[index] ?? quantize;
+            onQuantizeChange(nextQuantize);
           }}
           disabled={disabled}
         />
         <Typography variant="caption" color="text.secondary">
-          {t('processing.filter.quantizeSelected', 'Selected: {value}', { value: quantizeLabel })}
+          {t('processing.filter.quantizeSelected', 'Selected: {value}', { value: quantizeLabel || quantize.toLocaleString() })}
         </Typography>
         <Typography variant="caption" color="text.secondary">
           {t('processing.filter.quantizeHelp', 'Quantization factor used in simplify stage 2.')}

@@ -56,8 +56,13 @@ export function resolveBatchConfigInvalidation(
     stages.add('vectorTiles');
   }
 
-  if (hasDiff(prev.simplificationConfig ?? {}, next.simplificationConfig ?? {})) {
+  if (hasDiff(prev.simplify1Config ?? {}, next.simplify1Config ?? {})) {
     stages.add('simplify1');
+    stages.add('simplify2');
+    stages.add('vectorTiles');
+  }
+
+  if (hasDiff(prev.simplify2Config ?? {}, next.simplify2Config ?? {})) {
     stages.add('simplify2');
     stages.add('vectorTiles');
   }

@@ -15,6 +15,19 @@ const STAGES: Array<{ id: string; title: string; description: string }> = [
   { id: 'tile', title: 'Tile', description: 'Generate vector tiles for selections.' },
   { id: 'finalize', title: 'Finalize', description: 'Persist results and indexes.' },
 ];
+const SPLITVIEW_BREAKPOINTS = [600, 900, 1200];
+const SPLITVIEW_INITIAL_SIZES = [
+  Array.from({ length: STAGES.length }, () => 300),
+  Array.from({ length: STAGES.length }, () => 300),
+  Array.from({ length: STAGES.length }, () => 300),
+  Array.from({ length: STAGES.length }, () => 300),
+];
+const SPLITVIEW_AUTO_CLOSE_COUNTS = [
+  Math.max(0, STAGES.length - 1),
+  Math.max(0, STAGES.length - 2),
+  Math.max(0, STAGES.length - 3),
+  0,
+];
 
 export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft }) => {
   const { t } = useTranslation();
@@ -52,6 +65,9 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft }) => {
         overallProgress={overallProgress}
         stages={STAGES}
         stageProgress={stageProgress}
+        splitViewBreakpoints={SPLITVIEW_BREAKPOINTS}
+        splitViewInitialSizesByBreakpoint={SPLITVIEW_INITIAL_SIZES}
+        splitViewAutoCloseCountsByBreakpoint={SPLITVIEW_AUTO_CLOSE_COUNTS}
         onPause={() => setStatus('paused')}
         onResume={() => setStatus('running')}
         onComplete={() => {

@@ -15,13 +15,13 @@ import type {
   FeatureFilterMethod,
   HybridFilterConfig,
   BatchConfig,
-  SimplificationBatchConfig,
+  Simplify1Config,
 } from '../../../common/types/index.js';
 import { useTranslation } from '../../i18n.js';
 
 type Props = {
   controlId: string;
-  baseSimplificationConfig: SimplificationBatchConfig;
+  baseSimplify1Config: Simplify1Config;
   baseHybridConfig: HybridFilterConfig;
   quickRejectLogMin: number;
   quickRejectLogMax: number;
@@ -32,7 +32,7 @@ type Props = {
 
 export const AreaFilterPanel: React.FC<Props> = ({
   controlId,
-  baseSimplificationConfig,
+  baseSimplify1Config,
   baseHybridConfig,
   quickRejectLogMin,
   quickRejectLogMax,
@@ -57,12 +57,12 @@ export const AreaFilterPanel: React.FC<Props> = ({
               <RadioGroup
                 aria-labelledby={`${controlId}-filtering-method`}
                 name="filtering-method"
-                value={baseSimplificationConfig.featureFilterMethod || 'hybrid'}
+                value={baseSimplify1Config.featureFilterMethod || 'hybrid'}
                 onChange={(e) => {
                   const method = e.target.value as FeatureFilterMethod;
                   update({
-                    simplificationConfig: {
-                      ...baseSimplificationConfig,
+                    simplify1Config: {
+                      ...baseSimplify1Config,
                       featureFilterMethod: method,
                     },
                   });
@@ -100,12 +100,12 @@ export const AreaFilterPanel: React.FC<Props> = ({
               </Typography>
               <Box sx={{ px: 2 }}>
                 <Slider
-                  value={baseSimplificationConfig.minVertexCountForAreaFilter ?? 25}
+                  value={baseSimplify1Config.minVertexCountForAreaFilter ?? 25}
                   onChange={(_, value) => {
                     const minVertexCountForAreaFilter = value as number;
                     update({
-                      simplificationConfig: {
-                        ...baseSimplificationConfig,
+                      simplify1Config: {
+                        ...baseSimplify1Config,
                         minVertexCountForAreaFilter,
                       },
                     });
@@ -134,12 +134,12 @@ export const AreaFilterPanel: React.FC<Props> = ({
               </Typography>
               <Box sx={{ px: 2 }}>
                 <Slider
-                  value={baseSimplificationConfig.areaThreshold ?? 5}
+                  value={baseSimplify1Config.areaThreshold ?? 5}
                   onChange={(_, value) => {
                     const areaThreshold = value as number;
                     update({
-                      simplificationConfig: {
-                        ...baseSimplificationConfig,
+                      simplify1Config: {
+                        ...baseSimplify1Config,
                         areaThreshold,
                       },
                     });
@@ -172,8 +172,8 @@ export const AreaFilterPanel: React.FC<Props> = ({
                     const logValue = value as number;
                     const quickRejectThreshold = Number((10 ** logValue).toFixed(3));
                     update({
-                      simplificationConfig: {
-                        ...baseSimplificationConfig,
+                      simplify1Config: {
+                        ...baseSimplify1Config,
                         hybridFilterConfig: {
                           ...baseHybridConfig,
                           quickRejectThreshold,
@@ -209,8 +209,8 @@ export const AreaFilterPanel: React.FC<Props> = ({
                   onChange={(_, value) => {
                     const simpleShapeVertexThreshold = value as number;
                     update({
-                      simplificationConfig: {
-                        ...baseSimplificationConfig,
+                      simplify1Config: {
+                        ...baseSimplify1Config,
                         hybridFilterConfig: {
                           ...baseHybridConfig,
                           simpleShapeVertexThreshold,
@@ -245,8 +245,8 @@ export const AreaFilterPanel: React.FC<Props> = ({
                   onChange={(_, value) => {
                     const elongatedShapeCorrectionFactor = value as number;
                     update({
-                      simplificationConfig: {
-                        ...baseSimplificationConfig,
+                      simplify1Config: {
+                        ...baseSimplify1Config,
                         hybridFilterConfig: {
                           ...baseHybridConfig,
                           elongatedShapeCorrectionFactor,

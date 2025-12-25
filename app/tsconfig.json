@@ -27,6 +27,12 @@
       "@hierarchidb/common-types/*": [
         "../packages/common/types/src/*"
       ],
+      "@hierarchidb/auth-recovery": [
+        "../packages/features/auth-recovery/src/index.ts"
+      ],
+      "@hierarchidb/auth-recovery/*": [
+        "../packages/features/auth-recovery/src/*"
+      ],
       "@hierarchidb/basemap-plugin": [
         "../plugins/basemap-plugin/src/index.ts"
       ],
@@ -38,6 +44,12 @@
       ],
       "@hierarchidb/components/*": [
         "../packages/components/src/*"
+      ],
+      "@hierarchidb/download": [
+        "../packages/features/download/src/index.ts"
+      ],
+      "@hierarchidb/download/*": [
+        "../packages/features/download/src/*"
       ],
       "@hierarchidb/ui-worker-client": [
         "../packages/ui/worker-client/src/index.ts"

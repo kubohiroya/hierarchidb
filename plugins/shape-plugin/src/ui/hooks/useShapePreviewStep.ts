@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTheme } from '@mui/material/styles';
 import type { ShapeEntity } from '../../common/types/index.js';
 import { useTranslation } from '../i18n.js';
@@ -21,6 +21,7 @@ import {
   useVectorTilePreviewMapLayers,
 } from '@hierarchidb/ui-gis';
 import { useVectorTilePreviewTable } from './preview/useVectorTilePreviewTable.js';
+import { getTile, getTileSummary } from '../../services/tiles/RuntimeTileClient.js';
 
 type ShapePreviewDraft = Partial<ShapeEntity> & {
   tilesUrl?: string;
@@ -50,8 +51,33 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
   const tilesUrl = previewDraft.tilesUrl ?? previewDraft.tilesEndpoint ?? '';
   const tilesLayer = previewDraft.tilesLayer ?? 'default';
   const sessionId = previewDraft.batchSessionId ?? previewDraft.nodeId ?? null;
+  const tilesAvailableFromDraft = (previewDraft.tileSummary?.tiles ?? 0) > 0;
+  const [tilesAvailable, setTilesAvailable] = useState(tilesAvailableFromDraft);
   const baseLayerId = 'shape-preview';
   const baseSourceId = 'shape-preview-source';
+  const tileDbName = 'shape-preview-tiles';
+
+  useEffect(() => {
+    setTilesAvailable(tilesAvailableFromDraft);
+  }, [tilesAvailableFromDraft]);
+
+  useEffect(() => {
+    if (!sessionId || tilesAvailableFromDraft) return;
+    let cancelled = false;
+    const loadSummary = async () => {
+      try {
+        const summary = await getTileSummary(String(sessionId));
+        if (cancelled) return;
+        setTilesAvailable(summary.tiles > 0);
+      } catch (error) {
+        console.debug('[ShapePreviewStep] tile summary load failed', error);
+      }
+    };
+    void loadSummary();
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId, tilesAvailableFromDraft]);
 
   const loadMetadataRows = useCallback(
     (targetSessionId: string) =>
@@ -185,6 +211,17 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
     theme,
   });
 
+  const tileDataProvider = useCallback<NonNullable<MapWithVectorTilesProps['tileDataProvider']>>(
+    async (z: number, x: number, y: number, nodeId?: string) => {
+      const resolvedSessionId = nodeId ?? (sessionId ? String(sessionId) : undefined);
+      if (!resolvedSessionId) return null;
+      const data = await getTile(resolvedSessionId, z, x, y);
+      if (!data) return null;
+      return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+    },
+    [sessionId],
+  );
+
   return {
     t,
     theme,
@@ -215,6 +252,9 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
     tilesUrl,
     tilesLayer,
     sessionId,
+    tilesAvailable,
+    tileDbName,
+    tileDataProvider,
     baseLayerId,
     baseSourceId,
     mapInstance,

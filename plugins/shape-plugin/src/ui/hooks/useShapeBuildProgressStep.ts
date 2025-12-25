@@ -14,6 +14,7 @@ import { useBuildStages } from './build/useBuildStages.js';
 import { useBuildStatus } from './build/useBuildStatus.js';
 import { useBuildTaskProgress } from '@hierarchidb/ui-batch';
 import { useBatchSessionActions } from './build/useBatchSessionActions.js';
+import { getTileSummary } from '../../services/tiles/RuntimeTileClient.js';
 
 const normalizeStageId = (stage?: string): string | undefined => {
   if (!stage) return undefined;
@@ -61,6 +62,15 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     return t('build.progress.idleStage', 'idle');
   })();
   const taskLabel = (() => {
+    if (buildStatus === 'completed') {
+      return t('build.progress.done', 'Completed');
+    }
+    if (buildStatus === 'failed') {
+      return t('build.progress.failed', 'Failed');
+    }
+    if (buildStatus === 'paused') {
+      return t('build.progress.paused', 'Paused');
+    }
     if (buildStatus !== 'running') {
       if (effectiveStatus?.error) return effectiveStatus.error;
       if (effectiveProgress?.currentTask && effectiveProgress.currentTask !== 'processing' && effectiveProgress.currentTask !== sessionId) {
@@ -78,7 +88,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
   const skipped = effectiveProgress?.skipped ?? 0;
   const hasProgressData = Boolean(effectiveProgress) || Boolean(effectiveStatus && effectiveStatus.status !== 'idle');
   const debugStateRef = useRef<Record<string, unknown> | null>(null);
-  const clearedSessionsRef = useRef<Set<string>>(new Set());
+  const lastSyncedStatusRef = useRef<string | null>(null);
 
   useEffect(() => {
     const nextState = {
@@ -128,11 +138,52 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
 
   useEffect(() => {
     if (!sessionId || !effectiveStatus?.status) return;
-    if (!['completed', 'failed', 'cancelled'].includes(effectiveStatus.status)) return;
-    if (clearedSessionsRef.current.has(sessionId)) return;
-    clearedSessionsRef.current.add(sessionId);
-    onChange({ batchSessionId: undefined, processingStatus: 'idle' });
-  }, [effectiveStatus?.status, onChange, sessionId]);
+    const nextStatus = (() => {
+      switch (effectiveStatus.status) {
+        case 'processing':
+          return 'processing';
+        case 'paused':
+          return 'paused';
+        case 'completed':
+          return 'completed';
+        case 'failed':
+          return 'failed';
+        case 'cancelled':
+          return 'cancelled';
+        case 'idle':
+          return 'idle';
+        default:
+          return undefined;
+      }
+    })();
+    if (!nextStatus) return;
+    if (data?.processingStatus === nextStatus) return;
+    if (lastSyncedStatusRef.current === nextStatus) return;
+    lastSyncedStatusRef.current = nextStatus;
+    onChange({ processingStatus: nextStatus });
+  }, [data?.processingStatus, effectiveStatus?.status, onChange, sessionId]);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    if (!['running', 'completed'].includes(buildStatus)) return;
+    if ((data?.tileSummary?.tiles ?? 0) > 0) return;
+    let cancelled = false;
+    const loadSummary = async () => {
+      try {
+        const summary = await getTileSummary(sessionId);
+        if (cancelled) return;
+        if (summary.tiles > 0) {
+          onChange({ tileSummary: summary });
+        }
+      } catch (error) {
+        console.debug('[ShapeBuildProgressStep] tile summary load failed', error);
+      }
+    };
+    void loadSummary();
+    return () => {
+      cancelled = true;
+    };
+  }, [buildStatus, data?.tileSummary?.tiles, onChange, sessionId]);
 
   const displayTasks = tasks.length > 0 ? tasks : persistedTasks;
   const { stageProgress, tasksByStage, paneProgress } = useBuildTaskProgress(

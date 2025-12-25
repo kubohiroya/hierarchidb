@@ -16,11 +16,13 @@ const DEFAULT_COLLAPSED_SIZE = 60;
 export function useLRUPanes({
                               panes,
                               maxExpandedPanes = DEFAULT_MAX_EXPANDED,
+                              initialSizes,
+                              equalizeOnAllExpanded = false,
                               defaultCollapsedSize = DEFAULT_COLLAPSED_SIZE,
                               autoExpand,
                               progress = [],
                               onPaneToggle,
-                            }: Pick<LRUSplitViewConfig, 'panes' | 'maxExpandedPanes' | 'defaultCollapsedSize' | 'autoExpand' | 'progress' | 'onPaneToggle'>): UseLRUPanesResult {
+                            }: Pick<LRUSplitViewConfig, 'panes' | 'maxExpandedPanes' | 'defaultCollapsedSize' | 'autoExpand' | 'progress' | 'onPaneToggle'> & { initialSizes?: number[]; equalizeOnAllExpanded?: boolean }): UseLRUPanesResult {
   const theme = useTheme();
 
   // Generate default colors based on theme
@@ -45,9 +47,24 @@ export function useLRUPanes({
     return colors[index % colors.length];
   }, [theme.palette.mode]);
 
+  const applyMaxExpanded = useCallback((states: PaneState[], limit: number) => {
+    const expandedPanes = states.filter((p) => p.isExpanded);
+    if (expandedPanes.length <= limit) return states;
+
+    const sortedByAccess = [...expandedPanes].sort((a, b) => a.lastAccessTime - b.lastAccessTime);
+    const toCollapse = new Set(
+      sortedByAccess.slice(0, expandedPanes.length - limit).map((pane) => pane.id),
+    );
+
+    return states.map((pane) => ({
+      ...pane,
+      isExpanded: toCollapse.has(pane.id) ? false : pane.isExpanded,
+    }));
+  }, []);
+
   // Initialize pane states
   const initialPaneStates = useMemo<PaneState[]>(() => {
-    return panes.map((pane, index) => ({
+    const states = panes.map((pane, index) => ({
       id: pane.id,
       title: pane.title,
       icon: pane.icon,
@@ -56,7 +73,8 @@ export function useLRUPanes({
       color: (pane.color || generateDefaultColor(index)) as string,
       collapsedSize: pane.collapsedSize ?? defaultCollapsedSize,
     }));
-  }, [panes, generateDefaultColor, defaultCollapsedSize]);
+    return applyMaxExpanded(states, maxExpandedPanes);
+  }, [panes, generateDefaultColor, defaultCollapsedSize, applyMaxExpanded, maxExpandedPanes]);
 
   const [paneStates, setPaneStates] = useState<PaneState[]>(initialPaneStates);
   const paneStatesRef = useRef<PaneState[]>(initialPaneStates);
@@ -186,8 +204,20 @@ export function useLRUPanes({
 
   // Calculate sizes for Allotment
   const getSizes = useCallback(() => {
-    const expandedPanes = paneStates.filter((p) => p.isExpanded);
-    const expandedCount = expandedPanes.length;
+    const expandedCount = paneStates.filter((p) => p.isExpanded).length;
+    if (equalizeOnAllExpanded && expandedCount === paneStates.length) {
+      const sizePerPane = 1000 / paneStates.length;
+      return paneStates.map(() => sizePerPane);
+    }
+
+    const hasInitialSizes = initialSizes && initialSizes.length === paneStates.length;
+    if (hasInitialSizes) {
+      return paneStates.map((pane, index) =>
+        pane.isExpanded
+          ? (initialSizes[index] ?? pane.collapsedSize ?? DEFAULT_COLLAPSED_SIZE)
+          : pane.collapsedSize || DEFAULT_COLLAPSED_SIZE,
+      );
+    }
 
     if (expandedCount === 0) {
       // All collapsed - equal distribution of available space
@@ -211,11 +241,26 @@ export function useLRUPanes({
           : pane.collapsedSize || DEFAULT_COLLAPSED_SIZE,
       );
     }
-  }, [paneStates]);
+  }, [paneStates, initialSizes, equalizeOnAllExpanded]);
 
   useEffect(() => {
     paneStatesRef.current = paneStates;
   }, [paneStates]);
+
+  useEffect(() => {
+    setPaneStates((prev) => applyMaxExpanded(prev, maxExpandedPanes));
+  }, [applyMaxExpanded, maxExpandedPanes]);
+
+  useEffect(() => {
+    if (!equalizeOnAllExpanded) return;
+    setPaneStates((prev) =>
+      prev.map((pane) => ({
+        ...pane,
+        isExpanded: true,
+        lastAccessTime: pane.isExpanded ? pane.lastAccessTime : Date.now(),
+      })),
+    );
+  }, [equalizeOnAllExpanded]);
 
   // Auto-expand based on progress changes
   useEffect(() => {

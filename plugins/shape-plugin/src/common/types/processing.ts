@@ -6,6 +6,8 @@ export type FeatureFilterMethod = 'bbox_only' | 'polygon_only' | 'hybrid';
 export interface BatchConfig {
   dataSource?: DataSourceName;
   downloadConfig?: DownloadBatchConfig;
+  simplify1Config?: Simplify1Config;
+  simplify2Config?: Simplify2Config;
   simplificationConfig?: SimplificationBatchConfig;
   tileConfig?: TileBatchConfig;
   cleanupConfig?: CleanupBatchConfig;
@@ -29,6 +31,23 @@ export interface SimplificationBatchConfig {
   hybridFilterConfig?: HybridFilterConfig;
   level1Workers: number;
   level2Workers: number;
+  tolerance: number;
+  quantize?: number;
+  enablePerFeatureSimplification?: boolean;
+}
+
+export interface Simplify1Config {
+  workers: number;
+  tolerance: number;
+  featureFilterMethod: FeatureFilterMethod;
+  areaThreshold: number;
+  minVertexCountForAreaFilter?: number;
+  aspectRatioThreshold?: number;
+  hybridFilterConfig?: HybridFilterConfig;
+}
+
+export interface Simplify2Config {
+  workers: number;
   tolerance: number;
   quantize?: number;
   enablePerFeatureSimplification?: boolean;

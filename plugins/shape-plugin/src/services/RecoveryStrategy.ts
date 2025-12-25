@@ -13,11 +13,6 @@ import type { BatchSessionConfig } from '../common/types/BatchConfig.js';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { DataSourceName } from '../common/types/data-source.js';
 
-// ========================================
-// ========================================
-
-/**
-    */
 export interface RecoveryContext {
   error: BaseShapeError;
   sessionId: string;
@@ -27,8 +22,6 @@ export interface RecoveryContext {
   previousAttempts: RecoveryAttempt[];
 }
 
-/**
-    */
 export interface RecoveryAttempt {
   timestamp: number;
   strategy: string;
@@ -37,8 +30,6 @@ export interface RecoveryAttempt {
   adjustedParams?: Partial<BatchSessionConfig>;
 }
 
-/**
-    */
 export interface RecoveryResult {
   success: boolean;
   strategy: string;
@@ -48,8 +39,6 @@ export interface RecoveryResult {
   nextAttemptDelay?: number;
 }
 
-/**
-    */
 export interface ResumePoint {
   stage: 'download' | 'simplify1' | 'simplify2' | 'vectorTiles';
   taskIndex: number;
@@ -57,32 +46,19 @@ export interface ResumePoint {
   skipTasks?: string[];
 }
 
-/**
-    */
 export interface RecoveryStrategy {
   name: string;
   description: string;
   applicableCategories: ErrorCategory[];
   maxAttempts: number;
 
-  /**
-            */
   canApply(context: RecoveryContext): boolean;
 
-  /**
-            */
   execute(context: RecoveryContext): Promise<RecoveryResult>;
 
-  /**
-            */
   calculateDelay(attemptNumber: number): number;
 }
 
-// ========================================
-// ========================================
-
-/**
-    */
 export class ExponentialBackoffRetryStrategy implements RecoveryStrategy {
   name = 'ExponentialBackoffRetry';
   description = '指数バックオフでリトライ';
@@ -120,8 +96,6 @@ export class ExponentialBackoffRetryStrategy implements RecoveryStrategy {
   }
 }
 
-/**
-    */
 export class ReduceConcurrencyStrategy implements RecoveryStrategy {
   name = 'ReduceConcurrency';
   description = '並行処理数を削減してリトライ';
@@ -178,8 +152,6 @@ export class ReduceConcurrencyStrategy implements RecoveryStrategy {
   }
 }
 
-/**
-    */
 export class CheckpointResumeStrategy implements RecoveryStrategy {
   name = 'CheckpointResume';
   description = 'チェックポイントから処理を再開';
@@ -226,15 +198,11 @@ export class CheckpointResumeStrategy implements RecoveryStrategy {
     return this.checkpoints.get(sessionId) || null;
   }
 
-  /**
-            */
   async saveCheckpoint(sessionId: string, point: ResumePoint): Promise<void> {
     this.checkpoints.set(sessionId, point);
   }
 }
 
-/**
-    */
 export class ReduceDataSizeStrategy implements RecoveryStrategy {
   name = 'ReduceDataSize';
   description = 'データサイズを削減してリトライ';
@@ -275,8 +243,6 @@ export class ReduceDataSizeStrategy implements RecoveryStrategy {
   }
 }
 
-/**
-    */
 export class FallbackStrategy implements RecoveryStrategy {
   name = 'Fallback';
   description = '代替データソースまたは処理方法を使用';
@@ -333,11 +299,6 @@ export class FallbackStrategy implements RecoveryStrategy {
   }
 }
 
-// ========================================
-// ========================================
-
-/**
-    */
 export class RecoveryStrategyManager {
   private strategies: RecoveryStrategy[] = [];
   private attemptHistory = new Map<string, RecoveryAttempt[]>();
@@ -350,14 +311,10 @@ export class RecoveryStrategyManager {
     this.registerStrategy(new FallbackStrategy());
   }
 
-  /**
-            */
   registerStrategy(strategy: RecoveryStrategy): void {
     this.strategies.push(strategy);
   }
 
-  /**
-            */
   selectStrategy(context: RecoveryContext): RecoveryStrategy | null {
     const applicableStrategies = this.strategies.filter(s => s.canApply(context));
 
@@ -383,8 +340,6 @@ export class RecoveryStrategyManager {
     return sortedStrategies[0] ?? null;
   }
 
-  /**
-            */
   async executeRecovery(context: RecoveryContext): Promise<RecoveryResult> {
     const applicableStrategies = this.strategies.filter(s => s.canApply(context));
 
@@ -433,22 +388,16 @@ export class RecoveryStrategyManager {
     return result;
   }
 
-  /**
-            */
   private recordAttempt(sessionId: string, attempt: RecoveryAttempt): void {
     const history = this.attemptHistory.get(sessionId) || [];
     history.push(attempt);
     this.attemptHistory.set(sessionId, history);
   }
 
-  /**
-            */
   getAttemptHistory(sessionId: string): RecoveryAttempt[] {
     return this.attemptHistory.get(sessionId) || [];
   }
 
-  /**
-            */
   clearHistory(sessionId: string): void {
     this.attemptHistory.delete(sessionId);
   }

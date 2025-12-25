@@ -1,7 +1,8 @@
 import type React from 'react';
 import { Box, Stack } from '@mui/material';
 import { DownloadConfigSection } from './DownloadConfigSection.js';
-import { SimplificationConfigSection } from './SimplificationConfigSection.js';
+import { Simplify1ConfigSection } from './Simplify1ConfigSection.js';
+import { Simplify2ConfigSection } from './Simplify2ConfigSection.js';
 import { TileConfigSection } from './TileConfigSection.js';
 import type { ShapeDialogStepProps } from './ShapeDialogStepProps.ts';
 import { useShapeProcessingSettingsStep } from '../../hooks/useShapeProcessingSettingsStep.js';
@@ -12,7 +13,7 @@ import { useShapeProcessingSettingsStep } from '../../hooks/useShapeProcessingSe
 export const ShapeProcessingSettingsStep: React.FC<ShapeDialogStepProps> = ({ data, onChange }) => {
   const { config, handleChange } = useShapeProcessingSettingsStep({ data, onChange });
   const resetSession = () => {
-    onChange({ batchSessionId: undefined, processingStatus: 'idle' });
+    onChange({ batchSessionId: undefined, processingStatus: 'idle', tileSummary: undefined });
   };
 
   return (
@@ -24,7 +25,8 @@ export const ShapeProcessingSettingsStep: React.FC<ShapeDialogStepProps> = ({ da
           onChange={handleChange}
           onResetSession={resetSession}
         />
-        <SimplificationConfigSection config={config} onChange={handleChange} />
+        <Simplify1ConfigSection config={config} onChange={handleChange} />
+        <Simplify2ConfigSection config={config} onChange={handleChange} />
         <TileConfigSection config={config} onChange={handleChange} />
       </Stack>
     </Box>

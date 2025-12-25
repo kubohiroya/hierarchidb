@@ -32,6 +32,9 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
     tilesUrl,
     tilesLayer,
     sessionId,
+    tilesAvailable,
+    tileDbName,
+    tileDataProvider,
     baseLayerId,
     baseSourceId,
     setMapInstance,
@@ -40,18 +43,23 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
   } = useShapePreviewStep(data ?? {});
 
   const renderMapPreview = () => {
-    if (!tilesUrl) {
+    const hasRemoteTiles = Boolean(tilesUrl);
+    if (!hasRemoteTiles && !tilesAvailable) {
       return (
         <Alert severity="info">
           {t('preview.noTiles', 'No vector tiles are available yet. Run the build to generate tiles.')}
         </Alert>
       );
     }
+    const tiles = hasRemoteTiles ? [tilesUrl] : undefined;
     return (
       <Box flex={1} minHeight={360} borderRadius={1} overflow="hidden" border="1px solid #e0e0e0">
         <Suspense fallback={null}>
           <LazyMapWithVectorTiles
-            tiles={[tilesUrl]}
+            tiles={tiles}
+            dbName={!hasRemoteTiles ? tileDbName : undefined}
+            nodeId={!hasRemoteTiles ? sessionId ?? undefined : undefined}
+            tileDataProvider={!hasRemoteTiles ? tileDataProvider : undefined}
             layerConfig={{
               layerId: baseLayerId,
               sourceId: baseSourceId,

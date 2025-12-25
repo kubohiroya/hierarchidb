@@ -14,6 +14,19 @@ const STAGES = [
   { id: 'compute', title: 'Compute', description: 'Calculate routes and metrics.' },
   { id: 'finalize', title: 'Finalize', description: 'Persist results and indexes.' },
 ];
+const SPLITVIEW_BREAKPOINTS = [600, 900, 1200];
+const SPLITVIEW_INITIAL_SIZES = [
+  Array.from({ length: STAGES.length }, () => 300),
+  Array.from({ length: STAGES.length }, () => 300),
+  Array.from({ length: STAGES.length }, () => 300),
+  Array.from({ length: STAGES.length }, () => 300),
+];
+const SPLITVIEW_AUTO_CLOSE_COUNTS = [
+  Math.max(0, STAGES.length - 1),
+  Math.max(0, STAGES.length - 2),
+  Math.max(0, STAGES.length - 3),
+  0,
+];
 
 const resolveTransportLabel = (draft: Record<string, unknown>, t: (key: string, fallback?: string) => string): string => {
   const metadata = (draft.metadata ?? {}) as Record<string, unknown>;
@@ -106,6 +119,9 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({ draft: draftProp
         overallProgress={overallProgress}
         stages={STAGES}
         stageProgress={stageProgress}
+        splitViewBreakpoints={SPLITVIEW_BREAKPOINTS}
+        splitViewInitialSizesByBreakpoint={SPLITVIEW_INITIAL_SIZES}
+        splitViewAutoCloseCountsByBreakpoint={SPLITVIEW_AUTO_CLOSE_COUNTS}
         onPause={() => setStatus('paused')}
         onResume={() => setStatus('running')}
         onComplete={() => {

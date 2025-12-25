@@ -8,22 +8,26 @@ import {
   Switch,
   Typography,
 } from '@mui/material';
-import type {
-  BatchConfig,
-  SimplificationBatchConfig,
-} from '../../../common/types/index.js';
 import { useTranslation } from '../../i18n.js';
 
 type Props = {
-  baseSimplificationConfig: SimplificationBatchConfig;
+  tolerance: number;
+  enablePerFeatureSimplification?: boolean;
+  showPerFeatureToggle?: boolean;
+  onToleranceChange: (next: number) => void;
+  onPerFeatureChange?: (enabled: boolean) => void;
+  toleranceHelpKey?: string;
   disabled?: boolean;
-  update: (partial: Partial<BatchConfig>) => void;
 };
 
 export const SimplificationPanel: React.FC<Props> = ({
-  baseSimplificationConfig,
+  tolerance,
+  enablePerFeatureSimplification,
+  showPerFeatureToggle = true,
+  onToleranceChange,
+  onPerFeatureChange,
+  toleranceHelpKey = 'processing.filter.toleranceHelp',
   disabled,
-  update,
 }) => {
   const { t } = useTranslation();
 
@@ -38,15 +42,9 @@ export const SimplificationPanel: React.FC<Props> = ({
         </Typography>
         <Box sx={{ px: 2 }}>
           <Slider
-            value={baseSimplificationConfig.tolerance ?? 0.01}
+            value={tolerance ?? 0.01}
             onChange={(_, value) => {
-              const tolerance = value as number;
-              update({
-                simplificationConfig: {
-                  ...baseSimplificationConfig,
-                  tolerance,
-                },
-              });
+              onToleranceChange(value as number);
             }}
             min={0.001}
             max={0.1}
@@ -61,31 +59,26 @@ export const SimplificationPanel: React.FC<Props> = ({
           />
         </Box>
         <Typography variant="caption" color="text.secondary">
-          {t('processing.filter.toleranceHelp', 'Higher values simplify geometry more aggressively.')}
+          {t(toleranceHelpKey, 'Higher values simplify geometry more aggressively.')}
         </Typography>
       </div>
-      <FormGroup>
-        <FormControlLabel
-          control={
-            <Switch
-              checked={Boolean(baseSimplificationConfig.enablePerFeatureSimplification)}
-              onChange={(event) => {
-                update({
-                  simplificationConfig: {
-                    ...baseSimplificationConfig,
-                    enablePerFeatureSimplification: event.target.checked,
-                  },
-                });
-              }}
-              disabled={disabled}
-            />
-          }
-          label={t('processing.filter.enablePerFeatureSimplification', 'Enable per-feature simplification')}
-        />
-        <FormHelperText>
-          {t('processing.filter.enablePerFeatureSimplificationHelp', 'Apply tolerance per feature instead of globally.')}
-        </FormHelperText>
-      </FormGroup>
+      {showPerFeatureToggle && (
+        <FormGroup>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={Boolean(enablePerFeatureSimplification)}
+                onChange={(event) => onPerFeatureChange?.(event.target.checked)}
+                disabled={disabled}
+              />
+            }
+            label={t('processing.filter.enablePerFeatureSimplification', 'Enable per-feature simplification')}
+          />
+          <FormHelperText>
+            {t('processing.filter.enablePerFeatureSimplificationHelp', 'Apply tolerance per feature instead of globally.')}
+          </FormHelperText>
+        </FormGroup>
+      )}
     </Stack>
   );
 };

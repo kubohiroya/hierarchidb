@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Box, Card, CardContent, Stack, Typography } from '@mui/material';
+import { Box, Card, CardContent, LinearProgress, Stack, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import ConstructionIcon from '@mui/icons-material/Construction';
 import { BuildStepPanel, type BuildStage } from '@hierarchidb/components';
@@ -18,7 +18,6 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
     stageProgress,
     paneProgress,
     tasksByStage,
-    tasks,
     buildStatus,
     overallProgress,
     stageLabel,
@@ -61,17 +60,21 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
     if (stage === 'vectortile' || stage === 'vectorTiles') {
       const minZoom = metadata.minZoom as number | undefined;
       const maxZoom = metadata.maxZoom as number | undefined;
-      const tileX = metadata.tileX as number | undefined;
-      const tileY = metadata.tileY as number | undefined;
-      if (typeof tileX === 'number' && typeof tileY === 'number') {
-        if (typeof minZoom === 'number' && typeof maxZoom === 'number') {
-          return `z${minZoom}-${maxZoom} / x${tileX} y${tileY}`;
-        }
-        return `x${tileX} y${tileY}`;
-      }
-      if (typeof minZoom === 'number' && typeof maxZoom === 'number') {
-        return `z${minZoom}-${maxZoom}`;
-      }
+      const metadataContext = metadata.metadataContext as {
+        dataSource?: string;
+        countryCode?: string;
+        countryName?: string;
+        adminLevel?: number;
+      } | undefined;
+      const countryLabel = metadataContext?.countryName ?? metadataContext?.countryCode;
+      const adminLabel = metadataContext?.adminLevel != null ? `ADM${metadataContext.adminLevel}` : undefined;
+      const dataSourceLabel = metadataContext?.dataSource ? metadataContext.dataSource.toUpperCase() : undefined;
+      const zoomLabel = typeof minZoom === 'number' && typeof maxZoom === 'number'
+        ? `z${minZoom}-${maxZoom}`
+        : undefined;
+      const parts = [dataSourceLabel, countryLabel, adminLabel, zoomLabel].filter(Boolean);
+      if (parts.length > 0) return parts.join(' • ');
+      if (typeof minZoom === 'number' && typeof maxZoom === 'number') return `z${minZoom}-${maxZoom}`;
     }
     return t('build.tasks.unknown', '(Title unavailable)');
   }, [t]);
@@ -117,41 +120,57 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
   }, [resolveStatusColor, resolveStatusLabel, resolveTaskTitle, t, tasksByStage]);
 
   const renderTaskProgressBar = useCallback(() => {
-    const totalTasks = tasks.length || total;
-    if (totalTasks <= 0) {
-      return (
-        <Box sx={{ height: 10, borderRadius: 1, backgroundColor: theme.palette.action.hover }} />
-      );
-    }
-    const viewWidth = totalTasks;
+    const waitingColor = theme.palette.grey[300];
+    const emptyStageColor = theme.palette.grey[500];
+    const runningColor = theme.palette.info.main;
+    const segments: Array<{ fill: string }> = [];
+
+    stages.forEach((stage) => {
+      const stageTasks = tasksByStage[stage.id] ?? [];
+      if (stageTasks.length === 0) {
+        segments.push({ fill: emptyStageColor });
+        return;
+      }
+      stageTasks.forEach((task) => {
+        let fill = waitingColor;
+        if (task.status === 'completed') fill = theme.palette.success.main;
+        else if (task.status === 'failed') fill = theme.palette.error.main;
+        else if (task.status === 'running') fill = runningColor;
+        else if (task.status === 'paused' || task.status === 'cancelled') fill = theme.palette.warning.main;
+        segments.push({ fill });
+      });
+    });
+
+    const viewWidth = segments.length || 1;
     const rectHeight = 10;
-    const colorForTask = (task: BatchTaskSummary): string => {
-      if (task.status === 'completed') return theme.palette.success.main;
-      if (task.status === 'failed') return theme.palette.error.main;
-      return theme.palette.grey[400];
-    };
+
     return (
       <Box sx={{ width: '100%', height: rectHeight }}>
         <svg width="100%" height={rectHeight} viewBox={`0 0 ${viewWidth} 1`} preserveAspectRatio="none">
           <title>---progress---</title>
-          {Array.from<number>({ length: totalTasks }).map((_item: number, index: number)=>index).map((index) => {
-            const task = tasks[index];
-            const fill = task ? colorForTask(task) : theme.palette.grey[400];
-            return (
-              <rect
-                key={`task-${index}`}
-                x={index}
-                y={0}
-                width={1}
-                height={1}
-                fill={fill}
-              />
-            );
-          })}
+          {segments.length > 0 ? segments.map((segment, index) => (
+            <rect
+              key={`task-${index.toString()}`}
+              x={index}
+              y={0}
+              width={1}
+              height={1}
+              fill={segment.fill}
+            />
+          )) : (
+            <rect
+              key="task-empty"
+              x={0}
+              y={0}
+              width={1}
+              height={1}
+              fill={emptyStageColor}
+            />
+          )}
         </svg>
       </Box>
     );
-  }, [tasks, theme, total]);
+  }, [stages, tasksByStage, theme]);
 
   const BatchProgressSummaryCard = useCallback(() => (
     <Card
@@ -180,6 +199,9 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
         </Stack>
         <Stack gap={1}>
           {renderTaskProgressBar()}
+          {buildStatus === 'running' ? (
+            <LinearProgress variant="indeterminate" sx={{ height: 6, borderRadius: 6 }} />
+          ) : null}
           <Typography variant="caption" color="text.secondary">
             {t('build.progress.counts', '{{percentage}}% ・ {{completed}}/{{total}} completed ・ failed {{failed}} ・ skipped {{skipped}}', {
               percentage: Math.round(overallProgress),
@@ -192,7 +214,7 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
         </Stack>
       </CardContent>
     </Card>
-  ), [completed, failed, overallProgress, renderTaskProgressBar, skipped, stageLabel, t, taskLabel, total]);
+  ), [buildStatus, completed, failed, overallProgress, renderTaskProgressBar, skipped, stageLabel, t, taskLabel, total]);
 
   return (
     <Box display="flex" flexDirection="column" gap={3} height="100%" minHeight={0}>
@@ -203,6 +225,19 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
           stages={stages}
           stageProgress={stageProgress}
           paneProgress={paneProgress}
+          splitViewBreakpoints={[600, 900, 1200]}
+          splitViewInitialSizesByBreakpoint={[
+            Array.from({ length: stages.length }, () => 300),
+            Array.from({ length: stages.length }, () => 300),
+            Array.from({ length: stages.length }, () => 300),
+            Array.from({ length: stages.length }, () => 300),
+          ]}
+          splitViewAutoCloseCountsByBreakpoint={[
+            Math.max(0, stages.length - 1),
+            Math.max(0, stages.length - 2),
+            Math.max(0, stages.length - 3),
+            0,
+          ]}
           renderStageContent={renderStageContent}
           statusContent={hasProgressData ? <BatchProgressSummaryCard /> : undefined}
           startIcon={<ConstructionIcon fontSize="small" />}

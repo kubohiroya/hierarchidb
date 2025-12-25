@@ -188,6 +188,9 @@ const sizes = calculateOptimalSizes(paneStates, 1000, 60);
 |------|------|---------|-------------|
 | `panes` | `PaneConfig[]` | Required | Array of pane configurations |
 | `maxExpandedPanes` | `number` | `2` | Maximum number of expanded panes |
+| `responsiveBreakpoints` | `number[]` | `undefined` | Max-width breakpoints (px, ascending) |
+| `initialPaneSizesByBreakpoint` | `number[][]` | `undefined` | Initial pane sizes per breakpoint (px, length = panes) |
+| `autoCloseCountsByBreakpoint` | `number[]` | `undefined` | Auto-close counts per breakpoint (0 disables auto open/close) |
 | `defaultCollapsedSize` | `number` | `60` | Default collapsed size (px) |
 | `vertical` | `boolean` | `false` | Use vertical orientation |
 | `autoExpand` | `AutoExpandConfig` | `undefined` | Auto-expand behavior |
@@ -196,6 +199,8 @@ const sizes = calculateOptimalSizes(paneStates, 1000, 60);
 | `onPaneReorder` | `function` | `undefined` | Callback when panes reorder |
 | `height` | `string \| number` | `'100%'` | Component height |
 | `width` | `string \| number` | `'100%'` | Component width |
+
+Responsive arrays use the breakpoint index `0..breakpoints.length`, where index `i` applies when `viewportWidth <= breakpoints[i]` and the last entry applies above the final breakpoint.
 
 ### PaneConfig
 

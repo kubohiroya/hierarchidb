@@ -246,7 +246,6 @@ export class EntityLifecycleManager {
         const sessionIds = await db.batchSessions.where('nodeId').equals(nodeId).primaryKeys();
         const featureIds = await db.features.where('nodeId').equals(nodeId).primaryKeys();
         await db.transaction('rw', [
-          db.shapeEntities,
           db.batchSessions,
           db.batchTasks,
           db.features,
@@ -256,7 +255,6 @@ export class EntityLifecycleManager {
           db.tileBuffers,
           db.cache,
         ], async () => {
-          await db.shapeEntities.where('nodeId').equals(nodeId).delete();
           if (sessionIds.length > 0) {
             await db.batchTasks.where('sessionId').anyOf(sessionIds as string[]).delete();
           }
