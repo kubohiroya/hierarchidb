@@ -53,18 +53,45 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
-1872) shape-plugin Step5 待機UIとStep6メタデータ絞り込み（P1）
-- ブランチ: `fix/shape/step5-wait-ui-step6-metadata-filter`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: plugins/shape-plugin（Step5 UI/Hook、Step6 Preview）
+1878) shape-plugin Step6 プレビューのタイル強調表示が出ない問題の修正（P1）
+- ブランチ: `fix/shape/preview-tile-highlight`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin, packages/ui/map, tiles DB
 - 受け入れ基準（DoD）:
-  - [ ] Step5 で「ベクトルタイルがまだありません」表示中に待機UI（CircularProgress 等）が表示される
-  - [ ] タイル準備完了後に自動で地図が表示され、待機UIは消える
-  - [ ] Step6 のメタデータ一覧が Step3 で選択した国（日本/中国）に一致する範囲のみ表示される
+  - [ ] Step6 プレビューで生成済みタイルが確実に表示される
+  - [ ] 対象シェイプの強調表示が視認できる
+  - [ ] タイル未生成/読み込み失敗時の表示が明確になる
   - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
 - チェックリスト:
-  - [ ] Step5 のビルド進行中/タイル未生成の判定と待機UI表示を整理する
-  - [ ] Step6 のメタデータ一覧のフィルタ条件を Step3 選択条件に同期する
-- ロールバック手順：本タスクの差分を revert する。
+  - [ ] タイル取得経路（dbName/nodeId/tileDataProvider/tiles）の選択ロジックを確認する
+  - [ ] レイヤー設定と sourceLayer の整合を確認する
+  - [ ] 必要なフォールバックを追加する
+- ロールバック手順：本タスクの差分を revert し、従来のプレビュー挙動へ戻す。
+
+1877) shape-plugin Step6 プレビューのシェイプを primary 配色で強調表示（P1）
+- ブランチ: `fix/shape/preview-primary-style`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin, packages/ui/map
+- 受け入れ基準（DoD）:
+  - [ ] Step6 プレビューの対象シェイプが primary 系配色で視認性高く表示される
+  - [ ] 塗りと境界線のコントラストが十分で識別できる
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] プレビュー用のシェイプ描画スタイルを primary カラーに合わせる
+  - [ ] Step6 のプレビュー表示に反映されることを確認する
+- ロールバック手順：本タスクの差分を revert し、従来の配色へ戻す。
+
+1873) shape-plugin Step5 タスク粒度をパイプライン設計に合わせて再構成（P1）
+- ブランチ: `refactor/shape/step5-pipeline-tasks`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin（batch/worker/Step5 UI）
+- 受け入れ基準（DoD）:
+  - [ ] Simplify1/Simplify2 のタスク単位がフィーチャーグループ単位になる
+  - [ ] VectorTile のタスク単位がタイル(z/x/y)単位になる
+  - [ ] タスク名がステージの責務に一致し、国・行政単位は前段のみで表示される
+  - [ ] Step5 のタスク表示が重複/混乱を起こさない構成に更新される
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] セッション内のタスク生成ルール（download→feature grouping→tile）を整理し実装する
+  - [ ] Step5 の表示ロジックが新タスク構成に追従するよう調整する
+- ロールバック手順：本タスクの差分を revert し、従来のタスク構成へ戻す。
 
 1864) LRUSplitView ブレイクポイント別の初期幅/自動開閉制御（P1）
 - ブランチ: `fix/ui/lru-splitview-breakpoints`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -5078,6 +5105,50 @@ P2:
 
 ### Done（完了） <a id="kanban-done"></a>
 
+- 1883) shape-plugin Step6 ホイールイベントの捕捉修正（P1） — 完了 (2025-12-26)
+  - 要点：Step6 の地図/メタデータ領域でホイール捕捉を追加し、GenericDataGrid のホイール捕捉を capture に変更。
+  - 検証：未実施。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` と `packages/ui/data-grid/src/GenericDataGrid.tsx` の差分を revert する。
+- 1882) shape-plugin Step6 メタデータ表のホイール伝播抑止（P1） — 完了 (2025-12-26)
+  - 要点：GenericDataGrid にホイール伝播抑止オプションを追加し、Step6 で有効化。
+  - 検証：未実施。
+  - ロールバック手順：`packages/ui/data-grid/src/GenericDataGrid.tsx` と `plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` の差分を revert する。
+- 1881) shape-plugin Step6 メタデータ表のスクロール復旧（P1） — 完了 (2025-12-26)
+  - 要点：テーブルコンテナの overflow を明示しホイールスクロールを復旧。
+  - 検証：未実施。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` の差分を revert する。
+- 1880) shape-plugin Step6 メタデータ表のレイアウト改善（P1） — 完了 (2025-12-26)
+  - 要点：GenericDataGrid にテーブルコンテナ sx を追加し、Step6 のメタデータ表が全高で表示されるよう調整。
+  - 検証：未実施。
+  - ロールバック手順：`packages/ui/data-grid/src/GenericDataGrid.tsx` と `plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` の差分を revert する。
+- 1879) shape-plugin Step6 fitBounds オプション型エラー修正（maxZoom）（P1） — 完了 (2025-12-26)
+  - 要点：fitBounds の maxZoom を削除し型定義に合わせた。
+  - 検証：未実施。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` の差分を revert する。
+- 1878) shape-plugin Step6 fitBounds オプション型エラー修正（P1） — 完了 (2025-12-26)
+  - 要点：fitBounds の duration を削除し型定義に合わせた。
+  - 検証：未実施。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` の差分を revert する。
+- 1877) shape-plugin SessionController typecheck エラー修正（P1） — 完了 (2025-12-26)
+  - 要点：turf import を @turf/turf に統一し、FeatureCollection の型ガードと bbox の型注釈を追加。@turf/bbox 依存を削除。
+  - 検証：未実施。
+  - ロールバック手順：`plugins/shape-plugin/src/services/batch/SessionController.ts` と `plugins/shape-plugin/package.json` の差分を revert する。
+- 1876) shape-plugin Step6 basemap のテーマ連動（P1） — 完了 (2025-12-26)
+  - 要点：Step6 の basemap をテーマに応じた light/dark の style URL に切り替え。
+  - 検証：未実施。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` の差分を revert する。
+- 1875) shape-plugin @turf/bbox 解決エラー修正（P1） — 完了 (2025-12-26)
+  - 要点：shape-plugin の依存に `@turf/bbox` を追加し、import 解決エラーを解消。
+  - 検証：未実施。
+  - ロールバック手順：`plugins/shape-plugin/package.json` の差分を revert する。
+- 1874) shape-plugin Step6 プレビューのズーム/表示範囲/レイアウト改善（P1） — 完了 (2025-12-26)
+  - 要点：ズームボタン/ホイール操作を有効化し、初期ズームを minZoom へ統一。選択メタデータの bbox にマージンを付与して fitBounds し、表示領域を拡大。
+  - 検証：未実施。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` と `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` と `packages/ui/map/src/components/MapWithVectorTiles.tsx` の差分を revert する。
+- 1872) shape-plugin Step5 待機UIとStep6メタデータ絞り込み（P1） — 完了 (2025-12-26)
+  - 要点：Preview でタイル準備中の待機UI/ポーリングを追加し、メタデータ一覧を Step3 選択の国/レベルでフィルタ。
+  - 検証：未実施。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` と `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` と `plugins/shape-plugin/src/ui/locales/{ja.json,en.json}` の差分を revert する。
 - 1871) ui-lru-splitview expandedCount 未定義エラー修正（P1） — 完了 (2025-12-26)
   - 要点：expandedCount を paneStates から導出し、getSizes で使用する前提を明確化。
   - 検証：未実施。
@@ -11620,8 +11691,37 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-26 01:11 start: fix/shape/step6-wheel-capture — Step6 のホイールイベント捕捉修正に着手。DoD: Kanban 1883 のとおり。
+- 2025-12-26 01:12 done: fix/shape/step6-wheel-capture — Step6 の地図/メタデータ領域でホイール捕捉を追加し、GenericDataGrid のホイール捕捉を capture に変更。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` と `packages/ui/data-grid/src/GenericDataGrid.tsx` の差分を revert。
+- 2025-12-26 01:05 start: fix/shape/step6-metadata-wheel — Step6 メタデータ表のホイール伝播抑止に着手。DoD: Kanban 1882 のとおり。
+- 2025-12-26 01:06 done: fix/shape/step6-metadata-wheel — GenericDataGrid にホイール伝播抑止オプションを追加し、Step6 で有効化。検証: 未実施。ロールバック: `packages/ui/data-grid/src/GenericDataGrid.tsx` と `plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` の差分を revert。
+- 2025-12-26 01:03 start: fix/shape/step6-metadata-scroll — Step6 メタデータ表のスクロール復旧に着手。DoD: Kanban 1881 のとおり。
+- 2025-12-26 01:03 done: fix/shape/step6-metadata-scroll — テーブルコンテナの overflow を明示してホイールスクロールを復旧。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` の差分を revert。
+- 2025-12-26 00:59 start: fix/shape/step6-metadata-layout — Step6 メタデータ表のレイアウト改善に着手。DoD: Kanban 1880 のとおり。
+- 2025-12-26 01:00 done: fix/shape/step6-metadata-layout — GenericDataGrid にテーブルコンテナの高さ調整用 sx を追加し、Step6 のメタデータ表を全高表示に調整。検証: 未実施。ロールバック: `packages/ui/data-grid/src/GenericDataGrid.tsx` と `plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` の差分を revert。
+- 2025-12-26 00:46 start: fix/shape/step6-fitbounds-maxzoom — fitBounds の maxZoom 型エラー修正に着手。DoD: Kanban 1879 のとおり。
+- 2025-12-26 00:46 done: fix/shape/step6-fitbounds-maxzoom — fitBounds の maxZoom を削除して型定義に合わせた。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` の差分を revert。
+- 2025-12-26 00:45 start: fix/shape/step6-fitbounds-type — Step6 の fitBounds オプション型エラー修正に着手。DoD: Kanban 1878 のとおり。
+- 2025-12-26 00:45 done: fix/shape/step6-fitbounds-type — fitBounds の duration を削除して型定義に合わせた。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` の差分を revert。
+- 2025-12-26 00:42 start: fix/shape/sessioncontroller-typecheck — SessionController の typecheck エラー修正に着手。DoD: Kanban 1877 のとおり。
+- 2025-12-26 00:43 done: fix/shape/sessioncontroller-typecheck — turf import を @turf/turf に変更し、FeatureCollection の型ガードと bbox の型注釈を追加。@turf/bbox 依存は削除。検証: 未実施。ロールバック: `plugins/shape-plugin/src/services/batch/SessionController.ts` と `plugins/shape-plugin/package.json` の差分を revert。
+- 2025-12-26 00:41 start: fix/shape/step6-basemap-theme — Step6 basemap のテーマ連動に着手。DoD: Kanban 1876 のとおり。
+- 2025-12-26 00:41 done: fix/shape/step6-basemap-theme — Step6 でテーマに応じた basemap URL を適用。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` の差分を revert。
+- 2025-12-26 00:40 start: fix/shape/turf-bbox-dependency — `@turf/bbox` の import 解決エラー修正に着手。DoD: Kanban 1875 のとおり。
+- 2025-12-26 00:40 done: fix/shape/turf-bbox-dependency — shape-plugin に `@turf/bbox` を追加して import 解決を修正。検証: 未実施。ロールバック: `plugins/shape-plugin/package.json` の差分を revert。
+- 2025-12-26 00:33 start: fix/shape/step6-preview-zoom-bounds-layout — Step6 プレビューのズームUI・表示範囲・レイアウト改善に着手。DoD: Kanban 1874 のとおり。
+- 2025-12-26 00:35 progress: fix/shape/step6-preview-zoom-bounds-layout — MapWithVectorTiles に controls を追加し、Step6 プレビューで初期ズーム/選択bboxフィット/レイアウトを調整。
+- 2025-12-26 00:35 done: fix/shape/step6-preview-zoom-bounds-layout — ズームUI/初期ズーム/選択bbox表示/レイアウト改善を完了。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` と `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` と `packages/ui/map/src/components/MapWithVectorTiles.tsx` の差分を revert。
+- 2025-12-26 02:05 start: fix/shape/preview-primary-style — Step6 プレビューのシェイプを primary 配色で強調表示する対応に着手。DoD: Kanban 1877 のとおり。
+- 2025-12-26 02:10 progress: fix/shape/preview-primary-style — Step6 のプレビュー用 VectorTile レイヤーの塗り/境界を primary 配色に変更し、視認性を向上。
+- 2025-12-26 02:20 start: fix/shape/preview-tile-highlight — Step6 プレビューで生成済みタイルの強調表示が出ない問題の修正に着手。DoD: Kanban 1878 のとおり。
+- 2025-12-26 02:25 progress: fix/shape/preview-tile-highlight — tilesLayer の既定値を vector tile の実レイヤー名（layer0）へ修正し、source-layer 不一致で描画されない問題を解消。
+- 2025-12-26 02:27 done: fix/shape/preview-tile-highlight — Step6 プレビューの tilesLayer 既定値を layer0 に更新。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` の差分を revert。
+- 2025-12-26 01:15 start: refactor/shape/step5-pipeline-tasks — Step5 のタスク粒度をパイプライン設計（download→feature grouping→tile）に合わせて再構成する対応に着手。DoD: Kanban 1873 のとおり。
+- 2025-12-26 01:45 progress: refactor/shape/step5-pipeline-tasks — Download 後に Feature 単位の raw buffer を生成し Simplify1/2 を Feature グループ単位へ変更。VectorTile 入力は Simplify2 の統合バッファに寄せ、タイル座標ベースのタスクを生成するよう再構成。Step5/worker のタスクタイトルはタイル座標を優先して表示するよう更新。
 - 2025-12-26 00:22 start: fix/shape/step5-wait-ui-step6-metadata-filter — Step5 の待機UI表示と Step6 メタデータ一覧の国フィルタ不整合を修正する対応に着手。DoD: Kanban 1872 のとおり。
 - 2025-12-26 00:28 progress: fix/shape/step5-wait-ui-step6-metadata-filter — Preview でタイル準備中のポーリングと待機UIを追加し、メタデータ一覧を Step3 選択に合わせて国/レベルで絞り込むよう調整。
+- 2025-12-26 00:29 done: fix/shape/step5-wait-ui-step6-metadata-filter — 待機UI表示とメタデータ国フィルタの修正を完了。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` と `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` と `plugins/shape-plugin/src/ui/locales/{ja.json,en.json}` の差分を revert。
 - 2025-12-26 00:07 start: fix/ui-lru-splitview/expanded-count-undefined — useLRUPanes の expandedCount 未定義エラーを解消する対応に着手。DoD: Kanban 1871 のとおり。
 - 2025-12-26 00:07 done: fix/ui-lru-splitview/expanded-count-undefined — expandedCount を paneStates から導出し、getSizes の依存に追加。検証: 未実施。ロールバック: `packages/ui/lru-splitview/src/hooks/useLRUPanes.ts` の差分を revert。
 - 2025-12-26 00:04 start: fix/ui-dialog/plugin-dialog-contextvalue — PluginDialog の contextValue 再利用ロジック（L148）の不適切箇所を修正する対応に着手。DoD: Kanban 1870 のとおり。

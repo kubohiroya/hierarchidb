@@ -44,28 +44,39 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     const client = await getShapeRuntimeWorkerClient();
     const vectorTileClient = client?.vectortile;
     if (!vectorTileClient) throw new Error('Runtime worker vectortile not available');
-    let completed = 0, failed = 0;
+    let completed = 0;
+    let failed = 0;
     let metadataReplace = true;
+    const tasksByInput = new Map<string, VectorTileTask[]>();
     for (const task of tasks) {
+      const inputBufferId = task.config?.inputBufferId ?? '';
+      if (!tasksByInput.has(inputBufferId)) {
+        tasksByInput.set(inputBufferId, []);
+      }
+      tasksByInput.get(inputBufferId)!.push(task);
+    }
+    for (const [inputBufferId, inputTasks] of tasksByInput) {
       if (controls?.waitIfPaused) {
         await controls.waitIfPaused();
       }
+      const sample = inputTasks[0];
+      if (!sample) continue;
       try {
-        if (task.taskId) {
+        await Promise.all(inputTasks.map(async (task) => {
+          if (!task.taskId) return;
           await shapeDB.updateBatchTask(task.taskId, {
             status: 'running',
             startedAt: Date.now(),
             progress: 0,
           });
-        }
-        const inputBufferId = task.config?.inputBufferId ?? '';
-        const compression = task.config?.compression ?? false;
-        const format = (task.config?.format ?? 'mvt') as 'mvt';
-        const tileSize = task.config?.tileSize ?? 256;
-        const buffer = task.config?.buffer;
-        const minZoom = task.config?.minZoom;
-        const maxZoom = task.config?.maxZoom;
-        const metadataEnabled = Boolean(task.config?.metadataEnabled);
+        }));
+        const compression = sample.config?.compression ?? false;
+        const format = (sample.config?.format ?? 'mvt') as 'mvt';
+        const tileSize = sample.config?.tileSize ?? 256;
+        const buffer = sample.config?.buffer;
+        const minZoom = sample.config?.minZoom;
+        const maxZoom = sample.config?.maxZoom;
+        const metadataEnabled = Boolean(sample.config?.metadataEnabled);
         const replace = metadataEnabled && metadataReplace;
         if (metadataEnabled) {
           metadataReplace = false;
@@ -80,28 +91,49 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
           maxZoom,
           metadataEnabled,
           metadataReplace: replace,
-          metadataContext: task.config?.metadataContext,
+          metadataContext: sample.config?.metadataContext,
         });
-        completed++;
-        if (task.taskId) {
-          await shapeDB.updateBatchTask(task.taskId, {
-            status: 'completed',
-            completedAt: Date.now(),
-            progress: 100,
+        for (const task of inputTasks) {
+          completed++;
+          if (task.taskId) {
+            await shapeDB.updateBatchTask(task.taskId, {
+              status: 'completed',
+              completedAt: Date.now(),
+              progress: 100,
+            });
+          }
+          onProgress({
+            total: tasks.length,
+            completed,
+            failed,
+            skipped: 0,
+            percentage: (completed / tasks.length) * 100,
+            currentStage: 'vectortile',
+            currentTask: task.taskId,
           });
         }
       } catch (error) {
-        failed++;
-        if (task.taskId) {
-          await shapeDB.updateBatchTask(task.taskId, {
-            status: 'failed',
-            completedAt: Date.now(),
-            progress: 100,
-            errorMessage: error instanceof Error ? error.message : 'Vector tile generation failed',
+        for (const task of inputTasks) {
+          failed++;
+          if (task.taskId) {
+            await shapeDB.updateBatchTask(task.taskId, {
+              status: 'failed',
+              completedAt: Date.now(),
+              progress: 100,
+              errorMessage: error instanceof Error ? error.message : 'Vector tile generation failed',
+            });
+          }
+          onProgress({
+            total: tasks.length,
+            completed,
+            failed,
+            skipped: 0,
+            percentage: tasks.length > 0 ? (completed / tasks.length) * 100 : 0,
+            currentStage: 'vectortile',
+            currentTask: task.taskId,
           });
         }
       }
-      onProgress({ total: tasks.length, completed, failed, skipped: 0, percentage: (completed / tasks.length) * 100, currentStage: 'vectortile', currentTask: task.taskId });
     }
     return { processed: completed, failed };
   }

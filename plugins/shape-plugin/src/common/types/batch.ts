@@ -87,6 +87,10 @@ export interface DownloadTask extends BatchTaskBase {
 export interface SimplifyTaskConfig {
   inputBufferId?: string;
   sourceUrl?: string;
+  featureId?: string;
+  featureLabel?: string;
+  featureGroupId?: string;
+  featureIndex?: number;
   tolerance?: number;
   minimumArea?: number;
   zoomLevels?: number[];
@@ -123,10 +127,15 @@ export interface VectorTileTaskConfig {
   inputBufferId?: string;
   minZoom?: number;
   maxZoom?: number;
+  tileZ?: number;
+  tileX?: number;
+  tileY?: number;
+  extent?: number;
   tileSize?: number;
   buffer?: number;
   compression?: boolean;
   format?: 'mvt' | 'pbf';
+  layers?: unknown[];
   outputBufferId?: string;
   metadataEnabled?: boolean;
   metadataReplace?: boolean;

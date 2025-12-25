@@ -52,6 +52,9 @@ export type MapWithVectorTilesProps = BaseMapProps & VectorTileDataSource & {
   /** Vector tile layer configuration */
   layerConfig?: VectorTileLayerConfig;
 
+  /** Optional built-in control toggles */
+  controls?: MapLibreMapProps['controls'];
+
   // Backward compatibility props (deprecated)
   /**
    * @deprecated Use layerConfig instead
@@ -90,6 +93,7 @@ export const MapWithVectorTiles: React.FC<MapWithVectorTilesProps> = ({
                                                                         onViewStateChange,
                                                                         onClick,
                                                                         mapOptions,
+                                                                        controls,
                                                                         identifyFeatureOnClick,
 
                                                                         // Layer configuration
@@ -148,6 +152,7 @@ export const MapWithVectorTiles: React.FC<MapWithVectorTilesProps> = ({
       onClick={onClick || onMapClick}
       identifyFeatureOnClick={identifyFeatureOnClick}
       mapOptions={mapOptions}
+      controls={controls}
     >
       {mapInstance && (dbName || tiles || tileDataProvider) && (
         <VectorTileLayer

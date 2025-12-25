@@ -35,6 +35,9 @@ const DEFAULT_VIEW: MapWithVectorTilesProps['initialViewState'] = {
   zoom: 1.5,
 };
 
+const DEFAULT_BOUNDS_MARGIN = 0.1;
+const MIN_BOUNDS_MARGIN = 0.25;
+
 export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -49,9 +52,10 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
 
   const previewDraft = data as ShapePreviewDraft;
   const tilesUrl = previewDraft.tilesUrl ?? previewDraft.tilesEndpoint ?? '';
-  const tilesLayer = previewDraft.tilesLayer ?? 'default';
+  const tilesLayer = previewDraft.tilesLayer ?? 'layer0';
   const sessionId = previewDraft.batchSessionId ?? previewDraft.nodeId ?? null;
   const processingStatus = previewDraft.processingStatus;
+  const minZoom = previewDraft.batchConfig?.tileConfig?.minZoom;
   const tilesAvailableFromDraft = (previewDraft.tileSummary?.tiles ?? 0) > 0;
   const [tilesAvailable, setTilesAvailable] = useState(tilesAvailableFromDraft);
   const [tilesChecking, setTilesChecking] = useState(false);
@@ -158,6 +162,65 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
       return matchesFilter(rowName, selectionFilters.byName);
     });
   }, [rawMetadataRows, selectionFilters]);
+
+  const selectionBounds = useMemo(() => {
+    let minLng = Number.POSITIVE_INFINITY;
+    let minLat = Number.POSITIVE_INFINITY;
+    let maxLng = Number.NEGATIVE_INFINITY;
+    let maxLat = Number.NEGATIVE_INFINITY;
+    let hasBounds = false;
+    metadataRows.forEach((row) => {
+      const bbox = row.bbox;
+      if (!bbox || bbox.length !== 4) return;
+      const [minX, minY, maxX, maxY] = bbox;
+      if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY)) {
+        return;
+      }
+      hasBounds = true;
+      minLng = Math.min(minLng, minX);
+      minLat = Math.min(minLat, minY);
+      maxLng = Math.max(maxLng, maxX);
+      maxLat = Math.max(maxLat, maxY);
+    });
+    if (!hasBounds) return null;
+    const lngPadding = Math.max((maxLng - minLng) * DEFAULT_BOUNDS_MARGIN, MIN_BOUNDS_MARGIN);
+    const latPadding = Math.max((maxLat - minLat) * DEFAULT_BOUNDS_MARGIN, MIN_BOUNDS_MARGIN);
+    const clampLng = (value: number) => Math.max(-180, Math.min(180, value));
+    const clampLat = (value: number) => Math.max(-90, Math.min(90, value));
+    return {
+      minLng: clampLng(minLng - lngPadding),
+      minLat: clampLat(minLat - latPadding),
+      maxLng: clampLng(maxLng + lngPadding),
+      maxLat: clampLat(maxLat + latPadding),
+    };
+  }, [metadataRows]);
+
+  const initialViewState = useMemo<MapWithVectorTilesProps['initialViewState']>(() => {
+    const zoom = typeof minZoom === 'number' ? minZoom : DEFAULT_VIEW.zoom;
+    if (!selectionBounds) {
+      return { ...DEFAULT_VIEW, zoom };
+    }
+    const centerLng = (selectionBounds.minLng + selectionBounds.maxLng) / 2;
+    const centerLat = (selectionBounds.minLat + selectionBounds.maxLat) / 2;
+    return {
+      longitude: centerLng,
+      latitude: centerLat,
+      zoom,
+      bearing: 0,
+      pitch: 0,
+    };
+  }, [minZoom, selectionBounds]);
+
+  useEffect(() => {
+    if (!mapInstance || !selectionBounds) return;
+    const bounds: [[number, number], [number, number]] = [
+      [selectionBounds.minLng, selectionBounds.minLat],
+      [selectionBounds.maxLng, selectionBounds.maxLat],
+    ];
+    mapInstance.fitBounds(bounds, {
+      padding: 24,
+    });
+  }, [mapInstance, minZoom, selectionBounds]);
 
   const getRowId = useCallback((row: ShapeFeatureMetadataRow) => row.featureId, []);
   const buildSearchText = useCallback((row: ShapeFeatureMetadataRow) => {
@@ -329,6 +392,6 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
     mapInstance,
     setMapInstance,
     handleMapIdentify,
-    defaultView: DEFAULT_VIEW,
+    defaultView: initialViewState,
   };
 };

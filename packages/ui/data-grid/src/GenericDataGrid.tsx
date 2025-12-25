@@ -205,6 +205,10 @@ export interface GenericDataGridProps<T extends RowRecord = RowRecord> {
   rowHeight?: number;
   /** Container max height */
   maxHeight?: number | string;
+  /** Optional sx override for the table container */
+  tableContainerSx?: SxProps<Theme>;
+  /** Stop wheel events from bubbling to parent scroll containers */
+  stopWheelPropagation?: boolean;
 
   // Appearance
   /** Dense padding */
@@ -277,6 +281,8 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
                                            onCellClick,
                                            enableVirtualization = false,
                                            maxHeight = 600,
+                                           tableContainerSx,
+                                           stopWheelPropagation = false,
                                            dense = false,
                                            stickyHeader = true,
                                            showGridLines = false,
@@ -501,8 +507,13 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
           '& .MuiTableCell-root': showGridLines
             ? { border: '1px solid rgba(224, 224, 224, 1)' }
             : undefined,
+          ...tableContainerSx,
         }}
         ref={enableVirtualization ? parentRef : undefined}
+        onWheelCapture={(event) => {
+          if (!stopWheelPropagation) return;
+          event.stopPropagation();
+        }}
       >
         <Table stickyHeader={stickyHeader} size={dense ? 'small' : 'medium'}>
           <TableHead>

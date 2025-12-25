@@ -58,6 +58,14 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
       return sourceUrl ?? featureId ?? t('build.tasks.unknown', '(Title unavailable)');
     }
     if (stage === 'vectortile' || stage === 'vectorTiles') {
+      const tileZ = metadata.tileZ as number | undefined;
+      const tileX = metadata.tileX as number | undefined;
+      const tileY = metadata.tileY as number | undefined;
+      const featureLabel = (metadata.featureLabel ?? metadata.featureId) as string | undefined;
+      if (typeof tileZ === 'number' && typeof tileX === 'number' && typeof tileY === 'number') {
+        const tileLabel = `z${tileZ} / x${tileX} y${tileY}`;
+        return featureLabel ? `${tileLabel} • ${featureLabel}` : tileLabel;
+      }
       const minZoom = metadata.minZoom as number | undefined;
       const maxZoom = metadata.maxZoom as number | undefined;
       const metadataContext = metadata.metadataContext as {

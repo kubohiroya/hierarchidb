@@ -24,8 +24,12 @@ import { BatchTaskStage } from '../../common/types/index.js';
 import type { DownloadTask } from '../../common/types/index.js';
 import { isShapePreviewMetadataEnabled } from '../../common/config/previewFlags.js';
 import { shapeDB } from '../database/ShapeDB.js';
+import { getEphemeralShapeDB } from '../database/EphemeralShapeDB.js';
 import type { DownloadStageOutput } from './strategies/DownloadStageStrategy.js';
 import { resolveDownloadStageStrategy } from './strategies/resolveDownloadStageStrategy.js';
+import { geojson as geojsonApi } from 'flatgeobuf';
+import type { Feature, FeatureCollection } from 'geojson';
+import { bbox as turfBbox } from '@turf/turf';
 
 type WorkerPoolStatistics = Record<string, number>;
 
@@ -93,6 +97,114 @@ export class SessionController {
       throw new Error('Data source is required for batch processing');
     }
     return dataSource;
+  }
+
+  private async decodeFeatureCollection(buffer: ArrayBuffer): Promise<FeatureCollection | null> {
+    const decoded = geojsonApi.deserialize(new Uint8Array(buffer));
+    if (decoded && typeof (decoded as AsyncIterable<unknown>)[Symbol.asyncIterator] === 'function') {
+      const features: Feature[] = [];
+      for await (const feature of decoded as AsyncIterable<Feature>) {
+        if (feature) features.push(feature);
+      }
+      return { type: 'FeatureCollection', features };
+    }
+    if (this.isFeatureCollection(decoded)) {
+      return decoded;
+    }
+    return null;
+  }
+
+  private isFeatureCollection(candidate: unknown): candidate is FeatureCollection {
+    return Boolean(
+      candidate
+      && typeof candidate === 'object'
+      && (candidate as FeatureCollection).type === 'FeatureCollection'
+      && Array.isArray((candidate as FeatureCollection).features),
+    );
+  }
+
+  private async encodeFeatureCollection(collection: FeatureCollection): Promise<ArrayBuffer> {
+    const bytes = await geojsonApi.serialize(collection);
+    return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+  }
+
+  private resolveFeatureLabel(feature: Feature, index: number, fallbackPrefix: string): string {
+    const properties = feature.properties ?? {};
+    const candidateKeys = [
+      'name',
+      'NAME',
+      'Name',
+      'adminName',
+      'admin_name',
+      'ADMIN_NAME',
+      'admName',
+      'ADM0_NAME',
+      'ADM1_NAME',
+      'ADM2_NAME',
+      'shapeName',
+      'SHAPE_NAME',
+      'NAME_LONG',
+    ];
+    for (const key of candidateKeys) {
+      const value = properties[key as keyof typeof properties];
+      if (typeof value === 'string' && value.trim()) {
+        return value.trim();
+      }
+    }
+    if (typeof feature.id === 'string' && feature.id.trim()) {
+      return feature.id.trim();
+    }
+    return `${fallbackPrefix}-${index + 1}`;
+  }
+
+  private async expandOutputsForFeatureGroups(outputs: DownloadStageOutput[]): Promise<DownloadStageOutput[]> {
+    const db = getEphemeralShapeDB();
+    const expanded: DownloadStageOutput[] = [];
+    for (const output of outputs) {
+      const raw = await db.rawBuffers.get(output.inputBufferId);
+      if (!raw) {
+        expanded.push(output);
+        continue;
+      }
+      const collection = await this.decodeFeatureCollection(raw.data);
+      if (!collection || collection.features.length === 0) {
+        expanded.push(output);
+        continue;
+      }
+      const fallbackPrefix = output.adminLevel != null ? `ADM${output.adminLevel}` : 'feature';
+      for (let index = 0; index < collection.features.length; index++) {
+        const feature = collection.features[index];
+        if (!feature) continue;
+        const featureLabel = this.resolveFeatureLabel(feature, index, fallbackPrefix);
+        const featureGroupId = String(
+          (feature.properties as Record<string, unknown> | undefined)?.id ?? feature.id ?? index,
+        );
+        const featureCollection: FeatureCollection = { type: 'FeatureCollection', features: [feature] };
+        const bufferId = `${output.inputBufferId}-feature-${index}`;
+        const data = await this.encodeFeatureCollection(featureCollection);
+        const bbox = turfBbox(featureCollection as unknown as FeatureCollection);
+        await db.rawBuffers.put({
+          id: bufferId,
+          sessionId: raw.sessionId,
+          nodeId: raw.nodeId,
+          data,
+          featureCount: 1,
+          bbox: [bbox[0], bbox[1], bbox[2], bbox[3]],
+          downloadTime: raw.downloadTime,
+          size: data.byteLength,
+          timestamp: Date.now(),
+        });
+        expanded.push({
+          ...output,
+          inputBufferId: bufferId,
+          featureGroupId,
+          featureLabel,
+          featureIndex: index,
+          featureCount: collection.features.length,
+        });
+      }
+    }
+    return expanded;
   }
 
   /**
@@ -252,7 +364,8 @@ export class SessionController {
       },
       downloadTasks: tasks,
     });
-    this.simplify1Tasks = this.buildSimplify1Tasks(postprocess.outputs);
+    const expandedOutputs = await this.expandOutputsForFeatureGroups(postprocess.outputs);
+    this.simplify1Tasks = this.buildSimplify1Tasks(expandedOutputs);
   }
 
   private buildSimplify1Tasks(outputs: DownloadStageOutput[]): Simplify1Task[] {
@@ -262,7 +375,10 @@ export class SessionController {
       ?? 0.001;
     const minArea = simplifyConfig?.featureAreaThreshold ?? 0;
 
-    return outputs.map((output, index) => ({
+    return outputs.map((output, index) => {
+      const featureLabel = output.featureLabel ?? output.featureGroupId;
+      const featureId = featureLabel ?? `${output.countryCode ?? 'UNK'}:${output.adminLevel ?? index}`;
+      return {
       taskId: `${this.sessionId}-simplify1-${index}`,
       sessionId: this.sessionId as NodeId,
       taskType: 'simplify1',
@@ -280,10 +396,14 @@ export class SessionController {
         dataSource: output.dataSource,
         countryName: output.countryName,
         sourceUrl: output.sourceUrl,
+        featureLabel,
       },
       config: {
         sourceUrl: output.sourceUrl,
-        featureId: `${output.countryCode ?? 'UNK'}:${output.adminLevel ?? index}`,
+        featureId,
+        featureLabel,
+        featureGroupId: output.featureGroupId,
+        featureIndex: output.featureIndex,
         countryCode: output.countryCode,
         adminLevel: output.adminLevel,
         algorithm: 'douglas-peucker',
@@ -295,7 +415,8 @@ export class SessionController {
         aspectRatioThreshold: simplifyConfig?.aspectRatioThreshold,
         hybridFilterConfig: simplifyConfig?.hybridFilterConfig,
       },
-    }));
+      };
+    });
   }
 
   /**
@@ -346,7 +467,10 @@ export class SessionController {
       metadata: task.metadata,
       config: {
         sourceUrl: task.config?.sourceUrl,
-        featureId: `${task.countryCode ?? 'UNK'}:${task.adminLevel ?? index}`,
+        featureId: task.config?.featureId ?? `${task.countryCode ?? 'UNK'}:${task.adminLevel ?? index}`,
+        featureLabel: task.config?.featureLabel,
+        featureGroupId: task.config?.featureGroupId,
+        featureIndex: task.config?.featureIndex,
         countryCode: task.countryCode,
         adminLevel: task.adminLevel,
         zoomLevel: zoomLevels[0] ?? 10,
@@ -375,6 +499,112 @@ export class SessionController {
     console.log(`[Session ${this.sessionId}] Simplify2 stage completed: ${r.processed}/${tasks.length} successful`);
   }
 
+  private buildTileCoordinates(
+    bbox: [number, number, number, number],
+    zoomLevels: number[],
+  ): Array<{ z: number; x: number; y: number }> {
+    const [minLon, minLat, maxLon, maxLat] = bbox;
+    const long2tile = (lon: number, z: number) => Math.floor(((lon + 180) / 360) * 2 ** z);
+    const lat2tile = (lat: number, z: number) => {
+      const rad = (lat * Math.PI) / 180;
+      return Math.floor(((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * 2 ** z);
+    };
+    const tiles: Array<{ z: number; x: number; y: number }> = [];
+    for (const z of zoomLevels) {
+      const x1 = long2tile(minLon, z);
+      const x2 = long2tile(maxLon, z);
+      const y1 = lat2tile(maxLat, z);
+      const y2 = lat2tile(minLat, z);
+      for (let x = x1; x <= x2; x++) {
+        for (let y = y1; y <= y2; y++) {
+          tiles.push({ z, x, y });
+        }
+      }
+    }
+    return tiles;
+  }
+
+  private async buildVectorTileInputBuffer(): Promise<{
+    inputBufferId: string;
+    collection: FeatureCollection;
+  } | null> {
+    const db = getEphemeralShapeDB();
+    const features: Feature[] = [];
+    for (const task of this.simplify2Tasks) {
+      const bufferId = task.inputBufferId ?? task.config?.inputBufferId;
+      if (!bufferId) continue;
+      const input = await db.simplifiedBuffers.get(bufferId)
+        ?? await db.rawBuffers.get(bufferId);
+      if (!input) continue;
+      const decoded = await this.decodeFeatureCollection(input.data);
+      if (!decoded) continue;
+      features.push(...decoded.features);
+    }
+    if (features.length === 0) {
+      return null;
+    }
+    const collection: FeatureCollection = { type: 'FeatureCollection', features };
+    const mergedId = `${this.sessionId}-simplify2-merged`;
+    const data = await this.encodeFeatureCollection(collection);
+    await db.simplifiedBuffers.put({
+      id: mergedId,
+      sessionId: this.sessionId,
+      nodeId: this.nodeId,
+      stage: 'simplify2',
+      data,
+      featureCount: features.length,
+      simplificationRatio: 1,
+      tolerance: this.config.simplify2?.tolerance ?? 0,
+      timestamp: Date.now(),
+    });
+    return { inputBufferId: mergedId, collection };
+  }
+
+  private buildVectorTileTasks(
+    inputBufferId: string,
+    collection: FeatureCollection,
+  ): VectorTileTask[] {
+    const tileSize = this.config.vectorTiles?.tileSize ?? this.config.tileSize ?? 256;
+    const buffer = this.config.vectorTiles?.bufferSize ?? 256;
+    const minZoom = this.config.vectorTiles?.minZoom ?? 0;
+    const maxZoom = this.config.vectorTiles?.maxZoom ?? 10;
+    const zoomLevels = this.resolveZoomLevels();
+    const metadataEnabled = isShapePreviewMetadataEnabled();
+    const dataSource = this.resolveDataSource();
+    const bbox = turfBbox(collection);
+    if (!bbox.every((value: number) => Number.isFinite(value))) {
+      return [];
+    }
+    const tiles = this.buildTileCoordinates([bbox[0], bbox[1], bbox[2], bbox[3]], zoomLevels);
+    return tiles.map((tile, index) => ({
+      taskId: `${this.sessionId}-vectortile-${index}`,
+      sessionId: this.sessionId as NodeId,
+      taskType: 'vectortile',
+      stage: BatchTaskStage.WAIT,
+      type: 'vectortile',
+      status: 'waiting',
+      index,
+      progress: 0,
+      zoomLevel: tile.z,
+      config: {
+        inputBufferId,
+        minZoom,
+        maxZoom,
+        tileZ: tile.z,
+        tileX: tile.x,
+        tileY: tile.y,
+        extent: 4096,
+        buffer,
+        tileSize,
+        layers: [],
+        format: 'mvt',
+        compression: true,
+        metadataEnabled,
+        metadataContext: { dataSource },
+      },
+    }));
+  }
+
   /**
    * Process vector tile generation stage
    */
@@ -382,55 +612,12 @@ export class SessionController {
     this.currentStage = 'vectortile';
     console.log(`[Session ${this.sessionId}] Processing vector tile stage`);
 
-    const tileSize = this.config.vectorTiles?.tileSize ?? this.config.tileSize ?? 256;
-    const buffer = this.config.vectorTiles?.bufferSize ?? 256;
-    const minZoom = this.config.vectorTiles?.minZoom ?? 0;
-    const maxZoom = this.config.vectorTiles?.maxZoom ?? 10;
-    const metadataEnabled = isShapePreviewMetadataEnabled();
-    let metadataReplace = true;
-    const tasks: VectorTileTask[] = this.simplify2Tasks.map((task, index) => {
-      const replace = metadataEnabled && metadataReplace;
-      if (metadataEnabled) {
-        metadataReplace = false;
-      }
-      const metadata = (task.metadata ?? {}) as {
-        dataSource?: string;
-        countryName?: string;
-      };
-      return {
-        taskId: `${this.sessionId}-vectortile-${index}`,
-        sessionId: this.sessionId as NodeId,
-        taskType: 'vectortile',
-        stage: BatchTaskStage.WAIT,
-        type: 'vectortile',
-        status: 'waiting',
-        index,
-        progress: 0,
-        countryCode: task.countryCode,
-        adminLevel: task.adminLevel,
-        config: {
-          inputBufferId: `${this.sessionId}-simplify2-${index}`,
-          minZoom,
-          maxZoom,
-          tileX: 0,
-          tileY: 0,
-          extent: 4096,
-          buffer,
-          tileSize,
-          layers: [],
-          format: 'mvt',
-          compression: true,
-          metadataEnabled,
-          metadataReplace: replace,
-          metadataContext: {
-            dataSource: metadata.dataSource,
-            countryCode: task.countryCode,
-            countryName: metadata.countryName,
-            adminLevel: task.adminLevel,
-          },
-        },
-      };
-    });
+    const merged = await this.buildVectorTileInputBuffer();
+    if (!merged) {
+      console.warn(`[Session ${this.sessionId}] No vector tile inputs to process`);
+      return;
+    }
+    const tasks = this.buildVectorTileTasks(merged.inputBufferId, merged.collection);
     if (tasks.length === 0) {
       console.warn(`[Session ${this.sessionId}] No vector tile tasks to process`);
       return;

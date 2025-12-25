@@ -27,6 +27,10 @@ export interface DownloadStageOutput {
   adminLevel?: number;
   dataSource?: string;
   sourceUrl?: string;
+  featureGroupId?: string;
+  featureLabel?: string;
+  featureIndex?: number;
+  featureCount?: number;
 }
 
 export interface DownloadStagePostprocessResult {

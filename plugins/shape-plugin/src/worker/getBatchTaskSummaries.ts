@@ -25,6 +25,14 @@ const buildTaskTitle = (task: BatchTaskRecord): string | undefined => {
     return sourceUrl ?? featureId;
   }
   if (task.taskType === 'vectortile') {
+    const tileZ = getNumber(input.tileZ);
+    const tileX = getNumber(input.tileX);
+    const tileY = getNumber(input.tileY);
+    const featureLabel = (input.featureLabel ?? input.featureId) as string | undefined;
+    if (typeof tileZ === 'number' && typeof tileX === 'number' && typeof tileY === 'number') {
+      const tileLabel = `z${tileZ} / x${tileX} y${tileY}`;
+      return featureLabel ? `${tileLabel} • ${featureLabel}` : tileLabel;
+    }
     const minZoom = getNumber(input.minZoom);
     const maxZoom = getNumber(input.maxZoom);
     const metadataContext = input.metadataContext as {

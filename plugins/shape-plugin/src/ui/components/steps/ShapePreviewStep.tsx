@@ -42,6 +42,9 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
     handleMapIdentify,
     defaultView,
   } = useShapePreviewStep(data ?? {});
+  const baseMapStyleUrl = theme.palette.mode === 'dark'
+    ? DARK_BASEMAP_STYLE_URL
+    : LIGHT_BASEMAP_STYLE_URL;
 
   const renderMapPreview = () => {
     const hasRemoteTiles = Boolean(tilesUrl);
@@ -61,25 +64,46 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
     }
     const tiles = hasRemoteTiles ? [tilesUrl] : undefined;
     return (
-      <Box flex={1} minHeight={360} borderRadius={1} overflow="hidden" border="1px solid #e0e0e0">
+      <Box
+        flex={1}
+        minHeight={420}
+        borderRadius={1}
+        overflow="hidden"
+        border="1px solid #e0e0e0"
+        onWheelCapture={(event) => {
+          event.stopPropagation();
+        }}
+      >
         <Suspense fallback={null}>
           <LazyMapWithVectorTiles
             tiles={tiles}
             dbName={!hasRemoteTiles ? tileDbName : undefined}
             nodeId={!hasRemoteTiles ? sessionId ?? undefined : undefined}
             tileDataProvider={!hasRemoteTiles ? tileDataProvider : undefined}
+            mapOptions={{
+              interactive: true,
+              scrollZoom: true,
+              dragPan: true,
+              dragRotate: true,
+              doubleClickZoom: true,
+              touchZoomRotate: true,
+            }}
+            controls={{ navigation: true }}
             layerConfig={{
               layerId: baseLayerId,
               sourceId: baseSourceId,
               sourceLayer: tilesLayer,
               layerType: 'fill',
               paint: {
-                'fill-color': theme.palette.grey[300],
-                'fill-opacity': 0.3,
-                'fill-outline-color': theme.palette.grey[500],
+                'fill-color': theme.palette.primary.main,
+                'fill-opacity': 0.35,
+                'fill-outline-color': theme.palette.primary.dark,
               },
             }}
             initialViewState={defaultView}
+            mapStyleUrl={baseMapStyleUrl}
+            width="100%"
+            height="100%"
             style={{ width: '100%', height: '100%' }}
             onLoad={setMapInstance}
             identifyFeatureOnClick={{
@@ -98,7 +122,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
   };
 
   return (
-    <Box display="flex" flexDirection="column" gap={2} height={480}>
+    <Box display="flex" flexDirection="column" gap={2} height="100%" minHeight={520}>
       <Typography variant="h6">{t('preview.title', 'Preview')}</Typography>
       <Typography variant="body2" color="text.secondary">
         {t('preview.description', 'Visualize generated vector tiles on the map.')}
@@ -112,7 +136,18 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
           {tabIndex === 0 ? (
             renderMapPreview()
           ) : (
-            <Box flex={1} minHeight={360} borderRadius={1} overflow="hidden" border="1px solid #e0e0e0">
+            <Box
+              flex={1}
+              minHeight={420}
+              display="flex"
+              flexDirection="column"
+              borderRadius={1}
+              overflow="hidden"
+              border="1px solid #e0e0e0"
+              onWheelCapture={(event) => {
+                event.stopPropagation();
+              }}
+            >
               {!sessionId ? (
                 <Alert severity="info" sx={{ m: 2 }}>
                   {t('preview.metadata.missingSession', 'Build the dataset to generate metadata.')}
@@ -137,48 +172,52 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
                         : `${metadataTableRows.length} ${t('preview.metadata.rows', 'Rows')}`}
                     </Typography>
                   </Box>
-                  <GenericDataGrid
-                    columns={metadataColumns}
-                    rows={metadataTableRows}
-                    maxHeight={360}
-                    rowHeight={38}
-                    stickyHeader
-                    dense
-                    hover
-                    striped
-                    enableVirtualization
-                    loading={metadataLoading}
-                    error={metadataError ?? undefined}
-                    selectable
-                    selectionMode="multiple"
-                    selectedRows={selectedIdSet}
-                    onSelectionChange={(next) => {
-                      setSelectedIds(Array.from(next).map(String));
-                    }}
-                    matchedRows={matchedIdSet}
-                    hoveredRows={hoveredIdSet}
-                    onRowHover={(_, rowId) => setHoveredId(String(rowId))}
-                    onRowLeave={() => setHoveredId(null)}
-                    sortColumn={sortColumn}
-                    sortDirection={sortDirection}
-                    onSort={handleSort}
-                    rowSx={(state) => {
-                      if (state.selected) {
-                        return { backgroundColor: theme.palette.primary.light };
-                      }
-                      if (state.matched) {
-                        return {
-                          backgroundColor: theme.palette.secondary.light,
-                          boxShadow: `inset 3px 0 0 0 ${theme.palette.secondary.main}`,
-                        };
-                      }
-                      if (state.hovered) {
-                        return { backgroundColor: theme.palette.action.hover };
-                      }
-                      return undefined;
-                    }}
-                    toolbarComponent={<></>}
-                  />
+                  <Box flex={1} minHeight={0}>
+                    <GenericDataGrid
+                      columns={metadataColumns}
+                      rows={metadataTableRows}
+                      maxHeight="100%"
+                      tableContainerSx={{ height: '100%', maxHeight: '100%', overflow: 'auto' }}
+                      stopWheelPropagation
+                      rowHeight={38}
+                      stickyHeader
+                      dense
+                      hover
+                      striped
+                      enableVirtualization
+                      loading={metadataLoading}
+                      error={metadataError ?? undefined}
+                      selectable
+                      selectionMode="multiple"
+                      selectedRows={selectedIdSet}
+                      onSelectionChange={(next) => {
+                        setSelectedIds(Array.from(next).map(String));
+                      }}
+                      matchedRows={matchedIdSet}
+                      hoveredRows={hoveredIdSet}
+                      onRowHover={(_, rowId) => setHoveredId(String(rowId))}
+                      onRowLeave={() => setHoveredId(null)}
+                      sortColumn={sortColumn}
+                      sortDirection={sortDirection}
+                      onSort={handleSort}
+                      rowSx={(state) => {
+                        if (state.selected) {
+                          return { backgroundColor: theme.palette.primary.light };
+                        }
+                        if (state.matched) {
+                          return {
+                            backgroundColor: theme.palette.secondary.light,
+                            boxShadow: `inset 3px 0 0 0 ${theme.palette.secondary.main}`,
+                          };
+                        }
+                        if (state.hovered) {
+                          return { backgroundColor: theme.palette.action.hover };
+                        }
+                        return undefined;
+                      }}
+                      toolbarComponent={<></>}
+                    />
+                  </Box>
                 </>
               )}
             </Box>
@@ -201,3 +240,6 @@ const LazyMapWithVectorTiles = React.lazy(async () => {
   const mod = await loadMapWithVectorTiles();
   return { default: mod.MapWithVectorTiles };
 });
+
+const LIGHT_BASEMAP_STYLE_URL = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
+const DARK_BASEMAP_STYLE_URL = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
