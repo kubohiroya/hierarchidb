@@ -115,5 +115,5 @@ export interface UseLRUPanesResult {
   /** Get expanded pane IDs */
   getExpandedPanes: () => string[];
   /** Get calculated sizes for Allotment */
-  getSizes: () => number[];
+  getSizes: (availableSpace?: number) => number[];
 }

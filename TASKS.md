@@ -11634,6 +11634,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-25 19:05 progress: fix/ui/lru-splitview-breakpoints — autoCloseCount=0 の帯では初回レンダーでも均等割りの sizes を返すよう修正し、幅0初期レンダーの影響を回避。
 - 2025-12-25 19:20 progress: fix/ui/lru-splitview-breakpoints — コンテナ幅が 0 の間は LRUSplitView を描画せず、幅確定後にレイアウトするよう変更（診断ログは撤去）。
 - 2025-12-25 19:40 progress: fix/ui/lru-splitview-breakpoints — 均等割り時の sizes を比率ではなくコンテナ幅(px)基準で算出し、最後のペインが余剰を占有する問題を修正。
+- 2025-12-25 19:55 progress: fix/ui/lru-splitview-breakpoints — getSizes の型定義を availableSpace 引数対応に更新し、TS2554 を解消。
 - 2025-12-25 18:10 start: refactor/shape/step4-simplify-split — Step4 の Simplify1/2 設定分離とステージ整合の実装に着手。DoD: Kanban 1867 のとおり。
 - 2025-12-25 18:30 progress: refactor/shape/step4-simplify-split — `simplify1Config`/`simplify2Config` を導入し、旧 `simplificationConfig` をマージで移行。Worker の batch config 参照を新構造へ更新。
 - 2025-12-25 18:50 done: refactor/shape/step4-simplify-split — Step4 UI を Simplify1/Simplify2 に分割し、翻訳文言/説明を更新。検証: 未実施。ロールバック: Done セクションの記載に従う。
