@@ -124,7 +124,7 @@ export const LRUSplitView: React.FC<LRUSplitViewProps> = ({
     onPaneToggle,
   });
 
-  const sizes = getSizes(containerWidth > 0 ? containerWidth : undefined);
+  const sizes = getSizes();
 
   // Find progress info for each pane
   const getProgressForPane = (paneId: string) => {
