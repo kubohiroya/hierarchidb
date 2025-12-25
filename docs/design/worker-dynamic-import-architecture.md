@@ -99,14 +99,14 @@ sequenceDiagram
     participant Proxy as WorkerClientProxy
     participant Loader as WorkerModuleLoader
     participant Runtime as runtime-worker
-    participant Plugin as Plugin Peer Loader
+    participant Plugin as Plugin Store Loader
 
     UI->>Proxy: ensureInitialized()
     Proxy->>Loader: loadRuntime()
     Loader->>Runtime: modulePaths.importRuntimeWorker()
     Runtime-->>Loader: storeRegistry, channel APIs
     Loader->>Plugin: modulePaths.importPluginWorker(pluginId)
-    Plugin-->>Loader: registerPeer()
+    Plugin-->>Loader: registerGroup/registerRelations (optional)
     Loader->>Proxy: resolve(clientRef)
     Proxy-->>UI: Promise resolved
     UI->>UI: render children with client context
@@ -167,27 +167,29 @@ export const WorkerRuntimeProvider: React.FC<{ children: ReactNode }> = ({ child
 
 ### 6.1 参照方式の統一
 - 各プラグインの `src/worker/factory/` にファクトリー関数を集約し、`register<Plugin>WorkerStores`/`load<Plugin>EntitiesDbModule` のような API を提供する。
-- 例: `packages/plugins/styler-plugin/src/worker/factory/registerStylerWorkerStores.ts`
+- PeerStore は廃止済みのため、Worker 側で行うのは **Group/Relation の登録のみ**。
+- 例: `packages/plugins/location-plugin/src/worker/factory/registerLocationWorkerStores.ts`
   ```ts
-  export async function registerStylerWorkerStores({ storeRegistry }: RegisterStylerWorkerStoresOptions = {}) {
+  export async function registerLocationWorkerStores({ storeRegistry }: RegisterLocationWorkerStoresOptions = {}) {
     if (!storeRegistry) return;
-    const { createNodePayloadPeerStore } = await import('@hierarchidb/runtime-worker');
-    if (!storeRegistry.getPeer('styler')) {
-      storeRegistry.registerPeer(
-        'styler',
-        createNodePayloadPeerStore({
-          normalize: (data) => normalizeStylerPeerData(data ?? undefined),
-        })
-      );
+    const { LocationEntitiesDB } = await import('../locationEntitiesDB.js');
+    const db = new LocationEntitiesDB();
+    await db.open?.();
+    if (!storeRegistry.getGroup('location')) {
+      const { createLocationGroupStoreDexie } = await import('../locationGroupStore.dexie.js');
+      storeRegistry.registerGroup('location', createLocationGroupStoreDexie(db));
     }
-    // groupEntities/relations が必要な場合はここで Dexie DB を開き、registerGroup/registerRelations を呼び出す
+    if (!storeRegistry.getRelations('location')) {
+      const { createLocationRelationStoreDexie } = await import('../locationRelationStore.dexie.js');
+      storeRegistry.registerRelations('location', createLocationRelationStoreDexie(db));
+    }
   }
   ```
-- `WorkerModuleLoader` は上記ファクトリー関数を `modulePaths.importPluginWorker('styler')` で取得し、実行時に呼び出す。
+- `WorkerModuleLoader` は上記ファクトリー関数を `modulePaths.importPluginWorker('location')` で取得し、実行時に呼び出す。
 
 ### 6.2 型定義
 - `dist/worker/index.d.ts` は再エクスポートから関数エクスポートへ更新する必要がある（modulePaths からの import を前提とした公開面に揃える）。
-- `PeerStore` や `EntitiesDB` を直接 import するテストは、必要に応じて `load...` ファクトリー内部で `return { StylerEntitiesDB }` のように公開する。
+- `EntitiesDB` を直接 import するテストは、必要に応じて `load...` ファクトリー内部で `return { LocationEntitiesDB }` のように公開する。
 
 ---
 

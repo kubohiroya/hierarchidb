@@ -15,7 +15,7 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
     onAction,
     rowClickAction = 'Select/Navigate',
     onRowClickActionChange,
-    autosaveEnabled = true,
+    autosaveEnabled = false,
     onAutosaveEnabledChange,
     canUndo = false,
     canRedo = false,

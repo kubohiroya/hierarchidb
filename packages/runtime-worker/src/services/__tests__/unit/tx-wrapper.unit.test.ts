@@ -1,6 +1,5 @@
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { PeerEntity, PeerStore } from '../../../entity/store.js';
 import { CommandProcessor } from '../../CommandProcessor.js';
 import type { CoreDB } from '../../CoreDB.js';
 import type { CommandTestHarness } from '../../test-helpers/commandProcessorHarness.js';

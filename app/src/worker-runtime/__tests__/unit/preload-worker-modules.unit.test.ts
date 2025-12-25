@@ -17,10 +17,7 @@ const importPluginWorkerMock = vi.hoisted(() =>
   vi.fn<(id: string) => Promise<Record<string, unknown>>>()
 );
 
-const mockStoreRegistry = {
-  getPeer: vi.fn(),
-  registerPeer: vi.fn(),
-};
+const mockStoreRegistry = {};
 
 vi.mock('@hierarchidb/runtime-worker-worker', () => ({
   importPluginWorker: importPluginWorkerMock,
@@ -37,8 +34,6 @@ describe('WorkerModuleLoader', () => {
     workerClientMock.isReady.mockReset();
     workerClientMock.getSingleton.mockReset();
     importPluginWorkerMock.mockReset();
-    mockStoreRegistry.getPeer.mockReset();
-    mockStoreRegistry.registerPeer.mockReset();
   });
 
   it('preloads plugin workers and swallows loader errors', async () => {

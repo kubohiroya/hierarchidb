@@ -23,6 +23,7 @@ export const DATA_SOURCE_CONFIGS: Record<string, DataSourceConfig> = {
     color: '#4CAF50',
     icon: '🌍',
     maxAdminLevel: 1,
+    countryCodeFormat: 'iso2',
   },
   geoboundaries: {
     name: 'geoboundaries',
@@ -34,6 +35,7 @@ export const DATA_SOURCE_CONFIGS: Record<string, DataSourceConfig> = {
     color: '#2196F3',
     icon: '🗺️',
     maxAdminLevel: 3,
+    countryCodeFormat: 'iso3',
   },
   gadm: {
     name: 'gadm',
@@ -45,6 +47,7 @@ export const DATA_SOURCE_CONFIGS: Record<string, DataSourceConfig> = {
     color: '#FF9800',
     icon: '📊',
     maxAdminLevel: 5,
+    countryCodeFormat: 'iso2',
   },
   openstreetmap: {
     name: 'openstreetmap',
@@ -56,6 +59,7 @@ export const DATA_SOURCE_CONFIGS: Record<string, DataSourceConfig> = {
     color: '#9C27B0',
     icon: '🚗',
     maxAdminLevel: 4,
+    countryCodeFormat: 'iso2',
   },
 };
 

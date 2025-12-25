@@ -5,12 +5,14 @@ import { generateUrlMetadata } from '../utils.js';
 const COUNTRY_METADATA: CountryMetadata[] = [
   {
     countryCode: 'JP',
+    iso3: 'JPN',
     countryName: 'Japan',
     continent: 'AS',
     availableAdminLevels: [0, 1],
   },
   {
     countryCode: 'ID',
+    iso3: 'IDN',
     countryName: 'Indonesia',
     continent: 'AS',
     availableAdminLevels: [0, 1],
@@ -50,10 +52,10 @@ describe('generateUrlMetadata', () => {
 
   it('creates geoboundaries URLs for JP/ID levels 0/1', () => {
     assertUrls('geoboundaries', [
-      'https://www.geoboundaries.org/api/gbOpen/JP/ADM0',
-      'https://www.geoboundaries.org/api/gbOpen/JP/ADM1',
-      'https://www.geoboundaries.org/api/gbOpen/ID/ADM0',
-      'https://www.geoboundaries.org/api/gbOpen/ID/ADM1',
+      'https://www.geoboundaries.org/api/gbOpen/JPN/ADM0',
+      'https://www.geoboundaries.org/api/gbOpen/JPN/ADM1',
+      'https://www.geoboundaries.org/api/gbOpen/IDN/ADM0',
+      'https://www.geoboundaries.org/api/gbOpen/IDN/ADM1',
     ]);
   });
 

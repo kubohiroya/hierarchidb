@@ -94,7 +94,7 @@ export class NodeLifecycleManager {
     // Create the node
     const nodeId = await this.createNodeCore(parentId, nodeData);
 
-    // Handle reference counting after node creation (when PeerEntity is created)
+    // Handle reference counting after node creation (when TreeNode data/draftData is created)
     await this.handleReferenceCountIncrement(nodeId, nodeType);
 
     // Execute afterCreate hook
@@ -254,7 +254,7 @@ export class NodeLifecycleManager {
   }
 
   /**
-   * Handle reference count increment when PeerEntity is created
+   * Handle reference count increment when TreeNode data/draftData is created
    */
   private async handleReferenceCountIncrement(nodeId: NodeId, nodeType: NodeType): Promise<void> {
     try {
@@ -275,7 +275,7 @@ export class NodeLifecycleManager {
   }
 
   /**
-   * Handle reference count decrement when PeerEntity is deleted
+   * Handle reference count decrement when TreeNode data/draftData is deleted
    */
   private async handleReferenceCountDecrement(nodeId: NodeId, nodeType: NodeType): Promise<void> {
     try {

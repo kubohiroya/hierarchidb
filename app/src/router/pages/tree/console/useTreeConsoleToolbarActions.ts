@@ -93,7 +93,7 @@ export function useTreeConsoleToolbarActions({
   });
   const [autosaveEnabled, setAutosaveEnabled] = useState<boolean>(() => {
     const stored = loadTreeConsoleSettings().autosaveEnabled;
-    return typeof stored === 'boolean' ? stored : true;
+    return typeof stored === 'boolean' ? stored : false;
   });
 
   useEffect(() => {
@@ -103,7 +103,7 @@ export function useTreeConsoleToolbarActions({
       if (event.key && event.key !== TREE_CONSOLE_SETTINGS_STORAGE_KEY) return;
       const next = loadTreeConsoleSettings();
       setRowClickAction(next.rowClickAction === 'Edit' ? 'Edit' : 'Select/Navigate');
-      setAutosaveEnabled(typeof next.autosaveEnabled === 'boolean' ? next.autosaveEnabled : true);
+      setAutosaveEnabled(typeof next.autosaveEnabled === 'boolean' ? next.autosaveEnabled : false);
     };
     global.addEventListener('storage', handleStorage);
     return () => {

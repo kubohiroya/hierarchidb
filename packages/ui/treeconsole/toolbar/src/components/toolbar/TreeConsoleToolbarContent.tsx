@@ -47,7 +47,7 @@ export function TreeConsoleToolbarContent({
   onAction,
   rowClickAction = 'Select/Navigate',
   onRowClickActionChange,
-  autosaveEnabled = true,
+  autosaveEnabled = false,
   onAutosaveEnabledChange,
   canUndo,
   canRedo,

@@ -37,7 +37,8 @@ import type { BatchProcessConfig } from '../services/batch/types.js';
 import { getEphemeralShapeDB } from '../services/database/EphemeralShapeDB.js';
 import type { BatchStage, BatchTaskStatus } from '../common/types/BatchTaskLike.js';
 import type { BatchProgressEvent as RuntimeBatchProgressEvent } from '@hierarchidb/common-api';
-import { calculateSelectionStats, generateUrlMetadata } from '../services/utils/utils.js';
+import { calculateSelectionStats, generateUrlMetadata, getPreferredCountryCodeFormat } from '../services/utils/utils.js';
+import { normalizeCountryCodeFormat } from '../services/utils/iso3166.js';
 
 // Create singleton unified batch manager
 const batchSessionManager = createShapeBatchManager();
@@ -347,8 +348,12 @@ export const shapePluginAPI = {
   ): Promise<UrlMetadata[]> => {
     // Get country metadata first
     const dataSourceName = toDataSourceName(dataSource);
+    const preferredFormat = getPreferredCountryCodeFormat(dataSourceName);
+    const normalizedCountries = await Promise.all(
+      countries.map((code) => normalizeCountryCodeFormat(code, preferredFormat)),
+    );
     const countryMetadata = await shapePluginAPI.getCountryMetadata(dataSourceName);
-    return generateUrlMetadata(dataSourceName, countries, adminLevels, countryMetadata);
+    return generateUrlMetadata(dataSourceName, normalizedCountries, adminLevels, countryMetadata);
   },
 
   // ===================================

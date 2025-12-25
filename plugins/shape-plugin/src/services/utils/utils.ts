@@ -29,6 +29,36 @@ export function normalizeDataSourceName(value?: string | null): DataSourceName |
     : undefined;
 }
 
+export function getDataSourceConfig(dataSource?: string | null) {
+  const normalized = normalizeDataSourceName(dataSource);
+  if (!normalized) return undefined;
+  return SHAPE_DATA_SOURCES.find((source) => source.name === normalized);
+}
+
+export function getPreferredCountryCodeFormat(dataSource?: string | null): 'iso2' | 'iso3' {
+  return getDataSourceConfig(dataSource)?.countryCodeFormat ?? 'iso2';
+}
+
+export function resolveCountryCodeForDataSource(
+  dataSource: DataSourceName,
+  country: Partial<CountryMetadata>,
+  fallback?: string,
+): string {
+  const preferred = getPreferredCountryCodeFormat(dataSource);
+  const byFormat = preferred === 'iso3' ? country.iso3 : country.iso2;
+  const candidate = (byFormat ?? country.countryCode ?? fallback ?? '')
+    .trim()
+    .toUpperCase();
+  if (!candidate) return fallback?.trim().toUpperCase() || '';
+  if (preferred === 'iso2' && candidate.length === 3 && country.iso2) {
+    return country.iso2.trim().toUpperCase();
+  }
+  if (preferred === 'iso3' && candidate.length === 2 && country.iso3) {
+    return country.iso3.trim().toUpperCase();
+  }
+  return candidate;
+}
+
 type ShapeDraft = {
   draftData: ShapeEntity;
 };
@@ -200,25 +230,35 @@ export function generateUrlMetadata(
   countryMetadata: CountryMetadata[],
 ): UrlMetadata[] {
   const urlMetadata: UrlMetadata[] = [];
-  const countryMap = new Map(countryMetadata.map((c) => [c.countryCode, c]));
+  const countryMap = new Map<string, CountryMetadata>();
+  countryMetadata.forEach((country) => {
+    const add = (code?: string) => {
+      if (!code) return;
+      countryMap.set(code.trim().toUpperCase(), country);
+    };
+    add(country.countryCode);
+    add(country.iso2);
+    add(country.iso3);
+  });
 
   countries.forEach((countryCode) => {
-    const country = countryMap.get(countryCode);
+    const country = countryMap.get(countryCode.trim().toUpperCase());
     if (!country) return;
 
     adminLevels.forEach((level) => {
       if (!country.availableAdminLevels.includes(level)) return;
 
-      const url = buildDataSourceUrl(dataSource, countryCode, level);
+      const resolvedCode = resolveCountryCodeForDataSource(dataSource, country, countryCode);
+      const url = buildDataSourceUrl(dataSource, resolvedCode, level);
       if (url) {
         urlMetadata.push({
           url,
-          countryCode,
+          countryCode: resolvedCode,
           countryName: country.countryName,
           adminLevel: level,
           continent: country.continent,
           dataSource,
-          estimatedSize: estimateDataSize(dataSource, countryCode, level, country),
+          estimatedSize: estimateDataSize(dataSource, resolvedCode, level, country),
           lastUpdated: new Date().toISOString(),
         });
       }

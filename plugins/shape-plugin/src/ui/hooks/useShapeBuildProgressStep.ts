@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import { useShapeBatchTasks } from './useShapeBatchTasks.js';
 import { useShapeProgress } from './useShapeProgress.js';
@@ -31,16 +31,18 @@ type Args = {
 
 export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
   const { t } = useTranslation();
-  const sessionId = data?.batchSessionId ?? nodeId ?? null;
+  const sessionId = data?.batchSessionId ?? null;
 
-  const { progress, status } = useShapeProgress(sessionId, { autoSubscribe: Boolean(sessionId) });
+  const { progress, status, error, isSubscribed } = useShapeProgress(sessionId, { autoSubscribe: Boolean(sessionId) });
   const { tasks, refresh: refreshTasks } = useShapeBatchTasks(sessionId, { autoRefresh: true, pollIntervalMs: 2000 });
-  const shouldForcePaused = Boolean(status?.status === 'processing' && !data?.batchSessionId);
+  const hasSessionId = Boolean(sessionId && !error);
+  const effectiveProgress = hasSessionId ? progress : null;
+  const effectiveStatus = hasSessionId ? status : null;
   const stages = useBuildStages();
-  const { buildStatus, statusLabel } = useBuildStatus(status, { forcePaused: shouldForcePaused });
+  const { buildStatus, statusLabel } = useBuildStatus(effectiveStatus);
 
-  const currentStage = normalizeStageId(progress?.currentStage);
-  const overallProgress = progress?.percentage ?? status?.progress ?? 0;
+  const currentStage = normalizeStageId(effectiveProgress?.currentStage);
+  const overallProgress = effectiveProgress?.percentage ?? effectiveStatus?.progress ?? 0;
   const stageLabel = (() => {
     if (currentStage) {
       return stages.find((stage) => stage.id === currentStage)?.title
@@ -59,21 +61,52 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
   })();
   const taskLabel = (() => {
     if (buildStatus !== 'running') {
-      if (status?.error) return status.error;
-      if (progress?.currentTask && progress.currentTask !== 'processing' && progress.currentTask !== sessionId) {
-        return progress.currentTask;
+      if (effectiveStatus?.error) return effectiveStatus.error;
+      if (effectiveProgress?.currentTask && effectiveProgress.currentTask !== 'processing' && effectiveProgress.currentTask !== sessionId) {
+        return effectiveProgress.currentTask;
       }
       return t('build.progress.ready', 'Ready');
     }
-    return progress?.currentTask
-      ?? status?.error
+    return effectiveProgress?.currentTask
+      ?? effectiveStatus?.error
       ?? t('build.progress.working', 'Working...');
   })();
-  const completed = progress?.completed ?? 0;
-  const total = progress?.total ?? 0;
-  const failed = progress?.failed ?? 0;
-  const skipped = progress?.skipped ?? 0;
-  const hasProgressData = Boolean(progress) || Boolean(status && status.status !== 'idle');
+  const completed = effectiveProgress?.completed ?? 0;
+  const total = effectiveProgress?.total ?? 0;
+  const failed = effectiveProgress?.failed ?? 0;
+  const skipped = effectiveProgress?.skipped ?? 0;
+  const hasProgressData = Boolean(effectiveProgress) || Boolean(effectiveStatus && effectiveStatus.status !== 'idle');
+  const debugStateRef = useRef<Record<string, unknown> | null>(null);
+
+  useEffect(() => {
+    const nextState = {
+      sessionId,
+      hasSessionId,
+      buildStatus,
+      status: effectiveStatus?.status ?? null,
+      progress: effectiveProgress?.percentage ?? null,
+      currentStage: currentStage ?? null,
+      currentTask: effectiveProgress?.currentTask ?? null,
+      isSubscribed,
+      error: error?.message ?? null,
+    };
+    const prev = debugStateRef.current;
+    const hasChanged = !prev || Object.keys(nextState).some((key) => prev[key] !== nextState[key]);
+    if (hasChanged) {
+      console.debug('[ShapeBuildProgressStep] state', nextState);
+      debugStateRef.current = nextState;
+    }
+  }, [
+    sessionId,
+    hasSessionId,
+    buildStatus,
+    effectiveStatus?.status,
+    effectiveProgress?.percentage,
+    effectiveProgress?.currentTask,
+    currentStage,
+    isSubscribed,
+    error?.message,
+  ]);
 
   useEffect(() => {
     if (!sessionId) return;

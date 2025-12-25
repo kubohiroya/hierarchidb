@@ -37,7 +37,7 @@ strict, packages interoperable, and builds reproducible.
   add a local `.d.ts` shim with explicit, minimal contracts.
 - MUST: Avoid `unknown` in public APIs. Use precise interfaces.
 - MUST: Model external registries by domain-specific interfaces (e.g.,
-  `ShapePeerStore<T>` instead of `unknown`).
+  `ShapeGroupStore<T>` instead of `unknown`).
 - MUST: Prefer branded IDs from `@hierarchidb/common-type` (`NodeId`, `EntityId`).
   Do not cast between them. Introduce mapping helpers if needed.
 - MUST: Keep `BaseEntityHandler`/Dexie types concrete:

@@ -43,7 +43,7 @@ TreeNodeUpdaterAPI / useTreeNodeUpdater / useSingleSourceDialogAtom への一本
    └─ registerRuntimeExports({ createEntityHandler, lifecycle, batch? })
 🟩 Plugin Worker Services (EntityHandler / BatchManager)
    └─ Query/Mutation/Subscription API, StageProcessingFacade を利用
-🟦 Dexie schema (storeRegistry.registerPeer)
+🟦 Dexie schema (Group/Relation store only; PeerStore廃止)
 🟪 Stage worker (必要時のみ Comlink.expose)
 ```
 

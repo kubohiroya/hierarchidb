@@ -60,6 +60,34 @@ const decodeFeatureCollection = async (buffer: ArrayBuffer): Promise<{ features?
   return null;
 };
 
+type BBox = [number, number, number, number];
+
+const mergeBboxes = (left: BBox | null, right: BBox | null): BBox | null => {
+  if (!left) return right;
+  if (!right) return left;
+  return [
+    Math.min(left[0], right[0]),
+    Math.min(left[1], right[1]),
+    Math.max(left[2], right[2]),
+    Math.max(left[3], right[3]),
+  ];
+};
+
+const isBboxContained = (outer: BBox, inner: BBox): boolean => (
+  outer[0] <= inner[0] && outer[1] <= inner[1] && outer[2] >= inner[2] && outer[3] >= inner[3]
+);
+
+const tileToBbox = (z: number, x: number, y: number): BBox => {
+  const n = 2 ** z;
+  const lonMin = (x / n) * 360 - 180;
+  const lonMax = ((x + 1) / n) * 360 - 180;
+  const latRadMax = Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / n)));
+  const latRadMin = Math.atan(Math.sinh(Math.PI * (1 - (2 * (y + 1)) / n)));
+  const latMax = (latRadMax * 180) / Math.PI;
+  const latMin = (latRadMin * 180) / Math.PI;
+  return [lonMin, latMin, lonMax, latMax];
+};
+
 async function createDraftNode(
   core: CoreDB,
   draftData: Partial<ShapeEntity>,
@@ -86,6 +114,146 @@ async function createDraftNode(
   await core.createNode(node);
   return nodeId;
 }
+
+const buildCountryBboxes = async (sessionId: string): Promise<Map<string, BBox>> => {
+  const tasks = await shapeDB.batchTasks.where('sessionId').equals(sessionId).toArray();
+  const downloadTasks = tasks.filter((task) => task.taskType === 'download');
+  const db = getEphemeralShapeDB();
+  const countryBboxes = new Map<string, BBox>();
+
+  for (const task of downloadTasks) {
+    const index = task.index;
+    const bufferId = `${sessionId}-download-${index}`;
+    const rawBuffer = await db.rawBuffers.get(bufferId);
+    if (!rawBuffer) {
+      throw new Error(`Download buffer missing for task ${task.taskId}`);
+    }
+    const input = task.inputData ?? {};
+    const country = String(input.country ?? input.countryCode ?? '').trim().toUpperCase();
+    if (!country) {
+      throw new Error(`Download task missing country code: ${task.taskId}`);
+    }
+    const bbox = rawBuffer.bbox as BBox;
+    const merged = mergeBboxes(countryBboxes.get(country) ?? null, bbox);
+    if (merged) {
+      countryBboxes.set(country, merged);
+    }
+  }
+  return countryBboxes;
+};
+
+const buildUnionTileBboxes = (
+  tiles: Array<{ z: number; x: number; y: number }>,
+): Map<number, BBox> => {
+  const union = new Map<number, BBox>();
+  tiles.forEach((tile) => {
+    const bbox = tileToBbox(tile.z, tile.x, tile.y);
+    const merged = mergeBboxes(union.get(tile.z) ?? null, bbox);
+    if (merged) {
+      union.set(tile.z, merged);
+    }
+  });
+  return union;
+};
+
+const runBatchProcessing = async (
+  core: CoreDB,
+  config: BatchConfig,
+  countries: string[],
+  adminLevels: number[],
+): Promise<{ sessionId: string; events: BatchProgressEvent[] }> => {
+  const draftId = await createDraftNode(core, {
+    dataSourceName: 'geoboundaries',
+    selectedCountries: countries,
+    adminLevels,
+    licenseAgreement: true,
+    batchConfig: config,
+  });
+  const urlMetadata = await shapePluginAPI.generateUrlMetadata(
+    'geoboundaries',
+    countries,
+    adminLevels,
+  );
+  if (urlMetadata.length === 0) {
+    throw new Error('No URL metadata generated for geoBoundaries selection.');
+  }
+
+  const sessionId = await shapePluginAPI.startBatchProcessing(
+    draftId,
+    config,
+    urlMetadata,
+  );
+
+  const events: BatchProgressEvent[] = [];
+  const completed = new Promise<void>((resolve, reject) => {
+    let settled = false;
+    let pollId: ReturnType<typeof setInterval> | null = null;
+    const buildFailureMessage = async (reason: string) => {
+      const tasks = await shapeDB.batchTasks.where('sessionId').equals(sessionId).toArray();
+      const errors = tasks.map((task) => task.errorMessage).filter(Boolean);
+      const urls = fetchedUrls.join(', ');
+      return `${reason}. errors=${errors.join(' | ') || 'none'}; fetchedUrls=${urls || 'none'}`;
+    };
+    const finalizeReject = async (reason: string) => {
+      if (settled) return;
+      settled = true;
+      reject(new Error(await buildFailureMessage(reason)));
+    };
+    const finalizeResolve = () => {
+      if (settled) return;
+      settled = true;
+      resolve();
+    };
+    const timer = setTimeout(() => {
+      void finalizeReject('Batch processing timed out');
+    }, 90000);
+    const unsubscribe = shapePluginAPI.subscribeToProgress(
+      sessionId,
+      (event: BatchProgressEvent) => {
+        events.push(event);
+        if (event.type === 'error' || event.status === 'failed') {
+          clearTimeout(timer);
+          if (pollId) clearInterval(pollId);
+          unsubscribe();
+          void finalizeReject('Batch processing failed');
+        }
+        if (event.stage === 'vectorTiles' && event.status === 'completed') {
+          clearTimeout(timer);
+          if (pollId) clearInterval(pollId);
+          unsubscribe();
+          finalizeResolve();
+        }
+      },
+    );
+    pollId = setInterval(async () => {
+      const session = await shapePluginAPI.getBatchSession(sessionId);
+      if (!session) return;
+      if (session.status === 'completed') {
+        clearTimeout(timer);
+        if (pollId) clearInterval(pollId);
+        unsubscribe();
+        finalizeResolve();
+      }
+      if (session.status === 'failed' || session.status === 'cancelled') {
+        clearTimeout(timer);
+        if (pollId) clearInterval(pollId);
+        unsubscribe();
+        void finalizeReject(`Batch processing ${session.status}`);
+      }
+    }, 200);
+  });
+
+  await completed.catch(async (error) => {
+    try {
+      await shapePluginAPI.cancelBatchProcessing(draftId);
+    } catch {
+      // Ignore cleanup errors after failure.
+    }
+    throw error;
+  });
+
+  return { sessionId, events };
+};
 
 describe('Shape batch processing (headless)', () => {
   let core: CoreDB;
@@ -192,90 +360,12 @@ describe('Shape batch processing (headless)', () => {
       },
     });
     expect(config.downloadConfig.corsProxyUrl).toBe('');
-    const draftId = await createDraftNode(core, {
-      dataSourceName: 'geoboundaries',
-      batchConfig: config,
-    });
-    const urlMetadata = await shapePluginAPI.generateUrlMetadata(
-      'geoboundaries',
+    const { sessionId, events } = await runBatchProcessing(
+      core,
+      config,
       ['JP'],
       [0],
     );
-    expect(urlMetadata.length).toBeGreaterThan(0);
-
-    const sessionId = await shapePluginAPI.startBatchProcessing(
-      draftId,
-      config,
-      urlMetadata,
-    );
-
-    const events: BatchProgressEvent[] = [];
-    const completed = new Promise<void>((resolve, reject) => {
-      let settled = false;
-      let pollId: ReturnType<typeof setInterval> | null = null;
-      const buildFailureMessage = async (reason: string) => {
-        const tasks = await shapeDB.batchTasks.where('sessionId').equals(sessionId).toArray();
-        const errors = tasks.map((task) => task.errorMessage).filter(Boolean);
-        const urls = fetchedUrls.join(', ');
-        return `${reason}. errors=${errors.join(' | ') || 'none'}; fetchedUrls=${urls || 'none'}`;
-      };
-      const finalizeReject = async (reason: string) => {
-        if (settled) return;
-        settled = true;
-        reject(new Error(await buildFailureMessage(reason)));
-      };
-      const finalizeResolve = () => {
-        if (settled) return;
-        settled = true;
-        resolve();
-      };
-      const timer = setTimeout(() => {
-        void finalizeReject('Batch processing timed out');
-      }, 80000);
-      const unsubscribe = shapePluginAPI.subscribeToProgress(
-        sessionId,
-        (event: BatchProgressEvent) => {
-          events.push(event);
-          if (event.type === 'error' || event.status === 'failed') {
-            clearTimeout(timer);
-            if (pollId) clearInterval(pollId);
-            unsubscribe();
-            void finalizeReject('Batch processing failed');
-          }
-          if (event.stage === 'vectorTiles' && event.status === 'completed') {
-            clearTimeout(timer);
-            if (pollId) clearInterval(pollId);
-            unsubscribe();
-            finalizeResolve();
-          }
-        },
-      );
-      pollId = setInterval(async () => {
-        const session = await shapePluginAPI.getBatchSession(sessionId);
-        if (!session) return;
-        if (session.status === 'completed') {
-          clearTimeout(timer);
-          if (pollId) clearInterval(pollId);
-          unsubscribe();
-          finalizeResolve();
-        }
-        if (session.status === 'failed' || session.status === 'cancelled') {
-          clearTimeout(timer);
-          if (pollId) clearInterval(pollId);
-          unsubscribe();
-          void finalizeReject(`Batch processing ${session.status}`);
-        }
-      }, 200);
-    });
-
-    await completed.catch(async (error) => {
-      try {
-        await shapePluginAPI.cancelBatchProcessing(draftId);
-      } catch {
-        // Ignore cleanup errors after failure.
-      }
-      throw error;
-    });
 
     const session = await shapePluginAPI.getBatchSession(sessionId);
     expect(session?.status).toBe('completed');
@@ -334,6 +424,72 @@ describe('Shape batch processing (headless)', () => {
     const summary = await stageClient.vectortile.getSummary(sessionId);
     expect(summary.tiles).toBeGreaterThan(0);
   }, 90000);
+
+  it('runs geoBoundaries Admin1 for JP/CN/KR and writes vector tiles', async () => {
+    const config = createBatchConfig({
+      dataSource: 'geoboundaries',
+      downloadConfig: {
+        corsProxyUrl: '',
+        maxConcurrent: 1,
+      },
+      tileConfig: {
+        ...DEFAULT_PROCESSING_CONFIG.tileConfig,
+        minZoom: 0,
+        maxZoom: 3,
+        workers: 1,
+      },
+    });
+    expect(config.downloadConfig.corsProxyUrl).toBe('');
+
+    const countries = ['JP', 'CN', 'KR'];
+    const adminLevels = [1];
+    const { sessionId } = await runBatchProcessing(
+      core,
+      config,
+      countries,
+      adminLevels,
+    );
+
+    const session = await shapePluginAPI.getBatchSession(sessionId);
+    expect(session?.status).toBe('completed');
+    expect(fetchedUrls.length).toBeGreaterThan(0);
+    expect(
+      fetchedUrls.some((url) => url.toLowerCase().includes('geoboundaries')),
+    ).toBe(true);
+    const stageClient = await getStageProcessingClient();
+    const summary = await stageClient.vectortile.getSummary(sessionId);
+    expect(summary.tiles).toBeGreaterThan(0);
+    expect(summary.zoomMin).toBe(0);
+    expect(summary.zoomMax).toBe(3);
+
+    const tiles = await stageClient.vectortile.listTiles(sessionId);
+    const zooms = new Set(tiles.map((tile) => tile.z));
+    [0, 1, 2, 3].forEach((zoom) => {
+      if (!zooms.has(zoom)) {
+        throw new Error(`Missing vector tiles at zoom ${zoom}`);
+      }
+    });
+
+    const countryBboxes = await buildCountryBboxes(sessionId);
+    const expectedCountries = ['JPN', 'CHN', 'KOR'];
+    expectedCountries.forEach((country) => {
+      if (!countryBboxes.has(country)) {
+        throw new Error(`Country bbox missing for ${country}`);
+      }
+    });
+    const unionByZoom = buildUnionTileBboxes(tiles);
+    const zoom3Union = unionByZoom.get(3);
+    if (!zoom3Union) {
+      throw new Error('Zoom 3 union bbox is missing');
+    }
+    expectedCountries.forEach((country) => {
+      const bbox = countryBboxes.get(country);
+      if (!bbox) return;
+      if (!isBboxContained(zoom3Union, bbox)) {
+        throw new Error(`Zoom 3 tiles do not contain bbox for ${country}`);
+      }
+    });
+  }, 120000);
 
   it('fails when dataSource is missing from the batch config', async () => {
     const fullConfig = createBatchConfig({

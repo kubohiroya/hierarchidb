@@ -1,6 +1,6 @@
 # TreeNode Payload / Working Copy Defaults
 
-本ドキュメントは、各プラグインの `TreeNode.payload` とワーキングコピー (`TreeNode.draft`) がどのような初期状態で生成されるかを整理する。2025-11 以降、PeerEntity は Dexie `peerEntities` テーブルではなく `TreeNode<TPayload>` に直接保存されるようになり、各プラグインは `createNodePayloadPeerStore()` で正規化ロジックを登録する。ここでは主に「payload 正規化の結果」と「ワーキングコピーや UI が用意する初期値」を JSON 風スニペットで記載する。
+本ドキュメントは、各プラグインの `TreeNode.payload` とワーキングコピー (`TreeNode.draft`) がどのような初期状態で生成されるかを整理する。2025-11 以降、PeerEntity は Dexie `peerEntities` テーブルではなく `TreeNode<TPayload>` に直接保存されるようになり、PeerStore は廃止された。ここでは主に「payload 正規化の結果」と「ワーキングコピーや UI が用意する初期値」を JSON 風スニペットで記載する。
 
 > 最終更新: 2025-11-19
 
@@ -41,7 +41,7 @@
 }
 ```
 
-`normalizeBasemapPeerData()` は mapStyle / viewport を `presentation` にまとめ、TreeNode.payload と TreeNode.draft で同じ構造を共有する。UI が `presentation` を書き換えると、`createNodePayloadPeerStore()` が normalize → CoreDB 更新を行う。
+`normalizeBasemapPeerData()` は mapStyle / viewport を `presentation` にまとめ、TreeNode.payload と TreeNode.draft で同じ構造を共有する。UI が `presentation` を書き換えると、Worker 側の更新フローで normalize → CoreDB 更新が行われる。
 
 ### Viewport / Map Style 既定値
 参照: `plugins/basemap-plugin/src/ui/components/steps/ViewportStep.tsx`
@@ -156,8 +156,8 @@ Resolver は TreeNode.payload に最後の実行時刻を保持し、UI で「�
 }
 ```
 
-`normalizeStylerPeerData()` は最後に適用したスタイル設定（`StylerConfig`）と任意の metadata を TreeNode.payload に保持する。UI は payload を直接読んでフォームへ反映し、保存時は `createNodePayloadPeerStore()` を経由して CoreDB へ更新する。
+`normalizeStylerPeerData()` は最後に適用したスタイル設定（`StylerConfig`）と任意の metadata を TreeNode.payload に保持する。UI は payload を直接読んでフォームへ反映し、保存時は Worker 側の更新フローで CoreDB へ反映する。
 
 ---
 
-今後プラグインを追加する際は、(1) `createNodePayloadPeerStore()` の normalize で `schemaVersion` を含めた payload を定義し、(2) UI/Worker の初期値がどこで決まるか（localStorage, geolocation, server defaults 等）を本ドキュメントへ追記すること。
+今後プラグインを追加する際は、(1) normalize で `schemaVersion` を含めた payload を定義し、(2) UI/Worker の初期値がどこで決まるか（localStorage, geolocation, server defaults 等）を本ドキュメントへ追記すること。

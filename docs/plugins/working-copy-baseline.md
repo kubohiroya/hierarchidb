@@ -12,7 +12,7 @@
 - **メタ情報は最小限**: `WorkingCopyBase<TEntity>` が提供する `treeNodeId` / `createdAt` / `updatedAt` / `originalVersion?` のみを保持する。`isDraft` や `schemaVersion`、独自 ID などは追加しない。
 - **1 ノード 1 WC**: `treeNodeId` がそのまま WC の主キーとなる。WC 専用 ID を作らない。
 - **UI 一時状態は UI で管理**: ステッパーの選択状態や検索結果などは UI コンポーネント／URL パラメータに保持し、WC へは保存しない。
-- **PeerStore とは責務分離**: PeerStore のデフォルト値・マイグレーションは `peer-store/*` のヘルパーで扱い、WC へは含めない。
+- **TreeNode data/draftData と責務分離**: 永続データの初期値やマイグレーションは TreeNode 側で完結させ、WC へは含めない。
 
 ## 必須プロパティ
 | プロパティ | 型 | 説明 |

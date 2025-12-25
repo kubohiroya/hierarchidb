@@ -1,12 +1,10 @@
 /// <reference types="vite/client" />
 
 
-import type { GroupItemBase, GroupStore, PeerStore, RelationBase, RelationStore } from '@hierarchidb/runtime-worker';
+import type { GroupItemBase, GroupStore, RelationBase, RelationStore } from '@hierarchidb/runtime-worker';
 import { isDevEnvironment } from '../../common/utils/env.js';
 
 type StoreRegistry = {
-  getPeer<T = unknown>(nodeType: string): PeerStore<T> | undefined;
-  registerPeer<T = unknown>(nodeType: string, store: PeerStore<T>): void;
   getGroup<T extends GroupItemBase<any> = GroupItemBase<any>>(nodeType: string): GroupStore<T> | undefined;
   registerGroup<T extends GroupItemBase<any>>(nodeType: string, store: GroupStore<T>): void;
   getRelations<T extends RelationBase<any> = RelationBase<any>>(nodeType: string): RelationStore<T> | undefined;

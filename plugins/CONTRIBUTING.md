@@ -104,12 +104,12 @@ react-i18next, i18next
 - DB 名は `getDBName('<kebab-suffix>')` を使用（例: `core`, `ephemeral-db`, `spreadsheet-metadata-db`）。
 - 共有実装がある場合は `@hierarchidb/table-metadata` などの feature パッケージを優先。
 
-### PeerStore データの扱い
-- プラグイン固有の `PeerRow` / `PeerStore` では、`data` フィールドが未定義の場合でも必ず**型付きの既定値**を格納すること。
-  - 例: `type FooPeerData = { schemaVersion: 1; domain?: FooDomain }` のように `schemaVersion` を含む最小構造体を定義する。
-  - 実装側では `normalizeFooPeerData(undefined) => { schemaVersion: 1 }` のような正規化関数を用意し、`put/bulkUpsert` で必ず通過させる。
-- UI 側が `PeerStore#get` を呼び出した際に `data` が `undefined` になることを禁止する。既定値を返すことで、`FolderPeerData` などデータを持たないプラグインでも型安全に扱えるようにする。
-- 一時的にドメインデータを持たないプラグインでも `PeerStore<T>` は `T = FooPeerData` の形で具体的な型パラメータを使用し、`any` や `unknown` を使用しない。
+### TreeNode data/draftData の扱い
+- プラグイン固有の data/draftData では、`data` フィールドが未定義の場合でも必ず**型付きの既定値**を格納すること。
+  - 例: `type FooData = { schemaVersion: 1; domain?: FooDomain }` のように `schemaVersion` を含む最小構造体を定義する。
+  - 実装側では `normalizeFooData(undefined) => { schemaVersion: 1 }` のような正規化関数を用意し、保存前に必ず通過させる。
+- UI 側で `data` が `undefined` になる前提は持たない。既定値を返すことで、`Folder` などデータを持たないプラグインでも型安全に扱えるようにする。
+- 一時的にドメインデータを持たないプラグインでも `T = FooData` の形で具体的な型パラメータを使用し、`any` や `unknown` を使用しない。
 
 ## 変更前チェックリスト
 - [ ] peer へ入れるべきものを peerDependencies に置いたか

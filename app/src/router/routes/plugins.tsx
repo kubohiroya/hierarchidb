@@ -369,7 +369,7 @@ function ResetPluginDialog({
           <DialogContentText id={descriptionId}>
             {isFolderPlugin
               ? 'This will reset the entire system, clearing ALL data including TreeNodes, all plugin entities, and recreating initial trees and root nodes.'
-              : 'This will clear GroupEntity and RelationalEntity data for this plugin type. TreeNodes and PeerEntity data will be preserved.'}
+              : 'This will clear GroupEntity and RelationalEntity data for this plugin type. TreeNodes and TreeNode data/draftData will be preserved.'}
           </DialogContentText>
 
           {affectedPlugins.length > 1 && (
@@ -399,7 +399,7 @@ function ResetPluginDialog({
               </Typography>
               <Typography variant="body2">
                 This action will permanently delete ALL data including TreeNodes, all plugin
-                entities (PeerEntity, GroupEntity, RelationalEntity), and cannot be undone. The
+                entities (TreeNode data/draftData, GroupEntity, RelationalEntity), and cannot be undone. The
                 system will be reset to its initial state with new trees and root nodes.
               </Typography>
             </Alert>
@@ -413,7 +413,7 @@ function ResetPluginDialog({
               </Typography>
               <Typography variant="body2" sx={{ mt: 1 }}>
                 • TreeNodes will be <strong>preserved</strong>
-                <br />• PeerEntity data will be <strong>preserved</strong>
+                <br />• TreeNode data/draftData will be <strong>preserved</strong>
                 <br />• Only plugin-specific group and relational data will be deleted
               </Typography>
             </Alert>
@@ -628,7 +628,7 @@ export default function PluginsPage() {
         // TODO: Implement complete system reset
         // This would:
         // 1. Clear ALL TreeNodes
-        // 2. Clear ALL PeerEntity data
+        // 2. Clear ALL plugin entity data (group/relations only)
         // 3. Clear ALL GroupEntity data
         // 4. Clear ALL RelationalEntity data
         // 5. Recreate initial trees and root nodes
@@ -637,7 +637,7 @@ export default function PluginsPage() {
       } else {
         // Reset specific plugin and dependents
         // This only clears GroupEntity and RelationalEntity data
-        // TreeNodes and PeerEntity data are preserved
+        // TreeNodes and TreeNode data/draftData are preserved
         for (const plugin of affected) {
           console.log(`Resetting plugin: ${plugin} (GroupEntity and RelationalEntity only)`);
           // TODO: Implement actual reset logic with Worker API
@@ -645,7 +645,7 @@ export default function PluginsPage() {
           // 1. Clear GroupEntity data for this plugin type
           // 2. Clear RelationalEntity data for this plugin type
           // 3. TreeNodes remain intact
-          // 4. PeerEntity data remains intact
+          // 4. TreeNode data/draftData remains intact
           // await client.resetPluginEntities(plugin, { preserveTreeNodes: true, preservePeerEntities: true });
         }
       }

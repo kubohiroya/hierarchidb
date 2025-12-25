@@ -6,7 +6,7 @@ export type TreeConsoleSettings = {
 };
 
 const defaultSettings: Required<Pick<TreeConsoleSettings, 'autosaveEnabled'>> = {
-  autosaveEnabled: true,
+  autosaveEnabled: false,
 };
 
 const safeGlobal = (): typeof window | null => {

@@ -54,7 +54,7 @@
 - [ ] Timeline plugin: `MapPreviewStep` / `AnimationViewerStep` にある placeholder UI（ベースマップ描画なし）を basemap-plugin の preview 実装と同等の機能に置き換える
   - 参考実装: `packages/plugins/basemap-plugin/src/components/BaseMapPreview.tsx`, `reference/app0/src/features/tree-console`
   - 進捗: 両ステップでフレーム／座標情報をオーバーレイ表示するスタイリングを追加（MapIcon + coordinate chip）。今後は `@hierarchidb/ui-map` を用いた実マップ描画とバッチ進捗連携を実装
-- [x] Shape plugin: worker entry で Dexie PeerStore を自動登録するロジックと `loadShapeEntitiesDbModule` を追加し、route/spreadsheet プラグインと同じ preload パターンに揃える
+- [x] Shape plugin: worker entry で Dexie Group/Relation store を自動登録するロジックと `loadShapeEntitiesDbModule` を追加し、route/spreadsheet プラグインと同じ preload パターンに揃える
   - 対応: `packages/plugins/shape-plugin/src/worker/RuntimeWorkerService.ts` に Dexie 登録を実装、`app/src/worker-runtime/WorkerModuleLoader.ts`・`runtime-shared/module-paths` へ shape を追加
   - フォローアップ: テスト拡充とドキュメント整備（Phase 4 で実施）
 

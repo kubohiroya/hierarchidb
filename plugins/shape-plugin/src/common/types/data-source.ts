@@ -1,4 +1,5 @@
 export type DataSourceName = 'naturalearth' | 'geoboundaries' | 'gadm' | 'openstreetmap';
+export type CountryCodeFormat = 'iso2' | 'iso3';
 
 export interface DataSourceConfig {
   name: DataSourceName;
@@ -10,6 +11,7 @@ export interface DataSourceConfig {
   color: string;
   icon: string;
   maxAdminLevel: number;
+  countryCodeFormat?: CountryCodeFormat;
   supportedCountries?: string[];
 }
 

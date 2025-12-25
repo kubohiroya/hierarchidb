@@ -98,4 +98,4 @@ sequenceDiagram
 
 - Basemap payload (`BasemapPeerData`) は `schemaVersion=1` と `presentation` (mapStyle / viewport) のみを保持。UI 表示用フィールド（name/description/tags）は TreeNode の top-level に存在する。
 - `ViewportStep` は `window.localStorage.zxy` → Geolocation API → `[0,0] zoom 2` の順に初期状態を決める。MapLibre の view state 変更イベントで `zxy` を常にリライトする。
-- WorkingCopyService は Step1/2/3 の入力を `TreeNode.draft` に書き込み、`createNodePayloadPeerStore()` の normalize が payload/presentation を整形する。commit 後は `syncPeerDataFromNode()` が新しい payload をストア登録済みの peer store（TreeNode ベース）へ反映する。
+- WorkingCopyService は Step1/2/3 の入力を `TreeNode.draft` に書き込み、Worker 側で normalize を適用し `TreeNode.data/draftData` を更新する。PeerStore は廃止済みのため、commit 後は TreeNode の更新だけで完結する。

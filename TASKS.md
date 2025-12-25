@@ -53,6 +53,75 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1855) shape-plugin Step5 Start Build の進捗デバッグログ追加（P1）
+- ブランチ: `fix/shape/step5-build-debug-logs`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin（Step5 UI/Hook/worker）、packages/ui-batch
+- 受け入れ基準（DoD）:
+  - [ ] Start Build 押下〜batch session 開始/再開/購読/進捗の主要イベントを console.debug で可視化する
+  - [ ] buildStatus が即 idle に戻る経路がログで追跡できる
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] useBatchSessionActions で start/resume/pause/保存のログを追加する
+  - [ ] useShapeBuildProgressStep / useShapeProgress で状態遷移ログを追加する
+- ロールバック手順：本タスクの差分を revert する。
+
+1854) spreadsheet-plugin worker store 登録時の registry.getPeer エラー調査/修正（P1）
+- ブランチ: `fix/worker/spreadsheet-registry-getpeer`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/spreadsheet-plugin, packages/runtime-worker, packages/plugin-service-sdk, app/src/worker-runtime
+- 受け入れ基準（DoD）:
+  - [ ] `registerSpreadsheetWorkerStores()` 実行時に `registry.getPeer is not a function` が再現しない
+  - [ ] 期待する registry 型と実体の差分を特定し、原因を説明できる
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] `registerSpreadsheetWorkerStores.ts` の registry 参照元を特定する
+  - [ ] `WorkerModuleLoader` 経由の registry 注入と型定義を確認する
+  - [ ] 互換性のある API に修正する（必要なら adapter 追加）
+- ロールバック手順：本タスクの差分を revert する
+
+1853) ISO2/ISO3 可逆変換ユーティリティ整備 + data source ISO優先方針の明文化（P1）
+- ブランチ: `feat/shape/iso-code-preference`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: packages/tools/gen-iso3166-2, plugins/shape-plugin, data source 定義
+- 受け入れ基準（DoD）:
+  - [ ] gen-iso3166-2 を用いて ISO2↔ISO3 の可逆変換ユーティリティを実装する
+  - [ ] データソース定義で ISO2/ISO3 の優先方針を記述できる
+  - [ ] それぞれのデータソースの方針を再検討し、定義へ反映する
+  - [ ] geoBoundaries(JP/CN/KR Admin1) headless テストを再実行し、vector tiles 生成まで到達する
+  - [ ] 実行コマンド/結果を運用ログに記載する
+- チェックリスト:
+  - [ ] iso3166 変換ユーティリティの配置/利用箇所を決める
+  - [ ] data source 定義の型と利用箇所を更新する
+  - [ ] shape-plugin の URL 生成/バッチ処理に ISO 優先方針を反映する
+  - [ ] headless テストの再実行で結果を確認する
+- ロールバック手順：追加した util/定義変更を revert し、headless テストは実行ログのみ削除。
+
+1852) shape-plugin batch処理テスト検証 + geoBoundaries(JP/CN/KR Admin1)でのheadless検証（P1）
+- ブランチ: `analysis/shape/batch-headless-geoboundaries-admin1`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin（batch処理/テスト）、packages/runtime-worker、fake-indexeddb、geoBoundariesデータ取得
+- 受け入れ基準（DoD）:
+  - [ ] 既存の shape-plugin batch処理テスト内容を要約し、検証観点を整理する
+  - [ ] geoBoundariesで日中韓3カ国のAdmin1レベルを対象とするShapeEntityの入力条件を明確化する
+  - [ ] headless環境でネットワーク利用のテストを実施し、fake-indexeddb上で最終的なベクトルタイル生成まで到達したことを確認する
+  - [ ] 実行コマンド/結果（成功要点または失敗要因）を運用ログに記載する
+- チェックリスト:
+  - [ ] batch処理テストの配置と実行方法を特定する
+  - [ ] 既存テストの前提（入力データ/モック/環境）を整理する
+  - [ ] geoBoundaries取得手順（URL/形式/フィルタ条件）を整理する
+  - [ ] headlessテストの手順とログの保存場所を特定する
+- ロールバック手順：調査/実行のみ。記載内容を戻す場合は本タスクの運用ログ追記を削除する。
+
+1851) shape-plugin Step5 build 失敗（"Failed to start or resume build."）の原因調査（P1）
+- ブランチ: `analysis/shape/step5-build-failure`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin（Step5 UI/Hook/worker）、packages/plugin-service-sdk（WorkerBridge）、packages/runtime-worker（BatchSession）
+- 受け入れ基準（DoD）:
+  - [ ] Snackbar「Failed to start or resume build.」の発火元（UI/Hook/Bridge/Worker）を特定する
+  - [ ] Step4 のキャッシュ削除が復旧に効かない理由をコード根拠付きで説明できる
+  - [ ] 原因/影響範囲/再現条件を運用ログに記載する
+- チェックリスト:
+  - [ ] Step5 の build 開始/再開フロー（UI → WorkerBridge → runtime-worker）を追跡する
+  - [ ] 失敗時に返るエラー/ステータスの条件分岐を特定する
+  - [ ] Step4 のキャッシュ削除が参照している状態と build 実行条件の関係を確認する
+- ロールバック手順：調査のみのため差分なし。記載内容を戻す場合は本タスクの運用ログ追記を削除する。
+
 1850) build/preview の dialogRoute startsWith 例外調査と修正（P1）
 - ブランチ: `fix/app/preview-dialogroute-startswith`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: app/src/router/routes/tree/dialogRoute.tsx, packages/plugin-ui-host, app build 出力
@@ -4898,6 +4967,15 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+
+- 1856) PeerStore/getPeer/registerPeer 完全廃止の徹底（P1） — 完了 (2025-12-25)
+  - 要点：PeerStore/createNodePayloadPeerStore を runtime-worker から削除し、spreadsheet/location/shape の worker 登録と app テストモックから PeerStore 参照を撤去。設計/運用ドキュメントも廃止前提に更新。
+  - 検証：未実施。
+  - ロールバック手順：`packages/runtime-worker/src/{entity/store.ts,index.ts,module-paths.ts,services/NodeLifecycleManager.ts}` と `plugins/{spreadsheet-plugin,location-plugin,shape-plugin}`、`app/src/router/__tests__/unit/configure-router-mode.unit.test.ts`、`app/src/worker-runtime/__tests__/unit/preload-worker-modules.unit.test.ts`、`docs/**`、`plugins/**` の差分を revert する。
+- 1851) 自動保存のデフォルトをオフに変更（P1） — 完了 (2025-12-25)
+  - 要点：TreeConsole の自動保存既定値を false に統一し、設定未作成時はオフで起動するように修正。ドキュメントの記載も既定オフに合わせて更新。
+  - 検証：未実施。
+  - ロールバック手順：`packages/util/src/treeConsoleSettings.ts`、`app/src/router/pages/tree/console/useTreeConsoleToolbarActions.ts`、`packages/ui/treeconsole/toolbar/src/components/{TreeConsoleToolbar.tsx,toolbar/TreeConsoleToolbarContent.tsx}`、`app/docs/{01-getting-started.md,02-basic-operations.md,11-settings.md}` の差分を revert し、既定値を true に戻す。
 - 1848) runtime-worker typecheck: toTreeId/generateNodeId/TreeSubscriptionAPI 修正（P1） — 完了 (2025-12-24)
   - 要点：toTreeId を `as TreeId` キャストへ置換し、generateNodeId を uuid(v4) 生成へ統一。TreeSubscriptionService に TreeSubscriptionAPI の不足メソッドを実装。
   - 検証：未実施。
@@ -11400,6 +11478,32 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-25 08:41 progress: Step5 Start Build 実ログ確認。startBatchResult が status=paused を返す一方、useShapeBuildProgressStep は sessionId ありでも hasSessionId=false（error判定）になり buildStatus が idle に戻る挙動を確認。進捗購読/ステータス取得側のエラー詳細を追加ログで追跡する必要あり。
+- 2025-12-25 09:07 start: fix/runtime/remove-peerstore-api — PeerStore/getPeer/registerPeer 廃止をリポジトリ全体で徹底する対応に着手。DoD: Kanban 1856 のとおり削除/ドキュメント更新/運用ログ記載。
+- 2025-12-25 09:18 progress: fix/runtime/remove-peerstore-api — runtime-worker の PeerStore 定義/実装と createNodePayloadPeerStore を削除。shape/location/spreadsheet の worker store 登録から PeerStore 参照を撤去し、app のテストモックも更新。設計/運用ドキュメントを PeerStore 廃止に合わせて更新。
+- 2025-12-25 09:20 done: fix/runtime/remove-peerstore-api — PeerStore/getPeer/registerPeer の実装・参照・型を撤去し、関連ドキュメントを更新。検証: 未実施。ロールバック: Done セクションの記載に従う。
+- 2025-12-25 08:37 progress: Step5 Start Build のログ追加。useBatchSessionActions に saveDraft/start/resume/pause の console.debug を追加し、useShapeBuildProgressStep で session/buildStatus/progress の遷移ログを追加。
+- 2025-12-25 08:36 start: fix/shape/step5-build-debug-logs — Step5 Start Build の進捗が分からない問題に対し、主要フローへ console.debug を追加する対応に着手。DoD: Kanban 1855 のとおり。
+- 2025-12-25 08:34 start: fix/worker/spreadsheet-registry-getpeer — spreadsheet-plugin の worker store 登録で `registry.getPeer is not a function` が発生するため調査開始。DoD: Kanban 1854 のとおり原因特定/再発防止/運用ログ記載。
+- 2025-12-25 08:36 progress: fix/worker/spreadsheet-registry-getpeer — runtime-worker の storeRegistry が peer store API（getPeer/registerPeer）を持っておらず、preload 時に渡される registry が型と不一致な点を確認。store-registry に peer map と getPeer/registerPeer を追加する方針で修正。
+- 2025-12-25 08:46 progress: fix/worker/spreadsheet-registry-getpeer — peer API 追加は取り下げ、spreadsheet の register で getPeer/registerPeer が無い場合は no-op に変更。runtime-worker の store-registry は従来どおり group/relations のみ。
+- 2025-12-25 08:26 progress: shape-batch headless テストで vector tiles の定量検証を追加。download raw buffer の bbox を国別に集約し、zoom=3 のタイル union bbox が JPN/CHN/KOR を包含することをチェック。zoom 0-3 の各レベルにタイルが存在し、summary の zoomMin/zoomMax が 0/3 であることも検証。
+- 2025-12-25 08:26 command: `pnpm --filter @hierarchidb/shape-plugin exec vitest run -t "geoBoundaries Admin1" src/headless/shape-batch-progress.headless.test.ts` — exit 0。JP/CN/KR Admin1 の vector tiles を zoom 0-3 で生成し、国別 bbox を包含することを確認。
+- 2025-12-25 08:22 start: test/shape/batch-vector-tile-coverage — JP/CN/KR Admin1 headless テストで vector tiles の範囲/ズーム検証を追加（maxZoom=3）。DoD: bbox包含/zoom範囲確認/運用ログ記載。
+- 2025-12-25 08:15 progress: ISO2/ISO3 可逆変換ユーティリティ（gen-iso3166-2）を追加し、data source 定義に `countryCodeFormat` を導入。generateUrlMetadata は iso2/iso3 両対応の metadata map を使い、geoboundaries は ISO3 へ正規化。worker API は iso3166 変換で preferred format を適用。vitest alias に gen-iso3166-2 を追加。
+- 2025-12-25 08:15 command: `pnpm --filter @hierarchidb/shape-plugin exec vitest run -t "geoBoundaries Admin1" src/headless/shape-batch-progress.headless.test.ts` — exit 0。JP/CN/KR Admin1 の geoBoundaries 取得と vector tiles 生成まで完了。
+- 2025-12-25 07:57 start: feat/shape/iso-code-preference — ISO2/ISO3 可逆変換ユーティリティ整備と data source ISO優先方針の明文化に着手。DoD: Kanban 1853 のとおり実装/方針反映/再テスト/運用ログ記載。
+- 2025-12-25 07:51 progress: ISO2/ISO3 の現状調査。MetadataLoader は countryCode=iso2優先で保持し iso2/iso3 を併記するが、ISO2↔ISO3の可逆変換ユーティリティは未整備。GeoBoundariesStrategy の normalizeCountryCode は JP/CN 等の手書きマップのみで KR→KOR が未定義。selectionUrlMetadata は ISO2 を優先し、data source ごとの ISO2/ISO3 方針はコード上明文化されていない。
+- 2025-12-25 07:46 progress: shape-batch headless テストに run helper を追加し、JP/CN/KR Admin1 を対象にした geoBoundaries headless テストケースを追加（`plugins/shape-plugin/src/headless/shape-batch-progress.headless.test.ts`）。
+- 2025-12-25 07:45 command: `pnpm --filter @hierarchidb/shape-plugin exec vitest run -t "geoBoundaries Admin1" src/headless/shape-batch-progress.headless.test.ts` — exit 1。KR の Admin1 が geoBoundaries API で 404（`gbOpen/KR/ADM1`）となり batch が failed。unhandled: DatabaseClosedError が発生（失敗後の後始末で DB close 競合）。blocked: KR を geoboundaries へ渡す ISO 正規化（KR→KOR）か、ShapeEntity 側の country code 方針を明確化する必要がある。
+- 2025-12-25 07:39 start: analysis/shape/batch-headless-geoboundaries-admin1 — shape-plugin batch処理テスト検証と geoBoundaries(日中韓Admin1) headless検証に着手。DoD: Kanban 1852 のとおりテスト内容整理/ShapeEntity条件の明確化/headless検証/運用ログ記載。
+- 2025-12-25 07:20 start: analysis/shape/step5-build-failure — shape-plugin Step5 の build 実行で「Failed to start or resume build.」が表示される原因調査を開始。DoD: Kanban 1851 のとおり発火元特定/キャッシュ削除無効の理由整理/運用ログ更新。
+- 2025-12-25 07:27 progress: analysis/shape/step5-build-failure — Snackbar は Step5 の `useBatchSessionActions` で start/resume 例外を catch したときのみ表示（`plugins/shape-plugin/src/ui/hooks/build/useBatchSessionActions.ts`）。worker 側は `startBatchSession` で draft の `batchConfig` をそのまま渡すため、`batchConfig.dataSource` 未設定/検証NG/working copy 未検出だと `shapePluginAPI.startBatchProcessing` が例外を投げる（`plugins/shape-plugin/src/worker/api.ts`）。Step4 のキャッシュ削除は Ephemeral DB と batchTasks を消すだけで設定や Worker API の失敗条件を解消しないため復旧しない（`plugins/shape-plugin/src/ui/hooks/useDownloadConfigSection.ts`）。
+- 2025-12-25 07:30 progress: analysis/shape/step5-build-failure — エラー「Session ... not found」は Step5 が `sessionId = data.batchSessionId ?? nodeId` を使い、`shouldForcePaused` により buildStatus が paused になると `resumeBatchSession(sessionId)` を呼ぶため発生。`batchSessionId` 未設定の状態だと nodeId を sessionId として扱って resume するが、実際のバッチセッションは存在しないため `BatchSessionManager.resumeSession` で not found になる（`plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts` / `plugins/shape-plugin/src/ui/hooks/build/useBatchSessionActions.ts` / `app/src/worker-runtime/worker.ts`）。
+- 2025-12-25 07:32 progress: analysis/shape/step5-build-failure — DoD方針2の対処として `sessionId` のフォールバックを撤廃し、`batchSessionId` が無い場合は null 扱いに修正（`plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`）。これにより Start Build で resume が走らず、まず start 経路へ進む。
+- 2025-12-25 07:35 progress: analysis/shape/step5-build-failure — `batchSessionId` 無しで Resume ラベルが出ないよう、sessionId 不在時は progress/status を無効化して buildStatus を idle に固定（`plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`）。これにより stale progress による paused 判定を回避し、Start Build は必ず start 経路になる。
+- 2025-12-25 07:37 progress: analysis/shape/step5-build-failure — sessionId はあるがセッション未存在（`Session ... not found`）のケースで Resume 表示が残るため、progress エラー時は sessionId を無効扱いにして idle へ戻す（`plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts`）。Resume ラベルが出ず Start Build に戻る想定。
+- 2025-12-25 08:24 command: `pnpm --filter @hierarchidb/shape-plugin typecheck` — exit 0。
 - 2025-12-25 04:33 start: fix/app/preview-dialogroute-startswith — `pnpm build && pnpm preview` で dialogRoute の `startsWith` が undefined となる TypeError を調査開始。DoD: Kanban 1850 のとおり再発防止/原因特定/運用ログ更新。
 - 2025-12-25 04:43 progress: fix/app/preview-dialogroute-startswith — PluginDialogHeader の buildStepLink で pathname/hash のフォールバックを追加し、hash router 由来の `#/` を step link に二重付与しないように補正。`to` が空/不正にならないよう guard を導入。
 - 2025-12-25 04:58 progress: fix/app/preview-dialogroute-startswith — PluginDialogStepper で step link が空/不正な場合は Link を使わずに描画し、`startsWith` が未定義に落ちる経路を遮断。
@@ -11438,6 +11542,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-24 09:41 command: `VITE_APP_NAME=hierarchidb pnpm -C app preview` は EPERM で listen 失敗（0.0.0.0:4173）。sandbox 制約で preview 確認不可。
 - 2025-12-24 09:47 progress: test/vite-minimal-index — `app/vite.config.ts` の主要設定項目の依存関係を整理し、共有依存（mode/env）を持つため木構造ではなく DAG であることを確認。
 - 2025-12-24 09:52 progress: test/vite-minimal-index — `app/vite.config.minimal.ts` を削除し、`app/vite.config.ts`/`app/vite.config.min.ts` から SSR 設定を撤去。
+- 2025-12-25 13:20 start: fix/ui/autosave-default-off — 自動保存の既定値をオフへ変更する対応に着手（sandbox 制約で branch 作成不可なら main 上で作業）。DoD: Kanban 1851 のとおり既定値の統一/運用ログ更新/ロールバック明記。
+- 2025-12-25 13:30 progress: fix/ui/autosave-default-off — TreeConsole 設定の既定値と UI 初期値の autosaveEnabled を false に統一し、設定未作成時はオフになるように更新。関連ドキュメントも既定オフに合わせて記述を修正。
+- 2025-12-25 13:35 done: fix/ui/autosave-default-off — 既定値の統一を完了。検証: 未実施。ロールバック: `packages/util/src/treeConsoleSettings.ts`、`app/src/router/pages/tree/console/useTreeConsoleToolbarActions.ts`、`packages/ui/treeconsole/toolbar/src/components/{TreeConsoleToolbar.tsx,toolbar/TreeConsoleToolbarContent.tsx}`、`app/docs/{01-getting-started.md,02-basic-operations.md,11-settings.md}` の差分を revert する。
 - 2025-12-24 10:02 progress: test/vite-minimal-index — 検証用 `_app` ディレクトリを削除。
 - 2025-12-24 10:05 progress: test/vite-minimal-index — `app/vite.config.min.ts` の base を `VITE_APP_NAME` のみに統一。
 - 2025-12-24 10:12 progress: test/vite-minimal-index — `crypto`/`child_process` の shim alias を `app/vite.config.ts`/`app/vite.config.min.ts` から削除し、`app/src/virtual/*-shim.ts` を削除。

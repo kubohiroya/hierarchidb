@@ -66,6 +66,7 @@ export const SHAPE_DATA_SOURCES = [
     color: '#2E8B57',
     icon: '🌍',
     maxAdminLevel: 2,
+    countryCodeFormat: 'iso2',
   },
   {
     name: 'geoboundaries',
@@ -77,6 +78,7 @@ export const SHAPE_DATA_SOURCES = [
     color: '#4169E1',
     icon: '🗺️',
     maxAdminLevel: 5,
+    countryCodeFormat: 'iso3',
   },
   {
     name: 'gadm',
@@ -88,6 +90,7 @@ export const SHAPE_DATA_SOURCES = [
     color: '#FF6347',
     icon: '🌐',
     maxAdminLevel: 4,
+    countryCodeFormat: 'iso2',
   },
   {
     name: 'openstreetmap',
@@ -99,6 +102,7 @@ export const SHAPE_DATA_SOURCES = [
     color: '#7EDD00',
     icon: '🛣️',
     maxAdminLevel: 3,
+    countryCodeFormat: 'iso2',
   },
 ] as DataSourceConfig[];
 

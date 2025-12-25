@@ -6,14 +6,11 @@ export {
 export type { PluginWorkerModuleLoader } from './di/interfaces.js';
 export { WorkerDiTokens } from './di/tokens.js';
 export { resolveDefaultNodeName } from './utils/default-node-name.js';
-export { createNodePayloadPeerStore } from './entity/createNodePayloadPeerStore.js';
 
 // Public re-exports for plugin-side stores and registry
 export type {
   GroupItemBase,
   GroupStore,
-  PeerEntity,
-  PeerStore,
   RelationBase,
   RelationStore,
 } from './entity/store.js';

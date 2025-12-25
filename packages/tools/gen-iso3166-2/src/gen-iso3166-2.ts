@@ -1,5 +1,6 @@
 import { generateIso3166Files } from "./scraper.js";
 export * from "./index.js";
+import * as process from "node:process";
 
 const isDirectRun = (() => {
   if (typeof process === "undefined" || typeof import.meta.url !== "string") return false;

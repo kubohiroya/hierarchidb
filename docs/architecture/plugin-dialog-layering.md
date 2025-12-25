@@ -33,7 +33,7 @@ _Last updated: 2025-10-30_
 - `@hierarchidb/plugin-base` を新設し、以下を移設
   - `usePluginDialogController` と関連型
   - Step / Host registry（`PluginStepRegistry`, `HostProfileRegistry`）
-  - WorkingCopy/PeerStore ブリッジ（`getWorkerBridge`, WorkingCopy hooks）
+  - WorkingCopy/TreeNode data ブリッジ（`getWorkerBridge`, WorkingCopy hooks）
   - URL 同期・状態管理ロジック
 - `@hierarchidb/plugin-ui-sdk` は作者向け API を `plugin-base` から再エクスポート。
 - `@hierarchidb/plugin-ui-host` は UI コンポーネント（シェル、フッター、ステッパー）と `PluginDialogHost` ファサードに集中させる。

@@ -65,6 +65,14 @@ export default defineConfig({
         __dirname,
         '../../packages/features/download/src/index.ts',
       ),
+      '@hierarchidb/gen-iso3166-2': path.resolve(
+        __dirname,
+        '../../packages/tools/gen-iso3166-2/src/index.ts',
+      ),
+      '@hierarchidb/gen-iso3166-2/browser': path.resolve(
+        __dirname,
+        '../../packages/tools/gen-iso3166-2/src/browser.ts',
+      ),
       '@hierarchidb/fetch-save-metadata': path.resolve(
         __dirname,
         '../../packages/features/fetch-save-metadata',

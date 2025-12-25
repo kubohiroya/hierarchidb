@@ -307,7 +307,7 @@ export interface StylerEntity extends SpreadsheetEntity {
 
 }
 
-// Working copies are handled by runtime-worker-worker PeerStore; no dedicated type here.
+// Working copies live on TreeNode data/draftData; no dedicated worker store.
 
 export interface StylerColorRule {
   column: string;

@@ -1,52 +1,13 @@
-import type { NodeId } from '@hierarchidb/common-types';
-
-interface DialogWindowState {
-  mode?: 'normal' | 'maximize' | 'full-screen';
-  position?: { x: number; y: number } | null;
-  size?: { width: number; height: number } | null;
-}
-
-interface DialogProgressState {
-  /**
-   * 1-based index of the last active step when the dialog was persisted.
-   */
-  activeStepIndex: number;
-}
-
 /**
- * Abstractions for plugin entity stores (Peer/Group/Relational).
+ * Abstractions for plugin entity stores (Group/Relational).
  * Implementations should wrap per-plugin Dexie databases that expose
  * the same logical table names:
- *   - peerEntities
  *   - groupEntities
  *   - relations
  *
  * Each plugin provides its own DB instance (e.g. `<pluginName>-entities`),
  * keeping table names consistent so that shared handlers/utilities can be reused.
  */
-
-// Peer: 1:1 with TreeNode; primary key is nodeId
-export interface PeerEntity<TData = unknown> {
-  nodeId: NodeId;
-  // Domain data only; UI-facing fields (name/description) live in TreeNode
-  data?: TData;
-  updatedAt?: number;
-  // Persisted dialog window state (mode/position/size)
-  dialogWindow?: DialogWindowState | null;
-  // Minimal multi-step dialog progress snapshot
-  dialogProgress?: DialogProgressState | null;
-}
-
-export interface PeerStore<TData = unknown> {
-  get(nodeId: NodeId): Promise<PeerEntity<TData> | undefined>;
-
-  put(entity: PeerEntity<TData>): Promise<void>;
-
-  delete(nodeId: NodeId): Promise<void>;
-
-  // Optional fast-path for bulk upsert
-  bulkUpsert?(entities: PeerEntity<TData>[]): Promise<void>;
-}
 
 // Group: 1:N under a node; primary key is [nodeId + id]
 export interface GroupItemBase<TItemData = unknown> {
