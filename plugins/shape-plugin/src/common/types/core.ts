@@ -56,6 +56,8 @@ export interface ShapeEntity {
   batchSessionId?: string;
   processingStatus?: 'idle' | 'processing' | 'paused' | 'completed' | 'failed' | 'cancelled';
   tileSummary?: { tiles: number; totalBytes: number; zoomMin?: number; zoomMax?: number };
+  buildStartedAt?: number;
+  buildFinishedAt?: number;
 }
 
 export type ShapeDraft = TreeNodeUpdaterPayload<ShapeEntity>;

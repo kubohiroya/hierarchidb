@@ -13,7 +13,13 @@ import { useShapeProcessingSettingsStep } from '../../hooks/useShapeProcessingSe
 export const ShapeProcessingSettingsStep: React.FC<ShapeDialogStepProps> = ({ data, onChange }) => {
   const { config, handleChange } = useShapeProcessingSettingsStep({ data, onChange });
   const resetSession = () => {
-    onChange({ batchSessionId: undefined, processingStatus: 'idle', tileSummary: undefined });
+    onChange({
+      batchSessionId: undefined,
+      processingStatus: 'idle',
+      tileSummary: undefined,
+      buildStartedAt: undefined,
+      buildFinishedAt: undefined,
+    });
   };
 
   return (
@@ -25,9 +31,9 @@ export const ShapeProcessingSettingsStep: React.FC<ShapeDialogStepProps> = ({ da
           onChange={handleChange}
           onResetSession={resetSession}
         />
-        <Simplify1ConfigSection config={config} onChange={handleChange} />
-        <Simplify2ConfigSection config={config} onChange={handleChange} />
-        <TileConfigSection config={config} onChange={handleChange} />
+        <Simplify1ConfigSection config={config} draft={data} onChange={handleChange} />
+        <Simplify2ConfigSection config={config} draft={data} onChange={handleChange} />
+        <TileConfigSection config={config} draft={data} onChange={handleChange} />
       </Stack>
     </Box>
   );

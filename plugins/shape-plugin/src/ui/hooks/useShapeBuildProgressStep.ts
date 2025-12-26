@@ -15,6 +15,15 @@ import { useBuildStatus } from './build/useBuildStatus.js';
 import { useBuildTaskProgress } from '@hierarchidb/ui-batch';
 import { useBatchSessionActions } from './build/useBatchSessionActions.js';
 import { getTileSummary } from '../../services/tiles/RuntimeTileClient.js';
+import {
+  appendBuildSample,
+  BUILD_MONITOR_SAMPLE_INTERVAL_MS,
+  getBuildConfigSnapshot,
+  getBuildMonitorKey,
+  getMemorySnapshot,
+  recordBuildFinish,
+  recordBuildStart,
+} from '../utils/buildMonitor.js';
 
 const normalizeStageId = (stage?: string): string | undefined => {
   if (!stage) return undefined;
@@ -90,6 +99,14 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
   const hasProgressData = Boolean(effectiveProgress) || Boolean(effectiveStatus && effectiveStatus.status !== 'idle');
   const debugStateRef = useRef<Record<string, unknown> | null>(null);
   const lastSyncedStatusRef = useRef<string | null>(null);
+  const monitorKey = useMemo(() => {
+    const resolvedNodeId = nodeId ?? data?.nodeId;
+    return getBuildMonitorKey(resolvedNodeId ? String(resolvedNodeId) : null, sessionId);
+  }, [data?.nodeId, nodeId, sessionId]);
+  const configSnapshot = useMemo(
+    () => getBuildConfigSnapshot(data?.batchConfig),
+    [data?.batchConfig],
+  );
 
   useEffect(() => {
     const nextState = {
@@ -163,6 +180,46 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     lastSyncedStatusRef.current = nextStatus;
     onChange({ processingStatus: nextStatus });
   }, [data?.processingStatus, effectiveStatus?.status, onChange, sessionId]);
+
+  useEffect(() => {
+    if (buildStatus !== 'running') return;
+    if (data?.buildStartedAt) return;
+    onChange({
+      buildStartedAt: Date.now(),
+      buildFinishedAt: undefined,
+    });
+  }, [buildStatus, data?.buildStartedAt, onChange]);
+
+  useEffect(() => {
+    if (!monitorKey) return;
+    if (buildStatus !== 'running') return;
+    const startedAt = data?.buildStartedAt ?? Date.now();
+    recordBuildStart(monitorKey, {
+      nodeId: data?.nodeId ? String(data.nodeId) : undefined,
+      sessionId: sessionId ?? undefined,
+      startedAt,
+      configSnapshot,
+    });
+    const interval = window.setInterval(() => {
+      appendBuildSample(monitorKey, {
+        timestamp: Date.now(),
+        stage: currentStage as 'download' | 'simplify1' | 'simplify2' | 'vectorTiles' | undefined,
+        ...getMemorySnapshot(),
+      });
+    }, BUILD_MONITOR_SAMPLE_INTERVAL_MS);
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [buildStatus, configSnapshot, currentStage, data?.buildStartedAt, data?.nodeId, monitorKey, sessionId]);
+
+  useEffect(() => {
+    if (!monitorKey) return;
+    if (!['completed', 'failed', 'cancelled'].includes(buildStatus)) return;
+    if (!data?.buildFinishedAt) {
+      onChange({ buildFinishedAt: Date.now() });
+    }
+    recordBuildFinish(monitorKey, Date.now());
+  }, [buildStatus, data?.buildFinishedAt, monitorKey, onChange]);
 
   useEffect(() => {
     if (!sessionId) return;

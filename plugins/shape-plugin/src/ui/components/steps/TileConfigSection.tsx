@@ -1,19 +1,38 @@
 import { Accordion, AccordionDetails, AccordionSummary, Box, Grid, Stack, Typography, Slider } from '@mui/material';
 import { Layers as LayersIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
-import type { BatchConfig } from '../../../common/types/index.js';
+import type { BatchConfig, ShapeEntity } from '../../../common/types/index.js';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { useTranslation } from '../../i18n.js';
 import { useTileConfigSection } from '../../hooks/useTileConfigSection.js';
+import { useBuildCrashInsight } from '../../hooks/useBuildCrashInsight.js';
+import { getStageConcurrencyWarning } from '../../utils/buildMonitor.js';
 
 type Props = {
   config: BatchConfig;
+  draft?: Partial<ShapeEntity> | null;
   disabled?: boolean;
   onChange: (next: BatchConfig) => void;
 };
 
-export const TileConfigSection: React.FC<Props> = ({ config, disabled, onChange }) => {
+export const TileConfigSection: React.FC<Props> = ({ config, draft, disabled, onChange }) => {
   const { t } = useTranslation();
+  const crashInsight = useBuildCrashInsight({
+    draft,
+    nodeId: draft?.nodeId ? String(draft.nodeId) : undefined,
+  });
   const { baseTileConfig, zoomRange, update } = useTileConfigSection({ config, disabled, onChange });
+  const tileWarning = getStageConcurrencyWarning(
+    crashInsight,
+    'vectorTiles',
+    baseTileConfig.workers,
+  );
+  const tileWarningText = tileWarning
+    ? t(
+      'processing.tile.memoryWarning',
+      'Possible memory pressure: {{message}}',
+      { message: tileWarning.message },
+    )
+    : undefined;
 
   return (
     <Accordion defaultExpanded>
@@ -36,6 +55,7 @@ export const TileConfigSection: React.FC<Props> = ({ config, disabled, onChange 
               title={t('processing.tile.workers', 'Tile Worker Count')}
               value={baseTileConfig.workers ?? 2}
               helperText={t('processing.tile.workersHelp', 'Parallel workers for tile generation.')}
+              warningText={tileWarningText}
               onChange={(workers) =>
                 update({
                   tileConfig: {

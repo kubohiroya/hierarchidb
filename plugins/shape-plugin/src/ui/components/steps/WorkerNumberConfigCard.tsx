@@ -20,6 +20,7 @@ type WorkerNumberConfigCardProps = {
   ratingEmptyIcon?: React.ReactNode;
   onChange: (value: number) => void;
   helperText?: string;
+  warningText?: string;
   disabled?: boolean;
 };
 
@@ -36,6 +37,7 @@ export const WorkerNumberConfigCard: React.FC<WorkerNumberConfigCardProps> = ({
   ratingEmptyIcon,
   onChange,
   helperText,
+  warningText,
   disabled,
 }) => {
   const clampedValue = Math.max(min, Math.min(max, value));
@@ -79,6 +81,11 @@ export const WorkerNumberConfigCard: React.FC<WorkerNumberConfigCardProps> = ({
       {helperText ? (
         <Typography variant="caption" color="text.secondary">
           {helperText}
+        </Typography>
+      ) : null}
+      {warningText ? (
+        <Typography variant="caption" color="error">
+          {warningText}
         </Typography>
       ) : null}
     </Paper>

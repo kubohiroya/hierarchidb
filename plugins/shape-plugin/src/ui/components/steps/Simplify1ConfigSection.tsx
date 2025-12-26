@@ -8,21 +8,28 @@ import {
   Paper,
 } from '@mui/material';
 import { FilterAlt as FilterAltIcon, ExpandMore as ExpandMoreIcon, FilterAlt } from '@mui/icons-material';
-import type { BatchConfig } from '../../../common/types/index.js';
+import type { BatchConfig, ShapeEntity } from '../../../common/types/index.js';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { useTranslation } from '../../i18n.js';
 import { useSimplify1ConfigSection } from '../../hooks/useSimplificationConfigSection.js';
 import { AreaFilterPanel } from '../processing/AreaFilterPanel.js';
 import { SimplificationPanel } from '../processing/SimplificationPanel.js';
+import { useBuildCrashInsight } from '../../hooks/useBuildCrashInsight.js';
+import { getStageConcurrencyWarning } from '../../utils/buildMonitor.js';
 
 type Props = {
   config: BatchConfig;
+  draft?: Partial<ShapeEntity> | null;
   disabled?: boolean;
   onChange: (next: BatchConfig) => void;
 };
 
-export const Simplify1ConfigSection: React.FC<Props> = ({ config, disabled, onChange }) => {
+export const Simplify1ConfigSection: React.FC<Props> = ({ config, draft, disabled, onChange }) => {
   const { t } = useTranslation();
+  const crashInsight = useBuildCrashInsight({
+    draft,
+    nodeId: draft?.nodeId ? String(draft.nodeId) : undefined,
+  });
   const {
     controlId,
     baseSimplify1Config,
@@ -32,6 +39,18 @@ export const Simplify1ConfigSection: React.FC<Props> = ({ config, disabled, onCh
     quickRejectLogValue,
     update,
   } = useSimplify1ConfigSection({ config, disabled, onChange });
+  const simplify1Warning = getStageConcurrencyWarning(
+    crashInsight,
+    'simplify1',
+    baseSimplify1Config.workers,
+  );
+  const simplify1WarningText = simplify1Warning
+    ? t(
+      'processing.simplify1.memoryWarning',
+      'Possible memory pressure: {{message}}',
+      { message: simplify1Warning.message },
+    )
+    : undefined;
 
   return (
     <Accordion defaultExpanded>
@@ -55,6 +74,7 @@ export const Simplify1ConfigSection: React.FC<Props> = ({ config, disabled, onCh
                 title={t('processing.filter.workersStage1', 'Number of Workers for Polygon-Simplification (Stage 1)')}
                 value={baseSimplify1Config.workers ?? 2}
                 helperText={t('processing.filter.workersStage1Help', 'Parallel workers for feature simplification in stage 1.')}
+                warningText={simplify1WarningText}
                 onChange={(workers) =>
                   update({
                     simplify1Config: {

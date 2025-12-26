@@ -155,6 +155,8 @@ export const useDownloadConfigSection = ({ config, draft, disabled, onChange, on
           batchSessionId: undefined,
           processingStatus: 'idle',
           tileSummary: undefined,
+          buildStartedAt: undefined,
+          buildFinishedAt: undefined,
         } as Record<string, unknown>,
       });
     } catch (error) {

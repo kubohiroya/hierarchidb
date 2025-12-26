@@ -374,42 +374,55 @@ export const generateVectorTilesFromFeatureCollection = async (
   const db = await TilesDB.getSingleton();
   let tiles = 0;
   let totalBytes = 0;
-  for (const z of targetZooms) {
-    throwIfAborted(config.signal);
-    const x1 = long2tile(minLon, z);
-    const x2 = long2tile(maxLon, z);
-    const y1 = lat2tile(maxLat, z);
-    const y2 = lat2tile(minLat, z);
-    for (let x = x1; x <= x2; x++) {
+  const createdTileKeys: string[] = [];
+  try {
+    for (const z of targetZooms) {
       throwIfAborted(config.signal);
-      for (let y = y1; y <= y2; y++) {
+      const x1 = long2tile(minLon, z);
+      const x2 = long2tile(maxLon, z);
+      const y1 = lat2tile(maxLat, z);
+      const y2 = lat2tile(minLat, z);
+      for (let x = x1; x <= x2; x++) {
         throwIfAborted(config.signal);
-        const tile = index.getTile(z, x, y);
-        const layer =
-          tile && Array.isArray((tile as { features?: unknown[] }).features)
-            ? (tile as Tile)
-            : null;
-        if (layer?.features?.length) {
-          const layers: Record<string, Tile> = { layer0: layer };
-          const pbf = vtpbf.fromGeojsonVt(layers as unknown as Tile[], { version: 2 });
-          const bytes = pbf as Uint8Array;
-          tiles++;
-          totalBytes += bytes.byteLength;
-          const key = `${sessionId}-${z}-${x}-${y}`;
-          await db.tiles.put({
-            key,
-            sessionId,
-            z,
-            x,
-            y,
-            data: bytes.slice().buffer,
-            size: bytes.byteLength,
-            contentType: 'application/vnd.mapbox-vector-tile',
-            timestamp: Date.now(),
-          });
+        for (let y = y1; y <= y2; y++) {
+          throwIfAborted(config.signal);
+          const tile = index.getTile(z, x, y);
+          const layer =
+            tile && Array.isArray((tile as { features?: unknown[] }).features)
+              ? (tile as Tile)
+              : null;
+          if (layer?.features?.length) {
+            const layers: Record<string, Tile> = { layer0: layer };
+            const pbf = vtpbf.fromGeojsonVt(layers as unknown as Tile[], { version: 2 });
+            const bytes = pbf as Uint8Array;
+            tiles++;
+            totalBytes += bytes.byteLength;
+            const key = `${sessionId}-${z}-${x}-${y}`;
+            createdTileKeys.push(key);
+            await db.tiles.put({
+              key,
+              sessionId,
+              z,
+              x,
+              y,
+              data: bytes.slice().buffer,
+              size: bytes.byteLength,
+              contentType: 'application/vnd.mapbox-vector-tile',
+              timestamp: Date.now(),
+            });
+          }
         }
       }
     }
+  } catch (error) {
+    if (isAbortError(error) && createdTileKeys.length > 0) {
+      await deleteTilesInBatches(db, createdTileKeys);
+      console.debug('[VectorTiles] aborted; cleaned up generated tiles', {
+        sessionId,
+        tiles: createdTileKeys.length,
+      });
+    }
+    throw error;
   }
 
   return { tilesGenerated: tiles, totalBytes, metadataCount };
@@ -423,6 +436,23 @@ const throwIfAborted = (signal?: AbortSignal): void => {
   const error = new Error('Vector tile generation aborted');
   (error as Error & { name: string }).name = 'AbortError';
   throw error;
+};
+
+const isAbortError = (error: unknown): boolean => {
+  if (!error || typeof error !== 'object') return false;
+  const maybeError = error as Error & { name?: string };
+  return maybeError.name === 'AbortError';
+};
+
+const deleteTilesInBatches = async (
+  db: TilesDB,
+  keys: string[],
+  batchSize = 500,
+): Promise<void> => {
+  for (let index = 0; index < keys.length; index += batchSize) {
+    const batch = keys.slice(index, index + batchSize);
+    await db.tiles.bulkDelete(batch);
+  }
 };
 
 export const getVectorTile = async (

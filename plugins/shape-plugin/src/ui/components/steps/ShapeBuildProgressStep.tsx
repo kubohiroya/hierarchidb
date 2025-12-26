@@ -1,5 +1,17 @@
-import { useCallback } from 'react';
-import { Box, Card, CardContent, LinearProgress, Stack, Typography } from '@mui/material';
+import { useCallback, useMemo, useState } from 'react';
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  LinearProgress,
+  Stack,
+  Typography,
+} from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import ConstructionIcon from '@mui/icons-material/Construction';
 import { BuildStepPanel, type BuildStage } from '@hierarchidb/components';
@@ -8,10 +20,17 @@ import type { NodeId } from '@hierarchidb/common-types';
 import type { ShapeDialogStepProps } from './ShapeDialogStepProps.ts';
 import { useShapeBuildProgressStep } from '../../hooks/useShapeBuildProgressStep.js';
 import { ShapeBuildTaskItem } from './ShapeBuildTaskItem.js';
+import { useBuildCrashInsight } from '../../hooks/useBuildCrashInsight.js';
+import { getStageConcurrencyWarning } from '../../utils/buildMonitor.js';
 
 export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, onChange, nodeId }) => {
   const resolvedNodeId = nodeId as NodeId | undefined;
   const theme = useTheme();
+  const crashInsight = useBuildCrashInsight({
+    draft: data,
+    nodeId: resolvedNodeId ? String(resolvedNodeId) : undefined,
+  });
+  const [warningDialogOpen, setWarningDialogOpen] = useState(false);
   const {
     t,
     stages,
@@ -127,6 +146,75 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
     );
   }, [resolveStatusColor, resolveStatusLabel, resolveTaskTitle, t, tasksByStage]);
 
+  const startWarning = useMemo(() => {
+    if (!crashInsight || !crashInsight.memoryPressure) return null;
+    const stageId = crashInsight.stage;
+    if (!stageId) {
+      return {
+        title: t('build.warning.title', 'Build warning'),
+        message: t(
+          'build.warning.unknownStage',
+          'A previous build ended without a completion record. Consider lowering concurrency if it happens again.',
+        ),
+      };
+    }
+    const stage = stages.find((candidate) => candidate.id === stageId);
+    const stageLabel = stage?.title ?? stageId;
+    const currentValue = (() => {
+      switch (stageId) {
+        case 'download':
+          return data?.batchConfig?.downloadConfig?.maxConcurrent;
+        case 'simplify1':
+          return data?.batchConfig?.simplify1Config?.workers;
+        case 'simplify2':
+          return data?.batchConfig?.simplify2Config?.workers;
+        case 'vectorTiles':
+          return data?.batchConfig?.tileConfig?.workers;
+        default:
+          return undefined;
+      }
+    })();
+    const warning = getStageConcurrencyWarning(crashInsight, stageId, currentValue);
+    if (!warning) return null;
+    const ratioText = crashInsight.peakRatio
+      ? `${(crashInsight.peakRatio * 100).toFixed(1)}%`
+      : t('build.warning.memoryUnknown', 'unknown');
+    return {
+      title: t('build.warning.title', 'Build warning'),
+      message: t(
+        'build.warning.message',
+        'The previous build ended without completion. Peak memory usage for {{stage}} was {{ratio}}. Current concurrency is {{value}} (threshold {{threshold}}). Consider lowering it.',
+        {
+          stage: stageLabel,
+          ratio: ratioText,
+          value: currentValue ?? '-',
+          threshold: warning.threshold ?? '-',
+        },
+      ),
+    };
+  }, [crashInsight, data?.batchConfig, stages, t]);
+
+  const crashHint = useMemo(() => {
+    if (!crashInsight) return null;
+    if (!crashInsight.memoryPressure) {
+      return t(
+        'build.warning.genericHint',
+        'A previous build ended without a completion record. Consider reducing concurrency if it happens again.',
+      );
+    }
+    const stageLabel = crashInsight.stage
+      ? stages.find((candidate) => candidate.id === crashInsight.stage)?.title ?? crashInsight.stage
+      : t('build.warning.unknownStageShort', 'unknown stage');
+    const ratioText = crashInsight.peakRatio
+      ? `${(crashInsight.peakRatio * 100).toFixed(1)}%`
+      : t('build.warning.memoryUnknown', 'unknown');
+    return t(
+      'build.warning.memoryHint',
+      'Previous build likely hit memory pressure during {{stage}} (peak {{ratio}}). Lower concurrency to reduce memory usage.',
+      { stage: stageLabel, ratio: ratioText },
+    );
+  }, [crashInsight, stages, t]);
+
   const renderTaskProgressBar = useCallback(() => {
     const waitingColor = theme.palette.grey[300];
     const emptyStageColor = theme.palette.grey[500];
@@ -224,9 +312,27 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
     </Card>
   ), [buildStatus, completed, failed, overallProgress, renderTaskProgressBar, skipped, stageLabel, t, taskLabel, total]);
 
+  const handleStartClick = useCallback(async () => {
+    if (startWarning) {
+      setWarningDialogOpen(true);
+      return;
+    }
+    await handleStartOrResume();
+  }, [handleStartOrResume, startWarning]);
+
+  const handleConfirmStart = useCallback(async () => {
+    setWarningDialogOpen(false);
+    await handleStartOrResume();
+  }, [handleStartOrResume]);
+
   return (
     <Box display="flex" flexDirection="column" gap={3} height="100%" minHeight={0}>
       <Box flex={1} minHeight={0}>
+        {crashHint ? (
+          <Typography variant="body2" sx={{ mb: 2, color: 'warning.main' }}>
+            {crashHint}
+          </Typography>
+        ) : null}
         <BuildStepPanel
           status={buildStatus}
           overallProgress={overallProgress}
@@ -250,7 +356,7 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
           statusContent={hasProgressData ? <BatchProgressSummaryCard /> : undefined}
           startIcon={<ConstructionIcon fontSize="small" />}
           onPause={handlePause}
-          onResume={canStartOrResume ? handleStartOrResume : undefined}
+          onResume={canStartOrResume ? handleStartClick : undefined}
           controlLabel={t('build.controls.title', 'Build controls')}
           pauseLabel={t('build.controls.pause', 'Pause')}
           startLabel={t('build.controls.start', 'Start build')}
@@ -258,6 +364,24 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
           statusLabel={statusLabel}
         />
       </Box>
+      {startWarning ? (
+        <Dialog open={warningDialogOpen} onClose={() => setWarningDialogOpen(false)}>
+          <DialogTitle>{startWarning.title}</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2" color="text.secondary">
+              {startWarning.message}
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setWarningDialogOpen(false)}>
+              {t('build.warning.cancel', 'Cancel')}
+            </Button>
+            <Button variant="contained" onClick={handleConfirmStart}>
+              {t('build.warning.proceed', 'Proceed')}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      ) : null}
     </Box>
   );
 };

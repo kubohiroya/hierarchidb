@@ -16,6 +16,8 @@ import { useDownloadConfigSection } from '../../hooks/useDownloadConfigSection.j
 import { DownloadRetentionToggle } from '../processing/DownloadRetentionToggle.js';
 import { DownloadCacheActions } from '../processing/DownloadCacheActions.js';
 import { DownloadRetryControls } from '../processing/DownloadRetryControls.js';
+import { useBuildCrashInsight } from '../../hooks/useBuildCrashInsight.js';
+import { getStageConcurrencyWarning } from '../../utils/buildMonitor.js';
 
 type Props = {
   config: BatchConfig;
@@ -26,6 +28,10 @@ type Props = {
 };
 
 export const DownloadConfigSection: React.FC<Props> = ({ config, draft, disabled, onChange, onResetSession }) => {
+  const crashInsight = useBuildCrashInsight({
+    draft,
+    nodeId: draft?.nodeId ? String(draft.nodeId) : undefined,
+  });
   const {
     t,
     switchId,
@@ -42,6 +48,18 @@ export const DownloadConfigSection: React.FC<Props> = ({ config, draft, disabled
     handleDeleteMetadata,
     update,
   } = useDownloadConfigSection({ config, draft, disabled, onChange, onResetSession });
+  const downloadWarning = getStageConcurrencyWarning(
+    crashInsight,
+    'download',
+    baseDownloadConfig.maxConcurrent,
+  );
+  const downloadWarningText = downloadWarning
+    ? t(
+      'processing.download.memoryWarning',
+      'Possible memory pressure: {{message}}',
+      { message: downloadWarning.message },
+    )
+    : undefined;
 
   return (
     <Accordion defaultExpanded>
@@ -61,6 +79,7 @@ export const DownloadConfigSection: React.FC<Props> = ({ config, draft, disabled
               value={baseDownloadConfig.maxConcurrent ?? 2}
               icon={<CloudDownloadIcon fontSize="small" color="primary" />}
               helperText={t('processing.download.workersHelp', 'Controls how many downloads run in parallel.')}
+              warningText={downloadWarningText}
               onChange={(maxConcurrent) =>
                 update({
                   downloadConfig: {

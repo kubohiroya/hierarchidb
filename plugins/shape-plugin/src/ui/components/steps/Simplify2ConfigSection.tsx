@@ -8,21 +8,28 @@ import {
   Paper,
 } from '@mui/material';
 import { Tune as TuneIcon, ExpandMore as ExpandMoreIcon, FilterAlt } from '@mui/icons-material';
-import type { BatchConfig } from '../../../common/types/index.js';
+import type { BatchConfig, ShapeEntity } from '../../../common/types/index.js';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { useTranslation } from '../../i18n.js';
 import { useSimplify2ConfigSection } from '../../hooks/useSimplificationConfigSection.js';
 import { SimplificationPanel } from '../processing/SimplificationPanel.js';
 import { PrecisionPanel } from '../processing/PrecisionPanel.js';
+import { useBuildCrashInsight } from '../../hooks/useBuildCrashInsight.js';
+import { getStageConcurrencyWarning } from '../../utils/buildMonitor.js';
 
 type Props = {
   config: BatchConfig;
+  draft?: Partial<ShapeEntity> | null;
   disabled?: boolean;
   onChange: (next: BatchConfig) => void;
 };
 
-export const Simplify2ConfigSection: React.FC<Props> = ({ config, disabled, onChange }) => {
+export const Simplify2ConfigSection: React.FC<Props> = ({ config, draft, disabled, onChange }) => {
   const { t } = useTranslation();
+  const crashInsight = useBuildCrashInsight({
+    draft,
+    nodeId: draft?.nodeId ? String(draft.nodeId) : undefined,
+  });
   const {
     baseSimplify2Config,
     quantizeOptions,
@@ -30,6 +37,18 @@ export const Simplify2ConfigSection: React.FC<Props> = ({ config, disabled, onCh
     quantizeLabel,
     update,
   } = useSimplify2ConfigSection({ config, disabled, onChange });
+  const simplify2Warning = getStageConcurrencyWarning(
+    crashInsight,
+    'simplify2',
+    baseSimplify2Config.workers,
+  );
+  const simplify2WarningText = simplify2Warning
+    ? t(
+      'processing.simplify2.memoryWarning',
+      'Possible memory pressure: {{message}}',
+      { message: simplify2Warning.message },
+    )
+    : undefined;
 
   return (
     <Accordion defaultExpanded>
@@ -53,6 +72,7 @@ export const Simplify2ConfigSection: React.FC<Props> = ({ config, disabled, onCh
                 title={t('processing.filter.workersStage2', 'Number of Workers for Tile Generation (Stage 2)')}
                 value={baseSimplify2Config.workers ?? 2}
                 helperText={t('processing.filter.workersStage2Help', 'Parallel workers for tile preparation in stage 2.')}
+                warningText={simplify2WarningText}
                 onChange={(workers) =>
                   update({
                     simplify2Config: {

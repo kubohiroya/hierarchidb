@@ -60,13 +60,33 @@
   - [ ] Pause 操作で AbortSignal が発火し、進行中タスクが中断されても session 状態は paused を維持する
   - [ ] Resume 操作で残タスクが再開でき、cancel 扱いにならない
   - [ ] Download/Simplify1/Simplify2/VectorTile で中断導線が有効化される
+  - [ ] generateTiles の中断時に部分的なタイルが残らず、再開時に破損しない
   - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
 - チェックリスト:
   - [ ] StageControls に AbortSignal を追加し、pause/resume で controller を差し替える
   - [ ] 各 stage adapter が signal を受け取り、abort 時に処理を停止する
   - [ ] VectorTile の長時間処理に中断導線を追加する
+  - [ ] generateTiles 中断時に生成済みタイルを削除して復旧できるようにする
   - [ ] 代表検証として `pnpm --filter @hierarchidb/shape-plugin typecheck` を実行し、結果を運用ログに記録する（不可なら理由記載）
 - ロールバック手順：本タスクで変更した stage adapter / batch session / worker の差分を revert し、必要なら `pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する
+
+1896) shape-plugin ビルド監視ログ/クラッシュ推測/警告表示（P1）
+- ブランチ: `feat/shape/build-monitor-crash-hints`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin（UI/worker/batch）, app（TreeNode）, localStorage
+- 受け入れ基準（DoD）:
+  - [ ] ビルド開始/終了日時を TreeNode に保存できる
+  - [ ] 稼働状況（メモリ残量など）を JSON で localStorage にリングバッファ保存できる
+  - [ ] 開始日時があるのに終了日時がない場合にクラッシュ疑いを検知し、UIでヒントを表示する
+  - [ ] メモリ不足疑い時に Step4 の並列度設定に警告文を出す
+  - [ ] Step5 のビルド開始時に警告ダイアログを表示する
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] TreeNode に buildStartedAt/buildFinishedAt を追加して保存する
+  - [ ] 稼働状況のリングバッファ保存（localStorage）と JSON スキーマを定義する
+  - [ ] クラッシュ疑い判定と UI ヒント表示を追加する
+  - [ ] Step4 の並列度ヘルプ警告と Step5 警告ダイアログを追加する
+  - [ ] 代表検証として `pnpm --filter @hierarchidb/shape-plugin typecheck` を実行し、結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：TreeNode の追加フィールドと UI/monitoring 変更を revert し、localStorage のキーは放置可。
 
 1889) shape-plugin Step6 メタデータの自治体コード/featureId を ISO2+ISO3166-2 に整理（P1）
 - ブランチ: `fix/shape/metadata-iso3166-2-logical-id`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -82,20 +102,66 @@
   - [ ] 表示/検索/ホバーの参照キーを整理する
 - ロールバック手順：本タスクの差分を revert し、既存のメタデータ表示へ戻す。
 
-1895) shape-plugin 共通コード抽出計画（shape → location/route 共有化）（P1）
-- ブランチ: `analysis/shape/shared-extraction-plan`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: plugins/shape-plugin, plugins/location-plugin, plugins/route-plugin, packages/ui/batch, packages/batch-runtime-services, packages/features/download, packages/ui/datasource, packages/ui/tabular-extract
+1898) 共通化の安定化方針（shape維持 + location/route一時対処）（P1）
+- ブランチ: `analysis/shape-location-route/stabilize-shared-extraction`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plans/shape-shared-extraction-*.md, plugins/shape-plugin, plugins/location-plugin, plugins/route-plugin, TASKS.md
 - 受け入れ基準（DoD）:
-  - [ ] shape-plugin の抽出対象（UI/worker/service/common）をファイル単位で列挙し、抽出理由を説明できる
-  - [ ] 共有先（既存パッケージ or 新設）の配置案と責務を明記する
-  - [ ] location/route 側での再利用ポイントを具体的に紐付ける
-  - [ ] 実装フェーズ用の ExecPlan 作成有無・分割方針・依存順を示す
+  - [ ] shape の既存機能を維持するためのガード方針（フラグ/フォールバック/段階導入）が明記されている
+  - [ ] location/route の安定化優先の一時対処（必要ならモック）を記録している
+  - [ ] location/route の大幅見直しフェーズを別タスクとして切り出している
   - [ ] TASKS 運用ログに start/progress/done を記載する
 - チェックリスト:
-  - [ ] shape/location/route の重複実装（進捗/Download/RuntimeWorker/Tabular など）を棚卸しする
-  - [ ] 抽出候補と移設先（既存 or 新規）を 1 対 1 以上で対応付ける
-  - [ ] 影響範囲（型/依存/テスト/フラグ）を記載する
-- ロールバック手順：調査のみのため差分なし。記載内容を戻す場合は本タスクの運用ログ追記を削除する。
+  - [ ] 共通化の適用範囲と影響範囲を整理する
+  - [ ] 一時対処の条件（使う場合/使わない場合）を明示する
+  - [ ] 次フェーズ（大幅見直し）タスクの起票内容を準備する
+- ロールバック手順：調査のみのため差分なし。記載内容を戻す場合は本タスクの運用ログ追記と関連ドキュメントを削除する。
+
+1900) shape 共通化抽出 + 共通基盤化 + shape安定化（P1）
+- ブランチ: `refactor/shape/shared-core-stabilize`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plans/shape-shared-extraction-stage*.md, plugins/shape-plugin, packages/*, TASKS.md
+- 受け入れ基準（DoD）:
+  - [ ] Stage1〜4 の共通化を shape 中心に適用し、shape の機能が維持されている
+  - [ ] location/route はスタブ/フォールバックで共通基盤に寄せ、安定ビルドできる
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] Stage1 Runtime Worker アダプタ共通化を適用
+  - [ ] Stage2 Download/認証/キャッシュ共通化を適用
+  - [ ] Stage3 Tabular API 共通化を適用
+  - [ ] Stage4 Progress hook 共通化を適用
+  - [ ] shape の typecheck を実行し結果を記録する（不可なら理由記載）
+  - [ ] location/route の typecheck を実行し結果を記録する（不可なら理由記載）
+- ロールバック手順：共通化適用の差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行して旧挙動へ戻す。
+
+1901) location 実装（設計ドキュメント準拠）（P1）
+- ブランチ: `feat/location/implementation-from-design`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: docs/location-route-design-gap.md, plugins/location-plugin, packages/*, TASKS.md
+- 受け入れ基準（DoD）:
+  - [ ] location の Step2〜Step6 が設計概要どおりに動作する
+  - [ ] GroupEntity ベースの Point/メタデータ構造が実装されている
+  - [ ] Step4 の削除操作ボタン（download/cache/metadata）が動作する
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] Step2/Step3 の選択をビルド処理へ反映する
+  - [ ] データソースからの取得 → メタデータ保存 → タイル生成の導線を実装する
+  - [ ] Step6 に共通メタデータ一覧 UI を導入する
+  - [ ] `pnpm --filter @hierarchidb/location-plugin typecheck` を実行し結果を記録する（不可なら理由記載）
+- ロールバック手順：location 実装差分を revert し、`pnpm --filter @hierarchidb/location-plugin typecheck` を再実行して旧挙動へ戻す。
+
+1902) route 実装（設計ドキュメント準拠）（P1）
+- ブランチ: `feat/route/implementation-from-design`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: docs/location-route-design-gap.md, plugins/route-plugin, packages/*, TASKS.md
+- 受け入れ基準（DoD）:
+  - [ ] route の Step2〜Step6 が設計概要どおりに動作する
+  - [ ] LineString の GroupEntity 化が実装されている
+  - [ ] Step5 の差分生成と Step4 の削除操作が動作する
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] Step3 の国×種類選択を実装し、国条件をビルドへ反映する
+  - [ ] location 探索順序（兄弟→兄弟フォルダ子孫→先祖フォルダ兄弟）を実装する
+  - [ ] Step5 にダウンロード/メタデータ保存/LineString生成/タイル生成を実装する
+  - [ ] Step6 に共通メタデータ一覧 UI を導入する
+  - [ ] `pnpm --filter @hierarchidb/route-plugin typecheck` を実行し結果を記録する（不可なら理由記載）
+- ロールバック手順：route 実装差分を revert し、`pnpm --filter @hierarchidb/route-plugin typecheck` を再実行して旧挙動へ戻す。
 
 1881) shape-plugin Step6 ホバー調査ログ追加 + メタデータ削除 + Stepper 回転条件修正（P1）
 - ブランチ: `fix/shape/step6-hover-metadata-clear-stepper`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -5188,6 +5254,66 @@ P2:
 
 ### Done（完了） <a id="kanban-done"></a>
 
+1899) location/route 設計概要の文書化 + 現状差分棚卸し + 作業計画（P1）
+- ステータス: Done（2025-12-26）
+- ブランチ: `analysis/location-route/design-gap-plan`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/location-plugin, plugins/route-plugin, TASKS.md
+- 受け入れ基準（DoD）:
+  - [x] location/route の設計概要を日本語で文書化できている
+  - [x] 現状実装との差分（不足/齟齬/未実装）を機能単位で列挙できている
+  - [x] 差分を埋めるための開発作業計画（優先度/依存/段階）を提示できている
+  - [x] TASKS 運用ログに start/progress/done を記載する
+- チェックリスト:
+  - [x] 設計概要のステップ別フローを整理する
+  - [x] 現行実装のStep2〜Step6を確認し、差分を列挙する
+  - [x] 共通化の影響と安定化方針を併記する
+- ロールバック手順：調査のみのため差分なし。記載内容を戻す場合は本タスクの運用ログ追記と作成ドキュメントを削除する。
+
+1897) ExecPlan 精査反映（Stage2→Stage3→Stage1）（P1）
+- ステータス: Done（2025-12-26）
+- ブランチ: `analysis/shape/shared-extraction-plan-update`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plans/shape-shared-extraction-stage1-runtime-worker.md, plans/shape-shared-extraction-stage2-download-registry.md, plans/shape-shared-extraction-stage3-tabular-api.md
+- 受け入れ基準（DoD）:
+  - [x] Stage2 のキャッシュ/通知/CORS責務が明文化されている
+  - [x] Stage3 の依存方向問題が解消され、配置先が修正されている
+  - [x] Stage1 のフラグ/依存/動的import方針が明確化されている
+  - [x] PLANS.md の改訂メモ要件が各ExecPlanに反映されている
+- チェックリスト:
+  - [x] stage2/3/1 の Progress/Decision/Context/Steps/Validation を更新する
+  - [x] 各ExecPlanの末尾に改訂メモを追記する
+- ロールバック手順：該当 ExecPlan の変更差分を revert し、TASKS 運用ログ追記を削除する。
+
+1896) ExecPlan 精査と倍増計画（shape-shared-extraction-*）（P1）
+- ステータス: Done（2025-12-26）
+- ブランチ: `analysis/shape/shared-extraction-plan-review`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plans/shape-shared-extraction-*.md, PLANS.md, TASKS.md
+- 受け入れ基準（DoD）:
+  - [x] 各ExecPlanの見落とし/矛盾/不適切点を列挙できる
+  - [x] 「行数を倍にする」ための具体的な増補計画を文書化する
+  - [x] 追加文書がPLANS.mdの要件に整合している
+  - [x] TASKS 運用ログに start/progress/done を記載する
+- チェックリスト:
+  - [x] plans/shape-shared-extraction-* を精査する
+  - [x] 増補対象の章と増補方針を列挙する
+  - [x] 行数の基準値と達成方法を明記する
+- ロールバック手順：調査のみのため差分なし。記載内容を戻す場合は本タスクの運用ログ追記と作成ドキュメントを削除する。
+
+1895) shape-plugin 共通コード抽出計画（shape → location/route 共有化）（P1）
+- ステータス: Done（2025-12-26）
+- ブランチ: `analysis/shape/shared-extraction-plan`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin, plugins/location-plugin, plugins/route-plugin, packages/ui/batch, packages/batch-runtime-services, packages/features/download, packages/ui/datasource, packages/ui/tabular-extract
+- 受け入れ基準（DoD）:
+  - [x] shape-plugin の抽出対象（UI/worker/service/common）をファイル単位で列挙し、抽出理由を説明できる
+  - [x] 共有先（既存パッケージ or 新設）の配置案と責務を明記する
+  - [x] location/route 側での再利用ポイントを具体的に紐付ける
+  - [x] 実装フェーズ用の ExecPlan 作成有無・分割方針・依存順を示す
+  - [x] TASKS 運用ログに start/progress/done を記載する
+- チェックリスト:
+  - [x] shape/location/route の重複実装（進捗/Download/RuntimeWorker/Tabular など）を棚卸しする
+  - [x] 抽出候補と移設先（既存 or 新規）を 1 対 1 以上で対応付ける
+  - [x] 影響範囲（型/依存/テスト/フラグ）を記載する
+- ロールバック手順：調査のみのため差分なし。記載内容を戻す場合は本タスクの運用ログ追記を削除する。
+
 - 1893) shape-plugin Step4 ワーカー数ラベル文言修正（P1） — 完了 (2025-12-26)
   - 要点：Step4 のワーカー数ラベルを指定文言へ更新（ja/en）。
   - 検証：未実施（文言変更のみ）。
@@ -9853,6 +9979,8 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-5"></a>
 
+- 2025-12-25 23:35 start: shape-plugin ビルド監視ログ/クラッシュ推測/警告表示（#1896）。
+- 2025-12-25 23:10 progress: shape-plugin Step5 pause/resume — generateTiles 中断時のタイル残骸を削除して再開時に破損しない方針（DoD/チェック項目）を追加。
 - 2025-12-25 00:20 start: 1837 fix/app/index-module-script — module script が build 後に消える原因調査を再開。`HDB_TRACE_INDEX_HTML=1` ログで「transform 前から欠落」「bundle に index.html が無い」状態を再確認し、Vite の HTML 変換がどの段階で置換されるかを特定する。DoD: build/build:sourcemap/preview で module script が維持されること、原因と修正方針を運用ログに記載。
 - 2025-12-08 18:25 progress: research/plugin-dialog-i18n — route-plugin を location-plugin と同様にプラグイン内 locales 方式へ移行（`src/ui/locales/{en,ja}.json` 追加、`src/ui/i18n.ts` で glob 登録、common i18n ラッパーを i18next ベースに置換）。RouteSelection/Processing/Details/Build ステップと step labels を新キーへ差し替え。`plugins/route-plugin/tsconfig.json` で Vite 型/デコレータ許可を追加し、`pnpm --filter @hierarchidb/route-plugin typecheck` exit 0 を確認。
 - 2025-12-08 19:05 progress: research/plugin-dialog-i18n — linker-plugin へプラグイン内 locales（`src/ui/locales/{en,ja}.json`）と `src/ui/i18n.ts` を追加し、steps-provider/ResourcePicker/AggregatedList/MapPreview の文言を t() 化。`tsconfig.json` を base paths 依存に合わせ簡素化し、`pnpm --filter @hierarchidb/linker-plugin typecheck` exit 0 を確認。
@@ -11835,6 +11963,22 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
 - 2025-12-26 10:55 start: analysis/shape/shared-extraction-plan — shape-plugin から location/route で共通利用すべきコード抽出計画の整理に着手。DoD: Kanban 1895 のとおり。
+- 2025-12-26 11:25 progress: analysis/shape/shared-extraction-plan — 共有化の段階1〜5を ExecPlan 化し、`plans/shape-shared-extraction-stage{1..5}-*.md` を作成。
+- 2025-12-26 11:25 done: analysis/shape/shared-extraction-plan — ExecPlan 作成を完了。ロールバック: `TASKS.md` の運用ログ追記と `plans/shape-shared-extraction-stage*.md` を削除。
+- 2025-12-26 11:32 start: analysis/shape/shared-extraction-plan-review — ExecPlan 精査と行数倍増の計画作成に着手。DoD: Kanban 1896 のとおり。
+- 2025-12-26 11:35 progress: analysis/shape/shared-extraction-plan-review — ExecPlan 精査の論点を整理し、行数倍増の増補計画文書を作成。
+- 2025-12-26 11:35 done: analysis/shape/shared-extraction-plan-review — `plans/shape-shared-extraction-plan-review.md` を作成し、行数倍増の計画を文書化。ロールバック: 当該ファイルと運用ログを削除。
+- 2025-12-26 11:41 start: analysis/shape/shared-extraction-plan-update — Stage2→Stage3→Stage1 の順で ExecPlan を修正し、依存/方針/検証を精査反映する。DoD: 依存方向/責務/検証/ロールバックの明文化、PLANS.md 準拠。
+- 2025-12-26 11:44 progress: analysis/shape/shared-extraction-plan-update — Stage2 のキャッシュ/通知/CORS責務、Stage3 の依存方向、Stage1 のフラグ/依存方針を追記。
+- 2025-12-26 11:44 done: analysis/shape/shared-extraction-plan-update — stage2/3/1 ExecPlan の改訂と改訂メモ追記を完了。ロールバック: 該当ExecPlanの差分を revert。
+- 2025-12-26 11:45 start: analysis/shape-location-route/stabilize-shared-extraction — 共通化に伴う安定化方針（shape維持 + location/route一時対処）を策定開始。DoD: Kanban 1898 のとおり。
+- 2025-12-26 12:52 start: analysis/location-route/design-gap-plan — location/route 設計概要の文書化と現状差分棚卸しに着手。DoD: Kanban 1899 のとおり。
+- 2025-12-26 12:56 progress: analysis/location-route/design-gap-plan — 設計概要を文書化し、現行実装との差分と共通化対象を整理。
+- 2025-12-26 12:56 done: analysis/location-route/design-gap-plan — `docs/location-route-design-gap.md` を作成。ロールバック: 当該ファイルと運用ログを削除。
+- 2025-12-26 13:22 progress: analysis/location-route/design-gap-plan — 設計確定事項（GroupEntity化/メタデータ方針/探索順/差分生成/Step4操作/共通UI）を反映。
+- 2025-12-26 13:25 progress: analysis/location-route/design-gap-plan — route LineString の GroupEntity 方針と再開ポイントを追記。
+- 2025-12-26 13:28 start: plan/shape-location-route/roadmap — shape共通化→location→route の大きな流れを TASKS に反映。DoD: Kanban 1900〜1902 のとおり。
+- 2025-12-26 13:30 start: refactor/shape/shared-core-stabilize — Stage1〜4 共通化を shape 中心に適用し、location/route をスタブ化して安定化する対応に着手。DoD: Kanban 1900 のとおり。
 - 2025-12-26 13:52 start: fix/shape/step5-pause-abort — Step5 Pause/Resume で AbortSignal を使って進行中タスクを中断できるようにする対応に着手。DoD: Kanban 1894 のとおり。
 - 2025-12-26 14:20 progress: fix/shape/step5-pause-abort — StageControls に AbortSignal の取得関数を追加し、SessionController の pause/resume で stage AbortController を切り替え。download/simplify/vectorTile adapter が pause abort を検知して待機/再開できるよう補強し、download 経由の fetch に signal を伝播するよう更新。
 - 2025-12-26 15:05 progress: fix/shape/step5-pause-abort — vectortile generateTiles に abortKey を追加し、runtime-worker で AbortSignal を監視する中断導線を追加。gis-sdk のタイル生成ループに abort チェックを挿入し、adapter は pause 時に abortGenerateTiles を呼ぶよう更新。
