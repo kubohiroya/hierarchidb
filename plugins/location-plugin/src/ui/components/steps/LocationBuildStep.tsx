@@ -31,7 +31,7 @@ const resolveStageIndex = (stageId: string | undefined, stages: BuildStage[]): n
   return stages.findIndex((stage) => normalized.includes(stage.id));
 };
 
-export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft }) => {
+export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _onUpdate }) => {
   const { t, translations } = useTranslation();
   const stageLabels = translations.batch?.stages ?? {};
   const stages = useMemo<Array<BuildStage & { description: string }>>(() => ([
@@ -41,17 +41,17 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft }) => {
       description: t('build.stageDescriptions.download', 'Download points and metadata.'),
     },
     {
-      id: 'filter',
+      id: 'simplify1',
       title: stageLabels.filtering ?? t('build.stages.filter', 'Filter'),
       description: t('build.stageDescriptions.filter', 'Normalize and filter the source data.'),
     },
     {
-      id: 'cluster',
+      id: 'simplify2',
       title: stageLabels.clustering ?? t('build.stages.cluster', 'Cluster'),
       description: t('build.stageDescriptions.cluster', 'Prepare point clusters and indexes.'),
     },
     {
-      id: 'index',
+      id: 'vectortile',
       title: stageLabels.indexing ?? t('build.stages.index', 'Index'),
       description: t('build.stageDescriptions.index', 'Generate vector tiles for previews.'),
     },

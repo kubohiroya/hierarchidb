@@ -10,6 +10,7 @@ import { PluginDialogStepper } from './PluginDialogStepper.js';
 import {
   PluginDialogMaximizeButton,
   PluginDialogFullScreenButton,
+  PluginDialogMinimizeButton,
   PluginDialogCloseButton,
 } from './PluginDialogControls.js';
 import { usePluginDialogHeaderLogic } from './hooks/usePluginDialogHeaderLogic.js';
@@ -45,11 +46,14 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
     navigationLocked,
     toggleMaximize,
     toggleFullscreen,
+    toggleMinimize,
     handleStepClick,
   } = usePluginDialogHeaderLogic({ dialogState, pendingAction });
   const theme = useTheme();
 
   const dragHandlePointerDown = ctx.onDragHandlePointerDown;
+  const canMinimize = Boolean(ctx.onMinimizeChange);
+  const isMinimized = Boolean(ctx.isMinimized);
 
   const headerSubtitle = useMemo(() => {
     if (subtitle && ctx.stepComponents.length <= 1) return subtitle;
@@ -162,6 +166,13 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
 
       <Stack direction="row" spacing={1.5} alignItems="center">
         <Stack direction="row" spacing={0.5} alignItems="center">
+          {canMinimize ? (
+            <PluginDialogMinimizeButton
+              isMinimized={isMinimized}
+              onClick={toggleMinimize}
+              onPointerDown={stopPointerPropagation}
+            />
+          ) : null}
           <PluginDialogMaximizeButton
             displayMode={ctx.displayMode === 'maximize' ? 'maximize' : 'default'}
             onClick={toggleMaximize}

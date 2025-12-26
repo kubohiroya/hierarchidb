@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { toNodeId } from '@hierarchidb/common-types';
-import type { LocationEntity } from '../../../../_obsolate_common/types/index';
+import type { LocationEntity } from '../../../../common/types/index.js';
 import en from '../../../../ui/locales/en.json' with { type: 'json' };
 
 type SessionRecord = {
@@ -84,12 +84,7 @@ const {
   };
 });
 
-vi.mock('../../../../../services/database/EphemeralLocationDB', () => ({
-  __esModule: true,
-  getEphemeralLocationDB: getEphemeralLocationDBMock,
-}));
-
-vi.mock('../../../../../services/database/EphemeralLocationDB', () => ({
+vi.mock('../../../../../database/EphemeralLocationDB', () => ({
   __esModule: true,
   getEphemeralLocationDB: getEphemeralLocationDBMock,
 }));
@@ -98,17 +93,6 @@ vi.mock('../../../../../services/tiles/LocationVectorTileService', () => ({
   LocationVectorTileService: vi.fn(() => ({
     getSessionSummary,
   })),
-}));
-
-vi.mock('../../../../../services/tiles/LocationVectorTileService', () => ({
-  LocationVectorTileService: vi.fn(() => ({
-    getSessionSummary,
-  })),
-}));
-
-vi.mock('../../../../../services/pointRepository', () => ({
-  __esModule: true,
-  listLocationPoints: listLocationPointsMock,
 }));
 
 vi.mock('../../../../../services/pointRepository', () => ({
@@ -135,14 +119,14 @@ describe('LocationMapPreviewStep', () => {
     listLocationPointsMock.mockReset();
     listLocationPointsMock.mockResolvedValue([
       {
-        schemaVersion: 1,
+        schemaVersion: 2,
         pid: 'point-1',
         name: 'Sample Point',
         latitude: 35.68,
         longitude: 139.76,
         kind: 'airport',
-        gid0: 'JPN',
-        payload: { importance: 1 },
+        countryCode: 'JPN',
+        metadata: { importance: 1 },
       },
     ]);
   });

@@ -2,7 +2,8 @@
   * Location Map Preview Component
    */
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import {
   Box,
   Button,
@@ -28,13 +29,20 @@ import {
   GroupWork,
   Info,
   Layers,
+  LocationCity,
   LocationOn,
+  Place,
+  Public,
   MyLocation,
   Search,
   Settings,
   Whatshot,
   ZoomIn,
   ZoomOut,
+  FlightTakeoff,
+  DirectionsBoat,
+  Train,
+  ForkRight,
 } from '@mui/icons-material';
 import type { LocationType, NodeId } from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
@@ -113,17 +121,45 @@ const SAMPLE_LOCATIONS: PreviewLocationPoint[] = [
   },
 ];
 
-const TYPE_SETTINGS_BASE: Partial<Record<LocationType, {
+type TypeStyle = {
   color: string;
-  icon: string;
+  icon: ReactNode;
+  altIcon?: ReactNode;
   defaultVisible: boolean;
-}>> = {
-  area_centroid: { color: '#6A5ACD', icon: '🎯', defaultVisible: true },
-  airport: { color: '#2196F3', icon: '✈️', defaultVisible: true },
-  port: { color: '#FF9800', icon: '🚢', defaultVisible: true },
-  railway_station: { color: '#4CAF50', icon: '🚉', defaultVisible: true },
-  interchange: { color: '#FFA000', icon: '🛣️', defaultVisible: true },
 };
+
+const TYPE_SETTINGS_BASE: Partial<Record<LocationType, TypeStyle>> = {
+  area_centroid: {
+    color: '#6A5ACD',
+    icon: <Public fontSize="small" />,
+    altIcon: <LocationCity fontSize="small" />,
+    defaultVisible: true,
+  },
+  airport: {
+    color: '#2196F3',
+    icon: <FlightTakeoff fontSize="small" />,
+    defaultVisible: true,
+  },
+  port: {
+    color: '#FF9800',
+    icon: <DirectionsBoat fontSize="small" />,
+    defaultVisible: true,
+  },
+  railway_station: {
+    color: '#4CAF50',
+    icon: <Train fontSize="small" />,
+    defaultVisible: true,
+  },
+  interchange: {
+    color: '#FFA000',
+    icon: <ForkRight fontSize="small" />,
+    defaultVisible: true,
+  },
+};
+
+const ICON_DENSITY_THRESHOLD = 0.0015;
+const resolveMarkerSize = (zoom: number) => Math.max(2, Math.min(12, Math.round(2 + zoom / 2)));
+const resolveIconSize = (zoom: number) => Math.max(12, Math.min(28, Math.round(12 + zoom)));
 
 export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
   locations = SAMPLE_LOCATIONS,
@@ -137,8 +173,9 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
     (Object.entries(TYPE_SETTINGS_BASE) as Array<[LocationType, NonNullable<(typeof TYPE_SETTINGS_BASE)[LocationType]>]>)
       .filter(([, value]) => Boolean(value))
       .map(([key, value]) => [key, { ...value, name: translations.locationTypes?.[key] ?? key }]),
-  ) as Record<LocationType, NonNullable<(typeof TYPE_SETTINGS_BASE)[LocationType]> & { name: string }> , [translations.locationTypes]);
+  ) as Record<LocationType, NonNullable<(typeof TYPE_SETTINGS_BASE)[LocationType]> & { name: string }>, [translations.locationTypes]);
   const mapRef = useRef<HTMLDivElement>(null);
+  const [mapSize, setMapSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
   const [displayMode, setDisplayMode] = useState<DisplayMode>('points');
   const [visibleTypes, setVisibleTypes] = useState<LocationType[]>(
     Object.keys(TYPE_SETTINGS_BASE).filter((type) =>
@@ -204,6 +241,104 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
       },
     };
   }, [filteredLocations, locations.length, displayMode, zoom, center]);
+
+  const bounds = useMemo(() => {
+    if (filteredLocations.length === 0) return null;
+    const lngs = filteredLocations.map((loc) => loc.coordinates[0]);
+    const lats = filteredLocations.map((loc) => loc.coordinates[1]);
+    let minLon = Math.min(...lngs);
+    let maxLon = Math.max(...lngs);
+    let minLat = Math.min(...lats);
+    let maxLat = Math.max(...lats);
+    if (minLon === maxLon) {
+      minLon -= 0.5;
+      maxLon += 0.5;
+    }
+    if (minLat === maxLat) {
+      minLat -= 0.5;
+      maxLat += 0.5;
+    }
+    return { minLon, maxLon, minLat, maxLat };
+  }, [filteredLocations]);
+
+  const useIconMarkers = useMemo(() => {
+    if (displayMode !== 'points') return false;
+    const area = mapSize.width * mapSize.height;
+    if (area <= 0) return true;
+    return (filteredLocations.length / area) <= ICON_DENSITY_THRESHOLD;
+  }, [displayMode, filteredLocations.length, mapSize.height, mapSize.width]);
+
+  const resolvePointIcon = useCallback((point: PreviewLocationPoint) => {
+    const base = typeSettings[point.type];
+    if (!base) return <Place fontSize="small" />;
+    if (point.type === 'area_centroid' && base.altIcon) {
+      return point.properties?.admin1 ? base.altIcon : base.icon;
+    }
+    return base.icon;
+  }, [typeSettings]);
+
+  const markers = useMemo(() => {
+    if (!bounds || displayMode !== 'points' || mapSize.width === 0 || mapSize.height === 0) return null;
+    const size = resolveMarkerSize(zoom);
+    const iconSize = resolveIconSize(zoom);
+    const { minLon, maxLon, minLat, maxLat } = bounds;
+    const scaleX = mapSize.width / (maxLon - minLon);
+    const scaleY = mapSize.height / (maxLat - minLat);
+    return filteredLocations.map((point) => {
+      const [lon, lat] = point.coordinates;
+      const x = (lon - minLon) * scaleX;
+      const y = (maxLat - lat) * scaleY;
+      const style = typeSettings[point.type];
+      const color = style?.color ?? '#607D8B';
+      const title = `${point.name} (${point.type})`;
+      if (!useIconMarkers) {
+        return (
+          <Box
+            key={point.id}
+            title={title}
+            sx={{
+              position: 'absolute',
+              left: x - size / 2,
+              top: y - size / 2,
+              width: size,
+              height: size,
+              bgcolor: color,
+              borderRadius: 0.5,
+              opacity: 0.85,
+            }}
+          />
+        );
+      }
+      return (
+        <Box
+          key={point.id}
+          title={title}
+          sx={{
+            position: 'absolute',
+            left: x - iconSize / 2,
+            top: y - iconSize / 2,
+            color,
+            opacity: 0.95,
+            '& svg': { fontSize: iconSize },
+          }}
+        >
+          {resolvePointIcon(point)}
+        </Box>
+      );
+    });
+  }, [bounds, displayMode, filteredLocations, mapSize.height, mapSize.width, resolvePointIcon, typeSettings, useIconMarkers, zoom]);
+
+  useEffect(() => {
+    if (!mapRef.current || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      const { width, height } = entry.contentRect;
+      setMapSize({ width, height });
+    });
+    observer.observe(mapRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   const handleDisplayModeChange = (
     _: React.MouseEvent<HTMLElement>,
@@ -342,7 +477,12 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
             return (
               <Chip
                 key={type}
-                label={`${config.icon} ${config.name} (${count})`}
+                label={(
+                  <Box display="flex" alignItems="center" gap={0.5}>
+                    <span>{config.icon}</span>
+                    <span>{config.name} ({count})</span>
+                  </Box>
+                )}
                 variant={isVisible ? 'filled' : 'outlined'}
                 color={isVisible ? 'primary' : 'default'}
                 onClick={() => handleTypeToggle(type as LocationType)}
@@ -360,9 +500,11 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
 
       {/*
 */}
-      <Box sx={{ flex: 1, position: 'relative', bgcolor: 'grey.100', borderRadius: 1 }}>
+      <Box
+        ref={mapRef}
+        sx={{ flex: 1, position: 'relative', bgcolor: 'grey.100', borderRadius: 1 }}
+      >
         <div
-          ref={mapRef}
           style={{
             width: '100%',
             height: '100%',
@@ -395,6 +537,18 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
             </Typography>
           </Box>
         </div>
+
+        {displayMode === 'points' && markers ? (
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              pointerEvents: 'none',
+            }}
+          >
+            {markers}
+          </Box>
+        ) : null}
 
         {/*
 */}

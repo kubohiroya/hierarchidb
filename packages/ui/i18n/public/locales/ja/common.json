@@ -175,7 +175,9 @@
         "maximize": "最大化",
         "restoreSize": "元のサイズに戻す",
         "fullscreen": "全画面",
-        "exitFullscreen": "全画面を終了"
+        "exitFullscreen": "全画面を終了",
+        "minimize": "最小化",
+        "restoreMinimized": "元に戻す"
       },
       "tooltips": {
         "saveDraftDisabled": "変更がないため保存できません",
@@ -183,7 +185,9 @@
         "maximize": "最大化",
         "restoreSize": "元のサイズに戻す",
         "fullscreen": "全画面",
-        "exitFullscreen": "全画面を終了"
+        "exitFullscreen": "全画面を終了",
+        "minimize": "最小化",
+        "restoreMinimized": "元に戻す"
       },
       "titles": {
         "create": "{{plugin}}の作成",

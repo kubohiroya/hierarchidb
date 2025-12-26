@@ -18,8 +18,11 @@ export interface WorkerBridge {
   getBatchTasks(nodeType: NodeType, sessionId: BatchSessionId): Promise<BatchTaskSummary[]>;
   getStyleQueryAPI(): ReturnType<WorkerAPI['getStyleQueryAPI']>;
   getStyleMutationAPI(): ReturnType<WorkerAPI['getStyleMutationAPI']>;
+  getShapeQueryAPI(): ReturnType<WorkerAPI['getShapeQueryAPI']>;
+  getShapeMutationAPI(): ReturnType<WorkerAPI['getShapeMutationAPI']>;
   getLocationQueryAPI(): ReturnType<WorkerAPI['getLocationQueryAPI']>;
   getRouteQueryAPI(): ReturnType<WorkerAPI['getRouteQueryAPI']>;
+  getRouteMutationAPI(): ReturnType<WorkerAPI['getRouteMutationAPI']>;
   getTreeNodeUpdaterAPI(): ReturnType<WorkerAPI['getTreeNodeUpdaterAPI']>;
   subscribeBatchProgress(
     nodeType: NodeType,
@@ -111,6 +114,16 @@ class WorkerBridgeImpl implements WorkerBridge {
     return api.getStyleMutationAPI();
   }
 
+  async getShapeQueryAPI(): Promise<Awaited<ReturnType<WorkerAPI['getShapeQueryAPI']>>> {
+    const api = await ensureWorkerAPI();
+    return api.getShapeQueryAPI();
+  }
+
+  async getShapeMutationAPI(): Promise<Awaited<ReturnType<WorkerAPI['getShapeMutationAPI']>>> {
+    const api = await ensureWorkerAPI();
+    return api.getShapeMutationAPI();
+  }
+
   async getLocationQueryAPI(): Promise<Awaited<ReturnType<WorkerAPI['getLocationQueryAPI']>>> {
     const api = await ensureWorkerAPI();
     return api.getLocationQueryAPI();
@@ -119,6 +132,11 @@ class WorkerBridgeImpl implements WorkerBridge {
   async getRouteQueryAPI(): Promise<Awaited<ReturnType<WorkerAPI['getRouteQueryAPI']>>> {
     const api = await ensureWorkerAPI();
     return api.getRouteQueryAPI();
+  }
+
+  async getRouteMutationAPI(): Promise<Awaited<ReturnType<WorkerAPI['getRouteMutationAPI']>>> {
+    const api = await ensureWorkerAPI();
+    return api.getRouteMutationAPI();
   }
 
   async getTreeNodeUpdaterAPI(): Promise<Awaited<ReturnType<WorkerAPI['getTreeNodeUpdaterAPI']>>> {

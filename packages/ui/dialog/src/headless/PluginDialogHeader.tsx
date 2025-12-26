@@ -11,6 +11,8 @@ function buildHeaderRenderProps<TData>(ctx: ReturnType<typeof useDialogContext<T
     committableStepIndices: ctx.committableStepIndices,
     displayMode: ctx.displayMode ?? 'normal',
     onDisplayModeChange: ctx.onDisplayModeChange,
+    isMinimized: ctx.isMinimized,
+    onMinimizeChange: ctx.onMinimizeChange,
     stepNavigation: ctx.onStepNavigate,
     isDirty: ctx.isDirty,
     onRequestClose: ctx.onRequestClose,

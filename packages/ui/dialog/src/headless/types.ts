@@ -39,6 +39,8 @@ export interface HeadlessHeaderRenderProps<TData> {
   committableStepIndices: ReadonlyArray<number>;
   displayMode: DialogDisplayMode;
   onDisplayModeChange?: (mode: DialogDisplayMode) => void;
+  isMinimized?: boolean;
+  onMinimizeChange?: (next: boolean) => void;
   stepNavigation: (event: StepNavigationEvent) => void;
   isDirty: boolean;
   onRequestClose: (reason?: 'close' | 'discard') => void;
@@ -73,6 +75,8 @@ export interface DialogFrameProps {
   onSizeChange?: (next: DialogSize) => void;
   displayMode?: DialogDisplayMode;
   onDisplayModeChange?: (mode: DialogDisplayMode) => void;
+  isMinimized?: boolean;
+  onMinimizeChange?: (next: boolean) => void;
   headerDisplayMode?: SectionVisibilityMode;
   footerDisplayMode?: SectionVisibilityMode;
   headerHoverZoneHeight?: number;

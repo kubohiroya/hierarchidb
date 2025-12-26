@@ -12,7 +12,7 @@ export * from './validation.js';
 export * from './create-update.js';
 export * from './core.js';
 export * from './constants.js';
-export type { ProcessingStatus, TileInfo, ShapeAPI } from './api.js';
+export type { ProcessingStatus, TileInfo } from './api.js';
 export {
   mergeBatchConfig,
   summarizeCheckboxState,

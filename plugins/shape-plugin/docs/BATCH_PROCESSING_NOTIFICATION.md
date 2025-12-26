@@ -288,6 +288,8 @@ export function BatchProcessingPanel({ nodeId }: { nodeId: NodeId }) {
 
 ### Material-UIを使用した進捗表示
 
+Note: `useShapeAPI` has been removed. Use `getWorkerBridge()` with `getShapeQueryAPI` / `getShapeMutationAPI` and batch-control APIs instead. The snippet below reflects legacy usage.
+
 ```typescript
 import { Box, LinearProgress, Typography, Alert } from '@mui/material';
 import { useShapeAPI } from '../hooks/useShapeAPI';

@@ -19,7 +19,6 @@ export { ShapeDB, EphemeralShapeDB, shapeDB } from './services/index.js';
 export { ShapeMetadata } from './common/types/metadata.js';
 export { PLUGIN_MANIFEST as ShapePluginManifest } from './plugin-manifest.js';
 export type { ShapeEntity, CreateShapeData, UpdateShapeData, BatchTaskStageType, BatchTaskStage } from './common/types/index.js';
-export type { ShapeAPI } from './common/types/api.js';
 
 // Unified Batch Control API (API v2)
 export * from './services/batch/UnifiedShapeBatchManager.js';

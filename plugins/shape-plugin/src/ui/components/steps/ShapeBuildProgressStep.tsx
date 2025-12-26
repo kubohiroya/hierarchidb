@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Button,
@@ -33,6 +33,7 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
     nodeId: resolvedNodeId ? String(resolvedNodeId) : undefined,
   });
   const [warningDialogOpen, setWarningDialogOpen] = useState(false);
+  const [heapDialogOpen, setHeapDialogOpen] = useState(false);
   const {
     t,
     stages,
@@ -56,6 +57,7 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
     resolveStatusColor,
   } = useShapeBuildProgressStep({ data, onChange, nodeId: resolvedNodeId });
   const heapPressure = useHeapPressure(buildStatus === 'running' || buildStatus === 'paused');
+  const heapPauseRef = useRef<string | null>(null);
 
   type TaskWithMetadata = BatchTaskSummary & { metadata?: Record<string, unknown>; stage?: string; title?: string };
 
@@ -237,6 +239,23 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
     };
   }, [heapPressure, t]);
 
+  useEffect(() => {
+    if (buildStatus !== 'running') {
+      heapPauseRef.current = null;
+      return;
+    }
+    if (!heapPressure) return;
+    const activeSessionId = data?.batchSessionId ?? null;
+    if (!activeSessionId) return;
+    if (heapPauseRef.current === activeSessionId) return;
+    heapPauseRef.current = activeSessionId;
+    const pauseAndWarn = async () => {
+      await handlePause();
+      setHeapDialogOpen(true);
+    };
+    void pauseAndWarn();
+  }, [buildStatus, data?.batchSessionId, handlePause, heapPressure]);
+
   const renderTaskProgressBar = useCallback(() => {
     const waitingColor = theme.palette.grey[300];
     const emptyStageColor = theme.palette.grey[500];
@@ -405,6 +424,29 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
             </Button>
             <Button variant="contained" onClick={handleConfirmStart}>
               {t('build.warning.proceed', 'Proceed')}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      ) : null}
+      {heapWarning ? (
+        <Dialog open={heapDialogOpen} onClose={() => setHeapDialogOpen(false)}>
+          <DialogTitle>
+            {t('build.heap.pauseTitle', 'Build paused due to memory pressure')}
+          </DialogTitle>
+          <DialogContent>
+            <Alert severity={heapWarning.severity} sx={{ mb: 2 }}>
+              {heapWarning.message}
+            </Alert>
+            <Typography variant="body2" color="text.secondary">
+              {t(
+                'build.heap.pauseHint',
+                'Reduce concurrency and resume when ready.',
+              )}
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setHeapDialogOpen(false)}>
+              {t('build.heap.pauseConfirm', 'OK')}
             </Button>
           </DialogActions>
         </Dialog>

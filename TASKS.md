@@ -53,6 +53,27 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1910) map 非モーダルダイアログ（ModelessDialog）導入（P1）
+- ブランチ: `feat/ui/modeless-dialog-map`（sandbox 制約で `main` 上で作業）
+- 依存: `app/src/router/pages/map.tsx`, `app/src/components/dialogs/*`, `packages/runtime-plugin-dialog`, `packages/plugin-ui-host`, `packages/ui/*`, `localStorage`
+- 受け入れ基準（DoD）:
+  - [ ] `AbstractDialog` を新設し、`PluginDialog` と `ModelessDialog` が共通 API/実装を利用できる
+  - [ ] `/hierarchidb/map` で複数の非モーダルダイアログを同時表示できる
+  - [ ] 前後関係（z-index）を管理し、クリックで最前面化できる
+  - [ ] ドラッグ移動・リサイズ・最小化・最大化・フルスクリーンが動作する
+  - [ ] ヘッダ UI は既存 `PluginDialog` と同等の見た目/操作を維持する
+  - [ ] ウィンドウ状態（位置/サイズ/状態/順序）を `localStorage` に保存・復元できる
+  - [ ] 既存モーダルの挙動は維持される（回帰なし）
+  - [ ] `TASKS.md` の Kanban/運用ログに start→progress→done を記録し、ロールバック手順を明記する
+- チェックリスト:
+  - [ ] `PluginDialog` を `AbstractDialog` 継承へ移行し、共通 API を抽出する
+  - [ ] `ModelessDialog` の UI コンポーネントと状態モデルを追加する
+  - [ ] Z-order 管理（最前面化/アクティブ状態）を追加する
+  - [ ] `localStorage` への永続化と復元ロジックを実装する
+  - [ ] `/hierarchidb/map` での表示導線を追加する
+  - [ ] 必要な型/テスト/検証コマンドの結果を運用ログに記録する
+- ロールバック手順：`AbstractDialog`/`ModelessDialog` 追加分と `PluginDialog` の変更を revert し、`localStorage` のキーは放置可。
+
 1894) shape-plugin Step5 Pause/Resume の AbortSignal 導線追加（P1）
 - ブランチ: `fix/shape/step5-pause-abort`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: plugins/shape-plugin（services/batch/adapters）, packages/features/download, packages/runtime-worker, packages/plugin-service-sdk（WorkerBridge）
@@ -202,6 +223,24 @@
   - [ ] location/route のデータソース選択に IDE-GSM を追加する
   - [ ] IDE-GSM 選択時にライセンスカード部分へ FileInputWithUrl を表示する
   - [ ] IDE-GSM のファイル指定（アップロード/URL）が draft に保持される
+
+1906) memory監視基盤 + UI警告 + Worker逼迫通知連携（P1）
+- ブランチ: `feat/memory/heap-pressure-pubsub`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: packages/memory, packages/ui/memory, plugins/shape-plugin, plugins/location-plugin, plugins/route-plugin, app/worker runtime, TASKS.md
+- 受け入れ基準（DoD）:
+  - [ ] `packages/memory` にヒープ逼迫監視の Pub/Sub API と実装が存在する
+  - [ ] `packages/ui/memory` に逼迫警告ダイアログUIが存在する
+  - [ ] Worker側がヒープ逼迫を検知してUIへ通知できる（shape/location/routeのビルド経路）
+  - [ ] UI側でWorker通知＋UI自身の逼迫検知をOR判定し、ビルド一時停止＋警告表示する
+  - [ ] `performance.memory` 非対応環境では安全に無効化される
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] `packages/memory` を追加し、共通のHeapPressureMonitor（Pub/Sub）を実装する
+  - [ ] `packages/ui/memory` を追加し、警告ダイアログUIとフックを実装する
+  - [ ] Worker⇄UIの通知経路を整理してイベントを伝播する
+  - [ ] shape/location/route のビルド停止と警告表示に接続する
+  - [ ] 代表検証として `pnpm --filter @hierarchidb/shape-plugin typecheck` を実行し、結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：memory パッケージ追加と通知連携差分を revert し、既存のビルド挙動へ戻す
   - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
 - チェックリスト:
   - [ ] location のデータソース定義/選択/ライセンスUIに IDE-GSM を追加する
@@ -2176,27 +2215,6 @@
 - ロールバック手順：本タスクで更新するファイル（package.json/tsconfig/Tabular* 関連）を revert し、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` を再実行して旧状態へ戻す
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
-
-- 1910) map 非モーダルダイアログ（ModelessDialog）導入（P1）
-- ブランチ: `feat/ui/modeless-dialog-map`（sandbox 制約で `main` 上で作業）
-- 依存: `app/src/router/pages/map/*`, `app/src/components/dialogs/*`, `packages/runtime-plugin-dialog`, `packages/plugin-ui-host`, `packages/ui/*`, `localStorage`
-- 受け入れ基準（DoD）:
-  - [ ] `AbstractDialog` を新設し、`PluginDialog` と `ModelessDialog` が共通 API/実装を利用できる
-  - [ ] `/hierarchidb/map` で複数の非モーダルダイアログを同時表示できる
-  - [ ] 前後関係（z-index）を管理し、クリックで最前面化できる
-  - [ ] ドラッグ移動・リサイズ・最小化・最大化・フルスクリーンが動作する
-  - [ ] ヘッダ UI は既存 `PluginDialog` と同等の見た目/操作を維持する
-  - [ ] ウィンドウ状態（位置/サイズ/状態/順序）を `localStorage` に保存・復元できる
-  - [ ] 既存モーダルの挙動は維持される（回帰なし）
-  - [ ] `TASKS.md` の Kanban/運用ログに start→progress→done を記録し、ロールバック手順を明記する
-- チェックリスト:
-  - [ ] `PluginDialog` を `AbstractDialog` 継承へ移行し、共通 API を抽出する
-  - [ ] `ModelessDialog` の UI コンポーネントと状態モデルを追加する
-  - [ ] Z-order 管理（最前面化/アクティブ状態）を追加する
-  - [ ] `localStorage` への永続化と復元ロジックを実装する
-  - [ ] `/hierarchidb/map` での表示導線を追加する
-  - [ ] 必要な型/テスト/検証コマンドの結果を運用ログに記録する
-- ロールバック手順：`AbstractDialog`/`ModelessDialog` 追加分と `PluginDialog` の変更を revert し、`localStorage` のキーは放置可。
 
 
 - 101) ui-shell typecheck 依存ビルド効率化（P1）
@@ -5320,6 +5338,21 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+
+1907) ShapeAPI 廃止 + Shape/Route Query/Mutation API 再設計（location 後回し）（P1）
+- ブランチ: `refactor/shape-route/api-boundary-rework`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: packages/plugin-service-api, packages/runtime-worker, packages/common/api, packages/ui/worker-client, app/src/worker-runtime, plugins/shape-plugin, plugins/route-plugin, plans/*, TASKS.md
+- 受け入れ基準（DoD）:
+  - [x] ShapeAPI 廃止方針と ShapeQueryAPI/ShapeMutationAPI の API 境界を明文化する
+  - [x] Route の Mutation/Query 追加方針と影響範囲を整理する（Location は対象外）
+  - [x] 影響範囲（plugin-service-api/runtime-worker/WorkerAPI/worker-runtime/ui worker client/shape-plugin/route-plugin）を洗い出す
+  - [x] ExecPlan を作成し、TASKS 運用ログに start/progress/done を記載する
+- チェックリスト:
+  - [x] 現行 ShapeAPI/ShapeWorkerAPI/Batch API の責務を棚卸しする
+  - [x] Shape/Route の永続データの保管先と読取経路を確認する
+  - [x] 新 API の責務分割（Query/Mutation/Batch/WorkingCopy）を定義する
+  - [x] 移行フェーズ（アダプタ/互換/削除）の段取りを決める
+- ロールバック手順：本タスクで追加/変更した API 型定義と Worker/Plugin の差分を revert し、`plans/shape-route-api-rework.md` と運用ログの追記を削除する。
 
 1906) Shape/Location/Route API（Query/Mutation）作成状況の調査（P1）
 - ブランチ: `analysis/api/shape-location-route-apis`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -10095,6 +10128,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-25 23:35 start: shape-plugin ビルド監視ログ/クラッシュ推測/警告表示（#1896）。
 - 2025-12-26 00:05 start: shape-plugin JSヒープ逼迫の可視化/警告（#1896）。
 - 2025-12-26 00:12 start: shape-plugin ビルド中ヒープ逼迫の自動一時停止/警告ダイアログ（#1896）。
+- 2025-12-26 00:22 start: memory監視基盤 + UI警告 + Worker逼迫通知連携（#1906）。
 - 2025-12-25 23:10 progress: shape-plugin Step5 pause/resume — generateTiles 中断時のタイル残骸を削除して再開時に破損しない方針（DoD/チェック項目）を追加。
 - 2025-12-25 00:20 start: 1837 fix/app/index-module-script — module script が build 後に消える原因調査を再開。`HDB_TRACE_INDEX_HTML=1` ログで「transform 前から欠落」「bundle に index.html が無い」状態を再確認し、Vite の HTML 変換がどの段階で置換されるかを特定する。DoD: build/build:sourcemap/preview で module script が維持されること、原因と修正方針を運用ログに記載。
 - 2025-12-08 18:25 progress: research/plugin-dialog-i18n — route-plugin を location-plugin と同様にプラグイン内 locales 方式へ移行（`src/ui/locales/{en,ja}.json` 追加、`src/ui/i18n.ts` で glob 登録、common i18n ラッパーを i18next ベースに置換）。RouteSelection/Processing/Details/Build ステップと step labels を新キーへ差し替え。`plugins/route-plugin/tsconfig.json` で Vite 型/デコレータ許可を追加し、`pnpm --filter @hierarchidb/route-plugin typecheck` exit 0 を確認。
@@ -12077,6 +12111,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-26 16:43 start: feat/ui/modeless-dialog-map — map 非モーダルダイアログ導入（AbstractDialog/ModelessDialog）に着手。DoD: Kanban 1910 のとおり。
+- 2025-12-26 17:04 progress: feat/ui/modeless-dialog-map — `AbstractDialog` を新設し `HeadlessPluginDialog` を薄く整理。`ModelessDialogFrame` とヘッダ最小化ボタンを追加し、map 用の `MapDialogWindows`（localStorage 永続化/Z-order 管理）を実装。ExecPlan: `plans/modeless-dialog-map.md`。
+- 2025-12-26 17:04 note: feat/ui/modeless-dialog-map — 主要な手動確認/テストは未実施（後続で実行して記録予定）。
 - 2025-12-26 10:55 start: analysis/shape/shared-extraction-plan — shape-plugin から location/route で共通利用すべきコード抽出計画の整理に着手。DoD: Kanban 1895 のとおり。
 - 2025-12-26 11:25 progress: analysis/shape/shared-extraction-plan — 共有化の段階1〜5を ExecPlan 化し、`plans/shape-shared-extraction-stage{1..5}-*.md` を作成。
 - 2025-12-26 11:25 done: analysis/shape/shared-extraction-plan — ExecPlan 作成を完了。ロールバック: `TASKS.md` の運用ログ追記と `plans/shape-shared-extraction-stage*.md` を削除。
@@ -13039,3 +13076,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-26 16:14 start: analysis/api/shape-location-route-apis — Shape/Location/Route API（Query/Mutation）作成状況と関連状況の調査に着手。DoD: Kanban 1906 のとおり。
 - 2025-12-26 16:32 progress: analysis/api/shape-location-route-apis — plugin-service-api / runtime-worker / app worker / worker-bridge / shape-plugin の API 定義と利用状況を確認。
 - 2025-12-26 16:36 done: analysis/api/shape-location-route-apis — LocationMutation/RouteMutation/ShapeQuery/ShapeMutation が未定義であることを確認し、既存の Style/Location/Route Query/Mutation と shape の代替 API の状況を整理。検証: `rg` 検索。ロールバック: 調査のみのため差分なし（運用ログ追記を削除）。
+- 2025-12-26 16:44 start: refactor/shape-route/api-boundary-rework — ShapeAPI 廃止と Shape/Route Query/Mutation API 再設計（location 後回し）に着手。DoD: Kanban 1907 のとおり。
+- 2025-12-26 16:47 progress: refactor/shape-route/api-boundary-rework — ExecPlan を `plans/shape-route-api-rework.md` に作成し、Shape/Route API 再設計の方針を整理。
+- 2025-12-26 17:45 progress: feat/location/implementation-from-design — Location Build/Preview ステップを設計準拠へ更新（進捗・pause/resume・メタデータタブ追加）、バッチ設定にクリーンアップ操作とズーム編集を復帰、関連 i18n/ドキュメントを更新。検証: 未実施。ロールバック: location-plugin UI/locale/doc 差分を revert。
+- 2025-12-26 18:05 progress: feat/location/implementation-from-design — Location の進捗ステージ名を共通APIに合わせて調整し、selection/metadata などの追加翻訳とテスト更新を反映。検証: 未実施。ロールバック: location-plugin UI/locale/runtimeBridge/test 差分を revert。
+- 2025-12-26 18:30 progress: feat/location/implementation-from-design — Location プレビューのポイント表示を Material Icons 対応にし、密度が高い場合はズーム連動の正方形で描画するロジックを追加。検証: 未実施。ロールバック: location-plugin map preview 差分を revert。
+- 2025-12-26 17:12 progress: refactor/shape-route/api-boundary-rework — ShapeQuery/ShapeMutation/RouteMutation の型追加、runtime-worker サービス実装、WorkerAPI/worker runtime/workerBridge の結線、shapeBatchAPI への移行、useShapeAPI 撤去とドキュメント注記を反映。
+- 2025-12-26 17:12 done: refactor/shape-route/api-boundary-rework — ShapeAPI 廃止と Shape/Route Query/Mutation API 再設計を反映。検証: 未実施。ロールバック: Kanban 1907 の手順に従い差分を revert。

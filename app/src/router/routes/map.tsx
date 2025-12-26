@@ -36,6 +36,7 @@ import {
   type MapViewState as LoaderMapViewState,
   parseZxyParam,
 } from '../loaders/mapLoader.js';
+import { MapDialogWindows } from './mapDialogWindows.js';
 
 type MapSearch = {
   zxy?: string;
@@ -404,31 +405,19 @@ export default function MapPage() {
     return DEFAULT_MAP_CONFIG.mapStyleUrl;
   }, [basemapStyles.length]);
 
+  const formattedZxy = formatZxyParam(initialViewState);
+
   return (
     <Box sx={{ width: '100vw', height: '100vh', position: 'relative', overscrollBehavior: 'contain' }}>
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 16,
-          left: 16,
-          zIndex: 1000,
-          backgroundColor: 'rgba(255, 255, 255, 0.9)',
-          padding: 2,
-          borderRadius: 1,
-          boxShadow: 2,
-          maxWidth: 320,
-        }}
-      >
-        <Box component="h3" sx={{ margin: 0, marginBottom: 1 }}>
-          Folder Map Preview
-        </Box>
-        <Box component="p" sx={{ margin: 0, fontSize: '0.875rem' }}>
-          URL Format: <code>?zxy=zoom,lng,lat</code>
-        </Box>
-        <Box component="p" sx={{ margin: 0, marginTop: 1, fontSize: '0.875rem' }}>
-          Current: <code>?zxy={formatZxyParam(initialViewState)}</code>
-        </Box>
-      </Box>
+      {nodeId ? (
+        <MapDialogWindows
+          nodeId={nodeId}
+          formattedZxy={formattedZxy}
+          basemapStyles={basemapStyles}
+          vectorLayers={vectorLayers}
+          geoJsonLayers={geoJsonLayers}
+        />
+      ) : null}
 
       <ResourceLayerMap
         initialViewState={initialViewState}

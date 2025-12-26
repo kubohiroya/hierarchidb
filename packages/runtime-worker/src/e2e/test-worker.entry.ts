@@ -12,6 +12,9 @@ import type {
 import type {
   LocationQueryAPI,
   RouteQueryAPI,
+  RouteMutationAPI,
+  ShapeMutationAPI,
+  ShapeQueryAPI,
   StyleMutationAPI,
   StyleQueryAPI,
 } from '@hierarchidb/plugin-service-api';
@@ -36,8 +39,11 @@ async function main(endpoint?: Endpoint): Promise<void> {
     getTreeTableExpandedAPI: (): TreeTableExpandedAPI => proxy(svc.getTreeTableExpandedAPI()),
     getStyleQueryAPI: (): StyleQueryAPI => proxy(svc.getStyleQueryAPI()),
     getStyleMutationAPI: (): StyleMutationAPI => proxy(svc.getStyleMutationAPI()),
+    getShapeQueryAPI: (): ShapeQueryAPI => proxy(svc.getShapeQueryAPI()),
+    getShapeMutationAPI: (): ShapeMutationAPI => proxy(svc.getShapeMutationAPI()),
     getLocationQueryAPI: (): LocationQueryAPI => proxy(svc.getLocationQueryAPI()),
     getRouteQueryAPI: (): RouteQueryAPI => proxy(svc.getRouteQueryAPI()),
+    getRouteMutationAPI: (): RouteMutationAPI => proxy(svc.getRouteMutationAPI()),
     getCommandProcessor: (): CommandProcessor => proxy(svc.getCommandProcessor()),
   };
   // When used in-process via MessageChannel, a test passes an explicit endpoint.

@@ -2,9 +2,12 @@ import type { BatchProgressEvent, BatchSessionStatus, ProgressPhase } from '@hie
 
 const stageMap: Record<string, BatchProgressEvent['stage']> = {
   download: 'download',
+  import: 'download',
   filter: 'simplify1',
+  normalize: 'simplify1',
   cluster: 'simplify2',
   index: 'vectortile',
+  tilegen: 'vectortile',
 };
 
 type LocationSessionStatus = Extract<BatchSessionStatus['status'], 'running' | 'paused' | 'completed' | 'failed' | 'cancelled'>;

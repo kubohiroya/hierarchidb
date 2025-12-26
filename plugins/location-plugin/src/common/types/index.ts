@@ -103,12 +103,3 @@ export type {
   LocationGroupItemData,
   LocationRelationMeta,
 } from './entities.js';
-export type {
-  OsmPointPayload,
-  OverpassPointPayload,
-  GeoNamesPointPayload,
-  WikidataPointPayload,
-  CustomPointPayload,
-  LocationPointPayloadBySource,
-  LocationPointPayloadUnion,
-} from './payloads.js';

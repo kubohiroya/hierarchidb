@@ -6,7 +6,7 @@
 import { ShapeMetadata } from '../common/types/metadata.js';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { ShapeEntity } from '../common/types/index.js';
-import { shapePluginAPI } from './api.js';
+import { shapeBatchAPI } from './api.js';
 import { ShapeEntityHandler } from './handlers/index.js';
 
 /**
@@ -18,8 +18,8 @@ const shapeEntityHandlerInstance = new ShapeEntityHandler();
 export const ShapeWorkerPlugin = {
   metadata: ShapeMetadata,
 
-  // Plugin API implementation for PluginRegistryImpl
-  api: shapePluginAPI,
+  // Batch API for runtime worker adapters (non-public)
+  batch: shapeBatchAPI,
 
   // Entity handler for database operations
   entityHandler: shapeEntityHandlerInstance,
@@ -69,10 +69,10 @@ export const ShapeWorkerPlugin = {
     beforeDelete: async (nodeId: NodeId, entity: ShapeEntity) => {
       // Cancel any active batch sessions
       if (entity.batchSessionId) {
-        await shapePluginAPI.cancelBatchProcessing(nodeId);
+        await shapeBatchAPI.cancelBatchProcessing(nodeId);
       }
       // Cleanup processing data
-      await shapePluginAPI.cleanupProcessingData(nodeId);
+      await shapeBatchAPI.cleanupProcessingData(nodeId);
     },
 
     afterUpdate: async (_nodeId: NodeId, _entity: ShapeEntity, _changes: Partial<ShapeEntity>) => {

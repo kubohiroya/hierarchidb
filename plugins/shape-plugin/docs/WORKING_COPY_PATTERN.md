@@ -301,6 +301,8 @@ export class ShapeEntityHandler {
 ```typescript
 // packages/plugin-loader/shape-plugin/src/ui/hooks/useShapeWorkingCopy.ts
 
+// NOTE: `useShapeAPI` has been removed. Use `getWorkerBridge()` with `getShapeQueryAPI` / `getShapeMutationAPI` and batch-control APIs instead.
+
 export function useShapeWorkingCopy(
   nodeId: NodeId | null,
   mode: 'create' | 'edit'

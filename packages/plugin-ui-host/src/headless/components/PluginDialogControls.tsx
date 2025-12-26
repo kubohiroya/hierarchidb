@@ -4,6 +4,8 @@ import {
   FullscreenExit as FullscreenExitIcon,
   Fullscreen as FullscreenIcon,
   OpenInFull as OpenInFullIcon,
+  Minimize as MinimizeIcon,
+  CropSquare as RestoreIcon,
   Close as CloseIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
@@ -20,6 +22,8 @@ const useDialogTooltips = () => {
     restoreSize: t('dialogs.pluginDialog.tooltips.restoreSize', 'Restore size'),
     fullscreen: t('dialogs.pluginDialog.tooltips.fullscreen', 'Full screen'),
     exitFullscreen: t('dialogs.pluginDialog.tooltips.exitFullscreen', 'Exit full screen'),
+    minimize: t('dialogs.pluginDialog.tooltips.minimize', 'Minimize'),
+    restoreMinimized: t('dialogs.pluginDialog.tooltips.restoreMinimized', 'Restore'),
     close: t('dialogs.pluginDialog.tooltips.close', 'Close dialog'),
   };
 };
@@ -75,6 +79,33 @@ export const PluginDialogFullScreenButton: React.FC<
             <FullscreenExitIcon fontSize="small" />
           ) : (
             <FullscreenIcon fontSize="small" />
+          )}
+        </IconButton>
+      </span>
+    </Tooltip>
+  );
+};
+
+export const PluginDialogMinimizeButton: React.FC<
+  CommonProps & { isMinimized: boolean; onClick: () => void }
+> = ({ isMinimized, onClick, onPointerDown, disabled }) => {
+  const tooltips = useDialogTooltips();
+  const label = isMinimized ? tooltips.restoreMinimized : tooltips.minimize;
+  return (
+    <Tooltip title={label}>
+      <span>
+        <IconButton
+          size="small"
+          color={isMinimized ? 'primary' : 'default'}
+          onClick={onClick}
+          onPointerDown={onPointerDown}
+          disabled={disabled}
+          aria-label={label}
+        >
+          {isMinimized ? (
+            <RestoreIcon fontSize="small" />
+          ) : (
+            <MinimizeIcon fontSize="small" />
           )}
         </IconButton>
       </span>

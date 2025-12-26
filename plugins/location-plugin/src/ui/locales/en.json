@@ -46,7 +46,9 @@
     },
     "ideGsm": {
       "buttonLabel": "Select IDE-GSM file",
-      "instructions": "Provide an IDE-GSM schema file (location/resource) via upload or URL."
+      "instructions": "Provide an IDE-GSM schema file (location/resource) via upload or URL.",
+      "missing": "IDE-GSM source URL is required.",
+      "fetchError": "Failed to load IDE-GSM file."
     }
   },
   "license": {
@@ -59,6 +61,9 @@
     "description": "Select the location data to retrieve. You can specify data by country and location type combinations.",
     "waypoints": "Locations",
     "matrixTitle": "Selection Matrix",
+    "loadingCountries": "Loading countries...",
+    "loadError": "Failed to load country list",
+    "emptyCountries": "No countries available. Please try again later.",
     "typeDescriptions": {
       "area_centroid": "Representative points for administrative areas or polygons.",
       "airport": "Commercial and regional airports with passenger facilities.",
@@ -90,7 +95,13 @@
     "settings": "Processing Settings",
     "concurrency": "Concurrent downloads",
     "zoomMin": "Min zoom to generate",
-    "zoomMax": "Max zoom to generate"
+    "zoomMax": "Max zoom to generate",
+    "stages": {
+      "download": "Download",
+      "filtering": "Filtering",
+      "clustering": "Clustering",
+      "indexing": "Indexing"
+    }
   },
   "processing": {
     "description": "Configure download and tiling parameters for batch processing.",
@@ -157,6 +168,7 @@
       "index": "Generate vector tiles for previews."
     },
     "requiresApproval": "Provide a data source and save the node before building.",
+    "noSelection": "No country/type selections found.",
     "noPoints": "No location points available to process.",
     "success": "Build started (session {{sessionId}})",
     "errors": {

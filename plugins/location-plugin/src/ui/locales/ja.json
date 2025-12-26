@@ -46,7 +46,9 @@
     },
     "ideGsm": {
       "buttonLabel": "IDE-GSM ファイルを選択",
-      "instructions": "IDE-GSM スキーマの location/resource ファイルをアップロードまたはURL指定してください。"
+      "instructions": "IDE-GSM スキーマの location/resource ファイルをアップロードまたはURL指定してください。",
+      "missing": "IDE-GSM ソース URL が必要です。",
+      "fetchError": "IDE-GSM ファイルの読み込みに失敗しました。"
     }
   },
   "license": {
@@ -59,6 +61,9 @@
     "description": "取得する地点データを選択します。国と地点種別の組み合わせで指定できます。",
     "waypoints": "地点",
     "matrixTitle": "選択マトリクス",
+    "loadingCountries": "国一覧を読み込み中…",
+    "loadError": "国一覧の取得に失敗しました",
+    "emptyCountries": "国一覧が取得できませんでした。時間をおいて再試行してください。",
     "typeDescriptions": {
       "area_centroid": "行政区域やポリゴンの代表点。",
       "airport": "旅客対応の空港・飛行場。",
@@ -90,15 +95,80 @@
     "settings": "処理設定",
     "concurrency": "同時ダウンロード数",
     "zoomMin": "生成する最小ズーム",
-    "zoomMax": "生成する最大ズーム"
+    "zoomMax": "生成する最大ズーム",
+    "stages": {
+      "download": "ダウンロード",
+      "filtering": "フィルタリング",
+      "clustering": "クラスタリング",
+      "indexing": "インデックス生成"
+    }
+  },
+  "processing": {
+    "description": "バッチ処理のダウンロード/タイル生成パラメータを設定します。",
+    "concurrentDownloadsLabel": "同時ダウンロード数",
+    "tilingZoomLabel": "タイルズーム範囲",
+    "minZoom": "最小ズーム",
+    "maxZoom": "最大ズーム",
+    "cleanupTitle": "クリーンアップ",
+    "deleteDownloads": "ダウンロード済みポイントを削除 ({count})",
+    "deleteCache": "キャッシュ済みデータを削除 ({count})",
+    "deleteMetadata": "メタデータを削除 ({count})",
+    "deleteDownloadsDone": "ダウンロード済みポイントを削除しました",
+    "deleteCacheDone": "中間キャッシュを削除しました",
+    "deleteMetadataDone": "メタデータを削除しました"
   },
   "mapPreview": {
     "title": "地図プレビュー",
-    "loading": "地図プレビューを読み込み中…"
+    "loading": "地図プレビューを読み込み中…",
+    "description": "生成済みのポイントを地図でプレビューします。",
+    "tabs": {
+      "map": "地図",
+      "metadata": "メタデータ"
+    },
+    "metadataEmpty": "表示できるメタデータがまだありません。",
+    "metadataLoading": "メタデータを読み込み中…",
+    "summary": {
+      "noData": "まだベクトルタイルが生成されていません。",
+      "zoomRange": "ズーム範囲: {min} - {max}",
+      "size": "合計サイズ: {size}",
+      "tiles": "生成済みタイル数: {count}",
+      "layers": "レイヤー: {layers}"
+    }
   },
   "build": {
+    "title": "ビルド",
     "action": "ビルド",
+    "description": "進捗を確認し、ビルドを制御します。必要な条件が揃ったらフッターのビルドボタンを押してください。",
+    "prereq": "データソースを選択し、前のステップを完了してからビルドしてください。",
+    "statusLabel": "ビルド状況",
+    "status": {
+      "idle": "ビルド開始待ちです。",
+      "running": "ビルド中です。",
+      "paused": "ビルドを一時停止しました。",
+      "completed": "ビルドが完了しました。",
+      "failed": "ビルドに失敗しました。"
+    },
+    "currentTask": "現在のタスク: {{task}}",
+    "progressSummary": "{{completed}} / {{total}} (失敗: {{failed}})",
+    "pauseLabel": "一時停止",
+    "resumeLabel": "再開",
+    "startLabel": "開始",
+    "controlsLabel": "ビルド操作",
+    "mutationError": "ビルド操作に失敗しました: {{message}}",
+    "stages": {
+      "download": "ダウンロード",
+      "filter": "フィルタリング",
+      "cluster": "クラスタリング",
+      "index": "インデックス生成"
+    },
+    "stageDescriptions": {
+      "download": "ポイントとメタデータを取得します。",
+      "filter": "データを正規化してフィルタリングします。",
+      "cluster": "ポイントのクラスタとインデックスを準備します。",
+      "index": "プレビュー用のベクトルタイルを生成します。"
+    },
     "requiresApproval": "データソースを選択して保存してからビルドしてください。",
+    "noSelection": "国/種別の選択がありません。",
     "noPoints": "処理できる地点データがありません。",
     "success": "ビルドを開始しました（セッション {{sessionId}}）",
     "errors": {

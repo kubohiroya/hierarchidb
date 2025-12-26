@@ -19,7 +19,7 @@ import type {
   ShapeStepValidationResult,
 } from '../common/types/index.js';
 
-export interface ShapeWorkerAPI {
+export interface ShapeBatchAPI {
   // Working copies
   createDraft(nodeId: NodeId): Promise<NodeId>;
   createNewDraftBase(parentId: NodeId): Promise<NodeId>;

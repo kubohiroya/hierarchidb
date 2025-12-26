@@ -199,9 +199,9 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
 
   const stageDefinitions = useMemo(() => ([
     { id: 'download', label: translations.batch?.stages?.download ?? 'Download' },
-    { id: 'filter', label: translations.batch?.stages?.filtering ?? 'Filtering' },
-    { id: 'cluster', label: translations.batch?.stages?.clustering ?? 'Clustering' },
-    { id: 'index', label: translations.batch?.stages?.indexing ?? 'Indexing' },
+    { id: 'simplify1', label: translations.batch?.stages?.filtering ?? 'Filtering' },
+    { id: 'simplify2', label: translations.batch?.stages?.clustering ?? 'Clustering' },
+    { id: 'vectortile', label: translations.batch?.stages?.indexing ?? 'Indexing' },
   ]), [translations.batch?.stages]);
 
   const stages: StageInfo[] = useMemo(() => {

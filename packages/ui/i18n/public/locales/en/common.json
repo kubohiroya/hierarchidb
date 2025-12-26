@@ -175,7 +175,9 @@
         "maximize": "Maximize",
         "restoreSize": "Restore size",
         "fullscreen": "Full screen",
-        "exitFullscreen": "Exit full screen"
+        "exitFullscreen": "Exit full screen",
+        "minimize": "Minimize",
+        "restoreMinimized": "Restore"
       },
       "tooltips": {
         "saveDraftDisabled": "No changes to save",
@@ -183,7 +185,9 @@
         "maximize": "Maximize",
         "restoreSize": "Restore size",
         "fullscreen": "Full screen",
-        "exitFullscreen": "Exit full screen"
+        "exitFullscreen": "Exit full screen",
+        "minimize": "Minimize",
+        "restoreMinimized": "Restore"
       },
       "titles": {
         "create": "Create {{plugin}}",

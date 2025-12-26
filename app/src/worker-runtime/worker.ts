@@ -65,8 +65,8 @@ const resolveBatchTaskProvider = (mod: unknown): BatchTaskProvider | null => {
   if (typeof direct === 'function') {
     return direct as BatchTaskProvider;
   }
-  const shapePlugin = record.ShapeWorkerPlugin as { api?: Record<string, unknown> } | undefined;
-  const api = shapePlugin?.api;
+  const shapePlugin = record.ShapeWorkerPlugin as { api?: Record<string, unknown>; batch?: Record<string, unknown> } | undefined;
+  const api = shapePlugin?.batch ?? shapePlugin?.api;
   const apiFn = api?.getBatchTasks ?? api?.listBatchTasks;
   if (typeof apiFn === 'function') {
     return (sessionId: string) => (apiFn as (id: string) => Promise<BatchTaskSummary[]>)(sessionId);
@@ -77,12 +77,12 @@ const resolveBatchTaskProvider = (mod: unknown): BatchTaskProvider | null => {
 const resolveShapeBatchAPI = (mod: unknown): ShapeBatchAPI | null => {
   if (!mod || (typeof mod !== 'object' && typeof mod !== 'function')) return null;
   const record = mod as Record<string, unknown>;
-  const direct = record.shapePluginAPI as ShapeBatchAPI | undefined;
+  const direct = (record.shapeBatchAPI ?? record.shapePluginAPI) as ShapeBatchAPI | undefined;
   if (direct?.startBatchProcessing) {
     return direct;
   }
-  const shapePlugin = record.ShapeWorkerPlugin as { api?: ShapeBatchAPI } | undefined;
-  const api = shapePlugin?.api;
+  const shapePlugin = record.ShapeWorkerPlugin as { api?: ShapeBatchAPI; batch?: ShapeBatchAPI } | undefined;
+  const api = shapePlugin?.batch ?? shapePlugin?.api;
   if (api?.startBatchProcessing) {
     return api;
   }
@@ -301,8 +301,11 @@ reporter.reportStepProgress('Load Comlink', 0);
         getPluginLifecycleAPI: () => Comlink.proxy(services.getPluginLifecycleAPI()),
         getStyleQueryAPI: () => Comlink.proxy(services.getStyleQueryAPI()),
         getStyleMutationAPI: () => Comlink.proxy(services.getStyleMutationAPI()),
+        getShapeQueryAPI: () => Comlink.proxy(services.getShapeQueryAPI()),
+        getShapeMutationAPI: () => Comlink.proxy(services.getShapeMutationAPI()),
         getLocationQueryAPI: () => Comlink.proxy(services.getLocationQueryAPI()),
         getRouteQueryAPI: () => Comlink.proxy(services.getRouteQueryAPI()),
+        getRouteMutationAPI: () => Comlink.proxy(services.getRouteMutationAPI()),
         getImportExportAPI: () => Comlink.proxy(services.getImportExportAPI()),
         getTagAPI: () => Comlink.proxy(services.getTagAPI()),
         getCommandProcessor: () => Comlink.proxy(services.getCommandProcessor()),

@@ -14,10 +14,13 @@ import { ImportExportDBPortCoreDBAdapter } from './services/adapters/ImportExpor
 import { TreeNodeUpdaterService } from './services/TreeNodeUpdaterService.js';
 import {
   PluginLifecycleAPI,
+  ShapeMutationAPI,
+  ShapeQueryAPI,
   StyleMutationAPI,
   StyleQueryAPI,
   LocationQueryAPI,
   RouteQueryAPI,
+  RouteMutationAPI,
 } from '@hierarchidb/plugin-service-api';
 import {
   ImportExportAPI,
@@ -32,8 +35,11 @@ import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import { UIStateDB } from './services/UIStateDB.js';
 import { StyleDB } from '@hierarchidb/style-store';
 import { StyleService } from './services/StyleService.js';
+import { ShapeQueryService } from './services/ShapeQueryService.js';
+import { ShapeMutationService } from './services/ShapeMutationService.js';
 import { LocationQueryService } from './services/LocationQueryService.js';
 import { RouteQueryService } from './services/RouteQueryService.js';
+import { RouteMutationService } from './services/RouteMutationService.js';
 import type { RuntimePluginDefinition } from './types/RuntimePluginDefinition.js';
 
 interface PerformanceMemoryStats {
@@ -41,12 +47,57 @@ interface PerformanceMemoryStats {
   jsHeapSizeLimit?: number;
 }
 
+type DexieCollectionHandle = {
+  toArray: () => Promise<any[]>;
+  count: () => Promise<number>;
+  delete?: () => Promise<number>;
+};
+
+type DexieWhereHandle = {
+  equals: (value: unknown) => DexieCollectionHandle;
+};
+
+type DexieTableHandle = {
+  where: (key: string) => DexieWhereHandle;
+  get?: (id: string) => Promise<any>;
+  delete?: (id: string) => Promise<void>;
+};
+
+type ShapeDatabaseHandle = {
+  open?: () => Promise<unknown>;
+  close?: () => void;
+  batchSessions: DexieTableHandle;
+  batchTasks: DexieTableHandle;
+  features: DexieTableHandle;
+  featureBuffers: DexieTableHandle;
+  tileBuffers: DexieTableHandle;
+  vectorTiles: DexieTableHandle;
+  cache: DexieTableHandle;
+  getVectorTile?: (nodeId: NodeId, z: number, x: number, y: number) => Promise<any>;
+  clearCache?: (nodeId?: NodeId, cacheType?: string) => Promise<number>;
+};
+
 type RouteDatabaseHandle = {
   open?: () => Promise<unknown>;
   close?: () => void;
   routeResults: {
     where: (key: string) => {
-      equals: (value: NodeId) => { toArray: () => Promise<unknown[]> };
+      equals: (value: NodeId) => { toArray: () => Promise<unknown[]>; delete?: () => Promise<number> };
+    };
+  };
+  routeCache: {
+    where: (key: string) => {
+      equals: (value: NodeId) => { delete?: () => Promise<number> };
+    };
+  };
+  routeCursors: {
+    where: (key: string) => {
+      equals: (value: NodeId) => { delete?: () => Promise<number> };
+    };
+  };
+  pendingSessions: {
+    where: (key: string) => {
+      equals: (value: NodeId) => { delete?: () => Promise<number> };
     };
   };
 };
@@ -146,12 +197,19 @@ export class WorkerService {
       const styleService: StyleQueryAPI & StyleMutationAPI = await StyleService.getSingleton(
         styleDB,
       );
+      const { ShapeDB } = await import('@hierarchidb/shape-plugin') as {
+        ShapeDB: new () => ShapeDatabaseHandle;
+      };
+      const shapeDB = new ShapeDB();
+      const shapeQueryService: ShapeQueryAPI = await ShapeQueryService.getSingleton(shapeDB);
+      const shapeMutationService: ShapeMutationAPI = await ShapeMutationService.getSingleton(shapeDB);
       const locationQueryService: LocationQueryAPI = await LocationQueryService.getSingleton();
       const { RouteDatabase } = await import('@hierarchidb/route-plugin/database') as {
         RouteDatabase: new () => RouteDatabaseHandle;
       };
       const routeDB = new RouteDatabase();
       const routeQueryService: RouteQueryAPI = await RouteQueryService.getSingleton(routeDB);
+      const routeMutationService: RouteMutationAPI = await RouteMutationService.getSingleton(routeDB);
 
       return new WorkerService(
         coreDB,
@@ -166,9 +224,13 @@ export class WorkerService {
         treeTableExpandedService,
         styleDB,
         styleService,
+        shapeDB,
+        shapeQueryService,
+        shapeMutationService,
         locationQueryService,
         routeDB,
         routeQueryService,
+        routeMutationService,
       );
     });
   }
@@ -186,9 +248,13 @@ export class WorkerService {
     private treeTableExpandedService: TreeTableExpandedAPI,
     private styleDB: StyleDB,
     private styleService: StyleQueryAPI & StyleMutationAPI,
+    private shapeDB: ShapeDatabaseHandle,
+    private shapeQueryService: ShapeQueryAPI,
+    private shapeMutationService: ShapeMutationAPI,
     private locationQueryService: LocationQueryAPI,
     private routeDB: RouteDatabaseHandle,
     private routeQueryService: RouteQueryAPI,
+    private routeMutationService: RouteMutationAPI,
   ) {
   }
 
@@ -207,6 +273,7 @@ export class WorkerService {
     // Close databases
     this.coreDB.close();
     this.styleDB.close();
+    this.shapeDB.close?.();
     this.routeDB.close?.();
   }
 
@@ -249,12 +316,24 @@ export class WorkerService {
     return this.styleService;
   }
 
+  getShapeQueryAPI(): ShapeQueryAPI {
+    return this.shapeQueryService;
+  }
+
+  getShapeMutationAPI(): ShapeMutationAPI {
+    return this.shapeMutationService;
+  }
+
   getLocationQueryAPI(): LocationQueryAPI {
     return this.locationQueryService;
   }
 
   getRouteQueryAPI(): RouteQueryAPI {
     return this.routeQueryService;
+  }
+
+  getRouteMutationAPI(): RouteMutationAPI {
+    return this.routeMutationService;
   }
 
   // Minimal stub to satisfy interface; not yet wired.

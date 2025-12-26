@@ -1,6 +1,6 @@
 /**
  * Worker API implementation for Shape plugin
- * Implements ShapeAPI interface from shared layer
+ * Exposes batch-oriented operations for runtime worker adapters
  */
 
 import type { NodeId, TreeNodeId} from '@hierarchidb/common-types';
@@ -402,11 +402,11 @@ const hydrateSessionMeta = async (sessionId: string): Promise<void> => {
       meta.treeNodeId = record.nodeId as unknown as TreeNodeId;
     }
   } catch (error) {
-    console.warn('[shapePluginAPI] Failed to hydrate session metadata', error);
+    console.warn('[shapeBatchAPI] Failed to hydrate session metadata', error);
   }
 };
 
-export const shapePluginAPI = {
+export const shapeBatchAPI = {
 
   // ===================================
   // Data Source Operations
@@ -443,7 +443,7 @@ export const shapePluginAPI = {
     const normalizedCountries = await Promise.all(
       countries.map((code) => normalizeCountryCodeFormat(code, preferredFormat)),
     );
-    const countryMetadata = await shapePluginAPI.getCountryMetadata(dataSourceName);
+    const countryMetadata = await shapeBatchAPI.getCountryMetadata(dataSourceName);
     return generateUrlMetadata(dataSourceName, normalizedCountries, adminLevels, countryMetadata);
   },
 
@@ -646,7 +646,7 @@ export const shapePluginAPI = {
     }
     const sessionId = (payload as { sessionId?: string }).sessionId;
     if (!sessionId) {
-      console.warn('[shapePluginAPI] batch command missing sessionId', command);
+      console.warn('[shapeBatchAPI] batch command missing sessionId', command);
       return;
     }
     switch (command) {
@@ -660,7 +660,7 @@ export const shapePluginAPI = {
         await batchSessionManager.cancelBatchSession(sessionId);
         break;
       default:
-        console.warn('[shapePluginAPI] batch command unavailable in unified manager', command);
+        console.warn('[shapeBatchAPI] batch command unavailable in unified manager', command);
         break;
     }
   },
@@ -670,7 +670,7 @@ export const shapePluginAPI = {
       const { status, missing, error } = await getBatchSessionStatusSafe(sessionId);
       if (!status) {
         if (!missing && error) {
-          console.warn('[shapePluginAPI] failed to fetch batch session', error);
+          console.warn('[shapeBatchAPI] failed to fetch batch session', error);
         }
         return undefined;
       }
@@ -712,7 +712,7 @@ export const shapePluginAPI = {
       };
     } catch (error) {
       if (!isSessionNotFoundError(error)) {
-        console.warn('[shapePluginAPI] failed to fetch batch session', error);
+        console.warn('[shapeBatchAPI] failed to fetch batch session', error);
       }
       return undefined;
     }
@@ -786,7 +786,7 @@ export const shapePluginAPI = {
         totalTasks: status.progress?.total,
       };
     } catch (error) {
-      console.warn('[shapePluginAPI] failed to fetch batch status', error);
+      console.warn('[shapeBatchAPI] failed to fetch batch status', error);
       return {
         sessionId,
         status: 'idle',
@@ -916,8 +916,7 @@ export const shapePluginAPI = {
   // ===================================
 
   getProcessedFeatureCount: async (nodeId: NodeId): Promise<number> => {
-    console.log(`Getting processed feature count for node: ${nodeId}`);
-    return 0;
+    return shapeDB.features.where('nodeId').equals(nodeId).count();
   },
 
   getVectorTileInfo: async (
@@ -926,8 +925,16 @@ export const shapePluginAPI = {
     x: number,
     y: number,
   ): Promise<TileInfo | undefined> => {
-    console.log(`Getting vector tile info for node: ${nodeId}, z: ${z}, x: ${x}, y: ${y}`);
-    return undefined;
+    const tile = await shapeDB.getVectorTile(nodeId, z, x, y);
+    if (!tile) return undefined;
+    return {
+      exists: true,
+      size: tile.size,
+      features: tile.features,
+      layers: (tile.layers ?? []).map((layer) => layer.name),
+      generatedAt: tile.generatedAt,
+      lastAccessed: tile.lastAccessed,
+    };
   },
 
   // ===================================
@@ -945,7 +952,7 @@ export const shapePluginAPI = {
       if (missing) {
         await handler.updateEntity(nodeId, { batchSessionId: undefined } as Partial<ShapeEntity>);
       } else if (error) {
-        console.warn('[shapePluginAPI] failed to fetch batch session status', error);
+        console.warn('[shapeBatchAPI] failed to fetch batch session status', error);
       } else if (status) {
         const normalizedStatus = mapManagerStatusToShapeStatus(status.status);
         return {
@@ -979,7 +986,16 @@ export const shapePluginAPI = {
   },
 
   cleanupProcessingData: async (nodeId: NodeId): Promise<void> => {
-    console.log(`Cleaning up processing data for node: ${nodeId}`);
+    const sessions = await shapeDB.batchSessions.where('nodeId').equals(nodeId).toArray();
+    for (const session of sessions) {
+      await shapeDB.batchTasks.where('sessionId').equals(session.sessionId).delete();
+    }
+    await shapeDB.batchSessions.where('nodeId').equals(nodeId).delete();
+    await shapeDB.features.where('nodeId').equals(nodeId).delete();
+    await shapeDB.featureBuffers.where('nodeId').equals(nodeId).delete();
+    await shapeDB.tileBuffers.where('nodeId').equals(nodeId).delete();
+    await shapeDB.vectorTiles.where('nodeId').equals(nodeId).delete();
+    await shapeDB.cache.where('nodeId').equals(nodeId).delete();
   },
 };
 

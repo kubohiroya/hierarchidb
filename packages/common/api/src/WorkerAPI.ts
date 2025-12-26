@@ -2,10 +2,13 @@ import type { TreeNodeUpdaterAPI } from './TreeNodeUpdaterAPI.js';
 import type { ImportExportAPI } from './ImportExportAPI.js';
 import type {
   PluginLifecycleAPI,
+  ShapeMutationAPI,
+  ShapeQueryAPI,
   StyleMutationAPI,
   StyleQueryAPI,
   LocationQueryAPI,
   RouteQueryAPI,
+  RouteMutationAPI,
 } from '@hierarchidb/plugin-service-api';
 import type { TagAPI } from './TagAPI.js';
 import type { TreeMutationAPI } from './TreeMutationAPI.js';
@@ -53,8 +56,11 @@ export interface WorkerAPI {
   getTagAPI(): Promise<TagAPI>;
   getStyleQueryAPI(): Promise<StyleQueryAPI>;
   getStyleMutationAPI(): Promise<StyleMutationAPI>;
+  getShapeQueryAPI(): Promise<ShapeQueryAPI>;
+  getShapeMutationAPI(): Promise<ShapeMutationAPI>;
   getLocationQueryAPI(): Promise<LocationQueryAPI>;
   getRouteQueryAPI(): Promise<RouteQueryAPI>;
+  getRouteMutationAPI(): Promise<RouteMutationAPI>;
   getPluginLifecycleAPI(): Promise<PluginLifecycleAPI>;
   getCommandProcessor(): Promise<CommandProcessorAPI>;
   startBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus>;

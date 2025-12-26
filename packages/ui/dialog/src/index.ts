@@ -4,6 +4,7 @@ export * from './components/CommonDialogTitle.js';
 export * from './components/CommonDialogActions.js';
 export * from './components/UnsavedChangesDialog.js';
 export * from './types/PluginDialog.types.js';
+export * from './headless/AbstractDialog.js';
 export * from './headless/PluginDialog.js';
 export * from './headless/PluginDialogContent.js';
 export * from './headless/PluginDialogHeader.js';
@@ -12,6 +13,6 @@ export * from './headless/types.js';
 export * from './hooks/useDialogContext.js';
 export * from './headless/frameHelpers.js';
 export * from './headless/PluginDialogFrame.js';
+export * from './headless/ModelessDialogFrame.js';
 export * from './utils/dialogSurfaceColor.js';
 export { useDialogInteractionGuards } from './hooks/useDialogInteractionGuards.js';
-

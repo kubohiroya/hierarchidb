@@ -13,16 +13,16 @@ LocationDialog における Start Batch は以下の段階で構成する。
   - `name`
   - `latitude` / `longitude`
   - `kind`（点の種類: POI / 拠点 / etc.）
-  - `gid0`（国 ID）, `gid1`（行政レベル 1 ID）, `gid2`（行政レベル 2 ID）
-  - `payload`（種別ごとの拡張情報）
+  - `countryCode`（国コード）, `admin1`（行政レベル 1）, `admin2`（行政レベル 2）
+  - `metadata`（種別ごとの拡張情報。`Record<string, string | number | null>` として保持）
 - 変換時に必須フィールドが欠落しているレコードは検出し、ログ・リトライ・スキップなどを一元管理する。
 
 #### LocationPoint 型案
 ```ts
 import type { GroupEntity } from '@hierarchidb/common-type';
 
-type LocationPoint<TPayload extends Record<string, unknown>> = GroupEntity<string> & {
-  schemaVersion: 1;
+type LocationPoint = GroupEntity<string> & {
+  schemaVersion: 2;
   nodeId: NodeId;
   type: 'locationPoint';
   /** ベクトルタイルの Point フィーチャーと一致する一意 ID */
@@ -34,12 +34,12 @@ type LocationPoint<TPayload extends Record<string, unknown>> = GroupEntity<strin
   longitude: number;
   /** 点の種類（例: poi / facility / station など） */
   kind: string;
-  /** 行政区分 ID。gid0: 国, gid1: 都道府県相当, gid2: 市区町村相当 */
-  gid0: string;
-  gid1?: string;
-  gid2?: string;
+  /** 行政区分。countryCode: 国, admin1: 都道府県相当, admin2: 市区町村相当 */
+  countryCode: string;
+  admin1?: string;
+  admin2?: string;
   /** ベクトルタイルにも埋め込む追加属性（カテゴリや tags 等） */
-  payload: TPayload;
+  metadata?: Record<string, string | number | null>;
   /** データソースメタ（取得元 URL / 変換ルール ID 等） */
   source?: {
     provider: string;
@@ -49,57 +49,7 @@ type LocationPoint<TPayload extends Record<string, unknown>> = GroupEntity<strin
 };
 ```
 
-代表的な payload 型（詳細は `src/types/payloads.ts` を参照）:
-
-```ts
-interface OsmPointPayload {
-  osmId: string;
-  osmType: 'node' | 'way' | 'relation';
-  tags: Record<string, string>;
-  categories?: string[];
-  lastSeenAt?: number;
-}
-
-interface OverpassPointPayload extends OsmPointPayload {
-  overpassQuery?: string;
-}
-
-interface GeoNamesPointPayload {
-  geonameId: number;
-  featureClass: string;
-  featureCode: string;
-  population?: number;
-  elevation?: number;
-  timezone?: string;
-  adminCodes?: { level1?: string; level2?: string };
-  alternateNames?: string[];
-}
-
-interface WikidataPointPayload {
-  entityId: string;
-  labels: Record<string, string>;
-  descriptions?: Record<string, string>;
-  wikipediaTitle?: string;
-  instanceOf?: string[];
-  properties?: Record<string, unknown>;
-}
-
-interface CustomPointPayload {
-  schemaVersion: number;
-  attributes: Record<string, unknown>;
-}
-
-type LocationPointPayloadBySource = {
-  openstreetmap: OsmPointPayload;
-  overpass: OverpassPointPayload;
-  geonames: GeoNamesPointPayload;
-  wikidata: WikidataPointPayload;
-  custom: CustomPointPayload;
-  manual: CustomPointPayload;
-};
-```
-
-各データソース向けパーサはストラテジーパターンで実装し、上記 payload 型を返すようにする。これにより、Generics で `LocationPoint<LocationPointPayloadBySource[S]>` を指定するだけで、型安全に属性へアクセスできる。
+各データソース向けのパーサは、地点としての用途に直結しない情報を `metadata` に集約する。`metadata` は `Record<string, string | number | null>` として統一し、同名キーが存在する場合は後続のパーサで上書きしない運用を前提とする。
 
 ### 3. 永続化フェーズ（Persistent DB）
 - 完成した `LocationPoint` を Ephemeral DB ではなく永続ストア（Dexie 永続テーブル / BFF 経由の本番 DB）へ保存する。既存エンティティと重複する場合はアップサートポリシーを定義する。
@@ -107,7 +57,7 @@ type LocationPointPayloadBySource = {
 
 ### 4. ベクトルタイル生成フェーズ
 - 永続化した `LocationPoint` 群をもとに、ズーム範囲（例: 5〜14）ごとのベクトルタイルを生成する。Shape Plugin にならい、`LocationVectorTileService` を通じて Worker にタイル生成を委譲する。
-- 生成されたタイルは `vector_tiles` テーブルやオブジェクトストレージに保存し、`pid / gid0 / gid1 / gid2` などの属性をプロパティとして埋め込む。
+- 生成されたタイルは `vector_tiles` テーブルやオブジェクトストレージに保存し、`pid / countryCode / admin1 / admin2` などの属性をプロパティとして埋め込む。
 
 ### 5. 進捗監視と通知
 - `UnifiedLocationBatchManager` + `WorkerBridge` を用い、`prepareSession → startBatchSession → onBatchProgress` の流れを確立する。

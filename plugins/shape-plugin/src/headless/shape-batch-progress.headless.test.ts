@@ -5,7 +5,7 @@ import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import { CoreDB, getStageProcessingClient, unregisterRuntimeWorkerClient } from '@hierarchidb/runtime-worker';
 import type { BatchProgressEvent, BatchConfig, ShapeEntity } from '../common/types/index.js';
 import { DEFAULT_PROCESSING_CONFIG } from '../common/types/index.js';
-import { shapePluginAPI } from '../worker/api.js';
+import { shapeBatchAPI } from '../worker/api.js';
 import { getEphemeralShapeDB, closeEphemeralShapeDB } from '../services/database/EphemeralShapeDB.js';
 import { shapeDB } from '../services/database/ShapeDB.js';
 import { registerShapeRuntimeWorkerClient } from '../services/batch/adapters/RuntimeWorkerClient.js';
@@ -169,7 +169,7 @@ const runBatchProcessing = async (
     licenseAgreement: true,
     batchConfig: config,
   });
-  const urlMetadata = await shapePluginAPI.generateUrlMetadata(
+  const urlMetadata = await shapeBatchAPI.generateUrlMetadata(
     'geoboundaries',
     countries,
     adminLevels,
@@ -178,7 +178,7 @@ const runBatchProcessing = async (
     throw new Error('No URL metadata generated for geoBoundaries selection.');
   }
 
-  const sessionId = await shapePluginAPI.startBatchProcessing(
+  const sessionId = await shapeBatchAPI.startBatchProcessing(
     draftId,
     config,
     urlMetadata,
@@ -207,7 +207,7 @@ const runBatchProcessing = async (
     const timer = setTimeout(() => {
       void finalizeReject('Batch processing timed out');
     }, 90000);
-    const unsubscribe = shapePluginAPI.subscribeToProgress(
+    const unsubscribe = shapeBatchAPI.subscribeToProgress(
       sessionId,
       (event: BatchProgressEvent) => {
         events.push(event);
@@ -226,7 +226,7 @@ const runBatchProcessing = async (
       },
     );
     pollId = setInterval(async () => {
-      const session = await shapePluginAPI.getBatchSession(sessionId);
+      const session = await shapeBatchAPI.getBatchSession(sessionId);
       if (!session) return;
       if (session.status === 'completed') {
         clearTimeout(timer);
@@ -245,7 +245,7 @@ const runBatchProcessing = async (
 
   await completed.catch(async (error) => {
     try {
-      await shapePluginAPI.cancelBatchProcessing(draftId);
+      await shapeBatchAPI.cancelBatchProcessing(draftId);
     } catch {
       // Ignore cleanup errors after failure.
     }
@@ -363,7 +363,7 @@ describe('Shape batch processing (headless)', () => {
       [0],
     );
 
-    const session = await shapePluginAPI.getBatchSession(sessionId);
+    const session = await shapeBatchAPI.getBatchSession(sessionId);
     expect(session?.status).toBe('completed');
     expect(events.length).toBeGreaterThan(0);
     expect(fetchedUrls.length).toBeGreaterThan(0);
@@ -444,7 +444,7 @@ describe('Shape batch processing (headless)', () => {
       adminLevels,
     );
 
-    const session = await shapePluginAPI.getBatchSession(sessionId);
+    const session = await shapeBatchAPI.getBatchSession(sessionId);
     expect(session?.status).toBe('completed');
     expect(fetchedUrls.length).toBeGreaterThan(0);
     expect(
@@ -497,7 +497,7 @@ describe('Shape batch processing (headless)', () => {
     });
 
     await expect(
-      shapePluginAPI.startBatchProcessing(draftId, invalidConfig, []),
+      shapeBatchAPI.startBatchProcessing(draftId, invalidConfig, []),
     ).rejects.toThrow('Data source is required');
   });
 });

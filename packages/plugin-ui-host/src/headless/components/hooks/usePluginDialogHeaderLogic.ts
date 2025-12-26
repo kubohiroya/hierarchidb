@@ -33,6 +33,11 @@ export function usePluginDialogHeaderLogic(params: {
     ctx.onDisplayModeChange?.(next);
   }, [ctx]);
 
+  const toggleMinimize = useCallback(() => {
+    if (!ctx.onMinimizeChange) return;
+    ctx.onMinimizeChange(!(ctx.isMinimized ?? false));
+  }, [ctx]);
+
   const handleStepClick = useCallback(
     (event: React.MouseEvent | React.KeyboardEvent, index: number, canNavigate: boolean) => {
       if (!canNavigate || index === ctx.activeStepIndex || navigationLocked) {
@@ -50,6 +55,7 @@ export function usePluginDialogHeaderLogic(params: {
     navigationLocked,
     toggleMaximize,
     toggleFullscreen,
+    toggleMinimize,
     handleStepClick,
   };
 }
