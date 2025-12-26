@@ -4,7 +4,7 @@
  */
 
 import type React from 'react';
-import { useId } from 'react';
+import { useEffect, useId, useMemo } from 'react';
 import { Box, Grid, Slider, TextField, Typography } from '@mui/material';
 import type { RouteEntity, RouteProcessingConfig, RouteUpdaterPayload } from '../../../common/entities/RouteEntity.js';
 import { useTranslation } from '../../../common/i18n/index.js';
@@ -13,6 +13,41 @@ export interface RouteProcessingStepProps {
   draft: RouteUpdaterPayload;
   onUpdate: (updates: Partial<RouteEntity>) => void;
 }
+
+const SHARED_ZOOM_RANGE_KEY = 'sharedZoomRange';
+const DEFAULT_SHARED_ZOOM_RANGE: [number, number] = [0, 6];
+const SHARED_ZOOM_RANGE_MIN = 0;
+const SHARED_ZOOM_RANGE_MAX = 22;
+
+const normalizeSharedZoomRange = (value: unknown): [number, number] => {
+  if (!Array.isArray(value) || value.length < 2) {
+    return DEFAULT_SHARED_ZOOM_RANGE;
+  }
+  const rawMin = Number(value[0]);
+  const rawMax = Number(value[1]);
+  const min = Number.isFinite(rawMin) ? rawMin : DEFAULT_SHARED_ZOOM_RANGE[0];
+  const max = Number.isFinite(rawMax) ? rawMax : DEFAULT_SHARED_ZOOM_RANGE[1];
+  const clampedMin = Math.min(Math.max(min, SHARED_ZOOM_RANGE_MIN), SHARED_ZOOM_RANGE_MAX);
+  const clampedMax = Math.min(Math.max(max, SHARED_ZOOM_RANGE_MIN), SHARED_ZOOM_RANGE_MAX);
+  return clampedMin <= clampedMax ? [clampedMin, clampedMax] : [clampedMax, clampedMin];
+};
+
+const readSharedZoomRange = (): [number, number] => {
+  if (typeof window === 'undefined') {
+    return DEFAULT_SHARED_ZOOM_RANGE;
+  }
+  const stored = window.localStorage?.getItem(SHARED_ZOOM_RANGE_KEY);
+  if (!stored) {
+    return DEFAULT_SHARED_ZOOM_RANGE;
+  }
+  try {
+    const parsed = JSON.parse(stored);
+    return normalizeSharedZoomRange(parsed);
+  } catch (error) {
+    console.warn('[RouteProcessingStep] Failed to parse shared zoom range', error);
+    return DEFAULT_SHARED_ZOOM_RANGE;
+  }
+};
 
 type ResolvedRouteProcessingConfig = {
   apiThrottle: {
@@ -62,6 +97,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
   const { t } = useTranslation();
   const fieldId = useId();
   const processing = (draft.draftData?.processing ?? {}) as RouteProcessingConfig;
+  const sharedZoomRange = useMemo(() => readSharedZoomRange(), []);
 
   const mergedConfig: ResolvedRouteProcessingConfig = {
     apiThrottle: {
@@ -113,6 +149,18 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
     };
     onUpdate({ processing: nextProcessing });
   };
+
+  useEffect(() => {
+    const [sharedMin, sharedMax] = sharedZoomRange;
+    if (mergedConfig.vectorTiles.minZoom !== sharedMin || mergedConfig.vectorTiles.maxZoom !== sharedMax) {
+      updateProcessing({
+        vectorTiles: {
+          minZoom: sharedMin,
+          maxZoom: sharedMax,
+        },
+      });
+    }
+  }, [mergedConfig.vectorTiles.maxZoom, mergedConfig.vectorTiles.minZoom, sharedZoomRange, updateProcessing]);
 
   return (
     <Box display="flex" flexDirection="column" gap={3}>
@@ -220,6 +268,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
                   });
                 }}
                 fullWidth
+                disabled
               />
             </Grid>
             <Grid size={{ xs: 4 }}>
@@ -241,6 +290,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
                   });
                 }}
                 fullWidth
+                disabled
               />
             </Grid>
             <Grid size={{ xs: 4 }}>

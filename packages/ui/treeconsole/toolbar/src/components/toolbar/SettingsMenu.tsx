@@ -22,7 +22,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import type { TreeConsoleToolbarActionParams } from '../../types.js';
 
 const SHARED_ZOOM_RANGE_KEY = 'sharedZoomRange';
-const DEFAULT_SHARED_ZOOM_RANGE: [number, number] = [4, 12];
+const DEFAULT_SHARED_ZOOM_RANGE: [number, number] = [0, 6];
 const SHARED_ZOOM_RANGE_MIN = 0;
 const SHARED_ZOOM_RANGE_MAX = 22;
 

@@ -53,22 +53,6 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
-1905) TreeConsole 共通ズーム範囲スライダー + 各プラグインズーム設定の無効化（P1）
-- ブランチ: `feat/ui/shared-zoom-range-toolbar`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: packages/ui/treeconsole/toolbar, plugins/shape-plugin, plugins/location-plugin, plugins/route-plugin, app/public/locales, TASKS.md
-- 受け入れ基準（DoD）:
-  - [ ] TreeConsole ツールバー設定に共通ズーム範囲スライダーを追加し、localStorage `sharedZoomRange` に保存/復元できる
-  - [ ] shape/location/route の設定ステップにあるズーム範囲入力は共通値を表示し、変更不可（disabled）になっている
-  - [ ] 既存のズーム範囲設定は共通値へ反映（表示/保存の整合）される
-  - [ ] UI 文言は i18n 対応し、en/ja の両方に追加されている
-  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
-- チェックリスト:
-  - [ ] TreeConsole toolbar settings に sharedZoomRange スライダーを追加する
-  - [ ] localStorage 読み書きと値の正規化を実装する
-  - [ ] shape/location/route のズーム範囲 UI を共通値表示 + disabled にする
-  - [ ] i18n キー追加（common.json ja/en）
-- ロールバック手順：本タスクで変更した UI/設定/ローカライズの差分を revert し、localStorage `sharedZoomRange` は残置可。
-
 1894) shape-plugin Step5 Pause/Resume の AbortSignal 導線追加（P1）
 - ブランチ: `fix/shape/step5-pause-abort`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: plugins/shape-plugin（services/batch/adapters）, packages/features/download, packages/runtime-worker, packages/plugin-service-sdk（WorkerBridge）
@@ -5283,6 +5267,23 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+
+1905) TreeConsole 共通ズーム範囲スライダー + 各プラグインズーム設定の無効化（P1）
+- ブランチ: `feat/ui/shared-zoom-range-toolbar`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: packages/ui/treeconsole/toolbar, plugins/shape-plugin, plugins/location-plugin, plugins/route-plugin, app/public/locales, TASKS.md
+- 受け入れ基準（DoD）:
+  - [x] TreeConsole ツールバー設定に共通ズーム範囲スライダーを追加し、localStorage `sharedZoomRange` に保存/復元できる
+  - [x] shape/location/route の設定ステップにあるズーム範囲入力は共通値を表示し、変更不可（disabled）になっている
+  - [x] 既存のズーム範囲設定は共通値へ反映（表示/保存の整合）される
+  - [x] UI 文言は i18n 対応し、en/ja の両方に追加されている
+  - [x] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [x] TreeConsole toolbar settings に sharedZoomRange スライダーを追加する
+  - [x] localStorage 読み書きと値の正規化を実装する
+  - [x] shape/location/route のズーム範囲 UI を共通値表示 + disabled にする
+  - [x] i18n キー追加（common.json ja/en）
+- ロールバック手順：本タスクで変更した UI/設定/ローカライズの差分を revert し、localStorage `sharedZoomRange` は残置可。
+- 影響範囲: TreeConsole ツールバー設定 / shape・location・route のズーム設定 UI。
 
 1904) shape/location/route の設定項目共通化候補の洗い出し（P2）
 - ブランチ: `analysis/config/defaults-candidates`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -12953,3 +12954,6 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-26 14:30 start: analysis/config/defaults-candidates — shape/location/route の設定項目共通化候補の洗い出しに着手。DoD: Kanban 1904 のとおり。
 - 2025-12-26 14:40 done: analysis/config/defaults-candidates — ShapeEntity/LocationEntity/RouteEntity と各ステップの既存設定項目を整理し、設定ノードの共通化候補を提案。検証: 調査のみ。ロールバック: 運用ログ追記を削除。
 - 2025-12-26 14:50 start: feat/ui/shared-zoom-range-toolbar — TreeConsole 共通ズーム範囲スライダーと各プラグインズーム設定の無効化に着手。DoD: Kanban 1905 のとおり。
+- 2025-12-26 14:54 done: feat/ui/shared-zoom-range-toolbar — TreeConsole の共通ズーム範囲スライダーを追加し、shape/location/route のズーム範囲を共有値表示+disabledに統一。検証: 未実施。ロールバック: 変更ファイルを revert。
+- 2025-12-26 14:56 progress: feat/ui/shared-zoom-range-toolbar — 共通ズーム範囲の既定値を 0-6 へ更新。
+- 2025-12-26 14:56 done: feat/ui/shared-zoom-range-toolbar — 既定値を 0-6 に統一（toolbar/shape/location/route）。検証: 未実施。ロールバック: 対象ファイルの差分を revert。
