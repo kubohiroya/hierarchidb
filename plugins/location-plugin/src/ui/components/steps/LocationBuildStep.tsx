@@ -3,6 +3,7 @@ import { Alert, Box, Stack, Typography } from '@mui/material';
 import { BuildStepPanel, type BuildStatus, type BuildStage } from '@hierarchidb/components';
 import type { NodeType } from '@hierarchidb/common-types';
 import { getWorkerBridge, type WorkerBridge } from '@hierarchidb/ui-worker-client';
+import { HeapPressureDialog, useHeapPressureGuard } from '@hierarchidb/ui-memory';
 import type { LocationEntity } from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
 import { useLocationProgress } from '../../../common/hooks/useLocationProgress.js';
@@ -75,6 +76,8 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
   const bridgeRef = useRef<WorkerBridge>(getWorkerBridge());
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [isMutating, setIsMutating] = useState(false);
+  const [heapDialogOpen, setHeapDialogOpen] = useState(false);
+  const heapPauseRef = useRef<string | null>(null);
   const { progress, unifiedProgress } = useLocationProgress(sessionId, { autoSubscribe: Boolean(sessionId) });
 
   useEffect(() => {
@@ -90,6 +93,10 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
     progress?.stage,
     sessionId,
   );
+  const { event: heapEvent, dismiss: dismissHeapEvent } = useHeapPressureGuard({
+    enabled: buildStatus === 'running' || buildStatus === 'paused',
+    workerBridge: bridgeRef.current,
+  });
   const overallProgress = useMemo(() => {
     const fallback = progress?.percentage ?? 0;
     const value = unifiedProgress?.percentage ?? fallback;
@@ -133,6 +140,29 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
       setIsMutating(false);
     }
   }, [isMutating, sessionId]);
+
+  useEffect(() => {
+    if (!heapEvent) return;
+    setHeapDialogOpen(true);
+  }, [heapEvent]);
+
+  useEffect(() => {
+    if (buildStatus !== 'running') {
+      heapPauseRef.current = null;
+      return;
+    }
+    if (!heapEvent) return;
+    const activeSessionId = sessionId ?? null;
+    if (!activeSessionId) return;
+    const eventKey = `${activeSessionId}:${heapEvent.source}:${heapEvent.timestamp}`;
+    if (heapPauseRef.current === eventKey) return;
+    heapPauseRef.current = eventKey;
+    const pauseAndWarn = async () => {
+      await handlePause();
+      setHeapDialogOpen(true);
+    };
+    void pauseAndWarn();
+  }, [buildStatus, handlePause, heapEvent, sessionId]);
 
   const handleResume = useCallback(async () => {
     if (!sessionId || isMutating) return;
@@ -220,6 +250,17 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
         resumeLabel={t('build.resumeLabel', 'Resume')}
         startLabel={t('build.startLabel', 'Start')}
         controlLabel={t('build.controlsLabel', 'Build controls')}
+      />
+      <HeapPressureDialog
+        open={heapDialogOpen}
+        event={heapEvent}
+        onClose={() => {
+          setHeapDialogOpen(false);
+          dismissHeapEvent();
+        }}
+        title={t('build.heap.pauseTitle', 'Build paused due to memory pressure')}
+        confirmLabel={t('build.heap.pauseConfirm', 'OK')}
+        description={t('build.heap.pauseHint', 'Reduce concurrency and resume when ready.')}
       />
     </Box>
   );

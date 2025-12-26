@@ -1,18 +1,4 @@
-import { toNodeId, type Timestamp } from '@hierarchidb/common-types';
-import type {
-  LocationCategory,
-  LocationEntity,
-  LocationType,
-  LocationAttributes,
-  LocationDataSource,
-} from '../../common/entities/LocationEntity.js';
-
-const CATEGORY_MAP: Record<string, LocationCategory> = {
-  aeroway: 'transportation',
-  railway: 'transportation',
-  highway: 'transportation',
-  place: 'administrative',
-};
+import type { LocationType } from '../../common/entities/LocationEntity.js';
 
 const TYPE_MAP: Record<string, LocationType> = {
   centroid: 'area_centroid',
@@ -26,9 +12,6 @@ const TYPE_MAP: Record<string, LocationType> = {
   interchange: 'interchange',
 };
 
-export const mapCategory = (value?: string): LocationCategory =>
-  CATEGORY_MAP[value ?? ''] ?? 'transportation';
-
 export const mapType = (value?: string): LocationType =>
   TYPE_MAP[value ?? ''] ?? 'area_centroid';
 
@@ -39,59 +22,6 @@ export const sanitizeTags = (tags: unknown): Record<string, string> | undefined 
   return entries.length > 0 ? Object.fromEntries(entries) : undefined;
 };
 
-export interface BaseEntityParams {
-  prefix: string;
-  rawId: string | number;
-  name: string;
-  category: LocationCategory;
-  type: LocationType;
-  dataSource: LocationDataSource;
-  attributes?: LocationAttributes;
-  boundingBox?: [number, number, number, number];
-  address?: LocationEntity['address'];
-  importance?: number;
-  metadata?: Record<string, unknown>;
-}
-
-export const buildLocationEntity = ({
-  prefix,
-  rawId,
-  name,
-  category,
-  type,
-  dataSource,
-  attributes,
-  boundingBox,
-  address,
-  importance,
-  metadata,
-}: BaseEntityParams): LocationEntity => {
-  const now = Date.now() as Timestamp;
-  const idSegment = String(rawId);
-  const treeNodeId = toNodeId(`${prefix}-node-${idSegment}`);
-  return {
-    id: treeNodeId,
-    name,
-    category,
-    type,
-    dataSource,
-    boundingBox,
-    address,
-    attributes,
-    metadata,
-    description: undefined,
-    licenseAgreement: true,
-    licenseAgreedAt: now,
-    processingStatus: 'completed',
-    processedAt: now,
-    importance,
-    selectionMatrix: [],
-    concurrentDownloads: 1,
-    batchSessionId: undefined,
-    lastProcessedAt: undefined,
-  };
-};
-
 export const parseNumber = (value: unknown): number | undefined => {
   if (typeof value === 'number' && !Number.isNaN(value)) return value;
   if (typeof value === 'string') {
@@ -99,24 +29,4 @@ export const parseNumber = (value: unknown): number | undefined => {
     return Number.isNaN(parsed) ? undefined : parsed;
   }
   return undefined;
-};
-
-export const normalizeOsmType = (
-  value: unknown,
-): LocationAttributes['osmType'] => (
-  value === 'node' || value === 'way' || value === 'relation'
-    ? value
-    : undefined
-);
-
-export const parseBoundingBox = (value: unknown): [number, number, number, number] | undefined => {
-  if (!Array.isArray(value) || value.length !== 4) return undefined;
-  const parsed = value.map(parseNumber);
-  if (parsed.some((n) => typeof n !== 'number')) return undefined;
-  return parsed as [number, number, number, number];
-};
-
-export const normalizeImportance = (value: unknown, fallback = 0.5): number => {
-  const parsed = parseNumber(value);
-  return typeof parsed === 'number' ? parsed : fallback;
 };

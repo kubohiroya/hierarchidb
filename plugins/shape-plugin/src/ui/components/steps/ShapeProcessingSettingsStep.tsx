@@ -7,7 +7,7 @@ import { Simplify2ConfigSection } from './Simplify2ConfigSection.js';
 import { TileConfigSection } from './TileConfigSection.js';
 import type { ShapeDialogStepProps } from './ShapeDialogStepProps.ts';
 import { useShapeProcessingSettingsStep } from '../../hooks/useShapeProcessingSettingsStep.js';
-import { useHeapPressure } from '../../hooks/useHeapPressure.js';
+import { useHeapPressureMonitor } from '@hierarchidb/ui-memory';
 import { useTranslation } from '../../i18n.js';
 
 /**
@@ -16,7 +16,7 @@ import { useTranslation } from '../../i18n.js';
 export const ShapeProcessingSettingsStep: React.FC<ShapeDialogStepProps> = ({ data, onChange }) => {
   const { t } = useTranslation();
   const { config, handleChange } = useShapeProcessingSettingsStep({ data, onChange });
-  const heapPressure = useHeapPressure();
+  const { event: heapPressure } = useHeapPressureMonitor();
   const heapWarning = useMemo(() => {
     if (!heapPressure) return null;
     const usedMb = Math.round(heapPressure.usedBytes / (1024 * 1024));

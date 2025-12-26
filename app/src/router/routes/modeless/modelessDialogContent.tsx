@@ -1,6 +1,6 @@
 /**
- * @file mapDialogContent.tsx
- * @description Content blocks for map dialog windows.
+ * @file modelessDialogContent.tsx
+ * @description Content blocks for modeless map dialog windows.
  */
 
 import type { ResourceGeoJsonLayer, ResourceVectorLayer } from '@hierarchidb/ui-plugin-shell/ui-map';

@@ -15,7 +15,7 @@ The map page should be able to show multiple non-modal dialog windows on top of 
 - [x] 2025-12-26 17:04 Introduce a modeless dialog frame component with drag/resize and minimized handling, and export it from `@hierarchidb/ui-dialog`.
 - [x] 2025-12-26 17:04 Extend dialog context to expose minimize state + handler and add the minimize control to the header UI (only when enabled).
 - [x] 2025-12-26 17:04 Implement a map window manager that persists window state + stacking order to localStorage and renders multiple modeless dialogs on `/map/$nodeId`.
-- [ ] 2025-12-26 18:30 Validate map behavior manually (multiple windows, z-order, drag/resize, minimize/maximize/full-screen) and record results in `TASKS.md`.
+- [ ] 2025-12-26 18:30 Validate map behavior manually (multiple windows, z-order rotation, drag/resize, minimize/maximize/full-screen, icon restore) and record results in `TASKS.md`.
 
 ## Surprises & Discoveries
 
@@ -45,6 +45,8 @@ Next, add a `ModelessDialogFrame` component in `packages/ui/dialog/src/headless/
 
 Then, extend dialog frame props in `packages/ui/dialog/src/headless/types.ts` to include optional `isMinimized` and `onMinimizeChange`. Update `HeadlessPluginDialog`/`AbstractDialog` to pass these through the context. Add a minimize button to `packages/plugin-ui-host/src/headless/components/PluginDialogHeader.tsx`, implemented in `PluginDialogControls.tsx`, and only render it when `ctx.onMinimizeChange` is provided. Update `packages/ui/i18n/public/locales/en/common.json` and `packages/ui/i18n/public/locales/ja/common.json` with tooltip/label strings for minimize and restore.
 
+Finally, introduce a `ModelessDialogManager` that owns window visibility, z-order rotation, and localStorage persistence. It should also render draggable icon buttons for closed dialogs and restore the original position/size/display mode when the icon is clicked. This manager should be used by the map page to coordinate multiple modeless dialogs.
+
 Finally, implement a map window manager in `app/src/router/routes/mapDialogWindows.tsx` with layout helpers in `app/src/router/routes/mapDialogLayout.ts`. Define a window state model containing id, size, position, display mode, minimized flag, visibility, and a per-window restore cache for normal size/position. Load and persist this state to localStorage using a per-node key (include `$nodeId` so each folder has its own layout). Render at least two modeless dialogs (e.g., "Map Info" and "Layers") using `ModelessDialogFrame` and a one-step headless dialog configuration with the existing plugin dialog header component. Clicking a dialog should bring it to front by updating the order array; z-index is computed from this order and a base value below MUI modal z-index. Extract the content blocks into `app/src/router/routes/mapDialogContent.tsx` to keep UI code compact.
 
 ## Concrete Steps
@@ -61,7 +63,7 @@ Finally, implement a map window manager in `app/src/router/routes/mapDialogWindo
 
 4) Add a minimize button in `packages/plugin-ui-host/src/headless/components/PluginDialogControls.tsx` and render it in `PluginDialogHeader.tsx` when `ctx.onMinimizeChange` is available. Update i18n strings in `packages/ui/i18n/public/locales/en/common.json` and `packages/ui/i18n/public/locales/ja/common.json`.
 
-5) Update `app/src/router/routes/map.tsx` to render `MapDialogWindows` and implement the window manager in `app/src/router/routes/mapDialogWindows.tsx`, with layout helpers in `app/src/router/routes/mapDialogLayout.ts` and content blocks in `app/src/router/routes/mapDialogContent.tsx`. Use `ModelessDialogFrame` and `PluginDialogHeader` to keep header styling consistent. Implement z-order management and localStorage persistence keyed by node id.
+5) Update `app/src/router/routes/map.tsx` to render `ModelessDialogManager` and implement the window manager in `app/src/router/routes/modeless/ModelessDialogManager.tsx` (or equivalent module), with layout helpers and content blocks. Use `ModelessDialogFrame` and `PluginDialogHeader` to keep header styling consistent. Implement z-order management, icon button restore UI, and localStorage persistence keyed by node id.
 
 ## Validation and Acceptance
 
@@ -85,8 +87,8 @@ The window manager state is stored in localStorage and can be cleared by removin
 - `packages/ui/dialog/src/headless/types.ts`: add `isMinimized` + `onMinimizeChange` to `DialogFrameProps` and `HeadlessDialogContextValue`.
 - `packages/plugin-ui-host/src/headless/components/PluginDialogHeader.tsx` and `PluginDialogControls.tsx`: add minimize control.
 - `app/src/router/routes/map.tsx`: render `MapDialogWindows` on the map page.
-- `app/src/router/routes/mapDialogWindows.tsx`: window manager + view composition.
-- `app/src/router/routes/mapDialogLayout.ts`: localStorage layout helpers.
-- `app/src/router/routes/mapDialogContent.tsx`: map dialog content components.
+- `app/src/router/routes/modeless/ModelessDialogManager.tsx`: manager + view composition.
+- `app/src/router/routes/modeless/modelessDialogLayout.ts`: localStorage layout helpers.
+- `app/src/router/routes/modeless/modelessDialogContent.tsx`: map dialog content components.
 
-Plan update note (2025-12-26): Updated Progress to reflect completed implementation steps and current validation status, and revised file references after splitting map dialog layout/content into dedicated modules.
+Plan update note (2025-12-26): Updated Progress and plan to include ModelessDialogManager responsibilities and icon restore UI, and revised file references for the new manager module.

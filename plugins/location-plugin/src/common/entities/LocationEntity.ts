@@ -6,14 +6,6 @@
 import type { NodeId, Timestamp, TreeNodeData } from '@hierarchidb/common-types';
 
 /**
- * Category taxonomy used when importing / classifying locations.
- * Trimmed for transportation/economic simulations.
- */
-export type LocationCategory =
-  | 'transportation'
-  | 'administrative';
-
-/**
  * Location types recognised by batch download/normalizer routines.
  * Trimmed to the core set needed for economic/transport simulations.
  */
@@ -40,36 +32,6 @@ export type LocationDataSource =
   | 'custom'
   | 'manual';
 
-export interface LocationAddress {
-  street?: string;
-  houseNumber?: string;
-  postcode?: string;
-  city?: string;
-  district?: string;
-  state?: string;
-  country?: string;
-  countryCode?: string;
-}
-
-export interface LocationAttributes {
-  osmId?: string;
-  osmType?: 'node' | 'way' | 'relation';
-  tags?: Record<string, string>;
-  categories?: LocationCategory[];
-  sourceUrl?: string;
-  wikidataId?: string;
-  geonameId?: number;
-  payload?: Record<string, unknown>;
-}
-
-export interface LocationFeature {
-  id?: string;
-  position: { lat: number; lon: number };
-  kind?: LocationType | string;
-  properties?: Record<string, unknown>;
-  sourceId?: string;
-}
-
 export type LocationProcessingStatus =
   | 'pending'
   | 'searching'
@@ -84,10 +46,6 @@ export type LocationProcessingStatus =
  * Contains both acquisition settings and the latest processing status.
  */
 export interface LocationEntity extends TreeNodeData {
-
-  type: LocationType;
-  category: LocationCategory;
-
   /** Data acquisition settings. */
   dataSource: LocationDataSource;
   licenseAgreement: boolean;
@@ -103,16 +61,8 @@ export interface LocationEntity extends TreeNodeData {
   batchSessionId?: string;
   lastProcessedAt?: Timestamp;
 
-  /** Derived / imported attributes. */
-  boundingBox?: [number, number, number, number];
-  address?: LocationAddress;
-  attributes?: LocationAttributes;
-  metadata?: Record<string, unknown>;
-  importance?: number;
   processingStatus?: LocationProcessingStatus;
   processedAt?: Timestamp;
-  /** Collection of points associated with this node (multi-point support). */
-  features?: LocationFeature[];
   /** Tabular pipeline metadata (source storage ID and extract criteria). */
   tabularSourceId?: string;
   extractConfig?: Record<string, unknown>;
@@ -128,8 +78,6 @@ export type LocationDraft = Partial<LocationEntity> & {
  * Additional filtering options for batch processing.
  */
 export interface LocationBatchFilterCriteria {
-  minImportance?: number;
-  allowedCategories?: LocationCategory[];
   allowedTypes?: LocationType[];
   countryCodes?: string[];
   excludeIds?: string[];
@@ -161,7 +109,6 @@ export interface LocationSearchConfig {
   language?: string;
   limit?: number;
   types?: LocationType[];
-  categories?: LocationCategory[];
   selectionMatrix?: boolean[][];
   options?: LocationSearchOptions;
 }

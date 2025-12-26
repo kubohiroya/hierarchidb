@@ -7,6 +7,7 @@ import type {
   BatchTaskSummary,
   WorkerAPI,
 } from '@hierarchidb/common-api';
+import type { HeapPressureEvent } from '@hierarchidb/memory';
 
 export interface WorkerBridge {
   initialize(): Promise<void>;
@@ -28,6 +29,9 @@ export interface WorkerBridge {
     nodeType: NodeType,
     sessionId: BatchSessionId,
     cb: (event: BatchProgressEvent) => void,
+  ): Promise<() => void>;
+  subscribeHeapPressure(
+    cb: (event: HeapPressureEvent) => void,
   ): Promise<() => void>;
 }
 
@@ -151,6 +155,20 @@ class WorkerBridgeImpl implements WorkerBridge {
   ): Promise<() => void> {
     const api = await ensureWorkerAPI();
     const unsubscribe = await api.subscribeBatchProgress(nodeType, sessionId, proxy(cb));
+    return () => {
+      try {
+        unsubscribe();
+      } catch (error) {
+        console.warn('[WorkerBridge] unsubscribe failed', error);
+      }
+    };
+  }
+
+  async subscribeHeapPressure(
+    cb: (event: HeapPressureEvent) => void,
+  ): Promise<() => void> {
+    const api = await ensureWorkerAPI();
+    const unsubscribe = await api.subscribeHeapPressure(proxy(cb));
     return () => {
       try {
         unsubscribe();

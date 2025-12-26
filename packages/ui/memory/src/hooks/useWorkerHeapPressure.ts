@@ -1,0 +1,49 @@
+import { useEffect, useState } from 'react';
+import type { WorkerBridge } from '@hierarchidb/ui-worker-client';
+import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
+import type { HeapPressureEvent } from '@hierarchidb/memory';
+
+export type UseWorkerHeapPressureOptions = {
+  enabled?: boolean;
+  workerBridge?: WorkerBridge | null;
+};
+
+export const useWorkerHeapPressure = (
+  options: UseWorkerHeapPressureOptions = {}
+): HeapPressureEvent | null => {
+  const { enabled = true, workerBridge } = options;
+  const [event, setEvent] = useState<HeapPressureEvent | null>(null);
+
+  useEffect(() => {
+    if (!enabled) return;
+    const bridge = workerBridge ?? getWorkerBridge();
+    let unsubscribe: (() => void) | null = null;
+    let isActive = true;
+
+    const connect = async () => {
+      try {
+        await bridge.initialize();
+        const stop = await bridge.subscribeHeapPressure((next) => {
+          if (!isActive) return;
+          setEvent(next);
+        });
+        unsubscribe = stop;
+      } catch (error) {
+        console.warn('[useWorkerHeapPressure] failed to subscribe', error);
+      }
+    };
+
+    void connect();
+
+    return () => {
+      isActive = false;
+      try {
+        unsubscribe?.();
+      } catch (error) {
+        console.warn('[useWorkerHeapPressure] unsubscribe failed', error);
+      }
+    };
+  }, [enabled, workerBridge]);
+
+  return event;
+};

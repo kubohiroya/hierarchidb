@@ -94,9 +94,6 @@ export function useUrlDownload({
         corsProxyBaseURL =
           (import.meta && import.meta.env && import.meta.env.VITE_CORS_PROXY_BASE_URL) || '';
       } catch {}
-      if (!corsProxyBaseURL && typeof globalThis !== 'undefined') {
-        corsProxyBaseURL = globalThis.ENV?.VITE_CORS_PROXY_BASE_URL || '';
-      }
       if (needsCorsProxy && corsProxyBaseURL && !hasValidToken) {
         setIsAuthError(true);
         throw new Error(

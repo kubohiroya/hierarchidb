@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Box, Chip, Stack, Typography } from '@mui/material';
 import { BuildStepPanel, type BuildStatus } from '@hierarchidb/components';
+import { HeapPressureDialog, useHeapPressureGuard } from '@hierarchidb/ui-memory';
 import type { RouteUpdaterPayload } from '../../../common/entities/RouteEntity.js';
 import { useTranslation } from '../../../common/i18n/index.js';
 
@@ -65,6 +66,12 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({ draft: draftProp
 
   const [status, setStatus] = useState<BuildStatus>('idle');
   const [overallProgress, setOverallProgress] = useState(0);
+  const [heapDialogOpen, setHeapDialogOpen] = useState(false);
+  const heapPauseRef = useRef<number | null>(null);
+  const { event: heapEvent, dismiss: dismissHeapEvent } = useHeapPressureGuard({
+    enabled: status === 'running' || status === 'paused',
+    workerEnabled: false,
+  });
 
   const stageProgress = useMemo(() => {
     const map: Record<string, number> = {};
@@ -73,6 +80,23 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({ draft: draftProp
     });
     return map;
   }, [overallProgress]);
+
+  useEffect(() => {
+    if (!heapEvent) return;
+    setHeapDialogOpen(true);
+  }, [heapEvent]);
+
+  useEffect(() => {
+    if (status !== 'running') {
+      heapPauseRef.current = null;
+      return;
+    }
+    if (!heapEvent) return;
+    if (heapPauseRef.current === heapEvent.timestamp) return;
+    heapPauseRef.current = heapEvent.timestamp;
+    setStatus('paused');
+    setHeapDialogOpen(true);
+  }, [heapEvent, status]);
 
   return (
     <Box display="flex" flexDirection="column" gap={2}>
@@ -128,6 +152,17 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({ draft: draftProp
           setStatus('completed');
           setOverallProgress(100);
         }}
+      />
+      <HeapPressureDialog
+        open={heapDialogOpen}
+        event={heapEvent}
+        onClose={() => {
+          setHeapDialogOpen(false);
+          dismissHeapEvent();
+        }}
+        title={t('build.heap.pauseTitle', 'Build paused due to memory pressure')}
+        confirmLabel={t('build.heap.pauseConfirm', 'OK')}
+        description={t('build.heap.pauseHint', 'Reduce concurrency and resume when ready.')}
       />
     </Box>
   );

@@ -12114,6 +12114,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-26 16:43 start: feat/ui/modeless-dialog-map — map 非モーダルダイアログ導入（AbstractDialog/ModelessDialog）に着手。DoD: Kanban 1910 のとおり。
 - 2025-12-26 17:04 progress: feat/ui/modeless-dialog-map — `AbstractDialog` を新設し `HeadlessPluginDialog` を薄く整理。`ModelessDialogFrame` とヘッダ最小化ボタンを追加し、map 用の `MapDialogWindows`（localStorage 永続化/Z-order 管理）を実装。ExecPlan: `plans/modeless-dialog-map.md`。
 - 2025-12-26 17:04 note: feat/ui/modeless-dialog-map — 主要な手動確認/テストは未実施（後続で実行して記録予定）。
+- 2025-12-26 17:12 progress: feat/ui/modeless-dialog-map — ModelessDialogManager による表示管理/Z-order ローテーション/永続化と、閉じたウィンドウのアイコンボタン復帰導線を追加する対応に着手。
+- 2025-12-26 17:28 progress: feat/ui/modeless-dialog-map — `ModelessDialogManager` へ統合し、閉じたウィンドウのドラッグ可能アイコン＋復帰導線と localStorage 永続化を実装。map 側は manager 参照へ更新。
+- 2025-12-26 17:52 progress: feat/ui/modeless-dialog-map — ModelessDialogProvider/Context を追加し、ModelessDialogManager がアイコン配置/外観設定を provider 経由で扱えるよう整理。ModelessDialog の状態管理/永続化を provider に集約中。検証: 未実施。ロールバック: `app/src/router/routes/modeless/{ModelessDialogProvider.tsx,ModelessDialogManager.tsx,modelessDialogLayout.ts}` と map route 差分を revert。
+- 2025-12-26 18:15 progress: feat/ui/modeless-dialog-map — 閉じたウィンドウのアイコンドラッグ時に map へイベントが伝播しないよう pointerdown を stopPropagation。検証: 未実施。ロールバック: `app/src/router/routes/modeless/ModelessDialogManager.tsx` の差分を revert。
 - 2025-12-26 10:55 start: analysis/shape/shared-extraction-plan — shape-plugin から location/route で共通利用すべきコード抽出計画の整理に着手。DoD: Kanban 1895 のとおり。
 - 2025-12-26 11:25 progress: analysis/shape/shared-extraction-plan — 共有化の段階1〜5を ExecPlan 化し、`plans/shape-shared-extraction-stage{1..5}-*.md` を作成。
 - 2025-12-26 11:25 done: analysis/shape/shared-extraction-plan — ExecPlan 作成を完了。ロールバック: `TASKS.md` の運用ログ追記と `plans/shape-shared-extraction-stage*.md` を削除。
@@ -13081,5 +13085,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-26 17:45 progress: feat/location/implementation-from-design — Location Build/Preview ステップを設計準拠へ更新（進捗・pause/resume・メタデータタブ追加）、バッチ設定にクリーンアップ操作とズーム編集を復帰、関連 i18n/ドキュメントを更新。検証: 未実施。ロールバック: location-plugin UI/locale/doc 差分を revert。
 - 2025-12-26 18:05 progress: feat/location/implementation-from-design — Location の進捗ステージ名を共通APIに合わせて調整し、selection/metadata などの追加翻訳とテスト更新を反映。検証: 未実施。ロールバック: location-plugin UI/locale/runtimeBridge/test 差分を revert。
 - 2025-12-26 18:30 progress: feat/location/implementation-from-design — Location プレビューのポイント表示を Material Icons 対応にし、密度が高い場合はズーム連動の正方形で描画するロジックを追加。検証: 未実施。ロールバック: location-plugin map preview 差分を revert。
+- 2025-12-26 18:55 progress: feat/location/implementation-from-design — LocationEntity を仕様に合わせて整理（category/type/attributes 等を削除）、関連型とマッパーを縮小、LocationPanel の既定値を更新。検証: 未実施。ロールバック: location-plugin entity/types/mappers/panel 差分を revert。
 - 2025-12-26 17:12 progress: refactor/shape-route/api-boundary-rework — ShapeQuery/ShapeMutation/RouteMutation の型追加、runtime-worker サービス実装、WorkerAPI/worker runtime/workerBridge の結線、shapeBatchAPI への移行、useShapeAPI 撤去とドキュメント注記を反映。
 - 2025-12-26 17:12 done: refactor/shape-route/api-boundary-rework — ShapeAPI 廃止と Shape/Route Query/Mutation API 再設計を反映。検証: 未実施。ロールバック: Kanban 1907 の手順に従い差分を revert。
+- 2025-12-26 19:10 progress: feat/memory/heap-pressure-pubsub — memory/ui-memory 連携の未解消エラー修正と UI/Worker 結線の仕上げに着手。検証: 未実施。ロールバック: Kanban 1906 の手順に従い差分を revert。

@@ -22,6 +22,7 @@ import type {
   BatchTaskSummary,
 } from './BatchControlAPI.js';
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
+import type { HeapPressureEvent } from '@hierarchidb/memory';
 
 export type CommandProcessorAPI = {
   canUndo?: () => boolean;
@@ -73,6 +74,9 @@ export interface WorkerAPI {
     nodeType: NodeType,
     sessionId: BatchSessionId,
     callback: (event: BatchProgressEvent) => void
+  ): Promise<() => void>;
+  subscribeHeapPressure(
+    callback: (event: HeapPressureEvent) => void
   ): Promise<() => void>;
   setAuthToken(token: string, type?: 'Bearer' | 'Basic', expiresAt?: number): Promise<void>;
   setCorsProxyBaseURL(url: string): Promise<void>;

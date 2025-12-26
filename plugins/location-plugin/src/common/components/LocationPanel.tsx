@@ -7,7 +7,6 @@ import { useMemo } from 'react';
 import { Chip, Grid, IconButton, List, ListItem, ListItemText, Paper, Tooltip, Typography } from '@mui/material';
 import { Edit, LocationOn, Refresh } from '@mui/icons-material';
 import type { LocationEntity, NodeId } from '../types/index.js';
-import { DEFAULT_LOCATION_CATEGORY } from '../types/category-types.js';
 import { useTranslation } from '../i18n/index.js';
 
 export interface LocationPanelProps {
@@ -21,8 +20,6 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
   const entity = useMemo<LocationEntity>(() => ({
     id: nodeId,
     nodeId,
-    type: 'area_centroid',
-    category: DEFAULT_LOCATION_CATEGORY,
     dataSource: 'openstreetmap',
     licenseAgreement: true,
     selectionMatrix: [],

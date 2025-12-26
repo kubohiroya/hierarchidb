@@ -18,12 +18,8 @@ import type {
   LocationBatchConfig,
   LocationBatchFilterCriteria,
   LocationBatchProcessingOptions,
-  LocationCategory,
   LocationType,
   LocationSearchConfig,
-  LocationAddress,
-  LocationAttributes,
-  LocationFeature,
 } from '../entities/LocationEntity.js';
 export type {
   LocationPoint,
@@ -35,15 +31,11 @@ export type {
 export type LocationEntity = LocationEntityDefinition;
 export type {
   LocationDataSource,
-  LocationCategory,
   LocationType,
   LocationBatchConfig,
   LocationBatchFilterCriteria,
   LocationBatchProcessingOptions,
   LocationSearchConfig,
-  LocationAddress,
-  LocationAttributes,
-  LocationFeature,
 };
 
 export interface LocationDraft extends Partial<LocationEntityDefinition> {
@@ -78,8 +70,6 @@ export interface UpdateLocationData {
   licenseAgreedAt?: Timestamp;
   batchSessionId?: string;
   lastProcessedAt?: number;
-  category?: LocationCategory;
-  type?: LocationType;
 }
 
 // ================================

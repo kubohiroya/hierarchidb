@@ -38,6 +38,7 @@
   "license": "MIT",
   "dependencies": {},
   "devDependencies": {
+    "@hierarchidb/memory": "workspace:*",
     "@types/node": "^20.11.5",
     "@vitest/ui": "^3.2.4",
     "comlink": "^4.4.1",
@@ -52,6 +53,7 @@
   },
   "peerDependencies": {
     "comlink": "^4.4.1",
+    "@hierarchidb/memory": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*"

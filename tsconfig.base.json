@@ -82,6 +82,12 @@
       "@hierarchidb/download/*": [
         "packages/features/download/dist/*"
       ],
+      "@hierarchidb/memory": [
+        "packages/memory/src/index.ts"
+      ],
+      "@hierarchidb/memory/*": [
+        "packages/memory/src/*"
+      ],
       "@hierarchidb/feature-registry": [
         "packages/features/feature-registry/dist/index.d.ts"
       ],
@@ -430,6 +436,12 @@
       ],
       "@hierarchidb/ui-map/*": [
         "packages/ui/map/src/*"
+      ],
+      "@hierarchidb/ui-memory": [
+        "packages/ui/memory/src/index.ts"
+      ],
+      "@hierarchidb/ui-memory/*": [
+        "packages/ui/memory/src/*"
       ],
       "@hierarchidb/ui-monitoring": [
         "packages/ui/monitoring/src/index.ts"

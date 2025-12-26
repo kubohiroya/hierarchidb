@@ -36,7 +36,7 @@ import {
   type MapViewState as LoaderMapViewState,
   parseZxyParam,
 } from '../loaders/mapLoader.js';
-import { MapDialogWindows } from './mapDialogWindows.js';
+import { ModelessDialogManager } from './modeless/ModelessDialogManager.js';
 
 type MapSearch = {
   zxy?: string;
@@ -410,7 +410,7 @@ export default function MapPage() {
   return (
     <Box sx={{ width: '100vw', height: '100vh', position: 'relative', overscrollBehavior: 'contain' }}>
       {nodeId ? (
-        <MapDialogWindows
+        <ModelessDialogManager
           nodeId={nodeId}
           formattedZxy={formattedZxy}
           basemapStyles={basemapStyles}

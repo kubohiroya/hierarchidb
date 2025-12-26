@@ -26,6 +26,11 @@ import {
 import { setCorsProxyBaseURL } from '@hierarchidb/download';
 import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
 import {
+  createHeapPressureMonitor,
+  type HeapPressureContext,
+  type HeapPressureEvent,
+} from '@hierarchidb/memory';
+import {
   pluginDefinitions as staticPluginDefinitions,
 } from '~/plugin-loaders/index.ts';
 import { pluginWorkerLoaders } from '~/plugin-loaders/worker-loaders.ts';
@@ -56,6 +61,17 @@ type ShapeBatchAPI = {
   cancelBatchProcessing?: (draftId: NodeId) => Promise<void>;
   invokeBatchCommand?: (command: string, payload: Record<string, unknown>) => Promise<void>;
   subscribeToProgress?: BatchProgressSubscriber;
+};
+
+const heapMonitor = createHeapPressureMonitor({ source: 'worker' });
+const heapListeners = new Set<(event: HeapPressureEvent) => void>();
+heapMonitor.subscribe((event) => {
+  heapListeners.forEach((listener) => listener(event));
+});
+heapMonitor.start();
+
+const setHeapContext = (context: HeapPressureContext | null) => {
+  heapMonitor.setContext(context);
 };
 
 const resolveBatchTaskProvider = (mod: unknown): BatchTaskProvider | null => {
@@ -323,11 +339,13 @@ reporter.reportStepProgress('Load Comlink', 0);
           const urlMetadata = (draftData as { urlMetadata?: unknown[] }).urlMetadata ?? [];
           const sessionId = await api.startBatchProcessing(nodeId, batchConfig, urlMetadata);
           const session = api.getBatchSession ? await api.getBatchSession(sessionId) : undefined;
-          return toBatchSessionStatus(
+          const status = toBatchSessionStatus(
             session as Record<string, unknown> | undefined,
             nodeId,
             sessionId
           );
+          setHeapContext({ nodeType, sessionId: status.sessionId });
+          return status;
         },
         getBatchSessionStatus: async (nodeType: NodeType, sessionId: string): Promise<BatchSessionStatus> => {
           const api = resolveShapeBatchApiOrThrow(nodeType);
@@ -359,6 +377,7 @@ reporter.reportStepProgress('Load Comlink', 0);
           const api = resolveShapeBatchApiOrThrow(nodeType);
           if (api.invokeBatchCommand) {
             await api.invokeBatchCommand('session/resume', { sessionId });
+            setHeapContext({ nodeType, sessionId });
             return;
           }
           const session = api.getBatchSession ? await api.getBatchSession(sessionId) : undefined;
@@ -368,11 +387,13 @@ reporter.reportStepProgress('Load Comlink', 0);
           if (api.resumeBatchProcessing) {
             await api.resumeBatchProcessing(draftId);
           }
+          setHeapContext({ nodeType, sessionId });
         },
         cancelBatchSession: async (nodeType: NodeType, sessionId: string): Promise<void> => {
           const api = resolveShapeBatchApiOrThrow(nodeType);
           if (api.invokeBatchCommand) {
             await api.invokeBatchCommand('session/cancel', { sessionId });
+            setHeapContext(null);
             return;
           }
           const session = api.getBatchSession ? await api.getBatchSession(sessionId) : undefined;
@@ -382,6 +403,7 @@ reporter.reportStepProgress('Load Comlink', 0);
           if (api.cancelBatchProcessing) {
             await api.cancelBatchProcessing(draftId);
           }
+          setHeapContext(null);
         },
         subscribeBatchProgress: async (
           nodeType: NodeType,
@@ -394,6 +416,14 @@ reporter.reportStepProgress('Load Comlink', 0);
           }
           const unsubscribe = api.subscribeToProgress(sessionId, callback);
           return Comlink.proxy(unsubscribe);
+        },
+        subscribeHeapPressure: async (
+          callback: (event: HeapPressureEvent) => void,
+        ): Promise<() => void> => {
+          heapListeners.add(callback);
+          return Comlink.proxy(() => {
+            heapListeners.delete(callback);
+          });
         },
         getBatchTasks: async (nodeType: NodeType, sessionId: string): Promise<BatchTaskSummary[]> => {
           const provider = batchTaskProviders.get(nodeType);

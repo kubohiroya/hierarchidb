@@ -9,7 +9,6 @@ import {
   DialogContent,
   DialogTitle,
   LinearProgress,
-  Alert,
   Stack,
   Typography,
 } from '@mui/material';
@@ -23,7 +22,7 @@ import { useShapeBuildProgressStep } from '../../hooks/useShapeBuildProgressStep
 import { ShapeBuildTaskItem } from './ShapeBuildTaskItem.js';
 import { useBuildCrashInsight } from '../../hooks/useBuildCrashInsight.js';
 import { getStageConcurrencyWarning } from '../../utils/buildMonitor.js';
-import { useHeapPressure } from '../../hooks/useHeapPressure.js';
+import { HeapPressureDialog, useHeapPressureGuard } from '@hierarchidb/ui-memory';
 
 export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, onChange, nodeId }) => {
   const resolvedNodeId = nodeId as NodeId | undefined;
@@ -33,7 +32,6 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
     nodeId: resolvedNodeId ? String(resolvedNodeId) : undefined,
   });
   const [warningDialogOpen, setWarningDialogOpen] = useState(false);
-  const [heapDialogOpen, setHeapDialogOpen] = useState(false);
   const {
     t,
     stages,
@@ -56,8 +54,11 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
     resolveStatusLabel,
     resolveStatusColor,
   } = useShapeBuildProgressStep({ data, onChange, nodeId: resolvedNodeId });
-  const heapPressure = useHeapPressure(buildStatus === 'running' || buildStatus === 'paused');
+  const [heapDialogOpen, setHeapDialogOpen] = useState(false);
   const heapPauseRef = useRef<string | null>(null);
+  const { event: heapEvent, dismiss: dismissHeapEvent } = useHeapPressureGuard({
+    enabled: buildStatus === 'running' || buildStatus === 'paused',
+  });
 
   type TaskWithMetadata = BatchTaskSummary & { metadata?: Record<string, unknown>; stage?: string; title?: string };
 
@@ -220,41 +221,28 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
     );
   }, [crashInsight, stages, t]);
 
-  const heapWarning = useMemo(() => {
-    if (!heapPressure) return null;
-    const usedMb = Math.round(heapPressure.usedBytes / (1024 * 1024));
-    const limitMb = Math.round(heapPressure.limitBytes / (1024 * 1024));
-    const ratioPercent = Math.round(heapPressure.ratio * 100);
-    return {
-      severity: heapPressure.level === 'critical' ? 'error' : 'warning',
-      message: t(
-        'build.heap.warning',
-        'High JS heap usage detected ({{ratio}}% / {{used}}MB of {{limit}}MB). Consider reducing concurrency or pausing.',
-        {
-          ratio: ratioPercent,
-          used: usedMb,
-          limit: limitMb,
-        },
-      ),
-    };
-  }, [heapPressure, t]);
+  useEffect(() => {
+    if (!heapEvent) return;
+    setHeapDialogOpen(true);
+  }, [heapEvent]);
 
   useEffect(() => {
     if (buildStatus !== 'running') {
       heapPauseRef.current = null;
       return;
     }
-    if (!heapPressure) return;
+    if (!heapEvent) return;
     const activeSessionId = data?.batchSessionId ?? null;
     if (!activeSessionId) return;
-    if (heapPauseRef.current === activeSessionId) return;
-    heapPauseRef.current = activeSessionId;
+    const eventKey = `${activeSessionId}:${heapEvent.source}:${heapEvent.timestamp}`;
+    if (heapPauseRef.current === eventKey) return;
+    heapPauseRef.current = eventKey;
     const pauseAndWarn = async () => {
       await handlePause();
       setHeapDialogOpen(true);
     };
     void pauseAndWarn();
-  }, [buildStatus, data?.batchSessionId, handlePause, heapPressure]);
+  }, [buildStatus, data?.batchSessionId, handlePause, heapEvent]);
 
   const renderTaskProgressBar = useCallback(() => {
     const waitingColor = theme.palette.grey[300];
@@ -369,11 +357,6 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
   return (
     <Box display="flex" flexDirection="column" gap={3} height="100%" minHeight={0}>
       <Box flex={1} minHeight={0}>
-        {heapWarning ? (
-          <Alert severity={heapWarning.severity} sx={{ mb: 2 }}>
-            {heapWarning.message}
-          </Alert>
-        ) : null}
         {crashHint ? (
           <Typography variant="body2" sx={{ mb: 2, color: 'warning.main' }}>
             {crashHint}
@@ -428,29 +411,17 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
           </DialogActions>
         </Dialog>
       ) : null}
-      {heapWarning ? (
-        <Dialog open={heapDialogOpen} onClose={() => setHeapDialogOpen(false)}>
-          <DialogTitle>
-            {t('build.heap.pauseTitle', 'Build paused due to memory pressure')}
-          </DialogTitle>
-          <DialogContent>
-            <Alert severity={heapWarning.severity} sx={{ mb: 2 }}>
-              {heapWarning.message}
-            </Alert>
-            <Typography variant="body2" color="text.secondary">
-              {t(
-                'build.heap.pauseHint',
-                'Reduce concurrency and resume when ready.',
-              )}
-            </Typography>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setHeapDialogOpen(false)}>
-              {t('build.heap.pauseConfirm', 'OK')}
-            </Button>
-          </DialogActions>
-        </Dialog>
-      ) : null}
+      <HeapPressureDialog
+        open={heapDialogOpen}
+        event={heapEvent}
+        onClose={() => {
+          setHeapDialogOpen(false);
+          dismissHeapEvent();
+        }}
+        title={t('build.heap.pauseTitle', 'Build paused due to memory pressure')}
+        confirmLabel={t('build.heap.pauseConfirm', 'OK')}
+        description={t('build.heap.pauseHint', 'Reduce concurrency and resume when ready.')}
+      />
     </Box>
   );
 };

@@ -10,11 +10,11 @@ After this change, the app can automatically pause builds when JavaScript heap m
 
 ## Progress
 
-- [ ] (2025-12-26 00:25 JST) Baseline: collect context, align on API shape, and create new packages `packages/memory` and `packages/ui/memory`.
-- [ ] (2025-12-26 00:25 JST) Implement heap pressure Pub/Sub monitor in `packages/memory` with UI + Worker compatibility.
-- [ ] (2025-12-26 00:25 JST) Implement UI dialog + hooks in `packages/ui/memory` and wire to build steps.
-- [ ] (2025-12-26 00:25 JST) Add WorkerAPI subscription for heap pressure and connect Worker runtime monitor.
-- [ ] (2025-12-26 00:25 JST) Integrate OR-logic (UI + Worker) pause/alert in shape/location/route build UIs.
+- [x] (2025-12-26 00:25 JST) Baseline: collect context, align on API shape, and create new packages `packages/memory` and `packages/ui/memory`.
+- [x] (2025-12-26 00:25 JST) Implement heap pressure Pub/Sub monitor in `packages/memory` with UI + Worker compatibility.
+- [x] (2025-12-26 00:25 JST) Implement UI dialog + hooks in `packages/ui/memory` and wire to build steps.
+- [x] (2025-12-26 00:25 JST) Add WorkerAPI subscription for heap pressure and connect Worker runtime monitor.
+- [x] (2025-12-26 00:25 JST) Integrate OR-logic (UI + Worker) pause/alert in shape/location/route build UIs.
 - [ ] (2025-12-26 00:25 JST) Validate with `pnpm --filter @hierarchidb/shape-plugin typecheck` and manual UI checks.
 
 ## Surprises & Discoveries
@@ -35,7 +35,7 @@ After this change, the app can automatically pause builds when JavaScript heap m
 
 ## Outcomes & Retrospective
 
-- Pending implementation.
+- Implemented heap pressure monitoring packages and wired build steps to auto-pause with warning dialogs; validation still pending.
 
 ## Context and Orientation
 
