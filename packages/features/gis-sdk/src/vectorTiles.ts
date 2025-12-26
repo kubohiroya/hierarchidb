@@ -23,6 +23,7 @@ export type VectorTileGenerateConfig = {
   metadataEnabled?: boolean;
   metadataReplace?: boolean;
   metadataContext?: VectorTileMetadataContext;
+  signal?: AbortSignal;
 };
 
 export type VectorTileGenerateResult = {
@@ -271,7 +272,9 @@ export const generateVectorTilesFromJsonBuffer = async (
   buffer: ArrayBuffer,
   config: VectorTileGenerateConfig,
 ): Promise<VectorTileGenerateResult> => {
+  throwIfAborted(config.signal);
   const geojson = await decodeFeatureCollectionFromJsonBuffer(buffer);
+  throwIfAborted(config.signal);
   if (!geojson) return { tilesGenerated: 0, totalBytes: 0 };
   return generateVectorTilesFromFeatureCollection(sessionId, geojson, config);
 };
@@ -281,6 +284,7 @@ export const generateVectorTilesFromFeatureCollection = async (
   geojson: FeatureCollectionLike,
   config: VectorTileGenerateConfig,
 ): Promise<VectorTileGenerateResult> => {
+  throwIfAborted(config.signal);
   const features = geojson.features ?? [];
   if (features.length === 0) return { tilesGenerated: 0, totalBytes: 0 };
 
@@ -296,6 +300,7 @@ export const generateVectorTilesFromFeatureCollection = async (
     }
     const records: FeatureMetadataRow[] = [];
     for (let index = 0; index < features.length; index++) {
+      throwIfAborted(config.signal);
       const feature = features[index];
       if (!feature) continue;
       const properties = (feature.properties ??= {});
@@ -325,6 +330,7 @@ export const generateVectorTilesFromFeatureCollection = async (
     metadataCount = records.length;
   } else {
     for (let index = 0; index < features.length; index++) {
+      throwIfAborted(config.signal);
       const feature = features[index];
       if (!feature) continue;
       const properties = (feature.properties ??= {});
@@ -350,9 +356,11 @@ export const generateVectorTilesFromFeatureCollection = async (
     indexMaxZoom,
     promoteId: 'id',
   });
+  throwIfAborted(config.signal);
 
   const bbox: [number, number, number, number] = [Infinity, Infinity, -Infinity, -Infinity];
   for (const feature of features) {
+    throwIfAborted(config.signal);
     const stats = extractGeometryStats(feature?.geometry);
     if (!stats.bbox) continue;
     updateBbox(bbox, [stats.bbox[0], stats.bbox[1]]);
@@ -367,12 +375,15 @@ export const generateVectorTilesFromFeatureCollection = async (
   let tiles = 0;
   let totalBytes = 0;
   for (const z of targetZooms) {
+    throwIfAborted(config.signal);
     const x1 = long2tile(minLon, z);
     const x2 = long2tile(maxLon, z);
     const y1 = lat2tile(maxLat, z);
     const y2 = lat2tile(minLat, z);
     for (let x = x1; x <= x2; x++) {
+      throwIfAborted(config.signal);
       for (let y = y1; y <= y2; y++) {
+        throwIfAborted(config.signal);
         const tile = index.getTile(z, x, y);
         const layer =
           tile && Array.isArray((tile as { features?: unknown[] }).features)
@@ -402,6 +413,16 @@ export const generateVectorTilesFromFeatureCollection = async (
   }
 
   return { tilesGenerated: tiles, totalBytes, metadataCount };
+};
+
+const throwIfAborted = (signal?: AbortSignal): void => {
+  if (!signal?.aborted) return;
+  if (typeof DOMException === 'function') {
+    throw new DOMException('Vector tile generation aborted', 'AbortError');
+  }
+  const error = new Error('Vector tile generation aborted');
+  (error as Error & { name: string }).name = 'AbortError';
+  throw error;
 };
 
 export const getVectorTile = async (

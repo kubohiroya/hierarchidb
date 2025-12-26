@@ -102,8 +102,10 @@ export interface VectorTileWorkerAPI {
         countryName?: string;
         adminLevel?: number;
       };
+      abortKey?: string;
     }
   ): Promise<{ tilesGenerated: number; totalBytes?: number; metadataCount?: number }>;
+  abortGenerateTiles?(abortKey: string): Promise<void>;
   getTile(sessionId: string, z: number, x: number, y: number): Promise<Uint8Array | null>;
   listTiles(
     sessionId: string

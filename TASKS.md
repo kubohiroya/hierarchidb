@@ -11837,6 +11837,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-26 10:55 start: analysis/shape/shared-extraction-plan — shape-plugin から location/route で共通利用すべきコード抽出計画の整理に着手。DoD: Kanban 1895 のとおり。
 - 2025-12-26 13:52 start: fix/shape/step5-pause-abort — Step5 Pause/Resume で AbortSignal を使って進行中タスクを中断できるようにする対応に着手。DoD: Kanban 1894 のとおり。
 - 2025-12-26 14:20 progress: fix/shape/step5-pause-abort — StageControls に AbortSignal の取得関数を追加し、SessionController の pause/resume で stage AbortController を切り替え。download/simplify/vectorTile adapter が pause abort を検知して待機/再開できるよう補強し、download 経由の fetch に signal を伝播するよう更新。
+- 2025-12-26 15:05 progress: fix/shape/step5-pause-abort — vectortile generateTiles に abortKey を追加し、runtime-worker で AbortSignal を監視する中断導線を追加。gis-sdk のタイル生成ループに abort チェックを挿入し、adapter は pause 時に abortGenerateTiles を呼ぶよう更新。
 - 2025-12-26 09:48 start: fix/auth/download-401-redirect — @hierarchidb/download の 401 復帰フロー調査と修復に着手。DoD: Kanban 1892 のとおり。
 - 2025-12-26 10:05 progress: fix/auth/download-401-redirect — download の FetchNetworkPort が AuthRecoveryService.fetchWithAuth を使わないため、401 が AuthNotificationRegistry へ伝播せず UI の localStorage 保存が走らないことを確認。
 - 2025-12-26 10:08 done: fix/auth/download-401-redirect — FetchNetworkPort に authFetch を追加し、createDownloadService / runtime-worker の downloadAdapter で AuthRecoveryService.fetchWithAuth を採用。401 時に UI 側の registerAuthRecoveryHandlers が発火できるよう修正。検証: 未実施。ロールバック: Done の Kanban 1892 を参照。

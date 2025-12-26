@@ -9,6 +9,10 @@ import { DexieChunkStoragePort } from '@hierarchidb/download';
 import { geojson } from 'flatgeobuf';
 import type { Feature } from 'geojson';
 
+const isAbortError = (error: unknown): boolean => (
+  error instanceof Error && error.name === 'AbortError'
+);
+
 export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
   private async decodeGeoJson(buffer: ArrayBuffer): Promise<unknown> {
     const decoded = geojson.deserialize(new Uint8Array(buffer));
@@ -59,6 +63,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     }
     for (const [inputBufferId, inputTasks] of tasksByInput) {
       let finished = false;
+      let abortKey: string | null = null;
       while (!finished) {
         if (controls?.waitIfPaused) {
           await controls.waitIfPaused();
@@ -106,17 +111,34 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
               return { processed: completed, failed };
             }
           }
-          await vectorTileClient.generateTiles(inputBufferId, {
-            format,
-            compression: compression ? 'gzip' : 'none',
-            tileSize,
-            buffer,
-            minZoom,
-            maxZoom,
-            metadataEnabled,
-            metadataReplace: replace,
-            metadataContext: sample.config?.metadataContext,
-          });
+          abortKey = `${inputBufferId}-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+          const signal = getSignal?.();
+          const abortListener = async () => {
+            if (abortKey && vectorTileClient.abortGenerateTiles) {
+              await vectorTileClient.abortGenerateTiles(abortKey);
+            }
+          };
+          if (signal) {
+            signal.addEventListener('abort', abortListener, { once: true });
+          }
+          try {
+            await vectorTileClient.generateTiles(inputBufferId, {
+              format,
+              compression: compression ? 'gzip' : 'none',
+              tileSize,
+              buffer,
+              minZoom,
+              maxZoom,
+              metadataEnabled,
+              metadataReplace: replace,
+              metadataContext: sample.config?.metadataContext,
+              abortKey,
+            });
+          } finally {
+            if (signal) {
+              signal.removeEventListener('abort', abortListener);
+            }
+          }
           if (shouldAbort()) {
             if (controls?.waitIfPaused) {
               await controls.waitIfPaused();
@@ -146,6 +168,19 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
           finished = true;
         } catch (error) {
           if (shouldAbort()) {
+            if (abortKey && vectorTileClient.abortGenerateTiles) {
+              await vectorTileClient.abortGenerateTiles(abortKey);
+            }
+            if (controls?.waitIfPaused) {
+              await controls.waitIfPaused();
+              continue;
+            }
+            return { processed: completed, failed };
+          }
+          if (isAbortError(error)) {
+            if (abortKey && vectorTileClient.abortGenerateTiles) {
+              await vectorTileClient.abortGenerateTiles(abortKey);
+            }
             if (controls?.waitIfPaused) {
               await controls.waitIfPaused();
               continue;

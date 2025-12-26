@@ -83,6 +83,7 @@ class RealSimplifyWorker implements SimplifyWorkerAPI {
 
 class RealVectorTileWorker implements VectorTileWorkerAPI {
   private sharedPromise: Promise<SharedDownloadService> | null = null;
+  private readonly abortControllers = new Map<string, AbortController>();
 
   private async getShared(): Promise<SharedDownloadService> {
     if (!this.sharedPromise) {
@@ -123,22 +124,42 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
         countryName?: string;
         adminLevel?: number;
       };
+      abortKey?: string;
     }
   ) {
-    const buf = await this.readBuffer(inputBufferId);
-    if (!buf) return { tilesGenerated: 0, totalBytes: 0 };
-    const sessionId = inputBufferId.includes('-simplify2-')
-      ? inputBufferId.substring(0, inputBufferId.lastIndexOf('-simplify2-'))
-      : inputBufferId;
-    const sdkConfig: VectorTileGenerateConfig = {
-      buffer: config.buffer,
-      minZoom: config.minZoom,
-      maxZoom: config.maxZoom,
-      metadataEnabled: config.metadataEnabled,
-      metadataReplace: config.metadataReplace,
-      metadataContext: config.metadataContext,
-    };
-    return generateVectorTilesFromJsonBuffer(sessionId, buf, sdkConfig);
+    const abortKey = config.abortKey;
+    const controller = abortKey ? new AbortController() : null;
+    if (abortKey && controller) {
+      this.abortControllers.set(abortKey, controller);
+    }
+    try {
+      const buf = await this.readBuffer(inputBufferId);
+      if (!buf) return { tilesGenerated: 0, totalBytes: 0 };
+      const sessionId = inputBufferId.includes('-simplify2-')
+        ? inputBufferId.substring(0, inputBufferId.lastIndexOf('-simplify2-'))
+        : inputBufferId;
+      const sdkConfig: VectorTileGenerateConfig = {
+        buffer: config.buffer,
+        minZoom: config.minZoom,
+        maxZoom: config.maxZoom,
+        metadataEnabled: config.metadataEnabled,
+        metadataReplace: config.metadataReplace,
+        metadataContext: config.metadataContext,
+        signal: controller?.signal,
+      };
+      return generateVectorTilesFromJsonBuffer(sessionId, buf, sdkConfig);
+    } finally {
+      if (abortKey) {
+        this.abortControllers.delete(abortKey);
+      }
+    }
+  }
+
+  async abortGenerateTiles(abortKey: string): Promise<void> {
+    const controller = this.abortControllers.get(abortKey);
+    if (controller && !controller.signal.aborted) {
+      controller.abort();
+    }
   }
 
   async getTile(sessionId: string, z: number, x: number, y: number) {
