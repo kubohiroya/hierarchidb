@@ -51,7 +51,6 @@ export class OverpassStrategy implements ILocationDownloadStrategy {
     if (typeof lon !== 'number' || typeof lat !== 'number') return null;
 
     const tags = overpassData.tags ?? {};
-    const primaryClass = this.detectClass(tags);
     const primaryType = this.detectType(tags);
     const mappedType = mapType(primaryType);
     const fetchedAt = Date.now();
@@ -63,28 +62,6 @@ export class OverpassStrategy implements ILocationDownloadStrategy {
       fetchedAt,
     );
     return point;
-  }
-
-  private detectClass(tags: Record<string, string>): string | undefined {
-    return tags.amenity
-      ? 'amenity'
-      : tags.aeroway
-        ? 'aeroway'
-        : tags.railway
-          ? 'railway'
-          : tags.highway
-            ? 'highway'
-            : tags.shop
-              ? 'shop'
-              : tags.tourism
-                ? 'tourism'
-                : tags.historic
-                  ? 'historic'
-                  : tags.leisure
-                    ? 'leisure'
-                    : tags.natural
-                      ? 'natural'
-                      : undefined;
   }
 
   private detectType(tags: Record<string, string>): string | undefined {

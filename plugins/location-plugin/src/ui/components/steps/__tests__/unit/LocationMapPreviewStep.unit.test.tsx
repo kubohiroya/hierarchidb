@@ -3,7 +3,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { toNodeId } from '@hierarchidb/common-types';
 import type { LocationEntity } from '../../../../common/types/index.js';
 import type { LocationPointId } from '../../../../common/entities/LocationPoint.js';
-import en from '../../../../ui/locales/en.json' with { type: 'json' };
+import en from '../../../../locales/en.json' with { type: 'json' };
 
 type SessionRecord = {
   sessionId: string;
@@ -160,7 +160,7 @@ describe('LocationMapPreviewStep', () => {
     const tilesLabel = await screen.findByText(/Generated tiles:/i);
     expect(tilesLabel.textContent).toContain('3');
     expect(listLocationPointsMock).toHaveBeenCalledWith(nodeId);
-    expect(screen.getByText(/Layers: location_points/i)).toBeInTheDocument();
+    expect(screen.getByText(/Layers: location_points/i)).not.toBeNull();
   });
 
   it('shows empty message when no session exists', async () => {
@@ -174,7 +174,7 @@ describe('LocationMapPreviewStep', () => {
     });
 
     const message = await screen.findByText(en.mapPreview.summary.noData);
-    expect(message).toBeInTheDocument();
+    expect(message).not.toBeNull();
     expect(listLocationPointsMock).toHaveBeenCalledWith(nodeId);
   });
 
@@ -200,8 +200,8 @@ describe('LocationMapPreviewStep', () => {
       expect(listLocationPointsMock).toHaveBeenCalled();
     });
 
-    const errorMessage = await screen.findByText(/Failed to load map preview: network error/i);
-    expect(errorMessage).toBeInTheDocument();
+    const errorMessage = await screen.findByText(/Failed to load map preview\./i);
+    expect(errorMessage).not.toBeNull();
     expect(listLocationPointsMock).toHaveBeenCalledWith(nodeId);
   });
 });

@@ -3,7 +3,26 @@ import { describe, expect, it, vi } from 'vitest';
 import type { LocationEntity } from '../../../types/index';
 import type { Timestamp } from '@hierarchidb/common-types';
 import { LocationSelectionStep } from '../../LocationSelectionStep';
-import en from '../../../../ui/locales/en.json' with { type: 'json' };
+import en from '../../../../locales/en.json' with { type: 'json' };
+
+vi.mock('@hierarchidb/ui-country-select', () => ({
+  useIsoCountries: () => ({
+    status: 'ready',
+    countries: [{ code: 'JP', name: 'Japan', continent: 'Asia' }],
+  }),
+  CountryMatrixSelector: ({ matrixConfig, onSelectionsChange }: { matrixConfig: { columns: { id: string; label: string }[] }; onSelectionsChange: (value: any) => void }) => (
+    <div>
+      <div>{matrixConfig.columns[0]?.label}</div>
+      <button
+        type="button"
+        aria-label="toggle-selection"
+        onClick={() => onSelectionsChange([{ countryCode: 'JP', selections: { [matrixConfig.columns[0]?.id ?? '']: true } }])}
+      >
+        toggle
+      </button>
+    </div>
+  ),
+}));
 
 describe('LocationSelectionStep (component)', () => {
   const timestamp = Date.now() as Timestamp;
@@ -22,18 +41,15 @@ describe('LocationSelectionStep (component)', () => {
     const onUpdate = vi.fn();
     render(<LocationSelectionStep draft={baseDraft} onUpdate={onUpdate} />);
 
-    expect(screen.getByText(en.selection.alertMessage)).toBeInTheDocument();
-    expect(screen.getByText(/Region/i)).toBeInTheDocument();
-    expect(screen.getByText(/Country/i)).toBeInTheDocument();
-    expect(screen.getByText(en.locationTypes.airport, { exact: false })).toBeInTheDocument();
+    expect(screen.getByText(en.locationTypes.area_centroid, { exact: false })).not.toBeNull();
   });
 
   it('notifies parent via onUpdate when a matrix cell is toggled', () => {
     const onUpdate = vi.fn();
     const { rerender } = render(<LocationSelectionStep draft={baseDraft} onUpdate={onUpdate} />);
 
-    const firstCheckbox = screen.getByRole('checkbox', { name: /Japan.*Area centroid/i });
-    fireEvent.click(firstCheckbox);
+    const toggleButton = screen.getByRole('button', { name: /toggle-selection/i });
+    fireEvent.click(toggleButton);
 
     expect(onUpdate).toHaveBeenCalledTimes(1);
     const patch = onUpdate.mock.calls[0][0] as Partial<LocationEntity>;

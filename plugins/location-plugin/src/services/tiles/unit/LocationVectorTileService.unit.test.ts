@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { toNodeId, type ProgressEvent } from '@hierarchidb/common-types';
 import type { LocationPointInput, LocationTileSettings, ProgressInfo } from '../LocationVectorTileService';
 import { LocationVectorTileService } from '../LocationVectorTileService';
-import { closeEphemeralLocationDB, getEphemeralLocationDB } from '../../database/EphemeralLocationDB';
+import { closeEphemeralLocationDB, getEphemeralLocationDB } from '../../../database/EphemeralLocationDB';
 import { UnifiedLocationBatchManager } from '../../batch/UnifiedLocationBatchManager';
 import { LocationBatchSessionManager } from '../../batch/BatchSessionManager';
 import type { SessionSummary } from '../../_obsolate_common/types/batch-types.js';

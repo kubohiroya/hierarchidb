@@ -82,8 +82,9 @@ export const normalizePeerData = (data: unknown): LocationPeerData => {
 
 const isGroupData = (value: unknown): value is LocationGroupItemData =>
   isObject(value)
-  && (typeof (value as LocationGroupItemData).pointId === 'string' || typeof (value as { pid?: string }).pid === 'string')
-  && (value.schemaVersion === 1 || value.schemaVersion === 2);
+  && (typeof (value as Record<string, unknown>).pointId === 'string'
+    || typeof (value as Record<string, unknown>).pid === 'string')
+  && (((value as Record<string, unknown>).schemaVersion === 1) || ((value as Record<string, unknown>).schemaVersion === 2));
 
 const normalizeGroupData = (value: unknown): LocationGroupItemData => {
   if (isGroupData(value)) {
@@ -95,17 +96,18 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
         metadata: sanitizeMetadata(value.metadata),
       };
     }
+    const legacy = value as unknown as Record<string, unknown>;
     return {
       schemaVersion: 2,
-      pointId: (value as { pid?: string }).pid ?? '',
+      pointId: (legacy.pid ?? '') as LocationGroupItemData['pointId'],
       name: typeof value.name === 'string' ? value.name : '',
       latitude: typeof value.latitude === 'number' ? value.latitude : 0,
       longitude: typeof value.longitude === 'number' ? value.longitude : 0,
       kind: typeof value.kind === 'string' ? value.kind : 'unknown',
-      countryCode: typeof value.gid0 === 'string' ? value.gid0 : '',
-      admin1: typeof value.gid1 === 'string' ? value.gid1 : undefined,
-      admin2: typeof value.gid2 === 'string' ? value.gid2 : undefined,
-      metadata: sanitizeMetadata(value.payload),
+      countryCode: typeof legacy.gid0 === 'string' ? legacy.gid0 : '',
+      admin1: typeof legacy.gid1 === 'string' ? legacy.gid1 : undefined,
+      admin2: typeof legacy.gid2 === 'string' ? legacy.gid2 : undefined,
+      metadata: sanitizeMetadata(legacy.payload),
     };
   }
 
@@ -126,29 +128,31 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
 
   const pointId = typeof (value as Record<string, unknown>).pointId === 'string'
     ? (value as Record<string, unknown>).pointId as string
-    : typeof value.pid === 'string'
-      ? value.pid
+    : typeof (value as Record<string, unknown>).pid === 'string'
+      ? (value as Record<string, unknown>).pid as string
       : '';
   const name = typeof value.name === 'string' ? value.name : '';
   const latitude = typeof value.latitude === 'number' ? value.latitude : 0;
   const longitude = typeof value.longitude === 'number' ? value.longitude : 0;
   const kind = typeof value.kind === 'string' ? value.kind : 'unknown';
-  const countryCode = typeof value.countryCode === 'string'
-    ? value.countryCode
-    : typeof value.gid0 === 'string'
-      ? value.gid0
+  const countryCode = typeof (value as Record<string, unknown>).countryCode === 'string'
+    ? (value as Record<string, unknown>).countryCode as string
+    : typeof (value as Record<string, unknown>).gid0 === 'string'
+      ? (value as Record<string, unknown>).gid0 as string
       : '';
-  const admin1 = typeof value.admin1 === 'string'
-    ? value.admin1
-    : typeof value.gid1 === 'string'
-      ? value.gid1
+  const admin1 = typeof (value as Record<string, unknown>).admin1 === 'string'
+    ? (value as Record<string, unknown>).admin1 as string
+    : typeof (value as Record<string, unknown>).gid1 === 'string'
+      ? (value as Record<string, unknown>).gid1 as string
       : undefined;
-  const admin2 = typeof value.admin2 === 'string'
-    ? value.admin2
-    : typeof value.gid2 === 'string'
-      ? value.gid2
+  const admin2 = typeof (value as Record<string, unknown>).admin2 === 'string'
+    ? (value as Record<string, unknown>).admin2 as string
+    : typeof (value as Record<string, unknown>).gid2 === 'string'
+      ? (value as Record<string, unknown>).gid2 as string
       : undefined;
-  const countryName = typeof value.countryName === 'string' ? value.countryName : undefined;
+  const countryName = typeof (value as Record<string, unknown>).countryName === 'string'
+    ? (value as Record<string, unknown>).countryName as string
+    : undefined;
 
   return {
     schemaVersion: 2,

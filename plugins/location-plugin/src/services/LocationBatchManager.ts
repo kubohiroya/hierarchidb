@@ -26,6 +26,8 @@ const logLocationBatchWarning = (message: string, error: unknown): void => {
   console.warn('[LocationBatchManager]', message, error);
 };
 
+const ISO3166_CSV_URL = '/iso3166-2-level1.csv';
+
 /**
  * Location batch task interface
  */
@@ -89,6 +91,7 @@ export class LocationBatchManager {
   private locationSessions: Map<string, LocationBatchSession> = new Map();
   private locationTasks: Map<string, LocationBatchTask[]> = new Map();
   private progressCallbacks: Map<string, (event: LocationBatchProgressEvent) => void> = new Map();
+  private countryNameMap: Map<string, string> | null = null;
 
   private async persistLocationPoints(
     nodeId: NodeId,
@@ -380,12 +383,15 @@ export class LocationBatchManager {
         console.warn(`Unsupported data source: ${config.dataSource}`);
     }
 
+    await this.normalizeCountryCodes(locations);
+    const filtered = this.filterLocationsByConfig(locations, config);
+
     // Apply limit if specified
-    if (config.limit && locations.length > config.limit) {
-      return locations.slice(0, config.limit);
+    if (config.limit && filtered.length > config.limit) {
+      return filtered.slice(0, config.limit);
     }
 
-    return locations;
+    return filtered;
   }
 
   /**
@@ -712,14 +718,28 @@ export class LocationBatchManager {
   ): Promise<LocationPointProperties[]> {
     if (!criteria) return locations;
 
+    const normalizedCodes = criteria.countryCodes?.map((code) => code.toUpperCase()) ?? [];
+    const normalizedNames = criteria.countryNames?.map((name) => name.toLowerCase()) ?? [];
+
     return locations.filter(location => {
       if (criteria.allowedTypes && !criteria.allowedTypes.includes(location.kind as LocationType)) {
         return false;
       }
 
-      const countryCode = location.countryCode;
-      if (criteria.countryCodes && countryCode && !criteria.countryCodes.includes(countryCode)) {
-        return false;
+      if (normalizedCodes.length > 0 || normalizedNames.length > 0) {
+        const normalizedLocationCode = location.countryCode?.toUpperCase();
+        const normalizedLocationName = location.countryName?.toLowerCase();
+        const matchesCode = normalizedLocationCode
+          ? normalizedCodes.includes(normalizedLocationCode)
+          : false;
+        const matchesName = normalizedLocationName
+          ? normalizedNames.includes(normalizedLocationName)
+          : false;
+        if (!matchesCode && !matchesName) {
+          if (normalizedLocationCode || normalizedLocationName) {
+            return false;
+          }
+        }
       }
 
       if (criteria.excludeIds && location.pointId && criteria.excludeIds.includes(String(location.pointId))) {
@@ -728,6 +748,93 @@ export class LocationBatchManager {
 
       return true;
     });
+  }
+
+  private filterLocationsByConfig(
+    locations: LocationPointProperties[],
+    config: LocationSearchConfig,
+  ): LocationPointProperties[] {
+    const allowedTypes = config.types ?? [];
+    const hasTypeFilter = allowedTypes.length > 0;
+    const countryCode = config.countryCode?.toUpperCase();
+    const countryName = config.countryName?.toLowerCase();
+    const hasCountryFilter = Boolean(countryCode || countryName);
+
+    if (!hasTypeFilter && !hasCountryFilter) return locations;
+
+    return locations.filter((location) => {
+      if (hasTypeFilter && !allowedTypes.includes(location.kind as LocationType)) {
+        return false;
+      }
+      if (!hasCountryFilter) return true;
+
+      const normalizedLocationCode = location.countryCode?.toUpperCase();
+      const normalizedLocationName = location.countryName?.toLowerCase();
+      const matchesCode = countryCode && normalizedLocationCode
+        ? normalizedLocationCode === countryCode
+        : false;
+      const matchesName = countryName && normalizedLocationName
+        ? normalizedLocationName === countryName
+        : false;
+
+      if (matchesCode || matchesName) return true;
+      if (normalizedLocationCode || normalizedLocationName) return false;
+      return true;
+    });
+  }
+
+  private async normalizeCountryCodes(locations: LocationPointProperties[]): Promise<void> {
+    if (locations.length === 0) return;
+    const map = await this.getCountryNameMap();
+    if (map.size === 0) return;
+    locations.forEach((location) => {
+      const rawCode = location.countryCode?.trim();
+      const rawName = location.countryName?.trim();
+      const normalized = this.resolveIso2Code(map, rawCode, rawName);
+      if (normalized) {
+        location.countryCode = normalized;
+      }
+    });
+  }
+
+  private resolveIso2Code(
+    map: Map<string, string>,
+    rawCode?: string,
+    rawName?: string,
+  ): string | null {
+    if (rawCode) {
+      const normalized = rawCode.trim().toUpperCase();
+      if (normalized.length === 2) return normalized;
+      const mappedCode = map.get(normalized.toLowerCase());
+      if (mappedCode) return mappedCode;
+    }
+    if (rawName) {
+      const mappedName = map.get(rawName.trim().toLowerCase());
+      if (mappedName) return mappedName;
+    }
+    return null;
+  }
+
+  private async getCountryNameMap(): Promise<Map<string, string>> {
+    if (this.countryNameMap) return this.countryNameMap;
+    try {
+      const { ensureIso3166Data, getAllCountries } = await import('@hierarchidb/gen-iso3166-2');
+      await ensureIso3166Data({ csvUrl: ISO3166_CSV_URL });
+      const countries = await getAllCountries();
+      const map = new Map<string, string>();
+      countries.forEach((country) => {
+        const alpha2 = country.alpha2.toUpperCase();
+        map.set(country.alpha2.toLowerCase(), alpha2);
+        map.set(country.alpha3.toLowerCase(), alpha2);
+        map.set(country.countryEn.toLowerCase(), alpha2);
+      });
+      this.countryNameMap = map;
+      return map;
+    } catch (error) {
+      logLocationBatchWarning('Failed to normalize country names using ISO3166 data', error);
+      this.countryNameMap = new Map();
+      return this.countryNameMap;
+    }
   }
 
   /**

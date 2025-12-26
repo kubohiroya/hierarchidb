@@ -20,7 +20,12 @@ async function resolveStoreRegistry(options: RegisterLocationWorkerStoresOptions
   if (options.storeRegistry) {
     return options.storeRegistry;
   }
-  return null;
+  try {
+    const runtime = await import('@hierarchidb/runtime-worker');
+    return (runtime as { storeRegistry?: StoreRegistry }).storeRegistry ?? null;
+  } catch {
+    return null;
+  }
 }
 
 async function ensureLocationStores(registry: StoreRegistry): Promise<void> {

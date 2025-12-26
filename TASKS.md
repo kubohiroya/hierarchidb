@@ -94,6 +94,7 @@
 - 受け入れ基準（DoD）:
   - [ ] plans 配下の既存計画ドキュメントを確認し、route-plugin 再編修正の仕様詳細を整理する
   - [ ] 仕様の詳細化ドキュメントを英語で作成し、未確定点/質問事項を明記する
+  - [ ] Stage2/Stage5/Stage7 の実装計画を追記し、依存順とロールバックを明記する
   - [ ] `TASKS.md` の運用ログに start→progress→done を記録する
 - チェックリスト:
   - [ ] `plans/` 配下の対象ドキュメントを特定して読み込む
@@ -5365,6 +5366,38 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+
+1914) route-plugin Stage2/5/7 実装（GIS SDK/命名整合/BaseBatchManager）（P0）
+- ステータス: Done（2025-12-26）
+- ブランチ: `feat/route/stage2-5-7-implementation`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plans/route-plugin-reorg-spec.md`, `packages/features/gis-sdk`, `packages/runtime-worker`, `plugins/{shape,location,route}-plugin`, `packages/batch-runtime-services`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [x] Stage2: runtime-worker 経由のみで GIS SDK が利用され、GIS ロジックが SDK に集約されている
+  - [x] Stage5: BatchConfig/batch-types 命名・ファイル配置が shape/location/route で整合する
+  - [x] Stage7: BaseBatchSessionManager に統合され、永続化は base 側の hooks 経由になる
+  - [x] 各段階のロールバック手順と検証結果を `TASKS.md` に記録する
+- チェックリスト:
+  - [x] Stage2: SDK/StageProcessingService/adapter naming を統一
+  - [x] Stage5: file/type naming を整備し import を更新
+  - [x] Stage7: session manager を BaseBatchSessionManager へ移行
+  - [x] `pnpm --filter @hierarchidb/{runtime-worker,shape-plugin,location-plugin,route-plugin,batch-runtime-services} typecheck` を記録
+- ロールバック手順：Stage2/5/7 の変更差分を revert し、上記 typecheck を再実行する。
+- 影響範囲: `packages/runtime-worker/src/services/StageProcessingService.ts`, `packages/batch-runtime-services/src/BaseBatchSessionManager.ts`, `plugins/shape-plugin/src/services/batch/BatchSessionManager.ts`, `plugins/location-plugin/src/services/batch/BatchSessionManager.ts`, `plugins/route-plugin/src/services/RouteBatchSessionOrchestrator.ts`
+
+1913) route-plugin RuntimeWiring で runtime worker adapter を起動（P1）
+- ブランチ: `feat/route/runtime-wiring-adapter`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/route-plugin/src/index.ts`, `plugins/route-plugin/src/services/batch/adapters/registerRuntimeWorker.ts`, `packages/ui/worker-client`
+- 受け入れ基準（DoD）:
+  - [x] `RuntimeWiring.registerRuntimeWorkerAdapters()` が route-plugin に追加される
+  - [x] route-plugin の初期化で `registerRouteRuntimeWorkerAdapters()` が呼ばれる
+  - [x] 例外時に起動フローが落ちない（try/catch の no-op）
+  - [x] `TASKS.md` の運用ログに start→progress→done を記録する
+- チェックリスト:
+  - [x] `plugins/route-plugin/src/index.ts` を追加/更新する
+  - [x] runtime wiring を `wirePluginsFromModules` が拾える形で export する
+  - [x] 影響範囲とロールバック手順を記載する
+- ロールバック手順：`plugins/route-plugin/src/index.ts` の変更を revert する。
+- 影響範囲: `plugins/route-plugin/src/index.ts`
 
 1912) runtime-worker ShapeDB 型不一致の typecheck 解消（P1）
 - ブランチ: `fix/runtime-worker/shapedb-handle-typing`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -12167,8 +12200,51 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-26 21:10 start: feat/location/implementation-from-design — location-plugin のテスト修正（Selection/MapPreview/BatchParameters のユニットテスト）に着手。DoD: 位置プラグインの `pnpm --filter @hierarchidb/location-plugin test` が通ること、修正内容と検証を運用ログへ記録。
+- 2025-12-26 21:22 progress: feat/location/implementation-from-design — Selection の正規化 helper を抽出しテスト更新、MapPreview/BatchParameters のテストでローカルモック（country select/localStorage）を追加、jest-dom 依存を撤去。
+- 2025-12-26 21:23 command: pnpm --filter @hierarchidb/location-plugin test — exit 0（Warning: `--localstorage-file` invalid path が 1 回出力）。
+- 2025-12-26 21:38 start: feat/location/implementation-from-design — GroupEntity ライフサイクル（delete/duplicate）向けに storeRegistry の登録を worker 側で自動化する対応に着手。DoD: location ノード削除/複製で groupEntities が追従し、typecheck 結果を記録。
+- 2025-12-26 21:40 progress: feat/location/implementation-from-design — registerLocationWorkerStores が runtime-worker の storeRegistry を自動解決し、worker bootstrap からの呼び出しが無くても GroupStore/RelationStore を登録できるよう更新。
+- 2025-12-26 21:41 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 2（location/shape の既存型エラー: BatchSessionManager idle/ProgressEvent 型不一致）。
+- 2025-12-26 21:42 done: feat/location/implementation-from-design — location worker の storeRegistry 自動解決で GroupEntity の delete/duplicate が EntityLifecycleManager 経由で追従。ロールバック: `plugins/location-plugin/src/worker/factory/registerLocationWorkerStores.ts` の差分を revert。
+- 2025-12-26 21:54 progress: feat/location/implementation-from-design — shape/location の BatchSessionManager で idle 状態は永続化せず、ShapeBatchSession は ProgressInfo を emit（skipped を含める）するよう修正。不要な cleanupSessionTracking 呼び出しを削除。
+- 2025-12-26 21:55 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 0。
+- 2025-12-26 22:12 start: feat/location/implementation-from-design — Step3→Step5 の選択条件と検索/メタデータの整合を確認し、国/種別フィルタを共通化する対応に着手。DoD: 選択条件が search/validation/preview に反映、typecheck 記録。
+- 2025-12-26 22:20 progress: feat/location/implementation-from-design — 検索結果に対する国/種別フィルタを統一し、selection から countryNames も渡すように更新。単一タイプ時の強制選択を撤去。
+- 2025-12-26 22:21 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 0。
+- 2025-12-26 22:38 start: feat/location/implementation-from-design — Step6 プレビューでアイコン/点の密度閾値と表示を調整し、Material Icons を共有化する対応に着手。DoD: 密度で矩形表示へ切替、typecheck 記録。
+- 2025-12-26 22:46 progress: feat/location/implementation-from-design — Location type の Material Icons と色を共有化し、プレビューは密度超過時に正方形で描画するよう更新。
+- 2025-12-26 22:47 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 0。
+- 2025-12-26 22:56 progress: feat/location/implementation-from-design — アイコン密度閾値を 0.001 に調整し、ズーム連動のアイコン/正方形サイズ式を見直し。
+- 2025-12-26 22:57 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 0。
 - 2025-12-26 18:35 start: docs/route/spec-detailing — route-plugin 再編修正の仕様詳細化に着手。DoD: Kanban 1912 のとおり。
 - 2025-12-26 18:35 progress: docs/route/spec-detailing — Stage1(Runtime Worker Adapter) の仕様詳細を `plans/route-plugin-reorg-spec.md` に追加。
+- 2025-12-26 18:36 progress: docs/route/spec-detailing — Stage2(GIS SDK Separation) の仕様詳細を `plans/route-plugin-reorg-spec.md` に追加。
+- 2025-12-26 18:36 progress: docs/route/spec-detailing — Stage3(Shape/Route API Boundary) の仕様詳細を `plans/route-plugin-reorg-spec.md` に追加。
+- 2025-12-26 18:36 progress: docs/route/spec-detailing — Stage4(Download Registry) の仕様詳細を `plans/route-plugin-reorg-spec.md` に追加。
+- 2025-12-26 18:37 progress: docs/route/spec-detailing — Stage5(Tabular API) の仕様詳細を `plans/route-plugin-reorg-spec.md` に追加。
+- 2025-12-26 18:38 progress: docs/route/spec-detailing — Stage6(Progress Hooks) の仕様詳細を `plans/route-plugin-reorg-spec.md` に追加。
+- 2025-12-26 18:39 progress: docs/route/spec-detailing — Stage7(Batch Session Manager) の仕様詳細を `plans/route-plugin-reorg-spec.md` に追加。
+- 2025-12-26 20:16 start: feat/route/runtime-wiring-adapter — route-plugin の RuntimeWiring で runtime worker adapter を起動する対応に着手。DoD: Kanban 1913 のとおり。
+- 2025-12-26 20:17 progress: feat/route/runtime-wiring-adapter — `plugins/route-plugin/src/index.ts` を追加し RuntimeWiring を export。
+- 2025-12-26 20:17 done: feat/route/runtime-wiring-adapter — route-plugin の RuntimeWiring で `registerRouteRuntimeWorkerAdapters()` を呼び出す導線を追加。検証: 未実施。ロールバック: `plugins/route-plugin/src/index.ts` の差分を revert。
+- 2025-12-26 20:18 command: pnpm --filter @hierarchidb/route-plugin typecheck — exit 0。
+- 2025-12-26 20:30 progress: docs/route/spec-detailing — Stage2/Stage5/Stage7 の方針確定（runtime-worker 経由のみ、BatchConfig 名称整合、BaseBatchSessionManager へ統一・永続化寄せ）を `plans/route-plugin-reorg-spec.md` に反映。
+- 2025-12-26 20:37 start: docs/route/spec-detailing — Stage2/Stage5/Stage7 の実装計画整理に着手。DoD: Kanban 1912 のとおり。
+- 2025-12-26 20:38 progress: docs/route/spec-detailing — Stage2/Stage5/Stage7 の実装計画（依存順/検証/ロールバック）を `plans/route-plugin-reorg-spec.md` に追記。
+- 2025-12-26 20:38 done: docs/route/spec-detailing — Stage2/Stage5/Stage7 の実装計画整理を完了。
+- 2025-12-26 20:41 progress: feat/route/stage2-5-7-implementation — ExecPlan を `plans/route-plugin-stage2-5-7-execplan.md` に作成。
+- 2025-12-26 20:50 progress: feat/route/stage2-5-7-implementation — runtime-worker の StageProcessingService が SDK の EphemeralGisDB を使用するよう更新。
+- 2025-12-26 21:05 progress: feat/route/stage2-5-7-implementation — BatchConfig 命名整合: shape に alias 追加、location/route に `BatchConfig.ts` を追加し import を更新。
+- 2025-12-26 21:25 progress: feat/route/stage2-5-7-implementation — BaseBatchSessionManager の hook を追加し、shape/location/route の session manager を拡張して永続化と進捗の共通化を開始。
+- 2025-12-26 21:32 progress: feat/route/stage2-5-7-implementation — DB クラス名の揃えとして shape/location に alias export を追加。
+- 2025-12-26 21:45 progress: feat/route/stage2-5-7-implementation — RouteBatchSessionOrchestrator の完了時 cleanupSessionTracking を追加。
+- 2025-12-26 21:58 progress: feat/route/stage2-5-7-implementation — RouteBatchSessionOrchestrator の emitter を BaseBatchSessionManager へ接続し、`pnpm --filter @hierarchidb/route-plugin typecheck` (exit 0) を確認。
+- 2025-12-26 22:05 progress: feat/route/stage2-5-7-implementation — `pnpm --filter @hierarchidb/batch-runtime-services typecheck` (exit 0) を確認。
+- 2025-12-26 22:06 progress: feat/route/stage2-5-7-implementation — `pnpm --filter @hierarchidb/runtime-worker typecheck` (exit 0) を確認。
+- 2025-12-26 22:07 progress: feat/route/stage2-5-7-implementation — `pnpm --filter @hierarchidb/shape-plugin typecheck` (exit 0) を確認。
+- 2025-12-26 22:07 progress: feat/route/stage2-5-7-implementation — `pnpm --filter @hierarchidb/location-plugin typecheck` (exit 0) を確認。
+- 2025-12-26 22:12 done: feat/route/stage2-5-7-implementation — Stage2/5/7 の実装と typecheck を完了。検証: `pnpm --filter @hierarchidb/{runtime-worker,shape-plugin,location-plugin,route-plugin,batch-runtime-services} typecheck`。ロールバック: Kanban 1914 の手順に従い差分を revert。
 - 2025-12-26 16:43 start: feat/ui/modeless-dialog-map — map 非モーダルダイアログ導入（AbstractDialog/ModelessDialog）に着手。DoD: Kanban 1910 のとおり。
 - 2025-12-26 17:04 progress: feat/ui/modeless-dialog-map — `AbstractDialog` を新設し `HeadlessPluginDialog` を薄く整理。`ModelessDialogFrame` とヘッダ最小化ボタンを追加し、map 用の `MapDialogWindows`（localStorage 永続化/Z-order 管理）を実装。ExecPlan: `plans/modeless-dialog-map.md`。
 - 2025-12-26 17:04 note: feat/ui/modeless-dialog-map — 主要な手動確認/テストは未実施（後続で実行して記録予定）。
@@ -13160,6 +13236,14 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-26 18:37 progress: feat/location/implementation-from-design — データソースの許可タイプに合わせて選択タイプをフィルタし、Step3/Step5 の整合を補強。検証: 未実施。ロールバック: location-plugin steps-provider 差分を revert。
 - 2025-12-26 19:16 start: feat/location/implementation-from-design — OurAirports/OpenFlights/WorldPortIndex の取得クライアントとテストに着手。DoD: 取得実装 + マッピング + 単体テスト + 運用ログ記載。
 - 2025-12-26 19:20 progress: feat/location/implementation-from-design — OurAirports/OpenFlights/WorldPortIndex の CSV パーサ/マッピングと BatchManager 導線を追加、単体テストを作成。検証: 未実施。ロールバック: location-plugin の csvSources/csvUtils/LocationBatchManager/pointFactories/test/sharedNet 差分を revert。
+- 2025-12-26 19:37 progress: feat/location/implementation-from-design — OurAirports は IATA→ICAO→local/ident で code を集約し metadata に保存。WPI の country code が国名混在する前提で countryName/regionName/unlocode を保持。テストも更新。検証: 未実施。ロールバック: location-plugin csvSources/pointFactories/test 差分を revert。
+- 2025-12-26 19:52 progress: feat/location/implementation-from-design — countryCodes フィルタを countryName にも適用し、WPI の公式 CSV URL を data source 定義へ追加。検証: 未実施。ロールバック: location-plugin LocationBatchManager/LocationDataSourceDefinitions の差分を revert。
+- 2025-12-26 19:56 progress: feat/location/implementation-from-design — typecheck 指摘の未使用変数/関数を削除し、legacy group 正規化の型エラーと latest null 判定を修正。検証: 未実施。ロールバック: location-plugin overpass strategy/pointFactories/normalizers/LocationBatchParametersStep と shape-plugin datasources の差分を revert。
+- 2025-12-26 19:58 progress: feat/location/implementation-from-design — normalizers の legacy group 型変換を unknown 経由にして typecheck エラーを解消。検証: 未実施。ロールバック: location-plugin normalizers 差分を revert。
+- 2025-12-26 19:59 progress: feat/location/implementation-from-design — shape-plugin の typecheck 指摘（Alert severity 型/checkboxState 参照）を修正。検証: 未実施。ロールバック: shape-plugin ShapeProcessingSettingsStep/useBatchSessionActions の差分を revert。
+- 2025-12-26 20:02 progress: feat/location/implementation-from-design — app typecheck 指摘（modeless layout fallback / definitions cast / ModelessIconPlacement export / plugin-ui-host 依存）を修正。検証: 未実施。ロールバック: app modelessDialogLayout/ModelessDialogManager/ModelessDialogProvider と app package.json の差分を revert。
+- 2025-12-26 20:21 progress: feat/location/implementation-from-design — location-plugin テスト失敗に対応（vitest alias 修正、CSV テスト/パーサ調整、テストの locale import 修正、package 依存追加、テスト用 DB import 修正）。検証: `pnpm --filter @hierarchidb/location-plugin test` 失敗。ロールバック: location-plugin vitest.config/CSV パーサ/テスト/LocationVectorTileService.unit.test.ts/package.json 差分を revert。
+- 2025-12-26 20:23 progress: feat/location/implementation-from-design — vitest の ui-i18n/usePluginBatchProgress スタブ追加、WPI/OurAirports テスト補正、進捗ステージ期待値更新。検証: 未実施。ロールバック: location-plugin test-shims/vitest.config/test 修正差分を revert。
 - 2025-12-26 17:12 progress: refactor/shape-route/api-boundary-rework — ShapeQuery/ShapeMutation/RouteMutation の型追加、runtime-worker サービス実装、WorkerAPI/worker runtime/workerBridge の結線、shapeBatchAPI への移行、useShapeAPI 撤去とドキュメント注記を反映。
 - 2025-12-26 17:12 done: refactor/shape-route/api-boundary-rework — ShapeAPI 廃止と Shape/Route Query/Mutation API 再設計を反映。検証: 未実施。ロールバック: Kanban 1907 の手順に従い差分を revert。
 - 2025-12-26 19:10 progress: feat/memory/heap-pressure-pubsub — memory/ui-memory 連携の未解消エラー修正と UI/Worker 結線の仕上げに着手。検証: 未実施。ロールバック: Kanban 1906 の手順に従い差分を revert。

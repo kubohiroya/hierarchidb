@@ -444,42 +444,6 @@ out geom;
     return `node-osm-${element.type}-${element.id}`;
   }
 
-  private extractName(element: OSMElement): string {
-    const tags = element.tags || {};
-
-    const nameKeys = ['name:en', 'name', 'name:local', 'ref', 'alt_name'];
-
-    for (const key of nameKeys) {
-      if (tags[key]) {
-        return tags[key];
-      }
-    }
-
-    const type = tags.place || tags.boundary || tags.natural || tags.highway || tags.waterway || element.type;
-    return `${type} ${element.id}`;
-  }
-
-  private extractDescription(element: OSMElement): string | undefined {
-    const tags = element.tags || {};
-    const parts: string[] = [];
-
-    //  OSM
-    parts.push(`OSM ${element.type} #${element.id}`);
-
-    const importantTags = ['place', 'boundary', 'admin_level', 'natural', 'highway', 'waterway', 'landuse'];
-    for (const tagKey of importantTags) {
-      if (tags[tagKey]) {
-        parts.push(`${tagKey}: ${tags[tagKey]}`);
-      }
-    }
-
-    if (tags.wikipedia) {
-      parts.push(`Wikipedia: ${tags.wikipedia}`);
-    }
-
-    return parts.length > 1 ? parts.join(', ') : undefined;
-  }
-
   getAvailablePresets(): Record<string, OverpassTagPreset> {
     return { ...this.tagPresets };
   }

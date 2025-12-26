@@ -1,7 +1,8 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import { RouteBatchManager, type RouteBatchRouteInput, type RouteBatchManagerDeps } from './RouteBatchManager.js';
+import type { RouteBatchSession } from './RouteBatchSession.js';
 import { RouteDatabase } from './database/RouteDatabase.js';
-import { RouteBatchConfig } from './RouteBatchSession.js';
+import type { RouteBatchConfig } from '../common/types/BatchConfig.js';
 import type {
   BatchProgressCallback,
   BatchProgressEvent,
@@ -10,6 +11,7 @@ import type {
   IBatchSessionManager,
   StageKey,
 } from '@hierarchidb/common-api';
+import { BaseBatchSessionManager } from '@hierarchidb/batch-runtime-services';
 
 export interface RouteBatchSessionConfig {
   routeGeneration?: Partial<RouteBatchConfig['routeGeneration']>;
@@ -22,13 +24,13 @@ export interface RouteBatchInput {
   routes: RouteBatchRouteInput[];
 }
 
-export class RouteBatchSessionOrchestrator implements IBatchSessionManager {
+export class RouteBatchSessionOrchestrator extends BaseBatchSessionManager {
   private readonly db = new RouteDatabase();
   private readonly manager: RouteBatchManager;
   private readonly sessionNodeMap = new Map<BatchSessionId, NodeId>();
-  private readonly listeners = new Map<BatchSessionId, Set<BatchProgressCallback>>();
 
   constructor(deps?: RouteBatchManagerDeps) {
+    super();
     const emitter = {
       emit: (update: { jobId: string; progress: number; phase: string; ts: number }) => {
         const event: BatchProgressEvent = {
@@ -44,7 +46,7 @@ export class RouteBatchSessionOrchestrator implements IBatchSessionManager {
             currentTask: update.phase,
           },
         };
-        this.forwardProgress(event);
+        this.emitProgress(update.jobId, event);
       },
     };
     this.manager = new RouteBatchManager({ ...deps, emitter });
@@ -73,18 +75,31 @@ export class RouteBatchSessionOrchestrator implements IBatchSessionManager {
 
     const sessionId = await this.manager.startRouteBatchSession(nodeId, config, routes);
     this.sessionNodeMap.set(sessionId, nodeId);
+    const session = this.manager.getSession(sessionId);
+    if (session) {
+      this.registerSession(session);
+    }
     return sessionId;
   }
 
   async pauseBatchSession(sessionId: BatchSessionId): Promise<void> {
+    if (this.sessions.has(sessionId)) {
+      await super.pauseBatchSession(sessionId);
+    }
     await this.manager.pauseRouteBatchSession(sessionId);
   }
 
   async resumeBatchSession(sessionId: BatchSessionId): Promise<void> {
+    if (this.sessions.has(sessionId)) {
+      await super.resumeBatchSession(sessionId);
+    }
     await this.manager.resumeRouteBatchSession(sessionId);
   }
 
   async cancelBatchSession(sessionId: BatchSessionId): Promise<void> {
+    if (this.sessions.has(sessionId)) {
+      await super.cancelBatchSession(sessionId);
+    }
     await this.manager.pauseRouteBatchSession(sessionId);
   }
 
@@ -127,29 +142,22 @@ export class RouteBatchSessionOrchestrator implements IBatchSessionManager {
   }
 
   onBatchProgress(sessionId: BatchSessionId, callback: BatchProgressCallback): () => void {
-    let set = this.listeners.get(sessionId);
-    if (!set) {
-      set = new Set();
-      this.listeners.set(sessionId, set);
-    }
-    set.add(callback);
-    return () => {
-      const listeners = this.listeners.get(sessionId);
-      if (!listeners) return;
-      listeners.delete(callback);
-      if (listeners.size === 0) this.listeners.delete(sessionId);
-    };
+    return super.onBatchProgress(sessionId, callback);
   }
 
-  private forwardProgress(event: BatchProgressEvent): void {
-    const listeners = this.listeners.get(event.sessionId);
-    if (!listeners) return;
-    for (const cb of listeners) {
-      try {
-        cb(event);
-      } catch (error) {
-        console.error('[RouteBatchSessionOrchestrator] progress callback failed', error);
-      }
+  protected async onSessionStatusChange(_session: RouteBatchSession): Promise<void> {
+    const state = _session.getState();
+    const cursor = await this.db.routeCursors.get(state.sessionId);
+    if (cursor) {
+      await this.db.routeCursors.update(state.sessionId, {
+        updatedAt: Date.now(),
+        paused: state.status === 'paused',
+      });
+    }
+    if (state.status === 'completed' || state.status === 'failed' || state.status === 'cancelled') {
+      this.sessions.delete(state.sessionId);
+      this.sessionNodeMap.delete(state.sessionId);
+      this.cleanupSessionTracking(state.sessionId);
     }
   }
 }

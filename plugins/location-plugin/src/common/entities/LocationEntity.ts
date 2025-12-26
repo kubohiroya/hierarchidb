@@ -80,6 +80,7 @@ export type LocationDraft = Partial<LocationEntity> & {
 export interface LocationBatchFilterCriteria {
   allowedTypes?: LocationType[];
   countryCodes?: string[];
+  countryNames?: string[];
   excludeIds?: string[];
 }
 

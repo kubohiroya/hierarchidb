@@ -486,5 +486,8 @@ export class ShapeDB extends Dexie {
   }
 }
 
+// Aligned alias for cross-plugin naming consistency.
+export { ShapeDB as ShapeDatabase };
+
 // Singleton instance
 export const shapeDB = new ShapeDB();

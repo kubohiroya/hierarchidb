@@ -4,7 +4,7 @@ import type { NodeId } from '@hierarchidb/common-types';
 import { RouteSourceOrchestrator } from '../../common/orchestrator/RouteSourceOrchestrator.js';
 import { RouteBatchOrchestrationService } from '../../common/orchestrator/RouteBatchOrchestrationService.js';
 import type { createRouteBatchManager as createMgrFn } from '../../services/createRouteBatchManager.js';
-import type { RouteBatchConfig } from '../../services/RouteBatchSession.js';
+import type { RouteBatchConfig } from '../../common/types/BatchConfig.js';
 import type { RouteBatchSpec } from '../../common/orchestrator/types.js';
 import { getOsrmEngineDefaults, getOsrmThrottleDefaults } from '../../services/config/osrm-defaults.js';
 import { getNetPort } from '../../services/net/getNetPort.js';

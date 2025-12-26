@@ -16,6 +16,33 @@ interface LocationSelectionStepProps {
   onUpdate: (updates: Partial<LocationEntity>) => void;
 }
 
+type SelectionColumn = {
+  id: string;
+};
+
+type CountryLike = {
+  code: string;
+};
+
+export const buildSelectionRecord = (
+  countries: CountryLike[],
+  columns: SelectionColumn[],
+  nextSelections: MatrixSelection[],
+  allowedTypeSet: Set<LocationType>,
+): Record<string, boolean[]> => {
+  const normalized: Record<string, boolean[]> = {};
+  countries.forEach((country) => {
+    const entry = nextSelections.find((sel) => sel.countryCode === country.code);
+    const selections = entry?.selections ?? {};
+    normalized[country.code] = columns.map((col) => {
+      const allowed = allowedTypeSet.has(col.id as LocationType);
+      return allowed ? Boolean(selections[col.id]) : false;
+    });
+  });
+
+  return normalized;
+};
+
 export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ draft, onUpdate }) => {
   const { translations, t } = useTranslation();
   const iso = useIsoCountries();
@@ -29,10 +56,11 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ dr
       const description = typeDescriptions[type.id as keyof typeof typeDescriptions] ?? name;
       return {
         id: type.id,
-        label: `${type.icon} ${name}`,
+        label: name,
         description,
         type: 'custom',
         width: 140,
+        icon: type.icon,
       };
     }),
     virtualization: {
@@ -86,26 +114,12 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ dr
   const applySelections = useCallback(
     (nextSelections: CountryMatrixSelection[]) => {
       if (iso.status !== 'ready') return;
-      const normalized: Record<string, boolean[]> = {};
-      iso.countries.forEach((country) => {
-        const entry = nextSelections.find((sel) => sel.countryCode === country.code);
-        const selections = entry?.selections ?? {};
-        normalized[country.code] = matrixConfig.columns.map((col) => {
-          const allowed = allowedTypeSet.has(col.id as LocationType);
-          return allowed ? Boolean(selections[col.id]) : false;
-        });
-      });
-
-      if (allowedTypes.length === 1) {
-        const sole = allowedTypes[0];
-        const soleIndex = matrixConfig.columns.findIndex((c) => c.id === sole);
-        if (soleIndex >= 0) {
-          Object.values(normalized).forEach((row) => {
-            row[soleIndex] = true;
-          });
-        }
-      }
-
+      const normalized = buildSelectionRecord(
+        iso.countries,
+        matrixConfig.columns,
+        nextSelections,
+        allowedTypeSet,
+      );
       if (!deepEqualSelectionRecord(selectionRecordSource, normalized)) {
         onUpdate({ selectedArrayByCountries: normalized });
       }

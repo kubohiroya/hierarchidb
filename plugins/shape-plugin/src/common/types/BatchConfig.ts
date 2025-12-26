@@ -118,3 +118,6 @@ export interface BatchSessionConfig extends CommonSessionConfig {
   deleteSimplify1CacheOnComplete?: boolean;
   deleteSimplify2CacheOnComplete?: boolean;
 }
+
+// Aligned alias for cross-plugin naming consistency.
+export type BatchConfig = BatchSessionConfig;

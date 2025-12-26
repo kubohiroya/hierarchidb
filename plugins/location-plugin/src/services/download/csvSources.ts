@@ -31,6 +31,7 @@ export const parseOurAirportsCsv = (text: string, timestamp: Timestamp): Locatio
         localCode: getColumnValue(row, headerIndex, 'local_code'),
         municipality: getColumnValue(row, headerIndex, 'municipality'),
         isoCountry: getColumnValue(row, headerIndex, 'iso_country'),
+        countryName: getColumnValue(row, headerIndex, 'country_name', 'country'),
         isoRegion: getColumnValue(row, headerIndex, 'iso_region'),
         scheduledService: getColumnValue(row, headerIndex, 'scheduled_service'),
         elevationFt: parseNumber(getColumnValue(row, headerIndex, 'elevation_ft')),
@@ -89,17 +90,34 @@ export const parseWorldPortIndexCsv = (text: string, timestamp: Timestamp): Loca
   const headerIndex = buildHeaderIndex(headers);
   return rows
     .map((row) => {
-      const name = getColumnValue(row, headerIndex, 'port_name', 'portname', 'name');
+      const name = getColumnValue(row, headerIndex, 'port_name', 'portname', 'main_port_name', 'mainportname', 'name');
       const lat = parseNumber(getColumnValue(row, headerIndex, 'latitude', 'lat'));
       const lon = parseNumber(getColumnValue(row, headerIndex, 'longitude', 'lon', 'lng'));
       if (!name || lat == null || lon == null) return null;
+      const rawCountryCode = getColumnValue(
+        row,
+        headerIndex,
+        'country_code',
+        'countrycode',
+        'iso2',
+        'countryalpha2',
+      );
+      const rawCountryName = getColumnValue(row, headerIndex, 'country', 'country_name', 'countrycode');
+      const countryCode = rawCountryCode && rawCountryCode.length === 2
+        ? rawCountryCode
+        : undefined;
+      const countryName = rawCountryName && (!countryCode || rawCountryName.length > 2)
+        ? rawCountryName
+        : undefined;
       return buildWorldPortIndexPointProperties({
         id: getColumnValue(row, headerIndex, 'port_number', 'portnumber', 'port_id'),
         name,
         latitude: lat,
         longitude: lon,
-        countryCode: getColumnValue(row, headerIndex, 'country_code', 'countrycode', 'iso2'),
-        countryName: getColumnValue(row, headerIndex, 'country', 'country_name'),
+        countryCode,
+        countryName,
+        regionName: getColumnValue(row, headerIndex, 'region_name', 'region'),
+        unlocode: getColumnValue(row, headerIndex, 'un/locode', 'unlocode', 'locode'),
         harborSize: getColumnValue(row, headerIndex, 'harbor_size', 'harborsize'),
         harborType: getColumnValue(row, headerIndex, 'harbor_type', 'harbortype'),
         shelter: getColumnValue(row, headerIndex, 'shelter'),

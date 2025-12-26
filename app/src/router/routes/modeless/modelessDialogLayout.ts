@@ -169,7 +169,11 @@ export function mergeLayout(
   definitions.forEach((definition) => {
     const existing = prev.windows[definition.id];
     if (!existing) {
-      windows[definition.id] = defaults.windows[definition.id];
+      const fallback = defaults.windows[definition.id];
+      if (fallback) {
+        windows[definition.id] = fallback;
+        changed = true;
+      }
       changed = true;
       return;
     }

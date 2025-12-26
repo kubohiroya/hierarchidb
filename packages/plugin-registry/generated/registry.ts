@@ -828,12 +828,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
               "required": true
             },
             {
-              "name": "selectedCountries",
-              "type": "array",
-              "required": true
-            },
-            {
-              "name": "selectedAdminLevels",
+              "name": "selectedArrayByCountries",
               "type": "array",
               "required": true
             },

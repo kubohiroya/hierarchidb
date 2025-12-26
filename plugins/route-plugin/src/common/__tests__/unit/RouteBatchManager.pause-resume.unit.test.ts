@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { RouteBatchManager, type RouteBatchRouteInput } from '../../src/services/RouteBatchManager.js';
 import { RouteDatabase } from '../../src/services/database/RouteDatabase.js';
-import type { RouteBatchConfig } from '../../src/services/RouteBatchSession.js';
+import type { RouteBatchConfig } from '../../src/common/types/BatchConfig.js';
 import type { NodeId } from '@hierarchidb/common-types';
 
 describe('RouteBatchManager pause/resume (smoke)', () => {

@@ -14,6 +14,7 @@ export type {
   RouteType,
   TransportMode,
 } from '../entities/RouteEntity.js';
+export type { BatchConfig, RouteBatchConfig } from './BatchConfig.js';
 
 export type RouteUpdaterPayload = TreeNodeUpdaterPayload<RouteEntity>;
 export type TagId = string;

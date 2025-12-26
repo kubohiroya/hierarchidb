@@ -8,7 +8,8 @@ import type { NodeId } from '@hierarchidb/common-types';
 // No longer extend local batch shim; RouteBatchSession provides shared behavior
 import type { RouteGenerationConfig } from '../common/entities/RouteEntity.js';
 import { RouteDatabase, type RouteCursorRow } from './database/RouteDatabase.js';
-import { type RouteBatchConfig, RouteBatchSession, type RouteBatchTask } from './RouteBatchSession.js';
+import type { RouteBatchConfig } from '../common/types/BatchConfig.js';
+import { RouteBatchSession, type RouteBatchTask } from './RouteBatchSession.js';
 import { BatchProgressEvent } from '@hierarchidb/common-api';
 
 export type ProgressUpdate = { jobId: string; progress: number; phase: string; ts: number };
@@ -42,6 +43,7 @@ export class RouteBatchManager {
   constructor(protected readonly deps?: RouteBatchManagerDeps) {}
 
   private routeSpecificTasks = new Map<string, RouteBatchTask[]>();
+  private activeSessions = new Map<string, RouteBatchSession>();
   // private generator = new RouteGenerator();
   private db = new RouteDatabase();
   // Idempotency (jobKey -> session)
@@ -152,6 +154,7 @@ export class RouteBatchManager {
     await this.db.routeCursors.put(createCursorRow(sessionId, nodeId, 0, routeTasks.length));
     // Start processing using Shape's infrastructure
     const session = new RouteBatchSession(sessionId, nodeId, config, routeTasks);
+    this.activeSessions.set(sessionId, session);
     const unsubscribe = session.addBatchProgressListener((event: BatchProgressEvent) => this.emitProgressEvent(event));
     await session.initialize();
     const runPromise = session.start();
@@ -160,9 +163,14 @@ export class RouteBatchManager {
     });
     void runPromise.finally(() => {
       unsubscribe();
+      this.activeSessions.delete(sessionId);
     });
 
     return sessionId;
+  }
+
+  getSession(sessionId: string): RouteBatchSession | undefined {
+    return this.activeSessions.get(sessionId);
   }
 
   // Process route tasks using RouteBatchSession (handled within session)

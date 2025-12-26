@@ -36,6 +36,7 @@
     "@hierarchidb/plugin-presentation": "workspace:*",
     "@hierarchidb/plugin-registry": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
+    "@hierarchidb/plugin-ui-host": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/resolver-plugin": "workspace:*",
     "@hierarchidb/route-plugin": "workspace:*",

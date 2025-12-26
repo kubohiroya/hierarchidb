@@ -37,6 +37,7 @@ export type {
   LocationBatchProcessingOptions,
   LocationSearchConfig,
 };
+export type { BatchConfig, UnifiedLocationBatchConfig } from './BatchConfig.js';
 
 export interface LocationDraft extends Partial<LocationEntityDefinition> {
   treeNodeId: NodeId;

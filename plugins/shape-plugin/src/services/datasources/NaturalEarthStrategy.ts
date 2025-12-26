@@ -254,29 +254,6 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
     return `node-${this.generateEntityId(properties, index)}`;
   }
 
-  private extractName(properties: NaturalEarthProperties): string {
-    return this.getString(properties, 'NAME') ||
-      this.getString(properties, 'NAME_EN') ||
-      this.getString(properties, 'name') ||
-      this.getString(properties, 'NAME_LOCAL') ||
-      'Unnamed Feature';
-  }
-
-  private extractDescription(properties: NaturalEarthProperties): string | undefined {
-    const parts: string[] = [];
-
-    const type = this.getString(properties, 'TYPE');
-    const continent = this.getString(properties, 'CONTINENT');
-    const region = this.getString(properties, 'REGION_UN');
-    const population = properties['POP_EST'];
-    if (type) parts.push(`Type: ${type}`);
-    if (continent) parts.push(`Continent: ${continent}`);
-    if (region) parts.push(`Region: ${region}`);
-    if (typeof population === 'number') parts.push(`Population: ${population.toLocaleString()}`);
-
-    return parts.length > 0 ? parts.join(', ') : undefined;
-  }
-
   private getString(properties: NaturalEarthProperties, key: string): string | undefined {
     const value = properties[key];
     return typeof value === 'string' ? value : undefined;

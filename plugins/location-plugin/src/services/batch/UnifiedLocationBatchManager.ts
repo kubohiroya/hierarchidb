@@ -16,7 +16,8 @@ import { UnifiedBatchManagerBase, type BatchPersistence, type UnifiedBatchSessio
 import { LocationBatchSessionManager } from './BatchSessionManager.js';
 import { getEphemeralLocationDB, type EphemeralLocationDB } from '../../database/EphemeralLocationDB.js';
 import { toBatchProgressEvent } from './ProgressAdapter.js';
-import type { LocationBatchData, UnifiedLocationBatchConfig } from '../../common/types/batch-types.js';
+import type { LocationBatchData } from '../../common/types/batch-types.js';
+import type { UnifiedLocationBatchConfig } from '../../common/types/BatchConfig.js';
 import { mapManagerStatusToLocationStatus, mapStageToBatchStage, toProgressSnapshot } from './runtimeBridge.js';
 
 const PENDING_TTL = 24 * 60 * 60 * 1000; // 24 hours

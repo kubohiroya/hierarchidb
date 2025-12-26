@@ -3,19 +3,28 @@
  */
 
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-types';
+import { BaseBatchSessionManager } from '@hierarchidb/batch-runtime-services';
+import type { BatchProgressEvent } from '@hierarchidb/common-api';
 import { LocationSessionController } from './LocationSessionController.js';
 import type { LocationPointInput, LocationTileSettings, SessionSummary } from '../../common/types/batch-types.js';
 import { LocationBatchSession } from './LocationBatchSession.js';
 import { isDevEnvironment } from '../../common/utils/env.js';
 
-export class LocationBatchSessionManager {
-  private shared = new Map<string, LocationBatchSession>();
-  private progress = new Map<string, Set<(p: ProgressEvent) => void>>();
+export class LocationBatchSessionManager extends BaseBatchSessionManager {
+  private legacyProgress = new Map<string, Set<(p: ProgressEvent) => void>>();
   private summaries = new Map<string, SessionSummary>();
 
   private static readonly SESSION_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
   private static readonly PENDING_TTL = 24 * 60 * 60 * 1000; // 24 hours
   private static readonly VECTOR_TILE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+  constructor() {
+    super();
+  }
+
+  async startBatchSession(_nodeId: NodeId): Promise<string> {
+    throw new Error('LocationBatchSessionManager requires createSession to start.');
+  }
 
   async createSession(
     nodeId: NodeId,
@@ -66,51 +75,34 @@ export class LocationBatchSessionManager {
       }
     }
     //  Fire and forget
-    const shared = new LocationBatchSession(sessionId, nodeId, { concurrency: options?.concurrency ?? 4 }, controller, (ev) => {
-      const set2 = this.progress.get(sessionId);
-      if (!set2) return;
-      for (const cb of set2) cb(ev);
-    });
-    this.shared.set(sessionId, shared);
+    const shared = new LocationBatchSession(
+      sessionId,
+      nodeId,
+      { concurrency: options?.concurrency ?? 4 },
+      controller,
+      (ev) => this.emitLegacyProgress(sessionId, ev),
+    );
+    this.registerSession(shared);
 
-    shared.start().then(async () => {
-      try {
-        const { getEphemeralLocationDB } = await import('../../database/EphemeralLocationDB.js');
-        const db = getEphemeralLocationDB();
-        await db.sessions?.update(sessionId, { status: 'completed' });
-      } catch (error) {
-        if (isDevEnvironment) {
-          console.warn('[LocationBatchSessionManager] failed to mark session completed', error);
-        }
-      }
-    }).catch(async (e) => {
+    shared.start().catch((e) => {
       console.error('Location session failed', e);
-      try {
-        const { getEphemeralLocationDB } = await import('../../database/EphemeralLocationDB.js');
-        const db = getEphemeralLocationDB();
-        await db.sessions?.update(sessionId, { status: 'failed' });
-      } catch (error) {
-        if (isDevEnvironment) {
-          console.warn('[LocationBatchSessionManager] failed to mark session failed', error);
-        }
-      }
     });
     return summary;
   }
 
   onProgress(sessionId: string, cb: (p: ProgressEvent) => void): () => void {
-    let set = this.progress.get(sessionId);
+    let set = this.legacyProgress.get(sessionId);
     if (!set) {
       set = new Set();
-      this.progress.set(sessionId, set);
+      this.legacyProgress.set(sessionId, set);
     }
     set.add(cb);
     //  late subscriber
     return () => {
-      const s = this.progress.get(sessionId);
+      const s = this.legacyProgress.get(sessionId);
       if (!s) return;
       s.delete(cb);
-      if (s.size === 0) this.progress.delete(sessionId);
+      if (s.size === 0) this.legacyProgress.delete(sessionId);
     };
   }
 
@@ -120,15 +112,68 @@ export class LocationBatchSessionManager {
 
   // Control APIs
   pause(sessionId: string) {
-    this.shared.get(sessionId)?.pause();
+    void this.pauseBatchSession(sessionId);
   }
 
   resume(sessionId: string) {
-    this.shared.get(sessionId)?.resume();
+    void this.resumeBatchSession(sessionId);
   }
 
   cancel(sessionId: string) {
-    this.shared.get(sessionId)?.cancel();
+    void this.cancelBatchSession(sessionId);
+  }
+
+  protected async onSessionProgress(session: LocationBatchSession, event: BatchProgressEvent): Promise<void> {
+    const payload = event.payload ?? {};
+    const total = payload.total ?? 0;
+    const completed = payload.completed ?? 0;
+    const failed = payload.failed ?? 0;
+    const percentage = total > 0 ? (completed / total) * 100 : 0;
+    try {
+      const { getEphemeralLocationDB } = await import('../../database/EphemeralLocationDB.js');
+      const db = getEphemeralLocationDB();
+      await db.sessions?.update(session.getState().sessionId, {
+        progress: {
+          total,
+          completed,
+          failed,
+          percentage,
+          currentStage: event.stage,
+          currentTask: payload.currentTask,
+        },
+        updatedAt: event.timestamp,
+      });
+    } catch (error) {
+      if (isDevEnvironment) {
+        console.warn('[LocationBatchSessionManager] failed to persist progress', error);
+      }
+    }
+  }
+
+  protected async onSessionStatusChange(session: LocationBatchSession): Promise<void> {
+    const state = session.getState();
+    if (state.status === 'idle') {
+      return;
+    }
+    try {
+      const { getEphemeralLocationDB } = await import('../../database/EphemeralLocationDB.js');
+      const db = getEphemeralLocationDB();
+      await db.sessions?.update(state.sessionId, { status: state.status, updatedAt: Date.now() });
+    } catch (error) {
+      if (isDevEnvironment) {
+        console.warn('[LocationBatchSessionManager] failed to persist status', error);
+      }
+    }
+    if (state.status === 'completed' || state.status === 'failed' || state.status === 'cancelled') {
+      this.sessions.delete(state.sessionId);
+      this.legacyProgress.delete(state.sessionId);
+    }
+  }
+
+  private emitLegacyProgress(sessionId: string, progress: ProgressEvent): void {
+    const set = this.legacyProgress.get(sessionId);
+    if (!set) return;
+    for (const cb of set) cb(progress);
   }
 }
 

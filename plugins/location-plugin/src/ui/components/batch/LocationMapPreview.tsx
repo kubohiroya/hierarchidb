@@ -29,23 +29,18 @@ import {
   GroupWork,
   Info,
   Layers,
-  LocationCity,
   LocationOn,
   Place,
-  Public,
   MyLocation,
   Search,
   Settings,
   Whatshot,
   ZoomIn,
   ZoomOut,
-  FlightTakeoff,
-  DirectionsBoat,
-  Train,
-  ForkRight,
 } from '@mui/icons-material';
 import type { LocationType, NodeId } from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
+import { LOCATION_TYPE_STYLES } from '../steps/locationTypes.js';
 
 export interface PreviewLocationPoint {
   id: string;
@@ -128,38 +123,26 @@ type TypeStyle = {
   defaultVisible: boolean;
 };
 
-const TYPE_SETTINGS_BASE: Partial<Record<LocationType, TypeStyle>> = {
-  area_centroid: {
-    color: '#6A5ACD',
-    icon: <Public fontSize="small" />,
-    altIcon: <LocationCity fontSize="small" />,
-    defaultVisible: true,
-  },
-  airport: {
-    color: '#2196F3',
-    icon: <FlightTakeoff fontSize="small" />,
-    defaultVisible: true,
-  },
-  port: {
-    color: '#FF9800',
-    icon: <DirectionsBoat fontSize="small" />,
-    defaultVisible: true,
-  },
-  railway_station: {
-    color: '#4CAF50',
-    icon: <Train fontSize="small" />,
-    defaultVisible: true,
-  },
-  interchange: {
-    color: '#FFA000',
-    icon: <ForkRight fontSize="small" />,
-    defaultVisible: true,
-  },
-};
+const TYPE_SETTINGS_BASE: Partial<Record<LocationType, TypeStyle>> = Object.fromEntries(
+  (Object.entries(LOCATION_TYPE_STYLES) as Array<[LocationType, typeof LOCATION_TYPE_STYLES[LocationType]]>)
+    .map(([key, value]) => {
+      const Icon = value.icon;
+      const AltIcon = value.altIcon;
+      return [
+        key,
+        {
+          color: value.color,
+          icon: <Icon fontSize="small" />,
+          altIcon: AltIcon ? <AltIcon fontSize="small" /> : undefined,
+          defaultVisible: true,
+        },
+      ];
+    }),
+) as Partial<Record<LocationType, TypeStyle>>;
 
-const ICON_DENSITY_THRESHOLD = 0.0015;
-const resolveMarkerSize = (zoom: number) => Math.max(2, Math.min(12, Math.round(2 + zoom / 2)));
-const resolveIconSize = (zoom: number) => Math.max(12, Math.min(28, Math.round(12 + zoom)));
+const ICON_DENSITY_THRESHOLD = 0.001;
+const resolveMarkerSize = (zoom: number) => Math.max(3, Math.min(14, Math.round(3 + zoom / 1.6)));
+const resolveIconSize = (zoom: number) => Math.max(10, Math.min(26, Math.round(10 + zoom * 0.8)));
 
 export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
   locations = SAMPLE_LOCATIONS,
@@ -303,7 +286,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
               width: size,
               height: size,
               bgcolor: color,
-              borderRadius: 0.5,
+              borderRadius: 0,
               opacity: 0.85,
             }}
           />

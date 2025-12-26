@@ -255,6 +255,9 @@ export const WorldPortIndexDataSource: LocationDataSourceBase = {
   ],
   maxAdminLevel: 0,
   category: 'location',
+  endpoints: {
+    ports: 'https://msi.nga.mil/api/publications/download?type=view&key=16920959/SFH00000/UpdatedPub150.csv',
+  },
 };
 
 /**

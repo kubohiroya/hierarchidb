@@ -264,9 +264,15 @@ const parseIdeGsmPayload = (payload: unknown): LocationPointProperties[] => {
 const filterPointsBySelection = (points: LocationPointProperties[], entries: SelectionEntry[]) => {
   if (entries.length === 0) return points;
   const countrySet = new Set(entries.map((entry) => entry.countryCode));
+  const countryNameSet = new Set(entries.map((entry) => entry.countryName.toLowerCase()));
   const typeSet = new Set(entries.flatMap((entry) => entry.types));
   return points.filter((point) => {
-    const matchesCountry = !point.countryCode || countrySet.has(point.countryCode);
+    const normalizedCode = point.countryCode?.toUpperCase();
+    const normalizedName = point.countryName?.toLowerCase();
+    const matchesCountry =
+      (!normalizedCode && !normalizedName)
+      || (normalizedCode && countrySet.has(normalizedCode))
+      || (normalizedName && countryNameSet.has(normalizedName));
     const matchesType = typeSet.size === 0 || typeSet.has(point.kind as LocationType);
     return matchesCountry && matchesType;
   });
@@ -374,6 +380,7 @@ const startLocationBatch = async (data: LocationStepData, context: StartBatchCon
       processingOptions: { concurrent: concurrency },
       filterCriteria: {
         countryCodes: selectionEntries.map((entry) => entry.countryCode),
+        countryNames: selectionEntries.map((entry) => entry.countryName),
         allowedTypes: selectionEntries.flatMap((entry) => entry.types),
       },
     });

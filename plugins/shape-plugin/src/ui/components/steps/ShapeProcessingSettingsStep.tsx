@@ -1,6 +1,7 @@
 import type React from 'react';
 import { useMemo } from 'react';
 import { Alert, Box, Stack } from '@mui/material';
+import type { AlertColor } from '@mui/material';
 import { DownloadConfigSection } from './DownloadConfigSection.js';
 import { Simplify1ConfigSection } from './Simplify1ConfigSection.js';
 import { Simplify2ConfigSection } from './Simplify2ConfigSection.js';
@@ -23,7 +24,7 @@ export const ShapeProcessingSettingsStep: React.FC<ShapeDialogStepProps> = ({ da
     const limitMb = Math.round(heapPressure.limitBytes / (1024 * 1024));
     const ratioPercent = Math.round(heapPressure.ratio * 100);
     return {
-      severity: heapPressure.level === 'critical' ? 'error' : 'warning',
+      severity: (heapPressure.level === 'critical' ? 'error' : 'warning') as AlertColor,
       message: t(
         'processing.heap.warning',
         'High JS heap usage detected ({{ratio}}% / {{used}}MB of {{limit}}MB). Consider reducing concurrency.',

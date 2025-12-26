@@ -1,8 +1,8 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LocationEntity } from '../../../types/index';
 import { LocationBatchParametersStep } from '../../LocationBatchParametersStep';
-import en from '../../../../ui/locales/en.json' with { type: 'json' };
+import en from '../../../../locales/en.json' with { type: 'json' };
 
 const baseDraft: Partial<LocationEntity> = {
   concurrentDownloads: 2,
@@ -11,13 +11,24 @@ const baseDraft: Partial<LocationEntity> = {
 };
 
 describe('LocationBatchParametersStep', () => {
+  beforeEach(() => {
+    Object.defineProperty(window, 'localStorage', {
+      value: {
+        getItem: vi.fn(() => null),
+        setItem: vi.fn(),
+        removeItem: vi.fn(),
+      },
+      configurable: true,
+    });
+  });
+
   it('renders processing description and initial values', () => {
     const onUpdate = vi.fn();
     render(<LocationBatchParametersStep draft={baseDraft} onUpdate={onUpdate} />);
 
-    expect(screen.getByText(en.processing.description)).toBeInTheDocument();
-    expect(screen.getByLabelText(en.processing.minZoom)).toHaveValue(4);
-    expect(screen.getByLabelText(en.processing.maxZoom)).toHaveValue(12);
+    expect(screen.getByText(en.processing.description)).not.toBeNull();
+    expect(Number((screen.getByLabelText(en.processing.minZoom) as HTMLInputElement).value)).toBe(4);
+    expect(Number((screen.getByLabelText(en.processing.maxZoom) as HTMLInputElement).value)).toBe(12);
   });
 
   it('clamps concurrency slider changes within allowed range', () => {

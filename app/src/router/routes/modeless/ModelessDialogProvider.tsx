@@ -19,6 +19,8 @@ import {
   type ModelessIconPlacement,
 } from './modelessDialogLayout.js';
 
+export type { ModelessIconPlacement } from './modelessDialogLayout.js';
+
 export type ModelessIconAppearance = {
   buttonSx?: SxProps<Theme>;
   buttonSize?: 'small' | 'medium' | 'large';

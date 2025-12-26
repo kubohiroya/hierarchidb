@@ -1,40 +1,21 @@
 import type { DownloadWorkerAPI, SimplifyWorkerAPI, VectorTileWorkerAPI } from '../types.js';
-import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import {
   generateVectorTilesFromJsonBuffer,
   getVectorTile,
   listVectorTiles,
   getVectorTileSummary,
+  EphemeralGisDB,
   type VectorTileGenerateConfig,
 } from '@hierarchidb/gis-sdk';
 
 import type { SharedDownloadService } from './downloadAdapter.js';
 import { createSharedDownloadService } from './downloadAdapter.js';
 
-interface EphemeralBufferRow {
-  id: string;
-  sessionId: string;
-  data: ArrayBuffer;
-}
-
-class ShapeEphemeralDB extends Dexie {
-  rawBuffers!: Table<EphemeralBufferRow>;
-  simplifiedBuffers!: Table<EphemeralBufferRow>;
-
-  constructor() {
-    super(getDBName('shape-ephemeral'));
-    this.version(1).stores({
-      rawBuffers: '&id, sessionId, nodeId, timestamp',
-      simplifiedBuffers: '&id, sessionId, nodeId, stage, timestamp',
-    });
-  }
-}
-
-let ephemeralDb: ShapeEphemeralDB | null = null;
-const getEphemeralDb = (): ShapeEphemeralDB => {
+let ephemeralDb: EphemeralGisDB | null = null;
+const getEphemeralDb = (): EphemeralGisDB => {
   if (!ephemeralDb) {
-    ephemeralDb = new ShapeEphemeralDB();
+    ephemeralDb = new EphemeralGisDB(getDBName('shape-ephemeral'));
   }
   return ephemeralDb;
 };

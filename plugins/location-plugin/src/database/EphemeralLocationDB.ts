@@ -5,7 +5,8 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId, Timestamp } from '@hierarchidb/common-types';
-import type { LocationBatchData, UnifiedLocationBatchConfig } from '../common/types/batch-types.js';
+import type { LocationBatchData } from '../common/types/batch-types.js';
+import type { UnifiedLocationBatchConfig } from '../common/types/BatchConfig.js';
 
 export interface VectorTileRecord {
   id: string; // tileKey, e.g. loc-mvt-<sessionId>-<z>-<x>-<y>
@@ -138,3 +139,7 @@ export async function closeEphemeralLocationDB(): Promise<void> {
     singleton = null;
   }
 }
+
+// Aligned alias for cross-plugin naming consistency.
+export { EphemeralLocationDB as LocationDatabase };
+export const getLocationDatabase = getEphemeralLocationDB;

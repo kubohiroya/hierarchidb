@@ -1,6 +1,6 @@
-import { AbstractBatchSession } from '@hierarchidb/batch';
+import { AbstractBatchSession } from '@hierarchidb/batch-runtime-services';
 import type { BaseBatchConfig, BatchProgressEvent } from '@hierarchidb/common-api';
-import type { NodeId, ProgressEvent } from '@hierarchidb/common-types';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { ProgressInfo } from '../../common/types/index.js';
 import type { ProcessingStage } from '../../common/types/index.js';
 import type { SessionController } from './SessionController.js';
@@ -15,7 +15,7 @@ export interface ShapeBatchTask {
 }
 
 export class ShapeBatchSession extends AbstractBatchSession<ShapeBatchConfig> {
-  constructor(sessionId: string, nodeId: NodeId, config: ShapeBatchConfig, private controller: SessionController, private sink?: (e: ProgressEvent) => void) {
+  constructor(sessionId: string, nodeId: NodeId, config: ShapeBatchConfig, private controller: SessionController, private sink?: (e: ProgressInfo) => void) {
     super(sessionId, nodeId, config);
   }
 
@@ -58,16 +58,17 @@ export class ShapeBatchSession extends AbstractBatchSession<ShapeBatchConfig> {
     const total = payload.total ?? 0;
     const completed = payload.completed ?? 0;
     const failed = payload.failed ?? 0;
+    const skipped = payload.skipped ?? 0;
     const progress = total > 0 ? (completed / total) * 100 : 0;
 
-    const legacyEvent: ProgressEvent = {
-      sessionId: event.sessionId,
-      stage: event.stage,
+    const legacyEvent: ProgressInfo = {
       total,
       completed,
       failed,
+      skipped,
       percentage: progress,
-      currentTask: payload.currentTask ?? '',
+      currentStage: (event.stage as ProcessingStage) ?? 'processing',
+      currentTask: payload.currentTask,
     };
 
     this.sink?.(legacyEvent);

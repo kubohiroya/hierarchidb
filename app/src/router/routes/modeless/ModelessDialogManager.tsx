@@ -249,12 +249,13 @@ const ModelessDialogManagerBody: React.FC = () => {
     changeDisplayMode,
     toggleWindowVisibility,
   } = useModelessDialogContext();
+  const dialogDefinitions = definitions as MapDialogDefinition[];
   const baseZIndex = (theme.zIndex?.modal ?? 1300) - BASE_Z_INDEX_OFFSET;
   const iconAppearance = config.iconAppearance;
 
   return (
     <>
-      {definitions.map((definition) => {
+      {dialogDefinitions.map((definition) => {
         const windowState = layout.windows[definition.id];
         if (!windowState) return null;
         const orderIndex = layout.order.indexOf(definition.id);
@@ -272,7 +273,7 @@ const ModelessDialogManagerBody: React.FC = () => {
         );
       })}
 
-      {definitions.map((definition) => {
+      {dialogDefinitions.map((definition) => {
         const windowState = layout.windows[definition.id];
         if (!windowState || windowState.isVisible) return null;
         const orderIndex = layout.order.indexOf(definition.id);

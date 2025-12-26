@@ -310,6 +310,9 @@ importers:
       '@hierarchidb/plugin-service-api':
         specifier: workspace:*
         version: link:../packages/plugin-service-api
+      '@hierarchidb/plugin-ui-host':
+        specifier: workspace:*
+        version: link:../packages/plugin-ui-host
       '@hierarchidb/plugin-ui-sdk':
         specifier: workspace:*
         version: link:../packages/plugin-ui-sdk

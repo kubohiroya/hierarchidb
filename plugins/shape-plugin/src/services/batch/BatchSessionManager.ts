@@ -10,6 +10,8 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-types';
+import { BaseBatchSessionManager } from '@hierarchidb/batch-runtime-services';
+import type { BatchProgressEvent } from '@hierarchidb/common-api';
 import { type BatchSessionRecord, type BatchTaskRecord, shapeDB } from '../database/ShapeDB.js';
 import { SessionController } from './SessionController.js';
 import { ShapeBatchSession } from './ShapeBatchSession.js';
@@ -32,12 +34,16 @@ export interface BatchSessionOptions {
   enableResourceTracking?: boolean;
 }
 
-export class BatchSessionManager {
-  private sharedSessions = new Map<string, ShapeBatchSession>();
-  private progressCallbacks = new Map<string, (progress: ProgressInfo) => void>();
+export class BatchSessionManager extends BaseBatchSessionManager {
+  private legacyProgressCallbacks = new Map<string, (progress: ProgressInfo) => void>();
 
   constructor() {
+    super();
     // WorkerPoolManager is now created per session by SessionController
+  }
+
+  async startBatchSession(_nodeId: NodeId): Promise<string> {
+    throw new Error('Shape BatchSessionManager requires prepareSession/createSession to start.');
   }
 
   async initialize(): Promise<void> {
@@ -47,7 +53,7 @@ export class BatchSessionManager {
 
   async shutdown(): Promise<void> {
     // Cancel all active sessions
-    for (const [sessionId] of this.sharedSessions) {
+    for (const [sessionId] of this.sessions) {
       await this.cancelSession(sessionId);
     }
     // WorkerPools are now managed by individual SessionControllers
@@ -69,7 +75,7 @@ export class BatchSessionManager {
           return existing;
         }
       }
-      this.sharedSessions.delete(sessionId);
+      this.sessions.delete(sessionId);
       await shapeDB.batchTasks.where('sessionId').equals(sessionId).delete();
       await shapeDB.batchSessions.delete(sessionId);
     }
@@ -112,46 +118,22 @@ export class BatchSessionManager {
     );
 
     //  Start processing
-    const shared = new ShapeBatchSession(session.sessionId, nodeId, { concurrency: options.maxConcurrentTasks }, controller, (ev) => {
-      const progress: ProgressInfo = {
-        total: ev.total,
-        completed: ev.completed,
-        failed: ev.failed,
-        skipped: 0,
-        percentage: ev.percentage,
-        currentStage: (ev.stage as ProcessingStage) ?? 'processing',
-        currentTask: ev.currentTask,
-      };
-      void shapeDB.updateBatchSession(session.sessionId, { progress });
-      try {
-        this.progressCallbacks.get(session.sessionId)?.({
-          ...progress,
-        });
-      } catch (error) {
-        logBatchSessionWarning(`Progress callback for session ${session.sessionId} failed`, error);
-      }
-    });
-    this.sharedSessions.set(session.sessionId, shared);
-    //  Run without
+    const shared = new ShapeBatchSession(
+      session.sessionId,
+      nodeId,
+      { concurrency: options.maxConcurrentTasks },
+      controller,
+      (ev) => this.emitLegacyProgress(session.sessionId, ev),
+    );
+    this.registerSession(shared);
+    // Run without blocking the caller.
     shared
       .initialize()
       .then(() => shared.start())
-      .then(async () => {
-        await shapeDB.updateBatchSession(session.sessionId, {
-          status: 'completed',
-          completedAt: Date.now(),
-        });
-        this.sharedSessions.delete(session.sessionId);
-      })
       .catch(async (e) => {
         if (e instanceof Error && e.name === 'AbortError') {
           return;
         }
-        await shapeDB.updateBatchSession(session.sessionId, {
-          status: 'failed',
-          completedAt: Date.now(),
-        });
-        this.sharedSessions.delete(session.sessionId);
         console.error('Shape shared session failed', e);
       });
 
@@ -160,34 +142,15 @@ export class BatchSessionManager {
   }
 
   async pauseSession(sessionId: string): Promise<void> {
-    const shared = this.sharedSessions.get(sessionId);
-    if (!shared) throw new Error(`Session ${sessionId} not found`);
-    await shared.pause();
-    await shapeDB.updateBatchSession(sessionId, {
-      status: 'paused',
-    });
+    await this.pauseBatchSession(sessionId);
   }
 
   async resumeSession(sessionId: string): Promise<void> {
-    const shared = this.sharedSessions.get(sessionId);
-    if (!shared) throw new Error(`Session ${sessionId} not found`);
-    await shared.resume();
-
-    await shapeDB.updateBatchSession(sessionId, {
-      status: 'running',
-    });
+    await this.resumeBatchSession(sessionId);
   }
 
   async cancelSession(sessionId: string): Promise<void> {
-    const shared = this.sharedSessions.get(sessionId);
-    if (!shared) return;
-    await shared.cancel();
-    this.sharedSessions.delete(sessionId);
-
-    await shapeDB.updateBatchSession(sessionId, {
-      status: 'cancelled',
-      completedAt: Date.now(),
-    });
+    await this.cancelBatchSession(sessionId);
 
     // Cancel all pending tasks
     const tasks = await shapeDB.getBatchTasks(sessionId);
@@ -233,11 +196,11 @@ export class BatchSessionManager {
 
   // Progress Tracking
   onProgress(sessionId: string, callback: (progress: ProgressInfo) => void): () => void {
-    this.progressCallbacks.set(sessionId, callback);
+    this.legacyProgressCallbacks.set(sessionId, callback);
     return () => {
-      const current = this.progressCallbacks.get(sessionId);
+      const current = this.legacyProgressCallbacks.get(sessionId);
       if (current === callback) {
-        this.progressCallbacks.delete(sessionId);
+        this.legacyProgressCallbacks.delete(sessionId);
       }
     };
   }
@@ -247,7 +210,7 @@ export class BatchSessionManager {
     payload: ShapeBatchCommandMap[K],
   ): Promise<void> {
     const sessionId = payload.sessionId as string;
-    const shared = this.sharedSessions.get(sessionId);
+    const shared = this.sessions.get(sessionId) as ShapeBatchSession | undefined;
     if (!shared) {
       throw new Error(`Batch session ${sessionId} not found`);
     }
@@ -274,6 +237,52 @@ export class BatchSessionManager {
       default:
         logBatchSessionWarning(`Unknown batch command ${String(command)}`, undefined);
         break;
+    }
+  }
+
+  protected async onSessionProgress(session: ShapeBatchSession, event: BatchProgressEvent): Promise<void> {
+    const payload = event.payload ?? {};
+    const total = payload.total ?? 0;
+    const completed = payload.completed ?? 0;
+    const failed = payload.failed ?? 0;
+    const skipped = payload.skipped ?? 0;
+    const percentage = total > 0 ? (completed / total) * 100 : 0;
+    const progress: ProgressInfo = {
+      total,
+      completed,
+      failed,
+      skipped,
+      percentage,
+      currentStage: (event.stage as ProcessingStage) ?? 'processing',
+      currentTask: payload.currentTask,
+    };
+    await shapeDB.updateBatchSession(session.getState().sessionId, { progress });
+  }
+
+  protected async onSessionStatusChange(session: ShapeBatchSession): Promise<void> {
+    const state = session.getState();
+    if (state.status === 'idle') {
+      return;
+    }
+    const updates: Partial<BatchSessionRecord> = {
+      status: state.status,
+      updatedAt: Date.now(),
+    };
+    if (state.status === 'completed' || state.status === 'failed' || state.status === 'cancelled') {
+      updates.completedAt = Date.now();
+      this.sessions.delete(state.sessionId);
+      this.legacyProgressCallbacks.delete(state.sessionId);
+    }
+    await shapeDB.updateBatchSession(state.sessionId, updates);
+  }
+
+  private emitLegacyProgress(sessionId: string, progress: ProgressInfo): void {
+    const callback = this.legacyProgressCallbacks.get(sessionId);
+    if (!callback) return;
+    try {
+      callback(progress);
+    } catch (error) {
+      logBatchSessionWarning(`Progress callback for session ${sessionId} failed`, error);
     }
   }
 

@@ -25,6 +25,25 @@ export class TabularWriter {
   }
 }
 
+export class SimpleTableMetadataManager {
+  constructor(_dbName: string) {}
+
+  async forceDelete(_tableId: string): Promise<void> {
+    // no-op
+  }
+}
+
+export const getRowStoreDB = () => ({
+  rowChunks: {
+    where: (_field: string) => ({
+      equals: (_value: string) => ({
+        count: async () => 0,
+        delete: async () => 0,
+      }),
+    }),
+  },
+});
+
 export abstract class AbstractBatchSession<TConfig> {
   protected progress: Record<string, unknown> = {};
 
@@ -204,6 +223,21 @@ export function useBatchProgress(
   }, [poll, progress?.phase]);
 
   return { progress, subscribed, subscribe, unsubscribe } as const;
+}
+
+export function usePluginBatchProgress<TProgress>(
+  _nodeType: string,
+  _sessionId?: string | null,
+  _options?: Record<string, unknown>,
+) {
+  return {
+    progress: null as TProgress | null,
+    unifiedProgress: null,
+    isSubscribed: false,
+    error: null as Error | null,
+    subscribe: () => undefined,
+    unsubscribe: () => undefined,
+  };
 }
 
 // default exports expected by SessionController

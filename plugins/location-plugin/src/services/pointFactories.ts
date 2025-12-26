@@ -143,6 +143,7 @@ export const buildGeoNamesPointProperties = (
     adminCode1: raw.adminCode1,
     adminCode2: raw.adminCode2,
     alternateNames: raw.alternateNames?.join(','),
+    lastSeenAt: timestamp,
   });
 
   return createLocationPointProperties({
@@ -170,6 +171,7 @@ export const buildWikidataPointProperties = (
     instanceOf: raw.instanceOf?.join(','),
     descriptions: raw.descriptions,
     properties: raw.properties,
+    lastSeenAt: timestamp,
   });
 
   return createLocationPointProperties({
@@ -193,6 +195,7 @@ export const buildCustomPointProperties = (
   const metadata = toMetadata({
     customId: raw.id,
     attributes: raw.attributes ?? {},
+    lastSeenAt: timestamp,
   });
 
   return createLocationPointProperties({
@@ -221,6 +224,7 @@ export const buildOurAirportsPointProperties = (
     localCode?: string;
     municipality?: string;
     isoCountry?: string;
+    countryName?: string;
     isoRegion?: string;
     scheduledService?: string;
     elevationFt?: number;
@@ -231,8 +235,10 @@ export const buildOurAirportsPointProperties = (
   },
   timestamp: Timestamp,
 ): LocationPointProperties => {
+  const primaryCode = raw.iataCode || raw.icaoCode || raw.localCode || raw.ident;
   const metadata = toMetadata({
     ourAirportsId: raw.id,
+    airportCode: primaryCode,
     ident: raw.ident,
     airportType: raw.type,
     iataCode: raw.iataCode,
@@ -256,7 +262,7 @@ export const buildOurAirportsPointProperties = (
     latitude: raw.latitude,
     longitude: raw.longitude,
     countryCode: raw.isoCountry?.toUpperCase() ?? '',
-    countryName: undefined,
+    countryName: raw.countryName,
     admin1: raw.isoRegion,
     admin2: raw.municipality,
     metadata,
@@ -282,8 +288,10 @@ export const buildOpenFlightsPointProperties = (
   },
   timestamp: Timestamp,
 ): LocationPointProperties => {
+  const primaryCode = raw.iata || raw.icao;
   const metadata = toMetadata({
     openFlightsId: raw.id,
+    airportCode: primaryCode,
     city: raw.city,
     country: raw.country,
     iataCode: raw.iata,
@@ -318,6 +326,8 @@ export const buildWorldPortIndexPointProperties = (
     longitude: number;
     countryCode?: string;
     countryName?: string;
+    regionName?: string;
+    unlocode?: string;
     harborSize?: string;
     harborType?: string;
     shelter?: string;
@@ -327,6 +337,7 @@ export const buildWorldPortIndexPointProperties = (
 ): LocationPointProperties => {
   const metadata = toMetadata({
     worldPortIndexId: raw.id,
+    portCode: raw.unlocode,
     harborSize: raw.harborSize,
     harborType: raw.harborType,
     shelter: raw.shelter,
@@ -342,6 +353,7 @@ export const buildWorldPortIndexPointProperties = (
     longitude: raw.longitude,
     countryCode: raw.countryCode?.toUpperCase() ?? '',
     countryName: raw.countryName,
+    admin1: raw.regionName,
     metadata,
   });
 };

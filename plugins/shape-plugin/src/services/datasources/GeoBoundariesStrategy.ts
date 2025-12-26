@@ -324,46 +324,6 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
     return `node-${this.generateEntityId(properties, index)}` as NodeId;
   }
 
-  private extractName(properties: GeoBoundariesProperties): string {
-    return this.getString(properties, 'shapeName') ||
-      this.getString(properties, 'NAME') ||
-      this.getString(properties, 'name') ||
-      'Unnamed Administrative Area';
-  }
-
-
-  private extractDescription(
-    properties: GeoBoundariesProperties,
-    metadata: GeoBoundariesRawData['metadata'],
-  ): string | undefined {
-    const parts: string[] = [];
-
-    parts.push(`Administrative Level: ${metadata.adminLevel}`);
-    parts.push(`Country: ${metadata.country}`);
-    parts.push(`Release Type: ${metadata.releaseType}`);
-
-    if (metadata.version) {
-      parts.push(`Boundary Year: ${metadata.version}`);
-    }
-
-    //  GeoBoundaries
-    const shapeGroup = this.getString(properties, 'shapeGroup');
-    if (shapeGroup) {
-      parts.push(`Shape Group: ${shapeGroup}`);
-    }
-
-    const shapeType = this.getString(properties, 'shapeType');
-    if (shapeType) {
-      parts.push(`Shape Type: ${shapeType}`);
-    }
-
-    if (metadata.apiResponse?.licenseDetail) {
-      parts.push(`License: ${metadata.apiResponse.licenseDetail}`);
-    }
-
-    return parts.length > 0 ? parts.join(', ') : undefined;
-  }
-
   private getString(properties: GeoBoundariesProperties, key: string): string | undefined {
     const value = properties[key];
     return typeof value === 'string' ? value : undefined;

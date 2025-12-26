@@ -111,8 +111,14 @@ export const LocationBatchParametersStep: React.FC<LocationBatchParametersStepPr
     let latestTableId: string | null = null;
     const sessions = await getEphemeralLocationDB().sessions?.where('nodeId').equals(nodeId).toArray().catch(() => []);
     if (sessions && sessions.length > 0) {
-      const latest = sessions.reduce((acc, cur) => (!acc || (cur.createdAt ?? 0) > (acc.createdAt ?? 0) ? cur : acc), sessions[0]);
-      latestTableId = latest.tableId ?? null;
+      const [first] = sessions;
+      if (first) {
+        const latest = sessions.reduce(
+          (acc, cur) => ((cur.createdAt ?? 0) > (acc.createdAt ?? 0) ? cur : acc),
+          first,
+        );
+        latestTableId = latest.tableId ?? null;
+      }
     }
     let metadataRows = 0;
     if (latestTableId) {
