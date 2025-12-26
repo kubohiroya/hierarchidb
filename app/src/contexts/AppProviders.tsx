@@ -11,6 +11,7 @@ import { AppConfigProvider } from '../contexts/AppConfigContext.js';
 import { BootProgressProvider } from '../contexts/BootProgressProvider.js';
 import { WorkerProvider } from '../contexts/WorkerProvider.js';
 import { AppIconRegistryProvider } from './IconRegistryProvider.js';
+import { AuthRequiredDialogHost } from './AuthRequiredDialogHost.js';
 import {
   AuthReadyReporter,
   ConfigReadyReporter,
@@ -52,6 +53,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
                   <CssBaseline />
                   <LanguageEventsBridge />
                   <NotificationSystem />
+                  <AuthRequiredDialogHost />
                   <ConfigReadyReporter />
                   <ThemeReadyReporter />
                   <UIReadyReporter />

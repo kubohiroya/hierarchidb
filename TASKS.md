@@ -53,6 +53,20 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1904) shape/location/route の設定項目共通化候補の洗い出し（P2）
+- ブランチ: `analysis/config/defaults-candidates`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin, plugins/location-plugin, plugins/route-plugin, packages/plugin-service-api, TASKS.md
+- 受け入れ基準（DoD）:
+  - [ ] ShapeEntity/LocationEntity/RouteEntity の設定保持オブジェクトの定義箇所を特定する
+  - [ ] 既存の設定項目を一覧化し、項目名と用途を整理する
+  - [ ] 既存項目の中から「設定ノードで共通化できる候補」を理由付きで提案する
+  - [ ] 調査結果/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] エンティティ定義（型/インターフェース）の設定項目を抽出する
+  - [ ] UI 設定ステップの既存項目と突き合わせる
+  - [ ] 共通化候補/非候補を理由付きで分類する
+- ロールバック手順：調査のみのため差分なし。記載内容を戻す場合は本タスクの運用ログ追記を削除する。
+
 1894) shape-plugin Step5 Pause/Resume の AbortSignal 導線追加（P1）
 - ブランチ: `fix/shape/step5-pause-abort`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: plugins/shape-plugin（services/batch/adapters）, packages/features/download, packages/runtime-worker, packages/plugin-service-sdk（WorkerBridge）
@@ -162,6 +176,20 @@
   - [ ] Step6 に共通メタデータ一覧 UI を導入する
   - [ ] `pnpm --filter @hierarchidb/route-plugin typecheck` を実行し結果を記録する（不可なら理由記載）
 - ロールバック手順：route 実装差分を revert し、`pnpm --filter @hierarchidb/route-plugin typecheck` を再実行して旧挙動へ戻す。
+
+1903) 認証要求ダイアログ連携（AuthRequiredDialog + pluginType拡張）（P1）
+- ブランチ: `feat/auth/auth-required-dialog`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: packages/ui/auth, packages/common/auth, packages/features/auth-recovery, packages/features/download, app, TASKS.md
+- 受け入れ基準（DoD）:
+  - [ ] AuthRequiredDialog がアプリ側で表示され、認証要求の通知から起動できる
+  - [ ] pluginType に location/route を追加し、認証要求 UI で正しく表示される
+  - [ ] location/route の認証要求で generic へフォールバックしない
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] AuthNotificationSystem/ AuthRecoveryService の pluginType 型を拡張する
+  - [ ] DownloadService 経由の authFetch が pluginType を伝搬できるようにする
+  - [ ] App に AuthRequiredDialog を結線し、通知→ダイアログ→成功/取消通知の導線を実装する
+- ロールバック手順：本タスクの差分を revert し、従来の認証フロー（ログイン画面遷移のみ）へ戻す。
 
 1881) shape-plugin Step6 ホバー調査ログ追加 + メタデータ削除 + Stepper 回転条件修正（P1）
 - ブランチ: `fix/shape/step6-hover-metadata-clear-stepper`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -12902,3 +12930,6 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-26 10:10 done: analysis/shape/build-valid-persistence — Step5/Preview の valid 判定を shapeDB/batchSessions の永続データで評価するよう変更し、Step6/Download も同じ参照元に統一。検証: `pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0、`pnpm --filter @hierarchidb/plugin-ui-host typecheck` exit 0。ロールバック: `plugins/shape-plugin/src/ui/{components/steps-provider.tsx,hooks/useShapePreviewStep.ts,hooks/useDownloadConfigSection.ts}`, `packages/plugin-ui-host/src/headless/usePluginDialogController/steps.tsx` を revert。
 - 2025-12-26 10:31 start: fix/shape/step4-worker-labels — Step4 ワーカー数ラベル文言の更新に着手。DoD: 指定文言へ更新、運用ログ/ロールバック記載。（Kanban: 1893）
 - 2025-12-26 10:31 done: fix/shape/step4-worker-labels — Step4 のワーカー数ラベルを指定文言へ更新（ja/en）。検証: 未実施（文言変更のみ）。ロールバック: `plugins/shape-plugin/src/ui/locales/{ja.json,en.json}` の差分を revert。
+- 2025-12-26 13:48 progress: refactor/shape/shared-core-stabilize — download/auth 共通化の補強（plugin download registry + authFetch）、tabular API 共通化（spreadsheet plugin へ factory 追加）、progress hook 共通化（ui-batch に共通 hook 追加）を反映。検証: 未実施。ロールバック: 本差分を revert。
+- 2025-12-26 14:21 start: feat/auth/auth-required-dialog — AuthRequiredDialog の結線と pluginType 拡張（location/route）に着手。DoD: Kanban 1903 のとおり。
+- 2025-12-26 14:26 progress: feat/auth/auth-required-dialog — AuthRequiredDialog のホストを追加し、AuthNotification pluginType を location/route まで拡張。download/authFetch の pluginType 伝搬と location POST の pluginType 修正も反映。検証: 未実施。ロールバック: 本差分を revert。

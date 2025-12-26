@@ -1,4 +1,4 @@
-export type AuthPluginType = 'shape' | 'spreadsheet' | 'styler' | 'generic';
+export type AuthPluginType = 'shape' | 'location' | 'route' | 'spreadsheet' | 'styler' | 'generic';
 
 export interface AuthContext {
   sessionId?: string;
@@ -11,4 +11,3 @@ export interface AuthHeadersProvider {
 
   setToken(token: string, type?: 'Bearer' | 'Basic', expiresAt?: number): void;
 }
-

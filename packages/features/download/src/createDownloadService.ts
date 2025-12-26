@@ -1,12 +1,13 @@
 import { DownloadService as DownloadEngine } from './DownloadService.js';
 import { DexieChunkStoragePort } from './adapters/DexieChunkStoragePort.js';
 import { FetchNetworkPort } from './adapters/FetchNetworkPort.js';
-import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
+import { AuthRecoveryService, type AuthPluginType } from '@hierarchidb/auth-recovery';
 
 export interface DownloadServiceOptions {
   dbPrefix?: string;
   perHostConcurrency?: number;
   corsProxyBaseURL?: string;
+  pluginType?: AuthPluginType;
 }
 
 export interface DownloadServiceBundle {
@@ -17,11 +18,12 @@ export interface DownloadServiceBundle {
 
 export async function createDownloadService(opts?: DownloadServiceOptions): Promise<DownloadServiceBundle> {
   const auth = await AuthRecoveryService.getSingleton();
+  const pluginType = opts?.pluginType ?? 'generic';
   const net = new FetchNetworkPort({
     headers: () => auth.getAuthHeaders(),
     perHostConcurrency: opts?.perHostConcurrency ?? 4,
     corsProxyBaseURL: opts?.corsProxyBaseURL,
-    authFetch: (url, init) => auth.fetchWithAuth(url, init, { pluginType: 'generic' }),
+    authFetch: (url, init) => auth.fetchWithAuth(url, init, { pluginType }),
   });
   const storage = new DexieChunkStoragePort(`${opts?.dbPrefix || 'hidb'}-chunks`);
   const integrity = new (class {

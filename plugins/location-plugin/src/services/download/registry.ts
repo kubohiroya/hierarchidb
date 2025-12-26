@@ -1,60 +1,44 @@
 import type { ILocationDownloadStrategy } from './types.js';
 import type { LocationSearchConfig } from '../../common/entities/LocationEntity.js';
-import { createDownloadService, type DownloadServiceBundle, type DownloadServiceOptions } from '@hierarchidb/download';
+import {
+  type DownloadServiceBundle,
+  type DownloadServiceOptions,
+  configurePluginDownloadDefaults,
+  getPluginDownloadService,
+  notifyPluginAuthRequired,
+  registerPluginAuthNotifier,
+  registerPluginDownloadServiceFactory,
+} from '@hierarchidb/download';
 
 export type LocationDownloadService = DownloadServiceBundle;
 
-type LocationDownloadOptions = Pick<DownloadServiceOptions, 'dbPrefix' | 'perHostConcurrency'>;
+type LocationDownloadOptions = Pick<DownloadServiceOptions, 'dbPrefix' | 'perHostConcurrency' | 'corsProxyBaseURL'>;
 
 type Factory = (opts?: LocationDownloadOptions) => Promise<LocationDownloadService>;
 
-let factory: Factory | null = null;
+const LOCATION_PLUGIN_ID = 'location';
 const DEFAULT_OPTIONS: LocationDownloadOptions = { perHostConcurrency: 4 };
 
-let defaults: LocationDownloadOptions = { ...DEFAULT_OPTIONS };
-let authNotifier: ((info: { resource: string; provider?: string; hint?: string; status?: number }) => void) | null = null;
+configurePluginDownloadDefaults(LOCATION_PLUGIN_ID, DEFAULT_OPTIONS);
 
 export function registerLocationDownloadServiceFactory(f: Factory): void {
-  factory = f;
+  registerPluginDownloadServiceFactory(LOCATION_PLUGIN_ID, f);
 }
 
 export function configureLocationDownloadDefaults(opts: LocationDownloadOptions): void {
-  defaults = { ...defaults, ...opts };
+  configurePluginDownloadDefaults(LOCATION_PLUGIN_ID, { ...DEFAULT_OPTIONS, ...opts });
 }
 
 export async function getLocationDownloadService(opts?: LocationDownloadOptions): Promise<LocationDownloadService> {
-  const effectiveOpts = mergeOptions(opts);
-  if (factory) return factory(effectiveOpts);
-  return createDownloadService(effectiveOpts);
+  return getPluginDownloadService(LOCATION_PLUGIN_ID, opts);
 }
 
 export function registerLocationAuthNotifier(fn: (info: { resource: string; provider?: string; hint?: string; status?: number }) => void): void {
-  authNotifier = fn;
+  registerPluginAuthNotifier(LOCATION_PLUGIN_ID, fn);
 }
 
 export function notifyLocationAuthRequired(info: { resource: string; provider?: string; hint?: string; status?: number }): void {
-  if (authNotifier) {
-    authNotifier(info);
-    return;
-  }
-  const globalScope = globalThis as unknown as {
-    AuthNotificationRegistry?: {
-      getInstance?: () => { onAuthRequired?: (payload: typeof info) => void };
-    };
-    authNotificationRegistry?: { onAuthRequired?: (payload: typeof info) => void };
-    authRegistry?: { onAuthRequired?: (payload: typeof info) => void };
-  };
-  const registry = globalScope.AuthNotificationRegistry?.getInstance?.()
-    ?? globalScope.authNotificationRegistry
-    ?? globalScope.authRegistry;
-  registry?.onAuthRequired?.(info);
-}
-
-function mergeOptions(opts?: LocationDownloadOptions): LocationDownloadOptions | undefined {
-  const merged: LocationDownloadOptions = { ...defaults, ...(opts || {}) };
-  if (merged.dbPrefix == null) delete merged.dbPrefix;
-  if (merged.perHostConcurrency == null) delete merged.perHostConcurrency;
-  return Object.keys(merged).length > 0 ? merged : undefined;
+  notifyPluginAuthRequired(LOCATION_PLUGIN_ID, info);
 }
 
 // Simple in-memory strategy registry

@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { NodeType, ProgressEvent } from '@hierarchidb/common-types';
-import type { UnifiedProgressInfo } from '@hierarchidb/common-api';
-import { useBatchProgress, createAdapterFromProgressSubscribe } from '@hierarchidb/batch';
+import type { BatchSessionStatus, UnifiedProgressInfo } from '@hierarchidb/common-api';
 import { AuthNotificationRegistry } from '@hierarchidb/common-auth';
-import { getWorkerBridge, type WorkerBridge } from '@hierarchidb/ui-worker-client';
+import { usePluginBatchProgress } from '@hierarchidb/ui-batch';
 
 export interface UseLocationProgressOptions {
   autoSubscribe?: boolean;
@@ -28,6 +27,36 @@ type ExtendedProgressInfo = UnifiedProgressInfo & {
   message?: string;
   nodeId?: string;
   sessionId?: string;
+};
+
+const statusToUnified = (status: BatchSessionStatus): UnifiedProgressInfo => {
+  const progress = status.progress ?? {};
+  const total = progress.total ?? 0;
+  const completed = progress.completed ?? 0;
+  const failed = progress.failed ?? 0;
+  const percentage = progress.percentage
+    ?? (total > 0 ? Math.max(0, Math.min(100, Math.round((completed / total) * 100))) : 0);
+  const stage = progress.currentStage ?? 'processing';
+  return {
+    stage,
+    total,
+    completed,
+    failed,
+    percentage,
+    currentTask: progress.currentTask ?? stage,
+    phase: status.status,
+    timestamp: status.lastActivity ?? Date.now(),
+    payload: {
+      total,
+      completed,
+      failed,
+      currentTask: progress.currentTask ?? stage,
+      meta: status.error ? { errors: [status.error] } : undefined,
+    },
+    message: status.error,
+    nodeId: status.nodeId,
+    sessionId: status.sessionId,
+  };
 };
 
 function toProgressEvent(
@@ -59,46 +88,28 @@ export function useLocationProgress(
   options: UseLocationProgressOptions = {},
 ): UseLocationProgressState & { subscribe: () => void; unsubscribe: () => void } {
   const { autoSubscribe = true } = options;
-  const bridgeRef = useRef<WorkerBridge>(getWorkerBridge());
   const [overrideProgress, setOverrideProgress] = useState<LocationProgressEvent | null>(null);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    if (!sessionId || !autoSubscribe) return;
-    void bridgeRef.current.initialize().catch((err: unknown) => {
-      const errorObj = err instanceof Error ? err : new Error(String(err));
-      setError(errorObj);
-    });
-  }, [autoSubscribe, sessionId]);
+  const {
+    progress: derivedProgress,
+    unifiedProgress,
+    isSubscribed,
+    error,
+    subscribe,
+    unsubscribe,
+  } = usePluginBatchProgress<LocationProgressEvent>(
+    LOCATION_NODE_TYPE,
+    sessionId,
+    {
+      autoSubscribe,
+      enablePollingFallback: false,
+      mapStatusToUnified: statusToUnified,
+      mapUnifiedToProgress: (info, id) => toProgressEvent(info as ExtendedProgressInfo | null, id),
+    },
+  );
 
   useEffect(() => {
     setOverrideProgress(null);
   }, [sessionId]);
-
-  const adapter = useMemo(() => {
-    if (!sessionId) return null;
-    return createAdapterFromProgressSubscribe((cb) =>
-      bridgeRef.current
-        .subscribeBatchProgress(LOCATION_NODE_TYPE, sessionId, cb)
-        .then((unsubscribe: () => void) => {
-          setError(null);
-          return unsubscribe;
-        })
-        .catch((err: unknown) => {
-          const errorObj = err instanceof Error ? err : new Error('Failed to subscribe to location batch progress');
-          setError(errorObj);
-          return () => {
-          };
-        }),
-    );
-  }, [sessionId]);
-
-  const {
-    progress: unifiedProgress,
-    subscribed,
-    subscribe: sharedSubscribe,
-    unsubscribe: sharedUnsubscribe,
-  } = useBatchProgress(adapter, { autoSubscribe });
 
   useEffect(() => {
     if (unifiedProgress) {
@@ -156,25 +167,10 @@ export function useLocationProgress(
     };
   }, [sessionId]);
 
-  const subscribe = useCallback(() => {
-    void bridgeRef.current.initialize().catch((err: unknown) => {
-      const errorObj = err instanceof Error ? err : new Error(String(err));
-      setError(errorObj);
-    });
-    sharedSubscribe();
-  }, [sharedSubscribe]);
-
-  const unsubscribe = useCallback(() => {
-    sharedUnsubscribe();
-  }, [sharedUnsubscribe]);
-
-  const derived = toProgressEvent(unifiedProgress as ExtendedProgressInfo | null, sessionId ?? undefined);
-  const combined = derived ?? overrideProgress;
-
   return {
-    progress: combined,
+    progress: derivedProgress ?? overrideProgress,
     unifiedProgress: unifiedProgress ?? null,
-    isSubscribed: subscribed,
+    isSubscribed,
     error,
     subscribe,
     unsubscribe,

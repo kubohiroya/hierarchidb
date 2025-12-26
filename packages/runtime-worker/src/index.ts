@@ -29,6 +29,10 @@ export {
   createStageWorkerClient,
   getStageProcessingClient,
 } from './services/StageProcessingService.js';
+export {
+  registerPluginRuntimeWorkerAdapters,
+  type RuntimeWorkerAdapterOptions,
+} from './services/pluginRuntimeWorkerAdapters.js';
 // Worker service (public API for worker bootstrap)
 export { WorkerService } from './WorkerService.js';
 // CoreDB and draft utilities (for plugin-side usage)

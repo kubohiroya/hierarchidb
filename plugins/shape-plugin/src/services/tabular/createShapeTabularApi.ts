@@ -1,5 +1,5 @@
 import type { TabularDataApi } from '@hierarchidb/ui-tabular';
-import { SpreadsheetTabularApiDriver } from '@hierarchidb/spreadsheet-plugin';
+import { createPluginTabularApi } from '@hierarchidb/spreadsheet-plugin';
 import { ShapeTabularMetadataManager } from './ShapeTabularMetadataManager.js';
 import { SHAPE_PLUGIN_ID } from '../../common/types/constants.js';
 
@@ -8,5 +8,8 @@ import { SHAPE_PLUGIN_ID } from '../../common/types/constants.js';
  */
 export function createShapeTabularApi(): TabularDataApi {
   const metadataManager = new ShapeTabularMetadataManager();
-  return new SpreadsheetTabularApiDriver(metadataManager, SHAPE_PLUGIN_ID);
+  return createPluginTabularApi({
+    pluginId: SHAPE_PLUGIN_ID,
+    metadataManager,
+  });
 }

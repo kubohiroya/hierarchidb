@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeType } from '@hierarchidb/common-types';
 import { getWorkerBridge, type WorkerBridge } from '@hierarchidb/ui-worker-client';
-import type { BatchProgressEvent, BatchSessionStatus, ProgressPhase, UnifiedProgressInfo } from '@hierarchidb/common-api';
-import { useBatchProgress, createAdapterFromProgressSubscribe } from '@hierarchidb/batch-runtime-services';
+import type { BatchSessionStatus, ProgressPhase, UnifiedProgressInfo } from '@hierarchidb/common-api';
+import { usePluginBatchProgress } from '@hierarchidb/ui-batch';
 
 const ROUTE_NODE_TYPE = 'route' as NodeType;
 
@@ -32,32 +32,25 @@ export function useRouteBatchProgress(jobId: string | null, _deps?: unknown): Ro
     });
   }, [jobId]);
 
-  const adapter = useMemo(() => {
-    if (!jobId) return null;
-    return createAdapterFromProgressSubscribe((eventCallback: (event: BatchProgressEvent) => void) => bridgeRef.current.subscribeBatchProgress(
-      ROUTE_NODE_TYPE,
-      jobId,
-      (event: BatchProgressEvent) => {
-        eventCallback(event);
-      },
-    ));
-  }, [jobId]);
+  const {
+    progress,
+    rawStatus,
+  } = usePluginBatchProgress<UnifiedProgressInfo, BatchSessionStatus>(
+    ROUTE_NODE_TYPE,
+    jobId,
+    {
+      autoSubscribe: true,
+      enablePollingFallback: true,
+      mapStatusToUnified: statusToUnified,
+      mapUnifiedToProgress: (info) => info ?? null,
+      mapUnifiedToStatus: (_info, nextStatus) => nextStatus,
+    },
+  );
 
-  const poll = useMemo(() => {
-    if (!jobId) return undefined;
-    return async (): Promise<UnifiedProgressInfo | null> => {
-      try {
-        const nextStatus = await bridgeRef.current.getBatchSessionStatus(ROUTE_NODE_TYPE, jobId);
-        setStatus(nextStatus);
-        return statusToUnified(nextStatus);
-      } catch (error: unknown) {
-        console.warn('[useRouteBatchProgress] poll failed', error);
-        return null;
-      }
-    };
-  }, [jobId]);
-
-  const { progress } = useBatchProgress(adapter, { autoSubscribe: true, poll });
+  useEffect(() => {
+    if (!rawStatus) return;
+    setStatus(rawStatus);
+  }, [rawStatus]);
 
   const [snapshot, setSnapshot] = useState<UnifiedProgressInfo | null>(null);
   useEffect(() => {

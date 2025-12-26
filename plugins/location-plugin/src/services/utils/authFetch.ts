@@ -1,6 +1,5 @@
-import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
+import { authFetch as sharedAuthFetch } from '@hierarchidb/download';
 
 export async function authFetch(input: string, init?: RequestInit): Promise<Response> {
-  const auth = await AuthRecoveryService.getSingleton();
-  return auth.fetchWithAuth(input, init, { pluginType: 'shape' });
+  return sharedAuthFetch('location', input, init);
 }

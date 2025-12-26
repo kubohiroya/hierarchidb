@@ -7,7 +7,7 @@
  */
 
 export type AuthSource = 'worker' | 'cors-proxy' | 'bff' | 'external-api';
-export type PluginType = 'shape' | 'spreadsheet' | 'styler';
+export type PluginType = 'shape' | 'location' | 'route' | 'spreadsheet' | 'styler';
 export type AuthNotificationType = 'AUTH_REQUIRED' | 'AUTH_SUCCESS' | 'AUTH_CANCELLED';
 
 /**

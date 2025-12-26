@@ -1,29 +1,35 @@
-import { createDownloadService } from '@hierarchidb/download';
+import {
+  configurePluginDownloadDefaults,
+  getPluginDownloadService,
+  notifyPluginAuthRequired,
+  registerPluginAuthNotifier,
+  registerPluginDownloadServiceFactory,
+} from '@hierarchidb/download';
 import { type RouteDownloadFactoryOptions, type RouteDownloadService } from './factory.js';
 
 type Factory = (opts?: RouteDownloadFactoryOptions) => Promise<RouteDownloadService>;
 
-let factory: Factory | null = null;
-let authNotifier: RouteAuthNotifier | null = null;
+const ROUTE_PLUGIN_ID = 'route';
 const DEFAULT_OPTIONS: RouteDownloadFactoryOptions = { perHostConcurrency: 4 };
 
+configurePluginDownloadDefaults(ROUTE_PLUGIN_ID, DEFAULT_OPTIONS);
+
 /**
- * Allow host app to inject a shared download service (auth headers, CAS, concurrency),
- * mirroring shape/location plugin behavior.
+ * Allow host app to inject a shared download service (auth headers, CAS, concurrency).
  */
 export function registerRouteDownloadServiceFactory(f: Factory): void {
-  factory = f;
+  registerPluginDownloadServiceFactory(ROUTE_PLUGIN_ID, f);
+}
+
+export function configureRouteDownloadDefaults(opts: RouteDownloadFactoryOptions): void {
+  configurePluginDownloadDefaults(ROUTE_PLUGIN_ID, { ...DEFAULT_OPTIONS, ...opts });
 }
 
 /**
- * Resolve the route download service. Falls back to the built-in factory.
+ * Resolve the route download service.
  */
 export async function getRouteDownloadService(opts?: RouteDownloadFactoryOptions): Promise<RouteDownloadService> {
-  const options = mergeOptions(opts);
-  if (factory) {
-    return factory(options);
-  }
-  return createDownloadService(options);
+  return getPluginDownloadService(ROUTE_PLUGIN_ID, opts);
 }
 
 /**
@@ -39,63 +45,12 @@ export type RouteAuthNotification = {
 export type RouteAuthNotifier = (info: RouteAuthNotification) => void;
 
 export function registerRouteAuthNotifier(fn: RouteAuthNotifier): void {
-  authNotifier = fn;
+  registerPluginAuthNotifier(ROUTE_PLUGIN_ID, fn);
 }
 
 /**
  * Notify registered callbacks (with a global fallback used in older UIs).
  */
 export function notifyAuthRequired(info: RouteAuthNotification): void {
-  if (authNotifier) {
-    authNotifier(info); return;
-  }
-  const registry = resolveAuthRegistry();
-  registry?.onAuthRequired?.(info);
-}
-
-export interface AuthNotificationRegistry {
-  onAuthRequired?(payload: AuthNotificationPayload): void;
-  getInstance?(): unknown;
-}
-
-export interface AuthNotificationPayload {
-  resource: string;
-  provider?: string;
-  hint?: string;
-  status?: number;
-}
-
-export function resolveAuthRegistry(): AuthNotificationRegistry | undefined {
-  const globalRecord = globalThis as Record<string, unknown>;
-  const candidates: unknown[] = [
-    globalRecord.AuthNotificationRegistry,
-    globalRecord.authNotificationRegistry,
-    globalRecord.authRegistry,
-  ];
-
-  for (const candidate of candidates) {
-    if (!candidate) continue;
-    if (isAuthRegistry(candidate)) return candidate;
-    if (typeof candidate === 'object' && candidate !== null) {
-      const factoryCandidate = candidate as { getInstance?: () => unknown };
-      if (typeof factoryCandidate.getInstance === 'function') {
-        const instance = factoryCandidate.getInstance();
-        if (isAuthRegistry(instance)) return instance;
-      }
-    }
-  }
-  return undefined;
-}
-
-function isAuthRegistry(value: unknown): value is AuthNotificationRegistry {
-  if (typeof value !== 'object' || value === null) return false;
-  const record = value as Record<string, unknown>;
-  return typeof record.onAuthRequired === 'function';
-}
-
-function mergeOptions(opts?: RouteDownloadFactoryOptions): RouteDownloadFactoryOptions | undefined {
-  const merged: RouteDownloadFactoryOptions = { ...DEFAULT_OPTIONS, ...(opts || {}) };
-  if (merged.dbPrefix == null) delete merged.dbPrefix;
-  if (merged.perHostConcurrency == null) delete merged.perHostConcurrency;
-  return Object.keys(merged).length > 0 ? merged : undefined;
+  notifyPluginAuthRequired(ROUTE_PLUGIN_ID, info);
 }

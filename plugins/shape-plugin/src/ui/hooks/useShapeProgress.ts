@@ -1,6 +1,6 @@
 import type { NodeType } from '@hierarchidb/common-types';
 import type { BatchSessionStatus } from '@hierarchidb/common-api';
-import { useBatchProgressState } from '@hierarchidb/ui-batch';
+import { usePluginBatchProgress } from '@hierarchidb/ui-batch';
 import {
   statusToUnified,
   toShapeProgress,
@@ -35,24 +35,25 @@ export function useShapeProgress(
     enablePollingFallback = true,
   } = options;
   const {
-    progress: unifiedProgress,
-    status,
+    progress,
+    status: derivedStatus,
+    unifiedProgress,
+    rawStatus,
     isSubscribed,
     error,
     subscribe,
     unsubscribe,
-  } = useBatchProgressState(
+  } = usePluginBatchProgress<ShapeProgress, ShapeProgressStatus>(
     SHAPE_NODE_TYPE,
     sessionId,
     {
       autoSubscribe,
       enablePollingFallback,
       mapStatusToUnified: statusToUnified,
+      mapUnifiedToProgress: (info, id) => toShapeProgress(info as ExtendedProgress | null, id),
+      mapUnifiedToStatus: (info, fallback) => toShapeStatus(info as ExtendedProgress | null, fallback as BatchSessionStatus | null),
     },
   );
-
-  const progress = toShapeProgress(unifiedProgress as ExtendedProgress | null, sessionId ?? undefined);
-  const derivedStatus = toShapeStatus(unifiedProgress as ExtendedProgress | null, status as BatchSessionStatus | null);
   const debugKey = sessionId ?? 'none';
   const debugSnapshot = {
     sessionId,
@@ -60,7 +61,7 @@ export function useShapeProgress(
     enablePollingFallback,
     isSubscribed,
     error: error?.message ?? null,
-    unifiedStatus: status?.status ?? null,
+    unifiedStatus: rawStatus?.status ?? null,
     derivedStatus: derivedStatus?.status ?? null,
     progress: progress?.percentage ?? null,
     currentStage: progress?.currentStage ?? null,
