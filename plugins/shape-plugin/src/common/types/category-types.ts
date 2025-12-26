@@ -73,14 +73,3 @@ export const getCategoryOption = (category: ShapeCategory): CategoryOption<Shape
 
 /**
     */
-export const getCategoryLabel = (category: ShapeCategory): string => {
-  const option = getCategoryOption(category);
-  return option?.label || category;
-};
-
-/**
-    */
-export const getCategoryColor = (category: ShapeCategory): string => {
-  const option = getCategoryOption(category);
-  return option?.color || '#757575';
-};

@@ -96,30 +96,6 @@ export function mapDraftToUpdates(draft: ShapeDraft): Partial<ShapeEntity> {
 }
 
 /**
- * Validate shape-plugin entity name
- */
-export function validateShapeName(name: string): ShapeStepValidationResult {
-  const errors: string[] = [];
-
-  if (!name.trim()) {
-    errors.push('Name is required');
-  }
-
-  if (name.length > 100) {
-    errors.push('Name must be 100 characters or less');
-  }
-
-  if (!/^[a-zA-Z0-9\s\-_]+$/.test(name)) {
-    errors.push('Name can only contain letters, numbers, spaces, hyphens, and underscores');
-  }
-
-  return {
-    isValid: errors.length === 0,
-    errors: errors.length > 0 ? errors : undefined,
-  };
-}
-
-/**
  * Validate processing configuration
  */
 export function validateBatchConfig(config: Partial<BatchConfig>): ShapeStepValidationResult {

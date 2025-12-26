@@ -163,7 +163,9 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
         throw new Error('Invalid GeoJSON data');
       }
 
-      let features: GeoBoundariesFeature[] = rawData.geojson.features;
+      let features: GeoBoundariesFeature[] = rawData.geojson.features.filter(
+        (feature): feature is GeoBoundariesFeature => Boolean(feature),
+      );
 
       if (filters && filters.length > 0) {
         features = await this.applyFilters(features, filters);
@@ -171,6 +173,12 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
 
       if (transformations && transformations.length > 0) {
         features = await this.applyTransformations(features, transformations);
+      }
+
+      if (features.length === 0) {
+        const source = rawData.metadata?.country ?? 'unknown';
+        const adminLevel = rawData.metadata?.adminLevel ?? 'unknown';
+        throw new Error(`GeoBoundaries features empty after filtering: ${source} ${adminLevel}`);
       }
 
       //  ShapeEntity

@@ -1,10 +1,25 @@
-import { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import type { GridColumn } from '@hierarchidb/ui-grid';
 import { useTranslation } from '../../i18n.js';
 import type { ShapeFeatureMetadataRow } from '../../../services/database/ShapeTileMetadataDB.js';
+import { Typography } from '@mui/material';
+
+type PreviewMetadataRow = ShapeFeatureMetadataRow & {
+  logicalCountryCode?: string;
+  logicalAdminCode?: string;
+  logicalFeatureId?: string;
+};
+
+const formatLogicalCode = (value: unknown) => {
+  const text = String(value ?? '');
+  if (text === 'N/A') {
+    return React.createElement(Typography, { color: 'error.main' }, 'N/A');
+  }
+  return text;
+};
 
 export const useVectorTilePreviewTable = (
-  metadataRows: ShapeFeatureMetadataRow[],
+  metadataRows: PreviewMetadataRow[],
   matchedIdSet: Set<string>,
   searchKeyword: string,
 ) => {
@@ -16,17 +31,17 @@ export const useVectorTilePreviewTable = (
     const rows = metadataRows.map((row) => ({
       id: row.featureId,
       countryName: row.countryName ?? '',
-      countryCode: row.countryCode ?? '',
+      countryCode: row.logicalCountryCode ?? row.countryCode ?? '',
       adminName: row.adminName ?? '',
-      adminLevel: row.adminLevel ?? '',
-      adminCode: row.adminCode ?? '',
+      adminLevel: row.adminLevel != null ? `ADM${row.adminLevel}` : '',
+      adminCode: row.logicalAdminCode ?? row.adminCode ?? '',
       dataSource: row.dataSource ?? '',
       createdAt: row.createdAt ? new Date(row.createdAt).toLocaleString() : '',
       vertexCount: row.vertexCount,
       polygonCount: row.polygonCount,
       bbox: row.bbox ? row.bbox.map((value) => value.toFixed(4)).join(', ') : '',
       area: Number.isFinite(row.area) ? Math.round(row.area).toLocaleString() : '',
-      featureId: row.featureId,
+      featureId: row.logicalFeatureId ?? row.featureId,
     }));
     const keyword = searchKeyword.trim().toLowerCase();
     const filtered = keyword
@@ -55,14 +70,14 @@ export const useVectorTilePreviewTable = (
     { id: 'countryCode', label: t('preview.metadata.columns.countryCode', 'Country Code'), width: 120, sortable: true },
     { id: 'adminName', label: t('preview.metadata.columns.adminName', 'Admin Name'), width: 180, sortable: true },
     { id: 'adminLevel', label: t('preview.metadata.columns.adminLevel', 'Admin Level'), width: 120, align: 'right', sortable: true },
-    { id: 'adminCode', label: t('preview.metadata.columns.adminCode', 'Admin Code'), width: 160, sortable: true },
+    { id: 'adminCode', label: t('preview.metadata.columns.adminCode', 'Admin Code'), width: 160, sortable: true, format: formatLogicalCode },
     { id: 'dataSource', label: t('preview.metadata.columns.dataSource', 'Data Source'), width: 140, sortable: true },
     { id: 'createdAt', label: t('preview.metadata.columns.createdAt', 'Created At'), width: 180, sortable: true },
     { id: 'vertexCount', label: t('preview.metadata.columns.vertexCount', 'Vertices'), width: 120, align: 'right', sortable: true },
     { id: 'polygonCount', label: t('preview.metadata.columns.polygonCount', 'Polygons'), width: 120, align: 'right', sortable: true },
     { id: 'bbox', label: t('preview.metadata.columns.bbox', 'Bounding Box'), width: 220, sortable: true },
     { id: 'area', label: t('preview.metadata.columns.area', 'Area'), width: 140, align: 'right', sortable: true },
-    { id: 'featureId', label: t('preview.metadata.columns.featureId', 'Feature ID'), width: 160, sortable: true },
+    { id: 'featureId', label: t('preview.metadata.columns.featureId', 'Feature ID'), width: 160, sortable: true, format: formatLogicalCode },
   ]), [t]);
 
   return {

@@ -22,7 +22,7 @@ const getProcessingStatus = (data?: StepDataSnapshot | null): string | undefined
 const isBuildRunning = (data?: StepDataSnapshot | null): boolean => {
   const status = getProcessingStatus(data);
   if (!status) return false;
-  return ['processing', 'running', 'searching', 'validating'].includes(status);
+  return ['processing', 'running'].includes(status);
 };
 
 export interface PluginDialogStepperProps {
@@ -68,7 +68,7 @@ export const PluginDialogStepper: React.FC<PluginDialogStepperProps> = ({
           ? true
           : previousWorkerStep?.completed ?? validatedStepIndices.includes(index - 1);
         const isValidatedButDisabled = completed && !canNavigate && index > 0 && !previousCompleted;
-        const showBuildProgress = step.id === 'build' && isBuildRunning(stepData);
+        const showBuildProgress = step.id === 'build' && isActive && isBuildRunning(stepData) && !completed;
 
         return (
           <Step key={step.id} completed={completed}>

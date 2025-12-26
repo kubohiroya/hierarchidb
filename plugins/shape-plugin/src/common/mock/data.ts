@@ -1,12 +1,8 @@
 import type {
   CountryMetadata,
   DataSourceConfig,
-  DownloadTask,
-  SimplifyTask,
   UrlMetadata,
-  VectorTileTask,
 } from '../types/index.js';
-import { BatchTaskStage } from '../types/index.js';
 
 // ================================
 // Data Source Configurations
@@ -274,99 +270,6 @@ export function generateUrlMetadata(
 }
 
 // ================================
-// Sample Batch Tasks
-// ================================
-
-let taskIdCounter = 1;
-
-export function generateMockDownloadTasks(urlMetadata: UrlMetadata[]): DownloadTask[] {
-  return urlMetadata.slice(0, 5).map(meta => {
-    const stages = [BatchTaskStage.SUCCESS, BatchTaskStage.PROCESS, BatchTaskStage.WAIT] as const;
-    const stage = stages[Math.floor(Math.random() * stages.length)];
-
-    return {
-      taskId: `download-${taskIdCounter++}`,
-      taskType: 'download' as const,
-      stage,
-      progress: Math.random() * 100,
-      url: meta.url,
-      countryCode: meta.countryCode,
-      adminLevel: meta.adminLevel,
-      fileSize: meta.estimatedSize,
-      downloadedBytes: Math.floor((meta.estimatedSize || 1000000) * Math.random()),
-      startedAt: Date.now() - Math.random() * 3600000,
-    };
-  });
-}
-
-export function generateMockSimplifyTasks(countries: string[], adminLevels: number[]): SimplifyTask[] {
-  const tasks: SimplifyTask[] = [];
-
-  countries.slice(0, 3).forEach(countryCode => {
-    adminLevels.slice(0, 2).forEach(level => {
-      tasks.push({
-        taskId: `simplify1-${taskIdCounter++}`,
-        taskType: 'simplify1',
-        stage: BatchTaskStage.WAIT,
-        countryCode,
-        adminLevel: level,
-        config: {
-          inputBufferId: `${countryCode}-${level}-input`,
-          minimumArea: Math.random() * 0.5,
-        },
-      });
-    });
-  });
-
-  return tasks;
-}
-
-export function generateMockVectorTileTasks(countries: string[], adminLevels: number[]): VectorTileTask[] {
-  const tasks: VectorTileTask[] = [];
-
-  countries.slice(0, 2).forEach(countryCode => {
-    adminLevels.slice(0, 1).forEach(level => {
-      for (let zoom = 8; zoom <= 12; zoom++) {
-        tasks.push({
-          taskId: `vectortile-${taskIdCounter++}`,
-          taskType: 'vectortile',
-          stage: BatchTaskStage.WAIT,
-          countryCode,
-          adminLevel: level,
-          zoomLevel: zoom,
-          tileCount: 4 ** (zoom - 8) * 10,
-          generatedTiles: 0,
-        });
-      }
-    });
-  });
-
-  return tasks;
-}
-
-// ================================
-// Sample Selection Matrix
-// ================================
-
-export function generateSampleCheckboxMatrix(
-  countryCount: number,
-  maxAdminLevel: number,
-): boolean[][] {
-  const matrix: boolean[][] = [];
-
-  for (let i = 0; i < countryCount; i++) {
-    const row: boolean[] = [];
-    for (let j = 0; j <= maxAdminLevel; j++) {
-      // Random selection with decreasing probability for higher levels
-      row.push(Math.random() < (0.3 - j * 0.05));
-    }
-    matrix.push(row);
-  }
-
-  return matrix;
-}
-
-// ================================
 // Utility Functions
 // ================================
 
@@ -395,16 +298,4 @@ export function calculateEstimatedFeatures(
   const avgPopulation = countries.reduce((sum, c) => sum + (c.population || 0), 0) / countries.length;
   const featuresPerMillion = 100; // Rough estimate
   return Math.floor(totalSelections * (avgPopulation / 1000000) * featuresPerMillion);
-}
-
-export function calculateEstimatedProcessingTime(totalSelections: number): string {
-  // Rough estimate: 30 seconds per selection
-  const seconds = totalSelections * 30;
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
-  }
-  return `${minutes}m`;
 }

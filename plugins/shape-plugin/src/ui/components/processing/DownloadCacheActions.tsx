@@ -4,6 +4,7 @@ import {
   FilterAlt as FilterAltIcon,
   Filter as FilterIcon,
   Layers as LayersIcon,
+  Description as DescriptionIcon,
 } from '@mui/icons-material';
 import { useTranslation } from '../../i18n.js';
 
@@ -13,9 +14,11 @@ type Props = {
   canDeleteStage1: boolean;
   canDeleteStage2: boolean;
   canDeleteTiles: boolean;
+  canDeleteMetadata: boolean;
   onDeleteRaw: () => void;
   onDeleteStage: (stage: 'simplify1' | 'simplify2') => void;
   onDeleteTiles: () => void;
+  onDeleteMetadata: () => void;
 };
 
 export const DownloadCacheActions: React.FC<Props> = ({
@@ -24,9 +27,11 @@ export const DownloadCacheActions: React.FC<Props> = ({
   canDeleteStage1,
   canDeleteStage2,
   canDeleteTiles,
+  canDeleteMetadata,
   onDeleteRaw,
   onDeleteStage,
   onDeleteTiles,
+  onDeleteMetadata,
 }) => {
   const { t } = useTranslation();
 
@@ -78,6 +83,18 @@ export const DownloadCacheActions: React.FC<Props> = ({
           onClick={onDeleteTiles}
         >
           {t('processing.download.deleteTiles', 'Delete Tiles')}
+        </Button>
+      </Grid>
+      <Grid size={{ xs: 12, sm: 6 }}>
+        <Button
+          fullWidth
+          variant="outlined"
+          color="error"
+          startIcon={<DescriptionIcon />}
+          disabled={!canDeleteMetadata}
+          onClick={onDeleteMetadata}
+        >
+          {t('processing.download.deleteMetadata', 'Delete Metadata')}
         </Button>
       </Grid>
     </Grid>

@@ -37,6 +37,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
   const { progress, status, error, isSubscribed } = useShapeProgress(sessionId, { autoSubscribe: Boolean(sessionId) });
   const { tasks, refresh: refreshTasks } = useShapeBatchTasks(sessionId, { autoRefresh: true, pollIntervalMs: 2000 });
   const [persistedTasks, setPersistedTasks] = useState<typeof tasks>([]);
+  const [isStartPending, setIsStartPending] = useState(false);
   const hasSessionId = Boolean(sessionId && !error);
   const effectiveProgress = hasSessionId ? progress : null;
   const effectiveStatus = hasSessionId ? status : null;
@@ -185,6 +186,13 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     };
   }, [buildStatus, data?.tileSummary?.tiles, onChange, sessionId]);
 
+  useEffect(() => {
+    if (!isStartPending) return;
+    if (buildStatus !== 'idle') {
+      setIsStartPending(false);
+    }
+  }, [buildStatus, isStartPending]);
+
   const displayTasks = tasks.length > 0 ? tasks : persistedTasks;
   const { stageProgress, tasksByStage, paneProgress } = useBuildTaskProgress(
     stages,
@@ -236,7 +244,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
   ), [data?.batchConfig]);
   const hasSelection = summarizeCheckboxState(data?.checkboxState).hasSelection;
   const hasDataSource = Boolean(data?.batchConfig?.dataSource ?? data?.dataSourceName);
-  const canStartOrResume = buildStatus !== 'running'
+  const canStartOrResume = !isStartPending && buildStatus !== 'running'
     && hasDataSource
     && hasSelection
     && isProcessingValid;
@@ -249,6 +257,18 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     onChange,
     buildStatus,
   });
+  const startOrResume = useCallback(async () => {
+    if (isStartPending) return;
+    setIsStartPending(true);
+    const ok = await handleStartOrResume();
+    if (!ok) {
+      setIsStartPending(false);
+    }
+  }, [handleStartOrResume, isStartPending]);
+  const effectiveBuildStatus = isStartPending ? 'running' : buildStatus;
+  const effectiveStatusLabel = isStartPending && buildStatus === 'idle'
+    ? t('build.status.starting', 'Starting build...')
+    : statusLabel;
 
   return {
     t,
@@ -257,18 +277,18 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     paneProgress,
     tasksByStage,
     tasks: displayTasks,
-    buildStatus,
+    buildStatus: effectiveBuildStatus,
     overallProgress,
     stageLabel,
     taskLabel,
-    statusLabel,
+    statusLabel: effectiveStatusLabel,
     completed,
     total,
     failed,
     skipped,
     hasProgressData,
     canStartOrResume,
-    handleStartOrResume,
+    handleStartOrResume: startOrResume,
     handlePause,
     resolveStatusLabel,
     resolveStatusColor,

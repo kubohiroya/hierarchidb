@@ -32,6 +32,7 @@
       "deleteStage1Cache": "ステージ1キャッシュを削除",
       "deleteStage2Cache": "ステージ2キャッシュを削除",
       "deleteTiles": "タイルを削除",
+      "deleteMetadata": "メタデータを削除",
       "timeoutMs": "タイムアウト (ms)",
       "timeoutHelp": "各ダウンロードの待機時間上限です。",
       "retryAttempts": "リトライ回数",
@@ -49,9 +50,9 @@
     },
     "filter": {
       "title": "抽出設定",
-      "workersStage1": "ポリゴン簡略化 (ステージ1) のワーカー数",
+      "workersStage1": "一次簡略化のワーカー数",
       "workersStage1Help": "ステージ1の簡略化を並列実行する数です。",
-      "workersStage2": "タイル生成 (ステージ2) のワーカー数",
+      "workersStage2": "タイル前処理のワーカー数",
       "workersStage2Help": "ステージ2のタイル準備を並列実行する数です。",
       "method": "フィルタリング方法",
       "methodBBox": "バウンディングボックスのみ (高速)",
@@ -84,7 +85,7 @@
     "tile": {
       "title": "タイル生成（ズーム別最終簡略化）",
       "description": "ズームごとに最終的な簡略化を行い、ベクトルタイルを生成します。",
-      "workers": "タイルワーカー数",
+      "workers": "タイル生成のワーカー数",
       "workersHelp": "タイル生成を並列実行する数です。",
       "bufferSize": "タイルマージン (px)",
       "bufferSizeHelp": "タイル境界の欠けを防ぐための余白（バッファ）です。",

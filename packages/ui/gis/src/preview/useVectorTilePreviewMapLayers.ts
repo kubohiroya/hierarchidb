@@ -21,6 +21,7 @@ type Args = {
   selectedIds: string[];
   hoveredId: string | null;
   setHoveredId: (id: string | null) => void;
+  invalidFeatureIds?: string[];
   theme: Theme;
 };
 
@@ -34,6 +35,7 @@ export const useVectorTilePreviewMapLayers = ({
   hoveredId,
   setHoveredId,
   theme,
+  invalidFeatureIds = [],
 }: Args) => {
   useEffect(() => {
     if (!mapInstance) return;
@@ -55,7 +57,7 @@ export const useVectorTilePreviewMapLayers = ({
             'fill-opacity': opacity,
             'fill-outline-color': color,
           },
-          filter: ['==', ['id'], '__none__'],
+          filter: ['==', ['get', 'id'], '__none__'],
           'source-layer': sourceLayer,
         },
         undefined,
@@ -64,6 +66,7 @@ export const useVectorTilePreviewMapLayers = ({
 
     const handleIdle = () => {
       if (!map.getLayer(baseId)) return;
+      ensureLayer(`${baseId}-invalid`, theme.palette.error.main, 0.55);
       ensureLayer(`${baseId}-matched`, theme.palette.secondary.light, 0.45);
       ensureLayer(`${baseId}-selected`, theme.palette.primary.main, 0.5);
       ensureLayer(`${baseId}-hovered`, theme.palette.action.hover, 0.6);
@@ -82,15 +85,16 @@ export const useVectorTilePreviewMapLayers = ({
     const updateFilter = (id: string, ids: string[]) => {
       if (!map.getLayer(id)) return;
       if (!ids.length) {
-        map.setFilter(id, ['==', ['id'], '__none__']);
+        map.setFilter(id, ['==', ['get', 'id'], '__none__']);
         return;
       }
-      map.setFilter(id, ['in', ['id'], ...ids]);
+      map.setFilter(id, ['in', ['get', 'id'], ...ids]);
     };
+    updateFilter(`${baseLayerId}-invalid`, invalidFeatureIds);
     updateFilter(`${baseLayerId}-matched`, matchedIds);
     updateFilter(`${baseLayerId}-selected`, selectedIds);
     updateFilter(`${baseLayerId}-hovered`, hoveredId ? [hoveredId] : []);
-  }, [baseLayerId, hoveredId, mapInstance, matchedIds, selectedIds]);
+  }, [baseLayerId, hoveredId, invalidFeatureIds, mapInstance, matchedIds, selectedIds]);
 
   useEffect(() => {
     if (!mapInstance) return;
@@ -99,7 +103,10 @@ export const useVectorTilePreviewMapLayers = ({
     const handleMouseMove = (...args: unknown[]) => {
       const event = args[0] as { features?: Array<{ id?: unknown; properties?: Record<string, unknown> }> };
       const feature = event?.features?.[0];
-      const featureId = feature ? String(feature.id ?? feature.properties?.id ?? '') : '';
+      if (feature?.properties) {
+        console.debug('[ShapePreview] hover properties', feature.properties);
+      }
+      const featureId = feature ? String(feature.properties?.id ?? feature.id ?? '') : '';
       setHoveredId(featureId || null);
     };
     const handleMouseLeave = () => {

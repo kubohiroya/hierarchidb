@@ -5,7 +5,6 @@
 
 import type { NodeId } from '@hierarchidb/common-types';
 import {
-  isBatchControlAPIV2Enabled,
   type BatchProgressCallback,
   type BatchProgressEvent,
   type BatchSessionStatus,
@@ -179,11 +178,4 @@ export interface ShapeBatchData {
  */
 export function createShapeBatchManager(): IBatchSessionManager {
   return new UnifiedShapeBatchManager();
-}
-
-/**
- * Feature flag check for shape plugin specifically
- */
-export function isShapeBatchAPIV2Enabled(): boolean {
-  return isBatchControlAPIV2Enabled();
 }

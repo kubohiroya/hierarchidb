@@ -257,7 +257,8 @@ export function useDialogSteps({
       (cfg: PluginStepConfig<Partial<PluginDefinedEntity>, DialogUiState>) => ({
         ...cfg,
         validate: cfg.validate
-          ? (data?: Partial<PluginDefinedEntity>) => Boolean(cfg.validate?.(data ?? {}))
+          ? (data?: Partial<PluginDefinedEntity>) =>
+            Promise.resolve(cfg.validate?.(data ?? {})).then(Boolean)
           : undefined,
       })
     );
@@ -295,15 +296,15 @@ export function useDialogSteps({
       const resolveValidate: StepValidationFn | undefined = (() => {
         if (isBasicInfoStep) {
           if (validateFn) {
-              return () =>
-                Boolean(
-                  validateFn(basicInfoValidationPayloadRef.current as unknown as Partial<PluginDefinedEntity>)
-                ) && isBasicInfoValid;
+            return () =>
+              Promise.resolve(
+                validateFn(basicInfoValidationPayloadRef.current as unknown as Partial<PluginDefinedEntity>)
+              ).then((valid) => Boolean(valid) && isBasicInfoValid);
           }
           return () => isBasicInfoValid;
         }
         if (!validateFn) return undefined;
-        return () => Boolean(validateFn(draftDataRef.current));
+        return () => Promise.resolve(validateFn(draftDataRef.current)).then(Boolean);
       })();
       result.push({
         id: cfg.id,

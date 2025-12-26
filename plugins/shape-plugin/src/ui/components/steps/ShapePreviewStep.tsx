@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useLayoutEffect, useRef, useState } from 'react';
 import { Box, Typography, Alert, Tabs, Tab, Snackbar, CircularProgress } from '@mui/material';
 import { loadMapWithVectorTiles } from '@hierarchidb/ui-map';
 import { GenericDataGrid } from '@hierarchidb/ui-grid';
@@ -45,6 +45,28 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
   const baseMapStyleUrl = theme.palette.mode === 'dark'
     ? DARK_BASEMAP_STYLE_URL
     : LIGHT_BASEMAP_STYLE_URL;
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const metadataPanelRef = useRef<HTMLDivElement | null>(null);
+  const metadataToolbarRef = useRef<HTMLDivElement | null>(null);
+  const [metadataTableHeight, setMetadataTableHeight] = useState(0);
+
+  useLayoutEffect(() => {
+    const panel = metadataPanelRef.current;
+    if (!panel) return;
+    const updateHeight = () => {
+      const panelHeight = panel.getBoundingClientRect().height;
+      const toolbarHeight = metadataToolbarRef.current?.getBoundingClientRect().height ?? 0;
+      const available = Math.max(panelHeight - toolbarHeight, 0);
+      setMetadataTableHeight(available);
+    };
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(panel);
+    if (metadataToolbarRef.current) {
+      observer.observe(metadataToolbarRef.current);
+    }
+    return () => observer.disconnect();
+  }, [tabIndex]);
 
   const renderMapPreview = () => {
     const hasRemoteTiles = Boolean(tilesUrl);
@@ -65,14 +87,13 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
     const tiles = hasRemoteTiles ? [tilesUrl] : undefined;
     return (
       <Box
+        ref={mapContainerRef}
         flex={1}
         minHeight={420}
         borderRadius={1}
         overflow="hidden"
         border="1px solid #e0e0e0"
-        onWheelCapture={(event) => {
-          event.stopPropagation();
-        }}
+        sx={{ overscrollBehavior: 'contain' }}
       >
         <Suspense fallback={null}>
           <LazyMapWithVectorTiles
@@ -137,6 +158,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
             renderMapPreview()
           ) : (
             <Box
+              ref={metadataPanelRef}
               flex={1}
               minHeight={420}
               display="flex"
@@ -144,9 +166,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
               borderRadius={1}
               overflow="hidden"
               border="1px solid #e0e0e0"
-              onWheelCapture={(event) => {
-                event.stopPropagation();
-              }}
+              sx={{ overscrollBehavior: 'contain' }}
             >
               {!sessionId ? (
                 <Alert severity="info" sx={{ m: 2 }}>
@@ -158,7 +178,10 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
                 </Alert>
               ) : (
                 <>
-                  <Box sx={{ p: 1.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Box
+                    ref={metadataToolbarRef}
+                    sx={{ p: 1.5, display: 'flex', alignItems: 'center', gap: 1.5 }}
+                  >
                     <SearchField
                       searchText={searchKeyword}
                       handleSearchTextChange={setSearchKeyword}
@@ -176,9 +199,15 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
                     <GenericDataGrid
                       columns={metadataColumns}
                       rows={metadataTableRows}
-                      maxHeight="100%"
-                      tableContainerSx={{ height: '100%', maxHeight: '100%', overflow: 'auto' }}
-                      stopWheelPropagation
+                      maxHeight={metadataTableHeight || 360}
+                      tableContainerSx={{
+                        height: metadataTableHeight || 360,
+                        maxHeight: metadataTableHeight || 360,
+                        overflowY: 'auto',
+                        overflowX: 'auto',
+                        overscrollBehavior: 'contain',
+                        WebkitOverflowScrolling: 'touch',
+                      }}
                       rowHeight={38}
                       stickyHeader
                       dense
@@ -230,6 +259,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
         open={Boolean(hoverMessage)}
         message={hoverMessage}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        autoHideDuration={3600}
         onClose={() => setHoveredId(null)}
       />
     </Box>

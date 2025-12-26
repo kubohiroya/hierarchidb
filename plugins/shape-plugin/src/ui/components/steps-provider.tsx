@@ -7,6 +7,7 @@ import {
   mergeBatchConfig,
   type ShapeEntity,
 } from '../../common/types/index.js';
+import { shapeDB } from '../../services/database/ShapeDB.js';
 import { ShapeDataSourceStep } from './steps/ShapeDataSourceStep.js';
 import { ShapeProcessingSettingsStep } from './steps/ShapeProcessingSettingsStep.js';
 import { ShapeCountrySelectionStep } from './steps/ShapeCountrySelectionStep.js';
@@ -58,10 +59,30 @@ const canStartShapeBatch = (data?: Partial<ShapeEntity>): boolean => {
   ).isValid;
   return hasSelection && hasDataSource && processingValid;
 };
-const hasVectorTiles = (data?: Partial<ShapeEntity>): boolean =>
-  (data?.tileSummary?.tiles ?? 0) > 0;
-const isShapeBuildPersisted = (data?: Partial<ShapeEntity>): boolean =>
-  data?.processingStatus === 'completed' || hasVectorTiles(data);
+const resolveShapeNodeKey = (data?: Partial<ShapeEntity>): string | null => {
+  const key = data?.nodeId ?? data?.batchSessionId;
+  return key ? String(key) : null;
+};
+
+const hasPersistedVectorTiles = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
+  const nodeKey = resolveShapeNodeKey(data);
+  if (!nodeKey) return false;
+  const count = await shapeDB.vectorTiles.where('nodeId').equals(nodeKey).count();
+  return count > 0;
+};
+
+const hasCompletedBatchSession = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
+  const sessionId = data?.batchSessionId;
+  if (!sessionId) return false;
+  const session = await shapeDB.batchSessions.get(sessionId);
+  return session?.status === 'completed';
+};
+
+const isShapeBuildPersisted = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
+  if (!data) return false;
+  if (await hasPersistedVectorTiles(data)) return true;
+  return hasCompletedBatchSession(data);
+};
 
 registry.registerConfigProvider<Partial<ShapeEntity>>({
   nodeType: 'shape',

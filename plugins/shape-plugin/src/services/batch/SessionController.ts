@@ -530,6 +530,27 @@ export class SessionController {
   } | null> {
     const db = getEphemeralShapeDB();
     const features: Feature[] = [];
+    const hasValue = (value: unknown): boolean =>
+      typeof value === 'string' ? value.trim().length > 0 : value != null;
+    const applyFeatureMetadata = (
+      feature: Feature,
+      task: Simplify2Task,
+    ) => {
+      const properties = (feature.properties ??= {});
+      const adminLevel = task.adminLevel;
+      if (adminLevel != null && !hasValue(properties.adminLevel) && !hasValue(properties.admin_level) && !hasValue(properties.ADM_LEVEL)) {
+        properties.adminLevel = adminLevel;
+      }
+      const countryCode = task.countryCode;
+      if (countryCode && !hasValue(properties.ISO_A3) && !hasValue(properties.ISO3) && !hasValue(properties.ADM0_A3)) {
+        properties.ISO_A3 = countryCode;
+        properties.ISO3 = countryCode;
+      }
+      const countryName = task.metadata?.countryName;
+      if (countryName && !hasValue(properties.COUNTRY_NAME) && !hasValue(properties.COUNTRY) && !hasValue(properties.NAME_0)) {
+        properties.COUNTRY_NAME = countryName;
+      }
+    };
     for (const task of this.simplify2Tasks) {
       const bufferId = task.inputBufferId ?? task.config?.inputBufferId;
       if (!bufferId) continue;
@@ -538,6 +559,7 @@ export class SessionController {
       if (!input) continue;
       const decoded = await this.decodeFeatureCollection(input.data);
       if (!decoded) continue;
+      decoded.features.forEach((feature) => applyFeatureMetadata(feature, task));
       features.push(...decoded.features);
     }
     if (features.length === 0) {

@@ -466,7 +466,7 @@ export function PluginDialogFrame<TData>(props: PluginDialogFrameComponentProps<
           if (event.target !== event.currentTarget) return;
           guards.handleBackdropClick();
         }}
-        onWheelCapture={guards.handleWheelCapture}
+        onWheel={guards.handleWheelCapture}
       >
         {frameNode}
       </Box>

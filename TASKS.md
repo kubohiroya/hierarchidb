@@ -53,6 +53,59 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1889) shape-plugin Step6 メタデータの自治体コード/featureId を ISO2+ISO3166-2 に整理（P1）
+- ブランチ: `fix/shape/metadata-iso3166-2-logical-id`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin, packages/tools/gen-iso3166-2
+- 受け入れ基準（DoD）:
+  - [ ] ADM0 は ISO2 の国コードを表示する
+  - [ ] ADM1 は ISO3166-2 コードを表示する
+  - [ ] featureId は論理ID（ADM0/ADM1 のコード）を表示用に使い、内部一意IDは別欄で保持する
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] gen-iso3166-2 の CSV/Store を用いた ADM1 コードの取得方法を確定する
+  - [ ] メタデータ生成または表示のどこで正規化するかを決定する
+  - [ ] 表示/検索/ホバーの参照キーを整理する
+- ロールバック手順：本タスクの差分を revert し、既存のメタデータ表示へ戻す。
+
+1881) shape-plugin Step6 ホバー調査ログ追加 + メタデータ削除 + Stepper 回転条件修正（P1）
+- ブランチ: `fix/shape/step6-hover-metadata-clear-stepper`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin, packages/ui/dialog, packages/ui/gis
+- 受け入れ基準（DoD）:
+  - [ ] ホバー時に feature.properties が一時的に console.debug で出力される
+  - [ ] Step6 メタデータ削除が実装され、Step4 ボタンで実行できる
+  - [ ] Stepper の回転表示がビルド中のみになり停止時に止まる
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] hover 時の debug ログ追加
+  - [ ] メタデータ削除処理を追加し、Step4 から実行できるようにする
+  - [ ] Stepper の回転条件を buildStatus に揃える
+- ロールバック手順：本タスクの差分を revert し、従来挙動へ戻す。
+
+1880) shape-plugin Step6 ホバー時の featureId 重複による誤強調を修正（P1）
+- ブランチ: `fix/shape/preview-hover-id-collision`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: packages/features/gis-sdk, plugins/shape-plugin
+- 受け入れ基準（DoD）:
+  - [ ] ホバー時に別地域が同時に強調表示されない
+  - [ ] Snackbar 表示がホバー対象の地物に一致する
+  - [ ] featureId の一意性が保証される
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] featureId 生成ロジックに一意性の確保を追加する
+  - [ ] 既存ホバー/選択の整合を確認する
+- ロールバック手順：本タスクの差分を revert し、従来の featureId 生成へ戻す。
+
+1879) shape-plugin Step6 プレビューのホバー情報を Snackbar に表示（P1）
+- ブランチ: `fix/shape/preview-hover-snackbar`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin, packages/ui/gis
+- 受け入れ基準（DoD）:
+  - [ ] Step6 プレビューでホバーしたシェイプの国・自治体情報が Snackbar に表示される
+  - [ ] 表示内容が metadata に基づき読みやすく構成される
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] Hover 時に featureId から metadata を引いて表示する
+  - [ ] Snackbar 表示の UI を追加する
+- ロールバック手順：本タスクの差分を revert し、従来の挙動へ戻す。
+
 1878) shape-plugin Step6 プレビューのタイル強調表示が出ない問題の修正（P1）
 - ブランチ: `fix/shape/preview-tile-highlight`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: plugins/shape-plugin, packages/ui/map, tiles DB
@@ -92,18 +145,6 @@
   - [ ] セッション内のタスク生成ルール（download→feature grouping→tile）を整理し実装する
   - [ ] Step5 の表示ロジックが新タスク構成に追従するよう調整する
 - ロールバック手順：本タスクの差分を revert し、従来のタスク構成へ戻す。
-
-1884) shape-plugin Step6 ホイール伝播の詳細対応（P1）
-- ブランチ: `fix/shape/step6-wheel-chain`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: plugins/shape-plugin（Step6 Preview）、packages/ui/data-grid（GenericDataGrid）
-- 受け入れ基準（DoD）:
-  - [ ] Step6 の地図/メタデータ表でホイール操作が有効になる
-  - [ ] 背景ダイアログへのスクロール伝播が発生しない
-  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
-- チェックリスト:
-  - [ ] GenericDataGrid のホイール処理を非パッシブで境界抑止する
-  - [ ] Step6 の地図/表コンテナに overscroll-behavior を追加する
-- ロールバック手順：本タスクの差分を revert する。
 
 1864) LRUSplitView ブレイクポイント別の初期幅/自動開閉制御（P1）
 - ブランチ: `fix/ui/lru-splitview-breakpoints`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -5117,6 +5158,50 @@ P2:
 
 ### Done（完了） <a id="kanban-done"></a>
 
+- 1893) shape-plugin Step4 ワーカー数ラベル文言修正（P1） — 完了 (2025-12-26)
+  - 要点：Step4 のワーカー数ラベルを指定文言へ更新（ja/en）。
+  - 検証：未実施（文言変更のみ）。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/locales/{ja.json,en.json}` の差分を revert する。
+- 1892) shape-plugin Step5 ビルド完了の valid 条件と永続化確認（P1） — 完了 (2025-12-26)
+  - 要点：Step5/Preview の valid 判定を永続データ（shapeDB/batchSessions）参照に変更し、processingStatus/tileSummary の draft 依存を解消。Step6/Download も batchSessions/tiles の永続状態で評価するよう更新。
+  - 検証：`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0、`pnpm --filter @hierarchidb/plugin-ui-host typecheck` exit 0。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/{components/steps-provider.tsx,hooks/useShapePreviewStep.ts,hooks/useDownloadConfigSection.ts}`, `packages/plugin-ui-host/src/headless/usePluginDialogController/steps.tsx` の差分を revert する。
+- 1892) @hierarchidb/download 401 復帰フローの復旧（P1） — 完了 (2025-12-26)
+  - 要点：FetchNetworkPort に authFetch を追加し、download/worker のネットワーク経路が AuthRecoveryService.fetchWithAuth を使うよう統一。401 時に AuthRequired → UI ハンドラを起動できるようにした。
+  - 検証：未実施。
+  - ロールバック手順：`packages/features/download/src/adapters/FetchNetworkPort.ts`、`packages/features/download/src/createDownloadService.ts`、`packages/runtime-worker/src/services/downloadAdapter.ts` の差分を revert する。
+- 1891) shape-plugin/basemap-plugin 最終ステップのホイール操作復旧（P1） — 完了 (2025-12-26)
+  - 要点：PluginDialogFrame のホイール捕捉を capture から bubble に変更し、MapLibre のホイールズーム/表のスクロールがイベントを受け取れるよう調整。shape-plugin は tabIndex=0 のときのみ map layer 更新、map container capture を撤去。
+  - 検証：未実施。
+  - ロールバック手順：`packages/ui/dialog/src/headless/PluginDialogFrame.tsx`、`plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts`、`plugins/shape-plugin/src/ui/hooks/preview/useVectorTilePreviewTable.ts` の差分を revert する。
+- 1890) shape-plugin Step7 仮想テーブルのスクロール復旧（styler比較）（P1） — 完了 (2025-12-26)
+  - 要点：styler-plugin の ResizeObserver 方式に合わせてメタデータ表の高さを確定し、固定高さでスクロール領域を確保。
+  - 検証：未実施。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` の差分を revert する。
+- 1889) shape-plugin Step5 ビルド開始ボタンの即時ローディング化（P1） — 完了 (2025-12-26)
+  - 要点：開始クリック時にローカル pending を立て、BuildStepPanel の status/label を即時更新して loading+disabled を反映。
+  - 検証：`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/hooks/{useShapeBuildProgressStep.ts,build/useBatchSessionActions.ts}` の差分を revert する。
+- 1888) shape-plugin Step6 ホイール伝播のデバッグログ追加（P1） — 完了 (2025-12-26)
+  - 要点：Step6 の地図/表/ドキュメントに wheel listener を追加してデバッグログを出力。
+  - 検証：未実施。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` の差分を revert する。
+- 1887) shape-plugin Step6 ホイール捕捉の副作用撤去（P1） — 完了 (2025-12-26)
+  - 要点：Step6 の onWheelCapture を撤去し、MapLibre/表のホイール処理を阻害しないよう調整。
+  - 検証：未実施。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` の差分を revert する。
+- 1886) shape-plugin 未使用候補の削除（P1） — 完了 (2025-12-26)
+  - 要点：未参照のモック関数とユーティリティを削除し、未使用のテスト/アダプタ/モックファイルを整理。
+  - 検証：`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。
+  - ロールバック手順：`plugins/shape-plugin/src/common/mock/data.ts` と削除済みファイル（`services/datasources/__tests__/demo.ts`/`manual-test.ts`、`services/batch/adapters/RuntimeWorkerSimplifyAdapters.ts`、`ui/__tests__/mocks/useWorkerAPIClient.ts`）の差分を revert する。
+- 1885) ui-grid GenericDataGrid wheel handler scope 修正（P1） — 完了 (2025-12-26)
+  - 要点：useEffect をコンポーネント内へ移動し、stopWheelPropagation/parentRef の参照エラーを解消。
+  - 検証：未実施。
+  - ロールバック手順：`packages/ui/data-grid/src/GenericDataGrid.tsx` の差分を revert する。
+- 1884) shape-plugin Step6 ホイール伝播の詳細対応（P1） — 完了 (2025-12-26)
+  - 要点：GenericDataGrid に非パッシブ wheel ハンドラを追加し境界で preventDefault。Step6 の地図/表コンテナに overscroll-behavior を追加。
+  - 検証：未実施。
+  - ロールバック手順：`packages/ui/data-grid/src/GenericDataGrid.tsx` と `plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` の差分を revert する。
 - 1883) shape-plugin Step6 ホイールイベントの捕捉修正（P1） — 完了 (2025-12-26)
   - 要点：Step6 の地図/メタデータ領域でホイール捕捉を追加し、GenericDataGrid のホイール捕捉を capture に変更。
   - 検証：未実施。
@@ -5161,6 +5246,22 @@ P2:
   - 要点：Preview でタイル準備中の待機UI/ポーリングを追加し、メタデータ一覧を Step3 選択の国/レベルでフィルタ。
   - 検証：未実施。
   - ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` と `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` と `plugins/shape-plugin/src/ui/locales/{ja.json,en.json}` の差分を revert する。
+- 1872) shape-plugin MapLibreMapInstance 操作の型エラー修正（P1） — 完了 (2025-12-26)
+  - 要点：MapLibre のインタラクション系 API と getCanvas を型補助で扱い、useShapePreviewStep の TS2339 を解消。
+  - 検証：未実施。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` の差分を revert する。
+- 1873) shape-plugin Step4 スライダーの通常/反転判定再評価（P1） — 完了 (2025-12-26)
+  - 要点：Min Vertex Count を通常に戻し、Simple Shape Vertex Threshold を反転へ変更。Quick Reject ヘルプ文言をロジックに整合。
+  - 検証：未実施。
+  - ロールバック手順：`plugins/shape-plugin/src/ui/components/processing/AreaFilterPanel.tsx` の差分を revert する。
+- 1874) shape-plugin Step5 一次簡略化での小国欠落エラー調査（P1） — 完了 (2025-12-26)
+  - 要点：GeoBoundaries の feature 配列に未定義要素が混入するケースで `feature.properties` 参照が落ちる可能性を特定。処理前に feature の存在チェック/フィルタを入れる方針を提示。
+  - 検証：調査のみ。
+  - ロールバック手順：調査のみのため差分なし（運用ログ追記を削除）。
+- 1875) shape-plugin GeoBoundaries の未定義 feature ガード追加（P1） — 完了 (2025-12-26)
+  - 要点：feature 配列の undefined を除外し、空配列時は明示的なエラーを出すようにした。
+  - 検証：未実施。
+  - ロールバック手順：`plugins/shape-plugin/src/services/datasources/GeoBoundariesStrategy.ts` の差分を revert する。
 - 1871) ui-lru-splitview expandedCount 未定義エラー修正（P1） — 完了 (2025-12-26)
   - 要点：expandedCount を paneStates から導出し、getSizes で使用する前提を明確化。
   - 検証：未実施。
@@ -11703,7 +11804,37 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-26 09:48 start: fix/auth/download-401-redirect — @hierarchidb/download の 401 復帰フロー調査と修復に着手。DoD: Kanban 1892 のとおり。
+- 2025-12-26 10:05 progress: fix/auth/download-401-redirect — download の FetchNetworkPort が AuthRecoveryService.fetchWithAuth を使わないため、401 が AuthNotificationRegistry へ伝播せず UI の localStorage 保存が走らないことを確認。
+- 2025-12-26 10:08 done: fix/auth/download-401-redirect — FetchNetworkPort に authFetch を追加し、createDownloadService / runtime-worker の downloadAdapter で AuthRecoveryService.fetchWithAuth を採用。401 時に UI 側の registerAuthRecoveryHandlers が発火できるよう修正。検証: 未実施。ロールバック: Done の Kanban 1892 を参照。
+- 2025-12-26 09:22 start: fix/shape-basemap/final-step-wheel-scroll — shape/basemap 最終ステップのホイール操作復旧と styler との差分分析に着手。DoD: Kanban 1891 のとおり。
+- 2025-12-26 09:30 progress: fix/shape-basemap/final-step-wheel-scroll — PluginDialogFrame の onWheelCapture が MapLibre/表の wheel を捕捉し、MapLibre 側へ届かない可能性を確認。bubble で stopPropagation する方針に変更。shape-plugin は map container の capture listener を撤去し、tabIndex=0 のときのみ map layer 更新へ変更。
+- 2025-12-26 09:32 progress: fix/shape-basemap/final-step-wheel-scroll — Step6 の metadata 表で JSX を含む .ts を `React.createElement` に変更して Vite overlay を解消。
+- 2025-12-26 09:34 done: fix/shape-basemap/final-step-wheel-scroll — wheel 捕捉位置を調整し、MapLibre と表のホイール処理が優先されるよう修正。検証: 未実施。ロールバック: Done の Kanban 1891 を参照。
+- 2025-12-26 09:16 start: fix/shape/step7-virtual-scroll — styler-plugin のスクロール実装比較と shape-plugin の仮想テーブル修正に着手。DoD: Kanban 1890 のとおり。
+- 2025-12-26 09:17 progress: fix/shape/step7-virtual-scroll — styler-plugin は ResizeObserver で一覧高さを確定し、overflow auto の内側スクロールを確保。shape-plugin は maxHeight=100% のためスクロール領域が未確定で伝播していたため、計測した高さを適用する方針。
+- 2025-12-26 09:17 done: fix/shape/step7-virtual-scroll — shape-plugin に ResizeObserver でメタデータ表の高さを算出し、固定高さを適用。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` の差分を revert。
+- 2025-12-26 02:49 start: fix/shape/maplibre-instance-typing — MapLibreMapInstance の TS2339 を解消する対応に着手。DoD: Kanban 1872 のとおり。
+- 2025-12-26 02:49 done: fix/shape/maplibre-instance-typing — インタラクション系 API と getCanvas を型補助で扱い、TS2339 を解消。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` の差分を revert。
+- 2025-12-26 10:05 start: analysis/shape/step4-slider-inversion — Step4 スライダーの通常/反転判定を再評価する調査に着手。DoD: Kanban 1873 のとおり。
+- 2025-12-26 10:07 progress: analysis/shape/step4-slider-inversion — Step4 の各スライダーの意味とフィルタ処理への影響を確認。
+- 2025-12-26 10:07 done: analysis/shape/step4-slider-inversion — 通常/反転の妥当性を項目別に判定。検証: 調査のみ。ロールバック: `TASKS.md` の運用ログ追記を削除。
+- 2025-12-26 10:10 done: fix/shape/step4-slider-inversion — Min Vertex Count を通常トラックに戻し、Simple Shape Vertex Threshold を反転トラックへ変更。Quick Reject のヘルプ文言をロジックに整合。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/processing/AreaFilterPanel.tsx` の差分を revert。
+- 2025-12-26 10:22 start: analysis/shape/step5-stage1-missing-features — Step5 一次簡略化での欠落エラーを調査開始。DoD: Kanban 1874 のとおり。
+- 2025-12-26 10:25 done: analysis/shape/step5-stage1-missing-features — GeoBoundaries の processData で feature 配列に未定義が混入すると `feature.properties` 参照で落ちる可能性を確認。feature を事前フィルタする修正方針を整理。検証: 調査のみ。ロールバック: `TASKS.md` の運用ログ追記を削除。
+- 2025-12-26 10:26 start: fix/shape/geoboundaries-undefined-feature-guard — GeoBoundaries の未定義 feature ガード追加に着手。DoD: Kanban 1875 のとおり。
+- 2025-12-26 10:26 done: fix/shape/geoboundaries-undefined-feature-guard — feature の undefined を事前除外し、空配列時に明示エラーを出すガードを追加。検証: 未実施。ロールバック: `plugins/shape-plugin/src/services/datasources/GeoBoundariesStrategy.ts` の差分を revert。
+- 2025-12-26 01:51 start: debug/shape/step6-wheel-logging — Step6 ホイール伝播のデバッグログ追加に着手。DoD: Kanban 1888 のとおり。
+- 2025-12-26 02:06 progress: debug/shape/step6-wheel-logging — map canvas/table container へ wheel ログを追加し、mapInstance の scroll/drag 操作を再有効化。テーブルの overflowY を明示。
+- 2025-12-26 02:12 progress: debug/shape/step6-wheel-logging — mapInstance の canvas に wheel stopPropagation を追加し、背景スクロールの伝播を遮断。
+- 2025-12-26 08:47 progress: debug/shape/step6-wheel-logging — map container/canvas と table container を querySelector で再取得し、MapLibre コンテナに wheel stopPropagation を追加。
+- 2025-12-26 01:51 done: debug/shape/step6-wheel-logging — Step6 の地図/表/ドキュメントに wheel listener を追加してデバッグログを出力。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` の差分を revert。
+- 2025-12-26 01:46 start: fix/shape/step6-wheel-propagation — Step6 のホイール捕捉の副作用撤去に着手。DoD: Kanban 1887 のとおり。
+- 2025-12-26 01:46 done: fix/shape/step6-wheel-propagation — Step6 の onWheelCapture を撤去し、MapLibre/表のホイール処理を阻害しないよう調整。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` の差分を revert。
+- 2025-12-26 01:19 start: fix/ui-grid/wheel-handler-scope — GenericDataGrid の wheel handler scope 修正に着手。DoD: Kanban 1885 のとおり。
+- 2025-12-26 01:19 done: fix/ui-grid/wheel-handler-scope — useEffect をコンポーネント内へ移動して参照エラーを解消。検証: 未実施。ロールバック: `packages/ui/data-grid/src/GenericDataGrid.tsx` の差分を revert。
 - 2025-12-26 01:17 start: fix/shape/step6-wheel-chain — Step6 のホイール伝播詳細対応に着手。DoD: Kanban 1884 のとおり。
+- 2025-12-26 01:18 done: fix/shape/step6-wheel-chain — GenericDataGrid に非パッシブ wheel ハンドラを追加し、境界で preventDefault。Step6 の地図/表コンテナに overscroll-behavior を追加。検証: 未実施。ロールバック: `packages/ui/data-grid/src/GenericDataGrid.tsx` と `plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` の差分を revert。
 - 2025-12-26 01:11 start: fix/shape/step6-wheel-capture — Step6 のホイールイベント捕捉修正に着手。DoD: Kanban 1883 のとおり。
 - 2025-12-26 01:12 done: fix/shape/step6-wheel-capture — Step6 の地図/メタデータ領域でホイール捕捉を追加し、GenericDataGrid のホイール捕捉を capture に変更。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` と `packages/ui/data-grid/src/GenericDataGrid.tsx` の差分を revert。
 - 2025-12-26 01:05 start: fix/shape/step6-metadata-wheel — Step6 メタデータ表のホイール伝播抑止に着手。DoD: Kanban 1882 のとおり。
@@ -11730,6 +11861,21 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-26 02:20 start: fix/shape/preview-tile-highlight — Step6 プレビューで生成済みタイルの強調表示が出ない問題の修正に着手。DoD: Kanban 1878 のとおり。
 - 2025-12-26 02:25 progress: fix/shape/preview-tile-highlight — tilesLayer の既定値を vector tile の実レイヤー名（layer0）へ修正し、source-layer 不一致で描画されない問題を解消。
 - 2025-12-26 02:27 done: fix/shape/preview-tile-highlight — Step6 プレビューの tilesLayer 既定値を layer0 に更新。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` の差分を revert。
+- 2025-12-26 02:40 start: fix/shape/preview-hover-snackbar — Step6 プレビューのホバー情報を Snackbar に表示する対応に着手。DoD: Kanban 1879 のとおり。
+- 2025-12-26 02:45 progress: fix/shape/preview-hover-snackbar — Step6 の Snackbar に auto-hide を追加し、ホバー時に短時間表示されるよう調整。
+- 2025-12-26 02:50 progress: fix/shape/preview-hover-snackbar — auto-hide を 3 倍（3600ms）に延長。
+- 2025-12-26 03:10 progress: fix/shape/preview-hover-snackbar — featureId を countryCode/adm レベル接頭辞付きで生成し、hover で別地域が同時に強調表示される重複問題を回避。
+- 2025-12-26 03:20 start: fix/shape/preview-hover-id-collision — Step6 ホバー時の featureId 重複による誤強調を修正する対応に着手。DoD: Kanban 1880 のとおり。
+- 2025-12-26 03:25 progress: fix/shape/preview-hover-id-collision — featureId に country/ADM/adminCode 接頭辞と index を付与し、一意性を強制してホバー誤連動を回避。
+- 2025-12-26 03:40 progress: fix/shape/preview-hover-id-collision — hover/強調の filter を feature id ではなく properties.id 参照に切り替え、Snackbar も metadata と一致するよう修正。
+- 2025-12-26 03:55 start: fix/shape/step6-hover-metadata-clear-stepper — Step6 ホバー調査ログ追加・メタデータ削除・Stepper 回転条件修正に着手。DoD: Kanban 1881 のとおり。
+- 2025-12-26 04:05 progress: fix/shape/step6-hover-metadata-clear-stepper — Step6 ホバー調査ログ追加・メタデータ削除ボタン追加・Stepper 回転条件の見直しを実施中。
+- 2025-12-26 04:20 progress: fix/shape/step6-hover-metadata-clear-stepper — Step6 メタデータの adminLevel 空欄対応として、VectorTile 生成前に country/admin 情報を feature.properties に注入し、表示側は ADM 表記へ整形。
+- 2025-12-26 04:35 progress: fix/shape/metadata-iso3166-2-logical-id — gen-iso3166-2 の型/ストア/CSV 出力を確認。ISO2/ISO3166-2 の取得は `SubdivisionRecord.code` と alpha2 で対応可能。shape-plugin 側は `services/utils/iso3166.ts` で ISO2/ISO3 変換を利用済み。ADM1 を ISO3166-2 へ正規化する照合方法の決定が必要。
+- 2025-12-26 04:55 start: fix/shape/metadata-iso3166-2-logical-id — Step6 メタデータの ISO2/ISO3166-2 正規化と N/A 表示/警告/エラーカラー対応に着手。DoD: Kanban 1889 のとおり。
+- 2025-12-26 05:20 progress: fix/shape/metadata-iso3166-2-logical-id — ISO2/ISO3166-2 の正規化を UI 側で実施し、解決不能時は N/A を設定して console.warn を出力。地図上は invalid レイヤー、一覧は N/A を error color 表示に変更。
+- 2025-12-26 05:30 progress: fix/shape/metadata-iso3166-2-logical-id — selectionMetadata の adminLevel が一意に決まる場合は欠落した adminLevel を補完し、ADM 表示が空欄にならないよう補正。
+- 2025-12-26 06:05 start: analysis/shape/step5-pause-worker-lifecycle — Step5 Pause が worker 処理を止めない件と Worker ライフサイクルイベントの発火経路を調査。DoD: 初期化/遷移/操作の発火順を整理して報告。
 - 2025-12-26 01:15 start: refactor/shape/step5-pipeline-tasks — Step5 のタスク粒度をパイプライン設計（download→feature grouping→tile）に合わせて再構成する対応に着手。DoD: Kanban 1873 のとおり。
 - 2025-12-26 01:45 progress: refactor/shape/step5-pipeline-tasks — Download 後に Feature 単位の raw buffer を生成し Simplify1/2 を Feature グループ単位へ変更。VectorTile 入力は Simplify2 の統合バッファに寄せ、タイル座標ベースのタスクを生成するよう再構成。Step5/worker のタスクタイトルはタイル座標を優先して表示するよう更新。
 - 2025-12-26 00:22 start: fix/shape/step5-wait-ui-step6-metadata-filter — Step5 の待機UI表示と Step6 メタデータ一覧の国フィルタ不整合を修正する対応に着手。DoD: Kanban 1872 のとおり。
@@ -12569,3 +12715,12 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-25 22:55 done: fix/cors-proxy/jwt-decode-guard — JWT セグメント不足時に Invalid token を返し、decode 前の型ガードで TS2345 を解消。検証: `pnpm --filter @hierarchidb/cors-proxy typecheck` exit 0。ロールバック: `packages/backend/cors-proxy/src/worker.ts` の差分を revert。
 - 2025-12-25 23:31 start: analysis/shape/src-unused-inventory — shape-plugin/src の未使用ファイル/関数/定数を棚卸しする調査に着手（Kanban: 1868）。DoD: 未使用候補一覧と根拠、削除/保留分類、運用ログ更新。
 - 2025-12-25 23:35 done: analysis/shape/src-unused-inventory — 未使用ファイル/関数/定数の候補を `rg` で再確認し一覧化（削除/保留を分類）。検証: `rg` 検索。ロールバック: 調査のみのため差分なし（運用ログ追記を削除）。
+- 2025-12-26 01:21 start: chore/shape/prune-unused-src — shape-plugin の削除候補（ファイル/関数）を削除する対応に着手。DoD: Kanban 記載どおり削除対象の削除、typecheck 結果記録、運用ログ/ロールバック記載。（Kanban: 1886）
+- 2025-12-26 01:25 done: chore/shape/prune-unused-src — 未使用のモック関数（generateMock* / generateSampleCheckboxMatrix / calculateEstimatedProcessingTime）と ShapeErrorFactory / validateShapeName / isShapeBatchAPIV2Enabled / getCategoryLabel / getCategoryColor を削除。未参照ファイル（demo.ts/manual-test.ts/RuntimeWorkerSimplifyAdapters.ts/useWorkerAPIClient.ts）も削除。検証: `pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。ロールバック: `plugins/shape-plugin/src/common/{mock/data.ts,types/ShapeErrorHierarchy.ts,types/category-types.ts}`, `plugins/shape-plugin/src/services/{batch/UnifiedShapeBatchManager.ts,utils/utils.ts}` と削除済みファイル差分を revert。
+- 2025-12-26 08:52 start: fix/shape/build-start-immediate-loading — Step5 の「ビルド開始」押下直後に loading+disabled になるよう改善に着手。DoD: Kanban 記載どおり即時ローディング化、挙動維持、運用ログ/ロールバック記載。（Kanban: 1889）
+- 2025-12-26 08:53 done: fix/shape/build-start-immediate-loading — 開始直後に pending を立てて status を一時的に running 扱いにし、ボタンの loading+disabled を即時反映。検証: `pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。ロールバック: `plugins/shape-plugin/src/ui/hooks/{useShapeBuildProgressStep.ts,build/useBatchSessionActions.ts}` の差分を revert。
+- 2025-12-26 09:47 start: analysis/shape/build-valid-persistence — Step5 の valid 条件と永続化されないデータの特定に着手。DoD: Kanban 記載どおり条件/原因/再現対応の説明。（Kanban: 1892）
+- 2025-12-26 09:57 progress: analysis/shape/build-valid-persistence — processingStatus/tileSummary の参照箇所を洗い出し。Step5 以外（Step6 preview, DownloadConfigSection の削除ボタン制御）でも draft 値を参照していることを確認。
+- 2025-12-26 10:10 done: analysis/shape/build-valid-persistence — Step5/Preview の valid 判定を shapeDB/batchSessions の永続データで評価するよう変更し、Step6/Download も同じ参照元に統一。検証: `pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0、`pnpm --filter @hierarchidb/plugin-ui-host typecheck` exit 0。ロールバック: `plugins/shape-plugin/src/ui/{components/steps-provider.tsx,hooks/useShapePreviewStep.ts,hooks/useDownloadConfigSection.ts}`, `packages/plugin-ui-host/src/headless/usePluginDialogController/steps.tsx` を revert。
+- 2025-12-26 10:31 start: fix/shape/step4-worker-labels — Step4 ワーカー数ラベル文言の更新に着手。DoD: 指定文言へ更新、運用ログ/ロールバック記載。（Kanban: 1893）
+- 2025-12-26 10:31 done: fix/shape/step4-worker-labels — Step4 のワーカー数ラベルを指定文言へ更新（ja/en）。検証: 未実施（文言変更のみ）。ロールバック: `plugins/shape-plugin/src/ui/locales/{ja.json,en.json}` の差分を revert。

@@ -120,7 +120,6 @@ export const AreaFilterPanel: React.FC<Props> = ({
                     { value: 100, label: '100' },
                     { value: 200, label: '200' },
                   ]}
-                  track="inverted"
                   disabled={disabled}
                 />
               </Box>
@@ -196,7 +195,7 @@ export const AreaFilterPanel: React.FC<Props> = ({
                 />
               </Box>
               <Typography variant="caption" color="text.secondary">
-                {t('processing.filter.quickRejectHelp', 'Lower values reject more tiny features quickly.')}
+                {t('processing.filter.quickRejectHelp', 'Higher values reject more tiny features quickly.')}
               </Typography>
             </div>
             <div>
@@ -228,6 +227,7 @@ export const AreaFilterPanel: React.FC<Props> = ({
                     { value: 100, label: '100' },
                     { value: 200, label: '200' },
                   ]}
+                  track="inverted"
                   disabled={disabled || !baseHybridConfig}
                 />
               </Box>

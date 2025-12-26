@@ -35,9 +35,11 @@ export const DownloadConfigSection: React.FC<Props> = ({ config, draft, disabled
     canDeleteStage1,
     canDeleteStage2,
     canDeleteTiles,
+    canDeleteMetadata,
     handleDeleteRaw,
     handleDeleteStage,
     handleDeleteTiles,
+    handleDeleteMetadata,
     update,
   } = useDownloadConfigSection({ config, draft, disabled, onChange, onResetSession });
 
@@ -96,9 +98,11 @@ export const DownloadConfigSection: React.FC<Props> = ({ config, draft, disabled
               canDeleteStage1={canDeleteStage1}
               canDeleteStage2={canDeleteStage2}
               canDeleteTiles={canDeleteTiles}
+              canDeleteMetadata={canDeleteMetadata}
               onDeleteRaw={handleDeleteRaw}
               onDeleteStage={handleDeleteStage}
               onDeleteTiles={handleDeleteTiles}
+              onDeleteMetadata={handleDeleteMetadata}
             />
           </Grid>
           <DownloadRetryControls

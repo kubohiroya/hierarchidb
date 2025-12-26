@@ -21,6 +21,7 @@ export async function createDownloadService(opts?: DownloadServiceOptions): Prom
     headers: () => auth.getAuthHeaders(),
     perHostConcurrency: opts?.perHostConcurrency ?? 4,
     corsProxyBaseURL: opts?.corsProxyBaseURL,
+    authFetch: (url, init) => auth.fetchWithAuth(url, init, { pluginType: 'generic' }),
   });
   const storage = new DexieChunkStoragePort(`${opts?.dbPrefix || 'hidb'}-chunks`);
   const integrity = new (class {

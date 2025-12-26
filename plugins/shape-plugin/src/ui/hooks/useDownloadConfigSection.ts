@@ -28,12 +28,13 @@ export const useDownloadConfigSection = ({ config, draft, disabled, onChange, on
   const db = getEphemeralShapeDB();
   const nodeId = (draft as { nodeId?: NodeId })?.nodeId;
   const sessionId = resolveShapeSessionId(draft);
-  const processingStatus = (draft as { processingStatus?: string })?.processingStatus ?? 'idle';
   const bridgeRef = useMemo(() => getWorkerBridge(), []);
 
   const [counts, setCounts] = useState({ raw: 0, stage1: 0, stage2: 0, tiles: 0, cache: 0 });
   const [finalCounts, setFinalCounts] = useState({ tiles: 0, metadata: 0 });
   const [failedCounts, setFailedCounts] = useState({ download: 0, simplify1: 0, simplify2: 0, vectortile: 0 });
+  const [persistedStatus, setPersistedStatus] = useState<string | null>(null);
+  const [statusLoaded, setStatusLoaded] = useState(false);
   const deleteLabel = useMemo(() => (
     counts.raw > 0
       ? t('processing.download.deleteDownloadedFilesWithCount', 'Delete Downloaded Files ({{count}} files)', { count: counts.raw })
@@ -87,7 +88,33 @@ export const useDownloadConfigSection = ({ config, draft, disabled, onChange, on
     };
   }, [config, loadCounts]);
 
-  const isRunning = processingStatus === 'processing';
+  useEffect(() => {
+    let cancelled = false;
+    if (!sessionId) {
+      setPersistedStatus(null);
+      setStatusLoaded(true);
+      return () => {
+        cancelled = true;
+      };
+    }
+    setStatusLoaded(false);
+    shapeDB.batchSessions.get(sessionId).then((session) => {
+      if (cancelled) return;
+      setPersistedStatus(session?.status ?? null);
+      setStatusLoaded(true);
+    }).catch(() => {
+      if (cancelled) return;
+      setPersistedStatus(null);
+      setStatusLoaded(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId]);
+
+  const isRunning = !statusLoaded
+    ? Boolean(sessionId)
+    : persistedStatus === 'running';
   const hasFinalOutputs = finalCounts.tiles > 0 || finalCounts.metadata > 0;
   const canDeleteRaw = !isRunning && !disabled && (counts.raw > 0 || failedCounts.download > 0);
   const canDeleteStage1 = !isRunning && !disabled && (counts.stage1 > 0 || failedCounts.simplify1 > 0);
@@ -97,6 +124,7 @@ export const useDownloadConfigSection = ({ config, draft, disabled, onChange, on
     || failedCounts.vectortile > 0
     || hasFinalOutputs
   );
+  const canDeleteMetadata = !isRunning && !disabled && finalCounts.metadata > 0;
 
   const clearBatchTasksForType = useCallback(async (taskType: string) => {
     if (!sessionId) return;
@@ -180,6 +208,14 @@ export const useDownloadConfigSection = ({ config, draft, disabled, onChange, on
     notify.success('Deleted tiles');
   }, [clearBatchTasksForType, clearFinalOutputs, db, loadCounts, persistTileSummaryReset, sessionId]);
 
+  const handleDeleteMetadata = useCallback(async () => {
+    if (!sessionId) return notify.warning('SessionId is missing.');
+    const metadataDb = await getShapeTileMetadataDB();
+    await metadataDb.featureMetadata.where('sessionId').equals(sessionId).delete();
+    await loadCounts();
+    notify.success('Deleted metadata');
+  }, [loadCounts, sessionId]);
+
   const update = useCallback((partial: Partial<BatchConfig>) => {
     onChange(mergeBatchConfig({ ...config, ...partial }));
   }, [config, onChange]);
@@ -197,9 +233,11 @@ export const useDownloadConfigSection = ({ config, draft, disabled, onChange, on
     canDeleteStage1,
     canDeleteStage2,
     canDeleteTiles,
+    canDeleteMetadata,
     handleDeleteRaw,
     handleDeleteStage,
     handleDeleteTiles,
+    handleDeleteMetadata,
     update,
   };
 };

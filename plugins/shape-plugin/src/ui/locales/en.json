@@ -32,6 +32,7 @@
       "deleteStage1Cache": "Delete Stage1 Cache",
       "deleteStage2Cache": "Delete Stage2 Cache",
       "deleteTiles": "Delete Tiles",
+      "deleteMetadata": "Delete Metadata",
       "timeoutMs": "Timeout (ms)",
       "timeoutHelp": "Maximum time to wait for each download before failing.",
       "retryAttempts": "Retry Attempts",
@@ -49,9 +50,9 @@
     },
     "filter": {
       "title": "Extraction Setting",
-      "workersStage1": "Number of Workers for Polygon-Simplification (Stage 1)",
+      "workersStage1": "Worker Count for Primary Simplification",
       "workersStage1Help": "Parallel workers for feature simplification in stage 1.",
-      "workersStage2": "Number of Workers for Tile Generation (Stage 2)",
+      "workersStage2": "Worker Count for Tile Preprocessing",
       "workersStage2Help": "Parallel workers for tile preparation in stage 2.",
       "method": "Filtering Method",
       "methodBBox": "Bounding Box Only (Fastest)",
@@ -84,7 +85,7 @@
     "tile": {
       "title": "Tile Generation (Zoom-Aware Final Simplification)",
       "description": "Performs final zoom-aware simplification and generates vector tiles.",
-      "workers": "Tile Worker Count",
+      "workers": "Worker Count for Tile Generation",
       "workersHelp": "Parallel workers for tile generation.",
       "bufferSize": "Tile Margin (px)",
       "bufferSizeHelp": "Extra margin to avoid visible seams at tile edges.",

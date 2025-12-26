@@ -20,6 +20,7 @@ export async function createSharedDownloadService(
   const net = new FetchNetworkPort({
     headers: () => auth.getAuthHeaders(),
     perHostConcurrency: opts?.perHostConcurrency ?? 4,
+    authFetch: (url, init) => auth.fetchWithAuth(url, init, { pluginType: 'generic' }),
   });
   const storage = new DexieChunkStoragePort(`${opts?.dbPrefix || 'hidb'}-chunks`);
   const integrity = new (class {

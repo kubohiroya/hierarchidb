@@ -10,12 +10,16 @@ export interface FetchNetworkPortOptions {
   globalConcurrency?: number;   // optional global semaphore across hosts
   rps?: number;                 // optional requests-per-second token bucket (global)
   corsProxyBaseURL?: string;
+  authFetch?: (url: string, init?: RequestInit) => Promise<Response>;
 }
 
 type HostKey = string;
 
 export class FetchNetworkPort implements NetworkPort {
-  private opts: Required<Omit<FetchNetworkPortOptions, 'corsProxyBaseURL'>> & { corsProxyBaseURL: string };
+  private opts: Required<Omit<FetchNetworkPortOptions, 'corsProxyBaseURL' | 'authFetch'>> & {
+    corsProxyBaseURL: string;
+    authFetch?: (url: string, init?: RequestInit) => Promise<Response>;
+  };
   private semaphores = new Map<HostKey, Semaphore>();
   private globalSemaphore?: Semaphore;
   private tokenBucket?: TokenBucket;
@@ -30,6 +34,7 @@ export class FetchNetworkPort implements NetworkPort {
       globalConcurrency: opts.globalConcurrency ?? 0,
       rps: opts.rps ?? 0,
       corsProxyBaseURL: opts.corsProxyBaseURL ?? '',
+      authFetch: opts.authFetch,
     };
     if (this.opts.globalConcurrency > 0) this.globalSemaphore = new Semaphore(this.opts.globalConcurrency);
     if (this.opts.rps > 0) this.tokenBucket = new TokenBucket(this.opts.rps);
@@ -64,7 +69,8 @@ export class FetchNetworkPort implements NetworkPort {
       while (attempt <= this.opts.retries) {
         try {
           const target = resolveNetworkUrl(url, { corsProxyBaseURL: this.opts.corsProxyBaseURL });
-          const res = await fetch(target, { ...init, headers });
+          const fetcher = this.opts.authFetch ?? fetch;
+          const res = await fetcher(target, { ...init, headers });
           if (res.ok) return wrap(res);
           if (!this.shouldRetry(res.status)) return wrap(res);
           await sleep(backoff(attempt++, this.opts.baseDelayMs, this.opts.maxDelayMs));

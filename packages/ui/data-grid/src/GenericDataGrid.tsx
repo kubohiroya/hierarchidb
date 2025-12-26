@@ -310,6 +310,31 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
 
   // Virtual scrolling setup
   const parentRef = React.useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!stopWheelPropagation) return;
+    const container = parentRef.current;
+    if (!container) return;
+    const handleWheel = (event: WheelEvent) => {
+      event.stopPropagation();
+      const scrollHeight = container.scrollHeight;
+      const clientHeight = container.clientHeight;
+      const scrollable = scrollHeight > clientHeight + 1;
+      if (!scrollable) {
+        event.preventDefault();
+        return;
+      }
+      const scrollTop = container.scrollTop;
+      const atTop = scrollTop <= 0;
+      const atBottom = scrollTop + clientHeight >= scrollHeight - 1;
+      if ((event.deltaY < 0 && atTop) || (event.deltaY > 0 && atBottom)) {
+        event.preventDefault();
+      }
+    };
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+    };
+  }, [stopWheelPropagation]);
   /*
   const _virtualizer = useVirtualizer({
     count: rows.length,
@@ -711,28 +736,3 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
     </Box>
   );
 }
-  useEffect(() => {
-    if (!stopWheelPropagation) return;
-    const container = parentRef.current;
-    if (!container) return;
-    const handleWheel = (event: WheelEvent) => {
-      event.stopPropagation();
-      const scrollHeight = container.scrollHeight;
-      const clientHeight = container.clientHeight;
-      const scrollable = scrollHeight > clientHeight + 1;
-      if (!scrollable) {
-        event.preventDefault();
-        return;
-      }
-      const scrollTop = container.scrollTop;
-      const atTop = scrollTop <= 0;
-      const atBottom = scrollTop + clientHeight >= scrollHeight - 1;
-      if ((event.deltaY < 0 && atTop) || (event.deltaY > 0 && atBottom)) {
-        event.preventDefault();
-      }
-    };
-    container.addEventListener('wheel', handleWheel, { passive: false });
-    return () => {
-      container.removeEventListener('wheel', handleWheel);
-    };
-  }, [stopWheelPropagation]);

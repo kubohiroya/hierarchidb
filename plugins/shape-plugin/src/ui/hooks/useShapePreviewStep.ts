@@ -4,6 +4,7 @@ import type { ShapeEntity } from '../../common/types/index.js';
 import { useTranslation } from '../i18n.js';
 import { isShapePreviewMetadataEnabled } from '../../common/config/previewFlags.js';
 import { getShapeTileMetadataDB, type ShapeFeatureMetadataRow } from '../../services/database/ShapeTileMetadataDB.js';
+import { ensureIso3166Data, getCountry, type SubdivisionRecord } from '@hierarchidb/gen-iso3166-2/browser';
 import { useAtom } from 'jotai';
 import {
   shapePreviewSearchAtom,
@@ -22,6 +23,7 @@ import {
 } from '@hierarchidb/ui-gis';
 import { useVectorTilePreviewTable } from './preview/useVectorTilePreviewTable.js';
 import { getTile, getTileSummary } from '../../services/tiles/RuntimeTileClient.js';
+import { shapeDB } from '../../services/database/ShapeDB.js';
 
 type ShapePreviewDraft = Partial<ShapeEntity> & {
   tilesUrl?: string;
@@ -37,6 +39,8 @@ const DEFAULT_VIEW: MapWithVectorTilesProps['initialViewState'] = {
 
 const DEFAULT_BOUNDS_MARGIN = 0.1;
 const MIN_BOUNDS_MARGIN = 0.25;
+const ISO3166_CSV_URL = '/iso3166-2-level1.csv';
+const ISO3166_UNRESOLVED = 'N/A';
 
 export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
   const { t } = useTranslation();
@@ -54,10 +58,14 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
   const tilesUrl = previewDraft.tilesUrl ?? previewDraft.tilesEndpoint ?? '';
   const tilesLayer = previewDraft.tilesLayer ?? 'layer0';
   const sessionId = previewDraft.batchSessionId ?? previewDraft.nodeId ?? null;
-  const processingStatus = previewDraft.processingStatus;
+  const nodeKey = previewDraft.nodeId ?? sessionId;
+  const [persistedStatus, setPersistedStatus] = useState<string | null>(null);
+  const [statusLoaded, setStatusLoaded] = useState(false);
+  const processingStatus = persistedStatus === 'running'
+    ? 'processing'
+    : persistedStatus;
   const minZoom = previewDraft.batchConfig?.tileConfig?.minZoom;
-  const tilesAvailableFromDraft = (previewDraft.tileSummary?.tiles ?? 0) > 0;
-  const [tilesAvailable, setTilesAvailable] = useState(tilesAvailableFromDraft);
+  const [tilesAvailable, setTilesAvailable] = useState(false);
   const [tilesChecking, setTilesChecking] = useState(false);
   const baseLayerId = 'shape-preview';
   const baseSourceId = 'shape-preview-source';
@@ -65,12 +73,54 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
   const selectionMetadata = previewDraft.urlMetadata ?? [];
 
   useEffect(() => {
-    setTilesAvailable(tilesAvailableFromDraft);
-  }, [tilesAvailableFromDraft]);
+    let cancelled = false;
+    if (!sessionId) {
+      setPersistedStatus(null);
+      setStatusLoaded(true);
+      return () => {
+        cancelled = true;
+      };
+    }
+    setStatusLoaded(false);
+    shapeDB.batchSessions.get(String(sessionId)).then((session) => {
+      if (cancelled) return;
+      setPersistedStatus(session?.status ?? null);
+      setStatusLoaded(true);
+    }).catch(() => {
+      if (cancelled) return;
+      setPersistedStatus(null);
+      setStatusLoaded(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const key = nodeKey ? String(nodeKey) : null;
+    if (!key) {
+      setTilesAvailable(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+    shapeDB.vectorTiles.where('nodeId').equals(key).count().then((count) => {
+      if (cancelled) return;
+      setTilesAvailable(count > 0);
+    }).catch(() => {
+      if (cancelled) return;
+      setTilesAvailable(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [nodeKey]);
+
+  const statusForPolling = statusLoaded ? processingStatus : 'processing';
   const shouldPollTiles = Boolean(sessionId)
-    && !tilesAvailableFromDraft
-    && ['processing', 'paused', 'completed'].includes(processingStatus ?? '');
+    && !tilesAvailable
+    && ['processing', 'paused', 'completed'].includes(statusForPolling ?? '');
 
   useEffect(() => {
     if (!shouldPollTiles) {
@@ -103,7 +153,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
         clearTimeout(timeoutId);
       }
     };
-  }, [sessionId, shouldPollTiles, tilesAvailableFromDraft]);
+  }, [sessionId, shouldPollTiles]);
 
   const loadMetadataRows = useCallback(
     (targetSessionId: string) =>
@@ -117,6 +167,128 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
     metadataLoading,
     metadataError,
   } = useVectorTilePreviewMetadata(metadataEnabled, sessionId, loadMetadataRows);
+  const [normalizedMetadataRows, setNormalizedMetadataRows] = useState(rawMetadataRows);
+  const [invalidFeatureIds, setInvalidFeatureIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!metadataEnabled) {
+      setNormalizedMetadataRows(rawMetadataRows);
+      setInvalidFeatureIds(new Set());
+      return;
+    }
+    let cancelled = false;
+    const subdivisionCache = new Map<string, SubdivisionRecord[]>();
+    const selectionLevelMap = new Map<string, number>();
+    selectionMetadata.forEach((entry) => {
+      const code = entry.countryCode?.trim().toUpperCase();
+      if (!code) return;
+      const level = entry.adminLevel;
+      if (typeof level !== 'number') return;
+      const existing = selectionLevelMap.get(code);
+      if (existing != null && existing !== level) {
+        selectionLevelMap.set(code, -1);
+        return;
+      }
+      selectionLevelMap.set(code, level);
+    });
+    const resolveIso2 = async (code?: string): Promise<string | null> => {
+      const trimmed = code?.trim().toUpperCase();
+      if (!trimmed) return null;
+      if (trimmed.length === 2) return trimmed;
+      const { country } = await getCountry(trimmed);
+      return country?.alpha2?.toUpperCase() ?? null;
+    };
+    const resolveSubdivisions = async (alpha2: string): Promise<SubdivisionRecord[]> => {
+      const key = alpha2.toUpperCase();
+      if (subdivisionCache.has(key)) {
+        return subdivisionCache.get(key) ?? [];
+      }
+      const { subdivisions } = await getCountry(key);
+      const rows = subdivisions ?? [];
+      subdivisionCache.set(key, rows);
+      return rows;
+    };
+    const normalizeName = (value?: string) => value?.trim().toLowerCase() ?? '';
+    const resolveIso3166Code = async (
+      alpha2: string,
+      adminName?: string,
+      adminCode?: string,
+    ): Promise<string | null> => {
+      const trimmedCode = adminCode?.trim().toUpperCase() ?? '';
+      if (trimmedCode.startsWith(`${alpha2}-`)) {
+        return trimmedCode;
+      }
+      const name = normalizeName(adminName);
+      if (!name) return null;
+      const subdivisions = await resolveSubdivisions(alpha2);
+      const match = subdivisions.find((row) => {
+        const en = normalizeName(row.subdivisionEn);
+        const local = normalizeName(row.subdivisionLocal);
+        return en === name || local === name;
+      });
+      return match?.code?.toUpperCase() ?? null;
+    };
+    const run = async () => {
+      await ensureIso3166Data({ csvUrl: ISO3166_CSV_URL, useScraper: false });
+      const invalidIds = new Set<string>();
+      const rows = await Promise.all(rawMetadataRows.map(async (row) => {
+        const iso2 = await resolveIso2(row.countryCode);
+        let resolvedLevel = row.adminLevel;
+        if (resolvedLevel == null) {
+          const selectionLevel = row.countryCode
+            ? selectionLevelMap.get(row.countryCode.trim().toUpperCase())
+            : undefined;
+          if (selectionLevel != null && selectionLevel >= 0) {
+            resolvedLevel = selectionLevel;
+          }
+          if (row.adminCode && row.adminCode.includes('-')) {
+            resolvedLevel = 1;
+          } else if (iso2 && row.adminCode?.toUpperCase() === iso2) {
+            resolvedLevel = 0;
+          }
+        }
+        let logicalCode = ISO3166_UNRESOLVED;
+        if (resolvedLevel === 0) {
+          if (iso2) {
+            logicalCode = iso2;
+          }
+        } else if (resolvedLevel === 1) {
+          if (iso2) {
+            const resolved = await resolveIso3166Code(iso2, row.adminName, row.adminCode);
+            if (resolved) {
+              logicalCode = resolved;
+            }
+          }
+        }
+        if (resolvedLevel == null && logicalCode !== ISO3166_UNRESOLVED) {
+          resolvedLevel = logicalCode.includes('-') ? 1 : 0;
+        }
+        if (logicalCode === ISO3166_UNRESOLVED) {
+          console.warn('[ShapePreview] ISO3166 code unresolved', {
+            countryCode: row.countryCode,
+            adminLevel: resolvedLevel,
+            adminName: row.adminName,
+            adminCode: row.adminCode,
+          });
+          invalidIds.add(row.featureId);
+        }
+        return {
+          ...row,
+          adminLevel: resolvedLevel ?? row.adminLevel,
+          logicalCountryCode: iso2 ?? row.countryCode,
+          logicalAdminCode: logicalCode,
+          logicalFeatureId: logicalCode,
+        };
+      }));
+      if (cancelled) return;
+      setNormalizedMetadataRows(rows);
+      setInvalidFeatureIds(invalidIds);
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [metadataEnabled, rawMetadataRows, selectionMetadata]);
 
   const selectionFilters = useMemo(() => {
     if (selectionMetadata.length === 0) return null;
@@ -146,8 +318,9 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
   }, [selectionMetadata]);
 
   const metadataRows = useMemo(() => {
-    if (!selectionFilters) return rawMetadataRows;
-    return rawMetadataRows.filter((row) => {
+    const sourceRows = normalizedMetadataRows;
+    if (!selectionFilters) return sourceRows;
+    return sourceRows.filter((row) => {
       const rowLevel = row.adminLevel;
       const rowCode = row.countryCode?.trim().toUpperCase();
       const rowName = row.countryName?.trim().toLowerCase();
@@ -161,7 +334,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
       if (matchesFilter(rowCode, selectionFilters.byCode)) return true;
       return matchesFilter(rowName, selectionFilters.byName);
     });
-  }, [rawMetadataRows, selectionFilters]);
+  }, [normalizedMetadataRows, selectionFilters]);
 
   const selectionBounds = useMemo(() => {
     let minLng = Number.POSITIVE_INFINITY;
@@ -330,7 +503,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
   } = useVectorTilePreviewTable(metadataRows, matchedIdSet, searchKeyword);
 
   useVectorTilePreviewMapLayers({
-    mapInstance,
+    mapInstance: tabIndex === 0 ? mapInstance : null,
     baseLayerId,
     baseSourceId,
     tilesLayer,
@@ -339,7 +512,37 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
     hoveredId,
     setHoveredId,
     theme,
+    invalidFeatureIds: Array.from(invalidFeatureIds),
   });
+
+  useEffect(() => {
+    if (!mapInstance) return;
+    const interactiveMap = mapInstance as MapLibreMapInstance & {
+      scrollZoom?: { enable?: () => void };
+      dragPan?: { enable?: () => void };
+      dragRotate?: { enable?: () => void };
+      doubleClickZoom?: { enable?: () => void };
+      touchZoomRotate?: { enable?: () => void };
+    };
+    interactiveMap.scrollZoom?.enable?.();
+    interactiveMap.dragPan?.enable?.();
+    interactiveMap.dragRotate?.enable?.();
+    interactiveMap.doubleClickZoom?.enable?.();
+    interactiveMap.touchZoomRotate?.enable?.();
+  }, [mapInstance]);
+
+  useEffect(() => {
+    if (!mapInstance) return;
+    const canvas = (mapInstance as MapLibreMapInstance & { getCanvas?: () => HTMLCanvasElement }).getCanvas?.();
+    if (!canvas) return;
+    const handleWheel = (event: WheelEvent) => {
+      event.stopPropagation();
+    };
+    canvas.addEventListener('wheel', handleWheel, { passive: true });
+    return () => {
+      canvas.removeEventListener('wheel', handleWheel);
+    };
+  }, [mapInstance]);
 
   const tileDataProvider = useCallback<NonNullable<MapWithVectorTilesProps['tileDataProvider']>>(
     async (z: number, x: number, y: number, nodeId?: string) => {

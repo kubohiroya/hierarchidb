@@ -111,6 +111,28 @@ const pickAdminLevel = (properties: Record<string, unknown>): number | undefined
   return undefined;
 };
 
+const buildUniqueFeatureId = (
+  feature: FeatureLike,
+  index: number,
+  metadataContext?: VectorTileMetadataContext,
+): string => {
+  const properties = (feature.properties ??= {});
+  const rawBaseId = properties.id ?? feature.id ?? index;
+  const baseId = normalizeFeatureId(rawBaseId).trim();
+  const adminCode = pickAdminCode(properties);
+  const fallbackBaseId = baseId.length > 0 ? baseId : adminCode ?? `feature-${index}`;
+  const countryCode = metadataContext?.countryCode ?? pickCountryCode(properties);
+  const adminLevel = metadataContext?.adminLevel ?? pickAdminLevel(properties);
+  const prefixParts = [
+    countryCode,
+    adminLevel != null ? `ADM${adminLevel}` : undefined,
+    adminCode,
+  ].filter(Boolean);
+  const prefix = prefixParts.join('-');
+  const composed = prefix ? `${prefix}:${fallbackBaseId}` : fallbackBaseId;
+  return `${composed}:${index}`;
+};
+
 const updateBbox = (bbox: [number, number, number, number], coord: number[]) => {
   if (coord.length < 2) return;
   const lon = coord[0];
@@ -277,7 +299,7 @@ export const generateVectorTilesFromFeatureCollection = async (
       const feature = features[index];
       if (!feature) continue;
       const properties = (feature.properties ??= {});
-      const tileFeatureId = normalizeFeatureId(properties.id ?? feature.id ?? index);
+      const tileFeatureId = buildUniqueFeatureId(feature, index, metadataContext);
       properties.id = tileFeatureId;
       const stats = extractGeometryStats(feature.geometry);
       records.push({
@@ -306,9 +328,7 @@ export const generateVectorTilesFromFeatureCollection = async (
       const feature = features[index];
       if (!feature) continue;
       const properties = (feature.properties ??= {});
-      if (properties.id == null) {
-        properties.id = normalizeFeatureId(feature.id ?? index);
-      }
+      properties.id = buildUniqueFeatureId(feature, index, metadataContext);
     }
   }
 
