@@ -37,7 +37,6 @@ export function useShapeProgress(
   const {
     progress,
     status: derivedStatus,
-    unifiedProgress,
     rawStatus,
     isSubscribed,
     error,

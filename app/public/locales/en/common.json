@@ -315,6 +315,10 @@
         },
         "autosave": {
           "title": "Autosave"
+        },
+        "sharedZoomRange": {
+          "title": "Shared zoom range",
+          "helper": "Default zoom range applied to shape/location/route settings."
         }
       }
     },

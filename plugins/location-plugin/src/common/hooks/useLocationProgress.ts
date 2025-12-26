@@ -103,7 +103,8 @@ export function useLocationProgress(
       autoSubscribe,
       enablePollingFallback: false,
       mapStatusToUnified: statusToUnified,
-      mapUnifiedToProgress: (info, id) => toProgressEvent(info as ExtendedProgressInfo | null, id),
+      mapUnifiedToProgress: (info: UnifiedProgressInfo | null, id?: string) =>
+        toProgressEvent(info as ExtendedProgressInfo | null, id),
     },
   );
 

@@ -145,6 +145,11 @@ export function TreeConsoleToolbarContent({
     },
     developerMenuLabel: t('developerMenu.clearIndexedDb'),
     autosaveTitle: t('settings.autosave.title', 'Autosave'),
+    sharedZoomRangeTitle: t('settings.sharedZoomRange.title', 'Shared zoom range'),
+    sharedZoomRangeHelper: t(
+      'settings.sharedZoomRange.helper',
+      'Default zoom range applied to shape/location/route settings.',
+    ),
   } as const;
 
   return (
@@ -210,6 +215,8 @@ export function TreeConsoleToolbarContent({
             rowClickSelectNavigate: labels.rowClickSelectNavigate,
             rowClickEdit: labels.rowClickEdit,
             autosaveTitle: labels.autosaveTitle,
+            sharedZoomRangeTitle: labels.sharedZoomRangeTitle,
+            sharedZoomRangeHelper: labels.sharedZoomRangeHelper,
           }}
         />
       </Box>

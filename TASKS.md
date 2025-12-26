@@ -53,19 +53,21 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
-1904) shape/location/route の設定項目共通化候補の洗い出し（P2）
-- ブランチ: `analysis/config/defaults-candidates`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: plugins/shape-plugin, plugins/location-plugin, plugins/route-plugin, packages/plugin-service-api, TASKS.md
+1905) TreeConsole 共通ズーム範囲スライダー + 各プラグインズーム設定の無効化（P1）
+- ブランチ: `feat/ui/shared-zoom-range-toolbar`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: packages/ui/treeconsole/toolbar, plugins/shape-plugin, plugins/location-plugin, plugins/route-plugin, app/public/locales, TASKS.md
 - 受け入れ基準（DoD）:
-  - [ ] ShapeEntity/LocationEntity/RouteEntity の設定保持オブジェクトの定義箇所を特定する
-  - [ ] 既存の設定項目を一覧化し、項目名と用途を整理する
-  - [ ] 既存項目の中から「設定ノードで共通化できる候補」を理由付きで提案する
-  - [ ] 調査結果/ロールバック手順を運用ログに記載する
+  - [ ] TreeConsole ツールバー設定に共通ズーム範囲スライダーを追加し、localStorage `sharedZoomRange` に保存/復元できる
+  - [ ] shape/location/route の設定ステップにあるズーム範囲入力は共通値を表示し、変更不可（disabled）になっている
+  - [ ] 既存のズーム範囲設定は共通値へ反映（表示/保存の整合）される
+  - [ ] UI 文言は i18n 対応し、en/ja の両方に追加されている
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
 - チェックリスト:
-  - [ ] エンティティ定義（型/インターフェース）の設定項目を抽出する
-  - [ ] UI 設定ステップの既存項目と突き合わせる
-  - [ ] 共通化候補/非候補を理由付きで分類する
-- ロールバック手順：調査のみのため差分なし。記載内容を戻す場合は本タスクの運用ログ追記を削除する。
+  - [ ] TreeConsole toolbar settings に sharedZoomRange スライダーを追加する
+  - [ ] localStorage 読み書きと値の正規化を実装する
+  - [ ] shape/location/route のズーム範囲 UI を共通値表示 + disabled にする
+  - [ ] i18n キー追加（common.json ja/en）
+- ロールバック手順：本タスクで変更した UI/設定/ローカライズの差分を revert し、localStorage `sharedZoomRange` は残置可。
 
 1894) shape-plugin Step5 Pause/Resume の AbortSignal 導線追加（P1）
 - ブランチ: `fix/shape/step5-pause-abort`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -5281,6 +5283,21 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+
+1904) shape/location/route の設定項目共通化候補の洗い出し（P2）
+- ブランチ: `analysis/config/defaults-candidates`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin, plugins/location-plugin, plugins/route-plugin, packages/plugin-service-api, TASKS.md
+- 受け入れ基準（DoD）:
+  - [x] ShapeEntity/LocationEntity/RouteEntity の設定保持オブジェクトの定義箇所を特定する
+  - [x] 既存の設定項目を一覧化し、項目名と用途を整理する
+  - [x] 既存項目の中から「設定ノードで共通化できる候補」を理由付きで提案する
+  - [x] 調査結果/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [x] エンティティ定義（型/インターフェース）の設定項目を抽出する
+  - [x] UI 設定ステップの既存項目と突き合わせる
+  - [x] 共通化候補/非候補を理由付きで分類する
+- ロールバック手順：調査のみのため差分なし。記載内容を戻す場合は本タスクの運用ログ追記を削除する。
+- 影響範囲: 調査のみ（コード変更なし）。
 
 1899) location/route 設計概要の文書化 + 現状差分棚卸し + 作業計画（P1）
 - ステータス: Done（2025-12-26）
@@ -12933,3 +12950,6 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-26 13:48 progress: refactor/shape/shared-core-stabilize — download/auth 共通化の補強（plugin download registry + authFetch）、tabular API 共通化（spreadsheet plugin へ factory 追加）、progress hook 共通化（ui-batch に共通 hook 追加）を反映。検証: 未実施。ロールバック: 本差分を revert。
 - 2025-12-26 14:21 start: feat/auth/auth-required-dialog — AuthRequiredDialog の結線と pluginType 拡張（location/route）に着手。DoD: Kanban 1903 のとおり。
 - 2025-12-26 14:26 progress: feat/auth/auth-required-dialog — AuthRequiredDialog のホストを追加し、AuthNotification pluginType を location/route まで拡張。download/authFetch の pluginType 伝搬と location POST の pluginType 修正も反映。検証: 未実施。ロールバック: 本差分を revert。
+- 2025-12-26 14:30 start: analysis/config/defaults-candidates — shape/location/route の設定項目共通化候補の洗い出しに着手。DoD: Kanban 1904 のとおり。
+- 2025-12-26 14:40 done: analysis/config/defaults-candidates — ShapeEntity/LocationEntity/RouteEntity と各ステップの既存設定項目を整理し、設定ノードの共通化候補を提案。検証: 調査のみ。ロールバック: 運用ログ追記を削除。
+- 2025-12-26 14:50 start: feat/ui/shared-zoom-range-toolbar — TreeConsole 共通ズーム範囲スライダーと各プラグインズーム設定の無効化に着手。DoD: Kanban 1905 のとおり。

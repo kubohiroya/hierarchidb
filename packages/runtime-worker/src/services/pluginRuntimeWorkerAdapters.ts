@@ -82,7 +82,10 @@ export async function registerPluginRuntimeWorkerAdapters({
       return null;
     }
     if (createClient) {
-      return await createClient();
+      if (typeof createClient === 'function') {
+        return await createClient();
+      }
+      return createClient;
     }
     return await createRuntimeWorkerClient(allowLocalWorker);
   });

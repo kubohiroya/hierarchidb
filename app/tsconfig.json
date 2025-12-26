@@ -21,6 +21,12 @@
       "@hierarchidb/common-api/*": [
         "../packages/common/api/src/*"
       ],
+      "@hierarchidb/common-auth": [
+        "../packages/common/auth/src/index.ts"
+      ],
+      "@hierarchidb/common-auth/*": [
+        "../packages/common/auth/src/*"
+      ],
       "@hierarchidb/common-types": [
         "../packages/common/types/src/index.ts"
       ],
@@ -108,6 +114,12 @@
       ],
       "@hierarchidb/ui-dialog/*": [
         "../packages/ui/dialog/src/*"
+      ],
+      "@hierarchidb/ui-batch": [
+        "../packages/ui/batch/src/index.ts"
+      ],
+      "@hierarchidb/ui-batch/*": [
+        "../packages/ui/batch/src/*"
       ],
       "@hierarchidb/ui-plugin-basic-info": [
         "../packages/ui/plugin-basic-info/src/index.ts"

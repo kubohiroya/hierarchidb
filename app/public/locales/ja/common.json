@@ -284,6 +284,10 @@
         },
         "autosave": {
           "title": "自動保存"
+        },
+        "sharedZoomRange": {
+          "title": "共通ズーム範囲",
+          "helper": "shape/location/route のズーム範囲に共通の既定値を適用します。"
         }
       },
       "developerMenu": {

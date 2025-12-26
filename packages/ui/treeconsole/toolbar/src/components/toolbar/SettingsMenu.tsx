@@ -5,6 +5,7 @@ import {
   Save,
 } from '@mui/icons-material';
 import {
+  Box,
   Divider,
   FormControlLabel,
   IconButton,
@@ -13,11 +14,47 @@ import {
   Paper,
   Radio,
   RadioGroup,
+  Slider,
   Switch,
   Typography,
 } from '@mui/material';
-import { useCallback, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { TreeConsoleToolbarActionParams } from '../../types.js';
+
+const SHARED_ZOOM_RANGE_KEY = 'sharedZoomRange';
+const DEFAULT_SHARED_ZOOM_RANGE: [number, number] = [4, 12];
+const SHARED_ZOOM_RANGE_MIN = 0;
+const SHARED_ZOOM_RANGE_MAX = 22;
+
+const normalizeSharedZoomRange = (value: unknown): [number, number] => {
+  if (!Array.isArray(value) || value.length < 2) {
+    return DEFAULT_SHARED_ZOOM_RANGE;
+  }
+  const rawMin = Number(value[0]);
+  const rawMax = Number(value[1]);
+  const min = Number.isFinite(rawMin) ? rawMin : DEFAULT_SHARED_ZOOM_RANGE[0];
+  const max = Number.isFinite(rawMax) ? rawMax : DEFAULT_SHARED_ZOOM_RANGE[1];
+  const clampedMin = Math.min(Math.max(min, SHARED_ZOOM_RANGE_MIN), SHARED_ZOOM_RANGE_MAX);
+  const clampedMax = Math.min(Math.max(max, SHARED_ZOOM_RANGE_MIN), SHARED_ZOOM_RANGE_MAX);
+  return clampedMin <= clampedMax ? [clampedMin, clampedMax] : [clampedMax, clampedMin];
+};
+
+const readSharedZoomRange = (): [number, number] => {
+  if (typeof window === 'undefined') {
+    return DEFAULT_SHARED_ZOOM_RANGE;
+  }
+  const stored = window.localStorage?.getItem(SHARED_ZOOM_RANGE_KEY);
+  if (!stored) {
+    return DEFAULT_SHARED_ZOOM_RANGE;
+  }
+  try {
+    const parsed = JSON.parse(stored);
+    return normalizeSharedZoomRange(parsed);
+  } catch (error) {
+    console.warn('[TreeConsoleToolbar] Failed to parse shared zoom range', error);
+    return DEFAULT_SHARED_ZOOM_RANGE;
+  }
+};
 
 interface SettingsMenuProps {
   rowClickAction: 'Select/Navigate' | 'Edit';
@@ -32,6 +69,8 @@ interface SettingsMenuProps {
     rowClickSelectNavigate: string;
     rowClickEdit: string;
     autosaveTitle: string;
+    sharedZoomRangeTitle: string;
+    sharedZoomRangeHelper: string;
   };
 }
 
@@ -45,8 +84,24 @@ export function SettingsMenu({
   labels,
 }: SettingsMenuProps) {
   const [settingsAnchorEl, setSettingsAnchorEl] = useState<HTMLElement | null>(null);
+  const [sharedZoomRange, setSharedZoomRange] = useState<[number, number]>(() => readSharedZoomRange());
 
   const settingsOpen = Boolean(settingsAnchorEl);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage?.setItem(SHARED_ZOOM_RANGE_KEY, JSON.stringify(sharedZoomRange));
+  }, [sharedZoomRange]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== SHARED_ZOOM_RANGE_KEY) return;
+      setSharedZoomRange(readSharedZoomRange());
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   const scheduleCloseSettingsMenu = useCallback(() => {
     if (typeof window !== 'undefined') {
@@ -79,6 +134,11 @@ export function SettingsMenu({
     }
     scheduleCloseSettingsMenu();
   };
+
+  const sharedZoomLabel = useMemo(() => {
+    const [minZoom, maxZoom] = sharedZoomRange;
+    return `${minZoom} - ${maxZoom}`;
+  }, [sharedZoomRange]);
 
   return (
     <>
@@ -134,6 +194,31 @@ export function SettingsMenu({
               }
               label={<LabelWithIcon icon={<Save fontSize="small" />} text={labels.autosaveTitle} />}
             />
+
+            <Divider sx={{ my: 1.5 }} />
+
+            <Typography variant="subtitle2" gutterBottom>
+              {labels.sharedZoomRangeTitle}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              {labels.sharedZoomRangeHelper}
+            </Typography>
+            <Box sx={{ px: 1 }}>
+              <Slider
+                value={sharedZoomRange}
+                onChange={(_, value) => {
+                  if (!Array.isArray(value)) return;
+                  setSharedZoomRange(normalizeSharedZoomRange(value));
+                }}
+                min={SHARED_ZOOM_RANGE_MIN}
+                max={SHARED_ZOOM_RANGE_MAX}
+                step={1}
+                valueLabelDisplay="auto"
+              />
+            </Box>
+            <Typography variant="caption" color="text.secondary">
+              {sharedZoomLabel}
+            </Typography>
           </Paper>
         </MenuItem>
 
