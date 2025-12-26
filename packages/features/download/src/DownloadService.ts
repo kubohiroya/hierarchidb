@@ -4,6 +4,7 @@ export interface DownloadOptions {
   concurrency?: number; // for multi-part in future
   partSize?: number; // bytes
   expectedHash?: string;
+  signal?: AbortSignal;
 }
 
 export interface DownloadResult {
@@ -26,7 +27,7 @@ export class DownloadService {
     });
 
     // Serial download
-    const res = await this.net.get(url);
+    const res = await this.net.get(url, buildInit(opts.signal));
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const buf = await res.arrayBuffer();
     await this.store.putChunk(fileId, 0, buf);
@@ -40,7 +41,8 @@ export class DownloadService {
   }
 
   private async downloadChunked(url: string, fileId: string, opts: Required<Pick<DownloadOptions, 'partSize' | 'concurrency'>> & DownloadOptions): Promise<DownloadResult> {
-    const head = await this.net.head(url);
+    if (opts.signal?.aborted) throw abortError();
+    const head = await this.net.head(url, buildInit(opts.signal));
     // Fallback when HEAD not allowed
     const contentLengthValue = readHeader(head.headers, 'content-length');
     const contentLength = contentLengthValue ? Number(contentLengthValue) : 0;
@@ -57,12 +59,13 @@ export class DownloadService {
     let next = startIndex;
     const workers = new Array(concurrency).fill(0).map(async () => {
       while (totalSize === 0 ? next === 0 : next < parts) {
+        if (opts.signal?.aborted) throw abortError();
         const idx = next++;
         const byteStart = totalSize === 0 ? 0 : idx * partSize;
         const byteEnd = totalSize === 0 ? undefined : Math.min((idx + 1) * partSize - 1, totalSize - 1);
       const res = byteEnd !== undefined
-        ? await this.net.getRange(url, byteStart, byteEnd)
-        : await this.net.get(url);
+        ? await this.net.getRange(url, byteStart, byteEnd, buildInit(opts.signal))
+        : await this.net.get(url, buildInit(opts.signal));
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const buf = await res.arrayBuffer();
         await this.store.putChunk(fileId, idx, buf);
@@ -81,6 +84,19 @@ export class DownloadService {
     await this.store.commit(fileId, { sizeBytes: totalSize || undefined, hash });
     return { fileId, sizeBytes: totalSize || undefined, hash } as DownloadResult;
   }
+}
+
+const buildInit = (signal?: AbortSignal): RequestInit | undefined => (
+  signal ? { signal } : undefined
+);
+
+function abortError(): Error {
+  if (typeof DOMException === 'function') {
+    return new DOMException('Download aborted', 'AbortError');
+  }
+  const error = new Error('Download aborted');
+  (error as Error & { name: string }).name = 'AbortError';
+  return error;
 }
 
 function readHeader(headers: ResponseLike['headers'], key: string): string | undefined {

@@ -172,6 +172,7 @@ export class OpenStreetMapStrategy extends BaseDataSourceStrategy<OSMRawData, OS
       query,
       timeout = 25, //  Overpass API
       endpoint: _endpoint = 'interpreter',
+      signal,
     } = options || {};
     const tags = ((options?.tags ?? []) as OverpassTag[]);
 
@@ -182,7 +183,7 @@ export class OpenStreetMapStrategy extends BaseDataSourceStrategy<OSMRawData, OS
       console.log(`[OSM] Executing Overpass query: ${overpassQuery.substring(0, 200)}...`);
 
       //  Overpass API
-      const response = await this.executeOverpassQuery(overpassQuery);
+      const response = await this.executeOverpassQuery(overpassQuery, signal);
 
       if (!response.elements || !Array.isArray(response.elements)) {
         throw new Error('Invalid response format from Overpass API');
@@ -329,7 +330,7 @@ out geom;
     return query;
   }
 
-  private async executeOverpassQuery(query: string): Promise<OverpassResponse> {
+  private async executeOverpassQuery(query: string, signal?: AbortSignal): Promise<OverpassResponse> {
     const url = `${this.config.access.baseUrl}${this.config.access.endpoints?.interpreter}`;
 
     const { authFetch } = await import('../utils/authFetch.js');
@@ -339,6 +340,7 @@ out geom;
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
       },
       body: `data=${encodeURIComponent(query)}`,
+      signal,
     });
 
     if (!response.ok) {

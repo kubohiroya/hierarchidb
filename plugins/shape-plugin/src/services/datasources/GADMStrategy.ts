@@ -108,6 +108,7 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
       country = 'JPN',
       adminLevel = 1,
       endpoint = 'country-gpkg',
+      signal,
     } = options || {};
 
     const normalizedCountry = this.normalizeCountryCode(country);
@@ -134,6 +135,7 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
         downloadUrl,
         `gadm:${normalizedCountry}:${format}`,
         { retries: retries.count, delayMs: retries.delay, backoff: retries.backoff },
+        signal,
       );
 
       if (format === 'gpkg') {

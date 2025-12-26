@@ -15,6 +15,19 @@ export interface FetchNetworkPortOptions {
 
 type HostKey = string;
 
+const isAbortError = (error: unknown): boolean => (
+  error instanceof Error && error.name === 'AbortError'
+);
+
+const createAbortError = (): Error => {
+  if (typeof DOMException === 'function') {
+    return new DOMException('Fetch aborted', 'AbortError');
+  }
+  const error = new Error('Fetch aborted');
+  (error as Error & { name: string }).name = 'AbortError';
+  return error;
+};
+
 export class FetchNetworkPort implements NetworkPort {
   private opts: Required<Omit<FetchNetworkPortOptions, 'corsProxyBaseURL' | 'authFetch'>> & {
     corsProxyBaseURL: string;
@@ -55,6 +68,9 @@ export class FetchNetworkPort implements NetworkPort {
   }
 
   private async request(url: string, init?: RequestInit): Promise<ResponseLike> {
+    if (init?.signal?.aborted) {
+      throw createAbortError();
+    }
     const host = new URL(url).host;
     const sem = this.getSemaphore(host);
     if (this.tokenBucket) await this.tokenBucket.take();
@@ -75,6 +91,9 @@ export class FetchNetworkPort implements NetworkPort {
           if (!this.shouldRetry(res.status)) return wrap(res);
           await sleep(backoff(attempt++, this.opts.baseDelayMs, this.opts.maxDelayMs));
         } catch (e) {
+          if (isAbortError(e) || init?.signal?.aborted) {
+            throw e;
+          }
           lastErr = e;
           await sleep(backoff(attempt++, this.opts.baseDelayMs, this.opts.maxDelayMs));
         }

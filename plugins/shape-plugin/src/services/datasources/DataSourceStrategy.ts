@@ -116,6 +116,7 @@ export interface FetchOptions {
   maxRows?: number;
   tags?: Array<TagFilter | string>;
   timeout?: number;
+  signal?: AbortSignal;
   filters?: FilterRule[];
   geoFilters?: GeographicFilter[];
 

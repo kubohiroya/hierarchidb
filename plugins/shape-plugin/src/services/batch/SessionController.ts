@@ -65,6 +65,7 @@ export class SessionController {
   private simplify2Tasks: Simplify2Task[] = [];
   private readonly pausedStages = new Set<ProcessingStage>();
   private readonly stageWaiters = new Map<ProcessingStage, Array<() => void>>();
+  private readonly stageAbortControllers = new Map<ProcessingStage, AbortController>();
 
   constructor(
     sessionId: string,
@@ -236,20 +237,29 @@ export class SessionController {
     console.log(`[Session ${this.sessionId}] Starting batch processing`);
 
     try {
+      const waitForResumeIfPaused = async () => {
+        if (this.isPaused) {
+          await this.waitForStageResume(this.currentStage);
+        }
+      };
       // Process each stage sequentially
       await this.processDownloadStage();
+      await waitForResumeIfPaused();
 
       if (!this.isAborted && !this.isPaused) {
         await this.processSimplify1Stage();
       }
+      await waitForResumeIfPaused();
 
       if (!this.isAborted && !this.isPaused) {
         await this.processSimplify2Stage();
       }
+      await waitForResumeIfPaused();
 
       if (!this.isAborted && !this.isPaused) {
         await this.processVectorTileStage();
       }
+      await waitForResumeIfPaused();
 
       if (!this.isAborted && !this.isPaused) {
         console.log(`[Session ${this.sessionId}] Batch processing completed successfully`);
@@ -339,7 +349,10 @@ export class SessionController {
       this.nodeId,
       tasks,
       (p) => this.progressCallback?.(p),
-      { waitIfPaused: () => this.waitForStageResume('download') },
+      {
+        waitIfPaused: () => this.waitForStageResume('download'),
+        getSignal: () => this.getStageAbortSignal('download'),
+      },
     );
     console.log(`[Session ${this.sessionId}] Download stage completed: ${res.processed} successful, ${res.failed} failed`);
     const percentage = (res.processed / tasks.length) * 100;
@@ -435,6 +448,7 @@ export class SessionController {
     await this.registerTasks('simplify1', tasks);
     const r = await this.simplify1Adapter!.process(tasks, (p) => this.progressCallback?.(p), {
       waitIfPaused: () => this.waitForStageResume('simplify1'),
+      getSignal: () => this.getStageAbortSignal('simplify1'),
     });
     console.log(`[Session ${this.sessionId}] Simplify1 stage completed: ${r.processed}/${tasks.length} successful`);
   }
@@ -495,6 +509,7 @@ export class SessionController {
     await this.registerTasks('simplify2', tasks);
     const r = await this.simplify2Adapter!.process(tasks, (p) => this.progressCallback?.(p), {
       waitIfPaused: () => this.waitForStageResume('simplify2'),
+      getSignal: () => this.getStageAbortSignal('simplify2'),
     });
     console.log(`[Session ${this.sessionId}] Simplify2 stage completed: ${r.processed}/${tasks.length} successful`);
   }
@@ -648,6 +663,7 @@ export class SessionController {
     await this.registerTasks('vectortile', tasks);
     const r = await this.vectorTileAdapter!.process(tasks, (p) => this.progressCallback?.(p), {
       waitIfPaused: () => this.waitForStageResume('vectortile'),
+      getSignal: () => this.getStageAbortSignal('vectortile'),
     });
     console.log(`[Session ${this.sessionId}] Vector tile stage completed: ${r.processed}/${tasks.length} successful`);
   }
@@ -661,17 +677,44 @@ export class SessionController {
 
   pauseStage(stage: ProcessingStage): void {
     this.pausedStages.add(stage);
+    this.isPaused = true;
+    this.abortStageController(stage);
   }
 
   resumeStage(stage: ProcessingStage): void {
     if (!this.pausedStages.delete(stage)) return;
+    this.resetStageAbortController(stage);
     this.resolveStageWaiters(stage);
+    if (this.pausedStages.size === 0) {
+      this.isPaused = false;
+    }
   }
 
   resumeAllStages(): void {
     for (const stage of [...this.pausedStages]) {
       this.pausedStages.delete(stage);
+      this.resetStageAbortController(stage);
       this.resolveStageWaiters(stage);
+    }
+    this.isPaused = false;
+  }
+
+  private getStageAbortSignal(stage: ProcessingStage): AbortSignal {
+    const existing = this.stageAbortControllers.get(stage);
+    if (existing) return existing.signal;
+    const controller = new AbortController();
+    this.stageAbortControllers.set(stage, controller);
+    return controller.signal;
+  }
+
+  private resetStageAbortController(stage: ProcessingStage): void {
+    this.stageAbortControllers.set(stage, new AbortController());
+  }
+
+  private abortStageController(stage: ProcessingStage): void {
+    const controller = this.stageAbortControllers.get(stage);
+    if (controller && !controller.signal.aborted) {
+      controller.abort();
     }
   }
 

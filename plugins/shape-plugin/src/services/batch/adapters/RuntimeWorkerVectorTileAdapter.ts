@@ -44,6 +44,8 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     const client = await getShapeRuntimeWorkerClient();
     const vectorTileClient = client?.vectortile;
     if (!vectorTileClient) throw new Error('Runtime worker vectortile not available');
+    const getSignal = controls?.getSignal;
+    const shouldAbort = () => Boolean(getSignal?.()?.aborted);
     let completed = 0;
     let failed = 0;
     let metadataReplace = true;
@@ -56,82 +58,121 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
       tasksByInput.get(inputBufferId)!.push(task);
     }
     for (const [inputBufferId, inputTasks] of tasksByInput) {
-      if (controls?.waitIfPaused) {
-        await controls.waitIfPaused();
-      }
-      const sample = inputTasks[0];
-      if (!sample) continue;
-      try {
-        await Promise.all(inputTasks.map(async (task) => {
-          if (!task.taskId) return;
-          await shapeDB.updateBatchTask(task.taskId, {
-            status: 'running',
-            startedAt: Date.now(),
-            progress: 0,
-          });
-        }));
-        const compression = sample.config?.compression ?? false;
-        const format = (sample.config?.format ?? 'mvt') as 'mvt';
-        const tileSize = sample.config?.tileSize ?? 256;
-        const buffer = sample.config?.buffer;
-        const minZoom = sample.config?.minZoom;
-        const maxZoom = sample.config?.maxZoom;
-        const metadataEnabled = Boolean(sample.config?.metadataEnabled);
-        const replace = metadataEnabled && metadataReplace;
-        if (metadataEnabled) {
-          metadataReplace = false;
+      let finished = false;
+      while (!finished) {
+        if (controls?.waitIfPaused) {
+          await controls.waitIfPaused();
         }
-        await this.persistGeoJsonInput(inputBufferId);
-        await vectorTileClient.generateTiles(inputBufferId, {
-          format,
-          compression: compression ? 'gzip' : 'none',
-          tileSize,
-          buffer,
-          minZoom,
-          maxZoom,
-          metadataEnabled,
-          metadataReplace: replace,
-          metadataContext: sample.config?.metadataContext,
-        });
-        for (const task of inputTasks) {
-          completed++;
-          if (task.taskId) {
+        if (shouldAbort()) {
+          if (controls?.waitIfPaused) {
+            await controls.waitIfPaused();
+            continue;
+          }
+          return { processed: completed, failed };
+        }
+        const sample = inputTasks[0];
+        if (!sample) {
+          finished = true;
+          continue;
+        }
+        try {
+          await Promise.all(inputTasks.map(async (task) => {
+            if (!task.taskId) return;
             await shapeDB.updateBatchTask(task.taskId, {
-              status: 'completed',
-              completedAt: Date.now(),
-              progress: 100,
+              status: 'running',
+              startedAt: Date.now(),
+              progress: 0,
+            });
+          }));
+          const compression = sample.config?.compression ?? false;
+          const format = (sample.config?.format ?? 'mvt') as 'mvt';
+          const tileSize = sample.config?.tileSize ?? 256;
+          const buffer = sample.config?.buffer;
+          const minZoom = sample.config?.minZoom;
+          const maxZoom = sample.config?.maxZoom;
+          const metadataEnabled = Boolean(sample.config?.metadataEnabled);
+          const replace = metadataEnabled && metadataReplace;
+          if (metadataEnabled) {
+            metadataReplace = false;
+          }
+          if (shouldAbort()) {
+            continue;
+          }
+          await this.persistGeoJsonInput(inputBufferId);
+          if (shouldAbort()) {
+            if (controls?.waitIfPaused) {
+              await controls.waitIfPaused();
+            } else {
+              return { processed: completed, failed };
+            }
+          }
+          await vectorTileClient.generateTiles(inputBufferId, {
+            format,
+            compression: compression ? 'gzip' : 'none',
+            tileSize,
+            buffer,
+            minZoom,
+            maxZoom,
+            metadataEnabled,
+            metadataReplace: replace,
+            metadataContext: sample.config?.metadataContext,
+          });
+          if (shouldAbort()) {
+            if (controls?.waitIfPaused) {
+              await controls.waitIfPaused();
+            } else {
+              return { processed: completed, failed };
+            }
+          }
+          for (const task of inputTasks) {
+            completed++;
+            if (task.taskId) {
+              await shapeDB.updateBatchTask(task.taskId, {
+                status: 'completed',
+                completedAt: Date.now(),
+                progress: 100,
+              });
+            }
+            onProgress({
+              total: tasks.length,
+              completed,
+              failed,
+              skipped: 0,
+              percentage: (completed / tasks.length) * 100,
+              currentStage: 'vectortile',
+              currentTask: task.taskId,
             });
           }
-          onProgress({
-            total: tasks.length,
-            completed,
-            failed,
-            skipped: 0,
-            percentage: (completed / tasks.length) * 100,
-            currentStage: 'vectortile',
-            currentTask: task.taskId,
-          });
-        }
-      } catch (error) {
-        for (const task of inputTasks) {
-          failed++;
-          if (task.taskId) {
-            await shapeDB.updateBatchTask(task.taskId, {
-              status: 'failed',
-              completedAt: Date.now(),
-              progress: 100,
-              errorMessage: error instanceof Error ? error.message : 'Vector tile generation failed',
+          finished = true;
+        } catch (error) {
+          if (shouldAbort()) {
+            if (controls?.waitIfPaused) {
+              await controls.waitIfPaused();
+              continue;
+            }
+            return { processed: completed, failed };
+          }
+          for (const task of inputTasks) {
+            failed++;
+            if (task.taskId) {
+              await shapeDB.updateBatchTask(task.taskId, {
+                status: 'failed',
+                completedAt: Date.now(),
+                progress: 100,
+                errorMessage: error instanceof Error ? error.message : 'Vector tile generation failed',
+              });
+            }
+            onProgress({
+              total: tasks.length,
+              completed,
+              failed,
+              skipped: 0,
+              percentage: tasks.length > 0 ? (completed / tasks.length) * 100 : 0,
+              currentStage: 'vectortile',
+              currentTask: task.taskId,
             });
           }
-          onProgress({
-            total: tasks.length,
-            completed,
-            failed,
-            skipped: 0,
-            percentage: tasks.length > 0 ? (completed / tasks.length) * 100 : 0,
-            currentStage: 'vectortile',
-            currentTask: task.taskId,
-          });
+          finished = true;
         }
       }
     }

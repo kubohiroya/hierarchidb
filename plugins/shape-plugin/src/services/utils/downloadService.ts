@@ -39,10 +39,15 @@ const buildDownloadFileId = (prefix: string, url: string): string => (
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
+const isAbortError = (error: unknown): boolean => (
+  error instanceof Error && error.name === 'AbortError'
+);
+
 export const downloadArrayBuffer = async (
   url: string,
   prefix: string,
   retryOptions: DownloadRetryOptions = {},
+  signal?: AbortSignal,
 ): Promise<ArrayBuffer> => {
   const { service, readAll } = await getShapeDownloadService();
   const corsProxyBaseURL = getCorsProxyBaseURL();
@@ -58,9 +63,12 @@ export const downloadArrayBuffer = async (
 
   for (let attempt = 0; attempt < retries; attempt += 1) {
     try {
-      await service.download(url, fileId);
+      await service.download(url, fileId, { signal });
       return await readAll(fileId);
     } catch (error) {
+      if (signal?.aborted || isAbortError(error)) {
+        throw error;
+      }
       if (attempt === retries - 1) {
         throw error;
       }
@@ -80,8 +88,9 @@ export const downloadJson = async <T>(
   url: string,
   prefix: string,
   retryOptions: DownloadRetryOptions = {},
+  signal?: AbortSignal,
 ): Promise<T> => {
-  const buffer = await downloadArrayBuffer(url, prefix, retryOptions);
+  const buffer = await downloadArrayBuffer(url, prefix, retryOptions, signal);
   const text = new TextDecoder('utf-8').decode(buffer);
   return JSON.parse(text) as T;
 };

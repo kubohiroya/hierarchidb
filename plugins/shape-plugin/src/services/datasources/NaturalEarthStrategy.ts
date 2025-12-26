@@ -101,6 +101,7 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
       endpoint = 'countries-50m',
       adminLevel,
       bbox: _bbox,
+      signal,
     } = options || {};
 
     const selectedEndpoint = this.selectEndpoint(endpoint, adminLevel);
@@ -119,6 +120,7 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
         downloadUrl,
         `naturalearth:${selectedEndpoint}`,
         { retries: retries.count, delayMs: retries.delay, backoff: retries.backoff },
+        signal,
       );
 
       //  ZIP

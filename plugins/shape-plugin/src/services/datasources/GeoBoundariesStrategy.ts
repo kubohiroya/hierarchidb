@@ -107,6 +107,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
     const {
       country = 'USA',
       adminLevel = '1',
+      signal,
     } = options || {};
 
     //  admin
@@ -115,7 +116,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
 
     try {
       //  APIURL
-      const apiData = await this.fetchBoundaryMetadata(normalizedCountry, normalizedAdminLevel);
+      const apiData = await this.fetchBoundaryMetadata(normalizedCountry, normalizedAdminLevel, signal);
 
       if (!apiData || !apiData.gjDownloadURL) {
         throw new Error(`No boundary data available for ${normalizedCountry} ${normalizedAdminLevel}`);
@@ -130,6 +131,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
         apiData.gjDownloadURL,
         `geoboundaries:${normalizedCountry}:${normalizedAdminLevel}`,
         { retries: retries.count, delayMs: retries.delay, backoff: retries.backoff },
+        signal,
       );
       console.log(`[GeoBoundaries] Download succeeded: ${apiData.gjDownloadURL}`);
       const geojson = JSON.parse(new TextDecoder('utf-8').decode(buffer)) as GeoBoundariesGeoJSON;
@@ -236,6 +238,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
   private async fetchBoundaryMetadata(
     country: string,
     adminLevel: string,
+    signal?: AbortSignal,
   ): Promise<GeoBoundariesApiResponse> {
     const url = `${this.config.access.baseUrl}${this.releaseType}/${country}/${adminLevel}/`;
     console.log(`[GeoBoundaries] Fetching metadata: ${url}`);
@@ -244,6 +247,8 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
       const data = await downloadJson<GeoBoundariesApiResponse>(
         url,
         `geoboundaries:metadata:${country}:${adminLevel}`,
+        undefined,
+        signal,
       );
       data.releaseType = this.releaseType;
       return data;

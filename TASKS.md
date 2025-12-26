@@ -53,6 +53,21 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1894) shape-plugin Step5 Pause/Resume の AbortSignal 導線追加（P1）
+- ブランチ: `fix/shape/step5-pause-abort`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin（services/batch/adapters）, packages/features/download, packages/runtime-worker, packages/plugin-service-sdk（WorkerBridge）
+- 受け入れ基準（DoD）:
+  - [ ] Pause 操作で AbortSignal が発火し、進行中タスクが中断されても session 状態は paused を維持する
+  - [ ] Resume 操作で残タスクが再開でき、cancel 扱いにならない
+  - [ ] Download/Simplify1/Simplify2/VectorTile で中断導線が有効化される
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] StageControls に AbortSignal を追加し、pause/resume で controller を差し替える
+  - [ ] 各 stage adapter が signal を受け取り、abort 時に処理を停止する
+  - [ ] VectorTile の長時間処理に中断導線を追加する
+  - [ ] 代表検証として `pnpm --filter @hierarchidb/shape-plugin typecheck` を実行し、結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：本タスクで変更した stage adapter / batch session / worker の差分を revert し、必要なら `pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する
+
 1889) shape-plugin Step6 メタデータの自治体コード/featureId を ISO2+ISO3166-2 に整理（P1）
 - ブランチ: `fix/shape/metadata-iso3166-2-logical-id`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: plugins/shape-plugin, packages/tools/gen-iso3166-2
@@ -66,6 +81,21 @@
   - [ ] メタデータ生成または表示のどこで正規化するかを決定する
   - [ ] 表示/検索/ホバーの参照キーを整理する
 - ロールバック手順：本タスクの差分を revert し、既存のメタデータ表示へ戻す。
+
+1895) shape-plugin 共通コード抽出計画（shape → location/route 共有化）（P1）
+- ブランチ: `analysis/shape/shared-extraction-plan`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/shape-plugin, plugins/location-plugin, plugins/route-plugin, packages/ui/batch, packages/batch-runtime-services, packages/features/download, packages/ui/datasource, packages/ui/tabular-extract
+- 受け入れ基準（DoD）:
+  - [ ] shape-plugin の抽出対象（UI/worker/service/common）をファイル単位で列挙し、抽出理由を説明できる
+  - [ ] 共有先（既存パッケージ or 新設）の配置案と責務を明記する
+  - [ ] location/route 側での再利用ポイントを具体的に紐付ける
+  - [ ] 実装フェーズ用の ExecPlan 作成有無・分割方針・依存順を示す
+  - [ ] TASKS 運用ログに start/progress/done を記載する
+- チェックリスト:
+  - [ ] shape/location/route の重複実装（進捗/Download/RuntimeWorker/Tabular など）を棚卸しする
+  - [ ] 抽出候補と移設先（既存 or 新規）を 1 対 1 以上で対応付ける
+  - [ ] 影響範囲（型/依存/テスト/フラグ）を記載する
+- ロールバック手順：調査のみのため差分なし。記載内容を戻す場合は本タスクの運用ログ追記を削除する。
 
 1881) shape-plugin Step6 ホバー調査ログ追加 + メタデータ削除 + Stepper 回転条件修正（P1）
 - ブランチ: `fix/shape/step6-hover-metadata-clear-stepper`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -11804,6 +11834,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-26 10:55 start: analysis/shape/shared-extraction-plan — shape-plugin から location/route で共通利用すべきコード抽出計画の整理に着手。DoD: Kanban 1895 のとおり。
+- 2025-12-26 13:52 start: fix/shape/step5-pause-abort — Step5 Pause/Resume で AbortSignal を使って進行中タスクを中断できるようにする対応に着手。DoD: Kanban 1894 のとおり。
+- 2025-12-26 14:20 progress: fix/shape/step5-pause-abort — StageControls に AbortSignal の取得関数を追加し、SessionController の pause/resume で stage AbortController を切り替え。download/simplify/vectorTile adapter が pause abort を検知して待機/再開できるよう補強し、download 経由の fetch に signal を伝播するよう更新。
 - 2025-12-26 09:48 start: fix/auth/download-401-redirect — @hierarchidb/download の 401 復帰フロー調査と修復に着手。DoD: Kanban 1892 のとおり。
 - 2025-12-26 10:05 progress: fix/auth/download-401-redirect — download の FetchNetworkPort が AuthRecoveryService.fetchWithAuth を使わないため、401 が AuthNotificationRegistry へ伝播せず UI の localStorage 保存が走らないことを確認。
 - 2025-12-26 10:08 done: fix/auth/download-401-redirect — FetchNetworkPort に authFetch を追加し、createDownloadService / runtime-worker の downloadAdapter で AuthRecoveryService.fetchWithAuth を採用。401 時に UI 側の registerAuthRecoveryHandlers が発火できるよう修正。検証: 未実施。ロールバック: Done の Kanban 1892 を参照。

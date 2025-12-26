@@ -5,4 +5,8 @@ export interface StageControls {
    * a resume command is issued.
    */
   waitIfPaused?: () => Promise<void>;
+  /**
+   * AbortSignal for interrupting in-flight work when a pause request arrives.
+   */
+  getSignal?: () => AbortSignal | undefined;
 }
