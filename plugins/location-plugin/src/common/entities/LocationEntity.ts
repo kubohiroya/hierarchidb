@@ -155,6 +155,8 @@ export interface LocationSearchOptions {
 export interface LocationSearchConfig {
   dataSource: LocationDataSource;
   query?: string;
+  countryCode?: string;
+  countryName?: string;
   boundingBox?: [number, number, number, number];
   language?: string;
   limit?: number;

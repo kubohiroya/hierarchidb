@@ -248,10 +248,11 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
         properties: {
           name: point.name,
           kind: point.kind,
-          gid0: point.gid0,
-          gid1: point.gid1,
-          gid2: point.gid2,
-          ...(point.payload ?? {}),
+          countryCode: point.countryCode,
+          countryName: point.countryName,
+          admin1: point.admin1,
+          admin2: point.admin2,
+          ...(point.metadata ?? {}),
         },
       }));
 

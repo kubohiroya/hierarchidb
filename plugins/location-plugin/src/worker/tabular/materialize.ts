@@ -11,6 +11,21 @@ type ProgressReporter = (progress: {
 
 const toNumber = (val: unknown): number | null => (typeof val === 'number' ? val : null);
 const toStringVal = (val: unknown): string | undefined => (typeof val === 'string' ? val : undefined);
+const normalizeMetadataValue = (value: unknown): string | number | null => {
+  if (value == null) return null;
+  if (typeof value === 'string' || typeof value === 'number') return value;
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (Array.isArray(value) || typeof value === 'object') {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  }
+  return String(value);
+};
+const toMetadata = (row: Record<string, unknown>) =>
+  Object.fromEntries(Object.entries(row).map(([k, v]) => [k, normalizeMetadataValue(v)]));
 
 export async function materializeLocationPointsFromTabular(
   nodeId: NodeId,
@@ -30,17 +45,23 @@ export async function materializeLocationPointsFromTabular(
     const featureClass = toStringVal(r.featureClass);
     const featureCode = toStringVal(r.featureCode);
     const kind = featureCode ?? featureClass ?? 'poi';
-    const gid0 = toStringVal(r.countryCode) ?? '';
+    const countryCode = toStringVal(r.countryCode) ?? '';
+    const admin1 = toStringVal(r.admin1) ?? toStringVal(r.adminCode1);
+    const admin2 = toStringVal(r.admin2) ?? toStringVal(r.adminCode2);
+    const countryName = toStringVal(r.countryName) ?? toStringVal(r.country);
 
     normalized.push({
-      schemaVersion: 1,
+      schemaVersion: 2,
       pid: crypto.randomUUID(),
       name,
       latitude: lat,
       longitude: lon,
       kind,
-      gid0,
-      payload: r,
+      countryCode,
+      countryName,
+      admin1,
+      admin2,
+      metadata: toMetadata(r),
     });
     processed += 1;
     if (reportProgress && processed % 50 === 0) {

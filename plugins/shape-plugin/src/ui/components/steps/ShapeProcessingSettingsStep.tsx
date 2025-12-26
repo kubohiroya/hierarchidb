@@ -1,17 +1,40 @@
 import type React from 'react';
-import { Box, Stack } from '@mui/material';
+import { useMemo } from 'react';
+import { Alert, Box, Stack } from '@mui/material';
 import { DownloadConfigSection } from './DownloadConfigSection.js';
 import { Simplify1ConfigSection } from './Simplify1ConfigSection.js';
 import { Simplify2ConfigSection } from './Simplify2ConfigSection.js';
 import { TileConfigSection } from './TileConfigSection.js';
 import type { ShapeDialogStepProps } from './ShapeDialogStepProps.ts';
 import { useShapeProcessingSettingsStep } from '../../hooks/useShapeProcessingSettingsStep.js';
+import { useHeapPressure } from '../../hooks/useHeapPressure.js';
+import { useTranslation } from '../../i18n.js';
 
 /**
  * Processing configuration step for Shape plugin.
  */
 export const ShapeProcessingSettingsStep: React.FC<ShapeDialogStepProps> = ({ data, onChange }) => {
+  const { t } = useTranslation();
   const { config, handleChange } = useShapeProcessingSettingsStep({ data, onChange });
+  const heapPressure = useHeapPressure();
+  const heapWarning = useMemo(() => {
+    if (!heapPressure) return null;
+    const usedMb = Math.round(heapPressure.usedBytes / (1024 * 1024));
+    const limitMb = Math.round(heapPressure.limitBytes / (1024 * 1024));
+    const ratioPercent = Math.round(heapPressure.ratio * 100);
+    return {
+      severity: heapPressure.level === 'critical' ? 'error' : 'warning',
+      message: t(
+        'processing.heap.warning',
+        'High JS heap usage detected ({{ratio}}% / {{used}}MB of {{limit}}MB). Consider reducing concurrency.',
+        {
+          ratio: ratioPercent,
+          used: usedMb,
+          limit: limitMb,
+        },
+      ),
+    };
+  }, [heapPressure, t]);
   const resetSession = () => {
     onChange({
       batchSessionId: undefined,
@@ -25,6 +48,11 @@ export const ShapeProcessingSettingsStep: React.FC<ShapeDialogStepProps> = ({ da
   return (
     <Box sx={{ p: 2 }}>
       <Stack spacing={2}>
+        {heapWarning ? (
+          <Alert severity={heapWarning.severity} sx={{ alignItems: 'center' }}>
+            {heapWarning.message}
+          </Alert>
+        ) : null}
         <DownloadConfigSection
           config={config}
           draft={data}

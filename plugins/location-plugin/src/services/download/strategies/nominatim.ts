@@ -1,24 +1,12 @@
 import type { ILocationDownloadStrategy } from '../types.js';
 import type {
-  LocationEntity,
   LocationSearchConfig,
-  LocationCategory,
   LocationType,
 } from '../../../common/entities/LocationEntity.js';
-import type { NodeId } from '@hierarchidb/common-types';
-import {
-  buildLocationEntity,
-  mapCategory,
-  mapType,
-  normalizeImportance,
-  normalizeOsmType,
-  parseBoundingBox,
-  parseNumber,
-  sanitizeTags,
-} from '../mappers.js';
+import type { LocationPointProperties } from '../../../common/entities/LocationPoint.js';
+import { mapType, parseNumber } from '../mappers.js';
 import type { RawNominatimResult } from '../rawTypes.js';
 import { buildOsmPointProperties } from '../../pointFactories.js';
-import { appendLocationPoints } from '../../pointRepository.js';
 
 export class NominatimStrategy implements ILocationDownloadStrategy {
   readonly id = 'openstreetmap-nominatim';
@@ -27,7 +15,7 @@ export class NominatimStrategy implements ILocationDownloadStrategy {
     return config.dataSource === 'openstreetmap';
   }
 
-  async search(config: LocationSearchConfig): Promise<LocationEntity[]> {
+  async search(config: LocationSearchConfig): Promise<LocationPointProperties[]> {
     const endpoint = config.options?.nominatimEndpoint || 'https://nominatim.openstreetmap.org/search';
     const params = new URLSearchParams({
       q: config.query || '',
@@ -49,41 +37,21 @@ export class NominatimStrategy implements ILocationDownloadStrategy {
       const response = await authFetch(`${endpoint}?${params}`);
       const data = await response.json();
       if (!Array.isArray(data)) return [];
-      const entities = data
+      const points = data
         .map((item) => this.fromOSM(item as RawNominatimResult))
-        .filter((value): value is LocationEntity => value !== null);
-      return entities;
+        .filter((value): value is LocationPointProperties => value !== null);
+      return points;
     } catch (e) {
       console.error('[Location][Strategy:Nominatim] search failed', e);
       return [];
     }
   }
 
-  private fromOSM(osmData: RawNominatimResult): LocationEntity | null {
+  private fromOSM(osmData: RawNominatimResult): LocationPointProperties | null {
     const lon = parseNumber(osmData.lon);
     const lat = parseNumber(osmData.lat);
     if (typeof lon !== 'number' || typeof lat !== 'number') return null;
 
-    const address = osmData.address
-      ? {
-          street: osmData.address.road,
-          houseNumber: osmData.address.house_number,
-          postcode: osmData.address.postcode,
-          city: osmData.address.city || osmData.address.town || osmData.address.village,
-          district: osmData.address.suburb,
-          state: osmData.address.state,
-          country: osmData.address.country,
-          countryCode: osmData.address.country_code?.toUpperCase(),
-        }
-      : undefined;
-
-    const attributes = {
-      osmId: String(osmData.osm_id),
-      osmType: normalizeOsmType(osmData.osm_type),
-      osmTags: sanitizeTags(osmData.extratags),
-    };
-
-    const category: LocationCategory = mapCategory(osmData.class);
     const type: LocationType = mapType(osmData.type);
     const fetchedAt = Date.now();
     const point = buildOsmPointProperties(
@@ -93,22 +61,6 @@ export class NominatimStrategy implements ILocationDownloadStrategy {
       lon,
       fetchedAt,
     );
-
-    const entity = buildLocationEntity({
-      prefix: 'osm',
-      rawId: osmData.osm_id,
-      name: osmData.display_name || 'Unknown',
-      category,
-      type,
-      dataSource: 'openstreetmap',
-      attributes,
-      boundingBox: parseBoundingBox(osmData.boundingbox),
-      address,
-      importance: normalizeImportance(osmData.importance, 0.5),
-    });
-    void appendLocationPoints(entity.id as NodeId, [point]).catch((err) => {
-      console.warn('[Location][Nominatim] failed to persist point', err);
-    });
-    return entity;
+    return point;
   }
 }

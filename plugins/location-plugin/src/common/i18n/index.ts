@@ -62,6 +62,13 @@ type LocationTranslations = {
     tilingZoomLabel?: string;
     minZoom?: string;
     maxZoom?: string;
+    cleanupTitle?: string;
+    deleteDownloads?: string;
+    deleteCache?: string;
+    deleteMetadata?: string;
+    deleteDownloadsDone?: string;
+    deleteCacheDone?: string;
+    deleteMetadataDone?: string;
   };
   selectionSettings: SelectionSettingsTranslations;
   locationTypes?: TranslationMap;
@@ -70,6 +77,9 @@ type LocationTranslations = {
     loading?: string;
     description?: string;
     error?: string;
+    tabs?: TranslationMap;
+    metadataEmpty?: string;
+    metadataLoading?: string;
     displayModeLabel: string;
     visibleCountLabel: string;
     centerLabel: string;
@@ -178,6 +188,13 @@ const baseTranslations: LocationTranslations = {
     tilingZoomLabel: 'Tile Zoom Range',
     minZoom: 'Min zoom',
     maxZoom: 'Max zoom',
+    cleanupTitle: 'Cleanup',
+    deleteDownloads: 'Delete downloaded points ({count})',
+    deleteCache: 'Delete cached data ({count})',
+    deleteMetadata: 'Delete metadata ({count})',
+    deleteDownloadsDone: 'Deleted downloaded points',
+    deleteCacheDone: 'Deleted cached intermediate data',
+    deleteMetadataDone: 'Deleted metadata',
   },
   selectionSettings: {
     generic: {
@@ -207,6 +224,12 @@ const baseTranslations: LocationTranslations = {
     loading: 'Loading map preview...',
     error: 'Failed to load map preview.',
     description: 'Preview the generated points on the map.',
+    tabs: {
+      map: 'Map',
+      metadata: 'Metadata',
+    },
+    metadataEmpty: 'No metadata available yet.',
+    metadataLoading: 'Loading metadata...',
     displayModeLabel: 'Display: {mode}',
     visibleCountLabel: 'Visible: {visible}/{total}',
     centerLabel: 'Center: {lat}, {lon}',
@@ -241,7 +264,7 @@ const baseTranslations: LocationTranslations = {
       zoomRange: 'Zoom range: {min} - {max}',
       size: 'Data size: {size}',
       tiles: 'Tiles: {count}',
-      layers: 'Layers: {count}',
+      layers: 'Layers: {layers}',
     },
   },
   batch: {

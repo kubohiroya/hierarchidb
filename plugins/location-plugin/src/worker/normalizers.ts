@@ -37,8 +37,26 @@ const sanitizeErrorInfo = (value: unknown): ErrorInfo | undefined => {
   return { message, code };
 };
 
-const sanitizeMetadata = (value: unknown): Record<string, unknown> | undefined =>
-  (isRecord(value) ? { ...value } : undefined);
+const normalizeMetadataValue = (value: unknown): string | number | null => {
+  if (value == null) return null;
+  if (typeof value === 'string' || typeof value === 'number') return value;
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (Array.isArray(value) || typeof value === 'object') {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  }
+  return String(value);
+};
+
+const sanitizeMetadata = (value: unknown): Record<string, string | number | null> | undefined => {
+  if (!isRecord(value)) return undefined;
+  return Object.fromEntries(
+    Object.entries(value).map(([key, val]) => [key, normalizeMetadataValue(val)]),
+  );
+};
 
 export const normalizePeerData = (data: unknown): LocationPeerData => {
   if (isObject(data) && data.schemaVersion === 1) {
@@ -63,7 +81,7 @@ export const normalizePeerData = (data: unknown): LocationPeerData => {
 };
 
 const isGroupData = (value: unknown): value is LocationGroupItemData =>
-  isObject(value) && value.schemaVersion === 1 && typeof value.pid === 'string';
+  isObject(value) && typeof value.pid === 'string' && (value.schemaVersion === 1 || value.schemaVersion === 2);
 
 const sanitizeSource = (value: unknown): LocationGroupItemData['source'] => {
   if (!isObject(value)) return undefined;
@@ -74,31 +92,44 @@ const sanitizeSource = (value: unknown): LocationGroupItemData['source'] => {
   return { provider, fetchedAt, originalId };
 };
 
-const sanitizePayload = (value: unknown): Record<string, unknown> => (
-  isRecord(value) ? { ...value } : {}
-);
-
 const normalizeGroupData = (value: unknown): LocationGroupItemData => {
   if (isGroupData(value)) {
+    const schemaVersion = value.schemaVersion === 2 ? 2 : 1;
+    if (schemaVersion === 2) {
+      return {
+        ...value,
+        schemaVersion: 2,
+        metadata: sanitizeMetadata(value.metadata),
+        source: sanitizeSource(value.source),
+      };
+    }
     return {
-      ...value,
-      payload: sanitizePayload(value.payload),
+      schemaVersion: 2,
+      pid: value.pid,
+      name: typeof value.name === 'string' ? value.name : '',
+      latitude: typeof value.latitude === 'number' ? value.latitude : 0,
+      longitude: typeof value.longitude === 'number' ? value.longitude : 0,
+      kind: typeof value.kind === 'string' ? value.kind : 'unknown',
+      countryCode: typeof value.gid0 === 'string' ? value.gid0 : '',
+      admin1: typeof value.gid1 === 'string' ? value.gid1 : undefined,
+      admin2: typeof value.gid2 === 'string' ? value.gid2 : undefined,
+      metadata: sanitizeMetadata(value.payload),
       source: sanitizeSource(value.source),
     };
   }
 
   if (!isObject(value)) {
     return {
-      schemaVersion: 1,
+      schemaVersion: 2,
       pid: '',
       name: '',
       latitude: 0,
       longitude: 0,
       kind: 'unknown',
-      gid0: '',
-      gid1: undefined,
-      gid2: undefined,
-      payload: {},
+      countryCode: '',
+      admin1: undefined,
+      admin2: undefined,
+      metadata: undefined,
       source: undefined,
     };
   }
@@ -108,21 +139,35 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
   const latitude = typeof value.latitude === 'number' ? value.latitude : 0;
   const longitude = typeof value.longitude === 'number' ? value.longitude : 0;
   const kind = typeof value.kind === 'string' ? value.kind : 'unknown';
-  const gid0 = typeof value.gid0 === 'string' ? value.gid0 : '';
-  const gid1 = typeof value.gid1 === 'string' ? value.gid1 : undefined;
-  const gid2 = typeof value.gid2 === 'string' ? value.gid2 : undefined;
+  const countryCode = typeof value.countryCode === 'string'
+    ? value.countryCode
+    : typeof value.gid0 === 'string'
+      ? value.gid0
+      : '';
+  const admin1 = typeof value.admin1 === 'string'
+    ? value.admin1
+    : typeof value.gid1 === 'string'
+      ? value.gid1
+      : undefined;
+  const admin2 = typeof value.admin2 === 'string'
+    ? value.admin2
+    : typeof value.gid2 === 'string'
+      ? value.gid2
+      : undefined;
+  const countryName = typeof value.countryName === 'string' ? value.countryName : undefined;
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     pid,
     name,
     latitude,
     longitude,
     kind,
-    gid0,
-    gid1,
-    gid2,
-    payload: sanitizePayload((value as Record<string, unknown>).payload),
+    countryCode,
+    countryName,
+    admin1,
+    admin2,
+    metadata: sanitizeMetadata((value as Record<string, unknown>).metadata ?? (value as Record<string, unknown>).payload),
     source: sanitizeSource((value as Record<string, unknown>).source),
   };
 };

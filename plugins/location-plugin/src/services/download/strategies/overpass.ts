@@ -1,20 +1,13 @@
 import type { ILocationDownloadStrategy } from '../types.js';
 import type {
-  LocationEntity,
   LocationSearchConfig,
 } from '../../../common/entities/LocationEntity.js';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { LocationPointProperties } from '../../../common/entities/LocationPoint.js';
 import {
-  buildLocationEntity,
-  mapCategory,
   mapType,
-  normalizeImportance,
-  normalizeOsmType,
-  sanitizeTags,
 } from '../mappers.js';
 import type { RawOverpassElement } from '../rawTypes.js';
 import { buildOverpassPointProperties } from '../../pointFactories.js';
-import { appendLocationPoints } from '../../pointRepository.js';
 
 export class OverpassStrategy implements ILocationDownloadStrategy {
   readonly id = 'openstreetmap-overpass';
@@ -23,7 +16,7 @@ export class OverpassStrategy implements ILocationDownloadStrategy {
     return config.dataSource === 'overpass';
   }
 
-  async search(config: LocationSearchConfig): Promise<LocationEntity[]> {
+  async search(config: LocationSearchConfig): Promise<LocationPointProperties[]> {
     const endpoint = config.options?.overpassEndpoint || 'https://overpass-api.de/api/interpreter';
     const query = typeof config.options?.overpassQuery === 'string' ? config.options.overpassQuery : undefined;
     if (!query?.trim()) {
@@ -41,14 +34,14 @@ export class OverpassStrategy implements ILocationDownloadStrategy {
       const elements = Array.isArray(data?.elements) ? data.elements as RawOverpassElement[] : [];
       return elements
         .map((item) => this.fromOverpass(item))
-        .filter((value): value is LocationEntity => value !== null);
+        .filter((value): value is LocationPointProperties => value !== null);
     } catch (e) {
       console.error('[Location][Strategy:Overpass] search failed', e);
       return [];
     }
   }
 
-  private fromOverpass(overpassData: RawOverpassElement): LocationEntity | null {
+  private fromOverpass(overpassData: RawOverpassElement): LocationPointProperties | null {
     const lon = typeof overpassData.lon === 'number'
       ? overpassData.lon
       : overpassData.center?.lon;
@@ -69,25 +62,7 @@ export class OverpassStrategy implements ILocationDownloadStrategy {
       lon,
       fetchedAt,
     );
-
-    const entity = buildLocationEntity({
-      prefix: 'overpass',
-      rawId: overpassData.id,
-      name: tags.name || 'Unknown',
-      category: mapCategory(primaryClass),
-      type: mappedType,
-      dataSource: 'overpass',
-      attributes: {
-        osmId: String(overpassData.id),
-        osmType: normalizeOsmType(overpassData.type),
-        tags: sanitizeTags(tags),
-      },
-      importance: normalizeImportance(tags.importance),
-    });
-    void appendLocationPoints(entity.id as NodeId, [point]).catch((err) => {
-      console.warn('[Location][Overpass strategy] failed to persist point', err);
-    });
-    return entity;
+    return point;
   }
 
   private detectClass(tags: Record<string, string>): string | undefined {

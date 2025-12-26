@@ -3,24 +3,19 @@
  */
 
 import type React from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState, useId } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Button,
   CircularProgress,
   Divider,
-  FormControlLabel,
   Paper,
   Stack,
   Tab,
   Tabs,
-  TextField,
   Typography,
-  Slider,
-  Switch,
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import SettingsIcon from '@mui/icons-material/Settings';
 import type { NodeId } from '@hierarchidb/common-types';
 import { LocationMapPreview } from '../batch/LocationMapPreview.js';
 import type { PreviewLocationPoint } from '../batch/LocationMapPreview.js';
@@ -29,7 +24,7 @@ import { formatBytes, useTranslation } from '../../../common/i18n/index.js';
 import { getEphemeralLocationDB } from '../../../database/EphemeralLocationDB.js';
 import { LocationVectorTileService } from '../../../services/tiles/LocationVectorTileService.js';
 import { listLocationPoints } from '../../../services/pointRepository.js';
-import { BASE_LOCATION_TYPES } from './locationTypes.js';
+import { DataGridPreview } from '@hierarchidb/ui-grid';
 
 const KNOWN_LOCATION_TYPES: readonly LocationType[] = [
   'area_centroid',
@@ -47,18 +42,19 @@ const resolveLocationType = (kind: string): LocationType => (
 
 const toPreviewLocationPoint = (point: Awaited<ReturnType<typeof listLocationPoints>>[number]): PreviewLocationPoint => {
   const properties: PreviewLocationPoint['properties'] = {
-    ...(point.payload ?? {}),
+    ...(point.metadata ?? {}),
   };
 
-  if (point.gid1) properties.gid1 = point.gid1;
-  if (point.gid2) properties.gid2 = point.gid2;
+  if (point.admin1) properties.admin1 = point.admin1;
+  if (point.admin2) properties.admin2 = point.admin2;
+  if (point.countryName) properties.countryName = point.countryName;
   if (point.source) properties.source = point.source;
 
   return {
     id: point.pid,
     name: point.name,
     type: resolveLocationType(point.kind),
-    countryCode: point.gid0 || 'UNK',
+    countryCode: point.countryCode || 'UNK',
     coordinates: [point.longitude, point.latitude],
     properties,
   };
@@ -77,19 +73,15 @@ type TileSummary = Awaited<ReturnType<LocationVectorTileService['getSessionSumma
 export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ draft: _draft, nodeId }) => {
   const { translations, locale } = useTranslation();
   const panelTranslations = translations.panel ?? {};
-  const selectionTranslations = translations.selection ?? {};
-  const selectionSettings = translations.selectionSettings ?? {};
-  const typeLabels = translations.locationTypes ?? {};
-  const typeDescriptions = selectionTranslations.typeDescriptions ?? {};
-  const controlId = useId();
   const previewNodeId = nodeId ?? 'preview' as NodeId;
   const [summary, setSummary] = useState<TileSummary | null>(null);
   const [locations, setLocations] = useState<PreviewLocationPoint[]>([]);
+  const [tableId, setTableId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const serviceRef = useRef<LocationVectorTileService | null>(null);
   const isMountedRef = useRef(true);
-  const [activeTypeTab, setActiveTypeTab] = useState(0);
+  const [activeTab, setActiveTab] = useState(0);
 
   if (!serviceRef.current) {
     serviceRef.current = new LocationVectorTileService();
@@ -119,6 +111,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       const sessions = db.sessions;
       if (!sessions || typeof sessions.where !== 'function') {
         setSummary(null);
+        setTableId(null);
         const pointRecords = await listLocationPoints(resolvedNodeId);
         if (!isMountedRef.current) return;
         setLocations(pointRecords.map(toPreviewLocationPoint));
@@ -128,6 +121,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       const records = await sessions.where('nodeId').equals(previewNodeId).toArray();
       if (!records?.length) {
         setSummary(null);
+        setTableId(null);
         const pointRecords = await listLocationPoints(resolvedNodeId);
         if (!isMountedRef.current) return;
         setLocations(pointRecords.map(toPreviewLocationPoint));
@@ -142,6 +136,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
 
       if (!latest?.sessionId) {
         setSummary(null);
+        setTableId(null);
         const pointRecords = await listLocationPoints(resolvedNodeId);
         if (!isMountedRef.current) return;
         setLocations(pointRecords.map(toPreviewLocationPoint));
@@ -165,10 +160,12 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
           sessionId: latest.sessionId,
         } as TileSummary & { sessionId: string };
       });
+      setTableId(latest.tableId ?? null);
       setLocations(pointRecords.map(toPreviewLocationPoint));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setSummary(null);
+      setTableId(null);
       setLocations([]);
     } finally {
       if (isMountedRef.current) {
@@ -176,21 +173,6 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       }
     }
   }, [previewNodeId]);
-
-  const locationTypes = useMemo(() => BASE_LOCATION_TYPES.map((t) => {
-    const name = typeLabels[t.id] ?? t.id;
-    const descriptionKey = t.id as keyof typeof typeDescriptions;
-    return {
-      ...t,
-      name,
-      description: typeDescriptions[descriptionKey] ?? name,
-    };
-  }), [typeDescriptions, typeLabels]);
-
-  const activeType = locationTypes[activeTypeTab];
-  const airportSettings = selectionSettings.airport ?? {};
-  const railwaySettings = selectionSettings.railway_station ?? selectionSettings.railway ?? {};
-  const genericSettings = selectionSettings.generic ?? {};
 
   useEffect(() => () => {
     isMountedRef.current = false;
@@ -263,158 +245,33 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     );
   }, [error, loading, locale, summary, translations.mapPreview]);
 
+  const metadataContent = useMemo(() => {
+    if (loading) {
+      return (
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <CircularProgress size={16} />
+          <Typography variant="body2" color="text.secondary">
+            {translations.mapPreview?.metadataLoading ?? 'Loading metadata...'}
+          </Typography>
+        </Stack>
+      );
+    }
+    if (!tableId) {
+      return (
+        <Typography variant="body2" color="text.secondary">
+          {translations.mapPreview?.metadataEmpty ?? 'No metadata available yet.'}
+        </Typography>
+      );
+    }
+    return (
+      <Box sx={{ height: 420 }}>
+        <DataGridPreview pluginId="location" tableId={tableId} />
+      </Box>
+    );
+  }, [loading, tableId, translations.mapPreview?.metadataEmpty, translations.mapPreview?.metadataLoading]);
+
   return (
     <Box display="flex" flexDirection="column" gap={2} sx={{ height: '100%' }}>
-      <Paper elevation={1} sx={{ p: 3 }}>
-        <Box display="flex" alignItems="center" gap={1} mb={2}>
-          <SettingsIcon color="primary" fontSize="small" />
-          <Typography variant="h6">
-            {selectionTranslations.settingsTitle ?? 'Location type settings'}
-          </Typography>
-        </Box>
-        {selectionTranslations.settingsDescription && (
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            {selectionTranslations.settingsDescription}
-          </Typography>
-        )}
-
-        <Tabs
-          value={activeTypeTab}
-          onChange={(_, value) => setActiveTypeTab(value)}
-          variant="scrollable"
-          scrollButtons="auto"
-          sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
-        >
-          {locationTypes.map((type) => (
-            <Tab
-              key={type.id}
-              label={(
-                <Box display="flex" alignItems="center" gap={1}>
-                  <span>{type.icon}</span>
-                  <span>{type.name}</span>
-                </Box>
-              )}
-            />
-          ))}
-        </Tabs>
-
-        {activeType && (
-          <Box>
-            <Typography variant="subtitle1" gutterBottom>
-              {activeType.icon} {activeType.description}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              {genericSettings.advancedFilters ?? 'Configure advanced filters for this type.'}
-            </Typography>
-
-            {activeType.id === 'airport' && (
-              <Box
-                display="grid"
-                gridTemplateColumns={{ xs: '1fr', md: '1fr 1fr' }}
-                gap={3}
-              >
-                <FormControlLabel
-                  control={(
-                    <Switch
-                      defaultChecked
-                      inputProps={{
-                        id: `${controlId}-airport-include-heliports`,
-                        name: 'airport-include-heliports',
-                      }}
-                    />
-                  )}
-                  label={airportSettings.includeHeliports ?? 'Include heliports'}
-                />
-                <FormControlLabel
-                  control={(
-                    <Switch
-                      defaultChecked
-                      inputProps={{
-                        id: `${controlId}-airport-active-only`,
-                        name: 'airport-active-only',
-                      }}
-                    />
-                  )}
-                  label={airportSettings.activeOnly ?? 'Active airports only'}
-                />
-                <FormControlLabel
-                  control={(
-                    <Switch
-                      inputProps={{
-                        id: `${controlId}-airport-commercial-only`,
-                        name: 'airport-commercial-only',
-                      }}
-                    />
-                  )}
-                  label={airportSettings.commercialOnly ?? 'Commercial airports only'}
-                />
-                <Box>
-                  <Typography gutterBottom>
-                    {(airportSettings.minRunwayLengthLabel ?? 'Minimum runway length: {value} m').replace('{value}', '1500')}
-                  </Typography>
-                  <Slider min={300} max={5000} step={100} defaultValue={1500} />
-                </Box>
-              </Box>
-            )}
-
-            {activeType.id === 'railway_station' && (
-              <Box
-                display="grid"
-                gridTemplateColumns={{ xs: '1fr', md: '1fr 1fr' }}
-                gap={3}
-              >
-                <FormControlLabel
-                  control={(
-                    <Switch
-                      defaultChecked
-                      inputProps={{
-                        id: `${controlId}-railway-include-metro`,
-                        name: 'railway-include-metro',
-                      }}
-                    />
-                  )}
-                  label={railwaySettings.includeMetro ?? 'Include metro/light rail'}
-                />
-                <FormControlLabel
-                  control={(
-                    <Switch
-                      inputProps={{
-                        id: `${controlId}-railway-include-abandoned`,
-                        name: 'railway-include-abandoned',
-                      }}
-                    />
-                  )}
-                  label={railwaySettings.includeAbandoned ?? 'Include abandoned lines'}
-                />
-                <FormControlLabel
-                  control={(
-                    <Switch
-                      inputProps={{
-                        id: `${controlId}-railway-intercity-only`,
-                        name: 'railway-intercity-only',
-                      }}
-                    />
-                  )}
-                  label={railwaySettings.intercityOnly ?? 'Intercity only'}
-                />
-                <TextField
-                  type="number"
-                  label={railwaySettings.minPlatformsLabel ?? 'Minimum platforms'}
-                  defaultValue={1}
-                  size="small"
-                  id={`${controlId}-railway-min-platforms`}
-                  name="railway-min-platforms"
-                  inputProps={{
-                    id: `${controlId}-railway-min-platforms`,
-                    name: 'railway-min-platforms',
-                  }}
-                />
-              </Box>
-            )}
-          </Box>
-        )}
-      </Paper>
-
       <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
         <Typography variant="body2" color="text.secondary">
           {translations.mapPreview?.description ?? 'Preview the generated points on the map.'}
@@ -435,8 +292,24 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
 
       <Divider />
 
+      <Paper elevation={0} sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Tabs
+          value={activeTab}
+          onChange={(_, value) => setActiveTab(value)}
+          variant="scrollable"
+          scrollButtons="auto"
+        >
+          <Tab label={translations.mapPreview?.tabs?.map ?? 'Map'} />
+          <Tab label={translations.mapPreview?.tabs?.metadata ?? 'Metadata'} />
+        </Tabs>
+      </Paper>
+
       <Box flex={1} minHeight={320}>
-        <LocationMapPreview nodeId={previewNodeId} locations={locations} />
+        {activeTab === 0 ? (
+          <LocationMapPreview nodeId={previewNodeId} locations={locations} />
+        ) : (
+          metadataContent
+        )}
       </Box>
     </Box>
   );

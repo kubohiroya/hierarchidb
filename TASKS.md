@@ -79,14 +79,33 @@
   - [ ] 開始日時があるのに終了日時がない場合にクラッシュ疑いを検知し、UIでヒントを表示する
   - [ ] メモリ不足疑い時に Step4 の並列度設定に警告文を出す
   - [ ] Step5 のビルド開始時に警告ダイアログを表示する
+  - [ ] JSヒープ逼迫を可視化し、Step4/Step5で警告を表示する（Chrome限定）
+  - [ ] ビルド中にJSヒープ逼迫を検出したら自動一時停止し、警告ダイアログを表示する
   - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
 - チェックリスト:
   - [ ] TreeNode に buildStartedAt/buildFinishedAt を追加して保存する
   - [ ] 稼働状況のリングバッファ保存（localStorage）と JSON スキーマを定義する
   - [ ] クラッシュ疑い判定と UI ヒント表示を追加する
   - [ ] Step4 の並列度ヘルプ警告と Step5 警告ダイアログを追加する
+  - [ ] JSヒープ逼迫のリアルタイム警告（Step4/Step5）を追加する
+  - [ ] ビルド中のJSヒープ逼迫で自動一時停止+警告ダイアログを追加する
   - [ ] 代表検証として `pnpm --filter @hierarchidb/shape-plugin typecheck` を実行し、結果を運用ログに記録する（不可なら理由記載）
 - ロールバック手順：TreeNode の追加フィールドと UI/monitoring 変更を revert し、localStorage のキーは放置可。
+
+1901) location 実装（設計ドキュメント準拠）（P1）
+- ブランチ: `feat/location/implementation-from-design`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: docs/location-route-design-gap.md, plugins/location-plugin, packages/*, TASKS.md
+- 受け入れ基準（DoD）:
+  - [ ] location の Step2〜Step6 が設計概要どおりに動作する
+  - [ ] GroupEntity ベースの Point/メタデータ構造が実装されている
+  - [ ] Step4 の削除操作ボタン（download/cache/metadata）が動作する
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] Step2/Step3 の選択をビルド処理へ反映する
+  - [ ] データソースからの取得 → メタデータ保存 → タイル生成の導線を実装する
+  - [ ] Step6 に共通メタデータ一覧 UI を導入する
+  - [ ] `pnpm --filter @hierarchidb/location-plugin typecheck` を実行し結果を記録する（不可なら理由記載）
+- ロールバック手順：location 実装差分を revert し、`pnpm --filter @hierarchidb/location-plugin typecheck` を再実行して旧挙動へ戻す。
 
 1889) shape-plugin Step6 メタデータの自治体コード/featureId を ISO2+ISO3166-2 に整理（P1）
 - ブランチ: `fix/shape/metadata-iso3166-2-logical-id`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -131,21 +150,6 @@
   - [ ] shape の typecheck を実行し結果を記録する（不可なら理由記載）
   - [ ] location/route の typecheck を実行し結果を記録する（不可なら理由記載）
 - ロールバック手順：共通化適用の差分を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行して旧挙動へ戻す。
-
-1901) location 実装（設計ドキュメント準拠）（P1）
-- ブランチ: `feat/location/implementation-from-design`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: docs/location-route-design-gap.md, plugins/location-plugin, packages/*, TASKS.md
-- 受け入れ基準（DoD）:
-  - [ ] location の Step2〜Step6 が設計概要どおりに動作する
-  - [ ] GroupEntity ベースの Point/メタデータ構造が実装されている
-  - [ ] Step4 の削除操作ボタン（download/cache/metadata）が動作する
-  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
-- チェックリスト:
-  - [ ] Step2/Step3 の選択をビルド処理へ反映する
-  - [ ] データソースからの取得 → メタデータ保存 → タイル生成の導線を実装する
-  - [ ] Step6 に共通メタデータ一覧 UI を導入する
-  - [ ] `pnpm --filter @hierarchidb/location-plugin typecheck` を実行し結果を記録する（不可なら理由記載）
-- ロールバック手順：location 実装差分を revert し、`pnpm --filter @hierarchidb/location-plugin typecheck` を再実行して旧挙動へ戻す。
 
 1902) route 実装（設計ドキュメント準拠）（P1）
 - ブランチ: `feat/route/implementation-from-design`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -2172,6 +2176,27 @@
 - ロールバック手順：本タスクで更新するファイル（package.json/tsconfig/Tabular* 関連）を revert し、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` を再実行して旧状態へ戻す
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
+
+- 1910) map 非モーダルダイアログ（ModelessDialog）導入（P1）
+- ブランチ: `feat/ui/modeless-dialog-map`（sandbox 制約で `main` 上で作業）
+- 依存: `app/src/router/pages/map/*`, `app/src/components/dialogs/*`, `packages/runtime-plugin-dialog`, `packages/plugin-ui-host`, `packages/ui/*`, `localStorage`
+- 受け入れ基準（DoD）:
+  - [ ] `AbstractDialog` を新設し、`PluginDialog` と `ModelessDialog` が共通 API/実装を利用できる
+  - [ ] `/hierarchidb/map` で複数の非モーダルダイアログを同時表示できる
+  - [ ] 前後関係（z-index）を管理し、クリックで最前面化できる
+  - [ ] ドラッグ移動・リサイズ・最小化・最大化・フルスクリーンが動作する
+  - [ ] ヘッダ UI は既存 `PluginDialog` と同等の見た目/操作を維持する
+  - [ ] ウィンドウ状態（位置/サイズ/状態/順序）を `localStorage` に保存・復元できる
+  - [ ] 既存モーダルの挙動は維持される（回帰なし）
+  - [ ] `TASKS.md` の Kanban/運用ログに start→progress→done を記録し、ロールバック手順を明記する
+- チェックリスト:
+  - [ ] `PluginDialog` を `AbstractDialog` 継承へ移行し、共通 API を抽出する
+  - [ ] `ModelessDialog` の UI コンポーネントと状態モデルを追加する
+  - [ ] Z-order 管理（最前面化/アクティブ状態）を追加する
+  - [ ] `localStorage` への永続化と復元ロジックを実装する
+  - [ ] `/hierarchidb/map` での表示導線を追加する
+  - [ ] 必要な型/テスト/検証コマンドの結果を運用ログに記録する
+- ロールバック手順：`AbstractDialog`/`ModelessDialog` 追加分と `PluginDialog` の変更を revert し、`localStorage` のキーは放置可。
 
 
 - 101) ui-shell typecheck 依存ビルド効率化（P1）
@@ -5295,6 +5320,20 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+
+1906) Shape/Location/Route API（Query/Mutation）作成状況の調査（P1）
+- ブランチ: `analysis/api/shape-location-route-apis`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: packages/*, plugins/*, docs/*, TASKS.md
+- 受け入れ基準（DoD）:
+  - [x] Style/Location/Route/Shape 系 API の実体と参照箇所を確認する
+  - [x] LocationMutation/RouteMutation/ShapeQuery/ShapeMutation が未作成である根拠と関連状況を整理する
+  - [x] 「原因・発生範囲の確認内容・修正方法と適用範囲」の観点で調査結果をまとめる
+  - [x] TASKS 運用ログに start/progress/done を記載する
+- チェックリスト:
+  - [x] `rg` で API 名と類似名（Query/Mutation/Service/Repository）を横断検索する
+  - [x] Style/Location/Route 既存 API の定義元と利用側を列挙する
+  - [x] 未作成 API の設計/代替実装/未着手理由の痕跡を確認する
+- ロールバック手順：調査のみのため差分なし。記載内容を戻す場合は本タスクの運用ログ追記を削除する。
 
 1905) TreeConsole 共通ズーム範囲スライダー + 各プラグインズーム設定の無効化（P1）
 - ブランチ: `feat/ui/shared-zoom-range-toolbar`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -10054,6 +10093,8 @@ ToDo（Phase 2/3: any の完全撤去）
 ## 今日の着手（運用ログ） <a id="worklog-5"></a>
 
 - 2025-12-25 23:35 start: shape-plugin ビルド監視ログ/クラッシュ推測/警告表示（#1896）。
+- 2025-12-26 00:05 start: shape-plugin JSヒープ逼迫の可視化/警告（#1896）。
+- 2025-12-26 00:12 start: shape-plugin ビルド中ヒープ逼迫の自動一時停止/警告ダイアログ（#1896）。
 - 2025-12-25 23:10 progress: shape-plugin Step5 pause/resume — generateTiles 中断時のタイル残骸を削除して再開時に破損しない方針（DoD/チェック項目）を追加。
 - 2025-12-25 00:20 start: 1837 fix/app/index-module-script — module script が build 後に消える原因調査を再開。`HDB_TRACE_INDEX_HTML=1` ログで「transform 前から欠落」「bundle に index.html が無い」状態を再確認し、Vite の HTML 変換がどの段階で置換されるかを特定する。DoD: build/build:sourcemap/preview で module script が維持されること、原因と修正方針を運用ログに記載。
 - 2025-12-08 18:25 progress: research/plugin-dialog-i18n — route-plugin を location-plugin と同様にプラグイン内 locales 方式へ移行（`src/ui/locales/{en,ja}.json` 追加、`src/ui/i18n.ts` で glob 登録、common i18n ラッパーを i18next ベースに置換）。RouteSelection/Processing/Details/Build ステップと step labels を新キーへ差し替え。`plugins/route-plugin/tsconfig.json` で Vite 型/デコレータ許可を追加し、`pnpm --filter @hierarchidb/route-plugin typecheck` exit 0 を確認。
@@ -12990,7 +13031,11 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-26 16:55 progress: feat/location-route/ide-gsm-datasource — DataSourceSelectionStep の表示文言を i18n 化し、shape/location/route の DataSource ラベル/説明/カード見出し/ライセンス文言を翻訳キーへ統一。location en.json の欠落カンマも修正。検証: 未実施。ロールバック: UI datasource と locale/ステップ差分を revert。
 - 2025-12-26 14:30 start: analysis/config/defaults-candidates — shape/location/route の設定項目共通化候補の洗い出しに着手。DoD: Kanban 1904 のとおり。
 - 2025-12-26 14:40 done: analysis/config/defaults-candidates — ShapeEntity/LocationEntity/RouteEntity と各ステップの既存設定項目を整理し、設定ノードの共通化候補を提案。検証: 調査のみ。ロールバック: 運用ログ追記を削除。
+- 2025-12-26 16:06 start: feat/location/implementation-from-design — location-plugin を設計ドキュメント準拠で再構築する作業に着手。DoD: Kanban 1901 のとおり。
 - 2025-12-26 14:50 start: feat/ui/shared-zoom-range-toolbar — TreeConsole 共通ズーム範囲スライダーと各プラグインズーム設定の無効化に着手。DoD: Kanban 1905 のとおり。
 - 2025-12-26 14:54 done: feat/ui/shared-zoom-range-toolbar — TreeConsole の共通ズーム範囲スライダーを追加し、shape/location/route のズーム範囲を共有値表示+disabledに統一。検証: 未実施。ロールバック: 変更ファイルを revert。
 - 2025-12-26 14:56 progress: feat/ui/shared-zoom-range-toolbar — 共通ズーム範囲の既定値を 0-6 へ更新。
 - 2025-12-26 14:56 done: feat/ui/shared-zoom-range-toolbar — 既定値を 0-6 に統一（toolbar/shape/location/route）。検証: 未実施。ロールバック: 対象ファイルの差分を revert。
+- 2025-12-26 16:14 start: analysis/api/shape-location-route-apis — Shape/Location/Route API（Query/Mutation）作成状況と関連状況の調査に着手。DoD: Kanban 1906 のとおり。
+- 2025-12-26 16:32 progress: analysis/api/shape-location-route-apis — plugin-service-api / runtime-worker / app worker / worker-bridge / shape-plugin の API 定義と利用状況を確認。
+- 2025-12-26 16:36 done: analysis/api/shape-location-route-apis — LocationMutation/RouteMutation/ShapeQuery/ShapeMutation が未定義であることを確認し、既存の Style/Location/Route Query/Mutation と shape の代替 API の状況を整理。検証: `rg` 検索。ロールバック: 調査のみのため差分なし（運用ログ追記を削除）。

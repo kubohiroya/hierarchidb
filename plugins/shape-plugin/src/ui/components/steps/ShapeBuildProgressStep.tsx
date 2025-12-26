@@ -9,6 +9,7 @@ import {
   DialogContent,
   DialogTitle,
   LinearProgress,
+  Alert,
   Stack,
   Typography,
 } from '@mui/material';
@@ -22,6 +23,7 @@ import { useShapeBuildProgressStep } from '../../hooks/useShapeBuildProgressStep
 import { ShapeBuildTaskItem } from './ShapeBuildTaskItem.js';
 import { useBuildCrashInsight } from '../../hooks/useBuildCrashInsight.js';
 import { getStageConcurrencyWarning } from '../../utils/buildMonitor.js';
+import { useHeapPressure } from '../../hooks/useHeapPressure.js';
 
 export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, onChange, nodeId }) => {
   const resolvedNodeId = nodeId as NodeId | undefined;
@@ -53,6 +55,7 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
     resolveStatusLabel,
     resolveStatusColor,
   } = useShapeBuildProgressStep({ data, onChange, nodeId: resolvedNodeId });
+  const heapPressure = useHeapPressure(buildStatus === 'running' || buildStatus === 'paused');
 
   type TaskWithMetadata = BatchTaskSummary & { metadata?: Record<string, unknown>; stage?: string; title?: string };
 
@@ -215,6 +218,25 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
     );
   }, [crashInsight, stages, t]);
 
+  const heapWarning = useMemo(() => {
+    if (!heapPressure) return null;
+    const usedMb = Math.round(heapPressure.usedBytes / (1024 * 1024));
+    const limitMb = Math.round(heapPressure.limitBytes / (1024 * 1024));
+    const ratioPercent = Math.round(heapPressure.ratio * 100);
+    return {
+      severity: heapPressure.level === 'critical' ? 'error' : 'warning',
+      message: t(
+        'build.heap.warning',
+        'High JS heap usage detected ({{ratio}}% / {{used}}MB of {{limit}}MB). Consider reducing concurrency or pausing.',
+        {
+          ratio: ratioPercent,
+          used: usedMb,
+          limit: limitMb,
+        },
+      ),
+    };
+  }, [heapPressure, t]);
+
   const renderTaskProgressBar = useCallback(() => {
     const waitingColor = theme.palette.grey[300];
     const emptyStageColor = theme.palette.grey[500];
@@ -328,6 +350,11 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
   return (
     <Box display="flex" flexDirection="column" gap={3} height="100%" minHeight={0}>
       <Box flex={1} minHeight={0}>
+        {heapWarning ? (
+          <Alert severity={heapWarning.severity} sx={{ mb: 2 }}>
+            {heapWarning.message}
+          </Alert>
+        ) : null}
         {crashHint ? (
           <Typography variant="body2" sx={{ mb: 2, color: 'warning.main' }}>
             {crashHint}

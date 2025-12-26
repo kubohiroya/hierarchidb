@@ -92,12 +92,70 @@
     "zoomMin": "Min zoom to generate",
     "zoomMax": "Max zoom to generate"
   },
+  "processing": {
+    "description": "Configure download and tiling parameters for batch processing.",
+    "concurrentDownloadsLabel": "Concurrent Downloads",
+    "tilingZoomLabel": "Tile Zoom Range",
+    "minZoom": "Min zoom",
+    "maxZoom": "Max zoom",
+    "cleanupTitle": "Cleanup",
+    "deleteDownloads": "Delete downloaded points ({count})",
+    "deleteCache": "Delete cached data ({count})",
+    "deleteMetadata": "Delete metadata ({count})",
+    "deleteDownloadsDone": "Deleted downloaded points",
+    "deleteCacheDone": "Deleted cached intermediate data",
+    "deleteMetadataDone": "Deleted metadata"
+  },
   "mapPreview": {
     "title": "Map Preview",
-    "loading": "Loading map preview…"
+    "loading": "Loading map preview…",
+    "description": "Preview the generated points on the map.",
+    "tabs": {
+      "map": "Map",
+      "metadata": "Metadata"
+    },
+    "metadataEmpty": "No metadata available yet.",
+    "metadataLoading": "Loading metadata...",
+    "summary": {
+      "noData": "No vector tiles generated yet.",
+      "zoomRange": "Zoom range: {min} - {max}",
+      "size": "Total size: {size}",
+      "tiles": "Generated tiles: {count}",
+      "layers": "Layers: {layers}"
+    }
   },
   "build": {
+    "title": "Build",
     "action": "Build",
+    "description": "Review progress and control the build. Use the footer Build button to start when prerequisites are met.",
+    "prereq": "Select a data source and complete previous steps before building.",
+    "statusLabel": "Build status",
+    "status": {
+      "idle": "Waiting for build start.",
+      "running": "Build in progress.",
+      "paused": "Build paused.",
+      "completed": "Build completed.",
+      "failed": "Build failed."
+    },
+    "currentTask": "Current task: {{task}}",
+    "progressSummary": "{{completed}} / {{total}} (failed: {{failed}})",
+    "pauseLabel": "Pause",
+    "resumeLabel": "Resume",
+    "startLabel": "Start",
+    "controlsLabel": "Build controls",
+    "mutationError": "Build control failed: {{message}}",
+    "stages": {
+      "download": "Download",
+      "filter": "Filter",
+      "cluster": "Cluster",
+      "index": "Index"
+    },
+    "stageDescriptions": {
+      "download": "Download points and metadata.",
+      "filter": "Normalize and filter the source data.",
+      "cluster": "Prepare point clusters and indexes.",
+      "index": "Generate vector tiles for previews."
+    },
     "requiresApproval": "Provide a data source and save the node before building.",
     "noPoints": "No location points available to process.",
     "success": "Build started (session {{sessionId}})",

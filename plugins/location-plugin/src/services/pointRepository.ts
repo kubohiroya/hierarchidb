@@ -6,7 +6,7 @@ import type { LocationGroupItemData } from '../common/types/entities.js';
 import type { LocationPointProperties } from '../common/entities/LocationPoint.js';
 
 type PointItem = GroupItemBase<LocationGroupItemData>;
-type PointProperties = LocationPointProperties<Record<string, unknown>>;
+type PointProperties = LocationPointProperties;
 
 let dbPromise: Promise<LocationEntitiesDB> | null = null;
 
@@ -51,14 +51,14 @@ export async function listLocationPoints(nodeId: NodeId): Promise<PointPropertie
   const rows = await db.groupEntities.where('nodeId').equals(nodeId).toArray();
   return fromGroupRow(rows).map((item) => ({
     ...(item.data ?? {
-      schemaVersion: 1,
+      schemaVersion: 2,
       pid: item.id,
       name: '',
       latitude: 0,
       longitude: 0,
       kind: 'unknown',
-      gid0: '',
-      payload: {},
+      countryCode: '',
+      metadata: undefined,
     }),
   }));
 }

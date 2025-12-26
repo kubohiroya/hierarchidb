@@ -7,24 +7,16 @@ import type { NodeId } from '@hierarchidb/common-types';
 import type {
   LocationBatchConfig,
   LocationBatchFilterCriteria,
-  LocationCategory,
-  LocationEntity,
   LocationSearchConfig,
   LocationType,
 } from '../common/entities/LocationEntity.js';
 import type { LocationPointProperties } from '../common/entities/LocationPoint.js';
 import {
-  buildLocationEntity,
-  mapCategory,
   mapType,
-  normalizeImportance,
-  normalizeOsmType,
-  parseBoundingBox,
   parseNumber,
-  sanitizeTags,
 } from './download/mappers.js';
 import { buildOsmPointProperties, buildOverpassPointProperties } from './pointFactories.js';
-import { appendLocationPoints } from './pointRepository.js';
+import { appendLocationPoints, replaceLocationPoints } from './pointRepository.js';
 import type { RawNominatimResult, RawOverpassElement } from './download/rawTypes.js';
 
 const logLocationBatchWarning = (message: string, error: unknown): void => {
@@ -42,7 +34,7 @@ interface LocationBatchTask {
   searchConfig: LocationSearchConfig;
   status: 'pending' | 'searching' | 'geocoding' | 'validating' | 'completed' | 'failed';
   progress: number;
-  results?: LocationEntity[];
+  results?: LocationPointProperties[];
   error?: string;
   metrics?: {
     searchTime?: number;
@@ -63,7 +55,7 @@ interface LocationBatchSession {
   totalTasks: number;
   completedTasks: number;
   failedTasks: number;
-  totalLocations: number;
+  totalPoints: number;
   startTime: number;
   endTime?: number;
   status: 'running' | 'paused' | 'completed' | 'failed';
@@ -96,9 +88,61 @@ export class LocationBatchManager {
   private locationTasks: Map<string, LocationBatchTask[]> = new Map();
   private progressCallbacks: Map<string, (event: LocationBatchProgressEvent) => void> = new Map();
 
-  private async persistLocationPoints(nodeId: NodeId, points: Array<LocationPointProperties>): Promise<void> {
+  private async persistLocationPoints(
+    nodeId: NodeId,
+    points: Array<LocationPointProperties>,
+    mode: 'append' | 'replace' = 'append',
+  ): Promise<void> {
     if (!points.length) return;
+    if (mode === 'replace') {
+      await replaceLocationPoints(nodeId, points);
+      return;
+    }
     await appendLocationPoints(nodeId, points);
+  }
+
+  async collectLocationPoints(
+    nodeId: NodeId,
+    config: LocationBatchConfig,
+    progressCallback?: (event: LocationBatchProgressEvent) => void,
+  ): Promise<LocationPointProperties[]> {
+    const tasks = config.searchConfigs.map((searchConfig, index) => ({
+      taskId: `collect-task-${index}`,
+      sessionId: `collect-${Date.now()}`,
+      nodeId,
+      searchConfig,
+      status: 'pending' as const,
+      progress: 0,
+    }));
+    const collected: LocationPointProperties[] = [];
+    const { concurrent } = config.processingOptions;
+    const batches = this.createBatches(tasks, concurrent);
+
+    for (const batch of batches) {
+      await Promise.all(batch.map(async (task) => {
+        const searchResults = await this.searchLocations(task.searchConfig);
+        const validatedResults = await this.validateAndFilterLocations(
+          searchResults,
+          config.filterCriteria,
+        );
+        collected.push(...validatedResults);
+        progressCallback?.({
+          sessionId: task.sessionId,
+          taskId: task.taskId,
+          stage: 'saving',
+          progress: collected.length,
+          message: `Collected ${collected.length} locations`,
+          metrics: {
+            locationsFound: collected.length,
+            locationsProcessed: collected.length,
+            locationsSaved: collected.length,
+          },
+        });
+      }));
+    }
+
+    await this.persistLocationPoints(nodeId, collected, 'replace');
+    return collected;
   }
 
   /**
@@ -130,7 +174,7 @@ export class LocationBatchManager {
       totalTasks,
       completedTasks: 0,
       failedTasks: 0,
-      totalLocations: 0,
+      totalPoints: 0,
       startTime: Date.now(),
       status: 'running',
     };
@@ -179,11 +223,11 @@ export class LocationBatchManager {
       sessionId,
       stage: 'completed',
       progress: 100,
-      message: `Batch processing completed: ${session.totalLocations} locations processed`,
+      message: `Batch processing completed: ${session.totalPoints} locations processed`,
       metrics: {
-        locationsFound: session.totalLocations,
-        locationsProcessed: session.totalLocations,
-        locationsSaved: session.totalLocations,
+        locationsFound: session.totalPoints,
+        locationsProcessed: session.totalPoints,
+        locationsSaved: session.totalPoints,
       },
     });
   }
@@ -260,8 +304,9 @@ export class LocationBatchManager {
 
       // Phase 4: Save locations
       task.status = 'completed';
+      await this.persistLocationPoints(task.nodeId, task.results ?? []);
       task.metrics.totalSaved = task.results.length;
-      session.totalLocations += task.results.length;
+      session.totalPoints += task.results.length;
       session.completedTasks++;
       task.progress = 100;
 
@@ -288,7 +333,7 @@ export class LocationBatchManager {
   /**
    * Search locations based on configuration
    */
-  private async searchLocations(config: LocationSearchConfig): Promise<LocationEntity[]> {
+  private async searchLocations(config: LocationSearchConfig): Promise<LocationPointProperties[]> {
     // Try Strategy registry first (features-gated)
     try {
       const { getLocationStrategy } = await import('./download/registry.js');
@@ -302,7 +347,7 @@ export class LocationBatchManager {
       logLocationBatchWarning('Failed to execute registered location strategy', error);
     }
 
-    const locations: LocationEntity[] = [];
+    const locations: LocationPointProperties[] = [];
 
     switch (config.dataSource) {
       case 'openstreetmap':
@@ -335,7 +380,7 @@ export class LocationBatchManager {
   /**
    * Search OpenStreetMap Nominatim
    */
-  private async searchOSM(config: LocationSearchConfig): Promise<LocationEntity[]> {
+  private async searchOSM(config: LocationSearchConfig): Promise<LocationPointProperties[]> {
     const endpoint = config.options?.nominatimEndpoint || 'https://nominatim.openstreetmap.org/search';
     const params = new URLSearchParams({
       q: config.query || '',
@@ -368,7 +413,7 @@ export class LocationBatchManager {
   /**
    * Search GeoNames
    */
-  private async searchGeoNames(config: LocationSearchConfig): Promise<LocationEntity[]> {
+  private async searchGeoNames(config: LocationSearchConfig): Promise<LocationPointProperties[]> {
     // Placeholder implementation
     console.log('GeoNames search:', config);
     return [];
@@ -377,7 +422,7 @@ export class LocationBatchManager {
   /**
    * Search Wikidata
    */
-  private async searchWikidata(config: LocationSearchConfig): Promise<LocationEntity[]> {
+  private async searchWikidata(config: LocationSearchConfig): Promise<LocationPointProperties[]> {
     // Placeholder implementation
     console.log('Wikidata search:', config);
     return [];
@@ -386,7 +431,7 @@ export class LocationBatchManager {
   /**
    * Search Overpass API
    */
-  private async searchOverpass(config: LocationSearchConfig): Promise<LocationEntity[]> {
+  private async searchOverpass(config: LocationSearchConfig): Promise<LocationPointProperties[]> {
     const endpoint = config.options?.overpassEndpoint || 'https://overpass-api.de/api/interpreter';
     const queryOption = config.options?.overpassQuery;
     const query = typeof queryOption === 'string' && queryOption.trim().length > 0
@@ -410,7 +455,7 @@ export class LocationBatchManager {
   /**
    * Search custom endpoint
    */
-  private async searchCustom(config: LocationSearchConfig): Promise<LocationEntity[]> {
+  private async searchCustom(config: LocationSearchConfig): Promise<LocationPointProperties[]> {
     if (!config.options?.customEndpoint) {
       console.error('Custom endpoint not specified');
       return [];
@@ -452,21 +497,27 @@ export class LocationBatchManager {
     const bbox = config.boundingBox ?
       `(${config.boundingBox[1]},${config.boundingBox[0]},${config.boundingBox[3]},${config.boundingBox[2]})` :
       '';
-
-    let query = '[out:json];(';
+    const countryCode = config.countryCode?.trim().toUpperCase();
+    const areaClause = countryCode ? `area["ISO3166-1"="${countryCode}"][admin_level=2]->.searchArea;` : '';
+    const region = countryCode ? '(area.searchArea)' : bbox;
+    let query = '[out:json];';
+    if (areaClause) {
+      query += areaClause;
+    }
+    query += '(';
 
     // Add queries for each location type
     if (config.types && config.types.length > 0) {
       for (const type of config.types) {
         const osmTag = this.getOSMTagForType(type);
         if (osmTag) {
-          query += `node["${osmTag.key}"="${osmTag.value}"]${bbox};`;
-          query += `way["${osmTag.key}"="${osmTag.value}"]${bbox};`;
+          query += `node["${osmTag.key}"="${osmTag.value}"]${region};`;
+          query += `way["${osmTag.key}"="${osmTag.value}"]${region};`;
         }
       }
     } else if (config.query) {
-      query += `node["name"~"${config.query}"]${bbox};`;
-      query += `way["name"~"${config.query}"]${bbox};`;
+      query += `node["name"~"${config.query}"]${region};`;
+      query += `way["name"~"${config.query}"]${region};`;
     }
 
     query += ');out body;>;out skel qt;';
@@ -490,26 +541,26 @@ export class LocationBatchManager {
   /**
    * Convert OSM data to location entities
    */
-  private convertOSMToLocations(data: RawNominatimLike[]): LocationEntity[] {
+  private convertOSMToLocations(data: RawNominatimLike[]): LocationPointProperties[] {
     return data
       .map((item) => this.createLocationFromOSM(item))
-      .filter((value): value is LocationEntity => value !== null);
+      .filter((value): value is LocationPointProperties => value !== null);
   }
 
   /**
    * Convert Overpass data to location entities
    */
-  private convertOverpassToLocations(data: { elements?: RawOverpassElement[] }): LocationEntity[] {
+  private convertOverpassToLocations(data: { elements?: RawOverpassElement[] }): LocationPointProperties[] {
     if (!Array.isArray(data.elements)) return [];
     return data.elements
       .map((item) => this.createLocationFromOverpass(item))
-      .filter((value): value is LocationEntity => value !== null);
+      .filter((value): value is LocationPointProperties => value !== null);
   }
 
   /**
    * Convert custom data to location entities
    */
-  private convertCustomToLocations(_data: unknown): LocationEntity[] {
+  private convertCustomToLocations(_data: unknown): LocationPointProperties[] {
     // This would need custom mapping logic based on the data format
     return [];
   }
@@ -517,25 +568,11 @@ export class LocationBatchManager {
   /**
    * Create location entity from OSM data
    */
-  private createLocationFromOSM(osmData: RawNominatimLike): LocationEntity | null {
+  private createLocationFromOSM(osmData: RawNominatimLike): LocationPointProperties | null {
     const lon = parseNumber(osmData.lon);
     const lat = parseNumber(osmData.lat);
     if (typeof lon !== 'number' || typeof lat !== 'number') return null;
 
-    const address = osmData.address
-      ? {
-          street: osmData.address.road,
-          houseNumber: osmData.address.house_number,
-          postcode: osmData.address.postcode,
-          city: osmData.address.city || osmData.address.town || osmData.address.village,
-          district: osmData.address.suburb,
-          state: osmData.address.state,
-          country: osmData.address.country,
-          countryCode: osmData.address.country_code?.toUpperCase(),
-        }
-      : undefined;
-
-    const category = mapCategory(osmData.class);
     const type = mapType(osmData.type);
     const fetchedAt = Date.now();
     const point = buildOsmPointProperties(
@@ -545,33 +582,13 @@ export class LocationBatchManager {
       lon,
       fetchedAt,
     );
-
-    const entity = buildLocationEntity({
-      prefix: 'osm',
-      rawId: osmData.osm_id,
-      name: osmData.display_name || 'Unknown',
-      category,
-      type,
-      dataSource: 'openstreetmap',
-      attributes: {
-        osmId: String(osmData.osm_id),
-        osmType: normalizeOsmType(osmData.osm_type),
-        tags: sanitizeTags(osmData.extratags),
-      },
-      boundingBox: parseBoundingBox(osmData.boundingbox),
-      address,
-      importance: normalizeImportance(osmData.importance, 0.5),
-    });
-    void this.persistLocationPoints(entity.id as NodeId, [point]).catch((err) => {
-      console.warn('[LocationBatchManager] failed to persist OSM point', err);
-    });
-    return entity;
+    return point;
   }
 
   /**
    * Create location entity from Overpass data
    */
-  private createLocationFromOverpass(overpassData: RawOverpassElement): LocationEntity | null {
+  private createLocationFromOverpass(overpassData: RawOverpassElement): LocationPointProperties | null {
     const lon = typeof overpassData.lon === 'number'
       ? overpassData.lon
       : typeof overpassData.lon === 'string'
@@ -595,24 +612,7 @@ export class LocationBatchManager {
       fetchedAt,
     );
 
-    const entity = buildLocationEntity({
-      prefix: 'overpass',
-      rawId: overpassData.id,
-      name: tags.name || 'Unknown',
-      category: this.detectCategoryFromTags(tags),
-      type: mappedType,
-      dataSource: 'overpass',
-      attributes: {
-        osmId: String(overpassData.id),
-        osmType: normalizeOsmType(overpassData.type),
-        tags: sanitizeTags(tags),
-      },
-      importance: normalizeImportance(tags.importance),
-    });
-    void this.persistLocationPoints(entity.id as NodeId, [point]).catch((err) => {
-      console.warn('[LocationBatchManager] failed to persist Overpass point', err);
-    });
-    return entity;
+    return point;
   }
 
   /**
@@ -621,12 +621,6 @@ export class LocationBatchManager {
   /**
    * Detect category from OSM tags
    */
-  private detectCategoryFromTags(tags: Record<string, string>): LocationCategory {
-    if (tags.aeroway || tags.railway || tags.highway) return 'transportation';
-    if (tags.office || tags.government || tags.place) return 'administrative';
-    return 'transportation';
-  }
-
   /**
    * Detect type from OSM tags
    */
@@ -641,7 +635,7 @@ export class LocationBatchManager {
   /**
    * Geocode locations
    */
-  private async geocodeLocations(locations: LocationEntity[]): Promise<LocationEntity[]> {
+  private async geocodeLocations(locations: LocationPointProperties[]): Promise<LocationPointProperties[]> {
     // Geocoding would be done here for locations without coordinates
     // or to enhance address information
     return locations;
@@ -651,31 +645,22 @@ export class LocationBatchManager {
    * Validate and filter locations
    */
   private async validateAndFilterLocations(
-    locations: LocationEntity[],
+    locations: LocationPointProperties[],
     criteria?: LocationBatchFilterCriteria,
-  ): Promise<LocationEntity[]> {
+  ): Promise<LocationPointProperties[]> {
     if (!criteria) return locations;
 
     return locations.filter(location => {
-      // Apply filter criteria
-      if (criteria.minImportance && (location.importance || 0) < criteria.minImportance) {
+      if (criteria.allowedTypes && !criteria.allowedTypes.includes(location.kind as LocationType)) {
         return false;
       }
 
-      if (criteria.allowedCategories && !criteria.allowedCategories.includes(location.category)) {
-        return false;
-      }
-
-      if (criteria.allowedTypes && !criteria.allowedTypes.includes(location.type)) {
-        return false;
-      }
-
-      const countryCode = location.address?.countryCode;
+      const countryCode = location.countryCode;
       if (criteria.countryCodes && countryCode && !criteria.countryCodes.includes(countryCode)) {
         return false;
       }
 
-      if (criteria.excludeIds && location.id && criteria.excludeIds.includes(String(location.id))) {
+      if (criteria.excludeIds && location.pid && criteria.excludeIds.includes(String(location.pid))) {
         return false;
       }
 

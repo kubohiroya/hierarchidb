@@ -2,45 +2,58 @@ import type { Timestamp } from '@hierarchidb/common-types';
 import type {
   LocationPointProperties,
   LocationPointSource,
+  LocationPointMetadata,
 } from '../common/entities/LocationPoint.js';
-import type {
-  LocationPointPayloadBySource,
-  OsmPointPayload,
-  OverpassPointPayload,
-  GeoNamesPointPayload,
-  WikidataPointPayload,
-  CustomPointPayload,
-} from '../common/types/payloads.js';
 import type { LocationPointKind } from '../common/entities/LocationPoint.js';
 import type { RawNominatimResult, RawOverpassElement } from './download/rawTypes.js';
 import { sanitizeTags } from './download/mappers.js';
 
-interface BasePointParams<TPayload extends Record<string, unknown>> {
+interface BasePointParams {
   pid: string;
   name: string;
   kind: LocationPointKind;
   latitude: number;
   longitude: number;
-  gid0: string;
-  gid1?: string;
-  gid2?: string;
-  payload: TPayload;
+  countryCode: string;
+  countryName?: string;
+  admin1?: string;
+  admin2?: string;
+  metadata?: LocationPointMetadata;
   source: LocationPointSource;
 }
 
-export const createLocationPointProperties = <
-  TPayload extends Record<string, unknown>,
->(params: BasePointParams<TPayload>): LocationPointProperties<TPayload> => ({
-  schemaVersion: 1,
+const normalizeMetadataValue = (value: unknown): string | number | null => {
+  if (value == null) return null;
+  if (typeof value === 'string' || typeof value === 'number') return value;
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (Array.isArray(value) || typeof value === 'object') {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  }
+  return String(value);
+};
+
+const toMetadata = (value: Record<string, unknown> | undefined): LocationPointMetadata | undefined => {
+  if (!value) return undefined;
+  const entries = Object.entries(value).map(([key, val]) => [key, normalizeMetadataValue(val)]);
+  return Object.fromEntries(entries);
+};
+
+export const createLocationPointProperties = (params: BasePointParams): LocationPointProperties => ({
+  schemaVersion: 2,
   pid: params.pid,
   name: params.name,
   latitude: params.latitude,
   longitude: params.longitude,
   kind: params.kind,
-  gid0: params.gid0,
-  gid1: params.gid1,
-  gid2: params.gid2,
-  payload: params.payload,
+  countryCode: params.countryCode,
+  countryName: params.countryName,
+  admin1: params.admin1,
+  admin2: params.admin2,
+  metadata: params.metadata,
   source: params.source,
 });
 
@@ -58,19 +71,25 @@ export const buildOsmPointProperties = (
   latitude: number,
   longitude: number,
   timestamp: Timestamp,
-): LocationPointProperties<LocationPointPayloadBySource['openstreetmap']> => {
-  const payload: OsmPointPayload = {
-    osmId: String(raw.osm_id),
-    osmType: (raw.osm_type === 'node' || raw.osm_type === 'way' || raw.osm_type === 'relation') ? raw.osm_type : 'node',
-    tags: sanitizeTags(raw.extratags) ?? {},
-    categories: raw.class ? [raw.class] : undefined,
+): LocationPointProperties => {
+  const metadata = toMetadata({
+    osmId: raw.osm_id,
+    osmType: raw.osm_type,
+    class: raw.class,
+    type: raw.type,
+    importance: raw.importance,
+    tags: sanitizeTags(raw.extratags) ?? undefined,
     lastSeenAt: timestamp,
-  };
+    addressCountry: raw.address?.country,
+    addressState: raw.address?.state,
+    addressCity: raw.address?.city || raw.address?.town || raw.address?.village,
+  });
 
   const source = toSource('openstreetmap', timestamp, String(raw.osm_id));
-  const gid0 = raw.address?.country_code?.toUpperCase() ?? '';
-  const gid1 = raw.address?.state;
-  const gid2 = raw.address?.city || raw.address?.town || raw.address?.village;
+  const countryCode = raw.address?.country_code?.toUpperCase() ?? '';
+  const countryName = raw.address?.country;
+  const admin1 = raw.address?.state;
+  const admin2 = raw.address?.city || raw.address?.town || raw.address?.village;
 
   return createLocationPointProperties({
     pid: toPid('osm', raw.osm_id),
@@ -78,10 +97,11 @@ export const buildOsmPointProperties = (
     kind,
     latitude,
     longitude,
-    gid0,
-    gid1: gid1 ?? undefined,
-    gid2: gid2 ?? undefined,
-    payload,
+    countryCode,
+    countryName,
+    admin1: admin1 ?? undefined,
+    admin2: admin2 ?? undefined,
+    metadata,
     source,
   });
 };
@@ -92,23 +112,20 @@ export const buildOverpassPointProperties = (
   latitude: number,
   longitude: number,
   timestamp: Timestamp,
-): LocationPointProperties<LocationPointPayloadBySource['overpass']> => {
-  const basePayload: OsmPointPayload = {
-    osmId: String(raw.id),
-    osmType: (raw.type === 'node' || raw.type === 'way' || raw.type === 'relation') ? raw.type : 'node',
-    tags: sanitizeTags(raw.tags) ?? {},
-    categories: raw.tags?.amenity ? [raw.tags.amenity] : undefined,
+): LocationPointProperties => {
+  const metadata = toMetadata({
+    osmId: raw.id,
+    osmType: raw.type,
+    tags: sanitizeTags(raw.tags) ?? undefined,
+    amenity: raw.tags?.amenity,
     lastSeenAt: timestamp,
-  };
-  const payload: OverpassPointPayload = {
-    ...basePayload,
     overpassQuery: raw.tags?.overpassQuery,
-  };
+  });
 
   const source = toSource('overpass', timestamp, String(raw.id));
-  const gid0 = raw.tags?.['addr:country']?.toUpperCase() ?? '';
-  const gid1 = raw.tags?.['addr:state'] ?? raw.tags?.['addr:region'];
-  const gid2 = raw.tags?.['addr:city'] ?? raw.tags?.['addr:district'];
+  const countryCode = raw.tags?.['addr:country']?.toUpperCase() ?? '';
+  const admin1 = raw.tags?.['addr:state'] ?? raw.tags?.['addr:region'];
+  const admin2 = raw.tags?.['addr:city'] ?? raw.tags?.['addr:district'];
 
   return createLocationPointProperties({
     pid: toPid('overpass', raw.id),
@@ -116,10 +133,10 @@ export const buildOverpassPointProperties = (
     kind,
     latitude,
     longitude,
-    gid0,
-    gid1: gid1 ?? undefined,
-    gid2: gid2 ?? undefined,
-    payload,
+    countryCode,
+    admin1: admin1 ?? undefined,
+    admin2: admin2 ?? undefined,
+    metadata,
     source,
   });
 };
@@ -128,20 +145,18 @@ export const buildGeoNamesPointProperties = (
   raw: { geonameId: number; name: string; countryCode?: string; adminCode1?: string; adminCode2?: string; lat: number; lng: number; featureClass?: string; featureCode?: string; population?: number; elevation?: number; timezone?: string; alternateNames?: string[]; },
   kind: LocationPointKind,
   timestamp: Timestamp,
-): LocationPointProperties<GeoNamesPointPayload> => {
-  const payload: GeoNamesPointPayload = {
+): LocationPointProperties => {
+  const metadata = toMetadata({
     geonameId: raw.geonameId,
     featureClass: raw.featureClass ?? 'unknown',
     featureCode: raw.featureCode ?? 'unknown',
     population: raw.population,
     elevation: raw.elevation,
     timezone: raw.timezone,
-    adminCodes: {
-      level1: raw.adminCode1,
-      level2: raw.adminCode2,
-    },
-    alternateNames: raw.alternateNames,
-  };
+    adminCode1: raw.adminCode1,
+    adminCode2: raw.adminCode2,
+    alternateNames: raw.alternateNames?.join(','),
+  });
 
   const source = toSource('geonames', timestamp, String(raw.geonameId));
 
@@ -151,10 +166,10 @@ export const buildGeoNamesPointProperties = (
     kind,
     latitude: raw.lat,
     longitude: raw.lng,
-    gid0: raw.countryCode ?? '',
-    gid1: raw.adminCode1,
-    gid2: raw.adminCode2,
-    payload,
+    countryCode: raw.countryCode ?? '',
+    admin1: raw.adminCode1,
+    admin2: raw.adminCode2,
+    metadata,
     source,
   });
 };
@@ -163,15 +178,15 @@ export const buildWikidataPointProperties = (
   raw: { entityId: string; label: string; coordinates: { lat: number; lon: number }; countryCode?: string; admin1?: string; admin2?: string; descriptions?: Record<string, string>; wikipediaTitle?: string; instanceOf?: string[]; properties?: Record<string, unknown>; },
   kind: LocationPointKind,
   timestamp: Timestamp,
-): LocationPointProperties<WikidataPointPayload> => {
-  const payload: WikidataPointPayload = {
+): LocationPointProperties => {
+  const metadata = toMetadata({
     entityId: raw.entityId,
-    labels: { default: raw.label },
-    descriptions: raw.descriptions,
+    label: raw.label,
     wikipediaTitle: raw.wikipediaTitle,
-    instanceOf: raw.instanceOf,
+    instanceOf: raw.instanceOf?.join(','),
+    descriptions: raw.descriptions,
     properties: raw.properties,
-  };
+  });
 
   const source = toSource('wikidata', timestamp, raw.entityId);
 
@@ -181,10 +196,10 @@ export const buildWikidataPointProperties = (
     kind,
     latitude: raw.coordinates.lat,
     longitude: raw.coordinates.lon,
-    gid0: raw.countryCode ?? '',
-    gid1: raw.admin1,
-    gid2: raw.admin2,
-    payload,
+    countryCode: raw.countryCode ?? '',
+    admin1: raw.admin1,
+    admin2: raw.admin2,
+    metadata,
     source,
   });
 };
@@ -193,11 +208,11 @@ export const buildCustomPointProperties = (
   raw: { id: string; name: string; latitude: number; longitude: number; countryCode?: string; admin1?: string; admin2?: string; attributes?: Record<string, unknown>; },
   kind: LocationPointKind,
   timestamp: Timestamp,
-): LocationPointProperties<CustomPointPayload> => {
-  const payload: CustomPointPayload = {
+): LocationPointProperties => {
+  const metadata = toMetadata({
     schemaVersion: 1,
     attributes: raw.attributes ?? {},
-  };
+  });
 
   const source = toSource('custom', timestamp, raw.id);
 
@@ -207,10 +222,10 @@ export const buildCustomPointProperties = (
     kind,
     latitude: raw.latitude,
     longitude: raw.longitude,
-    gid0: raw.countryCode ?? '',
-    gid1: raw.admin1,
-    gid2: raw.admin2,
-    payload,
+    countryCode: raw.countryCode ?? '',
+    admin1: raw.admin1,
+    admin2: raw.admin2,
+    metadata,
     source,
   });
 };

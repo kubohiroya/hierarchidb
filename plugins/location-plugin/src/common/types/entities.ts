@@ -18,9 +18,7 @@ export interface LocationPeerData {
   metadata?: Record<string, unknown>;
 }
 
-export interface LocationGroupItemData<
-  TPayload extends Record<string, unknown> = Record<string, unknown>,
-> extends LocationPointProperties<TPayload> {}
+export interface LocationGroupItemData extends LocationPointProperties {}
 
 export interface LocationRelationMeta {
   schemaVersion: 1;
