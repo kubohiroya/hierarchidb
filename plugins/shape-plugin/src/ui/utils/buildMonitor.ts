@@ -34,6 +34,13 @@ export type CrashInsight = {
   configSnapshot?: BuildConfigSnapshot;
 };
 
+export type HeapPressureSnapshot = {
+  ratio: number;
+  usedBytes: number;
+  limitBytes: number;
+  level: 'warning' | 'critical';
+};
+
 type MemoryInfo = {
   usedJSHeapSize: number;
   totalJSHeapSize: number;
@@ -44,6 +51,8 @@ const STORAGE_PREFIX = 'hdb:shape:build-monitor';
 export const BUILD_MONITOR_SAMPLE_INTERVAL_MS = 10000;
 const MAX_SAMPLES = 3;
 const MEMORY_PRESSURE_RATIO = 0.85;
+const HEAP_WARNING_RATIO = 0.85;
+const HEAP_CRITICAL_RATIO = 0.9;
 
 const getLocalStorage = (): Storage | null => {
   if (typeof window === 'undefined') return null;
@@ -148,6 +157,20 @@ export const getMemorySnapshot = (): Partial<BuildMonitorSample> => {
     usedJSHeapSize: memory.usedJSHeapSize,
     totalJSHeapSize: memory.totalJSHeapSize,
     jsHeapSizeLimit: memory.jsHeapSizeLimit,
+  };
+};
+
+export const getHeapPressureSnapshot = (): HeapPressureSnapshot | null => {
+  if (typeof performance === 'undefined') return null;
+  const memory = (performance as Performance & { memory?: MemoryInfo }).memory;
+  if (!memory || !memory.jsHeapSizeLimit) return null;
+  const ratio = memory.usedJSHeapSize / memory.jsHeapSizeLimit;
+  if (!Number.isFinite(ratio) || ratio < HEAP_WARNING_RATIO) return null;
+  return {
+    ratio,
+    usedBytes: memory.usedJSHeapSize,
+    limitBytes: memory.jsHeapSizeLimit,
+    level: ratio >= HEAP_CRITICAL_RATIO ? 'critical' : 'warning',
   };
 };
 
