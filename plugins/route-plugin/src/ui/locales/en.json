@@ -13,12 +13,20 @@
   "dataSource": {
     "title": "Data Source",
     "description": "Choose the primary dataset or service that provides route geometry.",
+    "selectionTitle": "Data Source",
+    "detailsTitle": "Data Source Details",
+    "licenseRequired": "License agreement is required to proceed.",
     "label": "Route data source",
     "helperText": "Select the data source used to generate routes.",
     "options": {
       "openstreetmap": "OpenStreetMap",
       "searoute": "Searoute",
+      "ide-gsm": "IDE-GSM",
       "custom": "Custom"
+    },
+    "ideGsm": {
+      "buttonLabel": "Select IDE-GSM file",
+      "instructions": "Provide an IDE-GSM schema file (location/resource) via upload or URL."
     }
   },
   "routeConfig": {

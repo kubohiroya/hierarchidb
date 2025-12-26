@@ -395,7 +395,11 @@ export class LocationBatchManager {
 
     try {
       const { postJson } = await import('./utils/sharedNet.js');
-      const data = await postJson(endpoint, query, { 'Content-Type': 'application/x-www-form-urlencoded' });
+      const data = await postJson<{ elements?: RawOverpassElement[] }>(
+        endpoint,
+        query,
+        { 'Content-Type': 'application/x-www-form-urlencoded' },
+      );
       return this.convertOverpassToLocations(data);
     } catch (error) {
       console.error('Overpass search failed:', error);

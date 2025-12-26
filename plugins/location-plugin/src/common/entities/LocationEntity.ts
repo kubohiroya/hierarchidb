@@ -36,6 +36,7 @@ export type LocationDataSource =
   | 'openflights'
   | 'world-port-index'
   | 'natural-earth'
+  | 'ide-gsm'
   | 'custom'
   | 'manual';
 
@@ -91,6 +92,8 @@ export interface LocationEntity extends TreeNodeData {
   dataSource: LocationDataSource;
   licenseAgreement: boolean;
   licenseAgreedAt?: Timestamp;
+  ideGsmFileName?: string;
+  ideGsmSourceUrl?: string;
   selectionMatrix: boolean[][];
 
   /** Optional tiling zoom range for batch downloads. */

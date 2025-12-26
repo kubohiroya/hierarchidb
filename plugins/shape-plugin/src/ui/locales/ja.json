@@ -21,6 +21,13 @@
     "save": "保存",
     "defaultName": "新規 shape"
   },
+  "dataSource": {
+    "title": "データソース",
+    "description": "地理データ提供元を選択してください。ソースごとにカバレッジや精度、ライセンス要件が異なります。",
+    "selectionTitle": "データソース",
+    "detailsTitle": "データソース詳細",
+    "licenseRequired": "続行するにはライセンス同意が必要です。"
+  },
   "processing": {
     "download": {
       "title": "ダウンロード設定 / キャッシュ管理",

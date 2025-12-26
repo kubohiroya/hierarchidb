@@ -3,7 +3,7 @@
  * @description Route entity definition extending Shape plugin
  */
 
-import type { NodeId, TreeNodeUpdaterPayload } from '@hierarchidb/common-types';
+import type { NodeId, Timestamp, TreeNodeUpdaterPayload } from '@hierarchidb/common-types';
 export const ROUTE_TYPES = {
   ROAD: 'road',
   RAILWAY: 'railway',
@@ -118,6 +118,10 @@ export interface RouteEntity {
   // Data source information
   dataSourceId?: string;
   dataSourceName?: string;
+  licenseAgreement?: boolean;
+  licenseAgreedAt?: Timestamp;
+  ideGsmFileName?: string;
+  ideGsmSourceUrl?: string;
   tabularSourceId?: string;
   extractConfig?: Record<string, unknown>;
   generationOptions?: RouteGenerationOptions;

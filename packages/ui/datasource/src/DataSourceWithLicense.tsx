@@ -25,6 +25,7 @@ export interface DataSourceWithLicenseProps<TAgreedAt = string | number | undefi
   description?: React.ReactNode;
   renderOption?: DataSourceSelectorProps['renderOption'];
   createAgreedAt?: () => TAgreedAt;
+  renderLicenseExtra?: (selected?: DataSourceWithLicenseOption) => React.ReactNode;
 }
 
 export const DataSourceWithLicense = <TAgreedAt,>({
@@ -36,6 +37,7 @@ export const DataSourceWithLicense = <TAgreedAt,>({
   description,
   renderOption,
   createAgreedAt,
+  renderLicenseExtra,
 }: DataSourceWithLicenseProps<TAgreedAt>): React.JSX.Element => {
   const fallbackValue = options[0]?.id ?? '';
   const value = state.dataSourceId ?? fallbackValue;
@@ -105,10 +107,15 @@ export const DataSourceWithLicense = <TAgreedAt,>({
           onAgree={handleAgree}
           disabled={disabled}
           renderExtra={
-            licenseRequired ? (
-              <Typography variant="caption" color="text.secondary">
-                License agreement is required to proceed.
-              </Typography>
+            licenseRequired || renderLicenseExtra ? (
+              <Box display="flex" flexDirection="column" gap={1}>
+                {licenseRequired ? (
+                  <Typography variant="caption" color="text.secondary">
+                    License agreement is required to proceed.
+                  </Typography>
+                ) : null}
+                {renderLicenseExtra?.(selected)}
+              </Box>
             ) : undefined
           }
         />

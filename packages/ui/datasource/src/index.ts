@@ -2,10 +2,18 @@
 // Import paths must not reach into other packages' source files.
 
 // Components
+export { DataSourceDetailsCard } from './DataSourceDetailsCard.js';
+export type { DataSourceDetailsCardProps } from './DataSourceDetailsCard.js';
+export { DataSourceSelectionCard } from './DataSourceSelectionCard.js';
+export type { DataSourceSelectionCardProps } from './DataSourceSelectionCard.js';
 export { DataSourceSelector } from './DataSourceSelector.js';
 export type { DataSourceSelectorProps, DataSourceOption } from './DataSourceSelector.js';
 export { DataSourceSelectionStep } from './DataSourceSelectionStep.js';
-export type { DataSourceSelectionStepProps } from './DataSourceSelectionStep.js';
+export type {
+  DataSourceSelectionStepProps,
+  DataSourceSelectionOption,
+  DataSourceSelectionState,
+} from './DataSourceSelectionStep.js';
 export { DataSourceWithLicense } from './DataSourceWithLicense.js';
 export type {
   DataSourceWithLicenseProps,

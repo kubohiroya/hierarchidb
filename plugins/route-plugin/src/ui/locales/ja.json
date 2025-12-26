@@ -13,12 +13,20 @@
   "dataSource": {
     "title": "データソース",
     "description": "ルート形状を取得する主なデータセット/サービスを選択します。",
+    "selectionTitle": "データソース",
+    "detailsTitle": "データソース詳細",
+    "licenseRequired": "続行するにはライセンス同意が必要です。",
     "label": "ルートのデータソース",
     "helperText": "ルート生成に利用するデータソースを選択してください。",
     "options": {
       "openstreetmap": "OpenStreetMap",
       "searoute": "Searoute",
+      "ide-gsm": "IDE-GSM",
       "custom": "カスタム"
+    },
+    "ideGsm": {
+      "buttonLabel": "IDE-GSM ファイルを選択",
+      "instructions": "IDE-GSM スキーマの location/resource ファイルをアップロードまたはURL指定してください。"
     }
   },
   "routeConfig": {

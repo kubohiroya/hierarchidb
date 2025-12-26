@@ -1,43 +1,151 @@
 import type React from 'react';
 import { Box, Typography } from '@mui/material';
-import { DataSourceSelector } from './DataSourceSelector.js';
-import type { DataSourceName, DataSourceCategory } from './types/DataSource.js';
+import { LicenseAgreementStep } from '@hierarchidb/ui-license';
+import type { DataSourceSelectorProps, DataSourceOption } from './DataSourceSelector.js';
+import { DataSourceDetailsCard } from './DataSourceDetailsCard.js';
+import { DataSourceSelectionCard } from './DataSourceSelectionCard.js';
 
-export interface DataSourceSelectionStepProps {
-  selectedDataSource?: DataSourceName;
-  onDataSourceChange: (dataSource: DataSourceName) => void;
-  filterByCategory?: DataSourceCategory;
-  showDescription?: boolean;
-  gridColumns?: number;
+export interface DataSourceSelectionOption extends DataSourceOption {
+  licenseName: string;
+  licenseUrl?: string;
+  attribution?: string;
 }
 
-export const DataSourceSelectionStep: React.FC<DataSourceSelectionStepProps> = ({
-  selectedDataSource,
-  onDataSourceChange,
-  filterByCategory: _filterByCategory,
-  showDescription = true,
-  gridColumns: _gridColumns = 2,
-}) => {
-  // Build options from configs lazily to keep this component UI-level
-  return (
-    <Box>
-      <Typography variant="h6" gutterBottom>
-        Select Data Source
-      </Typography>
-      {showDescription && (
-        <Typography variant="body2" color="text.secondary" gutterBottom sx={{ mb: 3 }}>
-          Choose a geographic data source for your shapes. Each data source has different
-          licensing terms, coverage areas, and data quality characteristics.
-        </Typography>
-      )}
+export interface DataSourceSelectionState<TAgreedAt = string | number | undefined> {
+  dataSourceId?: string;
+  licenseAgreement?: boolean;
+  licenseAgreedAt?: TAgreedAt;
+}
 
-      {/* Minimal wrapper: delegate selection UX to DataSourceSelector from this package */}
-      <DataSourceSelector
-        options={[]}
-        // This simple UI package’s selector expects generic options; consumers may pass richer options.
-        value={selectedDataSource || ''}
-        onChange={(v) => onDataSourceChange(v as DataSourceName)}
+export interface DataSourceSelectionStepProps<TAgreedAt = string | number | undefined> {
+  options: DataSourceSelectionOption[];
+  state: DataSourceSelectionState<TAgreedAt>;
+  onChange: (next: Partial<DataSourceSelectionState<TAgreedAt>>) => void;
+  licenseRequired?: boolean;
+  licenseRequiredText?: React.ReactNode;
+  disabled?: boolean;
+  title?: string;
+  description?: React.ReactNode;
+  renderOption?: DataSourceSelectorProps['renderOption'];
+  createAgreedAt?: () => TAgreedAt;
+  renderDetails?: (
+    selected: DataSourceSelectionOption,
+    context: {
+      agreedAtIso?: string;
+      onAgree: () => void;
+      state: DataSourceSelectionState<TAgreedAt>;
+    },
+  ) => React.ReactNode | null | undefined;
+  selectionTitle?: string;
+  detailsTitle?: string;
+}
+
+export const DataSourceSelectionStep = <TAgreedAt,>({
+  options,
+  state,
+  onChange,
+  licenseRequired = true,
+  licenseRequiredText,
+  disabled,
+  title = 'Select Data Source',
+  description,
+  renderOption,
+  createAgreedAt,
+  renderDetails,
+  selectionTitle = 'Data Source',
+  detailsTitle = 'Data Source Details',
+}: DataSourceSelectionStepProps<TAgreedAt>): React.JSX.Element => {
+  const fallbackValue = options[0]?.id ?? '';
+  const value = state.dataSourceId ?? fallbackValue;
+  const selected = options.find((option) => option.id === value);
+  const agreedAtIso = state.licenseAgreedAt
+    ? typeof state.licenseAgreedAt === 'number'
+      ? new Date(state.licenseAgreedAt).toISOString()
+      : String(state.licenseAgreedAt)
+    : undefined;
+
+  const handleSelect = (next: string) => {
+    onChange({
+      dataSourceId: next,
+      licenseAgreement: false,
+      licenseAgreedAt: undefined,
+    });
+  };
+
+  const handleAgree = () => {
+    const buildAgreedAt =
+      createAgreedAt ??
+      (() => new Date().toISOString() as unknown as TAgreedAt);
+    if (selected?.licenseUrl) {
+      window.open(selected.licenseUrl, '_blank', 'noopener,noreferrer');
+    }
+    onChange({
+      licenseAgreement: true,
+      licenseAgreedAt: buildAgreedAt(),
+    });
+  };
+
+  const detailsContent = selected
+    ? renderDetails?.(selected, { agreedAtIso, onAgree: handleAgree, state })
+    : null;
+
+  return (
+    <Box display="flex" flexDirection="column" gap={3}>
+      <Box>
+        <Typography variant="h6" gutterBottom>
+          {title}
+        </Typography>
+        {description ? (
+          <Box>
+            {typeof description === 'string' ? (
+              <Typography variant="body2" color="text.secondary">
+                {description}
+              </Typography>
+            ) : (
+              description
+            )}
+          </Box>
+        ) : null}
+      </Box>
+
+      <DataSourceSelectionCard
+        title={selectionTitle}
+        options={options}
+        value={value}
+        onChange={handleSelect}
+        disabled={disabled}
+        renderOption={renderOption}
       />
+
+      {selected ? (
+        <DataSourceDetailsCard title={detailsTitle}>
+          {detailsContent ?? (
+            <LicenseAgreementStep
+              sourceName={selected.name}
+              details={{
+                licenseName: selected.licenseName,
+                attribution: selected.attribution,
+                url: selected.licenseUrl,
+              }}
+              state={{
+                agreed: Boolean(state.licenseAgreement),
+                agreedAt: agreedAtIso,
+              }}
+              onAgree={handleAgree}
+              disabled={disabled}
+              renderExtra={
+                licenseRequired
+                  ? licenseRequiredText ?? (
+                    <Typography variant="caption" color="text.secondary">
+                      License agreement is required to proceed.
+                    </Typography>
+                  )
+                  : undefined
+              }
+            />
+          )}
+        </DataSourceDetailsCard>
+      ) : null}
     </Box>
   );
 };

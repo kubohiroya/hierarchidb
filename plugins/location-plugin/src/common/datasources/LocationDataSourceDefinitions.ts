@@ -258,6 +258,33 @@ export const WorldPortIndexDataSource: LocationDataSourceBase = {
 };
 
 /**
+ * IDE-GSM data source definition (user-provided schema).
+ */
+export const IdeGsmDataSource: LocationDataSourceBase = {
+  id: 'ide-gsm',
+  name: 'IDE-GSM',
+  displayName: 'IDE-GSM',
+  description: 'User-provided IDE-GSM schema files for locations',
+  baseUrl: '',
+  website: undefined,
+  license: 'IDE-GSM License',
+  licenseUrl: undefined,
+  attribution: undefined,
+  licenseType: 'varies',
+  updateFrequency: 'irregular',
+  supportedTypes: ['all'],
+  availableAttributes: [
+    'name',
+    'type',
+    'country',
+    'lat',
+    'lon',
+  ],
+  maxAdminLevel: 0,
+  category: 'location',
+};
+
+/**
  * Collection of all available location data sources
  */
 export const LocationDataSources: Record<string, LocationDataSourceBase> = {
@@ -268,6 +295,7 @@ export const LocationDataSources: Record<string, LocationDataSourceBase> = {
   'ourairports': OurAirportsDataSource,
   'openflights': OpenFlightsDataSource,
   'world-port-index': WorldPortIndexDataSource,
+  'ide-gsm': IdeGsmDataSource,
 };
 
 /**

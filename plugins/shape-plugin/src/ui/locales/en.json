@@ -21,6 +21,13 @@
     "save": "Save",
     "defaultName": "New shape"
   },
+  "dataSource": {
+    "title": "Data Source",
+    "description": "Choose a geographic data provider. Each source has different coverage, accuracy, and licensing requirements.",
+    "selectionTitle": "Data Source",
+    "detailsTitle": "Data Source Details",
+    "licenseRequired": "License agreement is required to proceed."
+  },
   "processing": {
     "download": {
       "title": "Download Setting / Cache Management",

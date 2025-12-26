@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import type { DataSourceWithLicenseOption } from '@hierarchidb/ui-datasource';
+import type { DataSourceSelectionOption } from '@hierarchidb/ui-datasource';
 import type { DataSourceConfig, DataSourceName, ShapeEntity } from '../../common/types/index.js';
 import { normalizeDataSourceName } from '../../services/utils/utils.js';
 import { DATA_SOURCE_CONFIGS } from '../../common/mock/data.js';
@@ -13,7 +13,7 @@ type Args = {
 export const useShapeDataSourceStep = ({ data, onChange }: Args) => {
   const draftData = data ?? {};
   const sources = Object.values(DATA_SOURCE_CONFIGS) as DataSourceConfig[];
-  const options: DataSourceWithLicenseOption[] = useMemo(
+  const options: DataSourceSelectionOption[] = useMemo(
     () => sources.map((source) => ({
       id: source.name,
       name: source.displayName,

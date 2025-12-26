@@ -3,11 +3,14 @@
  * @description Step 2: select data source for route generation.
  */
 
-import { useCallback, useEffect, useId, useMemo } from 'react';
-import { Box, Divider, MenuItem, TextField, Typography } from '@mui/material';
+import { useCallback, useEffect, useMemo } from 'react';
+import { Box } from '@mui/material';
+import { FileInputWithUrl } from '@hierarchidb/ui-file';
+import { DataSourceSelectionStep, type DataSourceSelectionOption } from '@hierarchidb/ui-datasource';
 import { useTranslation } from '../../../common/i18n/index.js';
 import type { RouteEntity, RouteUpdaterPayload } from '../../../common/entities/RouteEntity.js';
 import { getRouteUpdaterPayload } from '../../../common/utils/draft.js';
+import { ROUTE_DATA_SOURCES } from '../../../common/datasource/configs.js';
 
 export interface RouteDataSourceStepProps {
   draft: RouteUpdaterPayload;
@@ -19,6 +22,7 @@ export interface RouteDataSourceStepProps {
 const DATA_SOURCE_OPTIONS = [
   { id: 'openstreetmap', key: 'openstreetmap' },
   { id: 'searoute', key: 'searoute' },
+  { id: 'ide-gsm', key: 'ide-gsm' },
   { id: 'custom', key: 'custom' },
 ] as const;
 
@@ -31,9 +35,27 @@ export const RouteDataSourceStep: React.FC<RouteDataSourceStepProps> = ({
   disabled = false,
 }) => {
   const { t } = useTranslation();
-  const fieldId = useId();
   const draft = useMemo(() => getRouteUpdaterPayload(draftProp), [draftProp]);
   const resolvedSource = (draft.dataSourceName as DataSourceKey | undefined) ?? 'openstreetmap';
+  const dataSourceMap = useMemo(
+    () => new Map(ROUTE_DATA_SOURCES.map((source) => [source.name, source])),
+    [],
+  );
+  const options = useMemo<DataSourceSelectionOption[]>(
+    () =>
+      DATA_SOURCE_OPTIONS.map(({ id, key }) => {
+        const source = dataSourceMap.get(id);
+        return {
+          id,
+          name: t(`dataSource.options.${key}`, id),
+          description: source?.description ?? '',
+          licenseName: source?.license ?? 'License',
+          licenseUrl: source?.licenseUrl || undefined,
+          attribution: source?.attribution || undefined,
+        };
+      }),
+    [dataSourceMap, t],
+  );
 
   const emitUpdate = useCallback(
     (updates: Partial<RouteEntity>) => {
@@ -56,34 +78,57 @@ export const RouteDataSourceStep: React.FC<RouteDataSourceStepProps> = ({
 
   return (
     <Box sx={{ p: 3, maxWidth: 720, margin: '0 auto' }}>
-      <Typography variant="h6" gutterBottom>
-        {t('dataSource.title', 'Data Source')}
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        {t('dataSource.description', 'Choose the primary dataset or service that provides route geometry.')}
-      </Typography>
-
-      <Divider sx={{ my: 2 }} />
-
-      <TextField
-        select
-        label={t('dataSource.label', 'Route data source')}
-        id={`${fieldId}-route-data-source`}
-        name="route-data-source"
-        value={resolvedSource}
-        onChange={(event) => emitUpdate({ dataSourceName: event.target.value as RouteEntity['dataSourceName'] })}
-        required
-        fullWidth
+      <DataSourceSelectionStep<number>
+        title={t('dataSource.title', 'Data Source')}
+        options={options}
+        state={{
+          dataSourceId: resolvedSource,
+          licenseAgreement: Boolean(draft.licenseAgreement),
+          licenseAgreedAt: draft.licenseAgreedAt,
+        }}
+        onChange={(next) => {
+          const nextSource = (next.dataSourceId as DataSourceKey | undefined) ?? resolvedSource;
+          emitUpdate({
+            dataSourceName: nextSource,
+            licenseAgreement: next.licenseAgreement,
+            licenseAgreedAt: next.licenseAgreedAt,
+            ideGsmFileName: nextSource === 'ide-gsm' ? draft.ideGsmFileName : undefined,
+            ideGsmSourceUrl: nextSource === 'ide-gsm' ? draft.ideGsmSourceUrl : undefined,
+          });
+        }}
         disabled={disabled}
-        helperText={t('dataSource.helperText', 'Select the data source used to generate routes.')}
-        inputProps={{ id: `${fieldId}-route-data-source`, name: 'route-data-source' }}
-      >
-        {DATA_SOURCE_OPTIONS.map((option) => (
-          <MenuItem key={option.id} value={option.id}>
-            {t(`dataSource.options.${option.key}`, option.id)}
-          </MenuItem>
-        ))}
-      </TextField>
+        description={t(
+          'dataSource.description',
+          'Choose the primary dataset or service that provides route geometry.',
+        )}
+        createAgreedAt={() => Date.now()}
+        selectionTitle={t('dataSource.selectionTitle', 'Data Source')}
+        detailsTitle={t('dataSource.detailsTitle', 'Data Source Details')}
+        licenseRequiredText={t(
+          'dataSource.licenseRequired',
+          'License agreement is required to proceed.',
+        )}
+        renderDetails={(selected) => {
+          if (selected.id !== 'ide-gsm') return null;
+          return (
+            <FileInputWithUrl
+              accept=".json,.geojson,.csv"
+              buttonLabel={t('dataSource.ideGsm.buttonLabel', 'Select IDE-GSM file')}
+              instructions={t(
+                'dataSource.ideGsm.instructions',
+                'Provide an IDE-GSM schema file (location/resource) via upload or URL.',
+              )}
+              defaultDownloadUrl={draft.ideGsmSourceUrl}
+              onFileSelect={(file, downloadUrl) => {
+                emitUpdate({
+                  ideGsmFileName: file.name,
+                  ideGsmSourceUrl: downloadUrl ?? undefined,
+                });
+              }}
+            />
+          );
+        }}
+      />
     </Box>
   );
 };

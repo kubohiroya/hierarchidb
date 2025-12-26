@@ -4,6 +4,7 @@ import {
   type DownloadServiceOptions,
 } from './createDownloadService.js';
 import type { AuthPluginType } from '@hierarchidb/auth-recovery';
+import { authFetch } from './helpers/authFetch.js';
 import { resolveNetworkUrl } from './helpers/resolveNetworkUrl.js';
 
 type BackoffMode = 'linear' | 'exponential';
@@ -182,4 +183,37 @@ export async function downloadJson<T>(
   const buffer = await downloadArrayBuffer(pluginId, url, prefix, retryOptions, signal);
   const text = new TextDecoder('utf-8').decode(buffer);
   return JSON.parse(text) as T;
+}
+
+export async function postJson<T = unknown>(
+  pluginId: string,
+  url: string,
+  body: string | object,
+  headers?: Record<string, string>,
+  init?: RequestInit,
+): Promise<T> {
+  const pluginType = resolvePluginType(pluginId) ?? 'generic';
+  const resolvedUrl = resolveNetworkUrl(url);
+  const mergedHeaders = new Headers(init?.headers);
+  if (!mergedHeaders.has('Content-Type')) {
+    mergedHeaders.set(
+      'Content-Type',
+      typeof body === 'string' ? 'application/x-www-form-urlencoded' : 'application/json',
+    );
+  }
+  if (headers) {
+    Object.entries(headers).forEach(([key, value]) => mergedHeaders.set(key, value));
+  }
+  const initBody = typeof body === 'string' ? body : JSON.stringify(body);
+  const requestInit: RequestInit = {
+    ...init,
+    method: 'POST',
+    body: initBody,
+    headers: mergedHeaders,
+  };
+  const response = await authFetch(pluginType, resolvedUrl, requestInit);
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+  return (await response.json()) as T;
 }

@@ -16,6 +16,7 @@ export const LOCATION_TYPES_BY_SOURCE: Record<string, LocationType[]> = {
   geonames: ['area_centroid', 'airport', 'port'],
   openstreetmap: BASE_LOCATION_TYPES.map((t) => t.id),
   overpass: BASE_LOCATION_TYPES.map((t) => t.id),
+  'ide-gsm': BASE_LOCATION_TYPES.map((t) => t.id),
 };
 
 export const resolveTypesForSource = (sourceId: string): LocationType[] => {

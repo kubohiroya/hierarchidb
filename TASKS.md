@@ -177,6 +177,34 @@
   - [ ] App に AuthRequiredDialog を結線し、通知→ダイアログ→成功/取消通知の導線を実装する
 - ロールバック手順：本タスクの差分を revert し、従来の認証フロー（ログイン画面遷移のみ）へ戻す。
 
+1904) download 共通レジストリの認証付きPOST対応（locationの独自POST撤去）（P1）
+- ブランチ: `feat/download/auth-post`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: packages/features/download, plugins/location-plugin, TASKS.md
+- 受け入れ基準（DoD）:
+  - [ ] download 共通レジストリに認証付きPOST APIを追加する
+  - [ ] location の独自 postJson を共通APIに置換する
+  - [ ] location の認証要求が pluginType=location として通知される
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] pluginDownloadRegistry に POST ヘルパーを追加する
+  - [ ] location の sharedNet を共通ヘルパーへ切替える
+  - [ ] typecheck の結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：download 共通レジストリ追加分と location の差分を revert し、独自 POST 実装へ戻す。
+
+1905) IDE-GSM データソース追加（location/route + FileInputWithUrl）（P1）
+- ブランチ: `feat/location-route/ide-gsm-datasource`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/location-plugin, plugins/route-plugin, packages/ui/datasource, packages/ui/file, TASKS.md
+- 受け入れ基準（DoD）:
+  - [ ] location/route のデータソース選択に IDE-GSM を追加する
+  - [ ] IDE-GSM 選択時にライセンスカード部分へ FileInputWithUrl を表示する
+  - [ ] IDE-GSM のファイル指定（アップロード/URL）が draft に保持される
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] location のデータソース定義/選択/ライセンスUIに IDE-GSM を追加する
+  - [ ] route のデータソース選択とライセンスUIに IDE-GSM を追加する
+  - [ ] `pnpm --filter @hierarchidb/location-plugin typecheck` / `pnpm --filter @hierarchidb/route-plugin typecheck` を実行し結果を記録する（不可なら理由記載）
+- ロールバック手順：IDE-GSM 関連の差分を revert し、既存のデータソース UI へ戻す。
+
 1881) shape-plugin Step6 ホバー調査ログ追加 + メタデータ削除 + Stepper 回転条件修正（P1）
 - ブランチ: `fix/shape/step6-hover-metadata-clear-stepper`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: plugins/shape-plugin, packages/ui/dialog, packages/ui/gis
@@ -12951,6 +12979,15 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-26 13:48 progress: refactor/shape/shared-core-stabilize — download/auth 共通化の補強（plugin download registry + authFetch）、tabular API 共通化（spreadsheet plugin へ factory 追加）、progress hook 共通化（ui-batch に共通 hook 追加）を反映。検証: 未実施。ロールバック: 本差分を revert。
 - 2025-12-26 14:21 start: feat/auth/auth-required-dialog — AuthRequiredDialog の結線と pluginType 拡張（location/route）に着手。DoD: Kanban 1903 のとおり。
 - 2025-12-26 14:26 progress: feat/auth/auth-required-dialog — AuthRequiredDialog のホストを追加し、AuthNotification pluginType を location/route まで拡張。download/authFetch の pluginType 伝搬と location POST の pluginType 修正も反映。検証: 未実施。ロールバック: 本差分を revert。
+- 2025-12-26 15:05 start: feat/download/auth-post — download 共通レジストリの認証付きPOST対応と location 独自POST撤去に着手。DoD: Kanban 1904 のとおり。
+- 2025-12-26 15:05 progress: feat/download/auth-post — pluginDownloadRegistry に認証付きPOSTを追加し、location sharedNet を共通APIに切替。検証: 未実施。ロールバック: 本差分を revert。
+- 2025-12-26 15:23 start: fix/location/overpass-postjson-typing — location の Overpass POST 経路の型エラー解消に着手。DoD: route typecheck エラー解消、運用ログ記載。
+- 2025-12-26 15:23 progress: fix/location/overpass-postjson-typing — postJson をジェネリック対応にし、Overpass の戻り型を明示して型エラーを解消。検証: 未実施。ロールバック: location の postJson/Overpass 呼び出し差分を revert。
+- 2025-12-26 15:33 start: feat/location-route/ide-gsm-datasource — IDE-GSM データソース追加と FileInputWithUrl の表示対応に着手。DoD: Kanban 1905 のとおり。
+- 2025-12-26 15:33 progress: feat/location-route/ide-gsm-datasource — location/route のデータソースに IDE-GSM を追加し、ライセンスカード内に FileInputWithUrl を表示する導線を実装。検証: 未実施。ロールバック: IDE-GSM 関連差分を revert。
+- 2025-12-26 16:10 progress: feat/location-route/ide-gsm-datasource — DataSourceWithLicense を DataSourceSelectionStep + DataSourceSelectionCard/DataSourceDetailsCard 構成へ差し替え準備。DataSourceDetails でライセンス同意/IDE-GSM FileInputWithUrl の分岐を行う方針。検証: 未実施。ロールバック: UI datasource パッケージと各プラグインのステップ差分を revert。
+- 2025-12-26 16:35 progress: feat/location-route/ide-gsm-datasource — DataSourceSelectionCard/DataSourceDetailsCard を追加し、shape/location/route の DataSource ステップを DataSourceSelectionStep へ移行。route の data source config に openstreetmap/searoute/custom を補完。検証: 未実施。ロールバック: UI datasource と各プラグイン/route config の差分を revert。
+- 2025-12-26 16:55 progress: feat/location-route/ide-gsm-datasource — DataSourceSelectionStep の表示文言を i18n 化し、shape/location/route の DataSource ラベル/説明/カード見出し/ライセンス文言を翻訳キーへ統一。location en.json の欠落カンマも修正。検証: 未実施。ロールバック: UI datasource と locale/ステップ差分を revert。
 - 2025-12-26 14:30 start: analysis/config/defaults-candidates — shape/location/route の設定項目共通化候補の洗い出しに着手。DoD: Kanban 1904 のとおり。
 - 2025-12-26 14:40 done: analysis/config/defaults-candidates — ShapeEntity/LocationEntity/RouteEntity と各ステップの既存設定項目を整理し、設定ノードの共通化候補を提案。検証: 調査のみ。ロールバック: 運用ログ追記を削除。
 - 2025-12-26 14:50 start: feat/ui/shared-zoom-range-toolbar — TreeConsole 共通ズーム範囲スライダーと各プラグインズーム設定の無効化に着手。DoD: Kanban 1905 のとおり。

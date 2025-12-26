@@ -1,4 +1,4 @@
-import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
+import { postJson as postJsonForPlugin } from '@hierarchidb/download';
 
 type DownloadRegistryModule = typeof import('../download/registry.js');
 
@@ -34,17 +34,10 @@ export async function getJson(url: string, init?: RequestInit): Promise<any> {
   return JSON.parse(text);
 }
 
-export async function postJson(url: string, body: string | object, headers?: Record<string, string>) {
-  const auth = await AuthRecoveryService.getSingleton();
-  const init: RequestInit = {
-    method: 'POST',
-    body: typeof body === 'string' ? body : JSON.stringify(body),
-    headers: {
-      'Content-Type': typeof body === 'string' ? 'application/x-www-form-urlencoded' : 'application/json',
-      ...(headers || {}),
-    },
-  };
-  const res = await auth.fetchWithAuth(url, init, { pluginType: 'location' });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
+export async function postJson<T = unknown>(
+  url: string,
+  body: string | object,
+  headers?: Record<string, string>,
+): Promise<T> {
+  return postJsonForPlugin<T>('location', url, body, headers);
 }

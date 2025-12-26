@@ -8,8 +8,12 @@
     "mapPreview": { "label": "プレビュー" }
   },
   "dataSource": {
+    "title": "データソース",
     "description": "地点データを取得するためのソースを選択してください。",
     "descriptionFallback": "データソースを選択してください",
+    "selectionTitle": "データソース",
+    "detailsTitle": "データソース詳細",
+    "licenseRequired": "続行するにはライセンス同意が必要です。",
     "options": {
       "openstreetmap": {
         "name": "OpenStreetMap",
@@ -27,6 +31,10 @@
         "name": "Wikidata",
         "description": "多言語の構造化ナレッジグラフ。地点エンティティや識別子が豊富です。"
       },
+      "ide-gsm": {
+        "name": "IDE-GSM",
+        "description": "IDE-GSM スキーマの location/resource ファイルを指定します。"
+      },
       "custom": {
         "name": "カスタム",
         "description": "組織内の独自データセットをカスタムエンドポイントやファイルで利用します。"
@@ -35,6 +43,10 @@
         "name": "手動",
         "description": "外部ソースを使わず、少数の地点を手入力またはインポートします。"
       }
+    },
+    "ideGsm": {
+      "buttonLabel": "IDE-GSM ファイルを選択",
+      "instructions": "IDE-GSM スキーマの location/resource ファイルをアップロードまたはURL指定してください。"
     }
   },
   "license": {

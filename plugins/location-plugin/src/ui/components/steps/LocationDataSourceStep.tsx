@@ -6,10 +6,11 @@ import type React from 'react';
 import { useMemo } from 'react';
 import { Box, Stack, Typography } from '@mui/material';
 import {
-  DataSourceWithLicense,
-  type DataSourceWithLicenseOption,
+  DataSourceSelectionStep,
+  type DataSourceSelectionOption,
   type DataSourceSelectorProps,
 } from '@hierarchidb/ui-datasource';
+import { FileInputWithUrl } from '@hierarchidb/ui-file';
 import type { LocationDataSource, LocationEntity, LocationType } from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
 import type { Timestamp } from '@hierarchidb/common-types';
@@ -23,6 +24,7 @@ const ORDERED_DATA_SOURCES: LocationDataSource[] = [
   'openflights',
   'world-port-index',
   'natural-earth',
+  'ide-gsm',
   'custom',
   'manual',
 ];
@@ -78,6 +80,11 @@ const LICENSE_DETAILS: Record<
     licenseUrl: 'https://www.naturalearthdata.com/about/terms-of-use/',
     attribution: 'Map data by Natural Earth',
   },
+  'ide-gsm': {
+    licenseName: 'IDE-GSM License',
+    licenseUrl: undefined,
+    attribution: undefined,
+  },
   custom: {
     licenseName: 'Custom terms',
     licenseUrl: undefined,
@@ -99,6 +106,7 @@ const SOURCE_DESCRIPTIONS: Record<LocationDataSource, string> = {
   openflights: 'OpenFlights airport dataset with IATA/ICAO codes',
   'world-port-index': 'World Port Index (NGA) major ports worldwide',
   'natural-earth': 'Natural Earth populated places and transport hubs',
+  'ide-gsm': 'IDE-GSM schema files provided by your organization',
   custom: 'Upload your own tabular dataset',
   manual: 'Enter locations manually',
 };
@@ -120,6 +128,7 @@ const SOURCE_TYPES: Record<LocationDataSource, LocationType[]> = {
   openflights: ['airport'],
   'world-port-index': ['port'],
   'natural-earth': ['area_centroid', 'airport', 'port'],
+  'ide-gsm': ['area_centroid', 'airport', 'port', 'railway_station', 'interchange'],
   custom: ['area_centroid', 'airport', 'port', 'railway_station', 'interchange'],
   manual: ['area_centroid', 'airport', 'port', 'railway_station', 'interchange'],
 };
@@ -137,7 +146,7 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
     [draft.dataSource]
   );
 
-  const options = useMemo<DataSourceWithLicenseOption[]>(
+  const options = useMemo<DataSourceSelectionOption[]>(
     () =>
       ORDERED_DATA_SOURCES.map((sourceId) => {
         const license = LICENSE_DETAILS[sourceId];
@@ -182,7 +191,8 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
   };
 
   return (
-    <DataSourceWithLicense<Timestamp>
+    <DataSourceSelectionStep<Timestamp>
+      title={t('dataSource.title', 'Data Source')}
       options={options}
       state={{
         dataSourceId: value,
@@ -195,17 +205,41 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
           dataSource: nextSource,
           licenseAgreement: next.licenseAgreement,
           licenseAgreedAt: next.licenseAgreedAt,
+          ideGsmFileName: nextSource === 'ide-gsm' ? draft.ideGsmFileName : undefined,
+          ideGsmSourceUrl: nextSource === 'ide-gsm' ? draft.ideGsmSourceUrl : undefined,
         });
       }}
       licenseRequired={licenseRequired}
+      licenseRequiredText={t(
+        'dataSource.licenseRequired',
+        'License agreement is required to proceed.',
+      )}
       disabled={disabled}
-      description={
-        <Typography variant="body2" color="text.secondary">
-          {description}
-        </Typography>
-      }
+      description={description}
       renderOption={renderOption}
       createAgreedAt={() => Date.now() as Timestamp}
+      selectionTitle={t('dataSource.selectionTitle', 'Data Source')}
+      detailsTitle={t('dataSource.detailsTitle', 'Data Source Details')}
+      renderDetails={(selected) => {
+        if (selected.id !== 'ide-gsm') return null;
+        return (
+          <FileInputWithUrl
+            accept=".json,.geojson,.csv"
+            buttonLabel={t('dataSource.ideGsm.buttonLabel', 'Select IDE-GSM file')}
+            instructions={t(
+              'dataSource.ideGsm.instructions',
+              'Provide an IDE-GSM schema file (location/resource) via upload or URL.',
+            )}
+            defaultDownloadUrl={draft.ideGsmSourceUrl}
+            onFileSelect={(file, downloadUrl) => {
+              onUpdate({
+                ideGsmFileName: file.name,
+                ideGsmSourceUrl: downloadUrl ?? undefined,
+              });
+            }}
+          />
+        );
+      }}
     />
   );
 };

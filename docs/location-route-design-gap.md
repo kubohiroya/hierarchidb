@@ -164,3 +164,4 @@ location/route の独自実装のうち、shape と共通化して置換すべ�
 - location は Point GroupEntity の再設計と、Step2/Step3 選択の build 反映が最優先である。
 - route は LineString GroupEntity の導入、location 探索順序、Step5 差分生成と Step4 削除操作が最優先である。
 - 共通化は Stage1〜4 を段階導入し、shape の挙動維持を最優先とする。
+- pause/resume 導線の現状: shape は UI→Worker が接続済み、route も UI→Worker が接続済み、location は UI から Worker への呼び出しが未接続（UI はローカル state の切替のみ）。
