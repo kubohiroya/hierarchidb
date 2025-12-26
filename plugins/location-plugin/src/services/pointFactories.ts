@@ -1,7 +1,8 @@
 import type { Timestamp } from '@hierarchidb/common-types';
+import { generateId } from '@hierarchidb/util';
 import type {
   LocationPointProperties,
-  LocationPointSource,
+  LocationPointId,
   LocationPointMetadata,
 } from '../common/entities/LocationPoint.js';
 import type { LocationPointKind } from '../common/entities/LocationPoint.js';
@@ -9,7 +10,7 @@ import type { RawNominatimResult, RawOverpassElement } from './download/rawTypes
 import { sanitizeTags } from './download/mappers.js';
 
 interface BasePointParams {
-  pid: string;
+  pointId: LocationPointId;
   name: string;
   kind: LocationPointKind;
   latitude: number;
@@ -19,7 +20,6 @@ interface BasePointParams {
   admin1?: string;
   admin2?: string;
   metadata?: LocationPointMetadata;
-  source: LocationPointSource;
 }
 
 const normalizeMetadataValue = (value: unknown): string | number | null => {
@@ -44,7 +44,7 @@ const toMetadata = (value: Record<string, unknown> | undefined): LocationPointMe
 
 export const createLocationPointProperties = (params: BasePointParams): LocationPointProperties => ({
   schemaVersion: 2,
-  pid: params.pid,
+  pointId: params.pointId,
   name: params.name,
   latitude: params.latitude,
   longitude: params.longitude,
@@ -54,16 +54,9 @@ export const createLocationPointProperties = (params: BasePointParams): Location
   admin1: params.admin1,
   admin2: params.admin2,
   metadata: params.metadata,
-  source: params.source,
 });
 
-const toSource = (
-  provider: LocationPointSource['provider'],
-  fetchedAt: Timestamp,
-  originalId?: string,
-): LocationPointSource => ({ provider, fetchedAt, originalId });
-
-const toPid = (prefix: string, rawId: string | number): string => `${prefix}:${String(rawId)}`;
+const toPointId = (): LocationPointId => generateId() as LocationPointId;
 
 export const buildOsmPointProperties = (
   raw: RawNominatimResult,
@@ -84,15 +77,13 @@ export const buildOsmPointProperties = (
     addressState: raw.address?.state,
     addressCity: raw.address?.city || raw.address?.town || raw.address?.village,
   });
-
-  const source = toSource('openstreetmap', timestamp, String(raw.osm_id));
   const countryCode = raw.address?.country_code?.toUpperCase() ?? '';
   const countryName = raw.address?.country;
   const admin1 = raw.address?.state;
   const admin2 = raw.address?.city || raw.address?.town || raw.address?.village;
 
   return createLocationPointProperties({
-    pid: toPid('osm', raw.osm_id),
+    pointId: toPointId(),
     name: raw.display_name ?? 'Unknown',
     kind,
     latitude,
@@ -102,7 +93,6 @@ export const buildOsmPointProperties = (
     admin1: admin1 ?? undefined,
     admin2: admin2 ?? undefined,
     metadata,
-    source,
   });
 };
 
@@ -114,21 +104,19 @@ export const buildOverpassPointProperties = (
   timestamp: Timestamp,
 ): LocationPointProperties => {
   const metadata = toMetadata({
-    osmId: raw.id,
+    overpassRawId: raw.id,
     osmType: raw.type,
     tags: sanitizeTags(raw.tags) ?? undefined,
     amenity: raw.tags?.amenity,
     lastSeenAt: timestamp,
     overpassQuery: raw.tags?.overpassQuery,
   });
-
-  const source = toSource('overpass', timestamp, String(raw.id));
   const countryCode = raw.tags?.['addr:country']?.toUpperCase() ?? '';
   const admin1 = raw.tags?.['addr:state'] ?? raw.tags?.['addr:region'];
   const admin2 = raw.tags?.['addr:city'] ?? raw.tags?.['addr:district'];
 
   return createLocationPointProperties({
-    pid: toPid('overpass', raw.id),
+    pointId: toPointId(),
     name: raw.tags?.name ?? 'Unknown',
     kind,
     latitude,
@@ -137,7 +125,6 @@ export const buildOverpassPointProperties = (
     admin1: admin1 ?? undefined,
     admin2: admin2 ?? undefined,
     metadata,
-    source,
   });
 };
 
@@ -147,7 +134,7 @@ export const buildGeoNamesPointProperties = (
   timestamp: Timestamp,
 ): LocationPointProperties => {
   const metadata = toMetadata({
-    geonameId: raw.geonameId,
+    geoNameId: raw.geonameId,
     featureClass: raw.featureClass ?? 'unknown',
     featureCode: raw.featureCode ?? 'unknown',
     population: raw.population,
@@ -158,10 +145,8 @@ export const buildGeoNamesPointProperties = (
     alternateNames: raw.alternateNames?.join(','),
   });
 
-  const source = toSource('geonames', timestamp, String(raw.geonameId));
-
   return createLocationPointProperties({
-    pid: toPid('geonames', raw.geonameId),
+    pointId: toPointId(),
     name: raw.name,
     kind,
     latitude: raw.lat,
@@ -170,7 +155,6 @@ export const buildGeoNamesPointProperties = (
     admin1: raw.adminCode1,
     admin2: raw.adminCode2,
     metadata,
-    source,
   });
 };
 
@@ -180,7 +164,7 @@ export const buildWikidataPointProperties = (
   timestamp: Timestamp,
 ): LocationPointProperties => {
   const metadata = toMetadata({
-    entityId: raw.entityId,
+    wikidataEntityId: raw.entityId,
     label: raw.label,
     wikipediaTitle: raw.wikipediaTitle,
     instanceOf: raw.instanceOf?.join(','),
@@ -188,10 +172,8 @@ export const buildWikidataPointProperties = (
     properties: raw.properties,
   });
 
-  const source = toSource('wikidata', timestamp, raw.entityId);
-
   return createLocationPointProperties({
-    pid: toPid('wikidata', raw.entityId),
+    pointId: toPointId(),
     name: raw.label,
     kind,
     latitude: raw.coordinates.lat,
@@ -200,7 +182,6 @@ export const buildWikidataPointProperties = (
     admin1: raw.admin1,
     admin2: raw.admin2,
     metadata,
-    source,
   });
 };
 
@@ -210,14 +191,12 @@ export const buildCustomPointProperties = (
   timestamp: Timestamp,
 ): LocationPointProperties => {
   const metadata = toMetadata({
-    schemaVersion: 1,
+    customId: raw.id,
     attributes: raw.attributes ?? {},
   });
 
-  const source = toSource('custom', timestamp, raw.id);
-
   return createLocationPointProperties({
-    pid: toPid('custom', raw.id),
+    pointId: toPointId(),
     name: raw.name,
     kind,
     latitude: raw.latitude,
@@ -226,6 +205,143 @@ export const buildCustomPointProperties = (
     admin1: raw.admin1,
     admin2: raw.admin2,
     metadata,
-    source,
+  });
+};
+
+export const buildOurAirportsPointProperties = (
+  raw: {
+    id: string;
+    name: string;
+    latitude: number;
+    longitude: number;
+    ident?: string;
+    type?: string;
+    iataCode?: string;
+    icaoCode?: string;
+    localCode?: string;
+    municipality?: string;
+    isoCountry?: string;
+    isoRegion?: string;
+    scheduledService?: string;
+    elevationFt?: number;
+    continent?: string;
+    homeLink?: string;
+    wikipediaLink?: string;
+    keywords?: string;
+  },
+  timestamp: Timestamp,
+): LocationPointProperties => {
+  const metadata = toMetadata({
+    ourAirportsId: raw.id,
+    ident: raw.ident,
+    airportType: raw.type,
+    iataCode: raw.iataCode,
+    icaoCode: raw.icaoCode,
+    localCode: raw.localCode,
+    municipality: raw.municipality,
+    isoRegion: raw.isoRegion,
+    scheduledService: raw.scheduledService,
+    elevationFt: raw.elevationFt,
+    continent: raw.continent,
+    homeLink: raw.homeLink,
+    wikipediaLink: raw.wikipediaLink,
+    keywords: raw.keywords,
+    lastSeenAt: timestamp,
+  });
+
+  return createLocationPointProperties({
+    pointId: toPointId(),
+    name: raw.name,
+    kind: 'airport',
+    latitude: raw.latitude,
+    longitude: raw.longitude,
+    countryCode: raw.isoCountry?.toUpperCase() ?? '',
+    countryName: undefined,
+    admin1: raw.isoRegion,
+    admin2: raw.municipality,
+    metadata,
+  });
+};
+
+export const buildOpenFlightsPointProperties = (
+  raw: {
+    id: string;
+    name: string;
+    latitude: number;
+    longitude: number;
+    city?: string;
+    country?: string;
+    iata?: string;
+    icao?: string;
+    altitude?: number;
+    timezone?: number;
+    dst?: string;
+    tz?: string;
+    type?: string;
+    source?: string;
+  },
+  timestamp: Timestamp,
+): LocationPointProperties => {
+  const metadata = toMetadata({
+    openFlightsId: raw.id,
+    city: raw.city,
+    country: raw.country,
+    iataCode: raw.iata,
+    icaoCode: raw.icao,
+    altitude: raw.altitude,
+    timezone: raw.timezone,
+    dst: raw.dst,
+    timezoneName: raw.tz,
+    source: raw.source,
+    lastSeenAt: timestamp,
+  });
+
+  return createLocationPointProperties({
+    pointId: toPointId(),
+    name: raw.name,
+    kind: 'airport',
+    latitude: raw.latitude,
+    longitude: raw.longitude,
+    countryCode: '',
+    countryName: raw.country,
+    admin1: undefined,
+    admin2: raw.city,
+    metadata,
+  });
+};
+
+export const buildWorldPortIndexPointProperties = (
+  raw: {
+    id?: string;
+    name: string;
+    latitude: number;
+    longitude: number;
+    countryCode?: string;
+    countryName?: string;
+    harborSize?: string;
+    harborType?: string;
+    shelter?: string;
+    tideRange?: string;
+  },
+  timestamp: Timestamp,
+): LocationPointProperties => {
+  const metadata = toMetadata({
+    worldPortIndexId: raw.id,
+    harborSize: raw.harborSize,
+    harborType: raw.harborType,
+    shelter: raw.shelter,
+    tideRange: raw.tideRange,
+    lastSeenAt: timestamp,
+  });
+
+  return createLocationPointProperties({
+    pointId: toPointId(),
+    name: raw.name,
+    kind: 'port',
+    latitude: raw.latitude,
+    longitude: raw.longitude,
+    countryCode: raw.countryCode?.toUpperCase() ?? '',
+    countryName: raw.countryName,
+    metadata,
   });
 };

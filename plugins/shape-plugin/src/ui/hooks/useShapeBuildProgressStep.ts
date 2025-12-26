@@ -52,6 +52,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
   const effectiveStatus = hasSessionId ? status : null;
   const stages = useBuildStages();
   const { buildStatus, statusLabel } = useBuildStatus(effectiveStatus);
+  const selectedArrayByCountries = data?.selectedArrayByCountries;
 
   const currentStage = normalizeStageId(effectiveProgress?.currentStage);
   const overallProgress = effectiveProgress?.percentage ?? effectiveStatus?.progress ?? 0;
@@ -299,7 +300,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
       mergeBatchConfig(data?.batchConfig ?? DEFAULT_PROCESSING_CONFIG),
     ).isValid
   ), [data?.batchConfig]);
-  const hasSelection = summarizeCheckboxState(data?.checkboxState).hasSelection;
+  const hasSelection = summarizeCheckboxState(selectedArrayByCountries).hasSelection;
   const hasDataSource = Boolean(data?.batchConfig?.dataSource ?? data?.dataSourceName);
   const canStartOrResume = !isStartPending && buildStatus !== 'running'
     && hasDataSource

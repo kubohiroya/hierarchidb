@@ -295,6 +295,9 @@ importers:
       '@hierarchidb/location-plugin':
         specifier: workspace:*
         version: link:../plugins/location-plugin
+      '@hierarchidb/memory':
+        specifier: workspace:*
+        version: link:../packages/memory
       '@hierarchidb/plugin-base':
         specifier: workspace:*
         version: link:../packages/plugin-base
@@ -557,6 +560,9 @@ importers:
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../types
+      '@hierarchidb/memory':
+        specifier: workspace:*
+        version: link:../../memory
       '@hierarchidb/plugin-service-api':
         specifier: workspace:*
         version: link:../../plugin-service-api
@@ -891,6 +897,12 @@ importers:
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../util
+      typescript:
+        specifier: 5.8.2
+        version: 5.8.2
+
+  packages/memory:
+    devDependencies:
       typescript:
         specifier: 5.8.2
         version: 5.8.2
@@ -1732,6 +1744,28 @@ importers:
         specifier: '>=18.0.0'
         version: 18.3.1
 
+  packages/ui/memory:
+    dependencies:
+      '@emotion/react':
+        specifier: 11.14.0
+        version: 11.14.0(@types/react@18.3.27)(react@18.3.1)
+      '@hierarchidb/memory':
+        specifier: workspace:*
+        version: link:../../memory
+      '@hierarchidb/ui-worker-client':
+        specifier: workspace:*
+        version: link:../worker-client
+    devDependencies:
+      '@mui/icons-material':
+        specifier: ^7.3.6
+        version: 7.3.6(@mui/material@7.3.6(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.27)(react@18.3.1)
+      '@mui/material':
+        specifier: ^7.3.6
+        version: 7.3.6(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+
   packages/ui/memory-usage:
     dependencies:
       allotment:
@@ -2445,6 +2479,9 @@ importers:
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../common/types
+      '@hierarchidb/memory':
+        specifier: workspace:*
+        version: link:../../memory
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../../runtime-worker
@@ -2870,6 +2907,9 @@ importers:
       '@hierarchidb/ui-license':
         specifier: workspace:*
         version: link:../../packages/ui/license
+      '@hierarchidb/ui-memory':
+        specifier: workspace:*
+        version: link:../../packages/ui/memory
       '@hierarchidb/ui-plugin-basic-info':
         specifier: workspace:*
         version: link:../../packages/ui/plugin-basic-info
@@ -3031,6 +3071,9 @@ importers:
       '@hierarchidb/ui-grid':
         specifier: workspace:*
         version: link:../../packages/ui/data-grid
+      '@hierarchidb/ui-memory':
+        specifier: workspace:*
+        version: link:../../packages/ui/memory
       '@hierarchidb/ui-plugin-basic-info':
         specifier: workspace:*
         version: link:../../packages/ui/plugin-basic-info
@@ -3191,6 +3234,9 @@ importers:
       '@hierarchidb/ui-lru-splitview':
         specifier: workspace:*
         version: link:../../packages/ui/lru-splitview
+      '@hierarchidb/ui-memory':
+        specifier: workspace:*
+        version: link:../../packages/ui/memory
       '@hierarchidb/ui-plugin-basic-info':
         specifier: workspace:*
         version: link:../../packages/ui/plugin-basic-info

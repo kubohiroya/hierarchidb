@@ -238,7 +238,9 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
   async function simulateDownloadStage(entity: any): Promise<any> {
     try {
       // Simulate download stage logic
-      const countries = entity.selectedCountries;
+      const countries = Array.from(
+        new Set((entity.urlMetadata ?? []).map((metadata: { countryCode?: string }) => metadata.countryCode).filter(Boolean)),
+      );
       const filesDownloaded = countries.length;
 
       // Check if fetch was mocked and successful

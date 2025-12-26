@@ -16,8 +16,10 @@ import {
   parseNumber,
 } from './download/mappers.js';
 import { buildOsmPointProperties, buildOverpassPointProperties } from './pointFactories.js';
+import { parseOpenFlightsCsv, parseOurAirportsCsv, parseWorldPortIndexCsv } from './download/csvSources.js';
 import { appendLocationPoints, replaceLocationPoints } from './pointRepository.js';
 import type { RawNominatimResult, RawOverpassElement } from './download/rawTypes.js';
+import { getLocationDataSource } from '../common/datasources/LocationDataSourceDefinitions.js';
 
 const logLocationBatchWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -365,6 +367,15 @@ export class LocationBatchManager {
       case 'custom':
         locations.push(...await this.searchCustom(config));
         break;
+      case 'ourairports':
+        locations.push(...await this.searchOurAirports(config));
+        break;
+      case 'openflights':
+        locations.push(...await this.searchOpenFlights(config));
+        break;
+      case 'world-port-index':
+        locations.push(...await this.searchWorldPortIndex(config));
+        break;
       default:
         console.warn(`Unsupported data source: ${config.dataSource}`);
     }
@@ -486,6 +497,57 @@ export class LocationBatchManager {
       return this.convertCustomToLocations(data);
     } catch (error) {
       console.error('Custom search failed:', error);
+      return [];
+    }
+  }
+
+  private async searchOurAirports(config: LocationSearchConfig): Promise<LocationPointProperties[]> {
+    const source = getLocationDataSource('ourairports');
+    const endpoint = config.options?.sourceUrl || source?.endpoints?.airports;
+    if (typeof endpoint !== 'string' || endpoint.length === 0) {
+      console.error('OurAirports endpoint not specified');
+      return [];
+    }
+    try {
+      const { getText } = await import('./utils/sharedNet.js');
+      const csv = await getText(endpoint);
+      return parseOurAirportsCsv(csv, Date.now());
+    } catch (error) {
+      console.error('OurAirports search failed:', error);
+      return [];
+    }
+  }
+
+  private async searchOpenFlights(config: LocationSearchConfig): Promise<LocationPointProperties[]> {
+    const source = getLocationDataSource('openflights');
+    const endpoint = config.options?.sourceUrl || source?.endpoints?.airports;
+    if (typeof endpoint !== 'string' || endpoint.length === 0) {
+      console.error('OpenFlights endpoint not specified');
+      return [];
+    }
+    try {
+      const { getText } = await import('./utils/sharedNet.js');
+      const csv = await getText(endpoint);
+      return parseOpenFlightsCsv(csv, Date.now());
+    } catch (error) {
+      console.error('OpenFlights search failed:', error);
+      return [];
+    }
+  }
+
+  private async searchWorldPortIndex(config: LocationSearchConfig): Promise<LocationPointProperties[]> {
+    const source = getLocationDataSource('world-port-index');
+    const endpoint = config.options?.sourceUrl || source?.endpoints?.ports;
+    if (typeof endpoint !== 'string' || endpoint.length === 0) {
+      console.error('World Port Index endpoint not specified');
+      return [];
+    }
+    try {
+      const { getText } = await import('./utils/sharedNet.js');
+      const csv = await getText(endpoint);
+      return parseWorldPortIndexCsv(csv, Date.now());
+    } catch (error) {
+      console.error('World Port Index search failed:', error);
       return [];
     }
   }
@@ -660,7 +722,7 @@ export class LocationBatchManager {
         return false;
       }
 
-      if (criteria.excludeIds && location.pid && criteria.excludeIds.includes(String(location.pid))) {
+      if (criteria.excludeIds && location.pointId && criteria.excludeIds.includes(String(location.pointId))) {
         return false;
       }
 

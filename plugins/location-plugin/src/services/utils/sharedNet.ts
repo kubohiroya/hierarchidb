@@ -34,6 +34,19 @@ export async function getJson(url: string, init?: RequestInit): Promise<any> {
   return JSON.parse(text);
 }
 
+export async function getText(url: string, init?: RequestInit): Promise<string> {
+  const { net } = await ensure();
+  const res = await net.get(url, init);
+  if (res.status === 401 || res.status === 403) {
+    const { notifyLocationAuthRequired } = await ensureDownloadRegistry();
+    notifyLocationAuthRequired({ resource: url, provider: 'location', hint: 'Authentication required', status: res.status });
+    throw new Error(`Auth required: ${res.status}`);
+  }
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const buf = await res.arrayBuffer();
+  return new TextDecoder().decode(buf);
+}
+
 export async function postJson<T = unknown>(
   url: string,
   body: string | object,

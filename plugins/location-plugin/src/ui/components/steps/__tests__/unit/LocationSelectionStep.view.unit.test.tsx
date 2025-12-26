@@ -9,7 +9,9 @@ describe('LocationSelectionStep (component)', () => {
   const timestamp = Date.now() as Timestamp;
   const baseDraft: Partial<LocationEntity> = {
     dataSource: 'openstreetmap',
-    selectionMatrix: Array.from({ length: 2 }, () => Array(5).fill(false)),
+    selectedArrayByCountries: {
+      JP: Array(5).fill(false),
+    },
     concurrentDownloads: 2,
     licenseAgreement: false,
     createdAt: timestamp,
@@ -35,12 +37,13 @@ describe('LocationSelectionStep (component)', () => {
 
     expect(onUpdate).toHaveBeenCalledTimes(1);
     const patch = onUpdate.mock.calls[0][0] as Partial<LocationEntity>;
-    const nextMatrix = patch.selectionMatrix ?? baseDraft.selectionMatrix;
-    expect(nextMatrix?.[0]?.[0]).toBe(true);
+    const nextSelections = patch.selectedArrayByCountries ?? baseDraft.selectedArrayByCountries ?? {};
+    const selectedRow = Object.values(nextSelections).find((row) => row?.some(Boolean));
+    expect(selectedRow?.[0]).toBe(true);
 
     rerender(
       <LocationSelectionStep
-        draft={{ ...baseDraft, selectionMatrix: nextMatrix }}
+        draft={{ ...baseDraft, selectedArrayByCountries: nextSelections }}
         onUpdate={onUpdate}
       />,
     );

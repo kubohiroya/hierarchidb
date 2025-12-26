@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { TabularDataResult } from '@hierarchidb/ui-tabular';
-import type { LocationPointProperties } from '../../common/entities/LocationPoint.js';
+import type { LocationPointProperties, LocationPointId } from '../../common/entities/LocationPoint.js';
 import { replaceLocationPoints } from '../../services/pointRepository.js';
 type ProgressReporter = (progress: {
   stage?: string;
@@ -52,7 +52,7 @@ export async function materializeLocationPointsFromTabular(
 
     normalized.push({
       schemaVersion: 2,
-      pid: crypto.randomUUID(),
+      pointId: crypto.randomUUID() as LocationPointId,
       name,
       latitude: lat,
       longitude: lon,

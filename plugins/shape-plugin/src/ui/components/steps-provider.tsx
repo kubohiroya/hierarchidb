@@ -50,9 +50,12 @@ const ShapeCountrySelection = createStepAdapter(ShapeCountrySelectionStep);
 const ShapePreview = createStepAdapter(ShapePreviewStep);
 const ShapeBuildProgress = createStepAdapter(ShapeBuildProgressStep);
 
+const resolveSelectedArrayByCountries = (data?: Partial<ShapeEntity>): boolean[][] | string | undefined =>
+  data?.selectedArrayByCountries;
+
 const canStartShapeBatch = (data?: Partial<ShapeEntity>): boolean => {
   // data reflects draftData (payload) only
-  const hasSelection = summarizeCheckboxState(data?.checkboxState).hasSelection;
+  const hasSelection = summarizeCheckboxState(resolveSelectedArrayByCountries(data)).hasSelection;
   const hasDataSource = Boolean(data?.batchConfig?.dataSource);
   const processingValid = validateBatchConfig(
     mergeBatchConfig(data?.batchConfig ?? DEFAULT_PROCESSING_CONFIG),
@@ -101,7 +104,7 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
         label: t('steps.countrySelection.label', 'Country Selection'),
         componentFactory: (props: ShapeStepProps) => <ShapeCountrySelection {...props} />,
         validate: (data?: Partial<ShapeEntity>) =>
-          summarizeCheckboxState(data?.checkboxState).hasSelection,
+          summarizeCheckboxState(resolveSelectedArrayByCountries(data)).hasSelection,
       },
       {
         id: 'processing-configuration',

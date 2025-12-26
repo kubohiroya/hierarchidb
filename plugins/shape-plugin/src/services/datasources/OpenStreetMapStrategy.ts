@@ -247,14 +247,6 @@ export class OpenStreetMapStrategy extends BaseDataSourceStrategy<OSMRawData, OS
               osmChangeset: osmElement.changeset,
               osmTimestamp: osmElement.timestamp,
             },
-            metadata: {
-              name: this.extractName(osmElement) ?? 'OSM feature',
-              description: this.extractDescription(osmElement) ?? '',
-              tags: [],
-            },
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-            version: 1,
           } as ShapeEntity;
         })
         .filter((entity): entity is ShapeEntity => entity !== null);

@@ -29,18 +29,18 @@ const resolveSelectedLevels = (row?: boolean[]): number[] => {
 export function deriveUrlMetadataFromSelection(params: {
   dataSource?: string | null;
   dataSourceName?: string | null;
-  checkboxState?: boolean[][] | string;
+  selectedArrayByCountries?: boolean[][] | string;
   metadata: CountryMetadata[];
 }): UrlMetadata[] {
-  const { dataSource, dataSourceName, checkboxState, metadata } = params;
-  if (!Array.isArray(checkboxState)) return [];
+  const { dataSource, dataSourceName, selectedArrayByCountries, metadata } = params;
+  if (!Array.isArray(selectedArrayByCountries)) return [];
   if (!metadata.length) return [];
   const resolvedDataSource = normalizeDataSourceName(dataSource ?? dataSourceName ?? null);
   if (!resolvedDataSource) return [];
   const normalizedMetadata = normalizeMetadata(metadata);
 
   return normalizedMetadata.flatMap((country, index) => {
-    const selectedLevels = resolveSelectedLevels(checkboxState[index]);
+    const selectedLevels = resolveSelectedLevels(selectedArrayByCountries[index]);
     if (selectedLevels.length === 0) return [];
     return generateUrlMetadata(resolvedDataSource, [country.countryCode], selectedLevels, normalizedMetadata);
   });

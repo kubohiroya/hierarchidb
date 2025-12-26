@@ -205,13 +205,6 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
             originalIndex: index,
             license: rawData.metadata?.apiResponse?.licenseDetail || 'Open Data',
           },
-          metadata: {
-            name: this.extractName(properties),
-            description: this.extractDescription(properties, rawData.metadata),
-          },
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-          version: 1,
         };
       });
 

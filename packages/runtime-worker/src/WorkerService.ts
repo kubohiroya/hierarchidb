@@ -18,6 +18,7 @@ import {
   ShapeQueryAPI,
   StyleMutationAPI,
   StyleQueryAPI,
+  LocationMutationAPI,
   LocationQueryAPI,
   RouteQueryAPI,
   RouteMutationAPI,
@@ -38,6 +39,7 @@ import { StyleService } from './services/StyleService.js';
 import { ShapeQueryService } from './services/ShapeQueryService.js';
 import { ShapeMutationService } from './services/ShapeMutationService.js';
 import { LocationQueryService } from './services/LocationQueryService.js';
+import { LocationMutationService } from './services/LocationMutationService.js';
 import { RouteQueryService } from './services/RouteQueryService.js';
 import { RouteMutationService } from './services/RouteMutationService.js';
 import type { RuntimePluginDefinition } from './types/RuntimePluginDefinition.js';
@@ -59,8 +61,8 @@ type DexieWhereHandle = {
 
 type DexieTableHandle = {
   where: (key: string) => DexieWhereHandle;
-  get?: (id: string) => Promise<any>;
-  delete?: (id: string) => Promise<void>;
+  get?: (...args: any[]) => Promise<any>;
+  delete?: (...args: any[]) => Promise<void>;
 };
 
 type ShapeDatabaseHandle = {
@@ -204,6 +206,7 @@ export class WorkerService {
       const shapeQueryService: ShapeQueryAPI = await ShapeQueryService.getSingleton(shapeDB);
       const shapeMutationService: ShapeMutationAPI = await ShapeMutationService.getSingleton(shapeDB);
       const locationQueryService: LocationQueryAPI = await LocationQueryService.getSingleton();
+      const locationMutationService: LocationMutationAPI = await LocationMutationService.getSingleton();
       const { RouteDatabase } = await import('@hierarchidb/route-plugin/database') as {
         RouteDatabase: new () => RouteDatabaseHandle;
       };
@@ -228,6 +231,7 @@ export class WorkerService {
         shapeQueryService,
         shapeMutationService,
         locationQueryService,
+        locationMutationService,
         routeDB,
         routeQueryService,
         routeMutationService,
@@ -252,6 +256,7 @@ export class WorkerService {
     private shapeQueryService: ShapeQueryAPI,
     private shapeMutationService: ShapeMutationAPI,
     private locationQueryService: LocationQueryAPI,
+    private locationMutationService: LocationMutationAPI,
     private routeDB: RouteDatabaseHandle,
     private routeQueryService: RouteQueryAPI,
     private routeMutationService: RouteMutationAPI,
@@ -326,6 +331,10 @@ export class WorkerService {
 
   getLocationQueryAPI(): LocationQueryAPI {
     return this.locationQueryService;
+  }
+
+  getLocationMutationAPI(): LocationMutationAPI {
+    return this.locationMutationService;
   }
 
   getRouteQueryAPI(): RouteQueryAPI {

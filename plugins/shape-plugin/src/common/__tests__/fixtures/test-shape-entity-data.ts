@@ -16,13 +16,10 @@ interface ShapeEntity {
   id: EntityId;
   nodeId: NodeId;
   dataSourceName: string;
-  selectedCountries: string[];
-  selectedAdminLevels: number[];
   licenseAgreement: boolean;
   batchConfig?: BatchConfig;
-  createdAt: number;
-  updatedAt: number;
-  version: number;
+  selectedArrayByCountries?: boolean[][];
+  urlMetadata?: UrlMetadata[];
 }
 
 interface BatchConfig {
@@ -54,6 +51,14 @@ interface BatchConfig {
     minZoom: number;
     maxZoom: number;
   };
+}
+
+interface UrlMetadata {
+  url: string;
+  countryCode: string;
+  adminLevel: number;
+  continent: string;
+  dataSource?: string;
 }
 
 /**
@@ -110,20 +115,22 @@ export function createTestBatchConfig(): BatchConfig {
   * ShapeEntity - 3Level 0
   */
 export function createTestShapeEntity(): ShapeEntity {
-  const now = Date.now();
-
   return {
     id: TEST_ENTITY_ID,
     nodeId: TEST_NODE_ID,
     dataSourceName: 'geoboundaries',
-    selectedCountries: [
-      'JPN', 'DEU', 'USA'],
-    selectedAdminLevels: [0], //  Level 0
     licenseAgreement: true,
     batchConfig: createTestBatchConfig(),
-    createdAt: now,
-    updatedAt: now,
-    version: 1,
+    selectedArrayByCountries: [
+      [true],
+      [true],
+      [true],
+    ],
+    urlMetadata: [
+      { url: 'https://example.com/jpn/adm0', countryCode: 'JPN', adminLevel: 0, continent: 'AS', dataSource: 'geoboundaries' },
+      { url: 'https://example.com/deu/adm0', countryCode: 'DEU', adminLevel: 0, continent: 'EU', dataSource: 'geoboundaries' },
+      { url: 'https://example.com/usa/adm0', countryCode: 'USA', adminLevel: 0, continent: 'NA', dataSource: 'geoboundaries' },
+    ],
   };
 }
 
@@ -137,7 +144,10 @@ export function createTestShapeEntityJapanOnly(): ShapeEntity {
     ...baseEntity,
     id: 'test-shape-plugin-entity-jpn-only' as EntityId,
     nodeId: 'test-shape-plugin-node-jpn-only' as NodeId,
-    selectedCountries: ['JPN'],
+    selectedArrayByCountries: [[true]],
+    urlMetadata: [
+      { url: 'https://example.com/jpn/adm0', countryCode: 'JPN', adminLevel: 0, continent: 'AS', dataSource: 'geoboundaries' },
+    ],
     batchConfig: {
       ...baseEntity.batchConfig!,
       simplify2: {

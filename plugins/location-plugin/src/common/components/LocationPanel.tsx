@@ -22,7 +22,7 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
     nodeId,
     dataSource: 'openstreetmap',
     licenseAgreement: true,
-    selectionMatrix: [],
+    selectedArrayByCountries: {},
     concurrentDownloads: 2,
   }), [nodeId]);
 
@@ -119,7 +119,10 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
                 <ListItem>
                   <ListItemText
                     primary="Selection entries"
-                    secondary={entity.selectionMatrix.flat().filter(Boolean).length}
+                    secondary={Object.values(entity.selectedArrayByCountries ?? {})
+                      .flat()
+                      .filter(Boolean)
+                      .length}
                   />
                 </ListItem>
               </List>

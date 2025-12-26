@@ -13,6 +13,7 @@
     "descriptionFallback": "Select a data source",
     "selectionTitle": "Data Source",
     "detailsTitle": "Data Source Details",
+    "unsupported": "This data source is not supported yet. Please select another source.",
     "licenseRequired": "License agreement is required to proceed.",
     "options": {
       "openstreetmap": {
@@ -48,7 +49,7 @@
       "buttonLabel": "Select IDE-GSM file",
       "instructions": "Provide an IDE-GSM schema file (location/resource) via upload or URL.",
       "missing": "IDE-GSM source URL is required.",
-      "fetchError": "Failed to load IDE-GSM file."
+      "fetchError": "Failed to load IDE-GSM file. (status: {{status}})"
     }
   },
   "license": {
@@ -168,6 +169,7 @@
       "index": "Generate vector tiles for previews."
     },
     "requiresApproval": "Provide a data source and save the node before building.",
+    "dataSourceUnsupported": "This data source is not supported yet.",
     "noSelection": "No country/type selections found.",
     "noPoints": "No location points available to process.",
     "success": "Build started (session {{sessionId}})",

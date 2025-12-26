@@ -188,14 +188,6 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
             processedAt: new Date().toISOString(),
             adminLevel: this.extractAdminLevel(rawData.metadata.endpoint),
           },
-          metadata: {
-            name: this.extractName(properties) ?? 'Natural Earth feature',
-            description: this.extractDescription(properties) ?? '',
-            tags: [],
-          },
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-          version: 1,
         };
       });
 

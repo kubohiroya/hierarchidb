@@ -22,7 +22,7 @@ async function getDb(): Promise<LocationEntitiesDB> {
 }
 
 const toItem = (point: PointProperties): PointItem => ({
-  id: point.pid,
+  id: point.pointId,
   data: { ...point },
   updatedAt: Date.now(),
 });
@@ -52,7 +52,7 @@ export async function listLocationPoints(nodeId: NodeId): Promise<PointPropertie
   return fromGroupRow(rows).map((item) => ({
     ...(item.data ?? {
       schemaVersion: 2,
-      pid: item.id,
+      pointId: item.id as LocationPointProperties['pointId'],
       name: '',
       latitude: 0,
       longitude: 0,

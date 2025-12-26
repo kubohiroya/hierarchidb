@@ -9,22 +9,15 @@ import type { NodeId, ShapeEntity } from '../../../common/types/index.js';
 const baseEntity = (dataSourceName: string, batchDataSource = dataSourceName): ShapeEntity => ({
   id: 'shape-node' as NodeId,
   nodeId: 'shape-node' as NodeId,
-  name: 'Country Boundaries',
-  description: 'template node',
   dataSourceName: dataSourceName as unknown as ShapeEntity['dataSourceName'],
   licenseAgreement: false,
   batchConfig: {
     ...DEFAULT_PROCESSING_CONFIG,
     dataSource: batchDataSource as ShapeEntity['batchConfig']['dataSource'],
   },
-  checkboxState: [],
-  selectedCountries: [],
-  adminLevels: [],
+  selectedArrayByCountries: [],
   urlMetadata: [],
   processingStatus: 'idle',
-  createdAt: Date.now(),
-  updatedAt: Date.now(),
-  version: 1,
 });
 
 describe('data source normalization', () => {

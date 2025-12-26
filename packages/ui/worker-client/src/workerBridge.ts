@@ -22,6 +22,7 @@ export interface WorkerBridge {
   getShapeQueryAPI(): ReturnType<WorkerAPI['getShapeQueryAPI']>;
   getShapeMutationAPI(): ReturnType<WorkerAPI['getShapeMutationAPI']>;
   getLocationQueryAPI(): ReturnType<WorkerAPI['getLocationQueryAPI']>;
+  getLocationMutationAPI(): ReturnType<WorkerAPI['getLocationMutationAPI']>;
   getRouteQueryAPI(): ReturnType<WorkerAPI['getRouteQueryAPI']>;
   getRouteMutationAPI(): ReturnType<WorkerAPI['getRouteMutationAPI']>;
   getTreeNodeUpdaterAPI(): ReturnType<WorkerAPI['getTreeNodeUpdaterAPI']>;
@@ -131,6 +132,11 @@ class WorkerBridgeImpl implements WorkerBridge {
   async getLocationQueryAPI(): Promise<Awaited<ReturnType<WorkerAPI['getLocationQueryAPI']>>> {
     const api = await ensureWorkerAPI();
     return api.getLocationQueryAPI();
+  }
+
+  async getLocationMutationAPI(): Promise<Awaited<ReturnType<WorkerAPI['getLocationMutationAPI']>>> {
+    const api = await ensureWorkerAPI();
+    return api.getLocationMutationAPI();
   }
 
   async getRouteQueryAPI(): Promise<Awaited<ReturnType<WorkerAPI['getRouteQueryAPI']>>> {

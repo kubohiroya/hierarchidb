@@ -222,9 +222,6 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
             processedAt,
             originalIndex: index,
           },
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-          version: 1,
         };
       });
 

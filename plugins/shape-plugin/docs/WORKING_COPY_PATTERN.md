@@ -49,13 +49,10 @@ interface ShapeEntity {
   id: EntityId;                    // エンティティの一意識別子
   nodeId: NodeId;                   // ツリーノードへの参照
   dataSourceName: DataSourceName;  // データソース識別子
-  selectedCountries: string[];     // 選択された国コード
-  selectedAdminLevels: number[];   // 管理レベル
-  licenseAgreement: boolean;       // ライセンス同意状態
+  selectedArrayByCountries?: boolean[][] | string; // 国×管理レベルの選択状態
+  urlMetadata?: UrlMetadata[];     // 選択から生成されたダウンロード対象
+  licenseAgreement?: boolean;      // ライセンス同意状態
   batchConfig?: BatchConfig;       // バッチ処理設定
-  createdAt: number;               // 作成タイムスタンプ
-  updatedAt: number;               // 更新タイムスタンプ
-  version: number;                 // バージョン番号
 }
 ```
 

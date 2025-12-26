@@ -1,19 +1,20 @@
 import { PluginStepRegistry, type StartBatchContext, type PluginStepProps } from '@hierarchidb/plugin-base';
 import type { NodeId, TreeNodeMetadata } from '@hierarchidb/common-types';
 import type { LocationEntity, LocationDataSource, LocationSearchConfig, LocationType } from '../../common/types/index.js';
-import type { LocationPointProperties } from '../../common/entities/LocationPoint.js';
+import type { LocationPointProperties, LocationPointId } from '../../common/entities/LocationPoint.js';
 import { LocationDataSourceStep } from './steps/LocationDataSourceStep.js';
 import { LocationSelectionStep } from './steps/LocationSelectionStep.js';
 import { LocationBatchParametersStep } from './steps/LocationBatchParametersStep.js';
 import { LocationMapPreviewStep } from './steps/LocationMapPreviewStep.js';
 import { LocationBuildStep } from './steps/LocationBuildStep.js';
 import { notify } from '@hierarchidb/components';
+import { generateId } from '@hierarchidb/util';
 import { replaceLocationPoints } from '../../services/pointRepository.js';
 import { LocationVectorTileService } from '../../services/tiles/LocationVectorTileService.js';
 import { i18n } from '@hierarchidb/ui-i18n';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { ensureIso3166Data, getAllCountries } from '@hierarchidb/gen-iso3166-2/browser';
-import { BASE_LOCATION_TYPES } from './steps/locationTypes.js';
+import { BASE_LOCATION_TYPES, resolveTypesForSource } from './steps/locationTypes.js';
 import { LocationBatchManager } from '../../services/LocationBatchManager.js';
 import { getEphemeralLocationDB } from '../../database/EphemeralLocationDB.js';
 
@@ -50,9 +51,8 @@ const mergeData = (
 type StepProps = PluginStepProps<LocationStepData>;
 
 const hasSelection = (data?: LocationStepData): boolean => {
-  const matrix = data?.selectionMatrix;
-  if (!Array.isArray(matrix)) return false;
-  return matrix.some((row) => Array.isArray(row) && row.some(Boolean));
+  const selected = data?.selectedArrayByCountries ?? {};
+  return Object.values(selected).some((row) => Array.isArray(row) && row.some(Boolean));
 };
 
 const clamp = (value: number, min: number, max: number): number => {
@@ -65,6 +65,7 @@ const MAX_CONCURRENCY = 16;
 const DEFAULT_MIN_ZOOM = 5;
 const DEFAULT_MAX_ZOOM = 12;
 const LICENSE_REQUIRED = false;
+const UNSUPPORTED_DATA_SOURCES: LocationDataSource[] = ['geonames', 'wikidata', 'custom'];
 
 const canStartLocationBatch = (data?: Partial<LocationEntity>): boolean => {
   if (!data?.dataSource) return false;
@@ -93,14 +94,19 @@ type SelectionEntry = {
   types: LocationType[];
 };
 
-const resolveSelectionEntries = async (selectionMatrix?: boolean[][]): Promise<SelectionEntry[]> => {
-  if (!selectionMatrix || selectionMatrix.length === 0) return [];
+const resolveSelectionEntries = async (
+  selectedArrayByCountries?: Record<string, boolean[]>,
+  allowedTypes?: LocationType[],
+): Promise<SelectionEntry[]> => {
+  if (!selectedArrayByCountries || Object.keys(selectedArrayByCountries).length === 0) return [];
   await ensureIso3166Data({ csvUrl: DEFAULT_CSV_URL });
   const countries = await getAllCountries();
-  return countries.map((country, index) => {
-    const row = selectionMatrix[index] ?? [];
+  const allowedTypeSet = allowedTypes ? new Set(allowedTypes) : null;
+  return countries.map((country) => {
+    const row = selectedArrayByCountries?.[country.alpha2] ?? [];
     const types = BASE_LOCATION_TYPES
-      .map((typeDef, colIdx) => (row[colIdx] ? typeDef.id : null))
+      .map((typeDef, colIdx) =>
+        row[colIdx] && (!allowedTypeSet || allowedTypeSet.has(typeDef.id)) ? typeDef.id : null)
       .filter((type): type is LocationType => Boolean(type));
     return {
       countryCode: country.alpha2,
@@ -112,9 +118,9 @@ const resolveSelectionEntries = async (selectionMatrix?: boolean[][]): Promise<S
 
 const buildSearchConfigs = async (
   dataSource: LocationDataSource,
-  selectionMatrix?: boolean[][],
+  selectedArrayByCountries?: Record<string, boolean[]>,
 ): Promise<LocationSearchConfig[]> => {
-  const entries = await resolveSelectionEntries(selectionMatrix);
+  const entries = await resolveSelectionEntries(selectedArrayByCountries, resolveTypesForSource(dataSource));
   return entries.flatMap((entry) =>
     entry.types.map((type) => {
       const label = LOCATION_QUERY_LABELS[type] ?? type;
@@ -145,6 +151,8 @@ const normalizeMetadataValue = (value: unknown): string | number | null => {
   }
   return String(value);
 };
+
+const toPointId = (): LocationPointId => generateId() as LocationPointId;
 
 const toMetadataRecord = (raw: Record<string, unknown>, omitKeys: Set<string>) =>
   Object.fromEntries(
@@ -198,9 +206,18 @@ const parseIdeGsmPayload = (payload: unknown): LocationPointProperties[] => {
         ? record.adminCode2
         : undefined;
     const omit = new Set(['latitude', 'lat', 'longitude', 'lon', 'name', 'label', 'type', 'kind', 'countryCode', 'country_code', 'countryName', 'country', 'admin1', 'admin2', 'adminCode1', 'adminCode2']);
+    const metadata = toMetadataRecord(record, omit);
+    const rawId = record.id;
+    const ideGsmId = typeof rawId === 'string' || typeof rawId === 'number'
+      ? String(rawId)
+      : undefined;
+    if (ideGsmId) {
+      metadata.ideGsmId = ideGsmId;
+    }
+
     points.push({
       schemaVersion: 2,
-      pid: typeof record.id === 'string' ? record.id : `ide-gsm-${index + 1}`,
+      pointId: toPointId(),
       name,
       latitude: lat,
       longitude: lon,
@@ -209,12 +226,7 @@ const parseIdeGsmPayload = (payload: unknown): LocationPointProperties[] => {
       countryName,
       admin1,
       admin2,
-      metadata: toMetadataRecord(record, omit),
-      source: {
-        provider: 'ide-gsm',
-        fetchedAt: Date.now(),
-        originalId: typeof record.id === 'string' ? record.id : undefined,
-      },
+      metadata,
     });
   };
 
@@ -263,7 +275,7 @@ const filterPointsBySelection = (points: LocationPointProperties[], entries: Sel
 const toLocationPointInput = (point: LocationPointProperties) => ({
   lon: Number(point.longitude) || 0,
   lat: Number(point.latitude) || 0,
-  id: point.pid,
+  id: point.pointId,
   properties: {
     name: point.name,
     kind: point.kind,
@@ -309,8 +321,13 @@ const startLocationBatch = async (data: LocationStepData, context: StartBatchCon
     notify.info(tNs('build.requiresApproval', 'Provide a data source and save the node before building.'));
     return;
   }
+  if (UNSUPPORTED_DATA_SOURCES.includes(draft.dataSource)) {
+    notify.warning(tNs('build.dataSourceUnsupported', 'This data source is not supported yet.'));
+    return;
+  }
 
-  const selectionEntries = await resolveSelectionEntries(draft.selectionMatrix);
+  const allowedTypes = resolveTypesForSource(draft.dataSource);
+  const selectionEntries = await resolveSelectionEntries(draft.selectedArrayByCountries, allowedTypes);
   if (selectionEntries.length === 0) {
     notify.info(tNs('build.noSelection', 'No country/type selections found.'));
     return;
@@ -323,9 +340,13 @@ const startLocationBatch = async (data: LocationStepData, context: StartBatchCon
       return;
     }
     try {
-      const res = await fetch(draft.ideGsmSourceUrl);
+      const { authFetch } = await import('../../services/utils/authFetch.js');
+      const res = await authFetch(draft.ideGsmSourceUrl);
       if (!res.ok) {
-        notify.error(tNs('dataSource.ideGsm.fetchError', 'Failed to load IDE-GSM file.'));
+        notify.error(
+          tNs('dataSource.ideGsm.fetchError', 'Failed to load IDE-GSM file.')
+            .replace('{{status}}', String(res.status)),
+        );
         return;
       }
       const payload = await res.json();
@@ -334,11 +355,13 @@ const startLocationBatch = async (data: LocationStepData, context: StartBatchCon
       await replaceLocationPoints(nodeId, points);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      notify.error(`${tNs('dataSource.ideGsm.fetchError', 'Failed to load IDE-GSM file.')}: ${message}`);
+      notify.error(
+        `${tNs('dataSource.ideGsm.fetchError', 'Failed to load IDE-GSM file.')} ${message}`,
+      );
       return;
     }
   } else {
-    const searchConfigs = await buildSearchConfigs(draft.dataSource, draft.selectionMatrix);
+    const searchConfigs = await buildSearchConfigs(draft.dataSource, draft.selectedArrayByCountries);
     if (searchConfigs.length === 0) {
       notify.info(tNs('build.noSelection', 'No country/type selections found.'));
       return;

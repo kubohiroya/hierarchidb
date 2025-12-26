@@ -25,7 +25,7 @@ export type {
   LocationPoint,
   LocationPointProperties,
   LocationPointKind,
-  LocationPointSource,
+  LocationPointId,
 } from '../entities/LocationPoint.js';
 
 export type LocationEntity = LocationEntityDefinition;
@@ -52,7 +52,7 @@ export interface LocationDraft extends Partial<LocationEntityDefinition> {
     name?: string;
     description?: string;
     tags?: string[];
-    selectionMatrix?: boolean[][];
+    selectedArrayByCountries?: Record<string, boolean[]>;
     concurrentDownloads?: number;
     licenseAgreement?: boolean;
     dataSource?: LocationDataSource;
@@ -64,7 +64,7 @@ export interface LocationDraft extends Partial<LocationEntityDefinition> {
 
 export interface UpdateLocationData {
   dataSource?: LocationDataSource;
-  selectionMatrix?: boolean[][];
+  selectedArrayByCountries?: Record<string, boolean[]>;
   concurrentDownloads?: number;
   licenseAgreement?: boolean;
   licenseAgreedAt?: Timestamp;

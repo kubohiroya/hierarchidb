@@ -87,6 +87,7 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
   const iso = useIsoCountries();
   const { metadata: countries, loading, error } = useCountryMetadata({ dataSource: dataSourceKey });
   const [availableAdminLevels, setAvailableAdminLevels] = useState<Map<string, number[]> | null>(null);
+  const selectedArrayByCountries = data.selectedArrayByCountries;
 
   const dataSourceConfig = DATA_SOURCE_CONFIGS[dataSourceKey];
   const maxAdminLevel = dataSourceConfig?.maxAdminLevel ?? 0;
@@ -120,8 +121,8 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
   }, [availableAdminLevels, countries, dataSourceKey, isoContinentByCode]);
 
   const checkboxMatrix = useMemo<boolean[][]>(() => {
-    if (Array.isArray(data.checkboxState)) {
-      return (data.checkboxState as unknown[]).map((row: unknown): boolean[] => {
+    if (Array.isArray(selectedArrayByCountries)) {
+      return (selectedArrayByCountries as unknown[]).map((row: unknown): boolean[] => {
         if (!Array.isArray(row)) {
           return Array.from({ length: maxAdminLevel + 1 }, () => false);
         }
@@ -129,7 +130,7 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
       });
     }
     return baseCountries.map(() => Array.from({ length: maxAdminLevel + 1 }, () => false));
-  }, [data.checkboxState, baseCountries, maxAdminLevel]);
+  }, [baseCountries, maxAdminLevel, selectedArrayByCountries]);
 
   useEffect(() => {
     let cancelled = false;
@@ -177,7 +178,7 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
   }, [dataSourceKey, enqueueSnackbar]);
 
   useEffect(() => {
-    if (!Array.isArray(data.checkboxState)) return;
+    if (!Array.isArray(selectedArrayByCountries)) return;
     if (dataSourceKey !== 'geoboundaries' || !availableAdminLevels) return;
     const nextMatrix = baseCountries.map((entry, rowIndex) => {
       const row = checkboxMatrix[rowIndex] ?? [];
@@ -185,24 +186,24 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
         entry.availableAdminLevels.includes(colIndex) ? Boolean(row[colIndex]) : false
       ));
     });
-    const previousMatrix = data.checkboxState as boolean[][];
+    const previousMatrix = selectedArrayByCountries as boolean[][];
     if (!isMatrixEqual(previousMatrix, nextMatrix)) {
       const selectedMetadata = deriveUrlMetadataFromSelection({
         dataSource: dataSourceKey,
-        checkboxState: nextMatrix,
+        selectedArrayByCountries: nextMatrix,
         metadata: countries,
       });
-      onChange({ checkboxState: nextMatrix, urlMetadata: selectedMetadata });
+      onChange({ selectedArrayByCountries: nextMatrix, urlMetadata: selectedMetadata });
     }
   }, [
     availableAdminLevels,
     baseCountries,
     checkboxMatrix,
     countries,
-    data.checkboxState,
     dataSourceKey,
     maxAdminLevel,
     onChange,
+    selectedArrayByCountries,
   ]);
 
   const columns: MatrixConfig['columns'] = useMemo(
@@ -245,8 +246,8 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
         });
         return row;
       });
-      const previousMatrix = Array.isArray(data.checkboxState)
-        ? (data.checkboxState as boolean[][])
+      const previousMatrix = Array.isArray(selectedArrayByCountries)
+        ? (selectedArrayByCountries as boolean[][])
         : undefined;
       if (!isMatrixEqual(previousMatrix, nextMatrix)) {
         const sessionId = resolveShapeSessionId(data);
@@ -256,10 +257,10 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
       }
       const selectedMetadata = deriveUrlMetadataFromSelection({
         dataSource: dataSourceKey,
-        checkboxState: nextMatrix,
+        selectedArrayByCountries: nextMatrix,
         metadata: countries,
       });
-      onChange({ checkboxState: nextMatrix, urlMetadata: selectedMetadata });
+      onChange({ selectedArrayByCountries: nextMatrix, urlMetadata: selectedMetadata });
 
       const totalSelected = nextMatrix.flat().filter(Boolean).length;
       const countriesWithSelection = nextMatrix.filter((row) => row.some(Boolean)).length;
@@ -270,7 +271,7 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
         { variant: 'info' },
       );
     },
-    [baseCountries, columns, countries, data, dataSourceKey, enqueueSnackbar, onChange],
+    [baseCountries, columns, countries, data, dataSourceKey, enqueueSnackbar, onChange, selectedArrayByCountries],
   );
 
   const isCellEnabled = useCallback(

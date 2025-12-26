@@ -203,7 +203,7 @@ interface LicenseStep {
 interface SelectionMatrixStep {
   // データソースのenabledCountries/locationTypesに基づいて
   // 選択可能なセルのみがenabledになる
-  selectionMatrix: boolean[][];
+  selectedArrayByCountries: Record<ISO2, boolean[]>;
   
   // 例: OurAirportsの場合
   //     Airport  Station  Port  City  POI
@@ -516,13 +516,13 @@ const config = {
 
 // Step 4: 国と施設タイプ選択
 const selection = {
-  countries: ['JPN', 'KOR', 'CHN', 'SGP', 'THA'],
+  countries: ['JP', 'KR', 'CN', 'SG', 'TH'],
   locationTypes: ['airport'],
-  selectionMatrix: [
-    [true, false, false, false, false], // JPN: airports only
-    [true, false, false, false, false], // KOR: airports only
+  selectedArrayByCountries: {
+    JP: [true, false, false, false, false], // JP: airports only
+    KR: [true, false, false, false, false], // KR: airports only
     // ...
-  ]
+  }
 };
 
 // Step 5-6: フィルタとマッピング

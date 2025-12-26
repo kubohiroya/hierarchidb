@@ -3,23 +3,19 @@
  * @description Persistent GroupEntity representing a single location point that belongs to a TreeNode.
  */
 
-import type { GroupEntity, Timestamp, NodeId } from '@hierarchidb/common-types';
+import type { GroupEntity, NodeId } from '@hierarchidb/common-types';
 import type { LocationType } from './LocationEntity.js';
-
-export interface LocationPointSource {
-  provider: string;
-  fetchedAt: Timestamp;
-  originalId?: string;
-}
 
 export type LocationPointKind = LocationType | string;
 
 export type LocationPointMetadata = Record<string, string | number | null>;
 
+export type LocationPointId = string & { readonly __brand: 'LocationPointId' };
+
 export interface LocationPointProperties {
   schemaVersion: 2;
-  /** Vector tile PID; also used for cross-plugin joins. */
-  pid: string;
+  /** Stable point identifier for cross-plugin joins. */
+  pointId: LocationPointId;
   /** Human-readable name. */
   name: string;
   /** WGS84 coordinates. */
@@ -36,15 +32,11 @@ export interface LocationPointProperties {
   admin2?: string;
   /** Additional attributes captured as flat metadata. */
   metadata?: LocationPointMetadata;
-  /** Acquisition metadata. */
-  source?: LocationPointSource;
 }
 
-export interface LocationPoint extends GroupEntity<string>, LocationPointProperties {
+export interface LocationPoint extends GroupEntity<LocationPointId>, LocationPointProperties {
   /** TreeNode to which this point belongs. */
   nodeId: NodeId;
   /** GroupEntity discriminator. */
   type: 'locationPoint';
 }
-
-export type LocationPointId = LocationPoint['id'];

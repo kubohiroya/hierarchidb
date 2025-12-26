@@ -10,6 +10,7 @@ import type {
   TreeTableExpandedAPI,
 } from '@hierarchidb/common-api';
 import type {
+  LocationMutationAPI,
   LocationQueryAPI,
   RouteQueryAPI,
   RouteMutationAPI,
@@ -42,6 +43,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
     getShapeQueryAPI: (): ShapeQueryAPI => proxy(svc.getShapeQueryAPI()),
     getShapeMutationAPI: (): ShapeMutationAPI => proxy(svc.getShapeMutationAPI()),
     getLocationQueryAPI: (): LocationQueryAPI => proxy(svc.getLocationQueryAPI()),
+    getLocationMutationAPI: (): LocationMutationAPI => proxy(svc.getLocationMutationAPI()),
     getRouteQueryAPI: (): RouteQueryAPI => proxy(svc.getRouteQueryAPI()),
     getRouteMutationAPI: (): RouteMutationAPI => proxy(svc.getRouteMutationAPI()),
     getCommandProcessor: (): CommandProcessor => proxy(svc.getCommandProcessor()),

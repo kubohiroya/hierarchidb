@@ -4,7 +4,7 @@
 
 import type React from 'react';
 import { useMemo } from 'react';
-import { Box, Stack, Typography } from '@mui/material';
+import { Alert, Box, Stack, Typography } from '@mui/material';
 import {
   DataSourceSelectionStep,
   type DataSourceSelectionOption,
@@ -133,6 +133,12 @@ const SOURCE_TYPES: Record<LocationDataSource, LocationType[]> = {
   manual: ['area_centroid', 'airport', 'port', 'railway_station', 'interchange'],
 };
 
+const UNSUPPORTED_SOURCES: LocationDataSource[] = [
+  'geonames',
+  'wikidata',
+  'custom',
+];
+
 export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
   draft,
   onUpdate,
@@ -221,6 +227,16 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
       selectionTitle={t('dataSource.selectionTitle', 'Data Source')}
       detailsTitle={t('dataSource.detailsTitle', 'Data Source Details')}
       renderDetails={(selected) => {
+        if (UNSUPPORTED_SOURCES.includes(selected.id as LocationDataSource)) {
+          return (
+            <Alert severity="warning">
+              {t(
+                'dataSource.unsupported',
+                'This data source is not supported yet. Please select another source.',
+              )}
+            </Alert>
+          );
+        }
         if (selected.id !== 'ide-gsm') return null;
         return (
           <FileInputWithUrl

@@ -244,7 +244,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
       const points = pointsRaw.map((point) => ({
         lon: point.longitude,
         lat: point.latitude,
-        id: point.pid,
+        id: point.pointId,
         properties: {
           name: point.name,
           kind: point.kind,

@@ -164,8 +164,6 @@ const runBatchProcessing = async (
 ): Promise<{ sessionId: string; events: BatchProgressEvent[] }> => {
   const draftId = await createDraftNode(core, {
     dataSourceName: 'geoboundaries',
-    selectedCountries: countries,
-    adminLevels,
     licenseAgreement: true,
     batchConfig: config,
   });

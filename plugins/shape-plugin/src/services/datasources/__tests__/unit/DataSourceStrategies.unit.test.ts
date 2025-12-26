@@ -80,18 +80,13 @@ class TestStrategy extends BaseDataSourceStrategy<any, ShapeEntity[]> {
 
   async processData(_rawData: any, _options?: ProcessOptions): Promise<ShapeEntity[]> {
     // Minimal valid ShapeEntity per current type definition
-    const now = Date.now();
     const entity: ShapeEntity = {
       // Cast string to branded ids for test purposes
       id: 'test-entity-1' as unknown as any,
       nodeId: 'test-node-1' as unknown as any,
       dataSourceName: 'naturalearth',
-      selectedCountries: ['JPN'],
-      selectedAdminLevels: [0],
       licenseAgreement: true,
-      createdAt: now,
-      updatedAt: now,
-      version: 1,
+      selectedArrayByCountries: [[true]],
     };
     return [entity];
   }
@@ -139,17 +134,12 @@ describe('DataSourceStrategy', () => {
     });
 
     it('should validate data successfully', async () => {
-      const now = Date.now();
       const data: ShapeEntity[] = [{
         id: 'test' as unknown as any,
         nodeId: 'node' as unknown as any,
         dataSourceName: 'naturalearth',
-        selectedCountries: [],
-        selectedAdminLevels: [],
         licenseAgreement: true,
-        createdAt: now,
-        updatedAt: now,
-        version: 1,
+        selectedArrayByCountries: [],
       }];
 
       const result = await strategy.validateData(data);
@@ -168,12 +158,8 @@ describe('DataSourceStrategy', () => {
         id: 'test' as unknown as any,
         nodeId: 'node' as unknown as any,
         dataSourceName: 'naturalearth',
-        selectedCountries: [],
-        selectedAdminLevels: [],
         licenseAgreement: true,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        version: 1,
+        selectedArrayByCountries: [],
       }] as ShapeEntity[];
       const target: SaveTarget = {
         type: 'hierarchidb',

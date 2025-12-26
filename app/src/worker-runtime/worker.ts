@@ -320,6 +320,7 @@ reporter.reportStepProgress('Load Comlink', 0);
         getShapeQueryAPI: () => Comlink.proxy(services.getShapeQueryAPI()),
         getShapeMutationAPI: () => Comlink.proxy(services.getShapeMutationAPI()),
         getLocationQueryAPI: () => Comlink.proxy(services.getLocationQueryAPI()),
+        getLocationMutationAPI: () => Comlink.proxy(services.getLocationMutationAPI()),
         getRouteQueryAPI: () => Comlink.proxy(services.getRouteQueryAPI()),
         getRouteMutationAPI: () => Comlink.proxy(services.getRouteMutationAPI()),
         getImportExportAPI: () => Comlink.proxy(services.getImportExportAPI()),

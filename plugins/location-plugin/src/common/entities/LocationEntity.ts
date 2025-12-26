@@ -52,7 +52,7 @@ export interface LocationEntity extends TreeNodeData {
   licenseAgreedAt?: Timestamp;
   ideGsmFileName?: string;
   ideGsmSourceUrl?: string;
-  selectionMatrix: boolean[][];
+  selectedArrayByCountries: Record<string, boolean[]>;
 
   /** Optional tiling zoom range for batch downloads. */
   tilesMinZoom?: number;
@@ -109,7 +109,6 @@ export interface LocationSearchConfig {
   language?: string;
   limit?: number;
   types?: LocationType[];
-  selectionMatrix?: boolean[][];
   options?: LocationSearchOptions;
 }
 

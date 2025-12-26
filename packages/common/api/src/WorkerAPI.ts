@@ -6,6 +6,7 @@ import type {
   ShapeQueryAPI,
   StyleMutationAPI,
   StyleQueryAPI,
+  LocationMutationAPI,
   LocationQueryAPI,
   RouteQueryAPI,
   RouteMutationAPI,
@@ -60,6 +61,7 @@ export interface WorkerAPI {
   getShapeQueryAPI(): Promise<ShapeQueryAPI>;
   getShapeMutationAPI(): Promise<ShapeMutationAPI>;
   getLocationQueryAPI(): Promise<LocationQueryAPI>;
+  getLocationMutationAPI(): Promise<LocationMutationAPI>;
   getRouteQueryAPI(): Promise<RouteQueryAPI>;
   getRouteMutationAPI(): Promise<RouteMutationAPI>;
   getPluginLifecycleAPI(): Promise<PluginLifecycleAPI>;

@@ -230,10 +230,10 @@ interface LocationTypeConfig {
 ```typescript
 interface LocationSelection {
   // 選択マトリックス (国 × 地点タイプ)
-  selectionMatrix: boolean[][];
+  selectedArrayByCountries: Record<ISO2, boolean[]>;
   
   countries: Array<{
-    code: string;      // ISO 3166-1 alpha-3
+    code: string;      // ISO 3166-1 alpha-2
     name: string;      // 英語名
     localName?: string; // 現地語名
     continent: string;
@@ -638,7 +638,7 @@ interface LocationEntity {
   nodeId: NodeId;
   dataSource: string;
   licenseAgreement: boolean;
-  selectionMatrix: boolean[][];
+  selectedArrayByCountries: Record<ISO2, boolean[]>;
   concurrentDownloads: number;
   batchSessionId?: string;
   lastProcessedAt?: number;
@@ -735,14 +735,14 @@ const dataSource = {
 
 // Step 3: 地域と種別選択
 const selection = {
-  countries: ["JPN", "KOR", "CHN", "TWN"],
+  countries: ["JP", "KR", "CN", "TW"],
   locationTypes: ["airport", "railway_station"],
-  selectionMatrix: [
-    [true, true],  // Japan: airports & stations
-    [true, false], // Korea: airports only
-    [true, true],  // China: both
-    [false, true]  // Taiwan: stations only
-  ]
+  selectedArrayByCountries: {
+    JP: [true, true],  // Japan: airports & stations
+    KR: [true, false], // Korea: airports only
+    CN: [true, true],  // China: both
+    TW: [false, true]  // Taiwan: stations only
+  }
 };
 
 // Step 4: 処理実行

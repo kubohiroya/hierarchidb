@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { toNodeId } from '@hierarchidb/common-types';
 import type { LocationEntity } from '../../../../common/types/index.js';
+import type { LocationPointId } from '../../../../common/entities/LocationPoint.js';
 import en from '../../../../ui/locales/en.json' with { type: 'json' };
 
 type SessionRecord = {
@@ -120,7 +121,7 @@ describe('LocationMapPreviewStep', () => {
     listLocationPointsMock.mockResolvedValue([
       {
         schemaVersion: 2,
-        pid: 'point-1',
+        pointId: 'point-1' as LocationPointId,
         name: 'Sample Point',
         latitude: 35.68,
         longitude: 139.76,

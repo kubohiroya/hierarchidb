@@ -41,11 +41,14 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ dr
     },
   };
 
-  const deepEqualMatrix = (a: boolean[][], b: boolean[][]): boolean => {
-    if (a.length !== b.length) return false;
-    for (let i = 0; i < a.length; i += 1) {
-      const rowA = a[i] ?? [];
-      const rowB = b[i] ?? [];
+  const deepEqualSelectionRecord = (
+    current: Record<string, boolean[]>,
+    next: Record<string, boolean[]>,
+  ): boolean => {
+    if (iso.status !== 'ready') return true;
+    for (const country of iso.countries) {
+      const rowA = current[country.code] ?? [];
+      const rowB = next[country.code] ?? [];
       if (rowA.length !== rowB.length) return false;
       for (let j = 0; j < rowA.length; j += 1) {
         if (rowA[j] !== rowB[j]) return false;
@@ -56,7 +59,17 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ dr
 
   type CountryMatrixSelection = MatrixSelection;
 
-  const selectionMatrixSource = draft.selectionMatrix ?? [];
+  const selectionByCountries = draft.selectedArrayByCountries ?? {};
+
+  const selectionMatrixSource = useMemo(() => {
+    if (iso.status !== 'ready') return [];
+    return iso.countries.map((country) => selectionByCountries[country.code] ?? []);
+  }, [iso, selectionByCountries]);
+
+  const selectionRecordSource = useMemo(() => {
+    if (iso.status !== 'ready') return {};
+    return selectionByCountries;
+  }, [iso, selectionByCountries]);
 
   const currentSelections: CountryMatrixSelection[] = useMemo(() => {
     if (iso.status !== 'ready') return [];
@@ -73,10 +86,11 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ dr
   const applySelections = useCallback(
     (nextSelections: CountryMatrixSelection[]) => {
       if (iso.status !== 'ready') return;
-      const normalized = iso.countries.map((country) => {
+      const normalized: Record<string, boolean[]> = {};
+      iso.countries.forEach((country) => {
         const entry = nextSelections.find((sel) => sel.countryCode === country.code);
         const selections = entry?.selections ?? {};
-        return matrixConfig.columns.map((col) => {
+        normalized[country.code] = matrixConfig.columns.map((col) => {
           const allowed = allowedTypeSet.has(col.id as LocationType);
           return allowed ? Boolean(selections[col.id]) : false;
         });
@@ -86,17 +100,17 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ dr
         const sole = allowedTypes[0];
         const soleIndex = matrixConfig.columns.findIndex((c) => c.id === sole);
         if (soleIndex >= 0) {
-          normalized.forEach((row) => {
+          Object.values(normalized).forEach((row) => {
             row[soleIndex] = true;
           });
         }
       }
 
-      if (!deepEqualMatrix(selectionMatrixSource, normalized)) {
-        onUpdate({ selectionMatrix: normalized });
+      if (!deepEqualSelectionRecord(selectionRecordSource, normalized)) {
+        onUpdate({ selectedArrayByCountries: normalized });
       }
     },
-    [allowedTypeSet, allowedTypes, iso, matrixConfig.columns, onUpdate, selectionMatrixSource],
+    [allowedTypeSet, allowedTypes, iso, matrixConfig.columns, onUpdate, selectionRecordSource],
   );
 
   if (iso.status === 'loading') {

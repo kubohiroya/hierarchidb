@@ -81,16 +81,9 @@ export const normalizePeerData = (data: unknown): LocationPeerData => {
 };
 
 const isGroupData = (value: unknown): value is LocationGroupItemData =>
-  isObject(value) && typeof value.pid === 'string' && (value.schemaVersion === 1 || value.schemaVersion === 2);
-
-const sanitizeSource = (value: unknown): LocationGroupItemData['source'] => {
-  if (!isObject(value)) return undefined;
-  const provider = typeof value.provider === 'string' ? value.provider : undefined;
-  const fetchedAt = typeof value.fetchedAt === 'number' ? value.fetchedAt : undefined;
-  if (!provider || fetchedAt === undefined) return undefined;
-  const originalId = typeof value.originalId === 'string' ? value.originalId : undefined;
-  return { provider, fetchedAt, originalId };
-};
+  isObject(value)
+  && (typeof (value as LocationGroupItemData).pointId === 'string' || typeof (value as { pid?: string }).pid === 'string')
+  && (value.schemaVersion === 1 || value.schemaVersion === 2);
 
 const normalizeGroupData = (value: unknown): LocationGroupItemData => {
   if (isGroupData(value)) {
@@ -100,12 +93,11 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
         ...value,
         schemaVersion: 2,
         metadata: sanitizeMetadata(value.metadata),
-        source: sanitizeSource(value.source),
       };
     }
     return {
       schemaVersion: 2,
-      pid: value.pid,
+      pointId: (value as { pid?: string }).pid ?? '',
       name: typeof value.name === 'string' ? value.name : '',
       latitude: typeof value.latitude === 'number' ? value.latitude : 0,
       longitude: typeof value.longitude === 'number' ? value.longitude : 0,
@@ -114,14 +106,13 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
       admin1: typeof value.gid1 === 'string' ? value.gid1 : undefined,
       admin2: typeof value.gid2 === 'string' ? value.gid2 : undefined,
       metadata: sanitizeMetadata(value.payload),
-      source: sanitizeSource(value.source),
     };
   }
 
   if (!isObject(value)) {
     return {
       schemaVersion: 2,
-      pid: '',
+      pointId: '' as LocationGroupItemData['pointId'],
       name: '',
       latitude: 0,
       longitude: 0,
@@ -130,11 +121,14 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
       admin1: undefined,
       admin2: undefined,
       metadata: undefined,
-      source: undefined,
     };
   }
 
-  const pid = typeof value.pid === 'string' ? value.pid : '';
+  const pointId = typeof (value as Record<string, unknown>).pointId === 'string'
+    ? (value as Record<string, unknown>).pointId as string
+    : typeof value.pid === 'string'
+      ? value.pid
+      : '';
   const name = typeof value.name === 'string' ? value.name : '';
   const latitude = typeof value.latitude === 'number' ? value.latitude : 0;
   const longitude = typeof value.longitude === 'number' ? value.longitude : 0;
@@ -158,7 +152,7 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
 
   return {
     schemaVersion: 2,
-    pid,
+    pointId: pointId as LocationGroupItemData['pointId'],
     name,
     latitude,
     longitude,
@@ -168,7 +162,6 @@ const normalizeGroupData = (value: unknown): LocationGroupItemData => {
     admin1,
     admin2,
     metadata: sanitizeMetadata((value as Record<string, unknown>).metadata ?? (value as Record<string, unknown>).payload),
-    source: sanitizeSource((value as Record<string, unknown>).source),
   };
 };
 

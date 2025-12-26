@@ -48,10 +48,8 @@ const toPreviewLocationPoint = (point: Awaited<ReturnType<typeof listLocationPoi
   if (point.admin1) properties.admin1 = point.admin1;
   if (point.admin2) properties.admin2 = point.admin2;
   if (point.countryName) properties.countryName = point.countryName;
-  if (point.source) properties.source = point.source;
-
   return {
-    id: point.pid,
+    id: point.pointId,
     name: point.name,
     type: resolveLocationType(point.kind),
     countryCode: point.countryCode || 'UNK',

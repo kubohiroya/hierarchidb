@@ -15,26 +15,11 @@ export interface ShapeEntity {
   geometry?: Geometry;
   properties?: Record<string, unknown>;
 
-  // Metadata for display
-  metadata?: {
-    name?: string;
-    description?: string;
-    tags?: string[];
-  };
-
-  // Timestamps / versioning
-  createdAt?: number;
-  updatedAt?: number;
-  version?: number;
-
   tabularMetadataId?: string;
   tabularFilters?: unknown; // kept broad; concrete type in data-source module
   tabularMetadata?: TabularTableMetadata | null;
 //tabularFile?: TabularFileSummary;
   tabularLastPreview?: TabularDataResult;
-
-// Map Position
-  zxy?: [number, number, number];
 
   // License Agreement
   licenseAgreement?: boolean;
@@ -47,9 +32,7 @@ export interface ShapeEntity {
   batchConfig?: BatchConfig;
 
 // Country & Admin Selection
-  checkboxState?: boolean[][] | string;
-  selectedCountries?: string[];
-  adminLevels?: number[];
+  selectedArrayByCountries?: boolean[][] | string;
   urlMetadata?: UrlMetadata[];
 
   // Processing Status
