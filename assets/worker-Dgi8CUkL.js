@@ -1,0 +1,2 @@
+import{b as e}from"./entry.client.js";import{n as t}from"./plugin-manifest-CcVtnL_I.js";async function n(e={}){return e.storeRegistry?e.storeRegistry:null}var r=n=>{n.getPeer(`spreadsheet`)||n.registerPeer(t,e({normalize:e=>e?{...e}:void 0}))};async function i(e={}){if(e.signal?.aborted)return;let t=await n(e);t&&r(t)}i().catch(()=>{});export{i as registerSpreadsheetWorkerStores};
+//# sourceMappingURL=worker-Dgi8CUkL.js.map

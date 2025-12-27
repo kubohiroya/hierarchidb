@@ -1,0 +1,2 @@
+import"./vendor-react-DueQUKGo.js";import"./identifier-CN0yTFUG.js";import{Rr as e}from"./entry.client.js";const t=e;var n=t;export{t as LinkerPluginIcon,n as default};
+//# sourceMappingURL=icon-CAduLQD5.js.map

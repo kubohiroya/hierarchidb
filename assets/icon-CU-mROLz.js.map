@@ -1,0 +1,1 @@
+{"version":3,"file":"icon-CU-mROLz.js","names":[],"sources":["../../../plugins/shape-plugin/src/icon/index.ts"],"sourcesContent":["import HexagonIcon from '@mui/icons-material/Hexagon';\n\nexport const ShapePluginIcon = HexagonIcon;\n\nexport default ShapePluginIcon;\n"],"mappings":"mJAEA,MAAa,EAAkB,EAE/B,IAAA,EAAe"}

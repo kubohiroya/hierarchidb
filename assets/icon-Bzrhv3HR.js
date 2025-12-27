@@ -1,2 +1,0 @@
-import"./vendor-react-DueQUKGo.js";import{pn as e}from"./index.js";const t=e;var n=t;export{t as ResolverPluginIcon,n as default};
-//# sourceMappingURL=icon-Bzrhv3HR.js.map

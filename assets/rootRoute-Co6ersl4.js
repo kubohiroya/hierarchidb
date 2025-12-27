@@ -1,0 +1,2 @@
+import{a as e}from"./rolldown-runtime-GuRs8mfQ.js";import{r as t}from"./vendor-react-DueQUKGo.js";import{di as n,fi as r}from"./entry.client.js";import{t as i}from"./ui-plugin-loader-ki8P9cR6.js";async function a(){return await i(),{registry:{},servicesReady:Promise.resolve(),teardown:async()=>{}}}var o=e(t(),1);const s=r({beforeLoad:async()=>(await a(),{uiPluginsReady:!0}),component:()=>(0,o.jsx)(n,{})});export{s as t};
+//# sourceMappingURL=rootRoute-Co6ersl4.js.map

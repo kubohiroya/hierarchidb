@@ -1,0 +1,1 @@
+import{t as e}from"./handlers-B_NeDgqu.js";export{e as ShapeEntityHandler,e as ShapeEntityService};

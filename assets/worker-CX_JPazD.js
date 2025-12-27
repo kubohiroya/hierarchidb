@@ -1,0 +1,2 @@
+import{n as e}from"./rolldown-runtime-GuRs8mfQ.js";import{n as t,t as n}from"./registerLocationWorkerStores-CD0W7NhA.js";var r=e({loadLocationEntitiesDbModule:()=>n,registerLocationWorkerStores:()=>t},1);export{r as t};
+//# sourceMappingURL=worker-CX_JPazD.js.map

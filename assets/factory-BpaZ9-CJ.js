@@ -1,0 +1,1 @@
+import{n as e,t}from"./registerShapeWorkerStores-CVpvh2J6.js";export{t as loadShapeEntitiesDbModule,e as registerShapeWorkerStores};

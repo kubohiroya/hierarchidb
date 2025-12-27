@@ -1,2 +1,0 @@
-import"./vendor-react-DueQUKGo.js";import{En as e}from"./index.js";const t=e;var n=t;export{t as TimelinePluginIcon,n as default};
-//# sourceMappingURL=icon-BqAEmvbJ.js.map

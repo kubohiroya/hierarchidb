@@ -1,0 +1,2 @@
+import{A as e,j as t}from"../worker.js";import{t as n}from"./corsProxyBase-D_eNTQbl.js";async function r(r,i){let a=await t.getSingleton(),o=e(r,{corsProxyBaseURL:n()});return a.fetchWithAuth(o,i,{pluginType:`shape`})}export{r as authFetch};
+//# sourceMappingURL=authFetch-_aea3O3V.js.map

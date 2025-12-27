@@ -1,0 +1,1 @@
+import{ht as e}from"./entry.client.js";export{e as EntityLifecycleManager};

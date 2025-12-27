@@ -1,2 +1,0 @@
-import{a as e}from"./rolldown-runtime-GuRs8mfQ.js";import{r as t}from"./vendor-react-DueQUKGo.js";import{Dr as n,Or as r}from"./index.js";import{t as i}from"./ui-plugin-loader-Bsdc6mnM.js";async function a(){return await i(),{registry:{},servicesReady:Promise.resolve(),teardown:async()=>{}}}var o=e(t(),1);const s=r({beforeLoad:async()=>(await a(),{uiPluginsReady:!0}),component:()=>(0,o.jsx)(n,{})});export{s as t};
-//# sourceMappingURL=rootRoute-Dry04mdg.js.map

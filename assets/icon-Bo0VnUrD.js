@@ -1,0 +1,2 @@
+import"./vendor-react-DueQUKGo.js";import"./identifier-CN0yTFUG.js";import{yr as e}from"./entry.client.js";const t=e;var n=t;export{t as LocationPluginIcon,n as default};
+//# sourceMappingURL=icon-Bo0VnUrD.js.map

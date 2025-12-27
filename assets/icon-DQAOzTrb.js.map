@@ -1,0 +1,1 @@
+{"version":3,"file":"icon-DQAOzTrb.js","names":[],"sources":["../../../plugins/timeline-plugin/src/icon/index.ts"],"sourcesContent":["import AccessTimeIcon from '@mui/icons-material/AccessTime';\n\nexport const TimelinePluginIcon = AccessTimeIcon;\n\nexport default TimelinePluginIcon;\n"],"mappings":"2GAEA,MAAa,EAAqB,EAElC,IAAA,EAAe"}

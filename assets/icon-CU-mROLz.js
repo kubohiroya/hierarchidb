@@ -1,0 +1,2 @@
+import"./react-C7p0Js4D.js";import"./DefaultPropsProvider-BcGgqO1n.js";import"./jsx-runtime-CnMVNxLz.js";import{t as e}from"./Hexagon-DbcLJiM3.js";const t=e;var n=t;export{t as ShapePluginIcon,n as default};
+//# sourceMappingURL=icon-CU-mROLz.js.map

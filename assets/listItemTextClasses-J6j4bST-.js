@@ -1,0 +1,2 @@
+import{b as e,x as t}from"./DefaultPropsProvider-BcGgqO1n.js";function n(e){return t(`MuiListItemText`,e)}var r=e(`MuiListItemText`,[`root`,`multiline`,`dense`,`inset`,`primary`,`secondary`]);export{r as n,n as t};
+//# sourceMappingURL=listItemTextClasses-J6j4bST-.js.map

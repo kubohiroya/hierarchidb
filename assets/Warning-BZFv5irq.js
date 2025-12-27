@@ -1,0 +1,2 @@
+import{a as e}from"./rolldown-runtime-GuRs8mfQ.js";import{r as t}from"./vendor-react-DueQUKGo.js";import{t as n}from"./createSvgIcon-CYKPKq5k.js";var r=n((0,e(t()).jsx)(`path`,{d:`M1 21h22L12 2zm12-3h-2v-2h2zm0-4h-2v-4h2z`}),`Warning`);export{r as t};
+//# sourceMappingURL=Warning-BZFv5irq.js.map

@@ -1,1 +1,0 @@
-import{t as e}from"./Indexer-BJiUS-OG.js";export{e as TabularIndexer};

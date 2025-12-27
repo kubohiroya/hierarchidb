@@ -1,0 +1,2 @@
+import"./vendor-react-DueQUKGo.js";import"./identifier-CN0yTFUG.js";import{Er as e}from"./entry.client.js";const t=e;var n=t;export{t as ResolverPluginIcon,n as default};
+//# sourceMappingURL=icon-8kx_9gda.js.map
