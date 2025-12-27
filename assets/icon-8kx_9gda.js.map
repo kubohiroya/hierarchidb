@@ -1,0 +1,1 @@
+{"version":3,"file":"icon-8kx_9gda.js","names":[],"sources":["../../../plugins/resolver-plugin/src/icon/index.ts"],"sourcesContent":["import ExtensionIcon from '@mui/icons-material/Extension';\n\nexport const ResolverPluginIcon = ExtensionIcon;\n\nexport default ResolverPluginIcon;\n"],"mappings":"2GAEA,MAAa,EAAqB,EAElC,IAAA,EAAe"}

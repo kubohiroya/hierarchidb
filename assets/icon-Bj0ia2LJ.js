@@ -1,0 +1,2 @@
+import"./react-C7p0Js4D.js";import"./DefaultPropsProvider-BcGgqO1n.js";import"./jsx-runtime-CnMVNxLz.js";import{t as e}from"./LocationOn-BmDL1Ebm.js";const t=e;var n=t;export{t as LocationPluginIcon,n as default};
+//# sourceMappingURL=icon-Bj0ia2LJ.js.map

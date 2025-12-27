@@ -1,0 +1,2 @@
+import{q as e}from"../worker.js";import{t}from"./react-C7p0Js4D.js";import{t as n}from"./jsx-runtime-CnMVNxLz.js";var r=e(t(),1);n(),(0,r.createContext)(null);function i(){throw Error(`Worker client hook is not registered. Please ensure registerWorkerClientHook is called at app startup.`)}export{i as t};
+//# sourceMappingURL=src-Dp5hjjkT.js.map

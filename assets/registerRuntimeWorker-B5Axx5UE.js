@@ -1,2 +1,0 @@
-import"./import-wrapper-prod-C18LpNRm.js";import"./src-CDHgwM50.js";import"./esm-1RXwEGda.js";import"./dist-C2Px9BpZ.js";import"./dist-Bvwzo_2i.js";import"./EntityLifecycleManager-DyQjyeWw.js";import"./dist-Nhhe4JoU.js";import{b as e}from"./dist-K8nD3MoO.js";import"./DraftTreeNodeOperations-DLI1rrDa.js";import{n as t}from"./RuntimeWorkerClient-D-ab7ioR.js";function n(){t(async()=>{try{return await e()}catch{return null}})}export{n as registerShapeRuntimeWorkerAdapters};
-//# sourceMappingURL=registerRuntimeWorker-B5Axx5UE.js.map

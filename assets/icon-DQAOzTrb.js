@@ -1,0 +1,2 @@
+import"./vendor-react-DueQUKGo.js";import"./identifier-CN0yTFUG.js";import{zr as e}from"./entry.client.js";const t=e;var n=t;export{t as TimelinePluginIcon,n as default};
+//# sourceMappingURL=icon-DQAOzTrb.js.map

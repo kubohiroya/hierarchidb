@@ -1,0 +1,2 @@
+import"./react-C7p0Js4D.js";import"./DefaultPropsProvider-BcGgqO1n.js";import"./jsx-runtime-CnMVNxLz.js";import{t as e}from"./AccessTime-U9hic4n6.js";const t=e;var n=t;export{t as TimelinePluginIcon,n as default};
+//# sourceMappingURL=icon-D8pFG_bK.js.map

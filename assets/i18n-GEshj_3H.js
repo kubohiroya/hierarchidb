@@ -1,0 +1,1 @@
+import"./react-C7p0Js4D.js";import"./jsx-runtime-CnMVNxLz.js";import"./src-D-FgKjsX.js";import{t as e}from"./i18n-DHCtXMQu.js";export{e as useTranslation};

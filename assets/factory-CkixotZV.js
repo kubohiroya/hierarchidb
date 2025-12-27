@@ -1,0 +1,1 @@
+import{n as e,t}from"./registerShapeWorkerStores-M3PQmOhf.js";export{t as loadShapeEntitiesDbModule,e as registerShapeWorkerStores};

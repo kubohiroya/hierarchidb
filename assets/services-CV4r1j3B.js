@@ -1,0 +1,2 @@
+import{dt as e}from"./entry.client.js";import"./Indexer-XoNkWY72.js";import{t}from"./dist-C1YpAH2X.js";import{t as n}from"./StylerDataService-ub8XtmDD.js";var r=class extends t{constructor(){super(e(`styler-metadata-db`))}};export{n as StylerDataService,r as StylerMetadataManager};
+//# sourceMappingURL=services-CV4r1j3B.js.map

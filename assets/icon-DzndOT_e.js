@@ -1,0 +1,2 @@
+import"./vendor-react-DueQUKGo.js";import"./identifier-CN0yTFUG.js";import{Ir as e}from"./entry.client.js";const t=e;var n=t;export{t as SpreadsheetPluginIcon,n as default};
+//# sourceMappingURL=icon-DzndOT_e.js.map

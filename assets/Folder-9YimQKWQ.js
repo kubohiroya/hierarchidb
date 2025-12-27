@@ -1,0 +1,2 @@
+import{q as e}from"../worker.js";import{t}from"./jsx-runtime-CnMVNxLz.js";import{t as n}from"./createSvgIcon-DJHgFwJy.js";var r=n((0,e(t()).jsx)(`path`,{d:`M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8z`}),`Folder`);export{r as t};
+//# sourceMappingURL=Folder-9YimQKWQ.js.map

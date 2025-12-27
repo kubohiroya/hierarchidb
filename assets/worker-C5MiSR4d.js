@@ -1,0 +1,2 @@
+import{a as e}from"../worker.js";import{n as t}from"./plugin-manifest-hRYuu7fZ.js";async function n(e={}){return e.storeRegistry?e.storeRegistry:null}const r=n=>{n.getPeer(t)||n.registerPeer(t,e({normalize:e=>e?{...e}:void 0}))};async function i(e={}){if(e.signal?.aborted)return;let t=await n(e);t&&r(t)}i().catch(()=>{});export{i as registerSpreadsheetWorkerStores};
+//# sourceMappingURL=worker-C5MiSR4d.js.map

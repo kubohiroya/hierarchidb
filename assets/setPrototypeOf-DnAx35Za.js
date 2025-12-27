@@ -1,0 +1,2 @@
+function e(t,n){return e=Object.setPrototypeOf?Object.setPrototypeOf.bind():function(e,t){return e.__proto__=t,e},e(t,n)}export{e as t};
+//# sourceMappingURL=setPrototypeOf-DnAx35Za.js.map

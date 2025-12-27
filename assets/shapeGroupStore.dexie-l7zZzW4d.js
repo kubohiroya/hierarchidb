@@ -1,0 +1,2 @@
+function e(e){return{async list(t){return(await e.groupEntities.where(`nodeId`).equals(t).toArray()).map(({id:e,data:t,updatedAt:n})=>({id:e,data:t??void 0,updatedAt:n}))},async bulkUpsert(t,n){let r=Date.now(),i=n.map(e=>({nodeId:t,id:e.id,data:e.data,updatedAt:e.updatedAt??r}));await e.groupEntities.bulkPut(i)},async bulkDelete(t,n){await e.transaction(`rw`,e.groupEntities,async()=>{for(let r of n)await e.groupEntities.delete([t,r])})}}}export{e as createShapeGroupStoreDexie};
+//# sourceMappingURL=shapeGroupStore.dexie-l7zZzW4d.js.map

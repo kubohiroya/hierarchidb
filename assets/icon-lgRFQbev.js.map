@@ -1,0 +1,1 @@
+{"version":3,"file":"icon-lgRFQbev.js","names":[],"sources":["../../../plugins/resolver-plugin/src/icon/index.ts"],"sourcesContent":["import ExtensionIcon from '@mui/icons-material/Extension';\n\nexport const ResolverPluginIcon = ExtensionIcon;\n\nexport default ResolverPluginIcon;\n"],"mappings":"qJAEA,MAAa,EAAqB,EAElC,IAAA,EAAe"}

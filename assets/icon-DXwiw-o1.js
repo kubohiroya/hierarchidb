@@ -1,0 +1,2 @@
+import"./vendor-react-DueQUKGo.js";import"./identifier-CN0yTFUG.js";import{Cr as e}from"./entry.client.js";const t=e;var n=t;export{t as ShapePluginIcon,n as default};
+//# sourceMappingURL=icon-DXwiw-o1.js.map
