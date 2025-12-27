@@ -178,7 +178,7 @@ registry.registerConfigProvider<RouteStepData>({
         optional: true,
         componentFactory: (p: StepProps) => {
           const draft = ensureDraft(p.data);
-          return <RoutePreviewStep draft={draft as unknown as RouteUpdaterPayload} nodeId={p.nodeId} />;
+          return <RoutePreviewStep draft={draft as unknown as RouteUpdaterPayload} nodeId={p.nodeId as NodeId | undefined} />;
         },
         validate: (data?: RouteStepData) => isRouteBuildPersisted(data),
       },

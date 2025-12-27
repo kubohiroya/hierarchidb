@@ -1,4 +1,3 @@
-import type { NodeId } from '@hierarchidb/common-types';
 import type { RouteNearestLineQuery, RouteNearestLineResponse } from './routeTypes.js';
 
 /**

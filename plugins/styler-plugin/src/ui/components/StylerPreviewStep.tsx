@@ -22,6 +22,7 @@ import {
   type StylerStepData,
   type ColorStyleKeyValue,
   type ScalarStyleKeyValue,
+  MAPLIBRE_PROPERTY_METADATA,
 } from '../../common/types/StylerEntity.js';
 import type { NodeId } from '@hierarchidb/common-types';
 import { wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';

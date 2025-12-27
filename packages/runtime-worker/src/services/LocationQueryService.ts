@@ -59,7 +59,7 @@ export class LocationQueryService implements LocationQueryAPI {
         const x = tile.x + dx;
         const y = tile.y + dy;
         if (x < 0 || y < 0 || x >= maxIndex || y >= maxIndex) continue;
-        const tree = await this.getTileTree(query.nodeId, sessionId, zoom, x, y);
+        const tree = await this.getTileTree(sessionId, zoom, x, y);
         if (!tree) continue;
         const matches = findWithinDistanceInTree(
           tree,
@@ -93,17 +93,18 @@ export class LocationQueryService implements LocationQueryAPI {
     const db = getEphemeralLocationDB();
     const sessions = await db.sessions.where('nodeId').equals(nodeId).toArray();
     if (!sessions.length) return null;
-    const latest = sessions.reduce((acc, current) => {
-      if (!acc) return current;
-      return (current.createdAt ?? 0) > (acc.createdAt ?? 0) ? current : acc;
-    }, sessions[0]);
+    const [first, ...rest] = sessions;
+    if (!first) return null;
+    let latest = first;
+    for (const current of rest) {
+      latest = (current.createdAt ?? 0) > (latest.createdAt ?? 0) ? current : latest;
+    }
     const sessionId = latest.sessionId;
     this.sessionCache.set(nodeId, { sessionId, checkedAt: Date.now() });
     return sessionId ?? null;
   }
 
   private async getTileTree(
-    nodeId: NodeId,
     sessionId: string,
     z: number,
     x: number,

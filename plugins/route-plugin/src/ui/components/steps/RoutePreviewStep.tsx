@@ -65,7 +65,7 @@ const resolveBounds = (geometry: [number, number][]): Bounds | null => {
 export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeId }) => {
   const { t, locale } = useTranslation();
   const hasGeometry = Array.isArray(draft.draftData?.lineGeometry) && draft.draftData?.lineGeometry.length > 0;
-  const geometry = (draft.draftData?.lineGeometry ?? []) as [number, number][];
+  const geometry: [number, number][] = useMemo(()=> draft.draftData?.lineGeometry ?? [], [draft.draftData?.lineGeometry]);
   const previewNodeId = nodeId ?? draft.treeNodeId;
   const bounds = useMemo(() => resolveBounds(geometry), [geometry]);
   const mapRef = useRef<HTMLDivElement>(null);
@@ -149,7 +149,7 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
         }
       })();
     }, 120);
-  }, [hoverBounds, mapSize.height, mapSize.width, previewNodeId, zoomLevel]);
+  }, [hoverBounds, mapSize, previewNodeId, zoomLevel]);
 
   const handleMapMouseMove = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
     if (!mapRef.current) return;

@@ -150,6 +150,7 @@ export function useTreeConsoleIntegrationInner({
         type?: string;
         name?: string;
         metadata?: { name?: string; description?: string; tags?: string[] };
+        invisible?: boolean;
         depth?: number;
       },
       options?: { navigateToParent?: boolean }

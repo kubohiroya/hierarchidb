@@ -19,6 +19,7 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist",
+    "build:types": "tsc --emitDeclarationOnly --declaration --declarationMap --project tsconfig.json --outDir dist",
     "lint": "eslint src",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit --project tsconfig.json"

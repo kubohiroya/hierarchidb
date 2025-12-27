@@ -5,10 +5,46 @@
       "dependsOn": [
         "^build"
       ],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!**/*.md",
+        "!docs/**",
+        "!plans/**",
+        "!reports/**",
+        "!coverage/**",
+        "!artifacts/**",
+        "!playwright-report/**",
+        "!storybook-static/**",
+        "!e2e-results/**",
+        "!tmp/**"
+      ],
       "outputs": [
         "dist/**",
         "build/**",
         "storybook-static/**"
+      ]
+    },
+    "build:types": {
+      "dependsOn": [
+        "^build:types"
+      ],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!**/*.md",
+        "!docs/**",
+        "!plans/**",
+        "!reports/**",
+        "!coverage/**",
+        "!artifacts/**",
+        "!playwright-report/**",
+        "!storybook-static/**",
+        "!e2e-results/**",
+        "!tmp/**"
+      ],
+      "outputs": [
+        "dist/**/*.d.ts",
+        "dist/**/*.d.ts.map",
+        "**/*.tsbuildinfo"
       ]
     },
     "test": {
@@ -33,10 +69,25 @@
     },
     "typecheck": {
       "dependsOn": [
-        "^build",
+        "^build:types",
         "^typecheck"
       ],
-      "outputs": []
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!**/*.md",
+        "!docs/**",
+        "!plans/**",
+        "!reports/**",
+        "!coverage/**",
+        "!artifacts/**",
+        "!playwright-report/**",
+        "!storybook-static/**",
+        "!e2e-results/**",
+        "!tmp/**"
+      ],
+      "outputs": [
+        "**/*.tsbuildinfo"
+      ]
     },
     "dev": {
       "cache": false,

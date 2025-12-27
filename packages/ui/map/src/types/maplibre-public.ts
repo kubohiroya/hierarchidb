@@ -29,7 +29,9 @@ export type MapLibreFeatureIdentifier = string | number;
 export interface MapLibreGeoJSONFeature {
   id?: MapLibreFeatureIdentifier;
   properties?: Record<string, unknown> | null;
-  layer?: { id?: string };
+  source?: string;
+  sourceLayer?: string;
+  layer?: { id?: string; type?: string };
 }
 
 export interface MapLibrePoint {
@@ -70,12 +72,19 @@ export interface MapLibreMapInstance {
   removeLayer(id: string): void;
 
   addControl(control: unknown, position?: string): void;
+  removeControl(control: unknown): void;
 
   queryRenderedFeatures(geometry?: MapLibreQueryGeometry, parameters?: { layers?: string[]; filter?: MapLibreFilter }): MapLibreGeoJSONFeature[];
+  setFeatureState(
+    target: { source: string; id?: MapLibreFeatureIdentifier; sourceLayer?: string },
+    state: Record<string, unknown>
+  ): void;
+  removeFeatureState(target: { source: string; id?: MapLibreFeatureIdentifier; key?: string }): void;
 
   // Commonly used convenience methods (subset of MapLibre Map API)
   getCenter(): { lng: number; lat: number };
   getZoom(): number;
+  getCanvas(): HTMLCanvasElement;
   getBearing(): number;
   getPitch(): number;
   zoomIn(): void;
@@ -85,6 +94,7 @@ export interface MapLibreMapInstance {
   setPitch(pitch: number): void;
   setStyle(style: string | MapLibreStyle): void;
   fitBounds(bounds: [[number, number], [number, number]], options?: { padding?: number }): void;
+  off(event: string, cb: (...args: unknown[]) => void): void;
 }
 
 export interface MapLibreMapMouseEvent {

@@ -436,7 +436,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
         }
       })();
     }, 120);
-  }, [hoverBounds, mapSize.height, mapSize.width, nodeId, zoom]);
+  }, [hoverBounds, mapSize, nodeId, zoom]);
 
   const handleMapMouseMove = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
     if (!mapRef.current) return;

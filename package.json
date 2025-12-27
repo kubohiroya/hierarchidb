@@ -20,6 +20,7 @@
     "build:start": "bash -lc 'set -a; source scripts/env/production.sh; if [ -f app/.env.secrets ]; then source app/.env.secrets; fi; set +a; pnpm build:turbo'",
     "build:storybook": "storybook build",
     "build:turbo": "turbo run build",
+    "build:types": "turbo run build:types",
     "build:watch": "turbo run build --watch",
     "check:deps": "pnpm exec dep-fence --strict",
     "check:deps:pkg": "pnpm exec dep-fence",
@@ -207,9 +208,8 @@
       "rollup": "4.50.1"
     },
     "ignoredBuiltDependencies": [
-      "@vaadin/vaadin-usage-statistics",
+      "core-js",
       "esbuild",
-      "oxc-resolver",
       "sharp",
       "workerd"
     ],

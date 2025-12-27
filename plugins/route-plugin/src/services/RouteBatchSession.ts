@@ -193,8 +193,8 @@ class Semaphore {
 
   release(): void {
     if (this.queue.length > 0) {
-      const resolve = this.queue.shift()!;
-      resolve();
+      const resolve = this.queue.shift();
+      if(resolve) {resolve()}
     } else this.count = Math.min(this.count + 1, this.capacity);
   }
 }
@@ -202,7 +202,7 @@ class Semaphore {
 function pickNumeric(obj: Record<string, unknown>): Record<string, number> {
   const out: Record<string, number> = {};
   for (const [k, v] of Object.entries(obj)) {
-    if (typeof v === 'number' && isFinite(v) && v > 0) out[k] = Math.floor(v);
+    if (typeof v === 'number' && Number.isFinite(v) && v > 0) out[k] = Math.floor(v);
   }
   return out;
 }

@@ -4,6 +4,7 @@ import type {
   LocationQueryAPI,
 } from '@hierarchidb/plugin-service-api';
 import { ROUTE_MODES, type RouteLineString, type RouteMode, type RoutePoint } from '../../common/entities/RouteLineString.js';
+import type { LocationPointId } from '@hierarchidb/location-plugin';
 
 export type IdeGsmCsvError = {
   id: string;
@@ -107,6 +108,7 @@ export function parseIdeGsmCsv(
 
       const startPoint = buildRoutePoint(startLocation, parsed.country1, parsed.region1);
       const endPoint = buildRoutePoint(endLocation, parsed.country2, parsed.region2);
+      const featureId = `${startPoint.pointId}+${endPoint.pointId}`;
 
       const now = Date.now();
       const lineString: RouteLineString = {
@@ -117,10 +119,9 @@ export function parseIdeGsmCsv(
         createdAt: now,
         updatedAt: now,
         name: parsed.name,
-        startLocationId: startLocation.id,
-        endLocationId: endLocation.id,
         startPoint,
         endPoint,
+        featureId,
         routeMode: parsed.mode,
         distance: parsed.distance,
         speed: parsed.speed,
@@ -191,12 +192,18 @@ function buildRoutePoint(
   admin0Name?: string,
   admin1Name?: string,
 ): RoutePoint {
+  const pointId =
+    (location as { pointId?: LocationPointId }).pointId
+    ?? ((location as { pid?: string }).pid as LocationPointId | undefined)
+    ?? (crypto.randomUUID() as LocationPointId);
   return {
     coordinates: [location.longitude, location.latitude],
     admin0Name: admin0Name ?? location.gid0 ?? '',
     admin1Name: admin1Name ?? location.gid1 ?? '',
     admin2Name: location.gid2,
     locationId: location.id,
+    pointId,
+    name: location.name ?? '',
   };
 }
 

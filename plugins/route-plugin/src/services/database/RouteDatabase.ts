@@ -7,7 +7,7 @@ import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
 
-import { RouteLineString } from '@hierarchidb/route-plugin/common/entities/RouteLineString.ts';
+import type { RouteLineString } from '../../common/entities/RouteLineString.js';
 
 export class RouteDatabase extends Dexie {
   lineStrings!: Table<RouteLineString, NodeId>;

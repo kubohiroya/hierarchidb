@@ -20,21 +20,17 @@ type SelectionColumn = {
   id: string;
 };
 
-type CountryLike = {
-  code: string;
-};
-
 export const buildSelectionRecord = (
-  countries: CountryLike[],
+  countryCodes: string[],
   columns: SelectionColumn[],
   nextSelections: MatrixSelection[],
   allowedTypeSet: Set<LocationType>,
 ): Record<string, boolean[]> => {
   const normalized: Record<string, boolean[]> = {};
-  countries.forEach((country) => {
-    const entry = nextSelections.find((sel) => sel.countryCode === country.code);
+  countryCodes.forEach((countryCode) => {
+    const entry = nextSelections.find((sel) => sel.countryCode === countryCode);
     const selections = entry?.selections ?? {};
-    normalized[country.code] = columns.map((col) => {
+    normalized[countryCode] = columns.map((col) => {
       const allowed = allowedTypeSet.has(col.id as LocationType);
       return allowed ? Boolean(selections[col.id]) : false;
     });
@@ -47,7 +43,7 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ dr
   const { translations, t } = useTranslation();
   const iso = useIsoCountries();
   const allowedTypes = resolveTypesForSource(draft.dataSource ?? '');
-  const allowedTypeSet = new Set(allowedTypes);
+  const allowedTypeSet = useMemo(()=>new Set(allowedTypes), [allowedTypes]);
   const typeDescriptions = translations.selection?.typeDescriptions ?? {};
 
   const matrixConfig: MatrixConfig = {
@@ -69,7 +65,7 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ dr
     },
   };
 
-  const deepEqualSelectionRecord = (
+  const deepEqualSelectionRecord = useCallback((
     current: Record<string, boolean[]>,
     next: Record<string, boolean[]>,
   ): boolean => {
@@ -83,11 +79,11 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ dr
       }
     }
     return true;
-  };
+  }, [iso.countries, iso.status]);
 
   type CountryMatrixSelection = MatrixSelection;
 
-  const selectionByCountries = draft.selectedArrayByCountries ?? {};
+  const selectionByCountries = useMemo(()=>draft.selectedArrayByCountries ?? {}, [draft.selectedArrayByCountries]);
 
   const selectionMatrixSource = useMemo(() => {
     if (iso.status !== 'ready') return [];
@@ -115,7 +111,7 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ dr
     (nextSelections: CountryMatrixSelection[]) => {
       if (iso.status !== 'ready') return;
       const normalized = buildSelectionRecord(
-        iso.countries,
+        iso.countries.map(c=>c.code),
         matrixConfig.columns,
         nextSelections,
         allowedTypeSet,
@@ -124,7 +120,7 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ dr
         onUpdate({ selectedArrayByCountries: normalized });
       }
     },
-    [allowedTypeSet, allowedTypes, iso, matrixConfig.columns, onUpdate, selectionRecordSource],
+    [allowedTypeSet, deepEqualSelectionRecord, iso.countries, iso.status, matrixConfig.columns, onUpdate, selectionRecordSource],
   );
 
   if (iso.status === 'loading') {

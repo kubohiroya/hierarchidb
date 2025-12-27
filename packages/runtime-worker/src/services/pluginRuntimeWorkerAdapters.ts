@@ -47,20 +47,6 @@ const isFlagEnabled = (name: string, fallback: boolean): boolean => {
 async function createRuntimeWorkerClient(
   allowLocalWorker: boolean,
 ): Promise<RuntimeWorkerStageClient | null> {
-  try {
-    const name = '@' + 'hierarchidb/runtime-worker-worker';
-    const mod: unknown = await import(/* @vite-ignore */ name);
-    if (typeof mod === 'object' && mod !== null && 'createStageWorkerClient' in mod) {
-      const factory = (mod as { createStageWorkerClient?: () => Promise<RuntimeWorkerStageClient> })
-        .createStageWorkerClient;
-      if (typeof factory === 'function') {
-        return await factory();
-      }
-    }
-  } catch {
-    // Ignore when runtime-worker-worker is unavailable.
-  }
-
   if (!allowLocalWorker) return null;
   try {
     return await createStageWorkerClient();

@@ -5,3 +5,4 @@ export { TabularDataSourceStep } from './components/steps/TabularDataSourceStep.
 export { TabularDataFilterStep } from './components/steps/TabularDataFilterStep.js';
 export { ValueHistogram } from './components/ValueHistogram.js';
 export { tabularRowsAtom } from './state/tabularKeyValueAtoms.js';
+export { KeyValueSourcePanel } from './components/KeyValueSourcePanel.js';

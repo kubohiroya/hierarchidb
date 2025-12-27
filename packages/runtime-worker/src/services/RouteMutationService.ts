@@ -31,7 +31,7 @@ type RouteDatabaseLike = {
   lineStrings: DexieTable;
 };
 
-type RouteGeneratorType = typeof import('@hierarchidb/route-plugin/services/RouteGenerator.js').RouteGenerator;
+type RouteGeneratorType = typeof import('@hierarchidb/route-plugin').RouteGenerator;
 
 export class RouteMutationService implements RouteMutationAPI {
   static async getSingleton(db: RouteDatabaseLike, locationQueryService: LocationQueryAPI): Promise<RouteMutationService> {
@@ -156,9 +156,8 @@ let ideGsmGeneratorPromise: Promise<InstanceType<RouteGeneratorType>> | null = n
 async function getIdeGsmRouteGenerator(): Promise<InstanceType<RouteGeneratorType>> {
   if (!ideGsmGeneratorPromise) {
     ideGsmGeneratorPromise = (async () => {
-      const [{ RouteGenerator }, { SearouteEngine }] = await Promise.all([
-        import('@hierarchidb/route-plugin/services/RouteGenerator.js'),
-        import('@hierarchidb/route-plugin/services/engines/SearouteEngine.js'),
+      const [{ RouteGenerator, SearouteEngine }] = await Promise.all([
+        import('@hierarchidb/route-plugin'),
       ]);
       return new RouteGenerator({ searoute: new SearouteEngine() });
     })();

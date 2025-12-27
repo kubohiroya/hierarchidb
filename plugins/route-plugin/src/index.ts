@@ -9,6 +9,8 @@ export {
   parseIdeGsmCsv,
   type IdeGsmCsvError,
 } from './services/ide-gsm/ideGsmCsv.js';
+export { RouteGenerator } from './services/RouteGenerator.js';
+export { SearouteEngine } from './services/engines/SearouteEngine.js';
 export { getRouteDownloadService } from './services/download/registry.js';
 export * as worker from './worker/index.js';
 

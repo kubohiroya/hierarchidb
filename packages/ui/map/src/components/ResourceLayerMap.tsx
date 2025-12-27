@@ -14,7 +14,7 @@ import {
   type VectorTileDataSource,
   type VectorTileLayerConfig,
 } from '../types/unified-map-props.js';
-import { MapLibreMap } from './MapLibreMap.js';
+import { MapLibreMap, type MapLibreMapProps } from './MapLibreMap.js';
 
 type BasemapStyleEntry = {
   nodeId: string;
@@ -49,6 +49,8 @@ export type ResourceLayerMapProps = BaseMapProps & {
   geoJsonLayers?: ResourceGeoJsonLayer[];
   styleOverrides?: Record<string, unknown>;
   styleOverridesByType?: LayerStyleOverrides;
+  highlightOverridesByType?: LayerStyleOverrides;
+  controls?: MapLibreMapProps['controls'];
 };
 
 const LAYER_PAINT_KEYS: Record<MapLayerType, Set<string>> = {
@@ -95,6 +97,7 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
     geoJsonLayers,
     styleOverrides,
     styleOverridesByType,
+    highlightOverridesByType,
     mapStyleUrl,
     mapStyleObject,
     onLoad,
@@ -178,7 +181,8 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
           const layerConfig = { ...DEFAULT_MAP_CONFIG.vectorTileLayer, ...layer.layerConfig };
           const layerType = layerConfig.layerType ?? 'fill';
           const paintOverrides = pickStyleOverrides(layerType, styleOverrides, styleOverridesByType);
-          const layerPaint = { ...(layerConfig.paint ?? {}), ...paintOverrides };
+          const highlightOverrides = highlightOverridesByType?.[layerType] ?? {};
+          const layerPaint = { ...(layerConfig.paint ?? {}), ...paintOverrides, ...highlightOverrides };
           const layerId = layerConfig.layerId ?? `resource-layer-${layer.nodeId}`;
           const sourceId = layerConfig.sourceId ?? `resource-source-${layer.nodeId}`;
 

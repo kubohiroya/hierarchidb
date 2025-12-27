@@ -47,6 +47,11 @@ export const StylerMappingKeysStep: React.FC<PluginStepProps<StylerStepData>> = 
   const keyColumn = data?.keyColumn ?? '';
   const valueColumn = data?.valueColumn ?? '';
   const featureIdProperty = data?.mapping?.featureIdProperty ?? '';
+  const placeholderText = t('step3.featureIdProperty.placeholder', 'e.g. iso2, gid_1, portCode');
+  const placeholder =
+    typeof placeholderText === 'string' && placeholderText.length > 0
+      ? placeholderText
+      : 'e.g. iso2, gid_1, portCode';
   const menuContainer = (dialogRef?.current as Element | null) ?? null;
   const lastValidity = useRef<boolean | null>(null);
   const lastError = useRef<string | null>(null);
@@ -102,7 +107,7 @@ export const StylerMappingKeysStep: React.FC<PluginStepProps<StylerStepData>> = 
               mapping: { ...(data?.mapping ?? {}), featureIdProperty: event.target.value },
             } as StylerStepData)
           }
-          placeholder={t('step3.featureIdProperty.placeholder', 'e.g. iso2, gid_1, portCode')}
+          placeholder={placeholder}
         />
         <FormHelperText>
           {t(

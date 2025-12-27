@@ -25,14 +25,9 @@ import {
   TEST_TIMEOUTS,
 } from '../fixtures/test-shape-entity-data.js';
 
-// Minimal type definitions for standalone testing
-type NodeId = string & { readonly __brand: 'NodeId' };
-type EntityId = string & { readonly __brand: 'EntityId' };
-
 describe('Full Batch Processing Workflow Integration Tests', () => {
   let errorHandler: ShapeErrorHandler;
-  let testEntity: any;
-  let testNodeId: NodeId;
+  let testEntity: ShapeEntity;
 
   beforeAll(async () => {
     // Set up test environment
@@ -86,7 +81,7 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
         }],
       };
 
-      (global.fetch as any).mockResolvedValueOnce({
+      (global.fetch).mockResolvedValueOnce({
         ok: true,
         json: async () => mockJapanGeoJSON,
       });
@@ -184,7 +179,7 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
   describe('Error Handling Integration', () => {
     it('should handle network errors gracefully during download', async () => {
       // Given: Network error scenario
-      (global.fetch as any).mockRejectedValueOnce(new Error('Network request failed'));
+      (global.fetch).mockRejectedValueOnce(new Error('Network request failed'));
 
       // When: Execute download with network failure
       const downloadResult = await simulateDownloadStage(testEntity);
@@ -235,7 +230,7 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
 
   // Helper functions for simulating each stage
 
-  async function simulateDownloadStage(entity: any): Promise<any> {
+  async function simulateDownloadStage(entity: ShapeEntity): Promise<unknown> {
     try {
       // Simulate download stage logic
       const countries = Array.from(
@@ -271,7 +266,7 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
     }
   }
 
-  async function simulateSimplify1Stage(data: any): Promise<any> {
+  async function simulateSimplify1Stage(data: unknown): Promise<unknown> {
     try {
       if (!data || !data.features) {
         throw new Error('Invalid data format');
@@ -284,7 +279,7 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
         success: true,
         processedFeatures,
         data: {
-          features: data.features.map((f: any) => ({
+          features: data.features.map((f: Feature) => ({
             ...f,
             processed: true,
             filtered: true,
@@ -300,7 +295,7 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
     }
   }
 
-  async function simulateSimplify2Stage(data: any): Promise<any> {
+  async function simulateSimplify2Stage(data: unknown): Promise<unknown> {
     try {
       if (!data || !data.features) {
         throw new Error('Invalid data format');
@@ -313,7 +308,7 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
         success: true,
         simplifiedFeatures,
         data: {
-          features: data.features.map((f: any) => ({
+          features: data.features.map((f: unknown) => ({
             ...f,
             simplified: true,
             tolerance: 0.005,
@@ -329,7 +324,7 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
     }
   }
 
-  async function simulateVectorTilesStage(data: any): Promise<any> {
+  async function simulateVectorTilesStage(data: unknown): Promise<unknown> {
     try {
       if (!data || !data.features) {
         throw new Error('Invalid data format');
@@ -398,7 +393,7 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
       },
     };
 
-    (global.fetch as any).mockImplementation((url: string) => {
+    (global.fetch).mockImplementation((url: string) => {
       const country = Object.keys(GEOBOUNDARIES_TEST_ENDPOINTS.download).find(c =>
         url.includes(c),
       );

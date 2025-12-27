@@ -1,0 +1,25 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@hierarchidb/import-export": [
+        "src/index.ts"
+      ],
+      "@hierarchidb/import-export/*": [
+        "src/*"
+      ]
+    }
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.d.ts"
+  ],
+  "exclude": [
+    "src/__tests__/**",
+    "src/**/*.test.*",
+    "src/**/*.spec.*",
+    "dist",
+    "node_modules"
+  ]
+}

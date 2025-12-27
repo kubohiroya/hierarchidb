@@ -15,8 +15,20 @@ import { Box, IconButton, Tooltip } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import type React from 'react';
 import { useCallback, useMemo, useRef } from 'react';
-import { InfoOutlined as InfoOutlinedIcon, Layers as LayersIcon } from '@mui/icons-material';
-import { MapInfoContent, MapLayerContent } from './modelessDialogContent.js';
+import {
+  AltRoute as AltRouteIcon,
+  InfoOutlined as InfoOutlinedIcon,
+  Layers as LayersIcon,
+  PlaceOutlined as PlaceOutlinedIcon,
+} from '@mui/icons-material';
+import {
+  MapInfoContent,
+  MapLayerContent,
+  MapToggleCard,
+  type MapInfoSummary,
+  type MapToggleOption,
+  type MapToggleSelection,
+} from './modelessDialogContent.js';
 import type { MapDialogDefinitionBase, MapDialogWindowState } from './modelessDialogLayout.js';
 import type { ModelessIconAppearance, ModelessIconPlacement } from './ModelessDialogProvider.js';
 import { ModelessDialogProvider, useModelessDialogContext } from './ModelessDialogProvider.js';
@@ -30,6 +42,13 @@ export type MapDialogLayerInput = {
   basemapStyles: Array<{ nodeId: string; absolutePath?: string }>;
   vectorLayers: ResourceVectorLayer[];
   geoJsonLayers: ResourceGeoJsonLayer[];
+  mapInfo: MapInfoSummary;
+  locationTypeOptions: MapToggleOption[];
+  routeModeOptions: MapToggleOption[];
+  locationTypeSelection: MapToggleSelection;
+  routeModeSelection: MapToggleSelection;
+  onToggleLocationType: (id: string) => void;
+  onToggleRouteMode: (id: string) => void;
 };
 
 type MapDialogDefinition = MapDialogDefinitionBase & {
@@ -308,6 +327,13 @@ export const ModelessDialogManager: React.FC<ModelessDialogManagerProps> = ({
   basemapStyles,
   vectorLayers,
   geoJsonLayers,
+  mapInfo,
+  locationTypeOptions,
+  routeModeOptions,
+  locationTypeSelection,
+  routeModeSelection,
+  onToggleLocationType,
+  onToggleRouteMode,
   iconPlacement,
   iconAppearance,
 }) => {
@@ -317,7 +343,7 @@ export const ModelessDialogManager: React.FC<ModelessDialogManagerProps> = ({
       title: 'Map Info',
       icon: <InfoOutlinedIcon fontSize="small" />,
       defaultSize: { width: 320, height: 180 },
-      content: <MapInfoContent formattedZxy={formattedZxy} />,
+      content: <MapInfoContent formattedZxy={formattedZxy} info={mapInfo} />,
     },
     {
       id: 'map-layers',
@@ -332,7 +358,35 @@ export const ModelessDialogManager: React.FC<ModelessDialogManagerProps> = ({
         />
       ),
     },
-  ], [basemapStyles, formattedZxy, geoJsonLayers, vectorLayers]);
+    {
+      id: 'map-location-types',
+      title: 'Terrain Types',
+      icon: <PlaceOutlinedIcon fontSize="small" />,
+      defaultSize: { width: 360, height: 220 },
+      content: (
+        <MapToggleCard
+          title="Terrain Types"
+          options={locationTypeOptions}
+          selection={locationTypeSelection}
+          onToggle={onToggleLocationType}
+        />
+      ),
+    },
+    {
+      id: 'map-route-modes',
+      title: 'Route Modes',
+      icon: <AltRouteIcon fontSize="small" />,
+      defaultSize: { width: 360, height: 220 },
+      content: (
+        <MapToggleCard
+          title="Route Modes"
+          options={routeModeOptions}
+          selection={routeModeSelection}
+          onToggle={onToggleRouteMode}
+        />
+      ),
+    },
+  ], [basemapStyles, formattedZxy, geoJsonLayers, locationTypeOptions, locationTypeSelection, mapInfo, onToggleLocationType, onToggleRouteMode, routeModeOptions, routeModeSelection, vectorLayers]);
 
   const storageKey = useMemo(() => `hdb.map.dialogs.${nodeId}`, [nodeId]);
 

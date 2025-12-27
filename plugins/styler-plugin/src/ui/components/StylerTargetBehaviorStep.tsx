@@ -69,6 +69,7 @@ export const StylerTargetBehaviorStep: React.FC<PluginStepProps<StylerStepData>>
         ...(pluginData as StylerStepData),
         mapping: {
           ...(pluginData.mapping ?? {}),
+          targetProperty: pluginData.mapping?.targetProperty ?? null,
           valueType: targetMeta.type as StylerValueType,
         },
       });
@@ -76,11 +77,17 @@ export const StylerTargetBehaviorStep: React.FC<PluginStepProps<StylerStepData>>
   }, [onChange, pluginData, targetMeta]);
 
   const updateMapping = (patch: Partial<StylerStepData['mapping']>) => {
+    const safePatch = patch ?? {};
+    const nextTargetProperty =
+      'targetProperty' in safePatch
+        ? safePatch.targetProperty ?? null
+        : pluginData.mapping?.targetProperty ?? null;
     onChange({
       ...(pluginData as StylerStepData),
       mapping: {
         ...(pluginData.mapping ?? {}),
-        ...patch,
+        targetProperty: nextTargetProperty,
+        ...safePatch,
       },
     });
   };

@@ -13,6 +13,7 @@ import {
   loadLayout,
   mergeLayout,
   persistLayout,
+  resolveRestorePosition,
   type MapDialogLayout,
   type MapDialogDefinitionBase,
   type MapDialogWindowState,
@@ -131,11 +132,36 @@ export const ModelessDialogProvider: React.FC<ModelessDialogProviderProps> = ({
   }, []);
 
   const toggleWindowVisibility = useCallback((id: string, nextVisible: boolean) => {
-    updateWindow(id, { isVisible: nextVisible });
-    if (nextVisible) {
-      bringToFront(id);
-    }
-  }, [bringToFront, updateWindow]);
+    setLayout((prev) => {
+      const target = prev.windows[id];
+      if (!target) return prev;
+      let nextWindow: MapDialogWindowState = { ...target, isVisible: nextVisible };
+      if (nextVisible && !target.isVisible) {
+        const restoredPosition = resolveRestorePosition({
+          layout: prev,
+          windowId: id,
+          windowState: target,
+        });
+        nextWindow = { ...nextWindow, position: restoredPosition };
+        if (nextWindow.displayMode === 'normal') {
+          nextWindow.lastNormalPosition = restoredPosition;
+        }
+      }
+
+      const nextOrder = nextVisible
+        ? [...prev.order.filter((entry) => entry !== id), id]
+        : prev.order;
+
+      return {
+        ...prev,
+        windows: {
+          ...prev.windows,
+          [id]: nextWindow,
+        },
+        order: nextOrder,
+      };
+    });
+  }, []);
 
   const value = useMemo<ModelessDialogContextValue>(() => ({
     config,

@@ -45,6 +45,12 @@
       "@hierarchidb/basemap-plugin/*": [
         "../plugins/basemap-plugin/src/*"
       ],
+      "@hierarchidb/shape-plugin": [
+        "../plugins/shape-plugin/src/index.ts"
+      ],
+      "@hierarchidb/shape-plugin/*": [
+        "../plugins/shape-plugin/src/*"
+      ],
       "@hierarchidb/components": [
         "../packages/components/src/index.ts"
       ],
@@ -56,6 +62,12 @@
       ],
       "@hierarchidb/download/*": [
         "../packages/features/download/src/*"
+      ],
+      "@hierarchidb/gis-sdk": [
+        "../packages/features/gis-sdk/src/index.ts"
+      ],
+      "@hierarchidb/gis-sdk/*": [
+        "../packages/features/gis-sdk/src/*"
       ],
       "@hierarchidb/ui-worker-client": [
         "../packages/ui/worker-client/src/index.ts"

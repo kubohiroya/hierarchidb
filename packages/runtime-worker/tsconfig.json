@@ -14,12 +14,7 @@
     "emitDecoratorMetadata": true,
     "allowImportingTsExtensions": true,
     "composite": true,
-    "incremental": true,
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ]
-    }
+    "incremental": true
   },
   "include": [
     "src/**/*.ts",

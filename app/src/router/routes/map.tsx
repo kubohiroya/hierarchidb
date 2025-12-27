@@ -15,22 +15,62 @@
  */
 
 import type {
+  FeatureStateEntry,
+  FeatureStateRecord,
+  MapFeatureIdentifyResult,
+  MapLibreFilter,
+  MapLibreGeoJSONFeature,
   MapLibreMapInstance,
+  MapLibreMapMouseEvent,
   MapLibreStyle,
   MapViewState,
   ResourceGeoJsonLayer,
   ResourceVectorLayer,
 } from '@hierarchidb/ui-plugin-shell/ui-map';
-import { DEFAULT_MAP_CONFIG, ResourceLayerMap } from '@hierarchidb/ui-plugin-shell/ui-map';
-import { Box } from '@mui/material';
+import {
+  DEFAULT_MAP_CONFIG,
+  ResourceLayerMap,
+  defaultFeatureIdAccessor,
+  resolveIdentifyCandidates,
+} from '@hierarchidb/ui-plugin-shell/ui-map';
+import {
+  Box,
+  Checkbox,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  FormControlLabel,
+  FormGroup,
+  IconButton,
+  InputAdornment,
+  Paper,
+  TextField,
+  Typography,
+} from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import {
+  Close as CloseIcon,
+  DirectionsBoat as DirectionsBoatIcon,
+  DirectionsCar as DirectionsCarIcon,
+  Flight as FlightIcon,
+  FlightTakeoff as FlightTakeoffIcon,
+  ForkRight as ForkRightIcon,
+  LocationCity as LocationCityIcon,
+  Speed as SpeedIcon,
+  Tune as TuneIcon,
+  Train as TrainIcon,
+} from '@mui/icons-material';
 import { useLoaderData, useNavigate, useParams, useSearch } from '@tanstack/react-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useAtom } from 'jotai';
+import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import useGeolocation from 'react-hook-geolocation';
 import { ensureWorkerAPI } from '@hierarchidb/ui-worker-client';
+import { MaplibreExportControl } from '@watergis/maplibre-gl-export';
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import { getDBName } from '@hierarchidb/util';
 import { shapeDB } from '@hierarchidb/shape-plugin';
-import { getEphemeralLocationDB } from '@hierarchidb/location-plugin';
+import { getEphemeralLocationDB, type LocationType } from '@hierarchidb/location-plugin';
+import { ROUTE_MODES, type RouteMode } from '@hierarchidb/route-plugin';
 import { TilesDB } from '@hierarchidb/gis-sdk';
 import { MAPLIBRE_PROPERTY_METADATA } from '@hierarchidb/styler-plugin';
 import {
@@ -38,7 +78,18 @@ import {
   type MapViewState as LoaderMapViewState,
   parseZxyParam,
 } from '../loaders/mapLoader.js';
+import {
+  mapHoverMatchAtom,
+  mapSearchMatchesAtom,
+  mapSearchTargetSelectionAtom,
+  mapSearchTextAtom,
+  mapSelectedMatchAtom,
+  type MapHighlightEntry,
+  type MapSearchTargetId,
+} from '../../state/mapSearch.atoms.js';
 import { ModelessDialogManager } from './modeless/ModelessDialogManager.js';
+import type { MapInfoSummary, MapToggleOption, MapToggleSelection } from './modeless/modelessDialogContent.js';
+import '@watergis/maplibre-gl-export/dist/maplibre-gl-export.css';
 
 type MapSearch = {
   zxy?: string;
@@ -51,7 +102,6 @@ type BasemapStyleEntry = {
 };
 
 type LayerStyleOverrides = Partial<Record<'fill' | 'line' | 'circle' | 'symbol', Record<string, unknown>>>;
-type FeatureStateEntry = { id: string | number; state: Record<string, unknown> };
 type FeatureStateBundle = { featureIdProperty: string; entries: FeatureStateEntry[] };
 
 type MapStyle = {
@@ -119,6 +169,58 @@ const sortByLayerPath = <T extends { absolutePath?: string; layerId: string }>(i
     return aKey.localeCompare(bKey);
   });
 
+type RouteModeOption = MapToggleOption & { modes: RouteMode[] };
+
+const LOCATION_TYPE_OPTIONS = [
+  { id: 'area_centroid' as LocationType, label: 'Admin Center', icon: <LocationCityIcon fontSize="small" /> },
+  { id: 'airport' as LocationType, label: 'Airport', icon: <FlightTakeoffIcon fontSize="small" /> },
+  { id: 'port' as LocationType, label: 'Port', icon: <DirectionsBoatIcon fontSize="small" /> },
+  { id: 'railway_station' as LocationType, label: 'Station', icon: <TrainIcon fontSize="small" /> },
+  { id: 'interchange' as LocationType, label: 'Interchange', icon: <ForkRightIcon fontSize="small" /> },
+] satisfies MapToggleOption[];
+
+const ROUTE_MODE_OPTIONS = [
+  { id: ROUTE_MODES.AIRWAY, label: 'Air', icon: <FlightIcon fontSize="small" />, modes: [ROUTE_MODES.AIRWAY] },
+  { id: ROUTE_MODES.WATERWAY, label: 'Sea', icon: <DirectionsBoatIcon fontSize="small" />, modes: [ROUTE_MODES.WATERWAY] },
+  { id: ROUTE_MODES.RAILWAY, label: 'Rail', icon: <TrainIcon fontSize="small" />, modes: [ROUTE_MODES.RAILWAY] },
+  {
+    id: ROUTE_MODES.H_RAILWAY,
+    label: 'High-speed Rail',
+    icon: <SpeedIcon fontSize="small" />,
+    modes: [ROUTE_MODES.H_RAILWAY],
+  },
+  {
+    id: ROUTE_MODES.ROAD,
+    label: 'Road',
+    icon: <DirectionsCarIcon fontSize="small" />,
+    modes: [ROUTE_MODES.ROAD, ROUTE_MODES.HIGHWAY],
+  },
+] satisfies RouteModeOption[];
+
+const buildPropertyExpression = (keys: string[]) =>
+  keys.length === 1 ? ['get', keys[0]] : ['coalesce', ...keys.map((key) => ['get', key])];
+
+const buildCategoryFilter = (
+  enabledValues: string[],
+  knownValues: string[],
+  propertyKeys: string[],
+): MapLibreFilter | null => {
+  if (enabledValues.length === 0) return null;
+  if (enabledValues.length === knownValues.length) return null;
+  const propertyExpr = buildPropertyExpression(propertyKeys);
+  return [
+    'any',
+    ['!', ['in', propertyExpr, ['literal', knownValues]]],
+    ['in', propertyExpr, ['literal', enabledValues]],
+  ] as MapLibreFilter;
+};
+
+const mergeFilters = (base?: MapLibreFilter, next?: MapLibreFilter | null): MapLibreFilter | undefined => {
+  if (!base) return next ?? undefined;
+  if (!next) return base;
+  return ['all', base, next] as MapLibreFilter;
+};
+
 let routeTilesDbPromise: Promise<TilesDB> | null = null;
 const getRouteTilesDb = async (): Promise<TilesDB> => {
   if (!routeTilesDbPromise) {
@@ -137,12 +239,121 @@ const withLayerOrder = (
   return `${prefix}/${key}`;
 };
 
+const SEARCH_TARGET_DEFINITIONS: Record<MapSearchTargetId, { label: string; group: 'point' | 'route' | 'shape'; keys: string[] }> = {
+  pointName: { label: '名前', group: 'point', keys: ['name', 'NAME', 'label'] },
+  pointAirportCode: {
+    label: '空港コード',
+    group: 'point',
+    keys: ['airportCode', 'iataCode', 'icaoCode', 'iata', 'icao', 'ident', 'metadata.airportCode', 'metadata.iataCode', 'metadata.icaoCode'],
+  },
+  pointPortCode: {
+    label: '港コード',
+    group: 'point',
+    keys: ['portCode', 'unlocode', 'locode', 'metadata.portCode', 'metadata.unlocode'],
+  },
+  pointStationCode: {
+    label: '駅コード',
+    group: 'point',
+    keys: ['stationCode', 'station_code', 'metadata.stationCode', 'metadata.station_code'],
+  },
+  routeName: { label: '名前', group: 'route', keys: ['name', 'routeName', 'route_name'] },
+  shapeRegionName: {
+    label: '地域名',
+    group: 'shape',
+    keys: ['adminName', 'name', 'NAME', 'name_en', 'NAME_EN', 'shapeName', 'NAME_1', 'NAME_2', 'NAME_3', 'NAME_4', 'NAME_5'],
+  },
+  shapeCountryName: {
+    label: '国名',
+    group: 'shape',
+    keys: ['countryName', 'country', 'COUNTRY', 'COUNTRY_NAME', 'NAME_0', 'ADMIN', 'SOVEREIGNT'],
+  },
+  shapeRegionCode: {
+    label: '地域コード',
+    group: 'shape',
+    keys: ['adminCode', 'ADM1_CODE', 'ADM2_CODE', 'GID_1', 'GID_2', 'GID_3', 'shapeID', 'code'],
+  },
+  shapeCountryCode: {
+    label: '国コード',
+    group: 'shape',
+    keys: ['countryCode', 'ISO_A2', 'ISO2', 'ISO_2', 'ISO_A3', 'ADM0_A3', 'ISO3', 'shapeISO'],
+  },
+};
+
+const SEARCH_TARGET_GROUPS: Array<{ title: string; targetIds: MapSearchTargetId[] }> = [
+  {
+    title: '地点 (point)',
+    targetIds: ['pointName', 'pointAirportCode', 'pointPortCode', 'pointStationCode'],
+  },
+  {
+    title: '経路 (lineString)',
+    targetIds: ['routeName'],
+  },
+  {
+    title: 'シェイプ (multiPolygon)',
+    targetIds: ['shapeRegionName', 'shapeCountryName', 'shapeRegionCode', 'shapeCountryCode'],
+  },
+];
+
+const POINT_TARGETS = SEARCH_TARGET_GROUPS[0]?.targetIds ?? [];
+const ROUTE_TARGETS = SEARCH_TARGET_GROUPS[1]?.targetIds ?? [];
+const SHAPE_TARGETS = SEARCH_TARGET_GROUPS[2]?.targetIds ?? [];
+
+const normalizeSearchValue = (value: string) => value.trim().toLowerCase();
+
+const coerceString = (value: unknown): string | undefined => {
+  if (typeof value === 'string') return value.trim() || undefined;
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  return undefined;
+};
+
+const getNestedValue = (source: Record<string, unknown>, keyPath: string): unknown => {
+  const parts = keyPath.split('.');
+  let current: unknown = source;
+  for (const part of parts) {
+    if (!current || typeof current !== 'object') return undefined;
+    current = (current as Record<string, unknown>)[part];
+  }
+  return current;
+};
+
+const collectSearchValues = (properties: Record<string, unknown>, keys: string[]): string[] => {
+  const values = new Set<string>();
+  keys.forEach((keyPath) => {
+    const raw = getNestedValue(properties, keyPath);
+    if (Array.isArray(raw)) {
+      raw.forEach((item) => {
+        const next = coerceString(item);
+        if (next) values.add(next);
+      });
+      return;
+    }
+    const next = coerceString(raw);
+    if (next) values.add(next);
+  });
+  return Array.from(values);
+};
+
+const getTargetsForLayerType = (layerType?: string): MapSearchTargetId[] => {
+  if (layerType === 'circle') return POINT_TARGETS;
+  if (layerType === 'line') return ROUTE_TARGETS;
+  if (layerType === 'fill') return SHAPE_TARGETS;
+  return [...POINT_TARGETS, ...ROUTE_TARGETS, ...SHAPE_TARGETS];
+};
+
 export default function MapPage() {
+  const theme = useTheme();
   const navigate = useNavigate();
   const { nodeId } = useParams({ from: '/map/$nodeId' });
   const search = useSearch({ from: '/map/$nodeId' }) as MapSearch;
   const loaderViewState = useLoaderData({ from: '/map/$nodeId' }) as LoaderMapViewState;
   const geolocation = useGeolocation();
+  const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
+  const [searchText, setSearchText] = useAtom(mapSearchTextAtom);
+  const [searchTargets, setSearchTargets] = useAtom(mapSearchTargetSelectionAtom);
+  const [searchMatches, setSearchMatches] = useAtom(mapSearchMatchesAtom);
+  const [hoverMatch, setHoverMatch] = useAtom(mapHoverMatchAtom);
+  const [selectedMatch, setSelectedMatch] = useAtom(mapSelectedMatchAtom);
+  const [searchSettingsOpen, setSearchSettingsOpen] = useState(false);
   const [initialViewState, setInitialViewState] = useState<MapViewState>(() => ({
     longitude: loaderViewState.longitude,
     latitude: loaderViewState.latitude,
@@ -152,9 +363,25 @@ export default function MapPage() {
   const [vectorLayers, setVectorLayers] = useState<ResourceVectorLayer[]>([]);
   const [geoJsonLayers, setGeoJsonLayers] = useState<ResourceGeoJsonLayer[]>([]);
   const [styleOverridesByType, setStyleOverridesByType] = useState<LayerStyleOverrides>({});
+  const [locationTypeSelection, setLocationTypeSelection] = useState<MapToggleSelection>(() =>
+    Object.fromEntries(LOCATION_TYPE_OPTIONS.map((option) => [option.id, true])) as MapToggleSelection
+  );
+  const [routeModeSelection, setRouteModeSelection] = useState<MapToggleSelection>(() =>
+    Object.fromEntries(ROUTE_MODE_OPTIONS.map((option) => [option.id, true])) as MapToggleSelection
+  );
+  const [mapInfo, setMapInfo] = useState<MapInfoSummary>({});
+  const appliedSearchMatchesRef = useRef<MapHighlightEntry[]>([]);
+  const appliedHoverRef = useRef<MapHighlightEntry | null>(null);
+  const appliedSelectedRef = useRef<MapHighlightEntry | null>(null);
+  const routeModeOptions = useMemo(
+    () => ROUTE_MODE_OPTIONS.map(({ id, label, icon }) => ({ id, label, icon })),
+    [],
+  );
   const persistedZxyApplied = useRef(false);
   const updateTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const lastUpdateRef = useRef<string>('');
+  const mapInstanceRef = useRef<MapLibreMapInstance | null>(null);
+  const exportControlRef = useRef<MaplibreExportControl | null>(null);
 
   useEffect(() => {
     setInitialViewState({
@@ -183,6 +410,15 @@ export default function MapPage() {
           nodeById.set(String(node.id), node);
         });
         const visibleDescendants = descendants.filter((node) => node.invisible !== true);
+
+        setMapInfo({
+          name: rootNode.metadata?.name ?? '',
+          description: rootNode.metadata?.description ?? '',
+          tags: rootNode.metadata?.tags ?? [],
+          createdAt: rootNode.createdAt,
+          updatedAt: rootNode.updatedAt,
+          path: buildAbsolutePath(String(rootNode.id), nodeById),
+        });
 
         if (!search?.zxy && !persistedZxyApplied.current) {
           const persisted =
@@ -254,19 +490,19 @@ export default function MapPage() {
           const entries: FeatureStateEntry[] = [];
           if (valueType === 'number') {
             (data?.styleKeyValues?.scalars ?? []).forEach((item) => {
-              entries.push({
-                id: item.key,
-                state: { value: item.scalarValue },
+                  entries.push({
+                    id: item.key,
+                    state: { value: item.scalarValue } as FeatureStateRecord,
+                  });
+                });
+            } else {
+              (data?.styleKeyValues?.colors ?? []).forEach((item) => {
+                entries.push({
+                  id: item.key,
+                  state: { value: item.color } as FeatureStateRecord,
+                });
               });
-            });
-          } else {
-            (data?.styleKeyValues?.colors ?? []).forEach((item) => {
-              entries.push({
-                id: item.key,
-                state: { value: item.color },
-              });
-            });
-          }
+            }
 
           if (entries.length > 0) {
             featureStateByStyleType[styleType] = { featureIdProperty, entries };
@@ -289,6 +525,8 @@ export default function MapPage() {
 
           if (node.nodeType === 'shape') {
             const featureState = featureStateByStyleType.choropleth;
+            const layerId = `resource-layer-${node.id}`;
+            const sourceId = `resource-source-${node.id}`;
             shapeEntries.push({
               nodeId: String(node.id),
               nodeType: 'shape',
@@ -302,6 +540,8 @@ export default function MapPage() {
               layerConfig: {
                 layerType: 'fill',
                 sourceLayer: 'default',
+                layerId,
+                sourceId,
               },
               promoteId: featureState?.featureIdProperty,
               featureState: featureState?.entries,
@@ -313,6 +553,8 @@ export default function MapPage() {
             const sessionId = data?.batchSessionId;
             if (sessionId) {
               const featureState = featureStateByStyleType.points;
+              const layerId = `resource-layer-${node.id}`;
+              const sourceId = `resource-source-${node.id}`;
               locationEntries.push({
                 nodeId: String(node.id),
                 nodeType: 'location',
@@ -326,6 +568,8 @@ export default function MapPage() {
                 layerConfig: {
                   layerType: 'circle',
                   sourceLayer: 'location_points',
+                  layerId,
+                  sourceId,
                   paint: {
                     'circle-radius': 4,
                     'circle-color': '#2f74ff',
@@ -344,6 +588,8 @@ export default function MapPage() {
             const sessionId = data?.batchSessionId;
             if (sessionId) {
               const featureState = featureStateByStyleType.lines;
+              const layerId = `resource-layer-${node.id}`;
+              const sourceId = `resource-source-${node.id}`;
               routeEntries.push({
                 nodeId: String(node.id),
                 nodeType: 'route',
@@ -360,6 +606,8 @@ export default function MapPage() {
                 layerConfig: {
                   layerType: 'line',
                   sourceLayer: 'layer0',
+                  layerId,
+                  sourceId,
                   paint: {
                     'line-color': '#f24c3d',
                     'line-width': 2,
@@ -412,7 +660,18 @@ export default function MapPage() {
 
   const handleMapLoad = useCallback((map: MapLibreMapInstance) => {
     console.log('[MapPage] Map loaded', map);
-  }, []);
+    mapInstanceRef.current = map;
+    setMapInstance(map);
+    if (!exportControlRef.current) {
+      const control = new MaplibreExportControl({
+        Format: 'pdf',
+        Local: 'ja',
+        Filename: nodeId ? `map-${nodeId}` : 'map-export',
+      });
+      map.addControl(control, 'bottom-left');
+      exportControlRef.current = control;
+    }
+  }, [nodeId]);
 
   const handleViewStateChange = useCallback(
     (viewState: MapViewState) => {
@@ -441,6 +700,10 @@ export default function MapPage() {
       if (updateTimeoutRef.current) {
         clearTimeout(updateTimeoutRef.current);
       }
+      if (mapInstanceRef.current && exportControlRef.current) {
+        mapInstanceRef.current.removeControl(exportControlRef.current);
+        exportControlRef.current = null;
+      }
     };
   }, []);
 
@@ -450,6 +713,343 @@ export default function MapPage() {
   }, [basemapStyles.length]);
 
   const formattedZxy = formatZxyParam(initialViewState);
+  const locationKinds = useMemo(
+    () => LOCATION_TYPE_OPTIONS.map((option) => option.id),
+    []
+  );
+  const enabledLocationKinds = useMemo(
+    () => LOCATION_TYPE_OPTIONS.filter((option) => locationTypeSelection[option.id]).map((option) => option.id),
+    [locationTypeSelection],
+  );
+  const routeModeValues = useMemo(
+    () => Array.from(new Set(ROUTE_MODE_OPTIONS.flatMap((option) => option.modes))),
+    []
+  );
+  const enabledRouteModes = useMemo(
+    () => ROUTE_MODE_OPTIONS.filter((option) => routeModeSelection[option.id]).flatMap((option) => option.modes),
+    [routeModeSelection],
+  );
+  const filteredVectorLayers = useMemo(() => {
+    const locationFilter = buildCategoryFilter(enabledLocationKinds, locationKinds, ['kind', 'type']);
+    const routeFilter = buildCategoryFilter(enabledRouteModes, routeModeValues, ['routeMode', 'mode', 'route_mode']);
+    return vectorLayers.map((layer) => {
+      if (layer.nodeType === 'location') {
+        const baseConfig = layer.layerConfig ?? {};
+        const nextVisible = enabledLocationKinds.length === 0 ? false : baseConfig.visible;
+        return {
+          ...layer,
+          layerConfig: {
+            ...baseConfig,
+            visible: nextVisible,
+            filter: mergeFilters(baseConfig.filter, locationFilter),
+          },
+        };
+      }
+      if (layer.nodeType === 'route') {
+        const baseConfig = layer.layerConfig ?? {};
+        const nextVisible = enabledRouteModes.length === 0 ? false : baseConfig.visible;
+        return {
+          ...layer,
+          layerConfig: {
+            ...baseConfig,
+            visible: nextVisible,
+            filter: mergeFilters(baseConfig.filter, routeFilter),
+          },
+        };
+      }
+      return layer;
+    });
+  }, [enabledLocationKinds, enabledRouteModes, locationKinds, routeModeValues, vectorLayers]);
+
+  const highlightLayerIds = useMemo(
+    () => vectorLayers.map((layer) => layer.layerConfig?.layerId ?? `resource-layer-${layer.nodeId}`),
+    [vectorLayers],
+  );
+
+  const highlightPaintByType = useMemo(() => {
+    const searchColor = '#ffd54f';
+    const hoverColor = '#ffecb3';
+    const selectedColor = theme.palette.primary.main;
+    const baseFillColor = styleOverridesByType.fill?.['fill-color'] ?? '#6aa6ff';
+    const baseLineColor = styleOverridesByType.line?.['line-color'] ?? '#f24c3d';
+    const baseCircleColor = styleOverridesByType.circle?.['circle-color'] ?? '#2f74ff';
+    const baseLineWidth = styleOverridesByType.line?.['line-width'] ?? 2;
+    const baseCircleRadius = styleOverridesByType.circle?.['circle-radius'] ?? 4;
+
+    const hasSearch = ['boolean', ['feature-state', 'hdbSearch'], false];
+    const hasHover = ['boolean', ['feature-state', 'hdbHover'], false];
+    const hasSelected = ['boolean', ['feature-state', 'hdbSelected'], false];
+
+    const colorExpression = (base: unknown) => [
+      'case',
+      hasSelected,
+      selectedColor,
+      hasHover,
+      hoverColor,
+      hasSearch,
+      searchColor,
+      base,
+    ];
+
+    return {
+      fill: {
+        'fill-color': colorExpression(baseFillColor),
+        'fill-outline-color': colorExpression(styleOverridesByType.fill?.['fill-outline-color'] ?? baseFillColor),
+        'fill-opacity': [
+          'case',
+          hasSelected,
+          0.65,
+          hasHover,
+          0.55,
+          hasSearch,
+          0.45,
+          styleOverridesByType.fill?.['fill-opacity'] ?? 0.3,
+        ],
+      },
+      line: {
+        'line-color': colorExpression(baseLineColor),
+        'line-width': [
+          'case',
+          hasSelected,
+          3.5,
+          hasHover,
+          2.8,
+          hasSearch,
+          2.4,
+          baseLineWidth,
+        ],
+        'line-opacity': [
+          'case',
+          hasSelected,
+          0.95,
+          hasHover,
+          0.9,
+          hasSearch,
+          0.85,
+          styleOverridesByType.line?.['line-opacity'] ?? 0.8,
+        ],
+        'line-blur': [
+          'case',
+          hasSearch,
+          1.2,
+          hasHover,
+          0.7,
+          hasSelected,
+          0.4,
+          styleOverridesByType.line?.['line-blur'] ?? 0,
+        ],
+      },
+      circle: {
+        'circle-color': colorExpression(baseCircleColor),
+        'circle-radius': [
+          'case',
+          hasSelected,
+          7,
+          hasHover,
+          6,
+          hasSearch,
+          5,
+          baseCircleRadius,
+        ],
+        'circle-opacity': [
+          'case',
+          hasSelected,
+          0.95,
+          hasHover,
+          0.9,
+          hasSearch,
+          0.85,
+          styleOverridesByType.circle?.['circle-opacity'] ?? 0.8,
+        ],
+        'circle-blur': [
+          'case',
+          hasSearch,
+          0.6,
+          hasHover,
+          0.35,
+          hasSelected,
+          0.2,
+          styleOverridesByType.circle?.['circle-blur'] ?? 0,
+        ],
+        'circle-stroke-color': colorExpression(styleOverridesByType.circle?.['circle-stroke-color'] ?? baseCircleColor),
+        'circle-stroke-width': [
+          'case',
+          hasSelected,
+          2,
+          hasHover,
+          1.5,
+          hasSearch,
+          1,
+          styleOverridesByType.circle?.['circle-stroke-width'] ?? 0,
+        ],
+      },
+    } satisfies LayerStyleOverrides;
+  }, [styleOverridesByType, theme.palette.primary.main]);
+
+  const buildHighlightEntry = useCallback((feature?: MapLibreGeoJSONFeature | null): MapHighlightEntry | null => {
+    if (!feature) return null;
+    const id = defaultFeatureIdAccessor(feature);
+    const source = typeof feature.source === 'string' ? feature.source : undefined;
+    if (id === undefined || id === null || !source) return null;
+    return { source, id };
+  },[]);
+
+  const clearHighlightKey = useCallback(
+    (entry: MapHighlightEntry | null, key: 'hdbSearch' | 'hdbHover' | 'hdbSelected') => {
+      if (!mapInstance || !entry) return;
+      try {
+        mapInstance.removeFeatureState({ source: entry.source, id: entry.id, key });
+      } catch (error) {
+        console.debug('[MapPage] Failed to clear feature-state', error);
+      }
+    },
+    [mapInstance],
+  );
+
+  const applyHighlightKey = useCallback(
+    (entry: MapHighlightEntry | null, key: 'hdbSearch' | 'hdbHover' | 'hdbSelected') => {
+      if (!mapInstance || !entry) return;
+      try {
+        mapInstance.setFeatureState({ source: entry.source, id: entry.id }, { [key]: true });
+      } catch (error) {
+        console.debug('[MapPage] Failed to set feature-state', error);
+      }
+    },
+    [mapInstance],
+  );
+
+  const setSingleHighlight = useCallback(
+    (
+      ref: MutableRefObject<MapHighlightEntry | null>,
+      key: 'hdbHover' | 'hdbSelected',
+      next: MapHighlightEntry | null,
+    ) => {
+      const current = ref.current;
+      if (current && (!next || current.source !== next.source || current.id !== next.id)) {
+        clearHighlightKey(current, key);
+      }
+      if (next) {
+        applyHighlightKey(next, key);
+      }
+      ref.current = next;
+    },
+    [applyHighlightKey, clearHighlightKey],
+  );
+
+  const clearSearchHighlights = useCallback(() => {
+    setSearchMatches([]);
+  }, [setSearchMatches]);
+
+  const handleSearchClear = useCallback(() => {
+    setSearchText('');
+    clearSearchHighlights();
+  }, [clearSearchHighlights, setSearchText]);
+
+  const handleSearchTargetToggle = useCallback(
+    (targetId: MapSearchTargetId) => {
+      setSearchTargets((prev) => ({ ...prev, [targetId]: !prev[targetId] }));
+    },
+    [setSearchTargets],
+  );
+
+  const runSearch = useCallback(() => {
+    if (!mapInstance) return;
+    const query = normalizeSearchValue(searchText);
+    if (!query) {
+      clearSearchHighlights();
+      return;
+    }
+
+    const canvas = mapInstance.getCanvas();
+    const features = mapInstance.queryRenderedFeatures(
+      [
+        [0, 0],
+        [canvas.width, canvas.height],
+      ],
+      { layers: highlightLayerIds },
+    ) as MapLibreGeoJSONFeature[];
+
+    const matchedEntries = new Map<string, MapHighlightEntry>();
+    for (const feature of features) {
+      const properties = (feature?.properties ?? {}) as Record<string, unknown>;
+      const layerType = feature.layer?.type;
+      const targetIds = getTargetsForLayerType(layerType);
+      let matched = false;
+      for (const targetId of targetIds) {
+        if (!searchTargets[targetId]) continue;
+        const targetKeys = SEARCH_TARGET_DEFINITIONS[targetId].keys;
+        const values = collectSearchValues(properties, targetKeys);
+        if (values.some((value) => normalizeSearchValue(value).startsWith(query))) {
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) continue;
+      const entry = buildHighlightEntry(feature);
+      if (!entry) continue;
+      matchedEntries.set(`${entry.source}:${entry.id}`, entry);
+    }
+
+    setSearchMatches(Array.from(matchedEntries.values()));
+  }, [buildHighlightEntry, clearSearchHighlights, highlightLayerIds, mapInstance, searchTargets, searchText, setSearchMatches]);
+
+  const handleIdentify = useCallback(
+    (result: MapFeatureIdentifyResult) => {
+      const entry = buildHighlightEntry(result.features[0]);
+      setSelectedMatch(entry);
+    },
+    [buildHighlightEntry, setSelectedMatch],
+  );
+
+  useEffect(() => {
+    if (!mapInstance) return undefined;
+    const handleMouseMove = (event: MapLibreMapMouseEvent) => {
+      const result = resolveIdentifyCandidates(mapInstance, event, {
+        layerIds: highlightLayerIds,
+        radius: 6,
+        getFeatureId: defaultFeatureIdAccessor,
+      });
+      const entry = buildHighlightEntry(result.features[0]);
+      setHoverMatch(entry);
+    };
+
+    const handleMouseLeave = () => {
+      setHoverMatch(null);
+    };
+
+    const canvas = mapInstance.getCanvas();
+    mapInstance.on('mousemove', handleMouseMove as (...args: unknown[]) => void);
+    canvas.addEventListener('mouseleave', handleMouseLeave);
+    return () => {
+      mapInstance.off('mousemove', handleMouseMove as (...args: unknown[]) => void);
+      canvas.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, [buildHighlightEntry, highlightLayerIds, mapInstance, setHoverMatch]);
+
+  useEffect(() => {
+    if (!mapInstance) return;
+    appliedSearchMatchesRef.current.forEach((entry) => {clearHighlightKey(entry, 'hdbSearch')});
+    searchMatches.forEach((entry) => {applyHighlightKey(entry, 'hdbSearch')});
+    appliedSearchMatchesRef.current = searchMatches;
+  }, [applyHighlightKey, clearHighlightKey, mapInstance, searchMatches]);
+
+  useEffect(() => {
+    if (!mapInstance) return;
+    setSingleHighlight(appliedHoverRef, 'hdbHover', hoverMatch);
+  }, [hoverMatch, mapInstance, setSingleHighlight]);
+
+  useEffect(() => {
+    if (!mapInstance) return;
+    setSingleHighlight(appliedSelectedRef, 'hdbSelected', selectedMatch);
+  }, [mapInstance, selectedMatch, setSingleHighlight]);
+
+  const handleLocationTypeToggle = useCallback((id: string) => {
+    setLocationTypeSelection((prev) => ({ ...prev, [id]: !prev[id] }));
+  }, []);
+
+  const handleRouteModeToggle = useCallback((id: string) => {
+    setRouteModeSelection((prev) => ({ ...prev, [id]: !prev[id] }));
+  }, []);
 
   return (
     <Box sx={{ width: '100vw', height: '100vh', position: 'relative', overscrollBehavior: 'contain' }}>
@@ -460,8 +1060,95 @@ export default function MapPage() {
           basemapStyles={basemapStyles}
           vectorLayers={vectorLayers}
           geoJsonLayers={geoJsonLayers}
+          mapInfo={mapInfo}
+          locationTypeOptions={LOCATION_TYPE_OPTIONS}
+          routeModeOptions={routeModeOptions}
+          locationTypeSelection={locationTypeSelection}
+          routeModeSelection={routeModeSelection}
+          onToggleLocationType={handleLocationTypeToggle}
+          onToggleRouteMode={handleRouteModeToggle}
         />
       ) : null}
+
+      <Paper
+        elevation={4}
+        sx={{
+          position: 'absolute',
+          top: 16,
+          left: 16,
+          zIndex: 200,
+          width: 360,
+          p: 1,
+          pointerEvents: 'auto',
+        }}
+      >
+        <TextField
+          fullWidth
+          size="small"
+          placeholder="検索..."
+          value={searchText}
+          onChange={(event) => setSearchText(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              runSearch();
+            }
+          }}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  aria-label="Clear search"
+                  size="small"
+                  onClick={handleSearchClear}
+                  disabled={!searchText.trim()}
+                >
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+                <IconButton
+                  aria-label="Search settings"
+                  size="small"
+                  onClick={() => setSearchSettingsOpen(true)}
+                >
+                  <TuneIcon fontSize="small" />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Paper>
+
+      <Dialog
+        open={searchSettingsOpen}
+        onClose={() => setSearchSettingsOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>検索対象</DialogTitle>
+        <DialogContent dividers>
+          {SEARCH_TARGET_GROUPS.map((group) => (
+            <Paper key={group.title} variant="outlined" sx={{ p: 1.5, mb: 2 }}>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                {group.title}
+              </Typography>
+              <FormGroup>
+                {group.targetIds.map((targetId) => (
+                  <FormControlLabel
+                    key={targetId}
+                    control={(
+                      <Checkbox
+                        checked={Boolean(searchTargets[targetId])}
+                        onChange={() => handleSearchTargetToggle(targetId)}
+                      />
+                    )}
+                    label={SEARCH_TARGET_DEFINITIONS[targetId].label}
+                  />
+                ))}
+              </FormGroup>
+            </Paper>
+          ))}
+        </DialogContent>
+      </Dialog>
 
       <ResourceLayerMap
         initialViewState={initialViewState}
@@ -469,11 +1156,19 @@ export default function MapPage() {
         height="100%"
         mapStyleUrl={mapStyleUrl}
         basemapStyles={basemapStyles}
-        vectorLayers={vectorLayers}
+        vectorLayers={filteredVectorLayers}
         geoJsonLayers={geoJsonLayers}
         styleOverridesByType={styleOverridesByType}
+        highlightOverridesByType={highlightPaintByType}
         onLoad={handleMapLoad}
         onViewStateChange={handleViewStateChange}
+        identifyFeatureOnClick={{
+          layerIds: highlightLayerIds,
+          radius: 6,
+          onIdentify: handleIdentify,
+          disableDefaultSnackbar: true,
+        }}
+        controls={{ navigation: { position: 'top-right' } }}
         mapOptions={{
           interactive: true,
           scrollZoom: true,

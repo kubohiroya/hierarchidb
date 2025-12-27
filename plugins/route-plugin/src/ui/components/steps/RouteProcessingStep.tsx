@@ -144,7 +144,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
     },
   };
 
-  const updateProcessing = (updates: RouteProcessingConfigUpdate) => {
+  const updateProcessing = useCallback((updates: RouteProcessingConfigUpdate) => {
     const nextProcessing: ResolvedRouteProcessingConfig = {
       apiThrottle: {
         ...mergedConfig.apiThrottle,
@@ -160,7 +160,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
       },
     };
     onUpdate({ config: nextProcessing });
-  };
+  }, [mergedConfig.apiThrottle, mergedConfig.simplification, mergedConfig.vectorTiles, onUpdate]);
 
   const loadCounts = useCallback(async () => {
     if (!nodeId) {
@@ -174,7 +174,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
 
   useEffect(() => {
     void loadCounts();
-  }, [draft.draftData?.processedAt, draft.draftData?.processingStatus, loadCounts]);
+  }, [loadCounts]);
 
   const handleDeleteLineStrings = useCallback(async () => {
     if (!nodeId) {
@@ -192,7 +192,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
       clearBuildMonitor(monitorKey);
     }
     onUpdate({
-      processingStatus: 'idle',
+      processingStatus: undefined,
       processingError: undefined,
       processedAt: undefined,
       buildStartedAt: undefined,

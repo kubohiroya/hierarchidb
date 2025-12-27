@@ -9,7 +9,7 @@ import type { NodeId } from '@hierarchidb/common-types';
 import type { RouteGenerationConfig } from '../common/entities/RouteEntity.js';
 import type { RouteBatchConfig } from '../common/types/BatchConfig.js';
 import { RouteBatchSession, type RouteBatchTask } from './RouteBatchSession.js';
-import { BatchProgressEvent } from '@hierarchidb/common-api';
+import type { BatchProgressEvent } from '@hierarchidb/common-api';
 
 export type ProgressUpdate = { jobId: string; progress: number; phase: string; ts: number };
 export type ProgressEmitter = { emit?: (event: ProgressUpdate) => void };
@@ -74,7 +74,7 @@ export class RouteBatchManager {
     const routeTasks: RouteBatchTask[] = [];
 
     // Phase 1: Location resolution tasks
-    if (config.validation && config.validation.checkLocationExists) {
+    if (config.validation?.checkLocationExists) {
       for (const route of routes) {
         if (route.startLocationId || route.endLocationId) {
           routeTasks.push({
@@ -97,7 +97,7 @@ export class RouteBatchManager {
 
     // Phase 2: Route generation tasks
     for (let i = 0; i < routes.length; i++) {
-      const route = routes[i]!;
+      const route = routes[i];
       routeTasks.push({
         taskId: crypto.randomUUID(),
         treeNodeId: nodeId,
@@ -107,15 +107,15 @@ export class RouteBatchManager {
         status: 'pending',
         index: routeTasks.length,
         routeData: {
-          startLocationId: route.startLocationId,
-          endLocationId: route.endLocationId,
-          method: route.method || config.routeGeneration.method,
-          ...(route.startCoordinates && route.endCoordinates ? {
+          startLocationId: route?.startLocationId,
+          endLocationId: route?.endLocationId,
+          method: route?.method || config.routeGeneration.method,
+          ...(route?.startCoordinates && route.endCoordinates ? {
             startCoordinates: route.startCoordinates,
             endCoordinates: route.endCoordinates,
           } : {}),
           // 追加オプションは型安全に存在チェック
-          ...(route.methodOptions ? { methodOptions: route.methodOptions } : {}),
+          ...(route?.methodOptions ? { methodOptions: route.methodOptions } : {}),
         },
       });
     }
@@ -327,7 +327,8 @@ function computePercentage(total: number, completed: number, isCompletedPhase: b
 
 function hashCyrb53(str: string, seed = 0): string {
   let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
-  for (let i = 0, ch; i < str.length; i++) {
+  let ch: number = 0;
+  for (let i = 0; i < str.length; i++) {
     ch = str.charCodeAt(i);
     h1 = Math.imul(h1 ^ ch, 2654435761);
     h2 = Math.imul(h2 ^ ch, 1597334677);

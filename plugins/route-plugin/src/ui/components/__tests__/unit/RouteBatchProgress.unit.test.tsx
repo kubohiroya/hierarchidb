@@ -9,39 +9,8 @@ vi.mock('../../hooks/useRouteBatchProgress.js', () => ({
   useRouteBatchProgress: mockUseRouteBatchProgress,
 }));
 
-const mockRouteCursorsGet = vi.fn();
-const mockRouteResultsWhere = vi.fn();
-const mockRouteResultsEquals = vi.fn();
-const mockRouteResultsCount = vi.fn();
-
-vi.mock('../../services/database/RouteDatabase.js', () => ({
-  RouteDatabase: class {
-    routeCursors = {
-      get: mockRouteCursorsGet,
-    };
-
-    routeResults = {
-      where: (field: string) => {
-        mockRouteResultsWhere(field);
-        return {
-          equals: (value: unknown) => {
-            mockRouteResultsEquals(value);
-            return {
-              count: mockRouteResultsCount,
-            };
-          },
-        };
-      },
-    };
-  },
-}));
-
 beforeEach(() => {
   mockUseRouteBatchProgress.mockReset();
-  mockRouteCursorsGet.mockReset();
-  mockRouteResultsWhere.mockReset();
-  mockRouteResultsEquals.mockReset();
-  mockRouteResultsCount.mockReset();
 });
 
 describe('RouteBatchLiveProgress', () => {
@@ -105,16 +74,13 @@ describe('RouteBatchSummary', () => {
       resume: vi.fn(),
     });
 
-    mockRouteCursorsGet.mockResolvedValue({ completed: 3, total: 11 });
-    mockRouteResultsCount.mockResolvedValue(5);
-
     render(<RouteBatchSummary sessionId="job-3" />);
 
     await waitFor(() => {
       expect(screen.getByTestId('route-summary-completed').textContent).toContain('完了: 4');
     });
 
-    expect(screen.getByTestId('route-summary-results').textContent).toContain('結果: 5');
+    expect(screen.getByTestId('route-summary-results').textContent).toContain('結果: 4');
     expect(screen.getByTestId('route-summary-failed').textContent).toBe('失敗: 2');
     expect(screen.getByTestId('route-summary-last-error')).toHaveAttribute('data-error-state', 'error');
     expect(screen.getByTestId('route-summary-last-error').textContent).toContain('最新のエラー: Worker error');

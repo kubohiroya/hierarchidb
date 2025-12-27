@@ -12,7 +12,7 @@ import type {
   VectorSourceSpecification,
 } from 'maplibre-gl';
 import type { MapLibreMapInstance } from '../types/maplibre-public.js';
-import type { VectorTileProps } from '../types/unified-map-props.js';
+import type { FeatureStateRecord, VectorTileProps } from '../types/unified-map-props.js';
 import { DEFAULT_MAP_CONFIG } from '../types/unified-map-props.js';
 import { loadMapLibreModule } from '../utils/maplibre-loader.js';
 
@@ -49,7 +49,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
   const [sourceAdded, setSourceAdded] = useState(false);
   const [computedTiles, setComputedTiles] = useState<string[] | undefined>(tiles);
   const tilesLoadedRef = useRef(false);
-  const prevFeatureIdsRef = useRef<Array<string | number>>([]);
+  const prevFeatureStateRef = useRef<Map<string | number, FeatureStateRecord>>(new Map());
 
   // Setup custom protocol for Dexie if needed
   useEffect(() => {
@@ -189,40 +189,52 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
     const mapRef = map;
     if (!mapRef.getSource || !mapRef.getSource(sourceId!)) return;
 
-    if (featureState.length === 0) {
-      prevFeatureIdsRef.current.forEach((id) => {
+    const removeStateKeys = (id: string | number, state: FeatureStateRecord) => {
+      Object.keys(state).forEach((key) => {
         try {
-          mapRef.removeFeatureState({ source: sourceId!, id });
+          mapRef.removeFeatureState({ source: sourceId!, id, key });
         } catch (error) {
           console.debug('VectorTileLayer feature-state cleanup skipped:', error);
         }
       });
-      prevFeatureIdsRef.current = [];
+    };
+
+    if (featureState.length === 0) {
+      prevFeatureStateRef.current.forEach((state, id) => removeStateKeys(id, state));
+      prevFeatureStateRef.current = new Map();
       return;
     }
 
-    const nextIds = featureState.map((entry) => entry.id);
-    const prevIds = prevFeatureIdsRef.current;
-
-    prevIds.forEach((id) => {
-      if (!nextIds.includes(id)) {
-        try {
-          mapRef.removeFeatureState({ source: sourceId!, id });
-        } catch (error) {
-          console.debug('VectorTileLayer feature-state cleanup skipped:', error);
-        }
-      }
-    });
+    const nextStateMap = new Map<string | number, FeatureStateRecord>();
 
     featureState.forEach((entry) => {
+      const prevState = prevFeatureStateRef.current.get(entry.id);
+      if (prevState) {
+        Object.keys(prevState).forEach((key) => {
+          if (!(key in entry.state)) {
+            try {
+              mapRef.removeFeatureState({ source: sourceId!, id: entry.id, key });
+            } catch (error) {
+              console.debug('VectorTileLayer feature-state cleanup skipped:', error);
+            }
+          }
+        });
+      }
       try {
         mapRef.setFeatureState({ source: sourceId!, id: entry.id }, entry.state);
       } catch (error) {
         console.debug('VectorTileLayer setFeatureState error:', error);
       }
+      nextStateMap.set(entry.id, entry.state);
     });
 
-    prevFeatureIdsRef.current = nextIds;
+    prevFeatureStateRef.current.forEach((state, id) => {
+      if (!nextStateMap.has(id)) {
+        removeStateKeys(id, state);
+      }
+    });
+
+    prevFeatureStateRef.current = nextStateMap;
   }, [featureState, map, sourceAdded, sourceId]);
 
   // Add layer

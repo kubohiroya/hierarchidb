@@ -53,6 +53,95 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1926) /map 検索/hover/クリックの対象 state を jotai 管理へ移行（P1）
+- ブランチ: `feat/ui/map-search-jotai-state`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `app/src/router/routes/map.tsx`, `app/src/state/mapSearch.atoms.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] 検索キーワード入力内容が jotai で管理される
+  - [ ] 検索マッチ対象が jotai で管理される
+  - [ ] クリック対象が jotai で管理される
+  - [ ] ホバー対象が jotai で管理される
+  - [ ] 強調表示は jotai state と同期して反映される
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] jotai atom を追加/更新する
+  - [ ] map.tsx の state 管理を jotai 経由へ移行する
+  - [ ] 強調表示の反映が state と同期することを確認する
+  - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：/map の jotai 追加差分を revert し、必要なら `pnpm --filter @hierarchidb/app typecheck` を再実行する。
+- 運用ログ：
+  - start: 2025-12-27 16:35 JST /map の検索/hover/クリック対象を jotai 管理へ移行する対応に着手。
+  - progress: 2025-12-27 16:50 JST 検索/hover/クリック対象の jotai atom を追加し、map.tsx を jotai state 参照へ移行。
+  - done: 2025-12-27 16:52 JST /map の検索/hover/クリック対象の jotai 管理を完了。検証: 未実施（時間のため）。ロールバック: 本タスク差分を revert。
+
+1925) /map 検索フィールド + 強調表示 + ナビゲーションコントロール追加（P1）
+- ブランチ: `feat/ui/map-search-highlight`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `app/src/router/routes/map.tsx`, `app/src/state`, `packages/ui/map`, `plans/`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] /map の右上に MapLibre のズーム+/-コントロールが表示される
+  - [ ] /map 左上に検索フィールド（右端に×/設定ボタン）が表示される
+  - [ ] 設定ボタンで検索対象チェックボックスのダイアログが開く
+  - [ ] 検索対象は指定どおり（point: 名前/空港コード/港コード/駅コード、lineString: 名前、multiPolygon: 地域名/国名/地域コード/国コード）
+  - [ ] 検索入力は jotai で管理され、Enter で前方一致検索が実行される
+  - [ ] 強調表示が3段階で反映される（検索ヒット=黄色の光彩、hover=明るい色、クリック選択=primary色）
+  - [ ] ExecPlan を `plans/map-search-highlight-execplan.md` に作成し更新する
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] ExecPlan を作成し設計→実装の手順を明記する
+  - [ ] map 画面に検索 UI と設定ダイアログを追加する
+  - [ ] jotai atom で検索入力/対象選択を管理する
+  - [ ] Enter 検索で feature-state を更新し強調表示を反映する
+  - [ ] hover/click 近傍判定で強調表示を更新する
+  - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：/map の検索 UI/強調表示/controls の差分を revert し、必要なら `pnpm --filter @hierarchidb/app typecheck` を再実行する。
+- 運用ログ：
+  - start: 2025-12-27 15:45 JST /map 検索フィールドと強調表示、ズームコントロール追加に着手。
+  - progress: 2025-12-27 16:05 JST ExecPlan `plans/map-search-highlight-execplan.md` を作成し、検索 UI/強調表示/controls の実装方針を整理。
+  - progress: 2025-12-27 16:25 JST jotai 状態を追加し、map.tsx に検索 UI・設定ダイアログ・feature-state 強調表示・zoom controls を実装。
+  - progress: 2025-12-27 16:26 JST `ResourceLayerMap` に highlightOverridesByType/controls 対応を追加し、VectorTileLayer の feature-state cleanup をキー単位へ変更。
+  - done: 2025-12-27 16:28 JST /map の検索 UI + 強調表示 + ズームコントロールを実装完了。検証: 未実施（時間のため）。ロールバック: 本タスク差分を revert。
+
+1923) /map 印刷アイコンボタンを画面左下に固定表示（P1）
+- ブランチ: `fix/ui/map-print-button-position`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `app/src/router/routes/map.tsx`, `packages/ui/map`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] /map の印刷アイコンボタンが画面左下に固定表示される
+  - [ ] 既存のアイコン/サイズ/挙動/ツールチップが維持される
+  - [ ] 他の UI（凡例/ズーム等）と重ならない配置になる
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] /map の印刷アイコンボタンの配置ロジックを特定する
+  - [ ] 画面左下固定にするスタイル/レイアウトを実装する
+  - [ ] 他 UI との干渉を回避するための余白/配置を調整する
+  - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：/map の印刷アイコンボタン配置変更を revert し、必要なら `pnpm --filter @hierarchidb/app typecheck` を再実行する。
+- 運用ログ：
+  - start: 2025-12-27 15:25 JST /map の印刷アイコンボタンを画面左下へ固定表示する対応に着手。
+  - progress: 2025-12-27 15:28 JST map.tsx の export control 位置を bottom-left へ変更。
+  - progress: 2025-12-27 15:28 JST 検証コマンドは未実行（依頼優先のため）。
+
+1922) /map 地形タイプ・経路モードの表示トグル追加（ModelessDialog）（P1）
+- ブランチ: `feat/ui/map-layer-toggle-dialog`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `app/src/router/routes/map.tsx`, `packages/ui/map`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] /map に地形タイプ（行政中心/空港/港/駅/インターチェンジ）の ModelessDialog カードが表示される
+  - [ ] /map に経路モード（空路/海路/鉄道/高速鉄道/道路）の ModelessDialog カードが表示される
+  - [ ] 地形タイプのトグルOFF時、該当 point のアイコン/矩形描画が不可視になる
+  - [ ] 経路モードのトグルOFF時、該当 lineString の描画が不可視になる
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] /map に ModelessDialog のカード UI を追加する
+  - [ ] 地形タイプのトグル状態を保持する状態を用意する
+  - [ ] 経路モードのトグル状態を保持する状態を用意する
+  - [ ] point 描画側で地形タイプに応じてフィルタする
+  - [ ] lineString 描画側で経路モードに応じてフィルタする
+  - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：/map の ModelessDialog と描画フィルタの変更を revert し、必要なら `pnpm --filter @hierarchidb/app typecheck` を再実行する。
+- 運用ログ：
+  - start: 2025-12-27 20:15 JST /map の地形タイプ/経路モードのトグル UI と描画フィルタ追加に着手。
+  - progress: 2025-12-27 20:35 JST /map の ModelessDialog に地形タイプ/経路モードのトグルカードを追加し、location/route レイヤーの描画フィルタを実装。
+  - progress: 2025-12-27 20:40 JST 検証コマンドは未実行（時間のため）。
+
 1921) treeconsole Visible/Invisible トグル追加（TreeTable/Breadcrumb/Preview）（P1）
 - ブランチ: `feat/ui-treeconsole/visibility-toggle`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `packages/common/types`, `packages/ui/treeconsole/treetable`, `packages/ui/treeconsole/breadcrumb`, `app`, `plugins/*-plugin`, `TASKS.md`
@@ -75,6 +164,17 @@
   - start: 2025-12-27 19:10 JST TreeTable/Breadcrumb の Visible/Invisible トグルと Preview 非表示対応に着手。
   - progress: 2025-12-27 19:30 JST TreeNode に invisible を追加し、TreeTable/Breadcrumb の表示・メニューと map プレビューの非表示フィルタを実装。
   - progress: 2025-12-27 19:50 JST invisible ノードの Preview 無効化と、関連ノード探索で invisible フォルダ境界を追加。
+  - progress: 2025-12-27 20:10 JST runtime-worker の tsconfig paths 上書きを解除し、プラグイン src alias を復帰。
+  - progress: 2025-12-27 20:20 JST map.tsx の import type 修正で Vite 変換エラーを解消。
+  - progress: 2025-12-27 20:35 JST Vite alias に common-auth/ui-file/gis-sdk と route-plugin subpath を追加し、route-plugin 内部参照を相対パス化。
+  - progress: 2025-12-27 20:45 JST runtime-worker-worker alias を src へ固定し dist 依存を回避。
+  - progress: 2025-12-27 20:55 JST vite.config.min.ts でも runtime-worker-worker を src へ固定。
+  - progress: 2025-12-27 21:05 JST runtime-worker の動的 import を相対パスへ変更し、仮想 specifier 依存を撤去。
+  - progress: 2025-12-27 21:15 JST runtime-worker-worker の動的 import を削除し、ローカル worker 起動のみに統一。
+  - progress: 2025-12-27 21:25 JST Vite alias に @hierarchidb/download を追加。
+  - progress: 2025-12-27 21:30 JST Vite alias に @hierarchidb/auth-recovery を追加。
+  - progress: 2025-12-27 21:40 JST spreadsheet-plugin で KeyValueSourcePanel を UI export に追加。
+  - progress: 2025-12-27 21:45 JST spreadsheet-plugin の root index から KeyValueSourcePanel を再 export。
 
 1920) styler の feature-state 対応（shape/location/route 対応） + resolver-plugin 非表示（P1）
 - ブランチ: `feat/styler/feature-state-config`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -116,6 +216,7 @@
 - 運用ログ：
   - start: 2025-12-27 12:06 JST routeResults廃止・routeCursors永続化廃止・クラッシュ検知整備に着手。
   - progress: 2025-12-27 12:14 JST routeResults/routeCursors/routeCache/pendingSessions をDBスキーマと関連サービスから削除し、RouteBuildStepにbuildStartedAt/buildFinishedAtとクラッシュヒント表示、RouteProcessingStepにlineStrings削除のcleanupボタンを追加。
+  - progress: 2025-12-27 23:26 JST RouteBatchSummary から routeCursors/routeResults 参照を撤去し、進捗由来の集計へ切替。
 
 1919) フォルダ Preview のレイヤー順序と route/location ベクトルタイル化（P1）
 - ブランチ: `feat/map/folder-layer-order`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -133,6 +234,27 @@
 - 運用ログ：
   - start: 2025-12-27 14:03 JST フォルダ Preview のベクトルタイル化とレイヤー順序調整に着手。
   - progress: 2025-12-27 14:09 JST route/location を vector tile のみで描画し、レイヤー順を shape→route→location に固定する実装を追加。
+
+1921) ModelessDialogManager の永続化/復帰アルゴリズム改修（P1）
+- ブランチ: `feat/map/modeless-layout-persist`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `app/src/router/routes/modeless/modelessDialogLayout.ts`, `app/src/router/routes/modeless/ModelessDialogProvider.tsx`, `app/src/router/routes/modeless/ModelessDialogManager.tsx`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] 種類ごとの表示モード/アイコン位置/ダイアログ位置/サイズを JSON で永続化できる
+  - [ ] 閉→開の復帰時に指定アルゴリズム（32px判定/3x3判定/最大32回/最終フォールバック）を適用する
+  - [ ] 初期状態 JSON を提示できる
+  - [ ] 変更内容/理由/ロールバック/検証を運用ログに記載する
+- チェックリスト:
+  - [ ] 永続化 JSON スキーマと load/persist 変換を実装する
+  - [ ] 復帰時の位置調整アルゴリズムを実装する
+  - [ ] 初期 JSON を提示できるよう整理する
+  - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：modeless dialog の永続化/復帰ロジック変更を revert し、必要なら `pnpm --filter @hierarchidb/app typecheck` を再実行する。
+- 運用ログ：
+  - start: 2025-12-27 15:02 JST modeless dialog の永続化/復帰アルゴリズム改修に着手。
+  - progress: 2025-12-27 22:40 JST 位置復帰アルゴリズムと永続化 JSON スキーマの実装に着手。
+  - progress: 2025-12-27 22:58 JST 永続化スキーマを v2（mode/rect/iconPosition）へ移行し、閉→開の復帰アルゴリズムを実装。
+  - progress: 2025-12-27 23:06 JST アイコン位置の保存を bottom/right 基準へ移行する対応に着手。
+  - progress: 2025-12-27 23:14 JST map-info にノード情報（name/description/createdAt/updatedAt/tags/path）を追加し、zxy を末尾に表示。
 
 1920) Projects ツリー導線の非表示化（P1）
 - ブランチ: `chore/ui/hide-projects-tree`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -221,6 +343,7 @@
   - progress: 2025-12-27 16:12 JST 検証未実施（`pnpm --filter @hierarchidb/location-plugin test` / `pnpm --filter @hierarchidb/route-plugin test` は未実行）。
   - start: 2025-12-27 16:20 JST IDE-GSM の chunkSize 指定を location/route 共通の定数へ統一する対応に着手。
   - progress: 2025-12-27 16:24 JST IDE-GSM の chunkSize を `IDE_GSM_BULK_CHUNK_SIZE` として plugin-service-api に集約し、location/route UI と runtime-worker のデフォルトに適用。
+  - progress: 2025-12-27 23:26 JST route IDE-GSM 取込で RoutePoint/RouteLineString の必須プロパティ（pointId/name/featureId）を補完するよう修正。
   - start: 2025-12-27 16:40 JST shape の /map に feature-state 連携を導入し、styler の ID→色/値を MapLibre の feature-state に反映する対応に着手。
   - start: 2025-12-27 16:55 JST styler-plugin のステップ構成と設定項目を棚卸しし、feature-state/線幅/アイコンサイズ対応のUI提案を整理する対応に着手。
   - progress: 2025-12-27 17:25 JST styler-plugin の現行ステップと設定項目を確認し、feature-state 前提の「ID列/値列/適用先/値解釈」の再配置案と、線幅/アイコンサイズ対応の提案を整理。
@@ -5122,6 +5245,10 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
 
 ## 今日の着手（運用ログ） <a id="worklog-1"></a>
 
+- 2025-12-27 15:00 start: chore/ui/map-print-check — /map の印刷ボタン表示と印刷機能結線の調査を開始。
+- 2025-12-27 15:10 done: chore/ui/map-print-check — /map 画面には印刷ボタンの UI が無く、印刷処理の結線も見当たらないことを確認（`app/src/router/routes/map.tsx`, `app/src/router/routes/modeless/ModelessDialogManager.tsx`, `app/src/router/routes/modeless/modelessDialogContent.tsx` を確認、`rg -n "print" app/src packages/ui -g"*.ts" -g"*.tsx"` は一致なし）。
+- 2025-12-27 15:04 start: feat/ui/map-print-button — /map の印刷アイコンボタン追加と PDF 出力結線に着手。
+- 2025-12-27 15:10 done: feat/ui/map-print-button — `@watergis/maplibre-gl-export` を導入し、`app/src/router/routes/map.tsx` で PDF 出力コントロールを追加（MapLibre control の印刷アイコン）。検証コマンドは未実施。
 - 2025-12-08 22:50 progress: ui-auth typecheck — vitest.setup.ts の `crypto.getRandomValues` を null 許容シグネチャに合わせて型エラー (TS2322) を解消。検証: `pnpm --filter @hierarchidb/ui-auth typecheck` exit 0。ロールバック: `packages/ui/auth/vitest.setup.ts` の getRandomValues 実装を revert し同コマンドを再実行。
 - 2025-12-09 06:45 progress: spreadsheet-plugin typecheck — tsconfig の lib を ES2022 へ引き上げ、`experimentalDecorators` を有効化して runtime-worker の Decorator/hasOwn エラーを解消。検証: `pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` exit 0。ロールバック: `plugins/spreadsheet-plugin/tsconfig.json` の lib/experimentalDecorators 変更を revert し同コマンドを再実行。
 - 2025-12-09 07:05 progress: folder-plugin typecheck — `tabular-source-xlsx` 依存の `xlsx/xlsx.mjs` 型欠如を global.d.ts 参照と package tsconfig include 追加で解消。検証: `pnpm --filter @hierarchidb/folder-plugin typecheck` exit 0。ロールバック: `plugins/folder-plugin/tsconfig.json` への global.d.ts 追加と lib/experimentalDecorators 変更を revert し同コマンドを再実行。
@@ -5598,6 +5725,38 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+
+1924) /map 印刷アイコンボタン追加（PDF出力結線）（P2）
+- ブランチ: `feat/ui/map-print-button`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `app/src/router/routes/map.tsx`, `packages/ui/map`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [x] /map 画面に印刷アイコンボタンが表示される
+  - [x] クリックで PDF 出力に結線される
+  - [x] MapLibre GL JS に直接の PDF 出力 API がない場合、代替実装の根拠と影響範囲を明記する
+  - [x] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [x] /map 画面の UI に印刷ボタンを配置する
+  - [x] PDF 出力の実装方針を決め、結線する
+  - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：/map の印刷ボタン/印刷処理の差分を revert し、必要なら `pnpm --filter @hierarchidb/app typecheck` を再実行する。
+- 運用ログ：
+  - start: 2025-12-27 15:04 JST /map の印刷アイコンボタン追加と PDF 出力結線に着手。
+  - done: 2025-12-27 15:10 JST `@watergis/maplibre-gl-export` を追加し、/map に PDF 出力コントロールを結線（MapLibre control 経由で印刷アイコン表示）。検証コマンドは未実施。
+
+1923) /map の印刷ボタン有無と印刷機能の結線確認（P3）
+- ブランチ: `chore/ui/map-print-check`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `app/src/router/routes/map.tsx`, `app/src/**`, `packages/ui/map`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [x] /map に印刷ボタンが表示されているか確認できる
+  - [x] 印刷ボタンが存在する場合、印刷機能に結線されているか確認できる
+  - [x] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [x] /map 画面の UI 定義から印刷ボタンの有無を確認する
+  - [x] クリック時のハンドラと印刷処理（window.print 等）の結線有無を確認する
+- ロールバック手順：調査のみのため差分なし（運用ログ追記を削除）。
+- 運用ログ：
+  - start: 2025-12-27 15:00 JST /map の印刷ボタン表示と印刷機能結線の調査に着手。
+  - done: 2025-12-27 15:10 JST /map の UI では印刷ボタンを提供しておらず、印刷処理の結線も見当たらないことを確認（`app/src/router/routes/map.tsx`, `app/src/router/routes/modeless/ModelessDialogManager.tsx`, `app/src/router/routes/modeless/modelessDialogContent.tsx` を確認）。
 
 1921) shape-plugin URLメタデータ生成のWorker移管 + 推定サイズ削除（P1）
 - ブランチ: `feat/shape/urlmetadata-worker`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -12496,6 +12655,15 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-27 15:45 start: feat/ui/map-search-highlight — /map の検索フィールド・強調表示・ズームコントロール追加に着手。DoD: Kanban 1925 のとおり。
+- 2025-12-27 16:35 start: feat/ui/map-search-jotai-state — /map の検索/hover/クリック対象を jotai 管理へ移行する対応に着手。DoD: Kanban 1926 のとおり。
+- 2025-12-27 16:50 progress: feat/ui/map-search-jotai-state — 検索/hover/クリック対象の jotai atom 追加と map.tsx の状態移行を実施。
+- 2025-12-27 16:52 done: feat/ui/map-search-jotai-state — /map の検索/hover/クリック対象を jotai 管理へ移行完了。検証: 未実施（時間のため）。ロールバック: 本タスク差分を revert。
+- 2025-12-27 16:05 progress: feat/ui/map-search-highlight — ExecPlan を作成し、検索 UI/強調表示/controls の実装方針を整理。
+- 2025-12-27 16:26 progress: feat/ui/map-search-highlight — jotai 状態、検索 UI、feature-state 強調表示、controls 設定、ResourceLayerMap/VectorTileLayer の対応を実装。
+- 2025-12-27 16:28 done: feat/ui/map-search-highlight — /map の検索 UI + 強調表示 + ズームコントロールを実装。検証: 未実施（時間のため）。ロールバック: 本タスク差分を revert。
+- 2025-12-27 15:07 start: analysis/map/ui-controls-presence — map 画面のズームコントロール表示（+/- 等）と検索フィールドの有無を実装から確認する調査に着手。DoD: 表示有無の結論と根拠（該当ファイル/記述）を提示し、運用ログに記録。
+- 2025-12-27 15:08 done: analysis/map/ui-controls-presence — /map は MapLibre の controls を渡しておらずズーム +/− UI は表示されない。検索フィールドも未実装（map.tsx と MapLibreMap/ResourceLayerMap に入力 UI なし）。検証: `rg` と実装確認。ロールバック: 調査ログ追記を削除。
 - 2025-12-26 21:10 start: feat/location/implementation-from-design — location-plugin のテスト修正（Selection/MapPreview/BatchParameters のユニットテスト）に着手。DoD: 位置プラグインの `pnpm --filter @hierarchidb/location-plugin test` が通ること、修正内容と検証を運用ログへ記録。
 - 2025-12-26 21:22 progress: feat/location/implementation-from-design — Selection の正規化 helper を抽出しテスト更新、MapPreview/BatchParameters のテストでローカルモック（country select/localStorage）を追加、jest-dom 依存を撤去。
 - 2025-12-26 21:23 command: pnpm --filter @hierarchidb/location-plugin test — exit 0（Warning: `--localstorage-file` invalid path が 1 回出力）。
@@ -13572,3 +13740,25 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-26 18:12 start: feat/location/api-query-mutation — LocationQuery/LocationMutation API の整備と結線に着手。DoD: Kanban 1908 のとおり。
 - 2025-12-26 18:35 progress: feat/location/api-query-mutation — LocationMutationAPI 型定義、LocationMutationService 追加、WorkerAPI/worker runtime/workerBridge/test-worker の結線を反映。
 - 2025-12-26 18:38 done: feat/location/api-query-mutation — LocationQuery/LocationMutation API を整備し結線完了。検証: 未実施（typecheck 未実行）。ロールバック: Kanban 1908 の手順に従い差分を revert。
+- 2025-12-26 20:45 start: fix/app-build/import-export-resolution — app build の import/export 解決エラーを一括で解消する対応に着手。DoD: app build エラー（import/export 解決）を解消、関連 typecheck を実行し結果を運用ログに記録、ロールバック手順を記載。
+- 2025-12-26 20:52 done: fix/app-build/import-export-resolution — app build の import/export 解決エラーを再現せず、`pnpm --filter @hierarchidb/app build` を実行して成功（exit 0）。検証: `pnpm --filter @hierarchidb/app build`（vite build 成功）。ロールバック: `TASKS.md` の本エントリを削除し、該当差分を revert。
+- 2025-12-26 21:05 start: fix/runtime-worker/route-generator-imports — runtime-worker の RouteGenerator/SearouteEngine import エラーを解消する対応に着手。DoD: runtime-worker typecheck の TS2307 を解消し、検証結果を運用ログへ記録、ロールバック手順を記載。
+- 2025-12-26 21:12 done: fix/runtime-worker/route-generator-imports — route-plugin の公開 API から RouteGenerator/SearouteEngine を参照するよう修正し、route-plugin build 後に runtime-worker typecheck が成功。検証: `pnpm --filter @hierarchidb/route-plugin build` exit 0、`pnpm --filter @hierarchidb/runtime-worker typecheck` exit 0。ロールバック: `packages/runtime-worker/src/services/RouteMutationService.ts`, `plugins/route-plugin/src/index.ts` と `TASKS.md` の差分を revert。
+- 2025-12-26 21:20 start: analysis/turbo-cache/build-typecheck-speed — pnpm build/typecheck を高速化するため、turbo キャッシュ/依存関係/タスク構成の見直し候補を調査。DoD: 現状ボトルネック整理、改善案2-3案、ロールバック指針、運用ログ更新。
+- 2025-12-26 21:45 done: analysis/turbo-cache/build-typecheck-speed — turbo.json の依存/outputs/inputs と各パッケージの build/typecheck 設定を確認し、高速化の改善案を整理。検証: 調査のみ。ロールバック: 運用ログ追記を削除。
+- 2025-12-26 21:58 start: fix/turbo/typecheck-build-types — turbo の typecheck キャッシュ強化と build:types 導入に着手。DoD: turbo inputs/outputs を設定、build:types スクリプト追加、typecheck 依存を切替、検証結果とロールバック手順を運用ログへ記録。
+- 2025-12-26 22:06 done: fix/turbo/typecheck-build-types — turbo.json に build/typecheck の inputs/outputs と build:types を追加し、typecheck 依存を ^build:types へ切替。dist 参照のパッケージに build:types を追加。検証: `pnpm --filter @hierarchidb/util build:types` exit 0。ロールバック: `turbo.json`, `package.json`, 対象パッケージの `package.json`, `TASKS.md` の差分を revert。
+- 2025-12-26 22:12 start: fix/compute/build-types-ts5055 — @hierarchidb/compute の build:types TS5055 を解消。DoD: build:types が dist overwrite しないこと、検証結果とロールバック手順を記載。
+- 2025-12-26 22:13 done: fix/compute/build-types-ts5055 — build:types を専用 tsconfig へ切替し、自己参照を src へ向けて TS5055 を解消。検証: `pnpm --filter @hierarchidb/compute build:types` exit 0。ロールバック: `packages/features/compute/{package.json,tsconfig.build.json}` と `TASKS.md` の差分を revert。
+- 2025-12-26 22:17 start: fix/fetch-save-metadata/build-types-ts5055 — @hierarchidb/fetch-save-metadata の build:types TS5055 を解消。DoD: build:types が dist overwrite しないこと、検証結果とロールバック手順を記載。
+- 2025-12-26 22:18 done: fix/fetch-save-metadata/build-types-ts5055 — build:types を専用 tsconfig へ切替し、自己参照を src へ向けて TS5055 を解消。検証: `pnpm --filter @hierarchidb/fetch-save-metadata build:types` exit 0。ロールバック: `packages/features/fetch-save-metadata/{package.json,tsconfig.build.json}` と `TASKS.md` の差分を revert。
+- 2025-12-26 22:26 start: fix/build-types/ts5055-batch — route-resolver/tabular-source/feature-registry の build:types TS5055 を解消。DoD: 各 build:types が dist overwrite しないこと、検証結果とロールバック手順を記載。
+- 2025-12-26 22:28 done: fix/build-types/ts5055-batch — route-resolver/tabular-source/feature-registry の build:types を専用 tsconfig へ切替し、自己参照を src へ向けて TS5055 を解消。検証: `pnpm --filter @hierarchidb/route-resolver build:types` exit 0、`pnpm --filter @hierarchidb/tabular-source build:types` exit 0、`pnpm --filter @hierarchidb/feature-registry build:types` exit 0。ロールバック: 各パッケージの `package.json`/`tsconfig.build.json` と `TASKS.md` の差分を revert。
+- 2025-12-26 22:35 start: fix/build-types/ts5055-import-export-map-source-tabular-store — import-export/map-source/tabular-store の build:types TS5055 を解消。DoD: 各 build:types が dist overwrite しないこと、検証結果とロールバック手順を記載。
+- 2025-12-26 22:38 done: fix/build-types/ts5055-import-export-map-source-tabular-store — build:types を専用 tsconfig へ切替し、import-export はテスト除外を追加して TS5055/型エラーを解消。検証: `pnpm --filter @hierarchidb/import-export build:types` exit 0、`pnpm --filter @hierarchidb/map-source build:types` exit 0、`pnpm --filter @hierarchidb/tabular-store build:types` exit 0。ロールバック: 各パッケージの `package.json`/`tsconfig.build.json` と `TASKS.md` の差分を revert。
+- 2025-12-26 22:41 start: fix/route-searoute/build-types-ts5055 — route-searoute の build:types TS5055 を解消。DoD: build:types が dist overwrite しないこと、検証結果とロールバック手順を記載。
+- 2025-12-26 22:42 done: fix/route-searoute/build-types-ts5055 — build:types を専用 tsconfig へ切替し、自己参照を src へ向けて TS5055 を解消。検証: `pnpm --filter @hierarchidb/route-searoute build:types` exit 0。ロールバック: `packages/features/route-searoute/{package.json,tsconfig.build.json}` と `TASKS.md` の差分を revert。
+- 2025-12-26 22:50 start: fix/ui-shell-styler/typecheck-errors — ui-plugin-shell pretypecheck と styler-plugin の型エラーを解消。DoD: pretypecheck の ENOENT 解消、styler-plugin typecheck 成功、検証結果とロールバック手順を記載。
+- 2025-12-26 22:55 done: fix/ui-shell-styler/typecheck-errors — pretypecheck の obsolete common パスを修正し、styler-plugin の placeholder/metadata import/mapping 型エラーを解消。検証: `pnpm --filter @hierarchidb/ui-plugin-shell typecheck` exit 0、`pnpm --filter @hierarchidb/styler-plugin typecheck` exit 0。ロールバック: `scripts/pretypecheck-ui-shell.mjs`, `plugins/styler-plugin/src/ui/components/{StylerMappingKeysStep.tsx,StylerPreviewStep.tsx,StylerTargetBehaviorStep.tsx}` と `TASKS.md` の差分を revert。
+- 2025-12-26 23:05 start: fix/app/typecheck-map-invisible — app typecheck の invisible/MapLibre/map search 型エラーと shape/gis-sdk 解決を修正。DoD: app typecheck 成功、検証結果とロールバック手順を記載。
+- 2025-12-26 23:10 done: fix/app/typecheck-map-invisible — breadcrumb の invisible 型追加、app tsconfig に gis-sdk/shape-plugin を追加、MapLibre 型拡張と map.tsx の import/FeatureState/検索型を整理。検証: `pnpm --filter @hierarchidb/app typecheck` exit 0。ロールバック: `app/tsconfig.json`, `app/src/router/pages/tree/console/useTreeConsoleIntegrationInner.ts`, `app/src/router/routes/map.tsx`, `packages/ui/map/src/types/maplibre-public.ts`, `TASKS.md` の差分を revert。

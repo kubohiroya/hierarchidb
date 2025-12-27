@@ -3,8 +3,7 @@ import { ensureIso3166Data, getAllCountries, type CountryRecord } from '@hierarc
 import type { Country, ContinentCode } from '../types/Country.js';
 
 type State =
-  | { status: 'loading' }
-  | { status: 'ready'; countries: Country[] }
+  | { status: 'loading'|'ready'; countries: Country[] }
   | { status: 'error'; message: string };
 
 export interface UseIsoCountriesOptions {
@@ -35,7 +34,7 @@ const normalizeContinent = (location: string | undefined): ContinentCode => {
 };
 
 export function useIsoCountries(options: UseIsoCountriesOptions = {}) {
-  const [state, setState] = useState<State>({ status: 'loading' });
+  const [state, setState] = useState<State>({ status: 'loading', countries: [] });
 
   useEffect(() => {
     let cancelled = false;
@@ -54,11 +53,12 @@ export function useIsoCountries(options: UseIsoCountriesOptions = {}) {
           continent: normalizeContinent(rec.location),
         }));
         setState({ status: 'ready', countries });
-      } catch (e: any) {
+      } catch (e) {
         if (cancelled) return;
+        const ee: {message: string} = e as {message: string};
         setState({
           status: 'error',
-          message: typeof e?.message === 'string' ? e.message : String(e),
+          message: typeof ee.message === 'string' ? ee.message : String(e),
         });
       }
     };
@@ -72,5 +72,5 @@ export function useIsoCountries(options: UseIsoCountriesOptions = {}) {
     return state.status === 'ready' ? state.countries : [];
   }, [state]);
 
-  return state.status === 'ready' ? { status: 'ready', countries: readyCountries } : state;
+  return state.status === 'ready' ? { status: 'ready', countries: readyCountries } : {...state, countries: []};
 }

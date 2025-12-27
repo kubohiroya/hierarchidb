@@ -17,5 +17,5 @@ export type { BatchConfig, RouteBatchConfig } from './BatchConfig.js';
 
 export type RouteUpdaterPayload = TreeNodeUpdaterPayload<RouteEntity>;
 export type TagId = string;
-export type { RouteLineString, RoutePoint, RouteMode } from '@hierarchidb/route-plugin/common/entities/RouteLineString.ts';
-export { ROUTE_MODES } from '@hierarchidb/route-plugin/common/entities/RouteLineString.ts';
+export type { RouteLineString, RoutePoint, RouteMode } from '../entities/RouteLineString.js';
+export { ROUTE_MODES } from '../entities/RouteLineString.js';

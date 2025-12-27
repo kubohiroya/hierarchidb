@@ -1,54 +1,30 @@
-import { useEffect, useMemo, useState } from 'react';
-import { RouteDatabase } from '../../services/database/RouteDatabase.js';
+import { useMemo } from 'react';
 import { useRouteBatchProgress } from '../hooks/useRouteBatchProgress.js';
 import { useTranslation } from '../../common/i18n/index.js';
 
 export function RouteBatchSummary({ sessionId }: { sessionId: string }) {
   const { progress, lastError } = useRouteBatchProgress(sessionId);
   const { translations } = useTranslation();
-  const [cursorStats, setCursorStats] = useState<{ completed: number; total: number } | null>(null);
-  const [resultsCount, setResultsCount] = useState<number | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const db = new RouteDatabase();
-        const [cursor, results] = await Promise.all([
-          db.routeCursors.get(sessionId),
-          db.routeResults.where('sessionId').equals(sessionId).count(),
-        ]);
-        if (cancelled) return;
-        setCursorStats({
-          completed: cursor?.completed ?? 0,
-          total: cursor?.total ?? 0,
-        });
-        setResultsCount(results ?? 0);
-      } catch {
-        if (cancelled) return;
-        setCursorStats(null);
-        setResultsCount(null);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [sessionId]);
 
   const completed = useMemo(() => {
-    const value = progress?.completed ?? cursorStats?.completed ?? 0;
+    const value = progress?.completed ?? 0;
     return Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0;
-  }, [cursorStats?.completed, progress?.completed]);
+  }, [progress?.completed]);
 
   const total = useMemo(() => {
-    const value = progress?.total ?? cursorStats?.total ?? 0;
+    const value = progress?.total ?? 0;
     return Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0;
-  }, [cursorStats?.total, progress?.total]);
+  }, [progress?.total]);
 
   const failed = useMemo(() => {
     const value = progress?.failed ?? 0;
     return Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0;
   }, [progress?.failed]);
+
+  const resultsCount = useMemo(() => {
+    const value = progress?.completed;
+    return Number.isFinite(value) ? Math.max(0, Math.round(value ?? 0)) : null;
+  }, [progress?.completed]);
 
   const pct = total > 0 ? Math.min(100, Math.max(0, Math.round((completed / total) * 100))) : 0;
   const summary = translations.batch?.summary;
