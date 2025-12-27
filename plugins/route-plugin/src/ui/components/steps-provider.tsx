@@ -134,6 +134,8 @@ registry.registerConfigProvider<RouteStepData>({
             <RouteProcessingStep
               draft={draft as unknown as RouteUpdaterPayload}
               onUpdate={(updates) => p.onChange(mergeDraft(draft, { draftData: updates }))}
+              nodeId={p.nodeId as NodeId | undefined}
+              disabled={Boolean(p.disabled)}
             />
           );
         },
@@ -145,7 +147,15 @@ registry.registerConfigProvider<RouteStepData>({
         optional: false,
         componentFactory: (p: StepProps) => {
           const draft = ensureDraft(p.data);
-          return <RouteBuildStep draft={draft as unknown as RouteUpdaterPayload} />;
+          return (
+            <RouteBuildStep
+              draft={draft as unknown as RouteUpdaterPayload}
+              onUpdate={(updates) => p.onChange(mergeDraft(draft, { draftData: updates }))}
+              nodeId={p.nodeId}
+              parentId={p.parentId}
+              mode={p.mode}
+            />
+          );
         },
         capabilities: {
           canStartBatch: (data: RouteStepData) => {
@@ -168,7 +178,7 @@ registry.registerConfigProvider<RouteStepData>({
         optional: true,
         componentFactory: (p: StepProps) => {
           const draft = ensureDraft(p.data);
-          return <RoutePreviewStep draft={draft as unknown as RouteUpdaterPayload} />;
+          return <RoutePreviewStep draft={draft as unknown as RouteUpdaterPayload} nodeId={p.nodeId} />;
         },
         validate: (data?: RouteStepData) => isRouteBuildPersisted(data),
       },

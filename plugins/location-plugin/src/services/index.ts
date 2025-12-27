@@ -8,10 +8,17 @@ export { LocationBatchManager, type LocationBatchProgressEvent } from './Locatio
 export {
   appendLocationPoints,
   replaceLocationPoints,
+  replaceLocationPointsChunked,
   listLocationPoints,
   deleteLocationPoints,
   clearLocationPoints,
 } from './pointRepository.js';
+export type { LocationPointWriteProgress } from './pointRepository.js';
+export {
+  parseIdeGsmCsv,
+  filterIdeGsmPointsBySelection,
+} from './ide-gsm/ideGsmCsv.js';
+export type { IdeGsmParseResult } from './ide-gsm/ideGsmCsv.js';
 
 // Batch Session manager and unified adapters
 export { LocationBatchSessionManager } from './batch/BatchSessionManager.js';

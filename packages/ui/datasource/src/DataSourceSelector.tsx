@@ -7,6 +7,7 @@ export interface DataSourceOption {
   description?: string;
   icon?: React.ReactNode;
   metadata?: Record<string, unknown>;
+  disabled?: boolean;
 }
 
 export interface DataSourceSelectorProps {
@@ -27,18 +28,20 @@ export const DataSourceSelector: React.FC<DataSourceSelectorProps> = ({
   <Box display="flex" flexDirection="column" gap={2}>
     {options.map((option) => {
       const active = option.id === value;
+      const optionDisabled = Boolean(disabled || option.disabled);
       return (
         <Box
           key={option.id}
-          onClick={() => !disabled && onChange(option.id)}
+          onClick={() => !optionDisabled && onChange(option.id)}
           sx={{
             p: 2,
             borderRadius: 1,
             border: 2,
-            cursor: disabled ? 'default' : 'pointer',
+            cursor: optionDisabled ? 'not-allowed' : 'pointer',
             borderColor: active ? 'primary.main' : 'divider',
             bgcolor: active ? 'action.selected' : 'background.paper',
-            '&:hover': disabled ? {} : { bgcolor: 'action.hover' },
+            opacity: optionDisabled ? 0.5 : 1,
+            '&:hover': optionDisabled ? {} : { bgcolor: 'action.hover' },
           }}
         >
           {renderOption ? (

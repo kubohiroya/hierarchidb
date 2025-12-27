@@ -34,7 +34,7 @@
       },
       "ide-gsm": {
         "name": "IDE-GSM",
-        "description": "IDE-GSM スキーマの location/resource ファイルを指定します。"
+        "description": "IDE-GSM の CSV/Excel ファイル（location/resource）を指定します。"
       },
       "custom": {
         "name": "カスタム",
@@ -47,7 +47,7 @@
     },
     "ideGsm": {
       "buttonLabel": "IDE-GSM ファイルを選択",
-      "instructions": "IDE-GSM スキーマの location/resource ファイルをアップロードまたはURL指定してください。",
+      "instructions": "IDE-GSM の CSV/Excel ファイルをアップロードまたはURL指定してください。",
       "missing": "IDE-GSM ソース URL が必要です。",
       "fetchError": "IDE-GSM ファイルの読み込みに失敗しました。(status: {{status}})"
     }
@@ -167,6 +167,14 @@
       "filter": "データを正規化してフィルタリングします。",
       "cluster": "ポイントのクラスタとインデックスを準備します。",
       "index": "プレビュー用のベクトルタイルを生成します。"
+    },
+    "ideGsm": {
+      "fetch": "IDE-GSM: ダウンロード中",
+      "parse": "IDE-GSM: 行を解析中",
+      "filter": "IDE-GSM: フィルタ中",
+      "save": "IDE-GSM: 保存中",
+      "completed": "IDE-GSM: 取り込み完了",
+      "failed": "IDE-GSM: 取り込み失敗"
     },
     "requiresApproval": "データソースを選択して保存してからビルドしてください。",
     "dataSourceUnsupported": "このデータソースはまだ未対応です。",

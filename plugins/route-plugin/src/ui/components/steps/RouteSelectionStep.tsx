@@ -16,7 +16,8 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
+import { findRelatedNodesByPriority } from '@hierarchidb/common-api';
+import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
 import type {
   RouteEntity,
@@ -167,26 +168,13 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
           return;
         }
 
-        const siblings = await query.listChildren(resolvedParentId);
-        const nextLocations = new Map<NodeId, TreeNode>();
-
-        for (const sibling of siblings) {
-          if (sibling.nodeType === 'location') {
-            nextLocations.set(sibling.id, sibling);
-            continue;
-          }
-          if (sibling.nodeType === 'folder') {
-            const descendants = await query.listDescendants(sibling.id as NodeId);
-            for (const descendant of descendants) {
-              if (descendant.nodeType === 'location') {
-                nextLocations.set(descendant.id, descendant);
-              }
-            }
-          }
-        }
+        const nextLocations = await findRelatedNodesByPriority(query, {
+          parentId: resolvedParentId,
+          nodeTypes: ['location' as NodeType],
+        });
 
         if (active) {
-          setLocations(Array.from(nextLocations.values()));
+          setLocations(nextLocations);
         }
       } catch (error) {
         if (active) {

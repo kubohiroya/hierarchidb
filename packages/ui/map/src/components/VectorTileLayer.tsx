@@ -43,10 +43,13 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
                                                                   layerType = DEFAULT_MAP_CONFIG.vectorTileLayer.layerType,
                                                                   sourceLayer,
                                                                   tileDataProvider,
+                                                                  promoteId,
+                                                                  featureState,
                                                                 }) => {
   const [sourceAdded, setSourceAdded] = useState(false);
   const [computedTiles, setComputedTiles] = useState<string[] | undefined>(tiles);
   const tilesLoadedRef = useRef(false);
+  const prevFeatureIdsRef = useRef<Array<string | number>>([]);
 
   // Setup custom protocol for Dexie if needed
   useEffect(() => {
@@ -146,6 +149,9 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
       minzoom,
       maxzoom,
     };
+    if (promoteId) {
+      vectorTileSource.promoteId = promoteId as VectorSourceSpecification['promoteId'];
+    }
 
     try {
       mapRef.addSource(sourceId!, vectorTileSource as SourceSpecification);
@@ -175,7 +181,49 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
         console.debug('VectorTileLayer cleanup skipped due to map state:', error);
       }
     };
-  }, [map, computedTiles, sourceId, minzoom, maxzoom, layerId]);
+  }, [map, computedTiles, sourceId, minzoom, maxzoom, layerId, promoteId]);
+
+  // Apply feature-state values
+  useEffect(() => {
+    if (!map || !sourceAdded || !featureState) return;
+    const mapRef = map;
+    if (!mapRef.getSource || !mapRef.getSource(sourceId!)) return;
+
+    if (featureState.length === 0) {
+      prevFeatureIdsRef.current.forEach((id) => {
+        try {
+          mapRef.removeFeatureState({ source: sourceId!, id });
+        } catch (error) {
+          console.debug('VectorTileLayer feature-state cleanup skipped:', error);
+        }
+      });
+      prevFeatureIdsRef.current = [];
+      return;
+    }
+
+    const nextIds = featureState.map((entry) => entry.id);
+    const prevIds = prevFeatureIdsRef.current;
+
+    prevIds.forEach((id) => {
+      if (!nextIds.includes(id)) {
+        try {
+          mapRef.removeFeatureState({ source: sourceId!, id });
+        } catch (error) {
+          console.debug('VectorTileLayer feature-state cleanup skipped:', error);
+        }
+      }
+    });
+
+    featureState.forEach((entry) => {
+      try {
+        mapRef.setFeatureState({ source: sourceId!, id: entry.id }, entry.state);
+      } catch (error) {
+        console.debug('VectorTileLayer setFeatureState error:', error);
+      }
+    });
+
+    prevFeatureIdsRef.current = nextIds;
+  }, [featureState, map, sourceAdded, sourceId]);
 
   // Add layer
   useEffect(() => {

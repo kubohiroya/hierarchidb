@@ -52,6 +52,7 @@ export const RouteDataSourceStep: React.FC<RouteDataSourceStepProps> = ({
           licenseName: source?.license ?? 'License',
           licenseUrl: source?.licenseUrl || undefined,
           attribution: source?.attribution || undefined,
+          disabled: id !== 'ide-gsm',
         };
       }),
     [dataSourceMap, t],
@@ -112,7 +113,7 @@ export const RouteDataSourceStep: React.FC<RouteDataSourceStepProps> = ({
           if (selected.id !== 'ide-gsm') return null;
           return (
             <FileInputWithUrl
-              accept=".json,.geojson,.csv"
+              accept=".csv,.xlsx,.xls"
               buttonLabel={t('dataSource.ideGsm.buttonLabel', 'Select IDE-GSM file')}
               instructions={t(
                 'dataSource.ideGsm.instructions',

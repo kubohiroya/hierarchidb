@@ -157,12 +157,14 @@ export class TreeMutationService implements TreeMutationAPI {
     nodeId: NodeId;
     name?: string;
     description?: string;
+    invisible?: boolean;
   }): Promise<{ success: boolean; error?: string }> {
     try {
       const envelope = this.commandProcessor.createEnvelope('updateNode', {
         nodeId: params.nodeId,
         name: params.name,
         description: params.description,
+        invisible: params.invisible,
       });
       const result = await this.commandProcessor.processCommand(envelope);
       if (!result.success) {

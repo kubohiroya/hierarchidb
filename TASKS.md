@@ -53,6 +53,238 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1921) treeconsole Visible/Invisible トグル追加（TreeTable/Breadcrumb/Preview）（P1）
+- ブランチ: `feat/ui-treeconsole/visibility-toggle`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/common/types`, `packages/ui/treeconsole/treetable`, `packages/ui/treeconsole/breadcrumb`, `app`, `plugins/*-plugin`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] TreeNode に `invisible?: boolean` が追加され、UI/Preview で参照できる
+  - [ ] TreeTable/Breadcrumb のコンテキストメニューで Visible/Invisible をトグルできる
+  - [ ] invisible の場合、TreeTable と Breadcrumb の名前表示に打ち消し線が付く
+  - [ ] Preview で invisible のノードが地図に描画されない
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] TreeNode 型へ `invisible?: boolean` を追加する
+  - [ ] NodeContextMenu を Visible/Invisible トグル表示へ変更する（Check Reference を置換）
+  - [ ] TreeTable/Breadcrumb の表示に打ち消し線を付与する
+  - [ ] Preview 描画経路で invisible ノードをフィルタする
+  - [ ] invisible ノードの Preview ボタンを disabled にする
+  - [ ] preview 探索で invisible フォルダを境界として探索を止める
+  - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：TreeNode 型/UI/Preview の変更を revert し、必要なら `pnpm --filter @hierarchidb/app typecheck` を再実行する。
+- 運用ログ：
+  - start: 2025-12-27 19:10 JST TreeTable/Breadcrumb の Visible/Invisible トグルと Preview 非表示対応に着手。
+  - progress: 2025-12-27 19:30 JST TreeNode に invisible を追加し、TreeTable/Breadcrumb の表示・メニューと map プレビューの非表示フィルタを実装。
+  - progress: 2025-12-27 19:50 JST invisible ノードの Preview 無効化と、関連ノード探索で invisible フォルダ境界を追加。
+
+1920) styler の feature-state 対応（shape/location/route 対応） + resolver-plugin 非表示（P1）
+- ブランチ: `feat/styler/feature-state-config`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/styler-plugin`, `app/src/router/routes/map.tsx`, `packages/plugin-registry`, `plugins/*-plugin`, `TASKS.md`, `plans/`
+- 受け入れ基準（DoD）:
+  - [ ] styler の UI が feature-state 前提の設定（ID/Target/Value 解釈）を持ち、shape/location/route を選択できる
+  - [ ] /map の preview が feature-state を使って style を反映できる（shape 先行で導入し、設定で location/route も選択可能）
+  - [ ] resolver-plugin が SpeedDial / Create メニューに表示されない（manifest に hidden を追加し、メニュー側が反映）
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] ExecPlan を作成し、設計 → 実装の手順を明記する
+  - [ ] styler のステップ構成と設定項目を再配置する（A案）
+  - [ ] feature-state 向けの ID / target / valueType / behavior 設定を永続化できるようにする
+  - [ ] /map の feature-state 反映導線を追加する（shape 優先、location/route は選択可能）
+  - [ ] resolver-plugin 非表示のメタデータと UI メニュー反映を実装する
+  - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：styler の UI/型/MapLibre 反映と resolver-plugin の manifest/UI 変更を revert し、必要なら `pnpm --filter @hierarchidb/styler-plugin typecheck` と `pnpm --filter @hierarchidb/app typecheck` を再実行する。
+- 運用ログ：
+  - start: 2025-12-27 17:40 JST styler の feature-state 対応（shape/location/route 選択）と resolver-plugin 非表示対応に着手。
+  - progress: 2025-12-27 17:55 JST ExecPlan `plans/styler-feature-state-execplan.md` を作成し、feature-state 対応と resolver-plugin 非表示の作業手順を整理。
+  - progress: 2025-12-27 18:45 JST styler の UI ステップ再構成（Mapping Keys / Target & Behavior / Scale / Preview）と feature-state 用の型・設定を追加。/map の promoteId/feature-state 反映導線を追加し、resolver-plugin を hidden メタデータでメニュー非表示に更新。
+
+1919) route バッチ永続データ整理（results/cursors廃止 + crash検知整備）（P1）
+- ブランチ: `refactor/route/batch-persistence-cleanup`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/route-plugin`, `packages/runtime-worker`, `packages/plugin-service-api`, `TASKS.md`, `plans/`
+- 受け入れ基準（DoD）:
+  - [ ] routeResults を廃止し、参照箇所が削除・置換される
+  - [ ] routeCursors の永続化を廃止し、UI状態/derived atomで進捗を扱う導線へ切替える
+  - [ ] shape の buildStartedAt/buildFinishedAt と同等のクラッシュ検知導線を route に導入する
+  - [ ] 再開不能時は種類別 delete → 再開の導線を用意する（shape 実装に準拠）
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] routeResults のスキーマ/コード参照を削除する
+  - [ ] routeCursors のスキーマ/コード参照を削除する
+  - [ ] crash検知の state/表示/保持を route へ移植・整理する
+  - [ ] route の cleanup UI に種類別 delete の導線を追加する
+  - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：routeResults/routeCursors削除・route crash検知変更を revert し、必要なら `pnpm --filter @hierarchidb/route-plugin typecheck` を再実行する。
+- 運用ログ：
+  - start: 2025-12-27 12:06 JST routeResults廃止・routeCursors永続化廃止・クラッシュ検知整備に着手。
+  - progress: 2025-12-27 12:14 JST routeResults/routeCursors/routeCache/pendingSessions をDBスキーマと関連サービスから削除し、RouteBuildStepにbuildStartedAt/buildFinishedAtとクラッシュヒント表示、RouteProcessingStepにlineStrings削除のcleanupボタンを追加。
+
+1919) フォルダ Preview のレイヤー順序と route/location ベクトルタイル化（P1）
+- ブランチ: `feat/map/folder-layer-order`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `app/src/router/routes/map.tsx`, `packages/ui/map`, `@hierarchidb/gis-sdk`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] フォルダ Preview は basemap → shape → route → location の順に描画される
+  - [ ] route/location はベクトルタイルのみを描画対象とし、geojson フォールバックは使わない
+  - [ ] 変更内容/理由/ロールバック/検証を運用ログに記載する
+- チェックリスト:
+  - [ ] `map.tsx` のレイヤー構成を type 別に整理する
+  - [ ] route のベクトルタイル参照を TilesDB 経由に切り替える
+  - [ ] location の geojson フォールバック導線を外す
+  - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：`map.tsx` の変更を revert し、必要なら `pnpm --filter @hierarchidb/app typecheck` を再実行する。
+- 運用ログ：
+  - start: 2025-12-27 14:03 JST フォルダ Preview のベクトルタイル化とレイヤー順序調整に着手。
+  - progress: 2025-12-27 14:09 JST route/location を vector tile のみで描画し、レイヤー順を shape→route→location に固定する実装を追加。
+
+1920) Projects ツリー導線の非表示化（P1）
+- ブランチ: `chore/ui/hide-projects-tree`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `app/src/router/pages/home/HomePage.tsx`, `app/src/router/routes/t.($treeId).($pageNodeId).tsx`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] トップページの Projects ボタンを削除し、Resources ボタンは “Start” 表記になる
+  - [ ] `/t/:treeId` 右上の Resources/Projects ボタングループを非表示にする
+  - [ ] 変更内容/理由/ロールバック/検証を運用ログに記載する
+- チェックリスト:
+  - [ ] `HomePage.tsx` のツリーボタン構成を修正する
+  - [ ] `t.($treeId).($pageNodeId).tsx` のボタングループを削除する
+  - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：該当 UI の変更を revert し、必要なら `pnpm --filter @hierarchidb/app typecheck` を再実行する。
+- 運用ログ：
+  - start: 2025-12-27 14:22 JST Projects ツリー導線の非表示化に着手。
+  - progress: 2025-12-27 14:30 JST HomePage から Projects ボタンを削除し、Resources ボタンを Start 表記へ変更。/t/:treeId のツリー切替ボタングループを削除。
+
+1918) route プレビュー hover で最近傍経路スナックバー表示（P1）
+- ブランチ: `feat/route/hover-nearest-line`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/route-plugin`, `packages/runtime-worker/src/services/RouteQueryService.ts`, `packages/plugin-service-api/src/types/RouteQueryAPI.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] route プレビューのホバー位置から `findNearestRouteLine` を呼び、最寄り経路を Snackbar に表示できる
+  - [ ] 対象は中心タイル＋周囲8タイルの最近傍探索結果に限定する
+  - [ ] データなし/未生成時に UI が破綻しない（スナックバー非表示 or クリア）
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] route プレビュー地図に hover イベントを追加する
+  - [ ] `RouteQueryAPI.findNearestRouteLine` を呼び出す導線を実装する
+  - [ ] Snackbar の表示内容を整形して出力する
+  - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：route プレビュー UI の変更を revert し、必要なら `pnpm --filter @hierarchidb/route-plugin typecheck` を再実行する。
+- 運用ログ：
+  - start: 2025-12-27 12:18 JST route プレビュー hover の最近傍線分/スナックバー表示実装に着手。
+  - progress: 2025-12-27 12:23 JST RoutePreviewStep に簡易マップを追加し、hover で RouteQueryAPI.findNearestRouteLine を呼び出して Snackbar 表示を行う導線を実装。プレビュー文言を i18n 追記。
+  - progress: 2025-12-27 12:37 JST route プレビューの hover 最近傍経路を視覚的に強調表示する対応に着手。
+  - progress: 2025-12-27 12:43 JST hover 最近傍経路が存在する場合にプレビュー線を太線+光彩で強調表示する描画を追加。
+  - progress: 2025-12-27 12:52 JST hover 最近傍判定の距離上限をピクセル指定(16px)で導入し、閾値超過時はスナックバー/強調表示を抑止。
+  - progress: 2025-12-27 13:07 JST RouteQueryAPI を距離閾値内の複数マッチ返却へ変更し、UI で先頭マッチを表示する導線に更新中。
+  - progress: 2025-12-27 13:21 JST RouteQueryAPI のレスポンスを matches 配列(距離順)に刷新し、runtime-worker と UI の呼び出し/表示を更新。
+
+1916) location-plugin map hover 最寄り地点プレビュー（P1）
+- ブランチ: `feat/location/hover-nearest-point`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/location-plugin`, `packages/plugin-service-api/src/types/LocationQueryAPI.ts`, `app/src/**`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] 地図プレビューのホバー位置から「最も近い地点」を1件選び、Snackbarに地点タイプ/地名/地域名/座標/座標を表示できる
+  - [ ] ホバー位置のタイル座標を求め、中心タイル＋周囲8枚（計9枚）のタイル内のみ探索対象とする
+  - [ ] タイルごとに地点を読み込んだ際、経度で構造化する二分木を構築し、`LRUMap<マップ座標, BTree<LocationPoint>>` で保持する
+  - [ ] `LocationQueryAPI` でAPIを提供し、返値にマウス位置と最も近い地点の距離情報を含める
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] `LocationQueryAPI` に最寄り地点取得APIを追加し、返値に距離を含める
+  - [ ] タイル座標算出と9タイル探索のロジックを実装する
+  - [ ] タイルごとの地点ロードと経度BTree構築+LRUキャッシュを実装する
+  - [ ] ホバー時にSnackbar表示するUI導線を追加する
+  - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：`LocationQueryAPI` と location-plugin/UI 変更を revert し、必要なら `pnpm --filter @hierarchidb/location-plugin typecheck` を再実行して旧挙動へ戻す。
+- 運用ログ：
+  - start: 2025-12-27 10:36 JST location-plugin のホバー最寄り地点探索とSnackbar表示、LocationQueryAPI 拡張に着手。
+  - progress: 2025-12-27 10:50 JST LocationQueryAPI に最寄り地点検索の型/メソッドを追加し、runtime-worker の LocationQueryService でタイル検索+BTree+LRUMap 実装を追加。LocationMapPreview にホバー→Snackbar 表示の導線を追加。
+  - progress: 2025-12-27 11:25 JST Snackbar 表示内容に国名を追加し、LocationQueryAPI 返値へ countryName を追加。
+  - progress: 2025-12-27 12:37 JST location プレビュー hover 最近傍地点の強調表示対応に着手。
+  - progress: 2025-12-27 12:43 JST hover 最近傍地点のアイコン/点を拡大し、光彩で強調表示する描画を追加。
+  - progress: 2025-12-27 12:52 JST hover 最近傍判定の距離上限をピクセル指定(16px)で導入し、閾値超過時は強調表示/スナックバーを抑止。
+  - progress: 2025-12-27 13:07 JST LocationQueryAPI を距離閾値内の複数マッチ返却へ変更し、UI で先頭マッチを表示する導線に更新中。
+  - progress: 2025-12-27 13:21 JST LocationQueryAPI のレスポンスを matches 配列(距離順)に刷新し、runtime-worker と UI の呼び出し/表示を更新。
+
+1912) location/route IDE-GSM build を Worker 実行 + 進捗可視化（P1）
+- ブランチ: `feat/location-route/ide-gsm-worker-build`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/location-plugin`, `plugins/route-plugin`, `packages/runtime-worker`, `packages/plugin-service-api`, `packages/ui/worker-client`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] IDE-GSM の読み込み/解析/保存が Worker 側で実行される（UI では実行しない）
+  - [ ] Worker 側で bulkPut を使った chunk 保存を行い、件数が多い場合でもメモリ負荷が過大にならない
+  - [ ] Step5 の進捗 UI で IDE-GSM 処理のフェーズ/件数が逐次表示される（location/route）
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] Worker API に IDE-GSM 取込/保存の新規メソッドと進捗通知を追加する
+  - [ ] location/route の Step5 から Worker API を呼ぶ導線へ切替える
+  - [ ] 進捗イベントを UI の Step5 で受け取り表示する
+  - [ ] 代表検証として `pnpm --filter @hierarchidb/location-plugin test` / `pnpm --filter @hierarchidb/route-plugin test` を実行し結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：Worker API/Step5 の差分を revert し、UI 側の既存 IDE-GSM 直接処理へ戻す。
+- 運用ログ：
+  - start: 2025-12-27 11:50 JST IDE-GSM build の空路/海路 waypoints 生成を Worker 側へ移す対応に着手。
+  - progress: 2025-12-27 11:55 JST RouteMutationAPI に IDE-GSM waypoints 生成を追加し、runtime-worker 実装と route build の呼び出しを Worker 経由へ切替。
+  - start: 2025-12-27 14:05 JST Location/Route の IDE-GSM 取込（download/parse/save）を Worker 移管し、Step5 進捗可視化と bulkPut chunk 保存の実装に着手。
+  - progress: 2025-12-27 16:10 JST LocationMutationAPI/RouteMutationAPI に IDE-GSM 取込APIと進捗コールバックを追加し、runtime-worker で download/parse/waypoint/save を実装。location/route の Step5 は Worker API 経由で IDE-GSM 取り込みを実行し、進捗ラベル/バーを表示。location 側は IDE-GSM 進捗ストアと chunked bulkPut を追加。
+  - progress: 2025-12-27 16:12 JST 検証未実施（`pnpm --filter @hierarchidb/location-plugin test` / `pnpm --filter @hierarchidb/route-plugin test` は未実行）。
+  - start: 2025-12-27 16:20 JST IDE-GSM の chunkSize 指定を location/route 共通の定数へ統一する対応に着手。
+  - progress: 2025-12-27 16:24 JST IDE-GSM の chunkSize を `IDE_GSM_BULK_CHUNK_SIZE` として plugin-service-api に集約し、location/route UI と runtime-worker のデフォルトに適用。
+  - start: 2025-12-27 16:40 JST shape の /map に feature-state 連携を導入し、styler の ID→色/値を MapLibre の feature-state に反映する対応に着手。
+  - start: 2025-12-27 16:55 JST styler-plugin のステップ構成と設定項目を棚卸しし、feature-state/線幅/アイコンサイズ対応のUI提案を整理する対応に着手。
+  - progress: 2025-12-27 17:25 JST styler-plugin の現行ステップと設定項目を確認し、feature-state 前提の「ID列/値列/適用先/値解釈」の再配置案と、線幅/アイコンサイズ対応の提案を整理。
+
+1915) GIS SDK ローカル geocoding + 形状ノード候補探索の共通化（P1）
+- ブランチ: `feat/gis-sdk/local-geocoding`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/features/gis-sdk`, `packages/plugin-service-api/src/types/ShapeQueryAPI.ts`, `plugins/shape-plugin`, `plugins/route-plugin`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] GIS SDK にブラウザローカル geocoding（MVT decode + point-in-polygon）が実装される
+  - [ ] MVT デコード結果が LRU キャッシュされる（`typescript-lru-cache` を GIS SDK 依存として追加）
+  - [ ] GeoBoundaries タイルのレイヤー名/属性キーを特定してコードに反映する
+  - [ ] 既存の route の location 検索ロジックを汎用化し、shape ノード探索にも流用できる
+  - [ ] 代表検証（テスト or typecheck）の結果を運用ログに記録する（不可なら理由記載）
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] `ShapeQueryAPI` の取得経路を確認し、GIS SDK 側の取得処理に統合する
+  - [ ] MVT デコードと point-in-polygon を実装し、キャッシュ戦略を明記する
+  - [ ] GeoBoundaries のレイヤー/属性スキーマを確認し、対象レイヤーを限定する
+  - [ ] location ノード検索ロジックを共通関数化し、shape ノード探索へ拡張する
+  - [ ] 影響範囲の typecheck もしくは単体テストを実行し、結果を運用ログへ記録する
+- ロールバック手順：`packages/features/gis-sdk` と `plugins/route-plugin` 等の差分を revert し、実行した検証コマンドを再実行して旧挙動へ戻す。
+- 運用ログ：
+  - start: 2025-12-26 22:23 JST GIS SDK のローカル geocoding 実装と shape ノード探索共通化に着手（branch: feat/gis-sdk/local-geocoding、branch 作成不可なら main）。
+  - progress: 2025-12-26 22:34 JST GIS SDK に MVT decode + point-in-polygon の geocoding 実装を追加し、LRU キャッシュ（typescript-lru-cache）を導入。共通 Tree 検索ユーティリティを `@hierarchidb/common-api` に追加し、route の location 検索で利用するよう更新。
+  - progress: 2025-12-26 23:06 JST IDE-GSM の取り込みを CSV 仕様へ合わせ、CSV パーサ適用・countryName→ISO2 変換・kind 判定・metadata 取り込みを実装。UI 説明文も CSV 前提へ更新。
+  - progress: 2025-12-26 23:11 JST IDE-GSM CSV の admin1 設定時に ISO3166-2 の subdivision 名を参照して admin1Code を自動付与。
+
+1916) route プレビュー hover の最近傍線分/スナックバー仕様策定（P1）
+- ブランチ: `docs/route/nearest-line-hover`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/plugin-service-api/src/types/RouteQueryAPI.ts`, `plugins/route-plugin`, `packages/ui-map`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] ホバー位置から「最も近い距離の線分」を含む RouteLineString を選ぶ仕様を文書化する
+  - [ ] 9タイル検索・最近傍線分判定アルゴリズムを複数案で比較し、推奨案を示す
+  - [ ] Snackbar に出すフィールド（交通モード/始点/終点/距離）と取得経路を明記する
+  - [ ] RouteQueryAPI に追加する API 形状（入力/出力）を整理する
+  - [ ] `TASKS.md` の運用ログに start→progress→done を記録する
+- チェックリスト:
+  - [ ] route の LineString 永続化構造と取得経路を確認する
+  - [ ] 9タイルの候補抽出と最近傍距離算出の計算量を整理する
+  - [ ] UI 側の hover event で呼ぶ API/データ導線を整理する
+  - [ ] 仕様の未確定点（座標系/距離単位/閾値）を列挙する
+- ロールバック手順：仕様/ログの追記を削除する。
+- 運用ログ：
+  - start: 2025-12-27 10:46 JST route プレビュー hover の最近傍線分/スナックバー仕様策定に着手（branch: docs/route/nearest-line-hover、branch 作成不可なら main）。
+
+1917) Location/Route 最近傍探索の共通化と RouteQueryAPI 拡張（P1）
+- ブランチ: `feat/runtime-worker/nearest-route-common`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/runtime-worker/src/services/LocationQueryService.ts`, `packages/runtime-worker/src/services/RouteQueryService.ts`, `packages/plugin-service-api/src/types/RouteQueryAPI.ts`, `packages/plugin-service-api/src/types/routeTypes.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] runtime-worker に tile nearest 探索の共通ユーティリティが追加される
+  - [ ] LocationQueryService が共通ユーティリティを利用するよう更新される
+  - [ ] RouteQueryAPI に最近傍 LineString の検索 API が追加される
+  - [ ] RouteQueryService が最近傍 LineString 検索を実装する
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] `tileNearest` ユーティリティ（BTree/LRU/タイル座標/距離計算）を追加する
+  - [ ] LocationQueryService のローカル実装を共通化へ置換する
+  - [ ] RouteQueryAPI の型追加と RouteQueryService の実装を更新する
+  - [ ] 影響範囲の typecheck を実行し、結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：`packages/runtime-worker/src/services/nearest/tileNearest.ts` と Location/RouteQueryService および plugin-service-api の差分を revert し、必要なら typecheck を再実行する。
+- 運用ログ：
+  - start: 2025-12-27 11:24 JST Location/Route 最近傍探索の共通化と RouteQueryAPI 拡張に着手（branch: feat/runtime-worker/nearest-route-common、branch 作成不可なら main）。
+  - progress: 2025-12-27 11:24 JST tileNearest ユーティリティを追加し、LocationQueryService を共通化。RouteQueryAPI に最近傍 LineString 型を追加し、RouteQueryService に 9 タイル探索+最近傍線分判定を実装。
+
 1910) map 非モーダルダイアログ（ModelessDialog）導入（P1）
 - ブランチ: `feat/ui/modeless-dialog-map`（sandbox 制約で `main` 上で作業）
 - 依存: `app/src/router/pages/map.tsx`, `app/src/components/dialogs/*`, `packages/runtime-plugin-dialog`, `packages/plugin-ui-host`, `packages/ui/*`, `localStorage`
@@ -5367,6 +5599,53 @@ P2:
 
 ### Done（完了） <a id="kanban-done"></a>
 
+1921) shape-plugin URLメタデータ生成のWorker移管 + 推定サイズ削除（P1）
+- ブランチ: `feat/shape/urlmetadata-worker`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin`, `packages/ui/worker-client`, `app/src/worker-runtime/worker.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [x] URLメタデータ生成をWorker側の一括APIで行い、UI側の繰り返し生成を廃止する
+  - [x] `estimateDataSize` と関連する推定ロジック/フィールドを削除する
+  - [x] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [x] Worker API に選択マトリクス対応のURLメタデータ生成メソッドを追加する
+  - [x] UI から Worker API を利用するよう導線を置換する
+  - [x] 推定サイズ/処理時間の計算と型を削除する
+- ロールバック手順：差分を revert し、必要なら `pnpm --filter @hierarchidb/shape-plugin typecheck` を再実行する。
+- 運用ログ：
+  - start: 2025-12-27 12:22 JST URLメタデータ生成のWorker移管と推定サイズ削除に着手。
+  - done: 2025-12-27 12:22 JST Worker API 経由の一括生成に移行し、推定サイズ関連を削除。
+
+1920) shape-plugin ビルド開始 UI→Worker 直前フロー調査（P1）
+- ブランチ: `analysis/shape/build-start-ui-flow`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin`, `packages/plugin-ui-host`, `packages/plugin-service-sdk`, `packages/runtime-worker`, `app/src/worker-runtime/worker.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [x] shape-plugin の「ビルド開始」ボタン押下〜Worker バッチ開始直前までの UI 側処理を整理し、コード根拠とともに説明できる
+  - [x] UI 側処理のうち Worker 側へ移管できる候補を列挙し、移管方法（API/責務変更）を説明できる
+  - [x] 参照した主要ファイルと前提/仮定を明記する
+- チェックリスト:
+  - [x] UI 側のボタン押下ハンドラと Dialog/WorkingCopy の更新経路を追跡する
+  - [x] Worker 側の batch 開始導線（bridge/service）直前までを把握する
+  - [x] 移管候補の根拠と移管手順を整理する
+- ロールバック手順：調査のみのため差分なし（運用ログ追記を削除）。
+- 運用ログ：
+  - start: 2025-12-27 11:52 JST shape-plugin のビルド開始 UI→Worker 直前フロー調査に着手。
+  - done: 2025-12-27 11:52 JST UI 側の事前処理と Worker 移管候補を整理し、参照ファイルを明記。
+
+1916) gis-sdk geocoding featureId 型エラー（TS2322）解消（P1）
+- ブランチ: `fix/gis-sdk/geocoding-featureid`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: packages/features/gis-sdk, TASKS.md
+- 受け入れ基準（DoD）:
+  - [x] `@hierarchidb/gis-sdk` の typecheck 失敗（featureId 型不一致）を解消する
+  - [x] featureId の型が `string | number | undefined` に整合する
+  - [x] 変更内容/理由/ロールバック手順を運用ログに記載する
+  - [ ] `pnpm --filter @hierarchidb/gis-sdk typecheck` の結果を運用ログに記録する（不可なら理由記載）
+- チェックリスト:
+  - [x] `packages/features/gis-sdk/src/geocoding.ts` の該当箇所を確認する
+  - [x] featureId の型変換/フォールバック方針を決める
+  - [ ] typecheck で再確認する（不可なら理由記載）
+- ロールバック手順：本タスクで変更した差分を revert し、typecheck を再実行する
+- 影響範囲: `packages/features/gis-sdk/src/geocoding.ts`
+
 1914) route-plugin Stage2/5/7 実装（GIS SDK/命名整合/BaseBatchManager）（P0）
 - ステータス: Done（2025-12-26）
 - ブランチ: `feat/route/stage2-5-7-implementation`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -5383,6 +5662,23 @@ P2:
   - [x] `pnpm --filter @hierarchidb/{runtime-worker,shape-plugin,location-plugin,route-plugin,batch-runtime-services} typecheck` を記録
 - ロールバック手順：Stage2/5/7 の変更差分を revert し、上記 typecheck を再実行する。
 - 影響範囲: `packages/runtime-worker/src/services/StageProcessingService.ts`, `packages/batch-runtime-services/src/BaseBatchSessionManager.ts`, `plugins/shape-plugin/src/services/batch/BatchSessionManager.ts`, `plugins/location-plugin/src/services/batch/BatchSessionManager.ts`, `plugins/route-plugin/src/services/RouteBatchSessionOrchestrator.ts`
+
+1915) route IDE-GSM CSV戦略とエラー仮想テーブル表示（P0）
+- ステータス: Done（2025-12-26）
+- ブランチ: `feat/route/ide-gsm-csv-strategy`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plans/route-plugin-reorg-spec.md`, `plugins/route-plugin`, `packages/ui/*`, `packages/plugin-ui-host`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [x] IDE-GSM CSV で Start/End の解決失敗は skip し、エラー一覧を蓄積する
+  - [x] ビルド完了時に仮想テーブルでエラー一覧を表示する
+  - [x] Distance/Speed を専用フィールドへ正規化し、AIRWAY/WATERWAY の waypoint 生成時に上書きする
+  - [x] 変更内容とロールバック手順を `TASKS.md` の運用ログに記録する
+- チェックリスト:
+  - [x] IDE-GSM CSV パーサで header/field の割当と LocationQueryAPI 連携を実装
+  - [x] 失敗行のエラー収集と仮想テーブル表示を実装
+  - [x] Distance/Speed の正規化と上書き処理を追加
+  - [x] 代表検証（`pnpm --filter @hierarchidb/route-plugin typecheck`）結果を運用ログに記録する
+- ロールバック手順：本タスクで変更した IDE-GSM パーサ/表示/モデル変更を revert し、関連 typecheck を再実行する。
+- 影響範囲: `plugins/route-plugin/src/services/ide-gsm/ideGsmCsv.ts`, `plugins/route-plugin/src/services/ide-gsm/ideGsmWaypoints.ts`, `plugins/route-plugin/src/ui/components/steps/RouteBuildStep.tsx`, `plugins/route-plugin/src/common/entities/RouteEntity.ts`
 
 1913) route-plugin RuntimeWiring で runtime worker adapter を起動（P1）
 - ブランチ: `feat/route/runtime-wiring-adapter`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -12217,6 +12513,12 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-26 22:47 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 0。
 - 2025-12-26 22:56 progress: feat/location/implementation-from-design — アイコン密度閾値を 0.001 に調整し、ズーム連動のアイコン/正方形サイズ式を見直し。
 - 2025-12-26 22:57 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 0。
+- 2025-12-26 23:10 start: feat/location/implementation-from-design — 空港/港の国名揺れを ISO3166 テーブルで正規化する対応に着手。DoD: countryName→ISO2 正規化、typecheck 記録。
+- 2025-12-26 23:18 progress: feat/location/implementation-from-design — gen-iso3166-2 の変換表で countryCode/alpha3/国名を ISO2 に統一し、検索結果に正規化を適用。
+- 2025-12-26 23:19 command: pnpm --filter @hierarchidb/location-plugin typecheck — exit 0。
+- 2025-12-26 23:40 progress: feat/location/implementation-from-design — ISO2 正規化の統合テストを追加し、batch-runtime-services の vitest alias を追加。LocationBatchManager は strategy 経由の検索でも正規化/フィルタを通すよう修正。
+- 2025-12-26 23:42 command: pnpm --filter @hierarchidb/location-plugin test — exit 1（LocationBatchManager.iso-normalization の期待値調整が必要）。
+- 2025-12-26 23:45 command: pnpm --filter @hierarchidb/location-plugin test — exit 0（Warning: `--localstorage-file` invalid path が 1 回出力）。
 - 2025-12-26 18:35 start: docs/route/spec-detailing — route-plugin 再編修正の仕様詳細化に着手。DoD: Kanban 1912 のとおり。
 - 2025-12-26 18:35 progress: docs/route/spec-detailing — Stage1(Runtime Worker Adapter) の仕様詳細を `plans/route-plugin-reorg-spec.md` に追加。
 - 2025-12-26 18:36 progress: docs/route/spec-detailing — Stage2(GIS SDK Separation) の仕様詳細を `plans/route-plugin-reorg-spec.md` に追加。
@@ -12245,6 +12547,20 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-26 22:07 progress: feat/route/stage2-5-7-implementation — `pnpm --filter @hierarchidb/shape-plugin typecheck` (exit 0) を確認。
 - 2025-12-26 22:07 progress: feat/route/stage2-5-7-implementation — `pnpm --filter @hierarchidb/location-plugin typecheck` (exit 0) を確認。
 - 2025-12-26 22:12 done: feat/route/stage2-5-7-implementation — Stage2/5/7 の実装と typecheck を完了。検証: `pnpm --filter @hierarchidb/{runtime-worker,shape-plugin,location-plugin,route-plugin,batch-runtime-services} typecheck`。ロールバック: Kanban 1914 の手順に従い差分を revert。
+- 2025-12-26 22:20 done: analysis/route/data-source-strategies — route-plugin のデータソース戦略（csv/geojson 実装、api 未実装、UI データソース一覧との乖離）を調査。検証: `rg` と実装確認。ロールバック: 調査ログ追記を削除。
+- 2025-12-26 22:24 done: analysis/route/ide-gsm-datasource-ui — IDE-GSM 選択時に Step2 の詳細で FileInputWithUrl が表示されることを確認。検証: `RouteDataSourceStep` 実装確認。ロールバック: 調査ログ追記を削除。
+- 2025-12-26 22:28 done: fix/route/ide-gsm-accept-excel — IDE-GSM の FileInputWithUrl で .xlsx/.xls/.csv を受け入れるよう accept を拡張。検証: 未実施（UI 変更）。ロールバック: 変更した accept 値を元に戻す。
+- 2025-12-26 22:34 done: fix/route-location/ide-gsm-accept-csv-excel-only — route/location の IDE-GSM FileInputWithUrl を .csv/.xlsx/.xls のみに制限。検証: 未実施（UI 変更）。ロールバック: accept 値を元に戻す。
+- 2025-12-26 22:38 done: fix/route-location/ide-gsm-copy-csv-excel — route/location の IDE-GSM 説明文言を CSV/Excel 対応に更新。検証: 未実施（文言変更）。ロールバック: 文言を元に戻す。
+- 2025-12-26 22:44 done: fix/ui/datasource-disable-non-ide-geo — route/location の IDE-GSM 以外、shape の geoboundaries 以外を選択不可の disabled 表示に変更。検証: 未実施（UI 変更）。ロールバック: disabled 設定を元に戻す。
+- 2025-12-26 22:55 done: docs/route/reorg-plan-update — route の再編方針（RouteEntity/RouteLineString、Stage1-3、IDE-GSM CSV 仕様）を `plans/route-plugin-reorg-spec.md` に追記し、ExecPlan に参照メモを追加。検証: 文書更新のみ。ロールバック: 該当ドキュメント追記を revert。
+- 2025-12-26 23:02 done: docs/route/ide-gsm-decisions — IDE-GSM 解決失敗は skip + エラー一覧ダイアログ、Distance/Speed 正規化と waypoint 生成時の上書きを仕様へ追記。検証: 文書更新のみ。ロールバック: 該当ドキュメント追記を revert。
+- 2025-12-26 23:10 start: feat/route/ide-gsm-csv-strategy — IDE-GSM CSV戦略（LocationQueryAPI 連携、失敗行の仮想テーブル表示、Distance/Speed 正規化）実装に着手。DoD: Kanban 1915 のとおり。
+- 2025-12-26 23:34 progress: feat/route/ide-gsm-csv-strategy — IDE-GSM CSV 解析/LocationQueryAPI 連携/waypoint 生成の基盤と Build UI（仮想テーブル表示）を実装中。
+- 2025-12-26 23:52 progress: feat/route/ide-gsm-csv-strategy — `pnpm --filter @hierarchidb/route-plugin typecheck` (exit 0) を確認。
+- 2025-12-26 23:58 progress: feat/route/ide-gsm-csv-strategy — waypoint の speed 上書きを追加し、再度 `pnpm --filter @hierarchidb/route-plugin typecheck` (exit 0) を確認。
+- 2025-12-27 00:07 progress: feat/route/ide-gsm-csv-strategy — RouteDatabase のテーブル復帰に伴い schema version を更新し、`pnpm --filter @hierarchidb/route-plugin typecheck` (exit 0) を確認。
+- 2025-12-27 00:05 done: feat/route/ide-gsm-csv-strategy — IDE-GSM CSV 解析/LocationQueryAPI 連携/仮想テーブルエラー表示/Distance・Speed 正規化と上書きを完了。検証: `pnpm --filter @hierarchidb/route-plugin typecheck`。ロールバック: Kanban 1915 の手順に従い差分を revert。
 - 2025-12-26 16:43 start: feat/ui/modeless-dialog-map — map 非モーダルダイアログ導入（AbstractDialog/ModelessDialog）に着手。DoD: Kanban 1910 のとおり。
 - 2025-12-26 17:04 progress: feat/ui/modeless-dialog-map — `AbstractDialog` を新設し `HeadlessPluginDialog` を薄く整理。`ModelessDialogFrame` とヘッダ最小化ボタンを追加し、map 用の `MapDialogWindows`（localStorage 永続化/Z-order 管理）を実装。ExecPlan: `plans/modeless-dialog-map.md`。
 - 2025-12-26 17:04 note: feat/ui/modeless-dialog-map — 主要な手動確認/テストは未実施（後続で実行して記録予定）。
@@ -12257,6 +12573,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-26 18:38 done: analysis/shape/shape-entity-audit — ShapeEntity の未使用フィールド削除と `selectedArrayByCountries` への改名を反映。検証: 未実施。ロールバック: `plugins/shape-plugin/src/**` と `TASKS.md` の差分を revert。
 - 2025-12-26 19:08 progress: analysis/shape/shape-entity-audit — `selectedArrayByCountries` のみ参照するよう UI フォールバックを撤去。
 - 2025-12-26 19:15 progress: analysis/shape/shape-entity-audit — plugin-manifest の schema を `selectedArrayByCountries` に更新。
+- 2025-12-26 19:18 start: feat/location-route/ide-gsm-worker-build — IDE-GSM 取込/解析/保存を Worker 実行へ移行し、Step5 で進捗可視化する対応に着手。DoD: Kanban 1912 のとおり。
 - 2025-12-26 10:55 start: analysis/shape/shared-extraction-plan — shape-plugin から location/route で共通利用すべきコード抽出計画の整理に着手。DoD: Kanban 1895 のとおり。
 - 2025-12-26 11:25 progress: analysis/shape/shared-extraction-plan — 共有化の段階1〜5を ExecPlan 化し、`plans/shape-shared-extraction-stage{1..5}-*.md` を作成。
 - 2025-12-26 11:25 done: analysis/shape/shared-extraction-plan — ExecPlan 作成を完了。ロールバック: `TASKS.md` の運用ログ追記と `plans/shape-shared-extraction-stage*.md` を削除。
@@ -13219,6 +13536,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-26 18:37 start: fix/runtime-worker/shapedb-handle-typing — runtime-worker の ShapeDB 型不一致（TS2352）解消に着手。DoD: Kanban 1912 のとおり。
 - 2025-12-26 18:39 progress: fix/runtime-worker/shapedb-handle-typing — ShapeDatabaseHandle の get/delete を可変引数に緩和し、ShapeDB の型差分を吸収。
 - 2025-12-26 18:39 done: fix/runtime-worker/shapedb-handle-typing — ShapeDB 型不一致の typecheck を回避するため型を緩和。検証: 未実施。ロールバック: `packages/runtime-worker/src/WorkerService.ts` の差分を revert。
+- 2025-12-26 22:40 start: fix/gis-sdk/geocoding-featureid — gis-sdk geocoding の featureId 型エラー解消に着手。DoD: Kanban 1916 のとおり。
+- 2025-12-26 22:42 progress: fix/gis-sdk/geocoding-featureid — featureId を string/number に正規化する補助関数を追加し、型不一致を解消。
+- 2025-12-26 22:42 done: fix/gis-sdk/geocoding-featureid — featureId の型整合を修正。検証: 未実施。ロールバック: `packages/features/gis-sdk/src/geocoding.ts` の差分を revert。
 - 2025-12-26 16:14 start: analysis/api/shape-location-route-apis — Shape/Location/Route API（Query/Mutation）作成状況と関連状況の調査に着手。DoD: Kanban 1906 のとおり。
 - 2025-12-26 16:32 progress: analysis/api/shape-location-route-apis — plugin-service-api / runtime-worker / app worker / worker-bridge / shape-plugin の API 定義と利用状況を確認。
 - 2025-12-26 16:36 done: analysis/api/shape-location-route-apis — LocationMutation/RouteMutation/ShapeQuery/ShapeMutation が未定義であることを確認し、既存の Style/Location/Route Query/Mutation と shape の代替 API の状況を整理。検証: `rg` 検索。ロールバック: 調査のみのため差分なし（運用ログ追記を削除）。
@@ -13247,6 +13567,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-26 17:12 progress: refactor/shape-route/api-boundary-rework — ShapeQuery/ShapeMutation/RouteMutation の型追加、runtime-worker サービス実装、WorkerAPI/worker runtime/workerBridge の結線、shapeBatchAPI への移行、useShapeAPI 撤去とドキュメント注記を反映。
 - 2025-12-26 17:12 done: refactor/shape-route/api-boundary-rework — ShapeAPI 廃止と Shape/Route Query/Mutation API 再設計を反映。検証: 未実施。ロールバック: Kanban 1907 の手順に従い差分を revert。
 - 2025-12-26 19:10 progress: feat/memory/heap-pressure-pubsub — memory/ui-memory 連携の未解消エラー修正と UI/Worker 結線の仕上げに着手。検証: 未実施。ロールバック: Kanban 1906 の手順に従い差分を revert。
+- 2025-12-26 19:20 start: fix/template/population-2023-shape-selection-schema — population-2023 テンプレートの shape 選択データを現行スキーマへ修正。DoD: core.ts の selectedArrayByCountries に合わせて key を更新、TASKS/運用ログ更新、ロールバック手順記載。
+- 2025-12-26 19:22 done: fix/template/population-2023-shape-selection-schema — shape の draftData で `checkboxState` を `selectedArrayByCountries` へ置換。検証: 未実施（JSON 更新のみ）。ロールバック: `app/public/templates/population-2023/tree-nodes.json` の差分を revert。
 - 2025-12-26 18:12 start: feat/location/api-query-mutation — LocationQuery/LocationMutation API の整備と結線に着手。DoD: Kanban 1908 のとおり。
 - 2025-12-26 18:35 progress: feat/location/api-query-mutation — LocationMutationAPI 型定義、LocationMutationService 追加、WorkerAPI/worker runtime/workerBridge/test-worker の結線を反映。
 - 2025-12-26 18:38 done: feat/location/api-query-mutation — LocationQuery/LocationMutation API を整備し結線完了。検証: 未実施（typecheck 未実行）。ロールバック: Kanban 1908 の手順に従い差分を revert。

@@ -19,11 +19,8 @@ import type {
   TabularDataApi,
 } from '@hierarchidb/ui-tabular';
 import type { StylerEntity, StylerMapping } from '../common/types/StylerEntity.js';
-import type {
-  ColorCalculationResult,
-  StylerConfig,
-  StylerTableRow,
-} from '../common/types/StylerEntity.js';
+import { MAPLIBRE_PROPERTY_METADATA } from '../common/types/StylerEntity.js';
+import type { ColorCalculationResult, StylerConfig, StylerTableRow } from '../common/types/StylerEntity.js';
 import { valueToColor } from '../common/utils/colorUtils.js';
 
 type StyledCellStyle = {
@@ -124,30 +121,51 @@ export class StylerDataService {
     entity: StylerEntity
   ): Promise<{ styleSpec: MapLibreStyle; colorMapping: Record<string, string> }> {
     const { config, mapping } = entity;
-    const keyColumn = entity.keyColumn;
-    const valueColumn = entity.valueColumn;
+    const valueColumn = entity.valueColumn ?? mapping.valueColumn;
 
-    if (!keyColumn || !valueColumn || !mapping.targetProperty) {
-      throw new Error('Key column, value column, and target property are required');
+    if (!mapping.targetProperty) {
+      throw new Error('Target property is required');
     }
 
-    const data = await this.tabularApiDriver.getFilteredPreview(tableId, [], 1000);
-    const values = data.rows
-      .map((row) => row[valueColumn])
-      .filter((val): val is number => typeof val === 'number');
-
-    if (values.length === 0) {
-      throw new Error('No numeric values found in selected column');
-    }
+    const targetProperty = mapping.targetProperty;
+    const targetMeta = targetProperty ? MAPLIBRE_PROPERTY_METADATA[targetProperty] : null;
+    const valueType = mapping.valueType ?? targetMeta?.type ?? 'color';
+    const mappingMode = mapping.mappingMode ?? 'map-interpolate';
+    const featureStateExpr = ['feature-state', 'value'];
 
     const colorMapping: Record<string, string> = {};
+    const needsNumericValues =
+      valueType === 'number' &&
+      mappingMode === 'map-interpolate' &&
+      targetMeta?.type === 'color';
+    const values: number[] = [];
+    if (needsNumericValues) {
+      if (!valueColumn) {
+        throw new Error('Value column is required for numeric-to-color interpolation');
+      }
+      const data = await this.tabularApiDriver.getFilteredPreview(tableId, [], 1000);
+      values.push(
+        ...data.rows
+          .map((row) => row[valueColumn])
+          .filter((val): val is number => typeof val === 'number')
+      );
+      if (values.length === 0) {
+        throw new Error('No numeric values found in selected column');
+      }
+    }
+    const layerType =
+      mapping.styleType === 'lines'
+        ? 'line'
+        : mapping.styleType === 'points'
+          ? 'circle'
+          : 'fill';
     const styleSpec: MapLibreStyle = {
       version: 8,
       sources: {},
       layers: [
         {
           id: `styler-layer-${(entity as { treeNodeId?: string; id?: string }).treeNodeId ?? (entity as { id?: string }).id ?? 'styler'}`,
-          type: 'fill',
+          type: layerType,
           paint: {},
         },
       ],
@@ -158,24 +176,38 @@ export class StylerDataService {
     }
 
 
-    values.forEach((value) => {
-      const colorResult = valueToColor(value, mapping, config, values);
-      colorMapping[value.toString()] = colorResult.color;
-    });
+    if (needsNumericValues) {
+      values.forEach((value) => {
+        const colorResult = valueToColor(value, mapping, config, values);
+        colorMapping[value.toString()] = colorResult.color;
+      });
+    }
 
-    //  MapLibre paint
-    if (mapping.targetProperty) {
+    const paint = (targetLayer.paint ??= {});
+    if (valueType === 'color') {
+      paint[targetProperty] = featureStateExpr;
+    } else if (mappingMode === 'precomputed') {
+      paint[targetProperty] = featureStateExpr;
+    } else if (targetMeta?.type === 'color') {
       const colorStops = Object.entries(colorMapping).map(([value, color]) => [
         parseFloat(value),
         color,
       ]);
-
-      const paint = (targetLayer.paint ??= {});
-      paint[mapping.targetProperty] = [
+      paint[targetProperty] = [
         'interpolate',
         ['linear'],
-        ['get', valueColumn],
+        featureStateExpr,
         ...colorStops.flat(),
+      ];
+    } else {
+      paint[targetProperty] = [
+        'interpolate',
+        ['linear'],
+        featureStateExpr,
+        config.min,
+        config.outputMin,
+        config.max,
+        config.outputMax,
       ];
     }
 
@@ -213,6 +245,11 @@ export class StylerDataService {
         tableMetadata.columns.find((col: TabularColumnInfo) => col.name === 'id')?.name ??
         tableMetadata.columns[0]?.name ?? "",
       targetProperty: 'fill-color' as const,
+      featureIdProperty:
+        tableMetadata.columns.find((col: TabularColumnInfo) => col.name === 'id')?.name ??
+        tableMetadata.columns[0]?.name ?? "",
+      valueType: 'color' as const,
+      mappingMode: 'map-interpolate' as const,
     } satisfies StylerMapping;
 
     const config: StylerConfig = {
@@ -222,6 +259,8 @@ export class StylerDataService {
       //enabled: true,
       min: 0,
       max: 100,
+      outputMin: 1,
+      outputMax: 8,
       hueStart: 0,
       hueEnd: 120,
       saturation: 0.8,

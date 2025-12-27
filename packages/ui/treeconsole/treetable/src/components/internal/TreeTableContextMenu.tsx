@@ -54,12 +54,19 @@ export function TreeTableContextMenu({
       nodeType={node?.nodeType || 'folder'}
       treeId={treeId}
       nodeName={node?.metadata.name}
+      isInvisible={Boolean(node?.invisible)}
       canCreate
       canEdit={!isRoot}
       canRemove={!isRoot}
       canDuplicate={!isRoot}
       canCopy={!isRoot}
       canCut={!isRoot}
+      onToggleInvisible={(_nextValue) => {
+        if (node) {
+          triggerContextAction('toggle-visibility', { source: 'treetable' });
+        }
+        handleClose();
+      }}
       onCreate={(type: string) => {
         if (node) {
           triggerContextAction(`create:${type}`, { expandTarget: true, source: 'treetable' });
@@ -117,12 +124,6 @@ export function TreeTableContextMenu({
       onOpenFolder={() => {
         if (node) {
           controller?.onNodeClick?.(node.id, node);
-        }
-        handleClose();
-      }}
-      onCheckReference={() => {
-        if (node) {
-          console.log('Check reference:', node.id);
         }
         handleClose();
       }}

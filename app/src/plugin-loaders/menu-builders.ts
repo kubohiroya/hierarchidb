@@ -47,8 +47,9 @@ export function buildMenuItemsForContext(treeContext: TreeContext): PluginMenuIt
   }
 
   const installed = getInstalledPlugins();
+  const visiblePlugins = installed.filter((plugin) => !plugin.manifest?.visibility?.hidden);
   const byNodeType = new Map<string, InstalledPlugin>();
-  for (const plugin of installed) {
+  for (const plugin of visiblePlugins) {
     byNodeType.set(plugin.nodeType, plugin);
   }
 
@@ -67,7 +68,7 @@ export function buildMenuItemsForContext(treeContext: TreeContext): PluginMenuIt
 
   // Append remaining plugins, sorted by createOrder then label
   const allowedGroups = new Set(spec.groups);
-  const remaining = installed.filter((plugin) => {
+  const remaining = visiblePlugins.filter((plugin) => {
     if (used.has(plugin.nodeType)) return false;
     const group = (spec.groupOf[plugin.nodeType] ?? plugin.menuGroup) as MenuGroup | undefined;
     return group ? allowedGroups.has(group) : false;

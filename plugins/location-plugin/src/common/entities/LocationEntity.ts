@@ -3,7 +3,7 @@
  * @description Location dataset entity definition and shared configuration types.
  */
 
-import type { NodeId, Timestamp, TreeNodeData } from '@hierarchidb/common-types';
+import type { Timestamp, TreeNodeData } from '@hierarchidb/common-types';
 
 /**
  * Location types recognised by batch download/normalizer routines.
@@ -67,12 +67,6 @@ export interface LocationEntity extends TreeNodeData {
   tabularSourceId?: string;
   extractConfig?: Record<string, unknown>;
 }
-
-export type LocationDraft = Partial<LocationEntity> & {
-  treeNodeId: NodeId;
-  draft?: LocationEntity;
-  originalVersion?: number;
-};
 
 /**
  * Additional filtering options for batch processing.

@@ -284,6 +284,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
         : reportedDepth;
       const iconDepth = typeof absoluteDepth === 'number' ? Math.max(0, absoluteDepth) : baseDepth;
       const nodeType = node.nodeType || 'folder';
+      const isInvisible = (node as { invisible?: boolean }).invisible === true;
       const baseIconColor = rainbowColors[Math.max(0, Math.round(iconDepth)) % rainbowColors.length];
       const manifestIconColor = getPluginIconColor(nodeType);
       const iconColor = isFolderNodeType(nodeType) ? baseIconColor : (manifestIconColor ?? baseIconColor);
@@ -508,7 +509,12 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                 <Box
                   component={RouterLink}
                   to={linkHref}
-                  sx={{ mr: 0.5, color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                  sx={{
+                    mr: 0.5,
+                    color: 'primary.main',
+                    textDecoration: isInvisible ? 'line-through' : 'none',
+                    '&:hover': { textDecoration: isInvisible ? 'line-through' : 'underline' },
+                  }}
                 >
                   {node.metadata.name}
                 </Box>

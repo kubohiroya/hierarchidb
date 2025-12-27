@@ -19,6 +19,14 @@ export {
 } from './processing/featureFiltering.js';
 export { simplifyGeoJson, type SimplifyOptions } from './processing/geometrySimplify.js';
 export {
+  createVectorTileGeocodeCache,
+  geocodePointInShapeTiles,
+  type GeoPoint,
+  type VectorTileGeocodeMatch,
+  type VectorTileGeocodeOptions,
+  type VectorTileLayerCache,
+} from './geocoding.js';
+export {
   EphemeralGisDB,
   type BatchSessionMetadata,
   type EphemeralStage,

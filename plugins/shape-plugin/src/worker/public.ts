@@ -10,7 +10,6 @@ import type {
   DataSourceConfig,
   BatchConfig,
   ProcessingStatus,
-  SelectionStats,
   ShapeBatchCommand,
   ShapeBatchCommandPayload,
   ShapeEntity,
@@ -32,6 +31,10 @@ export interface ShapeBatchAPI {
   getDataSourceConfigs(): Promise<DataSourceConfig[]>;
   getCountryMetadata(dataSource: string): Promise<CountryMetadata[]>;
   generateUrlMetadata(dataSource: string, countries: string[], adminLevels: number[]): Promise<UrlMetadata[]>;
+  generateUrlMetadataFromSelection(
+    dataSource: string,
+    selectedArrayByCountries: boolean[][] | string | undefined,
+  ): Promise<UrlMetadata[]>;
 
   // Validation / estimation
   validateSelection(
@@ -39,7 +42,6 @@ export interface ShapeBatchAPI {
     adminLevels: number[],
     dataSource: string,
   ): Promise<ShapeStepValidationResult>;
-  calculateSelectionStats(urlMetadata: UrlMetadata[]): Promise<SelectionStats>;
 
   // Batch processing (Draft-based)
   startBatchProcessing(

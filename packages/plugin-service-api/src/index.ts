@@ -19,6 +19,7 @@ export * from './types/StyleMutationAPI.js';
 export * from './types/shapeTypes.js';
 export * from './types/ShapeQueryAPI.js';
 export * from './types/ShapeMutationAPI.js';
+export * from './types/ideGsmTypes.js';
 export * from './types/locationTypes.js';
 export * from './types/LocationQueryAPI.js';
 export * from './types/LocationMutationAPI.js';

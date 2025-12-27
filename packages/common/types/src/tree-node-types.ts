@@ -87,6 +87,10 @@ export type TreeNode<
    * Temporary flag for pre-commit nodes created from UI flows.
    */
   isTemporary?: boolean;
+  /**
+   * Optional visibility toggle for map preview and UI rendering.
+   */
+  invisible?: boolean;
   dialogUIState?: DialogUIState;
   hasChildren?: boolean;
   descendantCount?: number;

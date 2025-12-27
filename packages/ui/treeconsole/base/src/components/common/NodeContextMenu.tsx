@@ -6,7 +6,6 @@
 
 import {
   Add as AddIcon,
-  AssignmentTurnedIn as AssignmentTurnedInIcon,
   ChevronRight as ChevronRightIcon,
   Clear as ClearIcon,
   ContentCopy as ContentCopyIcon,
@@ -16,8 +15,10 @@ import {
   Folder as FolderIcon,
   NoteAdd as NoteAddIcon,
   PlayArrow as PlayArrowIcon,
+  Visibility as VisibilityIcon,
+  VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
-import { Divider, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
+import { Divider, ListItemIcon, ListItemText, Menu, MenuItem, Switch } from '@mui/material';
 import { type MouseEvent, type ReactElement, useEffect, useRef, useState } from 'react';
 
 export interface NodeContextMenuProps {
@@ -43,7 +44,8 @@ export interface NodeContextMenuProps {
   /** @deprecated Use onTrash */
   onRemove?: () => void;
   onTrash?: () => void;
-  onCheckReference?: () => void;
+  onToggleInvisible?: (nextValue: boolean) => void;
+  isInvisible?: boolean;
   addMenuNodeTypes?: string[];
   isTrashRoot?: boolean;
   mode?: 'restore' | 'dispose';
@@ -76,7 +78,8 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     onDuplicate: _onDuplicate,
     onRemove: _onRemove,
     onTrash: _onTrash,
-    onCheckReference: _onCheckReference,
+    onToggleInvisible: _onToggleInvisible,
+    isInvisible = false,
     addMenuNodeTypes = [],
   } = props;
 
@@ -165,11 +168,12 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     });
   };
 
-  const handleCheckReferenceClick = () => {
-    const onCheckReference = propsRef.current.onCheckReference;
+  const handleToggleInvisible = () => {
+    const onToggleInvisible = propsRef.current.onToggleInvisible;
+    const nextInvisible = !Boolean(propsRef.current.isInvisible);
     handleMainMenuClose();
     requestAnimationFrame(() => {
-      onCheckReference?.();
+      onToggleInvisible?.(nextInvisible);
     });
   };
 
@@ -296,17 +300,26 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
 
         <Divider />
 
-        <MenuItem onClick={handleCheckReferenceClick} aria-label="Check Reference">
+        <MenuItem onClick={handleToggleInvisible} aria-label={isInvisible ? 'Invisible' : 'Visible'}>
           <ListItemIcon>
-            <AssignmentTurnedInIcon />
+            {isInvisible ? <VisibilityOffIcon /> : <VisibilityIcon />}
           </ListItemIcon>
-          <ListItemText>Check Reference</ListItemText>
+          <ListItemText>{isInvisible ? 'Invisible' : 'Visible'}</ListItemText>
+          <Switch
+            checked={!isInvisible}
+            size="small"
+            onChange={(event) => {
+              event.stopPropagation();
+              handleToggleInvisible();
+            }}
+            inputProps={{ 'aria-label': isInvisible ? 'Invisible' : 'Visible' }}
+          />
         </MenuItem>
 
         {!isFolder && (
           <>
             <Divider />
-            <MenuItem onClick={handlePreviewClick} aria-label="Preview">
+            <MenuItem onClick={handlePreviewClick} aria-label="Preview" disabled={isInvisible}>
               <ListItemIcon>
                 <PlayArrowIcon />
               </ListItemIcon>

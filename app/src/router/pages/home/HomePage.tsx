@@ -2,7 +2,6 @@ import type { TreeConfig } from '@hierarchidb/ui-plugin-shell/components';
 import { TreeToggleButtonGroup } from '@hierarchidb/ui-plugin-shell/components';
 import { UserLoginButton } from '@hierarchidb/ui-plugin-shell/ui-usermenu';
 import {
-  AccountTree,
   Extension as ExtensionIcon,
   Folder,
   GitHub as GitHubIcon,
@@ -36,19 +35,11 @@ export function meta() {
 const treeButtonConfigs: TreeConfig[] = [
   {
     id: 'r',
-    label: 'Resources',
+    label: 'Start',
     icon: Folder,
     routePath: 'r',
     color: 'primary',
     tooltip: 'Navigate to Resources view',
-  },
-  {
-    id: 'p',
-    label: 'Projects',
-    icon: AccountTree,
-    routePath: 'p',
-    color: 'secondary',
-    tooltip: 'Navigate to Projects view',
   },
 ];
 

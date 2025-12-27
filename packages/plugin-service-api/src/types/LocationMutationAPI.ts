@@ -1,5 +1,10 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { LocationGroupItem, LocationRelation } from './LocationQueryAPI.js';
+import type {
+  IdeGsmImportCallback,
+  IdeGsmLocationImportRequest,
+  IdeGsmLocationImportResult,
+} from './ideGsmTypes.js';
 
 export interface LocationMutationAPI {
   upsertLocationGroups(nodeId: NodeId, items: LocationGroupItem[]): Promise<void>;
@@ -7,4 +12,8 @@ export interface LocationMutationAPI {
   upsertLocationRelations(relations: LocationRelation[]): Promise<void>;
   deleteLocationRelations(relations: LocationRelation[]): Promise<void>;
   clearLocationEntities(nodeId: NodeId): Promise<void>;
+  importIdeGsmLocations(
+    request: IdeGsmLocationImportRequest,
+    progress?: IdeGsmImportCallback,
+  ): Promise<IdeGsmLocationImportResult>;
 }

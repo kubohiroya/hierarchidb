@@ -142,11 +142,15 @@ export class StylerEntityHandler {
 
     const nextKey = entity?.keyColumn;
     const nextValue = entity?.valueColumn;
+    const tableId = data.spreadsheetMetadataId ?? entity?.spreadsheetMetadataId;
+    const shouldRegenerate =
+      Boolean(entity && tableId) &&
+      Boolean(data.config || data.mapping || data.keyColumn || data.valueColumn);
 
-    if ((data.config || nextKey || nextValue) && entity && data.spreadsheetMetadataId) {
+    if (shouldRegenerate && entity && tableId) {
       try {
         const { styleSpec, colorMapping } = await this.dataService.generateMapLibreStyle(
-          data.spreadsheetMetadataId,
+          tableId,
           {
             ...entity,
             keyColumn: nextKey,

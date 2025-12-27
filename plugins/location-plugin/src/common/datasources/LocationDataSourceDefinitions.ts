@@ -267,7 +267,7 @@ export const IdeGsmDataSource: LocationDataSourceBase = {
   id: 'ide-gsm',
   name: 'IDE-GSM',
   displayName: 'IDE-GSM',
-  description: 'User-provided IDE-GSM schema files for locations',
+  description: 'User-provided IDE-GSM CSV files for locations',
   baseUrl: '',
   website: undefined,
   license: 'IDE-GSM License',

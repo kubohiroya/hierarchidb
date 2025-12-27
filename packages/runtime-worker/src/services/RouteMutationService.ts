@@ -1,6 +1,16 @@
 import { SingletonMixin } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { RouteMutationAPI } from '@hierarchidb/plugin-service-api';
+import {
+  IDE_GSM_BULK_CHUNK_SIZE,
+  type IdeGsmImportCallback,
+  type IdeGsmImportProgress,
+  type IdeGsmRouteImportRequest,
+  type IdeGsmRouteImportResult,
+  type LocationQueryAPI,
+  type RouteMutationAPI,
+  type RouteWaypointInput,
+  type RouteWaypointResult,
+} from '@hierarchidb/plugin-service-api';
 
 type DexieCollection = {
   delete?: () => Promise<number>;
@@ -13,44 +23,178 @@ type DexieWhere = {
 type DexieTable = {
   where(key: string): DexieWhere;
   delete?: (id: string) => Promise<void>;
+  bulkPut?: (items: unknown[]) => Promise<void>;
 };
 
 type RouteDatabaseLike = {
   open?: () => Promise<unknown>;
-  routeResults: DexieTable;
-  routeCache: DexieTable;
-  routeCursors: DexieTable;
-  pendingSessions: DexieTable;
+  lineStrings: DexieTable;
 };
 
+type RouteGeneratorType = typeof import('@hierarchidb/route-plugin/services/RouteGenerator.js').RouteGenerator;
+
 export class RouteMutationService implements RouteMutationAPI {
-  static async getSingleton(db: RouteDatabaseLike): Promise<RouteMutationService> {
-    return SingletonMixin.getSingleton('RouteMutationService', async () => new RouteMutationService(db));
+  static async getSingleton(db: RouteDatabaseLike, locationQueryService: LocationQueryAPI): Promise<RouteMutationService> {
+    return SingletonMixin.getSingleton(
+      'RouteMutationService',
+      async () => new RouteMutationService(db, locationQueryService),
+    );
   }
 
-  constructor(private db: RouteDatabaseLike) {}
+  constructor(private db: RouteDatabaseLike, private locationQueryService: LocationQueryAPI) {}
 
   private async ensureOpen(): Promise<void> {
     await this.db.open?.();
   }
 
-  async deleteRouteResults(nodeId: NodeId): Promise<void> {
+  async deleteRouteLineStrings(nodeId: NodeId): Promise<void> {
     await this.ensureOpen();
-    await this.db.routeResults.where('routeId').equals(nodeId).delete?.();
+    await this.db.lineStrings.where('nodeId').equals(nodeId).delete?.();
   }
 
-  async deleteRouteCache(nodeId: NodeId): Promise<void> {
-    await this.ensureOpen();
-    await this.db.routeCache.where('routeId').equals(nodeId).delete?.();
+  async applyIdeGsmWaypoints(lines: RouteWaypointInput[]): Promise<RouteWaypointResult[]> {
+    if (lines.length === 0) return [];
+    const generator = await getIdeGsmRouteGenerator();
+    const results: RouteWaypointResult[] = [];
+    for (const line of lines) {
+      results.push(await buildWaypoints(line, generator));
+    }
+    return results;
   }
 
-  async deleteRouteCursors(nodeId: NodeId): Promise<void> {
-    await this.ensureOpen();
-    await this.db.routeCursors.where('nodeId').equals(nodeId).delete?.();
+  async importIdeGsmRoutes(
+    request: IdeGsmRouteImportRequest,
+    progress?: IdeGsmImportCallback,
+  ): Promise<IdeGsmRouteImportResult> {
+    const emit = (payload: Omit<IdeGsmImportProgress, 'timestamp'>): void => {
+      progress?.({ ...payload, timestamp: Date.now() });
+    };
+    try {
+      emit({ phase: 'fetch' });
+
+      if (request.locationNodeIds.length === 0) {
+        throw new Error('No related location nodes found.');
+      }
+
+      const { getRouteDownloadService, buildIdeGsmLocationIndex, parseIdeGsmCsv } = await import(
+        '@hierarchidb/route-plugin'
+      );
+      const { service, readAll } = await getRouteDownloadService();
+      const fileId = `route-ide-gsm:${crypto.randomUUID()}`;
+      await service.download(request.sourceUrl, fileId);
+      const buffer = await readAll(fileId);
+      const csvText = new TextDecoder().decode(buffer);
+
+      const locationIndex = await buildIdeGsmLocationIndex(this.locationQueryService, request.locationNodeIds);
+      const { lineStrings, errors } = parseIdeGsmCsv(csvText, locationIndex, request.nodeId);
+      emit({ phase: 'parse', total: lineStrings.length, processed: lineStrings.length });
+
+      const generator = await getIdeGsmRouteGenerator();
+      emit({ phase: 'waypoints', total: lineStrings.length, processed: 0 });
+      const waypointResults: RouteWaypointResult[] = [];
+      for (let i = 0; i < lineStrings.length; i += 1) {
+        const line = lineStrings[i]!;
+        const result = await buildWaypoints(
+          {
+            id: line.id,
+            routeMode: line.routeMode,
+            startPoint: line.startPoint,
+            endPoint: line.endPoint,
+            distance: line.distance,
+            speed: line.speed,
+          },
+          generator,
+        );
+        waypointResults.push(result);
+        emit({ phase: 'waypoints', total: lineStrings.length, processed: i + 1 });
+      }
+
+      const waypointMap = new Map(waypointResults.map((result) => [result.id, result]));
+      const linesWithWaypoints = lineStrings.map((line) => {
+        const result = waypointMap.get(line.id);
+        if (!result) return line;
+        return {
+          ...line,
+          waypoints: result.waypoints,
+          distance: result.distance,
+          speed: result.speed,
+        };
+      });
+
+      await this.ensureOpen();
+      await this.db.lineStrings.where('nodeId').equals(request.nodeId).delete?.();
+      const chunkSize = request.chunkSize ?? IDE_GSM_BULK_CHUNK_SIZE;
+      let saved = 0;
+      let chunkIndex = 0;
+      emit({ phase: 'save', total: linesWithWaypoints.length, processed: 0, chunkSize });
+      for (let i = 0; i < linesWithWaypoints.length; i += chunkSize) {
+        chunkIndex += 1;
+        const slice = linesWithWaypoints.slice(i, i + chunkSize);
+        await this.db.lineStrings.bulkPut?.(slice);
+        saved += slice.length;
+        emit({
+          phase: 'save',
+          total: linesWithWaypoints.length,
+          processed: saved,
+          chunk: chunkIndex,
+          chunkSize,
+        });
+      }
+
+      emit({ phase: 'completed', total: linesWithWaypoints.length, processed: saved });
+      return { saved, errorCount: errors.length, errors };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      emit({ phase: 'failed', message });
+      throw error;
+    }
+  }
+}
+
+let ideGsmGeneratorPromise: Promise<InstanceType<RouteGeneratorType>> | null = null;
+
+async function getIdeGsmRouteGenerator(): Promise<InstanceType<RouteGeneratorType>> {
+  if (!ideGsmGeneratorPromise) {
+    ideGsmGeneratorPromise = (async () => {
+      const [{ RouteGenerator }, { SearouteEngine }] = await Promise.all([
+        import('@hierarchidb/route-plugin/services/RouteGenerator.js'),
+        import('@hierarchidb/route-plugin/services/engines/SearouteEngine.js'),
+      ]);
+      return new RouteGenerator({ searoute: new SearouteEngine() });
+    })();
+  }
+  return ideGsmGeneratorPromise;
+}
+
+async function buildWaypoints(
+  line: RouteWaypointInput,
+  generator: InstanceType<RouteGeneratorType>,
+): Promise<RouteWaypointResult> {
+  const method = resolveIdeGsmMethod(line.routeMode);
+  const start = line.startPoint?.coordinates;
+  const end = line.endPoint?.coordinates;
+  if (!method || !start || !end) {
+    return {
+      id: line.id,
+      waypoints: undefined,
+      distance: line.distance,
+      speed: line.speed,
+    };
   }
 
-  async deletePendingSessions(nodeId: NodeId): Promise<void> {
-    await this.ensureOpen();
-    await this.db.pendingSessions.where('nodeId').equals(nodeId).delete?.();
-  }
+  const result = await generator.generate([start, end], { method });
+  const distance = result.distance ?? line.distance;
+  const speed = result.duration && result.distance ? result.distance / result.duration : undefined;
+  return {
+    id: line.id,
+    waypoints: result.lineGeometry,
+    distance,
+    speed,
+  };
+}
+
+function resolveIdeGsmMethod(routeMode?: string): 'great_circle' | 'searoute' | null {
+  if (routeMode === 'airway') return 'great_circle';
+  if (routeMode === 'waterway') return 'searoute';
+  return null;
 }

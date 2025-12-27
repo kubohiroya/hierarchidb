@@ -8,6 +8,13 @@ import type { LocationPointProperties } from '../common/entities/LocationPoint.j
 type PointItem = GroupItemBase<LocationGroupItemData>;
 type PointProperties = LocationPointProperties;
 
+export type LocationPointWriteProgress = {
+  total: number;
+  saved: number;
+  chunkIndex: number;
+  chunkSize: number;
+};
+
 let dbPromise: Promise<LocationEntitiesDB> | null = null;
 
 async function getDb(): Promise<LocationEntitiesDB> {
@@ -43,6 +50,36 @@ export async function replaceLocationPoints(nodeId: NodeId, points: PointPropert
     const now = Date.now();
     const rows = points.map((point) => toGroupRow(nodeId, toItem(point), now));
     await db.groupEntities.bulkPut(rows);
+  });
+}
+
+export async function replaceLocationPointsChunked(
+  nodeId: NodeId,
+  points: PointProperties[],
+  options?: {
+    chunkSize?: number;
+    onProgress?: (progress: LocationPointWriteProgress) => void;
+  },
+): Promise<void> {
+  const db = await getDb();
+  const chunkSize = Math.max(1, options?.chunkSize ?? 1000);
+  await db.transaction('rw', db.groupEntities, async () => {
+    await db.groupEntities.where('nodeId').equals(nodeId).delete();
+    if (!points.length) {
+      options?.onProgress?.({ total: 0, saved: 0, chunkIndex: 0, chunkSize });
+      return;
+    }
+    let saved = 0;
+    let chunkIndex = 0;
+    for (let i = 0; i < points.length; i += chunkSize) {
+      chunkIndex += 1;
+      const slice = points.slice(i, i + chunkSize);
+      const now = Date.now();
+      const rows = slice.map((point) => toGroupRow(nodeId, toItem(point), now));
+      await db.groupEntities.bulkPut(rows);
+      saved += slice.length;
+      options?.onProgress?.({ total: points.length, saved, chunkIndex, chunkSize });
+    }
   });
 }
 

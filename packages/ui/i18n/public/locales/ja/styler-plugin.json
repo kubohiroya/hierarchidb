@@ -34,6 +34,14 @@
       "label": "対象プロパティ",
       "help": "マッピング先の MapLibreプロパティを選択します。"
     },
+    "algorithm": {
+      "numericRange": "数値範囲",
+      "min": "最小",
+      "max": "最大",
+      "outputRange": "出力範囲",
+      "outputMin": "出力最小",
+      "outputMax": "出力最大"
+    },
     "validation": {
       "required": "スタイル種別・値の列・対象プロパティを選択してください。"
     }
@@ -41,15 +49,55 @@
   "steps": {
     "dataSource": "データソース",
     "filtering": "フィルタリング",
+    "mappingKeys": "キーのマッピング",
+    "targetBehavior": "対象と挙動",
     "styleSettings": "スタイル設定",
-    "styleAlgorithm": "スタイルアルゴリズム",
+    "styleAlgorithm": "スケール / スタイル",
     "preview": "プレビュー"
+  },
+  "step3": {
+    "description": "表の列とタイル側の feature ID を指定して、スタイル値を紐づけます。",
+    "featureIdProperty": {
+      "label": "Feature ID Property",
+      "placeholder": "例: iso2, gid_1, portCode",
+      "help": "ベクトルタイルの feature properties にあるID属性名（promoteId/feature-stateに使用）を指定します。"
+    },
+    "validation": {
+      "required": "キー/値の列を選び、Feature ID Property を入力してください。"
+    }
+  },
+  "step4": {
+    "valueType": {
+      "label": "値の種類",
+      "number": "数値",
+      "color": "色",
+      "help": "feature-state に保存する値の型を選択します。"
+    },
+    "mappingMode": {
+      "label": "マッピング方式",
+      "interpolate": "MapLibre で補間",
+      "precomputed": "事前計算",
+      "help": "MapLibre 側で補間するか、feature-state に最終値を入れるかを選びます。"
+    },
+    "validation": {
+      "required": "スタイル対象と挙動を選択してください。"
+    }
   },
   "filtering": {
     "processing": "表データを処理しています…"
   },
   "stylePreview": {
-    "processing": "プレビュー用データを準備しています…"
+    "processing": "プレビュー用データを準備しています…",
+    "required": {
+      "title": "設定が必要です",
+      "body": "プレビューの前にスタイル設定を完了してください。",
+      "keyColumn": "キーの列を選択してください",
+      "valueColumn": "値の列を選択してください",
+      "featureIdProperty": "Feature ID Property を入力してください",
+      "targetProperty": "対象プロパティを選択してください",
+      "styleType": "スタイル種別を選択してください",
+      "mappingMode": "マッピング方式を選択してください"
+    }
   },
   "step5": {
     "title": "スタイルアルゴリズム",

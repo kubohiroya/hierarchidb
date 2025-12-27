@@ -1,15 +1,13 @@
 import { PluginStepRegistry, type StartBatchContext, type PluginStepProps } from '@hierarchidb/plugin-base';
 import type { NodeId, TreeNodeMetadata } from '@hierarchidb/common-types';
 import type { LocationEntity, LocationDataSource, LocationSearchConfig, LocationType } from '../../common/types/index.js';
-import type { LocationPointProperties, LocationPointId } from '../../common/entities/LocationPoint.js';
+import type { LocationPointProperties } from '../../common/entities/LocationPoint.js';
 import { LocationDataSourceStep } from './steps/LocationDataSourceStep.js';
 import { LocationSelectionStep } from './steps/LocationSelectionStep.js';
 import { LocationBatchParametersStep } from './steps/LocationBatchParametersStep.js';
 import { LocationMapPreviewStep } from './steps/LocationMapPreviewStep.js';
 import { LocationBuildStep } from './steps/LocationBuildStep.js';
 import { notify } from '@hierarchidb/components';
-import { generateId } from '@hierarchidb/util';
-import { replaceLocationPoints } from '../../services/pointRepository.js';
 import { LocationVectorTileService } from '../../services/tiles/LocationVectorTileService.js';
 import { i18n } from '@hierarchidb/ui-i18n';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
@@ -17,6 +15,13 @@ import { ensureIso3166Data, getAllCountries } from '@hierarchidb/gen-iso3166-2/b
 import { BASE_LOCATION_TYPES, resolveTypesForSource } from './steps/locationTypes.js';
 import { LocationBatchManager } from '../../services/LocationBatchManager.js';
 import { getEphemeralLocationDB } from '../../database/EphemeralLocationDB.js';
+import { proxy } from 'comlink';
+import {
+  IDE_GSM_BULK_CHUNK_SIZE,
+  type IdeGsmImportProgress,
+  type IdeGsmLocationPointInput,
+} from '@hierarchidb/plugin-service-api';
+import { clearIdeGsmProgress, updateIdeGsmProgress } from '../state/ideGsmProgress.js';
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -138,147 +143,7 @@ const buildSearchConfigs = async (
   );
 };
 
-const normalizeMetadataValue = (value: unknown): string | number | null => {
-  if (value == null) return null;
-  if (typeof value === 'string' || typeof value === 'number') return value;
-  if (typeof value === 'boolean') return value ? 'true' : 'false';
-  if (Array.isArray(value) || typeof value === 'object') {
-    try {
-      return JSON.stringify(value);
-    } catch {
-      return String(value);
-    }
-  }
-  return String(value);
-};
-
-const toPointId = (): LocationPointId => generateId() as LocationPointId;
-
-const toMetadataRecord = (raw: Record<string, unknown>, omitKeys: Set<string>) =>
-  Object.fromEntries(
-    Object.entries(raw)
-      .filter(([key]) => !omitKeys.has(key))
-      .map(([key, val]) => [key, normalizeMetadataValue(val)]),
-  );
-
-const parseIdeGsmPayload = (payload: unknown): LocationPointProperties[] => {
-  const points: LocationPointProperties[] = [];
-  const handleRecord = (record: Record<string, unknown>, index: number) => {
-    const lat = typeof record.latitude === 'number'
-      ? record.latitude
-      : typeof record.lat === 'number'
-        ? record.lat
-        : undefined;
-    const lon = typeof record.longitude === 'number'
-      ? record.longitude
-      : typeof record.lon === 'number'
-        ? record.lon
-        : undefined;
-    if (typeof lat !== 'number' || typeof lon !== 'number') return;
-    const name = typeof record.name === 'string'
-      ? record.name
-      : typeof record.label === 'string'
-        ? record.label
-        : `IDE-GSM ${index + 1}`;
-    const kind = typeof record.type === 'string'
-      ? record.type
-      : typeof record.kind === 'string'
-        ? record.kind
-        : 'area_centroid';
-    const countryCode = typeof record.countryCode === 'string'
-      ? record.countryCode
-      : typeof record.country_code === 'string'
-        ? record.country_code
-        : '';
-    const countryName = typeof record.countryName === 'string'
-      ? record.countryName
-      : typeof record.country === 'string'
-        ? record.country
-        : undefined;
-    const admin1 = typeof record.admin1 === 'string'
-      ? record.admin1
-      : typeof record.adminCode1 === 'string'
-        ? record.adminCode1
-        : undefined;
-    const admin2 = typeof record.admin2 === 'string'
-      ? record.admin2
-      : typeof record.adminCode2 === 'string'
-        ? record.adminCode2
-        : undefined;
-    const omit = new Set(['latitude', 'lat', 'longitude', 'lon', 'name', 'label', 'type', 'kind', 'countryCode', 'country_code', 'countryName', 'country', 'admin1', 'admin2', 'adminCode1', 'adminCode2']);
-    const metadata = toMetadataRecord(record, omit);
-    const rawId = record.id;
-    const ideGsmId = typeof rawId === 'string' || typeof rawId === 'number'
-      ? String(rawId)
-      : undefined;
-    if (ideGsmId) {
-      metadata.ideGsmId = ideGsmId;
-    }
-
-    points.push({
-      schemaVersion: 2,
-      pointId: toPointId(),
-      name,
-      latitude: lat,
-      longitude: lon,
-      kind,
-      countryCode,
-      countryName,
-      admin1,
-      admin2,
-      metadata,
-    });
-  };
-
-  if (Array.isArray(payload)) {
-    payload.forEach((entry, index) => {
-      if (typeof entry === 'object' && entry !== null) {
-        handleRecord(entry as Record<string, unknown>, index);
-      }
-    });
-    return points;
-  }
-
-  if (payload && typeof payload === 'object') {
-    const obj = payload as Record<string, unknown>;
-    if (Array.isArray(obj.features)) {
-      obj.features.forEach((feature, index) => {
-        if (!feature || typeof feature !== 'object') return;
-        const f = feature as Record<string, unknown>;
-        const geometry = f.geometry as Record<string, unknown> | undefined;
-        const coordinates = Array.isArray(geometry?.coordinates) ? geometry?.coordinates : [];
-        const lon = typeof coordinates[0] === 'number' ? coordinates[0] : undefined;
-        const lat = typeof coordinates[1] === 'number' ? coordinates[1] : undefined;
-        const props = (f.properties && typeof f.properties === 'object')
-          ? f.properties as Record<string, unknown>
-          : {};
-        handleRecord({ ...props, latitude: lat, longitude: lon, id: props.id ?? f.id }, index);
-      });
-      return points;
-    }
-  }
-
-  return points;
-};
-
-const filterPointsBySelection = (points: LocationPointProperties[], entries: SelectionEntry[]) => {
-  if (entries.length === 0) return points;
-  const countrySet = new Set(entries.map((entry) => entry.countryCode));
-  const countryNameSet = new Set(entries.map((entry) => entry.countryName.toLowerCase()));
-  const typeSet = new Set(entries.flatMap((entry) => entry.types));
-  return points.filter((point) => {
-    const normalizedCode = point.countryCode?.toUpperCase();
-    const normalizedName = point.countryName?.toLowerCase();
-    const matchesCountry =
-      (!normalizedCode && !normalizedName)
-      || (normalizedCode && countrySet.has(normalizedCode))
-      || (normalizedName && countryNameSet.has(normalizedName));
-    const matchesType = typeSet.size === 0 || typeSet.has(point.kind as LocationType);
-    return matchesCountry && matchesType;
-  });
-};
-
-const toLocationPointInput = (point: LocationPointProperties) => ({
+const toLocationPointInput = (point: LocationPointProperties): IdeGsmLocationPointInput => ({
   lon: Number(point.longitude) || 0,
   lat: Number(point.latitude) || 0,
   id: point.pointId,
@@ -339,28 +204,32 @@ const startLocationBatch = async (data: LocationStepData, context: StartBatchCon
     return;
   }
 
-  let points: LocationPointProperties[] = [];
+  let pointInputs: IdeGsmLocationPointInput[] = [];
   if (draft.dataSource === 'ide-gsm') {
     if (!draft.ideGsmSourceUrl) {
       notify.error(tNs('dataSource.ideGsm.missing', 'IDE-GSM source URL is required.'));
       return;
     }
     try {
-      const { authFetch } = await import('../../services/utils/authFetch.js');
-      const res = await authFetch(draft.ideGsmSourceUrl);
-      if (!res.ok) {
-        notify.error(
-          tNs('dataSource.ideGsm.fetchError', 'Failed to load IDE-GSM file.')
-            .replace('{{status}}', String(res.status)),
-        );
-        return;
-      }
-      const payload = await res.json();
-      points = parseIdeGsmPayload(payload);
-      points = filterPointsBySelection(points, selectionEntries);
-      await replaceLocationPoints(nodeId, points);
+      const bridge = getWorkerBridge();
+      await bridge.initialize();
+      const mutationApi = await bridge.getLocationMutationAPI();
+      const progressHandler = proxy((progress: IdeGsmImportProgress) => {
+        updateIdeGsmProgress(nodeId, progress);
+      });
+      const result = await mutationApi.importIdeGsmLocations(
+        {
+          nodeId,
+          sourceUrl: draft.ideGsmSourceUrl,
+          selectionEntries,
+          chunkSize: IDE_GSM_BULK_CHUNK_SIZE,
+        },
+        progressHandler,
+      );
+      pointInputs = result.points;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+      updateIdeGsmProgress(nodeId, { phase: 'failed', message, timestamp: Date.now() });
       notify.error(
         `${tNs('dataSource.ideGsm.fetchError', 'Failed to load IDE-GSM file.')} ${message}`,
       );
@@ -375,7 +244,7 @@ const startLocationBatch = async (data: LocationStepData, context: StartBatchCon
     const rawConcurrency = draft.concurrentDownloads ?? 4;
     const concurrency = clamp(rawConcurrency || 4, MIN_CONCURRENCY, MAX_CONCURRENCY);
     const manager = new LocationBatchManager();
-    points = await manager.collectLocationPoints(nodeId, {
+    const points = await manager.collectLocationPoints(nodeId, {
       searchConfigs,
       processingOptions: { concurrent: concurrency },
       filterCriteria: {
@@ -384,10 +253,14 @@ const startLocationBatch = async (data: LocationStepData, context: StartBatchCon
         allowedTypes: selectionEntries.flatMap((entry) => entry.types),
       },
     });
+    pointInputs = points.map(toLocationPointInput);
   }
 
-  if (!points.length) {
+  if (!pointInputs.length) {
     notify.info(tNs('build.noPoints', 'No location points available to process.'));
+    if (draft.dataSource === 'ide-gsm') {
+      clearIdeGsmProgress(nodeId);
+    }
     return;
   }
 
@@ -403,10 +276,14 @@ const startLocationBatch = async (data: LocationStepData, context: StartBatchCon
   const service = new LocationVectorTileService();
   const summary = await service.startSession(
     nodeId,
-    points.map(toLocationPointInput),
+    pointInputs,
     settings,
     { concurrency },
   );
+
+  if (draft.dataSource === 'ide-gsm') {
+    clearIdeGsmProgress(nodeId);
+  }
 
   await persistLocationDraft(nodeId, draft, {
     batchSessionId: summary.sessionId,

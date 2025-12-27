@@ -8,6 +8,8 @@ PLANS.md is checked into the repository root at `PLANS.md`. This ExecPlan must b
 
 After this change, GIS processing is centralized in the shared GIS SDK and invoked only through runtime-worker, batch config naming is consistent across shape/location/route, and batch session managers share a base implementation that owns lifecycle persistence. A developer can run shape/location/route typechecks without mismatched config naming, and batch sessions will report and persist status in a uniform way across plugins.
 
+Note: The broader route reorg direction (RouteEntity/RouteLineString, IDE-GSM ingestion, Step2-6 behavior) is defined in `plans/route-plugin-reorg-spec.md` under "Revised Direction (2025-12)". This ExecPlan remains focused on Stage2/5/7 infrastructure only.
+
 ## Progress
 
 - [x] (2025-12-26 20:41 JST) ExecPlan created.

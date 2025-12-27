@@ -1,5 +1,4 @@
 import { AbstractBatchSession, BatchService } from '@hierarchidb/batch-runtime-services';
-import { RouteDatabase, type RouteCursorRow, type RouteResultRow } from './database/RouteDatabase.js';
 import type { RouteGenerationConfig } from '../common/entities/RouteEntity.js';
 import { RouteGenerator } from './RouteGenerator.js';
 import { TabularWriter } from '@hierarchidb/tabular-store';
@@ -27,7 +26,6 @@ export interface RouteBatchTask {
 }
 
 export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
-  private db: RouteDatabase;
   private tasks: RouteBatchTask[] = [];
   private laneSemaphores = new Map<string, Semaphore>();
   private laneConfig: Record<string, number> = { osm_route: 1, searoute: 3, direct: 64, great_circle: 64, custom: 8 };
@@ -39,7 +37,6 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
     generator?: RouteGenerator
   }) {
     super(sessionId, nodeId, config);
-    this.db = new RouteDatabase();
     this.tasks = tasks;
     this.generator = deps?.generator ?? new RouteGenerator();
     // Apply lane cap overrides from config (best-effort, safe parse)
@@ -49,15 +46,6 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
   }
 
   protected async onInitialize(): Promise<void> {
-    const initialCursor: RouteCursorRow = {
-      sessionId: this.sessionId,
-      nodeId: this.nodeId,
-      completed: 0,
-      total: this.tasks.length,
-      updatedAt: Date.now(),
-      paused: false,
-    };
-    await this.db.routeCursors.put(initialCursor);
     this.writer = new TabularWriter('route');
     const columns = ['taskId', 'method', 'distance', 'duration', 'startLon', 'startLat', 'endLon', 'endLat'];
     await this.writer.begin({ filename: `route-${this.sessionId}.json`, columns });
@@ -77,8 +65,7 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
 
   protected async onComplete(): Promise<void> {
     if (this.writer && this.writerReady) {
-      const { tableId } = await this.writer.commit();
-      await this.db.routeCursors.update(this.sessionId, { tableId });
+      await this.writer.commit();
     }
   }
 
@@ -103,12 +90,6 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
         await this.processTask(task);
       }
       completed += 1;
-      await this.db.routeCursors.update(this.sessionId, {
-        completed,
-        total: this.tasks.length,
-        updatedAt: Date.now(),
-        paused: this.getState().status === 'paused',
-      });
       this.updateProgress({
         total: this.tasks.length,
         completed,
@@ -116,10 +97,9 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
         currentTask: `Processing ${task.taskType}#${index}`,
       });
       // Pause handling (poll cursor flag)
-      for (; ;) {
-        const cur = await this.db.routeCursors.get(this.sessionId);
-        if (!cur?.paused) break;
+      while (this.getState().status === 'paused') {
         this.updateProgress({ currentTask: `paused:${task.taskType}` });
+        await new Promise((resolve) => setTimeout(resolve, 250));
       }
     }, { concurrency: maxConcurrent });
   }
@@ -137,22 +117,10 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
             options: task.routeData?.methodOptions,
           };
           const res = await this.generator.generate(pts, config);
-          const resultRow: RouteResultRow = {
-            id: `${this.sessionId}:${task.taskId}`,
-            routeId: this.nodeId,
-            sessionId: this.sessionId,
-            taskId: task.taskId,
-            method,
-            lineGeometry: res.lineGeometry,
-            distance: res.distance,
-            duration: res.duration,
-            createdAt: Date.now(),
-          };
-          await this.db.routeResults.put(resultRow);
-            if (this.writer && this.writerReady) {
-              const row = {
-                taskId: task.taskId,
-                method,
+          if (this.writer && this.writerReady) {
+            const row = {
+              taskId: task.taskId,
+              method,
                 distance: res.distance,
                 duration: res.duration,
                 startLon: pts[0]?.[0],

@@ -129,26 +129,6 @@ describe('Shape Plugin API', () => {
     });
   });
 
-  describe('Selection Stats', () => {
-    it('should calculate stats for URL metadata', async () => {
-      const urlMetadata = [
-        {
-          url: 'http://example.com/us.zip',
-          countryCode: 'US',
-          adminLevel: 0,
-          continent: 'North America',
-          estimatedSize: 1000000,
-        },
-      ];
-
-      const stats = await shapeBatchAPI.calculateSelectionStats(urlMetadata);
-
-      expect(stats.totalSelected).toBe(1);
-      expect(stats.countriesWithSelection).toBe(1);
-      expect(stats.estimatedSize).toBe(1000000);
-    });
-  });
-
   describe('EphemeralDB Cleanup', () => {
     it('should perform cleanup of expired data', async () => {
       const result = await shapeBatchAPI.performCleanup();

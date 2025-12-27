@@ -259,7 +259,6 @@ export function generateUrlMetadata(
           countryCode,
           adminLevel: level,
           continent: country.continent,
-          estimatedSize: Math.floor(Math.random() * 10000000) + 500000, // 0.5MB - 10MB
           lastUpdated: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
         });
       }

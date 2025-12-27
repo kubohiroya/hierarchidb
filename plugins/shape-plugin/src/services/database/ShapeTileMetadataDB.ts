@@ -44,9 +44,6 @@ export class ShapeTileMetadataDB extends Dexie {
 
   private constructor(name: string) {
     super(name);
-    this.version(1).stores({
-      tiles: '&key, sessionId, [sessionId+z+x+y], z, x, y, timestamp',
-    });
     this.version(2).stores({
       tiles: '&key, sessionId, [sessionId+z+x+y], z, x, y, timestamp',
       featureMetadata:

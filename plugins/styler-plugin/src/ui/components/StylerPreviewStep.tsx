@@ -20,7 +20,6 @@ import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 're
 import { i18n } from '@hierarchidb/ui-i18n';
 import {
   type StylerStepData,
-  MAPLIBRE_PROPERTY_METADATA,
   type ColorStyleKeyValue,
   type ScalarStyleKeyValue,
 } from '../../common/types/StylerEntity.js';
@@ -48,6 +47,9 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
     keyColumn,
     valueColumn,
     targetProperty,
+    featureIdProperty,
+    valueType,
+    mappingMode,
     styleType,
     previewRowsSource,
     previewData,
@@ -62,7 +64,6 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
     mapping,
     isPreviewDeferred,
   } = useStylerPreview({ data, onValidate, tabularData });
-  const targetMeta = targetProperty ? MAPLIBRE_PROPERTY_METADATA[targetProperty] : null;
   const columnWidth = columns.length ? `${100 / columns.length}%` : '100%';
   const gridTemplateColumns = useMemo(
     () => columns.map(() => 'minmax(0, 1fr)').join(' '),
@@ -92,7 +93,16 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
   }, [sortedPreviewData.length]);
 
   useEffect(() => {
-    if (!keyColumn || !valueColumn || !targetProperty || !styleType || !sortedPreviewData.length) return;
+    if (
+      !keyColumn ||
+      !valueColumn ||
+      !targetProperty ||
+      !styleType ||
+      !featureIdProperty ||
+      (valueType === 'number' && !mappingMode) ||
+      !sortedPreviewData.length
+    )
+      return;
     const effectiveNodeId: NodeId = (nodeId ??
       (data as { treeNodeId?: string | null })?.treeNodeId ??
       (data as { id?: string | null })?.id ??
@@ -109,17 +119,19 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
       if (seenKeys.has(keyStr)) return;
       seenKeys.add(keyStr);
 
-      if (targetMeta?.type === 'color') {
+      if (valueType === 'color') {
         const rawValue = row[valueColumn];
-        const num = typeof rawValue === 'number' ? rawValue : Number(rawValue);
-        if (!Number.isFinite(num)) return;
-        const colorResult = valueToColor(num, mapping, derivedConfig, numericAllValues);
+        if (rawValue === null || rawValue === undefined || rawValue === '') return;
+        const isNumeric = typeof rawValue === 'number' || (typeof rawValue === 'string' && rawValue.trim() !== '' && !Number.isNaN(Number(rawValue)));
+        const colorResult = isNumeric
+          ? valueToColor(Number(rawValue), mapping, derivedConfig, numericAllValues)
+          : { color: String(rawValue) };
         colorPairs.push({
           nodeId: effectiveNodeId,
           key: keyStr,
           color: colorResult.color,
         });
-      } else if (targetMeta?.type === 'number') {
+      } else {
         const rawValue = row[valueColumn];
         const num = typeof rawValue === 'number' ? rawValue : Number(rawValue);
         if (!Number.isFinite(num)) return;
@@ -131,7 +143,7 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
       }
     });
 
-    const nextStyleKeyValues = targetMeta?.type === 'color'
+    const nextStyleKeyValues = valueType === 'color'
       ? { colors: colorPairs, scalars: [] as ScalarStyleKeyValue[] }
       : { colors: [] as ColorStyleKeyValue[], scalars: scalarPairs };
     const prev = data?.styleKeyValues ?? {};
@@ -164,12 +176,14 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
     onChange,
     sortedPreviewData,
     styleType,
-    targetMeta,
     targetProperty,
     valueColumn,
+    valueType,
+    mappingMode,
+    featureIdProperty,
   ]);
 
-  if (!keyColumn || !valueColumn || !targetProperty || !styleType) {
+  if (!keyColumn || !valueColumn || !targetProperty || !styleType || !featureIdProperty || (valueType === 'number' && !mappingMode)) {
     return (
       <Box sx={{ p: 3 }}>
         <Alert severity="info">
@@ -185,11 +199,17 @@ export const StylerPreviewStep: React.FC<StylerStepProps> = ({
             {!valueColumn && (
               <li>{t('stylePreview.required.valueColumn', 'Select a value column for mapping')}</li>
             )}
+            {!featureIdProperty && (
+              <li>{t('stylePreview.required.featureIdProperty', 'Enter a feature ID property')}</li>
+            )}
             {!targetProperty && (
               <li>{t('stylePreview.required.targetProperty', 'Select a target property')}</li>
             )}
             {!styleType && (
               <li>{t('stylePreview.required.styleType', 'Select a style type')}</li>
+            )}
+            {valueType === 'number' && !mappingMode && (
+              <li>{t('stylePreview.required.mappingMode', 'Select a mapping mode')}</li>
             )}
           </ul>
         </Alert>

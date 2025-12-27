@@ -106,7 +106,7 @@ const SOURCE_DESCRIPTIONS: Record<LocationDataSource, string> = {
   openflights: 'OpenFlights airport dataset with IATA/ICAO codes',
   'world-port-index': 'World Port Index (NGA) major ports worldwide',
   'natural-earth': 'Natural Earth populated places and transport hubs',
-  'ide-gsm': 'IDE-GSM schema files provided by your organization',
+  'ide-gsm': 'IDE-GSM CSV files provided by your organization',
   custom: 'Upload your own tabular dataset',
   manual: 'Enter locations manually',
 };
@@ -133,11 +133,9 @@ const SOURCE_TYPES: Record<LocationDataSource, LocationType[]> = {
   manual: ['area_centroid', 'airport', 'port', 'railway_station', 'interchange'],
 };
 
-const UNSUPPORTED_SOURCES: LocationDataSource[] = [
-  'geonames',
-  'wikidata',
-  'custom',
-];
+const DISABLED_SOURCES: LocationDataSource[] = ORDERED_DATA_SOURCES.filter(
+  (sourceId) => sourceId !== 'ide-gsm',
+);
 
 export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
   draft,
@@ -163,6 +161,7 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
           licenseName: license?.licenseName ?? 'License',
           licenseUrl: license?.licenseUrl,
           attribution: license?.attribution,
+          disabled: DISABLED_SOURCES.includes(sourceId),
         };
       }),
     [t]
@@ -227,7 +226,7 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
       selectionTitle={t('dataSource.selectionTitle', 'Data Source')}
       detailsTitle={t('dataSource.detailsTitle', 'Data Source Details')}
       renderDetails={(selected) => {
-        if (UNSUPPORTED_SOURCES.includes(selected.id as LocationDataSource)) {
+        if (DISABLED_SOURCES.includes(selected.id as LocationDataSource)) {
           return (
             <Alert severity="warning">
               {t(
@@ -240,11 +239,11 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
         if (selected.id !== 'ide-gsm') return null;
         return (
           <FileInputWithUrl
-            accept=".json,.geojson,.csv"
+            accept=".csv,.xlsx,.xls"
             buttonLabel={t('dataSource.ideGsm.buttonLabel', 'Select IDE-GSM file')}
             instructions={t(
               'dataSource.ideGsm.instructions',
-              'Provide an IDE-GSM schema file (location/resource) via upload or URL.',
+              'Provide an IDE-GSM CSV file via upload or URL.',
             )}
             defaultDownloadUrl={draft.ideGsmSourceUrl}
             onFileSelect={(file, downloadUrl) => {

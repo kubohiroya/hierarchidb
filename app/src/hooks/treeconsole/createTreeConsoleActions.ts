@@ -750,6 +750,34 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         return;
       }
 
+      if (normalizedAction === 'toggle-visibility' && node?.id) {
+        if (!client) return;
+        try {
+          const mutationAPI = await client.getMutationAPI();
+          const indexed = ssot.nodeIndex?.get(targetNodeId);
+          const currentInvisible =
+            typeof indexed?.invisible === 'boolean'
+              ? indexed.invisible
+              : (node as { invisible?: boolean }).invisible === true;
+          const nextInvisible = !currentInvisible;
+          const res = await mutationAPI.updateNode({
+            nodeId: targetNodeId,
+            invisible: nextInvisible,
+          });
+          if (!res.success) {
+            showCommandError('INVALID_OPERATION', res.error || 'Update failed');
+            return;
+          }
+          await refreshParent(parentId ?? (pageNodeId as NodeId));
+          await refreshUndoRedo();
+          fireCmdEvent();
+        } catch (error) {
+          console.error('Toggle visibility failed:', error);
+          showCommandError('UNKNOWN_ERROR');
+        }
+        return;
+      }
+
       if (normalizedAction === 'copy') {
         applyClipboard([targetNodeId], false);
         return;

@@ -1,10 +1,16 @@
 import { SingletonMixin } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
-import type {
-  LocationGroupItem,
-  LocationMutationAPI,
-  LocationRelation,
+import {
+  IDE_GSM_BULK_CHUNK_SIZE,
+  type IdeGsmImportCallback,
+  type IdeGsmImportProgress,
+  type IdeGsmLocationImportRequest,
+  type IdeGsmLocationImportResult,
+  type LocationGroupItem,
+  type LocationMutationAPI,
+  type LocationRelation,
 } from '@hierarchidb/plugin-service-api';
+import { authFetch } from '@hierarchidb/download';
 import { storeRegistry } from '../entity/store-registry.js';
 
 export class LocationMutationService implements LocationMutationAPI {
@@ -50,6 +56,70 @@ export class LocationMutationService implements LocationMutationAPI {
       if (rels.length > 0) {
         await relStore.bulkDelete(rels);
       }
+    }
+  }
+
+  async importIdeGsmLocations(
+    request: IdeGsmLocationImportRequest,
+    progress?: IdeGsmImportCallback,
+  ): Promise<IdeGsmLocationImportResult> {
+    const emit = (payload: Omit<IdeGsmImportProgress, 'timestamp'>): void => {
+      progress?.({ ...payload, timestamp: Date.now() });
+    };
+    try {
+      emit({ phase: 'fetch' });
+
+      const response = await authFetch('location', request.sourceUrl);
+      if (!response.ok) {
+        throw new Error(`IDE-GSM fetch failed (${response.status})`);
+      }
+      const csvText = await response.text();
+      const {
+        parseIdeGsmCsv,
+        filterIdeGsmPointsBySelection,
+        replaceLocationPointsChunked,
+      } = await import('@hierarchidb/location-plugin');
+      const parsed = await parseIdeGsmCsv(csvText);
+      emit({ phase: 'parse', total: parsed.rowCount, processed: parsed.rowCount });
+
+      const filtered = filterIdeGsmPointsBySelection(parsed.points, request.selectionEntries);
+      emit({ phase: 'filter', total: parsed.points.length, processed: filtered.length });
+
+      const chunkSize = request.chunkSize ?? IDE_GSM_BULK_CHUNK_SIZE;
+      await replaceLocationPointsChunked(request.nodeId, filtered, {
+        chunkSize,
+        onProgress: (chunkProgress) => {
+          emit({
+            phase: 'save',
+            total: chunkProgress.total,
+            processed: chunkProgress.saved,
+            chunk: chunkProgress.chunkIndex,
+            chunkSize: chunkProgress.chunkSize,
+          });
+        },
+      });
+
+      const points = filtered.map((point) => ({
+        lon: Number(point.longitude) || 0,
+        lat: Number(point.latitude) || 0,
+        id: point.pointId,
+        properties: {
+          name: point.name,
+          kind: point.kind,
+          countryCode: point.countryCode,
+          countryName: point.countryName,
+          admin1: point.admin1,
+          admin2: point.admin2,
+          ...(point.metadata ?? {}),
+        },
+      }));
+
+      emit({ phase: 'completed', total: points.length, processed: points.length });
+      return { points, total: points.length };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      emit({ phase: 'failed', message });
+      throw error;
     }
   }
 }

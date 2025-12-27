@@ -31,6 +31,7 @@ export type {
   ListChildrenPrefetchOptions,
   TreeQueryAPI,
 } from './TreeQueryAPI.js';
+export { findRelatedNodesByPriority, type RelatedNodeSearchOptions } from './treeNodeSearch.js';
 export type { TreeTableExpandedAPI } from './TreeTableExpandedAPI.js';
 export type { TreeSubscriptionAPI } from './TreeSubscriptionAPI.js';
 export type { WorkerAPI } from './WorkerAPI.js';

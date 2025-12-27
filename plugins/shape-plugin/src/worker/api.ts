@@ -21,7 +21,6 @@ import {
   type ShapeBatchCommand,
   type ShapeBatchCommandPayload,
   type ProgressInfo,
-  type SelectionStats,
   type ShapeEntity,
   type TileInfo,
   type UrlMetadata,
@@ -37,7 +36,11 @@ import type { BatchProcessConfig } from '../services/batch/types.js';
 import { getEphemeralShapeDB } from '../services/database/EphemeralShapeDB.js';
 import type { BatchStage, BatchTaskStatus } from '../common/types/BatchTaskLike.js';
 import type { BatchProgressEvent as RuntimeBatchProgressEvent } from '@hierarchidb/common-api';
-import { calculateSelectionStats, generateUrlMetadata, getPreferredCountryCodeFormat } from '../services/utils/utils.js';
+import {
+  generateUrlMetadata,
+  generateUrlMetadataFromSelection,
+  getPreferredCountryCodeFormat,
+} from '../services/utils/utils.js';
 import { normalizeCountryCodeFormat } from '../services/utils/iso3166.js';
 import { fetchGeoBoundariesAvailability } from '../services/utils/geoBoundariesAvailability.js';
 import { downloadJson } from '../services/utils/downloadService.js';
@@ -447,6 +450,15 @@ export const shapeBatchAPI = {
     return generateUrlMetadata(dataSourceName, normalizedCountries, adminLevels, countryMetadata);
   },
 
+  generateUrlMetadataFromSelection: async (
+    dataSource: string,
+    selectedArrayByCountries: boolean[][] | string | undefined,
+  ): Promise<UrlMetadata[]> => {
+    const dataSourceName = toDataSourceName(dataSource);
+    const countryMetadata = await shapeBatchAPI.getCountryMetadata(dataSourceName);
+    return generateUrlMetadataFromSelection(dataSourceName, selectedArrayByCountries, countryMetadata);
+  },
+
   // ===================================
   // Selection Validation
   // ===================================
@@ -481,10 +493,6 @@ export const shapeBatchAPI = {
       errors: errors.length > 0 ? errors : undefined,
       warnings: warnings.length > 0 ? warnings : undefined,
     };
-  },
-
-  calculateSelectionStats: async (urlMetadata: UrlMetadata[]): Promise<SelectionStats> => {
-    return calculateSelectionStats(urlMetadata);
   },
 
   // ===================================

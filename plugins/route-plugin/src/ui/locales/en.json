@@ -26,7 +26,7 @@
     },
     "ideGsm": {
       "buttonLabel": "Select IDE-GSM file",
-      "instructions": "Provide an IDE-GSM schema file (location/resource) via upload or URL."
+      "instructions": "Provide an IDE-GSM CSV/Excel file (location/resource) via upload or URL."
     }
   },
   "routeConfig": {
@@ -90,7 +90,12 @@
     "vectorTilesDescription": "Configure zoom range and buffer for tile generation.",
     "minZoom": "Min zoom",
     "maxZoom": "Max zoom",
-    "buffer": "Buffer (px)"
+    "buffer": "Buffer (px)",
+    "cleanupTitle": "Cleanup",
+    "deleteLineStrings": "Delete route line data ({count})",
+    "cleanupMissingNode": "NodeId is missing.",
+    "cleanupMissingApi": "Worker API is unavailable.",
+    "cleanupDone": "Deleted route line data."
   },
   "build": {
     "review": "Review the configuration and press Build to start the batch route generation.",
@@ -101,15 +106,42 @@
     "endLocation": "End:",
     "notConfigured": "Not configured",
     "missing": "Provide transport, route type, and start/end locations before building.",
+    "crashHint": "Previous build did not finish. Consider cleaning data before restarting.",
     "start": "When ready, click the Build button below to start the batch session.",
     "title": "Build routes",
-    "panelDescription": "Monitor and control route build progress."
+    "panelDescription": "Monitor and control route build progress.",
+    "ideGsm": {
+      "fetch": "IDE-GSM: downloading",
+      "parse": "IDE-GSM: parsing rows",
+      "waypoints": "IDE-GSM: generating waypoints",
+      "save": "IDE-GSM: saving routes",
+      "completed": "IDE-GSM: import completed",
+      "failed": "IDE-GSM: import failed"
+    },
+    "errors": {
+      "title": "Build errors",
+      "description": "Some rows were skipped. Review the list below.",
+      "countLabel": "errors",
+      "close": "Close",
+      "missingApi": "Worker API is unavailable.",
+      "missingSource": "IDE-GSM source URL is required.",
+      "unsupportedSource": "Selected data source is not supported yet.",
+      "columns": {
+        "row": "Row",
+        "start": "Start",
+        "end": "End",
+        "reason": "Reason"
+      }
+    }
   },
   "preview": {
     "title": "Preview",
     "description": "Preview the generated route geometry once the build is complete.",
     "missing": "No route geometry is available yet. Run Build to generate a preview.",
-    "ready": "Route geometry is available. Map preview will appear here."
+    "ready": "Route geometry is available. Map preview will appear here.",
+    "mapTitle": "Map Preview",
+    "hoverTemplate": "{mode} / {start} -> {end} / {distance}",
+    "hoverUnknown": "Unknown route"
   },
   "batch": {
     "pause": "Pause",

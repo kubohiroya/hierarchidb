@@ -1,12 +1,14 @@
 import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import { Alert, Box, Stack, Typography } from '@mui/material';
 import { BuildStepPanel, type BuildStatus, type BuildStage } from '@hierarchidb/components';
-import type { NodeType } from '@hierarchidb/common-types';
+import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import { getWorkerBridge, type WorkerBridge } from '@hierarchidb/ui-worker-client';
 import { HeapPressureDialog, useHeapPressureGuard } from '@hierarchidb/ui-memory';
+import type { IdeGsmImportProgress } from '@hierarchidb/plugin-service-api';
 import type { LocationEntity } from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
 import { useLocationProgress } from '../../../common/hooks/useLocationProgress.js';
+import { subscribeIdeGsmProgress } from '../../state/ideGsmProgress.js';
 
 type Props = {
   nodeId?: string;
@@ -30,6 +32,47 @@ const resolveStageIndex = (stageId: string | undefined, stages: BuildStage[]): n
   if (!stageId) return -1;
   const normalized = stageId.toLowerCase();
   return stages.findIndex((stage) => normalized.includes(stage.id));
+};
+
+const mapIdeGsmProgressToPercent = (progress: IdeGsmImportProgress): number => {
+  const total = progress.total ?? 0;
+  const processed = progress.processed ?? 0;
+  const ratio = total > 0 ? Math.min(1, processed / total) : 0;
+  switch (progress.phase) {
+    case 'fetch':
+      return 10;
+    case 'parse':
+      return 20 + Math.round(ratio * 30);
+    case 'filter':
+      return 55;
+    case 'save':
+      return 60 + Math.round(ratio * 35);
+    case 'completed':
+      return 100;
+    case 'failed':
+      return Math.max(0, Math.min(100, Math.round(ratio * 100)));
+    default:
+      return 0;
+  }
+};
+
+const resolveIdeGsmTaskLabel = (t: (key: string, fallback?: string) => string, progress: IdeGsmImportProgress): string => {
+  switch (progress.phase) {
+    case 'fetch':
+      return t('build.ideGsm.fetch', 'IDE-GSM: downloading');
+    case 'parse':
+      return t('build.ideGsm.parse', 'IDE-GSM: parsing rows');
+    case 'filter':
+      return t('build.ideGsm.filter', 'IDE-GSM: filtering rows');
+    case 'save':
+      return t('build.ideGsm.save', 'IDE-GSM: saving locations');
+    case 'completed':
+      return t('build.ideGsm.completed', 'IDE-GSM: import completed');
+    case 'failed':
+      return t('build.ideGsm.failed', 'IDE-GSM: import failed');
+    default:
+      return 'IDE-GSM';
+  }
 };
 
 export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _onUpdate }) => {
@@ -78,6 +121,7 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
   const [isMutating, setIsMutating] = useState(false);
   const [heapDialogOpen, setHeapDialogOpen] = useState(false);
   const heapPauseRef = useRef<string | null>(null);
+  const [ideGsmProgress, setIdeGsmProgress] = useState<IdeGsmImportProgress | null>(null);
   const { progress, unifiedProgress } = useLocationProgress(sessionId, { autoSubscribe: Boolean(sessionId) });
 
   useEffect(() => {
@@ -88,11 +132,18 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
   }, [sessionId]);
 
   const phase = unifiedProgress?.phase ?? progress?.stage;
-  const buildStatus = mapStatusToBuildStatus(
+  const baseStatus = mapStatusToBuildStatus(
     typeof phase === 'string' ? phase : undefined,
     progress?.stage,
     sessionId,
   );
+  const ideGsmActive = Boolean(ideGsmProgress && ideGsmProgress.phase !== 'completed' && ideGsmProgress.phase !== 'failed');
+  const ideGsmFailed = ideGsmProgress?.phase === 'failed';
+  const buildStatus: BuildStatus = ideGsmFailed
+    ? 'failed'
+    : ideGsmActive
+      ? 'running'
+      : baseStatus;
   const { event: heapEvent, dismiss: dismissHeapEvent } = useHeapPressureGuard({
     enabled: buildStatus === 'running' || buildStatus === 'paused',
     workerBridge: bridgeRef.current,
@@ -103,9 +154,16 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
     if (buildStatus === 'completed') return 100;
     return Math.max(0, Math.min(100, Math.round(value)));
   }, [buildStatus, progress?.percentage, unifiedProgress?.percentage]);
+  const ideGsmOverallProgress = ideGsmProgress ? mapIdeGsmProgressToPercent(ideGsmProgress) : overallProgress;
 
   const normalizedStage = unifiedProgress?.stage ?? progress?.stage;
   const stageProgress = useMemo(() => {
+    if (ideGsmActive) {
+      return stages.reduce<Record<string, number>>((acc, stage, index) => {
+        acc[stage.id] = index === 0 ? ideGsmOverallProgress : 0;
+        return acc;
+      }, {});
+    }
     const currentIndex = resolveStageIndex(normalizedStage, stages);
     return stages.reduce<Record<string, number>>((acc, stage, index) => {
       if (currentIndex === -1) {
@@ -123,7 +181,7 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
       acc[stage.id] = 0;
       return acc;
     }, {});
-  }, [normalizedStage, overallProgress, stages]);
+  }, [ideGsmActive, ideGsmOverallProgress, normalizedStage, overallProgress, stages]);
 
   const handlePause = useCallback(async () => {
     if (!sessionId || isMutating) return;
@@ -145,6 +203,11 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
     if (!heapEvent) return;
     setHeapDialogOpen(true);
   }, [heapEvent]);
+
+  useEffect(() => {
+    if (!nodeId) return;
+    return subscribeIdeGsmProgress(nodeId as NodeId, setIdeGsmProgress);
+  }, [nodeId]);
 
   useEffect(() => {
     if (buildStatus !== 'running') {
@@ -180,10 +243,18 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
     }
   }, [isMutating, sessionId]);
 
-  const total = unifiedProgress?.total ?? progress?.total ?? 0;
-  const completed = unifiedProgress?.completed ?? progress?.completed ?? 0;
-  const failed = unifiedProgress?.failed ?? progress?.failed ?? 0;
-  const currentTask = unifiedProgress?.currentTask ?? progress?.currentTask ?? normalizedStage ?? '';
+  const total = ideGsmActive
+    ? (ideGsmProgress?.total ?? 0)
+    : (unifiedProgress?.total ?? progress?.total ?? 0);
+  const completed = ideGsmActive
+    ? (ideGsmProgress?.processed ?? 0)
+    : (unifiedProgress?.completed ?? progress?.completed ?? 0);
+  const failed = ideGsmActive
+    ? 0
+    : (unifiedProgress?.failed ?? progress?.failed ?? 0);
+  const currentTask = ideGsmProgress
+    ? resolveIdeGsmTaskLabel(t, ideGsmProgress)
+    : (unifiedProgress?.currentTask ?? progress?.currentTask ?? normalizedStage ?? '');
 
   const hasPrerequisites = Boolean(nodeId && draft.dataSource);
   const statusLabel = t('build.statusLabel', 'Build status');
@@ -221,7 +292,7 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
 
       <BuildStepPanel
         status={buildStatus}
-        overallProgress={overallProgress}
+        overallProgress={ideGsmActive ? ideGsmOverallProgress : overallProgress}
         stages={stages}
         stageProgress={stageProgress}
         splitViewBreakpoints={SPLITVIEW_BREAKPOINTS}

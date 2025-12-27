@@ -54,6 +54,10 @@ type BatchProgressSubscriber = (sessionId: string, callback: (event: BatchProgre
 
 type ShapeBatchAPI = {
   startBatchProcessing: (draftId: NodeId, batchConfig: unknown, urlMetadata: unknown[]) => Promise<string>;
+  generateUrlMetadataFromSelection?: (
+    dataSource: string,
+    selectedArrayByCountries: boolean[][] | string | undefined,
+  ) => Promise<unknown[]>;
   getDraft?: (draftId: NodeId) => Promise<unknown>;
   getBatchSession?: (sessionId: string) => Promise<unknown>;
   pauseBatchProcessing?: (draftId: NodeId) => Promise<void>;
@@ -303,6 +307,7 @@ reporter.reportStepProgress('Load Comlink', 0);
         }
         return api;
       };
+      const SHAPE_NODE_TYPE = 'shape' as NodeType;
 
       const api = {
         ping: () => services.ping(),
@@ -347,6 +352,16 @@ reporter.reportStepProgress('Load Comlink', 0);
           );
           setHeapContext({ nodeType, sessionId: status.sessionId });
           return status;
+        },
+        generateShapeUrlMetadataFromSelection: async (
+          dataSource: string,
+          selectedArrayByCountries: boolean[][] | string | undefined,
+        ): Promise<unknown[]> => {
+          const api = resolveShapeBatchApiOrThrow(SHAPE_NODE_TYPE);
+          if (!api.generateUrlMetadataFromSelection) {
+            throw new Error('[worker bootstrap] generateUrlMetadataFromSelection is not available');
+          }
+          return api.generateUrlMetadataFromSelection(dataSource, selectedArrayByCountries);
         },
         getBatchSessionStatus: async (nodeType: NodeType, sessionId: string): Promise<BatchSessionStatus> => {
           const api = resolveShapeBatchApiOrThrow(nodeType);

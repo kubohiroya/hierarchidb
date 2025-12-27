@@ -7,7 +7,6 @@ import type { NodeId } from '@hierarchidb/common-types';
 
 // No longer extend local batch shim; RouteBatchSession provides shared behavior
 import type { RouteGenerationConfig } from '../common/entities/RouteEntity.js';
-import { RouteDatabase, type RouteCursorRow } from './database/RouteDatabase.js';
 import type { RouteBatchConfig } from '../common/types/BatchConfig.js';
 import { RouteBatchSession, type RouteBatchTask } from './RouteBatchSession.js';
 import { BatchProgressEvent } from '@hierarchidb/common-api';
@@ -44,8 +43,6 @@ export class RouteBatchManager {
 
   private routeSpecificTasks = new Map<string, RouteBatchTask[]>();
   private activeSessions = new Map<string, RouteBatchSession>();
-  // private generator = new RouteGenerator();
-  private db = new RouteDatabase();
   // Idempotency (jobKey -> session)
   private static jobKeyToSession = new Map<string, string>();
   // Lane semaphores: enforce per-engine concurrency regardless of batch size
@@ -150,8 +147,6 @@ export class RouteBatchManager {
     // Store route-specific tasks
     this.routeSpecificTasks.set(sessionId, routeTasks);
 
-    // Initialize cursor
-    await this.db.routeCursors.put(createCursorRow(sessionId, nodeId, 0, routeTasks.length));
     // Start processing using Shape's infrastructure
     const session = new RouteBatchSession(sessionId, nodeId, config, routeTasks);
     this.activeSessions.set(sessionId, session);
@@ -262,44 +257,6 @@ export class RouteBatchManager {
     };
   }
 
-  /** Pause a running session */
-  async pauseRouteBatchSession(sessionId: string): Promise<void> {
-    try {
-      const cursor = await this.db.routeCursors.get(sessionId);
-      const update: RouteCursorRow = {
-        sessionId,
-        nodeId: cursor?.nodeId ?? ('' as NodeId),
-        completed: cursor?.completed ?? 0,
-        total: cursor?.total ?? 0,
-        paused: true,
-        updatedAt: Date.now(),
-        tableId: cursor?.tableId,
-      };
-      await this.db.routeCursors.put(update);
-    } catch (error) {
-      logRouteBatchWarning(`Failed to persist pause state for session ${sessionId}`, error);
-    }
-  }
-
-  /** Resume a paused session */
-  async resumeRouteBatchSession(_sessionId: string): Promise<void> {
-    try {
-      const cursor = await this.db.routeCursors.get(_sessionId);
-      const update: RouteCursorRow = {
-        sessionId: _sessionId,
-        nodeId: cursor?.nodeId ?? ('' as NodeId),
-        completed: cursor?.completed ?? 0,
-        total: cursor?.total ?? 0,
-        paused: false,
-        updatedAt: Date.now(),
-        tableId: cursor?.tableId,
-      };
-      await this.db.routeCursors.put(update);
-    } catch (error) {
-      logRouteBatchWarning(`Failed to persist resume state for session ${_sessionId}`, error);
-    }
-  }
-
   private emitProgressEvent(event: BatchProgressEvent): void {
     const payload = event.payload ?? {};
     const total = coerceNumber(payload.total);
@@ -332,17 +289,6 @@ export class RouteBatchManager {
     };
     return hashCyrb53(stableStringify(payload));
   }
-}
-
-function createCursorRow(sessionId: string, nodeId: NodeId, completed: number, total: number): RouteCursorRow {
-  return {
-    sessionId,
-    nodeId,
-    completed,
-    total,
-    updatedAt: Date.now(),
-    paused: false,
-  };
 }
 
 function stableStringify(x: unknown): string {

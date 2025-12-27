@@ -70,6 +70,11 @@ export interface PluginManifest {
   dependencies?: string[];
   icon?: PluginIconConfig;
   category?: PluginCategoryConfig;
+  visibility?: {
+    hidden?: boolean;
+    showInCreateMenu?: boolean;
+    showInPluginList?: boolean;
+  };
   schema?: PluginManifestSchema;
   capabilities?: PluginCapabilities;
   packageName?: string;

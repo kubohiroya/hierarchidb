@@ -1,0 +1,42 @@
+import type { NodeId } from '@hierarchidb/common-types';
+import type { Geometry } from 'geojson';
+import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
+import type { TabularDataResult } from '@hierarchidb/ui-tabular';
+import type { BatchConfig, DataSourceName, UrlMetadata } from '@hierarchidb/shape-plugin';
+
+export interface ShapeEntity {
+  // Identifiers
+  id?: string;
+  nodeId?: NodeId;
+
+  // Geometry / properties
+  geometry?: Geometry;
+  properties?: Record<string, unknown>;
+
+  tabularMetadataId?: string;
+  tabularFilters?: unknown; // kept broad; concrete type in data-source module
+  tabularMetadata?: TabularTableMetadata | null;
+//tabularFile?: TabularFileSummary;
+  tabularLastPreview?: TabularDataResult;
+
+  // License Agreement
+  licenseAgreement?: boolean;
+  licenseAgreedAt?: string;
+
+  // Data source (legacy, derived from batchConfig.dataSource)
+  dataSourceName?: DataSourceName;
+
+// Processing Configuration
+  batchConfig?: BatchConfig;
+
+// Country & Admin Selection
+  selectedArrayByCountries?: boolean[][] | string;
+  urlMetadata?: UrlMetadata[];
+
+  // Processing Status
+  batchSessionId?: string;
+  processingStatus?: 'idle' | 'processing' | 'paused' | 'completed' | 'failed' | 'cancelled';
+  tileSummary?: { tiles: number; totalBytes: number; zoomMin?: number; zoomMax?: number };
+  buildStartedAt?: number;
+  buildFinishedAt?: number;
+}

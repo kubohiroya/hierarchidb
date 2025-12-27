@@ -125,6 +125,9 @@
         "menuGroup": "document",
         "createOrder": 60
       },
+      "visibility": {
+        "hidden": true
+      },
       "priority": 60,
       "creatable": true,
       "tags": [

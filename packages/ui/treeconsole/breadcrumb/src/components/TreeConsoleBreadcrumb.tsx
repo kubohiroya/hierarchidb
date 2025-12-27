@@ -310,6 +310,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
               const nodeId = node.id ?? node.treeNodeId ?? '';
               const nodeIdString = nodeId != null ? String(nodeId) : '';
               const nodeName = node.name || 'Unknown';
+              const isInvisible = node.invisible === true;
               const explicitDepth = typeof node.depth === 'number' ? node.depth : undefined;
               const nodeWithAbsolute = node as BreadcrumbNode & { absoluteDepth?: number };
               const absoluteDepth =
@@ -369,7 +370,13 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                         : undefined
                     }
                   />
-                  <Typography component="span" sx={{ fontWeight: isLast ? 700 : 500 }}>
+                  <Typography
+                    component="span"
+                    sx={{
+                      fontWeight: isLast ? 700 : 500,
+                      textDecoration: isInvisible ? 'line-through' : 'none',
+                    }}
+                  >
                     {nodeName}
                   </Typography>
                 </>
@@ -445,6 +452,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
         nodeType={contextMenuNode?.nodeType || contextMenuNode?.type || 'folder-plugin'}
         nodeName={contextMenuNode?.name}
         treeId={props.treeId}
+        isInvisible={contextMenuNode?.invisible === true}
         canCreate={true}
         canEdit={!isRootContext}
         canTrash={!isRootContext}
@@ -483,7 +491,12 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
             contextMenuNode || undefined
           )
         }
-        onCheckReference={() => console.log('Check reference:', contextMenuNode?.id)}
+        onToggleInvisible={(_nextValue) => {
+          if (contextMenuNode && onContextAction) {
+            onContextAction('toggle-visibility', contextMenuNode, { source: 'breadcrumb' });
+          }
+          handleContextMenuClose();
+        }}
         onPreview={() => {
           if (contextMenuNode && onContextAction) {
             onContextAction('preview', contextMenuNode, { source: 'breadcrumb' });

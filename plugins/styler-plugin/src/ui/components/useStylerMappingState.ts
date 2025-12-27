@@ -14,7 +14,11 @@ export const isStyleMappingComplete = (dialogData: Partial<StylerStepData>): boo
   const styleType = dialogData.mapping?.styleType;
   const targetProperty = dialogData.mapping?.targetProperty;
   const valueColumn = dialogData.valueColumn;
-  return Boolean(styleType && targetProperty && valueColumn);
+  const featureIdProperty = dialogData.mapping?.featureIdProperty;
+  const valueType = dialogData.mapping?.valueType;
+  const mappingMode = dialogData.mapping?.mappingMode;
+  const hasBehavior = valueType === 'number' ? Boolean(mappingMode) : Boolean(valueType);
+  return Boolean(styleType && targetProperty && valueColumn && featureIdProperty && hasBehavior);
 };
 
 export const hasKeyValueSelected = (dialogData?: Partial<StylerStepData>): boolean => {

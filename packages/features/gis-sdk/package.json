@@ -19,12 +19,16 @@
   },
   "dependencies": {
     "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/util": "workspace:*",
+    "@mapbox/vector-tile": "^2.0.4",
     "@maplibre/vt-pbf": "^4.0.3",
     "@turf/area": "^7.0.0",
     "@turf/turf": "^7.0.0",
     "dexie": "^4.2.1",
-    "geojson-vt": "^3.2.1"
+    "geojson-vt": "^3.2.1",
+    "pbf": "^4.0.1",
+    "typescript-lru-cache": "^2.0.0"
   },
   "devDependencies": {
     "@types/geojson": "^7946.0.14",

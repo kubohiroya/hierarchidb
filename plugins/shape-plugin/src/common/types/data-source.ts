@@ -36,6 +36,5 @@ export interface UrlMetadata {
   continent: string;
   dataSource?: DataSourceName;
   country?: string;
-  estimatedSize?: number;
   lastUpdated?: string;
 }

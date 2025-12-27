@@ -345,8 +345,10 @@ export class LocationBatchManager {
       const strategy = getLocationStrategy(config);
       if (strategy) {
         const list = await strategy.search(config);
-        if (config.limit && list.length > (config.limit || 0)) return list.slice(0, config.limit);
-        return list;
+        const normalized = await this.normalizeCountryCodes(list);
+        const filtered = this.filterLocationsByConfig(normalized, config);
+        if (config.limit && filtered.length > (config.limit || 0)) return filtered.slice(0, config.limit);
+        return filtered;
       }
     } catch (error) {
       logLocationBatchWarning('Failed to execute registered location strategy', error);
@@ -383,8 +385,8 @@ export class LocationBatchManager {
         console.warn(`Unsupported data source: ${config.dataSource}`);
     }
 
-    await this.normalizeCountryCodes(locations);
-    const filtered = this.filterLocationsByConfig(locations, config);
+    const normalized = await this.normalizeCountryCodes(locations);
+    const filtered = this.filterLocationsByConfig(normalized, config);
 
     // Apply limit if specified
     if (config.limit && filtered.length > config.limit) {
@@ -783,17 +785,18 @@ export class LocationBatchManager {
     });
   }
 
-  private async normalizeCountryCodes(locations: LocationPointProperties[]): Promise<void> {
-    if (locations.length === 0) return;
+  private async normalizeCountryCodes(
+    locations: LocationPointProperties[],
+  ): Promise<LocationPointProperties[]> {
+    if (locations.length === 0) return locations;
     const map = await this.getCountryNameMap();
-    if (map.size === 0) return;
-    locations.forEach((location) => {
+    if (map.size === 0) return locations;
+    return locations.map((location) => {
       const rawCode = location.countryCode?.trim();
       const rawName = location.countryName?.trim();
       const normalized = this.resolveIso2Code(map, rawCode, rawName);
-      if (normalized) {
-        location.countryCode = normalized;
-      }
+      if (!normalized || normalized === location.countryCode) return location;
+      return { ...location, countryCode: normalized };
     });
   }
 

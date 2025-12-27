@@ -1,6 +1,4 @@
-import type { Tree } from '@hierarchidb/common-types';
 import { UserLoginButton } from '@hierarchidb/ui-plugin-shell/ui-usermenu';
-import { Folder as FolderIcon, AccountTree as TreeIcon } from '@mui/icons-material';
 import {
   AppBar,
   Box,
@@ -12,14 +10,12 @@ import {
   DialogTitle,
   IconButton,
   Stack,
-  ToggleButton,
-  ToggleButtonGroup,
   Toolbar,
   Typography,
 } from '@mui/material';
 import { createTheme, ThemeProvider, useTheme } from '@mui/material/styles';
 import { Outlet, useLoaderData, useNavigate, useRouterState } from '@tanstack/react-router';
-import type { MouseEvent, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import AppLogoIcon from '~/components/AppLogoIcon.js';
 import { useOptionalBootProgress } from '~/contexts/BootProgressProvider.js';
@@ -110,8 +106,6 @@ export default function TLayout() {
 export function TreeLayoutBody({ data }: TreeLayoutBodyProps) {
   const navigate = useNavigate();
   const { client: workerClient } = useWorker();
-  const [trees, setTrees] = useState<Tree[]>([]);
-  const [selectedTreeId, setSelectedTreeId] = useState<string | null>(data.tree?.id || null);
   const bootProgress = useOptionalBootProgress();
   const isUserMenuReady = Boolean(
     bootProgress?.steps.Auth.done && bootProgress?.steps.Theme.done && bootProgress?.steps.I18n.done
@@ -125,31 +119,19 @@ export function TreeLayoutBody({ data }: TreeLayoutBodyProps) {
   }, [nodeNotFound]);
 
   useEffect(() => {
-    const loadTrees = async () => {
-      if (!workerClient) return;
+    if (!workerClient) return;
+    void (async () => {
       try {
         const queryAPI = await workerClient.getQueryAPI();
         const availableTrees = await queryAPI.listTrees();
-        setTrees(availableTrees);
+        if (!availableTrees.some((tree) => tree.id === 'r')) {
+          console.warn('[TreePageLayout] Resources tree not found in available trees');
+        }
       } catch (err) {
         console.warn('[TreePageLayout] failed to list trees', err);
       }
-    };
-    void loadTrees();
+    })();
   }, [workerClient]);
-
-  useEffect(() => {
-    if (data.tree?.id) {
-      setSelectedTreeId(data.tree.id);
-    }
-  }, [data.tree?.id]);
-
-  const handleTreeChange = (_event: MouseEvent<HTMLElement>, newTreeId: string | null) => {
-    if (newTreeId && newTreeId !== selectedTreeId) {
-      setSelectedTreeId(newTreeId);
-      navigate({ to: `/t/${newTreeId}` });
-    }
-  };
 
   const pageName =
     data.pageNode?.metadata?.name || data.tree?.name || 'TreeTypes Console';
@@ -180,55 +162,6 @@ export function TreeLayoutBody({ data }: TreeLayoutBodyProps) {
             <Box sx={{ flexGrow: 1 }} />
 
             <Stack direction="row" spacing={1} alignItems="center">
-              <ToggleButtonGroup
-                value={selectedTreeId || undefined}
-                exclusive
-                onChange={handleTreeChange}
-                aria-label="tree selection"
-                size="small"
-                sx={{
-                  borderRadius: '24px',
-                  '& .MuiToggleButton-root': {
-                    px: 2,
-                    py: 0.5,
-                    border: '1px solid rgba(0, 0, 0, 0.12)',
-                    borderRadius: 0,
-                    '&:first-of-type': {
-                      borderTopLeftRadius: '24px',
-                      borderBottomLeftRadius: '24px',
-                    },
-                    '&:last-of-type': {
-                      borderTopRightRadius: '24px',
-                      borderBottomRightRadius: '24px',
-                    },
-                    '&:not(:first-of-type)': {
-                      borderLeft: 'none',
-                    },
-                  },
-                }}
-              >
-                {trees
-                  .sort((a, b) => {
-                    const aIsResource = a.name.toLowerCase().includes('resource');
-                    const bIsResource = b.name.toLowerCase().includes('resource');
-                    if (aIsResource && !bIsResource) return -1;
-                    if (!aIsResource && bIsResource) return 1;
-                    return 0;
-                  })
-                  .map((tree) => (
-                    <ToggleButton key={tree.id} value={tree.id} aria-label={tree.name}>
-                      {tree.name.toLowerCase().includes('project') ? (
-                        <TreeIcon sx={{ mr: 1, fontSize: 20 }} />
-                      ) : tree.name.toLowerCase().includes('resource') ? (
-                        <FolderIcon sx={{ mr: 1, fontSize: 20 }} />
-                      ) : (
-                        <TreeIcon sx={{ mr: 1, fontSize: 20 }} />
-                      )}
-                      {tree.name}
-                    </ToggleButton>
-                  ))}
-              </ToggleButtonGroup>
-
               {isUserMenuReady ? (
                 <Box sx={{ ml: '8px' }}>
                   <UserLoginButton />

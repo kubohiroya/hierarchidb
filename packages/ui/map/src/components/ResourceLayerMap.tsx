@@ -192,6 +192,8 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
               tileDataProvider={layer.tileDataProvider}
               layerId={layerId}
               sourceId={sourceId}
+              promoteId={layer.promoteId}
+              featureState={layer.featureState}
               paint={layerPaint}
               layout={layerConfig.layout}
               filter={layerConfig.filter}

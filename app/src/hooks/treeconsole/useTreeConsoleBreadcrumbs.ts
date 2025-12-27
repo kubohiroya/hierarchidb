@@ -77,6 +77,7 @@ export function useTreeConsoleBreadcrumbs({
           id: n.id,
           name: n.metadata?.name ?? '',
           nodeType: n.nodeType,
+          invisible: n.invisible,
         }));
 
         if (nodes.length + 1 > resolvedMaxBreadcrumbItems) {
@@ -96,6 +97,7 @@ export function useTreeConsoleBreadcrumbs({
           id: pageTreeNode.id,
           name: pageTreeNode.metadata?.name ?? '',
           nodeType: pageTreeNode.nodeType,
+          invisible: pageTreeNode.invisible,
         };
 
         if (!disposed) {
@@ -112,7 +114,9 @@ export function useTreeConsoleBreadcrumbs({
               if (String(item.id) !== String(changedId)) return item;
               const nextName = ev.node?.metadata?.name ?? item.name;
               const nextNodeType = ev.node?.nodeType ?? item.nodeType;
-              return { ...item, name: nextName, nodeType: nextNodeType };
+              const nextInvisible =
+                typeof ev.node?.invisible === 'boolean' ? ev.node?.invisible : item.invisible;
+              return { ...item, name: nextName, nodeType: nextNodeType, invisible: nextInvisible };
             }),
           );
         });

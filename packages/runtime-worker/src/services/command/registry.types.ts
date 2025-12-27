@@ -60,6 +60,7 @@ export interface CommandMap {
       nodeId: NodeId;
       name?: string;
       description?: string;
+      invisible?: boolean;
     };
     result: CoreCommandResult;
   };

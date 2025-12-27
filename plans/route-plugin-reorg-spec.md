@@ -3,6 +3,84 @@
 This document expands the route plugin reorganization specifications based on existing plans in `plans/`.
 Each section refines one plan item with route-specific behavior, integration points, and open questions.
 
+## Revised Direction (2025-12)
+
+This section supersedes earlier assumptions that route data sources and processing must mirror legacy route flows. The intent is to keep route-plugin thin and move shared behaviors into shared packages, following the shape/location reorg pattern.
+
+### Core Data Model Refresh
+
+- `RouteEntity` is the single source of truth for dialog state.
+- `RouteEntity` is stored in `TreeNode<RouteEntity>.data` and `TreeNode<RouteEntity>.draftData` (draft is `Partial<RouteEntity>`).
+- Step 2 (Data Source), Step 3 (Country selection), and Step 4 (Settings) only update `RouteEntity` fields.
+- `RouteLineString` is a persisted output from Stage 1 (see below) and is not required to render the dialog steps.
+
+### Step Flow and Build Stages
+
+1) Step 2: Data Source selection
+   - Select a data source and update `RouteEntity` only.
+2) Step 3: Country selection
+   - Update `RouteEntity` selection fields only.
+3) Step 4: Settings
+   - Update `RouteEntity` settings only.
+4) Step 5: Build (three stages)
+   - Stage 1: Route data construction
+     - Fetch/parse source data.
+     - Resolve `LocationPoint` entries from sibling location nodes by name (exact match).
+     - Build `RouteLineString` objects with resolved coordinates.
+     - Persist the `RouteLineString` results.
+   - Stage 2: Waypoint construction
+     - Populate `RouteLineString.waypoints`:
+       - AIRWAY: great-circle points.
+       - WATERWAY: searoute.js points.
+       - Others: `undefined` (straight line).
+     - Future: OSRM/OpenStreetMap routing for roads/rails.
+   - Stage 3: Tile generation
+     - Generate vector tiles from the LineString bounding boxes.
+     - Persist tiles/metadata.
+5) Step 6: Preview
+   - Two tabs: "Map Preview" and "Metadata Table".
+   - Map Preview:
+     - Show start/end icons (airport/port/station) using the same mechanism as location preview.
+     - Style lines by mode:
+       - AIRWAY: red
+       - WATERWAY: blue
+       - H_RAILWAY: orange
+       - RAILWAY: green
+       - ROAD (highway): light gray
+       - ROAD (general): dark gray
+
+### IDE-GSM Strategy (CSV)
+
+IDE-GSM ingestion is defined as a CSV strategy. The first row is the header row with the exact columns:
+
+`Start,End,Name,Distance,Speed,Border,Overhead,Loading,Mode,Quality,Oneway,Freight,Country1,Region1,Country2,Region2`
+
+Rules:
+
+- Rows start at line 2.
+- `Start` and `End` must match `LocationPointProperties.name` (exact match) from the IDE-GSM location data source.
+- Use `LocationQueryAPI` to resolve the location and obtain coordinates.
+  - Build `startPoint`/`endPoint` from the resolved latitude/longitude.
+  - Map `Country1` → `startPoint.admin0Name`, `Region1` → `startPoint.admin1Name`,
+    `Country2` → `endPoint.admin0Name`, `Region2` → `endPoint.admin1Name`.
+- `Name` maps to `RouteEntity.name`.
+- `Mode` maps to `ROUTE_MODES`:
+  - `0` → ROAD
+  - `1` → WATERWAY
+  - `2` → AIRWAY
+  - `3` → RAILWAY
+  - `4` → H_RAILWAY
+- All other columns (`Distance`, `Speed`, `Border`, `Overhead`, `Loading`, `Quality`, `Oneway`, `Freight`)
+  are preserved as metadata.
+
+Open questions:
+
+- If `Start`/`End` lookup fails, skip the row and record the error.
+  - During build, collect error entries (row + reason) and show a summary dialog when the build completes.
+- `Distance`/`Speed` are normalized into dedicated fields.
+  - When waypoint generation runs for AIRWAY (great-circle) or WATERWAY (searoute-js),
+    overwrite `Distance`/`Speed` with the route-derived values.
+
 ## Stage 1: Runtime Worker Adapter Registration (Route)
 
 Reference plan: `plans/shape-shared-extraction-stage1-runtime-worker.md`

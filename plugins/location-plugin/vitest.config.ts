@@ -6,6 +6,7 @@ const basePluginEntry = path.resolve(__dirname, '../base-plugin/src/index.ts');
 export default defineConfig({
   resolve: {
     alias: {
+      '@hierarchidb/batch-runtime-services': path.resolve(__dirname, '../../packages/batch-runtime-services/src/index.ts'),
       '@hierarchidb/tabular-store': path.resolve(__dirname, 'src/common/test-shims/external-mocks.ts'),
       '@hierarchidb/plugin-ui-sdk': basePluginEntry,
       '@hierarchidb/runtime-worker': path.resolve(__dirname, 'src/common/test-shims/runtime-worker.ts'),

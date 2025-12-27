@@ -31,6 +31,8 @@ import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import { getDBName } from '@hierarchidb/util';
 import { shapeDB } from '@hierarchidb/shape-plugin';
 import { getEphemeralLocationDB } from '@hierarchidb/location-plugin';
+import { TilesDB } from '@hierarchidb/gis-sdk';
+import { MAPLIBRE_PROPERTY_METADATA } from '@hierarchidb/styler-plugin';
 import {
   formatZxyParam,
   type MapViewState as LoaderMapViewState,
@@ -49,6 +51,8 @@ type BasemapStyleEntry = {
 };
 
 type LayerStyleOverrides = Partial<Record<'fill' | 'line' | 'circle' | 'symbol', Record<string, unknown>>>;
+type FeatureStateEntry = { id: string | number; state: Record<string, unknown> };
+type FeatureStateBundle = { featureIdProperty: string; entries: FeatureStateEntry[] };
 
 type MapStyle = {
   style: 'streets' | 'satellite' | 'terrain' | 'dark' | 'light' | 'custom';
@@ -115,35 +119,23 @@ const sortByLayerPath = <T extends { absolutePath?: string; layerId: string }>(i
     return aKey.localeCompare(bKey);
   });
 
-type GeoJsonCollection = ResourceGeoJsonLayer['data'];
+let routeTilesDbPromise: Promise<TilesDB> | null = null;
+const getRouteTilesDb = async (): Promise<TilesDB> => {
+  if (!routeTilesDbPromise) {
+    routeTilesDbPromise = TilesDB.getSingleton();
+  }
+  return routeTilesDbPromise;
+};
 
-const createLineGeoJson = (coordinates: Array<[number, number]>): GeoJsonCollection => ({
-  type: 'FeatureCollection',
-  features: [
-    {
-      type: 'Feature',
-      geometry: {
-        type: 'LineString',
-        coordinates,
-      },
-      properties: {},
-    },
-  ],
-} as GeoJsonCollection);
-
-const createPointGeoJson = (
-  points: Array<{ lat: number; lon: number }>,
-): GeoJsonCollection => ({
-  type: 'FeatureCollection',
-  features: points.map((pt) => ({
-    type: 'Feature',
-    geometry: {
-      type: 'Point',
-      coordinates: [pt.lon, pt.lat],
-    },
-    properties: {},
-  })),
-} as GeoJsonCollection);
+const withLayerOrder = (
+  kind: 'shape' | 'route' | 'location',
+  absolutePath: string | undefined,
+  fallbackId: string,
+): string => {
+  const prefix = kind === 'shape' ? '1' : kind === 'route' ? '2' : '3';
+  const key = absolutePath ?? fallbackId;
+  return `${prefix}/${key}`;
+};
 
 export default function MapPage() {
   const navigate = useNavigate();
@@ -190,6 +182,7 @@ export default function MapPage() {
         [...ancestors, rootNode, ...descendants].forEach((node) => {
           nodeById.set(String(node.id), node);
         });
+        const visibleDescendants = descendants.filter((node) => node.invisible !== true);
 
         if (!search?.zxy && !persistedZxyApplied.current) {
           const persisted =
@@ -211,11 +204,14 @@ export default function MapPage() {
         }
 
         const basemapEntries: BasemapStyleEntry[] = [];
-        const vectorEntries: ResourceVectorLayer[] = [];
+        const shapeEntries: ResourceVectorLayer[] = [];
+        const routeEntries: ResourceVectorLayer[] = [];
+        const locationEntries: ResourceVectorLayer[] = [];
         const geoJsonEntries: ResourceGeoJsonLayer[] = [];
         const styleOverrides: LayerStyleOverrides = {};
+        const featureStateByStyleType: Partial<Record<'choropleth' | 'points' | 'lines', FeatureStateBundle>> = {};
 
-        const stylerNodes = descendants.filter((node) => node.nodeType === 'styler');
+        const stylerNodes = visibleDescendants.filter((node) => node.nodeType === 'styler');
         const sortedStylers = sortByPath(
           stylerNodes.map((node) => ({
             nodeId: String(node.id),
@@ -225,7 +221,19 @@ export default function MapPage() {
         );
 
         sortedStylers.forEach(({ node }) => {
-          const data = node.data as { generatedStyle?: { maplibreStyleSpec?: MapLibreStyle | Record<string, unknown> } } | null;
+          const data = node.data as {
+            generatedStyle?: { maplibreStyleSpec?: MapLibreStyle | Record<string, unknown> };
+            mapping?: {
+              styleType?: 'choropleth' | 'points' | 'lines';
+              featureIdProperty?: string;
+              valueType?: 'number' | 'color';
+              targetProperty?: keyof typeof MAPLIBRE_PROPERTY_METADATA;
+            };
+            styleKeyValues?: {
+              colors?: Array<{ key: string; color: string }>;
+              scalars?: Array<{ key: string; scalarValue: number }>;
+            };
+          } | null;
           const spec = isMapLibreStyle(data?.generatedStyle?.maplibreStyleSpec)
             ? data?.generatedStyle?.maplibreStyleSpec
             : undefined;
@@ -235,9 +243,37 @@ export default function MapPage() {
             if (!type || !layer.paint) return;
             styleOverrides[type] = { ...(styleOverrides[type] ?? {}), ...(layer.paint ?? {}) };
           });
+
+          const styleType = data?.mapping?.styleType;
+          const featureIdProperty = data?.mapping?.featureIdProperty;
+          if (!styleType || !featureIdProperty) return;
+
+          const targetProperty = data?.mapping?.targetProperty;
+          const targetMeta = targetProperty ? MAPLIBRE_PROPERTY_METADATA[targetProperty] : null;
+          const valueType = data?.mapping?.valueType ?? targetMeta?.type ?? 'color';
+          const entries: FeatureStateEntry[] = [];
+          if (valueType === 'number') {
+            (data?.styleKeyValues?.scalars ?? []).forEach((item) => {
+              entries.push({
+                id: item.key,
+                state: { value: item.scalarValue },
+              });
+            });
+          } else {
+            (data?.styleKeyValues?.colors ?? []).forEach((item) => {
+              entries.push({
+                id: item.key,
+                state: { value: item.color },
+              });
+            });
+          }
+
+          if (entries.length > 0) {
+            featureStateByStyleType[styleType] = { featureIdProperty, entries };
+          }
         });
 
-        descendants.forEach((node) => {
+        visibleDescendants.forEach((node) => {
           const absolutePath = buildAbsolutePath(String(node.id), nodeById);
           if (node.nodeType === 'basemap') {
             const data = node.data as { mapStyle?: MapStyle } | null;
@@ -252,10 +288,11 @@ export default function MapPage() {
           }
 
           if (node.nodeType === 'shape') {
-            vectorEntries.push({
+            const featureState = featureStateByStyleType.choropleth;
+            shapeEntries.push({
               nodeId: String(node.id),
               nodeType: 'shape',
-              absolutePath,
+              absolutePath: withLayerOrder('shape', absolutePath, String(node.id)),
               dbName: getDBName('shape'),
               tileDataProvider: async (z, x, y, tileNodeId) => {
                 if (!tileNodeId) return null;
@@ -266,6 +303,8 @@ export default function MapPage() {
                 layerType: 'fill',
                 sourceLayer: 'default',
               },
+              promoteId: featureState?.featureIdProperty,
+              featureState: featureState?.entries,
             });
           }
 
@@ -273,10 +312,11 @@ export default function MapPage() {
             const data = node.data as { batchSessionId?: string; features?: Array<{ position?: { lat?: number; lon?: number } }> } | null;
             const sessionId = data?.batchSessionId;
             if (sessionId) {
-              vectorEntries.push({
+              const featureState = featureStateByStyleType.points;
+              locationEntries.push({
                 nodeId: String(node.id),
                 nodeType: 'location',
-                absolutePath,
+                absolutePath: withLayerOrder('location', absolutePath, String(node.id)),
                 dbName: getDBName('location-ephemeral'),
                 tileDataProvider: async (z, x, y) => {
                   const db = getEphemeralLocationDB();
@@ -286,49 +326,49 @@ export default function MapPage() {
                 layerConfig: {
                   layerType: 'circle',
                   sourceLayer: 'location_points',
-                },
-              });
-            } else if (data?.features?.length) {
-              const points = data.features
-                .map((feature) => ({
-                  lat: feature.position?.lat ?? 0,
-                  lon: feature.position?.lon ?? 0,
-                }))
-                .filter((pt) => Number.isFinite(pt.lat) && Number.isFinite(pt.lon));
-              if (points.length) {
-                geoJsonEntries.push({
-                  layerId: `location-geojson-${node.id}`,
-                  sourceId: `location-geojson-source-${node.id}`,
-                  data: createPointGeoJson(points),
-                  layerType: 'circle',
                   paint: {
-                    'circle-radius': 5,
+                    'circle-radius': 4,
                     'circle-color': '#2f74ff',
                     'circle-opacity': 0.8,
                     ...(styleOverrides.circle ?? {}),
                   },
-                  absolutePath,
-                });
-              }
+                },
+                promoteId: featureState?.featureIdProperty,
+                featureState: featureState?.entries,
+              });
             }
           }
 
           if (node.nodeType === 'route') {
-            const data = node.data as { lineGeometry?: Array<[number, number]>; style?: { color?: string; width?: number; opacity?: number } } | null;
-            const line = data?.lineGeometry ?? [];
-            if (line.length >= 2) {
-              geoJsonEntries.push({
-                layerId: `route-geojson-${node.id}`,
-                sourceId: `route-geojson-source-${node.id}`,
-                data: createLineGeoJson(line),
-                layerType: 'line',
-                paint: {
-                  'line-color': data?.style?.color ?? '#f24c3d',
-                  'line-width': data?.style?.width ?? 3,
-                  'line-opacity': data?.style?.opacity ?? 0.9,
-                  ...(styleOverrides.line ?? {}),
+            const data = node.data as { batchSessionId?: string } | null;
+            const sessionId = data?.batchSessionId;
+            if (sessionId) {
+              const featureState = featureStateByStyleType.lines;
+              routeEntries.push({
+                nodeId: String(node.id),
+                nodeType: 'route',
+                absolutePath: withLayerOrder('route', absolutePath, String(node.id)),
+                dbName: getDBName('stage-tiles-db'),
+                tileDataProvider: async (z, x, y) => {
+                  const db = await getRouteTilesDb();
+                  const record = await db.tiles
+                    .where('[sessionId+z+x+y]')
+                    .equals([sessionId, z, x, y])
+                    .first();
+                  return record?.data ?? null;
                 },
-                absolutePath,
+                layerConfig: {
+                  layerType: 'line',
+                  sourceLayer: 'layer0',
+                  paint: {
+                    'line-color': '#f24c3d',
+                    'line-width': 2,
+                    'line-opacity': 0.9,
+                    ...(styleOverrides.line ?? {}),
+                  },
+                },
+                promoteId: featureState?.featureIdProperty,
+                featureState: featureState?.entries,
               });
             }
           }
@@ -336,7 +376,11 @@ export default function MapPage() {
 
         if (!cancelled) {
           setBasemapStyles(sortByPath(basemapEntries));
-          setVectorLayers(sortByPath(vectorEntries));
+          setVectorLayers([
+            ...sortByPath(shapeEntries),
+            ...sortByPath(routeEntries),
+            ...sortByPath(locationEntries),
+          ]);
           setGeoJsonLayers(sortByLayerPath(geoJsonEntries));
           setStyleOverridesByType(styleOverrides);
         }

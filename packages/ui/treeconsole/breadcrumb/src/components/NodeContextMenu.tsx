@@ -5,10 +5,9 @@
   */
 
 import { type MouseEvent, type ReactElement, useEffect, useMemo, useRef, useState } from 'react';
-import { Divider, ListItemIcon, ListItemText, Menu, MenuItem, Tooltip } from '@mui/material';
+import { Divider, ListItemIcon, ListItemText, Menu, MenuItem, Switch, Tooltip } from '@mui/material';
 import {
   Add as AddIcon,
-  AssignmentTurnedIn as AssignmentTurnedInIcon,
   ChevronRight as ChevronRightIcon,
   Clear as ClearIcon,
   ContentCopy as ContentCopyIcon,
@@ -17,6 +16,8 @@ import {
   FileCopy as DuplicateIcon,
   Folder as FolderIcon,
   PlayArrow as PlayArrowIcon,
+  Visibility as VisibilityIcon,
+  VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
 import { useIconRegistry } from '@hierarchidb/ui-icon';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
@@ -58,7 +59,8 @@ export interface NodeContextMenuProps {
   onTrash?: () => void;
   onCopy?: () => void;
   onCut?: () => void;
-  onCheckReference?: () => void;
+  onToggleInvisible?: (nextValue: boolean) => void;
+  isInvisible?: boolean;
   isTrashRoot?: boolean;
   mode?: 'restore' | 'dispose';
   onRestoreToOriginal?: () => void;
@@ -97,7 +99,8 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     onTrash: _onTrash,
     onCopy: _onCopy,
     onCut: _onCut,
-    onCheckReference: _onCheckReference,
+    onToggleInvisible: _onToggleInvisible,
+    isInvisible = false,
   } = props;
 
 
@@ -126,8 +129,10 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
   const duplicateLabel = translateWithFallback('treeConsole.contextMenu.duplicate', 'Duplicate');
   const moveToTrashLabel = translateWithFallback('treeConsole.contextMenu.moveToTrash', 'Move to Trash');
   const allowTrash = (typeof canTrash === 'boolean' ? canTrash : undefined) ?? (canRemove ?? true);
-  const checkReferenceLabel = translateWithFallback('treeConsole.contextMenu.checkReference', 'Check Reference');
+  const visibleLabel = translateWithFallback('treeConsole.contextMenu.visible', 'Visible');
+  const invisibleLabel = translateWithFallback('treeConsole.contextMenu.invisible', 'Invisible');
   const previewLabel = translateWithFallback('treeConsole.contextMenu.preview', 'Preview');
+  const canPreview = !isInvisible;
 
   // Use refs to store the latest props to avoid stale closures
   const propsRef = useRef(props);
@@ -227,11 +232,12 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     setTimeout(() => { onPreview?.(); }, 0);
   };
 
-  const handleCheckReferenceClick = () => {
-    const onCheckReference = propsRef.current.onCheckReference;
+  const handleToggleInvisible = () => {
+    const onToggleInvisible = propsRef.current.onToggleInvisible;
+    const nextInvisible = !Boolean(propsRef.current.isInvisible);
     blurActive();
     handleMainMenuClose();
-    setTimeout(() => { onCheckReference?.(); }, 0);
+    setTimeout(() => { onToggleInvisible?.(nextInvisible); }, 0);
   };
 
   // Effect to ensure menus are closed when anchorEl changes
@@ -398,16 +404,33 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
 
         <Divider />
 
-        <MenuItem onClick={handleCheckReferenceClick} aria-label={checkReferenceLabel}>
+        <MenuItem
+          onClick={handleToggleInvisible}
+          aria-label={isInvisible ? invisibleLabel : visibleLabel}
+        >
           <ListItemIcon>
-            <AssignmentTurnedInIcon />
+            {isInvisible ? <VisibilityOffIcon /> : <VisibilityIcon />}
           </ListItemIcon>
-          <ListItemText primary={checkReferenceLabel} />
+          <ListItemText primary={isInvisible ? invisibleLabel : visibleLabel} />
+          <Switch
+            checked={!isInvisible}
+            onChange={(event) => {
+              event.stopPropagation();
+              handleToggleInvisible();
+            }}
+            size="small"
+            inputProps={{ 'aria-label': isInvisible ? invisibleLabel : visibleLabel }}
+          />
         </MenuItem>
 
         {[
           <Divider key="divider-preview" />,
-          <MenuItem key="menuitem-preview" onClick={handlePreviewClick} aria-label={previewLabel}>
+          <MenuItem
+            key="menuitem-preview"
+            onClick={handlePreviewClick}
+            aria-label={previewLabel}
+            disabled={!canPreview}
+          >
             <ListItemIcon>
               <PlayArrowIcon />
             </ListItemIcon>

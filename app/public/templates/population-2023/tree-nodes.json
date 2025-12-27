@@ -18,7 +18,7 @@
               "dataSource": "geoboundaries"
             },
             "licenseAgreement": false,
-            "checkboxState": [
+            "selectedArrayByCountries": [
               [
                 true,
                 false,

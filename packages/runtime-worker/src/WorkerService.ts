@@ -82,25 +82,11 @@ type ShapeDatabaseHandle = {
 type RouteDatabaseHandle = {
   open?: () => Promise<unknown>;
   close?: () => void;
-  routeResults: {
+  lineStrings: {
     where: (key: string) => {
       equals: (value: NodeId) => { toArray: () => Promise<unknown[]>; delete?: () => Promise<number> };
     };
-  };
-  routeCache: {
-    where: (key: string) => {
-      equals: (value: NodeId) => { delete?: () => Promise<number> };
-    };
-  };
-  routeCursors: {
-    where: (key: string) => {
-      equals: (value: NodeId) => { delete?: () => Promise<number> };
-    };
-  };
-  pendingSessions: {
-    where: (key: string) => {
-      equals: (value: NodeId) => { delete?: () => Promise<number> };
-    };
+    bulkPut?: (items: unknown[]) => Promise<void>;
   };
 };
 
@@ -212,7 +198,10 @@ export class WorkerService {
       };
       const routeDB = new RouteDatabase();
       const routeQueryService: RouteQueryAPI = await RouteQueryService.getSingleton(routeDB);
-      const routeMutationService: RouteMutationAPI = await RouteMutationService.getSingleton(routeDB);
+      const routeMutationService: RouteMutationAPI = await RouteMutationService.getSingleton(
+        routeDB,
+        locationQueryService,
+      );
 
       return new WorkerService(
         coreDB,

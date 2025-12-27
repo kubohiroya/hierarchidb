@@ -5,8 +5,9 @@ import { StylerPreviewStep } from './StylerPreviewStep.tsx';
 import type { StylerMapping, StylerStepData } from '../../common/types/StylerEntity.js';
 import { i18n } from '@hierarchidb/ui-i18n';
 import { StylerMappingStep } from './StylerMappingStep.tsx';
-import { hasKeyValueSelected as mappingHasKeyValueSelected } from './useStylerMappingState.ts';
 import { StylerFilterStep } from './StylerFilterStep.tsx';
+import { StylerMappingKeysStep } from './StylerMappingKeysStep.tsx';
+import { StylerTargetBehaviorStep } from './StylerTargetBehaviorStep.tsx';
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -16,7 +17,9 @@ const getStylerT = () =>
     : (i18n.t.bind(i18n) as typeof i18n.t);
 
 
-const renderMappingStep = (p: PluginStepProps<StylerStepData>) => <StylerMappingStep {...p} />
+const renderScaleStep = (p: PluginStepProps<StylerStepData>) => (
+  <StylerMappingStep {...p} showTargetPanel={false} />
+);
 
 const hasMappingBasics = (dialogData?: StylerStepData): boolean => {
   const data = dialogData ?? ({} as StylerStepData);
@@ -25,16 +28,27 @@ const hasMappingBasics = (dialogData?: StylerStepData): boolean => {
   const keyColumn = data.keyColumn;
   const valueColumn = data.valueColumn;
   const targetProperty = mapping.targetProperty ?? null;
-  return Boolean(keyColumn && valueColumn && styleType && targetProperty);
+  const featureIdProperty = mapping.featureIdProperty ?? '';
+  const valueType = mapping.valueType;
+  const mappingMode = mapping.mappingMode;
+  const hasBehavior = valueType === 'number' ? Boolean(mappingMode) : Boolean(valueType);
+  return Boolean(keyColumn && valueColumn && styleType && targetProperty && featureIdProperty && hasBehavior);
 };
 
-const hasKeyValueSelected = (dialogData?: StylerStepData): boolean => {
+const hasMappingKeys = (dialogData?: StylerStepData): boolean => {
   const data = dialogData ?? ({} as StylerStepData);
   const keyColumn = data.keyColumn;
   const valueColumn = data.valueColumn;
-  const hasLocal = Boolean(keyColumn && valueColumn);
-  const hasHook = mappingHasKeyValueSelected(dialogData);
-  return hasLocal || hasHook;
+  const featureIdProperty = data.mapping?.featureIdProperty;
+  return Boolean(keyColumn && valueColumn && featureIdProperty);
+};
+
+const hasTargetBehavior = (dialogData?: StylerStepData): boolean => {
+  const data = dialogData ?? ({} as StylerStepData);
+  const mapping = (data.mapping ?? {}) as Partial<StylerMapping>;
+  if (!mapping.styleType || !mapping.targetProperty) return false;
+  if (!mapping.valueType) return false;
+  return mapping.valueType === 'number' ? Boolean(mapping.mappingMode) : true;
 };
 
 const hasLoadedDataSource = (dialogData?: StylerStepData): boolean => {
@@ -63,7 +77,7 @@ registry.registerConfigProvider<StylerStepData>({
       return <TabularDataSourceStep {...p} />;
     };
     const FilterWithValidation = (p: PluginStepProps<StylerStepData>) => {
-      const valid = ensureLoaded(p.data) && hasKeyValueSelected(p.data);
+      const valid = ensureLoaded(p.data);
       const lastValidRef = React.useRef<boolean | null>(null);
       React.useEffect(() => {
         if (lastValidRef.current !== valid) {
@@ -93,12 +107,30 @@ registry.registerConfigProvider<StylerStepData>({
         },
       },
       {
-        id: 'style-mapping',
-        label: t('steps.styleSettings', 'Style Mapping'),
-        componentFactory: renderMappingStep,
-        validate: (dialogData?: StylerStepData) => hasKeyValueSelected(dialogData),
+        id: 'mapping-keys',
+        label: t('steps.mappingKeys', 'Mapping Keys'),
+        componentFactory: StylerMappingKeysStep,
+        validate: (dialogData?: StylerStepData) => hasMappingKeys(dialogData),
         capabilities: {
-          canProceedToNext: (dialogData?: StylerStepData) => hasKeyValueSelected(dialogData),
+          canProceedToNext: (dialogData?: StylerStepData) => hasMappingKeys(dialogData),
+        },
+      },
+      {
+        id: 'target-behavior',
+        label: t('steps.targetBehavior', 'Target & Behavior'),
+        componentFactory: StylerTargetBehaviorStep,
+        validate: (dialogData?: StylerStepData) => hasTargetBehavior(dialogData),
+        capabilities: {
+          canProceedToNext: (dialogData?: StylerStepData) => hasTargetBehavior(dialogData),
+        },
+      },
+      {
+        id: 'style-scaling',
+        label: t('steps.styleAlgorithm', 'Scale / Style'),
+        componentFactory: renderScaleStep,
+        validate: (dialogData?: StylerStepData) => hasTargetBehavior(dialogData),
+        capabilities: {
+          canProceedToNext: (dialogData?: StylerStepData) => hasTargetBehavior(dialogData),
         },
       },
       {

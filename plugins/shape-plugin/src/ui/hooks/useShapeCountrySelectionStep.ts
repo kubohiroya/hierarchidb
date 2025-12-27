@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSnackbar } from 'notistack';
 import { useIsoCountries, type MatrixConfig, type MatrixSelection, type ContinentCode } from '@hierarchidb/ui-country-select';
+import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 import type { CountryMetadata, ShapeEntity } from '../../common/types/index.js';
 import { useCountryMetadata } from './useCountryMetadata.js';
 import {
@@ -12,7 +13,6 @@ import {
 } from '../../common/mock/data.js';
 import { normalizeDataSourceName } from '../../services/utils/utils.js';
 import { clearStagesIfPresent, FULL_INVALIDATION_STAGES, resolveShapeSessionId } from '../utils/sessionInvalidation.js';
-import { deriveUrlMetadataFromSelection } from '../utils/selectionUrlMetadata.js';
 import { fetchGeoBoundariesAvailability } from '../../services/utils/geoBoundariesAvailability.js';
 
 const CONTINENT_CODES: ContinentCode[] = ['AF', 'AS', 'EU', 'NA', 'SA', 'OC', 'AN'];
@@ -88,6 +88,16 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
   const { metadata: countries, loading, error } = useCountryMetadata({ dataSource: dataSourceKey });
   const [availableAdminLevels, setAvailableAdminLevels] = useState<Map<string, number[]> | null>(null);
   const selectedArrayByCountries = data.selectedArrayByCountries;
+  const workerClientHook = useMemo(() => {
+    try {
+      return getWorkerClientHook<WorkerClientRef | null>();
+    } catch {
+      return null;
+    }
+  }, []);
+  const workerClient = workerClientHook ? workerClientHook() : null;
+  const urlMetadataRequestRef = useRef(0);
+  const warnedMissingWorkerRef = useRef(false);
 
   const dataSourceConfig = DATA_SOURCE_CONFIGS[dataSourceKey];
   const maxAdminLevel = dataSourceConfig?.maxAdminLevel ?? 0;
@@ -131,6 +141,31 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
     }
     return baseCountries.map(() => Array.from({ length: maxAdminLevel + 1 }, () => false));
   }, [baseCountries, maxAdminLevel, selectedArrayByCountries]);
+
+  const requestUrlMetadata = useCallback(async (matrix: boolean[][]) => {
+    if (!workerClient) {
+      if (!warnedMissingWorkerRef.current) {
+        warnedMissingWorkerRef.current = true;
+        enqueueSnackbar(
+          'Worker client is unavailable. URL metadata will be generated when starting the build.',
+          { variant: 'warning' },
+        );
+      }
+      return null;
+    }
+    const requestId = urlMetadataRequestRef.current + 1;
+    urlMetadataRequestRef.current = requestId;
+    try {
+      const api = workerClient.getAPI();
+      const metadata = await api.generateShapeUrlMetadataFromSelection(dataSourceKey, matrix);
+      if (urlMetadataRequestRef.current !== requestId) return null;
+      return metadata;
+    } catch (fetchError) {
+      console.warn('[ShapeCountrySelectionStep] failed to generate urlMetadata', fetchError);
+      enqueueSnackbar('Failed to generate URL metadata.', { variant: 'warning' });
+      return null;
+    }
+  }, [dataSourceKey, enqueueSnackbar, workerClient]);
 
   useEffect(() => {
     let cancelled = false;
@@ -188,22 +223,23 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
     });
     const previousMatrix = selectedArrayByCountries as boolean[][];
     if (!isMatrixEqual(previousMatrix, nextMatrix)) {
-      const selectedMetadata = deriveUrlMetadataFromSelection({
-        dataSource: dataSourceKey,
-        selectedArrayByCountries: nextMatrix,
-        metadata: countries,
-      });
-      onChange({ selectedArrayByCountries: nextMatrix, urlMetadata: selectedMetadata });
+      onChange({ selectedArrayByCountries: nextMatrix });
+      void (async () => {
+        const selectedMetadata = await requestUrlMetadata(nextMatrix);
+        if (selectedMetadata) {
+          onChange({ urlMetadata: selectedMetadata });
+        }
+      })();
     }
   }, [
     availableAdminLevels,
     baseCountries,
     checkboxMatrix,
-    countries,
     dataSourceKey,
     maxAdminLevel,
     onChange,
     selectedArrayByCountries,
+    requestUrlMetadata,
   ]);
 
   const columns: MatrixConfig['columns'] = useMemo(
@@ -255,12 +291,13 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
           void clearStagesIfPresent(sessionId, FULL_INVALIDATION_STAGES);
         }
       }
-      const selectedMetadata = deriveUrlMetadataFromSelection({
-        dataSource: dataSourceKey,
-        selectedArrayByCountries: nextMatrix,
-        metadata: countries,
-      });
-      onChange({ selectedArrayByCountries: nextMatrix, urlMetadata: selectedMetadata });
+      onChange({ selectedArrayByCountries: nextMatrix });
+      void (async () => {
+        const selectedMetadata = await requestUrlMetadata(nextMatrix);
+        if (selectedMetadata) {
+          onChange({ urlMetadata: selectedMetadata });
+        }
+      })();
 
       const totalSelected = nextMatrix.flat().filter(Boolean).length;
       const countriesWithSelection = nextMatrix.filter((row) => row.some(Boolean)).length;
@@ -271,7 +308,17 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
         { variant: 'info' },
       );
     },
-    [baseCountries, columns, countries, data, dataSourceKey, enqueueSnackbar, onChange, selectedArrayByCountries],
+    [
+      baseCountries,
+      columns,
+      countries,
+      data,
+      dataSourceKey,
+      enqueueSnackbar,
+      onChange,
+      requestUrlMetadata,
+      selectedArrayByCountries,
+    ],
   );
 
   const isCellEnabled = useCallback(

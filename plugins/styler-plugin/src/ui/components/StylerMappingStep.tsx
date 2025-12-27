@@ -45,13 +45,14 @@ import { GradientSwatch } from './GradientSwatch.tsx';
 import { Gradient as GradientIcon, Insights as InsightsIcon, ShowChart as ShowChartIcon } from '@mui/icons-material';
 
 export const StylerMappingStep: React.FC<
-  PluginStepProps<StylerStepData>
+  PluginStepProps<StylerStepData> & { showTargetPanel?: boolean }
 > = ({
   data,
   onChange,
   setValid,
   setError,
   dialogRef,
+  showTargetPanel = true,
 }) => {
   const { t } = useTranslation('styler-plugin');
   const {
@@ -221,6 +222,25 @@ export const StylerMappingStep: React.FC<
           inputProps={{ step: 0.1 }}
         />
       </Stack>
+      <Typography variant="subtitle2">{t('styleSettings.algorithm.outputRange', 'Output range')}</Typography>
+      <Stack direction="row" spacing={1}>
+        <TextField
+          type="number"
+          label={t('styleSettings.algorithm.outputMin', 'Output Min')}
+          value={localConfig.outputMin}
+          onChange={(e) => applyConfigPatch({ outputMin: Number(e.target.value) })}
+          size="small"
+          inputProps={{ step: 0.1 }}
+        />
+        <TextField
+          type="number"
+          label={t('styleSettings.algorithm.outputMax', 'Output Max')}
+          value={localConfig.outputMax}
+          onChange={(e) => applyConfigPatch({ outputMax: Number(e.target.value) })}
+          size="small"
+          inputProps={{ step: 0.1 }}
+        />
+      </Stack>
     </Stack>
   ) : null;
 
@@ -265,25 +285,27 @@ export const StylerMappingStep: React.FC<
           <LinearProgress />
         </Stack>
       )}
-      <Accordion defaultExpanded>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <ViewColumnIcon fontSize="small" />
-            <Typography variant="subtitle1">
-              {t('styleSettings.accordion.targetProperty', 'Target Property')}
-            </Typography>
-          </Stack>
-        </AccordionSummary>
-        <AccordionDetails>
-          <StyleMappingTargetPanel
-            settings={settings}
-            handleStyleTypeChange={handleStyleTypeChange}
-            pluginData={pluginData}
-            menuContainer={menuContainer}
-            handleTargetPropertyChange={handleTargetPropertyChange}
-          />
-        </AccordionDetails>
-      </Accordion>
+      {showTargetPanel && (
+        <Accordion defaultExpanded>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <ViewColumnIcon fontSize="small" />
+              <Typography variant="subtitle1">
+                {t('styleSettings.accordion.targetProperty', 'Target Property')}
+              </Typography>
+            </Stack>
+          </AccordionSummary>
+          <AccordionDetails>
+            <StyleMappingTargetPanel
+              settings={settings}
+              handleStyleTypeChange={handleStyleTypeChange}
+              pluginData={pluginData}
+              menuContainer={menuContainer}
+              handleTargetPropertyChange={handleTargetPropertyChange}
+            />
+          </AccordionDetails>
+        </Accordion>
+      )}
 
       <Accordion defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>

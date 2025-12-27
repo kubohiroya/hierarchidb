@@ -92,6 +92,14 @@ export interface MapDimensionsProps {
  */
 export type MapFeatureIdentifier = MapLibreFeatureIdentifier;
 
+export type FeatureStateValue = string | number | boolean | null;
+export type FeatureStateRecord = Record<string, FeatureStateValue>;
+
+export interface FeatureStateEntry {
+  id: string | number;
+  state: FeatureStateRecord;
+}
+
 export interface MapClickEvent extends MapLibreMapMouseEvent {
   identifiedFeatureIds?: MapFeatureIdentifier[];
   identifiedFeatures?: MapLibreGeoJSONFeature[];
@@ -245,6 +253,12 @@ export interface VectorTileDataSource {
 
   /** Custom tile data provider function */
   tileDataProvider?: (z: number, x: number, y: number, nodeId?: string) => Promise<ArrayBuffer | null>;
+
+  /** Promote a feature property to be its ID */
+  promoteId?: string | Record<string, string>;
+
+  /** Feature-state entries keyed by promoted feature ID */
+  featureState?: FeatureStateEntry[];
 }
 
 // Complete vector tile props combining all configurations

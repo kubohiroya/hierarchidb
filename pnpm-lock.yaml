@@ -735,9 +735,15 @@ importers:
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../common/types
+      '@hierarchidb/plugin-service-api':
+        specifier: workspace:*
+        version: link:../../plugin-service-api
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../util
+      '@mapbox/vector-tile':
+        specifier: ^2.0.4
+        version: 2.0.4
       '@maplibre/vt-pbf':
         specifier: ^4.0.3
         version: 4.0.3
@@ -753,6 +759,12 @@ importers:
       geojson-vt:
         specifier: ^3.2.1
         version: 3.2.1
+      pbf:
+        specifier: ^4.0.1
+        version: 4.0.1
+      typescript-lru-cache:
+        specifier: ^2.0.0
+        version: 2.0.0
     devDependencies:
       '@types/geojson':
         specifier: ^7946.0.14
@@ -1179,6 +1191,9 @@ importers:
       '@hierarchidb/timeline-plugin':
         specifier: workspace:*
         version: link:../../plugins/timeline-plugin
+      '@mapbox/vector-tile':
+        specifier: ^2.0.3
+        version: 2.0.4
       comlink:
         specifier: ^4.4.2
         version: 4.4.2
@@ -1194,6 +1209,9 @@ importers:
       lunr:
         specifier: 2.3.9
         version: 2.3.9
+      pbf:
+        specifier: ^4.0.1
+        version: 4.0.1
       reflect-metadata:
         specifier: ^0.1.13
         version: 0.1.14
@@ -2874,6 +2892,9 @@ importers:
       '@hierarchidb/batch':
         specifier: workspace:*
         version: link:../../packages/features/batch
+      '@hierarchidb/batch-runtime-services':
+        specifier: workspace:*
+        version: link:../../packages/batch-runtime-services
       '@hierarchidb/common-api':
         specifier: workspace:*
         version: link:../../packages/common/api
@@ -2898,6 +2919,9 @@ importers:
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../../packages/runtime-worker
+      '@hierarchidb/ui-batch':
+        specifier: workspace:*
+        version: link:../../packages/ui/batch
       '@hierarchidb/ui-datasource':
         specifier: workspace:*
         version: link:../../packages/ui/datasource
@@ -2907,6 +2931,9 @@ importers:
       '@hierarchidb/ui-grid':
         specifier: workspace:*
         version: link:../../packages/ui/data-grid
+      '@hierarchidb/ui-i18n':
+        specifier: workspace:*
+        version: link:../../packages/ui/i18n
       '@hierarchidb/ui-license':
         specifier: workspace:*
         version: link:../../packages/ui/license
@@ -3171,6 +3198,9 @@ importers:
       '@hierarchidb/batch':
         specifier: workspace:*
         version: link:../../packages/features/batch
+      '@hierarchidb/batch-runtime-services':
+        specifier: workspace:*
+        version: link:../../packages/batch-runtime-services
       '@hierarchidb/common-api':
         specifier: workspace:*
         version: link:../../packages/common/api
@@ -12880,6 +12910,9 @@ packages:
 
   typedarray@0.0.6:
     resolution: {integrity: sha512-/aCDEGatGvZ2BIk+HmLf4ifCJFwvKFNb9/JeZPMulfgFracn9QFcAf5GO8B/mweUjSoblS5In0cWhqpfs/5PQA==}
+
+  typescript-lru-cache@2.0.0:
+    resolution: {integrity: sha512-Jp57Qyy8wXeMkdNuZiglE6v2Cypg13eDA1chHwDG6kq51X7gk4K7P7HaDdzZKCxkegXkVHNcPD0n5aW6OZH3aA==}
 
   typescript@5.8.2:
     resolution: {integrity: sha512-aJn6wq13/afZp/jT9QZmwEjDqqvSGp1VT5GVg+f/t6/oVyrgXM6BY1h9BRh/O5p3PlUPAe+WuiEZOmb/49RqoQ==}
@@ -25050,6 +25083,8 @@ snapshots:
       reflect.getprototypeof: 1.0.10
 
   typedarray@0.0.6: {}
+
+  typescript-lru-cache@2.0.0: {}
 
   typescript@5.8.2: {}
 

@@ -112,15 +112,27 @@ export class LocationBatchSessionManager extends BaseBatchSessionManager {
 
   // Control APIs
   pause(sessionId: string) {
-    void this.pauseBatchSession(sessionId);
+    void this.pauseBatchSession(sessionId).catch((error) => {
+      if (isDevEnvironment) {
+        console.warn('[LocationBatchSessionManager] pause failed', error);
+      }
+    });
   }
 
   resume(sessionId: string) {
-    void this.resumeBatchSession(sessionId);
+    void this.resumeBatchSession(sessionId).catch((error) => {
+      if (isDevEnvironment) {
+        console.warn('[LocationBatchSessionManager] resume failed', error);
+      }
+    });
   }
 
   cancel(sessionId: string) {
-    void this.cancelBatchSession(sessionId);
+    void this.cancelBatchSession(sessionId).catch((error) => {
+      if (isDevEnvironment) {
+        console.warn('[LocationBatchSessionManager] cancel failed', error);
+      }
+    });
   }
 
   protected async onSessionProgress(session: LocationBatchSession, event: BatchProgressEvent): Promise<void> {

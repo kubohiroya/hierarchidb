@@ -302,12 +302,7 @@ export class EntityLifecycleManager {
         RouteDatabase: new () => {
           open?: () => Promise<unknown>;
           close?: () => void;
-          routes: { where: (key: string) => { equals: (value: NodeId) => { delete(): Promise<void> } } };
-          workingCopies: { where: (key: string) => { equals: (value: NodeId) => { delete(): Promise<void> } } };
-          routeCache: { where: (key: string) => { equals: (value: NodeId) => { delete(): Promise<void> } } };
-          routeResults: { where: (key: string) => { equals: (value: NodeId) => { delete(): Promise<void> } } };
-          routeCursors: { where: (key: string) => { equals: (value: NodeId) => { delete(): Promise<void> } } };
-          pendingSessions: { where: (key: string) => { equals: (value: NodeId) => { delete(): Promise<void> } } };
+          lineStrings: { where: (key: string) => { equals: (value: NodeId) => { delete(): Promise<void> } } };
           transaction: (
             mode: 'rw',
             tables: unknown[],
@@ -319,19 +314,9 @@ export class EntityLifecycleManager {
       await db.open?.();
       for (const nodeId of nodeIds) {
         await db.transaction('rw', [
-          db.routes,
-          db.workingCopies,
-          db.routeCache,
-          db.routeResults,
-          db.routeCursors,
-          db.pendingSessions,
+          db.lineStrings,
         ], async () => {
-          await db.routes.where('nodeId').equals(nodeId).delete();
-          await db.workingCopies.where('nodeId').equals(nodeId).delete();
-          await db.routeCache.where('routeId').equals(nodeId).delete();
-          await db.routeResults.where('routeId').equals(nodeId).delete();
-          await db.routeCursors.where('nodeId').equals(nodeId).delete();
-          await db.pendingSessions.where('nodeId').equals(nodeId).delete();
+          await db.lineStrings.where('nodeId').equals(nodeId).delete();
         });
       }
       db.close?.();

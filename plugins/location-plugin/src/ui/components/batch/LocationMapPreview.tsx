@@ -16,6 +16,7 @@ import {
   MenuItem,
   MenuList,
   Paper,
+  Snackbar,
   Slider,
   TextField,
   ToggleButton,
@@ -41,6 +42,8 @@ import {
 import type { LocationType, NodeId } from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
 import { LOCATION_TYPE_STYLES } from '../steps/locationTypes.js';
+import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
+import type { LocationNearestPointResponse } from '@hierarchidb/plugin-service-api';
 
 export interface PreviewLocationPoint {
   id: string;
@@ -143,8 +146,34 @@ const TYPE_SETTINGS_BASE: Partial<Record<LocationType, TypeStyle>> = Object.from
 const ICON_DENSITY_THRESHOLD = 0.001;
 const resolveMarkerSize = (zoom: number) => Math.max(3, Math.min(14, Math.round(3 + zoom / 1.6)));
 const resolveIconSize = (zoom: number) => Math.max(10, Math.min(26, Math.round(10 + zoom * 0.8)));
+const HOVER_DISTANCE_PX = 16;
+
+const haversineMeters = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const toRad = (value: number) => (value * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2
+    + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 6371008.8 * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+};
+
+const resolveMetersPerPixel = (
+  bounds: { minLon: number; maxLon: number; minLat: number; maxLat: number },
+  mapSize: { width: number; height: number },
+  longitude: number,
+  latitude: number,
+): number | null => {
+  if (mapSize.width <= 0 || mapSize.height <= 0) return null;
+  const lonStep = (bounds.maxLon - bounds.minLon) / mapSize.width;
+  const latStep = (bounds.maxLat - bounds.minLat) / mapSize.height;
+  const lonMeters = haversineMeters(latitude, longitude, latitude, longitude + lonStep);
+  const latMeters = haversineMeters(latitude, longitude, latitude + latStep, longitude);
+  const metersPerPixel = (Math.abs(lonMeters) + Math.abs(latMeters)) / 2;
+  return Number.isFinite(metersPerPixel) && metersPerPixel > 0 ? metersPerPixel : null;
+};
 
 export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
+  nodeId,
   locations = SAMPLE_LOCATIONS,
 }) => {
   const { translations } = useTranslation();
@@ -171,6 +200,13 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
   const [showSettings, setShowSettings] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [settingsAnchor, setSettingsAnchor] = useState<null | HTMLElement>(null);
+  const [hoverInfo, setHoverInfo] = useState<LocationNearestPointResponse | null>(null);
+  const [hoverOpen, setHoverOpen] = useState(false);
+  const [hoverPointId, setHoverPointId] = useState<string | null>(null);
+  const hoverTimerRef = useRef<number | null>(null);
+  const hoverRequestIdRef = useRef(0);
+  const lastHoverRef = useRef<{ longitude: number; latitude: number; zoom: number } | null>(null);
+  const workerBridgeRef = useRef(getWorkerBridge());
 
   const [heatmapIntensity, setHeatmapIntensity] = useState(1.0);
   const [heatmapRadius, setHeatmapRadius] = useState(20);
@@ -244,6 +280,11 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
     return { minLon, maxLon, minLat, maxLat };
   }, [filteredLocations]);
 
+  const hoverBounds = useMemo(() => {
+    if (bounds) return bounds;
+    return { minLon: -180, maxLon: 180, minLat: -85, maxLat: 85 };
+  }, [bounds]);
+
   const useIconMarkers = useMemo(() => {
     if (displayMode !== 'points') return false;
     const area = mapSize.width * mapSize.height;
@@ -274,6 +315,8 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
       const style = typeSettings[point.type];
       const color = style?.color ?? '#607D8B';
       const title = `${point.name} (${point.type})`;
+      const isHovered = hoverPointId != null && point.id === hoverPointId;
+      const emphasisScale = isHovered ? 1.8 : 1;
       if (!useIconMarkers) {
         return (
           <Box
@@ -281,13 +324,15 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
             title={title}
             sx={{
               position: 'absolute',
-              left: x - size / 2,
-              top: y - size / 2,
-              width: size,
-              height: size,
+              left: x - (size * emphasisScale) / 2,
+              top: y - (size * emphasisScale) / 2,
+              width: size * emphasisScale,
+              height: size * emphasisScale,
               bgcolor: color,
               borderRadius: 0,
               opacity: 0.85,
+              boxShadow: isHovered ? `0 0 12px ${color}` : 'none',
+              zIndex: isHovered ? 2 : 1,
             }}
           />
         );
@@ -298,18 +343,20 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
           title={title}
           sx={{
             position: 'absolute',
-            left: x - iconSize / 2,
-            top: y - iconSize / 2,
+            left: x - (iconSize * emphasisScale) / 2,
+            top: y - (iconSize * emphasisScale) / 2,
             color,
             opacity: 0.95,
-            '& svg': { fontSize: iconSize },
+            filter: isHovered ? `drop-shadow(0 0 6px ${color})` : 'none',
+            zIndex: isHovered ? 2 : 1,
+            '& svg': { fontSize: iconSize * emphasisScale },
           }}
         >
           {resolvePointIcon(point)}
         </Box>
       );
     });
-  }, [bounds, displayMode, filteredLocations, mapSize.height, mapSize.width, resolvePointIcon, typeSettings, useIconMarkers, zoom]);
+  }, [bounds, displayMode, filteredLocations, hoverPointId, mapSize.height, mapSize.width, resolvePointIcon, typeSettings, useIconMarkers, zoom]);
 
   useEffect(() => {
     if (!mapRef.current || typeof ResizeObserver === 'undefined') return;
@@ -339,6 +386,104 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
         : [...prev, type],
     );
   };
+
+  const scheduleHoverLookup = useCallback((longitude: number, latitude: number) => {
+    if (!nodeId || String(nodeId) === 'preview' || mapSize.width === 0 || mapSize.height === 0) return;
+    const zoomLevel = Math.max(0, Math.min(24, Math.round(zoom)));
+    const last = lastHoverRef.current;
+    if (last) {
+      const lonDelta = Math.abs(last.longitude - longitude);
+      const latDelta = Math.abs(last.latitude - latitude);
+      if (last.zoom === zoomLevel && lonDelta < 0.0001 && latDelta < 0.0001) {
+        return;
+      }
+    }
+    lastHoverRef.current = { longitude, latitude, zoom: zoomLevel };
+    if (hoverTimerRef.current) {
+      window.clearTimeout(hoverTimerRef.current);
+    }
+    hoverTimerRef.current = window.setTimeout(() => {
+      const requestId = ++hoverRequestIdRef.current;
+      void (async () => {
+        try {
+          const api = await workerBridgeRef.current.getLocationQueryAPI();
+          const metersPerPixel = resolveMetersPerPixel(hoverBounds, mapSize, longitude, latitude);
+          if (!metersPerPixel) {
+            setHoverInfo(null);
+            setHoverOpen(false);
+            setHoverPointId(null);
+            return;
+          }
+          const result = await api.findNearestLocationPoint({
+            nodeId,
+            longitude,
+            latitude,
+            zoom: zoomLevel,
+            maxDistanceMeters: metersPerPixel * HOVER_DISTANCE_PX,
+          });
+          if (hoverRequestIdRef.current !== requestId) return;
+          setHoverInfo(result);
+          const nearest = result.matches[0]?.point;
+          setHoverOpen(Boolean(nearest));
+          setHoverPointId(nearest?.id ?? null);
+        } catch (error) {
+          if (hoverRequestIdRef.current === requestId) {
+            setHoverInfo(null);
+            setHoverOpen(false);
+            setHoverPointId(null);
+          }
+          console.warn('[LocationMapPreview] hover lookup failed', error);
+        }
+      })();
+    }, 120);
+  }, [hoverBounds, mapSize.height, mapSize.width, nodeId, zoom]);
+
+  const handleMapMouseMove = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    if (!mapRef.current) return;
+    const rect = mapRef.current.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    if (x < 0 || y < 0 || x > rect.width || y > rect.height) return;
+    const longitude = hoverBounds.minLon + (x / rect.width) * (hoverBounds.maxLon - hoverBounds.minLon);
+    const latitude = hoverBounds.maxLat - (y / rect.height) * (hoverBounds.maxLat - hoverBounds.minLat);
+    if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) return;
+    scheduleHoverLookup(longitude, latitude);
+  }, [hoverBounds, scheduleHoverLookup]);
+
+  const handleMapMouseLeave = useCallback(() => {
+    if (hoverTimerRef.current) {
+      window.clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+    setHoverOpen(false);
+    setHoverPointId(null);
+  }, []);
+
+  const hoverMessage = useMemo(() => {
+    const nearest = hoverInfo?.matches[0]?.point;
+    if (!nearest) return '';
+    const typeLabel = nearest.kind && typeSettings[nearest.kind as LocationType]?.name
+      ? typeSettings[nearest.kind as LocationType].name
+      : nearest.kind ?? 'unknown';
+    const countryLabel = nearest.countryName ?? '';
+    const regionLabel = nearest.region ?? '';
+    const latText = Number.isFinite(nearest.latitude) ? nearest.latitude.toFixed(5) : String(nearest.latitude);
+    const lonText = Number.isFinite(nearest.longitude) ? nearest.longitude.toFixed(5) : String(nearest.longitude);
+    const parts = [
+      typeLabel,
+      nearest.name ?? 'Unknown',
+      countryLabel,
+      regionLabel,
+      `(${latText}, ${lonText})`,
+    ].filter(Boolean);
+    return parts.join(' / ');
+  }, [hoverInfo, typeSettings]);
+
+  useEffect(() => () => {
+    if (hoverTimerRef.current) {
+      window.clearTimeout(hoverTimerRef.current);
+    }
+  }, []);
 
 
   const handleZoomChange = (newZoom: number) => {
@@ -486,6 +631,8 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
       <Box
         ref={mapRef}
         sx={{ flex: 1, position: 'relative', bgcolor: 'grey.100', borderRadius: 1 }}
+        onMouseMove={handleMapMouseMove}
+        onMouseLeave={handleMapMouseLeave}
       >
         <div
           style={{
@@ -591,6 +738,13 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
           />
         </Box>
       </Box>
+
+      <Snackbar
+        open={hoverOpen && Boolean(hoverMessage)}
+        onClose={() => setHoverOpen(false)}
+        message={hoverMessage}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
 
       {/*
 */}

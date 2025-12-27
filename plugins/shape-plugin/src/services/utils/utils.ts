@@ -10,7 +10,6 @@ import type {
   BatchConfig,
   DownloadBatchConfig,
   TileBatchConfig,
-  SelectionStats,
   UrlMetadata,
   ShapeStepValidationResult,
 } from '../../common/types/index.js';
@@ -159,48 +158,23 @@ export function validateBatchConfig(config: Partial<BatchConfig>): ShapeStepVali
 /**
  * Calculate selection statistics from URL metadata
  */
-export function calculateSelectionStats(urlMetadata: UrlMetadata[]): SelectionStats {
-  if (urlMetadata.length === 0) {
-    return {
-      totalSelected: 0,
-      countriesWithSelection: 0,
-      levelCounts: [],
-      estimatedSize: 0,
-      estimatedFeatures: 0,
-      estimatedProcessingTime: 0,
-    };
-  }
+const normalizeCountryCodeFromMetadata = (country: Partial<CountryMetadata>, index: number): string => {
+  const candidates = [country.countryCode, country.iso2, country.iso3].filter(
+    (value): value is string => Boolean(value?.trim()),
+  );
+  const primary = (candidates[0] ?? `country-${index}`).trim().toUpperCase();
+  if (primary.length === 2) return primary;
+  if (primary.length === 3 && country.iso2) return country.iso2.trim().toUpperCase();
+  if (primary.length === 3) return primary.slice(0, 2);
+  return primary.slice(0, 2) || `COUNTRY-${index}`;
+};
 
-  const countries = new Set<string>();
-  const levelCounts: number[] = new Array(6).fill(0);
-  let estimatedSize = 0;
-  let estimatedFeatures = 0;
-
-  urlMetadata.forEach((metadata) => {
-    countries.add(metadata.countryCode);
-    const lvl = metadata.adminLevel;
-    if (typeof lvl === 'number' && lvl >= 0 && lvl < levelCounts.length) {
-      levelCounts[lvl] = (levelCounts[lvl] ?? 0) + 1;
-    }
-    if (typeof metadata.estimatedSize === 'number') {
-      estimatedSize += metadata.estimatedSize;
-      // Rough estimate: 1MB ~ 1000 features
-      estimatedFeatures += Math.floor(metadata.estimatedSize / 1000);
-    }
-  });
-
-  // Rough processing time estimate: 1 second per 1000 features + 10 seconds base
-  const estimatedProcessingTime = Math.ceil(estimatedFeatures / 1000) + 10;
-
-  return {
-    totalSelected: urlMetadata.length,
-    countriesWithSelection: countries.size,
-    levelCounts,
-    estimatedSize,
-    estimatedFeatures,
-    estimatedProcessingTime,
-  };
-}
+const resolveSelectedLevels = (row?: boolean[]): number[] => {
+  if (!row) return [];
+  return row
+    .map((checked, levelIndex) => (checked ? levelIndex : null))
+    .filter((level): level is number => typeof level === 'number');
+};
 
 /**
  * Generate URL metadata for selected countries and admin levels
@@ -240,7 +214,6 @@ export function generateUrlMetadata(
           adminLevel: level,
           continent: country.continent,
           dataSource,
-          estimatedSize: estimateDataSize(dataSource, resolvedCode, level, country),
           lastUpdated: new Date().toISOString(),
         });
       }
@@ -248,6 +221,37 @@ export function generateUrlMetadata(
   });
 
   return urlMetadata;
+}
+
+/**
+ * Generate URL metadata for selected countries and admin levels by matrix selection.
+ */
+export function generateUrlMetadataFromSelection(
+  dataSource: DataSourceName,
+  selectedArrayByCountries: boolean[][] | string | undefined,
+  countryMetadata: CountryMetadata[],
+): UrlMetadata[] {
+  if (!Array.isArray(selectedArrayByCountries) || !countryMetadata.length) return [];
+  return countryMetadata.flatMap((country, index) => {
+    const selectedLevels = resolveSelectedLevels(selectedArrayByCountries[index]);
+    if (selectedLevels.length === 0) return [];
+    const normalizedCode = normalizeCountryCodeFromMetadata(country, index);
+    return selectedLevels.flatMap((level) => {
+      if (!country.availableAdminLevels.includes(level)) return [];
+      const resolvedCode = resolveCountryCodeForDataSource(dataSource, country, normalizedCode);
+      const url = buildDataSourceUrl(dataSource, resolvedCode, level);
+      if (!url) return [];
+      return [{
+        url,
+        countryCode: resolvedCode,
+        countryName: country.countryName,
+        adminLevel: level,
+        continent: country.continent,
+        dataSource,
+        lastUpdated: new Date().toISOString(),
+      }];
+    });
+  });
 }
 
 /**
@@ -293,32 +297,6 @@ function buildDataSourceUrl(
 /**
  * Estimate data size based on country and admin level
  */
-function estimateDataSize(
-  dataSource: DataSourceName,
-  _countryCode: string,
-  adminLevel: number,
-  country: CountryMetadata,
-): number {
-  // Base size factors per data source (in KB)
-  const baseSizeFactors = {
-    naturalearth: 100,
-    geoboundaries: 50,
-    gadm: 200,
-    openstreetmap: 1000,
-  };
-
-  // Admin level multipliers
-  const adminLevelMultipliers = [1, 2, 5, 10, 20, 50];
-
-  // Population factor (larger countries = more data)
-  const populationFactor = Math.log10((country.population || 1000000) / 1000000) + 1;
-
-  const baseSize = baseSizeFactors[dataSource] || 100;
-  const adminMultiplier = adminLevelMultipliers[adminLevel] || 1;
-
-  return Math.round(baseSize * adminMultiplier * populationFactor * 1000); // Convert to bytes
-}
-
 /**
  * Merge processing config with defaults
  */

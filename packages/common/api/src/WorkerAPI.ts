@@ -25,6 +25,19 @@ import type {
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import type { HeapPressureEvent } from '@hierarchidb/memory';
 
+type ShapeDataSourceName = 'naturalearth' | 'geoboundaries' | 'gadm' | 'openstreetmap';
+
+type ShapeUrlMetadata = {
+  url: string;
+  countryCode: string;
+  countryName?: string;
+  adminLevel: number;
+  continent: string;
+  dataSource?: ShapeDataSourceName;
+  country?: string;
+  lastUpdated?: string;
+};
+
 export type CommandProcessorAPI = {
   canUndo?: () => boolean;
   canRedo?: () => boolean;
@@ -72,6 +85,10 @@ export interface WorkerAPI {
   resumeBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
   cancelBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
   getBatchTasks(nodeType: NodeType, sessionId: BatchSessionId): Promise<BatchTaskSummary[]>;
+  generateShapeUrlMetadataFromSelection(
+    dataSource: ShapeDataSourceName,
+    selectedArrayByCountries: boolean[][] | string | undefined,
+  ): Promise<ShapeUrlMetadata[]>;
   subscribeBatchProgress(
     nodeType: NodeType,
     sessionId: BatchSessionId,

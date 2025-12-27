@@ -26,7 +26,7 @@
     },
     "ideGsm": {
       "buttonLabel": "IDE-GSM ファイルを選択",
-      "instructions": "IDE-GSM スキーマの location/resource ファイルをアップロードまたはURL指定してください。"
+      "instructions": "IDE-GSM の CSV/Excel ファイル（location/resource）をアップロードまたはURL指定してください。"
     }
   },
   "routeConfig": {
@@ -90,7 +90,12 @@
     "vectorTilesDescription": "ズーム範囲とバッファを設定します。",
     "minZoom": "最小ズーム",
     "maxZoom": "最大ズーム",
-    "buffer": "バッファ（px）"
+    "buffer": "バッファ（px）",
+    "cleanupTitle": "クリーンアップ",
+    "deleteLineStrings": "ルートラインデータを削除（{count}）",
+    "cleanupMissingNode": "NodeId がありません。",
+    "cleanupMissingApi": "Worker API が利用できません。",
+    "cleanupDone": "ルートラインデータを削除しました。"
   },
   "build": {
     "review": "設定内容を確認し、ビルドを開始してください。",
@@ -101,15 +106,42 @@
     "endLocation": "終点:",
     "notConfigured": "未設定",
     "missing": "交通モード、経路タイプ、始点/終点を設定してからビルドしてください。",
+    "crashHint": "前回のビルドが完了していません。再開前にデータを削除してください。",
     "start": "準備ができたらビルドボタンを押してください。",
     "title": "ルートビルド",
-    "panelDescription": "ルートビルドの進捗を確認できます。"
+    "panelDescription": "ルートビルドの進捗を確認できます。",
+    "ideGsm": {
+      "fetch": "IDE-GSM: ダウンロード中",
+      "parse": "IDE-GSM: 行を解析中",
+      "waypoints": "IDE-GSM: 経由点を生成中",
+      "save": "IDE-GSM: ルートを保存中",
+      "completed": "IDE-GSM: 取り込み完了",
+      "failed": "IDE-GSM: 取り込み失敗"
+    },
+    "errors": {
+      "title": "ビルドエラー",
+      "description": "一部の行がスキップされました。詳細を確認してください。",
+      "countLabel": "件",
+      "close": "閉じる",
+      "missingApi": "Worker API が利用できません。",
+      "missingSource": "IDE-GSM のソース URL が必要です。",
+      "unsupportedSource": "選択中のデータソースは未対応です。",
+      "columns": {
+        "row": "行",
+        "start": "Start",
+        "end": "End",
+        "reason": "理由"
+      }
+    }
   },
   "preview": {
     "title": "プレビュー",
     "description": "ビルド完了後に生成されたルート形状をプレビューします。",
     "missing": "ルート形状がまだありません。ビルドを実行してください。",
-    "ready": "ルート形状が利用可能です。ここにマッププレビューが表示されます。"
+    "ready": "ルート形状が利用可能です。ここにマッププレビューが表示されます。",
+    "mapTitle": "マッププレビュー",
+    "hoverTemplate": "{mode} / {start} -> {end} / {distance}",
+    "hoverUnknown": "不明なルート"
   },
   "batch": {
     "pause": "一時停止",

@@ -34,6 +34,14 @@
       "label": "Target style property",
       "help": "Select the MapLibre paint property to map this value to."
     },
+    "algorithm": {
+      "numericRange": "Numeric range",
+      "min": "Min",
+      "max": "Max",
+      "outputRange": "Output range",
+      "outputMin": "Output Min",
+      "outputMax": "Output Max"
+    },
     "validation": {
       "required": "Select a style type, value source, and target property to continue."
     }
@@ -41,15 +49,55 @@
   "steps": {
     "dataSource": "Data Source",
     "filtering": "Filtering",
+    "mappingKeys": "Mapping Keys",
+    "targetBehavior": "Target & Behavior",
     "styleSettings": "Style Mapping",
-    "styleAlgorithm": "Style Algorithm",
+    "styleAlgorithm": "Scale / Style",
     "preview": "Preview"
+  },
+  "step3": {
+    "description": "Choose the table columns and tile feature ID to link styling values.",
+    "featureIdProperty": {
+      "label": "Feature ID Property",
+      "placeholder": "e.g. iso2, gid_1, portCode",
+      "help": "The property name on the vector tile feature used for promoteId and feature-state lookup."
+    },
+    "validation": {
+      "required": "Select key/value columns and enter the feature ID property."
+    }
+  },
+  "step4": {
+    "valueType": {
+      "label": "Value Type",
+      "number": "Number",
+      "color": "Color",
+      "help": "Choose whether feature-state stores numeric values or colors."
+    },
+    "mappingMode": {
+      "label": "Mapping Mode",
+      "interpolate": "Map interpolate",
+      "precomputed": "Precomputed",
+      "help": "Interpolate in MapLibre or store final values directly in feature-state."
+    },
+    "validation": {
+      "required": "Select a style target and behavior to continue."
+    }
   },
   "filtering": {
     "processing": "Processing tabular data..."
   },
   "stylePreview": {
-    "processing": "Preparing preview data..."
+    "processing": "Preparing preview data...",
+    "required": {
+      "title": "Configuration Required",
+      "body": "Please complete style configuration before viewing the preview.",
+      "keyColumn": "Select a key column for mapping",
+      "valueColumn": "Select a value column for mapping",
+      "featureIdProperty": "Enter a feature ID property",
+      "targetProperty": "Select a target property",
+      "styleType": "Select a style type",
+      "mappingMode": "Select a mapping mode"
+    }
   },
   "step5": {
     "title": "Style Algorithm",

@@ -36,7 +36,7 @@ export type ContextAction =
   | 'import'
   | 'export'
   | 'trash'
-  | 'checkReference'
+  | 'toggle-visibility'
   | `create:${string}`;
 
 export interface UseTreeConsoleIntegrationParams {

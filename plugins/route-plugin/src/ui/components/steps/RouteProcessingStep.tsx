@@ -4,14 +4,21 @@
  */
 
 import type React from 'react';
-import { useEffect, useId, useMemo } from 'react';
-import { Box, Grid, Slider, TextField, Typography } from '@mui/material';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { Box, Button, Grid, Slider, TextField, Typography } from '@mui/material';
 import type { RouteEntity, RouteProcessingConfig, RouteUpdaterPayload } from '../../../common/entities/RouteEntity.js';
 import { useTranslation } from '../../../common/i18n/index.js';
+import type { NodeId } from '@hierarchidb/common-types';
+import { notify } from '@hierarchidb/components';
+import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
+import { RouteDatabase } from '../../../services/database/RouteDatabase.js';
+import { clearBuildMonitor, getBuildMonitorKey } from '../../utils/buildMonitor.js';
 
 export interface RouteProcessingStepProps {
   draft: RouteUpdaterPayload;
   onUpdate: (updates: Partial<RouteEntity>) => void;
+  nodeId?: NodeId;
+  disabled?: boolean;
 }
 
 const SHARED_ZOOM_RANGE_KEY = 'sharedZoomRange';
@@ -93,9 +100,14 @@ const clamp = (value: number, min: number, max: number): number => {
 export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
   draft,
   onUpdate,
+  nodeId,
+  disabled,
 }) => {
   const { t } = useTranslation();
   const fieldId = useId();
+  const { api, initialize } = useWorkerAPI();
+  const [lineCount, setLineCount] = useState(0);
+  const monitorKey = useMemo(() => getBuildMonitorKey(nodeId ? String(nodeId) : null), [nodeId]);
   const processing = (draft.draftData?.processing ?? {}) as RouteProcessingConfig;
   const sharedZoomRange = useMemo(() => readSharedZoomRange(), []);
 
@@ -147,8 +159,48 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
         ...(updates.vectorTiles ?? {}),
       },
     };
-    onUpdate({ processing: nextProcessing });
+    onUpdate({ config: nextProcessing });
   };
+
+  const loadCounts = useCallback(async () => {
+    if (!nodeId) {
+      setLineCount(0);
+      return;
+    }
+    const db = new RouteDatabase();
+    const count = await db.lineStrings.where('nodeId').equals(nodeId).count().catch(() => 0);
+    setLineCount(count);
+  }, [nodeId]);
+
+  useEffect(() => {
+    void loadCounts();
+  }, [draft.draftData?.processedAt, draft.draftData?.processingStatus, loadCounts]);
+
+  const handleDeleteLineStrings = useCallback(async () => {
+    if (!nodeId) {
+      notify.warning(t('processing.cleanupMissingNode', 'NodeId is missing.'));
+      return;
+    }
+    if (!api) {
+      notify.error(t('processing.cleanupMissingApi', 'Worker API is unavailable.'));
+      return;
+    }
+    await initialize();
+    const mutation = await api.getRouteMutationAPI();
+    await mutation.deleteRouteLineStrings(nodeId);
+    if (monitorKey) {
+      clearBuildMonitor(monitorKey);
+    }
+    onUpdate({
+      processingStatus: 'idle',
+      processingError: undefined,
+      processedAt: undefined,
+      buildStartedAt: undefined,
+      buildFinishedAt: undefined,
+    });
+    await loadCounts();
+    notify.success(t('processing.cleanupDone', 'Deleted route line data.'));
+  }, [api, initialize, loadCounts, monitorKey, nodeId, onUpdate, t]);
 
   useEffect(() => {
     const [sharedMin, sharedMax] = sharedZoomRange;
@@ -314,6 +366,24 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
           </Grid>
         </Grid>
       </Grid>
+
+      <Box display="flex" flexDirection="column" gap={2}>
+        <Typography variant="subtitle1">
+          {t('processing.cleanupTitle', 'Cleanup')}
+        </Typography>
+        <Grid container spacing={2} columns={{ xs: 12 }}>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Button
+              variant="outlined"
+              fullWidth
+              disabled={disabled || lineCount === 0}
+              onClick={handleDeleteLineStrings}
+            >
+              {t('processing.deleteLineStrings', 'Delete route line data ({count})').replace('{count}', String(lineCount))}
+            </Button>
+          </Grid>
+        </Grid>
+      </Box>
     </Box>
   );
 };

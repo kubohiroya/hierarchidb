@@ -5,11 +5,14 @@ import type { MapLibreStyle } from '@hierarchidb/ui-map';
 import type { StepData } from '@hierarchidb/plugin-base';
 import type { SpreadSheetDataSourceType } from '@hierarchidb/spreadsheet-plugin';
 export type StyleType = 'choropleth' | 'points' | 'lines';
+export type StylerValueType = 'number' | 'color';
+export type StylerMappingMode = 'map-interpolate' | 'precomputed';
 
 export type MapLibreStyleProperty =
   | 'fill-color'
   | 'fill-opacity'
   | 'line-color'
+  | 'line-width'
   | 'line-opacity'
   | 'circle-color'
   | 'circle-radius'
@@ -64,6 +67,9 @@ export interface StylerMapping {
   valueColumn?: string;
   styleType?: StyleType;
   targetProperty: MapLibreStyleProperty | null;
+  featureIdProperty?: string;
+  valueType?: StylerValueType;
+  mappingMode?: StylerMappingMode;
 }
 
 export interface StylerConfig {
@@ -77,6 +83,8 @@ export interface StylerConfig {
 
   min: number;
   max: number;
+  outputMin: number;
+  outputMax: number;
 
   //  HSV
   hueStart: number; // 0-360
@@ -122,6 +130,8 @@ export interface ColorCalculationResult {
 
 export const StylerMappingDefault: StylerMapping = {
   targetProperty: null,
+  valueType: 'color',
+  mappingMode: 'map-interpolate',
 }
 
 export const StylerConfigDefault: StylerConfig = {
@@ -133,6 +143,8 @@ export const StylerConfigDefault: StylerConfig = {
   nullHandling: 'exclude',
   min: 0,
   max: 100,
+  outputMin: 1,
+  outputMax: 8,
   hueStart: 0, // Red
   hueEnd: 120, // Green
   saturation: 0.8,
@@ -163,6 +175,16 @@ export const MAPLIBRE_PROPERTY_METADATA: Record<MapLibreStyleProperty, MapLibreP
     category: 'line',
     type: 'color',
     defaultValue: '#000000',
+  },
+  'line-width': {
+    name: 'line-width',
+    displayName: 'Line Width',
+    category: 'line',
+    type: 'number',
+    defaultValue: 2,
+    min: 0,
+    max: 20,
+    step: 0.5,
   },
   'line-opacity': {
     name: 'line-opacity',
@@ -236,7 +258,7 @@ export const MAPLIBRE_PROPERTY_GROUPS: PropertyGroup[] = [
   {
     name: 'line',
     displayName: 'Line Properties',
-    properties: ['line-color', 'line-opacity'],
+    properties: ['line-color', 'line-width', 'line-opacity'],
   },
   {
     name: 'circle',

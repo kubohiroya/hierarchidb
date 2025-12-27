@@ -167,6 +167,7 @@ export function useTreeConsoleIntegrationInner({
           description: breadcrumbNode.metadata?.description,
           tags: breadcrumbNode.metadata?.tags ?? [],
         },
+        invisible: breadcrumbNode.invisible,
         draftMetadata: null,
         data: null,
         draftData: null,

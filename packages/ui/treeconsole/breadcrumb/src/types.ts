@@ -16,6 +16,7 @@ export interface BreadcrumbNode {
   holderType?: 'draft' | 'trash';
   holderTargetId?: string;
   holderMetaParentId?: string;
+  invisible?: boolean;
 }
 
 export interface TreeConsoleBreadcrumbContext {

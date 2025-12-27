@@ -331,6 +331,8 @@
       "edit": "Edit",
       "duplicate": "Duplicate",
       "moveToTrash": "Move to Trash",
+      "visible": "Visible",
+      "invisible": "Invisible",
       "checkReference": "Check reference",
       "preview": "Preview"
     },
@@ -351,6 +353,8 @@
     "cut": "Cut",
     "duplicate": "Duplicate",
     "moveToTrash": "Move to Trash",
+    "visible": "Visible",
+    "invisible": "Invisible",
     "checkReference": "Check reference",
     "preview": "Preview"
   }

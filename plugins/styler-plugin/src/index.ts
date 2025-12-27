@@ -28,6 +28,8 @@ export type {
   PropertyGroup,
   StylerConfig,
   StylerMapping,
+  StylerMappingMode,
+  StylerValueType,
   TablePreviewProps,
 } from './common/types/StylerEntity.js';
 // Constants and defaults

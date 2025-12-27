@@ -110,13 +110,20 @@ async function handleUpdateNode(
     const payload = envelope.payload as {
       nodeId: NodeId;
       metadata?: { name?: string; description?: string; tags?: string[] };
+      name?: string;
+      description?: string;
+      invisible?: boolean;
     };
     const node = await deps.coreDB.getNode?.(payload.nodeId);
     if (!node) {
       return deps.createErrorResult('Node not found', WorkerErrorCode.INVALID_OPERATION);
     }
 
-    const meta = payload.metadata;
+    const meta =
+      payload.metadata ??
+      (payload.name !== undefined || payload.description !== undefined
+        ? { name: payload.name, description: payload.description }
+        : undefined);
     if (meta?.name && meta.name !== node.metadata.name && node.parentId) {
       const siblings = (await deps.coreDB.listChildren?.(node.parentId)) || [];
       const hasConflict = siblings.some(
@@ -140,6 +147,7 @@ async function handleUpdateNode(
           tags: meta.tags ?? node.metadata.tags ?? [],
         },
       }),
+      ...(typeof payload.invisible === 'boolean' ? { invisible: payload.invisible } : {}),
       updatedAt: Date.now() as Timestamp,
       version: node.version + 1,
     });

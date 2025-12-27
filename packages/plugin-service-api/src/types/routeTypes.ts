@@ -1,20 +1,62 @@
 import type { NodeId } from '@hierarchidb/common-types';
 
-export interface RouteResultPayload {
-  name?: string;
-  coordinates?: [number, number];
-  payload?: Record<string, unknown>;
+export interface RouteNearestLineQuery {
+  nodeId: NodeId;
+  longitude: number;
+  latitude: number;
+  zoom: number;
+  maxDistanceMeters: number;
 }
 
-export interface RouteResultItem {
+export interface RouteNearestEndpoint {
+  name?: string;
+  admin1Name?: string;
+  admin0Name?: string;
+  pointId?: string;
+}
+
+export interface RouteNearestLine {
+  lineStringId?: string;
+  featureId?: string;
+  routeMode?: string;
+  routeDistanceMeters?: number;
+  start?: RouteNearestEndpoint;
+  end?: RouteNearestEndpoint;
+}
+
+export interface RouteNearestLineMatch {
+  line: RouteNearestLine;
+  distanceMeters: number;
+}
+
+export interface RouteNearestLineResponse {
+  cursor: {
+    longitude: number;
+    latitude: number;
+  };
+  matches: RouteNearestLineMatch[];
+}
+
+export interface RouteWaypointPoint {
+  coordinates?: [number, number];
+  name?: string;
+  admin1Name?: string;
+  admin0Name?: string;
+  pointId?: string;
+}
+
+export interface RouteWaypointInput {
   id: string;
-  routeId?: NodeId;
-  sessionId: string;
-  taskId: string;
-  method: string;
-  lineGeometry?: [number, number][];
+  routeMode?: string;
+  startPoint?: RouteWaypointPoint;
+  endPoint?: RouteWaypointPoint;
   distance?: number;
-  duration?: number;
-  createdAt: number;
-  result?: RouteResultPayload;
+  speed?: number;
+}
+
+export interface RouteWaypointResult {
+  id: string;
+  waypoints?: [number, number][];
+  distance?: number;
+  speed?: number;
 }

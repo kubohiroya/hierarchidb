@@ -1,4 +1,4 @@
-import type { VectorTileEntity } from './core.js';
+import { VectorTileEntity } from '@hierarchidb/shape-plugin/common/types/VectorTileEntity.ts';
 
 /**
  * Peer data stored for shape nodes in peerEntities. Always include

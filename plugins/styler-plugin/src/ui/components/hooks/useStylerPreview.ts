@@ -5,6 +5,7 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'rea
 import type { TabularFilterRule } from '@hierarchidb/ui-tabular';
 import { tabularRowsAtom } from '@hierarchidb/spreadsheet-plugin';
 import {
+  MAPLIBRE_PROPERTY_METADATA,
   StylerConfigDefault,
   StylerMappingDefault,
   type StylerConfig,
@@ -69,6 +70,10 @@ export const useStylerPreview = ({
   const keyColumn = data?.keyColumn;
   const valueColumn = data?.valueColumn;
   const targetProperty = mapping.targetProperty;
+  const featureIdProperty = mapping.featureIdProperty;
+  const targetMeta = targetProperty ? MAPLIBRE_PROPERTY_METADATA[targetProperty] : null;
+  const valueType = mapping.valueType ?? targetMeta?.type ?? 'color';
+  const mappingMode = mapping.mappingMode;
   const styleType = mapping.styleType;
   const [sortState, setSortState] = useState<{
     column: string | null;
@@ -241,16 +246,21 @@ export const useStylerPreview = ({
 
   useEffect(() => {
     if (onValidate) {
-      const ok = Boolean(keyColumn && valueColumn && targetProperty && styleType);
+      const ok =
+        Boolean(keyColumn && valueColumn && targetProperty && styleType && featureIdProperty) &&
+        (valueType === 'number' ? Boolean(mappingMode) : Boolean(valueType));
       onValidate(ok);
     }
-  }, [onValidate, keyColumn, valueColumn, targetProperty, styleType]);
+  }, [featureIdProperty, keyColumn, mappingMode, onValidate, targetProperty, styleType, valueColumn, valueType]);
 
   return {
     t,
     keyColumn,
     valueColumn,
     targetProperty,
+    featureIdProperty,
+    valueType,
+    mappingMode,
     styleType,
     previewRowsSource,
     previewData,

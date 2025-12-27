@@ -15,6 +15,38 @@ export interface LocationRelation {
   updatedAt?: number;
 }
 
+export interface LocationNearestPointQuery {
+  nodeId: NodeId;
+  longitude: number;
+  latitude: number;
+  zoom: number;
+  maxDistanceMeters: number;
+}
+
+export interface LocationNearestPoint {
+  id?: string;
+  name?: string;
+  kind?: string;
+  region?: string;
+  countryName?: string;
+  longitude: number;
+  latitude: number;
+  properties?: Record<string, unknown>;
+}
+
+export interface LocationNearestPointMatch {
+  point: LocationNearestPoint;
+  distanceMeters: number;
+}
+
+export interface LocationNearestPointResponse {
+  cursor: {
+    longitude: number;
+    latitude: number;
+  };
+  matches: LocationNearestPointMatch[];
+}
+
 /**
  * Exposes location plugin artifacts.
  * Data is persisted independently and is not yet tied to TreeNode lifecycle events.
@@ -22,4 +54,5 @@ export interface LocationRelation {
 export interface LocationQueryAPI {
   listLocationGroups(nodeId: NodeId): Promise<LocationGroupItem[]>;
   listLocationRelations(nodeId: NodeId): Promise<LocationRelation[]>;
+  findNearestLocationPoint(query: LocationNearestPointQuery): Promise<LocationNearestPointResponse>;
 }

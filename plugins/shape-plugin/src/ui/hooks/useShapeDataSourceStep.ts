@@ -22,6 +22,7 @@ export const useShapeDataSourceStep = ({ data, onChange }: Args) => {
       licenseName: source.license,
       licenseUrl: source.licenseUrl,
       attribution: source.attribution,
+      disabled: source.name !== 'geoboundaries',
     })),
     [sources],
   );
