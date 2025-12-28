@@ -53,6 +53,19 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1845) TreeNodeInfoPanel の visible 反映遅延修正（P1）
+- ブランチ: `fix/ui/treenode-info-visible`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: app（TreeNodeInfoPanel）
+- 受け入れ基準（DoD）:
+  - [ ] TreeNodeInfoPanel の preview ボタンが visible 変更直後に即時反映される
+  - [ ] invisible 状態のタイトル打ち消し線が即時反映される
+  - [ ] Breadcrumb/TreeTableCore と同等の更新経路へ揃える
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] TreeNodeInfoPanel の state 参照と購読経路を確認する
+  - [ ] visible 変更時に再レンダリングされるよう補正する
+- ロールバック手順：`app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx` の差分を revert する
+
 1936) パッケージ依存の循環調査（plugin-registry を除外）（P2）
 - ブランチ: `chore/deps/cycle-audit`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `.dependency-cruiser.cjs`, `packages/`, `app/`, `plugins/`, `TASKS.md`
@@ -319,6 +332,7 @@
   - progress: 2025-12-27 22:50 JST visible 状態が UI に反映されない問題の調査・修正に着手。
   - progress: 2025-12-27 23:10 JST CoreDB の visible 正規化とコンテキストメニュー再描画条件を修正。
   - progress: 2025-12-27 23:25 JST invisible 経路（CoreDB互換・i18n文言）を撤去し、Hidden 表記へ移行。
+  - progress: 2025-12-27 23:40 JST map で useGeolocation が undefined になる問題に互換取得を追加。
   - progress: 2025-12-27 20:10 JST runtime-worker の tsconfig paths 上書きを解除し、プラグイン src alias を復帰。
   - progress: 2025-12-27 20:20 JST map.tsx の import type 修正で Vite 変換エラーを解消。
   - progress: 2025-12-27 20:35 JST Vite alias に common-auth/ui-file/gis-sdk と route-plugin subpath を追加し、route-plugin 内部参照を相対パス化。
@@ -12882,6 +12896,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-28 15:57 start: fix/ui/treenode-info-visible — TreeNodeInfoPanel の visible 反映遅延（preview ボタン/タイトル打ち消し線）修正に着手。DoD: Kanban 記載どおり。（Kanban: 1845）
+- 2025-12-28 16:02 command: pnpm --filter @hierarchidb/app typecheck — exit 1。既存の visible 必須化に伴うテスト/worker 側の型エラー（app tests, runtime-worker, ui/worker-client）で失敗。
+- 2025-12-28 16:02 done: fix/ui/treenode-info-visible — TreeNodeInfoPanel の visible 参照を SSOT ノードと同期させ、preview ボタン/タイトル表示の即時反映を修正。ロールバック: `app/src/router/pages/tree/console/useTreeNodeInfoPanel.ts` と `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx` の差分を revert する。
 - 2025-12-28 18:45 progress: feat/ui-treeconsole/visibility-toggle — Visible/Invisible スイッチの不具合（UI 幅の伸張/即時クローズ・invisible 未永続化）を調査し修正対応に着手。
 - 2025-12-28 19:05 progress: feat/ui-treeconsole/visibility-toggle — CoreDB 正規化で invisible を永続化し、コンテキストメニューの Visible/Invisible トグルを固定幅＋即時反映（メニュー維持）へ調整。
 - 2025-12-28 19:25 progress: feat/ui-treeconsole/visibility-toggle — visible=true をデフォルト扱いに変更し、更新API/Worker/Map/Breadcrumb の解釈を visible 優先へ統一。

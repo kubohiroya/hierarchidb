@@ -63,7 +63,7 @@ import {
 import { useLoaderData, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
-import useGeolocation from 'react-hook-geolocation';
+import useGeolocationImport from 'react-hook-geolocation';
 import { ensureWorkerAPI } from '@hierarchidb/ui-worker-client';
 import { MaplibreExportControl } from '@watergis/maplibre-gl-export';
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';
@@ -371,6 +371,9 @@ const getTargetsForLayerType = (layerType?: string): MapSearchTargetId[] => {
 };
 
 export default function MapPage() {
+  const useGeolocation =
+    (useGeolocationImport as unknown as { default?: typeof useGeolocationImport }).default ??
+    useGeolocationImport;
   const theme = useTheme();
   const navigate = useNavigate();
   const { nodeId } = useParams({ from: '/map/$nodeId' });

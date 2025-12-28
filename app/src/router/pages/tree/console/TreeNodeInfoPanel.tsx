@@ -26,6 +26,7 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
     canMutate,
     isDraft,
   } = useTreeNodeInfoPanel({ treeId, node, onContextMenuAction });
+  const isVisible = currentNode?.visible !== false;
 
   if (!currentNode) {
     return (
@@ -83,7 +84,16 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
         </Tooltip>
 
         <Stack spacing={0.5} alignItems="center">
-          <Typography variant="h4" component="h2" sx={{ wordBreak: 'break-word' }}>
+          <Typography
+            variant="h4"
+            component="h2"
+            sx={{
+              wordBreak: 'break-word',
+              textDecoration: isVisible ? 'none' : 'line-through',
+              textDecorationThickness: isVisible ? 'initial' : '2px',
+              textDecorationColor: isVisible ? 'initial' : 'inherit',
+            }}
+          >
             {currentNode.metadata?.name || labels.unnamedNodeLabel}
           </Typography>
           {isDraft && (
@@ -141,7 +151,7 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
             startIcon={<PlayArrowIcon />}
             onClick={() => handleContextMenuTrigger('preview')}
             aria-label={labels.previewAria}
-            disabled={menuNode?.visible === false}
+            disabled={!isVisible}
           >
             {labels.previewLabel}
           </Button>
@@ -156,7 +166,7 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
         nodeType={menuNode?.nodeType ?? 'folder'}
         nodeName={menuNode?.metadata?.name ?? ''}
         treeId={treeId}
-        isVisible={menuNode?.visible ?? true}
+        isVisible={isVisible}
         canCreate={false}
         canEdit={canMutate}
         canDuplicate={canMutate}
@@ -173,7 +183,9 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
         onCut={() => handleContextMenuTrigger('cut')}
         onTrash={() => handleContextMenuTrigger('trash')}
         onRemove={() => handleContextMenuTrigger('trash')}
-        onToggleVisible={() => handleContextMenuTrigger('toggle-visibility')}
+        onToggleVisible={(nextVisible) =>
+          handleContextMenuTrigger('toggle-visibility', { nextVisible })
+        }
       />
     </Box>
   );

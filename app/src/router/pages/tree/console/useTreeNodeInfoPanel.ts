@@ -15,6 +15,7 @@ import type {
   TreeConsolePanelProps,
   HierarchicalTreeNode,
 } from '@hierarchidb/ui-treeconsole-base';
+import { useTreeConsoleSSOT } from '~/state/treeconsole.atoms.ts';
 
 type ContextMenuHandler = NonNullable<TreeConsolePanelProps['onContextMenuAction']>;
 
@@ -33,6 +34,11 @@ export function useTreeNodeInfoPanel({
   const locale = i18n?.resolvedLanguage ?? i18n?.language ?? 'en';
   const workerCtx = useWorker();
   const workerClient = workerCtx?.client ?? null;
+  const { state: ssot } = useTreeConsoleSSOT(node?.id ? String(node.id) : undefined);
+  const indexedNode = useMemo(
+    () => (node?.id && ssot.nodeIndex ? ssot.nodeIndex.get(node.id as NodeId) : undefined),
+    [node?.id, ssot.nodeIndex]
+  );
   const [currentNode, setCurrentNode] = useState<TreeNode | undefined>(node);
   const nodeData = useMemo(
     () => (currentNode ? convertTreeNodeToTreeNodeData(currentNode) : undefined),
@@ -42,9 +48,27 @@ export function useTreeNodeInfoPanel({
   const [menuNode, setMenuNode] = useState<HierarchicalTreeNode | null>(nodeData ?? null);
 
   useEffect(() => {
-    setCurrentNode(node);
     setMenuAnchorEl(null);
-  }, [node]);
+  }, [node?.id]);
+
+  useEffect(() => {
+    const nextNode = indexedNode ?? node;
+    setCurrentNode((prev) => {
+      if (!nextNode) return undefined;
+      if (!prev || prev.id !== nextNode.id) return nextNode;
+      if (prev === nextNode) return prev;
+      if (
+        prev.visible !== nextNode.visible ||
+        prev.updatedAt !== nextNode.updatedAt ||
+        prev.version !== nextNode.version ||
+        prev.metadata?.name !== nextNode.metadata?.name ||
+        prev.metadata?.description !== nextNode.metadata?.description
+      ) {
+        return nextNode;
+      }
+      return prev;
+    });
+  }, [indexedNode, node]);
 
   useEffect(() => {
     setMenuNode(nodeData ?? null);
