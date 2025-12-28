@@ -310,7 +310,7 @@
       "duplicate": "複製",
       "moveToTrash": "ゴミ箱に移動",
       "visible": "表示",
-      "invisible": "非表示",
+      "hidden": "非表示",
       "checkReference": "参照を確認",
       "preview": "プレビュー"
     }

@@ -22,11 +22,23 @@ function getNodeId(node: TreeNodeLike | null | undefined): NodeId | null {
 }
 
 function removeSubtree(index: DualKeyMap<NodeId, NodeId, TreeNode>, nodeId: NodeId): void {
-  const childIds = index.getPrimaryKeysBySecondary(nodeId);
-  for (const childId of childIds) {
-    removeSubtree(index, childId as NodeId);
+  const stack: NodeId[] = [nodeId];
+  const visited = new Set<NodeId>();
+
+  while (stack.length > 0) {
+    const current = stack.pop() as NodeId | undefined;
+    if (!current) continue;
+    if (visited.has(current)) continue;
+    visited.add(current);
+    const childIds = index.getPrimaryKeysBySecondary(current);
+    childIds.forEach((childId) => {
+      const nextId = childId as NodeId;
+      if (!visited.has(nextId)) {
+        stack.push(nextId);
+      }
+    });
+    index.delete(current);
   }
-  index.delete(nodeId);
 }
 
 export function removeNodeAndDescendants(

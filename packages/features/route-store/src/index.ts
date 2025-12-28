@@ -142,5 +142,18 @@ export interface RouteBatchConfig extends BaseBatchConfigShape {
 export type BatchConfig = RouteBatchConfig;
 
 export { RouteDatabase } from './RouteDatabase.js';
+export type RouteDatabaseHandle = {
+  open?: () => Promise<unknown>;
+  close?: () => void;
+  lineStrings: {
+    where: (key: string) => {
+      equals: (value: NodeId) => {
+        toArray: () => Promise<RouteLineString[]>;
+        delete?: () => Promise<number>;
+      };
+    };
+    bulkPut?: (items: RouteLineString[]) => Promise<unknown>;
+  };
+};
 
 export type { RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/plugin-service-api';

@@ -61,7 +61,7 @@ export interface TreeTableController {
   onContextAction?: (
     action: string,
     node: TreeNodeInUI,
-    options?: { navigateToParent?: boolean }
+    options?: { navigateToParent?: boolean; nextVisible?: boolean }
   ) => void;
 }
 

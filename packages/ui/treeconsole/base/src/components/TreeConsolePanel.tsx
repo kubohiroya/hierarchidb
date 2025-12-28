@@ -88,8 +88,26 @@ export interface TreeConsolePanelProps {
   readonly onNavigateForward?: () => void;
   readonly canGoBack?: boolean;
   readonly canGoForward?: boolean;
-  readonly onContextMenuAction: (action: string, node: HierarchicalTreeNode, options?: { navigateToParent?: boolean }) => void;
-  readonly onBreadcrumbContextAction?: (action: string, node: PanelBreadcrumbNode, options?: { navigateToParent?: boolean }) => void;
+  readonly onContextMenuAction: (
+    action: string,
+    node: HierarchicalTreeNode,
+    options?: {
+      navigateToParent?: boolean;
+      expandTarget?: boolean;
+      source?: 'breadcrumb' | 'treetable' | 'speedDial';
+      nextVisible?: boolean;
+    }
+  ) => void;
+  readonly onBreadcrumbContextAction?: (
+    action: string,
+    node: PanelBreadcrumbNode,
+    options?: {
+      navigateToParent?: boolean;
+      expandTarget?: boolean;
+      source?: 'breadcrumb' | 'treetable' | 'speedDial';
+      nextVisible?: boolean;
+    }
+  ) => void;
   readonly onStartTour?: () => void;
   readonly onMoveNodes?: (nodeIds: string[], targetParentId: string) => void;
   /** Optional: For column-width persistence, provide treeId to scope keys */
@@ -225,7 +243,11 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       onMoveNodes: (nodeIds: string[], targetParentId: string) => {
         props.onMoveNodes?.(nodeIds, targetParentId);
       },
-      onContextAction: (action: string, node: TreeNodeInUI, options?: { navigateToParent?: boolean }) => {
+      onContextAction: (
+        action: string,
+        node: TreeNodeInUI,
+        options?: { navigateToParent?: boolean; nextVisible?: boolean }
+      ) => {
         if (props.onContextMenuAction) {
           const nodeData: HierarchicalTreeNode = {
             ...(node as unknown as HierarchicalTreeNode),

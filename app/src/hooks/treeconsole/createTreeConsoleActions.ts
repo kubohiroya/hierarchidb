@@ -757,7 +757,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
           const nextVisible =
             typeof options?.nextVisible === 'boolean'
               ? options.nextVisible
-              : (node as { visible?: boolean }).visible !== false;
+              : !((node as { visible?: boolean }).visible !== false);
           const res = await mutationAPI.updateNode({
             nodeId: targetNodeId,
             visible: nextVisible,
@@ -765,6 +765,13 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
           if (!res.success) {
             showCommandError('INVALID_OPERATION', res.error || 'Update failed');
             return;
+          }
+          const index = getOrCreateIndex(ssot);
+          const existing = index.get(targetNodeId) ?? (node as TreeNode | undefined);
+          if (existing) {
+            const parentKey = (existing.parentId ?? parentId ?? '') as NodeId;
+            index.set(targetNodeId, { ...existing, visible: nextVisible }, parentKey);
+            setSSOT({ nodeIndex: index });
           }
           await refreshParent(parentId ?? (pageNodeId as NodeId));
           await refreshUndoRedo();

@@ -1,4 +1,5 @@
 import type React from 'react';
+import { useEffect, useRef } from 'react';
 import { type PluginStepProps, PluginStepRegistry } from '@hierarchidb/plugin-base';
 import {
   summarizeCheckboxState,
@@ -25,12 +26,18 @@ function createStepAdapter(
   Component: React.ComponentType<ShapeDialogStepProps>,
 ): (props: ShapeStepProps) => JSX.Element {
   return function ShapeStepAdapter(props: ShapeStepProps) {
+    const latestDataRef = useRef<ShapeEntity | null>(null);
+    useEffect(() => {
+      latestDataRef.current = props.data ?? null;
+    }, [props.data]);
     const data = (props.data ?? {}) as Partial<ShapeEntity>;
     const handleChange = (updates: Partial<ShapeEntity>) => {
-      props.onChange({
-        ...(props.data ?? {}),
+      const next = {
+        ...(latestDataRef.current ?? {}),
         ...updates,
-      });
+      } as ShapeEntity;
+      latestDataRef.current = next;
+      props.onChange(next);
     };
 
     return (

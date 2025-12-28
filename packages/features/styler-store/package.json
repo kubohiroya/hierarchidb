@@ -21,13 +21,13 @@
   "peerDependencies": {
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*",
-    "@hierarchidb/spreadsheet-plugin": "workspace:*",
+    "@hierarchidb/spreadsheet-store": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*"
   },
   "devDependencies": {
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*",
-    "@hierarchidb/spreadsheet-plugin": "workspace:*",
+    "@hierarchidb/spreadsheet-store": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "typescript": "workspace:^5.9.3"
   }

@@ -75,13 +75,16 @@ export function TreeConsolePanelWithDynamicSpeedDial({
     }
   }, [handleTourFinish, tourRun, treeId]);
 
-  const rawContextAction = useMemo(()=>panelProps.onContextMenuAction ?? (() => {}), [panelProps.onContextMenuAction]);
+  const rawContextAction = useMemo(
+    () => panelProps.onContextMenuAction ?? (() => {}),
+    [panelProps.onContextMenuAction]
+  );
   const onContextMenuAction = useCallback(
-    (action: string, node: HierarchicalTreeNode) => {
+    (action: string, node: HierarchicalTreeNode, options?: Parameters<typeof rawContextAction>[2]) => {
       if (action?.startsWith('create:')) {
         setSpeedDialSuppressed(true);
       }
-      rawContextAction(action, node);
+      rawContextAction(action, node, options);
     },
     [rawContextAction, setSpeedDialSuppressed]
   );

@@ -332,7 +332,7 @@
       "duplicate": "Duplicate",
       "moveToTrash": "Move to Trash",
       "visible": "Visible",
-      "invisible": "Invisible",
+      "hidden": "Hidden",
       "checkReference": "Check reference",
       "preview": "Preview"
     },
@@ -354,7 +354,7 @@
     "duplicate": "Duplicate",
     "moveToTrash": "Move to Trash",
     "visible": "Visible",
-    "invisible": "Invisible",
+    "hidden": "Hidden",
     "checkReference": "Check reference",
     "preview": "Preview"
   }

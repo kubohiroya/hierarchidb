@@ -1,7 +1,7 @@
 import { SingletonMixin } from '@hierarchidb/util';
 import { CoreDB } from './services/CoreDB.js';
 import { bootstrapFeatures } from './services/FeatureBootstrap.js';
-import { enableAllExporters, enableAllImporters, ImportExportService } from '@hierarchidb/import-export';
+import { enableAllExporters, enableAllImporters } from '@hierarchidb/import-export';
 import { TagDBPortCoreDBAdapter } from './services/adapters/TagDBPortCoreDBAdapter.js';
 import { TagService } from '@hierarchidb/tag';
 import { CommandProcessor } from './services/CommandProcessor.js';
@@ -32,9 +32,9 @@ import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import { UIStateDB } from './services/UIStateDB.js';
 import { StyleDB } from '@hierarchidb/style-store';
 import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/location-store';
-import type { RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/route-store';
-import { ShapeDB, type VectorTileRecord } from '@hierarchidb/shape-store';
+import type { RouteDatabaseHandle, RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/route-store';
 import { RouteDatabase } from '@hierarchidb/route-store';
+import { ShapeDB, type VectorTileRecord } from '@hierarchidb/shape-store';
 import { StyleService } from './services/StyleService.js';
 import { ShapeQueryService } from './services/ShapeQueryService.js';
 import { ShapeMutationService } from './services/ShapeMutationService.js';
@@ -44,6 +44,7 @@ import { RouteQueryService } from './services/RouteQueryService.js';
 import { RouteMutationService } from './services/RouteMutationService.js';
 import { EntityLifecycleManager } from './entity/EntityLifecycleManager.js';
 import type { RuntimePluginDefinition } from './types/RuntimePluginDefinition.js';
+import { ImportExportLifecycleService } from './services/ImportExportLifecycleService.js';
 
 interface PerformanceMemoryStats {
   usedJSHeapSize?: number;
@@ -109,17 +110,6 @@ type ShapeDatabaseHandle = {
   cache: DexieTableHandle<unknown>;
   getVectorTile?: (nodeId: NodeId, z: number, x: number, y: number) => Promise<VectorTileRecord | undefined>;
   clearCache?: (nodeId?: NodeId, cacheType?: string) => Promise<number>;
-};
-
-type RouteDatabaseHandle = {
-  open?: () => Promise<unknown>;
-  close?: () => void;
-  lineStrings: {
-    where: (key: string) => {
-      equals: (value: NodeId) => { toArray: () => Promise<unknown[]>; delete?: () => Promise<number> };
-    };
-    bulkPut?: (...args: unknown[]) => Promise<unknown>;
-  };
 };
 
 const readHeapStats = (): { used: number; limit: number } => {
@@ -200,7 +190,9 @@ export class WorkerService {
 
       // Import/Export services
       const iePort = new ImportExportDBPortCoreDBAdapter(coreDB);
-      const importExportService: ImportExportAPI = await ImportExportService.getSingleton(iePort);
+      const importExportService: ImportExportAPI = await ImportExportLifecycleService.getSingleton(
+        iePort,
+      );
 
       const treeNodeUpdaterService: TreeNodeUpdaterAPI = new TreeNodeUpdaterService(
         coreDB,

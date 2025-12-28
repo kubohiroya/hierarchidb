@@ -130,7 +130,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
   const moveToTrashLabel = translateWithFallback('treeConsole.contextMenu.moveToTrash', 'Move to Trash');
   const allowTrash = (typeof canTrash === 'boolean' ? canTrash : undefined) ?? (canRemove ?? true);
   const visibleLabel = translateWithFallback('treeConsole.contextMenu.visible', 'Visible');
-  const invisibleLabel = translateWithFallback('treeConsole.contextMenu.invisible', 'Invisible');
+  const hiddenLabel = translateWithFallback('treeConsole.contextMenu.hidden', 'Hidden');
   const previewLabel = translateWithFallback('treeConsole.contextMenu.preview', 'Preview');
   const effectiveVisible =
     localInvisible !== null ? !localInvisible : (typeof isVisible === 'boolean' ? isVisible : true);
@@ -420,13 +420,13 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
 
         <MenuItem
           onClick={handleToggleVisible}
-          aria-label={effectiveInvisible ? invisibleLabel : visibleLabel}
+          aria-label={effectiveInvisible ? hiddenLabel : visibleLabel}
           sx={{ minWidth: 200 }}
         >
           <ListItemIcon>
             {effectiveInvisible ? <VisibilityOffIcon /> : <VisibilityIcon />}
           </ListItemIcon>
-          <ListItemText primary={effectiveInvisible ? invisibleLabel : visibleLabel} />
+          <ListItemText primary={effectiveInvisible ? hiddenLabel : visibleLabel} />
           <Switch
             checked={effectiveVisible}
             onChange={(event) => {
@@ -435,7 +435,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
             }}
             size="small"
             sx={{ ml: 'auto' }}
-            inputProps={{ 'aria-label': effectiveInvisible ? invisibleLabel : visibleLabel }}
+            inputProps={{ 'aria-label': effectiveInvisible ? hiddenLabel : visibleLabel }}
           />
         </MenuItem>
 

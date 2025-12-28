@@ -90,7 +90,7 @@ export type TreeNode<
   /**
    * Optional visibility toggle (default: true when undefined).
    */
-  visible?: boolean;
+  visible: boolean;
   dialogUIState?: DialogUIState;
   hasChildren?: boolean;
   descendantCount?: number;

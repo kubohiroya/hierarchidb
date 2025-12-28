@@ -11,38 +11,22 @@ import {
   type RouteWaypointResult,
 } from '@hierarchidb/plugin-service-api';
 import type { LocationQueryAPI } from '@hierarchidb/location-store';
-import type { RouteMutationAPI } from '@hierarchidb/route-store';
+import type { RouteDatabaseHandle, RouteMutationAPI } from '@hierarchidb/route-store';
 import { buildIdeGsmLocationIndex, parseIdeGsmCsv } from './route/ideGsmCsv.js';
 import { RouteGenerator } from './route/RouteGenerator.js';
 
-type DexieCollection = {
-  delete?: () => Promise<number>;
-};
-
-type DexieWhere = {
-  equals(value: unknown): DexieCollection;
-};
-
-type DexieTable = {
-  where(key: string): DexieWhere;
-  delete?: (id: string) => Promise<void>;
-  bulkPut?: (items: unknown[]) => Promise<unknown>;
-};
-
-type RouteDatabaseLike = {
-  open?: () => Promise<unknown>;
-  lineStrings: DexieTable;
-};
-
 export class RouteMutationService implements RouteMutationAPI {
-  static async getSingleton(db: RouteDatabaseLike, locationQueryService: LocationQueryAPI): Promise<RouteMutationService> {
+  static async getSingleton(
+    db: RouteDatabaseHandle,
+    locationQueryService: LocationQueryAPI,
+  ): Promise<RouteMutationService> {
     return SingletonMixin.getSingleton(
       'RouteMutationService',
       async () => new RouteMutationService(db, locationQueryService),
     );
   }
 
-  constructor(private db: RouteDatabaseLike, private locationQueryService: LocationQueryAPI) {}
+  constructor(private db: RouteDatabaseHandle, private locationQueryService: LocationQueryAPI) {}
 
   private async ensureOpen(): Promise<void> {
     await this.db.open?.();

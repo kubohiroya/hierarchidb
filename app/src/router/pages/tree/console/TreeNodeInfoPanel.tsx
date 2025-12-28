@@ -119,10 +119,10 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
           alignItems="center"
         >
           <Typography variant="body2" color="text.secondary">
-            {labels.createdAtLabel}
+            Created: {labels.createdAtLabel}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {labels.updatedAtLabel}
+            Updated: {labels.updatedAtLabel}
           </Typography>
         </Stack>
 

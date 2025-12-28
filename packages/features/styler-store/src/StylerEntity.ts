@@ -1,9 +1,8 @@
-import type { SpreadsheetEntity } from '@hierarchidb/spreadsheet-plugin';
+import type { SpreadsheetEntity, SpreadSheetDataSourceType } from '@hierarchidb/spreadsheet-store';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { MapLibreStyle } from '@hierarchidb/ui-map';
 
 import type { StepData } from '@hierarchidb/plugin-base';
-import type { SpreadSheetDataSourceType } from '@hierarchidb/spreadsheet-plugin';
 export type StyleType = 'choropleth' | 'points' | 'lines';
 export type StylerValueType = 'number' | 'color';
 export type StylerMappingMode = 'map-interpolate' | 'precomputed';

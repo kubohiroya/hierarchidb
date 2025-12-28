@@ -1,5 +1,5 @@
 {
-  "name": "@hierarchidb/location-store",
+  "name": "@hierarchidb/spreadsheet-store",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -20,17 +20,13 @@
   },
   "peerDependencies": {
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/gen-iso3166-2": "workspace:*",
-    "@hierarchidb/plugin-service-api": "workspace:*",
-    "@hierarchidb/util": "workspace:*",
-    "dexie": "^4.2.0"
+    "@hierarchidb/tabular-store": "workspace:*",
+    "@hierarchidb/ui-tabular": "workspace:*"
   },
   "devDependencies": {
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/gen-iso3166-2": "workspace:*",
-    "@hierarchidb/plugin-service-api": "workspace:*",
-    "@hierarchidb/util": "workspace:*",
-    "dexie": "^4.2.0",
+    "@hierarchidb/tabular-store": "workspace:*",
+    "@hierarchidb/ui-tabular": "workspace:*",
     "typescript": "workspace:^5.9.3"
   }
 }

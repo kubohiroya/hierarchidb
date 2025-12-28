@@ -194,9 +194,9 @@ function buildRoutePoint(
     ?? crypto.randomUUID()) as LocationPointId;
   return {
     coordinates: [location.longitude, location.latitude],
-    admin0Name: admin0Name ?? location.gid0 ?? '',
-    admin1Name: admin1Name ?? location.gid1 ?? '',
-    admin2Name: location.gid2,
+    admin0Name: admin0Name ?? location.countryName ?? location.countryCode ?? '',
+    admin1Name: admin1Name ?? location.admin1 ?? location.admin1Code ?? '',
+    admin2Name: location.admin2 ?? location.admin2Code,
     locationId: location.id,
     pointId,
     name: location.name ?? '',

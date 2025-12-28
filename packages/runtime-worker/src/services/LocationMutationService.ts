@@ -9,10 +9,18 @@ import {
   type LocationGroupItem,
   type LocationRelation,
 } from '@hierarchidb/plugin-service-api';
-import type { LocationMutationAPI } from '@hierarchidb/location-store';
+import type { LocationMutationAPI, LocationPointProperties } from '@hierarchidb/location-store';
+import { filterIdeGsmPointsBySelection, parseIdeGsmCsv } from '@hierarchidb/location-store';
 import { authFetch } from '@hierarchidb/download';
 import { getEphemeralLocationDB } from '@hierarchidb/location-store';
 import { storeRegistry } from '../entity/store-registry.js';
+
+type LocationPointWriteProgress = {
+  total: number;
+  saved: number;
+  chunkIndex: number;
+  chunkSize: number;
+};
 
 export class LocationMutationService implements LocationMutationAPI {
   static async getSingleton(): Promise<LocationMutationService> {
@@ -81,11 +89,6 @@ export class LocationMutationService implements LocationMutationAPI {
         throw new Error(`IDE-GSM fetch failed (${response.status})`);
       }
       const csvText = await response.text();
-      const {
-        parseIdeGsmCsv,
-        filterIdeGsmPointsBySelection,
-        replaceLocationPointsChunked,
-      } = await import('@hierarchidb/location-plugin');
       const parsed = await parseIdeGsmCsv(csvText);
       emit({ phase: 'parse', total: parsed.rowCount, processed: parsed.rowCount });
 
@@ -93,7 +96,7 @@ export class LocationMutationService implements LocationMutationAPI {
       emit({ phase: 'filter', total: parsed.points.length, processed: filtered.length });
 
       const chunkSize = request.chunkSize ?? IDE_GSM_BULK_CHUNK_SIZE;
-      await replaceLocationPointsChunked(request.nodeId, filtered, {
+      await this.replaceLocationPointsChunked(request.nodeId, filtered, {
         chunkSize,
         onProgress: (chunkProgress) => {
           emit({
@@ -127,6 +130,45 @@ export class LocationMutationService implements LocationMutationAPI {
       const message = error instanceof Error ? error.message : String(error);
       emit({ phase: 'failed', message });
       throw error;
+    }
+  }
+
+  private async replaceLocationPointsChunked(
+    nodeId: NodeId,
+    points: LocationPointProperties[],
+    options?: {
+      chunkSize?: number;
+      onProgress?: (progress: LocationPointWriteProgress) => void;
+    },
+  ): Promise<void> {
+    const store = storeRegistry.getGroup<LocationGroupItem>('location');
+    const chunkSize = Math.max(1, options?.chunkSize ?? 1000);
+    if (!store) {
+      options?.onProgress?.({ total: points.length, saved: 0, chunkIndex: 0, chunkSize });
+      return;
+    }
+    const existing = await store.list(nodeId);
+    if (existing.length > 0) {
+      await store.bulkDelete(nodeId, existing.map((item) => item.id));
+    }
+    if (!points.length) {
+      options?.onProgress?.({ total: 0, saved: 0, chunkIndex: 0, chunkSize });
+      return;
+    }
+    let saved = 0;
+    let chunkIndex = 0;
+    for (let i = 0; i < points.length; i += chunkSize) {
+      chunkIndex += 1;
+      const slice = points.slice(i, i + chunkSize);
+      const now = Date.now();
+      const items: LocationGroupItem[] = slice.map((point) => ({
+        id: point.pointId,
+        data: { ...point },
+        updatedAt: now,
+      }));
+      await store.bulkUpsert(nodeId, items);
+      saved += items.length;
+      options?.onProgress?.({ total: points.length, saved, chunkIndex, chunkSize });
     }
   }
 }

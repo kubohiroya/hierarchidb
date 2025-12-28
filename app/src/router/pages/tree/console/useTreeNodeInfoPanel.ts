@@ -137,9 +137,19 @@ export function useTreeNodeInfoPanel({
       const navigateToParent =
         options?.navigateToParent ??
         (action === 'trash' && !isFolderNodeType(nodeData.nodeType ?? ''));
-      onContextMenuAction(action, nodeData, { navigateToParent });
+      if (action === 'toggle-visibility') {
+        const nextVisible =
+          typeof options?.nextVisible === 'boolean'
+            ? options.nextVisible
+            : !((currentNode?.visible ?? true));
+        setCurrentNode((prev) => (prev ? { ...prev, visible: nextVisible } : prev));
+      }
+      onContextMenuAction(action, nodeData, {
+        navigateToParent,
+        nextVisible: options?.nextVisible,
+      });
     },
-    [nodeData, onContextMenuAction]
+    [nodeData, onContextMenuAction, currentNode]
   );
 
   const handleIconClick = useCallback(

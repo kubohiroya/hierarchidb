@@ -6,7 +6,7 @@ import type {
   RouteNearestLine,
   RouteNearestEndpoint,
 } from '@hierarchidb/plugin-service-api';
-import type { RouteQueryAPI } from '@hierarchidb/route-store';
+import type { RouteDatabaseHandle, RouteQueryAPI } from '@hierarchidb/route-store';
 import { TilesDB } from '@hierarchidb/gis-sdk';
 import {
   BTree,
@@ -17,15 +17,6 @@ import {
   tileToBbox,
   toTileCoord,
 } from './nearest/tileNearest.js';
-
-type RouteDatabaseLike = {
-  open?: () => Promise<unknown>;
-  lineStrings: {
-    where: (key: string) => {
-      equals: (value: NodeId) => { toArray: () => Promise<unknown[]> };
-    };
-  };
-};
 
 type RoutePointSummary = {
   name?: string;
@@ -57,11 +48,11 @@ export const DEFAULT_TILE_CACHE_SIZE = 256;
 export const LINESTRING_CACHE_TTL_MS = 5_000;
 
 export class RouteQueryService implements RouteQueryAPI {
-  static async getSingleton(db: RouteDatabaseLike): Promise<RouteQueryService> {
+  static async getSingleton(db: RouteDatabaseHandle): Promise<RouteQueryService> {
     return SingletonMixin.getSingleton('RouteQueryService', async () => new RouteQueryService(db));
   }
 
-  constructor(private db: RouteDatabaseLike) {}
+  constructor(private db: RouteDatabaseHandle) {}
 
   async findNearestRouteLine(query: RouteNearestLineQuery): Promise<RouteNearestLineResponse> {
     const cursor = { longitude: query.longitude, latitude: query.latitude };

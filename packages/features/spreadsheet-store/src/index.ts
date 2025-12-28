@@ -3,4 +3,4 @@ export type {
   SpreadSheetDataSourceType,
   SpreadsheetEntity,
   UploadedFileSummary,
-} from '@hierarchidb/spreadsheet-store';
+} from './SpreadsheetEntity.js';

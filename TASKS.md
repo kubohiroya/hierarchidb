@@ -149,6 +149,48 @@
 - ロールバック手順：本タスクで変更した `packages/`/`plugins/`/`app/`/`package.json`/`pnpm-lock.yaml` を revert し、`pnpm exec dependency-cruiser -c .dependency-cruiser.cjs packages app` を再実行して旧依存を再現する。
 - 運用ログ：
   - start: 2025-12-28 15:20 JST host→plugin 依存の解消（plugin-registry 経由のみ）に着手。ExecPlan: `plans/host-plugin-deps-execplan.md`。
+  - progress: 2025-12-28 16:05 JST location-store に IDE-GSM/CSV 処理を移設し、runtime-worker の LocationMutationService から location-plugin への動的 import を撤去。検証: 未実施。ロールバック: `packages/features/location-store/src/{ideGsmCsv.ts,csvUtils.ts,index.ts}` と `packages/runtime-worker/src/services/LocationMutationService.ts` の差分を revert。
+  - progress: 2025-12-28 16:05 JST spreadsheet-store を新設し、ホスト側で spreadsheet 共有型を参照できる基盤を追加。検証: 未実施。ロールバック: `packages/features/spreadsheet-store/**` と `tsconfig.base.json` の差分を revert。
+  - progress: 2025-12-28 16:24 JST styler-store の spreadsheet 型参照を spreadsheet-store へ移行し、spreadsheet-plugin は store 型を再export。app/runtime-worker の plugin 依存と app の turbo build 依存を整理。検証: 未実施。ロールバック: `packages/features/styler-store/src/StylerEntity.ts`, `packages/features/styler-store/package.json`, `plugins/spreadsheet-plugin/src/common/types/SpreadsheetEntity.ts`, `plugins/spreadsheet-plugin/package.json`, `app/package.json`, `packages/runtime-worker/package.json` の差分を revert。
+  - progress: 2025-12-28 16:24 JST route-store に RouteDatabaseHandle を追加し、runtime-worker の RouteQuery/RouteMutation/WorkerService を共通型で統一。検証: 未実施。ロールバック: `packages/features/route-store/src/index.ts`, `packages/runtime-worker/src/services/{RouteQueryService.ts,RouteMutationService.ts}`, `packages/runtime-worker/src/WorkerService.ts` の差分を revert。
+  - progress: 2025-12-28 16:24 JST plugin-registry 生成で ui/worker module declaration を追加し、`pnpm --workspace-root run tools:gen-plugin-registry` を実行。検証: exit 0（警告あり）。ロールバック: `packages/tools/build-scripts/src/gen-plugin-registry.ts` と `packages/plugin-registry/generated/registry.modules.d.ts` ほか生成差分を revert。
+  - progress: 2025-12-28 16:38 JST plugin-service-api/location-store/route-store を build して dist を更新し、runtime-worker typecheck を再実行。検証: `pnpm --filter @hierarchidb/plugin-service-api build` exit 0（define 警告あり）、`pnpm --filter @hierarchidb/location-store build` exit 0（define 警告あり）、`pnpm --filter @hierarchidb/route-store build` exit 0（define 警告あり）、`pnpm --filter @hierarchidb/runtime-worker typecheck` exit 0。ロールバック: 各 dist 出力と `packages/plugin-service-api/src/types/locationTypes.ts`, `packages/runtime-worker/src/services/{CoreDB.ts,route/ideGsmCsv.ts}`, `packages/features/route-store/src/index.ts` の差分を revert。
+  - start: 2025-12-28 17:05 JST app の tree ルート循環（page/target/dialog/nodeType）を shared 抽出で解消する対応に着手。
+  - progress: 2025-12-28 17:12 JST tree ルートの routeId を shared に集約し、t.($treeId).($pageNodeId).tsx のルート参照を shared 経由へ切替。検証: 未実施。ロールバック: `app/src/router/routes/tree/shared.ts` と `app/src/router/routes/{t.($treeId).($pageNodeId).tsx,tree/pageRoute.tsx,tree/targetRoute.tsx,tree/dialogRoute.tsx}` の差分を revert。
+  - progress: 2025-12-28 17:18 JST `pnpm exec dependency-cruiser -c .dependency-cruiser.cjs packages app` を実行し、app の tree ルート循環が解消されたことを確認（残りは plugin-registry 経由のみ）。検証: exit 12（plugin-registry 経由の循環のみ）。ロールバック: tree ルート shared 差分を revert。
+
+1934) ImportExportService 命名整理（P1）
+- ブランチ: `refactor/runtime/import-export-service-rename`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/features/import-export`, `packages/runtime-worker`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] ImportExportService の同名ファイル/クラスが重複しない
+  - [ ] 責務に合わせた命名へ変更し、参照箇所が更新される
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] 2つの ImportExportService の責務を確認する
+  - [ ] 命名変更の方針を決めて更新する
+  - [ ] 参照箇所を全て更新する
+- ロールバック手順：本タスクで変更した `packages/features/import-export/src/ImportExportService.ts`, `packages/runtime-worker/src/services/*`, `packages/runtime-worker/src/WorkerService.ts`, テスト差分を revert する。
+- 運用ログ：
+  - start: 2025-12-28 17:25 JST ImportExportService の命名整理に着手。
+  - progress: 2025-12-28 17:30 JST runtime-worker 側の ImportExportService を ImportExportLifecycleService に改名し、WorkerService とテストの参照を更新。検証: 未実施。ロールバック: `packages/runtime-worker/src/services/ImportExportLifecycleService.ts`, `packages/runtime-worker/src/WorkerService.ts`, テスト差分の revert とファイル名の復元。
+
+1935) export 型名とファイル名の整合 + 同名重複の整理（P1）
+- ブランチ: `refactor/runtime/export-name-align`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/**/src`, `plugins/**/src`, `app/src`, `TASKS.md`, `plans/`
+- 受け入れ基準（DoD）:
+  - [ ] index.ts を除き、同名の型/クラス/インターフェース/enum の重複を棚卸しし、責務に応じて改名または統合方針を決定する
+  - [ ] export される型名とファイル名のズレを解消し、原則「型名＝ファイル名」を満たす
+  - [ ] 参照箇所を更新し、型チェックに影響がない
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] ExecPlan を作成し、棚卸し→命名方針→更新→検証の手順を明記する
+  - [ ] 同名重複一覧を作成する（index.ts 除外）
+  - [ ] 型名=ファイル名のズレ一覧を作成する
+  - [ ] 改名/統合の具体案を確定し、参照を更新する
+- ロールバック手順：本タスクで変更した `packages/**/src`/`plugins/**/src`/`app/src` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-28 17:40 JST 同名重複と export 型名/ファイル名の不整合の棚卸しに着手。
 
 1925) /map 検索フィールド + 強調表示 + ナビゲーションコントロール追加（P1）
 - ブランチ: `feat/ui/map-search-highlight`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -234,12 +276,21 @@
   - [ ] Preview 描画経路で invisible ノードをフィルタする
   - [ ] invisible ノードの Preview ボタンを disabled にする
   - [ ] preview 探索で invisible フォルダを境界として探索を止める
+  - [ ] preview の非表示伝播を子孫方向のみに制限する
+  - [ ] shape-plugin Step3（国×自治体）選択のチェックが戻る不具合を修正する
+  - [ ] visible 更新が UI に即時反映されるように CoreDB/通知/コンテキスト連携を修正する
   - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
 - ロールバック手順：TreeNode 型/UI/Preview の変更を revert し、必要なら `pnpm --filter @hierarchidb/app typecheck` を再実行する。
 - 運用ログ：
   - start: 2025-12-27 19:10 JST TreeTable/Breadcrumb の Visible/Invisible トグルと Preview 非表示対応に着手。
   - progress: 2025-12-27 19:30 JST TreeNode に invisible を追加し、TreeTable/Breadcrumb の表示・メニューと map プレビューの非表示フィルタを実装。
   - progress: 2025-12-27 19:50 JST invisible ノードの Preview 無効化と、関連ノード探索で invisible フォルダ境界を追加。
+  - progress: 2025-12-27 21:55 JST preview 非表示伝播の子孫限定化と shape-plugin Step3 チェック不具合の調査・修正に着手。
+  - progress: 2025-12-27 22:15 JST map プレビューの非表示伝播を子孫方向のみに変更し、shape-plugin Step3 の選択保持を修正。
+  - progress: 2025-12-27 22:35 JST treeconsole の removeSubtree を反復処理に変更し、循環参照によるスタックオーバーフローを回避。
+  - progress: 2025-12-27 22:50 JST visible 状態が UI に反映されない問題の調査・修正に着手。
+  - progress: 2025-12-27 23:10 JST CoreDB の visible 正規化とコンテキストメニュー再描画条件を修正。
+  - progress: 2025-12-27 23:25 JST invisible 経路（CoreDB互換・i18n文言）を撤去し、Hidden 表記へ移行。
   - progress: 2025-12-27 20:10 JST runtime-worker の tsconfig paths 上書きを解除し、プラグイン src alias を復帰。
   - progress: 2025-12-27 20:20 JST map.tsx の import type 修正で Vite 変換エラーを解消。
   - progress: 2025-12-27 20:35 JST Vite alias に common-auth/ui-file/gis-sdk と route-plugin subpath を追加し、route-plugin 内部参照を相対パス化。
@@ -5801,6 +5852,11 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+
+1868) TreeNodeInfoPanel の日付表示にラベルを追加（P1） — 完了 (2025-12-28)
+- 要点：日時表示に `Created:` / `Updated:` のラベルを追加。
+- 検証：未実施（手動確認/コマンド未実行）。
+- ロールバック手順：`app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx` の差分を revert し、表示を確認する。
 
 1933) Gravatar へのユーザ画像上書きの環境変数制御（P1） — 完了 (2025-12-28)
 - 要点：`VITE_GRAVATAR_OVERRIDE` が true のときは Gravatar を優先表示し、既定はプロバイダ画像を維持。
@@ -12803,6 +12859,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-28 19:25 progress: feat/ui-treeconsole/visibility-toggle — visible=true をデフォルト扱いに変更し、更新API/Worker/Map/Breadcrumb の解釈を visible 優先へ統一。
 - 2025-12-28 19:45 progress: feat/ui-treeconsole/visibility-toggle — invisible を廃止し、visible のみで解釈/更新するよう整理。default は visible=true として扱う設計へ統一。
 - 2025-12-28 20:05 progress: feat/ui-treeconsole/visibility-toggle — トグル操作で UI が決定した nextVisible をそのまま Worker 更新へ渡すように変更し、反転ズレの原因を排除。
+- 2025-12-28 20:25 progress: feat/ui-treeconsole/visibility-toggle — nextVisible の伝搬漏れを補正し、options が無い場合もトグル反転するフォールバックを追加。
+- 2025-12-28 20:45 progress: feat/ui-treeconsole/visibility-toggle — トグル直後に nodeIndex と InfoPanel 状態を即時更新し、Subscription 遅延時でも UI に即反映されるよう改善。
 - 2025-12-28 14:50 start: chore/tooling/dependency-cruiser-update — dependency-cruiser を最新化し、Node 25 で deps:cycles が動くか確認する対応に着手。DoD: 最新版へ更新、依存解析コマンドの再実行、結果を記録。
 - 2025-12-28 15:05 progress: chore/tooling/dependency-cruiser-update — `pnpm add -Dw dependency-cruiser@latest` で最新版へ更新し、deps:cycles を再実行（Node 25 で起動確認）。循環依存 21 件を検出したため一覧化して共有する段階へ移行。
 - 2025-12-28 15:05 done: chore/tooling/dependency-cruiser-update — dependency-cruiser を最新化し、shape/location/runtime-worker/plugin-registry 周辺と app ルーティング周辺の循環依存を検出。ロールバック: `package.json`/`pnpm-lock.yaml` の dependency-cruiser 更新を revert し、旧版の失敗を再現。
@@ -13914,3 +13972,5 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-26 22:55 done: fix/ui-shell-styler/typecheck-errors — pretypecheck の obsolete common パスを修正し、styler-plugin の placeholder/metadata import/mapping 型エラーを解消。検証: `pnpm --filter @hierarchidb/ui-plugin-shell typecheck` exit 0、`pnpm --filter @hierarchidb/styler-plugin typecheck` exit 0。ロールバック: `scripts/pretypecheck-ui-shell.mjs`, `plugins/styler-plugin/src/ui/components/{StylerMappingKeysStep.tsx,StylerPreviewStep.tsx,StylerTargetBehaviorStep.tsx}` と `TASKS.md` の差分を revert。
 - 2025-12-26 23:05 start: fix/app/typecheck-map-invisible — app typecheck の invisible/MapLibre/map search 型エラーと shape/gis-sdk 解決を修正。DoD: app typecheck 成功、検証結果とロールバック手順を記載。
 - 2025-12-26 23:10 done: fix/app/typecheck-map-invisible — breadcrumb の invisible 型追加、app tsconfig に gis-sdk/shape-plugin を追加、MapLibre 型拡張と map.tsx の import/FeatureState/検索型を整理。検証: `pnpm --filter @hierarchidb/app typecheck` exit 0。ロールバック: `app/tsconfig.json`, `app/src/router/pages/tree/console/useTreeConsoleIntegrationInner.ts`, `app/src/router/routes/map.tsx`, `packages/ui/map/src/types/maplibre-public.ts`, `TASKS.md` の差分を revert。
+- 2025-12-28 13:36 start: fix/ui/tree-nodeinfo-dates — TreeNodeInfoPanel の日付表示にラベルを追加する対応に着手。（Kanban: 1868）
+- 2025-12-28 13:38 done: fix/ui/tree-nodeinfo-dates — Created/Updated ラベルを追加し、日付の意味を明確化。検証: 未実施。ロールバック: `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx` の差分を revert する。

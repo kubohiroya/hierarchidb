@@ -440,7 +440,7 @@ export default function MapPage() {
           nodeById.set(String(node.id), node);
         });
         const invisibleFolderIds = new Set<string>(
-          [...ancestors, rootNode, ...descendants]
+          [rootNode, ...descendants]
             .filter((node) => isInvisibleFolder(node))
             .map((node) => String(node.id))
         );

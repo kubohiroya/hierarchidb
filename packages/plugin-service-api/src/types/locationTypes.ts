@@ -1,32 +1,26 @@
-import type { Timestamp } from '@hierarchidb/common-types';
-
-export interface LocationPointSource {
-  provider: string;
-  fetchedAt: Timestamp;
-  originalId?: string;
-}
-
 export type LocationPointKind = string;
 
-export interface LocationPointProperties<
-  TPayload extends Record<string, unknown> = Record<string, unknown>,
-> {
-  schemaVersion: 1;
-  pid: string;
+export type LocationPointMetadata = Record<string, string | number | null>;
+
+export type LocationPointId = string & { readonly __brand: 'LocationPointId' };
+
+export interface LocationPointProperties {
+  schemaVersion: 2;
+  pointId: LocationPointId;
   name: string;
   latitude: number;
   longitude: number;
   kind: LocationPointKind;
-  gid0: string;
-  gid1?: string;
-  gid2?: string;
-  payload: TPayload;
-  source?: LocationPointSource;
+  countryName?: string;
+  countryCode: string;
+  admin1?: string;
+  admin2?: string;
+  admin1Code?: string;
+  admin2Code?: string;
+  metadata?: LocationPointMetadata;
 }
 
-export interface LocationGroupItemData<
-  TPayload extends Record<string, unknown> = Record<string, unknown>,
-> extends LocationPointProperties<TPayload> {}
+export interface LocationGroupItemData extends LocationPointProperties {}
 
 export interface LocationRelationMeta {
   schemaVersion: 1;

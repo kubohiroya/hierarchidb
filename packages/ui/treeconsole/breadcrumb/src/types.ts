@@ -104,6 +104,11 @@ export interface TreeConsoleBreadcrumbProps {
   onContextAction?: (
     action: string,
     node: BreadcrumbNode,
-    options?: { navigateToParent?: boolean; expandTarget?: boolean; source?: 'breadcrumb' },
+    options?: {
+      navigateToParent?: boolean;
+      expandTarget?: boolean;
+      source?: 'breadcrumb';
+      nextVisible?: boolean;
+    },
   ) => void;
 }

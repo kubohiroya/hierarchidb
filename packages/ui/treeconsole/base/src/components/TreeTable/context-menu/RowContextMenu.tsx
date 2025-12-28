@@ -326,7 +326,7 @@ export const RowContextMenu = memo(
               onClick={handleToggleVisible}
               aria-label={
               effectiveInvisible
-                ? t('treeConsole.contextMenu.invisible', 'Invisible')
+                ? t('treeConsole.contextMenu.hidden', 'Hidden')
                 : t('treeConsole.contextMenu.visible', 'Visible')
               }
               sx={{ minWidth: 200 }}
@@ -336,7 +336,7 @@ export const RowContextMenu = memo(
             </ListItemIcon>
             <ListItemText>
               {effectiveInvisible
-                ? t('treeConsole.contextMenu.invisible', 'Invisible')
+                ? t('treeConsole.contextMenu.hidden', 'Hidden')
                 : t('treeConsole.contextMenu.visible', 'Visible')}
             </ListItemText>
             <Switch
@@ -349,7 +349,7 @@ export const RowContextMenu = memo(
               sx={{ ml: 'auto' }}
               inputProps={{
                 'aria-label': effectiveInvisible
-                  ? t('treeConsole.contextMenu.invisible', 'Invisible')
+                  ? t('treeConsole.contextMenu.hidden', 'Hidden')
                   : t('treeConsole.contextMenu.visible', 'Visible'),
               }}
             />
@@ -481,6 +481,7 @@ export const RowContextMenu = memo(
       prevProps.canCreate === nextProps.canCreate &&
       prevTrash === nextTrash &&
       prevProps.canDuplicate === nextProps.canDuplicate &&
+      prevProps.isVisible === nextProps.isVisible &&
       prevProps.parentElem === nextProps.parentElem &&
       prevProps.addMenuNodeTypes.length === nextProps.addMenuNodeTypes.length &&
       prevProps.addMenuNodeTypes.every((type, index) => type === nextProps.addMenuNodeTypes[index])

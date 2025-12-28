@@ -183,6 +183,11 @@ export interface LocationBatchData {
 
 export type BatchConfig = UnifiedLocationBatchConfig;
 
+export type { CsvTable } from './csvUtils.js';
+export { buildHeaderIndex, getColumnValue, parseCsvTable } from './csvUtils.js';
+export type { IdeGsmParseResult } from './ideGsmCsv.js';
+export { filterIdeGsmPointsBySelection, parseIdeGsmCsv } from './ideGsmCsv.js';
+
 export {
   EphemeralLocationDB,
   type LocationSessionRecord,

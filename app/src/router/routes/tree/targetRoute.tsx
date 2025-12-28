@@ -8,10 +8,12 @@
 import { createRoute, Outlet } from '@tanstack/react-router';
 import { loadTargetNode } from '../../loaders/treeLoaders.js';
 import { treePageRoute } from './pageRoute.js';
+import { treeRouteIds } from './shared.js';
 
 export const treeTargetRoute = createRoute({
   getParentRoute: () => treePageRoute,
   path: '$targetNodeId',
+  id: treeRouteIds.target,
   loader: async ({ params }) => {
     const { treeId, pageNodeId, targetNodeId } = params;
     if (!treeId || !targetNodeId) {

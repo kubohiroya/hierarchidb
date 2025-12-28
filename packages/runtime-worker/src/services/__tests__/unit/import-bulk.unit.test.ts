@@ -2,7 +2,7 @@ import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { ImportExportDBPort } from '@hierarchidb/import-export';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-describe('ImportExportService importNodes bulk path', () => {
+describe('ImportExportLifecycleService importNodes bulk path', () => {
   beforeEach(() => vi.resetModules());
 
   it('bulk creates current level and recurses for children', async () => {
@@ -16,8 +16,8 @@ describe('ImportExportService importNodes bulk path', () => {
       listChildren: vi.fn(async () => []),
       getNode: vi.fn(async () => undefined),
     };
-    const { ImportExportService } = await import('../../ImportExportService.js');
-    const svc = await ImportExportService.getSingleton(port);
+    const { ImportExportLifecycleService } = await import('../../ImportExportLifecycleService.js');
+    const svc = await ImportExportLifecycleService.getSingleton(port);
     const r = await svc.importNodes({
       data: {
         nodes: [{ name: 'A' }, { name: 'B', children: [{ name: 'B1' }] }],

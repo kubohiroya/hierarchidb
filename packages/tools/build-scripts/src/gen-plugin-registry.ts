@@ -979,6 +979,28 @@ function generateModuleDeclarationSource(summaries: ManifestSummary[]): string {
   const isValidIdentifier = (value: string): boolean => /^[$A-Z_][0-9A-Z_$]*$/i.test(value);
 
   for (const summary of summaries) {
+    const uiSpecifier =
+      summary.uiSourceEntry || summary.uiDistEntry ? `${summary.packageName}/ui` : null;
+    if (uiSpecifier && !seen.has(uiSpecifier)) {
+      seen.add(uiSpecifier);
+      lines.push(`declare module '${uiSpecifier}' {`);
+      lines.push('  const mod: Record<string, unknown>;');
+      lines.push('  export default mod;');
+      lines.push('}');
+      lines.push('');
+    }
+
+    const workerSpecifier =
+      summary.workerSourceEntry || summary.workerDistEntry ? `${summary.packageName}/worker` : null;
+    if (workerSpecifier && !seen.has(workerSpecifier)) {
+      seen.add(workerSpecifier);
+      lines.push(`declare module '${workerSpecifier}' {`);
+      lines.push('  const mod: Record<string, unknown>;');
+      lines.push('  export default mod;');
+      lines.push('}');
+      lines.push('');
+    }
+
     const icon = summary.iconComponent;
     if (icon && !seen.has(icon.specifier)) {
       seen.add(icon.specifier);

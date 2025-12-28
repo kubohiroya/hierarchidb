@@ -37,6 +37,11 @@ const normalizeTreeNodeForPersist = (node: TreeNode): TreeNode => {
     visible,
   } = node as TreeNode;
 
+  const normalizedVisible =
+    typeof visible === 'boolean'
+      ? visible
+      : undefined;
+
   const rawMetadata = (node as { metadata?: unknown }).metadata;
   if (!rawMetadata) {
     throw new Error('metadata is required on TreeNode');
@@ -83,7 +88,7 @@ const normalizeTreeNodeForPersist = (node: TreeNode): TreeNode => {
     originalParentId,
     removedAt,
     lastTouchedAt,
-    visible,
+    visible: normalizedVisible,
   };
 };
 

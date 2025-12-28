@@ -23,10 +23,7 @@ import { useWorker } from '~/contexts/WorkerProvider.js';
 import { memo } from 'react';
 import type { LoadNodeActionReturn, LoadPageNodeReturn, LoadTargetNodeReturn } from '../loaders/treeLoaders.js';
 import type { TreeConsoleIntegrationProps } from '~/router/pages/tree/console/TreeConsoleIntegration.js';
-import { treeDialogRoute } from './tree/dialogRoute.js';
-import { treePageRoute } from './tree/pageRoute.js';
-import { treeTargetRoute } from './tree/targetRoute.js';
-import type { TreeDialogLoaderResult } from './tree/dialogRoute.js';
+import { treeRouteIds } from './tree/shared.js';
 
 const LazyTreeConsoleIntegration = lazy(async () => {
   const mod = await import('~/router/pages/tree/console/TreeConsoleIntegration.js');
@@ -47,26 +44,32 @@ type TreeLayoutBodyProps = {
   data: LoaderData;
 };
 
+type TreeDialogMatchData = {
+  kind?: 'trash' | 'plugin';
+  data?: unknown;
+  params?: { action?: string; nodeType?: string };
+};
+
 function useTreeDocumentTitle() {
   const matches = useRouterState({ select: (state) => state.matches });
 
   const pageMatch = useMemo(
-    () => matches.find((match) => match.routeId === treePageRoute.id),
+    () => matches.find((match) => match.routeId === treeRouteIds.page),
     [matches]
   );
   const targetMatch = useMemo(
-    () => matches.find((match) => match.routeId === treeTargetRoute.id),
+    () => matches.find((match) => match.routeId === treeRouteIds.target),
     [matches]
   );
   const dialogMatch = useMemo(
-    () => matches.find((match) => match.routeId === treeDialogRoute.id),
+    () => matches.find((match) => match.routeId === treeRouteIds.dialog),
     [matches]
   );
 
   const nextTitle = useMemo(() => {
     const defaultTitle = 'HierarchiDB App';
 
-    const dialogData = dialogMatch?.loaderData as TreeDialogLoaderResult | undefined;
+    const dialogData = dialogMatch?.loaderData as TreeDialogMatchData | undefined;
     if (dialogData?.kind === 'plugin') {
       const { targetNode, params } = dialogData.data as LoadNodeActionReturn & {
         params?: { action?: string; nodeType?: string };

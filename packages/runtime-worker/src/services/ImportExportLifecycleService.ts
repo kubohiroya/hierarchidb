@@ -7,11 +7,14 @@ import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';
 import type { CoreDB } from './CoreDB.js';
 
 // Augment base ImportExportService with lifecycle notifications.
-export class ImportExportService extends BaseImportExportService {
+export class ImportExportLifecycleService extends BaseImportExportService {
   private readonly coreDB: CoreDB | null;
 
-  static async getSingleton(db: ImportExportDBPort): Promise<ImportExportService> {
-    return SingletonMixin.getSingleton('ImportExportService', () => new ImportExportService(db));
+  static async getSingleton(db: ImportExportDBPort): Promise<ImportExportLifecycleService> {
+    return SingletonMixin.getSingleton(
+      'ImportExportLifecycleService',
+      () => new ImportExportLifecycleService(db),
+    );
   }
 
   private constructor(db: ImportExportDBPort) {
