@@ -68,6 +68,9 @@
 - 運用ログ：
   - start: 2025-12-28 23:10 JST Edit shape step 5 の start build 未開始の調査に着手。
   - progress: 2025-12-28 23:25 JST start build 時に batchConfig.dataSource と urlMetadata が不足するケースを確認。開始前に dataSourceName から batchConfig.dataSource を補完し、必要なら selection から urlMetadata を再生成する修正を追加。
+  - progress: 2025-12-28 21:32 JST DownloadTaskPayload への改名/生成責務移管/差分永続化/開始API更新を実装する方針で対応開始。
+  - progress: 2025-12-28 21:40 JST 選択マトリクスが文字列で保存されている場合でも payload 生成できるように `generateDownloadTaskPayloadsFromSelection` でパース対応を追加。
+  - progress: 2025-12-28 21:45 JST selectedArrayByCountries の型から string を廃止し、boolean[][] に統一する作業に着手。
 
 1948) route-plugin: LocationGroupItemData の admin 名参照整理（P1）
 - ブランチ: `fix/route-plugin/admin-name-mapping`（sandbox 制約で branch 作成不可なら main 上で作業）

@@ -11,7 +11,11 @@ import type { HeapPressureEvent } from '@hierarchidb/memory';
 
 export interface WorkerBridge {
   initialize(): Promise<void>;
-  startBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus>;
+  startBatchSession(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    downloadTaskPayloads?: Parameters<WorkerAPI['startBatchSession']>[2]
+  ): Promise<BatchSessionStatus>;
   getBatchSessionStatus(nodeType: NodeType, sessionId: BatchSessionId): Promise<BatchSessionStatus>;
   pauseBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
   resumeBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
@@ -79,9 +83,13 @@ class WorkerBridgeImpl implements WorkerBridge {
     }
   }
 
-  async startBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus> {
+  async startBatchSession(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    downloadTaskPayloads?: Parameters<WorkerAPI['startBatchSession']>[2],
+  ): Promise<BatchSessionStatus> {
     const api = await ensureWorkerAPI();
-    return api.startBatchSession(nodeType, nodeId);
+    return api.startBatchSession(nodeType, nodeId, downloadTaskPayloads);
   }
 
   async getBatchSessionStatus(nodeType: NodeType, sessionId: BatchSessionId): Promise<BatchSessionStatus> {

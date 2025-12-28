@@ -19,7 +19,6 @@ interface ShapeEntity {
   licenseAgreement: boolean;
   batchConfig?: BatchConfig;
   selectedArrayByCountries?: boolean[][];
-  urlMetadata?: UrlMetadata[];
 }
 
 interface BatchConfig {
@@ -51,14 +50,6 @@ interface BatchConfig {
     minZoom: number;
     maxZoom: number;
   };
-}
-
-interface UrlMetadata {
-  url: string;
-  countryCode: string;
-  adminLevel: number;
-  continent: string;
-  dataSource?: string;
 }
 
 /**
@@ -126,11 +117,6 @@ export function createTestShapeEntity(): ShapeEntity {
       [true],
       [true],
     ],
-    urlMetadata: [
-      { url: 'https://example.com/jpn/adm0', countryCode: 'JPN', adminLevel: 0, continent: 'AS', dataSource: 'geoboundaries' },
-      { url: 'https://example.com/deu/adm0', countryCode: 'DEU', adminLevel: 0, continent: 'EU', dataSource: 'geoboundaries' },
-      { url: 'https://example.com/usa/adm0', countryCode: 'USA', adminLevel: 0, continent: 'NA', dataSource: 'geoboundaries' },
-    ],
   };
 }
 
@@ -145,9 +131,6 @@ export function createTestShapeEntityJapanOnly(): ShapeEntity {
     id: 'test-shape-plugin-entity-jpn-only' as EntityId,
     nodeId: 'test-shape-plugin-node-jpn-only' as NodeId,
     selectedArrayByCountries: [[true]],
-    urlMetadata: [
-      { url: 'https://example.com/jpn/adm0', countryCode: 'JPN', adminLevel: 0, continent: 'AS', dataSource: 'geoboundaries' },
-    ],
     batchConfig: {
       ...baseEntity.batchConfig!,
       simplify2: {

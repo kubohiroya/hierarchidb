@@ -167,19 +167,19 @@ const runBatchProcessing = async (
     licenseAgreement: true,
     batchConfig: config,
   });
-  const urlMetadata = await shapeBatchAPI.generateUrlMetadata(
+  const downloadTaskPayloads = await shapeBatchAPI.generateDownloadTaskPayloads(
     'geoboundaries',
     countries,
     adminLevels,
   );
-  if (urlMetadata.length === 0) {
-    throw new Error('No URL metadata generated for geoBoundaries selection.');
+  if (downloadTaskPayloads.length === 0) {
+    throw new Error('No download task payloads generated for geoBoundaries selection.');
   }
 
-  const sessionId = await shapeBatchAPI.startBatchProcessing(
+  const sessionId = await shapeBatchAPI.startBatchProcess(
     draftId,
     config,
-    urlMetadata,
+    downloadTaskPayloads,
   );
 
   const events: BatchProgressEvent[] = [];
@@ -495,7 +495,7 @@ describe('Shape batch processing (headless)', () => {
     });
 
     await expect(
-      shapeBatchAPI.startBatchProcessing(draftId, invalidConfig, []),
+      shapeBatchAPI.startBatchProcess(draftId, invalidConfig, []),
     ).rejects.toThrow('Data source is required');
   });
 });

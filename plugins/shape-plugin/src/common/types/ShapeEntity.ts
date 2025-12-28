@@ -2,7 +2,7 @@ import type { NodeId } from '@hierarchidb/common-types';
 import type { Geometry } from 'geojson';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import type { TabularDataResult } from '@hierarchidb/ui-tabular';
-import type { BatchConfig, DataSourceName, UrlMetadata } from '@hierarchidb/shape-plugin';
+import type { BatchConfig, DataSourceName } from '@hierarchidb/shape-plugin';
 
 export interface ShapeEntity {
   // Identifiers
@@ -30,9 +30,7 @@ export interface ShapeEntity {
   batchConfig?: BatchConfig;
 
 // Country & Admin Selection
-  selectedArrayByCountries?: boolean[][] | string;
-  urlMetadata?: UrlMetadata[];
-
+  selectedArrayByCountries?: boolean[][];
   // Processing Status
   batchSessionId?: string;
   processingStatus?: 'idle' | 'processing' | 'paused' | 'completed' | 'failed' | 'cancelled';

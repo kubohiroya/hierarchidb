@@ -10,7 +10,7 @@ import type {
   BatchConfig,
   DownloadBatchConfig,
   TileBatchConfig,
-  UrlMetadata,
+  DownloadTaskPayload,
   ShapeStepValidationResult,
 } from '../../common/types/index.js';
 import { SHAPE_DATA_SOURCES, DEFAULT_PROCESSING_CONFIG } from '../../common/types/constants.js';
@@ -177,15 +177,15 @@ const resolveSelectedLevels = (row?: boolean[]): number[] => {
 };
 
 /**
- * Generate URL metadata for selected countries and admin levels
+ * Generate download task payloads for selected countries and admin levels
  */
-export function generateUrlMetadata(
+export function generateDownloadTaskPayloads(
   dataSource: DataSourceName,
   countries: string[],
   adminLevels: number[],
   countryMetadata: CountryMetadata[],
-): UrlMetadata[] {
-  const urlMetadata: UrlMetadata[] = [];
+): DownloadTaskPayload[] {
+  const payloads: DownloadTaskPayload[] = [];
   const countryMap = new Map<string, CountryMetadata>();
   countryMetadata.forEach((country) => {
     const add = (code?: string) => {
@@ -207,31 +207,30 @@ export function generateUrlMetadata(
       const resolvedCode = resolveCountryCodeForDataSource(dataSource, country, countryCode);
       const url = buildDataSourceUrl(dataSource, resolvedCode, level);
       if (url) {
-        urlMetadata.push({
+        payloads.push({
           url,
           countryCode: resolvedCode,
           countryName: country.countryName,
           adminLevel: level,
           continent: country.continent,
           dataSource,
-          lastUpdated: new Date().toISOString(),
         });
       }
     });
   });
 
-  return urlMetadata;
+  return payloads;
 }
 
 /**
- * Generate URL metadata for selected countries and admin levels by matrix selection.
+ * Generate download task payloads for selected countries and admin levels by matrix selection.
  */
-export function generateUrlMetadataFromSelection(
+export function generateDownloadTaskPayloadsFromSelection(
   dataSource: DataSourceName,
-  selectedArrayByCountries: boolean[][] | string | undefined,
+  selectedArrayByCountries: boolean[][] | undefined,
   countryMetadata: CountryMetadata[],
-): UrlMetadata[] {
-  if (!Array.isArray(selectedArrayByCountries) || !countryMetadata.length) return [];
+): DownloadTaskPayload[] {
+  if (!selectedArrayByCountries?.length || !countryMetadata.length) return [];
   return countryMetadata.flatMap((country, index) => {
     const selectedLevels = resolveSelectedLevels(selectedArrayByCountries[index]);
     if (selectedLevels.length === 0) return [];
@@ -248,11 +247,13 @@ export function generateUrlMetadataFromSelection(
         adminLevel: level,
         continent: country.continent,
         dataSource,
-        lastUpdated: new Date().toISOString(),
       }];
     });
   });
 }
+
+export const buildDownloadTaskId = (sessionId: string, payload: DownloadTaskPayload): string =>
+  `${sessionId}:download:${payload.url}`;
 
 /**
  * Build data source URL for specific country and admin level
@@ -359,33 +360,15 @@ export function mergeBatchConfig(config: Partial<BatchConfig>): BatchConfig {
 }
 
 /**
- * Parse serialized checkbox state
- */
-export function parseCheckboxState(state: boolean[][] | string): boolean[][] {
-  if (typeof state === 'string') {
-    try {
-      return JSON.parse(state) as boolean[][];
-    } catch {
-      return [];
-    }
-  }
-  return state;
-}
-
-/**
  * Summarize checkbox state into simple derived information.
  */
-export function summarizeCheckboxState(state: boolean[][] | string | undefined): {
+export function summarizeCheckboxState(state: boolean[][] | undefined): {
   hasSelection: boolean;
   levels: number[];
   selectedRowCount: number;
   totalSelections: number;
 } {
-  const matrix: boolean[][] = Array.isArray(state)
-    ? state
-    : typeof state === 'string'
-      ? parseCheckboxState(state)
-      : [];
+  const matrix: boolean[][] = Array.isArray(state) ? state : [];
 
   let hasSelection = false;
   const levelSet = new Set<number>();

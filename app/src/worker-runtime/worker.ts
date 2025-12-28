@@ -53,10 +53,10 @@ type BatchTaskProvider = (sessionId: string) => Promise<BatchTaskSummary[]>;
 type BatchProgressSubscriber = (sessionId: string, callback: (event: BatchProgressEvent) => void) => () => void;
 
 type ShapeBatchAPI = {
-  startBatchProcessing: (draftId: NodeId, batchConfig: unknown, urlMetadata: unknown[]) => Promise<string>;
-  generateUrlMetadataFromSelection?: (
+  startBatchProcess: (draftId: NodeId, batchConfig: unknown, downloadTaskPayloads: unknown[]) => Promise<string>;
+  generateDownloadTaskPayloadsFromSelection?: (
     dataSource: string,
-    selectedArrayByCountries: boolean[][] | string | undefined,
+    selectedArrayByCountries: boolean[][] | undefined,
   ) => Promise<unknown[]>;
   getDraft?: (draftId: NodeId) => Promise<unknown>;
   getBatchSession?: (sessionId: string) => Promise<unknown>;
@@ -98,12 +98,12 @@ const resolveShapeBatchAPI = (mod: unknown): ShapeBatchAPI | null => {
   if (!mod || (typeof mod !== 'object' && typeof mod !== 'function')) return null;
   const record = mod as Record<string, unknown>;
   const direct = (record.shapeBatchAPI ?? record.shapePluginAPI) as ShapeBatchAPI | undefined;
-  if (direct?.startBatchProcessing) {
+  if (direct?.startBatchProcess) {
     return direct;
   }
   const shapePlugin = record.ShapeWorkerPlugin as { api?: ShapeBatchAPI; batch?: ShapeBatchAPI } | undefined;
   const api = shapePlugin?.batch ?? shapePlugin?.api;
-  if (api?.startBatchProcessing) {
+  if (api?.startBatchProcess) {
     return api;
   }
   return null;
@@ -331,7 +331,11 @@ reporter.reportStepProgress('Load Comlink', 0);
         getImportExportAPI: () => Comlink.proxy(services.getImportExportAPI()),
         getTagAPI: () => Comlink.proxy(services.getTagAPI()),
         getCommandProcessor: () => Comlink.proxy(services.getCommandProcessor()),
-        startBatchSession: async (nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus> => {
+        startBatchSession: async (
+          nodeType: NodeType,
+          nodeId: NodeId,
+          downloadTaskPayloads?: unknown[],
+        ): Promise<BatchSessionStatus> => {
           const api = resolveShapeBatchApiOrThrow(nodeType);
           const draft = api.getDraft ? await api.getDraft(nodeId) : undefined;
           const fallbackNode = await services.getTreeNodeUpdaterAPI().getTreeNode(nodeId);
@@ -342,8 +346,8 @@ reporter.reportStepProgress('Load Comlink', 0);
               ?? (fallbackNode as { data?: unknown } | undefined)?.data
           );
           const batchConfig = (draftData as { batchConfig?: unknown }).batchConfig ?? {};
-          const urlMetadata = (draftData as { urlMetadata?: unknown[] }).urlMetadata ?? [];
-          const sessionId = await api.startBatchProcessing(nodeId, batchConfig, urlMetadata);
+          const payloads = downloadTaskPayloads ?? [];
+          const sessionId = await api.startBatchProcess(nodeId, batchConfig, payloads);
           const session = api.getBatchSession ? await api.getBatchSession(sessionId) : undefined;
           const status = toBatchSessionStatus(
             session as Record<string, unknown> | undefined,
@@ -353,15 +357,15 @@ reporter.reportStepProgress('Load Comlink', 0);
           setHeapContext({ nodeType, sessionId: status.sessionId });
           return status;
         },
-        generateShapeUrlMetadataFromSelection: async (
+        generateShapeDownloadTaskPayloadsFromSelection: async (
           dataSource: string,
-          selectedArrayByCountries: boolean[][] | string | undefined,
+          selectedArrayByCountries: boolean[][] | undefined,
         ): Promise<unknown[]> => {
           const api = resolveShapeBatchApiOrThrow(SHAPE_NODE_TYPE);
-          if (!api.generateUrlMetadataFromSelection) {
-            throw new Error('[worker bootstrap] generateUrlMetadataFromSelection is not available');
+          if (!api.generateDownloadTaskPayloadsFromSelection) {
+            throw new Error('[worker bootstrap] generateDownloadTaskPayloadsFromSelection is not available');
           }
-          return api.generateUrlMetadataFromSelection(dataSource, selectedArrayByCountries);
+          return api.generateDownloadTaskPayloadsFromSelection(dataSource, selectedArrayByCountries);
         },
         getBatchSessionStatus: async (nodeType: NodeType, sessionId: string): Promise<BatchSessionStatus> => {
           const api = resolveShapeBatchApiOrThrow(nodeType);

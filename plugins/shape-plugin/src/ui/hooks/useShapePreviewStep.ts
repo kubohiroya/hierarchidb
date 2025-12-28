@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTheme } from '@mui/material/styles';
-import type { ShapeEntity } from '../../common/types/index.js';
+import type { DownloadTaskPayload, ShapeEntity } from '../../common/types/index.js';
+import { normalizeDataSourceName } from '../../common/types/index.js';
 import { useTranslation } from '../i18n.js';
 import { isShapePreviewMetadataEnabled } from '../../common/config/previewFlags.js';
 import { getShapeTileMetadataDB, type ShapeFeatureMetadataRow } from '../../services/database/ShapeTileMetadataDB.js';
@@ -24,6 +25,7 @@ import {
 import { useVectorTilePreviewTable } from './preview/useVectorTilePreviewTable.js';
 import { getTile, getTileSummary } from '../../services/tiles/RuntimeTileClient.js';
 import { shapeDB } from '../../services/database/ShapeDB.js';
+import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 
 type ShapePreviewDraft = Partial<ShapeEntity> & {
   tilesUrl?: string;
@@ -70,7 +72,19 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
   const baseLayerId = 'shape-preview';
   const baseSourceId = 'shape-preview-source';
   const tileDbName = 'shape-preview-tiles';
-  const selectionMetadata = previewDraft.urlMetadata ?? [];
+  const [selectionMetadata, setSelectionMetadata] = useState<DownloadTaskPayload[]>([]);
+  const workerClientHook = useMemo(() => {
+    try {
+      return getWorkerClientHook<WorkerClientRef | null>();
+    } catch {
+      return null;
+    }
+  }, []);
+  const workerClient = workerClientHook ? workerClientHook() : null;
+  const selectionMatrix = previewDraft.selectedArrayByCountries;
+  const selectionDataSource = normalizeDataSourceName(
+    previewDraft.batchConfig?.dataSource ?? previewDraft.dataSourceName,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -154,6 +168,35 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
       }
     };
   }, [sessionId, shouldPollTiles]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      if (!workerClient || !selectionDataSource || !selectionMatrix) {
+        setSelectionMetadata([]);
+        return;
+      }
+      try {
+        const api = workerClient.getAPI();
+        const payloads = await api.generateShapeDownloadTaskPayloadsFromSelection(
+          selectionDataSource,
+          selectionMatrix,
+        );
+        if (!cancelled) {
+          setSelectionMetadata(payloads as DownloadTaskPayload[]);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.warn('[ShapePreviewStep] failed to generate download task payloads', error);
+          setSelectionMetadata([]);
+        }
+      }
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectionDataSource, selectionMatrix, workerClient]);
 
   const loadMetadataRows = useCallback(
     (targetSessionId: string) =>

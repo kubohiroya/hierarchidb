@@ -28,7 +28,7 @@ export interface CountryMetadata {
   dataQuality?: 'high' | 'medium' | 'low';
 }
 
-export interface UrlMetadata {
+export interface DownloadTaskPayload {
   url: string;
   countryCode: string;
   countryName?: string;
@@ -36,5 +36,4 @@ export interface UrlMetadata {
   continent: string;
   dataSource?: DataSourceName;
   country?: string;
-  lastUpdated?: string;
 }

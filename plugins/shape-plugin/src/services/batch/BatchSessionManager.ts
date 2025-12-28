@@ -17,7 +17,7 @@ import { SessionController } from './SessionController.js';
 import { ShapeBatchSession } from './ShapeBatchSession.js';
 import type { BatchSession, BatchStatus, ProcessingStage, ProgressInfo, StageStatus } from '../../common/types/index.js';
 import type { BatchProcessConfig } from './types.js';
-import type { UrlMetadata, ShapeBatchCommandMap } from '../../common/types/index.js';
+import type { DownloadTaskPayload, ShapeBatchCommandMap } from '../../common/types/index.js';
 
 const logBatchSessionWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -63,40 +63,39 @@ export class BatchSessionManager extends BaseBatchSessionManager {
   async createSession(
     nodeId: NodeId,
     config: BatchProcessConfig,
-    urlMetadata: UrlMetadata[],
+    downloadTaskPayloads: DownloadTaskPayload[],
     options: BatchSessionOptions = {},
   ): Promise<BatchSession> {
     const sessionId = String(nodeId);
     const existing = await shapeDB.getBatchSession(sessionId);
-    if (existing) {
-      if (existing.status === 'running') {
-        const taskCount = await shapeDB.batchTasks.where('sessionId').equals(sessionId).count();
-        if (taskCount > 0) {
-          return existing;
-        }
+    if (existing?.status === 'running') {
+      const taskCount = await shapeDB.batchTasks.where('sessionId').equals(sessionId).count();
+      if (taskCount > 0) {
+        return existing;
       }
+    }
+    if (existing) {
       this.sessions.delete(sessionId);
-      await shapeDB.batchTasks.where('sessionId').equals(sessionId).delete();
-      await shapeDB.batchSessions.delete(sessionId);
     }
 
-    // Create session record
-    const session = await shapeDB.createBatchSession({
+    const now = Date.now();
+    const baseProgress = existing?.progress ?? {
+      total: 0,
+      completed: 0,
+      failed: 0,
+      skipped: 0,
+      percentage: 0,
+      currentStage: 'download',
+      currentTask: 'Initializing...',
+    };
+    const session = existing ?? {
       sessionId,
       nodeId,
-      status: 'running',
+      status: 'running' as const,
       config,
-      startedAt: Date.now(),
-      updatedAt: Date.now(),
-      progress: {
-        total: urlMetadata.length,
-        completed: 0,
-        failed: 0,
-        skipped: 0,
-        percentage: 0,
-        currentStage: 'download',
-        currentTask: 'Initializing...',
-      },
+      startedAt: now,
+      updatedAt: now,
+      progress: baseProgress,
       stages: this.initializeStages(config),
       resourceUsage: {
         memoryUsed: 0,
@@ -106,13 +105,26 @@ export class BatchSessionManager extends BaseBatchSessionManager {
         networkBytesReceived: 0,
         networkBytesSent: 0,
       },
-    });
+    };
+    const updatedSession: BatchSession = {
+      ...session,
+      status: 'running',
+      config,
+      updatedAt: now,
+      progress: {
+        ...baseProgress,
+        total: Math.max(baseProgress.total ?? 0, downloadTaskPayloads.length),
+      },
+      stages: session.stages ?? this.initializeStages(config),
+    };
+
+    await shapeDB.batchSessions.put(updatedSession);
 
     // Create session controller with per-session worker pool
     const controller = new SessionController(
       session.sessionId,
       nodeId,
-      urlMetadata,
+      downloadTaskPayloads,
       config,
       options,
     );

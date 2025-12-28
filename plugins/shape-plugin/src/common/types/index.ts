@@ -18,7 +18,6 @@ export {
   summarizeCheckboxState,
   normalizeDataSourceName,
   validateBatchConfig,
-  parseCheckboxState,
 } from '../../services/utils/utils.js';
 export type { ShapeEntity } from '@hierarchidb/shape-plugin/common/types/ShapeEntity.ts';
 export type { Feature } from '@hierarchidb/shape-plugin/common/types/Feature.ts';

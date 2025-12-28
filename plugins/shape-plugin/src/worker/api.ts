@@ -23,7 +23,7 @@ import {
   type ProgressInfo,
   type ShapeEntity,
   type TileInfo,
-  type UrlMetadata,
+  type DownloadTaskPayload,
   validateBatchConfig,
   type ShapeStepValidationResult,
 } from '../common/types/index.js';
@@ -37,13 +37,14 @@ import { getEphemeralShapeDB } from '../services/database/EphemeralShapeDB.js';
 import type { BatchStage, BatchTaskStatus } from '../common/types/BatchTaskLike.js';
 import type { BatchProgressEvent as RuntimeBatchProgressEvent } from '@hierarchidb/common-api';
 import {
-  generateUrlMetadata,
-  generateUrlMetadataFromSelection,
+  buildDownloadTaskId,
+  generateDownloadTaskPayloads,
   getPreferredCountryCodeFormat,
 } from '../services/utils/utils.js';
 import { normalizeCountryCodeFormat } from '../services/utils/iso3166.js';
 import { fetchGeoBoundariesAvailability } from '../services/utils/geoBoundariesAvailability.js';
 import { downloadJson } from '../services/utils/downloadService.js';
+import { resolveDownloadStageStrategy } from '../services/batch/strategies/resolveDownloadStageStrategy.js';
 
 // Create singleton unified batch manager
 const batchSessionManager = createShapeBatchManager();
@@ -154,22 +155,22 @@ const hasGeoBoundariesEntry = async (iso3: string, adminLevel: number): Promise<
   return false;
 };
 
-const filterGeoBoundariesUrlMetadata = async (
-  urlMetadata: UrlMetadata[],
-): Promise<UrlMetadata[]> => {
-  if (!urlMetadata.length) return urlMetadata;
+const filterGeoBoundariesDownloadTaskPayloads = async (
+  downloadTaskPayloads: DownloadTaskPayload[],
+): Promise<DownloadTaskPayload[]> => {
+  if (!downloadTaskPayloads.length) return downloadTaskPayloads;
   try {
     const { entries, totalItems } = await fetchGeoBoundariesAvailability(GEOBOUNDARIES_AVAILABILITY_URL);
     if (entries.size === 0) {
       console.warn('[ShapeBatch] GeoBoundaries availability empty. Skipping filter.', {
         totalItems,
       });
-      return urlMetadata;
+      return downloadTaskPayloads;
     }
-    const filtered: UrlMetadata[] = [];
+    const filtered: DownloadTaskPayload[] = [];
     let dropped = 0;
     let unavailable = 0;
-    for (const metadata of urlMetadata) {
+    for (const metadata of downloadTaskPayloads) {
       const iso3 = await normalizeCountryCodeFormat(metadata.countryCode ?? '', 'iso3');
       const levels = entries.get(iso3);
       if (!levels?.includes(metadata.adminLevel)) {
@@ -186,7 +187,7 @@ const filterGeoBoundariesUrlMetadata = async (
     console.debug('[ShapeBatch] GeoBoundaries availability filter', {
       totalItems,
       availabilityCountries: entries.size,
-      input: urlMetadata.length,
+      input: downloadTaskPayloads.length,
       output: filtered.length,
       dropped,
       unavailable,
@@ -194,7 +195,45 @@ const filterGeoBoundariesUrlMetadata = async (
     return filtered;
   } catch (error) {
     console.warn('[ShapeBatch] failed to load GeoBoundaries availability', error);
-    return urlMetadata;
+    return downloadTaskPayloads;
+  }
+};
+
+const extractPayloadUrl = (task: BatchTaskRecord): string | null => {
+  const input = task.inputData as Record<string, unknown> | undefined;
+  const url = input?.url ?? (input?.payload as { url?: string } | undefined)?.url;
+  return typeof url === 'string' ? url : null;
+};
+
+const persistDownloadTaskPayloads = async (
+  sessionId: string,
+  payloads: DownloadTaskPayload[],
+): Promise<void> => {
+  if (payloads.length === 0) return;
+  const existingTasks = await shapeDB.batchTasks
+    .where('sessionId')
+    .equals(sessionId)
+    .and((task) => task.taskType === 'download')
+    .toArray();
+  const existingUrls = new Set(existingTasks.map(extractPayloadUrl).filter(Boolean));
+  let nextIndex = existingTasks.reduce((max, task) => Math.max(max, task.index ?? 0), -1) + 1;
+  const newTasks: BatchTaskRecord[] = [];
+  for (const payload of payloads) {
+    if (existingUrls.has(payload.url)) continue;
+    const taskId = buildDownloadTaskId(sessionId, payload);
+    newTasks.push({
+      taskId,
+      sessionId,
+      taskType: 'download',
+      status: 'waiting',
+      index: nextIndex,
+      progress: 0,
+      inputData: payload as unknown as Record<string, unknown>,
+    });
+    nextIndex += 1;
+  }
+  if (newTasks.length > 0) {
+    await shapeDB.batchTasks.bulkPut(newTasks);
   }
 };
 
@@ -435,11 +474,11 @@ export const shapeBatchAPI = {
     ];
   },
 
-  generateUrlMetadata: async (
+  generateDownloadTaskPayloads: async (
     dataSource: string,
     countries: string[],
     adminLevels: number[],
-  ): Promise<UrlMetadata[]> => {
+  ): Promise<DownloadTaskPayload[]> => {
     // Get country metadata first
     const dataSourceName = toDataSourceName(dataSource);
     const preferredFormat = getPreferredCountryCodeFormat(dataSourceName);
@@ -447,16 +486,20 @@ export const shapeBatchAPI = {
       countries.map((code) => normalizeCountryCodeFormat(code, preferredFormat)),
     );
     const countryMetadata = await shapeBatchAPI.getCountryMetadata(dataSourceName);
-    return generateUrlMetadata(dataSourceName, normalizedCountries, adminLevels, countryMetadata);
+    return generateDownloadTaskPayloads(dataSourceName, normalizedCountries, adminLevels, countryMetadata);
   },
 
-  generateUrlMetadataFromSelection: async (
+  generateDownloadTaskPayloadsFromSelection: async (
     dataSource: string,
-    selectedArrayByCountries: boolean[][] | string | undefined,
-  ): Promise<UrlMetadata[]> => {
+    selectedArrayByCountries: boolean[][] | undefined,
+  ): Promise<DownloadTaskPayload[]> => {
     const dataSourceName = toDataSourceName(dataSource);
     const countryMetadata = await shapeBatchAPI.getCountryMetadata(dataSourceName);
-    return generateUrlMetadataFromSelection(dataSourceName, selectedArrayByCountries, countryMetadata);
+    const strategy = resolveDownloadStageStrategy(dataSourceName);
+    return strategy.buildDownloadTaskPayloads({
+      selectedArrayByCountries,
+      countryMetadata,
+    });
   },
 
   // ===================================
@@ -499,10 +542,10 @@ export const shapeBatchAPI = {
   // DraftTypes-based Batch Processing
   // ===================================
 
-  startBatchProcessing: async (
+  startBatchProcess: async (
     draftId: NodeId,
     batchConfig: BatchConfig,
-    urlMetadata: UrlMetadata[],
+    downloadTaskPayloads: DownloadTaskPayload[],
     progressCallback?: (event: ShapeBatchProgressEvent) => void,
   ): Promise<string> => {
     if (!batchConfig?.dataSource) {
@@ -522,14 +565,14 @@ export const shapeBatchAPI = {
 
     const downloadConfig = batchConfig.downloadConfig ?? DEFAULT_PROCESSING_CONFIG.downloadConfig;
     const resolvedDataSource = toDataSourceName(batchConfig.dataSource);
-    const availabilityFilteredMetadata = resolvedDataSource === 'geoboundaries'
-      ? await filterGeoBoundariesUrlMetadata(urlMetadata)
-      : urlMetadata;
-    if (!availabilityFilteredMetadata.length) {
+    const availabilityFilteredPayloads = resolvedDataSource === 'geoboundaries'
+      ? await filterGeoBoundariesDownloadTaskPayloads(downloadTaskPayloads)
+      : downloadTaskPayloads;
+    if (!availabilityFilteredPayloads.length) {
       if (resolvedDataSource === 'geoboundaries') {
         throw new Error('No GeoBoundaries selections available after availability filter');
       }
-      throw new Error('Shape batch session requires urlMetadata');
+      throw new Error('Shape batch session requires download task payloads');
     }
     const baseConfig = buildBatchSessionConfig(batchConfig, { draftData: draftLike ?? undefined });
     const processConfig: BatchProcessConfig = {
@@ -541,7 +584,7 @@ export const shapeBatchAPI = {
       maxZoom: baseConfig.vectorTiles?.maxZoom,
     };
 
-    const batchSessionData = { urlMetadata: availabilityFilteredMetadata };
+    const batchSessionData = { downloadTaskPayloads: availabilityFilteredPayloads };
 
     // Start batch session using unified manager
     const sessionOptions = {
@@ -561,6 +604,7 @@ export const shapeBatchAPI = {
       ) => void;
     };
     const nodeForSession = draftLike.nodeId ?? draftLike.treeNodeId ?? draftId;
+    await persistDownloadTaskPayloads(String(nodeForSession), availabilityFilteredPayloads);
     managerWithPrepare.prepareSession?.(nodeForSession, processConfig, batchSessionData, sessionOptions);
     const sessionId = await batchSessionManager.startBatchSession(nodeForSession);
 

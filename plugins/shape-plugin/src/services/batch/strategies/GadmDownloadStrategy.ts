@@ -1,10 +1,25 @@
-import type { DownloadStageBuildContext, DownloadStagePostprocessContext, DownloadStagePostprocessResult, DownloadStageStrategy } from './DownloadStageStrategy.js';
+import type {
+  DownloadStageBuildContext,
+  DownloadStagePostprocessContext,
+  DownloadStagePostprocessResult,
+  DownloadStageStrategy,
+  DownloadTaskPayloadBuildContext,
+} from './DownloadStageStrategy.js';
 import type { DownloadTask } from '../../../common/types/index.js';
+import { buildDownloadTaskId, generateDownloadTaskPayloadsFromSelection } from '../../utils/utils.js';
 
 export class GadmDownloadStrategy implements DownloadStageStrategy {
+  buildDownloadTaskPayloads(context: DownloadTaskPayloadBuildContext) {
+    return generateDownloadTaskPayloadsFromSelection(
+      'gadm',
+      context.selectedArrayByCountries,
+      context.countryMetadata,
+    );
+  }
+
   async buildDownloadTasks(context: DownloadStageBuildContext): Promise<DownloadTask[]> {
-    return context.urlMetadata.map((metadata, index) => ({
-      taskId: `${context.sessionId}-download-${index}`,
+    return context.downloadTaskPayloads.map((metadata, index) => ({
+      taskId: buildDownloadTaskId(context.sessionId, metadata),
       sessionId: context.sessionId,
       taskType: 'download',
       stage: 'wait',
@@ -30,14 +45,18 @@ export class GadmDownloadStrategy implements DownloadStageStrategy {
   async postprocessDownloadOutputs(
     context: DownloadStagePostprocessContext,
   ): Promise<DownloadStagePostprocessResult> {
-    const outputs = context.urlMetadata.map((metadata, index) => ({
-      inputBufferId: `${context.sessionId}-download-${index}`,
-      countryCode: metadata.countryCode,
-      countryName: metadata.countryName,
-      adminLevel: metadata.adminLevel,
-      dataSource: metadata.dataSource ?? 'gadm',
-      sourceUrl: metadata.url,
-    }));
+    const payloadByUrl = new Map(context.downloadTaskPayloads.map((payload) => [payload.url, payload]));
+    const outputs = context.downloadTasks.map((task) => {
+      const payload = task.config?.url ? payloadByUrl.get(task.config.url) : undefined;
+      return {
+        inputBufferId: `${context.sessionId}-download-${task.index ?? 0}`,
+        countryCode: payload?.countryCode ?? task.countryCode,
+        countryName: payload?.countryName,
+        adminLevel: payload?.adminLevel ?? task.config?.adminLevel,
+        dataSource: payload?.dataSource ?? 'gadm',
+        sourceUrl: payload?.url ?? task.config?.url,
+      };
+    });
     return { outputs };
   }
 }

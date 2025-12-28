@@ -388,10 +388,15 @@ describe('Shape Plugin E2E', () => {
     });
     
     // Start batch processing
-    const sessionId = await api.startBatchProcessing(nodeId, {
-      adminLevels: [0, 1, 2],
-      simplification: 'auto'
-    });
+    const downloadTaskPayloads = await api.generateDownloadTaskPayloadsFromSelection(
+      'gadm',
+      [[true, true, true]],
+    );
+    const sessionId = await api.startBatchProcess(
+      nodeId,
+      { adminLevels: [0, 1, 2], simplification: 'auto' },
+      downloadTaskPayloads,
+    );
     
     // Wait for completion
     await api.waitForCompletion(sessionId);

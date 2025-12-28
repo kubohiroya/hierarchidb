@@ -1,7 +1,7 @@
 import type {
   CountryMetadata,
   DataSourceConfig,
-  UrlMetadata,
+  DownloadTaskPayload,
 } from '../types/index.js';
 
 // ================================
@@ -238,15 +238,15 @@ export const SAMPLE_COUNTRIES: CountryMetadata[] = [
 ];
 
 // ================================
-// Sample URL Metadata
+// Sample Download Task Payloads
 // ================================
 
-export function generateUrlMetadata(
+export function generateDownloadTaskPayloads(
   countries: string[],
   adminLevels: number[],
   dataSource: string,
-): UrlMetadata[] {
-  const metadata: UrlMetadata[] = [];
+): DownloadTaskPayload[] {
+  const metadata: DownloadTaskPayload[] = [];
 
   countries.forEach(countryCode => {
     const country = SAMPLE_COUNTRIES.find(c => c.countryCode === countryCode);
@@ -259,7 +259,6 @@ export function generateUrlMetadata(
           countryCode,
           adminLevel: level,
           continent: country.continent,
-          lastUpdated: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
         });
       }
     });

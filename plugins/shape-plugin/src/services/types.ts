@@ -26,7 +26,11 @@ export interface ShapesAPIMethods {
   setAuthToken(token: string, type?: 'Bearer' | 'Basic', expiresAt?: number): Promise<void> | void;
 
   // Batch processing
-  startBatchProcess(nodeId: NodeId, config: BatchProcessConfig): Promise<BatchSession>;
+  startBatchProcess(
+    nodeId: NodeId,
+    config: BatchProcessConfig,
+    downloadTaskPayloads: DownloadTaskPayload[],
+  ): Promise<BatchSession>;
 
   pauseBatchProcess(sessionId: string): Promise<void>;
 

@@ -25,7 +25,7 @@ import type { HeapPressureEvent } from '@hierarchidb/memory';
 
 type ShapeDataSourceName = 'naturalearth' | 'geoboundaries' | 'gadm' | 'openstreetmap';
 
-type ShapeUrlMetadata = {
+type ShapeDownloadTaskPayload = {
   url: string;
   countryCode: string;
   countryName?: string;
@@ -33,7 +33,6 @@ type ShapeUrlMetadata = {
   continent: string;
   dataSource?: ShapeDataSourceName;
   country?: string;
-  lastUpdated?: string;
 };
 
 export type CommandProcessorAPI = {
@@ -77,16 +76,20 @@ export interface WorkerAPI {
   getRouteMutationAPI(): Promise<RouteMutationAPI>;
   getPluginLifecycleAPI(): Promise<PluginLifecycleAPI>;
   getCommandProcessor(): Promise<CommandProcessorAPI>;
-  startBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus>;
+  startBatchSession(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    downloadTaskPayloads?: ShapeDownloadTaskPayload[],
+  ): Promise<BatchSessionStatus>;
   getBatchSessionStatus(nodeType: NodeType, sessionId: BatchSessionId): Promise<BatchSessionStatus>;
   pauseBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
   resumeBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
   cancelBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
   getBatchTasks(nodeType: NodeType, sessionId: BatchSessionId): Promise<BatchTaskSummary[]>;
-  generateShapeUrlMetadataFromSelection(
+  generateShapeDownloadTaskPayloadsFromSelection(
     dataSource: ShapeDataSourceName,
-    selectedArrayByCountries: boolean[][] | string | undefined,
-  ): Promise<ShapeUrlMetadata[]>;
+    selectedArrayByCountries: boolean[][] | undefined,
+  ): Promise<ShapeDownloadTaskPayload[]>;
   subscribeBatchProgress(
     nodeType: NodeType,
     sessionId: BatchSessionId,

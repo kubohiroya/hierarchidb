@@ -57,7 +57,7 @@ const ShapeCountrySelection = createStepAdapter(ShapeCountrySelectionStep);
 const ShapePreview = createStepAdapter(ShapePreviewStep);
 const ShapeBuildProgress = createStepAdapter(ShapeBuildProgressStep);
 
-const resolveSelectedArrayByCountries = (data?: Partial<ShapeEntity>): boolean[][] | string | undefined =>
+const resolveSelectedArrayByCountries = (data?: Partial<ShapeEntity>): boolean[][] | undefined =>
   data?.selectedArrayByCountries;
 
 const canStartShapeBatch = (data?: Partial<ShapeEntity>): boolean => {

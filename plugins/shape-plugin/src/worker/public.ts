@@ -14,7 +14,7 @@ import type {
   ShapeBatchCommandPayload,
   ShapeEntity,
   TileInfo,
-  UrlMetadata,
+  DownloadTaskPayload,
   ShapeStepValidationResult,
 } from '../common/types/index.js';
 
@@ -30,11 +30,11 @@ export interface ShapeBatchAPI {
   // Data sources
   getDataSourceConfigs(): Promise<DataSourceConfig[]>;
   getCountryMetadata(dataSource: string): Promise<CountryMetadata[]>;
-  generateUrlMetadata(dataSource: string, countries: string[], adminLevels: number[]): Promise<UrlMetadata[]>;
-  generateUrlMetadataFromSelection(
+  generateDownloadTaskPayloads(dataSource: string, countries: string[], adminLevels: number[]): Promise<DownloadTaskPayload[]>;
+  generateDownloadTaskPayloadsFromSelection(
     dataSource: string,
-    selectedArrayByCountries: boolean[][] | string | undefined,
-  ): Promise<UrlMetadata[]>;
+    selectedArrayByCountries: boolean[][] | undefined,
+  ): Promise<DownloadTaskPayload[]>;
 
   // Validation / estimation
   validateSelection(
@@ -44,10 +44,10 @@ export interface ShapeBatchAPI {
   ): Promise<ShapeStepValidationResult>;
 
   // Batch processing (Draft-based)
-  startBatchProcessing(
+  startBatchProcess(
     draftId: NodeId,
     config: BatchConfig,
-    urlMetadata: UrlMetadata[],
+    downloadTaskPayloads: DownloadTaskPayload[],
     progressCallback?: (event: BatchProgressEvent) => void,
   ): Promise<string>; // returns sessionId
   pauseBatchProcessing(draftId: NodeId): Promise<void>;

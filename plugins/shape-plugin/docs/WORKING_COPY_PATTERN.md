@@ -49,12 +49,13 @@ interface ShapeEntity {
   id: EntityId;                    // エンティティの一意識別子
   nodeId: NodeId;                   // ツリーノードへの参照
   dataSourceName: DataSourceName;  // データソース識別子
-  selectedArrayByCountries?: boolean[][] | string; // 国×管理レベルの選択状態
-  urlMetadata?: UrlMetadata[];     // 選択から生成されたダウンロード対象
+  selectedArrayByCountries?: boolean[][]; // 国×管理レベルの選択状態
   licenseAgreement?: boolean;      // ライセンス同意状態
   batchConfig?: BatchConfig;       // バッチ処理設定
 }
 ```
+
+※ DownloadTaskPayload は UI 側で生成し、`startBatchProcess` 呼び出し時に Worker へ渡す。CoreDB には永続化しない。
 
 #### 2. ShapeWorkingCopy (EphemeralDB)
 編集中の一時データ：
@@ -547,16 +548,16 @@ function ShapeCreateDialog({ parentNodeId, onClose }: Props) {
 function ShapeBuildProgressStep({ data, onChange }: Props) {
   const api = useShapeAPI();
 
-  const startBatchProcessing = async () => {
+  const startBatchProcess = async () => {
     try {
       const nodeId = data?.nodeId;
       if (!nodeId) return;
 
-      const session = await api.startBatchSession(nodeId, {
-        downloadWorkers: 4,
-        simplifyWorkers: 2,
-        tileWorkers: 2,
-      });
+      const payloads = await api.generateDownloadTaskPayloadsFromSelection(
+        data?.batchConfig?.dataSource ?? data?.dataSourceName ?? 'gadm',
+        data?.selectedArrayByCountries,
+      );
+      const session = await api.startBatchProcess(nodeId, data?.batchConfig ?? DEFAULT_CONFIG, payloads);
 
       onChange({ batchSessionId: session.sessionId });
     } catch (error) {
@@ -565,7 +566,7 @@ function ShapeBuildProgressStep({ data, onChange }: Props) {
   };
 
   return (
-    <BuildStepPanel onResume={startBatchProcessing} />
+    <BuildStepPanel onResume={startBatchProcess} />
   );
 }
 ```

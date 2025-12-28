@@ -124,7 +124,7 @@ describe('Shape Plugin API', () => {
       });
 
       await expect(
-        shapeBatchAPI.startBatchProcessing(draftId, config, []),
+        shapeBatchAPI.startBatchProcess(draftId, config, []),
       ).rejects.toThrow('Invalid processing config');
     });
   });

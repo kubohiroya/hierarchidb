@@ -6,25 +6,35 @@ import type {
   DownloadStagePostprocessContext,
   DownloadStagePostprocessResult,
   DownloadStageStrategy,
+  DownloadTaskPayloadBuildContext,
 } from './DownloadStageStrategy.js';
-import type { CountryMetadata, DownloadTask, UrlMetadata } from '../../../common/types/index.js';
+import type { CountryMetadata, DownloadTask, DownloadTaskPayload } from '../../../common/types/index.js';
 import { getEphemeralShapeDB } from '../../database/EphemeralShapeDB.js';
 import { decodeFlatGeoJson, encodeFlatGeoJson } from './flatgeobuf.js';
 import { metadataLoader } from '../../metadata/MetadataLoader.js';
+import { buildDownloadTaskId, generateDownloadTaskPayloadsFromSelection } from '../../utils/utils.js';
 
 type CountryLookup = Map<string, CountryMetadata>;
 
 export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
+  buildDownloadTaskPayloads(context: DownloadTaskPayloadBuildContext) {
+    return generateDownloadTaskPayloadsFromSelection(
+      'naturalearth',
+      context.selectedArrayByCountries,
+      context.countryMetadata,
+    );
+  }
+
   async buildDownloadTasks(context: DownloadStageBuildContext): Promise<DownloadTask[]> {
-    const adminLevels = new Map<number, UrlMetadata>();
-    for (const metadata of context.urlMetadata) {
+    const adminLevels = new Map<number, DownloadTaskPayload>();
+    for (const metadata of context.downloadTaskPayloads) {
       const level = metadata.adminLevel;
       if (!adminLevels.has(level)) {
         adminLevels.set(level, metadata);
       }
     }
     return Array.from(adminLevels.entries()).map(([adminLevel, metadata], index) => ({
-      taskId: `${context.sessionId}-download-${index}`,
+      taskId: buildDownloadTaskId(context.sessionId, metadata),
       sessionId: context.sessionId,
       taskType: 'download',
       stage: 'wait',
@@ -52,7 +62,7 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
   ): Promise<DownloadStagePostprocessResult> {
     const db = getEphemeralShapeDB();
     const outputs: DownloadStageOutput[] = [];
-    const selectedCountries = this.collectSelectedCountries(context.urlMetadata);
+    const selectedCountries = this.collectSelectedCountries(context.downloadTaskPayloads);
     const countryMetadata = await metadataLoader.getCountriesMetadata('naturalearth', selectedCountries);
     const lookup = this.buildCountryLookup(countryMetadata);
 
@@ -99,9 +109,9 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
     return { outputs };
   }
 
-  private collectSelectedCountries(urlMetadata: UrlMetadata[]): string[] {
+  private collectSelectedCountries(payloads: DownloadTaskPayload[]): string[] {
     const codes = new Set<string>();
-    urlMetadata.forEach((metadata) => {
+    payloads.forEach((metadata) => {
       if (metadata.countryCode) {
         codes.add(metadata.countryCode);
       }

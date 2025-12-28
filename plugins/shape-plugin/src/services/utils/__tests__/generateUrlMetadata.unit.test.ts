@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CountryMetadata, DataSourceName } from '../../../common/types/index.js';
-import { generateUrlMetadata } from '../utils.js';
+import { generateDownloadTaskPayloads } from '../utils.js';
 
 const COUNTRY_METADATA: CountryMetadata[] = [
   {
@@ -23,7 +23,7 @@ const COUNTRIES = ['JP', 'ID'];
 const LEVELS = [0, 1];
 
 const buildUrls = (source: DataSourceName): string[] =>
-  generateUrlMetadata(source, COUNTRIES, LEVELS, COUNTRY_METADATA).map((meta) => meta.url);
+  generateDownloadTaskPayloads(source, COUNTRIES, LEVELS, COUNTRY_METADATA).map((meta) => meta.url);
 
 const assertUrls = (source: DataSourceName, expected: string[]) => {
   const urls = buildUrls(source);
@@ -43,7 +43,7 @@ const fetchUrlOk = async (url: string): Promise<void> => {
   }
 };
 
-describe('generateUrlMetadata', () => {
+describe('generateDownloadTaskPayloads', () => {
   it('creates naturalearth URLs for JP/ID levels 0/1', () => {
     const admin0 = 'https://www.naturalearthdata.com/download/50m/cultural/ne_50m_admin_0_countries.zip';
     const admin1 = 'https://www.naturalearthdata.com/download/50m/cultural/ne_50m_admin_1_states_provinces.zip';
@@ -78,7 +78,7 @@ describe('generateUrlMetadata', () => {
   });
 });
 
-describe('generateUrlMetadata (network)', () => {
+describe('generateDownloadTaskPayloads (network)', () => {
   const shouldRun = process.env.ENABLE_INTEGRATION_TESTS === '1';
   const testFn = shouldRun ? it : it.skip;
 

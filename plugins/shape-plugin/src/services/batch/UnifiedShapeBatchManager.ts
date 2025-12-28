@@ -13,7 +13,7 @@ import {
 } from '@hierarchidb/common-api';
 import { BatchSessionManager, type BatchSessionOptions } from './BatchSessionManager.js';
 import type { BatchProcessConfig } from './types.js';
-import type { UrlMetadata } from '../../common/types/index.js';
+import type { DownloadTaskPayload } from '../../common/types/index.js';
 
 /**
  * Unified shape batch manager implementing the standard interface
@@ -50,14 +50,14 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
     }
     this.pending.delete(nodeId);
     const { config, data, options } = pending;
-    if (!data.urlMetadata?.length) {
-      throw new Error('Shape batch session requires urlMetadata');
+    if (!data.downloadTaskPayloads?.length) {
+      throw new Error('Shape batch session requires download task payloads');
     }
 
     const session = await this.manager.createSession(
       nodeId,
       config,
-      data.urlMetadata,
+      data.downloadTaskPayloads,
       options ?? {}
     );
     const sessionId = session.sessionId;
@@ -169,7 +169,7 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
  * Shape-specific data interface
  */
 export interface ShapeBatchData {
-  urlMetadata: UrlMetadata[];
+  downloadTaskPayloads: DownloadTaskPayload[];
 }
 
 /**

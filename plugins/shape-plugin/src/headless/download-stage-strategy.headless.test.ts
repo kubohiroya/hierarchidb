@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { BatchProcessConfig } from '../services/batch/types.js';
-import type { UrlMetadata } from '../common/types/index.js';
+import type { DownloadTaskPayload } from '../common/types/index.js';
 import { getEphemeralShapeDB, closeEphemeralShapeDB } from '../services/database/EphemeralShapeDB.js';
 import { encodeFlatGeoJson } from '../services/batch/strategies/flatgeobuf.js';
 import { GadmDownloadStrategy } from '../services/batch/strategies/GadmDownloadStrategy.js';
@@ -34,7 +34,7 @@ const createConfig = (dataSource: string): BatchProcessConfig => ({
   },
 });
 
-const createUrlMetadata = (overrides: Partial<UrlMetadata>[]): UrlMetadata[] => (
+const createDownloadTaskPayload = (overrides: Partial<DownloadTaskPayload>[]): DownloadTaskPayload[] => (
   overrides.map((item, index) => ({
     url: `https://example.com/${index}`,
     countryCode: 'JP',
@@ -63,14 +63,14 @@ describe('Download stage strategies', () => {
 
   it('GADM strategy keeps 1:1 mapping between download tasks and outputs', async () => {
     const strategy = new GadmDownloadStrategy();
-    const urlMetadata = createUrlMetadata([
+    const downloadTaskPayloads = createDownloadTaskPayload([
       { countryCode: 'JP', adminLevel: 0, dataSource: 'gadm' },
       { countryCode: 'ID', adminLevel: 1, dataSource: 'gadm' },
     ]);
     const tasks = await strategy.buildDownloadTasks({
       sessionId,
       nodeId,
-      urlMetadata,
+      downloadTaskPayloads,
       config: createConfig('gadm'),
       options: {},
     });
@@ -79,7 +79,7 @@ describe('Download stage strategies', () => {
     const postprocess = await strategy.postprocessDownloadOutputs({
       sessionId,
       nodeId,
-      urlMetadata,
+      downloadTaskPayloads,
       config: createConfig('gadm'),
       options: {},
       downloadTasks: tasks,
@@ -91,7 +91,7 @@ describe('Download stage strategies', () => {
 
   it('NaturalEarth strategy groups download tasks by level and splits outputs by country', async () => {
     const strategy = new NaturalEarthDownloadStrategy();
-    const urlMetadata = createUrlMetadata([
+    const downloadTaskPayloads = createDownloadTaskPayload([
       { countryCode: 'JP', countryName: 'Japan', adminLevel: 0, dataSource: 'naturalearth' },
       { countryCode: 'ID', countryName: 'Indonesia', adminLevel: 0, dataSource: 'naturalearth' },
       { countryCode: 'JP', countryName: 'Japan', adminLevel: 1, dataSource: 'naturalearth' },
@@ -100,7 +100,7 @@ describe('Download stage strategies', () => {
     const tasks = await strategy.buildDownloadTasks({
       sessionId,
       nodeId,
-      urlMetadata,
+      downloadTaskPayloads,
       config: createConfig('naturalearth'),
       options: {},
     });
@@ -138,7 +138,7 @@ describe('Download stage strategies', () => {
     const postprocess = await strategy.postprocessDownloadOutputs({
       sessionId,
       nodeId,
-      urlMetadata,
+      downloadTaskPayloads,
       config: createConfig('naturalearth'),
       options: {},
       downloadTasks: tasks,

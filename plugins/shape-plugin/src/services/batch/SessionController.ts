@@ -19,7 +19,7 @@ import { LocalSimplify1Adapter, LocalSimplify2Adapter } from './adapters/LocalSi
 import { RuntimeWorkerVectorTileAdapter } from './adapters/RuntimeWorkerVectorTileAdapter.js';
 import { getShapeRuntimeWorkerClient } from './adapters/RuntimeWorkerClient.js';
 import type { BatchProcessConfig } from './types.js';
-import type { UrlMetadata, ProgressInfo, ProcessingStage } from '../../common/types/index.js';
+import type { DownloadTaskPayload, ProgressInfo, ProcessingStage } from '../../common/types/index.js';
 import { BatchTaskStage } from '../../common/types/index.js';
 import type { DownloadTask } from '../../common/types/index.js';
 import { isShapePreviewMetadataEnabled } from '../../common/config/previewFlags.js';
@@ -51,7 +51,7 @@ export class SessionController {
   private nodeId: NodeId;
   private workerPool: WorkerPoolHandle | null = null;
   private downloadAdapter: DownloadStageAdapter = new RuntimeWorkerDownloadAdapter();
-  private urlMetadata: UrlMetadata[];
+  private downloadTaskPayloads: DownloadTaskPayload[];
   private options: BatchSessionOptions;
   private config: BatchProcessConfig;
   private currentStage: ProcessingStage = 'download';
@@ -70,13 +70,13 @@ export class SessionController {
   constructor(
     sessionId: string,
     nodeId: NodeId,
-    urlMetadata: UrlMetadata[],
+    downloadTaskPayloads: DownloadTaskPayload[],
     config: BatchProcessConfig,
     options: BatchSessionOptions = {},
   ) {
     this.sessionId = sessionId;
     this.nodeId = nodeId;
-    this.urlMetadata = urlMetadata;
+    this.downloadTaskPayloads = downloadTaskPayloads;
     this.options = options;
     this.config = config;
   }
@@ -93,7 +93,7 @@ export class SessionController {
   }
 
   private resolveDataSource(): string {
-    const dataSource = this.config.dataSource ?? this.urlMetadata[0]?.dataSource;
+    const dataSource = this.config.dataSource ?? this.downloadTaskPayloads[0]?.dataSource;
     if (!dataSource) {
       throw new Error('Data source is required for batch processing');
     }
@@ -335,7 +335,7 @@ export class SessionController {
     const tasks: DownloadTask[] = await strategy.buildDownloadTasks({
       sessionId: this.sessionId,
       nodeId: this.nodeId,
-      urlMetadata: this.urlMetadata,
+      downloadTaskPayloads: this.downloadTaskPayloads,
       config: this.config,
       options: {
         timeoutMs: this.options.timeoutMs,
@@ -343,7 +343,8 @@ export class SessionController {
         retryDelay: this.options.retryDelay,
       },
     });
-    await this.registerTasks('download', tasks);
+    const existingTaskIds = await this.assignDownloadTaskIndices(tasks);
+    await this.registerTasks('download', tasks, existingTaskIds);
     const res = await this.downloadAdapter.process(
       this.sessionId,
       this.nodeId,
@@ -368,7 +369,7 @@ export class SessionController {
     const postprocess = await strategy.postprocessDownloadOutputs({
       sessionId: this.sessionId,
       nodeId: this.nodeId,
-      urlMetadata: this.urlMetadata,
+      downloadTaskPayloads: this.downloadTaskPayloads,
       config: this.config,
       options: {
         timeoutMs: this.options.timeoutMs,
@@ -736,16 +737,54 @@ export class SessionController {
     this.stageWaiters.delete(stage);
   }
 
-  private async registerTasks(stage: ProcessingStage, tasks: Array<{ taskId: string; config?: unknown }>): Promise<void> {
-    await Promise.all(tasks.map((task, index) => shapeDB.createBatchTask({
-      taskId: task.taskId,
-      sessionId: this.sessionId,
-      taskType: stage,
-      status: 'waiting',
-      index,
-      progress: 0,
-      inputData: typeof task.config === 'object' && task.config ? (task.config as Record<string, unknown>) : undefined,
-    })));
+  private async registerTasks(
+    stage: ProcessingStage,
+    tasks: Array<{ taskId: string; config?: unknown; index?: number }>,
+    existingTaskIds?: Set<string>,
+  ): Promise<void> {
+    const existingIds = existingTaskIds ?? new Set(
+      (await shapeDB.batchTasks
+        .where('sessionId')
+        .equals(this.sessionId)
+        .and((task) => task.taskType === stage)
+        .toArray())
+        .map((task) => task.taskId),
+    );
+    const newTasks = tasks
+      .filter((task) => !existingIds.has(task.taskId))
+      .map((task, index) => ({
+        taskId: task.taskId,
+        sessionId: this.sessionId,
+        taskType: stage,
+        status: 'waiting' as const,
+        index: task.index ?? index,
+        progress: 0,
+        inputData: typeof task.config === 'object' && task.config ? (task.config as Record<string, unknown>) : undefined,
+      }));
+    if (newTasks.length > 0) {
+      await shapeDB.batchTasks.bulkPut(newTasks);
+    }
+  }
+
+  private async assignDownloadTaskIndices(tasks: DownloadTask[]): Promise<Set<string>> {
+    const existing = await shapeDB.batchTasks
+      .where('sessionId')
+      .equals(this.sessionId)
+      .and((task) => task.taskType === 'download')
+      .toArray();
+    const existingIds = new Set(existing.map((task) => task.taskId));
+    const existingIndexById = new Map(existing.map((task) => [task.taskId, task.index]));
+    let nextIndex = existing.reduce((max, task) => Math.max(max, task.index ?? 0), -1) + 1;
+    tasks.forEach((task) => {
+      const existingIndex = existingIndexById.get(task.taskId);
+      if (existingIndex != null) {
+        task.index = existingIndex;
+        return;
+      }
+      task.index = nextIndex;
+      nextIndex += 1;
+    });
+    return existingIds;
   }
 
   /**

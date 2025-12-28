@@ -74,8 +74,8 @@ import type { NodeId, TreeNodeType } from '@hierarchidb/core';
 
 export interface ShapesAPIMethods {
   // バッチ処理制御
-  startBatchProcessing: WorkerAPIMethod<
-    [nodeId: NodeId, config: ProcessingConfig, urlMetadata: UrlMetadata[]],
+  startBatchProcess: WorkerAPIMethod<
+    [nodeId: NodeId, config: ProcessingConfig, downloadTaskPayloads: DownloadTaskPayload[]],
     { batchId: string; sessionId: string }
   >;
   
@@ -139,8 +139,8 @@ export class ShapesPluginAPI implements PluginAPI<ShapesAPIMethods> {
   
   private createMethods(): ShapesAPIMethods {
     return {
-      startBatchProcessing: async (nodeId, config, urlMetadata) => {
-        return await this.service.startBatchProcessing(nodeId, config, urlMetadata);
+      startBatchProcess: async (nodeId, config, downloadTaskPayloads) => {
+        return await this.service.startBatchProcess(nodeId, config, downloadTaskPayloads);
       },
       
       pauseBatchProcessing: async (batchId) => {
@@ -246,15 +246,15 @@ import type { ShapesAPIMethods } from '../services/api/ShapesPluginAPI';
 export function useShapesAPI() {
   const workerAPI = useWorkerAPI();
   
-  const startBatchProcessing = useCallback(
-    async (nodeId: NodeId, config: ProcessingConfig, urlMetadata: UrlMetadata[]) => {
+  const startBatchProcess = useCallback(
+    async (nodeId: NodeId, config: ProcessingConfig, downloadTaskPayloads: DownloadTaskPayload[]) => {
       // PluginAPI経由でWorker側のメソッドを呼び出し
       return await workerAPI.invokePluginMethod<ShapesAPIMethods>(
         'shape',
-        'startBatchProcessing',
+        'startBatchProcess',
         nodeId,
         config,
-        urlMetadata
+        downloadTaskPayloads
       );
     },
     [workerAPI]
@@ -272,7 +272,7 @@ export function useShapesAPI() {
   );
   
   return {
-    startBatchProcessing,
+    startBatchProcess,
     getBatchStatus,
     // ... 他のメソッド
   };

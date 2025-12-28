@@ -1,20 +1,35 @@
-import type { DownloadStageBuildContext, DownloadStagePostprocessContext, DownloadStagePostprocessResult, DownloadStageStrategy } from './DownloadStageStrategy.js';
+import type {
+  DownloadStageBuildContext,
+  DownloadStagePostprocessContext,
+  DownloadStagePostprocessResult,
+  DownloadStageStrategy,
+  DownloadTaskPayloadBuildContext,
+} from './DownloadStageStrategy.js';
 import type { CountryMetadata, DownloadTask } from '../../../common/types/index.js';
 import { metadataLoader } from '../../metadata/MetadataLoader.js';
+import { buildDownloadTaskId, generateDownloadTaskPayloadsFromSelection } from '../../utils/utils.js';
 
 export class OsmDownloadStrategy implements DownloadStageStrategy {
+  buildDownloadTaskPayloads(context: DownloadTaskPayloadBuildContext) {
+    return generateDownloadTaskPayloadsFromSelection(
+      'openstreetmap',
+      context.selectedArrayByCountries,
+      context.countryMetadata,
+    );
+  }
+
   async buildDownloadTasks(context: DownloadStageBuildContext): Promise<DownloadTask[]> {
     const countryCodes = new Set<string>();
-    context.urlMetadata.forEach((metadata) => {
+    context.downloadTaskPayloads.forEach((metadata) => {
       if (metadata.countryCode) {
         countryCodes.add(metadata.countryCode);
       }
     });
     const metadataMap = await this.buildCountryMetadata(Array.from(countryCodes.values()));
-    return context.urlMetadata.map((metadata, index) => {
+    return context.downloadTaskPayloads.map((metadata, index) => {
       const country = metadata.countryCode ? metadataMap.get(metadata.countryCode.toUpperCase()) : undefined;
       return ({
-      taskId: `${context.sessionId}-download-${index}`,
+      taskId: buildDownloadTaskId(context.sessionId, metadata),
       sessionId: context.sessionId,
       taskType: 'download',
       stage: 'wait',
@@ -43,14 +58,18 @@ export class OsmDownloadStrategy implements DownloadStageStrategy {
   async postprocessDownloadOutputs(
     context: DownloadStagePostprocessContext,
   ): Promise<DownloadStagePostprocessResult> {
-    const outputs = context.urlMetadata.map((metadata, index) => ({
-      inputBufferId: `${context.sessionId}-download-${index}`,
-      countryCode: metadata.countryCode,
-      countryName: metadata.countryName,
-      adminLevel: metadata.adminLevel,
-      dataSource: metadata.dataSource ?? 'openstreetmap',
-      sourceUrl: metadata.url,
-    }));
+    const payloadByUrl = new Map(context.downloadTaskPayloads.map((payload) => [payload.url, payload]));
+    const outputs = context.downloadTasks.map((task) => {
+      const payload = task.config?.url ? payloadByUrl.get(task.config.url) : undefined;
+      return {
+        inputBufferId: `${context.sessionId}-download-${task.index ?? 0}`,
+        countryCode: payload?.countryCode ?? task.countryCode,
+        countryName: payload?.countryName,
+        adminLevel: payload?.adminLevel ?? task.config?.adminLevel,
+        dataSource: payload?.dataSource ?? 'openstreetmap',
+        sourceUrl: payload?.url ?? task.config?.url,
+      };
+    });
     return { outputs };
   }
 
