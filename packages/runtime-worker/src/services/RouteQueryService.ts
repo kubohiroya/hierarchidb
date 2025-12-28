@@ -51,6 +51,10 @@ type RouteNearestSegment = {
   keyLongitude: number;
 };
 
+
+export const DEFAULT_TILE_CACHE_SIZE = 256;
+export const LINESTRING_CACHE_TTL_MS = 5_000;
+
 export class RouteQueryService implements RouteQueryAPI {
   static async getSingleton(db: RouteDatabaseLike): Promise<RouteQueryService> {
     return SingletonMixin.getSingleton('RouteQueryService', async () => new RouteQueryService(db));
@@ -158,9 +162,6 @@ export class RouteQueryService implements RouteQueryAPI {
     };
   }
 }
-
-const DEFAULT_TILE_CACHE_SIZE = 256;
-const LINESTRING_CACHE_TTL_MS = 5_000;
 
 type TileBBox = { west: number; south: number; east: number; north: number };
 

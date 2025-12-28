@@ -213,7 +213,7 @@ export interface PluginI18nConfig {
       speedDial?: {
         tooltip?: string;
       };
-      [key: string]: any;
+      [key: string]: unknown;
     };
   };
 }

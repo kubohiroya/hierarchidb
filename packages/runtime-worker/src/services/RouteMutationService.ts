@@ -1,5 +1,6 @@
 import { SingletonMixin } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
+import { getPluginDownloadService } from '@hierarchidb/download';
 import {
   IDE_GSM_BULK_CHUNK_SIZE,
   type IdeGsmImportCallback,
@@ -11,6 +12,9 @@ import {
   type RouteWaypointInput,
   type RouteWaypointResult,
 } from '@hierarchidb/plugin-service-api';
+import { buildIdeGsmLocationIndex, parseIdeGsmCsv } from './route/ideGsmCsv.js';
+import { RouteGenerator } from './route/RouteGenerator.js';
+import { SearouteEngine } from './route/SearouteEngine.js';
 
 type DexieCollection = {
   delete?: () => Promise<number>;
@@ -30,8 +34,6 @@ type RouteDatabaseLike = {
   open?: () => Promise<unknown>;
   lineStrings: DexieTable;
 };
-
-type RouteGeneratorType = typeof import('@hierarchidb/route-plugin').RouteGenerator;
 
 export class RouteMutationService implements RouteMutationAPI {
   static async getSingleton(db: RouteDatabaseLike, locationQueryService: LocationQueryAPI): Promise<RouteMutationService> {
@@ -76,10 +78,7 @@ export class RouteMutationService implements RouteMutationAPI {
         throw new Error('No related location nodes found.');
       }
 
-      const { getRouteDownloadService, buildIdeGsmLocationIndex, parseIdeGsmCsv } = await import(
-        '@hierarchidb/route-plugin'
-      );
-      const { service, readAll } = await getRouteDownloadService();
+      const { service, readAll } = await getPluginDownloadService('route', { perHostConcurrency: 4 });
       const fileId = `route-ide-gsm:${crypto.randomUUID()}`;
       await service.download(request.sourceUrl, fileId);
       const buffer = await readAll(fileId);
@@ -151,15 +150,12 @@ export class RouteMutationService implements RouteMutationAPI {
   }
 }
 
-let ideGsmGeneratorPromise: Promise<InstanceType<RouteGeneratorType>> | null = null;
+let ideGsmGeneratorPromise: Promise<RouteGenerator> | null = null;
 
-async function getIdeGsmRouteGenerator(): Promise<InstanceType<RouteGeneratorType>> {
+async function getIdeGsmRouteGenerator(): Promise<RouteGenerator> {
   if (!ideGsmGeneratorPromise) {
     ideGsmGeneratorPromise = (async () => {
-      const [{ RouteGenerator, SearouteEngine }] = await Promise.all([
-        import('@hierarchidb/route-plugin'),
-      ]);
-      return new RouteGenerator({ searoute: new SearouteEngine() });
+      return new RouteGenerator();
     })();
   }
   return ideGsmGeneratorPromise;
@@ -167,7 +163,7 @@ async function getIdeGsmRouteGenerator(): Promise<InstanceType<RouteGeneratorTyp
 
 async function buildWaypoints(
   line: RouteWaypointInput,
-  generator: InstanceType<RouteGeneratorType>,
+  generator: RouteGenerator,
 ): Promise<RouteWaypointResult> {
   const method = resolveIdeGsmMethod(line.routeMode);
   const start = line.startPoint?.coordinates;
@@ -191,6 +187,7 @@ async function buildWaypoints(
     speed,
   };
 }
+
 
 function resolveIdeGsmMethod(routeMode?: string): 'great_circle' | 'searoute' | null {
   if (routeMode === 'airway') return 'great_circle';

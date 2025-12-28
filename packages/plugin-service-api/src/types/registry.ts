@@ -41,42 +41,6 @@ export interface INodeTypeRegistry<TValue = unknown> {
   clear(): void;
 }
 
-/**
- * Extended interface for plugin registries with PluginDefinition support
- */
-export interface IPluginRegistry extends INodeTypeRegistry<unknown> {
-  /**
-   * Register a plugin with its unified definition
-   */
-  registerPlugin(
-    definition: any, // PluginDefinition type would be imported from worker
-  ): void;
-
-  /**
-   * Get plugin definition
-   */
-  getPlugin(nodeType: NodeType): any;
-
-  /**
-   * Get entity handler for a node type
-   */
-  getEntityHandler(nodeType: NodeType): EntityHandler | undefined;
-
-  /**
-   * Validate plugin dependencies
-   */
-  validateDependencies(nodeType: NodeType): boolean;
-
-  /**
-   * Get plugin-loader by tag
-   */
-  findPluginsByTag(tag: string): any[];
-
-  /**
-   * Get all plugin-loader
-   */
-  getAllPlugins(): any[];
-}
 
 /**
  * Interface for node type definition registry (original core registry)

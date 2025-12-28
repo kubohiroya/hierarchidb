@@ -74,6 +74,58 @@
   - progress: 2025-12-27 16:50 JST 検索/hover/クリック対象の jotai atom を追加し、map.tsx を jotai state 参照へ移行。
   - done: 2025-12-27 16:52 JST /map の検索/hover/クリック対象の jotai 管理を完了。検証: 未実施（時間のため）。ロールバック: 本タスク差分を revert。
 
+1927) runtime-worker RouteMutationService の route-plugin 依存解消（P1）
+- ブランチ: `fix/worker/remove-route-plugin-dep`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/runtime-worker/src/services/RouteMutationService.ts`, `plugins/route-plugin`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] `RouteMutationService` から `route-plugin` への直接 import が除去される
+  - [ ] runtime-worker 側がプラグイン依存なしで型・実装が成立する
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] `route-plugin` 参照箇所を洗い出し、代替の共有型/インターフェースへ置換する
+  - [ ] 影響する型/実装差分を最小限に調整する
+  - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：`RouteMutationService` の変更差分を revert し、必要なら `pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行する。
+- 運用ログ：
+  - start: 2025-12-28 10:20 JST runtime-worker の `RouteMutationService` で route-plugin 依存を解消する対応に着手。
+  - progress: 2025-12-28 10:28 JST route-plugin 依存の IDE-GSM 処理を runtime-worker 側のローカル実装へ移管し、download は `@hierarchidb/download` 経由に切替。
+  - done: 2025-12-28 10:28 JST `RouteMutationService` の route-plugin import を撤去し、IDE-GSM 処理とルート生成を runtime-worker へ移動。検証: 未実施（依頼優先）。ロールバック: 本タスク差分を revert。
+
+1928) tag feature の d.ts 出力 TS5055 解消（P1）
+- ブランチ: `fix/tag/tsc-emit-overwrite`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/features/tag/tsconfig.json`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] `tsc --emitDeclarationOnly --project packages/features/tag/tsconfig.json --outDir dist` が TS5055 なく完了する
+  - [ ] 出力が input と衝突しない設定が `tsconfig.json` に明示される
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] tag の tsconfig include/exclude を見直し、dist への自己参照を避ける
+  - [ ] 影響範囲を最小化する
+  - [ ] 代表検証（tsc 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：`packages/features/tag/tsconfig.json` の差分を revert し、同コマンドを再実行して旧状態へ戻す。
+- 運用ログ：
+  - start: 2025-12-28 10:30 JST tag feature の d.ts 出力で TS5055 が発生する件の修正に着手。
+  - progress: 2025-12-28 10:30 JST tag の tsconfig に `include: ["src"]` と `exclude: ["dist","node_modules"]` を追加し、outDir の自己参照を回避。
+  - done: 2025-12-28 10:30 JST TS5055 回避のため tag の tsconfig を更新。検証: 未実施（手元の tsc 再実行が必要）。ロールバック: 本タスク差分を revert。
+
+1929) location/route plugin の型を features/*-store へ移設（P1）
+- ブランチ: `refactor/worker/location-route-store-types`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/location-plugin`, `plugins/route-plugin`, `packages/runtime-worker`, `packages/plugin-service-api`, `packages/features/*`, `TASKS.md`, `plans/`
+- 受け入れ基準（DoD）:
+  - [ ] `packages/features/location-store` と `packages/features/route-store` が新設され、対象型が移設される
+  - [ ] runtime-worker の Location/Route サービスが `*-plugin` ではなく `*-store` の型を参照する
+  - [ ] location/route plugin が新パッケージの型を参照し、型の重複定義が解消される
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] ExecPlan を作成し、型移設・import 更新・依存整理の手順を明記する
+  - [ ] location-store/route-store の package.json/tsconfig/index を追加する
+  - [ ] location/route plugin の型 import/export を新パッケージへ切替する
+  - [ ] runtime-worker/app の型 import を新パッケージへ置換する
+  - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：新規パッケージ作成と import 切替差分を revert し、必要なら `pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行する。
+- 運用ログ：
+  - start: 2025-12-28 10:48 JST location/route の型を features/*-store に移設する対応に着手。
+
 1925) /map 検索フィールド + 強調表示 + ナビゲーションコントロール追加（P1）
 - ブランチ: `feat/ui/map-search-highlight`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `app/src/router/routes/map.tsx`, `app/src/state`, `packages/ui/map`, `plans/`, `TASKS.md`
