@@ -1,5 +1,5 @@
 import type { NodeId, Timestamp } from '@hierarchidb/common-types';
-import {
+import type {
   BatchProgressCallback,
   BatchProgressEvent,
   BatchSessionId,

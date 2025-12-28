@@ -239,6 +239,12 @@
       "@hierarchidb/route-resolver/*": [
         "packages/features/route-resolver/dist/*"
       ],
+      "@hierarchidb/route-engine": [
+        "packages/features/route-engine/src/index.ts"
+      ],
+      "@hierarchidb/route-engine/*": [
+        "packages/features/route-engine/src/*"
+      ],
       "@hierarchidb/route-searoute": [
         "packages/features/route-searoute/dist/index.d.ts"
       ],

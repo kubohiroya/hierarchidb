@@ -218,3 +218,15 @@ export interface ResourceUsage {
   networkBytesReceived?: number;
   networkBytesSent?: number;
 }
+
+// Runtime placeholders for type-only exports used by bundled worker modules.
+export const BaseBatchConfig = undefined as unknown as BaseBatchConfig;
+export const BatchProgress = undefined as unknown as BatchProgress;
+export const BatchProgressCallback = undefined as unknown as BatchProgressCallback;
+export const BatchProgressEvent = undefined as unknown as BatchProgressEvent;
+export const BatchProgressPayload = undefined as unknown as BatchProgressPayload;
+export const BatchSessionId = undefined as unknown as BatchSessionId;
+export const BatchSessionState = undefined as unknown as BatchSessionState;
+export const BatchSessionStatus = undefined as unknown as BatchSessionStatus;
+export const IBatchSessionManager = undefined as unknown as IBatchSessionManager;
+export const ResourceUsage = undefined as unknown as ResourceUsage;

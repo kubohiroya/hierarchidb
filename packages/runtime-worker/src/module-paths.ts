@@ -7,7 +7,7 @@
  */
 
 import { getWorkerContainer } from './di/container.js';
-import type { PluginWorkerModuleLoader } from './di/interfaces.js';
+import type { PluginWorkerModuleLoaderContract } from './di/PluginWorkerModuleLoaderContract.js';
 import { WorkerDiTokens } from './di/tokens.js';
 import { pluginWorkerModuleMap } from './plugin-registry/index.js';
 
@@ -84,6 +84,6 @@ export function getPluginWorkerModuleId(id: PluginWorkerId): string {
 
 export function importPluginWorker<T extends PluginWorkerId>(id: T) {
   const container = getWorkerContainer();
-  const loader = container.get<PluginWorkerModuleLoader>(WorkerDiTokens.PluginWorkerModuleLoader);
+  const loader = container.get<PluginWorkerModuleLoaderContract>(WorkerDiTokens.PluginWorkerModuleLoader);
   return loader.importModule<PluginWorkerModule>(id as string);
 }

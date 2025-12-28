@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import {
+import type {
   BaseBatchConfig,
   BatchProgress,
   BatchProgressEvent,

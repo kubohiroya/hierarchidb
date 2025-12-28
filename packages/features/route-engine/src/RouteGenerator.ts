@@ -4,29 +4,8 @@
  */
 
 import type { RouteGenerationConfig } from '@hierarchidb/route-store';
-
-export interface RouteGenerationResult {
-  lineGeometry: [number, number][];
-  distance?: number;
-  duration?: number;
-}
-
-export interface RouteEnginesProvider {
-  osrm?: {
-    route: (points: [number, number][], options?: unknown) => Promise<{
-      line: [number, number][],
-      distance_m: number,
-      duration_s?: number
-    }>;
-  };
-  searoute?: {
-    route: (points: [number, number][], options?: unknown) => Promise<{
-      line: [number, number][],
-      distance_m: number,
-      duration_s?: number
-    }>;
-  };
-}
+import type { RouteEnginesProvider } from './RouteEnginesProvider.js';
+import type { RouteGenerationResult } from './RouteGenerationResult.js';
 
 export class RouteGenerator {
   constructor(private engines?: RouteEnginesProvider) {

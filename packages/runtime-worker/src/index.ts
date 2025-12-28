@@ -3,7 +3,7 @@ export {
   getWorkerContainer,
   resetWorkerContainerForTesting,
 } from './di/container.js';
-export type { PluginWorkerModuleLoader } from './di/interfaces.js';
+export type { PluginWorkerModuleLoaderContract } from './di/PluginWorkerModuleLoaderContract.js';
 export { WorkerDiTokens } from './di/tokens.js';
 export { resolveDefaultNodeName } from './utils/default-node-name.js';
 

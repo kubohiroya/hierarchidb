@@ -12,8 +12,8 @@ import {
 } from '@hierarchidb/plugin-service-api';
 import type { LocationQueryAPI } from '@hierarchidb/location-store';
 import type { RouteDatabaseHandle, RouteMutationAPI } from '@hierarchidb/route-store';
+import { RouteGenerator } from '@hierarchidb/route-engine';
 import { buildIdeGsmLocationIndex, parseIdeGsmCsv } from './route/ideGsmCsv.js';
-import { RouteGenerator } from './route/RouteGenerator.js';
 
 export class RouteMutationService implements RouteMutationAPI {
   static async getSingleton(

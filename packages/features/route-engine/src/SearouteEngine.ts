@@ -1,8 +1,12 @@
-import type { RoutingEngine } from './types.js';
 import { readRuntimeEnvValue } from '@hierarchidb/util';
+import type { RoutingEngine } from './RoutingEngine.js';
 
 type Coordinate = [number, number];
-type SeaRouteFunction = (from: Coordinate, to: Coordinate, options?: SeaRouteOptions | string) => Promise<SeaRouteResponse>;
+type SeaRouteFunction = (
+  from: Coordinate,
+  to: Coordinate,
+  options?: SeaRouteOptions | string,
+) => Promise<SeaRouteResponse>;
 type SeaRouteModule = SeaRouteFunction | SeaRouteObjectModule;
 type SeaRouteObjectModule = { getSeaRoute?: SeaRouteFunction; default?: SeaRouteFunction };
 
@@ -43,7 +47,10 @@ type ImportMetaWithEnv = ImportMeta & { env?: Record<string, unknown> };
 export class SearouteEngine implements RoutingEngine {
   private libPromise?: Promise<SeaRouteModule | undefined>;
 
-  async route(points: Coordinate[], options?: SeaRouteOptions): Promise<{
+  async route(
+    points: Coordinate[],
+    options?: unknown,
+  ): Promise<{
     line: Coordinate[];
     distance_m: number;
     duration_s?: number;
@@ -52,7 +59,7 @@ export class SearouteEngine implements RoutingEngine {
     const end = points[points.length - 1];
     if (!start || !end) throw new Error('searoute requires at least two coordinates');
 
-    const normalizedOptions = this.normalizeOptions(options);
+    const normalizedOptions = this.normalizeOptions(options as SeaRouteOptions | undefined);
 
     try {
       const module = await this.loadLib();
@@ -323,8 +330,10 @@ function toFiniteNumber(value: unknown): number | undefined {
 function haversine(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371000;
   const toRad = (d: number) => (d * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
-  const s1 = Math.sin(dLat / 2), s2 = Math.sin(dLon / 2);
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const s1 = Math.sin(dLat / 2);
+  const s2 = Math.sin(dLon / 2);
   const a = s1 * s1 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * s2 * s2;
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;

@@ -19,7 +19,7 @@ import {
   StyleMutationAPI,
   StyleQueryAPI,
 } from '@hierarchidb/plugin-service-api';
-import {
+import type {
   ImportExportAPI,
   TagAPI,
   TreeMutationAPI,

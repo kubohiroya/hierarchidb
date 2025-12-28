@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RouteGenerator, type RouteEnginesProvider } from '../../src/services/RouteGenerator.js';
+import { RouteGenerator, type RouteEnginesProvider } from '@hierarchidb/route-engine';
 
 describe('RouteGenerator engine delegation', () => {
   it('delegates osm_route to provided engine and maps distance/duration', async () => {

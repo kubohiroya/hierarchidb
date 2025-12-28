@@ -1,5 +1,4 @@
-import { RouteGenerator } from '../RouteGenerator.js';
-import { SearouteEngine } from '../engines/SearouteEngine.js';
+import { RouteGenerator, SearouteEngine } from '@hierarchidb/route-engine';
 import { ROUTE_MODES, type RouteLineString } from '../../common/entities/RouteLineString.js';
 
 const generator = new RouteGenerator({ searoute: new SearouteEngine() });

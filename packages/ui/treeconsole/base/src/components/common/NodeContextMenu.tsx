@@ -21,7 +21,7 @@ import {
 import { Divider, ListItemIcon, ListItemText, Menu, MenuItem, Switch } from '@mui/material';
 import { type MouseEvent, type ReactElement, useEffect, useRef, useState } from 'react';
 
-export interface NodeContextMenuProps {
+export interface TreeConsoleNodeContextMenuProps {
   anchorEl: HTMLElement | null;
   anchorPosition?: { top: number; left: number } | null;
   open: boolean;
@@ -57,7 +57,7 @@ export interface NodeContextMenuProps {
  * NodeContextMenu
  * eria-cartographRowContextMenuMUI
  */
-export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | null {
+export function NodeContextMenu(props: TreeConsoleNodeContextMenuProps): ReactElement | null {
   const {
     anchorEl,
     anchorPosition,

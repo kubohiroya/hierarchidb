@@ -1,4 +1,5 @@
-import type { NetworkPortLike, RoutingEngine } from './types.js';
+import type { RoutingEngine } from '@hierarchidb/route-engine';
+import type { NetworkPortLike } from './types.js';
 
 type Coordinate = [number, number];
 

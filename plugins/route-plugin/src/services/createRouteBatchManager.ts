@@ -1,7 +1,7 @@
 import { RouteBatchSessionOrchestrator } from './RouteBatchSessionOrchestrator.js';
 import type { RouteBatchManagerDeps } from './RouteBatchManager.js';
+import { SearouteEngine } from '@hierarchidb/route-engine';
 import { OsrmEngine } from './engines/OsrmEngine.js';
-import { SearouteEngine } from './engines/SearouteEngine.js';
 import { type NetworkPortLike as NetLike, ThrottledPort, type ThrottleOptions } from './net/ThrottledPort.js';
 
 export interface NetworkPortLike extends NetLike {}

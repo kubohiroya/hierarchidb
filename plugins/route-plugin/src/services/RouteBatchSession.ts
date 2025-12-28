@@ -1,6 +1,6 @@
 import { AbstractBatchSession, BatchService } from '@hierarchidb/batch-runtime-services';
 import type { RouteGenerationConfig } from '../common/entities/RouteEntity.js';
-import { RouteGenerator } from './RouteGenerator.js';
+import { RouteGenerator } from '@hierarchidb/route-engine';
 import { TabularWriter } from '@hierarchidb/tabular-store';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { RouteBatchConfig } from '../common/types/BatchConfig.js';

@@ -53,6 +53,23 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1936) パッケージ依存の循環調査（plugin-registry を除外）（P2）
+- ブランチ: `chore/deps/cycle-audit`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `.dependency-cruiser.cjs`, `packages/`, `app/`, `plugins/`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] plugin-registry を含む循環を除外した循環一覧を提示する
+  - [ ] 調査に使ったコマンド/根拠を運用ログに記載する
+  - [ ] 不明点があれば追加調査案を明記する
+- チェックリスト:
+  - [ ] dependency-cruiser などで循環を抽出する
+  - [ ] plugin-registry を含む循環を除外して整理する
+  - [ ] 結果と根拠を運用ログに残す
+- ロールバック手順：調査タスクのため変更なし（TASKS.md の記載のみ revert 可）。
+- 運用ログ：
+  - start: 2025-12-28 18:10 JST パッケージ依存の循環調査（plugin-registry 除外）に着手。
+  - progress: 2025-12-28 18:11 JST `pnpm exec dependency-cruiser -c .dependency-cruiser.cjs packages app plugins` を実行（exit 12）。循環は 12 件検出されたが、いずれも `packages/plugin-registry/generated/worker-loaders.ts` を含む循環のみ。
+  - done: 2025-12-28 18:12 JST plugin-registry を含む循環を除外すると、現状の循環は検出されないことを確認。
+
 1926) /map 検索/hover/クリックの対象 state を jotai 管理へ移行（P1）
 - ブランチ: `feat/ui/map-search-jotai-state`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `app/src/router/routes/map.tsx`, `app/src/state/mapSearch.atoms.ts`, `TASKS.md`
@@ -191,6 +208,13 @@
 - ロールバック手順：本タスクで変更した `packages/**/src`/`plugins/**/src`/`app/src` の差分を revert する。
 - 運用ログ：
   - start: 2025-12-28 17:40 JST 同名重複と export 型名/ファイル名の不整合の棚卸しに着手。
+- progress: 2025-12-28 17:50 JST ExecPlan `plans/export-name-align-execplan.md` を作成し、重複/不整合の棚卸し結果を整理。検証: 未実施。ロールバック: plan と TASKS の差分を revert。
+- progress: 2025-12-28 14:35 JST DoD 承認済み。重複ファイル整理（Route/Searoute 統合、LaneSemaphoreRegistry、NodeContextMenuProps、PluginWorkerModuleLoader、plugin-service-api 型ファイル整列）に着手。検証: 未実施。ロールバック: 変更ファイルを差し戻し。
+- progress: 2025-12-28 14:47 JST RouteGenerator/SearouteEngine を @hierarchidb/route-engine に統合、LaneSemaphoreRegistry を @hierarchidb/batch 側へ集約、PluginWorkerModuleLoaderContract へ改名、plugin-service-api の型ファイル名を PascalCase に更新。検証: 未実施。ロールバック: 変更ファイルを差し戻し。
+- progress: 2025-12-28 14:55 JST app build の MISSING_EXPORT 対応として runtime-worker の common-api import を type-only に修正。検証: 未実施。ロールバック: 変更ファイルを差し戻し。
+- progress: 2025-12-28 15:05 JST batch 側の common-api import を type-only に修正（@hierarchidb/batch）。検証: 未実施。ロールバック: 変更ファイルを差し戻し。
+- progress: 2025-12-28 15:09 JST @hierarchidb/common-api に型プレースホルダーを追加し build、@hierarchidb/batch build、@hierarchidb/runtime-worker build を実行。検証: warnings あり（tsdown define）。ロールバック: 変更ファイルを差し戻し。
+- progress: 2025-12-28 15:12 JST @hierarchidb/common-types に NodeId/Timestamp プレースホルダーを追加し build、@hierarchidb/runtime-worker build を実行。検証: warnings あり（tsdown define）。ロールバック: 変更ファイルを差し戻し。
 
 1925) /map 検索フィールド + 強調表示 + ナビゲーションコントロール追加（P1）
 - ブランチ: `feat/ui/map-search-highlight`（sandbox 制約で branch 作成不可なら main 上で作業）

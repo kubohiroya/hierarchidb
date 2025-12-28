@@ -6,7 +6,7 @@ import {
   pluginWorkerModuleMap,
   pluginWorkerSourceMap,
 } from '../plugin-registry/index.js';
-import type { PluginWorkerModuleLoader as PluginWorkerModuleLoaderContract } from './interfaces.js';
+import type { PluginWorkerModuleLoaderContract } from './PluginWorkerModuleLoaderContract.js';
 import { PluginWorkerModuleLoader } from './PluginWorkerModuleLoader.js';
 import { WorkerDiTokens } from './tokens.js';
 

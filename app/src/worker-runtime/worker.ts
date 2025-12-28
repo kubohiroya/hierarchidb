@@ -19,7 +19,7 @@ import {
 import {
   getWorkerContainer,
   configureWorkerContainer,
-  type PluginWorkerModuleLoader,
+  type PluginWorkerModuleLoaderContract,
   WorkerDiTokens,
   WorkerService,
 } from '@hierarchidb/runtime-worker';
@@ -213,7 +213,7 @@ reporter.reportStepProgress('Load Comlink', 0);
     });
 
     const workerContainer = getWorkerContainer();
-    const moduleLoader = workerContainer.get<PluginWorkerModuleLoader>(
+    const moduleLoader = workerContainer.get<PluginWorkerModuleLoaderContract>(
       WorkerDiTokens.PluginWorkerModuleLoader
     );
 
