@@ -566,6 +566,7 @@ export function usePluginDialogController(
   validatedStepsNavRef.current = validatedStepIndices;
   const stepsLengthRef = useRef(steps.length);
   stepsLengthRef.current = steps.length;
+  const pendingStepTransitionRef = useRef<{ target: number; resolve: () => void } | null>(null);
   const canSaveRef = useRef(canSaveCurrent);
   canSaveRef.current = canSaveCurrent;
   const handleSubmitRef = useRef<(() => Promise<void>) | null>(null);
@@ -595,6 +596,9 @@ export function usePluginDialogController(
             break;
         }
         if (nextIndex === activeStepIndexRef.current) return;
+        const waitForTransition = new Promise<void>((resolve) => {
+          pendingStepTransitionRef.current = { target: nextIndex, resolve };
+        });
         await Promise.resolve(updateLocalDraftRef.current?.()).finally(() => {
           setActiveStepIndexRef.current(nextIndex);
           setUrlStepRef.current(nextIndex);
@@ -602,6 +606,15 @@ export function usePluginDialogController(
             dialogProgress: { activeStepIndex: toPersistedStepIndex(nextIndex) } as DialogProgressState,
           });
         });
+        await Promise.race([
+          waitForTransition,
+          new Promise<void>((resolve) => {
+            window.setTimeout(resolve, 5000);
+          }),
+        ]);
+        if (pendingStepTransitionRef.current?.target === nextIndex) {
+          pendingStepTransitionRef.current = null;
+        }
       });
     },
     [runWithPending, updateDialogUIState, toPersistedStepIndex]
@@ -642,6 +655,14 @@ export function usePluginDialogController(
     },
     [dialogPosition, handlePositionChange, persistDialogWindow]
   );
+
+  useEffect(() => {
+    const pending = pendingStepTransitionRef.current;
+    if (pending && pending.target === activeStepIndex) {
+      pending.resolve();
+      pendingStepTransitionRef.current = null;
+    }
+  }, [activeStepIndex]);
 
   const handleSubmit = useCallback(async () => {
     await runWithPending({ type: 'commit' }, async () => {
