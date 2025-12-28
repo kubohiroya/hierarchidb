@@ -88,7 +88,7 @@ export class BatchSessionManager extends BaseBatchSessionManager {
       currentStage: 'download',
       currentTask: 'Initializing...',
     };
-    const session = existing ?? {
+    const session: BatchSessionRecord = existing ?? {
       sessionId,
       nodeId,
       status: 'running' as const,
@@ -106,7 +106,8 @@ export class BatchSessionManager extends BaseBatchSessionManager {
         networkBytesSent: 0,
       },
     };
-    const updatedSession: BatchSession = {
+    const stages = session.stages ?? this.initializeStages(config);
+    const updatedSession: BatchSessionRecord = {
       ...session,
       status: 'running',
       config,
@@ -115,7 +116,7 @@ export class BatchSessionManager extends BaseBatchSessionManager {
         ...baseProgress,
         total: Math.max(baseProgress.total ?? 0, downloadTaskPayloads.length),
       },
-      stages: session.stages ?? this.initializeStages(config),
+      stages,
     };
 
     await shapeDB.batchSessions.put(updatedSession);

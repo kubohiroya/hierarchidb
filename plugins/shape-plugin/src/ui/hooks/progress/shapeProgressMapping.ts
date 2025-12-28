@@ -39,7 +39,7 @@ export function toShapeProgress(info: ExtendedProgress | null, sessionId?: strin
   const total = info.total ?? info.payload?.total ?? 0;
   const completed = info.completed ?? info.payload?.completed ?? 0;
   const failed = info.failed ?? info.payload?.failed ?? 0;
-  const skipped = info.payload?.skipped ?? Math.max(total - completed - failed, 0);
+  const skipped = info.payload?.skipped ?? 0;
   const percentage = typeof info.percentage === 'number' && Number.isFinite(info.percentage)
     ? info.percentage
     : total > 0
@@ -102,6 +102,7 @@ export function statusToUnified(status: BatchSessionStatus): UnifiedProgressInfo
   const total = numeric(progress.total);
   const completed = numeric(progress.completed);
   const failed = numeric(progress.failed);
+  const skipped = numeric(progress.skipped);
   const percentage = numeric(progress.percentage, total > 0 ? Math.round((completed / total) * 100) : 0);
   const fallbackStage = status.status === 'idle' ? 'idle' : 'processing';
   return {
@@ -117,6 +118,7 @@ export function statusToUnified(status: BatchSessionStatus): UnifiedProgressInfo
       total,
       completed,
       failed,
+      skipped,
       currentTask: progress.currentTask ?? progress.currentStage ?? fallbackStage,
       meta: status.error ? { errors: [status.error] } : undefined,
     },

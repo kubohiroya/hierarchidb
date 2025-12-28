@@ -34,7 +34,7 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
       }
     }
     return Array.from(adminLevels.entries()).map(([adminLevel, metadata], index) => ({
-      taskId: buildDownloadTaskId(context.sessionId, metadata),
+      taskId: buildDownloadTaskId(String(context.nodeId), metadata),
       sessionId: context.sessionId,
       taskType: 'download',
       stage: 'wait',

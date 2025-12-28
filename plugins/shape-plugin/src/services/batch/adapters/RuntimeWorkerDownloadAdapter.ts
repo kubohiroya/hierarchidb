@@ -81,13 +81,14 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
       tasks.map((task) => (task.config?.dataSource ?? 'default').toLowerCase()),
       4,
     );
+    const maxConcurrent = controls?.maxConcurrent ?? recommendedConcurrency;
 
     await batch.mapChunks<DownloadTask, {}>(
       tasks,
       async (task: DownloadTask, index: number) => {
         const lane = (task.config?.dataSource ?? 'default').toLowerCase();
         await this.laneRegistry.runWithLane(lane, async () => {
-          const fileId = `${sessionId}-download-${index}`;
+          const fileId = `${sessionId}-download-${task.index ?? index}`;
           let finished = false;
           while (!finished) {
             if (controls?.waitIfPaused) {
@@ -222,7 +223,7 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
           });
         });
       },
-      { concurrency: recommendedConcurrency },
+      { concurrency: Math.max(1, maxConcurrent) },
     );
 
     return { processed: completed, failed, totalDownloadSize: totalBytes };

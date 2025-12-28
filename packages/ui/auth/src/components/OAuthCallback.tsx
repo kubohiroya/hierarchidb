@@ -26,7 +26,6 @@ export const OAuthCallback: React.FC = () => {
 
         // Get return URL from storage
         const returnUrl = localStorage.getItem('auth_return_url') || '/';
-        localStorage.removeItem('auth_return_url');
 
         // Navigate to the return URL
         void navigate({ to: returnUrl, replace: true });

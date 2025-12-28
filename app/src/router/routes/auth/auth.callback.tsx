@@ -27,7 +27,6 @@ export default function AuthCallbackRoute() {
         // If neither code nor error is present, assume a stray render and navigate away quietly.
         if (!code && !error) {
           const returnUrl = localStorage.getItem('auth_return_url') || '/';
-          localStorage.removeItem('auth_return_url');
           navigate({ to: returnUrl, replace: true });
           return;
         }
@@ -39,7 +38,6 @@ export default function AuthCallbackRoute() {
         if (!code) {
           // Nothing to process; go home without throwing.
           const returnUrl = localStorage.getItem('auth_return_url') || '/';
-          localStorage.removeItem('auth_return_url');
           navigate({ to: returnUrl, replace: true });
           return;
         }
@@ -48,7 +46,6 @@ export default function AuthCallbackRoute() {
         await authService.handleCallback(searchParams);
 
         const returnUrl = localStorage.getItem('auth_return_url') || '/';
-        localStorage.removeItem('auth_return_url');
         navigate({ to: returnUrl, replace: true });
       } catch (err) {
         console.error('Auth callback error:', err);

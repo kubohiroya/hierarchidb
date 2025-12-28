@@ -6,6 +6,7 @@ import type { StageControls } from './StageControls.js';
 import { getEphemeralShapeDB } from '../../database/EphemeralShapeDB.js';
 import { shapeDB } from '../../database/ShapeDB.js';
 import { applyFeatureFiltering, type FeatureFilterSettings, simplifyGeoJson } from '@hierarchidb/gis-sdk';
+import { BatchService } from '@hierarchidb/batch';
 import { geojson as geojsonApi } from 'flatgeobuf';
 import type { Feature } from 'geojson';
 import type { FeatureCollection } from 'geojson';
@@ -42,9 +43,12 @@ export class LocalSimplify1Adapter implements Simplify1StageAdapter {
     const db = getEphemeralShapeDB();
     const getSignal = controls?.getSignal;
     const shouldAbort = () => Boolean(getSignal?.()?.aborted);
+    const batch = new BatchService();
+    const maxConcurrent = Math.max(1, controls?.maxConcurrent ?? 1);
     let completed = 0;
     let failed = 0;
-    for (const task of tasks) {
+    let skipped = 0;
+    const processTask = async (task: Simplify1Task) => {
       let finished = false;
       while (!finished) {
         if (controls?.waitIfPaused) {
@@ -55,7 +59,7 @@ export class LocalSimplify1Adapter implements Simplify1StageAdapter {
             await controls.waitIfPaused();
             continue;
           }
-          return { processed: completed, failed };
+          return;
         }
         try {
           if (task.taskId) {
@@ -70,6 +74,30 @@ export class LocalSimplify1Adapter implements Simplify1StageAdapter {
           if (!raw) {
             throw new Error(`Raw buffer not found: ${inputBufferId}`);
           }
+          const taskIndex = task.index ?? 0;
+          if (!raw.featureCount) {
+            await db.simplifiedBuffers.put({
+              id: `${task.sessionId ?? ''}-simplify1-${taskIndex}`,
+              sessionId: String(task.sessionId ?? ''),
+              nodeId: raw.nodeId,
+              stage: 'simplify1',
+              data: raw.data,
+              featureCount: 0,
+              simplificationRatio: 0,
+              tolerance: task.tolerance ?? task.config?.tolerance ?? 0,
+              timestamp: Date.now(),
+            });
+            skipped += 1;
+            if (task.taskId) {
+              await shapeDB.updateBatchTask(task.taskId, {
+                status: 'completed',
+                completedAt: Date.now(),
+                progress: 100,
+              });
+            }
+            finished = true;
+            break;
+          }
           const geojson = await decodeGeoJson(raw.data);
           const filterSettings: FeatureFilterSettings = {
             minArea: task.minArea ?? task.config?.minimumArea ?? 0,
@@ -78,12 +106,35 @@ export class LocalSimplify1Adapter implements Simplify1StageAdapter {
             hybridFilterConfig: task.config?.hybridFilterConfig,
           };
           const filtered = applyFeatureFiltering(geojson, filterSettings);
-          const outputBufferId = `${task.sessionId ?? ''}-simplify1-${task.index ?? completed}`;
+          const outputBufferId = `${task.sessionId ?? ''}-simplify1-${taskIndex}`;
           const hasFilteredFeatures = isFeatureCollection(filtered);
           const data = hasFilteredFeatures ? await encodeGeoJson(filtered) : raw.data;
           const featureCount = hasFilteredFeatures
             ? filtered.features.length
             : raw.featureCount;
+          if (!featureCount) {
+            await db.simplifiedBuffers.put({
+              id: outputBufferId,
+              sessionId: String(task.sessionId ?? ''),
+              nodeId: raw.nodeId,
+              stage: 'simplify1',
+              data,
+              featureCount: 0,
+              simplificationRatio: 0,
+              tolerance: task.tolerance ?? task.config?.tolerance ?? 0,
+              timestamp: Date.now(),
+            });
+            skipped += 1;
+            if (task.taskId) {
+              await shapeDB.updateBatchTask(task.taskId, {
+                status: 'completed',
+                completedAt: Date.now(),
+                progress: 100,
+              });
+            }
+            finished = true;
+            break;
+          }
           await db.simplifiedBuffers.put({
             id: outputBufferId,
             sessionId: String(task.sessionId ?? ''),
@@ -110,7 +161,7 @@ export class LocalSimplify1Adapter implements Simplify1StageAdapter {
               await controls.waitIfPaused();
               continue;
             }
-            return { processed: completed, failed };
+            return;
           }
           failed++;
           if (task.taskId) {
@@ -125,18 +176,20 @@ export class LocalSimplify1Adapter implements Simplify1StageAdapter {
         }
       }
       if (shouldAbort()) {
-        return { processed: completed, failed };
+        return;
       }
+      const effectiveTotal = Math.max(0, tasks.length - skipped);
       onProgress({
-        total: tasks.length,
+        total: effectiveTotal,
         completed,
         failed,
-        skipped: 0,
-        percentage: tasks.length > 0 ? (completed / tasks.length) * 100 : 0,
+        skipped,
+        percentage: effectiveTotal > 0 ? (completed / effectiveTotal) * 100 : 100,
         currentStage: 'simplify1',
         currentTask: task.taskId,
       });
-    }
+    };
+    await batch.mapChunks(tasks, processTask, { concurrency: maxConcurrent });
     return { processed: completed, failed };
   }
 }
@@ -146,9 +199,12 @@ export class LocalSimplify2Adapter implements Simplify2StageAdapter {
     const db = getEphemeralShapeDB();
     const getSignal = controls?.getSignal;
     const shouldAbort = () => Boolean(getSignal?.()?.aborted);
+    const batch = new BatchService();
+    const maxConcurrent = Math.max(1, controls?.maxConcurrent ?? 1);
     let completed = 0;
     let failed = 0;
-    for (const task of tasks) {
+    let skipped = 0;
+    const processTask = async (task: Simplify2Task) => {
       let finished = false;
       while (!finished) {
         if (controls?.waitIfPaused) {
@@ -159,7 +215,7 @@ export class LocalSimplify2Adapter implements Simplify2StageAdapter {
             await controls.waitIfPaused();
             continue;
           }
-          return { processed: completed, failed };
+          return;
         }
         try {
           if (task.taskId) {
@@ -175,6 +231,31 @@ export class LocalSimplify2Adapter implements Simplify2StageAdapter {
           if (!input) {
             throw new Error(`Simplify2 input buffer not found: ${inputBufferId}`);
           }
+          const taskIndex = task.index ?? 0;
+          if (!input.featureCount) {
+            const outputBufferId = `${task.sessionId ?? ''}-simplify2-${taskIndex}`;
+            await db.simplifiedBuffers.put({
+              id: outputBufferId,
+              sessionId: String(task.sessionId ?? ''),
+              nodeId: input.nodeId,
+              stage: 'simplify2',
+              data: input.data,
+              featureCount: 0,
+              simplificationRatio: 0,
+              tolerance: task.config?.tolerance ?? task.tolerance ?? 0,
+              timestamp: Date.now(),
+            });
+            skipped += 1;
+            if (task.taskId) {
+              await shapeDB.updateBatchTask(task.taskId, {
+                status: 'completed',
+                completedAt: Date.now(),
+                progress: 100,
+              });
+            }
+            finished = true;
+            break;
+          }
           const geojson = await decodeGeoJson(input.data);
           const tolerance = task.config?.tolerance ?? task.tolerance ?? 0;
           const quantize = task.config?.quantize;
@@ -185,7 +266,7 @@ export class LocalSimplify2Adapter implements Simplify2StageAdapter {
             quantize,
           });
           const hasSimplifiedFeatures = isFeatureCollection(simplified);
-          const outputBufferId = `${task.sessionId ?? ''}-simplify2-${task.index ?? completed}`;
+          const outputBufferId = `${task.sessionId ?? ''}-simplify2-${taskIndex}`;
           const data = hasSimplifiedFeatures ? await encodeGeoJson(simplified) : input.data;
           const featureCount = hasSimplifiedFeatures
             ? simplified.features.length
@@ -216,7 +297,7 @@ export class LocalSimplify2Adapter implements Simplify2StageAdapter {
               await controls.waitIfPaused();
               continue;
             }
-            return { processed: completed, failed };
+            return;
           }
           failed++;
           if (task.taskId) {
@@ -231,18 +312,20 @@ export class LocalSimplify2Adapter implements Simplify2StageAdapter {
         }
       }
       if (shouldAbort()) {
-        return { processed: completed, failed };
+        return;
       }
+      const effectiveTotal = Math.max(0, tasks.length - skipped);
       onProgress({
-        total: tasks.length,
+        total: effectiveTotal,
         completed,
         failed,
-        skipped: 0,
-        percentage: tasks.length > 0 ? (completed / tasks.length) * 100 : 0,
+        skipped,
+        percentage: effectiveTotal > 0 ? (completed / effectiveTotal) * 100 : 100,
         currentStage: 'simplify2',
         currentTask: task.taskId,
       });
-    }
+    };
+    await batch.mapChunks(tasks, processTask, { concurrency: maxConcurrent });
     return { processed: completed, failed };
   }
 }

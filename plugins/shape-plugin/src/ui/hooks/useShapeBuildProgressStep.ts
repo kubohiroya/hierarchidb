@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
-import { useShapeBatchTasks } from './useShapeBatchTasks.js';
+import { useShapeBatchTasks, type ShapeBatchTaskSummary } from './useShapeBatchTasks.js';
 import { useShapeProgress } from './useShapeProgress.js';
 import { useTranslation } from '../i18n.js';
 import {
@@ -44,34 +44,27 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
   const sessionId = data?.batchSessionId ?? null;
 
   const { progress, status, error, isSubscribed } = useShapeProgress(sessionId, { autoSubscribe: Boolean(sessionId) });
-  const { tasks, refresh: refreshTasks } = useShapeBatchTasks(sessionId, { autoRefresh: true, pollIntervalMs: 2000 });
-  const [persistedTasks, setPersistedTasks] = useState<typeof tasks>([]);
+  const [persistedTasks, setPersistedTasks] = useState<ShapeBatchTaskSummary[]>([]);
   const [isStartPending, setIsStartPending] = useState(false);
   const hasSessionId = Boolean(sessionId && !error);
   const effectiveProgress = hasSessionId ? progress : null;
   const effectiveStatus = hasSessionId ? status : null;
   const stages = useBuildStages();
   const { buildStatus, statusLabel } = useBuildStatus(effectiveStatus);
+  const shouldPollTasks = Boolean(sessionId)
+    && buildStatus !== 'idle'
+    && buildStatus !== 'completed'
+    && buildStatus !== 'failed'
+    && buildStatus !== 'cancelled';
+  const shouldPollTasksRef = useCallback(() => shouldPollTasks, [shouldPollTasks]);
+  const { tasks, refresh: refreshTasks } = useShapeBatchTasks(sessionId, {
+    autoRefresh: shouldPollTasksRef,
+    pollIntervalMs: 2000,
+  });
   const selectedArrayByCountries = data?.selectedArrayByCountries;
 
   const currentStage = normalizeStageId(effectiveProgress?.currentStage);
   const overallProgress = effectiveProgress?.percentage ?? effectiveStatus?.progress ?? 0;
-  const stageLabel = (() => {
-    if (currentStage) {
-      return stages.find((stage) => stage.id === currentStage)?.title
-        ?? currentStage;
-    }
-    if (buildStatus === 'running') {
-      return t('build.progress.unknownStage', 'processing');
-    }
-    if (buildStatus === 'paused') {
-      return t('build.progress.pausedStage', 'paused');
-    }
-    if (buildStatus === 'completed') {
-      return t('build.progress.completedStage', 'completed');
-    }
-    return t('build.progress.idleStage', 'idle');
-  })();
   const taskLabel = (() => {
     if (buildStatus === 'completed') {
       return t('build.progress.done', 'Completed');
@@ -141,9 +134,9 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
   ]);
 
   useEffect(() => {
-    if (!sessionId) return;
+    if (!shouldPollTasksRef()) return;
     void refreshTasks();
-  }, [refreshTasks, sessionId]);
+  }, [refreshTasks, shouldPollTasksRef]);
 
   useEffect(() => {
     if (!sessionId) {
@@ -259,6 +252,65 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     buildStatus,
     displayTasks,
   );
+  const lastUnfinishedStageId = useMemo(() => {
+    if (buildStatus !== 'running') return undefined;
+    let candidate: string | undefined;
+    stages.forEach((stage) => {
+      const stageTasks = tasksByStage[stage.id] ?? [];
+      if (stageTasks.length === 0) return;
+      const hasIncomplete = stageTasks.some((task) => task.status !== 'completed');
+      if (hasIncomplete) {
+        candidate = stage.id;
+      }
+    });
+    return candidate;
+  }, [buildStatus, stages, tasksByStage]);
+  const displayStageId = lastUnfinishedStageId ?? currentStage;
+  const displayStageLabel = (() => {
+    if (displayStageId) {
+      return stages.find((stage) => stage.id === displayStageId)?.title
+        ?? displayStageId;
+    }
+    if (buildStatus === 'running') {
+      return t('build.progress.unknownStage', 'processing');
+    }
+    if (buildStatus === 'paused') {
+      return t('build.progress.pausedStage', 'paused');
+    }
+    if (buildStatus === 'completed') {
+      return t('build.progress.completedStage', 'completed');
+    }
+    return t('build.progress.idleStage', 'idle');
+  })();
+  const derivedCounts = useMemo(() => {
+    if (!lastUnfinishedStageId) return null;
+    const stageTasks = tasksByStage[lastUnfinishedStageId] ?? [];
+    if (!stageTasks.length) return null;
+    const completedCount = stageTasks.filter((task) => task.status === 'completed').length;
+    const failedCount = stageTasks.filter((task) => task.status === 'failed').length;
+    const skippedCount = stageTasks.filter((task) => task.status === 'skipped').length;
+    return {
+      total: stageTasks.length,
+      completed: completedCount,
+      failed: failedCount,
+      skipped: skippedCount,
+    };
+  }, [lastUnfinishedStageId, tasksByStage]);
+  const displayCounts = useMemo(() => {
+    if (buildStatus === 'running' && total === 0 && completed === 0 && failed === 0 && skipped === 0 && derivedCounts?.total) {
+      return {
+        ...derivedCounts,
+        percentage: Math.round((derivedCounts.completed / derivedCounts.total) * 100),
+      };
+    }
+    return {
+      total,
+      completed,
+      failed,
+      skipped,
+      percentage: Math.round(overallProgress),
+    };
+  }, [buildStatus, completed, derivedCounts, failed, overallProgress, skipped, total]);
 
   const resolveStatusLabel = useCallback((statusValue?: string): string => {
     switch (statusValue) {
@@ -307,7 +359,13 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     && hasSelection
     && isProcessingValid;
 
-  const { handleStartOrResume, handlePause } = useBatchSessionActions({
+  const {
+    handleStartOrResume,
+    handlePause,
+    authDialogOpen,
+    closeAuthDialog,
+    handleProviderSelect,
+  } = useBatchSessionActions({
     nodeType: SHAPE_NODE_TYPE,
     nodeId,
     sessionId,
@@ -336,18 +394,21 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     tasksByStage,
     tasks: displayTasks,
     buildStatus: effectiveBuildStatus,
-    overallProgress,
-    stageLabel,
+    overallProgress: displayCounts.percentage,
+    stageLabel: displayStageLabel,
     taskLabel,
     statusLabel: effectiveStatusLabel,
-    completed,
-    total,
-    failed,
-    skipped,
+    completed: displayCounts.completed,
+    total: displayCounts.total,
+    failed: displayCounts.failed,
+    skipped: displayCounts.skipped,
     hasProgressData,
     canStartOrResume,
     handleStartOrResume: startOrResume,
     handlePause,
+    authDialogOpen,
+    closeAuthDialog,
+    handleProviderSelect,
     resolveStatusLabel,
     resolveStatusColor,
   };

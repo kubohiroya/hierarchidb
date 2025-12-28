@@ -252,8 +252,10 @@ export function generateDownloadTaskPayloadsFromSelection(
   });
 }
 
-export const buildDownloadTaskId = (sessionId: string, payload: DownloadTaskPayload): string =>
-  `${sessionId}:download:${payload.url}`;
+export const buildDownloadTaskId = (nodeId: string, payload: DownloadTaskPayload): string => {
+  const countryId = payload.countryCode || payload.country || 'unknown';
+  return `${nodeId}+${countryId}+${payload.adminLevel}`;
+};
 
 /**
  * Build data source URL for specific country and admin level

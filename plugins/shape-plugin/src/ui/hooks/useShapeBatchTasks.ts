@@ -4,7 +4,7 @@ import type { NodeType } from '@hierarchidb/common-types';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 
 export interface UseShapeBatchTasksOptions {
-  autoRefresh?: boolean;
+  autoRefresh?: boolean | (() => boolean);
   pollIntervalMs?: number;
 }
 
@@ -31,6 +31,11 @@ export function useShapeBatchTasks(
   const [tasks, setTasks] = useState<ShapeBatchTaskSummary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const reportedFailuresRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    reportedFailuresRef.current = new Set();
+  }, [sessionId]);
 
   const refresh = useCallback(async () => {
     if (!sessionId) {
@@ -60,16 +65,42 @@ export function useShapeBatchTasks(
   }, [sessionId]);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    if (!sessionId) return;
+    if (typeof autoRefresh === 'function' && autoRefresh()) {
+      void refresh();
+      return;
+    }
+    if (autoRefresh === true) {
+      void refresh();
+    }
+  }, [autoRefresh, refresh, sessionId]);
 
   useEffect(() => {
-    if (!autoRefresh || !sessionId) return;
+    if (!sessionId) return;
+    const shouldAutoRefresh = typeof autoRefresh === 'function'
+      ? autoRefresh()
+      : autoRefresh;
+    if (!shouldAutoRefresh) return;
     const id = window.setInterval(() => {
       void refresh();
     }, pollIntervalMs);
     return () => window.clearInterval(id);
   }, [autoRefresh, pollIntervalMs, refresh, sessionId]);
+
+  useEffect(() => {
+    const reported = reportedFailuresRef.current;
+    tasks.forEach((task) => {
+      if (task.status !== 'failed') return;
+      if (reported.has(task.taskId)) return;
+      reported.add(task.taskId);
+      const message = task.message ?? 'Task failed';
+      console.error('[ShapeBuildProgressStep] task failed', {
+        taskId: task.taskId,
+        stage: task.stage,
+        message,
+      });
+    });
+  }, [tasks]);
 
   return useMemo(
     () => ({

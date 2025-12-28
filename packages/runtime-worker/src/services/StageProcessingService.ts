@@ -190,6 +190,9 @@ export async function createStageWorkerClient(): Promise<StageProcessingService>
   // Note: stageWorker.entry is built to JS and emitted alongside index.ts
   const worker = new Worker(new URL('./stageWorker.entry.js', import.meta.url), { type: 'module' });
   const mod = (await import('comlink')) as typeof import('comlink');
-  const client = mod.wrap<StageProcessingService>(worker);
-  return client as unknown as StageProcessingService;
+  const client = mod.wrap<StageProcessingService>(worker) as StageProcessingService & {
+    terminate?: () => void;
+  };
+  client.terminate = () => worker.terminate();
+  return client;
 }

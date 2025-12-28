@@ -53,6 +53,23 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1950) top page: GuidedTour Next で Target not mounted が出る不具合修正（P1）
+- ブランチ: `fix/app/top-guidedtour-next-target`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `app/src`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] GuidedTour の Next クリックで `Target not mounted` エラーが出ない
+  - [ ] Top page のツアーが次ステップへ進行できる
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] Joyride の target 解決タイミングと未マウント時の扱いを確認する
+  - [ ] Top page GuidedTour の step 定義と描画条件を確認する
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する
+- ロールバック手順：`app/src/**` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-28 23:45 JST Top page GuidedTour の Next で Target not mounted が発生する問題の調査に着手。
+  - progress: 2025-12-28 23:50 JST Top page GuidedTour の target をホーム画面実在要素へ差し替え、HomePage に tour 用 data-tour-id を付与。
+  - progress: 2025-12-28 23:51 JST 原因は Top page の step が tree page 向けの aria-label を参照しており、対象要素が未マウントだった点。
+
 1949) shape-plugin: Edit shape step 5 の start build が開始しない不具合調査/修正（P1）
 - ブランチ: `fix/shape-plugin/edit-step5-start-build`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `plugins/shape-plugin/src`, `packages/plugin-ui-host`, `packages/plugin-service-sdk`, `TASKS.md`
@@ -71,6 +88,22 @@
   - progress: 2025-12-28 21:32 JST DownloadTaskPayload への改名/生成責務移管/差分永続化/開始API更新を実装する方針で対応開始。
   - progress: 2025-12-28 21:40 JST 選択マトリクスが文字列で保存されている場合でも payload 生成できるように `generateDownloadTaskPayloadsFromSelection` でパース対応を追加。
   - progress: 2025-12-28 21:45 JST selectedArrayByCountries の型から string を廃止し、boolean[][] に統一する作業に着手。
+  - progress: 2025-12-28 21:55 JST start build 時の認証ダイアログが開かない問題に対し、ShapeBuildProgressStep で AuthProviderDialog をレンダリングする対応に着手。
+  - progress: 2025-12-28 22:10 JST 認証コールバック後の戻り先 URL が消える問題に対し、BFFAuthService の clearAuthData で auth_return_url を維持する修正に着手。
+  - progress: 2025-12-28 22:20 JST auth_return_url の削除を auth callback のリダイレクト直前の1箇所に集約し、その他の削除箇所を撤去。
+  - progress: 2025-12-28 22:30 JST auth_return_url を削除するコードを全て無効化し、戻り先 URL を保持する方針に変更。
+  - progress: 2025-12-28 22:40 JST 認証済みでもダイアログが開く問題に対し、認証ロード中のガードと認証済み時の自動クローズを追加。
+  - progress: 2025-12-28 22:55 JST start build 後の進捗が止まる件で、GeoBoundaries の per-payload メタデータ確認を停止し、availability リストのみでフィルタするように修正。
+  - progress: 2025-12-28 23:10 JST download task の登録判定を isRegistered/needRegistered に統一し、全データソースで `${nodeId}+${countryId}+${adminLevel}` の taskId を用いた差分登録に切り替え。
+  - progress: 2025-12-28 23:25 JST 進捗カードの一時的な 0/0 表示を未完了ステージに基づく表示へ変更し、ダウンロード再実行は未完了/失敗タスクのみ対象に修正。タスクタイトルの文字サイズを小さく調整。
+  - progress: 2025-12-28 23:35 JST download/simplify1/タイル前処理のタスクタイトルを `${国ID}/${自治体レベル}` に統一し、ダウンロード成功時は URL・失敗時はエラーをメッセージ表示するように更新。
+  - progress: 2025-12-28 23:45 JST 簡略化で処理不要なタスクを分母から除外し成功扱いに調整。全タスク完了後に runtime worker を終了するように更新。
+  - progress: 2025-12-29 00:05 JST Step5 入室時の batchTasks ポーリングを buildStatus に連動させ、開始/再開時のみ有効化するように調整。
+  - progress: 2025-12-28 23:25 JST 進捗の「スキップ」数が残数として表示される問題に対し、skipped の伝播/表示を実際のスキップ数のみ扱う方針で修正に着手。
+  - progress: 2025-12-28 23:25 JST ShapeBatchSession の progress 伝播に skipped を含め、UI 側の skip 表示は payload の skipped のみを使うよう修正。
+  - progress: 2025-12-28 23:45 JST Step5 で failed タスク通知時に console.error へ出力する対応と、ステージごとの未完了タスクのみ処理するように進捗集計/Worker起動タイミングを調整する対応に着手。
+  - progress: 2025-12-28 23:45 JST Step5 failed タスクの console.error 出力を追加し、各ステージで既完了タスクを除外して進捗集計と処理対象を更新。VectorTile 以外のステージは未完了タスクがある場合のみ処理するよう整理。
+  - progress: 2025-12-29 00:04 JST LRUSplitView ヘッダの 0/0 表示を 0% として出すよう補正し、ステージ進捗は完了+失敗+スキップで完了判定するよう更新。Step4 の worker 設定を各ステージの並列処理数に反映。
 
 1948) route-plugin: LocationGroupItemData の admin 名参照整理（P1）
 - ブランチ: `fix/route-plugin/admin-name-mapping`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -87,6 +120,7 @@
   - start: 2025-12-28 22:30 JST gid0/gid1/gid2 参照整理と geoBoundaries フィールド調査に着手。
   - progress: 2025-12-28 22:35 JST geoBoundaries-JPN-ADM1.geojson を確認し、properties は `shapeName`/`shapeISO`(JP-27)/`shapeID`/`shapeGroup`(JPN)/`shapeType` のみで admin2 相当は含まれず。
   - progress: 2025-12-28 22:40 JST geoBoundaries-JPN-ADM2.geojson を確認し、properties は ADM1 と同じ (`shapeName`/`shapeISO` 空/`shapeID`/`shapeGroup`/`shapeType`) で admin2 コード相当は未提供。
+  - progress: 2025-12-28 22:55 JST shape-plugin の typecheck エラー対応に着手（BatchSessionRecord の stages 必須化、DownloadTaskPayload import 不足）。
 
 1947) runtime-worker の TreeNode visible 必須化対応（P1）
 - ブランチ: `fix/runtime-worker/treenode-visible`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -559,6 +593,8 @@
   - progress: 2025-12-27 23:25 JST invisible 経路（CoreDB互換・i18n文言）を撤去し、Hidden 表記へ移行。
   - progress: 2025-12-27 23:40 JST map で useGeolocation が undefined になる問題に互換取得を追加。
   - progress: 2025-12-28 00:05 JST ステップ遷移の pending 表示を遷移完了まで維持するよう調整。
+  - progress: 2025-12-28 00:20 JST トップページ Start ボタン周囲の背景色を周辺と一致させる修正を実施。
+  - progress: 2025-12-28 00:35 JST Start/Tags ボタンのデザイン統一とサイズ拡大、Start ラベル変更を実施。
   - progress: 2025-12-27 20:10 JST runtime-worker の tsconfig paths 上書きを解除し、プラグイン src alias を復帰。
   - progress: 2025-12-27 20:20 JST map.tsx の import type 修正で Vite 変換エラーを解消。
   - progress: 2025-12-27 20:35 JST Vite alias に common-auth/ui-file/gis-sdk と route-plugin subpath を追加し、route-plugin 内部参照を相対パス化。

@@ -23,6 +23,7 @@ import { ShapeBuildTaskItem } from './ShapeBuildTaskItem.js';
 import { useBuildCrashInsight } from '../../hooks/useBuildCrashInsight.js';
 import { getStageConcurrencyWarning } from '../../utils/buildMonitor.js';
 import { HeapPressureDialog, useHeapPressureGuard } from '@hierarchidb/ui-memory';
+import { AuthProviderDialog } from '@hierarchidb/ui-auth';
 
 export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, onChange, nodeId }) => {
   const resolvedNodeId = nodeId as NodeId | undefined;
@@ -51,6 +52,9 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
     canStartOrResume,
     handleStartOrResume,
     handlePause,
+    authDialogOpen,
+    closeAuthDialog,
+    handleProviderSelect,
     resolveStatusLabel,
     resolveStatusColor,
   } = useShapeBuildProgressStep({ data, onChange, nodeId: resolvedNodeId });
@@ -66,21 +70,23 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
     if (task.title) return task.title;
     const metadata = task.metadata ?? {};
     const stage = task.stage;
+    const countryCode = (metadata.countryCode ?? metadata.country) as string | undefined;
+    const adminLevel = typeof metadata.adminLevel === 'number'
+      ? metadata.adminLevel
+      : metadata.adminLevel != null
+        ? Number(metadata.adminLevel)
+        : undefined;
+    const locationTitle = countryCode && typeof adminLevel === 'number'
+      ? `${countryCode}/${adminLevel}`
+      : undefined;
     if (stage === 'download') {
-      const url = metadata.url as string | undefined;
-      return url ?? t('build.tasks.unknown', '(Title unavailable)');
+      return locationTitle ?? t('build.tasks.unknown', '(Title unavailable)');
     }
     if (stage === 'simplify1') {
-      const sourceUrl = (metadata.sourceUrl ?? metadata.url) as string | undefined;
-      const featureId = metadata.featureId as string | undefined;
-      if (sourceUrl && featureId) return `${sourceUrl} • ${featureId}`;
-      return sourceUrl ?? featureId ?? t('build.tasks.unknown', '(Title unavailable)');
+      return locationTitle ?? t('build.tasks.unknown', '(Title unavailable)');
     }
     if (stage === 'simplify2') {
-      const sourceUrl = (metadata.sourceUrl ?? metadata.url) as string | undefined;
-      const featureId = metadata.featureId as string | undefined;
-      if (sourceUrl && featureId) return `${sourceUrl} • ${featureId}`;
-      return sourceUrl ?? featureId ?? t('build.tasks.unknown', '(Title unavailable)');
+      return locationTitle ?? t('build.tasks.unknown', '(Title unavailable)');
     }
     if (stage === 'vectortile' || stage === 'vectorTiles') {
       const tileZ = metadata.tileZ as number | undefined;
@@ -133,7 +139,15 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
               const statusLabelValue = resolveStatusLabel(statusValue);
               const statusColor = resolveStatusColor(statusValue);
               const taskTitle = resolveTaskTitle(task as TaskWithMetadata);
-              const taskMessage = task.message && task.message !== taskTitle ? task.message : undefined;
+              const taskMetadata = (task as TaskWithMetadata).metadata ?? {};
+              const downloadUrl = (taskMetadata.url ?? taskMetadata.endpoint) as string | undefined;
+              const taskMessage = (() => {
+                if (task.stage === 'download') {
+                  if (task.status === 'completed') return downloadUrl;
+                  if (task.status === 'failed') return task.message ?? undefined;
+                }
+                return task.message && task.message !== taskTitle ? task.message : undefined;
+              })();
               return (
                 <ShapeBuildTaskItem
                   key={task.taskId}
@@ -411,6 +425,11 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
           </DialogActions>
         </Dialog>
       ) : null}
+      <AuthProviderDialog
+        open={authDialogOpen}
+        onClose={closeAuthDialog}
+        onSelectProvider={handleProviderSelect}
+      />
       <HeapPressureDialog
         open={heapDialogOpen}
         event={heapEvent}

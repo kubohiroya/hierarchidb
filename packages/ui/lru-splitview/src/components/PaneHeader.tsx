@@ -192,7 +192,7 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
             )}
 
             {/* Progress percentage */}
-            {!isCompact && progress.progress > 0 && (
+            {!isCompact && progress.progress >= 0 && (
               <Typography variant="caption" color="text.secondary" sx={{ minWidth: 'auto' }}>
                 {progress.progress.toFixed(0)}%
               </Typography>

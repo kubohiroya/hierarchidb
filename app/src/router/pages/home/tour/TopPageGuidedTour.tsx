@@ -67,20 +67,19 @@ export const TopPageGuidedTour: React.FC<TopPageGuidedTourProps> = ({ run, onFin
       },
     } as Step,
     {
-      target: '[aria-label="console selection"]',
+      target: '[data-tour-id="home-tree-toggle"]',
       content: (
         <div>
           <h3>Tree Navigation 🌳</h3>
           <p>
-            Use these toggle buttons to switch between different trees. Each tree represents a
-            separate data hierarchy.
+            Use these buttons to jump into a tree. Each tree represents a separate data hierarchy.
           </p>
         </div>
       ),
       placement: 'bottom',
     },
     {
-      target: '[aria-label="User menu"], [data-testid="user-login-button"]',
+      target: '[data-tour-id="home-user-menu"]',
       content: (
         <div>
           <h3>User Account 👤</h3>
@@ -94,26 +93,24 @@ export const TopPageGuidedTour: React.FC<TopPageGuidedTourProps> = ({ run, onFin
       placement: 'bottom',
     },
     {
-      target: '[aria-label="TreeTypes console toolbar"]',
+      target: '[data-tour-id="home-tags-button"]',
       content: (
         <div>
-          <h3>Toolbar Actions 🔧</h3>
+          <h3>Tags 🔖</h3>
           <p>
-            The toolbar provides quick access to common actions like creating new nodes, editing,
-            deleting, and managing your tree data.
+            Open the Tags page to explore and manage labels across your data.
           </p>
         </div>
       ),
       placement: 'bottom',
     },
     {
-      target: '[aria-label="Create new item"]',
+      target: '[data-tour-id="home-help-button"]',
       content: (
         <div>
-          <h3>Quick Create ⚡</h3>
+          <h3>Need Help? 🤝</h3>
           <p>
-            Use the floating action button to quickly create new items in your tree. This is the
-            fastest way to add new data.
+            You can reopen this guided tour anytime from the help icon.
           </p>
         </div>
       ),

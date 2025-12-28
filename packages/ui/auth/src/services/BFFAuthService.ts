@@ -376,8 +376,8 @@ export class BFFAuthService {
         localStorage.setItem('refresh_token_id', data.refresh_token_id);
       }
 
-      // Clean up
-      this.clearAuthData();
+      // Clean up (keep return URL until caller consumes it)
+      this.clearAuthData({ preserveReturnUrl: true });
       sessionStorage.removeItem('oauth_state');
 
       // Parse user from token response
@@ -600,7 +600,7 @@ export class BFFAuthService {
   /**
    * Clear authentication data from storage
    */
-  private clearAuthData(): void {
+  private clearAuthData(options: { preserveReturnUrl?: boolean } = {}): void {
     // Clear PKCE data
     localStorage.removeItem('pkce_code_verifier');
     sessionStorage.removeItem('pkce_code_verifier');
@@ -615,7 +615,6 @@ export class BFFAuthService {
 
     // Clear provider and return URL
     localStorage.removeItem('auth_provider');
-    localStorage.removeItem('auth_return_url');
-    sessionStorage.removeItem('auth_return_url');
+    // auth_return_url removal is handled by auth callback right before redirect.
   }
 }

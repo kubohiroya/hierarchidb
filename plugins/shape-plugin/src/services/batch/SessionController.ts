@@ -17,7 +17,6 @@ import type { Simplify2StageAdapter } from './adapters/Simplify2StageAdapter.js'
 import type { VectorTileStageAdapter } from './adapters/VectorTileStageAdapter.js';
 import { LocalSimplify1Adapter, LocalSimplify2Adapter } from './adapters/LocalSimplifyAdapters.js';
 import { RuntimeWorkerVectorTileAdapter } from './adapters/RuntimeWorkerVectorTileAdapter.js';
-import { getShapeRuntimeWorkerClient } from './adapters/RuntimeWorkerClient.js';
 import type { BatchProcessConfig } from './types.js';
 import type { DownloadTaskPayload, ProgressInfo, ProcessingStage } from '../../common/types/index.js';
 import { BatchTaskStage } from '../../common/types/index.js';
@@ -219,10 +218,6 @@ export class SessionController {
     // Prefer runtime-worker-worker adapters when a client is available; otherwise optionally fall back to WorkerPool-backed ones
     this.simplify1Adapter = new LocalSimplify1Adapter();
     this.simplify2Adapter = new LocalSimplify2Adapter();
-    const client = await getShapeRuntimeWorkerClient();
-    if (!client) {
-      throw new Error('Shape runtime-worker worker unavailable. Legacy WorkerPool fallback has been removed.');
-    }
     this.vectorTileAdapter = new RuntimeWorkerVectorTileAdapter();
   }
 
@@ -345,27 +340,73 @@ export class SessionController {
     });
     const existingTaskIds = await this.assignDownloadTaskIndices(tasks);
     await this.registerTasks('download', tasks, existingTaskIds);
-    const res = await this.downloadAdapter.process(
-      this.sessionId,
-      this.nodeId,
-      tasks,
-      (p) => this.progressCallback?.(p),
-      {
-        waitIfPaused: () => this.waitForStageResume('download'),
-        getSignal: () => this.getStageAbortSignal('download'),
-      },
-    );
-    console.log(`[Session ${this.sessionId}] Download stage completed: ${res.processed} successful, ${res.failed} failed`);
-    const percentage = (res.processed / tasks.length) * 100;
-    this.progressCallback?.({
-      total: tasks.length,
-      completed: res.processed,
-      failed: res.failed,
-      skipped: 0,
-      percentage,
-      currentStage: 'download',
-      currentTask: 'Download completed',
-    });
+    const { runnableTasks, completedCount, failedCount, total } = await this.resolveStageTasks('download', tasks);
+    const baseCompleted = Math.min(completedCount, total);
+    const baseFailed = Math.min(failedCount, total - baseCompleted);
+    const baseDone = Math.min(total, baseCompleted + baseFailed);
+    if (baseDone > 0) {
+      console.debug(`[Session ${this.sessionId}] Skipping completed download tasks`, {
+        total,
+        runnable: runnableTasks.length,
+        completed: baseCompleted,
+        failed: baseFailed,
+      });
+    }
+    if (runnableTasks.length === 0) {
+      this.progressCallback?.({
+        total,
+        completed: baseCompleted,
+        failed: baseFailed,
+        skipped: 0,
+        percentage: total > 0 ? (baseDone / total) * 100 : 0,
+        currentStage: 'download',
+        currentTask: 'Download already completed',
+      });
+    } else {
+      const reportProgress = (p: ProgressInfo) => {
+        const completed = Math.min(total, baseCompleted + p.completed);
+        const failed = Math.min(total - completed, baseFailed + p.failed);
+        const skipped = p.skipped ?? 0;
+        const done = Math.min(total, completed + failed + skipped);
+        const percentage = total > 0 ? (done / total) * 100 : 0;
+        this.progressCallback?.({
+          ...p,
+          total,
+          completed,
+          failed,
+          skipped,
+          percentage,
+          currentStage: 'download',
+        });
+      };
+      const maxConcurrent = this.config.downloadConfig?.maxConcurrent ?? this.options.maxConcurrentTasks;
+      const res = await this.downloadAdapter.process(
+        this.sessionId,
+        this.nodeId,
+        runnableTasks,
+        reportProgress,
+        {
+          waitIfPaused: () => this.waitForStageResume('download'),
+          getSignal: () => this.getStageAbortSignal('download'),
+          maxConcurrent,
+        },
+      );
+      const totalTasks = total;
+      const processedTotal = baseCompleted + res.processed;
+      const failedTotal = baseFailed + res.failed;
+      const doneTotal = Math.min(totalTasks, processedTotal + failedTotal);
+      console.log(`[Session ${this.sessionId}] Download stage completed: ${processedTotal} successful, ${failedTotal} failed`);
+      const percentage = totalTasks > 0 ? (doneTotal / totalTasks) * 100 : 0;
+      this.progressCallback?.({
+        total: totalTasks,
+        completed: processedTotal,
+        failed: failedTotal,
+        skipped: 0,
+        percentage,
+        currentStage: 'download',
+        currentTask: 'Download completed',
+      });
+    }
     const postprocess = await strategy.postprocessDownloadOutputs({
       sessionId: this.sessionId,
       nodeId: this.nodeId,
@@ -447,11 +488,47 @@ export class SessionController {
     }
 
     await this.registerTasks('simplify1', tasks);
-    const r = await this.simplify1Adapter!.process(tasks, (p) => this.progressCallback?.(p), {
+    const { runnableTasks, completedCount, failedCount, total } = await this.resolveStageTasks('simplify1', tasks);
+    const baseCompleted = Math.min(completedCount, total);
+    const baseFailed = Math.min(failedCount, total - baseCompleted);
+    const baseDone = Math.min(total, baseCompleted + baseFailed);
+    if (runnableTasks.length === 0) {
+      this.progressCallback?.({
+        total,
+        completed: baseCompleted,
+        failed: baseFailed,
+        skipped: 0,
+        percentage: total > 0 ? (baseDone / total) * 100 : 0,
+        currentStage: 'simplify1',
+        currentTask: 'Simplify1 already completed',
+      });
+      return;
+    }
+    const reportProgress = (p: ProgressInfo) => {
+      const completed = Math.min(total, baseCompleted + p.completed);
+      const failed = Math.min(total - completed, baseFailed + p.failed);
+      const skipped = p.skipped ?? 0;
+      const done = Math.min(total, completed + failed + skipped);
+      const percentage = total > 0 ? (done / total) * 100 : 0;
+      this.progressCallback?.({
+        ...p,
+        total,
+        completed,
+        failed,
+        skipped,
+        percentage,
+        currentStage: 'simplify1',
+      });
+    };
+    const maxConcurrent = this.config.simplify1Config?.workers ?? this.options.maxConcurrentTasks;
+    const r = await this.simplify1Adapter!.process(runnableTasks, reportProgress, {
       waitIfPaused: () => this.waitForStageResume('simplify1'),
       getSignal: () => this.getStageAbortSignal('simplify1'),
+      maxConcurrent,
     });
-    console.log(`[Session ${this.sessionId}] Simplify1 stage completed: ${r.processed}/${tasks.length} successful`);
+    console.log(
+      `[Session ${this.sessionId}] Simplify1 stage completed: ${baseCompleted + r.processed}/${total} successful`,
+    );
   }
 
   /**
@@ -508,11 +585,47 @@ export class SessionController {
     }
 
     await this.registerTasks('simplify2', tasks);
-    const r = await this.simplify2Adapter!.process(tasks, (p) => this.progressCallback?.(p), {
+    const { runnableTasks, completedCount, failedCount, total } = await this.resolveStageTasks('simplify2', tasks);
+    const baseCompleted = Math.min(completedCount, total);
+    const baseFailed = Math.min(failedCount, total - baseCompleted);
+    const baseDone = Math.min(total, baseCompleted + baseFailed);
+    if (runnableTasks.length === 0) {
+      this.progressCallback?.({
+        total,
+        completed: baseCompleted,
+        failed: baseFailed,
+        skipped: 0,
+        percentage: total > 0 ? (baseDone / total) * 100 : 0,
+        currentStage: 'simplify2',
+        currentTask: 'Simplify2 already completed',
+      });
+      return;
+    }
+    const reportProgress = (p: ProgressInfo) => {
+      const completed = Math.min(total, baseCompleted + p.completed);
+      const failed = Math.min(total - completed, baseFailed + p.failed);
+      const skipped = p.skipped ?? 0;
+      const done = Math.min(total, completed + failed + skipped);
+      const percentage = total > 0 ? (done / total) * 100 : 0;
+      this.progressCallback?.({
+        ...p,
+        total,
+        completed,
+        failed,
+        skipped,
+        percentage,
+        currentStage: 'simplify2',
+      });
+    };
+    const maxConcurrent = this.config.simplify2Config?.workers ?? this.options.maxConcurrentTasks;
+    const r = await this.simplify2Adapter!.process(runnableTasks, reportProgress, {
       waitIfPaused: () => this.waitForStageResume('simplify2'),
       getSignal: () => this.getStageAbortSignal('simplify2'),
+      maxConcurrent,
     });
-    console.log(`[Session ${this.sessionId}] Simplify2 stage completed: ${r.processed}/${tasks.length} successful`);
+    console.log(
+      `[Session ${this.sessionId}] Simplify2 stage completed: ${baseCompleted + r.processed}/${total} successful`,
+    );
   }
 
   private buildTileCoordinates(
@@ -662,11 +775,47 @@ export class SessionController {
     }
 
     await this.registerTasks('vectortile', tasks);
-    const r = await this.vectorTileAdapter!.process(tasks, (p) => this.progressCallback?.(p), {
+    const { runnableTasks, completedCount, failedCount, total } = await this.resolveStageTasks('vectortile', tasks);
+    const baseCompleted = Math.min(completedCount, total);
+    const baseFailed = Math.min(failedCount, total - baseCompleted);
+    const baseDone = Math.min(total, baseCompleted + baseFailed);
+    if (runnableTasks.length === 0) {
+      this.progressCallback?.({
+        total,
+        completed: baseCompleted,
+        failed: baseFailed,
+        skipped: 0,
+        percentage: total > 0 ? (baseDone / total) * 100 : 0,
+        currentStage: 'vectortile',
+        currentTask: 'Vector tiles already completed',
+      });
+      return;
+    }
+    const reportProgress = (p: ProgressInfo) => {
+      const completed = Math.min(total, baseCompleted + p.completed);
+      const failed = Math.min(total - completed, baseFailed + p.failed);
+      const skipped = p.skipped ?? 0;
+      const done = Math.min(total, completed + failed + skipped);
+      const percentage = total > 0 ? (done / total) * 100 : 0;
+      this.progressCallback?.({
+        ...p,
+        total,
+        completed,
+        failed,
+        skipped,
+        percentage,
+        currentStage: 'vectortile',
+      });
+    };
+    const maxConcurrent = this.config.tileConfig?.workers ?? this.options.maxConcurrentTasks;
+    const r = await this.vectorTileAdapter!.process(runnableTasks, reportProgress, {
       waitIfPaused: () => this.waitForStageResume('vectortile'),
       getSignal: () => this.getStageAbortSignal('vectortile'),
+      maxConcurrent,
     });
-    console.log(`[Session ${this.sessionId}] Vector tile stage completed: ${r.processed}/${tasks.length} successful`);
+    console.log(
+      `[Session ${this.sessionId}] Vector tile stage completed: ${baseCompleted + r.processed}/${total} successful`,
+    );
   }
 
   /**
@@ -764,6 +913,25 @@ export class SessionController {
     if (newTasks.length > 0) {
       await shapeDB.batchTasks.bulkPut(newTasks);
     }
+  }
+
+  private async resolveStageTasks<T extends { taskId: string }>(
+    stage: ProcessingStage,
+    tasks: T[],
+  ): Promise<{ runnableTasks: T[]; completedCount: number; failedCount: number; total: number }> {
+    const existing = await shapeDB.batchTasks
+      .where('sessionId')
+      .equals(this.sessionId)
+      .and((task) => task.taskType === stage)
+      .toArray();
+    const statusById = new Map(existing.map((task) => [task.taskId, task.status]));
+    const runnableTasks = tasks.filter((task) => {
+      const status = statusById.get(task.taskId);
+      return status !== 'completed' && status !== 'failed' && status !== 'cancelled';
+    });
+    const completedCount = existing.filter((task) => task.status === 'completed').length;
+    const failedCount = existing.filter((task) => task.status === 'failed' || task.status === 'cancelled').length;
+    return { runnableTasks, completedCount, failedCount, total: tasks.length };
   }
 
   private async assignDownloadTaskIndices(tasks: DownloadTask[]): Promise<Set<string>> {

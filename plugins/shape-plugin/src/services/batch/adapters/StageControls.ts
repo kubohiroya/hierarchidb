@@ -9,4 +9,8 @@ export interface StageControls {
    * AbortSignal for interrupting in-flight work when a pause request arrives.
    */
   getSignal?: () => AbortSignal | undefined;
+  /**
+   * Max parallel work items for the stage.
+   */
+  maxConcurrent?: number;
 }

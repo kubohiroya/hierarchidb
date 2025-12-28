@@ -56,7 +56,7 @@ export const useBuildTaskProgress = (
       const failedCount = stageTasks.filter((task) => task.status === 'failed').length;
       const progressValue = taskCount > 0
         ? Math.round(stageTasks.reduce((sum, task) => sum + (task.progress ?? 0), 0) / taskCount)
-        : (stageProgress[stage.id] ?? overallProgress);
+        : 0;
       const derivedStatus = failedCount > 0 ? 'failed' : buildStatus;
       return {
         paneId: stage.id,

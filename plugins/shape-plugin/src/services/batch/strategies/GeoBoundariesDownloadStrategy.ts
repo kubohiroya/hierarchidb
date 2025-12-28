@@ -19,7 +19,7 @@ export class GeoBoundariesDownloadStrategy implements DownloadStageStrategy {
 
   async buildDownloadTasks(context: DownloadStageBuildContext): Promise<DownloadTask[]> {
     return context.downloadTaskPayloads.map((metadata, index) => ({
-      taskId: buildDownloadTaskId(context.sessionId, metadata),
+      taskId: buildDownloadTaskId(String(context.nodeId), metadata),
       sessionId: context.sessionId,
       taskType: 'download',
       stage: 'wait',

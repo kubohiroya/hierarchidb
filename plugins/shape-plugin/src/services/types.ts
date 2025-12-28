@@ -12,6 +12,7 @@ import type {
   DataSourceValidationResult,
 } from '@hierarchidb/ui-datasource';
 import type {
+  DownloadTaskPayload,
   ErrorInfo as SharedErrorInfo,
   ProcessingStage,
   ProgressInfo as SharedProgressInfo,

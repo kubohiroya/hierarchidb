@@ -15,14 +15,16 @@ const buildTaskTitle = (task: BatchTaskRecord): string | undefined => {
   const input = task.inputData ?? {};
   const getNumber = (value: unknown): number | undefined =>
     typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+  const countryCode = (input.countryCode ?? input.country) as string | undefined;
+  const adminLevel = getNumber(input.adminLevel);
+  const locationTitle = countryCode && typeof adminLevel === 'number'
+    ? `${countryCode}/${adminLevel}`
+    : undefined;
   if (task.taskType === 'download') {
-    return (input.url as string | undefined) ?? (input.endpoint as string | undefined);
+    return locationTitle ?? (input.url as string | undefined) ?? (input.endpoint as string | undefined);
   }
   if (task.taskType === 'simplify1' || task.taskType === 'simplify2') {
-    const sourceUrl = (input.sourceUrl ?? input.url) as string | undefined;
-    const featureId = input.featureId as string | undefined;
-    if (sourceUrl && featureId) return `${sourceUrl} • ${featureId}`;
-    return sourceUrl ?? featureId;
+    return locationTitle;
   }
   if (task.taskType === 'vectortile') {
     const tileZ = getNumber(input.tileZ);

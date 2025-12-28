@@ -20,7 +20,7 @@ export const ShapeBuildTaskItem: React.FC<Props> = ({
 }) => (
   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
     <Stack direction="row" spacing={1} alignItems="center">
-      <Typography variant="body2" sx={{ flex: 1 }}>
+      <Typography variant="caption" sx={{ flex: 1 }}>
         {title}
       </Typography>
       <Chip label={statusLabel} color={statusColor} size="small" variant="outlined" />
