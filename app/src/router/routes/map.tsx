@@ -126,7 +126,7 @@ const isFolderNodeType = (nodeType?: string | null): boolean => {
 const isNodeVisible = (node?: TreeNode | null): boolean => {
   if (!node) return true;
   if (typeof node.visible === 'boolean') return node.visible;
-  return node.invisible !== true;
+  return true;
 };
 
 const isInvisibleFolder = (node?: TreeNode | null): boolean =>
@@ -439,7 +439,24 @@ export default function MapPage() {
         [...ancestors, rootNode, ...descendants].forEach((node) => {
           nodeById.set(String(node.id), node);
         });
-        const visibleDescendants = descendants.filter((node) => node.invisible !== true);
+        const invisibleFolderIds = new Set<string>(
+          [...ancestors, rootNode, ...descendants]
+            .filter((node) => isInvisibleFolder(node))
+            .map((node) => String(node.id))
+        );
+        const visibleDescendants = isInvisibleFolder(rootNode)
+          ? []
+          : descendants.filter((node) => {
+              if (!isNodeVisible(node) || isInvisibleFolder(node)) return false;
+              let cursor = node.parentId ? String(node.parentId) : '';
+              while (cursor) {
+                if (invisibleFolderIds.has(cursor)) return false;
+                const parent = nodeById.get(cursor);
+                if (!parent) break;
+                cursor = parent.parentId ? String(parent.parentId) : '';
+              }
+              return true;
+            });
 
         setMapInfo({
           name: rootNode.metadata?.name ?? '',

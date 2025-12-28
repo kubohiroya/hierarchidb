@@ -53,19 +53,6 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
-1930) Gravatar へのユーザ画像上書きの環境変数制御（P1）
-- ブランチ: `feat/ui/gravatar-override`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: packages/ui/auth, packages/ui/usermenu
-- 受け入れ基準（DoD）:
-  - [ ] `VITE_GRAVATAR_OVERRIDE` が有効なときのみ Gravatar 画像が表示される
-  - [ ] 既定はオフ（未設定/false で従来どおりプロバイダ画像）
-  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
-- チェックリスト:
-  - [ ] 認証後ユーザ画像の表示経路を特定する
-  - [ ] 環境変数に応じて Gravatar を選択する分岐を追加する
-  - [ ] 影響範囲の lint/typecheck は可能なら実施し、不可なら理由を運用ログに記載する
-- ロールバック手順：該当ファイル差分を revert し、TASKS 運用ログ追記を削除する
-
 1926) /map 検索/hover/クリックの対象 state を jotai 管理へ移行（P1）
 - ブランチ: `feat/ui/map-search-jotai-state`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `app/src/router/routes/map.tsx`, `app/src/state/mapSearch.atoms.ts`, `TASKS.md`
@@ -144,6 +131,24 @@
   - progress: 2025-12-28 10:59 JST ExecPlan `plans/location-route-store-execplan.md` を作成し、location/route の型移設方針を整理。
   - progress: 2025-12-28 10:59 JST location-store/route-store を新設し、location/route plugin の型定義を store パッケージ参照へ切替。runtime-worker/app の型参照と tsconfig/依存を更新。
   - done: 2025-12-28 10:59 JST location/route の型を features/*-store へ移設し、plugin/host の型参照を更新。検証: 未実施（runtime-worker typecheck が @hierarchidb/tag の FeatureDefinition 未定義で失敗するため）。ロールバック: 本タスク差分を revert。
+
+1933) host → plugin 依存の解消（plugin-registry 経由のみ）（P1）
+- ブランチ: `refactor/runtime/host-plugin-deps`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/runtime-worker`, `packages/features/*-store`, `plugins/*-plugin`, `app`, `packages/plugin-registry`, `plans/host-plugin-deps-execplan.md`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] host 側の直接 plugin import が plugin-registry 経由以外で存在しない
+  - [ ] store パッケージに共有型/共有処理を移設し、plugin 側は re-export で参照する
+  - [ ] app/runtime-worker の package.json から plugin 依存が削除され、plugin-registry 経由に整理される
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] ExecPlan を作成し、棚卸し→移設→依存整理→検証の手順を明記する
+  - [ ] host→plugin の直接 import/依存を一覧化する
+  - [ ] location IDE-GSM/Spreadsheet 型などを store に移設する
+  - [ ] package.json の plugin 依存を整理する
+  - [ ] dependency-cruiser を再実行し、循環/依存の残りを記録する
+- ロールバック手順：本タスクで変更した `packages/`/`plugins/`/`app/`/`package.json`/`pnpm-lock.yaml` を revert し、`pnpm exec dependency-cruiser -c .dependency-cruiser.cjs packages app` を再実行して旧依存を再現する。
+- 運用ログ：
+  - start: 2025-12-28 15:20 JST host→plugin 依存の解消（plugin-registry 経由のみ）に着手。ExecPlan: `plans/host-plugin-deps-execplan.md`。
 
 1925) /map 検索フィールド + 強調表示 + ナビゲーションコントロール追加（P1）
 - ブランチ: `feat/ui/map-search-highlight`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -5796,6 +5801,14 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+
+1933) Gravatar へのユーザ画像上書きの環境変数制御（P1） — 完了 (2025-12-28)
+- 要点：`VITE_GRAVATAR_OVERRIDE` が true のときは Gravatar を優先表示し、既定はプロバイダ画像を維持。
+- 検証：未実施（lint/typecheck 未実行）。
+- ロールバック手順：`packages/ui/auth/src/components/UserAvatar.tsx` の差分を revert し、lint/typecheck を再実行する。
+- 運用ログ：
+  - start: 2025-12-28 12:54 JST 認証後のユーザ画像を Gravatar に上書きするかを `VITE_GRAVATAR_OVERRIDE` で制御する対応に着手。
+  - done: 2025-12-28 12:58 JST Gravatar は `VITE_GRAVATAR_OVERRIDE` が true の場合のみ呼び出すよう制御し、既定ではアクセスしないよう修正。検証: 未実施（lint/typecheck 未実行）。
 
 1930) shape/styler store 抽出 + Query/Mutation API 移設（P1）
 - ブランチ: `refactor/worker/shape-styler-store`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -12787,9 +12800,13 @@ ToDo（Phase 2/3: any の完全撤去）
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
 - 2025-12-28 18:45 progress: feat/ui-treeconsole/visibility-toggle — Visible/Invisible スイッチの不具合（UI 幅の伸張/即時クローズ・invisible 未永続化）を調査し修正対応に着手。
 - 2025-12-28 19:05 progress: feat/ui-treeconsole/visibility-toggle — CoreDB 正規化で invisible を永続化し、コンテキストメニューの Visible/Invisible トグルを固定幅＋即時反映（メニュー維持）へ調整。
+- 2025-12-28 19:25 progress: feat/ui-treeconsole/visibility-toggle — visible=true をデフォルト扱いに変更し、更新API/Worker/Map/Breadcrumb の解釈を visible 優先へ統一。
+- 2025-12-28 19:45 progress: feat/ui-treeconsole/visibility-toggle — invisible を廃止し、visible のみで解釈/更新するよう整理。default は visible=true として扱う設計へ統一。
+- 2025-12-28 20:05 progress: feat/ui-treeconsole/visibility-toggle — トグル操作で UI が決定した nextVisible をそのまま Worker 更新へ渡すように変更し、反転ズレの原因を排除。
 - 2025-12-28 14:50 start: chore/tooling/dependency-cruiser-update — dependency-cruiser を最新化し、Node 25 で deps:cycles が動くか確認する対応に着手。DoD: 最新版へ更新、依存解析コマンドの再実行、結果を記録。
 - 2025-12-28 15:05 progress: chore/tooling/dependency-cruiser-update — `pnpm add -Dw dependency-cruiser@latest` で最新版へ更新し、deps:cycles を再実行（Node 25 で起動確認）。循環依存 21 件を検出したため一覧化して共有する段階へ移行。
 - 2025-12-28 15:05 done: chore/tooling/dependency-cruiser-update — dependency-cruiser を最新化し、shape/location/runtime-worker/plugin-registry 周辺と app ルーティング周辺の循環依存を検出。ロールバック: `package.json`/`pnpm-lock.yaml` の dependency-cruiser 更新を revert し、旧版の失敗を再現。
+- 2025-12-28 15:20 start: refactor/host-plugin-deps — ホスト側のプラグイン直接依存を plugin-registry 経由のみに統一する対応に着手。DoD: host→plugin 直接 import/依存の棚卸し、store/API 抽出で依存解消、dependency-cruiser の循環縮小を確認。
 - 2025-12-27 15:45 start: feat/ui/map-search-highlight — /map の検索フィールド・強調表示・ズームコントロール追加に着手。DoD: Kanban 1925 のとおり。
 - 2025-12-27 16:35 start: feat/ui/map-search-jotai-state — /map の検索/hover/クリック対象を jotai 管理へ移行する対応に着手。DoD: Kanban 1926 のとおり。
 - 2025-12-27 16:50 progress: feat/ui/map-search-jotai-state — 検索/hover/クリック対象の jotai atom 追加と map.tsx の状態移行を実施。

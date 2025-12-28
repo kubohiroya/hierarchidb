@@ -77,7 +77,6 @@ export function useTreeConsoleBreadcrumbs({
           id: n.id,
           name: n.metadata?.name ?? '',
           nodeType: n.nodeType,
-          invisible: n.invisible,
           visible: n.visible,
         }));
 
@@ -98,7 +97,6 @@ export function useTreeConsoleBreadcrumbs({
           id: pageTreeNode.id,
           name: pageTreeNode.metadata?.name ?? '',
           nodeType: pageTreeNode.nodeType,
-          invisible: pageTreeNode.invisible,
           visible: pageTreeNode.visible,
         };
 
@@ -116,15 +114,12 @@ export function useTreeConsoleBreadcrumbs({
               if (String(item.id) !== String(changedId)) return item;
               const nextName = ev.node?.metadata?.name ?? item.name;
               const nextNodeType = ev.node?.nodeType ?? item.nodeType;
-              const nextInvisible =
-                typeof ev.node?.invisible === 'boolean' ? ev.node?.invisible : item.invisible;
               const nextVisible =
                 typeof ev.node?.visible === 'boolean' ? ev.node?.visible : item.visible;
               return {
                 ...item,
                 name: nextName,
                 nodeType: nextNodeType,
-                invisible: nextInvisible,
                 visible: nextVisible,
               };
             }),

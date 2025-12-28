@@ -310,7 +310,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
               const nodeId = node.id ?? node.treeNodeId ?? '';
               const nodeIdString = nodeId != null ? String(nodeId) : '';
               const nodeName = node.name || 'Unknown';
-              const isVisible = node.visible !== false && node.invisible !== true;
+              const isVisible = node.visible !== false;
               const explicitDepth = typeof node.depth === 'number' ? node.depth : undefined;
               const nodeWithAbsolute = node as BreadcrumbNode & { absoluteDepth?: number };
               const absoluteDepth =
@@ -453,7 +453,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
         nodeName={contextMenuNode?.name}
         treeId={props.treeId}
         isVisible={
-          contextMenuNode?.visible !== false && contextMenuNode?.invisible !== true
+          contextMenuNode?.visible !== false
         }
         canCreate={true}
         canEdit={!isRootContext}
@@ -493,9 +493,9 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
             contextMenuNode || undefined
           )
         }
-        onToggleVisible={(_nextValue) => {
+        onToggleVisible={(nextVisible) => {
           if (contextMenuNode && onContextAction) {
-            onContextAction('toggle-visibility', contextMenuNode, { source: 'breadcrumb' });
+            onContextAction('toggle-visibility', contextMenuNode, { source: 'breadcrumb', nextVisible });
           }
         }}
         onPreview={() => {

@@ -754,15 +754,10 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         if (!client) return;
         try {
           const mutationAPI = await client.getMutationAPI();
-          const indexed = ssot.nodeIndex?.get(targetNodeId);
-          const currentVisible =
-            typeof indexed?.visible === 'boolean'
-              ? indexed.visible
-              : typeof indexed?.invisible === 'boolean'
-                ? !indexed.invisible
-                : (node as { visible?: boolean; invisible?: boolean }).visible !== false &&
-                  (node as { invisible?: boolean }).invisible !== true;
-          const nextVisible = !currentVisible;
+          const nextVisible =
+            typeof options?.nextVisible === 'boolean'
+              ? options.nextVisible
+              : (node as { visible?: boolean }).visible !== false;
           const res = await mutationAPI.updateNode({
             nodeId: targetNodeId,
             visible: nextVisible,

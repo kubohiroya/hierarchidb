@@ -284,9 +284,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
         : reportedDepth;
       const iconDepth = typeof absoluteDepth === 'number' ? Math.max(0, absoluteDepth) : baseDepth;
       const nodeType = node.nodeType || 'folder';
-      const isVisible =
-        (node as { visible?: boolean }).visible !== false &&
-        (node as { invisible?: boolean }).invisible !== true;
+      const isVisible = (node as { visible?: boolean }).visible !== false;
       const baseIconColor = rainbowColors[Math.max(0, Math.round(iconDepth)) % rainbowColors.length];
       const manifestIconColor = getPluginIconColor(nodeType);
       const iconColor = isFolderNodeType(nodeType) ? baseIconColor : (manifestIconColor ?? baseIconColor);

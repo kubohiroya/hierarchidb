@@ -34,7 +34,6 @@ const normalizeTreeNodeForPersist = (node: TreeNode): TreeNode => {
     originalParentId,
     removedAt,
     lastTouchedAt,
-    invisible,
     visible,
   } = node as TreeNode;
 
@@ -84,7 +83,6 @@ const normalizeTreeNodeForPersist = (node: TreeNode): TreeNode => {
     originalParentId,
     removedAt,
     lastTouchedAt,
-    invisible,
     visible,
   };
 };

@@ -13,8 +13,13 @@ const isFolderNodeType = (nodeType?: string | null): boolean => {
   return normalized === 'folder' || /folder$/i.test(normalized);
 };
 
+const isNodeVisible = (node: TreeNode): boolean => {
+  if (typeof node.visible === 'boolean') return node.visible;
+  return true;
+};
+
 const isInvisibleFolder = (node: TreeNode): boolean =>
-  node.invisible === true && isFolderNodeType(node.nodeType);
+  !isNodeVisible(node) && isFolderNodeType(node.nodeType);
 
 const getNodeName = (node: TreeNode): string => {
   const name = node.metadata?.name ?? node.draftMetadata?.name ?? '';

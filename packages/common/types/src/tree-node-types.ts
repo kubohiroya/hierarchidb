@@ -88,10 +88,6 @@ export type TreeNode<
    */
   isTemporary?: boolean;
   /**
-   * Optional visibility toggle for map preview and UI rendering.
-   */
-  invisible?: boolean;
-  /**
    * Optional visibility toggle (default: true when undefined).
    */
   visible?: boolean;

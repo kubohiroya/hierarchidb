@@ -38,7 +38,12 @@ export function TreeTableContextMenu({
 
   const triggerContextAction = (
     action: string,
-    options?: { navigateToParent?: boolean; expandTarget?: boolean; source?: 'treetable' }
+    options?: {
+      navigateToParent?: boolean;
+      expandTarget?: boolean;
+      source?: 'treetable';
+      nextVisible?: boolean;
+    }
   ) => {
     if (!node) return;
     controller?.onContextAction?.(action, node, options);
@@ -54,16 +59,16 @@ export function TreeTableContextMenu({
       nodeType={node?.nodeType || 'folder'}
       treeId={treeId}
       nodeName={node?.metadata.name}
-      isVisible={node?.visible ?? (node?.invisible ? false : true)}
+      isVisible={node?.visible ?? true}
       canCreate
       canEdit={!isRoot}
       canRemove={!isRoot}
       canDuplicate={!isRoot}
       canCopy={!isRoot}
       canCut={!isRoot}
-      onToggleVisible={(_nextValue) => {
+      onToggleVisible={(nextVisible) => {
         if (node) {
-          triggerContextAction('toggle-visibility', { source: 'treetable' });
+          triggerContextAction('toggle-visibility', { source: 'treetable', nextVisible });
         }
       }}
       onCreate={(type: string) => {

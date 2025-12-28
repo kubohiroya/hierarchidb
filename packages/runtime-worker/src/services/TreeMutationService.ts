@@ -157,7 +157,6 @@ export class TreeMutationService implements TreeMutationAPI {
     nodeId: NodeId;
     name?: string;
     description?: string;
-    invisible?: boolean;
     visible?: boolean;
   }): Promise<{ success: boolean; error?: string }> {
     try {
@@ -165,7 +164,6 @@ export class TreeMutationService implements TreeMutationAPI {
         nodeId: params.nodeId,
         name: params.name,
         description: params.description,
-        invisible: params.invisible,
         visible: params.visible,
       });
       const result = await this.commandProcessor.processCommand(envelope);

@@ -141,7 +141,7 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
             startIcon={<PlayArrowIcon />}
             onClick={() => handleContextMenuTrigger('preview')}
             aria-label={labels.previewAria}
-            disabled={menuNode?.visible === false || menuNode?.invisible === true}
+            disabled={menuNode?.visible === false}
           >
             {labels.previewLabel}
           </Button>
@@ -156,7 +156,7 @@ export function TreeNodeInfoPanel({ treeId, node, onContextMenuAction }: TreeNod
         nodeType={menuNode?.nodeType ?? 'folder'}
         nodeName={menuNode?.metadata?.name ?? ''}
         treeId={treeId}
-        isVisible={menuNode?.visible ?? (menuNode?.invisible ? false : true)}
+        isVisible={menuNode?.visible ?? true}
         canCreate={false}
         canEdit={canMutate}
         canDuplicate={canMutate}

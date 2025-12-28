@@ -91,6 +91,7 @@ export interface TreeConsoleActions {
       navigateToParent?: boolean;
       expandTarget?: boolean;
       source?: 'breadcrumb' | 'treetable' | 'speedDial';
+      nextVisible?: boolean;
     }
   ) => void;
   handleUndo: () => Promise<void>;

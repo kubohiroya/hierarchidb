@@ -112,7 +112,6 @@ async function handleUpdateNode(
       metadata?: { name?: string; description?: string; tags?: string[] };
       name?: string;
       description?: string;
-      invisible?: boolean;
       visible?: boolean;
     };
     const node = await deps.coreDB.getNode?.(payload.nodeId);
@@ -140,11 +139,7 @@ async function handleUpdateNode(
 
     deps.history.storePreUpdateState(envelope.commandId, node);
     const visibilityUpdate =
-      typeof payload.visible === 'boolean'
-        ? { visible: payload.visible, invisible: !payload.visible }
-        : typeof payload.invisible === 'boolean'
-          ? { invisible: payload.invisible, visible: !payload.invisible }
-          : {};
+      typeof payload.visible === 'boolean' ? { visible: payload.visible } : {};
     await deps.coreDB.updateNode?.({
       ...node,
       ...(meta && {

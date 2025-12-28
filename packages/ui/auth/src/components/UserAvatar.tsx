@@ -56,6 +56,10 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   size = 40,
   sx,
 }) => {
+  const gravatarOverrideEnabled = useMemo(
+    () => String(import.meta.env.VITE_GRAVATAR_OVERRIDE || '').toLowerCase() === 'true',
+    []
+  );
   const [googleImageFailed, setGoogleImageFailed] = useState(false);
   const [gravatarFailed, setGravatarFailed] = useState(false);
   const [workingGoogleUrl, setWorkingGoogleUrl] = useState<string | null>(null);
@@ -110,10 +114,11 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   }, []);
 
   // Check if we should show Google profile picture
-  const shouldShowGoogleImage = (workingGoogleUrl || pictureUrl) && !googleImageFailed;
+  const shouldShowGoogleImage =
+    !gravatarOverrideEnabled && (workingGoogleUrl || pictureUrl) && !googleImageFailed;
 
   // Check if we should show Gravatar
-  const shouldShowGravatar = email && !shouldShowGoogleImage && !gravatarFailed;
+  const shouldShowGravatar = gravatarOverrideEnabled && email && !gravatarFailed;
 
   // Check if we should show initials
   const shouldShowInitials = userInitials && !shouldShowGoogleImage && !shouldShowGravatar;

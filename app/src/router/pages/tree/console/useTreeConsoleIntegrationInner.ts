@@ -127,7 +127,11 @@ export function useTreeConsoleIntegrationInner({
   });
 
   const handleContextMenuAction = useCallback(
-    (action: string, node: HierarchicalTreeNode, options?: { navigateToParent?: boolean }) => {
+    (
+      action: string,
+      node: HierarchicalTreeNode,
+      options?: { navigateToParent?: boolean; nextVisible?: boolean }
+    ) => {
       if (action === 'edit') {
         void (async () => {
           await requestEdit(node.id as NodeId, node);
@@ -150,11 +154,10 @@ export function useTreeConsoleIntegrationInner({
         type?: string;
         name?: string;
         metadata?: { name?: string; description?: string; tags?: string[] };
-        invisible?: boolean;
         visible?: boolean;
         depth?: number;
       },
-      options?: { navigateToParent?: boolean }
+      options?: { navigateToParent?: boolean; nextVisible?: boolean }
     ) => {
       const rawId = breadcrumbNode.id ?? breadcrumbNode.treeNodeId;
       if (!rawId) return;
@@ -169,7 +172,6 @@ export function useTreeConsoleIntegrationInner({
           description: breadcrumbNode.metadata?.description,
           tags: breadcrumbNode.metadata?.tags ?? [],
         },
-        invisible: breadcrumbNode.invisible,
         visible: breadcrumbNode.visible,
         draftMetadata: null,
         data: null,
