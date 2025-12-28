@@ -11,12 +11,9 @@ import { loadPageNode } from '../../loaders/treeLoaders.js';
 // Import the existing React Router component to reuse
 import TreePageLayout from '../t.($treeId).($pageNodeId).js';
 import { treeLayoutRoute } from './layoutRoute.js';
-import { treeRouteIds } from './shared.js';
-
 export const treePageRoute = createRoute({
   getParentRoute: () => treeLayoutRoute,
   path: '$pageNodeId',
-  id: treeRouteIds.page,
   loader: async ({ params }) => {
     const { treeId, pageNodeId } = params;
     if (!treeId) {

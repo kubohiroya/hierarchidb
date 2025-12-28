@@ -19,7 +19,7 @@ import {
   VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
 import { Divider, ListItemIcon, ListItemText, Menu, MenuItem, Switch } from '@mui/material';
-import { type MouseEvent, type ReactElement, useEffect, useRef, useState } from 'react';
+import { type MouseEvent, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export interface TreeConsoleNodeContextMenuProps {
   anchorEl: HTMLElement | null;
@@ -104,7 +104,7 @@ export function NodeContextMenu(props: TreeConsoleNodeContextMenuProps): ReactEl
     }
   }, [open, isVisible, localInvisible]);
 
-  const handleAddMenuClick = (event: MouseEvent<HTMLElement>) => {
+  const handleAddMenuClick = useCallback((event: MouseEvent<HTMLElement>) => {
     event.stopPropagation();
     event.preventDefault();
     // Get the menu item element as anchor
@@ -113,83 +113,83 @@ export function NodeContextMenu(props: TreeConsoleNodeContextMenuProps): ReactEl
       setAddMenuAnchor(menuItem as HTMLElement);
       setAddMenuOpen(true);
     }
-  };
+  }, []);
 
-  const handleMainMenuClose = () => {
+  const handleMainMenuClose = useCallback(() => {
     // Close all submenus as well
     setAddMenuOpen(false);
     setAddMenuAnchor(null);
     onClose();
-  };
+  },[onClose]);
 
-  const handleOpenClick = () => {
+  const handleOpenClick = useCallback(() => {
     const onOpen = propsRef.current.onOpen;
     handleMainMenuClose();
     // Call onOpen after menu is closed to avoid conflicts
     requestAnimationFrame(() => {
       onOpen?.();
     });
-  };
+  }, [handleMainMenuClose]);
 
-  const handleOpenFolderClick = () => {
+  const handleOpenFolderClick = useCallback(() => {
     const onOpenFolder = propsRef.current.onOpenFolder;
     handleMainMenuClose();
     requestAnimationFrame(() => {
       onOpenFolder?.();
     });
-  };
+  }, [handleMainMenuClose]);
 
-  const handleEditClick = () => {
+  const handleEditClick = useCallback(() => {
     const onEdit = propsRef.current.onEdit;
     handleMainMenuClose();
     requestAnimationFrame(() => {
       onEdit?.();
     });
-  };
+  }, [handleMainMenuClose]);
 
-  const handleCreateClick = (type: string) => {
+  const handleCreateClick = useCallback((type: string) => {
     const onCreate = propsRef.current.onCreate;
     handleMainMenuClose();
     requestAnimationFrame(() => {
       onCreate?.(type);
     });
-  };
+  }, [handleMainMenuClose]);
 
-  const handleDuplicateClick = () => {
+  const handleDuplicateClick = useCallback(() => {
     const onDuplicate = propsRef.current.onDuplicate;
     handleMainMenuClose();
     requestAnimationFrame(() => {
       onDuplicate?.();
     });
-  };
+  }, [handleMainMenuClose]);
 
-  const handleTrashClick = () => {
+  const handleTrashClick = useCallback(() => {
     const current = propsRef.current;
     const handler = current.onTrash ?? current.onRemove;
     handleMainMenuClose();
     requestAnimationFrame(() => {
       handler?.();
     });
-  };
+  }, [handleMainMenuClose]);
 
-  const handlePreviewClick = () => {
+  const handlePreviewClick = useCallback(() => {
     const onPreview = propsRef.current.onPreview;
     handleMainMenuClose();
     requestAnimationFrame(() => {
       onPreview?.();
     });
-  };
+  }, [handleMainMenuClose]);
 
-  const handleToggleVisible = () => {
+  const handleToggleVisible = useCallback(() => {
     const onToggleVisible = propsRef.current.onToggleVisible;
     const effectiveVisible =
       localInvisible !== null ? !localInvisible : (typeof isVisible === 'boolean' ? isVisible : true);
-    const nextVisible = !Boolean(effectiveVisible);
+    const nextVisible = !effectiveVisible;
     setLocalInvisible(!nextVisible);
     requestAnimationFrame(() => {
       onToggleVisible?.(nextVisible);
     });
-  };
+  }, [isVisible, localInvisible]);
 
   // Effect to ensure menus are closed when anchorEl changes
   useEffect(() => {
@@ -203,7 +203,7 @@ export function NodeContextMenu(props: TreeConsoleNodeContextMenuProps): ReactEl
     nodeType === 'folder' || nodeType === 'ProjectFolder' || nodeType === 'ResourceFolder';
   const allowTrash = (typeof canTrash === 'boolean' ? canTrash : undefined) ?? canRemove ?? true;
 
-  const safeAnchorEl = (() => {
+  const safeAnchorEl = useMemo(() => {
     try {
       if (!anchorEl) return null;
       const doc = anchorEl.ownerDocument || document;
@@ -212,7 +212,7 @@ export function NodeContextMenu(props: TreeConsoleNodeContextMenuProps): ReactEl
       console.warn('[NodeContextMenu] Failed to validate context menu anchor', error);
       return null;
     }
-  })();
+  }, [anchorEl]);
 
   const fallbackAnchorPosition = !safeAnchorEl && anchorPosition ? anchorPosition : null;
 
@@ -220,7 +220,7 @@ export function NodeContextMenu(props: TreeConsoleNodeContextMenuProps): ReactEl
     if (open && !safeAnchorEl && !fallbackAnchorPosition) {
       requestAnimationFrame(() => handleMainMenuClose());
     }
-  }, [open, safeAnchorEl, fallbackAnchorPosition]);
+  }, [open, safeAnchorEl, fallbackAnchorPosition, handleMainMenuClose]);
 
   return (
     <>

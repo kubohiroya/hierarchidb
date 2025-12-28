@@ -1,6 +1,18 @@
 // API Interfaces
 
 export * from './BatchControlAPI.js';
+export {
+  BaseBatchConfigValue as BaseBatchConfig,
+  BatchProgressValue as BatchProgress,
+  BatchProgressCallbackValue as BatchProgressCallback,
+  BatchProgressEventValue as BatchProgressEvent,
+  BatchProgressPayloadValue as BatchProgressPayload,
+  BatchSessionIdValue as BatchSessionId,
+  BatchSessionStateValue as BatchSessionState,
+  BatchSessionStatusValue as BatchSessionStatus,
+  IBatchSessionManagerValue as IBatchSessionManager,
+  ResourceUsageValue as ResourceUsage,
+} from './BatchControlAPI.js';
 export type {
   ExportNodesParams,
   ExportProgress,

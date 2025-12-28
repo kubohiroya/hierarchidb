@@ -72,6 +72,12 @@ export type {
 export * from './menu-types.js';
 export * from './primitive-types.js';
 export * from './primitive-types.js';
+export {
+  NodeIdValue,
+} from './id-types.js';
+export {
+  TimestampValue,
+} from './primitive-types.js';
 export * from './progress-types.js';
 export * from './subscription-types.js';
 export type {

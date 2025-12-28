@@ -4,7 +4,7 @@
   * eria-cartographRowContextMenuMUI
   */
 
-import { type MouseEvent, type ReactElement, useEffect, useMemo, useRef, useState } from 'react';
+import { type MouseEvent, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Divider, ListItemIcon, ListItemText, Menu, MenuItem, Switch, Tooltip } from '@mui/material';
 import {
   Add as AddIcon,
@@ -154,7 +154,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     }
   }, [open, isVisible, localInvisible]);
 
-  const handleAddMenuClick = (event: MouseEvent<HTMLElement>) => {
+  const handleAddMenuClick = useCallback((event: MouseEvent<HTMLElement>) => {
     event.stopPropagation();
     event.preventDefault();
     // Get the menu item element as anchor
@@ -163,96 +163,96 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
       setAddMenuAnchor(menuItem as HTMLElement);
       setAddMenuOpen(true);
     }
-  };
+  },[]);
 
-  const handleMainMenuClose = () => {
+  const handleMainMenuClose = useCallback(() => {
     // Close all submenus as well
     setAddMenuOpen(false);
     setAddMenuAnchor(null);
     onClose();
-  };
+  },[onClose]);
 
-  const blurActive = () => {
+  const blurActive = useCallback(() => {
     try {
       const el = (globalThis?.document?.activeElement ?? null) as HTMLElement | null;
       el?.blur?.();
     } catch (error) {
       logNodeContextMenuWarning('Failed to blur active element', error);
     }
-  };
+  },[]);
 
-  const handleOpenClick = () => {
+  const handleOpenClick = useCallback(() => {
     const onOpen = propsRef.current.onOpen;
     blurActive();
     handleMainMenuClose();
     // Defer until after menu unmount/aria-hidden settles
     setTimeout(() => { onOpen?.(); }, 0);
-  };
+  }, [blurActive, handleMainMenuClose]);
 
-  const handleOpenFolderClick = () => {
+  const handleOpenFolderClick = useCallback(() => {
     const onOpenFolder = propsRef.current.onOpenFolder;
     blurActive();
     handleMainMenuClose();
     setTimeout(() => { onOpenFolder?.(); }, 0);
-  };
+  }, [blurActive, handleMainMenuClose]);
 
-  const handleEditClick = () => {
+  const handleEditClick = useCallback(() => {
     const onEdit = propsRef.current.onEdit;
     blurActive();
     handleMainMenuClose();
     setTimeout(() => { onEdit?.(); }, 0);
-  };
+  }, [blurActive, handleMainMenuClose]);
 
-  const handleCreateClick = (type: string) => {
+  const handleCreateClick = useCallback((type: string) => {
     const onCreate = propsRef.current.onCreate;
     blurActive();
     handleMainMenuClose();
     setTimeout(() => { onCreate?.(type); }, 0);
-  };
+  }, [blurActive, handleMainMenuClose]);
 
-  const handleDuplicateClick = () => {
+  const handleDuplicateClick = useCallback(() => {
     const onDuplicate = propsRef.current.onDuplicate;
     blurActive();
     handleMainMenuClose();
     setTimeout(() => { onDuplicate?.(); }, 0);
-  };
+  }, [blurActive, handleMainMenuClose]);
 
-  const handleTrashClick = () => {
+  const handleTrashClick = useCallback(() => {
     const current = propsRef.current;
     const handler = current.onTrash ?? current.onRemove;
     blurActive();
     handleMainMenuClose();
     setTimeout(() => { handler?.(); }, 0);
-  };
+  }, [blurActive, handleMainMenuClose]);
 
-  const handleCopyClick = () => {
+  const handleCopyClick = useCallback(() => {
     const onCopy = propsRef.current.onCopy;
     blurActive();
     handleMainMenuClose();
     setTimeout(() => { onCopy?.(); }, 0);
-  };
+  }, [blurActive, handleMainMenuClose]);
 
-  const handleCutClick = () => {
+  const handleCutClick = useCallback(() => {
     const onCut = propsRef.current.onCut;
     blurActive();
     handleMainMenuClose();
     setTimeout(() => { onCut?.(); }, 0);
-  };
+  }, [blurActive, handleMainMenuClose]);
 
-  const handlePreviewClick = () => {
+  const handlePreviewClick = useCallback(() => {
     const onPreview = propsRef.current.onPreview;
     blurActive();
     handleMainMenuClose();
     setTimeout(() => { onPreview?.(); }, 0);
-  };
+  }, [blurActive, handleMainMenuClose]);
 
-  const handleToggleVisible = () => {
+  const handleToggleVisible = useCallback(() => {
     const onToggleVisible = propsRef.current.onToggleVisible;
-    const nextVisible = !Boolean(effectiveVisible);
+    const nextVisible = !effectiveVisible;
     blurActive();
     setLocalInvisible(!nextVisible);
     setTimeout(() => { onToggleVisible?.(nextVisible); }, 0);
-  };
+  }, [blurActive, effectiveVisible]);
 
   // Effect to ensure menus are closed when anchorEl changes
   useEffect(() => {
@@ -263,7 +263,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
   }, [anchorEl]);
 
   // Guard: ensure anchorEl is part of document layout
-  const safeAnchorEl = (() => {
+  const safeAnchorEl = useMemo(() => {
     try {
       if (!anchorEl) return null;
       const doc = anchorEl.ownerDocument || document;
@@ -272,7 +272,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
       logNodeContextMenuWarning('Failed to validate context menu anchor', error);
       return null;
     }
-  })();
+  }, [anchorEl]);
 
   const hasAnchorPosition = Boolean(anchorPosition);
   const anchorReference: 'anchorEl' | 'anchorPosition' = hasAnchorPosition ? 'anchorPosition' : 'anchorEl';
@@ -292,7 +292,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
   // Build Create submenu items
   type BuiltItem = { type: string; label: string; description?: string; icon?: { muiIconName?: string; emoji?: string; color?: string } };
   const builtCreateItems: Array<BuiltItem> = (() => {
-    if (props.createItems && props.createItems.length) return props.createItems;
+    if (props.createItems?.length) return props.createItems;
     try {
       const g = (globalThis as unknown as { __HDB_MENU_BUILDERS__?: GlobalMenuBuilders }).__HDB_MENU_BUILDERS__;
       const builder: CreateMenuBuilder | undefined = g?.buildMenuItemsForTreeId || g?.buildMenuItemsForContext;

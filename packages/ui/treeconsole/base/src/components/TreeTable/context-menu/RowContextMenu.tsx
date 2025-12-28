@@ -148,7 +148,7 @@ export const RowContextMenu = memo(
 
     const handleToggleVisible = () => {
       const onToggleVisible = propsRef.current.onToggleVisible;
-      const nextVisible = !Boolean(effectiveVisible);
+      const nextVisible = !effectiveVisible;
       setLocalInvisible(!nextVisible);
       requestAnimationFrame(() => {
         onToggleVisible?.(nextVisible);

@@ -26,4 +26,4 @@ export type EntityId = NodeId;
 export type TreeNodeId = string & { readonly __brand: 'TreeNodeId' };
 
 // Runtime placeholder to satisfy bundlers expecting a value export.
-export const NodeId = undefined as unknown as NodeId;
+export const NodeIdValue = undefined as unknown as NodeId;

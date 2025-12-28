@@ -1,5 +1,5 @@
 export const treeRouteIds = {
-  page: 'treePageRoute',
-  target: 'treeTargetRoute',
-  dialog: 'treeDialogRoute',
+  page: '/t/$treeId/$pageNodeId',
+  target: '/t/$treeId/$pageNodeId/$targetNodeId',
+  dialog: '/t/$treeId/$pageNodeId/$targetNodeId/$nodeType/$action',
 } as const;

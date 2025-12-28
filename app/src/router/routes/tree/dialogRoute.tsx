@@ -20,7 +20,6 @@ import {
 } from '../../loaders/treeLoaders.js';
 import { treeNodeTypeRoute } from './nodeTypeRoute.js';
 import { type PluginDialogLoaderData, PluginDialogRoute } from './PluginDialogRoute.js';
-import { treeRouteIds } from './shared.js';
 
 export type TreeDialogLoaderResult =
   | {
@@ -38,7 +37,6 @@ const TrashDialogLazy = lazy(() => import('~/router/pages/tree/trash/TrashDialog
 export const treeDialogRoute = createRoute({
   getParentRoute: () => treeNodeTypeRoute,
   path: '$action',
-  id: treeRouteIds.dialog,
   loader: async ({ params }) => {
     const { treeId, pageNodeId, targetNodeId, nodeType, action } = params;
     if (!treeId || !targetNodeId || !nodeType || !action) {

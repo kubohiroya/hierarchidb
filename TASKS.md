@@ -215,6 +215,10 @@
 - progress: 2025-12-28 15:05 JST batch 側の common-api import を type-only に修正（@hierarchidb/batch）。検証: 未実施。ロールバック: 変更ファイルを差し戻し。
 - progress: 2025-12-28 15:09 JST @hierarchidb/common-api に型プレースホルダーを追加し build、@hierarchidb/batch build、@hierarchidb/runtime-worker build を実行。検証: warnings あり（tsdown define）。ロールバック: 変更ファイルを差し戻し。
 - progress: 2025-12-28 15:12 JST @hierarchidb/common-types に NodeId/Timestamp プレースホルダーを追加し build、@hierarchidb/runtime-worker build を実行。検証: warnings あり（tsdown define）。ロールバック: 変更ファイルを差し戻し。
+- progress: 2025-12-28 15:22 JST TanStack Router の id/path 重複エラー対応として tree routes の id 指定を削除し、routeId 参照をパス由来の ID に更新。検証: 未実施。ロールバック: 変更ファイルを差し戻し。
+- progress: 2025-12-28 15:26 JST common-types の NodeId/Timestamp プレースホルダー名を NodeIdValue/TimestampValue に変更し build 実行（tsdown define 警告あり）。検証: 未実施。ロールバック: 変更ファイルを差し戻し。
+- progress: 2025-12-28 15:29 JST common-api の型プレースホルダー名を *Value に変更し build 実行（tsdown define 警告あり）。検証: 未実施。ロールバック: 変更ファイルを差し戻し。
+- progress: 2025-12-28 15:31 JST common-api/common-types の *Value を元名で re-export し、@hierarchidb/app build が完了（MISSING_EXPORT 解消）。検証: `pnpm --filter @hierarchidb/app build`。ロールバック: 変更ファイルを差し戻し。
 
 1925) /map 検索フィールド + 強調表示 + ナビゲーションコントロール追加（P1）
 - ブランチ: `feat/ui/map-search-highlight`（sandbox 制約で branch 作成不可なら main 上で作業）
