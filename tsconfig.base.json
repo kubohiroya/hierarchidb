@@ -82,6 +82,24 @@
       "@hierarchidb/download/*": [
         "packages/features/download/dist/*"
       ],
+      "@hierarchidb/location-store": [
+        "packages/features/location-store/src/index.ts"
+      ],
+      "@hierarchidb/location-store/*": [
+        "packages/features/location-store/src/*"
+      ],
+      "@hierarchidb/shape-store": [
+        "packages/features/shape-store/src/index.ts"
+      ],
+      "@hierarchidb/shape-store/*": [
+        "packages/features/shape-store/src/*"
+      ],
+      "@hierarchidb/styler-store": [
+        "packages/features/styler-store/src/index.ts"
+      ],
+      "@hierarchidb/styler-store/*": [
+        "packages/features/styler-store/src/*"
+      ],
       "@hierarchidb/memory": [
         "packages/memory/src/index.ts"
       ],
@@ -220,6 +238,12 @@
       ],
       "@hierarchidb/route-searoute/*": [
         "packages/features/route-searoute/dist/*"
+      ],
+      "@hierarchidb/route-store": [
+        "packages/features/route-store/src/index.ts"
+      ],
+      "@hierarchidb/route-store/*": [
+        "packages/features/route-store/src/*"
       ],
       "@hierarchidb/ui-worker-client": [
         "packages/ui/worker-client/src/index.ts"

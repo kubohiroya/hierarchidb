@@ -59,8 +59,8 @@ export interface NodeContextMenuProps {
   onTrash?: () => void;
   onCopy?: () => void;
   onCut?: () => void;
-  onToggleInvisible?: (nextValue: boolean) => void;
-  isInvisible?: boolean;
+  onToggleVisible?: (nextValue: boolean) => void;
+  isVisible?: boolean;
   isTrashRoot?: boolean;
   mode?: 'restore' | 'dispose';
   onRestoreToOriginal?: () => void;
@@ -99,13 +99,13 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     onTrash: _onTrash,
     onCopy: _onCopy,
     onCut: _onCut,
-    onToggleInvisible: _onToggleInvisible,
-    isInvisible = false,
+    onToggleVisible: _onToggleVisible,
+    isVisible,
   } = props;
-
 
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [addMenuAnchor, setAddMenuAnchor] = useState<HTMLElement | null>(null);
+  const [localInvisible, setLocalInvisible] = useState<boolean | null>(null);
   const { t, language } = useGlobalI18nTranslator();
   const { resolveIcon } = useIconRegistry();
 
@@ -132,13 +132,27 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
   const visibleLabel = translateWithFallback('treeConsole.contextMenu.visible', 'Visible');
   const invisibleLabel = translateWithFallback('treeConsole.contextMenu.invisible', 'Invisible');
   const previewLabel = translateWithFallback('treeConsole.contextMenu.preview', 'Preview');
-  const canPreview = !isInvisible;
+  const effectiveVisible =
+    localInvisible !== null ? !localInvisible : (typeof isVisible === 'boolean' ? isVisible : true);
+  const effectiveInvisible = !effectiveVisible;
+  const canPreview = !effectiveInvisible;
 
   // Use refs to store the latest props to avoid stale closures
   const propsRef = useRef(props);
   useEffect(() => {
     propsRef.current = props;
   });
+
+  useEffect(() => {
+    if (!open) {
+      setLocalInvisible(null);
+      return;
+    }
+    const resolvedVisible = typeof isVisible === 'boolean' ? isVisible : true;
+    if (localInvisible !== null && localInvisible === !resolvedVisible) {
+      setLocalInvisible(null);
+    }
+  }, [open, isVisible, localInvisible]);
 
   const handleAddMenuClick = (event: MouseEvent<HTMLElement>) => {
     event.stopPropagation();
@@ -232,12 +246,12 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     setTimeout(() => { onPreview?.(); }, 0);
   };
 
-  const handleToggleInvisible = () => {
-    const onToggleInvisible = propsRef.current.onToggleInvisible;
-    const nextInvisible = !Boolean(propsRef.current.isInvisible);
+  const handleToggleVisible = () => {
+    const onToggleVisible = propsRef.current.onToggleVisible;
+    const nextVisible = !Boolean(effectiveVisible);
     blurActive();
-    handleMainMenuClose();
-    setTimeout(() => { onToggleInvisible?.(nextInvisible); }, 0);
+    setLocalInvisible(!nextVisible);
+    setTimeout(() => { onToggleVisible?.(nextVisible); }, 0);
   };
 
   // Effect to ensure menus are closed when anchorEl changes
@@ -405,21 +419,23 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
         <Divider />
 
         <MenuItem
-          onClick={handleToggleInvisible}
-          aria-label={isInvisible ? invisibleLabel : visibleLabel}
+          onClick={handleToggleVisible}
+          aria-label={effectiveInvisible ? invisibleLabel : visibleLabel}
+          sx={{ minWidth: 200 }}
         >
           <ListItemIcon>
-            {isInvisible ? <VisibilityOffIcon /> : <VisibilityIcon />}
+            {effectiveInvisible ? <VisibilityOffIcon /> : <VisibilityIcon />}
           </ListItemIcon>
-          <ListItemText primary={isInvisible ? invisibleLabel : visibleLabel} />
+          <ListItemText primary={effectiveInvisible ? invisibleLabel : visibleLabel} />
           <Switch
-            checked={!isInvisible}
+            checked={effectiveVisible}
             onChange={(event) => {
               event.stopPropagation();
-              handleToggleInvisible();
+              handleToggleVisible();
             }}
             size="small"
-            inputProps={{ 'aria-label': isInvisible ? invisibleLabel : visibleLabel }}
+            sx={{ ml: 'auto' }}
+            inputProps={{ 'aria-label': effectiveInvisible ? invisibleLabel : visibleLabel }}
           />
         </MenuItem>
 

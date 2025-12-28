@@ -17,6 +17,7 @@ export interface BreadcrumbNode {
   holderTargetId?: string;
   holderMetaParentId?: string;
   invisible?: boolean;
+  visible?: boolean;
 }
 
 export interface TreeConsoleBreadcrumbContext {

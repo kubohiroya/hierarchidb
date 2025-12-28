@@ -78,6 +78,7 @@ export function useTreeConsoleBreadcrumbs({
           name: n.metadata?.name ?? '',
           nodeType: n.nodeType,
           invisible: n.invisible,
+          visible: n.visible,
         }));
 
         if (nodes.length + 1 > resolvedMaxBreadcrumbItems) {
@@ -98,6 +99,7 @@ export function useTreeConsoleBreadcrumbs({
           name: pageTreeNode.metadata?.name ?? '',
           nodeType: pageTreeNode.nodeType,
           invisible: pageTreeNode.invisible,
+          visible: pageTreeNode.visible,
         };
 
         if (!disposed) {
@@ -116,7 +118,15 @@ export function useTreeConsoleBreadcrumbs({
               const nextNodeType = ev.node?.nodeType ?? item.nodeType;
               const nextInvisible =
                 typeof ev.node?.invisible === 'boolean' ? ev.node?.invisible : item.invisible;
-              return { ...item, name: nextName, nodeType: nextNodeType, invisible: nextInvisible };
+              const nextVisible =
+                typeof ev.node?.visible === 'boolean' ? ev.node?.visible : item.visible;
+              return {
+                ...item,
+                name: nextName,
+                nodeType: nextNodeType,
+                invisible: nextInvisible,
+                visible: nextVisible,
+              };
             }),
           );
         });

@@ -32,8 +32,8 @@ export interface RowContextMenuProps {
   readonly onDuplicate: () => void;
   readonly onRemove?: () => void;
   readonly onTrash?: () => void;
-  readonly onToggleInvisible?: (nextValue: boolean) => void;
-  readonly isInvisible?: boolean;
+  readonly onToggleVisible?: (nextValue: boolean) => void;
+  readonly isVisible?: boolean;
   readonly canOpen: boolean;
   readonly canEdit: boolean;
   readonly canCreate: boolean;
@@ -52,9 +52,13 @@ export const RowContextMenu = memo(
   function RowContextMenu(props: RowContextMenuProps) {
     const [addMenuOpen, setAddMenuOpen] = useState(false);
     const [addMenuAnchor, setAddMenuAnchor] = useState<HTMLElement | null>(null);
+    const [localInvisible, setLocalInvisible] = useState<boolean | null>(null);
     const { t, language } = useGlobalI18nTranslator();
     const { resolveIcon } = useIconRegistry();
-    const isInvisible = props.isInvisible ?? false;
+    const isVisible = props.isVisible;
+    const effectiveVisible =
+      localInvisible !== null ? !localInvisible : (typeof isVisible === 'boolean' ? isVisible : true);
+    const effectiveInvisible = !effectiveVisible;
     const translateWithFallback = useMemo(() => {
       return (key: string, fallback: string) => {
         const safeFallback = fallback?.trim?.() ?? '';
@@ -83,6 +87,17 @@ export const RowContextMenu = memo(
     useEffect(() => {
       propsRef.current = props;
     });
+
+    useEffect(() => {
+      if (!props.parentElem) {
+        setLocalInvisible(null);
+        return;
+      }
+      const resolvedVisible = typeof isVisible === 'boolean' ? isVisible : true;
+      if (localInvisible !== null && localInvisible === !resolvedVisible) {
+        setLocalInvisible(null);
+      }
+    }, [props.parentElem, isVisible, localInvisible]);
 
     const handleAddMenuClick = (event: MouseEvent<HTMLElement>) => {
       event.stopPropagation();
@@ -131,12 +146,12 @@ export const RowContextMenu = memo(
       });
     };
 
-    const handleToggleInvisible = () => {
-      const onToggleInvisible = propsRef.current.onToggleInvisible;
-      const nextInvisible = !Boolean(propsRef.current.isInvisible);
-      handleMainMenuClose();
+    const handleToggleVisible = () => {
+      const onToggleVisible = propsRef.current.onToggleVisible;
+      const nextVisible = !Boolean(effectiveVisible);
+      setLocalInvisible(!nextVisible);
       requestAnimationFrame(() => {
-        onToggleInvisible?.(nextInvisible);
+        onToggleVisible?.(nextVisible);
       });
     };
 
@@ -307,31 +322,33 @@ export const RowContextMenu = memo(
 
           <Divider />
 
-          <MenuItem
-            onClick={handleToggleInvisible}
-            aria-label={
-              isInvisible
+            <MenuItem
+              onClick={handleToggleVisible}
+              aria-label={
+              effectiveInvisible
                 ? t('treeConsole.contextMenu.invisible', 'Invisible')
                 : t('treeConsole.contextMenu.visible', 'Visible')
-            }
-          >
+              }
+              sx={{ minWidth: 200 }}
+            >
             <ListItemIcon>
-              {isInvisible ? <VisibilityOffIcon /> : <VisibilityIcon />}
+              {effectiveInvisible ? <VisibilityOffIcon /> : <VisibilityIcon />}
             </ListItemIcon>
             <ListItemText>
-              {isInvisible
+              {effectiveInvisible
                 ? t('treeConsole.contextMenu.invisible', 'Invisible')
                 : t('treeConsole.contextMenu.visible', 'Visible')}
             </ListItemText>
             <Switch
-              checked={!isInvisible}
+              checked={effectiveVisible}
               size="small"
               onChange={(event) => {
                 event.stopPropagation();
-                handleToggleInvisible();
+                handleToggleVisible();
               }}
+              sx={{ ml: 'auto' }}
               inputProps={{
-                'aria-label': isInvisible
+                'aria-label': effectiveInvisible
                   ? t('treeConsole.contextMenu.invisible', 'Invisible')
                   : t('treeConsole.contextMenu.visible', 'Visible'),
               }}
@@ -343,7 +360,7 @@ export const RowContextMenu = memo(
             <MenuItem
               onClick={handlePreviewClick}
               aria-label={t('treeConsole.contextMenu.preview', 'Preview')}
-              disabled={isInvisible}
+              disabled={effectiveInvisible}
             >
               <ListItemIcon>
                 <PlayArrowIcon />

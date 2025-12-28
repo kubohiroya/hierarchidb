@@ -113,6 +113,7 @@ async function handleUpdateNode(
       name?: string;
       description?: string;
       invisible?: boolean;
+      visible?: boolean;
     };
     const node = await deps.coreDB.getNode?.(payload.nodeId);
     if (!node) {
@@ -138,6 +139,12 @@ async function handleUpdateNode(
     }
 
     deps.history.storePreUpdateState(envelope.commandId, node);
+    const visibilityUpdate =
+      typeof payload.visible === 'boolean'
+        ? { visible: payload.visible, invisible: !payload.visible }
+        : typeof payload.invisible === 'boolean'
+          ? { invisible: payload.invisible, visible: !payload.invisible }
+          : {};
     await deps.coreDB.updateNode?.({
       ...node,
       ...(meta && {
@@ -147,7 +154,7 @@ async function handleUpdateNode(
           tags: meta.tags ?? node.metadata.tags ?? [],
         },
       }),
-      ...(typeof payload.invisible === 'boolean' ? { invisible: payload.invisible } : {}),
+      ...visibilityUpdate,
       updatedAt: Date.now() as Timestamp,
       version: node.version + 1,
     });

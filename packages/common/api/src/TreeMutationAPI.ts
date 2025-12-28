@@ -33,12 +33,14 @@ export interface TreeMutationAPI {
    * - `params.name`: Optional new display name.
    * - `params.description`: Optional new description.
    * - `params.invisible`: Optional visibility toggle for map previews.
+   * - `params.visible`: Optional visibility toggle (default: true when undefined).
    */
   updateNode(params: {
     nodeId: NodeId;
     name?: string;
     description?: string;
     invisible?: boolean;
+    visible?: boolean;
   }): Promise<{ success: boolean; error?: string }>;
 
   /**

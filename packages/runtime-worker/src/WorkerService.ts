@@ -18,10 +18,6 @@ import {
   ShapeQueryAPI,
   StyleMutationAPI,
   StyleQueryAPI,
-  LocationMutationAPI,
-  LocationQueryAPI,
-  RouteQueryAPI,
-  RouteMutationAPI,
 } from '@hierarchidb/plugin-service-api';
 import {
   ImportExportAPI,
@@ -35,6 +31,10 @@ import {
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import { UIStateDB } from './services/UIStateDB.js';
 import { StyleDB } from '@hierarchidb/style-store';
+import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/location-store';
+import type { RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/route-store';
+import { ShapeDB, type VectorTileRecord } from '@hierarchidb/shape-store';
+import { RouteDatabase } from '@hierarchidb/route-store';
 import { StyleService } from './services/StyleService.js';
 import { ShapeQueryService } from './services/ShapeQueryService.js';
 import { ShapeMutationService } from './services/ShapeMutationService.js';
@@ -42,6 +42,7 @@ import { LocationQueryService } from './services/LocationQueryService.js';
 import { LocationMutationService } from './services/LocationMutationService.js';
 import { RouteQueryService } from './services/RouteQueryService.js';
 import { RouteMutationService } from './services/RouteMutationService.js';
+import { EntityLifecycleManager } from './entity/EntityLifecycleManager.js';
 import type { RuntimePluginDefinition } from './types/RuntimePluginDefinition.js';
 
 interface PerformanceMemoryStats {
@@ -49,33 +50,64 @@ interface PerformanceMemoryStats {
   jsHeapSizeLimit?: number;
 }
 
-type DexieCollectionHandle = {
-  toArray: () => Promise<any[]>;
+type ShapeBatchSessionRecord = {
+  sessionId: string;
+  nodeId: NodeId;
+  status: 'running' | 'paused' | 'completed' | 'failed' | 'cancelled' | 'idle';
+  startedAt?: number;
+  updatedAt?: number;
+  completedAt?: number;
+  progress?: {
+    total: number;
+    completed: number;
+    failed: number;
+    skipped: number;
+    percentage: number;
+    currentStage?: string;
+    currentTask?: string;
+  };
+};
+
+type ShapeBatchTaskRecord = {
+  taskId: string;
+  sessionId: string;
+  taskType: string;
+  status: string;
+  index: number;
+  progress: number;
+  message?: string;
+  startedAt?: number;
+  completedAt?: number;
+  errorMessage?: string;
+};
+
+type DexieCollectionHandle<T> = {
+  toArray: () => Promise<T[]>;
   count: () => Promise<number>;
   delete?: () => Promise<number>;
 };
 
-type DexieWhereHandle = {
-  equals: (value: unknown) => DexieCollectionHandle;
+type DexieWhereHandle<T> = {
+  equals: (value: unknown) => DexieCollectionHandle<T>;
 };
 
-type DexieTableHandle = {
-  where: (key: string) => DexieWhereHandle;
-  get?: (...args: any[]) => Promise<any>;
-  delete?: (...args: any[]) => Promise<void>;
+type DexieTableHandle<T> = {
+  where: (key: string) => DexieWhereHandle<T>;
+  get?: (...args: unknown[]) => Promise<T | undefined>;
+  delete?: (...args: unknown[]) => Promise<void>;
 };
 
 type ShapeDatabaseHandle = {
   open?: () => Promise<unknown>;
   close?: () => void;
-  batchSessions: DexieTableHandle;
-  batchTasks: DexieTableHandle;
-  features: DexieTableHandle;
-  featureBuffers: DexieTableHandle;
-  tileBuffers: DexieTableHandle;
-  vectorTiles: DexieTableHandle;
-  cache: DexieTableHandle;
-  getVectorTile?: (nodeId: NodeId, z: number, x: number, y: number) => Promise<any>;
+  batchSessions: DexieTableHandle<ShapeBatchSessionRecord>;
+  batchTasks: DexieTableHandle<ShapeBatchTaskRecord>;
+  features: DexieTableHandle<{ nodeId: NodeId }>;
+  featureBuffers: DexieTableHandle<unknown>;
+  tileBuffers: DexieTableHandle<unknown>;
+  vectorTiles: DexieTableHandle<VectorTileRecord>;
+  cache: DexieTableHandle<unknown>;
+  getVectorTile?: (nodeId: NodeId, z: number, x: number, y: number) => Promise<VectorTileRecord | undefined>;
   clearCache?: (nodeId?: NodeId, cacheType?: string) => Promise<number>;
 };
 
@@ -86,7 +118,7 @@ type RouteDatabaseHandle = {
     where: (key: string) => {
       equals: (value: NodeId) => { toArray: () => Promise<unknown[]>; delete?: () => Promise<number> };
     };
-    bulkPut?: (items: unknown[]) => Promise<void>;
+    bulkPut?: (...args: unknown[]) => Promise<unknown>;
   };
 };
 
@@ -185,23 +217,22 @@ export class WorkerService {
       const styleService: StyleQueryAPI & StyleMutationAPI = await StyleService.getSingleton(
         styleDB,
       );
-      const { ShapeDB } = await import('@hierarchidb/shape-plugin') as {
-        ShapeDB: new () => ShapeDatabaseHandle;
-      };
-      const shapeDB = new ShapeDB();
+      const shapeDB = new ShapeDB() as ShapeDatabaseHandle;
       const shapeQueryService: ShapeQueryAPI = await ShapeQueryService.getSingleton(shapeDB);
       const shapeMutationService: ShapeMutationAPI = await ShapeMutationService.getSingleton(shapeDB);
       const locationQueryService: LocationQueryAPI = await LocationQueryService.getSingleton();
       const locationMutationService: LocationMutationAPI = await LocationMutationService.getSingleton();
-      const { RouteDatabase } = await import('@hierarchidb/route-plugin/database') as {
-        RouteDatabase: new () => RouteDatabaseHandle;
-      };
-      const routeDB = new RouteDatabase();
+      const routeDB = new RouteDatabase() as RouteDatabaseHandle;
       const routeQueryService: RouteQueryAPI = await RouteQueryService.getSingleton(routeDB);
       const routeMutationService: RouteMutationAPI = await RouteMutationService.getSingleton(
         routeDB,
         locationQueryService,
       );
+      EntityLifecycleManager.getSingleton(coreDB, {
+        shapeMutation: shapeMutationService,
+        locationMutation: locationMutationService,
+        routeMutation: routeMutationService,
+      });
 
       return new WorkerService(
         coreDB,

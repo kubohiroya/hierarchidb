@@ -1,8 +1,8 @@
 import { SingletonMixin } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
+import { getEphemeralLocationDB, type LocationQueryAPI } from '@hierarchidb/location-store';
 import type {
   LocationGroupItem,
-  LocationQueryAPI,
   LocationRelation,
   LocationNearestPoint,
   LocationNearestPointQuery,
@@ -84,12 +84,19 @@ export class LocationQueryService implements LocationQueryAPI {
     return { cursor, matches };
   }
 
+  async getVectorTile(nodeId: NodeId, z: number, x: number, y: number): Promise<ArrayBuffer | null> {
+    const sessionId = await this.resolveSessionId(nodeId);
+    if (!sessionId) return null;
+    const db = getEphemeralLocationDB();
+    const record = await db.vectorTiles.get(`loc-mvt-${sessionId}-${z}-${x}-${y}`);
+    return record?.data ?? null;
+  }
+
   private async resolveSessionId(nodeId: NodeId): Promise<string | null> {
     const cached = this.sessionCache.get(nodeId);
     if (cached && Date.now() - cached.checkedAt < SESSION_CACHE_TTL_MS) {
       return cached.sessionId;
     }
-    const { getEphemeralLocationDB } = await import('@hierarchidb/location-plugin');
     const db = getEphemeralLocationDB();
     const sessions = await db.sessions.where('nodeId').equals(nodeId).toArray();
     if (!sessions.length) return null;
@@ -114,7 +121,6 @@ export class LocationQueryService implements LocationQueryAPI {
     const cached = this.tileCache.get(cacheKey);
     if (cached) return cached;
 
-    const { getEphemeralLocationDB } = await import('@hierarchidb/location-plugin');
     const db = getEphemeralLocationDB();
     const record = await db.vectorTiles.get(`loc-mvt-${sessionId}-${z}-${x}-${y}`);
     if (!record?.data) return null;

@@ -755,14 +755,17 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         try {
           const mutationAPI = await client.getMutationAPI();
           const indexed = ssot.nodeIndex?.get(targetNodeId);
-          const currentInvisible =
-            typeof indexed?.invisible === 'boolean'
-              ? indexed.invisible
-              : (node as { invisible?: boolean }).invisible === true;
-          const nextInvisible = !currentInvisible;
+          const currentVisible =
+            typeof indexed?.visible === 'boolean'
+              ? indexed.visible
+              : typeof indexed?.invisible === 'boolean'
+                ? !indexed.invisible
+                : (node as { visible?: boolean; invisible?: boolean }).visible !== false &&
+                  (node as { invisible?: boolean }).invisible !== true;
+          const nextVisible = !currentVisible;
           const res = await mutationAPI.updateNode({
             nodeId: targetNodeId,
-            invisible: nextInvisible,
+            visible: nextVisible,
           });
           if (!res.success) {
             showCommandError('INVALID_OPERATION', res.error || 'Update failed');

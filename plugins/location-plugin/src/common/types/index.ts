@@ -20,13 +20,13 @@ import type {
   LocationBatchProcessingOptions,
   LocationType,
   LocationSearchConfig,
-} from '../entities/LocationEntity.js';
+} from '@hierarchidb/location-store';
 export type {
   LocationPoint,
   LocationPointProperties,
   LocationPointKind,
   LocationPointId,
-} from '../entities/LocationPoint.js';
+} from '@hierarchidb/location-store';
 
 export type LocationEntity = LocationEntityDefinition;
 export type {
@@ -37,7 +37,7 @@ export type {
   LocationBatchProcessingOptions,
   LocationSearchConfig,
 };
-export type { BatchConfig, UnifiedLocationBatchConfig } from './BatchConfig.js';
+export type { BatchConfig, UnifiedLocationBatchConfig } from '@hierarchidb/location-store';
 
 export interface LocationDraft extends Partial<LocationEntityDefinition> {
   treeNodeId: NodeId;
@@ -93,4 +93,4 @@ export type {
   LocationPeerData,
   LocationGroupItemData,
   LocationRelationMeta,
-} from './entities.js';
+} from '@hierarchidb/location-store';

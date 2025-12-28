@@ -135,7 +135,7 @@
     "change-case": "^5.4.4",
     "comlink": "^4.4.2",
     "dep-fence": "^0.5.1",
-    "dependency-cruiser": "^14.1.2",
+    "dependency-cruiser": "^17.3.5",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-deprecation": "^2.0.0",

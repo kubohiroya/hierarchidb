@@ -284,7 +284,9 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
         : reportedDepth;
       const iconDepth = typeof absoluteDepth === 'number' ? Math.max(0, absoluteDepth) : baseDepth;
       const nodeType = node.nodeType || 'folder';
-      const isInvisible = (node as { invisible?: boolean }).invisible === true;
+      const isVisible =
+        (node as { visible?: boolean }).visible !== false &&
+        (node as { invisible?: boolean }).invisible !== true;
       const baseIconColor = rainbowColors[Math.max(0, Math.round(iconDepth)) % rainbowColors.length];
       const manifestIconColor = getPluginIconColor(nodeType);
       const iconColor = isFolderNodeType(nodeType) ? baseIconColor : (manifestIconColor ?? baseIconColor);
@@ -512,8 +514,8 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                   sx={{
                     mr: 0.5,
                     color: 'primary.main',
-                    textDecoration: isInvisible ? 'line-through' : 'none',
-                    '&:hover': { textDecoration: isInvisible ? 'line-through' : 'underline' },
+                    textDecoration: isVisible ? 'none' : 'line-through',
+                    '&:hover': { textDecoration: isVisible ? 'underline' : 'line-through' },
                   }}
                 >
                   {node.metadata.name}

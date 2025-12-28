@@ -8,6 +8,7 @@ import type {
 
 export interface RouteMutationAPI {
   deleteRouteLineStrings(nodeId: NodeId): Promise<void>;
+  clearRouteArtifacts(nodeId: NodeId): Promise<void>;
   applyIdeGsmWaypoints(lines: RouteWaypointInput[]): Promise<RouteWaypointResult[]>;
   importIdeGsmRoutes(
     request: IdeGsmRouteImportRequest,

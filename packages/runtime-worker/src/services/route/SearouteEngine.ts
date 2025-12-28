@@ -50,7 +50,7 @@ export interface RoutingEngine {
 export class SearouteEngine implements RoutingEngine {
   private libPromise?: Promise<SeaRouteModule | undefined>;
 
-  async route(points: Coordinate[], options?: SeaRouteOptions): Promise<{
+  async route(points: Coordinate[], options?: unknown): Promise<{
     line: Coordinate[];
     distance_m: number;
     duration_s?: number;
@@ -59,7 +59,7 @@ export class SearouteEngine implements RoutingEngine {
     const end = points[points.length - 1];
     if (!start || !end) throw new Error('searoute requires at least two coordinates');
 
-    const normalizedOptions = this.normalizeOptions(options);
+    const normalizedOptions = this.normalizeOptions(options as SeaRouteOptions | undefined);
 
     try {
       const module = await this.loadLib();

@@ -3,27 +3,7 @@
  * @description Route generation service for different algorithms
  */
 
-export type RouteGenerationMethod =
-  | 'direct'
-  | 'osm_route'
-  | 'great_circle'
-  | 'searoute'
-  | 'custom';
-
-export interface RouteGenerationOptions {
-  preferredChannels?: string[];
-  avoidCanals?: boolean;
-  osmProfile?: string;
-  osrmBaseUrl?: string;
-  osmAvoidTolls?: boolean;
-  osmAvoidHighways?: boolean;
-  [key: string]: unknown;
-}
-
-export interface RouteGenerationConfig {
-  method: RouteGenerationMethod;
-  options?: RouteGenerationOptions;
-}
+import type { RouteGenerationConfig } from '@hierarchidb/route-store';
 
 export interface RouteGenerationResult {
   lineGeometry: [number, number][];

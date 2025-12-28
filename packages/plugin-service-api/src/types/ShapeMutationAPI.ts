@@ -9,4 +9,5 @@ export interface ShapeMutationAPI {
   deleteFeatures(nodeId: NodeId): Promise<void>;
   clearCache(nodeId: NodeId): Promise<number>;
   cleanupProcessingData(nodeId: NodeId): Promise<void>;
+  clearShapeArtifacts(nodeId: NodeId): Promise<void>;
 }

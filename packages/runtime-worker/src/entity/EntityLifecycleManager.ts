@@ -8,6 +8,9 @@ import type {
   PasteNodesPayload,
   TreeNode,
 } from '@hierarchidb/common-types';
+import type { LocationMutationAPI } from '@hierarchidb/location-store';
+import type { RouteMutationAPI } from '@hierarchidb/route-store';
+import type { ShapeMutationAPI } from '@hierarchidb/shape-store';
 import type { CoreDB } from '../services/CoreDB.js';
 import type { CommandEnvelope } from '../services/command-types.js';
 import { storeRegistry } from './store-registry.js';
@@ -21,6 +24,11 @@ type ImportNodesEnvelope = CommandEnvelope<'importNodes', ImportNodesPayload>;
 type NodeMapping = Map<NodeId, NodeId>;
 type NodeMappingSource = Iterable<readonly [unknown, unknown]>;
 type SourceNodeMap = Map<NodeId, TreeNode>;
+type MutationServices = {
+  shapeMutation?: ShapeMutationAPI;
+  locationMutation?: LocationMutationAPI;
+  routeMutation?: RouteMutationAPI;
+};
 
 const toNodeId = (value: string): NodeId => value as NodeId;
 const maybeNodeId = (value: unknown): NodeId | undefined =>
@@ -63,14 +71,23 @@ const resolveNode = async (
 export class EntityLifecycleManager {
   private static instance: EntityLifecycleManager | undefined;
 
+  private mutationServices: MutationServices = {};
+
   private constructor(private readonly coreDB: CoreDB) {}
 
   private static idMappingByCommand = new Map<string, NodeMapping>();
 
-  static getSingleton(coreDB: CoreDB): EntityLifecycleManager {
+  static getSingleton(coreDB: CoreDB, mutationServices?: MutationServices): EntityLifecycleManager {
     if (!EntityLifecycleManager.instance)
       EntityLifecycleManager.instance = new EntityLifecycleManager(coreDB);
+    if (mutationServices) {
+      EntityLifecycleManager.instance.setMutationServices(mutationServices);
+    }
     return EntityLifecycleManager.instance;
+  }
+
+  setMutationServices(services: MutationServices): void {
+    this.mutationServices = { ...this.mutationServices, ...services };
   }
 
   static setIdMapping(commandId: string, mapping: NodeMappingSource): void {
@@ -237,45 +254,14 @@ export class EntityLifecycleManager {
 
   private async deleteShapeArtifacts(nodeIds: NodeId[]): Promise<void> {
     try {
-      const { ShapeDB, EphemeralShapeDB } = await import('@hierarchidb/shape-plugin');
-      const db = new ShapeDB();
-      await db.open?.();
-      const ephemeral = new EphemeralShapeDB();
-      await ephemeral.open?.();
-      for (const nodeId of nodeIds) {
-        const sessionIds = await db.batchSessions.where('nodeId').equals(nodeId).primaryKeys();
-        const featureIds = await db.features.where('nodeId').equals(nodeId).primaryKeys();
-        await db.transaction('rw', [
-          db.batchSessions,
-          db.batchTasks,
-          db.features,
-          db.featureIndices,
-          db.featureBuffers,
-          db.vectorTiles,
-          db.tileBuffers,
-          db.cache,
-        ], async () => {
-          if (sessionIds.length > 0) {
-            await db.batchTasks.where('sessionId').anyOf(sessionIds as string[]).delete();
-          }
-          await db.batchSessions.where('nodeId').equals(nodeId).delete();
-          await db.features.where('nodeId').equals(nodeId).delete();
-          if (featureIds.length > 0) {
-            const featureKeys = (featureIds as Array<number | string>).map((id) => id.toString());
-            await db.featureIndices.where('featureId').anyOf(featureKeys).delete();
-          }
-          await db.featureBuffers.where('nodeId').equals(nodeId).delete();
-          await db.vectorTiles.where('nodeId').equals(nodeId).delete();
-          await db.tileBuffers.where('nodeId').equals(nodeId).delete();
-          await db.cache.where('nodeId').equals(nodeId).delete();
-        });
-        const clear = (ephemeral as { clearNodeData?: (id: NodeId) => Promise<void> }).clearNodeData;
-        if (clear) {
-          await clear.call(ephemeral, nodeId);
-        }
+      const mutation = this.mutationServices.shapeMutation;
+      if (!mutation) {
+        console.warn('[EntityLifecycleManager] shape mutation API unavailable');
+        return;
       }
-      db.close?.();
-      ephemeral.close();
+      for (const nodeId of nodeIds) {
+        await mutation.clearShapeArtifacts(nodeId);
+      }
     } catch (error) {
       console.warn('[EntityLifecycleManager] shape cleanup failed', error);
     }
@@ -283,13 +269,13 @@ export class EntityLifecycleManager {
 
   private async deleteLocationArtifacts(nodeIds: NodeId[]): Promise<void> {
     try {
-      const { getEphemeralLocationDB } = await import('@hierarchidb/location-plugin');
-      const db = getEphemeralLocationDB();
+      const mutation = this.mutationServices.locationMutation;
+      if (!mutation) {
+        console.warn('[EntityLifecycleManager] location mutation API unavailable');
+        return;
+      }
       for (const nodeId of nodeIds) {
-        const clear = (db as { clearNodeData?: (id: NodeId) => Promise<void> }).clearNodeData;
-        if (clear) {
-          await clear.call(db, nodeId);
-        }
+        await mutation.clearLocationArtifacts(nodeId);
       }
     } catch (error) {
       console.warn('[EntityLifecycleManager] location cleanup failed', error);
@@ -298,28 +284,14 @@ export class EntityLifecycleManager {
 
   private async deleteRouteArtifacts(nodeIds: NodeId[]): Promise<void> {
     try {
-      const { RouteDatabase } = await import('@hierarchidb/route-plugin/database') as {
-        RouteDatabase: new () => {
-          open?: () => Promise<unknown>;
-          close?: () => void;
-          lineStrings: { where: (key: string) => { equals: (value: NodeId) => { delete(): Promise<void> } } };
-          transaction: (
-            mode: 'rw',
-            tables: unknown[],
-            executor: () => Promise<void>
-          ) => Promise<void>;
-        };
-      };
-      const db = new RouteDatabase();
-      await db.open?.();
-      for (const nodeId of nodeIds) {
-        await db.transaction('rw', [
-          db.lineStrings,
-        ], async () => {
-          await db.lineStrings.where('nodeId').equals(nodeId).delete();
-        });
+      const mutation = this.mutationServices.routeMutation;
+      if (!mutation) {
+        console.warn('[EntityLifecycleManager] route mutation API unavailable');
+        return;
       }
-      db.close?.();
+      for (const nodeId of nodeIds) {
+        await mutation.clearRouteArtifacts(nodeId);
+      }
     } catch (error) {
       console.warn('[EntityLifecycleManager] route cleanup failed', error);
     }

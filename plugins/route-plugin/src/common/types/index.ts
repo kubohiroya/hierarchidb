@@ -1,6 +1,6 @@
 import type { TreeNodeUpdaterPayload } from '@hierarchidb/common-types';
 
-import type { RouteEntity } from '../entities/RouteEntity.js';
+import type { RouteEntity } from '@hierarchidb/route-store';
 export type {
   //RouteCategory,
   RouteEntity,
@@ -12,10 +12,10 @@ export type {
 
   //TransportMode,
 
-} from '../entities/RouteEntity.js';
-export type { BatchConfig, RouteBatchConfig } from './BatchConfig.js';
+} from '@hierarchidb/route-store';
+export type { BatchConfig, RouteBatchConfig } from '@hierarchidb/route-store';
 
 export type RouteUpdaterPayload = TreeNodeUpdaterPayload<RouteEntity>;
 export type TagId = string;
-export type { RouteLineString, RoutePoint, RouteMode } from '../entities/RouteLineString.js';
-export { ROUTE_MODES } from '../entities/RouteLineString.js';
+export type { RouteLineString, RoutePoint, RouteMode } from '@hierarchidb/route-store';
+export { ROUTE_MODES } from '@hierarchidb/route-store';

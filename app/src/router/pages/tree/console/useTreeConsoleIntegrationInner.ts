@@ -151,6 +151,7 @@ export function useTreeConsoleIntegrationInner({
         name?: string;
         metadata?: { name?: string; description?: string; tags?: string[] };
         invisible?: boolean;
+        visible?: boolean;
         depth?: number;
       },
       options?: { navigateToParent?: boolean }
@@ -169,6 +170,7 @@ export function useTreeConsoleIntegrationInner({
           tags: breadcrumbNode.metadata?.tags ?? [],
         },
         invisible: breadcrumbNode.invisible,
+        visible: breadcrumbNode.visible,
         draftMetadata: null,
         data: null,
         draftData: null,

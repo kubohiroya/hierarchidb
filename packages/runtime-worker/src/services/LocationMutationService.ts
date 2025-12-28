@@ -7,10 +7,11 @@ import {
   type IdeGsmLocationImportRequest,
   type IdeGsmLocationImportResult,
   type LocationGroupItem,
-  type LocationMutationAPI,
   type LocationRelation,
 } from '@hierarchidb/plugin-service-api';
+import type { LocationMutationAPI } from '@hierarchidb/location-store';
 import { authFetch } from '@hierarchidb/download';
+import { getEphemeralLocationDB } from '@hierarchidb/location-store';
 import { storeRegistry } from '../entity/store-registry.js';
 
 export class LocationMutationService implements LocationMutationAPI {
@@ -57,6 +58,12 @@ export class LocationMutationService implements LocationMutationAPI {
         await relStore.bulkDelete(rels);
       }
     }
+  }
+
+  async clearLocationArtifacts(nodeId: NodeId): Promise<void> {
+    await this.clearLocationEntities(nodeId);
+    const db = getEphemeralLocationDB();
+    await db.clearNodeData(nodeId);
   }
 
   async importIdeGsmLocations(

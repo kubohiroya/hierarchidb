@@ -68,11 +68,10 @@ import { ensureWorkerAPI } from '@hierarchidb/ui-worker-client';
 import { MaplibreExportControl } from '@watergis/maplibre-gl-export';
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import { getDBName } from '@hierarchidb/util';
-import { shapeDB } from '@hierarchidb/shape-plugin';
-import { getEphemeralLocationDB, type LocationType } from '@hierarchidb/location-plugin';
-import { ROUTE_MODES, type RouteMode } from '@hierarchidb/route-plugin';
-import { TilesDB } from '@hierarchidb/gis-sdk';
-import { MAPLIBRE_PROPERTY_METADATA } from '@hierarchidb/styler-plugin';
+import type { LocationQueryAPI, LocationType } from '@hierarchidb/location-store';
+import { ROUTE_MODES, type RouteMode, type RouteQueryAPI } from '@hierarchidb/route-store';
+import type { ShapeQueryAPI } from '@hierarchidb/shape-store';
+import { MAPLIBRE_PROPERTY_METADATA } from '@hierarchidb/styler-store';
 import {
   formatZxyParam,
   type MapViewState as LoaderMapViewState,
@@ -117,6 +116,21 @@ const isMapLibreStyle = (value: unknown): value is MapLibreStyle => {
   if (!isRecord(value)) return false;
   return Array.isArray(value.layers) && isRecord(value.sources);
 };
+
+const isFolderNodeType = (nodeType?: string | null): boolean => {
+  if (!nodeType) return false;
+  const normalized = String(nodeType).trim();
+  return normalized === 'folder' || /folder$/i.test(normalized);
+};
+
+const isNodeVisible = (node?: TreeNode | null): boolean => {
+  if (!node) return true;
+  if (typeof node.visible === 'boolean') return node.visible;
+  return node.invisible !== true;
+};
+
+const isInvisibleFolder = (node?: TreeNode | null): boolean =>
+  !isNodeVisible(node) && isFolderNodeType(node?.nodeType);
 
 const BUILT_IN_STYLE_URLS: Record<Exclude<MapStyle['style'], 'custom'>, string> = {
   streets: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
@@ -221,12 +235,28 @@ const mergeFilters = (base?: MapLibreFilter, next?: MapLibreFilter | null): MapL
   return ['all', base, next] as MapLibreFilter;
 };
 
-let routeTilesDbPromise: Promise<TilesDB> | null = null;
-const getRouteTilesDb = async (): Promise<TilesDB> => {
-  if (!routeTilesDbPromise) {
-    routeTilesDbPromise = TilesDB.getSingleton();
+let shapeQueryPromise: Promise<ShapeQueryAPI> | null = null;
+const getShapeQueryAPI = async (): Promise<ShapeQueryAPI> => {
+  if (!shapeQueryPromise) {
+    shapeQueryPromise = ensureWorkerAPI().then((api) => api.getShapeQueryAPI());
   }
-  return routeTilesDbPromise;
+  return shapeQueryPromise;
+};
+
+let locationQueryPromise: Promise<LocationQueryAPI> | null = null;
+const getLocationQueryAPI = async (): Promise<LocationQueryAPI> => {
+  if (!locationQueryPromise) {
+    locationQueryPromise = ensureWorkerAPI().then((api) => api.getLocationQueryAPI());
+  }
+  return locationQueryPromise;
+};
+
+let routeQueryPromise: Promise<RouteQueryAPI> | null = null;
+const getRouteQueryAPI = async (): Promise<RouteQueryAPI> => {
+  if (!routeQueryPromise) {
+    routeQueryPromise = ensureWorkerAPI().then((api) => api.getRouteQueryAPI());
+  }
+  return routeQueryPromise;
 };
 
 const withLayerOrder = (
@@ -534,8 +564,10 @@ export default function MapPage() {
               dbName: getDBName('shape'),
               tileDataProvider: async (z, x, y, tileNodeId) => {
                 if (!tileNodeId) return null;
-                const record = await shapeDB.getVectorTile(tileNodeId as NodeId, z, x, y);
-                return record?.data_Uint8Array?.buffer ?? null;
+                const api = await getShapeQueryAPI();
+                const tile = await api.getVectorTile(tileNodeId as NodeId, z, x, y);
+                if (!tile) return null;
+                return tile.buffer.slice(tile.byteOffset, tile.byteOffset + tile.byteLength);
               },
               layerConfig: {
                 layerType: 'fill',
@@ -560,10 +592,10 @@ export default function MapPage() {
                 nodeType: 'location',
                 absolutePath: withLayerOrder('location', absolutePath, String(node.id)),
                 dbName: getDBName('location-ephemeral'),
-                tileDataProvider: async (z, x, y) => {
-                  const db = getEphemeralLocationDB();
-                  const rec = await db.vectorTiles.get(`loc-mvt-${sessionId}-${z}-${x}-${y}`);
-                  return rec?.data ?? null;
+                tileDataProvider: async (z, x, y, tileNodeId) => {
+                  if (!tileNodeId) return null;
+                  const api = await getLocationQueryAPI();
+                  return api.getVectorTile(tileNodeId as NodeId, z, x, y);
                 },
                 layerConfig: {
                   layerType: 'circle',
@@ -596,12 +628,8 @@ export default function MapPage() {
                 absolutePath: withLayerOrder('route', absolutePath, String(node.id)),
                 dbName: getDBName('stage-tiles-db'),
                 tileDataProvider: async (z, x, y) => {
-                  const db = await getRouteTilesDb();
-                  const record = await db.tiles
-                    .where('[sessionId+z+x+y]')
-                    .equals([sessionId, z, x, y])
-                    .first();
-                  return record?.data ?? null;
+                  const api = await getRouteQueryAPI();
+                  return api.getVectorTile(sessionId, z, x, y);
                 },
                 layerConfig: {
                   layerType: 'line',

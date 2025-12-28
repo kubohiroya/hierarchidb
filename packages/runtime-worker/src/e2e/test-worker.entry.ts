@@ -10,15 +10,13 @@ import type {
   TreeTableExpandedAPI,
 } from '@hierarchidb/common-api';
 import type {
-  LocationMutationAPI,
-  LocationQueryAPI,
-  RouteQueryAPI,
-  RouteMutationAPI,
   ShapeMutationAPI,
   ShapeQueryAPI,
   StyleMutationAPI,
   StyleQueryAPI,
 } from '@hierarchidb/plugin-service-api';
+import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/location-store';
+import type { RouteQueryAPI, RouteMutationAPI } from '@hierarchidb/route-store';
 import type { Endpoint as ComlinkEndpoint } from 'comlink';
 import { expose, proxy } from 'comlink';
 import type { CommandProcessor } from '../services/CommandProcessor.js';

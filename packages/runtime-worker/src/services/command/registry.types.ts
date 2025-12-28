@@ -61,6 +61,7 @@ export interface CommandMap {
       name?: string;
       description?: string;
       invisible?: boolean;
+      visible?: boolean;
     };
     result: CoreCommandResult;
   };

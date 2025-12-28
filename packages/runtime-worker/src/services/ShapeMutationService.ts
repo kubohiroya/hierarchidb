@@ -1,6 +1,7 @@
 import { SingletonMixin } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { ShapeMutationAPI } from '@hierarchidb/plugin-service-api';
+import { getEphemeralShapeDB } from '@hierarchidb/shape-store';
 
 type DexieCollection = {
   delete?: () => Promise<number>;
@@ -96,5 +97,11 @@ export class ShapeMutationService implements ShapeMutationAPI {
     await this.deleteTileBuffers(nodeId);
     await this.deleteVectorTiles(nodeId);
     await this.clearCache(nodeId);
+  }
+
+  async clearShapeArtifacts(nodeId: NodeId): Promise<void> {
+    await this.cleanupProcessingData(nodeId);
+    const ephemeral = getEphemeralShapeDB();
+    await ephemeral.clearNodeData(nodeId);
   }
 }

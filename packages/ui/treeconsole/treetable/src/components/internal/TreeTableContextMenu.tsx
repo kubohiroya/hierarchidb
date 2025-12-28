@@ -54,18 +54,17 @@ export function TreeTableContextMenu({
       nodeType={node?.nodeType || 'folder'}
       treeId={treeId}
       nodeName={node?.metadata.name}
-      isInvisible={Boolean(node?.invisible)}
+      isVisible={node?.visible ?? (node?.invisible ? false : true)}
       canCreate
       canEdit={!isRoot}
       canRemove={!isRoot}
       canDuplicate={!isRoot}
       canCopy={!isRoot}
       canCut={!isRoot}
-      onToggleInvisible={(_nextValue) => {
+      onToggleVisible={(_nextValue) => {
         if (node) {
           triggerContextAction('toggle-visibility', { source: 'treetable' });
         }
-        handleClose();
       }}
       onCreate={(type: string) => {
         if (node) {

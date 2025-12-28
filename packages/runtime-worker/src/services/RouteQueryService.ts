@@ -1,12 +1,13 @@
 import { SingletonMixin } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
 import type {
-  RouteQueryAPI,
   RouteNearestLineQuery,
   RouteNearestLineResponse,
   RouteNearestLine,
   RouteNearestEndpoint,
 } from '@hierarchidb/plugin-service-api';
+import type { RouteQueryAPI } from '@hierarchidb/route-store';
+import { TilesDB } from '@hierarchidb/gis-sdk';
 import {
   BTree,
   LRUMap,
@@ -108,6 +109,12 @@ export class RouteQueryService implements RouteQueryAPI {
       }));
 
     return { cursor, matches };
+  }
+
+  async getVectorTile(sessionId: string, z: number, x: number, y: number): Promise<ArrayBuffer | null> {
+    const db = await TilesDB.getSingleton();
+    const record = await db.tiles.where('[sessionId+z+x+y]').equals([sessionId, z, x, y]).first();
+    return record?.data ?? null;
   }
 
   private readonly tileCache = new LRUMap<string, BTree<RouteNearestSegment>>(DEFAULT_TILE_CACHE_SIZE);

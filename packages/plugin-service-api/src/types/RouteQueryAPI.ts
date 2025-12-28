@@ -6,4 +6,5 @@ import type { RouteNearestLineQuery, RouteNearestLineResponse } from './routeTyp
  */
 export interface RouteQueryAPI {
   findNearestRouteLine(query: RouteNearestLineQuery): Promise<RouteNearestLineResponse>;
+  getVectorTile(sessionId: string, z: number, x: number, y: number): Promise<ArrayBuffer | null>;
 }

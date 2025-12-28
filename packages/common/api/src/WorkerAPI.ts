@@ -6,11 +6,9 @@ import type {
   ShapeQueryAPI,
   StyleMutationAPI,
   StyleQueryAPI,
-  LocationMutationAPI,
-  LocationQueryAPI,
-  RouteQueryAPI,
-  RouteMutationAPI,
 } from '@hierarchidb/plugin-service-api';
+import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/location-store';
+import type { RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/route-store';
 import type { TagAPI } from './TagAPI.js';
 import type { TreeMutationAPI } from './TreeMutationAPI.js';
 import type { TreeQueryAPI } from './TreeQueryAPI.js';

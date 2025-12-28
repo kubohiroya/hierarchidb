@@ -60,6 +60,8 @@
   "dependencies": {
     "dexie": "^4.2.0",
     "searoute-js": "^0.1.0",
+    "@hierarchidb/location-store": "workspace:*",
+    "@hierarchidb/route-store": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*",
     "@hierarchidb/ui-tabular": "workspace:*"
   },
@@ -75,6 +77,8 @@
     "@hierarchidb/ui-worker-provider": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
+    "@hierarchidb/location-store": "workspace:*",
+    "@hierarchidb/route-store": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/ui-grid": "workspace:*",
     "@hierarchidb/ui-memory": "workspace:*",
@@ -100,6 +104,8 @@
     "@hierarchidb/ui-worker-provider": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
+    "@hierarchidb/location-store": "workspace:*",
+    "@hierarchidb/route-store": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/ui-grid": "workspace:*",
     "@hierarchidb/ui-memory": "workspace:*",

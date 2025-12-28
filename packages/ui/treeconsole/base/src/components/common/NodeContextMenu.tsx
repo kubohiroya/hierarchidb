@@ -44,8 +44,8 @@ export interface NodeContextMenuProps {
   /** @deprecated Use onTrash */
   onRemove?: () => void;
   onTrash?: () => void;
-  onToggleInvisible?: (nextValue: boolean) => void;
-  isInvisible?: boolean;
+  onToggleVisible?: (nextValue: boolean) => void;
+  isVisible?: boolean;
   addMenuNodeTypes?: string[];
   isTrashRoot?: boolean;
   mode?: 'restore' | 'dispose';
@@ -78,19 +78,31 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     onDuplicate: _onDuplicate,
     onRemove: _onRemove,
     onTrash: _onTrash,
-    onToggleInvisible: _onToggleInvisible,
-    isInvisible = false,
+    onToggleVisible: _onToggleVisible,
+    isVisible,
     addMenuNodeTypes = [],
   } = props;
 
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [addMenuAnchor, setAddMenuAnchor] = useState<HTMLElement | null>(null);
+  const [localInvisible, setLocalInvisible] = useState<boolean | null>(null);
 
   // Use refs to store the latest props to avoid stale closures
   const propsRef = useRef(props);
   useEffect(() => {
     propsRef.current = props;
   });
+
+  useEffect(() => {
+    if (!open) {
+      setLocalInvisible(null);
+      return;
+    }
+    const resolvedVisible = typeof isVisible === 'boolean' ? isVisible : true;
+    if (localInvisible !== null && localInvisible === !resolvedVisible) {
+      setLocalInvisible(null);
+    }
+  }, [open, isVisible, localInvisible]);
 
   const handleAddMenuClick = (event: MouseEvent<HTMLElement>) => {
     event.stopPropagation();
@@ -168,12 +180,14 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     });
   };
 
-  const handleToggleInvisible = () => {
-    const onToggleInvisible = propsRef.current.onToggleInvisible;
-    const nextInvisible = !Boolean(propsRef.current.isInvisible);
-    handleMainMenuClose();
+  const handleToggleVisible = () => {
+    const onToggleVisible = propsRef.current.onToggleVisible;
+    const effectiveVisible =
+      localInvisible !== null ? !localInvisible : (typeof isVisible === 'boolean' ? isVisible : true);
+    const nextVisible = !Boolean(effectiveVisible);
+    setLocalInvisible(!nextVisible);
     requestAnimationFrame(() => {
-      onToggleInvisible?.(nextInvisible);
+      onToggleVisible?.(nextVisible);
     });
   };
 
@@ -300,31 +314,49 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
 
         <Divider />
 
-        <MenuItem onClick={handleToggleInvisible} aria-label={isInvisible ? 'Invisible' : 'Visible'}>
+        {(() => {
+          const effectiveVisible =
+            localInvisible !== null ? !localInvisible : (typeof isVisible === 'boolean' ? isVisible : true);
+          const effectiveInvisible = !effectiveVisible;
+          return (
+            <MenuItem
+              onClick={handleToggleVisible}
+              aria-label={effectiveInvisible ? 'Invisible' : 'Visible'}
+              sx={{ minWidth: 200 }}
+            >
           <ListItemIcon>
-            {isInvisible ? <VisibilityOffIcon /> : <VisibilityIcon />}
+            {effectiveInvisible ? <VisibilityOffIcon /> : <VisibilityIcon />}
           </ListItemIcon>
-          <ListItemText>{isInvisible ? 'Invisible' : 'Visible'}</ListItemText>
+          <ListItemText>{effectiveInvisible ? 'Invisible' : 'Visible'}</ListItemText>
           <Switch
-            checked={!isInvisible}
+            checked={effectiveVisible}
             size="small"
             onChange={(event) => {
               event.stopPropagation();
-              handleToggleInvisible();
+              handleToggleVisible();
             }}
-            inputProps={{ 'aria-label': isInvisible ? 'Invisible' : 'Visible' }}
+            sx={{ ml: 'auto' }}
+            inputProps={{ 'aria-label': effectiveInvisible ? 'Invisible' : 'Visible' }}
           />
         </MenuItem>
+          );
+        })()}
 
         {!isFolder && (
           <>
             <Divider />
-            <MenuItem onClick={handlePreviewClick} aria-label="Preview" disabled={isInvisible}>
+            {(() => {
+              const effectiveVisible =
+                localInvisible !== null ? !localInvisible : (typeof isVisible === 'boolean' ? isVisible : true);
+              return (
+                <MenuItem onClick={handlePreviewClick} aria-label="Preview" disabled={!effectiveVisible}>
               <ListItemIcon>
                 <PlayArrowIcon />
               </ListItemIcon>
               <ListItemText>Preview</ListItemText>
             </MenuItem>
+              );
+            })()}
           </>
         )}
       </Menu>

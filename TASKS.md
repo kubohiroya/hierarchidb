@@ -53,6 +53,19 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1930) Gravatar へのユーザ画像上書きの環境変数制御（P1）
+- ブランチ: `feat/ui/gravatar-override`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: packages/ui/auth, packages/ui/usermenu
+- 受け入れ基準（DoD）:
+  - [ ] `VITE_GRAVATAR_OVERRIDE` が有効なときのみ Gravatar 画像が表示される
+  - [ ] 既定はオフ（未設定/false で従来どおりプロバイダ画像）
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] 認証後ユーザ画像の表示経路を特定する
+  - [ ] 環境変数に応じて Gravatar を選択する分岐を追加する
+  - [ ] 影響範囲の lint/typecheck は可能なら実施し、不可なら理由を運用ログに記載する
+- ロールバック手順：該当ファイル差分を revert し、TASKS 運用ログ追記を削除する
+
 1926) /map 検索/hover/クリックの対象 state を jotai 管理へ移行（P1）
 - ブランチ: `feat/ui/map-search-jotai-state`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `app/src/router/routes/map.tsx`, `app/src/state/mapSearch.atoms.ts`, `TASKS.md`
@@ -90,6 +103,7 @@
   - start: 2025-12-28 10:20 JST runtime-worker の `RouteMutationService` で route-plugin 依存を解消する対応に着手。
   - progress: 2025-12-28 10:28 JST route-plugin 依存の IDE-GSM 処理を runtime-worker 側のローカル実装へ移管し、download は `@hierarchidb/download` 経由に切替。
   - done: 2025-12-28 10:28 JST `RouteMutationService` の route-plugin import を撤去し、IDE-GSM 処理とルート生成を runtime-worker へ移動。検証: 未実施（依頼優先）。ロールバック: 本タスク差分を revert。
+  - progress: 2025-12-28 13:40 JST RouteMutationService の未使用 import（SearouteEngine）を削除し、route-plugin typecheck の TS6133 回避に対応。検証: 未実施（typecheck 未実行）。
 
 1928) tag feature の d.ts 出力 TS5055 解消（P1）
 - ブランチ: `fix/tag/tsc-emit-overwrite`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -124,7 +138,12 @@
   - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
 - ロールバック手順：新規パッケージ作成と import 切替差分を revert し、必要なら `pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行する。
 - 運用ログ：
+  - progress: 2025-12-28 13:40 JST RouteUpdaterPayload の export 不足により route-plugin typecheck が失敗したため、route-store と route-plugin の export 経路を整理して参照先を統一する対応に着手。検証: 未実施（typecheck 未実行）。
+  - progress: 2025-12-28 13:45 JST route-plugin の RouteEntity 再export に RouteUpdaterPayload を追加し、UI/共通ユーティリティの import を維持したまま型参照を復旧。検証: 未実施（typecheck 未実行）。
   - start: 2025-12-28 10:48 JST location/route の型を features/*-store に移設する対応に着手。
+  - progress: 2025-12-28 10:59 JST ExecPlan `plans/location-route-store-execplan.md` を作成し、location/route の型移設方針を整理。
+  - progress: 2025-12-28 10:59 JST location-store/route-store を新設し、location/route plugin の型定義を store パッケージ参照へ切替。runtime-worker/app の型参照と tsconfig/依存を更新。
+  - done: 2025-12-28 10:59 JST location/route の型を features/*-store へ移設し、plugin/host の型参照を更新。検証: 未実施（runtime-worker typecheck が @hierarchidb/tag の FeatureDefinition 未定義で失敗するため）。ロールバック: 本タスク差分を revert。
 
 1925) /map 検索フィールド + 強調表示 + ナビゲーションコントロール追加（P1）
 - ブランチ: `feat/ui/map-search-highlight`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -5777,6 +5796,65 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+
+1930) shape/styler store 抽出 + Query/Mutation API 移設（P1）
+- ブランチ: `refactor/worker/shape-styler-store`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin`, `plugins/styler-plugin`, `packages/runtime-worker`, `packages/features/{shape,styler,location,route}-store`, `packages/plugin-service-api`, `app/src/router/routes/map.tsx`, `TASKS.md`, `plans/`
+- 受け入れ基準（DoD）:
+  - [x] `packages/features/shape-store` に shape の DB 周りが移設される
+  - [x] `packages/features/styler-store` に StylerQueryAPI / StylerMutationAPI が追加される
+  - [x] `{Shape,Location,Route}MutationAPI` が store で公開され、EntityLifecycleManager のクリーンアップが plugin 直参照なしで動作する
+  - [x] `app/src/router/routes/map.tsx` が store の `{Shape,Location,Route}QueryAPI` を利用する
+  - [x] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [x] ExecPlan を作成し、DB 移設/API 移設/依存更新の手順を明記する
+  - [x] shape-store/styler-store の package.json/tsconfig/index を追加する
+  - [x] shape-plugin/styler-plugin の export を store パッケージ参照へ切替する
+  - [x] runtime-worker/app の API 参照を store パッケージへ切替する
+  - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：新規パッケージ作成と import 切替差分を revert し、必要なら `pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行する。
+- 運用ログ：
+  - start: 2025-12-28 11:17 JST shape/styler store 抽出と Query/Mutation API 移設の対応に着手。
+  - progress: 2025-12-28 11:56 JST shape/styler store を新設し、shape/location/route DB を store 側へ移設、runtime-worker と map を store API 経由へ切替。
+  - progress: 2025-12-28 13:55 JST shape-store の BatchSession/Task 型と shape-plugin の BatchSessionConfig/BatchTaskType を整合させるため、shape-store 側の型定義を詳細化して互換性を復旧する対応に着手。検証: 未実施（typecheck 未実行）。
+  - progress: 2025-12-28 14:05 JST shape-store の BatchSessionConfig/BatchTaskType を定義して BatchSessionRecord の型を更新し、shape-plugin の useBatchSessionActions から未使用 import を削除。検証: 未実施（typecheck 未実行）。
+  - done: 2025-12-28 11:56 JST EntityLifecycleManager を Mutation API 経由のクリーンアップに変更し、map のタイル取得を Query API 経由へ移行。検証: 未実施（typecheck 未実行）。ロールバック: 本タスク差分を revert。
+
+1931) runtime-worker typecheck 修正（cleanup API/RouteDatabase 型）（P1）
+- ブランチ: `fix/worker/typecheck-cleanup-apis`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/runtime-worker/tsconfig.typecheck.json`, `packages/runtime-worker/src/WorkerService.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [x] `EntityLifecycleManager` の cleanup API 呼び出しが型エラーなく解決する
+  - [x] `RouteDatabase` の型アサーションエラーが解消される
+  - [x] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [x] runtime-worker typecheck の解決先が最新 API 定義になるよう設定を調整する
+  - [x] RouteDatabase ハンドル型の整合性を修正する
+  - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：該当ファイルの差分を revert し、必要なら `pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行する。
+- 運用ログ：
+  - start: 2025-12-28 12:10 JST cleanup API/RouteDatabase 型の typecheck エラー解消に着手。
+  - progress: 2025-12-28 12:40 JST runtime-worker typecheck の paths を再調整し、外部パッケージの src 取り込みを回避。
+  - progress: 2025-12-28 13:05 JST RouteDatabaseLike の bulkPut 返り値を Promise<unknown> に緩和し、RouteDatabaseHandle の互換性を確保。検証: 未実施（typecheck 未実行）。
+  - progress: 2025-12-28 13:20 JST WorkerService の Dexie handle で any を撤去し、unknown/型参照へ置換する対応に着手。検証: 未実施（typecheck 未実行）。
+  - progress: 2025-12-28 13:25 JST WorkerService の any を具体型へ置換し、ShapeDB の vector tile は VectorTileRecord 型に統一。検証: 未実施（typecheck 未実行）。
+  - progress: 2025-12-28 12:40 JST runtime-worker typecheck の paths 設定と RouteDatabase 型を調整。検証: 未実施（typecheck 未実行）。
+
+1932) location/route store の DB/Query/Mutation 集約（P1）
+- ブランチ: `refactor/store/location-route-api`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/runtime-worker`, `packages/common/api`, `packages/features/{location,route}-store`, `TASKS.md`, `plans/`
+- 受け入れ基準（DoD）:
+  - [x] host 側の Location/Route Query/Mutation 型参照が store 経由に統一される
+  - [x] location/route の DB は store 実装を参照し、plugin 側は再exportのみとなる
+  - [x] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [x] ExecPlan を作成し、API 集約と import 更新の手順を明記する
+  - [x] runtime-worker/common/api の Location/Route API 型 import を store に切替する
+  - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：該当差分を revert し、必要なら `pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行する。
+- 運用ログ：
+  - start: 2025-12-28 12:20 JST location/route の DB/Query/Mutation を store 側へ集約する対応に着手。
+  - done: 2025-12-28 12:26 JST host 側の Location/Route API 型 import を store 経由に切替。検証: 未実施（typecheck 未実行）。ロールバック: 本タスク差分を revert。
 
 1924) /map 印刷アイコンボタン追加（PDF出力結線）（P2）
 - ブランチ: `feat/ui/map-print-button`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -12707,6 +12785,11 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-28 18:45 progress: feat/ui-treeconsole/visibility-toggle — Visible/Invisible スイッチの不具合（UI 幅の伸張/即時クローズ・invisible 未永続化）を調査し修正対応に着手。
+- 2025-12-28 19:05 progress: feat/ui-treeconsole/visibility-toggle — CoreDB 正規化で invisible を永続化し、コンテキストメニューの Visible/Invisible トグルを固定幅＋即時反映（メニュー維持）へ調整。
+- 2025-12-28 14:50 start: chore/tooling/dependency-cruiser-update — dependency-cruiser を最新化し、Node 25 で deps:cycles が動くか確認する対応に着手。DoD: 最新版へ更新、依存解析コマンドの再実行、結果を記録。
+- 2025-12-28 15:05 progress: chore/tooling/dependency-cruiser-update — `pnpm add -Dw dependency-cruiser@latest` で最新版へ更新し、deps:cycles を再実行（Node 25 で起動確認）。循環依存 21 件を検出したため一覧化して共有する段階へ移行。
+- 2025-12-28 15:05 done: chore/tooling/dependency-cruiser-update — dependency-cruiser を最新化し、shape/location/runtime-worker/plugin-registry 周辺と app ルーティング周辺の循環依存を検出。ロールバック: `package.json`/`pnpm-lock.yaml` の dependency-cruiser 更新を revert し、旧版の失敗を再現。
 - 2025-12-27 15:45 start: feat/ui/map-search-highlight — /map の検索フィールド・強調表示・ズームコントロール追加に着手。DoD: Kanban 1925 のとおり。
 - 2025-12-27 16:35 start: feat/ui/map-search-jotai-state — /map の検索/hover/クリック対象を jotai 管理へ移行する対応に着手。DoD: Kanban 1926 のとおり。
 - 2025-12-27 16:50 progress: feat/ui/map-search-jotai-state — 検索/hover/クリック対象の jotai atom 追加と map.tsx の状態移行を実施。

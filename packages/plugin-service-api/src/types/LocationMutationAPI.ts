@@ -12,6 +12,7 @@ export interface LocationMutationAPI {
   upsertLocationRelations(relations: LocationRelation[]): Promise<void>;
   deleteLocationRelations(relations: LocationRelation[]): Promise<void>;
   clearLocationEntities(nodeId: NodeId): Promise<void>;
+  clearLocationArtifacts(nodeId: NodeId): Promise<void>;
   importIdeGsmLocations(
     request: IdeGsmLocationImportRequest,
     progress?: IdeGsmImportCallback,

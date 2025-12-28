@@ -2,49 +2,14 @@ import type { NodeId } from '@hierarchidb/common-types';
 import type {
   IdeGsmRouteError,
   LocationGroupItemData,
-  LocationQueryAPI,
 } from '@hierarchidb/plugin-service-api';
-
-export const ROUTE_MODES = {
-  AIRWAY: 'airway',
-  WATERWAY: 'waterway',
-  RAILWAY: 'railway',
-  H_RAILWAY: 'high-speed-railway',
-  ROAD: 'road',
-  HIGHWAY: 'highway',
-} as const;
-
-export type RouteMode = typeof ROUTE_MODES[keyof typeof ROUTE_MODES];
-
-type LocationPointId = string;
-
-export interface RoutePoint {
-  coordinates: [number, number];
-  pointId: LocationPointId;
-  locationId?: NodeId;
-  name: string;
-  admin0Name: string;
-  admin1Name: string;
-  admin2Name?: string;
-}
-
-export interface RouteLineString {
-  id: NodeId;
-  nodeId: NodeId;
-  type: 'route-line-string';
-  version: number;
-  createdAt: number;
-  updatedAt: number;
-  name: string;
-  featureId: string;
-  routeMode: RouteMode;
-  startPoint: RoutePoint;
-  endPoint: RoutePoint;
-  waypoints?: [number, number][];
-  distance?: number;
-  speed?: number;
-  metadata?: Record<string, string | number | boolean>;
-}
+import {
+  ROUTE_MODES,
+  type RouteLineString,
+  type RouteMode,
+  type RoutePoint,
+} from '@hierarchidb/route-store';
+import type { LocationPointId, LocationQueryAPI } from '@hierarchidb/location-store';
 
 const IDE_GSM_HEADERS = [
   'Start',
@@ -224,9 +189,9 @@ function buildRoutePoint(
   admin0Name?: string,
   admin1Name?: string,
 ): RoutePoint {
-  const pointId = (location as { pointId?: string }).pointId
-    ?? location.pid
-    ?? (crypto.randomUUID() as LocationPointId);
+  const pointId = ((location as { pointId?: LocationPointId }).pointId
+    ?? (location as { pid?: string }).pid
+    ?? crypto.randomUUID()) as LocationPointId;
   return {
     coordinates: [location.longitude, location.latitude],
     admin0Name: admin0Name ?? location.gid0 ?? '',

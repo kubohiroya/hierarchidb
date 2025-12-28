@@ -7,14 +7,13 @@ import {
   type IdeGsmImportProgress,
   type IdeGsmRouteImportRequest,
   type IdeGsmRouteImportResult,
-  type LocationQueryAPI,
-  type RouteMutationAPI,
   type RouteWaypointInput,
   type RouteWaypointResult,
 } from '@hierarchidb/plugin-service-api';
+import type { LocationQueryAPI } from '@hierarchidb/location-store';
+import type { RouteMutationAPI } from '@hierarchidb/route-store';
 import { buildIdeGsmLocationIndex, parseIdeGsmCsv } from './route/ideGsmCsv.js';
 import { RouteGenerator } from './route/RouteGenerator.js';
-import { SearouteEngine } from './route/SearouteEngine.js';
 
 type DexieCollection = {
   delete?: () => Promise<number>;
@@ -27,7 +26,7 @@ type DexieWhere = {
 type DexieTable = {
   where(key: string): DexieWhere;
   delete?: (id: string) => Promise<void>;
-  bulkPut?: (items: unknown[]) => Promise<void>;
+  bulkPut?: (items: unknown[]) => Promise<unknown>;
 };
 
 type RouteDatabaseLike = {
@@ -52,6 +51,10 @@ export class RouteMutationService implements RouteMutationAPI {
   async deleteRouteLineStrings(nodeId: NodeId): Promise<void> {
     await this.ensureOpen();
     await this.db.lineStrings.where('nodeId').equals(nodeId).delete?.();
+  }
+
+  async clearRouteArtifacts(nodeId: NodeId): Promise<void> {
+    await this.deleteRouteLineStrings(nodeId);
   }
 
   async applyIdeGsmWaypoints(lines: RouteWaypointInput[]): Promise<RouteWaypointResult[]> {

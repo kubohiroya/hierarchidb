@@ -55,6 +55,7 @@
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
+    "@hierarchidb/shape-store": "workspace:*"
   },
   "peerDependencies": {
     "@hierarchidb/auth-recovery": "workspace:*",
@@ -71,6 +72,7 @@
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/spreadsheet-plugin": "workspace:*",
+    "@hierarchidb/shape-store": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/ui-accordion-config": "workspace:*",
     "@hierarchidb/ui-country-select": "workspace:*",
@@ -125,6 +127,7 @@
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/spreadsheet-plugin": "workspace:*",
+    "@hierarchidb/shape-store": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/ui-accordion-config": "workspace:*",
     "@hierarchidb/ui-country-select": "workspace:*",

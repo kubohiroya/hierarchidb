@@ -55,4 +55,5 @@ export interface LocationQueryAPI {
   listLocationGroups(nodeId: NodeId): Promise<LocationGroupItem[]>;
   listLocationRelations(nodeId: NodeId): Promise<LocationRelation[]>;
   findNearestLocationPoint(query: LocationNearestPointQuery): Promise<LocationNearestPointResponse>;
+  getVectorTile(nodeId: NodeId, z: number, x: number, y: number): Promise<ArrayBuffer | null>;
 }

@@ -57,6 +57,7 @@
   },
   "dependencies": {
     "@hierarchidb/gen-iso3166-2": "workspace:*",
+    "@hierarchidb/location-store": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*",
     "@hierarchidb/ui-country-select": "workspace:*",
     "@hierarchidb/ui-tabular": "workspace:*",
@@ -92,6 +93,7 @@
     "@hierarchidb/plugin-base": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
     "@hierarchidb/ui-search-field": "workspace:*",
+    "@hierarchidb/location-store": "workspace:*",
     "react-virtuoso": "^4.14.0",
     "notistack": "^3.0.2"
   },
@@ -126,6 +128,7 @@
     "@hierarchidb/plugin-base": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
     "@hierarchidb/ui-search-field": "workspace:*",
+    "@hierarchidb/location-store": "workspace:*",
     "react-virtuoso": "^4.14.0",
     "notistack": "^3.0.2"
   },

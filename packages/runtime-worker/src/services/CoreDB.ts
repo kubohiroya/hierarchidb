@@ -34,6 +34,8 @@ const normalizeTreeNodeForPersist = (node: TreeNode): TreeNode => {
     originalParentId,
     removedAt,
     lastTouchedAt,
+    invisible,
+    visible,
   } = node as TreeNode;
 
   const rawMetadata = (node as { metadata?: unknown }).metadata;
@@ -82,6 +84,8 @@ const normalizeTreeNodeForPersist = (node: TreeNode): TreeNode => {
     originalParentId,
     removedAt,
     lastTouchedAt,
+    invisible,
+    visible,
   };
 };
 

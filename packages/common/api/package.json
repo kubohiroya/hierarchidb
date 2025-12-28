@@ -25,8 +25,10 @@
   },
   "dependencies": {
     "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/location-store": "workspace:*",
     "@hierarchidb/memory": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
+    "@hierarchidb/route-store": "workspace:*",
     "comlink": "^4.4.2",
     "rxjs": "^7.8.2"
   },
