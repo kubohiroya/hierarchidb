@@ -1,1 +1,0 @@
-{"version":3,"file":"icon-B3EhhFfM.js","names":[],"sources":["../../../plugins/basemap-plugin/src/icon/index.ts"],"sourcesContent":["import PublicIcon from '@mui/icons-material/Public';\n\nexport const BasemapPluginIcon = PublicIcon;\n\nexport default BasemapPluginIcon;\n"],"mappings":"kJAEA,MAAa,EAAoB,EAEjC,IAAA,EAAe"}

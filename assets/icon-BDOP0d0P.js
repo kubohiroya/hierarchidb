@@ -1,2 +1,0 @@
-import"./vendor-react-DueQUKGo.js";import"./identifier-CN0yTFUG.js";import{fr as e}from"./entry.client.js";const t=e;var n=t;export{t as RoutePluginIcon,n as default};
-//# sourceMappingURL=icon-BDOP0d0P.js.map

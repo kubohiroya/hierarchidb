@@ -1,1 +1,0 @@
-import{t as e}from"./Indexer-XoNkWY72.js";export{e as TabularIndexer};

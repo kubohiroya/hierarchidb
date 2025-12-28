@@ -1,0 +1,1 @@
+import{D as e}from"../worker.js";async function t(t,n){return e(`shape`,t,n)}export{t as authFetch};

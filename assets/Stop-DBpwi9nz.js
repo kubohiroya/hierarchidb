@@ -1,2 +1,0 @@
-import{a as e}from"./rolldown-runtime-GuRs8mfQ.js";import{r as t}from"./vendor-react-DueQUKGo.js";import{t as n}from"./createSvgIcon-CYKPKq5k.js";var r=n((0,e(t()).jsx)(`path`,{d:`M6 6h12v12H6z`}),`Stop`);export{r as t};
-//# sourceMappingURL=Stop-DBpwi9nz.js.map

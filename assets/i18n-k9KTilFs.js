@@ -1,2 +1,0 @@
-import"./react-C7p0Js4D.js";import"./jsx-runtime-CnMVNxLz.js";import{t as e}from"./src-D-FgKjsX.js";import{r as t,t as n}from"./ja-DUImtwvG.js";const r={en:t,ja:n},i=()=>(e.language||`en`).toLowerCase().startsWith(`ja`)?`ja`:`en`,a=(t=`resolver-plugin`)=>{let n=i();return{t:(n,r,i)=>String(e.t(n,{ns:t,defaultValue:r??n,...i})),translations:r[n]??r.en,locale:n}};export{a as useTranslation};
-//# sourceMappingURL=i18n-k9KTilFs.js.map

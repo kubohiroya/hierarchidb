@@ -1,0 +1,1 @@
+import"./import-wrapper-prod-Sv3TzLWw.js";import"./src-MxIw79LM.js";import{u as e}from"./src-COvsh-KS.js";async function t(t,n){return e(`shape`,t,n)}export{t as authFetch};

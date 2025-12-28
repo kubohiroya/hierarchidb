@@ -1,0 +1,1 @@
+import"./vendor-react-DpltIsIb.js";import{dt as e}from"./index.js";const t=e;var n=t;export{t as LinkerPluginIcon,n as default};

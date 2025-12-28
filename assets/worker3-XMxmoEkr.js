@@ -1,0 +1,1 @@
+var e=async()=>{},t=e;export{t as default,e as registerRouteWorkerStores};

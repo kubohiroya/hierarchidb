@@ -1,1 +1,0 @@
-{"version":3,"file":"icon-6xSEvJN1.js","names":[],"sources":["../../../plugins/basemap-plugin/src/icon/index.ts"],"sourcesContent":["import PublicIcon from '@mui/icons-material/Public';\n\nexport const BasemapPluginIcon = PublicIcon;\n\nexport default BasemapPluginIcon;\n"],"mappings":"6GAEA,MAAa,EAAoB,EAEjC,IAAA,EAAe"}

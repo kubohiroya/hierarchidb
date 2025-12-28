@@ -1,1 +1,0 @@
-import"./vendor-react-DueQUKGo.js";import"./ui-plugin-loader-ki8P9cR6.js";import"./loader-BjRsWBqU.js";import"./rootRoute-Co6ersl4.js";import{t as e}from"./baseRoute-Ctjk940M.js";export{e as treeBaseRoute};

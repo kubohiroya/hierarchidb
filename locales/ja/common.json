@@ -284,6 +284,10 @@
         },
         "autosave": {
           "title": "自動保存"
+        },
+        "sharedZoomRange": {
+          "title": "共通ズーム範囲",
+          "helper": "shape/location/route のズーム範囲に共通の既定値を適用します。"
         }
       },
       "developerMenu": {
@@ -305,6 +309,8 @@
       "cut": "切り取り",
       "duplicate": "複製",
       "moveToTrash": "ゴミ箱に移動",
+      "visible": "表示",
+      "hidden": "非表示",
       "checkReference": "参照を確認",
       "preview": "プレビュー"
     }

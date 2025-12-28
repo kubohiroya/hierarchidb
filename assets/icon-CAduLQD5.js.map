@@ -1,1 +1,0 @@
-{"version":3,"file":"icon-CAduLQD5.js","names":[],"sources":["../../../plugins/linker-plugin/src/icon/index.ts"],"sourcesContent":["import AccountTreeIcon from '@mui/icons-material/AccountTree';\n\nexport const LinkerPluginIcon = AccountTreeIcon;\n\nexport default LinkerPluginIcon;\n"],"mappings":"2GAEA,MAAa,EAAmB,EAEhC,IAAA,EAAe"}

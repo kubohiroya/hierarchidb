@@ -1,2 +1,0 @@
-import{dt as e}from"./entry.client.js";import{a as t}from"./constants-BDUvh75O.js";import{t as n}from"./dist-C1YpAH2X.js";import{n as r}from"./spreadsheetTabularApiFactory-DSXmsL5x.js";var i=class extends n{constructor(t=e(`shape-tabular-metadata-db`)){super(t)}};function a(){return new r(new i,t)}export{i as n,a as t};
-//# sourceMappingURL=services-DqvXJvUz.js.map
