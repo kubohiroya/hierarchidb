@@ -1,2 +1,0 @@
-import{L as e,N as t}from"../worker.js";import{n,r,t as i}from"./EphemeralLocationDB-CNH7o8uV.js";import{t as a}from"./locationEntitiesDB-nQcH4WHI.js";async function o(){await t.delete(e(`location`)),await t.delete(e(`location-ephemeral`))}export{i as EphemeralLocationDB,a as LocationEntitiesDB,o as clearDatabases,n as closeEphemeralLocationDB,r as getEphemeralLocationDB};
-//# sourceMappingURL=database-DRVKFss0.js.map

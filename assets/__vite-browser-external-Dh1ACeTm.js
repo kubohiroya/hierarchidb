@@ -1,0 +1,1 @@
+import{L as e}from"../worker.js";var t=e(((e,t)=>{t.exports={}}));export{t};

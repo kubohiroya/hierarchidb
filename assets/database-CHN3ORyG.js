@@ -1,2 +1,0 @@
-import{L as e,N as t}from"../worker.js";async function n(){await t.delete(e(`resolver-db`))}var r=class extends t{resolvers;constructor(){super(e(`resolver-db`)),this.version(1).stores({resolvers:`&id, nodeId, name`})}};const i=new r;export{r as ResolverEntitiesDB,n as clearDatabases,i as resolverEntitiesDB};
-//# sourceMappingURL=database-CHN3ORyG.js.map

@@ -1,2 +1,0 @@
-import"./vendor-react-DueQUKGo.js";import"./identifier-CN0yTFUG.js";import{hr as e}from"./entry.client.js";const t=e;var n=t;export{t as StylerPluginIcon,n as default};
-//# sourceMappingURL=icon-n1Wnz-JX.js.map

@@ -1,1 +1,0 @@
-{"version":3,"file":"icon-BDOP0d0P.js","names":[],"sources":["../../../plugins/route-plugin/src/icon/index.ts"],"sourcesContent":["import RouteIcon from '@mui/icons-material/Route';\n\nexport const RoutePluginIcon = RouteIcon;\n\nexport default RoutePluginIcon;\n"],"mappings":"2GAEA,MAAa,EAAkB,EAE/B,IAAA,EAAe"}

@@ -1,2 +1,0 @@
-import{rt as e}from"./entry.client.js";async function t(){return await e.getSingleton()}function n(){}export{t as getShapeAuthHandler,n as resetShapeAuthHandler};
-//# sourceMappingURL=auth-BnVJHYhd.js.map

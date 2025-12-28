@@ -1,1 +1,0 @@
-{"version":3,"file":"icon-2k4guGkD.js","names":[],"sources":["../../../plugins/folder-plugin/src/icon/index.ts"],"sourcesContent":["import FolderIcon from '@mui/icons-material/Folder';\n\nexport const FolderPluginIcon = FolderIcon;\n\nexport default FolderPluginIcon;\n"],"mappings":"kJAEA,MAAa,EAAmB,EAEhC,IAAA,EAAe"}

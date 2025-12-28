@@ -1,2 +1,0 @@
-const e={ROAD:`road`,RAILWAY:`railway`,WATERWAY:`waterway`,AIRWAY:`airway`,WALKING:`walking`,CYCLING:`cycling`,HIKING:`hiking`,SHIPPING:`shipping`,PIPELINE:`pipeline`,POWERLINE:`powerline`};export{e as ROUTE_TYPES};
-//# sourceMappingURL=types-CqCK55RI.js.map

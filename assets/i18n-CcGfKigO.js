@@ -1,2 +1,0 @@
-import"./vendor-react-DueQUKGo.js";import"./identifier-CN0yTFUG.js";import{Et as e}from"./entry.client.js";import{r as t,t as n}from"./ja-CD5o-6mu.js";var r={en:t,ja:n},i=()=>(e.language||`en`).toLowerCase().startsWith(`ja`)?`ja`:`en`;const a=(t=`resolver-plugin`)=>{let n=i();return{t:(n,r,i)=>String(e.t(n,{ns:t,defaultValue:r??n,...i})),translations:r[n]??r.en,locale:n}};export{a as useTranslation};
-//# sourceMappingURL=i18n-CcGfKigO.js.map

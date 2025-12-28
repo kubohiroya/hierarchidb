@@ -1,2 +1,0 @@
-const e=e=>({schemaVersion:1,domain:e?.domain??{}});export{e as normalizeFolderPeerData};
-//# sourceMappingURL=types-FSBG59yg.js.map

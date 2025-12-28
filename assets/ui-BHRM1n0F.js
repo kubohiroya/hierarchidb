@@ -1,2 +1,0 @@
-import"./react-C7p0Js4D.js";import"./Grow-CvLdXSSC.js";import"./DefaultPropsProvider-BcGgqO1n.js";import"./jsx-runtime-CnMVNxLz.js";import"./PreviewTestStep-DjkJmQyn.js";import{t as e}from"./src-D-FgKjsX.js";import"./dist-CupeTQMV.js";import{i as t,n}from"./ja-DUImtwvG.js";import"./steps-provider-D22KESLP.js";const r={"./locales/en.json":t,"./locales/ja.json":n};Object.entries(r).forEach(([t,n])=>{let r=t.match(/locales\/([a-z-]+)\.json$/i)?.[1];if(!r)return;let i=n.default??n;i&&e.addResourceBundle(r,`resolver-plugin`,i,!0,!0)});
-//# sourceMappingURL=ui-BHRM1n0F.js.map

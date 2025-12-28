@@ -1,2 +1,0 @@
-import{x as e}from"../worker.js";import{n as t}from"./RuntimeWorkerClient-FS2uwipH.js";function n(){t(async()=>{try{return await e()}catch{return null}})}export{n as registerShapeRuntimeWorkerAdapters};
-//# sourceMappingURL=registerRuntimeWorker-DHCaZKJg.js.map
