@@ -36,3 +36,20 @@ export interface DialogStepState {
   /** Optional validation error message to surface to the UI */
   errors?: Map<string,unknown> | null;
 }
+
+export interface DialogWindowState {
+  mode?: DialogDisplayMode;
+  position?: DialogPosition | null;
+  size?: DialogSize | null;
+}
+
+export interface DialogProgressState {
+  /** Zero-based index of the last active step when the dialog was persisted. */
+  activeStepIndex: number;
+}
+
+export interface DialogUIState {
+  dialogWindow?: DialogWindowState | null;
+  dialogProgress?: DialogProgressState | null;
+  // Add minimal UI-only flags here to avoid mixing with domain data.
+}

@@ -83,6 +83,8 @@ export interface MatrixSelection {
 export interface MatrixConfig {
   /** Available columns */
   columns: MatrixColumn[];
+  /** Column IDs to disable in the matrix */
+  disabledColumnIds?: string[];
   /** Whether to allow bulk selection operations */
   allowBulkSelect?: boolean;
   /** Whether to show column headers */

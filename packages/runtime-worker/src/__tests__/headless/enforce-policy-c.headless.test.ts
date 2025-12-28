@@ -23,14 +23,19 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
   }
 
   const withPayload = (
-    node: Omit<TreeNode, 'data' | 'draftData' | 'metadata' | 'draftMetadata'> & Partial<TreeNode> & {
-      name?: string;
-    }
+    node: Omit<
+      TreeNode,
+      'data' | 'draftData' | 'metadata' | 'draftMetadata' | 'visible'
+    > &
+      Partial<TreeNode> & {
+        name?: string;
+      }
   ): TreeNode => ({
     data: {},
     draftData: null,
     metadata: { name: node.name ?? 'Untitled', description: undefined, tags: [] },
     draftMetadata: null,
+    visible: node.visible ?? true,
     ...node,
   });
 
@@ -52,6 +57,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
       draftMetadata: null,
       data: {},
       draftData: null,
+      visible: true,
     };
     await core.createNode(aNode);
 
@@ -65,6 +71,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
       metadata: { name: holderName, description: undefined, tags: [] },
       draftMetadata: null,
       depth: 0,
+      visible: true,
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
@@ -79,6 +86,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
       metadata: { name: 'Draft', description: undefined, tags: [] },
       draftMetadata: null,
       depth: 1,
+      visible: true,
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,

@@ -7,14 +7,14 @@ import type {
   StyleQueryAPI,
   StyleRecord,
 } from '@hierarchidb/plugin-service-api';
-import { StyleDB } from '@hierarchidb/style-store';
+import { StylerDB } from '@hierarchidb/styler-store';
 
 export class StyleService implements StyleQueryAPI, StyleMutationAPI {
-  static async getSingleton(db: StyleDB): Promise<StyleService> {
+  static async getSingleton(db: StylerDB): Promise<StyleService> {
     return SingletonMixin.getSingleton('StyleService', async () => new StyleService(db));
   }
 
-  constructor(private db: StyleDB) {}
+  constructor(private db: StylerDB) {}
 
   async getStyleDescriptor(nodeId: NodeId): Promise<StyleDescriptor | null> {
     const record = await this.db.styles.get(nodeId);

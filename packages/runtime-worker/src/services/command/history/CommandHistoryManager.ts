@@ -443,6 +443,7 @@ export class CommandHistoryManager {
           data: null,
           draftData: null,
           depth: 0,
+          visible: true,
           createdAt: Date.now() as Timestamp,
           updatedAt: Date.now() as Timestamp,
           version: 1,

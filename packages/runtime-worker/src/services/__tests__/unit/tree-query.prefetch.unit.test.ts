@@ -12,6 +12,7 @@ const makeNode = (id: string, parentId: string | null, name: string): TreeNode =
   data: {},
   draftData: null,
   depth: parentId ? 1 : 0,
+  visible: true,
   createdAt: Date.now(),
   updatedAt: Date.now(),
   version: 1,

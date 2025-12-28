@@ -28,4 +28,5 @@ export {
   type StylerValueType,
   type TablePreviewProps,
 } from './StylerEntity.js';
+export { StylerDB } from './StylerDB.js';
 export type { StylerMutationAPI, StylerQueryAPI } from './StylerAPI.js';

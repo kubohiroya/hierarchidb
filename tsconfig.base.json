@@ -29,16 +29,16 @@
         "plugins/basemap-plugin/src/*"
       ],
       "@hierarchidb/batch": [
-        "packages/features/batch/dist/index.d.ts"
+        "packages/features/batch/src/index.ts"
       ],
       "@hierarchidb/batch-runtime-services": [
-        "packages/batch-runtime-services/dist/index.d.ts"
+        "packages/batch-runtime-services/src/index.ts"
       ],
       "@hierarchidb/batch-runtime-services/*": [
-        "packages/batch-runtime-services/dist/*"
+        "packages/batch-runtime-services/src/*"
       ],
       "@hierarchidb/batch/*": [
-        "packages/features/batch/dist/*"
+        "packages/features/batch/src/*"
       ],
       "@hierarchidb/bff": [
         "packages/backend/bff/src/index.ts"
@@ -310,12 +310,6 @@
       ],
       "@hierarchidb/styler-plugin/*": [
         "plugins/styler-plugin/src/*"
-      ],
-      "@hierarchidb/style-store": [
-        "packages/features/style-store/src/index.ts"
-      ],
-      "@hierarchidb/style-store/*": [
-        "packages/features/style-store/src/*"
       ],
       "@hierarchidb/table-metadata": [
         "packages/features/table-metadata/src/index.ts"

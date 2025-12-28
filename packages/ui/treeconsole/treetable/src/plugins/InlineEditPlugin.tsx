@@ -121,6 +121,7 @@ export function createInlineEditPlugin(config?: InlineEditPluginConfig): TreeTab
             createdAt: Date.now(),
             updatedAt: Date.now(),
             version: 1,
+            visible: true,
             data: {...newData.data},
             draftData: {...newData.draftData},
             metadata: {...newData.metadata},

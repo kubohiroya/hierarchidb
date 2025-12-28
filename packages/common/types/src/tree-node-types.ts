@@ -1,3 +1,4 @@
+import type { DialogUIState } from './dialog-state.js';
 import type { NodeId, NodeType } from './id-types.js';
 import type { Timestamp } from './primitive-types.js';
 
@@ -34,23 +35,6 @@ export interface DescendantProperties {
 
 export interface ReferenceProperties {
   references?: NodeId[];
-}
-
-export interface DialogWindowState {
-  mode?: 'normal' | 'maximize' | 'full-screen';
-  position?: { x: number; y: number } | null;
-  size?: { width: number; height: number } | null;
-}
-
-export interface DialogProgressState {
-  /** Zero-based index of the last active step when the dialog was persisted. */
-  activeStepIndex: number;
-}
-
-export interface DialogUIState {
-  dialogWindow?: DialogWindowState | null;
-  dialogProgress?: DialogProgressState | null;
-  // Add minimal UI-only flags here to avoid mixing with domain data.
 }
 
 // Base shape for payloads; keep structural typing while avoiding primitive-only payloads.

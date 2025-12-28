@@ -24,6 +24,7 @@ describe('Create dialog commit flow', () => {
       data: null,
       draftData: null,
       depth: 0,
+      visible: true,
       createdAt: now,
       updatedAt: now,
       version: 1,

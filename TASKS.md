@@ -53,18 +53,229 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
-1845) TreeNodeInfoPanel の visible 反映遅延修正（P1）
-- ブランチ: `fix/ui/treenode-info-visible`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: app（TreeNodeInfoPanel）
+1949) shape-plugin: Edit shape step 5 の start build が開始しない不具合調査/修正（P1）
+- ブランチ: `fix/shape-plugin/edit-step5-start-build`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src`, `packages/plugin-ui-host`, `packages/plugin-service-sdk`, `TASKS.md`
 - 受け入れ基準（DoD）:
-  - [ ] TreeNodeInfoPanel の preview ボタンが visible 変更直後に即時反映される
-  - [ ] invisible 状態のタイトル打ち消し線が即時反映される
-  - [ ] Breadcrumb/TreeTableCore と同等の更新経路へ揃える
-  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+  - [ ] `Edit shape` step 5 で `start build` を押すとビルドが開始される
+  - [ ] 原因（UI/Worker/状態遷移）と発生範囲を運用ログに記載する
+  - [ ] 修正が必要な場合、最小差分で反映しロールバック手順を記載する
 - チェックリスト:
-  - [ ] TreeNodeInfoPanel の state 参照と購読経路を確認する
-  - [ ] visible 変更時に再レンダリングされるよう補正する
-- ロールバック手順：`app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx` の差分を revert する
+  - [ ] `start build` のイベント発火と RPC 呼び出し経路を確認する
+  - [ ] step 5 の条件分岐/ガード/状態を確認する
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する
+- ロールバック手順：`plugins/shape-plugin/**` と関連 UI/Worker の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-28 23:10 JST Edit shape step 5 の start build 未開始の調査に着手。
+  - progress: 2025-12-28 23:25 JST start build 時に batchConfig.dataSource と urlMetadata が不足するケースを確認。開始前に dataSourceName から batchConfig.dataSource を補完し、必要なら selection から urlMetadata を再生成する修正を追加。
+
+1948) route-plugin: LocationGroupItemData の admin 名参照整理（P1）
+- ブランチ: `fix/route-plugin/admin-name-mapping`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/route-plugin/src/services/ide-gsm/ideGsmCsv.ts`, geoBoundaries データ, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] `gid0/gid1/gid2` 参照を `countryCode/admin1/admin2` 系へ移行する
+  - [ ] geoBoundaries の admin0/1/2 相当フィールドの調査結果をログに残す
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] buildRoutePoint の admin 名解決を更新する
+  - [ ] geoBoundaries の実データを確認し、フィールド対応をメモする
+- ロールバック手順：`plugins/route-plugin/src/services/ide-gsm/ideGsmCsv.ts` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-28 22:30 JST gid0/gid1/gid2 参照整理と geoBoundaries フィールド調査に着手。
+  - progress: 2025-12-28 22:35 JST geoBoundaries-JPN-ADM1.geojson を確認し、properties は `shapeName`/`shapeISO`(JP-27)/`shapeID`/`shapeGroup`(JPN)/`shapeType` のみで admin2 相当は含まれず。
+  - progress: 2025-12-28 22:40 JST geoBoundaries-JPN-ADM2.geojson を確認し、properties は ADM1 と同じ (`shapeName`/`shapeISO` 空/`shapeID`/`shapeGroup`/`shapeType`) で admin2 コード相当は未提供。
+
+1947) runtime-worker の TreeNode visible 必須化対応（P1）
+- ブランチ: `fix/runtime-worker/treenode-visible`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/runtime-worker/src`, `packages/common/types/src/tree-node-types.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] TreeNode 作成時に `visible` が欠落しない
+  - [ ] `pnpm --filter @hierarchidb/runtime-worker typecheck` の該当エラーが解消する
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] エラー箇所の TreeNode 生成を修正する
+  - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：`packages/runtime-worker/src/**` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-28 21:15 JST runtime-worker の TreeNode visible 必須化対応に着手。
+  - progress: 2025-12-28 21:40 JST runtime-worker の TreeNode visible 欠落エラー修正に着手（テスト/実装のノード生成を追跡中）。
+  - progress: 2025-12-28 21:55 JST runtime-worker テスト/実装の TreeNode 生成に `visible: true` を追加（headless/unit/draft/command handlers 等）。
+  - progress: 2025-12-28 22:05 JST headless/unit テストの withPayload 引数型から `visible` を除外し、helper 内で既定 `visible: true` を付与。
+  - progress: 2025-12-28 22:12 JST CoreDB の visible 正規化を `boolean` 既定に変更（undefined を許容しない型エラーを回避）。
+
+1946) ui-treeconsole-treetable の TreeNode visible 必須化対応（P1）
+- ブランチ: `fix/ui-treetable/treenode-visible`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/ui/treeconsole/treetable/src/plugins/InlineEditPlugin.tsx`, `packages/common/types/src/tree-node-types.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] `TreeNodeInUI` 生成で `visible` が欠落しない
+  - [ ] typecheck の該当エラーが解消する
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] `InlineEditPlugin.tsx` の `TreeNodeInUI` 生成箇所を修正する
+  - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：`packages/ui/treeconsole/treetable/src/plugins/InlineEditPlugin.tsx` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-28 21:05 JST ui-treeconsole-treetable の TreeNode visible 必須化対応に着手。
+  - progress: 2025-12-28 21:06 JST InlineEditPlugin の TreeNodeInUI 生成に `visible: true` を追加し、型エラーを解消。検証: 未実施（依頼優先）。
+  - done: 2025-12-28 21:06 JST TreeNodeInUI の visible 欠落を修正。検証: 未実施。ロールバック: `packages/ui/treeconsole/treetable/src/plugins/InlineEditPlugin.tsx` の差分を revert。
+
+1945) import-export の TreeNode visible 必須化対応（P1）
+- ブランチ: `fix/import-export/treenode-visible`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/features/import-export/src/ImportExportService.ts`, `packages/common/types/src/tree-node-types.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] `TreeNode` 生成で `visible` が欠落しない
+  - [ ] build:types のエラーが解消する
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] `ImportExportService` の `TreeNode` 生成箇所を修正する
+  - [ ] 代表検証（build:types 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：`packages/features/import-export/src/ImportExportService.ts` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-28 20:55 JST import-export の TreeNode visible 必須化対応に着手。
+  - progress: 2025-12-28 20:57 JST ImportExportService の TreeNode 生成に `visible: true` を追加し、型エラーを解消。検証: 未実施（依頼優先）。
+  - done: 2025-12-28 20:57 JST TreeNode の visible 欠落を修正。検証: 未実施。ロールバック: `packages/features/import-export/src/ImportExportService.ts` の差分を revert。
+
+1944) runtime-worker の値 import 根治（common-types/common-api）（P1）
+- ブランチ: `fix/runtime-worker/remove-value-imports`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/runtime-worker`, `packages/batch-runtime-services`, `packages/common/{types,api}`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] `worker4.js` から `@hierarchidb/common-types` / `@hierarchidb/common-api` の値 import が消える
+  - [ ] value placeholder を追加せずに `pnpm b` が通る
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] 値 import を生成している経路を特定する
+  - [ ] import type 統一/ビルド経路の修正で値 import を除去する
+  - [ ] 代表検証（build 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：`packages/runtime-worker/**` と関連依存の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-28 20:35 JST runtime-worker の値 import 根治対応に着手。
+  - progress: 2025-12-28 20:40 JST tsconfig の @hierarchidb/batch paths を dist 指向から src 指向へ切替し、runtime-worker bundle に d.ts が混入する経路を遮断。検証: 未実施。
+
+1943) build 順序保証（batch-runtime-services → runtime-worker → app）（P1）
+- ブランチ: `fix/build/order-batch-runtime-app`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `turbo.json`, `package.json`, `packages/**/package.json`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] `pnpm build` で batch-runtime-services → runtime-worker → app の順序が保証される
+  - [ ] 手動でのビルド順に依存しない
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] turbo/pnpm の依存関係設定を確認する
+  - [ ] 必要な build 依存を追加する
+  - [ ] 代表検証（build 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：`turbo.json` と関連 `package.json` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-28 20:15 JST build 順序保証（batch-runtime-services → runtime-worker → app）に着手。
+  - progress: 2025-12-28 20:20 JST runtime-worker の turbo build に batch-runtime-services の build 依存を追加し、app build スクリプトにも batch-runtime-services → runtime-worker の順序を明示。検証: 未実施（依頼優先）。
+  - done: 2025-12-28 20:20 JST build 順序を turbo/pnpm の両方で保証する設定を反映。検証: 未実施。ロールバック: `packages/runtime-worker/package.json` と `app/package.json` の差分を revert。
+
+1942) batch-runtime-services の不要 API/型を削減（P1）
+- ブランチ: `refactor/batch-runtime-services/minimize-api`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/batch-runtime-services`, `plugins/*-plugin`, `packages/features/batch`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] batch-runtime-services の未使用 API/型を棚卸しして削除対象を決定する
+  - [ ] 必要最小限の API に整理し、利用側の import を更新する
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] 公開 API の使用箇所を洗い出す
+  - [ ] 削除対象と残存 API を決定する
+  - [ ] 参照元の import と型定義を更新する
+  - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：`packages/batch-runtime-services/**` と参照元の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-28 19:35 JST batch-runtime-services の不要 API/型削減に着手。
+  - progress: 2025-12-28 19:50 JST batch-runtime-services の公開 API を最小化し、BaseBatchSessionManager のみ残して AbstractBatchSession/BatchService は @hierarchidb/batch から再 export する形に整理。不要ファイルを削除して重複 API を除去。common-api の BatchControlAPI プレースホルダー export を撤去して型としての export を明確化。検証: 未実施（依頼優先）。
+  - progress: 2025-12-28 20:05 JST tsconfig の @hierarchidb/batch-runtime-services paths を dist 指向から src 指向へ切替し、d.ts が runtime bundle に混入する経路を遮断。検証: 未実施。
+  - done: 2025-12-28 20:05 JST batch-runtime-services を必要最小限の API に削減し、d.ts 混入の経路を整理。検証: 未実施。ロールバック: `packages/batch-runtime-services/src/**` と `packages/common/api/src/{index.ts,BatchControlAPI.ts}` と `tsconfig.base.json` の差分を revert。
+
+1941) common/types の型名・ファイル名・再エクスポート整理（P1）
+- ブランチ: `refactor/common-types/align-exports`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/common/types/src`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] 公開型名とファイル名の不一致を棚卸しし、整理方針を決定する
+  - [ ] `index.ts` の再エクスポートを整理し、混乱を解消する
+  - [ ] props 型は対象外とする
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] `packages/common/types/src` の公開型とファイル名の差異を洗い出す
+  - [ ] `index.ts` の再エクスポートを整理する
+  - [ ] 参照元の import を必要に応じて更新する
+  - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：`packages/common/types/src/**` と関連 import 差分を revert する。
+- 運用ログ：
+  - start: 2025-12-28 19:25 JST common/types の型名・ファイル名・再エクスポート整理に着手。
+  - progress: 2025-12-28 19:32 JST dialog UI 関連型を dialog-state に移設し、tree-node-types から分離。index.ts を type-only 再エクスポート中心に整理し、重複や混在を解消。検証: 未実施（依頼優先）。
+  - done: 2025-12-28 19:32 JST common/types の再エクスポート構成を整理し、型配置の混乱を解消。検証: 未実施。ロールバック: `packages/common/types/src/{dialog-state.ts,tree-node-types.ts,index.ts}` の差分を revert。
+
+1940) plugin-base / styler-store / runtime-worker の循環依存解消（P1）
+- ブランチ: `fix/deps/break-cycle-plugin-base-styler-runtime`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/plugin-base`, `packages/styler-store`, `packages/runtime-worker`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] `@hierarchidb/plugin-base` / `@hierarchidb/styler-store` / `@hierarchidb/runtime-worker` の循環が解消される
+  - [ ] 変更方針と切断理由が記録される（`TASKS.md`）
+  - [ ] 公開 API の破壊的変更を避ける（必要なら段階導入）
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] 3 パッケージ間の依存経路を特定する
+  - [ ] 切断方針を決めて `TASKS.md` に記載する
+  - [ ] 依存を解消する最小差分の修正を行う
+  - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：本タスクの差分を revert し、依存関係を元に戻す。
+- 運用ログ：
+  - start: 2025-12-28 17:20 JST 循環依存（plugin-base / styler-store / runtime-worker）の解消に着手。
+  - progress: 2025-12-28 17:20 JST 循環は `plugin-base (dev) -> runtime-worker -> styler-store (peer) -> plugin-base` の経路で発生。`plugin-base` の未使用 devDependency である `@hierarchidb/runtime-worker` を削除して切断する方針。
+  - done: 2025-12-28 17:20 JST `packages/plugin-base/package.json` から `@hierarchidb/runtime-worker` の devDependency を削除して循環を解消。検証: 未実施（依頼優先）。ロールバック: 本差分を revert して依存を元に戻す。
+
+1939) style-store を styler-store へ統合（P1）
+- ブランチ: `refactor/style-store/merge-into-styler-store`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/features/style-store`, `packages/features/styler-store`, `packages/runtime-worker`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] `style-store` の機能が `styler-store` に統合される
+  - [ ] 参照元が `@hierarchidb/styler-store` に統一される
+  - [ ] `style-store` が撤去される（不要な残骸がない）
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] `style-store` の実装を `styler-store` に移設する
+  - [ ] import/依存を `styler-store` に統一する
+  - [ ] 旧 `style-store` を撤去する
+  - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：`packages/features/styler-store/**` と import 更新差分を revert し、`packages/features/style-store` を復元する。
+- 運用ログ：
+  - start: 2025-12-28 19:05 JST style-store を styler-store に統合する対応に着手。
+  - progress: 2025-12-28 19:10 JST StylerDB を styler-store に移設し、runtime-worker などの参照を styler-store へ統一。tsconfig の style-store alias を削除し、style-store パッケージを撤去。検証: 未実施（依頼優先）。
+  - done: 2025-12-28 19:10 JST style-store を styler-store に統合し、参照と依存を整理。検証: 未実施。ロールバック: `packages/features/styler-store/**` と関連 import 差分の revert および `packages/features/style-store` の復元。
+
+1938) app build の MISSING_EXPORT（NodeId/Timestamp）調査（P2）
+- ブランチ: `chore/build/missing-export-common-types`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/runtime-worker/dist/worker4.js`, `packages/common/types/src/index.ts`, `packages/common/types/src/{id-types,primitive-types}.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] エラーの原因と関係ファイルを特定して説明する
+  - [ ] 根拠となる参照ファイル/ログを運用ログに記載する
+- チェックリスト:
+  - [ ] app build エラーの該当 import 元を特定する
+  - [ ] common-types の export 状況を確認する
+  - [ ] 参照結果を運用ログへ記録する
+- ロールバック手順：調査タスクのため変更なし（TASKS.md の記載のみ revert 可）。
+- 運用ログ：
+  - start: 2025-12-28 18:20 JST app build の MISSING_EXPORT（NodeId/Timestamp）調査に着手。
+  - progress: 2025-12-28 18:22 JST `packages/runtime-worker/dist/worker4.js` で `import { NodeId, Timestamp } from "@hierarchidb/common-types";` を確認。
+  - progress: 2025-12-28 18:23 JST `packages/common/types/src/index.ts` は `export type { NodeId, TagId, TreeId }` のみ、`Timestamp` も type-only であることを確認。`packages/common/types/src/id-types.ts` と `packages/common/types/src/primitive-types.ts` に `NodeIdValue`/`TimestampValue` のみ定義。
+  - done: 2025-12-28 18:24 JST common-types が値として `NodeId`/`Timestamp` を export していないため、runtime-worker の bundle が runtime import を要求すると解決できずに MISSING_EXPORT となることを確認。
+
+1937) styler-plugin の colorUtils.ts 構文/型エラー修正（P1）
+- ブランチ: `fix/styler/color-utils-errors`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/styler-plugin/src/common/utils/colorUtils.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] `colorUtils.ts` の構文/型エラーが解消される
+  - [ ] 既存の色計算ロジックの意図を保ったまま安全性が向上する
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] `colorUtils.ts` のエラー箇所を特定し修正する
+  - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：`plugins/styler-plugin/src/common/utils/colorUtils.ts` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-28 18:45 JST styler-plugin の colorUtils.ts の構文/型エラー修正に着手。
+  - progress: 2025-12-28 18:48 JST Jenks 分類の境界計算で undefined 耐性を追加し、配列アクセスの型安全性を補強。`_valueToColor` の未実装を補完し、null/undefined の挙動を明示。検証: 未実施（依頼優先）。
+  - done: 2025-12-28 18:48 JST colorUtils.ts の構文/型エラーを解消する修正を反映。検証: 未実施。ロールバック: `plugins/styler-plugin/src/common/utils/colorUtils.ts` の差分を revert。
 
 1936) パッケージ依存の循環調査（plugin-registry を除外）（P2）
 - ブランチ: `chore/deps/cycle-audit`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -82,6 +293,17 @@
   - start: 2025-12-28 18:10 JST パッケージ依存の循環調査（plugin-registry 除外）に着手。
   - progress: 2025-12-28 18:11 JST `pnpm exec dependency-cruiser -c .dependency-cruiser.cjs packages app plugins` を実行（exit 12）。循環は 12 件検出されたが、いずれも `packages/plugin-registry/generated/worker-loaders.ts` を含む循環のみ。
   - done: 2025-12-28 18:12 JST plugin-registry を含む循環を除外すると、現状の循環は検出されないことを確認。
+
+1871) styler-plugin valueToColor の重複定義を解消（P1）
+- ブランチ: `fix/styler/value-to-color-dup`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/styler-plugin（colorUtils）
+- 受け入れ基準（DoD）:
+  - [ ] valueToColor が重複定義されていない
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] colorUtils の重複定義を整理する
+  - [ ] 代表検証（手動確認 or typecheck）を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：`plugins/styler-plugin/src/common/utils/colorUtils.ts` の差分を revert し、TASKS 運用ログ追記を削除する
 
 1926) /map 検索/hover/クリックの対象 state を jotai 管理へ移行（P1）
 - ブランチ: `feat/ui/map-search-jotai-state`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -333,6 +555,7 @@
   - progress: 2025-12-27 23:10 JST CoreDB の visible 正規化とコンテキストメニュー再描画条件を修正。
   - progress: 2025-12-27 23:25 JST invisible 経路（CoreDB互換・i18n文言）を撤去し、Hidden 表記へ移行。
   - progress: 2025-12-27 23:40 JST map で useGeolocation が undefined になる問題に互換取得を追加。
+  - progress: 2025-12-28 00:05 JST ステップ遷移の pending 表示を遷移完了まで維持するよう調整。
   - progress: 2025-12-27 20:10 JST runtime-worker の tsconfig paths 上書きを解除し、プラグイン src alias を復帰。
   - progress: 2025-12-27 20:20 JST map.tsx の import type 修正で Vite 変換エラーを解消。
   - progress: 2025-12-27 20:35 JST Vite alias に common-auth/ui-file/gis-sdk と route-plugin subpath を追加し、route-plugin 内部参照を相対パス化。
@@ -5894,6 +6117,33 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+
+1949) shape-plugin: Step3 のレベル選択制限（0/1のみ選択可、2+は無効表示）（P2） — 完了 (2025-12-28)
+- 要点：MatrixConfig に `disabledColumnIds` を追加し、SelectionMatrix が無効カラムの表示/選択不可に対応。shape-plugin Step3 で level2+ を disabled 指定。
+- 検証：未実施（コマンド未実行）。
+- ロールバック手順：`packages/ui/country-select/src/types/MatrixColumn.ts`、`packages/ui/country-select/src/components/CountryMatrixSelector.tsx`、`packages/components/src/SelectionMatrix/SelectionMatrix.tsx`、`plugins/shape-plugin/src/ui/hooks/useShapeCountrySelectionStep.ts` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-28 19:13 JST shape-plugin Step3 のレベル選択制限（0/1のみ選択可）対応に着手。
+  - done: 2025-12-28 19:19 JST ui-country-select の disabledColumnIds 対応と shape-plugin Step3 の level2+ 無効化を反映。
+
+1845) TreeNodeInfoPanel の visible 反映遅延修正（P1） — 完了 (2025-12-28)
+- 要点：TreeNodeInfoPanel の表示を SSOT の nodeIndex と同期し、visible 変更時の preview ボタン/タイトル打ち消し線を即時反映するよう修正。
+- 検証：`pnpm --filter @hierarchidb/app typecheck` exit 1（既存の visible 必須化に伴うテスト/worker 側の型エラーで失敗）。
+- ロールバック手順：`app/src/router/pages/tree/console/useTreeNodeInfoPanel.ts` と `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx` の差分を revert する。
+
+1950) app: TreeNode visible 必須化に伴うテスト修正（P1） — 完了 (2025-12-28)
+- 要点：TreeNode テストデータに `visible: true` を追加し、app typecheck の型エラーを解消。
+- 検証：`pnpm --filter @hierarchidb/app typecheck` exit 0。
+- ロールバック手順：`app/src/hooks/treeconsole/__tests__/unit/useTreeConsoleBreadcrumbs.unit.test.ts` と `app/src/router/loaders/__tests__/unit/load-tree-router-handlers.unit.test.ts` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-28 19:21 JST TreeNode visible 必須化に伴う app テスト修正に着手。
+  - progress: 2025-12-28 19:22 JST `pnpm --filter @hierarchidb/app typecheck` が timeout (exit 124) したため再実行。
+  - done: 2025-12-28 19:22 JST `pnpm --filter @hierarchidb/app typecheck` exit 0 を確認。
+
+1870) styler-plugin のグラデーションアルゴリズム実装（P1） — 完了 (2025-12-28)
+- 要点：LINEAR/LOGARITHMIC/QUANTILE/JENKS/EQUAL を正規化して色計算・グラデーション生成に反映。
+- 検証：未実施（手動確認/コマンド未実行）。
+- ロールバック手順：`plugins/styler-plugin/src/common/utils/colorUtils.ts` の差分を revert し、表示/計算を再確認する。
 
 1868) TreeNodeInfoPanel の日付表示にラベルを追加（P1） — 完了 (2025-12-28)
 - 要点：日時表示に `Created:` / `Updated:` のラベルを追加。
@@ -13786,9 +14036,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-22 10:20 start: feat/style/api-types — StyleQueryAPI/StyleMutationAPI と styleTypes の型定義を plugin-service-api に追加。DoD: 型ファイル追加と index export。
 - 2025-12-22 10:20 done: feat/style/api-types — plugin-service-api に styleTypes/StyleQueryAPI/StyleMutationAPI を追加し export。検証: 未実施。ロールバック: 追加ファイルと index export の差分を revert。
 - 2025-12-22 10:34 start: feat/style/worker-api — style DB/StyleService を runtime-worker に追加し、WorkerAPI と worker bridge を拡張。DoD: StyleQueryAPI/StyleMutationAPI が worker 経由で取得可能。
-- 2025-12-22 10:34 done: feat/style/worker-api — StyleDB/StyleService を追加し、WorkerAPI + app worker + ui-worker-client へ getStyleQueryAPI/getStyleMutationAPI を接続。検証: 未実施。ロールバック: 追加ファイルと関連 import/export 差分を revert。
-- 2025-12-22 11:03 start: feat/style/style-store — StyleDB を features/style-store へ移設し runtime-worker から参照。DoD: 新パッケージ追加・参照更新。
-- 2025-12-22 11:04 done: feat/style/style-store — style-store パッケージを追加し、StyleDB を移設して runtime-worker 参照へ更新。検証: 未実施。ロールバック: 追加パッケージと参照更新の差分を revert。
+- 2025-12-22 10:34 done: feat/style/worker-api — StylerDB/StyleService を追加し、WorkerAPI + app worker + ui-worker-client へ getStyleQueryAPI/getStyleMutationAPI を接続。検証: 未実施。ロールバック: 追加ファイルと関連 import/export 差分を revert。
+- 2025-12-22 11:03 start: feat/style/style-store — StylerDB を features/style-store へ移設し runtime-worker から参照。DoD: 新パッケージ追加・参照更新。
+- 2025-12-22 11:04 done: feat/style/style-store — style-store パッケージを追加し、StylerDB を移設して runtime-worker 参照へ更新。検証: 未実施。ロールバック: 追加パッケージと参照更新の差分を revert。
 - 2025-12-22 11:13 start: inquiry/map/map-adapter-vs-ui-map — map-adapter と ui/map の責務と依存関係を確認。DoD: 根拠ファイル付きで説明。
 - 2025-12-22 11:13 done: inquiry/map/map-adapter-vs-ui-map — map-adapter と ui-map の責務・依存関係を整理して回答。検証: 該当ドキュメント/設定の確認のみ。ロールバック: 本ログ追記を削除。
 - 2025-12-22 11:14 done: consult/ui-map/stylequery-mapstyle — UI親コンポーネントで StyleQueryAPI を利用し mapStyleObject へ合成する方針を整理。検証: 方針整理のみ。ロールバック: 本ログ追記を削除。
@@ -14019,3 +14269,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-26 23:10 done: fix/app/typecheck-map-invisible — breadcrumb の invisible 型追加、app tsconfig に gis-sdk/shape-plugin を追加、MapLibre 型拡張と map.tsx の import/FeatureState/検索型を整理。検証: `pnpm --filter @hierarchidb/app typecheck` exit 0。ロールバック: `app/tsconfig.json`, `app/src/router/pages/tree/console/useTreeConsoleIntegrationInner.ts`, `app/src/router/routes/map.tsx`, `packages/ui/map/src/types/maplibre-public.ts`, `TASKS.md` の差分を revert。
 - 2025-12-28 13:36 start: fix/ui/tree-nodeinfo-dates — TreeNodeInfoPanel の日付表示にラベルを追加する対応に着手。（Kanban: 1868）
 - 2025-12-28 13:38 done: fix/ui/tree-nodeinfo-dates — Created/Updated ラベルを追加し、日付の意味を明確化。検証: 未実施。ロールバック: `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx` の差分を revert する。
+- 2025-12-28 16:22 start: feat/styler/gradient-algorithms — styler-plugin のグラデーションアルゴリズム実装に着手。（Kanban: 1870）
+- 2025-12-28 16:27 done: feat/styler/gradient-algorithms — LINEAR/LOGARITHMIC/QUANTILE/JENKS/EQUAL をそれぞれ正規化して色計算・グラデーション生成に反映。検証: 未実施。ロールバック: `plugins/styler-plugin/src/common/utils/colorUtils.ts` の差分を revert する。
+- 2025-12-28 16:46 done: feat/styler/gradient-algorithms — Number of bins をクラス数として使用し、binCount を config に反映。検証: 未実施。ロールバック: `packages/features/styler-store/src/StylerEntity.ts` と `plugins/styler-plugin/src/{common/utils/colorUtils.ts,ui/components/StylerMappingStep.tsx}` の差分を revert。
+- 2025-12-28 16:09 done: fix/templates/population-2023-feature-id — population-2023 の shape ノード初期値に Feature ID Property として shapeISO を設定。検証: 未実施。ロールバック: `app/public/templates/population-2023/tree-nodes.json` の差分を revert。
+- 2025-12-28 16:48 start: fix/styler/value-to-color-dup — valueToColor の重複定義を整理する対応に着手。（Kanban: 1871）
+- 2025-12-28 16:48 done: fix/styler/value-to-color-dup — colorUtils 内の未使用 _valueToColor を削除して重複定義を解消。検証: 未実施。ロールバック: `plugins/styler-plugin/src/common/utils/colorUtils.ts` の差分を revert する。

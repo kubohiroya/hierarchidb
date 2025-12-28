@@ -75,6 +75,7 @@ function createTreeNode(overrides: Partial<TreeNode> = {}): TreeNode {
     updatedAt: Date.now(),
     version: 1,
     ...(rest as Partial<TreeNode>),
+    visible: true,
   };
 }
 

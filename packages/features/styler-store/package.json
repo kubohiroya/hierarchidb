@@ -21,14 +21,20 @@
   "peerDependencies": {
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/spreadsheet-store": "workspace:*",
-    "@hierarchidb/ui-map": "workspace:*"
+    "@hierarchidb/ui-map": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
+    "dexie": "^4.2.0"
   },
   "devDependencies": {
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/spreadsheet-store": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
+    "dexie": "^4.2.0",
     "typescript": "workspace:^5.9.3"
   }
 }

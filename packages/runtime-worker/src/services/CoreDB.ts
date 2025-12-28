@@ -37,10 +37,7 @@ const normalizeTreeNodeForPersist = (node: TreeNode): TreeNode => {
     visible,
   } = node as TreeNode;
 
-  const normalizedVisible =
-    typeof visible === 'boolean'
-      ? visible
-      : undefined;
+  const normalizedVisible = typeof visible === 'boolean' ? visible : true;
 
   const rawMetadata = (node as { metadata?: unknown }).metadata;
   if (!rawMetadata) {

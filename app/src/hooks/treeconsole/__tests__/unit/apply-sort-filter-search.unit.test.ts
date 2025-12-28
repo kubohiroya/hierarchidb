@@ -23,6 +23,7 @@ const baseNode = (
   data: null,
   draftData: null,
   depth: 1,
+  visible: true,
   createdAt: Date.now() as Timestamp,
   updatedAt: Date.now() as Timestamp,
   version: 1,

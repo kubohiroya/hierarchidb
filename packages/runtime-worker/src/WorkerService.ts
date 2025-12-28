@@ -12,7 +12,7 @@ import { NodeLifecycleManager } from './services/NodeLifecycleManager.js';
 import { TreeTableExpandedService } from './services/TreeTableExpandedService.js';
 import { ImportExportDBPortCoreDBAdapter } from './services/adapters/ImportExportDBPortCoreDBAdapter.js';
 import { TreeNodeUpdaterService } from './services/TreeNodeUpdaterService.js';
-import {
+import type {
   PluginLifecycleAPI,
   ShapeMutationAPI,
   ShapeQueryAPI,
@@ -28,9 +28,9 @@ import type {
   TreeSubscriptionAPI,
   TreeTableExpandedAPI,
 } from '@hierarchidb/common-api';
-import type { NodeId, NodeType } from '@hierarchidb/common-types';
+import type { NodeId, NodeType} from '@hierarchidb/common-types';
 import { UIStateDB } from './services/UIStateDB.js';
-import { StyleDB } from '@hierarchidb/style-store';
+
 import type { LocationMutationAPI, LocationQueryAPI } from '@hierarchidb/location-store';
 import type { RouteDatabaseHandle, RouteMutationAPI, RouteQueryAPI } from '@hierarchidb/route-store';
 import { RouteDatabase } from '@hierarchidb/route-store';
@@ -45,6 +45,7 @@ import { RouteMutationService } from './services/RouteMutationService.js';
 import { EntityLifecycleManager } from './entity/EntityLifecycleManager.js';
 import type { RuntimePluginDefinition } from './types/RuntimePluginDefinition.js';
 import { ImportExportLifecycleService } from './services/ImportExportLifecycleService.js';
+import { StylerDB } from '@hierarchidb/styler-store';
 
 interface PerformanceMemoryStats {
   usedJSHeapSize?: number;
@@ -205,7 +206,7 @@ export class WorkerService {
         treeQueryService,
       );
 
-      const styleDB = await StyleDB.getSingleton();
+      const styleDB = await StylerDB.getSingleton();
       const styleService: StyleQueryAPI & StyleMutationAPI = await StyleService.getSingleton(
         styleDB,
       );
@@ -262,8 +263,8 @@ export class WorkerService {
     private nodeLifecycleManager: NodeLifecycleManager,
     private commandProcessor: CommandProcessor,
     private treeTableExpandedService: TreeTableExpandedAPI,
-    private styleDB: StyleDB,
-    private styleService: StyleQueryAPI & StyleMutationAPI,
+    private stylerDB: StylerDB,
+    private stylerService: StyleQueryAPI & StyleMutationAPI,
     private shapeDB: ShapeDatabaseHandle,
     private shapeQueryService: ShapeQueryAPI,
     private shapeMutationService: ShapeMutationAPI,
@@ -289,7 +290,7 @@ export class WorkerService {
 
     // Close databases
     this.coreDB.close();
-    this.styleDB.close();
+    this.stylerDB.close();
     this.shapeDB.close?.();
     this.routeDB.close?.();
   }
@@ -326,11 +327,11 @@ export class WorkerService {
   }
 
   getStyleQueryAPI(): StyleQueryAPI {
-    return this.styleService;
+    return this.stylerService;
   }
 
   getStyleMutationAPI(): StyleMutationAPI {
-    return this.styleService;
+    return this.stylerService;
   }
 
   getShapeQueryAPI(): ShapeQueryAPI {

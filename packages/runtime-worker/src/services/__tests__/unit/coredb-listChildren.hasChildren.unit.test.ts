@@ -33,6 +33,7 @@ describe('CoreDB.listChildren hasChildren propagation', () => {
       data: {},
       draftData: null,
       depth: 1,
+      visible: true,
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,

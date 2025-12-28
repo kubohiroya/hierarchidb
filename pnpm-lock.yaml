@@ -934,21 +934,6 @@ importers:
         specifier: 5.8.2
         version: 5.8.2
 
-  packages/features/style-store:
-    devDependencies:
-      '@hierarchidb/plugin-service-api':
-        specifier: workspace:*
-        version: link:../../plugin-service-api
-      '@hierarchidb/util':
-        specifier: workspace:*
-        version: link:../../util
-      dexie:
-        specifier: 4.2.0
-        version: 4.2.0
-      typescript:
-        specifier: 5.8.2
-        version: 5.8.2
-
   packages/features/styler-store:
     devDependencies:
       '@hierarchidb/common-types':
@@ -957,12 +942,21 @@ importers:
       '@hierarchidb/plugin-base':
         specifier: workspace:*
         version: link:../../plugin-base
+      '@hierarchidb/plugin-service-api':
+        specifier: workspace:*
+        version: link:../../plugin-service-api
       '@hierarchidb/spreadsheet-store':
         specifier: workspace:*
         version: link:../spreadsheet-store
       '@hierarchidb/ui-map':
         specifier: workspace:*
         version: link:../../ui/map
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../../util
+      dexie:
+        specifier: 4.2.0
+        version: 4.2.0
       typescript:
         specifier: 5.8.2
         version: 5.8.2
@@ -1037,9 +1031,6 @@ importers:
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../common/types
-      '@hierarchidb/runtime-worker':
-        specifier: workspace:*
-        version: link:../runtime-worker
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../ui/dialog
@@ -1276,9 +1267,9 @@ importers:
       '@hierarchidb/shape-store':
         specifier: workspace:*
         version: link:../features/shape-store
-      '@hierarchidb/style-store':
+      '@hierarchidb/styler-store':
         specifier: workspace:*
-        version: link:../features/style-store
+        version: link:../features/styler-store
       '@mapbox/vector-tile':
         specifier: ^2.0.3
         version: 2.0.4

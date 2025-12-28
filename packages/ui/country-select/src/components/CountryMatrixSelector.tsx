@@ -75,6 +75,11 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
     return map;
   }, [selections]);
 
+  const disabledColumnIdSet = useMemo(
+    () => new Set(matrixConfig.disabledColumnIds ?? []),
+    [matrixConfig.disabledColumnIds],
+  );
+
   const selectionColumns: SelectionMatrixColumn[] = useMemo(
     () =>
       matrixConfig.columns.map((col) => ({
@@ -82,8 +87,9 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
         label: col.label,
         description: col.description,
         width: col.width,
+        disabled: disabledColumnIdSet.has(col.id),
       })),
-    [matrixConfig.columns],
+    [disabledColumnIdSet, matrixConfig.columns],
   );
 
   const continentAliases: Record<string, keyof typeof CONTINENTS> = useMemo(() => ({
@@ -168,7 +174,7 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
       return compare(a.country.name, b.country.name, sortState.direction);
     });
     return filtered;
-  }, [countries, search, selectionMap, sortState]);
+  }, [countries, flagFromCode, search, selectionMap, sortState.columnId, sortState.direction, sortState.kind, toRegionLabel]);
 
   const rows: SelectionMatrixRow<{ country: Country; sourceIndex: number }>[] = useMemo(
     () =>
@@ -311,8 +317,8 @@ export const CountryMatrixSelector: React.FC<CountryMatrixSelectorProps> = ({
 
   const isCellEnabledWrapper = useCallback(
     (row: SelectionMatrixRow<{ country: Country }>, column: SelectionMatrixColumn) =>
-      isCellEnabled(row.data.country, column.id),
-    [isCellEnabled],
+      !disabledColumnIdSet.has(column.id) && isCellEnabled(row.data.country, column.id),
+    [disabledColumnIdSet, isCellEnabled],
   );
 
   const getColumnSortDirection = useCallback(

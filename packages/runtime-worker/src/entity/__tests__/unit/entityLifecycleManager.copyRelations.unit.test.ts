@@ -13,13 +13,14 @@ describe('EntityLifecycleManager.copyRelationsByMapping', () => {
   it('copies relations only when both ends are inside the mapping', async () => {
     const nodeMap = new Map<NodeId, TreeNode>();
     const withPayload = (
-      node: Omit<TreeNode, 'data' | 'draftData' | 'metadata' | 'draftMetadata'> &
+      node: Omit<TreeNode, 'data' | 'draftData' | 'metadata' | 'draftMetadata' | 'visible'> &
         Partial<TreeNode> & { name?: string }
     ): TreeNode => ({
       data: {},
       draftData: null,
       metadata: { name: node.name ?? 'Untitled', description: undefined, tags: [] },
       draftMetadata: null,
+      visible: node.visible ?? true,
       ...node,
     });
     const makeNode = (id: NodeId, nodeType: NodeType): TreeNode =>

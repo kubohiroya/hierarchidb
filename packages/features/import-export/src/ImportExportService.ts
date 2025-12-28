@@ -160,6 +160,7 @@ export class ImportExportService implements ImportExportAPI {
               ((nodeData as { data?: Record<string, unknown> | null }).data as Record<string, unknown> | null | undefined) ??
               null,
             draftData: draftDataFromTemplate ?? null,
+            visible: true,
           };
           toCreate.push({ node, children: nodeData.children });
           if (!nameCache.has(node.id)) {

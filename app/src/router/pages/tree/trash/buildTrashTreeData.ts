@@ -93,6 +93,7 @@ export function buildTrashTreeData({
         tags: (node as { metadata?: { tags?: string[] } }).metadata?.tags ?? [],
       },
       draftMetadata: null,
+      visible: true,
       createdAt: node.createdAt,
       updatedAt: node.updatedAt,
       version: node.version,

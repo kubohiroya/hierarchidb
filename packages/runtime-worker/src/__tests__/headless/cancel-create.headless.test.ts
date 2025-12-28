@@ -25,6 +25,7 @@ describe('create dialog cancel discards draft nodes', () => {
       data: null,
       draftData: null,
       depth: 0,
+      visible: true,
       createdAt: now,
       updatedAt: now,
       version: 1,

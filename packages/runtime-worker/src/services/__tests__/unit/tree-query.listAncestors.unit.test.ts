@@ -24,6 +24,7 @@ describe('TreeQueryService.listAncestors', () => {
       data: {},
       draftData: null,
       depth: options.depth,
+      visible: true,
       createdAt: now,
       updatedAt: now,
       version: 1,

@@ -2,12 +2,12 @@ import { getDBName, SingletonMixin } from '@hierarchidb/util';
 import { Dexie, type Table } from 'dexie';
 import type { StyleRecord } from '@hierarchidb/plugin-service-api';
 
-export class StyleDB extends Dexie {
+export class StylerDB extends Dexie {
   styles!: Table<StyleRecord, string>;
 
-  static async getSingleton(name?: string): Promise<StyleDB> {
-    return SingletonMixin.getSingleton('StyleDB', async () => {
-      const db = new StyleDB(name);
+  static async getSingleton(name?: string): Promise<StylerDB> {
+    return SingletonMixin.getSingleton('StylerDB', async () => {
+      const db = new StylerDB(name);
       await db.open();
       return db;
     });

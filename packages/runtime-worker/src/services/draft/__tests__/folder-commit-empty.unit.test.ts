@@ -25,6 +25,7 @@ describe('folder commit clears draft and keeps metadata (empty payload)', () => 
       data: null,
       draftData: null,
       depth: 0,
+      visible: true,
       createdAt: now,
       updatedAt: now,
       version: 1,

@@ -18,6 +18,7 @@ function node(
     data: {},
     draftData: null,
     depth,
+    visible: true,
     createdAt: Date.now(),
     updatedAt: Date.now(),
     version: 1,

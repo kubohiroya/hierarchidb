@@ -28,6 +28,7 @@ export interface SelectionMatrixColumn {
   label: string;
   description?: string;
   width?: number;
+  disabled?: boolean;
 }
 
 export interface SelectionMatrixRow<T = any> {
@@ -318,14 +319,23 @@ export function SelectionMatrix<T = any>({
           <Typography variant="subtitle2">{rowHeaderLabel}</Typography>
         </TableCell>
       )}
-      {columns.map((column, colIndex) => (
+      {columns.map((column, colIndex) => {
+        const isColumnDisabled = Boolean(column.disabled);
+        return (
         <TableCell
           key={column.id}
           align="center"
           sx={{ width: column.width || 120, pl: '8px', pr: '8px', pt: '4px', pb: '4px' }}
-          onClick={onColumnHeaderClick ? () => onColumnHeaderClick(colIndex) : undefined}
+          onClick={onColumnHeaderClick && !isColumnDisabled ? () => onColumnHeaderClick(colIndex) : undefined}
         >
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: onColumnHeaderClick ? 'pointer' : 'default' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              cursor: onColumnHeaderClick && !isColumnDisabled ? 'pointer' : 'default',
+            }}
+          >
             <Tooltip
               title={`${column.label}: ${columnCounts[colIndex]} selected`}
               disableInteractive
@@ -342,6 +352,7 @@ export function SelectionMatrix<T = any>({
                       handleColumnSelectAll(colIndex);
                     }}
                     disabled={
+                      isColumnDisabled ||
                       !rows.some((row, rowIndex) =>
                         isCellEnabled(row, column, rowIndex, colIndex),
                       )
@@ -351,11 +362,11 @@ export function SelectionMatrix<T = any>({
                 )}
                 <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
                   {column.description ? (
-                    <Typography variant="caption" sx={{ cursor: 'help' }}>
+                    <Typography variant="caption" sx={{ cursor: 'help' }} color={isColumnDisabled ? 'text.disabled' : undefined}>
                       {column.label}
                     </Typography>
                   ) : (
-                    <Typography variant="caption">
+                    <Typography variant="caption" color={isColumnDisabled ? 'text.disabled' : undefined}>
                       {column.label}
                     </Typography>
                   )}
@@ -378,7 +389,8 @@ export function SelectionMatrix<T = any>({
             </Tooltip>
           </Box>
         </TableCell>
-      ))}
+        );
+      })}
       {showSelectionCount && (
         <TableCell align="center" sx={{ width: 80 }}>
           <Typography variant="caption">Selected</Typography>

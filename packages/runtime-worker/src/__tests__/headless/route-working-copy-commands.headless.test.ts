@@ -21,13 +21,14 @@ describe('Headless E2E (Node + fake-indexeddb): CP routing + WC flows', () => {
   }
 
   const withPayload = (
-    node: Omit<TreeNode, 'data' | 'draftData' | 'metadata' | 'draftMetadata'> &
+    node: Omit<TreeNode, 'data' | 'draftData' | 'metadata' | 'draftMetadata' | 'visible'> &
       Partial<TreeNode> & { name?: string }
   ): TreeNode => ({
     data: {},
     draftData: null,
     metadata: { name: node.name ?? 'Untitled', description: undefined, tags: [] },
     draftMetadata: null,
+    visible: node.visible ?? true,
     ...node,
   });
 

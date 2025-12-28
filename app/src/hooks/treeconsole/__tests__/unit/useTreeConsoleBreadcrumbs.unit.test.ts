@@ -23,6 +23,7 @@ function createTreeNode(options: {
     createdAt: now,
     updatedAt: now,
     version: 1,
+    visible: true,
     data: {},
     draftData: null,
   };

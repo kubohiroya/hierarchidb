@@ -21,6 +21,7 @@ function createNode(
     },
     draftMetadata: null,
     depth: overrides.depth ?? 0,
+    visible: overrides.visible ?? true,
     createdAt: overrides.createdAt ?? now,
     updatedAt: overrides.updatedAt ?? now,
     version: overrides.version ?? 1,

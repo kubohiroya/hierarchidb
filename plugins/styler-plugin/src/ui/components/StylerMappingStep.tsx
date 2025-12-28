@@ -83,10 +83,11 @@ export const StylerMappingStep: React.FC<
   }, [pluginData.stylerConfig]);
 
   const [localConfig, setLocalConfig] = useState<StylerConfig>(initialConfig);
-  const [binCount, setBinCount] = useState<number>(256);
+  const [binCount, setBinCount] = useState<number>(initialConfig.binCount ?? 256);
 
   useEffect(() => {
     setLocalConfig((prev) => ({ ...prev, ...initialConfig }));
+    setBinCount(initialConfig.binCount ?? 256);
   }, [initialConfig]);
 
   const applyConfigPatch = (patch: Partial<StylerConfig>) => {
@@ -370,15 +371,6 @@ export const StylerMappingStep: React.FC<
                   {t('styleSettings.algorithm.colorScale', 'Color scale')}
                 </Typography>
 
-                <RadioGroup
-                  row
-                  value={localConfig.invertColors ? 'inverted' : 'normal'}
-                  onChange={handleInvertColorsChange}
-                >
-                  <FormControlLabel control={<Radio />} value="normal" label={t('step5.colorRange.normal', 'normal')} />
-                  <FormControlLabel control={<Radio />} value="inverted" label={t('step5.colorRange.invert', 'inverted')} />
-                </RadioGroup>
-
                 <ToggleButtonGroup
                   exclusive
                   color="primary"
@@ -410,7 +402,18 @@ export const StylerMappingStep: React.FC<
                 </ToggleButtonGroup>
                 {customHSBControls}
 
+                <RadioGroup
+                  row
+                  value={localConfig.invertColors ? 'inverted' : 'normal'}
+                  onChange={handleInvertColorsChange}
+                  sx={{paddingLeft: 6}}
+                >
+                  <FormControlLabel control={<Radio />} value="normal" label={t('step5.colorRange.normal', 'normal')} />
+                  <FormControlLabel control={<Radio />} value="inverted" label={t('step5.colorRange.invert', 'inverted')} />
+                </RadioGroup>
+
                 <Box sx={{ paddingLeft: 6, paddingRight: 2, height: 32, borderRadius: 25, border: (theme) => `1px solid ${theme.palette.divider}` }}>
+
                   <Box
                     sx={{
                       height: '100%',
@@ -441,7 +444,11 @@ export const StylerMappingStep: React.FC<
                   { value: 128, label: '128' },
                   { value: 256, label: '256' },
                 ]}
-                onChange={(_e, value) => setBinCount(value as number)}
+                onChange={(_e, value) => {
+                  const next = value as number;
+                  setBinCount(next);
+                  applyConfigPatch({ binCount: next });
+                }}
               />
             </Box>
             <Box sx={{ width: '100%', height: 260 }}>

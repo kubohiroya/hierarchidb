@@ -1493,7 +1493,8 @@
             "valueColumn": "Value",
             "mapping": {
               "styleType": "choropleth",
-              "targetProperty": "fill-color"
+              "targetProperty": "fill-color",
+              "featureIdProperty": "shapeISO"
             },
             "colorStops": [
               { "value": 0, "color": "#1976d2" },

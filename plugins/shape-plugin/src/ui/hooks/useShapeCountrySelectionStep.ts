@@ -253,10 +253,16 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
     [maxAdminLevel],
   );
 
+  const disabledColumnIds = useMemo(
+    () => columns.filter((_, levelIndex) => levelIndex >= 2).map((column) => column.id),
+    [columns],
+  );
+
   const matrixConfig: MatrixConfig = useMemo(() => ({
     columns,
+    disabledColumnIds,
     virtualization: { rowHeight: 40, overscan: 8 },
-  }), [columns]);
+  }), [columns, disabledColumnIds]);
 
   const currentSelections: MatrixSelection[] = useMemo(() => {
     return baseCountries.map((entry, countryIndex) => {

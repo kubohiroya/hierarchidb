@@ -84,6 +84,7 @@ async function handleCreateNode(
       },
       draftMetadata: null,
       depth: 0,
+      visible: true,
       createdAt,
       updatedAt: createdAt,
       version: 1,

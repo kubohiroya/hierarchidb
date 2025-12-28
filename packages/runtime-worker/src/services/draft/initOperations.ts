@@ -107,6 +107,7 @@ export async function initTreeNode(
       },
       isTemporary: initial?.isTemporary,
       depth,
+      visible: true,
       createdAt: now,
       updatedAt: now,
       version: 0,

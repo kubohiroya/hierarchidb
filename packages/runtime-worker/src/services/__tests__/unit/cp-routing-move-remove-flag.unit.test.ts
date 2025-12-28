@@ -18,6 +18,7 @@ const createNode = (id: string, parentId: string, depth: number): TreeNode => {
     data: {},
     draftData: null,
     depth,
+    visible: true,
     createdAt: now,
     updatedAt: now,
     version: 1,

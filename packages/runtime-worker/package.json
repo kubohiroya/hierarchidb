@@ -36,7 +36,7 @@
     "@hierarchidb/route-engine": "workspace:*",
     "@hierarchidb/route-store": "workspace:*",
     "@hierarchidb/shape-store": "workspace:*",
-    "@hierarchidb/style-store": "workspace:*",
+    "@hierarchidb/styler-store": "workspace:*",
     "@mapbox/vector-tile": "^2.0.3",
     "comlink": "^4.4.2",
     "dexie": "^4.2.1",
@@ -67,7 +67,7 @@
     "@hierarchidb/tabular-source-xlsx": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/tag": "workspace:*",
-    "@hierarchidb/style-store": "workspace:*",
+    "@hierarchidb/styler-store": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "jotai": "^2.13.1"
   },
@@ -94,7 +94,7 @@
     "@hierarchidb/tabular-source-xlsx": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/tag": "workspace:*",
-    "@hierarchidb/style-store": "workspace:*",
+    "@hierarchidb/styler-store": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@types/lunr": "^2.3.7",
     "@types/node": "^24.3.0",
@@ -106,6 +106,10 @@
   "turbo": {
     "pipeline": {
       "build": {
+        "dependsOn": [
+          "^build",
+          "@hierarchidb/batch-runtime-services#build"
+        ],
         "outputs": [
           "dist/**"
         ]

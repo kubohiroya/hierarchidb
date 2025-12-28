@@ -78,6 +78,7 @@ export interface StylerConfig {
   opacity?: number;
   colorScheme?: ColorScheme;
   nullHandling?: 'exclude' | 'zero';
+  binCount?: number;
   // enabled?: boolean;
 
   min: number;
@@ -140,6 +141,7 @@ export const StylerConfigDefault: StylerConfig = {
   opacity: 1.0,
   colorScheme: 'grayscale',
   nullHandling: 'exclude',
+  binCount: 256,
   min: 0,
   max: 100,
   outputMin: 1,
