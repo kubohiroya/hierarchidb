@@ -765,7 +765,6 @@ export interface IShapesService {
   // バッチ処理
   startBatchDownload(sources: any[], options?: any): Promise<string>;
   getBatchStatus(taskId: string): Promise<BatchTaskLike | undefined>;
-  cancelBatch(taskId: string): Promise<void>;
   
   // ファイル操作
   importGeoJSON(nodeId: string, file: File): Promise<void>;
@@ -828,11 +827,6 @@ export class ShapesService extends BaseResourceWorkerService<ShapesWorkerAPI> im
   async getBatchStatus(taskId: string): Promise<BatchTaskLike | undefined> {
     const worker = await this.getWorker();
     return worker.getTask(taskId);
-  }
-  
-  async cancelBatch(taskId: string): Promise<void> {
-    const worker = await this.getWorker();
-    return worker.cancelTask(taskId);
   }
   
   async importGeoJSON(nodeId: string, file: File): Promise<void> {

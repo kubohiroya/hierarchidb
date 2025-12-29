@@ -223,9 +223,9 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
 
 function abortError(): Error {
   if (typeof DOMException === 'function') {
-    return new DOMException('Route batch cancelled', 'AbortError');
+    return new DOMException('Route batch aborted', 'AbortError');
   }
-  const error = new Error('Route batch cancelled');
+  const error = new Error('Route batch aborted');
   (error as Error & { name: string }).name = 'AbortError';
   return error;
 }
