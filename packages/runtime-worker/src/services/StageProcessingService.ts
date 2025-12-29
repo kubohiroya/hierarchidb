@@ -6,6 +6,7 @@ import {
   listVectorTiles,
   getVectorTileSummary,
   EphemeralGisDB,
+  TilesDB,
   type VectorTileGenerateConfig,
 } from '@hierarchidb/gis-sdk';
 
@@ -74,6 +75,14 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
   }
 
   private async readBuffer(fileId: string): Promise<ArrayBuffer | null> {
+    if (fileId.startsWith('stage-tile:')) {
+      const key = fileId.slice('stage-tile:'.length);
+      const tilesDb = await TilesDB.getSingleton();
+      const row = await tilesDb.tiles.get(key);
+      if (row?.data && row.data.byteLength > 0) {
+        return row.data;
+      }
+    }
     try {
       const shared = await this.getShared();
       const data = await shared.readAll(fileId);
@@ -116,9 +125,17 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
     try {
       const buf = await this.readBuffer(inputBufferId);
       if (!buf) return { tilesGenerated: 0, totalBytes: 0 };
-      const sessionId = inputBufferId.includes('-simplify2-')
-        ? inputBufferId.substring(0, inputBufferId.lastIndexOf('-simplify2-'))
-        : inputBufferId;
+      const resolveStageTileSessionId = (key: string): string | null => {
+        const match = key.match(/^input:(.+)-(\d+)-(\d+)-(\d+)$/);
+        if (match) return match[1] ?? null;
+        const fallback = key.match(/^(.+)-(\d+)-(\d+)-(\d+)$/);
+        return fallback?.[1] ?? null;
+      };
+      const sessionId = inputBufferId.startsWith('stage-tile:')
+        ? resolveStageTileSessionId(inputBufferId.slice('stage-tile:'.length)) ?? inputBufferId
+        : inputBufferId.includes('-simplify2-')
+          ? inputBufferId.substring(0, inputBufferId.lastIndexOf('-simplify2-'))
+          : inputBufferId;
       const sdkConfig: VectorTileGenerateConfig = {
         buffer: config.buffer,
         minZoom: config.minZoom,
@@ -190,7 +207,7 @@ export async function createStageWorkerClient(): Promise<StageProcessingService>
   // Note: stageWorker.entry is built to JS and emitted alongside index.ts
   const worker = new Worker(new URL('./stageWorker.entry.js', import.meta.url), { type: 'module' });
   const mod = (await import('comlink')) as typeof import('comlink');
-  const client = mod.wrap<StageProcessingService>(worker) as StageProcessingService & {
+  const client = mod.wrap<StageProcessingService>(worker) as unknown as StageProcessingService & {
     terminate?: () => void;
   };
   client.terminate = () => worker.terminate();

@@ -49,7 +49,7 @@ interface ShapeEntity {
   id: EntityId;                    // エンティティの一意識別子
   nodeId: NodeId;                   // ツリーノードへの参照
   dataSourceName: DataSourceName;  // データソース識別子
-  selectedArrayByCountries?: boolean[][]; // 国×管理レベルの選択状態
+  selectedArrayByCountries?: Record<ISO2, boolean[]>; // 国×管理レベルの選択状態
   licenseAgreement?: boolean;      // ライセンス同意状態
   batchConfig?: BatchConfig;       // バッチ処理設定
 }

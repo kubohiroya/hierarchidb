@@ -65,6 +65,19 @@ export const Simplify2ConfigSection: React.FC<Props> = ({ config, draft, disable
           <Typography variant="body2" color="text.secondary">
             {t('processing.simplify2.description', 'Preprocess geometry for stable tile generation.')}
           </Typography>
+          <Paper variant="outlined" sx={{ p: 2, borderColor: 'divider', backgroundColor: 'background.paper' }}>
+            <Stack spacing={1}>
+              <Typography variant="subtitle2">
+                {t('processing.simplify2.dropConditionsTitle', 'When can geometries be omitted?')}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {t(
+                  'processing.simplify2.dropConditionsBody',
+                  'If enabled, simplification can omit geometries when: (1) the feature filter drops small or thin shapes based on area threshold, minimum vertex count, or aspect ratio/hybrid checks, or (2) simplification/quantization reduces a geometry to empty. In that case, metadata is still retained.',
+                )}
+              </Typography>
+            </Stack>
+          </Paper>
           <Grid container spacing={3}>
             <Grid size={{ xs: 12, sm: 4 }}>
               <WorkerNumberConfigCard
@@ -92,7 +105,7 @@ export const Simplify2ConfigSection: React.FC<Props> = ({ config, draft, disable
             <Grid size={{ xs: 12, md: 4 }}>
               <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
                 <SimplificationPanel
-                  tolerance={baseSimplify2Config.tolerance ?? 0.01}
+                  tolerance={baseSimplify2Config.tolerance ?? 0.5}
                   enablePerFeatureSimplification={baseSimplify2Config.enablePerFeatureSimplification ?? true}
                   toleranceHelpKey="processing.filter.toleranceHelpStage2"
                   onToleranceChange={(tolerance) =>

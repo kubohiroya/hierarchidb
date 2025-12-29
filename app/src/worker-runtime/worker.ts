@@ -56,7 +56,7 @@ type ShapeBatchAPI = {
   startBatchProcess: (draftId: NodeId, batchConfig: unknown, downloadTaskPayloads: unknown[]) => Promise<string>;
   generateDownloadTaskPayloadsFromSelection?: (
     dataSource: string,
-    selectedArrayByCountries: boolean[][] | undefined,
+    selectedArrayByCountries: Record<string, boolean[]> | undefined,
   ) => Promise<unknown[]>;
   getDraft?: (draftId: NodeId) => Promise<unknown>;
   getBatchSession?: (sessionId: string) => Promise<unknown>;
@@ -359,7 +359,7 @@ reporter.reportStepProgress('Load Comlink', 0);
         },
         generateShapeDownloadTaskPayloadsFromSelection: async (
           dataSource: string,
-          selectedArrayByCountries: boolean[][] | undefined,
+          selectedArrayByCountries: Record<string, boolean[]> | undefined,
         ): Promise<unknown[]> => {
           const api = resolveShapeBatchApiOrThrow(SHAPE_NODE_TYPE);
           if (!api.generateDownloadTaskPayloadsFromSelection) {

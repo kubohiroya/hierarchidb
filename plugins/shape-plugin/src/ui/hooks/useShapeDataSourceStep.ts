@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import type { DataSourceSelectionOption } from '@hierarchidb/ui-datasource';
 import type { DataSourceConfig, DataSourceName, ShapeEntity } from '../../common/types/index.js';
+import { DEFAULT_PROCESSING_CONFIG } from '../../common/types/index.js';
 import { normalizeDataSourceName } from '../../services/utils/utils.js';
 import { DATA_SOURCE_CONFIGS } from '../../common/mock/data.js';
 import { clearStagesIfPresent, FULL_INVALIDATION_STAGES, resolveShapeSessionId } from '../utils/sessionInvalidation.js';
@@ -51,6 +52,10 @@ export const useShapeDataSourceStep = ({ data, onChange }: Args) => {
       updates.batchConfig = {
         ...(draftData.batchConfig ?? {}),
         dataSource: nextSource,
+        cleanupConfig: {
+          ...(DEFAULT_PROCESSING_CONFIG.cleanupConfig ?? {}),
+          ...(draftData.batchConfig?.cleanupConfig ?? {}),
+        },
       };
       updates.dataSourceName = nextSource;
     }

@@ -86,6 +86,15 @@ export class ShapeBatchSession extends AbstractBatchSession<ShapeBatchConfig> {
   resumeAllStages(): void {
     this.controller.resumeAllStages();
   }
+
+  emitWarning(stage: ProcessingStage, message: string): void {
+    this.emitProgress({
+      phase: 'paused',
+      stage,
+      message,
+      payload: this.toProgressPayload(),
+    });
+  }
 }
 
 function abortError(): Error {

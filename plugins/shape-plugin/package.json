@@ -46,7 +46,7 @@
   ],
   "scripts": {
     "prebuild": "pnpm --filter hierarchidb metadata:ensure",
-    "build": "tsdown src/common/shared/index.ts src/index.ts src/services/index.ts src/ui/index.ts src/worker/index.ts src/worker/public.ts src/worker/shapeEntitiesDB.ts src/worker/shapeGroupStore.dexie.ts src/worker/shapeRelationStore.dexie.ts src/icon/index.ts --config ../../tsdown.config.ts --splitting false",
+    "build": "tsdown src/common/shared/index.ts src/index.ts src/services/index.ts src/services/batch/workers/shapeStageWorker.entry.ts src/ui/index.ts src/worker/index.ts src/worker/public.ts src/worker/shapeEntitiesDB.ts src/worker/shapeGroupStore.dexie.ts src/worker/shapeRelationStore.dexie.ts src/icon/index.ts --config ../../tsdown.config.ts --splitting false",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:run": "vitest run",

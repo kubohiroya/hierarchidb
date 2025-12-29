@@ -38,7 +38,6 @@ export const ShapeProcessingSettingsStep: React.FC<ShapeDialogStepProps> = ({ da
   }, [heapPressure, t]);
   const resetSession = () => {
     onChange({
-      batchSessionId: undefined,
       processingStatus: 'idle',
       tileSummary: undefined,
       buildStartedAt: undefined,

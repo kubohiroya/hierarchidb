@@ -9,11 +9,15 @@ import {
   DialogContent,
   DialogTitle,
   LinearProgress,
+  Snackbar,
   Stack,
   Typography,
+  Alert,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import ConstructionIcon from '@mui/icons-material/Construction';
+import { Provider, useAtomValue, useSetAtom } from 'jotai';
+import { createStore } from 'jotai/vanilla';
 import { BuildStepPanel, type BuildStage } from '@hierarchidb/components';
 import type { BatchTaskSummary } from '@hierarchidb/common-api';
 import type { NodeId } from '@hierarchidb/common-types';
@@ -24,17 +28,27 @@ import { useBuildCrashInsight } from '../../hooks/useBuildCrashInsight.js';
 import { getStageConcurrencyWarning } from '../../utils/buildMonitor.js';
 import { HeapPressureDialog, useHeapPressureGuard } from '@hierarchidb/ui-memory';
 import { AuthProviderDialog } from '@hierarchidb/ui-auth';
+import { useTranslation } from '../../i18n.js';
+import { useBuildStages } from '../../hooks/build/useBuildStages.js';
+import {
+  shapeBuildBuildStatusAtom,
+  shapeBuildPaneProgressAtom,
+  shapeBuildProgressAuthAtom,
+  shapeBuildProgressControlsAtom,
+  shapeBuildProgressSummaryAtom,
+  shapeBuildWarningMessageAtom,
+  shapeBuildStageProgressAtom,
+  shapeBuildStagesAtom,
+  shapeBuildTasksByStageAtom,
+} from '../../state/shapeBuildProgressAtoms.js';
 
-export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, onChange, nodeId }) => {
+type ShapeBuildProgressPanelProps = Pick<ShapeDialogStepProps, 'data' | 'nodeId'>;
+
+type TaskWithMetadata = BatchTaskSummary & { metadata?: Record<string, unknown>; stage?: string; title?: string };
+
+const ShapeBuildProgressAtomSync: React.FC<ShapeDialogStepProps> = ({ data, onChange, nodeId }) => {
   const resolvedNodeId = nodeId as NodeId | undefined;
-  const theme = useTheme();
-  const crashInsight = useBuildCrashInsight({
-    draft: data,
-    nodeId: resolvedNodeId ? String(resolvedNodeId) : undefined,
-  });
-  const [warningDialogOpen, setWarningDialogOpen] = useState(false);
   const {
-    t,
     stages,
     stageProgress,
     paneProgress,
@@ -49,22 +63,121 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
     failed,
     skipped,
     hasProgressData,
+    warningMessage,
     canStartOrResume,
     handleStartOrResume,
     handlePause,
     authDialogOpen,
     closeAuthDialog,
     handleProviderSelect,
-    resolveStatusLabel,
-    resolveStatusColor,
   } = useShapeBuildProgressStep({ data, onChange, nodeId: resolvedNodeId });
-  const [heapDialogOpen, setHeapDialogOpen] = useState(false);
-  const heapPauseRef = useRef<string | null>(null);
-  const { event: heapEvent, dismiss: dismissHeapEvent } = useHeapPressureGuard({
-    enabled: buildStatus === 'running' || buildStatus === 'paused',
-  });
 
-  type TaskWithMetadata = BatchTaskSummary & { metadata?: Record<string, unknown>; stage?: string; title?: string };
+  const setStages = useSetAtom(shapeBuildStagesAtom);
+  const setStageProgress = useSetAtom(shapeBuildStageProgressAtom);
+  const setPaneProgress = useSetAtom(shapeBuildPaneProgressAtom);
+  const setTasksByStage = useSetAtom(shapeBuildTasksByStageAtom);
+  const setBuildStatus = useSetAtom(shapeBuildBuildStatusAtom);
+  const setSummary = useSetAtom(shapeBuildProgressSummaryAtom);
+  const setWarningMessage = useSetAtom(shapeBuildWarningMessageAtom);
+  const setControls = useSetAtom(shapeBuildProgressControlsAtom);
+  const setAuth = useSetAtom(shapeBuildProgressAuthAtom);
+
+  useEffect(() => {
+    setStages(stages);
+  }, [setStages, stages]);
+
+  useEffect(() => {
+    setStageProgress(stageProgress);
+  }, [setStageProgress, stageProgress]);
+
+  useEffect(() => {
+    setPaneProgress(paneProgress ?? []);
+  }, [setPaneProgress, paneProgress]);
+
+  useEffect(() => {
+    setTasksByStage(tasksByStage);
+  }, [setTasksByStage, tasksByStage]);
+
+  useEffect(() => {
+    setBuildStatus(buildStatus);
+  }, [buildStatus, setBuildStatus]);
+
+  useEffect(() => {
+    setSummary({
+      stageLabel,
+      taskLabel,
+      overallProgress,
+      completed,
+      total,
+      failed,
+      skipped,
+      buildStatus,
+      hasProgressData,
+    });
+  }, [
+    buildStatus,
+    completed,
+    failed,
+    hasProgressData,
+    overallProgress,
+    skipped,
+    stageLabel,
+    taskLabel,
+    total,
+    setSummary,
+  ]);
+
+  useEffect(() => {
+    setWarningMessage(warningMessage ?? null);
+  }, [setWarningMessage, warningMessage]);
+
+  useEffect(() => {
+    setControls({
+      canStartOrResume,
+      statusLabel: statusLabel ?? '',
+      handleStartOrResume,
+      handlePause,
+    });
+  }, [
+    canStartOrResume,
+    handlePause,
+    handleStartOrResume,
+    setControls,
+    statusLabel,
+  ]);
+
+  useEffect(() => {
+    setAuth({
+      authDialogOpen: Boolean(authDialogOpen),
+      closeAuthDialog: closeAuthDialog ?? (() => {}),
+      handleProviderSelect: handleProviderSelect ?? (() => {}),
+    });
+  }, [authDialogOpen, closeAuthDialog, handleProviderSelect, setAuth]);
+
+  return null;
+};
+
+const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data, nodeId }) => {
+  const resolvedNodeId = nodeId as NodeId | undefined;
+  const theme = useTheme();
+  const { t } = useTranslation();
+  const stages = useAtomValue(shapeBuildStagesAtom);
+  const fallbackStages = useBuildStages();
+  const effectiveStages = stages.length > 0 ? stages : fallbackStages;
+  const stageProgress = useAtomValue(shapeBuildStageProgressAtom);
+  const paneProgress = useAtomValue(shapeBuildPaneProgressAtom);
+  const tasksByStage = useAtomValue(shapeBuildTasksByStageAtom);
+  const summary = useAtomValue(shapeBuildProgressSummaryAtom);
+  const controls = useAtomValue(shapeBuildProgressControlsAtom);
+  const warningMessage = useAtomValue(shapeBuildWarningMessageAtom);
+  const crashInsight = useBuildCrashInsight({
+    draft: data,
+    nodeId: resolvedNodeId ? String(resolvedNodeId) : undefined,
+  });
+  const [warningDialogOpen, setWarningDialogOpen] = useState(false);
+  const [crashHintOpen, setCrashHintOpen] = useState(false);
+  const [sizeWarningOpen, setSizeWarningOpen] = useState(false);
+  const lastWarningRef = useRef<string | null>(null);
 
   const resolveTaskTitle = useCallback((task: TaskWithMetadata): string => {
     if (task.title) return task.title;
@@ -117,6 +230,41 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
     }
     return t('build.tasks.unknown', '(Title unavailable)');
   }, [t]);
+
+  const resolveStatusLabel = useCallback((statusValue?: string): string => {
+    switch (statusValue) {
+      case 'running':
+        return t('build.taskStatus.running', 'Running');
+      case 'completed':
+        return t('build.taskStatus.completed', 'Completed');
+      case 'failed':
+        return t('build.taskStatus.failed', 'Failed');
+      case 'cancelled':
+        return t('build.taskStatus.cancelled', 'Cancelled');
+      case 'paused':
+        return t('build.taskStatus.paused', 'Paused');
+      case 'queued':
+        return t('build.taskStatus.queued', 'Queued');
+      default:
+        return t('build.taskStatus.waiting', 'Waiting');
+    }
+  }, [t]);
+
+  const resolveStatusColor = useCallback((statusValue?: string) => {
+    switch (statusValue) {
+      case 'completed':
+        return 'success';
+      case 'failed':
+        return 'error';
+      case 'cancelled':
+      case 'paused':
+        return 'warning';
+      case 'running':
+        return 'info';
+      default:
+        return 'default';
+    }
+  }, []);
 
   const renderStageContent = useCallback((stage: BuildStage, stageValue: number) => {
     const stageTasks = tasksByStage[stage.id] ?? [];
@@ -178,7 +326,7 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
         ),
       };
     }
-    const stage = stages.find((candidate) => candidate.id === stageId);
+    const stage = effectiveStages.find((candidate) => candidate.id === stageId);
     const stageLabel = stage?.title ?? stageId;
     const currentValue = (() => {
       switch (stageId) {
@@ -212,7 +360,7 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
         },
       ),
     };
-  }, [crashInsight, data?.batchConfig, stages, t]);
+  }, [crashInsight, data?.batchConfig, effectiveStages, t]);
 
   const crashHint = useMemo(() => {
     if (!crashInsight) return null;
@@ -223,7 +371,7 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
       );
     }
     const stageLabel = crashInsight.stage
-      ? stages.find((candidate) => candidate.id === crashInsight.stage)?.title ?? crashInsight.stage
+      ? effectiveStages.find((candidate) => candidate.id === crashInsight.stage)?.title ?? crashInsight.stage
       : t('build.warning.unknownStageShort', 'unknown stage');
     const ratioText = crashInsight.peakRatio
       ? `${(crashInsight.peakRatio * 100).toFixed(1)}%`
@@ -233,30 +381,22 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
       'Previous build likely hit memory pressure during {{stage}} (peak {{ratio}}). Lower concurrency to reduce memory usage.',
       { stage: stageLabel, ratio: ratioText },
     );
-  }, [crashInsight, stages, t]);
+  }, [crashInsight, effectiveStages, t]);
 
   useEffect(() => {
-    if (!heapEvent) return;
-    setHeapDialogOpen(true);
-  }, [heapEvent]);
-
-  useEffect(() => {
-    if (buildStatus !== 'running') {
-      heapPauseRef.current = null;
-      return;
+    if (crashHint) {
+      setCrashHintOpen(true);
+    } else {
+      setCrashHintOpen(false);
     }
-    if (!heapEvent) return;
-    const activeSessionId = data?.batchSessionId ?? null;
-    if (!activeSessionId) return;
-    const eventKey = `${activeSessionId}:${heapEvent.source}:${heapEvent.timestamp}`;
-    if (heapPauseRef.current === eventKey) return;
-    heapPauseRef.current = eventKey;
-    const pauseAndWarn = async () => {
-      await handlePause();
-      setHeapDialogOpen(true);
-    };
-    void pauseAndWarn();
-  }, [buildStatus, data?.batchSessionId, handlePause, heapEvent]);
+  }, [crashHint]);
+
+  useEffect(() => {
+    if (!warningMessage) return;
+    if (lastWarningRef.current === warningMessage) return;
+    lastWarningRef.current = warningMessage;
+    setSizeWarningOpen(true);
+  }, [warningMessage]);
 
   const renderTaskProgressBar = useCallback(() => {
     const waitingColor = theme.palette.grey[300];
@@ -264,7 +404,7 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
     const runningColor = theme.palette.info.main;
     const segments: Array<{ fill: string }> = [];
 
-    stages.forEach((stage) => {
+    effectiveStages.forEach((stage) => {
       const stageTasks = tasksByStage[stage.id] ?? [];
       if (stageTasks.length === 0) {
         segments.push({ fill: emptyStageColor });
@@ -309,7 +449,7 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
         </svg>
       </Box>
     );
-  }, [stages, tasksByStage, theme]);
+  }, [effectiveStages, tasksByStage, theme]);
 
   const BatchProgressSummaryCard = useCallback(() => (
     <Card
@@ -327,86 +467,101 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
             <Typography variant="caption" color="text.secondary">
               {t('build.progress.stage', 'Stage')}
             </Typography>
-            <Typography variant="body2">{stageLabel}</Typography>
+            <Typography variant="body2">{summary.stageLabel}</Typography>
           </Stack>
           <Stack spacing={0.25} flex={1}>
             <Typography variant="caption" color="text.secondary">
               {t('build.progress.task', 'Task')}
             </Typography>
-            <Typography variant="body2">{taskLabel}</Typography>
+            <Typography variant="body2">{summary.taskLabel}</Typography>
           </Stack>
         </Stack>
         <Stack gap={1}>
           {renderTaskProgressBar()}
-          {buildStatus === 'running' ? (
+          {summary.buildStatus === 'running' ? (
             <LinearProgress variant="indeterminate" sx={{ height: 6, borderRadius: 6 }} />
           ) : null}
           <Typography variant="caption" color="text.secondary">
             {t('build.progress.counts', '{{percentage}}% ・ {{completed}}/{{total}} completed ・ failed {{failed}} ・ skipped {{skipped}}', {
-              percentage: Math.round(overallProgress),
-              completed,
-              total,
-              failed,
-              skipped,
+              percentage: Math.round(summary.overallProgress),
+              completed: summary.completed,
+              total: summary.total,
+              failed: summary.failed,
+              skipped: summary.skipped,
             })}
           </Typography>
         </Stack>
       </CardContent>
     </Card>
-  ), [buildStatus, completed, failed, overallProgress, renderTaskProgressBar, skipped, stageLabel, t, taskLabel, total]);
+  ), [renderTaskProgressBar, summary, t]);
 
   const handleStartClick = useCallback(async () => {
     if (startWarning) {
       setWarningDialogOpen(true);
       return;
     }
-    await handleStartOrResume();
-  }, [handleStartOrResume, startWarning]);
+    await controls.handleStartOrResume?.();
+  }, [controls.handleStartOrResume, startWarning]);
 
   const handleConfirmStart = useCallback(async () => {
     setWarningDialogOpen(false);
-    await handleStartOrResume();
-  }, [handleStartOrResume]);
+    await controls.handleStartOrResume?.();
+  }, [controls.handleStartOrResume]);
 
   return (
     <Box display="flex" flexDirection="column" gap={3} height="100%" minHeight={0}>
       <Box flex={1} minHeight={0}>
-        {crashHint ? (
-          <Typography variant="body2" sx={{ mb: 2, color: 'warning.main' }}>
-            {crashHint}
-          </Typography>
-        ) : null}
         <BuildStepPanel
-          status={buildStatus}
-          overallProgress={overallProgress}
-          stages={stages}
+          status={summary.buildStatus}
+          overallProgress={summary.overallProgress}
+          stages={effectiveStages}
           stageProgress={stageProgress}
           paneProgress={paneProgress}
           splitViewBreakpoints={[600, 900, 1200]}
           splitViewInitialSizesByBreakpoint={[
-            Array.from({ length: stages.length }, () => 300),
-            Array.from({ length: stages.length }, () => 300),
-            Array.from({ length: stages.length }, () => 300),
-            Array.from({ length: stages.length }, () => 300),
+            Array.from({ length: effectiveStages.length }, () => 250),
+            Array.from({ length: effectiveStages.length }, () => 250),
+            Array.from({ length: effectiveStages.length }, () => 250),
+            Array.from({ length: effectiveStages.length }, () => 250),
           ]}
           splitViewAutoCloseCountsByBreakpoint={[
-            Math.max(0, stages.length - 1),
-            Math.max(0, stages.length - 2),
-            Math.max(0, stages.length - 3),
+            Math.max(0, effectiveStages.length - 1),
+            Math.max(0, effectiveStages.length - 2),
+            Math.max(0, effectiveStages.length - 3),
             0,
           ]}
           renderStageContent={renderStageContent}
-          statusContent={hasProgressData ? <BatchProgressSummaryCard /> : undefined}
+          statusContent={summary.hasProgressData ? <BatchProgressSummaryCard /> : undefined}
           startIcon={<ConstructionIcon fontSize="small" />}
-          onPause={handlePause}
-          onResume={canStartOrResume ? handleStartClick : undefined}
+          onPause={controls.handlePause}
+          onResume={controls.canStartOrResume ? handleStartClick : undefined}
           controlLabel={t('build.controls.title', 'Build controls')}
           pauseLabel={t('build.controls.pause', 'Pause')}
           startLabel={t('build.controls.start', 'Start build')}
           resumeLabel={t('build.controls.resume', 'Resume build')}
-          statusLabel={statusLabel}
+          statusLabel={controls.statusLabel}
         />
       </Box>
+      <Snackbar
+        open={crashHintOpen}
+        autoHideDuration={8000}
+        onClose={() => setCrashHintOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      >
+        <Alert severity="warning" variant="filled" onClose={() => setCrashHintOpen(false)}>
+          {crashHint}
+        </Alert>
+      </Snackbar>
+      <Snackbar
+        open={sizeWarningOpen}
+        autoHideDuration={8000}
+        onClose={() => setSizeWarningOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      >
+        <Alert severity="warning" variant="filled" onClose={() => setSizeWarningOpen(false)}>
+          {warningMessage}
+        </Alert>
+      </Snackbar>
       {startWarning ? (
         <Dialog open={warningDialogOpen} onClose={() => setWarningDialogOpen(false)}>
           <DialogTitle>{startWarning.title}</DialogTitle>
@@ -425,10 +580,50 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
           </DialogActions>
         </Dialog>
       ) : null}
+    </Box>
+  );
+};
+
+const ShapeBuildProgressDialogs: React.FC<ShapeBuildProgressPanelProps> = ({ data }) => {
+  const { t } = useTranslation();
+  const buildStatus = useAtomValue(shapeBuildBuildStatusAtom);
+  const authState = useAtomValue(shapeBuildProgressAuthAtom);
+  const controls = useAtomValue(shapeBuildProgressControlsAtom);
+  const [heapDialogOpen, setHeapDialogOpen] = useState(false);
+  const heapPauseRef = useRef<string | null>(null);
+  const { event: heapEvent, dismiss: dismissHeapEvent } = useHeapPressureGuard({
+    enabled: buildStatus === 'running' || buildStatus === 'paused',
+  });
+
+  useEffect(() => {
+    if (!heapEvent) return;
+    setHeapDialogOpen(true);
+  }, [heapEvent]);
+
+  useEffect(() => {
+    if (buildStatus !== 'running') {
+      heapPauseRef.current = null;
+      return;
+    }
+    if (!heapEvent) return;
+    const activeNodeId = data?.nodeId ?? null;
+    if (!activeNodeId) return;
+    const eventKey = `${activeNodeId}:${heapEvent.source}:${heapEvent.timestamp}`;
+    if (heapPauseRef.current === eventKey) return;
+    heapPauseRef.current = eventKey;
+    const pauseAndWarn = async () => {
+      await controls.handlePause?.();
+      setHeapDialogOpen(true);
+    };
+    void pauseAndWarn();
+  }, [buildStatus, controls.handlePause, data?.nodeId, heapEvent]);
+
+  return (
+    <>
       <AuthProviderDialog
-        open={authDialogOpen}
-        onClose={closeAuthDialog}
-        onSelectProvider={handleProviderSelect}
+        open={authState.authDialogOpen}
+        onClose={authState.closeAuthDialog}
+        onSelectProvider={authState.handleProviderSelect}
       />
       <HeapPressureDialog
         open={heapDialogOpen}
@@ -441,6 +636,17 @@ export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = ({ data, o
         confirmLabel={t('build.heap.pauseConfirm', 'OK')}
         description={t('build.heap.pauseHint', 'Reduce concurrency and resume when ready.')}
       />
-    </Box>
+    </>
+  );
+};
+
+export const ShapeBuildProgressStep: React.FC<ShapeDialogStepProps> = (props) => {
+  const store = useMemo(() => createStore(), []);
+  return (
+    <Provider store={store}>
+      <ShapeBuildProgressAtomSync {...props} />
+      <ShapeBuildProgressPanel data={props.data} nodeId={props.nodeId} />
+      <ShapeBuildProgressDialogs data={props.data} nodeId={props.nodeId} />
+    </Provider>
   );
 };

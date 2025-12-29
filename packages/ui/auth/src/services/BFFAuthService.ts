@@ -615,6 +615,9 @@ export class BFFAuthService {
 
     // Clear provider and return URL
     localStorage.removeItem('auth_provider');
-    // auth_return_url removal is handled by auth callback right before redirect.
+    if (!options.preserveReturnUrl) {
+      localStorage.removeItem('auth_return_url');
+      sessionStorage.removeItem('auth_return_url');
+    }
   }
 }

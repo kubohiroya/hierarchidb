@@ -193,6 +193,9 @@ function createRuntimeAliasConfig({
       exclude: true,
       exact: true,
     });
+    addAlias('@hierarchidb/shape-plugin/shape-stage-worker', '../plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.entry.ts', {
+      exclude: true,
+    });
     registerDevPackage('@hierarchidb/ui-worker-client', '../packages/ui/worker-client/src/index.ts', {
       group: 'runtime-worker',
       exclude: true,
@@ -301,6 +304,9 @@ function createRuntimeAliasConfig({
     addAlias('@hierarchidb/runtime-worker-worker/stage-worker', '../packages/runtime-worker/worker/src/stageWorker.entry.ts', {
       exclude: true,
       exact: true,
+    });
+    addAlias('@hierarchidb/shape-plugin/shape-stage-worker', '../plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.entry.ts', {
+      exclude: true,
     });
     addAlias('@hierarchidb/ui-worker-client', '../packages/ui/worker-client/src/index.ts', { exact: true });
     addAlias('@hierarchidb/ui-worker-provider', '../packages/ui/worker-provider/src/index.ts', { exact: true });

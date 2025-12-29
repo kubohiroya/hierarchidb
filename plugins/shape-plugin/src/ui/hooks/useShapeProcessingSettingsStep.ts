@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { DEFAULT_PROCESSING_CONFIG, mergeBatchConfig } from '../../common/types/index.js';
 import type { BatchConfig, ShapeEntity } from '../../common/types/index.js';
 import { clearStagesIfPresent, resolveBatchConfigInvalidation, resolveShapeSessionId } from '../utils/sessionInvalidation.js';
@@ -13,6 +13,12 @@ export const useShapeProcessingSettingsStep = ({ data, onChange }: Args) => {
     () => mergeBatchConfig(data?.batchConfig ?? DEFAULT_PROCESSING_CONFIG),
     [data?.batchConfig],
   );
+
+  useEffect(() => {
+    if (!data?.batchConfig) return;
+    if (data.batchConfig.cleanupConfig) return;
+    onChange({ batchConfig: mergeBatchConfig(data.batchConfig) });
+  }, [data?.batchConfig, onChange]);
 
   const handleChange = useCallback((nextConfig: BatchConfig) => {
     const previousConfig = mergeBatchConfig(data?.batchConfig ?? DEFAULT_PROCESSING_CONFIG);

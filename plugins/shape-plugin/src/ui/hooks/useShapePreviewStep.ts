@@ -59,7 +59,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
   const previewDraft = data as ShapePreviewDraft;
   const tilesUrl = previewDraft.tilesUrl ?? previewDraft.tilesEndpoint ?? '';
   const tilesLayer = previewDraft.tilesLayer ?? 'layer0';
-  const sessionId = previewDraft.batchSessionId ?? previewDraft.nodeId ?? null;
+  const sessionId = previewDraft.nodeId ?? null;
   const nodeKey = previewDraft.nodeId ?? sessionId;
   const [persistedStatus, setPersistedStatus] = useState<string | null>(null);
   const [statusLoaded, setStatusLoaded] = useState(false);

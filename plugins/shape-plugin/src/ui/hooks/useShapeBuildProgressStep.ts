@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
-import { useShapeBatchTasks, type ShapeBatchTaskSummary } from './useShapeBatchTasks.js';
+import { useShapeBatchTasks } from './useShapeBatchTasks.js';
 import { useShapeProgress } from './useShapeProgress.js';
 import { useTranslation } from '../i18n.js';
+import { useAtom } from 'jotai';
+import { shapeBuildPersistedTasksAtom } from '../state/shapeBuildProgressAtoms.js';
 import {
   DEFAULT_PROCESSING_CONFIG,
   mergeBatchConfig,
@@ -41,21 +43,21 @@ type Args = {
 
 export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
   const { t } = useTranslation();
-  const sessionId = data?.batchSessionId ?? null;
+  const sessionId = nodeId ?? data?.nodeId ?? null;
 
   const { progress, status, error, isSubscribed } = useShapeProgress(sessionId, { autoSubscribe: Boolean(sessionId) });
-  const [persistedTasks, setPersistedTasks] = useState<ShapeBatchTaskSummary[]>([]);
+  const [persistedTasks, setPersistedTasks] = useAtom(shapeBuildPersistedTasksAtom);
   const [isStartPending, setIsStartPending] = useState(false);
   const hasSessionId = Boolean(sessionId && !error);
   const effectiveProgress = hasSessionId ? progress : null;
   const effectiveStatus = hasSessionId ? status : null;
   const stages = useBuildStages();
-  const { buildStatus, statusLabel } = useBuildStatus(effectiveStatus);
+  const { buildStatus, statusLabel, effectiveStatus: resolvedStatus } = useBuildStatus(effectiveStatus);
   const shouldPollTasks = Boolean(sessionId)
     && buildStatus !== 'idle'
     && buildStatus !== 'completed'
     && buildStatus !== 'failed'
-    && buildStatus !== 'cancelled';
+    && resolvedStatus?.status !== 'cancelled';
   const shouldPollTasksRef = useCallback(() => shouldPollTasks, [shouldPollTasks]);
   const { tasks, refresh: refreshTasks } = useShapeBatchTasks(sessionId, {
     autoRefresh: shouldPollTasksRef,
@@ -86,6 +88,10 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
       ?? effectiveStatus?.error
       ?? t('build.progress.working', 'Working...');
   })();
+  const warningMessage = useMemo(() => {
+    if (buildStatus !== 'paused') return null;
+    return effectiveStatus?.error ?? null;
+  }, [buildStatus, effectiveStatus?.error]);
   const completed = effectiveProgress?.completed ?? 0;
   const total = effectiveProgress?.total ?? 0;
   const failed = effectiveProgress?.failed ?? 0;
@@ -286,11 +292,11 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     if (!lastUnfinishedStageId) return null;
     const stageTasks = tasksByStage[lastUnfinishedStageId] ?? [];
     if (!stageTasks.length) return null;
-    const completedCount = stageTasks.filter((task) => task.status === 'completed').length;
+    const completedCount = stageTasks.filter((task) => task.status === 'completed' && task.message !== 'skipped').length;
     const failedCount = stageTasks.filter((task) => task.status === 'failed').length;
-    const skippedCount = stageTasks.filter((task) => task.status === 'skipped').length;
+    const skippedCount = stageTasks.filter((task) => task.message === 'skipped').length;
     return {
-      total: stageTasks.length,
+      total: Math.max(0, stageTasks.length - skippedCount),
       completed: completedCount,
       failed: failedCount,
       skipped: skippedCount,
@@ -311,41 +317,6 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
       percentage: Math.round(overallProgress),
     };
   }, [buildStatus, completed, derivedCounts, failed, overallProgress, skipped, total]);
-
-  const resolveStatusLabel = useCallback((statusValue?: string): string => {
-    switch (statusValue) {
-      case 'running':
-        return t('build.taskStatus.running', 'Running');
-      case 'completed':
-        return t('build.taskStatus.completed', 'Completed');
-      case 'failed':
-        return t('build.taskStatus.failed', 'Failed');
-      case 'cancelled':
-        return t('build.taskStatus.cancelled', 'Cancelled');
-      case 'paused':
-        return t('build.taskStatus.paused', 'Paused');
-      case 'queued':
-        return t('build.taskStatus.queued', 'Queued');
-      default:
-        return t('build.taskStatus.waiting', 'Waiting');
-    }
-  }, [t]);
-
-  const resolveStatusColor = useCallback((statusValue?: string) => {
-    switch (statusValue) {
-      case 'completed':
-        return 'success';
-      case 'failed':
-        return 'error';
-      case 'cancelled':
-      case 'paused':
-        return 'warning';
-      case 'running':
-        return 'info';
-      default:
-        return 'default';
-    }
-  }, []);
 
   const isProcessingValid = useMemo(() => (
     validateBatchConfig(
@@ -403,13 +374,12 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     failed: displayCounts.failed,
     skipped: displayCounts.skipped,
     hasProgressData,
+    warningMessage,
     canStartOrResume,
     handleStartOrResume: startOrResume,
     handlePause,
     authDialogOpen,
     closeAuthDialog,
     handleProviderSelect,
-    resolveStatusLabel,
-    resolveStatusColor,
   };
 };

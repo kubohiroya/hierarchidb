@@ -2,6 +2,7 @@ import { SingletonMixin } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { ShapeMutationAPI } from '@hierarchidb/plugin-service-api';
 import { getEphemeralShapeDB } from '@hierarchidb/shape-store';
+import { TilesDB } from '@hierarchidb/gis-sdk';
 
 type DexieCollection = {
   delete?: () => Promise<number>;
@@ -85,9 +86,11 @@ export class ShapeMutationService implements ShapeMutationAPI {
   async cleanupProcessingData(nodeId: NodeId): Promise<void> {
     await this.ensureOpen();
     const sessions = await this.db.batchSessions.where('nodeId').equals(nodeId).toArray?.() ?? [];
+    const sessionIds = new Set<string>([String(nodeId)]);
     for (const session of sessions as Array<{ sessionId?: string }>) {
       const sessionId = session.sessionId;
       if (sessionId) {
+        sessionIds.add(sessionId);
         await this.db.batchTasks.where('sessionId').equals(sessionId).delete?.();
       }
     }
@@ -97,11 +100,26 @@ export class ShapeMutationService implements ShapeMutationAPI {
     await this.deleteTileBuffers(nodeId);
     await this.deleteVectorTiles(nodeId);
     await this.clearCache(nodeId);
+    await this.clearTileIndexArtifacts(Array.from(sessionIds));
   }
 
   async clearShapeArtifacts(nodeId: NodeId): Promise<void> {
     await this.cleanupProcessingData(nodeId);
     const ephemeral = getEphemeralShapeDB();
     await ephemeral.clearNodeData(nodeId);
+  }
+
+  private async clearTileIndexArtifacts(sessionIds: string[]): Promise<void> {
+    try {
+      const db = await TilesDB.getSingleton();
+      for (const sessionId of sessionIds) {
+        const inputKey = `input:${sessionId}`;
+        await db.tiles.where('sessionId').equals(sessionId).delete();
+        await db.tiles.where('sessionId').equals(inputKey).delete();
+        await db.featureMetadata.where('sessionId').equals(sessionId).delete();
+      }
+    } catch (error) {
+      console.warn('[ShapeMutationService] failed to clear TilesDB artifacts', error);
+    }
   }
 }

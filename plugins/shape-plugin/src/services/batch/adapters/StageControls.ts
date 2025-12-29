@@ -13,4 +13,8 @@ export interface StageControls {
    * Max parallel work items for the stage.
    */
   maxConcurrent?: number;
+  /**
+   * Request a pause with a warning message.
+   */
+  requestPause?: (message: string) => void | Promise<void>;
 }

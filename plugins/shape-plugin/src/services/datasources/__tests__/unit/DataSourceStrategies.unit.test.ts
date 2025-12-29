@@ -86,7 +86,7 @@ class TestStrategy extends BaseDataSourceStrategy<any, ShapeEntity[]> {
       nodeId: 'test-node-1' as unknown as any,
       dataSourceName: 'naturalearth',
       licenseAgreement: true,
-      selectedArrayByCountries: [[true]],
+      selectedArrayByCountries: { US: [true] },
     };
     return [entity];
   }
@@ -139,7 +139,7 @@ describe('DataSourceStrategy', () => {
         nodeId: 'node' as unknown as any,
         dataSourceName: 'naturalearth',
         licenseAgreement: true,
-        selectedArrayByCountries: [],
+        selectedArrayByCountries: {},
       }];
 
       const result = await strategy.validateData(data);
@@ -159,7 +159,7 @@ describe('DataSourceStrategy', () => {
         nodeId: 'node' as unknown as any,
         dataSourceName: 'naturalearth',
         licenseAgreement: true,
-        selectedArrayByCountries: [],
+        selectedArrayByCountries: {},
       }] as ShapeEntity[];
       const target: SaveTarget = {
         type: 'hierarchidb',

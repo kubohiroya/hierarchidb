@@ -33,7 +33,11 @@
       "title": "ダウンロード設定 / キャッシュ管理",
       "workers": "同時ダウンロードのワーカー数",
       "workersHelp": "同時に実行するダウンロード数を指定します。",
-      "retainFiles": "ダウンロード済みファイルを保持",
+      "retainTitle": "ビルド終了時の中間生成物の保持",
+      "retainDownloadedFiles": "ダウンロード済みファイル",
+      "retainStage1Cache": "ステージ1キャッシュ",
+      "retainStage2Cache": "ステージ2キャッシュ",
+      "deleteNowTitle": "即時でのビルド生成物の削除",
       "deleteDownloadedFiles": "ダウンロード済みファイルを削除",
       "deleteDownloadedFilesWithCount": "ダウンロード済みファイルを削除 ({{count}}件)",
       "deleteStage1Cache": "ステージ1キャッシュを削除",
@@ -53,7 +57,9 @@
     },
     "simplify2": {
       "title": "タイル前処理（量子化・境界整合）",
-      "description": "タイル生成前に量子化や境界整合を行い、生成負荷を安定化します。"
+      "description": "タイル生成前に量子化や境界整合を行い、生成負荷を安定化します。",
+      "dropConditionsTitle": "いつ形状が省略されますか？",
+      "dropConditionsBody": "有効時は、(1) 面積しきい値・最小頂点数・縦横比/ハイブリッド判定により小さな地物が除外される、または (2) 簡略化/量子化で形状が空になる場合に、形状が省略されることがあります。その場合でもメタデータは残ります。"
     },
     "filter": {
       "title": "抽出設定",
@@ -86,8 +92,8 @@
       "quantizeSelected": "選択中: {value}",
       "quantizeHelp": "タイル前処理で使用する座標量子化です。データ量を抑え、境界整合を安定化します。",
       "quantizeStarHelp": "★1は最も粗い丸め（低精度）で、★が増えるほど精度が上がります。",
-      "enablePerFeatureSimplification": "フィーチャー単位の簡略化を有効化",
-      "enablePerFeatureSimplificationHelp": "タイル前処理の簡略化を地物ごとに適用します。"
+      "enablePerFeatureSimplification": "簡略化により国や自治体が省略されることを許容",
+      "enablePerFeatureSimplificationHelp": "形状は省略される場合がありますが、メタデータは残ります。"
     },
     "tile": {
       "title": "タイル生成（ズーム別最終簡略化）",

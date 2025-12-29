@@ -2,10 +2,14 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  FormControlLabel,
+  FormGroup,
   Grid,
+  Paper,
   Stack,
+  Switch,
   Typography,
-} from '@mui/material';
+  } from '@mui/material';
 import {
   CloudDownload as CloudDownloadIcon,
   ExpandMore as ExpandMoreIcon,
@@ -13,7 +17,6 @@ import {
 import type { BatchConfig, ShapeEntity } from '../../../common/types/index.js';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { useDownloadConfigSection } from '../../hooks/useDownloadConfigSection.js';
-import { DownloadRetentionToggle } from '../processing/DownloadRetentionToggle.js';
 import { DownloadCacheActions } from '../processing/DownloadCacheActions.js';
 import { DownloadRetryControls } from '../processing/DownloadRetryControls.js';
 import { useBuildCrashInsight } from '../../hooks/useBuildCrashInsight.js';
@@ -94,35 +97,103 @@ export const DownloadConfigSection: React.FC<Props> = ({ config, draft, disabled
               disabled={disabled}
             />
           </Grid>
-          <Grid size={{ xs: 12, sm: 4 }} sx={{ display: 'flex', alignItems: 'center' }}>
-            <DownloadRetentionToggle
-              checked={!config?.cleanupConfig?.deleteDownloadedFiles}
-              onChange={(retainFiles) => {
-                update({
-                  cleanupConfig: {
-                    ...config.cleanupConfig,
-                    deleteDownloadedFiles: !retainFiles,
-                  },
-                });
-              }}
-              disabled={disabled}
-              switchId={switchId}
-              label={t('processing.download.retainFiles', 'Retain downloaded files')}
-            />
+          <Grid size={{ xs: 12, sm: 4 }} sx={{ display: 'flex', alignItems: 'flex-start' }}>
+            <Paper variant="outlined" sx={{ p: 2, width: '100%' }}>
+              <Stack spacing={1.5}>
+                <Typography variant="subtitle2">
+                  {t('processing.download.retainTitle', 'Retain intermediate outputs after build')}
+                </Typography>
+                <FormGroup>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={!config?.cleanupConfig?.deleteDownloadedFiles}
+                        onChange={(event) => {
+                          const retainFiles = event.target.checked;
+                          update({
+                            cleanupConfig: {
+                              ...config.cleanupConfig,
+                              deleteDownloadedFiles: !retainFiles,
+                            },
+                          });
+                        }}
+                        disabled={disabled}
+                        inputProps={{
+                          id: `${switchId}-retain-downloaded-files`,
+                          name: 'retain-downloaded-files',
+                        }}
+                      />
+                    }
+                    label={t('processing.download.retainDownloadedFiles', 'Downloaded files')}
+                  />
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={!config?.cleanupConfig?.deleteStage1Cache}
+                        onChange={(event) => {
+                          const retainCache = event.target.checked;
+                          update({
+                            cleanupConfig: {
+                              ...config.cleanupConfig,
+                              deleteStage1Cache: !retainCache,
+                            },
+                          });
+                        }}
+                        disabled={disabled}
+                        inputProps={{
+                          id: `${switchId}-retain-stage1-cache`,
+                          name: 'retain-stage1-cache',
+                        }}
+                      />
+                    }
+                    label={t('processing.download.retainStage1Cache', 'Stage 1 cache')}
+                  />
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={!config?.cleanupConfig?.deleteStage2Cache}
+                        onChange={(event) => {
+                          const retainCache = event.target.checked;
+                          update({
+                            cleanupConfig: {
+                              ...config.cleanupConfig,
+                              deleteStage2Cache: !retainCache,
+                            },
+                          });
+                        }}
+                        disabled={disabled}
+                        inputProps={{
+                          id: `${switchId}-retain-stage2-cache`,
+                          name: 'retain-stage2-cache',
+                        }}
+                      />
+                    }
+                    label={t('processing.download.retainStage2Cache', 'Stage 2 cache')}
+                  />
+                </FormGroup>
+              </Stack>
+            </Paper>
           </Grid>
           <Grid size={{ xs: 12, sm: 4 }} sx={{ display: 'flex', alignItems: 'center' }}>
-            <DownloadCacheActions
-              deleteLabel={deleteLabel}
-              canDeleteRaw={canDeleteRaw}
-              canDeleteStage1={canDeleteStage1}
-              canDeleteStage2={canDeleteStage2}
-              canDeleteTiles={canDeleteTiles}
-              canDeleteMetadata={canDeleteMetadata}
-              onDeleteRaw={handleDeleteRaw}
-              onDeleteStage={handleDeleteStage}
-              onDeleteTiles={handleDeleteTiles}
-              onDeleteMetadata={handleDeleteMetadata}
-            />
+            <Paper variant="outlined" sx={{ p: 2, width: '100%' }}>
+              <Stack spacing={1.5}>
+                <Typography variant="subtitle2">
+                  {t('processing.download.deleteNowTitle', 'Delete build outputs immediately')}
+                </Typography>
+                <DownloadCacheActions
+                  deleteLabel={deleteLabel}
+                  canDeleteRaw={canDeleteRaw}
+                  canDeleteStage1={canDeleteStage1}
+                  canDeleteStage2={canDeleteStage2}
+                  canDeleteTiles={canDeleteTiles}
+                  canDeleteMetadata={canDeleteMetadata}
+                  onDeleteRaw={handleDeleteRaw}
+                  onDeleteStage={handleDeleteStage}
+                  onDeleteTiles={handleDeleteTiles}
+                  onDeleteMetadata={handleDeleteMetadata}
+                />
+              </Stack>
+            </Paper>
           </Grid>
           <DownloadRetryControls
             baseDownloadConfig={baseDownloadConfig}

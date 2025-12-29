@@ -1,7 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { BatchTaskSummary } from '@hierarchidb/common-api';
 import type { NodeType } from '@hierarchidb/common-types';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
+import { useAtom } from 'jotai';
+import {
+  shapeBuildTasksAtom,
+  shapeBuildTasksErrorAtom,
+  shapeBuildTasksLoadingAtom,
+} from '../state/shapeBuildProgressAtoms.js';
 
 export interface UseShapeBatchTasksOptions {
   autoRefresh?: boolean | (() => boolean);
@@ -28,9 +34,9 @@ export function useShapeBatchTasks(
 ): UseShapeBatchTasksState {
   const { autoRefresh = true, pollIntervalMs = 2000 } = options;
   const bridgeRef = useRef(getWorkerBridge());
-  const [tasks, setTasks] = useState<ShapeBatchTaskSummary[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const [tasks, setTasks] = useAtom(shapeBuildTasksAtom);
+  const [isLoading, setIsLoading] = useAtom(shapeBuildTasksLoadingAtom);
+  const [error, setError] = useAtom(shapeBuildTasksErrorAtom);
   const reportedFailuresRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
@@ -82,6 +88,13 @@ export function useShapeBatchTasks(
       : autoRefresh;
     if (!shouldAutoRefresh) return;
     const id = window.setInterval(() => {
+      const stillAutoRefresh = typeof autoRefresh === 'function'
+        ? autoRefresh()
+        : autoRefresh;
+      if (!stillAutoRefresh) {
+        window.clearInterval(id);
+        return;
+      }
       void refresh();
     }, pollIntervalMs);
     return () => window.clearInterval(id);
@@ -94,7 +107,7 @@ export function useShapeBatchTasks(
       if (reported.has(task.taskId)) return;
       reported.add(task.taskId);
       const message = task.message ?? 'Task failed';
-      console.error('[ShapeBuildProgressStep] task failed', {
+      console.warn('[ShapeBuildProgressStep] task failed', {
         taskId: task.taskId,
         stage: task.stage,
         message,

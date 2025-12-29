@@ -93,6 +93,7 @@ export class LocalSimplify1Adapter implements Simplify1StageAdapter {
                 status: 'completed',
                 completedAt: Date.now(),
                 progress: 100,
+                message: 'skipped',
               });
             }
             finished = true;
@@ -130,6 +131,7 @@ export class LocalSimplify1Adapter implements Simplify1StageAdapter {
                 status: 'completed',
                 completedAt: Date.now(),
                 progress: 100,
+                message: 'skipped',
               });
             }
             finished = true;
@@ -178,13 +180,14 @@ export class LocalSimplify1Adapter implements Simplify1StageAdapter {
       if (shouldAbort()) {
         return;
       }
-      const effectiveTotal = Math.max(0, tasks.length - skipped);
+      const total = tasks.length;
+      const done = completed + failed + skipped;
       onProgress({
-        total: effectiveTotal,
+        total,
         completed,
         failed,
         skipped,
-        percentage: effectiveTotal > 0 ? (completed / effectiveTotal) * 100 : 100,
+        percentage: total > 0 ? (done / total) * 100 : 0,
         currentStage: 'simplify1',
         currentTask: task.taskId,
       });
@@ -225,13 +228,28 @@ export class LocalSimplify2Adapter implements Simplify2StageAdapter {
               progress: 0,
             });
           }
+          const taskIndex = task.index ?? 0;
+          const simplify1TaskId = `${task.sessionId ?? ''}-simplify1-${taskIndex}`;
+          const simplify1Task = await shapeDB.batchTasks.get(simplify1TaskId);
+          if (simplify1Task?.status === 'failed' || simplify1Task?.status === 'cancelled') {
+            failed++;
+            if (task.taskId) {
+              await shapeDB.updateBatchTask(task.taskId, {
+                status: 'failed',
+                completedAt: Date.now(),
+                progress: 100,
+                errorMessage: 'Simplify1 failed for this task',
+              });
+            }
+            finished = true;
+            continue;
+          }
           const inputBufferId = task.inputBufferId ?? task.config?.inputBufferId ?? '';
           const input = await db.simplifiedBuffers.get(inputBufferId)
             ?? await db.rawBuffers.get(inputBufferId);
           if (!input) {
             throw new Error(`Simplify2 input buffer not found: ${inputBufferId}`);
           }
-          const taskIndex = task.index ?? 0;
           if (!input.featureCount) {
             const outputBufferId = `${task.sessionId ?? ''}-simplify2-${taskIndex}`;
             await db.simplifiedBuffers.put({
@@ -251,6 +269,7 @@ export class LocalSimplify2Adapter implements Simplify2StageAdapter {
                 status: 'completed',
                 completedAt: Date.now(),
                 progress: 100,
+                message: 'skipped',
               });
             }
             finished = true;
@@ -314,13 +333,14 @@ export class LocalSimplify2Adapter implements Simplify2StageAdapter {
       if (shouldAbort()) {
         return;
       }
-      const effectiveTotal = Math.max(0, tasks.length - skipped);
+      const total = tasks.length;
+      const done = completed + failed + skipped;
       onProgress({
-        total: effectiveTotal,
+        total,
         completed,
         failed,
         skipped,
-        percentage: effectiveTotal > 0 ? (completed / effectiveTotal) * 100 : 100,
+        percentage: total > 0 ? (done / total) * 100 : 0,
         currentStage: 'simplify2',
         currentTask: task.taskId,
       });

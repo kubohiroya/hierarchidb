@@ -33,7 +33,11 @@
       "title": "Download Setting / Cache Management",
       "workers": "Number of Workers for Concurrent Download",
       "workersHelp": "Controls how many downloads run in parallel.",
-      "retainFiles": "Retain downloaded files",
+      "retainTitle": "Retain intermediate outputs after build",
+      "retainDownloadedFiles": "Downloaded files",
+      "retainStage1Cache": "Stage 1 cache",
+      "retainStage2Cache": "Stage 2 cache",
+      "deleteNowTitle": "Delete build outputs immediately",
       "deleteDownloadedFiles": "Delete Downloaded Files",
       "deleteDownloadedFilesWithCount": "Delete Downloaded Files ({{count}} files)",
       "deleteStage1Cache": "Delete Stage1 Cache",
@@ -53,7 +57,9 @@
     },
     "simplify2": {
       "title": "Tile Preprocessing (Quantization & Boundary Alignment)",
-      "description": "Applies quantization and boundary alignment before tile generation to stabilize workload."
+      "description": "Applies quantization and boundary alignment before tile generation to stabilize workload.",
+      "dropConditionsTitle": "When can geometries be omitted?",
+      "dropConditionsBody": "If enabled, simplification can omit geometries when: (1) the feature filter drops small or thin shapes based on area threshold, minimum vertex count, or aspect ratio/hybrid checks, or (2) simplification/quantization reduces a geometry to empty. In that case, metadata is still retained."
     },
     "filter": {
       "title": "Extraction Setting",
@@ -86,8 +92,8 @@
       "quantizeSelected": "Selected: {value}",
       "quantizeHelp": "Coordinate quantization used in tile preprocessing to reduce size and stabilize boundaries.",
       "quantizeStarHelp": "★1 is the coarsest rounding (lowest precision); higher stars increase precision.",
-      "enablePerFeatureSimplification": "Enable per-feature simplification",
-      "enablePerFeatureSimplificationHelp": "Applies preprocessing simplification per feature."
+      "enablePerFeatureSimplification": "Allow simplification to omit countries or municipalities",
+      "enablePerFeatureSimplificationHelp": "Geometries may be omitted, but metadata is retained."
     },
     "tile": {
       "title": "Tile Generation (Zoom-Aware Final Simplification)",

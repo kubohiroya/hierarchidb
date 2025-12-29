@@ -16,6 +16,7 @@ import type {
   TileInfo,
   DownloadTaskPayload,
   ShapeStepValidationResult,
+  SelectedArrayByCountries,
 } from '../common/types/index.js';
 
 export interface ShapeBatchAPI {
@@ -33,7 +34,7 @@ export interface ShapeBatchAPI {
   generateDownloadTaskPayloads(dataSource: string, countries: string[], adminLevels: number[]): Promise<DownloadTaskPayload[]>;
   generateDownloadTaskPayloadsFromSelection(
     dataSource: string,
-    selectedArrayByCountries: boolean[][] | undefined,
+    selectedArrayByCountries: SelectedArrayByCountries | undefined,
   ): Promise<DownloadTaskPayload[]>;
 
   // Validation / estimation

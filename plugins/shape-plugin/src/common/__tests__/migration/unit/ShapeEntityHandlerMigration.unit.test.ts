@@ -15,8 +15,16 @@ import { ShapeEntityHandler } from '../../services/ShapeEntityHandler.js';
 import type { ShapeDraft } from '../../types/ShapeEntity.js';
 import type { BatchConfig } from '../../types/BatchConfig.js';
 
-const buildSelectionMatrix = (rows: number, cols: number): boolean[][] =>
-  Array.from({ length: rows }, () => Array.from({ length: cols }, () => true));
+const toIso2 = (index: number): string => {
+  const first = String.fromCharCode(65 + Math.floor(index / 26));
+  const second = String.fromCharCode(65 + (index % 26));
+  return `${first}${second}`;
+};
+
+const buildSelectionMap = (countries: number, levels: number): Record<string, boolean[]> =>
+  Object.fromEntries(
+    Array.from({ length: countries }, (_, index) => [toIso2(index), Array.from({ length: levels }, () => true)]),
+  );
 
 describe('ShapeEntityHandler Migration Tests', () => {
   let entityHandler: ShapeEntityHandler;
@@ -33,7 +41,7 @@ describe('ShapeEntityHandler Migration Tests', () => {
       //  Given: Shape
       const shapeData = {
         dataSourceName: 'naturalearth' as const,
-        selectedArrayByCountries: buildSelectionMatrix(2, 2),
+        selectedArrayByCountries: buildSelectionMap(2, 2),
         licenseAgreement: true,
       };
 
@@ -45,7 +53,7 @@ describe('ShapeEntityHandler Migration Tests', () => {
       expect(createdEntity.id).toBeDefined();
       expect(createdEntity.nodeId).toBe(mockNodeId);
       expect(createdEntity.dataSourceName).toBe('naturalearth');
-      expect(createdEntity.selectedArrayByCountries).toEqual(buildSelectionMatrix(2, 2));
+      expect(createdEntity.selectedArrayByCountries).toEqual(buildSelectionMap(2, 2));
       expect(createdEntity.licenseAgreement).toBe(true);
     });
 
@@ -53,7 +61,7 @@ describe('ShapeEntityHandler Migration Tests', () => {
       //  Given: Shape
       await entityHandler.createEntity(mockNodeId, {
         dataSourceName: 'gadm',
-        selectedArrayByCountries: buildSelectionMatrix(1, 3),
+        selectedArrayByCountries: buildSelectionMap(1, 3),
         licenseAgreement: true,
       });
 
@@ -70,12 +78,12 @@ describe('ShapeEntityHandler Migration Tests', () => {
       //  Given: Shape
       await entityHandler.createEntity(mockNodeId, {
         dataSourceName: 'naturalearth',
-        selectedArrayByCountries: buildSelectionMatrix(1, 2),
+        selectedArrayByCountries: buildSelectionMap(1, 2),
         licenseAgreement: true,
       });
 
       const updateData = {
-        selectedArrayByCountries: buildSelectionMatrix(3, 4),
+        selectedArrayByCountries: buildSelectionMap(3, 4),
       };
 
       //  When:
@@ -83,14 +91,14 @@ describe('ShapeEntityHandler Migration Tests', () => {
 
       //  Then:
       expect(updatedEntity).toBeDefined();
-      expect(updatedEntity.selectedArrayByCountries).toEqual(buildSelectionMatrix(3, 4));
+      expect(updatedEntity.selectedArrayByCountries).toEqual(buildSelectionMap(3, 4));
     });
 
     it('Shapeエンティティが正常に削除される', async () => {
       //  Given: Shape
       await entityHandler.createEntity(mockNodeId, {
         dataSourceName: 'naturalearth',
-        selectedArrayByCountries: buildSelectionMatrix(1, 2),
+        selectedArrayByCountries: buildSelectionMap(1, 2),
         licenseAgreement: true,
       });
 
@@ -108,7 +116,7 @@ describe('ShapeEntityHandler Migration Tests', () => {
       //  Given: Shape
       const baseEntity = await entityHandler.createEntity(mockNodeId, {
         dataSourceName: 'naturalearth',
-        selectedArrayByCountries: buildSelectionMatrix(1, 2),
+        selectedArrayByCountries: buildSelectionMap(1, 2),
         licenseAgreement: true,
       });
 
@@ -132,19 +140,19 @@ describe('ShapeEntityHandler Migration Tests', () => {
 
       //  When: Working Copy
       const modifiedDraft = await entityHandler.modifyDraft(draft, {
-        selectedArrayByCountries: buildSelectionMatrix(2, 3),
+        selectedArrayByCountries: buildSelectionMap(2, 3),
       });
 
       //  Then:
       expect(modifiedDraft.isModified).toBe(true);
-      expect(modifiedDraft.changes.selectedArrayByCountries).toEqual(buildSelectionMatrix(2, 3));
+      expect(modifiedDraft.changes.selectedArrayByCountries).toEqual(buildSelectionMap(2, 3));
     });
 
     it('Working Copyのコミットが正常に動作する', async () => {
       //  Given:
       await entityHandler.createEntity(mockNodeId, {
         dataSourceName: 'naturalearth',
-        selectedArrayByCountries: buildSelectionMatrix(1, 2),
+        selectedArrayByCountries: buildSelectionMap(1, 2),
         licenseAgreement: true,
       });
 
@@ -154,7 +162,7 @@ describe('ShapeEntityHandler Migration Tests', () => {
         baseVersion: 1,
         isModified: true,
         changes: {
-          selectedArrayByCountries: buildSelectionMatrix(3, 2),
+          selectedArrayByCountries: buildSelectionMap(3, 2),
           dataSourceName: 'geoboundaries',
         },
       };
@@ -164,7 +172,7 @@ describe('ShapeEntityHandler Migration Tests', () => {
 
       //  Then: CoreDB
       expect(committedEntity).toBeDefined();
-      expect(committedEntity.selectedArrayByCountries).toEqual(buildSelectionMatrix(3, 2));
+      expect(committedEntity.selectedArrayByCountries).toEqual(buildSelectionMap(3, 2));
       expect(committedEntity.dataSourceName).toBe('geoboundaries');
     });
 
@@ -175,7 +183,7 @@ describe('ShapeEntityHandler Migration Tests', () => {
         baseVersion: 1,
         isModified: true,
         changes: {
-          selectedArrayByCountries: buildSelectionMatrix(1, 1),
+          selectedArrayByCountries: buildSelectionMap(1, 1),
         },
       };
 
@@ -184,7 +192,7 @@ describe('ShapeEntityHandler Migration Tests', () => {
 
       //  Then:
       const originalEntity = await entityHandler.getEntity(mockNodeId);
-      expect(originalEntity?.selectedArrayByCountries).not.toEqual(buildSelectionMatrix(1, 1));
+      expect(originalEntity?.selectedArrayByCountries).not.toEqual(buildSelectionMap(1, 1));
     });
   });
 
@@ -193,7 +201,7 @@ describe('ShapeEntityHandler Migration Tests', () => {
       //  Given: BatchConfig
       await entityHandler.createEntity(mockNodeId, {
         dataSourceName: 'naturalearth',
-        selectedArrayByCountries: buildSelectionMatrix(1, 2),
+        selectedArrayByCountries: buildSelectionMap(1, 2),
         licenseAgreement: true,
       });
 
@@ -241,7 +249,7 @@ describe('ShapeEntityHandler Migration Tests', () => {
       //  Given: BatchConfigShape
       await entityHandler.createEntity(mockNodeId, {
         dataSourceName: 'naturalearth',
-        selectedArrayByCountries: buildSelectionMatrix(1, 2),
+        selectedArrayByCountries: buildSelectionMap(1, 2),
         licenseAgreement: true,
       });
 

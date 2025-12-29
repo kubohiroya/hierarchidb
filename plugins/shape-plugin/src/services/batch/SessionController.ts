@@ -15,7 +15,7 @@ import type { Simplify1Task, Simplify2Task, VectorTileTask } from '../../common/
 import type { Simplify1StageAdapter } from './adapters/Simplify1StageAdapter.js';
 import type { Simplify2StageAdapter } from './adapters/Simplify2StageAdapter.js';
 import type { VectorTileStageAdapter } from './adapters/VectorTileStageAdapter.js';
-import { LocalSimplify1Adapter, LocalSimplify2Adapter } from './adapters/LocalSimplifyAdapters.js';
+import { ShapeWorkerSimplify1Adapter, ShapeWorkerSimplify2Adapter } from './adapters/ShapeWorkerSimplifyAdapters.js';
 import { RuntimeWorkerVectorTileAdapter } from './adapters/RuntimeWorkerVectorTileAdapter.js';
 import type { BatchProcessConfig } from './types.js';
 import type { DownloadTaskPayload, ProgressInfo, ProcessingStage } from '../../common/types/index.js';
@@ -24,11 +24,12 @@ import type { DownloadTask } from '../../common/types/index.js';
 import { isShapePreviewMetadataEnabled } from '../../common/config/previewFlags.js';
 import { shapeDB } from '../database/ShapeDB.js';
 import { getEphemeralShapeDB } from '../database/EphemeralShapeDB.js';
+import { getShapeTileMetadataDB } from '../database/ShapeTileMetadataDB.js';
 import type { DownloadStageOutput } from './strategies/DownloadStageStrategy.js';
 import { resolveDownloadStageStrategy } from './strategies/resolveDownloadStageStrategy.js';
 import { geojson as geojsonApi } from 'flatgeobuf';
-import type { Feature, FeatureCollection } from 'geojson';
-import { bbox as turfBbox } from '@turf/turf';
+import type { Feature, FeatureCollection, Geometry } from 'geojson';
+import { bbox as turfBbox, area as turfArea } from '@turf/turf';
 
 type WorkerPoolStatistics = Record<string, number>;
 
@@ -65,16 +66,19 @@ export class SessionController {
   private readonly pausedStages = new Set<ProcessingStage>();
   private readonly stageWaiters = new Map<ProcessingStage, Array<() => void>>();
   private readonly stageAbortControllers = new Map<ProcessingStage, AbortController>();
+  private readonly pauseRequestedStages = new Set<ProcessingStage>();
+  private pauseHandler?: (stage: ProcessingStage, message: string) => void | Promise<void>;
 
   constructor(
-    sessionId: string,
+    _sessionId: string,
     nodeId: NodeId,
     downloadTaskPayloads: DownloadTaskPayload[],
     config: BatchProcessConfig,
     options: BatchSessionOptions = {},
   ) {
-    this.sessionId = sessionId;
     this.nodeId = nodeId;
+    this.sessionId = String(nodeId);
+    void _sessionId;
     this.downloadTaskPayloads = downloadTaskPayloads;
     this.options = options;
     this.config = config;
@@ -215,10 +219,21 @@ export class SessionController {
       throw new Error(`Session ${this.sessionId} already initialized`);
     }
 
-    // Prefer runtime-worker-worker adapters when a client is available; otherwise optionally fall back to WorkerPool-backed ones
-    this.simplify1Adapter = new LocalSimplify1Adapter();
-    this.simplify2Adapter = new LocalSimplify2Adapter();
+    // Use shape-stage workers for download/simplify and runtime-worker for vector tiles.
+    this.simplify1Adapter = new ShapeWorkerSimplify1Adapter();
+    this.simplify2Adapter = new ShapeWorkerSimplify2Adapter();
     this.vectorTileAdapter = new RuntimeWorkerVectorTileAdapter();
+  }
+
+  setPauseHandler(handler?: (stage: ProcessingStage, message: string) => void | Promise<void>): void {
+    this.pauseHandler = handler;
+  }
+
+  private async requestPause(stage: ProcessingStage, message: string): Promise<void> {
+    if (this.pauseRequestedStages.has(stage)) return;
+    this.pauseRequestedStages.add(stage);
+    this.pauseStage(stage);
+    await this.pauseHandler?.(stage, message);
   }
 
   /**
@@ -379,7 +394,7 @@ export class SessionController {
           currentStage: 'download',
         });
       };
-      const maxConcurrent = this.config.downloadConfig?.maxConcurrent ?? this.options.maxConcurrentTasks;
+      const maxConcurrent = this.config.download?.concurrentDownloads ?? this.options.maxConcurrentTasks;
       const res = await this.downloadAdapter.process(
         this.sessionId,
         this.nodeId,
@@ -520,7 +535,7 @@ export class SessionController {
         currentStage: 'simplify1',
       });
     };
-    const maxConcurrent = this.config.simplify1Config?.workers ?? this.options.maxConcurrentTasks;
+    const maxConcurrent = this.config.simplify1?.concurrentProcesses ?? this.options.maxConcurrentTasks;
     const r = await this.simplify1Adapter!.process(runnableTasks, reportProgress, {
       waitIfPaused: () => this.waitForStageResume('simplify1'),
       getSignal: () => this.getStageAbortSignal('simplify1'),
@@ -617,7 +632,7 @@ export class SessionController {
         currentStage: 'simplify2',
       });
     };
-    const maxConcurrent = this.config.simplify2Config?.workers ?? this.options.maxConcurrentTasks;
+    const maxConcurrent = this.config.simplify2?.concurrentProcesses ?? this.options.maxConcurrentTasks;
     const r = await this.simplify2Adapter!.process(runnableTasks, reportProgress, {
       waitIfPaused: () => this.waitForStageResume('simplify2'),
       getSignal: () => this.getStageAbortSignal('simplify2'),
@@ -653,81 +668,256 @@ export class SessionController {
     return tiles;
   }
 
-  private async buildVectorTileInputBuffer(): Promise<{
-    inputBufferId: string;
-    collection: FeatureCollection;
-  } | null> {
-    const db = getEphemeralShapeDB();
-    const features: Feature[] = [];
-    const hasValue = (value: unknown): boolean =>
-      typeof value === 'string' ? value.trim().length > 0 : value != null;
-    const applyFeatureMetadata = (
-      feature: Feature,
-      task: Simplify2Task,
-    ) => {
-      const properties = (feature.properties ??= {});
-      const adminLevel = task.adminLevel;
-      if (adminLevel != null && !hasValue(properties.adminLevel) && !hasValue(properties.admin_level) && !hasValue(properties.ADM_LEVEL)) {
-        properties.adminLevel = adminLevel;
+  private buildStageTileKey(z: number, x: number, y: number): string {
+    return `input:${String(this.nodeId)}-${z}-${x}-${y}`;
+  }
+
+  private buildStageTileInputBufferId(key: string): string {
+    return `stage-tile:${key}`;
+  }
+
+  private formatBytes(bytes: number): string {
+    if (!Number.isFinite(bytes)) return 'unknown size';
+    if (bytes < 1024) return `${bytes} B`;
+    const kb = bytes / 1024;
+    if (kb < 1024) return `${kb.toFixed(1)} KB`;
+    const mb = kb / 1024;
+    if (mb < 1024) return `${mb.toFixed(1)} MB`;
+    const gb = mb / 1024;
+    return `${gb.toFixed(2)} GB`;
+  }
+
+  private pickFirstString(properties: Record<string, unknown>, keys: string[]): string | undefined {
+    for (const key of keys) {
+      const value = properties[key];
+      if (typeof value === 'string' && value.trim()) return value.trim();
+    }
+    return undefined;
+  }
+
+  private pickAdminName(properties: Record<string, unknown>): string | undefined {
+    return this.pickFirstString(properties, [
+      'adminName',
+      'admin_name',
+      'ADMIN_NAME',
+      'shapeName',
+      'NAME_0',
+      'NAME_1',
+      'NAME_2',
+      'NAME_3',
+      'NAME_4',
+      'NAME_5',
+      'name',
+    ]);
+  }
+
+  private pickCountryCode(properties: Record<string, unknown>): string | undefined {
+    return this.pickFirstString(properties, ['ISO_A3', 'ISO3', 'ADM0_A3', 'countryCode', 'COUNTRY_CODE']);
+  }
+
+  private pickCountryName(properties: Record<string, unknown>): string | undefined {
+    return this.pickFirstString(properties, ['COUNTRY_NAME', 'COUNTRY', 'NAME_0', 'countryName']);
+  }
+
+  private pickAdminCode(properties: Record<string, unknown>): string | undefined {
+    return this.pickFirstString(properties, ['GID_0', 'GID_1', 'GID_2', 'GID_3', 'shapeID', 'adminCode', 'code']);
+  }
+
+  private pickAdminLevel(properties: Record<string, unknown>): number | undefined {
+    const candidates = [
+      properties.adminLevel,
+      properties.admin_level,
+      properties.ADM_LEVEL,
+      properties.level,
+    ];
+    for (const value of candidates) {
+      if (typeof value === 'number' && Number.isFinite(value)) return value;
+      if (typeof value === 'string') {
+        const parsed = Number(value);
+        if (Number.isFinite(parsed)) return parsed;
       }
-      const countryCode = task.countryCode;
-      if (countryCode && !hasValue(properties.ISO_A3) && !hasValue(properties.ISO3) && !hasValue(properties.ADM0_A3)) {
-        properties.ISO_A3 = countryCode;
-        properties.ISO3 = countryCode;
+    }
+    return undefined;
+  }
+
+  private countVertices(coords: unknown): number {
+    if (!Array.isArray(coords)) return 0;
+    if (coords.length === 0) return 0;
+    if (typeof coords[0] === 'number') return 1;
+    return coords.reduce((sum, child) => sum + this.countVertices(child), 0);
+  }
+
+  private countVerticesFromGeometry(geometry?: Geometry | null): number {
+    if (!geometry) return 0;
+    if (geometry.type === 'GeometryCollection') {
+      return geometry.geometries.reduce((sum, child) => sum + this.countVerticesFromGeometry(child), 0);
+    }
+    return this.countVertices(geometry.coordinates);
+  }
+
+  private countPolygons(geometry?: Geometry | null): number {
+    if (!geometry) return 0;
+    if (geometry.type === 'Polygon') return 1;
+    if (geometry.type === 'MultiPolygon') return geometry.coordinates.length;
+    return 0;
+  }
+
+  private extractGeometryStats(feature: Feature): {
+    vertexCount: number;
+    polygonCount: number;
+    bbox?: [number, number, number, number];
+    area: number;
+  } {
+    const geometry = feature.geometry ?? null;
+    let bbox: [number, number, number, number] | undefined;
+    try {
+      const box = turfBbox(feature as unknown as Feature);
+      if (box.every((value) => Number.isFinite(value))) {
+        bbox = [box[0], box[1], box[2], box[3]];
       }
-      const countryName = task.metadata?.countryName;
-      if (countryName && !hasValue(properties.COUNTRY_NAME) && !hasValue(properties.COUNTRY) && !hasValue(properties.NAME_0)) {
-        properties.COUNTRY_NAME = countryName;
-      }
+    } catch {
+      bbox = undefined;
+    }
+    const vertexCount = this.countVerticesFromGeometry(geometry);
+    const polygonCount = this.countPolygons(geometry);
+    const area = geometry ? turfArea(feature as unknown as Feature) : 0;
+    return {
+      vertexCount,
+      polygonCount,
+      bbox,
+      area,
     };
+  }
+
+  private buildFeatureId(base: string, index: number, countryCode?: string, adminLevel?: number, adminCode?: string): string {
+    const baseId = base.trim().length > 0 ? base.trim() : (adminCode ?? `feature-${index}`);
+    const prefixParts = [
+      countryCode,
+      adminLevel != null ? `ADM${adminLevel}` : undefined,
+      adminCode,
+    ].filter(Boolean);
+    const prefix = prefixParts.join('-');
+    const composed = prefix ? `${prefix}:${baseId}` : baseId;
+    return `${composed}:${index}`;
+  }
+
+  private async ensureTileFeatureIndex(): Promise<Array<{ key: string; z: number; x: number; y: number }>> {
+    const tileDb = await getShapeTileMetadataDB();
+    const tileSessionId = `input:${String(this.nodeId)}`;
+    const existing = await tileDb.tiles.where('sessionId').equals(tileSessionId).toArray();
+    if (existing.length > 0) {
+      return existing.map((row) => ({ key: row.key, z: row.z, x: row.x, y: row.y }));
+    }
+    const zoomLevels = this.resolveZoomLevels();
+    if (zoomLevels.length === 0) return [];
+    const db = getEphemeralShapeDB();
+    const tilesByKey = new Map<string, { key: string; z: number; x: number; y: number; features: Feature[] }>();
+    const metadataRecords: Array<{
+      id: string;
+      sessionId: string;
+      featureId: string;
+      countryName?: string;
+      countryCode?: string;
+      adminName?: string;
+      adminLevel?: number;
+      adminCode?: string;
+      dataSource?: string;
+      createdAt: number;
+      vertexCount: number;
+      polygonCount: number;
+      bbox?: [number, number, number, number];
+      area: number;
+    }> = [];
+    const createdAt = Date.now();
+
     for (const task of this.simplify2Tasks) {
-      const bufferId = task.inputBufferId ?? task.config?.inputBufferId;
-      if (!bufferId) continue;
-      const input = await db.simplifiedBuffers.get(bufferId)
-        ?? await db.rawBuffers.get(bufferId);
-      if (!input) continue;
-      const decoded = await this.decodeFeatureCollection(input.data);
-      if (!decoded) continue;
-      decoded.features.forEach((feature) => applyFeatureMetadata(feature, task));
-      features.push(...decoded.features);
+      const inputBufferId = task.inputBufferId ?? `${this.sessionId}-simplify2-${task.index ?? 0}`;
+      const buffer = await db.simplifiedBuffers.get(inputBufferId);
+      if (!buffer) continue;
+      const collection = await this.decodeFeatureCollection(buffer.data);
+      if (!collection) continue;
+      for (let index = 0; index < collection.features.length; index++) {
+        const feature = collection.features[index];
+        if (!feature) continue;
+        const properties = (feature.properties ??= {});
+        const stats = this.extractGeometryStats(feature);
+        const countryCode = task.countryCode ?? this.pickCountryCode(properties);
+        const adminLevel = task.adminLevel ?? this.pickAdminLevel(properties);
+        const adminCode = this.pickAdminCode(properties);
+        const baseId = String(properties.id ?? feature.id ?? `feature-${index}`);
+        const featureId = this.buildFeatureId(baseId, index, countryCode, adminLevel, adminCode);
+        properties.id = featureId;
+        metadataRecords.push({
+          id: `${String(this.nodeId)}-${featureId}`,
+          sessionId: String(this.nodeId),
+          featureId,
+          countryName: this.pickCountryName(properties),
+          countryCode,
+          adminName: this.pickAdminName(properties),
+          adminLevel,
+          adminCode,
+          dataSource: this.resolveDataSource(),
+          createdAt,
+          vertexCount: stats.vertexCount,
+          polygonCount: stats.polygonCount,
+          bbox: stats.bbox,
+          area: stats.area,
+        });
+        if (!stats.bbox) continue;
+        const tiles = this.buildTileCoordinates(stats.bbox, zoomLevels);
+        for (const tile of tiles) {
+          const key = this.buildStageTileKey(tile.z, tile.x, tile.y);
+          const existingEntry = tilesByKey.get(key);
+          if (existingEntry) {
+            existingEntry.features.push(feature);
+          } else {
+            tilesByKey.set(key, { key, z: tile.z, x: tile.x, y: tile.y, features: [feature] });
+          }
+        }
+      }
     }
-    if (features.length === 0) {
-      return null;
+
+    if (metadataRecords.length > 0) {
+      await tileDb.featureMetadata.bulkPut(metadataRecords);
     }
-    const collection: FeatureCollection = { type: 'FeatureCollection', features };
-    const mergedId = `${this.sessionId}-simplify2-merged`;
-    const data = await this.encodeFeatureCollection(collection);
-    await db.simplifiedBuffers.put({
-      id: mergedId,
-      sessionId: this.sessionId,
-      nodeId: this.nodeId,
-      stage: 'simplify2',
-      data,
-      featureCount: features.length,
-      simplificationRatio: 1,
-      tolerance: this.config.simplify2?.tolerance ?? 0,
-      timestamp: Date.now(),
-    });
-    return { inputBufferId: mergedId, collection };
+
+    const maxTileBytes = 50 * 1024 * 1024;
+    const tileRows = Array.from(tilesByKey.values());
+    const encoder = new TextEncoder();
+    for (const row of tileRows) {
+      const payload = { type: 'FeatureCollection', features: row.features };
+      const json = JSON.stringify(payload);
+      const data = encoder.encode(json).buffer;
+      const size = data.byteLength;
+      if (size > maxTileBytes) {
+        const message = `Tile input too large (z${row.z}/${row.x}/${row.y}, ${this.formatBytes(size)} > ${this.formatBytes(maxTileBytes)}).`;
+        await this.requestPause('vectortile', message);
+        return [];
+      }
+      await tileDb.tiles.put({
+        key: row.key,
+        sessionId: tileSessionId,
+        z: row.z,
+        x: row.x,
+        y: row.y,
+        data,
+        size,
+        contentType: 'application/json',
+        timestamp: Date.now(),
+      });
+    }
+    return tileRows.map((row) => ({ key: row.key, z: row.z, x: row.x, y: row.y }));
   }
 
   private buildVectorTileTasks(
-    inputBufferId: string,
-    collection: FeatureCollection,
+    tileRows: Array<{ key: string; z: number; x: number; y: number }>,
   ): VectorTileTask[] {
     const tileSize = this.config.vectorTiles?.tileSize ?? this.config.tileSize ?? 256;
     const buffer = this.config.vectorTiles?.bufferSize ?? 256;
     const minZoom = this.config.vectorTiles?.minZoom ?? 0;
     const maxZoom = this.config.vectorTiles?.maxZoom ?? 10;
-    const zoomLevels = this.resolveZoomLevels();
-    const metadataEnabled = isShapePreviewMetadataEnabled();
-    const dataSource = this.resolveDataSource();
-    const bbox = turfBbox(collection);
-    if (!bbox.every((value: number) => Number.isFinite(value))) {
-      return [];
-    }
-    const tiles = this.buildTileCoordinates([bbox[0], bbox[1], bbox[2], bbox[3]], zoomLevels);
-    return tiles.map((tile, index) => ({
+    const metadataEnabled = false;
+    return tileRows.map((tile, index) => ({
       taskId: `${this.sessionId}-vectortile-${index}`,
       sessionId: this.sessionId as NodeId,
       taskType: 'vectortile',
@@ -738,7 +928,7 @@ export class SessionController {
       progress: 0,
       zoomLevel: tile.z,
       config: {
-        inputBufferId,
+        inputBufferId: this.buildStageTileInputBufferId(tile.key),
         minZoom,
         maxZoom,
         tileZ: tile.z,
@@ -751,9 +941,51 @@ export class SessionController {
         format: 'mvt',
         compression: true,
         metadataEnabled,
-        metadataContext: { dataSource },
       },
     }));
+  }
+
+  private async persistPlaceholderMetadata(replace: boolean): Promise<number> {
+    if (!isShapePreviewMetadataEnabled()) return 0;
+    const sessionId = String(this.nodeId);
+    const db = await getShapeTileMetadataDB();
+    if (replace) {
+      await db.featureMetadata.where('sessionId').equals(sessionId).delete();
+    }
+    const existing = replace
+      ? new Set<string>()
+      : new Set(
+        (await db.featureMetadata.where('sessionId').equals(sessionId).toArray())
+          .map((row) => row.featureId),
+      );
+    const createdAt = Date.now();
+    const dataSourceFallback = this.resolveDataSource();
+    const rows = [];
+    for (const payload of this.downloadTaskPayloads) {
+      const dataSource = payload.dataSource ?? dataSourceFallback;
+      const countryCode = (payload.countryCode ?? 'UNK').trim().toUpperCase();
+      const adminLevel = payload.adminLevel;
+      const featureKey = `${dataSource ?? 'unknown'}:${countryCode}:${adminLevel ?? 'NA'}`;
+      if (existing.has(featureKey)) continue;
+      existing.add(featureKey);
+      rows.push({
+        id: `${sessionId}-${featureKey}`,
+        sessionId,
+        featureId: featureKey,
+        countryName: payload.countryName,
+        countryCode,
+        adminLevel,
+        dataSource,
+        createdAt,
+        vertexCount: 0,
+        polygonCount: 0,
+        area: 0,
+      });
+    }
+    if (rows.length > 0) {
+      await db.featureMetadata.bulkPut(rows);
+    }
+    return rows.length;
   }
 
   /**
@@ -763,12 +995,13 @@ export class SessionController {
     this.currentStage = 'vectortile';
     console.log(`[Session ${this.sessionId}] Processing vector tile stage`);
 
-    const merged = await this.buildVectorTileInputBuffer();
-    if (!merged) {
+    const tileRows = await this.ensureTileFeatureIndex();
+    if (tileRows.length === 0) {
       console.warn(`[Session ${this.sessionId}] No vector tile inputs to process`);
+      await this.persistPlaceholderMetadata(true);
       return;
     }
-    const tasks = this.buildVectorTileTasks(merged.inputBufferId, merged.collection);
+    const tasks = this.buildVectorTileTasks(tileRows);
     if (tasks.length === 0) {
       console.warn(`[Session ${this.sessionId}] No vector tile tasks to process`);
       return;
@@ -807,12 +1040,14 @@ export class SessionController {
         currentStage: 'vectortile',
       });
     };
-    const maxConcurrent = this.config.tileConfig?.workers ?? this.options.maxConcurrentTasks;
+    const maxConcurrent = this.config.vectorTiles?.concurrentProcesses ?? this.options.maxConcurrentTasks;
     const r = await this.vectorTileAdapter!.process(runnableTasks, reportProgress, {
       waitIfPaused: () => this.waitForStageResume('vectortile'),
       getSignal: () => this.getStageAbortSignal('vectortile'),
       maxConcurrent,
+      requestPause: (message) => this.requestPause('vectortile', message),
     });
+    await this.persistPlaceholderMetadata(false);
     console.log(
       `[Session ${this.sessionId}] Vector tile stage completed: ${baseCompleted + r.processed}/${total} successful`,
     );

@@ -63,4 +63,6 @@ export interface TileBatchConfig {
 
 export interface CleanupBatchConfig {
   deleteDownloadedFiles?: boolean;
+  deleteStage1Cache?: boolean;
+  deleteStage2Cache?: boolean;
 }

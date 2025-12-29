@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { BatchProcessConfig } from '../types.js';
-import type { CountryMetadata, DownloadTask, DownloadTaskPayload } from '../../../common/types/index.js';
+import type { CountryMetadata, DownloadTask, DownloadTaskPayload, SelectedArrayByCountries } from '../../../common/types/index.js';
 
 export interface DownloadStageOptions {
   timeoutMs?: number;
@@ -21,7 +21,7 @@ export interface DownloadStagePostprocessContext extends DownloadStageBuildConte
 }
 
 export interface DownloadTaskPayloadBuildContext {
-  selectedArrayByCountries: boolean[][] | undefined;
+  selectedArrayByCountries: SelectedArrayByCountries | undefined;
   countryMetadata: CountryMetadata[];
 }
 

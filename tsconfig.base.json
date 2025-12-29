@@ -296,6 +296,9 @@
       "@hierarchidb/shape-plugin": [
         "plugins/shape-plugin/src/index.ts"
       ],
+      "@hierarchidb/shape-plugin/shape-stage-worker": [
+        "plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.entry.ts"
+      ],
       "@hierarchidb/shape-plugin/*": [
         "plugins/shape-plugin/src/*"
       ],

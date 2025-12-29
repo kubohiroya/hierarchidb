@@ -49,28 +49,33 @@ const normalizeContinentCode = (continent?: string): ContinentCode | undefined =
 };
 
 const normalizeCountryCodeFromMetadata = (country: Partial<CountryMetadata>, index: number): string => {
-  const candidates = [country.countryCode, country.iso2, country.iso3].filter(
-    (value): value is string => Boolean(value?.trim()),
-  );
-  const primary = (candidates[0] ?? `country-${index}`).trim().toUpperCase();
-  if (primary.length === 2) return primary;
-  if (primary.length === 3 && country.iso2) return country.iso2.trim().toUpperCase();
-  if (primary.length === 3) return primary.slice(0, 2);
-  return primary.slice(0, 2) || `COUNTRY-${index}`;
+  const iso2 = country.iso2?.trim();
+  if (iso2) return iso2.toUpperCase();
+  const countryCode = country.countryCode?.trim();
+  if (countryCode) return countryCode.toUpperCase();
+  return `COUNTRY-${index}`;
 };
 
-const isMatrixEqual = (left?: boolean[][], right?: boolean[][]): boolean => {
+const isSelectionEqual = (
+  left?: Record<string, boolean[]>,
+  right?: Record<string, boolean[]>,
+): boolean => {
   if (!left || !right) return false;
-  if (left.length !== right.length) return false;
-  for (let rowIndex = 0; rowIndex < left.length; rowIndex += 1) {
-    const leftRow = left[rowIndex] ?? [];
-    const rightRow = right[rowIndex] ?? [];
+  const leftKeys = Object.keys(left).sort();
+  const rightKeys = Object.keys(right).sort();
+  if (leftKeys.length !== rightKeys.length) return false;
+  for (let i = 0; i < leftKeys.length; i += 1) {
+    if (leftKeys[i] !== rightKeys[i]) return false;
+  }
+  return leftKeys.every((key) => {
+    const leftRow = left[key] ?? [];
+    const rightRow = right[key] ?? [];
     if (leftRow.length !== rightRow.length) return false;
     for (let colIndex = 0; colIndex < leftRow.length; colIndex += 1) {
       if (Boolean(leftRow[colIndex]) !== Boolean(rightRow[colIndex])) return false;
     }
-  }
-  return true;
+    return true;
+  });
 };
 
 type Args = {
@@ -94,6 +99,18 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
     if (iso.status !== 'ready') return new Map<string, ContinentCode>();
     return new Map(iso.countries.map((country) => [country.code, country.continent]));
   }, [iso]);
+  const iso3ToIso2 = useMemo(() => {
+    return new Map(
+      countries
+        .map((country, index) => {
+          const iso3 = country.iso3?.trim().toUpperCase();
+          const iso2 = normalizeCountryCodeFromMetadata(country, index).trim().toUpperCase();
+          if (!iso3 || !iso2 || iso2.length !== 2) return null;
+          return [iso3, iso2] as const;
+        })
+        .filter((entry): entry is [string, string] => Boolean(entry)),
+    );
+  }, [countries]);
 
   const baseCountries = useMemo(() => {
     return countries.map((country, countryIndex) => {
@@ -118,17 +135,44 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
     });
   }, [availableAdminLevels, countries, dataSourceKey, isoContinentByCode]);
 
-  const checkboxMatrix = useMemo<boolean[][]>(() => {
+  const normalizedSelection = useMemo<Record<string, boolean[]>>(() => {
+    if (!selectedArrayByCountries) return {};
     if (Array.isArray(selectedArrayByCountries)) {
-      return (selectedArrayByCountries as unknown[]).map((row: unknown): boolean[] => {
-        if (!Array.isArray(row)) {
-          return Array.from({ length: maxAdminLevel + 1 }, () => false);
-        }
-        return Array.from({ length: maxAdminLevel + 1 }, (_, idx) => Boolean((row as unknown[])[idx]));
+      const legacy = selectedArrayByCountries as boolean[][];
+      const mapped: Record<string, boolean[]> = {};
+      baseCountries.forEach((entry, rowIndex) => {
+        const row = legacy[rowIndex] ?? [];
+        mapped[entry.country.code] = Array.from({ length: maxAdminLevel + 1 }, (_, idx) => Boolean(row[idx]));
       });
+      return mapped;
     }
-    return baseCountries.map(() => Array.from({ length: maxAdminLevel + 1 }, () => false));
-  }, [baseCountries, maxAdminLevel, selectedArrayByCountries]);
+    const resolveSelectionKey = (code: string) => {
+      const normalized = code.trim().toUpperCase();
+      if (normalized.length === 2) return normalized;
+      return iso3ToIso2.get(normalized) ?? normalized;
+    };
+    return Object.fromEntries(
+      Object.entries(selectedArrayByCountries).map(([code, row]) => [
+        resolveSelectionKey(code),
+        Array.isArray(row)
+          ? Array.from({ length: maxAdminLevel + 1 }, (_, idx) => Boolean(row[idx]))
+          : Array.from({ length: maxAdminLevel + 1 }, () => false),
+      ]),
+    );
+  }, [baseCountries, iso3ToIso2, maxAdminLevel, selectedArrayByCountries]);
+
+  const checkboxMatrix = useMemo<boolean[][]>(() => {
+    return baseCountries.map((entry) => {
+      const row = normalizedSelection[entry.country.code] ?? [];
+      return Array.from({ length: maxAdminLevel + 1 }, (_, idx) => Boolean(row[idx]));
+    });
+  }, [baseCountries, maxAdminLevel, normalizedSelection]);
+
+  useEffect(() => {
+    if (!Array.isArray(selectedArrayByCountries)) return;
+    if (Object.keys(normalizedSelection).length === 0) return;
+    onChange({ selectedArrayByCountries: normalizedSelection });
+  }, [normalizedSelection, onChange, selectedArrayByCountries]);
 
   useEffect(() => {
     let cancelled = false;
@@ -176,26 +220,24 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
   }, [dataSourceKey, enqueueSnackbar]);
 
   useEffect(() => {
-    if (!Array.isArray(selectedArrayByCountries)) return;
     if (dataSourceKey !== 'geoboundaries' || !availableAdminLevels) return;
-    const nextMatrix = baseCountries.map((entry, rowIndex) => {
-      const row = checkboxMatrix[rowIndex] ?? [];
-      return Array.from({ length: maxAdminLevel + 1 }, (_, colIndex) => (
+    const nextSelection: Record<string, boolean[]> = {};
+    baseCountries.forEach((entry) => {
+      const row = normalizedSelection[entry.country.code] ?? [];
+      nextSelection[entry.country.code] = Array.from({ length: maxAdminLevel + 1 }, (_, colIndex) => (
         entry.availableAdminLevels.includes(colIndex) ? Boolean(row[colIndex]) : false
       ));
     });
-    const previousMatrix = selectedArrayByCountries as boolean[][];
-    if (!isMatrixEqual(previousMatrix, nextMatrix)) {
-      onChange({ selectedArrayByCountries: nextMatrix });
+    if (!isSelectionEqual(normalizedSelection, nextSelection)) {
+      onChange({ selectedArrayByCountries: nextSelection });
     }
   }, [
     availableAdminLevels,
     baseCountries,
-    checkboxMatrix,
     dataSourceKey,
     maxAdminLevel,
+    normalizedSelection,
     onChange,
-    selectedArrayByCountries,
   ]);
 
   const columns: MatrixConfig['columns'] = useMemo(
@@ -236,27 +278,26 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
 
   const applySelections = useCallback(
     (nextSelections: MatrixSelection[]) => {
-      const nextMatrix = baseCountries.map((entry) => {
+      const nextSelection = baseCountries.reduce<Record<string, boolean[]>>((acc, entry) => {
         const found = nextSelections.find((sel) => sel.countryCode === entry.country.code);
         const row = columns.map((col, idx) => {
           const enabled = entry.availableAdminLevels.includes(idx);
           return enabled ? Boolean(found?.selections?.[col.id]) : false;
         });
-        return row;
-      });
-      const previousMatrix = Array.isArray(selectedArrayByCountries)
-        ? (selectedArrayByCountries as boolean[][])
-        : undefined;
-      if (!isMatrixEqual(previousMatrix, nextMatrix)) {
+        acc[entry.country.code] = row;
+        return acc;
+      }, {});
+      if (!isSelectionEqual(normalizedSelection, nextSelection)) {
         const sessionId = resolveShapeSessionId(data);
         if (sessionId) {
           void clearStagesIfPresent(sessionId, FULL_INVALIDATION_STAGES);
         }
       }
-      onChange({ selectedArrayByCountries: nextMatrix });
+      onChange({ selectedArrayByCountries: nextSelection });
 
-      const totalSelected = nextMatrix.flat().filter(Boolean).length;
-      const countriesWithSelection = nextMatrix.filter((row) => row.some(Boolean)).length;
+      const rows = Object.values(nextSelection);
+      const totalSelected = rows.flat().filter(Boolean).length;
+      const countriesWithSelection = rows.filter((row) => row.some(Boolean)).length;
       enqueueSnackbar(
         `${countriesWithSelection} countries / ${totalSelected} selections — Est. Size: ${formatBytes(
           calculateEstimatedSize(totalSelected),
@@ -272,7 +313,7 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
       dataSourceKey,
       enqueueSnackbar,
       onChange,
-      selectedArrayByCountries,
+      normalizedSelection,
     ],
   );
 

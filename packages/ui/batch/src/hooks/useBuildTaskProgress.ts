@@ -8,6 +8,8 @@ const toStageKey = (stage?: string): string => {
   return stage;
 };
 
+const isSkippedTask = (task: BatchTaskSummary): boolean => task.message === 'skipped';
+
 export const useBuildTaskProgress = (
   stages: BuildStage[],
   currentStage: string | undefined,
@@ -52,7 +54,9 @@ export const useBuildTaskProgress = (
     return stages.map((stage) => {
       const stageTasks = tasksByStage[stage.id] ?? [];
       const taskCount = stageTasks.length;
-      const completedCount = stageTasks.filter((task) => task.status === 'completed').length;
+      const skippedCount = stageTasks.filter(isSkippedTask).length;
+      const taskCountEffective = Math.max(0, taskCount - skippedCount);
+      const completedCount = stageTasks.filter((task) => task.status === 'completed' && !isSkippedTask(task)).length;
       const failedCount = stageTasks.filter((task) => task.status === 'failed').length;
       const progressValue = taskCount > 0
         ? Math.round(stageTasks.reduce((sum, task) => sum + (task.progress ?? 0), 0) / taskCount)
@@ -61,7 +65,7 @@ export const useBuildTaskProgress = (
       return {
         paneId: stage.id,
         progress: Math.min(100, Math.max(0, progressValue)),
-        taskCount,
+        taskCount: taskCountEffective,
         completedCount,
         status: derivedStatus,
       };

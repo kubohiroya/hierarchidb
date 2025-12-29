@@ -15,7 +15,7 @@ const baseEntity = (dataSourceName: string, batchDataSource = dataSourceName): S
     ...DEFAULT_PROCESSING_CONFIG,
     dataSource: batchDataSource as ShapeEntity['batchConfig']['dataSource'],
   },
-  selectedArrayByCountries: [],
+  selectedArrayByCountries: {},
   processingStatus: 'idle',
 });
 

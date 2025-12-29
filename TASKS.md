@@ -53,6 +53,185 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1957) shape-plugin: stage5 タイル生成で task failed が出る原因調査/修正（P1）
+- ブランチ: `fix/shape-plugin/stage5-tile-task-failed`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`, `plugins/shape-plugin/src/ui/hooks/useShapeBatchTasks.ts`, `plugins/shape-plugin/src/services/batch/**`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] stage5「タイル生成」での task failed 発生原因を特定し、影響範囲を運用ログに記載する
+  - [ ] 必要な修正を最小差分で反映する（不要なら理由を明記）
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] ShapeBuildProgressStep の task failed 発生経路（UI/Worker/ログ）を確認する
+  - [ ] タイル生成ステージの task payload/結果/例外処理を確認する
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する
+- ロールバック手順：`plugins/shape-plugin/src/ui/**` と `plugins/shape-plugin/src/services/batch/**` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 01:35 JST stage5 タイル生成で task failed が出る原因調査に着手。
+  - progress: 2025-12-29 03:30 JST ExecPlan を `plans/shape-tile-preprocess-indexing-execplan.md` に作成し、タイル前処理でタイル座標ごとに FeatureCollection を索引化する方針を整理。
+  - progress: 2025-12-29 03:55 JST SessionController にタイル索引化とメタデータ生成の実装を追加し、vector tile ステージは stage-tile 参照へ切替する作業に着手。
+  - progress: 2025-12-29 04:20 JST stage-tile 入力は TilesDB の key に `input:` を付与して保存し、runtime-worker の readBuffer が stage-tile を読むよう調整。vector tile adapter の input サイズ判定/永続化を stage-tile ではスキップするよう修正。
+  - progress: 2025-12-29 04:45 JST sessionId を廃止し nodeId を唯一識別子として扱う方針へ更新。worker/api と UI の参照を nodeId に揃え、SessionController の sessionId を nodeId に固定。TilesDB の削除は nodeId と input:nodeId を対象に追加。
+  - progress: 2025-12-29 05:05 JST Step4「ビルド終了時の中間生成物の保持」カードの縦位置を上揃えに修正。
+  - progress: 2025-12-29 05:15 JST SessionController の GeometryCollection 対応と metadata 型エラーを修正し、未使用の buildVectorTileInputBuffer を削除。worker plugin の未使用引数を整理。
+
+1958) shape-plugin: selectedArrayByCountries を Record<ISO2, boolean[]> へ変更（P1）
+- ブランチ: `fix/shape-plugin/selected-array-by-countries-map`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/**`, `app/public/templates/population-2023/tree-nodes.json`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] selectedArrayByCountries を `Record<ISO2, boolean[]>` に統一する
+  - [ ] UI/Worker/サービス/テスト/テンプレートを新形式に更新する
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] ShapeEntity/create-update/WorkerAPI の型と参照を更新する
+  - [ ] shape-plugin の fixtures/tests を新形式へ更新する
+  - [ ] population-2023 テンプレートの shape 選択データをRecord形式へ変換する
+- ロールバック手順：`plugins/shape-plugin/src/**` と `app/public/templates/population-2023/tree-nodes.json` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 06:25 JST selectedArrayByCountries を Record<ISO2, boolean[]> に更新する作業に着手。
+  - progress: 2025-12-29 06:40 JST ShapeEntity/WorkerAPI/サービス/テストの型参照を Record 形式へ更新し、UI/Worker で国コード正規化を iso2→countryCode→iso3 の優先順へ修正。
+  - done: 2025-12-29 06:50 JST population-2023 テンプレートの選択データを国コードRecordへ変換し、fixtures/tests/docs を更新。検証: 未実施。ロールバック: `plugins/shape-plugin/src/**` と `app/public/templates/population-2023/tree-nodes.json` の差分を revert。
+
+1959) runtime-worker: StageProcessingService の string | undefined → string | null 型エラー修正（P1）
+- ブランチ: `fix/runtime-worker/stageprocessing-nullable`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/runtime-worker/src/services/StageProcessingService.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] `string | undefined` が `string | null` へ適切に整合される
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] 該当行の返り値を `null` へ統一する
+  - [ ] 影響する型定義/呼び出し元を確認する
+- ロールバック手順：`packages/runtime-worker/src/services/StageProcessingService.ts` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 06:55 JST StageProcessingService の nullable 型エラー修正に着手。
+  - done: 2025-12-29 06:58 JST `match[1]`/`fallback[1]` を null 合成に変更し、string|null へ統一。検証: 未実施。ロールバック: `packages/runtime-worker/src/services/StageProcessingService.ts` の差分を revert。
+
+1960) shape-plugin: Step4 簡略化許容値のデフォルトを 0.5 に変更（P2）
+- ブランチ: `fix/shape-plugin/step4-tolerance-default-0_5`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/**`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] Step4の「簡略化許容値 (度)」のデフォルトが 0.5 になる
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] 該当UI/初期値の参照先を特定する
+  - [ ] 既定値を 0.5 に変更する
+- ロールバック手順：`plugins/shape-plugin/src/**` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 07:05 JST Step4 簡略化許容値のデフォルトを 0.5 に変更する作業に着手。
+  - done: 2025-12-29 07:10 JST simplify2Config/simplificationConfig の tolerance を 0.5 に更新し、Step4 の UI 既定値を 0.5 へ変更。検証: 未実施。ロールバック: `plugins/shape-plugin/src/common/types/constants.ts` と `plugins/shape-plugin/src/ui/components/steps/Simplify2ConfigSection.tsx` の差分を revert。
+
+1961) shape-plugin: selectedArrayByCountries Record 化後の downloadTaskPayload 空生成調査（P1）
+- ブランチ: `fix/shape-plugin/selection-record-download-task-empty`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/**`, `app/src/worker-runtime/worker.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] downloadTaskPayload が空になる経路を特定する
+  - [ ] selectedArrayByCountries の key 正規化/一致条件を確認する
+  - [ ] 原因/影響範囲/修正方針を運用ログに記載する
+- チェックリスト:
+  - [ ] UI側の選択正規化と Worker 呼び出し引数を確認する
+  - [ ] 生成ロジックの country metadata / key 解決を確認する
+- ロールバック手順：`plugins/shape-plugin/src/**` と `app/src/worker-runtime/worker.ts` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 07:20 JST Record 化後の downloadTaskPayload 空生成の可能性を調査開始。
+  - progress: 2025-12-29 07:30 JST `useBatchSessionActions.ts` の `buildDownloadTaskPayloads` が `selectedArrayByCountries` を配列前提で判定しており、Record 形式では空扱いになっていることを確認（`Selection is empty` で停止）。
+  - progress: 2025-12-29 07:45 JST buildDownloadTaskPayloads を Record 対応に修正した後も startOrResume:missingPayloads が発生するため、原因の追加調査に着手。
+  - done: 2025-12-29 08:00 JST downloadTaskPayload 生成で国コードの一致が取れず空になるため、selection key を大文字正規化し iso2/countryCode/iso3 の候補から一致を探すよう修正。検証: 未実施。ロールバック: `plugins/shape-plugin/src/services/utils/utils.ts` の差分を revert。
+
+1962) shape-plugin: 共通化候補の調査（P2）
+- ブランチ: `chore/shape-plugin/commonality-survey`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/**`, `plugins/*-plugin/src/**`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] shape-plugin 内の重複/共通化候補（型/ロジック/フロー/ユーティリティ）を具体的に列挙する
+  - [ ] 共通化の方向性（移動先/共通API化/抽象化の粒度）と影響範囲を整理する
+  - [ ] 優先度とリスク/副作用を整理し、次アクション候補を提示する
+  - [ ] 調査結果を運用ログに記録する
+- チェックリスト:
+  - [ ] shape-plugin の UI/Worker/共通層を棚卸しし、重複ロジックを抽出する
+  - [ ] 他プラグイン（location/shape以外）の実装と比較し、共通化の根拠を補強する
+  - [ ] 共通化候補の移動先（plugin-base/runtime/shared utils 等）を仮置きする
+- ロールバック手順：調査のみのため変更なし
+- 運用ログ：
+
+1963) shape-plugin: 内部ISO2統一と外部ISO3変換の方針適用（P1）
+- ブランチ: `fix/shape-plugin/iso2-internal-iso3-external`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/**`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] 内部の国コードは ISO2 を標準として保持する
+  - [ ] ISO3 が必要な外部出力は必要時に変換する
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] metadata loader で iso2 を優先して countryCode を設定する
+  - [ ] selection の正規化を iso2 基準に統一する
+  - [ ] payload 生成で iso3 key を iso2 に変換して受け付ける
+- ロールバック手順：`plugins/shape-plugin/src/**` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 08:10 JST 内部ISO2統一と外部ISO3変換の方針適用に着手。
+  - done: 2025-12-29 08:20 JST metadata loader で ISO2 を優先し、選択正規化と payload 生成の key を ISO2 基準へ統一。ISO3 は外部出力時に変換。検証: 未実施。ロールバック: `plugins/shape-plugin/src/**` の差分を revert。
+  - start: 2025-12-29 09:25 JST shape-plugin の共通化候補調査に着手。
+  - progress: 2025-12-29 09:28 JST 共通化候補を一次抽出（download/authFetch/ISO3166・BuildMonitor・Batch progress hook・selectedArrayByCountries 周辺・BatchSessionManager 補助）。
+  - progress: 2025-12-29 09:35 JST download/authFetch 共通化案と BuildMonitor 共通化案の設計観点を整理（@hierarchidb/download の pluginDownloadRegistry 既存APIベース）。
+  - progress: 2025-12-29 09:45 JST 設計方針を具体化。download/auth: @hierarchidb/download に createPluginDownloadRegistry/authFetchForPlugin 追加し、shape/location/route の registry/utils を薄いラッパーへ統一。BuildMonitor: 共通ユーティリティを packages/ui/monitoring へ集約し、storagePrefix と stage 型をパラメータ化。
+
+1963) download/auth と BuildMonitor の共通化実装計画・移行（P2）
+- ブランチ: `refactor/plugins/download-buildmonitor-common`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/features/download/src/pluginDownloadRegistry.ts`, `packages/ui/monitoring/src/**`, `plugins/shape-plugin/src/**`, `plugins/location-plugin/src/**`, `plugins/route-plugin/src/**`, `TASKS.md`, `plans/**`
+- 受け入れ基準（DoD）:
+  - [ ] ExecPlan を作成し、PLANS.md 準拠で更新し続けられる状態にする
+  - [ ] BuildMonitor 共通実装を `packages/ui/monitoring` へ集約し、shape/route から直接 API を呼ぶ（薄いラッパーは残さない）
+  - [ ] download/auth は `@hierarchidb/download` の既存 API を直接呼ぶ形で整理し、不要な registry/utils を解消する
+  - [ ] 影響範囲/移行手順/ロールバック方針を整理し、TASKS.md に記録する
+- チェックリスト:
+  - [ ] ExecPlan を `plans/` に作成し、Decision Log/Progress を開始する
+  - [ ] BuildMonitor の移行先を `packages/ui/monitoring` に確定し、key 互換を維持する設計にする
+  - [ ] location/route/shape の download/auth 呼び出し元を洗い出し、直接 API 呼び出しへ置換する計画を立てる
+- ロールバック手順：対象ファイルの差分を revert し、各プラグインの従来ローカル実装へ戻す
+- 運用ログ：
+  - start: 2025-12-29 09:40 JST download/auth と BuildMonitor の共通化実装計画に着手。
+  - progress: 2025-12-29 09:45 JST ExecPlan を `plans/download-buildmonitor-common-execplan.md` に作成。
+  - done: 2025-12-29 07:40 JST `buildDownloadTaskPayloads` を Record 形式対応に変更し、空判定は object の key 判定へ修正。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/hooks/build/useBatchSessionActions.ts` の差分を revert。
+1954) shape-plugin typecheck 追加エラー修正（P1）
+- ブランチ: `fix/shape-plugin/typecheck-batch-guards`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/services/batch`, `plugins/shape-plugin/src/ui/hooks`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] shape-plugin typecheck の undefined/プロパティ不一致エラーを解消する
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] Worker クライアントの undefined ガードを追加する
+  - [ ] BatchProcessConfig の参照を実態に合わせる
+  - [ ] UI の進捗ステータス判定を型に合わせる
+- ロールバック手順：`plugins/shape-plugin/src/services/batch/**` と `plugins/shape-plugin/src/ui/hooks/useShapeBuildProgressStep.ts` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 00:40 JST shape-plugin typecheck 追加エラーの修正に着手。
+  - progress: 2025-12-29 00:45 JST worker クライアントの undefined ガードと SessionController の config 参照を修正、build progress の cancelled 判定を型に合わせて更新。
+
+1953) app build: shapeStageWorker entry 解決エラー修正（P1）
+- ブランチ: `fix/app/shape-stage-worker-entry`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/services/batch/adapters/ShapeWorkerPool.ts`, `tsconfig.base.json`, `app/vite.config.ts`, `app/vite.config.min.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] `shapeStageWorker.entry` の解決エラーが発生しない
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] worker URL を package specifier に切替える
+  - [ ] Vite/tsconfig の alias を追加する
+  - [ ] ビルドログまたは未検証理由を記録する
+- ロールバック手順：`plugins/shape-plugin/src/services/batch/adapters/ShapeWorkerPool.ts`, `tsconfig.base.json`, `app/vite.config.ts`, `app/vite.config.min.ts` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 00:10 JST app build の shapeStageWorker entry 解決エラー修正に着手。
+  - progress: 2025-12-29 00:20 JST shapeStageWorker の URL を package specifier に変更し、tsconfig/Vite に alias を追加。
+
+1952) ui-auth typecheck 未使用変数の整理（P2）
+- ブランチ: `fix/ui-auth/unused-options`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/ui/auth/src/services/BFFAuthService.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] `clearAuthData` の未使用引数エラーを解消する
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] 未使用引数を実際の処理に反映する
+  - [ ] typecheck 結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：`packages/ui/auth/src/services/BFFAuthService.ts` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-28 23:55 JST ui-auth の未使用引数エラー修正に着手。
+  - progress: 2025-12-28 23:56 JST clearAuthData の preserveReturnUrl を実装し、auth_return_url の削除を条件化。
+
 1950) top page: GuidedTour Next で Target not mounted が出る不具合修正（P1）
 - ブランチ: `fix/app/top-guidedtour-next-target`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `app/src`, `TASKS.md`
@@ -69,6 +248,101 @@
   - start: 2025-12-28 23:45 JST Top page GuidedTour の Next で Target not mounted が発生する問題の調査に着手。
   - progress: 2025-12-28 23:50 JST Top page GuidedTour の target をホーム画面実在要素へ差し替え、HomePage に tour 用 data-tour-id を付与。
   - progress: 2025-12-28 23:51 JST 原因は Top page の step が tree page 向けの aria-label を参照しており、対象要素が未マウントだった点。
+
+1951) shape-plugin: step5 の LRUSplitView 初期ペイン幅を 250 に変更（P2）
+- ブランチ: `fix/shape-plugin/step5-pane-width-250`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] step5 の LRUSplitView 初期ペイン幅が 250 になる
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] `splitViewInitialSizesByBreakpoint` の初期値を 250 に更新する
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する
+- ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-28 23:56 JST step5 の LRUSplitView 初期ペイン幅を 250 に変更する作業に着手。
+  - done: 2025-12-28 23:57 JST splitViewInitialSizesByBreakpoint を 300→250 に更新。検証: 未実施。
+
+1952) shape-plugin: step5 進捗表示の状態管理をJotai化して再レンダリングを局所化（P1）
+- ブランチ: `perf/shape-plugin/step5-progress-jotai`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/ui`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] 進捗表示の状態保持がJotai経由になる
+  - [ ] 進捗更新時の再レンダリング範囲が局所化される
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] progress/task の保持をJotai atomへ移行する
+  - [ ] 進捗表示のUIをatom読取に分離する
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する
+- ロールバック手順：`plugins/shape-plugin/src/ui/**` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 00:05 JST step5 進捗表示の状態管理をJotai化して再レンダリング局所化に着手。
+  - progress: 2025-12-29 00:18 JST 進捗/タスク状態をJotai atomへ移行し、Step5のUIをatom読取へ分離する対応に着手。
+  - progress: 2025-12-29 00:28 JST ShapeBuildProgressStep を atom sync + panel/dialogs に分割し、進捗表示とダイアログの再レンダリングを分離。
+  - progress: 2025-12-29 00:33 JST buildStatus/controls/auth を別atomに分割し、ダイアログ系の再レンダリングを最小化。
+
+1953) shape-plugin: Step5の「previous build」警告をSnackbar表示へ変更（P2）
+- ブランチ: `fix/shape-plugin/step5-crashhint-snackbar`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] Step5の警告文が常時表示ではなくSnackbarで表示される
+  - [ ] 表示タイミング/自動クローズが適切である
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] crashHintの表示をSnackbarへ置き換える
+  - [ ] 表示タイミングの条件を確認する
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する
+- ロールバック手順：`plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 00:40 JST Step5の「previous build」警告をSnackbarに変更する作業に着手。
+  - progress: 2025-12-29 00:52 JST crashHint の常時表示をSnackbarに切替し、自動クローズ＋手動クローズを追加。
+
+1954) shape-plugin: Step5でLRUSplitViewが非表示になる原因調査（P1）
+- ブランチ: `fix/shape-plugin/step5-lru-splitview-missing`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`, `packages/components/src/BuildStepPanel.tsx`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] LRUSplitViewが表示されない原因を特定し、影響範囲を記録する
+  - [ ] 必要な修正を最小差分で反映する
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] Step5のJotai化後のprops/children経路を確認する
+  - [ ] BuildStepPanel/LRUSplitViewのrender条件を確認する
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する
+- ロールバック手順：`plugins/shape-plugin/src/ui/**` と `packages/components/src/BuildStepPanel.tsx` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 00:40 JST Step5でLRUSplitViewが非表示になる原因調査に着手。
+  - progress: 2025-12-29 00:52 JST Jotai化で `stages` が初期空のまま描画されるとLRUSplitViewのpaneが生成されない点を確認。fallbackでuseBuildStagesを使う対応を追加。
+
+1955) dev error: ENOTDIR index.ts/shape-stage-worker の原因調査（P1）
+- ブランチ: `fix/shape-plugin/enotdir-shape-stage-worker`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src`, `app/src/plugin-registry`, `packages/plugin-registry`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] `index.ts/shape-stage-worker` が参照される経路を特定する
+  - [ ] 原因に対する最小修正を反映する
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] plugin registry / import.meta.glob のパス生成を確認する
+  - [ ] shape-plugin の entry 設定を確認する
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する
+- ロールバック手順：関連差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 01:05 JST ENOTDIR の原因調査に着手。
+  - progress: 2025-12-29 01:12 JST Vite alias の regex exact が短い順で評価され、`@hierarchidb/shape-plugin` の prefix alias が勝って `src/index.ts/shape-stage-worker` に解決される問題を確認。shape-stage-worker の alias を文字列に変更して優先度を上げた。
+
+1956) shape-plugin: task failed のconsole.errorを抑制（P2）
+- ブランチ: `fix/shape-plugin/task-failed-log-level`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/ui/hooks/useShapeBatchTasks.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] `task failed` ログでコンポーネントスタックが出ない
+  - [ ] 失敗タスクの情報は残る
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] console.error を warn/info に変更する
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する
+- ロールバック手順：`plugins/shape-plugin/src/ui/hooks/useShapeBatchTasks.ts` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 01:20 JST task failed のログレベル調整に着手。
+  - progress: 2025-12-29 01:21 JST task failed のログを console.warn に変更し、コンポーネントスタック抑制を狙う。
 
 1949) shape-plugin: Edit shape step 5 の start build が開始しない不具合調査/修正（P1）
 - ブランチ: `fix/shape-plugin/edit-step5-start-build`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -104,6 +378,16 @@
   - progress: 2025-12-28 23:45 JST Step5 で failed タスク通知時に console.error へ出力する対応と、ステージごとの未完了タスクのみ処理するように進捗集計/Worker起動タイミングを調整する対応に着手。
   - progress: 2025-12-28 23:45 JST Step5 failed タスクの console.error 出力を追加し、各ステージで既完了タスクを除外して進捗集計と処理対象を更新。VectorTile 以外のステージは未完了タスクがある場合のみ処理するよう整理。
   - progress: 2025-12-29 00:04 JST LRUSplitView ヘッダの 0/0 表示を 0% として出すよう補正し、ステージ進捗は完了+失敗+スキップで完了判定するよう更新。Step4 の worker 設定を各ステージの並列処理数に反映。
+  - progress: 2025-12-29 00:09 JST simplify2 の入力バッファ欠落時に simplify1 の失敗を検知して先に失敗扱いとし、進捗は総タスク数に対する完了+失敗+スキップで算出するよう統一。
+  - progress: 2025-12-29 00:15 JST ExecPlan `plans/shape-stage-worker-pool-execplan.md` を作成し、ステージごとの WebWorker プール化方針と実装手順を明文化。
+  - progress: 2025-12-29 01:05 JST Step5 の download/simplify/vectortile を実際に複数 Worker 起動で並列実行する実装に着手。
+  - progress: 2025-12-29 01:25 JST shape-plugin の stage worker entry と worker プールを追加し、download/simplify/vectortile のアダプタを Step4 の worker 数で並列処理する構成へ更新。
+  - progress: 2025-12-29 01:45 JST useShapeBatchTasks のポーリングが停止条件で残るケースに対し、interval 内で autoRefresh を再評価し停止時に clear するよう修正。
+  - progress: 2025-12-29 02:05 JST shape-plugin の stage worker で cors proxy URL を初期化し、ダウンロードの 2 回目アクセスが直アクセスにならないよう修正。
+  - progress: 2025-12-29 02:20 JST shape stage worker へ Auth token を同期し、cors-proxy へのリクエストに Authorization ヘッダが付与されるよう更新。
+  - progress: 2025-12-29 02:40 JST 一次簡略化のスキップタスクを message=skipped で記録し、LRUSplitView の分母から除外して成功扱いになるよう UI 側で集計を補正。
+  - progress: 2025-12-29 03:10 JST タイル生成前に入力バイト数を評価し、閾値超過時は警告表示とセッション一時停止を行うように追加。
+  - progress: 2025-12-29 03:30 JST タイル前処理でタイル座標キーの索引化保存を行い、タイル生成をタイル単位にする再設計の ExecPlan 作成に着手。
 
 1948) route-plugin: LocationGroupItemData の admin 名参照整理（P1）
 - ブランチ: `fix/route-plugin/admin-name-mapping`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -579,6 +863,8 @@
   - [ ] preview の非表示伝播を子孫方向のみに制限する
   - [ ] shape-plugin Step3（国×自治体）選択のチェックが戻る不具合を修正する
   - [ ] visible 更新が UI に即時反映されるように CoreDB/通知/コンテキスト連携を修正する
+  - [ ] Step4 の「中間生成物の保持」設定を ShapeEntity に保存し、保存値を初期値として反映する
+  - [ ] Step4 の中間生成物保持デフォルト（全てON）をテンプレートへ保存する
   - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
 - ロールバック手順：TreeNode 型/UI/Preview の変更を revert し、必要なら `pnpm --filter @hierarchidb/app typecheck` を再実行する。
 - 運用ログ：
@@ -595,6 +881,12 @@
   - progress: 2025-12-28 00:05 JST ステップ遷移の pending 表示を遷移完了まで維持するよう調整。
   - progress: 2025-12-28 00:20 JST トップページ Start ボタン周囲の背景色を周辺と一致させる修正を実施。
   - progress: 2025-12-28 00:35 JST Start/Tags ボタンのデザイン統一とサイズ拡大、Start ラベル変更を実施。
+  - progress: 2025-12-28 00:50 JST StageProcessingService の Comlink wrap 型変換を unknown 経由に修正。
+  - progress: 2025-12-28 01:10 JST Step4 ラベル更新と、簡略化で形状が欠落してもメタデータを保持するよう補正。
+  - progress: 2025-12-28 01:25 JST Step4 タイル前処理に「省略される条件」説明を追加。
+  - progress: 2025-12-28 01:40 JST Step4 に中間生成物保持カードと即時削除カードを追加。
+  - start: 2025-12-29 08:31 JST Step4 中間生成物保持の保存/初期値反映とテンプレート反映に着手。
+  - progress: 2025-12-29 08:35 JST cleanupConfig の保存補強とテンプレートのデフォルト値追加を実施。
   - progress: 2025-12-27 20:10 JST runtime-worker の tsconfig paths 上書きを解除し、プラグイン src alias を復帰。
   - progress: 2025-12-27 20:20 JST map.tsx の import type 修正で Vite 変換エラーを解消。
   - progress: 2025-12-27 20:35 JST Vite alias に common-auth/ui-file/gis-sdk と route-plugin subpath を追加し、route-plugin 内部参照を相対パス化。

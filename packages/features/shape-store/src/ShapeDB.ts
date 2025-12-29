@@ -311,7 +311,7 @@ export class ShapeDB extends Dexie {
   async createBatchSession(
     session: Omit<BatchSessionRecord, 'sessionId'> & { sessionId?: string },
   ): Promise<BatchSessionRecord> {
-    const sessionId = session.sessionId ?? crypto.randomUUID();
+    const sessionId = session.sessionId ?? String(session.nodeId ?? crypto.randomUUID());
     const fullSession: BatchSessionRecord = {
       ...session,
       sessionId,

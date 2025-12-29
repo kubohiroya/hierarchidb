@@ -13,7 +13,7 @@ type Args = {
 };
 
 export const useBuildCrashInsight = ({ draft, nodeId }: Args): CrashInsight | null => {
-  const sessionId = draft?.batchSessionId ?? draft?.nodeId ?? null;
+  const sessionId = draft?.nodeId ?? null;
   const key = useMemo(
     () => getBuildMonitorKey(nodeId ?? (draft?.nodeId ?? null), sessionId),
     [draft?.nodeId, nodeId, sessionId],

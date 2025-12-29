@@ -3,7 +3,7 @@
  * @description Test fixture data for Shape plugin integration tests
   * ShapeEntity:
  * - : geoBoundaries
- * - : (JPN), (DEU), (USA)
+ * - : (JP), (DE), (US)
  * - Admin Level: 0 ()
  * - :
   */
@@ -18,7 +18,7 @@ interface ShapeEntity {
   dataSourceName: string;
   licenseAgreement: boolean;
   batchConfig?: BatchConfig;
-  selectedArrayByCountries?: boolean[][];
+  selectedArrayByCountries?: Record<string, boolean[]>;
 }
 
 interface BatchConfig {
@@ -112,11 +112,11 @@ export function createTestShapeEntity(): ShapeEntity {
     dataSourceName: 'geoboundaries',
     licenseAgreement: true,
     batchConfig: createTestBatchConfig(),
-    selectedArrayByCountries: [
-      [true],
-      [true],
-      [true],
-    ],
+    selectedArrayByCountries: {
+      JP: [true],
+      DE: [true],
+      US: [true],
+    },
   };
 }
 
@@ -130,7 +130,7 @@ export function createTestShapeEntityJapanOnly(): ShapeEntity {
     ...baseEntity,
     id: 'test-shape-plugin-entity-jpn-only' as EntityId,
     nodeId: 'test-shape-plugin-node-jpn-only' as NodeId,
-    selectedArrayByCountries: [[true]],
+    selectedArrayByCountries: { JP: [true] },
     batchConfig: {
       ...baseEntity.batchConfig!,
       simplify2: {

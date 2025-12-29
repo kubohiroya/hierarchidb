@@ -30,7 +30,7 @@ export interface ShapeEntity {
   batchConfig?: BatchConfig;
 
 // Country & Admin Selection
-  selectedArrayByCountries?: boolean[][];
+  selectedArrayByCountries?: SelectedArrayByCountries;
   // Processing Status
   batchSessionId?: string;
   processingStatus?: 'idle' | 'processing' | 'paused' | 'completed' | 'failed' | 'cancelled';
@@ -38,3 +38,6 @@ export interface ShapeEntity {
   buildStartedAt?: number;
   buildFinishedAt?: number;
 }
+
+export type ISO2 = string;
+export type SelectedArrayByCountries = Record<ISO2, boolean[]>;

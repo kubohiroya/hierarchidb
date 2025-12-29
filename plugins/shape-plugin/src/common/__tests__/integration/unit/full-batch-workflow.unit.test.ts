@@ -234,7 +234,7 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
     try {
       // Simulate download stage logic
       const allCountries = Object.keys(GEOBOUNDARIES_TEST_ENDPOINTS.download);
-      const selectionCount = entity.selectedArrayByCountries?.length ?? 0;
+      const selectionCount = Object.keys(entity.selectedArrayByCountries ?? {}).length;
       const countries = selectionCount > 0 ? allCountries.slice(0, selectionCount) : allCountries;
       const filesDownloaded = countries.length;
 

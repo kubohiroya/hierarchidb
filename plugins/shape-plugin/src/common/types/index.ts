@@ -19,6 +19,6 @@ export {
   normalizeDataSourceName,
   validateBatchConfig,
 } from '../../services/utils/utils.js';
-export type { ShapeEntity } from '@hierarchidb/shape-plugin/common/types/ShapeEntity.ts';
+export type { ShapeEntity, ISO2, SelectedArrayByCountries } from '@hierarchidb/shape-plugin/common/types/ShapeEntity.ts';
 export type { Feature } from '@hierarchidb/shape-plugin/common/types/Feature.ts';
 export type { VectorTileEntity } from '@hierarchidb/shape-plugin/common/types/VectorTileEntity.ts';

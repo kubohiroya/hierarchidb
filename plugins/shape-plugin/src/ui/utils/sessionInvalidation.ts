@@ -25,7 +25,7 @@ const uniqueStages = (stages: EphemeralStage[]): EphemeralStage[] => {
 };
 
 export const resolveShapeSessionId = (draft?: Partial<ShapeEntity> | null): string | undefined =>
-  draft?.nodeId ?? draft?.batchSessionId;
+  draft?.nodeId;
 
 export async function clearStagesIfPresent(sessionId: string, stages: EphemeralStage[]): Promise<EphemeralStage[]> {
   const db = getEphemeralShapeDB();

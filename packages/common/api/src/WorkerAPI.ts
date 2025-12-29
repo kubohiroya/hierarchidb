@@ -88,7 +88,7 @@ export interface WorkerAPI {
   getBatchTasks(nodeType: NodeType, sessionId: BatchSessionId): Promise<BatchTaskSummary[]>;
   generateShapeDownloadTaskPayloadsFromSelection(
     dataSource: ShapeDataSourceName,
-    selectedArrayByCountries: boolean[][] | undefined,
+    selectedArrayByCountries: Record<string, boolean[]> | undefined,
   ): Promise<ShapeDownloadTaskPayload[]>;
   subscribeBatchProgress(
     nodeType: NodeType,

@@ -24,6 +24,7 @@ import {
   type ShapeEntity,
   type TileInfo,
   type DownloadTaskPayload,
+  type SelectedArrayByCountries,
   validateBatchConfig,
   type ShapeStepValidationResult,
 } from '../common/types/index.js';
@@ -59,8 +60,8 @@ type DraftLike = {
   draftData?: Partial<ShapeEntity>;
 };
 
-const getBatchSessionIdFromDraft = (draft: DraftLike | null | undefined): string | undefined =>
-  draft?.batchSessionId ?? draft?.draftData?.batchSessionId;
+const resolveBatchNodeId = (draft: DraftLike | null | undefined): string | undefined =>
+  draft?.nodeId ?? draft?.treeNodeId ?? draft?.draftData?.nodeId;
 
 const buildBatchSessionConfig = (batchConfig: BatchConfig, draft?: DraftLike): BatchSessionConfig => {
   const downloadConfig = batchConfig.downloadConfig ?? DEFAULT_PROCESSING_CONFIG.downloadConfig;
@@ -419,7 +420,7 @@ export const shapeBatchAPI = {
 
   generateDownloadTaskPayloadsFromSelection: async (
     dataSource: string,
-    selectedArrayByCountries: boolean[][] | undefined,
+    selectedArrayByCountries: SelectedArrayByCountries | undefined,
   ): Promise<DownloadTaskPayload[]> => {
     const dataSourceName = toDataSourceName(dataSource);
     const countryMetadata = await shapeBatchAPI.getCountryMetadata(dataSourceName);
@@ -544,8 +545,8 @@ export const shapeBatchAPI = {
       progressCallbacks.set(sessionId, { unsubscribe });
     }
 
-    // Save session ID to draft
-    await handler.updateEntity(draftId, { batchSessionId: sessionId } as Partial<ShapeEntity>);
+    // Ensure legacy session id field is cleared for nodeId-based sessions.
+    await handler.updateEntity(draftId, { batchSessionId: undefined } as Partial<ShapeEntity>);
 
     return sessionId;
   },
@@ -553,57 +554,57 @@ export const shapeBatchAPI = {
   pauseBatchProcessing: async (draftId: NodeId): Promise<void> => {
     const handler = getShapeEntityHandler();
     const entity = await handler.getEntity(draftId);
-    const batchSessionId = getBatchSessionIdFromDraft(entity as DraftLike | undefined);
-    if (!entity || !batchSessionId) {
+    const nodeId = resolveBatchNodeId(entity as DraftLike | undefined);
+    if (!entity || !nodeId) {
       throw new Error(`No active batch session for draft: ${draftId}`);
     }
 
     if (batchManagerWithDispatch.dispatchCommand) {
       await batchManagerWithDispatch.dispatchCommand('session/pause', {
-        sessionId: batchSessionId,
+        sessionId: nodeId,
       });
       return;
     }
-    await batchSessionManager.pauseBatchSession(batchSessionId);
+    await batchSessionManager.pauseBatchSession(nodeId);
   },
 
   resumeBatchProcessing: async (draftId: NodeId): Promise<string> => {
     const handler = getShapeEntityHandler();
     const entity = await handler.getEntity(draftId);
-    const batchSessionId = getBatchSessionIdFromDraft(entity as DraftLike | undefined);
-    if (!entity || !batchSessionId) {
+    const nodeId = resolveBatchNodeId(entity as DraftLike | undefined);
+    if (!entity || !nodeId) {
       throw new Error(`No batch session to resume for draft: ${draftId}`);
     }
 
     if (batchManagerWithDispatch.dispatchCommand) {
       await batchManagerWithDispatch.dispatchCommand('session/resume', {
-        sessionId: batchSessionId,
+        sessionId: nodeId,
       });
-      return batchSessionId;
+      return nodeId;
     }
-    await batchSessionManager.resumeBatchSession(batchSessionId);
-    return batchSessionId;
+    await batchSessionManager.resumeBatchSession(nodeId);
+    return nodeId;
   },
 
   cancelBatchProcessing: async (draftId: NodeId): Promise<void> => {
     const handler = getShapeEntityHandler();
     const entity = await handler.getEntity(draftId);
-    const batchSessionId = getBatchSessionIdFromDraft(entity as DraftLike | undefined);
-    if (!entity || !batchSessionId) {
+    const nodeId = resolveBatchNodeId(entity as DraftLike | undefined);
+    if (!entity || !nodeId) {
       throw new Error(`No active batch session for draft: ${draftId}`);
     }
 
     if (batchManagerWithDispatch.dispatchCommand) {
       await batchManagerWithDispatch.dispatchCommand('session/cancel', {
-        sessionId: batchSessionId,
+        sessionId: nodeId,
       });
     } else {
-      await batchSessionManager.cancelBatchSession(batchSessionId);
+      await batchSessionManager.cancelBatchSession(nodeId);
     }
-    const subscription = progressCallbacks.get(batchSessionId);
+    const subscription = progressCallbacks.get(nodeId);
     subscription?.unsubscribe?.();
-    progressCallbacks.delete(batchSessionId);
-    progressSessionMeta.delete(batchSessionId);
+    progressCallbacks.delete(nodeId);
+    progressSessionMeta.delete(nodeId);
 
     // Clear session ID from draft
     await handler.updateEntity(draftId, { batchSessionId: undefined } as Partial<ShapeEntity>);
@@ -699,8 +700,8 @@ export const shapeBatchAPI = {
   getBatchProgress: async (draftId: NodeId): Promise<ProgressInfo> => {
     const handler = getShapeEntityHandler();
     const entity = await handler.getEntity(draftId);
-    const batchSessionId = getBatchSessionIdFromDraft(entity as DraftLike | undefined);
-    if (!entity || !batchSessionId) {
+    const nodeId = resolveBatchNodeId(entity as DraftLike | undefined);
+    if (!entity || !nodeId) {
       return {
         total: 0,
         completed: 0,
@@ -710,7 +711,7 @@ export const shapeBatchAPI = {
       };
     }
     try {
-      const status = await batchSessionManager.getBatchSessionStatus(batchSessionId);
+      const status = await batchSessionManager.getBatchSessionStatus(nodeId);
       const progress = status.progress ?? {
         total: 0,
         completed: 0,
@@ -919,12 +920,10 @@ export const shapeBatchAPI = {
     const entity = await handler.getEntity(nodeId);
     if (!entity) return { status: 'idle', hasErrors: false, errorMessages: [] };
 
-    // Try to reflect batch session status if available
-    if (entity.batchSessionId) {
-      const { status, missing, error } = await getBatchSessionStatusSafe(entity.batchSessionId);
-      if (missing) {
-        await handler.updateEntity(nodeId, { batchSessionId: undefined } as Partial<ShapeEntity>);
-      } else if (error) {
+    // NodeId is the only batch session identifier.
+    const { status, missing, error } = await getBatchSessionStatusSafe(String(nodeId));
+    if (!missing) {
+      if (error) {
         console.warn('[shapeBatchAPI] failed to fetch batch session status', error);
       } else if (status) {
         const normalizedStatus = mapManagerStatusToShapeStatus(status.status);

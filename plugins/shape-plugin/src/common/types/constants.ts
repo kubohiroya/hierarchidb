@@ -33,7 +33,7 @@ export const DEFAULT_PROCESSING_CONFIG: BatchConfig = {
   },
   simplify2Config: {
     workers: 2,
-    tolerance: 0.01,
+    tolerance: 0.5,
     quantize: 10000,
     enablePerFeatureSimplification: true,
   },
@@ -51,7 +51,7 @@ export const DEFAULT_PROCESSING_CONFIG: BatchConfig = {
     },
     level1Workers: 2,
     level2Workers: 2,
-    tolerance: 0.01,
+    tolerance: 0.5,
     quantize: 10000,
     enablePerFeatureSimplification: true,
   },
@@ -63,6 +63,8 @@ export const DEFAULT_PROCESSING_CONFIG: BatchConfig = {
   },
   cleanupConfig: {
     deleteDownloadedFiles: false,
+    deleteStage1Cache: false,
+    deleteStage2Cache: false,
   },
 } as const;
 

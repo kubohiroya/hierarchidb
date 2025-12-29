@@ -12,6 +12,7 @@ import type {
   TileBatchConfig,
   DownloadTaskPayload,
   ShapeStepValidationResult,
+  SelectedArrayByCountries,
 } from '../../common/types/index.js';
 import { SHAPE_DATA_SOURCES, DEFAULT_PROCESSING_CONFIG } from '../../common/types/constants.js';
 
@@ -159,14 +160,11 @@ export function validateBatchConfig(config: Partial<BatchConfig>): ShapeStepVali
  * Calculate selection statistics from URL metadata
  */
 const normalizeCountryCodeFromMetadata = (country: Partial<CountryMetadata>, index: number): string => {
-  const candidates = [country.countryCode, country.iso2, country.iso3].filter(
-    (value): value is string => Boolean(value?.trim()),
-  );
-  const primary = (candidates[0] ?? `country-${index}`).trim().toUpperCase();
-  if (primary.length === 2) return primary;
-  if (primary.length === 3 && country.iso2) return country.iso2.trim().toUpperCase();
-  if (primary.length === 3) return primary.slice(0, 2);
-  return primary.slice(0, 2) || `COUNTRY-${index}`;
+  const iso2 = country.iso2?.trim();
+  if (iso2) return iso2.toUpperCase();
+  const countryCode = country.countryCode?.trim();
+  if (countryCode) return countryCode.toUpperCase();
+  return `COUNTRY-${index}`;
 };
 
 const resolveSelectedLevels = (row?: boolean[]): number[] => {
@@ -227,14 +225,38 @@ export function generateDownloadTaskPayloads(
  */
 export function generateDownloadTaskPayloadsFromSelection(
   dataSource: DataSourceName,
-  selectedArrayByCountries: boolean[][] | undefined,
+  selectedArrayByCountries: SelectedArrayByCountries | undefined,
   countryMetadata: CountryMetadata[],
 ): DownloadTaskPayload[] {
-  if (!selectedArrayByCountries?.length || !countryMetadata.length) return [];
+  if (!selectedArrayByCountries || !Object.keys(selectedArrayByCountries).length || !countryMetadata.length) {
+    return [];
+  }
+  const iso3ToIso2 = new Map(
+    countryMetadata
+      .map((country) => {
+        const iso3 = country.iso3?.trim().toUpperCase();
+        const iso2 = country.iso2?.trim().toUpperCase() ?? country.countryCode?.trim().toUpperCase();
+        if (!iso3 || !iso2) return null;
+        return [iso3, iso2] as const;
+      })
+      .filter((entry): entry is [string, string] => Boolean(entry)),
+  );
+  const selectionByIso2 = new Map<string, boolean[]>();
+  Object.entries(selectedArrayByCountries).forEach(([key, row]) => {
+    const normalizedKey = key.trim().toUpperCase();
+    const iso2Key = normalizedKey.length === 2
+      ? normalizedKey
+      : iso3ToIso2.get(normalizedKey);
+    if (iso2Key) {
+      selectionByIso2.set(iso2Key, row);
+    }
+  });
   return countryMetadata.flatMap((country, index) => {
-    const selectedLevels = resolveSelectedLevels(selectedArrayByCountries[index]);
-    if (selectedLevels.length === 0) return [];
     const normalizedCode = normalizeCountryCodeFromMetadata(country, index);
+    const iso2Key = normalizedCode.trim().toUpperCase();
+    const selectedRow = selectionByIso2.get(iso2Key);
+    const selectedLevels = resolveSelectedLevels(selectedRow);
+    if (selectedLevels.length === 0) return [];
     return selectedLevels.flatMap((level) => {
       if (!country.availableAdminLevels.includes(level)) return [];
       const resolvedCode = resolveCountryCodeForDataSource(dataSource, country, normalizedCode);
@@ -364,13 +386,13 @@ export function mergeBatchConfig(config: Partial<BatchConfig>): BatchConfig {
 /**
  * Summarize checkbox state into simple derived information.
  */
-export function summarizeCheckboxState(state: boolean[][] | undefined): {
+export function summarizeCheckboxState(state: SelectedArrayByCountries | undefined): {
   hasSelection: boolean;
   levels: number[];
   selectedRowCount: number;
   totalSelections: number;
 } {
-  const matrix: boolean[][] = Array.isArray(state) ? state : [];
+  const matrix = Object.values(state ?? {}) as boolean[][];
 
   let hasSelection = false;
   const levelSet = new Set<number>();

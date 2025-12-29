@@ -4,6 +4,7 @@ import naturalearthMetadata from '@hierarchidb/fetch-save-metadata/output/natura
 import osmMetadata from '@hierarchidb/fetch-save-metadata/output/osm.json' with { type: 'json' };
 import type { CountryMetadata, DataSourceName } from '../../common/types/index.js';
 import { normalizeDataSourceName } from '../utils/utils.js';
+import { normalizeCountryCodeFormat } from '../utils/iso3166.js';
 
 type RawCountryMetadata = Partial<CountryMetadata> & {
   availableAdminLevels?: Array<number | { level?: number } | string>;
@@ -68,7 +69,7 @@ export class MetadataLoader {
       }
       const rawData = moduleData;
 
-      const metadata = this.transformMetadata(rawData, normalized);
+      const metadata = await this.transformMetadata(rawData, normalized);
 
       // Cache the result
       this.metadataCache.set(normalized, metadata);
@@ -83,20 +84,34 @@ export class MetadataLoader {
   /**
    * Transform raw metadata to CountryMetadata format
    */
-  private transformMetadata(
+  private async transformMetadata(
     rawData: RawCountryMetadata[],
     _dataSource: string,
-  ): CountryMetadata[] {
-    return rawData.map((item) => {
+  ): Promise<CountryMetadata[]> {
+    return Promise.all(rawData.map(async (item) => {
       const resolvedLevels = this.normalizeAvailableLevels(item);
-      const countryCode = item.iso2 || item.countryCode || item.iso3 || 'UNKNOWN';
+      const rawCode = (item.iso2 ?? item.countryCode ?? item.iso3 ?? '').trim();
+      const normalizedIso2 = rawCode
+        ? await normalizeCountryCodeFormat(rawCode, 'iso2')
+        : '';
+      const iso2 = normalizedIso2.length === 2
+        ? normalizedIso2
+        : (item.iso2?.trim().toUpperCase() ?? '');
+      const countryCode = iso2 || 'UNKNOWN';
+      if (!iso2 && rawCode) {
+        console.warn('[MetadataLoader] failed to resolve ISO2 code', {
+          rawCode,
+          iso3: item.iso3,
+          countryName: item.countryName,
+        });
+      }
       return {
         countryCode,
         countryName: item.countryName || '',
         continent: item.continent || '',
         availableAdminLevels: resolvedLevels,
-        iso2: item.iso2,
-        iso3: item.iso3,
+        iso2: iso2 || undefined,
+        iso3: item.iso3?.trim().toUpperCase(),
         bbox: Array.isArray(item.bbox) && item.bbox.length === 4
           ? [item.bbox[0] as number, item.bbox[1] as number, item.bbox[2] as number, item.bbox[3] as number]
           : undefined,
@@ -104,7 +119,7 @@ export class MetadataLoader {
         area: item.area,
         dataQuality: this.determineDataQuality(resolvedLevels),
       };
-    });
+    }));
   }
 
   private normalizeAvailableLevels(item: RawCountryMetadata): number[] {

@@ -141,6 +141,8 @@ export const useDownloadConfigSection = ({ config, draft, disabled, onChange, on
     await shapeDB.vectorTiles.where('nodeId').equals(finalNodeId).delete();
     const metadataDb = await getShapeTileMetadataDB();
     await metadataDb.featureMetadata.where('sessionId').equals(sessionId).delete();
+    await metadataDb.tiles.where('sessionId').equals(sessionId).delete();
+    await metadataDb.tiles.where('sessionId').equals(`input:${sessionId}`).delete();
   }, [nodeId, sessionId]);
 
   const persistSessionReset = useCallback(async () => {
@@ -152,7 +154,6 @@ export const useDownloadConfigSection = ({ config, draft, disabled, onChange, on
         mode: 'save-draft',
         draftData: {
           ...(draft ?? {}),
-          batchSessionId: undefined,
           processingStatus: 'idle',
           tileSummary: undefined,
           buildStartedAt: undefined,
@@ -182,7 +183,7 @@ export const useDownloadConfigSection = ({ config, draft, disabled, onChange, on
   }, [bridgeRef, draft, nodeId]);
 
   const handleDeleteRaw = useCallback(async () => {
-    if (!sessionId) return notify.warning('SessionId is missing.');
+    if (!sessionId) return notify.warning('NodeId is missing.');
     await db.clearStage(sessionId, 'download');
     await clearBatchTasksForType('download');
     await clearFinalOutputs();
@@ -193,7 +194,7 @@ export const useDownloadConfigSection = ({ config, draft, disabled, onChange, on
   }, [clearBatchTasksForType, clearFinalOutputs, db, loadCounts, onResetSession, persistSessionReset, sessionId]);
 
   const handleDeleteStage = useCallback(async (stage: 'simplify1' | 'simplify2') => {
-    if (!sessionId) return notify.warning('SessionId is missing.');
+    if (!sessionId) return notify.warning('NodeId is missing.');
     await db.clearStage(sessionId, stage);
     await clearBatchTasksForType(stage);
     await loadCounts();
@@ -201,7 +202,7 @@ export const useDownloadConfigSection = ({ config, draft, disabled, onChange, on
   }, [clearBatchTasksForType, db, loadCounts, sessionId]);
 
   const handleDeleteTiles = useCallback(async () => {
-    if (!sessionId) return notify.warning('SessionId is missing.');
+    if (!sessionId) return notify.warning('NodeId is missing.');
     await db.clearStage(sessionId, 'vectorTiles');
     await clearBatchTasksForType('vectortile');
     await clearFinalOutputs();
@@ -211,7 +212,7 @@ export const useDownloadConfigSection = ({ config, draft, disabled, onChange, on
   }, [clearBatchTasksForType, clearFinalOutputs, db, loadCounts, persistTileSummaryReset, sessionId]);
 
   const handleDeleteMetadata = useCallback(async () => {
-    if (!sessionId) return notify.warning('SessionId is missing.');
+    if (!sessionId) return notify.warning('NodeId is missing.');
     const metadataDb = await getShapeTileMetadataDB();
     await metadataDb.featureMetadata.where('sessionId').equals(sessionId).delete();
     await loadCounts();

@@ -138,6 +138,10 @@ export class BatchSessionManager extends BaseBatchSessionManager {
       controller,
       (ev) => this.emitLegacyProgress(session.sessionId, ev),
     );
+    controller.setPauseHandler(async (stage, message) => {
+      await shared.pause();
+      shared.emitWarning(stage, message);
+    });
     this.registerSession(shared);
     // Run without blocking the caller.
     shared
