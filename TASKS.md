@@ -85,6 +85,9 @@
 - ロールバック手順：preview UI と MapLibre フィルタ適用の変更を revert し、必要なら `pnpm --filter @hierarchidb/location-plugin typecheck` と `pnpm --filter @hierarchidb/route-plugin typecheck` を再実行する。
 - 運用ログ：
   - start: 2025-12-27 21:05 JST location/route プレビューの地物種別トグルUI追加と巻き戻り確認に着手。
+  - progress: 2025-12-29 12:58 JST /map のプレビュー集約で root node が層に含まれない点を修正し、巻き戻り懸念の差分を再点検する対応を開始。
+  - progress: 2025-12-29 12:59 JST location/route/shape プレビューでトグルUIとフィルタ適用が残っていることを再確認し、巻き戻りは未検出。
+  - progress: 2025-12-29 13:03 JST location/route/shape のプレビュー依存を `@hierarchidb/ui-map` に揃え、peer/dev 依存へ追加。
 
 1957) shape-plugin: stage5 タイル生成で task failed が出る原因調査/修正（P1）
 - ブランチ: `fix/shape-plugin/stage5-tile-task-failed`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -317,6 +320,52 @@
   - progress: 2025-12-29 11:00 JST `pnpm knip --workspace plugins/route-plugin` 実行。未使用 files/exports/deps を検出。storybook plugin の警告は継続。
   - progress: 2025-12-29 11:02 JST `pnpm knip --workspace packages/features/batch` 実行。未使用検出なし（storybook plugin 警告のみ）。
   - progress: 2025-12-29 11:10 JST knip の未使用依存に従い、location/route の dependencies/devDependencies を整理。
+
+1971) batch: cancelled ステータスの型整合（P1）
+- ブランチ: `fix/batch/cancelled-status-types`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/common/api/src/BatchControlAPI.ts`, `packages/features/batch/src/**`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] `@hierarchidb/batch` の build:types が通る
+  - [ ] cancelled の状態/phase を型定義に反映する
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] ProgressPhase / BatchSessionStatus の union を更新する
+  - [ ] 既存の cancelled 分岐との整合を確認する
+- ロールバック手順：`packages/common/api/src/BatchControlAPI.ts` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 11:20 JST cancelled の型整合修正に着手。
+  - done: 2025-12-29 11:25 JST ProgressPhase と BatchSessionStatus に cancelled を追加。検証: 未実施。ロールバック: `packages/common/api/src/BatchControlAPI.ts` の差分を revert。
+  - done: 2025-12-29 11:30 JST BatchSessionState に cancelled を追加し、AbstractBatchSession の型エラーに対応。検証: 未実施。ロールバック: `packages/common/api/src/BatchControlAPI.ts` の差分を revert。
+
+1972) app: ui-map 参照を ui-plugin-shell から ui-map へ統一（P1）
+- ブランチ: `fix/app/ui-map-direct-import`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] `@hierarchidb/ui-plugin-shell/ui-map` 参照が `@hierarchidb/ui-map` に置き換わる
+  - [ ] `@hierarchidb/app` の build で UNLOADABLE_DEPENDENCY が解消する
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] 参照元の import を `@hierarchidb/ui-map` に統一する
+  - [ ] 影響範囲が location-plugin のみに限定されることを確認する
+- ロールバック手順：`plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 11:35 JST ui-map 参照の統一に着手。
+  - done: 2025-12-29 11:37 JST LocationMapPreviewStep の import を @hierarchidb/ui-map に切替。検証: 未実施。ロールバック: `plugins/location-plugin/src/ui/components/steps/LocationMapPreviewStep.tsx` の差分を revert。
+
+1973) ui-batch: useBatchProgressState の NodeId 型整合（P1）
+- ブランチ: `fix/ui-batch/nodeid-cast`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/ui/batch/src/hooks/useBatchProgressState.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] `@hierarchidb/ui-batch` の typecheck が通る
+  - [ ] NodeId の型整合が取れている
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] nodeId の string を toNodeId で変換する
+  - [ ] subscribe / getBatchSessionStatus に NodeId を渡す
+- ロールバック手順：`packages/ui/batch/src/hooks/useBatchProgressState.ts` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 11:45 JST useBatchProgressState の NodeId 型整合に着手。
+  - done: 2025-12-29 11:47 JST toNodeId で変換し WorkerBridge 呼び出しへ渡すよう修正。検証: 未実施。ロールバック: `packages/ui/batch/src/hooks/useBatchProgressState.ts` の差分を revert。
 
 1966) ISO2/ISO3 型定義の移動指示対応（P1）
 - ブランチ: `refactor/common/iso2-iso3-relocation`（sandbox 制約で branch 作成不可なら main 上で作業）

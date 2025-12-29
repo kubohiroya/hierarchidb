@@ -4,7 +4,7 @@
  */
 
 import type { ResourceGeoJsonLayer, ResourceVectorLayer } from '@hierarchidb/ui-plugin-shell/ui-map';
-import { Box, Divider, List, ListItem, ListItemText, Paper, Stack, ToggleButton, Typography } from '@mui/material';
+import { Box, Divider, List, ListItem, ListItemText, Stack, Typography } from '@mui/material';
 import type React from 'react';
 
 export type MapInfoSummary = {
@@ -59,58 +59,6 @@ export const MapInfoContent: React.FC<{ formattedZxy: string; info: MapInfoSumma
       <Typography variant="body2">Current: <code>?zxy={formattedZxy}</code></Typography>
     </Stack>
   </Stack>
-);
-
-export type MapToggleOption = {
-  id: string;
-  label: string;
-  icon: React.ReactNode;
-};
-
-export type MapToggleSelection = Record<string, boolean>;
-
-export const MapToggleCard: React.FC<{
-  title: string;
-  helperText?: string;
-  options: MapToggleOption[];
-  selection: MapToggleSelection;
-  onToggle: (id: string) => void;
-}> = ({ title, helperText, options, selection, onToggle }) => (
-  <Paper variant="outlined" sx={{ p: 1.5 }}>
-    <Stack spacing={1}>
-      <Box>
-        <Typography variant="subtitle2">{title}</Typography>
-        {helperText ? (
-          <Typography variant="caption" color="text.secondary">
-            {helperText}
-          </Typography>
-        ) : null}
-      </Box>
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(72px, 1fr))', gap: 1 }}>
-        {options.map((option) => (
-          <ToggleButton
-            key={option.id}
-            value={option.id}
-            selected={Boolean(selection[option.id])}
-            onChange={() => onToggle(option.id)}
-            color="primary"
-            sx={{
-              borderRadius: 1.5,
-              textTransform: 'none',
-              px: 1,
-              py: 0.75,
-            }}
-            aria-label={option.label}
-          >
-            <Stack spacing={0.5} alignItems="center">
-              {option.icon}
-              <Typography variant="caption">{option.label}</Typography>
-            </Stack>
-          </ToggleButton>
-        ))}
-      </Box>
-    </Stack>
-  </Paper>
 );
 
 export const MapLayerContent: React.FC<{

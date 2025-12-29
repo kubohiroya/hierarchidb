@@ -13,6 +13,8 @@ export const loadMapWithVectorTiles = () =>
   import('./components/MapWithVectorTiles.js') as Promise<typeof import('./components/MapWithVectorTiles.js')>;
 // Direct component exports
 export { MapLibreMap } from './components/MapLibreMap.js';
+export { MapToggleCard } from './components/MapToggleCard.js';
+export type { MapToggleOption, MapToggleSelection } from './components/MapToggleCard.js';
 
 // Type exports - unified props
 export type {
@@ -49,6 +51,7 @@ export type {
   ResourceVectorLayer,
   ResourceGeoJsonLayer,
 } from './components/ResourceLayerMap.js';
+export { buildCategoryFilter, mergeFilters } from './utils/layerFilters.js';
 
 // Layer presets
 export * from './presets/vectorLayers.js';

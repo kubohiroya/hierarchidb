@@ -18,19 +18,22 @@ import type {
   FeatureStateEntry,
   FeatureStateRecord,
   MapFeatureIdentifyResult,
-  MapLibreFilter,
   MapLibreGeoJSONFeature,
   MapLibreMapInstance,
   MapLibreMapMouseEvent,
   MapLibreStyle,
+  MapToggleOption,
+  MapToggleSelection,
   MapViewState,
   ResourceGeoJsonLayer,
   ResourceVectorLayer,
 } from '@hierarchidb/ui-plugin-shell/ui-map';
 import {
+  buildCategoryFilter,
   DEFAULT_MAP_CONFIG,
   ResourceLayerMap,
   defaultFeatureIdAccessor,
+  mergeFilters,
   resolveIdentifyCandidates,
 } from '@hierarchidb/ui-plugin-shell/ui-map';
 import {
@@ -87,7 +90,7 @@ import {
   type MapSearchTargetId,
 } from '../../state/mapSearch.atoms.js';
 import { ModelessDialogManager } from './modeless/ModelessDialogManager.js';
-import type { MapInfoSummary, MapToggleOption, MapToggleSelection } from './modeless/modelessDialogContent.js';
+import type { MapInfoSummary } from './modeless/modelessDialogContent.js';
 import '@watergis/maplibre-gl-export/dist/maplibre-gl-export.css';
 
 type MapSearch = {
@@ -210,30 +213,6 @@ const ROUTE_MODE_OPTIONS = [
     modes: [ROUTE_MODES.ROAD, ROUTE_MODES.HIGHWAY],
   },
 ] satisfies RouteModeOption[];
-
-const buildPropertyExpression = (keys: string[]) =>
-  keys.length === 1 ? ['get', keys[0]] : ['coalesce', ...keys.map((key) => ['get', key])];
-
-const buildCategoryFilter = (
-  enabledValues: string[],
-  knownValues: string[],
-  propertyKeys: string[],
-): MapLibreFilter | null => {
-  if (enabledValues.length === 0) return null;
-  if (enabledValues.length === knownValues.length) return null;
-  const propertyExpr = buildPropertyExpression(propertyKeys);
-  return [
-    'any',
-    ['!', ['in', propertyExpr, ['literal', knownValues]]],
-    ['in', propertyExpr, ['literal', enabledValues]],
-  ] as MapLibreFilter;
-};
-
-const mergeFilters = (base?: MapLibreFilter, next?: MapLibreFilter | null): MapLibreFilter | undefined => {
-  if (!base) return next ?? undefined;
-  if (!next) return base;
-  return ['all', base, next] as MapLibreFilter;
-};
 
 let shapeQueryPromise: Promise<ShapeQueryAPI> | null = null;
 const getShapeQueryAPI = async (): Promise<ShapeQueryAPI> => {
@@ -460,6 +439,11 @@ export default function MapPage() {
               }
               return true;
             });
+        const nodesForLayers = isFolderNodeType(rootNode.nodeType)
+          ? visibleDescendants
+          : isNodeVisible(rootNode)
+            ? [rootNode, ...visibleDescendants]
+            : visibleDescendants;
 
         setMapInfo({
           name: rootNode.metadata?.name ?? '',
@@ -497,7 +481,7 @@ export default function MapPage() {
         const styleOverrides: LayerStyleOverrides = {};
         const featureStateByStyleType: Partial<Record<'choropleth' | 'points' | 'lines', FeatureStateBundle>> = {};
 
-        const stylerNodes = visibleDescendants.filter((node) => node.nodeType === 'styler');
+        const stylerNodes = nodesForLayers.filter((node) => node.nodeType === 'styler');
         const sortedStylers = sortByPath(
           stylerNodes.map((node) => ({
             nodeId: String(node.id),
@@ -540,26 +524,26 @@ export default function MapPage() {
           const entries: FeatureStateEntry[] = [];
           if (valueType === 'number') {
             (data?.styleKeyValues?.scalars ?? []).forEach((item) => {
-                  entries.push({
-                    id: item.key,
-                    state: { value: item.scalarValue } as FeatureStateRecord,
-                  });
-                });
-            } else {
-              (data?.styleKeyValues?.colors ?? []).forEach((item) => {
-                entries.push({
-                  id: item.key,
-                  state: { value: item.color } as FeatureStateRecord,
-                });
+              entries.push({
+                id: item.key,
+                state: { value: item.scalarValue } as FeatureStateRecord,
               });
-            }
+            });
+          } else {
+            (data?.styleKeyValues?.colors ?? []).forEach((item) => {
+              entries.push({
+                id: item.key,
+                state: { value: item.color } as FeatureStateRecord,
+              });
+            });
+          }
 
           if (entries.length > 0) {
             featureStateByStyleType[styleType] = { featureIdProperty, entries };
           }
         });
 
-        visibleDescendants.forEach((node) => {
+        nodesForLayers.forEach((node) => {
           const absolutePath = buildAbsolutePath(String(node.id), nodeById);
           if (node.nodeType === 'basemap') {
             const data = node.data as { mapStyle?: MapStyle } | null;

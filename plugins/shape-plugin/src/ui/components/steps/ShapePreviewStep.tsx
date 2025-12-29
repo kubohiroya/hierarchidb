@@ -1,6 +1,6 @@
-import React, { Suspense, useLayoutEffect, useRef, useState } from 'react';
+import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Box, Typography, Alert, Tabs, Tab, Snackbar, CircularProgress } from '@mui/material';
-import { loadMapWithVectorTiles } from '@hierarchidb/ui-map';
+import { ResourceLayerMap } from '@hierarchidb/ui-map';
 import { GenericDataGrid } from '@hierarchidb/ui-grid';
 import { SearchField } from '@hierarchidb/ui-search-field';
 import type { ShapeDialogStepProps } from './ShapeDialogStepProps.ts';
@@ -68,6 +68,32 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
     return () => observer.disconnect();
   }, [tabIndex]);
 
+  const vectorLayers = useMemo(() => {
+    if (!nodeId) return [];
+    const hasRemoteTiles = Boolean(tilesUrl);
+    const tiles = hasRemoteTiles ? [tilesUrl] : undefined;
+    return [
+      {
+        nodeId,
+        nodeType: 'shape' as const,
+        tiles,
+        dbName: !hasRemoteTiles ? tileDbName : undefined,
+        tileDataProvider: !hasRemoteTiles ? tileDataProvider : undefined,
+        layerConfig: {
+          layerId: baseLayerId,
+          sourceId: baseSourceId,
+          sourceLayer: tilesLayer,
+          layerType: 'fill',
+          paint: {
+            'fill-color': theme.palette.primary.main,
+            'fill-opacity': 0.35,
+            'fill-outline-color': theme.palette.primary.dark,
+          },
+        },
+      },
+    ];
+  }, [baseLayerId, baseSourceId, nodeId, theme.palette.primary.dark, theme.palette.primary.main, tileDataProvider, tileDbName, tilesLayer, tilesUrl]);
+
   const renderMapPreview = () => {
     const hasRemoteTiles = Boolean(tilesUrl);
     if (!hasRemoteTiles && !tilesAvailable) {
@@ -84,7 +110,6 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
         </Alert>
       );
     }
-    const tiles = hasRemoteTiles ? [tilesUrl] : undefined;
     return (
       <Box
         ref={mapContainerRef}
@@ -95,49 +120,33 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
         border="1px solid #e0e0e0"
         sx={{ overscrollBehavior: 'contain' }}
       >
-        <Suspense fallback={null}>
-          <LazyMapWithVectorTiles
-            tiles={tiles}
-            dbName={!hasRemoteTiles ? tileDbName : undefined}
-            nodeId={!hasRemoteTiles ? nodeId ?? undefined : undefined}
-            tileDataProvider={!hasRemoteTiles ? tileDataProvider : undefined}
-            mapOptions={{
-              interactive: true,
-              scrollZoom: true,
-              dragPan: true,
-              dragRotate: true,
-              doubleClickZoom: true,
-              touchZoomRotate: true,
-            }}
-            controls={{ navigation: true }}
-            layerConfig={{
-              layerId: baseLayerId,
-              sourceId: baseSourceId,
-              sourceLayer: tilesLayer,
-              layerType: 'fill',
-              paint: {
-                'fill-color': theme.palette.primary.main,
-                'fill-opacity': 0.35,
-                'fill-outline-color': theme.palette.primary.dark,
-              },
-            }}
-            initialViewState={defaultView}
-            mapStyleUrl={baseMapStyleUrl}
-            width="100%"
-            height="100%"
-            style={{ width: '100%', height: '100%' }}
-            onLoad={setMapInstance}
-            identifyFeatureOnClick={{
-              layerIds: [baseLayerId],
-              disableDefaultSnackbar: true,
-              getFeatureId: (feature) => {
-                const candidate = feature.id ?? feature.properties?.id;
-                return typeof candidate === 'string' || typeof candidate === 'number' ? candidate : null;
-              },
-              onIdentify: handleMapIdentify,
-            }}
-          />
-        </Suspense>
+        <ResourceLayerMap
+          initialViewState={defaultView}
+          width="100%"
+          height="100%"
+          mapStyleUrl={baseMapStyleUrl}
+          basemapStyles={[]}
+          vectorLayers={vectorLayers}
+          geoJsonLayers={[]}
+          mapOptions={{
+            interactive: true,
+            scrollZoom: true,
+            dragPan: true,
+            dragRotate: true,
+            doubleClickZoom: true,
+            touchZoomRotate: true,
+          }}
+          onLoad={setMapInstance}
+          identifyFeatureOnClick={{
+            layerIds: [baseLayerId],
+            disableDefaultSnackbar: true,
+            getFeatureId: (feature) => {
+              const candidate = feature.id ?? feature.properties?.id;
+              return typeof candidate === 'string' || typeof candidate === 'number' ? candidate : null;
+            },
+            onIdentify: handleMapIdentify,
+          }}
+        />
       </Box>
     );
   };
@@ -265,11 +274,6 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
     </Box>
   );
 };
-
-const LazyMapWithVectorTiles = React.lazy(async () => {
-  const mod = await loadMapWithVectorTiles();
-  return { default: mod.MapWithVectorTiles };
-});
 
 const LIGHT_BASEMAP_STYLE_URL = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
 const DARK_BASEMAP_STYLE_URL = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';

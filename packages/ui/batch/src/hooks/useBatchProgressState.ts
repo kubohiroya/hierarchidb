@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { NodeType } from '@hierarchidb/common-types';
+import { toNodeId, type NodeType } from '@hierarchidb/common-types';
 import type { BatchSessionStatus, UnifiedProgressInfo } from '@hierarchidb/common-api';
 import { useBatchProgress, createAdapterFromProgressSubscribe } from '@hierarchidb/batch';
 import { getWorkerBridge, type WorkerBridge } from '@hierarchidb/ui-worker-client';
@@ -44,9 +44,10 @@ export const useBatchProgressState = (
 
   const adapter = useMemo(() => {
     if (!nodeId) return null;
+    const resolvedNodeId = toNodeId(nodeId);
     return createAdapterFromProgressSubscribe((eventCallback) =>
       bridgeRef.current
-        .subscribeBatchProgress(nodeType, nodeId, eventCallback)
+        .subscribeBatchProgress(nodeType, resolvedNodeId, eventCallback)
         .then((unsubscribe: () => void) => {
           setError(null);
           return unsubscribe;
@@ -61,9 +62,10 @@ export const useBatchProgressState = (
 
   const poll = useMemo(() => {
     if (!nodeId || !enablePollingFallback) return undefined;
+    const resolvedNodeId = toNodeId(nodeId);
     return async (): Promise<UnifiedProgressInfo | null> => {
       try {
-        const nextStatus = await bridgeRef.current.getBatchSessionStatus(nodeType, nodeId);
+        const nextStatus = await bridgeRef.current.getBatchSessionStatus(nodeType, resolvedNodeId);
         setStatus(nextStatus);
         return mapStatusToUnified(nextStatus);
       } catch (err: unknown) {

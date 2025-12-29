@@ -17,14 +17,27 @@ import {
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import type { NodeId } from '@hierarchidb/common-types';
-import { LocationMapPreview } from '../batch/LocationMapPreview.js';
-import type { PreviewLocationPoint } from '../batch/LocationMapPreview.js';
+import type {
+  MapToggleSelection,
+  MapViewState,
+  ResourceGeoJsonLayer,
+  ResourceVectorLayer,
+} from '@hierarchidb/ui-map';
+import {
+  buildCategoryFilter,
+  DEFAULT_MAP_CONFIG,
+  MapToggleCard,
+  mergeFilters,
+  ResourceLayerMap,
+} from '@hierarchidb/ui-map';
 import type { LocationEntity, LocationType } from '../../../common/types/index.js';
 import { formatBytes, useTranslation } from '../../../common/i18n/index.js';
 import { getLocationSessionSummary } from '../../../common/tiles/locationVectorTiles.js';
 import { getEphemeralLocationDB } from '@hierarchidb/location-store';
 import { listLocationPoints } from '../../../services/pointRepository.js';
 import { DataGridPreview } from '@hierarchidb/ui-grid';
+import { LOCATION_TYPE_STYLES } from './locationTypes.js';
+import { getDBName } from '@hierarchidb/util';
 
 const KNOWN_LOCATION_TYPES: readonly LocationType[] = [
   'area_centroid',
@@ -40,21 +53,26 @@ const resolveLocationType = (kind: string): LocationType => (
     : 'area_centroid'
 );
 
-const toPreviewLocationPoint = (point: Awaited<ReturnType<typeof listLocationPoints>>[number]): PreviewLocationPoint => {
-  const properties: PreviewLocationPoint['properties'] = {
-    ...(point.metadata ?? {}),
-  };
-
-  if (point.admin1) properties.admin1 = point.admin1;
-  if (point.admin2) properties.admin2 = point.admin2;
-  if (point.countryName) properties.countryName = point.countryName;
+const LOCATION_TYPE_OPTIONS = (Object.entries(LOCATION_TYPE_STYLES) as Array<
+  [LocationType, (typeof LOCATION_TYPE_STYLES)[LocationType]]
+>).map(([key, value]) => {
+  const Icon = value.icon;
   return {
-    id: point.pointId,
-    name: point.name,
-    type: resolveLocationType(point.kind),
-    countryCode: point.countryCode || 'UNK',
-    coordinates: [point.longitude, point.latitude],
-    properties,
+    id: key,
+    label: key,
+    icon: <Icon fontSize="small" />,
+  };
+});
+
+const buildInitialViewState = (bbox?: [number, number, number, number]): MapViewState => {
+  if (!bbox) return DEFAULT_MAP_CONFIG.viewState;
+  const [minLon, minLat, maxLon, maxLat] = bbox;
+  const longitude = (minLon + maxLon) / 2;
+  const latitude = (minLat + maxLat) / 2;
+  return {
+    longitude: Number.isFinite(longitude) ? longitude : DEFAULT_MAP_CONFIG.viewState.longitude,
+    latitude: Number.isFinite(latitude) ? latitude : DEFAULT_MAP_CONFIG.viewState.latitude,
+    zoom: DEFAULT_MAP_CONFIG.viewState.zoom,
   };
 };
 
@@ -71,12 +89,15 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
   const panelTranslations = translations.panel ?? {};
   const previewNodeId = nodeId ?? 'preview' as NodeId;
   const [summary, setSummary] = useState<TileSummary | null>(null);
-  const [locations, setLocations] = useState<PreviewLocationPoint[]>([]);
+  const [locations, setLocations] = useState<Awaited<ReturnType<typeof listLocationPoints>>>([]);
   const [tableId, setTableId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isMountedRef = useRef(true);
   const [activeTab, setActiveTab] = useState(0);
+  const [locationTypeSelection, setLocationTypeSelection] = useState<MapToggleSelection>(() =>
+    Object.fromEntries(LOCATION_TYPE_OPTIONS.map((option) => [option.id, true])) as MapToggleSelection
+  );
 
   const loadData = useCallback(async () => {
     if (!isMountedRef.current) return;
@@ -105,7 +126,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
         setTableId(null);
         const pointRecords = await listLocationPoints(resolvedNodeId);
         if (!isMountedRef.current) return;
-        setLocations(pointRecords.map(toPreviewLocationPoint));
+        setLocations(pointRecords);
         return;
       }
 
@@ -115,7 +136,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
         setTableId(null);
         const pointRecords = await listLocationPoints(resolvedNodeId);
         if (!isMountedRef.current) return;
-        setLocations(pointRecords.map(toPreviewLocationPoint));
+        setLocations(pointRecords);
         return;
       }
 
@@ -142,7 +163,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
         } as TileSummary;
       });
       setTableId(latest.tableId ?? null);
-      setLocations(pointRecords.map(toPreviewLocationPoint));
+      setLocations(pointRecords);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setSummary(null);
@@ -251,6 +272,92 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
     );
   }, [loading, tableId, translations.mapPreview?.metadataEmpty, translations.mapPreview?.metadataLoading]);
 
+  const knownLocationTypes = useMemo(() => LOCATION_TYPE_OPTIONS.map((option) => option.id), []);
+  const enabledLocationTypes = useMemo(
+    () => LOCATION_TYPE_OPTIONS.filter((option) => locationTypeSelection[option.id]).map((option) => option.id),
+    [locationTypeSelection],
+  );
+  const locationFilter = useMemo(
+    () => buildCategoryFilter(enabledLocationTypes, knownLocationTypes, ['kind', 'type']),
+    [enabledLocationTypes, knownLocationTypes],
+  );
+  const initialViewState = useMemo(
+    () => buildInitialViewState(summary?.bbox),
+    [summary?.bbox],
+  );
+  const locationVectorLayers = useMemo<ResourceVectorLayer[]>(() => {
+    if (!previewNodeId || previewNodeId === 'preview') return [];
+    if (!summary?.exists || summary.tiles === 0) return [];
+    return [
+      {
+        nodeId: String(previewNodeId),
+        nodeType: 'location',
+        dbName: getDBName('location-ephemeral'),
+        tileDataProvider: async (z, x, y) => {
+          const db = getEphemeralLocationDB();
+          const rec = await db.vectorTiles.get(`loc-mvt-${previewNodeId}-${z}-${x}-${y}`);
+          return rec?.data ?? null;
+        },
+        layerConfig: {
+          layerType: 'circle',
+          sourceLayer: 'location_points',
+          paint: {
+            'circle-radius': 4,
+            'circle-color': '#2f74ff',
+            'circle-opacity': 0.8,
+          },
+        },
+      },
+    ];
+  }, [previewNodeId, summary?.exists, summary?.tiles]);
+  const locationGeoJsonLayers = useMemo<ResourceGeoJsonLayer[]>(() => {
+    if (enabledLocationTypes.length === 0) return [];
+    if (locationVectorLayers.length > 0 || locations.length === 0) return [];
+    return [
+      {
+        layerId: `location-preview-${previewNodeId}`,
+        sourceId: `location-preview-source-${previewNodeId}`,
+        layerType: 'circle',
+        filter: locationFilter ?? undefined,
+        data: {
+          type: 'FeatureCollection',
+          features: locations.map((point) => ({
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [point.longitude, point.latitude],
+            },
+            properties: {
+              kind: resolveLocationType(point.kind),
+            },
+          })),
+        },
+        paint: {
+          'circle-radius': 4,
+          'circle-color': '#2f74ff',
+          'circle-opacity': 0.8,
+        },
+      },
+    ];
+  }, [enabledLocationTypes.length, locationFilter, locationVectorLayers.length, locations, previewNodeId]);
+  const filteredVectorLayers = useMemo(() => {
+    const nextVisible = enabledLocationTypes.length > 0;
+    return locationVectorLayers.map((layer) => {
+      const baseConfig = layer.layerConfig ?? {};
+      return {
+        ...layer,
+        layerConfig: {
+          ...baseConfig,
+          visible: nextVisible ? baseConfig.visible : false,
+          filter: mergeFilters(baseConfig.filter, locationFilter),
+        },
+      };
+    });
+  }, [enabledLocationTypes.length, locationFilter, locationVectorLayers]);
+  const handleLocationToggle = useCallback((id: string) => {
+    setLocationTypeSelection((prev) => ({ ...prev, [id]: !prev[id] }));
+  }, []);
+
   return (
     <Box display="flex" flexDirection="column" gap={2} sx={{ height: '100%' }}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
@@ -287,7 +394,29 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
 
       <Box flex={1} minHeight={320}>
         {activeTab === 0 ? (
-          <LocationMapPreview nodeId={previewNodeId} locations={locations} />
+          <Stack spacing={2} sx={{ height: '100%' }}>
+            <MapToggleCard
+              title="Terrain Types"
+              options={LOCATION_TYPE_OPTIONS.map((option) => ({
+                ...option,
+                label: translations.locationTypes?.[option.id as LocationType] ?? option.label,
+              }))}
+              selection={locationTypeSelection}
+              onToggle={handleLocationToggle}
+            />
+            <Box flex={1} minHeight={320}>
+              <ResourceLayerMap
+                initialViewState={initialViewState}
+                width="100%"
+                height="100%"
+                mapStyleUrl={DEFAULT_MAP_CONFIG.mapStyleUrl}
+                basemapStyles={[]}
+                vectorLayers={filteredVectorLayers}
+                geoJsonLayers={locationGeoJsonLayers}
+                mapOptions={DEFAULT_MAP_CONFIG.interactionOptions}
+              />
+            </Box>
+          </Stack>
         ) : (
           metadataContent
         )}

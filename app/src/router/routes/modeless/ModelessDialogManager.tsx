@@ -3,7 +3,13 @@
  * @description Modeless dialog manager with stacking and restore icons for the map page.
  */
 
-import type { ResourceGeoJsonLayer, ResourceVectorLayer } from '@hierarchidb/ui-plugin-shell/ui-map';
+import type {
+  MapToggleOption,
+  MapToggleSelection,
+  ResourceGeoJsonLayer,
+  ResourceVectorLayer,
+} from '@hierarchidb/ui-plugin-shell/ui-map';
+import { MapToggleCard } from '@hierarchidb/ui-plugin-shell/ui-map';
 import type {
   HeadlessDialogProps,
   HeadlessDialogHeaderProps,
@@ -21,14 +27,7 @@ import {
   Layers as LayersIcon,
   PlaceOutlined as PlaceOutlinedIcon,
 } from '@mui/icons-material';
-import {
-  MapInfoContent,
-  MapLayerContent,
-  MapToggleCard,
-  type MapInfoSummary,
-  type MapToggleOption,
-  type MapToggleSelection,
-} from './modelessDialogContent.js';
+import { MapInfoContent, MapLayerContent } from './modelessDialogContent.js';
 import type { MapDialogDefinitionBase, MapDialogWindowState } from './modelessDialogLayout.js';
 import type { ModelessIconAppearance, ModelessIconPlacement } from './ModelessDialogProvider.js';
 import { ModelessDialogProvider, useModelessDialogContext } from './ModelessDialogProvider.js';

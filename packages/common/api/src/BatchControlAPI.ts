@@ -11,7 +11,8 @@ export type ProgressPhase =
   | 'paused'
   | 'completed'
   | 'failed'
-  | 'warning';
+  | 'warning'
+  | 'cancelled';
 
 export interface BatchProgressPayload {
   total?: number;
@@ -95,7 +96,7 @@ export interface IBatchSessionManager {
  */
 export interface BatchSessionStatus {
   nodeId: NodeId;
-  status: 'idle' | 'running' | 'paused' | 'completed' | 'failed';
+  status: 'idle' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
   progress: BatchProgress;
   startedAt?: number;
   completedAt?: number;
@@ -179,7 +180,7 @@ export interface BaseBatchConfig {
  */
 export interface BatchSessionState {
   nodeId: NodeId;
-  status: 'idle' | 'running' | 'paused' | 'completed' | 'failed';
+  status: 'idle' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
   startedAt?: number;
   completedAt?: number;
   lastActivity?: number;

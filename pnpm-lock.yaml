@@ -3025,6 +3025,9 @@ importers:
       '@hierarchidb/ui-i18n':
         specifier: workspace:*
         version: link:../../packages/ui/i18n
+      '@hierarchidb/ui-map':
+        specifier: workspace:*
+        version: link:../../packages/ui/map
       '@hierarchidb/ui-search-field':
         specifier: workspace:*
         version: link:../../packages/ui/search-field
@@ -3210,6 +3213,9 @@ importers:
       '@hierarchidb/tabular-store':
         specifier: workspace:*
         version: link:../../packages/features/tabular-store
+      '@hierarchidb/ui-map':
+        specifier: workspace:*
+        version: link:../../packages/ui/map
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../packages/util
@@ -3355,6 +3361,9 @@ importers:
       '@hierarchidb/ui-lru-splitview':
         specifier: workspace:*
         version: link:../../packages/ui/lru-splitview
+      '@hierarchidb/ui-map':
+        specifier: workspace:*
+        version: link:../../packages/ui/map
       '@hierarchidb/ui-memory':
         specifier: workspace:*
         version: link:../../packages/ui/memory

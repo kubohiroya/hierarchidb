@@ -4,12 +4,31 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
-import { Alert, Box, Paper, Snackbar, Typography } from '@mui/material';
+import { Alert, Box, Paper, Snackbar, Stack, Typography } from '@mui/material';
+import {
+  buildCategoryFilter,
+  DEFAULT_MAP_CONFIG,
+  MapToggleCard,
+  mergeFilters,
+  ResourceLayerMap,
+  type MapLibreMapInstance,
+  type MapToggleSelection,
+  type MapViewState,
+  type ResourceGeoJsonLayer,
+} from '@hierarchidb/ui-map';
+import {
+  DirectionsBoat as DirectionsBoatIcon,
+  DirectionsCar as DirectionsCarIcon,
+  Flight as FlightIcon,
+  Speed as SpeedIcon,
+  Train as TrainIcon,
+} from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-types';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import type { RouteNearestLineResponse } from '@hierarchidb/plugin-service-api';
 import type { RouteUpdaterPayload } from '../../../common/entities/RouteEntity.js';
 import { formatDistance, getTransportModeName, useTranslation } from '../../../common/i18n/index.js';
+import { ROUTE_MODES, type RouteMode } from '@hierarchidb/route-plugin';
 
 interface RoutePreviewStepProps {
   draft: RouteUpdaterPayload;
@@ -19,29 +38,20 @@ interface RoutePreviewStepProps {
 type Bounds = { minLon: number; maxLon: number; minLat: number; maxLat: number };
 const HOVER_DISTANCE_PX = 16;
 
-const haversineMeters = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-  const toRad = (value: number) => (value * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a = Math.sin(dLat / 2) ** 2
-    + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  return 6371008.8 * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+type RouteModeOption = {
+  id: RouteMode;
+  label: string;
+  icon: React.ReactNode;
+  modes: RouteMode[];
 };
 
-const resolveMetersPerPixel = (
-  bounds: Bounds,
-  mapSize: { width: number; height: number },
-  longitude: number,
-  latitude: number,
-): number | null => {
-  if (mapSize.width <= 0 || mapSize.height <= 0) return null;
-  const lonStep = (bounds.maxLon - bounds.minLon) / mapSize.width;
-  const latStep = (bounds.maxLat - bounds.minLat) / mapSize.height;
-  const lonMeters = haversineMeters(latitude, longitude, latitude, longitude + lonStep);
-  const latMeters = haversineMeters(latitude, longitude, latitude + latStep, longitude);
-  const metersPerPixel = (Math.abs(lonMeters) + Math.abs(latMeters)) / 2;
-  return Number.isFinite(metersPerPixel) && metersPerPixel > 0 ? metersPerPixel : null;
-};
+const ROUTE_MODE_OPTIONS: RouteModeOption[] = [
+  { id: ROUTE_MODES.AIRWAY, label: 'Air', icon: <FlightIcon fontSize="small" />, modes: [ROUTE_MODES.AIRWAY] },
+  { id: ROUTE_MODES.WATERWAY, label: 'Sea', icon: <DirectionsBoatIcon fontSize="small" />, modes: [ROUTE_MODES.WATERWAY] },
+  { id: ROUTE_MODES.RAILWAY, label: 'Rail', icon: <TrainIcon fontSize="small" />, modes: [ROUTE_MODES.RAILWAY] },
+  { id: ROUTE_MODES.H_RAILWAY, label: 'High-speed Rail', icon: <SpeedIcon fontSize="small" />, modes: [ROUTE_MODES.H_RAILWAY] },
+  { id: ROUTE_MODES.ROAD, label: 'Road', icon: <DirectionsCarIcon fontSize="small" />, modes: [ROUTE_MODES.ROAD, ROUTE_MODES.HIGHWAY] },
+];
 
 const resolveBounds = (geometry: [number, number][]): Bounds | null => {
   if (!geometry.length) return null;
@@ -62,27 +72,43 @@ const resolveBounds = (geometry: [number, number][]): Bounds | null => {
   return { minLon, maxLon, minLat, maxLat };
 };
 
+const resolveMetersPerPixel = (latitude: number, zoom: number): number => {
+  const worldCircumference = 40_075_016.686;
+  const latFactor = Math.cos((latitude * Math.PI) / 180);
+  const scale = 256 * 2 ** zoom;
+  return (worldCircumference * latFactor) / scale;
+};
+
+const resolveRouteMode = (draft: RouteUpdaterPayload['draftData']): RouteMode | null => {
+  const selection = draft?.transportSelection;
+  if (selection === 'high-speed-rail') return ROUTE_MODES.H_RAILWAY;
+  if (selection === 'rail') return ROUTE_MODES.RAILWAY;
+  if (selection === 'highway') return ROUTE_MODES.HIGHWAY;
+  if (selection === 'road') return ROUTE_MODES.ROAD;
+  const mode = draft?.transportMode;
+  if (mode === 'air') return ROUTE_MODES.AIRWAY;
+  if (mode === 'sea') return ROUTE_MODES.WATERWAY;
+  if (mode === 'rail') return ROUTE_MODES.RAILWAY;
+  if (mode === 'road') return ROUTE_MODES.ROAD;
+  return null;
+};
+
 export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeId }) => {
   const { t, locale } = useTranslation();
   const hasGeometry = Array.isArray(draft.draftData?.lineGeometry) && draft.draftData?.lineGeometry.length > 0;
   const geometry: [number, number][] = useMemo(()=> draft.draftData?.lineGeometry ?? [], [draft.draftData?.lineGeometry]);
   const previewNodeId = nodeId ?? draft.treeNodeId;
   const bounds = useMemo(() => resolveBounds(geometry), [geometry]);
-  const mapRef = useRef<HTMLDivElement>(null);
   const workerBridgeRef = useRef(getWorkerBridge());
-  const [mapSize, setMapSize] = useState({ width: 0, height: 0 });
+  const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
+  const [routeModeSelection, setRouteModeSelection] = useState<MapToggleSelection>(() =>
+    Object.fromEntries(ROUTE_MODE_OPTIONS.map((option) => [option.id, true])) as MapToggleSelection
+  );
   const [hoverInfo, setHoverInfo] = useState<RouteNearestLineResponse | null>(null);
   const [hoverOpen, setHoverOpen] = useState(false);
   const hoverTimerRef = useRef<number | null>(null);
   const hoverRequestIdRef = useRef(0);
   const lastHoverRef = useRef<{ longitude: number; latitude: number; zoom: number } | null>(null);
-
-  const hoverBounds = useMemo<Bounds>(() => bounds ?? { minLon: -180, maxLon: 180, minLat: -85, maxLat: 85 }, [bounds]);
-  const zoomLevel = useMemo(() => {
-    const maxZoom = draft.draftData?.processing?.vectorTiles?.maxZoom ?? draft.draftData?.zoomRange?.[1];
-    return Math.max(0, Math.min(20, Math.round(maxZoom ?? 8)));
-  }, [draft.draftData?.processing?.vectorTiles?.maxZoom, draft.draftData?.zoomRange]);
-  const isHoverActive = hoverOpen && Boolean(hoverInfo?.matches?.length);
 
   const formatTemplate = useCallback(
     (template: string, values: Record<string, string | number>) =>
@@ -93,29 +119,17 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
     [],
   );
 
-  useEffect(() => {
-    if (!mapRef.current || typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (!entry) return;
-      const { width, height } = entry.contentRect;
-      setMapSize({ width, height });
-    });
-    observer.observe(mapRef.current);
-    return () => observer.disconnect();
-  }, []);
-
-  const scheduleHoverLookup = useCallback((longitude: number, latitude: number) => {
-    if (!previewNodeId || mapSize.width === 0 || mapSize.height === 0) return;
+  const scheduleHoverLookup = useCallback((longitude: number, latitude: number, zoom: number) => {
+    if (!previewNodeId) return;
     const last = lastHoverRef.current;
     if (last) {
       const lonDelta = Math.abs(last.longitude - longitude);
       const latDelta = Math.abs(last.latitude - latitude);
-      if (last.zoom === zoomLevel && lonDelta < 0.0001 && latDelta < 0.0001) {
+      if (last.zoom === zoom && lonDelta < 0.0001 && latDelta < 0.0001) {
         return;
       }
     }
-    lastHoverRef.current = { longitude, latitude, zoom: zoomLevel };
+    lastHoverRef.current = { longitude, latitude, zoom };
     if (hoverTimerRef.current) {
       window.clearTimeout(hoverTimerRef.current);
     }
@@ -124,17 +138,12 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
       void (async () => {
         try {
           const api = await workerBridgeRef.current.getRouteQueryAPI();
-          const metersPerPixel = resolveMetersPerPixel(hoverBounds, mapSize, longitude, latitude);
-          if (!metersPerPixel) {
-            setHoverInfo(null);
-            setHoverOpen(false);
-            return;
-          }
+          const metersPerPixel = resolveMetersPerPixel(latitude, zoom);
           const result = await api.findNearestRouteLine({
             nodeId: previewNodeId,
             longitude,
             latitude,
-            zoom: zoomLevel,
+            zoom,
             maxDistanceMeters: metersPerPixel * HOVER_DISTANCE_PX,
           });
           if (hoverRequestIdRef.current !== requestId) return;
@@ -149,27 +158,30 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
         }
       })();
     }, 120);
-  }, [hoverBounds, mapSize, previewNodeId, zoomLevel]);
+  }, [previewNodeId]);
 
-  const handleMapMouseMove = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
-    if (!mapRef.current) return;
-    const rect = mapRef.current.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    if (x < 0 || y < 0 || x > rect.width || y > rect.height) return;
-    const longitude = hoverBounds.minLon + (x / rect.width) * (hoverBounds.maxLon - hoverBounds.minLon);
-    const latitude = hoverBounds.maxLat - (y / rect.height) * (hoverBounds.maxLat - hoverBounds.minLat);
-    if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) return;
-    scheduleHoverLookup(longitude, latitude);
-  }, [hoverBounds, scheduleHoverLookup]);
-
-  const handleMapMouseLeave = useCallback(() => {
-    if (hoverTimerRef.current) {
-      window.clearTimeout(hoverTimerRef.current);
-      hoverTimerRef.current = null;
-    }
-    setHoverOpen(false);
-  }, []);
+  useEffect(() => {
+    if (!mapInstance) return;
+    const handleMove = (event: unknown) => {
+      const lngLat = (event as { lngLat?: { lng: number; lat: number } })?.lngLat;
+      if (!lngLat) return;
+      const zoom = mapInstance.getZoom();
+      scheduleHoverLookup(lngLat.lng, lngLat.lat, zoom);
+    };
+    const handleLeave = () => {
+      if (hoverTimerRef.current) {
+        window.clearTimeout(hoverTimerRef.current);
+        hoverTimerRef.current = null;
+      }
+      setHoverOpen(false);
+    };
+    mapInstance.on('mousemove', handleMove);
+    mapInstance.on('mouseleave', handleLeave);
+    return () => {
+      mapInstance.off('mousemove', handleMove);
+      mapInstance.off('mouseleave', handleLeave);
+    };
+  }, [mapInstance, scheduleHoverLookup]);
 
   const hoverMessage = useMemo(() => {
     const nearest = hoverInfo?.matches?.[0]?.line;
@@ -192,24 +204,77 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
     });
   }, [formatTemplate, hoverInfo, locale, t]);
 
-  const polylinePoints = useMemo(() => {
-    if (!bounds || mapSize.width === 0 || mapSize.height === 0) return '';
-    const { minLon, maxLon, minLat, maxLat } = bounds;
-    const scaleX = mapSize.width / (maxLon - minLon);
-    const scaleY = mapSize.height / (maxLat - minLat);
-    return geometry
-      .map(([lon, lat]) => {
-        const x = (lon - minLon) * scaleX;
-        const y = (maxLat - lat) * scaleY;
-        return `${x},${y}`;
-      })
-      .join(' ');
-  }, [bounds, geometry, mapSize.height, mapSize.width]);
-
   useEffect(() => () => {
     if (hoverTimerRef.current) {
       window.clearTimeout(hoverTimerRef.current);
     }
+  }, []);
+
+  const routeModeValues = useMemo(
+    () => Array.from(new Set(ROUTE_MODE_OPTIONS.flatMap((option) => option.modes))),
+    [],
+  );
+  const enabledRouteModes = useMemo(
+    () => ROUTE_MODE_OPTIONS.filter((option) => routeModeSelection[option.id]).flatMap((option) => option.modes),
+    [routeModeSelection],
+  );
+  const routeFilter = useMemo(
+    () => buildCategoryFilter(enabledRouteModes, routeModeValues, ['routeMode', 'mode', 'route_mode']),
+    [enabledRouteModes, routeModeValues],
+  );
+  const routeMode = useMemo(() => resolveRouteMode(draft.draftData), [draft.draftData]);
+  const initialViewState = useMemo<MapViewState>(() => {
+    if (!bounds) return DEFAULT_MAP_CONFIG.viewState;
+    const longitude = (bounds.minLon + bounds.maxLon) / 2;
+    const latitude = (bounds.minLat + bounds.maxLat) / 2;
+    return {
+      longitude: Number.isFinite(longitude) ? longitude : DEFAULT_MAP_CONFIG.viewState.longitude,
+      latitude: Number.isFinite(latitude) ? latitude : DEFAULT_MAP_CONFIG.viewState.latitude,
+      zoom: DEFAULT_MAP_CONFIG.viewState.zoom,
+    };
+  }, [bounds]);
+  const geoJsonLayers = useMemo<ResourceGeoJsonLayer[]>(() => {
+    if (!hasGeometry) return [];
+    return [
+      {
+        layerId: `route-preview-${previewNodeId ?? 'route'}`,
+        sourceId: `route-preview-source-${previewNodeId ?? 'route'}`,
+        layerType: 'line',
+        data: {
+          type: 'FeatureCollection',
+          features: [
+            {
+              type: 'Feature',
+              geometry: {
+                type: 'LineString',
+                coordinates: geometry,
+              },
+              properties: {
+                routeMode: routeMode ?? ROUTE_MODES.ROAD,
+              },
+            },
+          ],
+        },
+        paint: {
+          'line-color': '#f24c3d',
+          'line-width': 2,
+          'line-opacity': 0.9,
+        },
+      },
+    ];
+  }, [geometry, hasGeometry, previewNodeId, routeMode]);
+  const filteredGeoJsonLayers = useMemo(
+    () => {
+      if (enabledRouteModes.length === 0) return [];
+      return geoJsonLayers.map((layer) => ({
+        ...layer,
+        filter: mergeFilters(layer.filter, routeFilter),
+      }));
+    },
+    [enabledRouteModes.length, geoJsonLayers, routeFilter],
+  );
+  const handleRouteModeToggle = useCallback((id: string) => {
+    setRouteModeSelection((prev) => ({ ...prev, [id]: !prev[id] }));
   }, []);
 
   return (
@@ -232,46 +297,41 @@ export const RoutePreviewStep: React.FC<RoutePreviewStepProps> = ({ draft, nodeI
           </Alert>
           <Paper variant="outlined" sx={{ p: 2 }}>
             <Typography variant="subtitle1">{t('preview.mapTitle', 'Map Preview')}</Typography>
-            <Box
-              ref={mapRef}
-              onMouseMove={handleMapMouseMove}
-              onMouseLeave={handleMapMouseLeave}
-              sx={{
-                position: 'relative',
-                mt: 1,
-                height: 320,
-                borderRadius: 1,
-                border: '1px solid',
-                borderColor: 'divider',
-                bgcolor: 'background.default',
-                overflow: 'hidden',
-              }}
-            >
+            <Stack spacing={2} mt={1}>
+              <MapToggleCard
+                title="Route Modes"
+                options={ROUTE_MODE_OPTIONS.map((option) => ({
+                  id: option.id,
+                  label: option.label,
+                  icon: option.icon,
+                }))}
+                selection={routeModeSelection}
+                onToggle={handleRouteModeToggle}
+              />
               <Box
-                component="svg"
-                sx={{ position: 'absolute', inset: 0 }}
-                viewBox={`0 0 ${Math.max(1, mapSize.width)} ${Math.max(1, mapSize.height)}`}
-                preserveAspectRatio="none"
+                sx={{
+                  position: 'relative',
+                  height: 320,
+                  borderRadius: 1,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: 'background.default',
+                  overflow: 'hidden',
+                }}
               >
-                <polyline
-                  points={polylinePoints}
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  opacity={0.6}
+                <ResourceLayerMap
+                  initialViewState={initialViewState}
+                  width="100%"
+                  height="100%"
+                  mapStyleUrl={DEFAULT_MAP_CONFIG.mapStyleUrl}
+                  basemapStyles={[]}
+                  vectorLayers={[]}
+                  geoJsonLayers={filteredGeoJsonLayers}
+                  mapOptions={DEFAULT_MAP_CONFIG.interactionOptions}
+                  onLoad={setMapInstance}
                 />
-                {isHoverActive && (
-                  <polyline
-                    points={polylinePoints}
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={5}
-                    opacity={0.95}
-                    style={{ filter: 'drop-shadow(0 0 6px currentColor)' }}
-                  />
-                )}
               </Box>
-            </Box>
+            </Stack>
           </Paper>
           <Snackbar
             open={hoverOpen && Boolean(hoverMessage)}

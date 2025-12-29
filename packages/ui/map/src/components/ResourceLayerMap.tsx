@@ -14,6 +14,7 @@ import {
   type VectorTileDataSource,
   type VectorTileLayerConfig,
 } from '../types/unified-map-props.js';
+import type { MapLibreFilter } from '../types/maplibre-public.js';
 import { MapLibreMap, type MapLibreMapProps } from './MapLibreMap.js';
 
 type BasemapStyleEntry = {
@@ -39,6 +40,7 @@ export type ResourceGeoJsonLayer = {
   layerType: 'line' | 'circle' | 'fill' | 'symbol';
   paint?: Record<string, unknown>;
   layout?: Record<string, unknown>;
+  filter?: MapLibreFilter;
   beforeId?: string;
   absolutePath?: string;
 };
@@ -157,6 +159,7 @@ export const ResourceLayerMap: React.FC<ResourceLayerMapProps> = (props) => {
           source: layer.sourceId,
           paint: layer.paint ?? {},
           layout: layer.layout ?? {},
+          ...(layer.filter ? { filter: layer.filter } : {}),
         },
         layer.beforeId,
       );
