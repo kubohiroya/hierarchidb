@@ -273,7 +273,7 @@ const startLocationBatch = async (data: LocationStepData, context: StartBatchCon
   const rawConcurrency = draft.concurrentDownloads ?? 4;
   const concurrency = clamp(rawConcurrency || 4, MIN_CONCURRENCY, MAX_CONCURRENCY);
 
-  const summary = await startLocationVectorTileSession(
+  await startLocationVectorTileSession(
     nodeId,
     pointInputs,
     settings,

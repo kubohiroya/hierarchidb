@@ -78,7 +78,6 @@ export class LocalSimplify1Adapter implements Simplify1StageAdapter {
           if (!raw.featureCount) {
             await db.simplifiedBuffers.put({
               id: `${task.nodeId ?? ''}-simplify1-${taskIndex}`,
-              nodeId: String(task.nodeId ?? ''),
               nodeId: raw.nodeId,
               stage: 'simplify1',
               data: raw.data,
@@ -116,7 +115,6 @@ export class LocalSimplify1Adapter implements Simplify1StageAdapter {
           if (!featureCount) {
             await db.simplifiedBuffers.put({
               id: outputBufferId,
-              nodeId: String(task.nodeId ?? ''),
               nodeId: raw.nodeId,
               stage: 'simplify1',
               data,
@@ -139,7 +137,6 @@ export class LocalSimplify1Adapter implements Simplify1StageAdapter {
           }
           await db.simplifiedBuffers.put({
             id: outputBufferId,
-            nodeId: String(task.nodeId ?? ''),
             nodeId: raw.nodeId,
             stage: 'simplify1',
             data,
@@ -254,7 +251,6 @@ export class LocalSimplify2Adapter implements Simplify2StageAdapter {
             const outputBufferId = `${task.nodeId ?? ''}-simplify2-${taskIndex}`;
             await db.simplifiedBuffers.put({
               id: outputBufferId,
-              nodeId: String(task.nodeId ?? ''),
               nodeId: input.nodeId,
               stage: 'simplify2',
               data: input.data,
@@ -292,7 +288,6 @@ export class LocalSimplify2Adapter implements Simplify2StageAdapter {
             : input.featureCount;
           await db.simplifiedBuffers.put({
             id: outputBufferId,
-            nodeId: String(task.nodeId ?? ''),
             nodeId: input.nodeId,
             stage: 'simplify2',
             data,

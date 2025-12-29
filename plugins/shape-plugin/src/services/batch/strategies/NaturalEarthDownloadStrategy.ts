@@ -86,7 +86,6 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
         const outputBufferId = this.buildOutputBufferId(context.nodeId, countryCode, adminLevel);
         await db.rawBuffers.put({
           id: outputBufferId,
-          nodeId: String(context.nodeId),
           nodeId: raw.nodeId,
           data,
           featureCount: features.length,

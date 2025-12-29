@@ -2937,9 +2937,9 @@ importers:
       '@hierarchidb/plugin-base':
         specifier: workspace:*
         version: link:../../packages/plugin-base
-      '@hierarchidb/spreadsheet-plugin':
+      '@hierarchidb/plugin-ui-sdk':
         specifier: workspace:*
-        version: link:../spreadsheet-plugin
+        version: link:../../packages/plugin-ui-sdk
       '@hierarchidb/tabular-source':
         specifier: workspace:*
         version: link:../../packages/features/tabular-source
@@ -2949,6 +2949,21 @@ importers:
       '@hierarchidb/ui-country-select':
         specifier: workspace:*
         version: link:../../packages/ui/country-select
+      '@hierarchidb/ui-datasource':
+        specifier: workspace:*
+        version: link:../../packages/ui/datasource
+      '@hierarchidb/ui-dialog':
+        specifier: workspace:*
+        version: link:../../packages/ui/dialog
+      '@hierarchidb/ui-license':
+        specifier: workspace:*
+        version: link:../../packages/ui/license
+      '@hierarchidb/ui-memory':
+        specifier: workspace:*
+        version: link:../../packages/ui/memory
+      '@hierarchidb/ui-plugin-basic-info':
+        specifier: workspace:*
+        version: link:../../packages/ui/plugin-basic-info
       '@hierarchidb/ui-tabular':
         specifier: workspace:*
         version: link:../../packages/ui/tabular-extract
@@ -2961,6 +2976,9 @@ importers:
       dexie:
         specifier: 4.2.0
         version: 4.2.0
+      notistack:
+        specifier: ^3.0.2
+        version: 3.0.2(csstype@3.2.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -2995,36 +3013,18 @@ importers:
       '@hierarchidb/plugin-service-api':
         specifier: workspace:*
         version: link:../../packages/plugin-service-api
-      '@hierarchidb/plugin-ui-sdk':
-        specifier: workspace:*
-        version: link:../../packages/plugin-ui-sdk
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../../packages/runtime-worker
       '@hierarchidb/ui-batch':
         specifier: workspace:*
         version: link:../../packages/ui/batch
-      '@hierarchidb/ui-datasource':
-        specifier: workspace:*
-        version: link:../../packages/ui/datasource
-      '@hierarchidb/ui-dialog':
-        specifier: workspace:*
-        version: link:../../packages/ui/dialog
       '@hierarchidb/ui-grid':
         specifier: workspace:*
         version: link:../../packages/ui/data-grid
       '@hierarchidb/ui-i18n':
         specifier: workspace:*
         version: link:../../packages/ui/i18n
-      '@hierarchidb/ui-license':
-        specifier: workspace:*
-        version: link:../../packages/ui/license
-      '@hierarchidb/ui-memory':
-        specifier: workspace:*
-        version: link:../../packages/ui/memory
-      '@hierarchidb/ui-plugin-basic-info':
-        specifier: workspace:*
-        version: link:../../packages/ui/plugin-basic-info
       '@hierarchidb/ui-search-field':
         specifier: workspace:*
         version: link:../../packages/ui/search-field
@@ -3040,9 +3040,6 @@ importers:
       '@types/react':
         specifier: ^18.3.27
         version: 18.3.27
-      notistack:
-        specifier: ^3.0.2
-        version: 3.0.2(csstype@3.2.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-virtuoso:
         specifier: ^4.14.0
         version: 4.14.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -3134,58 +3131,27 @@ importers:
       '@emotion/styled':
         specifier: 11.14.0
         version: 11.14.0(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react@18.3.1)
+      '@hierarchidb/batch-runtime-services':
+        specifier: workspace:*
+        version: link:../../packages/batch-runtime-services
+      '@hierarchidb/components':
+        specifier: workspace:*
+        version: link:../../packages/components
       '@hierarchidb/location-store':
         specifier: workspace:*
         version: link:../../packages/features/location-store
       '@hierarchidb/plugin-base':
         specifier: workspace:*
         version: link:../../packages/plugin-base
+      '@hierarchidb/plugin-ui-sdk':
+        specifier: workspace:*
+        version: link:../../packages/plugin-ui-sdk
       '@hierarchidb/route-engine':
         specifier: workspace:*
         version: link:../../packages/features/route-engine
       '@hierarchidb/route-store':
         specifier: workspace:*
         version: link:../../packages/features/route-store
-      '@hierarchidb/ui-tabular':
-        specifier: workspace:*
-        version: link:../../packages/ui/tabular-extract
-      dexie:
-        specifier: 4.2.0
-        version: 4.2.0
-      searoute-js:
-        specifier: ^0.1.0
-        version: 0.1.0
-    devDependencies:
-      '@hierarchidb/auth-recovery':
-        specifier: workspace:*
-        version: link:../../packages/features/auth-recovery
-      '@hierarchidb/batch-runtime-services':
-        specifier: workspace:*
-        version: link:../../packages/batch-runtime-services
-      '@hierarchidb/common-api':
-        specifier: workspace:*
-        version: link:../../packages/common/api
-      '@hierarchidb/common-types':
-        specifier: workspace:*
-        version: link:../../packages/common/types
-      '@hierarchidb/components':
-        specifier: workspace:*
-        version: link:../../packages/components
-      '@hierarchidb/download':
-        specifier: workspace:*
-        version: link:../../packages/features/download
-      '@hierarchidb/plugin-service-api':
-        specifier: workspace:*
-        version: link:../../packages/plugin-service-api
-      '@hierarchidb/plugin-ui-sdk':
-        specifier: workspace:*
-        version: link:../../packages/plugin-ui-sdk
-      '@hierarchidb/runtime-worker':
-        specifier: workspace:*
-        version: link:../../packages/runtime-worker
-      '@hierarchidb/tabular-store':
-        specifier: workspace:*
-        version: link:../../packages/features/tabular-store
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../packages/ui/dialog
@@ -3201,36 +3167,58 @@ importers:
       '@hierarchidb/ui-plugin-basic-info':
         specifier: workspace:*
         version: link:../../packages/ui/plugin-basic-info
+      '@hierarchidb/ui-tabular':
+        specifier: workspace:*
+        version: link:../../packages/ui/tabular-extract
       '@hierarchidb/ui-worker-client':
         specifier: workspace:*
         version: link:../../packages/ui/worker-client
       '@hierarchidb/ui-worker-provider':
         specifier: workspace:*
         version: link:../../packages/ui/worker-provider
-      '@hierarchidb/util':
-        specifier: workspace:*
-        version: link:../../packages/util
-      '@mui/icons-material':
-        specifier: ^7.3.6
-        version: 7.3.6(@mui/material@7.3.6(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.27)(react@18.3.1)
       '@mui/material':
         specifier: ^7.3.6
         version: 7.3.6(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@types/node':
-        specifier: 18.19.123
-        version: 18.19.123
-      '@types/react':
-        specifier: ^18.3.27
-        version: 18.3.27
-      '@types/react-dom':
-        specifier: ^18.3.7
-        version: 18.3.7(@types/react@18.3.27)
+      dexie:
+        specifier: 4.2.0
+        version: 4.2.0
       react:
         specifier: ^18.2.0
         version: 18.3.1
       react-dom:
         specifier: ^18.2.0
         version: 18.3.1(react@18.3.1)
+    devDependencies:
+      '@hierarchidb/auth-recovery':
+        specifier: workspace:*
+        version: link:../../packages/features/auth-recovery
+      '@hierarchidb/common-api':
+        specifier: workspace:*
+        version: link:../../packages/common/api
+      '@hierarchidb/common-types':
+        specifier: workspace:*
+        version: link:../../packages/common/types
+      '@hierarchidb/download':
+        specifier: workspace:*
+        version: link:../../packages/features/download
+      '@hierarchidb/plugin-service-api':
+        specifier: workspace:*
+        version: link:../../packages/plugin-service-api
+      '@hierarchidb/runtime-worker':
+        specifier: workspace:*
+        version: link:../../packages/runtime-worker
+      '@hierarchidb/tabular-store':
+        specifier: workspace:*
+        version: link:../../packages/features/tabular-store
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../../packages/util
+      '@mui/icons-material':
+        specifier: ^7.3.6
+        version: 7.3.6(@mui/material@7.3.6(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.27)(react@18.3.1)
+      '@types/node':
+        specifier: 18.19.123
+        version: 18.19.123
       typescript:
         specifier: 5.8.2
         version: 5.8.2

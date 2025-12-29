@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { NodeType } from '@hierarchidb/common-types';
+import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import { getWorkerBridge, type WorkerBridge } from '@hierarchidb/ui-worker-client';
 import type { BatchSessionStatus, ProgressPhase, UnifiedProgressInfo } from '@hierarchidb/common-api';
 import { usePluginBatchProgress } from '@hierarchidb/ui-batch';
@@ -19,7 +19,7 @@ export interface RouteBatchProgressResult {
   resume: () => Promise<void>;
 }
 
-export function useRouteBatchProgress(nodeId: string | null, _deps?: unknown): RouteBatchProgressResult {
+export function useRouteBatchProgress(nodeId: NodeId | null, _deps?: unknown): RouteBatchProgressResult {
   const bridgeRef = useRef<WorkerBridge>(getWorkerBridge());
   const [status, setStatus] = useState<BatchSessionStatus | null>(null);
   const [isMutating, setIsMutating] = useState(false);
@@ -121,11 +121,11 @@ export function useRouteBatchProgress(nodeId: string | null, _deps?: unknown): R
 
 function statusToUnified(status: BatchSessionStatus): UnifiedProgressInfo {
   const progress = status.progress ?? {};
-  const total = numeric((progress as any).total);
-  const completed = numeric((progress as any).completed);
-  const failed = numeric((progress as any).failed);
+  const total = numeric(progress.total);
+  const completed = numeric(progress.completed);
+  const failed = numeric(progress.failed);
   const phase = mapStatusToPhase(status.status);
-  const percentage = computePercentage(phase, total, completed, (progress as any).percentage);
+  const percentage = computePercentage(phase, total, completed, progress.percentage);
   const meta: Record<string, unknown> = {};
   if (status.error) {
     meta.lastError = status.error;
@@ -133,19 +133,19 @@ function statusToUnified(status: BatchSessionStatus): UnifiedProgressInfo {
   }
 
   return {
-    stage: (progress as any).currentStage ?? 'processing',
+    stage: progress.currentStage ?? 'processing',
     total,
     completed,
     failed,
     percentage,
-    currentTask: (progress as any).currentTask ?? (progress as any).currentStage ?? 'processing',
+    currentTask: progress.currentTask ?? progress.currentStage ?? 'processing',
     phase,
     timestamp: status.lastActivity ?? Date.now(),
     payload: {
       total,
       completed,
       failed,
-      currentTask: (progress as any).currentTask ?? (progress as any).currentStage ?? 'processing',
+      currentTask: progress.currentTask ?? progress.currentStage ?? 'processing',
       ...(Object.keys(meta).length > 0 ? { meta } : {}),
     },
     message: status.error,

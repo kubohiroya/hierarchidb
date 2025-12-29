@@ -66,7 +66,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
   const effectiveProgress = hasNodeId ? progress : null;
   const effectiveStatus = hasNodeId ? status : null;
   const stages = useBuildStages();
-  const { buildStatus, statusLabel, effectiveStatus: resolvedStatus } = useBuildStatus(effectiveStatus);
+  const { buildStatus, statusLabel } = useBuildStatus(effectiveStatus);
   const shouldPollTasks = Boolean(activeNodeId)
     && buildStatus !== 'idle'
     && buildStatus !== 'completed'
