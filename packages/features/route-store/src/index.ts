@@ -1,5 +1,5 @@
 // Shared route store types extracted from route-plugin.
-import type { GroupEntity, NodeId, Timestamp, TreeNodeUpdaterPayload } from '@hierarchidb/common-types';
+import type { ISO2, GroupEntity, NodeId, Timestamp, TreeNodeUpdaterPayload } from '@hierarchidb/common-types';
 import type { LocationPointId } from '@hierarchidb/location-store';
 
 export const ROUTE_MODES = {
@@ -83,7 +83,7 @@ export interface RouteProcessingConfig {
 }
 
 export interface RouteEntity {
-  selectedArrayByCountries: Record<string, boolean[]>;
+  selectedArrayByCountries: Record<ISO2, boolean[]>;
   dataSourceName?: string;
   licenseAgreement?: boolean;
   licenseAgreedAt?: Timestamp;

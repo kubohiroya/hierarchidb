@@ -28,7 +28,6 @@ export { BatchSessionManager as ShapeBatchSessionManager } from './services/batc
 // Export plugin definition for worker fallback loading
 // Plugin definition export removed: metadata is sourced from package.json
 export { TabularQueryService as ShapeTableQueryService } from '@hierarchidb/tabular-store';
-export * from './services/tiles/RuntimeTileClient.js';
 
 // Optional runtime-worker wiring for shared bootstrap (no shared imports)
 export class RuntimeWiring {

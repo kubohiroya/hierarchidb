@@ -41,7 +41,7 @@ export class ShapeWorkerSimplify1Adapter implements Simplify1StageAdapter {
         try {
           const taskIndex = task.index ?? index;
           const result = await workerPool.run((api) => api.processSimplify1Task({
-            sessionId: String(task.sessionId ?? ''),
+            nodeId: String(task.nodeId ?? ''),
             task,
             taskIndex,
           }));
@@ -144,9 +144,9 @@ export class ShapeWorkerSimplify2Adapter implements Simplify2StageAdapter {
         }
         try {
           const taskIndex = task.index ?? index;
-          const simplify1TaskId = `${task.sessionId ?? ''}-simplify1-${taskIndex}`;
+          const simplify1TaskId = `${task.nodeId ?? ''}-simplify1-${taskIndex}`;
           const simplify1Task = await shapeDB.batchTasks.get(simplify1TaskId);
-          if (simplify1Task?.status === 'failed' || simplify1Task?.status === 'cancelled') {
+          if (simplify1Task?.status === 'failed') {
             failed += 1;
             if (task.taskId) {
               await shapeDB.updateBatchTask(task.taskId, {
@@ -158,7 +158,7 @@ export class ShapeWorkerSimplify2Adapter implements Simplify2StageAdapter {
             }
           } else {
             const result = await workerPool.run((api) => api.processSimplify2Task({
-              sessionId: String(task.sessionId ?? ''),
+              nodeId: String(task.nodeId ?? ''),
               task,
               taskIndex,
             }));

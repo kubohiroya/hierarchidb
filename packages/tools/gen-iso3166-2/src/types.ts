@@ -1,15 +1,18 @@
+export type ISO2 = string;
+export type ISO3 = string;
+
 export type CountryRow = {
   countryEn: string;
-  alpha3: string;
-  alpha2: string;
+  alpha3: ISO3;
+  alpha2: ISO2;
   location: string; // "場所" column text (region)
   iso3166_2_url?: string; // link to ISO_3166-2:XX (ja or en)
 };
 
 export type SubdivisionRow = {
   countryEn: string;
-  alpha3: string;
-  alpha2: string;
+  alpha3: ISO3;
+  alpha2: ISO2;
   location: string;
   subdivisionEn: string;
   subdivisionLocal: string;
@@ -19,7 +22,7 @@ export type SubdivisionRow = {
 export type GenerateResult = {
   rows: SubdivisionRow[];
   countries: CountryRow[];
-  failures: Array<{ alpha2: string; reason: string }>;
+  failures: Array<{ alpha2: ISO2; reason: string }>;
 };
 
 export interface GenerateOptions {
@@ -49,16 +52,16 @@ export interface EnsureIsoOptions {
 }
 
 export type CountryRecord = {
-  alpha2: string;
-  alpha3: string;
+  alpha2: ISO2;
+  alpha3: ISO3;
   countryEn: string;
   location: string;
 };
 
 export type SubdivisionRecord = {
   code: string;
-  alpha2: string;
-  alpha3: string;
+  alpha2: ISO2;
+  alpha3: ISO3;
   countryEn: string;
   location: string;
   subdivisionEn: string;

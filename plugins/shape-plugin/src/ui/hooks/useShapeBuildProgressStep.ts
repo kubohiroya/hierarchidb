@@ -16,16 +16,16 @@ import { useBuildStages } from './build/useBuildStages.js';
 import { useBuildStatus } from './build/useBuildStatus.js';
 import { useBuildTaskProgress } from '@hierarchidb/ui-batch';
 import { useBatchSessionActions } from './build/useBatchSessionActions.js';
-import { getTileSummary } from '../../services/tiles/RuntimeTileClient.js';
+import { getShapeRuntimeWorkerClient } from '../../services/batch/adapters/RuntimeWorkerClient.js';
 import {
   appendBuildSample,
   BUILD_MONITOR_SAMPLE_INTERVAL_MS,
-  getBuildConfigSnapshot,
   getBuildMonitorKey,
   getMemorySnapshot,
   recordBuildFinish,
   recordBuildStart,
-} from '../utils/buildMonitor.js';
+} from '@hierarchidb/ui-monitoring';
+import { getBuildConfigSnapshot } from '../utils/buildWarnings.js';
 
 const normalizeStageId = (stage?: string): string | undefined => {
   if (!stage) return undefined;
@@ -34,6 +34,20 @@ const normalizeStageId = (stage?: string): string | undefined => {
 };
 
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
+const buildMonitorConfig = {
+  storagePrefix: 'hdb:shape:build-monitor',
+  maxSamples: 3,
+  memoryPressureRatio: 0.85,
+  heapWarningRatio: 0.85,
+  heapCriticalRatio: 0.9,
+} as const;
+
+const fetchTileSummary = async (nodeId: string) => {
+  const client = await getShapeRuntimeWorkerClient();
+  const vectorTile = client?.vectortile;
+  if (!vectorTile?.getSummary) return { tiles: 0, totalBytes: 0 };
+  return vectorTile.getSummary(nodeId);
+};
 
 type Args = {
   data?: Partial<ShapeEntity>;
@@ -43,23 +57,22 @@ type Args = {
 
 export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
   const { t } = useTranslation();
-  const sessionId = nodeId ?? data?.nodeId ?? null;
+  const activeNodeId = nodeId ?? data?.nodeId ?? null;
 
-  const { progress, status, error, isSubscribed } = useShapeProgress(sessionId, { autoSubscribe: Boolean(sessionId) });
+  const { progress, status, error, isSubscribed } = useShapeProgress(activeNodeId, { autoSubscribe: Boolean(activeNodeId) });
   const [persistedTasks, setPersistedTasks] = useAtom(shapeBuildPersistedTasksAtom);
   const [isStartPending, setIsStartPending] = useState(false);
-  const hasSessionId = Boolean(sessionId && !error);
-  const effectiveProgress = hasSessionId ? progress : null;
-  const effectiveStatus = hasSessionId ? status : null;
+  const hasNodeId = Boolean(activeNodeId && !error);
+  const effectiveProgress = hasNodeId ? progress : null;
+  const effectiveStatus = hasNodeId ? status : null;
   const stages = useBuildStages();
   const { buildStatus, statusLabel, effectiveStatus: resolvedStatus } = useBuildStatus(effectiveStatus);
-  const shouldPollTasks = Boolean(sessionId)
+  const shouldPollTasks = Boolean(activeNodeId)
     && buildStatus !== 'idle'
     && buildStatus !== 'completed'
-    && buildStatus !== 'failed'
-    && resolvedStatus?.status !== 'cancelled';
+    && buildStatus !== 'failed';
   const shouldPollTasksRef = useCallback(() => shouldPollTasks, [shouldPollTasks]);
-  const { tasks, refresh: refreshTasks } = useShapeBatchTasks(sessionId, {
+  const { tasks, refresh: refreshTasks } = useShapeBatchTasks(activeNodeId, {
     autoRefresh: shouldPollTasksRef,
     pollIntervalMs: 2000,
   });
@@ -79,7 +92,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     }
     if (buildStatus !== 'running') {
       if (effectiveStatus?.error) return effectiveStatus.error;
-      if (effectiveProgress?.currentTask && effectiveProgress.currentTask !== 'processing' && effectiveProgress.currentTask !== sessionId) {
+      if (effectiveProgress?.currentTask && effectiveProgress.currentTask !== 'processing' && effectiveProgress.currentTask !== activeNodeId) {
         return effectiveProgress.currentTask;
       }
       return t('build.progress.ready', 'Ready');
@@ -101,8 +114,8 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
   const lastSyncedStatusRef = useRef<string | null>(null);
   const monitorKey = useMemo(() => {
     const resolvedNodeId = nodeId ?? data?.nodeId;
-    return getBuildMonitorKey(resolvedNodeId ? String(resolvedNodeId) : null, sessionId);
-  }, [data?.nodeId, nodeId, sessionId]);
+    return getBuildMonitorKey(buildMonitorConfig, resolvedNodeId ? String(resolvedNodeId) : null);
+  }, [data?.nodeId, nodeId]);
   const configSnapshot = useMemo(
     () => getBuildConfigSnapshot(data?.batchConfig),
     [data?.batchConfig],
@@ -110,8 +123,8 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
 
   useEffect(() => {
     const nextState = {
-      sessionId,
-      hasSessionId,
+      nodeId: activeNodeId,
+      hasNodeId,
       buildStatus,
       status: effectiveStatus?.status ?? null,
       progress: effectiveProgress?.percentage ?? null,
@@ -128,8 +141,8 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
       debugStateRef.current = nextState;
     }
   }, [
-    sessionId,
-    hasSessionId,
+    activeNodeId,
+    hasNodeId,
     buildStatus,
     effectiveStatus?.status,
     effectiveProgress?.percentage,
@@ -145,17 +158,17 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
   }, [refreshTasks, shouldPollTasksRef]);
 
   useEffect(() => {
-    if (!sessionId) {
+    if (!activeNodeId) {
       setPersistedTasks([]);
       return;
     }
     if (tasks.length > 0) {
       setPersistedTasks(tasks);
     }
-  }, [sessionId, tasks]);
+  }, [activeNodeId, tasks]);
 
   useEffect(() => {
-    if (!sessionId || !effectiveStatus?.status) return;
+    if (!activeNodeId || !effectiveStatus?.status) return;
     const nextStatus = (() => {
       switch (effectiveStatus.status) {
         case 'processing':
@@ -166,8 +179,6 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
           return 'completed';
         case 'failed':
           return 'failed';
-        case 'cancelled':
-          return 'cancelled';
         case 'idle':
           return 'idle';
         default:
@@ -179,7 +190,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     if (lastSyncedStatusRef.current === nextStatus) return;
     lastSyncedStatusRef.current = nextStatus;
     onChange({ processingStatus: nextStatus });
-  }, [data?.processingStatus, effectiveStatus?.status, onChange, sessionId]);
+  }, [data?.processingStatus, effectiveStatus?.status, onChange, activeNodeId]);
 
   useEffect(() => {
     if (buildStatus !== 'running') return;
@@ -194,14 +205,13 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     if (!monitorKey) return;
     if (buildStatus !== 'running') return;
     const startedAt = data?.buildStartedAt ?? Date.now();
-    recordBuildStart(monitorKey, {
+    recordBuildStart(buildMonitorConfig, monitorKey, {
       nodeId: data?.nodeId ? String(data.nodeId) : undefined,
-      sessionId: sessionId ?? undefined,
       startedAt,
       configSnapshot,
     });
     const interval = window.setInterval(() => {
-      appendBuildSample(monitorKey, {
+      appendBuildSample(buildMonitorConfig, monitorKey, {
         timestamp: Date.now(),
         stage: currentStage as 'download' | 'simplify1' | 'simplify2' | 'vectorTiles' | undefined,
         ...getMemorySnapshot(),
@@ -210,25 +220,25 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     return () => {
       window.clearInterval(interval);
     };
-  }, [buildStatus, configSnapshot, currentStage, data?.buildStartedAt, data?.nodeId, monitorKey, sessionId]);
+  }, [buildStatus, configSnapshot, currentStage, data?.buildStartedAt, data?.nodeId, monitorKey]);
 
   useEffect(() => {
     if (!monitorKey) return;
-    if (!['completed', 'failed', 'cancelled'].includes(buildStatus)) return;
+    if (!['completed', 'failed'].includes(buildStatus)) return;
     if (!data?.buildFinishedAt) {
       onChange({ buildFinishedAt: Date.now() });
     }
-    recordBuildFinish(monitorKey, Date.now());
+    recordBuildFinish(buildMonitorConfig, monitorKey, Date.now());
   }, [buildStatus, data?.buildFinishedAt, monitorKey, onChange]);
 
   useEffect(() => {
-    if (!sessionId) return;
+    if (!activeNodeId) return;
     if (!['running', 'completed'].includes(buildStatus)) return;
     if ((data?.tileSummary?.tiles ?? 0) > 0) return;
     let cancelled = false;
     const loadSummary = async () => {
       try {
-        const summary = await getTileSummary(sessionId);
+        const summary = await fetchTileSummary(activeNodeId);
         if (cancelled) return;
         if (summary.tiles > 0) {
           onChange({ tileSummary: summary });
@@ -241,7 +251,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     return () => {
       cancelled = true;
     };
-  }, [buildStatus, data?.tileSummary?.tiles, onChange, sessionId]);
+  }, [activeNodeId, buildStatus, data?.tileSummary?.tiles, onChange]);
 
   useEffect(() => {
     if (!isStartPending) return;
@@ -338,8 +348,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     handleProviderSelect,
   } = useBatchSessionActions({
     nodeType: SHAPE_NODE_TYPE,
-    nodeId,
-    sessionId,
+    nodeId: activeNodeId ?? undefined,
     data,
     onChange,
     buildStatus,

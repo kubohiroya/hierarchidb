@@ -6,11 +6,11 @@ import { getEphemeralLocationDB } from '../../database/EphemeralLocationDB.js';
 import { TabularWriter } from '@hierarchidb/tabular-store';
 import { digestSha256Hex } from '@hierarchidb/util';
 // External libs (ambient types declared under types/external.d.ts)
-import { DexieChunkStoragePort } from '@hierarchidb/download';
 import { BatchService, createLaneSemaphoreRegistry } from '@hierarchidb/batch';
 import { getLocationRuntimeWorkerClient } from './adapters/RuntimeWorkerClient.js';
 import type { LocationPointInput, LocationTileSettings } from '../../common/types/batch-types.js';
 import type { Feature, Point } from 'geojson';
+import { runVectorTileStage } from '@hierarchidb/runtime-worker';
 
 // Use _obsolate_common progress event type to decouple worker from UI
 export type ProgressInfo = ProgressEvent;
@@ -27,7 +27,6 @@ export class LocationSessionController {
   });
 
   constructor(
-    public readonly sessionId: string,
     private readonly nodeId: NodeId,
     private readonly points: LocationPointInput[],
     private readonly settings: LocationTileSettings,
@@ -54,7 +53,7 @@ export class LocationSessionController {
     try {
       const columns = determineColumns(norm.features, this.settings.attributeAllowlist);
       const writer = new TabularWriter('location');
-      await writer.begin({ filename: `location-${this.sessionId}.json`, columns });
+      await writer.begin({ filename: `location-${this.nodeId}.json`, columns });
       const rows = featuresToRows(norm.features);
       // Write in chunks
       const CHUNK = 2000;
@@ -64,7 +63,7 @@ export class LocationSessionController {
       const { tableId: committedId } = await writer.commit();
       // Link tableId to session (best-effort)
         const db = getEphemeralLocationDB();
-        await db.table('sessions').update(this.sessionId, { tableId: committedId });
+        await db.table('sessions').update(this.nodeId, { tableId: committedId });
     } catch (e) {
       console.warn('[Location][Session] tabular-source persist skipped:', e);
     }
@@ -93,22 +92,14 @@ export class LocationSessionController {
   }) {
     const db = getEphemeralLocationDB();
     try {
-      await db.clearVectorTilesForSession(this.sessionId);
+      await db.clearVectorTilesForNode(this.nodeId);
     } catch (error) {
       console.warn('[Location][Session] failed to clear existing vector tiles for session', error);
     }
-    // 1) Persist normalized GeoJSON into shared chunk store so worker can read it
+    // 1) Prepare normalized GeoJSON input buffer for worker
     const json = JSON.stringify(fc);
     const bytes = new TextEncoder().encode(json).buffer;
-    const fileId = this.sessionId; // worker uses this as sessionId
-    try {
-      const storage = new DexieChunkStoragePort('hidb-chunks');
-      await storage.putChunk(fileId, 0, bytes);
-      await storage.commit(fileId, { sizeBytes: bytes.byteLength, contentType: 'application/json' });
-    } catch (e) {
-      console.error('[Location][Session] Failed to write input buffer for worker:', e);
-      return;
-    }
+    const fileId = this.nodeId; // worker uses this as nodeId
 
     // 2) Delegate tile generation to runtime-worker-worker
     const client = await getLocationRuntimeWorkerClient();
@@ -121,19 +112,23 @@ export class LocationSessionController {
       console.warn('[Location][Session] vectortile client unavailable; skipping worker delegation');
       return;
     }
-    await LocationSessionController.laneRegistry.runWithLane('tilegen', async () => {
-      await tileClient.generateTiles(fileId, { format: 'mvt', compression: 'none' });
-    });
+    let list: Array<{ z: number; x: number; y: number; size: number; timestamp: number }> = [];
+    try {
+      await LocationSessionController.laneRegistry.runWithLane('tilegen', async () => {
+        const result = await runVectorTileStage({
+          inputBufferId: fileId,
+          inputBuffer: bytes,
+          contentType: 'application/json',
+          config: { format: 'mvt', compression: 'none' },
+        }, tileClient);
+        list = result.tiles;
+      });
+    } catch (e) {
+      console.error('[Location][Session] Failed to generate tiles:', e);
+      return;
+    }
 
     // 3) Import generated tiles back into location DB for compatibility
-    type VectorTileRecord = { z: number; x: number; y: number; size: number; timestamp?: number };
-    const list = (await tileClient.listTiles(fileId)).map((record) => ({
-      z: record.z,
-      x: record.x,
-      y: record.y,
-      size: record.size ?? 0,
-      timestamp: record.timestamp,
-    })) satisfies VectorTileRecord[];
     const total = list.length;
     let completed = 0;
     const batch = new BatchService();
@@ -148,11 +143,10 @@ export class LocationSessionController {
         if (!u8) return;
         const copy = new Uint8Array(u8);
         const data: ArrayBuffer = copy.buffer.slice(0);
-        const id = `loc-mvt-${this.sessionId}-${t.z}-${t.x}-${t.y}`;
+        const id = `loc-mvt-${this.nodeId}-${t.z}-${t.x}-${t.y}`;
         const hash = await digestSha256Hex(new Uint8Array(data));
         await db.vectorTiles.put({
           id,
-          sessionId: this.sessionId,
           nodeId: this.nodeId,
           z: t.z, x: t.x, y: t.y,
           data,
@@ -170,7 +164,7 @@ export class LocationSessionController {
 
   private emit(stage: ProgressInfo['stage'], total: number, completed: number, failed: number, currentTask: string) {
     this.progressCb?.({
-      sessionId: this.sessionId,
+      nodeId: this.nodeId,
       stage,
       total,
       completed,

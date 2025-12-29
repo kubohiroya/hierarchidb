@@ -166,8 +166,7 @@
       "queued": "Queued",
       "completed": "Completed",
       "failed": "Failed",
-      "paused": "Paused",
-      "cancelled": "Cancelled"
+      "paused": "Paused"
     },
     "summary": {
       "completedLabel": "Completed",

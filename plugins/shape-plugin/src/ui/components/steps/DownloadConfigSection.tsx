@@ -17,20 +17,22 @@ import {
 import type { BatchConfig, ShapeEntity } from '../../../common/types/index.js';
 import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { useDownloadConfigSection } from '../../hooks/useDownloadConfigSection.js';
+import type { NodeId } from '@hierarchidb/common-types';
 import { DownloadCacheActions } from '../processing/DownloadCacheActions.js';
 import { DownloadRetryControls } from '../processing/DownloadRetryControls.js';
 import { useBuildCrashInsight } from '../../hooks/useBuildCrashInsight.js';
-import { getStageConcurrencyWarning } from '../../utils/buildMonitor.js';
+import { getStageConcurrencyWarning } from '../../utils/buildWarnings.js';
 
 type Props = {
   config: BatchConfig;
   draft?: Partial<ShapeEntity> | null;
+  nodeId?: string;
   disabled?: boolean;
   onChange: (next: BatchConfig) => void;
   onResetSession?: () => void;
 };
 
-export const DownloadConfigSection: React.FC<Props> = ({ config, draft, disabled, onChange, onResetSession }) => {
+export const DownloadConfigSection: React.FC<Props> = ({ config, draft, nodeId, disabled, onChange, onResetSession }) => {
   const crashInsight = useBuildCrashInsight({
     draft,
     nodeId: draft?.nodeId ? String(draft.nodeId) : undefined,
@@ -50,7 +52,7 @@ export const DownloadConfigSection: React.FC<Props> = ({ config, draft, disabled
     handleDeleteTiles,
     handleDeleteMetadata,
     update,
-  } = useDownloadConfigSection({ config, draft, disabled, onChange, onResetSession });
+  } = useDownloadConfigSection({ config, draft, nodeId: nodeId as NodeId | undefined, disabled, onChange, onResetSession });
   const downloadWarning = getStageConcurrencyWarning(
     crashInsight,
     'download',

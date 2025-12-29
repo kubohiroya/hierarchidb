@@ -1,20 +1,18 @@
 import { describe, it, expect, vi } from 'vitest';
 import { RouteSourceOrchestrator } from '../RouteSourceOrchestrator.js';
-import * as registry from '../../../services/download/registry.js';
+import * as download from '@hierarchidb/download';
 import type { RouteBatchSpec } from '../types.js';
-import type { RouteDownloadService } from '../../../services/download/factory.js';
-import type { FetchNetworkPort } from '@hierarchidb/download';
-import type { NetworkPortLike } from '../../../services/createRouteBatchManager.js';
+import type { DownloadServiceBundle, FetchNetworkPort } from '@hierarchidb/download';
 
 describe('RouteSourceOrchestrator auth notifier', () => {
   it('notifies on auth error during preview download', async () => {
     const spy = vi.fn();
-    registry.registerRouteAuthNotifier(spy);
+    download.registerPluginAuthNotifier('route', spy);
 
     const fakeSvc = createDownloadServiceStub({ ok: false, status: 401 });
-    const svcMock = vi.spyOn(registry, 'getRouteDownloadService').mockResolvedValue(fakeSvc);
+    const svcMock = vi.spyOn(download, 'getPluginDownloadService').mockResolvedValue(fakeSvc);
 
-    const orch = new RouteSourceOrchestrator({ net: createNetworkPort({ ok: true, status: 200 }) });
+    const orch = new RouteSourceOrchestrator();
     const spec: RouteBatchSpec = { sources: [{ type: 'csv', url: 'https://example.com/protected.csv' }], defaults: {} };
 
     await expect(orch.preview(spec)).rejects.toThrowError();
@@ -26,7 +24,7 @@ describe('RouteSourceOrchestrator auth notifier', () => {
   });
 });
 
-function createDownloadServiceStub(response: { ok: boolean; status: number }): RouteDownloadService {
+function createDownloadServiceStub(response: { ok: boolean; status: number }): DownloadServiceBundle {
   const net = {
     async head() {
       return createResponse(response);
@@ -45,7 +43,7 @@ function createDownloadServiceStub(response: { ok: boolean; status: number }): R
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         return { fileId: 'stub', sizeBytes: 0 };
       },
-    } as unknown as RouteDownloadService['service'],
+    } as unknown as DownloadServiceBundle['service'],
     readAll: async () => new ArrayBuffer(0),
     net,
   };
@@ -57,14 +55,6 @@ function createResponse(response: { ok: boolean; status: number }) {
     status: response.status,
     async arrayBuffer() {
       return new ArrayBuffer(0);
-    },
-  };
-}
-
-function createNetworkPort(response: { ok: boolean; status: number }): NetworkPortLike {
-  return {
-    async get() {
-      return createResponse(response);
     },
   };
 }

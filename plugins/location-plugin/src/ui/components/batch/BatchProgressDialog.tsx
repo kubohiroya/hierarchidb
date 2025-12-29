@@ -106,7 +106,6 @@ export interface BatchProgressDialogProps {
   open: boolean;
   onClose: () => void;
   nodeId: NodeId;
-  sessionId: string;
 }
 
 interface TabPanelProps {
@@ -146,7 +145,7 @@ const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
 export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
                                                                           open,
                                                                           onClose,
-                                                                          sessionId,
+                                                                          nodeId,
                                                                         }) => {
   const [tabValue, setTabValue] = useState(0);
   const [tableId, setTableId] = useState<string | null>(null);
@@ -155,7 +154,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
   const {
     progress: locationProgress,
     unifiedProgress,
-  } = useLocationProgress(sessionId, { autoSubscribe: true });
+  } = useLocationProgress(nodeId, { autoSubscribe: true });
   const showAuthRequired = locationProgress?.stage === 'auth-required';
   const phaseLabel = useCallback((phase: string) => {
     const phases = translations.batch?.phases;
@@ -263,7 +262,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
     (async () => {
       try {
         const db = getEphemeralLocationDB();
-        const session = (await db.sessions?.get(sessionId)) ?? null;
+        const session = (await db.sessions?.get(nodeId)) ?? null;
         if (!cancelled) setTableId(session?.tableId ?? null);
       } catch (error) {
         if (isDevEnvironment) {
@@ -274,7 +273,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [sessionId]);
+  }, [nodeId]);
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);

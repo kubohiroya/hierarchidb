@@ -3,6 +3,7 @@ import type { Geometry } from 'geojson';
 import type { TabularTableMetadata } from '@hierarchidb/tabular-store';
 import type { TabularDataResult } from '@hierarchidb/ui-tabular';
 import type { BatchConfig, DataSourceName } from '@hierarchidb/shape-plugin';
+import type { ISO2 } from '@hierarchidb/common-types';
 
 export interface ShapeEntity {
   // Identifiers
@@ -33,11 +34,10 @@ export interface ShapeEntity {
   selectedArrayByCountries?: SelectedArrayByCountries;
   // Processing Status
   batchSessionId?: string;
-  processingStatus?: 'idle' | 'processing' | 'paused' | 'completed' | 'failed' | 'cancelled';
+  processingStatus?: 'idle' | 'processing' | 'paused' | 'completed' | 'failed';
   tileSummary?: { tiles: number; totalBytes: number; zoomMin?: number; zoomMax?: number };
   buildStartedAt?: number;
   buildFinishedAt?: number;
 }
 
-export type ISO2 = string;
 export type SelectedArrayByCountries = Record<ISO2, boolean[]>;

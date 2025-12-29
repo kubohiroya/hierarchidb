@@ -83,7 +83,6 @@ export interface RoutePluginTranslations {
       completed: string;
       failed: string;
       paused: string;
-      cancelled: string;
     };
     summary: {
       completedLabel: string;

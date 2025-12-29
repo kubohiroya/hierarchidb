@@ -16,7 +16,7 @@ vi.mock('@hierarchidb/ui-worker-client', () => ({
 
 describe('useLocationProgress - auth notifications', () => {
   it('emits auth-required and resumed progress events when notifications fire', async () => {
-    const { result } = renderHook(() => useLocationProgress('sess-1', { autoSubscribe: false }));
+    const { result } = renderHook(() => useLocationProgress('node-1', { autoSubscribe: false }));
 
     const reg = AuthNotificationRegistry.getInstance();
     const authReq = AuthNotificationFactory.createAuthRequired({

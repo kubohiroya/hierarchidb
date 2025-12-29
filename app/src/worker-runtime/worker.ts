@@ -49,19 +49,19 @@ type WorkerMessagePort = typeof self & {
   postMessage?: (msg: unknown) => void;
 };
 
-type BatchTaskProvider = (sessionId: string) => Promise<BatchTaskSummary[]>;
-type BatchProgressSubscriber = (sessionId: string, callback: (event: BatchProgressEvent) => void) => () => void;
+type BatchTaskProvider = (nodeId: NodeId) => Promise<BatchTaskSummary[]>;
+type BatchProgressSubscriber = (nodeId: NodeId, callback: (event: BatchProgressEvent) => void) => () => void;
 
 type ShapeBatchAPI = {
-  startBatchProcess: (draftId: NodeId, batchConfig: unknown, downloadTaskPayloads: unknown[]) => Promise<string>;
+  startBatchProcess: (draftId: NodeId, batchConfig: unknown, downloadTaskPayloads: unknown[]) => Promise<NodeId>;
   generateDownloadTaskPayloadsFromSelection?: (
     dataSource: string,
     selectedArrayByCountries: Record<string, boolean[]> | undefined,
   ) => Promise<unknown[]>;
   getDraft?: (draftId: NodeId) => Promise<unknown>;
-  getBatchSession?: (sessionId: string) => Promise<unknown>;
+  getBatchSession?: (nodeId: NodeId) => Promise<unknown>;
   pauseBatchProcessing?: (draftId: NodeId) => Promise<void>;
-  resumeBatchProcessing?: (draftId: NodeId) => Promise<string>;
+  resumeBatchProcessing?: (draftId: NodeId) => Promise<NodeId>;
   cancelBatchProcessing?: (draftId: NodeId) => Promise<void>;
   invokeBatchCommand?: (command: string, payload: Record<string, unknown>) => Promise<void>;
   subscribeToProgress?: BatchProgressSubscriber;
@@ -89,7 +89,7 @@ const resolveBatchTaskProvider = (mod: unknown): BatchTaskProvider | null => {
   const api = shapePlugin?.batch ?? shapePlugin?.api;
   const apiFn = api?.getBatchTasks ?? api?.listBatchTasks;
   if (typeof apiFn === 'function') {
-    return (sessionId: string) => (apiFn as (id: string) => Promise<BatchTaskSummary[]>)(sessionId);
+    return (nodeId: NodeId) => (apiFn as (id: NodeId) => Promise<BatchTaskSummary[]>)(nodeId);
   }
   return null;
 };
@@ -112,11 +112,9 @@ const resolveShapeBatchAPI = (mod: unknown): ShapeBatchAPI | null => {
 const toBatchSessionStatus = (
   session: Record<string, unknown> | undefined,
   fallbackNodeId: NodeId,
-  fallbackSessionId: string,
 ): BatchSessionStatus => {
   const progress = (session?.progress as Record<string, unknown> | undefined) ?? {};
   return {
-    sessionId: (session?.sessionId as string | undefined) ?? fallbackSessionId,
     nodeId: (session?.nodeId as NodeId | undefined) ?? (session?.draftId as NodeId | undefined) ?? fallbackNodeId,
     status: (session?.status as BatchSessionStatus['status'] | undefined) ?? 'idle',
     progress: {
@@ -347,14 +345,13 @@ reporter.reportStepProgress('Load Comlink', 0);
           );
           const batchConfig = (draftData as { batchConfig?: unknown }).batchConfig ?? {};
           const payloads = downloadTaskPayloads ?? [];
-          const sessionId = await api.startBatchProcess(nodeId, batchConfig, payloads);
-          const session = api.getBatchSession ? await api.getBatchSession(sessionId) : undefined;
+          await api.startBatchProcess(nodeId, batchConfig, payloads);
+          const session = api.getBatchSession ? await api.getBatchSession(nodeId) : undefined;
           const status = toBatchSessionStatus(
             session as Record<string, unknown> | undefined,
-            nodeId,
-            sessionId
+            nodeId
           );
-          setHeapContext({ nodeType, sessionId: status.sessionId });
+          setHeapContext({ nodeType, nodeId: status.nodeId });
           return status;
         },
         generateShapeDownloadTaskPayloadsFromSelection: async (
@@ -367,59 +364,55 @@ reporter.reportStepProgress('Load Comlink', 0);
           }
           return api.generateDownloadTaskPayloadsFromSelection(dataSource, selectedArrayByCountries);
         },
-        getBatchSessionStatus: async (nodeType: NodeType, sessionId: string): Promise<BatchSessionStatus> => {
+        getBatchSessionStatus: async (nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus> => {
           const api = resolveShapeBatchApiOrThrow(nodeType);
-          const session = api.getBatchSession ? await api.getBatchSession(sessionId) : undefined;
-          const fallbackNodeId = (session as { nodeId?: NodeId; draftId?: NodeId } | undefined)?.nodeId
-            ?? (session as { draftId?: NodeId } | undefined)?.draftId
-            ?? (sessionId as NodeId);
+          const session = api.getBatchSession ? await api.getBatchSession(nodeId) : undefined;
           return toBatchSessionStatus(
             session as Record<string, unknown> | undefined,
-            fallbackNodeId,
-            sessionId
+            nodeId
           );
         },
-        pauseBatchSession: async (nodeType: NodeType, sessionId: string): Promise<void> => {
+        pauseBatchSession: async (nodeType: NodeType, nodeId: NodeId): Promise<void> => {
           const api = resolveShapeBatchApiOrThrow(nodeType);
           if (api.invokeBatchCommand) {
-            await api.invokeBatchCommand('session/pause', { sessionId });
+            await api.invokeBatchCommand('session/pause', { nodeId });
             return;
           }
-          const session = api.getBatchSession ? await api.getBatchSession(sessionId) : undefined;
+          const session = api.getBatchSession ? await api.getBatchSession(nodeId) : undefined;
           const draftId = (session as { nodeId?: NodeId; draftId?: NodeId } | undefined)?.nodeId
             ?? (session as { draftId?: NodeId } | undefined)?.draftId
-            ?? (sessionId as NodeId);
+            ?? nodeId;
           if (api.pauseBatchProcessing) {
             await api.pauseBatchProcessing(draftId);
           }
         },
-        resumeBatchSession: async (nodeType: NodeType, sessionId: string): Promise<void> => {
+        resumeBatchSession: async (nodeType: NodeType, nodeId: NodeId): Promise<void> => {
           const api = resolveShapeBatchApiOrThrow(nodeType);
           if (api.invokeBatchCommand) {
-            await api.invokeBatchCommand('session/resume', { sessionId });
-            setHeapContext({ nodeType, sessionId });
+            await api.invokeBatchCommand('session/resume', { nodeId });
+            setHeapContext({ nodeType, nodeId });
             return;
           }
-          const session = api.getBatchSession ? await api.getBatchSession(sessionId) : undefined;
+          const session = api.getBatchSession ? await api.getBatchSession(nodeId) : undefined;
           const draftId = (session as { nodeId?: NodeId; draftId?: NodeId } | undefined)?.nodeId
             ?? (session as { draftId?: NodeId } | undefined)?.draftId
-            ?? (sessionId as NodeId);
+            ?? nodeId;
           if (api.resumeBatchProcessing) {
             await api.resumeBatchProcessing(draftId);
           }
-          setHeapContext({ nodeType, sessionId });
+          setHeapContext({ nodeType, nodeId });
         },
-        cancelBatchSession: async (nodeType: NodeType, sessionId: string): Promise<void> => {
+        cancelBatchSession: async (nodeType: NodeType, nodeId: NodeId): Promise<void> => {
           const api = resolveShapeBatchApiOrThrow(nodeType);
           if (api.invokeBatchCommand) {
-            await api.invokeBatchCommand('session/cancel', { sessionId });
+            await api.invokeBatchCommand('session/cancel', { nodeId });
             setHeapContext(null);
             return;
           }
-          const session = api.getBatchSession ? await api.getBatchSession(sessionId) : undefined;
+          const session = api.getBatchSession ? await api.getBatchSession(nodeId) : undefined;
           const draftId = (session as { nodeId?: NodeId; draftId?: NodeId } | undefined)?.nodeId
             ?? (session as { draftId?: NodeId } | undefined)?.draftId
-            ?? (sessionId as NodeId);
+            ?? nodeId;
           if (api.cancelBatchProcessing) {
             await api.cancelBatchProcessing(draftId);
           }
@@ -427,14 +420,14 @@ reporter.reportStepProgress('Load Comlink', 0);
         },
         subscribeBatchProgress: async (
           nodeType: NodeType,
-          sessionId: string,
+          nodeId: NodeId,
           callback: (event: BatchProgressEvent) => void,
         ): Promise<() => void> => {
           const api = resolveShapeBatchApiOrThrow(nodeType);
           if (!api.subscribeToProgress) {
             return () => {};
           }
-          const unsubscribe = api.subscribeToProgress(sessionId, callback);
+          const unsubscribe = api.subscribeToProgress(nodeId, callback);
           return Comlink.proxy(unsubscribe);
         },
         subscribeHeapPressure: async (
@@ -445,11 +438,11 @@ reporter.reportStepProgress('Load Comlink', 0);
             heapListeners.delete(callback);
           });
         },
-        getBatchTasks: async (nodeType: NodeType, sessionId: string): Promise<BatchTaskSummary[]> => {
+        getBatchTasks: async (nodeType: NodeType, nodeId: NodeId): Promise<BatchTaskSummary[]> => {
           const provider = batchTaskProviders.get(nodeType);
           if (!provider) return [];
           try {
-            return await provider(sessionId);
+            return await provider(nodeId);
           } catch (error) {
             const msg = error instanceof Error ? error.message : String(error);
             console.warn(`[worker bootstrap] getBatchTasks failed for ${nodeType}:`, msg);

@@ -14,7 +14,7 @@ export type BatchTaskStatus = 'pending' | 'running' | 'completed' | 'failed' | '
 export interface BatchTaskLike {
   taskId: string;
   treeNodeId: TreeNodeId;
-  sessionId: string;
+  nodeId: string;
   type: string; // Task type identifier
   stage: BatchStage;
   status: BatchTaskStatus;

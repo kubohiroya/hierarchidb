@@ -27,7 +27,7 @@ export const BatchTaskStage = {
 
 export type BatchTaskStageType = (typeof BatchTaskStage)[keyof typeof BatchTaskStage];
 
-export type TaskStatus = 'waiting' | 'running' | 'completed' | 'failed' | 'cancelled';
+export type TaskStatus = 'waiting' | 'running' | 'completed' | 'failed';
 
 export type BatchTaskType = 'download' | 'simplify1' | 'simplify2' | 'vectortile';
 export type ProcessingStage = BatchTaskType;
@@ -36,7 +36,6 @@ export interface BatchTaskBase {
   taskId: string;
   taskType: BatchTaskType;
   nodeId?: NodeId;
-  sessionId?: string;
   stage?: BatchTaskStageType|undefined;
   status?: TaskStatus;
   type?: string;
@@ -158,10 +157,9 @@ export interface VectorTileTask extends BatchTaskBase {
 }
 
 export interface BatchSession {
-  sessionId: string;
   nodeId: NodeId;
   draftId?: NodeId;
-  status: 'idle' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
+  status: 'idle' | 'running' | 'paused' | 'completed' | 'failed';
   config: BatchSessionConfig;
   startedAt: number;
   updatedAt: number;
@@ -193,11 +191,11 @@ export interface ProgressInfo {
 }
 
 export type ShapeBatchCommandMap = {
-  'session/pause': { sessionId: NodeId };
-  'session/resume': { sessionId: NodeId };
-  'session/cancel': { sessionId: NodeId };
-  'stage/pause': { sessionId: NodeId; stage: ProcessingStage };
-  'stage/resume': { sessionId: NodeId; stage: ProcessingStage };
+  'session/pause': { nodeId: NodeId };
+  'session/resume': { nodeId: NodeId };
+  'session/cancel': { nodeId: NodeId };
+  'stage/pause': { nodeId: NodeId; stage: ProcessingStage };
+  'stage/resume': { nodeId: NodeId; stage: ProcessingStage };
 };
 
 export type ShapeBatchCommand = keyof ShapeBatchCommandMap;
@@ -215,7 +213,7 @@ export interface StageStatus {
 
 export interface ErrorInfo {
   taskId: string;
-  sessionId: string;
+  nodeId: NodeId;
   error: string;
   timestamp: number;
   stage: ProcessingStage;

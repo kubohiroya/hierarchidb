@@ -17,7 +17,7 @@ export interface ShapeProgress {
 }
 
 export interface ShapeProgressStatus {
-  status: 'idle' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'paused' | 'queued';
+  status: 'idle' | 'processing' | 'completed' | 'failed' | 'paused' | 'queued';
   stage?: string;
   progress?: number;
   hasErrors?: boolean;
@@ -34,7 +34,7 @@ export type ExtendedProgress = UnifiedProgressInfo & {
   payload?: ExtendedPayload;
 };
 
-export function toShapeProgress(info: ExtendedProgress | null, sessionId?: string): ShapeProgress | null {
+export function toShapeProgress(info: ExtendedProgress | null, nodeId?: string): ShapeProgress | null {
   if (!info) return null;
   const total = info.total ?? info.payload?.total ?? 0;
   const completed = info.completed ?? info.payload?.completed ?? 0;
@@ -52,7 +52,7 @@ export function toShapeProgress(info: ExtendedProgress | null, sessionId?: strin
     skipped,
     percentage,
     currentStage: info.stage ?? info.payload?.stage,
-    currentTask: info.currentTask ?? info.message ?? info.payload?.currentTask ?? sessionId,
+    currentTask: info.currentTask ?? info.message ?? info.payload?.currentTask ?? nodeId,
     timestamp: typeof info.timestamp === 'number' ? info.timestamp : Date.now(),
     message: info.message ?? undefined,
   };
@@ -87,7 +87,7 @@ export function mapPhaseToStatus(phase: string): ShapeProgressStatus['status'] {
     case 'failed':
       return 'failed';
     case 'cancelled':
-      return 'cancelled';
+      return 'failed';
     case 'paused':
       return 'paused';
     case 'queued':
@@ -124,7 +124,6 @@ export function statusToUnified(status: BatchSessionStatus): UnifiedProgressInfo
     },
     message: status.error,
     nodeId: status.nodeId,
-    sessionId: status.sessionId,
   };
 }
 

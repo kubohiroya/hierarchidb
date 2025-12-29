@@ -125,14 +125,14 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
     try {
       const buf = await this.readBuffer(inputBufferId);
       if (!buf) return { tilesGenerated: 0, totalBytes: 0 };
-      const resolveStageTileSessionId = (key: string): string | null => {
+      const resolveStageTileNodeId = (key: string): string | null => {
         const match = key.match(/^input:(.+)-(\d+)-(\d+)-(\d+)$/);
         if (match) return match[1] ?? null;
         const fallback = key.match(/^(.+)-(\d+)-(\d+)-(\d+)$/);
         return fallback?.[1] ?? null;
       };
-      const sessionId = inputBufferId.startsWith('stage-tile:')
-        ? resolveStageTileSessionId(inputBufferId.slice('stage-tile:'.length)) ?? inputBufferId
+      const nodeId = inputBufferId.startsWith('stage-tile:')
+        ? resolveStageTileNodeId(inputBufferId.slice('stage-tile:'.length)) ?? inputBufferId
         : inputBufferId.includes('-simplify2-')
           ? inputBufferId.substring(0, inputBufferId.lastIndexOf('-simplify2-'))
           : inputBufferId;
@@ -145,7 +145,7 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
         metadataContext: config.metadataContext,
         signal: controller?.signal,
       };
-      return generateVectorTilesFromJsonBuffer(sessionId, buf, sdkConfig);
+      return generateVectorTilesFromJsonBuffer(nodeId, buf, sdkConfig);
     } finally {
       if (abortKey) {
         this.abortControllers.delete(abortKey);
@@ -160,16 +160,16 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
     }
   }
 
-  async getTile(sessionId: string, z: number, x: number, y: number) {
-    return getVectorTile(sessionId, z, x, y);
+  async getTile(nodeId: string, z: number, x: number, y: number) {
+    return getVectorTile(nodeId, z, x, y);
   }
 
-  async listTiles(sessionId: string) {
-    return listVectorTiles(sessionId);
+  async listTiles(nodeId: string) {
+    return listVectorTiles(nodeId);
   }
 
-  async getSummary(sessionId: string) {
-    return getVectorTileSummary(sessionId);
+  async getSummary(nodeId: string) {
+    return getVectorTileSummary(nodeId);
   }
 }
 

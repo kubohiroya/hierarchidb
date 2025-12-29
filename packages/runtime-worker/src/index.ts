@@ -30,6 +30,13 @@ export {
   getStageProcessingClient,
 } from './services/StageProcessingService.js';
 export {
+  runVectorTileStage,
+  writeVectorTileInput,
+  type VectorTileStageInput,
+  type VectorTileStageOptions,
+  type VectorTileStageResult,
+} from './services/vectorTileStageRunner.js';
+export {
   registerPluginRuntimeWorkerAdapters,
   type RuntimeWorkerAdapterOptions,
 } from './services/pluginRuntimeWorkerAdapters.js';

@@ -15,7 +15,7 @@ import type { DataSourceName } from '../common/types/data-source.js';
 
 export interface RecoveryContext {
   error: BaseShapeError;
-  sessionId: string;
+  nodeId: NodeId;
   treeNodeId: NodeId;
   config: BatchSessionConfig;
   attemptNumber: number;
@@ -164,11 +164,11 @@ export class CheckpointResumeStrategy implements RecoveryStrategy {
   canApply(context: RecoveryContext): boolean {
     //  ID
     return context.error.recoverable &&
-      this.hasCheckpoint(context.sessionId);
+      this.hasCheckpoint(context.nodeId);
   }
 
   async execute(context: RecoveryContext): Promise<RecoveryResult> {
-    const checkpoint = await this.loadCheckpoint(context.sessionId);
+    const checkpoint = await this.loadCheckpoint(context.nodeId);
 
     if (!checkpoint) {
       return {
@@ -190,16 +190,16 @@ export class CheckpointResumeStrategy implements RecoveryStrategy {
     return 1000;
   }
 
-  private hasCheckpoint(sessionId: string): boolean {
-    return this.checkpoints.has(sessionId);
+  private hasCheckpoint(nodeId: string): boolean {
+    return this.checkpoints.has(nodeId);
   }
 
-  private async loadCheckpoint(sessionId: string): Promise<ResumePoint | null> {
-    return this.checkpoints.get(sessionId) || null;
+  private async loadCheckpoint(nodeId: string): Promise<ResumePoint | null> {
+    return this.checkpoints.get(nodeId) || null;
   }
 
-  async saveCheckpoint(sessionId: string, point: ResumePoint): Promise<void> {
-    this.checkpoints.set(sessionId, point);
+  async saveCheckpoint(nodeId: string, point: ResumePoint): Promise<void> {
+    this.checkpoints.set(nodeId, point);
   }
 }
 
@@ -377,7 +377,7 @@ export class RecoveryStrategyManager {
 
     const result = await selectedStrategy.execute(context);
 
-    this.recordAttempt(context.sessionId, {
+    this.recordAttempt(context.nodeId, {
       timestamp: Date.now(),
       strategy: selectedStrategy.name,
       success: result.success,
@@ -388,17 +388,17 @@ export class RecoveryStrategyManager {
     return result;
   }
 
-  private recordAttempt(sessionId: string, attempt: RecoveryAttempt): void {
-    const history = this.attemptHistory.get(sessionId) || [];
+  private recordAttempt(nodeId: string, attempt: RecoveryAttempt): void {
+    const history = this.attemptHistory.get(nodeId) || [];
     history.push(attempt);
-    this.attemptHistory.set(sessionId, history);
+    this.attemptHistory.set(nodeId, history);
   }
 
-  getAttemptHistory(sessionId: string): RecoveryAttempt[] {
-    return this.attemptHistory.get(sessionId) || [];
+  getAttemptHistory(nodeId: string): RecoveryAttempt[] {
+    return this.attemptHistory.get(nodeId) || [];
   }
 
-  clearHistory(sessionId: string): void {
-    this.attemptHistory.delete(sessionId);
+  clearHistory(nodeId: string): void {
+    this.attemptHistory.delete(nodeId);
   }
 }

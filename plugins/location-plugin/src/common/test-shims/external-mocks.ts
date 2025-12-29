@@ -47,7 +47,7 @@ export const getRowStoreDB = () => ({
 export abstract class AbstractBatchSession<TConfig> {
   protected progress: Record<string, unknown> = {};
 
-  constructor(public readonly sessionId: string, public readonly nodeId: string, protected readonly config: TConfig) {}
+  constructor(public readonly nodeId: string, protected readonly config: TConfig) {}
 
   protected updateProgress(update: Record<string, unknown>): void {
     this.progress = { ...this.progress, ...update };
@@ -70,32 +70,32 @@ export abstract class UnifiedBatchManagerBase<TConfig, TData> {
     return this.performStart(nodeId, payload.config, payload.data);
   }
 
-  async pauseBatchSession(sessionId: string): Promise<void> {
-    await this.performPause(sessionId);
+  async pauseBatchSession(nodeId: string): Promise<void> {
+    await this.performPause(nodeId);
   }
 
-  async resumeBatchSession(sessionId: string): Promise<void> {
-    await this.performResume(sessionId);
+  async resumeBatchSession(nodeId: string): Promise<void> {
+    await this.performResume(nodeId);
   }
 
-  async cancelBatchSession(sessionId: string): Promise<void> {
-    await this.performCancel(sessionId);
+  async cancelBatchSession(nodeId: string): Promise<void> {
+    await this.performCancel(nodeId);
   }
 
-  async getBatchSessionStatus(sessionId: string): Promise<unknown> {
-    return this.performStatus(sessionId);
+  async getBatchSessionStatus(nodeId: string): Promise<unknown> {
+    return this.performStatus(nodeId);
   }
 
-  onBatchProgress(sessionId: string, callback: (even: unknown) => void): () => void {
-    return this.performSubscribe(sessionId, callback);
+  onBatchProgress(nodeId: string, callback: (even: unknown) => void): () => void {
+    return this.performSubscribe(nodeId, callback);
   }
 
   protected abstract performStart(nodeId: string, config: TConfig, data: TData): Promise<string>;
-  protected abstract performPause(sessionId: string): Promise<void>;
-  protected abstract performResume(sessionId: string): Promise<void>;
-  protected abstract performCancel(sessionId: string): Promise<void>;
-  protected abstract performStatus(sessionId: string): Promise<unknown>;
-  protected abstract performSubscribe(sessionId: string, callback: (event: unknown) => void): () => void;
+  protected abstract performPause(nodeId: string): Promise<void>;
+  protected abstract performResume(nodeId: string): Promise<void>;
+  protected abstract performCancel(nodeId: string): Promise<void>;
+  protected abstract performStatus(nodeId: string): Promise<unknown>;
+  protected abstract performSubscribe(nodeId: string, callback: (event: unknown) => void): () => void;
 }
 
 export function createLaneSemaphoreRegistry(options: { defaults: Record<string, number>; fallback?: number }) {
@@ -148,7 +148,6 @@ export function progressEventToUnified(event: BatchProgressEvent): UnifiedProgre
     payload,
     message: event.message,
     nodeId: event.nodeId,
-    sessionId: event.sessionId,
   } as UnifiedProgressInfo;
 }
 
@@ -209,7 +208,7 @@ export function useBatchProgress(
 
   useEffect(() => {
     if (!poll) return;
-    if (progress?.phase === 'completed' || progress?.phase === 'cancelled') return;
+    if (progress?.phase === 'completed' || progress?.phase === 'failed') return;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const tick = async () => {
       const value = await poll();
@@ -227,7 +226,7 @@ export function useBatchProgress(
 
 export function usePluginBatchProgress<TProgress>(
   _nodeType: string,
-  _sessionId?: string | null,
+  _nodeId?: string | null,
   _options?: Record<string, unknown>,
 ) {
   return {

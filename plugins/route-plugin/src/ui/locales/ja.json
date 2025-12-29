@@ -166,8 +166,7 @@
       "queued": "待機中",
       "completed": "完了",
       "failed": "失敗",
-      "paused": "一時停止",
-      "cancelled": "キャンセル"
+      "paused": "一時停止"
     },
     "summary": {
       "completedLabel": "完了",

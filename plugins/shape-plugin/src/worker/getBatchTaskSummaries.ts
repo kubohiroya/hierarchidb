@@ -56,8 +56,8 @@ const buildTaskTitle = (task: BatchTaskRecord): string | undefined => {
   return undefined;
 };
 
-export async function getBatchTaskSummaries(sessionId: string): Promise<ShapeBatchTaskSummary[]> {
-  const tasks = await shapeDB.getBatchTasks(sessionId);
+export async function getBatchTaskSummaries(nodeId: string): Promise<ShapeBatchTaskSummary[]> {
+  const tasks = await shapeDB.getBatchTasks(nodeId);
   return tasks.map((task) => ({
     taskId: task.taskId,
     stage: task.taskType,

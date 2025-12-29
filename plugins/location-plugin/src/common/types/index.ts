@@ -3,7 +3,7 @@
    */
 
 //  @hierarchidb/_obsolate_common-type
-import type { NodeId, TreeId } from '@hierarchidb/common-types';
+import type { ISO2, NodeId, TreeId } from '@hierarchidb/common-types';
 export type { NodeId } from '@hierarchidb/common-types';
 import type { TabularFilterRule, TabularSelectionConfig } from '@hierarchidb/ui-tabular';
 
@@ -53,7 +53,7 @@ export interface LocationDraft extends Partial<LocationEntityDefinition> {
     name?: string;
     description?: string;
     tags?: string[];
-    selectedArrayByCountries?: Record<string, boolean[]>;
+    selectedArrayByCountries?: Record<ISO2, boolean[]>;
     concurrentDownloads?: number;
     licenseAgreement?: boolean;
     dataSource?: LocationDataSource;
@@ -65,11 +65,10 @@ export interface LocationDraft extends Partial<LocationEntityDefinition> {
 
 export interface UpdateLocationData {
   dataSource?: LocationDataSource;
-  selectedArrayByCountries?: Record<string, boolean[]>;
+  selectedArrayByCountries?: Record<ISO2, boolean[]>;
   concurrentDownloads?: number;
   licenseAgreement?: boolean;
   licenseAgreedAt?: Timestamp;
-  batchSessionId?: string;
   lastProcessedAt?: number;
 }
 

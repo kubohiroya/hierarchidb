@@ -21,7 +21,7 @@ export interface BatchProgressState {
 
 export const useBatchProgressState = (
   nodeType: NodeType,
-  sessionId: string | null,
+  nodeId: string | null,
   options: UseBatchProgressStateOptions,
 ): BatchProgressState => {
   const { autoSubscribe = true, enablePollingFallback = true, mapStatusToUnified } = options;
@@ -30,23 +30,23 @@ export const useBatchProgressState = (
   const [status, setStatus] = useState<BatchSessionStatus | null>(null);
 
   useEffect(() => {
-    if (!sessionId || !autoSubscribe) return;
+    if (!nodeId || !autoSubscribe) return;
     void bridgeRef.current.initialize().catch((err: unknown) => {
       const errObj = err instanceof Error ? err : new Error(String(err));
       setError(errObj);
     });
-  }, [autoSubscribe, sessionId]);
+  }, [autoSubscribe, nodeId]);
 
   useEffect(() => {
     setStatus(null);
     setError(null);
-  }, [sessionId]);
+  }, [nodeId]);
 
   const adapter = useMemo(() => {
-    if (!sessionId) return null;
+    if (!nodeId) return null;
     return createAdapterFromProgressSubscribe((eventCallback) =>
       bridgeRef.current
-        .subscribeBatchProgress(nodeType, sessionId, eventCallback)
+        .subscribeBatchProgress(nodeType, nodeId, eventCallback)
         .then((unsubscribe: () => void) => {
           setError(null);
           return unsubscribe;
@@ -57,13 +57,13 @@ export const useBatchProgressState = (
           return () => {};
         }),
     );
-  }, [nodeType, sessionId]);
+  }, [nodeType, nodeId]);
 
   const poll = useMemo(() => {
-    if (!sessionId || !enablePollingFallback) return undefined;
+    if (!nodeId || !enablePollingFallback) return undefined;
     return async (): Promise<UnifiedProgressInfo | null> => {
       try {
-        const nextStatus = await bridgeRef.current.getBatchSessionStatus(nodeType, sessionId);
+        const nextStatus = await bridgeRef.current.getBatchSessionStatus(nodeType, nodeId);
         setStatus(nextStatus);
         return mapStatusToUnified(nextStatus);
       } catch (err: unknown) {
@@ -72,7 +72,7 @@ export const useBatchProgressState = (
         return null;
       }
     };
-  }, [enablePollingFallback, mapStatusToUnified, nodeType, sessionId]);
+  }, [enablePollingFallback, mapStatusToUnified, nodeType, nodeId]);
 
   const {
     progress: unifiedProgress,

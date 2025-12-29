@@ -47,7 +47,6 @@ export interface BatchSessionOptions {
 }
 
 export class SessionController {
-  public readonly sessionId: string;
   private nodeId: NodeId;
   private workerPool: WorkerPoolHandle | null = null;
   private downloadAdapter: DownloadStageAdapter = new RuntimeWorkerDownloadAdapter();
@@ -70,15 +69,12 @@ export class SessionController {
   private pauseHandler?: (stage: ProcessingStage, message: string) => void | Promise<void>;
 
   constructor(
-    _sessionId: string,
     nodeId: NodeId,
     downloadTaskPayloads: DownloadTaskPayload[],
     config: BatchProcessConfig,
     options: BatchSessionOptions = {},
   ) {
     this.nodeId = nodeId;
-    this.sessionId = String(nodeId);
-    void _sessionId;
     this.downloadTaskPayloads = downloadTaskPayloads;
     this.options = options;
     this.config = config;
@@ -189,7 +185,6 @@ export class SessionController {
         const bbox = turfBbox(featureCollection as unknown as FeatureCollection);
         await db.rawBuffers.put({
           id: bufferId,
-          sessionId: raw.sessionId,
           nodeId: raw.nodeId,
           data,
           featureCount: 1,
@@ -216,7 +211,7 @@ export class SessionController {
    */
   async initialize(): Promise<void> {
     if (this.workerPool) {
-      throw new Error(`Session ${this.sessionId} already initialized`);
+      throw new Error(`Session ${this.nodeId} already initialized`);
     }
 
     // Use shape-stage workers for download/simplify and runtime-worker for vector tiles.
@@ -244,7 +239,7 @@ export class SessionController {
       await this.initialize();
     }
 
-    console.log(`[Session ${this.sessionId}] Starting batch processing`);
+    console.log(`[Session ${this.nodeId}] Starting batch processing`);
 
     try {
       const waitForResumeIfPaused = async () => {
@@ -272,10 +267,10 @@ export class SessionController {
       await waitForResumeIfPaused();
 
       if (!this.isAborted && !this.isPaused) {
-        console.log(`[Session ${this.sessionId}] Batch processing completed successfully`);
+        console.log(`[Session ${this.nodeId}] Batch processing completed successfully`);
       }
     } catch (error) {
-      console.error(`[Session ${this.sessionId}] Batch processing failed:`, error);
+      console.error(`[Session ${this.nodeId}] Batch processing failed:`, error);
       throw error;
     } finally {
       // Always cleanup on completion
@@ -290,7 +285,7 @@ export class SessionController {
    */
   async pause(): Promise<void> {
     this.isPaused = true;
-    console.log(`[Session ${this.sessionId}] Session paused`);
+    console.log(`[Session ${this.nodeId}] Session paused`);
     // Note: We keep the WorkerPool alive for resume
   }
 
@@ -299,11 +294,11 @@ export class SessionController {
    */
   async resume(): Promise<void> {
     if (!this.isPaused) {
-      throw new Error(`Session ${this.sessionId} is not paused`);
+      throw new Error(`Session ${this.nodeId} is not paused`);
     }
 
     this.isPaused = false;
-    console.log(`[Session ${this.sessionId}] Session resumed`);
+    console.log(`[Session ${this.nodeId}] Session resumed`);
     this.resumeAllStages();
 
     // Continue from current stage
@@ -315,7 +310,7 @@ export class SessionController {
    */
   async abort(): Promise<void> {
     this.isAborted = true;
-    console.log(`[Session ${this.sessionId}] Session aborted`);
+    console.log(`[Session ${this.nodeId}] Session aborted`);
     this.resumeAllStages();
     await this.cleanup();
   }
@@ -325,10 +320,10 @@ export class SessionController {
    */
   private async cleanup(): Promise<void> {
     if (this.workerPool) {
-      console.log(`[Session ${this.sessionId}] Shutting down WorkerPool`);
+      console.log(`[Session ${this.nodeId}] Shutting down WorkerPool`);
       await this.workerPool.shutdown();
       this.workerPool = null;
-      console.log(`[Session ${this.sessionId}] WorkerPool terminated`);
+      console.log(`[Session ${this.nodeId}] WorkerPool terminated`);
     }
     this.resumeAllStages();
   }
@@ -338,12 +333,11 @@ export class SessionController {
    */
   private async processDownloadStage(): Promise<void> {
     this.currentStage = 'download';
-    console.log(`[Session ${this.sessionId}] Processing download stage`);
+    console.log(`[Session ${this.nodeId}] Processing download stage`);
 
     const dataSource = this.resolveDataSource();
     const strategy = resolveDownloadStageStrategy(dataSource);
     const tasks: DownloadTask[] = await strategy.buildDownloadTasks({
-      sessionId: this.sessionId,
       nodeId: this.nodeId,
       downloadTaskPayloads: this.downloadTaskPayloads,
       config: this.config,
@@ -360,7 +354,7 @@ export class SessionController {
     const baseFailed = Math.min(failedCount, total - baseCompleted);
     const baseDone = Math.min(total, baseCompleted + baseFailed);
     if (baseDone > 0) {
-      console.debug(`[Session ${this.sessionId}] Skipping completed download tasks`, {
+      console.debug(`[Session ${this.nodeId}] Skipping completed download tasks`, {
         total,
         runnable: runnableTasks.length,
         completed: baseCompleted,
@@ -396,7 +390,6 @@ export class SessionController {
       };
       const maxConcurrent = this.config.download?.concurrentDownloads ?? this.options.maxConcurrentTasks;
       const res = await this.downloadAdapter.process(
-        this.sessionId,
         this.nodeId,
         runnableTasks,
         reportProgress,
@@ -410,7 +403,7 @@ export class SessionController {
       const processedTotal = baseCompleted + res.processed;
       const failedTotal = baseFailed + res.failed;
       const doneTotal = Math.min(totalTasks, processedTotal + failedTotal);
-      console.log(`[Session ${this.sessionId}] Download stage completed: ${processedTotal} successful, ${failedTotal} failed`);
+      console.log(`[Session ${this.nodeId}] Download stage completed: ${processedTotal} successful, ${failedTotal} failed`);
       const percentage = totalTasks > 0 ? (doneTotal / totalTasks) * 100 : 0;
       this.progressCallback?.({
         total: totalTasks,
@@ -423,7 +416,6 @@ export class SessionController {
       });
     }
     const postprocess = await strategy.postprocessDownloadOutputs({
-      sessionId: this.sessionId,
       nodeId: this.nodeId,
       downloadTaskPayloads: this.downloadTaskPayloads,
       config: this.config,
@@ -449,31 +441,31 @@ export class SessionController {
       const featureLabel = output.featureLabel ?? output.featureGroupId;
       const featureId = featureLabel ?? `${output.countryCode ?? 'UNK'}:${output.adminLevel ?? index}`;
       return {
-      taskId: `${this.sessionId}-simplify1-${index}`,
-      sessionId: this.sessionId as NodeId,
-      taskType: 'simplify1',
-      stage: BatchTaskStage.WAIT,
-      type: 'simplify1',
-      status: 'waiting',
-      index,
-      progress: 0,
-      inputBufferId: output.inputBufferId,
-      tolerance: simplifyTolerance,
-      minArea,
-      countryCode: output.countryCode,
-      adminLevel: output.adminLevel,
-      metadata: {
-        dataSource: output.dataSource,
-        countryName: output.countryName,
-        sourceUrl: output.sourceUrl,
-        featureLabel,
-      },
-      config: {
-        sourceUrl: output.sourceUrl,
-        featureId,
-        featureLabel,
-        featureGroupId: output.featureGroupId,
-        featureIndex: output.featureIndex,
+        taskId: `${this.nodeId}-simplify1-${index}`,
+        nodeId: this.nodeId,
+        taskType: 'simplify1',
+        stage: BatchTaskStage.WAIT,
+        type: 'simplify1',
+        status: 'waiting',
+        index,
+        progress: 0,
+        inputBufferId: output.inputBufferId,
+        tolerance: simplifyTolerance,
+        minArea,
+        countryCode: output.countryCode,
+        adminLevel: output.adminLevel,
+        metadata: {
+          dataSource: output.dataSource,
+          countryName: output.countryName,
+          sourceUrl: output.sourceUrl,
+          featureLabel,
+        },
+        config: {
+          sourceUrl: output.sourceUrl,
+          featureId,
+          featureLabel,
+          featureGroupId: output.featureGroupId,
+          featureIndex: output.featureIndex,
         countryCode: output.countryCode,
         adminLevel: output.adminLevel,
         algorithm: 'douglas-peucker',
@@ -494,11 +486,11 @@ export class SessionController {
    */
   private async processSimplify1Stage(): Promise<void> {
     this.currentStage = 'simplify1';
-    console.log(`[Session ${this.sessionId}] Processing simplify1 stage`);
+    console.log(`[Session ${this.nodeId}] Processing simplify1 stage`);
 
     const tasks = this.simplify1Tasks;
     if (tasks.length === 0) {
-      console.warn(`[Session ${this.sessionId}] No simplify1 tasks to process`);
+      console.warn(`[Session ${this.nodeId}] No simplify1 tasks to process`);
       return;
     }
 
@@ -542,7 +534,7 @@ export class SessionController {
       maxConcurrent,
     });
     console.log(
-      `[Session ${this.sessionId}] Simplify1 stage completed: ${baseCompleted + r.processed}/${total} successful`,
+      `[Session ${this.nodeId}] Simplify1 stage completed: ${baseCompleted + r.processed}/${total} successful`,
     );
   }
 
@@ -551,22 +543,22 @@ export class SessionController {
    */
   private async processSimplify2Stage(): Promise<void> {
     this.currentStage = 'simplify2';
-    console.log(`[Session ${this.sessionId}] Processing simplify2 stage`);
+    console.log(`[Session ${this.nodeId}] Processing simplify2 stage`);
 
     const zoomLevels = this.resolveZoomLevels();
     const tileSize = this.config.vectorTiles?.tileSize ?? this.config.tileSize ?? 512;
     const simplify2Config = this.config.simplify2;
 
     const tasks: Simplify2Task[] = this.simplify1Tasks.map((task, index) => ({
-      taskId: `${this.sessionId}-simplify2-${index}`,
-      sessionId: this.sessionId as NodeId,
+      taskId: `${this.nodeId}-simplify2-${index}`,
+      nodeId: this.nodeId,
       taskType: 'simplify2',
       stage: BatchTaskStage.WAIT,
       type: 'simplify2',
       status: 'waiting',
       index,
       progress: 0,
-      inputBufferId: `${this.sessionId}-simplify1-${index}`,
+      inputBufferId: `${this.nodeId}-simplify1-${index}`,
       zoomLevels,
       tileSize,
       countryCode: task.countryCode,
@@ -595,7 +587,7 @@ export class SessionController {
     }));
     this.simplify2Tasks = tasks;
     if (tasks.length === 0) {
-      console.warn(`[Session ${this.sessionId}] No simplify2 tasks to process`);
+      console.warn(`[Session ${this.nodeId}] No simplify2 tasks to process`);
       return;
     }
 
@@ -639,7 +631,7 @@ export class SessionController {
       maxConcurrent,
     });
     console.log(
-      `[Session ${this.sessionId}] Simplify2 stage completed: ${baseCompleted + r.processed}/${total} successful`,
+      `[Session ${this.nodeId}] Simplify2 stage completed: ${baseCompleted + r.processed}/${total} successful`,
     );
   }
 
@@ -803,8 +795,8 @@ export class SessionController {
 
   private async ensureTileFeatureIndex(): Promise<Array<{ key: string; z: number; x: number; y: number }>> {
     const tileDb = await getShapeTileMetadataDB();
-    const tileSessionId = `input:${String(this.nodeId)}`;
-    const existing = await tileDb.tiles.where('sessionId').equals(tileSessionId).toArray();
+    const tileNodeKey = `input:${String(this.nodeId)}`;
+    const existing = await tileDb.tiles.where('nodeId').equals(tileNodeKey).toArray();
     if (existing.length > 0) {
       return existing.map((row) => ({ key: row.key, z: row.z, x: row.x, y: row.y }));
     }
@@ -814,7 +806,7 @@ export class SessionController {
     const tilesByKey = new Map<string, { key: string; z: number; x: number; y: number; features: Feature[] }>();
     const metadataRecords: Array<{
       id: string;
-      sessionId: string;
+      nodeId: string;
       featureId: string;
       countryName?: string;
       countryCode?: string;
@@ -831,7 +823,7 @@ export class SessionController {
     const createdAt = Date.now();
 
     for (const task of this.simplify2Tasks) {
-      const inputBufferId = task.inputBufferId ?? `${this.sessionId}-simplify2-${task.index ?? 0}`;
+      const inputBufferId = task.inputBufferId ?? `${this.nodeId}-simplify2-${task.index ?? 0}`;
       const buffer = await db.simplifiedBuffers.get(inputBufferId);
       if (!buffer) continue;
       const collection = await this.decodeFeatureCollection(buffer.data);
@@ -849,7 +841,7 @@ export class SessionController {
         properties.id = featureId;
         metadataRecords.push({
           id: `${String(this.nodeId)}-${featureId}`,
-          sessionId: String(this.nodeId),
+          nodeId: String(this.nodeId),
           featureId,
           countryName: this.pickCountryName(properties),
           countryCode,
@@ -896,7 +888,7 @@ export class SessionController {
       }
       await tileDb.tiles.put({
         key: row.key,
-        sessionId: tileSessionId,
+        nodeId: tileNodeKey,
         z: row.z,
         x: row.x,
         y: row.y,
@@ -918,8 +910,8 @@ export class SessionController {
     const maxZoom = this.config.vectorTiles?.maxZoom ?? 10;
     const metadataEnabled = false;
     return tileRows.map((tile, index) => ({
-      taskId: `${this.sessionId}-vectortile-${index}`,
-      sessionId: this.sessionId as NodeId,
+      taskId: `${this.nodeId}-vectortile-${index}`,
+      nodeId: this.nodeId,
       taskType: 'vectortile',
       stage: BatchTaskStage.WAIT,
       type: 'vectortile',
@@ -947,15 +939,15 @@ export class SessionController {
 
   private async persistPlaceholderMetadata(replace: boolean): Promise<number> {
     if (!isShapePreviewMetadataEnabled()) return 0;
-    const sessionId = String(this.nodeId);
+    const nodeKey = String(this.nodeId);
     const db = await getShapeTileMetadataDB();
     if (replace) {
-      await db.featureMetadata.where('sessionId').equals(sessionId).delete();
+      await db.featureMetadata.where('nodeId').equals(nodeKey).delete();
     }
     const existing = replace
       ? new Set<string>()
       : new Set(
-        (await db.featureMetadata.where('sessionId').equals(sessionId).toArray())
+        (await db.featureMetadata.where('nodeId').equals(nodeKey).toArray())
           .map((row) => row.featureId),
       );
     const createdAt = Date.now();
@@ -969,8 +961,8 @@ export class SessionController {
       if (existing.has(featureKey)) continue;
       existing.add(featureKey);
       rows.push({
-        id: `${sessionId}-${featureKey}`,
-        sessionId,
+        id: `${nodeKey}-${featureKey}`,
+        nodeId: nodeKey,
         featureId: featureKey,
         countryName: payload.countryName,
         countryCode,
@@ -993,17 +985,17 @@ export class SessionController {
    */
   private async processVectorTileStage(): Promise<void> {
     this.currentStage = 'vectortile';
-    console.log(`[Session ${this.sessionId}] Processing vector tile stage`);
+    console.log(`[Session ${this.nodeId}] Processing vector tile stage`);
 
     const tileRows = await this.ensureTileFeatureIndex();
     if (tileRows.length === 0) {
-      console.warn(`[Session ${this.sessionId}] No vector tile inputs to process`);
+      console.warn(`[Session ${this.nodeId}] No vector tile inputs to process`);
       await this.persistPlaceholderMetadata(true);
       return;
     }
     const tasks = this.buildVectorTileTasks(tileRows);
     if (tasks.length === 0) {
-      console.warn(`[Session ${this.sessionId}] No vector tile tasks to process`);
+      console.warn(`[Session ${this.nodeId}] No vector tile tasks to process`);
       return;
     }
 
@@ -1049,7 +1041,7 @@ export class SessionController {
     });
     await this.persistPlaceholderMetadata(false);
     console.log(
-      `[Session ${this.sessionId}] Vector tile stage completed: ${baseCompleted + r.processed}/${total} successful`,
+      `[Session ${this.nodeId}] Vector tile stage completed: ${baseCompleted + r.processed}/${total} successful`,
     );
   }
 
@@ -1128,8 +1120,8 @@ export class SessionController {
   ): Promise<void> {
     const existingIds = existingTaskIds ?? new Set(
       (await shapeDB.batchTasks
-        .where('sessionId')
-        .equals(this.sessionId)
+        .where('nodeId')
+        .equals(this.nodeId)
         .and((task) => task.taskType === stage)
         .toArray())
         .map((task) => task.taskId),
@@ -1138,7 +1130,7 @@ export class SessionController {
       .filter((task) => !existingIds.has(task.taskId))
       .map((task, index) => ({
         taskId: task.taskId,
-        sessionId: this.sessionId,
+        nodeId: this.nodeId,
         taskType: stage,
         status: 'waiting' as const,
         index: task.index ?? index,
@@ -1155,24 +1147,24 @@ export class SessionController {
     tasks: T[],
   ): Promise<{ runnableTasks: T[]; completedCount: number; failedCount: number; total: number }> {
     const existing = await shapeDB.batchTasks
-      .where('sessionId')
-      .equals(this.sessionId)
+      .where('nodeId')
+      .equals(this.nodeId)
       .and((task) => task.taskType === stage)
       .toArray();
     const statusById = new Map(existing.map((task) => [task.taskId, task.status]));
     const runnableTasks = tasks.filter((task) => {
       const status = statusById.get(task.taskId);
-      return status !== 'completed' && status !== 'failed' && status !== 'cancelled';
+      return status !== 'completed' && status !== 'failed';
     });
     const completedCount = existing.filter((task) => task.status === 'completed').length;
-    const failedCount = existing.filter((task) => task.status === 'failed' || task.status === 'cancelled').length;
+    const failedCount = existing.filter((task) => task.status === 'failed').length;
     return { runnableTasks, completedCount, failedCount, total: tasks.length };
   }
 
   private async assignDownloadTaskIndices(tasks: DownloadTask[]): Promise<Set<string>> {
     const existing = await shapeDB.batchTasks
-      .where('sessionId')
-      .equals(this.sessionId)
+      .where('nodeId')
+      .equals(this.nodeId)
       .and((task) => task.taskType === 'download')
       .toArray();
     const existingIds = new Set(existing.map((task) => task.taskId));
@@ -1194,14 +1186,14 @@ export class SessionController {
    * Get current session status
    */
   getStatus(): {
-    sessionId: string;
+    nodeId: string;
     stage: ProcessingStage;
     isPaused: boolean;
     isAborted: boolean;
     hasWorkerPool: boolean;
   } {
     return {
-      sessionId: this.sessionId,
+      nodeId: String(this.nodeId),
       stage: this.currentStage,
       isPaused: this.isPaused,
       isAborted: this.isAborted,

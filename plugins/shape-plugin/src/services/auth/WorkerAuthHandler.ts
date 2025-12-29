@@ -20,7 +20,7 @@ import {
 import * as Comlink from 'comlink';
 
 export interface AuthContext {
-  sessionId?: string;
+  nodeId?: string;
   pluginType: 'shape' | 'spreadsheet' | 'styler';
   maxRetries?: number;
 }
@@ -63,26 +63,26 @@ export class WorkerAuthHandler {
   private currentState: 'idle' | 'waiting' | 'processing' = 'idle';
 
   /** Session IDs currently waiting for authentication */
-  private waitingSessions: Set<string> = new Set();
+  private waitingNodes: Set<string> = new Set();
 
   /**
    * Add session to waiting state
    */
-  private addWaitingSession(sessionId: string): void {
-    this.waitingSessions.add(sessionId);
+  private addWaitingNode(nodeId: string): void {
+    this.waitingNodes.add(nodeId);
     this.currentState = 'waiting';
-    console.log(`🔐 Session ${sessionId} added to waiting for auth`);
+    console.log(`🔐 Node ${nodeId} added to waiting for auth`);
   }
 
   /**
    * Remove session from waiting state
    */
-  private removeWaitingSession(sessionId: string): void {
-    this.waitingSessions.delete(sessionId);
-    if (this.waitingSessions.size === 0) {
+  private removeWaitingNode(nodeId: string): void {
+    this.waitingNodes.delete(nodeId);
+    if (this.waitingNodes.size === 0) {
       this.currentState = 'idle';
     }
-    console.log(`✅ Session ${sessionId} removed from waiting for auth`);
+    console.log(`✅ Node ${nodeId} removed from waiting for auth`);
   }
 
   /**
@@ -90,12 +90,12 @@ export class WorkerAuthHandler {
    */
   getAuthState(): {
     state: 'idle' | 'waiting' | 'processing';
-    waitingSessions: string[];
+    waitingNodes: string[];
     activeRequests: number;
   } {
     return {
       state: this.currentState,
-      waitingSessions: Array.from(this.waitingSessions),
+      waitingNodes: Array.from(this.waitingNodes),
       activeRequests: this.authCallbacks.size,
     };
   }
@@ -152,7 +152,7 @@ export class WorkerAuthHandler {
           method: init.method || 'GET',
           errorCode: response.status,
           errorMessage: await this.extractErrorMessage(response),
-          sessionId: context.sessionId,
+          nodeId: context.nodeId,
           pluginType: context.pluginType,
           retryCount,
         });
@@ -210,16 +210,16 @@ export class WorkerAuthHandler {
     maxRetries: number,
   ): Promise<Response> {
     // Add session to waiting state if provided
-    if (context.sessionId) {
-      this.addWaitingSession(context.sessionId);
+    if (context.nodeId) {
+      this.addWaitingNode(context.nodeId);
     }
 
     return new Promise<Response>((resolve, reject) => {
       const timeout = setTimeout(() => {
         this.authCallbacks.delete(requestId);
         // Remove from waiting state on timeout
-        if (context.sessionId) {
-          this.removeWaitingSession(context.sessionId);
+        if (context.nodeId) {
+          this.removeWaitingNode(context.nodeId);
         }
         reject(new Error('Authentication timeout'));
       }, AUTH_CONSTANTS.DEFAULT_TIMEOUT);
@@ -250,8 +250,8 @@ export class WorkerAuthHandler {
         this.authCallbacks.delete(requestId);
         clearTimeout(timeout);
         // Remove from waiting state if no UI callback
-        if (context.sessionId) {
-          this.removeWaitingSession(context.sessionId);
+        if (context.nodeId) {
+          this.removeWaitingNode(context.nodeId);
         }
         reject(new Error('No UI notification callback available'));
       }
@@ -273,7 +273,7 @@ export class WorkerAuthHandler {
    * Handle authentication success notification from UI
    */
   private async handleAuthSuccess(notification: AuthSuccessNotification): Promise<void> {
-    const { requestId, newToken, tokenType = 'Bearer', sessionId } = notification.context;
+    const { requestId, newToken, tokenType = 'Bearer', nodeId } = notification.context;
     const callback = this.authCallbacks.get(requestId);
 
     if (!callback) {
@@ -288,8 +288,8 @@ export class WorkerAuthHandler {
     this.authCallbacks.delete(requestId);
 
     // Remove session from waiting state
-    if (sessionId) {
-      this.removeWaitingSession(sessionId);
+    if (nodeId) {
+      this.removeWaitingNode(nodeId);
     }
 
     try {
@@ -344,7 +344,7 @@ export class WorkerAuthHandler {
    * Handle authentication cancellation notification from UI
    */
   private async handleAuthCancelled(notification: AuthCancelledNotification): Promise<void> {
-    const { requestId, reason, sessionId } = notification.context;
+    const { requestId, reason, nodeId } = notification.context;
     const callback = this.authCallbacks.get(requestId);
 
     if (!callback) {
@@ -359,8 +359,8 @@ export class WorkerAuthHandler {
     this.authCallbacks.delete(requestId);
 
     // Remove session from waiting state
-    if (sessionId) {
-      this.removeWaitingSession(sessionId);
+    if (nodeId) {
+      this.removeWaitingNode(nodeId);
     }
 
     // Reject the request with cancellation error
@@ -424,7 +424,7 @@ export class WorkerAuthHandler {
       // Send cancellation notification
       const cancelNotification = AuthNotificationFactory.createAuthCancelled({
         requestId: requestInfo.requestId,
-        sessionId: requestInfo.context.sessionId,
+        nodeId: requestInfo.context.nodeId,
         reason: 'error',
       });
 

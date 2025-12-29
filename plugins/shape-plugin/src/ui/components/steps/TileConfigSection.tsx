@@ -5,7 +5,7 @@ import { WorkerNumberConfigCard } from './WorkerNumberConfigCard.js';
 import { useTranslation } from '../../i18n.js';
 import { useTileConfigSection } from '../../hooks/useTileConfigSection.js';
 import { useBuildCrashInsight } from '../../hooks/useBuildCrashInsight.js';
-import { getStageConcurrencyWarning } from '../../utils/buildMonitor.js';
+import { getStageConcurrencyWarning } from '../../utils/buildWarnings.js';
 import { useEffect, useMemo } from 'react';
 
 const SHARED_ZOOM_RANGE_KEY = 'sharedZoomRange';

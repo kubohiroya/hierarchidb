@@ -58,10 +58,8 @@
   "dependencies": {
     "@hierarchidb/gen-iso3166-2": "workspace:*",
     "@hierarchidb/location-store": "workspace:*",
-    "@hierarchidb/plugin-base": "workspace:*",
     "@hierarchidb/ui-country-select": "workspace:*",
     "@hierarchidb/ui-tabular": "workspace:*",
-    "@hierarchidb/spreadsheet-plugin": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/tabular-source": "workspace:*"
   },
@@ -77,25 +75,17 @@
     "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/batch-runtime-services": "workspace:*",
-    "@hierarchidb/ui-datasource": "workspace:*",
-    "@hierarchidb/ui-license": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/ui-grid": "workspace:*",
-    "@hierarchidb/ui-plugin-basic-info": "workspace:*",
-    "@hierarchidb/ui-memory": "workspace:*",
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/common-auth": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
-    "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/ui-batch": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",
-    "@hierarchidb/plugin-ui-sdk": "workspace:*",
-    "@hierarchidb/plugin-base": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",
     "@hierarchidb/ui-search-field": "workspace:*",
     "@hierarchidb/location-store": "workspace:*",
-    "react-virtuoso": "^4.14.0",
-    "notistack": "^3.0.2"
+    "react-virtuoso": "^4.14.0"
   },
   "peerDependencies": {
     "dexie": "^4.2.0",

@@ -32,7 +32,6 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
   });
 
   async process(
-    sessionId: string,
     nodeId: NodeId,
     tasks: DownloadTask[],
     onProgress: (p: ProgressInfo) => void,
@@ -41,7 +40,7 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
     const getSignal = controls?.getSignal;
     const shouldAbort = () => Boolean(getSignal?.()?.aborted);
     console.debug('[ShapeDownloadAdapter] process', {
-      sessionId,
+      nodeId,
       taskCount: tasks.length,
       dataSources: Array.from(new Set(tasks.map((task) => task.config?.dataSource ?? 'unknown'))),
     });
@@ -82,7 +81,6 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
             try {
               const taskIndex = task.index ?? index;
               const result = await workerPool.run((api) => api.processDownloadTask({
-                sessionId,
                 nodeId,
                 task,
                 taskIndex,

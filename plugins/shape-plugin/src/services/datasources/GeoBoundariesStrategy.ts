@@ -7,7 +7,15 @@ import { BaseDataSourceStrategy, type DataSourceConfig, type FetchOptions, type 
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { ShapeEntity } from '../../common/types/index.js';
 import type { NodeId } from '@hierarchidb/common-types';
-import { downloadArrayBuffer, downloadJson } from '../utils/downloadService.js';
+import { configurePluginDownloadDefaults, downloadArrayBuffer, downloadJson, getCorsProxyBaseURL } from '@hierarchidb/download';
+
+const ensureShapeDownloadDefaults = (): void => {
+  const corsProxyBaseURL = getCorsProxyBaseURL() || undefined;
+  configurePluginDownloadDefaults('shape', {
+    dbPrefix: 'shape',
+    corsProxyBaseURL,
+  });
+};
 
 type GeoBoundariesProperties = Record<string, unknown>;
 type GeoBoundariesGeoJSON = FeatureCollection<Geometry, GeoBoundariesProperties>;
@@ -127,7 +135,9 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
 
       //  GeoJSON
       const retries = this.config.access.retries ?? { count: 1, delay: 0, backoff: 'exponential' };
+      ensureShapeDownloadDefaults();
       const buffer = await downloadArrayBuffer(
+        'shape',
         apiData.gjDownloadURL,
         `geoboundaries:${normalizedCountry}:${normalizedAdminLevel}`,
         { retries: retries.count, delayMs: retries.delay, backoff: retries.backoff },
@@ -237,7 +247,9 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
     console.log(`[GeoBoundaries] Fetching metadata: ${url}`);
 
     try {
+      ensureShapeDownloadDefaults();
       const data = await downloadJson<GeoBoundariesApiResponse>(
+        'shape',
         url,
         `geoboundaries:metadata:${country}:${adminLevel}`,
         undefined,
@@ -331,7 +343,9 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
 
   async getAvailableCountries(): Promise<string[]> {
     try {
+      ensureShapeDownloadDefaults();
       const data = await downloadJson<Record<string, unknown>>(
+        'shape',
         `${this.config.access.baseUrl}available/`,
         'geoboundaries:available',
       );
@@ -345,7 +359,9 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
   async getAvailableAdminLevels(country: string): Promise<string[]> {
     try {
       const normalizedCountry = this.normalizeCountryCode(country);
+      ensureShapeDownloadDefaults();
       const data = await downloadJson<Record<string, string[]>>(
+        'shape',
         `${this.config.access.baseUrl}available/`,
         'geoboundaries:available',
       );

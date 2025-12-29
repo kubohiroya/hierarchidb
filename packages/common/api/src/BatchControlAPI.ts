@@ -4,8 +4,6 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-types';
-
-export type BatchSessionId = string;
 export type StageKey = string;
 export type ProgressPhase =
   | 'queued'
@@ -13,8 +11,7 @@ export type ProgressPhase =
   | 'paused'
   | 'completed'
   | 'failed'
-  | 'warning'
-  | 'cancelled';
+  | 'warning';
 
 export interface BatchProgressPayload {
   total?: number;
@@ -38,7 +35,6 @@ export interface UnifiedProgressInfo {
   payload?: BatchProgressPayload;
   message?: string;
   nodeId?: NodeId;
-  sessionId?: BatchSessionId;
 }
 
 export interface UseBatchProgressOptions {
@@ -57,50 +53,49 @@ export interface IBatchSessionManager {
   /**
    * Start a new batch session.
    * @param nodeId - Target node identifier that owns the session.
-   * @returns A promise that resolves to the created batch session identifier.
+   * @returns A promise that resolves to the created batch session status.
    */
-  startBatchSession(nodeId: NodeId): Promise<BatchSessionId>;
+  startBatchSession(nodeId: NodeId): Promise<BatchSessionStatus>;
 
   /**
    * Pause a running batch session.
-   * @param sessionId - Identifier of the session to pause.
+   * @param nodeId - Identifier of the node to pause.
    */
-  pauseBatchSession(sessionId: BatchSessionId): Promise<void>;
+  pauseBatchSession(nodeId: NodeId): Promise<void>;
 
   /**
    * Resume a paused batch session.
-   * @param sessionId - Identifier of the session to resume.
+   * @param nodeId - Identifier of the node to resume.
    */
-  resumeBatchSession(sessionId: BatchSessionId): Promise<void>;
+  resumeBatchSession(nodeId: NodeId): Promise<void>;
 
   /**
    * Cancel a batch session.
-   * @param sessionId - Identifier of the session to cancel.
+   * @param nodeId - Identifier of the node to cancel.
    */
-  cancelBatchSession(sessionId: BatchSessionId): Promise<void>;
+  cancelBatchSession(nodeId: NodeId): Promise<void>;
 
   /**
    * Retrieve the current session status.
-   * @param sessionId - Identifier of the session to query.
+   * @param nodeId - Identifier of the node to query.
    */
-  getBatchSessionStatus(sessionId: BatchSessionId): Promise<BatchSessionStatus>;
+  getBatchSessionStatus(nodeId: NodeId): Promise<BatchSessionStatus>;
 
   /**
    * Subscribe to progress updates.
-   * @param sessionId - Identifier of the session to monitor.
+   * @param nodeId - Identifier of the node to monitor.
    * @param callback - Callback invoked whenever progress information changes.
    * @returns A function that removes the subscription when invoked.
    */
-  onBatchProgress(sessionId: BatchSessionId, callback: BatchProgressCallback): () => void;
+  onBatchProgress(nodeId: NodeId, callback: BatchProgressCallback): () => void;
 }
 
 /**
  * Standardized batch session status
  */
 export interface BatchSessionStatus {
-  sessionId: BatchSessionId;
   nodeId: NodeId;
-  status: 'idle' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
+  status: 'idle' | 'running' | 'paused' | 'completed' | 'failed';
   progress: BatchProgress;
   startedAt?: number;
   completedAt?: number;
@@ -117,7 +112,6 @@ export type BatchProgressCallback = (progress: BatchProgressEvent) => void;
  * Standardized progress event across all plugin-loader
  */
 export interface BatchProgressEvent<P = BatchProgressPayload> {
-  sessionId: BatchSessionId;
   nodeId: NodeId;
   stage: StageKey;
   phase: ProgressPhase;
@@ -184,9 +178,8 @@ export interface BaseBatchConfig {
  * Base batch session state
  */
 export interface BatchSessionState {
-  sessionId: string;
   nodeId: NodeId;
-  status: 'idle' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
+  status: 'idle' | 'running' | 'paused' | 'completed' | 'failed';
   startedAt?: number;
   completedAt?: number;
   lastActivity?: number;

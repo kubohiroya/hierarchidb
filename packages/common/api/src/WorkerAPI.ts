@@ -16,7 +16,6 @@ import type { TreeSubscriptionAPI } from './TreeSubscriptionAPI.js';
 import type { TreeTableExpandedAPI } from './TreeTableExpandedAPI.js';
 import type {
   BatchProgressEvent,
-  BatchSessionId,
   BatchSessionStatus,
   BatchTaskSummary,
 } from './BatchControlAPI.js';
@@ -81,18 +80,18 @@ export interface WorkerAPI {
     nodeId: NodeId,
     downloadTaskPayloads?: ShapeDownloadTaskPayload[],
   ): Promise<BatchSessionStatus>;
-  getBatchSessionStatus(nodeType: NodeType, sessionId: BatchSessionId): Promise<BatchSessionStatus>;
-  pauseBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
-  resumeBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
-  cancelBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
-  getBatchTasks(nodeType: NodeType, sessionId: BatchSessionId): Promise<BatchTaskSummary[]>;
+  getBatchSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus>;
+  pauseBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<void>;
+  resumeBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<void>;
+  cancelBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<void>;
+  getBatchTasks(nodeType: NodeType, nodeId: NodeId): Promise<BatchTaskSummary[]>;
   generateShapeDownloadTaskPayloadsFromSelection(
     dataSource: ShapeDataSourceName,
     selectedArrayByCountries: Record<string, boolean[]> | undefined,
   ): Promise<ShapeDownloadTaskPayload[]>;
   subscribeBatchProgress(
     nodeType: NodeType,
-    sessionId: BatchSessionId,
+    nodeId: NodeId,
     callback: (event: BatchProgressEvent) => void
   ): Promise<() => void>;
   subscribeHeapPressure(

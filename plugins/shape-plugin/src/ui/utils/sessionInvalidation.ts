@@ -24,16 +24,16 @@ const uniqueStages = (stages: EphemeralStage[]): EphemeralStage[] => {
   return STAGE_ORDER.filter((stage) => set.has(stage));
 };
 
-export const resolveShapeSessionId = (draft?: Partial<ShapeEntity> | null): string | undefined =>
+export const resolveShapeNodeId = (draft?: Partial<ShapeEntity> | null): string | undefined =>
   draft?.nodeId;
 
-export async function clearStagesIfPresent(sessionId: string, stages: EphemeralStage[]): Promise<EphemeralStage[]> {
+export async function clearStagesIfPresent(nodeId: string, stages: EphemeralStage[]): Promise<EphemeralStage[]> {
   const db = getEphemeralShapeDB();
   const targetStages = uniqueStages(stages);
   const cleared: EphemeralStage[] = [];
   for (const stage of targetStages) {
-    if (await db.hasStageData(sessionId, stage)) {
-      await db.clearStage(sessionId, stage);
+    if (await db.hasStageData(nodeId, stage)) {
+      await db.clearStage(nodeId, stage);
       cleared.push(stage);
     }
   }

@@ -19,25 +19,25 @@ export interface RouteBatchProgressResult {
   resume: () => Promise<void>;
 }
 
-export function useRouteBatchProgress(jobId: string | null, _deps?: unknown): RouteBatchProgressResult {
+export function useRouteBatchProgress(nodeId: string | null, _deps?: unknown): RouteBatchProgressResult {
   const bridgeRef = useRef<WorkerBridge>(getWorkerBridge());
   const [status, setStatus] = useState<BatchSessionStatus | null>(null);
   const [isMutating, setIsMutating] = useState(false);
   const [mutationError, setMutationError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!jobId) return;
+    if (!nodeId) return;
     void bridgeRef.current.initialize().catch((error: unknown) => {
       console.error('[useRouteBatchProgress] failed to initialize worker bridge', error);
     });
-  }, [jobId]);
+  }, [nodeId]);
 
   const {
     progress,
     rawStatus,
   } = usePluginBatchProgress<UnifiedProgressInfo, BatchSessionStatus>(
     ROUTE_NODE_TYPE,
-    jobId,
+    nodeId,
     {
       autoSubscribe: true,
       enablePollingFallback: true,
@@ -54,23 +54,23 @@ export function useRouteBatchProgress(jobId: string | null, _deps?: unknown): Ro
 
   const [snapshot, setSnapshot] = useState<UnifiedProgressInfo | null>(null);
   useEffect(() => {
-    if (!jobId) {
+    if (!nodeId) {
       setSnapshot(null);
       setStatus(null);
       setMutationError(null);
     }
-  }, [jobId]);
+  }, [nodeId]);
   useEffect(() => {
-    if (!progress || !jobId) return;
-    setSnapshot({ ...progress, sessionId: jobId });
-  }, [progress, jobId]);
+    if (!progress || !nodeId) return;
+    setSnapshot({ ...progress, nodeId });
+  }, [nodeId, progress]);
 
   const pause = useCallback(async () => {
-    if (!jobId || isMutating) return;
+    if (!nodeId || isMutating) return;
     setIsMutating(true);
     setMutationError(null);
     try {
-      await bridgeRef.current.pauseBatchSession(ROUTE_NODE_TYPE, jobId);
+      await bridgeRef.current.pauseBatchSession(ROUTE_NODE_TYPE, nodeId);
       setStatus((prev: BatchSessionStatus | null) => (prev ? { ...prev, status: 'paused', lastActivity: Date.now() } : prev));
     } catch (error: unknown) {
       const message = toErrorMessage(error);
@@ -79,14 +79,14 @@ export function useRouteBatchProgress(jobId: string | null, _deps?: unknown): Ro
     } finally {
       setIsMutating(false);
     }
-  }, [isMutating, jobId]);
+  }, [isMutating, nodeId]);
 
   const resume = useCallback(async () => {
-    if (!jobId || isMutating) return;
+    if (!nodeId || isMutating) return;
     setIsMutating(true);
     setMutationError(null);
     try {
-      await bridgeRef.current.resumeBatchSession(ROUTE_NODE_TYPE, jobId);
+      await bridgeRef.current.resumeBatchSession(ROUTE_NODE_TYPE, nodeId);
       setStatus((prev: BatchSessionStatus | null) => (prev ? { ...prev, status: 'running', lastActivity: Date.now() } : prev));
     } catch (error: unknown) {
       const message = toErrorMessage(error);
@@ -95,7 +95,7 @@ export function useRouteBatchProgress(jobId: string | null, _deps?: unknown): Ro
     } finally {
       setIsMutating(false);
     }
-  }, [isMutating, jobId]);
+  }, [isMutating, nodeId]);
 
   const lastError = useMemo(() => {
     if (status?.error) return status.error;
@@ -150,7 +150,6 @@ function statusToUnified(status: BatchSessionStatus): UnifiedProgressInfo {
     },
     message: status.error,
     nodeId: status.nodeId,
-    sessionId: status.sessionId,
   };
 }
 
@@ -178,8 +177,6 @@ function mapStatusToPhase(status: BatchSessionStatus['status']): ProgressPhase {
       return 'completed';
     case 'failed':
       return 'failed';
-    case 'cancelled':
-      return 'cancelled';
     case 'paused':
       return 'paused';
     case 'idle':

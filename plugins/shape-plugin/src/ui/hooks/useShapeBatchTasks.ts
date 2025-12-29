@@ -29,7 +29,7 @@ export type ShapeBatchTaskSummary = BatchTaskSummary & {
 };
 
 export function useShapeBatchTasks(
-  sessionId: string | null,
+  nodeId: string | null,
   options: UseShapeBatchTasksOptions = {},
 ): UseShapeBatchTasksState {
   const { autoRefresh = true, pollIntervalMs = 2000 } = options;
@@ -41,37 +41,37 @@ export function useShapeBatchTasks(
 
   useEffect(() => {
     reportedFailuresRef.current = new Set();
-  }, [sessionId]);
+  }, [nodeId]);
 
   const refresh = useCallback(async () => {
-    if (!sessionId) {
+    if (!nodeId) {
       setTasks([]);
       setError(null);
-      console.debug('[ShapeBuildProgressStep] batchTasks:skip', { sessionId });
+      console.debug('[ShapeBuildProgressStep] batchTasks:skip', { nodeId });
       return;
     }
     setIsLoading(true);
     try {
       await bridgeRef.current.initialize();
-      console.debug('[ShapeBuildProgressStep] batchTasks:fetch', { sessionId });
-      const next = await bridgeRef.current.getBatchTasks(SHAPE_NODE_TYPE, sessionId);
+      console.debug('[ShapeBuildProgressStep] batchTasks:fetch', { nodeId });
+      const next = await bridgeRef.current.getBatchTasks(SHAPE_NODE_TYPE, nodeId);
       setTasks(next);
       setError(null);
-      console.debug('[ShapeBuildProgressStep] batchTasks:ok', { sessionId, count: next.length });
+      console.debug('[ShapeBuildProgressStep] batchTasks:ok', { nodeId, count: next.length });
     } catch (err) {
       const errObj = err instanceof Error ? err : new Error('Failed to fetch batch tasks');
       setError(errObj);
       console.debug('[ShapeBuildProgressStep] batchTasks:error', {
-        sessionId,
+        nodeId,
         message: errObj.message,
       });
     } finally {
       setIsLoading(false);
     }
-  }, [sessionId]);
+  }, [nodeId]);
 
   useEffect(() => {
-    if (!sessionId) return;
+    if (!nodeId) return;
     if (typeof autoRefresh === 'function' && autoRefresh()) {
       void refresh();
       return;
@@ -79,10 +79,10 @@ export function useShapeBatchTasks(
     if (autoRefresh === true) {
       void refresh();
     }
-  }, [autoRefresh, refresh, sessionId]);
+  }, [autoRefresh, refresh, nodeId]);
 
   useEffect(() => {
-    if (!sessionId) return;
+    if (!nodeId) return;
     const shouldAutoRefresh = typeof autoRefresh === 'function'
       ? autoRefresh()
       : autoRefresh;
@@ -98,7 +98,7 @@ export function useShapeBatchTasks(
       void refresh();
     }, pollIntervalMs);
     return () => window.clearInterval(id);
-  }, [autoRefresh, pollIntervalMs, refresh, sessionId]);
+  }, [autoRefresh, pollIntervalMs, refresh, nodeId]);
 
   useEffect(() => {
     const reported = reportedFailuresRef.current;

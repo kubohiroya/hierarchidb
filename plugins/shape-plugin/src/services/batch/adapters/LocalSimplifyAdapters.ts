@@ -77,8 +77,8 @@ export class LocalSimplify1Adapter implements Simplify1StageAdapter {
           const taskIndex = task.index ?? 0;
           if (!raw.featureCount) {
             await db.simplifiedBuffers.put({
-              id: `${task.sessionId ?? ''}-simplify1-${taskIndex}`,
-              sessionId: String(task.sessionId ?? ''),
+              id: `${task.nodeId ?? ''}-simplify1-${taskIndex}`,
+              nodeId: String(task.nodeId ?? ''),
               nodeId: raw.nodeId,
               stage: 'simplify1',
               data: raw.data,
@@ -107,7 +107,7 @@ export class LocalSimplify1Adapter implements Simplify1StageAdapter {
             hybridFilterConfig: task.config?.hybridFilterConfig,
           };
           const filtered = applyFeatureFiltering(geojson, filterSettings);
-          const outputBufferId = `${task.sessionId ?? ''}-simplify1-${taskIndex}`;
+          const outputBufferId = `${task.nodeId ?? ''}-simplify1-${taskIndex}`;
           const hasFilteredFeatures = isFeatureCollection(filtered);
           const data = hasFilteredFeatures ? await encodeGeoJson(filtered) : raw.data;
           const featureCount = hasFilteredFeatures
@@ -116,7 +116,7 @@ export class LocalSimplify1Adapter implements Simplify1StageAdapter {
           if (!featureCount) {
             await db.simplifiedBuffers.put({
               id: outputBufferId,
-              sessionId: String(task.sessionId ?? ''),
+              nodeId: String(task.nodeId ?? ''),
               nodeId: raw.nodeId,
               stage: 'simplify1',
               data,
@@ -139,7 +139,7 @@ export class LocalSimplify1Adapter implements Simplify1StageAdapter {
           }
           await db.simplifiedBuffers.put({
             id: outputBufferId,
-            sessionId: String(task.sessionId ?? ''),
+            nodeId: String(task.nodeId ?? ''),
             nodeId: raw.nodeId,
             stage: 'simplify1',
             data,
@@ -229,9 +229,9 @@ export class LocalSimplify2Adapter implements Simplify2StageAdapter {
             });
           }
           const taskIndex = task.index ?? 0;
-          const simplify1TaskId = `${task.sessionId ?? ''}-simplify1-${taskIndex}`;
+          const simplify1TaskId = `${task.nodeId ?? ''}-simplify1-${taskIndex}`;
           const simplify1Task = await shapeDB.batchTasks.get(simplify1TaskId);
-          if (simplify1Task?.status === 'failed' || simplify1Task?.status === 'cancelled') {
+          if (simplify1Task?.status === 'failed') {
             failed++;
             if (task.taskId) {
               await shapeDB.updateBatchTask(task.taskId, {
@@ -251,10 +251,10 @@ export class LocalSimplify2Adapter implements Simplify2StageAdapter {
             throw new Error(`Simplify2 input buffer not found: ${inputBufferId}`);
           }
           if (!input.featureCount) {
-            const outputBufferId = `${task.sessionId ?? ''}-simplify2-${taskIndex}`;
+            const outputBufferId = `${task.nodeId ?? ''}-simplify2-${taskIndex}`;
             await db.simplifiedBuffers.put({
               id: outputBufferId,
-              sessionId: String(task.sessionId ?? ''),
+              nodeId: String(task.nodeId ?? ''),
               nodeId: input.nodeId,
               stage: 'simplify2',
               data: input.data,
@@ -285,14 +285,14 @@ export class LocalSimplify2Adapter implements Simplify2StageAdapter {
             quantize,
           });
           const hasSimplifiedFeatures = isFeatureCollection(simplified);
-          const outputBufferId = `${task.sessionId ?? ''}-simplify2-${taskIndex}`;
+          const outputBufferId = `${task.nodeId ?? ''}-simplify2-${taskIndex}`;
           const data = hasSimplifiedFeatures ? await encodeGeoJson(simplified) : input.data;
           const featureCount = hasSimplifiedFeatures
             ? simplified.features.length
             : input.featureCount;
           await db.simplifiedBuffers.put({
             id: outputBufferId,
-            sessionId: String(task.sessionId ?? ''),
+            nodeId: String(task.nodeId ?? ''),
             nodeId: input.nodeId,
             stage: 'simplify2',
             data,

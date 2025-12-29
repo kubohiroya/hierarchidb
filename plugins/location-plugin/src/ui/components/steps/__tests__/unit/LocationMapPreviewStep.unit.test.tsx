@@ -6,7 +6,6 @@ import type { LocationPointId } from '../../../../common/entities/LocationPoint.
 import en from '../../../../locales/en.json' with { type: 'json' };
 
 type SessionRecord = {
-  sessionId: string;
   nodeId: unknown;
   createdAt: number;
   status?: string;
@@ -14,7 +13,7 @@ type SessionRecord = {
 
 const {
   summaryMock,
-  getSessionSummary,
+  getLocationSessionSummary,
   dbState,
   listLocationPointsMock,
   getEphemeralLocationDBMock,
@@ -27,20 +26,20 @@ const {
     sizeBytes: 2048,
   };
 
-  const getSessionSummary = vi.fn(async () => summaryMock);
+  const getLocationSessionSummary = vi.fn(async () => summaryMock);
   const dbState = { sessions: [] as SessionRecord[] };
   const listLocationPointsMock = vi.fn<[], Promise<any[]>>();
 
   const fakeDb = {
     sessions: {
       async put(record: SessionRecord) {
-        const index = dbState.sessions.findIndex((item) => item.sessionId === record.sessionId);
+        const index = dbState.sessions.findIndex((item) => item.nodeId === record.nodeId);
         if (index >= 0) {
           dbState.sessions.splice(index, 1, record);
         } else {
           dbState.sessions.push(record);
         }
-        return record.sessionId;
+        return record.nodeId;
       },
       async count() {
         return dbState.sessions.length;
@@ -78,22 +77,20 @@ const {
 
   return {
     summaryMock,
-    getSessionSummary,
+    getLocationSessionSummary,
     dbState,
     listLocationPointsMock,
     getEphemeralLocationDBMock,
   };
 });
 
-vi.mock('../../../../../database/EphemeralLocationDB', () => ({
+vi.mock('@hierarchidb/location-store', () => ({
   __esModule: true,
   getEphemeralLocationDB: getEphemeralLocationDBMock,
 }));
 
-vi.mock('../../../../../services/tiles/LocationVectorTileService', () => ({
-  LocationVectorTileService: vi.fn(() => ({
-    getSessionSummary,
-  })),
+vi.mock('../../../../../common/tiles/locationVectorTiles', () => ({
+  getLocationSessionSummary,
 }));
 
 vi.mock('../../../../../services/pointRepository', () => ({
@@ -114,8 +111,8 @@ const baseDraft: Partial<LocationEntity> = {
 describe('LocationMapPreviewStep', () => {
   beforeEach(() => {
     dbState.sessions.splice(0, dbState.sessions.length);
-    getSessionSummary.mockReset();
-    getSessionSummary.mockResolvedValue(summaryMock);
+    getLocationSessionSummary.mockReset();
+    getLocationSessionSummary.mockResolvedValue(summaryMock);
     getEphemeralLocationDBMock.mockClear();
     listLocationPointsMock.mockReset();
     listLocationPointsMock.mockResolvedValue([
@@ -136,7 +133,6 @@ describe('LocationMapPreviewStep', () => {
     if (!LocationMapPreviewStep) throw new Error('component not loaded');
     const db = getEphemeralLocationDBMock();
     await db.sessions.put({
-      sessionId: 'session-1',
       nodeId,
       createdAt: Date.now(),
       status: 'running',
@@ -154,7 +150,7 @@ describe('LocationMapPreviewStep', () => {
     });
 
     await waitFor(() => {
-      expect(getSessionSummary).toHaveBeenCalledWith('session-1');
+      expect(getLocationSessionSummary).toHaveBeenCalledWith(nodeId);
     });
 
     const tilesLabel = await screen.findByText(/Generated tiles:/i);
@@ -182,13 +178,12 @@ describe('LocationMapPreviewStep', () => {
     if (!LocationMapPreviewStep) throw new Error('component not loaded');
     const db = getEphemeralLocationDBMock();
     await db.sessions.put({
-      sessionId: 'session-1',
       nodeId,
       createdAt: Date.now(),
     });
     expect(await db.sessions.count()).toBe(1);
 
-    getSessionSummary.mockRejectedValueOnce(new Error('network error'));
+    getLocationSessionSummary.mockRejectedValueOnce(new Error('network error'));
 
     render(<LocationMapPreviewStep draft={baseDraft} nodeId={nodeId} />);
 

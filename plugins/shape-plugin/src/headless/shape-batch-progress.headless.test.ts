@@ -232,7 +232,7 @@ const runBatchProcessing = async (
         unsubscribe();
         finalizeResolve();
       }
-      if (session.status === 'failed' || session.status === 'cancelled') {
+      if (session.status === 'failed') {
         clearTimeout(timer);
         if (pollId) clearInterval(pollId);
         unsubscribe();

@@ -132,7 +132,7 @@ export const LocationBatchParametersStep: React.FC<LocationBatchParametersStepPr
 
   useEffect(() => {
     void loadCounts();
-  }, [loadCounts, draft.batchSessionId]);
+  }, [loadCounts, nodeId]);
 
   const handleConcurrentDownloadsChange = (_: Event, value: number | number[]) => {
     const rawValue = Array.isArray(value) ? value[0] ?? concurrentDownloads : value ?? concurrentDownloads;

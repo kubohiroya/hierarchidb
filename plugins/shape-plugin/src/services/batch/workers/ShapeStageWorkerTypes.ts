@@ -9,14 +9,13 @@ export type ShapeStageWorkerTaskResult = {
 };
 
 export type DownloadTaskRequest = {
-  sessionId: string;
   nodeId: NodeId;
   task: DownloadTask;
   taskIndex: number;
 };
 
 export type SimplifyTaskRequest<TTask> = {
-  sessionId: string;
+  nodeId: NodeId;
   task: TTask;
   taskIndex: number;
 };

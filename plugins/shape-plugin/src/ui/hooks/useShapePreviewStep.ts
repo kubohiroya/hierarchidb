@@ -23,7 +23,7 @@ import {
   useVectorTilePreviewMapLayers,
 } from '@hierarchidb/ui-gis';
 import { useVectorTilePreviewTable } from './preview/useVectorTilePreviewTable.js';
-import { getTile, getTileSummary } from '../../services/tiles/RuntimeTileClient.js';
+import { getShapeRuntimeWorkerClient } from '../../services/batch/adapters/RuntimeWorkerClient.js';
 import { shapeDB } from '../../services/database/ShapeDB.js';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/ui-worker-provider';
 
@@ -44,6 +44,27 @@ const MIN_BOUNDS_MARGIN = 0.25;
 const ISO3166_CSV_URL = '/iso3166-2-level1.csv';
 const ISO3166_UNRESOLVED = 'N/A';
 
+const fetchTileSummary = async (nodeId: string) => {
+  const client = await getShapeRuntimeWorkerClient();
+  const vectorTile = client?.vectortile;
+  if (!vectorTile?.getSummary) return { tiles: 0, totalBytes: 0 };
+  return vectorTile.getSummary(nodeId);
+};
+
+const fetchTile = async (
+  nodeId: string,
+  z: number,
+  x: number,
+  y: number,
+): Promise<Uint8Array | null> => {
+  const client = await getShapeRuntimeWorkerClient();
+  const vectorTile = client?.vectortile;
+  if (!vectorTile?.getTile) return null;
+  const result = await vectorTile.getTile(nodeId, z, x, y);
+  if (!result) return null;
+  return result instanceof Uint8Array ? result : new Uint8Array(result);
+};
+
 export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -59,8 +80,8 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
   const previewDraft = data as ShapePreviewDraft;
   const tilesUrl = previewDraft.tilesUrl ?? previewDraft.tilesEndpoint ?? '';
   const tilesLayer = previewDraft.tilesLayer ?? 'layer0';
-  const sessionId = previewDraft.nodeId ?? null;
-  const nodeKey = previewDraft.nodeId ?? sessionId;
+  const activeNodeId = previewDraft.nodeId ?? null;
+  const nodeKey = activeNodeId;
   const [persistedStatus, setPersistedStatus] = useState<string | null>(null);
   const [statusLoaded, setStatusLoaded] = useState(false);
   const processingStatus = persistedStatus === 'running'
@@ -88,7 +109,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
 
   useEffect(() => {
     let cancelled = false;
-    if (!sessionId) {
+    if (!activeNodeId) {
       setPersistedStatus(null);
       setStatusLoaded(true);
       return () => {
@@ -96,7 +117,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
       };
     }
     setStatusLoaded(false);
-    shapeDB.batchSessions.get(String(sessionId)).then((session) => {
+    shapeDB.batchSessions.get(String(activeNodeId)).then((session) => {
       if (cancelled) return;
       setPersistedStatus(session?.status ?? null);
       setStatusLoaded(true);
@@ -108,7 +129,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
     return () => {
       cancelled = true;
     };
-  }, [sessionId]);
+  }, [activeNodeId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -132,7 +153,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
   }, [nodeKey]);
 
   const statusForPolling = statusLoaded ? processingStatus : 'processing';
-  const shouldPollTiles = Boolean(sessionId)
+  const shouldPollTiles = Boolean(activeNodeId)
     && !tilesAvailable
     && ['processing', 'paused', 'completed'].includes(statusForPolling ?? '');
 
@@ -146,7 +167,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
     const pollSummary = async () => {
       setTilesChecking(true);
       try {
-        const summary = await getTileSummary(String(sessionId));
+        const summary = await fetchTileSummary(String(activeNodeId));
         if (cancelled) return;
         if (summary.tiles > 0) {
           setTilesAvailable(true);
@@ -167,7 +188,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
         clearTimeout(timeoutId);
       }
     };
-  }, [sessionId, shouldPollTiles]);
+  }, [activeNodeId, shouldPollTiles]);
 
   useEffect(() => {
     let cancelled = false;
@@ -199,9 +220,9 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
   }, [selectionDataSource, selectionMatrix, workerClient]);
 
   const loadMetadataRows = useCallback(
-    (targetSessionId: string) =>
+    (targetNodeId: string) =>
       getShapeTileMetadataDB()
-        .then((db) => db.featureMetadata.where('sessionId').equals(String(targetSessionId)).toArray()),
+        .then((db) => db.featureMetadata.where('nodeId').equals(String(targetNodeId)).toArray()),
     [],
   );
 
@@ -209,7 +230,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
     metadataRows: rawMetadataRows,
     metadataLoading,
     metadataError,
-  } = useVectorTilePreviewMetadata(metadataEnabled, sessionId, loadMetadataRows);
+  } = useVectorTilePreviewMetadata(metadataEnabled, activeNodeId, loadMetadataRows);
   const [normalizedMetadataRows, setNormalizedMetadataRows] = useState(rawMetadataRows);
   const [invalidFeatureIds, setInvalidFeatureIds] = useState<Set<string>>(new Set());
 
@@ -589,13 +610,13 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
 
   const tileDataProvider = useCallback<NonNullable<MapWithVectorTilesProps['tileDataProvider']>>(
     async (z: number, x: number, y: number, nodeId?: string) => {
-      const resolvedSessionId = nodeId ?? (sessionId ? String(sessionId) : undefined);
-      if (!resolvedSessionId) return null;
-      const data = await getTile(resolvedSessionId, z, x, y);
+      const resolvedNodeId = nodeId ?? (activeNodeId ? String(activeNodeId) : undefined);
+      if (!resolvedNodeId) return null;
+      const data = await fetchTile(resolvedNodeId, z, x, y);
       if (!data) return null;
       return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
     },
-    [sessionId],
+    [activeNodeId],
   );
 
   return {
@@ -627,7 +648,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
     hoverMessage,
     tilesUrl,
     tilesLayer,
-    sessionId,
+    nodeId: activeNodeId,
     tilesAvailable,
     tilesChecking,
     processingStatus,

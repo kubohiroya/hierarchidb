@@ -30,7 +30,7 @@ export class OsmDownloadStrategy implements DownloadStageStrategy {
       const country = metadata.countryCode ? metadataMap.get(metadata.countryCode.toUpperCase()) : undefined;
       return ({
       taskId: buildDownloadTaskId(String(context.nodeId), metadata),
-      sessionId: context.sessionId,
+      nodeId: context.nodeId,
       taskType: 'download',
       stage: 'wait',
       type: 'download',
@@ -62,7 +62,7 @@ export class OsmDownloadStrategy implements DownloadStageStrategy {
     const outputs = context.downloadTasks.map((task) => {
       const payload = task.config?.url ? payloadByUrl.get(task.config.url) : undefined;
       return {
-        inputBufferId: `${context.sessionId}-download-${task.index ?? 0}`,
+        inputBufferId: `${context.nodeId}-download-${task.index ?? 0}`,
         countryCode: payload?.countryCode ?? task.countryCode,
         countryName: payload?.countryName,
         adminLevel: payload?.adminLevel ?? task.config?.adminLevel,

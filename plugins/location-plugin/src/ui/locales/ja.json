@@ -180,7 +180,7 @@
     "dataSourceUnsupported": "このデータソースはまだ未対応です。",
     "noSelection": "国/種別の選択がありません。",
     "noPoints": "処理できる地点データがありません。",
-    "success": "ビルドを開始しました（セッション {{sessionId}}）",
+    "success": "ビルドを開始しました。",
     "errors": {
       "saveFirst": "ビルドを始める前に保存してください。"
     }

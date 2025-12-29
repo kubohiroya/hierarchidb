@@ -93,7 +93,6 @@ export const en: RoutePluginTranslations = {
       completed: 'Completed',
       failed: 'Failed',
       paused: 'Paused',
-      cancelled: 'Cancelled',
     },
     summary: {
       completedLabel: 'Completed',

@@ -15,7 +15,6 @@ import type {
 export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = BaseBatchConfig> {
   protected readonly config: TConfig;
   protected readonly nodeId: NodeId;
-  protected readonly sessionId: string;
 
   protected resourceUsage?: ResourceUsage;
   protected abortController: AbortController | null = null;
@@ -24,13 +23,11 @@ export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = Bas
   private readonly state: BatchSessionState;
   private progress: BatchProgress;
 
-  constructor(sessionId: string, nodeId: NodeId, config: TConfig) {
-    this.sessionId = sessionId;
+  constructor(nodeId: NodeId, config: TConfig) {
     this.nodeId = nodeId;
     this.config = config;
 
     this.state = {
-      sessionId,
       nodeId,
       status: 'idle',
     };
@@ -188,7 +185,6 @@ export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = Bas
         ? formatProgressError(errorPayload)
         : event.error;
     const full: BatchProgressEvent = {
-      sessionId: this.sessionId,
       nodeId: this.nodeId,
       stage: event.stage ?? this.progress.currentStage ?? 'unknown',
       phase: event.phase ?? (this.state.status as ProgressPhase),

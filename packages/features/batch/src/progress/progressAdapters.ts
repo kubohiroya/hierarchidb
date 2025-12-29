@@ -21,7 +21,6 @@ export function progressEventToUnified(event: BatchProgressEvent): UnifiedProgre
     payload,
     message: event.message,
     nodeId: event.nodeId,
-    sessionId: event.sessionId,
   };
 }
 

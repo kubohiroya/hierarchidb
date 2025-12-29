@@ -5,7 +5,6 @@ export type EphemeralStage = 'download' | 'simplify1' | 'simplify2' | 'vectorTil
 
 export interface RawFeatureBuffer {
   id: string;
-  sessionId: string;
   nodeId: NodeId;
   data: ArrayBuffer;
   featureCount: number;
@@ -17,7 +16,6 @@ export interface RawFeatureBuffer {
 
 export interface SimplifiedFeatureBuffer {
   id: string;
-  sessionId: string;
   nodeId: NodeId;
   stage: 'simplify1' | 'simplify2';
   data: ArrayBuffer;
@@ -29,7 +27,6 @@ export interface SimplifiedFeatureBuffer {
 
 export interface VectorTileData {
   id: string;
-  sessionId: string;
   nodeId: NodeId;
   z: number;
   x: number;
@@ -43,9 +40,8 @@ export interface VectorTileData {
 }
 
 export interface BatchSessionMetadata<Config = unknown> {
-  id: string;
   nodeId: NodeId;
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+  status: 'pending' | 'processing' | 'completed' | 'failed';
   stage: EphemeralStage;
   progress: number;
   totalTasks: number;
@@ -76,32 +72,28 @@ export class EphemeralGisDB<Config = unknown> extends Dexie {
   constructor(name: string) {
     super(name);
     this.version(1).stores({
-      rawBuffers: '&id, sessionId, nodeId, timestamp',
-      simplifiedBuffers: '&id, sessionId, nodeId, stage, timestamp, [sessionId+stage]',
-      vectorTiles: '&id, sessionId, nodeId, [z+x+y], hash, timestamp',
+      rawBuffers: '&id, nodeId, timestamp',
+      simplifiedBuffers: '&id, nodeId, stage, timestamp, [nodeId+stage]',
+      vectorTiles: '&id, nodeId, [z+x+y], hash, timestamp',
       sessions: '&id, nodeId, status, stage, startTime',
       cache: '&key, type, lastAccessed, ttl',
     });
-  }
 
-  async clearSession(sessionId: string): Promise<void> {
-    await this.transaction('rw', [
-      this.rawBuffers,
-      this.simplifiedBuffers,
-      this.vectorTiles,
-      this.sessions,
-      this.cache,
-    ], async () => {
-      await this.rawBuffers.where('sessionId').equals(sessionId).delete();
-      await this.simplifiedBuffers.where('sessionId').equals(sessionId).delete();
-      await this.vectorTiles.where('sessionId').equals(sessionId).delete();
-      await this.sessions.where('id').equals(sessionId).delete();
-
-      const cacheKeys = await this.cache
-        .filter(entry => entry.key.includes(sessionId))
-        .primaryKeys();
-      await this.cache.bulkDelete(cacheKeys);
-    });
+    this.version(2)
+      .stores({
+        rawBuffers: '&id, nodeId, timestamp',
+        simplifiedBuffers: '&id, nodeId, stage, timestamp, [nodeId+stage]',
+        vectorTiles: '&id, nodeId, [z+x+y], hash, timestamp',
+        sessions: '&nodeId, status, stage, startTime',
+        cache: '&key, type, lastAccessed, ttl',
+      })
+      .upgrade(async () => {
+        await this.rawBuffers.clear();
+        await this.simplifiedBuffers.clear();
+        await this.vectorTiles.clear();
+        await this.sessions.clear();
+        await this.cache.clear();
+      });
   }
 
   async clearNodeData(nodeId: NodeId): Promise<void> {
@@ -112,40 +104,35 @@ export class EphemeralGisDB<Config = unknown> extends Dexie {
       this.sessions,
       this.cache,
     ], async () => {
-      const sessions = await this.sessions.where('nodeId').equals(nodeId).toArray();
-      const sessionIds = sessions.map((session) => session.id);
-
       await this.rawBuffers.where('nodeId').equals(nodeId).delete();
       await this.simplifiedBuffers.where('nodeId').equals(nodeId).delete();
       await this.vectorTiles.where('nodeId').equals(nodeId).delete();
       await this.sessions.where('nodeId').equals(nodeId).delete();
 
-      if (sessionIds.length > 0) {
-        const cacheKeys = await this.cache
-          .filter(entry => sessionIds.some((id) => entry.key.includes(id)))
-          .primaryKeys();
-        await this.cache.bulkDelete(cacheKeys);
-      }
+      const cacheKeys = await this.cache
+        .filter(entry => entry.key.includes(String(nodeId)))
+        .primaryKeys();
+      await this.cache.bulkDelete(cacheKeys);
     });
   }
 
-  async hasStageData(sessionId: string, stage: EphemeralStage): Promise<boolean> {
+  async hasStageData(nodeId: NodeId, stage: EphemeralStage): Promise<boolean> {
     switch (stage) {
       case 'download':
-        return (await this.rawBuffers.where('sessionId').equals(sessionId).count()) > 0;
+        return (await this.rawBuffers.where('nodeId').equals(nodeId).count()) > 0;
       case 'simplify1':
       case 'simplify2':
         return (
-          (await this.simplifiedBuffers.where({ sessionId, stage }).count()) > 0
+          (await this.simplifiedBuffers.where({ nodeId, stage }).count()) > 0
         );
       case 'vectorTiles':
-        return (await this.vectorTiles.where('sessionId').equals(sessionId).count()) > 0;
+        return (await this.vectorTiles.where('nodeId').equals(nodeId).count()) > 0;
       default:
         return false;
     }
   }
 
-  async clearStage(sessionId: string, stage: EphemeralStage): Promise<void> {
+  async clearStage(nodeId: NodeId, stage: EphemeralStage): Promise<void> {
     await this.transaction('rw', [
       this.rawBuffers,
       this.simplifiedBuffers,
@@ -155,23 +142,23 @@ export class EphemeralGisDB<Config = unknown> extends Dexie {
     ], async () => {
       switch (stage) {
         case 'download':
-          await this.rawBuffers.where('sessionId').equals(sessionId).delete();
+          await this.rawBuffers.where('nodeId').equals(nodeId).delete();
           break;
         case 'simplify1':
         case 'simplify2':
-          await this.simplifiedBuffers.where({ sessionId, stage }).delete();
+          await this.simplifiedBuffers.where({ nodeId, stage }).delete();
           break;
         case 'vectorTiles':
-          await this.vectorTiles.where('sessionId').equals(sessionId).delete();
+          await this.vectorTiles.where('nodeId').equals(nodeId).delete();
           break;
         default:
           break;
       }
 
-      await this.sessions.where('id').equals(sessionId).delete();
+      await this.sessions.where('nodeId').equals(nodeId).delete();
 
       const cacheKeys = await this.cache
-        .filter(entry => entry.key.includes(sessionId))
+        .filter(entry => entry.key.includes(String(nodeId)))
         .primaryKeys();
       await this.cache.bulkDelete(cacheKeys);
     });

@@ -5,8 +5,6 @@ import type { RouteBatchConfig } from '../common/types/BatchConfig.js';
 import type {
   BatchProgressCallback,
   BatchProgressEvent,
-  BatchSessionId,
-  IBatchSessionManager,
   StageKey,
 } from '@hierarchidb/common-api';
 import { BaseBatchSessionManager } from '@hierarchidb/batch-runtime-services';
@@ -24,7 +22,6 @@ export interface RouteBatchInput {
 
 export class RouteBatchSessionOrchestrator extends BaseBatchSessionManager {
   private readonly manager: RouteBatchManager;
-  private readonly sessionNodeMap = new Map<BatchSessionId, NodeId>();
   private readonly pendingSessions = new Map<NodeId, { config: RouteBatchConfig; routes: RouteBatchRouteInput[] }>();
 
   constructor(deps?: RouteBatchManagerDeps) {
@@ -32,8 +29,7 @@ export class RouteBatchSessionOrchestrator extends BaseBatchSessionManager {
     const emitter = {
       emit: (update: { jobId: string; progress: number; phase: string; ts: number }) => {
         const event: BatchProgressEvent = {
-          sessionId: update.jobId,
-          nodeId: this.sessionNodeMap.get(update.jobId) ?? ('' as NodeId),
+          nodeId: update.jobId as NodeId,
           stage: update.phase as StageKey,
           phase: update.progress >= 100 ? 'completed' : 'running',
           timestamp: update.ts,
@@ -44,7 +40,7 @@ export class RouteBatchSessionOrchestrator extends BaseBatchSessionManager {
             currentTask: update.phase,
           },
         };
-        this.emitProgress(update.jobId, event);
+        this.emitProgress(update.jobId as NodeId, event);
       },
     };
     this.manager = new RouteBatchManager({ ...deps, emitter });
@@ -58,7 +54,7 @@ export class RouteBatchSessionOrchestrator extends BaseBatchSessionManager {
     });
   }
 
-  async startBatchSession(nodeId: NodeId): Promise<BatchSessionId> {
+  async startBatchSession(nodeId: NodeId): Promise<NodeId> {
     const pending = this.pendingSessions.get(nodeId);
     this.pendingSessions.delete(nodeId);
     if (!pending) {
@@ -70,43 +66,41 @@ export class RouteBatchSessionOrchestrator extends BaseBatchSessionManager {
       throw new Error('Route batch session requires at least one route');
     }
 
-    const sessionId = await this.manager.startRouteBatchSession(nodeId, config, routes);
-    this.sessionNodeMap.set(sessionId, nodeId);
-    const session = this.manager.getSession(sessionId);
+    const sessionNodeId = await this.manager.startRouteBatchSession(nodeId, config, routes);
+    const session = this.manager.getSession(sessionNodeId);
     if (session) {
       this.registerSession(session);
     }
-    return sessionId;
+    return sessionNodeId;
   }
 
-  async pauseBatchSession(sessionId: BatchSessionId): Promise<void> {
-    if (this.sessions.has(sessionId)) {
-      await super.pauseBatchSession(sessionId);
+  async pauseBatchSession(nodeId: NodeId): Promise<void> {
+    if (this.sessions.has(nodeId)) {
+      await super.pauseBatchSession(nodeId);
     }
   }
 
-  async resumeBatchSession(sessionId: BatchSessionId): Promise<void> {
-    if (this.sessions.has(sessionId)) {
-      await super.resumeBatchSession(sessionId);
+  async resumeBatchSession(nodeId: NodeId): Promise<void> {
+    if (this.sessions.has(nodeId)) {
+      await super.resumeBatchSession(nodeId);
     }
   }
 
-  async cancelBatchSession(sessionId: BatchSessionId): Promise<void> {
-    if (this.sessions.has(sessionId)) {
-      await super.cancelBatchSession(sessionId);
+  async cancelBatchSession(nodeId: NodeId): Promise<void> {
+    if (this.sessions.has(nodeId)) {
+      await super.cancelBatchSession(nodeId);
     }
   }
 
-  onBatchProgress(sessionId: BatchSessionId, callback: BatchProgressCallback): () => void {
-    return super.onBatchProgress(sessionId, callback);
+  onBatchProgress(nodeId: NodeId, callback: BatchProgressCallback): () => void {
+    return super.onBatchProgress(nodeId, callback);
   }
 
   protected async onSessionStatusChange(_session: RouteBatchSession): Promise<void> {
     const state = _session.getState();
-    if (state.status === 'completed' || state.status === 'failed' || state.status === 'cancelled') {
-      this.sessions.delete(state.sessionId);
-      this.sessionNodeMap.delete(state.sessionId);
-      this.cleanupSessionTracking(state.sessionId);
+    if (state.status === 'completed' || state.status === 'failed') {
+      this.sessions.delete(state.nodeId);
+      this.cleanupSessionTracking(state.nodeId);
     }
   }
 }
@@ -128,8 +122,4 @@ function resolveRouteConfig(config?: RouteBatchSessionConfig | RouteBatchConfig)
     validation: config?.validation,
     laneCaps: config?.laneCaps,
   };
-}
-
-export function createRouteBatchManager(deps?: RouteBatchManagerDeps): IBatchSessionManager {
-  return new RouteBatchSessionOrchestrator(deps);
 }

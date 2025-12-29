@@ -27,7 +27,7 @@ export interface UseShapeProgressOptions {
 const SHAPE_NODE_TYPE = 'shape' as NodeType;
 
 export function useShapeProgress(
-  sessionId: string | null,
+  nodeId: string | null,
   options: UseShapeProgressOptions = {},
 ): ShapeProgressState & { subscribe: () => void; unsubscribe: () => void } {
   const {
@@ -44,7 +44,7 @@ export function useShapeProgress(
     unsubscribe,
   } = usePluginBatchProgress<ShapeProgress, ShapeProgressStatus>(
     SHAPE_NODE_TYPE,
-    sessionId,
+    nodeId,
     {
       autoSubscribe,
       enablePollingFallback,
@@ -53,9 +53,9 @@ export function useShapeProgress(
       mapUnifiedToStatus: (info, fallback) => toShapeStatus(info as ExtendedProgress | null, fallback as BatchSessionStatus | null),
     },
   );
-  const debugKey = sessionId ?? 'none';
+  const debugKey = nodeId ?? 'none';
   const debugSnapshot = {
-    sessionId,
+    nodeId,
     autoSubscribe,
     enablePollingFallback,
     isSubscribed,

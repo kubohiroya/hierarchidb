@@ -1,3 +1,5 @@
+import type { NodeId } from './id-types.js';
+
 /**
 
  - Unified progress event types for batch processing
@@ -14,7 +16,7 @@ export type BatchStage =
   | string;
 
 export interface ProgressEvent {
-  sessionId: string;
+  nodeId: NodeId;
   stage: BatchStage;
   total: number;
   completed: number;

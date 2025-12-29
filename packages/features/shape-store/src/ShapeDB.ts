@@ -145,7 +145,6 @@ export interface CacheStatistics {
 }
 
 export interface BatchSessionRecord {
-  sessionId: string;
   nodeId: NodeId;
   draftId?: NodeId;
   status: 'idle' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
@@ -163,7 +162,7 @@ export interface BatchSessionRecord {
 
 export interface BatchTaskRecord {
   taskId: string;
-  sessionId: string;
+  nodeId: NodeId;
   taskType: BatchTaskType;
   status: TaskStatus;
   index: number;
@@ -265,7 +264,7 @@ export interface CacheEntryRecord {
 export class ShapeDB extends Dexie {
 
   // Batch processing tables
-  batchSessions!: Table<BatchSessionRecord, string>;
+  batchSessions!: Table<BatchSessionRecord, NodeId>;
   batchTasks!: Table<BatchTaskRecord, string>;
 
   // Feature storage tables
@@ -305,28 +304,49 @@ export class ShapeDB extends Dexie {
       cache:
         '&cacheKey, nodeId, cacheType, [cacheType+lastHit], lastHit, createdAt, size, hits, expiresAt',
     });
+
+    this.version(2)
+      .stores({
+        // Batch processing - indexed for node-based session and task management
+        batchSessions: '&nodeId, status, startedAt, updatedAt',
+        batchTasks:
+          '&taskId, nodeId, [nodeId+status], [nodeId+type], [nodeId+index], status, type, startedAt',
+
+        // Features - spatial and attribute indexing
+        features:
+          '++id, nodeId, [nodeId+adminLevel], [nodeId+countryCode], mortonCode, adminLevel, countryCode, name, createdAt',
+        featureIndices:
+          '&indexId, featureId, mortonCode, [mortonCode+adminLevel], adminLevel, countryCode, area, complexity',
+        featureBuffers: '&bufferId, nodeId, [nodeId+stage], stage, createdAt, byteSize',
+
+        // Vector tiles - spatial tile indexing
+        vectorTiles: '&tileId, nodeId, [nodeId+z+x+y], [z+x+y], z, generatedAt, lastAccessed, size',
+        tileBuffers: '&bufferId, nodeId, [nodeId+z+x+y], [z+x+y], z, stage, createdAt',
+
+        // Cache - LRU and size-based management
+        cache:
+          '&cacheKey, nodeId, cacheType, [cacheType+lastHit], lastHit, createdAt, size, hits, expiresAt',
+      })
+      .upgrade(async () => {
+        await this.batchSessions.clear();
+        await this.batchTasks.clear();
+      });
   }
 
   // Batch Session Management
   async createBatchSession(
-    session: Omit<BatchSessionRecord, 'sessionId'> & { sessionId?: string },
+    session: BatchSessionRecord,
   ): Promise<BatchSessionRecord> {
-    const sessionId = session.sessionId ?? String(session.nodeId ?? crypto.randomUUID());
-    const fullSession: BatchSessionRecord = {
-      ...session,
-      sessionId,
-    };
-
-    await this.batchSessions.put(fullSession);
-    return fullSession;
+    await this.batchSessions.put(session);
+    return session;
   }
 
-  async getBatchSession(sessionId: string): Promise<BatchSessionRecord | undefined> {
-    return await this.batchSessions.get(sessionId);
+  async getBatchSession(nodeId: NodeId): Promise<BatchSessionRecord | undefined> {
+    return await this.batchSessions.get(nodeId);
   }
 
-  async updateBatchSession(sessionId: string, updates: Partial<BatchSessionRecord>): Promise<void> {
-    await this.batchSessions.update(sessionId, {
+  async updateBatchSession(nodeId: NodeId, updates: Partial<BatchSessionRecord>): Promise<void> {
+    await this.batchSessions.update(nodeId, {
       ...updates,
       updatedAt: Date.now(),
     });
@@ -358,12 +378,12 @@ export class ShapeDB extends Dexie {
     await this.batchTasks.update(taskId, updates);
   }
 
-  async getBatchTasks(sessionId: string): Promise<BatchTaskRecord[]> {
-    return await this.batchTasks.where('sessionId').equals(sessionId).sortBy('index');
+  async getBatchTasks(nodeId: NodeId): Promise<BatchTaskRecord[]> {
+    return await this.batchTasks.where('nodeId').equals(nodeId).sortBy('index');
   }
 
-  async getTasksByStatus(sessionId: string, status: TaskStatus): Promise<BatchTaskRecord[]> {
-    return await this.batchTasks.where('[sessionId+status]').equals([sessionId, status]).toArray();
+  async getTasksByStatus(nodeId: NodeId, status: TaskStatus): Promise<BatchTaskRecord[]> {
+    return await this.batchTasks.where('[nodeId+status]').equals([nodeId, status]).toArray();
   }
 
   // Feature Management

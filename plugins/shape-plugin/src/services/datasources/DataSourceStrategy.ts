@@ -244,8 +244,8 @@ export abstract class BaseDataSourceStrategy<TRawData = unknown, TProcessedData 
   async healthCheck(): Promise<boolean> {
     try {
       if (this.config.access.baseUrl) {
-        const { authFetch } = await import('../utils/authFetch.js');
-        const response = await authFetch(this.config.access.baseUrl);
+        const { authFetch } = await import('@hierarchidb/download');
+        const response = await authFetch('shape', this.config.access.baseUrl);
         return response.ok;
       }
       return true;

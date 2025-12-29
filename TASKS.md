@@ -53,6 +53,39 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1849) route-plugin Step3 の陸路カラム追加（API生成経路）（P1）
+- ブランチ: `feat/route/step3-api-columns`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/route-plugin（Step3 UI）, app/public/locales/route-plugin.json（必要なら）
+- 受け入れ基準（DoD）:
+  - [ ] Step3 のヘッダカラムに「API生成経路（高速鉄道/在来線鉄道/道路）」を追加する
+  - [ ] 追加する3カラムは既定 OFF かつ disabled 表示にする
+  - [ ] 既存の「直線近似経路」3カラムは維持する
+  - [ ] 表示文言の i18n を日英で更新する
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] Step3 のヘッダカラム定義を特定する
+  - [ ] API生成経路カラムを追加し、既定OFF/disabledにする
+- ロールバック手順：該当 UI ファイルと i18n の差分を revert する
+
+1959) location/route プレビュー(ステップ6) 地物種別トグルUI追加（P1）
+- ブランチ: `feat/ui/preview-layer-toggle`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/location-plugin`, `plugins/route-plugin`, `packages/ui/map`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] location-plugin のステップ6地図プレビュー内にカード状トグルUIを追加し、地形タイプ別に表示ON/OFFできる
+  - [ ] OFFの地形タイプは MapLibre フィルタで不可視になる
+  - [ ] route-plugin のステップ6地図プレビュー内にカード状トグルUIを追加し、経路モード別に表示ON/OFFできる
+  - [ ] OFFの経路モードは MapLibre フィルタで不可視になる
+  - [ ] 「巻き戻り」懸念の差分確認を行い、必要なら復旧内容を運用ログに記載する
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] location preview にトグルUIを組み込み、描画フィルタを適用する
+  - [ ] route preview にトグルUIを組み込み、描画フィルタを適用する
+  - [ ] 巻き戻りの有無を確認し、必要な復旧を実施する
+  - [ ] 代表検証（typecheck 等）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：preview UI と MapLibre フィルタ適用の変更を revert し、必要なら `pnpm --filter @hierarchidb/location-plugin typecheck` と `pnpm --filter @hierarchidb/route-plugin typecheck` を再実行する。
+- 運用ログ：
+  - start: 2025-12-27 21:05 JST location/route プレビューの地物種別トグルUI追加と巻き戻り確認に着手。
+
 1957) shape-plugin: stage5 タイル生成で task failed が出る原因調査/修正（P1）
 - ブランチ: `fix/shape-plugin/stage5-tile-task-failed`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`, `plugins/shape-plugin/src/ui/hooks/useShapeBatchTasks.ts`, `plugins/shape-plugin/src/services/batch/**`, `TASKS.md`
@@ -71,6 +104,7 @@
   - progress: 2025-12-29 03:55 JST SessionController にタイル索引化とメタデータ生成の実装を追加し、vector tile ステージは stage-tile 参照へ切替する作業に着手。
   - progress: 2025-12-29 04:20 JST stage-tile 入力は TilesDB の key に `input:` を付与して保存し、runtime-worker の readBuffer が stage-tile を読むよう調整。vector tile adapter の input サイズ判定/永続化を stage-tile ではスキップするよう修正。
   - progress: 2025-12-29 04:45 JST sessionId を廃止し nodeId を唯一識別子として扱う方針へ更新。worker/api と UI の参照を nodeId に揃え、SessionController の sessionId を nodeId に固定。TilesDB の削除は nodeId と input:nodeId を対象に追加。
+  - progress: 2025-12-29 09:30 JST GIS SDK / TilesDB の sessionId 命名とスキーマを nodeId へ統一する作業に着手。
   - progress: 2025-12-29 05:05 JST Step4「ビルド終了時の中間生成物の保持」カードの縦位置を上揃えに修正。
   - progress: 2025-12-29 05:15 JST SessionController の GeometryCollection 対応と metadata 型エラーを修正し、未使用の buildVectorTileInputBuffer を削除。worker plugin の未使用引数を整理。
 
@@ -166,6 +200,188 @@
 - 運用ログ：
   - start: 2025-12-29 08:10 JST 内部ISO2統一と外部ISO3変換の方針適用に着手。
   - done: 2025-12-29 08:20 JST metadata loader で ISO2 を優先し、選択正規化と payload 生成の key を ISO2 基準へ統一。ISO3 は外部出力時に変換。検証: 未実施。ロールバック: `plugins/shape-plugin/src/**` の差分を revert。
+
+1964) shape-plugin: ISO2/ISO3 を型別名で明示化（P2）
+- ブランチ: `refactor/shape-plugin/iso2-iso3-types`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/**`, `packages/common/types/src/datasource.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] ISO2/ISO3 が string ではなく型別名として表現される
+  - [ ] CountryMetadata など関連型が ISO2/ISO3 を参照する
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] ISO2/ISO3 型を共通型に定義/再利用する
+  - [ ] 既存の string 型指定を適切に置換する
+- ロールバック手順：`plugins/shape-plugin/src/**` と `packages/common/types/src/datasource.ts` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 08:30 JST ISO2/ISO3 を型別名で明示化する作業に着手。
+  - done: 2025-12-29 08:40 JST ISO2/ISO3/CountryCode 型を追加し、CountryMetadata/DownloadTaskPayload などの型参照を更新。検証: 未実施。ロールバック: `plugins/shape-plugin/src/common/types/*.ts` と `packages/common/types/src/datasource.ts` の差分を revert。
+
+1965) ISO2/ISO3 型定義の共通化と location/route への適用（P1）
+- ブランチ: `refactor/common/iso2-iso3-types`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/common/types/src/datasource.ts`, `packages/tools/gen-iso3166-2/src/types.ts`, `plugins/location-plugin/src/**`, `packages/features/location-store/src/index.ts`, `packages/features/route-store/src/index.ts`, `packages/plugin-service-api/src/types/*`, `plugins/shape-plugin/src/common/types/*`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] ISO2/ISO3 型は common/types と gen-iso3166-2 に定義される
+  - [ ] shape-plugin から ISO2/ISO3 定義が削除される
+  - [ ] location/route の国コード関連型が ISO2/ISO3 を参照する
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] common/types で ISO2/ISO3/CountryCode を整備する
+  - [ ] gen-iso3166-2 の型に ISO2/ISO3 を適用する
+  - [ ] location/route の型を ISO2/ISO3 に更新する
+- ロールバック手順：上記ファイル群の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 08:55 JST ISO2/ISO3 型定義の共通化と location/route への適用に着手。
+  - done: 2025-12-29 09:10 JST ISO2/ISO3 を common/types と gen-iso3166-2 に定義し、location/route/shape の型参照を更新。検証: 未実施。ロールバック: `packages/common/types/src/datasource.ts` と `packages/tools/gen-iso3166-2/src/types.ts`、`plugins/location-plugin/src/**`、`packages/features/location-store/src/index.ts`、`packages/features/route-store/src/index.ts`、`packages/plugin-service-api/src/types/*`、`plugins/shape-plugin/src/common/types/*` の差分を revert。
+
+1966) location-plugin: Nominatim 結果の unknown 型エラー修正（P1）
+- ブランチ: `fix/location-plugin/nominatim-unknown-type`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/location-plugin/src/services/LocationBatchManager.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] `convertOSMToLocations` 呼び出しの型エラーが解消する
+  - [ ] `@hierarchidb/location-plugin` と `@hierarchidb/route-plugin` の typecheck で同一エラーが出ない
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] Nominatim 取得結果の型確定ポイントを特定する
+  - [ ] 例外/エラー時の型安全を維持する
+- ロールバック手順：`plugins/location-plugin/src/services/LocationBatchManager.ts` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 09:20 JST Nominatim 結果の unknown 型エラー修正に着手。
+  - done: 2025-12-29 09:25 JST Nominatim 応答の型ガードを追加し、未知の形状は空配列で扱うよう修正。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/location-plugin/src/services/LocationBatchManager.ts` の差分を revert。
+
+1967) route-plugin: resolveTransportLabel の IDE-GSM mode 準拠修正（P1）
+- ブランチ: `fix/route-plugin/transport-label-ide-gsm`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/route-plugin/src/ui/components/steps/RouteBuildStep.tsx`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] resolveTransportLabel が IDE-GSM の mode 取り扱いに準拠する
+  - [ ] 既存の transportSelection/transportMode 表示が破綻しない
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] IDE-GSM の mode マッピング（ROAD/WATERWAY/AIRWAY/RAILWAY/H_RAILWAY）を参照する
+  - [ ] transportSelection / transportMode / routeMode のフォールバック順序を整理する
+- ロールバック手順：`plugins/route-plugin/src/ui/components/steps/RouteBuildStep.tsx` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 09:35 JST resolveTransportLabel の IDE-GSM mode 準拠修正に着手。
+  - done: 2025-12-29 09:45 JST transportSelection/transportMode/routeMode を IDE-GSM mode 対応でマップし、RouteBuildStep の表示ラベルを修正。検証: 未実施。ロールバック: `plugins/route-plugin/src/ui/components/steps/RouteBuildStep.tsx` の差分を revert。
+  - progress: 2025-12-29 09:55 JST candidates による複数解決を廃止し、transportSelection のみを正式プロパティとして参照する方針に切替。
+  - done: 2025-12-29 10:00 JST transportSelection の型ガードを導入し、未定義は Not configured、型外の値は例外で弾くよう修正。検証: 未実施。ロールバック: `plugins/route-plugin/src/ui/components/steps/RouteBuildStep.tsx` の差分を revert。
+
+1968) batch: BatchSessionId の型定義を common-api へ復帰（P1）
+- ブランチ: `fix/batch/batch-session-id-export`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/common/api/src/BatchControlAPI.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] `@hierarchidb/batch` の build:types が通る
+  - [ ] common-api から `BatchSessionId` が export される
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] 既存の NodeId ベース運用と整合する alias を追加する
+  - [ ] 影響箇所を最小差分で修正する
+- ロールバック手順：`packages/common/api/src/BatchControlAPI.ts` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 10:10 JST BatchSessionId の型定義を common-api へ復帰する作業に着手。
+  - done: 2025-12-29 10:15 JST BatchSessionId を NodeId alias として common-api に追加。検証: 未実施。ロールバック: `packages/common/api/src/BatchControlAPI.ts` の差分を revert。
+
+1969) batch: BatchSessionId の型名廃止（P1）
+- ブランチ: `refactor/batch/remove-batch-session-id`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/common/api/src/BatchControlAPI.ts`, `packages/features/batch/src/types.ts`, `plugins/location-plugin/src/**`, `plugins/route-plugin/src/**`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] `BatchSessionId` の型名がコードベースから廃止される
+  - [ ] 参照箇所は `NodeId` に統一される
+  - [ ] `@hierarchidb/batch` の build:types が通る
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] common-api の BatchSessionId export を削除する
+  - [ ] 参照箇所の型を NodeId へ統一する
+  - [ ] type export の整理を行う
+- ロールバック手順：上記ファイル群の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 10:20 JST BatchSessionId 型名廃止の対応に着手。
+  - done: 2025-12-29 10:30 JST BatchSessionId の export を削除し、参照箇所を NodeId へ統一。検証: 未実施。ロールバック: `packages/common/api/src/BatchControlAPI.ts`、`packages/features/batch/src/types.ts`、`plugins/location-plugin/src/**`、`plugins/route-plugin/src/**` の差分を revert。
+
+1970) refactor: ここまでの変更に伴う未使用コードの整理（P2）
+- ブランチ: `refactor/cleanup/remove-unused-after-batch`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/common/api/src/**`, `packages/features/batch/src/**`, `plugins/location-plugin/src/**`, `plugins/route-plugin/src/**`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] 未使用コード候補を洗い出し、削除範囲を明確化する
+  - [ ] 削除は最小差分で行い、影響範囲を記録する
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] IDE-GSM/Batch 周辺の未使用 import/型/関数を確認する
+  - [ ] 削除前に利用箇所がないことを確認する
+- ロールバック手順：変更したファイル群の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 10:35 JST 未使用コード整理の検討に着手。
+  - progress: 2025-12-29 10:40 JST `pnpm lint` を実行。未使用コードの指摘はなし。eslint-plugin-storybook が見つからず無効化される警告が複数パッケージで出力。
+  - blocked: 2025-12-29 10:45 JST `pnpm knip` が設定エラーで停止（Invalid input: workspaces.. / unrecognized_keys: plugins）。追加対応方針の判断待ち。
+  - progress: 2025-12-29 10:55 JST knip 設定の `plugins` キーを撤去し、`.storybook` を ignore へ追加。`pnpm knip` は全体実行で storybook 依存不足により失敗したため、workspace 単位で実行に切替。
+  - progress: 2025-12-29 10:58 JST `pnpm knip --workspace plugins/location-plugin` 実行。未使用 files/exports/deps を検出。storybook plugin の警告は継続。
+  - progress: 2025-12-29 11:00 JST `pnpm knip --workspace plugins/route-plugin` 実行。未使用 files/exports/deps を検出。storybook plugin の警告は継続。
+  - progress: 2025-12-29 11:02 JST `pnpm knip --workspace packages/features/batch` 実行。未使用検出なし（storybook plugin 警告のみ）。
+  - progress: 2025-12-29 11:10 JST knip の未使用依存に従い、location/route の dependencies/devDependencies を整理。
+
+1966) ISO2/ISO3 型定義の移動指示対応（P1）
+- ブランチ: `refactor/common/iso2-iso3-relocation`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/common/types/src/datasource.ts`, `packages/tools/gen-iso3166-2/src/types.ts`, `plugins/location-plugin/src/**`, `packages/features/location-store/src/index.ts`, `packages/features/route-store/src/index.ts`, `packages/plugin-service-api/src/types/*`, `plugins/shape-plugin/src/common/types/*`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] ISO2/ISO3 型が shape-plugin ではなく common/types と gen-iso3166-2 に定義される
+  - [ ] location/route の国コード型が ISO2/ISO3 を参照する
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] shape-plugin の ISO2/ISO3 定義を削除し、common/types を参照する
+  - [ ] location/route の国コード型を ISO2/ISO3 で統一する
+- ロールバック手順：上記ファイル群の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 09:20 JST ISO2/ISO3 型定義の移動指示対応に着手。
+  - done: 2025-12-29 09:30 JST ISO2/ISO3 を common/types と gen-iso3166-2 に定義し、shape/location/route の国コード型を ISO2/ISO3 に更新。検証: 未実施。ロールバック: `packages/common/types/src/datasource.ts` と `packages/tools/gen-iso3166-2/src/types.ts`、`plugins/location-plugin/src/**`、`packages/features/location-store/src/index.ts`、`packages/features/route-store/src/index.ts`、`packages/plugin-service-api/src/types/*`、`plugins/shape-plugin/src/common/types/*` の差分を revert。
+
+1967) shape-plugin: Stage5 failed表示とStage4削除ボタン無効の原因調査（P1）
+- ブランチ: `fix/shape-plugin/stage4-stage5-status-controls`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/ui/**`, `plugins/shape-plugin/src/services/**`, `packages/ui/**`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] Stage5の初期failed表示の原因を特定する
+  - [ ] Stage4の削除ボタン無効条件を特定する
+  - [ ] 原因/影響範囲/修正方針を運用ログに記載する
+- チェックリスト:
+  - [ ] buildStatus/currentStage の算出とキャッシュ状態の判定を確認する
+  - [ ] Stage4のボタン disabled 判定を確認する
+- ロールバック手順：`plugins/shape-plugin/src/**` と `packages/ui/**` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 09:40 JST Stage5 failed表示とStage4削除ボタン無効の原因調査に着手。
+  - progress: 2025-12-29 09:55 JST Stage4削除ボタンは sessionId が draft.nodeId 依存で未設定だと常に無効になるため、nodeId を渡して sessionId を解決する修正に着手。
+  - done: 2025-12-29 10:05 JST DownloadConfigSection に nodeId を渡して sessionId を解決し、Stage4削除ボタンが有効になるよう修正。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/components/steps/DownloadConfigSection.tsx` と `plugins/shape-plugin/src/ui/hooks/useDownloadConfigSection.ts`、`plugins/shape-plugin/src/ui/components/steps/ShapeProcessingSettingsStep.tsx` の差分を revert。
+
+1968) shape-plugin: sessionId 廃止の範囲確認と整理（P1）
+- ブランチ: `refactor/shape-plugin/remove-session-id`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/**`, `packages/common/api`, `packages/ui/**`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] sessionId 廃止の対象範囲が合意される
+  - [ ] 合意した範囲で nodeId へ統一する方針を整理する
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] UI/Worker/DB/共通API での sessionId 依存箇所を棚卸しする
+  - [ ] scope 合意後に必要な変更点を確定する
+- ロールバック手順：方針確認のみのため変更なし
+- 運用ログ：
+  - start: 2025-12-29 10:15 JST sessionId 廃止の範囲確認に着手。
+  - done: 2025-12-29 10:20 JST 全体廃止（nodeIdへ統一）で合意。フォールバックなしで進める方針を確定。
+
+1969) sessionId廃止: nodeId統一のExecPlan作成と実装準備（P1）
+- ブランチ: `refactor/common/remove-session-id`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plans/sessionid-abolish-execplan.md`, `packages/common/api/src/BatchControlAPI.ts`, `packages/common/api/src/WorkerAPI.ts`, `packages/features/*-store`, `plugins/*-plugin`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] ExecPlanを作成し、sessionId廃止の全体作業を定義する
+  - [ ] nodeId統一の影響範囲と検証方法が明記されている
+  - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] `plans/sessionid-abolish-execplan.md` を作成する
+  - [ ] 主要なAPI/DB/UIの影響点を明記する
+- ロールバック手順：`plans/sessionid-abolish-execplan.md` と `TASKS.md` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 10:25 JST ExecPlan 作成に着手。
+  - done: 2025-12-29 10:30 JST ExecPlan `plans/sessionid-abolish-execplan.md` を作成し、全体方針を明文化。検証: 未実施。ロールバック: `plans/sessionid-abolish-execplan.md` と `TASKS.md` の差分を revert。
+  - start: 2025-12-29 10:50 JST sessionId 廃止（nodeId統一）実装に着手。
+  - progress: 2025-12-29 11:25 JST common/api・batch runtime・worker・shape batch/DB を nodeId 基準へ更新（BatchControlAPI/WorkerAPI/workerBridge/worker.ts、ShapeDB/EphemeralGisDB/ShapeTileMetadataDB の移行、shape batch 管理/worker/adapters/SessionController/DownloadConfigSection の更新）。残りは shape UI 他箇所と location/route 等の sessionId 移行。
+  - progress: 2025-12-29 12:05 JST shape UI/worker の sessionId 依存をさらに削除（shape progress hook/preview/build progress/actions/monitor）。残りは location/route/gis/map-source 系の sessionId 参照、テスト/ドキュメント整備。
+  - progress: 2025-12-29 12:40 JST batch status から cancelled を廃止し、5状態（idle/running/failed/completed/paused）へ整理。common/api・shape/location/route の status 型/分岐/UI文言と主要テストを更新。
   - start: 2025-12-29 09:25 JST shape-plugin の共通化候補調査に着手。
   - progress: 2025-12-29 09:28 JST 共通化候補を一次抽出（download/authFetch/ISO3166・BuildMonitor・Batch progress hook・selectedArrayByCountries 周辺・BatchSessionManager 補助）。
   - progress: 2025-12-29 09:35 JST download/authFetch 共通化案と BuildMonitor 共通化案の設計観点を整理（@hierarchidb/download の pluginDownloadRegistry 既存APIベース）。
@@ -187,6 +403,37 @@
 - 運用ログ：
   - start: 2025-12-29 09:40 JST download/auth と BuildMonitor の共通化実装計画に着手。
   - progress: 2025-12-29 09:45 JST ExecPlan を `plans/download-buildmonitor-common-execplan.md` に作成。
+  - progress: 2025-12-29 10:02 JST BuildMonitor を `packages/ui/monitoring` へ集約し、shape/route から直接参照するよう更新。download/auth は @hierarchidb/download 直接呼び出しへ移行し、不要な registry/utils を削除。
+
+1964) プラグイン共通コードの直接利用化（ラッパー/アダプター廃止）（P2）
+- ブランチ: `refactor/plugins/direct-common-usage`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/{shape,location,route}-plugin/src/**`, `packages/**`, `TASKS.md`, `plans/**`
+- 受け入れ基準（DoD）:
+  - [ ] 主要プラグインで共通コードのラッパー/アダプター経由箇所を棚卸しし、直接利用化の候補を列挙する
+  - [ ] プラグイン側/共通側の必要修正を含めた変更案を提示し、優先度と影響範囲を整理する
+  - [ ] 必要な共通側のAPI修正を実施し、プラグイン側は直接呼び出しへ移行する
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] ExecPlan を作成し、Decision Log/Progress を開始する
+  - [ ] ラッパー/アダプターの定義と選定基準を文書化する
+  - [ ] 直接利用化の差分を段階的に実施する
+- ロールバック手順：対象ファイルの差分を revert し、既存ラッパー/アダプター経由へ戻す
+- 運用ログ：
+  - start: 2025-12-29 10:19 JST 共通コード直接利用化の調査と実装に着手。
+  - progress: 2025-12-29 10:21 JST ExecPlan を `plans/plugin-direct-common-usage-execplan.md` に作成。
+  - progress: 2025-12-29 10:25 JST location の sharedNet を廃止して直接 @hierarchidb/download を使用、shape の RuntimeTileClient を削除し UI から runtime-worker client を直接利用、route の download type wrapper と shape の auth wrapper を削除。
+  - progress: 2025-12-29 10:30 JST 次候補 (UnifiedShapeBatchManager / createShapeTabularApi / LocationVectorTileService) を順次実施する方針で着手。
+  - start: 2025-12-29 10:37 JST LocationVectorTileService の直接利用化（共通関数群への置換）に着手。
+  - progress: 2025-12-29 10:43 JST LocationVectorTileService を廃止し、共通 helper (`plugins/location-plugin/src/common/tiles/locationVectorTiles.ts`) を新設。LocationDialog/steps-provider/LocationMapPreviewStep を直接 helper 利用へ更新し、ユニットテストも新 helper へ移設。
+  - start: 2025-12-29 10:58 JST route-plugin のラッパー/アダプター経由を棚卸しし、直接利用化へリファクタリングを開始。
+  - progress: 2025-12-29 11:03 JST route の createRouteBatchManager ラッパー群と未使用 RuntimeWorkerClient を削除し、RouteBatchLaunchForm/RouteSourceOrchestrator を直接 API 利用へ更新。
+  - start: 2025-12-29 11:24 JST shape/location/route のタイル生成ステージ共通化の現状を調査開始。
+  - progress: 2025-12-29 11:30 JST 調査結果: shape は `SessionController` + `RuntimeWorkerVectorTileAdapter`（shapeDB/tileBuffers 経由）の独自実装、location は `LocationSessionController` が runtime-worker の `vectortile` client を直接呼び出し Dexie へ戻し込み、route は `RouteBatchManager`/`RouteBatchSession` の `vectortile` ステージが最適化扱いの no-op で共通コード化されていない。
+  - start: 2025-12-29 11:26 JST shape/location/route のタイル生成ステージ共通化（実装）に着手。
+  - progress: 2025-12-29 11:30 JST ExecPlan を `plans/common-vectortile-stage-execplan.md` に作成。
+  - progress: 2025-12-29 11:35 JST runtime-worker に共通の `runVectorTileStage` を追加し、shape/location/route の vectortile ステージを共通ユーティリティ経由に移行（route は sessionId で TilesDB へ生成）。
+  - start: 2025-12-29 11:39 JST ホスト側パッケージ → 特定プラグイン参照（plugin-registry 以外）の依存関係を調査。
+  - progress: 2025-12-29 11:39 JST package.json の依存関係では plugin-registry 以外にホスト→プラグイン参照は見当たらず。コード参照は dev/test 設定（app/vite.config.min.ts の alias、plugin-ui-host の vitest alias）に限定されることを確認。
   - done: 2025-12-29 07:40 JST `buildDownloadTaskPayloads` を Record 形式対応に変更し、空判定は object の key 判定へ修正。検証: 未実施。ロールバック: `plugins/shape-plugin/src/ui/hooks/build/useBatchSessionActions.ts` の差分を revert。
 1954) shape-plugin typecheck 追加エラー修正（P1）
 - ブランチ: `fix/shape-plugin/typecheck-batch-guards`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -6449,6 +6696,22 @@ P2:
 
 ### Done（完了） <a id="kanban-done"></a>
 
+1966) /map モードレスダイアログ内の生成物テーブル表示と検索フィールド有無を調査（P1） — 完了 (2025-12-29)
+- 要点：/map のモードレスダイアログは `ModelessDialogManager` が `MapInfoContent`/`MapLayerContent`/`MapToggleCard` を表示する構成で、shape/location/route の生成物を仮想テーブルで表示するUIは存在しない。リスト表示は MUI List のみ。検索フィールドも設置されていない。
+- 検証：調査のみ（コード確認）。
+- ロールバック手順：調査のみのため変更なし。
+- 運用ログ：
+  - start: 2025-12-29 09:40 JST /map モードレスダイアログ内の生成物テーブル表示と検索フィールド有無の調査を開始。
+  - done: 2025-12-29 09:55 JST モードレスダイアログは MapInfo/Layers/Toggle のみで、仮想テーブルや検索フィールドは未実装であることを確認。
+
+1965) map プレビュー画面の検索フィールド配線状況を確認（P1） — 完了 (2025-12-29)
+- 要点：/map の検索フィールドは `app/src/router/routes/map.tsx` の `runSearch` に配線され、MapLibre の `queryRenderedFeatures` で表示中の feature properties を検索し、feature-state (`hdbSearch`) で強調表示する。検索対象は Jotai の `mapSearchTargetSelectionAtom` で管理。外部検索/Worker 呼び出しはなし。
+- 検証：調査のみ（コード確認）。
+- ロールバック手順：調査のみのため変更なし。
+- 運用ログ：
+  - start: 2025-12-29 09:10 JST /map プレビュー画面の検索フィールド配線状況の確認に着手。
+  - done: 2025-12-29 09:25 JST `map.tsx` の検索 UI が `runSearch` を呼び出し、検索結果は feature-state ハイライトに反映されることを確認。
+
 1949) shape-plugin: Step3 のレベル選択制限（0/1のみ選択可、2+は無効表示）（P2） — 完了 (2025-12-28)
 - 要点：MatrixConfig に `disabledColumnIds` を追加し、SelectionMatrix が無効カラムの表示/選択不可に対応。shape-plugin Step3 で level2+ を disabled 指定。
 - 検証：未実施（コマンド未実行）。
@@ -6475,6 +6738,21 @@ P2:
 - 要点：LINEAR/LOGARITHMIC/QUANTILE/JENKS/EQUAL を正規化して色計算・グラデーション生成に反映。
 - 検証：未実施（手動確認/コマンド未実行）。
 - ロールバック手順：`plugins/styler-plugin/src/common/utils/colorUtils.ts` の差分を revert し、表示/計算を再確認する。
+
+1846) route-plugin 経路種別（空路/海路/直線）の RouteLineString 実装調査（P1） — 完了 (2025-12-29)
+- 要点：IDE-GSM の RouteLineString に対して空路=great_circle/海路=searoute の分岐は実装済み。ただし runtime-worker 側は searoute エンジン未注入のため実行時は great_circle へフォールバック。RouteBatchSession は RouteGenerator で direct/great_circle/searoute を生成し vector tile ステージへ投入するが、searoute/osrm は未注入時フォールバック。
+- 検証：調査のみ（コード確認）。
+- ロールバック手順：調査のみのため変更なし（TASKS.md の記載のみ revert 可）。
+
+1847) searoute-js のエンジン注入（runtime-worker/route-plugin）（P1） — 完了 (2025-12-29)
+- 要点：RouteMutationService/RouteBatchSession の RouteGenerator に SearouteEngine を注入し、海路の searoute-js 利用を有効化。
+- 検証：`pnpm --filter @hierarchidb/route-plugin typecheck` exit 2（既存の batch/session 型不整合や geojson 型不足などで失敗）。
+- ロールバック手順：`packages/runtime-worker/src/services/RouteMutationService.ts` と `plugins/route-plugin/src/services/RouteBatchSession.ts` の差分を revert する。
+
+1848) 陸路（鉄道/高速鉄道/道路）waypoints 生成の ExecPlan 作成（P1） — 完了 (2025-12-29)
+- 要点：`@hierarchidb/download` を用いた OSM ルーティング取得の作業項目と実装計画を ExecPlan 化。
+- 検証：調査のみ（ExecPlan 作成）。
+- ロールバック手順：`plans/route-land-waypoints-execplan.md` の追加を revert する。
 
 1868) TreeNodeInfoPanel の日付表示にラベルを追加（P1） — 完了 (2025-12-28)
 - 要点：日時表示に `Created:` / `Updated:` のラベルを追加。
@@ -13477,6 +13755,18 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-29 09:40 start: analysis/ui/map-modeless-tables — /map モードレスダイアログ内の生成物テーブル表示と検索フィールド有無を調査開始。DoD: Kanban 1966 のとおり。
+- 2025-12-29 09:55 done: analysis/ui/map-modeless-tables — モードレスダイアログは MapInfo/Layers/Toggle のみで、仮想テーブルや検索フィールドは未実装。検証: 調査のみ。ロールバック: 記載のみ revert。
+- 2025-12-29 12:12 start: feat/route/step3-api-columns — Step3 の陸路カラム（API生成経路）追加に着手。DoD: Kanban 記載どおり。（Kanban: 1849）
+- 2025-12-29 12:03 start: docs/route/land-waypoints-execplan — 陸路（鉄道/高速鉄道/道路）waypoints 生成の作業項目整理と ExecPlan 作成に着手。DoD: Kanban 記載どおり。（Kanban: 1848）
+- 2025-12-29 12:05 done: docs/route/land-waypoints-execplan — ExecPlan を `plans/route-land-waypoints-execplan.md` に作成。ロールバック: 記載のみ revert。
+- 2025-12-29 09:10 start: chore/ui/map-search-wiring — /map プレビュー画面の検索フィールド配線状況を確認開始。DoD: Kanban 1965 のとおり。
+- 2025-12-29 09:25 done: chore/ui/map-search-wiring — /map の検索フィールドは `app/src/router/routes/map.tsx` の `runSearch` に配線され、MapLibre の `queryRenderedFeatures` を検索し feature-state (`hdbSearch`) で強調表示。外部検索/Worker 呼び出しはなし。検証: 調査のみ。ロールバック: 記載のみ revert。
+- 2025-12-29 11:41 start: fix/route/searoute-engine-wire — runtime-worker/route-plugin で searoute-js エンジン注入に着手。DoD: Kanban 記載どおり。（Kanban: 1847）
+- 2025-12-29 11:41 command: pnpm --filter @hierarchidb/route-plugin typecheck — exit 2。既存の batch/session 型不整合や geojson 型不足などで失敗（本対応とは別要因）。
+- 2025-12-29 11:41 done: fix/route/searoute-engine-wire — RouteMutationService/RouteBatchSession の RouteGenerator に SearouteEngine を注入し、海路の searoute-js 利用を有効化。ロールバック: `packages/runtime-worker/src/services/RouteMutationService.ts` と `plugins/route-plugin/src/services/RouteBatchSession.ts` の差分を revert する。
+- 2025-12-29 11:34 start: analysis/route/route-linestring-waypoints — route-plugin の空路/海路/直線の RouteLineString 実装有無を調査開始。DoD: Kanban 記載どおり。（Kanban: 1846）
+- 2025-12-29 11:45 done: analysis/route/route-linestring-waypoints — IDE-GSM 取り込みで空路=great_circle/海路=searoute の分岐は実装済み。ただし runtime-worker 側の RouteGenerator は searoute エンジン未注入のため実行時は great_circle にフォールバック。RouteBatchSession は RouteGenerator で direct/great_circle/searoute を生成し vector tile ステージへ渡すが、searoute/osrm は未注入時フォールバック。ロールバック: 調査のみのため変更なし。
 - 2025-12-28 15:57 start: fix/ui/treenode-info-visible — TreeNodeInfoPanel の visible 反映遅延（preview ボタン/タイトル打ち消し線）修正に着手。DoD: Kanban 記載どおり。（Kanban: 1845）
 - 2025-12-28 16:02 command: pnpm --filter @hierarchidb/app typecheck — exit 1。既存の visible 必須化に伴うテスト/worker 側の型エラー（app tests, runtime-worker, ui/worker-client）で失敗。
 - 2025-12-28 16:02 done: fix/ui/treenode-info-visible — TreeNodeInfoPanel の visible 参照を SSOT ノードと同期させ、preview ボタン/タイトル表示の即時反映を修正。ロールバック: `app/src/router/pages/tree/console/useTreeNodeInfoPanel.ts` と `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx` の差分を revert する。

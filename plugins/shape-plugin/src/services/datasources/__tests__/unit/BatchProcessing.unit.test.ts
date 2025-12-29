@@ -54,7 +54,7 @@ export interface BatchJob {
   id: string;
   config: BatchConfig;
   startTime: number;
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+  status: 'pending' | 'running' | 'completed' | 'failed';
   progress: {
     phase: 'fetching' | 'processing' | 'validating' | 'saving' | 'completed';
     percentage: number;
@@ -242,7 +242,7 @@ export class DataSourceBatchProcessor {
       return false;
     }
 
-    job.status = 'cancelled';
+    job.status = 'failed';
     this.runningJobs.delete(jobId);
     return true;
   }

@@ -21,8 +21,8 @@ import { LocationMapPreview } from '../batch/LocationMapPreview.js';
 import type { PreviewLocationPoint } from '../batch/LocationMapPreview.js';
 import type { LocationEntity, LocationType } from '../../../common/types/index.js';
 import { formatBytes, useTranslation } from '../../../common/i18n/index.js';
-import { getEphemeralLocationDB } from '../../../database/EphemeralLocationDB.js';
-import { LocationVectorTileService } from '../../../services/tiles/LocationVectorTileService.js';
+import { getLocationSessionSummary } from '../../../common/tiles/locationVectorTiles.js';
+import { getEphemeralLocationDB } from '@hierarchidb/location-store';
 import { listLocationPoints } from '../../../services/pointRepository.js';
 import { DataGridPreview } from '@hierarchidb/ui-grid';
 
@@ -64,9 +64,7 @@ interface LocationMapPreviewStepProps {
   onUpdate?: (updates: Partial<LocationEntity>) => void;
 }
 
-type TileSummary = Awaited<ReturnType<LocationVectorTileService['getSessionSummary']>> & {
-  sessionId: string;
-};
+type TileSummary = Awaited<ReturnType<typeof getLocationSessionSummary>>;
 
 export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ draft: _draft, nodeId }) => {
   const { translations, locale } = useTranslation();
@@ -77,13 +75,8 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
   const [tableId, setTableId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const serviceRef = useRef<LocationVectorTileService | null>(null);
   const isMountedRef = useRef(true);
   const [activeTab, setActiveTab] = useState(0);
-
-  if (!serviceRef.current) {
-    serviceRef.current = new LocationVectorTileService();
-  }
 
   const loadData = useCallback(async () => {
     if (!isMountedRef.current) return;
@@ -132,17 +125,8 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
         return (current.createdAt ?? 0) > (acc.createdAt ?? 0) ? current : acc;
       }, null);
 
-      if (!latest?.sessionId) {
-        setSummary(null);
-        setTableId(null);
-        const pointRecords = await listLocationPoints(resolvedNodeId);
-        if (!isMountedRef.current) return;
-        setLocations(pointRecords.map(toPreviewLocationPoint));
-        return;
-      }
-
       const [summaryResponse, pointRecords] = await Promise.all([
-        serviceRef.current?.getSessionSummary(latest.sessionId),
+        getLocationSessionSummary(resolvedNodeId),
         listLocationPoints(resolvedNodeId),
       ]);
       if (!isMountedRef.current) return;
@@ -155,8 +139,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
           tiles: summaryResponse.tiles ?? 0,
           sizeBytes: summaryResponse.sizeBytes ?? 0,
           bbox: summaryResponse.bbox,
-          sessionId: latest.sessionId,
-        } as TileSummary & { sessionId: string };
+        } as TileSummary;
       });
       setTableId(latest.tableId ?? null);
       setLocations(pointRecords.map(toPreviewLocationPoint));

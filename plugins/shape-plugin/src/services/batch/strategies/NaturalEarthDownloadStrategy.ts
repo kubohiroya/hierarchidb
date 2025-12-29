@@ -35,7 +35,7 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
     }
     return Array.from(adminLevels.entries()).map(([adminLevel, metadata], index) => ({
       taskId: buildDownloadTaskId(String(context.nodeId), metadata),
-      sessionId: context.sessionId,
+      nodeId: context.nodeId,
       taskType: 'download',
       stage: 'wait',
       type: 'download',
@@ -67,7 +67,7 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
     const lookup = this.buildCountryLookup(countryMetadata);
 
     for (const task of context.downloadTasks) {
-      const inputBufferId = `${context.sessionId}-download-${task.index ?? 0}`;
+      const inputBufferId = `${context.nodeId}-download-${task.index ?? 0}`;
       const raw = await db.rawBuffers.get(inputBufferId);
       if (!raw) continue;
 
@@ -83,10 +83,10 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
         const collection: FeatureCollection = { type: 'FeatureCollection', features };
         const data = await encodeFlatGeoJson(collection);
         const bounds = turfBbox(collection);
-        const outputBufferId = this.buildOutputBufferId(context.sessionId, countryCode, adminLevel);
+        const outputBufferId = this.buildOutputBufferId(context.nodeId, countryCode, adminLevel);
         await db.rawBuffers.put({
           id: outputBufferId,
-          sessionId: String(context.sessionId),
+          nodeId: String(context.nodeId),
           nodeId: raw.nodeId,
           data,
           featureCount: features.length,
@@ -166,8 +166,8 @@ export class NaturalEarthDownloadStrategy implements DownloadStageStrategy {
     return undefined;
   }
 
-  private buildOutputBufferId(sessionId: string, countryCode: string, adminLevel: number): string {
+  private buildOutputBufferId(nodeId: string, countryCode: string, adminLevel: number): string {
     const normalizedCountry = countryCode.toLowerCase().replace(/[^a-z0-9]/g, '-');
-    return `${sessionId}-download-${normalizedCountry}-adm${adminLevel}`;
+    return `${nodeId}-download-${normalizedCountry}-adm${adminLevel}`;
   }
 }

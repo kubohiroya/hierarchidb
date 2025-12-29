@@ -89,7 +89,6 @@ export const ja: RoutePluginTranslations = {
       completed: '完了',
       failed: '失敗',
       paused: '一時停止',
-      cancelled: 'キャンセル',
     },
     summary: {
       completedLabel: '完了',

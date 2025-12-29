@@ -1,4 +1,4 @@
-import type { Timestamp } from '@hierarchidb/common-types';
+import type { CountryCode, Timestamp } from '@hierarchidb/common-types';
 import { generateId } from '@hierarchidb/util';
 import type {
   LocationPointProperties,
@@ -15,7 +15,7 @@ interface BasePointParams {
   kind: LocationPointKind;
   latitude: number;
   longitude: number;
-  countryCode: string;
+  countryCode: CountryCode;
   countryName?: string;
   admin1?: string;
   admin2?: string;

@@ -1,19 +1,12 @@
 import type { DataSourceSpec, DataSourceStrategy, OdPair, ParseTask, RouteBatchSpec, StrategyContext, TaskPlan } from './types.js';
-import type { NetworkPortLike } from '../../services/createRouteBatchManager.js';
-import { getRouteDownloadService, notifyAuthRequired } from '../../services/download/registry.js';
+import { getPluginDownloadService, notifyPluginAuthRequired } from '@hierarchidb/download';
 import { TabularStrategy } from './strategies/TabularStrategy.js';
 import { GeoJsonStrategy } from './strategies/GeoJsonStrategy.js';
-
-export interface OrchestratorDeps {
-  net: NetworkPortLike;
-}
 
 export class RouteSourceOrchestrator {
   private readonly strategies: DataSourceStrategy[] = [new TabularStrategy(), new GeoJsonStrategy()];
 
-  constructor(private deps: OrchestratorDeps) {
-    void this.deps;
-  }
+  constructor() {}
 
   async plan(spec: RouteBatchSpec): Promise<TaskPlan> {
     const planId = crypto.randomUUID();
@@ -31,7 +24,7 @@ export class RouteSourceOrchestrator {
   async preview(spec: RouteBatchSpec): Promise<{ odPairs: OdPair[]; plan: TaskPlan }> {
     const plan = await this.plan(spec);
     const blobs = new Map<string, Blob>();
-    const { service, readAll } = await getRouteDownloadService();
+    const { service, readAll } = await getPluginDownloadService('route', { perHostConcurrency: 4 });
     for (const f of plan.fetch) {
       try {
         const fileId = `route-src:${crypto.randomUUID()}`;
@@ -41,7 +34,7 @@ export class RouteSourceOrchestrator {
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         if (/HTTP 401|HTTP 403|Auth required/i.test(message)) {
-          notifyAuthRequired({ resource: f.url, provider: 'datasource', hint: 'Authentication required' });
+          notifyPluginAuthRequired('route', { resource: f.url, provider: 'datasource', hint: 'Authentication required' });
         }
         throw error;
       }

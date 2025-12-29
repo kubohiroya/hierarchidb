@@ -1,4 +1,7 @@
+import type { ISO2, ISO3 } from '@hierarchidb/common-types';
+
 export type DataSourceName = 'naturalearth' | 'geoboundaries' | 'gadm' | 'openstreetmap';
+export type CountryCode = ISO2 | ISO3;
 export type CountryCodeFormat = 'iso2' | 'iso3';
 
 export interface DataSourceConfig {
@@ -16,12 +19,12 @@ export interface DataSourceConfig {
 }
 
 export interface CountryMetadata {
-  countryCode: string;
+  countryCode: ISO2;
   countryName: string;
   continent: string;
   availableAdminLevels: number[];
-  iso2?: string;
-  iso3?: string;
+  iso2?: ISO2;
+  iso3?: ISO3;
   bbox?: [number, number, number, number];
   population?: number;
   area?: number;
@@ -30,10 +33,10 @@ export interface CountryMetadata {
 
 export interface DownloadTaskPayload {
   url: string;
-  countryCode: string;
+  countryCode: CountryCode;
   countryName?: string;
   adminLevel: number;
   continent: string;
   dataSource?: DataSourceName;
-  country?: string;
+  country?: CountryCode;
 }

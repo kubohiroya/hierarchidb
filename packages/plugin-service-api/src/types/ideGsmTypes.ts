@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-types';
+import type { CountryCode, NodeId } from '@hierarchidb/common-types';
 
 export type IdeGsmImportPhase =
   | 'fetch'
@@ -24,7 +24,7 @@ export type IdeGsmImportProgress = {
 export type IdeGsmImportCallback = (progress: IdeGsmImportProgress) => void;
 
 export type IdeGsmSelectionEntry = {
-  countryCode: string;
+  countryCode: CountryCode;
   countryName: string;
   types: string[];
 };

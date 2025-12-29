@@ -1,17 +1,19 @@
 import { AbstractBatchSession, BatchService } from '@hierarchidb/batch-runtime-services';
 import type { RouteGenerationConfig } from '../common/entities/RouteEntity.js';
-import { RouteGenerator } from '@hierarchidb/route-engine';
+import { RouteGenerator, SearouteEngine } from '@hierarchidb/route-engine';
 import { TabularWriter } from '@hierarchidb/tabular-store';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { RouteBatchConfig } from '../common/types/BatchConfig.js';
+import type { Feature, LineString } from 'geojson';
+import { createStageWorkerClient, runVectorTileStage } from '@hierarchidb/runtime-worker';
 
 export interface RouteBatchTask {
   taskId: string;
   treeNodeId: NodeId;
-  sessionId: string;
+  nodeId: NodeId;
   taskType: 'route_generation' | 'location_resolution' | 'validation' | 'optimization';
   stage: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+  status: 'pending' | 'processing' | 'completed' | 'failed';
   index: number;
   routeData?: {
     startLocationId?: NodeId;
@@ -32,13 +34,14 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
   private generator: RouteGenerator;
   private writer: TabularWriter | null = null;
   private writerReady = false;
+  private readonly vectorTileFeatures: Feature<LineString, Record<string, unknown>>[] = [];
 
-  constructor(sessionId: string, nodeId: NodeId, config: RouteBatchConfig, tasks: RouteBatchTask[], deps?: {
+  constructor(nodeId: NodeId, config: RouteBatchConfig, tasks: RouteBatchTask[], deps?: {
     generator?: RouteGenerator
   }) {
-    super(sessionId, nodeId, config);
+    super(nodeId, config);
     this.tasks = tasks;
-    this.generator = deps?.generator ?? new RouteGenerator();
+    this.generator = deps?.generator ?? new RouteGenerator({ searoute: new SearouteEngine() });
     // Apply lane cap overrides from config (best-effort, safe parse)
     if (config.laneCaps) {
       this.laneConfig = { ...this.laneConfig, ...pickNumeric(config.laneCaps) };
@@ -48,7 +51,7 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
   protected async onInitialize(): Promise<void> {
     this.writer = new TabularWriter('route');
     const columns = ['taskId', 'method', 'distance', 'duration', 'startLon', 'startLat', 'endLon', 'endLat'];
-    await this.writer.begin({ filename: `route-${this.sessionId}.json`, columns });
+    await this.writer.begin({ filename: `route-${this.nodeId}.json`, columns });
     this.writerReady = true;
   }
 
@@ -117,6 +120,20 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
             options: task.routeData?.methodOptions,
           };
           const res = await this.generator.generate(pts, config);
+          const line = res.line ?? [];
+          if (line.length >= 2) {
+            this.vectorTileFeatures.push({
+              type: 'Feature',
+              geometry: {
+                type: 'LineString',
+                coordinates: line,
+              },
+              properties: {
+                taskId: task.taskId,
+                method,
+              },
+            });
+          }
           if (this.writer && this.writerReady) {
             const row = {
               taskId: task.taskId,
@@ -134,8 +151,10 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
         }
         case 'location_resolution':
         case 'validation':
-        case 'optimization':
           // no-op demo
+          break;
+        case 'optimization':
+          await this.generateVectorTiles(task.nodeId);
           break;
       }
       task.status = 'completed';
@@ -163,6 +182,44 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
       this.laneSemaphores.set(method, sem);
     }
     return sem;
+  }
+
+  private async generateVectorTiles(nodeId: NodeId): Promise<void> {
+    if (this.vectorTileFeatures.length === 0) {
+      return;
+    }
+    const featureCollection = {
+      type: 'FeatureCollection',
+      features: this.vectorTileFeatures,
+    } as const;
+    const bytes = new TextEncoder().encode(JSON.stringify(featureCollection)).buffer;
+    const vectorTiles = (this.config as RouteBatchConfig & {
+      vectorTiles?: { minZoom?: number; maxZoom?: number; buffer?: number };
+    }).vectorTiles;
+    const minZoom = vectorTiles?.minZoom ?? 4;
+    const maxZoom = vectorTiles?.maxZoom ?? 12;
+    const buffer = vectorTiles?.buffer ?? 8;
+    const client = await createStageWorkerClient();
+    try {
+      const vectorTileClient = client.vectortile;
+      if (!vectorTileClient) {
+        throw new Error('vectortile client unavailable');
+      }
+      await runVectorTileStage({
+        inputBufferId: nodeId,
+        inputBuffer: bytes,
+        contentType: 'application/json',
+        config: {
+          format: 'mvt',
+          compression: 'none',
+          minZoom,
+          maxZoom,
+          buffer,
+        },
+      }, vectorTileClient);
+    } finally {
+      (client as { terminate?: () => void }).terminate?.();
+    }
   }
 }
 

@@ -1,14 +1,27 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { toNodeId, type ProgressEvent } from '@hierarchidb/common-types';
-import type { LocationPointInput, LocationTileSettings, ProgressInfo } from '../LocationVectorTileService';
-import { LocationVectorTileService } from '../LocationVectorTileService';
-import { closeEphemeralLocationDB, getEphemeralLocationDB } from '../../../database/EphemeralLocationDB';
-import { UnifiedLocationBatchManager } from '../../batch/UnifiedLocationBatchManager';
-import { LocationBatchSessionManager } from '../../batch/BatchSessionManager';
-import type { SessionSummary } from '../../_obsolate_common/types/batch-types.js';
-import type { BatchProgressEvent } from '@hierarchidb/common-api';
+import { toNodeId, type ProgressEvent, type NodeId, type NodeType } from '@hierarchidb/common-types';
+import type { LocationPointInput, LocationTileSettings, SessionSummary } from '@hierarchidb/location-store';
+import { closeEphemeralLocationDB, getEphemeralLocationDB } from '@hierarchidb/location-store';
+import type { BatchProgressEvent, BatchSessionStatus } from '@hierarchidb/common-api';
+import { UnifiedLocationBatchManager } from '../../../services/batch/UnifiedLocationBatchManager.js';
+import { LocationBatchSessionManager } from '../../../services/batch/BatchSessionManager.js';
+import {
+  getLocationSessionSummary,
+  getLocationVectorTile,
+  startLocationVectorTileSession,
+  subscribeLocationBatchProgress,
+  type ProgressInfo,
+} from '../locationVectorTiles.js';
 
-type BridgeLike = NonNullable<ConstructorParameters<typeof LocationVectorTileService>[0]>;
+type BridgeLike = {
+  initialize(): Promise<void>;
+  startBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus>;
+  subscribeBatchProgress(
+    nodeType: NodeType,
+    nodeId: NodeId,
+    cb: (event: BatchProgressEvent) => void,
+  ): Promise<() => void>;
+};
 
 class TestSessionManager extends LocationBatchSessionManager {
   private summary: SessionSummary | undefined;
@@ -18,10 +31,8 @@ class TestSessionManager extends LocationBatchSessionManager {
     nodeId: ReturnType<typeof toNodeId>,
     points: LocationPointInput[],
     settings: LocationTileSettings,
-    // options?: { concurrency?: number },
   ): Promise<SessionSummary> {
     this.summary = {
-      sessionId: `${String(nodeId)}-session`,
       nodeId,
       zoomMin: settings.zoomMinGenerate,
       zoomMax: settings.zoomMaxGenerate,
@@ -37,7 +48,7 @@ class TestSessionManager extends LocationBatchSessionManager {
     return this.summary;
   }
 
-  override onProgress(_sessionId: string, cb: (e: ProgressEvent) => void): () => void {
+  override onProgress(_nodeId: string, cb: (e: ProgressEvent) => void): () => void {
     this.progressCb = cb;
     return () => {
       this.progressCb = undefined;
@@ -49,8 +60,7 @@ class TestSessionManager extends LocationBatchSessionManager {
   }
 }
 
-function createLocalBridge(): BridgeLike {
-  const manager = new UnifiedLocationBatchManager();
+function createLocalBridge(manager: UnifiedLocationBatchManager): BridgeLike {
   const sessionManager = new TestSessionManager();
   manager.setInternalManager(sessionManager);
   manager.setDbProvider(() => getEphemeralLocationDB());
@@ -60,12 +70,11 @@ function createLocalBridge(): BridgeLike {
       // no-op
     },
     async startBatchSession(_nodeType, nodeId) {
-      const sessionId = await manager.startBatchSession(nodeId);
+      const sessionNodeId = await manager.startBatchSession(nodeId);
       const db = getEphemeralLocationDB();
       await db.vectorTiles.put({
-        id: `loc-mvt-${sessionId}-5-28-12`,
-        sessionId,
-        nodeId,
+        id: `loc-mvt-${sessionNodeId}-5-28-12`,
+        nodeId: sessionNodeId,
         z: 5,
         x: 28,
         y: 12,
@@ -76,12 +85,11 @@ function createLocalBridge(): BridgeLike {
         timestamp: Date.now(),
         contentType: 'application/vnd.mapbox-vector-tile',
       });
-      return manager.getBatchSessionStatus(sessionId);
+      return manager.getBatchSessionStatus(sessionNodeId);
     },
-    async subscribeBatchProgress(_nodeType, sessionId, cb) {
+    async subscribeBatchProgress(_nodeType, nodeId, cb) {
       const event: BatchProgressEvent = {
-        sessionId,
-        nodeId: toNodeId('stub-node'),
+        nodeId,
         stage: 'vectortile',
         phase: 'completed',
         timestamp: Date.now(),
@@ -92,7 +100,7 @@ function createLocalBridge(): BridgeLike {
       } satisfies BatchProgressEvent;
       const timer = setTimeout(() => {
         const db = getEphemeralLocationDB();
-        void db.sessions?.update?.(sessionId, {
+        void db.sessions?.update?.(nodeId, {
           status: 'completed',
           progress: event.payload?.completed,
           updatedAt: Date.now(),
@@ -127,9 +135,8 @@ async function waitForCompleted(on: (cb: (p: ProgressInfo) => void) => void, tim
   });
 }
 
-describe('LocationVectorTileService', () => {
+describe('locationVectorTiles', () => {
   beforeEach(async () => {
-    // ensure a clean DB per test
     const db = getEphemeralLocationDB();
     await db.vectorTiles.clear();
   });
@@ -138,75 +145,76 @@ describe('LocationVectorTileService', () => {
   });
 
   it('generates at least one vector tile for small point set', async () => {
-    const svc = new LocationVectorTileService(createLocalBridge());
+    const manager = new UnifiedLocationBatchManager();
+    const bridge = createLocalBridge(manager);
     const points: LocationPointInput[] = [
-      { lon: 139.767, lat: 35.681 }, // Tokyo Station
-      { lon: 139.700, lat: 35.689 }, // Shinjuku
-      { lon: 139.730, lat: 35.710 }, // Ueno
+      { lon: 139.767, lat: 35.681 },
+      { lon: 139.7, lat: 35.689 },
+      { lon: 139.73, lat: 35.71 },
     ];
     const settings: LocationTileSettings = { zoomMinGenerate: 5, zoomMaxGenerate: 6 };
 
     const nodeId = toNodeId('node-1');
-    const summary = await svc.startSession(nodeId, points, settings);
-    expect(summary.sessionId).toBeTruthy();
+    const summary = await startLocationVectorTileSession(nodeId, points, settings, undefined, { manager, bridge });
     expect(summary.totalPoints).toBe(3);
 
-    await waitForCompleted((cb) => svc.onProgress(summary.sessionId, cb));
+    await waitForCompleted((cb) => subscribeLocationBatchProgress(summary.nodeId, cb, { bridge }));
 
     const db = getEphemeralLocationDB();
-    const tiles = await db.vectorTiles.where('sessionId').equals(summary.sessionId).toArray();
+    const tiles = await db.vectorTiles.where('nodeId').equals(summary.nodeId).toArray();
     expect(tiles.length).toBeGreaterThan(0);
 
     const first = tiles[0]!;
-    const bytes = await svc.getVectorTile(summary.sessionId, summary.nodeId, first.z, first.x, first.y);
+    const bytes = await getLocationVectorTile(summary.nodeId, first.z, first.x, first.y);
     expect(bytes).not.toBeNull();
     expect(bytes?.byteLength ?? 0).toBeGreaterThan(0);
+
+    const sessionSummary = await getLocationSessionSummary(summary.nodeId);
+    expect(sessionSummary.exists).toBe(true);
   });
 
   it('emits progress events and completes to 100%', async () => {
-    const svc = new LocationVectorTileService(createLocalBridge());
+    const manager = new UnifiedLocationBatchManager();
+    const bridge = createLocalBridge(manager);
     const points: LocationPointInput[] = [
-      { lon: -73.9857, lat: 40.7484 }, // NYC
-      { lon: -73.9851, lat: 40.7580 },
+      { lon: -73.9857, lat: 40.7484 },
+      { lon: -73.9851, lat: 40.758 },
       { lon: -73.9792, lat: 40.7615 },
     ];
     const settings: LocationTileSettings = { zoomMinGenerate: 4, zoomMaxGenerate: 4 };
     const nodeId = toNodeId('node-2');
-    const { sessionId } = await svc.startSession(nodeId, points, settings);
+    const summary = await startLocationVectorTileSession(nodeId, points, settings, undefined, { manager, bridge });
 
     let sawTilegen = false;
-    const p = await waitForCompleted((cb) => svc.onProgress(sessionId, (e) => {
+    const p = await waitForCompleted((cb) => subscribeLocationBatchProgress(summary.nodeId, (e) => {
       if (e.stage === 'vectortile' || e.phase === 'completed') sawTilegen = true;
       cb(e);
-    }));
+    }, { bridge }));
     expect(sawTilegen).toBe(true);
     expect(p.phase).toBe('completed');
 
-    // sanity: chosen z/x/y for a point at zoom 4 should be present or empty; ensure summary exists
     const db = getEphemeralLocationDB();
-    const all = await db.vectorTiles.where('sessionId').equals(sessionId).toArray();
+    const all = await db.vectorTiles.where('nodeId').equals(summary.nodeId).toArray();
     expect(all.length).toBeGreaterThan(0);
 
-    // pick a z/x/y from the first point and ask the service
     const z = 4;
     const firstPoint = points[0];
-    expect(firstPoint).toBeDefined();
     const x = long2tile(firstPoint!.lon, z);
     const y = lat2tile(firstPoint!.lat, z);
-    const bytes = await svc.getVectorTile(sessionId, nodeId, z, x, y);
-    // It might be null if all points fell in neighboring tile; allow null but require at least one non-null in DB overall
+    const bytes = await getLocationVectorTile(summary.nodeId, z, x, y);
     if (bytes) expect(bytes.byteLength).toBeGreaterThan(0);
   });
 
   it('passes batch configuration through prepareSession', async () => {
-    const prepareSpy = vi.spyOn(UnifiedLocationBatchManager.prototype, 'prepareSession');
-    const svc = new LocationVectorTileService(createLocalBridge());
+    const manager = new UnifiedLocationBatchManager();
+    const bridge = createLocalBridge(manager);
+    const prepareSpy = vi.spyOn(manager, 'prepareSession');
     const nodeId = toNodeId('node-config');
     const points: LocationPointInput[] = [{ lon: 0, lat: 0 }];
     const settings: LocationTileSettings = { zoomMinGenerate: 3, zoomMaxGenerate: 5 };
 
     try {
-      await svc.startSession(nodeId, points, settings, { concurrency: 6 });
+      await startLocationVectorTileSession(nodeId, points, settings, { concurrency: 6 }, { manager, bridge });
       expect(prepareSpy).toHaveBeenCalledWith(
         nodeId,
         { concurrency: 6 },

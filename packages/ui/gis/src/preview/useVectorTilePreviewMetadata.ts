@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 
-export type VectorTileMetadataLoader<Row> = (sessionId: string) => Promise<Row[]>;
+export type VectorTileMetadataLoader<Row> = (nodeId: string) => Promise<Row[]>;
 
 export const useVectorTilePreviewMetadata = <Row,>(
   metadataEnabled: boolean,
-  sessionId: string | null,
+  nodeId: string | null,
   loadRows: VectorTileMetadataLoader<Row>,
 ) => {
   const [metadataRows, setMetadataRows] = useState<Row[]>([]);
@@ -12,7 +12,7 @@ export const useVectorTilePreviewMetadata = <Row,>(
   const [metadataError, setMetadataError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!metadataEnabled || !sessionId) {
+    if (!metadataEnabled || !nodeId) {
       setMetadataRows([]);
       setMetadataLoading(false);
       setMetadataError(null);
@@ -21,7 +21,7 @@ export const useVectorTilePreviewMetadata = <Row,>(
     let cancelled = false;
     setMetadataLoading(true);
     setMetadataError(null);
-    void loadRows(sessionId)
+    void loadRows(nodeId)
       .then((rows) => {
         if (!cancelled) {
           setMetadataRows(rows);
@@ -40,7 +40,7 @@ export const useVectorTilePreviewMetadata = <Row,>(
     return () => {
       cancelled = true;
     };
-  }, [loadRows, metadataEnabled, sessionId]);
+  }, [loadRows, metadataEnabled, nodeId]);
 
   return {
     metadataRows,

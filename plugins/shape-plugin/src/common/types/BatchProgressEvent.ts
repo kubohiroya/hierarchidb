@@ -13,7 +13,7 @@ import type { BatchStage, BatchTaskStatus } from './BatchTaskLike.js';
  * Batch progress event
  */
 export interface BatchProgressEvent {
-  sessionId: string;
+  nodeId: string;
   treeNodeId: TreeNodeId;
   stage: BatchStage;
   status?: BatchTaskStatus;

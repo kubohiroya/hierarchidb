@@ -86,6 +86,7 @@
     "@hierarchidb/ui-license": "workspace:*",
     "@hierarchidb/ui-lru-splitview": "workspace:*",
     "@hierarchidb/ui-memory": "workspace:*",
+    "@hierarchidb/ui-monitoring": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/ui-tabular": "workspace:*",
     "@hierarchidb/ui-worker-client": "workspace:*",

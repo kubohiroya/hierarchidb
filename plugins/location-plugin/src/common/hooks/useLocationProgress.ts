@@ -26,7 +26,6 @@ type ExtendedProgressInfo = UnifiedProgressInfo & {
   timestamp?: number;
   message?: string;
   nodeId?: string;
-  sessionId?: string;
 };
 
 const statusToUnified = (status: BatchSessionStatus): UnifiedProgressInfo => {
@@ -55,19 +54,18 @@ const statusToUnified = (status: BatchSessionStatus): UnifiedProgressInfo => {
     },
     message: status.error,
     nodeId: status.nodeId,
-    sessionId: status.sessionId,
   };
 };
 
 function toProgressEvent(
   info: ExtendedProgressInfo | null,
-  fallbackSessionId?: string,
+  fallbackNodeId?: string,
 ): LocationProgressEvent | null {
   if (!info) return null;
-  const sessionId = (info.sessionId as string | undefined) ?? fallbackSessionId ?? 'location';
+  const nodeId = (info.nodeId as string | undefined) ?? fallbackNodeId ?? 'location';
   const stage = info.phase === 'completed' ? 'completed' : info.stage;
   const event: LocationProgressEvent = {
-    sessionId,
+    nodeId,
     stage,
     total: info.total ?? 0,
     completed: info.completed ?? 0,
@@ -84,7 +82,7 @@ function toProgressEvent(
  * useLocationProgress - Subscribe to Location batch progress events via WorkerBridge.
  */
 export function useLocationProgress(
-  sessionId: string | null,
+  nodeId: string | null,
   options: UseLocationProgressOptions = {},
 ): UseLocationProgressState & { subscribe: () => void; unsubscribe: () => void } {
   const { autoSubscribe = true } = options;
@@ -98,7 +96,7 @@ export function useLocationProgress(
     unsubscribe,
   } = usePluginBatchProgress<LocationProgressEvent>(
     LOCATION_NODE_TYPE,
-    sessionId,
+    nodeId,
     {
       autoSubscribe,
       enablePollingFallback: false,
@@ -110,7 +108,7 @@ export function useLocationProgress(
 
   useEffect(() => {
     setOverrideProgress(null);
-  }, [sessionId]);
+  }, [nodeId]);
 
   useEffect(() => {
     if (unifiedProgress) {
@@ -125,7 +123,7 @@ export function useLocationProgress(
     registry.register?.(id, {
       onAuthRequired: async (n) => {
         setOverrideProgress({
-          sessionId: sessionId || n?.context?.sessionId || 'location',
+          nodeId: nodeId || n?.context?.nodeId || 'location',
           stage: 'auth-required',
           total: 1,
           completed: 0,
@@ -138,7 +136,7 @@ export function useLocationProgress(
       },
       onAuthSuccess: async (_n) => {
         setOverrideProgress({
-          sessionId: sessionId || 'location',
+          nodeId: nodeId || 'location',
           stage: 'resumed',
           total: 1,
           completed: 1,
@@ -151,7 +149,7 @@ export function useLocationProgress(
       },
       onAuthCancelled: async (n) => {
         setOverrideProgress({
-          sessionId: sessionId || 'location',
+          nodeId: nodeId || 'location',
           stage: 'cancelled',
           total: 1,
           completed: 0,
@@ -166,7 +164,7 @@ export function useLocationProgress(
     return () => {
       registry.unregister?.(id);
     };
-  }, [sessionId]);
+  }, [nodeId]);
 
   return {
     progress: derivedProgress ?? overrideProgress,

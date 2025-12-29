@@ -12,7 +12,7 @@ import type { NodeId } from '@hierarchidb/common-types';
 import { notify } from '@hierarchidb/components';
 import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
 import { RouteDatabase } from '../../../services/database/RouteDatabase.js';
-import { clearBuildMonitor, getBuildMonitorKey } from '../../utils/buildMonitor.js';
+import { clearBuildMonitor, getBuildMonitorKey } from '@hierarchidb/ui-monitoring';
 
 export interface RouteProcessingStepProps {
   draft: RouteUpdaterPayload;
@@ -25,6 +25,12 @@ const SHARED_ZOOM_RANGE_KEY = 'sharedZoomRange';
 const DEFAULT_SHARED_ZOOM_RANGE: [number, number] = [0, 6];
 const SHARED_ZOOM_RANGE_MIN = 0;
 const SHARED_ZOOM_RANGE_MAX = 22;
+const buildMonitorConfig = {
+  storagePrefix: 'hdb:route:build-monitor',
+  keyMode: 'node',
+  maxSamples: 3,
+  memoryPressureRatio: 0.85,
+} as const;
 
 const normalizeSharedZoomRange = (value: unknown): [number, number] => {
   if (!Array.isArray(value) || value.length < 2) {
@@ -107,7 +113,10 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
   const fieldId = useId();
   const { api, initialize } = useWorkerAPI();
   const [lineCount, setLineCount] = useState(0);
-  const monitorKey = useMemo(() => getBuildMonitorKey(nodeId ? String(nodeId) : null), [nodeId]);
+  const monitorKey = useMemo(
+    () => getBuildMonitorKey(buildMonitorConfig, nodeId ? String(nodeId) : null),
+    [nodeId],
+  );
   const processing = (draft.draftData?.processing ?? {}) as RouteProcessingConfig;
   const sharedZoomRange = useMemo(() => readSharedZoomRange(), []);
 
@@ -189,7 +198,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
     const mutation = await api.getRouteMutationAPI();
     await mutation.deleteRouteLineStrings(nodeId);
     if (monitorKey) {
-      clearBuildMonitor(monitorKey);
+      clearBuildMonitor(buildMonitorConfig, monitorKey);
     }
     onUpdate({
       processingStatus: undefined,

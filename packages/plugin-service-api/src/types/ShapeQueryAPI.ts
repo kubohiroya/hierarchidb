@@ -10,8 +10,8 @@ import type {
 
 export interface ShapeQueryAPI {
   listBatchSessions(nodeId: NodeId): Promise<ShapeBatchSessionSummary[]>;
-  getBatchSession(sessionId: string): Promise<ShapeBatchSessionSummary | null>;
-  listBatchTasks(sessionId: string): Promise<ShapeBatchTaskSummary[]>;
+  getBatchSession(nodeId: NodeId): Promise<ShapeBatchSessionSummary | null>;
+  listBatchTasks(nodeId: NodeId): Promise<ShapeBatchTaskSummary[]>;
   getProcessingStatus(nodeId: NodeId): Promise<ShapeProcessingStatus | null>;
   getProcessedFeatureCount(nodeId: NodeId): Promise<number>;
   getVectorTileInfo(nodeId: NodeId, z: number, x: number, y: number): Promise<ShapeTileInfo | null>;

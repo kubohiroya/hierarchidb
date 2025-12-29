@@ -14,7 +14,7 @@ import { useTranslation } from '../../i18n.js';
 /**
  * Processing configuration step for Shape plugin.
  */
-export const ShapeProcessingSettingsStep: React.FC<ShapeDialogStepProps> = ({ data, onChange }) => {
+export const ShapeProcessingSettingsStep: React.FC<ShapeDialogStepProps> = ({ data, nodeId, onChange }) => {
   const { t } = useTranslation();
   const { config, handleChange } = useShapeProcessingSettingsStep({ data, onChange });
   const { event: heapPressure } = useHeapPressureMonitor();
@@ -56,6 +56,7 @@ export const ShapeProcessingSettingsStep: React.FC<ShapeDialogStepProps> = ({ da
         <DownloadConfigSection
           config={config}
           draft={data}
+          nodeId={nodeId}
           onChange={handleChange}
           onResetSession={resetSession}
         />

@@ -180,7 +180,7 @@
     "dataSourceUnsupported": "This data source is not supported yet.",
     "noSelection": "No country/type selections found.",
     "noPoints": "No location points available to process.",
-    "success": "Build started (session {{sessionId}})",
+    "success": "Build started.",
     "errors": {
       "saveFirst": "Save changes before starting a build."
     }

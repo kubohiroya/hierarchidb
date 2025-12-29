@@ -268,7 +268,7 @@ const loadVtPbf = async (): Promise<typeof vtPbfNS> => {
 };
 
 export const generateVectorTilesFromJsonBuffer = async (
-  sessionId: string,
+  nodeId: string,
   buffer: ArrayBuffer,
   config: VectorTileGenerateConfig,
 ): Promise<VectorTileGenerateResult> => {
@@ -276,11 +276,11 @@ export const generateVectorTilesFromJsonBuffer = async (
   const geojson = await decodeFeatureCollectionFromJsonBuffer(buffer);
   throwIfAborted(config.signal);
   if (!geojson) return { tilesGenerated: 0, totalBytes: 0 };
-  return generateVectorTilesFromFeatureCollection(sessionId, geojson, config);
+  return generateVectorTilesFromFeatureCollection(nodeId, geojson, config);
 };
 
 export const generateVectorTilesFromFeatureCollection = async (
-  sessionId: string,
+  nodeId: string,
   geojson: FeatureCollectionLike,
   config: VectorTileGenerateConfig,
 ): Promise<VectorTileGenerateResult> => {
@@ -296,7 +296,7 @@ export const generateVectorTilesFromFeatureCollection = async (
   if (metadataEnabled) {
     const db = await TilesDB.getSingleton();
     if (config.metadataReplace) {
-      await db.featureMetadata.where('sessionId').equals(sessionId).delete();
+      await db.featureMetadata.where('nodeId').equals(nodeId).delete();
     }
     const records: FeatureMetadataRow[] = [];
     for (let index = 0; index < features.length; index++) {
@@ -308,8 +308,8 @@ export const generateVectorTilesFromFeatureCollection = async (
       properties.id = tileFeatureId;
       const stats = extractGeometryStats(feature.geometry);
       records.push({
-        id: `${sessionId}-${tileFeatureId}`,
-        sessionId,
+        id: `${nodeId}-${tileFeatureId}`,
+        nodeId,
         featureId: tileFeatureId,
         countryName: metadataContext.countryName ?? pickCountryName(properties),
         countryCode: metadataContext.countryCode ?? pickCountryCode(properties),
@@ -397,11 +397,11 @@ export const generateVectorTilesFromFeatureCollection = async (
             const bytes = pbf as Uint8Array;
             tiles++;
             totalBytes += bytes.byteLength;
-            const key = `${sessionId}-${z}-${x}-${y}`;
+            const key = `${nodeId}-${z}-${x}-${y}`;
             createdTileKeys.push(key);
             await db.tiles.put({
               key,
-              sessionId,
+              nodeId,
               z,
               x,
               y,
@@ -418,7 +418,7 @@ export const generateVectorTilesFromFeatureCollection = async (
     if (isAbortError(error) && createdTileKeys.length > 0) {
       await deleteTilesInBatches(db, createdTileKeys);
       console.debug('[VectorTiles] aborted; cleaned up generated tiles', {
-        sessionId,
+        nodeId,
         tiles: createdTileKeys.length,
       });
     }
@@ -456,21 +456,21 @@ const deleteTilesInBatches = async (
 };
 
 export const getVectorTile = async (
-  sessionId: string,
+  nodeId: string,
   z: number,
   x: number,
   y: number,
 ): Promise<Uint8Array | null> => {
   const db = await TilesDB.getSingleton();
-  const key = `${sessionId}-${z}-${x}-${y}`;
+  const key = `${nodeId}-${z}-${x}-${y}`;
   const row = await db.tiles.get(key);
   if (!row) return null;
   return new Uint8Array(row.data);
 };
 
-export const listVectorTiles = async (sessionId: string) => {
+export const listVectorTiles = async (nodeId: string) => {
   const db = await TilesDB.getSingleton();
-  const rows = await db.tiles.where('sessionId').equals(sessionId).toArray();
+  const rows = await db.tiles.where('nodeId').equals(nodeId).toArray();
   return rows.map((row) => ({
     z: row.z,
     x: row.x,
@@ -480,9 +480,9 @@ export const listVectorTiles = async (sessionId: string) => {
   }));
 };
 
-export const getVectorTileSummary = async (sessionId: string) => {
+export const getVectorTileSummary = async (nodeId: string) => {
   const db = await TilesDB.getSingleton();
-  const rows = await db.tiles.where('sessionId').equals(sessionId).toArray();
+  const rows = await db.tiles.where('nodeId').equals(nodeId).toArray();
   if (rows.length === 0) return { tiles: 0, totalBytes: 0 };
   const tiles = rows.length;
   const totalBytes = rows.reduce((sum, row) => sum + row.size, 0);

@@ -3,7 +3,7 @@ export type HeapPressureSource = 'ui' | 'worker';
 
 export type HeapPressureContext = {
   nodeType?: string;
-  sessionId?: string;
+  nodeId?: string;
 };
 
 export type HeapPressureEvent = {

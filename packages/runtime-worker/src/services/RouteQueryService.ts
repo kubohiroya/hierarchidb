@@ -102,9 +102,9 @@ export class RouteQueryService implements RouteQueryAPI {
     return { cursor, matches };
   }
 
-  async getVectorTile(sessionId: string, z: number, x: number, y: number): Promise<ArrayBuffer | null> {
+  async getVectorTile(nodeId: NodeId, z: number, x: number, y: number): Promise<ArrayBuffer | null> {
     const db = await TilesDB.getSingleton();
-    const record = await db.tiles.where('[sessionId+z+x+y]').equals([sessionId, z, x, y]).first();
+    const record = await db.tiles.where('[sessionId+z+x+y]').equals([nodeId, z, x, y]).first();
     return record?.data ?? null;
   }
 

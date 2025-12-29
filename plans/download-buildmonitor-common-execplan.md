@@ -11,8 +11,8 @@ After this change, plugin download/auth calls and BuildMonitor logic will be cen
 ## Progress
 
 - [x] (2025-12-29 09:45 JST) Created initial ExecPlan framework and confirmed target shared package for BuildMonitor.
-- [ ] (pending) Add shared BuildMonitor utilities to packages/ui/monitoring and update shape/route callers to use them directly.
-- [ ] (pending) Replace plugin-specific download/auth wrappers with direct calls to @hierarchidb/download APIs and remove redundant registry modules/tests.
+- [x] (2025-12-29 10:05 JST) Added shared BuildMonitor utilities to packages/ui/monitoring and updated shape/route callers to use them directly; removed plugin-local buildMonitor modules.
+- [x] (2025-12-29 10:15 JST) Replaced plugin-specific download/auth wrappers with direct calls to @hierarchidb/download, removed redundant registry modules/tests, and preserved Location strategy registry via a dedicated module.
 - [ ] (pending) Validate with targeted tests and update TASKS.md with results and rollback steps.
 
 ## Surprises & Discoveries
@@ -28,6 +28,10 @@ After this change, plugin download/auth calls and BuildMonitor logic will be cen
 
 - Decision: Use existing @hierarchidb/download pluginDownloadRegistry APIs directly in plugins, rather than adding new wrapper helpers.
   Rationale: avoid additional indirection and keep API usage explicit at call sites.
+  Date/Author: 2025-12-29 / Codex
+
+- Decision: Preserve Location download strategy registry via plugins/location-plugin/src/services/download/strategyRegistry.ts after removing download/auth wrappers.
+  Rationale: strategy registry provides non-wrapper behavior used by LocationBatchManager and cannot be dropped when removing wrapper modules.
   Date/Author: 2025-12-29 / Codex
 
 ## Outcomes & Retrospective
@@ -121,3 +125,5 @@ The shared BuildMonitor utilities must live in packages/ui/monitoring/src/utils/
 The download/auth registry APIs are provided by @hierarchidb/download (packages/features/download/src/pluginDownloadRegistry.ts). Plugins must call configurePluginDownloadDefaults, getPluginDownloadService, downloadArrayBuffer, downloadJson, postJson, authFetch, registerPluginAuthNotifier, and notifyPluginAuthRequired directly without plugin-local wrapper modules.
 
 Plan change note: Initial survey proposed a new createPluginDownloadRegistry helper, but the user required eliminating thin wrapper layers. This plan therefore uses existing shared APIs directly and removes plugin-local wrappers instead.
+
+Plan change note (2025-12-29): Updated Progress and Decision Log to reflect completed BuildMonitor migration, direct download/auth usage, and the new Location strategy registry module introduced to preserve behavior.

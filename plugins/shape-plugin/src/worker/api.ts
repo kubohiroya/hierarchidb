@@ -31,7 +31,7 @@ import {
 import { ShapeEntityHandler } from './handlers/index.js';
 
 import { metadataLoader } from '../services/metadata/MetadataLoader.js';
-import { createShapeBatchManager } from '../services/batch/UnifiedShapeBatchManager.js';
+import { UnifiedShapeBatchManager } from '../services/batch/UnifiedShapeBatchManager.js';
 import { shapeDB, type BatchTaskRecord } from '../services/database/ShapeDB.js';
 import type { BatchProcessConfig } from '../services/batch/types.js';
 import { getEphemeralShapeDB } from '../services/database/EphemeralShapeDB.js';
@@ -46,7 +46,7 @@ import { normalizeCountryCodeFormat } from '../services/utils/iso3166.js';
 import { resolveDownloadStageStrategy } from '../services/batch/strategies/resolveDownloadStageStrategy.js';
 
 // Create singleton unified batch manager
-const batchSessionManager = createShapeBatchManager();
+const batchSessionManager = new UnifiedShapeBatchManager();
 const batchManagerWithDispatch = batchSessionManager as unknown as {
   dispatchCommand?: (command: string, payload: Record<string, unknown>) => Promise<void>;
 };
@@ -56,7 +56,6 @@ type BatchSessionStatusResult = Awaited<ReturnType<typeof batchSessionManager.ge
 type DraftLike = {
   nodeId?: NodeId;
   treeNodeId?: NodeId;
-  batchSessionId?: string;
   draftData?: Partial<ShapeEntity>;
 };
 
@@ -132,7 +131,7 @@ const persistDownloadTaskPayloads = async (
 ): Promise<void> => {
   if (payloads.length === 0) return;
   const existingTasks = await shapeDB.batchTasks
-    .where('sessionId')
+    .where('nodeId')
     .equals(nodeId)
     .and((task) => task.taskType === 'download')
     .toArray();
@@ -146,7 +145,7 @@ const persistDownloadTaskPayloads = async (
   const newTasks: BatchTaskRecord[] = needRegistered.map(({ payload, taskId }) => {
     const task: BatchTaskRecord = {
       taskId,
-      sessionId: nodeId,
+      nodeId,
       taskType: 'download',
       status: 'waiting',
       index: nextIndex,
@@ -180,11 +179,11 @@ const progressSessionMeta = new Map<string, ProgressSessionMeta>();
 const shapeEntityHandlerSingleton = new ShapeEntityHandler();
 const getShapeEntityHandler = (): ShapeEntityHandler => shapeEntityHandlerSingleton;
 
-const getOrCreateSessionMeta = (sessionId: string): ProgressSessionMeta => {
-  let meta = progressSessionMeta.get(sessionId);
+const getOrCreateNodeMeta = (nodeId: string): ProgressSessionMeta => {
+  let meta = progressSessionMeta.get(nodeId);
   if (!meta) {
     meta = {};
-    progressSessionMeta.set(sessionId, meta);
+    progressSessionMeta.set(nodeId, meta);
   }
   return meta;
 };
@@ -217,8 +216,6 @@ const mapManagerStatusToShapeStatus = (
       return 'completed';
     case 'failed':
       return 'failed';
-    case 'cancelled':
-      return 'cancelled';
     case 'running':
     case 'idle':
     default:
@@ -231,10 +228,10 @@ const isSessionNotFoundError = (error: unknown): boolean => (
 );
 
 const getBatchSessionStatusSafe = async (
-  sessionId: string,
+  nodeId: string,
 ): Promise<{ status?: BatchSessionStatusResult; missing: boolean; error?: unknown }> => {
   try {
-    const status = await batchSessionManager.getBatchSessionStatus(sessionId);
+    const status = await batchSessionManager.getBatchSessionStatus(nodeId);
     return { status, missing: false };
   } catch (error) {
     if (isSessionNotFoundError(error)) {
@@ -260,8 +257,6 @@ const mapTaskStatusToStage = (status?: BatchTask['status']): BatchTask['stage'] 
       return 'success';
     case 'failed':
       return 'error';
-    case 'cancelled':
-      return 'cancel';
     default:
       return undefined;
   }
@@ -306,7 +301,7 @@ const mapTaskRecordToBatchTask = (task: BatchTaskRecord): BatchTask & { title?: 
   taskId: task.taskId,
   taskType: task.taskType,
   stage: mapTaskStatusToStage(task.status),
-  sessionId: task.sessionId,
+  nodeId: task.nodeId,
   status: task.status,
   index: task.index,
   progress: task.progress,
@@ -320,14 +315,14 @@ const mapTaskRecordToBatchTask = (task: BatchTaskRecord): BatchTask & { title?: 
 });
 
 const buildBatchProgressEvent = (
-  sessionId: string,
+  nodeId: string,
   progress: ProgressInfo,
   meta: ProgressSessionMeta,
 ): ShapeBatchProgressEvent => {
   const status = mapProgressToStatus(progress);
   return {
-    sessionId,
-    treeNodeId: (meta.treeNodeId ?? sessionId) as TreeNodeId,
+    nodeId,
+    treeNodeId: (meta.treeNodeId ?? nodeId) as TreeNodeId,
     stage: mapStageToBatchStage(progress.currentStage),
     status,
     progress: Math.round(progress.percentage ?? 0),
@@ -363,12 +358,12 @@ const batchEventToProgressInfo = (event: RuntimeBatchProgressEvent): ProgressInf
   };
 };
 
-const hydrateSessionMeta = async (sessionId: string): Promise<void> => {
-  const meta = getOrCreateSessionMeta(sessionId);
+const hydrateSessionMeta = async (nodeId: string): Promise<void> => {
+  const meta = getOrCreateNodeMeta(nodeId);
   if (meta.treeNodeId) return;
   try {
     const db = getEphemeralShapeDB();
-    const record = await db.sessions.get(sessionId);
+    const record = await db.sessions.get(nodeId);
     if (record?.nodeId) {
       meta.treeNodeId = record.nodeId as unknown as TreeNodeId;
     }
@@ -476,7 +471,7 @@ export const shapeBatchAPI = {
     batchConfig: BatchConfig,
     downloadTaskPayloads: DownloadTaskPayload[],
     progressCallback?: (event: ShapeBatchProgressEvent) => void,
-  ): Promise<string> => {
+  ): Promise<NodeId> => {
     if (!batchConfig?.dataSource) {
       throw new Error('Data source is required to start batch processing');
     }
@@ -528,27 +523,24 @@ export const shapeBatchAPI = {
     const nodeForSession = draftLike.nodeId ?? draftLike.treeNodeId ?? draftId;
     await persistDownloadTaskPayloads(String(nodeForSession), downloadTaskPayloads);
     managerWithPrepare.prepareSession?.(nodeForSession, processConfig, batchSessionData, sessionOptions);
-    const sessionId = await batchSessionManager.startBatchSession(nodeForSession);
+    await batchSessionManager.startBatchSession(nodeForSession);
 
-    const sessionMeta = getOrCreateSessionMeta(sessionId);
+    const sessionMeta = getOrCreateNodeMeta(String(nodeForSession));
     sessionMeta.treeNodeId = nodeForSession as unknown as TreeNodeId;
 
     // Register progress callback if provided
     if (progressCallback) {
-      const existing = progressCallbacks.get(sessionId);
+      const existing = progressCallbacks.get(String(nodeForSession));
       existing?.unsubscribe?.();
-      const unsubscribe = batchSessionManager.onBatchProgress(sessionId, (event) => {
+      const unsubscribe = batchSessionManager.onBatchProgress(nodeForSession, (event) => {
         const info = batchEventToProgressInfo(event);
-        const normalized = buildBatchProgressEvent(sessionId, info, sessionMeta);
+        const normalized = buildBatchProgressEvent(String(nodeForSession), info, sessionMeta);
         progressCallback(normalized);
       });
-      progressCallbacks.set(sessionId, { unsubscribe });
+      progressCallbacks.set(String(nodeForSession), { unsubscribe });
     }
 
-    // Ensure legacy session id field is cleared for nodeId-based sessions.
-    await handler.updateEntity(draftId, { batchSessionId: undefined } as Partial<ShapeEntity>);
-
-    return sessionId;
+    return nodeForSession;
   },
 
   pauseBatchProcessing: async (draftId: NodeId): Promise<void> => {
@@ -561,14 +553,14 @@ export const shapeBatchAPI = {
 
     if (batchManagerWithDispatch.dispatchCommand) {
       await batchManagerWithDispatch.dispatchCommand('session/pause', {
-        sessionId: nodeId,
+        nodeId,
       });
       return;
     }
     await batchSessionManager.pauseBatchSession(nodeId);
   },
 
-  resumeBatchProcessing: async (draftId: NodeId): Promise<string> => {
+  resumeBatchProcessing: async (draftId: NodeId): Promise<NodeId> => {
     const handler = getShapeEntityHandler();
     const entity = await handler.getEntity(draftId);
     const nodeId = resolveBatchNodeId(entity as DraftLike | undefined);
@@ -578,7 +570,7 @@ export const shapeBatchAPI = {
 
     if (batchManagerWithDispatch.dispatchCommand) {
       await batchManagerWithDispatch.dispatchCommand('session/resume', {
-        sessionId: nodeId,
+        nodeId,
       });
       return nodeId;
     }
@@ -596,7 +588,7 @@ export const shapeBatchAPI = {
 
     if (batchManagerWithDispatch.dispatchCommand) {
       await batchManagerWithDispatch.dispatchCommand('session/cancel', {
-        sessionId: nodeId,
+        nodeId,
       });
     } else {
       await batchSessionManager.cancelBatchSession(nodeId);
@@ -606,8 +598,6 @@ export const shapeBatchAPI = {
     progressCallbacks.delete(nodeId);
     progressSessionMeta.delete(nodeId);
 
-    // Clear session ID from draft
-    await handler.updateEntity(draftId, { batchSessionId: undefined } as Partial<ShapeEntity>);
   },
 
   invokeBatchCommand: async <K extends ShapeBatchCommand>(
@@ -618,20 +608,20 @@ export const shapeBatchAPI = {
       await batchManagerWithDispatch.dispatchCommand(command, payload);
       return;
     }
-    const sessionId = (payload as { sessionId?: string }).sessionId;
-    if (!sessionId) {
-      console.warn('[shapeBatchAPI] batch command missing sessionId', command);
+    const nodeId = (payload as { nodeId?: NodeId }).nodeId;
+    if (!nodeId) {
+      console.warn('[shapeBatchAPI] batch command missing nodeId', command);
       return;
     }
     switch (command) {
       case 'session/pause':
-        await batchSessionManager.pauseBatchSession(sessionId);
+        await batchSessionManager.pauseBatchSession(nodeId);
         break;
       case 'session/resume':
-        await batchSessionManager.resumeBatchSession(sessionId);
+        await batchSessionManager.resumeBatchSession(nodeId);
         break;
       case 'session/cancel':
-        await batchSessionManager.cancelBatchSession(sessionId);
+        await batchSessionManager.cancelBatchSession(nodeId);
         break;
       default:
         console.warn('[shapeBatchAPI] batch command unavailable in unified manager', command);
@@ -639,16 +629,15 @@ export const shapeBatchAPI = {
     }
   },
 
-  getBatchSession: async (sessionId: string): Promise<BatchSession | undefined> => {
+  getBatchSession: async (nodeId: NodeId): Promise<BatchSession | undefined> => {
     try {
-      const { status, missing, error } = await getBatchSessionStatusSafe(sessionId);
+      const { status, missing, error } = await getBatchSessionStatusSafe(String(nodeId));
       if (!status) {
         if (!missing && error) {
           console.warn('[shapeBatchAPI] failed to fetch batch session', error);
         }
         return undefined;
       }
-      const nodeId = status.nodeId as NodeId;
       const handler = getShapeEntityHandler();
       const entity = await handler.getEntity(nodeId);
       const mergedConfig = mergeBatchConfig(entity?.batchConfig ?? DEFAULT_PROCESSING_CONFIG);
@@ -661,7 +650,6 @@ export const shapeBatchAPI = {
       };
       const normalizedStatus = mapManagerStatusToShapeStatus(status.status);
       return {
-        sessionId: status.sessionId,
         draftId: nodeId,
         nodeId,
         status: normalizedStatus,
@@ -692,8 +680,8 @@ export const shapeBatchAPI = {
     }
   },
 
-  getBatchTasks: async (sessionId: string): Promise<BatchTask[]> => {
-    const tasks = await shapeDB.getBatchTasks(sessionId);
+  getBatchTasks: async (nodeId: NodeId): Promise<BatchTask[]> => {
+    const tasks = await shapeDB.getBatchTasks(nodeId);
     return tasks.map(mapTaskRecordToBatchTask);
   },
 
@@ -739,9 +727,9 @@ export const shapeBatchAPI = {
   },
 
   getBatchStatus: async (
-    sessionId: string,
+    nodeId: NodeId,
   ): Promise<{
-    sessionId: string;
+    nodeId: NodeId;
     draftId?: NodeId;
     status: string;
     progress?: number;
@@ -749,10 +737,10 @@ export const shapeBatchAPI = {
     totalTasks?: number;
   }> => {
     try {
-      const status = await batchSessionManager.getBatchSessionStatus(sessionId);
+      const status = await batchSessionManager.getBatchSessionStatus(nodeId);
       const normalizedStatus = mapManagerStatusToShapeStatus(status.status);
       return {
-        sessionId,
+        nodeId,
         draftId: status.nodeId as NodeId,
         status: normalizedStatus,
         progress: status.progress?.percentage,
@@ -762,7 +750,7 @@ export const shapeBatchAPI = {
     } catch (error) {
       console.warn('[shapeBatchAPI] failed to fetch batch status', error);
       return {
-        sessionId,
+        nodeId,
         status: 'idle',
       };
     }
@@ -778,7 +766,7 @@ export const shapeBatchAPI = {
   },
 
   getBatchSessionStatus: async (
-    sessionId: string,
+    nodeId: NodeId,
   ): Promise<{
     exists: boolean;
     canResume: boolean;
@@ -786,7 +774,7 @@ export const shapeBatchAPI = {
     expiresAt: number;
   }> => {
     try {
-      const status = await batchSessionManager.getBatchSessionStatus(sessionId);
+      const status = await batchSessionManager.getBatchSessionStatus(nodeId);
       const lastActivity = status.lastActivity ?? status.startedAt ?? Date.now();
       const normalizedStatus = mapManagerStatusToShapeStatus(status.status);
       return {
@@ -847,24 +835,24 @@ export const shapeBatchAPI = {
   // Real-time Progress Subscription
   // ===================================
 
-  subscribeToProgress: (sessionId: string, callback: (event: ShapeBatchProgressEvent) => void): (() => void) => {
-    const sessionMeta = getOrCreateSessionMeta(sessionId);
+  subscribeToProgress: (nodeId: NodeId, callback: (event: ShapeBatchProgressEvent) => void): (() => void) => {
+    const sessionMeta = getOrCreateNodeMeta(String(nodeId));
     if (!sessionMeta.treeNodeId) {
-      void hydrateSessionMeta(sessionId);
+      void hydrateSessionMeta(String(nodeId));
     }
-    const existing = progressCallbacks.get(sessionId);
+    const existing = progressCallbacks.get(String(nodeId));
     existing?.unsubscribe?.();
-    const unsubscribe = batchSessionManager.onBatchProgress(sessionId, (event) => {
+    const unsubscribe = batchSessionManager.onBatchProgress(nodeId, (event) => {
       const info = batchEventToProgressInfo(event);
-      const normalized = buildBatchProgressEvent(sessionId, info, sessionMeta);
+      const normalized = buildBatchProgressEvent(String(nodeId), info, sessionMeta);
       callback(normalized);
     });
-    progressCallbacks.set(sessionId, { unsubscribe });
+    progressCallbacks.set(String(nodeId), { unsubscribe });
 
     return () => {
-      const active = progressCallbacks.get(sessionId);
+      const active = progressCallbacks.get(String(nodeId));
       active?.unsubscribe?.();
-      progressCallbacks.delete(sessionId);
+      progressCallbacks.delete(String(nodeId));
     };
   },
 
@@ -958,10 +946,7 @@ export const shapeBatchAPI = {
   },
 
   cleanupProcessingData: async (nodeId: NodeId): Promise<void> => {
-    const sessions = await shapeDB.batchSessions.where('nodeId').equals(nodeId).toArray();
-    for (const session of sessions) {
-      await shapeDB.batchTasks.where('sessionId').equals(session.sessionId).delete();
-    }
+    await shapeDB.batchTasks.where('nodeId').equals(nodeId).delete();
     await shapeDB.batchSessions.where('nodeId').equals(nodeId).delete();
     await shapeDB.features.where('nodeId').equals(nodeId).delete();
     await shapeDB.featureBuffers.where('nodeId').equals(nodeId).delete();

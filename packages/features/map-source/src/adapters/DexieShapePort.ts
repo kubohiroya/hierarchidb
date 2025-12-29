@@ -9,7 +9,6 @@ const logDexieShapeWarning = (message: string, error: unknown): void => {
 
 type RawBuffer = {
   id: string;
-  sessionId: string;
   nodeId: string;
   data: string;
   featureCount: number;
@@ -22,7 +21,7 @@ class ShapeEphemeralDB extends Dexie {
 
   constructor(name: string = getDBName('shape-ephemeral')) {
     super(name);
-    this.version(1).stores({ rawBuffers: '&id, sessionId, nodeId, timestamp' });
+    this.version(1).stores({ rawBuffers: '&id, nodeId, timestamp' });
   }
 }
 
@@ -43,7 +42,7 @@ export class DexieShapePort implements MapSourcePort {
         if (fc?.type !== 'FeatureCollection') continue;
         for (const f of fc.features) if (intersectsBBox(f, bbox)) feats.push(f);
       } catch (error) {
-        logDexieShapeWarning(`Failed to parse buffered geojson for session ${it.sessionId}`, error);
+        logDexieShapeWarning(`Failed to parse buffered geojson for node ${it.nodeId}`, error);
       }
     }
     return { type: 'FeatureCollection', features: feats };

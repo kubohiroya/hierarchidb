@@ -9,7 +9,6 @@ export interface DownloadStageOptions {
 }
 
 export interface DownloadStageBuildContext {
-  sessionId: string;
   nodeId: NodeId;
   downloadTaskPayloads: DownloadTaskPayload[];
   config: BatchProcessConfig;

@@ -40,11 +40,11 @@ function createMockDb(): [any, MockDbTables] {
     },
     sessions: {
       put: vi.fn(async (payload: any) => {
-        sessions.set(payload.sessionId, payload);
+        sessions.set(payload.nodeId, payload);
       }),
-      update: vi.fn(async (sessionId: string, changes: any) => {
-        const current = sessions.get(sessionId) ?? {};
-        sessions.set(sessionId, { ...current, ...changes });
+      update: vi.fn(async (nodeId: string, changes: any) => {
+        const current = sessions.get(nodeId) ?? {};
+        sessions.set(nodeId, { ...current, ...changes });
       }),
       where: vi.fn(() => ({ equals: vi.fn(() => ({ delete: vi.fn(async () => {}) })) })),
     },
@@ -57,9 +57,9 @@ function createMockDb(): [any, MockDbTables] {
     clearExpiredSessions: vi.fn(async () => 0),
     clearExpiredPendingSessions: vi.fn(async () => 0),
     clearExpiredVectorTiles: vi.fn(async () => 0),
-    clearVectorTilesForSession: vi.fn(async (sessionId: string) => {
+    clearVectorTilesForNode: vi.fn(async (nodeId: string) => {
       for (const [key, record] of vectorTiles.entries()) {
-        if (record.sessionId === sessionId) {
+        if (record.nodeId === nodeId) {
           vectorTiles.delete(key);
         }
       }
@@ -96,22 +96,22 @@ describe('UnifiedLocationBatchManager.onBatchProgress', () => {
       constructor(private readonly emit: (cb: (e: ProgressEvent) => void) => void) {
         super();
       }
-      override onProgress(_sid: string, cb: (e: ProgressEvent) => void): () => void {
+      override onProgress(_nodeId: string, cb: (e: ProgressEvent) => void): () => void {
         this.emit(cb);
         return () => {};
       }
     }
     const stub = new StubManager((cb) => {
-      cb({ sessionId: 's1', stage: 'index', total: 20, completed: 10, failed: 0, percentage: 50, currentTask: 'indexing' });
+      cb({ nodeId: 'node-1' as NodeId, stage: 'index', total: 20, completed: 10, failed: 0, percentage: 50, currentTask: 'indexing' });
     });
     mgr.setInternalManager(stub);
     mgr.setDbProvider(() => mockDb);
 
     const spy = vi.fn();
-    const unsubscribe = mgr.onBatchProgress('s1', (event) => spy(event));
+    const unsubscribe = mgr.onBatchProgress('node-1' as NodeId, (event) => spy(event));
     expect(spy).toHaveBeenCalledTimes(1);
     const arg = spy.mock.calls[0]?.[0];
-    expect(arg?.sessionId).toBe('s1');
+    expect(arg?.nodeId).toBe('node-1');
     expect(arg?.stage).toBe('vectortile');
     expect(arg?.phase).toBe('running');
     unsubscribe();
@@ -142,7 +142,6 @@ class StubSessionManager extends LocationBatchSessionManager {
   ): Promise<SessionSummary> {
     this.createSpy(nodeId, points, settings, options);
     this.summary = {
-      sessionId: 'session-stub',
       nodeId,
       zoomMin: settings.zoomMinGenerate,
       zoomMax: settings.zoomMaxGenerate,
@@ -158,7 +157,7 @@ class StubSessionManager extends LocationBatchSessionManager {
     return this.summary;
   }
 
-  override onProgress(_sessionId: string, cb: (e: ProgressEvent) => void): () => void {
+  override onProgress(_nodeId: string, cb: (e: ProgressEvent) => void): () => void {
     this.progressCb = cb;
     return () => {
       this.progressCb = undefined;
@@ -197,13 +196,12 @@ describe('UnifiedLocationBatchManager persistence contract', () => {
 
     await mgr.prepareSession(sampleNode, { concurrency: 2 }, { points: samplePoints, settings: sampleSettings });
 
-    const sessionId = await mgr.startBatchSession(sampleNode);
-    expect(sessionId).toBe('session-stub');
+    const sessionNodeId = await mgr.startBatchSession(sampleNode);
+    expect(sessionNodeId).toBe(sampleNode);
     expect(mockDb.pendingSessions.delete).toHaveBeenCalledWith(sampleNode);
     expect(stub.createSpy).toHaveBeenCalledWith(sampleNode, samplePoints, sampleSettings, { concurrency: 2 });
-    expect(mockDb.clearVectorTilesForSession).toHaveBeenCalledWith('session-stub');
+    expect(mockDb.clearVectorTilesForNode).toHaveBeenCalledWith(sampleNode);
     expect(mockDb.sessions.put).toHaveBeenCalledWith(expect.objectContaining({
-      sessionId,
       nodeId: sampleNode,
       status: 'running',
       totalPoints: samplePoints.length,
@@ -219,13 +217,13 @@ describe('UnifiedLocationBatchManager persistence contract', () => {
 
     await mgr.prepareSession(sampleNode, {}, { points: samplePoints, settings: sampleSettings });
 
-    const sessionId = await mgr.startBatchSession(sampleNode);
+    const sessionNodeId = await mgr.startBatchSession(sampleNode);
 
     const progressSpy = vi.fn();
-    mgr.onBatchProgress(sessionId, progressSpy);
+    mgr.onBatchProgress(sessionNodeId, progressSpy);
 
     stub.emit({
-      sessionId,
+      nodeId: sessionNodeId,
       stage: 'normalize',
       total: 10,
       completed: 4,
@@ -235,7 +233,7 @@ describe('UnifiedLocationBatchManager persistence contract', () => {
     });
 
     await waitFor(() => {
-      expect(mockDb.sessions.update).toHaveBeenCalledWith(sessionId, expect.objectContaining({
+      expect(mockDb.sessions.update).toHaveBeenCalledWith(sessionNodeId, expect.objectContaining({
         status: 'running',
         updatedAt: expect.any(Number),
         progress: expect.objectContaining({
@@ -250,7 +248,7 @@ describe('UnifiedLocationBatchManager persistence contract', () => {
     });
 
     stub.emit({
-      sessionId,
+      nodeId: sessionNodeId,
       stage: 'completed',
       total: 10,
       completed: 10,
@@ -260,7 +258,7 @@ describe('UnifiedLocationBatchManager persistence contract', () => {
     });
 
     await waitFor(() => {
-      expect(mockDb.sessions.update).toHaveBeenCalledWith(sessionId, expect.objectContaining({
+      expect(mockDb.sessions.update).toHaveBeenCalledWith(sessionNodeId, expect.objectContaining({
         status: 'completed',
       }));
     });
@@ -283,17 +281,17 @@ describe('UnifiedLocationBatchManager control operations', () => {
     const cancelSpy = vi.spyOn(LocationBatchSessionManager.prototype, 'cancel');
 
     try {
-      await mgr.pauseBatchSession('session-test');
-      await mgr.resumeBatchSession('session-test');
-      await mgr.cancelBatchSession('session-test');
+      await mgr.pauseBatchSession('node-test' as NodeId);
+      await mgr.resumeBatchSession('node-test' as NodeId);
+      await mgr.cancelBatchSession('node-test' as NodeId);
 
-      expect(pauseSpy).toHaveBeenCalledWith('session-test');
-      expect(resumeSpy).toHaveBeenCalledWith('session-test');
-      expect(cancelSpy).toHaveBeenCalledWith('session-test');
+      expect(pauseSpy).toHaveBeenCalledWith('node-test');
+      expect(resumeSpy).toHaveBeenCalledWith('node-test');
+      expect(cancelSpy).toHaveBeenCalledWith('node-test');
 
-      expect(mockDb.sessions.update).toHaveBeenCalledWith('session-test', expect.objectContaining({ status: 'paused' }));
-      expect(mockDb.sessions.update).toHaveBeenCalledWith('session-test', expect.objectContaining({ status: 'running' }));
-      expect(mockDb.sessions.update).toHaveBeenCalledWith('session-test', expect.objectContaining({ status: 'cancelled' }));
+      expect(mockDb.sessions.update).toHaveBeenCalledWith('node-test', expect.objectContaining({ status: 'paused' }));
+      expect(mockDb.sessions.update).toHaveBeenCalledWith('node-test', expect.objectContaining({ status: 'running' }));
+      expect(mockDb.sessions.update).toHaveBeenCalledWith('node-test', expect.objectContaining({ status: 'failed' }));
     } finally {
       pauseSpy.mockRestore();
       resumeSpy.mockRestore();

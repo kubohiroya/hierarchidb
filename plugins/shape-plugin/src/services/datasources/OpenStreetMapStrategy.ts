@@ -325,8 +325,8 @@ out geom;
   private async executeOverpassQuery(query: string, signal?: AbortSignal): Promise<OverpassResponse> {
     const url = `${this.config.access.baseUrl}${this.config.access.endpoints?.interpreter}`;
 
-    const { authFetch } = await import('../utils/authFetch.js');
-    const response = await authFetch(url, {
+    const { authFetch } = await import('@hierarchidb/download');
+    const response = await authFetch('shape', url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',

@@ -22,11 +22,11 @@ class TestGenerator {
   }
 }
 
-function makeTasks(sessionId: string, n: number, method: RouteGenerationMethod): RouteBatchTask[] {
+function makeTasks(nodeId: NodeId, n: number, method: RouteGenerationMethod): RouteBatchTask[] {
   return Array.from({ length: n }, (_, i) => ({
     taskId: `${method}-${i}`,
-    treeNodeId: 'n1' as NodeId,
-    sessionId,
+    treeNodeId: nodeId,
+    nodeId,
     taskType: 'route_generation',
     stage: 'route_generation',
     status: 'pending',
@@ -37,7 +37,6 @@ function makeTasks(sessionId: string, n: number, method: RouteGenerationMethod):
 
 describe('RouteBatchSession lane gating', () => {
   it('keeps osm_route concurrency at 1 even when maxConcurrent is high', async () => {
-    const sessionId = 's1';
     const cfg = {
       routeGeneration: {
         method: 'osm_route',
@@ -47,13 +46,13 @@ describe('RouteBatchSession lane gating', () => {
         maxRetries: 0,
       },
     } as RouteBatchConfig;
+    const nodeId = 'n1' as NodeId;
     const tasks: RouteBatchTask[] = [
-      ...makeTasks(sessionId, 5, 'osm_route'),
-      ...makeTasks(sessionId, 5, 'direct'),
+      ...makeTasks(nodeId, 5, 'osm_route'),
+      ...makeTasks(nodeId, 5, 'direct'),
     ];
     const gen = new TestGenerator();
-    const nodeId = 'n1' as NodeId;
-    const s = new RouteBatchSession(sessionId, nodeId, cfg, tasks, undefined);
+    const s = new RouteBatchSession(nodeId, cfg, tasks, { generator: gen as any });
     await s.initialize();
     await s.start();
     expect(gen.maxOsm).toBe(1);

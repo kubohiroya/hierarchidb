@@ -168,16 +168,14 @@
       "running": "Running",
       "paused": "Paused",
       "completed": "Completed",
-      "failed": "Failed",
-      "cancelled": "Cancelled"
+      "failed": "Failed"
     },
     "status": {
       "ready": "Ready to start build",
       "running": "Build in progress",
       "paused": "Build paused",
       "completed": "Build completed",
-      "failed": "Build failed",
-      "cancelled": "Build cancelled"
+      "failed": "Build failed"
     },
     "stages": {
       "download": {

@@ -8,7 +8,15 @@ import type { ShapeEntity } from '../../common/types/index.js';
 import type { NodeId } from '@hierarchidb/common-types';
 import type JSZip from 'jszip';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
-import { downloadArrayBuffer } from '../utils/downloadService.js';
+import { configurePluginDownloadDefaults, downloadArrayBuffer, getCorsProxyBaseURL } from '@hierarchidb/download';
+
+const ensureShapeDownloadDefaults = (): void => {
+  const corsProxyBaseURL = getCorsProxyBaseURL() || undefined;
+  configurePluginDownloadDefaults('shape', {
+    dbPrefix: 'shape',
+    corsProxyBaseURL,
+  });
+};
 
 //  Natural Earth
 export interface NaturalEarthRawData {
@@ -116,7 +124,9 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
     try {
       //  ZIP
       const retries = this.config.access.retries ?? { count: 1, delay: 0, backoff: 'exponential' };
+      ensureShapeDownloadDefaults();
       const zipBuffer = await downloadArrayBuffer(
+        'shape',
         downloadUrl,
         `naturalearth:${selectedEndpoint}`,
         { retries: retries.count, delayMs: retries.delay, backoff: retries.backoff },

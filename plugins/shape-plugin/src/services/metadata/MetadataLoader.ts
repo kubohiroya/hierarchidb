@@ -11,8 +11,8 @@ type RawCountryMetadata = Partial<CountryMetadata> & {
   adminLevels?: Array<number | { level?: number }>;
   maxAdminLevel?: number;
   countryCode?: string;
-  iso2?: string;
-  iso3?: string;
+  iso2?: CountryMetadata['iso2'];
+  iso3?: CountryMetadata['iso3'];
   countryName?: string;
   continent?: string;
   population?: number;

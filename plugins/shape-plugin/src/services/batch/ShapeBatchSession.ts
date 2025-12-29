@@ -15,8 +15,8 @@ export interface ShapeBatchTask {
 }
 
 export class ShapeBatchSession extends AbstractBatchSession<ShapeBatchConfig> {
-  constructor(sessionId: string, nodeId: NodeId, config: ShapeBatchConfig, private controller: SessionController, private sink?: (e: ProgressInfo) => void) {
-    super(sessionId, nodeId, config);
+  constructor(nodeId: NodeId, config: ShapeBatchConfig, private controller: SessionController, private sink?: (e: ProgressInfo) => void) {
+    super(nodeId, config);
   }
 
   protected async onInitialize(): Promise<void> {

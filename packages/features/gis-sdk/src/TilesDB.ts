@@ -2,8 +2,8 @@ import { getDBName, SingletonMixin } from '@hierarchidb/util';
 import { Dexie, type Table } from 'dexie';
 
 export interface TileRow {
-  key: string; // `${sessionId}-${z}-${x}-${y}`
-  sessionId: string;
+  key: string; // `${nodeId}-${z}-${x}-${y}`
+  nodeId: string;
   z: number;
   x: number;
   y: number;
@@ -14,8 +14,8 @@ export interface TileRow {
 }
 
 export interface FeatureMetadataRow {
-  id: string; // `${sessionId}-${featureId}`
-  sessionId: string;
+  id: string; // `${nodeId}-${featureId}`
+  nodeId: string;
   featureId: string;
   countryName?: string;
   countryCode?: string;
@@ -45,12 +45,17 @@ export class TilesDB extends Dexie {
   private constructor(name: string) {
     super(name);
     this.version(1).stores({
-      tiles: '&key, sessionId, [sessionId+z+x+y], z, x, y, timestamp',
+      tiles: '&key, nodeId, [nodeId+z+x+y], z, x, y, timestamp',
     });
     this.version(2).stores({
-      tiles: '&key, sessionId, [sessionId+z+x+y], z, x, y, timestamp',
+      tiles: '&key, nodeId, [nodeId+z+x+y], z, x, y, timestamp',
       featureMetadata:
-        '&id, sessionId, featureId, countryCode, adminLevel, adminCode, dataSource, createdAt',
+        '&id, nodeId, featureId, countryCode, adminLevel, adminCode, dataSource, createdAt',
+    });
+    this.version(3).stores({
+      tiles: '&key, nodeId, [nodeId+z+x+y], z, x, y, timestamp',
+      featureMetadata:
+        '&id, nodeId, featureId, countryCode, adminLevel, adminCode, dataSource, createdAt',
     });
     this.tiles = this.table('tiles');
     this.featureMetadata = this.table('featureMetadata');

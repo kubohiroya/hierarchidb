@@ -4,11 +4,10 @@ import type { VectorTileStageAdapter } from './VectorTileStageAdapter.js';
 import type { StageControls } from './StageControls.js';
 import { shapeDB } from '../../database/ShapeDB.js';
 import { getEphemeralShapeDB } from '../../database/EphemeralShapeDB.js';
-import { DexieChunkStoragePort } from '@hierarchidb/download';
 import { geojson } from 'flatgeobuf';
 import type { Feature } from 'geojson';
 import { BatchService } from '@hierarchidb/batch';
-import { createStageWorkerClient } from '@hierarchidb/runtime-worker';
+import { createStageWorkerClient, runVectorTileStage } from '@hierarchidb/runtime-worker';
 
 const isAbortError = (error: unknown): boolean => (
   error instanceof Error && error.name === 'AbortError'
@@ -33,7 +32,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     return decoded;
   }
 
-  private async persistGeoJsonInput(inputBufferId: string): Promise<void> {
+  private async buildGeoJsonBuffer(inputBufferId: string): Promise<ArrayBuffer> {
     const db = getEphemeralShapeDB();
     const input = await db.simplifiedBuffers.get(inputBufferId)
       ?? await db.rawBuffers.get(inputBufferId);
@@ -42,10 +41,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     }
     const geojsonPayload = await this.decodeGeoJson(input.data);
     const text = JSON.stringify(geojsonPayload);
-    const bytes = new TextEncoder().encode(text).buffer;
-    const storage = new DexieChunkStoragePort('hidb-chunks');
-    await storage.putChunk(inputBufferId, 0, bytes);
-    await storage.commit(inputBufferId, { sizeBytes: bytes.byteLength, contentType: 'application/json' });
+    return new TextEncoder().encode(text).buffer;
   }
 
   private async resolveInputByteLength(inputBufferId: string): Promise<number | null> {
@@ -144,9 +140,9 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
             if (shouldAbort()) {
               continue;
             }
-            if (!isStageTileInput(inputBufferId)) {
-              await this.persistGeoJsonInput(inputBufferId);
-            }
+            const inputBuffer = isStageTileInput(inputBufferId)
+              ? undefined
+              : await this.buildGeoJsonBuffer(inputBufferId);
             if (shouldAbort()) {
               if (controls?.waitIfPaused) {
                 await controls.waitIfPaused();
@@ -165,18 +161,23 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
               signal.addEventListener('abort', abortListener, { once: true });
             }
             try {
-              await vectorTileClient.generateTiles(inputBufferId, {
-                format,
-                compression: compression ? 'gzip' : 'none',
-                tileSize,
-                buffer,
-                minZoom,
-                maxZoom,
-                metadataEnabled,
-                metadataReplace: replace,
-                metadataContext: sample.config?.metadataContext,
-                abortKey,
-              });
+              await runVectorTileStage({
+                inputBufferId,
+                inputBuffer,
+                contentType: 'application/json',
+                config: {
+                  format,
+                  compression: compression ? 'gzip' : 'none',
+                  tileSize,
+                  buffer,
+                  minZoom,
+                  maxZoom,
+                  metadataEnabled,
+                  metadataReplace: replace,
+                  metadataContext: sample.config?.metadataContext,
+                  abortKey,
+                },
+              }, vectorTileClient);
             } finally {
               if (signal) {
                 signal.removeEventListener('abort', abortListener);

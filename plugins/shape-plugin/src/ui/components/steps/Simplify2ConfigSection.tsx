@@ -15,7 +15,7 @@ import { useSimplify2ConfigSection } from '../../hooks/useSimplificationConfigSe
 import { SimplificationPanel } from '../processing/SimplificationPanel.js';
 import { PrecisionPanel } from '../processing/PrecisionPanel.js';
 import { useBuildCrashInsight } from '../../hooks/useBuildCrashInsight.js';
-import { getStageConcurrencyWarning } from '../../utils/buildMonitor.js';
+import { getStageConcurrencyWarning } from '../../utils/buildWarnings.js';
 
 type Props = {
   config: BatchConfig;

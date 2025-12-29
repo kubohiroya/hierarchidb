@@ -10,7 +10,6 @@ export {
   type IdeGsmCsvError,
 } from './services/ide-gsm/ideGsmCsv.js';
 export { RouteGenerator, SearouteEngine } from '@hierarchidb/route-engine';
-export { getRouteDownloadService } from './services/download/registry.js';
 export * as worker from './worker/index.js';
 
 export class RuntimeWiring {

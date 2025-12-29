@@ -8,8 +8,8 @@ export interface LocationBatchConfig extends BaseBatchConfig {
 }
 
 export class LocationBatchSession extends AbstractBatchSession<LocationBatchConfig> {
-  constructor(sessionId: string, nodeId: NodeId, config: LocationBatchConfig, private controller: LocationSessionController, private sink?: (e: ProgressEvent) => void) {
-    super(sessionId, nodeId, config);
+  constructor(nodeId: NodeId, config: LocationBatchConfig, private controller: LocationSessionController, private sink?: (e: ProgressEvent) => void) {
+    super(nodeId, config);
   }
 
   protected async onInitialize(): Promise<void> {
@@ -54,7 +54,7 @@ export class LocationBatchSession extends AbstractBatchSession<LocationBatchConf
     const percentage = total > 0 ? (completed / total) * 100 : 0;
 
     const legacyEvent: ProgressEvent = {
-      sessionId: event.sessionId,
+      nodeId: event.nodeId,
       stage: event.stage,
       total,
       completed,

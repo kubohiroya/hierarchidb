@@ -4,12 +4,12 @@ import { toBatchProgressEvent } from '../../ProgressAdapter';
 describe('ProgressAdapter', () => {
   it('maps known stages to shared vocabulary and computes percentage from completed/total', () => {
     const std = toBatchProgressEvent({
-      sessionId: 's1',
+      nodeId: 'node-1',
       stage: 'filter',
       total: 10,
       completed: 7,
     });
-    expect(std.sessionId).toBe('s1');
+    expect(std.nodeId).toBe('node-1');
     expect(std.stage).toBe('simplify1');
     expect(std.phase).toBe('running');
     expect(std.payload?.completed).toBe(7);
@@ -18,7 +18,7 @@ describe('ProgressAdapter', () => {
 
   it('passes through percentage when provided and preserves unknown stages', () => {
     const std = toBatchProgressEvent({
-      sessionId: 's2',
+      nodeId: 'node-2',
       stage: 'custom-stage',
       percentage: 55,
       total: 0,

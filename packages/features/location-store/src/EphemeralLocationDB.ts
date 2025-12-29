@@ -8,8 +8,7 @@ import type { NodeId, Timestamp } from '@hierarchidb/common-types';
 import type { LocationBatchData, UnifiedLocationBatchConfig } from './index.js';
 
 export interface VectorTileRecord {
-  id: string; // tileKey, e.g. loc-mvt-<sessionId>-<z>-<x>-<y>
-  sessionId: string;
+  id: string; // tileKey, e.g. loc-mvt-<nodeId>-<z>-<x>-<y>
   nodeId: NodeId;
   z: number;
   x: number;
@@ -23,14 +22,13 @@ export interface VectorTileRecord {
 }
 
 export interface LocationSessionRecord {
-  sessionId: string;
   nodeId: NodeId;
   bbox: [number, number, number, number];
   zoomMin: number;
   zoomMax: number;
   totalPoints: number;
   createdAt: number;
-  status: 'running' | 'completed' | 'failed' | 'paused' | 'cancelled';
+  status: 'running' | 'completed' | 'failed' | 'paused';
   tableId?: string;
   progress?: {
     total: number;
@@ -75,14 +73,25 @@ export class EphemeralLocationDB extends Dexie {
       pendingSessions: '&nodeId, storedAt',
     });
 
+    this.version(5)
+      .stores({
+        vectorTiles: '&id, nodeId, [z+x+y], timestamp',
+        sessions: '&nodeId, createdAt, status',
+        pendingSessions: '&nodeId, storedAt',
+      })
+      .upgrade(async (tx) => {
+        await tx.table('vectorTiles').clear();
+        await tx.table('sessions').clear();
+      });
+
     this.vectorTiles = this.table('vectorTiles');
     this.sessions = this.table('sessions');
     this.pendingSessions = this.table('pendingSessions');
   }
 
-  async clearSession(sessionId: string) {
-    await this.clearVectorTilesForSession(sessionId);
-    if (this.sessions) await this.sessions.where('sessionId').equals(sessionId).delete();
+  async clearSession(nodeId: NodeId) {
+    await this.clearVectorTilesForNode(nodeId);
+    if (this.sessions) await this.sessions.where('nodeId').equals(nodeId).delete();
   }
 
   async clearExpiredSessions(ttlMs: number): Promise<number> {
@@ -90,14 +99,14 @@ export class EphemeralLocationDB extends Dexie {
     const threshold = Date.now() - ttlMs;
     const old = await this.sessions.where('createdAt').below(threshold).toArray();
     if (old.length === 0) return 0;
-    const sessionIds = old.map(s => s.sessionId);
+    const nodeIds = old.map(s => s.nodeId);
     await this.transaction('rw', this.sessions, this.vectorTiles, async () => {
-      await this.sessions.bulkDelete(sessionIds);
-      for (const id of sessionIds) {
-        await this.vectorTiles.where('sessionId').equals(id).delete();
+      await this.sessions.bulkDelete(nodeIds);
+      for (const id of nodeIds) {
+        await this.vectorTiles.where('nodeId').equals(id).delete();
       }
     });
-    return sessionIds.length;
+    return nodeIds.length;
   }
 
   async clearExpiredPendingSessions(ttlMs: number): Promise<number> {
@@ -120,8 +129,8 @@ export class EphemeralLocationDB extends Dexie {
     });
   }
 
-  async clearVectorTilesForSession(sessionId: string): Promise<void> {
-    await this.vectorTiles.where('sessionId').equals(sessionId).delete();
+  async clearVectorTilesForNode(nodeId: NodeId): Promise<void> {
+    await this.vectorTiles.where('nodeId').equals(nodeId).delete();
   }
 }
 

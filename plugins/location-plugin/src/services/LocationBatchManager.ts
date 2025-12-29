@@ -20,11 +20,25 @@ import { parseOpenFlightsCsv, parseOurAirportsCsv, parseWorldPortIndexCsv } from
 import { appendLocationPoints, replaceLocationPoints } from './pointRepository.js';
 import type { RawNominatimResult, RawOverpassElement } from './download/rawTypes.js';
 import { getLocationDataSource } from '../common/datasources/LocationDataSourceDefinitions.js';
+import { getPluginDownloadService, notifyPluginAuthRequired, postJson } from '@hierarchidb/download';
 
 const logLocationBatchWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
   console.warn('[LocationBatchManager]', message, error);
 };
+
+const isRawNominatimLike = (value: unknown): value is RawNominatimLike => {
+  if (value === null || typeof value !== 'object') return false;
+  const candidate = value as Record<string, unknown>;
+  const latType = typeof candidate.lat;
+  const lonType = typeof candidate.lon;
+  return (latType === 'string' || latType === 'number')
+    && (lonType === 'string' || lonType === 'number');
+};
+
+const isRawNominatimArray = (value: unknown): value is RawNominatimLike[] => (
+  Array.isArray(value) && value.every((item) => isRawNominatimLike(item))
+);
 
 const ISO3166_CSV_URL = '/iso3166-2-level1.csv';
 
@@ -33,7 +47,6 @@ const ISO3166_CSV_URL = '/iso3166-2-level1.csv';
  */
 interface LocationBatchTask {
   taskId: string;
-  sessionId: string;
   nodeId: NodeId;
   searchConfig: LocationSearchConfig;
   status: 'pending' | 'searching' | 'geocoding' | 'validating' | 'completed' | 'failed';
@@ -53,7 +66,6 @@ interface LocationBatchTask {
  * Location batch session status
  */
 interface LocationBatchSession {
-  sessionId: string;
   nodeId: NodeId;
   config: LocationBatchConfig;
   totalTasks: number;
@@ -69,7 +81,7 @@ interface LocationBatchSession {
  * Location batch progress event
  */
 export interface LocationBatchProgressEvent {
-  sessionId: string;
+  nodeId: NodeId;
   taskId?: string;
   stage: 'searching' | 'geocoding' | 'validating' | 'saving' | 'completed';
   progress: number;
@@ -88,9 +100,9 @@ type RawNominatimLike = RawNominatimResult;
  * Location batch manager extending Shape's batch session manager
  */
 export class LocationBatchManager {
-  private locationSessions: Map<string, LocationBatchSession> = new Map();
-  private locationTasks: Map<string, LocationBatchTask[]> = new Map();
-  private progressCallbacks: Map<string, (event: LocationBatchProgressEvent) => void> = new Map();
+  private locationSessions: Map<NodeId, LocationBatchSession> = new Map();
+  private locationTasks: Map<NodeId, LocationBatchTask[]> = new Map();
+  private progressCallbacks: Map<NodeId, (event: LocationBatchProgressEvent) => void> = new Map();
   private countryNameMap: Map<string, string> | null = null;
 
   private async persistLocationPoints(
@@ -112,8 +124,7 @@ export class LocationBatchManager {
     progressCallback?: (event: LocationBatchProgressEvent) => void,
   ): Promise<LocationPointProperties[]> {
     const tasks = config.searchConfigs.map((searchConfig, index) => ({
-      taskId: `collect-task-${index}`,
-      sessionId: `collect-${Date.now()}`,
+      taskId: `collect-${nodeId}-task-${index}`,
       nodeId,
       searchConfig,
       status: 'pending' as const,
@@ -132,7 +143,7 @@ export class LocationBatchManager {
         );
         collected.push(...validatedResults);
         progressCallback?.({
-          sessionId: task.sessionId,
+          nodeId: task.nodeId,
           taskId: task.taskId,
           stage: 'saving',
           progress: collected.length,
@@ -157,14 +168,12 @@ export class LocationBatchManager {
     nodeId: NodeId,
     config: LocationBatchConfig,
     progressCallback?: (event: LocationBatchProgressEvent) => void,
-  ): Promise<string> {
-    const sessionId = `location-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  ): Promise<NodeId> {
     const totalTasks = config.searchConfigs.length;
 
     // Create batch tasks
     const tasks: LocationBatchTask[] = config.searchConfigs.map((searchConfig, index) => ({
-      taskId: `${sessionId}-task-${index}`,
-      sessionId,
+      taskId: `${nodeId}-task-${index}`,
       nodeId,
       searchConfig,
       status: 'pending' as const,
@@ -173,7 +182,6 @@ export class LocationBatchManager {
 
     // Initialize session
     const session: LocationBatchSession = {
-      sessionId,
       nodeId,
       config,
       totalTasks,
@@ -184,31 +192,31 @@ export class LocationBatchManager {
       status: 'running',
     };
 
-    this.locationSessions.set(sessionId, session);
-    this.locationTasks.set(sessionId, tasks);
+    this.locationSessions.set(nodeId, session);
+    this.locationTasks.set(nodeId, tasks);
 
     if (progressCallback) {
-      this.progressCallbacks.set(sessionId, progressCallback);
+      this.progressCallbacks.set(nodeId, progressCallback);
     }
 
     // Start processing
-    this.processLocationBatch(sessionId).catch(error => {
+    this.processLocationBatch(nodeId).catch(error => {
       console.error('Location batch processing failed:', error);
-      this.handleBatchError(sessionId, error);
+      this.handleBatchError(nodeId, error);
     });
 
-    return sessionId;
+    return nodeId;
   }
 
   /**
    * Process location batch
    */
-  private async processLocationBatch(sessionId: string): Promise<void> {
-    const session = this.locationSessions.get(sessionId);
-    const tasks = this.locationTasks.get(sessionId);
+  private async processLocationBatch(nodeId: NodeId): Promise<void> {
+    const session = this.locationSessions.get(nodeId);
+    const tasks = this.locationTasks.get(nodeId);
 
     if (!session || !tasks) {
-      throw new Error(`Session not found: ${sessionId}`);
+      throw new Error(`Session not found: ${nodeId}`);
     }
 
     // Process tasks with concurrency control
@@ -224,8 +232,8 @@ export class LocationBatchManager {
     session.status = session.failedTasks === 0 ? 'completed' : 'failed';
 
     // Emit completion event
-    this.emitLocationProgress(sessionId, {
-      sessionId,
+    this.emitLocationProgress(nodeId, {
+      nodeId,
       stage: 'completed',
       progress: 100,
       message: `Batch processing completed: ${session.totalPoints} locations processed`,
@@ -254,8 +262,8 @@ export class LocationBatchManager {
       task.metrics.searchTime = Date.now() - searchStartTime;
       task.metrics.totalFound = searchResults.length;
 
-      this.emitLocationProgress(session.sessionId, {
-        sessionId: session.sessionId,
+      this.emitLocationProgress(session.nodeId, {
+        nodeId: session.nodeId,
         taskId: task.taskId,
         stage: 'searching',
         progress: 25,
@@ -273,8 +281,8 @@ export class LocationBatchManager {
         task.metrics.geocodeTime = Date.now() - geocodeStartTime;
         task.results = geocodedResults;
 
-        this.emitLocationProgress(session.sessionId, {
-          sessionId: session.sessionId,
+        this.emitLocationProgress(session.nodeId, {
+          nodeId: session.nodeId,
           taskId: task.taskId,
           stage: 'geocoding',
           progress: 50,
@@ -296,8 +304,8 @@ export class LocationBatchManager {
       task.metrics.totalFiltered = task.results.length - validatedResults.length;
       task.results = validatedResults;
 
-      this.emitLocationProgress(session.sessionId, {
-        sessionId: session.sessionId,
+      this.emitLocationProgress(session.nodeId, {
+        nodeId: session.nodeId,
         taskId: task.taskId,
         stage: 'validating',
         progress: 75,
@@ -315,8 +323,8 @@ export class LocationBatchManager {
       session.completedTasks++;
       task.progress = 100;
 
-      this.emitLocationProgress(session.sessionId, {
-        sessionId: session.sessionId,
+      this.emitLocationProgress(session.nodeId, {
+        nodeId: session.nodeId,
         taskId: task.taskId,
         stage: 'saving',
         progress: 100,
@@ -341,7 +349,7 @@ export class LocationBatchManager {
   private async searchLocations(config: LocationSearchConfig): Promise<LocationPointProperties[]> {
     // Try Strategy registry first (features-gated)
     try {
-      const { getLocationStrategy } = await import('./download/registry.js');
+      const { getLocationStrategy } = await import('./download/strategyRegistry.js');
       const strategy = getLocationStrategy(config);
       if (strategy) {
         const list = await strategy.search(config);
@@ -420,8 +428,11 @@ export class LocationBatchManager {
     }
 
     try {
-      const { getJson } = await import('./utils/sharedNet.js');
-      const data = await getJson(`${endpoint}?${params}`);
+      const data = await this.getJson(`${endpoint}?${params}`);
+      if (!isRawNominatimArray(data)) {
+        logLocationBatchWarning('Unexpected Nominatim response shape', data);
+        return [];
+      }
       return this.convertOSMToLocations(data);
     } catch (error) {
       console.error('OSM search failed:', error);
@@ -458,8 +469,8 @@ export class LocationBatchManager {
       : this.buildOverpassQuery(config);
 
     try {
-      const { postJson } = await import('./utils/sharedNet.js');
       const data = await postJson<{ elements?: RawOverpassElement[] }>(
+        'location',
         endpoint,
         query,
         { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -481,7 +492,6 @@ export class LocationBatchManager {
     }
 
     try {
-      const { getJson } = await import('./utils/sharedNet.js');
       const endpointUrl = config.options.customEndpoint;
       if (typeof endpointUrl !== 'string' || endpointUrl.length === 0) {
         console.error('Custom endpoint is invalid');
@@ -501,7 +511,7 @@ export class LocationBatchManager {
       const requestUrl = searchParams.size > 0 ? `${endpointUrl}?${searchParams.toString()}` : endpointUrl;
       const customHeaders = config.options.customHeaders as HeadersInit | undefined;
       const init: RequestInit | undefined = customHeaders ? { headers: customHeaders } : undefined;
-      const data = await getJson(requestUrl, init);
+      const data = await this.getJson(requestUrl, init);
       return this.convertCustomToLocations(data);
     } catch (error) {
       console.error('Custom search failed:', error);
@@ -517,8 +527,7 @@ export class LocationBatchManager {
       return [];
     }
     try {
-      const { getText } = await import('./utils/sharedNet.js');
-      const csv = await getText(endpoint);
+      const csv = await this.getText(endpoint);
       return parseOurAirportsCsv(csv, Date.now());
     } catch (error) {
       console.error('OurAirports search failed:', error);
@@ -534,8 +543,7 @@ export class LocationBatchManager {
       return [];
     }
     try {
-      const { getText } = await import('./utils/sharedNet.js');
-      const csv = await getText(endpoint);
+      const csv = await this.getText(endpoint);
       return parseOpenFlightsCsv(csv, Date.now());
     } catch (error) {
       console.error('OpenFlights search failed:', error);
@@ -551,13 +559,41 @@ export class LocationBatchManager {
       return [];
     }
     try {
-      const { getText } = await import('./utils/sharedNet.js');
-      const csv = await getText(endpoint);
+      const csv = await this.getText(endpoint);
       return parseWorldPortIndexCsv(csv, Date.now());
     } catch (error) {
       console.error('World Port Index search failed:', error);
       return [];
     }
+  }
+
+  private async getDownloadService() {
+    return getPluginDownloadService('location', { perHostConcurrency: 4 });
+  }
+
+  private async getJson(url: string, init?: RequestInit): Promise<unknown> {
+    const { net } = await this.getDownloadService();
+    const res = await net.get(url, init);
+    if (res.status === 401 || res.status === 403) {
+      notifyPluginAuthRequired('location', { resource: url, provider: 'location', hint: 'Authentication required', status: res.status });
+      throw new Error(`Auth required: ${res.status}`);
+    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const buf = await res.arrayBuffer();
+    const text = new TextDecoder().decode(buf);
+    return JSON.parse(text);
+  }
+
+  private async getText(url: string, init?: RequestInit): Promise<string> {
+    const { net } = await this.getDownloadService();
+    const res = await net.get(url, init);
+    if (res.status === 401 || res.status === 403) {
+      notifyPluginAuthRequired('location', { resource: url, provider: 'location', hint: 'Authentication required', status: res.status });
+      throw new Error(`Auth required: ${res.status}`);
+    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const buf = await res.arrayBuffer();
+    return new TextDecoder().decode(buf);
   }
 
   /**
@@ -854,8 +890,8 @@ export class LocationBatchManager {
   /**
    * Emit location progress event
    */
-  private emitLocationProgress(sessionId: string, event: LocationBatchProgressEvent): void {
-    const callback = this.progressCallbacks.get(sessionId);
+  private emitLocationProgress(nodeId: NodeId, event: LocationBatchProgressEvent): void {
+    const callback = this.progressCallbacks.get(nodeId);
     if (callback) {
       callback(event);
     }
@@ -864,15 +900,15 @@ export class LocationBatchManager {
   /**
    * Handle batch error
    */
-  private handleBatchError(sessionId: string, error: {message:unknown}): void {
-    const session = this.locationSessions.get(sessionId);
+  private handleBatchError(nodeId: NodeId, error: {message:unknown}): void {
+    const session = this.locationSessions.get(nodeId);
     if (session) {
       session.status = 'failed';
       session.endTime = Date.now();
     }
 
-    this.emitLocationProgress(sessionId, {
-      sessionId,
+    this.emitLocationProgress(nodeId, {
+      nodeId,
       stage: 'completed',
       progress: 100,
       message: `Batch processing failed: ${error.message}`,
@@ -882,23 +918,23 @@ export class LocationBatchManager {
   /**
    * Get session status
    */
-  getLocationSessionStatus(sessionId: string): LocationBatchSession | undefined {
-    return this.locationSessions.get(sessionId);
+  getLocationSessionStatus(nodeId: NodeId): LocationBatchSession | undefined {
+    return this.locationSessions.get(nodeId);
   }
 
   /**
    * Abort location batch session
    */
-  async abortLocationSession(sessionId: string): Promise<void> {
-    const session = this.locationSessions.get(sessionId);
+  async abortLocationSession(nodeId: NodeId): Promise<void> {
+    const session = this.locationSessions.get(nodeId);
     if (session) {
       session.status = 'failed';
       session.endTime = Date.now();
     }
 
     // Cleanup session
-    this.locationSessions.delete(sessionId);
-    this.locationTasks.delete(sessionId);
-    this.progressCallbacks.delete(sessionId);
+    this.locationSessions.delete(nodeId);
+    this.locationTasks.delete(nodeId);
+    this.progressCallbacks.delete(nodeId);
   }
 }

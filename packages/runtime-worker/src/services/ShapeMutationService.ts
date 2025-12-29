@@ -42,14 +42,14 @@ export class ShapeMutationService implements ShapeMutationAPI {
     await this.db.open?.();
   }
 
-  async deleteBatchSession(sessionId: string): Promise<void> {
+  async deleteBatchSession(nodeId: NodeId): Promise<void> {
     await this.ensureOpen();
-    await this.db.batchSessions.delete?.(sessionId);
+    await this.db.batchSessions.delete?.(String(nodeId));
   }
 
-  async deleteBatchTasks(sessionId: string): Promise<void> {
+  async deleteBatchTasks(nodeId: NodeId): Promise<void> {
     await this.ensureOpen();
-    await this.db.batchTasks.where('sessionId').equals(sessionId).delete?.();
+    await this.db.batchTasks.where('nodeId').equals(nodeId).delete?.();
   }
 
   async deleteVectorTiles(nodeId: NodeId): Promise<void> {
@@ -85,22 +85,14 @@ export class ShapeMutationService implements ShapeMutationAPI {
 
   async cleanupProcessingData(nodeId: NodeId): Promise<void> {
     await this.ensureOpen();
-    const sessions = await this.db.batchSessions.where('nodeId').equals(nodeId).toArray?.() ?? [];
-    const sessionIds = new Set<string>([String(nodeId)]);
-    for (const session of sessions as Array<{ sessionId?: string }>) {
-      const sessionId = session.sessionId;
-      if (sessionId) {
-        sessionIds.add(sessionId);
-        await this.db.batchTasks.where('sessionId').equals(sessionId).delete?.();
-      }
-    }
+    await this.db.batchTasks.where('nodeId').equals(nodeId).delete?.();
     await this.db.batchSessions.where('nodeId').equals(nodeId).delete?.();
     await this.deleteFeatures(nodeId);
     await this.deleteFeatureBuffers(nodeId);
     await this.deleteTileBuffers(nodeId);
     await this.deleteVectorTiles(nodeId);
     await this.clearCache(nodeId);
-    await this.clearTileIndexArtifacts(Array.from(sessionIds));
+    await this.clearTileIndexArtifacts(String(nodeId));
   }
 
   async clearShapeArtifacts(nodeId: NodeId): Promise<void> {
@@ -109,15 +101,13 @@ export class ShapeMutationService implements ShapeMutationAPI {
     await ephemeral.clearNodeData(nodeId);
   }
 
-  private async clearTileIndexArtifacts(sessionIds: string[]): Promise<void> {
+  private async clearTileIndexArtifacts(nodeId: string): Promise<void> {
     try {
       const db = await TilesDB.getSingleton();
-      for (const sessionId of sessionIds) {
-        const inputKey = `input:${sessionId}`;
-        await db.tiles.where('sessionId').equals(sessionId).delete();
-        await db.tiles.where('sessionId').equals(inputKey).delete();
-        await db.featureMetadata.where('sessionId').equals(sessionId).delete();
-      }
+      const inputKey = `input:${nodeId}`;
+      await db.tiles.where('sessionId').equals(nodeId).delete();
+      await db.tiles.where('sessionId').equals(inputKey).delete();
+      await db.featureMetadata.where('sessionId').equals(nodeId).delete();
     } catch (error) {
       console.warn('[ShapeMutationService] failed to clear TilesDB artifacts', error);
     }

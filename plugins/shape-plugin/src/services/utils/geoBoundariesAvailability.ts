@@ -1,4 +1,12 @@
-import { downloadJson } from './downloadService.js';
+import { configurePluginDownloadDefaults, downloadJson, getCorsProxyBaseURL } from '@hierarchidb/download';
+
+const ensureShapeDownloadDefaults = (): void => {
+  const corsProxyBaseURL = getCorsProxyBaseURL() || undefined;
+  configurePluginDownloadDefaults('shape', {
+    dbPrefix: 'shape',
+    corsProxyBaseURL,
+  });
+};
 
 const parseAdminLevel = (value: unknown): number | null => {
   if (typeof value === 'number' && Number.isInteger(value)) return value;
@@ -27,7 +35,8 @@ export type GeoBoundariesAvailability = {
 export async function fetchGeoBoundariesAvailability(
   url: string,
 ): Promise<GeoBoundariesAvailability> {
-  const availabilityPayload = await downloadJson<unknown>(url, 'geoboundaries:availability');
+  ensureShapeDownloadDefaults();
+  const availabilityPayload = await downloadJson<unknown>('shape', url, 'geoboundaries:availability');
   const items = Array.isArray(availabilityPayload)
     ? availabilityPayload
     : Array.isArray((availabilityPayload as { data?: unknown }).data)

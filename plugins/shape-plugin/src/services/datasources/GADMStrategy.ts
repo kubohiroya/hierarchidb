@@ -6,7 +6,15 @@
 import { BaseDataSourceStrategy, type DataSourceConfig, type FetchOptions, type ProcessOptions } from './DataSourceStrategy.js';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { ShapeEntity } from '../../common/types/index.js';
-import { downloadArrayBuffer } from '../utils/downloadService.js';
+import { configurePluginDownloadDefaults, downloadArrayBuffer, getCorsProxyBaseURL } from '@hierarchidb/download';
+
+const ensureShapeDownloadDefaults = (): void => {
+  const corsProxyBaseURL = getCorsProxyBaseURL() || undefined;
+  configurePluginDownloadDefaults('shape', {
+    dbPrefix: 'shape',
+    corsProxyBaseURL,
+  });
+};
 
 //  GADM
 export interface GADMRawData {
@@ -131,7 +139,9 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
       console.log(`[GADM] Downloading ${format.toUpperCase()} for ${normalizedCountry} level ${level}: ${downloadUrl}`);
 
       const retries = this.config.access.retries ?? { count: 1, delay: 0, backoff: 'exponential' };
+      ensureShapeDownloadDefaults();
       const zipBuffer = await downloadArrayBuffer(
+        'shape',
         downloadUrl,
         `gadm:${normalizedCountry}:${format}`,
         { retries: retries.count, delayMs: retries.delay, backoff: retries.backoff },

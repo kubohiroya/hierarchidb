@@ -3,24 +3,25 @@ import type { JSX } from 'react';
 import type { NodeId } from '@hierarchidb/common-types';
 import { RouteSourceOrchestrator } from '../../common/orchestrator/RouteSourceOrchestrator.js';
 import { RouteBatchOrchestrationService } from '../../common/orchestrator/RouteBatchOrchestrationService.js';
-import type { createRouteBatchManager as createMgrFn } from '../../services/createRouteBatchManager.js';
 import type { RouteBatchConfig } from '../../common/types/BatchConfig.js';
 import type { RouteBatchSpec } from '../../common/orchestrator/types.js';
 import { getOsrmEngineDefaults, getOsrmThrottleDefaults } from '../../services/config/osrm-defaults.js';
 import { getNetPort } from '../../services/net/getNetPort.js';
 import type { RouteGenerationOptions } from '../../common/entities/RouteEntity.js';
+import { RouteBatchSessionOrchestrator } from '../../services/RouteBatchSessionOrchestrator.js';
+import { OsrmEngine } from '../../services/engines/OsrmEngine.js';
+import { SearouteEngine } from '@hierarchidb/route-engine';
+import { ThrottledPort } from '../../services/net/ThrottledPort.js';
 
 type JobKind = 'recompute' | 'matrix' | 'enrich';
 
 export interface RouteBatchLaunchFormProps {
   nodeId: NodeId;
-  createRouteBatchManager: typeof createMgrFn;
   onLaunched?: (res: { jobId: string; count: number }) => void;
 }
 
 export function RouteBatchLaunchForm({
   nodeId,
-  createRouteBatchManager,
   onLaunched,
 }: RouteBatchLaunchFormProps): JSX.Element {
   const [kind, setKind] = useState<JobKind>('recompute');
@@ -39,8 +40,14 @@ export function RouteBatchLaunchForm({
     setStatus('starting...');
     try {
       const net = getNetPort();
-      const orchestrator = new RouteBatchOrchestrationService(new RouteSourceOrchestrator({ net }));
-      const mgr = createRouteBatchManager({ net, osrmThrottle: { rps, concurrency } });
+      const orchestrator = new RouteBatchOrchestrationService(new RouteSourceOrchestrator());
+      const osrmPort = new ThrottledPort(net, { rps, concurrency });
+      const mgr = new RouteBatchSessionOrchestrator({
+        engines: {
+          osrm: new OsrmEngine(osrmPort),
+          searoute: new SearouteEngine(),
+        },
+      });
       const methodOptions: RouteGenerationOptions & { profile: OsrmProfile } = {
         osrmBaseUrl: baseUrl,
         profile,

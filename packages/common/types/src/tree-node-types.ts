@@ -7,7 +7,6 @@ import type { Timestamp } from './primitive-types.js';
  */
 export const NODE_TYPES = {
   FOLDER: 'folder',
-  FILE: 'file',
   // Plugin-specific types will be added dynamically
 } as const;
 
@@ -102,6 +101,8 @@ export interface TreeNodeUpdaterPayload<T extends object = object> {
   treeNodeId: NodeId;
   draftMetadata: TreeNodeMetadata | null;
   draftData: Partial<T> | null;
+  buildStartedAt?: Timestamp;
+  buildFinishedAt?: Timestamp;
 }
 
 /**

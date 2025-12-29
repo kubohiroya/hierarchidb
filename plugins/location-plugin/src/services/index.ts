@@ -3,7 +3,6 @@
  * Aggregates service-layer utilities for consumption by the app.
  */
 
-export { LocationVectorTileService } from './tiles/LocationVectorTileService.js';
 export { LocationBatchManager, type LocationBatchProgressEvent } from './LocationBatchManager.js';
 export {
   appendLocationPoints,

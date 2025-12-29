@@ -4,7 +4,7 @@ import type { BatchSessionStatus, UnifiedProgressInfo } from '@hierarchidb/commo
 import { useBatchProgressState, type UseBatchProgressStateOptions } from './useBatchProgressState.js';
 
 export type UsePluginBatchProgressOptions<TProgress, TStatus> = UseBatchProgressStateOptions & {
-  mapUnifiedToProgress: (info: UnifiedProgressInfo | null, sessionId?: string) => TProgress | null;
+  mapUnifiedToProgress: (info: UnifiedProgressInfo | null, nodeId?: string) => TProgress | null;
   mapUnifiedToStatus?: (info: UnifiedProgressInfo | null, status: BatchSessionStatus | null) => TStatus | null;
 };
 
@@ -21,7 +21,7 @@ export interface PluginBatchProgressState<TProgress, TStatus> {
 
 export const usePluginBatchProgress = <TProgress, TStatus = BatchSessionStatus>(
   nodeType: NodeType,
-  sessionId: string | null,
+  nodeId: string | null,
   options: UsePluginBatchProgressOptions<TProgress, TStatus>,
 ): PluginBatchProgressState<TProgress, TStatus> => {
   const { mapUnifiedToProgress, mapUnifiedToStatus, ...stateOptions } = options;
@@ -32,11 +32,11 @@ export const usePluginBatchProgress = <TProgress, TStatus = BatchSessionStatus>(
     error,
     subscribe,
     unsubscribe,
-  } = useBatchProgressState(nodeType, sessionId, stateOptions);
+  } = useBatchProgressState(nodeType, nodeId, stateOptions);
 
   const progress = useMemo(
-    () => mapUnifiedToProgress(unifiedProgress, sessionId ?? undefined),
-    [mapUnifiedToProgress, sessionId, unifiedProgress],
+    () => mapUnifiedToProgress(unifiedProgress, nodeId ?? undefined),
+    [mapUnifiedToProgress, nodeId, unifiedProgress],
   );
 
   const status = useMemo(() => {

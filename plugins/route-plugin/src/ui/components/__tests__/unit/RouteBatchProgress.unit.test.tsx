@@ -74,7 +74,7 @@ describe('RouteBatchSummary', () => {
       resume: vi.fn(),
     });
 
-    render(<RouteBatchSummary sessionId="job-3" />);
+    render(<RouteBatchSummary nodeId="job-3" />);
 
     await waitFor(() => {
       expect(screen.getByTestId('route-summary-completed').textContent).toContain('完了: 4');

@@ -12,7 +12,7 @@ import {
 } from '@hierarchidb/plugin-service-api';
 import type { LocationQueryAPI } from '@hierarchidb/location-store';
 import type { RouteDatabaseHandle, RouteMutationAPI } from '@hierarchidb/route-store';
-import { RouteGenerator } from '@hierarchidb/route-engine';
+import { RouteGenerator, SearouteEngine } from '@hierarchidb/route-engine';
 import { buildIdeGsmLocationIndex, parseIdeGsmCsv } from './route/ideGsmCsv.js';
 
 export class RouteMutationService implements RouteMutationAPI {
@@ -142,7 +142,7 @@ let ideGsmGeneratorPromise: Promise<RouteGenerator> | null = null;
 async function getIdeGsmRouteGenerator(): Promise<RouteGenerator> {
   if (!ideGsmGeneratorPromise) {
     ideGsmGeneratorPromise = (async () => {
-      return new RouteGenerator();
+      return new RouteGenerator({ searoute: new SearouteEngine() });
     })();
   }
   return ideGsmGeneratorPromise;

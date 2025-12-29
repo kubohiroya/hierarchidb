@@ -31,7 +31,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
     hoverMessage,
     tilesUrl,
     tilesLayer,
-    sessionId,
+    nodeId,
     tilesAvailable,
     tilesChecking,
     tileDbName,
@@ -99,7 +99,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
           <LazyMapWithVectorTiles
             tiles={tiles}
             dbName={!hasRemoteTiles ? tileDbName : undefined}
-            nodeId={!hasRemoteTiles ? sessionId ?? undefined : undefined}
+            nodeId={!hasRemoteTiles ? nodeId ?? undefined : undefined}
             tileDataProvider={!hasRemoteTiles ? tileDataProvider : undefined}
             mapOptions={{
               interactive: true,
@@ -168,7 +168,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
               border="1px solid #e0e0e0"
               sx={{ overscrollBehavior: 'contain' }}
             >
-              {!sessionId ? (
+              {!nodeId ? (
                 <Alert severity="info" sx={{ m: 2 }}>
                   {t('preview.metadata.missingSession', 'Build the dataset to generate metadata.')}
                 </Alert>

@@ -25,7 +25,6 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
     data: ShapeBatchData;
     options?: BatchSessionOptions;
   }>();
-  private sessionNodes = new Map<string, NodeId>();
 
   constructor() {
     this.manager = new BatchSessionManager();
@@ -43,7 +42,7 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
     this.pending.set(nodeId, { config, data, options });
   }
 
-  async startBatchSession(nodeId: NodeId): Promise<string> {
+  async startBatchSession(nodeId: NodeId): Promise<BatchSessionStatus> {
     const pending = this.pending.get(nodeId);
     if (!pending) {
       throw new Error(`No pending shape batch session data for node ${nodeId}`);
@@ -60,33 +59,29 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
       data.downloadTaskPayloads,
       options ?? {}
     );
-    const sessionId = session.sessionId;
-    if (!sessionId) {
-      throw new Error('Failed to create shape batch session: missing sessionId');
+    if (!session.nodeId) {
+      throw new Error('Failed to create shape batch session: missing nodeId');
     }
-    this.sessionNodes.set(sessionId, nodeId);
-    return sessionId;
+    return this.getBatchSessionStatus(nodeId);
   }
 
-  async pauseBatchSession(sessionId: string): Promise<void> {
-    return this.manager.pauseSession(sessionId);
+  async pauseBatchSession(nodeId: NodeId): Promise<void> {
+    return this.manager.pauseSession(nodeId);
   }
 
-  async resumeBatchSession(sessionId: string): Promise<void> {
-    return this.manager.resumeSession(sessionId);
+  async resumeBatchSession(nodeId: NodeId): Promise<void> {
+    return this.manager.resumeSession(nodeId);
   }
 
-  async cancelBatchSession(sessionId: string): Promise<void> {
-    await this.manager.cancelSession(sessionId);
-    this.sessionNodes.delete(sessionId);
+  async cancelBatchSession(nodeId: NodeId): Promise<void> {
+    await this.manager.cancelSession(nodeId);
   }
 
-  async getBatchSessionStatus(sessionId: string): Promise<BatchSessionStatus> {
-    const status = await this.manager.getSessionStatus(sessionId);
+  async getBatchSessionStatus(nodeId: NodeId): Promise<BatchSessionStatus> {
+    const status = await this.manager.getSessionStatus(nodeId);
 
     // Convert shape-specific status to standard format
     return {
-      sessionId: status.session.sessionId,
       nodeId: status.session.nodeId,
       status: status.session.status,
       progress: status.session.progress,
@@ -97,13 +92,8 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
     };
   }
 
-  onBatchProgress(sessionId: string, callback: BatchProgressCallback): () => void {
-    const unsubscribe = this.manager.onProgress(sessionId, (progress) => {
-      const nodeId = this.sessionNodes.get(sessionId);
-      if (!nodeId) {
-        return;
-      }
-
+  onBatchProgress(nodeId: NodeId, callback: BatchProgressCallback): () => void {
+    const unsubscribe = this.manager.onProgress(nodeId, (progress) => {
       const total = progress.total ?? 0;
       const completed = progress.completed ?? 0;
       const failed = progress.failed ?? 0;
@@ -123,7 +113,6 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
       };
 
       const event: Parameters<BatchProgressCallback>[0] = {
-        sessionId,
         nodeId,
         stage: progress.currentStage || 'processing',
         phase,
@@ -133,10 +122,6 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
       };
 
       callback(event);
-
-      if (phase === 'completed' || phase === 'failed') {
-        this.sessionNodes.delete(sessionId);
-      }
     });
 
     // Return unsubscribe function (shape manager doesn't provide one, so we return a no-op)
@@ -170,12 +155,4 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
  */
 export interface ShapeBatchData {
   downloadTaskPayloads: DownloadTaskPayload[];
-}
-
-/**
- * Factory function to get the appropriate batch manager
- * Returns the unified manager if API v2 is enabled, otherwise returns a wrapper around the legacy manager
- */
-export function createShapeBatchManager(): IBatchSessionManager {
-  return new UnifiedShapeBatchManager();
 }

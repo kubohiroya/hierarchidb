@@ -8,13 +8,13 @@ import { LocationBatchParametersStep } from './steps/LocationBatchParametersStep
 import { LocationMapPreviewStep } from './steps/LocationMapPreviewStep.js';
 import { LocationBuildStep } from './steps/LocationBuildStep.js';
 import { notify } from '@hierarchidb/components';
-import { LocationVectorTileService } from '../../services/tiles/LocationVectorTileService.js';
+import { startLocationVectorTileSession } from '../../common/tiles/locationVectorTiles.js';
 import { i18n } from '@hierarchidb/ui-i18n';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
+import { getEphemeralLocationDB } from '@hierarchidb/location-store';
 import { ensureIso3166Data, getAllCountries } from '@hierarchidb/gen-iso3166-2/browser';
 import { BASE_LOCATION_TYPES, resolveTypesForSource } from './steps/locationTypes.js';
 import { LocationBatchManager } from '../../services/LocationBatchManager.js';
-import { getEphemeralLocationDB } from '../../database/EphemeralLocationDB.js';
 import { proxy } from 'comlink';
 import {
   IDE_GSM_BULK_CHUNK_SIZE,
@@ -273,8 +273,7 @@ const startLocationBatch = async (data: LocationStepData, context: StartBatchCon
   const rawConcurrency = draft.concurrentDownloads ?? 4;
   const concurrency = clamp(rawConcurrency || 4, MIN_CONCURRENCY, MAX_CONCURRENCY);
 
-  const service = new LocationVectorTileService();
-  const summary = await service.startSession(
+  const summary = await startLocationVectorTileSession(
     nodeId,
     pointInputs,
     settings,
@@ -286,17 +285,11 @@ const startLocationBatch = async (data: LocationStepData, context: StartBatchCon
   }
 
   await persistLocationDraft(nodeId, draft, {
-    batchSessionId: summary.sessionId,
     processingStatus: 'processing',
     lastProcessedAt: Date.now(),
   });
 
-  notify.success(
-    tNs('build.success', 'Build started (session {{sessionId}})').replace(
-      '{{sessionId}}',
-      summary.sessionId
-    )
-  );
+  notify.success(tNs('build.success', 'Build started.'));
 };
 
 registry.registerConfigProvider<LocationStepData>({

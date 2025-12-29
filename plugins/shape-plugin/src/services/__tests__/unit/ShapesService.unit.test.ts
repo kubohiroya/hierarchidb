@@ -199,10 +199,10 @@ describe('ShapesService', () => {
       // Assert
       expect(mockPluginAPI.getDatabase().batchSessions.update).toHaveBeenCalledWith(
         sessionId,
-        expect.objectContaining({ status: 'cancelled' }),
+      expect.objectContaining({ status: 'failed' }),
       );
 
-      // Should update all tasks to cancelled
+      // Should update all tasks to failed
       expect(mockPluginAPI.getDatabase().batchTasks.update).toHaveBeenCalledTimes(2);
     });
   });

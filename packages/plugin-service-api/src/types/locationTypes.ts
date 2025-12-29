@@ -1,3 +1,5 @@
+import type { CountryCode } from '@hierarchidb/common-types';
+
 export type LocationPointKind = string;
 
 export type LocationPointMetadata = Record<string, string | number | null>;
@@ -12,7 +14,7 @@ export interface LocationPointProperties {
   longitude: number;
   kind: LocationPointKind;
   countryName?: string;
-  countryCode: string;
+  countryCode: CountryCode;
   admin1?: string;
   admin2?: string;
   admin1Code?: string;

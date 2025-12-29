@@ -6,7 +6,7 @@
  * Processing status types
  */
 export interface ProcessingStatus {
-  status: 'idle' | 'processing' | 'paused' | 'completed' | 'failed' | 'cancelled';
+  status: 'idle' | 'processing' | 'paused' | 'completed' | 'failed';
   lastProcessed?: number;
   totalFeatures?: number;
   totalVectorTiles?: number;

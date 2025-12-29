@@ -24,8 +24,8 @@ export class OverpassStrategy implements ILocationDownloadStrategy {
       return [];
     }
     try {
-      const { authFetch } = await import('../../utils/authFetch.js');
-      const res = await authFetch(endpoint, {
+      const { authFetch } = await import('@hierarchidb/download');
+      const res = await authFetch('location', endpoint, {
         method: 'POST',
         body: query,
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

@@ -26,7 +26,7 @@ export interface BaseShapeError extends Error {
   suggestedActions?: SuggestedAction[];
 
   timestamp: number;
-  sessionId?: string;
+  nodeId?: string;
   treeNodeId?: TreeNodeId;
   stage?: BatchProcessingStage;
   metadata?: ErrorMetadata;

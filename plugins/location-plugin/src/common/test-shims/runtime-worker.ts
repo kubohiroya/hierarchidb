@@ -8,12 +8,10 @@ export const workerBootstrap = {
 
 export const workerAPI = {
   startBatchSession: async () => ({
-    sessionId: 'stub-session',
     nodeId: 'stub-node',
     status: 'running' as const,
   }),
   getBatchSessionStatus: async () => ({
-    sessionId: 'stub-session',
     nodeId: 'stub-node',
     status: 'running' as const,
   }),

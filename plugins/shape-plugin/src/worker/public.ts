@@ -50,15 +50,15 @@ export interface ShapeBatchAPI {
     config: BatchConfig,
     downloadTaskPayloads: DownloadTaskPayload[],
     progressCallback?: (event: BatchProgressEvent) => void,
-  ): Promise<string>; // returns sessionId
+  ): Promise<NodeId>;
   pauseBatchProcessing(draftId: NodeId): Promise<void>;
-  resumeBatchProcessing(draftId: NodeId): Promise<string>;
+  resumeBatchProcessing(draftId: NodeId): Promise<NodeId>;
   cancelBatchProcessing(draftId: NodeId): Promise<void>;
   invokeBatchCommand<K extends ShapeBatchCommand>(command: K, payload: ShapeBatchCommandPayload<K>): Promise<void>;
-  getBatchSession(sessionId: string): Promise<BatchSession | undefined>;
-  listBatchTasks(sessionId: string): Promise<BatchTask[]>;
-  getBatchStatus(sessionId: string): Promise<ProcessingStatus>;
-  subscribeToProgress(sessionId: string, callback: (event: BatchProgressEvent) => void): () => void;
+  getBatchSession(nodeId: NodeId): Promise<BatchSession | undefined>;
+  listBatchTasks(nodeId: NodeId): Promise<BatchTask[]>;
+  getBatchStatus(nodeId: NodeId): Promise<ProcessingStatus>;
+  subscribeToProgress(nodeId: NodeId, callback: (event: BatchProgressEvent) => void): () => void;
 
   // Tiles / features
   getProcessedFeatureCount(nodeId: NodeId): Promise<number>;

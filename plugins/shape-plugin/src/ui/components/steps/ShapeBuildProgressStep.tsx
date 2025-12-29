@@ -25,7 +25,7 @@ import type { ShapeDialogStepProps } from './ShapeDialogStepProps.ts';
 import { useShapeBuildProgressStep } from '../../hooks/useShapeBuildProgressStep.js';
 import { ShapeBuildTaskItem } from './ShapeBuildTaskItem.js';
 import { useBuildCrashInsight } from '../../hooks/useBuildCrashInsight.js';
-import { getStageConcurrencyWarning } from '../../utils/buildMonitor.js';
+import { getStageConcurrencyWarning } from '../../utils/buildWarnings.js';
 import { HeapPressureDialog, useHeapPressureGuard } from '@hierarchidb/ui-memory';
 import { AuthProviderDialog } from '@hierarchidb/ui-auth';
 import { useTranslation } from '../../i18n.js';
@@ -239,8 +239,6 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
         return t('build.taskStatus.completed', 'Completed');
       case 'failed':
         return t('build.taskStatus.failed', 'Failed');
-      case 'cancelled':
-        return t('build.taskStatus.cancelled', 'Cancelled');
       case 'paused':
         return t('build.taskStatus.paused', 'Paused');
       case 'queued':
@@ -256,7 +254,6 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
         return 'success';
       case 'failed':
         return 'error';
-      case 'cancelled':
       case 'paused':
         return 'warning';
       case 'running':
@@ -415,7 +412,7 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
         if (task.status === 'completed') fill = theme.palette.success.main;
         else if (task.status === 'failed') fill = theme.palette.error.main;
         else if (task.status === 'running') fill = runningColor;
-        else if (task.status === 'paused' || task.status === 'cancelled') fill = theme.palette.warning.main;
+        else if (task.status === 'paused') fill = theme.palette.warning.main;
         segments.push({ fill });
       });
     });
@@ -501,12 +498,12 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
       return;
     }
     await controls.handleStartOrResume?.();
-  }, [controls.handleStartOrResume, startWarning]);
+  }, [controls, startWarning]);
 
   const handleConfirmStart = useCallback(async () => {
     setWarningDialogOpen(false);
     await controls.handleStartOrResume?.();
-  }, [controls.handleStartOrResume]);
+  }, [controls]);
 
   return (
     <Box display="flex" flexDirection="column" gap={3} height="100%" minHeight={0}>
@@ -616,7 +613,7 @@ const ShapeBuildProgressDialogs: React.FC<ShapeBuildProgressPanelProps> = ({ dat
       setHeapDialogOpen(true);
     };
     void pauseAndWarn();
-  }, [buildStatus, controls.handlePause, data?.nodeId, heapEvent]);
+  }, [buildStatus, controls, controls.handlePause, data?.nodeId, heapEvent]);
 
   return (
     <>

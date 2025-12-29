@@ -601,9 +601,8 @@ export default function MapPage() {
           }
 
           if (node.nodeType === 'location') {
-            const data = node.data as { batchSessionId?: string; features?: Array<{ position?: { lat?: number; lon?: number } }> } | null;
-            const sessionId = data?.batchSessionId;
-            if (sessionId) {
+            const data = node.data as { processingStatus?: string; features?: Array<{ position?: { lat?: number; lon?: number } }> } | null;
+            if (data?.processingStatus) {
               const featureState = featureStateByStyleType.points;
               const layerId = `resource-layer-${node.id}`;
               const sourceId = `resource-source-${node.id}`;
@@ -636,9 +635,8 @@ export default function MapPage() {
           }
 
           if (node.nodeType === 'route') {
-            const data = node.data as { batchSessionId?: string } | null;
-            const sessionId = data?.batchSessionId;
-            if (sessionId) {
+            const data = node.data as { processingStatus?: string } | null;
+            if (data?.processingStatus) {
               const featureState = featureStateByStyleType.lines;
               const layerId = `resource-layer-${node.id}`;
               const sourceId = `resource-source-${node.id}`;
@@ -649,7 +647,7 @@ export default function MapPage() {
                 dbName: getDBName('stage-tiles-db'),
                 tileDataProvider: async (z, x, y) => {
                   const api = await getRouteQueryAPI();
-                  return api.getVectorTile(sessionId, z, x, y);
+                  return api.getVectorTile(String(node.id) as NodeId, z, x, y);
                 },
                 layerConfig: {
                   layerType: 'line',

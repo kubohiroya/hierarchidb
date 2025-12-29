@@ -13,7 +13,7 @@ import type { BatchProgressEvent } from '@hierarchidb/common-api';
 
 export type ProgressUpdate = { jobId: string; progress: number; phase: string; ts: number };
 export type ProgressEmitter = { emit?: (event: ProgressUpdate) => void };
-export type ProgressStore = { upsert?: (sessionId: string, record: ProgressUpdate) => void };
+export type ProgressStore = { upsert?: (nodeId: string, record: ProgressUpdate) => void };
 export type RouteBatchManagerDeps = {
   engines?: unknown;
   emitter?: ProgressEmitter;
@@ -41,10 +41,10 @@ const logRouteBatchWarning = (message: string, error: unknown): void => {
 export class RouteBatchManager {
   constructor(protected readonly deps?: RouteBatchManagerDeps) {}
 
-  private routeSpecificTasks = new Map<string, RouteBatchTask[]>();
-  private activeSessions = new Map<string, RouteBatchSession>();
+  private routeSpecificTasks = new Map<NodeId, RouteBatchTask[]>();
+  private activeSessions = new Map<NodeId, RouteBatchSession>();
   // Idempotency (jobKey -> session)
-  private static jobKeyToSession = new Map<string, string>();
+  private static jobKeyToSession = new Map<string, NodeId>();
   // Lane semaphores: enforce per-engine concurrency regardless of batch size
   // private laneSemaphores = new Map<string, Semaphore>();
   // private laneConfig: Record<string, number> = {
@@ -62,13 +62,12 @@ export class RouteBatchManager {
     nodeId: NodeId,
     config: RouteBatchConfig,
     routes: RouteBatchRouteInput[],
-  ): Promise<string> {
+  ): Promise<NodeId> {
     // Idempotency: reuse an existing session if the same payload arrives
-    const jobKey = this.computeJobKey(config, routes);
+    const jobKey = this.computeJobKey(nodeId, config, routes);
     const existing = RouteBatchManager.jobKeyToSession.get(jobKey);
     if (existing) return existing;
-    const sessionId = crypto.randomUUID();
-    RouteBatchManager.jobKeyToSession.set(jobKey, sessionId);
+    RouteBatchManager.jobKeyToSession.set(jobKey, nodeId);
 
     // Create route-specific tasks
     const routeTasks: RouteBatchTask[] = [];
@@ -80,7 +79,7 @@ export class RouteBatchManager {
           routeTasks.push({
             taskId: crypto.randomUUID(),
             treeNodeId: nodeId,
-            sessionId,
+            nodeId,
             taskType: 'location_resolution',
             stage: 'download', // Reuse Shape's stage
             status: 'pending',
@@ -101,7 +100,7 @@ export class RouteBatchManager {
       routeTasks.push({
         taskId: crypto.randomUUID(),
         treeNodeId: nodeId,
-        sessionId,
+        nodeId,
         taskType: 'route_generation',
         stage: 'simplify1', // Reuse Shape's stage for processing
         status: 'pending',
@@ -125,7 +124,7 @@ export class RouteBatchManager {
       routeTasks.push({
         taskId: crypto.randomUUID(),
         treeNodeId: nodeId,
-        sessionId,
+        nodeId,
         taskType: 'validation',
         stage: 'simplify2', // Reuse Shape's stage for validation
         status: 'pending',
@@ -137,7 +136,7 @@ export class RouteBatchManager {
     routeTasks.push({
       taskId: crypto.randomUUID(),
       treeNodeId: nodeId,
-      sessionId,
+      nodeId,
       taskType: 'optimization',
       stage: 'vectortile', // Reuse Shape's stage for final optimization
       status: 'pending',
@@ -145,11 +144,11 @@ export class RouteBatchManager {
     });
 
     // Store route-specific tasks
-    this.routeSpecificTasks.set(sessionId, routeTasks);
+    this.routeSpecificTasks.set(nodeId, routeTasks);
 
     // Start processing using Shape's infrastructure
-    const session = new RouteBatchSession(sessionId, nodeId, config, routeTasks);
-    this.activeSessions.set(sessionId, session);
+    const session = new RouteBatchSession(nodeId, config, routeTasks);
+    this.activeSessions.set(nodeId, session);
     const unsubscribe = session.addBatchProgressListener((event: BatchProgressEvent) => this.emitProgressEvent(event));
     await session.initialize();
     const runPromise = session.start();
@@ -158,14 +157,14 @@ export class RouteBatchManager {
     });
     void runPromise.finally(() => {
       unsubscribe();
-      this.activeSessions.delete(sessionId);
+      this.activeSessions.delete(nodeId);
     });
 
-    return sessionId;
+    return nodeId;
   }
 
-  getSession(sessionId: string): RouteBatchSession | undefined {
-    return this.activeSessions.get(sessionId);
+  getSession(nodeId: NodeId): RouteBatchSession | undefined {
+    return this.activeSessions.get(nodeId);
   }
 
   // Process route tasks using RouteBatchSession (handled within session)
@@ -218,14 +217,14 @@ export class RouteBatchManager {
   /**
    * Get route batch progress
    */
-  async getRouteBatchProgress(sessionId: string): Promise<{
+  async getRouteBatchProgress(nodeId: NodeId): Promise<{
     phase: string;
     progress: number;
     completedRoutes: number;
     totalRoutes: number;
     errors: string[];
   }> {
-    const tasks = this.routeSpecificTasks.get(sessionId) || [];
+    const tasks = this.routeSpecificTasks.get(nodeId) || [];
     const completedTasks = tasks.filter((t) => t.status === 'completed');
     const failedTasks = tasks.filter((t) => t.status === 'failed');
 
@@ -264,7 +263,7 @@ export class RouteBatchManager {
     const percentage = computePercentage(total, completed, event.phase === 'completed');
     const ts = event.timestamp ?? Date.now();
     const update: ProgressUpdate = {
-      jobId: event.sessionId,
+      jobId: event.nodeId,
       progress: percentage,
       phase: event.stage,
       ts,
@@ -275,14 +274,15 @@ export class RouteBatchManager {
       logRouteBatchWarning('Progress emitter raised an error', error);
     }
     try {
-      this.deps?.store?.upsert?.(event.sessionId, update);
+      this.deps?.store?.upsert?.(event.nodeId, update);
     } catch (error) {
       logRouteBatchWarning('Progress store upsert failed', error);
     }
   }
 
-  private computeJobKey(config: RouteBatchConfig, routes: RouteBatchRouteInput[]): string {
+  private computeJobKey(nodeId: NodeId, config: RouteBatchConfig, routes: RouteBatchRouteInput[]): string {
     const payload = {
+      nodeId,
       method: config.routeGeneration.method,
       mc: config.routeGeneration.maxConcurrent,
       r: routes.map(r => ({ s: r.startCoordinates, e: r.endCoordinates, m: r.method })).slice(0, 200),

@@ -3,7 +3,7 @@ import { getDBName, SingletonMixin } from '@hierarchidb/util';
 
 export interface StageTileRow {
   key: string;
-  sessionId: string;
+  nodeId: string;
   z: number;
   x: number;
   y: number;
@@ -15,7 +15,7 @@ export interface StageTileRow {
 
 export interface ShapeFeatureMetadataRow {
   id: string;
-  sessionId: string;
+  nodeId: string;
   featureId: string;
   countryName?: string;
   countryCode?: string;
@@ -49,6 +49,16 @@ export class ShapeTileMetadataDB extends Dexie {
       featureMetadata:
         '&id, sessionId, featureId, countryCode, adminLevel, adminCode, dataSource, createdAt',
     });
+    this.version(3)
+      .stores({
+        tiles: '&key, nodeId, [nodeId+z+x+y], z, x, y, timestamp',
+        featureMetadata:
+          '&id, nodeId, featureId, countryCode, adminLevel, adminCode, dataSource, createdAt',
+      })
+      .upgrade(async () => {
+        await this.table('tiles').clear();
+        await this.table('featureMetadata').clear();
+      });
     this.tiles = this.table('tiles');
     this.featureMetadata = this.table('featureMetadata');
   }

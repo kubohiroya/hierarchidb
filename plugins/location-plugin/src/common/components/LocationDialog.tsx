@@ -16,7 +16,7 @@ import { useTranslation } from '../i18n/index.js';
 import { LocationSelectionStep } from '../../ui/components/steps/LocationSelectionStep.js';
 import { LocationBatchParametersStep } from '../../ui/components/steps/LocationBatchParametersStep.js';
 import { LocationMapPreviewStep } from '../../ui/components/steps/LocationMapPreviewStep.js';
-import { LocationVectorTileService } from '../../services/tiles/LocationVectorTileService.js';
+import { startLocationVectorTileSession } from '../tiles/locationVectorTiles.js';
 import { listLocationPoints } from '../../services/pointRepository.js';
 import { runLocationTabularBuild } from '../../worker/tabular/task.js';
 import {
@@ -176,7 +176,6 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
 
   const dialogSizeRef = useRef<PluginDialogSize>(dialogViewState.size);
   const dialogPositionRef = useRef<PluginDialogPosition>(dialogViewState.position);
-  const vectorServiceRef = useRef<LocationVectorTileService | null>(null);
   const { size: dialogSize, position: dialogPosition, displayMode, activeStepIndex } = dialogViewState;
   const [isBatchStarting, setIsBatchStarting] = useState(false);
   const [buildStatus, setBuildStatus] = useState<string | null>(null);
@@ -218,13 +217,6 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
       { name: '', description: '', tags: [] },
     );
   }, [dialogData, updateMetadata, updatePayload]);
-
-  const ensureVectorTileService = useCallback((): LocationVectorTileService => {
-    if (!vectorServiceRef.current) {
-      vectorServiceRef.current = new LocationVectorTileService();
-    }
-    return vectorServiceRef.current;
-  }, []);
 
   const handleStartBatch = useCallback(async () => {
     if (isBatchStarting) return;
@@ -270,16 +262,15 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
       const rawConcurrency = Number(dialogData.draft?.concurrentDownloads ?? DEFAULT_CONCURRENCY) || DEFAULT_CONCURRENCY;
       const concurrency = Math.min(MAX_CONCURRENCY, Math.max(MIN_CONCURRENCY, rawConcurrency));
 
-      const service = ensureVectorTileService();
-      const summary = await service.startSession(nodeId, points, settings, { concurrency });
-      notify.success(`Batch session ${summary.sessionId} started.`);
+      await startLocationVectorTileSession(nodeId, points, settings, { concurrency });
+      notify.success('Build started.');
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       notify.error(`Failed to start batch session: ${message}`);
     } finally {
       setIsBatchStarting(false);
     }
-  }, [dialogData, ensureVectorTileService, isBatchStarting]);
+  }, [dialogData, isBatchStarting]);
 
   const stepComponents = useMemo<ReadonlyArray<StepComponentDescriptor<LocationDraft>>>(() => ([
     {

@@ -3,8 +3,7 @@ import type { BatchProgressEvent, BatchProgressPayload } from '@hierarchidb/comm
 import { mapStageToBatchStage } from './runtimeBridge.js';
 
 export function toBatchProgressEvent(ev: {
-  sessionId: string;
-  nodeId?: NodeId;
+  nodeId: NodeId;
   stage: string;
   total?: number;
   completed?: number;
@@ -26,8 +25,7 @@ export function toBatchProgressEvent(ev: {
     currentTask: ev.currentTask,
   };
   return {
-    sessionId: ev.sessionId,
-    nodeId: ev.nodeId ?? ('' as NodeId),
+    nodeId: ev.nodeId,
     stage: mappedStage,
     phase: pct >= 100 ? 'completed' : 'running',
     timestamp: Date.now(),

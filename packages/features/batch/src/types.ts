@@ -5,7 +5,6 @@ export type {
   BatchProgressCallback,
   BatchProgressEvent,
   BatchProgressPayload,
-  BatchSessionId,
   BatchSessionState,
   BatchSessionStatus,
   BatchManagerFactory,

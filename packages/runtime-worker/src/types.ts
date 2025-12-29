@@ -106,11 +106,11 @@ export interface VectorTileWorkerAPI {
     }
   ): Promise<{ tilesGenerated: number; totalBytes?: number; metadataCount?: number }>;
   abortGenerateTiles?(abortKey: string): Promise<void>;
-  getTile(sessionId: string, z: number, x: number, y: number): Promise<Uint8Array | null>;
+  getTile(nodeId: string, z: number, x: number, y: number): Promise<Uint8Array | null>;
   listTiles(
-    sessionId: string
+    nodeId: string
   ): Promise<Array<{ z: number; x: number; y: number; size: number; timestamp: number }>>;
   getSummary(
-    sessionId: string
+    nodeId: string
   ): Promise<{ tiles: number; totalBytes: number; zoomMin?: number; zoomMax?: number }>;
 }

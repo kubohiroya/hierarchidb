@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { DEFAULT_PROCESSING_CONFIG, mergeBatchConfig } from '../../common/types/index.js';
 import type { BatchConfig, ShapeEntity } from '../../common/types/index.js';
-import { clearStagesIfPresent, resolveBatchConfigInvalidation, resolveShapeSessionId } from '../utils/sessionInvalidation.js';
+import { clearStagesIfPresent, resolveBatchConfigInvalidation, resolveShapeNodeId } from '../utils/sessionInvalidation.js';
 
 type Args = {
   data: Partial<ShapeEntity>;
@@ -24,9 +24,9 @@ export const useShapeProcessingSettingsStep = ({ data, onChange }: Args) => {
     const previousConfig = mergeBatchConfig(data?.batchConfig ?? DEFAULT_PROCESSING_CONFIG);
     const nextMerged = mergeBatchConfig(nextConfig ?? DEFAULT_PROCESSING_CONFIG);
     const stages = resolveBatchConfigInvalidation(previousConfig, nextMerged);
-    const sessionId = resolveShapeSessionId(data);
-    if (sessionId && stages.length > 0) {
-      void clearStagesIfPresent(sessionId, stages);
+    const nodeId = resolveShapeNodeId(data);
+    if (nodeId && stages.length > 0) {
+      void clearStagesIfPresent(nodeId, stages);
     }
     onChange({ batchConfig: nextMerged });
   }, [data, onChange]);

@@ -22,9 +22,10 @@ import {
   type IdeGsmImportProgress,
   type IdeGsmRouteError,
 } from '@hierarchidb/plugin-service-api';
-import type { RouteUpdaterPayload } from '../../../common/entities/RouteEntity.js';
+import type { RouteTransportSelection, RouteUpdaterPayload } from '../../../common/entities/RouteEntity.js';
 import type { RouteEntity } from '../../../common/entities/RouteEntity.js';
 import { useTranslation } from '../../../common/i18n/index.js';
+import { getRouteUpdaterPayload } from '../../../common/utils/draft.js';
 import { useRouteBuildCrashInsight } from '../../hooks/useRouteBuildCrashInsight.js';
 import {
   BUILD_MONITOR_SAMPLE_INTERVAL_MS,
@@ -34,7 +35,7 @@ import {
   recordBuildFinish,
   recordBuildStart,
   type BuildMonitorStage,
-} from '../../utils/buildMonitor.js';
+} from '@hierarchidb/ui-monitoring';
 
 interface RouteBuildStepProps {
   draft: RouteUpdaterPayload;
@@ -63,27 +64,41 @@ const SPLITVIEW_AUTO_CLOSE_COUNTS = [
   Math.max(0, STAGES.length - 3),
   0,
 ];
+const buildMonitorConfig = {
+  storagePrefix: 'hdb:route:build-monitor',
+  keyMode: 'node',
+  maxSamples: 3,
+  memoryPressureRatio: 0.85,
+} as const;
 
-const resolveTransportLabel = (draft: Record<string, unknown>, t: (key: string, fallback?: string) => string): string => {
-  const metadata = (draft.metadata ?? {}) as Record<string, unknown>;
-  const selection = typeof metadata.transportSelection === 'string' ? metadata.transportSelection : null;
-  if (selection === 'high-speed-rail') return t('transportModes.highSpeedRail', 'High-speed rail');
-  if (selection === 'rail') return t('transportModes.rail', 'Rail');
-  if (selection === 'highway') return t('transportModes.highway', 'Highway');
-  if (selection === 'road') return t('transportModes.road', 'General road');
-  if (selection === 'sea') return t('transportModes.sea', 'Sea');
-  if (selection === 'air') return t('transportModes.air', 'Air');
+const TRANSPORT_SELECTION_LABELS: Record<RouteTransportSelection, { key: string; fallback: string }> = {
+  air: { key: 'transportModes.air', fallback: 'Air' },
+  sea: { key: 'transportModes.sea', fallback: 'Sea' },
+  rail: { key: 'transportModes.rail', fallback: 'Rail' },
+  'high-speed-rail': { key: 'transportModes.highSpeedRail', fallback: 'High-speed rail' },
+  highway: { key: 'transportModes.highway', fallback: 'Highway' },
+  road: { key: 'transportModes.road', fallback: 'General road' },
+};
 
-  const baseMode = typeof draft.transportMode === 'string' ? draft.transportMode : null;
-  if (baseMode === 'air') return t('transportModes.air', 'Air');
-  if (baseMode === 'sea') return t('transportModes.sea', 'Sea');
-  if (baseMode === 'rail') return t('transportModes.rail', 'Rail');
-  if (baseMode === 'road') return t('transportModes.road', 'General road');
-  return t('build.notConfigured', 'Not configured');
+const isTransportSelection = (value: unknown): value is RouteTransportSelection => (
+  typeof value === 'string' && value in TRANSPORT_SELECTION_LABELS
+);
+
+const resolveTransportLabel = (draft: RouteUpdaterPayload, t: (key: string, fallback?: string) => string): string => {
+  const data = getRouteUpdaterPayload(draft);
+  const selection = data.transportSelection;
+  if (selection == null) {
+    return t('build.notConfigured', 'Not configured');
+  }
+  if (!isTransportSelection(selection)) {
+    throw new Error(`Unsupported transportSelection: ${String(selection)}`);
+  }
+  const entry = TRANSPORT_SELECTION_LABELS[selection];
+  return t(entry.key, entry.fallback);
 };
 
 export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
-  draft: draftProp,
+  draft,
   onUpdate,
   nodeId,
   parentId,
@@ -91,10 +106,9 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
 }) => {
   const { t } = useTranslation();
   const { api, initialize } = useWorkerAPI();
-  const draft = draftProp.draftData ?? {};
   const dataSource = (draft as { dataSourceName?: string }).dataSourceName ?? t('build.notConfigured', 'Not configured');
   const generationMethod = (draft as { generationMethod?: string }).generationMethod ?? t('build.notConfigured', 'Not configured');
-  const transportLabel = resolveTransportLabel(draft as Record<string, unknown>, t);
+  const transportLabel = resolveTransportLabel(draft, t);
   const startLocation = (draft as { startLocationId?: string }).startLocationId ?? t('build.notConfigured', 'Not configured');
   const endLocation = (draft as { endLocationId?: string }).endLocationId ?? t('build.notConfigured', 'Not configured');
 
@@ -114,10 +128,10 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const buildInFlightRef = useRef(false);
   const heapPauseRef = useRef<number | null>(null);
-  const routeNodeId = (draftProp.treeNodeId ?? nodeId) as NodeId | undefined;
+  const routeNodeId = (draft.treeNodeId ?? nodeId) as NodeId | undefined;
   const crashInsight = useRouteBuildCrashInsight({ draft, nodeId: routeNodeId ? String(routeNodeId) : null });
   const monitorKey = useMemo(
-    () => getBuildMonitorKey(routeNodeId ? String(routeNodeId) : null),
+    () => getBuildMonitorKey(buildMonitorConfig, routeNodeId ? String(routeNodeId) : null),
     [routeNodeId],
   );
   const { event: heapEvent, dismiss: dismissHeapEvent } = useHeapPressureGuard({
@@ -154,12 +168,12 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     if (!monitorKey) return;
     if (status !== 'running') return;
     const startedAt = draft.buildStartedAt ?? Date.now();
-    recordBuildStart(monitorKey, {
+    recordBuildStart(buildMonitorConfig, monitorKey, {
       nodeId: routeNodeId ? String(routeNodeId) : undefined,
       startedAt,
     });
     const interval = window.setInterval(() => {
-      appendBuildSample(monitorKey, {
+      appendBuildSample(buildMonitorConfig, monitorKey, {
         timestamp: Date.now(),
         stage: resolveMonitorStage(ideGsmPhase?.phase),
         ...getMemorySnapshot(),
@@ -173,7 +187,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
   useEffect(() => {
     if (!monitorKey) return;
     if (status !== 'completed' && status !== 'failed') return;
-    recordBuildFinish(monitorKey, Date.now());
+    recordBuildFinish(buildMonitorConfig, monitorKey, Date.now());
   }, [monitorKey, status]);
 
   const errorColumns = useMemo<GridColumn<IdeGsmRouteError>[]>(() => ([
@@ -279,7 +293,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
         throw new Error('No related location nodes found.');
       }
 
-      const routeNodeId = (draftProp.treeNodeId ?? nodeId) as NodeId;
+      const routeNodeId = (draft.treeNodeId ?? nodeId) as NodeId;
       const routeMutation = await api.getRouteMutationAPI();
       const result = await routeMutation.importIdeGsmRoutes(
         {
@@ -309,7 +323,7 @@ export const RouteBuildStep: React.FC<RouteBuildStepProps> = ({
     } finally {
       buildInFlightRef.current = false;
     }
-  }, [api, draft, draftProp.treeNodeId, initialize, mapIdeGsmProgress, nodeId, onUpdate, resolveLocationNodes, t]);
+  }, [api, draft, initialize, mapIdeGsmProgress, nodeId, onUpdate, resolveLocationNodes, t]);
 
   return (
     <Box display="flex" flexDirection="column" gap={2}>

@@ -11,8 +11,8 @@ import { LocationBatchSession } from './LocationBatchSession.js';
 import { isDevEnvironment } from '../../common/utils/env.js';
 
 export class LocationBatchSessionManager extends BaseBatchSessionManager {
-  private legacyProgress = new Map<string, Set<(p: ProgressEvent) => void>>();
-  private summaries = new Map<string, SessionSummary>();
+  private legacyProgress = new Map<NodeId, Set<(p: ProgressEvent) => void>>();
+  private summaries = new Map<NodeId, SessionSummary>();
 
   private static readonly SESSION_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
   private static readonly PENDING_TTL = 24 * 60 * 60 * 1000; // 24 hours
@@ -32,11 +32,9 @@ export class LocationBatchSessionManager extends BaseBatchSessionManager {
     settings: LocationTileSettings,
     options?: { concurrency?: number },
   ): Promise<SessionSummary> {
-    const sessionId = `loc-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-    const controller = new LocationSessionController(sessionId, nodeId, points, settings);
+    const controller = new LocationSessionController(nodeId, points, settings);
     const bbox = computeBbox(points);
     const summary: SessionSummary = {
-      sessionId,
       nodeId,
       zoomMin: settings.zoomMinGenerate,
       zoomMax: settings.zoomMaxGenerate,
@@ -45,7 +43,7 @@ export class LocationBatchSessionManager extends BaseBatchSessionManager {
       totalPoints: points.length,
       layers: ['location_points'],
     };
-    this.summaries.set(sessionId, summary);
+    this.summaries.set(nodeId, summary);
     // Persist session meta (best-effort)
     try {
       const { getEphemeralLocationDB } = await import('../../database/EphemeralLocationDB.js');
@@ -60,7 +58,6 @@ export class LocationBatchSessionManager extends BaseBatchSessionManager {
         }
       }
       await db.sessions?.put({
-        sessionId,
         nodeId,
         bbox,
         zoomMin: summary.zoomMin,
@@ -76,11 +73,10 @@ export class LocationBatchSessionManager extends BaseBatchSessionManager {
     }
     //  Fire and forget
     const shared = new LocationBatchSession(
-      sessionId,
       nodeId,
       { concurrency: options?.concurrency ?? 4 },
       controller,
-      (ev) => this.emitLegacyProgress(sessionId, ev),
+      (ev) => this.emitLegacyProgress(nodeId, ev),
     );
     this.registerSession(shared);
 
@@ -90,45 +86,45 @@ export class LocationBatchSessionManager extends BaseBatchSessionManager {
     return summary;
   }
 
-  onProgress(sessionId: string, cb: (p: ProgressEvent) => void): () => void {
-    let set = this.legacyProgress.get(sessionId);
+  onProgress(nodeId: NodeId, cb: (p: ProgressEvent) => void): () => void {
+    let set = this.legacyProgress.get(nodeId);
     if (!set) {
       set = new Set();
-      this.legacyProgress.set(sessionId, set);
+      this.legacyProgress.set(nodeId, set);
     }
     set.add(cb);
     //  late subscriber
     return () => {
-      const s = this.legacyProgress.get(sessionId);
+      const s = this.legacyProgress.get(nodeId);
       if (!s) return;
       s.delete(cb);
-      if (s.size === 0) this.legacyProgress.delete(sessionId);
+      if (s.size === 0) this.legacyProgress.delete(nodeId);
     };
   }
 
-  getInitialSummary(sessionId: string): SessionSummary | undefined {
-    return this.summaries.get(sessionId);
+  getInitialSummary(nodeId: NodeId): SessionSummary | undefined {
+    return this.summaries.get(nodeId);
   }
 
   // Control APIs
-  pause(sessionId: string) {
-    void this.pauseBatchSession(sessionId).catch((error) => {
+  pause(nodeId: NodeId) {
+    void this.pauseBatchSession(nodeId).catch((error) => {
       if (isDevEnvironment) {
         console.warn('[LocationBatchSessionManager] pause failed', error);
       }
     });
   }
 
-  resume(sessionId: string) {
-    void this.resumeBatchSession(sessionId).catch((error) => {
+  resume(nodeId: NodeId) {
+    void this.resumeBatchSession(nodeId).catch((error) => {
       if (isDevEnvironment) {
         console.warn('[LocationBatchSessionManager] resume failed', error);
       }
     });
   }
 
-  cancel(sessionId: string) {
-    void this.cancelBatchSession(sessionId).catch((error) => {
+  cancel(nodeId: NodeId) {
+    void this.cancelBatchSession(nodeId).catch((error) => {
       if (isDevEnvironment) {
         console.warn('[LocationBatchSessionManager] cancel failed', error);
       }
@@ -144,7 +140,7 @@ export class LocationBatchSessionManager extends BaseBatchSessionManager {
     try {
       const { getEphemeralLocationDB } = await import('../../database/EphemeralLocationDB.js');
       const db = getEphemeralLocationDB();
-      await db.sessions?.update(session.getState().sessionId, {
+      await db.sessions?.update(session.getState().nodeId, {
         progress: {
           total,
           completed,
@@ -170,20 +166,20 @@ export class LocationBatchSessionManager extends BaseBatchSessionManager {
     try {
       const { getEphemeralLocationDB } = await import('../../database/EphemeralLocationDB.js');
       const db = getEphemeralLocationDB();
-      await db.sessions?.update(state.sessionId, { status: state.status, updatedAt: Date.now() });
+      await db.sessions?.update(state.nodeId, { status: state.status, updatedAt: Date.now() });
     } catch (error) {
       if (isDevEnvironment) {
         console.warn('[LocationBatchSessionManager] failed to persist status', error);
       }
     }
-    if (state.status === 'completed' || state.status === 'failed' || state.status === 'cancelled') {
-      this.sessions.delete(state.sessionId);
-      this.legacyProgress.delete(state.sessionId);
+    if (state.status === 'completed' || state.status === 'failed') {
+      this.sessions.delete(state.nodeId);
+      this.legacyProgress.delete(state.nodeId);
     }
   }
 
-  private emitLegacyProgress(sessionId: string, progress: ProgressEvent): void {
-    const set = this.legacyProgress.get(sessionId);
+  private emitLegacyProgress(nodeId: NodeId, progress: ProgressEvent): void {
+    const set = this.legacyProgress.get(nodeId);
     if (!set) return;
     for (const cb of set) cb(progress);
   }

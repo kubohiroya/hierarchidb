@@ -2,7 +2,6 @@ import type { NodeId, Timestamp } from '@hierarchidb/common-types';
 import type {
   BatchProgressCallback,
   BatchProgressEvent,
-  BatchSessionId,
   BatchSessionStatus,
   IBatchSessionManager,
 } from '@hierarchidb/common-api';
@@ -19,15 +18,14 @@ export interface BatchPersistence<TConfig, TData> {
     | Promise<UnifiedBatchSession<TConfig, TData> | undefined>
     | UnifiedBatchSession<TConfig, TData>
     | undefined;
-  onSessionStarted?(sessionId: BatchSessionId, nodeId: NodeId, payload: UnifiedBatchSession<TConfig, TData>): Promise<void> | void;
-  onSessionProgress?(sessionId: BatchSessionId, event: BatchProgressEvent): Promise<void> | void;
-  onSessionStatusChange?(sessionId: BatchSessionId, status: BatchSessionStatus): Promise<void> | void;
-  onSessionCompleted?(sessionId: BatchSessionId): Promise<void> | void;
+  onSessionStarted?(nodeId: NodeId, payload: UnifiedBatchSession<TConfig, TData>): Promise<void> | void;
+  onSessionProgress?(nodeId: NodeId, event: BatchProgressEvent): Promise<void> | void;
+  onSessionStatusChange?(nodeId: NodeId, status: BatchSessionStatus): Promise<void> | void;
+  onSessionCompleted?(nodeId: NodeId): Promise<void> | void;
 }
 
 export abstract class UnifiedBatchManagerBase<TConfig, TData> implements IBatchSessionManager {
   private readonly pending = new Map<NodeId, UnifiedBatchSession<TConfig, TData>>();
-  private readonly sessions = new Map<BatchSessionId, NodeId>();
 
   protected constructor(protected readonly persistence?: BatchPersistence<TConfig, TData>) {}
 
@@ -44,7 +42,7 @@ export abstract class UnifiedBatchManagerBase<TConfig, TData> implements IBatchS
     }
   }
 
-  async startBatchSession(nodeId: NodeId): Promise<BatchSessionId> {
+  async startBatchSession(nodeId: NodeId): Promise<BatchSessionStatus> {
     const payload = this.persistence
       ? await this.persistence.takePending(nodeId)
       : this.pending.get(nodeId);
@@ -55,80 +53,69 @@ export abstract class UnifiedBatchManagerBase<TConfig, TData> implements IBatchS
       this.pending.delete(nodeId);
     }
 
-    const sessionId = await this.performStart(nodeId, payload.config, payload.data);
-    this.sessions.set(sessionId, nodeId);
+    const status = await this.performStart(nodeId, payload.config, payload.data);
+    if (!status.nodeId) status.nodeId = nodeId;
     if (this.persistence?.onSessionStarted) {
-      await this.persistence.onSessionStarted(sessionId, nodeId, payload);
-    }
-    return sessionId;
-  }
-
-  async pauseBatchSession(sessionId: BatchSessionId): Promise<void> {
-    await this.performPause(sessionId);
-    await this.notifyStatus(sessionId);
-  }
-
-  async resumeBatchSession(sessionId: BatchSessionId): Promise<void> {
-    await this.performResume(sessionId);
-    await this.notifyStatus(sessionId);
-  }
-
-  async cancelBatchSession(sessionId: BatchSessionId): Promise<void> {
-    await this.performCancel(sessionId);
-    this.sessions.delete(sessionId);
-    if (this.persistence?.onSessionCompleted) {
-      await this.persistence.onSessionCompleted(sessionId);
-    }
-  }
-
-  async getBatchSessionStatus(sessionId: BatchSessionId): Promise<BatchSessionStatus> {
-    const status = await this.performStatus(sessionId);
-    if (!status.nodeId) {
-      const nodeId = this.sessions.get(sessionId);
-      if (nodeId) status.nodeId = nodeId;
-    }
-    if (this.persistence?.onSessionStatusChange) {
-      await this.persistence.onSessionStatusChange(sessionId, status);
+      await this.persistence.onSessionStarted(nodeId, payload);
     }
     return status;
   }
 
-  onBatchProgress(sessionId: BatchSessionId, callback: BatchProgressCallback): () => void {
-    return this.performSubscribe(sessionId, (event: BatchProgressEvent) => {
+  async pauseBatchSession(nodeId: NodeId): Promise<void> {
+    await this.performPause(nodeId);
+    await this.notifyStatus(nodeId);
+  }
+
+  async resumeBatchSession(nodeId: NodeId): Promise<void> {
+    await this.performResume(nodeId);
+    await this.notifyStatus(nodeId);
+  }
+
+  async cancelBatchSession(nodeId: NodeId): Promise<void> {
+    await this.performCancel(nodeId);
+    if (this.persistence?.onSessionCompleted) {
+      await this.persistence.onSessionCompleted(nodeId);
+    }
+  }
+
+  async getBatchSessionStatus(nodeId: NodeId): Promise<BatchSessionStatus> {
+    const status = await this.performStatus(nodeId);
+    if (!status.nodeId) status.nodeId = nodeId;
+    if (this.persistence?.onSessionStatusChange) {
+      await this.persistence.onSessionStatusChange(nodeId, status);
+    }
+    return status;
+  }
+
+  onBatchProgress(nodeId: NodeId, callback: BatchProgressCallback): () => void {
+    return this.performSubscribe(nodeId, (event: BatchProgressEvent) => {
       let nextEvent = event;
       if (!nextEvent.nodeId) {
-        const nodeId = this.sessions.get(sessionId);
-        if (nodeId) {
-          nextEvent = { ...nextEvent, nodeId };
-        }
+        nextEvent = { ...nextEvent, nodeId };
       }
       callback(nextEvent);
       if (this.persistence?.onSessionProgress) {
-        void this.persistence.onSessionProgress(sessionId, nextEvent);
+        void this.persistence.onSessionProgress(nodeId, nextEvent);
       }
       if (nextEvent.phase === 'completed' || nextEvent.phase === 'failed' || nextEvent.phase === 'cancelled') {
-        this.sessions.delete(sessionId);
         if (this.persistence?.onSessionCompleted) {
-          void this.persistence.onSessionCompleted(sessionId);
+          void this.persistence.onSessionCompleted(nodeId);
         }
       }
     });
   }
 
-  protected abstract performStart(nodeId: NodeId, config: TConfig, data: TData): Promise<BatchSessionId>;
-  protected abstract performPause(sessionId: BatchSessionId): Promise<void>;
-  protected abstract performResume(sessionId: BatchSessionId): Promise<void>;
-  protected abstract performCancel(sessionId: BatchSessionId): Promise<void>;
-  protected abstract performStatus(sessionId: BatchSessionId): Promise<BatchSessionStatus>;
-  protected abstract performSubscribe(sessionId: BatchSessionId, callback: BatchProgressCallback): () => void;
+  protected abstract performStart(nodeId: NodeId, config: TConfig, data: TData): Promise<BatchSessionStatus>;
+  protected abstract performPause(nodeId: NodeId): Promise<void>;
+  protected abstract performResume(nodeId: NodeId): Promise<void>;
+  protected abstract performCancel(nodeId: NodeId): Promise<void>;
+  protected abstract performStatus(nodeId: NodeId): Promise<BatchSessionStatus>;
+  protected abstract performSubscribe(nodeId: NodeId, callback: BatchProgressCallback): () => void;
 
-  private async notifyStatus(sessionId: BatchSessionId): Promise<void> {
+  private async notifyStatus(nodeId: NodeId): Promise<void> {
     if (!this.persistence?.onSessionStatusChange) return;
-    const status = await this.performStatus(sessionId);
-    if (!status.nodeId) {
-      const nodeId = this.sessions.get(sessionId);
-      if (nodeId) status.nodeId = nodeId;
-    }
-    await this.persistence.onSessionStatusChange(sessionId, status);
+    const status = await this.performStatus(nodeId);
+    if (!status.nodeId) status.nodeId = nodeId;
+    await this.persistence.onSessionStatusChange(nodeId, status);
   }
 }

@@ -33,8 +33,8 @@ export class NominatimStrategy implements ILocationDownloadStrategy {
       params.append('accept-language', config.language);
     }
     try {
-      const { authFetch } = await import('../../utils/authFetch.js');
-      const response = await authFetch(`${endpoint}?${params}`);
+      const { authFetch } = await import('@hierarchidb/download');
+      const response = await authFetch('location', `${endpoint}?${params}`);
       const data = await response.json();
       if (!Array.isArray(data)) return [];
       const points = data

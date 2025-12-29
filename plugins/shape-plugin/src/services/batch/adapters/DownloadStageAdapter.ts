@@ -12,7 +12,6 @@ export interface DownloadStageAdapterResult {
 
 export interface DownloadStageAdapter {
   process(
-    sessionId: string,
     nodeId: NodeId,
     tasks: DownloadTask[],
     onProgress: (p: ProgressInfo) => void,

@@ -6,7 +6,7 @@ export interface BatchRecoveryDialogProps {
   open: boolean;
   sessions: BatchSession[];
   onResume: (session: BatchSession) => void;
-  onDiscard: (sessionId: string) => void;
+  onDiscard: (nodeId: string) => void;
   onClose: () => void;
   loading?: boolean;
 }

@@ -1,5 +1,5 @@
 // Shared location store types extracted from location-plugin.
-import type { GroupEntity, NodeId, Timestamp, TreeNodeData } from '@hierarchidb/common-types';
+import type { CountryCode, ISO2, GroupEntity, NodeId, Timestamp, TreeNodeData } from '@hierarchidb/common-types';
 
 export type LocationType =
   | 'area_centroid'
@@ -36,11 +36,10 @@ export interface LocationEntity extends TreeNodeData {
   licenseAgreedAt?: Timestamp;
   ideGsmFileName?: string;
   ideGsmSourceUrl?: string;
-  selectedArrayByCountries: Record<string, boolean[]>;
+  selectedArrayByCountries: Record<ISO2, boolean[]>;
   tilesMinZoom?: number;
   tilesMaxZoom?: number;
   concurrentDownloads: number;
-  batchSessionId?: string;
   lastProcessedAt?: Timestamp;
   processingStatus?: LocationProcessingStatus;
   processedAt?: Timestamp;
@@ -50,7 +49,7 @@ export interface LocationEntity extends TreeNodeData {
 
 export interface LocationBatchFilterCriteria {
   allowedTypes?: LocationType[];
-  countryCodes?: string[];
+  countryCodes?: CountryCode[];
   countryNames?: string[];
   excludeIds?: string[];
 }
@@ -74,7 +73,7 @@ export interface LocationSearchOptions {
 export interface LocationSearchConfig {
   dataSource: LocationDataSource;
   query?: string;
-  countryCode?: string;
+  countryCode?: CountryCode;
   countryName?: string;
   boundingBox?: [number, number, number, number];
   language?: string;
@@ -104,7 +103,7 @@ export interface LocationPointProperties {
   longitude: number;
   kind: LocationPointKind;
   countryName?: string;
-  countryCode: string;
+  countryCode: CountryCode;
   admin1?: string;
   admin2?: string;
   admin1Code?: string;
@@ -159,7 +158,6 @@ export interface LocationTileSettings {
 }
 
 export interface SessionSummary {
-  sessionId: string;
   nodeId: NodeId;
   zoomMin: number;
   zoomMax: number;

@@ -53,9 +53,8 @@ interface PerformanceMemoryStats {
 }
 
 type ShapeBatchSessionRecord = {
-  sessionId: string;
   nodeId: NodeId;
-  status: 'running' | 'paused' | 'completed' | 'failed' | 'cancelled' | 'idle';
+  status: 'running' | 'paused' | 'completed' | 'failed' | 'idle';
   startedAt?: number;
   updatedAt?: number;
   completedAt?: number;
@@ -72,7 +71,7 @@ type ShapeBatchSessionRecord = {
 
 type ShapeBatchTaskRecord = {
   taskId: string;
-  sessionId: string;
+  nodeId: NodeId;
   taskType: string;
   status: string;
   index: number;

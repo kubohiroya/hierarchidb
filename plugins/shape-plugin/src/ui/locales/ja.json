@@ -168,16 +168,14 @@
       "running": "実行中",
       "paused": "一時停止",
       "completed": "完了",
-      "failed": "失敗",
-      "cancelled": "キャンセル"
+      "failed": "失敗"
     },
     "status": {
       "ready": "ビルドを開始する準備ができています",
       "running": "ビルド処理中",
       "paused": "ビルド一時停止中",
       "completed": "ビルド完了",
-      "failed": "ビルド失敗",
-      "cancelled": "ビルドがキャンセルされました"
+      "failed": "ビルド失敗"
     },
     "stages": {
       "download": {

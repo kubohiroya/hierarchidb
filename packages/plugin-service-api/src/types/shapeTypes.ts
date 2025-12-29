@@ -5,8 +5,7 @@ export type ShapeProcessingState =
   | 'processing'
   | 'paused'
   | 'completed'
-  | 'failed'
-  | 'cancelled';
+  | 'failed';
 
 export interface ShapeProcessingStatus {
   status: ShapeProcessingState;
@@ -63,7 +62,6 @@ export interface ShapeBatchProgressSummary {
 }
 
 export interface ShapeBatchSessionSummary {
-  sessionId: string;
   nodeId: NodeId;
   status: ShapeProcessingState;
   startedAt?: number;
@@ -74,7 +72,7 @@ export interface ShapeBatchSessionSummary {
 
 export interface ShapeBatchTaskSummary {
   taskId: string;
-  sessionId: string;
+  nodeId: NodeId;
   taskType: string;
   status: string;
   index: number;

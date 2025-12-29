@@ -2,6 +2,9 @@
  * Common Data Source Types for Geographic Plugins
  * Base types shared by shape, location, and route plugin-loader
  */
+export type ISO2 = string;
+export type ISO3 = string;
+export type CountryCode = ISO2 | ISO3;
 
 /**
  * Base data source configuration
@@ -94,9 +97,11 @@ export type RouteType = 'airway' | 'seaway' | 'road' | 'railway' | 'high_speed_r
  * Common country metadata
  */
 export interface CountryMetadata {
-  countryCode: string;
+  countryCode: CountryCode;
   countryName: string;
   continent: string;
+  iso2?: ISO2;
+  iso3?: ISO3;
   bbox?: [number, number, number, number];
   population?: number;
   area?: number;

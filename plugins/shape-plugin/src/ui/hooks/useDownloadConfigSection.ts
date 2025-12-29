@@ -9,25 +9,25 @@ import { notify } from '@hierarchidb/components';
 import { useTranslation } from '../i18n.js';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { getShapeTileMetadataDB } from '../../services/database/ShapeTileMetadataDB.js';
-import { resolveShapeSessionId } from '../utils/sessionInvalidation.js';
 
 type Args = {
   config: BatchConfig;
   draft?: Partial<ShapeEntity> | null;
+  nodeId?: NodeId;
   disabled?: boolean;
   onChange: (next: BatchConfig) => void;
   onResetSession?: () => void;
 };
 
-export const useDownloadConfigSection = ({ config, draft, disabled, onChange, onResetSession }: Args) => {
+export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onChange, onResetSession }: Args) => {
   const { t } = useTranslation();
   const switchId = useId();
   const baseDownloadConfig: DownloadBatchConfig | undefined =
     config.downloadConfig ?? DEFAULT_PROCESSING_CONFIG.downloadConfig;
 
   const db = getEphemeralShapeDB();
-  const nodeId = (draft as { nodeId?: NodeId })?.nodeId;
-  const sessionId = resolveShapeSessionId(draft);
+  const resolvedNodeId = nodeId ?? (draft as { nodeId?: NodeId })?.nodeId;
+  const batchNodeId = resolvedNodeId ? String(resolvedNodeId) : undefined;
   const bridgeRef = useMemo(() => getWorkerBridge(), []);
 
   const [counts, setCounts] = useState({ raw: 0, stage1: 0, stage2: 0, tiles: 0, cache: 0 });
@@ -42,27 +42,27 @@ export const useDownloadConfigSection = ({ config, draft, disabled, onChange, on
   ), [counts.raw, t]);
 
   const loadCounts = useCallback(async () => {
-    if (!sessionId) {
+    if (!batchNodeId) {
       setCounts({ raw: 0, stage1: 0, stage2: 0, tiles: 0, cache: 0 });
       setFinalCounts({ tiles: 0, metadata: 0 });
       setFailedCounts({ download: 0, simplify1: 0, simplify2: 0, vectortile: 0 });
       return;
     }
     const [raw, stage1, stage2, tiles, cacheEntries, finalTiles, finalMetadata] = await Promise.all([
-      db.rawBuffers.where('sessionId').equals(sessionId).count(),
-      db.simplifiedBuffers.where({ sessionId, stage: 'simplify1' }).count(),
-      db.simplifiedBuffers.where({ sessionId, stage: 'simplify2' }).count(),
-      db.vectorTiles.where('sessionId').equals(sessionId).count(),
-      db.cache.filter((entry) => entry.key.includes(sessionId)).count(),
-      shapeDB.vectorTiles.where('nodeId').equals(String(nodeId ?? sessionId)).count(),
+      db.rawBuffers.where('nodeId').equals(batchNodeId).count(),
+      db.simplifiedBuffers.where({ nodeId: batchNodeId, stage: 'simplify1' }).count(),
+      db.simplifiedBuffers.where({ nodeId: batchNodeId, stage: 'simplify2' }).count(),
+      db.vectorTiles.where('nodeId').equals(batchNodeId).count(),
+      db.cache.filter((entry) => entry.key.includes(batchNodeId)).count(),
+      shapeDB.vectorTiles.where('nodeId').equals(batchNodeId).count(),
       getShapeTileMetadataDB()
         .then((metadataDb) =>
-          metadataDb.featureMetadata.where('sessionId').equals(sessionId).count()
+          metadataDb.featureMetadata.where('nodeId').equals(batchNodeId).count()
         ),
     ]);
     const failedTasks = await shapeDB.batchTasks
-      .where('sessionId')
-      .equals(sessionId)
+      .where('nodeId')
+      .equals(batchNodeId)
       .and((task) => task.status === 'failed')
       .toArray();
     const failed = {
@@ -74,7 +74,7 @@ export const useDownloadConfigSection = ({ config, draft, disabled, onChange, on
     setCounts({ raw, stage1, stage2, tiles, cache: cacheEntries });
     setFinalCounts({ tiles: finalTiles, metadata: finalMetadata });
     setFailedCounts(failed);
-  }, [db, nodeId, sessionId]);
+  }, [batchNodeId, db, resolvedNodeId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -90,7 +90,7 @@ export const useDownloadConfigSection = ({ config, draft, disabled, onChange, on
 
   useEffect(() => {
     let cancelled = false;
-    if (!sessionId) {
+    if (!batchNodeId) {
       setPersistedStatus(null);
       setStatusLoaded(true);
       return () => {
@@ -98,7 +98,7 @@ export const useDownloadConfigSection = ({ config, draft, disabled, onChange, on
       };
     }
     setStatusLoaded(false);
-    shapeDB.batchSessions.get(sessionId).then((session) => {
+    shapeDB.batchSessions.get(batchNodeId).then((session) => {
       if (cancelled) return;
       setPersistedStatus(session?.status ?? null);
       setStatusLoaded(true);
@@ -110,10 +110,10 @@ export const useDownloadConfigSection = ({ config, draft, disabled, onChange, on
     return () => {
       cancelled = true;
     };
-  }, [sessionId]);
+  }, [batchNodeId]);
 
   const isRunning = !statusLoaded
-    ? Boolean(sessionId)
+    ? Boolean(batchNodeId)
     : persistedStatus === 'running';
   const hasFinalOutputs = finalCounts.tiles > 0 || finalCounts.metadata > 0;
   const canDeleteRaw = !isRunning && !disabled && (counts.raw > 0 || failedCounts.download > 0);
@@ -127,23 +127,22 @@ export const useDownloadConfigSection = ({ config, draft, disabled, onChange, on
   const canDeleteMetadata = !isRunning && !disabled && finalCounts.metadata > 0;
 
   const clearBatchTasksForType = useCallback(async (taskType: string) => {
-    if (!sessionId) return;
+    if (!batchNodeId) return;
     await shapeDB.batchTasks
-      .where('sessionId')
-      .equals(sessionId)
+      .where('nodeId')
+      .equals(batchNodeId)
       .and((task) => task.taskType === taskType)
       .delete();
-  }, [sessionId]);
+  }, [batchNodeId]);
 
   const clearFinalOutputs = useCallback(async () => {
-    if (!sessionId) return;
-    const finalNodeId = String(nodeId ?? sessionId);
-    await shapeDB.vectorTiles.where('nodeId').equals(finalNodeId).delete();
+    if (!batchNodeId) return;
+    await shapeDB.vectorTiles.where('nodeId').equals(batchNodeId).delete();
     const metadataDb = await getShapeTileMetadataDB();
-    await metadataDb.featureMetadata.where('sessionId').equals(sessionId).delete();
-    await metadataDb.tiles.where('sessionId').equals(sessionId).delete();
-    await metadataDb.tiles.where('sessionId').equals(`input:${sessionId}`).delete();
-  }, [nodeId, sessionId]);
+    await metadataDb.featureMetadata.where('nodeId').equals(batchNodeId).delete();
+    await metadataDb.tiles.where('nodeId').equals(batchNodeId).delete();
+    await metadataDb.tiles.where('nodeId').equals(`input:${batchNodeId}`).delete();
+  }, [batchNodeId, nodeId]);
 
   const persistSessionReset = useCallback(async () => {
     if (!nodeId) return;
@@ -183,41 +182,41 @@ export const useDownloadConfigSection = ({ config, draft, disabled, onChange, on
   }, [bridgeRef, draft, nodeId]);
 
   const handleDeleteRaw = useCallback(async () => {
-    if (!sessionId) return notify.warning('NodeId is missing.');
-    await db.clearStage(sessionId, 'download');
+    if (!batchNodeId) return notify.warning('NodeId is missing.');
+    await db.clearStage(batchNodeId, 'download');
     await clearBatchTasksForType('download');
     await clearFinalOutputs();
     await loadCounts();
     onResetSession?.();
     await persistSessionReset();
     notify.success('Deleted downloaded files');
-  }, [clearBatchTasksForType, clearFinalOutputs, db, loadCounts, onResetSession, persistSessionReset, sessionId]);
+  }, [batchNodeId, clearBatchTasksForType, clearFinalOutputs, db, loadCounts, onResetSession, persistSessionReset]);
 
   const handleDeleteStage = useCallback(async (stage: 'simplify1' | 'simplify2') => {
-    if (!sessionId) return notify.warning('NodeId is missing.');
-    await db.clearStage(sessionId, stage);
+    if (!batchNodeId) return notify.warning('NodeId is missing.');
+    await db.clearStage(batchNodeId, stage);
     await clearBatchTasksForType(stage);
     await loadCounts();
     notify.success(stage === 'simplify1' ? 'Deleted Stage1 cache' : 'Deleted Stage2 cache');
-  }, [clearBatchTasksForType, db, loadCounts, sessionId]);
+  }, [batchNodeId, clearBatchTasksForType, db, loadCounts]);
 
   const handleDeleteTiles = useCallback(async () => {
-    if (!sessionId) return notify.warning('NodeId is missing.');
-    await db.clearStage(sessionId, 'vectorTiles');
+    if (!batchNodeId) return notify.warning('NodeId is missing.');
+    await db.clearStage(batchNodeId, 'vectorTiles');
     await clearBatchTasksForType('vectortile');
     await clearFinalOutputs();
     await persistTileSummaryReset();
     await loadCounts();
     notify.success('Deleted tiles');
-  }, [clearBatchTasksForType, clearFinalOutputs, db, loadCounts, persistTileSummaryReset, sessionId]);
+  }, [batchNodeId, clearBatchTasksForType, clearFinalOutputs, db, loadCounts, persistTileSummaryReset]);
 
   const handleDeleteMetadata = useCallback(async () => {
-    if (!sessionId) return notify.warning('NodeId is missing.');
+    if (!batchNodeId) return notify.warning('NodeId is missing.');
     const metadataDb = await getShapeTileMetadataDB();
-    await metadataDb.featureMetadata.where('sessionId').equals(sessionId).delete();
+    await metadataDb.featureMetadata.where('nodeId').equals(batchNodeId).delete();
     await loadCounts();
     notify.success('Deleted metadata');
-  }, [loadCounts, sessionId]);
+  }, [batchNodeId, loadCounts]);
 
   const update = useCallback((partial: Partial<BatchConfig>) => {
     onChange(mergeBatchConfig({ ...config, ...partial }));

@@ -11,9 +11,8 @@ import type {
 } from '@hierarchidb/plugin-service-api';
 
 type ShapeBatchSessionRecord = {
-  sessionId: string;
   nodeId: NodeId;
-  status: 'running' | 'paused' | 'completed' | 'failed' | 'cancelled' | 'idle';
+  status: 'running' | 'paused' | 'completed' | 'failed' | 'idle';
   startedAt?: number;
   updatedAt?: number;
   completedAt?: number;
@@ -30,7 +29,7 @@ type ShapeBatchSessionRecord = {
 
 type ShapeBatchTaskRecord = {
   taskId: string;
-  sessionId: string;
+  nodeId: NodeId;
   taskType: string;
   status: string;
   index: number;
@@ -84,7 +83,6 @@ const mapStatus = (status: ShapeBatchSessionRecord['status']): ShapeProcessingSt
 };
 
 const toSessionSummary = (session: ShapeBatchSessionRecord): ShapeBatchSessionSummary => ({
-  sessionId: session.sessionId,
   nodeId: session.nodeId,
   status: mapStatus(session.status),
   startedAt: session.startedAt,
@@ -95,7 +93,7 @@ const toSessionSummary = (session: ShapeBatchSessionRecord): ShapeBatchSessionSu
 
 const toTaskSummary = (task: ShapeBatchTaskRecord): ShapeBatchTaskSummary => ({
   taskId: task.taskId,
-  sessionId: task.sessionId,
+  nodeId: task.nodeId,
   taskType: task.taskType,
   status: task.status,
   index: task.index,
@@ -123,15 +121,15 @@ export class ShapeQueryService implements ShapeQueryAPI {
     return sessions.map(toSessionSummary);
   }
 
-  async getBatchSession(sessionId: string): Promise<ShapeBatchSessionSummary | null> {
+  async getBatchSession(nodeId: NodeId): Promise<ShapeBatchSessionSummary | null> {
     await this.ensureOpen();
-    const session = await this.db.batchSessions.get?.(sessionId);
+    const session = await this.db.batchSessions.get?.(String(nodeId));
     return session ? toSessionSummary(session) : null;
   }
 
-  async listBatchTasks(sessionId: string): Promise<ShapeBatchTaskSummary[]> {
+  async listBatchTasks(nodeId: NodeId): Promise<ShapeBatchTaskSummary[]> {
     await this.ensureOpen();
-    const tasks = await this.db.batchTasks.where('sessionId').equals(sessionId).toArray();
+    const tasks = await this.db.batchTasks.where('nodeId').equals(nodeId).toArray();
     return tasks.map(toTaskSummary);
   }
 

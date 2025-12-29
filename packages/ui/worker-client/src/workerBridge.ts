@@ -2,7 +2,6 @@ import { proxy, type Remote } from 'comlink';
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import type {
   BatchProgressEvent,
-  BatchSessionId,
   BatchSessionStatus,
   BatchTaskSummary,
   WorkerAPI,
@@ -16,11 +15,11 @@ export interface WorkerBridge {
     nodeId: NodeId,
     downloadTaskPayloads?: Parameters<WorkerAPI['startBatchSession']>[2]
   ): Promise<BatchSessionStatus>;
-  getBatchSessionStatus(nodeType: NodeType, sessionId: BatchSessionId): Promise<BatchSessionStatus>;
-  pauseBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
-  resumeBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
-  cancelBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
-  getBatchTasks(nodeType: NodeType, sessionId: BatchSessionId): Promise<BatchTaskSummary[]>;
+  getBatchSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus>;
+  pauseBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<void>;
+  resumeBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<void>;
+  cancelBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<void>;
+  getBatchTasks(nodeType: NodeType, nodeId: NodeId): Promise<BatchTaskSummary[]>;
   getStyleQueryAPI(): ReturnType<WorkerAPI['getStyleQueryAPI']>;
   getStyleMutationAPI(): ReturnType<WorkerAPI['getStyleMutationAPI']>;
   getShapeQueryAPI(): ReturnType<WorkerAPI['getShapeQueryAPI']>;
@@ -32,7 +31,7 @@ export interface WorkerBridge {
   getTreeNodeUpdaterAPI(): ReturnType<WorkerAPI['getTreeNodeUpdaterAPI']>;
   subscribeBatchProgress(
     nodeType: NodeType,
-    sessionId: BatchSessionId,
+    nodeId: NodeId,
     cb: (event: BatchProgressEvent) => void,
   ): Promise<() => void>;
   subscribeHeapPressure(
@@ -92,29 +91,29 @@ class WorkerBridgeImpl implements WorkerBridge {
     return api.startBatchSession(nodeType, nodeId, downloadTaskPayloads);
   }
 
-  async getBatchSessionStatus(nodeType: NodeType, sessionId: BatchSessionId): Promise<BatchSessionStatus> {
+  async getBatchSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus> {
     const api = await ensureWorkerAPI();
-    return api.getBatchSessionStatus(nodeType, sessionId);
+    return api.getBatchSessionStatus(nodeType, nodeId);
   }
 
-  async pauseBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void> {
+  async pauseBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<void> {
     const api = await ensureWorkerAPI();
-    await api.pauseBatchSession(nodeType, sessionId);
+    await api.pauseBatchSession(nodeType, nodeId);
   }
 
-  async resumeBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void> {
+  async resumeBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<void> {
     const api = await ensureWorkerAPI();
-    await api.resumeBatchSession(nodeType, sessionId);
+    await api.resumeBatchSession(nodeType, nodeId);
   }
 
-  async cancelBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void> {
+  async cancelBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<void> {
     const api = await ensureWorkerAPI();
-    await api.cancelBatchSession(nodeType, sessionId);
+    await api.cancelBatchSession(nodeType, nodeId);
   }
 
-  async getBatchTasks(nodeType: NodeType, sessionId: BatchSessionId): Promise<BatchTaskSummary[]> {
+  async getBatchTasks(nodeType: NodeType, nodeId: NodeId): Promise<BatchTaskSummary[]> {
     const api = await ensureWorkerAPI();
-    return api.getBatchTasks(nodeType, sessionId);
+    return api.getBatchTasks(nodeType, nodeId);
   }
 
   async getStyleQueryAPI(): Promise<Awaited<ReturnType<WorkerAPI['getStyleQueryAPI']>>> {
@@ -164,11 +163,11 @@ class WorkerBridgeImpl implements WorkerBridge {
 
   async subscribeBatchProgress(
     nodeType: NodeType,
-    sessionId: BatchSessionId,
+    nodeId: NodeId,
     cb: (event: BatchProgressEvent) => void,
   ): Promise<() => void> {
     const api = await ensureWorkerAPI();
-    const unsubscribe = await api.subscribeBatchProgress(nodeType, sessionId, proxy(cb));
+    const unsubscribe = await api.subscribeBatchProgress(nodeType, nodeId, proxy(cb));
     return () => {
       try {
         unsubscribe();

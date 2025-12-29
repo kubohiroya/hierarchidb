@@ -2,8 +2,8 @@ import { useMemo } from 'react';
 import { useRouteBatchProgress } from '../hooks/useRouteBatchProgress.js';
 import { useTranslation } from '../../common/i18n/index.js';
 
-export function RouteBatchSummary({ sessionId }: { sessionId: string }) {
-  const { progress, lastError } = useRouteBatchProgress(sessionId);
+export function RouteBatchSummary({ nodeId }: { nodeId: string }) {
+  const { progress, lastError } = useRouteBatchProgress(nodeId);
   const { translations } = useTranslation();
 
   const completed = useMemo(() => {

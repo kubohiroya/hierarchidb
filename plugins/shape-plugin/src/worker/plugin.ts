@@ -32,8 +32,8 @@ export const ShapeWorkerPlugin = {
 
     // Additional tables for shape-plugin data
     additionalTables: {
-      shapeBatchSessions: '&sessionId, nodeId, status, startedAt, updatedAt',
-      shapeBatchTasks: '&taskId, sessionId, taskType, stage, progress',
+      shapeBatchSessions: '&nodeId, status, startedAt, updatedAt',
+      shapeBatchTasks: '&taskId, nodeId, taskType, stage, progress',
       shapeFeatures: '&featureId, nodeId, countryCode, adminLevel, geometry',
       shapeVectorTiles: '&tileId, nodeId, z, x, y, data, size',
       shapeCache: '&cacheKey, nodeId, cacheType, data, size, createdAt',

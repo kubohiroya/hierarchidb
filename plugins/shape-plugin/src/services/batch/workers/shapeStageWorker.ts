@@ -59,7 +59,6 @@ const encodeGeoJson = async (geojsonData: FeatureCollection): Promise<ArrayBuffe
 };
 
 const processDownloadTask = async ({
-  sessionId,
   nodeId,
   task,
   taskIndex,
@@ -98,10 +97,9 @@ const processDownloadTask = async ({
       const fgb = fgbBytes.buffer.slice(fgbBytes.byteOffset, fgbBytes.byteOffset + fgbBytes.byteLength);
       const bounds = turfBbox(featureCollection);
       const db = getEphemeralShapeDB();
-      const bufferId = `${sessionId}-download-${taskIndex}`;
+      const bufferId = `${nodeId}-download-${taskIndex}`;
       await db.rawBuffers.put({
         id: bufferId,
-        sessionId,
         nodeId: task.nodeId ?? nodeId,
         data: fgb,
         featureCount: featureCollection.features.length,
@@ -129,7 +127,7 @@ const processDownloadTask = async ({
 };
 
 const processSimplify1Task = async ({
-  sessionId,
+  nodeId,
   task,
   taskIndex,
 }: SimplifyTaskRequest<Simplify1Task>): Promise<ShapeStageWorkerTaskResult> => {
@@ -141,8 +139,7 @@ const processSimplify1Task = async ({
   }
   if (!raw.featureCount) {
     await db.simplifiedBuffers.put({
-      id: `${sessionId}-simplify1-${taskIndex}`,
-      sessionId: String(sessionId),
+      id: `${nodeId}-simplify1-${taskIndex}`,
       nodeId: raw.nodeId,
       stage: 'simplify1',
       data: raw.data,
@@ -161,7 +158,7 @@ const processSimplify1Task = async ({
     hybridFilterConfig: task.config?.hybridFilterConfig,
   };
   const filtered = applyFeatureFiltering(geojson, filterSettings);
-  const outputBufferId = `${sessionId}-simplify1-${taskIndex}`;
+  const outputBufferId = `${nodeId}-simplify1-${taskIndex}`;
   const hasFilteredFeatures = isFeatureCollection(filtered);
   const data = hasFilteredFeatures ? await encodeGeoJson(filtered) : raw.data;
   const featureCount = hasFilteredFeatures
@@ -170,7 +167,6 @@ const processSimplify1Task = async ({
   if (!featureCount) {
     await db.simplifiedBuffers.put({
       id: outputBufferId,
-      sessionId: String(sessionId),
       nodeId: raw.nodeId,
       stage: 'simplify1',
       data,
@@ -183,7 +179,6 @@ const processSimplify1Task = async ({
   }
   await db.simplifiedBuffers.put({
     id: outputBufferId,
-    sessionId: String(sessionId),
     nodeId: raw.nodeId,
     stage: 'simplify1',
     data,
@@ -196,7 +191,7 @@ const processSimplify1Task = async ({
 };
 
 const processSimplify2Task = async ({
-  sessionId,
+  nodeId,
   task,
   taskIndex,
 }: SimplifyTaskRequest<Simplify2Task>): Promise<ShapeStageWorkerTaskResult> => {
@@ -208,10 +203,9 @@ const processSimplify2Task = async ({
     return { status: 'failed', errorMessage: `Simplify2 input buffer not found: ${inputBufferId}` };
   }
   if (!input.featureCount) {
-    const outputBufferId = `${sessionId}-simplify2-${taskIndex}`;
+    const outputBufferId = `${nodeId}-simplify2-${taskIndex}`;
     await db.simplifiedBuffers.put({
       id: outputBufferId,
-      sessionId: String(sessionId),
       nodeId: input.nodeId,
       stage: 'simplify2',
       data: input.data,
@@ -232,14 +226,13 @@ const processSimplify2Task = async ({
     quantize,
   });
   const hasSimplifiedFeatures = isFeatureCollection(simplified);
-  const outputBufferId = `${sessionId}-simplify2-${taskIndex}`;
+  const outputBufferId = `${nodeId}-simplify2-${taskIndex}`;
   const data = hasSimplifiedFeatures ? await encodeGeoJson(simplified) : input.data;
   const featureCount = hasSimplifiedFeatures
     ? simplified.features.length
     : input.featureCount;
   await db.simplifiedBuffers.put({
     id: outputBufferId,
-    sessionId: String(sessionId),
     nodeId: input.nodeId,
     stage: 'simplify2',
     data,

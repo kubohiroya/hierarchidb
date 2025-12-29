@@ -11,7 +11,7 @@ import {
   formatNumber,
 } from '../../common/mock/data.js';
 import { normalizeDataSourceName } from '../../services/utils/utils.js';
-import { clearStagesIfPresent, FULL_INVALIDATION_STAGES, resolveShapeSessionId } from '../utils/sessionInvalidation.js';
+import { clearStagesIfPresent, FULL_INVALIDATION_STAGES, resolveShapeNodeId } from '../utils/sessionInvalidation.js';
 import { fetchGeoBoundariesAvailability } from '../../services/utils/geoBoundariesAvailability.js';
 
 const CONTINENT_CODES: ContinentCode[] = ['AF', 'AS', 'EU', 'NA', 'SA', 'OC', 'AN'];
@@ -288,9 +288,9 @@ export const useShapeCountrySelectionStep = ({ data, onChange }: Args) => {
         return acc;
       }, {});
       if (!isSelectionEqual(normalizedSelection, nextSelection)) {
-        const sessionId = resolveShapeSessionId(data);
-        if (sessionId) {
-          void clearStagesIfPresent(sessionId, FULL_INVALIDATION_STAGES);
+        const nodeId = resolveShapeNodeId(data);
+        if (nodeId) {
+          void clearStagesIfPresent(nodeId, FULL_INVALIDATION_STAGES);
         }
       }
       onChange({ selectedArrayByCountries: nextSelection });

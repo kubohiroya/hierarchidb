@@ -38,6 +38,7 @@
     "**/.cache/**",
     "**/.debug/**",
     "**/.generated/**",
+    "**/.storybook/**",
     "**/.storybook-static/**",
     "**/.turbo/**",
     "**/build/**",
@@ -87,47 +88,6 @@
         ".turbo/**",
         "storybook-static/**"
       ],
-      "plugins": {
-        "vitest": {
-          "config": [
-            "vitest.config.ts",
-            "packages/**/vitest.config.ts"
-          ]
-        },
-        "tsup": {
-          "config": [
-            "tsup.config.{ts,js,mjs,cjs}",
-            "packages/**/tsup.config.{ts,js,mjs,cjs}",
-            "packages/**/tsup.*.config.{ts,js,mjs,cjs}"
-          ]
-        },
-        "vite": {
-          "config": [
-            "app/vite.config.ts"
-          ]
-        },
-        "storybook": {
-          "config": [
-            "packages/**/.storybook/main.{ts,js,mjs,cjs}"
-          ]
-        },
-        "playwright": {
-          "config": [
-            "playwright.config.ts",
-            "packages/**/playwright.config.{ts,js,mjs,cjs}"
-          ]
-        },
-        "eslint": {
-          "config": [
-            "eslint.config.js"
-          ]
-        },
-        "biome": {
-          "config": [
-            "biome.json"
-          ]
-        },
-      }
     },
     "app": {
       "entry": [

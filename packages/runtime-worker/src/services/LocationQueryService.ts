@@ -22,7 +22,6 @@ import {
 
 export class LocationQueryService implements LocationQueryAPI {
   private readonly tileCache = new LRUMap<string, BTree<LocationNearestPoint>>(DEFAULT_TILE_CACHE_SIZE);
-  private readonly sessionCache = new Map<NodeId, { sessionId: string; checkedAt: number }>();
 
   static async getSingleton(): Promise<LocationQueryService> {
     return SingletonMixin.getSingleton('LocationQueryService', async () => new LocationQueryService());
@@ -46,10 +45,7 @@ export class LocationQueryService implements LocationQueryAPI {
     const cursor = { longitude: query.longitude, latitude: query.latitude };
     const zoom = clampZoom(query.zoom);
     const maxDistanceMeters = query.maxDistanceMeters;
-    const sessionId = await this.resolveSessionId(query.nodeId);
-    if (!sessionId) {
-      return { cursor, matches: [] };
-    }
+    const nodeId = query.nodeId;
 
     const tile = toTileCoord(cursor.longitude, cursor.latitude, zoom);
     const maxIndex = 2 ** zoom;
@@ -59,7 +55,7 @@ export class LocationQueryService implements LocationQueryAPI {
         const x = tile.x + dx;
         const y = tile.y + dy;
         if (x < 0 || y < 0 || x >= maxIndex || y >= maxIndex) continue;
-        const tree = await this.getTileTree(sessionId, zoom, x, y);
+        const tree = await this.getTileTree(nodeId, zoom, x, y);
         if (!tree) continue;
         const matches = findWithinDistanceInTree(
           tree,
@@ -85,44 +81,23 @@ export class LocationQueryService implements LocationQueryAPI {
   }
 
   async getVectorTile(nodeId: NodeId, z: number, x: number, y: number): Promise<ArrayBuffer | null> {
-    const sessionId = await this.resolveSessionId(nodeId);
-    if (!sessionId) return null;
     const db = getEphemeralLocationDB();
-    const record = await db.vectorTiles.get(`loc-mvt-${sessionId}-${z}-${x}-${y}`);
+    const record = await db.vectorTiles.get(`loc-mvt-${nodeId}-${z}-${x}-${y}`);
     return record?.data ?? null;
   }
 
-  private async resolveSessionId(nodeId: NodeId): Promise<string | null> {
-    const cached = this.sessionCache.get(nodeId);
-    if (cached && Date.now() - cached.checkedAt < SESSION_CACHE_TTL_MS) {
-      return cached.sessionId;
-    }
-    const db = getEphemeralLocationDB();
-    const sessions = await db.sessions.where('nodeId').equals(nodeId).toArray();
-    if (!sessions.length) return null;
-    const [first, ...rest] = sessions;
-    if (!first) return null;
-    let latest = first;
-    for (const current of rest) {
-      latest = (current.createdAt ?? 0) > (latest.createdAt ?? 0) ? current : latest;
-    }
-    const sessionId = latest.sessionId;
-    this.sessionCache.set(nodeId, { sessionId, checkedAt: Date.now() });
-    return sessionId ?? null;
-  }
-
   private async getTileTree(
-    sessionId: string,
+    nodeId: NodeId,
     z: number,
     x: number,
     y: number,
   ): Promise<BTree<LocationNearestPoint> | null> {
-    const cacheKey = `${sessionId}:${z}:${x}:${y}`;
+    const cacheKey = `${nodeId}:${z}:${x}:${y}`;
     const cached = this.tileCache.get(cacheKey);
     if (cached) return cached;
 
     const db = getEphemeralLocationDB();
-    const record = await db.vectorTiles.get(`loc-mvt-${sessionId}-${z}-${x}-${y}`);
+    const record = await db.vectorTiles.get(`loc-mvt-${nodeId}-${z}-${x}-${y}`);
     if (!record?.data) return null;
 
     const points = decodeLocationPoints(record.data, z, x, y);
@@ -138,7 +113,6 @@ export class LocationQueryService implements LocationQueryAPI {
 }
 
 const DEFAULT_TILE_CACHE_SIZE = 256;
-const SESSION_CACHE_TTL_MS = 5_000;
 const DEFAULT_LAYER_NAME = 'location_points';
 
 function decodeLocationPoints(

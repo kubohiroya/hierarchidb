@@ -4,7 +4,7 @@ import type { RouteBatchConfig } from '../../src/common/types/BatchConfig.js';
 import type { NodeId } from '@hierarchidb/common-types';
 
 describe('RouteBatchManager idempotency', () => {
-  it('returns the same sessionId for identical input payload', async () => {
+  it('returns the same nodeId for identical input payload', async () => {
     const mgr = new RouteBatchManager();
     const cfg: RouteBatchConfig = {
       routeGeneration: {

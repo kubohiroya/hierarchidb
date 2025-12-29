@@ -20,7 +20,7 @@ export class GeoBoundariesDownloadStrategy implements DownloadStageStrategy {
   async buildDownloadTasks(context: DownloadStageBuildContext): Promise<DownloadTask[]> {
     return context.downloadTaskPayloads.map((metadata, index) => ({
       taskId: buildDownloadTaskId(String(context.nodeId), metadata),
-      sessionId: context.sessionId,
+      nodeId: context.nodeId,
       taskType: 'download',
       stage: 'wait',
       type: 'download',
@@ -49,7 +49,7 @@ export class GeoBoundariesDownloadStrategy implements DownloadStageStrategy {
     const outputs = context.downloadTasks.map((task) => {
       const payload = task.config?.url ? payloadByUrl.get(task.config.url) : undefined;
       return {
-        inputBufferId: `${context.sessionId}-download-${task.index ?? 0}`,
+        inputBufferId: `${context.nodeId}-download-${task.index ?? 0}`,
         countryCode: payload?.countryCode ?? task.countryCode,
         countryName: payload?.countryName,
         adminLevel: payload?.adminLevel ?? task.config?.adminLevel,

@@ -20,10 +20,10 @@ const LOCATION_NODE_TYPE = 'location' as NodeType;
 
 const SPLITVIEW_BREAKPOINTS = [600, 900, 1200];
 
-const mapStatusToBuildStatus = (phase?: string, fallbackStage?: string, sessionId?: string | null): BuildStatus => {
-  if (!sessionId) return 'idle';
+const mapStatusToBuildStatus = (phase?: string, fallbackStage?: string, nodeId?: string | null): BuildStatus => {
+  if (!nodeId) return 'idle';
   if (phase === 'completed') return 'completed';
-  if (phase === 'failed' || phase === 'cancelled') return 'failed';
+  if (phase === 'failed') return 'failed';
   if (phase === 'paused' || fallbackStage === 'paused' || fallbackStage === 'auth-required') return 'paused';
   return 'running';
 };
@@ -115,27 +115,27 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
     ]),
     [stages.length],
   );
-  const sessionId = draft.batchSessionId ?? null;
+  const activeNodeId = nodeId ?? null;
   const bridgeRef = useRef<WorkerBridge>(getWorkerBridge());
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [isMutating, setIsMutating] = useState(false);
   const [heapDialogOpen, setHeapDialogOpen] = useState(false);
   const heapPauseRef = useRef<string | null>(null);
   const [ideGsmProgress, setIdeGsmProgress] = useState<IdeGsmImportProgress | null>(null);
-  const { progress, unifiedProgress } = useLocationProgress(sessionId, { autoSubscribe: Boolean(sessionId) });
+  const { progress, unifiedProgress } = useLocationProgress(activeNodeId, { autoSubscribe: Boolean(activeNodeId) });
 
   useEffect(() => {
-    if (!sessionId) return;
+    if (!activeNodeId) return;
     void bridgeRef.current.initialize().catch((error: unknown) => {
       console.warn('[LocationBuildStep] failed to initialize worker bridge', error);
     });
-  }, [sessionId]);
+  }, [activeNodeId]);
 
   const phase = unifiedProgress?.phase ?? progress?.stage;
   const baseStatus = mapStatusToBuildStatus(
     typeof phase === 'string' ? phase : undefined,
     progress?.stage,
-    sessionId,
+    activeNodeId,
   );
   const ideGsmActive = Boolean(ideGsmProgress && ideGsmProgress.phase !== 'completed' && ideGsmProgress.phase !== 'failed');
   const ideGsmFailed = ideGsmProgress?.phase === 'failed';
@@ -184,11 +184,11 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
   }, [ideGsmActive, ideGsmOverallProgress, normalizedStage, overallProgress, stages]);
 
   const handlePause = useCallback(async () => {
-    if (!sessionId || isMutating) return;
+    if (!activeNodeId || isMutating) return;
     setIsMutating(true);
     setMutationError(null);
     try {
-      await bridgeRef.current.pauseBatchSession(LOCATION_NODE_TYPE, sessionId);
+      await bridgeRef.current.pauseBatchSession(LOCATION_NODE_TYPE, activeNodeId);
       // Status will refresh via batch progress polling/subscription.
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
@@ -197,7 +197,7 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
     } finally {
       setIsMutating(false);
     }
-  }, [isMutating, sessionId]);
+  }, [activeNodeId, isMutating]);
 
   useEffect(() => {
     if (!heapEvent) return;
@@ -215,9 +215,8 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
       return;
     }
     if (!heapEvent) return;
-    const activeSessionId = sessionId ?? null;
-    if (!activeSessionId) return;
-    const eventKey = `${activeSessionId}:${heapEvent.source}:${heapEvent.timestamp}`;
+    if (!activeNodeId) return;
+    const eventKey = `${activeNodeId}:${heapEvent.source}:${heapEvent.timestamp}`;
     if (heapPauseRef.current === eventKey) return;
     heapPauseRef.current = eventKey;
     const pauseAndWarn = async () => {
@@ -225,14 +224,14 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
       setHeapDialogOpen(true);
     };
     void pauseAndWarn();
-  }, [buildStatus, handlePause, heapEvent, sessionId]);
+  }, [activeNodeId, buildStatus, handlePause, heapEvent]);
 
   const handleResume = useCallback(async () => {
-    if (!sessionId || isMutating) return;
+    if (!activeNodeId || isMutating) return;
     setIsMutating(true);
     setMutationError(null);
     try {
-      await bridgeRef.current.resumeBatchSession(LOCATION_NODE_TYPE, sessionId);
+      await bridgeRef.current.resumeBatchSession(LOCATION_NODE_TYPE, activeNodeId);
       // Status will refresh via batch progress polling/subscription.
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
@@ -241,7 +240,7 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
     } finally {
       setIsMutating(false);
     }
-  }, [isMutating, sessionId]);
+  }, [activeNodeId, isMutating]);
 
   const total = ideGsmActive
     ? (ideGsmProgress?.total ?? 0)
@@ -298,8 +297,8 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
         splitViewBreakpoints={SPLITVIEW_BREAKPOINTS}
         splitViewInitialSizesByBreakpoint={splitViewInitialSizes}
         splitViewAutoCloseCountsByBreakpoint={splitViewAutoCloseCounts}
-        onPause={sessionId ? handlePause : undefined}
-        onResume={sessionId ? handleResume : undefined}
+        onPause={activeNodeId ? handlePause : undefined}
+        onResume={activeNodeId ? handleResume : undefined}
         statusLabel={statusLabel}
         statusContent={(
           <Stack spacing={0.5}>
