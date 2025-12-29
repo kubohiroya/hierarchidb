@@ -3,6 +3,7 @@ import { Button, CircularProgress, Tooltip } from '@mui/material';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import { toNodeId } from '@hierarchidb/common-types';
 import { useRouteBatchProgress } from '../hooks/useRouteBatchProgress.js';
 import { useTranslation } from '../../common/i18n/index.js';
 
@@ -15,7 +16,7 @@ export function RouteBatchLiveProgress({ jobId }: { jobId: string }) {
     mutationError,
     pause,
     resume,
-  } = useRouteBatchProgress(jobId);
+  } = useRouteBatchProgress(toNodeId(jobId));
   const { translations } = useTranslation();
 
   const pct = useMemo(() => {

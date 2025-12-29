@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
+import { toNodeId } from '@hierarchidb/common-types';
 import { useRouteBatchProgress } from '../hooks/useRouteBatchProgress.js';
 import { useTranslation } from '../../common/i18n/index.js';
 
 export function RouteBatchSummary({ nodeId }: { nodeId: string }) {
-  const { progress, lastError } = useRouteBatchProgress(nodeId);
+  const { progress, lastError } = useRouteBatchProgress(toNodeId(nodeId));
   const { translations } = useTranslation();
 
   const completed = useMemo(() => {

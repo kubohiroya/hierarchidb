@@ -5,6 +5,7 @@ import type { RouteBatchConfig } from '../common/types/BatchConfig.js';
 import type {
   BatchProgressCallback,
   BatchProgressEvent,
+  BatchSessionStatus,
   StageKey,
 } from '@hierarchidb/common-api';
 import { BaseBatchSessionManager } from '@hierarchidb/batch-runtime-services';
@@ -54,7 +55,7 @@ export class RouteBatchSessionOrchestrator extends BaseBatchSessionManager {
     });
   }
 
-  async startBatchSession(nodeId: NodeId): Promise<NodeId> {
+  async startBatchSession(nodeId: NodeId): Promise<BatchSessionStatus> {
     const pending = this.pendingSessions.get(nodeId);
     this.pendingSessions.delete(nodeId);
     if (!pending) {
@@ -71,7 +72,7 @@ export class RouteBatchSessionOrchestrator extends BaseBatchSessionManager {
     if (session) {
       this.registerSession(session);
     }
-    return sessionNodeId;
+    return this.getBatchSessionStatus(sessionNodeId);
   }
 
   async pauseBatchSession(nodeId: NodeId): Promise<void> {
@@ -98,7 +99,7 @@ export class RouteBatchSessionOrchestrator extends BaseBatchSessionManager {
 
   protected async onSessionStatusChange(_session: RouteBatchSession): Promise<void> {
     const state = _session.getState();
-    if (state.status === 'completed' || state.status === 'failed') {
+    if (state.status === 'completed' || state.status === 'failed' || state.status === 'cancelled') {
       this.sessions.delete(state.nodeId);
       this.cleanupSessionTracking(state.nodeId);
     }

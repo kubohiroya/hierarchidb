@@ -112,7 +112,8 @@ export class LocationSessionController {
       console.warn('[Location][Session] vectortile client unavailable; skipping worker delegation');
       return;
     }
-    let list: Array<{ z: number; x: number; y: number; size: number; timestamp: number }> = [];
+    type TileInfo = { z: number; x: number; y: number; size: number; timestamp: number };
+    let list: TileInfo[] = [];
     try {
       await LocationSessionController.laneRegistry.runWithLane('tilegen', async () => {
         const result = await runVectorTileStage({
@@ -135,7 +136,7 @@ export class LocationSessionController {
     const laneName = 'tilegen';
     const concurrency = LocationSessionController.laneRegistry.recommendConcurrency([laneName], 4);
 
-    await batch.mapChunks<VectorTileRecord, void>(list, async (t) => {
+    await batch.mapChunks<TileInfo, void>(list, async (t) => {
       await LocationSessionController.laneRegistry.runWithLane(laneName, async () => {
         if (this.cancelled) return;
         while (this.paused) await new Promise(r => setTimeout(r, 100));

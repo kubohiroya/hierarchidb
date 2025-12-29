@@ -4,7 +4,7 @@
 
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-types';
 import { BaseBatchSessionManager } from '@hierarchidb/batch-runtime-services';
-import type { BatchProgressEvent } from '@hierarchidb/common-api';
+import type { BatchProgressEvent, BatchSessionStatus } from '@hierarchidb/common-api';
 import { LocationSessionController } from './LocationSessionController.js';
 import type { LocationPointInput, LocationTileSettings, SessionSummary } from '../../common/types/batch-types.js';
 import { LocationBatchSession } from './LocationBatchSession.js';
@@ -22,7 +22,7 @@ export class LocationBatchSessionManager extends BaseBatchSessionManager {
     super();
   }
 
-  async startBatchSession(_nodeId: NodeId): Promise<string> {
+  async startBatchSession(_nodeId: NodeId): Promise<BatchSessionStatus> {
     throw new Error('LocationBatchSessionManager requires createSession to start.');
   }
 
@@ -172,7 +172,7 @@ export class LocationBatchSessionManager extends BaseBatchSessionManager {
         console.warn('[LocationBatchSessionManager] failed to persist status', error);
       }
     }
-    if (state.status === 'completed' || state.status === 'failed') {
+    if (state.status === 'completed' || state.status === 'failed' || state.status === 'cancelled') {
       this.sessions.delete(state.nodeId);
       this.legacyProgress.delete(state.nodeId);
     }

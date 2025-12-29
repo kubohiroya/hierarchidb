@@ -11,7 +11,7 @@ import { useLocationProgress } from '../../../common/hooks/useLocationProgress.j
 import { subscribeIdeGsmProgress } from '../../state/ideGsmProgress.js';
 
 type Props = {
-  nodeId?: string;
+  nodeId: NodeId;
   draft: Partial<LocationEntity>;
   onUpdate?: (updates: Partial<LocationEntity>) => void;
 };
@@ -115,14 +115,14 @@ export const LocationBuildStep: React.FC<Props> = ({ nodeId, draft, onUpdate: _o
     ]),
     [stages.length],
   );
-  const activeNodeId = nodeId ?? null;
+  const activeNodeId = nodeId;
   const bridgeRef = useRef<WorkerBridge>(getWorkerBridge());
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [isMutating, setIsMutating] = useState(false);
   const [heapDialogOpen, setHeapDialogOpen] = useState(false);
   const heapPauseRef = useRef<string | null>(null);
   const [ideGsmProgress, setIdeGsmProgress] = useState<IdeGsmImportProgress | null>(null);
-  const { progress, unifiedProgress } = useLocationProgress(activeNodeId, { autoSubscribe: Boolean(activeNodeId) });
+  const { progress, unifiedProgress } = useLocationProgress(activeNodeId, { autoSubscribe: true });
 
   useEffect(() => {
     if (!activeNodeId) return;

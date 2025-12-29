@@ -96,7 +96,7 @@ export class UnifiedLocationBatchManager extends UnifiedBatchManagerBase<Unified
     this.getDb = provider;
   }
 
-  protected async performStart(nodeId: NodeId, config: UnifiedLocationBatchConfig | undefined, data: LocationBatchData): Promise<NodeId> {
+  protected async performStart(nodeId: NodeId, config: UnifiedLocationBatchConfig | undefined, data: LocationBatchData): Promise<BatchSessionStatus> {
     const summary = await this.manager.createSession(nodeId, data.points, data.settings, { concurrency: config?.concurrency });
     try {
       const db = this.getDb();
@@ -115,7 +115,18 @@ export class UnifiedLocationBatchManager extends UnifiedBatchManagerBase<Unified
     } catch (error) {
       console.warn('[UnifiedLocationBatchManager] failed to persist session metadata', error);
     }
-    return summary.nodeId;
+    return {
+      nodeId,
+      status: 'running',
+      progress: {
+        total: summary.totalPoints ?? data.points.length,
+        completed: 0,
+        failed: 0,
+        percentage: 0,
+      },
+      startedAt: Date.now(),
+      lastActivity: Date.now(),
+    };
   }
 
   protected async performPause(nodeId: NodeId): Promise<void> {

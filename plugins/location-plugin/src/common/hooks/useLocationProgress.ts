@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { NodeType, ProgressEvent } from '@hierarchidb/common-types';
+import type { NodeId, NodeType, ProgressEvent } from '@hierarchidb/common-types';
 import type { BatchSessionStatus, UnifiedProgressInfo } from '@hierarchidb/common-api';
 import { AuthNotificationRegistry } from '@hierarchidb/common-auth';
 import { usePluginBatchProgress } from '@hierarchidb/ui-batch';
@@ -25,7 +25,7 @@ type ExtendedProgressInfo = UnifiedProgressInfo & {
   phase?: string;
   timestamp?: number;
   message?: string;
-  nodeId?: string;
+  nodeId?: NodeId;
 };
 
 const statusToUnified = (status: BatchSessionStatus): UnifiedProgressInfo => {
@@ -59,13 +59,13 @@ const statusToUnified = (status: BatchSessionStatus): UnifiedProgressInfo => {
 
 function toProgressEvent(
   info: ExtendedProgressInfo | null,
-  fallbackNodeId?: string,
+  fallbackNodeId: NodeId,
 ): LocationProgressEvent | null {
   if (!info) return null;
-  const nodeId = (info.nodeId as string | undefined) ?? fallbackNodeId ?? 'location';
+  const resolvedNodeId = info.nodeId ?? fallbackNodeId;
   const stage = info.phase === 'completed' ? 'completed' : info.stage;
   const event: LocationProgressEvent = {
-    nodeId,
+    nodeId: resolvedNodeId,
     stage,
     total: info.total ?? 0,
     completed: info.completed ?? 0,
@@ -82,7 +82,7 @@ function toProgressEvent(
  * useLocationProgress - Subscribe to Location batch progress events via WorkerBridge.
  */
 export function useLocationProgress(
-  nodeId: string | null,
+  nodeId: NodeId,
   options: UseLocationProgressOptions = {},
 ): UseLocationProgressState & { subscribe: () => void; unsubscribe: () => void } {
   const { autoSubscribe = true } = options;
@@ -101,8 +101,8 @@ export function useLocationProgress(
       autoSubscribe,
       enablePollingFallback: false,
       mapStatusToUnified: statusToUnified,
-      mapUnifiedToProgress: (info: UnifiedProgressInfo | null, id?: string) =>
-        toProgressEvent(info as ExtendedProgressInfo | null, id),
+      mapUnifiedToProgress: (info: UnifiedProgressInfo | null) =>
+        toProgressEvent(info as ExtendedProgressInfo | null, nodeId),
     },
   );
 
@@ -123,7 +123,7 @@ export function useLocationProgress(
     registry.register?.(id, {
       onAuthRequired: async (n) => {
         setOverrideProgress({
-          nodeId: nodeId || n?.context?.nodeId || 'location',
+          nodeId,
           stage: 'auth-required',
           total: 1,
           completed: 0,
@@ -136,7 +136,7 @@ export function useLocationProgress(
       },
       onAuthSuccess: async (_n) => {
         setOverrideProgress({
-          nodeId: nodeId || 'location',
+          nodeId,
           stage: 'resumed',
           total: 1,
           completed: 1,
@@ -149,7 +149,7 @@ export function useLocationProgress(
       },
       onAuthCancelled: async (n) => {
         setOverrideProgress({
-          nodeId: nodeId || 'location',
+          nodeId,
           stage: 'cancelled',
           total: 1,
           completed: 0,

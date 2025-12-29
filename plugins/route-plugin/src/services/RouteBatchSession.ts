@@ -120,7 +120,7 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
             options: task.routeData?.methodOptions,
           };
           const res = await this.generator.generate(pts, config);
-          const line = res.line ?? [];
+          const line = res.lineGeometry ?? [];
           if (line.length >= 2) {
             this.vectorTileFeatures.push({
               type: 'Feature',

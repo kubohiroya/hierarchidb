@@ -109,6 +109,7 @@
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@mui/icons-material": "^7.3.6",
+    "@types/geojson": "^7946.0.14",
     "@types/node": "^20.10.5",
     "typescript": "workspace:^5.9.3"
   },

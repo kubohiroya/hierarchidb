@@ -348,7 +348,10 @@ registry.registerConfigProvider<LocationStepData>({
         optional: false,
         componentFactory: (p: StepProps) => {
           const draft = ensureData(p.data);
-          return <LocationBuildStep draft={draft} nodeId={p.nodeId} onUpdate={p.onChange} />;
+          if (!p.nodeId) {
+            throw new Error('[LocationSteps] nodeId is required for build step');
+          }
+          return <LocationBuildStep draft={draft} nodeId={p.nodeId as NodeId} onUpdate={p.onChange} />;
         },
         validate: (data?: LocationStepData) => isLocationBuildPersisted(data),
         capabilities: {

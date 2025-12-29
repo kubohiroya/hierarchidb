@@ -367,6 +367,23 @@
   - start: 2025-12-29 11:45 JST useBatchProgressState の NodeId 型整合に着手。
   - done: 2025-12-29 11:47 JST toNodeId で変換し WorkerBridge 呼び出しへ渡すよう修正。検証: 未実施。ロールバック: `packages/ui/batch/src/hooks/useBatchProgressState.ts` の差分を revert。
 
+1974) route-plugin: 型エラー（NodeId/BatchSessionStatus 等）の修正（P1）
+- ブランチ: `fix/route-plugin/typecheck-nodeid-batch-status`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/location-plugin/src/**`, `plugins/route-plugin/src/**`, `packages/common/api/src/**`, `packages/ui/**`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] `@hierarchidb/route-plugin` の typecheck が通る
+  - [ ] NodeId の型整合と BatchSessionStatus 返却が一致する
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] useLocationProgress の nodeId を toNodeId で整合
+  - [ ] Location/Route の BatchSessionManager で BatchSessionStatus を返す
+  - [ ] VectorTileRecord 型参照と geojson 型依存を整合
+  - [ ] UI 側の useRouteBatchProgress 引数を NodeId 化
+- ロールバック手順：変更したファイル群の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 12:00 JST route-plugin typecheck エラー修正に着手。
+  - progress: 2025-12-29 12:20 JST useLocationProgress の nodeId 必須化・フォールバック削除、Location/Route の batch session 戻り値と cancelled 整合、RouteBatchSession の lineGeometry 参照修正、geojson 型追加、UI の NodeId 変換を実施。
+
 1966) ISO2/ISO3 型定義の移動指示対応（P1）
 - ブランチ: `refactor/common/iso2-iso3-relocation`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `packages/common/types/src/datasource.ts`, `packages/tools/gen-iso3166-2/src/types.ts`, `plugins/location-plugin/src/**`, `packages/features/location-store/src/index.ts`, `packages/features/route-store/src/index.ts`, `packages/plugin-service-api/src/types/*`, `plugins/shape-plugin/src/common/types/*`, `TASKS.md`
