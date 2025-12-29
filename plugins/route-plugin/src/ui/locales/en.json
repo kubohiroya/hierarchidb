@@ -1,13 +1,13 @@
 {
   "steps": {
     "dataSource": { "label": "Data Source" },
-    "routeConfig": { "label": "Transport & Endpoints" },
+    "routeConfig": { "label": "Route modes" },
     "processing": { "label": "Processing Settings" },
     "build": { "label": "Build" },
     "preview": { "label": "Preview" }
   },
   "messages": {
-    "completeBeforeBuild": "Complete the transport, route type, and endpoint selections before starting a build.",
+    "completeBeforeBuild": "Select route modes by country before starting a build.",
     "batchNotImplemented": "Route batch launch is not yet implemented in this dialog."
   },
   "dataSource": {
@@ -30,8 +30,13 @@
     }
   },
   "routeConfig": {
-    "title": "Transport & Endpoints",
-    "description": "Define how the route is generated and select the start/end locations.",
+    "title": "Route modes by country",
+    "description": "Select which route modes to include for each country. Availability depends on the data source.",
+    "loadingCountries": "Loading countries...",
+    "loadError": "Failed to load country list",
+    "emptyCountries": "No countries available. Please try again later.",
+    "defaultSelectionNote": "Default selections are applied based on the data source.",
+    "customSelectionNote": "Choose the route modes to fetch for each country.",
     "transportModeLabel": "Transport mode",
     "transportModeHelperText": "Choose the primary transport mode for this route.",
     "routeTypeLabel": "Route type",
@@ -105,7 +110,7 @@
     "startLocation": "Start:",
     "endLocation": "End:",
     "notConfigured": "Not configured",
-    "missing": "Provide transport, route type, and start/end locations before building.",
+    "missing": "Select route modes by country before building.",
     "crashHint": "Previous build did not finish. Consider cleaning data before restarting.",
     "start": "When ready, click the Build button below to start the batch session.",
     "title": "Build routes",

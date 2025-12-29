@@ -152,7 +152,6 @@ export class WorkerAuthHandler {
           method: init.method || 'GET',
           errorCode: response.status,
           errorMessage: await this.extractErrorMessage(response),
-          nodeId: context.nodeId,
           pluginType: context.pluginType,
           retryCount,
         });
@@ -273,7 +272,7 @@ export class WorkerAuthHandler {
    * Handle authentication success notification from UI
    */
   private async handleAuthSuccess(notification: AuthSuccessNotification): Promise<void> {
-    const { requestId, newToken, tokenType = 'Bearer', nodeId } = notification.context;
+    const { requestId, newToken, tokenType = 'Bearer' } = notification.context;
     const callback = this.authCallbacks.get(requestId);
 
     if (!callback) {
@@ -288,8 +287,8 @@ export class WorkerAuthHandler {
     this.authCallbacks.delete(requestId);
 
     // Remove session from waiting state
-    if (nodeId) {
-      this.removeWaitingNode(nodeId);
+    if (requestInfo.context.nodeId) {
+      this.removeWaitingNode(requestInfo.context.nodeId);
     }
 
     try {
@@ -344,7 +343,7 @@ export class WorkerAuthHandler {
    * Handle authentication cancellation notification from UI
    */
   private async handleAuthCancelled(notification: AuthCancelledNotification): Promise<void> {
-    const { requestId, reason, nodeId } = notification.context;
+    const { requestId, reason } = notification.context;
     const callback = this.authCallbacks.get(requestId);
 
     if (!callback) {
@@ -359,8 +358,8 @@ export class WorkerAuthHandler {
     this.authCallbacks.delete(requestId);
 
     // Remove session from waiting state
-    if (nodeId) {
-      this.removeWaitingNode(nodeId);
+    if (callback.requestInfo.context.nodeId) {
+      this.removeWaitingNode(callback.requestInfo.context.nodeId);
     }
 
     // Reject the request with cancellation error

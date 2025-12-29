@@ -1,32 +1,16 @@
 /**
  * RouteSelectionStep - Step 3 of route creation dialog.
- * Configures transport/method and selects start/end locations from sibling location nodes.
+ * Selects route modes per country, aligned with LocationSelectionStep UI.
  */
 
 import type React from 'react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  Alert,
-  Autocomplete,
-  Box,
-  CircularProgress,
-  Divider,
-  Grid,
-  MenuItem,
-  TextField,
-  Typography,
-} from '@mui/material';
-import { findRelatedNodesByPriority } from '@hierarchidb/common-api';
-import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
-import { useWorkerAPI } from '@hierarchidb/ui-worker-provider';
-import type {
-  RouteEntity,
-  RouteGenerationMethod,
-  RouteGenerationOptions,
-  RouteUpdaterPayload,
-} from '../../../common/entities/RouteEntity.js';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { Alert, Box, Typography } from '@mui/material';
+import type { RouteEntity, RouteUpdaterPayload } from '../../../common/entities/RouteEntity.js';
 import { useTranslation } from '../../../common/i18n/index.js';
 import { getRouteUpdaterPayload } from '../../../common/utils/draft.js';
+import { CountryMatrixSelector, useIsoCountries, type MatrixConfig, type MatrixSelection } from '@hierarchidb/ui-country-select';
+import { ROUTE_MODES, type RouteMode } from '@hierarchidb/route-store';
 
 export interface RouteSelectionStepProps {
   draft: RouteUpdaterPayload;
@@ -37,95 +21,58 @@ export interface RouteSelectionStepProps {
   parentId?: string;
 }
 
-const TRANSPORT_MODE_OPTIONS = [
-  {
-    id: 'air',
-    labelKey: 'transportModes.air',
-    baseMode: 'air',
-    detail: { transportSelection: 'air' },
-  },
-  {
-    id: 'sea',
-    labelKey: 'transportModes.sea',
-    baseMode: 'sea',
-    detail: { transportSelection: 'sea' },
-  },
-  {
-    id: 'rail',
-    labelKey: 'transportModes.rail',
-    baseMode: 'rail',
-    detail: { transportSelection: 'rail', railType: 'conventional' },
-  },
-  {
-    id: 'high-speed-rail',
-    labelKey: 'transportModes.highSpeedRail',
-    baseMode: 'rail',
-    detail: { transportSelection: 'high-speed-rail', railType: 'high-speed' },
-  },
-  {
-    id: 'highway',
-    labelKey: 'transportModes.highway',
-    baseMode: 'road',
-    detail: { transportSelection: 'highway', roadType: 'highway' },
-  },
-  {
-    id: 'road',
-    labelKey: 'transportModes.road',
-    baseMode: 'road',
-    detail: { transportSelection: 'road', roadType: 'general' },
-  },
-] as const;
+type SelectionColumn = {
+  id: RouteMode;
+  labelKey: string;
+};
 
-type TransportOption = typeof TRANSPORT_MODE_OPTIONS[number];
-
-const ROUTE_METHOD_OPTIONS: Array<{ id: RouteGenerationMethod; labelKey: string }> = [
-  { id: 'direct', labelKey: 'routeGeneration.direct' },
-  { id: 'great_circle', labelKey: 'routeGeneration.greatCircle' },
-  { id: 'searoute', labelKey: 'routeGeneration.searoute' },
-  { id: 'osm_route', labelKey: 'routeGeneration.osm' },
+const ROUTE_MODE_COLUMNS: SelectionColumn[] = [
+  { id: ROUTE_MODES.AIRWAY, labelKey: 'transportModes.air' },
+  { id: ROUTE_MODES.WATERWAY, labelKey: 'transportModes.sea' },
+  { id: ROUTE_MODES.H_RAILWAY, labelKey: 'transportModes.highSpeedRail' },
+  { id: ROUTE_MODES.RAILWAY, labelKey: 'transportModes.rail' },
+  { id: ROUTE_MODES.ROAD, labelKey: 'transportModes.road' },
 ];
 
-const getTransportOption = (draft: Partial<RouteEntity>): TransportOption | undefined => {
-  const selection = draft.transportSelection;
-  if (typeof selection === 'string') {
-    return TRANSPORT_MODE_OPTIONS.find((option) => option.id === selection);
+type ModePolicy = {
+  allowedModes: RouteMode[];
+  defaultChecked: Set<RouteMode> | null;
+};
+
+const resolveModePolicy = (source?: string | null): ModePolicy => {
+  switch (source) {
+    case 'openflights':
+      return { allowedModes: [ROUTE_MODES.AIRWAY], defaultChecked: new Set([ROUTE_MODES.AIRWAY]) };
+    case 'searoute':
+    case 'searoute-js':
+    case 'naturalearth-rivers':
+      return { allowedModes: [ROUTE_MODES.WATERWAY], defaultChecked: new Set([ROUTE_MODES.WATERWAY]) };
+    case 'openstreetmap':
+      return { allowedModes: [ROUTE_MODES.ROAD], defaultChecked: new Set([ROUTE_MODES.ROAD]) };
+    case 'transitland':
+      return { allowedModes: [ROUTE_MODES.H_RAILWAY, ROUTE_MODES.RAILWAY], defaultChecked: new Set([ROUTE_MODES.H_RAILWAY, ROUTE_MODES.RAILWAY]) };
+    case 'ide-gsm':
+    case 'custom':
+    default:
+      return { allowedModes: ROUTE_MODE_COLUMNS.map((col) => col.id), defaultChecked: null };
   }
-  const baseMode = draft.transportMode;
-  return TRANSPORT_MODE_OPTIONS.find((option) => option.baseMode === baseMode);
 };
 
 export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
   draft: draftProp,
   onUpdate,
   onValidationChange,
-  mode,
-  nodeId,
-  parentId,
+  mode: _mode,
+  nodeId: _nodeId,
+  parentId: _parentId,
 }) => {
-  const { t } = useTranslation();
-  const { api, loading: apiLoading, error: apiError } = useWorkerAPI();
+  const { t, translations } = useTranslation();
+  const iso = useIsoCountries();
   const draft = useMemo(() => getRouteUpdaterPayload(draftProp), [draftProp]);
-  const [locations, setLocations] = useState<TreeNode[]>([]);
-  const [loadingLocations, setLoadingLocations] = useState(false);
-  const [locationError, setLocationError] = useState<string | null>(null);
-
-  const transportOption = useMemo(() => getTransportOption(draft), [draft]);
-  const generationMethod = (draft.generationMethod as RouteGenerationMethod | undefined) ?? 'direct';
-  const generationOptions = useMemo<RouteGenerationOptions>(
-    () => draft.generationOptions ?? {},
-    [draft.generationOptions],
-  );
-
-  const locationOptions = useMemo(() => {
-    return [...locations].sort((a, b) => {
-      const nameA = a.metadata?.name ?? '';
-      const nameB = b.metadata?.name ?? '';
-      return nameA.localeCompare(nameB);
-    });
-  }, [locations]);
-
-  const selectedStart = locationOptions.find((loc) => loc.id === draft.startLocationId) ?? null;
-  const selectedEnd = locationOptions.find((loc) => loc.id === draft.endLocationId) ?? null;
+  const dataSourceName = draft.dataSourceName ?? null;
+  const policy = useMemo(() => resolveModePolicy(dataSourceName), [dataSourceName]);
+  const allowedModeSet = useMemo(() => new Set(policy.allowedModes), [policy.allowedModes]);
+  const lastDataSourceRef = useRef<string | null>(dataSourceName);
 
   const emitUpdate = useCallback(
     (updates: Partial<RouteEntity>) => {
@@ -136,329 +83,188 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
     [onUpdate],
   );
 
-  useEffect(() => {
-    const isValid = Boolean(
-      draft.transportMode &&
-      draft.generationMethod &&
-      draft.startLocationId &&
-      draft.endLocationId,
-    );
-    onValidationChange(isValid);
-  }, [draft.endLocationId, draft.generationMethod, draft.startLocationId, draft.transportMode, onValidationChange]);
+  const selectionByCountries = useMemo(() => draft.selectedArrayByCountries ?? {}, [draft.selectedArrayByCountries]);
 
-  useEffect(() => {
-    let active = true;
-    const loadLocations = async () => {
-      if (!api) return;
-      setLoadingLocations(true);
-      setLocationError(null);
-      try {
-        const query = await api.getQueryAPI();
-        let resolvedParentId: NodeId | null = null;
+  const matrixConfig: MatrixConfig = useMemo(() => ({
+    columns: ROUTE_MODE_COLUMNS.map((mode) => ({
+      id: mode.id,
+      label: t(mode.labelKey, mode.id),
+      description: t(mode.labelKey, mode.id),
+      type: 'custom',
+      width: 150,
+    })),
+    virtualization: {
+      rowHeight: 40,
+      overscan: 8,
+    },
+  }), [t]);
 
-        if (mode === 'create' && parentId) {
-          resolvedParentId = parentId as NodeId;
-        } else if (nodeId) {
-          const node = await query.getNode(nodeId as NodeId);
-          resolvedParentId = node?.parentId ?? null;
-        }
-
-        if (!resolvedParentId) {
-          setLocations([]);
-          return;
-        }
-
-        const nextLocations = await findRelatedNodesByPriority(query, {
-          parentId: resolvedParentId,
-          nodeTypes: ['location' as NodeType],
-        });
-
-        if (active) {
-          setLocations(nextLocations);
-        }
-      } catch (error) {
-        if (active) {
-          setLocationError(error instanceof Error ? error.message : t('routeConfig.locationLoadError', 'Failed to load locations.'));
-        }
-      } finally {
-        if (active) {
-          setLoadingLocations(false);
-        }
+  const deepEqualSelectionRecord = useCallback((
+    current: Record<string, boolean[]>,
+    next: Record<string, boolean[]>,
+  ): boolean => {
+    if (iso.status !== 'ready') return true;
+    for (const country of iso.countries) {
+      const rowA = current[country.code] ?? [];
+      const rowB = next[country.code] ?? [];
+      if (rowA.length !== rowB.length) return false;
+      for (let j = 0; j < rowA.length; j += 1) {
+        if (rowA[j] !== rowB[j]) return false;
       }
-    };
+    }
+    return true;
+  }, [iso.countries, iso.status]);
 
-    void loadLocations();
+  const selectionMatrixSource = useMemo(() => {
+    if (iso.status !== 'ready') return [];
+    return iso.countries.map((country) => selectionByCountries[country.code] ?? []);
+  }, [iso, selectionByCountries]);
 
-    return () => {
-      active = false;
-    };
-  }, [api, mode, nodeId, parentId, t]);
+  const selectionRecordSource = useMemo(() => {
+    if (iso.status !== 'ready') return {};
+    return selectionByCountries;
+  }, [iso, selectionByCountries]);
 
-  const handleTransportChange = useCallback(
-    (value: string) => {
-      const option = TRANSPORT_MODE_OPTIONS.find((item) => item.id === value) ?? TRANSPORT_MODE_OPTIONS[0];
-      const detail = option.detail;
-      emitUpdate({
-        transportMode: option.baseMode as RouteEntity['transportMode'],
-        transportModes: [option.baseMode] as RouteEntity['transportModes'],
-        transportSelection: detail.transportSelection,
-        railType: 'railType' in detail ? detail.railType : undefined,
-        roadType: 'roadType' in detail ? detail.roadType : undefined,
+  const currentSelections: MatrixSelection[] = useMemo(() => {
+    if (iso.status !== 'ready') return [];
+    return iso.countries.map((country, index) => {
+      const row = selectionMatrixSource[index] ?? [];
+      const selections: Record<string, boolean> = {};
+      matrixConfig.columns.forEach((col, colIdx) => {
+        selections[col.id] = Boolean(row[colIdx]);
       });
-    },
-    [emitUpdate],
-  );
+      return { countryCode: country.code, selections };
+    });
+  }, [iso, selectionMatrixSource, matrixConfig.columns]);
 
-  const handleMethodChange = useCallback(
-    (value: RouteGenerationMethod) => {
-      emitUpdate({
-        generationMethod: value,
+  const normalizeSelectionRecord = useCallback((applyDefaults: boolean) => {
+    if (iso.status !== 'ready') return {};
+    const normalized: Record<string, boolean[]> = {};
+    const defaultChecked = applyDefaults ? policy.defaultChecked : null;
+    iso.countries.forEach((country) => {
+      const row = selectionByCountries[country.code] ?? [];
+      normalized[country.code] = matrixConfig.columns.map((col, colIdx) => {
+        if (!allowedModeSet.has(col.id as RouteMode)) return false;
+        if (defaultChecked) return defaultChecked.has(col.id as RouteMode);
+        return Boolean(row[colIdx]);
       });
-    },
-    [emitUpdate],
-  );
+    });
+    return normalized;
+  }, [allowedModeSet, iso.countries, iso.status, matrixConfig.columns, policy.defaultChecked, selectionByCountries]);
 
-  const handleGenerationOptionChange = useCallback(
-    (updates: Partial<RouteGenerationOptions>) => {
-      const nextOptions: RouteGenerationOptions = {
-        ...generationOptions,
-        ...updates,
-      };
-      emitUpdate({ generationOptions: nextOptions });
+  const hasAnySelection = useMemo(() => {
+    if (iso.status !== 'ready') return false;
+    return iso.countries.some((country) => {
+      const row = selectionByCountries[country.code] ?? [];
+      return row.some(Boolean);
+    });
+  }, [iso.countries, iso.status, selectionByCountries]);
+
+  useEffect(() => {
+    if (iso.status !== 'ready') return;
+    const dataSourceChanged = lastDataSourceRef.current !== dataSourceName;
+    if (dataSourceChanged) {
+      lastDataSourceRef.current = dataSourceName;
+    }
+    const shouldApplyDefaults = Boolean(policy.defaultChecked && (dataSourceChanged || !hasAnySelection));
+    const normalized = normalizeSelectionRecord(shouldApplyDefaults);
+    if (!deepEqualSelectionRecord(selectionRecordSource, normalized)) {
+      emitUpdate({ selectedArrayByCountries: normalized });
+    }
+  }, [
+    dataSourceName,
+    deepEqualSelectionRecord,
+    emitUpdate,
+    hasAnySelection,
+    iso.status,
+    normalizeSelectionRecord,
+    policy.defaultChecked,
+    selectionRecordSource,
+  ]);
+
+  const applySelections = useCallback(
+    (nextSelections: MatrixSelection[]) => {
+      if (iso.status !== 'ready') return;
+      const normalized: Record<string, boolean[]> = {};
+      iso.countries.forEach((country) => {
+        const entry = nextSelections.find((sel) => sel.countryCode === country.code);
+        const selections = entry?.selections ?? {};
+        normalized[country.code] = matrixConfig.columns.map((col) => {
+          const allowed = allowedModeSet.has(col.id as RouteMode);
+          return allowed ? Boolean(selections[col.id]) : false;
+        });
+      });
+      if (!deepEqualSelectionRecord(selectionRecordSource, normalized)) {
+        emitUpdate({ selectedArrayByCountries: normalized });
+      }
     },
-    [emitUpdate, generationOptions],
+    [allowedModeSet, deepEqualSelectionRecord, emitUpdate, iso.countries, iso.status, matrixConfig.columns, selectionRecordSource],
   );
 
   useEffect(() => {
-    if (!draft.transportMode) {
-      handleTransportChange(transportOption?.id ?? TRANSPORT_MODE_OPTIONS[0].id);
-    }
-  }, [draft.transportMode, handleTransportChange, transportOption]);
+    const isValid = hasAnySelection;
+    onValidationChange(isValid);
+  }, [hasAnySelection, onValidationChange]);
 
-  useEffect(() => {
-    if (!draft.generationMethod) {
-      handleMethodChange('direct');
-    }
-  }, [draft.generationMethod, handleMethodChange]);
+  if (iso.status === 'loading') {
+    return (
+      <Box>
+        <Alert severity="info">{t('routeConfig.loadingCountries', 'Loading countries...')}</Alert>
+      </Box>
+    );
+  }
+
+  if (iso.status === 'error') {
+    const message = 'message' in iso ? iso.message : '';
+    return (
+      <Box>
+        <Alert severity="error">
+          {t('routeConfig.loadError', 'Failed to load country list')}: {message}
+        </Alert>
+      </Box>
+    );
+  }
+
+  if (iso.status !== 'ready' || iso.countries.length === 0) {
+    return (
+      <Box>
+        <Alert severity="warning">
+          {t('routeConfig.emptyCountries', 'No countries available. Please try again later.')}
+        </Alert>
+      </Box>
+    );
+  }
 
   return (
-    <Box sx={{ width: '100%' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       <Typography variant="h6" gutterBottom>
-        {t('routeConfig.title', 'Transport & Endpoints')}
-      </Typography>
-
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        {t('routeConfig.description', 'Define how the route is generated and select the start/end locations.')}
-      </Typography>
-
-      <Grid container spacing={3} columns={{ xs: 12 }}>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <TextField
-            select
-            fullWidth
-            label={t('routeConfig.transportModeLabel', 'Transport mode')}
-            value={transportOption?.id ?? TRANSPORT_MODE_OPTIONS[0].id}
-            onChange={(event) => handleTransportChange(event.target.value)}
-            helperText={t('routeConfig.transportModeHelperText', 'Choose the primary transport mode for this route.')}
-          >
-            {TRANSPORT_MODE_OPTIONS.map((option) => (
-              <MenuItem key={option.id} value={option.id}>
-                {t(option.labelKey, option.id)}
-              </MenuItem>
-            ))}
-          </TextField>
-        </Grid>
-
-        <Grid size={{ xs: 12, md: 6 }}>
-          <TextField
-            select
-            fullWidth
-            label={t('routeConfig.routeTypeLabel', 'Route type')}
-            value={generationMethod}
-            onChange={(event) => handleMethodChange(event.target.value as RouteGenerationMethod)}
-            helperText={t('routeConfig.routeTypeHelperText', 'Choose the method used to generate the route geometry.')}
-          >
-            {ROUTE_METHOD_OPTIONS.map((option) => (
-              <MenuItem key={option.id} value={option.id}>
-                {t(option.labelKey, option.id)}
-              </MenuItem>
-            ))}
-          </TextField>
-        </Grid>
-      </Grid>
-
-      {(generationMethod === 'searoute' || generationMethod === 'osm_route') && (
-        <Box sx={{ mt: 3 }}>
-          <Typography variant="subtitle1" gutterBottom>
-            {generationMethod === 'searoute'
-              ? t('routeConfig.searouteSettings', 'Searoute settings')
-              : t('routeConfig.osmSettings', 'OpenStreetMap settings')}
-          </Typography>
-          <Grid container spacing={2} columns={{ xs: 12 }}>
-            {generationMethod === 'searoute' && (
-              <>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    fullWidth
-                    label={t('routeConfig.searoutePreferredChannels', 'Preferred channels')}
-                    value={(generationOptions.preferredChannels ?? []).join(', ')}
-                    onChange={(event) =>
-                      handleGenerationOptionChange({
-                        preferredChannels: event.target.value
-                          .split(',')
-                          .map((value) => value.trim())
-                          .filter(Boolean),
-                      })
-                    }
-                    helperText={t('routeConfig.searoutePreferredChannelsHelp', 'Comma-separated channel names (optional).')}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    select
-                    fullWidth
-                    label={t('routeConfig.searouteAvoidCanals', 'Avoid canals')}
-                    value={generationOptions.avoidCanals ? 'yes' : 'no'}
-                    onChange={(event) =>
-                      handleGenerationOptionChange({ avoidCanals: event.target.value === 'yes' })
-                    }
-                  >
-                    <MenuItem value="no">{t('routeConfig.no', 'No')}</MenuItem>
-                    <MenuItem value="yes">{t('routeConfig.yes', 'Yes')}</MenuItem>
-                  </TextField>
-                </Grid>
-              </>
-            )}
-
-            {generationMethod === 'osm_route' && (
-              <>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    select
-                    fullWidth
-                    label={t('routeConfig.osmProfile', 'Routing profile')}
-                    value={generationOptions.osmProfile ?? 'car'}
-                    onChange={(event) =>
-                      handleGenerationOptionChange({ osmProfile: event.target.value as RouteGenerationOptions['osmProfile'] })
-                    }
-                  >
-                    <MenuItem value="car">{t('routeConfig.osmProfileCar', 'Car')}</MenuItem>
-                    <MenuItem value="bike">{t('routeConfig.osmProfileBike', 'Bike')}</MenuItem>
-                    <MenuItem value="foot">{t('routeConfig.osmProfileFoot', 'Foot')}</MenuItem>
-                    <MenuItem value="truck">{t('routeConfig.osmProfileTruck', 'Truck')}</MenuItem>
-                  </TextField>
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    fullWidth
-                    label={t('routeConfig.osrmBaseUrl', 'OSRM base URL')}
-                    value={generationOptions.osrmBaseUrl ?? ''}
-                    onChange={(event) => handleGenerationOptionChange({ osrmBaseUrl: event.target.value })}
-                    helperText={t('routeConfig.osrmBaseUrlHelp', 'Optional override for the OSRM endpoint.')}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    select
-                    fullWidth
-                    label={t('routeConfig.osmAvoidTolls', 'Avoid tolls')}
-                    value={generationOptions.avoidTolls ? 'yes' : 'no'}
-                    onChange={(event) =>
-                      handleGenerationOptionChange({ avoidTolls: event.target.value === 'yes' })
-                    }
-                  >
-                    <MenuItem value="no">{t('routeConfig.no', 'No')}</MenuItem>
-                    <MenuItem value="yes">{t('routeConfig.yes', 'Yes')}</MenuItem>
-                  </TextField>
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    select
-                    fullWidth
-                    label={t('routeConfig.osmAvoidHighways', 'Avoid highways')}
-                    value={generationOptions.avoidHighways ? 'yes' : 'no'}
-                    onChange={(event) =>
-                      handleGenerationOptionChange({ avoidHighways: event.target.value === 'yes' })
-                    }
-                  >
-                    <MenuItem value="no">{t('routeConfig.no', 'No')}</MenuItem>
-                    <MenuItem value="yes">{t('routeConfig.yes', 'Yes')}</MenuItem>
-                  </TextField>
-                </Grid>
-              </>
-            )}
-          </Grid>
-        </Box>
-      )}
-
-      <Divider sx={{ my: 3 }} />
-
-      <Typography variant="subtitle1" gutterBottom>
-        {t('routeConfig.locationSelectionTitle', 'Start and end locations')}
+        {t('routeConfig.title', 'Route mode selection')}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        {t('routeConfig.locationSelectionDescription', 'Choose from sibling locations or descendant locations under sibling folders.')}
+        {t('routeConfig.description', 'Select route modes by country. Availability depends on the data source.')}
       </Typography>
-
-      {(apiLoading || loadingLocations) && (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-          <CircularProgress size={20} />
-          <Typography variant="body2">{t('routeConfig.loadingLocations', 'Loading locations...')}</Typography>
-        </Box>
+      <CountryMatrixSelector
+        countries={iso.countries}
+        matrixConfig={matrixConfig}
+        selections={currentSelections}
+        onSelectionsChange={applySelections}
+        showAlphabetIndex
+        showRegionIndex
+        rowHeight={40}
+        isCellEnabled={(_, columnId) => allowedModeSet.has(columnId as RouteMode)}
+        height="100%"
+        maxHeight={undefined}
+      />
+      {policy.defaultChecked && (
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+          {t('routeConfig.defaultSelectionNote', 'Default selections are applied based on the data source.')}
+        </Typography>
       )}
-
-      {apiError && (
-        <Alert severity="warning" sx={{ mb: 2 }}>
-          {t('routeConfig.locationApiUnavailable', 'Worker API is not ready yet. Locations may be unavailable.')}
-        </Alert>
+      {translations && dataSourceName && !policy.defaultChecked && (
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+          {t('routeConfig.customSelectionNote', 'Choose the route modes to fetch for each country.')}
+        </Typography>
       )}
-
-      {locationError && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {locationError}
-        </Alert>
-      )}
-
-      {!loadingLocations && !locationError && locationOptions.length === 0 && (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          {t('routeConfig.locationEmpty', 'No sibling locations are available yet.')}
-        </Alert>
-      )}
-
-      <Grid container spacing={2} columns={{ xs: 12 }}>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Autocomplete
-            options={locationOptions}
-            value={selectedStart}
-            getOptionLabel={(option) => option.metadata?.name ?? String(option.id)}
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-            onChange={(_, value) => emitUpdate({ startLocationId: (value?.id as NodeId | undefined) })}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label={t('routeConfig.startLocationLabel', 'Start location')}
-                placeholder={t('routeConfig.locationPlaceholder', 'Select a location')}
-              />
-            )}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Autocomplete
-            options={locationOptions}
-            value={selectedEnd}
-            getOptionLabel={(option) => option.metadata?.name ?? String(option.id)}
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-            onChange={(_, value) => emitUpdate({ endLocationId: (value?.id as NodeId | undefined) })}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label={t('routeConfig.endLocationLabel', 'End location')}
-                placeholder={t('routeConfig.locationPlaceholder', 'Select a location')}
-              />
-            )}
-          />
-        </Grid>
-      </Grid>
     </Box>
   );
 };

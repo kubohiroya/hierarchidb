@@ -9,6 +9,7 @@ import {
   type ShapeEntity,
   type SelectedArrayByCountries,
 } from '../../common/types/index.js';
+import { toNodeId } from '@hierarchidb/common-types';
 import { shapeDB } from '../../services/database/ShapeDB.js';
 import { ShapeDataSourceStep } from './steps/ShapeDataSourceStep.js';
 import { ShapeProcessingSettingsStep } from './steps/ShapeProcessingSettingsStep.js';
@@ -78,14 +79,14 @@ const resolveShapeNodeKey = (data?: Partial<ShapeEntity>): string | null => {
 const hasPersistedVectorTiles = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
   const nodeKey = resolveShapeNodeKey(data);
   if (!nodeKey) return false;
-  const count = await shapeDB.vectorTiles.where('nodeId').equals(nodeKey).count();
+  const count = await shapeDB.vectorTiles.where('nodeId').equals(toNodeId(nodeKey)).count();
   return count > 0;
 };
 
 const hasCompletedBatchSession = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
   const nodeId = data?.nodeId;
   if (!nodeId) return false;
-  const session = await shapeDB.batchSessions.get(String(nodeId));
+  const session = await shapeDB.batchSessions.get(nodeId);
   return session?.status === 'completed';
 };
 

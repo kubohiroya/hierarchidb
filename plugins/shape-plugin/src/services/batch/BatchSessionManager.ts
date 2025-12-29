@@ -11,7 +11,7 @@
 
 import type { NodeId } from '@hierarchidb/common-types';
 import { BaseBatchSessionManager } from '@hierarchidb/batch-runtime-services';
-import type { BatchProgressEvent } from '@hierarchidb/common-api';
+import type { BatchProgressEvent, BatchSessionStatus } from '@hierarchidb/common-api';
 import { type BatchSessionRecord, type BatchTaskRecord, shapeDB } from '../database/ShapeDB.js';
 import { SessionController } from './SessionController.js';
 import { ShapeBatchSession } from './ShapeBatchSession.js';

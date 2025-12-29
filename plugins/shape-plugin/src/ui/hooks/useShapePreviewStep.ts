@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTheme } from '@mui/material/styles';
 import type { DownloadTaskPayload, ShapeEntity } from '../../common/types/index.js';
+import { toNodeId } from '@hierarchidb/common-types';
 import { normalizeDataSourceName } from '../../common/types/index.js';
 import { useTranslation } from '../i18n.js';
 import { isShapePreviewMetadataEnabled } from '../../common/config/previewFlags.js';
@@ -80,7 +81,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
   const previewDraft = data as ShapePreviewDraft;
   const tilesUrl = previewDraft.tilesUrl ?? previewDraft.tilesEndpoint ?? '';
   const tilesLayer = previewDraft.tilesLayer ?? 'layer0';
-  const activeNodeId = previewDraft.nodeId ?? null;
+  const activeNodeId = previewDraft.nodeId ? toNodeId(String(previewDraft.nodeId)) : null;
   const nodeKey = activeNodeId;
   const [persistedStatus, setPersistedStatus] = useState<string | null>(null);
   const [statusLoaded, setStatusLoaded] = useState(false);
@@ -117,7 +118,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
       };
     }
     setStatusLoaded(false);
-    shapeDB.batchSessions.get(String(activeNodeId)).then((session) => {
+    shapeDB.batchSessions.get(activeNodeId).then((session) => {
       if (cancelled) return;
       setPersistedStatus(session?.status ?? null);
       setStatusLoaded(true);

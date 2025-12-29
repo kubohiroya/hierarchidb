@@ -64,7 +64,7 @@ import {
   Train as TrainIcon,
 } from '@mui/icons-material';
 import { useLoaderData, useNavigate, useParams, useSearch } from '@tanstack/react-router';
-import { useAtom } from 'jotai';
+import { useAtom, useSetAtom } from 'jotai';
 import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import useGeolocationImport from 'react-hook-geolocation';
 import { ensureWorkerAPI } from '@hierarchidb/ui-worker-client';
@@ -82,11 +82,15 @@ import {
 } from '../loaders/mapLoader.js';
 import {
   mapHoverMatchAtom,
+  mapLayerInfoAtom,
   mapSearchMatchesAtom,
   mapSearchTargetSelectionAtom,
   mapSearchTextAtom,
   mapSelectedMatchAtom,
+  mapViewportFeatureIdsAtom,
   type MapHighlightEntry,
+  type MapLayerInfo,
+  type MapViewportFeatureIds,
   type MapSearchTargetId,
 } from '../../state/mapSearch.atoms.js';
 import { ModelessDialogManager } from './modeless/ModelessDialogManager.js';
@@ -365,6 +369,8 @@ export default function MapPage() {
   const [searchMatches, setSearchMatches] = useAtom(mapSearchMatchesAtom);
   const [hoverMatch, setHoverMatch] = useAtom(mapHoverMatchAtom);
   const [selectedMatch, setSelectedMatch] = useAtom(mapSelectedMatchAtom);
+  const setMapLayerInfo = useSetAtom(mapLayerInfoAtom);
+  const setViewportFeatureIds = useSetAtom(mapViewportFeatureIdsAtom);
   const [searchSettingsOpen, setSearchSettingsOpen] = useState(false);
   const [initialViewState, setInitialViewState] = useState<MapViewState>(() => ({
     longitude: loaderViewState.longitude,
@@ -394,6 +400,29 @@ export default function MapPage() {
   const lastUpdateRef = useRef<string>('');
   const mapInstanceRef = useRef<MapLibreMapInstance | null>(null);
   const exportControlRef = useRef<MaplibreExportControl | null>(null);
+  const { list: layerInfoList, byId: layerInfoById, bySource: layerInfoBySource } = useMemo(() => {
+    const list: MapLayerInfo[] = [];
+    const byId = new Map<string, MapLayerInfo>();
+    const bySource = new Map<string, MapLayerInfo>();
+    vectorLayers.forEach((layer) => {
+      const layerId = layer.layerConfig?.layerId ?? `resource-layer-${layer.nodeId}`;
+      const sourceId = layer.layerConfig?.sourceId ?? `resource-source-${layer.nodeId}`;
+      const info = {
+        nodeId: layer.nodeId,
+        nodeType: layer.nodeType,
+        layerId,
+        sourceId,
+      };
+      list.push(info);
+      byId.set(layerId, info);
+      bySource.set(sourceId, info);
+    });
+    return { list, byId, bySource };
+  }, [vectorLayers]);
+
+  useEffect(() => {
+    setMapLayerInfo(layerInfoList);
+  }, [layerInfoList, setMapLayerInfo]);
 
   useEffect(() => {
     setInitialViewState({
@@ -860,12 +889,12 @@ export default function MapPage() {
         ],
         'line-blur': [
           'case',
+          hasHover,
+          1.4,
           hasSearch,
           1.2,
-          hasHover,
-          0.7,
           hasSelected,
-          0.4,
+          0.6,
           styleOverridesByType.line?.['line-blur'] ?? 0,
         ],
       },
@@ -893,12 +922,12 @@ export default function MapPage() {
         ],
         'circle-blur': [
           'case',
+          hasHover,
+          0.8,
           hasSearch,
           0.6,
-          hasHover,
-          0.35,
           hasSelected,
-          0.2,
+          0.4,
           styleOverridesByType.circle?.['circle-blur'] ?? 0,
         ],
         'circle-stroke-color': colorExpression(styleOverridesByType.circle?.['circle-stroke-color'] ?? baseCircleColor),
@@ -916,13 +945,75 @@ export default function MapPage() {
     } satisfies LayerStyleOverrides;
   }, [styleOverridesByType, theme.palette.primary.main]);
 
+  const resolveLayerMeta = useCallback(
+    (feature?: MapLibreGeoJSONFeature | null) => {
+      if (!feature) return undefined;
+      const layerId = typeof feature.layer?.id === 'string' ? feature.layer.id : undefined;
+      if (layerId) {
+        const byId = layerInfoById.get(layerId);
+        if (byId) return byId;
+      }
+      const sourceId = typeof feature.source === 'string' ? feature.source : undefined;
+      return sourceId ? layerInfoBySource.get(sourceId) : undefined;
+    },
+    [layerInfoById, layerInfoBySource],
+  );
+
   const buildHighlightEntry = useCallback((feature?: MapLibreGeoJSONFeature | null): MapHighlightEntry | null => {
     if (!feature) return null;
     const id = defaultFeatureIdAccessor(feature);
     const source = typeof feature.source === 'string' ? feature.source : undefined;
     if (id === undefined || id === null || !source) return null;
-    return { source, id };
-  },[]);
+    const layerId = typeof feature.layer?.id === 'string' ? feature.layer.id : undefined;
+    const meta = resolveLayerMeta(feature);
+    return {
+      source,
+      id,
+      layerId,
+      nodeId: meta?.nodeId,
+      nodeType: meta?.nodeType,
+    };
+  },[resolveLayerMeta]);
+
+  const updateViewportFeatures = useCallback(() => {
+    if (!mapInstance) return;
+    const canvas = mapInstance.getCanvas();
+    let features: MapLibreGeoJSONFeature[] = [];
+    try {
+      features = mapInstance.queryRenderedFeatures(
+        [
+          [0, 0],
+          [canvas.width, canvas.height],
+        ],
+        { layers: highlightLayerIds },
+      ) as MapLibreGeoJSONFeature[];
+    } catch (error) {
+      console.debug('[MapPage] Failed to query viewport features', error);
+      return;
+    }
+
+    const idsByLayer = new Map<string, Set<string | number>>();
+    layerInfoById.forEach((_info, layerId) => {
+      idsByLayer.set(layerId, new Set());
+    });
+
+    for (const feature of features) {
+      const layerId = typeof feature.layer?.id === 'string' ? feature.layer.id : undefined;
+      if (!layerId) continue;
+      if (!layerInfoById.has(layerId)) continue;
+      const id = defaultFeatureIdAccessor(feature);
+      if (id === undefined || id === null) continue;
+      idsByLayer.get(layerId)?.add(id);
+    }
+
+    const next: MapViewportFeatureIds = {};
+    layerInfoById.forEach((info, layerId) => {
+      if (!next[info.nodeId]) next[info.nodeId] = {};
+      next[info.nodeId]![info.nodeType] = Array.from(idsByLayer.get(layerId) ?? []);
+    });
+
+    setViewportFeatureIds(next);
+  }, [highlightLayerIds, layerInfoById, mapInstance, setViewportFeatureIds]);
 
   const clearHighlightKey = useCallback(
     (entry: MapHighlightEntry | null, key: 'hdbSearch' | 'hdbHover' | 'hdbSelected') => {
@@ -1055,6 +1146,18 @@ export default function MapPage() {
       canvas.removeEventListener('mouseleave', handleMouseLeave);
     };
   }, [buildHighlightEntry, highlightLayerIds, mapInstance, setHoverMatch]);
+
+  useEffect(() => {
+    if (!mapInstance) return;
+    updateViewportFeatures();
+    const handleViewportChange = () => updateViewportFeatures();
+    mapInstance.on('moveend', handleViewportChange);
+    mapInstance.on('zoomend', handleViewportChange);
+    return () => {
+      mapInstance.off('moveend', handleViewportChange);
+      mapInstance.off('zoomend', handleViewportChange);
+    };
+  }, [mapInstance, updateViewportFeatures]);
 
   useEffect(() => {
     if (!mapInstance) return;

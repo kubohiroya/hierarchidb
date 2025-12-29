@@ -304,8 +304,6 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
                                         }: GenericDataGridProps<T>): ReactElement {
   const [showFilters, setShowFilters] = useState(false);
   const controlId = React.useId();
-  void onRowHover; // keep optional callbacks referenced to satisfy noUnusedParameters
-  void onRowLeave;
   const [localSearchValue, setLocalSearchValue] = useState(searchValue);
 
   // Virtual scrolling setup
@@ -661,12 +659,14 @@ export function GenericDataGrid<T extends RowRecord = RowRecord>({
                 : undefined;
 
               return (
-                  <TableRow
+                <TableRow
                   key={rowId}
                   hover={hover}
                   selected={state.selected}
                   onClick={() => !state.disabled && onRowClick?.(row)}
                   onDoubleClick={() => !state.disabled && onRowDoubleClick?.(row)}
+                  onMouseEnter={() => !state.disabled && onRowHover?.(row, rowId)}
+                  onMouseLeave={() => !state.disabled && onRowLeave?.(row, rowId)}
                   className={rowClassName?.(state)}
                   sx={sxValue}
                   style={rowInlineStyle}

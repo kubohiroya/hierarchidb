@@ -4,7 +4,7 @@ import type { DownloadBatchConfig, BatchConfig, ShapeEntity } from '../../common
 import { DEFAULT_PROCESSING_CONFIG, mergeBatchConfig } from '../../common/types/index.js';
 import { getEphemeralShapeDB } from '../../services/database/EphemeralShapeDB.js';
 import { shapeDB } from '../../services/database/ShapeDB.js';
-import type { NodeId } from '@hierarchidb/common-types';
+import { toNodeId, type NodeId } from '@hierarchidb/common-types';
 import { notify } from '@hierarchidb/components';
 import { useTranslation } from '../i18n.js';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
@@ -27,7 +27,7 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
 
   const db = getEphemeralShapeDB();
   const resolvedNodeId = nodeId ?? (draft as { nodeId?: NodeId })?.nodeId;
-  const batchNodeId = resolvedNodeId ? String(resolvedNodeId) : undefined;
+  const batchNodeId = resolvedNodeId ? toNodeId(String(resolvedNodeId)) : undefined;
   const bridgeRef = useMemo(() => getWorkerBridge(), []);
 
   const [counts, setCounts] = useState({ raw: 0, stage1: 0, stage2: 0, tiles: 0, cache: 0 });

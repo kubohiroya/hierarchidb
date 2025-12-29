@@ -40,6 +40,8 @@
     "@hierarchidb/shape-store": "workspace:*",
     "@hierarchidb/styler-store": "workspace:*",
     "@hierarchidb/tag": "workspace:*",
+    "@hierarchidb/tabular-store": "workspace:*",
+    "@hierarchidb/ui-grid": "workspace:*",
     "@hierarchidb/ui-country-select": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/ui-lru-splitview": "workspace:*",
@@ -98,7 +100,9 @@
           "@hierarchidb/vite-plugin-hierarchidb-plugin-alias#build",
           "@hierarchidb/plugin-base#build",
           "@hierarchidb/runtime-worker#build",
-          "@hierarchidb/plugin-registry#build"
+          "@hierarchidb/plugin-registry#build",
+          "@hierarchidb/tabular-store#build",
+          "@hierarchidb/ui-grid#build"
         ]
       },
       "typecheck": {

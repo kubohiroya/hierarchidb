@@ -54,15 +54,12 @@ const mergeDraft = (current: RouteStepData, updates: Partial<RouteStepData>): Ro
   };
 };
 
+const hasAnyRouteSelection = (selection?: Record<string, boolean[]>): boolean =>
+  Boolean(selection && Object.values(selection).some((row) => row?.some(Boolean)));
+
 const hasRouteConfig = (data?: RouteStepData): boolean => {
   const draftData = data?.draftData ?? {};
-  return Boolean(
-    draftData.dataSourceName &&
-      draftData.transportMode &&
-      draftData.generationMethod &&
-      draftData.startLocationId &&
-      draftData.endLocationId
-  );
+  return Boolean(draftData.dataSourceName && hasAnyRouteSelection(draftData.selectedArrayByCountries));
 };
 
 const isRouteBuildPersisted = (data?: RouteStepData): boolean =>
@@ -72,11 +69,7 @@ const startRouteBatch = async (data: RouteStepData, _context: StartBatchContext)
   const { t } = getTranslation();
   const draft = data?.draftData ?? {};
   const hasEssentials = Boolean(
-    draft.dataSourceName &&
-      draft.transportMode &&
-      draft.generationMethod &&
-      draft.startLocationId &&
-      draft.endLocationId
+    draft.dataSourceName && hasAnyRouteSelection(draft.selectedArrayByCountries),
   );
 
   if (!hasEssentials) {
@@ -109,7 +102,7 @@ registry.registerConfigProvider<RouteStepData>({
       },
       {
         id: 'route-config',
-        label: t('steps.routeConfig.label', 'Transport & Endpoints'),
+        label: t('steps.routeConfig.label', 'Route modes'),
         componentFactory: (p: StepProps) => {
           const draft = ensureDraft(p.data);
           return (
@@ -161,11 +154,7 @@ registry.registerConfigProvider<RouteStepData>({
           canStartBatch: (data: RouteStepData) => {
             const draft = data?.draftData ?? {};
             return Boolean(
-              draft.dataSourceName &&
-                draft.transportMode &&
-                draft.generationMethod &&
-                draft.startLocationId &&
-                draft.endLocationId
+              draft.dataSourceName && hasAnyRouteSelection(draft.selectedArrayByCountries),
             );
           },
           startBatch: (data, context) => startRouteBatch(data as RouteStepData, context),

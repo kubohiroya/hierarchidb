@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { BatchTaskSummary } from '@hierarchidb/common-api';
-import type { NodeType } from '@hierarchidb/common-types';
+import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { useAtom } from 'jotai';
 import {
@@ -29,7 +29,7 @@ export type ShapeBatchTaskSummary = BatchTaskSummary & {
 };
 
 export function useShapeBatchTasks(
-  nodeId: string | null,
+  nodeId: NodeId | null,
   options: UseShapeBatchTasksOptions = {},
 ): UseShapeBatchTasksState {
   const { autoRefresh = true, pollIntervalMs = 2000 } = options;

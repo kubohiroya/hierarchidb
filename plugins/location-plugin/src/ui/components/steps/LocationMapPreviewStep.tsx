@@ -162,7 +162,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
           bbox: summaryResponse.bbox,
         } as TileSummary;
       });
-      setTableId(latest.tableId ?? null);
+      setTableId(latest?.tableId ?? null);
       setLocations(pointRecords);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));

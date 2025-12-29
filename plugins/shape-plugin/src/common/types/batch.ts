@@ -27,7 +27,7 @@ export const BatchTaskStage = {
 
 export type BatchTaskStageType = (typeof BatchTaskStage)[keyof typeof BatchTaskStage];
 
-export type TaskStatus = 'waiting' | 'running' | 'completed' | 'failed';
+export type TaskStatus = 'waiting' | 'running' | 'completed' | 'failed' | 'cancelled';
 
 export type BatchTaskType = 'download' | 'simplify1' | 'simplify2' | 'vectortile';
 export type ProcessingStage = BatchTaskType;
@@ -159,7 +159,7 @@ export interface VectorTileTask extends BatchTaskBase {
 export interface BatchSession {
   nodeId: NodeId;
   draftId?: NodeId;
-  status: 'idle' | 'running' | 'paused' | 'completed' | 'failed';
+  status: 'idle' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
   config: BatchSessionConfig;
   startedAt: number;
   updatedAt: number;

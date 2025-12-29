@@ -1,6 +1,6 @@
 import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Box, Typography, Alert, Tabs, Tab, Snackbar, CircularProgress } from '@mui/material';
-import { ResourceLayerMap } from '@hierarchidb/ui-map';
+import { ResourceLayerMap, type ResourceVectorLayer } from '@hierarchidb/ui-map';
 import { GenericDataGrid } from '@hierarchidb/ui-grid';
 import { SearchField } from '@hierarchidb/ui-search-field';
 import type { ShapeDialogStepProps } from './ShapeDialogStepProps.ts';
@@ -68,13 +68,13 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
     return () => observer.disconnect();
   }, [tabIndex]);
 
-  const vectorLayers = useMemo(() => {
+  const vectorLayers = useMemo<ResourceVectorLayer[]>(() => {
     if (!nodeId) return [];
     const hasRemoteTiles = Boolean(tilesUrl);
     const tiles = hasRemoteTiles ? [tilesUrl] : undefined;
     return [
       {
-        nodeId,
+        nodeId: String(nodeId),
         nodeType: 'shape' as const,
         tiles,
         dbName: !hasRemoteTiles ? tileDbName : undefined,
@@ -83,7 +83,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
           layerId: baseLayerId,
           sourceId: baseSourceId,
           sourceLayer: tilesLayer,
-          layerType: 'fill',
+          layerType: 'fill' as const,
           paint: {
             'fill-color': theme.palette.primary.main,
             'fill-opacity': 0.35,

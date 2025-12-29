@@ -17,7 +17,7 @@ export interface ShapeProgress {
 }
 
 export interface ShapeProgressStatus {
-  status: 'idle' | 'processing' | 'completed' | 'failed' | 'paused' | 'queued';
+  status: 'idle' | 'processing' | 'completed' | 'failed' | 'paused' | 'queued' | 'cancelled';
   stage?: string;
   progress?: number;
   hasErrors?: boolean;
@@ -87,7 +87,7 @@ export function mapPhaseToStatus(phase: string): ShapeProgressStatus['status'] {
     case 'failed':
       return 'failed';
     case 'cancelled':
-      return 'failed';
+      return 'cancelled';
     case 'paused':
       return 'paused';
     case 'queued':

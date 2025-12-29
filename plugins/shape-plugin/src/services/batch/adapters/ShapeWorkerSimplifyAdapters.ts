@@ -10,6 +10,13 @@ const isAbortError = (error: unknown): boolean => (
   error instanceof Error && error.name === 'AbortError'
 );
 
+const requireNodeId = (value: Simplify1Task['nodeId'] | Simplify2Task['nodeId']): NonNullable<typeof value> => {
+  if (!value) {
+    throw new Error('Task nodeId is required');
+  }
+  return value;
+};
+
 export class ShapeWorkerSimplify1Adapter implements Simplify1StageAdapter {
   async process(tasks: Simplify1Task[], onProgress: (p: ProgressInfo) => void, controls?: StageControls) {
     const getSignal = controls?.getSignal;
@@ -40,8 +47,9 @@ export class ShapeWorkerSimplify1Adapter implements Simplify1StageAdapter {
         }
         try {
           const taskIndex = task.index ?? index;
+          const resolvedNodeId = requireNodeId(task.nodeId);
           const result = await workerPool.run((api) => api.processSimplify1Task({
-            nodeId: String(task.nodeId ?? ''),
+            nodeId: resolvedNodeId,
             task,
             taskIndex,
           }));
@@ -144,7 +152,8 @@ export class ShapeWorkerSimplify2Adapter implements Simplify2StageAdapter {
         }
         try {
           const taskIndex = task.index ?? index;
-          const simplify1TaskId = `${task.nodeId ?? ''}-simplify1-${taskIndex}`;
+          const resolvedNodeId = requireNodeId(task.nodeId);
+          const simplify1TaskId = `${String(resolvedNodeId)}-simplify1-${taskIndex}`;
           const simplify1Task = await shapeDB.batchTasks.get(simplify1TaskId);
           if (simplify1Task?.status === 'failed') {
             failed += 1;
@@ -158,7 +167,7 @@ export class ShapeWorkerSimplify2Adapter implements Simplify2StageAdapter {
             }
           } else {
             const result = await workerPool.run((api) => api.processSimplify2Task({
-              nodeId: String(task.nodeId ?? ''),
+              nodeId: resolvedNodeId,
               task,
               taskIndex,
             }));

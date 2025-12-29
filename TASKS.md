@@ -53,19 +53,46 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
-1849) route-plugin Step3 の陸路カラム追加（API生成経路）（P1）
-- ブランチ: `feat/route/step3-api-columns`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: plugins/route-plugin（Step3 UI）, app/public/locales/route-plugin.json（必要なら）
+1968) /map 地物状態 (A)-(E) のSSOT分離と重ね合わせ表示（P1）
+- ブランチ: `feat/ui/map-feature-overlays`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `app/src/router/routes/map/**`, `packages/ui/data-grid/**`, `packages/ui/map/**`, `packages/features/**`, `TASKS.md`, `plans/`
 - 受け入れ基準（DoD）:
-  - [ ] Step3 のヘッダカラムに「API生成経路（高速鉄道/在来線鉄道/道路）」を追加する
-  - [ ] 追加する3カラムは既定 OFF かつ disabled 表示にする
-  - [ ] 既存の「直線近似経路」3カラムは維持する
-  - [ ] 表示文言の i18n を日英で更新する
-  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+  - [ ] (A) は Dexie 永続、(B)-(E) は Jotai を SSOT として保持する
+  - [ ] nodeId ごとの地図レイヤ表示に (B)-(E) の状態が反映される
+  - [ ] テーブルは (B) を非表示制御に使い、(C)(D)(E) は視覚的に直交するスタイルで表現される
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+  - [ ] ExecPlan を作成する（変更内容/ロールバック/検証方針を記載）
 - チェックリスト:
-  - [ ] Step3 のヘッダカラム定義を特定する
-  - [ ] API生成経路カラムを追加し、既定OFF/disabledにする
-- ロールバック手順：該当 UI ファイルと i18n の差分を revert する
+  - [x] ExecPlan を `plans/map-feature-overlays-execplan.md` に作成する
+  - [x] /map の状態管理（B)-(E) を Jotai に分離して SSOT 化する
+  - [x] 地図レイヤの描画に (B)-(E) のスタイル適用を追加する
+  - [x] データテーブルの行表示/スタイルに (B)-(E) を反映する
+  - [ ] 代表検証（手動）結果を運用ログに記録する
+- ロールバック手順：/map の状態管理・地図レイヤ描画・テーブル行描画の差分を revert する
+- 運用ログ：
+  - start: 2025-12-29 13:45 JST /map の地物状態 (A)-(E) 分離と重ね合わせ表示に着手。
+  - progress: 2025-12-29 14:01 JST ExecPlan を `plans/map-feature-overlays-execplan.md` に作成。
+  - progress: 2025-12-29 14:01 JST map.tsx の viewport 可視 ID 更新、Jotai atoms 拡張、DataGrid の hover/selection 同期とスタイル反映を実装。
+
+1967) /map モードレスに生成物テーブル + 検索フィールドを追加（P1）
+- ブランチ: `feat/ui/map-modeless-data-table`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `app/src/router/routes/modeless/**`, `packages/ui/data-grid/**`, `packages/features/{shape,route,location}-store`, `TASKS.md`, `plans/`
+- 受け入れ基準（DoD）:
+  - [ ] /map のモードレスダイアログに shape/location/route の生成物を表示する仮想テーブル UI を追加する
+  - [ ] テーブル上部に検索フィールドがあり、入力で行が絞り込まれる
+  - [ ] shape/route のテーブルで 1000 行超過時にフッターのページング UI が表示される
+  - [ ] データ取得元（Dexie/TabularStore）と対象カラムが実装上で明示される
+  - [ ] 既存の /map 検索（地物ハイライト）とは独立して動作する
+  - [ ] ExecPlan を作成し、変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] ExecPlan を `plans/map-modeless-generated-table-execplan.md` に作成する
+  - [ ] モードレスに Data Table ダイアログを追加する
+  - [ ] shape/location/route の行生成と検索フィールドを実装する
+  - [ ] shape/route テーブルのページング UI を追加する（1000 行）
+  - [ ] 代表検証（手動）結果を運用ログに記録する
+- ロールバック手順：モードレス追加分とテーブル表示ロジックを revert する
+- 運用ログ：
+  - start: 2025-12-29 14:05 JST /map モードレスに生成物テーブル + 検索フィールド追加に着手。
 
 1959) location/route プレビュー(ステップ6) 地物種別トグルUI追加（P1）
 - ブランチ: `feat/ui/preview-layer-toggle`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -384,6 +411,23 @@
   - start: 2025-12-29 12:00 JST route-plugin typecheck エラー修正に着手。
   - progress: 2025-12-29 12:20 JST useLocationProgress の nodeId 必須化・フォールバック削除、Location/Route の batch session 戻り値と cancelled 整合、RouteBatchSession の lineGeometry 参照修正、geojson 型追加、UI の NodeId 変換を実施。
   - progress: 2025-12-29 12:30 JST RouteBatchOrchestrationService の jobId を NodeId に統一し、LaunchForm の表示/型も更新。
+  - progress: 2025-12-29 12:40 JST LocationMapPreviewStep の latest null ガードを追加し typecheck エラーを解消。
+
+1975) app: ui-grid / tabular-store の build 依存追加（P1）
+- ブランチ: `fix/app/build-deps-ui-grid-tabular-store`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `app/package.json`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] `@hierarchidb/app` build の UNLOADABLE_DEPENDENCY が解消する
+  - [ ] app の依存に `@hierarchidb/ui-grid` / `@hierarchidb/tabular-store` が追加される
+  - [ ] build 順序が turbo で保証される
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] app/package.json に依存を追加する
+  - [ ] turbo pipeline build dependsOn に build を追加する
+- ロールバック手順：`app/package.json` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 12:55 JST app build の依存不足解消に着手。
+  - done: 2025-12-29 12:58 JST app 依存に ui-grid/tabular-store を追加し build dependsOn に反映。検証: 未実施。ロールバック: `app/package.json` の差分を revert。
 
 1966) ISO2/ISO3 型定義の移動指示対応（P1）
 - ブランチ: `refactor/common/iso2-iso3-relocation`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -6762,6 +6806,16 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+
+1849) route-plugin Step3 を国×交通経路マトリクスへ再構成（P1） — 完了 (2025-12-29)
+- 要点：Step3 を CountryMatrixSelector ベースの国×交通経路マトリクスへ置換し、データソース別の checked/disabled 制約と Step3 バリデーションを更新。i18n を日英で更新。
+- 検証：`pnpm --filter @hierarchidb/route-plugin typecheck` exit 0。
+- ロールバック手順：Step3 UI・steps-provider・i18n の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-29 12:12 JST Step3 の陸路カラム追加に着手（feat/route/step3-api-columns）。
+  - progress: 2025-12-29 13:50 JST Step3 を国×交通経路マトリクスへ再構成する方針へ切替。
+  - progress: 2025-12-29 13:55 JST Step3 を CountryMatrixSelector に置換し、データソース別の checked/disabled 制約と Step3 バリデーションを更新。
+  - done: 2025-12-29 13:55 JST 交通経路マトリクス化と i18n 更新を完了。検証: `pnpm --filter @hierarchidb/route-plugin typecheck` exit 0。ロールバック: Step3 UI/steps-provider/i18n の差分を revert。
 
 1966) /map モードレスダイアログ内の生成物テーブル表示と検索フィールド有無を調査（P1） — 完了 (2025-12-29)
 - 要点：/map のモードレスダイアログは `ModelessDialogManager` が `MapInfoContent`/`MapLayerContent`/`MapToggleCard` を表示する構成で、shape/location/route の生成物を仮想テーブルで表示するUIは存在しない。リスト表示は MUI List のみ。検索フィールドも設置されていない。
@@ -13822,6 +13876,12 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-29 13:45 start: feat/ui/map-feature-overlays — /map の地物状態 (A)-(E) をSSOT分離し、重ね合わせ表示へ反映する作業に着手。DoD: Kanban 1968 のとおり。
+- 2025-12-29 14:01 progress: feat/ui/map-feature-overlays — ExecPlan を `plans/map-feature-overlays-execplan.md` に作成し、map.tsx の viewport 可視 ID 更新と DataGrid の hover/selection 同期を実装。
+- 2025-12-29 14:05 start: feat/ui/map-modeless-data-table — /map モードレスに生成物テーブル + 検索フィールド追加に着手。DoD: Kanban 1967 のとおり。
+- 2025-12-29 14:15 progress: feat/ui/map-modeless-data-table — ExecPlan を `plans/map-modeless-generated-table-execplan.md` に作成。
+- 2025-12-29 14:35 progress: feat/ui/map-modeless-data-table — モードレスに Data Table ダイアログを追加し、shape/location/route の仮想テーブル表示と検索フィールドを実装。
+- 2025-12-29 15:05 progress: feat/ui/map-modeless-data-table — shape/route のページングを 1000 行単位に変更し、Dexie offset/limit でページ取得するよう更新。
 - 2025-12-29 09:40 start: analysis/ui/map-modeless-tables — /map モードレスダイアログ内の生成物テーブル表示と検索フィールド有無を調査開始。DoD: Kanban 1966 のとおり。
 - 2025-12-29 09:55 done: analysis/ui/map-modeless-tables — モードレスダイアログは MapInfo/Layers/Toggle のみで、仮想テーブルや検索フィールドは未実装。検証: 調査のみ。ロールバック: 記載のみ revert。
 - 2025-12-29 12:12 start: feat/route/step3-api-columns — Step3 の陸路カラム（API生成経路）追加に着手。DoD: Kanban 記載どおり。（Kanban: 1849）

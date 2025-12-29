@@ -1,13 +1,13 @@
 {
   "steps": {
     "dataSource": { "label": "データソース" },
-    "routeConfig": { "label": "交通モードと始点終点" },
+    "routeConfig": { "label": "交通経路の種類" },
     "processing": { "label": "処理設定" },
     "build": { "label": "ビルド" },
     "preview": { "label": "プレビュー" }
   },
   "messages": {
-    "completeBeforeBuild": "ビルド開始前に交通モード、経路タイプ、始点終点の選択を完了してください。",
+    "completeBeforeBuild": "ビルド開始前に国ごとの交通経路の選択を完了してください。",
     "batchNotImplemented": "このダイアログからのルートバッチ起動は未実装です。"
   },
   "dataSource": {
@@ -30,8 +30,13 @@
     }
   },
   "routeConfig": {
-    "title": "交通モードと始点終点",
-    "description": "ルート生成方法と始点/終点のロケーションを指定します。",
+    "title": "国ごとの交通経路の選択",
+    "description": "国ごとに読み込む交通経路を選択します。利用可能な種類はデータソースに依存します。",
+    "loadingCountries": "国リストを読み込み中...",
+    "loadError": "国リストの取得に失敗しました",
+    "emptyCountries": "利用可能な国がありません。時間をおいて再試行してください。",
+    "defaultSelectionNote": "データソースに応じた既定の選択が適用されています。",
+    "customSelectionNote": "国ごとに読み込む交通経路を選択してください。",
     "transportModeLabel": "交通モード",
     "transportModeHelperText": "このルートの主な交通モードを選択してください。",
     "routeTypeLabel": "経路タイプ",
@@ -105,7 +110,7 @@
     "startLocation": "始点:",
     "endLocation": "終点:",
     "notConfigured": "未設定",
-    "missing": "交通モード、経路タイプ、始点/終点を設定してからビルドしてください。",
+    "missing": "ビルド前に国ごとの交通経路を選択してください。",
     "crashHint": "前回のビルドが完了していません。再開前にデータを削除してください。",
     "start": "準備ができたらビルドボタンを押してください。",
     "title": "ルートビルド",

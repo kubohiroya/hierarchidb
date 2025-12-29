@@ -1,6 +1,7 @@
 import type { BatchConfig, ShapeEntity } from '../../common/types/index.js';
 import { DEFAULT_PROCESSING_CONFIG, mergeBatchConfig } from '../../common/types/index.js';
 import { getEphemeralShapeDB, type EphemeralStage } from '../../services/database/EphemeralShapeDB.js';
+import { toNodeId, type NodeId } from '@hierarchidb/common-types';
 
 const STAGE_ORDER: EphemeralStage[] = ['download', 'simplify1', 'simplify2', 'vectorTiles'];
 
@@ -24,10 +25,10 @@ const uniqueStages = (stages: EphemeralStage[]): EphemeralStage[] => {
   return STAGE_ORDER.filter((stage) => set.has(stage));
 };
 
-export const resolveShapeNodeId = (draft?: Partial<ShapeEntity> | null): string | undefined =>
-  draft?.nodeId;
+export const resolveShapeNodeId = (draft?: Partial<ShapeEntity> | null): NodeId | undefined =>
+  draft?.nodeId ? toNodeId(String(draft.nodeId)) : undefined;
 
-export async function clearStagesIfPresent(nodeId: string, stages: EphemeralStage[]): Promise<EphemeralStage[]> {
+export async function clearStagesIfPresent(nodeId: NodeId, stages: EphemeralStage[]): Promise<EphemeralStage[]> {
   const db = getEphemeralShapeDB();
   const targetStages = uniqueStages(stages);
   const cleared: EphemeralStage[] = [];

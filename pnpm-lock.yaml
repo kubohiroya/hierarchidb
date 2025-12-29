@@ -319,12 +319,18 @@ importers:
       '@hierarchidb/styler-store':
         specifier: workspace:*
         version: link:../packages/features/styler-store
+      '@hierarchidb/tabular-store':
+        specifier: workspace:*
+        version: link:../packages/features/tabular-store
       '@hierarchidb/tag':
         specifier: workspace:*
         version: link:../packages/features/tag
       '@hierarchidb/ui-country-select':
         specifier: workspace:*
         version: link:../packages/ui/country-select
+      '@hierarchidb/ui-grid':
+        specifier: workspace:*
+        version: link:../packages/ui/data-grid
       '@hierarchidb/ui-i18n':
         specifier: workspace:*
         version: link:../packages/ui/i18n

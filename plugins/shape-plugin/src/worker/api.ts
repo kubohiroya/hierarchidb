@@ -3,7 +3,7 @@
  * Exposes batch-oriented operations for runtime worker adapters
  */
 
-import type { NodeId, TreeNodeId} from '@hierarchidb/common-types';
+import { toNodeId, type NodeId, type TreeNodeId } from '@hierarchidb/common-types';
 import {
   type BatchSession,
   type BatchTask,
@@ -59,8 +59,10 @@ type DraftLike = {
   draftData?: Partial<ShapeEntity>;
 };
 
-const resolveBatchNodeId = (draft: DraftLike | null | undefined): string | undefined =>
-  draft?.nodeId ?? draft?.treeNodeId ?? draft?.draftData?.nodeId;
+const resolveBatchNodeId = (draft: DraftLike | null | undefined): NodeId | undefined => {
+  const resolved = draft?.nodeId ?? draft?.treeNodeId ?? draft?.draftData?.nodeId;
+  return resolved ? toNodeId(String(resolved)) : undefined;
+};
 
 const buildBatchSessionConfig = (batchConfig: BatchConfig, draft?: DraftLike): BatchSessionConfig => {
   const downloadConfig = batchConfig.downloadConfig ?? DEFAULT_PROCESSING_CONFIG.downloadConfig;
@@ -126,7 +128,7 @@ const buildBatchSessionConfig = (batchConfig: BatchConfig, draft?: DraftLike): B
 };
 
 const persistDownloadTaskPayloads = async (
-  nodeId: string,
+  nodeId: NodeId,
   payloads: DownloadTaskPayload[],
 ): Promise<void> => {
   if (payloads.length === 0) return;
@@ -216,6 +218,8 @@ const mapManagerStatusToShapeStatus = (
       return 'completed';
     case 'failed':
       return 'failed';
+    case 'cancelled':
+      return 'cancelled';
     case 'running':
     case 'idle':
     default:
@@ -228,7 +232,7 @@ const isSessionNotFoundError = (error: unknown): boolean => (
 );
 
 const getBatchSessionStatusSafe = async (
-  nodeId: string,
+  nodeId: NodeId,
 ): Promise<{ status?: BatchSessionStatusResult; missing: boolean; error?: unknown }> => {
   try {
     const status = await batchSessionManager.getBatchSessionStatus(nodeId);
@@ -257,6 +261,8 @@ const mapTaskStatusToStage = (status?: BatchTask['status']): BatchTask['stage'] 
       return 'success';
     case 'failed':
       return 'error';
+    case 'cancelled':
+      return 'cancel';
     default:
       return undefined;
   }
@@ -521,7 +527,7 @@ export const shapeBatchAPI = {
       ) => void;
     };
     const nodeForSession = draftLike.nodeId ?? draftLike.treeNodeId ?? draftId;
-    await persistDownloadTaskPayloads(String(nodeForSession), downloadTaskPayloads);
+    await persistDownloadTaskPayloads(toNodeId(String(nodeForSession)), downloadTaskPayloads);
     managerWithPrepare.prepareSession?.(nodeForSession, processConfig, batchSessionData, sessionOptions);
     await batchSessionManager.startBatchSession(nodeForSession);
 
@@ -631,7 +637,7 @@ export const shapeBatchAPI = {
 
   getBatchSession: async (nodeId: NodeId): Promise<BatchSession | undefined> => {
     try {
-      const { status, missing, error } = await getBatchSessionStatusSafe(String(nodeId));
+      const { status, missing, error } = await getBatchSessionStatusSafe(nodeId);
       if (!status) {
         if (!missing && error) {
           console.warn('[shapeBatchAPI] failed to fetch batch session', error);
@@ -909,7 +915,7 @@ export const shapeBatchAPI = {
     if (!entity) return { status: 'idle', hasErrors: false, errorMessages: [] };
 
     // NodeId is the only batch session identifier.
-    const { status, missing, error } = await getBatchSessionStatusSafe(String(nodeId));
+    const { status, missing, error } = await getBatchSessionStatusSafe(nodeId);
     if (!missing) {
       if (error) {
         console.warn('[shapeBatchAPI] failed to fetch batch session status', error);

@@ -19,6 +19,7 @@ import { ModelessDialogFrame } from '@hierarchidb/ui-dialog';
 import { PluginDialogHeader } from '@hierarchidb/plugin-ui-host';
 import { Box, IconButton, Tooltip } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import type { NodeId } from '@hierarchidb/common-types';
 import type React from 'react';
 import { useCallback, useMemo, useRef } from 'react';
 import {
@@ -26,8 +27,14 @@ import {
   InfoOutlined as InfoOutlinedIcon,
   Layers as LayersIcon,
   PlaceOutlined as PlaceOutlinedIcon,
+  TableView as TableViewIcon,
 } from '@mui/icons-material';
-import { MapInfoContent, MapLayerContent } from './modelessDialogContent.js';
+import {
+  MapGeneratedDataContent,
+  MapInfoContent,
+  MapLayerContent,
+  type MapInfoSummary,
+} from './modelessDialogContent.js';
 import type { MapDialogDefinitionBase, MapDialogWindowState } from './modelessDialogLayout.js';
 import type { ModelessIconAppearance, ModelessIconPlacement } from './ModelessDialogProvider.js';
 import { ModelessDialogProvider, useModelessDialogContext } from './ModelessDialogProvider.js';
@@ -358,6 +365,15 @@ export const ModelessDialogManager: React.FC<ModelessDialogManagerProps> = ({
       ),
     },
     {
+      id: 'map-data-table',
+      title: 'Data Table',
+      icon: <TableViewIcon fontSize="small" />,
+      defaultSize: { width: 720, height: 420 },
+      content: (
+        <MapGeneratedDataContent nodeId={nodeId as NodeId} />
+      ),
+    },
+    {
       id: 'map-location-types',
       title: 'Terrain Types',
       icon: <PlaceOutlinedIcon fontSize="small" />,
@@ -385,7 +401,7 @@ export const ModelessDialogManager: React.FC<ModelessDialogManagerProps> = ({
         />
       ),
     },
-  ], [basemapStyles, formattedZxy, geoJsonLayers, locationTypeOptions, locationTypeSelection, mapInfo, onToggleLocationType, onToggleRouteMode, routeModeOptions, routeModeSelection, vectorLayers]);
+  ], [basemapStyles, formattedZxy, geoJsonLayers, locationTypeOptions, locationTypeSelection, mapInfo, nodeId, onToggleLocationType, onToggleRouteMode, routeModeOptions, routeModeSelection, vectorLayers]);
 
   const storageKey = useMemo(() => `hdb.map.dialogs.${nodeId}`, [nodeId]);
 
