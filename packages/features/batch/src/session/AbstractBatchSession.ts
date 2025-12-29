@@ -234,7 +234,7 @@ function abortError(message: string): Error {
 function formatProgressError(error: unknown): { code?: string; detail?: unknown } | undefined {
   if (!error) return undefined;
   if (typeof error === 'object' && error !== null) {
-    if ('code' in (error as any) || 'detail' in (error as any)) {
+    if ('code' in (error) || 'detail' in (error)) {
       const existing = error as { code?: string; detail?: unknown };
       return { code: existing.code, detail: existing.detail ?? error };
     }

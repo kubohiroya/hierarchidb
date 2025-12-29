@@ -165,7 +165,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     if (tasks.length > 0) {
       setPersistedTasks(tasks);
     }
-  }, [activeNodeId, tasks]);
+  }, [activeNodeId, tasks, setPersistedTasks]);
 
   useEffect(() => {
     if (!activeNodeId || !effectiveStatus?.status) return;
