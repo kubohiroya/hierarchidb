@@ -21,6 +21,8 @@ type Args = {
   onResetSession?: () => void;
 };
 
+const isVectorTileStage = (stage?: string): boolean => stage === 'vectortile' || stage === 'vectorTiles';
+
 export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onChange, onResetSession }: Args) => {
   const { t } = useTranslation();
   const switchId = useId();
@@ -227,16 +229,8 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
     await db.clearStage(batchNodeId, 'vectorTiles');
     await clearBatchTasksForType('vectortile');
     await clearFinalOutputs();
-    setBuildTasks((prev) => prev.filter((task) => (
-      task.taskType !== 'vectortile'
-      && task.stage !== 'vectortile'
-      && task.stage !== 'vectorTiles'
-    )));
-    setPersistedTasks((prev) => prev.filter((task) => (
-      task.taskType !== 'vectortile'
-      && task.stage !== 'vectortile'
-      && task.stage !== 'vectorTiles'
-    )));
+    setBuildTasks((prev) => prev.filter((task) => !isVectorTileStage(task.stage)));
+    setPersistedTasks((prev) => prev.filter((task) => !isVectorTileStage(task.stage)));
     await persistTileSummaryReset();
     await loadCounts();
     notify.success('Deleted tiles');

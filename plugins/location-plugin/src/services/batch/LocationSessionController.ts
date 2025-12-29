@@ -35,7 +35,6 @@ export class LocationSessionController {
 
   private progressCb?: (p: ProgressInfo) => void;
   private paused = false;
-  private cancelled = false;
 
   setProgressCallback(cb: (p: ProgressInfo) => void) {
     this.progressCb = cb;
@@ -138,7 +137,6 @@ export class LocationSessionController {
 
     await batch.mapChunks<TileInfo, void>(list, async (t) => {
       await LocationSessionController.laneRegistry.runWithLane(laneName, async () => {
-        if (this.cancelled) return;
         while (this.paused) await new Promise(r => setTimeout(r, 100));
         const u8 = await tileClient.getTile(fileId, t.z, t.x, t.y);
         if (!u8) return;
@@ -183,10 +181,6 @@ export class LocationSessionController {
 
   resume() {
     this.paused = false;
-  }
-
-  cancel() {
-    this.cancelled = true;
   }
 }
 

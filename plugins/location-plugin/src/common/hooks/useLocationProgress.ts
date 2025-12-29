@@ -150,12 +150,12 @@ export function useLocationProgress(
       onAuthCancelled: async (n) => {
         setOverrideProgress({
           nodeId,
-          stage: 'cancelled',
+          stage: 'failed',
           total: 1,
           completed: 0,
           failed: 1,
           percentage: 0,
-          currentTask: n?.context?.reason || 'Authentication cancelled',
+          currentTask: 'Authentication stopped',
           timestamp: Date.now(),
           message: n?.context?.reason,
         });

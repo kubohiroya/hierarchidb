@@ -54,7 +54,9 @@ export class BatchSessionManager extends BaseBatchSessionManager {
   async shutdown(): Promise<void> {
     // Cancel all active sessions
     for (const [nodeId] of this.sessions) {
-      await this.cancelSession(nodeId);
+      await this.pauseSession(nodeId);
+      this.sessions.delete(nodeId);
+      this.legacyProgressCallbacks.delete(String(nodeId));
     }
     // WorkerPools are now managed by individual SessionControllers
   }
@@ -197,20 +199,6 @@ export class BatchSessionManager extends BaseBatchSessionManager {
     await this.createSession(resolved, existing.config as BatchProcessConfig, downloadPayloads);
   }
 
-  async cancelSession(nodeId: string): Promise<void> {
-    await this.cancelBatchSession(nodeId as NodeId);
-
-    // Cancel all pending tasks
-    const tasks = await shapeDB.getBatchTasks(nodeId as NodeId);
-    for (const task of tasks) {
-      if (task.status === 'waiting' || task.status === 'running') {
-        await shapeDB.updateBatchTask(task.taskId, {
-          status: 'failed',
-        });
-      }
-    }
-  }
-
   async getSessionStatus(nodeId: string): Promise<BatchStatus> {
     const session = await shapeDB.getBatchSession(nodeId as NodeId);
     if (!session) {
@@ -271,10 +259,6 @@ export class BatchSessionManager extends BaseBatchSessionManager {
       case 'session/resume':
         shared.resumeAllStages();
         await this.resumeSession(String(nodeId));
-        break;
-      case 'session/cancel':
-        shared.resumeAllStages();
-        await this.cancelSession(String(nodeId));
         break;
       case 'stage/pause':
         shared.pauseStage((payload as {stage: ProcessingStage}).stage);

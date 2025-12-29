@@ -1176,7 +1176,6 @@ describe('useTreeViewController', () => {
         getBatchSessionStatus: vi.fn(),
         pauseBatchSession: vi.fn(),
         resumeBatchSession: vi.fn(),
-        cancelBatchSession: vi.fn(),
         subscribeBatchProgress: vi.fn(),
         ping: vi.fn(() => ({ response: 'pong' as const, timestamp: Date.now() })),
         initialize: vi.fn(async () => {}),

@@ -53,7 +53,6 @@ export interface ShapeBatchAPI {
   ): Promise<NodeId>;
   pauseBatchProcessing(draftId: NodeId): Promise<void>;
   resumeBatchProcessing(draftId: NodeId): Promise<NodeId>;
-  cancelBatchProcessing(draftId: NodeId): Promise<void>;
   invokeBatchCommand<K extends ShapeBatchCommand>(command: K, payload: ShapeBatchCommandPayload<K>): Promise<void>;
   getBatchSession(nodeId: NodeId): Promise<BatchSession | undefined>;
   listBatchTasks(nodeId: NodeId): Promise<BatchTask[]>;

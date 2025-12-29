@@ -50,18 +50,6 @@ export abstract class BaseBatchSessionManager implements IBatchSessionManager {
     await this.onSessionStatusChange(session);
   }
 
-  async cancelBatchSession(nodeId: NodeId): Promise<void> {
-    const session = this.sessions.get(nodeId);
-    if (!session) {
-      throw new Error(`Session ${nodeId} not found`);
-    }
-    await session.cancel();
-    await this.onSessionStatusChange(session);
-    this.sessions.delete(nodeId);
-    this.progressCallbacks.delete(nodeId);
-    this.cleanupSessionTracking(nodeId);
-  }
-
   async getBatchSessionStatus(nodeId: NodeId): Promise<BatchSessionStatus> {
     const session = this.sessions.get(nodeId);
     if (!session) {

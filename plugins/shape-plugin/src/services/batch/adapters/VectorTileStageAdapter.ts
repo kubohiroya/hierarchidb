@@ -13,4 +13,5 @@ export interface VectorTileStageAdapter {
     onProgress: (p: ProgressInfo) => void,
     controls?: StageControls,
   ): Promise<VectorTileStageAdapterResult>;
+  clearFeatureCache?(nodeId: string): void;
 }

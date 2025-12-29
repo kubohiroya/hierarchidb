@@ -18,7 +18,6 @@ export interface WorkerBridge {
   getBatchSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus>;
   pauseBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<void>;
   resumeBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<void>;
-  cancelBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<void>;
   getBatchTasks(nodeType: NodeType, nodeId: NodeId): Promise<BatchTaskSummary[]>;
   getStyleQueryAPI(): ReturnType<WorkerAPI['getStyleQueryAPI']>;
   getStyleMutationAPI(): ReturnType<WorkerAPI['getStyleMutationAPI']>;
@@ -104,11 +103,6 @@ class WorkerBridgeImpl implements WorkerBridge {
   async resumeBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<void> {
     const api = await ensureWorkerAPI();
     await api.resumeBatchSession(nodeType, nodeId);
-  }
-
-  async cancelBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<void> {
-    const api = await ensureWorkerAPI();
-    await api.cancelBatchSession(nodeType, nodeId);
   }
 
   async getBatchTasks(nodeType: NodeType, nodeId: NodeId): Promise<BatchTaskSummary[]> {

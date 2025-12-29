@@ -70,6 +70,32 @@
   - start: 2025-12-30 11:30 JST デフォルト簡略化/タイル範囲の強化に着手。
   - progress: 2025-12-30 11:40 JST simplify1/2 と tileConfig の既定値を強化し、共有ズーム既定値を 0-4 に更新。検証: 未実施。
 
+1971) shape-plugin: vectortile サイズ超過時の regression リトライと simplify2 再始動（P1）
+- ブランチ: `feat/shape-plugin/vectortile-regression-retry`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/services/batch/SessionController.ts`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `packages/features/shape-store/src/ShapeDB.ts`, `plugins/shape-plugin/src/common/types/batch.ts`, `TASKS.md`, `plans/`
+- 受け入れ基準（DoD）:
+  - [ ] vectortile サイズ超過時にタスクが `regression` 状態になり、retry が更新される
+  - [ ] vectortile 完了後に regression が残る場合、simplify2 を再起動して再試行する
+  - [ ] simplify2 が retry 値に応じて簡略化を強める
+  - [ ] batch 制御/API/UI/Worker から cancel/cancelled を撤廃し、pause のみで操作できる
+  - [ ] ExecPlan を作成し、変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [x] ExecPlan を `plans/shape-vectortile-regression-retry-execplan.md` に作成する
+  - [ ] TaskStatus に regression を追加し UI/Worker で扱えるようにする
+  - [ ] vectortile サイズ超過時の retry 更新と regression 状態遷移を実装する
+  - [ ] regression 検知で simplify2 を再始動する制御を追加する
+  - [ ] simplify2 の簡略化ロジックに retry 強化を追加する
+  - [ ] cancel/cancelled の参照を検索して除去する（batch 制御/API/UI/Worker）
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：`plugins/shape-plugin/src/services/batch/**` と `packages/features/shape-store/src/ShapeDB.ts`、`plugins/shape-plugin/src/common/types/batch.ts` の差分を revert する
+- 運用ログ：
+  - start: 2025-12-30 11:50 JST vectortile サイズ超過時の regression リトライ実装に着手。
+  - progress: 2025-12-30 12:05 JST ExecPlan を `plans/shape-vectortile-regression-retry-execplan.md` に作成。検証: 未実施。
+  - progress: 2025-12-30 12:15 JST TaskStatus から cancelled を削除し regression 追加に向けた整理を開始。検証: 未実施。
+  - progress: 2025-12-30 12:30 JST batch セッション/進捗の cancelled 状態を削除し failed に統一。検証: 未実施。
+  - progress: 2025-12-30 12:45 JST Batch API から cancel 操作を撤廃し、pause のみで操作する方針に合わせてコードとテストを調整。検証: 未実施。
+  - start: 2025-12-30 13:05 JST cancel/cancelled を全体から除去する確認と残件の整理に着手。
+
 1968) /map 地物状態 (A)-(E) のSSOT分離と重ね合わせ表示（P1）
 - ブランチ: `feat/ui/map-feature-overlays`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `app/src/router/routes/map/**`, `packages/ui/data-grid/**`, `packages/ui/map/**`, `packages/features/**`, `TASKS.md`, `plans/`
@@ -15125,6 +15151,14 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-28 17:14 done: fix/app/modeless-sx-constraint — DataGrid rowSx の型を NonNullable にして useCallback の関数制約を満たすよう修正。検証: 未実施（typecheck 未実行）。ロールバック: `app/src/router/routes/modeless/modelessDialogContent.tsx` と `TASKS.md` の差分を revert。
 - 2025-12-28 17:18 start: fix/runtime-worker/stage-processing-proxy-cast — StageProcessingService の proxy キャスト TS2352 を解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
 - 2025-12-28 17:20 done: fix/runtime-worker/stage-processing-proxy-cast — comlink client の proxy 参照を unknown 経由でキャストし、TS2352 を解消。検証: 未実施（typecheck 未実行）。ロールバック: `packages/runtime-worker/src/services/StageProcessingService.ts` と `TASKS.md` の差分を revert。
+- 2025-12-28 17:23 start: fix/ui-batch/task-summary-stage-key — useBuildTaskProgress の taskType 参照エラーを解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 17:24 done: fix/ui-batch/task-summary-stage-key — BatchTaskSummary は stage 必須なので taskType フォールバックを撤去し、stage のみで key を解決。検証: 未実施（typecheck 未実行）。ロールバック: `packages/ui/batch/src/hooks/useBuildTaskProgress.ts` と `TASKS.md` の差分を revert。
+- 2025-12-28 17:32 start: fix/shape/nodeid-task-stage-typing — shape-plugin の NodeId 必須化と task stage/type の型不一致を解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 17:41 done: fix/shape/nodeid-task-stage-typing — vector tile 入力の nodeId 解析をガードし、未使用メソッドを削除、taskType 参照を stage ベースに整理、task status を stage に変換して型整合を修正。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/shape-plugin/src/services/batch/{SessionController.ts,adapters/RuntimeWorkerVectorTileAdapter.ts}`, `plugins/shape-plugin/src/ui/hooks/{useDownloadConfigSection.ts,useShapeBuildProgressStep.ts}`, `plugins/shape-plugin/src/worker/api.ts` と `TASKS.md` の差分を revert。
+- 2025-12-28 17:45 start: fix/location/status-cancelled-normalize — UnifiedLocationBatchManager の status から cancelled を除外し、BatchSessionStatus と整合させる対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 17:48 done: fix/location/status-cancelled-normalize — cancelled を failed に正規化し、idle/paused/completed/failed のみを返すよう status を整形。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/location-plugin/src/services/batch/UnifiedLocationBatchManager.ts` と `TASKS.md` の差分を revert。
+- 2025-12-28 17:51 start: fix/location/status-idle-compare — rawStatus の型に合わせて idle 判定を削除し、比較エラーを解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 17:52 done: fix/location/status-idle-compare — rawStatus の idle 比較を撤去し、TS2367 を解消。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/location-plugin/src/services/batch/UnifiedLocationBatchManager.ts` と `TASKS.md` の差分を revert。
 - 2025-12-29 15:06 start: analysis/shape/step5-lru-task-component — shape step5 の LRUSplitPane 内タスク表示コンポーネント特定の調査に着手。DoD: Kanban 1969 のとおり。
 - 2025-12-29 15:07 progress: analysis/shape/step5-lru-task-component — `rg -n "LRUSplitPane|LRUSplitView" plugins app packages` と `rg -n "Step5|step5|BuildStep" plugins/shape-plugin app packages` で参照箇所を探索。
 - 2025-12-29 15:08 progress: analysis/shape/step5-lru-task-component — `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx` と `packages/components/src/BuildStepPanel.tsx` を確認し、pane content とタスク表示の責務を切り分け。

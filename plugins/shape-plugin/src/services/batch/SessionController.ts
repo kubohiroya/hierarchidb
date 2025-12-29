@@ -764,27 +764,6 @@ export class SessionController {
     return `stage-tile:${key}`;
   }
 
-  private formatBytes(bytes: number): string {
-    if (!Number.isFinite(bytes)) return 'unknown size';
-    if (bytes < 1024) return `${bytes} B`;
-    const kb = bytes / 1024;
-    if (kb < 1024) return `${kb.toFixed(1)} KB`;
-    const mb = kb / 1024;
-    if (mb < 1024) return `${mb.toFixed(1)} MB`;
-    const gb = mb / 1024;
-    return `${gb.toFixed(2)} GB`;
-  }
-
-  private formatErrorLocation(error: Error): string | undefined {
-    const stack = error.stack ?? '';
-    const line = stack.split('\n').find((entry) => entry.includes(':') && entry.includes('/') && entry.includes('at '));
-    if (!line) return undefined;
-    const match = line.match(/\((.+?):(\d+):(\d+)\)/) ?? line.match(/at (.+?):(\d+):(\d+)/);
-    if (!match) return undefined;
-    const [, file, lineNumber, column] = match;
-    return `${file}:${lineNumber}:${column}`;
-  }
-
   private pickFirstString(properties: Record<string, unknown>, keys: string[]): string | undefined {
     for (const key of keys) {
       const value = properties[key];
@@ -1286,22 +1265,6 @@ export class SessionController {
     const completedCount = existing.filter((task) => task.status === 'completed').length;
     const failedCount = existing.filter((task) => task.status === 'failed').length;
     return { runnableTasks, completedCount, failedCount, total: tasks.length };
-  }
-
-  private async ensureVectorTilePlaceholderTask(message: string): Promise<void> {
-    const taskId = `${String(this.nodeId)}-vectortile-skipped`;
-    const existing = await shapeDB.batchTasks.get(taskId);
-    if (existing) return;
-    await shapeDB.batchTasks.put({
-      taskId,
-      nodeId: this.nodeId,
-      taskType: 'vectortile',
-      status: 'completed',
-      index: 0,
-      progress: 100,
-      message,
-      completedAt: Date.now(),
-    });
   }
 
   private async assignDownloadTaskIndices(tasks: DownloadTask[]): Promise<Set<string>> {

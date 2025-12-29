@@ -78,10 +78,6 @@ export abstract class UnifiedBatchManagerBase<TConfig, TData> {
     await this.performResume(nodeId);
   }
 
-  async cancelBatchSession(nodeId: string): Promise<void> {
-    await this.performCancel(nodeId);
-  }
-
   async getBatchSessionStatus(nodeId: string): Promise<unknown> {
     return this.performStatus(nodeId);
   }
@@ -93,7 +89,6 @@ export abstract class UnifiedBatchManagerBase<TConfig, TData> {
   protected abstract performStart(nodeId: string, config: TConfig, data: TData): Promise<string>;
   protected abstract performPause(nodeId: string): Promise<void>;
   protected abstract performResume(nodeId: string): Promise<void>;
-  protected abstract performCancel(nodeId: string): Promise<void>;
   protected abstract performStatus(nodeId: string): Promise<unknown>;
   protected abstract performSubscribe(nodeId: string, callback: (event: unknown) => void): () => void;
 }

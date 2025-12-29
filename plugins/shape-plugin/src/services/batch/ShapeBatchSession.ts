@@ -48,9 +48,6 @@ export class ShapeBatchSession extends AbstractBatchSession<ShapeBatchConfig> {
   protected async onResume(): Promise<void> {
   }
 
-  protected async onCancel(): Promise<void> {
-  }
-
   protected async onComplete(): Promise<void> {
   }
 

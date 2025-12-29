@@ -28,7 +28,7 @@ export interface LocationSessionRecord {
   zoomMax: number;
   totalPoints: number;
   createdAt: number;
-  status: 'running' | 'completed' | 'failed' | 'paused' | 'cancelled';
+  status: 'running' | 'completed' | 'failed' | 'paused';
   tableId?: string;
   progress?: {
     total: number;

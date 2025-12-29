@@ -26,6 +26,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     const match = key.match(/^input:(.+)-(\d+)-(\d+)-(\d+)$/) ?? key.match(/^(.+)-(\d+)-(\d+)-(\d+)$/);
     if (!match) return null;
     const [, nodeId, z, x, y] = match;
+    if (!nodeId) return null;
     return {
       key,
       nodeId,
@@ -33,6 +34,10 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
       x: Number(x),
       y: Number(y),
     };
+  }
+
+  clearFeatureCache(nodeId: string): void {
+    this.featureCache.delete(nodeId);
   }
 
   private updateBounds(coords: unknown, bounds: { minX: number; minY: number; maxX: number; maxY: number }): void {
@@ -219,15 +224,24 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                   limitBytes: MAX_VECTOR_TILE_INPUT_BYTES,
                 });
                 for (const task of inputTasks) {
-                  failed += 1;
+                  const currentRetry = typeof task.config?.retry === 'number' ? task.config.retry : 0;
+                  const shouldRegress = currentRetry <= 1;
+                  const nextRetry = currentRetry + 1;
+                  if (!shouldRegress) {
+                    failed += 1;
+                  }
                   if (task.taskId) {
-                    await shapeDB.updateBatchTask(task.taskId, {
-                      status: 'failed',
+                    const updates: Record<string, unknown> = {
+                      status: shouldRegress ? 'regression' : 'failed',
                       completedAt: Date.now(),
                       progress: 100,
                       message,
-                      errorMessage: message,
-                    });
+                      errorMessage: shouldRegress ? undefined : message,
+                    };
+                    if (shouldRegress) {
+                      updates.inputData = { ...(task.config ?? {}), retry: nextRetry };
+                    }
+                    await shapeDB.updateBatchTask(task.taskId, updates);
                   }
                   onProgress({
                     total: tasks.length,
@@ -328,15 +342,24 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                   limitBytes: MAX_VECTOR_TILE_INPUT_BYTES,
                 });
                 for (const task of inputTasks) {
-                  failed += 1;
+                  const currentRetry = typeof task.config?.retry === 'number' ? task.config.retry : 0;
+                  const shouldRegress = currentRetry <= 1;
+                  const nextRetry = currentRetry + 1;
+                  if (!shouldRegress) {
+                    failed += 1;
+                  }
                   if (task.taskId) {
-                    await shapeDB.updateBatchTask(task.taskId, {
-                      status: 'failed',
+                    const updates: Record<string, unknown> = {
+                      status: shouldRegress ? 'regression' : 'failed',
                       completedAt: Date.now(),
                       progress: 100,
                       message: detailMessage,
-                      errorMessage: detailMessage,
-                    });
+                      errorMessage: shouldRegress ? undefined : detailMessage,
+                    };
+                    if (shouldRegress) {
+                      updates.inputData = { ...(task.config ?? {}), retry: nextRetry };
+                    }
+                    await shapeDB.updateBatchTask(task.taskId, updates);
                   }
                   onProgress({
                     total: tasks.length,

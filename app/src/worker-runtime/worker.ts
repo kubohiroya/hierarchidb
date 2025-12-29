@@ -62,7 +62,6 @@ type ShapeBatchAPI = {
   getBatchSession?: (nodeId: NodeId) => Promise<unknown>;
   pauseBatchProcessing?: (draftId: NodeId) => Promise<void>;
   resumeBatchProcessing?: (draftId: NodeId) => Promise<NodeId>;
-  cancelBatchProcessing?: (draftId: NodeId) => Promise<void>;
   invokeBatchCommand?: (command: string, payload: Record<string, unknown>) => Promise<void>;
   subscribeToProgress?: BatchProgressSubscriber;
 };
@@ -401,22 +400,6 @@ reporter.reportStepProgress('Load Comlink', 0);
             await api.resumeBatchProcessing(draftId);
           }
           setHeapContext({ nodeType, nodeId });
-        },
-        cancelBatchSession: async (nodeType: NodeType, nodeId: NodeId): Promise<void> => {
-          const api = resolveShapeBatchApiOrThrow(nodeType);
-          if (api.invokeBatchCommand) {
-            await api.invokeBatchCommand('session/cancel', { nodeId });
-            setHeapContext(null);
-            return;
-          }
-          const session = api.getBatchSession ? await api.getBatchSession(nodeId) : undefined;
-          const draftId = (session as { nodeId?: NodeId; draftId?: NodeId } | undefined)?.nodeId
-            ?? (session as { draftId?: NodeId } | undefined)?.draftId
-            ?? nodeId;
-          if (api.cancelBatchProcessing) {
-            await api.cancelBatchProcessing(draftId);
-          }
-          setHeapContext(null);
         },
         subscribeBatchProgress: async (
           nodeType: NodeType,

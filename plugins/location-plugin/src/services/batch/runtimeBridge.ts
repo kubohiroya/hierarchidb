@@ -10,7 +10,7 @@ const stageMap: Record<string, BatchProgressEvent['stage']> = {
   tilegen: 'vectortile',
 };
 
-type LocationSessionStatus = Extract<BatchSessionStatus['status'], 'running' | 'paused' | 'completed' | 'failed' | 'cancelled'>;
+type LocationSessionStatus = Extract<BatchSessionStatus['status'], 'running' | 'paused' | 'completed' | 'failed'>;
 
 export const mapStageToBatchStage = (stage?: string): BatchProgressEvent['stage'] => {
   if (!stage) return 'download';
@@ -18,7 +18,7 @@ export const mapStageToBatchStage = (stage?: string): BatchProgressEvent['stage'
 };
 
 export const mapManagerStatusToLocationStatus = (phase: ProgressPhase | BatchSessionStatus['status']): LocationSessionStatus => {
-  if (phase === 'paused' || phase === 'completed' || phase === 'failed' || phase === 'cancelled') {
+  if (phase === 'paused' || phase === 'completed' || phase === 'failed') {
     return phase;
   }
   return 'running';

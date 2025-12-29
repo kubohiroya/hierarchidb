@@ -15,6 +15,7 @@ import {
   mergeBatchConfig,
   type BatchConfig,
   type BatchSessionConfig,
+  type BatchTaskStageType,
   type ProcessingStatus,
   type ProcessingStage,
   type BatchProgressEvent as ShapeBatchProgressEvent,
@@ -218,8 +219,6 @@ const mapManagerStatusToShapeStatus = (
       return 'completed';
     case 'failed':
       return 'failed';
-    case 'cancelled':
-      return 'cancelled';
     case 'running':
     case 'idle':
     default:
@@ -249,6 +248,23 @@ const mapProgressToStatus = (progress: ProgressInfo): BatchTaskStatus => {
   if (progress.failed > 0) return 'failed';
   if (progress.total > 0 && progress.completed >= progress.total) return 'completed';
   return 'running';
+};
+
+const mapTaskStatusToStage = (status: BatchTaskRecord['status']): BatchTaskStageType | undefined => {
+  switch (status) {
+    case 'waiting':
+      return 'wait';
+    case 'running':
+      return 'process';
+    case 'completed':
+      return 'success';
+    case 'failed':
+      return 'error';
+    case 'regression':
+      return 'error';
+    default:
+      return undefined;
+  }
 };
 
 const buildTaskTitle = (task: BatchTaskRecord): string | undefined => {
@@ -289,7 +305,7 @@ const buildTaskTitle = (task: BatchTaskRecord): string | undefined => {
 const mapTaskRecordToBatchTask = (task: BatchTaskRecord): BatchTask & { title?: string } => ({
   taskId: task.taskId,
   taskType: task.taskType,
-  stage: task.taskType,
+  stage: mapTaskStatusToStage(task.status),
   nodeId: task.nodeId,
   status: task.status,
   index: task.index,
@@ -567,28 +583,6 @@ export const shapeBatchAPI = {
     return nodeId;
   },
 
-  cancelBatchProcessing: async (draftId: NodeId): Promise<void> => {
-    const handler = getShapeEntityHandler();
-    const entity = await handler.getEntity(draftId);
-    const nodeId = resolveBatchNodeId(entity as DraftLike | undefined);
-    if (!entity || !nodeId) {
-      throw new Error(`No active batch session for draft: ${draftId}`);
-    }
-
-    if (batchManagerWithDispatch.dispatchCommand) {
-      await batchManagerWithDispatch.dispatchCommand('session/cancel', {
-        nodeId,
-      });
-    } else {
-      await batchSessionManager.cancelBatchSession(nodeId);
-    }
-    const subscription = progressCallbacks.get(nodeId);
-    subscription?.unsubscribe?.();
-    progressCallbacks.delete(nodeId);
-    progressSessionMeta.delete(nodeId);
-
-  },
-
   invokeBatchCommand: async <K extends ShapeBatchCommand>(
     command: K,
     payload: ShapeBatchCommandPayload<K>,
@@ -608,9 +602,6 @@ export const shapeBatchAPI = {
         break;
       case 'session/resume':
         await batchSessionManager.resumeBatchSession(nodeId);
-        break;
-      case 'session/cancel':
-        await batchSessionManager.cancelBatchSession(nodeId);
         break;
       default:
         console.warn('[shapeBatchAPI] batch command unavailable in unified manager', command);

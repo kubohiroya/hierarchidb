@@ -91,14 +91,14 @@ export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = Bas
       await this.onComplete();
     } catch (error) {
       if (controller.signal.aborted) {
-        this.state.status = 'cancelled';
-        this.state.error = undefined;
+        this.state.status = 'failed';
+        this.state.error = 'Session aborted';
         this.emitProgress({
-          phase: 'cancelled',
-          stage: this.progress.currentStage ?? 'cancelled',
+          phase: 'failed',
+          stage: this.progress.currentStage ?? 'failed',
           payload: this.toProgressPayload(),
         });
-        throw abortError('Session cancelled');
+        throw abortError('Session aborted');
       }
       this.state.status = 'failed';
       this.state.error = error instanceof Error ? error.message : String(error);
@@ -131,17 +131,6 @@ export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = Bas
     this.state.lastActivity = Date.now();
     await this.onResume();
     this.emitProgress({ phase: 'running', stage: this.progress.currentStage ?? 'running', payload: this.toProgressPayload() });
-  }
-
-  async cancel(): Promise<void> {
-    if (this.state.status === 'completed' || this.state.status === 'failed' || this.state.status === 'cancelled') {
-      return;
-    }
-    this.state.status = 'cancelled';
-    this.state.lastActivity = Date.now();
-    this.ensureAbortController().abort();
-    await this.onCancel();
-    this.emitProgress({ phase: 'cancelled', stage: this.progress.currentStage ?? 'cancelled', payload: this.toProgressPayload() });
   }
 
   addBatchProgressListener(listener: (event: BatchProgressEvent) => void): () => void {
@@ -217,7 +206,6 @@ export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = Bas
   protected async onStart(): Promise<void> {}
   protected async onPause(): Promise<void> {}
   protected async onResume(): Promise<void> {}
-  protected async onCancel(): Promise<void> {}
   protected async onComplete(): Promise<void> {}
   protected onBatchProgressEvent(_event: BatchProgressEvent): void {}
 }

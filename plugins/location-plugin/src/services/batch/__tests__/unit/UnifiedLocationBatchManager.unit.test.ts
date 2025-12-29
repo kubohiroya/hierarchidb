@@ -272,30 +272,25 @@ describe('UnifiedLocationBatchManager control operations', () => {
     [mockDb] = createMockDb();
   });
 
-  it('delegates pause/resume/cancel to internal session manager', async () => {
+  it('delegates pause/resume to internal session manager', async () => {
     const mgr = new UnifiedLocationBatchManager();
     mgr.setDbProvider(() => mockDb);
 
     const pauseSpy = vi.spyOn(LocationBatchSessionManager.prototype, 'pause');
     const resumeSpy = vi.spyOn(LocationBatchSessionManager.prototype, 'resume');
-    const cancelSpy = vi.spyOn(LocationBatchSessionManager.prototype, 'cancel');
 
     try {
       await mgr.pauseBatchSession('node-test' as NodeId);
       await mgr.resumeBatchSession('node-test' as NodeId);
-      await mgr.cancelBatchSession('node-test' as NodeId);
 
       expect(pauseSpy).toHaveBeenCalledWith('node-test');
       expect(resumeSpy).toHaveBeenCalledWith('node-test');
-      expect(cancelSpy).toHaveBeenCalledWith('node-test');
 
       expect(mockDb.sessions.update).toHaveBeenCalledWith('node-test', expect.objectContaining({ status: 'paused' }));
       expect(mockDb.sessions.update).toHaveBeenCalledWith('node-test', expect.objectContaining({ status: 'running' }));
-      expect(mockDb.sessions.update).toHaveBeenCalledWith('node-test', expect.objectContaining({ status: 'failed' }));
     } finally {
       pauseSpy.mockRestore();
       resumeSpy.mockRestore();
-      cancelSpy.mockRestore();
     }
   });
 });

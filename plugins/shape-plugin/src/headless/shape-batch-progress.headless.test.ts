@@ -242,11 +242,6 @@ const runBatchProcessing = async (
   });
 
   await completed.catch(async (error) => {
-    try {
-      await shapeBatchAPI.cancelBatchProcessing(draftId);
-    } catch {
-      // Ignore cleanup errors after failure.
-    }
     throw error;
   });
 

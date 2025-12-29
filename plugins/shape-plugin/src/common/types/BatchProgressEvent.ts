@@ -46,5 +46,5 @@ export interface BatchProgressEvent {
   };
 
   /** Event type for enhanced UI handling (union includes UI hook expectations) */
-  type?: 'progress' | 'auth-required' | 'resumed' | 'cancelled' | 'stage-change' | 'complete' | 'error';
+  type?: 'progress' | 'auth-required' | 'resumed' | 'stage-change' | 'complete' | 'error';
 }

@@ -64,8 +64,6 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
   protected async onResume(): Promise<void> {
   }
 
-  protected async onCancel(): Promise<void> {}
-
   protected async onComplete(): Promise<void> {
     if (this.writer && this.writerReady) {
       await this.writer.commit();

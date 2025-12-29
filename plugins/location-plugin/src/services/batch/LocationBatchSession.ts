@@ -40,10 +40,6 @@ export class LocationBatchSession extends AbstractBatchSession<LocationBatchConf
     await this.controller.resume();
   }
 
-  protected async onCancel(): Promise<void> {
-    await this.controller.cancel?.();
-  }
-
   protected async onComplete(): Promise<void> {}
 
   protected onBatchProgressEvent(event: BatchProgressEvent): void {

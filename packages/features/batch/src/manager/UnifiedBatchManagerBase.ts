@@ -71,13 +71,6 @@ export abstract class UnifiedBatchManagerBase<TConfig, TData> implements IBatchS
     await this.notifyStatus(nodeId);
   }
 
-  async cancelBatchSession(nodeId: NodeId): Promise<void> {
-    await this.performCancel(nodeId);
-    if (this.persistence?.onSessionCompleted) {
-      await this.persistence.onSessionCompleted(nodeId);
-    }
-  }
-
   async getBatchSessionStatus(nodeId: NodeId): Promise<BatchSessionStatus> {
     const status = await this.performStatus(nodeId);
     if (!status.nodeId) status.nodeId = nodeId;
@@ -97,7 +90,7 @@ export abstract class UnifiedBatchManagerBase<TConfig, TData> implements IBatchS
       if (this.persistence?.onSessionProgress) {
         void this.persistence.onSessionProgress(nodeId, nextEvent);
       }
-      if (nextEvent.phase === 'completed' || nextEvent.phase === 'failed' || nextEvent.phase === 'cancelled') {
+      if (nextEvent.phase === 'completed' || nextEvent.phase === 'failed') {
         if (this.persistence?.onSessionCompleted) {
           void this.persistence.onSessionCompleted(nodeId);
         }
@@ -108,7 +101,6 @@ export abstract class UnifiedBatchManagerBase<TConfig, TData> implements IBatchS
   protected abstract performStart(nodeId: NodeId, config: TConfig, data: TData): Promise<BatchSessionStatus>;
   protected abstract performPause(nodeId: NodeId): Promise<void>;
   protected abstract performResume(nodeId: NodeId): Promise<void>;
-  protected abstract performCancel(nodeId: NodeId): Promise<void>;
   protected abstract performStatus(nodeId: NodeId): Promise<BatchSessionStatus>;
   protected abstract performSubscribe(nodeId: NodeId, callback: BatchProgressCallback): () => void;
 

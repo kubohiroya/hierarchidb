@@ -67,11 +67,11 @@ export const ShapeWorkerPlugin = {
     },
 
     beforeDelete: async (nodeId: NodeId, _entity: ShapeEntity) => {
-      // Cancel any active batch sessions (nodeId is the only identifier).
+      // Pause any active batch sessions before cleanup (nodeId is the only identifier).
       try {
-        await shapeBatchAPI.cancelBatchProcessing(nodeId);
+        await shapeBatchAPI.pauseBatchProcessing(nodeId);
       } catch (error) {
-        console.warn('[shape-plugin] failed to cancel batch processing before delete', error);
+        console.warn('[shape-plugin] failed to pause batch processing before delete', error);
       }
       // Cleanup processing data
       await shapeBatchAPI.cleanupProcessingData(nodeId);

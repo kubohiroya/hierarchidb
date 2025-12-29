@@ -92,7 +92,7 @@ export interface BatchSessionConfig extends CommonSessionConfig {
 export type BatchProcessConfig = BatchSessionConfig;
 export type BatchTaskType = 'download' | 'simplify1' | 'simplify2' | 'vectortile';
 export type ProcessingStage = BatchTaskType;
-export type TaskStatus = 'waiting' | 'running' | 'completed' | 'failed' | 'cancelled';
+export type TaskStatus = 'waiting' | 'running' | 'completed' | 'failed' | 'regression';
 
 export interface ProgressInfo {
   total: number;
@@ -147,7 +147,7 @@ export interface CacheStatistics {
 export interface BatchSessionRecord {
   nodeId: NodeId;
   draftId?: NodeId;
-  status: 'idle' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
+  status: 'idle' | 'running' | 'paused' | 'completed' | 'failed';
   config: BatchProcessConfig;
   startedAt: number;
   updatedAt: number;

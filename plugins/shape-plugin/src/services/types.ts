@@ -37,8 +37,6 @@ export interface ShapesAPIMethods {
 
   resumeBatchProcess(nodeId: NodeId): Promise<void>;
 
-  cancelBatchProcess(nodeId: NodeId): Promise<void>;
-
   getBatchStatus(nodeId: NodeId): Promise<BatchStatus>;
 
   // Data sources

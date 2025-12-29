@@ -149,17 +149,6 @@ export class UnifiedLocationBatchManager extends UnifiedBatchManagerBase<Unified
     }
   }
 
-  protected async performCancel(nodeId: NodeId): Promise<void> {
-    this.manager.cancel(nodeId);
-    try {
-      const db = this.getDb();
-      await db.sessions?.update(nodeId, { status: 'failed', updatedAt: Date.now() });
-      await db.clearVectorTilesForNode(nodeId);
-    } catch (error) {
-      console.warn('[UnifiedLocationBatchManager] failed to mark session failed', error);
-    }
-  }
-
   protected async performStatus(nodeId: NodeId): Promise<BatchSessionStatus> {
     const db = this.getDb();
     const record = await db.sessions?.get(nodeId);
@@ -173,7 +162,14 @@ export class UnifiedLocationBatchManager extends UnifiedBatchManagerBase<Unified
     const total = progress?.total ?? record?.totalPoints ?? summary?.totalPoints ?? 0;
     const completed = progress?.completed ?? 0;
     const percentage = progress?.percentage ?? (total > 0 ? Math.round((completed / total) * 100) : 0);
-    const status = record?.status ?? (percentage >= 100 ? 'completed' : 'running');
+    const rawStatus = record?.status ?? (percentage >= 100 ? 'completed' : 'running');
+    const status: BatchSessionStatus['status'] = (() => {
+      if (rawStatus === 'cancelled') return 'failed';
+      if (rawStatus === 'paused' || rawStatus === 'completed' || rawStatus === 'failed') {
+        return rawStatus;
+      }
+      return 'running';
+    })();
     return {
       nodeId: record?.nodeId ?? summary?.nodeId ?? ('' as NodeId),
       status,

@@ -168,43 +168,6 @@ describe('ShapesService', () => {
       );
     });
 
-    it('should cancel batch session and cleanup tasks', async () => {
-      // Arrange
-      const sessionId = 'session-123';
-      const nodeId: NodeId = 'node-123' as NodeId;
-
-      const mockSession: BatchSession = {
-        sessionId,
-        nodeId,
-        status: 'running',
-        config: { dataSource: 'GADM', countryCode: 'JP', adminLevels: [1] },
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        progress: { total: 100, completed: 25, failed: 0, skipped: 0, percentage: 25 },
-      };
-
-      const mockTasks = [
-        { taskId: 'task-1', sessionId, status: 'running', type: 'download' },
-        { taskId: 'task-2', sessionId, status: 'pending', type: 'simplify1' },
-      ];
-
-      mockPluginAPI.getDatabase().batchSessions.get.mockResolvedValue(mockSession);
-      mockPluginAPI.getDatabase().batchTasks.where.mockReturnValue({
-        toArray: vi.fn().mockResolvedValue(mockTasks),
-      });
-
-      // Act
-      await service.cancelBatchSession(sessionId);
-
-      // Assert
-      expect(mockPluginAPI.getDatabase().batchSessions.update).toHaveBeenCalledWith(
-        sessionId,
-      expect.objectContaining({ status: 'failed' }),
-      );
-
-      // Should update all tasks to failed
-      expect(mockPluginAPI.getDatabase().batchTasks.update).toHaveBeenCalledTimes(2);
-    });
   });
 
   describe('data source management', () => {

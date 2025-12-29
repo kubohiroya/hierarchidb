@@ -27,7 +27,7 @@ export const BatchTaskStage = {
 
 export type BatchTaskStageType = (typeof BatchTaskStage)[keyof typeof BatchTaskStage];
 
-export type TaskStatus = 'waiting' | 'running' | 'completed' | 'failed' | 'cancelled';
+export type TaskStatus = 'waiting' | 'running' | 'completed' | 'failed' | 'regression';
 
 export type BatchTaskType = 'download' | 'simplify1' | 'simplify2' | 'vectortile';
 export type ProcessingStage = BatchTaskType;
@@ -101,6 +101,7 @@ export interface SimplifyTaskConfig {
   aspectRatioThreshold?: number;
   hybridFilterConfig?: HybridFilterConfig;
   enablePerFeatureSimplification?: boolean;
+  retry?: number;
 }
 
 export interface SimplifyTask extends BatchTaskBase {
@@ -139,6 +140,7 @@ export interface VectorTileTaskConfig {
   outputBufferId?: string;
   metadataEnabled?: boolean;
   metadataReplace?: boolean;
+  retry?: number;
   metadataContext?: {
     dataSource?: string;
     countryCode?: string;
@@ -160,7 +162,7 @@ export interface VectorTileTask extends BatchTaskBase {
 export interface BatchSession {
   nodeId: NodeId;
   draftId?: NodeId;
-  status: 'idle' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
+  status: 'idle' | 'running' | 'paused' | 'completed' | 'failed';
   config: BatchSessionConfig;
   startedAt: number;
   updatedAt: number;
@@ -194,7 +196,6 @@ export interface ProgressInfo {
 export type ShapeBatchCommandMap = {
   'session/pause': { nodeId: NodeId };
   'session/resume': { nodeId: NodeId };
-  'session/cancel': { nodeId: NodeId };
   'stage/pause': { nodeId: NodeId; stage: ProcessingStage };
   'stage/resume': { nodeId: NodeId; stage: ProcessingStage };
 };

@@ -73,10 +73,6 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
     return this.manager.resumeSession(nodeId);
   }
 
-  async cancelBatchSession(nodeId: NodeId): Promise<void> {
-    await this.manager.cancelSession(nodeId);
-  }
-
   async getBatchSessionStatus(nodeId: NodeId): Promise<BatchSessionStatus> {
     const status = await this.manager.getSessionStatus(nodeId);
 

@@ -17,7 +17,6 @@ export const workerAPI = {
   }),
   pauseBatchSession: async () => undefined,
   resumeBatchSession: async () => undefined,
-  cancelBatchSession: async () => undefined,
   subscribeBatchProgress: async () => () => undefined,
 };
 

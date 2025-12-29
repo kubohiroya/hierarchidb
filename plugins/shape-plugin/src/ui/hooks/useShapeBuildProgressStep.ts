@@ -193,7 +193,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
         return summary[key];
       };
       rows.forEach((task) => {
-        const stageKey = normalizeStageId(task.stage ?? task.taskType) ?? 'download';
+        const stageKey = normalizeStageId(task.taskType) ?? 'download';
         const slot = ensure(stageKey);
         slot.total += 1;
         if (isSkippedMessage(task.message)) {
@@ -331,7 +331,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
       warned.add(task.taskId);
       console.warn('[ShapeBuildProgressStep] Task skipped', {
         taskId: task.taskId,
-        stage: task.stage ?? task.taskType,
+        stage: task.stage ?? 'download',
         message: task.message,
       });
     }

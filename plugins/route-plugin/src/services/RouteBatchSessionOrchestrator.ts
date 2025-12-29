@@ -87,19 +87,13 @@ export class RouteBatchSessionOrchestrator extends BaseBatchSessionManager {
     }
   }
 
-  async cancelBatchSession(nodeId: NodeId): Promise<void> {
-    if (this.sessions.has(nodeId)) {
-      await super.cancelBatchSession(nodeId);
-    }
-  }
-
   onBatchProgress(nodeId: NodeId, callback: BatchProgressCallback): () => void {
     return super.onBatchProgress(nodeId, callback);
   }
 
   protected async onSessionStatusChange(_session: RouteBatchSession): Promise<void> {
     const state = _session.getState();
-    if (state.status === 'completed' || state.status === 'failed' || state.status === 'cancelled') {
+    if (state.status === 'completed' || state.status === 'failed') {
       this.sessions.delete(state.nodeId);
       this.cleanupSessionTracking(state.nodeId);
     }

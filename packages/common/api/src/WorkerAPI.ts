@@ -83,7 +83,6 @@ export interface WorkerAPI {
   getBatchSessionStatus(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus>;
   pauseBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<void>;
   resumeBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<void>;
-  cancelBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<void>;
   getBatchTasks(nodeType: NodeType, nodeId: NodeId): Promise<BatchTaskSummary[]>;
   generateShapeDownloadTaskPayloadsFromSelection(
     dataSource: ShapeDataSourceName,

@@ -51,7 +51,7 @@ export function useBatchProgress(
 
   useEffect(() => {
     if (!poll) return;
-    if (progress?.phase === 'completed' || progress?.phase === 'cancelled') return;
+    if (progress?.phase === 'completed') return;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const tick = async () => {
       const value = await poll();

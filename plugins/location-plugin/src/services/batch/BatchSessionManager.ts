@@ -123,14 +123,6 @@ export class LocationBatchSessionManager extends BaseBatchSessionManager {
     });
   }
 
-  cancel(nodeId: NodeId) {
-    void this.cancelBatchSession(nodeId).catch((error) => {
-      if (isDevEnvironment) {
-        console.warn('[LocationBatchSessionManager] cancel failed', error);
-      }
-    });
-  }
-
   protected async onSessionProgress(session: LocationBatchSession, event: BatchProgressEvent): Promise<void> {
     const payload = event.payload ?? {};
     const total = payload.total ?? 0;
@@ -172,7 +164,7 @@ export class LocationBatchSessionManager extends BaseBatchSessionManager {
         console.warn('[LocationBatchSessionManager] failed to persist status', error);
       }
     }
-    if (state.status === 'completed' || state.status === 'failed' || state.status === 'cancelled') {
+    if (state.status === 'completed' || state.status === 'failed') {
       this.sessions.delete(state.nodeId);
       this.legacyProgress.delete(state.nodeId);
     }

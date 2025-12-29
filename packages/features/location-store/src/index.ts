@@ -27,8 +27,7 @@ export type LocationProcessingStatus =
   | 'processing'
   | 'validating'
   | 'completed'
-  | 'failed'
-  | 'cancelled';
+  | 'failed';
 
 export interface LocationEntity extends TreeNodeData {
   dataSource: LocationDataSource;
