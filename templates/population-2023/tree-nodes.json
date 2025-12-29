@@ -18,1400 +18,1400 @@
               "dataSource": "geoboundaries"
             },
             "licenseAgreement": false,
-            "selectedArrayByCountries": [
-              [
+            "selectedArrayByCountries": {
+              "AF": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "AL": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "DZ": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "ASM": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "AND": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "AGO": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "AIA": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "ATA": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "ATG": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "AR": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "AM": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "ABW": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "AU": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "AT": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "AZE": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "BHS": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "BHR": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "BD": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "BRB": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "BLR": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "BE": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "BLZ": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "BJ": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "BMU": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "BT": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "BO": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "BES": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "BA": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "BW": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "BR": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "VGB": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "BRN": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "BG": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "BF": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "BI": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "CPV": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "KH": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "CM": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "CA": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "CYM": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "CF": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "TD": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "CL": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "CN": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "CO": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "KM": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "CG": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "COK": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "CR": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "CI": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "HR": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "CU": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "CUW": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "CY": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "CZ": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "KP": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "CD": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "DK": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "DJ": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "DMA": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "DO": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "EC": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "EG": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "SV": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "GQ": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "ER": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "EE": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "SZ": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "ET": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "FLK": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "FRO": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "FJ": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "FI": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "FR": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "GUF": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "PYF": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "GA": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "GM": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "GE": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "DE": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "GH": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "GIB": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "GR": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "GRL": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "GRD": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "GLP": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "GUM": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "GT": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "GGY": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "GN": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "GW": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "GY": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "HT": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "VAT": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "HN": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "HU": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "IS": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "IN": [
                 false,
                 true,
                 false,
                 false
               ],
-              [
+              "ID": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "IR": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "IQ": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "IE": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "IMN": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "IL": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "IT": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "JM": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "JP": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "JO": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "KZ": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "KE": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "KI": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "XK": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "KW": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "KG": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "LA": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "LV": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "LB": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "LS": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "LR": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "LY": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "LI": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "LT": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "LU": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "MG": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "MW": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "MY": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "MV": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "ML": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "MT": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "MHL": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "MTQ": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "MR": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "MU": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "MYT": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "MX": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "FM": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "MC": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "MN": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "ME": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "MSR": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "MA": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "MZ": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "MM": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "NA": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "NR": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "NP": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "NL": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "NCL": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "NZ": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "NI": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "NE": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "NG": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "NIU": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "MK": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "MNP": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "NO": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "OM": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "PK": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "PW": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "PA": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "PG": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "PY": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "PE": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "PH": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "PCN": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "PL": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "PT": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "PRI": [
                 false,
                 false,
                 true,
                 false
               ],
-              [
+              "QA": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "KR": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "MD": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "REU": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "RO": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "RU": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "RW": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "BLM": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "SHN": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "KN": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "LC": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "VC": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "WS": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "SM": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "ST": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "SA": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "SN": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "RS": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "SC": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "SL": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "SG": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "SK": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "SI": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "SB": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "SO": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "ZA": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "SS": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "ES": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "LK": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "PS": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "SD": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "SR": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "SE": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "CH": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "SY": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "TW": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "TJ": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "TH": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "TL": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "TG": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "TKL": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "TO": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "TT": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "TN": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "TR": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "TM": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "TCA": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "TV": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "UG": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "UA": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "AE": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "GB": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "TZ": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "US": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "VIR": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "UY": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "UZ": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "VU": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "VE": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "VN": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "WLF": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "YE": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "ZM": [
                 true,
                 false,
                 false,
                 false
               ],
-              [
+              "ZW": [
                 true,
                 false,
                 false,
                 false
               ]
-            ]
+            }
           }
         },
         {
@@ -1443,51 +1443,321 @@
                 "value": "2023",
                 "enabled": true
               },
-              {"id": "cell-dd8a2b5a-967d-494f-9c8e-bcf43155122d", "column": "Year", "operation": "equals", "value": "2023", "enabled": true},
-              {"id": "cell-4b37b7f3-00b1-4e5a-a008-6b2358d6d325", "column": "Country Name", "operator": "not_equals", "value": "World", "enabled": true},
-              {"id": "cell-6112757b-8f2e-4c25-a72c-48aee6666f6d", "column": "Country Name", "operator": "not_equals", "value": "IDA & IBRD total", "enabled": true},
-              {"id": "cell-6ec256d1-2416-4660-8057-3912fc30f52b", "column": "Country Name", "operator": "not_equals", "value": "Low & middle income", "enabled": true},
-              {"id": "cell-92d7bc77-abdf-4b32-8711-ce1992643da0", "column": "Country Name", "operator": "not_equals", "value": "Middle income", "enabled": true},
-              {"id": "cell-66b2f947-9374-48ee-b585-7f88df88f384", "column": "Country Name", "operator": "not_equals", "value": "IBRD only", "enabled": true},
-              {"id": "cell-eca04244-7c7d-4726-8aa8-05c43fc0d0cb", "column": "Country Name", "operator": "not_equals", "value": "Early-demographic dividend", "enabled": true},
-              {"id": "cell-5fa5f775-be67-4d40-9e1a-3e65724c4edd", "column": "Country Name", "operator": "not_equals", "value": "Lower middle income", "enabled": true},
-              {"id": "cell-d5e9f57a-bcb1-45d4-8491-dd52fdef8635", "column": "Country Name", "operator": "not_equals", "value": "Upper middle income", "enabled": true},
-              {"id": "cell-3033e012-0f0b-4e4e-baf6-cb6609d1bb30", "column": "Country Name", "operator": "not_equals", "value": "East Asia & Pacific", "enabled": true},
-              {"id": "cell-d2c0721d-abbe-4152-b628-f67543282de6", "column": "Country Name", "operator": "not_equals", "value": "Late-demographic dividend", "enabled": true},
-              {"id": "cell-59fc5407-5261-4325-91f7-3ce5818757c2", "column": "Country Name", "operator": "not_equals", "value": "East Asia & Pacific (excluding high income)", "enabled": true},
-              {"id": "cell-9697142d-0e28-451c-b277-bd1ad459ea60", "column": "Country Name", "operator": "not_equals", "value": "East Asia & Pacific (IDA & IBRD countries)", "enabled": true},
-              {"id": "cell-d11a8893-db37-4434-842f-6336f3a8d67e", "column": "Country Name", "operator": "not_equals", "value": "South Asia", "enabled": true},
-              {"id": "cell-d5ad84fc-75f1-4db8-952f-f47c4abc78ad", "column": "Country Name", "operator": "not_equals", "value": "South Asia (IDA & IBRD)", "enabled": true},
-              {"id": "cell-8da00a85-5225-4ef4-bc43-21b0e0eef9c2", "column": "Country Name", "operator": "not_equals", "value": "IDA total", "enabled": true},
-              {"id": "cell-e6559678-48a8-4f43-a46a-b8ede305a4ea", "column": "Country Name", "operator": "not_equals", "value": "High income", "enabled": true},
-              {"id": "cell-498b9129-dcb1-4b5b-8799-95e98eb31397", "column": "Country Name", "operator": "not_equals", "value": "OECD members", "enabled": true},
-              {"id": "cell-e2840939-5b46-4b69-a8eb-02080d9ef20b", "column": "Country Name", "operator": "not_equals", "value": "IDA only", "enabled": true},
-              {"id": "cell-1593c812-ee9a-474b-bc14-978b28cc6a25", "column": "Country Name", "operator": "not_equals", "value": "Sub-Saharan Africa", "enabled": true},
-              {"id": "cell-a4d8287d-63aa-4311-8528-a6e952abb89a", "column": "Country Name", "operator": "not_equals", "value": "Sub-Saharan Africa (IDA & IBRD countries)", "enabled": true},
-              {"id": "cell-d323202b-cdae-4242-a61b-cafddd2c7c93", "column": "Country Name", "operator": "not_equals", "value": "Sub-Saharan Africa (excluding high income)", "enabled": true},
-              {"id": "cell-a079bab9-d8bd-4d54-9c98-e1a4478da3f7", "column": "Country Name", "operator": "not_equals", "value": "Least developed countries: UN classification", "enabled": true},
-              {"id": "cell-edef7b35-f5d7-4729-8327-3e1a090927a4", "column": "Country Name", "operator": "not_equals", "value": "Post-demographic dividend", "enabled": true},
-              {"id": "cell-45274cfa-c8b6-4482-aae2-bbcff9167461", "column": "Country Name", "operator": "not_equals", "value": "Pre-demographic dividend", "enabled": true},
-              {"id": "cell-8f6df776-fe0d-415a-8b25-a91d25547077", "column": "Country Name", "operator": "not_equals", "value": "Europe & Central Asia", "enabled": true},
-              {"id": "cell-b20243fb-7404-499c-a672-44f2452e9f8b", "column": "Country Name", "operator": "not_equals", "value": "Heavily indebted poor countries (HIPC)", "enabled": true},
-              {"id": "cell-611f4873-8bea-44c7-a7b6-4e04f64581eb", "column": "Country Name", "operator": "not_equals", "value": "Africa Eastern and Southern", "enabled": true},
-              {"id": "cell-b942a7c7-d168-4898-9977-814002525f69", "column": "Country Name", "operator": "not_equals", "value": "Low income", "enabled": true},
-              {"id": "cell-0b1ff3e9-6663-4c24-9626-7e7693682c7c", "column": "Country Name", "operator": "not_equals", "value": "Latin America & Caribbean", "enabled": true},
-              {"id": "cell-30f088a1-1b1c-4c5a-a6dc-3b878d24ceec", "column": "Country Name", "operator": "not_equals", "value": "Latin America & the Caribbean (IDA & IBRD countries)", "enabled": true},
-              {"id": "cell-08be93ed-3788-4f66-b8d1-6dfff30b25e4", "column": "Country Name", "operator": "not_equals", "value": "IDA blend", "enabled": true},
-              {"id": "cell-f14a402c-ba45-4bf7-99e0-eace76f5da88", "column": "Country Name", "operator": "not_equals", "value": "Latin America & Caribbean (excluding high income)", "enabled": true},
-              {"id": "cell-9f0a9b17-a666-4d14-9a1b-db38844876e7", "column": "Country Name", "operator": "not_equals", "value": "Africa Western and Central", "enabled": true},
-              {"id": "cell-682b1e5a-454a-4ea1-91b0-79b3070178d4", "column": "Country Name", "operator": "not_equals", "value": "Middle East & North Africa", "enabled": true},
-              {"id": "cell-80b836a8-446d-4080-ac1f-fdb5ce6cef5c", "column": "Country Name", "operator": "not_equals", "value": "Fragile and conflict affected situations", "enabled": true},
-              {"id": "cell-36999fee-6ed0-4f4d-85a5-d1aac9159964", "column": "Country Name", "operator": "not_equals", "value": "Arab World", "enabled": true},
-              {"id": "cell-650eb2ef-1d13-4732-a6ea-1eee0f4627a1", "column": "Country Name", "operator": "not_equals", "value": "Europe & Central Asia (IDA & IBRD countries)", "enabled": true},
-              {"id": "cell-8fe1664a-0ed0-4a8b-8594-d5988c9696d0", "column": "Country Name", "operator": "not_equals", "value": "European Union", "enabled": true},
-              {"id": "cell-70f79f51-22d3-4cb3-a137-b91f5883da07", "column": "Country Name", "operator": "not_equals", "value": "Middle East & North Africa (excluding high income)", "enabled": true},
-              {"id": "cell-49439fac-22ee-4900-95b0-0d6d6e06287d", "column": "Country Name", "operator": "not_equals", "value": "Middle East & North Africa (IDA & IBRD countries)", "enabled": true},
-              {"id": "cell-52f705e9-d713-4f93-b6dd-c782ffb03662", "column": "Country Name", "operator": "not_equals", "value": "North America", "enabled": true},
-              {"id": "cell-6dac25a1-877c-4a16-9def-18f5851ff17d", "column": "Country Name", "operator": "not_equals", "value": "Euro area", "enabled": true},
-              {"id": "cell-02f7da03-7c9b-42df-b9a2-c76b10fe1039", "column": "Country Name", "operator": "not_equals", "value": "Europe & Central Asia (excluding high income)", "enabled": true},
-              {"id": "cell-856af51c-c0f9-4d13-8417-7cadeffb07d2", "column": "Country Name", "operator": "not_equals", "value": "Central Europe and the Baltics", "enabled": true}
+              {
+                "id": "cell-dd8a2b5a-967d-494f-9c8e-bcf43155122d",
+                "column": "Year",
+                "operation": "equals",
+                "value": "2023",
+                "enabled": true
+              },
+              {
+                "id": "cell-4b37b7f3-00b1-4e5a-a008-6b2358d6d325",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "World",
+                "enabled": true
+              },
+              {
+                "id": "cell-6112757b-8f2e-4c25-a72c-48aee6666f6d",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "IDA & IBRD total",
+                "enabled": true
+              },
+              {
+                "id": "cell-6ec256d1-2416-4660-8057-3912fc30f52b",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Low & middle income",
+                "enabled": true
+              },
+              {
+                "id": "cell-92d7bc77-abdf-4b32-8711-ce1992643da0",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Middle income",
+                "enabled": true
+              },
+              {
+                "id": "cell-66b2f947-9374-48ee-b585-7f88df88f384",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "IBRD only",
+                "enabled": true
+              },
+              {
+                "id": "cell-eca04244-7c7d-4726-8aa8-05c43fc0d0cb",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Early-demographic dividend",
+                "enabled": true
+              },
+              {
+                "id": "cell-5fa5f775-be67-4d40-9e1a-3e65724c4edd",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Lower middle income",
+                "enabled": true
+              },
+              {
+                "id": "cell-d5e9f57a-bcb1-45d4-8491-dd52fdef8635",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Upper middle income",
+                "enabled": true
+              },
+              {
+                "id": "cell-3033e012-0f0b-4e4e-baf6-cb6609d1bb30",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "East Asia & Pacific",
+                "enabled": true
+              },
+              {
+                "id": "cell-d2c0721d-abbe-4152-b628-f67543282de6",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Late-demographic dividend",
+                "enabled": true
+              },
+              {
+                "id": "cell-59fc5407-5261-4325-91f7-3ce5818757c2",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "East Asia & Pacific (excluding high income)",
+                "enabled": true
+              },
+              {
+                "id": "cell-9697142d-0e28-451c-b277-bd1ad459ea60",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "East Asia & Pacific (IDA & IBRD countries)",
+                "enabled": true
+              },
+              {
+                "id": "cell-d11a8893-db37-4434-842f-6336f3a8d67e",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "South Asia",
+                "enabled": true
+              },
+              {
+                "id": "cell-d5ad84fc-75f1-4db8-952f-f47c4abc78ad",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "South Asia (IDA & IBRD)",
+                "enabled": true
+              },
+              {
+                "id": "cell-8da00a85-5225-4ef4-bc43-21b0e0eef9c2",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "IDA total",
+                "enabled": true
+              },
+              {
+                "id": "cell-e6559678-48a8-4f43-a46a-b8ede305a4ea",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "High income",
+                "enabled": true
+              },
+              {
+                "id": "cell-498b9129-dcb1-4b5b-8799-95e98eb31397",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "OECD members",
+                "enabled": true
+              },
+              {
+                "id": "cell-e2840939-5b46-4b69-a8eb-02080d9ef20b",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "IDA only",
+                "enabled": true
+              },
+              {
+                "id": "cell-1593c812-ee9a-474b-bc14-978b28cc6a25",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Sub-Saharan Africa",
+                "enabled": true
+              },
+              {
+                "id": "cell-a4d8287d-63aa-4311-8528-a6e952abb89a",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Sub-Saharan Africa (IDA & IBRD countries)",
+                "enabled": true
+              },
+              {
+                "id": "cell-d323202b-cdae-4242-a61b-cafddd2c7c93",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Sub-Saharan Africa (excluding high income)",
+                "enabled": true
+              },
+              {
+                "id": "cell-a079bab9-d8bd-4d54-9c98-e1a4478da3f7",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Least developed countries: UN classification",
+                "enabled": true
+              },
+              {
+                "id": "cell-edef7b35-f5d7-4729-8327-3e1a090927a4",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Post-demographic dividend",
+                "enabled": true
+              },
+              {
+                "id": "cell-45274cfa-c8b6-4482-aae2-bbcff9167461",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Pre-demographic dividend",
+                "enabled": true
+              },
+              {
+                "id": "cell-8f6df776-fe0d-415a-8b25-a91d25547077",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Europe & Central Asia",
+                "enabled": true
+              },
+              {
+                "id": "cell-b20243fb-7404-499c-a672-44f2452e9f8b",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Heavily indebted poor countries (HIPC)",
+                "enabled": true
+              },
+              {
+                "id": "cell-611f4873-8bea-44c7-a7b6-4e04f64581eb",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Africa Eastern and Southern",
+                "enabled": true
+              },
+              {
+                "id": "cell-b942a7c7-d168-4898-9977-814002525f69",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Low income",
+                "enabled": true
+              },
+              {
+                "id": "cell-0b1ff3e9-6663-4c24-9626-7e7693682c7c",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Latin America & Caribbean",
+                "enabled": true
+              },
+              {
+                "id": "cell-30f088a1-1b1c-4c5a-a6dc-3b878d24ceec",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Latin America & the Caribbean (IDA & IBRD countries)",
+                "enabled": true
+              },
+              {
+                "id": "cell-08be93ed-3788-4f66-b8d1-6dfff30b25e4",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "IDA blend",
+                "enabled": true
+              },
+              {
+                "id": "cell-f14a402c-ba45-4bf7-99e0-eace76f5da88",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Latin America & Caribbean (excluding high income)",
+                "enabled": true
+              },
+              {
+                "id": "cell-9f0a9b17-a666-4d14-9a1b-db38844876e7",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Africa Western and Central",
+                "enabled": true
+              },
+              {
+                "id": "cell-682b1e5a-454a-4ea1-91b0-79b3070178d4",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Middle East & North Africa",
+                "enabled": true
+              },
+              {
+                "id": "cell-80b836a8-446d-4080-ac1f-fdb5ce6cef5c",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Fragile and conflict affected situations",
+                "enabled": true
+              },
+              {
+                "id": "cell-36999fee-6ed0-4f4d-85a5-d1aac9159964",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Arab World",
+                "enabled": true
+              },
+              {
+                "id": "cell-650eb2ef-1d13-4732-a6ea-1eee0f4627a1",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Europe & Central Asia (IDA & IBRD countries)",
+                "enabled": true
+              },
+              {
+                "id": "cell-8fe1664a-0ed0-4a8b-8594-d5988c9696d0",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "European Union",
+                "enabled": true
+              },
+              {
+                "id": "cell-70f79f51-22d3-4cb3-a137-b91f5883da07",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Middle East & North Africa (excluding high income)",
+                "enabled": true
+              },
+              {
+                "id": "cell-49439fac-22ee-4900-95b0-0d6d6e06287d",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Middle East & North Africa (IDA & IBRD countries)",
+                "enabled": true
+              },
+              {
+                "id": "cell-52f705e9-d713-4f93-b6dd-c782ffb03662",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "North America",
+                "enabled": true
+              },
+              {
+                "id": "cell-6dac25a1-877c-4a16-9def-18f5851ff17d",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Euro area",
+                "enabled": true
+              },
+              {
+                "id": "cell-02f7da03-7c9b-42df-b9a2-c76b10fe1039",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Europe & Central Asia (excluding high income)",
+                "enabled": true
+              },
+              {
+                "id": "cell-856af51c-c0f9-4d13-8417-7cadeffb07d2",
+                "column": "Country Name",
+                "operator": "not_equals",
+                "value": "Central Europe and the Baltics",
+                "enabled": true
+              }
             ],
             "keyColumn": "Country Code",
             "valueColumn": "Value",
@@ -1497,8 +1767,14 @@
               "featureIdProperty": "shapeISO"
             },
             "colorStops": [
-              { "value": 0, "color": "#1976d2" },
-              { "value": 1, "color": "#e53935" }
+              {
+                "value": 0,
+                "color": "#1976d2"
+              },
+              {
+                "value": 1,
+                "color": "#e53935"
+              }
             ]
           }
         }

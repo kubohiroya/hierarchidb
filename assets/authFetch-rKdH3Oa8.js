@@ -1,0 +1,1 @@
+import{t as e}from"../shapeStageWorker.entry.js";async function t(t,n){return e(`shape`,t,n)}export{t as authFetch};

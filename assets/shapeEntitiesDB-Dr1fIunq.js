@@ -1,0 +1,1 @@
+import{C as e,D as t}from"../worker.js";var n=class extends e{groupEntities;relations;constructor(e=t(`shape`)){super(e),this.version(1).stores({groupEntities:`&[nodeId+id], nodeId, id, updatedAt`,relations:`&[srcNodeId+type+dstNodeId], srcNodeId, dstNodeId, type, updatedAt`}),this.version(2).upgrade(()=>{})}};export{n as ShapeEntitiesDB};
