@@ -1,5 +1,8 @@
 import { getDBName } from '@hierarchidb/util';
+import type { NodeId } from '@hierarchidb/common-types';
+import { type Table } from 'dexie';
 import type { BatchProcessConfig } from './ShapeDB.js';
+import type { FeatureBufferRecord, TileBufferRecord } from './ShapeDB.js';
 import {
   EphemeralGisDB,
   type BatchSessionMetadata as BaseBatchSessionMetadata,
@@ -18,8 +21,40 @@ export type ProcessingCache = BaseProcessingCache;
 export type BatchSessionMetadata = BaseBatchSessionMetadata<BatchProcessConfig>;
 
 export class EphemeralShapeDB extends EphemeralGisDB<BatchProcessConfig> {
+  featureBuffers!: Table<FeatureBufferRecord, string>;
+  tileBuffers!: Table<TileBufferRecord, string>;
+
   constructor() {
     super(getDBName('shape-ephemeral'));
+    this.version(3).stores({
+      rawBuffers: '&id, nodeId, timestamp',
+      simplifiedBuffers: '&id, nodeId, stage, timestamp, [nodeId+stage]',
+      vectorTiles: '&id, nodeId, [z+x+y], hash, timestamp',
+      sessions: '&nodeId, status, stage, startTime',
+      cache: '&key, type, lastAccessed, ttl',
+      featureBuffers: '&bufferId, nodeId, [nodeId+stage], stage, createdAt, byteSize',
+      tileBuffers: '&bufferId, nodeId, [nodeId+z+x+y], [z+x+y], z, stage, createdAt',
+    });
+    this.featureBuffers = this.table('featureBuffers');
+    this.tileBuffers = this.table('tileBuffers');
+  }
+
+  async clearNodeData(nodeId: NodeId): Promise<void> {
+    await super.clearNodeData(nodeId);
+    await this.featureBuffers.where('nodeId').equals(nodeId).delete();
+    await this.tileBuffers.where('nodeId').equals(nodeId).delete();
+  }
+
+  async clearStage(nodeId: NodeId, stage: BaseEphemeralStage): Promise<void> {
+    await super.clearStage(nodeId, stage);
+    await this.featureBuffers.where('[nodeId+stage]').equals([nodeId, stage]).delete();
+    await this.tileBuffers.where('nodeId').equals(nodeId).and((entry) => entry.stage === stage).delete();
+  }
+
+  async clearAll(): Promise<void> {
+    await super.clearAll();
+    await this.featureBuffers.clear();
+    await this.tileBuffers.clear();
   }
 }
 

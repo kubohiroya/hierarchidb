@@ -926,13 +926,19 @@ export const shapeBatchAPI = {
   },
 
   cleanupProcessingData: async (nodeId: NodeId): Promise<void> => {
+    const ephemeral = getEphemeralShapeDB();
     await shapeDB.batchTasks.where('nodeId').equals(nodeId).delete();
     await shapeDB.batchSessions.where('nodeId').equals(nodeId).delete();
     await shapeDB.features.where('nodeId').equals(nodeId).delete();
-    await shapeDB.featureBuffers.where('nodeId').equals(nodeId).delete();
-    await shapeDB.tileBuffers.where('nodeId').equals(nodeId).delete();
+    await ephemeral.featureBuffers.where('nodeId').equals(nodeId).delete();
+    await ephemeral.tileBuffers.where('nodeId').equals(nodeId).delete();
     await shapeDB.vectorTiles.where('nodeId').equals(nodeId).delete();
-    await shapeDB.cache.where('nodeId').equals(nodeId).delete();
+    const cacheKeys = await ephemeral.cache
+      .filter((entry) => entry.key.includes(String(nodeId)))
+      .primaryKeys();
+    if (cacheKeys.length > 0) {
+      await ephemeral.cache.bulkDelete(cacheKeys);
+    }
   },
 };
 

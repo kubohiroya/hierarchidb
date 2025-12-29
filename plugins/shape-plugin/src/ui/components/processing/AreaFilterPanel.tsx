@@ -100,7 +100,7 @@ export const AreaFilterPanel: React.FC<Props> = ({
               </Typography>
               <Box sx={{ px: 2 }}>
                 <Slider
-                  value={baseSimplify1Config.minVertexCountForAreaFilter ?? 25}
+                  value={baseSimplify1Config.minVertexCountForAreaFilter ?? 8000}
                   onChange={(_, value) => {
                     const minVertexCountForAreaFilter = value as number;
                     update({
@@ -111,15 +111,15 @@ export const AreaFilterPanel: React.FC<Props> = ({
                     });
                   }}
                   min={0}
-                  max={5000}
+                  max={10000}
                   step={1}
                   valueLabelDisplay="auto"
                   marks={[
                     { value: 0, label: '0' },
-                    { value: 200, label: '200' },
-                    { value: 800, label: '800' },
                     { value: 2000, label: '2000' },
                     { value: 5000, label: '5000' },
+                    { value: 8000, label: '8000' },
+                    { value: 10000, label: '10000' },
                   ]}
                   track="inverted"
                   disabled={disabled}

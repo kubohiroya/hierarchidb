@@ -36,7 +36,7 @@ export class TilesDB extends Dexie {
 
   static async getSingleton(): Promise<TilesDB> {
     return SingletonMixin.getSingleton('TilesDB', async () => {
-      const db = new TilesDB(getDBName('stage-tiles-db'));
+      const db = new TilesDB(getDBName('vectortile'));
       await db.open();
       return db;
     });

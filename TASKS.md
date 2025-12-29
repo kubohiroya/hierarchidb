@@ -53,6 +53,56 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1974) shape-plugin: vectortile/simplify2 完了メッセージへ件数・サイズを表示（P1）
+- ブランチ: `feat/shape-plugin/task-completion-metrics`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `plugins/shape-plugin/src/services/batch/adapters/ShapeWorkerSimplifyAdapters.ts`, `plugins/shape-plugin/src/services/batch/adapters/LocalSimplifyAdapters.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] vectortile Completed の message に features 数とタイルサイズが表示される
+  - [ ] simplify2 Completed の message に features 数と出力サイズが表示される
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] vectortile 完了時に TilesDB からサイズを取得し message へ反映する
+  - [ ] simplify2 完了時に output buffer の featureCount/サイズを message へ反映する
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：上記 adapter の message 追加差分を revert する
+- 運用ログ：
+  - start: 2025-12-30 17:55 JST Completed メッセージに件数/サイズを表示する修正に着手。
+  - progress: 2025-12-30 18:05 JST vectortile 完了で TilesDB からサイズ取得、simplify2 完了で output buffer から件数/サイズを message に反映。検証: 未実施。
+
+1973) shape-plugin: vectortile DB 名称変更と中間生成物の ephemeral 移設（P1）
+- ブランチ: `refactor/shape-plugin/ephemeral-buffers-db`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/features/gis-sdk/src/TilesDB.ts`, `plugins/shape-plugin/src/services/database/ShapeTileMetadataDB.ts`, `app/src/router/routes/map.tsx`, `packages/features/shape-store/src/ShapeDB.ts`, `packages/features/shape-store/src/EphemeralShapeDB.ts`, `packages/runtime-worker/src/services/ShapeMutationService.ts`, `plugins/shape-plugin/src/worker/api.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] `hidb-stage-tiles-db` を `hidb-vectortile` に改名し参照先を更新する
+  - [ ] `featureBuffers`/`tileBuffers`/`cache` を `hidb-shape` から `hidb-shape-ephemeral` へ移設する
+  - [ ] 中間生成物の削除処理が `hidb-shape-ephemeral` を参照する
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] `TilesDB`/`ShapeTileMetadataDB`/`map` の DB 名を `vectortile` へ更新
+  - [ ] `ShapeDB` から中間生成物テーブルを外し、`EphemeralShapeDB` 側へ移設
+  - [ ] cleanup などの削除処理を `EphemeralShapeDB` 側へ寄せる
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：`getDBName('vectortile')` を旧名へ戻し、`ShapeDB`/`EphemeralShapeDB` のテーブル定義と cleanup を元に戻す
+- 運用ログ：
+  - start: 2025-12-30 17:25 JST vectortile DB 名称変更と中間生成物テーブルの移設に着手。
+  - progress: 2025-12-30 17:45 JST stage-tiles-db を vectortile に改名し、featureBuffers/tileBuffers を EphemeralShapeDB へ移設。cleanup は ephem DB を参照するよう更新。検証: 未実施。
+
+1972) shape-plugin: Step6 プレビューでタイル未生成表示になる問題の修正（P1）
+- ブランチ: `fix/shape-plugin/step6-preview-tiles-availability`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts`, `plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] Step6 プレビューがビルド直後のタイル生成済み状態を正しく判定する
+  - [ ] タイル未生成時は従来通り「No vector tiles...」を表示する
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] tilesAvailable の判定ロジックを確認し、TilesDB/summary 参照に統一する
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：`plugins/shape-plugin/src/ui/hooks/useShapePreviewStep.ts` と `plugins/shape-plugin/src/ui/components/steps/ShapePreviewStep.tsx` の差分を revert する
+- 運用ログ：
+  - start: 2025-12-30 16:40 JST Step6 プレビューのタイル未生成表示不具合の修正に着手。
+  - progress: 2025-12-30 16:55 JST tilesAvailable 判定を Tiles summary の初回取得へ統一し、processing/paused 時のみポーリングするよう調整。検証: 未実施。
+  - progress: 2025-12-30 17:10 JST vectortile 完了後に TilesDB から hidb-shape vectorTiles へ同期する処理を追加し、プレビュー判定は shapeDB もフォールバック参照に更新。検証: 未実施。
+
 1970) shape-plugin: デフォルト簡略化を強化して頂点90%削減/タイルサイズ1桁減（P1）
 - ブランチ: `fix/shape-plugin/default-simplify-aggressive`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `plugins/shape-plugin/src/common/types/constants.ts`, `plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx`, `TASKS.md`
@@ -96,6 +146,16 @@
   - progress: 2025-12-30 12:45 JST Batch API から cancel 操作を撤廃し、pause のみで操作する方針に合わせてコードとテストを調整。検証: 未実施。
   - start: 2025-12-30 13:05 JST cancel/cancelled を全体から除去する確認と残件の整理に着手。
   - progress: 2025-12-30 13:25 JST batch 制御/API/Worker/Doc の cancel/cancelled を撤廃し、pause/failed へ統一。認証/Import-Export 等の一般的な「取り消し」表現は残存。検証: 未実施。
+  - start: 2025-12-30 14:10 JST サイズ超過タスクの regression 再試行が動作しない件の調査と修正に着手。
+  - progress: 2025-12-30 14:30 JST vectortile regression 検知→simplify2 再起動→vectortile 再実行のループと retry 反映を追加。simplify2 の retry 強化と UI の regression 表示を補正。検証: 未実施。
+  - progress: 2025-12-30 15:20 JST vectortile 再始動時のクラッシュ対策として retry 時の vectortile 並列数を 1 に固定し、stage 終了時に feature cache を解放。検証: 未実施。
+  - progress: 2025-12-30 15:35 JST simplify2 の retry 強化係数を増やし、tolerance を倍増・quantize をさらに低下させるよう調整。検証: 未実施。
+  - progress: 2025-12-30 15:45 JST vectortile 再実行時は waiting/regression のみ処理し、completed/failed を再処理しないようフィルタを修正。検証: 未実施。
+  - progress: 2025-12-30 15:55 JST vectortile タスク生成時に既存IDを確認し、regressionのみ retry+1 更新、非regressionは上書きしないよう登録処理を修正。検証: 未実施。
+  - progress: 2025-12-30 16:05 JST Step4 の Min Vertex Count を 0-10000/既定8000、Simplification Tolerance を 1-50/既定40 に変更。検証: 未実施。
+  - progress: 2025-12-30 16:15 JST GeoBoundaries の download を gjDownloadURL から simplifiedGeometryGeoJSON に切替。モックテストも更新。検証: 未実施。
+  - start: 2025-12-30 16:25 JST Step6 プレビューで vector tiles が未生成扱いになる件を調査。
+  - start: 2025-12-30 15:10 JST vectortile 再始動時の「エラーコード:5」発生を調査。
 
 1968) /map 地物状態 (A)-(E) のSSOT分離と重ね合わせ表示（P1）
 - ブランチ: `feat/ui/map-feature-overlays`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -15162,6 +15222,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-28 17:52 done: fix/location/status-idle-compare — rawStatus の idle 比較を撤去し、TS2367 を解消。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/location-plugin/src/services/batch/UnifiedLocationBatchManager.ts` と `TASKS.md` の差分を revert。
 - 2025-12-28 17:54 start: fix/location/status-cancelled-compare — rawStatus の cancelled 比較を削除し、型エラーを解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
 - 2025-12-28 17:55 done: fix/location/status-cancelled-compare — rawStatus の cancelled 比較を撤去し、TS2367 を解消。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/location-plugin/src/services/batch/UnifiedLocationBatchManager.ts` と `TASKS.md` の差分を revert。
+- 2025-12-28 17:58 start: fix/shape/vectortile-tilesize-shadow — RuntimeWorkerVectorTileAdapter の tileSize 変数再宣言エラーを解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 17:59 done: fix/shape/vectortile-tilesize-shadow — tileSize の設定値を tileSizeConfig にリネームし、再宣言を回避。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts` と `TASKS.md` の差分を revert。
+- 2025-12-28 18:02 start: fix/shape/vectortile-tilesize-redeclare — RuntimeWorkerVectorTileAdapter の tileSize 再宣言と simplify adapter の outputBufferId 参照エラーを解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 18:04 done: fix/shape/vectortile-tilesize-redeclare — tileSize 変数を tileSizeBytes に分離し、simplify2 の outputBufferId 参照を削除して固定 ID で参照。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/shape-plugin/src/services/batch/adapters/{RuntimeWorkerVectorTileAdapter.ts,ShapeWorkerSimplifyAdapters.ts}` と `TASKS.md` の差分を revert。
 - 2025-12-29 15:06 start: analysis/shape/step5-lru-task-component — shape step5 の LRUSplitPane 内タスク表示コンポーネント特定の調査に着手。DoD: Kanban 1969 のとおり。
 - 2025-12-29 15:07 progress: analysis/shape/step5-lru-task-component — `rg -n "LRUSplitPane|LRUSplitView" plugins app packages` と `rg -n "Step5|step5|BuildStep" plugins/shape-plugin app packages` で参照箇所を探索。
 - 2025-12-29 15:08 progress: analysis/shape/step5-lru-task-component — `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx` と `packages/components/src/BuildStepPanel.tsx` を確認し、pane content とタスク表示の責務を切り分け。

@@ -60,6 +60,28 @@ const sanitizeFeatureCollection = (collection: FeatureCollection): FeatureCollec
 const SIMPLIFY1_SKIP_MESSAGE = 'Skipped: no features remain after filtering.';
 const SIMPLIFY2_SKIP_MESSAGE = 'Skipped: no features remain after simplification.';
 
+const formatBytes = (bytes: number): string => {
+  if (!Number.isFinite(bytes)) return 'unknown size';
+  if (bytes < 1024) return `${bytes} B`;
+  const kb = bytes / 1024;
+  if (kb < 1024) return `${kb.toFixed(1)} KB`;
+  const mb = kb / 1024;
+  if (mb < 1024) return `${mb.toFixed(1)} MB`;
+  const gb = mb / 1024;
+  return `${gb.toFixed(2)} GB`;
+};
+
+const buildSimplify2CompletionMessage = (featureCount?: number, sizeBytes?: number): string | undefined => {
+  const parts: string[] = [];
+  if (typeof featureCount === 'number') {
+    parts.push(`Features: ${featureCount}`);
+  }
+  if (typeof sizeBytes === 'number') {
+    parts.push(`Size: ${formatBytes(sizeBytes)}`);
+  }
+  return parts.length > 0 ? `Completed (${parts.join(', ')})` : undefined;
+};
+
 export class LocalSimplify1Adapter implements Simplify1StageAdapter {
   async process(tasks: Simplify1Task[], onProgress: (p: ProgressInfo) => void, controls?: StageControls) {
     const db = getEphemeralShapeDB();
@@ -302,6 +324,10 @@ export class LocalSimplify2Adapter implements Simplify2StageAdapter {
           }
           if (!input.featureCount) {
             const outputBufferId = `${task.nodeId ?? ''}-simplify2-${taskIndex}`;
+            const baseTolerance = task.config?.tolerance ?? task.tolerance ?? 0;
+            const retry = task.config?.retry ?? 0;
+            const retryScale = retry > 0 ? 1 + retry * 2 : 1;
+            const effectiveTolerance = baseTolerance * retryScale;
             await db.simplifiedBuffers.put({
               id: outputBufferId,
               nodeId: input.nodeId,
@@ -309,7 +335,7 @@ export class LocalSimplify2Adapter implements Simplify2StageAdapter {
               data: input.data,
               featureCount: 0,
               simplificationRatio: 0,
-              tolerance: task.config?.tolerance ?? task.tolerance ?? 0,
+              tolerance: effectiveTolerance,
               timestamp: Date.now(),
             });
             skipped += 1;
@@ -325,8 +351,14 @@ export class LocalSimplify2Adapter implements Simplify2StageAdapter {
             break;
           }
           const geojson = await decodeGeoJson(input.data);
-          const tolerance = task.config?.tolerance ?? task.tolerance ?? 0;
-          const quantize = task.config?.quantize;
+          const baseTolerance = task.config?.tolerance ?? task.tolerance ?? 0;
+          const retry = task.config?.retry ?? 0;
+          const retryScale = retry > 0 ? 1 + retry * 2 : 1;
+          const tolerance = baseTolerance * retryScale;
+          const quantizeBase = task.config?.quantize;
+          const quantize = typeof quantizeBase === 'number'
+            ? Math.max(1, Math.round(quantizeBase / (1 + retry * 2)))
+            : quantizeBase;
           const enablePerFeatureSimplification = task.config?.enablePerFeatureSimplification ?? true;
           const simplified = simplifyGeoJson(geojson, {
             tolerance,
@@ -349,7 +381,7 @@ export class LocalSimplify2Adapter implements Simplify2StageAdapter {
               data: input.data,
               featureCount: 0,
               simplificationRatio: 0,
-              tolerance: task.config?.tolerance ?? task.tolerance ?? 0,
+              tolerance,
               timestamp: Date.now(),
             });
             skipped += 1;
@@ -379,10 +411,12 @@ export class LocalSimplify2Adapter implements Simplify2StageAdapter {
           });
           completed++;
           if (task.taskId) {
+            const completionMessage = buildSimplify2CompletionMessage(featureCount, data.byteLength);
             await shapeDB.updateBatchTask(task.taskId, {
               status: 'completed',
               completedAt: Date.now(),
               progress: 100,
+              message: completionMessage,
             });
           }
           finished = true;

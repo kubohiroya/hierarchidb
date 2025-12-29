@@ -22,7 +22,7 @@ import type { DownloadTaskPayload, ProgressInfo, ProcessingStage } from '../../c
 import { BatchTaskStage } from '../../common/types/index.js';
 import type { DownloadTask } from '../../common/types/index.js';
 import { isShapePreviewMetadataEnabled } from '../../common/config/previewFlags.js';
-import { shapeDB } from '../database/ShapeDB.js';
+import { shapeDB, type BatchTaskRecord, type VectorTileRecord } from '../database/ShapeDB.js';
 import { getEphemeralShapeDB } from '../database/EphemeralShapeDB.js';
 import { getShapeTileMetadataDB } from '../database/ShapeTileMetadataDB.js';
 import type { DownloadStageOutput } from './strategies/DownloadStageStrategy.js';
@@ -30,6 +30,7 @@ import { resolveDownloadStageStrategy } from './strategies/resolveDownloadStageS
 import { geojson as geojsonApi } from 'flatgeobuf';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import { bbox as turfBbox, area as turfArea } from '@turf/turf';
+import { TilesDB } from '@hierarchidb/gis-sdk';
 
 type WorkerPoolStatistics = Record<string, number>;
 
@@ -68,6 +69,7 @@ export class SessionController {
   private vectorTileAdapter?: VectorTileStageAdapter;
   private simplify1Tasks: Simplify1Task[] = [];
   private simplify2Tasks: Simplify2Task[] = [];
+  private simplify2RetryOverride = 0;
   private readonly pausedStages = new Set<ProcessingStage>();
   private readonly stageWaiters = new Map<ProcessingStage, Array<() => void>>();
   private readonly stageAbortControllers = new Map<ProcessingStage, AbortController>();
@@ -124,6 +126,42 @@ export class SessionController {
       return decoded;
     }
     return null;
+  }
+
+  private async calculateTileHash(data: Uint8Array): Promise<string> {
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data as ArrayBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  private async syncVectorTilesToShapeDb(): Promise<void> {
+    const nodeKey = String(this.nodeId);
+    const tilesDb = await TilesDB.getSingleton();
+    const tiles = await tilesDb.tiles.where('nodeId').equals(nodeKey).toArray();
+    if (tiles.length === 0) return;
+    const records = await Promise.all(tiles
+      .filter((row) => row.contentType === 'application/vnd.mapbox-vector-tile' && row.data)
+      .map(async (row) => {
+        const data = row.data instanceof Uint8Array ? row.data : new Uint8Array(row.data);
+        const contentHash = await this.calculateTileHash(data);
+        return {
+          tileId: `${nodeKey}-${row.z}-${row.x}-${row.y}`,
+          nodeId: this.nodeId,
+          z: row.z,
+          x: row.x,
+          y: row.y,
+          data_Uint8Array: data,
+          size: row.size,
+          features: 0,
+          layers: [],
+          generatedAt: row.timestamp,
+          contentHash,
+          version: 1,
+        } satisfies VectorTileRecord;
+      }));
+    if (records.length > 0) {
+      await shapeDB.vectorTiles.bulkPut(records);
+    }
   }
 
   private isFeatureCollection(candidate: unknown): candidate is FeatureCollection {
@@ -333,6 +371,27 @@ export class SessionController {
         await this.processVectorTileStage();
       }
       await waitForResumeIfPaused();
+
+      let regressionRounds = 0;
+      while (!this.isAborted && !this.isPaused) {
+        const retry = await this.getVectorTileRegressionRetry();
+        if (retry == null) break;
+        regressionRounds += 1;
+        if (regressionRounds > 2) {
+          console.warn(`[Session ${this.nodeId}] Regression retry limit reached; skipping further retries.`);
+          break;
+        }
+        console.warn(
+          `[Session ${this.nodeId}] Vector tile regression detected (retry=${retry}); restarting simplify2.`,
+        );
+        await this.prepareSimplify2Retry(retry);
+        await this.processSimplify2Stage();
+        await waitForResumeIfPaused();
+        if (this.isAborted || this.isPaused) break;
+        await this.processVectorTileStage();
+        await waitForResumeIfPaused();
+      }
+      this.simplify2RetryOverride = 0;
 
       if (!this.isAborted && !this.isPaused) {
         console.log(`[Session ${this.nodeId}] Batch processing completed successfully`);
@@ -626,6 +685,7 @@ export class SessionController {
     const zoomLevels = this.resolveZoomLevels();
     const tileSize = this.config.vectorTiles?.tileSize ?? this.config.tileSize ?? 512;
     const simplify2Config = this.config.simplify2;
+    const retry = this.simplify2RetryOverride ?? 0;
 
     const tasks: Simplify2Task[] = this.simplify1Tasks.map((task, index) => ({
       taskId: this.buildProcessingTaskId('simplify2', this.resolveTaskIdDetails(task)),
@@ -662,6 +722,7 @@ export class SessionController {
         maxVertices: undefined,
         coordinatePrecision: 6,
         enablePerFeatureSimplification: simplify2Config?.enablePerFeatureSimplification,
+        retry: retry > 0 ? retry : undefined,
       },
     }));
     this.simplify2Tasks = tasks;
@@ -1088,6 +1149,7 @@ export class SessionController {
       return;
     }
     const tasks = this.buildVectorTileTasks(tileRows);
+    await this.applyVectorTileRetryOverrides(tasks);
     if (tasks.length === 0) {
       console.warn(`[Session ${this.nodeId}] No vector tile tasks to process`);
       return;
@@ -1135,7 +1197,10 @@ export class SessionController {
         currentStage: 'vectortile',
       });
     };
-    const maxConcurrent = this.config.vectorTiles?.concurrentProcesses ?? this.options.maxConcurrentTasks;
+    const baseConcurrent = this.config.vectorTiles?.concurrentProcesses ?? this.options.maxConcurrentTasks;
+    const maxConcurrent = this.simplify2RetryOverride > 0
+      ? 1
+      : (baseConcurrent ?? 1);
     const r = await this.vectorTileAdapter!.process(runnableTasks, reportProgress, {
       waitIfPaused: () => this.waitForStageResume('vectortile'),
       getSignal: () => this.getStageAbortSignal('vectortile'),
@@ -1143,6 +1208,8 @@ export class SessionController {
       requestPause: (message) => this.requestPause('vectortile', message),
     });
     await this.persistPlaceholderMetadata(false);
+    await this.syncVectorTilesToShapeDb();
+    this.vectorTileAdapter?.clearFeatureCache?.(String(this.nodeId));
     console.log(
       `[Session ${this.nodeId}] Vector tile stage completed: ${baseCompleted + r.processed}/${total} successful`,
     );
@@ -1221,6 +1288,48 @@ export class SessionController {
     tasks: Array<{ taskId: string; config?: unknown; index?: number }>,
     existingTaskIds?: Set<string>,
   ): Promise<void> {
+    if (stage === 'vectortile') {
+      const existing = await shapeDB.batchTasks
+        .where('nodeId')
+        .equals(this.nodeId)
+        .and((task) => task.taskType === stage)
+        .toArray();
+      const existingById = new Map(existing.map((task) => [task.taskId, task]));
+      const newTasks = [];
+      for (const [index, task] of tasks.entries()) {
+        const existingTask = existingById.get(task.taskId);
+        if (!existingTask) {
+          newTasks.push({
+            taskId: task.taskId,
+            nodeId: this.nodeId,
+            taskType: stage,
+            status: 'waiting' as const,
+            index: task.index ?? index,
+            progress: 0,
+            inputData: typeof task.config === 'object' && task.config ? (task.config as Record<string, unknown>) : undefined,
+          });
+          continue;
+        }
+        if (existingTask.status !== 'regression') {
+          continue;
+        }
+        const currentRetry = this.getRetryValue(existingTask);
+        const nextRetry = currentRetry + 1;
+        const nextInputData = {
+          ...(existingTask.inputData ?? {}),
+          ...(typeof task.config === 'object' && task.config ? (task.config as Record<string, unknown>) : {}),
+          retry: nextRetry,
+        };
+        await shapeDB.updateBatchTask(task.taskId, { inputData: nextInputData });
+      }
+      if (newTasks.length > 0) {
+        const chunkSize = 50;
+        for (let offset = 0; offset < newTasks.length; offset += chunkSize) {
+          await shapeDB.batchTasks.bulkPut(newTasks.slice(offset, offset + chunkSize));
+        }
+      }
+      return;
+    }
     const existingIds = existingTaskIds ?? new Set(
       (await shapeDB.batchTasks
         .where('nodeId')
@@ -1260,11 +1369,95 @@ export class SessionController {
     const statusById = new Map(existing.map((task) => [task.taskId, task.status]));
     const runnableTasks = tasks.filter((task) => {
       const status = statusById.get(task.taskId);
-      return status !== 'completed' && status !== 'failed';
+      return status === 'waiting' || status === 'regression';
     });
     const completedCount = existing.filter((task) => task.status === 'completed').length;
     const failedCount = existing.filter((task) => task.status === 'failed').length;
     return { runnableTasks, completedCount, failedCount, total: tasks.length };
+  }
+
+  private getRetryValue(task: BatchTaskRecord): number {
+    const input = task.inputData ?? {};
+    const retry = (input as { retry?: number }).retry;
+    return typeof retry === 'number' && Number.isFinite(retry) ? retry : 0;
+  }
+
+  private async getVectorTileRegressionRetry(): Promise<number | null> {
+    const tasks = await shapeDB.batchTasks
+      .where('nodeId')
+      .equals(this.nodeId)
+      .and((task) => task.taskType === 'vectortile' && task.status === 'regression')
+      .toArray();
+    if (tasks.length === 0) return null;
+    const retryable = tasks
+      .map((task) => this.getRetryValue(task))
+      .filter((retry) => retry < 2);
+    if (retryable.length === 0) return null;
+    return Math.max(...retryable);
+  }
+
+  private async prepareSimplify2Retry(retry: number): Promise<void> {
+    this.simplify2RetryOverride = retry;
+    const simplify2Tasks = await shapeDB.batchTasks
+      .where('nodeId')
+      .equals(this.nodeId)
+      .and((task) => task.taskType === 'simplify2')
+      .toArray();
+    for (const task of simplify2Tasks) {
+      const inputData = { ...(task.inputData ?? {}), retry };
+      await shapeDB.updateBatchTask(task.taskId, {
+        status: 'waiting',
+        progress: 0,
+        startedAt: undefined,
+        completedAt: undefined,
+        errorMessage: undefined,
+        inputData,
+      });
+    }
+    await this.resetVectorTileTasksForRetry();
+    this.vectorTileAdapter?.clearFeatureCache?.(String(this.nodeId));
+  }
+
+  private async resetVectorTileTasksForRetry(): Promise<void> {
+    const vectorTasks = await shapeDB.batchTasks
+      .where('nodeId')
+      .equals(this.nodeId)
+      .and((task) => task.taskType === 'vectortile')
+      .toArray();
+    for (const task of vectorTasks) {
+      const needsReset = task.status === 'completed' || task.status === 'failed';
+      if (!needsReset) {
+        await shapeDB.updateBatchTask(task.taskId, {
+          progress: 0,
+          startedAt: undefined,
+          completedAt: undefined,
+          errorMessage: undefined,
+        });
+        continue;
+      }
+      await shapeDB.updateBatchTask(task.taskId, {
+        status: 'waiting',
+        progress: 0,
+        startedAt: undefined,
+        completedAt: undefined,
+        errorMessage: undefined,
+      });
+    }
+  }
+
+  private async applyVectorTileRetryOverrides(tasks: VectorTileTask[]): Promise<void> {
+    const existing = await shapeDB.batchTasks
+      .where('nodeId')
+      .equals(this.nodeId)
+      .and((task) => task.taskType === 'vectortile')
+      .toArray();
+    if (existing.length === 0) return;
+    const retryById = new Map(existing.map((task) => [task.taskId, this.getRetryValue(task)]));
+    tasks.forEach((task) => {
+      const retry = retryById.get(task.taskId);
+      if (!retry) return;
+      task.config = { ...(task.config ?? {}), retry };
+    });
   }
 
   private async assignDownloadTaskIndices(tasks: DownloadTask[]): Promise<Set<string>> {

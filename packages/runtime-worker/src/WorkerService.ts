@@ -104,12 +104,8 @@ type ShapeDatabaseHandle = {
   batchSessions: DexieTableHandle<ShapeBatchSessionRecord>;
   batchTasks: DexieTableHandle<ShapeBatchTaskRecord>;
   features: DexieTableHandle<{ nodeId: NodeId }>;
-  featureBuffers: DexieTableHandle<unknown>;
-  tileBuffers: DexieTableHandle<unknown>;
   vectorTiles: DexieTableHandle<VectorTileRecord>;
-  cache: DexieTableHandle<unknown>;
   getVectorTile?: (nodeId: NodeId, z: number, x: number, y: number) => Promise<VectorTileRecord | undefined>;
-  clearCache?: (nodeId?: NodeId, cacheType?: string) => Promise<number>;
 };
 
 const readHeapStats = (): { used: number; limit: number } => {

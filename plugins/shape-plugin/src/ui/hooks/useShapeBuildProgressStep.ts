@@ -200,7 +200,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
           slot.skip += 1;
           return;
         }
-        if (task.status === 'failed') {
+        if (task.status === 'failed' || task.status === 'regression') {
           slot.error += 1;
           return;
         }
@@ -405,7 +405,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     const stageTasks = tasksByStage[lastUnfinishedStageId] ?? [];
     if (!stageTasks.length) return null;
     const completedCount = stageTasks.filter((task) => task.status === 'completed' && !isSkippedMessage(task.message)).length;
-    const failedCount = stageTasks.filter((task) => task.status === 'failed').length;
+    const failedCount = stageTasks.filter((task) => task.status === 'failed' || task.status === 'regression').length;
     const skippedCount = stageTasks.filter((task) => isSkippedMessage(task.message)).length;
     return {
       total: Math.max(0, stageTasks.length - skippedCount),

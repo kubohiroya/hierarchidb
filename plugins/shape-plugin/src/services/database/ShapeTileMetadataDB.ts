@@ -36,7 +36,7 @@ export class ShapeTileMetadataDB extends Dexie {
 
   static async getSingleton(): Promise<ShapeTileMetadataDB> {
     return SingletonMixin.getSingleton('ShapeTileMetadataDB', async () => {
-      const db = new ShapeTileMetadataDB(getDBName('stage-tiles-db'));
+      const db = new ShapeTileMetadataDB(getDBName('vectortile'));
       await db.open();
       return db;
     });

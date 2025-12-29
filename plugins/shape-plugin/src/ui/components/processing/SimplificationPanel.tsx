@@ -17,6 +17,10 @@ type Props = {
   onToleranceChange: (next: number) => void;
   onPerFeatureChange?: (enabled: boolean) => void;
   toleranceHelpKey?: string;
+  min?: number;
+  max?: number;
+  step?: number;
+  marks?: Array<{ value: number; label?: string }>;
   disabled?: boolean;
 };
 
@@ -27,6 +31,16 @@ export const SimplificationPanel: React.FC<Props> = ({
   onToleranceChange,
   onPerFeatureChange,
   toleranceHelpKey = 'processing.filter.toleranceHelp',
+  min = 1,
+  max = 20,
+  step = 0.5,
+  marks = [
+    { value: 1, label: '1' },
+    { value: 5, label: '5' },
+    { value: 10, label: '10' },
+    { value: 15, label: '15' },
+    { value: 20, label: '20' },
+  ],
   disabled,
 }) => {
   const { t } = useTranslation();
@@ -46,16 +60,10 @@ export const SimplificationPanel: React.FC<Props> = ({
             onChange={(_, value) => {
               onToleranceChange(value as number);
             }}
-            min={1}
-            max={20}
-            step={0.5}
-            marks={[
-              { value: 1, label: '1' },
-              { value: 5, label: '5' },
-              { value: 10, label: '10' },
-              { value: 15, label: '15' },
-              { value: 20, label: '20' },
-            ]}
+            min={min}
+            max={max}
+            step={step}
+            marks={marks}
             valueLabelDisplay="auto"
             track="inverted"
             disabled={disabled}

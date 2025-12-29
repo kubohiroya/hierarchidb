@@ -229,6 +229,10 @@ const processSimplify2Task = async ({
   }
   if (!input.featureCount) {
     const outputBufferId = `${nodeId}-simplify2-${taskIndex}`;
+    const baseTolerance = task.config?.tolerance ?? task.tolerance ?? 0;
+    const retry = task.config?.retry ?? 0;
+    const retryScale = retry > 0 ? 1 + retry * 2 : 1;
+    const effectiveTolerance = baseTolerance * retryScale;
     await db.simplifiedBuffers.put({
       id: outputBufferId,
       nodeId: input.nodeId,
@@ -236,14 +240,20 @@ const processSimplify2Task = async ({
       data: input.data,
       featureCount: 0,
       simplificationRatio: 0,
-      tolerance: task.config?.tolerance ?? task.tolerance ?? 0,
+      tolerance: effectiveTolerance,
       timestamp: Date.now(),
     });
     return { status: 'skipped', featureCount: 0 };
   }
   const geojson = await decodeGeoJson(input.data);
-  const tolerance = task.config?.tolerance ?? task.tolerance ?? 0;
-  const quantize = task.config?.quantize;
+  const baseTolerance = task.config?.tolerance ?? task.tolerance ?? 0;
+  const retry = task.config?.retry ?? 0;
+  const retryScale = retry > 0 ? 1 + retry * 2 : 1;
+  const tolerance = baseTolerance * retryScale;
+  const quantizeBase = task.config?.quantize;
+  const quantize = typeof quantizeBase === 'number'
+    ? Math.max(1, Math.round(quantizeBase / (1 + retry * 2)))
+    : quantizeBase;
   const enablePerFeatureSimplification = task.config?.enablePerFeatureSimplification ?? true;
   const simplified = simplifyGeoJson(geojson, {
     tolerance,
@@ -266,7 +276,7 @@ const processSimplify2Task = async ({
       data: input.data,
       featureCount: 0,
       simplificationRatio: 0,
-      tolerance: task.config?.tolerance ?? task.tolerance ?? 0,
+      tolerance,
       timestamp: Date.now(),
     });
     return { status: 'skipped', featureCount: 0 };

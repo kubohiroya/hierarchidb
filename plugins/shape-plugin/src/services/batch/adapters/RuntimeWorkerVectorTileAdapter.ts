@@ -9,6 +9,7 @@ import { geojson } from 'flatgeobuf';
 import type { Feature } from 'geojson';
 import { BatchService } from '@hierarchidb/batch';
 import { createStageWorkerClient, runVectorTileStage } from '@hierarchidb/runtime-worker';
+import { TilesDB } from '@hierarchidb/gis-sdk';
 
 const isAbortError = (error: unknown): boolean => (
   error instanceof Error && error.name === 'AbortError'
@@ -166,6 +167,17 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     return `z${z}/${x}/${y}`;
   }
 
+  private buildCompletionMessage(featureCount?: number | null, sizeBytes?: number | null): string | undefined {
+    const parts: string[] = [];
+    if (typeof featureCount === 'number') {
+      parts.push(`Features: ${featureCount}`);
+    }
+    if (typeof sizeBytes === 'number') {
+      parts.push(`Size: ${this.formatBytes(sizeBytes)}`);
+    }
+    return parts.length > 0 ? `Completed (${parts.join(', ')})` : undefined;
+  }
+
   async process(tasks: VectorTileTask[], onProgress: (p: ProgressInfo) => void, controls?: StageControls) {
     const getSignal = controls?.getSignal;
     const shouldAbort = () => Boolean(getSignal?.()?.aborted);
@@ -257,19 +269,23 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                 continue;
               }
             }
-            if (isStageTileInput(inputBufferId)) {
-              const parsed = this.parseStageTileInput(inputBufferId);
-              if (!parsed) {
-                throw new Error(`Invalid stage tile input: ${inputBufferId}`);
-              }
-              const features = await this.loadSimplify2Features(parsed.nodeId);
-              const tileBBox = this.tileToBBox(parsed.z, parsed.x, parsed.y);
-              const tileFeatures = features
-                .filter((entry) => this.intersects(entry.bbox, tileBBox))
-                .map((entry) => entry.feature)
-                .filter(Boolean);
-              if (tileFeatures.length === 0) {
-                const skipMessage = `Skipped: no features intersect tile ${this.formatTileId(parsed.z, parsed.x, parsed.y)}.`;
+          let tileFeatureCount: number | null = null;
+          let tileKey: string | null = null;
+          if (isStageTileInput(inputBufferId)) {
+            const parsed = this.parseStageTileInput(inputBufferId);
+            if (!parsed) {
+              throw new Error(`Invalid stage tile input: ${inputBufferId}`);
+            }
+            const features = await this.loadSimplify2Features(parsed.nodeId);
+            const tileBBox = this.tileToBBox(parsed.z, parsed.x, parsed.y);
+            const tileFeatures = features
+              .filter((entry) => this.intersects(entry.bbox, tileBBox))
+              .map((entry) => entry.feature)
+              .filter(Boolean);
+            tileFeatureCount = tileFeatures.length;
+            tileKey = `${parsed.nodeId}-${parsed.z}-${parsed.x}-${parsed.y}`;
+            if (tileFeatures.length === 0) {
+              const skipMessage = `Skipped: no features intersect tile ${this.formatTileId(parsed.z, parsed.x, parsed.y)}.`;
                 console.warn('[VectorTile] Skipping empty tile input', {
                   inputBufferId,
                   tileId: this.formatTileId(parsed.z, parsed.x, parsed.y),
@@ -397,7 +413,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
             }));
             const compression = sample.config?.compression ?? false;
             const format = (sample.config?.format ?? 'mvt') as 'mvt';
-            const tileSize = sample.config?.tileSize ?? 256;
+            const tileSizeConfig = sample.config?.tileSize ?? 256;
             const buffer = sample.config?.buffer;
             const minZoom = sample.config?.minZoom;
             const maxZoom = sample.config?.maxZoom;
@@ -437,7 +453,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                 config: {
                   format,
                   compression: compression ? 'gzip' : 'none',
-                  tileSize,
+                  tileSize: tileSizeConfig,
                   buffer,
                   minZoom,
                   maxZoom,
@@ -452,6 +468,13 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                 signal.removeEventListener('abort', abortListener);
               }
             }
+            let tileSizeBytes: number | null = null;
+            if (tileKey) {
+              const tilesDb = await TilesDB.getSingleton();
+              const row = await tilesDb.tiles.get(tileKey);
+              tileSizeBytes = typeof row?.size === 'number' ? row.size : null;
+            }
+            const completionMessage = this.buildCompletionMessage(tileFeatureCount, tileSizeBytes);
             if (shouldAbort()) {
               if (controls?.waitIfPaused) {
                 await controls.waitIfPaused();
@@ -466,6 +489,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                   status: 'completed',
                   completedAt: Date.now(),
                   progress: 100,
+                  message: completionMessage,
                 });
               }
               onProgress({

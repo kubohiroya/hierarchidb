@@ -24,11 +24,7 @@ type ShapeDatabaseLike = {
   batchSessions: DexieTable;
   batchTasks: DexieTable;
   features: DexieTable;
-  featureBuffers: DexieTable;
-  tileBuffers: DexieTable;
   vectorTiles: DexieTable;
-  cache: DexieTable;
-  clearCache?: (nodeId?: NodeId, cacheType?: string) => Promise<number>;
 };
 
 export class ShapeMutationService implements ShapeMutationAPI {
@@ -59,12 +55,14 @@ export class ShapeMutationService implements ShapeMutationAPI {
 
   async deleteTileBuffers(nodeId: NodeId): Promise<void> {
     await this.ensureOpen();
-    await this.db.tileBuffers.where('nodeId').equals(nodeId).delete?.();
+    const ephemeral = getEphemeralShapeDB();
+    await ephemeral.tileBuffers.where('nodeId').equals(nodeId).delete();
   }
 
   async deleteFeatureBuffers(nodeId: NodeId): Promise<void> {
     await this.ensureOpen();
-    await this.db.featureBuffers.where('nodeId').equals(nodeId).delete?.();
+    const ephemeral = getEphemeralShapeDB();
+    await ephemeral.featureBuffers.where('nodeId').equals(nodeId).delete();
   }
 
   async deleteFeatures(nodeId: NodeId): Promise<void> {
@@ -74,13 +72,14 @@ export class ShapeMutationService implements ShapeMutationAPI {
 
   async clearCache(nodeId: NodeId): Promise<number> {
     await this.ensureOpen();
-    if (this.db.clearCache) {
-      return this.db.clearCache(nodeId);
+    const ephemeral = getEphemeralShapeDB();
+    const keys = await ephemeral.cache
+      .filter((entry) => entry.key.includes(String(nodeId)))
+      .primaryKeys();
+    if (keys.length > 0) {
+      await ephemeral.cache.bulkDelete(keys);
     }
-    const query = this.db.cache.where('nodeId').equals(nodeId);
-    const count = (await query.count?.()) ?? 0;
-    await query.delete?.();
-    return count;
+    return keys.length;
   }
 
   async cleanupProcessingData(nodeId: NodeId): Promise<void> {

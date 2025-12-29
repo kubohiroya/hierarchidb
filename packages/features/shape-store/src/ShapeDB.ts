@@ -4,8 +4,8 @@
  * Manages all persistent data for the shapes plugin including:
  * - Shape entities and metadata
  * - Batch sessions and tasks
- * - Feature indices and buffers
- * - Vector tiles and cache
+ * - Feature indices
+ * - Vector tiles
  */
 
 import { Dexie, type Table } from 'dexie';
@@ -270,14 +270,9 @@ export class ShapeDB extends Dexie {
   // Feature storage tables
   features!: Table<FeatureRecord, number>;
   featureIndices!: Table<FeatureIndexRecord, string>;
-  featureBuffers!: Table<FeatureBufferRecord, string>;
 
   // Tile storage tables
   vectorTiles!: Table<VectorTileRecord, string>;
-  tileBuffers!: Table<TileBufferRecord, string>;
-
-  // Cache tables
-  cache!: Table<CacheEntryRecord, string>;
 
   constructor() {
     super(getDBName('shape'));
@@ -294,15 +289,9 @@ export class ShapeDB extends Dexie {
         '++id, nodeId, [nodeId+adminLevel], [nodeId+countryCode], mortonCode, adminLevel, countryCode, name, createdAt',
       featureIndices:
         '&indexId, featureId, mortonCode, [mortonCode+adminLevel], adminLevel, countryCode, area, complexity',
-      featureBuffers: '&bufferId, nodeId, [nodeId+stage], stage, createdAt, byteSize',
 
       // Vector tiles - spatial tile indexing
       vectorTiles: '&tileId, nodeId, [nodeId+z+x+y], [z+x+y], z, generatedAt, lastAccessed, size',
-      tileBuffers: '&bufferId, nodeId, [nodeId+z+x+y], [z+x+y], z, stage, createdAt',
-
-      // Cache - LRU and size-based management
-      cache:
-        '&cacheKey, nodeId, cacheType, [cacheType+lastHit], lastHit, createdAt, size, hits, expiresAt',
     });
 
     this.version(2)
@@ -317,15 +306,9 @@ export class ShapeDB extends Dexie {
           '++id, nodeId, [nodeId+adminLevel], [nodeId+countryCode], mortonCode, adminLevel, countryCode, name, createdAt',
         featureIndices:
           '&indexId, featureId, mortonCode, [mortonCode+adminLevel], adminLevel, countryCode, area, complexity',
-        featureBuffers: '&bufferId, nodeId, [nodeId+stage], stage, createdAt, byteSize',
 
         // Vector tiles - spatial tile indexing
         vectorTiles: '&tileId, nodeId, [nodeId+z+x+y], [z+x+y], z, generatedAt, lastAccessed, size',
-        tileBuffers: '&bufferId, nodeId, [nodeId+z+x+y], [z+x+y], z, stage, createdAt',
-
-        // Cache - LRU and size-based management
-        cache:
-          '&cacheKey, nodeId, cacheType, [cacheType+lastHit], lastHit, createdAt, size, hits, expiresAt',
       })
       .upgrade(async () => {
         await this.batchSessions.clear();
@@ -453,19 +436,6 @@ export class ShapeDB extends Dexie {
       .toArray();
   }
 
-  // Feature Buffer Management
-  async storeFeatureBuffer(buffer: FeatureBufferRecord): Promise<void> {
-    await this.featureBuffers.put(buffer);
-  }
-
-  async getFeatureBuffer(bufferId: string): Promise<FeatureBufferRecord | undefined> {
-    return await this.featureBuffers.get(bufferId);
-  }
-
-  async getBuffersByStage(nodeId: NodeId, stage: ProcessingStage): Promise<FeatureBufferRecord[]> {
-    return await this.featureBuffers.where('[nodeId+stage]').equals([nodeId, stage]).toArray();
-  }
-
   // Vector Tile Management
   async storeVectorTile(tile: VectorTileRecord): Promise<void> {
     await this.vectorTiles.put(tile);
@@ -501,92 +471,8 @@ export class ShapeDB extends Dexie {
       .toArray();
   }
 
-  // Cache Management
-  async setCacheEntry(entry: CacheEntryRecord): Promise<void> {
-    await this.cache.put(entry);
-  }
-
-  async getCacheEntry(cacheKey: string): Promise<CacheEntryRecord | undefined> {
-    const entry = await this.cache.get(cacheKey);
-    if (entry) {
-      // Update hit count and last hit time
-      await this.cache.update(cacheKey, {
-        hits: entry.hits + 1,
-        lastHit: Date.now(),
-      });
-    }
-    return entry;
-  }
-
-  async clearCache(nodeId?: NodeId, cacheType?: string): Promise<number> {
-    let query = this.cache.toCollection();
-
-    if (nodeId) {
-      query = this.cache.where('nodeId').equals(nodeId);
-    }
-
-    if (cacheType) {
-      query = query.filter((entry) => entry.cacheType === cacheType);
-    }
-
-    const count = await query.count();
-    await query.delete();
-    return count;
-  }
-
-  async getCacheStatistics(): Promise<CacheStatistics> {
-    const allEntries = await this.cache.toArray();
-
-    const totalSize = allEntries.reduce((sum, entry) => sum + entry.size, 0);
-    const totalItems = allEntries.length;
-    const totalHits = allEntries.reduce((sum, entry) => sum + entry.hits, 0);
-    const totalMisses = Math.max(totalHits * 0.1, 0);
-    const totalRequests = totalHits + totalMisses;
-
-    const byType: Record<string, { totalSize: number; count: number; averageSize: number }> = {};
-    for (const type of ['features', 'tiles', 'buffers', 'all']) {
-      const entries = type === 'all' ? allEntries : allEntries.filter((e) => e.cacheType === type);
-      const size = entries.reduce((sum, entry) => sum + entry.size, 0);
-      const count = entries.length;
-      // const hits = entries.reduce((sum, entry) => sum + entry.hits, 0);
-
-      byType[type] = {
-        totalSize: size,
-        count,
-        averageSize: count > 0 ? size / count : 0,
-      };
-    }
-
-    return {
-      hits: totalHits,
-      misses: totalMisses,
-      totalSize,
-      totalItems,
-      byType,
-      hitRate: totalRequests > 0 ? totalHits / totalRequests : 0,
-      missRate: totalRequests > 0 ? totalMisses / totalRequests : 0,
-      evictionCount: 0,
-      oldestItem:
-        allEntries.length > 0 ? Math.min(...allEntries.map((e) => e.createdAt)) : Date.now(),
-      newestItem:
-        allEntries.length > 0 ? Math.max(...allEntries.map((e) => e.createdAt)) : Date.now(),
-    };
-  }
-
-  // Cleanup and Maintenance
-  async cleanupExpiredCache(): Promise<number> {
-    const now = Date.now();
-    const expired = await this.cache.where('expiresAt').below(now).toArray();
-
-    if (expired.length > 0) {
-      await this.cache.bulkDelete(expired.map((e) => e.cacheKey));
-    }
-
-    return expired.length;
-  }
-
   async getStorageUsage(): Promise<{ totalSize: number; breakdown: Record<string, number> }> {
-    const [ sessionsSize, tasksSize, featuresSize, buffersSize, tilesSize, cacheSize] =
+    const [sessionsSize, tasksSize, featuresSize, tilesSize] =
       await Promise.all([
         this.batchSessions.toArray().then((items: BatchSessionRecord[]) => items.length * 2000),
         this.batchTasks.toArray().then((items: BatchTaskRecord[]) => items.length * 1000),
@@ -595,33 +481,20 @@ export class ShapeDB extends Dexie {
           .then((items: FeatureRecord[]) =>
             items.reduce((sum: number, f: FeatureRecord) => sum + JSON.stringify(f).length, 0),
           ),
-        this.featureBuffers
-          .toArray()
-          .then((items: FeatureBufferRecord[]) =>
-            items.reduce((sum: number, b: FeatureBufferRecord) => sum + b.byteSize, 0),
-          ),
         this.vectorTiles
           .toArray()
           .then((items: VectorTileRecord[]) =>
             items.reduce((sum: number, t: VectorTileRecord) => sum + t.size, 0),
           ),
-        this.cache
-          .toArray()
-          .then((items: CacheEntryRecord[]) =>
-            items.reduce((sum: number, c: CacheEntryRecord) => sum + c.size, 0),
-          ),
       ]);
 
     return {
-      totalSize:
-        sessionsSize + tasksSize + featuresSize + buffersSize + tilesSize + cacheSize,
+      totalSize: sessionsSize + tasksSize + featuresSize + tilesSize,
       breakdown: {
         sessions: sessionsSize,
         tasks: tasksSize,
         features: featuresSize,
-        buffers: buffersSize,
         tiles: tilesSize,
-        cache: cacheSize,
       },
     };
   }

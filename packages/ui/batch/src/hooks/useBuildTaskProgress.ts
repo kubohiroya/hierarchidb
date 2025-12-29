@@ -57,7 +57,9 @@ export const useBuildTaskProgress = (
       const skippedCount = stageTasks.filter(isSkippedTask).length;
       const taskCountEffective = Math.max(0, taskCount - skippedCount);
       const completedCount = stageTasks.filter((task) => task.status === 'completed' && !isSkippedTask(task)).length;
-      const failedCount = stageTasks.filter((task) => task.status === 'failed').length;
+      const failedCount = stageTasks.filter(
+        (task) => task.status === 'failed' || task.status === 'regression',
+      ).length;
       const progressValue = taskCount > 0
         ? Math.round(stageTasks.reduce((sum, task) => sum + (task.progress ?? 0), 0) / taskCount)
         : 0;

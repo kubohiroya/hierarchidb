@@ -3,6 +3,7 @@ import type { Simplify1StageAdapter } from './Simplify1StageAdapter.js';
 import type { Simplify2StageAdapter } from './Simplify2StageAdapter.js';
 import type { StageControls } from './StageControls.js';
 import { shapeDB } from '../../database/ShapeDB.js';
+import { getEphemeralShapeDB } from '../../database/EphemeralShapeDB.js';
 import { BatchService } from '@hierarchidb/batch';
 import { ShapeWorkerPool } from './ShapeWorkerPool.js';
 
@@ -31,6 +32,28 @@ const formatErrorWithSource = (error: unknown, fallback: string): string => {
 
 const SIMPLIFY1_SKIP_MESSAGE = 'Skipped: no features remain after filtering.';
 const SIMPLIFY2_SKIP_MESSAGE = 'Skipped: no features remain after simplification.';
+
+const formatBytes = (bytes: number): string => {
+  if (!Number.isFinite(bytes)) return 'unknown size';
+  if (bytes < 1024) return `${bytes} B`;
+  const kb = bytes / 1024;
+  if (kb < 1024) return `${kb.toFixed(1)} KB`;
+  const mb = kb / 1024;
+  if (mb < 1024) return `${mb.toFixed(1)} MB`;
+  const gb = mb / 1024;
+  return `${gb.toFixed(2)} GB`;
+};
+
+const buildSimplify2CompletionMessage = (featureCount?: number, sizeBytes?: number): string | undefined => {
+  const parts: string[] = [];
+  if (typeof featureCount === 'number') {
+    parts.push(`Features: ${featureCount}`);
+  }
+  if (typeof sizeBytes === 'number') {
+    parts.push(`Size: ${formatBytes(sizeBytes)}`);
+  }
+  return parts.length > 0 ? `Completed (${parts.join(', ')})` : undefined;
+};
 
 export class ShapeWorkerSimplify1Adapter implements Simplify1StageAdapter {
   async process(tasks: Simplify1Task[], onProgress: (p: ProgressInfo) => void, controls?: StageControls) {
@@ -212,10 +235,17 @@ export class ShapeWorkerSimplify2Adapter implements Simplify2StageAdapter {
             } else {
               completed += 1;
               if (task.taskId) {
+                const outputBufferId = `${String(resolvedNodeId)}-simplify2-${taskIndex}`;
+                const db = getEphemeralShapeDB();
+                const output = await db.simplifiedBuffers.get(outputBufferId);
+                const completionMessage = output
+                  ? buildSimplify2CompletionMessage(output.featureCount, output.data.byteLength)
+                  : undefined;
                 await shapeDB.updateBatchTask(task.taskId, {
                   status: 'completed',
                   completedAt: Date.now(),
                   progress: 100,
+                  message: completionMessage,
                 });
               }
             }

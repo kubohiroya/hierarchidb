@@ -250,6 +250,8 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
         return t('build.taskStatus.completed', 'Completed');
       case 'failed':
         return t('build.taskStatus.failed', 'Failed');
+      case 'regression':
+        return t('build.taskStatus.regression', 'Regression');
       case 'paused':
         return t('build.taskStatus.paused', 'Paused');
       case 'queued':
@@ -268,6 +270,8 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
         return 'success';
       case 'failed':
         return 'error';
+      case 'regression':
+        return 'warning';
       case 'paused':
         return 'warning';
       case 'running':

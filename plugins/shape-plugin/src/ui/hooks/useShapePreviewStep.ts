@@ -52,6 +52,13 @@ const fetchTileSummary = async (nodeId: string) => {
   return vectorTile.getSummary(nodeId);
 };
 
+const resolveTilesAvailable = async (nodeId: string): Promise<boolean> => {
+  const summary = await fetchTileSummary(nodeId);
+  if (summary.tiles > 0) return true;
+  const count = await shapeDB.vectorTiles.where('nodeId').equals(nodeId).count();
+  return count > 0;
+};
+
 const fetchTile = async (
   nodeId: string,
   z: number,
@@ -137,16 +144,20 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
     const key = nodeKey ? String(nodeKey) : null;
     if (!key) {
       setTilesAvailable(false);
+      setTilesChecking(false);
       return () => {
         cancelled = true;
       };
     }
-    shapeDB.vectorTiles.where('nodeId').equals(key).count().then((count) => {
+    setTilesChecking(true);
+    resolveTilesAvailable(key).then((available) => {
       if (cancelled) return;
-      setTilesAvailable(count > 0);
+      setTilesAvailable(available);
+      setTilesChecking(false);
     }).catch(() => {
       if (cancelled) return;
       setTilesAvailable(false);
+      setTilesChecking(false);
     });
     return () => {
       cancelled = true;
@@ -156,7 +167,7 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
   const statusForPolling = statusLoaded ? processingStatus : 'processing';
   const shouldPollTiles = Boolean(activeNodeId)
     && !tilesAvailable
-    && ['processing', 'paused', 'completed'].includes(statusForPolling ?? '');
+    && ['processing', 'paused'].includes(statusForPolling ?? '');
 
   useEffect(() => {
     if (!shouldPollTiles) {
@@ -168,9 +179,9 @@ export const useShapePreviewStep = (data: Partial<ShapeEntity>) => {
     const pollSummary = async () => {
       setTilesChecking(true);
       try {
-        const summary = await fetchTileSummary(String(activeNodeId));
+        const available = await resolveTilesAvailable(String(activeNodeId));
         if (cancelled) return;
-        if (summary.tiles > 0) {
+        if (available) {
           setTilesAvailable(true);
           setTilesChecking(false);
           return;

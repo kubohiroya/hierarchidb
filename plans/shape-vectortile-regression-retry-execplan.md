@@ -11,10 +11,10 @@ PLANS.md is located at `PLANS.md` from the repository root and this plan must be
 ## Progress
 
 - [x] (2025-12-30 12:05 JST) ExecPlan を作成し、対象ファイルと方針を整理する。
-- [ ] (2025-12-30 11:50 JST) TaskStatus に regression を追加し、DB/Worker/UI の表示に反映する。
-- [ ] (2025-12-30 11:50 JST) vectortile サイズ超過時に regression + retry 更新を実装する。
-- [ ] (2025-12-30 11:50 JST) regression 検知で simplify2 の再始動と vectortile 再実行を行う。
-- [ ] (2025-12-30 11:50 JST) simplify2 の簡略化ロジックで retry 値に応じた強化を行う。
+- [x] (2025-12-30 14:20 JST) TaskStatus に regression を追加し、DB/Worker/UI の表示に反映する。
+- [x] (2025-12-30 14:20 JST) vectortile サイズ超過時に regression + retry 更新を実装する。
+- [x] (2025-12-30 14:25 JST) regression 検知で simplify2 の再始動と vectortile 再実行を行う。
+- [x] (2025-12-30 14:25 JST) simplify2 の簡略化ロジックで retry 値に応じた強化を行う。
 - [ ] (2025-12-30 11:50 JST) 検証手順を実施し、TASKS.md に結果を記録する。
 
 ## Surprises & Discoveries
@@ -33,7 +33,7 @@ PLANS.md is located at `PLANS.md` from the repository root and this plan must be
 
 ## Context and Orientation
 
-このリポジトリの shape plugin は Step5 でバッチ処理を実行する。`plugins/shape-plugin/src/services/batch/SessionController.ts` が download → simplify1 → simplify2 → vectortile の順でステージを制御し、各ステージのタスクは `shapeDB.batchTasks` に保存される。vectortile の処理は `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts` が行い、サイズ超過時は現在 `failed` にして終了している。
+このリポジトリの shape plugin は Step5 でバッチ処理を実行する。`plugins/shape-plugin/src/services/batch/SessionController.ts` が download → simplify1 → simplify2 → vectortile の順でステージを制御し、各ステージのタスクは `shapeDB.batchTasks` に保存される。vectortile の処理は `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts` が行い、サイズ超過時は `regression` として記録する。
 
 ここでいう `regression` は「サイズ超過によって簡略化の再試行が必要な状態」を表すタスク状態であり、`failed` や `skipped` と区別して表示する。`retry` は再試行回数を表し、vectortile タスクの payload（inputData/config）に保存する。
 
@@ -45,7 +45,7 @@ PLANS.md is located at `PLANS.md` from the repository root and this plan must be
 
 次に SessionController を拡張する。`plugins/shape-plugin/src/services/batch/SessionController.ts` に regression 検知のユーティリティを追加し、vectortile ステージ完了後に `status === 'regression'` かつ `retry < 2` のタスクが 1 件以上ある場合、simplify2 ステージを再実行して vectortile ステージへ戻るように制御を追加する。再始動時は simplify2 タスクの payload に `retry` 値を渡せるようにし、初回は 0、再試行時は 1/2 を付与する。再試行は最大 2 回に制限し、無限ループを防ぐ。
 
-最後に simplify2 の簡略化ロジックを強化する。`plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts` および `plugins/shape-plugin/src/services/batch/adapters/LocalSimplifyAdapters.ts` の simplify2 実装で、payload の `retry` を参照し、`retry` がある場合は tolerance を増やし、quantize を小さくする（粗い簡略化にする）。具体的には `effectiveTolerance = tolerance * (1 + retry)`、`effectiveQuantize = max(100, quantize / (1 + retry))` として適用する。これにより retry が進むほど簡略化が強くなる。
+最後に simplify2 の簡略化ロジックを強化する。`plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts` および `plugins/shape-plugin/src/services/batch/adapters/LocalSimplifyAdapters.ts` の simplify2 実装で、payload の `retry` を参照し、`retry` がある場合は tolerance を増やし、quantize を小さくする（粗い簡略化にする）。具体的には `effectiveTolerance = tolerance * (1 + retry)`、`effectiveQuantize = max(1, round(quantize / (1 + retry)))` として適用する。これにより retry が進むほど簡略化が強くなる。
 
 ## Concrete Steps
 

@@ -23,6 +23,7 @@ type GeoBoundariesFeature = Feature<Geometry, GeoBoundariesProperties>;
 
 export interface GeoBoundariesApiResponse {
   gjDownloadURL?: string;
+  simplifiedGeometryGeoJSON?: string;
   boundaryYear?: number;
   licenseDetail?: string;
   releaseType?: 'gbOpen';
@@ -126,24 +127,24 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
       //  APIURL
       const apiData = await this.fetchBoundaryMetadata(normalizedCountry, normalizedAdminLevel, signal);
 
-      if (!apiData || !apiData.gjDownloadURL) {
+      if (!apiData || !apiData.simplifiedGeometryGeoJSON) {
         throw new Error(`No boundary data available for ${normalizedCountry} ${normalizedAdminLevel}`);
       }
 
       console.log(`[GeoBoundaries] Downloading ${this.releaseType} data for ${normalizedCountry} ${normalizedAdminLevel}`);
-      console.log(`[GeoBoundaries] URL: ${apiData.gjDownloadURL}`);
+      console.log(`[GeoBoundaries] URL: ${apiData.simplifiedGeometryGeoJSON}`);
 
       //  GeoJSON
       const retries = this.config.access.retries ?? { count: 1, delay: 0, backoff: 'exponential' };
       ensureShapeDownloadDefaults();
       const buffer = await downloadArrayBuffer(
         'shape',
-        apiData.gjDownloadURL,
+        apiData.simplifiedGeometryGeoJSON,
         `geoboundaries:${normalizedCountry}:${normalizedAdminLevel}`,
         { retries: retries.count, delayMs: retries.delay, backoff: retries.backoff },
         signal,
       );
-      console.log(`[GeoBoundaries] Download succeeded: ${apiData.gjDownloadURL}`);
+      console.log(`[GeoBoundaries] Download succeeded: ${apiData.simplifiedGeometryGeoJSON}`);
       const geojson = JSON.parse(new TextDecoder('utf-8').decode(buffer)) as GeoBoundariesGeoJSON;
 
       return {

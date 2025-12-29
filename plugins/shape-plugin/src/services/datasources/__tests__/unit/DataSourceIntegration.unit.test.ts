@@ -37,7 +37,7 @@ vi.mock('@hierarchidb/auth-recovery', () => {
       return new Response(JSON.stringify({ USA: ['ADM0', 'ADM1'], JPN: ['ADM0', 'ADM1'] }), { status: 200 });
     }
     if (url.includes('/gbOpen/')) {
-      return new Response(JSON.stringify({ gjDownloadURL: 'https://mock.local/gb.geojson', boundaryYear: '2023', licenseDetail: 'Open' }), { status: 200 });
+      return new Response(JSON.stringify({ simplifiedGeometryGeoJSON: 'https://mock.local/gb.geojson', boundaryYear: '2023', licenseDetail: 'Open' }), { status: 200 });
     }
     if (url.includes('mock.local/gb.geojson')) {
       return new Response(JSON.stringify({ type: 'FeatureCollection', features: [{ type: 'Feature', geometry: { type: 'Polygon', coordinates: [[[0,0],[1,0],[1,1],[0,1],[0,0]]] }, properties: { shapeName: 'Mock' } }] }), { status: 200 });

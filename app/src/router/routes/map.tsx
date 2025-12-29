@@ -657,7 +657,7 @@ export default function MapPage() {
                 nodeId: String(node.id),
                 nodeType: 'route',
                 absolutePath: withLayerOrder('route', absolutePath, String(node.id)),
-                dbName: getDBName('stage-tiles-db'),
+                dbName: getDBName('vectortile'),
                 tileDataProvider: async (z, x, y) => {
                   const api = await getRouteQueryAPI();
                   return api.getVectorTile(String(node.id) as NodeId, z, x, y);

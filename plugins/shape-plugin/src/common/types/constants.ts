@@ -18,10 +18,10 @@ export const DEFAULT_PROCESSING_CONFIG: BatchConfig = {
   },
   simplify1Config: {
     workers: 2,
-    tolerance: 15.0,
+    tolerance: 40.0,
     featureFilterMethod: 'hybrid',
     areaThreshold: 10000,
-    minVertexCountForAreaFilter: 5000,
+    minVertexCountForAreaFilter: 8000,
     aspectRatioThreshold: 5,
     hybridFilterConfig: {
       quickRejectThreshold: 0.5,
@@ -40,7 +40,7 @@ export const DEFAULT_PROCESSING_CONFIG: BatchConfig = {
   simplificationConfig: {
     featureFilterMethod: 'hybrid',
     areaThreshold: 10000,
-    minVertexCountForAreaFilter: 5000,
+    minVertexCountForAreaFilter: 8000,
     aspectRatioThreshold: 5,
     hybridFilterConfig: {
       quickRejectThreshold: 0.5,
@@ -51,7 +51,7 @@ export const DEFAULT_PROCESSING_CONFIG: BatchConfig = {
     },
     level1Workers: 2,
     level2Workers: 2,
-    tolerance: 15.0,
+    tolerance: 40.0,
     quantize: 100,
     enablePerFeatureSimplification: false,
   },
