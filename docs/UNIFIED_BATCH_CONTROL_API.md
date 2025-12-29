@@ -15,7 +15,7 @@
 ```ts
 export type BatchSessionId = string;
 export type StageKey = string;              // download / simplify1 / vectortile などに正規化
-export type ProgressPhase = 'queued' | 'running' | 'paused' | 'completed' | 'failed' | 'warning' | 'cancelled';
+export type ProgressPhase = 'queued' | 'running' | 'paused' | 'completed' | 'failed' | 'warning';
 
 interface BatchProgressEvent<P = BatchProgressPayload> {
   sessionId: BatchSessionId;
@@ -43,7 +43,6 @@ startBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatu
 getBatchSessionStatus(nodeType: NodeType, sessionId: BatchSessionId): Promise<BatchSessionStatus>;
 pauseBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
 resumeBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
-cancelBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
 subscribeBatchProgress(
   nodeType: NodeType,
   sessionId: BatchSessionId,

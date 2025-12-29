@@ -164,7 +164,6 @@ export class UnifiedLocationBatchManager extends UnifiedBatchManagerBase<Unified
     const percentage = progress?.percentage ?? (total > 0 ? Math.round((completed / total) * 100) : 0);
     const rawStatus = record?.status ?? (percentage >= 100 ? 'completed' : 'running');
     const status: BatchSessionStatus['status'] = (() => {
-      if (rawStatus === 'cancelled') return 'failed';
       if (rawStatus === 'paused' || rawStatus === 'completed' || rawStatus === 'failed') {
         return rawStatus;
       }

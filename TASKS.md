@@ -85,7 +85,7 @@
   - [ ] vectortile サイズ超過時の retry 更新と regression 状態遷移を実装する
   - [ ] regression 検知で simplify2 を再始動する制御を追加する
   - [ ] simplify2 の簡略化ロジックに retry 強化を追加する
-  - [ ] cancel/cancelled の参照を検索して除去する（batch 制御/API/UI/Worker）
+  - [x] cancel/cancelled の参照を検索して除去する（batch 制御/API/UI/Worker）
   - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
 - ロールバック手順：`plugins/shape-plugin/src/services/batch/**` と `packages/features/shape-store/src/ShapeDB.ts`、`plugins/shape-plugin/src/common/types/batch.ts` の差分を revert する
 - 運用ログ：
@@ -95,6 +95,7 @@
   - progress: 2025-12-30 12:30 JST batch セッション/進捗の cancelled 状態を削除し failed に統一。検証: 未実施。
   - progress: 2025-12-30 12:45 JST Batch API から cancel 操作を撤廃し、pause のみで操作する方針に合わせてコードとテストを調整。検証: 未実施。
   - start: 2025-12-30 13:05 JST cancel/cancelled を全体から除去する確認と残件の整理に着手。
+  - progress: 2025-12-30 13:25 JST batch 制御/API/Worker/Doc の cancel/cancelled を撤廃し、pause/failed へ統一。認証/Import-Export 等の一般的な「取り消し」表現は残存。検証: 未実施。
 
 1968) /map 地物状態 (A)-(E) のSSOT分離と重ね合わせ表示（P1）
 - ブランチ: `feat/ui/map-feature-overlays`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -15159,6 +15160,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-28 17:48 done: fix/location/status-cancelled-normalize — cancelled を failed に正規化し、idle/paused/completed/failed のみを返すよう status を整形。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/location-plugin/src/services/batch/UnifiedLocationBatchManager.ts` と `TASKS.md` の差分を revert。
 - 2025-12-28 17:51 start: fix/location/status-idle-compare — rawStatus の型に合わせて idle 判定を削除し、比較エラーを解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
 - 2025-12-28 17:52 done: fix/location/status-idle-compare — rawStatus の idle 比較を撤去し、TS2367 を解消。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/location-plugin/src/services/batch/UnifiedLocationBatchManager.ts` と `TASKS.md` の差分を revert。
+- 2025-12-28 17:54 start: fix/location/status-cancelled-compare — rawStatus の cancelled 比較を削除し、型エラーを解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 17:55 done: fix/location/status-cancelled-compare — rawStatus の cancelled 比較を撤去し、TS2367 を解消。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/location-plugin/src/services/batch/UnifiedLocationBatchManager.ts` と `TASKS.md` の差分を revert。
 - 2025-12-29 15:06 start: analysis/shape/step5-lru-task-component — shape step5 の LRUSplitPane 内タスク表示コンポーネント特定の調査に着手。DoD: Kanban 1969 のとおり。
 - 2025-12-29 15:07 progress: analysis/shape/step5-lru-task-component — `rg -n "LRUSplitPane|LRUSplitView" plugins app packages` と `rg -n "Step5|step5|BuildStep" plugins/shape-plugin app packages` で参照箇所を探索。
 - 2025-12-29 15:08 progress: analysis/shape/step5-lru-task-component — `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx` と `packages/components/src/BuildStepPanel.tsx` を確認し、pane content とタスク表示の責務を切り分け。

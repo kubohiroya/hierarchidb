@@ -236,17 +236,6 @@ export class DataSourceBatchProcessor {
     return this.getAllJobs().filter(job => job.status === 'running');
   }
 
-  async cancelJob(jobId: string): Promise<boolean> {
-    const job = this.jobQueue.get(jobId);
-    if (!job || job.status === 'completed' || job.status === 'failed') {
-      return false;
-    }
-
-    job.status = 'failed';
-    this.runningJobs.delete(jobId);
-    return true;
-  }
-
   clearCompletedJobs(): void {
     for (const [jobId, job] of Object.entries(this.jobQueue)) {
       if (job.status === 'completed' || job.status === 'failed') {
@@ -408,37 +397,6 @@ describe('Batch Processing System', () => {
         expect(result.success).toBe(true);
         expect(result.jobId).toBeDefined();
       });
-    });
-
-    it('should support job cancellation', async () => {
-      const config: BatchConfig = {
-        strategyId: 'openstreetmap-overpass',
-        fetchOptions: {
-          bbox: { minLat: 35, maxLat: 36, minLng: 139, maxLng: 140 },
-          timeout: 30,
-        },
-        saveTarget: { type: 'hierarchidb' },
-      };
-
-      //  job
-      const jobPromise = batchProcessor.executeBatch(config);
-
-      //  cancel
-      await new Promise(resolve => setTimeout(resolve, 10));
-
-      const runningJobs = batchProcessor.getRunningJobs();
-      if (runningJobs.length > 0 && runningJobs[0]?.id) {
-        const cancelled = await batchProcessor.cancelJob(runningJobs[0]?.id);
-        expect(typeof cancelled).toBe('boolean');
-      }
-
-      //  jobcancel
-      try {
-        await jobPromise;
-      } catch (error) {
-        //  cancel
-        expect(error).toBeInstanceOf(Error);
-      }
     });
 
     it('should provide job statistics', async () => {

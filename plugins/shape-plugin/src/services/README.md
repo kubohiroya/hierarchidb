@@ -89,11 +89,6 @@ export interface ShapesAPIMethods {
     void
   >;
   
-  cancelBatchProcessing: WorkerAPIMethod<
-    [batchId: string],
-    void
-  >;
-  
   // バッチ状態取得
   getBatchStatus: WorkerAPIMethod<
     [batchId: string],
@@ -149,10 +144,6 @@ export class ShapesPluginAPI implements PluginAPI<ShapesAPIMethods> {
       
       resumeBatchProcessing: async (batchId) => {
         await this.service.resumeBatch(batchId);
-      },
-      
-      cancelBatchProcessing: async (batchId) => {
-        await this.service.cancelBatch(batchId);
       },
       
       getBatchStatus: async (batchId) => {

@@ -285,9 +285,9 @@ export class AuthPromptService {
       
       await this.notifyWorkerAuthSuccess(successNotification);
     } else {
-      // 認証キャンセル時はバッチ処理を停止
+      // 認証キャンセル時はバッチ処理を一時停止
       if (context.sessionId) {
-        await this.cancelBatchProcessing(context.sessionId);
+        await this.pauseBatchProcessing(context.sessionId);
       }
     }
     

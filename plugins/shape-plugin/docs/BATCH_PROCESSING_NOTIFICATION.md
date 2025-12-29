@@ -347,15 +347,15 @@ export function ShapeProcessingStatus({ nodeId }: { nodeId: NodeId }) {
 
 ## セッション管理
 
-### セッションのキャンセル
+### セッションの一時停止
 
 ```typescript
-// UI層でのキャンセル処理
-const handleCancel = async () => {
-  await manager.abortSession(sessionId);
+// UI層での一時停止処理
+const handlePause = async () => {
+  await manager.pauseSession(sessionId);
   
-  // キャンセル通知が自動的に発行される
-  // コールバックで status === 'cancelled' をチェック
+  // 一時停止通知が自動的に発行される
+  // コールバックで status === 'paused' をチェック
 };
 ```
 
