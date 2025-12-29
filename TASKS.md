@@ -15023,3 +15023,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-28 16:09 done: fix/templates/population-2023-feature-id — population-2023 の shape ノード初期値に Feature ID Property として shapeISO を設定。検証: 未実施。ロールバック: `app/public/templates/population-2023/tree-nodes.json` の差分を revert。
 - 2025-12-28 16:48 start: fix/styler/value-to-color-dup — valueToColor の重複定義を整理する対応に着手。（Kanban: 1871）
 - 2025-12-28 16:48 done: fix/styler/value-to-color-dup — colorUtils 内の未使用 _valueToColor を削除して重複定義を解消。検証: 未実施。ロールバック: `plugins/styler-plugin/src/common/utils/colorUtils.ts` の差分を revert する。
+- 2025-12-28 17:05 start: fix/shape/auth-context-nodeid — shape-plugin の Auth 通知コンテキストから nodeId を撤去し、型整合を修正する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 17:07 done: fix/shape/auth-context-nodeid — AuthCancelled 通知の context から nodeId を削除し、型エラーを解消。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/shape-plugin/src/services/auth/WorkerAuthHandler.ts` と `TASKS.md` の差分を revert。
+- 2025-12-28 17:12 start: fix/app/modeless-sx-constraint — modeless dialog の sx 型制約エラー（TS2344）を解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 17:14 done: fix/app/modeless-sx-constraint — DataGrid rowSx の型を NonNullable にして useCallback の関数制約を満たすよう修正。検証: 未実施（typecheck 未実行）。ロールバック: `app/src/router/routes/modeless/modelessDialogContent.tsx` と `TASKS.md` の差分を revert。

@@ -59,7 +59,7 @@ const formatText = (value?: string | null) => (value && value.trim().length > 0 
 const MAX_ROWS = 1000;
 
 type DataGridRow = Record<string, unknown>;
-type DataGridRowSx = GenericDataGridProps<DataGridRow>['rowSx'];
+type DataGridRowSx = NonNullable<GenericDataGridProps<DataGridRow>['rowSx']>;
 
 type DataGridState = {
   rows: DataGridRow[];

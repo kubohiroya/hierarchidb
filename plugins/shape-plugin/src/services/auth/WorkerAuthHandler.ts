@@ -423,7 +423,6 @@ export class WorkerAuthHandler {
       // Send cancellation notification
       const cancelNotification = AuthNotificationFactory.createAuthCancelled({
         requestId: requestInfo.requestId,
-        nodeId: requestInfo.context.nodeId,
         reason: 'error',
       });
 
