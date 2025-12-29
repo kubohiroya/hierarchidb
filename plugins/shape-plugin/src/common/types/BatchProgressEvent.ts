@@ -41,7 +41,7 @@ export interface BatchProgressEvent {
       name?: string;
       provider?: string;
     };
-    /** Reason for authentication cancellation */
+    /** Reason for authentication stop */
     reason?: string;
   };
 

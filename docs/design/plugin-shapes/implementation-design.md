@@ -284,7 +284,7 @@ export interface BatchTaskLike {
   taskId: string;
   sessionId: string; // nodeId
   type: 'download' | 'vectorTile' | 'geometry' | 'transform';
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+  status: 'pending' | 'running' | 'completed' | 'failed';
   progress: number; // 0-100
   stage: string;
   metadata?: Record<string, any>;
@@ -1447,7 +1447,6 @@ export function ShapesBatchProgressPanel({
       case 'completed': return 'success';
       case 'failed': return 'error';
       case 'running': return 'primary';
-      case 'cancelled': return 'default';
       default: return 'default';
     }
   };
@@ -1458,7 +1457,6 @@ export function ShapesBatchProgressPanel({
       case 'running': return '実行中';
       case 'completed': return '完了';
       case 'failed': return '失敗';
-      case 'cancelled': return 'キャンセル';
       default: return '不明';
     }
   };
