@@ -12,15 +12,15 @@ export class RouteBatchOrchestrationService {
   constructor(private readonly source: RouteSourceOrchestrator, private readonly deps?: RouteBatchManagerDeps) {}
 
   async startFromSources(nodeId: NodeId, spec: RouteBatchSpec, mgr: RouteBatchManagerLike | undefined, config: RouteBatchConfig): Promise<{
-    jobId: string;
+    nodeId: NodeId;
     count: number
   }> {
     const { odPairs } = await this.source.preview(spec);
     const routes = mapRecomputeTasks(odPairs, spec.defaults, { methodOptions: spec.defaults });
     const effectiveMgr = mgr ?? new RouteBatchSessionOrchestrator(this.deps);
     await effectiveMgr.prepareSession(nodeId, toSessionConfig(config), { routes });
-    const jobId = await effectiveMgr.startBatchSession(nodeId);
-    return { jobId, count: routes.length };
+    await effectiveMgr.startBatchSession(nodeId);
+    return { nodeId, count: routes.length };
   }
 
   async startMatrix(
@@ -31,7 +31,7 @@ export class RouteBatchOrchestrationService {
     config: RouteBatchConfig,
     methodOptions?: RouteTaskInput['methodOptions'],
   ): Promise<{
-    jobId: string;
+    nodeId: NodeId;
     count: number
   }> {
     const { odPairs: O } = await this.source.preview(origins);
@@ -39,8 +39,8 @@ export class RouteBatchOrchestrationService {
     const routes = mapMatrixTasks(O, D, origins.defaults ?? destinations.defaults, methodOptions);
     const effectiveMgr = mgr ?? new RouteBatchSessionOrchestrator(this.deps);
     await effectiveMgr.prepareSession(nodeId, toSessionConfig(config), { routes });
-    const jobId = await effectiveMgr.startBatchSession(nodeId);
-    return { jobId, count: routes.length };
+    await effectiveMgr.startBatchSession(nodeId);
+    return { nodeId, count: routes.length };
   }
 
   async startEnrich(
@@ -50,15 +50,15 @@ export class RouteBatchOrchestrationService {
     config: RouteBatchConfig,
     options: RouteTaskInput['methodOptions'],
   ): Promise<{
-    jobId: string;
+    nodeId: NodeId;
     count: number
   }> {
     const { odPairs } = await this.source.preview(spec);
     const routes = mapEnrichTasks(odPairs, options, spec.defaults);
     const effectiveMgr = mgr ?? new RouteBatchSessionOrchestrator(this.deps);
     await effectiveMgr.prepareSession(nodeId, toSessionConfig(config), { routes });
-    const jobId = await effectiveMgr.startBatchSession(nodeId);
-    return { jobId, count: routes.length };
+    await effectiveMgr.startBatchSession(nodeId);
+    return { nodeId, count: routes.length };
   }
 }
 

@@ -383,6 +383,7 @@
 - 運用ログ：
   - start: 2025-12-29 12:00 JST route-plugin typecheck エラー修正に着手。
   - progress: 2025-12-29 12:20 JST useLocationProgress の nodeId 必須化・フォールバック削除、Location/Route の batch session 戻り値と cancelled 整合、RouteBatchSession の lineGeometry 参照修正、geojson 型追加、UI の NodeId 変換を実施。
+  - progress: 2025-12-29 12:30 JST RouteBatchOrchestrationService の jobId を NodeId に統一し、LaunchForm の表示/型も更新。
 
 1966) ISO2/ISO3 型定義の移動指示対応（P1）
 - ブランチ: `refactor/common/iso2-iso3-relocation`（sandbox 制約で branch 作成不可なら main 上で作業）

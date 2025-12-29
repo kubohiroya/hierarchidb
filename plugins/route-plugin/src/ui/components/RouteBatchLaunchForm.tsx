@@ -17,7 +17,7 @@ type JobKind = 'recompute' | 'matrix' | 'enrich';
 
 export interface RouteBatchLaunchFormProps {
   nodeId: NodeId;
-  onLaunched?: (res: { jobId: string; count: number }) => void;
+  onLaunched?: (res: { nodeId: NodeId; count: number }) => void;
 }
 
 export function RouteBatchLaunchForm({
@@ -72,13 +72,13 @@ export function RouteBatchLaunchForm({
           defaults: { engine: 'osm_route', mode: 'road_general' },
         };
         const res = await orchestrator.startFromSources(targetNodeId, spec, mgr, config);
-        setStatus(`launched ${res.jobId} (${res.count})`);
+        setStatus(`launched ${String(res.nodeId)} (${res.count})`);
         onLaunched?.(res);
       } else if (kind === 'matrix') {
         const origins: RouteBatchSpec = { sources: [{ type: 'csv', url: tabularUrl }], defaults };
         const dests: RouteBatchSpec = { sources: [{ type: 'csv', url: tabularUrl2 }], defaults };
         const res = await orchestrator.startMatrix(targetNodeId, origins, dests, mgr, config, methodOptions);
-        setStatus(`launched ${res.jobId} (${res.count})`);
+        setStatus(`launched ${String(res.nodeId)} (${res.count})`);
         onLaunched?.(res);
       } else {
         const spec: RouteBatchSpec = { sources: [{ type: 'csv', url: tabularUrl }], defaults };
@@ -87,7 +87,7 @@ export function RouteBatchLaunchForm({
           elevation: true,
           ...methodOptions,
         });
-        setStatus(`launched ${res.jobId} (${res.count})`);
+        setStatus(`launched ${String(res.nodeId)} (${res.count})`);
         onLaunched?.(res);
       }
     } catch (e: any) {
