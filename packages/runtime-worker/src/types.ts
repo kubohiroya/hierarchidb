@@ -1,5 +1,14 @@
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 
+export type VectorTileProgress = {
+  total: number;
+  completed: number;
+  percent: number;
+  zoom: number;
+  x: number;
+  y: number;
+};
+
 /**
  * Lifecycle hooks for node operations
  */
@@ -103,7 +112,8 @@ export interface VectorTileWorkerAPI {
         adminLevel?: number;
       };
       abortKey?: string;
-    }
+    },
+    onProgress?: (progress: VectorTileProgress) => void,
   ): Promise<{ tilesGenerated: number; totalBytes?: number; metadataCount?: number }>;
   abortGenerateTiles?(abortKey: string): Promise<void>;
   getTile(nodeId: string, z: number, x: number, y: number): Promise<Uint8Array | null>;

@@ -53,6 +53,25 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1975) shape-plugin: Step4 デフォルト見直し + simplify2 TopoJSON 簡略化（P1）
+- ブランチ: `feat/shape-plugin/simplify2-topojson`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/batch/adapters/LocalSimplifyAdapters.ts`, `plugins/shape-plugin/src/common/types/constants.ts`, `plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx`, `TASKS.md`, `plans/`
+- 受け入れ基準（DoD）:
+  - [ ] Step4 のデフォルト値を「過度な簡略化」から適正へ戻す
+  - [ ] simplify2 の簡略化を TopoJSON ベースへ切り替え、境界の崩壊を抑える
+  - [ ] ExecPlan を作成し、変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] ExecPlan を `plans/shape-simplify2-topojson-execplan.md` に作成する
+  - [ ] simplify2（worker/local）で TopoJSON 簡略化を実装する
+  - [ ] Step4 のデフォルト値を見直す
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：simplify2 実装と Step4 デフォルト値の差分を revert する
+- 運用ログ：
+  - start: 2025-12-30 18:20 JST simplify2 TopoJSON 簡略化と Step4 デフォルト見直しの検討に着手。
+  - progress: 2025-12-30 18:35 JST ExecPlan を `plans/shape-simplify2-topojson-execplan.md` に作成。検証: 未実施。
+  - progress: 2025-12-30 19:20 JST TopoJSON 簡略化のユーティリティ追加と simplify2 worker/local への適用、Step4 デフォルト値の緩和を実施。検証: 未実施。
+  - progress: 2025-12-30 19:35 JST 共有ズーム範囲のデフォルトを 1-4 に更新。検証: 未実施。
+
 1974) shape-plugin: vectortile/simplify2 完了メッセージへ件数・サイズを表示（P1）
 - ブランチ: `feat/shape-plugin/task-completion-metrics`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `plugins/shape-plugin/src/services/batch/adapters/ShapeWorkerSimplifyAdapters.ts`, `plugins/shape-plugin/src/services/batch/adapters/LocalSimplifyAdapters.ts`, `TASKS.md`
@@ -68,6 +87,106 @@
 - 運用ログ：
   - start: 2025-12-30 17:55 JST Completed メッセージに件数/サイズを表示する修正に着手。
   - progress: 2025-12-30 18:05 JST vectortile 完了で TilesDB からサイズ取得、simplify2 完了で output buffer から件数/サイズを message に反映。検証: 未実施。
+1976) shape-plugin: Step5 LRUSplitView の空表示をタスク無し時に限定（P1）
+- ブランチ: `fix/shape-plugin/step5-empty-state-visibility`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] タスクが1件以上ある場合、ステージ見出し/説明/「まだタスクがありません」ブロックを表示しない
+  - [ ] タスクが0件の時のみブロックを表示する
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] 空表示の判定をタスク件数で分岐する
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：`ShapeBuildProgressStep.tsx` の空表示分岐を元に戻す
+- 運用ログ：
+  - start: 2025-12-30 19:50 JST Step5 の空表示をタスク無し時に限定する修正に着手。
+  - progress: 2025-12-30 20:00 JST タスク有無で空表示を切り替え、タスクがある場合はリストのみ表示するよう修正。検証: 未実施。
+1977) shape-plugin: simplify1 完了メッセージにサイズ/比率を表示（P1）
+- ブランチ: `feat/shape-plugin/simplify1-completion-metrics`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/services/batch/adapters/ShapeWorkerSimplifyAdapters.ts`, `plugins/shape-plugin/src/services/batch/adapters/LocalSimplifyAdapters.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] simplify1 Completed の message に元サイズ・簡略化後サイズ・比率(%)を表示する
+  - [ ] 取得できない場合は従来通り message を省略する
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] simplify1 の worker/local 完了処理にメッセージ生成を追加する
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：simplify1 完了メッセージ追加の差分を revert する
+- 運用ログ：
+  - start: 2025-12-30 20:10 JST simplify1 完了メッセージへサイズ/比率表示を追加する修正に着手。
+  - progress: 2025-12-30 20:20 JST simplify1 の worker/local で raw/output サイズから比率を算出して message に反映。検証: 未実施。
+
+1978) shape-plugin: download 完了メッセージにサイズを付記（P1）
+- ブランチ: `fix/shape-plugin/download-message-size`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerDownloadAdapter.ts`, `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] download Completed の message が URL + `(Size: xx.xMB)` の形式になる
+  - [ ] UI の download タスク表示が Completed 時に message を優先して表示する
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] download 完了時に URL とサイズを message に設定する
+  - [ ] UI の Completed 表示で message を優先する
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：download 完了 message 追加と UI 表示分岐の差分を revert する
+- 運用ログ：
+  - start: 2025-12-30 21:10 JST download 完了メッセージへサイズ付記の対応に着手。
+  - progress: 2025-12-30 21:20 JST download 完了時に URL + サイズの message を付与し、UI は Completed で message を優先表示するよう調整。検証: 未実施。
+
+1979) shape-plugin: vectortile タスク進捗を段階的に更新（P1）
+- ブランチ: `feat/shape-plugin/vectortile-progress`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `packages/features/gis-sdk/src/vectorTiles.ts`, `packages/runtime-worker/src/services/StageProcessingService.ts`, `packages/runtime-worker/src/types.ts`, `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] vectortile の個別タスクが 0→100% 以外の中間進捗を表示できる
+  - [ ] UI の LinearProgress が重いタイルでも段階的に進む
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] vector tile 生成処理でタイル単位の進捗コールバックを追加する
+  - [ ] 進捗コールバックで task progress を 1-99% で更新する
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：vectortile 進捗コールバック追加と UI 更新の差分を revert する
+- 運用ログ：
+  - start: 2025-12-30 21:35 JST vectortile タスク進捗を段階的に更新する対応に着手。
+  - progress: 2025-12-30 21:45 JST vector tile 生成に進捗コールバックを追加し、タスクの progress を 1-99% で更新するよう調整。検証: 未実施。
+  - progress: 2025-12-30 22:50 JST comlink proxy を明示適用し、progress コールバックが Worker へ渡せず全タイルが失敗する不具合を修正。検証: 未実施。
+  - progress: 2025-12-30 23:55 JST runtime-worker から proxy を再エクスポートし、同一 comlink インスタンスで progress を渡すよう修正。検証: 未実施。
+  - progress: 2025-12-31 00:20 JST StageProcessingService 内で comlink を共有化し、同一インスタンスの proxy を返すよう修正。検証: 未実施。
+  - progress: 2025-12-31 00:40 JST vectortile の progress を generateTiles の第3引数として渡すよう変更し、VectorTileStageInput を明示的な型へ簡素化。検証: 未実施。
+
+1980) shape-plugin: Download/Cache 管理を 4 カラム化しリセットボタンを追加（P1）
+- ブランチ: `feat/shape-plugin/download-cache-4col-reset`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/ui/components/steps/DownloadConfigSection.tsx`, `plugins/shape-plugin/src/ui/hooks/useDownloadConfigSection.ts`, `plugins/shape-plugin/src/ui/locales/{en,ja}.json`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] Step4 の Download/Cache 管理カードが 4 カラム表示になる
+  - [ ] 「即時でのビルド生成物の削除」カード右隣に「設定値をデフォルトに戻す」ボタンが表示される
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] Grid のカラム数を 4 カラムに調整する
+  - [ ] デフォルトへ戻すボタンのアクションを実装する
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：DownloadConfigSection と hook の差分を revert する
+- 運用ログ：
+  - start: 2025-12-30 22:10 JST Download/Cache 管理の 4 カラム化とリセットボタン追加に着手。
+  - progress: 2025-12-30 22:20 JST Download/Cache 管理を 4 カラムに拡張し、デフォルト復帰ボタンと文言を追加。検証: 未実施。
+  - progress: 2025-12-30 22:30 JST デフォルト復帰ボタンを即時削除カードの 6つ目ボタンへ移設し、編集中の設定をシステムデフォルトへ戻す挙動へ更新。検証: 未実施。
+  - progress: 2025-12-30 22:35 JST Download/Cache 管理を 3 カラム表示へ戻し、空欄の 4 列目を解消。検証: 未実施。
+
+1981) shape-plugin: simplify1 デフォルト値の見直しと簡略化の反映（P1）
+- ブランチ: `fix/shape-plugin/simplify1-defaults`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/common/types/constants.ts`, `plugins/shape-plugin/src/services/batch/workers/shapeStageWorker.ts`, `plugins/shape-plugin/src/services/batch/adapters/LocalSimplifyAdapters.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] simplify1 デフォルト値が見直され、簡略化が反映される
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] simplify1 で簡略化（tolerance）を反映する
+  - [ ] simplify1 デフォルト値を更新する
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：simplify1 の変更差分を revert する
+- 運用ログ：
+  - start: 2025-12-30 23:05 JST simplify1 デフォルト値見直しと簡略化反映の対応に着手。
+  - progress: 2025-12-30 23:20 JST simplify1 に simplifyGeoJson を適用し、デフォルト tolerance を 4.0 へ見直し。検証: 未実施。
+  - progress: 2025-12-30 23:30 JST simplify1 の最小面積を 0-2000 に調整し、デフォルトを 500 に変更。検証: 未実施。
+  - progress: 2025-12-30 23:40 JST simplify1 の最小頂点数を 0-500 に調整し、デフォルトを 200 に変更。検証: 未実施。
+  - progress: 2025-12-31 00:05 JST simplify1 のデフォルト最小頂点数を 100、最小面積を 300 に再調整。検証: 未実施。
 
 1973) shape-plugin: vectortile DB 名称変更と中間生成物の ephemeral 移設（P1）
 - ブランチ: `refactor/shape-plugin/ephemeral-buffers-db`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -6976,6 +7095,17 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+
+1976) 調査: PluginDialog の activeStepIndex / uiDialogState 永続化タイミング特定（P2） — 完了 (2025-12-30)
+- 要点：activeStepIndex は step ナビゲーション時に `usePluginDialogController` の `handleNavigation` で更新され、URL（`useDialogUrlSync`）にも即反映される。`dialogUIState` は `useDialogUIStateSync` の `getPersistableDialogUIState()` で組み立てられ、保存系（commit/save-draft/autosave/close）で TreeNodeUpdater 経由で永続化される。
+- 検証：調査のみ（コード確認）。
+- ロールバック手順：調査のみのため変更なし。
+- 運用ログ：
+  - start: 2025-12-30 06:45 JST PluginDialog の activeStepIndex / uiDialogState 永続化タイミング調査に着手。
+  - progress: 2025-12-30 06:46 JST `rg -n "activeStepIndex|uiDialogState|dialogStateAtom|dialogUIState|uiDialog" packages plugins app` で参照箇所を探索。
+  - progress: 2025-12-30 06:48 JST `packages/plugin-ui-host/src/headless/usePluginDialogController.tsx` と `packages/plugin-ui-host/src/headless/usePluginDialogController/dialog-ui-state.ts` を確認し、UI state 更新と永続化呼び出し箇所を整理。
+  - progress: 2025-12-30 06:49 JST `packages/plugin-ui-sdk/src/hooks/useTreeNodeUpdater.ts` と `packages/plugin-ui-host/src/headless/usePluginDialogController/autosave.ts` を確認し、save-draft/commit/autosave 経路での dialogUIState 保存を確認。
+  - done: 2025-12-30 06:50 JST activeStepIndex と dialogUIState の永続化タイミング（ナビゲーション/保存/クローズ/オートセーブ）を特定。
 
 1969) 調査: shape step5 の LRUSplitPane 内タスク表示コンポーネント特定（P2） — 完了 (2025-12-29)
 - 要点：Step5 の進捗ビューは `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx` が `BuildStepPanel` を描画し、`renderStageContent` 内でタスク 1 件を `ShapeBuildTaskItem` として表示する。`BuildStepPanel` は `packages/components/src/BuildStepPanel.tsx` で `LRUSplitView` の pane content を組み立てているため、LRUSplitPane 内のタスク表示コンポーネントは `plugins/shape-plugin/src/ui/components/steps/ShapeBuildTaskItem.tsx`。
@@ -15210,6 +15340,11 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-28 17:07 done: fix/shape/auth-context-nodeid — AuthCancelled 通知の context から nodeId を削除し、型エラーを解消。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/shape-plugin/src/services/auth/WorkerAuthHandler.ts` と `TASKS.md` の差分を revert。
 - 2025-12-28 17:12 start: fix/app/modeless-sx-constraint — modeless dialog の sx 型制約エラー（TS2344）を解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
 - 2025-12-28 17:14 done: fix/app/modeless-sx-constraint — DataGrid rowSx の型を NonNullable にして useCallback の関数制約を満たすよう修正。検証: 未実施（typecheck 未実行）。ロールバック: `app/src/router/routes/modeless/modelessDialogContent.tsx` と `TASKS.md` の差分を revert。
+- 2025-12-30 06:45 start: analysis/ui-dialog/persistence-timing — PluginDialog の activeStepIndex / uiDialogState 永続化タイミング調査に着手。DoD: Kanban 1976 のとおり。
+- 2025-12-30 06:46 progress: analysis/ui-dialog/persistence-timing — `rg -n "activeStepIndex|uiDialogState|dialogStateAtom|dialogUIState|uiDialog" packages plugins app` で参照箇所を探索。
+- 2025-12-30 06:48 progress: analysis/ui-dialog/persistence-timing — `packages/plugin-ui-host/src/headless/usePluginDialogController.tsx` と `packages/plugin-ui-host/src/headless/usePluginDialogController/dialog-ui-state.ts` を確認し、UI state 更新と永続化呼び出し箇所を整理。
+- 2025-12-30 06:49 progress: analysis/ui-dialog/persistence-timing — `packages/plugin-ui-sdk/src/hooks/useTreeNodeUpdater.ts` と `packages/plugin-ui-host/src/headless/usePluginDialogController/autosave.ts` を確認し、save-draft/commit/autosave 経路での dialogUIState 保存を確認。
+- 2025-12-30 06:50 done: analysis/ui-dialog/persistence-timing — activeStepIndex と dialogUIState の永続化タイミング（ナビゲーション/保存/クローズ/オートセーブ）を特定。検証: 調査のみ。ロールバック: 運用ログ追記を削除。
 - 2025-12-28 17:18 start: fix/runtime-worker/stage-processing-proxy-cast — StageProcessingService の proxy キャスト TS2352 を解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
 - 2025-12-28 17:20 done: fix/runtime-worker/stage-processing-proxy-cast — comlink client の proxy 参照を unknown 経由でキャストし、TS2352 を解消。検証: 未実施（typecheck 未実行）。ロールバック: `packages/runtime-worker/src/services/StageProcessingService.ts` と `TASKS.md` の差分を revert。
 - 2025-12-28 17:23 start: fix/ui-batch/task-summary-stage-key — useBuildTaskProgress の taskType 参照エラーを解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
@@ -15226,6 +15361,12 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-28 17:59 done: fix/shape/vectortile-tilesize-shadow — tileSize の設定値を tileSizeConfig にリネームし、再宣言を回避。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts` と `TASKS.md` の差分を revert。
 - 2025-12-28 18:02 start: fix/shape/vectortile-tilesize-redeclare — RuntimeWorkerVectorTileAdapter の tileSize 再宣言と simplify adapter の outputBufferId 参照エラーを解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
 - 2025-12-28 18:04 done: fix/shape/vectortile-tilesize-redeclare — tileSize 変数を tileSizeBytes に分離し、simplify2 の outputBufferId 参照を削除して固定 ID で参照。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/shape-plugin/src/services/batch/adapters/{RuntimeWorkerVectorTileAdapter.ts,ShapeWorkerSimplifyAdapters.ts}` と `TASKS.md` の差分を revert。
+- 2025-12-28 18:08 start: fix/shape/topojson-simplify-types — ShapeWorkerSimplifyAdapters の重複 import と topojsonSimplify の型エラーを解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 18:10 done: fix/shape/topojson-simplify-types — 重複 import を削除し、GeometryCollection/FeatureCollection の型ガードとキャストで topojsonSimplify の型エラーを解消。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/shape-plugin/src/services/batch/{adapters/ShapeWorkerSimplifyAdapters.ts,utils/topojsonSimplify.ts}` と `TASKS.md` の差分を revert。
+- 2025-12-28 18:16 start: fix/runtime-worker/vector-tile-progress-types — StageProcessingService の onProgress 参照と VectorTileProgress 型の欠落を解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 18:19 done: fix/runtime-worker/vector-tile-progress-types — VectorTileProgress を runtime-worker 側に定義し、generateTiles の config/onProgress 型と sdkConfig を拡張して型エラーを解消。検証: 未実施（typecheck 未実行）。ロールバック: `packages/runtime-worker/src/{types.ts,services/StageProcessingService.ts}` と `TASKS.md` の差分を revert。
+- 2025-12-28 18:26 start: fix/shape/download-config-defaults — useDownloadConfigSection の DownloadBatchConfig 既定値を明示し、maxConcurrent の undefined を解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 18:27 done: fix/shape/download-config-defaults — reset defaults で downloadConfig を明示設定し、maxConcurrent の undefined を回避。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/shape-plugin/src/ui/hooks/useDownloadConfigSection.ts` と `TASKS.md` の差分を revert。
 - 2025-12-29 15:06 start: analysis/shape/step5-lru-task-component — shape step5 の LRUSplitPane 内タスク表示コンポーネント特定の調査に着手。DoD: Kanban 1969 のとおり。
 - 2025-12-29 15:07 progress: analysis/shape/step5-lru-task-component — `rg -n "LRUSplitPane|LRUSplitView" plugins app packages` と `rg -n "Step5|step5|BuildStep" plugins/shape-plugin app packages` で参照箇所を探索。
 - 2025-12-29 15:08 progress: analysis/shape/step5-lru-task-component — `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx` と `packages/components/src/BuildStepPanel.tsx` を確認し、pane content とタスク表示の責務を切り分け。

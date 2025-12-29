@@ -116,8 +116,8 @@ export class LocationSessionController {
     try {
       await LocationSessionController.laneRegistry.runWithLane('tilegen', async () => {
         const result = await runVectorTileStage({
-          inputBufferId: fileId,
-          inputBuffer: bytes,
+          bufferId: fileId,
+          buffer: bytes,
           contentType: 'application/json',
           config: { format: 'mvt', compression: 'none' },
         }, tileClient);

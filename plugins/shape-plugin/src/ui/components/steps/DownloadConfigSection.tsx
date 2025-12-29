@@ -9,7 +9,7 @@ import {
   Stack,
   Switch,
   Typography,
-  } from '@mui/material';
+} from '@mui/material';
 import {
   CloudDownload as CloudDownloadIcon,
   ExpandMore as ExpandMoreIcon,
@@ -51,6 +51,7 @@ export const DownloadConfigSection: React.FC<Props> = ({ config, draft, nodeId, 
     handleDeleteStage,
     handleDeleteTiles,
     handleDeleteMetadata,
+    handleResetDefaults,
     update,
   } = useDownloadConfigSection({ config, draft, nodeId: nodeId as NodeId | undefined, disabled, onChange, onResetSession });
   const downloadWarning = getStageConcurrencyWarning(
@@ -193,6 +194,8 @@ export const DownloadConfigSection: React.FC<Props> = ({ config, draft, nodeId, 
                   onDeleteStage={handleDeleteStage}
                   onDeleteTiles={handleDeleteTiles}
                   onDeleteMetadata={handleDeleteMetadata}
+                  onResetDefaults={handleResetDefaults}
+                  resetDisabled={disabled}
                 />
               </Stack>
             </Paper>

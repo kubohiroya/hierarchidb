@@ -1,11 +1,29 @@
 import type { VectorTileWorkerAPI } from '../types.js';
+import type { VectorTileProgress } from '@hierarchidb/gis-sdk';
 import { DexieChunkStoragePort } from '@hierarchidb/download';
 
 export type VectorTileStageInput = {
-  inputBufferId: string;
-  inputBuffer?: ArrayBuffer;
+  bufferId: string;
+  buffer?: ArrayBuffer;
   contentType?: string;
-  config: Parameters<VectorTileWorkerAPI['generateTiles']>[1];
+  config: {
+    format: 'mvt' | 'pbf';
+    compression?: 'gzip' | 'none';
+    tileSize?: number;
+    buffer?: number;
+    minZoom?: number;
+    maxZoom?: number;
+    metadataEnabled?: boolean;
+    metadataReplace?: boolean;
+    metadataContext?: {
+      dataSource?: string;
+      countryCode?: string;
+      countryName?: string;
+      adminLevel?: number;
+    };
+    abortKey?: string;
+  };
+  onProgress?: (progress: VectorTileProgress) => void;
 };
 
 export type VectorTileStageResult = {
@@ -20,14 +38,14 @@ export type VectorTileStageOptions = {
 const DEFAULT_CHUNK_STORE = 'hidb-chunks';
 
 export async function writeVectorTileInput(
-  inputBufferId: string,
+  bufferId: string,
   buffer: ArrayBuffer,
   contentType = 'application/json',
   chunkStoreName = DEFAULT_CHUNK_STORE,
 ): Promise<void> {
   const storage = new DexieChunkStoragePort(chunkStoreName);
-  await storage.putChunk(inputBufferId, 0, buffer);
-  await storage.commit(inputBufferId, {
+  await storage.putChunk(bufferId, 0, buffer);
+  await storage.commit(bufferId, {
     sizeBytes: buffer.byteLength,
     contentType,
   });
@@ -38,16 +56,16 @@ export async function runVectorTileStage(
   client: VectorTileWorkerAPI,
   options: VectorTileStageOptions = {},
 ): Promise<VectorTileStageResult> {
-  const { inputBufferId, inputBuffer, contentType, config } = input;
-  if (inputBuffer && !inputBufferId.startsWith('stage-tile:')) {
+  const { bufferId, buffer, contentType, config, onProgress } = input;
+  if (buffer && !bufferId.startsWith('stage-tile:')) {
     await writeVectorTileInput(
-      inputBufferId,
-      inputBuffer,
+      bufferId,
+      buffer,
       contentType ?? 'application/json',
       options.chunkStoreName ?? DEFAULT_CHUNK_STORE,
     );
   }
-  const generated = await client.generateTiles(inputBufferId, config);
-  const tiles = await client.listTiles(inputBufferId);
+  const generated = await client.generateTiles(bufferId, config, onProgress);
+  const tiles = await client.listTiles(bufferId);
   return { generated, tiles };
 }

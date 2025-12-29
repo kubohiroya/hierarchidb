@@ -55,6 +55,7 @@
       "deleteStage2Cache": "ステージ2キャッシュを削除",
       "deleteTiles": "タイルを削除",
       "deleteMetadata": "メタデータを削除",
+      "resetDefaultsAction": "設定値をデフォルトに戻す",
       "timeoutMs": "タイムアウト (ms)",
       "timeoutHelp": "各ダウンロードの待機時間上限です。",
       "retryAttempts": "リトライ回数",

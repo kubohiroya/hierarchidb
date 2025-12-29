@@ -112,7 +112,8 @@
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
     "topojson-client": "^3.1.0",
-    "topojson-server": "^3.0.1"
+    "topojson-server": "^3.0.1",
+    "topojson-simplify": "^3.0.3"
   },
   "devDependencies": {
     "@hierarchidb/auth-recovery": "workspace:*",

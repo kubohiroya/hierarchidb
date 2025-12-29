@@ -761,7 +761,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "react",
         "react-dom",
         "topojson-client",
-        "topojson-server"
+        "topojson-server",
+        "topojson-simplify"
       ],
     exports: ["","worker","icon","ui"],
     manifest: {
@@ -829,7 +830,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "react",
           "react-dom",
           "topojson-client",
-          "topojson-server"
+          "topojson-server",
+          "topojson-simplify"
         ],
         "icon": {
           "mui": "Hexagon",

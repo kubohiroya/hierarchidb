@@ -15,10 +15,12 @@ type Props = {
   canDeleteStage2: boolean;
   canDeleteTiles: boolean;
   canDeleteMetadata: boolean;
+  resetDisabled?: boolean;
   onDeleteRaw: () => void;
   onDeleteStage: (stage: 'simplify1' | 'simplify2') => void;
   onDeleteTiles: () => void;
   onDeleteMetadata: () => void;
+  onResetDefaults: () => void;
 };
 
 export const DownloadCacheActions: React.FC<Props> = ({
@@ -28,10 +30,12 @@ export const DownloadCacheActions: React.FC<Props> = ({
   canDeleteStage2,
   canDeleteTiles,
   canDeleteMetadata,
+  resetDisabled,
   onDeleteRaw,
   onDeleteStage,
   onDeleteTiles,
   onDeleteMetadata,
+  onResetDefaults,
 }) => {
   const { t } = useTranslation();
 
@@ -95,6 +99,17 @@ export const DownloadCacheActions: React.FC<Props> = ({
           onClick={onDeleteMetadata}
         >
           {t('processing.download.deleteMetadata', 'Delete Metadata')}
+        </Button>
+      </Grid>
+      <Grid size={{ xs: 12, sm: 6 }}>
+        <Button
+          fullWidth
+          variant="outlined"
+          color="warning"
+          disabled={resetDisabled}
+          onClick={onResetDefaults}
+        >
+          {t('processing.download.resetDefaultsAction', 'Reset to defaults')}
         </Button>
       </Grid>
     </Grid>

@@ -101,6 +101,7 @@ export interface SimplifyTaskConfig {
   aspectRatioThreshold?: number;
   hybridFilterConfig?: HybridFilterConfig;
   enablePerFeatureSimplification?: boolean;
+  preserveSharedBoundaries?: boolean;
   retry?: number;
 }
 

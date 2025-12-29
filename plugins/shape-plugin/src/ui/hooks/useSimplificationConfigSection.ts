@@ -57,7 +57,7 @@ export const useSimplify2ConfigSection = ({ config, onChange }: Args) => {
     throw new Error('Simplify2ConfigSection: baseSimplify2Config is not defined');
   }
 
-  const quantizeOptions = [100, 300, 1000, 3000, 10000];
+  const quantizeOptions = [100, 300, 1000, 2000, 3000, 10000];
   const resolveQuantizeIndex = (value: number) => {
     const resolved = quantizeOptions.reduce((best, option, index) => {
       const diff = Math.abs(option - value);

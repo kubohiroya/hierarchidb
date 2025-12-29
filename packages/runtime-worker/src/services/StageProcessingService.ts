@@ -1,4 +1,4 @@
-import type { DownloadWorkerAPI, SimplifyWorkerAPI, VectorTileWorkerAPI } from '../types.js';
+import type { DownloadWorkerAPI, SimplifyWorkerAPI, VectorTileProgress, VectorTileWorkerAPI } from '../types.js';
 import { getDBName } from '@hierarchidb/util';
 import {
   generateVectorTilesFromJsonBuffer,
@@ -115,8 +115,9 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
         adminLevel?: number;
       };
       abortKey?: string;
-    }
-  ) {
+    },
+    onProgress?: (progress: VectorTileProgress) => void,
+    ) {
     const abortKey = config.abortKey;
     const controller = abortKey ? new AbortController() : null;
     if (abortKey && controller) {
@@ -145,7 +146,7 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
         metadataContext: config.metadataContext,
         signal: controller?.signal,
       };
-      return generateVectorTilesFromJsonBuffer(nodeId, buf, sdkConfig);
+      return generateVectorTilesFromJsonBuffer(nodeId, buf, sdkConfig, onProgress);
     } finally {
       if (abortKey) {
         this.abortControllers.delete(abortKey);
@@ -202,11 +203,27 @@ export async function getStageProcessingClient(): Promise<StageProcessingService
   return getStageProcessingService();
 }
 
+let comlinkModule: typeof import('comlink') | null = null;
+
+const getComlinkModule = async (): Promise<typeof import('comlink')> => {
+  if (!comlinkModule) {
+    comlinkModule = (await import('comlink')) as typeof import('comlink');
+  }
+  return comlinkModule;
+};
+
+export async function getStageWorkerProxy<T extends (...args: never[]) => unknown>(
+  handler: T,
+): Promise<T> {
+  const mod = await getComlinkModule();
+  return mod.proxy(handler) as T;
+}
+
 // Comlink-based client factory for browser Worker threads
 export async function createStageWorkerClient(): Promise<StageProcessingService> {
   // Note: stageWorker.entry is built to JS and emitted alongside index.ts
   const worker = new Worker(new URL('./stageWorker.entry.js', import.meta.url), { type: 'module' });
-  const mod = (await import('comlink')) as typeof import('comlink');
+  const mod = await getComlinkModule();
   const client = mod.wrap<StageProcessingService>(worker);
   const proxy = new Proxy({} as StageProcessingService & { terminate?: () => void }, {
     get: (_target, prop) => {

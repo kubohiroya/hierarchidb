@@ -55,6 +55,7 @@
       "deleteStage2Cache": "Delete Stage2 Cache",
       "deleteTiles": "Delete Tiles",
       "deleteMetadata": "Delete Metadata",
+      "resetDefaultsAction": "Reset to defaults",
       "timeoutMs": "Timeout (ms)",
       "timeoutHelp": "Maximum time to wait for each download before failing.",
       "retryAttempts": "Retry Attempts",

@@ -7,6 +7,7 @@ import type { Feature, FeatureCollection } from 'geojson';
 import { geojson as geojsonApi } from 'flatgeobuf';
 import { bbox as turfBbox } from '@turf/turf';
 import { applyFeatureFiltering, type FeatureFilterSettings, simplifyGeoJson } from '@hierarchidb/gis-sdk';
+import { simplifyTopoJsonByTiles } from '../utils/topojsonSimplify.js';
 import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
 
 const resolveStrategyId = (source?: string): DataSourceStrategyId | null => {
@@ -165,13 +166,22 @@ const processSimplify1Task = async ({
     hybridFilterConfig: task.config?.hybridFilterConfig,
   };
   const filtered = applyFeatureFiltering(geojson, filterSettings);
+  const baseTolerance = task.config?.tolerance ?? task.tolerance ?? 0;
+  const tolerance = Number.isFinite(baseTolerance) ? baseTolerance : 0;
   const outputBufferId = `${nodeId}-simplify1-${taskIndex}`;
   const hasFilteredFeatures = isFeatureCollection(filtered);
   const sanitizedFiltered = hasFilteredFeatures
     ? sanitizeFeatureCollection(filtered)
     : null;
-  const featureCount = sanitizedFiltered
-    ? sanitizedFiltered.features.length
+  const simplified = sanitizedFiltered
+    ? simplifyGeoJson(sanitizedFiltered, { tolerance, perFeature: true })
+    : filtered;
+  const hasSimplifiedFeatures = isFeatureCollection(simplified);
+  const sanitizedSimplified = hasSimplifiedFeatures
+    ? sanitizeFeatureCollection(simplified)
+    : null;
+  const featureCount = sanitizedSimplified
+    ? sanitizedSimplified.features.length
     : raw.featureCount;
   if (sanitizedFiltered && featureCount === 0) {
     await db.simplifiedBuffers.put({
@@ -186,8 +196,8 @@ const processSimplify1Task = async ({
     });
     return { status: 'skipped', featureCount: 0 };
   }
-  const data = sanitizedFiltered
-    ? await encodeGeoJson(sanitizedFiltered)
+  const data = sanitizedSimplified
+    ? await encodeGeoJson(sanitizedSimplified)
     : raw.data;
   if (!featureCount) {
     await db.simplifiedBuffers.put({
@@ -255,11 +265,27 @@ const processSimplify2Task = async ({
     ? Math.max(1, Math.round(quantizeBase / (1 + retry * 2)))
     : quantizeBase;
   const enablePerFeatureSimplification = task.config?.enablePerFeatureSimplification ?? true;
-  const simplified = simplifyGeoJson(geojson, {
-    tolerance,
-    perFeature: enablePerFeatureSimplification,
-    quantize,
-  });
+  let simplifiedPayload: unknown = geojson;
+  let usedTopo = false;
+  if (task.config?.preserveSharedBoundaries && isFeatureCollection(geojson)) {
+    try {
+      simplifiedPayload = simplifyTopoJsonByTiles(geojson, {
+        tolerance,
+        quantize,
+        zoomLevels: task.zoomLevels,
+      });
+      usedTopo = true;
+    } catch (error) {
+      console.warn('[shapeStageWorker] TopoJSON simplify failed; falling back to per-feature', error);
+    }
+  }
+  const simplified = usedTopo
+    ? simplifiedPayload
+    : simplifyGeoJson(geojson, {
+      tolerance,
+      perFeature: enablePerFeatureSimplification,
+      quantize,
+    });
   const hasSimplifiedFeatures = isFeatureCollection(simplified);
   const outputBufferId = `${nodeId}-simplify2-${taskIndex}`;
   const sanitizedSimplified = hasSimplifiedFeatures

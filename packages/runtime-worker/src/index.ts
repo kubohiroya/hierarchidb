@@ -27,6 +27,7 @@ export {
 } from './services/RuntimeWorkerService.js';
 export {
   createStageWorkerClient,
+  getStageWorkerProxy,
   getStageProcessingClient,
 } from './services/StageProcessingService.js';
 export {

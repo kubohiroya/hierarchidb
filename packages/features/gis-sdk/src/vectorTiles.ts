@@ -32,6 +32,15 @@ export type VectorTileGenerateResult = {
   metadataCount?: number;
 };
 
+export type VectorTileProgress = {
+  total: number;
+  completed: number;
+  percent: number;
+  zoom: number;
+  x: number;
+  y: number;
+};
+
 export type FeatureCollectionLike = {
   type: 'FeatureCollection';
   features?: FeatureLike[];
@@ -271,18 +280,20 @@ export const generateVectorTilesFromJsonBuffer = async (
   nodeId: string,
   buffer: ArrayBuffer,
   config: VectorTileGenerateConfig,
+  onProgress?: (progress: VectorTileProgress) => void,
 ): Promise<VectorTileGenerateResult> => {
   throwIfAborted(config.signal);
   const geojson = await decodeFeatureCollectionFromJsonBuffer(buffer);
   throwIfAborted(config.signal);
   if (!geojson) return { tilesGenerated: 0, totalBytes: 0 };
-  return generateVectorTilesFromFeatureCollection(nodeId, geojson, config);
+  return generateVectorTilesFromFeatureCollection(nodeId, geojson, config, onProgress);
 };
 
 export const generateVectorTilesFromFeatureCollection = async (
   nodeId: string,
   geojson: FeatureCollectionLike,
   config: VectorTileGenerateConfig,
+  onProgress?: (progress: VectorTileProgress) => void,
 ): Promise<VectorTileGenerateResult> => {
   throwIfAborted(config.signal);
   const features = geojson.features ?? [];
@@ -371,17 +382,38 @@ export const generateVectorTilesFromFeatureCollection = async (
   }
   const [minLon, minLat, maxLon, maxLat] = bbox;
 
+  const tileRanges = targetZooms.map((z) => {
+    const x1 = long2tile(minLon, z);
+    const x2 = long2tile(maxLon, z);
+    const y1 = lat2tile(maxLat, z);
+    const y2 = lat2tile(minLat, z);
+    const count = Math.max(0, (x2 - x1 + 1) * (y2 - y1 + 1));
+    return { z, x1, x2, y1, y2, count };
+  });
+  const totalTiles = tileRanges.reduce((sum, range) => sum + range.count, 0);
+  let processedTiles = 0;
+  let lastPercent = -1;
+  let lastUpdateAt = 0;
+  const reportProgress = (z: number, x: number, y: number) => {
+    if (!onProgress || totalTiles <= 0) return;
+    processedTiles += 1;
+    const percent = Math.min(100, (processedTiles / totalTiles) * 100);
+    const now = Date.now();
+    if (processedTiles === totalTiles || percent - lastPercent >= 1 || now - lastUpdateAt >= 750) {
+      lastPercent = percent;
+      lastUpdateAt = now;
+      onProgress({ total: totalTiles, completed: processedTiles, percent, zoom: z, x, y });
+    }
+  };
+
   const db = await TilesDB.getSingleton();
   let tiles = 0;
   let totalBytes = 0;
   const createdTileKeys: string[] = [];
   try {
-    for (const z of targetZooms) {
+    for (const range of tileRanges) {
+      const { z, x1, x2, y1, y2 } = range;
       throwIfAborted(config.signal);
-      const x1 = long2tile(minLon, z);
-      const x2 = long2tile(maxLon, z);
-      const y1 = lat2tile(maxLat, z);
-      const y2 = lat2tile(minLat, z);
       for (let x = x1; x <= x2; x++) {
         throwIfAborted(config.signal);
         for (let y = y1; y <= y2; y++) {
@@ -411,6 +443,7 @@ export const generateVectorTilesFromFeatureCollection = async (
               timestamp: Date.now(),
             });
           }
+          reportProgress(z, x, y);
         }
       }
     }

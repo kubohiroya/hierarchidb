@@ -10,6 +10,7 @@ export {
   type VectorTileGenerateConfig,
   type VectorTileGenerateResult,
   type VectorTileMetadataContext,
+  type VectorTileProgress,
 } from './vectorTiles.js';
 export {
   applyFeatureFiltering,

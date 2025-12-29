@@ -108,7 +108,7 @@ export const Simplify1ConfigSection: React.FC<Props> = ({ config, draft, disable
             <Grid size={{ xs: 12, md: 4 }}>
               <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
                 <SimplificationPanel
-                  tolerance={baseSimplify1Config.tolerance ?? 40}
+                  tolerance={baseSimplify1Config.tolerance ?? 8}
                   onToleranceChange={(tolerance) =>
                     update({
                       simplify1Config: {

@@ -204,8 +204,8 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
         throw new Error('vectortile client unavailable');
       }
       await runVectorTileStage({
-        inputBufferId: nodeId,
-        inputBuffer: bytes,
+        bufferId: nodeId,
+        buffer: bytes,
         contentType: 'application/json',
         config: {
           format: 'mvt',

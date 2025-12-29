@@ -8,8 +8,8 @@ import { getShapeTileMetadataDB } from '../../database/ShapeTileMetadataDB.js';
 import { geojson } from 'flatgeobuf';
 import type { Feature } from 'geojson';
 import { BatchService } from '@hierarchidb/batch';
-import { createStageWorkerClient, runVectorTileStage } from '@hierarchidb/runtime-worker';
-import { TilesDB } from '@hierarchidb/gis-sdk';
+import { createStageWorkerClient, getStageWorkerProxy, runVectorTileStage } from '@hierarchidb/runtime-worker';
+import { TilesDB, type VectorTileProgress } from '@hierarchidb/gis-sdk';
 
 const isAbortError = (error: unknown): boolean => (
   error instanceof Error && error.name === 'AbortError'
@@ -17,7 +17,6 @@ const isAbortError = (error: unknown): boolean => (
 
 const MAX_VECTOR_TILE_INPUT_BYTES = 50 * 1024 * 1024;
 const isStageTileInput = (inputBufferId: string): boolean => inputBufferId.startsWith('stage-tile:');
-
 export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
   private readonly featureCache = new Map<string, Array<{ feature: Feature; bbox: [number, number, number, number] }>>();
 
@@ -403,6 +402,37 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                 timestamp: Date.now(),
               });
             }
+            const taskIds = inputTasks
+              .map((task) => task.taskId)
+              .filter((taskId): taskId is string => typeof taskId === 'string' && taskId.length > 0);
+            let lastProgressPercent = -1;
+            let lastProgressAt = 0;
+            let progressInFlight = false;
+            const progressHandler = async (progress: VectorTileProgress) => {
+              const percent = Math.min(99, Math.max(1, Math.floor(progress.percent)));
+              if (!Number.isFinite(percent)) return;
+              const now = Date.now();
+              if (percent <= lastProgressPercent && now - lastProgressAt < 1000) return;
+              if (progressInFlight) return;
+              progressInFlight = true;
+              lastProgressPercent = percent;
+              lastProgressAt = now;
+              try {
+                await Promise.all(taskIds.map((taskId) => (
+                  shapeDB.updateBatchTask(taskId, {
+                    status: 'running',
+                    progress: percent,
+                  })
+                )));
+              } catch (error) {
+                console.warn('[VectorTile] Progress update failed', error);
+              } finally {
+                progressInFlight = false;
+              }
+            };
+            const progressReporter = taskIds.length > 0
+              ? await getStageWorkerProxy(progressHandler)
+              : undefined;
             await Promise.all(inputTasks.map(async (task) => {
               if (!task.taskId) return;
               await shapeDB.updateBatchTask(task.taskId, {
@@ -447,8 +477,8 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
             }
             try {
               await runVectorTileStage({
-                inputBufferId,
-                inputBuffer,
+                bufferId: inputBufferId,
+                buffer: inputBuffer,
                 contentType: 'application/json',
                 config: {
                   format,
@@ -462,6 +492,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                   metadataContext: sample.config?.metadataContext,
                   abortKey,
                 },
+                onProgress: progressReporter,
               }, vectorTileClient);
             } finally {
               if (signal) {

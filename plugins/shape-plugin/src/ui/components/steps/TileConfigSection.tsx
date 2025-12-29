@@ -9,7 +9,7 @@ import { getStageConcurrencyWarning } from '../../utils/buildWarnings.js';
 import { useEffect, useMemo } from 'react';
 
 const SHARED_ZOOM_RANGE_KEY = 'sharedZoomRange';
-const DEFAULT_SHARED_ZOOM_RANGE: [number, number] = [0, 4];
+const DEFAULT_SHARED_ZOOM_RANGE: [number, number] = [1, 4];
 const SHARED_ZOOM_RANGE_MIN = 0;
 const SHARED_ZOOM_RANGE_MAX = 10;
 

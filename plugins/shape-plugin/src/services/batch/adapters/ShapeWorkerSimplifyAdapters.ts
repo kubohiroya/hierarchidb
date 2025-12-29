@@ -55,6 +55,17 @@ const buildSimplify2CompletionMessage = (featureCount?: number, sizeBytes?: numb
   return parts.length > 0 ? `Completed (${parts.join(', ')})` : undefined;
 };
 
+const buildSimplify1CompletionMessage = (
+  rawBytes?: number,
+  simplifiedBytes?: number,
+): string | undefined => {
+  if (typeof rawBytes !== 'number' || typeof simplifiedBytes !== 'number' || rawBytes <= 0) {
+    return undefined;
+  }
+  const ratio = (simplifiedBytes / rawBytes) * 100;
+  return `Completed (Raw: ${formatBytes(rawBytes)}, Simplified: ${formatBytes(simplifiedBytes)}, Ratio: ${ratio.toFixed(1)}%)`;
+};
+
 export class ShapeWorkerSimplify1Adapter implements Simplify1StageAdapter {
   async process(tasks: Simplify1Task[], onProgress: (p: ProgressInfo) => void, controls?: StageControls) {
     const getSignal = controls?.getSignal;
@@ -114,10 +125,20 @@ export class ShapeWorkerSimplify1Adapter implements Simplify1StageAdapter {
           } else {
             completed += 1;
             if (task.taskId) {
+              const inputBufferId = task.inputBufferId ?? task.config?.inputBufferId ?? '';
+              const outputBufferId = `${String(resolvedNodeId)}-simplify1-${taskIndex}`;
+              const db = getEphemeralShapeDB();
+              const raw = await db.rawBuffers.get(inputBufferId);
+              const output = await db.simplifiedBuffers.get(outputBufferId);
+              const completionMessage = buildSimplify1CompletionMessage(
+                raw?.data.byteLength,
+                output?.data.byteLength,
+              );
               await shapeDB.updateBatchTask(task.taskId, {
                 status: 'completed',
                 completedAt: Date.now(),
                 progress: 100,
+                message: completionMessage,
               });
             }
           }

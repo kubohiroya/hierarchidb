@@ -283,18 +283,21 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
 
   const renderStageContent = useCallback((stage: BuildStage, stageValue: number) => {
     const stageTasks = tasksByStage[stage.id] ?? [];
+    const hasTasks = stageTasks.length > 0;
     return (
       <Stack spacing={1} sx={{ p: 2 }}>
-        <Typography variant="subtitle2">{stage.title}</Typography>
-        {stage.description ? (
-          <Typography variant="body2" color="text.secondary">
-            {stage.description}
-          </Typography>
-        ) : null}
-        {stageTasks.length === 0 ? (
-          <Typography variant="caption" color="text.secondary">
-            {t('build.tasks.empty', 'No tasks yet.')}
-          </Typography>
+        {!hasTasks ? (
+          <>
+            <Typography variant="subtitle2">{stage.title}</Typography>
+            {stage.description ? (
+              <Typography variant="body2" color="text.secondary">
+                {stage.description}
+              </Typography>
+            ) : null}
+            <Typography variant="caption" color="text.secondary">
+              {t('build.tasks.empty', 'No tasks yet.')}
+            </Typography>
+          </>
         ) : (
           <Stack spacing={1}>
             {stageTasks.map((task) => {
@@ -307,7 +310,7 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
               const downloadUrl = (taskMetadata.url ?? taskMetadata.endpoint) as string | undefined;
               const taskMessage = (() => {
                 if (task.stage === 'download') {
-                  if (task.status === 'completed') return downloadUrl;
+                  if (task.status === 'completed') return task.message ?? downloadUrl;
                   if (task.status === 'failed') return task.message ?? undefined;
                 }
                 return task.message && task.message !== taskTitle ? task.message : undefined;

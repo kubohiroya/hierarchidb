@@ -105,7 +105,7 @@ export const Simplify2ConfigSection: React.FC<Props> = ({ config, draft, disable
             <Grid size={{ xs: 12, md: 4 }}>
               <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
                 <SimplificationPanel
-                  tolerance={baseSimplify2Config.tolerance ?? 0.5}
+                  tolerance={baseSimplify2Config.tolerance ?? 2.5}
                   enablePerFeatureSimplification={baseSimplify2Config.enablePerFeatureSimplification ?? true}
                   toleranceHelpKey="processing.filter.toleranceHelpStage2"
                   onToleranceChange={(tolerance) =>
@@ -131,7 +131,7 @@ export const Simplify2ConfigSection: React.FC<Props> = ({ config, draft, disable
             <Grid size={{ xs: 12, md: 4 }}>
               <Paper variant="outlined" sx={{ p: 2, pl: 1, pr: 2 }}>
                 <PrecisionPanel
-                  quantize={baseSimplify2Config.quantize ?? 10000}
+                  quantize={baseSimplify2Config.quantize ?? 2000}
                   quantizeOptions={quantizeOptions}
                   quantizeRank={quantizeRank}
                   quantizeLabel={quantizeLabel}

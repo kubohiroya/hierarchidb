@@ -257,6 +257,15 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
     onChange(mergeBatchConfig({ ...config, ...partial }));
   }, [config, onChange]);
 
+  const handleResetDefaults = useCallback(() => {
+    const defaultDownloadConfig: DownloadBatchConfig = DEFAULT_PROCESSING_CONFIG.downloadConfig ?? { maxConcurrent: 2 };
+    onChange(mergeBatchConfig({
+      ...DEFAULT_PROCESSING_CONFIG,
+      downloadConfig: defaultDownloadConfig,
+      dataSource: config.dataSource ?? DEFAULT_PROCESSING_CONFIG.dataSource,
+    }));
+  }, [config.dataSource, onChange]);
+
   if (!baseDownloadConfig) {
     throw new Error('DownloadConfigSection: baseDownloadConfig is not defined');
   }
@@ -275,6 +284,7 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
     handleDeleteStage,
     handleDeleteTiles,
     handleDeleteMetadata,
+    handleResetDefaults,
     update,
   };
 };

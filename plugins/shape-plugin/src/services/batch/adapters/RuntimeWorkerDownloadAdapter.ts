@@ -11,6 +11,26 @@ const isAbortError = (error: unknown): boolean => (
   error instanceof Error && error.name === 'AbortError'
 );
 
+const formatBytes = (bytes: number): string => {
+  if (!Number.isFinite(bytes)) return 'unknown size';
+  if (bytes < 1024) return `${bytes}B`;
+  const kb = bytes / 1024;
+  if (kb < 1024) return `${kb.toFixed(1)}KB`;
+  const mb = kb / 1024;
+  if (mb < 1024) return `${mb.toFixed(1)}MB`;
+  const gb = mb / 1024;
+  return `${gb.toFixed(2)}GB`;
+};
+
+const buildDownloadCompletionMessage = (
+  url?: string,
+  bytesWritten?: number,
+): string | undefined => {
+  if (!url) return undefined;
+  if (typeof bytesWritten !== 'number') return url;
+  return `${url} (Size: ${formatBytes(bytesWritten)})`;
+};
+
 /**
  * RuntimeWorkerDownloadAdapter
  *
@@ -99,10 +119,12 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
                 completed += 1;
                 totalBytes += result.bytesWritten ?? 0;
                 if (task.taskId) {
+                  const url = task.url ?? task.config?.url;
                   await shapeDB.updateBatchTask(task.taskId, {
                     status: 'completed',
                     completedAt: Date.now(),
                     progress: 100,
+                    message: buildDownloadCompletionMessage(url, result.bytesWritten),
                   });
                 }
               }
