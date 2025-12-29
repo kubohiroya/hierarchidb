@@ -43,7 +43,7 @@ export const useBuildTaskProgress = (
   const tasksByStage = useMemo(() => {
     const grouped: Record<string, BatchTaskSummary[]> = {};
     tasks.forEach((task) => {
-      const key = toStageKey(task.stage);
+      const key = toStageKey(task.stage ?? task.taskType);
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(task);
     });

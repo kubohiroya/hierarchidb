@@ -21,6 +21,17 @@
     "save": "保存",
     "defaultName": "新規 shape"
   },
+  "batchRecovery": {
+    "title": "バッチセッション再開",
+    "body": "バッチセッション復旧UIは再構築中です。リファクタ完了まで、ワーカーツールから再開または破棄してください。",
+    "close": "閉じる"
+  },
+  "countrySelection": {
+    "loading": "国別メタデータを読み込み中...",
+    "loadError": "国別メタデータの読み込みに失敗しました: {{message}}",
+    "title": "国・行政レベルの選択",
+    "description": "ダウンロードする国と行政レベルを選択してください。行列で細かく指定できます。"
+  },
   "dataSource": {
     "title": "データソース",
     "description": "地理データ提供元を選択してください。ソースごとにカバレッジや精度、ライセンス要件が異なります。",
@@ -110,6 +121,9 @@
       "tileCountThresholdHelp": "タイル数がこの値を超えたら生成を停止します。",
       "zoomLevels": "ズームレベル (カンマ区切り)",
       "zoomLevelsHelp": "生成対象のズームレベルを指定します。"
+    },
+    "workers": {
+      "countLabel": "{{count}} ワーカー"
     }
   },
   "preview": {
@@ -125,6 +139,7 @@
       "missingSession": "ビルドを実行してメタデータを生成してください。",
       "empty": "メタデータがまだ生成されていません。",
       "searchPlaceholder": "メタデータを検索",
+      "searchAriaLabel": "メタデータを検索",
       "matches": "一致",
       "rows": "件",
       "columns": {
@@ -168,6 +183,7 @@
       "running": "実行中",
       "paused": "一時停止",
       "completed": "完了",
+      "skipped": "スキップ",
       "failed": "失敗"
     },
     "status": {

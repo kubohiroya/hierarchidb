@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { NodeId, NodeType } from '@hierarchidb/common-types';
+import { toNodeId, type NodeId, type NodeType } from '@hierarchidb/common-types';
 import { useShapeBatchTasks } from './useShapeBatchTasks.js';
 import { useShapeProgress } from './useShapeProgress.js';
 import { useTranslation } from '../i18n.js';
@@ -26,6 +26,7 @@ import {
   recordBuildStart,
 } from '@hierarchidb/ui-monitoring';
 import { getBuildConfigSnapshot } from '../utils/buildWarnings.js';
+import { shapeDB } from '../../services/database/ShapeDB.js';
 
 const normalizeStageId = (stage?: string): string | undefined => {
   if (!stage) return undefined;
@@ -49,6 +50,12 @@ const fetchTileSummary = async (nodeId: string) => {
   return vectorTile.getSummary(nodeId);
 };
 
+const isSkippedMessage = (message?: string | null): boolean => {
+  if (!message) return false;
+  const normalized = message.trim().toLowerCase();
+  return normalized === 'skipped' || normalized.startsWith('skipped:');
+};
+
 type Args = {
   data?: Partial<ShapeEntity>;
   onChange: (patch: Partial<ShapeEntity>) => void;
@@ -62,6 +69,8 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
   const { progress, status, error, isSubscribed } = useShapeProgress(activeNodeId, { autoSubscribe: Boolean(activeNodeId) });
   const [persistedTasks, setPersistedTasks] = useAtom(shapeBuildPersistedTasksAtom);
   const [isStartPending, setIsStartPending] = useState(false);
+  const warnedSkippedTasksRef = useRef<Set<string>>(new Set());
+  const [stageTaskSummary, setStageTaskSummary] = useState<Record<string, { total: number; success: number; error: number; skip: number }>>({});
   const hasNodeId = Boolean(activeNodeId && !error);
   const effectiveProgress = hasNodeId ? progress : null;
   const effectiveStatus = hasNodeId ? status : null;
@@ -109,7 +118,6 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
   const total = effectiveProgress?.total ?? 0;
   const failed = effectiveProgress?.failed ?? 0;
   const skipped = effectiveProgress?.skipped ?? 0;
-  const hasProgressData = Boolean(effectiveProgress) || Boolean(effectiveStatus && effectiveStatus.status !== 'idle');
   const debugStateRef = useRef<Record<string, unknown> | null>(null);
   const lastSyncedStatusRef = useRef<string | null>(null);
   const monitorKey = useMemo(() => {
@@ -166,6 +174,47 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
       setPersistedTasks(tasks);
     }
   }, [activeNodeId, tasks, setPersistedTasks]);
+
+  useEffect(() => {
+    if (!activeNodeId) {
+      setStageTaskSummary({});
+      return;
+    }
+    let cancelled = false;
+    const nodeKey = toNodeId(String(activeNodeId));
+    const run = async () => {
+      const rows = await shapeDB.batchTasks.where('nodeId').equals(nodeKey).toArray();
+      if (cancelled) return;
+      const summary: Record<string, { total: number; success: number; error: number; skip: number }> = {};
+      const ensure = (key: string) => {
+        if (!summary[key]) {
+          summary[key] = { total: 0, success: 0, error: 0, skip: 0 };
+        }
+        return summary[key];
+      };
+      rows.forEach((task) => {
+        const stageKey = normalizeStageId(task.stage ?? task.taskType) ?? 'download';
+        const slot = ensure(stageKey);
+        slot.total += 1;
+        if (isSkippedMessage(task.message)) {
+          slot.skip += 1;
+          return;
+        }
+        if (task.status === 'failed') {
+          slot.error += 1;
+          return;
+        }
+        if (task.status === 'completed') {
+          slot.success += 1;
+        }
+      });
+      setStageTaskSummary(summary);
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeNodeId, buildStatus, tasks]);
 
   useEffect(() => {
     if (!activeNodeId || !effectiveStatus?.status) return;
@@ -261,6 +310,32 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
   }, [buildStatus, isStartPending]);
 
   const displayTasks = tasks.length > 0 ? tasks : persistedTasks;
+  const hasTaskSummary = useMemo(() => {
+    return Object.values(stageTaskSummary).some((summary) => (
+      (summary?.total ?? 0) > 0
+      || (summary?.success ?? 0) > 0
+      || (summary?.error ?? 0) > 0
+      || (summary?.skip ?? 0) > 0
+    ));
+  }, [stageTaskSummary]);
+  const hasProgressData = Boolean(effectiveProgress)
+    || Boolean(effectiveStatus && effectiveStatus.status !== 'idle')
+    || displayTasks.length > 0
+    || hasTaskSummary;
+  useEffect(() => {
+    if (displayTasks.length === 0) return;
+    const warned = warnedSkippedTasksRef.current;
+    for (const task of displayTasks) {
+      if (!task.taskId || !isSkippedMessage(task.message)) continue;
+      if (warned.has(task.taskId)) continue;
+      warned.add(task.taskId);
+      console.warn('[ShapeBuildProgressStep] Task skipped', {
+        taskId: task.taskId,
+        stage: task.stage ?? task.taskType,
+        message: task.message,
+      });
+    }
+  }, [displayTasks]);
   const { stageProgress, tasksByStage, paneProgress } = useBuildTaskProgress(
     stages,
     currentStage,
@@ -268,6 +343,33 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     buildStatus,
     displayTasks,
   );
+  const paneProgressWithSummary = useMemo(() => {
+    return stages.map((stage) => {
+      const base = paneProgress?.find((entry) => entry.paneId === stage.id);
+      const summary = stageTaskSummary[stage.id] ?? { total: 0, success: 0, error: 0, skip: 0 };
+      const total = summary.total ?? base?.taskCount ?? 0;
+      const success = summary.success ?? base?.completedCount ?? 0;
+      const error = summary.error ?? 0;
+      const skip = summary.skip ?? 0;
+      const done = Math.min(total, success + error + skip);
+      const progressValue = total > 0 ? Math.round((done / total) * 100) : (base?.progress ?? 0);
+      const status = error > 0
+        ? 'failed'
+        : total > 0 && success + skip >= total
+          ? 'completed'
+          : total > 0
+            ? 'paused'
+            : (base?.status ?? buildStatus);
+      return {
+        paneId: stage.id,
+        progress: progressValue,
+        taskCount: total,
+        completedCount: success,
+        status,
+        summary: { total, success, error, skip },
+      };
+    });
+  }, [buildStatus, paneProgress, stageTaskSummary, stages]);
   const lastUnfinishedStageId = useMemo(() => {
     if (buildStatus !== 'running') return undefined;
     let candidate: string | undefined;
@@ -302,9 +404,9 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     if (!lastUnfinishedStageId) return null;
     const stageTasks = tasksByStage[lastUnfinishedStageId] ?? [];
     if (!stageTasks.length) return null;
-    const completedCount = stageTasks.filter((task) => task.status === 'completed' && task.message !== 'skipped').length;
+    const completedCount = stageTasks.filter((task) => task.status === 'completed' && !isSkippedMessage(task.message)).length;
     const failedCount = stageTasks.filter((task) => task.status === 'failed').length;
-    const skippedCount = stageTasks.filter((task) => task.message === 'skipped').length;
+    const skippedCount = stageTasks.filter((task) => isSkippedMessage(task.message)).length;
     return {
       total: Math.max(0, stageTasks.length - skippedCount),
       completed: completedCount,
@@ -313,19 +415,36 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     };
   }, [lastUnfinishedStageId, tasksByStage]);
   const displayCounts = useMemo(() => {
-    if (buildStatus === 'running' && total === 0 && completed === 0 && failed === 0 && skipped === 0 && derivedCounts?.total) {
+    const applySkippedAdjustment = (next: { total: number; completed: number; failed: number; skipped: number; percentage: number }) => {
+      if (next.skipped === 0) return next;
+      if (next.completed + next.failed + next.skipped < next.total) return next;
+      const effectiveTotal = Math.max(0, next.total - next.skipped);
+      const effectiveCompleted = Math.min(next.completed, effectiveTotal);
+      const effectiveFailed = Math.min(next.failed, Math.max(0, effectiveTotal - effectiveCompleted));
+      const percentage = effectiveTotal > 0
+        ? Math.round(((effectiveCompleted + effectiveFailed) / effectiveTotal) * 100)
+        : 100;
       return {
+        ...next,
+        total: effectiveTotal,
+        completed: effectiveCompleted,
+        failed: effectiveFailed,
+        percentage,
+      };
+    };
+    if (buildStatus === 'running' && total === 0 && completed === 0 && failed === 0 && skipped === 0 && derivedCounts?.total) {
+      return applySkippedAdjustment({
         ...derivedCounts,
         percentage: Math.round((derivedCounts.completed / derivedCounts.total) * 100),
-      };
+      });
     }
-    return {
+    return applySkippedAdjustment({
       total,
       completed,
       failed,
       skipped,
       percentage: Math.round(overallProgress),
-    };
+    });
   }, [buildStatus, completed, derivedCounts, failed, overallProgress, skipped, total]);
 
   const isProcessingValid = useMemo(() => (
@@ -370,7 +489,7 @@ export const useShapeBuildProgressStep = ({ data, onChange, nodeId }: Args) => {
     t,
     stages,
     stageProgress,
-    paneProgress,
+    paneProgress: paneProgressWithSummary,
     tasksByStage,
     tasks: displayTasks,
     buildStatus: effectiveBuildStatus,

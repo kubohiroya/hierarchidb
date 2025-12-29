@@ -33,6 +33,12 @@ import { bbox as turfBbox, area as turfArea } from '@turf/turf';
 
 type WorkerPoolStatistics = Record<string, number>;
 
+const isSkippedMessage = (message?: string | null): boolean => {
+  if (!message) return false;
+  const normalized = message.trim().toLowerCase();
+  return normalized === 'skipped' || normalized.startsWith('skipped:');
+};
+
 interface WorkerPoolHandle {
   shutdown(): Promise<void>;
   getPoolStatistics(): WorkerPoolStatistics;
@@ -67,6 +73,12 @@ export class SessionController {
   private readonly stageAbortControllers = new Map<ProcessingStage, AbortController>();
   private readonly pauseRequestedStages = new Set<ProcessingStage>();
   private pauseHandler?: (stage: ProcessingStage, message: string) => void | Promise<void>;
+  private lastTileIndexStats?: {
+    totalTiles: number;
+    acceptedTiles: number;
+    skippedSerialization: number;
+    skippedSize: number;
+  };
 
   constructor(
     nodeId: NodeId,
@@ -155,6 +167,62 @@ export class SessionController {
       return feature.id.trim();
     }
     return `${fallbackPrefix}-${index + 1}`;
+  }
+
+  private normalizeTaskIdSegment(value: string): string {
+    const normalized = value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    return normalized.replace(/^-+|-+$/g, '') || 'unknown';
+  }
+
+  private buildProcessingTaskId(
+    stage: 'simplify1' | 'simplify2',
+    details: {
+      countryCode?: string;
+      adminLevel?: number;
+      featureLabel?: string;
+      featureGroupId?: string;
+    },
+  ): string {
+    const countrySegment = this.normalizeTaskIdSegment(details.countryCode ?? 'UNK');
+    const adminSegment = Number.isFinite(details.adminLevel)
+      ? `adm${details.adminLevel}`
+      : 'adm-unknown';
+    const featureSegments = [details.featureLabel, details.featureGroupId]
+      .flatMap((value) => {
+        if (typeof value === 'number') return [String(value)];
+        if (typeof value === 'string') return [value];
+        return [];
+      })
+      .map((value) => this.normalizeTaskIdSegment(value))
+      .filter(Boolean);
+    const uniqueFeatureSegments = Array.from(new Set(featureSegments));
+    const featureSegment = uniqueFeatureSegments.length > 0 ? uniqueFeatureSegments.join('-') : 'all';
+    return `${this.nodeId}+${countrySegment}+${adminSegment}+${featureSegment}+${stage}`;
+  }
+
+  private resolveTaskIdDetails(task: {
+    countryCode?: string;
+    adminLevel?: number;
+    metadata?: Record<string, unknown>;
+    config?: {
+      featureLabel?: string;
+      featureGroupId?: string;
+    };
+  }): {
+    countryCode?: string;
+    adminLevel?: number;
+    featureLabel?: string;
+    featureGroupId?: string;
+  } {
+    const metadata = task.metadata ?? {};
+    return {
+      countryCode: task.countryCode,
+      adminLevel: task.adminLevel,
+      featureLabel: task.config?.featureLabel
+        ?? (typeof metadata.featureLabel === 'string' ? metadata.featureLabel : undefined),
+      featureGroupId: task.config?.featureGroupId
+        ?? (typeof metadata.featureGroupId === 'string' ? metadata.featureGroupId : undefined),
+    };
   }
 
   private async expandOutputsForFeatureGroups(outputs: DownloadStageOutput[]): Promise<DownloadStageOutput[]> {
@@ -439,9 +507,17 @@ export class SessionController {
 
     return outputs.map((output, index) => {
       const featureLabel = output.featureLabel ?? output.featureGroupId;
-      const featureId = featureLabel ?? `${output.countryCode ?? 'UNK'}:${output.adminLevel ?? index}`;
+      const featureId = featureLabel
+        ?? output.featureGroupId
+        ?? `${output.countryCode ?? 'UNK'}:ADM${output.adminLevel ?? 'X'}`;
+      const taskId = this.buildProcessingTaskId('simplify1', {
+        countryCode: output.countryCode,
+        adminLevel: output.adminLevel,
+        featureLabel,
+        featureGroupId: output.featureGroupId,
+      });
       return {
-        taskId: `${this.nodeId}-simplify1-${index}`,
+        taskId,
         nodeId: this.nodeId,
         taskType: 'simplify1',
         stage: BatchTaskStage.WAIT,
@@ -459,6 +535,8 @@ export class SessionController {
           countryName: output.countryName,
           sourceUrl: output.sourceUrl,
           featureLabel,
+          featureIndex: output.featureIndex,
+          featureCount: output.featureCount,
         },
         config: {
           sourceUrl: output.sourceUrl,
@@ -466,17 +544,17 @@ export class SessionController {
           featureLabel,
           featureGroupId: output.featureGroupId,
           featureIndex: output.featureIndex,
-        countryCode: output.countryCode,
-        adminLevel: output.adminLevel,
-        algorithm: 'douglas-peucker',
-        tolerance: simplifyTolerance,
-        preserveTopology: true,
-        minimumArea: minArea,
-        featureFilterMethod: simplifyConfig?.featureFilterMethod,
-        minVertexCountForAreaFilter: simplifyConfig?.minVertexCountForAreaFilter,
-        aspectRatioThreshold: simplifyConfig?.aspectRatioThreshold,
-        hybridFilterConfig: simplifyConfig?.hybridFilterConfig,
-      },
+          countryCode: output.countryCode,
+          adminLevel: output.adminLevel,
+          algorithm: 'douglas-peucker',
+          tolerance: simplifyTolerance,
+          preserveTopology: true,
+          minimumArea: minArea,
+          featureFilterMethod: simplifyConfig?.featureFilterMethod,
+          minVertexCountForAreaFilter: simplifyConfig?.minVertexCountForAreaFilter,
+          aspectRatioThreshold: simplifyConfig?.aspectRatioThreshold,
+          hybridFilterConfig: simplifyConfig?.hybridFilterConfig,
+        },
       };
     });
   }
@@ -550,7 +628,7 @@ export class SessionController {
     const simplify2Config = this.config.simplify2;
 
     const tasks: Simplify2Task[] = this.simplify1Tasks.map((task, index) => ({
-      taskId: `${this.nodeId}-simplify2-${index}`,
+      taskId: this.buildProcessingTaskId('simplify2', this.resolveTaskIdDetails(task)),
       nodeId: this.nodeId,
       taskType: 'simplify2',
       stage: BatchTaskStage.WAIT,
@@ -565,8 +643,9 @@ export class SessionController {
       adminLevel: task.adminLevel,
       metadata: task.metadata,
       config: {
+        sourceTaskId: task.taskId,
         sourceUrl: task.config?.sourceUrl,
-        featureId: task.config?.featureId ?? `${task.countryCode ?? 'UNK'}:${task.adminLevel ?? index}`,
+        featureId: task.config?.featureId ?? `${task.countryCode ?? 'UNK'}:ADM${task.adminLevel ?? 'X'}`,
         featureLabel: task.config?.featureLabel,
         featureGroupId: task.config?.featureGroupId,
         featureIndex: task.config?.featureIndex,
@@ -630,6 +709,23 @@ export class SessionController {
       getSignal: () => this.getStageAbortSignal('simplify2'),
       maxConcurrent,
     });
+    const skipped = await shapeDB.batchTasks
+      .where('nodeId')
+      .equals(this.nodeId)
+      .and((task) => task.taskType === 'simplify2' && isSkippedMessage(task.message))
+      .count();
+    const completed = Math.min(total, baseCompleted + r.processed);
+    const failed = Math.min(total - completed, baseFailed + r.failed);
+    const done = Math.min(total, completed + failed + skipped);
+    this.progressCallback?.({
+      total,
+      completed,
+      failed,
+      skipped,
+      percentage: total > 0 ? (done / total) * 100 : 0,
+      currentStage: 'simplify2',
+      currentTask: 'Simplify2 completed',
+    });
     console.log(
       `[Session ${this.nodeId}] Simplify2 stage completed: ${baseCompleted + r.processed}/${total} successful`,
     );
@@ -677,6 +773,16 @@ export class SessionController {
     if (mb < 1024) return `${mb.toFixed(1)} MB`;
     const gb = mb / 1024;
     return `${gb.toFixed(2)} GB`;
+  }
+
+  private formatErrorLocation(error: Error): string | undefined {
+    const stack = error.stack ?? '';
+    const line = stack.split('\n').find((entry) => entry.includes(':') && entry.includes('/') && entry.includes('at '));
+    if (!line) return undefined;
+    const match = line.match(/\((.+?):(\d+):(\d+)\)/) ?? line.match(/at (.+?):(\d+):(\d+)/);
+    if (!match) return undefined;
+    const [, file, lineNumber, column] = match;
+    return `${file}:${lineNumber}:${column}`;
   }
 
   private pickFirstString(properties: Record<string, unknown>, keys: string[]): string | undefined {
@@ -795,13 +901,16 @@ export class SessionController {
 
   private async ensureTileFeatureIndex(): Promise<Array<{ key: string; z: number; x: number; y: number }>> {
     const tileDb = await getShapeTileMetadataDB();
-    const tileNodeKey = `input:${String(this.nodeId)}`;
-    const existing = await tileDb.tiles.where('nodeId').equals(tileNodeKey).toArray();
-    if (existing.length > 0) {
-      return existing.map((row) => ({ key: row.key, z: row.z, x: row.x, y: row.y }));
-    }
     const zoomLevels = this.resolveZoomLevels();
-    if (zoomLevels.length === 0) return [];
+    if (zoomLevels.length === 0) {
+      this.lastTileIndexStats = {
+        totalTiles: 0,
+        acceptedTiles: 0,
+        skippedSerialization: 0,
+        skippedSize: 0,
+      };
+      return [];
+    }
     const db = getEphemeralShapeDB();
     const tilesByKey = new Map<string, { key: string; z: number; x: number; y: number; features: Feature[] }>();
     const metadataRecords: Array<{
@@ -873,32 +982,20 @@ export class SessionController {
       await tileDb.featureMetadata.bulkPut(metadataRecords);
     }
 
-    const maxTileBytes = 50 * 1024 * 1024;
     const tileRows = Array.from(tilesByKey.values());
-    const encoder = new TextEncoder();
-    for (const row of tileRows) {
-      const payload = { type: 'FeatureCollection', features: row.features };
-      const json = JSON.stringify(payload);
-      const data = encoder.encode(json).buffer;
-      const size = data.byteLength;
-      if (size > maxTileBytes) {
-        const message = `Tile input too large (z${row.z}/${row.x}/${row.y}, ${this.formatBytes(size)} > ${this.formatBytes(maxTileBytes)}).`;
-        await this.requestPause('vectortile', message);
-        return [];
-      }
-      await tileDb.tiles.put({
-        key: row.key,
-        nodeId: tileNodeKey,
-        z: row.z,
-        x: row.x,
-        y: row.y,
-        data,
-        size,
-        contentType: 'application/json',
-        timestamp: Date.now(),
-      });
-    }
-    return tileRows.map((row) => ({ key: row.key, z: row.z, x: row.x, y: row.y }));
+    const acceptedRows: Array<{ key: string; z: number; x: number; y: number }> = tileRows.map((row) => ({
+      key: row.key,
+      z: row.z,
+      x: row.x,
+      y: row.y,
+    }));
+    this.lastTileIndexStats = {
+      totalTiles: tileRows.length,
+      acceptedTiles: acceptedRows.length,
+      skippedSerialization: 0,
+      skippedSize: 0,
+    };
+    return acceptedRows;
   }
 
   private buildVectorTileTasks(
@@ -991,6 +1088,24 @@ export class SessionController {
     if (tileRows.length === 0) {
       console.warn(`[Session ${this.nodeId}] No vector tile inputs to process`);
       await this.persistPlaceholderMetadata(true);
+      const stats = this.lastTileIndexStats;
+      const detailParts = [
+        stats ? `tiles=${stats.totalTiles}` : undefined,
+        stats ? `accepted=${stats.acceptedTiles}` : undefined,
+        stats && stats.skippedSerialization > 0 ? `serializeFailed=${stats.skippedSerialization}` : undefined,
+        stats && stats.skippedSize > 0 ? `tooLarge=${stats.skippedSize}` : undefined,
+      ].filter(Boolean);
+      const detailSuffix = detailParts.length > 0 ? ` (${detailParts.join(', ')})` : '';
+      console.warn(`[Session ${this.nodeId}] Vector tile stage skipped${detailSuffix}`);
+      this.progressCallback?.({
+        total: 0,
+        completed: 0,
+        failed: 0,
+        skipped: 0,
+        percentage: 100,
+        currentStage: 'vectortile',
+        currentTask: 'No vector tile inputs',
+      });
       return;
     }
     const tasks = this.buildVectorTileTasks(tileRows);
@@ -1004,6 +1119,15 @@ export class SessionController {
     const baseCompleted = Math.min(completedCount, total);
     const baseFailed = Math.min(failedCount, total - baseCompleted);
     const baseDone = Math.min(total, baseCompleted + baseFailed);
+    this.progressCallback?.({
+      total,
+      completed: baseCompleted,
+      failed: baseFailed,
+      skipped: 0,
+      percentage: total > 0 ? (baseDone / total) * 100 : 0,
+      currentStage: 'vectortile',
+      currentTask: 'Vector tile tasks queued',
+    });
     if (runnableTasks.length === 0) {
       this.progressCallback?.({
         total,
@@ -1138,7 +1262,10 @@ export class SessionController {
         inputData: typeof task.config === 'object' && task.config ? (task.config as Record<string, unknown>) : undefined,
       }));
     if (newTasks.length > 0) {
-      await shapeDB.batchTasks.bulkPut(newTasks);
+      const chunkSize = 50;
+      for (let offset = 0; offset < newTasks.length; offset += chunkSize) {
+        await shapeDB.batchTasks.bulkPut(newTasks.slice(offset, offset + chunkSize));
+      }
     }
   }
 
@@ -1159,6 +1286,22 @@ export class SessionController {
     const completedCount = existing.filter((task) => task.status === 'completed').length;
     const failedCount = existing.filter((task) => task.status === 'failed').length;
     return { runnableTasks, completedCount, failedCount, total: tasks.length };
+  }
+
+  private async ensureVectorTilePlaceholderTask(message: string): Promise<void> {
+    const taskId = `${String(this.nodeId)}-vectortile-skipped`;
+    const existing = await shapeDB.batchTasks.get(taskId);
+    if (existing) return;
+    await shapeDB.batchTasks.put({
+      taskId,
+      nodeId: this.nodeId,
+      taskType: 'vectortile',
+      status: 'completed',
+      index: 0,
+      progress: 100,
+      message,
+      completedAt: Date.now(),
+    });
   }
 
   private async assignDownloadTaskIndices(tasks: DownloadTask[]): Promise<Set<string>> {

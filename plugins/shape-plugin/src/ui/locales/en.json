@@ -21,6 +21,17 @@
     "save": "Save",
     "defaultName": "New shape"
   },
+  "batchRecovery": {
+    "title": "Resume Batch Session",
+    "body": "Batch session recovery UI is under reconstruction. Please resume or discard sessions via the worker tools until the refactor is complete.",
+    "close": "Close"
+  },
+  "countrySelection": {
+    "loading": "Loading country metadata...",
+    "loadError": "Failed to load country metadata: {{message}}",
+    "title": "Select Countries & Administrative Levels",
+    "description": "Select countries and their administrative levels to download. Use the matrix to make precise selections."
+  },
   "dataSource": {
     "title": "Data Source",
     "description": "Choose a geographic data provider. Each source has different coverage, accuracy, and licensing requirements.",
@@ -110,6 +121,9 @@
       "tileCountThresholdHelp": "Stops tile generation once the tile count exceeds this value.",
       "zoomLevels": "Zoom Levels (comma separated)",
       "zoomLevelsHelp": "Zoom levels to generate tiles for."
+    },
+    "workers": {
+      "countLabel": "{{count}} workers"
     }
   },
   "preview": {
@@ -125,6 +139,7 @@
       "missingSession": "Build the dataset to generate metadata.",
       "empty": "No metadata entries have been generated yet.",
       "searchPlaceholder": "Search metadata",
+      "searchAriaLabel": "Search metadata",
       "matches": "Matched",
       "rows": "Rows",
       "columns": {
@@ -168,6 +183,7 @@
       "running": "Running",
       "paused": "Paused",
       "completed": "Completed",
+      "skipped": "Skipped",
       "failed": "Failed"
     },
     "status": {

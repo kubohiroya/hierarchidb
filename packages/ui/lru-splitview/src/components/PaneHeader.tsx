@@ -20,6 +20,7 @@ import {
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 
 import type { PaneHeaderProps } from '../types/LRUSplitView.js';
+import { PaneProgressSummary } from './PaneProgressSummary.js';
 
 export interface PaneHeaderComponentProps extends PaneHeaderProps {
   /** Whether to use vertical orientation icon */
@@ -166,7 +167,9 @@ export const PaneHeader: React.FC<PaneHeaderComponentProps> = ({
         {showProgress && progress && (
           <>
             {/* Task count chip */}
-            {showCounts && (progress.taskCount !== undefined || progress.completedCount !== undefined) && (
+            {showCounts && progress.summary ? (
+              <PaneProgressSummary summary={progress.summary} />
+            ) : showCounts && (progress.taskCount !== undefined || progress.completedCount !== undefined) && (
               <Chip
                 label={
                   progress.taskCount !== undefined && progress.completedCount !== undefined

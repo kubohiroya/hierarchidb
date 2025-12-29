@@ -3,8 +3,10 @@ import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import { CountryMatrixSelector } from '@hierarchidb/ui-country-select';
 import type { ShapeDialogStepProps } from './ShapeDialogStepProps.ts';
 import { useShapeCountrySelectionStep } from '../../hooks/useShapeCountrySelectionStep.js';
+import { useTranslation } from '../../i18n.js';
 
 export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ data, onChange, }) => {
+  const { t } = useTranslation();
   const {
     loading,
     error,
@@ -19,24 +21,31 @@ export const ShapeCountrySelectionStep: React.FC<ShapeDialogStepProps> = ({ data
     return (
       <Box sx={{ height: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <CircularProgress />
-        <Typography sx={{ ml: 2 }}>Loading country metadata...</Typography>
+        <Typography sx={{ ml: 2 }}>
+          {t('countrySelection.loading', 'Loading country metadata...')}
+        </Typography>
       </Box>
     );
   }
 
   if (error) {
     return (
-      <Alert severity="error">Failed to load country metadata: {error.message}</Alert>
+      <Alert severity="error">
+        {t('countrySelection.loadError', 'Failed to load country metadata: {{message}}', { message: error.message })}
+      </Alert>
     );
   }
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, height: '100%', minHeight: 0 }}>
       <Typography variant="h6" gutterBottom>
-        Select Countries & Administrative Levels
+        {t('countrySelection.title', 'Select Countries & Administrative Levels')}
       </Typography>
       <Typography variant="body2" color="text.secondary" paragraph>
-        Select countries and their administrative levels to download. Use the matrix to make precise selections.
+        {t(
+          'countrySelection.description',
+          'Select countries and their administrative levels to download. Use the matrix to make precise selections.',
+        )}
       </Typography>
 
       <Box sx={{ flex: 1, minHeight: 0, display: 'flex' }}>

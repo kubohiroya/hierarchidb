@@ -11,9 +11,12 @@ import {
   type DataSourceSelectorProps,
 } from '@hierarchidb/ui-datasource';
 import { FileInputWithUrl } from '@hierarchidb/ui-file';
+import { notify } from '@hierarchidb/components';
 import type { LocationDataSource, LocationEntity, LocationType } from '../../../common/types/index.js';
 import { useTranslation } from '../../../common/i18n/index.js';
 import type { Timestamp } from '@hierarchidb/common-types';
+import { parseIdeGsmCsv } from '@hierarchidb/location-store';
+import { BASE_LOCATION_TYPES } from './locationTypes.js';
 
 const ORDERED_DATA_SOURCES: LocationDataSource[] = [
   'openstreetmap',
@@ -246,11 +249,41 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({
               'Provide an IDE-GSM CSV file via upload or URL.',
             )}
             defaultDownloadUrl={draft.ideGsmSourceUrl}
-            onFileSelect={(file, downloadUrl) => {
-              onUpdate({
+            onFileSelect={async (file, downloadUrl) => {
+              const updates: Partial<LocationEntity> = {
                 ideGsmFileName: file.name,
                 ideGsmSourceUrl: downloadUrl ?? undefined,
-              });
+              };
+              try {
+                const csvText = await file.text();
+                const parsed = await parseIdeGsmCsv(csvText);
+                if (!parsed.points.length) {
+                  notify.warning(t('dataSource.ideGsm.empty', 'No valid IDE-GSM rows found.'));
+                  updates.selectedArrayByCountries = {};
+                } else {
+                  const typeIndex = new Map(
+                    BASE_LOCATION_TYPES.map((typeDef, index) => [typeDef.id, index]),
+                  );
+                  const selectionMap: Record<string, boolean[]> = {};
+                  parsed.points.forEach((point) => {
+                    const countryCode = point.countryCode?.toUpperCase();
+                    if (!countryCode) return;
+                    const idx = typeIndex.get(point.kind as LocationType);
+                    if (idx == null) return;
+                    if (!selectionMap[countryCode]) {
+                      selectionMap[countryCode] = Array(BASE_LOCATION_TYPES.length).fill(false);
+                    }
+                    selectionMap[countryCode][idx] = true;
+                  });
+                  updates.selectedArrayByCountries = selectionMap;
+                }
+              } catch (error) {
+                const message = error instanceof Error ? error.message : String(error);
+                notify.error(
+                  `${t('dataSource.ideGsm.parseError', 'Failed to parse IDE-GSM CSV.')} ${message}`,
+                );
+              }
+              onUpdate(updates);
             }}
           />
         );

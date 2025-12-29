@@ -9,6 +9,8 @@ import { notify } from '@hierarchidb/components';
 import { useTranslation } from '../i18n.js';
 import { getWorkerBridge } from '@hierarchidb/ui-worker-client';
 import { getShapeTileMetadataDB } from '../../services/database/ShapeTileMetadataDB.js';
+import { useSetAtom } from 'jotai';
+import { shapeBuildPersistedTasksAtom, shapeBuildTasksAtom } from '../state/shapeBuildProgressAtoms.js';
 
 type Args = {
   config: BatchConfig;
@@ -31,10 +33,13 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
   const bridgeRef = useMemo(() => getWorkerBridge(), []);
 
   const [counts, setCounts] = useState({ raw: 0, stage1: 0, stage2: 0, tiles: 0, cache: 0 });
+  const [taskCounts, setTaskCounts] = useState({ vectortile: 0 });
   const [finalCounts, setFinalCounts] = useState({ tiles: 0, metadata: 0 });
   const [failedCounts, setFailedCounts] = useState({ download: 0, simplify1: 0, simplify2: 0, vectortile: 0 });
   const [persistedStatus, setPersistedStatus] = useState<string | null>(null);
   const [statusLoaded, setStatusLoaded] = useState(false);
+  const setBuildTasks = useSetAtom(shapeBuildTasksAtom);
+  const setPersistedTasks = useSetAtom(shapeBuildPersistedTasksAtom);
   const deleteLabel = useMemo(() => (
     counts.raw > 0
       ? t('processing.download.deleteDownloadedFilesWithCount', 'Delete Downloaded Files ({{count}} files)', { count: counts.raw })
@@ -46,9 +51,19 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
       setCounts({ raw: 0, stage1: 0, stage2: 0, tiles: 0, cache: 0 });
       setFinalCounts({ tiles: 0, metadata: 0 });
       setFailedCounts({ download: 0, simplify1: 0, simplify2: 0, vectortile: 0 });
+      setTaskCounts({ vectortile: 0 });
       return;
     }
-    const [raw, stage1, stage2, tiles, cacheEntries, finalTiles, finalMetadata] = await Promise.all([
+    const [
+      raw,
+      stage1,
+      stage2,
+      tiles,
+      cacheEntries,
+      finalTiles,
+      finalMetadata,
+      vectortileTasks,
+    ] = await Promise.all([
       db.rawBuffers.where('nodeId').equals(batchNodeId).count(),
       db.simplifiedBuffers.where({ nodeId: batchNodeId, stage: 'simplify1' }).count(),
       db.simplifiedBuffers.where({ nodeId: batchNodeId, stage: 'simplify2' }).count(),
@@ -59,6 +74,11 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
         .then((metadataDb) =>
           metadataDb.featureMetadata.where('nodeId').equals(batchNodeId).count()
         ),
+      shapeDB.batchTasks
+        .where('nodeId')
+        .equals(batchNodeId)
+        .and((task) => task.taskType === 'vectortile')
+        .count(),
     ]);
     const failedTasks = await shapeDB.batchTasks
       .where('nodeId')
@@ -74,6 +94,7 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
     setCounts({ raw, stage1, stage2, tiles, cache: cacheEntries });
     setFinalCounts({ tiles: finalTiles, metadata: finalMetadata });
     setFailedCounts(failed);
+    setTaskCounts({ vectortile: vectortileTasks });
   }, [batchNodeId, db, resolvedNodeId]);
 
   useEffect(() => {
@@ -123,6 +144,7 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
     counts.tiles > 0
     || failedCounts.vectortile > 0
     || hasFinalOutputs
+    || taskCounts.vectortile > 0
   );
   const canDeleteMetadata = !isRunning && !disabled && finalCounts.metadata > 0;
 
@@ -205,10 +227,29 @@ export const useDownloadConfigSection = ({ config, draft, nodeId, disabled, onCh
     await db.clearStage(batchNodeId, 'vectorTiles');
     await clearBatchTasksForType('vectortile');
     await clearFinalOutputs();
+    setBuildTasks((prev) => prev.filter((task) => (
+      task.taskType !== 'vectortile'
+      && task.stage !== 'vectortile'
+      && task.stage !== 'vectorTiles'
+    )));
+    setPersistedTasks((prev) => prev.filter((task) => (
+      task.taskType !== 'vectortile'
+      && task.stage !== 'vectortile'
+      && task.stage !== 'vectorTiles'
+    )));
     await persistTileSummaryReset();
     await loadCounts();
     notify.success('Deleted tiles');
-  }, [batchNodeId, clearBatchTasksForType, clearFinalOutputs, db, loadCounts, persistTileSummaryReset]);
+  }, [
+    batchNodeId,
+    clearBatchTasksForType,
+    clearFinalOutputs,
+    db,
+    loadCounts,
+    persistTileSummaryReset,
+    setBuildTasks,
+    setPersistedTasks,
+  ]);
 
   const handleDeleteMetadata = useCallback(async () => {
     if (!batchNodeId) return notify.warning('NodeId is missing.');

@@ -111,15 +111,17 @@ export const AreaFilterPanel: React.FC<Props> = ({
                     });
                   }}
                   min={0}
-                  max={200}
+                  max={5000}
                   step={1}
                   valueLabelDisplay="auto"
                   marks={[
                     { value: 0, label: '0' },
-                    { value: 25, label: '25' },
-                    { value: 100, label: '100' },
                     { value: 200, label: '200' },
+                    { value: 800, label: '800' },
+                    { value: 2000, label: '2000' },
+                    { value: 5000, label: '5000' },
                   ]}
+                  track="inverted"
                   disabled={disabled}
                 />
               </Box>
@@ -144,10 +146,15 @@ export const AreaFilterPanel: React.FC<Props> = ({
                     });
                   }}
                   min={1}
-                  max={100}
+                  max={10000}
                   step={1}
                   valueLabelDisplay="auto"
-                  marks={[{ value: 1, label: '1' }, { value: 50, label: '50' }, { value: 100, label: '100' }]}
+                  marks={[
+                    { value: 1, label: '1' },
+                    { value: 100, label: '100' },
+                    { value: 1000, label: '1000' },
+                    { value: 10000, label: '10000' },
+                  ]}
                   track="inverted"
                   disabled={disabled}
                 />
@@ -218,14 +225,14 @@ export const AreaFilterPanel: React.FC<Props> = ({
                     });
                   }}
                   min={0}
-                  max={200}
+                  max={500}
                   step={1}
                   valueLabelDisplay="auto"
                   marks={[
                     { value: 0, label: '0' },
-                    { value: 50, label: '50' },
                     { value: 100, label: '100' },
-                    { value: 200, label: '200' },
+                    { value: 300, label: '300' },
+                    { value: 500, label: '500' },
                   ]}
                   track="inverted"
                   disabled={disabled || !baseHybridConfig}

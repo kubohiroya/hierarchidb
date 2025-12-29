@@ -34,7 +34,9 @@ const decodeGeoJson = async (buffer: ArrayBuffer): Promise<unknown> => {
   if (decoded && typeof (decoded as AsyncIterable<unknown>)[Symbol.asyncIterator] === 'function') {
     const features: Feature[] = [];
     for await (const feature of decoded as AsyncIterable<Feature>) {
-      features.push(feature);
+      if (feature) {
+        features.push(feature);
+      }
     }
     return {
       type: 'FeatureCollection',
@@ -57,6 +59,11 @@ const encodeGeoJson = async (geojsonData: FeatureCollection): Promise<ArrayBuffe
   const bytes = await geojsonApi.serialize(geojsonData);
   return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
 };
+
+const sanitizeFeatureCollection = (collection: FeatureCollection): FeatureCollection => ({
+  ...collection,
+  features: collection.features.filter(Boolean),
+});
 
 const processDownloadTask = async ({
   nodeId,
@@ -160,10 +167,28 @@ const processSimplify1Task = async ({
   const filtered = applyFeatureFiltering(geojson, filterSettings);
   const outputBufferId = `${nodeId}-simplify1-${taskIndex}`;
   const hasFilteredFeatures = isFeatureCollection(filtered);
-  const data = hasFilteredFeatures ? await encodeGeoJson(filtered) : raw.data;
-  const featureCount = hasFilteredFeatures
-    ? filtered.features.length
+  const sanitizedFiltered = hasFilteredFeatures
+    ? sanitizeFeatureCollection(filtered)
+    : null;
+  const featureCount = sanitizedFiltered
+    ? sanitizedFiltered.features.length
     : raw.featureCount;
+  if (sanitizedFiltered && featureCount === 0) {
+    await db.simplifiedBuffers.put({
+      id: outputBufferId,
+      nodeId: raw.nodeId,
+      stage: 'simplify1',
+      data: raw.data,
+      featureCount: 0,
+      simplificationRatio: 0,
+      tolerance: task.tolerance ?? task.config?.tolerance ?? 0,
+      timestamp: Date.now(),
+    });
+    return { status: 'skipped', featureCount: 0 };
+  }
+  const data = sanitizedFiltered
+    ? await encodeGeoJson(sanitizedFiltered)
+    : raw.data;
   if (!featureCount) {
     await db.simplifiedBuffers.put({
       id: outputBufferId,
@@ -227,10 +252,28 @@ const processSimplify2Task = async ({
   });
   const hasSimplifiedFeatures = isFeatureCollection(simplified);
   const outputBufferId = `${nodeId}-simplify2-${taskIndex}`;
-  const data = hasSimplifiedFeatures ? await encodeGeoJson(simplified) : input.data;
-  const featureCount = hasSimplifiedFeatures
-    ? simplified.features.length
+  const sanitizedSimplified = hasSimplifiedFeatures
+    ? sanitizeFeatureCollection(simplified)
+    : null;
+  const featureCount = sanitizedSimplified
+    ? sanitizedSimplified.features.length
     : input.featureCount;
+  if (sanitizedSimplified && featureCount === 0) {
+    await db.simplifiedBuffers.put({
+      id: outputBufferId,
+      nodeId: input.nodeId,
+      stage: 'simplify2',
+      data: input.data,
+      featureCount: 0,
+      simplificationRatio: 0,
+      tolerance: task.config?.tolerance ?? task.tolerance ?? 0,
+      timestamp: Date.now(),
+    });
+    return { status: 'skipped', featureCount: 0 };
+  }
+  const data = sanitizedSimplified
+    ? await encodeGeoJson(sanitizedSimplified)
+    : input.data;
   await db.simplifiedBuffers.put({
     id: outputBufferId,
     nodeId: input.nodeId,

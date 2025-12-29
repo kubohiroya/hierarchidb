@@ -17,6 +17,21 @@ const requireNodeId = (value: Simplify1Task['nodeId'] | Simplify2Task['nodeId'])
   return value;
 };
 
+const formatErrorWithSource = (error: unknown, fallback: string): string => {
+  if (!(error instanceof Error)) return fallback;
+  const message = error.message || fallback;
+  const stack = error.stack ?? '';
+  const line = stack.split('\n').find((entry) => entry.includes(':') && entry.includes('/') && entry.includes('at '));
+  if (!line) return message;
+  const match = line.match(/\((.+?):(\d+):(\d+)\)/) ?? line.match(/at (.+?):(\d+):(\d+)/);
+  if (!match) return message;
+  const [, file, lineNumber, column] = match;
+  return `${message} (at ${file}:${lineNumber}:${column})`;
+};
+
+const SIMPLIFY1_SKIP_MESSAGE = 'Skipped: no features remain after filtering.';
+const SIMPLIFY2_SKIP_MESSAGE = 'Skipped: no features remain after simplification.';
+
 export class ShapeWorkerSimplify1Adapter implements Simplify1StageAdapter {
   async process(tasks: Simplify1Task[], onProgress: (p: ProgressInfo) => void, controls?: StageControls) {
     const getSignal = controls?.getSignal;
@@ -70,7 +85,7 @@ export class ShapeWorkerSimplify1Adapter implements Simplify1StageAdapter {
                 status: 'completed',
                 completedAt: Date.now(),
                 progress: 100,
-                message: 'skipped',
+                message: SIMPLIFY1_SKIP_MESSAGE,
               });
             }
           } else {
@@ -96,7 +111,7 @@ export class ShapeWorkerSimplify1Adapter implements Simplify1StageAdapter {
               status: 'failed',
               completedAt: Date.now(),
               progress: 100,
-              errorMessage: error instanceof Error ? error.message : 'Simplify stage 1 failed',
+              errorMessage: formatErrorWithSource(error, 'Simplify stage 1 failed'),
             });
           }
         }
@@ -153,16 +168,19 @@ export class ShapeWorkerSimplify2Adapter implements Simplify2StageAdapter {
         try {
           const taskIndex = task.index ?? index;
           const resolvedNodeId = requireNodeId(task.nodeId);
-          const simplify1TaskId = `${String(resolvedNodeId)}-simplify1-${taskIndex}`;
-          const simplify1Task = await shapeDB.batchTasks.get(simplify1TaskId);
+          const sourceTaskId = task.config?.sourceTaskId
+            ?? `${String(resolvedNodeId)}-simplify1-${taskIndex}`;
+          const simplify1Task = await shapeDB.batchTasks.get(sourceTaskId);
           if (simplify1Task?.status === 'failed') {
             failed += 1;
             if (task.taskId) {
+              const simplify1TaskLabel = simplify1Task.taskId ?? sourceTaskId;
+              const simplify1Reason = simplify1Task.errorMessage ?? 'unknown error';
               await shapeDB.updateBatchTask(task.taskId, {
                 status: 'failed',
                 completedAt: Date.now(),
                 progress: 100,
-                errorMessage: 'Simplify1 failed for this task',
+                errorMessage: `Simplify1 failed (${simplify1TaskLabel}): ${simplify1Reason}`,
               });
             }
           } else {
@@ -188,7 +206,7 @@ export class ShapeWorkerSimplify2Adapter implements Simplify2StageAdapter {
                   status: 'completed',
                   completedAt: Date.now(),
                   progress: 100,
-                  message: 'skipped',
+                  message: SIMPLIFY2_SKIP_MESSAGE,
                 });
               }
             } else {

@@ -1,6 +1,7 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material';
 import type { BatchSession } from '../../common/types/index.js';
 import { useBatchRecoveryDialog } from '../hooks/useBatchRecoveryDialog.js';
+import { useTranslation } from '../i18n.js';
 
 export interface BatchRecoveryDialogProps {
   open: boolean;
@@ -20,6 +21,7 @@ export function BatchRecoveryDialog({
   loading = false,
 }: BatchRecoveryDialogProps): JSX.Element | null {
   const { shouldRender } = useBatchRecoveryDialog({ open, sessions, loading });
+  const { t } = useTranslation();
   void sessions;
   void onResume;
   void onDiscard;
@@ -29,15 +31,17 @@ export function BatchRecoveryDialog({
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Resume Batch Session</DialogTitle>
+      <DialogTitle>{t('batchRecovery.title', 'Resume Batch Session')}</DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary">
-          Batch session recovery UI is under reconstruction. Please resume or discard sessions
-          via the worker tools until the refactor is complete.
+          {t(
+            'batchRecovery.body',
+            'Batch session recovery UI is under reconstruction. Please resume or discard sessions via the worker tools until the refactor is complete.',
+          )}
         </Typography>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Close</Button>
+        <Button onClick={onClose}>{t('batchRecovery.close', 'Close')}</Button>
       </DialogActions>
     </Dialog>
   );

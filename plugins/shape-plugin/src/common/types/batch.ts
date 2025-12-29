@@ -86,6 +86,7 @@ export interface DownloadTask extends BatchTaskBase {
 export interface SimplifyTaskConfig {
   inputBufferId?: string;
   sourceUrl?: string;
+  sourceTaskId?: string;
   featureId?: string;
   featureLabel?: string;
   featureGroupId?: string;

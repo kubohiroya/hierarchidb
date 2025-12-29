@@ -144,8 +144,8 @@ export function validateBatchConfig(config: Partial<BatchConfig>): ShapeStepVali
 
   const areaThreshold = config.simplify1Config?.areaThreshold ?? legacySimplification?.areaThreshold;
   if (areaThreshold !== undefined) {
-    if (areaThreshold < 1 || areaThreshold > 100) {
-      errors.push('Feature area threshold must be between 1 and 100');
+    if (areaThreshold < 1 || areaThreshold > 10000) {
+      errors.push('Feature area threshold must be between 1 and 10000');
     }
   }
 

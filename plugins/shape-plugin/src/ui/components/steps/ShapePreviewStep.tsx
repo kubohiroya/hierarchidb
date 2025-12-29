@@ -196,7 +196,7 @@ export const ShapePreviewStep: React.FC<ShapeDialogStepProps> = ({ data }) => {
                       handleSearchTextChange={setSearchKeyword}
                       handleSearchCommit={() => undefined}
                       placeholder={t('preview.metadata.searchPlaceholder', 'Search metadata')}
-                      ariaLabel="Search metadata"
+                      ariaLabel={t('preview.metadata.searchAriaLabel', 'Search metadata')}
                     />
                     <Typography variant="body2" color="text.secondary">
                       {searchKeyword

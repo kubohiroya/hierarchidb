@@ -53,6 +53,23 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1970) shape-plugin: デフォルト簡略化を強化して頂点90%削減/タイルサイズ1桁減（P1）
+- ブランチ: `fix/shape-plugin/default-simplify-aggressive`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/common/types/constants.ts`, `plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] simplify1/2 のデフォルト値を強い簡略化（90%間引き想定）へ更新する
+  - [ ] vectorTiles の maxZoom を下げ、タイルサイズが1桁小さくなる方向へ調整する
+  - [ ] UI のデフォルト値が更新内容と一致する
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [x] DEFAULT_PROCESSING_CONFIG の simplify1/2/tiles を更新する
+  - [x] TileConfigSection の共有ズーム既定値を更新する
+  - [ ] 代表検証（手動/ログ）結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：`plugins/shape-plugin/src/common/types/constants.ts` と `plugins/shape-plugin/src/ui/components/steps/TileConfigSection.tsx` の差分を revert する
+- 運用ログ：
+  - start: 2025-12-30 11:30 JST デフォルト簡略化/タイル範囲の強化に着手。
+  - progress: 2025-12-30 11:40 JST simplify1/2 と tileConfig の既定値を強化し、共有ズーム既定値を 0-4 に更新。検証: 未実施。
+
 1968) /map 地物状態 (A)-(E) のSSOT分離と重ね合わせ表示（P1）
 - ブランチ: `feat/ui/map-feature-overlays`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: `app/src/router/routes/map/**`, `packages/ui/data-grid/**`, `packages/ui/map/**`, `packages/features/**`, `TASKS.md`, `plans/`
@@ -121,11 +138,19 @@
 - 依存: `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx`, `plugins/shape-plugin/src/ui/hooks/useShapeBatchTasks.ts`, `plugins/shape-plugin/src/services/batch/**`, `TASKS.md`
 - 受け入れ基準（DoD）:
   - [ ] stage5「タイル生成」での task failed 発生原因を特定し、影響範囲を運用ログに記載する
+  - [ ] タスクIDを国・自治体レベルをもとに生成する
+  - [ ] エラーメッセージで失敗理由が分かる文言に更新する
   - [ ] 必要な修正を最小差分で反映する（不要なら理由を明記）
   - [ ] 変更内容/理由/ロールバック手順/検証結果を運用ログに記載する
 - チェックリスト:
   - [ ] ShapeBuildProgressStep の task failed 発生経路（UI/Worker/ログ）を確認する
   - [ ] タイル生成ステージの task payload/結果/例外処理を確認する
+  - [ ] タスクID生成を国・自治体レベル基準に合わせる
+  - [x] simplify1 のタスクタイトルに複数フィーチャー時の枝番（-1/-2/...）を付与する
+  - [x] simplify1 のタスクタイトルを `country/admin label` 形式で識別できるようにする
+  - [ ] pause 時の `Session ... not found` を解消し、再開/停止が正しく動作する
+  - [ ] vectortile の待機状態が継続する原因を特定し、進捗が進むようにする
+  - [ ] task failed のエラーメッセージを失敗理由の説明に置き換える
   - [ ] 代表検証（手動/ログ）結果を運用ログに記録する
 - ロールバック手順：`plugins/shape-plugin/src/ui/**` と `plugins/shape-plugin/src/services/batch/**` の差分を revert する。
 - 運用ログ：
@@ -134,9 +159,55 @@
   - progress: 2025-12-29 03:55 JST SessionController にタイル索引化とメタデータ生成の実装を追加し、vector tile ステージは stage-tile 参照へ切替する作業に着手。
   - progress: 2025-12-29 04:20 JST stage-tile 入力は TilesDB の key に `input:` を付与して保存し、runtime-worker の readBuffer が stage-tile を読むよう調整。vector tile adapter の input サイズ判定/永続化を stage-tile ではスキップするよう修正。
   - progress: 2025-12-29 04:45 JST sessionId を廃止し nodeId を唯一識別子として扱う方針へ更新。worker/api と UI の参照を nodeId に揃え、SessionController の sessionId を nodeId に固定。TilesDB の削除は nodeId と input:nodeId を対象に追加。
+  - progress: 2025-12-29 15:40 JST 保存済みキャッシュから擬似タスク（completed）を生成して表示する処理の撤去に着手。
+  - progress: 2025-12-29 15:48 JST Step5 の擬似タスク生成（fallbackTasks）と stageSnapshot 集計を撤去し、表示は保存済み実タスクと集計サマリのみ参照に変更。
+  - progress: 2025-12-29 15:48 JST 検証未実施（未着手）。
+  - progress: 2025-12-29 16:05 JST shape-plugin 全体の i18n 未対応文言を補正し、skipped/error のメッセージ/ログ方針を見直す対応に着手。
+  - progress: 2025-12-29 16:24 JST shape-plugin の未i18n文言（国選択/復旧ダイアログ/検索aria/ワーカー表示）を i18n 化し、skipped メッセージを理由付きに変更。UI は skipped を console.warn、サイズ超過/シリアライズ失敗は failed + console.error に変更。
+  - progress: 2025-12-29 16:24 JST 検証未実施（未着手）。
+  - progress: 2025-12-29 16:55 JST simplify1 の IND/1 重複疑義を調査。download 後の `expandOutputsForFeatureGroups` が Feature 単位でタスク化し、UI のタイトルが `country/admin` だけなので同一表示になることを確認。再開時は download が完了でも postprocess/expand が再実行されるが `taskId` は `country/admin/featureLabel/featureGroupId` 由来で安定していれば重複登録されない。feature id が欠落し index 依存になる場合のみ重複タスク化の可能性がある。
   - progress: 2025-12-29 09:30 JST GIS SDK / TilesDB の sessionId 命名とスキーマを nodeId へ統一する作業に着手。
   - progress: 2025-12-29 05:05 JST Step4「ビルド終了時の中間生成物の保持」カードの縦位置を上揃えに修正。
   - progress: 2025-12-29 05:15 JST SessionController の GeometryCollection 対応と metadata 型エラーを修正し、未使用の buildVectorTileInputBuffer を削除。worker plugin の未使用引数を整理。
+  - progress: 2025-12-29 14:43 JST Step5 の taskId 生成とエラーメッセージ改善の対応に着手。
+  - progress: 2025-12-29 14:50 JST simplify1/2 の taskId を国・自治体ベースへ変更し、simplify1 失敗理由をエラーメッセージへ反映。検証: 未実施。
+  - progress: 2025-12-29 15:02 JST simplify1 エラーにスタック由来のファイル/行/列情報を含めるよう更新。検証: 未実施。
+  - progress: 2025-12-29 15:05 JST ensureTileFeatureIndex の JSON.stringify 失敗時に vectortile を pause し、タイル座標とファイル/行情報を含めるよう修正。検証: 未実施。
+  - progress: 2025-12-29 15:11 JST simplify1 の flatgeobuf serialize 前に undefined feature を除外するガードを追加。検証: 未実施。
+  - progress: 2025-12-29 15:14 JST simplify1/2 で結果 FeatureCollection が空になった場合は skipped 扱いに変更。検証: 未実施。
+  - progress: 2025-12-29 15:21 JST vectortile 入力の stringify/サイズ警告で pause せず、該当タイルのみスキップするよう変更。検証: 未実施。
+  - progress: 2025-12-29 15:46 JST vectortile 入力が0件のときスキップ扱いのダミータスクを登録し、タスクなし表示を回避。検証: 未実施。
+  - progress: 2025-12-29 15:52 JST タイル生成ペインのタスクが表示されない原因調査に着手（task.stage の割当を再確認）。
+  - progress: 2025-12-29 16:18 JST タイル生成ペインの stage を taskType に修正し、Step4 の簡略化デフォルトを粗く更新（頂点数1/10目標）。検証: 未実施。
+  - progress: 2025-12-29 16:27 JST タスク分類を stage/taskType のフォールバックに修正し、Step4 デフォルトをさらに粗く更新（tolerance/quantize/areaThreshold）。検証: 未実施。
+  - progress: 2025-12-29 16:43 JST Comlink の DataCloneError 回避（terminate を proxy wrapper に変更）と、稀な update depth 警告を抑制するため mapStatusToUnified を ref 化。検証: 未実施。
+  - progress: 2025-12-29 16:50 JST デフォルトのズーム範囲を 1-6 に固定し、Step4 簡略化をさらに粗く（頂点数25%以下目標）。検証: 未実施。
+  - progress: 2025-12-29 17:01 JST タイル生成のステージタスクを常に登録して表示を安定化し、Step4 デフォルトをさらに粗く更新（50MB以下目標）。検証: 未実施。
+  - progress: 2025-12-29 17:04 JST 既存タイル行の null を除外し、Step4 デフォルトをさらに粗く更新（1枚50MB以下目標）。検証: 未実施。
+  - progress: 2025-12-29 17:08 JST タイル生成のダミータスクを廃止し、実タスク登録時のみ表示されるよう戻す。検証: 未実施。
+  - progress: 2025-12-29 18:35 JST Step4「タイルを削除」で tileDB と vectortile task を両方削除し、Step5 表示へ反映する対応に着手。検証: 未実施。
+  - progress: 2025-12-29 18:45 JST タイル削除時に vectortile タスクをDB削除し、UIのタスクキャッシュも同時に除去するよう更新。検証: 未実施。
+  - progress: 2025-12-29 19:10 JST Step4 から Step5 に進めない valid 条件の原因調査に着手。検証: 未実施。
+  - progress: 2025-12-29 19:25 JST Step4 の areaThreshold 既定値(2000)が validateBatchConfig の上限(100)を超えていたため、許容範囲とUIスライダー上限を拡大。検証: 未実施。
+  - progress: 2025-12-29 19:40 JST タイル生成ステージ開始時に progressCallback を即時発火し、UIへ確実にステージ開始を通知するよう修正。検証: 未実施。
+  - progress: 2025-12-29 20:05 JST タイル入力サイズを最大30MB/平均10MB目標にするため、Step4 既定値をさらに粗く調整（tolerance/quantize/areaThreshold 等）。検証: 未実施。
+  - progress: 2025-12-29 20:20 JST Step4「タイルを削除」で nodeId の vectortile タスクが残っていればボタンを有効化し、削除対象に含める対応に着手。検証: 未実施。
+  - progress: 2025-12-29 20:30 JST Step4 のタイル削除ボタンを、nodeId の vectortile タスク数でも有効化し、削除後にタスク数が0になるよう反映。検証: 未実施。
+  - progress: 2025-12-29 20:45 JST 「簡略化許容値 (度)」のスライダー上限を 5 まで拡張し、粗い簡略化を選択できるよう変更。検証: 未実施。
+  - progress: 2025-12-29 21:05 JST 「簡略化許容値 (度)」のUI範囲を 1-6、既定値を 3 に調整し、ズーム範囲スライダー上限を 10 へ変更。検証: 未実施。
+  - progress: 2025-12-29 21:20 JST 「シンプル形状の頂点しきい値」の範囲を 0-500 に拡張し、既定値を 300 に更新。検証: 未実施。
+  - progress: 2025-12-29 21:40 JST タイル前処理の全体進捗とペイン進捗の不一致を解消し、タイル生成開始がUIへ確実に伝わるよう調整に着手。検証: 未実施。
+  - progress: 2025-12-29 22:00 JST simplify2 完了時に skipped を含めて最終進捗を送信し、タイル生成入力なしでも vectortile 開始を通知するよう修正。UI側は skipped 分を除外した合計で表示を整合。検証: 未実施。
+  - progress: 2025-12-29 22:20 JST 最小頂点数スライダーを inverted 化し、簡略化許容値レンジを 1-20/既定10 に拡張。検証: 未実施。
+  - progress: 2025-12-29 22:40 JST Step5 の valid/canSave 判定をタイル生成済み（tileSummary/永続タイル/タスク完了）で成立するよう更新し、Save の二重押下抑止に備える。検証: 未実施。
+  - progress: 2025-12-29 23:00 JST Step4 の削除ボタン条件に合わせて、Step5 でもビルド開始前に各ステージの状態を表示するためのスナップショット表示を追加。検証: 未実施。
+  - progress: 2025-12-29 23:20 JST Step5 のペインヘッダにタスク総数/成功/失敗/スキップのサマリ表示を追加し、保存済みタスクから集計するよう更新。検証: 未実施。
+  - progress: 2025-12-29 23:40 JST registerTasks の bulkPut を 50 件ずつに分割し、大量タスク時のUI固まりを軽減。検証: 未実施。
+  - progress: 2025-12-30 00:10 JST vectortile 入力の生成をタスク実行中へ移し、タスク実行時にスキップ判定/記録するよう再構成。検証: 未実施。
+  - start: 2025-12-30 10:10 JST simplify1 の複数フィーチャー時にタスクタイトルへ -1/-2... を付与する対応に着手。
+  - progress: 2025-12-30 10:15 JST simplify1 タスクの metadata に featureIndex/featureCount を追加し、UI 表示で -1/-2... の枝番を付与。検証: 未実施。
+  - start: 2025-12-30 11:05 JST simplify1 タイトルの重複/ pause 失敗 / vectortile 待機の調査に着手。
+  - progress: 2025-12-30 11:15 JST simplify1/2 のタイトルで featureLabel を表示し、セッション既存時に再生成できるよう createSession を更新。検証: 未実施。
 
 1958) shape-plugin: selectedArrayByCountries を Record<ISO2, boolean[]> へ変更（P1）
 - ブランチ: `fix/shape-plugin/selected-array-by-countries-map`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -1817,6 +1888,18 @@
 - チェックリスト:
   - [ ] ダウンロード成功/失敗のログ出力を追加する
 - ロールバック手順：本タスクの差分を revert する。
+1862) location IDE-GSM CSV 選択時の国/選択状態生成（P1）
+- ブランチ: `fix/location/ide-gsm-selection-bootstrap`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: plugins/location-plugin（LocationDataSourceStep, selection state）
+- 受け入れ基準（DoD）:
+  - [ ] IDE-GSM CSV 選択後に国の選択状態が生成され、Step2→Step3 へ進める
+  - [ ] CSV から国コード/地点種別の選択が `selectedArrayByCountries` に反映される
+  - [ ] 変更内容/理由/ロールバック手順を運用ログに記載する
+- チェックリスト:
+  - [ ] IDE-GSM ファイル選択時に CSV をパースして選択状態を生成する
+  - [ ] 影響範囲の typecheck など代表検証を実行し、結果を運用ログに記録する（不可なら理由記載）
+- ロールバック手順：LocationDataSourceStep などの差分を revert し、運用ログ追記を削除する
+
 1861) shape-plugin metadata API を DownloadService 経由に統一（P1）
 - ブランチ: `fix/shape/download-metadata-via-downloadservice`（sandbox 制約で branch 作成不可なら main 上で作業）
 - 依存: plugins/shape-plugin（GeoBoundariesStrategy/availability/worker）
@@ -6806,6 +6889,16 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+
+1969) 調査: shape step5 の LRUSplitPane 内タスク表示コンポーネント特定（P2） — 完了 (2025-12-29)
+- 要点：Step5 の進捗ビューは `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx` が `BuildStepPanel` を描画し、`renderStageContent` 内でタスク 1 件を `ShapeBuildTaskItem` として表示する。`BuildStepPanel` は `packages/components/src/BuildStepPanel.tsx` で `LRUSplitView` の pane content を組み立てているため、LRUSplitPane 内のタスク表示コンポーネントは `plugins/shape-plugin/src/ui/components/steps/ShapeBuildTaskItem.tsx`。
+- 検証：調査のみ（コード確認）。
+- ロールバック手順：調査のみのため変更なし。
+- 運用ログ：
+  - start: 2025-12-29 15:06 JST shape step5 の LRUSplitPane 内タスク表示コンポーネント特定の調査に着手。
+  - progress: 2025-12-29 15:07 JST `rg -n "LRUSplitPane|LRUSplitView" plugins app packages` と `rg -n "Step5|step5|BuildStep" plugins/shape-plugin app packages` で参照箇所を探索。
+  - progress: 2025-12-29 15:08 JST `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx` と `packages/components/src/BuildStepPanel.tsx` を確認し、pane content とタスク表示の責務を切り分け。
+  - done: 2025-12-29 15:09 JST `ShapeBuildTaskItem`（`plugins/shape-plugin/src/ui/components/steps/ShapeBuildTaskItem.tsx`）が LRUSplitPane 内でタスク1件を描画するコンポーネントであることを特定。
 
 1849) route-plugin Step3 を国×交通経路マトリクスへ再構成（P1） — 完了 (2025-12-29)
 - 要点：Step3 を CountryMatrixSelector ベースの国×交通経路マトリクスへ置換し、データソース別の checked/disabled 制約と Step3 バリデーションを更新。i18n を日英で更新。
@@ -13876,6 +13969,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-16 23:55 start: fix/ui-datasource/license-import — Vite で `@hierarchidb/ui-license` 未解決（DataSourceWithLicense.tsx）を調査開始。branch 作成不可のため main 作業。DoD: Kanban 記載どおり typecheck 通過と原因/修正/ロールバックの運用ログ記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-18"></a>
+- 2025-12-29 14:41 start: fix/location/ide-gsm-selection-bootstrap — IDE-GSM CSV 選択後に国/選択状態が生成されず Step3 へ進めない問題の修正に着手。DoD: Kanban 記載どおり CSV 反映/運用ログ記載。（Kanban: 1862）
+- 2025-12-29 14:43 progress: fix/location/ide-gsm-selection-bootstrap — IDE-GSM CSV 選択時に parseIdeGsmCsv を実行し、国×種別の選択状態を selectedArrayByCountries に反映する処理を追加。
+- 2025-12-29 14:43 done: fix/location/ide-gsm-selection-bootstrap — 変更完了。検証: 未実施（既存エラーが多く個別 typecheck 未実行）。ロールバック: `plugins/location-plugin/src/ui/components/steps/LocationDataSourceStep.tsx` の差分を revert し、必要なら `pnpm --filter @hierarchidb/location-plugin typecheck` を再実行する。
 - 2025-12-29 13:45 start: feat/ui/map-feature-overlays — /map の地物状態 (A)-(E) をSSOT分離し、重ね合わせ表示へ反映する作業に着手。DoD: Kanban 1968 のとおり。
 - 2025-12-29 14:01 progress: feat/ui/map-feature-overlays — ExecPlan を `plans/map-feature-overlays-execplan.md` に作成し、map.tsx の viewport 可視 ID 更新と DataGrid の hover/selection 同期を実装。
 - 2025-12-29 14:05 start: feat/ui/map-modeless-data-table — /map モードレスに生成物テーブル + 検索フィールド追加に着手。DoD: Kanban 1967 のとおり。
@@ -15027,3 +15123,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-28 17:07 done: fix/shape/auth-context-nodeid — AuthCancelled 通知の context から nodeId を削除し、型エラーを解消。検証: 未実施（typecheck 未実行）。ロールバック: `plugins/shape-plugin/src/services/auth/WorkerAuthHandler.ts` と `TASKS.md` の差分を revert。
 - 2025-12-28 17:12 start: fix/app/modeless-sx-constraint — modeless dialog の sx 型制約エラー（TS2344）を解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
 - 2025-12-28 17:14 done: fix/app/modeless-sx-constraint — DataGrid rowSx の型を NonNullable にして useCallback の関数制約を満たすよう修正。検証: 未実施（typecheck 未実行）。ロールバック: `app/src/router/routes/modeless/modelessDialogContent.tsx` と `TASKS.md` の差分を revert。
+- 2025-12-28 17:18 start: fix/runtime-worker/stage-processing-proxy-cast — StageProcessingService の proxy キャスト TS2352 を解消する対応に着手。DoD: typecheck エラー解消、運用ログ更新、ロールバック手順記載。
+- 2025-12-28 17:20 done: fix/runtime-worker/stage-processing-proxy-cast — comlink client の proxy 参照を unknown 経由でキャストし、TS2352 を解消。検証: 未実施（typecheck 未実行）。ロールバック: `packages/runtime-worker/src/services/StageProcessingService.ts` と `TASKS.md` の差分を revert。
+- 2025-12-29 15:06 start: analysis/shape/step5-lru-task-component — shape step5 の LRUSplitPane 内タスク表示コンポーネント特定の調査に着手。DoD: Kanban 1969 のとおり。
+- 2025-12-29 15:07 progress: analysis/shape/step5-lru-task-component — `rg -n "LRUSplitPane|LRUSplitView" plugins app packages` と `rg -n "Step5|step5|BuildStep" plugins/shape-plugin app packages` で参照箇所を探索。
+- 2025-12-29 15:08 progress: analysis/shape/step5-lru-task-component — `plugins/shape-plugin/src/ui/components/steps/ShapeBuildProgressStep.tsx` と `packages/components/src/BuildStepPanel.tsx` を確認し、pane content とタスク表示の責務を切り分け。
+- 2025-12-29 15:09 done: analysis/shape/step5-lru-task-component — `ShapeBuildTaskItem`（`plugins/shape-plugin/src/ui/components/steps/ShapeBuildTaskItem.tsx`）が LRUSplitPane 内でタスク1件を描画するコンポーネントであることを特定。検証: 調査のみ。ロールバック: 運用ログ追記を削除。

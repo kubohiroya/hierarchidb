@@ -67,10 +67,13 @@ export class BatchSessionManager extends BaseBatchSessionManager {
     options: BatchSessionOptions = {},
   ): Promise<BatchSession> {
     const existing = await shapeDB.getBatchSession(nodeId);
+    if (existing && this.sessions.has(nodeId)) {
+      return existing;
+    }
     if (existing?.status === 'running') {
       const taskCount = await shapeDB.batchTasks.where('nodeId').equals(nodeId).count();
       if (taskCount > 0) {
-        return existing;
+        this.sessions.delete(nodeId);
       }
     }
     if (existing) {
@@ -155,11 +158,43 @@ export class BatchSessionManager extends BaseBatchSessionManager {
   }
 
   async pauseSession(nodeId: string): Promise<void> {
-    await this.pauseBatchSession(nodeId as NodeId);
+    const resolved = nodeId as NodeId;
+    if (this.sessions.has(resolved)) {
+      await this.pauseBatchSession(resolved);
+      return;
+    }
+    const existing = await shapeDB.getBatchSession(resolved);
+    if (!existing) {
+      throw new Error(`Session ${nodeId} not found`);
+    }
+    await shapeDB.updateBatchSession(resolved, {
+      status: 'paused',
+      updatedAt: Date.now(),
+    });
   }
 
   async resumeSession(nodeId: string): Promise<void> {
-    await this.resumeBatchSession(nodeId as NodeId);
+    const resolved = nodeId as NodeId;
+    if (this.sessions.has(resolved)) {
+      await this.resumeBatchSession(resolved);
+      return;
+    }
+    const existing = await shapeDB.getBatchSession(resolved);
+    if (!existing) {
+      throw new Error(`Session ${nodeId} not found`);
+    }
+    const downloadTasks = await shapeDB.batchTasks
+      .where('nodeId')
+      .equals(resolved)
+      .and((task) => task.taskType === 'download')
+      .toArray();
+    const downloadPayloads = downloadTasks
+      .map((task) => task.inputData as DownloadTaskPayload | undefined)
+      .filter((payload): payload is DownloadTaskPayload => Boolean(payload));
+    if (downloadPayloads.length === 0) {
+      throw new Error(`Session ${nodeId} missing download payloads`);
+    }
+    await this.createSession(resolved, existing.config as BatchProcessConfig, downloadPayloads);
   }
 
   async cancelSession(nodeId: string): Promise<void> {

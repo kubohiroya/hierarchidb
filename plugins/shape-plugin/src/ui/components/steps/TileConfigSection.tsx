@@ -9,9 +9,9 @@ import { getStageConcurrencyWarning } from '../../utils/buildWarnings.js';
 import { useEffect, useMemo } from 'react';
 
 const SHARED_ZOOM_RANGE_KEY = 'sharedZoomRange';
-const DEFAULT_SHARED_ZOOM_RANGE: [number, number] = [0, 6];
+const DEFAULT_SHARED_ZOOM_RANGE: [number, number] = [0, 4];
 const SHARED_ZOOM_RANGE_MIN = 0;
-const SHARED_ZOOM_RANGE_MAX = 22;
+const SHARED_ZOOM_RANGE_MAX = 10;
 
 const normalizeSharedZoomRange = (value: unknown): [number, number] => {
   if (!Array.isArray(value) || value.length < 2) {
@@ -172,7 +172,14 @@ export const TileConfigSection: React.FC<Props> = ({ config, draft, disabled, on
                 min={SHARED_ZOOM_RANGE_MIN}
                 max={SHARED_ZOOM_RANGE_MAX}
                 step={1}
-                marks={[{ value: 0, label: '0' }, { value: 8, label: '8' }, { value: 12, label: '12' }, { value: 18, label: '18' }, { value: 22, label: '22' }]}
+                marks={[
+                  { value: 0, label: '0' },
+                  { value: 2, label: '2' },
+                  { value: 4, label: '4' },
+                  { value: 6, label: '6' },
+                  { value: 8, label: '8' },
+                  { value: 10, label: '10' },
+                ]}
                 valueLabelDisplay="auto"
                 disabled
               />

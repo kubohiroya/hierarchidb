@@ -8,6 +8,7 @@ import {
   Typography,
 } from '@mui/material';
 import EngineeringIcon from '@mui/icons-material/Engineering';
+import { useTranslation } from '../../i18n.js';
 
 type WorkerNumberConfigCardProps = {
   title: string;
@@ -24,7 +25,8 @@ type WorkerNumberConfigCardProps = {
   disabled?: boolean;
 };
 
-const formatWorkersLabel = (value: number) => `${value} Workers`;
+const formatWorkersLabel = (t: (key: string, fallback?: string, options?: Record<string, unknown>) => string, value: number) =>
+  t('processing.workers.countLabel', '{{count}} workers', { count: value });
 
 export const WorkerNumberConfigCard: React.FC<WorkerNumberConfigCardProps> = ({
   title,
@@ -40,6 +42,7 @@ export const WorkerNumberConfigCard: React.FC<WorkerNumberConfigCardProps> = ({
   warningText,
   disabled,
 }) => {
+  const { t } = useTranslation();
   const clampedValue = Math.max(min, Math.min(max, value));
   const labelValue = Math.round(clampedValue);
   const headerIcon = icon ?? <EngineeringIcon fontSize="large" color="primary" />;
@@ -65,7 +68,7 @@ export const WorkerNumberConfigCard: React.FC<WorkerNumberConfigCardProps> = ({
       <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
         {headerIcon}
         <Typography variant="subtitle2">{title}</Typography>
-        <Chip label={formatWorkersLabel(labelValue)} size="small" variant="outlined" />
+        <Chip label={formatWorkersLabel(t, labelValue)} size="small" variant="outlined" />
       </Stack>
       <Box px={1} display="flex" alignItems="center">
         <Rating

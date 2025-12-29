@@ -76,11 +76,27 @@ const resolveShapeNodeKey = (data?: Partial<ShapeEntity>): string | null => {
   return key ? String(key) : null;
 };
 
+const hasTileSummary = (data?: Partial<ShapeEntity>): boolean =>
+  Boolean(data?.tileSummary && (data.tileSummary.tiles ?? 0) > 0);
+
 const hasPersistedVectorTiles = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
   const nodeKey = resolveShapeNodeKey(data);
   if (!nodeKey) return false;
   const count = await shapeDB.vectorTiles.where('nodeId').equals(toNodeId(nodeKey)).count();
   return count > 0;
+};
+
+const hasCompletedVectorTileTasks = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
+  const nodeKey = resolveShapeNodeKey(data);
+  if (!nodeKey) return false;
+  const tasks = await shapeDB.batchTasks
+    .where('nodeId')
+    .equals(nodeKey)
+    .and((task) => task.taskType === 'vectortile')
+    .toArray();
+  if (tasks.length === 0) return false;
+  const completed = tasks.filter((task) => task.status === 'completed').length;
+  return completed === tasks.length;
 };
 
 const hasCompletedBatchSession = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
@@ -92,7 +108,9 @@ const hasCompletedBatchSession = async (data?: Partial<ShapeEntity>): Promise<bo
 
 const isShapeBuildPersisted = async (data?: Partial<ShapeEntity>): Promise<boolean> => {
   if (!data) return false;
+  if (hasTileSummary(data)) return true;
   if (await hasPersistedVectorTiles(data)) return true;
+  if (await hasCompletedVectorTileTasks(data)) return true;
   return hasCompletedBatchSession(data);
 };
 
@@ -131,6 +149,7 @@ registry.registerConfigProvider<Partial<ShapeEntity>>({
         validate: (data?: Partial<ShapeEntity>) => isShapeBuildPersisted(data),
         capabilities: {
           canStartBatch: (data?: Partial<ShapeEntity>) => canStartShapeBatch(data),
+          canSave: (data?: Partial<ShapeEntity>) => isShapeBuildPersisted(data),
         },
       },
       {

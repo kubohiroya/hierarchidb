@@ -26,8 +26,13 @@ export const useBatchProgressState = (
 ): BatchProgressState => {
   const { autoSubscribe = true, enablePollingFallback = true, mapStatusToUnified } = options;
   const bridgeRef = useRef<WorkerBridge>(getWorkerBridge());
+  const mapStatusRef = useRef(mapStatusToUnified);
   const [error, setError] = useState<Error | null>(null);
   const [status, setStatus] = useState<BatchSessionStatus | null>(null);
+
+  useEffect(() => {
+    mapStatusRef.current = mapStatusToUnified;
+  }, [mapStatusToUnified]);
 
   useEffect(() => {
     if (!nodeId || !autoSubscribe) return;
@@ -67,14 +72,14 @@ export const useBatchProgressState = (
       try {
         const nextStatus = await bridgeRef.current.getBatchSessionStatus(nodeType, resolvedNodeId);
         setStatus(nextStatus);
-        return mapStatusToUnified(nextStatus);
+        return mapStatusRef.current(nextStatus);
       } catch (err: unknown) {
         const errObj = err instanceof Error ? err : new Error('Failed to fetch batch status');
         setError(errObj);
         return null;
       }
     };
-  }, [enablePollingFallback, mapStatusToUnified, nodeType, nodeId]);
+  }, [enablePollingFallback, nodeType, nodeId]);
 
   const {
     progress: unifiedProgress,

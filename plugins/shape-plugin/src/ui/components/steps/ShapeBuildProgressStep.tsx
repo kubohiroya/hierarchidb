@@ -46,6 +46,12 @@ type ShapeBuildProgressPanelProps = Pick<ShapeDialogStepProps, 'data' | 'nodeId'
 
 type TaskWithMetadata = BatchTaskSummary & { metadata?: Record<string, unknown>; stage?: string; title?: string };
 
+const isSkippedMessage = (message?: string | null): boolean => {
+  if (!message) return false;
+  const normalized = message.trim().toLowerCase();
+  return normalized === 'skipped' || normalized.startsWith('skipped:');
+};
+
 const ShapeBuildProgressAtomSync: React.FC<ShapeDialogStepProps> = ({ data, onChange, nodeId }) => {
   const resolvedNodeId = nodeId as NodeId | undefined;
   const {
@@ -180,7 +186,6 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
   const lastWarningRef = useRef<string | null>(null);
 
   const resolveTaskTitle = useCallback((task: TaskWithMetadata): string => {
-    if (task.title) return task.title;
     const metadata = task.metadata ?? {};
     const stage = task.stage;
     const countryCode = (metadata.countryCode ?? metadata.country) as string | undefined;
@@ -192,14 +197,17 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
     const locationTitle = countryCode && typeof adminLevel === 'number'
       ? `${countryCode}/${adminLevel}`
       : undefined;
+    const featureLabel = (metadata.featureLabel ?? metadata.featureId) as string | undefined;
     if (stage === 'download') {
-      return locationTitle ?? t('build.tasks.unknown', '(Title unavailable)');
+      return locationTitle ?? task.title ?? t('build.tasks.unknown', '(Title unavailable)');
     }
     if (stage === 'simplify1') {
-      return locationTitle ?? t('build.tasks.unknown', '(Title unavailable)');
+      if (locationTitle && featureLabel) return `${locationTitle} ${featureLabel}`;
+      return locationTitle ?? featureLabel ?? task.title ?? t('build.tasks.unknown', '(Title unavailable)');
     }
     if (stage === 'simplify2') {
-      return locationTitle ?? t('build.tasks.unknown', '(Title unavailable)');
+      if (locationTitle && featureLabel) return `${locationTitle} ${featureLabel}`;
+      return locationTitle ?? featureLabel ?? task.title ?? t('build.tasks.unknown', '(Title unavailable)');
     }
     if (stage === 'vectortile' || stage === 'vectorTiles') {
       const tileZ = metadata.tileZ as number | undefined;
@@ -231,7 +239,10 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
     return t('build.tasks.unknown', '(Title unavailable)');
   }, [t]);
 
-  const resolveStatusLabel = useCallback((statusValue?: string): string => {
+  const resolveStatusLabel = useCallback((statusValue?: string, skipped?: boolean): string => {
+    if (skipped) {
+      return t('build.taskStatus.skipped', 'Skipped');
+    }
     switch (statusValue) {
       case 'running':
         return t('build.taskStatus.running', 'Running');
@@ -248,7 +259,10 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
     }
   }, [t]);
 
-  const resolveStatusColor = useCallback((statusValue?: string) => {
+  const resolveStatusColor = useCallback((statusValue?: string, skipped?: boolean) => {
+    if (skipped) {
+      return 'warning';
+    }
     switch (statusValue) {
       case 'completed':
         return 'success';
@@ -281,8 +295,9 @@ const ShapeBuildProgressPanel: React.FC<ShapeBuildProgressPanelProps> = ({ data,
           <Stack spacing={1}>
             {stageTasks.map((task) => {
               const statusValue = task.status;
-              const statusLabelValue = resolveStatusLabel(statusValue);
-              const statusColor = resolveStatusColor(statusValue);
+              const isSkipped = isSkippedMessage(task.message);
+              const statusLabelValue = resolveStatusLabel(statusValue, isSkipped);
+              const statusColor = resolveStatusColor(statusValue, isSkipped);
               const taskTitle = resolveTaskTitle(task as TaskWithMetadata);
               const taskMetadata = (task as TaskWithMetadata).metadata ?? {};
               const downloadUrl = (taskMetadata.url ?? taskMetadata.endpoint) as string | undefined;

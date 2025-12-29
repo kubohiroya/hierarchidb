@@ -4,6 +4,7 @@ import type { VectorTileStageAdapter } from './VectorTileStageAdapter.js';
 import type { StageControls } from './StageControls.js';
 import { shapeDB } from '../../database/ShapeDB.js';
 import { getEphemeralShapeDB } from '../../database/EphemeralShapeDB.js';
+import { getShapeTileMetadataDB } from '../../database/ShapeTileMetadataDB.js';
 import { geojson } from 'flatgeobuf';
 import type { Feature } from 'geojson';
 import { BatchService } from '@hierarchidb/batch';
@@ -17,6 +18,99 @@ const MAX_VECTOR_TILE_INPUT_BYTES = 50 * 1024 * 1024;
 const isStageTileInput = (inputBufferId: string): boolean => inputBufferId.startsWith('stage-tile:');
 
 export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
+  private readonly featureCache = new Map<string, Array<{ feature: Feature; bbox: [number, number, number, number] }>>();
+
+  private parseStageTileInput(inputBufferId: string): { key: string; nodeId: string; z: number; x: number; y: number } | null {
+    if (!isStageTileInput(inputBufferId)) return null;
+    const key = inputBufferId.slice('stage-tile:'.length);
+    const match = key.match(/^input:(.+)-(\d+)-(\d+)-(\d+)$/) ?? key.match(/^(.+)-(\d+)-(\d+)-(\d+)$/);
+    if (!match) return null;
+    const [, nodeId, z, x, y] = match;
+    return {
+      key,
+      nodeId,
+      z: Number(z),
+      x: Number(x),
+      y: Number(y),
+    };
+  }
+
+  private updateBounds(coords: unknown, bounds: { minX: number; minY: number; maxX: number; maxY: number }): void {
+    if (!Array.isArray(coords)) return;
+    if (coords.length >= 2 && typeof coords[0] === 'number' && typeof coords[1] === 'number') {
+      const x = coords[0];
+      const y = coords[1];
+      if (Number.isFinite(x) && Number.isFinite(y)) {
+        bounds.minX = Math.min(bounds.minX, x);
+        bounds.minY = Math.min(bounds.minY, y);
+        bounds.maxX = Math.max(bounds.maxX, x);
+        bounds.maxY = Math.max(bounds.maxY, y);
+      }
+      return;
+    }
+    for (const child of coords) {
+      this.updateBounds(child, bounds);
+    }
+  }
+
+  private computeBBox(geometry?: Feature['geometry'] | null): [number, number, number, number] | null {
+    if (!geometry) return null;
+    if (geometry.type === 'GeometryCollection') {
+      const merged = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
+      for (const child of geometry.geometries ?? []) {
+        const childBox = this.computeBBox(child);
+        if (!childBox) continue;
+        merged.minX = Math.min(merged.minX, childBox[0]);
+        merged.minY = Math.min(merged.minY, childBox[1]);
+        merged.maxX = Math.max(merged.maxX, childBox[2]);
+        merged.maxY = Math.max(merged.maxY, childBox[3]);
+      }
+      if (!Number.isFinite(merged.minX)) return null;
+      return [merged.minX, merged.minY, merged.maxX, merged.maxY];
+    }
+    const bounds = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
+    this.updateBounds(geometry.coordinates, bounds);
+    if (!Number.isFinite(bounds.minX)) return null;
+    return [bounds.minX, bounds.minY, bounds.maxX, bounds.maxY];
+  }
+
+  private tileToBBox(z: number, x: number, y: number): [number, number, number, number] {
+    const n = 2 ** z;
+    const lon1 = (x / n) * 360 - 180;
+    const lon2 = ((x + 1) / n) * 360 - 180;
+    const lat1 = (180 / Math.PI) * Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / n)));
+    const lat2 = (180 / Math.PI) * Math.atan(Math.sinh(Math.PI * (1 - (2 * (y + 1)) / n)));
+    const minLon = Math.min(lon1, lon2);
+    const maxLon = Math.max(lon1, lon2);
+    const minLat = Math.min(lat1, lat2);
+    const maxLat = Math.max(lat1, lat2);
+    return [minLon, minLat, maxLon, maxLat];
+  }
+
+  private intersects(a: [number, number, number, number], b: [number, number, number, number]): boolean {
+    return a[0] <= b[2] && a[2] >= b[0] && a[1] <= b[3] && a[3] >= b[1];
+  }
+
+  private async loadSimplify2Features(nodeId: string): Promise<Array<{ feature: Feature; bbox: [number, number, number, number] }>> {
+    const cached = this.featureCache.get(nodeId);
+    if (cached) return cached;
+    const db = getEphemeralShapeDB();
+    const buffers = await db.simplifiedBuffers.where({ nodeId, stage: 'simplify2' }).toArray();
+    const result: Array<{ feature: Feature; bbox: [number, number, number, number] }> = [];
+    for (const row of buffers) {
+      const decoded = await this.decodeGeoJson(row.data);
+      if (!decoded || typeof decoded !== 'object') continue;
+      const features = (decoded as { features?: Feature[] }).features ?? [];
+      for (const feature of features) {
+        if (!feature) continue;
+        const bbox = this.computeBBox(feature.geometry);
+        if (!bbox) continue;
+        result.push({ feature, bbox });
+      }
+    }
+    this.featureCache.set(nodeId, result);
+    return result;
+  }
   private async decodeGeoJson(buffer: ArrayBuffer): Promise<unknown> {
     const decoded = geojson.deserialize(new Uint8Array(buffer));
     if (decoded && typeof (decoded as AsyncIterable<unknown>)[Symbol.asyncIterator] === 'function') {
@@ -63,6 +157,10 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     return `${gb.toFixed(2)} GB`;
   }
 
+  private formatTileId(z: number, x: number, y: number): string {
+    return `z${z}/${x}/${y}`;
+  }
+
   async process(tasks: VectorTileTask[], onProgress: (p: ProgressInfo) => void, controls?: StageControls) {
     const getSignal = controls?.getSignal;
     const shouldAbort = () => Boolean(getSignal?.()?.aborted);
@@ -74,6 +172,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     let nextClientIndex = 0;
     let completed = 0;
     let failed = 0;
+    let skipped = 0;
     const metadataReplaceRef = { value: true };
     const tasksByInput = new Map<string, VectorTileTask[]>();
     for (const task of tasks) {
@@ -114,9 +213,156 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
               const inputBytes = await this.resolveInputByteLength(inputBufferId);
               if (typeof inputBytes === 'number' && inputBytes > MAX_VECTOR_TILE_INPUT_BYTES) {
                 const message = `Vector tile input too large (${this.formatBytes(inputBytes)} > ${this.formatBytes(MAX_VECTOR_TILE_INPUT_BYTES)}).`;
-                await controls?.requestPause?.(message);
-                return { processed: completed, failed };
+                console.error('[VectorTile] Input size exceeds limit', {
+                  inputBufferId,
+                  inputBytes,
+                  limitBytes: MAX_VECTOR_TILE_INPUT_BYTES,
+                });
+                for (const task of inputTasks) {
+                  failed += 1;
+                  if (task.taskId) {
+                    await shapeDB.updateBatchTask(task.taskId, {
+                      status: 'failed',
+                      completedAt: Date.now(),
+                      progress: 100,
+                      message,
+                      errorMessage: message,
+                    });
+                  }
+                  onProgress({
+                    total: tasks.length,
+                    completed,
+                    failed,
+                    skipped,
+                    percentage: tasks.length > 0 ? ((completed + failed + skipped) / tasks.length) * 100 : 0,
+                    currentStage: 'vectortile',
+                    currentTask: task.taskId,
+                  });
+                }
+                finished = true;
+                continue;
               }
+            }
+            if (isStageTileInput(inputBufferId)) {
+              const parsed = this.parseStageTileInput(inputBufferId);
+              if (!parsed) {
+                throw new Error(`Invalid stage tile input: ${inputBufferId}`);
+              }
+              const features = await this.loadSimplify2Features(parsed.nodeId);
+              const tileBBox = this.tileToBBox(parsed.z, parsed.x, parsed.y);
+              const tileFeatures = features
+                .filter((entry) => this.intersects(entry.bbox, tileBBox))
+                .map((entry) => entry.feature)
+                .filter(Boolean);
+              if (tileFeatures.length === 0) {
+                const skipMessage = `Skipped: no features intersect tile ${this.formatTileId(parsed.z, parsed.x, parsed.y)}.`;
+                console.warn('[VectorTile] Skipping empty tile input', {
+                  inputBufferId,
+                  tileId: this.formatTileId(parsed.z, parsed.x, parsed.y),
+                });
+                for (const task of inputTasks) {
+                  skipped += 1;
+                  if (task.taskId) {
+                    await shapeDB.updateBatchTask(task.taskId, {
+                      status: 'completed',
+                      completedAt: Date.now(),
+                      progress: 100,
+                      message: skipMessage,
+                    });
+                  }
+                  onProgress({
+                    total: tasks.length,
+                    completed,
+                    failed,
+                    skipped,
+                    percentage: tasks.length > 0 ? ((completed + failed + skipped) / tasks.length) * 100 : 0,
+                    currentStage: 'vectortile',
+                    currentTask: task.taskId,
+                  });
+                }
+                finished = true;
+                continue;
+              }
+              let json: string;
+              try {
+                json = JSON.stringify({ type: 'FeatureCollection', features: tileFeatures });
+              } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : 'Tile input serialization failed';
+                const detailMessage = `Vector tile input serialization failed for ${this.formatTileId(parsed.z, parsed.x, parsed.y)}: ${errorMessage}`;
+                console.error('[VectorTile] Tile input serialization failed', {
+                  inputBufferId,
+                  tileId: this.formatTileId(parsed.z, parsed.x, parsed.y),
+                  error,
+                });
+                for (const task of inputTasks) {
+                  failed += 1;
+                  if (task.taskId) {
+                    await shapeDB.updateBatchTask(task.taskId, {
+                      status: 'failed',
+                      completedAt: Date.now(),
+                      progress: 100,
+                      message: detailMessage,
+                      errorMessage,
+                    });
+                  }
+                  onProgress({
+                    total: tasks.length,
+                    completed,
+                    failed,
+                    skipped,
+                    percentage: tasks.length > 0 ? ((completed + failed + skipped) / tasks.length) * 100 : 0,
+                    currentStage: 'vectortile',
+                    currentTask: task.taskId,
+                  });
+                }
+                finished = true;
+                continue;
+              }
+              const buffer = new TextEncoder().encode(json).buffer;
+              if (buffer.byteLength > MAX_VECTOR_TILE_INPUT_BYTES) {
+                const detailMessage = `Vector tile input too large for ${this.formatTileId(parsed.z, parsed.x, parsed.y)} (${this.formatBytes(buffer.byteLength)} > ${this.formatBytes(MAX_VECTOR_TILE_INPUT_BYTES)}).`;
+                console.error('[VectorTile] Tile input exceeds size limit', {
+                  inputBufferId,
+                  tileId: this.formatTileId(parsed.z, parsed.x, parsed.y),
+                  sizeBytes: buffer.byteLength,
+                  limitBytes: MAX_VECTOR_TILE_INPUT_BYTES,
+                });
+                for (const task of inputTasks) {
+                  failed += 1;
+                  if (task.taskId) {
+                    await shapeDB.updateBatchTask(task.taskId, {
+                      status: 'failed',
+                      completedAt: Date.now(),
+                      progress: 100,
+                      message: detailMessage,
+                      errorMessage: detailMessage,
+                    });
+                  }
+                  onProgress({
+                    total: tasks.length,
+                    completed,
+                    failed,
+                    skipped,
+                    percentage: tasks.length > 0 ? ((completed + failed + skipped) / tasks.length) * 100 : 0,
+                    currentStage: 'vectortile',
+                    currentTask: task.taskId,
+                  });
+                }
+                finished = true;
+                continue;
+              }
+              const tileDb = await getShapeTileMetadataDB();
+              await tileDb.tiles.put({
+                key: parsed.key,
+                nodeId: parsed.key.startsWith('input:') ? `input:${parsed.nodeId}` : parsed.nodeId,
+                z: parsed.z,
+                x: parsed.x,
+                y: parsed.y,
+                data: buffer,
+                size: buffer.byteLength,
+                contentType: 'application/json',
+                timestamp: Date.now(),
+              });
             }
             await Promise.all(inputTasks.map(async (task) => {
               if (!task.taskId) return;
@@ -203,8 +449,8 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                 total: tasks.length,
                 completed,
                 failed,
-                skipped: 0,
-                percentage: (completed / tasks.length) * 100,
+                skipped,
+                percentage: tasks.length > 0 ? ((completed + failed + skipped) / tasks.length) * 100 : 0,
                 currentStage: 'vectortile',
                 currentTask: task.taskId,
               });
@@ -245,8 +491,8 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
                 total: tasks.length,
                 completed,
                 failed,
-                skipped: 0,
-                percentage: tasks.length > 0 ? (completed / tasks.length) * 100 : 0,
+                skipped,
+                percentage: tasks.length > 0 ? ((completed + failed + skipped) / tasks.length) * 100 : 0,
                 currentStage: 'vectortile',
                 currentTask: task.taskId,
               });

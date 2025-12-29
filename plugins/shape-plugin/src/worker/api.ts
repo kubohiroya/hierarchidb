@@ -251,23 +251,6 @@ const mapProgressToStatus = (progress: ProgressInfo): BatchTaskStatus => {
   return 'running';
 };
 
-const mapTaskStatusToStage = (status?: BatchTask['status']): BatchTask['stage'] => {
-  switch (status) {
-    case 'waiting':
-      return 'wait';
-    case 'running':
-      return 'process';
-    case 'completed':
-      return 'success';
-    case 'failed':
-      return 'error';
-    case 'cancelled':
-      return 'cancel';
-    default:
-      return undefined;
-  }
-};
-
 const buildTaskTitle = (task: BatchTaskRecord): string | undefined => {
   const input = task.inputData ?? {};
   const getNumber = (value: unknown): number | undefined =>
@@ -306,7 +289,7 @@ const buildTaskTitle = (task: BatchTaskRecord): string | undefined => {
 const mapTaskRecordToBatchTask = (task: BatchTaskRecord): BatchTask & { title?: string } => ({
   taskId: task.taskId,
   taskType: task.taskType,
-  stage: mapTaskStatusToStage(task.status),
+  stage: task.taskType,
   nodeId: task.nodeId,
   status: task.status,
   index: task.index,

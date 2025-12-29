@@ -47,6 +47,13 @@ export interface PaneProgress {
   taskCount?: number;
   /** Completed task count */
   completedCount?: number;
+  /** Task summary counts for custom header rendering */
+  summary?: {
+    total: number;
+    success: number;
+    error: number;
+    skip: number;
+  };
   /** Custom status text */
   status?: string;
 }

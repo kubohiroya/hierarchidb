@@ -42,16 +42,19 @@ export const SimplificationPanel: React.FC<Props> = ({
         </Typography>
         <Box sx={{ px: 2 }}>
           <Slider
-            value={tolerance ?? 0.01}
+            value={tolerance ?? 10}
             onChange={(_, value) => {
               onToleranceChange(value as number);
             }}
-            min={0.001}
-            max={0.1}
-            step={0.001}
+            min={1}
+            max={20}
+            step={0.5}
             marks={[
-              { value: 0.001, label: '0.001' },
-              { value: 0.1, label: '0.1' },
+              { value: 1, label: '1' },
+              { value: 5, label: '5' },
+              { value: 10, label: '10' },
+              { value: 15, label: '15' },
+              { value: 20, label: '20' },
             ]}
             valueLabelDisplay="auto"
             track="inverted"
