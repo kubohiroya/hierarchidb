@@ -23,7 +23,13 @@ export const ShapeBuildTaskItem: React.FC<Props> = ({
       <Typography variant="caption" sx={{ flex: 1 }}>
         {title}
       </Typography>
-      <Chip label={statusLabel} color={statusColor} size="small" variant="outlined" />
+      <Chip
+        label={statusLabel}
+        color={statusColor}
+        size="small"
+        variant="outlined"
+        sx={{ transform: 'translateY(8px)' }}
+      />
     </Stack>
     {message ? (
       <Typography variant="caption" color="text.secondary">

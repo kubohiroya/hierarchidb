@@ -74,6 +74,9 @@
   - progress: 2025-12-31 07:46 JST extract1/extract2 のステージ名を simplify1/simplify2 にマッピングし、タスク一覧を表示可能に修正。
   - progress: 2025-12-31 07:55 JST simplify1/simplify2 を extract1/extract2 に統一し、UIのステージID/ラベルを更新。
   - progress: 2025-12-31 08:02 JST useBuildStages の import をローカル参照へ戻し、Vite の解決エラーを解消。
+  - progress: 2025-12-31 08:06 JST LRUSplitView のタスク一覧でステータス Chip を 4px 下げる調整を追加。
+  - progress: 2025-12-31 08:10 JST LRUSplitView のタスク一覧でステータス Chip の下げ量を 8px に拡大。
+  - progress: 2025-12-31 08:14 JST Chip の位置調整を transform へ切替し、横方向のズレを防止。
 
 2016) shape-plugin: Extract1 ステージの完了ログとスキップ理由を出力（P1）
 - ブランチ: `fix/shape-plugin/extract1-logging-summary`（sandbox 制約で branch 作成不可なら main 上で作業）
