@@ -4,7 +4,7 @@ import React, { useCallback } from 'react';
 import { i18n } from '@hierarchidb/ui-i18n';
 import type { StylerConfig, StylerStepData } from '../../common/types/StylerEntity.js';
 import { StylerConfigDefault } from '../../common/types/StylerEntity.js';
-import { StylerConfigPanel } from './StylerConfigPanel.tsx';
+import { StylerAlgorithmPanel } from './StylerAlgorithmPanel.tsx';
 import type { StylerStepProps } from './StylerStepProps.tsx';
 
 const getStylerT = () =>
@@ -12,7 +12,7 @@ const getStylerT = () =>
     ? i18n.getFixedT(i18n.language ?? 'en', 'styler-plugin')
     : (i18n.t.bind(i18n) as typeof i18n.t);
 
-export const StylerConfigStep: React.FC<StylerStepProps> = ({
+export const StylerAlgorithmStep: React.FC<StylerStepProps> = ({
   data,
   onChange,
   onValidate,
@@ -48,7 +48,7 @@ export const StylerConfigStep: React.FC<StylerStepProps> = ({
 
   return (
     <Box sx={{ width: '100%', p: 2 }}>
-      <StylerConfigPanel
+      <StylerAlgorithmPanel
         config={currentConfig}
         onChange={handleConfigChange}
         values={sampleValues}
@@ -59,7 +59,7 @@ export const StylerConfigStep: React.FC<StylerStepProps> = ({
   );
 };
 
-const StylerConfigStepComponent = wrapDialogStepComponent(StylerConfigStep);
+const StylerAlgorithmStepComponent = wrapDialogStepComponent(StylerAlgorithmStep);
 
 export const StylerConfigStepDefinition = {
   stepNumber: 5,
@@ -67,7 +67,7 @@ export const StylerConfigStepDefinition = {
     const t = getStylerT();
     return t('step5.title', 'Style Algorithm');
   },
-  component: StylerConfigStepComponent,
+  component: StylerAlgorithmStepComponent,
   validation: {
     validate: async (data: StylerStepData) => {
       const config = data?.stylerConfig ?? StylerConfigDefault;

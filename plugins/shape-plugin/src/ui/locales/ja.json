@@ -72,9 +72,9 @@
       "omissionHelp": "有効化の場合には、抽出・量子化で形状が空になる場合に、形状が省略されることがあります。",
       "extractionModeTitle": "抽出方式",
       "extractionModeHelp": "タイル前処理で使用する抽出方式を選択します。",
-      "extractionModeOff": "フィルタリングをオフにする",
-      "extractionModeTopo": "TopoJSON",
-      "extractionModeGeo": "GeoJSON"
+      "extractionModeOff": "パススルー",
+      "extractionModeTopo": "TopoJSONでフィルタリング",
+      "extractionModeGeo": "GeoJSONでフィルタリング"
     },
     "filter": {
       "title": "抽出設定",
@@ -83,7 +83,7 @@
       "workersStage2": "二次抽出（タイル前処理）のワーカー数",
       "workersStage2Help": "並列度を増やすと高速化しますがブラウザがメモリ不足で不安定化することがあります。",
       "method": "フィルタリング方法",
-      "methodNone": "フィルタリングをオフにする",
+      "methodNone": "パススルー",
       "methodBBox": "バウンディングボックスのみ (高速)",
       "methodPolygon": "ポリゴンのみ",
       "methodHybrid": "ハイブリッド (推奨)",

@@ -50,18 +50,89 @@
     },
     "targetProperty": {
       "label": "対象プロパティ",
-      "help": "マッピング先の MapLibre ペイントプロパティを選択します。"
+      "help": "マッピング先の MapLibre ペイントプロパティを選択します。",
+      "groups": {
+        "fill": "塗り",
+        "line": "線",
+        "circle": "円",
+        "text": "テキスト"
+      },
+      "options": {
+        "fillColor": "塗りの色",
+        "fillOpacity": "塗りの透明度",
+        "lineColor": "線の色",
+        "lineWidth": "線の太さ",
+        "lineOpacity": "線の透明度",
+        "circleColor": "円の色",
+        "circleRadius": "円の半径",
+        "circleOpacity": "円の透明度",
+        "textColor": "文字の色",
+        "textHaloColor": "文字の縁取り色",
+        "textHaloWidth": "文字の縁取り幅"
+      },
+      "descriptions": {
+        "fillColor": "エリアの塗り色をデータ値に応じて変化させます。",
+        "fillOpacity": "エリアの透明度を数値で調整します。",
+        "lineColor": "線やルートの色をデータ値で変化させます。",
+        "lineWidth": "線の太さを数値で調整します。",
+        "lineOpacity": "線の透明度を数値で調整します。",
+        "circleColor": "ポイントの色をデータ値で変化させます。",
+        "circleRadius": "ポイントの半径を数値で調整します。",
+        "circleOpacity": "ポイントの透明度を数値で調整します。",
+        "textColor": "ラベルの文字色をデータ値で変化させます。",
+        "textHaloColor": "文字の縁取り色を変更して視認性を高めます。",
+        "textHaloWidth": "文字の縁取りの太さを数値で調整します。"
+      }
     },
     "validation": {
       "required": "スタイル種別・値の列・対象プロパティを選択してください。"
+    }
+  },
+  "step4": {
+    "numericRange": {
+      "label": "数値レンジ",
+      "min": "最小値",
+      "max": "最大値",
+      "help": "数値ターゲットの出力範囲を設定します。既定は 0.0〜10.0（中央値 5.0）です。"
     }
   },
   "steps": {
     "dataSource": "データソース",
     "filtering": "フィルタリング",
     "styleSettings": "スタイル設定",
-    "styleAlgorithm": "スタイルアルゴリズム",
+    "target": "適用対象",
+    "styleAlgorithm": "アルゴリズム",
     "preview": "プレビュー"
+  },
+  "step5": {
+    "target": {
+      "sections": {
+        "area": "国・自治体の描画",
+        "point": "地点の描画",
+        "route": "経路の描画"
+      },
+      "options": {
+        "fillColor": "塗りの色 🎨",
+        "fillOpacity": "塗りの透明度 🪄",
+        "lineColor": "線の色 🎨",
+        "lineOpacity": "線の透明度 🪄",
+        "lineWidth": "線の幅 📐",
+        "circleColor": "地点の色 🎨",
+        "circleRadius": "地点のサイズ 📐",
+        "routeLineColor": "線の色 🎨",
+        "routeLineOpacity": "線の透明度 🪄",
+        "routeLineWidth": "線の太さ 📐"
+      },
+      "numericRange": {
+        "label": "数値の範囲",
+        "min": "最小値",
+        "max": "最大値"
+      },
+      "help": "対象を1つ選択してください。数値の場合は範囲を指定します。",
+      "validation": {
+        "required": "対象を選択してください。"
+      }
+    }
   },
   "filtering": {
     "processing": "表データを処理しています…"

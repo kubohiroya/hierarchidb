@@ -72,7 +72,7 @@
       "omissionHelp": "When enabled, extraction/quantization can remove empty geometries.",
       "extractionModeTitle": "Extraction Mode",
       "extractionModeHelp": "Choose how geometry is extracted during tile preprocessing.",
-      "extractionModeOff": "Off",
+      "extractionModeOff": "Pass-through",
       "extractionModeTopo": "TopoJSON",
       "extractionModeGeo": "GeoJSON"
     },
@@ -83,7 +83,7 @@
       "workersStage2": "Worker Count for Secondary Extraction (Tile Preprocessing)",
       "workersStage2Help": "Higher concurrency can speed up processing but may exhaust browser memory.",
       "method": "Filtering Method",
-      "methodNone": "Filtering Off",
+      "methodNone": "Pass-through",
       "methodBBox": "Bounding Box Only (Fastest)",
       "methodPolygon": "Polygon Only",
       "methodHybrid": "Hybrid (Recommended)",

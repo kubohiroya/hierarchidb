@@ -35,38 +35,31 @@ import PaletteIcon from '@mui/icons-material/Palette';
 import ContrastIcon from '@mui/icons-material/Contrast';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
-import ViewColumnIcon from '@mui/icons-material/ViewColumn';
-import { StyleMappingTargetPanel } from './StyleMappingTargetPanel.tsx';
 import { generateColorGradient } from '../../common/utils/colorUtils.ts';
 import { ValueHistogram } from '@hierarchidb/spreadsheet-plugin/ui';
 import { valueToColor } from '../../common/utils/colorUtils.ts';
 import { calculateStatistics } from '../../common/utils/dataAnalysis.ts';
 import { GradientSwatch } from './GradientSwatch.tsx';
-import { Gradient as GradientIcon, Insights as InsightsIcon, ShowChart as ShowChartIcon } from '@mui/icons-material';
+import { Insights as InsightsIcon, ShowChart as ShowChartIcon } from '@mui/icons-material';
 
-export const StylerMappingStep: React.FC<
+export const StylerAlgorithmStep2: React.FC<
   PluginStepProps<StylerStepData> & { showTargetPanel?: boolean }
 > = ({
-  data,
-  onChange,
-  setValid,
-  setError,
-  dialogRef,
-  showTargetPanel = true,
-}) => {
+       data,
+       onChange,
+       setValid,
+       setError,
+     }) => {
   const { t } = useTranslation('styler-plugin');
   const {
-    menuContainer,
+//menuContainer,
     pluginData,
-    settings,
-    handleStyleTypeChange,
-    handleTargetPropertyChange,
   } = useStylerMappingState({
     data,
     onChange,
     setValid,
     setError,
-    dialogRef,
+    //dialogRef,
     styleTypeOptions: STYLE_TYPE_OPTIONS,
   });
 
@@ -83,11 +76,10 @@ export const StylerMappingStep: React.FC<
   }, [pluginData.stylerConfig]);
 
   const [localConfig, setLocalConfig] = useState<StylerConfig>(initialConfig);
-  const [binCount, setBinCount] = useState<number>(initialConfig.binCount ?? 256);
+  const [binCount, setBinCount] = useState<number>(256);
 
   useEffect(() => {
     setLocalConfig((prev) => ({ ...prev, ...initialConfig }));
-    setBinCount(initialConfig.binCount ?? 256);
   }, [initialConfig]);
 
   const applyConfigPatch = (patch: Partial<StylerConfig>) => {
@@ -136,8 +128,8 @@ export const StylerMappingStep: React.FC<
       max: histogramStats?.max ?? localConfig.max,
     };
     return ({
-      midpoint,
-    }: {
+              midpoint,
+            }: {
       midpoint: number;
     }) => valueToColor(midpoint, mapping, previewConfig, numericValues).color;
   }, [histogramStats?.max, histogramStats?.min, localConfig, numericValues, pluginData, valueColumn]);
@@ -156,14 +148,6 @@ export const StylerMappingStep: React.FC<
         quantile: t(
           'step5.algorithms.quantileDescription',
           'Creates classes with an equal number of features. Produces balanced visuals even for skewed data and is resilient to outliers.'
-        ),
-        jenks: t(
-          'step5.algorithms.jenksDescription',
-          'Finds natural breaks by minimizing variance within classes and maximizing it between classes. Offers meaningful groupings at a higher computational cost.'
-        ),
-        equal: t(
-          'step5.algorithms.equalDescription',
-          'Divides the value range into equal intervals. Suited for continuous, roughly linear distributions such as temperature or elevation, and is fast and easy to understand.'
         ),
       }) as Record<ColorAlgorithm, string>,
     [t]
@@ -286,27 +270,6 @@ export const StylerMappingStep: React.FC<
           <LinearProgress />
         </Stack>
       )}
-      {showTargetPanel && (
-        <Accordion defaultExpanded>
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <ViewColumnIcon fontSize="small" />
-              <Typography variant="subtitle1">
-                {t('styleSettings.accordion.targetProperty', 'Target Property')}
-              </Typography>
-            </Stack>
-          </AccordionSummary>
-          <AccordionDetails>
-            <StyleMappingTargetPanel
-              settings={settings}
-              handleStyleTypeChange={handleStyleTypeChange}
-              pluginData={pluginData}
-              menuContainer={menuContainer}
-              handleTargetPropertyChange={handleTargetPropertyChange}
-            />
-          </AccordionDetails>
-        </Accordion>
-      )}
 
       <Accordion defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -344,19 +307,15 @@ export const StylerMappingStep: React.FC<
               }
               size="small"
             >
-                <ToggleButton value="linear">
-                  <ShowChartIcon fontSize="small" sx={{ mr: 1 }} />
-                  {t('styleSettings.algorithms.linear', 'Linear')}</ToggleButton>
-                <ToggleButton value="log">
-                  <BarChartIcon fontSize="small" sx={{ mr: 1 }} />
-                  {t('styleSettings.algorithms.log', 'Logarithmic')}</ToggleButton>
-                <ToggleButton value="quantile">
-                  <InsightsIcon fontSize="small" sx={{ mr: 1 }} />
-                  {t('styleSettings.algorithms.quantile', 'Quantile')}</ToggleButton>
-                <ToggleButton value="jenks">
-                  <GradientIcon fontSize="small" sx={{ mr: 1 }} />
-                  {t('styleSettings.algorithms.jenks', 'Jenks Natural Breaks')}</ToggleButton>
-                <ToggleButton value="equal">{t('styleSettings.algorithms.equal', 'Equal Interval')}</ToggleButton>
+              <ToggleButton value="linear">
+                <ShowChartIcon fontSize="small" sx={{ mr: 1 }} />
+                {t('styleSettings.algorithms.linear', 'Linear')}</ToggleButton>
+              <ToggleButton value="log">
+                <BarChartIcon fontSize="small" sx={{ mr: 1 }} />
+                {t('styleSettings.algorithms.log', 'Logarithmic')}</ToggleButton>
+              <ToggleButton value="quantile">
+                <InsightsIcon fontSize="small" sx={{ mr: 1 }} />
+                {t('styleSettings.algorithms.quantile', 'Quantile')}</ToggleButton>
             </ToggleButtonGroup>
 
             <Typography variant="body2" sx={{ mt: 1 }}>
@@ -370,6 +329,15 @@ export const StylerMappingStep: React.FC<
                 <Typography variant="subtitle2">
                   {t('styleSettings.algorithm.colorScale', 'Color scale')}
                 </Typography>
+
+                <RadioGroup
+                  row
+                  value={localConfig.invertColors ? 'inverted' : 'normal'}
+                  onChange={handleInvertColorsChange}
+                >
+                  <FormControlLabel control={<Radio />} value="normal" label={t('step5.colorRange.normal', 'normal')} />
+                  <FormControlLabel control={<Radio />} value="inverted" label={t('step5.colorRange.invert', 'inverted')} />
+                </RadioGroup>
 
                 <ToggleButtonGroup
                   exclusive
@@ -402,18 +370,7 @@ export const StylerMappingStep: React.FC<
                 </ToggleButtonGroup>
                 {customHSBControls}
 
-                <RadioGroup
-                  row
-                  value={localConfig.invertColors ? 'inverted' : 'normal'}
-                  onChange={handleInvertColorsChange}
-                  sx={{paddingLeft: 6}}
-                >
-                  <FormControlLabel control={<Radio />} value="normal" label={t('step5.colorRange.normal', 'normal')} />
-                  <FormControlLabel control={<Radio />} value="inverted" label={t('step5.colorRange.invert', 'inverted')} />
-                </RadioGroup>
-
                 <Box sx={{ paddingLeft: 6, paddingRight: 2, height: 32, borderRadius: 25, border: (theme) => `1px solid ${theme.palette.divider}` }}>
-
                   <Box
                     sx={{
                       height: '100%',
@@ -424,9 +381,7 @@ export const StylerMappingStep: React.FC<
                 </Box>
 
               </Stack>
-            ) : (
-              numericRangeControls
-            )}
+            ) : null}
           </Stack>
           <Stack spacing={2}>
             <Box sx={{paddingLeft: 6, paddingRight: 2}} >
@@ -444,11 +399,7 @@ export const StylerMappingStep: React.FC<
                   { value: 128, label: '128' },
                   { value: 256, label: '256' },
                 ]}
-                onChange={(_e, value) => {
-                  const next = value as number;
-                  setBinCount(next);
-                  applyConfigPatch({ binCount: next });
-                }}
+                onChange={(_e, value) => setBinCount(value as number)}
               />
             </Box>
             <Box sx={{ width: '100%', height: 260 }}>

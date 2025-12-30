@@ -66,9 +66,14 @@ export interface StylerMapping {
   valueColumn?: string;
   styleType?: StyleType;
   targetProperty: MapLibreStyleProperty | null;
+  targetOptionId?: string;
   featureIdProperty?: string;
   valueType?: StylerValueType;
   mappingMode?: StylerMappingMode;
+  targetNumericValueRange?: {
+    min?: number;
+    max?: number;
+  };
 }
 
 export interface StylerConfig {

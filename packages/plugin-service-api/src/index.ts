@@ -17,6 +17,7 @@ export * from './types/styleTypes.js';
 export * from './types/StyleQueryAPI.js';
 export * from './types/StyleMutationAPI.js';
 export * from './types/shapeTypes.js';
+export * from './types/shapeBatchTypes.js';
 export * from './types/ShapeQueryAPI.js';
 export * from './types/ShapeMutationAPI.js';
 export * from './types/ideGsmTypes.js';

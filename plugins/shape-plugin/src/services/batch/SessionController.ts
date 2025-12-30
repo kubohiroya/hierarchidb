@@ -20,26 +20,22 @@ import { RuntimeWorkerVectorTileAdapter } from './adapters/RuntimeWorkerVectorTi
 import type { BatchProcessConfig } from './types.js';
 import type { DataSourceName, DownloadTaskPayload, ProgressInfo, ProcessingStage } from '../../common/types/index.js';
 import { BatchTaskStage } from '../../common/types/index.js';
-import type { DownloadTask } from '../../common/types/index.js';
 import { isShapePreviewMetadataEnabled } from '../../common/config/previewFlags.js';
-import {
-  shapeDB,
-  type BatchTaskRecord,
-  type Extract1TaskInputData,
-  type Extract2TaskInputData,
-  type VectorTileTaskInputData,
-  type ShapeBatchTaskInputData,
-  type ShapeBatchTaskOutputData,
-  type VectorTileRecord,
-} from '../database/ShapeDB.js';
-import { getEphemeralShapeDB } from '../database/EphemeralShapeDB.js';
-import { getShapeTileMetadataDB, type ShapeSourceMetadataRow } from '../database/VectorTileDB.ts';
+import type {
+  ShapeExtract1TaskInputData,
+  ShapeExtract2TaskInputData,
+  ShapeFeatureMetadataRow,
+  ShapeSourceMetadataRow,
+  ShapeVectorTileTaskInputData,
+} from '@hierarchidb/plugin-service-api';
+import { createShapeBatchApiClient } from './ShapeBatchApiClient.js';
+import { SessionTaskRegistry } from './SessionTaskRegistry.js';
+import { SessionArtifactStore } from './SessionArtifactStore.js';
 import type { DownloadStageOutput } from './strategies/DownloadStageStrategy.js';
 import { resolveDownloadStageStrategy } from './strategies/resolveDownloadStageStrategy.js';
 import { geojson as geojsonApi } from 'flatgeobuf';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import { bbox as turfBbox, area as turfArea } from '@turf/turf';
-import { TilesDB } from '@hierarchidb/gis-sdk';
 import { VectorTile } from '@mapbox/vector-tile';
 import Pbf from 'pbf';
 import { HDB_ORIGIN_KEY } from './utils/featureIds.js';
@@ -117,6 +113,8 @@ export class SessionController {
   };
   private originMetadataByKey = new Map<string, OriginMetadata>();
   private originMetadataByBuffer = new Map<string, OriginMetadata>();
+  private readonly taskRegistry: SessionTaskRegistry;
+  private readonly artifactStore: SessionArtifactStore;
 
   constructor(
     nodeId: NodeId,
@@ -128,6 +126,9 @@ export class SessionController {
     this.downloadTaskPayloads = downloadTaskPayloads;
     this.options = options;
     this.config = config;
+    const { query, mutation } = createShapeBatchApiClient();
+    this.taskRegistry = new SessionTaskRegistry(nodeId, query, mutation);
+    this.artifactStore = new SessionArtifactStore(nodeId, query, mutation);
   }
 
   private resolveZoomLevels(): number[] {
@@ -164,40 +165,8 @@ export class SessionController {
     return null;
   }
 
-  private async calculateTileHash(data: Uint8Array): Promise<string> {
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data as ArrayBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-  }
-
-  private async syncVectorTilesToShapeDb(): Promise<void> {
-    const nodeKey = String(this.nodeId);
-    const tilesDb = await TilesDB.getSingleton();
-    const tiles = await tilesDb.tiles.where('nodeId').equals(nodeKey).toArray();
-    if (tiles.length === 0) return;
-    const records = await Promise.all(tiles
-      .filter((row) => row.contentType === 'application/vnd.mapbox-vector-tile' && row.data)
-      .map(async (row) => {
-        const data = row.data instanceof Uint8Array ? row.data : new Uint8Array(row.data);
-        const contentHash = await this.calculateTileHash(data);
-        return {
-          tileId: `${nodeKey}-${row.z}-${row.x}-${row.y}`,
-          nodeId: this.nodeId,
-          z: row.z,
-          x: row.x,
-          y: row.y,
-          data_Uint8Array: data,
-          size: row.size,
-          features: 0,
-          layers: [],
-          generatedAt: row.timestamp,
-          contentHash,
-          version: 1,
-        } satisfies VectorTileRecord;
-      }));
-    if (records.length > 0) {
-      await shapeDB.vectorTiles.bulkPut(records);
-    }
+  private async syncVectorTilesToShapeStore(): Promise<void> {
+    await this.artifactStore.syncVectorTilesToShapeStore();
   }
 
   private isFeatureCollection(candidate: unknown): candidate is FeatureCollection {
@@ -298,10 +267,19 @@ export class SessionController {
   }
 
   private async expandOutputsForFeatureGroups(outputs: DownloadStageOutput[]): Promise<DownloadStageOutput[]> {
-    const db = getEphemeralShapeDB();
     const expanded: DownloadStageOutput[] = [];
+    const newBuffers: Array<{
+      id: string;
+      nodeId: NodeId;
+      data: ArrayBuffer;
+      featureCount: number;
+      bbox: [number, number, number, number];
+      downloadTime: number;
+      size: number;
+      timestamp: number;
+    }> = [];
     for (const output of outputs) {
-      const raw = await db.rawBuffers.get(output.inputBufferId);
+      const raw = await this.artifactStore.getRawBuffer(output.inputBufferId);
       if (!raw) {
         expanded.push(output);
         continue;
@@ -325,7 +303,7 @@ export class SessionController {
         const bufferId = `${output.inputBufferId}-feature-${index}`;
         const data = await this.encodeFeatureCollection(featureCollection);
         const bbox = turfBbox(featureCollection as unknown as FeatureCollection);
-        await db.rawBuffers.put({
+        newBuffers.push({
           id: bufferId,
           nodeId: raw.nodeId,
           data,
@@ -345,6 +323,9 @@ export class SessionController {
           featureCount: collection.features.length,
         });
       }
+    }
+    if (newBuffers.length > 0) {
+      await this.artifactStore.putRawBuffers(newBuffers);
     }
     return expanded;
   }
@@ -423,7 +404,7 @@ export class SessionController {
 
       let regressionRounds = 0;
       while (!this.isAborted && !this.isPaused) {
-        const retry = await this.getVectorTileRegressionRetry();
+        const retry = await this.taskRegistry.getVectorTileRegressionRetry();
         if (retry == null) break;
         regressionRounds += 1;
         if (regressionRounds > 2) {
@@ -523,10 +504,11 @@ export class SessionController {
         retryDelay: this.options.retryDelay,
       },
     });
-    const existingTaskIds = await this.assignDownloadTaskIndices(tasks);
-    await this.registerTasks('download', tasks, existingTaskIds, inputsByTaskId);
-    await this.markDownloadTasksCompletedWhenBuffersExist(tasks);
-    const { runnableTasks, completedCount, failedCount, total } = await this.resolveStageTasks('download', tasks);
+    const existingTaskIds = await this.taskRegistry.assignDownloadTaskIndices(tasks);
+    await this.taskRegistry.registerTasks('download', tasks, existingTaskIds, inputsByTaskId);
+    await this.taskRegistry.markDownloadTasksCompletedWhenBuffersExist(tasks);
+    const { runnableTasks, completedCount, failedCount, total } =
+      await this.taskRegistry.resolveStageTasks('download', tasks);
     const baseCompleted = Math.min(completedCount, total);
     const baseFailed = Math.min(failedCount, total - baseCompleted);
     const baseDone = Math.min(total, baseCompleted + baseFailed);
@@ -609,10 +591,9 @@ export class SessionController {
     if (isShapePreviewMetadataEnabled()) {
       const originEntries = this.indexOriginMetadata(expandedOutputs);
       await this.updateSourceMetadataBase(originEntries);
-      const db = getEphemeralShapeDB();
       const rawStatsByOrigin = new Map<string, GeometryStatsSummary>();
       for (const entry of originEntries) {
-        const raw = await db.rawBuffers.get(entry.inputBufferId);
+        const raw = await this.artifactStore.getRawBuffer(entry.inputBufferId);
         if (!raw) continue;
         const stats = await this.summarizeBufferStats(raw.data);
         const existing = rawStatsByOrigin.get(entry.originKey) ?? { vertexCount: 0, polygonCount: 0 };
@@ -663,7 +644,7 @@ export class SessionController {
       return;
     }
 
-    const inputsByTaskId = new Map<string, Extract1TaskInputData>();
+    const inputsByTaskId = new Map<string, ShapeExtract1TaskInputData>();
     for (const task of tasks) {
       const bufferId = task.inputBufferId ?? '';
       const origin = this.originMetadataByBuffer.get(bufferId);
@@ -688,8 +669,9 @@ export class SessionController {
         countryName: origin?.countryName,
       });
     }
-    await this.registerTasks('extract1', tasks, undefined, inputsByTaskId);
-    const { runnableTasks, completedCount, failedCount, total } = await this.resolveStageTasks('extract1', tasks);
+    await this.taskRegistry.registerTasks('extract1', tasks, undefined, inputsByTaskId);
+    const { runnableTasks, completedCount, failedCount, total } =
+      await this.taskRegistry.resolveStageTasks('extract1', tasks);
     const baseCompleted = Math.min(completedCount, total);
     const baseFailed = Math.min(failedCount, total - baseCompleted);
     const baseDone = Math.min(total, baseCompleted + baseFailed);
@@ -731,13 +713,12 @@ export class SessionController {
       `[Session ${this.nodeId}] Extract1 stage completed: ${baseCompleted + r.processed}/${total} successful`,
     );
     if (isShapePreviewMetadataEnabled()) {
-      const db = getEphemeralShapeDB();
       const statsByOrigin = new Map<string, GeometryStatsSummary>();
       for (const task of this.extract1Tasks) {
         const originKey = this.getOriginKeyFromInput(inputsByTaskId.get(task.taskId));
         if (!originKey) continue;
         const bufferId = `${this.nodeId}-extract1-${task.index ?? 0}`;
-        const buffer = await db.extractedBuffers.get(bufferId);
+        const buffer = await this.artifactStore.getExtractedBuffer(bufferId);
         if (!buffer) continue;
         const stats = await this.summarizeBufferStats(buffer.data);
         const existing = statsByOrigin.get(originKey) ?? { vertexCount: 0, polygonCount: 0 };
@@ -748,9 +729,9 @@ export class SessionController {
   }
 
   private buildExtract2TasksFromExtract1(
-    extract1InputsByTaskId: Map<string, Extract1TaskInputData>,
-  ): { tasks: Extract2Task[]; inputsByTaskId: Map<string, Extract2TaskInputData> } {
-    const inputsByTaskId = new Map<string, Extract2TaskInputData>();
+    extract1InputsByTaskId: Map<string, ShapeExtract1TaskInputData>,
+  ): { tasks: Extract2Task[]; inputsByTaskId: Map<string, ShapeExtract2TaskInputData> } {
+    const inputsByTaskId = new Map<string, ShapeExtract2TaskInputData>();
     const tasks: Extract2Task[] = this.extract1Tasks.map((task, index) => {
       const input = extract1InputsByTaskId.get(task.taskId);
       const featureId = input?.featureId ?? `${task.countryCode ?? 'UNK'}:ADM${task.adminLevel ?? 'X'}`;
@@ -795,23 +776,23 @@ export class SessionController {
     return { tasks, inputsByTaskId };
   }
 
-  private resolveTaskContinent(input?: Extract1TaskInputData): string | undefined {
+  private resolveTaskContinent(input?: ShapeExtract1TaskInputData): string | undefined {
     return input?.continent;
   }
 
-  private resolveTaskCountryName(input?: Extract1TaskInputData): string | undefined {
+  private resolveTaskCountryName(input?: ShapeExtract1TaskInputData): string | undefined {
     const name = input?.countryName;
     return typeof name === 'string' && name.trim() ? name.trim() : undefined;
   }
 
-  private resolveTaskCountryCode(task: Extract1Task, input?: Extract1TaskInputData): string | undefined {
+  private resolveTaskCountryCode(task: Extract1Task, input?: ShapeExtract1TaskInputData): string | undefined {
     const code = input?.countryCode ?? task.countryCode;
     return typeof code === 'string' && code.trim()
       ? code.trim().toUpperCase()
       : undefined;
   }
 
-  private resolveTaskAdminCode(input?: Extract1TaskInputData): string | undefined {
+  private resolveTaskAdminCode(input?: ShapeExtract1TaskInputData): string | undefined {
     const code = input?.adminCode ?? input?.featureGroupId;
     return typeof code === 'string' && code.trim() ? code.trim() : undefined;
   }
@@ -863,9 +844,8 @@ export class SessionController {
   }
 
   private async buildGroupedExtract2Tasks(
-    extract1InputsByTaskId: Map<string, Extract1TaskInputData>,
-  ): Promise<{ tasks: Extract2Task[]; inputsByTaskId: Map<string, Extract2TaskInputData> }> {
-    const db = getEphemeralShapeDB();
+    extract1InputsByTaskId: Map<string, ShapeExtract1TaskInputData>,
+  ): Promise<{ tasks: Extract2Task[]; inputsByTaskId: Map<string, ShapeExtract2TaskInputData> }> {
     const maxFeaturesPerGroup = 2000;
     type Candidate = {
       task: Extract1Task;
@@ -895,7 +875,7 @@ export class SessionController {
         continue;
       }
       const inputBufferId = `${this.nodeId}-extract1-${task.index ?? 0}`;
-      const buffer = await db.extractedBuffers.get(inputBufferId);
+      const buffer = await this.artifactStore.getExtractedBuffer(inputBufferId);
       if (!buffer) {
         console.warn(`[Session ${this.nodeId}] Extract1 buffer missing; skipping extract2 task`, {
           taskId: task.taskId,
@@ -967,7 +947,17 @@ export class SessionController {
     }
 
     const tasks: Extract2Task[] = [];
-    const inputsByTaskId = new Map<string, Extract2TaskInputData>();
+    const inputsByTaskId = new Map<string, ShapeExtract2TaskInputData>();
+    const newBuffers: Array<{
+      id: string;
+      nodeId: NodeId;
+      stage: 'extract1';
+      data: ArrayBuffer;
+      featureCount: number;
+      extractionRatio: number;
+      tolerance: number;
+      timestamp: number;
+    }> = [];
     for (let index = 0; index < finalGroups.length; index += 1) {
       const group = finalGroups[index];
       const groupFeatures = group?.items.flatMap((item) => item.features);
@@ -978,7 +968,7 @@ export class SessionController {
       };
       const groupBufferId = `${this.nodeId}-extract1-group-${index}`;
       const data = await this.encodeFeatureCollection(groupCollection);
-      await db.extractedBuffers.put({
+      newBuffers.push({
         id: groupBufferId,
         nodeId: this.nodeId,
         stage: 'extract1',
@@ -1024,6 +1014,9 @@ export class SessionController {
         countryName: primary.countryName,
       });
     }
+    if (newBuffers.length > 0) {
+      await this.artifactStore.putExtractedBuffers(newBuffers);
+    }
     return { tasks, inputsByTaskId };
   }
 
@@ -1037,7 +1030,7 @@ export class SessionController {
     const zoomLevels = this.resolveZoomLevels();
     const extractionMode = 'topojson';
     const shouldGroupByContinent = extractionMode === 'topojson' && zoomLevels.includes(0);
-    const extract1InputsByTaskId = await this.loadStageInputs<Extract1TaskInputData>('extract1');
+    const extract1InputsByTaskId = await this.taskRegistry.loadStageInputs<ShapeExtract1TaskInputData>('extract1');
     const extract2Build = shouldGroupByContinent
       ? await this.buildGroupedExtract2Tasks(extract1InputsByTaskId)
       : this.buildExtract2TasksFromExtract1(extract1InputsByTaskId);
@@ -1046,8 +1039,9 @@ export class SessionController {
       console.warn(`[Session ${this.nodeId}] No extract2 tasks to process`);
       return;
     }
-    await this.registerTasks('extract2', this.extract2Tasks, undefined, extract2Build.inputsByTaskId);
-    const { runnableTasks, completedCount, failedCount, total } = await this.resolveStageTasks('extract2', this.extract2Tasks);
+    await this.taskRegistry.registerTasks('extract2', this.extract2Tasks, undefined, extract2Build.inputsByTaskId);
+    const { runnableTasks, completedCount, failedCount, total } =
+      await this.taskRegistry.resolveStageTasks('extract2', this.extract2Tasks);
     const baseCompleted = Math.min(completedCount, total);
     const baseFailed = Math.min(failedCount, total - baseCompleted);
     const baseDone = Math.min(total, baseCompleted + baseFailed);
@@ -1085,11 +1079,8 @@ export class SessionController {
       getSignal: () => this.getStageAbortSignal('extract2'),
       maxConcurrent,
     });
-    const skipped = await shapeDB.batchTasks
-      .where('nodeId')
-      .equals(this.nodeId)
-      .and((task) => task.taskType === 'extract2' && isSkippedMessage(task.message))
-      .count();
+    const extract2Records = await this.taskRegistry.listStageRecords('extract2');
+    const skipped = extract2Records.filter((task) => isSkippedMessage(task.message)).length;
     const completed = Math.min(total, baseCompleted + r.processed);
     const failed = Math.min(total - completed, baseFailed + r.failed);
     const done = Math.min(total, completed + failed + skipped);
@@ -1106,14 +1097,13 @@ export class SessionController {
       `[Session ${this.nodeId}] Extract2 stage completed: ${baseCompleted + r.processed}/${total} successful`,
     );
     if (isShapePreviewMetadataEnabled()) {
-      const db = getEphemeralShapeDB();
       const statsByOrigin = new Map<string, GeometryStatsSummary>();
-      const extract2InputsByTaskId = await this.loadStageInputs<Extract2TaskInputData>('extract2');
+      const extract2InputsByTaskId = await this.taskRegistry.loadStageInputs<ShapeExtract2TaskInputData>('extract2');
       for (const task of this.extract2Tasks) {
         const originKey = this.getOriginKeyFromInput(extract2InputsByTaskId.get(task.taskId));
         if (!originKey) continue;
         const bufferId = `${this.nodeId}-extract2-${task.index ?? 0}`;
-        const buffer = await db.extractedBuffers.get(bufferId);
+        const buffer = await this.artifactStore.getExtractedBuffer(bufferId);
         if (!buffer) continue;
         const stats = await this.summarizeBufferStats(buffer.data);
         const existing = statsByOrigin.get(originKey) ?? { vertexCount: 0, polygonCount: 0 };
@@ -1295,7 +1285,7 @@ export class SessionController {
   }
 
   private getOriginKeyFromInput(
-    input?: Extract1TaskInputData | Extract2TaskInputData,
+    input?: ShapeExtract1TaskInputData | ShapeExtract2TaskInputData,
   ): string | undefined {
     return input?.originKey;
   }
@@ -1338,14 +1328,13 @@ export class SessionController {
   }
 
   private async updateSourceMetadataBase(entries: OriginMetadata[]): Promise<void> {
-    const db = await getShapeTileMetadataDB();
     const nodeKey = String(this.nodeId);
-    const existing = await db.sourceMetadata.where('nodeId').equals(nodeKey).toArray();
+    const existing = await this.artifactStore.listSourceMetadata();
     const existingByKey = new Map(existing.map((row) => [row.originKey, row]));
     const nextKeys = new Set(entries.map((entry) => entry.originKey));
     const staleIds = existing.filter((row) => !nextKeys.has(row.originKey)).map((row) => row.id);
     if (staleIds.length > 0) {
-      await db.sourceMetadata.bulkDelete(staleIds);
+      await this.artifactStore.deleteSourceMetadataByIds(staleIds);
     }
     const now = Date.now();
     const rows: ShapeSourceMetadataRow[] = entries.map((entry) => {
@@ -1376,7 +1365,7 @@ export class SessionController {
       };
     });
     if (rows.length > 0) {
-      await db.sourceMetadata.bulkPut(rows);
+      await this.artifactStore.putSourceMetadata(rows);
     }
   }
 
@@ -1385,9 +1374,8 @@ export class SessionController {
     statsByOrigin: Map<string, GeometryStatsSummary>,
   ): Promise<void> {
     if (statsByOrigin.size === 0) return;
-    const db = await getShapeTileMetadataDB();
     const nodeKey = String(this.nodeId);
-    const existing = await db.sourceMetadata.where('nodeId').equals(nodeKey).toArray();
+    const existing = await this.artifactStore.listSourceMetadata();
     const existingByKey = new Map(existing.map((row) => [row.originKey, row]));
     const now = Date.now();
     const rows: ShapeSourceMetadataRow[] = [];
@@ -1424,14 +1412,13 @@ export class SessionController {
       });
     }
     if (rows.length > 0) {
-      await db.sourceMetadata.bulkPut(rows);
+      await this.artifactStore.putSourceMetadata(rows);
     }
   }
 
   private async summarizeVectorTilesByOrigin(): Promise<Map<string, GeometryStatsSummary>> {
     const statsByOrigin = new Map<string, GeometryStatsSummary>();
-    const tilesDb = await TilesDB.getSingleton();
-    const rows = await tilesDb.tiles.where('nodeId').equals(String(this.nodeId)).toArray();
+    const rows = await this.artifactStore.listVectorTileRows();
     for (const row of rows) {
       const tile = new VectorTile(new Pbf(new Uint8Array(row.data)));
       for (const layerName of Object.keys(tile.layers)) {
@@ -1470,7 +1457,6 @@ export class SessionController {
   }
 
   private async ensureTileFeatureIndex(): Promise<Array<{ key: string; z: number; x: number; y: number }>> {
-    const tileDb = await getShapeTileMetadataDB();
     const zoomLevels = this.resolveZoomLevels();
     if (zoomLevels.length === 0) {
       this.lastTileIndexStats = {
@@ -1481,29 +1467,13 @@ export class SessionController {
       };
       return [];
     }
-    const db = getEphemeralShapeDB();
     const tilesByKey = new Map<string, { key: string; z: number; x: number; y: number; features: Feature[] }>();
-    const metadataRecords: Array<{
-      id: string;
-      nodeId: string;
-      featureId: string;
-      countryName?: string;
-      countryCode?: string;
-      adminName?: string;
-      adminLevel?: number;
-      adminCode?: string;
-      dataSource?: string;
-      createdAt: number;
-      vertexCount: number;
-      polygonCount: number;
-      bbox?: [number, number, number, number];
-      area: number;
-    }> = [];
+    const metadataRecords: ShapeFeatureMetadataRow[] = [];
     const createdAt = Date.now();
 
     for (const task of this.extract2Tasks) {
       const inputBufferId = task.inputBufferId ?? `${this.nodeId}-extract2-${task.index ?? 0}`;
-      const buffer = await db.extractedBuffers.get(inputBufferId);
+      const buffer = await this.artifactStore.getExtractedBuffer(inputBufferId);
       if (!buffer) continue;
       const collection = await this.decodeFeatureCollection(buffer.data);
       if (!collection) continue;
@@ -1551,7 +1521,7 @@ export class SessionController {
     }
 
     if (metadataRecords.length > 0) {
-      await tileDb.featureMetadata.bulkPut(metadataRecords);
+      await this.artifactStore.putFeatureMetadata(metadataRecords);
     }
 
     const tileRows = Array.from(tilesByKey.values());
@@ -1572,13 +1542,13 @@ export class SessionController {
 
   private buildVectorTileTasks(
     tileRows: Array<{ key: string; z: number; x: number; y: number }>,
-  ): { tasks: VectorTileTask[]; inputsByTaskId: Map<string, VectorTileTaskInputData> } {
+  ): { tasks: VectorTileTask[]; inputsByTaskId: Map<string, ShapeVectorTileTaskInputData> } {
     const tileSize = this.config.vectorTiles?.tileSize ?? this.config.tileSize ?? 256;
     const buffer = this.config.vectorTiles?.bufferSize ?? 256;
     const minZoom = this.config.vectorTiles?.minZoom ?? 0;
     const maxZoom = this.config.vectorTiles?.maxZoom ?? 10;
     const metadataEnabled = false;
-    const inputsByTaskId = new Map<string, VectorTileTaskInputData>();
+    const inputsByTaskId = new Map<string, ShapeVectorTileTaskInputData>();
     const tasks: VectorTileTask[] = tileRows.map((tile, index) => {
       const taskId = `${this.nodeId}-vectortile-${index}`;
       inputsByTaskId.set(taskId, {
@@ -1613,15 +1583,13 @@ export class SessionController {
   private async persistPlaceholderMetadata(replace: boolean): Promise<number> {
     if (!isShapePreviewMetadataEnabled()) return 0;
     const nodeKey = String(this.nodeId);
-    const db = await getShapeTileMetadataDB();
     if (replace) {
-      await db.featureMetadata.where('nodeId').equals(nodeKey).delete();
+      await this.artifactStore.deleteFeatureMetadataByNode();
     }
     const existing = replace
       ? new Set<string>()
       : new Set(
-        (await db.featureMetadata.where('nodeId').equals(nodeKey).toArray())
-          .map((row) => row.featureId),
+        (await this.artifactStore.listFeatureMetadata()).map((row) => row.featureId),
       );
     const createdAt = Date.now();
     const dataSourceFallback = this.resolveDataSource();
@@ -1648,7 +1616,7 @@ export class SessionController {
       });
     }
     if (rows.length > 0) {
-      await db.featureMetadata.bulkPut(rows);
+      await this.artifactStore.putFeatureMetadata(rows);
     }
     return rows.length;
   }
@@ -1691,8 +1659,9 @@ export class SessionController {
       return;
     }
 
-    await this.registerTasks('vectortile', tasks, undefined, vectorTileBuild.inputsByTaskId);
-    const { runnableTasks, completedCount, failedCount, total } = await this.resolveStageTasks('vectortile', tasks);
+    await this.taskRegistry.registerTasks('vectortile', tasks, undefined, vectorTileBuild.inputsByTaskId);
+    const { runnableTasks, completedCount, failedCount, total } =
+      await this.taskRegistry.resolveStageTasks('vectortile', tasks);
     const baseCompleted = Math.min(completedCount, total);
     const baseFailed = Math.min(failedCount, total - baseCompleted);
     const baseDone = Math.min(total, baseCompleted + baseFailed);
@@ -1744,7 +1713,7 @@ export class SessionController {
       requestPause: (message) => this.requestPause('vectortile', message),
     });
     await this.persistPlaceholderMetadata(false);
-    await this.syncVectorTilesToShapeDb();
+    await this.syncVectorTilesToShapeStore();
     if (isShapePreviewMetadataEnabled()) {
       const statsByOrigin = await this.summarizeVectorTilesByOrigin();
       await this.updateSourceMetadataStage('vectorTile', statsByOrigin);
@@ -1753,6 +1722,13 @@ export class SessionController {
     console.log(
       `[Session ${this.nodeId}] Vector tile stage completed: ${baseCompleted + r.processed}/${total} successful`,
     );
+  }
+
+  private async prepareExtract2Retry(retry: number): Promise<void> {
+    this.extract2RetryOverride = retry;
+    await this.taskRegistry.prepareExtract2Retry(retry);
+    await this.taskRegistry.resetVectorTileTasksForRetry();
+    this.vectorTileAdapter?.clearFeatureCache?.(String(this.nodeId));
   }
 
   /**
@@ -1821,249 +1797,6 @@ export class SessionController {
     if (!waiters) return;
     for (const release of waiters) release();
     this.stageWaiters.delete(stage);
-  }
-
-  private async registerTasks<
-    TInput extends ShapeBatchTaskInputData = ShapeBatchTaskInputData,
-    TOutput extends ShapeBatchTaskOutputData = ShapeBatchTaskOutputData
-  >(
-    stage: ProcessingStage,
-    tasks: Array<{ taskId: string; index?: number }>,
-    existingTaskIds?: Set<string>,
-    inputsByTaskId?: Map<string, TInput>,
-    outputsByTaskId?: Map<string, TOutput>,
-  ): Promise<void> {
-    const now = Date.now();
-    if (stage === 'vectortile') {
-      const existing = await shapeDB.batchTasks
-        .where('nodeId')
-        .equals(this.nodeId)
-        .and((task) => task.taskType === stage)
-        .toArray();
-      const existingById = new Map(existing.map((task) => [task.taskId, task]));
-      const newTasks = [];
-      for (const [index, task] of tasks.entries()) {
-        const existingTask = existingById.get(task.taskId);
-        const inputData = inputsByTaskId?.get(task.taskId);
-        const outputData = outputsByTaskId?.get(task.taskId);
-        if (!existingTask) {
-          newTasks.push({
-            taskId: task.taskId,
-            nodeId: this.nodeId,
-            taskType: stage,
-            status: 'waiting' as const,
-            index: task.index ?? index,
-            progress: 0,
-            inputData,
-            outputData,
-            createdAt: now,
-            updatedAt: now,
-          });
-          continue;
-        }
-        if (existingTask.status !== 'regression') {
-          continue;
-        }
-        const currentRetry = this.getRetryValue(existingTask);
-        const nextRetry = currentRetry + 1;
-        const nextOutputData = {
-          ...(existingTask.outputData ?? {}),
-          ...(outputData ?? {}),
-          retry: nextRetry,
-        } as ShapeBatchTaskOutputData;
-        await shapeDB.updateBatchTask(task.taskId, { outputData: nextOutputData });
-      }
-      if (newTasks.length > 0) {
-        const chunkSize = 50;
-        for (let offset = 0; offset < newTasks.length; offset += chunkSize) {
-          await shapeDB.batchTasks.bulkPut(newTasks.slice(offset, offset + chunkSize));
-        }
-      }
-      return;
-    }
-    const existingIds = existingTaskIds ?? new Set(
-      (await shapeDB.batchTasks
-        .where('nodeId')
-        .equals(this.nodeId)
-        .and((task) => task.taskType === stage)
-        .toArray())
-        .map((task) => task.taskId),
-    );
-    const newTasks = tasks
-      .filter((task) => !existingIds.has(task.taskId))
-      .map((task, index) => ({
-        taskId: task.taskId,
-        nodeId: this.nodeId,
-        taskType: stage,
-        status: 'waiting' as const,
-        index: task.index ?? index,
-        progress: 0,
-        inputData: inputsByTaskId?.get(task.taskId),
-        outputData: outputsByTaskId?.get(task.taskId),
-        createdAt: now,
-        updatedAt: now,
-      }));
-    if (newTasks.length > 0) {
-      const chunkSize = 50;
-      for (let offset = 0; offset < newTasks.length; offset += chunkSize) {
-        await shapeDB.batchTasks.bulkPut(newTasks.slice(offset, offset + chunkSize));
-      }
-    }
-  }
-
-  private async loadStageInputs<TInput>(stage: ProcessingStage): Promise<Map<string, TInput>> {
-    const rows = await shapeDB.batchTasks
-      .where('nodeId')
-      .equals(this.nodeId)
-      .and((task) => task.taskType === stage)
-      .toArray();
-    const inputs = new Map<string, TInput>();
-    rows.forEach((row) => {
-      if (row.inputData) {
-        inputs.set(row.taskId, row.inputData as TInput);
-      }
-    });
-    return inputs;
-  }
-
-  private async resolveStageTasks<T extends { taskId: string }>(
-    stage: ProcessingStage,
-    tasks: T[],
-  ): Promise<{ runnableTasks: T[]; completedCount: number; failedCount: number; total: number }> {
-    const existing = await shapeDB.batchTasks
-      .where('nodeId')
-      .equals(this.nodeId)
-      .and((task) => task.taskType === stage)
-      .toArray();
-    const statusById = new Map(existing.map((task) => [task.taskId, task.status]));
-    const runnableTasks = tasks.filter((task) => {
-      const status = statusById.get(task.taskId);
-      return status === 'waiting' || status === 'regression';
-    });
-    const completedCount = existing.filter((task) => task.status === 'completed').length;
-    const failedCount = existing.filter((task) => task.status === 'failed').length;
-    return { runnableTasks, completedCount, failedCount, total: tasks.length };
-  }
-
-  private async markDownloadTasksCompletedWhenBuffersExist(tasks: DownloadTask[]): Promise<void> {
-    if (tasks.length === 0) return;
-    const db = getEphemeralShapeDB();
-    const session = await shapeDB.getBatchSession(this.nodeId);
-    const startedAt = session?.startedAt ?? 0;
-    const existing = await shapeDB.batchTasks
-      .where('nodeId')
-      .equals(this.nodeId)
-      .and((task) => task.taskType === 'download')
-      .toArray();
-    const statusById = new Map(existing.map((task) => [task.taskId, task.status]));
-    for (const task of tasks) {
-      const status = statusById.get(task.taskId);
-      if (status !== 'waiting' && status !== 'regression') continue;
-      const index = task.index ?? 0;
-      const bufferId = `${this.nodeId}-download-${index}`;
-      const raw = await db.rawBuffers.get(bufferId);
-      if (!raw) continue;
-      if (startedAt > 0 && raw.timestamp < startedAt) {
-        continue;
-      }
-      await shapeDB.updateBatchTask(task.taskId, {
-        status: 'completed',
-        progress: 100,
-        completedAt: Date.now(),
-        message: 'Skipped: already downloaded.',
-        errorMessage: undefined,
-      });
-    }
-  }
-
-  private getRetryValue(task: BatchTaskRecord): number {
-    const output = task.outputData ?? {};
-    const retry = (output as { retry?: number }).retry;
-    return typeof retry === 'number' && Number.isFinite(retry) ? retry : 0;
-  }
-
-  private async getVectorTileRegressionRetry(): Promise<number | null> {
-    const tasks = await shapeDB.batchTasks
-      .where('nodeId')
-      .equals(this.nodeId)
-      .and((task) => task.taskType === 'vectortile' && task.status === 'regression')
-      .toArray();
-    if (tasks.length === 0) return null;
-    const retryable = tasks
-      .map((task) => this.getRetryValue(task))
-      .filter((retry) => retry < 2);
-    if (retryable.length === 0) return null;
-    return Math.max(...retryable);
-  }
-
-  private async prepareExtract2Retry(retry: number): Promise<void> {
-    this.extract2RetryOverride = retry;
-    const extract2Tasks = await shapeDB.batchTasks
-      .where('nodeId')
-      .equals(this.nodeId)
-      .and((task) => task.taskType === 'extract2')
-      .toArray();
-    for (const task of extract2Tasks) {
-      const outputData = { ...(task.outputData ?? {}), retry };
-      await shapeDB.updateBatchTask(task.taskId, {
-        status: 'waiting',
-        progress: 0,
-        startedAt: undefined,
-        completedAt: undefined,
-        errorMessage: undefined,
-        outputData,
-      });
-    }
-    await this.resetVectorTileTasksForRetry();
-    this.vectorTileAdapter?.clearFeatureCache?.(String(this.nodeId));
-  }
-
-  private async resetVectorTileTasksForRetry(): Promise<void> {
-    const vectorTasks = await shapeDB.batchTasks
-      .where('nodeId')
-      .equals(this.nodeId)
-      .and((task) => task.taskType === 'vectortile')
-      .toArray();
-    for (const task of vectorTasks) {
-      const needsReset = task.status === 'completed' || task.status === 'failed';
-      if (!needsReset) {
-        await shapeDB.updateBatchTask(task.taskId, {
-          progress: 0,
-          startedAt: undefined,
-          completedAt: undefined,
-          errorMessage: undefined,
-        });
-        continue;
-      }
-      await shapeDB.updateBatchTask(task.taskId, {
-        status: 'waiting',
-        progress: 0,
-        startedAt: undefined,
-        completedAt: undefined,
-        errorMessage: undefined,
-      });
-    }
-  }
-
-  private async assignDownloadTaskIndices(tasks: DownloadTask[]): Promise<Set<string>> {
-    const existing = await shapeDB.batchTasks
-      .where('nodeId')
-      .equals(this.nodeId)
-      .and((task) => task.taskType === 'download')
-      .toArray();
-    const existingIds = new Set(existing.map((task) => task.taskId));
-    const existingIndexById = new Map(existing.map((task) => [task.taskId, task.index]));
-    let nextIndex = existing.reduce((max, task) => Math.max(max, task.index ?? 0), -1) + 1;
-    tasks.forEach((task) => {
-      const existingIndex = existingIndexById.get(task.taskId);
-      if (existingIndex != null) {
-        task.index = existingIndex;
-        return;
-      }
-      task.index = nextIndex;
-      nextIndex += 1;
-    });
-    return existingIds;
   }
 
   /**

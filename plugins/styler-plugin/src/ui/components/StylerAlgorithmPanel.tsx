@@ -1,5 +1,5 @@
 /**
- * @file StylerConfigPanel.tsx
+ * @file StylerAlgorithmPanel.tsx
  * @description Styler mapping configuration UI component (Step 5)
  */
 
@@ -34,7 +34,7 @@ import { useTranslation } from 'react-i18next';
 
 import type { StylerConfig, StylerTableRow } from '../../common/types/StylerEntity.js';
 import { StylerConfigDefault } from '../../common/types/StylerEntity.js';
-import { useStylerConfigPanelState } from './useStylerConfigPanelState.js';
+import { useStylerConfigPanelState } from './hooks/useStylerConfigPanelState.js';
 
 export interface StylerMappingProps {
   config?: StylerConfig;
@@ -44,7 +44,7 @@ export interface StylerMappingProps {
   tabularData?: StylerTableRow[];
 }
 
-export const StylerConfigPanel = ({
+export const StylerAlgorithmPanel = ({
   config = StylerConfigDefault,
   onChange,
   values = [],
@@ -207,7 +207,7 @@ export const StylerConfigPanel = ({
               <Typography variant="subtitle2">
                 {t('step5.advanced.title', 'Advanced color controls')}
               </Typography>
-              <Button size="small" onClick={() => setShowAdvanced((prev) => !prev)}>
+              <Button size="small" onClick={() => setShowAdvanced((prev:boolean) => !prev)}>
                 {showAdvanced ? t('step5.advanced.hide', 'Hide') : t('step5.advanced.show', 'Show')}
               </Button>
             </Box>

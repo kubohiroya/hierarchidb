@@ -30,7 +30,7 @@ export const hasKeyValueSelected = (dialogData?: Partial<StylerStepData>): boole
 
 type Params = Pick<
   PluginStepProps<StylerStepData>,
-  'data' | 'onChange' | 'setValid' | 'setError' | 'dialogRef'
+  'data' | 'onChange' | 'setValid' | 'setError'
 > & {
   styleTypeOptions: ReadonlyArray<{ value: StyleType; labelKey: string; descriptionKey: string }>;
 };
@@ -40,11 +40,8 @@ export const useStylerMappingState = ({
   onChange,
   setValid,
   setError,
-  dialogRef,
   styleTypeOptions,
 }: Params) => {
-  const menuContainer = (dialogRef?.current as Element | null) ?? null;
-
   const pluginData = useMemo<Partial<StylerStepData>>(
     () => (isRecord(data) ? (data as Partial<StylerStepData>) : {}),
     [data]
@@ -125,7 +122,6 @@ export const useStylerMappingState = ({
   }, [validity, setValid, setError]);
 
   return {
-    menuContainer,
     pluginData,
     sanitizedStyleType,
     settings,

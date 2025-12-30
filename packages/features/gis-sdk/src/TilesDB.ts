@@ -38,6 +38,7 @@ export interface SourceMetadataRow {
   dataSource?: string;
   countryName?: string;
   countryCode?: string;
+  continent?: string;
   adminLevel?: number;
   featureGroupId?: string;
   featureLabel?: string;

@@ -4,10 +4,11 @@ import { TabularDataSourceStep } from '@hierarchidb/spreadsheet-plugin';
 import { StylerPreviewStep } from './StylerPreviewStep.tsx';
 import type { StylerMapping, StylerStepData } from '../../common/types/StylerEntity.js';
 import { i18n } from '@hierarchidb/ui-i18n';
-import { StylerMappingStep } from './StylerMappingStep.tsx';
 import { StylerFilterStep } from './StylerFilterStep.tsx';
 import { StylerMappingKeysStep } from './StylerMappingKeysStep.tsx';
-import { StylerTargetBehaviorStep } from './StylerTargetBehaviorStep.tsx';
+import { StylerTargetStep } from './StylerTargetStep.tsx';
+import { StylerAlgorithmStep2 } from './StylerAlgorithmStep2.tsx';
+
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -16,10 +17,6 @@ const getStylerT = () =>
     ? i18n.getFixedT(i18n.language ?? 'en', 'styler-plugin')
     : (i18n.t.bind(i18n) as typeof i18n.t);
 
-
-const renderScaleStep = (p: PluginStepProps<StylerStepData>) => (
-  <StylerMappingStep {...p} showTargetPanel={false} />
-);
 
 const hasMappingBasics = (dialogData?: StylerStepData): boolean => {
   const data = dialogData ?? ({} as StylerStepData);
@@ -117,8 +114,8 @@ registry.registerConfigProvider<StylerStepData>({
       },
       {
         id: 'target-behavior',
-        label: t('steps.targetBehavior', 'Target & Behavior'),
-        componentFactory: StylerTargetBehaviorStep,
+        label: t('steps.target', 'Apply Target'),
+        componentFactory: (p: PluginStepProps<StylerStepData>) => <StylerTargetStep {...p} showTargetPanel={false} />,
         validate: (dialogData?: StylerStepData) => hasTargetBehavior(dialogData),
         capabilities: {
           canProceedToNext: (dialogData?: StylerStepData) => hasTargetBehavior(dialogData),
@@ -126,8 +123,10 @@ registry.registerConfigProvider<StylerStepData>({
       },
       {
         id: 'style-scaling',
-        label: t('steps.styleAlgorithm', 'Scale / Style'),
-        componentFactory: renderScaleStep,
+        label: t('steps.styleAlgorithm', 'Algorithm'),
+        componentFactory: (p: PluginStepProps<StylerStepData>) => (
+          <StylerAlgorithmStep2 {...p} />
+        ),
         validate: (dialogData?: StylerStepData) => hasTargetBehavior(dialogData),
         capabilities: {
           canProceedToNext: (dialogData?: StylerStepData) => hasTargetBehavior(dialogData),

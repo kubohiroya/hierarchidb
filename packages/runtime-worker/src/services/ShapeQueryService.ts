@@ -2,13 +2,22 @@ import { SingletonMixin } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
 import type {
   ShapeBatchSessionSummary,
+  ShapeBatchTaskRecord,
+  ShapeBatchTaskStage,
   ShapeBatchTaskSummary,
+  ShapeExtractedBufferRecord,
+  ShapeFeatureMetadataRow,
   ShapeProcessingStatus,
   ShapeQueryAPI,
+  ShapeRawBufferRecord,
+  ShapeSourceMetadataRow,
   ShapeTileInfo,
+  ShapeTileRow,
   ShapeTileSummary,
   ShapeTileSummaryEntry,
 } from '@hierarchidb/plugin-service-api';
+import { getEphemeralShapeDB } from '@hierarchidb/shape-store';
+import { TilesDB } from '@hierarchidb/gis-sdk';
 
 type ShapeBatchSessionRecord = {
   nodeId: NodeId;
@@ -27,7 +36,7 @@ type ShapeBatchSessionRecord = {
   };
 };
 
-type ShapeBatchTaskRecord = {
+type ShapeBatchTaskRow = {
   taskId: string;
   nodeId: NodeId;
   taskType: string;
@@ -38,6 +47,8 @@ type ShapeBatchTaskRecord = {
   startedAt?: number;
   completedAt?: number;
   errorMessage?: string;
+  inputData?: unknown;
+  outputData?: unknown;
 };
 
 type ShapeVectorTileRecord = {
@@ -70,7 +81,7 @@ type DexieTable<T> = {
 type ShapeDatabaseLike = {
   open?: () => Promise<unknown>;
   batchSessions: DexieTable<ShapeBatchSessionRecord>;
-  batchTasks: DexieTable<ShapeBatchTaskRecord>;
+  batchTasks: DexieTable<ShapeBatchTaskRow>;
   features: DexieTable<{ nodeId: NodeId }>;
   vectorTiles: DexieTable<ShapeVectorTileRecord>;
   getVectorTile?: (nodeId: NodeId, z: number, x: number, y: number) => Promise<ShapeVectorTileRecord | undefined>;
@@ -91,7 +102,7 @@ const toSessionSummary = (session: ShapeBatchSessionRecord): ShapeBatchSessionSu
   progress: session.progress,
 });
 
-const toTaskSummary = (task: ShapeBatchTaskRecord): ShapeBatchTaskSummary => ({
+const toTaskSummary = (task: ShapeBatchTaskRow): ShapeBatchTaskSummary => ({
   taskId: task.taskId,
   nodeId: task.nodeId,
   taskType: task.taskType,
@@ -131,6 +142,22 @@ export class ShapeQueryService implements ShapeQueryAPI {
     await this.ensureOpen();
     const tasks = await this.db.batchTasks.where('nodeId').equals(nodeId).toArray();
     return tasks.map(toTaskSummary);
+  }
+
+  async listBatchTaskRecords(nodeId: NodeId): Promise<ShapeBatchTaskRecord[]> {
+    await this.ensureOpen();
+    return this.db.batchTasks.where('nodeId').equals(nodeId).toArray() as Promise<ShapeBatchTaskRecord[]>;
+  }
+
+  async listBatchTaskRecordsByStage(nodeId: NodeId, stage: ShapeBatchTaskStage): Promise<ShapeBatchTaskRecord[]> {
+    const tasks = await this.listBatchTaskRecords(nodeId);
+    return tasks.filter((task) => task.taskType === stage);
+  }
+
+  async getBatchTaskRecord(taskId: string): Promise<ShapeBatchTaskRecord | null> {
+    await this.ensureOpen();
+    const task = await this.db.batchTasks.get?.(taskId);
+    return (task as ShapeBatchTaskRecord | undefined) ?? null;
   }
 
   async getProcessingStatus(nodeId: NodeId): Promise<ShapeProcessingStatus | null> {
@@ -215,5 +242,49 @@ export class ShapeQueryService implements ShapeQueryAPI {
       zoomMin: Math.min(...zoomLevels),
       zoomMax: Math.max(...zoomLevels),
     };
+  }
+
+  async listRawBuffers(nodeId: NodeId): Promise<ShapeRawBufferRecord[]> {
+    const db = getEphemeralShapeDB();
+    return db.rawBuffers.where('nodeId').equals(nodeId).toArray() as Promise<ShapeRawBufferRecord[]>;
+  }
+
+  async getRawBuffer(bufferId: string): Promise<ShapeRawBufferRecord | null> {
+    const db = getEphemeralShapeDB();
+    const buffer = await db.rawBuffers.get(bufferId);
+    return buffer ?? null;
+  }
+
+  async listExtractedBuffers(
+    nodeId: NodeId,
+    stage?: 'extract1' | 'extract2',
+  ): Promise<ShapeExtractedBufferRecord[]> {
+    const db = getEphemeralShapeDB();
+    if (!stage) {
+      return db.extractedBuffers.where('nodeId').equals(nodeId).toArray() as Promise<ShapeExtractedBufferRecord[]>;
+    }
+    return db.extractedBuffers.where('[nodeId+stage]').equals([nodeId, stage]).toArray() as
+      Promise<ShapeExtractedBufferRecord[]>;
+  }
+
+  async getExtractedBuffer(bufferId: string): Promise<ShapeExtractedBufferRecord | null> {
+    const db = getEphemeralShapeDB();
+    const buffer = await db.extractedBuffers.get(bufferId);
+    return buffer ?? null;
+  }
+
+  async listVectorTileRows(nodeId: NodeId): Promise<ShapeTileRow[]> {
+    const db = await TilesDB.getSingleton();
+    return db.tiles.where('nodeId').equals(String(nodeId)).toArray() as Promise<ShapeTileRow[]>;
+  }
+
+  async listSourceMetadata(nodeId: NodeId): Promise<ShapeSourceMetadataRow[]> {
+    const db = await TilesDB.getSingleton();
+    return db.sourceMetadata.where('nodeId').equals(String(nodeId)).toArray() as Promise<ShapeSourceMetadataRow[]>;
+  }
+
+  async listFeatureMetadata(nodeId: NodeId): Promise<ShapeFeatureMetadataRow[]> {
+    const db = await TilesDB.getSingleton();
+    return db.featureMetadata.where('nodeId').equals(String(nodeId)).toArray() as Promise<ShapeFeatureMetadataRow[]>;
   }
 }

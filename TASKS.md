@@ -53,24 +53,42 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
-2010) styler-plugin: Step4 の対象プロパティ選択をカード式に変更し、値の種類を自動判定（P1）
-- ブランチ: `feat/styler-plugin/step4-property-cards`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: `plugins/styler-plugin/src/ui/**`, `TASKS.md`
+2014) shape-plugin: Step4 デフォルト復帰後に valid にならず進めない不具合修正（P1）
+- ブランチ: `fix/shape/step4-valid-defaults`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/ui/**`, `plugins/shape-plugin/src/services/**`, `plugins/shape-plugin/src/common/**`, `TASKS.md`
 - 受け入れ基準（DoD）:
-  - [ ] 対象プロパティがアイコン＋説明付きの択一ボタンで選択できる
-  - [ ] 「値の種類」の選択UIが廃止され、対象プロパティから自動判定される
-  - [ ] `*Color` は色、`Opacity`/`Radius`/`Width` は数値として内部判定される
-  - [ ] 数値のときのみ最小値/最大値の入力が有効化される
-  - [ ] 最小値 0.0 / 最大値 10.0 / デフォルト 5.0 が設定される
+  - [ ] Step4 で設定をデフォルトへ戻した際に valid が true となり、Step5 へ進める
+  - [ ] valid 条件が UI/Worker/バリデーションで整合していることを確認できる
+  - [ ] 原因/影響範囲/修正方法と適用範囲を運用ログに明記する
   - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
 - チェックリスト:
-  - [ ] Step4 の対象プロパティ UI をカード式選択に置き換える
-  - [ ] 値の種類の選択UIを削除する
-  - [ ] 自動判定ロジックと数値入力の活性制御を実装する
-  - [ ] デフォルト値を設定する
-- ロールバック手順：`plugins/styler-plugin/src/ui/**` と `TASKS.md` の差分を revert する
+  - [ ] Step4 の valid 判定経路（UI/validateBatchConfig/worker）を確認する
+  - [ ] デフォルト復帰で invalid になる条件を特定する
+  - [ ] 最小差分で修正し、既存挙動を維持する
+- ロールバック手順：`plugins/shape-plugin/src/ui/**`, `plugins/shape-plugin/src/services/**`, `plugins/shape-plugin/src/common/**`, `TASKS.md` の差分を revert する
 - 運用ログ：
-  - start: 2025-12-31 10:00 JST Step4 の対象プロパティ選択UIと値種別自動判定の対応に着手。
+  - start: 2025-12-31 06:10 JST Step4 デフォルト復帰で valid にならない問題の修正に着手。
+  - progress: 2025-12-31 06:22 JST 原因: BatchConfig の一部が null/undefined を含むと mergeBatchConfig で既定値が上書きされ、validateBatchConfig が範囲外として invalid 扱いになる可能性があると判断。対応: mergeBatchConfig で nil を除去し、validateBatchConfig を正規化後の値で判定するよう修正。影響範囲: shape-plugin の UI/Worker で共通利用する設定マージ/検証。ロールバック: `plugins/shape-plugin/src/services/utils/utils.ts` と `TASKS.md` の差分を revert。
+
+2011) shape-plugin: SessionController 分割と API 経由化（P1）
+- ブランチ: `refactor/shape-plugin/session-controller-split`（sandbox 制約で branch 作成不可なら main 上で作業）
+- 依存: `plugins/shape-plugin/src/services/batch/**`, `packages/plugin-service-api/src/types/ShapeQueryAPI.ts`, `packages/plugin-service-api/src/types/ShapeMutationAPI.ts`, `packages/runtime-worker/src/services/ShapeQueryService.ts`, `packages/runtime-worker/src/services/ShapeMutationService.ts`, `packages/common/api/src/WorkerAPI.ts`, `packages/ui/worker-client/src/workerBridge.ts`, `TASKS.md`, `plans/`
+- 受け入れ基準（DoD）:
+  - [ ] ExecPlan を `plans/shape-session-controller-split-execplan.md` に作成する
+  - [ ] SessionController はステージ遷移のオーケストレーションのみに絞られる
+  - [ ] Dexie 直接参照が撤廃され、TreeQueryAPI/ShapeQueryAPI/ShapeMutationAPI 経由になる
+  - [ ] API 追加が必要な場合、plugin-service-api/runtime-worker/worker-bridge まで一貫して実装する
+  - [ ] 変更内容/理由/ロールバック/検証結果を運用ログに記載する
+- チェックリスト:
+  - [ ] ExecPlan を作成し、分割対象と API 置換方針を明記する
+  - [ ] SessionController の責務を StageBuilder/Registry/Repository/Stats に分割する
+  - [ ] Dexie 直叩き箇所を API 呼び出しへ置き換える
+  - [ ] API 追加時は worker/client 経由まで実装し型整合を取る
+  - [ ] `pnpm --filter @hierarchidb/shape-plugin typecheck` を記録する
+- ロールバック手順：`plugins/shape-plugin/src/services/batch/**` と API 関連ファイル、および `plans/shape-session-controller-split-execplan.md` の差分を revert する
+- 運用ログ：
+  - start: 2025-12-31 04:35 JST SessionController 分割と API 経由化の対応に着手。
+  - progress: 2025-12-31 05:40 JST SessionController に TaskRegistry/ArtifactStore を導入し、Dexie 直接参照を撤去。ShapeQueryAPI/ShapeMutationAPI に batch/metadata/buffer/tile 系 API を追加し、LocalShape*Api と runtime-worker 実装を拡張。検証: `pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。
 
 2009) shape-plugin: Extract1/2 task の tolerance/minArea/zoomLevels/tileSize 重複保持の是非調査（P2）
 - ブランチ: `investigation/shape-plugin/extract-task-field-redundancy`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -107,6 +125,7 @@
   - progress: 2025-12-31 02:28 JST DownloadTaskPayload から continent/country を削除し、DownloadTaskInput も同様に整理。Download 戦略/SessionController/テストを新シグネチャに追従。
   - progress: 2025-12-31 02:46 JST ExtractTask/VectorTileTask を薄くし、tolerance/minArea/zoomLevels/tileSize および vector tile の country/admin/tileCount を撤去。実処理は input 参照へ移行。
   - blocked: 2025-12-31 03:32 JST `pnpm --filter @hierarchidb/shape-plugin typecheck` が route-store/runtime-worker の型エラーで失敗（RouteVectorTileRecord 未定義 / StoreRegistry.getGroup / RouteQueryService 型不一致）。
+  - progress: 2025-12-31 04:20 JST route-store/runtime-worker の型修正を反映し、`pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0 を確認。
 
 2007) shape-plugin: ダウンロード同時実行数の上限を4に変更（P1）
 - ブランチ: `fix/shape-plugin/download-concurrency-cap-4`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -3414,7 +3433,7 @@
 
 1630) Styler Key-Value Pair アコーディオン追加（P1）
 - ブランチ: `feat/styler/key-value-accordion`（sandbox 制約で branch 作成不可なら main 上で作業）
-- 依存: plugins/styler-plugin（StylerMappingStep/StyleMapping panels/StylerConfigStep, locale）
+- 依存: plugins/styler-plugin（StylerTargetStep/StyleMapping panels/StylerAlgorithmStep, locale）
 - 受け入れ基準（DoD）:
   - [ ] Step3 に「Key-Value Pair」アコーディオンを追加し、Step4 にあった keyColumn/valueColumn 選択 UI を移設する（Step4 側の重複は撤去）
   - [ ] Key/Value 選択結果が既存の保存・検証ロジックに正しく引き継がれる（回帰なし）
@@ -3426,7 +3445,7 @@
   - [ ] Value 列の数値のみを集計し max/min/avg/median/stddev を表示
   - [ ] 既存の mapping/config/preview への key/value 連携が維持されることを確認
   - [ ] typecheck 結果を運用ログへ追記
-- ロールバック手順：Styler Step3/Step4 関連差分（StylerMappingStep/StyleMapping panels/locale など）を revert し、`pnpm --filter @hierarchidb/styler-plugin typecheck` を再実行して元の挙動を確認する
+- ロールバック手順：Styler Step3/Step4 関連差分（StylerTargetStep/StyleMapping panels/locale など）を revert し、`pnpm --filter @hierarchidb/styler-plugin typecheck` を再実行して元の挙動を確認する
 
 1627) UserLoginButton リファクタ（メニュー分割・i18n・言語設定化）（P1）
 - ブランチ: `refactor/ui-usermenu/split-and-i18n`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -3800,10 +3819,10 @@
 - ロールバック手順：今回変更する styler-plugin/plugin-ui-host 周辺の差分を revert し、実行した検証コマンドを再実行して現状（ステッパー非表示）の挙動へ戻す
 - 運用ログ：
   - start: 2025-12-08 14:06 JST styler-plugin のマルチステップダイアログでステッパーが表示されない問題の調査を開始（branch: fix/styler/dialog-stepper-hidden）。
-  - progress: 2025-12-08 14:16 JST HeadlessPluginDialog に PluginDialogHeader/PluginDialogFooter を render するよう styler-dialog を更新し、ステッパー/ナビゲーションを再表示する実装を追加。依存に plugin-ui-host を追加。検証: `pnpm --filter @hierarchidb/styler-plugin typecheck` exit 2（既存エラー: StylerConfigPanel.tsx unused import, StylerConfigStep.tsx config possibly undefined, StyleMappingPanel.tsx 型未定義/any 等）。
+  - progress: 2025-12-08 14:16 JST HeadlessPluginDialog に PluginDialogHeader/PluginDialogFooter を render するよう styler-dialog を更新し、ステッパー/ナビゲーションを再表示する実装を追加。依存に plugin-ui-host を追加。検証: `pnpm --filter @hierarchidb/styler-plugin typecheck` exit 2（既存エラー: StylerAlgorithmPanel.tsx unused import, StylerAlgorithmStep.tsx config possibly undefined, StyleMappingPanel.tsx 型未定義/any 等）。
   - progress: 2025-12-08 14:28 JST Styler の独自 Headless ダイアログを撤去し、UI エントリは steps-provider の登録みに縮小（他プラグインと同様に PluginDialogHost がダイアログを描画）。`plugins/styler-plugin/package.json` から plugin-ui-host 依存を除去。再検証: `pnpm --filter @hierarchidb/styler-plugin typecheck` exit 2（上記と同じ既存エラーのみ）。
-  - progress: 2025-12-08 15:00 JST `@hierarchidb/ui-modal-select` 依存欠落で Vite が `StyleMappingPanel.tsx` を解決できていなかったため、styler-plugin の dependencies に追加し、UI types から MapLibre 定数/型を再エクスポートして import エラーを解消。`pnpm install --no-frozen-lockfile`（成功: node_modules 再生成）、`pnpm --filter @hierarchidb/styler-plugin typecheck` exit 2（従前の未修正エラー: StylerMapping unused import, StylerConfigStep config undefined 等）、`pnpm --filter @hierarchidb/app build` exit 0 で元のビルド失敗は解消済み。
-  - progress: 2025-12-08 14:44 JST Styler plugin typecheck 残課題を修正（StylerMapping unused import削除、StylerConfigStep validation で stylerConfig 未設定時もデフォルト適用、StyleMappingPanel の columns/targetProperty 型エラーを data ベースの columns 抽出＆型注釈で解消）。`pnpm --filter @hierarchidb/styler-plugin typecheck` exit 0。
+  - progress: 2025-12-08 15:00 JST `@hierarchidb/ui-modal-select` 依存欠落で Vite が `StyleMappingPanel.tsx` を解決できていなかったため、styler-plugin の dependencies に追加し、UI types から MapLibre 定数/型を再エクスポートして import エラーを解消。`pnpm install --no-frozen-lockfile`（成功: node_modules 再生成）、`pnpm --filter @hierarchidb/styler-plugin typecheck` exit 2（従前の未修正エラー: StylerMapping unused import, StylerAlgorithmStep config undefined 等）、`pnpm --filter @hierarchidb/app build` exit 0 で元のビルド失敗は解消済み。
+  - progress: 2025-12-08 14:44 JST Styler plugin typecheck 残課題を修正（StylerMapping unused import削除、StylerAlgorithmStep validation で stylerConfig 未設定時もデフォルト適用、StyleMappingPanel の columns/targetProperty 型エラーを data ベースの columns 抽出＆型注釈で解消）。`pnpm --filter @hierarchidb/styler-plugin typecheck` exit 0。
 
 1600) TreeConsole/Trash select-all チェックボックス id 重複解消（P0）
 - ブランチ: `fix/ui-treeconsole/trash-selectall-id`（sandbox 制約で branch 作成不可なら main 上で作業）
@@ -7684,6 +7703,70 @@ P2:
 
 ### Done（完了） <a id="kanban-done"></a>
 
+2020) fix/styler-plugin/population-2023-template-target (P1) — 完了 (2025-12-30)
+- 要点：population-2023 テンプレートの styler ノードで「国・自治体の塗りの色」が選択済みになるよう targetOptionId を追加。
+- 検証：未実施（手動確認未実行）。
+- ロールバック手順：`app/public/templates/population-2023/tree-nodes.json` と `TASKS.md` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-30 22:27 JST population-2023 テンプレートの対象選択初期化に着手。
+  - done: 2025-12-30 22:27 JST targetOptionId を追加して初期選択を反映。検証: 未実施（手動確認未実行）。ロールバック: 上記差分を revert。
+
+2019) fix/styler-plugin/step5-three-columns (P1) — 完了 (2025-12-30)
+- 要点：Step5 を3カラム固定レイアウト（国・自治体/地点/経路）に変更し、カード内は縦積みで数値範囲を同列表示。
+- 検証：未実施（手動確認未実行）。
+- ロールバック手順：`plugins/styler-plugin/src/ui/components/StylerTargetStep.tsx` と `TASKS.md` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-30 22:19 JST Step5 を3カラム固定レイアウトに変更する対応に着手。
+  - done: 2025-12-30 22:19 JST Step5 を3カラム表示に更新。検証: 未実施（手動確認未実行）。ロールバック: 上記差分を revert。
+
+2018) fix/styler-plugin/step5-target-option-id (P1) — 完了 (2025-12-30)
+- 要点：targetOptionId を追加して同一 property の選択が同期しないように修正。
+- 検証：未実施（手動確認未実行）。
+- ロールバック手順：`plugins/styler-plugin/src/ui/components/StylerTargetStep.tsx`, `packages/features/styler-store/src/StylerEntity.ts`, `TASKS.md` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-30 22:15 JST Step5 の同一property選択同期を解消する対応に着手。
+  - done: 2025-12-30 22:16 JST targetOptionId を導入し、同一 property の選択同期を解消。検証: 未実施（手動確認未実行）。ロールバック: 上記差分を revert。
+
+2017) fix/styler-plugin/step5-settings-ref (P1) — 完了 (2025-12-30)
+- 要点：Styler Step5 の設定未定義参照を除去し、適用対象UIのみ表示するよう整理。
+- 検証：未実施（手動確認未実行）。
+- ロールバック手順：`plugins/styler-plugin/src/ui/components/StylerTargetStep.tsx` と `TASKS.md` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-30 21:55 JST Step5 の settings 参照エラー修正に着手。
+  - done: 2025-12-30 21:55 JST settings 依存のUIを削除し、参照エラーを解消。検証: 未実施（手動確認未実行）。ロールバック: 上記差分を revert。
+
+2016) fix/styler-plugin/stepper-label-keys (P1) — 完了 (2025-12-30)
+- 要点：Stepper の target/algorithm ラベルキーを整理し、Step5/Step6 の表示混同を解消。
+- 検証：未実施（手動確認未実行）。
+- ロールバック手順：`plugins/styler-plugin/src/ui/components/steps-provider.tsx` と `TASKS.md` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-30 21:49 JST Stepper ラベルキーの整合に着手。
+  - done: 2025-12-30 21:49 JST Step5 を steps.target、Step6 を steps.styleAlgorithm に統一。検証: 未実施（手動確認未実行）。ロールバック: 上記差分を revert。
+
+2015) fix/styler-plugin/stepper-labels (P1) — 完了 (2025-12-30)
+- 要点：Step5 の表示を「適用対象」、Step6 を「アルゴリズム」に修正し、誤って同一ラベルになる状態を解消。
+- 検証：未実施（手動確認未実行）。
+- ロールバック手順：`plugins/styler-plugin/src/ui/components/steps-provider.tsx` と `TASKS.md` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-30 21:44 JST Stepper ラベルの誤表示修正に着手。
+  - done: 2025-12-30 21:44 JST Step5/Step6 ラベルを正規化。検証: 未実施（手動確認未実行）。ロールバック: 上記差分を revert。
+
+2013) feat/styler-plugin/step5-target-sections (P1) — 完了 (2025-12-30)
+- 要点：Step5(target) を3セクション構成へ再編し、色🎨/透明度🪄/数値📐の択一選択と数値範囲入力を追加。数値範囲の既定保持用に StylerMapping へオプショナルプロパティを追加。
+- 検証：未実施（手動確認未実行）。
+- ロールバック手順：`plugins/styler-plugin/src/ui/components/StylerTargetStep.tsx`, `plugins/styler-plugin/src/ui/components/steps-provider.tsx`, `packages/features/styler-store/src/StylerEntity.ts`, `app/public/locales/{en,ja}/styler-plugin.json`, `packages/ui/i18n/public/locales/{en,ja}/styler-plugin.json`, `TASKS.md` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-30 21:30 JST Step5(target) の再編と数値範囲デフォルト保持に着手。
+  - done: 2025-12-30 21:37 JST Step5(target) の新レイアウトと数値範囲デフォルト保持を反映。検証: 未実施（手動確認未実行）。ロールバック: 上記差分を revert。
+
+2012) feat/styler-plugin/step4-property-cards (P1) — 完了 (2025-12-30)
+- 要点：Step4 の対象プロパティをアイコン付きカードで選択可能にし、*Color は色、Opacity/Radius/Width は数値として自動判定。数値時の最小値/最大値入力を有効化し、既定を 0.0〜10.0 に設定。
+- 検証：未実施（手動確認未実行）。
+- ロールバック手順：`plugins/styler-plugin/src/ui/components/{StyleMappingTargetPanel.tsx,StylerTargetBehaviorStep.tsx,StylerTargetStep.tsx,useStylerMappingState.ts}`, `app/public/locales/{en,ja}/styler-plugin.json`, `packages/ui/i18n/public/locales/{en,ja}/styler-plugin.json`, `TASKS.md` の差分を revert する。
+- 運用ログ：
+  - start: 2025-12-30 20:45 JST Step4 の対象プロパティ選択UIと値種別自動判定の対応に着手。
+  - done: 2025-12-30 20:58 JST 対象プロパティのカード選択、値種別自動判定、数値範囲入力を反映。検証: 未実施（手動確認未実行）。ロールバック: 上記差分を revert。
+
 2010) fix/route-plugin/typecheck-errors (P1) — 完了 (2025-12-30)
 - 要点：Location/Route の型整合を修正し、未使用 import と ID 型の不一致を解消。
 - 検証：`pnpm --filter @hierarchidb/route-plugin typecheck`（exit 0）
@@ -8542,7 +8625,7 @@ P2:
 - 1788) styler-plugin Step2-5 初回遷移の進捗表示（P1） — 完了 (2025-12-21)
   - 要点：tabular preview/filter の処理中表示と、styler mapping/preview の deferred 処理表示を追加。`filtering.processing`/`styleSettings.processing`/`stylePreview.processing` を追加。
   - 検証：未実施。
-  - ロールバック手順：`packages/ui/tabular-extract/src/components/TabularDataFilter.tsx`、`plugins/spreadsheet-plugin/src/ui/{state,components,hooks}`、`plugins/styler-plugin/src/ui/components/{StylerMappingStep.tsx,StylerPreviewStep.tsx,hooks/useStylerPreview.ts}`、`app/public/locales/{en,ja}/{styler-plugin,spreadsheet-plugin}.json`、`packages/ui/i18n/public/locales/{en,ja}/styler-plugin.json` の差分を revert する。
+  - ロールバック手順：`packages/ui/tabular-extract/src/components/TabularDataFilter.tsx`、`plugins/spreadsheet-plugin/src/ui/{state,components,hooks}`、`plugins/styler-plugin/src/ui/components/{StylerTargetStep.tsx,StylerPreviewStep.tsx,hooks/useStylerPreview.ts}`、`app/public/locales/{en,ja}/{styler-plugin,spreadsheet-plugin}.json`、`packages/ui/i18n/public/locales/{en,ja}/styler-plugin.json` の差分を revert する。
 - 1789) route-plugin typecheck エラー修正（BuildStepPanel/RouteProcessingConfig）（P1） — 完了 (2025-12-21)
   - 要点：RouteBuildStep の BuildStepPanel props を現行に合わせ、RouteProcessingStep の processing 設定を必須値で確定。
   - 検証：未実施。
@@ -12872,6 +12955,8 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-5"></a>
 
+- 2025-12-31 04:35 start: shape-plugin SessionController 分割と API 経由化（#2011）。
+- 2025-12-31 05:40 progress: shape-plugin SessionController 分割と API 経由化 — TaskRegistry/ArtifactStore へ分割し、ShapeQueryAPI/ShapeMutationAPI 拡張で Dexie 直接参照を撤去。検証: `pnpm --filter @hierarchidb/shape-plugin typecheck` exit 0。
 - 2025-12-25 23:35 start: shape-plugin ビルド監視ログ/クラッシュ推測/警告表示（#1896）。
 - 2025-12-26 00:05 start: shape-plugin JSヒープ逼迫の可視化/警告（#1896）。
 - 2025-12-26 00:12 start: shape-plugin ビルド中ヒープ逼迫の自動一時停止/警告ダイアログ（#1896）。
@@ -14624,7 +14709,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-09 13:10 start: fix/ui-treeconsole/integration-hook-extract — TreeConsoleIntegrationInner のロジックを useTreeConsoleIntegrationInner フックへ分離する作業を開始。DoD: 責務分離、挙動維持、typecheck 実行ログ、ロールバック明記。branch は main。
 - 2025-12-09 13:45 progress: fix/ui-treeconsole/integration-hook-extract — useTreeConsoleIntegrationInner を履歴管理・サブスクリプション・ツールバー・IndexedDB リセットのサブフックへ分割し、TreeConsoleIntegration を表示主体にリファクタ。`pnpm --filter @hierarchidb/app typecheck` exit 0（plugin-base build define 警告は既知）。
 - 2025-12-08 14:06 start: fix/styler/dialog-stepper-hidden — styler-plugin のマルチステップダイアログでステッパーが表示されない問題の調査を開始。DoD: ステッパー表示確認、原因と修正内容の記録、影響範囲とロールバック明記、関連 lint/typecheck の実行または未実施理由を記録。branch は `fix/styler/dialog-stepper-hidden`（作成不可なら main）。
-- 2025-12-08 14:16 progress: fix/styler/dialog-stepper-hidden — StylerDialog に PluginDialogHeader/PluginDialogFooter を render するよう headlessProps を拡張し、ステッパーとナビゲーションを再表示する実装を追加。依存に plugin-ui-host を追加。検証: `pnpm --filter @hierarchidb/styler-plugin typecheck` exit 2（既存エラー: StylerConfigPanel.tsx unused import, StylerConfigStep.tsx config undefined 判定, StyleMappingPanel.tsx 型未定義/any など）。
+- 2025-12-08 14:16 progress: fix/styler/dialog-stepper-hidden — StylerDialog に PluginDialogHeader/PluginDialogFooter を render するよう headlessProps を拡張し、ステッパーとナビゲーションを再表示する実装を追加。依存に plugin-ui-host を追加。検証: `pnpm --filter @hierarchidb/styler-plugin typecheck` exit 2（既存エラー: StylerAlgorithmPanel.tsx unused import, StylerAlgorithmStep.tsx config undefined 判定, StyleMappingPanel.tsx 型未定義/any など）。
 - 2025-12-08 14:28 progress: fix/styler/dialog-stepper-hidden — 独自 Headless ダイアログを撤去し、UI エントリは steps-provider の登録みに縮小（PluginDialogHost 経由で共通ヘッダー/ステッパーを使用）。`plugins/styler-plugin/package.json` から plugin-ui-host 依存を除去。再検証: `pnpm --filter @hierarchidb/styler-plugin typecheck` exit 2（同じ既存エラーのみ）。
 - 2025-12-07 19:43 start: chore/docs/readme-framework-refresh — README にツールチェーン/プラグイン枠組み/開発フローを反映するドキュメント更新を開始。DoD: Kanban/ログ更新、現行仕様と今後の方針（pnpm/turbo/tsdown/feature flags/rollback/検証コマンド/プラグインホスト仕様）を README に整理し整合性を保つ。ロールバック: README.md と TASKS.md の今回差分を revert。branch 作成不可なら main で作業。
 - 2025-12-07 19:46 done: chore/docs/readme-framework-refresh — README にモノレポ構成、プラグインレジストリ/ローダー、pnpm+turbo+tsdown の開発フロー、検証コマンド、フラグ/ロールバック方針、What’s next を追記。ドキュメント更新のみでコマンド未実行。ロールバック: README.md と TASKS.md の今回差分を revert。
@@ -16007,7 +16092,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-12-28 13:38 done: fix/ui/tree-nodeinfo-dates — Created/Updated ラベルを追加し、日付の意味を明確化。検証: 未実施。ロールバック: `app/src/router/pages/tree/console/TreeNodeInfoPanel.tsx` の差分を revert する。
 - 2025-12-28 16:22 start: feat/styler/gradient-algorithms — styler-plugin のグラデーションアルゴリズム実装に着手。（Kanban: 1870）
 - 2025-12-28 16:27 done: feat/styler/gradient-algorithms — LINEAR/LOGARITHMIC/QUANTILE/JENKS/EQUAL をそれぞれ正規化して色計算・グラデーション生成に反映。検証: 未実施。ロールバック: `plugins/styler-plugin/src/common/utils/colorUtils.ts` の差分を revert する。
-- 2025-12-28 16:46 done: feat/styler/gradient-algorithms — Number of bins をクラス数として使用し、binCount を config に反映。検証: 未実施。ロールバック: `packages/features/styler-store/src/StylerEntity.ts` と `plugins/styler-plugin/src/{common/utils/colorUtils.ts,ui/components/StylerMappingStep.tsx}` の差分を revert。
+- 2025-12-28 16:46 done: feat/styler/gradient-algorithms — Number of bins をクラス数として使用し、binCount を config に反映。検証: 未実施。ロールバック: `packages/features/styler-store/src/StylerEntity.ts` と `plugins/styler-plugin/src/{common/utils/colorUtils.ts,ui/components/StylerTargetStep.tsx}` の差分を revert。
 - 2025-12-28 16:09 done: fix/templates/population-2023-feature-id — population-2023 の shape ノード初期値に Feature ID Property として shapeISO を設定。検証: 未実施。ロールバック: `app/public/templates/population-2023/tree-nodes.json` の差分を revert。
 - 2025-12-28 16:48 start: fix/styler/value-to-color-dup — valueToColor の重複定義を整理する対応に着手。（Kanban: 1871）
 - 2025-12-28 16:48 done: fix/styler/value-to-color-dup — colorUtils 内の未使用 _valueToColor を削除して重複定義を解消。検証: 未実施。ロールバック: `plugins/styler-plugin/src/common/utils/colorUtils.ts` の差分を revert する。

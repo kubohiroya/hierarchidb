@@ -14,7 +14,7 @@
 
 **✅ styler-pluginは完成されたプラグイン**:
 - **spreadsheet-plugin拡張**: SpreadsheetEntityを継承してStylerEntity定義
-- **Step5-6追加実装**: StylerConfigStep（スタイル設定）、StylerStep6（プレビュー）
+- **Step5-6追加実装**: StylerAlgorithmStep（スタイル設定）、StylerStep6（プレビュー）
 - **MapLibre統合**: カラーマッピング機能、スタイル仕様生成
 - **高度な機能**: 統計分析、カラーグラデーション、データ可視化
 - **完全なUI**: StylerConfiguration、StylerPreviewStep
@@ -40,7 +40,7 @@ export interface StylerEntity extends SpreadsheetEntity, StylerExtendedFields {
 ```
 
 ### UI Components（実装済み）
-- **StylerConfigStep**: カラーマッピング設定、データ統計分析
+- **StylerAlgorithmStep**: カラーマッピング設定、データ統計分析
 - **StylerStep6**: プレビュー機能、MapLibreスタイル確認
 - **StylerConfiguration**: 詳細スタイル設定
 - **StylerPreviewStep**: データテーブルプレビュー
@@ -72,7 +72,7 @@ const { t } = useTranslation('styler-plugin');
 ```bash
 # 対象ファイル（一括修正）
 src/steps/BasicInfoStep.tsx
-src/components/steps/StylerConfigStep.tsx
+src/components/steps/StylerAlgorithmStep.tsx
 src/components/steps/StylerStep6.tsx
 ```
 

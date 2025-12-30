@@ -3,12 +3,14 @@ import { useEffect, useMemo, useRef } from 'react';
 import type { PluginStepProps } from '@hierarchidb/plugin-base';
 import {
   MAPLIBRE_PROPERTY_METADATA,
+  StylerConfigDefault,
+  type StylerConfig,
   type StylerStepData,
   type StylerValueType,
   type StylerMappingMode,
 } from '../../common/types/StylerEntity.js';
 import { StyleMappingTargetPanel } from './StyleMappingTargetPanel.tsx';
-import { Box, FormControl, FormHelperText, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+import { Box, FormControl, FormHelperText, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useStylerMappingState } from './useStylerMappingState.ts';
 import { STYLE_TYPE_OPTIONS } from '../../common/types/StylerEntity.js';
@@ -18,26 +20,38 @@ export const StylerTargetBehaviorStep: React.FC<PluginStepProps<StylerStepData>>
   onChange,
   setValid,
   setError,
-  dialogRef,
 }) => {
   const { t } = useTranslation('styler-plugin');
-  const { menuContainer, pluginData, settings, handleStyleTypeChange, handleTargetPropertyChange } =
+  const { pluginData, settings, handleStyleTypeChange, handleTargetPropertyChange } =
     useStylerMappingState({
       data,
       onChange,
       setValid: () => undefined,
       setError: () => undefined,
-      dialogRef,
       styleTypeOptions: STYLE_TYPE_OPTIONS,
     });
   const targetProperty = pluginData.mapping?.targetProperty ?? null;
-  const targetMeta = targetProperty ? MAPLIBRE_PROPERTY_METADATA[targetProperty] : null;
-  const valueType: StylerValueType =
-    (pluginData.mapping?.valueType as StylerValueType | undefined) ?? targetMeta?.type ?? 'color';
+  const valueType = useMemo<StylerValueType>(() => {
+    if (!targetProperty) return 'color';
+    const normalized = targetProperty.toLowerCase();
+    if (normalized.endsWith('color')) return 'color';
+    if (normalized.endsWith('opacity') || normalized.endsWith('radius') || normalized.endsWith('width')) {
+      return 'number';
+    }
+    return MAPLIBRE_PROPERTY_METADATA[targetProperty]?.type ?? 'color';
+  }, [targetProperty]);
   const mappingMode: StylerMappingMode =
     (pluginData.mapping?.mappingMode as StylerMappingMode | undefined) ?? 'map-interpolate';
+  const currentConfig = useMemo<StylerConfig>(
+    () => ({
+      ...StylerConfigDefault,
+      ...(pluginData.stylerConfig ?? {}),
+    }),
+    [pluginData.stylerConfig]
+  );
   const lastValidity = useRef<boolean | null>(null);
   const lastError = useRef<string | null>(null);
+  const lastValueType = useRef<StylerValueType | null>(null);
 
   const isValid = useMemo(() => {
     const hasTarget = Boolean(settings.styleType && targetProperty);
@@ -63,18 +77,37 @@ export const StylerTargetBehaviorStep: React.FC<PluginStepProps<StylerStepData>>
   }, [isValid, setError, setValid, t]);
 
   useEffect(() => {
-    if (!targetMeta) return;
-    if (!pluginData.mapping?.valueType) {
+    if (!targetProperty) return;
+    const mappingPatch: Partial<StylerStepData['mapping']> = {};
+    if (pluginData.mapping?.valueType !== valueType) {
+      mappingPatch.valueType = valueType;
+    }
+    if (valueType === 'number' && !pluginData.mapping?.mappingMode) {
+      mappingPatch.mappingMode = 'map-interpolate';
+    }
+    const shouldResetNumericRange = valueType === 'number' && lastValueType.current !== 'number';
+    const configPatch: Partial<StylerConfig> | null = shouldResetNumericRange
+      ? { outputMin: 0, outputMax: 10 }
+      : null;
+    if (Object.keys(mappingPatch).length > 0 || configPatch) {
       onChange({
         ...(pluginData as StylerStepData),
         mapping: {
           ...(pluginData.mapping ?? {}),
-          targetProperty: pluginData.mapping?.targetProperty ?? null,
-          valueType: targetMeta.type as StylerValueType,
+          targetProperty,
+          ...mappingPatch,
         },
+        stylerConfig: configPatch
+          ? {
+              ...StylerConfigDefault,
+              ...(pluginData.stylerConfig ?? {}),
+              ...configPatch,
+            }
+          : pluginData.stylerConfig,
       });
     }
-  }, [onChange, pluginData, targetMeta]);
+    lastValueType.current = valueType;
+  }, [onChange, pluginData, targetProperty, valueType]);
 
   const updateMapping = (patch: Partial<StylerStepData['mapping']>) => {
     const safePatch = patch ?? {};
@@ -91,6 +124,17 @@ export const StylerTargetBehaviorStep: React.FC<PluginStepProps<StylerStepData>>
       },
     });
   };
+  const updateStylerConfig = (patch: Partial<StylerConfig>) => {
+    const nextConfig: StylerConfig = {
+      ...StylerConfigDefault,
+      ...(pluginData.stylerConfig ?? {}),
+      ...patch,
+    };
+    onChange({
+      ...(pluginData as StylerStepData),
+      stylerConfig: nextConfig,
+    });
+  };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -98,40 +142,8 @@ export const StylerTargetBehaviorStep: React.FC<PluginStepProps<StylerStepData>>
         settings={settings}
         handleStyleTypeChange={handleStyleTypeChange}
         pluginData={pluginData}
-        menuContainer={menuContainer}
         handleTargetPropertyChange={handleTargetPropertyChange}
       />
-
-      <FormControl>
-        <Typography variant="subtitle2">
-          {t('step4.valueType.label', 'Value Type')}
-        </Typography>
-        <ToggleButtonGroup
-          exclusive
-          value={valueType}
-          onChange={(_event, nextValue) =>
-            nextValue &&
-            updateMapping({
-              valueType: nextValue,
-              mappingMode:
-                nextValue === 'number'
-                  ? (pluginData.mapping?.mappingMode ?? 'map-interpolate')
-                  : pluginData.mapping?.mappingMode,
-            })
-          }
-          size="small"
-          sx={{ mt: 1 }}
-        >
-          <ToggleButton value="number">{t('step4.valueType.number', 'Number')}</ToggleButton>
-          <ToggleButton value="color">{t('step4.valueType.color', 'Color')}</ToggleButton>
-        </ToggleButtonGroup>
-        <FormHelperText>
-          {t(
-            'step4.valueType.help',
-            'Choose whether feature-state stores numeric values or colors.',
-          )}
-        </FormHelperText>
-      </FormControl>
 
       {valueType === 'number' && (
         <FormControl>
@@ -160,6 +172,36 @@ export const StylerTargetBehaviorStep: React.FC<PluginStepProps<StylerStepData>>
           </FormHelperText>
         </FormControl>
       )}
+
+      <FormControl disabled={valueType !== 'number'}>
+        <Typography variant="subtitle2">
+          {t('step4.numericRange.label', 'Numeric range')}
+        </Typography>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mt: 1 }}>
+          <TextField
+            label={t('step4.numericRange.min', 'Minimum')}
+            type="number"
+            size="small"
+            value={currentConfig.outputMin}
+            onChange={(event) => updateStylerConfig({ outputMin: Number(event.target.value) })}
+            inputProps={{ step: 0.1 }}
+          />
+          <TextField
+            label={t('step4.numericRange.max', 'Maximum')}
+            type="number"
+            size="small"
+            value={currentConfig.outputMax}
+            onChange={(event) => updateStylerConfig({ outputMax: Number(event.target.value) })}
+            inputProps={{ step: 0.1 }}
+          />
+        </Stack>
+        <FormHelperText>
+          {t(
+            'step4.numericRange.help',
+            'Set the output range for numeric targets. Defaults are 0.0 to 10.0.',
+          )}
+        </FormHelperText>
+      </FormControl>
     </Box>
   );
 };

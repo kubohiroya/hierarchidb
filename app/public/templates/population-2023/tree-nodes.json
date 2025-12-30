@@ -1757,6 +1757,7 @@
             "mapping": {
               "styleType": "choropleth",
               "targetProperty": "fill-color",
+              "targetOptionId": "area-fill-color",
               "featureIdProperty": "shapeISO"
             },
             "colorStops": [

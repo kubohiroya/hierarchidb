@@ -34,12 +34,12 @@ export {
   rgbToHsv,
   valueToColor,
 } from '../../common/utils/colorUtils.js';
-export type { StylerMappingProps } from './StylerConfigPanel.tsx';
+export type { StylerMappingProps } from './StylerAlgorithmPanel.tsx';
 
 // Re-export components for direct use
-export { StylerConfigPanel } from './StylerConfigPanel.tsx';
+export { StylerAlgorithmPanel } from './StylerAlgorithmPanel.tsx';
 export type { StylerStepProps } from './StylerStepProps.tsx';
 // Step 5: Style Mapping Configuration
-export { StylerConfigStep, StylerConfigStepDefinition } from './StylerConfigStep.tsx';
+export { StylerAlgorithmStep, StylerConfigStepDefinition } from './StylerAlgorithmStep.tsx';
 // Step 6: Preview with Style Mapping
 export { StylerPreviewStep, StylerPreviewDefinition } from './StylerPreviewStep.tsx';

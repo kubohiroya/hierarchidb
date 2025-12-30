@@ -20,6 +20,13 @@ const KNOWN_DATA_SOURCE_NAMES = new Set<DataSourceName>(
   SHAPE_DATA_SOURCES.map((source) => source.name),
 );
 
+const stripNil = <T extends Record<string, unknown>>(value?: T | null): Partial<T> => {
+  if (!value) return {};
+  return Object.fromEntries(
+    Object.entries(value).filter(([, entryValue]) => entryValue !== null && entryValue !== undefined),
+  ) as Partial<T>;
+};
+
 export function normalizeDataSourceName(value?: string | null): DataSourceName | undefined {
   if (typeof value !== 'string') return undefined;
   const normalized = value.trim().toLowerCase();
@@ -101,11 +108,11 @@ export function mapDraftToUpdates(draft: ShapeDraft): Partial<ShapeEntity> {
 export function validateBatchConfig(config: Partial<BatchConfig>): ShapeStepValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
-  const legacyExtraction = config.extractionConfig;
-  const extract1Workers = config.extract1Config?.workers ?? legacyExtraction?.level1Workers;
-  const extract2Workers = config.extract2Config?.workers ?? legacyExtraction?.level2Workers;
+  const normalized = mergeBatchConfig(config);
+  const extract1Workers = normalized.extract1Config?.workers;
+  const extract2Workers = normalized.extract2Config?.workers;
 
-  const downloadConcurrency = config.downloadConfig?.maxConcurrent;
+  const downloadConcurrency = normalized.downloadConfig?.maxConcurrent;
   if (downloadConcurrency !== undefined) {
     if (downloadConcurrency < 1 || downloadConcurrency > 4) {
       errors.push('Concurrent downloads must be between 1 and 4');
@@ -123,8 +130,8 @@ export function validateBatchConfig(config: Partial<BatchConfig>): ShapeStepVali
     }
   }
 
-  const minZoom = config.tileConfig?.minZoom;
-  const maxZoom = config.tileConfig?.maxZoom;
+  const minZoom = normalized.tileConfig?.minZoom;
+  const maxZoom = normalized.tileConfig?.maxZoom;
   if (minZoom !== undefined) {
     if (minZoom < 0 || minZoom > 22) {
       errors.push('Min zoom level must be between 0 and 22');
@@ -142,7 +149,7 @@ export function validateBatchConfig(config: Partial<BatchConfig>): ShapeStepVali
     errors.push('Min zoom level must be less than or equal to max zoom level');
   }
 
-  const areaThreshold = config.extract1Config?.areaThreshold ?? legacyExtraction?.areaThreshold;
+  const areaThreshold = normalized.extract1Config?.areaThreshold;
   if (areaThreshold !== undefined) {
     if (areaThreshold < 0 || areaThreshold > 10000) {
       errors.push('Feature area threshold must be between 0 and 10000');
@@ -325,7 +332,7 @@ function buildDataSourceUrl(
  */
 export function mergeBatchConfig(config: Partial<BatchConfig>): BatchConfig {
   const legacyExtraction = config.extractionConfig;
-  const migratedExtract1 = legacyExtraction ? {
+  const migratedExtract1 = legacyExtraction ? stripNil({
     workers: legacyExtraction.level1Workers,
     tolerance: legacyExtraction.tolerance,
     featureFilterMethod: legacyExtraction.featureFilterMethod,
@@ -333,19 +340,24 @@ export function mergeBatchConfig(config: Partial<BatchConfig>): BatchConfig {
     minVertexCountForAreaFilter: legacyExtraction.minVertexCountForAreaFilter,
     aspectRatioThreshold: legacyExtraction.aspectRatioThreshold,
     hybridFilterConfig: legacyExtraction.hybridFilterConfig,
-  } : {};
-  const migratedExtract2 = legacyExtraction ? {
+  }) : {};
+  const migratedExtract2 = legacyExtraction ? stripNil({
     workers: legacyExtraction.level2Workers,
     tolerance: legacyExtraction.tolerance,
     quantize: legacyExtraction.quantize,
     enablePerFeatureExtraction: legacyExtraction.enablePerFeatureExtraction,
-  } : {};
+  }) : {};
+  const sanitizedDownloadConfig = stripNil(config.downloadConfig);
+  const sanitizedExtract1Config = stripNil(config.extract1Config);
+  const sanitizedExtract2Config = stripNil(config.extract2Config);
+  const sanitizedTileConfig = stripNil(config.tileConfig);
+  const sanitizedCleanupConfig = stripNil(config.cleanupConfig);
 
   return {
     dataSource: config.dataSource ?? DEFAULT_PROCESSING_CONFIG.dataSource,
     downloadConfig: {
       ...(DEFAULT_PROCESSING_CONFIG.downloadConfig ?? { maxConcurrent: 2 }),
-      ...(config.downloadConfig ?? {}),
+      ...sanitizedDownloadConfig,
     } as DownloadBatchConfig,
     extract1Config: {
       ...(DEFAULT_PROCESSING_CONFIG.extract1Config ?? {
@@ -355,7 +367,7 @@ export function mergeBatchConfig(config: Partial<BatchConfig>): BatchConfig {
         areaThreshold: 5,
       }),
       ...migratedExtract1,
-      ...(config.extract1Config ?? {}),
+      ...sanitizedExtract1Config,
     },
     extract2Config: {
       ...(DEFAULT_PROCESSING_CONFIG.extract2Config ?? {
@@ -363,7 +375,7 @@ export function mergeBatchConfig(config: Partial<BatchConfig>): BatchConfig {
         tolerance: 0.01,
       }),
       ...migratedExtract2,
-      ...(config.extract2Config ?? {}),
+      ...sanitizedExtract2Config,
     },
     tileConfig: {
       ...(DEFAULT_PROCESSING_CONFIG.tileConfig ?? {
@@ -371,11 +383,11 @@ export function mergeBatchConfig(config: Partial<BatchConfig>): BatchConfig {
         minZoom: 0,
         maxZoom: 12,
       }),
-      ...(config.tileConfig ?? {}),
+      ...sanitizedTileConfig,
     } as TileBatchConfig,
     cleanupConfig: {
       ...(DEFAULT_PROCESSING_CONFIG.cleanupConfig ?? {}),
-      ...(config.cleanupConfig ?? {}),
+      ...sanitizedCleanupConfig,
     },
     source: config.source ?? DEFAULT_PROCESSING_CONFIG.source,
   };

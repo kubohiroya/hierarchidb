@@ -39,7 +39,7 @@ feature-state は MapLibre の機構で、`map.setFeatureState({ source, id }, s
 主要ファイル:
 - Styler 型定義: `plugins/styler-plugin/src/common/types/StylerEntity.ts`
 - Styler UI ステップ: `plugins/styler-plugin/src/ui/components/steps-provider.tsx`
-- Styler マッピング UI: `plugins/styler-plugin/src/ui/components/StylerMappingStep.tsx`
+- Styler マッピング UI: `plugins/styler-plugin/src/ui/components/StylerTargetStep.tsx`
 - Styler プレビュー: `plugins/styler-plugin/src/ui/components/StylerPreviewStep.tsx`
 - Map プレビュー: `app/src/router/routes/map.tsx`
 - Vector tile レイヤー: `packages/ui/map/src/components/VectorTileLayer.tsx`
@@ -83,7 +83,7 @@ Styler の設定を feature-state 前提で再構成し、/map の描画で feat
 1. `plans/styler-feature-state-execplan.md` を更新し、調査や決定事項を `Progress` と `Decision Log` に追記する。
 2. `plugins/styler-plugin/src/common/types/StylerEntity.ts` を編集し、feature-state 用の設定型と既定値を追加する。
 3. `plugins/styler-plugin/src/ui/components/steps-provider.tsx` を編集し、ステップ構成を A 案に再配置する。
-4. `plugins/styler-plugin/src/ui/components` に Step3/Step4/Step5 用の UI を追加する（既存の StylerMappingStep は分割・再利用）。
+4. `plugins/styler-plugin/src/ui/components` に Step3/Step4/Step5 用の UI を追加する（既存の StylerTargetStep は分割・再利用）。
 5. `plugins/styler-plugin/src/ui/components/StylerPreviewStep.tsx` を編集し、feature-state 用の key/value 保存とプレビュー要約を追加する。
 6. `app/src/router/routes/map.tsx` で styler の設定を読み込み、feature-state 反映のための source/target 情報を組み立てる。
 7. `packages/ui/map/src/components/ResourceLayerMap.tsx` と `packages/ui/map/src/components/VectorTileLayer.tsx` に promoteId と feature-state の反映導線を追加する。
